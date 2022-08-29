@@ -46,6 +46,7 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 		newExportConfigCommand(prime),
 		newExportGithubActionCommand(prime),
 		newExportDocsCommand(prime),
+		newExportEnvCommand(prime),
 	)
 
 	platformsCmd := newPlatformsCommand(prime)
@@ -189,6 +190,7 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 		checkoutCmd,
 		useCmd,
 		shellCmd,
+		newSwitchCommand(prime),
 	)
 
 	return &CmdTree{

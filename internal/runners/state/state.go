@@ -10,6 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/profile"
+	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/pkg/cmdlets/checker"
 	"github.com/ActiveState/cli/pkg/platform/model"
 )
@@ -51,22 +52,13 @@ func (s *State) Run(usageFunc func() error) error {
 	return execute(s.opts, usageFunc, s.cfg, s.svcMdl, s.out)
 }
 
-type versionData struct {
-	License    string `json:"license"`
-	Version    string `json:"version"`
-	Branch     string `json:"branch"`
-	Revision   string `json:"revision"`
-	Date       string `json:"date"`
-	BuiltViaCI bool   `json:"builtViaCI"`
-}
-
 func execute(opts *Options, usageFunc func() error, cfg *config.Instance, svcModel *model.SvcModel, out output.Outputer) error {
 	logging.Debug("Execute")
 	defer profile.Measure("runners:state:execute", time.Now())
 
 	if opts.Version {
 		checker.RunUpdateNotifier(svcModel, out)
-		vd := versionData{
+		vd := installation.VersionData{
 			constants.LibraryLicense,
 			constants.Version,
 			constants.BranchName,

@@ -33,6 +33,7 @@ import (
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/svcctl"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
+	cmdletErrors "github.com/ActiveState/cli/pkg/cmdlets/errors"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
@@ -100,7 +101,7 @@ func main() {
 	// Run our main command logic, which is logic that defers to the error handling logic below
 	err = run(os.Args, isInteractive, cfg, out)
 	if err != nil {
-		exitCode, err = unwrapError(err)
+		exitCode, err = cmdletErrors.Unwrap(err)
 		if err != nil {
 			out.Error(err)
 		}

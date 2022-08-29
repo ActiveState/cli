@@ -136,7 +136,7 @@ $FETCH $TMPDIR/$ARCHIVE $STATEURL
 # If curl was used, make sure the file downloaded is of type 'data', according to the UNIX `file`
 # command. (The XML error will be reported as a 'text' type.)
 # If wget returned an error or curl fetched a "forbidden" response, raise an error and exit.
-if [ $? -ne 0 -o \( "`echo $FETCH | grep -o 'curl'`" == "curl" -a -z "`file -b $TMPDIR/$ARCHIVE | grep -o 'data'`" \) ]; then
+if [ $? -ne 0 -o \( "`echo $FETCH | grep -o 'curl'`" = "curl" -a -z "`file -b $TMPDIR/$ARCHIVE | grep -o 'data'`" \) ]; then
   rm -f $TMPDIR/$ARCHIVE
   progress_fail
   error "Could not download the State Tool installer at $STATEURL. Please try again."

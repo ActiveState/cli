@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -28,6 +29,7 @@ import (
 	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/ActiveState/cli/internal/runbits/panics"
 	"github.com/ActiveState/cli/internal/subshell"
+	"github.com/ActiveState/cli/pkg/cmdlets/errors"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/sysinfo"
 )
@@ -199,10 +201,10 @@ func main() {
 			multilog.Critical("Installer error: " + errs.JoinMessage(err))
 		}
 
-		exitCode = errs.UnwrapExitCode(err)
+		exitCode, err = errors.Unwrap(err)
 		an.EventWithLabel(AnalyticsFunnelCat, "fail", err.Error())
 		if !errs.IsSilent(err) {
-			out.Error(err.Error())
+			out.Error(err)
 		}
 	} else {
 		an.Event(AnalyticsFunnelCat, "success")
@@ -228,7 +230,7 @@ func execute(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher,
 	}
 
 	// Detect installed state tool
-	stateToolInstalled, installPath, err := installedOnPath(params.path, constants.BranchName)
+	stateToolInstalled, installPath, stateExePath, err := installedOnPath(params.path, constants.BranchName)
 	if err != nil {
 		return errs.Wrap(err, "Could not detect if State Tool is already installed.")
 	}
@@ -257,6 +259,12 @@ func execute(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher,
 	if !params.isUpdate {
 		packagedStateExe := filepath.Join(payloadPath, installation.BinDirName, constants.StateCmd+exeutils.Extension)
 		params.isUpdate = determineLegacyUpdate(stateToolInstalled, packagedStateExe, payloadPath, params)
+	}
+
+	// If the state tool is already installed, but out of date, continue with update flow.
+	if stateToolInstalled && !params.isUpdate && !params.force && shouldUpdateInstalledStateTool(stateExePath) {
+		logging.Debug("Installed state tool should be updated, switching to update flow.")
+		params.isUpdate = true
 	}
 
 	route := "install"
@@ -378,7 +386,7 @@ func postInstallEvents(out output.Outputer, cfg *config.Instance, an analytics.D
 			an.EventWithLabel(AnalyticsFunnelCat, "forward-activate-default-err", err.Error())
 			return errs.Silence(errs.Wrap(err, "Could not activate %s, error returned: %s", params.activateDefault.String(), errs.JoinMessage(err)))
 		}
-	case !params.isUpdate:
+	case !params.isUpdate && os.Getenv(constants.InstallerNoSubshell) != "true":
 		ss := subshell.New(cfg)
 		ss.SetEnv(envMap(binPath))
 		if err := ss.Activate(nil, cfg, out); err != nil {
@@ -467,4 +475,34 @@ func determineLegacyUpdate(stateToolInstalled bool, packagedStateExe, payloadPat
 
 func noArgs() bool {
 	return len(os.Args[1:]) == 0
+}
+
+func shouldUpdateInstalledStateTool(stateExePath string) bool {
+	logging.Debug("Checking if installed state tool is an older version.")
+
+	stdout, _, err := exeutils.ExecSimple(stateExePath, []string{"--version", "--output", "json"}, os.Environ())
+	if err != nil {
+		logging.Debug("Could not determine state tool version.")
+		return true // probably corrupted install
+	}
+	stdout = strings.Split(stdout, "\x00")[0] // TODO: DX-328
+
+	versionData := installation.VersionData{}
+	err = json.Unmarshal([]byte(stdout), &versionData)
+	if err != nil {
+		logging.Debug("Could not read state tool version output")
+		return true
+	}
+
+	if versionData.Branch != constants.BranchName {
+		logging.Debug("State tool branch is different from installer.")
+		return false // do not update, require --force
+	}
+
+	if versionData.Version != constants.Version {
+		logging.Debug("State tool version is different from installer.")
+		return true
+	}
+
+	return false
 }

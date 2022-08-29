@@ -6,7 +6,6 @@ import (
 	"os/user"
 	"path/filepath"
 	rt "runtime"
-	"strings"
 
 	"github.com/ActiveState/cli/internal/analytics"
 	anaConsts "github.com/ActiveState/cli/internal/analytics/constants"
@@ -168,24 +167,8 @@ func (r *Activate) run(params *ActivateParams) error {
 		}
 	}
 
-	// Determine branch name
-	branch := proj.BranchName()
-	if params.Branch != "" {
-		branch = params.Branch
-	}
-
 	rt, _, err := runtime.NewFromProject(proj, target.TriggerActivate, r.analytics, r.svcModel, r.out, r.auth)
 	if err != nil {
-		if errs.Matches(err, &model.ErrNoMatchingPlatform{}) {
-			branches, err := model.BranchNamesForProjectFiltered(proj.Owner(), proj.Name(), branch)
-			if err == nil && len(branches) > 1 {
-				err = locale.NewInputError("err_activate_platfrom_alternate_branches", "", branch, strings.Join(branches, "\n - "))
-				return errs.AddTips(err, "Run → `[ACTIONABLE]state branch switch <NAME>[/RESET]` to switch branch")
-			}
-		}
-		if !authentication.LegacyGet().Authenticated() {
-			return locale.WrapError(err, "error_could_not_activate_venv_auth", "Could not activate project. If this is a private project ensure that you are authenticated.")
-		}
 		return locale.WrapError(err, "err_could_not_activate_venv", "Could not activate project")
 	}
 
@@ -209,7 +192,7 @@ func (r *Activate) run(params *ActivateParams) error {
 		return errs.AddTips(err, "Run → [ACTIONABLE]state push[/RESET] to create your project")
 	}
 
-	if err := activation.ActivateAndWait(proj, venv, r.out, r.subshell, r.config, r.analytics); err != nil {
+	if err := activation.ActivateAndWait(proj, venv, r.out, r.subshell, r.config, r.analytics, true); err != nil {
 		return locale.WrapError(err, "err_activate_wait", "Could not activate runtime environment.")
 	}
 

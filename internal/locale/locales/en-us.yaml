@@ -739,6 +739,8 @@ update_available:
      You can update by running [ACTIONABLE]`state update`[/RESET]
 update_none_found:
   other: No new update available.
+updating_version:
+  other: Updating State Tool to version {{.V0}}
 runtime_update_notice_known_count:
   other: "Your activestate.yaml is [NOTICE]{{.V0}}[/RESET] commits behind."
 runtime_update_notice_unknown_count:
@@ -1702,7 +1704,7 @@ cve_needs_authentication:
   other: You need to be authenticated in order to access vulnerability information about your project.
 auth_tip:
   other: Run `state auth` to authenticate.
-err_activate_platfrom_alternate_branches:
+err_alternate_branches:
   other: |
     There are no valid dependencies for your platform in branch [ACTIONABLE]`{{.V0}}`[/RESET], perhaps you could try one of the alternate branches on your project:
 

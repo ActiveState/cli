@@ -2,6 +2,7 @@ package invite
 
 import (
 	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
 	"sync"
@@ -43,10 +44,14 @@ func New(prime primeable) *invite {
 	}
 }
 
-func (i *invite) Run(params *Params) error {
+func (i *invite) Run(params *Params, args []string) error {
 	if i.project == nil {
 		return locale.NewInputError("err_no_projectfile", "Must be in a project directory.")
 	}
+
+	if len(args) > 1 {
+		params.EmailList = strings.Join(args, ",")
+	} // otherwise CSV-separated list of e-mails is already in params.EmailList
 
 	org := params.Org
 	if org.String() == "" {
@@ -63,7 +68,9 @@ func (i *invite) Run(params *Params) error {
 		}
 	}
 
-	emails := strings.Split(params.EmailList, ",")
+	multipleCommas := regexp.MustCompile(",,+")
+	emailList := strings.Trim(multipleCommas.ReplaceAllString(params.EmailList, ","), ",")
+	emails := strings.Split(emailList, ",")
 
 	if err := org.CanInvite(len(emails)); err != nil {
 		return locale.WrapError(err, "err_caninvite", "Cannot invite users to {{.V0}}.", org.String())

@@ -140,7 +140,7 @@ func (suite *UpdateIntegrationTestSuite) testUpdate(ts *e2e.Session, baseDir str
 	suite.NoError(err)
 
 	cp := ts.SpawnCmdWithOpts(stateExec, spawnOpts...)
-	cp.Expect("Updating State Tool to latest version available")
+	cp.Expect("Updating State Tool to")
 	cp.Expect("Installing Update")
 }
 
@@ -170,7 +170,7 @@ func (suite *UpdateIntegrationTestSuite) TestUpdate_Repair() {
 	}
 
 	cp := ts.SpawnCmdWithOpts(stateExePath, spawnOpts...)
-	cp.Expect("Updating State Tool to latest version available")
+	cp.Expect("Updating State Tool to version")
 	cp.Expect("Installing Update", time.Minute)
 	cp.ExpectExitCode(0)
 

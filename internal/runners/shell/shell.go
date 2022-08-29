@@ -21,7 +21,8 @@ import (
 )
 
 type Params struct {
-	Namespace *project.Namespaced
+	Namespace       *project.Namespaced
+	ChangeDirectory bool
 }
 
 type primeable interface {
@@ -91,7 +92,7 @@ func (u *Shell) Run(params *Params) error {
 
 	venv := virtualenvironment.New(rti)
 
-	err = activation.ActivateAndWait(proj, venv, u.out, u.subshell, u.config, u.analytics)
+	err = activation.ActivateAndWait(proj, venv, u.out, u.subshell, u.config, u.analytics, params.ChangeDirectory)
 	if err != nil {
 		return locale.WrapError(err, "err_shell_wait", "Could not start runtime shell/prompt.")
 	}
