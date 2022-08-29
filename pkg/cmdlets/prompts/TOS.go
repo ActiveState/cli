@@ -10,24 +10,17 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/prompt"
-	"github.com/ActiveState/cli/internal/assets"
 )
 
-const TOSPath = "offline/LICENSE.txt"
-
-type TOS interface {
-	GetTOSText() (string, error)
-}
-
 type onlineTOS struct {
-	TOS
+	LegalText
 }
 
 func newOnlineTOS() *onlineTOS {
 	return &onlineTOS{}
 }
 
-func (tos *onlineTOS) GetTOSText() (string, error) {
+func (tos *onlineTOS) GetLegalText() (string, error) {
 	resp, err := http.Get(constants.TermsOfServiceURLText)
 	if err != nil {
 		return "", errs.Wrap(err, "Failed to download the Terms Of Service document.")
@@ -51,29 +44,7 @@ func PromptOnlineTOS(out output.Outputer, prompt prompt.Prompter)(bool,error) {
     return PromptTOS(tos,out,prompt)
 }
 
-type offlineTOS struct {
-	TOS
-}
-
-func newOfflineTOS() *offlineTOS {
-	return &offlineTOS{}
-}
-
-func (tos *offlineTOS) GetTOSText() (string, error) {
-    b,err := assets.ReadFileBytes(TOSPath)
-	if err != nil {
-		return "", errs.Wrap(err, "Unable to open TOS file")
-	}
-
-	return string(b), nil
-}
-
-func PromptOfflineTOS(out output.Outputer, prompt prompt.Prompter)(bool,error) {
-    tos := newOfflineTOS()
-    return PromptTOS(tos,out,prompt)
-}
-
-func PromptTOS(tos TOS, out output.Outputer, prompt prompt.Prompter) (bool, error) {
+func PromptTOS(tos LegalText, out output.Outputer, prompt prompt.Prompter) (bool, error) {
 	choices := []string{
 		locale.T("tos_accept"),
 		locale.T("tos_not_accept"),
@@ -93,7 +64,7 @@ func PromptTOS(tos TOS, out output.Outputer, prompt prompt.Prompter) (bool, erro
 	case locale.T("tos_not_accept"):
 		return false, nil
 	case locale.T("tos_show_full"):
-		tosText, err := tos.GetTOSText()
+		tosText, err := tos.GetLegalText()
 		if err != nil {
 			return false, locale.WrapError(err, "err_download_tos", "Could not get terms of service text.")
 		}

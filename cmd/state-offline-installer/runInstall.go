@@ -49,6 +49,7 @@ func runInstall(out output.Outputer, params *Params) error {
 	installToDir := params.path
 	assetsPath := filepath.Join(tempDir, assetsPathName)
 	artifactsPath := filepath.Join(tempDir, artifactsPathName)
+	licenseFileAssetPath := filepath.Join(assetsPath, licenseFileName)
 	licenseFilePath := filepath.Join(installToDir, licenseFileName)
 
 	out.Print(fmt.Sprintf("Temp directory is: %s", tempDir))
@@ -80,19 +81,6 @@ func runInstall(out output.Outputer, params *Params) error {
 		return errs.Wrap(err, "Unable to create artifactsPath directory")
 	}
 
-	accepted, err := prompts.PromptOfflineTOS(out, prompter)
-	if err != nil {
-		return errs.Wrap(err, "Error with TOS acceptance")
-	}
-	if !accepted {
-		return locale.NewInputError("offline_tos_not_accepted", "License not accepted")
-	}
-
-	// FIX: This is where I would suggest placing asking the EU for the installation directory
-	//     if installToDir == "" {
-	//     installToDir, err = prompter.Input("Choose installation directory", "Where would you like to install the software?", &installToDir, prompt.InputRequired)
-	// }
-	//
 	ua := unarchiver.NewZip()
 	out.Print(fmt.Sprintf("Stage 1 of 3 Start: Decompressing assets into: %s", assetsPath))
 	f, siz, err := ua.PrepareUnpacking(params.backpackZipFile, assetsPath)
@@ -106,6 +94,15 @@ func runInstall(out output.Outputer, params *Params) error {
 	}
 
 	out.Print(fmt.Sprintf("Stage 1 of 3 Finished: Decompressing assets into: %s", assetsPath))
+
+	fmt.Println(licenseFileAssetPath)
+	accepted, err := prompts.PromptOfflineLicense(out, prompter, licenseFileAssetPath)
+	if err != nil {
+		return errs.Wrap(err, "Error with TOS acceptance")
+	}
+	if !accepted {
+		return locale.NewInputError("License not accepted")
+	}
 
 	archivePath := filepath.Join(assetsPath, artifactsTarGZName)
 
@@ -149,13 +146,9 @@ func runInstall(out output.Outputer, params *Params) error {
 	out.Print(fmt.Sprintf("Stage 3 of 3 Finished: Installing artifacts from: %s", artifactsPath))
 
 	// Copy license file
-	contents, err := assets.ReadFileBytes(TOSPath)
+	err = fileutils.CopyFile(licenseFileAssetPath, licenseFilePath)
 	if err != nil {
-		return errs.Wrap(err, "Error reading file bytes for TOS")
-	}
-	err = fileutils.WriteFile(licenseFilePath, contents)
-	if err != nil {
-		return locale.WrapError(err, "Error copying TOS file")
+		return errs.Wrap(err, "Error copying license file")
 	}
 
 	configureEnvironmentAccepted, err := prompter.Confirm("Setup", "Setup environment for installed project?", &default_boolean_answer)
