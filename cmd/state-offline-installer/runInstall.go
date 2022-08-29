@@ -30,7 +30,6 @@ import (
 const artifactsTarGZName = "artifacts.tar.gz"
 const assetsPathName = "assets"
 const artifactsPathName = "artifacts"
-const TOSPath = "offline/LICENSE.txt"
 const licenseFileName = "LICENSE.txt"
 
 func runInstall(out output.Outputer, params *Params) error {
@@ -98,7 +97,7 @@ func runInstall(out output.Outputer, params *Params) error {
 	fmt.Println(licenseFileAssetPath)
 	accepted, err := prompts.PromptOfflineLicense(out, prompter, licenseFileAssetPath)
 	if err != nil {
-		return errs.Wrap(err, "Error with TOS acceptance")
+		return errs.Wrap(err, "Error with license acceptance")
 	}
 	if !accepted {
 		return locale.NewInputError("License not accepted")
