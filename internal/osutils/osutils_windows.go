@@ -27,7 +27,7 @@ func CmdExitCode(cmd *exec.Cmd) (code int) {
 	return cmd.ProcessState.Sys().(Status).ExitStatus()
 }
 
-dynamicEnvVarRe := regexp.MustCompile(`(^=.+)=(.+)`)
+var dynamicEnvVarRe = regexp.MustCompile(`(^=.+)=(.+)`)
 
 // InheritEnv returns a union of the given environment and os.Environ(). If the given environment
 // and os.Environ() share any environment variables, the former's will be used over the latter's.
