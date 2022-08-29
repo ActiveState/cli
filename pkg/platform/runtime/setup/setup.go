@@ -314,7 +314,7 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 
 	s.events.ParsedArtifacts(setup.ResolveArtifactName, downloads, failedArtifacts)
 
-	if buildResult.BuildPlan.Project.Commit.Build.Status == string(bpModel.Failed) {
+	if buildResult.BuildPlan.Project.Commit.Build.Status == string(bpModel.BuildFailed) {
 		s.events.BuildFinished()
 		return nil, locale.NewError("headchef_build_failure", "Build Failed: {{.V0}}", buildResult.BuildPlan.Project.Commit.Build.Error)
 	}

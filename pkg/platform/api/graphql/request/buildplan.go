@@ -15,61 +15,129 @@ func (b *buildPlanByCommitID) Query() string {
 	return `query ($commitID: String!) {
 	project(project: "placeholder", organization: "placeholder") {
 		... on Project {
-			name
-			description
-			commit(vcsRef: $commitID) {
-				... on Commit {
-					parentId
-					description
-					build {
-						__typename
-						... on BuildReady {
-							buildPlanID
-							status
-							terminals {
-								__typename
-								tag
-								targetIDs
-							}
-							targets {
-								... on Source {
-									__typename
-									targetID
-									namespace
-									name
-									version
-									revision
-									ingredientID
-									ingredientVersionID
-								}
-								... on Step {
-									__typename
-									targetID
-									name
-									inputs {
-										__typename
+      		__typename
+				commit(vcsRef:$commitID) {
+        			... on Commit {
+          				__typename
+          					build {
+            					__typename
+            					... on BuildReady {
+									buildPlanID
+									status
+									terminals {
 										tag
 										targetIDs
 									}
-									outputs
-								}
-								... on ArtifactSucceeded {
-									__typename
-									targetID
-									mimeType
+									targets {
+										__typename
+										... on Source {
+											targetID
+											name
+											namespace
+											version
+										}
+										... on Step {
+											targetID
+											inputs {
+												tag
+												targetIDs
+											}
+											outputs
+										}
+										... on ArtifactSucceeded {
+											targetID
+											mimeType
+											generatedBy
+											runtimeDependencies
+											status
+											logURL
+											url
+											checksum
+										}
+										... on ArtifactUnbuilt {
+											targetID
+											mimeType
+											generatedBy
+											runtimeDependencies
+											status
+										}
+										... on ArtifactBuilding {
+											targetID
+											mimeType
+											generatedBy
+											runtimeDependencies
+											status
+										}
+										... on ArtifactTransientlyFailed {
+											targetID
+											mimeType
+											generatedBy
+											runtimeDependencies
+											status
+											logURL
+											errors
+											attempts
+											nextAttemptAt
+										}
+              						}
+            					}
+								... on BuildPlanned {
+									buildPlanID
 									status
-									generatedBy
-									runtimeDependencies
-									status
-									logURL
-									url
-									checksum
+									terminals {
+										tag
+										targetIDs
+									}
 								}
-							}
-						}
+								... on BuildStarted {
+									buildPlanID
+									status
+									terminals {
+										tag
+										targetIDs
+									}
+								}
+								... on BuildPlanning {
+									buildPlanID
+									status
+									terminals {
+										tag
+										targetIDs
+									}
+								}
+								... on PlanningError {
+									error
+									subErrors {
+										__typename
+										... on GenericSolveError {
+											path
+											message
+											isTransient
+											validationErrors
+										}
+										... on RemediableSolveError {
+											path
+											message
+											isTransient
+											validationErrors
+											suggestedRemediations {
+												remediationType
+												command
+												parameters
+											}
+                						}
+									}
+            					}
+          					}
+        				}
+					... on CommitNotFound {
+						message
 					}
 				}
 			}
+		... on ProjectNotFound {
+			__typename
+			message
 		}
 	}
 }

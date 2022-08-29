@@ -176,6 +176,7 @@ func (r *Activate) run(params *ActivateParams) error {
 		branch = params.Branch
 	}
 
+	// The POC currently only supports commitIDs
 	commitID := proj.CommitUUID()
 	rt, err := runtime.New(target.NewProjectTarget(proj, storage.CachePath(), &commitID, target.TriggerActivate), r.analytics, r.svcModel)
 	if err != nil {

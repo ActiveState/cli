@@ -46,7 +46,7 @@ func (b *BuildPlanner) FetchBuildResult(commitID strfmt.UUID, _, _ string) (*Bui
 		return nil, errs.Wrap(err, "failed to fetch build plan")
 	}
 
-	if model.BuildPlanStatusEnum(resp.Project.Commit.Build.Status) != model.Ready {
+	if model.BuildPlanStatus(resp.Project.Commit.Build.Status) != model.BuildReady {
 		return nil, locale.NewError("err_buildplanner_not_ready", "Build plan is not ready")
 	}
 
@@ -72,7 +72,7 @@ func (b *BuildPlanner) FetchBuildResult(commitID strfmt.UUID, _, _ string) (*Bui
 	return &BuildResult{
 		BuildEngine: Alternative,
 		BuildPlan:   processOriginalTargets(resp, originalTargets),
-		BuildReady:  model.BuildPlanStatusEnum(resp.Project.Commit.Build.Status) == model.Ready,
+		BuildReady:  model.BuildPlanStatus(resp.Project.Commit.Build.Status) == model.BuildReady,
 	}, nil
 }
 
@@ -81,18 +81,15 @@ func processOriginalTargets(bp *model.BuildPlan, orignal []model.Target) *model.
 	var steps []model.Step
 	var sources []model.Source
 	for _, artifact := range orignal {
-		if artifact.TypeName == "Step" {
+		if artifact.Type == "Step" {
 			steps = append(steps, model.Step{
 				TargetID: artifact.TargetID,
-				Name:     artifact.Name,
-				Image:    artifact.Image,
-				Command:  artifact.Command,
 				Inputs:   artifact.Inputs,
 				Outputs:  artifact.Outputs,
 			})
 			continue
 		}
-		if artifact.TypeName == "Source" {
+		if artifact.Type == "Source" {
 			sources = append(sources, model.Source{
 				TargetID:  artifact.TargetID,
 				Name:      artifact.Name,

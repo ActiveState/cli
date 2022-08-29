@@ -1,19 +1,17 @@
 package model
 
-type BuildPlanStatusEnum string
+type BuildPlanStatus string
 
 type ArtifactStatus string
 
 const (
-	Planning BuildPlanStatusEnum = "PLANNING"
-	Planned  BuildPlanStatusEnum = "PLANNED"
-	Building BuildPlanStatusEnum = "BUILDING"
-	Ready    BuildPlanStatusEnum = "READY"
-	// TODO: Currently the POC does not have a failed status
-	Failed BuildPlanStatusEnum = "FAILED"
-)
+	BuildPlanning BuildPlanStatus = "PLANNING"
+	BuildPlanned  BuildPlanStatus = "PLANNED"
+	BuildBuilding BuildPlanStatus = "BUILDING"
+	BuildReady    BuildPlanStatus = "READY"
+	// Currently the POC does not have a failed status
+	BuildFailed BuildPlanStatus = "FAILED"
 
-const (
 	ArtifactNotSubmitted      ArtifactStatus = "NOT_SUBMITTED"
 	ArtifactBlocked           ArtifactStatus = "BLOCKED"
 	ArtifactFailedPermanently ArtifactStatus = "FAILED_PERMANENTLY"
@@ -29,55 +27,91 @@ type BuildPlan struct {
 }
 
 type Project struct {
+	Type   string `json:"__typename"`
 	Commit Commit `json:"commit"`
+	ProjectNotFound
+}
+
+type ProjectNotFound struct {
+	Message string `json:"message"`
 }
 
 type Commit struct {
-	Build Build `json:"build"`
+	Type  string `json:"__typename"`
+	Build Build  `json:"build"`
+	CommitNotFound
+}
+
+type CommitNotFound struct {
+	Message string `json:"message"`
 }
 
 type Build struct {
-	Terminals []Terminals `json:"terminals"`
-	Status    string      `json:"status"`
-	Targets   []Target    `json:"targets"`
-	Error     string      `json:"error"`
-	// TODO: Temporary workaround, remove after dependency resolution functions are updated
+	BuildPlanID string        `json:"buildPlanID"`
+	Status      string        `json:"status"`
+	Terminals   []NamedTarget `json:"terminals"`
+	Targets     []Target      `json:"targets"`
+
+	// Error fields
+	Error     string     `json:"error"`
+	SubErrors []SubError `json:"subErrors"`
+
 	Steps   []Step
 	Sources []Source
 }
 
-type Terminals struct {
+type NamedTarget struct {
 	Tag       string   `json:"tag"`
 	TargetIDs []string `json:"targetIDs"`
 }
 
 type Target struct {
-	TypeName            string   `json:"__typename"`
+	Type                string   `json:"__typename"`
 	TargetID            string   `json:"targetID"`
-	Name                string   `json:"name"`
-	Namespace           string   `json:"namespace"`
-	Version             string   `json:"version"`
 	MimeType            string   `json:"mimeType"`
 	GeneratedBy         string   `json:"generatedBy"`
+	RuntimeDependencies []string `json:"runtimeDependencies"`
 	Status              string   `json:"status"`
 	URL                 string   `json:"url"`
 	LogURL              string   `json:"logURL"`
 	Checksum            string   `json:"checksum"`
-	Image               string   `json:"image"`
-	Command             string   `json:"command"`
-	Inputs              []Input  `json:"inputs"`
-	Outputs             []string `json:"outputs"`
-	RuntimeDependencies []string `json:"runtimeDependencies"`
 	Errors              []string `json:"errors"`
+	Attempts            string   `json:"attempts"`
+	NextAttempt         string   `json:"nextAttempt"`
+
+	// Step fields
+	Inputs  []NamedTarget `json:"inputs"`
+	Outputs []string      `json:"outputs"`
+
+	// Source fields
+	Name      string `json:"name"`
+	Namespace string `json:"namespace"`
+	Version   string `json:"version"`
+}
+
+type SubError struct {
+	Type             string   `json:"__typename"`
+	Path             string   `json:"path"`
+	Message          string   `json:"message"`
+	IsTransient      bool     `json:"isTransient"`
+	ValidationErrors []string `json:"validationErrors"`
+	RemediableSolveError
+}
+
+type RemediableSolveError struct {
+	SuggestedRemediation
+}
+
+type SuggestedRemediation struct {
+	RemediationType string   `json:"remediationType"`
+	Command         string   `json:"command"`
+	Parameters      []string `json:"parameters"`
 }
 
 type Step struct {
-	TargetID string   `json:"targetID"`
-	Name     string   `json:"name"`
-	Image    string   `json:"image"`
-	Command  string   `json:"command"`
-	Inputs   []Input  `json:"inputs"`
-	Outputs  []string `json:"outputs"`
+	TargetID string        `json:"targetID"`
+	Inputs   []NamedTarget `json:"inputs"`
+	Outputs  []string      `json:"outputs"`
 }
 
 type Source struct {
@@ -85,9 +119,4 @@ type Source struct {
 	Name      string `json:"name"`
 	Namespace string `json:"namespace"`
 	Version   string `json:"version"`
-}
-
-type Input struct {
-	Tag       string   `json:"tag"`
-	TargetIDs []string `json:"targetIDs"`
 }

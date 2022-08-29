@@ -100,6 +100,15 @@ func NewMapFromRecipe(recipe *inventory_models.Recipe) ArtifactRecipeMap {
 func NewMapFromBuildPlan(buildPlan model.BuildPlan) ArtifactRecipeMap {
 	res := make(map[ArtifactID]ArtifactRecipe)
 
+	var targetIDs []string
+	for _, terminal := range buildPlan.Project.Commit.Build.Terminals {
+		targetIDs = append(targetIDs, terminal.TargetIDs...)
+	}
+
+	for _, tID := range targetIDs {
+		buildRuntimeDependencies(tID, buildPlan.Project.Commit.Build.Targets, res)
+	}
+
 	updatedRes := make(map[ArtifactID]ArtifactRecipe)
 	for k, v := range res {
 		var err error
@@ -111,6 +120,26 @@ func NewMapFromBuildPlan(buildPlan model.BuildPlan) ArtifactRecipeMap {
 	}
 
 	return updatedRes
+}
+
+func buildRuntimeDependencies(baseID string, artifacts []model.Target, mapping map[ArtifactID]ArtifactRecipe) {
+	for _, artifact := range artifacts {
+		if artifact.TargetID == baseID {
+			entry := ArtifactRecipe{
+				ArtifactID:       strfmt.UUID(artifact.TargetID),
+				RequestedByOrder: true,
+				generatedBy:      artifact.GeneratedBy,
+			}
+
+			var deps []strfmt.UUID
+			for _, dep := range artifact.RuntimeDependencies {
+				deps = append(deps, strfmt.UUID(dep))
+				buildRuntimeDependencies(dep, artifacts, mapping)
+			}
+			entry.Dependencies = deps
+			mapping[strfmt.UUID(artifact.TargetID)] = entry
+		}
+	}
 }
 
 // TODO: Should this be moved to where we fetch the build plan?
