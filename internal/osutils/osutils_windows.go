@@ -1,7 +1,10 @@
 package osutils
 
 import (
+	"os"
 	"os/exec"
+	"regexp"
+	"strings"
 
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
@@ -22,4 +25,42 @@ func CmdExitCode(cmd *exec.Cmd) (code int) {
 		ExitStatus() int
 	}
 	return cmd.ProcessState.Sys().(Status).ExitStatus()
+}
+
+dynamicEnvVarRe := regexp.MustCompile(`(^=.+)=(.+)`)
+
+// InheritEnv returns a union of the given environment and os.Environ(). If the given environment
+// and os.Environ() share any environment variables, the former's will be used over the latter's.
+func InheritEnv(env map[string]string) map[string]string {
+	for _, kv := range os.Environ() {
+		eq := strings.Index(kv, "=")
+		key := kv[:eq]
+		value := kv[eq+1:]
+
+		// cmd.exe on Windows uses some dynamic environment variables
+		// that begin with an '='. We want to make sure we include
+		// these in the virtual environment. For more information see:
+		// https://devblogs.microsoft.com/oldnewthing/20100506-00/?p=14133
+		if strings.HasPrefix(kv, "=") {
+			groups := dynamicEnvVarRe.FindStringSubmatch(kv)
+			if len(groups) == 0 {
+				continue
+			}
+			env[groups[1]] = groups[2]
+		} else {
+			// Windows allows environment variables that are not uppercase.
+			// This can lead to duplicate path entries. At this point we
+			// have already constructed the env vars that we need for
+			// our virtual environment so we discard any duplicate entries`.
+			if _, ok := env[strings.ToUpper(key)]; ok {
+				continue
+			}
+
+			if _, ok := env[key]; !ok {
+				env[key] = value
+			}
+		}
+	}
+
+	return env
 }
