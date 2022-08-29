@@ -313,7 +313,7 @@ func newArtifactFailureEvent(step SetupStep, artifactID artifact.ArtifactID, log
 
 // ChangeSummaryEvent is sent when a the information to summarize the changes introduced by this runtime is available
 type ChangeSummaryEvent struct {
-	artifacts map[artifact.ArtifactID]artifact.ArtifactRecipe
+	artifacts map[artifact.ArtifactID]artifact.ArtifactInfo
 	requested artifact.ArtifactChangeset
 	changed   artifact.ArtifactChangeset
 }
@@ -323,7 +323,7 @@ func (cse ChangeSummaryEvent) String() string {
 }
 
 // Artifacts returns the map of ArtifactRecipe structs extracted from the recipe
-func (cse ChangeSummaryEvent) Artifacts() map[artifact.ArtifactID]artifact.ArtifactRecipe {
+func (cse ChangeSummaryEvent) Artifacts() map[artifact.ArtifactID]artifact.ArtifactInfo {
 	return cse.artifacts
 }
 
@@ -337,7 +337,7 @@ func (cse ChangeSummaryEvent) CompleteChangeset() artifact.ArtifactChangeset {
 	return cse.changed
 }
 
-func newChangeSummaryEvent(artifacts map[artifact.ArtifactID]artifact.ArtifactRecipe, requested artifact.ArtifactChangeset, changed artifact.ArtifactChangeset) ChangeSummaryEvent {
+func newChangeSummaryEvent(artifacts map[artifact.ArtifactID]artifact.ArtifactInfo, requested artifact.ArtifactChangeset, changed artifact.ArtifactChangeset) ChangeSummaryEvent {
 	return ChangeSummaryEvent{
 		artifacts, requested, changed,
 	}

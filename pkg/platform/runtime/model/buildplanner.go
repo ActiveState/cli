@@ -46,8 +46,20 @@ func (b *BuildPlanner) FetchBuildResult(commitID strfmt.UUID, _, _ string) (*Bui
 		return nil, errs.Wrap(err, "failed to fetch build plan")
 	}
 
-	if model.BuildPlanStatus(resp.Project.Commit.Build.Status) != model.BuildReady {
+	// This is a lot of awkward error checking
+	if resp.Project.Commit.Build.Status != model.BuildReady {
 		return nil, locale.NewError("err_buildplanner_not_ready", "Build plan is not ready")
+	}
+	if resp.Project.Type == model.ProjectNotFoundType {
+		return nil, locale.NewError("err_buildplanner_project_not_found", "Project not found")
+	}
+	if resp.Project.Commit.Type == model.CommitNotFoundType {
+		return nil, locale.NewError("err_buildplanner_commit_not_found", "Commit not found")
+	}
+	if resp.Project.Commit.Build.Type == model.BuildResultPlanningError {
+		// Need a failed build from the test harness to properly handle errors
+		// TODO: Further unwrap errors from the build planner
+		return nil, locale.NewError("err_buildplanner_build_error", "Build encountered an error: {{.V0}}", resp.Project.Commit.Build.Error)
 	}
 
 	originalTargets := resp.Project.Commit.Build.Targets
@@ -61,6 +73,7 @@ func (b *BuildPlanner) FetchBuildResult(commitID strfmt.UUID, _, _ string) (*Bui
 			targets = append(targets, runtimeDependencies(id, resp.Project.Commit.Build.Targets)...)
 		}
 	}
+
 	var uniqueTargets []model.Target
 	for _, target := range targets {
 		if !funk.Contains(uniqueTargets, target) {
@@ -69,15 +82,17 @@ func (b *BuildPlanner) FetchBuildResult(commitID strfmt.UUID, _, _ string) (*Bui
 	}
 	resp.Project.Commit.Build.Targets = uniqueTargets
 
+	resp = separateTargets(resp, originalTargets)
+
 	return &BuildResult{
 		BuildEngine: Alternative,
-		BuildPlan:   processOriginalTargets(resp, originalTargets),
+		Build:       &resp.Project.Commit.Build,
 		BuildReady:  model.BuildPlanStatus(resp.Project.Commit.Build.Status) == model.BuildReady,
 	}, nil
 }
 
 // TODO: Tempoarary function, remove after dependecy resolution is updated
-func processOriginalTargets(bp *model.BuildPlan, orignal []model.Target) *model.BuildPlan {
+func separateTargets(bp *model.BuildPlan, orignal []model.Target) *model.BuildPlan {
 	var steps []model.Step
 	var sources []model.Source
 	for _, artifact := range orignal {

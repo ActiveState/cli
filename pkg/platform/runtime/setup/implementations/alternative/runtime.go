@@ -17,11 +17,11 @@ import (
 )
 
 type Setup struct {
-	artifacts artifact.ArtifactRecipeMap
+	artifacts artifact.ArtifactInfoMap
 	store     *store.Store
 }
 
-func NewSetup(store *store.Store, artifacts artifact.ArtifactRecipeMap) *Setup {
+func NewSetup(store *store.Store, artifacts artifact.ArtifactInfoMap) *Setup {
 	return &Setup{store: store, artifacts: artifacts}
 }
 
@@ -145,6 +145,6 @@ func (s *Setup) ResolveArtifactName(a artifact.ArtifactID) string {
 	return locale.Tl("alternative_unknown_pkg_name", "unknown")
 }
 
-func (s *Setup) DownloadsFromBuild(buildPlan model.BuildPlan) ([]artifact.ArtifactDownload, error) {
-	return artifact.NewDownloadsFromBuildPlan(buildPlan)
+func (s *Setup) DownloadsFromBuild(Build model.Build) ([]artifact.ArtifactDownload, error) {
+	return artifact.NewDownloadsFromBuildPlan(Build)
 }

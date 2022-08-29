@@ -5,6 +5,7 @@ type BuildPlanStatus string
 type ArtifactStatus string
 
 const (
+	// BuildPlan statuses
 	BuildPlanning BuildPlanStatus = "PLANNING"
 	BuildPlanned  BuildPlanStatus = "PLANNED"
 	BuildBuilding BuildPlanStatus = "BUILDING"
@@ -12,6 +13,7 @@ const (
 	// Currently the POC does not have a failed status
 	BuildFailed BuildPlanStatus = "FAILED"
 
+	// Artifact statuses
 	ArtifactNotSubmitted      ArtifactStatus = "NOT_SUBMITTED"
 	ArtifactBlocked           ArtifactStatus = "BLOCKED"
 	ArtifactFailedPermanently ArtifactStatus = "FAILED_PERMANENTLY"
@@ -20,6 +22,16 @@ const (
 	ArtifactRunning           ArtifactStatus = "RUNNING"
 	ArtifactSkipped           ArtifactStatus = "SKIPPED"
 	ArtifactSucceeded         ArtifactStatus = "SUCCEEDED"
+
+	// BuildResultTypes
+	BuildResultPlanning      = "BuildPlanning"
+	BuildResultPlanned       = "BuildPlanned"
+	BuildResultStarted       = "BuildStarted"
+	BuildResultReady         = "BuildReady"
+	BuildResultPlanningError = "BuildPlanningError"
+
+	ProjectNotFoundType = "ProjectNotFound"
+	CommitNotFoundType  = "CommitNotFound"
 )
 
 type BuildPlan struct {
@@ -47,10 +59,11 @@ type CommitNotFound struct {
 }
 
 type Build struct {
-	BuildPlanID string        `json:"buildPlanID"`
-	Status      string        `json:"status"`
-	Terminals   []NamedTarget `json:"terminals"`
-	Targets     []Target      `json:"targets"`
+	Type        string          `json:"__typename"`
+	BuildPlanID string          `json:"buildPlanID"`
+	Status      BuildPlanStatus `json:"status"`
+	Terminals   []NamedTarget   `json:"terminals"`
+	Targets     []Target        `json:"targets"`
 
 	// Error fields
 	Error     string     `json:"error"`

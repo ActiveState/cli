@@ -103,7 +103,7 @@ func (r *RuntimeEventProducer) ArtifactBuildProgress(artifactID artifact.Artifac
 	r.event(newArtifactBuildProgressEvent(artifactID, timeStamp, message, facility, pipeName, source))
 }
 
-func (r *RuntimeEventProducer) ChangeSummary(artifacts map[artifact.ArtifactID]artifact.ArtifactRecipe, requested artifact.ArtifactChangeset, changed artifact.ArtifactChangeset) {
+func (r *RuntimeEventProducer) ChangeSummary(artifacts map[artifact.ArtifactID]artifact.ArtifactInfo, requested artifact.ArtifactChangeset, changed artifact.ArtifactChangeset) {
 	r.event(newChangeSummaryEvent(artifacts, requested, changed))
 }
 

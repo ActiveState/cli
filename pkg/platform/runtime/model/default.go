@@ -44,15 +44,15 @@ func (m *Model) SignS3URL(uri *url.URL) (*url.URL, error) {
 type BuildResult struct {
 	BuildEngine         BuildEngine
 	Recipe              *inventory_models.Recipe
-	BuildPlan           *bpModel.BuildPlan
+	Build               *bpModel.Build
 	BuildStatusResponse *headchef_models.V1BuildStatusResponse
 	BuildStatus         headchef.BuildStatusEnum
 	BuildReady          bool
 }
 
 func (b *BuildResult) OrderedArtifacts() []artifact.ArtifactID {
-	res := make([]artifact.ArtifactID, 0, len(b.BuildPlan.Project.Commit.Build.Targets))
-	for _, a := range b.BuildPlan.Project.Commit.Build.Targets {
+	res := make([]artifact.ArtifactID, 0, len(b.Build.Targets))
+	for _, a := range b.Build.Targets {
 		res = append(res, strfmt.UUID(a.TargetID))
 	}
 	return res

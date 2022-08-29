@@ -84,7 +84,7 @@ type Events interface {
 	// ChangeSummary summarizes the changes to the current project during the InstallRuntime() call.
 	// This summary is printed as soon as possible, providing the State Tool user with an idea of the complexity of the requested build.
 	// The arguments are for the changes introduced in the latest commit that this Setup is setting up.
-	ChangeSummary(artifacts map[artifact.ArtifactID]artifact.ArtifactRecipe, requested artifact.ArtifactChangeset, changed artifact.ArtifactChangeset)
+	ChangeSummary(artifacts map[artifact.ArtifactID]artifact.ArtifactInfo, requested artifact.ArtifactChangeset, changed artifact.ArtifactChangeset)
 	TotalArtifacts(total int)
 	ArtifactStepStarting(events.SetupStep, artifact.ArtifactID, int)
 	ArtifactStepProgress(events.SetupStep, artifact.ArtifactID, int)
@@ -132,7 +132,7 @@ type Setuper interface {
 	// DeleteOutdatedArtifacts deletes outdated artifact as best as it can
 	DeleteOutdatedArtifacts(artifact.ArtifactChangeset, store.StoredArtifactMap, store.StoredArtifactMap) error
 	ResolveArtifactName(artifact.ArtifactID) string
-	DownloadsFromBuild(buildPlan bpModel.BuildPlan) ([]artifact.ArtifactDownload, error)
+	DownloadsFromBuild(build bpModel.Build) ([]artifact.ArtifactDownload, error)
 }
 
 // ArtifactSetuper is the interface for an implementation of artifact setup functions
@@ -287,7 +287,7 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 	s.events.SolverSuccess()
 
 	// Compute and handle the change summary
-	artifacts := artifact.NewMapFromBuildPlan(*buildResult.BuildPlan)
+	artifacts := artifact.NewMapFromBuildPlan(buildResult.Build)
 	setup, err := s.selectSetupImplementation(buildResult.BuildEngine, artifacts)
 	if err != nil {
 		return nil, errs.Wrap(err, "Failed to select setup implementation")
@@ -296,7 +296,7 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 	// The artifacts above have been processed to only the runtime dependencies.
 	// When we send the buildplan here it is not processed, need to update the build
 	// plan before we send it or in the DownloadsFromBuild function
-	downloads, err := setup.DownloadsFromBuild(*buildResult.BuildPlan)
+	downloads, err := setup.DownloadsFromBuild(*buildResult.Build)
 	if err != nil {
 		if errors.Is(err, artifact.CamelRuntimeBuilding) {
 			localeID := "build_status_in_progress"
@@ -310,21 +310,22 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 		return nil, errs.Wrap(err, "could not extract artifacts that are ready to download.")
 	}
 
-	failedArtifacts := artifact.NewFailedArtifactsFromBuildPlan(*buildResult.BuildPlan)
+	failedArtifacts := artifact.NewFailedArtifactsFromBuildPlan(*buildResult.Build)
 
 	s.events.ParsedArtifacts(setup.ResolveArtifactName, downloads, failedArtifacts)
 
-	if buildResult.BuildPlan.Project.Commit.Build.Status == string(bpModel.BuildFailed) {
+	if buildResult.Build.Status == bpModel.BuildFailed {
 		s.events.BuildFinished()
-		return nil, locale.NewError("headchef_build_failure", "Build Failed: {{.V0}}", buildResult.BuildPlan.Project.Commit.Build.Error)
+		return nil, locale.NewError("headchef_build_failure", "Build Failed: {{.V0}}", buildResult.Build.Error)
 	}
 
-	oldRecipe, err := s.store.Recipe()
+	oldBuildPlan, err := s.store.BuildPlan()
+	logging.Debug("old build plan: %v", oldBuildPlan)
 	if err != nil {
 		logging.Debug("Could not load existing recipe.  Maybe it is a new installation: %v", err)
 	}
-	requestedArtifacts := artifact.NewArtifactChangesetByBuildPlan(oldRecipe, *buildResult.BuildPlan, true)
-	changedArtifacts := artifact.NewArtifactChangesetByBuildPlan(oldRecipe, *buildResult.BuildPlan, false)
+	requestedArtifacts := artifact.NewArtifactChangesetByBuildPlan(oldBuildPlan, buildResult.Build, true)
+	changedArtifacts := artifact.NewArtifactChangesetByBuildPlan(oldBuildPlan, buildResult.Build, false)
 	s.events.ChangeSummary(artifacts, requestedArtifacts, changedArtifacts)
 
 	storedArtifacts, err := s.store.Artifacts()
@@ -332,7 +333,7 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 		return nil, locale.WrapError(err, "err_stored_artifacts", "Could not unmarshal stored artifacts, your install may be corrupted.")
 	}
 
-	alreadyInstalled := reusableArtifacts(buildResult.BuildPlan.Project.Commit.Build.Targets, storedArtifacts)
+	alreadyInstalled := reusableArtifacts(buildResult.Build.Targets, storedArtifacts)
 
 	err = setup.DeleteOutdatedArtifacts(changedArtifacts, storedArtifacts, alreadyInstalled)
 	if err != nil {
@@ -359,7 +360,7 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 		multilog.Log(logging.ErrorNoStacktrace, rollbar.Error)("Failed to remove temporary installation directory %s: %v", tempDir, err)
 	}
 
-	if err := s.store.StoreBuildPlan(*buildResult.BuildPlan); err != nil {
+	if err := s.store.StoreBuildPlan(*buildResult.Build); err != nil {
 		return nil, errs.Wrap(err, "Could not save recipe file.")
 	}
 
@@ -385,7 +386,7 @@ func aggregateErrors() (chan<- error, <-chan error) {
 	return bgErrs, aggErr
 }
 
-func (s *Setup) installArtifactsFromBuild(buildResult *model.BuildResult, artifacts artifact.ArtifactRecipeMap, downloads []artifact.ArtifactDownload, alreadyInstalled store.StoredArtifactMap, setup Setuper, installFunc artifactInstaller) error {
+func (s *Setup) installArtifactsFromBuild(buildResult *model.BuildResult, artifacts artifact.ArtifactInfoMap, downloads []artifact.ArtifactDownload, alreadyInstalled store.StoredArtifactMap, setup Setuper, installFunc artifactInstaller) error {
 	// Artifacts are installed in two stages
 	// - The first stage runs concurrently in MaxConcurrency worker threads (download, unpacking, relocation)
 	// - The second stage moves all files into its final destination is running in a single thread (using the mainthread library) to avoid file conflicts
@@ -450,7 +451,7 @@ func (s *Setup) installFromBuildResult(buildResult *model.BuildResult, downloads
 	return <-aggregatedErr
 }
 
-func (s *Setup) installFromBuildLog(buildResult *model.BuildResult, artifacts artifact.ArtifactRecipeMap, downloads []artifact.ArtifactDownload, alreadyInstalled store.StoredArtifactMap, setup Setuper, installFunc artifactInstaller) error {
+func (s *Setup) installFromBuildLog(buildResult *model.BuildResult, artifacts artifact.ArtifactInfoMap, downloads []artifact.ArtifactDownload, alreadyInstalled store.StoredArtifactMap, setup Setuper, installFunc artifactInstaller) error {
 	s.events.TotalArtifacts(len(artifacts) - len(alreadyInstalled))
 
 	alreadyBuilt := make(map[artifact.ArtifactID]struct{})
@@ -642,7 +643,7 @@ func (s *Setup) unpackArtifact(ua unarchiver.Unarchiver, tarballPath string, tar
 	return numUnpackedFiles, ua.Unarchive(proxy, i, targetDir)
 }
 
-func (s *Setup) selectSetupImplementation(buildEngine model.BuildEngine, artifacts artifact.ArtifactRecipeMap) (Setuper, error) {
+func (s *Setup) selectSetupImplementation(buildEngine model.BuildEngine, artifacts artifact.ArtifactInfoMap) (Setuper, error) {
 	switch buildEngine {
 	case model.Alternative:
 		return alternative.NewSetup(s.store, artifacts), nil

@@ -53,7 +53,7 @@ type BuildLog struct {
 
 // New creates a new BuildLog instance that allows us to wait for incoming build log information
 // artifactMap comprises all artifacts (from the runtime closure) that are in the recipe, alreadyBuilt is set of artifact IDs that have already been built in the past
-func New(ctx context.Context, artifactMap map[artifact.ArtifactID]artifact.ArtifactRecipe, alreadyBuilt map[artifact.ArtifactID]struct{}, events Events, recipeID strfmt.UUID) (*BuildLog, error) {
+func New(ctx context.Context, artifactMap map[artifact.ArtifactID]artifact.ArtifactInfo, alreadyBuilt map[artifact.ArtifactID]struct{}, events Events, recipeID strfmt.UUID) (*BuildLog, error) {
 	conn, err := buildlogstream.Connect(ctx)
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not connect to build-log streamer build updates")
@@ -69,7 +69,7 @@ func New(ctx context.Context, artifactMap map[artifact.ArtifactID]artifact.Artif
 }
 
 // NewWithCustomConnections creates a new BuildLog instance with all physical connections managed by the caller
-func NewWithCustomConnections(artifactMap map[artifact.ArtifactID]artifact.ArtifactRecipe, alreadyBuilt map[artifact.ArtifactID]struct{}, conn BuildLogConnector, events Events, recipeID strfmt.UUID) (*BuildLog, error) {
+func NewWithCustomConnections(artifactMap map[artifact.ArtifactID]artifact.ArtifactInfo, alreadyBuilt map[artifact.ArtifactID]struct{}, conn BuildLogConnector, events Events, recipeID strfmt.UUID) (*BuildLog, error) {
 	ch := make(chan artifact.ArtifactDownload)
 	errCh := make(chan error)
 
@@ -195,7 +195,7 @@ func (bl *BuildLog) BuiltArtifactsChannel() <-chan artifact.ArtifactDownload {
 	return bl.ch
 }
 
-func resolveArtifactName(artifactID artifact.ArtifactID, artifactMap artifact.ArtifactRecipeMap) (name string, ok bool) {
+func resolveArtifactName(artifactID artifact.ArtifactID, artifactMap artifact.ArtifactInfoMap) (name string, ok bool) {
 	artf, ok := artifactMap[artifactID]
 	if !ok {
 		return locale.Tl("unknown_artifact_name", "unknown"), false

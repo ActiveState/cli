@@ -40,9 +40,9 @@ func NewDownloadsFromBuild(buildStatus *headchef_models.V1BuildStatusResponse) (
 	return downloads, nil
 }
 
-func NewDownloadsFromBuildPlan(bp bpModel.BuildPlan) ([]ArtifactDownload, error) {
+func NewDownloadsFromBuildPlan(build bpModel.Build) ([]ArtifactDownload, error) {
 	var downloads []ArtifactDownload
-	for _, a := range bp.Project.Commit.Build.Targets {
+	for _, a := range build.Targets {
 		if a.Status == string(bpModel.ArtifactSucceeded) && a.URL != "" {
 			if strings.HasPrefix(a.URL, "s3://as-builds/noop/") {
 				continue

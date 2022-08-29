@@ -20,75 +20,75 @@ func TestArtifactsFromRecipe(t *testing.T) {
 	tests := []struct {
 		Name       string
 		recipeName string
-		expected   artifact.ArtifactRecipeMap
+		expected   artifact.ArtifactInfoMap
 	}{
 		{
 			"camel recipe",
 			"camel",
-			artifact.ArtifactRecipeMap{
-				strfmt.UUID("bdd5642b-928c-5770-9e12-5816c9676960"): artifact.ArtifactRecipe{
+			artifact.ArtifactInfoMap{
+				strfmt.UUID("bdd5642b-928c-5770-9e12-5816c9676960"): artifact.ArtifactInfo{
 					Name: "python", Namespace: "language", ArtifactID: strfmt.UUID("bdd5642b-928c-5770-9e12-5816c9676960"), Dependencies: nil, RequestedByOrder: true, Version: version("3.7.4")},
-				strfmt.UUID("decfc04f-5770-5663-8d00-e029402e6917"): artifact.ArtifactRecipe{
+				strfmt.UUID("decfc04f-5770-5663-8d00-e029402e6917"): artifact.ArtifactInfo{
 					Name: "json2", Namespace: "language/python", ArtifactID: strfmt.UUID("decfc04f-5770-5663-8d00-e029402e6917"), Dependencies: []artifact.ArtifactID{"bdd5642b-928c-5770-9e12-5816c9676960"}, RequestedByOrder: true, Version: version("0.4.0")},
-				strfmt.UUID("e6997088-7854-5498-8c57-afbe4343036a"): artifact.ArtifactRecipe{
+				strfmt.UUID("e6997088-7854-5498-8c57-afbe4343036a"): artifact.ArtifactInfo{
 					Name: "wheel", Namespace: "language/python", ArtifactID: strfmt.UUID("e6997088-7854-5498-8c57-afbe4343036a"), Dependencies: []artifact.ArtifactID{"bdd5642b-928c-5770-9e12-5816c9676960"}, RequestedByOrder: false, Version: version("0.35.1")},
-				strfmt.UUID("060cc2b8-01e4-5afe-8618-c44ccb25a592"): artifact.ArtifactRecipe{
+				strfmt.UUID("060cc2b8-01e4-5afe-8618-c44ccb25a592"): artifact.ArtifactInfo{
 					ArtifactID:       "060cc2b8-01e4-5afe-8618-c44ccb25a592",
 					Name:             "tix",
 					Namespace:        "shared",
 					Version:          version("8.4.3.6"),
 					RequestedByOrder: false,
 				},
-				strfmt.UUID("06e6c26f-7645-5971-a6ad-277497bdec0c"): artifact.ArtifactRecipe{
+				strfmt.UUID("06e6c26f-7645-5971-a6ad-277497bdec0c"): artifact.ArtifactInfo{
 					ArtifactID:       "06e6c26f-7645-5971-a6ad-277497bdec0c",
 					Name:             "tcl",
 					Namespace:        "shared",
 					Version:          version("8.6.8"),
 					RequestedByOrder: false,
 				},
-				strfmt.UUID("1931b61b-5e8b-5bce-a5ff-5663a0b9b9c3"): artifact.ArtifactRecipe{
+				strfmt.UUID("1931b61b-5e8b-5bce-a5ff-5663a0b9b9c3"): artifact.ArtifactInfo{
 					ArtifactID:       "1931b61b-5e8b-5bce-a5ff-5663a0b9b9c3",
 					Name:             "expat",
 					Namespace:        "shared",
 					Version:          version("2.2.9"),
 					RequestedByOrder: false,
 				},
-				strfmt.UUID("2a2dc52f-8324-59bf-ae5e-082ea2468a28"): artifact.ArtifactRecipe{
+				strfmt.UUID("2a2dc52f-8324-59bf-ae5e-082ea2468a28"): artifact.ArtifactInfo{
 					ArtifactID:       "2a2dc52f-8324-59bf-ae5e-082ea2468a28",
 					Name:             "bsddb",
 					Namespace:        "shared",
 					Version:          version("4.4.20"),
 					RequestedByOrder: false,
 				},
-				strfmt.UUID("2c8a61b6-995c-5e59-8d52-fac8604c3e88"): artifact.ArtifactRecipe{
+				strfmt.UUID("2c8a61b6-995c-5e59-8d52-fac8604c3e88"): artifact.ArtifactInfo{
 					ArtifactID:       "2c8a61b6-995c-5e59-8d52-fac8604c3e88",
 					Name:             "tk",
 					Namespace:        "shared",
 					Version:          version("8.6.8"),
 					RequestedByOrder: false,
 				},
-				strfmt.UUID("7b923ae1-94a9-574c-bb9e-a89163f0ccb8"): artifact.ArtifactRecipe{
+				strfmt.UUID("7b923ae1-94a9-574c-bb9e-a89163f0ccb8"): artifact.ArtifactInfo{
 					ArtifactID:       "7b923ae1-94a9-574c-bb9e-a89163f0ccb8",
 					Name:             "zlib",
 					Namespace:        "shared",
 					Version:          version("1.2.11"),
 					RequestedByOrder: false,
 				},
-				strfmt.UUID("7b9a5527-a6d0-50b9-a6fe-0c5c73d242cd"): artifact.ArtifactRecipe{
+				strfmt.UUID("7b9a5527-a6d0-50b9-a6fe-0c5c73d242cd"): artifact.ArtifactInfo{
 					ArtifactID:       "7b9a5527-a6d0-50b9-a6fe-0c5c73d242cd",
 					Name:             "sqlite3",
 					Namespace:        "shared",
 					Version:          version("3.15.2"),
 					RequestedByOrder: false,
 				},
-				strfmt.UUID("f6f7099a-2a86-5a30-8098-a111661cfbc5"): artifact.ArtifactRecipe{
+				strfmt.UUID("f6f7099a-2a86-5a30-8098-a111661cfbc5"): artifact.ArtifactInfo{
 					ArtifactID:       "f6f7099a-2a86-5a30-8098-a111661cfbc5",
 					Name:             "bzip2",
 					Namespace:        "shared",
 					Version:          version("1.0.6"),
 					RequestedByOrder: false,
 				},
-				strfmt.UUID("fb916bb5-73f9-55f8-9a01-ad79a876e00c"): artifact.ArtifactRecipe{
+				strfmt.UUID("fb916bb5-73f9-55f8-9a01-ad79a876e00c"): artifact.ArtifactInfo{
 					ArtifactID:       "fb916bb5-73f9-55f8-9a01-ad79a876e00c",
 					Name:             "openssl",
 					Namespace:        "shared",
@@ -100,34 +100,34 @@ func TestArtifactsFromRecipe(t *testing.T) {
 		{
 			"alternative recipe",
 			"perl-alternative-base",
-			artifact.ArtifactRecipeMap{
-				strfmt.UUID("b30ab2e5-4074-572c-8146-da692b1c9e45"): artifact.ArtifactRecipe{
+			artifact.ArtifactInfoMap{
+				strfmt.UUID("b30ab2e5-4074-572c-8146-da692b1c9e45"): artifact.ArtifactInfo{
 					Name: "perl", Namespace: "language", ArtifactID: strfmt.UUID("b30ab2e5-4074-572c-8146-da692b1c9e45"), Dependencies: nil, RequestedByOrder: true, Version: version("5.32.1")},
 			},
 		},
 		{
 			"alternative with bundles",
 			"perl-alternative-one-bundle",
-			artifact.ArtifactRecipeMap{
-				strfmt.UUID("c894fa23-0416-556d-9ca5-fdf9375595bc"): artifact.ArtifactRecipe{
+			artifact.ArtifactInfoMap{
+				strfmt.UUID("c894fa23-0416-556d-9ca5-fdf9375595bc"): artifact.ArtifactInfo{
 					Name: "Testing", Namespace: "bundles/perl", ArtifactID: strfmt.UUID("c894fa23-0416-556d-9ca5-fdf9375595bc"), Dependencies: []artifact.ArtifactID{"288aa0db-c0e4-55e7-8f67-fc2da409be70", "5ad88c8a-bc8f-50a0-9f61-74856cd28017", "30dc7965-0a69-5686-831a-e563fa73a98c", "8c2f830d-1b31-5448-a0a4-aa9d8fcacc4b"}, RequestedByOrder: true, Version: version("1.00")},
-				strfmt.UUID("b30ab2e5-4074-572c-8146-da692b1c9e45"): artifact.ArtifactRecipe{
+				strfmt.UUID("b30ab2e5-4074-572c-8146-da692b1c9e45"): artifact.ArtifactInfo{
 					Name: "perl", Namespace: "language", ArtifactID: strfmt.UUID("b30ab2e5-4074-572c-8146-da692b1c9e45"), Dependencies: nil, RequestedByOrder: true, Version: version("5.32.1")},
-				strfmt.UUID("48951744-f839-5031-8cf4-6e82a4be2089"): artifact.ArtifactRecipe{
+				strfmt.UUID("48951744-f839-5031-8cf4-6e82a4be2089"): artifact.ArtifactInfo{
 					Name: "Data-UUID", Namespace: "language/perl", ArtifactID: strfmt.UUID("48951744-f839-5031-8cf4-6e82a4be2089"), Dependencies: []artifact.ArtifactID{"b30ab2e5-4074-572c-8146-da692b1c9e45"}, RequestedByOrder: false, Version: version("1.226")},
-				strfmt.UUID("0029ae25-8497-5130-8268-1f0fe26ccc77"): artifact.ArtifactRecipe{
+				strfmt.UUID("0029ae25-8497-5130-8268-1f0fe26ccc77"): artifact.ArtifactInfo{
 					Name: "Importer", Namespace: "language/perl", ArtifactID: strfmt.UUID("0029ae25-8497-5130-8268-1f0fe26ccc77"), Dependencies: []artifact.ArtifactID{"b30ab2e5-4074-572c-8146-da692b1c9e45"}, RequestedByOrder: false, Version: version("0.025")},
-				strfmt.UUID("6591f01d-939d-5080-bb1a-7816ff4d020b"): artifact.ArtifactRecipe{
+				strfmt.UUID("6591f01d-939d-5080-bb1a-7816ff4d020b"): artifact.ArtifactInfo{
 					Name: "Long-Jump", Namespace: "language/perl", ArtifactID: strfmt.UUID("6591f01d-939d-5080-bb1a-7816ff4d020b"), Dependencies: []artifact.ArtifactID{"b30ab2e5-4074-572c-8146-da692b1c9e45"}, RequestedByOrder: false, Version: version("0.000001")},
-				strfmt.UUID("7c541a6a-4dfd-5135-8b98-2b44b5d1a816"): artifact.ArtifactRecipe{
+				strfmt.UUID("7c541a6a-4dfd-5135-8b98-2b44b5d1a816"): artifact.ArtifactInfo{
 					Name: "Module-Pluggable", Namespace: "language/perl", ArtifactID: strfmt.UUID("7c541a6a-4dfd-5135-8b98-2b44b5d1a816"), Dependencies: []artifact.ArtifactID{"b30ab2e5-4074-572c-8146-da692b1c9e45"}, RequestedByOrder: false, Version: version("5.2")},
-				strfmt.UUID("7f8a7197-b277-5621-a6f3-7f2ef32d871b"): artifact.ArtifactRecipe{
+				strfmt.UUID("7f8a7197-b277-5621-a6f3-7f2ef32d871b"): artifact.ArtifactInfo{
 					Name: "Scope-Guard", Namespace: "language/perl", ArtifactID: strfmt.UUID("7f8a7197-b277-5621-a6f3-7f2ef32d871b"), Dependencies: []artifact.ArtifactID{"b30ab2e5-4074-572c-8146-da692b1c9e45"}, RequestedByOrder: false, Version: version("0.21")},
-				strfmt.UUID("29983a5b-49c4-5cf4-a2c5-2490647d6910"): artifact.ArtifactRecipe{
+				strfmt.UUID("29983a5b-49c4-5cf4-a2c5-2490647d6910"): artifact.ArtifactInfo{
 					Name: "Sub-Info", Namespace: "language/perl", ArtifactID: strfmt.UUID("29983a5b-49c4-5cf4-a2c5-2490647d6910"), Dependencies: []artifact.ArtifactID{"0029ae25-8497-5130-8268-1f0fe26ccc77", "b30ab2e5-4074-572c-8146-da692b1c9e45"}, RequestedByOrder: false, Version: version("0.002")},
-				strfmt.UUID("4d95557d-2200-5a56-a809-4ea3d3502b20"): artifact.ArtifactRecipe{
+				strfmt.UUID("4d95557d-2200-5a56-a809-4ea3d3502b20"): artifact.ArtifactInfo{
 					Name: "Term-Table", Namespace: "language/perl", ArtifactID: strfmt.UUID("4d95557d-2200-5a56-a809-4ea3d3502b20"), Dependencies: []artifact.ArtifactID{"0029ae25-8497-5130-8268-1f0fe26ccc77", "b30ab2e5-4074-572c-8146-da692b1c9e45"}, RequestedByOrder: false, Version: version("0.015")},
-				strfmt.UUID("288aa0db-c0e4-55e7-8f67-fc2da409be70"): artifact.ArtifactRecipe{
+				strfmt.UUID("288aa0db-c0e4-55e7-8f67-fc2da409be70"): artifact.ArtifactInfo{
 					Name: "Test2-Harness", Namespace: "language/perl", ArtifactID: strfmt.UUID("288aa0db-c0e4-55e7-8f67-fc2da409be70"), Dependencies: []artifact.ArtifactID{
 						"7f8a7197-b277-5621-a6f3-7f2ef32d871b",
 						"0029ae25-8497-5130-8268-1f0fe26ccc77",
@@ -140,15 +140,15 @@ func TestArtifactsFromRecipe(t *testing.T) {
 						"c1e8c6c4-ea11-55a4-b415-97da2d32121e",
 						"30dc7965-0a69-5686-831a-e563fa73a98c",
 					}, RequestedByOrder: false, Version: version("1.000042")},
-				strfmt.UUID("282e3768-e12a-51ed-831f-7cbc212ba8bd"): artifact.ArtifactRecipe{
+				strfmt.UUID("282e3768-e12a-51ed-831f-7cbc212ba8bd"): artifact.ArtifactInfo{
 					Name: "Test2-Plugin-MemUsage", Namespace: "language/perl", ArtifactID: strfmt.UUID("282e3768-e12a-51ed-831f-7cbc212ba8bd"), Dependencies: []artifact.ArtifactID{"b30ab2e5-4074-572c-8146-da692b1c9e45"}, RequestedByOrder: false, Version: version("0.002003")},
-				strfmt.UUID("5ad88c8a-bc8f-50a0-9f61-74856cd28017"): artifact.ArtifactRecipe{
+				strfmt.UUID("5ad88c8a-bc8f-50a0-9f61-74856cd28017"): artifact.ArtifactInfo{
 					Name: "Test2-Plugin-NoWarnings", Namespace: "language/perl", ArtifactID: strfmt.UUID("5ad88c8a-bc8f-50a0-9f61-74856cd28017"), Dependencies: []artifact.ArtifactID{"b30ab2e5-4074-572c-8146-da692b1c9e45"}, RequestedByOrder: false, Version: version("0.06")},
-				strfmt.UUID("c3e652a7-676e-594f-b87f-93d19122f3f4"): artifact.ArtifactRecipe{
+				strfmt.UUID("c3e652a7-676e-594f-b87f-93d19122f3f4"): artifact.ArtifactInfo{
 					Name: "Test2-Plugin-UUID", Namespace: "language/perl", ArtifactID: strfmt.UUID("c3e652a7-676e-594f-b87f-93d19122f3f4"), Dependencies: []artifact.ArtifactID{"b30ab2e5-4074-572c-8146-da692b1c9e45", "48951744-f839-5031-8cf4-6e82a4be2089"}, RequestedByOrder: false, Version: version("0.002001")},
-				strfmt.UUID("30dc7965-0a69-5686-831a-e563fa73a98c"): artifact.ArtifactRecipe{
+				strfmt.UUID("30dc7965-0a69-5686-831a-e563fa73a98c"): artifact.ArtifactInfo{
 					Name: "Test2-Suite", Namespace: "language/perl", ArtifactID: strfmt.UUID("30dc7965-0a69-5686-831a-e563fa73a98c"), Dependencies: []artifact.ArtifactID{"7c541a6a-4dfd-5135-8b98-2b44b5d1a816", "7f8a7197-b277-5621-a6f3-7f2ef32d871b", "0029ae25-8497-5130-8268-1f0fe26ccc77", "4d95557d-2200-5a56-a809-4ea3d3502b20", "b30ab2e5-4074-572c-8146-da692b1c9e45", "29983a5b-49c4-5cf4-a2c5-2490647d6910"}, RequestedByOrder: false, Version: version("0.000127")},
-				strfmt.UUID("c1e8c6c4-ea11-55a4-b415-97da2d32121e"): artifact.ArtifactRecipe{
+				strfmt.UUID("c1e8c6c4-ea11-55a4-b415-97da2d32121e"): artifact.ArtifactInfo{
 					Name: "goto-file", Namespace: "language/perl", ArtifactID: strfmt.UUID("c1e8c6c4-ea11-55a4-b415-97da2d32121e"), Dependencies: []artifact.ArtifactID{"b30ab2e5-4074-572c-8146-da692b1c9e45"}, RequestedByOrder: false, Version: version("0.005")},
 			},
 		},
@@ -231,7 +231,7 @@ func TestRequestedArtifactChanges(t *testing.T) {
 	}
 
 	t.Run("starting empty", func(t *testing.T) {
-		var oldArts artifact.ArtifactRecipeMap
+		var oldArts artifact.ArtifactInfoMap
 		new := testhelper.LoadRecipe(t, "perl-alternative-base")
 		newArts := artifact.NewMapFromRecipe(new)
 		res := artifact.NewArtifactChangesetByIDMap(oldArts, newArts, true)
@@ -358,17 +358,17 @@ func TestArtifactDownloads(t *testing.T) {
 }
 
 func TestRecursiveDependencies(t *testing.T) {
-	artifacts := artifact.ArtifactRecipeMap{
-		artifact.ArtifactID("1"): artifact.ArtifactRecipe{
+	artifacts := artifact.ArtifactInfoMap{
+		artifact.ArtifactID("1"): artifact.ArtifactInfo{
 			Dependencies: []artifact.ArtifactID{"2", "3"}},
-		artifact.ArtifactID("2"): artifact.ArtifactRecipe{
+		artifact.ArtifactID("2"): artifact.ArtifactInfo{
 			Dependencies: []artifact.ArtifactID{"4", "5"}},
-		artifact.ArtifactID("3"): artifact.ArtifactRecipe{
+		artifact.ArtifactID("3"): artifact.ArtifactInfo{
 			Dependencies: []artifact.ArtifactID{"4", "6"}},
-		artifact.ArtifactID("4"): artifact.ArtifactRecipe{Dependencies: nil},
-		artifact.ArtifactID("5"): artifact.ArtifactRecipe{Dependencies: nil},
-		artifact.ArtifactID("6"): artifact.ArtifactRecipe{Dependencies: []artifact.ArtifactID{"7"}},
-		artifact.ArtifactID("7"): artifact.ArtifactRecipe{Dependencies: nil},
+		artifact.ArtifactID("4"): artifact.ArtifactInfo{Dependencies: nil},
+		artifact.ArtifactID("5"): artifact.ArtifactInfo{Dependencies: nil},
+		artifact.ArtifactID("6"): artifact.ArtifactInfo{Dependencies: []artifact.ArtifactID{"7"}},
+		artifact.ArtifactID("7"): artifact.ArtifactInfo{Dependencies: nil},
 	}
 
 	tests := []struct {

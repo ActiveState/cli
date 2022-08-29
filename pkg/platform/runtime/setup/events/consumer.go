@@ -14,7 +14,7 @@ import (
 
 // ChangeSummaryDigester provides an action for the ChangeSummaryEvent.
 type ChangeSummaryDigester interface {
-	ChangeSummary(artifact.ArtifactRecipeMap, artifact.ArtifactChangeset, artifact.ArtifactChangeset) error
+	ChangeSummary(artifact.ArtifactInfoMap, artifact.ArtifactChangeset, artifact.ArtifactChangeset) error
 }
 
 // ProgressDigester provides actions to display progress information during the setup of the runtime.
