@@ -69,7 +69,7 @@ func (rlt *rateLimitTransport) RoundTrip(req *http.Request) (*http.Response, err
 	// If you're making a large number of POST, PATCH, PUT, or DELETE requests
 	// for a single user or client ID, wait at least one second between each request.
 	if rlt.delayNextRequest {
-		delay := multiplier * writeDelay
+		delay := time.Duration(multiplier * float64(writeDelay))
 		logging.Debug("Sleeping %s between write operations", delay)
 		time.Sleep(delay)
 	}
