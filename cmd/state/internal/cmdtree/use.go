@@ -50,3 +50,17 @@ func newUseResetCommand(prime *primer.Values, globals *globalOptions) *captain.C
 		},
 	)
 }
+
+func newUseShowCommand(prime *primer.Values) *captain.Command {
+	return captain.NewCommand(
+		"show",
+		"",
+		locale.Tl("use_show_description", "Show your default project runtime"),
+		prime,
+		[]*captain.Flag{},
+		[]*captain.Argument{},
+		func(_ *captain.Command, _ []string) error {
+			return use.NewShow(prime).Run()
+		},
+	)
+}

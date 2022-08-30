@@ -160,6 +160,45 @@ func (suite *UseIntegrationTestSuite) TestReset() {
 	}
 }
 
+func (suite *UseIntegrationTestSuite) TestShow() {
+	suite.OnlyRunForTags(tagsuite.Use)
+
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.SpawnWithOpts(e2e.WithArgs("use", "show"))
+	cp.Expect("No default project is set")
+	cp.ExpectExitCode(1)
+
+	cp = ts.SpawnWithOpts(
+		e2e.WithArgs("checkout", "ActiveState-CLI/Python3"),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
+	cp.Expect("Checked out Python3")
+	cp.ExpectExitCode(0)
+
+	cp = ts.SpawnWithOpts(
+		e2e.WithArgs("use", "ActiveState-CLI/Python3"),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
+	cp.Expect("Switched to Python3")
+	cp.ExpectExitCode(0)
+
+	projectDir := filepath.Join(ts.Dirs.Work, "Python3")
+	cp = ts.SpawnWithOpts(e2e.WithArgs("use", "show"))
+	cp.ExpectLongString("The default project to use is ActiveState-CLI/Python3, located at")
+	cp.ExpectLongString(projectDir)
+	cp.ExpectExitCode(0)
+
+	cp = ts.SpawnWithOpts(e2e.WithArgs("use", "reset", "--non-interactive"))
+	cp.Expect("Reset")
+	cp.ExpectExitCode(0)
+
+	cp = ts.SpawnWithOpts(e2e.WithArgs("use", "show"))
+	cp.Expect("No default project is set")
+	cp.ExpectExitCode(1)
+}
+
 func TestUseIntegrationTestSuite(t *testing.T) {
 	suite.Run(t, new(UseIntegrationTestSuite))
 }
