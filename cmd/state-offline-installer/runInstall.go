@@ -94,7 +94,6 @@ func runInstall(out output.Outputer, params *Params) error {
 
 	out.Print(fmt.Sprintf("Stage 1 of 3 Finished: Decompressing assets into: %s", assetsPath))
 
-	fmt.Println(licenseFileAssetPath)
 	accepted, err := prompts.PromptOfflineLicense(out, prompter, licenseFileAssetPath)
 	if err != nil {
 		return errs.Wrap(err, "Error with license acceptance")
