@@ -83,6 +83,7 @@ jobs:
       - # === Preprocess ===
         name: Preprocess
         shell: bash
+        timeout-minutes: 1
         run: state run preprocess
 
       - # === Parallel Tasks ===
