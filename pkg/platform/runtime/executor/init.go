@@ -1,17 +1,14 @@
 package executor
 
 import (
-	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	rt "runtime"
 	"strings"
 
-	"github.com/ActiveState/cli/internal/assets"
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/installation"
-	"github.com/ActiveState/cli/internal/strutils"
 	"github.com/ActiveState/cli/pkg/platform/runtime/envdef"
 	"github.com/go-openapi/strfmt"
 
@@ -85,7 +82,7 @@ func (i *Init) Apply(env map[string]string, exes envdef.ExecutablePaths) error {
 	}
 
 	m := NewMeta(env, i.targeter, exes)
-	if err := m.WriteToFile(filepath.Join(i.targeter.Dir(), metaFileName)); err != nil {
+	if err := m.WriteToFile(filepath.Join(i.executorPath, metaFileName)); err != nil {
 		return err
 	}
 
@@ -181,24 +178,13 @@ func copyExecutor(dir, exe string) error {
 	if err != nil {
 		return locale.WrapError(err, "err_state_exec")
 	}
-	_ = executorExec
 
-	tplParams := map[string]interface{}{}
-	boxFile := "executor.sh"
-	if rt.GOOS == "windows" {
-		boxFile = "executor.bat"
-	}
-	fwBytes, err := assets.ReadFileBytes(fmt.Sprintf("executors/%s", boxFile))
-	if err != nil {
-		return errs.Wrap(err, "Failed to read asset")
-	}
-	fwStr, err := strutils.ParseTemplate(string(fwBytes), tplParams)
-	if err != nil {
-		return errs.Wrap(err, "Could not parse %s template", boxFile)
+	if err := fileutils.CopyFile(executorExec, target); err != nil {
+		return locale.WrapError(err, "err_copyexecutor_fail", "Could not copy {{.V0}} to {{.V1}}", executorExec, target)
 	}
 
-	if err = ioutil.WriteFile(target, []byte(fwStr), 0755); err != nil {
-		return locale.WrapError(err, "Could not create executor for {{.V0}} at {{.V1}}.", exe, target)
+	if err := os.Chmod(target, 0o755); err != nil {
+		return locale.WrapError(err, "err_setexecmode_fail", "Could not set mode of {{.V0}}", target)
 	}
 
 	return nil
