@@ -13,6 +13,7 @@ import (
 	model "github.com/ActiveState/cli/pkg/platform/api/graphql/model/buildplan"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/ActiveState/cli/pkg/platform/runtime/store"
+	"github.com/go-openapi/strfmt"
 	"github.com/thoas/go-funk"
 )
 
@@ -145,6 +146,6 @@ func (s *Setup) ResolveArtifactName(a artifact.ArtifactID) string {
 	return locale.Tl("alternative_unknown_pkg_name", "unknown")
 }
 
-func (s *Setup) DownloadsFromBuild(Build model.Build) ([]artifact.ArtifactDownload, error) {
-	return artifact.NewDownloadsFromBuildPlan(Build)
+func (s *Setup) DownloadsFromBuild(Build model.Build, artifacts map[strfmt.UUID]artifact.ArtifactInfo) ([]artifact.ArtifactDownload, error) {
+	return artifact.NewDownloadsFromBuildPlan(Build, artifacts)
 }

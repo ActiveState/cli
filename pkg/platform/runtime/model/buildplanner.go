@@ -14,7 +14,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 	"github.com/go-openapi/strfmt"
 	"github.com/machinebox/graphql"
-	"github.com/thoas/go-funk"
 )
 
 type BuildPlanner struct {
@@ -62,94 +61,9 @@ func (b *BuildPlanner) FetchBuildResult(commitID strfmt.UUID, _, _ string) (*Bui
 		return nil, locale.NewError("err_buildplanner_build_error", "Build encountered an error: {{.V0}}", resp.Project.Commit.Build.Error)
 	}
 
-	originalTargets := resp.Project.Commit.Build.Targets
-	var targets []model.Target
-	for _, terminal := range resp.Project.Commit.Build.Terminals {
-		// TODO: Add proper tag handling
-		if terminal.Tag == "orphans" {
-			continue
-		}
-		for _, id := range terminal.TargetIDs {
-			targets = append(targets, runtimeDependencies(id, resp.Project.Commit.Build.Targets)...)
-		}
-	}
-
-	var uniqueTargets []model.Target
-	for _, target := range targets {
-		if !funk.Contains(uniqueTargets, target) {
-			uniqueTargets = append(uniqueTargets, target)
-		}
-	}
-	resp.Project.Commit.Build.Targets = uniqueTargets
-
-	resp = separateTargets(resp, originalTargets)
-
 	return &BuildResult{
 		BuildEngine: Alternative,
 		Build:       &resp.Project.Commit.Build,
 		BuildReady:  model.BuildPlanStatus(resp.Project.Commit.Build.Status) == model.BuildReady,
 	}, nil
-}
-
-// TODO: Tempoarary function, remove after dependecy resolution is updated
-func separateTargets(bp *model.BuildPlan, orignal []model.Target) *model.BuildPlan {
-	var steps []model.Step
-	var sources []model.Source
-	for _, artifact := range orignal {
-		if artifact.Type == "Step" {
-			steps = append(steps, model.Step{
-				TargetID: artifact.TargetID,
-				Inputs:   artifact.Inputs,
-				Outputs:  artifact.Outputs,
-			})
-			continue
-		}
-		if artifact.Type == "Source" {
-			sources = append(sources, model.Source{
-				TargetID:  artifact.TargetID,
-				Name:      artifact.Name,
-				Namespace: artifact.Namespace,
-				Version:   artifact.Version,
-			})
-			continue
-		}
-	}
-	bp.Project.Commit.Build.Steps = steps
-	bp.Project.Commit.Build.Sources = sources
-	return bp
-}
-
-func runtimeDependencies(baseID string, artifacts []model.Target) []model.Target {
-	var deps []model.Target
-	for _, artifact := range artifacts {
-		if artifact.TargetID == baseID {
-			for _, id := range artifact.RuntimeDependencies {
-				deps = append(deps, artifact)
-				deps = append(deps, runtimeDependencies(id, artifacts)...)
-			}
-		}
-	}
-	return deps
-}
-
-func getArtifactName(generatedByID string, steps []model.Step, sources []model.Source) (string, error) {
-	for _, step := range steps {
-		if step.TargetID != generatedByID {
-			continue
-		}
-
-		for _, input := range step.Inputs {
-			if input.Tag == "src" {
-				// Should only be one source per step
-				for _, id := range input.TargetIDs {
-					for _, src := range sources {
-						if src.TargetID == id {
-							return src.Name, nil
-						}
-					}
-				}
-			}
-		}
-	}
-	return "", locale.NewError("err_resolve_artifact_name", "Could not resolve artifact name")
 }

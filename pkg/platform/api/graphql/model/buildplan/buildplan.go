@@ -32,6 +32,10 @@ const (
 
 	ProjectNotFoundType = "ProjectNotFound"
 	CommitNotFoundType  = "CommitNotFound"
+
+	// Target types
+	TargetTypeSource = "Source"
+	TargetTypeStep   = "Step"
 )
 
 type BuildPlan struct {
@@ -68,9 +72,6 @@ type Build struct {
 	// Error fields
 	Error     string     `json:"error"`
 	SubErrors []SubError `json:"subErrors"`
-
-	Steps   []Step
-	Sources []Source
 }
 
 type NamedTarget struct {
@@ -119,17 +120,4 @@ type SuggestedRemediation struct {
 	RemediationType string   `json:"remediationType"`
 	Command         string   `json:"command"`
 	Parameters      []string `json:"parameters"`
-}
-
-type Step struct {
-	TargetID string        `json:"targetID"`
-	Inputs   []NamedTarget `json:"inputs"`
-	Outputs  []string      `json:"outputs"`
-}
-
-type Source struct {
-	TargetID  string `json:"targetID"`
-	Name      string `json:"name"`
-	Namespace string `json:"namespace"`
-	Version   string `json:"version"`
 }

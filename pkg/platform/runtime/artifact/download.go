@@ -40,14 +40,16 @@ func NewDownloadsFromBuild(buildStatus *headchef_models.V1BuildStatusResponse) (
 	return downloads, nil
 }
 
-func NewDownloadsFromBuildPlan(build bpModel.Build) ([]ArtifactDownload, error) {
+func NewDownloadsFromBuildPlan(build bpModel.Build, artifacts map[strfmt.UUID]ArtifactInfo) ([]ArtifactDownload, error) {
 	var downloads []ArtifactDownload
-	for _, a := range build.Targets {
-		if a.Status == string(bpModel.ArtifactSucceeded) && a.URL != "" {
-			if strings.HasPrefix(a.URL, "s3://as-builds/noop/") {
-				continue
+	for id := range artifacts {
+		for _, a := range build.Targets {
+			if a.Status == string(bpModel.ArtifactSucceeded) && a.TargetID == id.String() && a.URL != "" {
+				if strings.HasPrefix(a.URL, "s3://as-builds/noop/") {
+					continue
+				}
+				downloads = append(downloads, ArtifactDownload{ArtifactID: strfmt.UUID(a.TargetID), UnsignedURI: a.URL, UnsignedLogURI: a.LogURL, Checksum: a.Checksum})
 			}
-			downloads = append(downloads, ArtifactDownload{ArtifactID: strfmt.UUID(a.TargetID), UnsignedURI: a.URL, UnsignedLogURI: a.LogURL, Checksum: a.Checksum})
 		}
 	}
 

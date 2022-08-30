@@ -132,7 +132,7 @@ type Setuper interface {
 	// DeleteOutdatedArtifacts deletes outdated artifact as best as it can
 	DeleteOutdatedArtifacts(artifact.ArtifactChangeset, store.StoredArtifactMap, store.StoredArtifactMap) error
 	ResolveArtifactName(artifact.ArtifactID) string
-	DownloadsFromBuild(build bpModel.Build) ([]artifact.ArtifactDownload, error)
+	DownloadsFromBuild(build bpModel.Build, artifacts map[strfmt.UUID]artifact.ArtifactInfo) ([]artifact.ArtifactDownload, error)
 }
 
 // ArtifactSetuper is the interface for an implementation of artifact setup functions
@@ -296,7 +296,7 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 	// The artifacts above have been processed to only the runtime dependencies.
 	// When we send the buildplan here it is not processed, need to update the build
 	// plan before we send it or in the DownloadsFromBuild function
-	downloads, err := setup.DownloadsFromBuild(*buildResult.Build)
+	downloads, err := setup.DownloadsFromBuild(*buildResult.Build, artifacts)
 	if err != nil {
 		if errors.Is(err, artifact.CamelRuntimeBuilding) {
 			localeID := "build_status_in_progress"
