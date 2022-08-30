@@ -184,10 +184,18 @@ func (suite *UseIntegrationTestSuite) TestShow() {
 	cp.Expect("Switched to Python3")
 	cp.ExpectExitCode(0)
 
-	projectDir := filepath.Join(ts.Dirs.Work, "Python3")
 	cp = ts.SpawnWithOpts(e2e.WithArgs("use", "show"))
 	cp.ExpectLongString("The default project to use is ActiveState-CLI/Python3, located at")
-	cp.ExpectLongString(projectDir)
+	if runtime.GOOS != "windows" {
+		projectDir := filepath.Join(ts.Dirs.Work, "Python3")
+		cp.ExpectLongString(projectDir)
+	} else {
+		// Windows sometimes uses shortened paths, sometimes not.
+		// Just verify the last two components of the path are there and assume all is well,
+		// especially if the Linux and macOS tests are passing.
+		projectDir := filepath.Join(filepath.Base(ts.Dirs.Work), "Python3")
+		cp.ExpectLongString(projectDir)
+	}
 	cp.ExpectExitCode(0)
 
 	cp = ts.SpawnWithOpts(e2e.WithArgs("use", "reset", "--non-interactive"))
