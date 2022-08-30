@@ -1,7 +1,6 @@
 package executor
 
 import (
-	"bytes"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -85,10 +84,9 @@ func (i *Init) Apply(env map[string]string, exes envdef.ExecutablePaths) error {
 		return locale.WrapError(err, "err_mkdir", "Could not create directory: {{.V0}}", i.executorPath)
 	}
 
-	m := NewMeta(env, i.targeter)
-	buf := &bytes.Buffer{}
-	if _, err := m.WriteTo(buf); err != nil {
-		return nil
+	m := NewMeta(env, i.targeter, exes)
+	if err := m.WriteToFile(filepath.Join(i.targeter.Dir(), metaFileName)); err != nil {
+		return err
 	}
 
 	for _, exe := range exes {
