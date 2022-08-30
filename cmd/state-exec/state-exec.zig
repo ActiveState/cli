@@ -14,7 +14,7 @@ const os = std.os;
 const path = std.fs.path;
 const process = std.process;
 
-const execName = "state-exec";
+const executorName = "state-exec";
 
 const initMsgDataErrPrefix = "InitMsgData_";
 const initMetaDataErrPrefix = "InitMetaData_";
@@ -40,7 +40,7 @@ pub fn main() !void {
     const stderr = io.getStdErr().writer();
 
     const exitCode = run(stderr) catch |err| {
-        try stderr.print("{s}: ", .{execName});
+        try stderr.print("{s}: ", .{executorName});
 
         const errName = @errorName(err);
         if (errName.len >= initMsgDataErrPrefix.len and mem.eql(u8, errName[0..initMsgDataErrPrefix.len], initMsgDataErrPrefix)) {
@@ -67,7 +67,7 @@ pub fn main() !void {
             Error.ChildProcSpawn => try stderr.print("Cannot spawn child process for runtime.\n", .{}),
         }
 
-        try stderr.print("{s}: This application is not intended to be user serviceable; Please contact support for assistance.\n", .{execName});
+        try stderr.print("{s}: This application is not intended to be user serviceable; Please contact support for assistance.\n", .{executorName});
 
         process.exit(1);
     };
@@ -81,7 +81,8 @@ fn run(stderr: fs.File.Writer) Error!u8 {
 
     const msgData = try MsgData.init(a);
     const execDir = path.dirname(msgData.exec) orelse return Error.DirOfSelfPath;
-    var metaData = try MetaData.init(a, execDir);
+    const execName = path.basename(msgData.exec);
+    var metaData = try MetaData.init(a, execDir, execName);
     defer metaData.deinit();
 
     const clientThread = Thread.spawn(.{}, sendMsgToServer, .{ a, stderr, metaData.sock, msgData }) catch {
@@ -89,14 +90,12 @@ fn run(stderr: fs.File.Writer) Error!u8 {
     };
     defer clientThread.join();
 
-    const runt = path.join(a, &[_][]const u8{ metaData.bin, path.basename(msgData.exec) }) catch return Error.FormRuntimePath;
-
     var usrArgs = process.argsAlloc(a) catch return Error.ProcessArgs;
     defer process.argsFree(a, usrArgs);
 
     var cmdArgs = ArrayList([]const u8).init(a);
     defer cmdArgs.deinit();
-    cmdArgs.append(runt) catch return Error.SetRuntimeCmd;
+    cmdArgs.append(metaData.bin) catch return Error.SetRuntimeCmd;
     cmdArgs.appendSlice(usrArgs[1..]) catch return Error.SetRuntimeUserArgs;
 
     const childProc = ChildProcess.init(cmdArgs.items, a) catch return Error.ChildProcInit;
@@ -122,20 +121,20 @@ const MsgData = struct {
 
 fn sendMsgToServer(a: mem.Allocator, stderr: fs.File.Writer, sock: []const u8, d: MsgData) !void {
     const conn = net.connectUnixSocket(sock) catch |err| {
-        try stderr.print("{s}: Cannot connect to socket: {s}.\n", .{ execName, err });
+        try stderr.print("{s}: Cannot connect to socket: {s}.\n", .{ executorName, err });
         return;
     };
     defer conn.close();
 
     var clientMsg = try fmt.allocPrint(a, MsgData.fmt, .{ d.pid, d.exec });
     _ = conn.write(clientMsg) catch |err| {
-        try stderr.print("{s}: Cannot write to socket connection: {s}.\n", .{ execName, err });
+        try stderr.print("{s}: Cannot write to socket connection: {s}.\n", .{ executorName, err });
         return;
     };
 
     var buf: [1024]u8 = undefined;
     _ = conn.read(buf[0..]) catch |err| {
-        try stderr.print("{s}: Cannot read from socket connection: {s}.\n", .{ execName, err });
+        try stderr.print("{s}: Cannot read from socket connection: {s}.\n", .{ executorName, err });
         return;
     };
 }
@@ -143,7 +142,7 @@ fn sendMsgToServer(a: mem.Allocator, stderr: fs.File.Writer, sock: []const u8, d
 const MetaData = struct {
     pub const filename = "meta.as";
     pub const sockDelim = "::sock::";
-    pub const binDelim = "::bin::";
+    pub const binsDelim = "::bins::";
     pub const envDelim = "::env::";
     pub const envVarDelim = '=';
 
@@ -151,7 +150,7 @@ const MetaData = struct {
     bin: []const u8,
     env: BufMap,
 
-    pub fn init(a: mem.Allocator, execDir: []const u8) Error!MetaData {
+    pub fn init(a: mem.Allocator, execDir: []const u8, execName: []const u8) Error!MetaData {
         var sock: []const u8 = undefined;
         var bin: []const u8 = undefined;
 
@@ -178,12 +177,6 @@ const MetaData = struct {
                     sock = dim;
                 },
                 1 => {
-                    var trimmedLine = mem.trimLeft(u8, line, MetaData.binDelim);
-                    const dim = a.alloc(u8, trimmedLine.len) catch return Error.InitMetaData_AllocLine;
-                    mem.copy(u8, dim, trimmedLine);
-                    bin = dim;
-                },
-                2 => {
                     const trimmedLine = mem.trimLeft(u8, line, MetaData.envDelim);
                     var split = mem.split(u8, trimmedLine, MetaData.envDelim);
                     while (split.next()) |kv| {
@@ -191,7 +184,16 @@ const MetaData = struct {
                         const v = kv[k.len + 1 ..];
                         env.put(k, v) catch return Error.InitMetaData_AddToMap;
                     }
-                    break;
+                },
+                2 => {
+                    const trimmedLine = mem.trimLeft(u8, line, MetaData.binsDelim);
+                    var split = mem.split(u8, trimmedLine, MetaData.binsDelim);
+                    while (split.next()) |binary| {
+                        if (mem.eql(u8, execName, path.basename(binary))) {
+                            bin = binary;
+                            break;
+                        }
+                    }
                 },
                 else => {
                     break;

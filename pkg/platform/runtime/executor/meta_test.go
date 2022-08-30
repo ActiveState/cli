@@ -15,8 +15,13 @@ func TestMeta(t *testing.T) {
 		"SAMPLE":  "other",
 		"THIRD":   "whatever",
 	}
-	tgt := target.NewCustomTarget("owner", "name", strfmt.UUID("1234abcd-1234-abcd-1234-abcd1234"), "./", target.TriggerActivate, true)
-	m := NewMeta(env, tgt)
+	bins := []string{
+		"/example/bin/abc",
+		"/example/bin/def",
+		"/example/bin/xyz",
+	}
+	tgt := target.NewCustomTarget("owner", "name", strfmt.UUID("1234abcd-1234-abcd-1234-abcd1234"), "/example/bin", target.TriggerActivate, true)
+	m := NewMeta(env, tgt, bins)
 	buf := &bytes.Buffer{}
 	_, err := m.WriteTo(buf)
 	if err != nil {

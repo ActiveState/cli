@@ -16,17 +16,19 @@ import (
 
 /*
 ::sock::/tmp/state-ipc/state-ipts.DX-1060.sock
-::bin::/home/daved/code/src/github.com/ActiveState/.home/.cache/28cd50f1/bin
-::env::TESTER=test/best::env::BESTER=example
+::env::EXAMPLE=value::env::SAMPLE=other::env::THIRD=whatever
+::bins::/example/bin/abc::bins::/example/bin/def::bins::/example/bin/xyz
 ::commit-id::1234abcd-1234-abcd-1234-abcd1234
-::namespace::ActiveState/Test
+::namespace::owner/name
 ::headless::true
 */
 
 var (
+	metaFileName = "meta.as"
+
 	sockDelim      = "::sock::"
-	binDelim       = "::bin::"
 	envDelim       = "::env::"
+	binsDelim      = "::bins::"
 	commitDelim    = "::commit-id::"
 	namespaceDelim = "::namespace::"
 	headlessDelim  = "::headless::"
@@ -34,18 +36,19 @@ var (
 
 type Meta struct {
 	SockPath   string
-	BinDir     string
 	Env        map[string]string
+	Bins       []string
 	CommitUUID string
 	Namespace  string
 	Headless   bool
 }
 
-func NewMeta(env map[string]string, t Targeter) *Meta {
+func NewMeta(env map[string]string, t Targeter, bins []string) *Meta {
 	commitID := t.CommitUUID().String()
 	return &Meta{
 		SockPath:   svcctl.NewIPCSockPathFromGlobals().String(),
 		Env:        env,
+		Bins:       bins,
 		CommitUUID: commitID,
 		Namespace:  project.NewNamespace(t.Owner(), t.Name(), commitID).String(),
 		Headless:   t.Headless(),
@@ -65,8 +68,6 @@ func NewMetaFromReader(r io.Reader) (*Meta, error) {
 		case 0:
 			m.SockPath = strings.TrimPrefix(txt, sockDelim)
 		case 1:
-			m.BinDir = strings.TrimPrefix(txt, binDelim)
-		case 2:
 			envMap := make(map[string]string)
 			envTxt := strings.TrimPrefix(txt, envDelim)
 			envSplit := strings.Split(envTxt, envDelim)
@@ -78,6 +79,9 @@ func NewMetaFromReader(r io.Reader) (*Meta, error) {
 				envMap[kvSplit[0]] = kvSplit[1]
 			}
 			m.Env = envMap
+		case 2:
+			binsTxt := strings.TrimPrefix(txt, binsDelim)
+			m.Bins = strings.Split(txt, binsTxt)
 		case 3:
 			m.CommitUUID = strings.TrimPrefix(txt, commitDelim)
 		case 4:
@@ -115,9 +119,12 @@ func (m *Meta) WriteTo(w io.Writer) (int64, error) {
 	aw := newAccumulatingWrite(w)
 
 	aw.fprintf("%s%s\n", sockDelim, m.SockPath)
-	aw.fprintf("%s%s\n", binDelim, m.BinDir)
 	for k, v := range m.Env {
 		aw.fprintf("%s%s=%s", envDelim, k, v)
+	}
+	aw.fprintf("\n")
+	for _, v := range m.Bins {
+		aw.fprintf("%s%s", binsDelim, v)
 	}
 	aw.fprintf("\n")
 	aw.fprintf("%s%s\n", commitDelim, m.CommitUUID)
