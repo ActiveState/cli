@@ -129,6 +129,7 @@ func (suite *SvcIntegrationTestSuite) TestStartDuplicateErrorOutput() {
 	defer ts.Close()
 
 	cp := ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("stop"))
+	cp.Expect("Stopping")
 	cp.ExpectExitCode(0)
 
 	cp = ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("status"))
@@ -148,6 +149,7 @@ func (suite *SvcIntegrationTestSuite) TestStartDuplicateErrorOutput() {
 	cp.ExpectExitCode(1)
 
 	cp = ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("stop"))
+	cp.Expect("Stopping")
 	cp.ExpectExitCode(0)
 }
 
