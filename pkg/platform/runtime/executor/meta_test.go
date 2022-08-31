@@ -21,7 +21,7 @@ func TestMeta(t *testing.T) {
 		"/example/bin/xyz",
 	}
 	tgt := target.NewCustomTarget("owner", "name", strfmt.UUID("1234abcd-1234-abcd-1234-abcd1234"), "/example/bin", target.TriggerActivate, true)
-	m := NewMeta(env, tgt, bins)
+	m := NewMeta("/sock-path", env, tgt, bins)
 	buf := &bytes.Buffer{}
 	_, err := m.WriteTo(buf)
 	if err != nil {

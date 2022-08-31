@@ -18,13 +18,6 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 )
 
-// executorDenoter is used to communicate to the user that this file is generated as well as for us to track
-// ownership of the file. Changing this will break updates to older executors that might need to be updated.
-const executorDenoter = "!DO NOT EDIT! State Tool Executor !DO NOT EDIT!"
-
-// shimDenoter is our old denoter that we want to make sure we clean up
-const shimDenoter = "!DO NOT EDIT! State Tool Shim !DO NOT EDIT!"
-
 // executorTarget tracks the target executable of the executor and is used to determine whether an existing
 // executor needs to be updating.
 // Update this if you want to blow away older targets (ie. you made changes to the template)
@@ -41,22 +34,26 @@ type Targeter interface {
 type Init struct {
 	targeter     Targeter
 	executorPath string // The location to store the executors
+
+	altExecSrcPath string // Path to alternate executor. Executor() will use global func if not set.
 }
 
-func NewInit(targeter Targeter) (*Init, error) {
-	binPath, err := ioutil.TempDir("", "executor")
-	if err != nil {
-		return nil, errs.New("Could not create tempDir: %v", err)
+func NewInit(targeter Targeter, executorPath string) *Init {
+	return &Init{
+		targeter:     targeter,
+		executorPath: executorPath,
 	}
-	return NewInitWithBinPath(targeter, binPath), nil
 }
 
-func NewInitWithBinPath(targeter Targeter, executorPath string) *Init {
-	return &Init{targeter, executorPath}
+func (i *Init) SetAltExecSrcPath(path string) {
+	i.altExecSrcPath = path
 }
 
-func (i *Init) BinPath() string {
-	return i.executorPath
+func (i *Init) ExecutorSrc() (string, error) {
+	if i.altExecSrcPath != "" {
+		return i.altExecSrcPath, nil
+	}
+	return installation.ExecutorExec()
 }
 
 func (i *Init) Apply(sockPath string, env map[string]string, exes envdef.ExecutablePaths) error {
@@ -86,8 +83,13 @@ func (i *Init) Apply(sockPath string, env map[string]string, exes envdef.Executa
 		return err
 	}
 
+	executorExec, err := i.ExecutorSrc()
+	if err != nil {
+		return locale.WrapError(err, "err_state_exec")
+	}
+
 	for _, exe := range exes {
-		if err := copyExecutor(i.executorPath, exe); err != nil {
+		if err := copyExecutor(i.executorPath, exe, executorExec); err != nil {
 			return locale.WrapError(err, "err_createexecutor", "Could not create executor for {{.V0}}.", exe)
 		}
 	}
@@ -115,6 +117,7 @@ func (i *Init) Clean() error {
 		if err != nil {
 			return locale.WrapError(err, "err_cleanexecutor_noread", "Could not read potential executor file: {{.V0}}.", file.Name())
 		}
+
 		if !isOwnedByUs(b) {
 			continue
 		}
@@ -139,17 +142,23 @@ func IsExecutor(filePath string) (bool, error) {
 	return isOwnedByUs(b), nil
 }
 
+// executorDenoter is an old denoter that we want to make sure we clean up
+const executorDenoter = "!DO NOT EDIT! State Tool Executor !DO NOT EDIT!"
+
+// shimDenoter is an old denoter that we want to make sure we clean up
+const shimDenoter = "!DO NOT EDIT! State Tool Shim !DO NOT EDIT!"
+
 func isOwnedByUs(fileContents []byte) bool {
-	if strings.Contains(string(fileContents), executorDenoter) ||
-		strings.Contains(string(fileContents), shimDenoter) {
-		return true
-	}
-	return false
+	return strings.Contains(string(fileContents), "state-exec") ||
+		strings.Contains(string(fileContents), envDelim) ||
+		// deprecated
+		strings.Contains(string(fileContents), executorDenoter) ||
+		strings.Contains(string(fileContents), shimDenoter)
 }
 
-func copyExecutor(dir, exe string) error {
+func copyExecutor(destDir, exe, srcExec string) error {
 	name := NameForExe(filepath.Base(exe))
-	target := filepath.Clean(filepath.Join(dir, name))
+	target := filepath.Clean(filepath.Join(destDir, name))
 
 	if strings.HasSuffix(exe, exeutils.Extension+exeutils.Extension) {
 		// This is super awkward, but we have a double .exe to temporarily work around an issue that will be fixed
@@ -159,8 +168,6 @@ func copyExecutor(dir, exe string) error {
 
 	logging.Debug("Creating executor for %s at %s", exe, target)
 
-	denoteTarget := executorTarget + exe
-
 	if fileutils.TargetExists(target) {
 		b, err := fileutils.ReadFile(target)
 		if err != nil {
@@ -169,18 +176,10 @@ func copyExecutor(dir, exe string) error {
 		if !isOwnedByUs(b) {
 			return locale.WrapError(err, "err_createexecutor_exists", "Could not create executor as target already exists: {{.V0}}.", target)
 		}
-		if strings.Contains(string(b), denoteTarget) {
-			return nil
-		}
 	}
 
-	executorExec, err := installation.ExecutorExec()
-	if err != nil {
-		return locale.WrapError(err, "err_state_exec")
-	}
-
-	if err := fileutils.CopyFile(executorExec, target); err != nil {
-		return locale.WrapError(err, "err_copyexecutor_fail", "Could not copy {{.V0}} to {{.V1}}", executorExec, target)
+	if err := fileutils.CopyFile(srcExec, target); err != nil {
+		return locale.WrapError(err, "err_copyexecutor_fail", "Could not copy {{.V0}} to {{.V1}}", srcExec, target)
 	}
 
 	if err := os.Chmod(target, 0o755); err != nil {

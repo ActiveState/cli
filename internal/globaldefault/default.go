@@ -78,7 +78,7 @@ func SetupDefaultActivation(subshell subshell.SubShell, cfg DefaultConfigurer, r
 	}
 
 	target := target.NewProjectTarget(proj, storage.GlobalBinDir(), nil, target.TriggerActivate)
-	fw := executor.NewInitWithBinPath(target, BinDir())
+	fw := executor.NewInit(target, BinDir())
 	if err := fw.Apply(svcctl.NewIPCSockPathFromGlobals().String(), env, exes); err != nil {
 		return locale.WrapError(err, "err_globaldefault_fw", "Could not set up forwarders")
 	}
@@ -106,7 +106,7 @@ func ResetDefaultActivation(subshell subshell.SubShell, cfg DefaultConfigurer) (
 	}
 
 	target := target.NewProjectTarget(proj, storage.GlobalBinDir(), nil, target.TriggerActivate)
-	fw := executor.NewInitWithBinPath(target, BinDir())
+	fw := executor.NewInit(target, BinDir())
 	err = fw.Clean()
 	if err != nil {
 		return false, locale.WrapError(err, "err_globaldefault_fw_cleanup", "Could not clean up forwarders")
