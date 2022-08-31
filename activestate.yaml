@@ -45,7 +45,6 @@ constants:
     if: ne .OS.Name "Windows"
     value: state-installer
   - name: BUILD_REMOTE_INSTALLER_TARGET
-    if: ne .OS.Name "Windows"
     value: state-remote-installer
   - name: SET_ENV
     description: The environment settings used throughout our project
@@ -212,7 +211,11 @@ scripts:
     value: |
       set -e
       $constants.SET_ENV
-      go build -tags "$GO_BUILD_TAGS" -o $BUILD_TARGET_DIR/$constants.BUILD_REMOTE_INSTALLER_TARGET ./cmd/state-remote-installer
+      TARGET=$BUILD_REMOTE_INSTALLER_TARGET
+      if [ "$GOOS" == "windows" ]; then
+        TARGET="${BUILD_REMOTE_INSTALLER_TARGET}.exe"
+      fi
+      go build -tags "$GO_BUILD_TAGS" -o $BUILD_TARGET_DIR/$TARGET ./cmd/state-remote-installer
   - name: build-updlg-all
     description: Invokes all build steps for the update dialog
     standalone: true
@@ -326,6 +329,12 @@ scripts:
     description: Deploys update files to S3. This steps is automated by CI and should never be ran manually unless you KNOW WHAT YOU'RE DOING.
     value: |
       go run scripts/ci/s3-deployer/main.go build/installers us-east-1 state-tool update/state
+  - name: deploy-remote-installer
+    language: bash
+    value: |
+      set -e
+      $constants.SET_ENV
+      go run scripts/ci/s3-deployer/main.go $BUILD_TARGET_DIR/remote-installer us-east-1 state-tool remote-installer
   - name: deploy-msi
     language: bash
     value: |
