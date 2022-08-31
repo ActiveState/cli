@@ -9,6 +9,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/users"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
+	"github.com/go-openapi/strfmt"
 )
 
 func cleanUser(t *testing.T, username string, auth *authentication.Auth) error {
@@ -34,7 +35,7 @@ func cleanUser(t *testing.T, username string, auth *authentication.Auth) error {
 		return err
 	}
 	for _, proj := range projects {
-		err = DeleteProject(username, proj.Name)
+		err = deleteProject(username, proj.Name)
 		if err != nil {
 			return err
 		}
@@ -54,7 +55,11 @@ func getProjects(org string) ([]*mono_models.Project, error) {
 	return listProjectsOK.Payload, nil
 }
 
-func DeleteProject(org, name string) error {
+func deleteProject(org, name string) error {
+	if org == PersistentUsername && !strfmt.IsUUID(name) {
+		return nil // do not delete non-UUID projects
+	}
+
 	params := projects.NewDeleteProjectParams()
 	params.SetOrganizationName(org)
 	params.SetProjectName(name)
@@ -68,6 +73,10 @@ func DeleteProject(org, name string) error {
 }
 
 func deleteUser(name string) error {
+	if name == PersistentUsername {
+		return nil // do not delete me
+	}
+
 	params := users.NewDeleteUserParams()
 	params.SetUsername(name)
 
