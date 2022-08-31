@@ -24,10 +24,10 @@ type ArtifactBuildPlan struct {
 }
 
 // ArtifactBuildPlanMap maps artifact ids to artifact information extracted from a recipe
-type ArtifactBuildPlanMap = map[ArtifactID]ArtifactBuildPlan
+type ArtifactBuildPlanMap map[ArtifactID]ArtifactBuildPlan
 
 // ArtifactNamedBuildPlanMap maps artifact names to artifact information extracted from a recipe
-type ArtifactNamedBuildPlanMap = map[string]ArtifactBuildPlan
+type ArtifactNamedBuildPlanMap map[string]ArtifactBuildPlan
 
 // NameWithVersion returns a string <name>@<version> if artifact has a version specified, otherwise it returns just the name
 func (a ArtifactBuildPlan) NameWithVersion() string {
@@ -39,7 +39,7 @@ func (a ArtifactBuildPlan) NameWithVersion() string {
 }
 
 func NewMapFromBuildPlan(build *model.Build) ArtifactBuildPlanMap {
-	res := make(map[ArtifactID]ArtifactBuildPlan)
+	res := make(ArtifactBuildPlanMap)
 	if build == nil {
 		return res
 	}
@@ -55,24 +55,23 @@ func NewMapFromBuildPlan(build *model.Build) ArtifactBuildPlanMap {
 		targetIDs = append(targetIDs, terminal.TargetIDs...)
 	}
 
-	for _, tID := range targetIDs {
-		buildRuntimeDependencies(tID, build.Artifacts, res)
+	for _, id := range targetIDs {
+		res.build(id, build.Artifacts)
 	}
 
-	updatedRes := make(map[ArtifactID]ArtifactBuildPlan)
 	for k, v := range res {
 		var err error
-		updatedRes[k], err = updateWithSourceInfo(v.generatedBy, v, build.Steps, build.Sources)
+		res[k], err = v.updateWithSourceInfo(v.generatedBy, build.Steps, build.Sources)
 		if err != nil {
 			logging.Error("updateWithSourceInfo failed: %s", errs.JoinMessage(err))
 			return nil
 		}
 	}
 
-	return updatedRes
+	return res
 }
 
-func buildRuntimeDependencies(baseID string, artifacts []model.Artifact, mapping map[ArtifactID]ArtifactBuildPlan) {
+func (a ArtifactBuildPlanMap) build(baseID string, artifacts []model.Artifact) {
 	for _, artifact := range artifacts {
 		if artifact.TargetID == baseID {
 			entry := ArtifactBuildPlan{
@@ -84,34 +83,36 @@ func buildRuntimeDependencies(baseID string, artifacts []model.Artifact, mapping
 			var deps []strfmt.UUID
 			for _, dep := range artifact.RuntimeDependencies {
 				deps = append(deps, strfmt.UUID(dep))
-				buildRuntimeDependencies(dep, artifacts, mapping)
+				a.build(dep, artifacts)
 			}
 			entry.Dependencies = deps
-			mapping[strfmt.UUID(artifact.TargetID)] = entry
+			a[strfmt.UUID(artifact.TargetID)] = entry
 		}
 	}
 }
 
-func updateWithSourceInfo(generatedByID string, original ArtifactBuildPlan, steps []model.Step, sources []model.Source) (ArtifactBuildPlan, error) {
+func (a ArtifactBuildPlan) updateWithSourceInfo(generatedByID string, steps []model.Step, sources []model.Source) (ArtifactBuildPlan, error) {
 	for _, step := range steps {
 		if step.TargetID != generatedByID {
 			continue
 		}
 		for _, input := range step.Inputs {
-			if input.Tag == model.TagSource {
-				// There should only be one source per step
-				for _, id := range input.TargetIDs {
-					for _, src := range sources {
-						if src.TargetID == id {
-							return ArtifactBuildPlan{
-								ArtifactID:       original.ArtifactID,
-								RequestedByOrder: original.RequestedByOrder,
-								Name:             src.Name,
-								Namespace:        src.Namespace,
-								Version:          &src.Version,
-							}, nil
-						}
+			if input.Tag != model.TagSource {
+				continue
+			}
+			for _, id := range input.TargetIDs {
+				for _, source := range sources {
+					// There should only be once source per step for artifacts
+					if source.TargetID != id {
+						continue
 					}
+					return ArtifactBuildPlan{
+						ArtifactID:       a.ArtifactID,
+						RequestedByOrder: a.RequestedByOrder,
+						Name:             source.Name,
+						Namespace:        source.Namespace,
+						Version:          &source.Version,
+					}, nil
 				}
 			}
 		}
