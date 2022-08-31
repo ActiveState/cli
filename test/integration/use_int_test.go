@@ -191,14 +191,10 @@ func (suite *UseIntegrationTestSuite) TestShow() {
 	if runtime.GOOS != "windows" {
 		cp.ExpectLongString(projectDir)
 	} else {
-		output := strings.Replace(cp.TrimmedSnapshot(), "\n", "", -1)
-		// Windows sometimes uses shortened paths, sometimes not.
-		longPath, err := fileutils.GetLongPathName(projectDir)
-		suite.Require().NoError(err)
+		// Windows uses the short path here.
 		shortPath, err := fileutils.GetShortPathName(projectDir)
 		suite.Require().NoError(err)
-		suite.Assert().True(strings.Contains(output, longPath) || strings.Contains(output, shortPath),
-			"expected to find ActiveState-CLI/Python3 project path in output")
+		cp.ExpectLongString(shortPath)
 	}
 	cp.ExpectExitCode(0)
 
