@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/projects"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/users"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
@@ -35,8 +36,10 @@ func cleanUser(t *testing.T, username string, auth *authentication.Auth) error {
 		return err
 	}
 	for _, proj := range projects {
+		logging.Debug("Attempting to delete project " + proj.Name)
 		err = deleteProject(username, proj.Name)
 		if err != nil {
+			logging.Debug("Error deleting project: " + err.Error())
 			return err
 		}
 	}
