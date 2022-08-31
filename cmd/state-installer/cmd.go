@@ -388,7 +388,7 @@ func postInstallEvents(out output.Outputer, cfg *config.Instance, an analytics.D
 		}
 	case !params.isUpdate && os.Getenv(constants.InstallerNoSubshell) != "true":
 		ss := subshell.New(cfg)
-		ss.SetEnv(envMap(binPath))
+		ss.SetEnv(osutils.InheritEnv(envMap(binPath)))
 		if err := ss.Activate(nil, cfg, out); err != nil {
 			return errs.Wrap(err, "Subshell setup; error returned: %s", errs.JoinMessage(err))
 		}

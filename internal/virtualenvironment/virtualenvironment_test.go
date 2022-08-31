@@ -32,16 +32,3 @@ func teardown() {
 	projectfile.Reset()
 	rtMock.Close()
 }
-
-func TestInheritEnv_MultipleEquals(t *testing.T) {
-	key := "MULTIPLEEQUALS"
-	value := "one=two two=three three=four"
-
-	os.Setenv(key, value)
-	defer os.Unsetenv(key)
-
-	env := map[string]string{}
-	updated := inheritEnv(env)
-
-	assert.Equal(t, value, updated[key])
-}
