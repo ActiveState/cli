@@ -3,7 +3,6 @@ package integration
 import (
 	"path/filepath"
 	"runtime"
-	"strings"
 	"testing"
 
 	"github.com/ActiveState/cli/internal/config"
