@@ -534,10 +534,8 @@ func (s *Session) Close() error {
 		}
 	}
 
-	if PersistentUsername != "" && runtime.GOOS == "linux" {
-		err = cleanUser(s.t, PersistentUsername, a)
-		assert.NoError(s.t, err, "error cleaning up for "+PersistentUsername)
-	}
+	err = cleanUser(s.t, PersistentUsername, a)
+	assert.NoError(s.t, err, "error cleaning up for "+PersistentUsername)
 
 	return nil
 }
