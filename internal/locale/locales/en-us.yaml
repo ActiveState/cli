@@ -185,6 +185,10 @@ tos_disclaimer:
     Your use of the ActiveState Platform is subject to the Terms of Service.
     You can review the Terms of Service at:
       {{.V0}}
+tos_disclaimer_prompt:
+  other: |
+    
+    By continuing you accept the Terms of Service. Continue?
 tos_acceptance:
   other: Do you accept the ActiveState Platform Terms of Service?
 tos_not_accepted:
@@ -717,7 +721,7 @@ developer_err_project_match:
   other: Encountered a situation where the tool is given different project paths. This indicates a bug in our code, please consider reporting it.
 
 err_version_parse:
-  other:  Could not determine the State Tool version to use to run this command. Please ensure the project field in your activestate.yaml is formatted correctly.
+  other: Could not determine the State Tool version to use to run this command. Please ensure the project field in your activestate.yaml is formatted correctly.
 err_invalid_lock:
   other: "Invalid lock specified in your activestate.yaml: '{{.V0}}', should be in the format of: [NOTICE]channel@{number}.{number}.{number}-{hash}[/RESET]"
 err_update_version:
@@ -733,10 +737,10 @@ forward_fail_info:
 update_available_header:
   other: "[ACTIONABLE]Update Available[/RESET]"
 update_available:
-   other: |
-     Your version: [NOTICE]{{.V0}}[/RESET]
-     Available Version: [NOTICE]{{.V1}}[/RESET]
-     You can update by running [ACTIONABLE]`state update`[/RESET]
+  other: |
+    Your version: [NOTICE]{{.V0}}[/RESET]
+    Available Version: [NOTICE]{{.V1}}[/RESET]
+    You can update by running [ACTIONABLE]`state update`[/RESET]
 update_none_found:
   other: No new update available.
 updating_version:
@@ -1369,7 +1373,7 @@ clean_cache_artifact_confirm:
 clean_config_confirm:
   other: You are about the remove the State Tool config directory. Continue?
 clean_success_message:
-  other:  |
+  other: |
     Successfully removed State Tool and related files.
 
     Please restart your shell in order for changes to take effect.
@@ -1958,3 +1962,5 @@ svcctl_wait_timeout:
     If this problem persists please report it on our forums: [ACTIONABLE]{{.V2}}[/RESET]
 err_autostart_app:
   other: Could not create new autostart app
+install_remote_title:
+  other: This will install the State Tool

@@ -7,6 +7,8 @@ constants:
     value: state-exec.exe
   - name: BUILD_INSTALLER_TARGET
     value: state-installer.exe
+  - name: BUILD_REMOTE_INSTALLER_TARGET
+    value: state-remote-installer.exe
   - name: BUILD_SYSTRAY_TARGET
     value: state-tray.exe
   - name: BUILD_UPDLG_TARGET
@@ -20,6 +22,15 @@ constants:
   - name: SCRIPT_EXT
     value: .ps1
 scripts:
+  - name: package-remote-installer
+    language: bash
+    description: Builds the state-remote-installer
+    value: |
+      set -e
+      $constants.SET_ENV
+      go install github.com/akavel/rsrc@latest
+      rsrc -ico installers/msi-language/assets/as.ico
+      go build -tags "$GO_BUILD_TAGS" -o $BUILD_TARGET_DIR/$constants.BUILD_REMOTE_INSTALLER_TARGET ./cmd/state-remote-installer
   - name: build-msi-state
     language: bash
     description: Build the state tool MSI, requires that you have wixtools installed and on PATH
