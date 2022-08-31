@@ -165,7 +165,6 @@ func (s *Setup) Update() error {
 	if err != nil {
 		return errs.Wrap(err, "Failed to update artifacts")
 	}
-	logging.Debug("Artifacts: %+v", artifacts)
 
 	// Update executors
 	if err := s.updateExecutors(artifacts); err != nil {

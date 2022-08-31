@@ -66,7 +66,7 @@ func (bp *BuildPlanner) FetchBuildResult(commitID strfmt.UUID, _, _ string) (*Bu
 	return &BuildResult{
 		BuildEngine: Alternative,
 		Build:       &resp.Project.Commit.Build,
-		BuildReady:  model.BuildPlanStatus(resp.Project.Commit.Build.Status) == model.BuildReady,
+		BuildReady:  resp.Project.Commit.Build.Status == model.BuildReady,
 	}, nil
 }
 

@@ -1,27 +1,23 @@
 package model
 
-type BuildPlanStatus string
-
-type ArtifactStatus string
-
 const (
 	// BuildPlan statuses
-	BuildPlanning BuildPlanStatus = "PLANNING"
-	BuildPlanned  BuildPlanStatus = "PLANNED"
-	BuildBuilding BuildPlanStatus = "BUILDING"
-	BuildReady    BuildPlanStatus = "READY"
+	BuildPlanning = "PLANNING"
+	BuildPlanned  = "PLANNED"
+	BuildBuilding = "BUILDING"
+	BuildReady    = "READY"
 	// Currently the POC does not have a failed status
-	BuildFailed BuildPlanStatus = "FAILED"
+	BuildFailed = "FAILED"
 
 	// Artifact statuses
-	ArtifactNotSubmitted      ArtifactStatus = "NOT_SUBMITTED"
-	ArtifactBlocked           ArtifactStatus = "BLOCKED"
-	ArtifactFailedPermanently ArtifactStatus = "FAILED_PERMANENTLY"
-	ArtifactFailedTransiently ArtifactStatus = "FAILED_TRANSIENTLY"
-	ArtifactReady             ArtifactStatus = "READY"
-	ArtifactRunning           ArtifactStatus = "RUNNING"
-	ArtifactSkipped           ArtifactStatus = "SKIPPED"
-	ArtifactSucceeded         ArtifactStatus = "SUCCEEDED"
+	ArtifactNotSubmitted      = "NOT_SUBMITTED"
+	ArtifactBlocked           = "BLOCKED"
+	ArtifactFailedPermanently = "FAILED_PERMANENTLY"
+	ArtifactFailedTransiently = "FAILED_TRANSIENTLY"
+	ArtifactReady             = "READY"
+	ArtifactRunning           = "RUNNING"
+	ArtifactSkipped           = "SKIPPED"
+	ArtifactSucceeded         = "SUCCEEDED"
 
 	// BuildResultTypes
 	BuildResultPlanning      = "BuildPlanning"
@@ -47,31 +43,27 @@ type BuildPlan struct {
 type Project struct {
 	Type   string `json:"__typename"`
 	Commit Commit `json:"commit"`
-	ProjectNotFound
-}
 
-type ProjectNotFound struct {
+	// Error fields
 	Message string `json:"message"`
 }
 
 type Commit struct {
 	Type  string `json:"__typename"`
 	Build Build  `json:"build"`
-	CommitNotFound
-}
 
-type CommitNotFound struct {
+	// Error fields
 	Message string `json:"message"`
 }
 
 type Build struct {
-	Type        string          `json:"__typename"`
-	BuildPlanID string          `json:"buildPlanID"`
-	Status      BuildPlanStatus `json:"status"`
-	Terminals   []NamedTarget   `json:"terminals"`
-	Artifacts   []Artifact      `json:"artifacts"`
-	Steps       []Step          `json:"steps"`
-	Sources     []Source        `json:"sources"`
+	Type        string        `json:"__typename"`
+	BuildPlanID string        `json:"buildPlanID"`
+	Status      string        `json:"status"`
+	Terminals   []NamedTarget `json:"terminals"`
+	Artifacts   []Artifact    `json:"artifacts"`
+	Steps       []Step        `json:"steps"`
+	Sources     []Source      `json:"sources"`
 
 	// Error fields
 	Error     string     `json:"error"`
@@ -111,21 +103,46 @@ type Source struct {
 	Version   string `json:"version"`
 }
 
+type PlanningError struct {
+	Error    string `json:"error"`
+	SubError SubError
+}
+
 type SubError struct {
-	Type             string   `json:"__typename"`
-	Path             string   `json:"path"`
-	Message          string   `json:"message"`
-	IsTransient      bool     `json:"isTransient"`
-	ValidationErrors []string `json:"validationErrors"`
-	RemediableSolveError
+	Type                  string   `json:"__typename"`
+	Path                  string   `json:"path"`
+	Message               string   `json:"message"`
+	IsTransient           bool     `json:"isTransient"`
+	ValidationErrors      []string `json:"validationErrors"`
+	RemediableSolverError RemediableSolveError
 }
 
 type RemediableSolveError struct {
-	SuggestedRemediation
+	Path                 string `json:"path"`
+	Message              string `json:"message"`
+	IsTransient          bool   `json:"isTransient"`
+	ErrorType            string `json:"errorType"`
+	SuggestedRemediation SolverErrorRemediation
 }
 
-type SuggestedRemediation struct {
+type SolverErrorRemediation struct {
 	RemediationType string   `json:"remediationType"`
 	Command         string   `json:"command"`
 	Parameters      []string `json:"parameters"`
+}
+
+type SolveErrorIncompatibility struct {
+	Type                              string `json:"type"`
+	SolveErrorPackageIncompatibility  SolveErrorPackageIncompatibility
+	SolveErrorPlatformIncompatibility SolveErrorPlatformIncompatibility
+}
+
+type SolveErrorPackageIncompatibility struct {
+	Feature   string `json:"feature"`
+	Namespace string `json:"namespace"`
+}
+
+type SolveErrorPlatformIncompatibility struct {
+	PlatformID     string `json:"platformID"`
+	PlatformKernel string `json:"platformKernel"`
 }

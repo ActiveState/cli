@@ -188,7 +188,7 @@ func (rp *RuntimeProgress) InstallationCompleted(anyFailures bool) error {
 	} else {
 		rp.installBar.SetTotal(0, true)
 		// TODO: Remove this when we have a buildplan with actual artifacts
-		// This causes the state tool to hang on activation with the noop artifact
+		// This may be causing the state tool to hang on activation with the noop artifact
 		// rp.prg.Wait()
 		rp.out.Notice(locale.Tl("runtime_verification_notice", "[SUCCESS]✔ All dependencies have been installed and verified.[/RESET]"))
 	}
