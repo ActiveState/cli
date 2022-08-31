@@ -3,6 +3,7 @@ package integration
 import (
 	"path/filepath"
 	"runtime"
+	"strings"
 	"testing"
 
 	"github.com/ActiveState/cli/internal/config"
@@ -192,8 +193,11 @@ func (suite *UseIntegrationTestSuite) TestShow() {
 	} else {
 		output := cp.TrimmedSnapshot()
 		// Windows sometimes uses shortened paths, sometimes not.
-		suite.Assert().True(strings.Contains(output, fileutils.GetLongPath(projectDir)) ||
-			strings.Contains(output, fileutils.GetShortPath(projectDir)),
+		longPath, err := fileutils.GetLongPathName(projectDir)
+		suite.Require().NoError(err)
+		shortPath, err := fileutils.GetShortPathName(projectDir)
+		suite.Require().NoError(err)
+		suite.Assert().True(strings.Contains(output, longPath) || strings.Contains(output, shortPath),
 			"expected to find ActiveState-CLI/Python3 project path in output")
 	}
 	cp.ExpectExitCode(0)
