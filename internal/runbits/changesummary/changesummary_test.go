@@ -11,23 +11,23 @@ import (
 )
 
 func TestChangeSummary(t *testing.T) {
-	artifacts := artifact.ArtifactInfoMap{
-		artifact.ArtifactID("1"): artifact.ArtifactInfo{
+	artifacts := artifact.ArtifactBuildPlanMap{
+		artifact.ArtifactID("1"): artifact.ArtifactBuildPlan{
 			Name: "Package 1", ArtifactID: "1",
 			Dependencies: []artifact.ArtifactID{"2", "3"}},
-		artifact.ArtifactID("2"): artifact.ArtifactInfo{
+		artifact.ArtifactID("2"): artifact.ArtifactBuildPlan{
 			Name: "Dependency 1", ArtifactID: "2",
 			Dependencies: []artifact.ArtifactID{"4", "5"}},
-		artifact.ArtifactID("3"): artifact.ArtifactInfo{
+		artifact.ArtifactID("3"): artifact.ArtifactBuildPlan{
 			Name: "Dependency 2", ArtifactID: "3",
 			Dependencies: []artifact.ArtifactID{"4", "6"}},
-		artifact.ArtifactID("4"): artifact.ArtifactInfo{
+		artifact.ArtifactID("4"): artifact.ArtifactBuildPlan{
 			Name: "Common recursive dependency", ArtifactID: "4", Dependencies: nil},
-		artifact.ArtifactID("5"): artifact.ArtifactInfo{
+		artifact.ArtifactID("5"): artifact.ArtifactBuildPlan{
 			Name: "Recursive dependency 1", ArtifactID: "5", Dependencies: nil},
-		artifact.ArtifactID("6"): artifact.ArtifactInfo{
+		artifact.ArtifactID("6"): artifact.ArtifactBuildPlan{
 			Name: "Recursive dependency 2", ArtifactID: "6", Dependencies: []artifact.ArtifactID{"7"}},
-		artifact.ArtifactID("7"): artifact.ArtifactInfo{
+		artifact.ArtifactID("7"): artifact.ArtifactBuildPlan{
 			Name: "Recursive dependency 3", ArtifactID: "7", Dependencies: nil},
 	}
 

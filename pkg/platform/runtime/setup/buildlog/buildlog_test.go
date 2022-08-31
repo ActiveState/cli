@@ -61,7 +61,7 @@ func (cm *connectionMock) SendBuildFailedMessage(t *testing.T, errMsg string) {
 	cm.messages = append(cm.messages, parseMessage(t, fmt.Sprintf(`{"type": "build_failed", "error_message": "%s"}`, errMsg)))
 }
 
-func (cm *connectionMock) SendArtifactStartedMessage(t *testing.T, a artifact.ArtifactInfo) {
+func (cm *connectionMock) SendArtifactStartedMessage(t *testing.T, a artifact.ArtifactBuildPlan) {
 	cm.messages = append(
 		cm.messages, parseMessage(t, fmt.Sprintf(`{
 			"type": "artifact_started",
@@ -69,7 +69,7 @@ func (cm *connectionMock) SendArtifactStartedMessage(t *testing.T, a artifact.Ar
 		}`, a.ArtifactID)))
 }
 
-func (cm *connectionMock) SendArtifactSucceededMessage(t *testing.T, a artifact.ArtifactInfo) {
+func (cm *connectionMock) SendArtifactSucceededMessage(t *testing.T, a artifact.ArtifactBuildPlan) {
 	chksum := "123"
 	uri := fmt.Sprintf("uri://%s", a.Name)
 	cm.messages = append(
@@ -81,7 +81,7 @@ func (cm *connectionMock) SendArtifactSucceededMessage(t *testing.T, a artifact.
 		}`, a.ArtifactID, chksum, uri)))
 }
 
-func (cm *connectionMock) SendArtifactFailedMessage(t *testing.T, a artifact.ArtifactInfo, errMsg string) {
+func (cm *connectionMock) SendArtifactFailedMessage(t *testing.T, a artifact.ArtifactBuildPlan, errMsg string) {
 	cm.messages = append(
 		cm.messages, parseMessage(t, fmt.Sprintf(`{
 			"type":         "artifact_failed",
@@ -139,12 +139,12 @@ func TestBuildLog(t *testing.T) {
 		"artifact1",
 		"artifact2",
 	}
-	artifacts := []artifact.ArtifactInfo{
+	artifacts := []artifact.ArtifactBuildPlan{
 		{ArtifactID: ids[0], Name: names[0]},
 		{ArtifactID: ids[1], Name: names[1]},
 		{ArtifactID: recipeID, Name: "terminal-node"},
 	}
-	artifactMap := map[artifact.ArtifactID]artifact.ArtifactInfo{
+	artifactMap := map[artifact.ArtifactID]artifact.ArtifactBuildPlan{
 		ids[0]: artifacts[0],
 		ids[1]: artifacts[1],
 	}

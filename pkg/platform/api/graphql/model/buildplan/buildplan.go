@@ -33,9 +33,11 @@ const (
 	ProjectNotFoundType = "ProjectNotFound"
 	CommitNotFoundType  = "CommitNotFound"
 
-	// Target types
-	TargetTypeSource = "Source"
-	TargetTypeStep   = "Step"
+	// Tag types
+	TagSource     = "src"
+	TagDependency = "dep"
+	TagBuilder    = "builder"
+	TagOrphan     = "orphans"
 )
 
 type BuildPlan struct {

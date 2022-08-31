@@ -10,8 +10,8 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// ArtifactInfo comprises useful information about an artifact that we extracted from a recipe
-type ArtifactInfo struct {
+// ArtifactBuildPlan comprises useful information about an artifact that we extracted from a build plan
+type ArtifactBuildPlan struct {
 	ArtifactID       ArtifactID
 	Name             string
 	Namespace        string
@@ -23,14 +23,14 @@ type ArtifactInfo struct {
 	Dependencies []ArtifactID
 }
 
-// ArtifactInfoMap maps artifact ids to artifact information extracted from a recipe
-type ArtifactInfoMap = map[ArtifactID]ArtifactInfo
+// ArtifactBuildPlanMap maps artifact ids to artifact information extracted from a recipe
+type ArtifactBuildPlanMap = map[ArtifactID]ArtifactBuildPlan
 
-// ArtifactNamedInfoMap maps artifact names to artifact information extracted from a recipe
-type ArtifactNamedInfoMap = map[string]ArtifactInfo
+// ArtifactNamedBuildPlanMap maps artifact names to artifact information extracted from a recipe
+type ArtifactNamedBuildPlanMap = map[string]ArtifactBuildPlan
 
 // NameWithVersion returns a string <name>@<version> if artifact has a version specified, otherwise it returns just the name
-func (a ArtifactInfo) NameWithVersion() string {
+func (a ArtifactBuildPlan) NameWithVersion() string {
 	version := ""
 	if a.Version != nil {
 		version = fmt.Sprintf("@%s", *a.Version)
@@ -38,16 +38,18 @@ func (a ArtifactInfo) NameWithVersion() string {
 	return a.Name + version
 }
 
-func NewMapFromBuildPlan(build *model.Build) ArtifactInfoMap {
-	res := make(map[ArtifactID]ArtifactInfo)
+func NewMapFromBuildPlan(build *model.Build) ArtifactBuildPlanMap {
+	res := make(map[ArtifactID]ArtifactBuildPlan)
 	if build == nil {
 		return res
 	}
 
 	var targetIDs []string
 	for _, terminal := range build.Terminals {
-		// TODO: Add proper tag handling
-		if terminal.Tag == "orphans" {
+		// May have to do futher filtering here for platform IDs
+		// There is currently an open discussion about this here:
+		// https://docs.google.com/document/d/1FRWiy4TQfiMr9eWStEbE003exi29oKemmJUEbGnoyAU/edit?disco=AAAAelvOB00
+		if terminal.Tag == model.TagOrphan {
 			continue
 		}
 		targetIDs = append(targetIDs, terminal.TargetIDs...)
@@ -57,7 +59,7 @@ func NewMapFromBuildPlan(build *model.Build) ArtifactInfoMap {
 		buildRuntimeDependencies(tID, build.Artifacts, res)
 	}
 
-	updatedRes := make(map[ArtifactID]ArtifactInfo)
+	updatedRes := make(map[ArtifactID]ArtifactBuildPlan)
 	for k, v := range res {
 		var err error
 		updatedRes[k], err = updateWithSourceInfo(v.generatedBy, v, build.Steps, build.Sources)
@@ -70,10 +72,10 @@ func NewMapFromBuildPlan(build *model.Build) ArtifactInfoMap {
 	return updatedRes
 }
 
-func buildRuntimeDependencies(baseID string, artifacts []model.Artifact, mapping map[ArtifactID]ArtifactInfo) {
+func buildRuntimeDependencies(baseID string, artifacts []model.Artifact, mapping map[ArtifactID]ArtifactBuildPlan) {
 	for _, artifact := range artifacts {
 		if artifact.TargetID == baseID {
-			entry := ArtifactInfo{
+			entry := ArtifactBuildPlan{
 				ArtifactID:       strfmt.UUID(artifact.TargetID),
 				RequestedByOrder: true,
 				generatedBy:      artifact.GeneratedBy,
@@ -90,18 +92,18 @@ func buildRuntimeDependencies(baseID string, artifacts []model.Artifact, mapping
 	}
 }
 
-func updateWithSourceInfo(generatedByID string, original ArtifactInfo, steps []model.Step, sources []model.Source) (ArtifactInfo, error) {
+func updateWithSourceInfo(generatedByID string, original ArtifactBuildPlan, steps []model.Step, sources []model.Source) (ArtifactBuildPlan, error) {
 	for _, step := range steps {
 		if step.TargetID != generatedByID {
 			continue
 		}
 		for _, input := range step.Inputs {
-			if input.Tag == "src" {
-				// Should only be one source per step
+			if input.Tag == model.TagSource {
+				// There should only be one source per step
 				for _, id := range input.TargetIDs {
 					for _, src := range sources {
 						if src.TargetID == id {
-							return ArtifactInfo{
+							return ArtifactBuildPlan{
 								ArtifactID:       original.ArtifactID,
 								RequestedByOrder: original.RequestedByOrder,
 								Name:             src.Name,
@@ -114,11 +116,11 @@ func updateWithSourceInfo(generatedByID string, original ArtifactInfo, steps []m
 			}
 		}
 	}
-	return ArtifactInfo{}, locale.NewError("err_resolve_artifact_name", "Could not resolve artifact name")
+	return ArtifactBuildPlan{}, locale.NewError("err_resolve_artifact_name", "Could not resolve artifact name")
 }
 
 // RecursiveDependenciesFor computes the recursive dependencies for an ArtifactID a using artifacts as a lookup table
-func RecursiveDependenciesFor(a ArtifactID, artifacts ArtifactInfoMap) []ArtifactID {
+func RecursiveDependenciesFor(a ArtifactID, artifacts ArtifactBuildPlanMap) []ArtifactID {
 	allDeps := make(map[ArtifactID]struct{})
 	artf, ok := artifacts[a]
 	if !ok {
@@ -150,14 +152,14 @@ func RecursiveDependenciesFor(a ArtifactID, artifacts ArtifactInfoMap) []Artifac
 }
 
 // NewNamedMapFromIDMap converts an ArtifactRecipeMap to a ArtifactNamedRecipeMap
-func NewNamedMapFromIDMap(am ArtifactInfoMap) ArtifactNamedInfoMap {
-	res := make(map[string]ArtifactInfo)
+func NewNamedMapFromIDMap(am ArtifactBuildPlanMap) ArtifactNamedBuildPlanMap {
+	res := make(map[string]ArtifactBuildPlan)
 	for _, a := range am {
 		res[a.Name] = a
 	}
 	return res
 }
 
-func NewNamedMapFromBuildPlan(build *model.Build) ArtifactNamedInfoMap {
+func NewNamedMapFromBuildPlan(build *model.Build) ArtifactNamedBuildPlanMap {
 	return NewNamedMapFromIDMap(NewMapFromBuildPlan(build))
 }

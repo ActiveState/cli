@@ -84,7 +84,7 @@ type Events interface {
 	// ChangeSummary summarizes the changes to the current project during the InstallRuntime() call.
 	// This summary is printed as soon as possible, providing the State Tool user with an idea of the complexity of the requested build.
 	// The arguments are for the changes introduced in the latest commit that this Setup is setting up.
-	ChangeSummary(artifacts map[artifact.ArtifactID]artifact.ArtifactInfo, requested artifact.ArtifactChangeset, changed artifact.ArtifactChangeset)
+	ChangeSummary(artifacts map[artifact.ArtifactID]artifact.ArtifactBuildPlan, requested artifact.ArtifactChangeset, changed artifact.ArtifactChangeset)
 	TotalArtifacts(total int)
 	ArtifactStepStarting(events.SetupStep, artifact.ArtifactID, int)
 	ArtifactStepProgress(events.SetupStep, artifact.ArtifactID, int)
@@ -132,7 +132,7 @@ type Setuper interface {
 	// DeleteOutdatedArtifacts deletes outdated artifact as best as it can
 	DeleteOutdatedArtifacts(artifact.ArtifactChangeset, store.StoredArtifactMap, store.StoredArtifactMap) error
 	ResolveArtifactName(artifact.ArtifactID) string
-	DownloadsFromBuild(build bpModel.Build, artifacts map[strfmt.UUID]artifact.ArtifactInfo) ([]artifact.ArtifactDownload, error)
+	DownloadsFromBuild(build bpModel.Build, artifacts map[strfmt.UUID]artifact.ArtifactBuildPlan) ([]artifact.ArtifactDownload, error)
 }
 
 // ArtifactSetuper is the interface for an implementation of artifact setup functions
@@ -386,7 +386,7 @@ func aggregateErrors() (chan<- error, <-chan error) {
 	return bgErrs, aggErr
 }
 
-func (s *Setup) installArtifactsFromBuild(buildResult *model.BuildResult, artifacts artifact.ArtifactInfoMap, downloads []artifact.ArtifactDownload, alreadyInstalled store.StoredArtifactMap, setup Setuper, installFunc artifactInstaller) error {
+func (s *Setup) installArtifactsFromBuild(buildResult *model.BuildResult, artifacts artifact.ArtifactBuildPlanMap, downloads []artifact.ArtifactDownload, alreadyInstalled store.StoredArtifactMap, setup Setuper, installFunc artifactInstaller) error {
 	// Artifacts are installed in two stages
 	// - The first stage runs concurrently in MaxConcurrency worker threads (download, unpacking, relocation)
 	// - The second stage moves all files into its final destination is running in a single thread (using the mainthread library) to avoid file conflicts
@@ -451,7 +451,7 @@ func (s *Setup) installFromBuildResult(buildResult *model.BuildResult, downloads
 	return <-aggregatedErr
 }
 
-func (s *Setup) installFromBuildLog(buildResult *model.BuildResult, artifacts artifact.ArtifactInfoMap, downloads []artifact.ArtifactDownload, alreadyInstalled store.StoredArtifactMap, setup Setuper, installFunc artifactInstaller) error {
+func (s *Setup) installFromBuildLog(buildResult *model.BuildResult, artifacts artifact.ArtifactBuildPlanMap, downloads []artifact.ArtifactDownload, alreadyInstalled store.StoredArtifactMap, setup Setuper, installFunc artifactInstaller) error {
 	s.events.TotalArtifacts(len(artifacts) - len(alreadyInstalled))
 
 	alreadyBuilt := make(map[artifact.ArtifactID]struct{})
@@ -539,11 +539,6 @@ func (s *Setup) downloadArtifactWithProgress(unsignedURI string, targetFile stri
 	if err != nil {
 		return errs.Wrap(err, "Could not parse artifact URL %s.", unsignedURI)
 	}
-
-	// downloadURL, err := s.model.SignS3URL(artifactURL)
-	// if err != nil {
-	// 	return errs.Wrap(err, "Could not sign artifact URL %s.", unsignedURI)
-	// }
 
 	req, err := download.NewGetRequest(artifactURL.String())
 	if err != nil {
@@ -643,10 +638,11 @@ func (s *Setup) unpackArtifact(ua unarchiver.Unarchiver, tarballPath string, tar
 	return numUnpackedFiles, ua.Unarchive(proxy, i, targetDir)
 }
 
-func (s *Setup) selectSetupImplementation(buildEngine model.BuildEngine, artifacts artifact.ArtifactInfoMap) (Setuper, error) {
+func (s *Setup) selectSetupImplementation(buildEngine model.BuildEngine, artifacts artifact.ArtifactBuildPlanMap) (Setuper, error) {
 	switch buildEngine {
 	case model.Alternative:
 		return alternative.NewSetup(s.store, artifacts), nil
+	// TODO: Re-enable this check when we have a camel build from the buildplanner
 	// case model.Camel:
 	// 	return camel.NewSetup(s.store), nil
 	default:

@@ -18,7 +18,7 @@ type ArtifactUpdate struct {
 }
 
 // NewArtifactChangeset parses two recipes and returns the artifact IDs of artifacts that have changed due to changes in the order requirements
-func NewArtifactChangeset(old, new ArtifactNamedInfoMap, requestedOnly bool) ArtifactChangeset {
+func NewArtifactChangeset(old, new ArtifactNamedBuildPlanMap, requestedOnly bool) ArtifactChangeset {
 	// Basic outline of what needs to happen here:
 	//   - add ArtifactID to the `Added` field if artifactID only appears in the the `new` recipe
 	//   - add ArtifactID to the `Removed` field if artifactID only appears in the the `old` recipe
@@ -67,7 +67,7 @@ func NewArtifactChangeset(old, new ArtifactNamedInfoMap, requestedOnly bool) Art
 }
 
 // DetectArtifactChanges computes the artifact changes between an old recipe (which can be empty) and a new recipe
-func NewArtifactChangesetByIDMap(old, new ArtifactInfoMap, requestedOnly bool) ArtifactChangeset {
+func NewArtifactChangesetByIDMap(old, new ArtifactBuildPlanMap, requestedOnly bool) ArtifactChangeset {
 	return NewArtifactChangeset(NewNamedMapFromIDMap(old), NewNamedMapFromIDMap(new), requestedOnly)
 }
 

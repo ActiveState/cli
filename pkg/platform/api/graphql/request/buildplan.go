@@ -10,7 +10,6 @@ type buildPlanByCommitID struct {
 	vars map[string]interface{}
 }
 
-// TODO: Add error handling to this query
 func (b *buildPlanByCommitID) Query() string {
 	return `query ($commitID: String!) {
 				project(project: "placeholder", organization: "placeholder") {
