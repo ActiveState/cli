@@ -34,7 +34,7 @@ func cleanUser(t *testing.T, username string, auth *authentication.Auth) error {
 		return err
 	}
 	for _, proj := range projects {
-		err = DeleteProject(username, proj.Name)
+		err = deleteProject(username, proj.Name)
 		if err != nil {
 			return err
 		}
@@ -54,7 +54,7 @@ func getProjects(org string) ([]*mono_models.Project, error) {
 	return listProjectsOK.Payload, nil
 }
 
-func DeleteProject(org, name string) error {
+func deleteProject(org, name string) error {
 	params := projects.NewDeleteProjectParams()
 	params.SetOrganizationName(org)
 	params.SetProjectName(name)
