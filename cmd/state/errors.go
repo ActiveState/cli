@@ -43,14 +43,6 @@ func (o *OutputError) MarshalOutput(f output.Format) interface{} {
 		errs = []error{o.error}
 	}
 	for _, errv := range errs {
-		if isInputError && locale.IsInputErrorNonRecursive(errv) {
-			outLines = []string{
-				"[/RESET]", // This achieves two goals: Adding an empty line and not printing the input error in red
-				locale.ErrorMessage(errv),
-			}
-			break // We only want the actual input error in this case
-		}
-		// If this is an input error then we just want to show the error itself without alarming the user too much
 		outLines = append(outLines, fmt.Sprintf(" [NOTICE][ERROR]x[/RESET] %s", trimError(locale.ErrorMessage(errv))))
 	}
 

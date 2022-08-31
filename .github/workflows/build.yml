@@ -246,7 +246,7 @@ jobs:
 
             TARGET_BRANCH="${{ github.event.pull_request.base.ref }}"
             echo "Target branch: $TARGET_BRANCH"
-  
+          
             if [ "$TEST_SUITE_TAGS" == "" ] && [ "$TARGET_BRANCH" != "beta" ] && [ "$TARGET_BRANCH" != "release" ]; then
               echo "Not running because no test labels were set nor beta or release were targeted."
               exit 0
@@ -295,7 +295,7 @@ jobs:
       SHELL: bash
       GITHUB_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     timeout-minutes: 10
-    if: contains(fromJSON('["refs/heads/master", "refs/heads/beta", "refs/heads/release"]'), github.ref)
+    if: contains(fromJSON('["refs/heads/master", "refs/heads/beta", "refs/heads/release"]'), github.ref) || startsWith(github.event.pull_request.head.ref, 'version/')
 
     # === Deploy Steps ===
     steps:
