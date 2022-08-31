@@ -38,9 +38,9 @@ func (b *BuildPlanner) SignS3URL(uri *url.URL) (*url.URL, error) {
 	return nil, errs.New("not implemented")
 }
 
-func (b *BuildPlanner) FetchBuildResult(commitID strfmt.UUID, _, _ string) (*BuildResult, error) {
+func (bp *BuildPlanner) FetchBuildResult(commitID strfmt.UUID, _, _ string) (*BuildResult, error) {
 	resp := &model.BuildPlan{}
-	err := b.client.Run(request.BuildPlanByCommitID(commitID.String()), resp)
+	err := bp.client.Run(request.BuildPlanByCommitID(commitID.String()), resp)
 	if err != nil {
 		return nil, errs.Wrap(err, "failed to fetch build plan")
 	}
@@ -61,9 +61,41 @@ func (b *BuildPlanner) FetchBuildResult(commitID strfmt.UUID, _, _ string) (*Bui
 		return nil, locale.NewError("err_buildplanner_build_error", "Build encountered an error: {{.V0}}", resp.Project.Commit.Build.Error)
 	}
 
+	removeEmptyTargets(resp)
+
 	return &BuildResult{
 		BuildEngine: Alternative,
 		Build:       &resp.Project.Commit.Build,
 		BuildReady:  model.BuildPlanStatus(resp.Project.Commit.Build.Status) == model.BuildReady,
 	}, nil
+}
+
+func removeEmptyTargets(bp *model.BuildPlan) {
+	var steps []model.Step
+	for _, step := range bp.Project.Commit.Build.Steps {
+		if step.TargetID == "" {
+			continue
+		}
+		steps = append(steps, step)
+	}
+
+	var sources []model.Source
+	for _, source := range bp.Project.Commit.Build.Sources {
+		if source.TargetID == "" {
+			continue
+		}
+		sources = append(sources, source)
+	}
+
+	var artifacts []model.Artifact
+	for _, artifact := range bp.Project.Commit.Build.Artifacts {
+		if artifact.TargetID == "" {
+			continue
+		}
+		artifacts = append(artifacts, artifact)
+	}
+
+	bp.Project.Commit.Build.Steps = steps
+	bp.Project.Commit.Build.Sources = sources
+	bp.Project.Commit.Build.Artifacts = artifacts
 }

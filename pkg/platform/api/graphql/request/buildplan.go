@@ -13,134 +13,152 @@ type buildPlanByCommitID struct {
 // TODO: Add error handling to this query
 func (b *buildPlanByCommitID) Query() string {
 	return `query ($commitID: String!) {
-	project(project: "placeholder", organization: "placeholder") {
-		... on Project {
-      		__typename
-				commit(vcsRef:$commitID) {
-        			... on Commit {
-          				__typename
-          					build {
-            					__typename
-            					... on BuildReady {
-									buildPlanID
-									status
-									terminals {
-										tag
-										targetIDs
-									}
-									targets {
-										__typename
-										... on Source {
-											targetID
-											name
-											namespace
-											version
-										}
-										... on Step {
-											targetID
-											inputs {
-												tag
-												targetIDs
-											}
-											outputs
-										}
-										... on ArtifactSucceeded {
-											targetID
-											mimeType
-											generatedBy
-											runtimeDependencies
-											status
-											logURL
-											url
-											checksum
-										}
-										... on ArtifactUnbuilt {
-											targetID
-											mimeType
-											generatedBy
-											runtimeDependencies
-											status
-										}
-										... on ArtifactBuilding {
-											targetID
-											mimeType
-											generatedBy
-											runtimeDependencies
-											status
-										}
-										... on ArtifactTransientlyFailed {
-											targetID
-											mimeType
-											generatedBy
-											runtimeDependencies
-											status
-											logURL
-											errors
-											attempts
-											nextAttemptAt
-										}
-              						}
-            					}
+				project(project: "placeholder", organization: "placeholder") {
+					... on Project {
+						__typename
+						commit(vcsRef: $commitID) {
+							... on Commit {
+								__typename
+								build {
+								__typename
 								... on BuildPlanned {
-									buildPlanID
-									status
-									terminals {
+										buildPlanID
+										status
+										terminals {
 										tag
 										targetIDs
 									}
 								}
-								... on BuildStarted {
+							... on BuildStarted {
 									buildPlanID
 									status
 									terminals {
-										tag
-										targetIDs
-									}
+									tag
+									targetIDs
 								}
-								... on BuildPlanning {
+							}
+							... on BuildPlanning {
 									buildPlanID
 									status
 									terminals {
+									tag
+									targetIDs
+								}
+							}
+							... on PlanningError {
+								error
+								subErrors {
+								__typename
+								... on GenericSolveError {
+									path
+									message
+									isTransient
+									validationErrors
+								}
+								... on RemediableSolveError {
+									path
+									message
+									isTransient
+									validationErrors
+									suggestedRemediations {
+										remediationType
+										command
+										parameters
+									}
+								}
+							}
+						}
+							... on BuildReady {
+								buildPlanID
+								status
+								terminals {
+									tag
+									targetIDs
+							}
+							sources: targets {
+								... on Source {
+									targetID
+									name
+									namespace
+									version
+								}
+							}
+							steps: targets {
+								... on Step {
+									targetID
+									inputs {
 										tag
 										targetIDs
 									}
+									outputs
 								}
-								... on PlanningError {
-									error
-									subErrors {
-										__typename
-										... on GenericSolveError {
-											path
-											message
-											isTransient
-											validationErrors
-										}
-										... on RemediableSolveError {
-											path
-											message
-											isTransient
-											validationErrors
-											suggestedRemediations {
-												remediationType
-												command
-												parameters
-											}
-                						}
-									}
-            					}
-          					}
-        				}
-					... on CommitNotFound {
-						message
+							}
+							artifacts: targets {
+								... on ArtifactSucceeded {
+									__typename
+									targetID
+									mimeType
+									generatedBy
+									runtimeDependencies
+									status
+									logURL
+									url
+									checksum
+								}
+								... on ArtifactUnbuilt {
+									__typename
+									targetID
+									mimeType
+									generatedBy
+									runtimeDependencies
+									status
+								}
+								... on ArtifactBuilding {
+									__typename
+									targetID
+									mimeType
+									generatedBy
+									runtimeDependencies
+									status
+								}
+								... on ArtifactTransientlyFailed {
+									__typename
+									targetID
+									mimeType
+									generatedBy
+									runtimeDependencies
+									status
+									logURL
+									errors
+									attempts
+									nextAttemptAt
+								}
+								... on ArtifactPermanentlyFailed {
+									__typename
+									targetID
+									mimeType
+									generatedBy
+									runtimeDependencies
+									status
+									logURL
+									errors
+								}
+							}
+						}
 					}
 				}
+			... on CommitNotFound {
+				message
 			}
-		... on ProjectNotFound {
-			__typename
-			message
 		}
 	}
+	... on ProjectNotFound {
+		__typename
+		message
+	}
+	}
 }
+
 `
 }
 

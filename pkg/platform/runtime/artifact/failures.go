@@ -29,7 +29,7 @@ func NewFailedArtifactsFromBuild(buildStatus *headchef_models.V1BuildStatusRespo
 
 func NewFailedArtifactsFromBuildPlan(build model.Build) []FailedArtifact {
 	var failed []FailedArtifact
-	for _, a := range build.Targets {
+	for _, a := range build.Artifacts {
 		if a.Status == string(model.BuildFailed) || len(a.Errors) > 0 {
 			failed = append(failed, FailedArtifact{ArtifactID: strfmt.UUID(a.TargetID), UnsignedLogURI: a.LogURL, ErrorMsg: strings.Join(a.Errors, "\n")})
 		}

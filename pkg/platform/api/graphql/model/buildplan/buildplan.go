@@ -67,7 +67,9 @@ type Build struct {
 	BuildPlanID string          `json:"buildPlanID"`
 	Status      BuildPlanStatus `json:"status"`
 	Terminals   []NamedTarget   `json:"terminals"`
-	Targets     []Target        `json:"targets"`
+	Artifacts   []Artifact      `json:"artifacts"`
+	Steps       []Step          `json:"steps"`
+	Sources     []Source        `json:"sources"`
 
 	// Error fields
 	Error     string     `json:"error"`
@@ -79,7 +81,7 @@ type NamedTarget struct {
 	TargetIDs []string `json:"targetIDs"`
 }
 
-type Target struct {
+type Artifact struct {
 	Type                string   `json:"__typename"`
 	TargetID            string   `json:"targetID"`
 	MimeType            string   `json:"mimeType"`
@@ -92,12 +94,16 @@ type Target struct {
 	Errors              []string `json:"errors"`
 	Attempts            string   `json:"attempts"`
 	NextAttempt         string   `json:"nextAttempt"`
+}
 
-	// Step fields
-	Inputs  []NamedTarget `json:"inputs"`
-	Outputs []string      `json:"outputs"`
+type Step struct {
+	TargetID string        `json:"targetID"`
+	Inputs   []NamedTarget `json:"inputs"`
+	Outputs  []string      `json:"outputs"`
+}
 
-	// Source fields
+type Source struct {
+	TargetID  string `json:"targetID"`
 	Name      string `json:"name"`
 	Namespace string `json:"namespace"`
 	Version   string `json:"version"`

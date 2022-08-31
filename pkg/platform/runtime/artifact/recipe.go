@@ -29,19 +29,6 @@ type ArtifactInfoMap = map[ArtifactID]ArtifactInfo
 // ArtifactNamedInfoMap maps artifact names to artifact information extracted from a recipe
 type ArtifactNamedInfoMap = map[string]ArtifactInfo
 
-type Step struct {
-	TargetID string              `json:"targetID"`
-	Inputs   []model.NamedTarget `json:"inputs"`
-	Outputs  []string            `json:"outputs"`
-}
-
-type Source struct {
-	TargetID  string `json:"targetID"`
-	Name      string `json:"name"`
-	Namespace string `json:"namespace"`
-	Version   string `json:"version"`
-}
-
 // NameWithVersion returns a string <name>@<version> if artifact has a version specified, otherwise it returns just the name
 func (a ArtifactInfo) NameWithVersion() string {
 	version := ""
@@ -57,9 +44,6 @@ func NewMapFromBuildPlan(build *model.Build) ArtifactInfoMap {
 		return res
 	}
 
-	sources := getSources(build)
-	steps := getSteps(build)
-
 	var targetIDs []string
 	for _, terminal := range build.Terminals {
 		// TODO: Add proper tag handling
@@ -70,13 +54,13 @@ func NewMapFromBuildPlan(build *model.Build) ArtifactInfoMap {
 	}
 
 	for _, tID := range targetIDs {
-		buildRuntimeDependencies(tID, build.Targets, res)
+		buildRuntimeDependencies(tID, build.Artifacts, res)
 	}
 
 	updatedRes := make(map[ArtifactID]ArtifactInfo)
 	for k, v := range res {
 		var err error
-		updatedRes[k], err = updateWithSourceInfo(v.generatedBy, v, steps, sources)
+		updatedRes[k], err = updateWithSourceInfo(v.generatedBy, v, build.Steps, build.Sources)
 		if err != nil {
 			logging.Error("updateWithSourceInfo failed: %s", errs.JoinMessage(err))
 			return nil
@@ -86,38 +70,9 @@ func NewMapFromBuildPlan(build *model.Build) ArtifactInfoMap {
 	return updatedRes
 }
 
-func getSteps(build *model.Build) []Step {
-	var steps []Step
-	for _, artifact := range build.Targets {
-		if artifact.Type == model.TargetTypeStep {
-			steps = append(steps, Step{
-				TargetID: artifact.TargetID,
-				Inputs:   artifact.Inputs,
-				Outputs:  artifact.Outputs,
-			})
-		}
-	}
-	return steps
-}
-
-func getSources(build *model.Build) []Source {
-	var sources []Source
-	for _, artifact := range build.Targets {
-		if artifact.Type == model.TargetTypeSource {
-			sources = append(sources, Source{
-				TargetID:  artifact.TargetID,
-				Name:      artifact.Name,
-				Namespace: artifact.Namespace,
-				Version:   artifact.Version,
-			})
-		}
-	}
-	return sources
-}
-
-func buildRuntimeDependencies(baseID string, artifacts []model.Target, mapping map[ArtifactID]ArtifactInfo) {
+func buildRuntimeDependencies(baseID string, artifacts []model.Artifact, mapping map[ArtifactID]ArtifactInfo) {
 	for _, artifact := range artifacts {
-		if artifact.TargetID == baseID && artifact.Type == "ArtifactSucceeded" {
+		if artifact.TargetID == baseID {
 			entry := ArtifactInfo{
 				ArtifactID:       strfmt.UUID(artifact.TargetID),
 				RequestedByOrder: true,
@@ -135,7 +90,7 @@ func buildRuntimeDependencies(baseID string, artifacts []model.Target, mapping m
 	}
 }
 
-func updateWithSourceInfo(generatedByID string, original ArtifactInfo, steps []Step, sources []Source) (ArtifactInfo, error) {
+func updateWithSourceInfo(generatedByID string, original ArtifactInfo, steps []model.Step, sources []model.Source) (ArtifactInfo, error) {
 	for _, step := range steps {
 		if step.TargetID != generatedByID {
 			continue

@@ -43,7 +43,7 @@ func NewDownloadsFromBuild(buildStatus *headchef_models.V1BuildStatusResponse) (
 func NewDownloadsFromBuildPlan(build bpModel.Build, artifacts map[strfmt.UUID]ArtifactInfo) ([]ArtifactDownload, error) {
 	var downloads []ArtifactDownload
 	for id := range artifacts {
-		for _, a := range build.Targets {
+		for _, a := range build.Artifacts {
 			if a.Status == string(bpModel.ArtifactSucceeded) && a.TargetID == id.String() && a.URL != "" {
 				if strings.HasPrefix(a.URL, "s3://as-builds/noop/") {
 					continue
