@@ -182,13 +182,13 @@ func execute(out output.Outputer, prompt prompt.Prompter, cfg *config.Instance, 
 		version = fmt.Sprintf("%s (%s)", version, branch)
 	}
 
-	out.Fprint(os.Stdout, fmt.Sprintf("• Downloading State Tool version [NOTICE]%s[/RESET]... ", version))
+	out.Fprint(os.Stdout, locale.Tl("remote_install_downloading", "• Downloading State Tool version [NOTICE]{{.V0}}[/RESET]... ", version))
 	tmpDir, err := update.DownloadAndUnpack()
 	if err != nil {
-		out.Print("[ERROR]x Failed[/RESET]")
+		out.Print(locale.Tl("remote_install_status_fail", "[ERROR]x Failed[/RESET]"))
 		return errs.Wrap(err, "Could not download and unpack")
 	}
-	out.Print("[SUCCESS]✔ Done[/RESET]")
+	out.Print(locale.Tl("remote_install_status_done", "[SUCCESS]✔ Done[/RESET]"))
 
 	env := []string{
 		constants.InstallerNoSubshell + "=true",
@@ -198,8 +198,8 @@ func execute(out output.Outputer, prompt prompt.Prompter, cfg *config.Instance, 
 		return errs.Wrap(err, "Could not run installer")
 	}
 
-	out.Print("Installation complete. Press enter to exit.")
-	fmt.Scanln(p.StrP(""))
+	out.Print(locale.Tl("remote_install_exit_prompt", "Installation complete. Press enter to exit."))
+	fmt.Scanln(p.StrP("")) // Wait for input from user
 
 	return nil
 }
