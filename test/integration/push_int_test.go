@@ -72,7 +72,7 @@ func (suite *PushIntegrationTestSuite) TestInitAndPush() {
 	cp.ExpectLongString("Creating project")
 	cp.ExpectLongString("Project created")
 	cp.ExpectExitCode(0)
-	defer e2e.DeleteProject(username, pname.String())
+	defer e2e.DeleteProject(username, pname)
 
 	// Check that languages were reset
 	pjfile, err := projectfile.Parse(pjfilepath)
@@ -154,7 +154,7 @@ func (suite *PushIntegrationTestSuite) TestPush_HeadlessConvert_NewProject() {
 	cp.SendLine(pname.String())
 	cp.Expect("Project created")
 	cp.ExpectExitCode(0)
-	defer e2e.DeleteProject(username, pname.String())
+	defer e2e.DeleteProject(username, pname)
 
 	pjfile, err = projectfile.Parse(pjfilepath)
 	suite.Require().NoError(err)
@@ -263,7 +263,7 @@ func (suite *PushIntegrationTestSuite) TestCarlisle() {
 	cp.Send("y")
 	cp.Expect("Project created")
 	cp.ExpectExitCode(0)
-	err = e2e.DeleteProject(username, pname.String())
+	err = e2e.DeleteProject(username, pname)
 	suite.Assert().NoError(err)
 }
 
