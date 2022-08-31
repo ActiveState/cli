@@ -20,6 +20,19 @@ func NewShow(prime primeable) *Show {
 	}
 }
 
+type outputFormat struct {
+	Message   string `locale:message,Message`
+	Namespace string `locale:"namespace,Namespace"`
+	Path      string `locale:"path,Path"`
+}
+
+func (f *outputFormat) MarshalOutput(format output.Format) interface{} {
+	if format == output.PlainFormatName {
+		return f.Message
+	}
+	return f
+}
+
 func (s *Show) Run() error {
 	projectDir := s.cfg.GetString(constants.GlobalDefaultPrefname)
 	if projectDir == "" {
@@ -31,10 +44,14 @@ func (s *Show) Run() error {
 		return locale.WrapError(err, "err_use_show_get_project", "Could not get default project.")
 	}
 
-	s.out.Print(locale.Tl("use_show", "The default project to use is {{.V0}}, located at {{.V1}}",
+	s.out.Print(&outputFormat{
+		locale.Tl("use_show", "The default project to use is {{.V0}}, located at {{.V1}}",
+			proj.NamespaceString(),
+			projectDir,
+		),
 		proj.NamespaceString(),
 		projectDir,
-	))
+	})
 
 	return nil
 }
