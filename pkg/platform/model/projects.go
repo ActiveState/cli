@@ -190,7 +190,7 @@ func CreateCopy(sourceOwner, sourceName, targetOwner, targetName string, makePri
 		}
 	}
 
-	// Turn the target project private if this was requested (unfortunately this can't be done int the Creation step)
+	// Turn the target project private if this was requested (unfortunately this can't be done in the Creation step)
 	if makePrivate {
 		if err := MakeProjectPrivate(targetOwner, targetName); err != nil {
 			logging.Debug("Cannot make forked project private; deleting public fork.")
