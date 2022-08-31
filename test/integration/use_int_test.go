@@ -190,10 +190,10 @@ func (suite *UseIntegrationTestSuite) TestShow() {
 	if runtime.GOOS != "windows" {
 		cp.ExpectLongString(projectDir)
 	} else {
-		// Windows uses the short path here.
-		shortPath, err := fileutils.GetShortPathName(projectDir)
+		// Windows uses the long path here.
+		longPath, err := fileutils.GetLongPathName(projectDir)
 		suite.Require().NoError(err)
-		cp.ExpectLongString(shortPath)
+		cp.ExpectLongString(longPath)
 	}
 	cp.ExpectExitCode(0)
 
