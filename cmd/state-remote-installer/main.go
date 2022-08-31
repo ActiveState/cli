@@ -25,6 +25,7 @@ import (
 	"github.com/ActiveState/cli/internal/rtutils/p"
 	"github.com/ActiveState/cli/internal/runbits/panics"
 	"github.com/ActiveState/cli/internal/updater"
+	"github.com/ActiveState/cli/pkg/cmdlets/errors"
 )
 
 type Params struct {
@@ -141,8 +142,8 @@ func main() {
 			multilog.Critical("Installer error: " + errs.JoinMessage(err))
 		}
 
-		exitCode = errs.UnwrapExitCode(err)
-		out.Error(err.Error())
+		exitCode, err = errors.Unwrap(err)
+		out.Error(err)
 		return
 	}
 }
