@@ -12,6 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
+	"github.com/ActiveState/cli/internal/svcctl"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
 	"github.com/ActiveState/cli/pkg/platform/runtime/executor"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
@@ -78,7 +79,7 @@ func SetupDefaultActivation(subshell subshell.SubShell, cfg DefaultConfigurer, r
 
 	target := target.NewProjectTarget(proj, storage.GlobalBinDir(), nil, target.TriggerActivate)
 	fw := executor.NewInitWithBinPath(target, BinDir())
-	if err := fw.Apply(env, exes); err != nil {
+	if err := fw.Apply(svcctl.NewIPCSockPathFromGlobals().String(), env, exes); err != nil {
 		return locale.WrapError(err, "err_globaldefault_fw", "Could not set up forwarders")
 	}
 

@@ -6,11 +6,11 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"path/filepath"
 	"strconv"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/internal/svcctl"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
@@ -24,7 +24,7 @@ import (
 */
 
 var (
-	metaFileName = "meta.as"
+	MetaFileName = "meta.as"
 
 	sockDelim      = "::sock::"
 	envDelim       = "::env::"
@@ -43,10 +43,10 @@ type Meta struct {
 	Headless   bool
 }
 
-func NewMeta(env map[string]string, t Targeter, bins []string) *Meta {
+func NewMeta(sockPath string, env map[string]string, t Targeter, bins []string) *Meta {
 	commitID := t.CommitUUID().String()
 	return &Meta{
-		SockPath:   svcctl.NewIPCSockPathFromGlobals().String(),
+		SockPath:   sockPath,
 		Env:        env,
 		Bins:       bins,
 		CommitUUID: commitID,
@@ -134,8 +134,9 @@ func (m *Meta) WriteTo(w io.Writer) (int64, error) {
 	return aw.total()
 }
 
-// WriteToFile is a convenience func, not intended to be unit tested.
-func (m *Meta) WriteToFile(path string) error {
+// WriteToDisk is a convenience func, not intended to be unit tested.
+func (m *Meta) WriteToDisk(dir string) error {
+	path := filepath.Join(dir, MetaFileName)
 	buf := &bytes.Buffer{}
 	if _, err := m.WriteTo(buf); err != nil {
 		return err
