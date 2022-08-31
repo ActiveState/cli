@@ -23,6 +23,7 @@ import (
 	"github.com/ActiveState/cli/internal/proxyreader"
 	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/ActiveState/cli/internal/rtutils/p"
+	"github.com/ActiveState/cli/internal/svcctl"
 	"github.com/ActiveState/cli/internal/unarchiver"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
@@ -267,7 +268,7 @@ func (s *Setup) updateExecutors(artifacts []artifact.ArtifactID) error {
 	}
 
 	exec := executor.NewInitWithBinPath(s.target, execPath)
-	if err := exec.Apply(env, exePaths); err != nil {
+	if err := exec.Apply(svcctl.NewIPCSockPathFromGlobals().String(), env, exePaths); err != nil {
 		return locale.WrapError(err, "err_deploy_executors", "Could not create executors")
 	}
 

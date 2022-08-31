@@ -59,7 +59,7 @@ func (i *Init) BinPath() string {
 	return i.executorPath
 }
 
-func (i *Init) Apply(env map[string]string, exes envdef.ExecutablePaths) error {
+func (i *Init) Apply(sockPath string, env map[string]string, exes envdef.ExecutablePaths) error {
 	logging.Debug("Creating executors at %s, exes: %v", i.executorPath, exes)
 
 	// We need to cover the use case of someone running perl.exe/python.exe
@@ -81,8 +81,8 @@ func (i *Init) Apply(env map[string]string, exes envdef.ExecutablePaths) error {
 		return locale.WrapError(err, "err_mkdir", "Could not create directory: {{.V0}}", i.executorPath)
 	}
 
-	m := NewMeta(env, i.targeter, exes)
-	if err := m.WriteToFile(filepath.Join(i.executorPath, metaFileName)); err != nil {
+	m := NewMeta(sockPath, env, i.targeter, exes)
+	if err := m.WriteToDisk(i.executorPath); err != nil {
 		return err
 	}
 
