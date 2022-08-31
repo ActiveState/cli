@@ -33,7 +33,6 @@ import (
 	"github.com/ActiveState/termtest/expect"
 	"github.com/google/uuid"
 	"github.com/phayes/permbits"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v2"
 )
@@ -415,7 +414,7 @@ func (s *Session) DebugMessage(prefix string) string {
 	}
 
 	v, err := strutils.ParseTemplate(`
-{{.Prefix}}{{.A}}Stack:
+{{.Prefix}}{{.A}}Stack: 
 {{.Stacktrace}}{{.Z}}
 {{.A}}Terminal snapshot:
 {{.FullSnapshot}}{{.Z}}
@@ -533,9 +532,6 @@ func (s *Session) Close() error {
 			s.t.Errorf("Could not delete user %s: %v", user, errs.JoinMessage(err))
 		}
 	}
-
-	err = cleanUser(s.t, PersistentUsername, a)
-	assert.NoError(s.t, err, "error cleaning up for "+PersistentUsername)
 
 	return nil
 }
