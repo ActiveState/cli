@@ -414,7 +414,7 @@ func (s *Session) DebugMessage(prefix string) string {
 	}
 
 	v, err := strutils.ParseTemplate(`
-{{.Prefix}}{{.A}}Stack: 
+{{.Prefix}}{{.A}}Stack:
 {{.Stacktrace}}{{.Z}}
 {{.A}}Terminal snapshot:
 {{.FullSnapshot}}{{.Z}}
@@ -530,6 +530,13 @@ func (s *Session) Close() error {
 		err := cleanUser(s.t, user, a)
 		if err != nil {
 			s.t.Errorf("Could not delete user %s: %v", user, errs.JoinMessage(err))
+		}
+	}
+
+	if PersistentUsername != "" && runtime.GOOS == "windows" {
+		err := cleanUser(s.t, PersistentUsername, a)
+		if err != nil {
+			s.t.Errorf("Could not clean up after user %s: %v", PersistentUsername, errs.JoinMessage(err))
 		}
 	}
 
