@@ -19,142 +19,142 @@ func (b *buildPlanByCommitID) Query() string {
 							... on Commit {
 								__typename
 								build {
-								__typename
-								... on BuildPlanned {
-										buildPlanID
-										status
-										terminals {
-										tag
-										targetIDs
+									__typename
+									... on BuildPlanned {
+											buildPlanID
+											status
+											terminals {
+											tag
+											targetIDs
+										}
+									}
+									... on BuildStarted {
+											buildPlanID
+											status
+											terminals {
+											tag
+											targetIDs
+										}
+									}
+									... on BuildPlanning {
+											buildPlanID
+											status
+											terminals {
+											tag
+											targetIDs
+										}
+									}
+									... on PlanningError {
+										error
+										subErrors {
+										__typename
+										... on GenericSolveError {
+											path
+											message
+											isTransient
+											validationErrors
+										}
+										... on RemediableSolveError {
+											path
+											message
+											isTransient
+											validationErrors
+											suggestedRemediations {
+												remediationType
+												command
+												parameters
+											}
+										}
 									}
 								}
-							... on BuildStarted {
+								... on BuildReady {
 									buildPlanID
 									status
 									terminals {
-									tag
-									targetIDs
+										tag
+										targetIDs
 								}
-							}
-							... on BuildPlanning {
-									buildPlanID
-									status
-									terminals {
-									tag
-									targetIDs
-								}
-							}
-							... on PlanningError {
-								error
-								subErrors {
-								__typename
-								... on GenericSolveError {
-									path
-									message
-									isTransient
-									validationErrors
-								}
-								... on RemediableSolveError {
-									path
-									message
-									isTransient
-									validationErrors
-									suggestedRemediations {
-										remediationType
-										command
-										parameters
+									sources: targets {
+										... on Source {
+											targetID
+											name
+											namespace
+											version
+										}
+									}
+									steps: targets {
+										... on Step {
+											targetID
+											inputs {
+												tag
+												targetIDs
+											}
+											outputs
+										}
+									}
+									artifacts: targets {
+										... on ArtifactSucceeded {
+											__typename
+											targetID
+											mimeType
+											generatedBy
+											runtimeDependencies
+											status
+											logURL
+											url
+											checksum
+										}
+										... on ArtifactUnbuilt {
+											__typename
+											targetID
+											mimeType
+											generatedBy
+											runtimeDependencies
+											status
+										}
+										... on ArtifactBuilding {
+											__typename
+											targetID
+											mimeType
+											generatedBy
+											runtimeDependencies
+											status
+										}
+										... on ArtifactTransientlyFailed {
+											__typename
+											targetID
+											mimeType
+											generatedBy
+											runtimeDependencies
+											status
+											logURL
+											errors
+											attempts
+											nextAttemptAt
+										}
+										... on ArtifactPermanentlyFailed {
+											__typename
+											targetID
+											mimeType
+											generatedBy
+											runtimeDependencies
+											status
+											logURL
+											errors
+										}
 									}
 								}
 							}
 						}
-							... on BuildReady {
-								buildPlanID
-								status
-								terminals {
-									tag
-									targetIDs
-							}
-							sources: targets {
-								... on Source {
-									targetID
-									name
-									namespace
-									version
-								}
-							}
-							steps: targets {
-								... on Step {
-									targetID
-									inputs {
-										tag
-										targetIDs
-									}
-									outputs
-								}
-							}
-							artifacts: targets {
-								... on ArtifactSucceeded {
-									__typename
-									targetID
-									mimeType
-									generatedBy
-									runtimeDependencies
-									status
-									logURL
-									url
-									checksum
-								}
-								... on ArtifactUnbuilt {
-									__typename
-									targetID
-									mimeType
-									generatedBy
-									runtimeDependencies
-									status
-								}
-								... on ArtifactBuilding {
-									__typename
-									targetID
-									mimeType
-									generatedBy
-									runtimeDependencies
-									status
-								}
-								... on ArtifactTransientlyFailed {
-									__typename
-									targetID
-									mimeType
-									generatedBy
-									runtimeDependencies
-									status
-									logURL
-									errors
-									attempts
-									nextAttemptAt
-								}
-								... on ArtifactPermanentlyFailed {
-									__typename
-									targetID
-									mimeType
-									generatedBy
-									runtimeDependencies
-									status
-									logURL
-									errors
-								}
-							}
-						}
+					... on CommitNotFound {
+						message
 					}
 				}
-			... on CommitNotFound {
-				message
 			}
+			... on ProjectNotFound {
+				__typename
+				message
 		}
-	}
-	... on ProjectNotFound {
-		__typename
-		message
-	}
 	}
 }
 
