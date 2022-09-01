@@ -539,7 +539,7 @@ func (s *Setup) downloadArtifactWithProgress(unsignedURI string, targetFile stri
 		return errs.Wrap(err, "Could not parse artifact URL %s.", unsignedURI)
 	}
 
-	req, err := download.NewGetRequest(artifactURL.String())
+	req, err := download.NewRequest(artifactURL.String())
 	if err != nil {
 		return errs.Wrap(err, "Could not create artifact download request for %s.", artifactURL.String())
 	}

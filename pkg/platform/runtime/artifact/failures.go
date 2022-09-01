@@ -30,7 +30,7 @@ func NewFailedArtifactsFromBuild(buildStatus *headchef_models.V1BuildStatusRespo
 func NewFailedArtifactsFromBuildPlan(build model.Build) []FailedArtifact {
 	var failed []FailedArtifact
 	for _, a := range build.Artifacts {
-		// We may have to handle transient failures differently
+		// Should we be handing transient failures differently?
 		if a.Status == model.ArtifactFailedPermanently || a.Status == model.ArtifactFailedTransiently || len(a.Errors) > 0 {
 			failed = append(failed, FailedArtifact{ArtifactID: strfmt.UUID(a.TargetID), UnsignedLogURI: a.LogURL, ErrorMsg: strings.Join(a.Errors, "\n")})
 		}

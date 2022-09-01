@@ -23,10 +23,10 @@ type ArtifactBuildPlan struct {
 	Dependencies []ArtifactID
 }
 
-// ArtifactBuildPlanMap maps artifact ids to artifact information extracted from a recipe
+// ArtifactBuildPlanMap maps artifact ids to artifact information extracted from a build plan
 type ArtifactBuildPlanMap map[ArtifactID]ArtifactBuildPlan
 
-// ArtifactNamedBuildPlanMap maps artifact names to artifact information extracted from a recipe
+// ArtifactNamedBuildPlanMap maps artifact names to artifact information extracted from a build plan
 type ArtifactNamedBuildPlanMap map[string]ArtifactBuildPlan
 
 // NameWithVersion returns a string <name>@<version> if artifact has a version specified, otherwise it returns just the name

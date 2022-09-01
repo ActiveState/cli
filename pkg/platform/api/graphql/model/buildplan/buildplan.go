@@ -44,7 +44,7 @@ type Project struct {
 	Type   string `json:"__typename"`
 	Commit Commit `json:"commit"`
 
-	// Error fields
+	// Error field
 	Message string `json:"message"`
 }
 
@@ -52,7 +52,7 @@ type Commit struct {
 	Type  string `json:"__typename"`
 	Build Build  `json:"build"`
 
-	// Error fields
+	// Error field
 	Message string `json:"message"`
 }
 
@@ -85,9 +85,11 @@ type Artifact struct {
 	URL                 string   `json:"url"`
 	LogURL              string   `json:"logURL"`
 	Checksum            string   `json:"checksum"`
-	Errors              []string `json:"errors"`
-	Attempts            string   `json:"attempts"`
-	NextAttempt         string   `json:"nextAttempt"`
+
+	// Error fields
+	Errors      []string `json:"errors"`
+	Attempts    string   `json:"attempts"`
+	NextAttempt string   `json:"nextAttempt"`
 }
 
 type Step struct {

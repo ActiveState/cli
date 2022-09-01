@@ -21,7 +21,7 @@ import (
 )
 
 // Get takes a URL and returns the contents as bytes
-var Get func(req *GetRequest) ([]byte, error)
+var Get func(req *Request) ([]byte, error)
 
 var GetDirect = httpGet
 
@@ -31,9 +31,9 @@ type DownloadProgress interface {
 }
 
 // GetWithProgress takes a URL and returns the contents as bytes, it takes an optional second arg which will spawn a progressbar
-var GetWithProgress func(req *GetRequest, progress DownloadProgress) ([]byte, error)
+var GetWithProgress func(req *Request, progress DownloadProgress) ([]byte, error)
 
-type GetRequest struct {
+type Request struct {
 	*retryablehttp.Request
 }
 
@@ -52,25 +52,25 @@ func SetMocking(useMocking bool) {
 	}
 }
 
-func NewGetRequest(url string) (*GetRequest, error) {
+func NewRequest(url string) (*Request, error) {
 	req, err := retryablehttp.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not intialize new retryable http request")
 	}
 
-	return &GetRequest{req}, nil
+	return &Request{req}, nil
 }
 
-func httpGet(req *GetRequest) ([]byte, error) {
+func httpGet(req *Request) ([]byte, error) {
 	logging.Debug("Retrieving url: %s", req.URL.String())
 	return httpGetWithProgress(req, nil)
 }
 
-func httpGetWithProgress(req *GetRequest, progress DownloadProgress) ([]byte, error) {
+func httpGetWithProgress(req *Request, progress DownloadProgress) ([]byte, error) {
 	return httpGetWithProgressRetry(req, progress, 1, 3)
 }
 
-func httpGetWithProgressRetry(req *GetRequest, prg DownloadProgress, attempt int, retries int) ([]byte, error) {
+func httpGetWithProgressRetry(req *Request, prg DownloadProgress, attempt int, retries int) ([]byte, error) {
 	logging.Debug("Retrieving url: %s, attempt: %d", req.URL.String(), attempt)
 	client := retryhttp.NewClient(0 /* 0 = no timeout */, retries)
 	resp, err := client.Do(req.Request)
@@ -120,12 +120,12 @@ func httpGetWithProgressRetry(req *GetRequest, prg DownloadProgress, attempt int
 	return dst.Bytes(), nil
 }
 
-func _testHTTPGetWithProgress(req *GetRequest, progress DownloadProgress) ([]byte, error) {
+func _testHTTPGetWithProgress(req *Request, progress DownloadProgress) ([]byte, error) {
 	return _testHTTPGet(req)
 }
 
 // _testHTTPGet is used when in tests, this cannot be in the test itself as that would limit it to only that one test
-func _testHTTPGet(req *GetRequest) ([]byte, error) {
+func _testHTTPGet(req *Request) ([]byte, error) {
 	path := strings.Replace(req.URL.String(), constants.APIArtifactURL, "", 1)
 	path = filepath.Join(environment.GetRootPathUnsafe(), "test", path)
 
