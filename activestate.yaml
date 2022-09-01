@@ -217,6 +217,8 @@ scripts:
       if [ "$GOOS" == "windows" ]; then
         TARGET="${BUILD_REMOTE_INSTALLER_TARGET}.exe"
       fi
+      GOFLAGS="" go install github.com/akavel/rsrc@latest
+      rsrc -ico internal/assets/contents/icon.ico
       go build -tags "$GO_BUILD_TAGS" -o $BUILD_TARGET_DIR/$TARGET ./cmd/state-remote-installer
   - name: build-updlg-all
     description: Invokes all build steps for the update dialog
