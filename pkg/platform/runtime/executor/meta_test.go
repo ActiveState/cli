@@ -2,7 +2,7 @@ package executor
 
 import (
 	"bytes"
-	"fmt"
+	"reflect"
 	"testing"
 
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
@@ -28,6 +28,13 @@ func TestMeta(t *testing.T) {
 		t.Fatalf("unexpected error: %s", err)
 	}
 
-	fmt.Println(buf.String())
+	t.Logf(buf.String())
 
+	mx, err := NewMetaFromReader(buf)
+	if err != nil {
+		t.Fatalf("unexpected error: %s", err)
+	}
+	if !reflect.DeepEqual(mx, m) {
+		t.Fatalf("got %v, want %v", mx, m)
+	}
 }

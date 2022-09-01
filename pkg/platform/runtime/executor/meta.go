@@ -81,7 +81,7 @@ func NewMetaFromReader(r io.Reader) (*Meta, error) {
 			m.Env = envMap
 		case 2:
 			binsTxt := strings.TrimPrefix(txt, binsDelim)
-			m.Bins = strings.Split(txt, binsTxt)
+			m.Bins = strings.Split(binsTxt, binsDelim)
 		case 3:
 			m.CommitUUID = strings.TrimPrefix(txt, commitDelim)
 		case 4:
