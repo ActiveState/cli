@@ -20,7 +20,6 @@ func main() {
 }
 
 func run() error {
-	channel := constants.BranchName
 	version := constants.RemoteInstallerVersion
 
 	goos := runtime.GOOS
@@ -31,8 +30,8 @@ func run() error {
 	}
 	platform := goos + "-" + goarch
 
-	relChannelPath := filepath.Join("remote-installer", channel, platform)
-	relVersionedPath := filepath.Join("remote-installer", channel, version, platform)
+	relPath := filepath.Join("remote-installer", platform)
+	relVersionedPath := filepath.Join("remote-installer", version, platform)
 
 	buildPath := filepath.Join(environment.GetRootPathUnsafe(), "build")
 
@@ -45,8 +44,8 @@ func run() error {
 		return errs.New("source file does not exist: %s", sourceFile)
 	}
 
-	fmt.Printf("Copying %s to %s\n", sourceFile, relChannelPath)
-	if err := fileutils.CopyFile(sourceFile, filepath.Join(buildPath, relChannelPath, constants.StateRemoteInstallerCmd+ext)); err != nil {
+	fmt.Printf("Copying %s to %s\n", sourceFile, relPath)
+	if err := fileutils.CopyFile(sourceFile, filepath.Join(buildPath, relPath, constants.StateRemoteInstallerCmd+ext)); err != nil {
 		return errs.Wrap(err, "failed to copy source file to channel path")
 	}
 
