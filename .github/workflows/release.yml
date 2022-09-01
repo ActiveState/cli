@@ -10,7 +10,7 @@ jobs:
   # === OS Specific Job (runs on each OS) ===
   remote-installer:
     name: Remote Installer
-    if: github.event_name == 'create' && github.event.ref_type == 'tag' && startsWith('release/remote-installer', github.event.ref)
+    if: github.event_name == 'create' && github.event.ref_type == 'tag' && startsWith(github.event.ref, 'release/remote-installer')
     timeout-minutes: 30
     runs-on: windows-2019
     env:
