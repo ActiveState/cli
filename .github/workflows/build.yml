@@ -121,10 +121,6 @@ jobs:
                 "Args": ["state", "run", "build-installer"]
             },
             {
-                "ID": "Build-Remote-Installer",
-                "Args": ["state", "run", "build-remote-installer"]
-            },
-            {
                 "ID": "Build-Install-Scripts",
                 "Args": ["state", "run", "build-install-scripts"]
             },
@@ -174,11 +170,6 @@ jobs:
         name: "Build: Installer"
         shell: bash
         run: parallelize results Build-Installer
-
-      - # === "Build: Remote Installer" ===
-        name: "Build: Remote Installer"
-        shell: bash
-        run: parallelize results Build-Remote-Installer
 
       - # === "Build: Install Scripts" ===
         name: "Build: Install Scripts"

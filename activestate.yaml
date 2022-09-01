@@ -188,8 +188,6 @@ scripts:
       $scripts.build.path._posix()
       echo "Building State Installer"
       $scripts.build-installer.path._posix()
-      echo "Building State Remote Installer"
-      $scripts.build-remote-installer.path._posix()
       echo "Building State Service"
       $scripts.build-svc.path._posix()
       echo "Building State Executor"
