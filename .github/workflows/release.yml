@@ -10,7 +10,6 @@ jobs:
   # === OS Specific Job (runs on each OS) ===
   remote-installer:
     name: Remote Installer
-    if: github.event_name == 'create' && github.event.ref_type == 'tag' && startsWith(github.event.ref, 'release/remote-installer')
     timeout-minutes: 30
     runs-on: windows-2019
     env:
@@ -21,6 +20,18 @@ jobs:
 
     # === OS Specific Steps ===
     steps:
+      - # === Verify if needs to run ===
+        name: Verify if needs to run
+        shell: bash
+        run: |
+          if [[ "${{ github.event.ref_type }}" != "tag" ]]; then
+            echo "ref_type should be tag but is '${{ github.event.ref_type }}'"
+            exit 1
+          fi
+          if [[ "${{ github.event.ref }}" != release\/remote-installer* ]]; then
+            echo "ref should start with release/remote-installer but is '${{ github.event.ref }}'"
+            exit 1
+          fi
 
       - # Checkout Code
         name: Checkout code
