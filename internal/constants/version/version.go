@@ -11,12 +11,12 @@ import (
 	"github.com/blang/semver"
 )
 
-func Detect() (semver.Version, error) {
+func Detect(relPath string) (semver.Version, error) {
 	root, err := environment.GetRootPath()
 	if err != nil {
 		return semver.Version{}, err
 	}
-	versionFile := filepath.Join(root, "version.txt")
+	versionFile := filepath.Join(root, relPath, "version.txt")
 	_, err = os.Stat(versionFile)
 	if err != nil {
 		return semver.Version{}, fmt.Errorf("Could not access version.txt file at %s: %w", versionFile, err)

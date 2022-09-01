@@ -87,6 +87,9 @@ scripts:
 
       echo "# Remove temp dir"
       rm -rf $TEMPDIR
+  - name: generate-remote-install-deployment
+    language: bash
+    value: go run scripts/ci/deploy-generator/remote-installer/main.go "$@"
   - name: generate-graph
     language: bash
     description: Generates graph server and client files
