@@ -7,12 +7,33 @@ name: Release
 # === JOBS ===
 jobs:
 
+  debug:
+    name: Debug
+    runs-on: windows-2019
+
+    steps:
+      -
+        name: Env
+        shell: bash
+        continue-on-error: true
+        run: printenv
+      -
+        name: Event Name
+        shell: bash
+        continue-on-error: true
+        run: echo ${{ toJson(github.event_name) }}
+      -
+        name: Event Data
+        shell: bash
+        continue-on-error: true
+        run: echo ${{ toJson(github.event) }}
+
   # === OS Specific Job (runs on each OS) ===
   remote-installer:
     name: Remote Installer
     if: github.event_name == 'create' && github.event.create.ref_type == 'tag' && startsWith('release/remote-installer', github.event.create.ref)
     timeout-minutes: 30
-    runs-on: ubuntu-20.04
+    runs-on: windows-2019
     env:
       ACTIVESTATE_CLI_DISABLE_RUNTIME: true
       GOFLAGS: -mod=vendor
