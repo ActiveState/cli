@@ -18,6 +18,7 @@ type ArtifactBuildPlan struct {
 	Namespace        string
 	Version          *string
 	RequestedByOrder bool
+	URL              string
 
 	generatedBy string
 
@@ -95,6 +96,7 @@ func (a ArtifactBuildPlanMap) build(baseID string, artifacts []*model.Artifact) 
 				RequestedByOrder: true,
 				generatedBy:      artifact.GeneratedBy,
 				Dependencies:     uniqueDeps,
+				URL:              artifact.URL,
 			}
 		}
 	}
@@ -112,6 +114,7 @@ func buildRuntimeDependencies(dependencyID string, artifacts []*model.Artifact, 
 	return deps
 }
 
+// Can we combine this with the above functions?
 func (a ArtifactBuildPlan) updateWithSourceInfo(generatedByID string, steps []*model.Step, sources []*model.Source) (ArtifactBuildPlan, error) {
 	for _, step := range steps {
 		if step.TargetID != generatedByID {
@@ -134,6 +137,7 @@ func (a ArtifactBuildPlan) updateWithSourceInfo(generatedByID string, steps []*m
 						Namespace:        source.Namespace,
 						Version:          &source.Version,
 						Dependencies:     a.Dependencies,
+						URL:              a.URL,
 					}, nil
 				}
 			}

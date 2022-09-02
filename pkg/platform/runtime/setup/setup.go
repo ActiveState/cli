@@ -293,8 +293,8 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 	}
 
 	// The artifacts above have been processed to only the runtime dependencies.
-	// When we send the buildplan here it is not processed, need to update the build
-	// plan before we send it or in the DownloadsFromBuild function
+	// When we send the buildplan here it is not processed, we could update the
+	// buildplan before we send it or just send the artifacts.
 	downloads, err := setup.DownloadsFromBuild(*buildResult.Build, artifacts)
 	if err != nil {
 		if errors.Is(err, artifact.CamelRuntimeBuilding) {
