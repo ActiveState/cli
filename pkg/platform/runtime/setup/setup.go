@@ -11,6 +11,8 @@ import (
 	"sync"
 
 	"github.com/ActiveState/cli/internal/analytics"
+	anaConsts "github.com/ActiveState/cli/internal/analytics/constants"
+	"github.com/ActiveState/cli/internal/analytics/dimensions"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/download"
 	"github.com/ActiveState/cli/internal/errs"
@@ -20,6 +22,7 @@ import (
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/proxyreader"
 	"github.com/ActiveState/cli/internal/rollbar"
+	"github.com/ActiveState/cli/internal/rtutils/p"
 	"github.com/ActiveState/cli/internal/unarchiver"
 	bpModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model/buildplan"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef"
@@ -38,6 +41,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup/implementations/camel"
 	"github.com/ActiveState/cli/pkg/platform/runtime/store"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
+	"github.com/ActiveState/cli/pkg/project"
 	"github.com/faiface/mainthread"
 	"github.com/gammazero/workerpool"
 	"github.com/go-openapi/strfmt"
@@ -280,6 +284,12 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 	buildPlan := model.NewBuildPlanner()
 	buildResult, err := buildPlan.FetchBuildResult(s.target.CommitUUID(), s.target.Owner(), s.target.Name())
 	if err != nil {
+		// TODO: Reenable and update when we have a build plan with errors
+		// serr := &apimodel.SolverError{}
+		// if errors.As(err, &serr) {
+		// 	s.events.SolverError(serr)
+		// 	return nil, formatSolverError(serr)
+		// }
 		return nil, errs.Wrap(err, "Could not fetch build plan")
 	}
 
@@ -313,13 +323,28 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 
 	s.events.ParsedArtifacts(setup.ResolveArtifactName, downloads, failedArtifacts)
 
+	// Analytics data to send.
+	dimensions := &dimensions.Values{
+		CommitID: p.StrP(s.target.CommitUUID().String()),
+	}
+
+	// send analytics build event, if a new runtime has to be built in the cloud
+	if buildResult.BuildStatus == headchef.Started {
+		s.analytics.Event(anaConsts.CatRuntime, anaConsts.ActRuntimeBuild, dimensions)
+		ns := project.Namespaced{
+			Owner:   s.target.Owner(),
+			Project: s.target.Name(),
+		}
+		s.analytics.EventWithLabel(anaConsts.CatRuntime, anaConsts.ActBuildProject, ns.String(), dimensions)
+	}
+
+	// We don't have a failed build status so this handling will likely have to change
 	if buildResult.Build.Status == bpModel.BuildFailed {
 		s.events.BuildFinished()
 		return nil, locale.NewError("headchef_build_failure", "Build Failed: {{.V0}}", buildResult.Build.Error)
 	}
 
 	oldBuildPlan, err := s.store.BuildPlan()
-	logging.Debug("old build plan: %v", oldBuildPlan)
 	if err != nil {
 		logging.Debug("Could not load existing recipe.  Maybe it is a new installation: %v", err)
 	}
