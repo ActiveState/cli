@@ -13,8 +13,10 @@ const net = std.net;
 const os = std.os;
 const path = std.fs.path;
 const process = std.process;
+const time = std.time;
 
 const executorName = "state-exec";
+const envVarKeyVerbose = "ACTIVESTATE_VERBOSE";
 
 const initMsgDataErrPrefix = "InitMsgData_";
 const initMetaDataErrPrefix = "InitMetaData_";
@@ -34,6 +36,30 @@ const Error = error{
     SetRuntimeUserArgs,
     ChildProcInit,
     ChildProcSpawn,
+};
+
+const DebugPrint = struct {
+    start: i128,
+    w: fs.File.Writer,
+
+    const Self = @This();
+
+    pub fn init(w: fs.File.Writer) DebugPrint {
+        return DebugPrint{
+            .start = time.nanoTimestamp(),
+            .w = w,
+        };
+    }
+
+    pub fn print(self: Self, comptime format: []const u8, args: anytype) void {
+        if (!mem.eql(u8, os.getenv(envVarKeyVerbose) orelse "", "true")) {
+            return;
+        }
+        const now = time.nanoTimestamp();
+
+        self.w.print("[DEBUG {d: >9}] ", .{now - self.start}) catch return;
+        self.w.print(format, args) catch return;
+    }
 };
 
 pub fn main() !void {
@@ -75,11 +101,16 @@ pub fn main() !void {
 }
 
 fn run(stderr: fs.File.Writer) Error!u8 {
-    var arena = heap.ArenaAllocator.init(heap.page_allocator);
+    const debug = DebugPrint.init(stderr);
+    debug.print("run hello\n", .{});
+    defer debug.print("run goodbye\n", .{});
+
+    var arena = heap.Allocator.init(heap.page_allocator);
     defer arena.deinit();
     const a = arena.allocator();
 
     const msgData = try MsgData.init(a);
+    debug.print("pid: {d}, exec: {s}\n", .{ msgData.pid, msgData.exec });
     const execDir = path.dirname(msgData.exec) orelse return Error.DirOfSelfPath;
     const execName = path.basename(msgData.exec);
     var metaData = try MetaData.init(a, execDir, execName);
