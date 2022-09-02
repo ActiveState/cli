@@ -226,7 +226,9 @@ const MetaData = struct {
                     var split = mem.split(u8, trimmedLine, MetaData.binsDelim);
                     while (split.next()) |binary| {
                         if (mem.eql(u8, execName, path.basename(binary))) {
-                            bin = binary;
+                            const dim = a.alloc(u8, binary.len) catch return Error.InitMetaData_AllocLine;
+                            mem.copy(u8, dim, binary);
+                            bin = dim;
                             break;
                         }
                     }
