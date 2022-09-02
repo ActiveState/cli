@@ -41,6 +41,7 @@ const Error = error{
 const DebugPrint = struct {
     start: i128,
     w: fs.File.Writer,
+    verbose: bool,
 
     const Self = @This();
 
@@ -48,11 +49,12 @@ const DebugPrint = struct {
         return DebugPrint{
             .start = time.nanoTimestamp(),
             .w = w,
+            .verbose = mem.eql(u8, os.getenv(envVarKeyVerbose) orelse "", "true"),
         };
     }
 
     pub fn print(self: Self, comptime format: []const u8, args: anytype) void {
-        if (!mem.eql(u8, os.getenv(envVarKeyVerbose) orelse "", "true")) {
+        if (!self.verbose) {
             return;
         }
         const now = time.nanoTimestamp();
@@ -105,15 +107,16 @@ fn run(stderr: fs.File.Writer) Error!u8 {
     debug.print("run hello\n", .{});
     defer debug.print("run goodbye\n", .{});
 
-    var arena = heap.Allocator.init(heap.page_allocator);
+    var arena = heap.ArenaAllocator.init(heap.page_allocator);
     defer arena.deinit();
     const a = arena.allocator();
 
     const msgData = try MsgData.init(a);
-    debug.print("pid: {d}, exec: {s}\n", .{ msgData.pid, msgData.exec });
+    debug.print("message data - pid: {d}, exec: {s}\n", .{ msgData.pid, msgData.exec });
     const execDir = path.dirname(msgData.exec) orelse return Error.DirOfSelfPath;
     const execName = path.basename(msgData.exec);
     var metaData = try MetaData.init(a, execDir, execName);
+    debug.print("meta data - sock: {s}, bin: {s}\n", .{ metaData.sock, metaData.bin });
     defer metaData.deinit();
 
     const clientThread = Thread.spawn(.{}, sendMsgToServer, .{ a, stderr, metaData.sock, msgData }) catch {
