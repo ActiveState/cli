@@ -45,11 +45,13 @@ const DebugPrint = struct {
 
     const Self = @This();
 
-    pub fn init(w: fs.File.Writer) DebugPrint {
+    pub fn init(a: mem.Allocator, w: fs.File.Writer) DebugPrint {
+        const verboseEnvVarVal = process.getEnvVarOwned(a, envVarKeyVerbose) catch "";
+
         return DebugPrint{
             .start = time.nanoTimestamp(),
             .w = w,
-            .verbose = mem.eql(u8, os.getenv(envVarKeyVerbose) orelse "", "true"),
+            .verbose = mem.eql(u8, verboseEnvVarVal, "true"),
         };
     }
 
@@ -103,13 +105,13 @@ pub fn main() !void {
 }
 
 fn run(stderr: fs.File.Writer) Error!u8 {
-    const debug = DebugPrint.init(stderr);
-    debug.print("run hello\n", .{});
-    defer debug.print("run goodbye\n", .{});
-
     var arena = heap.ArenaAllocator.init(heap.page_allocator);
     defer arena.deinit();
     const a = arena.allocator();
+
+    const debug = DebugPrint.init(a, stderr);
+    debug.print("run hello\n", .{});
+    defer debug.print("run goodbye\n", .{});
 
     const msgData = try MsgData.init(a);
     debug.print("message data - pid: {d}, exec: {s}\n", .{ msgData.pid, msgData.exec });
