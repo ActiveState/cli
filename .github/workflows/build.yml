@@ -296,6 +296,7 @@ jobs:
           exit $CODE
         continue-on-error: ${{ github.event_name == 'schedule' }}
         env:
+          ACTIVESTATE_VERBOSE: true
           INTEGRATION_TEST_USERNAME: ${{ secrets.INTEGRATION_TEST_USERNAME }}
           INTEGRATION_TEST_PASSWORD: ${{ secrets.INTEGRATION_TEST_PASSWORD }}
           INTEGRATION_TEST_TOKEN: ${{ secrets.INTEGRATION_TEST_TOKEN }}
