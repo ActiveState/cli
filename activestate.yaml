@@ -214,12 +214,13 @@ scripts:
       set -e
       $constants.SET_ENV
       TARGET=$BUILD_REMOTE_INSTALLER_TARGET
-      if [ "$GOOS" == "windows" ]; then
+      if [[ "$GOOS" == "windows" || "$OS" == "Windows_NT" ]]; then
         TARGET="${BUILD_REMOTE_INSTALLER_TARGET}.exe"
       fi
-      GOFLAGS="" go install github.com/akavel/rsrc@latest
-      rsrc -ico internal/assets/contents/icon.ico
-      go build -tags "$GO_BUILD_TAGS" -o $BUILD_TARGET_DIR/$TARGET ./cmd/state-remote-installer
+      GOFLAGS="" go install github.com/josephspurrier/goversioninfo/cmd/goversioninfo@latest
+      cd cmd/state-remote-installer
+      go generate
+      go build -tags "$GO_BUILD_TAGS" -o ../../$BUILD_TARGET_DIR/$TARGET .
   - name: build-updlg-all
     description: Invokes all build steps for the update dialog
     standalone: true
