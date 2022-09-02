@@ -48,13 +48,13 @@ func (bp *BuildPlanner) FetchBuildResult(commitID strfmt.UUID, _, _ string) (*Bu
 
 	return &BuildResult{
 		BuildEngine: Alternative,
-		Build:       &resp.Project.Commit.Build,
+		Build:       resp.Project.Commit.Build,
 		BuildReady:  resp.Project.Commit.Build.Status == model.BuildReady,
 	}, nil
 }
 
 func removeEmptyTargets(bp *model.BuildPlan) {
-	var steps []model.Step
+	var steps []*model.Step
 	for _, step := range bp.Project.Commit.Build.Steps {
 		if step.TargetID == "" {
 			continue
@@ -62,7 +62,7 @@ func removeEmptyTargets(bp *model.BuildPlan) {
 		steps = append(steps, step)
 	}
 
-	var sources []model.Source
+	var sources []*model.Source
 	for _, source := range bp.Project.Commit.Build.Sources {
 		if source.TargetID == "" {
 			continue
@@ -70,7 +70,7 @@ func removeEmptyTargets(bp *model.BuildPlan) {
 		sources = append(sources, source)
 	}
 
-	var artifacts []model.Artifact
+	var artifacts []*model.Artifact
 	for _, artifact := range bp.Project.Commit.Build.Artifacts {
 		if artifact.TargetID == "" {
 			continue

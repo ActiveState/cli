@@ -8,6 +8,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	model "github.com/ActiveState/cli/pkg/platform/api/graphql/model/buildplan"
 	"github.com/go-openapi/strfmt"
+	"github.com/thoas/go-funk"
 )
 
 // ArtifactBuildPlan comprises useful information about an artifact that we extracted from a build plan
@@ -41,7 +42,7 @@ func (a ArtifactBuildPlan) NameWithVersion() string {
 func NewMapFromBuildPlan(build *model.Build) ArtifactBuildPlanMap {
 	res := make(ArtifactBuildPlanMap)
 	if build == nil {
-		return res
+		return nil
 	}
 
 	var targetIDs []string
@@ -71,27 +72,47 @@ func NewMapFromBuildPlan(build *model.Build) ArtifactBuildPlanMap {
 	return res
 }
 
-func (a ArtifactBuildPlanMap) build(baseID string, artifacts []model.Artifact) {
+// TODO: These dependency resolution functions can be cleaned up and simplified
+func (a ArtifactBuildPlanMap) build(baseID string, artifacts []*model.Artifact) {
+	var deps []strfmt.UUID
 	for _, artifact := range artifacts {
 		if artifact.TargetID == baseID {
-			entry := ArtifactBuildPlan{
+			for _, depID := range artifact.RuntimeDependencies {
+				deps = append(deps, strfmt.UUID(depID))
+				deps = append(deps, buildRuntimeDependencies(depID, artifacts, deps)...)
+				a.build(depID, artifacts)
+			}
+
+			var uniqueDeps []strfmt.UUID
+			for _, dep := range deps {
+				if !funk.Contains(uniqueDeps, dep) {
+					uniqueDeps = append(uniqueDeps, dep)
+				}
+			}
+
+			a[strfmt.UUID(artifact.TargetID)] = ArtifactBuildPlan{
 				ArtifactID:       strfmt.UUID(artifact.TargetID),
 				RequestedByOrder: true,
 				generatedBy:      artifact.GeneratedBy,
+				Dependencies:     uniqueDeps,
 			}
-
-			var deps []strfmt.UUID
-			for _, dep := range artifact.RuntimeDependencies {
-				deps = append(deps, strfmt.UUID(dep))
-				a.build(dep, artifacts)
-			}
-			entry.Dependencies = deps
-			a[strfmt.UUID(artifact.TargetID)] = entry
 		}
 	}
 }
 
-func (a ArtifactBuildPlan) updateWithSourceInfo(generatedByID string, steps []model.Step, sources []model.Source) (ArtifactBuildPlan, error) {
+func buildRuntimeDependencies(dependencyID string, artifacts []*model.Artifact, deps []strfmt.UUID) []strfmt.UUID {
+	for _, artifact := range artifacts {
+		if artifact.TargetID == dependencyID {
+			for _, depID := range artifact.RuntimeDependencies {
+				deps = append(deps, strfmt.UUID(depID))
+				buildRuntimeDependencies(depID, artifacts, deps)
+			}
+		}
+	}
+	return deps
+}
+
+func (a ArtifactBuildPlan) updateWithSourceInfo(generatedByID string, steps []*model.Step, sources []*model.Source) (ArtifactBuildPlan, error) {
 	for _, step := range steps {
 		if step.TargetID != generatedByID {
 			continue
@@ -112,6 +133,7 @@ func (a ArtifactBuildPlan) updateWithSourceInfo(generatedByID string, steps []mo
 						Name:             source.Name,
 						Namespace:        source.Namespace,
 						Version:          &source.Version,
+						Dependencies:     a.Dependencies,
 					}, nil
 				}
 			}

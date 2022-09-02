@@ -37,12 +37,12 @@ const (
 )
 
 type BuildPlan struct {
-	Project Project `json:"project"`
+	Project *Project `json:"project"`
 }
 
 type Project struct {
-	Type   string `json:"__typename"`
-	Commit Commit `json:"commit"`
+	Type   string  `json:"__typename"`
+	Commit *Commit `json:"commit"`
 
 	// Error field
 	Message string `json:"message"`
@@ -50,24 +50,24 @@ type Project struct {
 
 type Commit struct {
 	Type  string `json:"__typename"`
-	Build Build  `json:"build"`
+	Build *Build `json:"build"`
 
 	// Error field
 	Message string `json:"message"`
 }
 
 type Build struct {
-	Type        string        `json:"__typename"`
-	BuildPlanID string        `json:"buildPlanID"`
-	Status      string        `json:"status"`
-	Terminals   []NamedTarget `json:"terminals"`
-	Artifacts   []Artifact    `json:"artifacts"`
-	Steps       []Step        `json:"steps"`
-	Sources     []Source      `json:"sources"`
+	Type        string         `json:"__typename"`
+	BuildPlanID string         `json:"buildPlanID"`
+	Status      string         `json:"status"`
+	Terminals   []*NamedTarget `json:"terminals"`
+	Artifacts   []*Artifact    `json:"artifacts"`
+	Steps       []*Step        `json:"steps"`
+	Sources     []*Source      `json:"sources"`
 
 	// Error fields
-	Error     string     `json:"error"`
-	SubErrors []SubError `json:"subErrors"`
+	Error     string      `json:"error"`
+	SubErrors []*SubError `json:"subErrors"`
 }
 
 type NamedTarget struct {
@@ -93,9 +93,9 @@ type Artifact struct {
 }
 
 type Step struct {
-	TargetID string        `json:"targetID"`
-	Inputs   []NamedTarget `json:"inputs"`
-	Outputs  []string      `json:"outputs"`
+	TargetID string         `json:"targetID"`
+	Inputs   []*NamedTarget `json:"inputs"`
+	Outputs  []string       `json:"outputs"`
 }
 
 type Source struct {
@@ -107,7 +107,7 @@ type Source struct {
 
 type PlanningError struct {
 	Error    string `json:"error"`
-	SubError SubError
+	SubError *SubError
 }
 
 type SubError struct {
@@ -116,7 +116,7 @@ type SubError struct {
 	Message               string   `json:"message"`
 	IsTransient           bool     `json:"isTransient"`
 	ValidationErrors      []string `json:"validationErrors"`
-	RemediableSolverError RemediableSolveError
+	RemediableSolverError *RemediableSolveError
 }
 
 type RemediableSolveError struct {
@@ -124,7 +124,7 @@ type RemediableSolveError struct {
 	Message              string `json:"message"`
 	IsTransient          bool   `json:"isTransient"`
 	ErrorType            string `json:"errorType"`
-	SuggestedRemediation SolverErrorRemediation
+	SuggestedRemediation *SolverErrorRemediation
 }
 
 type SolverErrorRemediation struct {
@@ -135,8 +135,8 @@ type SolverErrorRemediation struct {
 
 type SolveErrorIncompatibility struct {
 	Type                              string `json:"type"`
-	SolveErrorPackageIncompatibility  SolveErrorPackageIncompatibility
-	SolveErrorPlatformIncompatibility SolveErrorPlatformIncompatibility
+	SolveErrorPackageIncompatibility  *SolveErrorPackageIncompatibility
+	SolveErrorPlatformIncompatibility *SolveErrorPlatformIncompatibility
 }
 
 type SolveErrorPackageIncompatibility struct {
