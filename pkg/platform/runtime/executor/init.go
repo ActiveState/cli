@@ -157,7 +157,7 @@ func isOwnedByUs(fileContents []byte) bool {
 }
 
 func copyExecutor(destDir, exe, srcExec string) error {
-	name := NameForExe(filepath.Base(exe))
+	name := filepath.Base(exe)
 	target := filepath.Clean(filepath.Join(destDir, name))
 
 	if strings.HasSuffix(exe, exeutils.Extension+exeutils.Extension) {
