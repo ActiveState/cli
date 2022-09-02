@@ -3,10 +3,8 @@ package executor
 import (
 	"io/ioutil"
 	"path/filepath"
-	"runtime"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/ActiveState/cli/internal/errs"
@@ -38,7 +36,7 @@ func TestExecutor(t *testing.T) {
 
 	// Verify executors
 	for _, exe := range exes {
-		path := filepath.Join(binPath, NameForExe(filepath.Base(exe)))
+		path := filepath.Join(binPath, filepath.Base(exe))
 		t.Run("Executor Exists", func(t *testing.T) {
 			if !fileutils.FileExists(path) {
 				t.Errorf("Could not locate exe: %s", path)
@@ -63,12 +61,4 @@ func TestExecutor(t *testing.T) {
 		files := fileutils.ListDirSimple(binPath, false)
 		require.Len(t, files, 0, "Cleanup should remove all exes")
 	})
-}
-
-func TestNameForExe(t *testing.T) {
-	if runtime.GOOS != "windows" {
-		return // Pointless to test outside windows
-	}
-
-	assert.Equal(t, "filename.bat", NameForExe("filename.exe"))
 }
