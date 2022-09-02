@@ -119,6 +119,13 @@ fn run(stderr: fs.File.Writer) Error!u8 {
     const execName = path.basename(msgData.exec);
     var metaData = try MetaData.init(a, execDir, execName);
     debug.print("meta data - sock: {s}, bin: {s}\n", .{ metaData.sock, metaData.bin });
+    if (debug.verbose) {
+        debug.print("meta data - env...\n", .{});
+        var iter = metaData.env.iterator();
+        while (iter.next()) |entry| {
+            debug.print("            env - kv: {s}={s}\n", .{ entry.key_ptr.*, entry.value_ptr.* });
+        }
+    }
     defer metaData.deinit();
 
     const clientThread = Thread.spawn(.{}, sendMsgToServer, .{ a, stderr, metaData.sock, msgData }) catch {
