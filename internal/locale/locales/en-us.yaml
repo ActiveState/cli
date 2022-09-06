@@ -185,6 +185,10 @@ tos_disclaimer:
     Your use of the ActiveState Platform is subject to the Terms of Service.
     You can review the Terms of Service at:
       {{.V0}}
+tos_disclaimer_prompt:
+  other: |
+    
+    By continuing you accept the Terms of Service. Continue?
 tos_acceptance:
   other: Do you accept the ActiveState Platform Terms of Service?
 tos_not_accepted:
@@ -1968,3 +1972,5 @@ svcctl_wait_timeout:
     If this problem persists please report it on our forums: [ACTIONABLE]{{.V2}}[/RESET]
 err_autostart_app:
   other: Could not create new autostart app
+install_remote_title:
+  other: This will install the State Tool

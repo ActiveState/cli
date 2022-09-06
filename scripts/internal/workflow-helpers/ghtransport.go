@@ -42,6 +42,10 @@ SOFTWARE.
 const (
 	ctxId      = "id"
 	writeDelay = 720 * time.Millisecond // https://github.com/google/go-github/issues/431#issuecomment-248767702
+	// The above writeDelay is the minimum interval to avoid rate limiting as long as is only one
+	// job using the GitHub API at a time. Since this is likely not the case for us, we need a tunable
+	// parameter that can easily be adjusted based on experience.
+	multiplier = 1.5 // 150% of the minimum delay
 )
 
 // rateLimitTransport implements GitHub's best practices
@@ -65,8 +69,9 @@ func (rlt *rateLimitTransport) RoundTrip(req *http.Request) (*http.Response, err
 	// If you're making a large number of POST, PATCH, PUT, or DELETE requests
 	// for a single user or client ID, wait at least one second between each request.
 	if rlt.delayNextRequest {
-		logging.Debug("Sleeping %s between write operations", writeDelay)
-		time.Sleep(writeDelay)
+		delay := time.Duration(multiplier * float64(writeDelay))
+		logging.Debug("Sleeping %s between write operations", delay)
+		time.Sleep(delay)
 	}
 
 	rlt.delayNextRequest = isWriteMethod(req.Method)

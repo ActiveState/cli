@@ -61,7 +61,7 @@ func (v *VirtualEnvironment) GetEnv(inherit bool, useExecutors bool, projectDir 
 	}
 
 	if inherit {
-		envMap = inheritEnv(envMap)
+		envMap = osutils.InheritEnv(envMap)
 	}
 
 	return envMap, nil

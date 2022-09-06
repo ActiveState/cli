@@ -24,6 +24,7 @@ jobs:
   # === OS Specific Job (runs on each OS) ===
   os_specific:
     name: ${{ matrix.platform }}
+    timeout-minutes: 90
     strategy:
       matrix:
         go-version:
@@ -83,6 +84,7 @@ jobs:
       - # === Preprocess ===
         name: Preprocess
         shell: bash
+        timeout-minutes: 1
         run: state run preprocess
 
       - # === Parallel Tasks ===
@@ -117,6 +119,10 @@ jobs:
             {
                 "ID": "Build-Installer",
                 "Args": ["state", "run", "build-installer"]
+            },
+            {
+                "ID": "Build-Remote-Installer",
+                "Args": ["state", "run", "build-remote-installer"]
             },
             {
                 "ID": "Build-Install-Scripts",
@@ -168,6 +174,11 @@ jobs:
         name: "Build: Installer"
         shell: bash
         run: parallelize results Build-Installer
+
+      - # === "Build: Remote Installer" ===
+        name: "Build: Remote Installer"
+        shell: bash
+        run: parallelize results Build-Remote-Installer
 
       - # === "Build: Install Scripts" ===
         name: "Build: Install Scripts"
@@ -283,7 +294,7 @@ jobs:
           echo "Running integration tests with tags: $TEST_SUITE_TAGS (empty means every test not specifically tagged)"
 
           export TEST_SUITE_TAGS="$TEST_SUITE_TAGS"
-          TIMEOUT=10m
+          TIMEOUT=15m
           if [[ "$TEST_SUITE_TAGS" == "all" ]]; then
             TIMEOUT=60m
           fi

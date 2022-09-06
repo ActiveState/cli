@@ -26,17 +26,25 @@ func init() {
 		commitRef = sha
 	}
 
-	newVersion, err := version.Detect()
+	newVersion, err := version.Detect("")
 	if err != nil {
 		log.Fatalf("Could not parse new version: %s", err)
+	}
+
+	remoteInstallerVersion, err := version.Detect("cmd/state-remote-installer")
+	if err != nil {
+		log.Fatalf("Could not parse new remote installer version: %s", err)
 	}
 
 	Constants["BranchName"] = func() interface{} { return branchName }
 	Constants["BuildNumber"] = func() interface{} { return buildNumber }
 	Constants["RevisionHash"] = func() interface{} { return getCmdOutput("git rev-parse --verify " + commitRef) }
 	Constants["RevisionHashShort"] = func() interface{} { return getCmdOutput("git rev-parse --short " + commitRef) }
-	Constants["Version"] = func() interface{} { return mustVersionWithRevision(newVersion, Constants["RevisionHashShort"]().(string)) }
+	Constants["Version"] = func() interface{} {
+		return mustVersionWithRevision(newVersion, Constants["RevisionHashShort"]().(string))
+	}
 	Constants["VersionNumber"] = func() interface{} { return newVersion.String() }
+	Constants["RemoteInstallerVersion"] = func() interface{} { return remoteInstallerVersion.String() }
 	Constants["Date"] = func() interface{} { return time.Now().Format(constants.DateTimeFormatRecord) }
 	Constants["UserAgent"] = func() interface{} {
 		return fmt.Sprintf("%s/%s; %s", constants.CommandName, Constants["Version"](), branchName)

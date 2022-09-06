@@ -396,6 +396,9 @@ const StateCmd = "state"
 // StateInstallerCmd is the name of the state installer binary
 const StateInstallerCmd = "state-installer"
 
+// StateRemoteInstallerCmd is the name of the state remote installer binary
+const StateRemoteInstallerCmd = "state-remote-installer"
+
 // InstallerName is the name we give to our state-installer executable
 const InstallerName = "State Installer"
 
