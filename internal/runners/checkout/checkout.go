@@ -1,7 +1,7 @@
 package checkout
 
 import (
-	"os"
+	"path/filepath"
 
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/config"
@@ -63,12 +63,10 @@ func (u *Checkout) Run(params *Params) error {
 
 	checker.RunUpdateNotifier(u.svcModel, u.out)
 
-	if params.PreferredPath == "." {
-		path, err := os.Getwd()
-		if err != nil {
-			return locale.WrapInputError(err, "err_checkout_getwd", "Cannot determine working directory to checkout in")
-		}
-		params.PreferredPath = path
+	var err error
+	params.PreferredPath, err = filepath.Abs(params.PreferredPath)
+	if err != nil {
+		return locale.WrapInputError(err, "err_checkout_path_invalid", "Provided path appears to be invalid.")
 	}
 
 	logging.Debug("Checking out %s to %s", params.Namespace.String(), params.PreferredPath)
