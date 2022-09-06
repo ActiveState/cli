@@ -1,4 +1,4 @@
-package project
+package findproject
 
 import (
 	"sort"
@@ -18,6 +18,38 @@ type LocalProjectDoesNotExist struct{ *locale.LocalizedError }
 // IsLocalProjectDoesNotExistError checks if the error is a LocalProjectDoesNotExist.
 func IsLocalProjectDoesNotExistError(err error) bool {
 	return errs.Matches(err, &LocalProjectDoesNotExist{})
+}
+
+func FromInputByPriority(path string, ns *project.Namespaced, cfg projectfile.ConfigGetter, prompt prompt.Prompter) (*project.Project, error) {
+	// Priority #1 - PATH
+	if path != "" {
+		return FromPath(path, ns)
+	}
+
+	// Priority #2 - Namespace
+	if ns != nil {
+		return FromNamespaceLocal(ns, cfg, prompt)
+	}
+
+	// Priority #3 - Env
+	pj, err := project.FromEnv()
+	if err != nil {
+		return nil, locale.WrapError(err, "err_project_fromenv")
+	}
+
+	return pj, nil
+}
+
+func FromPath(path string, ns *project.Namespaced) (*project.Project, error) {
+	pj, err := project.FromPath(path)
+	if err != nil {
+		return nil, locale.WrapInputError(err, "err_project_frompath_notexist", "", path)
+	}
+
+	if ns != nil && ((ns.Owner != "" && pj.Namespace().Owner != ns.Owner) || pj.Namespace().Project != ns.Project) {
+		return nil, locale.WrapInputError(err, "err_project_namespace_missmatch", "", path, ns.String())
+	}
+	return pj, nil
 }
 
 // FromNamespaceLocal returns a local project (if any) that matches the given namespace.

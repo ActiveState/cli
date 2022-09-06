@@ -22,6 +22,7 @@ import (
 	"github.com/ActiveState/cli/internal/process"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runbits/activation"
+	"github.com/ActiveState/cli/internal/runbits/findproject"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
@@ -89,16 +90,22 @@ func (r *Activate) run(params *ActivateParams) error {
 
 	r.out.Notice(output.Title(locale.T("info_activating_state")))
 
-	// Detect target path
-	pathToUse, err := r.activateCheckout.Run(params.Namespace, params.Branch, params.PreferredPath)
+	proj, err := findproject.FromInputByPriority(params.PreferredPath, params.Namespace, r.config, r.prompt)
 	if err != nil {
-		return locale.WrapError(err, "err_activate_pathtouse", "Could not figure out what path to use.")
-	}
+		if !findproject.IsLocalProjectDoesNotExistError(err) {
+			return errs.Wrap(err, "could not get project") // runbits handles localization
+		}
 
-	// Detect target project
-	proj, err := r.pathToProject(pathToUse)
-	if err != nil {
-		return locale.WrapError(err, "err_activate_projecttouse", "Could not figure out what project to use.")
+		// Perform fresh checkout
+		pathToUse, err := r.activateCheckout.Run(params.Namespace, params.Branch, params.PreferredPath)
+		if err != nil {
+			return locale.WrapError(err, "err_activate_pathtouse", "Could not figure out what path to use.")
+		}
+		// Detect target project
+		proj, err = project.FromExactPath(pathToUse)
+		if err != nil {
+			return locale.WrapError(err, "err_activate_projecttouse", "Could not figure out what project to use.")
+		}
 	}
 
 	alreadyActivated := process.IsActivated(r.config)
@@ -233,14 +240,6 @@ func updateProjectFile(prj *project.Project, names *project.Namespaced, provided
 	}
 
 	return nil
-}
-
-func (r *Activate) pathToProject(path string) (*project.Project, error) {
-	projectToUse, err := project.FromExactPath(path)
-	if err != nil {
-		return nil, locale.WrapError(err, "err_activate_projectpath", "Could not find a valid project path.")
-	}
-	return projectToUse, nil
 }
 
 // warningForAdministrator prints a warning message if default activation is invoked by a Windows Administrator
