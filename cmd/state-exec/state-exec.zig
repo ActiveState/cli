@@ -125,6 +125,7 @@ fn run(stderr: fs.File.Writer) Error!u8 {
         while (iter.next()) |entry| {
             debug.print("            env - kv: {s}={s}\n", .{ entry.key_ptr.*, entry.value_ptr.* });
         }
+        debug.print("meta data - env done.\n", .{});
     }
     defer metaData.deinit();
 
