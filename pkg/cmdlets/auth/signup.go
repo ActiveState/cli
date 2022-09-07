@@ -7,7 +7,7 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/prompt"
 
-	"github.com/ActiveState/cli/pkg/cmdlets/prompts"
+	"github.com/ActiveState/cli/pkg/cmdlets/legalprompt"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/api/mono"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/users"
@@ -28,7 +28,7 @@ type signupInput struct {
 
 // Signup will prompt the user to create an account
 func Signup(cfg keypairs.Configurable, out output.Outputer, prompt prompt.Prompter, auth *authentication.Auth) error {
-	accepted, err := prompts.PromptOnlineTOS(out, prompt)
+	accepted, err := legalprompt.TOS(out, prompt)
 	if err != nil {
 		return err
 	}

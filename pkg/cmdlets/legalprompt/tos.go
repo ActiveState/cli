@@ -1,4 +1,4 @@
-package prompts
+package legalprompt
 
 import (
 	"io"
@@ -10,17 +10,10 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/prompt"
+	"github.com/ActiveState/cli/internal/rtutils/p"
 )
 
-type onlineTOS struct {
-	LegalText
-}
-
-func newOnlineTOS() *onlineTOS {
-	return &onlineTOS{}
-}
-
-func (tos *onlineTOS) GetLegalText() (string, error) {
+func DownloadTOS() (string, error) {
 	resp, err := http.Get(constants.TermsOfServiceURLText)
 	if err != nil {
 		return "", errs.Wrap(err, "Failed to download the Terms Of Service document.")
@@ -39,12 +32,7 @@ func (tos *onlineTOS) GetLegalText() (string, error) {
 	return tosText.String(), nil
 }
 
-func PromptOnlineTOS(out output.Outputer, prompt prompt.Prompter)(bool,error) {
-    tos := newOnlineTOS()
-    return PromptTOS(tos,out,prompt)
-}
-
-func PromptTOS(tos LegalText, out output.Outputer, prompt prompt.Prompter) (bool, error) {
+func TOS(out output.Outputer, prompt prompt.Prompter) (bool, error) {
 	choices := []string{
 		locale.T("tos_accept"),
 		locale.T("tos_not_accept"),
@@ -64,15 +52,12 @@ func PromptTOS(tos LegalText, out output.Outputer, prompt prompt.Prompter) (bool
 	case locale.T("tos_not_accept"):
 		return false, nil
 	case locale.T("tos_show_full"):
-		tosText, err := tos.GetLegalText()
+		tosText, err := DownloadTOS()
 		if err != nil {
-			return false, locale.WrapError(err, "err_download_tos", "Could not get terms of service text.")
+			return false, locale.WrapInputError(err, "err_download_tos")
 		}
-
 		out.Print(tosText)
-
-		tosConfirmDefault := true
-		return prompt.Confirm("", locale.T("tos_acceptance"), &tosConfirmDefault)
+		return prompt.Confirm("", locale.T("tos_acceptance"), p.BoolP(true))
 	}
 
 	return false, nil
