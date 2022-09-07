@@ -60,15 +60,15 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckoutMultiDir() {
 		fileutils.TempDirUnsafe(), fileutils.TempDirUnsafe(),
 	}
 
-	for _, dir := range dirs {
+	for x, dir := range dirs {
 		cp := ts.SpawnWithOpts(
-			e2e.WithArgs("checkout", "ActiveState-CLI/Python3"),
+			e2e.WithArgs("checkout", "ActiveState-CLI/Python3", "."),
 			e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=true"),
 			e2e.WithWorkDirectory(dir),
 		)
 		cp.Expect("Checked out")
 		cp.ExpectExitCode(0)
-		suite.Require().FileExists(filepath.Join(dir, constants.ConfigFileName))
+		suite.Require().FileExists(filepath.Join(dir, constants.ConfigFileName), "Dir %d", x)
 	}
 }
 
