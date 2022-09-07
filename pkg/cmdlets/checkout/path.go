@@ -31,7 +31,7 @@ func (r *Checkout) pathToUse(namespace *project.Namespaced, preferredPath string
 		path = filepath.Join(wd, namespace.Project)
 	}
 
-	if err := validatePath(namespace, preferredPath); err != nil {
+	if err := validatePath(namespace, path); err != nil {
 		return "", errs.Wrap(err, "Validation failed")
 	}
 
