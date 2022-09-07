@@ -203,12 +203,7 @@ const MetaData = struct {
         var sock: []const u8 = undefined;
         var bin: []const u8 = undefined;
 
-        var env = BufMap.init(a);
-        for (os.environ) |envEntry| {
-            const k = mem.sliceTo(envEntry, envVarDelim);
-            const v = envEntry[k.len + 1 .. mem.len(envEntry)];
-            env.put(k, v) catch return Error.InitMetaData_AddToMap;
-        }
+        var env = process.getEnvMap(a) catch return Error.InitMetaData_AddToMap;
 
         const metaPath = path.join(a, &[_][]const u8{ execDir, MetaData.filename }) catch return Error.InitMetaData_FormMetaFilePath;
         const metaFile = fs.openFileAbsolute(metaPath, .{ .read = true }) catch return Error.InitMetaData_OpenMetaFile;
@@ -235,10 +230,10 @@ const MetaData = struct {
                         if (mem.eql(u8, k, MetaData.pathVarKey)) {
                             const currentPath = env.get(MetaData.pathVarKey) orelse "";
                             if (currentPath.len > 0) {
-                                const dim = a.alloc(u8, currentPath.len + v.len + 1) catch return Error.InitMetaData_AllocLine;
+                                const dim = a.alloc(u8, currentPath.len + v.len + pathVarDelim.len) catch return Error.InitMetaData_AllocLine;
                                 mem.copy(u8, dim, v);
-                                mem.copy(u8, dim[v.len..], ":");
-                                mem.copy(u8, dim[v.len + 1 ..], currentPath);
+                                mem.copy(u8, dim[v.len..], pathVarDelim);
+                                mem.copy(u8, dim[v.len + pathVarDelim.len ..], currentPath);
                                 v = dim;
                             }
                         }
