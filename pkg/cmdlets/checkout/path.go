@@ -9,6 +9,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -20,6 +21,8 @@ func (r *Checkout) pathToUse(namespace *project.Namespaced, preferredPath string
 
 	path := preferredPath
 	if path == "" {
+		logging.Debug("No path provided, using default")
+
 		// Get path from working directory
 		wd, err := os.Getwd()
 		if err != nil {
@@ -36,9 +39,13 @@ func (r *Checkout) pathToUse(namespace *project.Namespaced, preferredPath string
 }
 
 func validatePath(ns *project.Namespaced, path string) error {
+	if !fileutils.TargetExists(path) {
+		return nil
+	}
+
 	empty, err := fileutils.IsEmptyDir(path)
 	if err != nil {
-		return locale.WrapError(err, "err_namespace_empty_dir", "Could not verify if directory is empty")
+		return locale.WrapError(err, "err_namespace_empty_dir", "Could not verify if directory '{{.V0}}' is empty", path)
 	}
 	if empty {
 		return nil
