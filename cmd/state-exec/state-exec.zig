@@ -188,6 +188,11 @@ const MetaData = struct {
     pub const binsDelim = "::bins::";
     pub const envDelim = "::env::";
     pub const envVarDelim = '=';
+    pub const pathVarKey = "PATH";
+    pub const pathVarDelim = switch (builtin.os.tag) {
+        .windows => ";",
+        else => ":",
+    };
 
     sock: []const u8,
     bin: []const u8,
@@ -224,7 +229,19 @@ const MetaData = struct {
                     var split = mem.split(u8, trimmedLine, MetaData.envDelim);
                     while (split.next()) |kv| {
                         const k = mem.sliceTo(kv, envVarDelim);
-                        const v = kv[k.len + 1 ..];
+                        var v = kv[k.len + 1 ..];
+
+                        if (mem.eql(u8, k, MetaData.pathVarKey)) {
+                            const currentPath = env.get(MetaData.pathVarKey) orelse "";
+                            if (currentPath.len > 0) {
+                                const dim = a.alloc(u8, currentPath.len + v.len + 1) catch return Error.InitMetaData_AllocLine;
+                                mem.copy(u8, dim, v);
+                                mem.copy(u8, dim[v.len..], ":");
+                                mem.copy(u8, dim[v.len + 1 ..], currentPath);
+                                v = dim;
+                            }
+                        }
+
                         env.put(k, v) catch return Error.InitMetaData_AddToMap;
                     }
                 },
