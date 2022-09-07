@@ -184,6 +184,7 @@ fn sendMsgToServer(a: mem.Allocator, stderr: fs.File.Writer, sock: []const u8, d
 }
 
 const MetaData = struct {
+    // See pkg/platform/runtime/executor/meta_test.go for example meta.as file.
     pub const filename = "meta.as";
     pub const sockDelim = "::sock::";
     pub const binsDelim = "::bins::";

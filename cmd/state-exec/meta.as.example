@@ -1,6 +1,0 @@
-::sock::/tmp/state-ipc/state-ipts.DX-1060.sock
-::bin::/home/daved/code/src/github.com/ActiveState/.home/.cache/28cd50f1/bin
-::env::TESTER="test/best"::env::BESTER="example"
-::commit-id::1234abcd-1234-abcd-1234-abcd1234
-::namespace::ActiveState/Test
-::headless::true
