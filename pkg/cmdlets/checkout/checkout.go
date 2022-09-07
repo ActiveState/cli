@@ -49,6 +49,11 @@ func (r *Checkout) Run(ns *project.Namespaced, branchName, targetPath string) (s
 		return "", errs.Wrap(err, "Could not get path to use")
 	}
 
+	path, err = filepath.Abs(path)
+	if err != nil {
+		return "", errs.Wrap(err, "Could not get absolute path")
+	}
+
 	if fileutils.FileExists(filepath.Join(path, constants.ConfigFileName)) {
 		return path, &ErrorAlreadyCheckedOut{locale.NewInputError("err_already_checked_out", "", path)}
 	}
