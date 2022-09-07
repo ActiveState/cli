@@ -57,7 +57,6 @@ const (
 	Secrets         = "secrets"
 	Switch          = "switch"
 	Shell           = "shell"
-	FindProject     = "findproject"
 	Exec            = "exec"
 	Show            = "show"
 	Uninstall       = "uninstall"
