@@ -11,7 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
-	runbitsProject "github.com/ActiveState/cli/internal/runbits/project"
+	"github.com/ActiveState/cli/internal/runbits/findproject"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/pkg/cmdlets/checker"
@@ -67,9 +67,9 @@ func (u *Use) Run(params *Params) error {
 
 	checker.RunUpdateNotifier(u.svcModel, u.out)
 
-	proj, err := runbitsProject.FromNamespaceLocal(params.Namespace, u.config, u.prompt)
+	proj, err := findproject.FromNamespaceLocal(params.Namespace, u.config, u.prompt)
 	if err != nil {
-		if !runbitsProject.IsLocalProjectDoesNotExistError(err) {
+		if !findproject.IsLocalProjectDoesNotExistError(err) {
 			return locale.WrapError(err, "err_use", "Unable to use project")
 		}
 		return locale.WrapInputError(err, "err_use_cannot_find_local_project", "Local project cannot be found.")
