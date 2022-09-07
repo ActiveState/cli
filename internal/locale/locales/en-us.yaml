@@ -1892,6 +1892,12 @@ err_checkout_project:
   other: Could not checkout project {{.V0}}
 err_project_frompath:
   other: Could not create project files
+err_project_frompath_notexist:
+  other: Could not locate a project at [ACTIONABLE]{{.V0}}[/RESET]
+err_project_namespace_missmatch:
+  other: Project at [ACTIONABLE]{{.V0}}[/RESET] does not match namespace [ACTIONABLE]{{.V1}}[/RESET]
+err_project_fromenv:
+  other: Could not detect an appropriate project to use, please provide a valid path or namespace.
 err_local_project_not_checked_out:
   other: "Cannot find the [ACTIONABLE]{{.V0}}[/RESET] project. Please either check it out using [ACTIONABLE]`state checkout`[/RESET] or reactivate it using [ACTIONABLE]`state activate`[/RESET]"
 arg_state_shell_namespace_description:
@@ -1958,3 +1964,8 @@ svcctl_wait_timeout:
     If this problem persists please report it on our forums: [ACTIONABLE]{{.V2}}[/RESET]
 err_autostart_app:
   other: Could not create new autostart app
+install_remote_title:
+  other: This will install the State Tool
+err_already_checked_out:
+  other: There is already a project checked out at '[ACTIONABLE]{{.V0}}[/RESET]'.
+

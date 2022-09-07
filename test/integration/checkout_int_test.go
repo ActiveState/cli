@@ -50,6 +50,28 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckout() {
 	cp.ExpectExitCode(0)
 }
 
+func (suite *CheckoutIntegrationTestSuite) TestCheckoutMultiDir() {
+	suite.OnlyRunForTags(tagsuite.Checkout)
+
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	dirs := []string{
+		fileutils.TempDirUnsafe(), fileutils.TempDirUnsafe(),
+	}
+
+	for x, dir := range dirs {
+		cp := ts.SpawnWithOpts(
+			e2e.WithArgs("checkout", "ActiveState-CLI/Python3", "."),
+			e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=true"),
+			e2e.WithWorkDirectory(dir),
+		)
+		cp.Expect("Checked out")
+		cp.ExpectExitCode(0)
+		suite.Require().FileExists(filepath.Join(dir, constants.ConfigFileName), "Dir %d", x)
+	}
+}
+
 func (suite *CheckoutIntegrationTestSuite) TestCheckoutWithFlags() {
 	suite.OnlyRunForTags(tagsuite.Checkout)
 
