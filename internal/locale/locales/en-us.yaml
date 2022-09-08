@@ -717,7 +717,7 @@ developer_err_project_match:
   other: Encountered a situation where the tool is given different project paths. This indicates a bug in our code, please consider reporting it.
 
 err_version_parse:
-  other:  Could not determine the State Tool version to use to run this command. Please ensure the project field in your activestate.yaml is formatted correctly.
+  other: Could not determine the State Tool version to use to run this command. Please ensure the project field in your activestate.yaml is formatted correctly.
 err_invalid_lock:
   other: "Invalid lock specified in your activestate.yaml: '{{.V0}}', should be in the format of: [NOTICE]channel@{number}.{number}.{number}-{hash}[/RESET]"
 err_update_version:
@@ -733,10 +733,10 @@ forward_fail_info:
 update_available_header:
   other: "[ACTIONABLE]Update Available[/RESET]"
 update_available:
-   other: |
-     Your version: [NOTICE]{{.V0}}[/RESET]
-     Available Version: [NOTICE]{{.V1}}[/RESET]
-     You can update by running [ACTIONABLE]`state update`[/RESET]
+  other: |
+    Your version: [NOTICE]{{.V0}}[/RESET]
+    Available Version: [NOTICE]{{.V1}}[/RESET]
+    You can update by running [ACTIONABLE]`state update`[/RESET]
 update_none_found:
   other: No new update available.
 updating_version:
@@ -1369,7 +1369,7 @@ clean_cache_artifact_confirm:
 clean_config_confirm:
   other: You are about the remove the State Tool config directory. Continue?
 clean_success_message:
-  other:  |
+  other: |
     Successfully removed State Tool and related files.
 
     Please restart your shell in order for changes to take effect.
@@ -1968,4 +1968,11 @@ install_remote_title:
   other: This will install the State Tool
 err_already_checked_out:
   other: There is already a project checked out at '[ACTIONABLE]{{.V0}}[/RESET]'.
-
+use_project_statement:
+  other: Switched to project [ACTIONABLE]{{.V0}}[/RESET] located at [ACTIONABLE]{{.V1}}[/RESET].
+shell_project_statement:
+  other: Opening shell for project [ACTIONABLE]{{.V0}}[/RESET] located at [ACTIONABLE]{{.V1}}[/RESET].
+checkout_project_statement:
+  other: Checked out project [ACTIONABLE]{{.V0}}[/RESET] at [ACTIONABLE]{{.V1}}[/RESET].
+export_project_statement:
+  other: Exporting env for project [ACTIONABLE]{{.V0}}[/RESET] located at [ACTIONABLE]{{.V1}}[/RESET].

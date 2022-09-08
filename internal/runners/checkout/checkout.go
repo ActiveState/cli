@@ -73,14 +73,14 @@ func (u *Checkout) Run(params *Params) error {
 		return locale.WrapError(err, "err_project_frompath")
 	}
 
-	_, _, err = runtime.NewFromProject(proj, target.TriggerCheckout, u.analytics, u.svcModel, u.out, u.auth)
+	_, err = runtime.NewFromProject(proj, target.TriggerCheckout, u.analytics, u.svcModel, u.out, u.auth)
 	if err != nil {
 		return locale.WrapError(err, "err_checkout_runtime_new", "Could not checkout this project.")
 	}
 
-	u.out.Print(locale.Tl("checkout_notice", "[NOTICE]Checked out[/RESET] [ACTIONABLE]{{ .V0 }}[/RESET] to [ACTIONABLE]{{ .V1 }}[/RESET]",
-		params.Namespace.Project,
-		projectDir),
+	u.out.Notice(locale.Tl("checkout_project_statement", "",
+		proj.NamespaceString(),
+		proj.Dir()),
 	)
 
 	return nil

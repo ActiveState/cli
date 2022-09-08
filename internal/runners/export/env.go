@@ -34,7 +34,12 @@ func (e *Env) Run() error {
 		return locale.NewInputError("err_env_no_project", "No project found.")
 	}
 
-	rt, _, err := runtime.NewFromProject(e.project, target.TriggerActivate, e.analytics, e.svcModel, e.out, e.auth)
+	e.out.Notice(locale.Tl("export_project_statement", "",
+		e.project.NamespaceString(),
+		e.project.Dir()),
+	)
+
+	rt, err := runtime.NewFromProject(e.project, target.TriggerActivate, e.analytics, e.svcModel, e.out, e.auth)
 	if err != nil {
 		return locale.WrapError(err, "err_export_new_runtime", "Could not initialize runtime")
 	}
