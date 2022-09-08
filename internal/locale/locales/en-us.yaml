@@ -1971,7 +1971,9 @@ err_already_checked_out:
 use_project_statement:
   other: Switched to project [ACTIONABLE]{{.V0}}[/RESET] located at [ACTIONABLE]{{.V1}}[/RESET].
 shell_project_statement:
-  other: Opening shell for project [ACTIONABLE]{{.V0}}[/RESET] located at [ACTIONABLE]{{.V1}}[/RESET].
+  other: |
+    Opening shell for project [ACTIONABLE]{{.V0}}[/RESET] located at [ACTIONABLE]{{.V1}}[/RESET].
+    For editors and other tooling use the executables at: [ACTIONABLE]{{.V2}}[/RESET].
 checkout_project_statement:
   other: Checked out project [ACTIONABLE]{{.V0}}[/RESET] at [ACTIONABLE]{{.V1}}[/RESET].
 export_project_statement:

@@ -17,6 +17,7 @@ import (
 	"github.com/ActiveState/cli/internal/virtualenvironment"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -82,8 +83,9 @@ func (u *Shell) Run(params *Params) error {
 
 	u.out.Notice(locale.Tl("shell_project_statement", "",
 		proj.NamespaceString(),
-		proj.Dir()),
-	)
+		proj.Dir(),
+		setup.ExecDir(rti.Target().Dir()),
+	))
 
 	venv := virtualenvironment.New(rti)
 	err = activation.ActivateAndWait(proj, venv, u.out, u.subshell, u.config, u.analytics, params.ChangeDirectory)
