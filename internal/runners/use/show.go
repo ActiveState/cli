@@ -21,14 +21,14 @@ func NewShow(prime primeable) *Show {
 }
 
 type outputFormat struct {
-	Message   string `locale:message,Message`
+	message   string `locale:message,Message`
 	Namespace string `locale:"namespace,Namespace"`
 	Path      string `locale:"path,Path"`
 }
 
 func (f *outputFormat) MarshalOutput(format output.Format) interface{} {
 	if format == output.PlainFormatName {
-		return f.Message
+		return f.message
 	}
 	return f
 }
