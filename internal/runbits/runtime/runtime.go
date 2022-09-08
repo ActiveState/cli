@@ -24,34 +24,34 @@ func NewFromProject(
 	an analytics.Dispatcher,
 	svcModel *model.SvcModel,
 	out output.Outputer,
-	auth *authentication.Auth) (*rt.Runtime, *target.ProjectTarget, error) {
+	auth *authentication.Auth) (*rt.Runtime, error) {
 	projectTarget := target.NewProjectTarget(proj, storage.CachePath(), nil, trigger)
 	rti, err := rt.New(projectTarget, an, svcModel)
 	if err != nil {
 		if !rt.IsNeedsUpdateError(err) {
-			return nil, nil, locale.WrapError(err, "err_activate_runtime", "Could not initialize a runtime for this project.")
+			return nil, locale.WrapError(err, "err_activate_runtime", "Could not initialize a runtime for this project.")
 		}
 
 		eh, err := runbits.ActivateRuntimeEventHandler(out)
 		if err != nil {
-			return nil, nil, locale.WrapError(err, "err_initialize_runtime_event_handler")
+			return nil, locale.WrapError(err, "err_initialize_runtime_event_handler")
 		}
 
 		if err = rti.Update(auth, eh); err != nil {
 			if errs.Matches(err, &model.ErrOrderAuth{}) {
-				return nil, nil, locale.WrapInputError(err, "err_update_auth", "Could not update runtime, if this is a private project you may need to authenticate with `[ACTIONABLE]state auth[/RESET]`")
+				return nil, locale.WrapInputError(err, "err_update_auth", "Could not update runtime, if this is a private project you may need to authenticate with `[ACTIONABLE]state auth[/RESET]`")
 			}
 			if errs.Matches(err, &model.ErrNoMatchingPlatform{}) {
 				branches, err := model.BranchNamesForProjectFiltered(proj.Owner(), proj.Name(), proj.BranchName())
 				if err == nil && len(branches) > 1 {
-					return nil, nil, locale.NewInputError("err_alternate_branches", "", proj.BranchName(), strings.Join(branches, "\n - "))
+					return nil, locale.NewInputError("err_alternate_branches", "", proj.BranchName(), strings.Join(branches, "\n - "))
 				}
 			}
 			if !auth.Authenticated() {
-				return nil, nil, locale.WrapError(err, "err_new_runtime_auth", "Could not update runtime installation. If this is a private project ensure that you are authenticated.")
+				return nil, locale.WrapError(err, "err_new_runtime_auth", "Could not update runtime installation. If this is a private project ensure that you are authenticated.")
 			}
-			return nil, nil, locale.WrapError(err, "err_update_runtime", "Could not update runtime installation.")
+			return nil, locale.WrapError(err, "err_update_runtime", "Could not update runtime installation.")
 		}
 	}
-	return rti, projectTarget, nil
+	return rti, nil
 }

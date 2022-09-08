@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 	"regexp"
 	"runtime"
 	"strings"
@@ -237,6 +238,11 @@ func (p *Project) BranchName() string {
 // Path returns the project path
 func (p *Project) Path() string {
 	return p.projectfile.Path()
+}
+
+// Dir returns the project dir
+func (p *Project) Dir() string {
+	return filepath.Dir(p.projectfile.Path())
 }
 
 func (p *Project) IsHeadless() bool {
