@@ -41,6 +41,8 @@ func newCheckoutCommand(prime *primer.Values) *captain.Command {
 		func(_ *captain.Command, _ []string) error {
 			return checkout.NewCheckout(prime).Run(params)
 		},
-	).SetGroup(EnvironmentGroup)
+	)
+	cmd.SetGroup(EnvironmentGroup)
+	cmd.SetUnstable(true)
 	return cmd
 }
