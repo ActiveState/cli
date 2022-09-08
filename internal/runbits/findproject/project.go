@@ -43,7 +43,7 @@ func FromInputByPriority(path string, ns *project.Namespaced, cfg projectfile.Co
 func FromPath(path string, ns *project.Namespaced) (*project.Project, error) {
 	pj, err := project.FromPath(path)
 	if err != nil {
-		return nil, locale.WrapInputError(err, "err_project_frompath_notexist", "", path)
+		return nil, &LocalProjectDoesNotExist{locale.WrapInputError(err, "err_project_frompath_notexist", "", path)}
 	}
 
 	if ns != nil && ((ns.Owner != "" && pj.Namespace().Owner != ns.Owner) || pj.Namespace().Project != ns.Project) {
