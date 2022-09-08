@@ -717,7 +717,7 @@ developer_err_project_match:
   other: Encountered a situation where the tool is given different project paths. This indicates a bug in our code, please consider reporting it.
 
 err_version_parse:
-  other:  Could not determine the State Tool version to use to run this command. Please ensure the project field in your activestate.yaml is formatted correctly.
+  other: Could not determine the State Tool version to use to run this command. Please ensure the project field in your activestate.yaml is formatted correctly.
 err_invalid_lock:
   other: "Invalid lock specified in your activestate.yaml: '{{.V0}}', should be in the format of: [NOTICE]channel@{number}.{number}.{number}-{hash}[/RESET]"
 err_update_version:
@@ -733,10 +733,10 @@ forward_fail_info:
 update_available_header:
   other: "[ACTIONABLE]Update Available[/RESET]"
 update_available:
-   other: |
-     Your version: [NOTICE]{{.V0}}[/RESET]
-     Available Version: [NOTICE]{{.V1}}[/RESET]
-     You can update by running [ACTIONABLE]`state update`[/RESET]
+  other: |
+    Your version: [NOTICE]{{.V0}}[/RESET]
+    Available Version: [NOTICE]{{.V1}}[/RESET]
+    You can update by running [ACTIONABLE]`state update`[/RESET]
 update_none_found:
   other: No new update available.
 updating_version:
@@ -1369,7 +1369,7 @@ clean_cache_artifact_confirm:
 clean_config_confirm:
   other: You are about the remove the State Tool config directory. Continue?
 clean_success_message:
-  other:  |
+  other: |
     Successfully removed State Tool and related files.
 
     Please restart your shell in order for changes to take effect.
@@ -1451,7 +1451,7 @@ deploy_restart:
   other: Action Required
 deploy_cmd_description:
   other: |
-    Deploys the given runtime environment on the local system. Deploy sets up the language so you can run it from any shell environment that matches the current shell, overriding any conflicting installations.
+    Deploys the runtime in a way that cannot be further managed (not recommended for most use-cases). Deploy sets up the language so you can run it from any shell environment that matches the current shell, overriding any conflicting installations.
     You can run individual deploy steps by running the sub-commands, which is useful if you're preparing docker images, CI environments, or the like.
     If you're setting up a local development environment you probably won't need the sub-commands.
 deploy_install_cmd_description:
