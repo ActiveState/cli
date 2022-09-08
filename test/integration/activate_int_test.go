@@ -193,6 +193,12 @@ func (suite *ActivateIntegrationTestSuite) activatePython(version string, extraE
 	executor := filepath.Join(ts.Dirs.DefaultBin, pythonShim)
 	// check that default activation works
 	cp = ts.SpawnCmdWithOpts(
+		"echo",
+		e2e.WithArgs(executor, "test"),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
+	cp.Expect("test")
+	cp = ts.SpawnCmdWithOpts(
 		executor,
 		e2e.WithArgs("-c", "import sys; print(sys.copyright);"),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
