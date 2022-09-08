@@ -1455,7 +1455,7 @@ deploy_restart:
   other: Action Required
 deploy_cmd_description:
   other: |
-    Deploys the given runtime environment on the local system. Deploy sets up the language so you can run it from any shell environment that matches the current shell, overriding any conflicting installations.
+    Deploys the runtime in a way that cannot be further managed (not recommended for most use-cases). Deploy sets up the language so you can run it from any shell environment that matches the current shell, overriding any conflicting installations.
     You can run individual deploy steps by running the sub-commands, which is useful if you're preparing docker images, CI environments, or the like.
     If you're setting up a local development environment you probably won't need the sub-commands.
 deploy_install_cmd_description:
@@ -1972,4 +1972,11 @@ install_remote_title:
   other: This will install the State Tool
 err_already_checked_out:
   other: There is already a project checked out at '[ACTIONABLE]{{.V0}}[/RESET]'.
-
+use_project_statement:
+  other: Switched to project [ACTIONABLE]{{.V0}}[/RESET] located at [ACTIONABLE]{{.V1}}[/RESET].
+shell_project_statement:
+  other: Opening shell for project [ACTIONABLE]{{.V0}}[/RESET] located at [ACTIONABLE]{{.V1}}[/RESET].
+checkout_project_statement:
+  other: Checked out project [ACTIONABLE]{{.V0}}[/RESET] at [ACTIONABLE]{{.V1}}[/RESET].
+export_project_statement:
+  other: Exporting env for project [ACTIONABLE]{{.V0}}[/RESET] located at [ACTIONABLE]{{.V1}}[/RESET].

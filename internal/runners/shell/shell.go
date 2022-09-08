@@ -75,13 +75,17 @@ func (u *Shell) Run(params *Params) error {
 		return locale.NewInputError("err_shell_commit_id_mismatch")
 	}
 
-	rti, _, err := runtime.NewFromProject(proj, target.TriggerShell, u.analytics, u.svcModel, u.out, u.auth)
+	rti, err := runtime.NewFromProject(proj, target.TriggerShell, u.analytics, u.svcModel, u.out, u.auth)
 	if err != nil {
 		return locale.WrapInputError(err, "err_shell_runtime_new", "Could not start a shell/prompt for this project.")
 	}
 
-	venv := virtualenvironment.New(rti)
+	u.out.Notice(locale.Tl("shell_project_statement", "",
+		proj.NamespaceString(),
+		proj.Dir()),
+	)
 
+	venv := virtualenvironment.New(rti)
 	err = activation.ActivateAndWait(proj, venv, u.out, u.subshell, u.config, u.analytics, params.ChangeDirectory)
 	if err != nil {
 		return locale.WrapError(err, "err_shell_wait", "Could not start runtime shell/prompt.")

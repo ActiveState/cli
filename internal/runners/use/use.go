@@ -19,7 +19,6 @@ import (
 	"github.com/ActiveState/cli/pkg/cmdlets/git"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -79,7 +78,7 @@ func (u *Use) Run(params *Params) error {
 		return locale.NewInputError("err_use_commit_id_mismatch")
 	}
 
-	rti, projectTarget, err := runtime.NewFromProject(proj, target.TriggerUse, u.analytics, u.svcModel, u.out, u.auth)
+	rti, err := runtime.NewFromProject(proj, target.TriggerUse, u.analytics, u.svcModel, u.out, u.auth)
 	if err != nil {
 		return locale.WrapError(err, "err_use_runtime_new", "Cannot use this project.")
 	}
@@ -88,9 +87,9 @@ func (u *Use) Run(params *Params) error {
 		return locale.WrapError(err, "err_use_default", "Could not configure your project as the global default.")
 	}
 
-	u.out.Print(locale.Tl("use_notice_switched_to", "[NOTICE]Switched to[/RESET] [ACTIONABLE]{{ .V0 }}[/RESET] located at [ACTIONABLE]{{ .V1 }}[/RESET]",
-		params.Namespace.Project,
-		setup.ExecDir(projectTarget.Dir())),
+	u.out.Notice(locale.Tl("use_project_statement", "",
+		proj.NamespaceString(),
+		proj.Dir()),
 	)
 
 	if rt.GOOS == "windows" {
