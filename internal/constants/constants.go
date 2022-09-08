@@ -348,6 +348,12 @@ const RCAppendDeployStartLine = "-- START ACTIVESTATE DEPLOY RUNTIME ENVIRONMENT
 // RCAppendDeployStopLine is the end line used to denote our deploy environment config in RC files
 const RCAppendDeployStopLine = "-- STOP ACTIVESTATE DEPLOY RUNTIME ENVIRONMENT"
 
+// RCAppendOfflineInstallStartLine is the start line used to denote our deploy environment config in RC files
+const RCAppendOfflineInstallStartLine = "-- START ACTIVESTATE OFFLINE INSTALL RUNTIME ENVIRONMENT"
+
+// RCAppendOfflineInstallStopLine is the end line used to denote our deploy environment config in RC files
+const RCAppendOfflineInstallStopLine = "-- STOP ACTIVESTATE OFFLINE INSTALL RUNTIME ENVIRONMENT"
+
 // RCAppendDefaultStartLine is the start line used to denote our default environment config in RC files
 const RCAppendDefaultStartLine = "-- START ACTIVESTATE DEFAULT RUNTIME ENVIRONMENT"
 
@@ -395,6 +401,9 @@ const StateCmd = "state"
 
 // StateInstallerCmd is the name of the state installer binary
 const StateInstallerCmd = "state-installer"
+
+// StateRemoteInstallerCmd is the name of the state remote installer binary
+const StateRemoteInstallerCmd = "state-remote-installer"
 
 // InstallerName is the name we give to our state-installer executable
 const InstallerName = "State Installer"

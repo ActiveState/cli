@@ -1,6 +1,8 @@
 package prompt
 
 import (
+	"strings"
+
 	"github.com/ActiveState/cli/internal/analytics/dimensions"
 	"gopkg.in/AlecAivazis/survey.v1"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
@@ -164,7 +166,7 @@ func (p *Prompt) Confirm(title, message string, defaultChoice *bool) (bool, erro
 
 	var resp bool
 	err := survey.AskOne(&Confirm{&survey.Confirm{
-		Message: formatMessage(message, !p.out.Config().Colored),
+		Message: formatMessage(strings.TrimSuffix(message, "\n"), !p.out.Config().Colored),
 		Default: defChoice,
 	}}, &resp, nil)
 	if err != nil {

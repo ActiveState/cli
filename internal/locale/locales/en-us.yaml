@@ -151,7 +151,7 @@ secret_value_prompt_summary:
     Description: [NOTICE]{{.V1}}[/RESET]
     Scope: [NOTICE]{{.V2}} ({{.V3}})[/RESET]
 secret_value_prompt:
-  other: "Please enter a value for secret \"[ACTIONABLE]{{.V0}}[/RESET]\":"
+  other: 'Please enter a value for secret "[ACTIONABLE]{{.V0}}[/RESET]":'
 secret_prompt_user:
   other: Only you can access the value
 secret_prompt_project:
@@ -171,7 +171,7 @@ email_prompt:
 totp_prompt:
   other: "Enter your two-factor authentication code:"
 survey_error_template:
-  other: "[[color \"red\"]] Invalid response: [[.Error]][[color \"reset\"]][[BR]]"
+  other: '[[color "red"]] Invalid response: [[.Error]][[color "reset"]][[BR]]'
 err_value_required:
   other: value required
 err_prompt_unknown:
@@ -185,6 +185,10 @@ tos_disclaimer:
     Your use of the ActiveState Platform is subject to the Terms of Service.
     You can review the Terms of Service at:
       {{.V0}}
+tos_disclaimer_prompt:
+  other: |
+    
+    By continuing you accept the Terms of Service. Continue?
 tos_acceptance:
   other: Do you accept the ActiveState Platform Terms of Service?
 tos_not_accepted:
@@ -195,6 +199,18 @@ tos_not_accept:
   other: No, I do not accept the ActiveState Terms of Service
 tos_show_full:
   other: Display the full Terms of Service in this terminal window
+err_get_license_text:
+  other: Could not get license text
+
+lic_acceptance:
+  other: Do you accept the ActiveState License?
+lic_accept:
+  other: Yes, I accept the ActiveState License
+lic_not_accept:
+  other: No, I do not accept the ActiveState License
+lic_show_full:
+  other: Display the full License Text in this terminal window
+
 err_auth_failed:
   other: Authentication failed
 err_auth_username_check:
@@ -262,7 +278,7 @@ organizations_description:
 organizations_err:
   other: Unable to list member organizations
 organizations_unknown_tier:
-  other: "Unknown tier [NOTICE]\"{{.Tier}}\"[/RESET] in organization [NOTICE]\"{{.Organization}}\"[/RESET]"
+  other: 'Unknown tier [NOTICE]"{{.Tier}}"[/RESET] in organization [NOTICE]"{{.Organization}}"[/RESET]'
 organization_name:
   other: Organization Name
 organization_no_orgs:
@@ -438,12 +454,10 @@ err_sscommon_unsupported_language:
 env_description:
   other: Manage Project Variables
 env_add_description:
-  other:
-    >
+  other: >
     add variable
 env_remove_description:
-  other:
-    >
+  other: >
     remove variable
 env_header_id:
   other: ID
@@ -607,9 +621,9 @@ secrets_err_no_publickey_found:
 secrets_err_check_access:
   other: Access check failed
 secrets_expand_err_undefined:
-  other: "Secret [NOTICE]\"{{.V0}}\"[/RESET] not defined in project"
+  other: 'Secret [NOTICE]"{{.V0}}"[/RESET] not defined in project'
 secrets_expand_err_not_found:
-  other: "Unable to obtain value for secret: [NOTICE]\"{{.V0}}\"[/RESET]."
+  other: 'Unable to obtain value for secret: [NOTICE]"{{.V0}}"[/RESET].'
 secrets_expand_err_no_access:
   other: You are not a member of organization '[NOTICE]{{.V0}}[/RESET]' and therefore cannot access secrets belonging to its projects
 secrets_err_invalid_store:
@@ -677,7 +691,7 @@ keypair_err_save:
 keypair_err_generate:
   other: Keypair could not be generated
 keypair_err_publickey_not_found:
-  other: "No public-key found for user [NOTICE]\"{{.V0}}\"[/RESET] ([NOTICE]\"{{.V1}}\"[/RESET])"
+  other: 'No public-key found for user [NOTICE]"{{.V0}}"[/RESET] ([NOTICE]"{{.V1}}"[/RESET])'
 keypair_err_passphrase_prompt:
   other: The provided passphrase is invalid
 keypair_err_require_auth:
@@ -693,7 +707,7 @@ keypairs_err_invalid_rsa_publickey:
 keypairs_err_load_not_found:
   other: Authorized keypair not found
 keypairs_err_load_requires_mode:
-  other: "Keypair [NOTICE]\"{{.V0}}\"[/RESET] file is too permissive, expects no more than [NOTICE]\"{{.V1}}\"[/RESET] permissions"
+  other: 'Keypair [NOTICE]"{{.V0}}"[/RESET] file is too permissive, expects no more than [NOTICE]"{{.V1}}"[/RESET] permissions'
 keypairs_err_base64_decoding:
   other: Message is not base-64 encoded
 keypairs_err_override_with_save:
@@ -1264,7 +1278,7 @@ init_description:
 push_description:
   other: Push your latest changes to the platform
 push_first_new_project:
-  other: "Since this is your first time running \"push\" you'll need to create a new project on the ActiveState Platform."
+  other: 'Since this is your first time running "push" you''ll need to create a new project on the ActiveState Platform.'
 push_prompt_owner:
   other: "Who would you like the owner of this project to be?"
 push_prompt_not_authorized:

@@ -41,6 +41,11 @@ var (
 		constants.RCAppendInstallStopLine,
 		"user_install_env",
 	}
+	OfflineInstallID RcIdentification = RcIdentification{
+		constants.RCAppendOfflineInstallStartLine,
+		constants.RCAppendOfflineInstallStopLine,
+		"user_offlineinstall_env",
+	}
 )
 
 // Configurable defines an interface to store and get configuration data
@@ -181,7 +186,7 @@ func CleanRcFile(path string, data RcIdentification) error {
 }
 
 // SetupShellRcFile create a rc file to activate a runtime (without a project being present)
-func SetupShellRcFile(rcFileName, templateName string, env map[string]string, namespace project.Namespaced) error {
+func SetupShellRcFile(rcFileName, templateName string, env map[string]string, namespace *project.Namespaced) error {
 	tpl, err := assets.ReadFileBytes(fmt.Sprintf("shells/%s", templateName))
 	if err != nil {
 		return errs.Wrap(err, "Failed to read asset")
@@ -191,10 +196,15 @@ func SetupShellRcFile(rcFileName, templateName string, env map[string]string, na
 		return errs.Wrap(err, "Failed to parse template file.")
 	}
 
+	projectValue := ""
+	if namespace != nil {
+		projectValue = namespace.String()
+	}
+
 	var out bytes.Buffer
 	rcData := map[string]interface{}{
 		"Env":     env,
-		"Project": namespace.String(),
+		"Project": projectValue,
 	}
 	err = t.Execute(&out, rcData)
 	if err != nil {

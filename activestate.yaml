@@ -44,6 +44,8 @@ constants:
   - name: BUILD_INSTALLER_TARGET
     if: ne .OS.Name "Windows"
     value: state-installer
+  - name: BUILD_REMOTE_INSTALLER_TARGET
+    value: state-remote-installer
   - name: SET_ENV
     description: The environment settings used throughout our project
     value: |
@@ -76,9 +78,9 @@ scripts:
     language: bash
     description: Install OS specific deps
     value: |
-      aptin() {
+      if [ hash apt &> /dev/null ]; then
         pkgs=""
-        for pkg in "${@}"; do
+        for pkg in "libgtk-3-dev libappindicator3-dev libwebkit2gtk-4.0-dev" ; do
           dpkg -s "${pkg}" &>/dev/null && continue
           pkgs="$pkgs ${pkg}"
         done
@@ -86,8 +88,9 @@ scripts:
           echo Installing packages "${pkgs}"
           sudo apt-get update && sudo apt-get install ${pkgs} -y
         fi
-      }
-      aptin libgtk-3-dev libappindicator3-dev libwebkit2gtk-4.0-dev
+      elif [ hash yum &> /dev/null ]; then
+        yum install -y gtk3-devel libappindicator-gtk3 webkitgtk4
+      fi
   - name: preprocess
     language: bash
     description: Generates assets required by the project that aren't just specific to the build
@@ -185,6 +188,8 @@ scripts:
       $scripts.build.path._posix()
       echo "Building State Installer"
       $scripts.build-installer.path._posix()
+      echo "Building State Remote Installer"
+      $scripts.build-remote-installer.path._posix()
       echo "Building State Service"
       $scripts.build-svc.path._posix()
       echo "Building State Executor"
@@ -203,6 +208,20 @@ scripts:
       if [[ ! -z "${CI}" ]]; then
         upx $BUILD_TARGET_DIR/$constants.BUILD_INSTALLER_TARGET
       fi
+  - name: build-remote-installer
+    language: bash
+    description: Builds the state-remote-installer
+    value: |
+      set -e
+      $constants.SET_ENV
+      TARGET=$BUILD_REMOTE_INSTALLER_TARGET
+      if [[ "$GOOS" == "windows" || "$OS" == "Windows_NT" ]]; then
+        TARGET="${BUILD_REMOTE_INSTALLER_TARGET}.exe"
+      fi
+      GOFLAGS="" go install github.com/josephspurrier/goversioninfo/cmd/goversioninfo@latest
+      cd cmd/state-remote-installer
+      go generate
+      go build -tags "$GO_BUILD_TAGS" -o ../../$BUILD_TARGET_DIR/$TARGET .
   - name: build-updlg-all
     description: Invokes all build steps for the update dialog
     standalone: true
@@ -316,6 +335,12 @@ scripts:
     description: Deploys update files to S3. This steps is automated by CI and should never be ran manually unless you KNOW WHAT YOU'RE DOING.
     value: |
       go run scripts/ci/s3-deployer/main.go build/installers us-east-1 state-tool update/state
+  - name: deploy-remote-installer
+    language: bash
+    value: |
+      set -e
+      $constants.SET_ENV
+      go run scripts/ci/s3-deployer/main.go $BUILD_TARGET_DIR/remote-installer us-east-1 state-tool remote-installer
   - name: deploy-msi
     language: bash
     value: |
@@ -331,8 +356,7 @@ scripts:
       GOOS=windows go build -o .github/deps/Windows/bin/parallelize.exe github.com/ActiveState/cli/scripts/ci/parallelize/
       GOOS=linux go build -o .github/deps/Linux/bin/parallelize github.com/ActiveState/cli/scripts/ci/parallelize/
       GOOS=darwin go build -o .github/deps/macOS/bin/parallelize github.com/ActiveState/cli/scripts/ci/parallelize/
-  -
-    name: update-workflow-assets
+  - name: update-workflow-assets
     language: bash
     description: Generates our github workflows
     value: |
@@ -460,6 +484,13 @@ scripts:
       export JIRA_TOKEN=${secrets.user.JIRA_TOKEN}
       export GITHUB_TOKEN=${secrets.user.GITHUB_TOKEN}
       go run $project.path()/scripts/ci/verify-pr/main.go $1
+  - name: start-story
+    language: bash
+    value: |
+      export JIRA_USERNAME=${secrets.user.JIRA_USERNAME}
+      export JIRA_TOKEN=${secrets.user.JIRA_TOKEN}
+      export GITHUB_TOKEN=${secrets.user.GITHUB_TOKEN}
+      go run $project.path()/scripts/start-story/main.go "$@"
   - name: ghapi
     language: bash
     value: |
@@ -498,5 +529,5 @@ events:
         go install github.com/go-swagger/go-swagger/cmd/swagger@v0.27.0
       fi
   - name: file-changed
-    scope: [ "internal/locale/locales" ]
+    scope: ["internal/locale/locales"]
     value: build
