@@ -11,7 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
-	runbitsProject "github.com/ActiveState/cli/internal/runbits/project"
+	"github.com/ActiveState/cli/internal/runbits/findproject"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/pkg/cmdlets/checker"
@@ -19,7 +19,6 @@ import (
 	"github.com/ActiveState/cli/pkg/cmdlets/git"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -67,9 +66,9 @@ func (u *Use) Run(params *Params) error {
 
 	checker.RunUpdateNotifier(u.svcModel, u.out)
 
-	proj, err := runbitsProject.FromNamespaceLocal(params.Namespace, u.config, u.prompt)
+	proj, err := findproject.FromNamespaceLocal(params.Namespace, u.config, u.prompt)
 	if err != nil {
-		if !runbitsProject.IsLocalProjectDoesNotExistError(err) {
+		if !findproject.IsLocalProjectDoesNotExistError(err) {
 			return locale.WrapError(err, "err_use", "Unable to use project")
 		}
 		return locale.WrapInputError(err, "err_use_cannot_find_local_project", "Local project cannot be found.")
@@ -79,7 +78,7 @@ func (u *Use) Run(params *Params) error {
 		return locale.NewInputError("err_use_commit_id_mismatch")
 	}
 
-	rti, projectTarget, err := runtime.NewFromProject(proj, target.TriggerUse, u.analytics, u.svcModel, u.out, u.auth)
+	rti, err := runtime.NewFromProject(proj, target.TriggerUse, u.analytics, u.svcModel, u.out, u.auth)
 	if err != nil {
 		return locale.WrapError(err, "err_use_runtime_new", "Cannot use this project.")
 	}
@@ -88,9 +87,9 @@ func (u *Use) Run(params *Params) error {
 		return locale.WrapError(err, "err_use_default", "Could not configure your project as the global default.")
 	}
 
-	u.out.Print(locale.Tl("use_notice_switched_to", "[NOTICE]Switched to[/RESET] [ACTIONABLE]{{ .V0 }}[/RESET] located at [ACTIONABLE]{{ .V1 }}[/RESET]",
-		params.Namespace.Project,
-		setup.ExecDir(projectTarget.Dir())),
+	u.out.Notice(locale.Tl("use_project_statement", "",
+		proj.NamespaceString(),
+		proj.Dir()),
 	)
 
 	if rt.GOOS == "windows" {

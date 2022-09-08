@@ -35,7 +35,7 @@ func newDeployCommand(prime *primer.Values) *captain.Command {
 		})
 	}
 
-	return captain.NewCommand(
+	cmd := captain.NewCommand(
 		"deploy",
 		locale.Tl("deploy_title", "Deploying Runtime"),
 		locale.T("deploy_cmd_description"),
@@ -51,7 +51,10 @@ func newDeployCommand(prime *primer.Values) *captain.Command {
 		},
 		func(cmd *captain.Command, args []string) error {
 			return runner.Run(params)
-		}).SetGroup(EnvironmentGroup)
+		})
+	cmd.SetGroup(EnvironmentGroup)
+	cmd.SetHidden(true)
+	return cmd
 }
 
 func newDeployInstallCommand(prime *primer.Values) *captain.Command {

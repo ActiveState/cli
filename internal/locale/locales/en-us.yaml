@@ -151,7 +151,7 @@ secret_value_prompt_summary:
     Description: [NOTICE]{{.V1}}[/RESET]
     Scope: [NOTICE]{{.V2}} ({{.V3}})[/RESET]
 secret_value_prompt:
-  other: "Please enter a value for secret \"[ACTIONABLE]{{.V0}}[/RESET]\":"
+  other: 'Please enter a value for secret "[ACTIONABLE]{{.V0}}[/RESET]":'
 secret_prompt_user:
   other: Only you can access the value
 secret_prompt_project:
@@ -171,7 +171,7 @@ email_prompt:
 totp_prompt:
   other: "Enter your two-factor authentication code:"
 survey_error_template:
-  other: "[[color \"red\"]] Invalid response: [[.Error]][[color \"reset\"]][[BR]]"
+  other: '[[color "red"]] Invalid response: [[.Error]][[color "reset"]][[BR]]'
 err_value_required:
   other: value required
 err_prompt_unknown:
@@ -185,6 +185,10 @@ tos_disclaimer:
     Your use of the ActiveState Platform is subject to the Terms of Service.
     You can review the Terms of Service at:
       {{.V0}}
+tos_disclaimer_prompt:
+  other: |
+    
+    By continuing you accept the Terms of Service. Continue?
 tos_acceptance:
   other: Do you accept the ActiveState Platform Terms of Service?
 tos_not_accepted:
@@ -195,6 +199,18 @@ tos_not_accept:
   other: No, I do not accept the ActiveState Terms of Service
 tos_show_full:
   other: Display the full Terms of Service in this terminal window
+err_get_license_text:
+  other: Could not get license text
+
+lic_acceptance:
+  other: Do you accept the ActiveState License?
+lic_accept:
+  other: Yes, I accept the ActiveState License
+lic_not_accept:
+  other: No, I do not accept the ActiveState License
+lic_show_full:
+  other: Display the full License Text in this terminal window
+
 err_auth_failed:
   other: Authentication failed
 err_auth_username_check:
@@ -262,7 +278,7 @@ organizations_description:
 organizations_err:
   other: Unable to list member organizations
 organizations_unknown_tier:
-  other: "Unknown tier [NOTICE]\"{{.Tier}}\"[/RESET] in organization [NOTICE]\"{{.Organization}}\"[/RESET]"
+  other: 'Unknown tier [NOTICE]"{{.Tier}}"[/RESET] in organization [NOTICE]"{{.Organization}}"[/RESET]'
 organization_name:
   other: Organization Name
 organization_no_orgs:
@@ -438,12 +454,10 @@ err_sscommon_unsupported_language:
 env_description:
   other: Manage Project Variables
 env_add_description:
-  other:
-    >
+  other: >
     add variable
 env_remove_description:
-  other:
-    >
+  other: >
     remove variable
 env_header_id:
   other: ID
@@ -607,9 +621,9 @@ secrets_err_no_publickey_found:
 secrets_err_check_access:
   other: Access check failed
 secrets_expand_err_undefined:
-  other: "Secret [NOTICE]\"{{.V0}}\"[/RESET] not defined in project"
+  other: 'Secret [NOTICE]"{{.V0}}"[/RESET] not defined in project'
 secrets_expand_err_not_found:
-  other: "Unable to obtain value for secret: [NOTICE]\"{{.V0}}\"[/RESET]."
+  other: 'Unable to obtain value for secret: [NOTICE]"{{.V0}}"[/RESET].'
 secrets_expand_err_no_access:
   other: You are not a member of organization '[NOTICE]{{.V0}}[/RESET]' and therefore cannot access secrets belonging to its projects
 secrets_err_invalid_store:
@@ -677,7 +691,7 @@ keypair_err_save:
 keypair_err_generate:
   other: Keypair could not be generated
 keypair_err_publickey_not_found:
-  other: "No public-key found for user [NOTICE]\"{{.V0}}\"[/RESET] ([NOTICE]\"{{.V1}}\"[/RESET])"
+  other: 'No public-key found for user [NOTICE]"{{.V0}}"[/RESET] ([NOTICE]"{{.V1}}"[/RESET])'
 keypair_err_passphrase_prompt:
   other: The provided passphrase is invalid
 keypair_err_require_auth:
@@ -693,7 +707,7 @@ keypairs_err_invalid_rsa_publickey:
 keypairs_err_load_not_found:
   other: Authorized keypair not found
 keypairs_err_load_requires_mode:
-  other: "Keypair [NOTICE]\"{{.V0}}\"[/RESET] file is too permissive, expects no more than [NOTICE]\"{{.V1}}\"[/RESET] permissions"
+  other: 'Keypair [NOTICE]"{{.V0}}"[/RESET] file is too permissive, expects no more than [NOTICE]"{{.V1}}"[/RESET] permissions'
 keypairs_err_base64_decoding:
   other: Message is not base-64 encoded
 keypairs_err_override_with_save:
@@ -717,7 +731,7 @@ developer_err_project_match:
   other: Encountered a situation where the tool is given different project paths. This indicates a bug in our code, please consider reporting it.
 
 err_version_parse:
-  other:  Could not determine the State Tool version to use to run this command. Please ensure the project field in your activestate.yaml is formatted correctly.
+  other: Could not determine the State Tool version to use to run this command. Please ensure the project field in your activestate.yaml is formatted correctly.
 err_invalid_lock:
   other: "Invalid lock specified in your activestate.yaml: '{{.V0}}', should be in the format of: [NOTICE]channel@{number}.{number}.{number}-{hash}[/RESET]"
 err_update_version:
@@ -733,10 +747,10 @@ forward_fail_info:
 update_available_header:
   other: "[ACTIONABLE]Update Available[/RESET]"
 update_available:
-   other: |
-     Your version: [NOTICE]{{.V0}}[/RESET]
-     Available Version: [NOTICE]{{.V1}}[/RESET]
-     You can update by running [ACTIONABLE]`state update`[/RESET]
+  other: |
+    Your version: [NOTICE]{{.V0}}[/RESET]
+    Available Version: [NOTICE]{{.V1}}[/RESET]
+    You can update by running [ACTIONABLE]`state update`[/RESET]
 update_none_found:
   other: No new update available.
 updating_version:
@@ -1264,7 +1278,7 @@ init_description:
 push_description:
   other: Push your latest changes to the platform
 push_first_new_project:
-  other: "Since this is your first time running \"push\" you'll need to create a new project on the ActiveState Platform."
+  other: 'Since this is your first time running "push" you''ll need to create a new project on the ActiveState Platform.'
 push_prompt_owner:
   other: "Who would you like the owner of this project to be?"
 push_prompt_not_authorized:
@@ -1369,7 +1383,7 @@ clean_cache_artifact_confirm:
 clean_config_confirm:
   other: You are about the remove the State Tool config directory. Continue?
 clean_success_message:
-  other:  |
+  other: |
     Successfully removed State Tool and related files.
 
     Please restart your shell in order for changes to take effect.
@@ -1451,7 +1465,7 @@ deploy_restart:
   other: Action Required
 deploy_cmd_description:
   other: |
-    Deploys the given runtime environment on the local system. Deploy sets up the language so you can run it from any shell environment that matches the current shell, overriding any conflicting installations.
+    Deploys the runtime in a way that cannot be further managed (not recommended for most use-cases). Deploy sets up the language so you can run it from any shell environment that matches the current shell, overriding any conflicting installations.
     You can run individual deploy steps by running the sub-commands, which is useful if you're preparing docker images, CI environments, or the like.
     If you're setting up a local development environment you probably won't need the sub-commands.
 deploy_install_cmd_description:
@@ -1892,8 +1906,14 @@ err_checkout_project:
   other: Could not checkout project {{.V0}}
 err_project_frompath:
   other: Could not create project files
+err_project_frompath_notexist:
+  other: Could not locate a project at [ACTIONABLE]{{.V0}}[/RESET]
+err_project_namespace_missmatch:
+  other: Project at [ACTIONABLE]{{.V0}}[/RESET] does not match namespace [ACTIONABLE]{{.V1}}[/RESET]
+err_project_fromenv:
+  other: Could not detect an appropriate project to use, please provide a valid path or namespace.
 err_local_project_not_checked_out:
-  other: "Cannot find the [ACTIONABLE]{{.V0}}[/RESET] project. Please either check it out using [ACTIONABLE]`state checkout`[/RESET] or reactivate it using [ACTIONABLE]`state activate`[/RESET]"
+  other: "Cannot find the [ACTIONABLE]{{.V0}}[/RESET] project. Please either check it out using [ACTIONABLE]`state checkout`[/RESET] or run this command again from the project directory."
 arg_state_shell_namespace_description:
   other: The namespace of the project you wish to start a shell/prompt for, or just the project name if previously used
 err_language_by_commit:
@@ -1958,3 +1978,17 @@ svcctl_wait_timeout:
     If this problem persists please report it on our forums: [ACTIONABLE]{{.V2}}[/RESET]
 err_autostart_app:
   other: Could not create new autostart app
+install_remote_title:
+  other: This will install the State Tool
+err_already_checked_out:
+  other: There is already a project checked out at '[ACTIONABLE]{{.V0}}[/RESET]'.
+use_project_statement:
+  other: Switched to project [ACTIONABLE]{{.V0}}[/RESET] located at [ACTIONABLE]{{.V1}}[/RESET].
+shell_project_statement:
+  other: |
+    Opening shell for project [ACTIONABLE]{{.V0}}[/RESET] located at [ACTIONABLE]{{.V1}}[/RESET].
+    For editors and other tooling use the executables at: [ACTIONABLE]{{.V2}}[/RESET].
+checkout_project_statement:
+  other: Checked out project [ACTIONABLE]{{.V0}}[/RESET] at [ACTIONABLE]{{.V1}}[/RESET].
+export_project_statement:
+  other: Exporting env for project [ACTIONABLE]{{.V0}}[/RESET] located at [ACTIONABLE]{{.V1}}[/RESET].

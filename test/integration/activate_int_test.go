@@ -305,7 +305,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivatePerl() {
 }
 
 func (suite *ActivateIntegrationTestSuite) TestActivate_Subdir() {
-	suite.OnlyRunForTags(tagsuite.Activate)
+	suite.OnlyRunForTags(tagsuite.Activate, tagsuite.Critical)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 	err := fileutils.Mkdir(ts.Dirs.Work, "foo", "bar", "baz")

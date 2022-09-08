@@ -89,6 +89,10 @@ func New(target setup.Targeter, an analytics.Dispatcher, svcm *model.SvcModel) (
 	return r, err
 }
 
+func (r *Runtime) Target() setup.Targeter {
+	return r.target
+}
+
 // Update updates the runtime by downloading all necessary artifacts from the Platform and installing them locally.
 // This function is usually called, after New() returned with a NeedsUpdateError
 func (r *Runtime) Update(auth *authentication.Auth, msgHandler *events.RuntimeEventHandler) error {

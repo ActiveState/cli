@@ -32,7 +32,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/getlantern/systray"
-	"github.com/shirou/gopsutil/process"
+	"github.com/shirou/gopsutil/v3/process"
 	"github.com/spf13/cast"
 )
 
@@ -105,7 +105,7 @@ func run(cfg *config.Instance) (rerr error) {
 
 	systray.SetIcon(iconFile)
 
-	port, err := svcctl.EnsureStartedAndLocateHTTP()
+	port, err := svcctl.EnsureStartedAndLocateHTTP("tray-start")
 	if err != nil && !errors.Is(err, ipc.ErrInUse) {
 		return errs.Wrap(err, "Service failed to start")
 	}

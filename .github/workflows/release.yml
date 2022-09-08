@@ -1,0 +1,93 @@
+name: Release
+
+# === Triggers ===
+"on":
+  create
+
+# === JOBS ===
+jobs:
+
+  # === OS Specific Job (runs on each OS) ===
+  remote-installer:
+    name: Remote Installer
+    timeout-minutes: 30
+    runs-on: windows-2019
+    env:
+      ACTIVESTATE_CLI_DISABLE_RUNTIME: true
+      GOFLAGS: -mod=vendor
+      SHELL: bash
+      GITHUB_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    # === OS Specific Steps ===
+    steps:
+      - # === Verify if needs to run ===
+        name: Verify if needs to run
+        shell: bash
+        run: |
+          if [[ "${{ github.event.ref_type }}" != "tag" ]]; then
+            echo "ref_type should be tag but is '${{ github.event.ref_type }}'"
+            exit 1
+          fi
+          if [[ "${{ github.event.ref }}" != release\/remote-installer* ]]; then
+            echo "ref should start with release/remote-installer but is '${{ github.event.ref }}'"
+            exit 1
+          fi
+
+      - # Checkout Code
+        name: Checkout code
+        uses: actions/checkout@v2
+
+      - # === Install Go ===
+        name: Install Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.18.x
+
+      - # === Setup ===
+        name: Setup
+        shell: bash
+        run: |
+          bin=$(pwd)/.github/deps/${{ runner.os }}/bin
+          echo "Adding $bin to PATH"
+          echo "$bin" >> $GITHUB_PATH
+
+      - # === Setup Windows ===
+        name: Setup (Windows)
+        shell: pwsh
+        run: |
+          echo "${PSScriptRoot}/.github/deps/${{ runner.os }}/bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
+      - # === Preprocess ===
+        name: Preprocess
+        shell: bash
+        timeout-minutes: 1
+        run: state run preprocess
+
+      - # === Build Remote Installer ===
+        name: Build Remote Installer
+        shell: bash
+        timeout-minutes: 15
+        run: |
+          echo $MSI_CERT_BASE64 | base64 --decode > Cert.p12
+          export PATH=/c/Program\ Files\ \(x86\)/WiX\ Toolset\ v3.11/bin/:/c/Program\ Files\ \(x86\)/Windows\ Kits/10/bin/10.0.16299.0/x86/:$PATH
+          
+          GOOS=windows state run build-remote-installer
+          signtool.exe sign -d "ActiveState State Tool Remote Installer" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/state-remote-installer.exe
+          state run generate-remote-install-deployment windows amd64
+          
+          GOOS=linux state run build-remote-installer
+          state run generate-remote-install-deployment linux amd64
+          
+          GOOS=darwin state run build-remote-installer
+          state run generate-remote-install-deployment darwin amd64
+        env:
+          CODE_SIGNING_PASSWD: ${{ secrets.CODE_SIGNING_PASSWD }}
+          MSI_CERT_BASE64: ${{ secrets.MSI_CERT_BASE64 }}
+
+      - # === Deploy ===
+        name: Deploy
+        shell: bash
+        run: state run deploy-remote-installer
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}

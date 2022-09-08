@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 	"regexp"
 	"runtime"
 	"strings"
@@ -239,6 +240,11 @@ func (p *Project) Path() string {
 	return p.projectfile.Path()
 }
 
+// Dir returns the project dir
+func (p *Project) Dir() string {
+	return filepath.Dir(p.projectfile.Path())
+}
+
 func (p *Project) IsHeadless() bool {
 	match := projectfile.CommitURLRe.FindStringSubmatch(p.URL())
 	return len(match) > 1
@@ -341,6 +347,16 @@ func FromPath(path string) (*Project, error) {
 	}
 
 	return project, nil
+}
+
+// FromEnv will return the project as per the environment configuration (eg. env var, working dir, global default, ..)
+func FromEnv() (*Project, error) {
+	path, err := projectfile.GetProjectFilePath()
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not get project file path")
+	}
+
+	return FromPath(path)
 }
 
 // FromExactPath will return the project that's located at the given path without walking up the directory tree

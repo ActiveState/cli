@@ -41,14 +41,21 @@ func New(repo git.Repository, prime primeable) *Checkout {
 	return &Checkout{repo, prime.Output(), prime.Config(), prime.Analytics(), ""}
 }
 
+type ErrorAlreadyCheckedOut struct{ *locale.LocalizedError }
+
 func (r *Checkout) Run(ns *project.Namespaced, branchName, targetPath string) (string, error) {
 	path, err := r.pathToUse(ns, targetPath)
 	if err != nil {
 		return "", errs.Wrap(err, "Could not get path to use")
 	}
 
+	path, err = filepath.Abs(path)
+	if err != nil {
+		return "", errs.Wrap(err, "Could not get absolute path")
+	}
+
 	if fileutils.FileExists(filepath.Join(path, constants.ConfigFileName)) {
-		return path, nil
+		return path, &ErrorAlreadyCheckedOut{locale.NewInputError("err_already_checked_out", "", path)}
 	}
 
 	// If project does not exist at path then we must checkout
@@ -122,19 +129,4 @@ func getLanguage(commitID strfmt.UUID) (language.Language, error) {
 		return language.Unset, locale.WrapError(err, "err_make_language")
 	}
 	return lang, nil
-}
-
-func (r *Checkout) pathToUse(namespace *project.Namespaced, preferredPath string) (string, error) {
-	switch {
-	case namespace != nil && namespace.String() != "":
-		// Checkout via namespace (eg. state activate org/project) and set resulting path
-		return ensureProjectPath(r.config, namespace, preferredPath)
-	case preferredPath != "":
-		// Use the user provided path
-		return preferredPath, nil
-	default:
-		// Get path from working directory
-		targetPath, err := projectfile.GetProjectFilePath()
-		return filepath.Dir(targetPath), err
-	}
 }
