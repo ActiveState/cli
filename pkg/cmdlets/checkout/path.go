@@ -63,7 +63,7 @@ func validatePath(ns *project.Namespaced, path string) error {
 	}
 
 	pjns := pj.Namespace()
-	if ns != nil && !pj.IsHeadless() && (pjns.Owner != ns.Owner || pjns.Project != ns.Project) {
+	if ns != nil && ns.IsValid() && !pj.IsHeadless() && (pjns.Owner != ns.Owner || pjns.Project != ns.Project) {
 		return locale.NewInputError("err_target_path_namespace_match", "", ns.String(), pjns.String())
 	}
 

@@ -27,7 +27,7 @@ func FromInputByPriority(path string, ns *project.Namespaced, cfg projectfile.Co
 	}
 
 	// Priority #2 - Namespace
-	if ns != nil {
+	if ns != nil && ns.IsValid() {
 		return FromNamespaceLocal(ns, cfg, prompt)
 	}
 
