@@ -93,7 +93,7 @@ func (v *SubShell) RcFile() (string, error) {
 }
 
 // SetupShellRcFile - subshell.SubShell
-func (v *SubShell) SetupShellRcFile(targetDir string, env map[string]string, namespace project.Namespaced) error {
+func (v *SubShell) SetupShellRcFile(targetDir string, env map[string]string, namespace *project.Namespaced) error {
 	env = sscommon.EscapeEnv(env)
 	return sscommon.SetupShellRcFile(filepath.Join(targetDir, "shell.tcsh"), "tcsh_global.sh", env, namespace)
 }

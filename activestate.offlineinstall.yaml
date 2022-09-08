@@ -1,0 +1,27 @@
+constants:
+  - name: OFFLINE_INSTALL
+    if: ne .OS.Name "Windows"
+    value: offline-installer
+  - name: OFFLINE_INSTALL
+    if: eq .OS.Name "Windows"
+    value: offline-installer.exe
+  - name: OFFLINE_INSTALL_PKGS
+    value: ./cmd/state-offline-installer
+  - name: OFFLINE_UNINSTALL
+    if: ne .OS.Name "Windows"
+    value: offline-uninstaller
+  - name: OFFLINE_UNINSTALL
+    if: eq .OS.Name "Windows"
+    value: offline-uninstaller.exe
+  - name: OFFLINE_UNINSTALL_PKGS
+    value: ./cmd/state-offline-uninstaller
+scripts:
+  - name: build-offline-install
+    language: bash
+    description: Builds the project with the host OS as the target OS.
+    value: |
+      set -e
+      $constants.SET_ENV
+
+      go build -tags "$GO_BUILD_TAGS" -o $BUILD_TARGET_DIR/offline/$constants.OFFLINE_INSTALL $constants.CLI_BUILDFLAGS $constants.OFFLINE_INSTALL_PKGS
+      go build -tags "$GO_BUILD_TAGS" -o $BUILD_TARGET_DIR/offline/$constants.OFFLINE_UNINSTALL $constants.CLI_BUILDFLAGS $constants.OFFLINE_UNINSTALL_PKGS

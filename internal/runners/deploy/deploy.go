@@ -218,7 +218,7 @@ func (d *Deploy) configure(namespace project.Namespaced, rtTarget setup.Targeter
 
 	// Write global env file
 	d.output.Notice(fmt.Sprintf("Writing shell env file to %s\n", filepath.Join(rtTarget.Dir(), "bin")))
-	err = d.subshell.SetupShellRcFile(binPath, env, namespace)
+	err = d.subshell.SetupShellRcFile(binPath, env, &namespace)
 	if err != nil {
 		return locale.WrapError(err, "err_deploy_subshell_rc_file", "Could not create environment script.")
 	}

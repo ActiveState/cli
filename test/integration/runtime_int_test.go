@@ -44,11 +44,8 @@ func TestOfflineInstaller(t *testing.T) {
 	require.NoError(t, err)
 	defer os.RemoveAll(dir)
 
-	owner := "testOwner"
-	name := "testName"
-	commitID := strfmt.UUID("000000000-0000-0000-0000-000000000000")
 	artifactsDir := filepath.Join(osutil.GetTestDataDir(), "offlineInstaller")
-	offlineTarget := target.NewOfflineTarget(owner, name, commitID, dir, artifactsDir)
+	offlineTarget := target.NewOfflineTarget(dir, artifactsDir)
 
 	analytics := blackhole.New()
 	mockProgress := &testhelper.MockProgressOutput{}
