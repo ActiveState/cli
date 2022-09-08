@@ -31,6 +31,7 @@ func newUseCommand(prime *primer.Values) *captain.Command {
 			return use.NewUse(prime).Run(params)
 		},
 	).SetGroup(EnvironmentGroup)
+	cmd.SetUnstable(true)
 	return cmd
 }
 
