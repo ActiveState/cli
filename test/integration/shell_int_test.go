@@ -111,7 +111,7 @@ func (suite *ShellIntegrationTestSuite) TestCwdShell() {
 func (suite *ShellIntegrationTestSuite) TestCd() {
 	suite.OnlyRunForTags(tagsuite.Shell)
 
-	ts := e2e.New(suite.T(), true)
+	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
 	cp := ts.SpawnWithOpts(

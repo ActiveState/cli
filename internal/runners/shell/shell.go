@@ -1,8 +1,6 @@
 package shell
 
 import (
-	"fmt"
-
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/locale"
@@ -76,7 +74,6 @@ func (u *Shell) Run(params *Params) error {
 		return locale.WrapInputError(err, "err_shell_runtime_new", "Could not start a shell/prompt for this project.")
 	}
 
-	fmt.Printf(`rti: %v, proj: %v`, rti, proj)
 	u.out.Notice(locale.Tl("shell_project_statement", "",
 		proj.NamespaceString(),
 		proj.Dir(),
