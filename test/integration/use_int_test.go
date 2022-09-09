@@ -66,7 +66,7 @@ func (suite *UseIntegrationTestSuite) TestUse() {
 		e2e.WithArgs("use", "ActiveState-CLI/Python-3.9"),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
-	cp.Expect("Switched to project ActiveState-CLI/Python3.9")
+	cp.Expect("Switched to project ActiveState-CLI/Python-3.9")
 	cp.ExpectExitCode(0)
 
 	// Verify the new runtime works.
