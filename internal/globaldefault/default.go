@@ -77,8 +77,8 @@ func SetupDefaultActivation(subshell subshell.SubShell, cfg DefaultConfigurer, r
 	}
 
 	target := target.NewProjectTarget(proj, storage.GlobalBinDir(), nil, target.TriggerActivate)
-	fw := executor.NewWithBinPath(target, BinDir())
-	if err := fw.Update(env, exes); err != nil {
+	fw := executor.NewWithBinPath(BinDir())
+	if err := fw.Update(target, env, exes); err != nil {
 		return locale.WrapError(err, "err_globaldefault_fw", "Could not set up forwarders")
 	}
 
@@ -99,20 +99,13 @@ func ResetDefaultActivation(subshell subshell.SubShell, cfg DefaultConfigurer) (
 		return false, nil // nothing to reset
 	}
 
-	proj, err := project.FromPath(projectDir)
-	if err != nil {
-		return false, locale.WrapError(err, "err_globaldefault_get_proj", "Could not get default project.")
-	}
-
-	target := target.NewProjectTarget(proj, storage.GlobalBinDir(), nil, target.TriggerActivate)
-	fw := executor.NewWithBinPath(target, BinDir())
-	err = fw.Cleanup()
-	if err != nil {
+	fw := executor.NewWithBinPath(BinDir())
+	if err := fw.Cleanup(); err != nil {
 		return false, locale.WrapError(err, "err_globaldefault_fw_cleanup", "Could not clean up forwarders")
 	}
 
 	envUpdates := map[string]string{}
-	err = subshell.WriteUserEnv(cfg, envUpdates, sscommon.DefaultID, true)
+	err := subshell.WriteUserEnv(cfg, envUpdates, sscommon.DefaultID, true)
 	if err != nil {
 		return false, locale.WrapError(err, "err_globaldefault_update_env")
 	}

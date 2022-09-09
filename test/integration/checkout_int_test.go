@@ -46,7 +46,7 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckout() {
 		e2e.WithArgs("--version"),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
-	cp.Expect("Python 3.6.6")
+	cp.Expect("Python 3")
 	cp.ExpectExitCode(0)
 }
 

@@ -15,7 +15,7 @@ import (
 
 func TestExecutor(t *testing.T) {
 	target := target.NewCustomTarget("owner", "project", "1234abcd-1234-abcd-1234-abcd1234abcd", "dummy/path", target.NewExecTrigger("test"), false)
-	fw, err := New(target)
+	fw, err := New()
 	require.NoError(t, err, errs.Join(err, ": "))
 
 	exePath := "/i/am/an/exe/"
@@ -23,7 +23,7 @@ func TestExecutor(t *testing.T) {
 	env := map[string]string{"PATH": "exePath"}
 
 	t.Run("Create executors", func(t *testing.T) {
-		err = fw.Update(env, exes)
+		err = fw.Update(target, env, exes)
 		require.NoError(t, err, errs.Join(err, ": "))
 	})
 

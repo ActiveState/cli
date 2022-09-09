@@ -44,27 +44,26 @@ type Targeter interface {
 }
 
 type Executor struct {
-	targeter     Targeter
 	executorPath string // The location to store the executors
 }
 
-func New(targeter Targeter) (*Executor, error) {
+func New() (*Executor, error) {
 	binPath, err := ioutil.TempDir("", "executor")
 	if err != nil {
 		return nil, errs.New("Could not create tempDir: %v", err)
 	}
-	return NewWithBinPath(targeter, binPath), nil
+	return NewWithBinPath(binPath), nil
 }
 
-func NewWithBinPath(targeter Targeter, executorPath string) *Executor {
-	return &Executor{targeter, executorPath}
+func NewWithBinPath(executorPath string) *Executor {
+	return &Executor{executorPath}
 }
 
 func (f *Executor) BinPath() string {
 	return f.executorPath
 }
 
-func (f *Executor) Update(env map[string]string, exes envdef.ExecutablePaths) error {
+func (f *Executor) Update(targeter Targeter, env map[string]string, exes envdef.ExecutablePaths) error {
 	logging.Debug("Creating executors at %s, exes: %v", f.executorPath, exes)
 
 	// We need to cover the use case of someone running perl.exe/python.exe
@@ -84,7 +83,7 @@ func (f *Executor) Update(env map[string]string, exes envdef.ExecutablePaths) er
 
 	sockPath := svcctl.NewIPCSockPathFromGlobals().String()
 	for _, exe := range exes {
-		if err := f.createExecutor(sockPath, env, exe); err != nil {
+		if err := f.createExecutor(targeter, sockPath, env, exe); err != nil {
 			return locale.WrapError(err, "err_createexecutor", "Could not create executor for {{.V0}}.", exe)
 		}
 	}
@@ -124,7 +123,7 @@ func (f *Executor) Cleanup() error {
 	return nil
 }
 
-func (f *Executor) createExecutor(sockPath string, env map[string]string, exe string) error {
+func (f *Executor) createExecutor(targeter Targeter, sockPath string, env map[string]string, exe string) error {
 	name := NameForExe(filepath.Base(exe))
 	target := filepath.Clean(filepath.Join(f.executorPath, name))
 
@@ -166,9 +165,9 @@ func (f *Executor) createExecutor(sockPath string, env map[string]string, exe st
 		"targetFile": exe,
 		"denote":     []string{executorDenoter, denoteTarget},
 		"Env":        env,
-		"commitID":   f.targeter.CommitUUID().String(),
-		"nameSpace":  project.NewNamespace(f.targeter.Owner(), f.targeter.Name(), f.targeter.CommitUUID().String()).String(),
-		"headless":   fmt.Sprintf("%t", f.targeter.Headless()),
+		"commitID":   targeter.CommitUUID().String(),
+		"nameSpace":  project.NewNamespace(targeter.Owner(), targeter.Name(), targeter.CommitUUID().String()).String(),
+		"headless":   fmt.Sprintf("%t", targeter.Headless()),
 	}
 	boxFile := "executor.sh"
 	if rt.GOOS == "windows" {
