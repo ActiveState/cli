@@ -29,7 +29,7 @@ func (suite *UseIntegrationTestSuite) TestUse() {
 		e2e.WithArgs("checkout", "ActiveState-CLI/Python3"),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
-	cp.Expect("Checked out Python3")
+	cp.Expect("Checked out project ActiveState-CLI/Python3")
 	cp.ExpectExitCode(0)
 
 	// Use.
@@ -37,7 +37,7 @@ func (suite *UseIntegrationTestSuite) TestUse() {
 		e2e.WithArgs("use", "ActiveState-CLI/Python3"),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
-	cp.Expect("Switched to Python3")
+	cp.Expect("Switched to project ActiveState-CLI/Python3")
 	cp.ExpectExitCode(0)
 
 	// Verify runtime works.
@@ -58,7 +58,7 @@ func (suite *UseIntegrationTestSuite) TestUse() {
 		e2e.WithArgs("checkout", "ActiveState-CLI/Python-3.9"),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
-	cp.Expect("Checked out Python-3.9")
+	cp.Expect("Checked out project ActiveState-CLI/Python3.9")
 	cp.ExpectExitCode(0)
 
 	// Use it.
@@ -66,7 +66,7 @@ func (suite *UseIntegrationTestSuite) TestUse() {
 		e2e.WithArgs("use", "ActiveState-CLI/Python-3.9"),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
-	cp.Expect("Switched to Python-3.9")
+	cp.Expect("Switched to project ActiveState-CLI/Python3.9")
 	cp.ExpectExitCode(0)
 
 	// Verify the new runtime works.
@@ -83,7 +83,7 @@ func (suite *UseIntegrationTestSuite) TestUse() {
 		e2e.WithArgs("use", "Python3"),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
-	cp.Expect("Switched to Python3")
+	cp.Expect("Switched to project ActiveState-CLI/Python3")
 	cp.ExpectExitCode(0)
 
 	// Verify the first runtime is set up correctly and usable.
@@ -114,14 +114,14 @@ func (suite *UseIntegrationTestSuite) TestReset() {
 		e2e.WithArgs("checkout", "ActiveState-CLI/Python3"),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
-	cp.Expect("Checked out Python3")
+	cp.Expect("Checked out project ActiveState-CLI/Python3")
 	cp.ExpectExitCode(0)
 
 	cp = ts.SpawnWithOpts(
 		e2e.WithArgs("use", "ActiveState-CLI/Python3"),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
-	cp.Expect("Switched to Python3")
+	cp.Expect("Switched to project ActiveState-CLI/Python3")
 	cp.ExpectExitCode(0)
 
 	python3Exe := filepath.Join(ts.Dirs.DefaultBin, "python3"+osutils.ExeExt)
@@ -174,14 +174,14 @@ func (suite *UseIntegrationTestSuite) TestShow() {
 		e2e.WithArgs("checkout", "ActiveState-CLI/Python3"),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
-	cp.Expect("Checked out Python3")
+	cp.Expect("Checked out project ActiveState-CLI/Python3")
 	cp.ExpectExitCode(0)
 
 	cp = ts.SpawnWithOpts(
 		e2e.WithArgs("use", "ActiveState-CLI/Python3"),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
-	cp.Expect("Switched to Python3")
+	cp.Expect("Switched to project ActiveState-CLI/Python3")
 	cp.ExpectExitCode(0)
 
 	cp = ts.SpawnWithOpts(e2e.WithArgs("use", "show"))
