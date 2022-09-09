@@ -58,7 +58,7 @@ func (suite *UseIntegrationTestSuite) TestUse() {
 		e2e.WithArgs("checkout", "ActiveState-CLI/Python-3.9"),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
-	cp.Expect("Checked out project ActiveState-CLI/Python3.9")
+	cp.Expect("Checked out project ActiveState-CLI/Python-3.9")
 	cp.ExpectExitCode(0)
 
 	// Use it.
