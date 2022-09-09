@@ -23,7 +23,6 @@ func (suite *ShellIntegrationTestSuite) TestShell() {
 
 	cp := ts.SpawnWithOpts(
 		e2e.WithArgs("checkout", "ActiveState-CLI/small-python"),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cp.Expect("Checked out project")
 	cp.ExpectExitCode(0)
@@ -32,7 +31,6 @@ func (suite *ShellIntegrationTestSuite) TestShell() {
 	for _, arg := range args {
 		cp := ts.SpawnWithOpts(
 			e2e.WithArgs("shell", arg),
-			e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 		)
 		cp.Expect("Activated")
 		cp.WaitForInput()
