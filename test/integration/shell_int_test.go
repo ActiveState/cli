@@ -36,7 +36,7 @@ func (suite *ShellIntegrationTestSuite) TestShell() {
 		cp.WaitForInput()
 
 		cp.SendLine("python3 --version")
-		cp.Expect("Python 3.6.6")
+		cp.Expect("Python 3")
 		cp.SendLine("exit")
 		cp.Expect("Deactivated")
 		cp.ExpectExitCode(0)
