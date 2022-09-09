@@ -30,7 +30,7 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckout() {
 		e2e.WithArgs("checkout", "ActiveState-CLI/Python3"),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
-	cp.Expect("Checked out project Python3")
+	cp.Expect("Checked out project")
 	python3Dir := filepath.Join(ts.Dirs.Work, "Python3")
 	suite.Require().True(fileutils.DirExists(python3Dir), "state checkout should have created "+python3Dir)
 	suite.Require().True(fileutils.FileExists(filepath.Join(python3Dir, constants.ConfigFileName)), "ActiveState-CLI/Python3 was not checked out properly")

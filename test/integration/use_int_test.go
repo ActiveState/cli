@@ -29,7 +29,7 @@ func (suite *UseIntegrationTestSuite) TestUse() {
 		e2e.WithArgs("checkout", "ActiveState-CLI/Python3"),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
-	cp.Expect("Checked out project Python3")
+	cp.Expect("Checked out project")
 	cp.ExpectExitCode(0)
 
 	// Use.
@@ -58,7 +58,7 @@ func (suite *UseIntegrationTestSuite) TestUse() {
 		e2e.WithArgs("checkout", "ActiveState-CLI/Python-3.9"),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
-	cp.Expect("Checked out project Python-3.9")
+	cp.Expect("Checked out project")
 	cp.ExpectExitCode(0)
 
 	// Use it.
@@ -114,7 +114,7 @@ func (suite *UseIntegrationTestSuite) TestReset() {
 		e2e.WithArgs("checkout", "ActiveState-CLI/Python3"),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
-	cp.Expect("Checked out project Python3")
+	cp.Expect("Checked out project")
 	cp.ExpectExitCode(0)
 
 	cp = ts.SpawnWithOpts(
@@ -174,7 +174,7 @@ func (suite *UseIntegrationTestSuite) TestShow() {
 		e2e.WithArgs("checkout", "ActiveState-CLI/Python3"),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
-	cp.Expect("Checked out project Python3")
+	cp.Expect("Checked out project")
 	cp.ExpectExitCode(0)
 
 	cp = ts.SpawnWithOpts(
