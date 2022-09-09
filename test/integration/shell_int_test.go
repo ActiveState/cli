@@ -116,7 +116,6 @@ func (suite *ShellIntegrationTestSuite) TestCd() {
 
 	cp := ts.SpawnWithOpts(
 		e2e.WithArgs("activate", "ActiveState-CLI/small-python"),
-		e2e.AppendEnv("SHELL=bash"),
 	)
 	cp.Expect("Activated")
 	cp.WaitForInput()
@@ -130,7 +129,6 @@ func (suite *ShellIntegrationTestSuite) TestCd() {
 	cp = ts.SpawnWithOpts(
 		e2e.WithArgs("shell", "ActiveState-CLI/small-python"),
 		e2e.WithWorkDirectory(subdir),
-		e2e.AppendEnv("SHELL=bash"),
 	)
 	cp.Expect("Activated")
 	cp.WaitForInput()
@@ -145,7 +143,6 @@ func (suite *ShellIntegrationTestSuite) TestCd() {
 	cp = ts.SpawnWithOpts(
 		e2e.WithArgs("shell", "ActiveState-CLI/small-python", "--cd"),
 		e2e.WithWorkDirectory(subdir),
-		e2e.AppendEnv("SHELL=bash"),
 	)
 	cp.Expect("Activated")
 	cp.WaitForInput()
