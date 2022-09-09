@@ -1,8 +1,6 @@
 package shell
 
 import (
-	"os"
-
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/locale"
@@ -62,12 +60,7 @@ func New(prime primeable) *Shell {
 func (u *Shell) Run(params *Params) error {
 	logging.Debug("Shell %v", params.Namespace)
 
-	wd, err := os.Getwd()
-	if err != nil {
-		return locale.WrapInputError(err, "err_wd")
-	}
-
-	proj, err := findproject.FromInputByPriority(wd, params.Namespace, u.config, u.prompt)
+	proj, err := findproject.FromInputByPriority("", params.Namespace, u.config, u.prompt)
 	if err != nil {
 		return locale.WrapError(err, "err_shell_cannot_load_project")
 	}

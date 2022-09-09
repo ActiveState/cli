@@ -22,23 +22,21 @@ func (suite *ShellIntegrationTestSuite) TestShell() {
 	defer ts.Close()
 
 	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("checkout", "ActiveState-CLI/Python3"),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.WithArgs("checkout", "ActiveState-CLI/small-python"),
 	)
-	cp.Expect("Checked out Python3")
+	cp.Expect("Checked out project")
 	cp.ExpectExitCode(0)
 
-	args := []string{"Python3", "ActiveState-CLI/Python3"}
+	args := []string{"small-python", "ActiveState-CLI/small-python"}
 	for _, arg := range args {
 		cp := ts.SpawnWithOpts(
 			e2e.WithArgs("shell", arg),
-			e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 		)
 		cp.Expect("Activated")
 		cp.WaitForInput()
 
 		cp.SendLine("python3 --version")
-		cp.Expect("Python 3.6.6")
+		cp.Expect("Python 3")
 		cp.SendLine("exit")
 		cp.Expect("Deactivated")
 		cp.ExpectExitCode(0)
@@ -49,7 +47,6 @@ func (suite *ShellIntegrationTestSuite) TestShell() {
 	for _, arg := range args {
 		cp := ts.SpawnWithOpts(
 			e2e.WithArgs("shell", arg),
-			e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 		)
 		cp.Expect("Cannot find the Python-3.9 project")
 		cp.ExpectExitCode(1)
@@ -62,18 +59,24 @@ func (suite *ShellIntegrationTestSuite) TestDefaultShell() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
+	// Checkout.
 	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("activate", "ActiveState-CLI/Python3", "--default", "--path", filepath.Join(ts.Dirs.Work, "foo", "bar", "baz")),
+		e2e.WithArgs("checkout", "ActiveState-CLI/small-python"),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
-	cp.Expect("Activated")
-	cp.WaitForInput()
-	cp.SendLine("exit")
+	cp.Expect("Checked out project")
+	cp.ExpectExitCode(0)
+
+	// Use.
+	cp = ts.SpawnWithOpts(
+		e2e.WithArgs("use", "ActiveState-CLI/small-python"),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
+	cp.Expect("Switched to project")
 	cp.ExpectExitCode(0)
 
 	cp = ts.SpawnWithOpts(
 		e2e.WithArgs("shell"),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cp.Expect("Activated")
 	cp.WaitForInput()
@@ -88,8 +91,7 @@ func (suite *ShellIntegrationTestSuite) TestCwdShell() {
 	defer ts.Close()
 
 	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("activate", "ActiveState-CLI/Python3"),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.WithArgs("activate", "ActiveState-CLI/small-python"),
 	)
 	cp.Expect("Activated")
 	cp.WaitForInput()
@@ -98,8 +100,7 @@ func (suite *ShellIntegrationTestSuite) TestCwdShell() {
 
 	cp = ts.SpawnWithOpts(
 		e2e.WithArgs("shell"),
-		e2e.WithWorkDirectory(filepath.Join(ts.Dirs.Work, "Python3")),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.WithWorkDirectory(filepath.Join(ts.Dirs.Work, "small-python")),
 	)
 	cp.Expect("Activated")
 	cp.WaitForInput()
@@ -114,8 +115,7 @@ func (suite *ShellIntegrationTestSuite) TestCd() {
 	defer ts.Close()
 
 	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("activate", "ActiveState-CLI/Python3"),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.WithArgs("activate", "ActiveState-CLI/small-python"),
 	)
 	cp.Expect("Activated")
 	cp.WaitForInput()
@@ -127,9 +127,8 @@ func (suite *ShellIntegrationTestSuite) TestCd() {
 	suite.Require().NoError(err)
 
 	cp = ts.SpawnWithOpts(
-		e2e.WithArgs("shell", "ActiveState-CLI/Python3"),
+		e2e.WithArgs("shell", "ActiveState-CLI/small-python"),
 		e2e.WithWorkDirectory(subdir),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cp.Expect("Activated")
 	cp.WaitForInput()
@@ -142,9 +141,8 @@ func (suite *ShellIntegrationTestSuite) TestCd() {
 	cp.SendLine("exit")
 
 	cp = ts.SpawnWithOpts(
-		e2e.WithArgs("shell", "ActiveState-CLI/Python3", "--cd"),
+		e2e.WithArgs("shell", "ActiveState-CLI/small-python", "--cd"),
 		e2e.WithWorkDirectory(subdir),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cp.Expect("Activated")
 	cp.WaitForInput()
