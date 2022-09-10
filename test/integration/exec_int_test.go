@@ -183,7 +183,7 @@ func (suite *ExecIntegrationTestSuite) TestExecWithPath() {
 		e2e.WithArgs("checkout", "ActiveState-CLI/Python-3.9", pythonDir),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
-	cp.Expect("Checked out Python-3.9")
+	cp.Expect("Checked out project")
 	cp.ExpectExitCode(0)
 
 	cp = ts.SpawnWithOpts(

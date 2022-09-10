@@ -267,8 +267,8 @@ func (s *Setup) updateExecutors(artifacts []artifact.ArtifactID) error {
 		return locale.WrapError(err, "err_setup_get_runtime_env", "Could not retrieve runtime environment")
 	}
 
-	exec := executor.NewInit(s.target, execPath)
-	if err := exec.Apply(svcctl.NewIPCSockPathFromGlobals().String(), env, exePaths); err != nil {
+	exec := executor.NewInit(execPath)
+	if err := exec.Apply(svcctl.NewIPCSockPathFromGlobals().String(), s.target, env, exePaths); err != nil {
 		return locale.WrapError(err, "err_deploy_executors", "Could not create executors")
 	}
 

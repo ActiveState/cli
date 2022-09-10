@@ -32,15 +32,13 @@ type Targeter interface {
 }
 
 type Init struct {
-	targeter     Targeter
 	executorPath string // The location to store the executors
 
 	altExecSrcPath string // Path to alternate executor. Executor() will use global func if not set.
 }
 
-func NewInit(targeter Targeter, executorPath string) *Init {
+func NewInit(executorPath string) *Init {
 	return &Init{
-		targeter:     targeter,
 		executorPath: executorPath,
 	}
 }
@@ -56,7 +54,7 @@ func (i *Init) ExecutorSrc() (string, error) {
 	return installation.ExecutorExec()
 }
 
-func (i *Init) Apply(sockPath string, env map[string]string, exes envdef.ExecutablePaths) error {
+func (i *Init) Apply(sockPath string, targeter Targeter, env map[string]string, exes envdef.ExecutablePaths) error {
 	logging.Debug("Creating executors at %s, exes: %v", i.executorPath, exes)
 
 	// We need to cover the use case of someone running perl.exe/python.exe
@@ -78,7 +76,7 @@ func (i *Init) Apply(sockPath string, env map[string]string, exes envdef.Executa
 		return locale.WrapError(err, "err_mkdir", "Could not create directory: {{.V0}}", i.executorPath)
 	}
 
-	m := NewMeta(sockPath, env, i.targeter, exes)
+	m := NewMeta(sockPath, env, targeter, exes)
 	if err := m.WriteToDisk(i.executorPath); err != nil {
 		return err
 	}

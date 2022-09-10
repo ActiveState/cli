@@ -46,7 +46,7 @@ func FromPath(path string, ns *project.Namespaced) (*project.Project, error) {
 		return nil, &LocalProjectDoesNotExist{locale.WrapInputError(err, "err_project_frompath_notexist", "", path)}
 	}
 
-	if ns != nil && ((ns.Owner != "" && pj.Namespace().Owner != ns.Owner) || pj.Namespace().Project != ns.Project) {
+	if ns != nil && ns.IsValid() && ((ns.Owner != "" && pj.Namespace().Owner != ns.Owner) || pj.Namespace().Project != ns.Project) {
 		return nil, locale.WrapInputError(err, "err_project_namespace_missmatch", "", path, ns.String())
 	}
 	return pj, nil

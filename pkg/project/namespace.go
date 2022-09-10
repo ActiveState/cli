@@ -82,7 +82,7 @@ func (ns *Namespaced) Type() string {
 
 // IsValid returns whether or not the namespace is set sufficiently.
 func (ns *Namespaced) IsValid() bool {
-	return ns != nil && ns.Owner != "" && ns.Project != ""
+	return ns != nil && ns.Project != ""
 }
 
 // Validate returns a failure if the namespace is not valid.

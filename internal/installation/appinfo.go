@@ -1,9 +1,13 @@
 package installation
 
 import (
+	"os"
 	"path/filepath"
+	"strings"
 
+	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/osutils"
 )
@@ -42,6 +46,14 @@ func newExecFromDir(baseDir string, exec executableType) (string, error) {
 		}
 	} else {
 		path = filepath.Dir(osutils.Executable())
+	}
+
+	// Work around dlv debugger giving an unexpected executable path
+	if !condition.BuiltViaCI() && len(os.Args) > 1 && strings.Contains(os.Args[0], "__debug_bin") {
+		rootPath := filepath.Clean(environment.GetRootPathUnsafe())
+		if rootPath == filepath.Clean(path) {
+			path = filepath.Join(path, "build")
+		}
 	}
 
 	return filepath.Join(path, execData[exec]), nil
