@@ -1,13 +1,7 @@
 if [ -f ~/.bashrc ]; then source ~/.bashrc; fi
 
 {{if ne .Owner ""}}
-__state_prompt() {
-  echo "[{{.Owner}}/{{.Name}}]"
-}
-if [ "$PROMPT_COMMAND" != "" ]; then
-  PROMPT_COMMAND+=" "
-fi
-PROMPT_COMMAND+='__state_prompt'
+export PS1="[{{.Owner}}/{{.Name}}] $PS1"
 {{end}}
 
 cd "{{.WD}}"
