@@ -1983,7 +1983,9 @@ install_remote_title:
 err_already_checked_out:
   other: There is already a project checked out at '[ACTIONABLE]{{.V0}}[/RESET]'.
 use_project_statement:
-  other: Switched to project [ACTIONABLE]{{.V0}}[/RESET] located at [ACTIONABLE]{{.V1}}[/RESET].
+  other: |
+    Switched to project [ACTIONABLE]{{.V0}}[/RESET] located at [ACTIONABLE]{{.V1}}[/RESET].
+    For editors and other tooling use the executables at: [ACTIONABLE]{{.V2}}[/RESET].
 shell_project_statement:
   other: |
     Opening shell for project [ACTIONABLE]{{.V0}}[/RESET] located at [ACTIONABLE]{{.V1}}[/RESET].
