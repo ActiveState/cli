@@ -73,7 +73,7 @@ func newCleanCacheCommand(prime *primer.Values, globals *globalOptions) *captain
 	)
 }
 
-func newCleanConfigCommand(prime *primer.Values) *captain.Command {
+func newCleanConfigCommand(prime *primer.Values, globals *globalOptions) *captain.Command {
 	runner := clean.NewConfig(prime)
 	params := clean.ConfigParams{}
 	return captain.NewCommand(
@@ -85,12 +85,13 @@ func newCleanConfigCommand(prime *primer.Values) *captain.Command {
 			{
 				Name:        "force",
 				Shorthand:   "f",
-				Description: locale.T("flag_state_config_cache_force_description"),
+				Description: locale.T("flag_state_clean_config_force_description"),
 				Value:       &params.Force,
 			},
 		},
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, _ []string) error {
+			params.NonInteractive = globals.NonInteractive // distinct from params.Force
 			return runner.Run(&params)
 		},
 	)

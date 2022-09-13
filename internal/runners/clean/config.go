@@ -31,7 +31,8 @@ type Config struct {
 }
 
 type ConfigParams struct {
-	Force bool
+	Force          bool
+	NonInteractive bool
 }
 
 func NewConfig(prime primeable) *Config {
@@ -53,12 +54,13 @@ func (c *Config) Run(params *ConfigParams) error {
 	}
 
 	if !params.Force {
-		ok, err := c.confirm.Confirm(locale.T("confirm"), locale.T("clean_config_confirm"), new(bool))
+		defaultChoice := params.NonInteractive
+		ok, err := c.confirm.Confirm(locale.T("confirm"), locale.T("clean_config_confirm"), &defaultChoice)
 		if err != nil {
-			return err
+			return locale.WrapError(err, "err_clean_config_confirm", "Could not confirm clean config choice")
 		}
 		if !ok {
-			return nil
+			return locale.NewInputError("err_clean_config_aborted", "Cleaning of config aborted by user")
 		}
 	}
 
