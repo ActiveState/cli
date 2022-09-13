@@ -86,7 +86,7 @@ func newCleanConfigCommand(prime *primer.Values) *captain.Command {
 			{
 				Name:        "force",
 				Shorthand:   "f",
-				Description: locale.T("flag_state_config_cache_force_description"),
+				Description: locale.T("flag_state_clean_config_force_description"),
 				Value:       &params.Force,
 			},
 		},

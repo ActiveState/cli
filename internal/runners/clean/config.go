@@ -8,6 +8,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/rtutils/p"
 	"github.com/ActiveState/cli/internal/svcctl"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -53,12 +54,12 @@ func (c *Config) Run(params *ConfigParams) error {
 	}
 
 	if !params.Force {
-		ok, err := c.confirm.Confirm(locale.T("confirm"), locale.T("clean_config_confirm"), new(bool))
+		ok, err := c.confirm.Confirm(locale.T("confirm"), locale.T("clean_config_confirm"), p.BoolP(true))
 		if err != nil {
-			return err
+			return locale.WrapError(err, "err_clean_config_confirm", "Could not confirm clean config choice")
 		}
 		if !ok {
-			return nil
+			return locale.NewInputError("err_clean_config_aborted", "Cleaning of config aborted by user")
 		}
 	}
 
