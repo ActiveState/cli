@@ -22,7 +22,7 @@ func newCleanCommand(prime *primer.Values) *captain.Command {
 	).SetGroup(UtilsGroup)
 }
 
-func newCleanUninstallCommand(prime *primer.Values) *captain.Command {
+func newCleanUninstallCommand(prime *primer.Values, globals *globalOptions) *captain.Command {
 	params := clean.UninstallParams{}
 	return captain.NewCommand(
 		"uninstall",
@@ -44,6 +44,7 @@ func newCleanUninstallCommand(prime *primer.Values) *captain.Command {
 				return err
 			}
 
+			params.NonInteractive = globals.NonInteractive // distinct from --force
 			return runner.Run(&params)
 		},
 	)

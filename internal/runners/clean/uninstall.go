@@ -28,7 +28,8 @@ type Uninstall struct {
 }
 
 type UninstallParams struct {
-	Force bool
+	Force          bool
+	NonInteractive bool
 }
 
 type primeable interface {
@@ -59,12 +60,13 @@ func (u *Uninstall) Run(params *UninstallParams) error {
 	}
 
 	if !params.Force {
-		ok, err := u.confirm.Confirm(locale.T("confirm"), locale.T("uninstall_confirm"), new(bool))
+		defaultChoice := params.NonInteractive
+		ok, err := u.confirm.Confirm(locale.T("confirm"), locale.T("uninstall_confirm"), &defaultChoice)
 		if err != nil {
-			return err
+			return locale.WrapError(err, "err_uninstall_confirm", "Could not confirm uninstall choice")
 		}
 		if !ok {
-			return nil
+			return locale.NewInputError("err_uninstall_aborted", "Uninstall aborted by user")
 		}
 	}
 

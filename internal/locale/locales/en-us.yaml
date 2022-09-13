@@ -187,7 +187,7 @@ tos_disclaimer:
       {{.V0}}
 tos_disclaimer_prompt:
   other: |
-    
+
     By continuing you accept the Terms of Service. Continue?
 tos_acceptance:
   other: Do you accept the ActiveState Platform Terms of Service?
@@ -1359,7 +1359,7 @@ cache_description:
 config_description:
   other: Removes global State Tool configuration. Project configuration will not be affected.
 flag_state_clean_uninstall_force_description:
-  other: Run uninstall operation without prompts
+  other: Run uninstall operation without prompts and ignoring any errors stopping running services
 flag_state_clean_ignore_errors_description:
   other: Does not stop when an error occurs, removing as much as possible
 flag_state_clean_cache_force_description:
