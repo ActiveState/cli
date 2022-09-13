@@ -1982,13 +1982,17 @@ err_already_checked_out:
   other: There is already a project checked out at '[ACTIONABLE]{{.V0}}[/RESET]'.
 use_project_statement:
   other: |
-    Switched to project [ACTIONABLE]{{.V0}}[/RESET] located at [ACTIONABLE]{{.V1}}[/RESET].
+    Switched to project [ACTIONABLE]{{.V0}}[/RESET], located at [ACTIONABLE]{{.V1}}[/RESET].
+    For editors and other tooling use the executables at: [ACTIONABLE]{{.V2}}[/RESET].
+use_show_project_statement:
+  other: |
+    The active project is [ACTIONABLE]{{.V0}}[/RESET], located at [ACTIONABLE]{{.V1}}[/RESET].
     For editors and other tooling use the executables at: [ACTIONABLE]{{.V2}}[/RESET].
 shell_project_statement:
   other: |
-    Opening shell for project [ACTIONABLE]{{.V0}}[/RESET] located at [ACTIONABLE]{{.V1}}[/RESET].
+    Opening shell for project [ACTIONABLE]{{.V0}}[/RESET], located at [ACTIONABLE]{{.V1}}[/RESET].
     For editors and other tooling use the executables at: [ACTIONABLE]{{.V2}}[/RESET].
 checkout_project_statement:
-  other: Checked out project [ACTIONABLE]{{.V0}}[/RESET] at [ACTIONABLE]{{.V1}}[/RESET].
+  other: Checked out project [ACTIONABLE]{{.V0}}[/RESET], located at [ACTIONABLE]{{.V1}}[/RESET].
 export_project_statement:
   other: Exporting env for project [ACTIONABLE]{{.V0}}[/RESET] located at [ACTIONABLE]{{.V1}}[/RESET].
