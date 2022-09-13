@@ -115,6 +115,7 @@ func buildRuntimeDependencies(dependencyID string, artifacts []*model.Artifact, 
 }
 
 // Can we combine this with the above functions?
+// This shouldn't be necessary anymore once the build plan includes the name with the artifact
 func (a ArtifactBuildPlan) updateWithSourceInfo(generatedByID string, steps []*model.Step, sources []*model.Source) (ArtifactBuildPlan, error) {
 	for _, step := range steps {
 		if step.TargetID != generatedByID {
