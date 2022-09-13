@@ -208,8 +208,10 @@ func (suite *UseIntegrationTestSuite) TestShow() {
 	cp.Expect("Switched to project")
 	cp.ExpectExitCode(0)
 
-	cp = ts.SpawnWithOpts(e2e.WithArgs("use", "show"))
-	cp.ExpectLongString("The default project to use is ActiveState-CLI/Python3, located at")
+	cp = ts.SpawnWithOpts(
+		e2e.WithArgs("use", "show"),
+	)
+	cp.ExpectLongString("The active project is ActiveState-CLI/Python3")
 	projectDir := filepath.Join(ts.Dirs.Work, "Python3")
 	if runtime.GOOS != "windows" {
 		cp.ExpectLongString(projectDir)
@@ -219,6 +221,8 @@ func (suite *UseIntegrationTestSuite) TestShow() {
 		suite.Require().NoError(err)
 		cp.ExpectLongString(longPath)
 	}
+	cp.ExpectLongString(ts.Dirs.Cache)
+	cp.Expect("/exec")
 	cp.ExpectExitCode(0)
 
 	err := os.RemoveAll(projectDir)
