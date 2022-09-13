@@ -65,6 +65,7 @@ const (
 	VSCode          = "vscode"
 	Performance     = "performance"
 	Service         = "service"
+	Executor        = "executor"
 	Deprecation     = "deprecation"
 	Compatibility   = "compatibility"
 	Automation      = "automation"
