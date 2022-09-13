@@ -198,7 +198,7 @@ func (suite *UseIntegrationTestSuite) TestShow() {
 		cp.ExpectLongString(longPath)
 	}
 	cp.ExpectLongString(ts.Dirs.Cache)
-	cp.Expect("/exec")
+	cp.Expect("exec")
 	cp.ExpectExitCode(0)
 
 	cp = ts.SpawnWithOpts(e2e.WithArgs("use", "reset", "--non-interactive"))
