@@ -8,6 +8,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/rtutils/p"
 	"github.com/ActiveState/cli/internal/svcctl"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -31,8 +32,7 @@ type Config struct {
 }
 
 type ConfigParams struct {
-	Force          bool
-	NonInteractive bool
+	Force bool
 }
 
 func NewConfig(prime primeable) *Config {
@@ -54,8 +54,7 @@ func (c *Config) Run(params *ConfigParams) error {
 	}
 
 	if !params.Force {
-		defaultChoice := params.NonInteractive
-		ok, err := c.confirm.Confirm(locale.T("confirm"), locale.T("clean_config_confirm"), &defaultChoice)
+		ok, err := c.confirm.Confirm(locale.T("confirm"), locale.T("clean_config_confirm"), p.BoolP(true))
 		if err != nil {
 			return locale.WrapError(err, "err_clean_config_confirm", "Could not confirm clean config choice")
 		}

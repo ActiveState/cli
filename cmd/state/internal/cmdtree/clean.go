@@ -73,7 +73,7 @@ func newCleanCacheCommand(prime *primer.Values, globals *globalOptions) *captain
 	)
 }
 
-func newCleanConfigCommand(prime *primer.Values, globals *globalOptions) *captain.Command {
+func newCleanConfigCommand(prime *primer.Values) *captain.Command {
 	runner := clean.NewConfig(prime)
 	params := clean.ConfigParams{}
 	return captain.NewCommand(
@@ -91,7 +91,6 @@ func newCleanConfigCommand(prime *primer.Values, globals *globalOptions) *captai
 		},
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, _ []string) error {
-			params.NonInteractive = globals.NonInteractive // distinct from params.Force
 			return runner.Run(&params)
 		},
 	)
