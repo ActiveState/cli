@@ -34,6 +34,8 @@ func (suite *ShellIntegrationTestSuite) TestShell() {
 		)
 		cp.Expect("Activated")
 		cp.WaitForInput()
+		cp.SendLine("which python3")
+		cp.Expect("fail")
 
 		cp.SendLine("python3 --version")
 		cp.Expect("Python 3")
