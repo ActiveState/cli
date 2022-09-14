@@ -3,9 +3,11 @@ package use
 import (
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/runbits/findproject"
+	"github.com/ActiveState/cli/pkg/project"
+	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 type Show struct {
@@ -39,9 +41,9 @@ func (s *Show) Run() error {
 		return locale.NewInputError("err_use_show_no_default_project", "No default project is set.")
 	}
 
-	proj, err := findproject.FromPath(projectDir, nil)
+	proj, err := project.FromPath(projectDir)
 	if err != nil {
-		if findproject.IsLocalProjectDoesNotExistError(err) {
+		if errs.Matches(err, &projectfile.ErrorNoProject{}) {
 			return locale.WrapError(err,
 				"err_use_show_default_project_does_not_exist",
 				"The default project no longer exists. Please either check it out again or run [ACTIONABLE]state use reset[/RESET].")
