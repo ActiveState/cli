@@ -31,6 +31,7 @@ func (suite *ExecutorIntegrationTestSuite) TestExecutorForwards() {
 
 	cp = ts.SpawnWithOpts(
 		e2e.WithArgs("shell", "ActiveState-CLI/Python3"),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cp.Expect("Activated")
 	cp.WaitForInput()
