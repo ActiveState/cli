@@ -5,7 +5,7 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/pkg/project"
+	"github.com/ActiveState/cli/internal/runbits/findproject"
 )
 
 type Show struct {
@@ -39,8 +39,13 @@ func (s *Show) Run() error {
 		return locale.NewInputError("err_use_show_no_default_project", "No default project is set.")
 	}
 
-	proj, err := project.FromPath(projectDir)
+	proj, err := findproject.FromPath(projectDir, nil)
 	if err != nil {
+		if findproject.IsLocalProjectDoesNotExistError(err) {
+			return locale.WrapError(err,
+				"err_use_show_default_project_does_not_exist",
+				"The default project no longer exists. Please either check it out again or run [ACTIONABLE]state use reset[/RESET].")
+		}
 		return locale.WrapError(err, "err_use_show_get_project", "Could not get default project.")
 	}
 
