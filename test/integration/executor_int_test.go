@@ -35,9 +35,6 @@ func (suite *ExecutorIntegrationTestSuite) TestExecutorForwards() {
 	cp.Expect("Activated")
 	cp.WaitForInput()
 
-	cp.SendLine("python3 -c \"import sys; print(sys.copyright)\"")
-	cp.Expect("ActiveState Software Inc.")
-
 	if runtime.GOOS == "linux" {
 		cp.SendLine("which python3")
 		cp.Expect("python")
@@ -46,6 +43,9 @@ func (suite *ExecutorIntegrationTestSuite) TestExecutorForwards() {
 		cp.SendLine("which python3.10")
 		cp.Expect("fail")
 	}
+
+	cp.SendLine("python3 -c \"import sys; print(sys.copyright)\"")
+	cp.Expect("ActiveState Software Inc.")
 
 	cp.SendLine("exit")
 	cp.Expect("Deactivated")
