@@ -23,28 +23,21 @@ func (suite *ExecutorIntegrationTestSuite) TestExecutorForwards() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	// Checkout.
 	cp := ts.SpawnWithOpts(
 		e2e.WithArgs("checkout", "ActiveState-CLI/small-python"),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cp.Expect("Checked out project")
 	cp.ExpectExitCode(0)
 
-	// Use.
 	cp = ts.SpawnWithOpts(
-		e2e.WithArgs("use", "ActiveState-CLI/small-python"),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
-	)
-	cp.Expect("Switched to project")
-	cp.ExpectExitCode(0)
-
-	cp = ts.SpawnWithOpts(
-		e2e.WithArgs("shell"),
+		e2e.WithArgs("shell", "ActiveState-CLI/small-python"),
 	)
 	cp.Expect("Activated")
-
 	cp.WaitForInput()
+
+	cp.SendLine("python3 -c \"import sys; print(sys.copyright)\"")
+	cp.Expect("ActiveState Software Inc.")
+
 	if runtime.GOOS == "linux" {
 		cp.SendLine("which python3")
 		cp.Expect("python")
@@ -53,10 +46,8 @@ func (suite *ExecutorIntegrationTestSuite) TestExecutorForwards() {
 		cp.SendLine("which python3.10")
 		cp.Expect("fail")
 	}
-	cp.SendLine("python3 -c \"import sys; print(sys.copyright)\"")
-	cp.Expect("ActiveState Software Inc.")
 
-	cp.WaitForInput()
 	cp.SendLine("exit")
+	cp.Expect("Deactivated")
 	cp.ExpectExitCode(0)
 }
