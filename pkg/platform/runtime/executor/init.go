@@ -34,7 +34,7 @@ type Targeter interface {
 type Init struct {
 	executorPath string // The location to store the executors
 
-	altExecSrcPath string // Path to alternate executor. Executor() will use global func if not set.
+	altExecSrcPath string // Path to alternate executor for testing. Executor() will use global func if not set.
 }
 
 func NewInit(executorPath string) *Init {
@@ -43,7 +43,8 @@ func NewInit(executorPath string) *Init {
 	}
 }
 
-func (i *Init) SetAltExecSrcPath(path string) {
+// setAltExecSrcPath is used for testing.
+func (i *Init) setAltExecSrcPath(path string) {
 	i.altExecSrcPath = path
 }
 

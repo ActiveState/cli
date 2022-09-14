@@ -25,7 +25,7 @@ func TestExecutor(t *testing.T) {
 
 	target := target.NewCustomTarget("owner", "project", "1234abcd-1234-abcd-1234-abcd1234abcd", "dummy/path", target.NewExecTrigger("test"), false)
 	fw := NewInit(binPath)
-	fw.SetAltExecSrcPath(dummyExecSrc)
+	fw.setAltExecSrcPath(dummyExecSrc)
 
 	exePath := "/i/am/an/exe/"
 	exes := []string{exePath + "a", exePath + "b", exePath + "c"}
