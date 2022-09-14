@@ -24,13 +24,13 @@ func (suite *ExecutorIntegrationTestSuite) TestExecutorForwards() {
 	defer ts.Close()
 
 	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("checkout", "ActiveState-CLI/Python"),
+		e2e.WithArgs("checkout", "ActiveState-CLI/Python3"),
 	)
 	cp.Expect("Checked out project")
 	cp.ExpectExitCode(0)
 
 	cp = ts.SpawnWithOpts(
-		e2e.WithArgs("shell", "ActiveState-CLI/Python"),
+		e2e.WithArgs("shell", "ActiveState-CLI/Python3"),
 	)
 	cp.Expect("Activated")
 	cp.WaitForInput()
@@ -40,12 +40,11 @@ func (suite *ExecutorIntegrationTestSuite) TestExecutorForwards() {
 		cp.Expect("python")
 		cp.SendLine("echo ${PATH}")
 		cp.Expect("bin")
-		cp.SendLine("which python3.10")
-		cp.Expect("fail")
 	}
 
 	cp.SendLine("python3 -c \"import sys; print(sys.copyright)\"")
 	cp.Expect("ActiveState Software Inc.")
+	cp.Expect("fail")
 
 	cp.SendLine("exit")
 	cp.Expect("Deactivated")
