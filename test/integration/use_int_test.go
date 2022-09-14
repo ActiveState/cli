@@ -1,6 +1,7 @@
 package integration
 
 import (
+	"os"
 	"path/filepath"
 	"runtime"
 	"testing"
@@ -196,6 +197,13 @@ func (suite *UseIntegrationTestSuite) TestShow() {
 		cp.ExpectLongString(longPath)
 	}
 	cp.ExpectExitCode(0)
+
+	err := os.RemoveAll(projectDir)
+	suite.Require().NoError(err)
+
+	cp = ts.SpawnWithOpts(e2e.WithArgs("use", "show"))
+	cp.ExpectLongString("The default project no longer exists")
+	cp.ExpectExitCode(1)
 
 	cp = ts.SpawnWithOpts(e2e.WithArgs("use", "reset", "--non-interactive"))
 	cp.Expect("Reset")
