@@ -32,6 +32,7 @@ import (
 	"github.com/ActiveState/cli/pkg/cmdlets/errors"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/sysinfo"
+	"golang.org/x/crypto/ssh/terminal"
 )
 
 const AnalyticsCat = "installer"
@@ -386,7 +387,7 @@ func postInstallEvents(out output.Outputer, cfg *config.Instance, an analytics.D
 			an.EventWithLabel(AnalyticsFunnelCat, "forward-activate-default-err", err.Error())
 			return errs.Silence(errs.Wrap(err, "Could not activate %s, error returned: %s", params.activateDefault.String(), errs.JoinMessage(err)))
 		}
-	case !params.isUpdate && os.Getenv(constants.InstallerNoSubshell) != "true":
+	case !params.isUpdate && terminal.IsTerminal(int(os.Stdin.Fd())) && os.Getenv(constants.InstallerNoSubshell) != "true":
 		ss := subshell.New(cfg)
 		ss.SetEnv(osutils.InheritEnv(envMap(binPath)))
 		if err := ss.Activate(nil, cfg, out); err != nil {
