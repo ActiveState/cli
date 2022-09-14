@@ -24,13 +24,13 @@ func (suite *ExecutorIntegrationTestSuite) TestExecutorForwards() {
 	defer ts.Close()
 
 	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("checkout", "ActiveState-CLI/small-python"),
+		e2e.WithArgs("checkout", "ActiveState-CLI/Python"),
 	)
 	cp.Expect("Checked out project")
 	cp.ExpectExitCode(0)
 
 	cp = ts.SpawnWithOpts(
-		e2e.WithArgs("shell", "ActiveState-CLI/small-python"),
+		e2e.WithArgs("shell", "ActiveState-CLI/Python"),
 	)
 	cp.Expect("Activated")
 	cp.WaitForInput()
