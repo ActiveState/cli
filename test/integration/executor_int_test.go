@@ -1,7 +1,6 @@
 package integration
 
 import (
-	"runtime"
 	"testing"
 
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
@@ -36,16 +35,8 @@ func (suite *ExecutorIntegrationTestSuite) TestExecutorForwards() {
 	cp.Expect("Activated")
 	cp.WaitForInput()
 
-	if runtime.GOOS == "linux" {
-		cp.SendLine("which python3")
-		cp.Expect("python")
-		cp.SendLine("echo ${PATH}")
-		cp.Expect("bin")
-	}
-
 	cp.SendLine("python3 -c \"import sys; print(sys.copyright)\"")
 	cp.Expect("ActiveState Software Inc.")
-	cp.Expect("fail")
 
 	cp.SendLine("exit")
 	cp.Expect("Deactivated")
