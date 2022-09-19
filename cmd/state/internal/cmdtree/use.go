@@ -23,7 +23,6 @@ func newUseCommand(prime *primer.Values) *captain.Command {
 			{
 				Name:        locale.T("arg_state_use_namespace"),
 				Description: locale.T("arg_state_use_namespace_description"),
-				Required:    true,
 				Value:       params.Namespace,
 			},
 		},
