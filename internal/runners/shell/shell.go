@@ -3,6 +3,7 @@ package shell
 import (
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/config"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
@@ -18,6 +19,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
+	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 type Params struct {
@@ -62,6 +64,9 @@ func (u *Shell) Run(params *Params) error {
 
 	proj, err := findproject.FromInputByPriority("", params.Namespace, u.config, u.prompt)
 	if err != nil {
+		if errs.Matches(err, &projectfile.ErrorNoProject{}) {
+			return locale.WrapError(err, "err_use_default_project_does_not_exist")
+		}
 		return locale.WrapError(err, "err_shell_cannot_load_project")
 	}
 
