@@ -1,6 +1,7 @@
 package integration
 
 import (
+	"os"
 	"path/filepath"
 	"runtime"
 	"testing"
@@ -155,6 +156,34 @@ func (suite *ShellIntegrationTestSuite) TestCd() {
 	cp.SendLine("exit")
 
 	cp.ExpectExitCode(0)
+}
+
+func (suite *ShellIntegrationTestSuite) TestDefaultNoLongerExists() {
+	suite.OnlyRunForTags(tagsuite.Shell)
+
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.SpawnWithOpts(
+		e2e.WithArgs("checkout", "ActiveState-CLI/Python3"),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
+	cp.Expect("Checked out project")
+	cp.ExpectExitCode(0)
+
+	cp = ts.SpawnWithOpts(
+		e2e.WithArgs("use", "ActiveState-CLI/Python3"),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
+	cp.Expect("Switched to project")
+	cp.ExpectExitCode(0)
+
+	err := os.RemoveAll(filepath.Join(ts.Dirs.Work, "Python3"))
+	suite.Require().NoError(err)
+
+	cp = ts.SpawnWithOpts(e2e.WithArgs("shell"))
+	cp.Expect("The default project no longer exists")
+	cp.ExpectExitCode(1)
 }
 
 func TestShellIntegrationTestSuite(t *testing.T) {
