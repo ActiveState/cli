@@ -1,8 +1,10 @@
 package request
 
-func BuildPlanByCommitID(commitID string) *buildPlanByCommitID {
+func BuildPlan(owner, project, commitID string) *buildPlanByCommitID {
 	return &buildPlanByCommitID{map[string]interface{}{
-		"commitID": commitID,
+		"organization": owner,
+		"project":      project,
+		"commitID":     commitID,
 	}}
 }
 
@@ -11,8 +13,8 @@ type buildPlanByCommitID struct {
 }
 
 func (b *buildPlanByCommitID) Query() string {
-	return `query ($commitID: String!) {
-				project(project: "placeholder", organization: "placeholder") {
+	return `query($organization:String!, $project:String!, $commitID:String!){
+				project(organization: $organization, project: $project) {
 					... on Project {
 						__typename
 						commit(vcsRef: $commitID) {
@@ -52,13 +54,17 @@ func (b *buildPlanByCommitID) Query() string {
 											path
 											message
 											isTransient
-											validationErrors
+											validationErrors {
+												jsonPath
+											}
 										}
 										... on RemediableSolveError {
 											path
 											message
 											isTransient
-											validationErrors
+											validationErrors {
+												jsonPath
+											}
 											suggestedRemediations {
 												remediationType
 												command
@@ -157,7 +163,6 @@ func (b *buildPlanByCommitID) Query() string {
 		}
 	}
 }
-
 `
 }
 

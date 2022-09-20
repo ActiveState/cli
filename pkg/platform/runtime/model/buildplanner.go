@@ -22,9 +22,9 @@ func NewBuildPlanner() *BuildPlanner {
 	}
 }
 
-func (bp *BuildPlanner) FetchBuildResult(commitID strfmt.UUID, _, _ string) (*BuildResult, error) {
+func (bp *BuildPlanner) FetchBuildResult(commitID strfmt.UUID, owner, project string) (*BuildResult, error) {
 	resp := &model.BuildPlan{}
-	err := bp.client.Run(request.BuildPlanByCommitID(commitID.String()), resp)
+	err := bp.client.Run(request.BuildPlan(owner, project, commitID.String()), resp)
 	if err != nil {
 		return nil, errs.Wrap(err, "failed to fetch build plan")
 	}
