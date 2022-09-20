@@ -47,9 +47,7 @@ func (s *Show) Run() error {
 	proj, err := project.FromPath(projectDir)
 	if err != nil {
 		if errs.Matches(err, &projectfile.ErrorNoProject{}) {
-			return locale.WrapError(err,
-				"err_use_show_default_project_does_not_exist",
-				"The default project no longer exists. Please either check it out again with [ACTIONABLE]state checkout[/RESET] or run [ACTIONABLE]state use reset[/RESET] to unset your default project.")
+			return locale.WrapError(err, "err_use_default_project_does_not_exist")
 		}
 		return locale.WrapError(err, "err_use_show_get_project", "Could not get default project.")
 	}
