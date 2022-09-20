@@ -1896,6 +1896,8 @@ arg_state_use_namespace_description:
   other: The org/project namespace of the project that you wish to use, or just the project name if previously used
 err_use_commit_id_mismatch:
   other: "Cannot switch to the given commit ID. Please use [ACTIONABLE]`state checkout`[/RESET] to check out a specific commit ID and then try again."
+err_use_default_project_does_not_exist:
+  other: "The default project no longer exists. Please either check it out again with [ACTIONABLE]state checkout[/RESET] or run [ACTIONABLE]state use reset[/RESET] to unset your default project."
 err_shell_commit_id_mismatch:
   other: "Cannot start a shell/prompt for the given commit ID. Please use [ACTIONABLE]`state checkout`[/RESET] to check out a specific commit ID and then try again."
 err_shell_cannot_load_project:
