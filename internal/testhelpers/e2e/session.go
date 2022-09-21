@@ -27,7 +27,8 @@ import (
 	"github.com/ActiveState/cli/internal/rtutils/singlethread"
 	"github.com/ActiveState/cli/internal/strutils"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
-	auth "github.com/ActiveState/cli/pkg/platform/authentication"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/ActiveState/termtest"
 	"github.com/ActiveState/termtest/expect"
@@ -54,6 +55,7 @@ type Session struct {
 	SvcExe      string
 	TrayExe     string
 	ExecutorExe string
+	auth        *authentication.Auth
 }
 
 // Options for spawning a testable terminal process
@@ -208,6 +210,8 @@ func new(t *testing.T, retainDirs, updatePath bool, extraEnv ...string) *Session
 	session.SvcExe = session.copyExeToBinDir(svcExe)
 	session.TrayExe = session.copyExeToBinDir(trayExe)
 	session.ExecutorExe = session.copyExeToBinDir(execExe)
+
+	session.Authenticate()
 
 	err = fileutils.Touch(filepath.Join(dirs.Base, installation.InstallDirMarker))
 	require.NoError(session.t, err)
@@ -414,7 +418,7 @@ func (s *Session) DebugMessage(prefix string) string {
 	}
 
 	v, err := strutils.ParseTemplate(`
-{{.Prefix}}{{.A}}Stack: 
+{{.Prefix}}{{.A}}Stack:
 {{.Stacktrace}}{{.Z}}
 {{.A}}Terminal snapshot:
 {{.FullSnapshot}}{{.Z}}
@@ -498,6 +502,40 @@ Error: {{.Error}}
 	}
 }
 
+func (s *Session) Authenticate() {
+	if os.Getenv("PLATFORM_API_TOKEN") == "" {
+		s.t.Log("PLATFORM_API_TOKEN env var not set, unable to perform actions that require authentication")
+		return
+	}
+
+	cfg, err := config.NewCustom(s.Dirs.Config, singlethread.New(), true)
+	if err != nil {
+		s.t.Logf("Could not read e2e session configuration: %s", errs.JoinMessage(err))
+		return
+	}
+	auth := authentication.New(cfg)
+	if os.Getenv(constants.APIHostEnvVarName) == "" {
+		err := os.Setenv(constants.APIHostEnvVarName, constants.DefaultAPIHost)
+		if err != nil {
+			s.t.Log("Unable to set APIHostEnvVarName to DefaultAPIHost")
+			return
+		}
+		defer func() {
+			os.Unsetenv(constants.APIHostEnvVarName)
+		}()
+	}
+
+	err = auth.AuthenticateWithModel(&mono_models.Credentials{
+		Token: os.Getenv("PLATFORM_API_TOKEN"),
+	})
+	if err != nil {
+		s.t.Logf("Unable to authenticate: %s", errs.JoinMessage(err))
+		return
+	}
+
+	s.auth = auth
+}
+
 // Close removes the temporary directory unless RetainDirs is specified
 func (s *Session) Close() error {
 	// stop service and tray if they exist
@@ -519,15 +557,13 @@ func (s *Session) Close() error {
 		s.cp.Close()
 	}
 
-	if os.Getenv("PLATFORM_API_TOKEN") == "" {
-		s.t.Log("PLATFORM_API_TOKEN env var not set, not running suite tear down")
+	if s.auth == nil {
+		s.t.Log("not authenticated, so not running suite tear down")
 		return nil
 	}
 
-	a := auth.New(cfg)
-
 	for _, user := range s.users {
-		err := cleanUser(s.t, user, a)
+		err := s.cleanUser(user)
 		if err != nil {
 			s.t.Errorf("Could not delete user %s: %v", user, errs.JoinMessage(err))
 		}
