@@ -38,9 +38,9 @@ func cleanUser(t *testing.T, username string, auth *authentication.Auth) error {
 	}
 	for _, proj := range projects {
 		if strfmt.IsUUID(proj.Name) {
-			logging.DEBUG("Will delete project: " + proj.Name)
+			logging.Debug("Will delete project: " + proj.Name)
 		} else {
-			logging.DEBUG("Will keep project: " + proj.Name)
+			logging.Debug("Will keep project: " + proj.Name)
 		}
 		//err = deleteProject(username, proj.Name, auth)
 		//if err != nil {
