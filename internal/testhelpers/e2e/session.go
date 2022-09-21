@@ -27,7 +27,8 @@ import (
 	"github.com/ActiveState/cli/internal/rtutils/singlethread"
 	"github.com/ActiveState/cli/internal/strutils"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
-	auth "github.com/ActiveState/cli/pkg/platform/authentication"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/ActiveState/termtest"
 	"github.com/ActiveState/termtest/expect"
@@ -414,7 +415,7 @@ func (s *Session) DebugMessage(prefix string) string {
 	}
 
 	v, err := strutils.ParseTemplate(`
-{{.Prefix}}{{.A}}Stack: 
+{{.Prefix}}{{.A}}Stack:
 {{.Stacktrace}}{{.Z}}
 {{.A}}Terminal snapshot:
 {{.FullSnapshot}}{{.Z}}
@@ -524,16 +525,46 @@ func (s *Session) Close() error {
 		return nil
 	}
 
-	a := auth.New(cfg)
+	auth := authentication.New(cfg)
 
 	for _, user := range s.users {
-		err := cleanUser(s.t, user, a)
+		err := cleanUser(s.t, user, auth)
 		if err != nil {
 			s.t.Errorf("Could not delete user %s: %v", user, errs.JoinMessage(err))
 		}
 	}
 
 	return nil
+}
+
+func (s *Session) DeleteProject(org, name string) error {
+	if os.Getenv("PLATFORM_API_TOKEN") == "" {
+		return errs.New("Unable to delete project because PLATFORM_API_TOKEN env var is not set")
+	}
+
+	cfg, err := config.NewCustom(s.Dirs.Config, singlethread.New(), true)
+	require.NoError(s.t, err, "Could not read e2e session configuration: %s", errs.JoinMessage(err))
+
+	auth := authentication.New(cfg)
+
+	if os.Getenv(constants.APIHostEnvVarName) == "" {
+		err := os.Setenv(constants.APIHostEnvVarName, constants.DefaultAPIHost)
+		if err != nil {
+			return err
+		}
+		defer func() {
+			os.Unsetenv(constants.APIHostEnvVarName)
+		}()
+	}
+
+	err = auth.AuthenticateWithModel(&mono_models.Credentials{
+		Token: os.Getenv("PLATFORM_API_TOKEN"),
+	})
+	if err != nil {
+		return err
+	}
+
+	return deleteProject(org, name, auth)
 }
 
 func (s *Session) InstallerLog() string {
