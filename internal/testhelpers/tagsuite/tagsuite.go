@@ -97,7 +97,7 @@ func IsTagDefined(tags ...string) bool {
 
 // OnlyRunForTags skips a test unless one of the given tags is asked for.
 func (suite *Suite) OnlyRunForTags(tags ...string) {
-	if !IsTagDefined(tags) {
+	if !IsTagDefined(tags...) {
 		suite.T().Skipf("Run only if any of the following tags are set: %s", strings.Join(tags, ", "))
 	}
 }
