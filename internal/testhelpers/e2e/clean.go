@@ -5,10 +5,13 @@ import (
 	"testing"
 
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/projects"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/users"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
+	"github.com/go-openapi/strfmt"
 )
 
 func cleanUser(t *testing.T, username string, auth *authentication.Auth) error {
@@ -34,15 +37,23 @@ func cleanUser(t *testing.T, username string, auth *authentication.Auth) error {
 		return err
 	}
 	for _, proj := range projects {
-		err = deleteProject(username, proj.Name, auth)
-		if err != nil {
-			return err
+		if strfmt.IsUUID(proj.Name) {
+			logging.DEBUG("Will delete project: " + proj.Name)
+		} else {
+			logging.DEBUG("Will keep project: " + proj.Name)
 		}
+		//err = deleteProject(username, proj.Name, auth)
+		//if err != nil {
+		//return err
+		//}
 	}
 
 	if username == PersistentUsername {
+		logging.Debug("Will not delete user: " + username)
+		return errs.New("Temporary failure to note projects that will be deleted.")
 		return nil // do not delete me
 	}
+	return errs.New("Should not get here")
 	return deleteUser(username, auth)
 }
 
