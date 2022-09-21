@@ -567,12 +567,14 @@ func authenticate(auth *authentication.Auth) error {
 		}()
 	}
 
-	err = auth.AuthenticateWithModel(&mono_models.Credentials{
+	err := auth.AuthenticateWithModel(&mono_models.Credentials{
 		Token: os.Getenv("PLATFORM_API_TOKEN"),
 	})
 	if err != nil {
 		return err
 	}
+
+	return nil
 }
 
 func (s *Session) DeleteProject(org, name string) error {
