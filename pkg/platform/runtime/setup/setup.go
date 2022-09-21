@@ -565,13 +565,22 @@ func (s *Setup) downloadArtifactWithProgress(unsignedURI string, targetFile stri
 		return errs.Wrap(err, "Could not parse artifact URL %s.", unsignedURI)
 	}
 
+	if artifactURL.Scheme == "s3" {
+		artifactURL, err = s.model.SignS3URL(artifactURL)
+		if err != nil {
+			return errs.Wrap(err, "Could not sign artifact URL %s.", artifactURL.String())
+		}
+	}
+
 	req, err := download.NewRequest(artifactURL.String())
 	if err != nil {
 		return errs.Wrap(err, "Could not create artifact download request for %s.", artifactURL.String())
 	}
 	// TODO: Remove when underlying mediator bug is fixed
 	// https://activestatef.atlassian.net/browse/PB-3465
-	req.Header.Set("Authorization", "Placeholder")
+	if req.URL.Scheme != "s3" {
+		req.Header.Set("Authorization", "Placeholder")
+	}
 
 	b, err := download.GetWithProgress(req, progress)
 	if err != nil {
