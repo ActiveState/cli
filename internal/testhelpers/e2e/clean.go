@@ -1,8 +1,10 @@
 package e2e
 
 import (
+	"os"
 	"testing"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/projects"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/users"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
@@ -10,7 +12,19 @@ import (
 )
 
 func cleanUser(t *testing.T, username string, auth *authentication.Auth) error {
-	err := authenticate(auth)
+	if os.Getenv(constants.APIHostEnvVarName) == "" {
+		err := os.Setenv(constants.APIHostEnvVarName, constants.DefaultAPIHost)
+		if err != nil {
+			return err
+		}
+		defer func() {
+			os.Unsetenv(constants.APIHostEnvVarName)
+		}()
+	}
+
+	err := auth.AuthenticateWithModel(&mono_models.Credentials{
+		Token: os.Getenv("PLATFORM_API_TOKEN"),
+	})
 	if err != nil {
 		return err
 	}

@@ -556,7 +556,16 @@ func (s *Session) Close() error {
 	return nil
 }
 
-func authenticate(auth *authentication.Auth) error {
+func (s *Session) DeleteProject(org, name string) error {
+	if os.Getenv("PLATFORM_API_TOKEN") == "" {
+		return errs.New("Unable to delete project because PLATFORM_API_TOKEN env var is not set")
+	}
+
+	cfg, err := config.NewCustom(s.Dirs.Config, singlethread.New(), true)
+	require.NoError(s.t, err, "Could not read e2e session configuration: %s", errs.JoinMessage(err))
+
+	auth := authentication.New(cfg)
+
 	if os.Getenv(constants.APIHostEnvVarName) == "" {
 		err := os.Setenv(constants.APIHostEnvVarName, constants.DefaultAPIHost)
 		if err != nil {
@@ -567,26 +576,9 @@ func authenticate(auth *authentication.Auth) error {
 		}()
 	}
 
-	err := auth.AuthenticateWithModel(&mono_models.Credentials{
+	err = auth.AuthenticateWithModel(&mono_models.Credentials{
 		Token: os.Getenv("PLATFORM_API_TOKEN"),
 	})
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (s *Session) DeleteProject(org, name string) error {
-	if os.Getenv("PLATFORM_API_TOKEN") == "" {
-		return errs.New("Unable to delete project because PLATFORM_API_TOKEN env var is not set")
-	}
-
-	cfg, err := config.NewCustom(s.Dirs.Config, singlethread.New(), true)
-	require.NoError(s.t, err, "Could not read e2e session configuration: %s", errs.JoinMessage(err))
-
-	auth := authentication.New(cfg)
-	err = authenticate(auth)
 	if err != nil {
 		return err
 	}
