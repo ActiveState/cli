@@ -535,7 +535,7 @@ func (s *Session) Close() error {
 
 	if PersistentUsername != "" && runtime.GOOS == "linux" {
 		err := cleanUser(s.t, PersistentUsername, a)
-		require.NoError(err)
+		require.NoError(s.t, err)
 		if err != nil {
 			s.t.Errorf("Could not clean up after user %s: %v", PersistentUsername, errs.JoinMessage(err))
 		}
