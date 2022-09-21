@@ -37,22 +37,16 @@ func cleanUser(t *testing.T, username string, auth *authentication.Auth) error {
 	}
 	for _, proj := range projects {
 		if strfmt.IsUUID(proj.Name) {
-			t.Log("Will delete project: " + proj.Name)
-		} else {
-			t.Log("Will keep project: " + proj.Name)
+			err = deleteProject(username, proj.Name, auth)
+			if err != nil {
+				return err
+			}
 		}
-		//err = deleteProject(username, proj.Name, auth)
-		//if err != nil {
-		//return err
-		//}
 	}
 
 	if username == PersistentUsername {
-		t.Log("Will not delete user: " + username)
-		return errs.New("Temporary failure to note projects that will be deleted.")
 		return nil // do not delete me
 	}
-	return errs.New("Should not get here")
 	return deleteUser(username, auth)
 }
 
