@@ -1893,7 +1893,7 @@ err_update_corrupt_install:
 arg_state_use_namespace:
   other: org/project or project
 arg_state_use_namespace_description:
-  other: "The org/project namespace of the project that you wish to use, or just the project name if previously checked out using [ACTIONABLE]`state checkout`[/RESET]."
+  other: "The fully qualified namespace (org/project) or just the project name (project) of the project to use. Must have been previously checked out using [ACTIONABLE]`state checkout`[/RESET]."
 err_use_commit_id_mismatch:
   other: "Cannot switch to the given commit ID. Please use [ACTIONABLE]`state checkout`[/RESET] to check out a specific commit ID and then try again."
 err_use_default_project_does_not_exist:
