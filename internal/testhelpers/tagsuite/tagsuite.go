@@ -22,6 +22,7 @@ const (
 	Config          = "config"
 	Critical        = "critical"
 	Cve             = "cve"
+	DeleteProjects  = "delete-uuid-projects"
 	Deploy          = "deploy"
 	Edit            = "edit"
 	Error           = "error"
@@ -76,21 +77,27 @@ type Suite struct {
 	suite.Suite
 }
 
-// OnlyRunForTags skips a test unless one of the given tags is asked for.
-func (suite *Suite) OnlyRunForTags(tags ...string) {
+func IsTagDefined(tags ...string) bool {
 	setTagsString, _ := os.LookupEnv("TEST_SUITE_TAGS")
 
 	setTags := strings.Split(setTagsString, ":")
 	// if no tags are defined and we're not on CI; run the test
 	if funk.Contains(setTags, "all") || (setTagsString == "" && !condition.OnCI()) {
-		return
+		return true
 	}
 
 	for _, tag := range tags {
 		if funk.Contains(setTags, tag) {
-			return
+			return true
 		}
 	}
 
-	suite.T().Skipf("Run only if any of the following tags are set: %s", strings.Join(tags, ", "))
+	return false
+}
+
+// OnlyRunForTags skips a test unless one of the given tags is asked for.
+func (suite *Suite) OnlyRunForTags(tags ...string) {
+	if !IsTagDefined(tags) {
+		suite.T().Skipf("Run only if any of the following tags are set: %s", strings.Join(tags, ", "))
+	}
 }
