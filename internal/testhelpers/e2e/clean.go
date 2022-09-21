@@ -29,24 +29,24 @@ func cleanUser(t *testing.T, username string, auth *authentication.Auth) error {
 		return err
 	}
 
-	projects, err := getProjects(username)
+	projects, err := getProjects(username, auth)
 	if err != nil {
 		return err
 	}
 	for _, proj := range projects {
-		err = DeleteProject(username, proj.Name)
+		err = deleteProject(username, proj.Name, auth)
 		if err != nil {
 			return err
 		}
 	}
 
-	return deleteUser(username)
+	return deleteUser(username, auth)
 }
 
-func getProjects(org string) ([]*mono_models.Project, error) {
+func getProjects(org string, auth *authentication.Auth) ([]*mono_models.Project, error) {
 	params := projects.NewListProjectsParams()
 	params.SetOrganizationName(org)
-	listProjectsOK, err := authentication.LegacyGet().Client().Projects.ListProjects(params, authentication.ClientAuth())
+	listProjectsOK, err := auth.Client().Projects.ListProjects(params, auth.ClientAuth())
 	if err != nil {
 		return nil, err
 	}
@@ -54,12 +54,12 @@ func getProjects(org string) ([]*mono_models.Project, error) {
 	return listProjectsOK.Payload, nil
 }
 
-func DeleteProject(org, name string) error {
+func deleteProject(org, name string, auth *authentication.Auth) error {
 	params := projects.NewDeleteProjectParams()
 	params.SetOrganizationName(org)
 	params.SetProjectName(name)
 
-	_, err := authentication.Client().Projects.DeleteProject(params, authentication.ClientAuth())
+	_, err := auth.Client().Projects.DeleteProject(params, auth.ClientAuth())
 	if err != nil {
 		return err
 	}
@@ -67,11 +67,11 @@ func DeleteProject(org, name string) error {
 	return nil
 }
 
-func deleteUser(name string) error {
+func deleteUser(name string, auth *authentication.Auth) error {
 	params := users.NewDeleteUserParams()
 	params.SetUsername(name)
 
-	_, err := authentication.Client().Users.DeleteUser(params, authentication.ClientAuth())
+	_, err := auth.Client().Users.DeleteUser(params, auth.ClientAuth())
 	if err != nil {
 		return err
 	}
