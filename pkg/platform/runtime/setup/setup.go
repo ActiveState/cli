@@ -117,6 +117,7 @@ type Targeter interface {
 
 type Setup struct {
 	model         ModelProvider
+	auth          *authentication.Auth
 	target        Targeter
 	events        Events
 	store         *store.Store
@@ -150,16 +151,16 @@ type artifactInstaller func(artifact.ArtifactID, string, ArtifactSetuper) error
 
 // New returns a new Setup instance that can install a Runtime locally on the machine.
 func New(target Targeter, msgHandler Events, auth *authentication.Auth, an analytics.Dispatcher) *Setup {
-	return NewWithModel(target, msgHandler, model.NewDefault(auth), an)
+	return NewWithModel(target, msgHandler, model.NewDefault(auth), auth, an)
 }
 
 // NewWithModel returns a new Setup instance with a customized model eg., for testing purposes
-func NewWithModel(target Targeter, msgHandler Events, model ModelProvider, an analytics.Dispatcher) *Setup {
+func NewWithModel(target Targeter, msgHandler Events, model ModelProvider, a *authentication.Auth, an analytics.Dispatcher) *Setup {
 	cache, err := artifactcache.New()
 	if err != nil {
 		multilog.Error("Could not create artifact cache: %v", err)
 	}
-	return &Setup{model, target, msgHandler, store.New(target.Dir()), an, cache}
+	return &Setup{model, a, target, msgHandler, store.New(target.Dir()), an, cache}
 }
 
 // Update installs the runtime locally (or updates it if it's already partially installed)
@@ -281,7 +282,7 @@ func (s *Setup) fetchAndInstallArtifacts(installFunc artifactInstaller) ([]artif
 
 func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstaller) ([]artifact.ArtifactID, error) {
 	s.events.SolverStart()
-	buildPlan := model.NewBuildPlanner()
+	buildPlan := model.NewBuildPlanner(s.auth)
 	buildResult, err := buildPlan.FetchBuildResult(s.target.CommitUUID(), s.target.Owner(), s.target.Name())
 	if err != nil {
 		// TODO: Reenable and update when we have a build plan with errors

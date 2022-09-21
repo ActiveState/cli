@@ -19,6 +19,7 @@ import (
 // var _ runtime.ClientProvider = &Default{}
 
 // Model is the default client that actually talks to the backend
+// TODO: Rename this to recipe?
 type Model struct {
 	auth *authentication.Auth
 }

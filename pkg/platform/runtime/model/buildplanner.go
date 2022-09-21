@@ -8,17 +8,22 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	model "github.com/ActiveState/cli/pkg/platform/api/graphql/model/buildplan"
 	"github.com/ActiveState/cli/pkg/platform/api/graphql/request"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/go-openapi/strfmt"
 	"github.com/machinebox/graphql"
 )
 
 type BuildPlanner struct {
+	auth   *authentication.Auth
 	client *gqlclient.Client
+	def    *Model
 }
 
-func NewBuildPlanner() *BuildPlanner {
+func NewBuildPlanner(auth *authentication.Auth) *BuildPlanner {
 	return &BuildPlanner{
+		auth:   auth,
 		client: gqlclient.NewWithOpts("https://platform.activestate.com/sv/buildplanner/graphql", 0, graphql.WithHTTPClient(&http.Client{})),
+		def:    NewDefault(auth),
 	}
 }
 
@@ -46,10 +51,16 @@ func (bp *BuildPlanner) FetchBuildResult(commitID strfmt.UUID, owner, project st
 	// response with emtpy targets that we have to remove
 	removeEmptyTargets(resp)
 
+	recipe, err := bp.def.ResolveRecipe(commitID, owner, project)
+	if err != nil {
+		return nil, locale.WrapError(err, "setup_build_resolve_recipe_err", "Could not resolve recipe for project {{.V0}}/{{.V1}}#{{.V2}}", owner, project, commitID.String())
+	}
+
 	return &BuildResult{
 		BuildEngine: Alternative,
 		Build:       resp.Project.Commit.Build,
 		BuildReady:  resp.Project.Commit.Build.Status == model.BuildReady,
+		Recipe:      recipe,
 	}, nil
 }
 
