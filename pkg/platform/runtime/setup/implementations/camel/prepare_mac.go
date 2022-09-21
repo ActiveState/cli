@@ -1,3 +1,4 @@
+//go:build darwin
 // +build darwin
 
 package camel
@@ -7,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strings"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
@@ -55,6 +57,9 @@ func (m *MetaData) Prepare(installRoot string) error {
 	if pythonpath, ok := os.LookupEnv("PYTHONPATH"); ok {
 		m.PathListEnv["PYTHONPATH"] = pythonpath
 	} else if fileutils.DirExists(sitePackages) {
+		if strings.HasPrefix(sitePackages, installRoot) {
+			sitePackages = strings.Replace(sitePackages, installRoot, "${INSTALLDIR}", 1)
+		}
 		m.PathListEnv["PYTHONPATH"] = sitePackages
 	}
 
