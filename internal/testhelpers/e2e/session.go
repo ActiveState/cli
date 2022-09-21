@@ -32,6 +32,7 @@ import (
 	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/ActiveState/termtest"
 	"github.com/ActiveState/termtest/expect"
+	"github.com/go-openapi/strfmt"
 	"github.com/google/uuid"
 	"github.com/phayes/permbits"
 	"github.com/stretchr/testify/require"
@@ -534,19 +535,28 @@ func (s *Session) Close() error {
 		}
 	}
 
+	// When deleting UUID projects for the cli-integration-tests user, only do it on one platform in
+	// order to avoid race conditions.
+	if tagsuite.IsTagDefined(tagsuite.DeleteProjects) && runtime.GOOS == "linux" {
+		projects, err := getProjects(PersistentUsername, auth)
+		if err != nil {
+			s.t.Errorf("Could not fetch projects: %v", errs.JoinMessage(err))
+		}
+		for _, proj := range projects {
+			if !strfmt.IsUUID(proj.Name) {
+				continue
+			}
+			err = deleteProject(PersistentUsername, proj.Name, auth)
+			if err != nil {
+				s.t.Errorf("Could not delete project %s: %v", proj.Name, errs.JoinMessage(err))
+			}
+		}
+	}
+
 	return nil
 }
 
-func (s *Session) DeleteProject(org, name string) error {
-	if os.Getenv("PLATFORM_API_TOKEN") == "" {
-		return errs.New("Unable to delete project because PLATFORM_API_TOKEN env var is not set")
-	}
-
-	cfg, err := config.NewCustom(s.Dirs.Config, singlethread.New(), true)
-	require.NoError(s.t, err, "Could not read e2e session configuration: %s", errs.JoinMessage(err))
-
-	auth := authentication.New(cfg)
-
+func authenticate(auth *authentication.Auth) error {
 	if os.Getenv(constants.APIHostEnvVarName) == "" {
 		err := os.Setenv(constants.APIHostEnvVarName, constants.DefaultAPIHost)
 		if err != nil {
@@ -560,6 +570,21 @@ func (s *Session) DeleteProject(org, name string) error {
 	err = auth.AuthenticateWithModel(&mono_models.Credentials{
 		Token: os.Getenv("PLATFORM_API_TOKEN"),
 	})
+	if err != nil {
+		return err
+	}
+}
+
+func (s *Session) DeleteProject(org, name string) error {
+	if os.Getenv("PLATFORM_API_TOKEN") == "" {
+		return errs.New("Unable to delete project because PLATFORM_API_TOKEN env var is not set")
+	}
+
+	cfg, err := config.NewCustom(s.Dirs.Config, singlethread.New(), true)
+	require.NoError(s.t, err, "Could not read e2e session configuration: %s", errs.JoinMessage(err))
+
+	auth := authentication.New(cfg)
+	err = authenticate(auth)
 	if err != nil {
 		return err
 	}
