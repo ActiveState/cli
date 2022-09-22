@@ -285,12 +285,10 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 	buildPlan := model.NewBuildPlanner(s.auth)
 	buildResult, err := buildPlan.FetchBuildResult(s.target.CommitUUID(), s.target.Owner(), s.target.Name())
 	if err != nil {
-		// TODO: Reenable and update when we have a build plan with errors
-		// serr := &apimodel.SolverError{}
-		// if errors.As(err, &serr) {
-		// 	s.events.SolverError(serr)
-		// 	return nil, formatSolverError(serr)
-		// }
+		serr := &model.BuildPlannerError{}
+		if errors.As(err, &serr) {
+			return nil, formatBuildPlanError(serr)
+		}
 		return nil, errs.Wrap(err, "Could not fetch build plan")
 	}
 
@@ -339,10 +337,14 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 		s.analytics.EventWithLabel(anaConsts.CatRuntime, anaConsts.ActBuildProject, ns.String(), dimensions)
 	}
 
-	// We don't have a failed build status so this handling will likely have to change
-	if buildResult.Build.Status == bpModel.BuildFailed {
+	if len(failedArtifacts) > 0 {
+		// TODO: Could improve error messaging here with source info (ie. Name of failed artifact)
 		s.events.BuildFinished()
-		return nil, locale.NewError("headchef_build_failure", "Build Failed: {{.V0}}", buildResult.Build.Error)
+		var errs []string
+		for _, f := range failedArtifacts {
+			errs = append(errs, f.ErrorMsg)
+		}
+		return nil, locale.NewError("buildplan_build_failure", "Build Failed: {{.V0}}", strings.Join(errs, "\n"))
 	}
 
 	oldBuildPlan, err := s.store.BuildPlan()
@@ -734,6 +736,34 @@ func formatSolverError(serr *apimodel.SolverError) error {
 	err = locale.WrapError(err, "solver_err", "", croppedMessage, errorLines)
 	if serr.IsTransient() {
 		err = errs.AddTips(serr, locale.Tr("transient_solver_tip"))
+	}
+	return err
+}
+
+func formatBuildPlanError(bperr *model.BuildPlannerError) error {
+	var err error = bperr
+	// Append last five lines to error message
+	offset := 0
+	numLines := len(bperr.ValidationErrors())
+	if numLines > 5 {
+		offset = numLines - 5
+	}
+
+	errorLines := strings.Join(bperr.ValidationErrors()[offset:], "\n")
+	// Crop at 500 characters to reduce noisy output further
+	if len(errorLines) > 500 {
+		offset = len(errorLines) - 499
+		errorLines = fmt.Sprintf("…%s", errorLines[offset:])
+	}
+	isCropped := offset > 0
+	croppedMessage := ""
+	if isCropped {
+		croppedMessage = locale.Tl("buildplan_err_cropped_intro", "These are the last lines of the error message:")
+	}
+
+	err = locale.WrapError(err, "buildplan_error", "{{.V0}}{{.V1}}", croppedMessage, errorLines)
+	if bperr.IsTransient() {
+		err = errs.AddTips(bperr, locale.Tr("transient_solver_tip"))
 	}
 	return err
 }

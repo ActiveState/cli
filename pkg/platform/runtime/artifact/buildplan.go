@@ -77,6 +77,7 @@ func buildMap(baseID string, lookup map[string]interface{}, result ArtifactBuild
 	artifact, ok := target.(*model.Artifact)
 	if !ok {
 		logging.Error("Incorrect target type for id %s", baseID)
+		return
 	}
 
 	var deps []strfmt.UUID

@@ -31,7 +31,7 @@ func NewFailedArtifactsFromBuildPlan(build model.Build) []FailedArtifact {
 	var failed []FailedArtifact
 	for _, a := range build.Artifacts {
 		// Should we be handing transient failures differently?
-		if a.Status == model.ArtifactFailedPermanently || a.Status == model.ArtifactFailedTransiently || len(a.Errors) > 0 {
+		if a.Status == model.ArtifactFailedPermanently || a.Status == model.ArtifactFailedTransiently || a.Status == model.ArtifactSkipped || len(a.Errors) > 0 {
 			failed = append(failed, FailedArtifact{ArtifactID: strfmt.UUID(a.TargetID), UnsignedLogURI: a.LogURL, ErrorMsg: strings.Join(a.Errors, "\n")})
 		}
 	}

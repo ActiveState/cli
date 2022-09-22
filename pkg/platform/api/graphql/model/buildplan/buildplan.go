@@ -6,8 +6,6 @@ const (
 	BuildPlanned  = "PLANNED"
 	BuildBuilding = "BUILDING"
 	BuildReady    = "READY"
-	// Currently the POC does not have a failed status
-	BuildFailed = "FAILED"
 
 	// Artifact statuses
 	ArtifactNotSubmitted      = "NOT_SUBMITTED"
@@ -20,11 +18,11 @@ const (
 	ArtifactSucceeded         = "SUCCEEDED"
 
 	// BuildResultTypes
-	BuildResultPlanning      = "BuildPlanning"
-	BuildResultPlanned       = "BuildPlanned"
-	BuildResultStarted       = "BuildStarted"
-	BuildResultReady         = "BuildReady"
-	BuildResultPlanningError = "BuildPlanningError"
+	BuildResultPlanning      = "Planning"
+	BuildResultPlanned       = "Planned"
+	BuildResultStarted       = "Started"
+	BuildResultReady         = "Ready"
+	BuildResultPlanningError = "PlanningError"
 
 	ProjectNotFoundType = "ProjectNotFound"
 	CommitNotFoundType  = "CommitNotFound"
@@ -111,12 +109,17 @@ type PlanningError struct {
 }
 
 type SubError struct {
-	Type                  string   `json:"__typename"`
-	Path                  string   `json:"path"`
-	Message               string   `json:"message"`
-	IsTransient           bool     `json:"isTransient"`
-	ValidationErrors      []string `json:"validationErrors"`
+	Type                  string                       `json:"__typename"`
+	Path                  string                       `json:"path"`
+	Message               string                       `json:"message"`
+	IsTransient           bool                         `json:"isTransient"`
+	ValidationErrors      []SolverErrorValidationError `json:"validationErrors"`
 	RemediableSolverError *RemediableSolveError
+}
+
+type SolverErrorValidationError struct {
+	JSONPath string `json:"jsonPath"`
+	Error    string `json:"error"`
 }
 
 type RemediableSolveError struct {

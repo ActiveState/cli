@@ -13,6 +13,28 @@ import (
 	"github.com/machinebox/graphql"
 )
 
+type BuildPlannerError struct {
+	wrapped          error
+	validationErrors []string
+	isTransient      bool
+}
+
+func (e *BuildPlannerError) Error() string {
+	return "buildplan_error"
+}
+
+func (e *BuildPlannerError) Unwrap() error {
+	return e.wrapped
+}
+
+func (e *BuildPlannerError) ValidationErrors() []string {
+	return e.validationErrors
+}
+
+func (e *BuildPlannerError) IsTransient() bool {
+	return e.isTransient
+}
+
 type BuildPlanner struct {
 	auth   *authentication.Auth
 	client *gqlclient.Client
@@ -42,26 +64,37 @@ func (bp *BuildPlanner) FetchBuildResult(commitID strfmt.UUID, owner, project st
 		return nil, locale.NewError("err_buildplanner_commit_not_found", "Build plan does not contain commit")
 	}
 	if resp.Project.Commit.Build.Type == model.BuildResultPlanningError {
-		// Need a failed build from the test harness to properly handle errors
-		// TODO: Further unwrap errors from the build planner
-		return nil, locale.NewError("err_buildplanner_build_error", "Build encountered an error: {{.V0}}", resp.Project.Commit.Build.Error)
+		var errs []string
+		var isTransient bool
+		for _, se := range resp.Project.Commit.Build.SubErrors {
+			errs = append(errs, se.Message)
+			isTransient = se.IsTransient
+		}
+		return nil, &BuildPlannerError{
+			wrapped:          locale.NewError("err_buildplanner", resp.Project.Commit.Build.Error),
+			validationErrors: errs,
+			isTransient:      isTransient,
+		}
 	}
 
 	// The type aliasing in the query populates the
 	// response with emtpy targets that we have to remove
 	removeEmptyTargets(resp)
 
-	recipe, err := bp.def.ResolveRecipe(commitID, owner, project)
-	if err != nil {
-		return nil, locale.WrapError(err, "setup_build_resolve_recipe_err", "Could not resolve recipe for project {{.V0}}/{{.V1}}#{{.V2}}", owner, project, commitID.String())
-	}
-
-	return &BuildResult{
+	res := BuildResult{
 		BuildEngine: Alternative,
 		Build:       resp.Project.Commit.Build,
 		BuildReady:  resp.Project.Commit.Build.Status == model.BuildReady,
-		Recipe:      recipe,
-	}, nil
+	}
+
+	if resp.Project.Commit.Build.Status == model.BuildBuilding {
+		res.Recipe, err = bp.def.ResolveRecipe(commitID, owner, project)
+		if err != nil {
+			return nil, locale.WrapError(err, "setup_build_resolve_recipe_err", "Could not resolve recipe for project {{.V0}}/{{.V1}}#{{.V2}}", owner, project, commitID.String())
+		}
+	}
+
+	return &res, nil
 }
 
 func removeEmptyTargets(bp *model.BuildPlan) {
