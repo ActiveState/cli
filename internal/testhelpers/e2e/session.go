@@ -538,6 +538,23 @@ func (s *Session) Close() error {
 	// When deleting UUID projects for the cli-integration-tests user, only do it on one platform in
 	// order to avoid race conditions.
 	if tagsuite.IsTagDefined(tagsuite.DeleteProjects) && runtime.GOOS == "linux" {
+		if os.Getenv(constants.APIHostEnvVarName) == "" {
+			err := os.Setenv(constants.APIHostEnvVarName, constants.DefaultAPIHost)
+			if err != nil {
+				return err
+			}
+			defer func() {
+				os.Unsetenv(constants.APIHostEnvVarName)
+			}()
+		}
+
+		err = auth.AuthenticateWithModel(&mono_models.Credentials{
+			Token: os.Getenv("PLATFORM_API_TOKEN"),
+		})
+		if err != nil {
+			return err
+		}
+
 		projects, err := getProjects(PersistentUsername, auth)
 		if err != nil {
 			s.t.Errorf("Could not fetch projects: %v", errs.JoinMessage(err))
