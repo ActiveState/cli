@@ -77,27 +77,21 @@ type Suite struct {
 	suite.Suite
 }
 
-func IsTagDefined(tags ...string) bool {
+// OnlyRunForTags skips a test unless one of the given tags is asked for.
+func (suite *Suite) OnlyRunForTags(tags ...string) {
 	setTagsString, _ := os.LookupEnv("TEST_SUITE_TAGS")
 
 	setTags := strings.Split(setTagsString, ":")
 	// if no tags are defined and we're not on CI; run the test
 	if funk.Contains(setTags, "all") || (setTagsString == "" && !condition.OnCI()) {
-		return true
+		return
 	}
 
 	for _, tag := range tags {
 		if funk.Contains(setTags, tag) {
-			return true
+			return
 		}
 	}
 
-	return false
-}
-
-// OnlyRunForTags skips a test unless one of the given tags is asked for.
-func (suite *Suite) OnlyRunForTags(tags ...string) {
-	if !IsTagDefined(tags...) {
-		suite.T().Skipf("Run only if any of the following tags are set: %s", strings.Join(tags, ", "))
-	}
+	suite.T().Skipf("Run only if any of the following tags are set: %s", strings.Join(tags, ", "))
 }
