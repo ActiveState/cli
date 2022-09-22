@@ -39,16 +39,23 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+// Represents a created project that needs to be deleted during cleanup.
+type project struct {
+	Org  string
+	Name string
+}
+
 // Session represents an end-to-end testing session during which several console process can be spawned and tested
 // It provides a consistent environment (environment variables and temporary
 // directories) that is shared by processes spawned during this session.
 // The session is approximately the equivalent of a terminal session, with the
 // main difference processes in this session are not spawned by a shell.
 type Session struct {
-	cp         *termtest.ConsoleProcess
-	Dirs       *Dirs
-	env        []string
-	retainDirs bool
+	cp              *termtest.ConsoleProcess
+	Dirs            *Dirs
+	env             []string
+	retainDirs      bool
+	createdProjects []*project
 	// users created during session
 	users       []string
 	t           *testing.T
@@ -388,6 +395,20 @@ func (s *Session) CreateNewUser() string {
 	return username
 }
 
+// NotifyProjectCreated indicates that the given project was created on the Platform and needs to
+// be deleted when the session is closed.
+// This only needs to be called for projects created by PersistentUsername, not projects created by
+// users created with CreateNewUser(). Created users' projects are auto-deleted.
+func (s *Session) NotifyProjectCreated(org, name string) {
+	s.createdProjects = append(s.createdProjects, &project{org, name})
+}
+
+const deleteUUIDProjects = "__delete_uuid_projects" // some unique project name
+
+func (s *Session) DeleteUUIDProjects(org string) {
+	s.NotifyProjectCreated(org, deleteUUIDProjects)
+}
+
 func observeSendFn(s *Session) func(string, int, error) {
 	return func(msg string, num int, err error) {
 		if err == nil {
@@ -528,61 +549,6 @@ func (s *Session) Close() error {
 
 	auth := authentication.New(cfg)
 
-	for _, user := range s.users {
-		err := cleanUser(s.t, user, auth)
-		if err != nil {
-			s.t.Errorf("Could not delete user %s: %v", user, errs.JoinMessage(err))
-		}
-	}
-
-	// When deleting UUID projects for the cli-integration-tests user, only do it on one platform in
-	// order to avoid race conditions.
-	if tagsuite.IsTagDefined(tagsuite.DeleteProjects) && runtime.GOOS == "linux" {
-		if os.Getenv(constants.APIHostEnvVarName) == "" {
-			err := os.Setenv(constants.APIHostEnvVarName, constants.DefaultAPIHost)
-			if err != nil {
-				return err
-			}
-			defer func() {
-				os.Unsetenv(constants.APIHostEnvVarName)
-			}()
-		}
-
-		err = auth.AuthenticateWithModel(&mono_models.Credentials{
-			Token: os.Getenv("PLATFORM_API_TOKEN"),
-		})
-		if err != nil {
-			return err
-		}
-
-		projects, err := getProjects(PersistentUsername, auth)
-		if err != nil {
-			s.t.Errorf("Could not fetch projects: %v", errs.JoinMessage(err))
-		}
-		for _, proj := range projects {
-			if !strfmt.IsUUID(proj.Name) {
-				continue
-			}
-			err = deleteProject(PersistentUsername, proj.Name, auth)
-			if err != nil {
-				s.t.Errorf("Could not delete project %s: %v", proj.Name, errs.JoinMessage(err))
-			}
-		}
-	}
-
-	return nil
-}
-
-func (s *Session) DeleteProject(org, name string) error {
-	if os.Getenv("PLATFORM_API_TOKEN") == "" {
-		return errs.New("Unable to delete project because PLATFORM_API_TOKEN env var is not set")
-	}
-
-	cfg, err := config.NewCustom(s.Dirs.Config, singlethread.New(), true)
-	require.NoError(s.t, err, "Could not read e2e session configuration: %s", errs.JoinMessage(err))
-
-	auth := authentication.New(cfg)
-
 	if os.Getenv(constants.APIHostEnvVarName) == "" {
 		err := os.Setenv(constants.APIHostEnvVarName, constants.DefaultAPIHost)
 		if err != nil {
@@ -600,7 +566,37 @@ func (s *Session) DeleteProject(org, name string) error {
 		return err
 	}
 
-	return deleteProject(org, name, auth)
+	if len(s.createdProjects) > 0 && s.createdProjects[0].Name == deleteUUIDProjects && runtime.GOOS == "linux" {
+		// When deleting UUID projects for the cli-integration-tests user, only do it on one platform in
+		// order to avoid race conditions.
+		org := s.createdProjects[0].Org
+		projects, err := getProjects(org, auth)
+		if err != nil {
+			s.t.Errorf("Could not fetch projects: %v", errs.JoinMessage(err))
+		}
+		s.createdProjects = make([]*project, 0) // reset
+		for _, proj := range projects {
+			if strfmt.IsUUID(proj.Name) {
+				s.NotifyProjectCreated(org, proj.Name)
+			}
+		}
+	}
+
+	for _, proj := range s.createdProjects {
+		err := deleteProject(proj.Org, proj.Name, auth)
+		if err != nil {
+			s.t.Errorf("Could not delete project %s: %v", proj.Name, errs.JoinMessage(err))
+		}
+	}
+
+	for _, user := range s.users {
+		err := cleanUser(s.t, user, auth)
+		if err != nil {
+			s.t.Errorf("Could not delete user %s: %v", user, errs.JoinMessage(err))
+		}
+	}
+
+	return nil
 }
 
 func (s *Session) InstallerLog() string {
