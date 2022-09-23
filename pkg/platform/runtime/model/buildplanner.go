@@ -2,16 +2,33 @@ package model
 
 import (
 	"net/http"
+	"os"
+	"runtime"
+	"strings"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/gqlclient"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/logging"
 	model "github.com/ActiveState/cli/pkg/platform/api/graphql/model/buildplan"
 	"github.com/ActiveState/cli/pkg/platform/api/graphql/request"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
+	platformModel "github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/sysinfo"
 	"github.com/go-openapi/strfmt"
 	"github.com/machinebox/graphql"
 )
+
+// HostPlatform stores a reference to current platform
+var HostPlatform string
+
+func init() {
+	HostPlatform = sysinfo.OS().String()
+	if osName, ok := os.LookupEnv(constants.OverrideOSNameEnvVarName); ok {
+		HostPlatform = osName
+	}
+}
 
 type BuildPlannerError struct {
 	wrapped          error
@@ -80,6 +97,33 @@ func (bp *BuildPlanner) FetchBuildResult(commitID strfmt.UUID, owner, project st
 	// The type aliasing in the query populates the
 	// response with emtpy targets that we have to remove
 	removeEmptyTargets(resp)
+
+	var bpPlatforms []strfmt.UUID
+	for _, t := range resp.Project.Commit.Build.Terminals {
+		if t.Tag == "orphans" {
+			logging.Debug("Skipping")
+			continue
+		}
+		bpPlatforms = append(bpPlatforms, strfmt.UUID(strings.TrimPrefix(t.Tag, "platform:")))
+	}
+
+	platformIDs, err := platformModel.FilterPlatformIDs(HostPlatform, runtime.GOARCH, bpPlatforms)
+	if err != nil {
+		return nil, errs.Wrap(err, "filterPlatformIDs failed")
+	}
+	if len(platformIDs) == 0 {
+		return nil, locale.NewInputError("err_recipe_no_platform")
+	} else if len(platformIDs) > 1 {
+		logging.Debug("Received multiple platform IDs. Picking the first one.")
+	}
+
+	var filteredTerminals []*model.NamedTarget
+	for _, t := range resp.Project.Commit.Build.Terminals {
+		if string(platformIDs[0]) == strings.TrimPrefix(t.Tag, "platform:") {
+			filteredTerminals = append(filteredTerminals, t)
+		}
+	}
+	resp.Project.Commit.Build.Terminals = filteredTerminals
 
 	res := BuildResult{
 		BuildEngine: Alternative,
