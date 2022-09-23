@@ -29,6 +29,7 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
+	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/ActiveState/termtest"
 	"github.com/ActiveState/termtest/expect"
@@ -38,12 +39,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v2"
 )
-
-// Represents a created project that needs to be deleted during cleanup.
-type createdProject struct {
-	Org  string
-	Name string
-}
 
 // Session represents an end-to-end testing session during which several console process can be spawned and tested
 // It provides a consistent environment (environment variables and temporary
@@ -55,7 +50,7 @@ type Session struct {
 	Dirs            *Dirs
 	env             []string
 	retainDirs      bool
-	createdProjects []*createdProject
+	createdProjects []*project.Namespaced
 	// users created during session
 	users       []string
 	t           *testing.T
@@ -400,7 +395,7 @@ func (s *Session) CreateNewUser() string {
 // This only needs to be called for projects created by PersistentUsername, not projects created by
 // users created with CreateNewUser(). Created users' projects are auto-deleted.
 func (s *Session) NotifyProjectCreated(org, name string) {
-	s.createdProjects = append(s.createdProjects, &createdProject{org, name})
+	s.createdProjects = append(s.createdProjects, project.NewNamespace(org, name, ""))
 }
 
 const deleteUUIDProjects = "__delete_uuid_projects" // some unique project name
@@ -571,9 +566,9 @@ func (s *Session) Close() error {
 		return err
 	}
 
-	if len(s.createdProjects) > 0 && s.createdProjects[0].Name == deleteUUIDProjects {
-		org := s.createdProjects[0].Org
-		s.createdProjects = make([]*createdProject, 0) // reset
+	if len(s.createdProjects) > 0 && s.createdProjects[0].Project == deleteUUIDProjects {
+		org := s.createdProjects[0].Owner
+		s.createdProjects = make([]*project.Namespaced, 0) // reset
 		// When deleting UUID projects, only do it on one platform in order to avoid race conditions.
 		if runtime.GOOS == "linux" {
 			projects, err := getProjects(org, auth)
@@ -589,9 +584,9 @@ func (s *Session) Close() error {
 	}
 
 	for _, proj := range s.createdProjects {
-		err := deleteProject(proj.Org, proj.Name, auth)
+		err := deleteProject(proj.Owner, proj.Project, auth)
 		if err != nil {
-			s.t.Errorf("Could not delete project %s: %v", proj.Name, errs.JoinMessage(err))
+			s.t.Errorf("Could not delete project %s: %v", proj.Project, errs.JoinMessage(err))
 		}
 	}
 
