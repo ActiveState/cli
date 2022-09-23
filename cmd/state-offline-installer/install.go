@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -8,6 +9,8 @@ import (
 	rt "runtime"
 
 	"github.com/ActiveState/cli/internal/analytics"
+	ac "github.com/ActiveState/cli/internal/analytics/constants"
+	"github.com/ActiveState/cli/internal/analytics/dimensions"
 	"github.com/ActiveState/cli/internal/assets"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
@@ -32,6 +35,8 @@ const artifactsTarGZName = "artifacts.tar.gz"
 const assetsPathName = "assets"
 const artifactsPathName = "artifacts"
 const licenseFileName = "LICENSE.txt"
+const installerConfigFileName = "installer_config.json"
+const uninstallerFileNameRoot = "uninstall"
 
 type runner struct {
 	out       output.Outputer
@@ -59,15 +64,32 @@ func NewRunner(prime primeable) *runner {
 	}
 }
 
-type Params struct {
-	path string
+type InstallerConfig struct {
+	OrgName     *string `json:"org_name"`
+	ProjectID   *string `json:"project_id"`
+	ProjectName *string `json:"project_name"`
+	CommitID    *string `json:"commit_id"`
 }
 
-func newParams() *Params {
-	return &Params{path: "/tmp"}
+func (r *runner) Event(eventType string, installerDimensions *dimensions.Values) {
+	r.analytics.Event(ac.CatRuntimeUsage, eventType, installerDimensions)
+}
+
+func (r *runner) EventWithLabel(eventType string, msg string, installerDimensions *dimensions.Values) {
+	r.analytics.EventWithLabel(ac.CatRuntimeUsage, eventType, msg, installerDimensions)
+}
+
+func (r *runner) handleFailure(err error, msg string, installerDimensions *dimensions.Values) error {
+	r.EventWithLabel("failure", msg, installerDimensions)
+	return errs.Wrap(err, msg)
 }
 
 func (r *runner) Run(params *Params) error {
+	logfile, err := buildlogfile.New(outputhelper.NewCatcher())
+	if err != nil {
+		return errs.Wrap(err, "Unable to create new logfile object")
+	}
+
 	tempDir, err := ioutil.TempDir("", "artifacts-")
 	if err != nil {
 		return errs.Wrap(err, "Unable to create temporary directory")
@@ -89,62 +111,140 @@ func (r *runner) Run(params *Params) error {
 		return errs.Wrap(err, "Could not extract assets")
 	}
 
+	config := InstallerConfig{}
+	installerConfigPath := filepath.Join(assetsPath, installerConfigFileName)
+	configData, err := os.ReadFile(installerConfigPath)
+	if err != nil {
+		return errs.Wrap(err, "Failed to read config_file")
+	}
+
+	if err := json.Unmarshal([]byte(configData), &config); err != nil {
+		return errs.Wrap(err, "Failed to decode config_file")
+	}
+
+	installerDimensions := &dimensions.Values{
+		ProjectID: config.ProjectID,
+		CommitID:  config.CommitID,
+		Trigger:   p.StrP(target.TriggerCliOfflineInstaller.String()),
+	}
+	r.Event("start", installerDimensions)
+
 	/* Prompt for License */
 	licenseFileAssetPath := filepath.Join(assetsPath, licenseFileName)
 	{
 		b, err := fileutils.ReadFile(licenseFileAssetPath)
 		if err != nil {
-			return errs.Wrap(err, "Unable to open License file")
+			return r.handleFailure(err, "Unable to open License file", installerDimensions)
 		}
 
 		accepted, err := legalprompt.CustomLicense(string(b), r.out, r.prompt)
 		if err != nil {
-			return errs.Wrap(err, "Error with license acceptance")
+			return r.handleFailure(err, "Error with license acceptance", installerDimensions)
 		}
 		if !accepted {
-			return locale.NewInputError("License not accepted")
+			return r.handleFailure(
+				locale.NewInputError("License not accepted"),
+				"License failure",
+				installerDimensions,
+			)
 		}
 	}
 
 	/* Extract Artifacts */
 	artifactsPath := filepath.Join(tempDir, artifactsPathName)
 	if err := r.extractArtifacts(artifactsPath, assetsPath); err != nil {
-		return errs.Wrap(err, "Could not extract artifacts")
+		return r.handleFailure(err, "Could not extract artifacts", installerDimensions)
 	}
 
 	/* Install Artifacts */
 	offlineTarget := target.NewOfflineTarget(params.path, artifactsPath)
-	asrt, err := r.setupRuntime(artifactsPath, offlineTarget)
+	asrt, err := r.setupRuntime(artifactsPath, offlineTarget, logfile)
 	if err != nil {
-		return errs.Wrap(err, "Could not setup runtime")
+		return r.handleFailure(err, "Could not setup runtime", installerDimensions)
 	}
 
 	/* Manually Install License File */
 	{
 		err = fileutils.CopyFile(licenseFileAssetPath, filepath.Join(params.path, licenseFileName))
 		if err != nil {
-			return errs.Wrap(err, "Error copying license file")
+			return r.handleFailure(err, "Error copying license file", installerDimensions)
+		}
+	}
+
+	/* Manually Install config File */
+	{
+		err = fileutils.CopyFile(
+			installerConfigPath,
+			filepath.Join(params.path, installerConfigFileName),
+		)
+		if err != nil {
+			return r.handleFailure(err, "Error copying config file", installerDimensions)
+		}
+	}
+
+	var uninstallerSrc string
+	var uninstallerDest string
+
+	/* Manually Install uninstaller */
+	if rt.GOOS == "windows" {
+		/* shenanigans because windows won't let you delete an executable that's running */
+		uninstallDir := filepath.Join(params.path, "uninstall-data")
+		if err := os.Mkdir(uninstallDir, os.ModeDir); err != nil {
+			return r.handleFailure(err, "Error creating uninstall directory", installerDimensions)
+		}
+		uninstallerDestName := fmt.Sprintf("%s-%s-%s.exe", *config.ProjectID, *config.CommitID, uninstallerFileNameRoot)
+
+		uninstallerSrc = filepath.Join(assetsPath, uninstallerFileNameRoot+".exe")
+		uninstallerDest = filepath.Join(uninstallDir, uninstallerDestName)
+
+		// create batch script
+		batch := fmt.Sprintf(
+			"@echo off\ncopy %s\\%s %%TEMP%%\\%s\n%%TEMP%%\\%s %s & del %%TEMP%%\\%s >nul 2>&1\n",
+			uninstallDir,
+			uninstallerDestName,
+			uninstallerDestName,
+			uninstallerDestName,
+			params.path,
+			uninstallerDestName,
+		)
+		err := os.WriteFile(filepath.Join(params.path, "uninstall.bat"), []byte(batch), 0755)
+		if err != nil {
+			return r.handleFailure(err, "Error creating uninstall script", installerDimensions)
+		}
+	} else {
+		uninstallerSrc = filepath.Join(assetsPath, uninstallerFileNameRoot)
+		uninstallerDest = filepath.Join(params.path, uninstallerFileNameRoot)
+	}
+	{
+		err = fileutils.CopyFile(
+			uninstallerSrc,
+			uninstallerDest,
+		)
+		if err != nil {
+			return r.handleFailure(err, "Error copying uninstaller", installerDimensions)
+		}
+		err = os.Chmod(uninstallerDest, 0555)
+		if err != nil {
+			return r.handleFailure(err, "Error making uninstaller executable", installerDimensions)
 		}
 	}
 
 	/* Configure Environment */
 	if err := r.configureEnvironment(params.path, asrt); err != nil {
-		return errs.Wrap(err, "Could not configure environment")
+		return r.handleFailure(err, "Could not configure environment", installerDimensions)
 	}
+
+	r.analytics.Event(ac.CatRuntimeUsage, "success", installerDimensions)
 
 	r.out.Print("Runtime installation completed.")
 
 	return nil
 }
 
-func (r *runner) setupRuntime(artifactsPath string, offlineTarget *target.OfflineTarget) (*runtime.Runtime, error) {
+func (r *runner) setupRuntime(artifactsPath string, offlineTarget *target.OfflineTarget, logfile *buildlogfile.BuildLogFile) (*runtime.Runtime, error) {
 	r.out.Print(fmt.Sprintf("Stage 3 of 3 Start: Installing artifacts from: %s", artifactsPath))
 
 	offlineProgress := newOfflineProgressOutput(r.out)
-	logfile, err := buildlogfile.New(outputhelper.NewCatcher())
-	if err != nil {
-		return nil, errs.Wrap(err, "Unable to create new logfile object")
-	}
 	eventHandler := events.NewRuntimeEventHandler(offlineProgress, nil, logfile)
 
 	rti, err := runtime.New(offlineTarget, r.analytics, nil)

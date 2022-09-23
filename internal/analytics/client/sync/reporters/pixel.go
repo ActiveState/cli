@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"os"
 
 	"github.com/ActiveState/cli/internal/analytics/dimensions"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 )
 
@@ -14,7 +16,13 @@ type PixelReporter struct {
 }
 
 func NewPixelReporter() *PixelReporter {
-	return &PixelReporter{"https://state-tool.s3.amazonaws.com/pixel"}
+	var pixelUrl string
+
+	// Attempt to get the value for the pixel URL from the environment.  Fall back to default if that fails
+	if pixelUrl = os.Getenv(constants.AnalyticsPixelOverrideEnv); pixelUrl == "" {
+		pixelUrl = constants.DefaultAnalyticsPixel
+	}
+	return &PixelReporter{pixelUrl}
 }
 
 func (r *PixelReporter) ID() string {
