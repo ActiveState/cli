@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/internal/analytics"
-	"github.com/ActiveState/cli/internal/analytics/client/blackhole"
+	"github.com/ActiveState/cli/internal/analytics/client/sync"
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
@@ -60,14 +60,14 @@ func main() {
 	}
 
 	rollbar.SetConfig(cfg)
-	an = blackhole.New()
+	an = sync.New(cfg, nil)
 
 	out, err := output.New("", &output.Config{
 		OutWriter: os.Stdout,
 		ErrWriter: os.Stderr,
 	})
 	if err != nil {
-		logging.Critical("Could not set up outputer: " + errs.JoinMessage(err))
+		logging.Critical("Could not set up outputter: " + errs.JoinMessage(err))
 		fmt.Fprintln(os.Stderr, errs.JoinMessage(err))
 		exitCode = 1
 		return

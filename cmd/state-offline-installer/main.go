@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/internal/analytics"
-	"github.com/ActiveState/cli/internal/analytics/client/blackhole"
+	"github.com/ActiveState/cli/internal/analytics/client/sync"
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
@@ -23,6 +23,16 @@ import (
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/pkg/cmdlets/errors"
 )
+
+type Params struct {
+	path string
+}
+
+func newParams() *Params {
+	return &Params{
+		path: "/tmp",
+	}
+}
 
 func main() {
 	var exitCode int
@@ -60,14 +70,14 @@ func main() {
 	}
 
 	rollbar.SetConfig(cfg)
-	an = blackhole.New()
+	an = sync.New(cfg, nil)
 
 	out, err := output.New("", &output.Config{
 		OutWriter: os.Stdout,
 		ErrWriter: os.Stderr,
 	})
 	if err != nil {
-		logging.Critical("Could not set up outputer: " + errs.JoinMessage(err))
+		logging.Critical("Could not set up outputter: " + errs.JoinMessage(err))
 		fmt.Fprintln(os.Stderr, errs.JoinMessage(err))
 		exitCode = 1
 		return
@@ -93,6 +103,7 @@ func main() {
 
 func run(prime *primer.Values) error {
 	params := newParams()
+
 	cmd := captain.NewCommand(
 		"install",
 		"Doing offline installation",

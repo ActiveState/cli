@@ -1,10 +1,13 @@
 package main
 
 import (
+	"encoding/json"
 	"os"
 	"path/filepath"
 
 	"github.com/ActiveState/cli/internal/analytics"
+	ac "github.com/ActiveState/cli/internal/analytics/constants"
+	"github.com/ActiveState/cli/internal/analytics/dimensions"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -16,6 +19,7 @@ import (
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
+	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 )
 
 const licenseFileName = "LICENSE.txt"
@@ -46,6 +50,15 @@ func NewRunner(prime primeable) *runner {
 	}
 }
 
+const installerConfigFileName = "installer_config.json"
+
+type InstallerConfig struct {
+	OrgName     *string `json:"org_name"`
+	ProjectID   *string `json:"project_id"`
+	ProjectName *string `json:"project_name"`
+	CommitID    *string `json:"commit_id"`
+}
+
 type Params struct {
 	path string
 }
@@ -54,11 +67,48 @@ func newParams() *Params {
 	return &Params{path: "/tmp"}
 }
 
+func (r *runner) Event(eventType string, installerDimensions *dimensions.Values) {
+	r.analytics.Event(ac.CatRuntimeUsage, eventType, installerDimensions)
+}
+
+func (r *runner) EventWithLabel(eventType string, msg string, installerDimensions *dimensions.Values) {
+	r.analytics.EventWithLabel(ac.CatRuntimeUsage, eventType, msg, installerDimensions)
+}
+
+func (r *runner) handleFailure(err error, msg string, installerDimensions *dimensions.Values) error {
+	r.EventWithLabel("failure", msg, installerDimensions)
+	return errs.Wrap(err, msg)
+}
+
+func (r *runner) handleFailureNewErr(msg string, installerDimensions *dimensions.Values) error {
+	r.EventWithLabel("failure", msg, installerDimensions)
+	return errs.New(msg)
+}
+
 func (r *runner) Run(params *Params) error {
 	licenseFilePath := filepath.Join(params.path, licenseFileName)
+	installerConfigPath := filepath.Join(params.path, installerConfigFileName)
+
+	configData, err := os.ReadFile(installerConfigPath)
+	if err != nil {
+		return errs.Wrap(err, "Failed to read config file, is this an install directory?")
+	}
+	installerConfig := InstallerConfig{}
+
+	if err := json.Unmarshal([]byte(configData), &installerConfig); err != nil {
+		return errs.Wrap(err, "Failed to decode config file")
+	}
+
+	installerDimensions := &dimensions.Values{
+		ProjectID: installerConfig.ProjectID,
+		CommitID:  installerConfig.CommitID,
+		Trigger:   p.StrP(target.TriggerCliOfflineUninstaller.String()),
+	}
+	r.analytics.Event(ac.CatRuntimeUsage, "start", installerDimensions)
+
 	containsLicenseFile, err := fileutils.FileContains(licenseFilePath, []byte("ACTIVESTATE"))
 	if err != nil {
-		return errs.Wrap(err, "Error determining if directory is an install directory")
+		return r.handleFailure(err, "Failed to find valid license file, is this an install directory?", installerDimensions)
 	}
 
 	if !containsLicenseFile {
@@ -67,25 +117,27 @@ func (r *runner) Run(params *Params) error {
 			"Directory does not look like an install directory, are you sure you want to proceed?",
 			p.BoolP(true))
 		if err != nil {
-			return errs.Wrap(err, "Error getting confirmation for installing")
+			return r.handleFailure(err, "Error getting confirmation for installing", installerDimensions)
 		}
 
 		if !confirmUninstall {
-			return errs.New("ActiveState license not found in uninstall directory. Please specify a valid uninstall directory.")
+			return r.handleFailureNewErr("ActiveState license not found in uninstall directory. Please specify a valid uninstall directory.", installerDimensions)
 		}
 	}
 
 	r.out.Print("Removing environment configuration")
 	err = r.removeEnvPaths()
 	if err != nil {
-		return errs.Wrap(err, "Error removing environment path")
+		return r.handleFailure(err, "Error removing environment path", installerDimensions)
 	}
 
 	r.out.Print("Removing installation directory")
 	err = os.RemoveAll(params.path)
 	if err != nil {
-		return errs.Wrap(err, "Error removing installation directory")
+		return r.handleFailure(err, "Error removing installation directory", installerDimensions)
 	}
+
+	r.analytics.Event(ac.CatRuntimeUsage, "success", installerDimensions)
 
 	r.out.Print("Uninstall Complete")
 

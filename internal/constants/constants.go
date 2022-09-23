@@ -453,3 +453,9 @@ const PipShim = "pip"
 
 // AutoUpdateConfigKey is the config key for storing whether or not autoupdates can be performed
 const AutoUpdateConfigKey = "autoupdate"
+
+// DefaultAnalyticsPixel is the default url for the analytics pixel
+const DefaultAnalyticsPixel = "https://state-tool.s3.amazonaws.com/pixel"
+
+// AnalyticsPixelOverrideEnv is the environment variable to check for overriding the analytics pixel url
+const AnalyticsPixelOverrideEnv = "ACTIVESTATE_CLI_ANALYTICS_PIXEL"
