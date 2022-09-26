@@ -1,3 +1,9 @@
+// Package svcmsg models the Heartbeat data that the executor must communicate
+// to the service.
+//
+// IMPORTANT: This package should have minimal dependencies as it will be
+// imported by cmd/state-exec. The resulting compiled executable must remain as
+// small as possible.
 package svcmsg
 
 import (

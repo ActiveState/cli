@@ -1,3 +1,11 @@
+// Package execmeta models the executor meta data that is communicated from the
+// state tool to executors via file. The meta file is stored alongside the
+// executors and should be named "meta.as". It should be applied to the file
+// file system when the runtime is manifested on disk.
+//
+// IMPORTANT: This package should have minimal dependencies as it will be
+// imported by cmd/state-exec. The resulting compiled executable must remain as
+// small as possible.
 package execmeta
 
 import (
