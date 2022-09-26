@@ -7,6 +7,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/mediator/model"
 	"github.com/ActiveState/cli/pkg/platform/api/mediator/request"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
+	"github.com/thoas/go-funk"
 )
 
 type Vulnerability model.Vulnerability
@@ -68,7 +69,7 @@ func FetchCommitVulnerabilities(auth *authentication.Auth, commitID string) (*mo
 
 func removeModerateSeverity(cv model.CommitVulnerabilities) *model.CommitVulnerabilities {
 	res := cv
-	/*res.VulnerabilityHistogram = funk.Filter(cv.VulnerabilityHistogram, func(sc model.SeverityCount) bool {
+	res.VulnerabilityHistogram = funk.Filter(cv.VulnerabilityHistogram, func(sc model.SeverityCount) bool {
 		return sc.Severity != "MODERATE"
 	}).([]model.SeverityCount)
 	res.Sources = funk.Map(cv.Sources, func(sv model.SourceVulnerability) model.SourceVulnerability {
@@ -77,7 +78,7 @@ func removeModerateSeverity(cv model.CommitVulnerabilities) *model.CommitVulnera
 			return v.Severity != "MODERATE"
 		}).([]model.Vulnerability)
 		return res
-	}).([]model.SourceVulnerability)*/
+	}).([]model.SourceVulnerability)
 	return &res
 }
 

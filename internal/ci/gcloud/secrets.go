@@ -1,9 +1,12 @@
 package gcloud
 
 import (
+	"context"
 	"fmt"
 
 	"cloud.google.com/go/compute/metadata"
+	secretmanager "cloud.google.com/go/secretmanager/apiv1"
+	secretmanagerpb "google.golang.org/genproto/googleapis/cloud/secretmanager/v1"
 
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -25,8 +28,8 @@ func GetSecret(name string) (tkn string, err error) {
 	}()
 
 	// Create the client.
-	//ctx := context.Background()
-	/*client, err := secretmanager.NewClient(ctx)*/
+	ctx := context.Background()
+	client, err := secretmanager.NewClient(ctx)
 	if err != nil {
 		// gcloud does not expose the error type for "no credentials", so we're going to assume any error is a not available error
 		return "", fmt.Errorf("failed to create gcloud secretmanager client: %v %w", err, ErrNotAvailable{})
@@ -44,7 +47,7 @@ func GetSecret(name string) (tkn string, err error) {
 	logging.Debug("Accessing gcloud secret at: %s", path)
 
 	// Build the request.
-	/*req := &secretmanagerpb.AccessSecretVersionRequest{
+	req := &secretmanagerpb.AccessSecretVersionRequest{
 		Name: path,
 	}
 
@@ -52,7 +55,7 @@ func GetSecret(name string) (tkn string, err error) {
 	result, err := client.AccessSecretVersion(ctx, req)
 	if err != nil {
 		return "", fmt.Errorf("failed to access secret version: %v", err)
-	}*/
+	}
 
-	return "" /*string(result.Payload.Data)*/, nil
+	return string(result.Payload.Data), nil
 }

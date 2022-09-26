@@ -8,6 +8,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/stretchr/testify/assert"
+	"github.com/thoas/go-funk"
 )
 
 type RegistryKeyMock struct {
@@ -105,7 +106,7 @@ func TestCmdEnv_unset(t *testing.T) {
 			"unset, value equals",
 			fields{&RegistryKeyMock{
 				getResults: map[string]RegistryValue{
-					"key": {"value_equals", nil},
+					"key": RegistryValue{"value_equals", nil},
 				},
 			}, nil},
 			args{
@@ -227,7 +228,7 @@ func TestCmdEnv_get(t *testing.T) {
 			"get existing",
 			fields{&RegistryKeyMock{
 				getResults: map[string]RegistryValue{
-					"key": {"value", nil},
+					"key": RegistryValue{"value", nil},
 				},
 			}, nil},
 			args{
@@ -273,7 +274,7 @@ func registryValidator(t *testing.T, got []string, want *[]string, name string) 
 			if exclude {
 				v = strings.TrimPrefix(v, "!")
 			}
-			contains := true /*funk.Contains(got, v)*/
+			contains := funk.Contains(got, v)
 			if exclude && contains {
 				t.Errorf("%s: should not contain: %s, calls: %v", name, v, got)
 			}

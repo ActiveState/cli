@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/thoas/go-funk"
 )
 
 type Configurable interface {
@@ -12,7 +13,7 @@ type Configurable interface {
 }
 
 var inTest = strings.HasSuffix(strings.TrimSuffix(os.Args[0], ".exe"), ".test") ||
-	strings.Contains(os.Args[0], "/_test/") /*|| funk.Contains(os.Args, "-test.v")*/
+	strings.Contains(os.Args[0], "/_test/") || funk.Contains(os.Args, "-test.v")
 
 // InUnitTest returns true when the app is being tested
 func InUnitTest() bool {

@@ -11,6 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/go-openapi/strfmt"
+	"github.com/thoas/go-funk"
 )
 
 type Trigger string
@@ -60,10 +61,10 @@ func NewExecTrigger(cmd string) Trigger {
 }
 
 func (t Trigger) IndicatesUsage() bool {
-	/*if funk.Contains(usageTriggers, t) {
+	if funk.Contains(usageTriggers, t) {
 		return true
-	}*/
-	return t.IsExecTrigger() /*&& funk.Contains(usageTriggers, TriggerExec)*/
+	}
+	return t.IsExecTrigger() && funk.Contains(usageTriggers, TriggerExec)
 }
 
 func (t Trigger) IsExecTrigger() bool {

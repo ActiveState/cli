@@ -4,7 +4,9 @@ import (
 	"os"
 	"strings"
 
+	"github.com/ActiveState/cli/internal/condition"
 	"github.com/stretchr/testify/suite"
+	"github.com/thoas/go-funk"
 )
 
 const (
@@ -81,15 +83,13 @@ func (suite *Suite) OnlyRunForTags(tags ...string) {
 
 	setTags := strings.Split(setTagsString, ":")
 	// if no tags are defined and we're not on CI; run the test
-	/*if funk.Contains(setTags, "all") || (setTagsString == "" && !condition.OnCI()) {
+	if funk.Contains(setTags, "all") || (setTagsString == "" && !condition.OnCI()) {
 		return
-	}*/
+	}
 
 	for _, tag := range tags {
-		/*if funk.Contains(setTags, tag) {
+		if funk.Contains(setTags, tag) {
 			return
-		}*/
-		if true {
 		}
 	}
 

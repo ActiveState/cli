@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"runtime"
+	"runtime/debug"
 	"time"
 
 	"github.com/ActiveState/cli/cmd/state-exec/internal/logr"
@@ -31,7 +32,7 @@ func logDbgFunc(start time.Time) logr.LogFunc {
 }
 
 func main() {
-	//debug.SetGCPercent(-1)
+	debug.SetGCPercent(-1)
 	runtime.GOMAXPROCS(1)
 
 	if os.Getenv(envVarKeyVerbose) == "true" {

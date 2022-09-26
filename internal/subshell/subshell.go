@@ -7,6 +7,9 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/thoas/go-funk"
+
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/logging"
@@ -129,9 +132,9 @@ func New(cfg sscommon.Configurable) SubShell {
 	logging.Debug("Using binary: %s", binary)
 	subs.SetBinary(binary)
 
-	env := []string{} /*funk.FilterString(os.Environ(), func(s string) bool {
+	env := funk.FilterString(os.Environ(), func(s string) bool {
 		return !strings.HasPrefix(s, constants.ProjectEnvVarName)
-	})*/
+	})
 	subs.SetEnv(osutils.EnvSliceToMap(env))
 
 	return subs

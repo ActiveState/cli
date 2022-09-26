@@ -1,8 +1,12 @@
 package globaldefault
 
 import (
+	"os"
+	"strings"
+
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/subshell/cmd"
+	"github.com/thoas/go-funk"
 )
 
 func isOnPATH(binDir string) bool {
@@ -13,8 +17,8 @@ func isOnPATH(binDir string) bool {
 		return false
 	}
 
-	return true /*funk.ContainsString(
+	return funk.ContainsString(
 		strings.Split(path, string(os.PathListSeparator)),
 		binDir,
-	)*/
+	)
 }

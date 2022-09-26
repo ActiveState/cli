@@ -1,4 +1,3 @@
-//go:build !darwin
 // +build !darwin
 
 package deploy
@@ -9,6 +8,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/thoas/go-funk"
 )
 
 // usablePath will find the first writable directory under PATH
@@ -30,9 +30,9 @@ func usablePath() (string, error) {
 		}
 
 		// check for preferred PATHs
-		/*if funk.Contains(preferredPaths, path) {
+		if funk.Contains(preferredPaths, path) {
 			return path, nil
-		}*/
+		}
 		// use the first available directory in PATH
 		if result == "" {
 			result = path

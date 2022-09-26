@@ -19,6 +19,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/ActiveState/cli/pkg/sysinfo"
+	"github.com/thoas/go-funk"
 )
 
 var cache = make(map[string]interface{})
@@ -59,7 +60,7 @@ func NewConditional(a *authentication.Auth) *Conditional {
 			"User": res,
 		}
 	})
-	/*c.RegisterFunc("Contains", funk.Contains)*/
+	c.RegisterFunc("Contains", funk.Contains)
 	c.RegisterFunc("HasPrefix", strings.HasPrefix)
 	c.RegisterFunc("HasSuffix", strings.HasSuffix)
 	c.RegisterFunc("MatchRx", func(rxv, v string) bool {
@@ -322,7 +323,7 @@ func compilerMatches(compiler string) bool {
 	osCompilers := osCompilersI.([]*sysinfo.CompilerInfo)
 
 	if compilerOverride != "" {
-		osCompilers = []*sysinfo.CompilerInfo{{}}
+		osCompilers = []*sysinfo.CompilerInfo{&sysinfo.CompilerInfo{}}
 		var name string
 		fmt.Sscanf(compilerOverride, "%s %d.%d", &name, &osCompilers[0].Major, &osCompilers[0].Minor)
 		name = strings.ToLower(name)

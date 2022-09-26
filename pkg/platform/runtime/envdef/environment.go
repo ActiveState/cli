@@ -10,6 +10,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/exeutils"
+	"github.com/thoas/go-funk"
 
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
@@ -167,17 +168,17 @@ func (ed EnvironmentDefinition) Merge(other *EnvironmentDefinition) (*Environmen
 
 	newEnv := []EnvironmentVariable{}
 
-	/*thisEnvNames := funk.Map(
+	thisEnvNames := funk.Map(
 		ed.Env,
 		func(x EnvironmentVariable) string { return x.Name },
-	).([]string)*/
+	).([]string)
 
 	newKeys := make([]string, 0, len(other.Env))
 	otherEnvMap := map[string]EnvironmentVariable{}
 	for _, ev := range other.Env {
-		/*if !funk.ContainsString(thisEnvNames, ev.Name) {
+		if !funk.ContainsString(thisEnvNames, ev.Name) {
 			newKeys = append(newKeys, ev.Name)
-		}*/
+		}
 		otherEnvMap[ev.Name] = ev
 	}
 
@@ -418,7 +419,7 @@ func (ed *EnvironmentDefinition) ExecutableDirs() (ExecutablePaths, error) {
 	for _, p := range exes {
 		dirs = append(dirs, filepath.Dir(p))
 	}
-	//dirs = funk.UniqString(dirs)
+	dirs = funk.UniqString(dirs)
 
 	return dirs, nil
 }

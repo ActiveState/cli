@@ -25,6 +25,7 @@ import (
 	rt "github.com/ActiveState/cli/pkg/platform/runtime"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
+	"github.com/thoas/go-funk"
 )
 
 const oldGlobalDefaultPrefname = "default_project_path"
@@ -130,9 +131,9 @@ func (r *Prepare) reportError(message string, err error) {
 }
 
 func updateConfigKey(cfg *config.Instance, oldKey, newKey string) error {
-	/*if !funk.Contains(cfg.AllKeys(), oldKey) {
+	if !funk.Contains(cfg.AllKeys(), oldKey) {
 		return nil
-	}*/
+	}
 
 	value := cfg.Get(oldKey)
 	err := cfg.Set(oldKey, "")

@@ -1267,9 +1267,9 @@ func addDeprecatedProjectMappings(cfg ConfigGetter) {
 
 			for _, key := range keys {
 				namespace := strings.TrimPrefix(key, "project_")
-				//newPaths := projects[namespace]
-				//paths := cfg.GetStringSlice(key)
-				projects[namespace] = []string{} /*funk.UniqString(append(newPaths, paths...))*/
+				newPaths := projects[namespace]
+				paths := cfg.GetStringSlice(key)
+				projects[namespace] = funk.UniqString(append(newPaths, paths...))
 				unsets = append(unsets, key)
 			}
 
@@ -1342,9 +1342,9 @@ func StoreProjectMapping(cfg ConfigGetter, namespace, projectPath string) {
 				paths = make([]string, 0)
 			}
 
-			/*if !funk.Contains(paths, projectPath) {
+			if !funk.Contains(paths, projectPath) {
 				paths = append(paths, projectPath)
-			}*/
+			}
 
 			projects[namespace] = paths
 

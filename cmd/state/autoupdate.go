@@ -20,6 +20,7 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/profile"
 	"github.com/ActiveState/cli/internal/updater"
+	"github.com/thoas/go-funk"
 )
 
 const CfgKeyLastCheck = "auto_update_lastcheck"
@@ -116,9 +117,9 @@ func shouldRunAutoUpdate(args []string, cfg *config.Instance) bool {
 		return false
 
 	// Running command that could conflict
-	/*case funk.Contains(args, "update") || funk.Contains(args, "export") || funk.Contains(args, "_prepare") || funk.Contains(args, "clean"):
-	logging.Debug("Not running auto updates because current command might conflict")
-	return false*/
+	case funk.Contains(args, "update") || funk.Contains(args, "export") || funk.Contains(args, "_prepare") || funk.Contains(args, "clean"):
+		logging.Debug("Not running auto updates because current command might conflict")
+		return false
 
 	// Updates are disabled
 	case strings.ToLower(os.Getenv(constants.DisableUpdates)) == "true":

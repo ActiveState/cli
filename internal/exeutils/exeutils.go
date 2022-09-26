@@ -9,6 +9,8 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/thoas/go-funk"
+
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/logging"
@@ -48,7 +50,7 @@ type exeFile struct {
 
 // UniqueExes filters the array of executables for those that would be selected by the command shell in case of a name collision
 func UniqueExes(exePaths []string, pathext string) ([]string, error) {
-	//pathExt := strings.Split(strings.ToLower(pathext), ";")
+	pathExt := strings.Split(strings.ToLower(pathext), ";")
 	exeFiles := map[string]exeFile{}
 	result := []string{}
 
@@ -58,14 +60,14 @@ func UniqueExes(exePaths []string, pathext string) ([]string, error) {
 		}
 
 		exe := exeFile{exePath, "", ""}
-		//ext := filepath.Ext(exePath)
+		ext := filepath.Ext(exePath)
 
 		// We only set the executable extension if PATHEXT is present.
 		// Some macOS builds can contain binaries with periods in their
 		// names and we do not want to strip off suffixes after the period.
-		/*if funk.Contains(pathExt, ext) {
+		if funk.Contains(pathExt, ext) {
 			exe.ext = filepath.Ext(exePath)
-		}*/
+		}
 		exe.name = strings.TrimSuffix(filepath.Base(exePath), exe.ext)
 
 		if prevExe, exists := exeFiles[exe.name]; exists {
@@ -76,9 +78,9 @@ func UniqueExes(exePaths []string, pathext string) ([]string, error) {
 			if !pathsEqual {
 				continue // Earlier PATH entries win
 			}
-			/*if funk.IndexOf(pathExt, prevExe.ext) < funk.IndexOf(pathExt, exe.ext) {
+			if funk.IndexOf(pathExt, prevExe.ext) < funk.IndexOf(pathExt, exe.ext) {
 				continue // Earlier PATHEXT entries win
-			}*/
+			}
 		}
 
 		exeFiles[exe.name] = exe
