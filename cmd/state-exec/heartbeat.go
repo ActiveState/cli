@@ -5,7 +5,7 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/ActiveState/cli/cmd/state-exec/internal/svcmsg"
+	"github.com/ActiveState/cli/internal/svcmsg"
 )
 
 func newHeartbeat() (*svcmsg.Heartbeat, error) {

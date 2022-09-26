@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/ActiveState/cli/cmd/state-exec/internal/svcmsg"
+	"github.com/ActiveState/cli/internal/svcmsg"
 )
 
 const (
