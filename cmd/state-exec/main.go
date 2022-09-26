@@ -4,11 +4,9 @@ import (
 	"fmt"
 	"os"
 	"runtime"
-	"runtime/debug"
 	"time"
 
 	"github.com/ActiveState/cli/cmd/state-exec/internal/logr"
-	"github.com/ActiveState/cli/internal/svcctl"
 )
 
 const (
@@ -32,7 +30,6 @@ func logDbgFunc(start time.Time) logr.LogFunc {
 }
 
 func main() {
-	debug.SetGCPercent(-1)
 	runtime.GOMAXPROCS(1)
 
 	if os.Getenv(envVarKeyVerbose) == "true" {
@@ -58,12 +55,6 @@ func run() error {
 	}
 	logr.Debug("message data - pid: %s, exec: %s", hb.ProcessID, hb.ExecPath)
 
-	sockPath := svcctl.NewIPCSockPathFromGlobals()
-	logr.Debug("communications - sock: %s", sockPath.String())
-	if err := sendMsgToService(sockPath, hb); err != nil {
-		return err
-	}
-
 	meta, err := newExecutorMeta(hb.ExecPath)
 	if err != nil {
 		return err
@@ -81,6 +72,11 @@ func run() error {
 			logr.Debug("            env - kv: %s", entry)
 		}
 	})
+
+	logr.Debug("communications - sock: %s", meta.SockPath)
+	if err := sendMsgToService(meta.SockPath, hb); err != nil {
+		return err
+	}
 
 	return runCmd(meta)
 }

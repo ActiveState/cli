@@ -1,4 +1,4 @@
-package executor
+package execmeta
 
 import (
 	"bufio"
@@ -6,12 +6,11 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
+	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
-
-	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/pkg/project"
 )
 
 /*
@@ -22,6 +21,13 @@ import (
 ::namespace::owner/name
 ::headless::true
 */
+
+type Target struct {
+	CommitUUID string
+	Namespace  string
+	Dir        string
+	Headless   bool
+}
 
 var (
 	MetaFileName = "meta.as"
@@ -34,7 +40,7 @@ var (
 	headlessDelim  = "::headless::"
 )
 
-type Meta struct {
+type ExecMeta struct {
 	SockPath   string
 	Env        map[string]string
 	Bins       []string
@@ -43,20 +49,19 @@ type Meta struct {
 	Headless   bool
 }
 
-func NewMeta(sockPath string, env map[string]string, t Targeter, bins []string) *Meta {
-	commitID := t.CommitUUID().String()
-	return &Meta{
+func New(sockPath string, env map[string]string, t Target, bins []string) *ExecMeta {
+	return &ExecMeta{
 		SockPath:   sockPath,
 		Env:        env,
 		Bins:       bins,
-		CommitUUID: commitID,
-		Namespace:  project.NewNamespace(t.Owner(), t.Name(), commitID).String(),
-		Headless:   t.Headless(),
+		CommitUUID: t.CommitUUID,
+		Namespace:  t.Namespace,
+		Headless:   t.Headless,
 	}
 }
 
-func NewMetaFromReader(r io.Reader) (*Meta, error) {
-	m := Meta{}
+func NewFromReader(r io.Reader) (*ExecMeta, error) {
+	m := ExecMeta{}
 
 	scnr := bufio.NewScanner(r)
 	iter := -1
@@ -105,17 +110,17 @@ func NewMetaFromReader(r io.Reader) (*Meta, error) {
 	return &m, nil
 }
 
-// NewMetaFromFile is a convenience func, not intended to be tested.
-func NewMetaFromFile(path string) (*Meta, error) {
-	data, err := fileutils.ReadFile(path)
+// NewFromFile is a convenience func, not intended to be tested.
+func NewFromFile(path string) (*ExecMeta, error) {
+	data, err := readFile(path)
 	if err != nil {
 		return nil, err
 	}
 	buf := bytes.NewBuffer(data)
-	return NewMetaFromReader(buf)
+	return NewFromReader(buf)
 }
 
-func (m *Meta) WriteTo(w io.Writer) (int64, error) {
+func (m *ExecMeta) WriteTo(w io.Writer) (int64, error) {
 	aw := newAccumulatingWrite(w)
 
 	aw.fprintf("%s%s\n", sockDelim, m.SockPath)
@@ -135,13 +140,13 @@ func (m *Meta) WriteTo(w io.Writer) (int64, error) {
 }
 
 // WriteToDisk is a convenience func, not intended to be unit tested.
-func (m *Meta) WriteToDisk(dir string) error {
+func (m *ExecMeta) WriteToDisk(dir string) error {
 	path := filepath.Join(dir, MetaFileName)
 	buf := &bytes.Buffer{}
 	if _, err := m.WriteTo(buf); err != nil {
 		return err
 	}
-	if err := fileutils.WriteFile(path, buf.Bytes()); err != nil {
+	if err := writeFile(path, buf.Bytes()); err != nil {
 		return err
 	}
 	return nil
@@ -173,4 +178,30 @@ func (aw *accumulatingWrite) fprintf(format string, as ...interface{}) {
 
 func (aw accumulatingWrite) total() (int64, error) {
 	return aw.n, aw.err
+}
+
+func IsMetaFile(fileContents []byte) bool {
+	return strings.Contains(string(fileContents), envDelim)
+}
+
+func readFile(filePath string) ([]byte, error) {
+	b, err := ioutil.ReadFile(filePath)
+	if err != nil {
+		return nil, fmt.Errorf("ioutil.ReadFile %s failed: %w", filePath, err)
+	}
+	return b, nil
+}
+
+func writeFile(filePath string, data []byte) error {
+	f, err := os.OpenFile(filePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+	if err != nil {
+		return fmt.Errorf("os.OpenFile %s failed: %w", filePath, err)
+	}
+	defer f.Close()
+
+	_, err = f.Write(data)
+	if err != nil {
+		return fmt.Errorf("file.Write %s failed: %w", filePath, err)
+	}
+	return nil
 }

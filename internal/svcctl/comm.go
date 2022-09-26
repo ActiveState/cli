@@ -14,7 +14,7 @@ import (
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/rtutils/p"
 	"github.com/ActiveState/cli/internal/svcmsg"
-	"github.com/ActiveState/cli/pkg/platform/runtime/executor"
+	"github.com/ActiveState/cli/pkg/platform/runtime/executor/execmeta"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 )
 
@@ -86,8 +86,8 @@ func HeartbeatHandler(reporter RuntimeUsageReporter) ipc.RequestHandler {
 
 			var headless, commit, namespace string
 
-			metaFilePath := filepath.Join(filepath.Dir(hb.ExecPath), executor.MetaFileName)
-			if metaData, err := executor.NewMetaFromFile(metaFilePath); err != nil {
+			metaFilePath := filepath.Join(filepath.Dir(hb.ExecPath), execmeta.MetaFileName)
+			if metaData, err := execmeta.NewFromFile(metaFilePath); err != nil {
 				multilog.Critical("Could not create meta data from filepath (%s): %s", metaFilePath, err)
 			} else {
 				headless = strconv.FormatBool(metaData.Headless)

@@ -10,6 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/pkg/platform/runtime/envdef"
+	"github.com/ActiveState/cli/pkg/platform/runtime/executor/execmeta"
 	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/errs"
@@ -77,7 +78,8 @@ func (i *Init) Apply(sockPath string, targeter Targeter, env map[string]string, 
 		return locale.WrapError(err, "err_mkdir", "Could not create directory: {{.V0}}", i.executorPath)
 	}
 
-	m := NewMeta(sockPath, env, targeter, exes)
+	t := execmeta.Target{}
+	m := execmeta.New(sockPath, env, t, exes)
 	if err := m.WriteToDisk(i.executorPath); err != nil {
 		return err
 	}
@@ -149,7 +151,7 @@ const shimDenoter = "!DO NOT EDIT! State Tool Shim !DO NOT EDIT!"
 
 func isOwnedByUs(fileContents []byte) bool {
 	return strings.Contains(string(fileContents), "state-exec") ||
-		strings.Contains(string(fileContents), envDelim) ||
+		execmeta.IsMetaFile(fileContents) ||
 		// deprecated
 		strings.Contains(string(fileContents), executorDenoter) ||
 		strings.Contains(string(fileContents), shimDenoter)

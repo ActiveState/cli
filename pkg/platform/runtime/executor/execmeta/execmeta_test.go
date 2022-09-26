@@ -1,12 +1,9 @@
-package executor
+package execmeta
 
 import (
 	"bytes"
 	"reflect"
 	"testing"
-
-	"github.com/ActiveState/cli/pkg/platform/runtime/target"
-	"github.com/go-openapi/strfmt"
 )
 
 /* example meta.as
@@ -18,7 +15,7 @@ import (
 ::headless::true
 */
 
-func TestMeta(t *testing.T) {
+func TestExecMeta(t *testing.T) {
 	env := map[string]string{
 		"EXAMPLE": "value",
 		"SAMPLE":  "other",
@@ -29,8 +26,13 @@ func TestMeta(t *testing.T) {
 		"/example/bin/def",
 		"/example/bin/xyz",
 	}
-	tgt := target.NewCustomTarget("owner", "name", strfmt.UUID("1234abcd-1234-abcd-1234-abcd1234"), "/example/bin", target.TriggerActivate, true)
-	m := NewMeta("/sock-path", env, tgt, bins)
+	tgt := Target{
+		CommitUUID: "1234abcd-1234-abcd-1234-abcd1234",
+		Namespace:  "owner/project",
+		Dir:        "/example/bin",
+		Headless:   true,
+	}
+	m := New("/sock-path", env, tgt, bins)
 	buf := &bytes.Buffer{}
 	_, err := m.WriteTo(buf)
 	if err != nil {
@@ -39,7 +41,7 @@ func TestMeta(t *testing.T) {
 
 	t.Logf(buf.String())
 
-	mx, err := NewMetaFromReader(buf)
+	mx, err := NewFromReader(buf)
 	if err != nil {
 		t.Fatalf("unexpected error: %s", err)
 	}

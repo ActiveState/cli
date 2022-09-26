@@ -1,18 +1,36 @@
 package main
 
 import (
-	"context"
 	"fmt"
+	"net"
 
-	"github.com/ActiveState/cli/internal/ipc"
-	"github.com/ActiveState/cli/internal/svcmsg"
+	"github.com/ActiveState/cli/cmd/state-exec/internal/svcmsg"
 )
 
-func sendMsgToService(sockPath *ipc.SockPath, hb *svcmsg.Heartbeat) error {
-	client := ipc.NewClient(sockPath)
-	_, err := client.Request(context.Background(), hb.SvcMsg())
+const (
+	network  = "unix"
+	msgWidth = 1024
+)
+
+func sendMsgToService(sockPath string, hb *svcmsg.Heartbeat) error {
+	ef := "send msg to service: %w"
+
+	conn, err := net.Dial(network, sockPath)
 	if err != nil {
-		return fmt.Errorf("send message to service: %w", err)
+		return fmt.Errorf(ef, err)
 	}
+	defer conn.Close()
+
+	_, err = conn.Write([]byte(hb.SvcMsg()))
+	if err != nil {
+		return fmt.Errorf(ef, err)
+	}
+
+	buf := make([]byte, msgWidth)
+	_, err = conn.Read(buf)
+	if err != nil {
+		return fmt.Errorf(ef, err)
+	}
+
 	return nil
 }

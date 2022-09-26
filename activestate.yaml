@@ -156,7 +156,10 @@ scripts:
       set -e
       $constants.SET_ENV
 
-      go build -tags "$GO_BUILD_TAGS" -o $BUILD_TARGET_DIR/$constants.BUILD_EXEC_TARGET $constants.CLI_BUILDFLAGS $constants.EXECUTOR_PKGS
+      ORIGINAL_DIR=${PWD} 
+      cd $constants.EXECUTOR_PKGS
+      go build -tags "$GO_BUILD_TAGS" -o $ORIGINAL_DIR/$BUILD_TARGET_DIR/$constants.BUILD_EXEC_TARGET $constants.CLI_BUILDFLAGS .
+      cd ${ORIGINAL_DIR}
   - name: build-all
     description: Builds all our tools
     standalone: true
@@ -488,7 +491,7 @@ scripts:
           sudo sh -c 'echo -1 >/proc/sys/kernel/perf_event_paranoid'
       fi
 
-      perf stat -a -r 100 -B ${@} > /dev/null
+      perf stat -d -r 100 ${@} > /dev/null
 
 events:
   - name: activate
