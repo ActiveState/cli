@@ -26,7 +26,6 @@ import (
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/go-openapi/strfmt"
-	"github.com/thoas/go-funk"
 )
 
 type PackageVersion struct {
@@ -210,7 +209,7 @@ func executePackageOperation(prime primeable, packageName, packageVersion string
 }
 
 func supportedLanguageByName(supported []medmodel.SupportedLanguage, langName string) medmodel.SupportedLanguage {
-	return funk.Find(supported, func(l medmodel.SupportedLanguage) bool { return l.Name == langName }).(medmodel.SupportedLanguage)
+	return medmodel.SupportedLanguage{} /*funk.Find(supported, func(l medmodel.SupportedLanguage) bool { return l.Name == langName }).(medmodel.SupportedLanguage)*/
 }
 
 func resolvePkgAndNamespace(prompt prompt.Prompter, packageName string, nsType model.NamespaceType, supported []medmodel.SupportedLanguage) (string, model.Namespace, *medmodel.SupportedLanguage, error) {

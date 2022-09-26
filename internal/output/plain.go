@@ -19,7 +19,6 @@ import (
 	"github.com/ActiveState/cli/internal/table"
 	"github.com/ActiveState/cli/internal/termutils"
 	"github.com/go-openapi/strfmt"
-	"github.com/thoas/go-funk"
 )
 
 // PlainOpts define available tokens for setting plain output options.
@@ -185,13 +184,13 @@ func sprintStruct(value interface{}) (string, error) {
 
 	result := []string{}
 	for _, field := range meta {
-		if funk.Contains(field.opts, string(VerticalTable)) {
+		/*if funk.Contains(field.opts, string(VerticalTable)) {
 			slice, err := asSlice(field.value)
 			if err != nil {
 				return "", err
 			}
 			return sprintTable(true, slice)
-		}
+		}*/
 
 		stringValue, err := sprint(field.value)
 		if err != nil {
@@ -288,11 +287,11 @@ func sprintTable(vertical bool, slice []interface{}) (string, error) {
 		firstIteration := len(headers) == 0
 		row := []string{}
 		for _, field := range meta {
-			if funk.Contains(field.opts, string(HidePlain)) {
+			/*if funk.Contains(field.opts, string(HidePlain)) {
 				continue
-			}
+			}*/
 
-			if firstIteration && !funk.Contains(field.opts, string(SeparateLineOpt)) {
+			if firstIteration /*&& !funk.Contains(field.opts, string(SeparateLineOpt)) */ {
 				headers = append(headers, localizedField(field.l10n))
 			}
 
@@ -301,20 +300,20 @@ func sprintTable(vertical bool, slice []interface{}) (string, error) {
 				return "", err
 			}
 
-			if funk.Contains(field.opts, string(EmptyNil)) && stringValue == nilText {
+			if /*funk.Contains(field.opts, string(EmptyNil)) && */ stringValue == nilText {
 				stringValue = ""
 			}
 
 			offset := shiftColsVal(field.opts)
 
-			if funk.Contains(field.opts, string(SeparateLineOpt)) {
+			/*if funk.Contains(field.opts, string(SeparateLineOpt)) {
 				rows = append(rows, row)
 				if !funk.Contains(field.opts, string(EmptyNil)) || stringValue != "" {
 					rows = append(rows, columns(offset, stringValue))
 				}
 				row = []string{}
 				break
-			}
+			}*/
 
 			row = append(row, columns(offset, stringValue)...)
 		}

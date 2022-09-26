@@ -4,7 +4,6 @@ import (
 	"strings"
 
 	"github.com/go-openapi/strfmt"
-	"github.com/thoas/go-funk"
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
@@ -115,7 +114,7 @@ func InviteUserToOrg(orgName string, asOwner bool, email string) (*mono_models.I
 
 // FetchOrganizationsByIDs fetches organizations by their IDs
 func FetchOrganizationsByIDs(ids []strfmt.UUID) ([]model.Organization, error) {
-	ids = funk.Uniq(ids).([]strfmt.UUID)
+	ids = []strfmt.UUID{} /*funk.Uniq(ids).([]strfmt.UUID)*/
 	request := request.OrganizationsByIDs(ids)
 
 	gql := graphql.New()

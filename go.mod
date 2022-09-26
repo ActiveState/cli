@@ -18,7 +18,6 @@ require (
 	github.com/dave/jennifer v0.18.0
 	github.com/faiface/mainthread v0.0.0-20171120011319-8b78f0a41ae3
 	github.com/fatih/color v1.10.0
-	github.com/felixge/fgprof v0.9.0
 	github.com/fsnotify/fsnotify v1.4.7
 	github.com/gammazero/workerpool v1.1.1
 	github.com/getlantern/systray v1.1.0
@@ -67,7 +66,6 @@ require (
 	golang.org/x/net v0.0.0-20210614182718-04defd469f4e
 	golang.org/x/sys v0.0.0-20220520151302-bc2c85ada10a
 	golang.org/x/text v0.3.6
-	google.golang.org/genproto v0.0.0-20200815001618-f69a88009b70
 	gopkg.in/AlecAivazis/survey.v1 v1.8.8
 	gopkg.in/src-d/go-git.v4 v4.13.1
 	gopkg.in/yaml.v2 v2.4.0
@@ -92,6 +90,7 @@ require (
 	github.com/dsnet/compress v0.0.0-20171208185109-cc9eb1d7ad76 // indirect
 	github.com/emirpasic/gods v1.12.0 // indirect
 	github.com/fatih/structs v1.1.0 // indirect
+	github.com/felixge/fgprof v0.9.0 // indirect
 	github.com/gammazero/deque v0.0.0-20200721202602-07291166fe33 // indirect
 	github.com/getlantern/context v0.0.0-20190109183933-c447772a6520 // indirect
 	github.com/getlantern/errors v0.0.0-20190325191628-abdb3e3e36f7 // indirect
@@ -175,6 +174,7 @@ require (
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
 	google.golang.org/api v0.30.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
+	google.golang.org/genproto v0.0.0-20200815001618-f69a88009b70 // indirect
 	google.golang.org/grpc v1.36.0 // indirect
 	google.golang.org/protobuf v1.25.0 // indirect
 	gopkg.in/fsnotify.v1 v1.4.7 // indirect

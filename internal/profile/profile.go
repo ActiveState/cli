@@ -8,7 +8,6 @@ import (
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/felixge/fgprof"
 
 	"github.com/ActiveState/cli/internal/errs"
 )
@@ -29,8 +28,10 @@ func CPU() (cleanUp func() error, err error) {
 	if err != nil {
 		return func() error { return nil }, errs.Wrap(err, "Could not create CPU profiling file: %s", cpuProfFile)
 	}
+	_ = f
 
-	return fgprof.Start(f, fgprof.FormatPprof), nil
+	//return fgprof.Start(f, fgprof.FormatPprof), nil
+	return func() error { return nil }, nil
 }
 
 func Measure(name string, start time.Time) {

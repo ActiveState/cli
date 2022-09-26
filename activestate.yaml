@@ -156,7 +156,8 @@ scripts:
       set -e
       $constants.SET_ENV
 
-      go build -tags "$GO_BUILD_TAGS" -o $BUILD_TARGET_DIR/$constants.BUILD_EXEC_TARGET $constants.CLI_BUILDFLAGS $constants.EXECUTOR_PKGS
+      cd $constants.EXECUTOR_PKGS
+      tinygo build -tags "$GO_BUILD_TAGS" -o $BUILD_TARGET_DIR/$constants.BUILD_EXEC_TARGET .
   - name: build-all
     description: Builds all our tools
     standalone: true

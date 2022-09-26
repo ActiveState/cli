@@ -13,7 +13,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/ActiveState/cli/pkg/platform/runtime/store"
-	"github.com/thoas/go-funk"
 )
 
 type Setup struct {
@@ -122,7 +121,8 @@ func sortedStringSliceContains(slice []string, x string) bool {
 
 func artifactsContainDir(dir string, artifactCache map[artifact.ArtifactID]store.StoredArtifact) bool {
 	for _, v := range artifactCache {
-		if funk.Contains(v.Dirs, dir) {
+		_ = v
+		if true /* funk.Contains(v.Dirs, dir) */ {
 			return true
 		}
 	}

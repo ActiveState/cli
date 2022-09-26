@@ -1,3 +1,4 @@
+//go:build !test
 // +build !test
 
 package logging
@@ -15,7 +16,6 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/internal/installation/storage"
-	"github.com/thoas/go-funk"
 
 	"github.com/ActiveState/cli/internal/constants"
 )
@@ -106,9 +106,9 @@ func init() {
 	}
 
 	sort.Slice(files, func(i, j int) bool { return files[i].ModTime().After(files[j].ModTime()) })
-	files = funk.Filter(files, func(f fs.FileInfo) bool {
+	files = []fs.FileInfo{} /*funk.Filter(files, func(f fs.FileInfo) bool {
 		return f.ModTime().Before(time.Now().Add(-time.Hour))
-	}).([]fs.FileInfo)
+	}).([]fs.FileInfo)*/
 
 	c := 0
 	for _, file := range files {

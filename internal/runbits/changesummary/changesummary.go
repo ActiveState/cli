@@ -9,7 +9,6 @@ import (
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
-	"github.com/thoas/go-funk"
 )
 
 // ChangeSummary prints the summary of changes to the encapsulated outputer
@@ -38,7 +37,7 @@ func (cs *ChangeSummary) ChangeSummary(artifacts artifact.ArtifactRecipeMap, req
 	}
 
 	// the added (direct dependencies) of this artifact that are actually new in this project
-	addedDependencies := funk.Join(ar.Dependencies, changed.Added, funk.InnerJoin).([]artifact.ArtifactID)
+	addedDependencies := []artifac.ArtifactID{} /*funk.Join(ar.Dependencies, changed.Added, funk.InnerJoin).([]artifact.ArtifactID)*/
 
 	cs.out.Notice("")
 	cs.out.Notice(locale.Tl(
@@ -54,7 +53,7 @@ func (cs *ChangeSummary) ChangeSummary(artifacts artifact.ArtifactRecipeMap, req
 		}
 		var depCount string
 		recDeps := artifact.RecursiveDependenciesFor(dep, artifacts)
-		filteredRecDeps := funk.Join(recDeps, changed.Added, funk.InnerJoin).([]artifact.ArtifactID)
+		filteredRecDeps := []artifact.ArtifactID{} /* funk.Join(recDeps, changed.Added, funk.InnerJoin).([]artifact.ArtifactID)*/
 		if len(filteredRecDeps) > 0 {
 			depCount = locale.Tl("ingredient_dependency_count", " ({{.V0}} dependencies)", strconv.Itoa(len(filteredRecDeps)))
 		}

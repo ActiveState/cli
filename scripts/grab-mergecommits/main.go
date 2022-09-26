@@ -11,7 +11,6 @@ import (
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/sliceutils"
 	wh "github.com/ActiveState/cli/scripts/internal/workflow-helpers"
-	"github.com/thoas/go-funk"
 )
 
 // cutoff tells the script not to look at PRs before this date.
@@ -50,7 +49,7 @@ func run() error {
 		jiraIssueIDs[strings.ToUpper(issue.Key)] = struct{}{}
 	}
 
-	fmt.Printf("Found %d issues: %v\n", len(issues), funk.Keys(jiraIssueIDs))
+	//fmt.Printf("Found %d issues: %v\n", len(issues), funk.Keys(jiraIssueIDs))
 
 	// Grab github PRs to compare against jira stories, cause Jira's API does not tell us what the linker PR is
 	prs, err := wh.FetchPRs(ghClient, cutoff, nil)

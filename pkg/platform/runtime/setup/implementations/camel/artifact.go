@@ -16,7 +16,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/ActiveState/cli/pkg/platform/runtime/envdef"
 	"github.com/ActiveState/cli/pkg/platform/runtime/store"
-	"github.com/thoas/go-funk"
 )
 
 type ErrNotExecutable struct{ *locale.LocalizedError }
@@ -126,7 +125,7 @@ func convertToEnvVars(metadata *MetaData) []envdef.EnvironmentVariable {
 
 	res = append(res, envdef.EnvironmentVariable{
 		Name:      "PATH",
-		Values:    funk.ReverseStrings(binPaths),
+		Values:    []string{}, /*funk.ReverseStrings(binPaths)*/
 		Inherit:   true,
 		Join:      envdef.Prepend,
 		Separator: string(os.PathListSeparator),

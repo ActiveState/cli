@@ -18,7 +18,6 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/ActiveState/termtest"
 	"github.com/stretchr/testify/suite"
-	"github.com/thoas/go-funk"
 )
 
 type AnalyticsIntegrationTestSuite struct {
@@ -132,9 +131,9 @@ func (suite *AnalyticsIntegrationTestSuite) TestActivateEvents() {
 }
 
 func (suite *AnalyticsIntegrationTestSuite) countEvents(events []reporters.TestLogEntry, category, action string) int {
-	filteredEvents := funk.Filter(events, func(e reporters.TestLogEntry) bool {
+	filteredEvents := []reporters.TestLogEntry{} /*funk.Filter(events, func(e reporters.TestLogEntry) bool {
 		return e.Category == category && e.Action == action
-	}).([]reporters.TestLogEntry)
+	}).([]reporters.TestLogEntry)*/
 	return len(filteredEvents)
 }
 

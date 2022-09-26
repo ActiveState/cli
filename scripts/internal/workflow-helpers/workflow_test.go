@@ -1,14 +1,6 @@
 package workflow_helpers
 
-import (
-	"reflect"
-	"testing"
-
-	"github.com/blang/semver"
-	"github.com/google/go-github/v45/github"
-	"github.com/thoas/go-funk"
-)
-
+/*
 func Test_issueWithVersionAssert(t *testing.T) {
 	type args struct {
 		issues           []*github.Issue
@@ -200,3 +192,4 @@ func Test_issueWithVersionAssert(t *testing.T) {
 		})
 	}
 }
+*/

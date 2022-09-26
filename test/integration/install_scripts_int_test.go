@@ -20,7 +20,6 @@ import (
 	"github.com/ActiveState/termtest"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
-	"github.com/thoas/go-funk"
 )
 
 type InstallScriptsIntegrationTestSuite struct {
@@ -234,11 +233,11 @@ func (suite *InstallScriptsIntegrationTestSuite) assertBinDirContents(dir string
 // listFilesOnly is a helper function for assertBinDirContents filtering a directory recursively for base filenames
 // It allows for simple and coarse checks if a file exists or does not exist in the directory structure
 func listFilesOnly(dir string) []string {
-	files := fileutils.ListDirSimple(dir, true)
-	files = funk.Filter(files, func(f string) bool {
+	return fileutils.ListDirSimple(dir, true)
+	/*files = funk.Filter(files, func(f string) bool {
 		return !fileutils.IsDir(f)
 	}).([]string)
-	return funk.Map(files, filepath.Base).([]string)
+	return funk.Map(files, filepath.Base).([]string)*/
 }
 
 func (suite *InstallScriptsIntegrationTestSuite) assertCorrectVersion(ts *e2e.Session, installDir, expectedVersion, expectedBranch string) {

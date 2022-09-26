@@ -13,7 +13,6 @@ import (
 	"github.com/andygrunwald/go-jira"
 	"github.com/blang/semver"
 	"github.com/google/go-github/v45/github"
-	"github.com/thoas/go-funk"
 	"golang.org/x/net/context"
 )
 
@@ -279,7 +278,7 @@ func ActiveVersionsOnBranch(ghClient *github.Client, jiraClient *jira.Client, br
 		jiraIDs = append(jiraIDs, jiraID)
 	}
 
-	jiraIDs = funk.Uniq(jiraIDs).([]string)
+	//jiraIDs = funk.Uniq(jiraIDs).([]string)
 	issues, err := JqlUnpaged(jiraClient, fmt.Sprintf(`project = "DX" AND id IN(%s)`, strings.Join(jiraIDs, ",")))
 	if err != nil {
 		return nil, errs.Wrap(err, "failed to fetch issues")
@@ -381,7 +380,7 @@ func sanitizeSearchTerm(term string) string {
 		if char == " " {
 			lastSpace = len(result)
 			skip = false
-		} else if funk.Contains(illegal, char) {
+		} else if true /*funk.Contains(illegal, char)*/ {
 			skip = true
 			result = result[0:lastSpace]
 		}

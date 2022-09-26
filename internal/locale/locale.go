@@ -5,7 +5,6 @@ package locale
 import (
 	"bytes"
 	"embed"
-	"fmt"
 	"log"
 	"os"
 	"path/filepath"
@@ -23,7 +22,6 @@ import (
 	"github.com/ActiveState/cli/internal/profile"
 	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/nicksnyder/go-i18n/i18n"
-	"github.com/thoas/go-funk"
 )
 
 // Supported languages
@@ -62,7 +60,7 @@ func init() {
 
 	localePath := getLocalePath()
 
-	funk.ForEach(Supported, func(x string) {
+	/*funk.ForEach(Supported, func(x string) {
 		localeFile := strings.ToLower(x) + ".yaml"
 		bytes, err := localeFiles.ReadFile("locales/" + localeFile) // need '/' for go:embed, even on Windows
 		if err != nil {
@@ -73,7 +71,8 @@ func init() {
 		if err != nil {
 			panic(fmt.Sprintf("Could not load %s: %v", path, err))
 		}
-	})
+	})*/
+	_ = localePath
 
 	if err := Set(locale); err != nil {
 		multilog.Error("Could not set locale: %v", err)
@@ -110,9 +109,9 @@ func getLocaleFlag() string {
 
 // Set the active language to the given locale
 func Set(localeName string) (rerr error) {
-	if !funk.Contains(Supported, localeName) {
+	/*if !funk.Contains(Supported, localeName) {
 		return errs.New("Locale does not exist: %s", localeName)
-	}
+	}*/
 
 	translateFunction, _ = i18n.Tfunc(localeName)
 	_ = translateFunction

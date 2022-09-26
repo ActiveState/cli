@@ -2,10 +2,7 @@ package stacktrace
 
 import (
 	"fmt"
-	"runtime"
 	"strings"
-
-	"github.com/ActiveState/cli/internal/rtutils"
 )
 
 // Stacktrace represents a stacktrace
@@ -45,38 +42,39 @@ func Get() *Stacktrace {
 }
 
 func GetWithSkip(skipFiles []string) *Stacktrace {
-	stacktrace := &Stacktrace{}
-	pc := make([]uintptr, FrameCap)
-	n := runtime.Callers(1, pc)
-	if n == 0 {
-		return stacktrace
-	}
+	return &Stacktrace{}
+	/*stacktrace := &Stacktrace{}
+		pc := make([]uintptr, FrameCap)
+		n := runtime.Callers(1, pc)
+		if n == 0 {
+			return stacktrace
+		}
 
-	pc = pc[:n]
-	frames := runtime.CallersFrames(pc)
-	skipFiles = append(skipFiles, rtutils.CurrentFile()) // Also skip the file we're in
-LOOP:
-	for {
-		frame, more := frames.Next()
-		pkg := strings.Split(frame.Func.Name(), ".")[0]
+		pc = pc[:n]
+		frames := runtime.CallersFrames(pc)
+		skipFiles = append(skipFiles, rtutils.CurrentFile()) // Also skip the file we're in
+	LOOP:
+		for {
+			frame, more := frames.Next()
+			pkg := strings.Split(frame.Func.Name(), ".")[0]
 
-		for _, skipFile := range skipFiles {
-			if frame.File == skipFile {
-				continue LOOP
+			for _, skipFile := range skipFiles {
+				if frame.File == skipFile {
+					continue LOOP
+				}
+			}
+
+			stacktrace.Frames = append(stacktrace.Frames, Frame{
+				Func:    frame.Func.Name(),
+				Line:    frame.Line,
+				Path:    frame.File,
+				Package: pkg,
+			})
+
+			if !more {
+				break
 			}
 		}
 
-		stacktrace.Frames = append(stacktrace.Frames, Frame{
-			Func:    frame.Func.Name(),
-			Line:    frame.Line,
-			Path:    frame.File,
-			Package: pkg,
-		})
-
-		if !more {
-			break
-		}
-	}
-
-	return stacktrace
+		return stacktrace*/
 }
