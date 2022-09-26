@@ -675,12 +675,12 @@ func (s *Setup) unpackArtifact(ua unarchiver.Unarchiver, tarballPath string, tar
 }
 
 func (s *Setup) selectSetupImplementation(buildEngine model.BuildEngine, artifacts artifact.ArtifactBuildPlanMap) (Setuper, error) {
+	logging.Debug("Selecting setup implementation for build engine %s", buildEngine)
 	switch buildEngine {
 	case model.Alternative:
 		return alternative.NewSetup(s.store, artifacts), nil
-	// TODO: Re-enable this check when we have a camel build from the buildplanner
-	// case model.Camel:
-	// 	return camel.NewSetup(s.store), nil
+	case model.Camel:
+		return camel.NewSetup(s.store), nil
 	default:
 		return nil, errs.New("Unknown build engine: %s", buildEngine)
 	}
@@ -710,34 +710,6 @@ func reusableArtifacts(requestedArtifacts []*bpModel.Artifact, storedArtifacts s
 		}
 	}
 	return keep
-}
-
-func formatSolverError(serr *apimodel.SolverError) error {
-	var err error = serr
-	// Append last five lines to error message
-	offset := 0
-	numLines := len(serr.ValidationErrors())
-	if numLines > 5 {
-		offset = numLines - 5
-	}
-
-	errorLines := strings.Join(serr.ValidationErrors()[offset:], "\n")
-	// Crop at 500 characters to reduce noisy output further
-	if len(errorLines) > 500 {
-		offset = len(errorLines) - 499
-		errorLines = fmt.Sprintf("…%s", errorLines[offset:])
-	}
-	isCropped := offset > 0
-	croppedMessage := ""
-	if isCropped {
-		croppedMessage = locale.Tl("solver_err_cropped_intro", "These are the last lines of the error message:")
-	}
-
-	err = locale.WrapError(err, "solver_err", "", croppedMessage, errorLines)
-	if serr.IsTransient() {
-		err = errs.AddTips(serr, locale.Tr("transient_solver_tip"))
-	}
-	return err
 }
 
 func formatBuildPlanError(bperr *model.BuildPlannerError) error {

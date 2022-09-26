@@ -1,12 +1,9 @@
 package artifact
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/logging"
 	bpModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model/buildplan"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
 	"github.com/go-openapi/strfmt"
@@ -56,27 +53,18 @@ func NewDownloadsFromBuildPlan(build bpModel.Build, artifacts map[strfmt.UUID]Ar
 	return downloads, nil
 }
 
-func NewDownloadsFromCamelBuild(buildStatus *headchef_models.V1BuildStatusResponse) ([]ArtifactDownload, error) {
-	for _, a := range buildStatus.Artifacts {
-		if a.BuildState != nil && *a.BuildState == headchef_models.V1ArtifactBuildStateSucceeded && a.URI != "" {
-			if strings.Contains(a.URI.String(), InstallerTestsSubstr) {
-				continue
-			}
-			if strings.HasSuffix(a.URI.String(), ".tar.gz") || strings.HasSuffix(a.URI.String(), ".zip") {
-				return []ArtifactDownload{{ArtifactID: *a.ArtifactID, UnsignedURI: a.URI.String(), UnsignedLogURI: a.LogURI.String(), Checksum: a.Checksum}}, nil
+func NewDownloadsFromCamelBuildPlan(build bpModel.Build, artifacts map[strfmt.UUID]ArtifactBuildPlan) ([]ArtifactDownload, error) {
+	for id := range artifacts {
+		for _, a := range build.Artifacts {
+			if a.Status == string(bpModel.ArtifactSucceeded) && a.TargetID == id.String() && a.URL != "" {
+				if strings.HasPrefix(a.URL, "s3://as-builds/noop/") {
+					continue
+				}
+				if strings.HasSuffix(a.URL, ".tar.gz") || strings.HasSuffix(a.URL, ".zip") {
+					return []ArtifactDownload{{ArtifactID: strfmt.UUID(a.TargetID), UnsignedURI: a.URL, UnsignedLogURI: a.LogURL, Checksum: a.Checksum}}, nil
+				}
 			}
 		}
 	}
-
-	if buildStatusType := buildStatus.Type; buildStatusType != nil {
-		logging.Debug("buildStatus=%v", buildStatus)
-		switch {
-		case *buildStatusType == headchef_models.V1BuildStatusResponseTypeBuildStarted:
-			return nil, CamelRuntimeBuilding
-		case *buildStatusType == headchef_models.V1BuildStatusResponseTypeBuildFailed:
-			return nil, locale.NewError("err_platform_response_build_error", "Build error: {{.V0}}", fmt.Sprintf("%+v", buildStatus))
-		}
-	}
-
-	return nil, errs.New("No download found in build response: %+v", buildStatus)
+	return nil, errs.New("No download found in build response: %+v", build.Status)
 }

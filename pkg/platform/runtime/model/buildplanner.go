@@ -125,8 +125,15 @@ func (bp *BuildPlanner) FetchBuildResult(commitID strfmt.UUID, owner, project st
 	}
 	resp.Project.Commit.Build.Terminals = filteredTerminals
 
+	buildEngine := Alternative
+	for _, s := range resp.Project.Commit.Build.Sources {
+		if s.Namespace == "builder" && s.Name == "camel" {
+			buildEngine = Camel
+		}
+	}
+
 	res := BuildResult{
-		BuildEngine: Alternative,
+		BuildEngine: buildEngine,
 		Build:       resp.Project.Commit.Build,
 		BuildReady:  resp.Project.Commit.Build.Status == model.BuildReady,
 	}
