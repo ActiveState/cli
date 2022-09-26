@@ -16,6 +16,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
+	bpModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model/buildplan"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/ActiveState/cli/pkg/platform/runtime/envdef"
@@ -63,6 +64,10 @@ func (s *Store) buildEngineFile() string {
 
 func (s *Store) recipeFile() string {
 	return filepath.Join(s.storagePath, constants.RuntimeRecipeStore)
+}
+
+func (s *Store) buildPlanFile() string {
+	return filepath.Join(s.storagePath, constants.RuntimeBuildPlanStore)
 }
 
 func (s *Store) HasMarker() bool {
@@ -174,6 +179,32 @@ func (s *Store) StoreRecipe(recipe *inventory_models.Recipe) error {
 		return errs.Wrap(err, "Could not marshal recipe.")
 	}
 	err = fileutils.WriteFile(s.recipeFile(), data)
+	if err != nil {
+		return errs.Wrap(err, "Could not write recipe file.")
+	}
+	return nil
+}
+
+func (s *Store) BuildPlan() (*bpModel.Build, error) {
+	data, err := fileutils.ReadFile(s.buildPlanFile())
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not read build plan file.")
+	}
+
+	var buildPlan bpModel.Build
+	err = json.Unmarshal(data, &buildPlan)
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not parse build plan file.")
+	}
+	return &buildPlan, err
+}
+
+func (s *Store) StoreBuildPlan(build bpModel.Build) error {
+	data, err := json.Marshal(build)
+	if err != nil {
+		return errs.Wrap(err, "Could not marshal buildPlan.")
+	}
+	err = fileutils.WriteFile(s.buildPlanFile(), data)
 	if err != nil {
 		return errs.Wrap(err, "Could not write recipe file.")
 	}

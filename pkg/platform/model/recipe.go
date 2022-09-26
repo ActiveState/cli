@@ -108,7 +108,7 @@ func fetchRawRecipe(commitID strfmt.UUID, owner, project string, hostPlatform *s
 	}
 
 	if hostPlatform != nil {
-		params.Order.Platforms, err = filterPlatformIDs(*hostPlatform, runtime.GOARCH, params.Order.Platforms)
+		params.Order.Platforms, err = FilterPlatformIDs(*hostPlatform, runtime.GOARCH, params.Order.Platforms)
 		if err != nil {
 			return "", err
 		}
@@ -183,7 +183,7 @@ func FetchRecipe(commitID strfmt.UUID, owner, project string, hostPlatform *stri
 		return nil, serr
 	}
 
-	platformIDs, err := filterPlatformIDs(*hostPlatform, runtime.GOARCH, params.Order.Platforms)
+	platformIDs, err := FilterPlatformIDs(*hostPlatform, runtime.GOARCH, params.Order.Platforms)
 	if err != nil {
 		return nil, errs.Wrap(err, "filterPlatformIDs failed")
 	}

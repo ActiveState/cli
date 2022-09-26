@@ -12,11 +12,14 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
+
+	bpModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model/buildplan"
 )
 
 // var _ runtime.ClientProvider = &Default{}
 
 // Model is the default client that actually talks to the backend
+// TODO: Rename this to recipe?
 type Model struct {
 	auth *authentication.Auth
 }
@@ -42,15 +45,16 @@ func (m *Model) SignS3URL(uri *url.URL) (*url.URL, error) {
 type BuildResult struct {
 	BuildEngine         BuildEngine
 	Recipe              *inventory_models.Recipe
+	Build               *bpModel.Build
 	BuildStatusResponse *headchef_models.V1BuildStatusResponse
 	BuildStatus         headchef.BuildStatusEnum
 	BuildReady          bool
 }
 
 func (b *BuildResult) OrderedArtifacts() []artifact.ArtifactID {
-	res := make([]artifact.ArtifactID, 0, len(b.BuildStatusResponse.Artifacts))
-	for _, a := range b.BuildStatusResponse.Artifacts {
-		res = append(res, *a.ArtifactID)
+	res := make([]artifact.ArtifactID, 0, len(b.Build.Artifacts))
+	for _, a := range b.Build.Artifacts {
+		res = append(res, strfmt.UUID(a.TargetID))
 	}
 	return res
 }
