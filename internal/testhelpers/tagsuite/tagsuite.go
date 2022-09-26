@@ -22,6 +22,7 @@ const (
 	Config          = "config"
 	Critical        = "critical"
 	Cve             = "cve"
+	DeleteProjects  = "delete-uuid-projects"
 	Deploy          = "deploy"
 	Edit            = "edit"
 	Error           = "error"
