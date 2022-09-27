@@ -75,10 +75,12 @@ func (a *Client) Event(category string, action string, dims ...*dimensions.Value
 
 // EventWithLabel logs an event with a label to google analytics
 func (a *Client) EventWithLabel(category string, action string, label string, dims ...*dimensions.Values) {
-	err := a.sendEvent(category, action, label, dims...)
-	if err != nil {
-		multilog.Error("Error during analytics.sendEvent: %v", errs.Join(err, ":"))
-	}
+	go func() {
+		err := a.sendEvent(category, action, label, dims...)
+		if err != nil {
+			multilog.Error("Error during analytics.sendEvent: %v", errs.Join(err, ":"))
+		}
+	}()
 }
 
 // Wait can be called to ensure that all events have been processed
