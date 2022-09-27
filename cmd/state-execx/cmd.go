@@ -5,8 +5,7 @@ import (
 	"os/exec"
 )
 
-func runCmd(meta *executorMeta) error {
-	userArgs := os.Args[1:]
+func runCmd(meta *executorMeta, userArgs []string) error {
 	cmd := exec.Command(meta.MatchingBin, userArgs...)
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout

@@ -10,8 +10,8 @@ constants:
     value: ./cmd/state-svc
   - name: INSTALLER_PKGS
     value: ./cmd/state-installer
-  - name: EXECUTOR_PKGS
-    value: ./cmd/state-exec
+  - name: EXECUTORX_PKGS
+    value: ./cmd/state-execx
   - name: BUILD_TARGET_PREFIX_DIR
     value: ./build
   - name: BUILD_TARGET
@@ -40,6 +40,9 @@ constants:
   - name: BUILD_DAEMON_TARGET
     if: ne .OS.Name "Windows"
     value: state-svc
+  - name: BUILD_EXECX_TARGET
+    if: ne .OS.Name "Windows"
+    value: state-execx
   - name: BUILD_EXEC_TARGET
     if: ne .OS.Name "Windows"
     value: state-exec
@@ -149,17 +152,46 @@ scripts:
       if [[ ! -z "${CI}" ]] && [[ ${ImageOS} != *mac* ]]; then
         upx $BUILD_TARGET_DIR/$constants.BUILD_SYSTRAY_TARGET
       fi
+  - name: build-execx
+    description: Builds the State ExecutorX application
+    language: bash
+    value: |
+      set -e
+      $constants.SET_ENV
+
+      go build -tags "$GO_BUILD_TAGS" -o $BUILD_TARGET_DIR/$constants.BUILD_EXECX_TARGET $constants.CLI_BUILDFLAGS $constants.EXECUTORX_PKGS
   - name: build-exec
+    if: eq .OS.Name "Linux"
     description: Builds the State Executor application
     language: bash
     value: |
       set -e
       $constants.SET_ENV
 
-      ORIGINAL_DIR=${PWD} 
-      cd $constants.EXECUTOR_PKGS
-      go build -tags "$GO_BUILD_TAGS" -o $ORIGINAL_DIR/$BUILD_TARGET_DIR/$constants.BUILD_EXEC_TARGET $constants.CLI_BUILDFLAGS .
-      cd ${ORIGINAL_DIR}
+      zig build-exe --strip -static -O ReleaseFast -target "x86_64-linux" "./cmd/${BUILD_EXEC_TARGET}/${BUILD_EXEC_TARGET}.zig"
+      mv "$BUILD_EXEC_TARGET" "$constants.BUILD_TARGET_PREFIX_DIR"
+  - name: build-exec
+    if: eq .OS.Name "MacOS"
+    description: Builds the State Executor application
+    language: bash
+    value: |
+      set -e
+      $constants.SET_ENV
+
+      zig build-exe --strip -O ReleaseFast -target "x86_64-macos" "./cmd/${BUILD_EXEC_TARGET}/${BUILD_EXEC_TARGET}.zig"
+      mv "$BUILD_EXEC_TARGET" "$constants.BUILD_TARGET_PREFIX_DIR"
+  - name: build-exec
+    if: eq .OS.Name "Windows"
+    description: Builds the State Executor application
+    language: bash
+    value: |
+      set -e
+      $constants.SET_ENV
+
+      BUILD_EXEC_NAME="${BUILD_EXEC_TARGET%.*}" # trim extension
+      zig build-exe --strip -static -O ReleaseFast -target "x86_64-windows.win10_rs4" "./cmd/${BUILD_EXEC_NAME}/${BUILD_EXEC_NAME}.zig"
+      mv "${BUILD_EXEC_NAME}" "$constants.BUILD_TARGET_PREFIX_DIR/${BUILD_EXEC_TARGET}"
+  - name: build-all
   - name: build-all
     description: Builds all our tools
     standalone: true
