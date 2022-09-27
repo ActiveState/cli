@@ -6,7 +6,7 @@ constants:
   - name: BUILD_EXECX_TARGET
     value: state-execx.exe
   - name: BUILD_EXEC_TARGET
-    value: state-exe.exe
+    value: state-exec.exe
   - name: BUILD_INSTALLER_TARGET
     value: state-installer.exe
   - name: BUILD_SYSTRAY_TARGET
