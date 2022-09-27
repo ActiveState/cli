@@ -17,7 +17,6 @@ type ArtifactBuildPlan struct {
 	Namespace        string
 	Version          *string
 	RequestedByOrder bool
-	URL              string
 
 	generatedBy string
 
@@ -80,6 +79,11 @@ func buildMap(baseID string, lookup map[string]interface{}, result ArtifactBuild
 		return
 	}
 
+	if artifact.Status == model.ArtifactNotSubmitted {
+		logging.Debug("Skipping artifact %s because it has not been submitted", artifact.TargetID)
+		return
+	}
+
 	var deps []strfmt.UUID
 	for _, depID := range artifact.RuntimeDependencies {
 		deps = append(deps, strfmt.UUID(depID))
@@ -106,7 +110,6 @@ func buildMap(baseID string, lookup map[string]interface{}, result ArtifactBuild
 		Namespace:        info.namespace,
 		Version:          &info.version,
 		RequestedByOrder: true,
-		URL:              artifact.URL,
 		generatedBy:      artifact.GeneratedBy,
 		Dependencies:     uniqueDeps,
 	}
