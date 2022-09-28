@@ -1,0 +1,105 @@
+package artifactvalidator
+
+import (
+	"crypto/x509"
+	"encoding/base64"
+	"encoding/json"
+	"encoding/pem"
+	"strings"
+
+	"github.com/ActiveState/cli/internal/download"
+	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/logging"
+	"go.mozilla.org/pkcs7"
+)
+
+type signature struct {
+	Sig  string `json: "sig"`
+	Cert string `json: "cert"`
+}
+
+type attestation struct {
+	Payload    string      `json: "payload"`
+	Signatures []signature `json: "signatures"`
+}
+
+func ValidateAttestation(attestationFile string) error {
+	data, err := fileutils.ReadFile(attestationFile)
+	if err != nil {
+		return errs.Wrap(err, "Could not read attestation: "+attestationFile)
+	}
+
+	att := attestation{}
+	err = json.Unmarshal(data, &att)
+	if err != nil {
+		return errs.Wrap(err, "Could not unmarshal attestation")
+	}
+
+	payload := make([]byte, len(att.Payload))
+	n, err := base64.StdEncoding.Decode(payload, []byte(att.Payload))
+	if err != nil {
+		return errs.Wrap(err, "Unable to decode attestation payload")
+	}
+	payload = payload[:n]
+
+	if len(att.Signatures) == 0 {
+		return locale.NewError("validate_attestation_fail_no_signatures", "No signatures")
+	}
+
+	// Validate signing certificate.
+	pemBlock, _ := pem.Decode([]byte(att.Signatures[0].Cert))
+	if pemBlock == nil {
+		return errs.Wrap(err, "Unable to decode attestation certificate")
+	}
+
+	cert, err := x509.ParseCertificate(pemBlock.Bytes)
+	if err != nil {
+		return errs.Wrap(err, "Unable to parse attestation certificate")
+	}
+
+	intermediates := x509.NewCertPool()
+	addIntermediatesToPool(cert, intermediates)
+
+	opts := x509.VerifyOptions{
+		Roots:         nil, // use system root CAs
+		Intermediates: intermediates,
+		KeyUsages:     []x509.ExtKeyUsage{x509.ExtKeyUsageCodeSigning},
+	}
+	_, err = cert.Verify(opts)
+	if err != nil {
+		return errs.Wrap(err, "Unable to validate certificate")
+	}
+
+	return nil
+}
+
+func addIntermediatesToPool(cert *x509.Certificate, pool *x509.CertPool) {
+	for _, url := range cert.IssuingCertificateURL {
+		bytes, err := download.GetDirect(url)
+		if err != nil {
+			logging.Debug("Unable to download intermediate certificate %s: %v", url, err)
+			continue
+		}
+		if !strings.HasSuffix(url, ".p7c") {
+			cert, err := x509.ParseCertificate(bytes)
+			if err != nil {
+				logging.Debug("Unable to parse intermediate certificate %s: %v", url, err)
+				continue
+			}
+			pool.AddCert(cert)
+			addIntermediatesToPool(cert, pool)
+		} else {
+			p7, err := pkcs7.Parse(bytes)
+			if err != nil {
+				logging.Debug("Unable to parse intermediate certificate %s: %v", url, err)
+				continue
+			}
+			for _, cert := range p7.Certificates {
+				pool.AddCert(cert)
+				addIntermediatesToPool(cert, pool)
+			}
+		}
+	}
+}
