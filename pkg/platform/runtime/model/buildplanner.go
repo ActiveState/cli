@@ -3,7 +3,6 @@ package model
 import (
 	"net/http"
 	"os"
-	"runtime"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/constants"
@@ -79,6 +78,7 @@ func (bp *BuildPlanner) FetchBuildResult(commitID strfmt.UUID, owner, project st
 	}
 
 	// This is a lot of awkward error checking
+	// This error checking should go away with the new commit query
 	// TODO: Investigate commit not found errors
 	if resp.Project.Type == model.ProjectNotFoundType {
 		return nil, locale.NewError("err_buildplanner_project_not_found", "Build plan does not contain project")
@@ -113,19 +113,14 @@ func (bp *BuildPlanner) FetchBuildResult(commitID strfmt.UUID, owner, project st
 		bpPlatforms = append(bpPlatforms, strfmt.UUID(strings.TrimPrefix(t.Tag, "platform:")))
 	}
 
-	platformIDs, err := platformModel.FilterPlatformIDs(HostPlatform, runtime.GOARCH, bpPlatforms)
+	platformID, err := platformModel.FilterCurrentPlatform(HostPlatform, bpPlatforms)
 	if err != nil {
-		return nil, errs.Wrap(err, "filterPlatformIDs failed")
-	}
-	if len(platformIDs) == 0 {
-		return nil, locale.NewInputError("err_recipe_no_platform")
-	} else if len(platformIDs) > 1 {
-		logging.Debug("Received multiple platform IDs. Picking the first one.")
+		return nil, locale.WrapError(err, "err_filter_current_platform")
 	}
 
 	var filteredTerminals []*model.NamedTarget
 	for _, t := range resp.Project.Commit.Build.Terminals {
-		if string(platformIDs[0]) == strings.TrimPrefix(t.Tag, "platform:") {
+		if string(platformID) == strings.TrimPrefix(t.Tag, "platform:") {
 			filteredTerminals = append(filteredTerminals, t)
 		}
 	}

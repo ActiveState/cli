@@ -1312,6 +1312,8 @@ request_timed_out:
   other: A request for data took too long - Trying again may help
 err_recipe_no_platform:
   other: Filter returned no valid platform IDs.
+err_filter_current_platform:
+  other: Filter returned no valid platform IDs for the current platform.
 no_commits:
   other: No commits exist yet for [NOTICE]{{.V0}}[/RESET]
 err_orgs_length:
