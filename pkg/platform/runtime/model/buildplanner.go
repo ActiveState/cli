@@ -59,9 +59,14 @@ type BuildPlanner struct {
 }
 
 func NewBuildPlanner(auth *authentication.Auth) *BuildPlanner {
+	url := constants.APIBuildPlannerURL
+	if constants.APIHostEnvVarName != "" {
+		url = os.Getenv(constants.APIHostEnvVarName)
+	}
+
 	return &BuildPlanner{
 		auth:   auth,
-		client: gqlclient.NewWithOpts("https://platform.activestate.com/sv/buildplanner/graphql", 0, graphql.WithHTTPClient(&http.Client{})),
+		client: gqlclient.NewWithOpts(url, 0, graphql.WithHTTPClient(&http.Client{})),
 		def:    NewDefault(auth),
 	}
 }
@@ -74,6 +79,7 @@ func (bp *BuildPlanner) FetchBuildResult(commitID strfmt.UUID, owner, project st
 	}
 
 	// This is a lot of awkward error checking
+	// TODO: Investigate commit not found errors
 	if resp.Project.Type == model.ProjectNotFoundType {
 		return nil, locale.NewError("err_buildplanner_project_not_found", "Build plan does not contain project")
 	}
