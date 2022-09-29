@@ -128,3 +128,25 @@ func addIntermediatesToPool(cert *x509.Certificate, pool *x509.CertPool) {
 		}
 	}
 }
+
+func ValidateChecksum(archivePath string, expectedChecksum string) error {
+	if expectedChecksum != "" {
+		logging.Debug("Validating checksum for %s", archivePath)
+	} else {
+		logging.Debug("Skipping checksum validation for %s because the Platform did not provide a checksum to validate against.")
+		return nil
+	}
+
+	checksum, err := fileutils.Sha256Hash(archivePath)
+	if err != nil {
+		return errs.Wrap(err, "Failed to compute checksum for "+archivePath)
+	}
+
+	if checksum != expectedChecksum {
+		logging.Debug("Checksum validation failed. Expected '%s', but was '%s'", expectedChecksum, checksum)
+		// Note: the artifact name will be reported higher up the chain
+		return locale.WrapError(err, "artifact_checksum_failed", "Checksum validation failed")
+	}
+
+	return nil
+}
