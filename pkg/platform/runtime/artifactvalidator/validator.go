@@ -1,6 +1,9 @@
 package artifactvalidator
 
 import (
+	"crypto"
+	"crypto/rsa"
+	"crypto/sha256"
 	"crypto/x509"
 	"encoding/base64"
 	"encoding/json"
@@ -37,18 +40,11 @@ func ValidateAttestation(attestationFile string) error {
 		return errs.Wrap(err, "Could not unmarshal attestation")
 	}
 
-	payload := make([]byte, len(att.Payload))
-	n, err := base64.StdEncoding.Decode(payload, []byte(att.Payload))
-	if err != nil {
-		return errs.Wrap(err, "Unable to decode attestation payload")
-	}
-	payload = payload[:n]
-
 	if len(att.Signatures) == 0 {
 		return locale.NewError("validate_attestation_fail_no_signatures", "No signatures")
 	}
 
-	// Validate signing certificate.
+	// Verify signing certificate.
 	pemBlock, _ := pem.Decode([]byte(att.Signatures[0].Cert))
 	if pemBlock == nil {
 		return errs.Wrap(err, "Unable to decode attestation certificate")
@@ -71,6 +67,35 @@ func ValidateAttestation(attestationFile string) error {
 	if err != nil {
 		return errs.Wrap(err, "Unable to validate certificate")
 	}
+
+	// Verify signature.
+	payload := make([]byte, len(att.Payload))
+	n, err := base64.StdEncoding.Decode(payload, []byte(att.Payload))
+	if err != nil {
+		return errs.Wrap(err, "Unable to decode attestation payload")
+	}
+	payload = payload[:n]
+	hash := sha256.New()
+	hash.Write(payload)
+	digest := hash.Sum(nil)
+
+	signature := make([]byte, len(att.Signatures[0].Sig))
+	n, err = base64.StdEncoding.Decode(signature, []byte(att.Signatures[0].Sig))
+	if err != nil {
+		return errs.Wrap(err, "Unable to decode attestation signature")
+	}
+	signature = signature[:n]
+
+	publicKey, ok := cert.PublicKey.(*rsa.PublicKey)
+	if !ok {
+		return locale.NewError("validate_attestation_fail_public_key", "Certificate's public key is not an expected RSA pubkey")
+	}
+	err = rsa.VerifyPSS(publicKey, crypto.SHA256, digest, signature, &rsa.PSSOptions{Hash: crypto.SHA256})
+	if err != nil {
+		return errs.Wrap(err, "Unable to validate signature")
+	}
+
+	// TODO: read payload artifact SHAs and validate them against downloaded artifact SHAs.
 
 	return nil
 }
