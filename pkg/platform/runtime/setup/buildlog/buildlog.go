@@ -100,7 +100,6 @@ func NewWithCustomConnections(artifactMap map[artifact.ArtifactID]artifact.Artif
 				return
 			case ArtifactStarted:
 				m := msg.messager.(ArtifactMessage)
-
 				// NOTE: fix to ignore current noop "final pkg artifact"
 				if artifact.ArtifactID(m.ArtifactID) == recipeID {
 					continue

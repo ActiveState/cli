@@ -151,7 +151,7 @@ type artifactInstaller func(artifact.ArtifactID, string, ArtifactSetuper) error
 
 // New returns a new Setup instance that can install a Runtime locally on the machine.
 func New(target Targeter, msgHandler Events, auth *authentication.Auth, an analytics.Dispatcher) *Setup {
-	return NewWithModel(target, msgHandler, model.NewDefault(auth), auth, an)
+	return NewWithModel(target, msgHandler, model.NewRecipe(auth), auth, an)
 }
 
 // NewWithModel returns a new Setup instance with a customized model eg., for testing purposes
@@ -306,9 +306,6 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 		return nil, errs.Wrap(err, "Failed to select setup implementation")
 	}
 
-	// The artifacts above have been processed to only the runtime dependencies.
-	// When we send the buildplan here it is not processed, we could update the
-	// buildplan before we send it or just send the artifacts.
 	downloads, err := setup.DownloadsFromBuild(*buildResult.Build, artifacts)
 	if err != nil {
 		if errors.Is(err, artifact.CamelRuntimeBuilding) {
@@ -343,7 +340,6 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 	}
 
 	if len(failedArtifacts) > 0 {
-		// TODO: Could improve error messaging here with source info (ie. Name of failed artifact)
 		s.events.BuildFinished()
 		var errs []string
 		for _, f := range failedArtifacts {
@@ -374,6 +370,12 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 		if err != nil {
 			return nil, locale.WrapError(err, "Failed to clean installation path")
 		}
+	}
+
+	// only send the download analytics event, if we have to install artifacts that are not yet installed
+	if len(artifacts) != len(alreadyInstalled) {
+		// if we get here, we dowload artifacts
+		s.analytics.Event(anaConsts.CatRuntime, anaConsts.ActRuntimeDownload, dimensions)
 	}
 
 	err = s.installArtifactsFromBuild(buildResult, artifacts, downloads, alreadyInstalled, setup, installFunc)
@@ -484,6 +486,8 @@ func (s *Setup) installFromBuildResult(buildResult *model.BuildResult, downloads
 }
 
 func (s *Setup) installFromBuildLog(buildResult *model.BuildResult, artifacts artifact.ArtifactBuildPlanMap, downloads []artifact.ArtifactDownload, alreadyInstalled store.StoredArtifactMap, setup Setuper, installFunc artifactInstaller) error {
+	// The runtime dependencies do not include all build dependencies. Since we are working
+	// with the build log, we need to add the missing dependencies to the list of artifacts
 	artifacts.AddBuildArtifacts(buildResult.Build)
 	s.events.TotalArtifacts(len(artifacts) - len(alreadyInstalled))
 
@@ -586,7 +590,6 @@ func (s *Setup) downloadArtifactWithProgress(unsignedURI string, targetFile stri
 	}
 	// TODO: Remove when underlying mediator bug is fixed
 	// https://activestatef.atlassian.net/browse/PB-3465
-	// TODO: Find a better way to do this
 	if strings.Contains(req.URL.String(), "dl.activestate.com") {
 		req.Header.Set("Authorization", "Placeholder")
 	}
@@ -641,7 +644,6 @@ func (s *Setup) downloadArtifact(a artifact.ArtifactDownload, extension string) 
 	}
 
 	archivePath := filepath.Join(targetDir, a.ArtifactID.String()+extension)
-	logging.Debug("Artifact archive path: %s", archivePath)
 	downloadProgress := events.NewIncrementalProgress(s.events, events.Download, a.ArtifactID)
 	if err := s.downloadArtifactWithProgress(a.UnsignedURI, archivePath, downloadProgress); err != nil {
 		err := errs.Wrap(err, "Could not download artifact %s", a.UnsignedURI)
@@ -682,7 +684,6 @@ func (s *Setup) unpackArtifact(ua unarchiver.Unarchiver, tarballPath string, tar
 }
 
 func (s *Setup) selectSetupImplementation(buildEngine model.BuildEngine, artifacts artifact.ArtifactBuildPlanMap) (Setuper, error) {
-	logging.Debug("Selecting setup implementation for build engine %s", buildEngine)
 	switch buildEngine {
 	case model.Alternative:
 		return alternative.NewSetup(s.store, artifacts), nil

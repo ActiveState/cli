@@ -56,7 +56,7 @@ const Python3_9_6AlternativeBaseCommit = strfmt.UUID("19a45add-a689-4b4c-95ff-5f
 
 func saveResponses(baseName string, commitID strfmt.UUID, projectName string, expectedBuildResult headchef.BuildStatusEnum) error {
 	fmt.Printf("Downloading build for %s\n", baseName)
-	d := model.NewDefault(authentication.LegacyGet())
+	d := model.NewRecipe(authentication.LegacyGet())
 
 	r, err := d.ResolveRecipe(commitID, "ActiveState-CLI", projectName)
 	if err != nil {

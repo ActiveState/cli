@@ -55,7 +55,7 @@ func (e *BuildPlannerError) IsTransient() bool {
 type BuildPlanner struct {
 	auth   *authentication.Auth
 	client *gqlclient.Client
-	def    *Model
+	def    *Recipe
 }
 
 func NewBuildPlanner(auth *authentication.Auth) *BuildPlanner {
@@ -67,7 +67,7 @@ func NewBuildPlanner(auth *authentication.Auth) *BuildPlanner {
 	return &BuildPlanner{
 		auth:   auth,
 		client: gqlclient.NewWithOpts(bpURL, 0, graphql.WithHTTPClient(&http.Client{})),
-		def:    NewDefault(auth),
+		def:    NewRecipe(auth),
 	}
 }
 
@@ -113,8 +113,7 @@ func (bp *BuildPlanner) FetchBuildResult(commitID strfmt.UUID, owner, project st
 
 	var bpPlatforms []strfmt.UUID
 	for _, t := range resp.Project.Commit.Build.Terminals {
-		if t.Tag == "orphans" {
-			logging.Debug("Skipping")
+		if t.Tag == model.TagOrphan {
 			continue
 		}
 		bpPlatforms = append(bpPlatforms, strfmt.UUID(strings.TrimPrefix(t.Tag, "platform:")))
