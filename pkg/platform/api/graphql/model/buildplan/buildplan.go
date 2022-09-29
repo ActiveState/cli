@@ -57,10 +57,7 @@ type Build struct {
 	Artifacts   []*Artifact    `json:"artifacts"`
 	Steps       []*Step        `json:"steps"`
 	Sources     []*Source      `json:"sources"`
-
-	// Error fields
-	Error     string      `json:"error"`
-	SubErrors []*SubError `json:"subErrors"`
+	*PlanningError
 }
 
 type NamedTarget struct {
@@ -99,17 +96,18 @@ type Source struct {
 }
 
 type PlanningError struct {
-	Error    string `json:"error"`
-	SubError *SubError
+	Error     string      `json:"error"`
+	SubErrors []*SubError `json:"subErrors"`
 }
 
 type SubError struct {
-	Type                  string                       `json:"__typename"`
-	Path                  string                       `json:"path"`
-	Message               string                       `json:"message"`
-	IsTransient           bool                         `json:"isTransient"`
-	ValidationErrors      []SolverErrorValidationError `json:"validationErrors"`
-	RemediableSolverError *RemediableSolveError
+	Type             string                        `json:"__typename"`
+	Path             string                        `json:"path"`
+	Message          string                        `json:"message"`
+	IsTransient      bool                          `json:"isTransient"`
+	ValidationErrors []*SolverErrorValidationError `json:"validationErrors"`
+	Remediations     []*SolverErrorRemediation     `json:"suggestedRemediations"`
+	*RemediableSolveError
 }
 
 type SolverErrorValidationError struct {
@@ -118,23 +116,18 @@ type SolverErrorValidationError struct {
 }
 
 type RemediableSolveError struct {
-	Path                 string `json:"path"`
-	Message              string `json:"message"`
-	IsTransient          bool   `json:"isTransient"`
-	ErrorType            string `json:"errorType"`
-	SuggestedRemediation *SolverErrorRemediation
+	ErrorType string `json:"errorType"`
 }
 
 type SolverErrorRemediation struct {
-	RemediationType string   `json:"remediationType"`
-	Command         string   `json:"command"`
-	Parameters      []string `json:"parameters"`
+	RemediationType string `json:"remediationType"`
+	Command         string `json:"command"`
 }
 
 type SolveErrorIncompatibility struct {
-	Type                              string `json:"type"`
-	SolveErrorPackageIncompatibility  *SolveErrorPackageIncompatibility
-	SolveErrorPlatformIncompatibility *SolveErrorPlatformIncompatibility
+	Type string `json:"type"`
+	*SolveErrorPackageIncompatibility
+	*SolveErrorPlatformIncompatibility
 }
 
 type SolveErrorPackageIncompatibility struct {

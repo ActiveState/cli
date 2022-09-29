@@ -24,7 +24,6 @@ query ($organization: String!, $project: String!, $commitID: String!) {
           build {
             __typename
             ... on Build {
-              buildPlanID
               status
               terminals {
                 tag
@@ -49,9 +48,9 @@ query ($organization: String!, $project: String!, $commitID: String!) {
                 }
               }
               artifacts: targets {
+                __typename
+                targetID
                 ... on ArtifactSucceeded {
-                  __typename
-                  targetID
                   mimeType
                   generatedBy
                   runtimeDependencies
@@ -61,24 +60,18 @@ query ($organization: String!, $project: String!, $commitID: String!) {
                   checksum
                 }
                 ... on ArtifactUnbuilt {
-                  __typename
-                  targetID
                   mimeType
                   generatedBy
                   runtimeDependencies
                   status
                 }
                 ... on ArtifactBuilding {
-                  __typename
-                  targetID
                   mimeType
                   generatedBy
                   runtimeDependencies
                   status
                 }
                 ... on ArtifactTransientlyFailed {
-                  __typename
-                  targetID
                   mimeType
                   generatedBy
                   runtimeDependencies
@@ -89,8 +82,6 @@ query ($organization: String!, $project: String!, $commitID: String!) {
                   nextAttemptAt
                 }
                 ... on ArtifactPermanentlyFailed {
-                  __typename
-                  targetID
                   mimeType
                   generatedBy
                   runtimeDependencies
@@ -99,14 +90,6 @@ query ($organization: String!, $project: String!, $commitID: String!) {
                   errors
                 }
               }
-            }
-            ... on BuildReady {
-							buildStartedAt
-              buildFinishedAt
-              buildDurationInMs
-            }
-            ... on BuildStarted {
-              buildStartedAt
             }
             ... on PlanningError {
               error
@@ -124,6 +107,7 @@ query ($organization: String!, $project: String!, $commitID: String!) {
                   path
                   message
                   isTransient
+                  errorType
                   validationErrors {
                     jsonPath
                   }
@@ -138,6 +122,7 @@ query ($organization: String!, $project: String!, $commitID: String!) {
           }
         }
         ... on CommitNotFound {
+          __typename
           message
         }
       }
@@ -148,6 +133,7 @@ query ($organization: String!, $project: String!, $commitID: String!) {
     }
   }
 }
+
 `
 }
 
