@@ -58,14 +58,14 @@ type BuildPlanner struct {
 }
 
 func NewBuildPlanner(auth *authentication.Auth) *BuildPlanner {
-	url := constants.APIBuildPlannerURL
-	if constants.APIHostEnvVarName != "" {
-		url = os.Getenv(constants.APIHostEnvVarName)
+	bpURL := constants.APIBuildPlannerURL
+	if url, ok := os.LookupEnv("_TEST_BUILDPLAN_URL"); ok {
+		bpURL = url
 	}
 
 	return &BuildPlanner{
 		auth:   auth,
-		client: gqlclient.NewWithOpts(url, 0, graphql.WithHTTPClient(&http.Client{})),
+		client: gqlclient.NewWithOpts(bpURL, 0, graphql.WithHTTPClient(&http.Client{})),
 		def:    NewDefault(auth),
 	}
 }
