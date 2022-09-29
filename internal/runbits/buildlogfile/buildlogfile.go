@@ -150,7 +150,7 @@ func (bl *BuildLogFile) SolverSuccess() error {
 }
 
 func (bl *BuildLogFile) SolverError(serr *model.SolverError) error {
-	if err := bl.writeMessage(locale.Tr("solver_err", "", serr.Error())); err != nil {
+	if err := bl.writeMessage(locale.Tr("resolve_err", "", serr.Error())); err != nil {
 		return err
 	}
 	if !serr.IsTransient() {

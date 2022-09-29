@@ -740,7 +740,7 @@ func formatBuildPlanError(bperr *model.BuildPlannerError) error {
 		croppedMessage = locale.Tl("buildplan_err_cropped_intro", "These are the last lines of the error message:")
 	}
 
-	err = locale.WrapError(err, "buildplan_error", "{{.V0}}{{.V1}}", croppedMessage, errorLines)
+	err = locale.WrapError(err, "resolve_err", "{{.V0}}{{.V1}}", croppedMessage, errorLines)
 	if bperr.IsTransient() {
 		err = errs.AddTips(bperr, locale.Tr("transient_solver_tip"))
 	}

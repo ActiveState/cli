@@ -36,7 +36,7 @@ type BuildPlannerError struct {
 }
 
 func (e *BuildPlannerError) Error() string {
-	return "buildplan_error"
+	return "resolve_err"
 }
 
 func (e *BuildPlannerError) Unwrap() error {

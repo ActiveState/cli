@@ -164,7 +164,7 @@ func (se SolverErrorEvent) Error() *model.SolverError {
 }
 
 func (se SolverErrorEvent) String() string {
-	return "solver_error"
+	return "resolve_error"
 }
 
 func newSolverErrorEvent(serr *model.SolverError) SolverErrorEvent {
