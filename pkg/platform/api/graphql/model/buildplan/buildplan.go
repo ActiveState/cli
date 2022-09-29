@@ -2,10 +2,10 @@ package model
 
 const (
 	// BuildPlan statuses
-	BuildPlanning = "PLANNING"
-	BuildPlanned  = "PLANNED"
-	BuildBuilding = "BUILDING"
-	BuildReady    = "READY"
+	Planning = "PLANNING"
+	Planned  = "PLANNED"
+	Building = "BUILDING"
+	Ready    = "READY"
 
 	// Artifact statuses
 	ArtifactNotSubmitted      = "NOT_SUBMITTED"
@@ -17,15 +17,10 @@ const (
 	ArtifactSkipped           = "SKIPPED"
 	ArtifactSucceeded         = "SUCCEEDED"
 
-	// BuildResultTypes
-	BuildResultPlanning      = "Planning"
-	BuildResultPlanned       = "Planned"
-	BuildResultStarted       = "Started"
-	BuildResultReady         = "Ready"
+	// Types
 	BuildResultPlanningError = "PlanningError"
-
-	ProjectNotFoundType = "ProjectNotFound"
-	CommitNotFoundType  = "CommitNotFound"
+	ProjectResultNotFound    = "ProjectNotFound"
+	CommitResultNotFound     = "CommitNotFound"
 
 	// Tag types
 	TagSource     = "src"

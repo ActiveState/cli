@@ -829,7 +829,7 @@ func HomeDir() (string, error) {
 func IsDir(path string) bool {
 	info, err := os.Stat(path)
 	if err != nil {
-		logging.Debug("Could not stat path: %s, got error: %v", path, err)
+		// logging.Debug("Could not stat path: %s, got error: %v", path, err)
 		return false
 	}
 	return info.IsDir()

@@ -80,10 +80,10 @@ func (bp *BuildPlanner) FetchBuildResult(commitID strfmt.UUID, owner, project st
 	// This is a lot of awkward error checking
 	// This error checking should go away with the new commit query
 	// TODO: Investigate commit not found errors
-	if resp.Project.Type == model.ProjectNotFoundType {
+	if resp.Project.Type == model.ProjectResultNotFound {
 		return nil, locale.NewError("err_buildplanner_project_not_found", "Build plan does not contain project")
 	}
-	if resp.Project.Commit.Type == model.CommitNotFoundType {
+	if resp.Project.Commit.Type == model.CommitResultNotFound {
 		return nil, locale.NewError("err_buildplanner_commit_not_found", "Build plan does not contain commit")
 	}
 	if resp.Project.Commit.Build.Type == model.BuildResultPlanningError {
@@ -136,10 +136,10 @@ func (bp *BuildPlanner) FetchBuildResult(commitID strfmt.UUID, owner, project st
 	res := BuildResult{
 		BuildEngine: buildEngine,
 		Build:       resp.Project.Commit.Build,
-		BuildReady:  resp.Project.Commit.Build.Status == model.BuildReady,
+		BuildReady:  resp.Project.Commit.Build.Status == model.Ready,
 	}
 
-	if resp.Project.Commit.Build.Status == model.BuildBuilding {
+	if resp.Project.Commit.Build.Status == model.Building {
 		res.Recipe, err = bp.def.ResolveRecipe(commitID, owner, project)
 		if err != nil {
 			return nil, locale.WrapError(err, "setup_build_resolve_recipe_err", "Could not resolve recipe for project {{.V0}}/{{.V1}}#{{.V2}}", owner, project, commitID.String())
