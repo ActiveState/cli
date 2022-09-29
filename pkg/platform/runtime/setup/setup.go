@@ -354,7 +354,7 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 
 	oldBuildPlan, err := s.store.BuildPlan()
 	if err != nil {
-		logging.Debug("Could not load existing recipe.  Maybe it is a new installation: %v", err)
+		logging.Debug("Could not load existing build plan. Maybe it is a new installation: %v", err)
 	}
 	requestedArtifacts := artifact.NewArtifactChangesetByBuildPlan(oldBuildPlan, buildResult.Build, true)
 	changedArtifacts := artifact.NewArtifactChangesetByBuildPlan(oldBuildPlan, buildResult.Build, false)
@@ -484,6 +484,7 @@ func (s *Setup) installFromBuildResult(buildResult *model.BuildResult, downloads
 }
 
 func (s *Setup) installFromBuildLog(buildResult *model.BuildResult, artifacts artifact.ArtifactBuildPlanMap, downloads []artifact.ArtifactDownload, alreadyInstalled store.StoredArtifactMap, setup Setuper, installFunc artifactInstaller) error {
+	artifacts.AddBuildArtifacts(buildResult.Build)
 	s.events.TotalArtifacts(len(artifacts) - len(alreadyInstalled))
 
 	alreadyBuilt := make(map[artifact.ArtifactID]struct{})
@@ -572,9 +573,11 @@ func (s *Setup) downloadArtifactWithProgress(unsignedURI string, targetFile stri
 		return errs.Wrap(err, "Could not parse artifact URL %s.", unsignedURI)
 	}
 
-	artifactURL, err = s.model.SignS3URL(artifactURL)
-	if err != nil {
-		return errs.Wrap(err, "Could not sign artifact URL %s.", artifactURL.String())
+	if artifactURL.Scheme == "s3" {
+		artifactURL, err = s.model.SignS3URL(artifactURL)
+		if err != nil {
+			return errs.Wrap(err, "Could not sign artifact URL.")
+		}
 	}
 
 	req, err := download.NewRequest(artifactURL.String())

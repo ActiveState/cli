@@ -100,10 +100,6 @@ func NewWithCustomConnections(artifactMap map[artifact.ArtifactID]artifact.Artif
 				return
 			case ArtifactStarted:
 				m := msg.messager.(ArtifactMessage)
-				if _, ok := artifactMap[m.ArtifactID]; !ok {
-					logging.Debug("Skipping artifact %s because it is not in the build plan", m.ArtifactID)
-					continue
-				}
 
 				// NOTE: fix to ignore current noop "final pkg artifact"
 				if artifact.ArtifactID(m.ArtifactID) == recipeID {
@@ -126,10 +122,6 @@ func NewWithCustomConnections(artifactMap map[artifact.ArtifactID]artifact.Artif
 				}
 			case ArtifactSucceeded:
 				m := msg.messager.(ArtifactSucceededMessage)
-				if _, ok := artifactMap[m.ArtifactID]; !ok {
-					logging.Debug("Skipping artifact %s because it is not in the build plan", m.ArtifactID)
-					continue
-				}
 
 				// NOTE: fix to ignore current noop "final pkg artifact"
 				if m.ArtifactID == recipeID {
@@ -145,10 +137,6 @@ func NewWithCustomConnections(artifactMap map[artifact.ArtifactID]artifact.Artif
 				events.ArtifactBuildCompleted(m.ArtifactID, m.LogURI)
 			case ArtifactFailed:
 				m := msg.messager.(ArtifactFailedMessage)
-				if _, ok := artifactMap[m.ArtifactID]; !ok {
-					logging.Debug("Skipping artifact %s because it is not in the build plan", m.ArtifactID)
-					continue
-				}
 				artifactName, _ := resolveArtifactName(m.ArtifactID, artifactMap)
 
 				artifactErr = locale.WrapError(artifactErr, "err_artifact_failed", "Failed to build \"{{.V0}}\", error reported: {{.V1}}.", artifactName, m.ErrorMessage)
@@ -161,10 +149,6 @@ func NewWithCustomConnections(artifactMap map[artifact.ArtifactID]artifact.Artif
 				events.ArtifactBuildFailed(m.ArtifactID, m.LogURI, m.ErrorMessage)
 			case ArtifactProgress:
 				m := msg.messager.(ArtifactProgressMessage)
-				if _, ok := artifactMap[m.ArtifactID]; !ok {
-					logging.Debug("Skipping artifact %s because it is not in the build plan", m.ArtifactID)
-					continue
-				}
 				logging.Debug("received artifact progress message: %s %s", m.ArtifactID, m.Body.Message)
 				events.ArtifactBuildProgress(m.ArtifactID, m.Timestamp, m.Body.Message, m.Body.Facility, m.PipeName, m.Source)
 			case Heartbeat:
