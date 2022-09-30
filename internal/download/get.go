@@ -26,6 +26,8 @@ var Get func(req *Request) ([]byte, error)
 
 var GetURL func(url string) ([]byte, error)
 
+var GetDirectURL = httpGetURL
+
 var GetDirect = httpGet
 
 type DownloadProgress interface {
