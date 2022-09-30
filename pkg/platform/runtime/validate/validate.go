@@ -47,7 +47,7 @@ func Attestation(attestationFile string) error {
 	// Verify signing certificate.
 	pemBlock, _ := pem.Decode([]byte(att.Signatures[0].Cert))
 	if pemBlock == nil {
-		return errs.Wrap(err, "Unable to decode attestation certificate")
+		return locale.NewError("validate_attestation_fail_decode_cert", "Unable to decode attestation certificate")
 	}
 
 	cert, err := x509.ParseCertificate(pemBlock.Bytes)
@@ -94,8 +94,6 @@ func Attestation(attestationFile string) error {
 	if err != nil {
 		return errs.Wrap(err, "Unable to validate signature")
 	}
-
-	// TODO: read payload artifact SHAs and validate them against downloaded artifact SHAs.
 
 	return nil
 }
