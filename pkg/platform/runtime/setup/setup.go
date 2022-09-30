@@ -31,7 +31,6 @@ import (
 	apimodel "github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifactcache"
-	"github.com/ActiveState/cli/pkg/platform/runtime/artifactvalidator"
 	"github.com/ActiveState/cli/pkg/platform/runtime/envdef"
 	"github.com/ActiveState/cli/pkg/platform/runtime/executor"
 	"github.com/ActiveState/cli/pkg/platform/runtime/model"
@@ -41,6 +40,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup/implementations/camel"
 	"github.com/ActiveState/cli/pkg/platform/runtime/store"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
+	"github.com/ActiveState/cli/pkg/platform/runtime/validate"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/faiface/mainthread"
 	"github.com/gammazero/workerpool"
@@ -588,7 +588,7 @@ func (s *Setup) downloadArtifactWithProgress(unsignedURI string, targetFile stri
 // verifyArtifact verifies the checksum of the downloaded artifact matches the checksum given by the
 // platform, and returns an error if the verification fails.
 func (s *Setup) verifyArtifact(archivePath string, a artifact.ArtifactDownload) error {
-  return artifactvalidator.ValidateChecksum(archivePath, a.Checksum)
+  return validate.Checksum(archivePath, a.Checksum)
 }
 
 // downloadArtifact downloads an artifact and returns the local path to that artifact's archive.

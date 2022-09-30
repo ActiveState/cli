@@ -1,4 +1,4 @@
-package artifactvalidator
+package validate
 
 import (
 	"path/filepath"
@@ -10,6 +10,6 @@ import (
 
 func TestValidate(t *testing.T) {
 	attestationFile := filepath.Join(osutil.GetTestDataDir(), "bzip2_attestation.json")
-	err := ValidateAttestation(attestationFile)
+	err := Attestation(attestationFile)
 	assert.NoError(t, err)
 }

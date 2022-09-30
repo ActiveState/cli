@@ -1,4 +1,4 @@
-package artifactvalidator
+package validate
 
 import (
 	"crypto"
@@ -28,10 +28,10 @@ type attestation struct {
 	Signatures []signature `json: "signatures"`
 }
 
-func ValidateAttestation(attestationFile string) error {
+func Attestation(attestationFile string) error {
 	data, err := fileutils.ReadFile(attestationFile)
 	if err != nil {
-		return errs.Wrap(err, "Could not read attestation: "+attestationFile)
+		return errs.Wrap(err, "Could not read attestation: %s", attestationFile)
 	}
 
 	att := attestation{}
@@ -56,7 +56,7 @@ func ValidateAttestation(attestationFile string) error {
 	}
 
 	intermediates := x509.NewCertPool()
-	addIntermediatesToPool(cert, intermediates)
+	addIntermediatesToPool(intermediates, cert)
 
 	opts := x509.VerifyOptions{
 		Roots:         nil, // use system root CAs
@@ -100,7 +100,7 @@ func ValidateAttestation(attestationFile string) error {
 	return nil
 }
 
-func addIntermediatesToPool(cert *x509.Certificate, pool *x509.CertPool) {
+func addIntermediatesToPool(pool *x509.CertPool, cert *x509.Certificate) {
 	for _, url := range cert.IssuingCertificateURL {
 		bytes, err := download.GetDirect(url)
 		if err != nil {
@@ -114,7 +114,7 @@ func addIntermediatesToPool(cert *x509.Certificate, pool *x509.CertPool) {
 				continue
 			}
 			pool.AddCert(cert)
-			addIntermediatesToPool(cert, pool)
+			addIntermediatesToPool(pool, cert)
 		} else {
 			p7, err := pkcs7.Parse(bytes)
 			if err != nil {
@@ -123,23 +123,22 @@ func addIntermediatesToPool(cert *x509.Certificate, pool *x509.CertPool) {
 			}
 			for _, cert := range p7.Certificates {
 				pool.AddCert(cert)
-				addIntermediatesToPool(cert, pool)
+				addIntermediatesToPool(pool, cert)
 			}
 		}
 	}
 }
 
-func ValidateChecksum(archivePath string, expectedChecksum string) error {
-	if expectedChecksum != "" {
-		logging.Debug("Validating checksum for %s", archivePath)
-	} else {
+func Checksum(archivePath string, expectedChecksum string) error {
+	if expectedChecksum == "" {
 		logging.Debug("Skipping checksum validation for %s because the Platform did not provide a checksum to validate against.")
 		return nil
 	}
+	logging.Debug("Validating checksum for %s", archivePath)
 
 	checksum, err := fileutils.Sha256Hash(archivePath)
 	if err != nil {
-		return errs.Wrap(err, "Failed to compute checksum for "+archivePath)
+		return errs.Wrap(err, "Failed to compute checksum for %s", archivePath)
 	}
 
 	if checksum != expectedChecksum {
