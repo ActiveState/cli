@@ -5,6 +5,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -22,6 +23,8 @@ import (
 
 // Get takes a URL and returns the contents as bytes
 var Get func(req *Request) ([]byte, error)
+
+var GetURL func(url string) ([]byte, error)
 
 var GetDirect = httpGet
 
@@ -45,9 +48,11 @@ func init() {
 func SetMocking(useMocking bool) {
 	if useMocking {
 		Get = _testHTTPGet
+		GetURL = _testHTTPGetURL
 		GetWithProgress = _testHTTPGetWithProgress
 	} else {
 		Get = httpGet
+		GetURL = httpGetURL
 		GetWithProgress = httpGetWithProgress
 	}
 }
@@ -59,6 +64,15 @@ func NewRequest(url string) (*Request, error) {
 	}
 
 	return &Request{req}, nil
+}
+
+func httpGetURL(url string) ([]byte, error) {
+	req, err := NewRequest(url)
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not create new request")
+	}
+
+	return httpGet(req)
 }
 
 func httpGet(req *Request) ([]byte, error) {
@@ -120,6 +134,15 @@ func httpGetWithProgressRetry(req *Request, prg DownloadProgress, attempt int, r
 	return dst.Bytes(), nil
 }
 
+func _testHTTPGetURL(url string) ([]byte, error) {
+	req, err := NewRequest(url)
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not create new request")
+	}
+
+	return _testHTTPGet(req)
+}
+
 func _testHTTPGetWithProgress(req *Request, progress DownloadProgress) ([]byte, error) {
 	return _testHTTPGet(req)
 }
@@ -127,6 +150,10 @@ func _testHTTPGetWithProgress(req *Request, progress DownloadProgress) ([]byte, 
 // _testHTTPGet is used when in tests, this cannot be in the test itself as that would limit it to only that one test
 func _testHTTPGet(req *Request) ([]byte, error) {
 	path := strings.Replace(req.URL.String(), constants.APIArtifactURL, "", 1)
+	path, err := url.QueryUnescape(path)
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not unescape path: %s", path)
+	}
 	path = filepath.Join(environment.GetRootPathUnsafe(), "test", path)
 
 	body, err := ioutil.ReadFile(path)
