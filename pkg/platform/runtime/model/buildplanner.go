@@ -1,7 +1,6 @@
 package model
 
 import (
-	"encoding/json"
 	"net/http"
 	"os"
 	"strings"
@@ -10,7 +9,6 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/gqlclient"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/logging"
 	model "github.com/ActiveState/cli/pkg/platform/api/graphql/model/buildplan"
 	"github.com/ActiveState/cli/pkg/platform/api/graphql/request"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -77,12 +75,6 @@ func (bp *BuildPlanner) FetchBuildResult(commitID strfmt.UUID, owner, project st
 	if err != nil {
 		return nil, errs.Wrap(err, "failed to fetch build plan")
 	}
-
-	output, err := json.MarshalIndent(resp, "", "  ")
-	if err != nil {
-		return nil, err
-	}
-	logging.Debug("BuildPlan: %s", string(output))
 
 	// This is a lot of awkward error checking
 	// This error checking should go away with the new commit query
