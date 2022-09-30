@@ -112,7 +112,11 @@ func run() error {
 func fetchMeta(ghClient *github.Client, jiraClient *jira.Client, prNumber int) (Meta, error) {
 	// Grab latest version on release channel to use as cutoff
 	finish := wc.PrintStart("Fetching latest version on release channel")
-	latestReleaseversionBytes, err := download.Get("https://raw.githubusercontent.com/ActiveState/cli/release/version.txt")
+	req, err := download.NewRequest("https://raw.githubusercontent.com/ActiveState/cli/release/version.txt")
+	if err != nil {
+		return Meta{}, errs.Wrap(err, "failed to create download request")
+	}
+	latestReleaseversionBytes, err := download.Get(req)
 	latestReleaseversion, err := semver.Parse(strings.TrimSpace(string(latestReleaseversionBytes)))
 	if err != nil {
 		return Meta{}, errs.Wrap(err, "failed to parse version blob")
