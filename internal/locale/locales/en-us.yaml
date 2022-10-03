@@ -1976,6 +1976,13 @@ svcctl_wait_timeout:
     Please try running your command again.
 
     If this problem persists please report it on our forums: [ACTIONABLE]{{.V2}}[/RESET]
+svcctl_file_not_found:
+  other: |
+    Could not find the State Tool service executable.
+
+    Please try running your command again.
+
+    If this problem persists please reinstall the State Tool.
 err_autostart_app:
   other: Could not create new autostart app
 install_remote_title:
