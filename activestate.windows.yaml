@@ -3,8 +3,6 @@ constants:
     value: state.exe
   - name: BUILD_DAEMON_TARGET
     value: state-svc.exe
-  - name: BUILD_EXECX_TARGET
-    value: state-execx.exe
   - name: BUILD_EXEC_TARGET
     value: state-exec.exe
   - name: BUILD_INSTALLER_TARGET

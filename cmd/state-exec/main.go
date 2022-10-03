@@ -6,12 +6,11 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/ActiveState/cli/cmd/state-execx/internal/logr"
-	"github.com/ActiveState/cli/internal/svcmsg"
+	"github.com/ActiveState/cli/cmd/state-exec/internal/logr"
 )
 
 const (
-	executorName     = "state-execx"
+	executorName     = "state-exec"
 	envVarKeyVerbose = "ACTIVESTATE_VERBOSE"
 	userErrMsg       = "Not user serviceable; Please contact support for assistance."
 )
@@ -25,7 +24,7 @@ var (
 
 func logDbgFunc(start time.Time) logr.LogFunc {
 	return func(format string, args ...interface{}) {
-		fmt.Fprintf(os.Stderr, "[%12s %9d] ", executorName, time.Since(start).Nanoseconds())
+		fmt.Fprintf(os.Stderr, "[DEBUG %9d] ", time.Since(start).Nanoseconds())
 		fmt.Fprintf(os.Stderr, format+"\n", args...)
 	}
 }
@@ -38,7 +37,6 @@ func main() {
 	}
 
 	if err := run(); err != nil {
-		// TODO: do not log errors if exiterror, just exit non-zero
 		logErr(userErrMsg)
 		logErr("%s", err)
 		os.Exit(1)
@@ -51,7 +49,10 @@ func run() error {
 	logr.Debug("run hello")
 	defer logr.Debug("run goodbye")
 
-	hb := svcmsg.NewHeartbeat(os.Args[2], os.Args[1])
+	hb, err := newHeartbeat()
+	if err != nil {
+		return err
+	}
 	logr.Debug("message data - pid: %s, exec: %s", hb.ProcessID, hb.ExecPath)
 
 	meta, err := newExecutorMeta(hb.ExecPath)
@@ -77,5 +78,5 @@ func run() error {
 		return err
 	}
 
-	return runCmd(meta, os.Args[3:])
+	return runCmd(meta)
 }
