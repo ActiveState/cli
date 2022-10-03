@@ -18,7 +18,7 @@ type ArtifactBuildPlan struct {
 	Version          *string
 	RequestedByOrder bool
 
-	generatedBy string
+	GeneratedBy string
 
 	Dependencies []ArtifactID
 }
@@ -87,7 +87,7 @@ func buildMap(baseID string, lookup map[string]interface{}, result ArtifactBuild
 	var deps []strfmt.UUID
 	for _, depID := range artifact.RuntimeDependencies {
 		deps = append(deps, strfmt.UUID(depID))
-		deps = append(deps, buildRuntimeDependencies(depID, lookup, deps)...)
+		deps = append(deps, BuildRuntimeDependencies(depID, lookup, deps)...)
 		buildMap(depID, lookup, result)
 	}
 
@@ -98,7 +98,7 @@ func buildMap(baseID string, lookup map[string]interface{}, result ArtifactBuild
 		}
 	}
 
-	info, err := getSourceInfo(artifact.GeneratedBy, lookup)
+	info, err := GetSourceInfo(artifact.GeneratedBy, lookup)
 	if err != nil {
 		logging.Error("Could not resolve source information: %v", err)
 		return
@@ -106,26 +106,26 @@ func buildMap(baseID string, lookup map[string]interface{}, result ArtifactBuild
 
 	result[strfmt.UUID(artifact.TargetID)] = ArtifactBuildPlan{
 		ArtifactID:       strfmt.UUID(artifact.TargetID),
-		Name:             info.name,
-		Namespace:        info.namespace,
-		Version:          &info.version,
+		Name:             info.Name,
+		Namespace:        info.Namespace,
+		Version:          &info.Version,
 		RequestedByOrder: true,
-		generatedBy:      artifact.GeneratedBy,
+		GeneratedBy:      artifact.GeneratedBy,
 		Dependencies:     uniqueDeps,
 	}
 
 }
 
-type sourceInfo struct {
-	name      string
-	namespace string
-	version   string
+type SourceInfo struct {
+	Name      string
+	Namespace string
+	Version   string
 }
 
-func getSourceInfo(sourceID string, lookup map[string]interface{}) (sourceInfo, error) {
+func GetSourceInfo(sourceID string, lookup map[string]interface{}) (SourceInfo, error) {
 	step, ok := lookup[sourceID].(*model.Step)
 	if !ok {
-		return sourceInfo{}, locale.NewError("err_source_name_step", "Could not find step with generatedBy id {{.V0}}", sourceID)
+		return SourceInfo{}, locale.NewError("err_source_name_step", "Could not find step with generatedBy id {{.V0}}", sourceID)
 	}
 
 	for _, input := range step.Inputs {
@@ -135,15 +135,15 @@ func getSourceInfo(sourceID string, lookup map[string]interface{}) (sourceInfo, 
 		for _, id := range input.TargetIDs {
 			source, ok := lookup[id].(*model.Source)
 			if !ok {
-				return sourceInfo{}, locale.NewError("err_source_name_source", "Could not find source with target id {{.V0}}", id)
+				return SourceInfo{}, locale.NewError("err_source_name_source", "Could not find source with target id {{.V0}}", id)
 			}
-			return sourceInfo{source.Name, source.Namespace, source.Version}, nil
+			return SourceInfo{source.Name, source.Namespace, source.Version}, nil
 		}
 	}
-	return sourceInfo{}, locale.NewError("err_resolve_artifact_name", "Could not resolve artifact name")
+	return SourceInfo{}, locale.NewError("err_resolve_artifact_name", "Could not resolve artifact name")
 }
 
-func buildRuntimeDependencies(depdendencyID string, lookup map[string]interface{}, result []strfmt.UUID) []strfmt.UUID {
+func BuildRuntimeDependencies(depdendencyID string, lookup map[string]interface{}, result []strfmt.UUID) []strfmt.UUID {
 	artifact, ok := lookup[depdendencyID].(*model.Artifact)
 	if !ok {
 		logging.Error("Incorrect target type for id %s", depdendencyID)
@@ -151,58 +151,10 @@ func buildRuntimeDependencies(depdendencyID string, lookup map[string]interface{
 
 	for _, depID := range artifact.RuntimeDependencies {
 		result = append(result, strfmt.UUID(depID))
-		buildRuntimeDependencies(depID, lookup, result)
+		BuildRuntimeDependencies(depID, lookup, result)
 	}
 
 	return result
-}
-
-func (a ArtifactBuildPlanMap) AddBuildArtifacts(build *model.Build) {
-	lookup := make(map[string]interface{})
-
-	for _, artifact := range build.Artifacts {
-		lookup[artifact.TargetID] = artifact
-	}
-	for _, step := range build.Steps {
-		lookup[step.TargetID] = step
-	}
-	for _, source := range build.Sources {
-		lookup[source.TargetID] = source
-	}
-
-	for _, artifact := range build.Artifacts {
-		_, ok := a[strfmt.UUID(artifact.TargetID)]
-		if !ok && artifact.Status != model.ArtifactNotSubmitted {
-			var deps []strfmt.UUID
-			for _, depID := range artifact.RuntimeDependencies {
-				deps = append(deps, strfmt.UUID(depID))
-				deps = append(deps, buildRuntimeDependencies(depID, lookup, deps)...)
-			}
-
-			var uniqueDeps []strfmt.UUID
-			for _, dep := range deps {
-				if !funk.Contains(uniqueDeps, dep) {
-					uniqueDeps = append(uniqueDeps, dep)
-				}
-			}
-
-			info, err := getSourceInfo(artifact.GeneratedBy, lookup)
-			if err != nil {
-				logging.Error("Could not resolve source information: %v", err)
-				return
-			}
-
-			a[strfmt.UUID(artifact.TargetID)] = ArtifactBuildPlan{
-				ArtifactID:       strfmt.UUID(artifact.TargetID),
-				Name:             info.name,
-				Namespace:        info.namespace,
-				Version:          &info.version,
-				RequestedByOrder: true,
-				generatedBy:      artifact.GeneratedBy,
-				Dependencies:     uniqueDeps,
-			}
-		}
-	}
 }
 
 // RecursiveDependenciesFor computes the recursive dependencies for an ArtifactID a using artifacts as a lookup table

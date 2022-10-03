@@ -487,9 +487,6 @@ func (s *Setup) installFromBuildResult(buildResult *model.BuildResult, downloads
 }
 
 func (s *Setup) installFromBuildLog(buildResult *model.BuildResult, artifacts artifact.ArtifactBuildPlanMap, downloads []artifact.ArtifactDownload, alreadyInstalled store.StoredArtifactMap, setup Setuper, installFunc artifactInstaller) error {
-	// The runtime dependencies do not include all build dependencies. Since we are working
-	// with the build log, we need to add the missing dependencies to the list of artifacts
-	artifacts.AddBuildArtifacts(buildResult.Build)
 	s.events.TotalArtifacts(len(artifacts) - len(alreadyInstalled))
 
 	alreadyBuilt := make(map[artifact.ArtifactID]struct{})
@@ -500,7 +497,7 @@ func (s *Setup) installFromBuildLog(buildResult *model.BuildResult, artifacts ar
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	buildLog, err := buildlog.New(ctx, artifacts, alreadyBuilt, s.events, *buildResult.Recipe.RecipeID)
+	buildLog, err := buildlog.New(ctx, artifacts, alreadyBuilt, s.events, buildResult)
 	defer func() {
 		if err := buildLog.Close(); err != nil {
 			logging.Debug("Failed to close build log: %v", errs.JoinMessage(err))
@@ -609,7 +606,7 @@ func (s *Setup) downloadArtifactWithProgress(unsignedURI string, targetFile stri
 // verifyArtifact verifies the checksum of the downloaded artifact matches the checksum given by the
 // platform, and returns an error if the verification fails.
 func (s *Setup) verifyArtifact(archivePath string, a artifact.ArtifactDownload) error {
-  return validate.Checksum(archivePath, a.Checksum)
+	return validate.Checksum(archivePath, a.Checksum)
 }
 
 // downloadArtifact downloads an artifact and returns the local path to that artifact's archive.
