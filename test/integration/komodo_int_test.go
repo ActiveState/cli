@@ -31,8 +31,8 @@ func (suite *AuthIntegrationTestSuite) TestAuthOutput_EditorV0() {
 func (suite *AuthIntegrationTestSuite) TestAuth_EditorV0() {
 	suite.OnlyRunForTags(tagsuite.Auth, tagsuite.Komodo)
 	user := userJSON{
-		Username: "cli-integration-tests",
-		URLName:  "cli-integration-tests",
+		Username: e2e.PersistentUsername,
+		URLName:  e2e.PersistentUsername,
 		Tier:     "free_legacy",
 	}
 	data, err := json.Marshal(user)

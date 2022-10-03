@@ -74,7 +74,7 @@ func (suite *ProjectsAutomationTestSuite) TestProjects_Remote() {
 	cp := ts.Spawn("projects", "remote")
 	cp.Expect("Name", time.Minute)
 	cp.Expect("Organization")
-	cp.Expect("cli-integration-tests")
+	cp.Expect(e2e.PersistentUsername)
 	cp.ExpectExitCode(0)
 }
 

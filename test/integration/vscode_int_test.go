@@ -72,7 +72,7 @@ func (suite *ShowIntegrationTestSuite) TestShow_VSCode() {
 	err := json.Unmarshal([]byte(cp.TrimmedSnapshot()), &out)
 	suite.Require().NoError(err, "Failed to parse JSON from: %s", cp.TrimmedSnapshot())
 	suite.Equal("Show", out.Name)
-	suite.Equal("cli-integration-tests", out.Organization)
+	suite.Equal(e2e.PersistentUsername, out.Organization)
 	suite.Equal("Public", out.Visibility)
 	suite.Len(out.Languages, 1)
 	suite.Len(out.Scripts, 2)
@@ -115,8 +115,8 @@ func (suite *AuthIntegrationTestSuite) TestAuth_VSCode() {
 	// TODO: Response change from "free" to "Community Tier (Free)".  Check that vs code extension is okay with that.
 	// https://www.pivotaltracker.com/story/show/178544144
 	user := userJSON{
-		Username: "cli-integration-tests",
-		URLName:  "cli-integration-tests",
+		Username: e2e.PersistentUsername,
+		URLName:  e2e.PersistentUsername,
 		Tier:     "free_legacy", // was "Community Tier (Free)"
 	}
 	data, err := json.Marshal(user)
