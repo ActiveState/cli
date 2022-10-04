@@ -54,7 +54,7 @@ jobs:
 
       - # === Set Target PR ===
         name: Set Target PR
-        if: github.event.pull_request.action == 'opened' || github.event.pull_request.action == 'reopened'
+        if: github.event.action == 'opened' || github.event.action == 'reopened'
         shell: bash
         run: go run scripts/ci/target-version-pr/main.go ${{ github.event.pull_request.number }}
 
