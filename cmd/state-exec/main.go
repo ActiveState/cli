@@ -32,6 +32,8 @@ func logDbgFunc(start time.Time) logr.LogFunc {
 }
 
 func init() {
+	// This application is not doing enough to warrant parallelism, so let's
+	// skip it and avoid the cost of scheduling.
 	runtime.GOMAXPROCS(1)
 }
 
