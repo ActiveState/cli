@@ -10,7 +10,8 @@ import (
 )
 
 const (
-	pathEnvVarKey     = "PATH"
+	envVarSeparator   = "="
+	pathEnvVarPrefix  = "PATH" + envVarSeparator
 	pathListSeparator = string(os.PathListSeparator)
 )
 
@@ -47,37 +48,28 @@ func matchingBinByPath(bins []string, path string) string {
 	return ""
 }
 
-func tranformedEnv(current []string, updates map[string]string) []string {
-	env := envSliceToMap(os.Environ())
-	for k, v := range updates {
-		if k == pathEnvVarKey {
-			p, ok := env[k]
-			if ok {
-				v += pathListSeparator + p
+func tranformedEnv(current []string, updates []string) []string {
+	for _, update := range updates {
+		if strings.HasPrefix(update, pathEnvVarPrefix) {
+			pathUpdate := update[len(pathEnvVarPrefix):]
+			if pathCurrent, ok := getEnvVarValue(current, pathEnvVarPrefix); ok {
+				pathUpdate += pathListSeparator + pathCurrent
 			}
-			env[k] = v
+			update = pathEnvVarPrefix + pathUpdate
 		}
+		current = append(current, update)
 	}
-	return envMapToSlice(env)
+	return current
 }
 
-func envSliceToMap(envSlice []string) map[string]string {
-	env := map[string]string{}
-	for _, v := range envSlice {
-		kv := strings.SplitN(v, "=", 2)
-		env[kv[0]] = ""
-		if len(kv) == 2 { // account for empty values, windows does some weird stuff, better safe than sorry
-			env[kv[0]] = kv[1]
+// getEnvVarValue returns the value of the environment variable from the
+// provided environment slice. The prefix should end with the environment
+// variable separator.
+func getEnvVarValue(env []string, prefix string) (string, bool) {
+	for _, v := range env {
+		if strings.HasPrefix(v, prefix) {
+			return v[len(prefix):], true
 		}
 	}
-	return env
-}
-
-func envMapToSlice(envMap map[string]string) []string {
-	var env []string
-	for k, v := range envMap {
-		env = append(env, fmt.Sprintf("%s=%s", k, v))
-	}
-
-	return env
+	return "", false
 }

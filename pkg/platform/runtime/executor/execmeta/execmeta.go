@@ -50,14 +50,14 @@ var (
 
 type ExecMeta struct {
 	SockPath   string
-	Env        map[string]string
+	Env        []string
 	Bins       []string
 	CommitUUID string
 	Namespace  string
 	Headless   bool
 }
 
-func New(sockPath string, env map[string]string, t Target, bins []string) *ExecMeta {
+func New(sockPath string, env []string, t Target, bins []string) *ExecMeta {
 	return &ExecMeta{
 		SockPath:   sockPath,
 		Env:        env,
@@ -81,17 +81,8 @@ func NewFromReader(r io.Reader) (*ExecMeta, error) {
 		case 0:
 			m.SockPath = strings.TrimPrefix(txt, sockDelim)
 		case 1:
-			envMap := make(map[string]string)
 			envTxt := strings.TrimPrefix(txt, envDelim)
-			envSplit := strings.Split(envTxt, envDelim)
-			for _, kv := range envSplit {
-				kvSplit := strings.SplitN(kv, "=", 2)
-				if len(kvSplit) < 2 {
-					return nil, errors.New("env data malformed")
-				}
-				envMap[kvSplit[0]] = kvSplit[1]
-			}
-			m.Env = envMap
+			m.Env = strings.Split(envTxt, envDelim)
 		case 2:
 			binsTxt := strings.TrimPrefix(txt, binsDelim)
 			m.Bins = strings.Split(binsTxt, binsDelim)

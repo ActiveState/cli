@@ -31,9 +31,11 @@ func logDbgFunc(start time.Time) logr.LogFunc {
 	}
 }
 
-func main() {
+func init() {
 	runtime.GOMAXPROCS(1)
+}
 
+func main() {
 	if os.Getenv(envVarKeyVerbose) == "true" {
 		logr.SetDebug(logDbgFunc(time.Now()))
 	}
@@ -52,7 +54,7 @@ func main() {
 }
 
 func run() error {
-	logr.Debug("run hello")
+	logr.Debug("hello")
 	defer logr.Debug("run goodbye")
 
 	hb, err := newHeartbeat()
@@ -84,5 +86,6 @@ func run() error {
 		return err
 	}
 
+	logr.Debug("cmd - running: %s", meta.MatchingBin)
 	return runCmd(meta)
 }
