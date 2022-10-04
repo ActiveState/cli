@@ -123,8 +123,8 @@ func (m *ExecMeta) WriteTo(w io.Writer) (int64, error) {
 	aw := newAccumulatingWrite(w)
 
 	aw.fprintf("%s%s\n", sockDelim, m.SockPath)
-	for k, v := range m.Env {
-		aw.fprintf("%s%s=%s", envDelim, k, v)
+	for _, v := range m.Env {
+		aw.fprintf("%s%s", envDelim, v)
 	}
 	aw.fprintf("\n")
 	for _, v := range m.Bins {

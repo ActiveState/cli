@@ -7,10 +7,10 @@ import (
 )
 
 func TestExecMeta(t *testing.T) {
-	env := map[string]string{
-		"EXAMPLE": "value",
-		"SAMPLE":  "other",
-		"THIRD":   "whatever",
+	env := []string{
+		"EXAMPLE=value",
+		"SAMPLE=other",
+		"THIRD=whatever",
 	}
 	bins := []string{
 		"/example/bin/abc",
