@@ -493,7 +493,7 @@ scripts:
           sudo sh -c 'echo -1 >/proc/sys/kernel/perf_event_paranoid'
           updated=true
       fi
-      perf stat -a -d -r 100 ${@} > /dev/null
+      perf stat -d -r 8 -e task-clock,page-faults,cycles,instructions -- ${@} >/dev/null 
       ${updated} && sudo sh -c 'echo '${paranoid}' >/proc/sys/kernel/perf_event_paranoid'
 
 events:
