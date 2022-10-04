@@ -487,11 +487,14 @@ scripts:
     value: |
       # example usage:
       # state run benchmark-exec -- state-exec /tmp/state-ipc/my.sock /home/me/.cache/abcd1234/bin/python3 -c "print('123');"
-      if [[ "$(cat /proc/sys/kernel/perf_event_paranoid)" != "-1" ]]; then
+      paranoid="$(cat /proc/sys/kernel/perf_event_paranoid)"
+      updated=false
+      if [[ "${paranoid}" != "-1" ]]; then
           sudo sh -c 'echo -1 >/proc/sys/kernel/perf_event_paranoid'
+          updated=true
       fi
-
-      perf stat -d -r 100 ${@} > /dev/null
+      perf stat -a -d -r 100 ${@} > /dev/null
+      ${updated} && sudo sh -c 'echo '${paranoid}' >/proc/sys/kernel/perf_event_paranoid'
 
 events:
   - name: activate
