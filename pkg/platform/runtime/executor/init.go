@@ -9,6 +9,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/installation"
+	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/pkg/platform/runtime/envdef"
 	"github.com/ActiveState/cli/pkg/platform/runtime/executor/execmeta"
 	"github.com/go-openapi/strfmt"
@@ -79,7 +80,7 @@ func (i *Init) Apply(sockPath string, targeter Targeter, env map[string]string, 
 	}
 
 	t := execmeta.Target{}
-	m := execmeta.New(sockPath, env, t, exes)
+	m := execmeta.New(sockPath, osutils.EnvMapToSlice(env), t, exes)
 	if err := m.WriteToDisk(i.executorPath); err != nil {
 		return err
 	}
