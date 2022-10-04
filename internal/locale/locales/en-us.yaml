@@ -1363,7 +1363,7 @@ flag_state_clean_uninstall_force_description:
 flag_state_clean_ignore_errors_description:
   other: Does not stop when an error occurs, removing as much as possible
 arg_state_clean_cache_project_description:
-  other: The project to be removed from the local cache. Must be in the format of <org/project>
+  other: The project to be removed from the local cache.
 flag_state_clean_config_force_description:
   other: Run clean config operation without prompts and ignoring any errors stopping running services
 err_uninstall_activated:
