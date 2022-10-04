@@ -1,8 +1,10 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"os"
+	"os/exec"
 	"runtime"
 	"time"
 
@@ -37,6 +39,10 @@ func main() {
 	}
 
 	if err := run(); err != nil {
+		if exitErr := (&exec.ExitError{}); errors.As(err, &exitErr) {
+			os.Exit(exitErr.ExitCode())
+		}
+
 		logErr(userErrMsg)
 		logErr("%s", err)
 		os.Exit(1)
