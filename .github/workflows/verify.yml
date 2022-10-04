@@ -6,9 +6,9 @@ name: Verify
     types:
       - edited
       - labeled
-      - opened
       - synchronize
       - reopened
+  workflow_call:
 
 # === JOBS ===
 jobs:

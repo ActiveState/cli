@@ -9,10 +9,15 @@ name: Set-Target-PR
 # === JOBS ===
 jobs:
 
+  call-verifypr:
+    uses: ./.github/workflows/verify.yml
+    secrets: inherit
+
   # === Set target pr ===
   target-version-pr:
     name: Set target version PR
     runs-on: ubuntu-20.04
+    needs: call-verifypr
     env:
       ACTIVESTATE_CLI_DISABLE_RUNTIME: true
       SHELL: bash
