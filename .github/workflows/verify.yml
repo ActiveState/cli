@@ -13,9 +13,9 @@ name: Verify
 # === JOBS ===
 jobs:
 
-  # === Verify PR ===
+  # === Target & Verify PR ===
   verifypr:
-    name: Verify PR
+    name: Target & Verify PR
     runs-on: ubuntu-20.04
     env:
       ACTIVESTATE_CLI_DISABLE_RUNTIME: true
