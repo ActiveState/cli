@@ -6,15 +6,6 @@ import (
 	"testing"
 )
 
-/* example meta.as
-::sock::/tmp/state-ipc/state-ipts.DX-123.sock
-::env::TESTER="test/best"::env::BESTER="example"
-::bins::/home/.cache/deadbeef/bin/python3::bins::/home/.cache/deadbeef/bin/cython
-::commit-id::1234abcd-1234-abcd-1234-abcd1234
-::namespace::SomeOrg/Test
-::headless::true
-*/
-
 func TestExecMeta(t *testing.T) {
 	env := map[string]string{
 		"EXAMPLE": "value",

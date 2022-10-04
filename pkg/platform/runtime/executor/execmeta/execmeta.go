@@ -22,9 +22,9 @@ import (
 )
 
 /*
-::sock::/tmp/state-ipc/state-ipts.DX-1060.sock
+::sock::/tmp/state-ipc/branch_name.sock
 ::env::EXAMPLE=value::env::SAMPLE=other::env::THIRD=whatever
-::bins::/example/bin/abc::bins::/example/bin/def::bins::/example/bin/xyz
+::bins::/home/.cache/deadbeef/bin/python3::bins::/home/.cache/deadbeef/bin/cython
 ::commit-id::1234abcd-1234-abcd-1234-abcd1234
 ::namespace::owner/name
 ::headless::true
