@@ -68,20 +68,20 @@ func newParams() *Params {
 }
 
 func (r *runner) Event(eventType string, installerDimensions *dimensions.Values) {
-	r.analytics.Event(ac.CatRuntimeUsage, eventType, installerDimensions)
+	r.analytics.Event(ac.CatOfflineInstaller, eventType, installerDimensions)
 }
 
 func (r *runner) EventWithLabel(eventType string, msg string, installerDimensions *dimensions.Values) {
-	r.analytics.EventWithLabel(ac.CatRuntimeUsage, eventType, msg, installerDimensions)
+	r.analytics.EventWithLabel(ac.CatOfflineInstaller, eventType, msg, installerDimensions)
 }
 
 func (r *runner) handleFailure(err error, msg string, installerDimensions *dimensions.Values) error {
-	r.EventWithLabel("failure", msg, installerDimensions)
+	r.EventWithLabel(ac.ActOfflineInstallerFailure, msg, installerDimensions)
 	return errs.Wrap(err, msg)
 }
 
 func (r *runner) handleFailureNewErr(msg string, installerDimensions *dimensions.Values) error {
-	r.EventWithLabel("failure", msg, installerDimensions)
+	r.EventWithLabel(ac.ActOfflineInstallerFailure, msg, installerDimensions)
 	return errs.New(msg)
 }
 
@@ -104,7 +104,7 @@ func (r *runner) Run(params *Params) error {
 		CommitID:  installerConfig.CommitID,
 		Trigger:   p.StrP(target.TriggerCliOfflineUninstaller.String()),
 	}
-	r.analytics.Event(ac.CatRuntimeUsage, "start", installerDimensions)
+	r.analytics.Event(ac.CatOfflineInstaller, ac.ActOfflineInstallerStart, installerDimensions)
 
 	containsLicenseFile, err := fileutils.FileContains(licenseFilePath, []byte("ACTIVESTATE"))
 	if err != nil {
@@ -137,7 +137,7 @@ func (r *runner) Run(params *Params) error {
 		return r.handleFailure(err, "Error removing installation directory", installerDimensions)
 	}
 
-	r.analytics.Event(ac.CatRuntimeUsage, "success", installerDimensions)
+	r.analytics.Event(ac.CatOfflineInstaller, ac.ActOfflineInstallerSuccess, installerDimensions)
 
 	r.out.Print("Uninstall Complete")
 
