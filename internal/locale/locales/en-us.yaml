@@ -1065,7 +1065,7 @@ language_name_unknown:
 language_unknown_options:
   other: Unknown options
 package_cmd_description:
-  other: Manage packages used in your project
+  other: List packages used in your project
 users_plural:
   other: users
 package_install_cmd_description:
