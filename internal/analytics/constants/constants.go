@@ -80,3 +80,18 @@ const CatStateSvc = "state-svc"
 
 // CatPackageOp is for `state packages` events
 const CatPackageOp = "package-operation"
+
+// CatOfflineInstaller is the event category used for all data relating to offline installs and uninstalls
+const CatOfflineInstaller = "offline-installer"
+
+// ActOfflineInstallerStart is the event action for the offline installer/uninstaller being initiated
+const ActOfflineInstallerStart = "start"
+
+// ActOfflineInstallerFailure is the event action for the offline installer/uninstaller failing
+const ActOfflineInstallerFailure = "failure"
+
+// ActOfflineInstallerStart is the event action for the offline installer/uninstaller succeeding
+const ActOfflineInstallerSuccess = "success"
+
+// ActOfflineInstallerAbort is the event action for the offline installer being terminated by the user
+const ActOfflineInstallerAbort = "aborted"

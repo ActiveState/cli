@@ -72,15 +72,20 @@ type InstallerConfig struct {
 }
 
 func (r *runner) Event(eventType string, installerDimensions *dimensions.Values) {
-	r.analytics.Event(ac.CatRuntimeUsage, eventType, installerDimensions)
+	r.analytics.Event(ac.CatOfflineInstaller, eventType, installerDimensions)
 }
 
 func (r *runner) EventWithLabel(eventType string, msg string, installerDimensions *dimensions.Values) {
-	r.analytics.EventWithLabel(ac.CatRuntimeUsage, eventType, msg, installerDimensions)
+	r.analytics.EventWithLabel(ac.CatOfflineInstaller, eventType, msg, installerDimensions)
 }
 
 func (r *runner) handleFailure(err error, msg string, installerDimensions *dimensions.Values) error {
-	r.EventWithLabel("failure", msg, installerDimensions)
+	r.EventWithLabel(ac.ActOfflineInstallerFailure, msg, installerDimensions)
+	return errs.Wrap(err, msg)
+}
+
+func (r *runner) handleAbort(err error, msg string, installerDimensions *dimensions.Values) error {
+	r.EventWithLabel(ac.ActOfflineInstallerAbort, msg, installerDimensions)
 	return errs.Wrap(err, msg)
 }
 
@@ -142,7 +147,7 @@ func (r *runner) Run(params *Params) error {
 			return r.handleFailure(err, "Error with license acceptance", installerDimensions)
 		}
 		if !accepted {
-			return r.handleFailure(
+			return r.handleAbort(
 				locale.NewInputError("License not accepted"),
 				"License failure",
 				installerDimensions,
@@ -234,7 +239,7 @@ func (r *runner) Run(params *Params) error {
 		return r.handleFailure(err, "Could not configure environment", installerDimensions)
 	}
 
-	r.analytics.Event(ac.CatRuntimeUsage, "success", installerDimensions)
+	r.analytics.Event(ac.CatOfflineInstaller, ac.ActOfflineInstallerSuccess, installerDimensions)
 
 	r.out.Print("Runtime installation completed.")
 
