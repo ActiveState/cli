@@ -196,7 +196,7 @@ func main() {
 	if err != nil {
 		if locale.IsInputError(err) {
 			an.EventWithLabel(AnalyticsCat, "input-error", errs.JoinMessage(err))
-			multilog.Error("Installer input error: " + errs.JoinMessage(err))
+			logging.Debug("Installer input error: " + errs.JoinMessage(err))
 		} else {
 			an.EventWithLabel(AnalyticsCat, "error", errs.JoinMessage(err))
 			multilog.Critical("Installer error: " + errs.JoinMessage(err))
