@@ -241,7 +241,8 @@ func (suite *UseIntegrationTestSuite) TestShow() {
 
 	cp = ts.SpawnWithOpts(e2e.WithArgs("use", "show"))
 	cp.ExpectLongString("The default project no longer exists")
-	if runtime.GOOS != "darwin" {
+	// Both Windows and MacOS can run into path comparison issues with symlinks and long paths.
+	if runtime.GOOS == "linux" {
 		cp.ExpectLongString(fmt.Sprintf("Could not find project at %s", projectDir))
 	}
 	cp.ExpectExitCode(1)

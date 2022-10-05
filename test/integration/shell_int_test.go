@@ -44,7 +44,8 @@ func (suite *ShellIntegrationTestSuite) TestShell() {
 		cp.ExpectExitCode(0)
 	}
 
-	if runtime.GOOS != "darwin" {
+	// Both Windows and MacOS can run into path comparison issues with symlinks and long paths.
+	if runtime.GOOS == "linux" {
 		projectDir := filepath.Join(ts.Dirs.Work, "small-python")
 		// projectDir, err := fileutils.SymlinkTarget(projectDir)
 		// suite.Require().NoError(err)
