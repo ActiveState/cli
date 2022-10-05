@@ -13,7 +13,7 @@ import (
 	"github.com/ActiveState/cli/internal/ipc"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/rtutils/p"
-	"github.com/ActiveState/cli/internal/svcmsg"
+	"github.com/ActiveState/cli/internal/svcctl/svcmsg"
 	"github.com/ActiveState/cli/pkg/platform/runtime/executor/execmeta"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 )
