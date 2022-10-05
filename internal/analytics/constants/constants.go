@@ -24,6 +24,9 @@ const ActRuntimeHeartbeat = "heartbeat"
 // ActRuntimeStart is the event action sent when creating a runtime
 const ActRuntimeStart = "start"
 
+// ActRuntimeDelete is the event action sent when uninstalling a runtime
+const ActRuntimeDelete = "delete"
+
 // ActRuntimeCache is the event action sent when a runtime is constructed from the local cache alone
 const ActRuntimeCache = "cache"
 

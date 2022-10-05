@@ -138,6 +138,7 @@ func (r *runner) Run(params *Params) error {
 	}
 
 	r.analytics.Event(ac.CatOfflineInstaller, ac.ActOfflineInstallerSuccess, installerDimensions)
+	r.analytics.Event(ac.CatRuntimeUsage, ac.ActRuntimeDelete, installerDimensions)
 
 	r.out.Print("Uninstall Complete")
 
