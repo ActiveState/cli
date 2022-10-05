@@ -179,7 +179,7 @@ func copyExecutor(destDir, exe, srcExec string) error {
 		return locale.WrapError(err, "err_copyexecutor_fail", "Could not copy {{.V0}} to {{.V1}}", srcExec, target)
 	}
 
-	if err := os.Chmod(target, 0o755); err != nil {
+	if err := os.Chmod(target, 0755); err != nil {
 		return locale.WrapError(err, "err_setexecmode_fail", "Could not set mode of {{.V0}}", target)
 	}
 
