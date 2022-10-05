@@ -23,6 +23,7 @@ func newRunCommand(prime *primer.Values) *captain.Command {
 				Name:        locale.T("arg_state_run_name"),
 				Description: locale.T("arg_state_run_name_description"),
 				Value:       &name,
+				Required:    true,
 			},
 		},
 		func(ccmd *captain.Command, args []string) error {
