@@ -1,6 +1,7 @@
 package integration
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -41,6 +42,17 @@ func (suite *ShellIntegrationTestSuite) TestShell() {
 		cp.SendLine("exit")
 		cp.Expect("Deactivated")
 		cp.ExpectExitCode(0)
+	}
+
+	if runtime.GOOS != "darwin" {
+		projectDir := filepath.Join(ts.Dirs.Work, "small-python")
+		// projectDir, err := fileutils.SymlinkTarget(projectDir)
+		// suite.Require().NoError(err)
+		err := os.RemoveAll(projectDir)
+		suite.Require().NoError(err)
+
+		cp = ts.Spawn("shell", "small-python")
+		cp.ExpectLongString(fmt.Sprintf("Could not find project at %s", projectDir))
 	}
 
 	// Check for project not checked out.

@@ -723,13 +723,11 @@ warn_move_incompatible_modes:
 warn_move_destination_overwritten:
   other: "Overwriting existing file [NOTICE]{{.V1}}[/RESET] with file [NOTICE]{{.V0}}[/RESET]"
 err_file_not_found_in_path:
-  other: could not find file=[NOTICE]{{.V0}}[/RESET] in path=[NOTICE]{{.V1}}[/RESET]
-
+  other: Could not find file=[NOTICE]{{.V0}}[/RESET] in path=[NOTICE]{{.V1}}[/RESET]
 secrets_err_expand_noproject:
   other: Expanding of variable failed because a project was not passed along. This indicates a problem in the underlying code, and is unlikely to be something an end-user can address.
 developer_err_project_match:
   other: Encountered a situation where the tool is given different project paths. This indicates a bug in our code, please consider reporting it.
-
 err_version_parse:
   other: Could not determine the State Tool version to use to run this command. Please ensure the project field in your activestate.yaml is formatted correctly.
 err_invalid_lock:
@@ -1702,6 +1700,8 @@ activate_default_prompt:
     This will allow you to operate on your project and run executables provided by its runtime without first "activating" it.
 err_no_projectfile:
   other: No activestate.yaml file exists in the current working directory or its parent directories.
+err_project_not_found:
+  other: Could not find project at [NOTICE]{{.V0}}[/RESET]
 err_non_interactive_prompt:
   other: Prompt "{{.V0}}" cannot be resolved in non-interactive mode.
 err_read_projectfile:

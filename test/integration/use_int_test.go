@@ -1,6 +1,7 @@
 package integration
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -240,6 +241,9 @@ func (suite *UseIntegrationTestSuite) TestShow() {
 
 	cp = ts.SpawnWithOpts(e2e.WithArgs("use", "show"))
 	cp.ExpectLongString("The default project no longer exists")
+	if runtime.GOOS != "darwin" {
+		cp.ExpectLongString(fmt.Sprintf("Could not find project at %s", projectDir))
+	}
 	cp.ExpectExitCode(1)
 
 	cp = ts.SpawnWithOpts(e2e.WithArgs("use", "reset", "--non-interactive"))

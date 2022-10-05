@@ -68,7 +68,7 @@ func FromNamespaceLocal(ns *project.Namespaced, cfg projectfile.ConfigGetter, pr
 
 	matchingProjects := make(map[string][]string)
 	matchingNamespaces := make([]string, 0)
-	for namespace, paths := range projectfile.GetProjectMapping(cfg) {
+	for namespace, paths := range projectfile.GetStaleProjectMapping(cfg) {
 		if len(paths) == 0 {
 			continue
 		}
@@ -119,7 +119,16 @@ func FromNamespaceLocal(ns *project.Namespaced, cfg projectfile.ConfigGetter, pr
 			}
 		}
 
-		return project.FromPath(path)
+		proj, err := project.FromPath(path)
+		if err != nil {
+			if errs.Matches(err, &projectfile.ErrorNoProject{}) {
+				return nil, &LocalProjectDoesNotExist{
+					locale.WrapInputError(err, "err_local_project_not_checked_out", "", ns.Project),
+				}
+			}
+			return nil, locale.WrapError(err, "err_project_frompath", "Could not load project from path: {{.V0}}", path)
+		}
+		return proj, nil
 	}
 
 	return nil, &LocalProjectDoesNotExist{
