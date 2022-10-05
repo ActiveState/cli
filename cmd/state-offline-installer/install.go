@@ -193,7 +193,11 @@ func (r *runner) Run(params *Params) error {
 	/* Manually Install uninstaller */
 	if rt.GOOS == "windows" {
 		/* shenanigans because windows won't let you delete an executable that's running */
-		uninstallDir := filepath.Join(params.path, "uninstall-data")
+		installDir, err := filepath.Abs(params.path)
+		if err != nil {
+			return r.handleFailure(err, "Error determining absolute install directory", installerDimensions)
+		}
+		uninstallDir := filepath.Join(installDir, "uninstall-data")
 		if err := os.Mkdir(uninstallDir, os.ModeDir); err != nil {
 			return r.handleFailure(err, "Error creating uninstall directory", installerDimensions)
 		}
@@ -204,15 +208,15 @@ func (r *runner) Run(params *Params) error {
 
 		// create batch script
 		batch := fmt.Sprintf(
-			"@echo off\ncopy %s\\%s %%TEMP%%\\%s\n%%TEMP%%\\%s %s & del %%TEMP%%\\%s >nul 2>&1\n",
+			"@echo off\ncopy %s\\%s %%TEMP%%\\%s >nul 2>&1\n%%TEMP%%\\%s %s & del %%TEMP%%\\%s >nul 2>&1 & echo You can safely ignore the following error message:\n",
 			uninstallDir,
 			uninstallerDestName,
 			uninstallerDestName,
 			uninstallerDestName,
-			params.path,
+			installDir,
 			uninstallerDestName,
 		)
-		err := os.WriteFile(filepath.Join(params.path, "uninstall.bat"), []byte(batch), 0755)
+		err = os.WriteFile(filepath.Join(installDir, "uninstall.bat"), []byte(batch), 0755)
 		if err != nil {
 			return r.handleFailure(err, "Error creating uninstall script", installerDimensions)
 		}
