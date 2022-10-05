@@ -24,15 +24,15 @@ func TestExecutor(t *testing.T) {
 	require.NoError(t, err, errs.Join(err, ": "))
 
 	target := target.NewCustomTarget("owner", "project", "1234abcd-1234-abcd-1234-abcd1234abcd", "dummy/path", target.NewExecTrigger("test"), false)
-	fw := NewInit(binPath)
-	fw.setAltExecSrcPath(dummyExecSrc)
+	execInit := NewInit(binPath)
+	execInit.altExecSrcPath = dummyExecSrc
 
 	exePath := "/i/am/an/exe/"
 	exes := []string{exePath + "a", exePath + "b", exePath + "c"}
 	env := map[string]string{"PATH": "exePath"}
 
 	t.Run("Create executors", func(t *testing.T) {
-		err = fw.Apply("/sock-path", target, env, exes)
+		err = execInit.Apply("/sock-path", target, env, exes)
 		require.NoError(t, err, errs.Join(err, ": "))
 	})
 
@@ -57,7 +57,7 @@ func TestExecutor(t *testing.T) {
 	}
 
 	t.Run("Cleanup old executors", func(t *testing.T) {
-		err = fw.Clean()
+		err = execInit.Clean()
 		require.NoError(t, err, errs.Join(err, ": "))
 
 		files := fileutils.ListDirSimple(binPath, false)

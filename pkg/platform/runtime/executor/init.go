@@ -45,11 +45,6 @@ func NewInit(executorPath string) *Init {
 	}
 }
 
-// setAltExecSrcPath is used for testing.
-func (i *Init) setAltExecSrcPath(path string) {
-	i.altExecSrcPath = path
-}
-
 func (i *Init) ExecutorSrc() (string, error) {
 	if i.altExecSrcPath != "" {
 		return i.altExecSrcPath, nil
