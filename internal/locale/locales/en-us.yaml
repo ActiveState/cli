@@ -354,7 +354,7 @@ unknown_value:
 total:
   other: Total
 projects_description:
-  other: Manage your projects
+  other: List your projects
 projects_list_description:
   other: List your platform projects
 err_api_not_authenticated:
