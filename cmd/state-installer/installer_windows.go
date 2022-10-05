@@ -12,7 +12,6 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
 )
@@ -132,7 +131,7 @@ func removeOldExecutables(dir string) error {
 			logging.Debug("Deleting old file: %s", file.Name())
 			oldFile := filepath.Join(dir, file.Name())
 			if err := os.Remove(oldFile); err != nil {
-				multilog.Error("Failed to remove old executable: %s. Error: %s", oldFile, errs.JoinMessage(err))
+				logging.Debug("Failed to remove old executable: %s. Error: %s", oldFile, errs.JoinMessage(err))
 			}
 		}
 	}
