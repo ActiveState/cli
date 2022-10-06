@@ -5,16 +5,34 @@ import (
 	"os"
 
 	"github.com/ActiveState/cli/errplay/internal/localx"
+	"github.com/ActiveState/cli/internal/locale"
 )
 
 func main() {
 	err := run(wrap1, wrap2, wrap3)
-	fmt.Printf("program: %v\n", err)
+	if err != nil {
+		fmt.Printf("program: %v\n", err)
 
-	for _, userMsg := range localx.UserErrorMessages(err) {
-		fmt.Printf(" [NOTICE][ERROR]x[/RESET] %s\n", userMsg.Err.String())
+		var errTips []string
+		for _, userMsg := range localx.UserErrorMessages(err) {
+			fmt.Printf(" [NOTICE][ERROR]x[/RESET] %s\n", userMsg.Err.String())
+			for _, tip := range userMsg.Tips {
+				errTips = append(errTips, tip.String())
+			}
+		}
+		if len(errTips) > 0 {
+			fmt.Printf("[HEADING]%s[/RESET]\n", locale.Tl("err_more_help", "Need More Help?"))
+			tipFmt := " [DISABLED]•[/RESET] %s\n"
+			for _, errTip := range errTips {
+				fmt.Printf(tipFmt, errTip)
+			}
+			fmt.Printf(tipFmt, localx.MakeL10n("err_help_forum", "[NOTICE]Ask For Help →[/RESET] [ACTIONABLE]{{.V0}}[/RESET]", "https://example.com").String())
+		}
+
+		if trace := localx.Stacktrace(err); trace != nil {
+			fmt.Println(trace)
+		}
 	}
-
 }
 
 type wrapFunc func(error) error
@@ -22,7 +40,9 @@ type wrapFunc func(error) error
 func run(fn1, fn2, fn3 wrapFunc) error {
 	if err := fn1(fn2(fn3(nil))); err != nil {
 		if os.Getenv("ADD_INPUT_ERR") != "" {
-			err = localx.WrapInputError(err, "run_req_fail", "input error")
+			lerr := localx.WrapInputError(err, "run_req_fail", "input error")
+			lerr.AddTip("run_tip", "Try something new")
+			err = lerr
 		}
 		return fmt.Errorf("run: %w", err)
 	}

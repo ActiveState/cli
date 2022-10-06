@@ -8,10 +8,16 @@ import (
 	"github.com/ActiveState/cli/internal/rtutils"
 )
 
+type Err = Error
+
 type L10n struct {
 	key  string
 	val  string
 	args []string
+}
+
+func MakeL10n(key, val string, args ...string) L10n {
+	return L10n{key: key, val: val, args: args}
 }
 
 func (l L10n) String() string {
@@ -24,7 +30,7 @@ type UserErrorMsgs struct {
 }
 
 type InputError struct {
-	err error
+	*Err
 }
 
 func NewInputError(key, val string, args ...string) *InputError {
@@ -76,12 +82,17 @@ func NewError(key, val string, args ...string) *Error {
 }
 
 func WrapError(err error, key, val string, args ...string) *Error {
+	var stack *stacktrace.Stacktrace
+	if st := Stacktrace(err); st == nil {
+		stack = stacktrace.GetWithSkip([]string{rtutils.CurrentFile()})
+	}
+
 	return &Error{
 		err: err,
 		msgs: &UserErrorMsgs{
 			Err: L10n{key, val, args},
 		},
-		stack: stacktrace.GetWithSkip([]string{rtutils.CurrentFile()}),
+		stack: stack,
 	}
 }
 
@@ -97,4 +108,16 @@ func UserErrorMessages(err error) (msgs []*UserErrorMsgs) {
 		err = errors.Unwrap(err)
 	}
 	return msgs
+}
+
+func Stacktrace(err error) *stacktrace.Stacktrace {
+	for err != nil {
+		if serr, ok := err.(interface{ Stack() *stacktrace.Stacktrace }); ok {
+			if stack := serr.Stack(); stack != nil {
+				return stack
+			}
+		}
+		err = errors.Unwrap(err)
+	}
+	return nil
 }
