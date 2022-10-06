@@ -41,11 +41,7 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckout() {
 	if runtime.GOOS == "windows" {
 		pythonExe = pythonExe + ".bat"
 	}
-	cp = ts.SpawnCmdWithOpts(
-		pythonExe,
-		e2e.WithArgs("--version"),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
-	)
+	cp = ts.SpawnCmdWithOpts(pythonExe, e2e.WithArgs("--version"))
 	cp.Expect("Python 3")
 	cp.ExpectExitCode(0)
 }
@@ -63,7 +59,6 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckoutMultiDir() {
 	for x, dir := range dirs {
 		cp := ts.SpawnWithOpts(
 			e2e.WithArgs("checkout", "ActiveState-CLI/Python3", "."),
-			e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=true"),
 			e2e.WithWorkDirectory(dir),
 		)
 		cp.Expect("Checked out")

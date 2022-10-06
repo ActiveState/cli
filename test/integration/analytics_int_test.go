@@ -249,14 +249,11 @@ scripts:
 	cp := ts.SpawnWithOpts(
 		e2e.WithArgs("activate", "ActiveState-CLI/Alternate-Python"),
 		e2e.WithWorkDirectory(ts.Dirs.Work),
-		e2e.AppendEnv(
-			"ACTIVESTATE_CLI_DISABLE_RUNTIME=false",
-		),
 	)
 
 	cp.Expect("Creating a Virtual Environment")
 	cp.Expect("Activated")
-	cp.WaitForInput(120 * time.Second)
+	cp.WaitForInput(10 * time.Second)
 
 	cp = ts.Spawn("run", "pip")
 	cp.Wait()
