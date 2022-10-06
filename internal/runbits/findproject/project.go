@@ -126,7 +126,7 @@ func FromNamespaceLocal(ns *project.Namespaced, cfg projectfile.ConfigGetter, pr
 					locale.WrapInputError(err, "err_local_project_not_checked_out", "", ns.Project),
 				}
 			}
-			return nil, locale.WrapError(err, "err_project_frompath", "Could not load project from path: {{.V0}}", path)
+			return nil, locale.WrapError(err, "err_findproject_frompath", "Could not load project from path: {{.V0}}", path)
 		}
 		return proj, nil
 	}
