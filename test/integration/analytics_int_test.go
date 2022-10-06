@@ -252,6 +252,7 @@ scripts:
 	)
 
 	cp.Expect("Creating a Virtual Environment")
+	cp.Expect("Skipping runtime setup")
 	cp.Expect("Activated")
 	cp.WaitForInput(10 * time.Second)
 

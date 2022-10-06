@@ -53,5 +53,8 @@ func NewFromProject(
 			return nil, locale.WrapError(err, "err_update_runtime", "Could not update runtime installation.")
 		}
 	}
+	if rti.Disabled() {
+		out.Notice(locale.T("notice_runtime_disabled"))
+	}
 	return rti, nil
 }

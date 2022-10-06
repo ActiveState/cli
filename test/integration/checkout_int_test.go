@@ -61,6 +61,7 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckoutMultiDir() {
 			e2e.WithArgs("checkout", "ActiveState-CLI/Python3", "."),
 			e2e.WithWorkDirectory(dir),
 		)
+		cp.Expect("Skipping runtime setup")
 		cp.Expect("Checked out")
 		cp.ExpectExitCode(0)
 		suite.Require().FileExists(filepath.Join(dir, constants.ConfigFileName), "Dir %d", x)
