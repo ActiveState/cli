@@ -288,7 +288,6 @@ func (c *Command) Execute(args []string) error {
 
 func (c *Command) SetExamples(examples ...string) *Command {
 	c.examples = append(c.examples, examples...)
-	c.cobra.Example = strings.Join(c.examples, "\n")
 	return c
 }
 
