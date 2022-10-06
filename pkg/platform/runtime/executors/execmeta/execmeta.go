@@ -26,15 +26,9 @@ type Target struct {
 	Headless   bool
 }
 
-var (
-	MetaFileName = "meta.as"
-
-	sockDelim      = "::sock::"
-	envDelim       = "::env::"
-	binsDelim      = "::bins::"
-	commitDelim    = "::commit-id::"
-	namespaceDelim = "::namespace::"
-	headlessDelim  = "::headless::"
+const (
+	MetaFileName           = "meta.as"
+	metaFileDetectionToken = `"SockPath":`
 )
 
 type ExecMeta struct {
@@ -94,7 +88,7 @@ func (m *ExecMeta) WriteToDisk(dir string) error {
 }
 
 func IsMetaFile(fileContents []byte) bool {
-	return strings.Contains(string(fileContents), envDelim)
+	return strings.Contains(string(fileContents), metaFileDetectionToken)
 }
 
 func readFile(filePath string) ([]byte, error) {
