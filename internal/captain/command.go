@@ -104,6 +104,8 @@ type Command struct {
 
 	unstable bool
 
+	examples []string
+
 	out       output.Outputer
 	analytics analytics.Dispatcher
 	cfg       *config.Instance
@@ -284,6 +286,12 @@ func (c *Command) Execute(args []string) error {
 	return setupSensibleErrors(err)
 }
 
+func (c *Command) SetExamples(examples ...string) *Command {
+	c.examples = append(c.examples, examples...)
+	c.cobra.Example = strings.Join(c.examples, "\n")
+	return c
+}
+
 func (c *Command) SetAliases(aliases ...string) {
 	c.cobra.Aliases = aliases
 }
@@ -302,6 +310,14 @@ func (c *Command) SetHidden(value bool) {
 
 func (c *Command) Hidden() bool {
 	return c.cobra.Hidden
+}
+
+func (c *Command) Unstable() bool {
+	return c.unstable
+}
+
+func (c *Command) Examples() []string {
+	return c.examples
 }
 
 func (c *Command) SetDescription(description string) {
