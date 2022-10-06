@@ -46,11 +46,7 @@ func (suite *UseIntegrationTestSuite) TestUse() {
 	if runtime.GOOS == "windows" {
 		pythonExe = pythonExe + ".bat"
 	}
-	cp = ts.SpawnCmdWithOpts(
-		pythonExe,
-		e2e.WithArgs("--version"),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
-	)
+	cp = ts.SpawnCmdWithOpts(pythonExe, e2e.WithArgs("--version"))
 	cp.Expect("Python 3")
 	cp.ExpectExitCode(0)
 
@@ -71,11 +67,7 @@ func (suite *UseIntegrationTestSuite) TestUse() {
 	cp.ExpectExitCode(0)
 
 	// Verify the new runtime works.
-	cp = ts.SpawnCmdWithOpts(
-		pythonExe,
-		e2e.WithArgs("--version"),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
-	)
+	cp = ts.SpawnCmdWithOpts(pythonExe, e2e.WithArgs("--version"))
 	cp.Expect("Python 3")
 	cp.ExpectExitCode(0)
 
@@ -88,19 +80,12 @@ func (suite *UseIntegrationTestSuite) TestUse() {
 	cp.ExpectExitCode(0)
 
 	// Verify the first runtime is set up correctly and usable.
-	cp = ts.SpawnCmdWithOpts(
-		pythonExe,
-		e2e.WithArgs("--version"),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
-	)
+	cp = ts.SpawnCmdWithOpts(pythonExe, e2e.WithArgs("--version"))
 	cp.Expect("Python 3")
 	cp.ExpectExitCode(0)
 
 	// Test failure switching to project name that was not checked out.
-	cp = ts.SpawnWithOpts(
-		e2e.WithArgs("use", "NotCheckedOut"),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
-	)
+	cp = ts.SpawnWithOpts(e2e.WithArgs("use", "NotCheckedOut"))
 	cp.Expect("Cannot find the NotCheckedOut project.")
 	cp.ExpectExitCode(1)
 }
