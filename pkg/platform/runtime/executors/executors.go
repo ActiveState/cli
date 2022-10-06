@@ -1,4 +1,4 @@
-package executor
+package executors
 
 import (
 	"io/ioutil"
@@ -11,7 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/pkg/platform/runtime/envdef"
-	"github.com/ActiveState/cli/pkg/platform/runtime/executor/execmeta"
+	"github.com/ActiveState/cli/pkg/platform/runtime/executors/execmeta"
 	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/errs"
@@ -33,27 +33,27 @@ type Targeter interface {
 	Headless() bool
 }
 
-type Init struct {
+type Executors struct {
 	executorPath string // The location to store the executors
 
 	altExecSrcPath string // Path to alternate executor for testing. Executor() will use global func if not set.
 }
 
-func NewInit(executorPath string) *Init {
-	return &Init{
+func New(executorPath string) *Executors {
+	return &Executors{
 		executorPath: executorPath,
 	}
 }
 
-func (i *Init) ExecutorSrc() (string, error) {
-	if i.altExecSrcPath != "" {
-		return i.altExecSrcPath, nil
+func (es *Executors) ExecutorSrc() (string, error) {
+	if es.altExecSrcPath != "" {
+		return es.altExecSrcPath, nil
 	}
 	return installation.ExecutorExec()
 }
 
-func (i *Init) Apply(sockPath string, targeter Targeter, env map[string]string, exes envdef.ExecutablePaths) error {
-	logging.Debug("Creating executors at %s, exes: %v", i.executorPath, exes)
+func (es *Executors) Apply(sockPath string, targeter Targeter, env map[string]string, exes envdef.ExecutablePaths) error {
+	logging.Debug("Creating executors at %s, exes: %v", es.executorPath, exes)
 
 	// We need to cover the use case of someone running perl.exe/python.exe
 	// Proper fix scheduled here https://www.pivotaltracker.com/story/show/177845386
@@ -66,27 +66,27 @@ func (i *Init) Apply(sockPath string, targeter Targeter, env map[string]string, 
 		}
 	}
 
-	if err := i.Clean(); err != nil {
+	if err := es.Clean(); err != nil {
 		return errs.Wrap(err, "Could not clean up old executors")
 	}
 
-	if err := fileutils.MkdirUnlessExists(i.executorPath); err != nil {
-		return locale.WrapError(err, "err_mkdir", "Could not create directory: {{.V0}}", i.executorPath)
+	if err := fileutils.MkdirUnlessExists(es.executorPath); err != nil {
+		return locale.WrapError(err, "err_mkdir", "Could not create directory: {{.V0}}", es.executorPath)
 	}
 
 	t := execmeta.Target{}
 	m := execmeta.New(sockPath, osutils.EnvMapToSlice(env), t, exes)
-	if err := m.WriteToDisk(i.executorPath); err != nil {
+	if err := m.WriteToDisk(es.executorPath); err != nil {
 		return err
 	}
 
-	executorExec, err := i.ExecutorSrc()
+	executorExec, err := es.ExecutorSrc()
 	if err != nil {
 		return locale.WrapError(err, "err_state_exec")
 	}
 
 	for _, exe := range exes {
-		if err := copyExecutor(i.executorPath, exe, executorExec); err != nil {
+		if err := copyExecutor(es.executorPath, exe, executorExec); err != nil {
 			return locale.WrapError(err, "err_createexecutor", "Could not create executor for {{.V0}}.", exe)
 		}
 	}
@@ -94,14 +94,14 @@ func (i *Init) Apply(sockPath string, targeter Targeter, env map[string]string, 
 	return nil
 }
 
-func (i *Init) Clean() error {
-	if !fileutils.DirExists(i.executorPath) {
+func (es *Executors) Clean() error {
+	if !fileutils.DirExists(es.executorPath) {
 		return nil
 	}
 
-	files, err := ioutil.ReadDir(i.executorPath)
+	files, err := ioutil.ReadDir(es.executorPath)
 	if err != nil {
-		return errs.Wrap(err, "Could not read dir: %s", i.executorPath)
+		return errs.Wrap(err, "Could not read dir: %s", es.executorPath)
 	}
 
 	for _, file := range files {
@@ -109,7 +109,7 @@ func (i *Init) Clean() error {
 			continue
 		}
 
-		filePath := filepath.Join(i.executorPath, file.Name())
+		filePath := filepath.Join(es.executorPath, file.Name())
 		b, err := fileutils.ReadFile(filePath)
 		if err != nil {
 			return locale.WrapError(err, "err_cleanexecutor_noread", "Could not read potential executor file: {{.V0}}.", file.Name())
@@ -148,7 +148,7 @@ const shimDenoter = "!DO NOT EDIT! State Tool Shim !DO NOT EDIT!"
 func isOwnedByUs(fileContents []byte) bool {
 	return strings.Contains(string(fileContents), "state-exec") ||
 		execmeta.IsMetaFile(fileContents) ||
-		// deprecated
+		//https://www.golangprojects.com/golang-remote-jobs.html/ deprecated
 		strings.Contains(string(fileContents), executorDenoter) ||
 		strings.Contains(string(fileContents), shimDenoter)
 }

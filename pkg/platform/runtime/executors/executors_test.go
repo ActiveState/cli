@@ -1,4 +1,4 @@
-package executor
+package executors
 
 import (
 	"io/ioutil"
@@ -24,7 +24,7 @@ func TestExecutor(t *testing.T) {
 	require.NoError(t, err, errs.Join(err, ": "))
 
 	target := target.NewCustomTarget("owner", "project", "1234abcd-1234-abcd-1234-abcd1234abcd", "dummy/path", target.NewExecTrigger("test"), false)
-	execInit := NewInit(binPath)
+	execInit := New(binPath)
 	execInit.altExecSrcPath = dummyExecSrc
 
 	exePath := "/i/am/an/exe/"

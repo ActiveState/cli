@@ -14,7 +14,7 @@ import (
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/rtutils/p"
 	"github.com/ActiveState/cli/internal/svcctl/svcmsg"
-	"github.com/ActiveState/cli/pkg/platform/runtime/executor/execmeta"
+	"github.com/ActiveState/cli/pkg/platform/runtime/executors/execmeta"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 )
 
@@ -78,7 +78,7 @@ func HeartbeatHandler(reporter RuntimeUsageReporter) ipc.RequestHandler {
 		data := input[len(KeyHeartbeat):]
 		hb := svcmsg.NewHeartbeatFromSvcMsg(data)
 
-		go func() { 
+		go func() {
 			pidNum, err := strconv.Atoi(hb.ProcessID)
 			if err != nil {
 				multilog.Critical("Could not convert pid string (%s) to int in heartbeat handler: %s", hb.ProcessID, err)
