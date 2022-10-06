@@ -39,7 +39,7 @@ func newExecutorMeta(execPath string) (*executorMeta, error) {
 	em := executorMeta{
 		ExecMeta:       meta,
 		MatchingBin:    matchingBin,
-		TransformedEnv: tranformedEnv(os.Environ(), meta.Env),
+		TransformedEnv: transformedEnv(os.Environ(), meta.Env),
 	}
 
 	return &em, nil
@@ -58,28 +58,31 @@ func matchingBinByPath(bins []string, path string) (string, error) {
 	return "", fmt.Errorf("matching binary by path %q", path)
 }
 
-func tranformedEnv(current []string, updates []string) []string {
+// transformedEnv will update the current environment. Update entries are
+// appended (which supersede existing entries) except for: PATH is updated with
+// the update value prepended to the existing PATH.
+func transformedEnv(current []string, updates []string) []string {
 	for _, update := range updates {
 		if strings.HasPrefix(update, pathEnvVarPrefix) {
-			pathUpdate := update[len(pathEnvVarPrefix):]
-			if pathCurrent, ok := getEnvVarValue(current, pathEnvVarPrefix); ok {
-				pathUpdate += pathListSeparator + pathCurrent
+			pathCurrentV, pathCurrentK, ok := getEnvVar(current, pathEnvVarPrefix)
+			if ok {
+				current[pathCurrentK] = update + pathListSeparator + pathCurrentV
+				continue
 			}
-			update = pathEnvVarPrefix + pathUpdate
 		}
 		current = append(current, update)
 	}
 	return current
 }
 
-// getEnvVarValue returns the value of the environment variable from the
+// getEnvVar returns the value and index of the environment variable from the
 // provided environment slice. The prefix should end with the environment
 // variable separator.
-func getEnvVarValue(env []string, prefix string) (string, bool) {
-	for _, v := range env {
+func getEnvVar(env []string, prefix string) (string, int, bool) {
+	for k, v := range env {
 		if strings.HasPrefix(v, prefix) {
-			return v[len(prefix):], true
+			return v[len(prefix):], k, true
 		}
 	}
-	return "", false
+	return "", 0, false
 }
