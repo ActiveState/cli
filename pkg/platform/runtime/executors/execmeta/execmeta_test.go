@@ -25,8 +25,7 @@ func TestExecMeta(t *testing.T) {
 	}
 	m := New("/sock-path", env, tgt, bins)
 	buf := &bytes.Buffer{}
-	_, err := m.WriteTo(buf)
-	if err != nil {
+	if err := m.Encode(buf); err != nil {
 		t.Fatalf("unexpected error: %s", err)
 	}
 

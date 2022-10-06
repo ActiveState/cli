@@ -9,26 +9,15 @@
 package execmeta
 
 import (
-	"bufio"
 	"bytes"
-	"errors"
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 )
-
-/*
-::sock::/tmp/state-ipc/branch_name.sock
-::env::EXAMPLE=value::env::SAMPLE=other::env::THIRD=whatever
-::bins::/home/.cache/deadbeef/bin/python3::bins::/home/.cache/deadbeef/bin/cython
-::commit-id::1234abcd-1234-abcd-1234-abcd1234
-::namespace::owner/name
-::headless::true
-*/
 
 type Target struct {
 	CommitUUID string
@@ -70,39 +59,7 @@ func New(sockPath string, env []string, t Target, bins []string) *ExecMeta {
 
 func NewFromReader(r io.Reader) (*ExecMeta, error) {
 	m := ExecMeta{}
-
-	scnr := bufio.NewScanner(r)
-	iter := -1
-	for scnr.Scan() {
-		iter++
-		txt := scnr.Text()
-
-		switch iter {
-		case 0:
-			m.SockPath = strings.TrimPrefix(txt, sockDelim)
-		case 1:
-			envTxt := strings.TrimPrefix(txt, envDelim)
-			m.Env = strings.Split(envTxt, envDelim)
-		case 2:
-			binsTxt := strings.TrimPrefix(txt, binsDelim)
-			m.Bins = strings.Split(binsTxt, binsDelim)
-		case 3:
-			m.CommitUUID = strings.TrimPrefix(txt, commitDelim)
-		case 4:
-			m.Namespace = strings.TrimPrefix(txt, namespaceDelim)
-		case 5:
-			boolTxt := strings.TrimPrefix(txt, headlessDelim)
-			headless, err := strconv.ParseBool(boolTxt)
-			if err != nil {
-				return nil, err
-			}
-			m.Headless = headless
-		default:
-			return nil, errors.New("unexpected line in meta file")
-		}
-
-	}
-	if err := scnr.Err(); err != nil {
+	if err := json.NewDecoder(r).Decode(&m); err != nil {
 		return nil, err
 	}
 
@@ -119,64 +76,21 @@ func NewFromFile(path string) (*ExecMeta, error) {
 	return NewFromReader(buf)
 }
 
-func (m *ExecMeta) WriteTo(w io.Writer) (int64, error) {
-	aw := newAccumulatingWrite(w)
-
-	aw.fprintf("%s%s\n", sockDelim, m.SockPath)
-	for _, v := range m.Env {
-		aw.fprintf("%s%s", envDelim, v)
-	}
-	aw.fprintf("\n")
-	for _, v := range m.Bins {
-		aw.fprintf("%s%s", binsDelim, v)
-	}
-	aw.fprintf("\n")
-	aw.fprintf("%s%s\n", commitDelim, m.CommitUUID)
-	aw.fprintf("%s%s\n", namespaceDelim, m.Namespace)
-	aw.fprintf("%s%t\n", headlessDelim, m.Headless)
-
-	return aw.total()
+func (m *ExecMeta) Encode(w io.Writer) error {
+	return json.NewEncoder(w).Encode(m)
 }
 
 // WriteToDisk is a convenience func, not intended to be unit tested.
 func (m *ExecMeta) WriteToDisk(dir string) error {
 	path := filepath.Join(dir, MetaFileName)
 	buf := &bytes.Buffer{}
-	if _, err := m.WriteTo(buf); err != nil {
+	if err := m.Encode(buf); err != nil {
 		return err
 	}
 	if err := writeFile(path, buf.Bytes()); err != nil {
 		return err
 	}
 	return nil
-}
-
-type accumulatingWrite struct {
-	w   io.Writer
-	n   int64
-	err error
-}
-
-func newAccumulatingWrite(w io.Writer) *accumulatingWrite {
-	return &accumulatingWrite{
-		w: w,
-	}
-}
-
-func (aw *accumulatingWrite) fprintf(format string, as ...interface{}) {
-	if aw.err != nil {
-		return
-	}
-	n, err := fmt.Fprintf(aw.w, format, as...)
-	if err != nil {
-		aw.err = err
-		return
-	}
-	aw.n += int64(n)
-}
-
-func (aw accumulatingWrite) total() (int64, error) {
-	return aw.n, aw.err
 }
 
 func IsMetaFile(fileContents []byte) bool {
