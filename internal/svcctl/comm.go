@@ -81,7 +81,7 @@ func HeartbeatHandler(reporter RuntimeUsageReporter) ipc.RequestHandler {
 		go func() {
 			pidNum, err := strconv.Atoi(hb.ProcessID)
 			if err != nil {
-				multilog.Critical("Could not convert pid string (%s) to int in heartbeat handler: %s", hb.ProcessID, err)
+				multilog.Error("Could not convert pid string (%s) to int in heartbeat handler: %s", hb.ProcessID, err)
 			}
 
 			var headless, commit, namespace string
