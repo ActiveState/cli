@@ -81,14 +81,15 @@ func HeartbeatHandler(reporter RuntimeUsageReporter) ipc.RequestHandler {
 		go func() {
 			pidNum, err := strconv.Atoi(hb.ProcessID)
 			if err != nil {
-				multilog.Error("Could not convert pid string (%s) to int in heartbeat handler: %s", hb.ProcessID, err)
+				multilog.Error("Heartbeat: Could not convert pid string (%s) to int in heartbeat handler: %s", hb.ProcessID, err)
 			}
 
 			var headless, commit, namespace string
 
 			metaFilePath := filepath.Join(filepath.Dir(hb.ExecPath), execmeta.MetaFileName)
 			if metaData, err := execmeta.NewFromFile(metaFilePath); err != nil {
-				multilog.Critical("Could not create meta data from filepath (%s): %s", metaFilePath, err)
+				multilog.Critical("Heartbeat Failure: Could not create meta data from filepath (%s): %s", metaFilePath, err)
+				return
 			} else {
 				headless = strconv.FormatBool(metaData.Headless)
 				commit = metaData.CommitUUID
@@ -104,12 +105,13 @@ func HeartbeatHandler(reporter RuntimeUsageReporter) ipc.RequestHandler {
 			}
 			dimsJSON, err := dims.Marshal()
 			if err != nil {
-				multilog.Critical("Could not marshal dimensions in heartbeat handler: %s", err)
+				multilog.Critical("Heartbeat Failure: Could not marshal dimensions in heartbeat handler: %s", err)
+				return
 			}
-
 			_, err = reporter.RuntimeUsage(context.Background(), pidNum, hb.ExecPath, dimsJSON)
 			if err != nil {
-				multilog.Critical("Failed to report runtime usage in heartbeat handler: %s", errs.JoinMessage(err))
+				multilog.Critical("Heartbeat Failure: Failed to report runtime usage in heartbeat handler: %s", errs.JoinMessage(err))
+				return
 			}
 		}()
 
