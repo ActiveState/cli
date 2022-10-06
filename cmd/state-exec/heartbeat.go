@@ -11,7 +11,7 @@ import (
 func newHeartbeat() (*svcmsg.Heartbeat, error) {
 	execPath, err := os.Executable()
 	if err != nil {
-		return nil, fmt.Errorf("create new heartbeat: %w", err)
+		return nil, fmt.Errorf("new heartbeat: %w", err)
 	}
 	pid := strconv.Itoa(os.Getpid())
 	hb := svcmsg.NewHeartbeat(pid, execPath)

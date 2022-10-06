@@ -13,23 +13,23 @@ const (
 )
 
 func sendMsgToService(sockPath string, hb *svcmsg.Heartbeat) error {
-	ef := "send msg to service: %w"
+	efmt := "send msg to service: %w"
 
 	conn, err := net.Dial(network, sockPath)
 	if err != nil {
-		return fmt.Errorf(ef, err)
+		return fmt.Errorf(efmt, err)
 	}
 	defer conn.Close()
 
 	_, err = conn.Write([]byte(hb.SvcMsg()))
 	if err != nil {
-		return fmt.Errorf(ef, err)
+		return fmt.Errorf(efmt, err)
 	}
 
 	buf := make([]byte, msgWidth)
 	_, err = conn.Read(buf)
 	if err != nil {
-		return fmt.Errorf(ef, err)
+		return fmt.Errorf(efmt, err)
 	}
 
 	return nil

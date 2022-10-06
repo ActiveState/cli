@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"os/exec"
 )
@@ -13,5 +14,9 @@ func runCmd(meta *executorMeta) error {
 	cmd.Stderr = os.Stderr
 	cmd.Env = meta.TransformedEnv
 
-	return cmd.Run()
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("run command %q: %w", meta.MatchingBin, err)
+	}
+
+	return nil
 }

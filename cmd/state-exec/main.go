@@ -47,8 +47,8 @@ func main() {
 			os.Exit(exitErr.ExitCode())
 		}
 
+		logErr("error: %s", err)
 		logErr(userErrMsg)
-		logErr("%s", err)
 		os.Exit(1)
 	}
 
@@ -56,6 +56,8 @@ func main() {
 }
 
 func run() error {
+	efmt := "run: %w"
+
 	logr.Debug("hello")
 	defer logr.Debug("run goodbye")
 
@@ -67,7 +69,7 @@ func run() error {
 
 	meta, err := newExecutorMeta(hb.ExecPath)
 	if err != nil {
-		return err
+		return fmt.Errorf(efmt, err)
 	}
 	logr.CallIfDebugIsSet(func() {
 		logr.Debug("meta data - bins...")
@@ -85,9 +87,13 @@ func run() error {
 
 	logr.Debug("communications - sock: %s", meta.SockPath)
 	if err := sendMsgToService(meta.SockPath, hb); err != nil {
-		return err
+		return fmt.Errorf(efmt, err)
 	}
 
 	logr.Debug("cmd - running: %s", meta.MatchingBin)
-	return runCmd(meta)
+	if err := runCmd(meta); err != nil {
+		return fmt.Errorf(efmt, err)
+	}
+
+	return nil
 }

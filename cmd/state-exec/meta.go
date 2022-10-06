@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/ActiveState/cli/pkg/platform/runtime/executor/execmeta"
+	"github.com/ActiveState/cli/pkg/platform/runtime/executors/execmeta"
 )
 
 const (
@@ -22,30 +22,37 @@ type executorMeta struct {
 }
 
 func newExecutorMeta(execPath string) (*executorMeta, error) {
+	efmt := "new executor meta: %w"
+
 	execDir := filepath.Dir(execPath)
 	metaPath := filepath.Join(execDir, execmeta.MetaFileName)
 	meta, err := execmeta.NewFromFile(metaPath)
 	if err != nil {
-		return nil, fmt.Errorf("create new executor meta: %w", err)
+		return nil, fmt.Errorf(efmt, err)
+	}
+
+	matchingBin, err := matchingBinByPath(meta.Bins, execPath)
+	if err != nil {
+		return nil, fmt.Errorf(efmt, err)
 	}
 
 	em := executorMeta{
 		ExecMeta:       meta,
-		MatchingBin:    matchingBinByPath(meta.Bins, execPath),
+		MatchingBin:    matchingBin,
 		TransformedEnv: tranformedEnv(os.Environ(), meta.Env),
 	}
 
 	return &em, nil
 }
 
-func matchingBinByPath(bins []string, path string) string {
+func matchingBinByPath(bins []string, path string) (string, error) {
 	name := filepath.Base(path)
 	for _, bin := range bins {
 		if filepath.Base(bin) == name {
-			return bin
+			return bin, nil
 		}
 	}
-	return ""
+	return "", fmt.Errorf("matching binary by path %q", path)
 }
 
 func tranformedEnv(current []string, updates []string) []string {
