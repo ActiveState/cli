@@ -232,6 +232,7 @@ func (suite *RunIntegrationTestSuite) TestRun_Unauthenticated() {
 	suite.createProjectFile(ts, 2)
 
 	cp := ts.SpawnWithOpts(e2e.WithArgs("activate"))
+	cp.Expect("Skipping runtime setup")
 	cp.Expect("Activated")
 	cp.WaitForInput(10 * time.Second)
 

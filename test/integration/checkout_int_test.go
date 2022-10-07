@@ -76,6 +76,7 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckoutWithFlags() {
 
 	// Test checking out to current working directory.
 	cp := ts.SpawnWithOpts(e2e.WithArgs("checkout", "ActiveState-CLI/Python3", "."))
+	cp.Expect("Skipping runtime setup")
 	cp.Expect("Checked out")
 	cp.Expect(ts.Dirs.Work)
 	suite.Assert().True(fileutils.FileExists(filepath.Join(ts.Dirs.Work, constants.ConfigFileName)), "ActiveState-CLI/Python3 was not checked out to the current working directory")
@@ -83,6 +84,7 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckoutWithFlags() {
 	// Test checkout out to a generic path.
 	python3Dir := filepath.Join(ts.Dirs.Work, "MyPython3")
 	cp = ts.SpawnWithOpts(e2e.WithArgs("checkout", "ActiveState-CLI/Python3#6d9280e7-75eb-401a-9e71-0d99759fbad3", python3Dir))
+	cp.Expect("Skipping runtime setup")
 	cp.Expect("Checked out")
 	cp.ExpectExitCode(0)
 
@@ -94,6 +96,7 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckoutWithFlags() {
 	// Test --branch mismatch in non-checked-out project.
 	branchPath := filepath.Join(ts.Dirs.Base, "branch")
 	cp = ts.SpawnWithOpts(e2e.WithArgs("checkout", "ActiveState-CLI/Python-3.9", branchPath, "--branch", "doesNotExist"))
+	cp.Expect("Skipping runtime setup")
 	cp.ExpectLongString("This project has no branch with label matching doesNotExist")
 	cp.ExpectExitCode(1)
 

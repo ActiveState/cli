@@ -27,6 +27,7 @@ func (suite *UseIntegrationTestSuite) TestUse() {
 
 	// Checkout.
 	cp := ts.SpawnWithOpts(e2e.WithArgs("checkout", "ActiveState-CLI/Python3"))
+	cp.Expect("Skipping runtime setup")
 	cp.Expect("Checked out project")
 	cp.ExpectExitCode(0)
 
@@ -49,6 +50,7 @@ func (suite *UseIntegrationTestSuite) TestUse() {
 
 	// Checkout another project.
 	cp = ts.SpawnWithOpts(e2e.WithArgs("checkout", "ActiveState-CLI/Python-3.9"))
+	cp.Expect("Skipping runtime setup")
 	cp.Expect("Checked out project")
 	cp.ExpectExitCode(0)
 
@@ -93,6 +95,7 @@ func (suite *UseIntegrationTestSuite) TestUseCwd() {
 	pythonDir := filepath.Join(ts.Dirs.Work, "MyPython3")
 
 	cp := ts.SpawnWithOpts(e2e.WithArgs("checkout", "ActiveState-CLI/Python3", pythonDir))
+	cp.Expect("Skipping runtime setup")
 	cp.Expect("Checked out project")
 	cp.ExpectExitCode(0)
 
@@ -121,6 +124,7 @@ func (suite *UseIntegrationTestSuite) TestReset() {
 	defer ts.Close()
 
 	cp := ts.SpawnWithOpts(e2e.WithArgs("checkout", "ActiveState-CLI/Python3"))
+	cp.Expect("Skipping runtime setup")
 	cp.Expect("Checked out project")
 	cp.ExpectExitCode(0)
 
@@ -178,6 +182,7 @@ func (suite *UseIntegrationTestSuite) TestShow() {
 	cp.ExpectExitCode(1)
 
 	cp = ts.SpawnWithOpts(e2e.WithArgs("checkout", "ActiveState-CLI/Python3"))
+	cp.Expect("Skipping runtime setup")
 	cp.Expect("Checked out project")
 	cp.ExpectExitCode(0)
 
