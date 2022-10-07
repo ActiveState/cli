@@ -58,7 +58,7 @@ func TestOfflineInstaller(t *testing.T) {
 		defer os.Setenv(constants.DisableRuntime, value)
 	}
 
-	rt, err := runtime.New(offlineTarget, analytics, nil, nil)
+	rt, err := runtime.New(offlineTarget, analytics, nil)
 	require.Error(t, err)
 	assert.True(t, runtime.IsNeedsUpdateError(err), "runtime should require an update")
 	err = rt.Update(nil, eventHandler)

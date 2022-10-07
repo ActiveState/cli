@@ -73,7 +73,7 @@ func (r *Prepare) resetExecutors() error {
 		return errs.Wrap(err, "Could not get project from default project directory")
 	}
 
-	run, err := rt.New(target.NewCustomTarget(proj.Owner(), proj.Name(), proj.CommitUUID(), defaultTargetDir, target.TriggerResetExec, proj.IsHeadless()), r.analytics, r.svcModel, r.out)
+	run, err := rt.New(target.NewCustomTarget(proj.Owner(), proj.Name(), proj.CommitUUID(), defaultTargetDir, target.TriggerResetExec, proj.IsHeadless()), r.analytics, r.svcModel)
 	if err != nil {
 		if rt.IsNeedsUpdateError(err) {
 			return nil // project was never set up, so no executors to reset

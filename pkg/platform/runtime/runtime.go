@@ -17,7 +17,6 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/osutils"
-	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/rtutils/p"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -37,7 +36,6 @@ type Runtime struct {
 	analytics analytics.Dispatcher
 	svcm      *model.SvcModel
 	completed bool
-	out       output.Outputer // only used by disabled runtimes
 }
 
 // NeedsUpdateError is an error returned when the runtime is not completely installed yet.
@@ -68,10 +66,9 @@ func newRuntime(target setup.Targeter, an analytics.Dispatcher, svcModel *model.
 }
 
 // New attempts to create a new runtime from local storage.  If it fails with a NeedsUpdateError, Update() needs to be called to update the locally stored runtime.
-func New(target setup.Targeter, an analytics.Dispatcher, svcm *model.SvcModel, out output.Outputer) (*Runtime, error) {
+func New(target setup.Targeter, an analytics.Dispatcher, svcm *model.SvcModel) (*Runtime, error) {
 	if strings.ToLower(os.Getenv(constants.DisableRuntime)) == "true" {
-		out.Notice(locale.Tl("notice_runtime_disabled", "Skipping runtime setup because it was disabled by an environment variable"))
-		return &Runtime{disabled: true, target: target, out: out}, nil
+		return &Runtime{disabled: true, target: target}, nil
 	}
 	an.Event(anaConsts.CatRuntime, anaConsts.ActRuntimeStart, &dimensions.Values{
 		Trigger:          p.StrP(target.Trigger().String()),
