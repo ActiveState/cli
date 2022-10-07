@@ -147,7 +147,7 @@ func (r *runner) setupRuntime(artifactsPath string, offlineTarget *target.Offlin
 	}
 	eventHandler := events.NewRuntimeEventHandler(offlineProgress, nil, logfile)
 
-	rti, err := runtime.New(offlineTarget, r.analytics, nil)
+	rti, err := runtime.New(offlineTarget, r.analytics, nil, nil)
 	if err != nil {
 		if !runtime.IsNeedsUpdateError(err) {
 			return nil, errs.Wrap(err, "Could not create runtime")

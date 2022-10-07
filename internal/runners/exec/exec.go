@@ -114,7 +114,7 @@ func (s *Exec) Run(params *Params, args ...string) error {
 		rtTarget = target.NewProjectTarget(proj, storage.CachePath(), nil, trigger)
 	}
 
-	rt, err := runtime.New(rtTarget, s.analytics, s.svcModel)
+	rt, err := runtime.New(rtTarget, s.analytics, s.svcModel, s.out)
 	if err != nil {
 		if !runtime.IsNeedsUpdateError(err) {
 			return locale.WrapError(err, "err_activate_runtime", "Could not initialize a runtime for this project.")

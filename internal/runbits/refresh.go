@@ -21,7 +21,7 @@ func RefreshRuntime(auth *authentication.Auth, out output.Outputer, an analytics
 	}
 	target := target.NewProjectTarget(proj, cachePath, &commitID, trigger)
 	isCached := true
-	rt, err := runtime.New(target, an, svcm)
+	rt, err := runtime.New(target, an, svcm, out)
 	if err != nil {
 		if runtime.IsNeedsUpdateError(err) {
 			isCached = false

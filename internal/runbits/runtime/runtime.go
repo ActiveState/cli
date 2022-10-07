@@ -26,7 +26,7 @@ func NewFromProject(
 	out output.Outputer,
 	auth *authentication.Auth) (*rt.Runtime, error) {
 	projectTarget := target.NewProjectTarget(proj, storage.CachePath(), nil, trigger)
-	rti, err := rt.New(projectTarget, an, svcModel)
+	rti, err := rt.New(projectTarget, an, svcModel, out)
 	if err != nil {
 		if !rt.IsNeedsUpdateError(err) {
 			return nil, locale.WrapError(err, "err_activate_runtime", "Could not initialize a runtime for this project.")
@@ -52,9 +52,6 @@ func NewFromProject(
 			}
 			return nil, locale.WrapError(err, "err_update_runtime", "Could not update runtime installation.")
 		}
-	}
-	if rti.Disabled() {
-		out.Notice(locale.T("notice_runtime_disabled"))
 	}
 	return rti, nil
 }
