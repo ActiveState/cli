@@ -31,7 +31,7 @@ func newRemoteProjectsCommand(prime *primer.Values) *captain.Command {
 	return captain.NewCommand(
 		"remote",
 		locale.Tl("projects_remote_title", "Listing Remote Projects"),
-		locale.Tl("projects_remote_description", "Manage all projects, including ones you have not checked out locally"),
+		locale.Tl("projects_remote_description", "List all projects, including ones you have not checked out locally"),
 		prime,
 		[]*captain.Flag{},
 		[]*captain.Argument{},
