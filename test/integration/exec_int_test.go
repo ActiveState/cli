@@ -179,10 +179,8 @@ func (suite *ExecIntegrationTestSuite) TestExecWithPath() {
 
 	pythonDir := filepath.Join(ts.Dirs.Work, "MyPython3")
 
-	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("checkout", "ActiveState-CLI/Python-3.9", pythonDir),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
-	)
+	cp := ts.SpawnWithOpts(e2e.WithArgs("checkout", "ActiveState-CLI/Python-3.9", pythonDir))
+	cp.Expect("Skipping runtime setup")
 	cp.Expect("Checked out project")
 	cp.ExpectExitCode(0)
 

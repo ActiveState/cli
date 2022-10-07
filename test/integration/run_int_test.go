@@ -231,12 +231,10 @@ func (suite *RunIntegrationTestSuite) TestRun_Unauthenticated() {
 
 	suite.createProjectFile(ts, 2)
 
-	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("activate"),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
-	)
-	cp.Expect("Activated", 40*time.Second)
-	cp.WaitForInput(120 * time.Second)
+	cp := ts.SpawnWithOpts(e2e.WithArgs("activate"))
+	cp.Expect("Skipping runtime setup")
+	cp.Expect("Activated")
+	cp.WaitForInput(10 * time.Second)
 
 	cp.SendLine(fmt.Sprintf("%s run testMultipleLanguages", cp.Executable()))
 	cp.Expect("2")

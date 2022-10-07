@@ -47,7 +47,8 @@ func (suite *ActivateIntegrationTestSuite) TestActivateWithoutRuntime() {
 	defer ts.Close()
 
 	cp := ts.Spawn("activate", "ActiveState-CLI/Python2")
-	cp.Expect("Activated", 30*time.Second)
+	cp.Expect("Skipping runtime setup")
+	cp.Expect("Activated")
 	cp.WaitForInput()
 
 	cp.SendLine("exit 123")
@@ -61,10 +62,9 @@ func (suite *ActivateIntegrationTestSuite) TestActivateUsingCommitID() {
 
 	cp := ts.SpawnWithOpts(
 		e2e.WithArgs("activate", "ActiveState-CLI/Python3#6d9280e7-75eb-401a-9e71-0d99759fbad3", "--path", ts.Dirs.Work),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
-
-	cp.Expect("Activated", 40*time.Second)
+	cp.Expect("Skipping runtime setup")
+	cp.Expect("Activated")
 	cp.WaitForInput(10 * time.Second)
 
 	cp.SendLine("exit")
@@ -76,11 +76,9 @@ func (suite *ActivateIntegrationTestSuite) TestActivateNotOnPath() {
 	ts := e2e.NewNoPathUpdate(suite.T(), false)
 	defer ts.Close()
 
-	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("activate", "activestate-cli/small-python", "--path", ts.Dirs.Work),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
-	)
-	cp.Expect("Activated", 40*time.Second)
+	cp := ts.SpawnWithOpts(e2e.WithArgs("activate", "activestate-cli/small-python", "--path", ts.Dirs.Work))
+	cp.Expect("Skipping runtime setup")
+	cp.Expect("Activated")
 	cp.WaitForInput(10 * time.Second)
 
 	if runtime.GOOS == "windows" {
@@ -446,7 +444,6 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_JSON() {
 
 	cp := ts.SpawnWithOpts(
 		e2e.WithArgs("activate", "ActiveState-CLI/small-python", "--output", "json", "--path", ts.Dirs.Work),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cp.Expect(`"ACTIVESTATE_ACTIVATED":"`, 60*time.Second)
 	cp.ExpectExitCode(0)
@@ -481,11 +478,8 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_AlreadyActive() {
 
 	namespace := "ActiveState-CLI/Python3"
 
-	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("activate", namespace),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
-	)
-
+	cp := ts.SpawnWithOpts(e2e.WithArgs("activate", namespace))
+	cp.Expect("Skipping runtime setup")
 	cp.Expect("Activated")
 	// ensure that shell is functional
 	cp.WaitForInput()
@@ -503,11 +497,8 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_AlreadyActive_SameNamesp
 
 	namespace := "ActiveState-CLI/Python3"
 
-	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("activate", namespace),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
-	)
-
+	cp := ts.SpawnWithOpts(e2e.WithArgs("activate", namespace))
+	cp.Expect("Skipping runtime setup")
 	cp.Expect("Activated")
 	// ensure that shell is functional
 	cp.WaitForInput()
@@ -525,11 +516,8 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_AlreadyActive_DifferentN
 
 	namespace := "ActiveState-CLI/Python3"
 
-	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("activate", namespace),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
-	)
-
+	cp := ts.SpawnWithOpts(e2e.WithArgs("activate", namespace))
+	cp.Expect("Skipping runtime setup")
 	cp.Expect("Activated")
 	// ensure that shell is functional
 	cp.WaitForInput()
@@ -549,9 +537,8 @@ func (suite *ActivateIntegrationTestSuite) TestActivateBranch() {
 
 	cp := ts.SpawnWithOpts(
 		e2e.WithArgs("activate", namespace, "--branch", "firstbranch"),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
-
+	cp.Expect("Skipping runtime setup")
 	cp.Expect("Activated")
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
@@ -565,10 +552,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivateBranchNonExistant() {
 
 	namespace := "ActiveState-CLI/Branches"
 
-	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("activate", namespace, "--branch", "does-not-exist"),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
-	)
+	cp := ts.SpawnWithOpts(e2e.WithArgs("activate", namespace, "--branch", "does-not-exist"))
 
 	cp.Expect("has no branch")
 }
