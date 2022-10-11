@@ -11,6 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
+	"github.com/thoas/go-funk"
 )
 
 // LocalProjectDoesNotExist is an error returned when a requested project is not checked out locally.
@@ -66,9 +67,12 @@ func FromNamespaceLocal(ns *project.Namespaced, cfg projectfile.ConfigGetter, pr
 		return project.FromPath(root)
 	}
 
+	// Get the stale project mapping early as GetProjectMapping will clean stale projects
+	staleProjects := projectfile.GetStaleProjectMapping(cfg)
+
 	matchingProjects := make(map[string][]string)
 	matchingNamespaces := make([]string, 0)
-	for namespace, paths := range projectfile.GetStaleProjectMapping(cfg) {
+	for namespace, paths := range projectfile.GetProjectMapping(cfg) {
 		if len(paths) == 0 {
 			continue
 		}
@@ -119,16 +123,15 @@ func FromNamespaceLocal(ns *project.Namespaced, cfg projectfile.ConfigGetter, pr
 			}
 		}
 
-		proj, err := project.FromPath(path)
-		if err != nil {
-			if errs.Matches(err, &projectfile.ErrorNoProject{}) {
-				return nil, &LocalProjectDoesNotExist{
-					locale.WrapInputError(err, "err_local_project_not_checked_out", "", ns.Project),
-				}
+		return project.FromPath(path)
+	}
+
+	for namespace, paths := range staleProjects {
+		if funk.Contains(namespace, ns.Project) && len(paths) > 0 {
+			return nil, &LocalProjectDoesNotExist{
+				locale.NewInputError("err_findproject_notfound", "", ns.Project, paths[0]),
 			}
-			return nil, locale.WrapError(err, "err_findproject_frompath", "Could not load project from path: {{.V0}}", path)
 		}
-		return proj, nil
 	}
 
 	return nil, &LocalProjectDoesNotExist{
