@@ -79,7 +79,7 @@ func FromNamespaceLocal(ns *project.Namespaced, cfg projectfile.ConfigGetter, pr
 			logging.Debug("Cannot parse namespace: %v") // should not happen since this is stored
 			continue
 		}
-		if ns.Equal(namespaced) {
+		if ns.ProjectIsEqual(namespaced) {
 			matchingProjects[namespace] = paths
 			matchingNamespaces = append(matchingNamespaces, namespace)
 		}
@@ -129,7 +129,7 @@ func FromNamespaceLocal(ns *project.Namespaced, cfg projectfile.ConfigGetter, pr
 			continue
 		}
 
-		if ns.Equal(namespaced) && len(paths) > 0 {
+		if ns.ProjectIsEqual(namespaced) && len(paths) > 0 {
 			return nil, &LocalProjectDoesNotExist{
 				locale.NewInputError("err_findproject_notfound", "", ns.Project, paths[0]),
 			}

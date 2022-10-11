@@ -94,7 +94,7 @@ func (ns *Namespaced) Validate() error {
 	return nil
 }
 
-func (ns *Namespaced) Equal(other *Namespaced) bool {
+func (ns *Namespaced) ProjectIsEqual(other *Namespaced) bool {
 	if ns == nil || other == nil {
 		return false
 	}
