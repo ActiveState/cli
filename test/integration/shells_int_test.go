@@ -15,7 +15,7 @@ type ShellsIntegrationTestSuite struct {
 }
 
 func (suite *ShellsIntegrationTestSuite) TestShells() {
-	suite.OnlyRunForTags(tagsuite.Critical)
+	suite.OnlyRunForTags(tagsuite.Critical, tagsuite.Shell)
 
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
