@@ -93,7 +93,7 @@ func (suite *ShellsIntegrationTestSuite) TestShells() {
 		}
 		cp.SendLine("exit")
 		cp.Expect("Deactivated")
-		if shell != "cmd" {
+		if shell != "fish" && shell != "cmd" {
 			cp.ExpectExitCode(0) // verify exiting the shell worked
 		}
 	}
