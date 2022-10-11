@@ -1,13 +1,13 @@
 package integration
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"runtime"
 	"testing"
 
 	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/stretchr/testify/suite"
@@ -54,7 +54,7 @@ func (suite *ShellIntegrationTestSuite) TestShell() {
 		suite.Require().NoError(err)
 
 		cp = ts.Spawn("shell", projectName)
-		cp.ExpectLongString(locale.Tl("err_findproject_notfound", "", projectName, projectDir))
+		cp.ExpectLongString(fmt.Sprintf("Could not load project %s from path: %s", projectName, projectDir))
 	}
 
 	// Check for project not checked out.
