@@ -81,12 +81,15 @@ func (suite *ShellsIntegrationTestSuite) TestShells() {
 		cp.WaitForInput()
 		cp.SendLine("python3 --version")
 		cp.Expect("Python 3.10") // verify runtime is functioning properly
-		if shell != "cmd" {
-			cp.SendLine("echo $0")
-			cp.Expect(shell) // verify the expected shell is running
-		} else {
+		if shell == "cmd" {
 			cp.SendLine("echo %COMSPEC%")
 			cp.Expect("cmd.exe") // verify the expected shell is running
+		} else if shell == "fish" {
+			cp.SendLine("echo $fish_pid")
+			cp.ExpectRe("\\d+") // verify the expected shell is running
+		} else {
+			cp.SendLine("echo $0")
+			cp.Expect(shell) // verify the expected shell is running
 		}
 		cp.SendLine("exit")
 		cp.Expect("Deactivated")
