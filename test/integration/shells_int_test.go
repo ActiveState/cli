@@ -50,14 +50,16 @@ func (suite *ShellsIntegrationTestSuite) TestShells() {
 			cp = ts.SpawnInCmd(args)
 		}
 		cp.Expect("Checked out project")
-		cp.ExpectExitCode(0)
+		if shell != "cmd" {
+			cp.ExpectExitCode(0)
+		}
 
 		// There are 2 or more instances checked out, so we should get a prompt in whichever shell we
 		// use.
 		args = "shell small-python"
 		env := e2e.AppendEnv(
 			"ACTIVESTATE_CLI_DISABLE_RUNTIME=false",
-			"SHELL=",
+			"SHELL="+shell,
 		)
 		if shell == "bash" {
 			cp = ts.SpawnInBash(args, env)
