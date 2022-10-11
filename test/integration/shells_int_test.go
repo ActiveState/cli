@@ -78,7 +78,7 @@ func (suite *ShellsIntegrationTestSuite) TestShells() {
 		cp.SendLine("python3 --version")
 		cp.Expect("Python 3.10") // verify runtime is functioning properly
 		if shell != "cmd" {
-			cp.SendLine("echo $SHELL")
+			cp.SendLine("echo $0")
 			cp.Expect(shell) // verify the expected shell is running
 		} else {
 			cp.SendLine("echo %COMSPEC%")
