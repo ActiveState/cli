@@ -12,12 +12,15 @@ Aliases:
     {{.Cobra.NameAndAliases}}
 {{- end}}
 
+{{- if .Cmd.Examples  }}
+
 Examples:
 {{- range  .Cmd.Examples }} 
     {{ . -}}
-{{ end }}
+{{- end }}
+{{- end }}
 
-{{childCommands .Cmd}}
+{{- childCommands .Cmd}}
 {{- if .Cobra.HasAvailableFlags}}
 
 Flags:
