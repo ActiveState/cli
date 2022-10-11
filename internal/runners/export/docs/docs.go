@@ -4,6 +4,7 @@ import (
 	_ "embed"
 
 	"github.com/ActiveState/cli/internal/captain"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/strutils"
@@ -28,28 +29,44 @@ var tpl string
 
 func (d *Docs) Run(p *Params, cmd *captain.Command) error {
 	stateCmd := cmd.TopParent()
-	children := grabChildren(stateCmd)
+	commands := make([][]*captain.Command, 0)
+	commands = append(commands, grabChildren(stateCmd, false))
+	commands = append(commands, grabChildren(stateCmd, true))
 
-	out, err := strutils.ParseTemplate(tpl, map[string]interface{}{
-		"Commands": children,
-	})
-	if err != nil {
-		return err
+	var output string
+	for _, cmds := range commands {
+		out, err := strutils.ParseTemplate(tpl, map[string]interface{}{
+			"Commands": cmds,
+		})
+		if err != nil {
+			return errs.Wrap(err, "Could not parse template")
+		}
+		output += out
 	}
 
-	d.output.Print(out)
+	d.output.Print(output)
 
 	return nil
 }
 
-func grabChildren(cmd *captain.Command) []*captain.Command {
+func grabChildren(cmd *captain.Command, includeUnstable bool) []*captain.Command {
 	children := []*captain.Command{}
 	for _, child := range cmd.Children() {
-		if child.Hidden() {
+		if skipCommand(child, includeUnstable) {
 			continue
 		}
 		children = append(children, child)
-		children = append(children, grabChildren(child)...)
+		children = append(children, grabChildren(child, includeUnstable)...)
 	}
+
 	return children
+}
+
+func skipCommand(cmd *captain.Command, includeUnstable bool) bool {
+	check := cmd.Hidden() || cmd.Unstable()
+	if includeUnstable {
+		check = !cmd.Unstable()
+	}
+
+	return check
 }
