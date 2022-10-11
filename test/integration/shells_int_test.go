@@ -73,9 +73,11 @@ func (suite *ShellsIntegrationTestSuite) TestShells() {
 			cp = ts.SpawnInCmd(args, env)
 		}
 		cp.Expect("Multiple project paths")
-		cp.SendLine("\n")                           // just pick the first one
-		cp.Expect("Activated")                      // this means the selection prompt worked
-		cp.Expect("[ActiveState-CLI/small-python]") // verify shell prompt contains the right info
+		cp.SendLine("\n")      // just pick the first one
+		cp.Expect("Activated") // this means the selection prompt worked
+		if shell != "tcsh" {   // tcsh prompt does not behave like other shells' prompts
+			cp.Expect("[ActiveState-CLI/small-python]") // verify shell prompt contains the right info
+		}
 		cp.WaitForInput()
 		cp.SendLine("python3 --version")
 		cp.Expect("Python 3.10") // verify runtime is functioning properly
@@ -88,7 +90,9 @@ func (suite *ShellsIntegrationTestSuite) TestShells() {
 		}
 		cp.SendLine("exit")
 		cp.Expect("Deactivated")
-		cp.ExpectExitCode(0) // verify exiting the shell worked
+		if shell != "cmd" {
+			cp.ExpectExitCode(0) // verify exiting the shell worked
+		}
 	}
 }
 
