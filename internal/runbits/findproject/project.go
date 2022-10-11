@@ -2,7 +2,6 @@ package findproject
 
 import (
 	"sort"
-	"strings"
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
@@ -11,7 +10,6 @@ import (
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
-	"github.com/thoas/go-funk"
 )
 
 // LocalProjectDoesNotExist is an error returned when a requested project is not checked out locally.
@@ -76,14 +74,12 @@ func FromNamespaceLocal(ns *project.Namespaced, cfg projectfile.ConfigGetter, pr
 		if len(paths) == 0 {
 			continue
 		}
-		var namespaced project.Namespaced
-		err := namespaced.Set(namespace)
+		namespaced, err := project.ParseNamespace(namespace)
 		if err != nil {
 			logging.Debug("Cannot parse namespace: %v") // should not happen since this is stored
 			continue
 		}
-		if (!ns.AllowOmitOwner && strings.ToLower(namespaced.String()) == strings.ToLower(ns.String())) ||
-			(ns.AllowOmitOwner && strings.ToLower(namespaced.Project) == strings.ToLower(ns.Project)) {
+		if ns.Equal(namespaced) {
 			matchingProjects[namespace] = paths
 			matchingNamespaces = append(matchingNamespaces, namespace)
 		}
@@ -127,7 +123,13 @@ func FromNamespaceLocal(ns *project.Namespaced, cfg projectfile.ConfigGetter, pr
 	}
 
 	for namespace, paths := range staleProjects {
-		if funk.Contains(namespace, ns.Project) && len(paths) > 0 {
+		namespaced, err := project.ParseNamespace(namespace)
+		if err != nil {
+			logging.Debug("Cannot parse namespace: %v") // should not happen since this is stored
+			continue
+		}
+
+		if ns.Equal(namespaced) && len(paths) > 0 {
 			return nil, &LocalProjectDoesNotExist{
 				locale.NewInputError("err_findproject_notfound", "", ns.Project, paths[0]),
 			}
