@@ -2,6 +2,7 @@ package findproject
 
 import (
 	"sort"
+	"strings"
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
@@ -79,7 +80,8 @@ func FromNamespaceLocal(ns *project.Namespaced, cfg projectfile.ConfigGetter, pr
 			logging.Debug("Cannot parse namespace: %v") // should not happen since this is stored
 			continue
 		}
-		if ns.ProjectIsEqual(namespaced) {
+		if !ns.AllowOmitOwner && strings.EqualFold(strings.ToLower(namespaced.String()), strings.ToLower(ns.String())) ||
+			(ns.AllowOmitOwner && strings.EqualFold(strings.ToLower(namespaced.Project), strings.ToLower(ns.Project))) {
 			matchingProjects[namespace] = paths
 			matchingNamespaces = append(matchingNamespaces, namespace)
 		}
@@ -129,7 +131,8 @@ func FromNamespaceLocal(ns *project.Namespaced, cfg projectfile.ConfigGetter, pr
 			continue
 		}
 
-		if ns.ProjectIsEqual(namespaced) && len(paths) > 0 {
+		if !ns.AllowOmitOwner && strings.EqualFold(strings.ToLower(namespaced.String()), strings.ToLower(ns.String())) ||
+			(ns.AllowOmitOwner && strings.EqualFold(strings.ToLower(namespaced.Project), strings.ToLower(ns.Project))) && len(paths) > 0 {
 			return nil, &LocalProjectDoesNotExist{
 				locale.NewInputError("err_findproject_notfound", "", ns.Project, paths[0]),
 			}

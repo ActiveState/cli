@@ -3,7 +3,6 @@ package project
 import (
 	"fmt"
 	"regexp"
-	"strings"
 
 	"github.com/go-openapi/strfmt"
 
@@ -92,15 +91,6 @@ func (ns *Namespaced) Validate() error {
 		return locale.NewInputError("err_invalid_namespace", "", ns.String())
 	}
 	return nil
-}
-
-func (ns *Namespaced) ProjectIsEqual(other *Namespaced) bool {
-	if ns == nil || other == nil {
-		return false
-	}
-
-	return !ns.AllowOmitOwner && strings.EqualFold(strings.ToLower(other.String()), strings.ToLower(ns.String())) ||
-		(ns.AllowOmitOwner && strings.EqualFold(strings.ToLower(other.Project), strings.ToLower(ns.Project)))
 }
 
 // ParseNamespace returns a valid project namespace
