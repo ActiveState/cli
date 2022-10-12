@@ -84,23 +84,18 @@ func HeartbeatHandler(reporter RuntimeUsageReporter) ipc.RequestHandler {
 				multilog.Error("Heartbeat: Could not convert pid string (%s) to int in heartbeat handler: %s", hb.ProcessID, err)
 			}
 
-			var headless, commit, namespace string
-
 			metaFilePath := filepath.Join(filepath.Dir(hb.ExecPath), execmeta.MetaFileName)
-			if metaData, err := execmeta.NewFromFile(metaFilePath); err != nil {
+			metaData, err := execmeta.NewFromFile(metaFilePath)
+			if err != nil {
 				multilog.Critical("Heartbeat Failure: Could not create meta data from filepath (%s): %s", metaFilePath, err)
 				return
-			} else {
-				headless = strconv.FormatBool(metaData.Headless)
-				commit = metaData.CommitUUID
-				namespace = metaData.Namespace
 			}
 
 			dims := &dimensions.Values{
 				Trigger:          p.StrP(target.TriggerExec.String()),
-				Headless:         &headless,
-				CommitID:         &commit,
-				ProjectNameSpace: &namespace,
+				Headless:         p.StrP(strconv.FormatBool(metaData.Headless)),
+				CommitID:         p.StrP(metaData.CommitUUID),
+				ProjectNameSpace: p.StrP(metaData.Namespace),
 				InstanceID:       p.StrP(instanceid.Make()),
 			}
 			dimsJSON, err := dims.Marshal()
