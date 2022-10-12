@@ -68,6 +68,9 @@ scripts:
       export GO111MODULE=on
       goflags="${GOFLAGS}"; unset GOFLAGS
       GOFLAGS="${goflags}"
+      pushd ~
+      go install github.com/sanderhahn/gozip/cmd/gozip@latest
+      popd
       $scripts.install-deps-os
   - name: install-deps-os
     language: bash

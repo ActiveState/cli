@@ -1,27 +1,37 @@
 constants:
-  - name: OFFLINE_INSTALL
+  - name: BUILD_OFFINSTALL_TARGET
     if: ne .OS.Name "Windows"
     value: offline-installer
-  - name: OFFLINE_INSTALL
+  - name: BUILD_OFFINSTALL_TARGET
     if: eq .OS.Name "Windows"
     value: offline-installer.exe
-  - name: OFFLINE_INSTALL_PKGS
+  - name: OFFINSTALL_PKGS
     value: ./cmd/state-offline-installer
-  - name: OFFLINE_UNINSTALL
+  - name: BUILD_OFFUNINSTALL_TARGET
     if: ne .OS.Name "Windows"
-    value: offline-uninstaller
-  - name: OFFLINE_UNINSTALL
+    value: uninstall
+  - name: BUILD_OFFUNINSTALL_TARGET
     if: eq .OS.Name "Windows"
-    value: offline-uninstaller.exe
-  - name: OFFLINE_UNINSTALL_PKGS
+    value: uninstall.exe
+  - name: OFFUNINSTALL_PKGS
     value: ./cmd/state-offline-uninstaller
 scripts:
-  - name: build-offline-install
+  - name: build-offline-installer
     language: bash
     description: Builds the project with the host OS as the target OS.
     value: |
       set -e
       $constants.SET_ENV
 
-      go build -tags "$GO_BUILD_TAGS" -o $BUILD_TARGET_DIR/offline/$constants.OFFLINE_INSTALL $constants.CLI_BUILDFLAGS $constants.OFFLINE_INSTALL_PKGS
-      go build -tags "$GO_BUILD_TAGS" -o $BUILD_TARGET_DIR/offline/$constants.OFFLINE_UNINSTALL $constants.CLI_BUILDFLAGS $constants.OFFLINE_UNINSTALL_PKGS
+      rm $BUILD_TARGET_DIR/offline/${constants.BUILD_OFFINSTALL_TARGET} || :
+      go build -tags "$GO_BUILD_TAGS" -o $BUILD_TARGET_DIR/offline/$constants.BUILD_OFFINSTALL_TARGET $constants.CLI_BUILDFLAGS $constants.OFFINSTALL_PKGS
+      go build -tags "$GO_BUILD_TAGS" -o $BUILD_TARGET_DIR/offline/$constants.BUILD_OFFUNINSTALL_TARGET $constants.CLI_BUILDFLAGS $constants.OFFUNINSTALL_PKGS
+  - name: pkg-offline-installer
+    language: bash
+    description: Packages the installer / uninstaller with the assets it requires
+    value: |
+      set -e
+      $constants.SET_ENV
+
+      cd $BUILD_TARGET_DIR/offline/
+      gozip -c ${constants.BUILD_OFFINSTALL_TARGET} artifacts.tar.gz LICENSE.txt installer_config.json $constants.BUILD_OFFUNINSTALL_TARGET

@@ -267,6 +267,16 @@ func CopyFile(src, target string) error {
 	return nil
 }
 
+func CopyMultipleFiles(files map[string]string) error {
+	for src, target := range files {
+		err := CopyFile(src, target)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // ReadFileUnsafe is an unsafe version of ioutil.ReadFile, DO NOT USE THIS OUTSIDE OF TESTS
 func ReadFileUnsafe(src string) []byte {
 	b, err := ioutil.ReadFile(src)
@@ -946,6 +956,19 @@ func ListDirSimple(sourcePath string, includeDirs bool) []string {
 		result = append(result, path)
 		return nil
 	})
+	return result
+}
+
+// ListFilesUnsafe lists filepaths under the given sourcePath non-recursively
+func ListFilesUnsafe(sourcePath string) []string {
+	result := []string{}
+	files, err := ioutil.ReadDir(sourcePath)
+	if err != nil {
+		panic(err)
+	}
+	for _, file := range files {
+		result = append(result, filepath.Join(sourcePath, file.Name()))
+	}
 	return result
 }
 
