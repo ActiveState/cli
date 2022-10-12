@@ -11,6 +11,8 @@ import (
 	"time"
 
 	"github.com/ActiveState/archiver"
+	"github.com/ActiveState/cli/internal/analytics/client/sync/reporters"
+	anaConst "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/exeutils"
@@ -45,6 +47,9 @@ func (suite *OffInstallIntegrationTestSuite) TestInstallAndUninstall() {
 	ts := e2e.New(suite.T(), true)
 	defer ts.Close()
 
+	testReportFilename := filepath.Join(ts.Dirs.Config, reporters.TestReportFilename)
+	suite.Require().NoFileExists(testReportFilename)
+
 	fmt.Printf("Work dir: %s\n", ts.Dirs.Work)
 
 	suite.preparePayload(ts)
@@ -64,6 +69,19 @@ func (suite *OffInstallIntegrationTestSuite) TestInstallAndUninstall() {
 		tp.Expect("Setup environment for installed project?")
 		tp.Send("Y")
 		tp.ExpectExitCode(0)
+
+		// Verify that our analytics event was fired
+		time.Sleep(2 * time.Second) // give time to let rtwatcher detect process has exited
+		events := parseAnalyticsEvents(suite, ts)
+		suite.Require().NotEmpty(events)
+		nHeartbeat := countEvents(events, anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat)
+		if nHeartbeat != 1 {
+			suite.FailNow(fmt.Sprintf("Expected 1 heartbeat event, got %d, events:\n%#v", nHeartbeat, events))
+		}
+		nDelete := countEvents(events, anaConst.CatRuntimeUsage, anaConst.ActRuntimeDelete)
+		if nDelete != 0 {
+			suite.FailNow(fmt.Sprintf("Expected 0 delete events, got %d, events:\n%#v", nDelete, events))
+		}
 
 		// Ensure shell env is updated
 		suite.assertShellUpdated(targetDir, true)
@@ -96,6 +114,18 @@ func (suite *OffInstallIntegrationTestSuite) TestInstallAndUninstall() {
 
 		// Ensure installation files are removed
 		suite.assertInstallDir(targetDir, false)
+
+		// Verify that our analytics event was fired
+		events := parseAnalyticsEvents(suite, ts)
+		suite.Require().NotEmpty(events)
+		nHeartbeat := countEvents(events, anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat)
+		if nHeartbeat != 1 {
+			suite.FailNow(fmt.Sprintf("Expected 1 heartbeat event, got %d, events:\n%#v", nHeartbeat, events))
+		}
+		nDelete := countEvents(events, anaConst.CatRuntimeUsage, anaConst.ActRuntimeDelete)
+		if nDelete != 1 {
+			suite.FailNow(fmt.Sprintf("Expected 1 delete events, got %d, events:\n%#v", nDelete, events))
+		}
 	}
 }
 

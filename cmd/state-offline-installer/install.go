@@ -130,7 +130,7 @@ func (r *runner) Run(params *Params) error {
 	installerDimensions := &dimensions.Values{
 		ProjectID: config.ProjectID,
 		CommitID:  config.CommitID,
-		Trigger:   p.StrP(target.TriggerCliOfflineInstaller.String()),
+		Trigger:   p.StrP(target.TriggerOfflineInstaller.String()),
 	}
 	r.Event("start", installerDimensions)
 
@@ -162,8 +162,7 @@ func (r *runner) Run(params *Params) error {
 	}
 
 	/* Install Artifacts */
-	offlineTarget := target.NewOfflineTarget(params.path, artifactsPath)
-	asrt, err := r.setupRuntime(artifactsPath, offlineTarget, logfile)
+	asrt, err := r.setupRuntime(artifactsPath, params.path, logfile)
 	if err != nil {
 		return r.handleFailure(err, "Could not setup runtime", installerDimensions)
 	}
@@ -250,8 +249,11 @@ func (r *runner) Run(params *Params) error {
 	return nil
 }
 
-func (r *runner) setupRuntime(artifactsPath string, offlineTarget *target.OfflineTarget, logfile *buildlogfile.BuildLogFile) (*runtime.Runtime, error) {
+func (r *runner) setupRuntime(artifactsPath string, targetPath string, logfile *buildlogfile.BuildLogFile) (*runtime.Runtime, error) {
 	r.out.Print(fmt.Sprintf("Stage 3 of 3 Start: Installing artifacts from: %s", artifactsPath))
+
+	offlineTarget := target.NewOfflineTarget(targetPath, artifactsPath)
+	offlineTarget.SetTrigger(target.TriggerOfflineInstaller)
 
 	offlineProgress := newOfflineProgressOutput(r.out)
 	eventHandler := events.NewRuntimeEventHandler(offlineProgress, nil, logfile)

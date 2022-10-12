@@ -102,7 +102,7 @@ func (r *runner) Run(params *Params) error {
 	installerDimensions := &dimensions.Values{
 		ProjectID: installerConfig.ProjectID,
 		CommitID:  installerConfig.CommitID,
-		Trigger:   p.StrP(target.TriggerCliOfflineUninstaller.String()),
+		Trigger:   p.StrP(target.TriggerOfflineUninstaller.String()),
 	}
 	r.analytics.Event(ac.CatOfflineInstaller, ac.ActOfflineInstallerStart, installerDimensions)
 

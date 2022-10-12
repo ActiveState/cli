@@ -21,24 +21,24 @@ func (t Trigger) String() string {
 }
 
 const (
-	TriggerActivate              Trigger = "activate"
-	TriggerScript                Trigger = "script"
-	TriggerDeploy                Trigger = "deploy"
-	TriggerExec                  Trigger = "exec"
-	TriggerResetExec             Trigger = "reset-exec"
-	TriggerSwitch                Trigger = "switch"
-	TriggerImport                Trigger = "import"
-	TriggerPackage               Trigger = "package"
-	TriggerPull                  Trigger = "pull"
-	TriggerReset                 Trigger = "reset"
-	TriggerRevert                Trigger = "revert"
-	TriggerOffline               Trigger = "offline"
-	TriggerShell                 Trigger = "shell"
-	TriggerCheckout              Trigger = "checkout"
-	TriggerUse                   Trigger = "use"
-	TriggerCliOfflineInstaller   Trigger = "cli-offline-installer"
-	TriggerCliOfflineUninstaller Trigger = "cli-offline-uninstaller"
-	triggerUnknown               Trigger = "unknown"
+	TriggerActivate           Trigger = "activate"
+	TriggerScript             Trigger = "script"
+	TriggerDeploy             Trigger = "deploy"
+	TriggerExec               Trigger = "exec"
+	TriggerResetExec          Trigger = "reset-exec"
+	TriggerSwitch             Trigger = "switch"
+	TriggerImport             Trigger = "import"
+	TriggerPackage            Trigger = "package"
+	TriggerPull               Trigger = "pull"
+	TriggerReset              Trigger = "reset"
+	TriggerRevert             Trigger = "revert"
+	TriggerOffline            Trigger = "offline"
+	TriggerShell              Trigger = "shell"
+	TriggerCheckout           Trigger = "checkout"
+	TriggerUse                Trigger = "use"
+	TriggerOfflineInstaller   Trigger = "offline-installer"
+	TriggerOfflineUninstaller Trigger = "offline-uninstaller"
+	triggerUnknown            Trigger = "unknown"
 )
 
 // usageTriggers are triggers that indicate actual usage of the runtime (as oppose to simply making changes to the runtime)
@@ -56,6 +56,8 @@ var usageTriggers = []Trigger{
 	TriggerShell,
 	TriggerCheckout,
 	TriggerUse,
+	TriggerOfflineInstaller,
+	TriggerOfflineUninstaller,
 }
 
 func NewExecTrigger(cmd string) Trigger {
@@ -182,6 +184,7 @@ func (c *CustomTarget) InstallFromDir() *string {
 type OfflineTarget struct {
 	dir          string
 	artifactsDir string
+	trigger      Trigger
 }
 
 func NewOfflineTarget(dir string, artifactsDir string) *OfflineTarget {
@@ -191,7 +194,7 @@ func NewOfflineTarget(dir string, artifactsDir string) *OfflineTarget {
 	} else {
 		dir = cleanDir
 	}
-	return &OfflineTarget{dir, artifactsDir}
+	return &OfflineTarget{dir, artifactsDir, TriggerOffline}
 }
 
 func (i *OfflineTarget) Owner() string {
@@ -210,8 +213,12 @@ func (i *OfflineTarget) Dir() string {
 	return i.dir
 }
 
+func (i *OfflineTarget) SetTrigger(t Trigger) {
+	i.trigger = t
+}
+
 func (i *OfflineTarget) Trigger() Trigger {
-	return TriggerOffline
+	return i.trigger
 }
 
 func (i *OfflineTarget) Headless() bool {
