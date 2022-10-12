@@ -1,6 +1,7 @@
 package integration
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -215,6 +216,10 @@ func (suite *UseIntegrationTestSuite) TestShow() {
 
 	cp = ts.SpawnWithOpts(e2e.WithArgs("use", "show"))
 	cp.ExpectLongString("The default project no longer exists")
+	// Both Windows and MacOS can run into path comparison issues with symlinks and long paths.
+	if runtime.GOOS == "linux" {
+		cp.ExpectLongString(fmt.Sprintf("Could not find project at %s", projectDir))
+	}
 	cp.ExpectExitCode(1)
 
 	cp = ts.SpawnWithOpts(e2e.WithArgs("use", "reset", "--non-interactive"))

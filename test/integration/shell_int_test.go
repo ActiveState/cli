@@ -1,6 +1,7 @@
 package integration
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -41,6 +42,19 @@ func (suite *ShellIntegrationTestSuite) TestShell() {
 		cp.SendLine("exit")
 		cp.Expect("Deactivated")
 		cp.ExpectExitCode(0)
+	}
+
+	// Both Windows and MacOS can run into path comparison issues with symlinks and long paths.
+	projectName := "small-python"
+	if runtime.GOOS == "linux" {
+		projectDir := filepath.Join(ts.Dirs.Work, projectName)
+		// projectDir, err := fileutils.SymlinkTarget(projectDir)
+		// suite.Require().NoError(err)
+		err := os.RemoveAll(projectDir)
+		suite.Require().NoError(err)
+
+		cp = ts.Spawn("shell", projectName)
+		cp.ExpectLongString(fmt.Sprintf("Could not load project %s from path: %s", projectName, projectDir))
 	}
 
 	// Check for project not checked out.
