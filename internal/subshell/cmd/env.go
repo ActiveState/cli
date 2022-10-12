@@ -85,7 +85,7 @@ func cleanPath(keyValue, oldEntry string) string {
 }
 
 // setUserEnv sets a variable in the user environment and saves the original as a backup
-func (c *CmdEnv) set(name, newValue string) error {
+func (c *CmdEnv) Set(name, newValue string) error {
 	key, err := c.openKeyFn(getEnvironmentPath(c.userScope))
 	if err != nil {
 		return locale.WrapError(err, "err_windows_registry")

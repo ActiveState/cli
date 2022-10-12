@@ -184,9 +184,11 @@ func (r *Runtime) recordCompletion(err error) {
 		r.recordUsage()
 	}
 
-	r.analytics.EventWithLabel(anaConsts.CatRuntime, action, anaConsts.LblRtFailEnv, &dimensions.Values{
-		CommitID: p.StrP(r.target.CommitUUID().String()),
-	})
+	if r.analytics != nil {
+		r.analytics.EventWithLabel(anaConsts.CatRuntime, action, anaConsts.LblRtFailEnv, &dimensions.Values{
+			CommitID: p.StrP(r.target.CommitUUID().String()),
+		})
+	}
 }
 
 func (r *Runtime) recordUsage() {
