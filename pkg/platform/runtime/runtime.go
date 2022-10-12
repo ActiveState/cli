@@ -204,6 +204,10 @@ func (r *Runtime) recordUsage() {
 		ProjectNameSpace: p.StrP(project.NewNamespace(r.target.Owner(), r.target.Name(), r.target.CommitUUID().String()).String()),
 		InstanceID:       p.StrP(instanceid.ID()),
 	}
+
+	// Fire initial runtime usage event right away, subsequent events will be fired via the service so long as the process is running
+	r.analytics.Event(anaConsts.CatRuntime, anaConsts.ActRuntimeHeartbeat, dims)
+
 	dimsJson, err := dims.Marshal()
 	if err != nil {
 		multilog.Critical("Could not marshal dimensions for runtime-usage: %s", errs.JoinMessage(err))
