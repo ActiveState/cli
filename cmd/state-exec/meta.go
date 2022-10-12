@@ -22,18 +22,16 @@ type executorMeta struct {
 }
 
 func newExecutorMeta(execPath string) (*executorMeta, error) {
-	efmt := "new executor meta: %w"
-
 	execDir := filepath.Dir(execPath)
 	metaPath := filepath.Join(execDir, execmeta.MetaFileName)
 	meta, err := execmeta.NewFromFile(metaPath)
 	if err != nil {
-		return nil, fmt.Errorf(efmt, err)
+		return nil, fmt.Errorf("cannot get execmeta from file: %w", err)
 	}
 
 	matchingBin, err := matchingBinByPath(meta.Bins, execPath)
 	if err != nil {
-		return nil, fmt.Errorf(efmt, err)
+		return nil, fmt.Errorf("cannot get matching bin by path: %w", err)
 	}
 
 	em := executorMeta{
@@ -55,7 +53,7 @@ func matchingBinByPath(bins []string, path string) (string, error) {
 			return bin, nil
 		}
 	}
-	return "", fmt.Errorf("matching binary by path %q", path)
+	return "", fmt.Errorf("no matching binary by path %q", path)
 }
 
 // transformedEnv will update the current environment. Update entries are

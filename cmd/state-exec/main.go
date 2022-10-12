@@ -47,7 +47,7 @@ func main() {
 			os.Exit(exitErr.ExitCode())
 		}
 
-		logErr("error: %s", err)
+		logErr("run failed: %s", err)
 		logErr(userErrMsg)
 		os.Exit(1)
 	}
@@ -56,20 +56,18 @@ func main() {
 }
 
 func run() error {
-	efmt := "run: %w"
-
 	logr.Debug("hello")
 	defer logr.Debug("run goodbye")
 
 	hb, err := newHeartbeat()
 	if err != nil {
-		return err
+		return fmt.Errorf("cannot create new heartbeat: %w", err)
 	}
 	logr.Debug("message data - pid: %s, exec: %s", hb.ProcessID, hb.ExecPath)
 
 	meta, err := newExecutorMeta(hb.ExecPath)
 	if err != nil {
-		return fmt.Errorf(efmt, err)
+		return fmt.Errorf("cannot create new executor meta: %w", err)
 	}
 	logr.CallIfDebugIsSet(func() {
 		logr.Debug("meta data - bins...")
@@ -87,12 +85,12 @@ func run() error {
 
 	logr.Debug("communications - sock: %s", meta.SockPath)
 	if err := sendMsgToService(meta.SockPath, hb); err != nil {
-		return fmt.Errorf(efmt, err)
+		return fmt.Errorf("cannot send message to service: %w", err)
 	}
 
 	logr.Debug("cmd - running: %s", meta.MatchingBin)
 	if err := runCmd(meta); err != nil {
-		return fmt.Errorf(efmt, err)
+		return fmt.Errorf("cannot run command: %w", err)
 	}
 
 	return nil

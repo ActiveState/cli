@@ -15,7 +15,7 @@ func runCmd(meta *executorMeta) error {
 	cmd.Env = meta.TransformedEnv
 
 	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("run command %q: %w", meta.MatchingBin, err)
+		return fmt.Errorf("command %q failed: %w", meta.MatchingBin, err)
 	}
 
 	return nil
