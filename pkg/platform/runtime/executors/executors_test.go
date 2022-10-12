@@ -3,6 +3,7 @@ package executors
 import (
 	"io/ioutil"
 	"os"
+	"path"
 	"path/filepath"
 	"testing"
 
@@ -55,6 +56,10 @@ func TestExecutor(t *testing.T) {
 			}
 		})
 	}
+
+	// add legacy files - deprecated
+	require.NoError(t, fileutils.WriteFile(path.Join(binPath, "old_exec"), []byte(legacyExecutorDenoter)))
+	require.NoError(t, fileutils.WriteFile(path.Join(binPath, "old_shim"), []byte(legacyShimDenoter)))
 
 	t.Run("Cleanup old executors", func(t *testing.T) {
 		err = execInit.Clean()

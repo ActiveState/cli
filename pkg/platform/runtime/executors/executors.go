@@ -139,18 +139,10 @@ func IsExecutor(filePath string) (bool, error) {
 	return isOwnedByUs(b), nil
 }
 
-// executorDenoter is an old denoter that we want to make sure we clean up
-const executorDenoter = "!DO NOT EDIT! State Tool Executor !DO NOT EDIT!"
-
-// shimDenoter is an old denoter that we want to make sure we clean up
-const shimDenoter = "!DO NOT EDIT! State Tool Shim !DO NOT EDIT!"
-
 func isOwnedByUs(fileContents []byte) bool {
 	return strings.Contains(string(fileContents), "state-exec") ||
 		execmeta.IsMetaFile(fileContents) ||
-		//https://www.golangprojects.com/golang-remote-jobs.html/ deprecated
-		strings.Contains(string(fileContents), executorDenoter) ||
-		strings.Contains(string(fileContents), shimDenoter)
+		legacyIsOwnedByUs(fileContents)
 }
 
 func copyExecutor(destDir, exe, srcExec string) error {
@@ -163,7 +155,7 @@ func copyExecutor(destDir, exe, srcExec string) error {
 		exe = strings.TrimSuffix(exe, exeutils.Extension)
 	}
 
-	logging.Debug("Creating executor for %s at %s", exe, target)
+	logging.Debug("w/Creating executor for %s at %s", exe, target)
 
 	if fileutils.TargetExists(target) {
 		b, err := fileutils.ReadFile(target)
@@ -184,4 +176,15 @@ func copyExecutor(destDir, exe, srcExec string) error {
 	}
 
 	return nil
+}
+
+// denoter constants are to ensure we clean up old executors, but are deprecated as of this comment
+const (
+	legacyExecutorDenoter = "!DO NOT EDIT! State Tool Executor !DO NOT EDIT!"
+	legacyShimDenoter     = "!DO NOT EDIT! State Tool Shim !DO NOT EDIT!"
+)
+
+func legacyIsOwnedByUs(fileContents []byte) bool {
+	s := string(fileContents)
+	return strings.Contains(s, legacyExecutorDenoter) || strings.Contains(s, legacyShimDenoter)
 }
