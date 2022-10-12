@@ -6,7 +6,6 @@ import (
 
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
-	"github.com/ActiveState/termtest"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -20,13 +19,14 @@ func (suite *ShellsIntegrationTestSuite) TestShells() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	var shells []string
-	if runtime.GOOS == "linux" {
-		shells = []string{"bash", "fish"}
-	} else if runtime.GOOS == "darwin" {
-		shells = []string{"bash", "zsh", "tcsh"}
-	} else if runtime.GOOS == "windows" {
-		shells = []string{"cmd"}
+	var shells []e2e.Shell
+	switch runtime.GOOS {
+	case "linux":
+		shells = []e2e.Shell{e2e.Bash, e2e.Fish}
+	case "darwin":
+		shells = []e2e.Shell{e2e.Bash, e2e.Zsh, e2e.Tsch}
+	case "windows":
+		shells = []e2e.Shell{e2e.Cmd}
 	}
 
 	// Checkout the first instance. It doesn't matter which shell is used.
@@ -35,66 +35,58 @@ func (suite *ShellsIntegrationTestSuite) TestShells() {
 	cp.ExpectExitCode(0)
 
 	for _, shell := range shells {
-		var cp *termtest.ConsoleProcess
 		// Run the checkout in a particular shell.
-		args := "checkout ActiveState-CLI/small-python " + shell
-		if shell == "bash" {
-			cp = ts.SpawnInBash(args)
-		} else if shell == "zsh" {
-			cp = ts.SpawnInZsh(args)
-		} else if shell == "tcsh" {
-			cp = ts.SpawnInTcsh(args)
-		} else if shell == "fish" {
-			cp = ts.SpawnInFish(args)
-		} else if shell == "cmd" {
-			cp = ts.SpawnInCmd(args)
-		}
+		cp := ts.SpawnInShell(
+			shell,
+			e2e.WithArgs("checkout", "ActiveState-CLI/small-python", string(shell)),
+		)
 		cp.Expect("Checked out project")
-		if shell != "cmd" {
+		if shell != e2e.Cmd {
 			cp.ExpectExitCode(0)
 		}
 
 		// There are 2 or more instances checked out, so we should get a prompt in whichever shell we
 		// use.
-		args = "shell small-python"
-		env := e2e.AppendEnv(
-			"ACTIVESTATE_CLI_DISABLE_RUNTIME=false",
-			"SHELL="+shell,
+		cp = ts.SpawnInShell(
+			shell,
+			e2e.WithArgs("shell", "small-python"),
+			e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 		)
-		if shell == "bash" {
-			cp = ts.SpawnInBash(args, env)
-		} else if shell == "zsh" {
-			cp = ts.SpawnInZsh(args, env)
-		} else if shell == "tcsh" {
-			cp = ts.SpawnInTcsh(args, env)
-		} else if shell == "fish" {
-			cp = ts.SpawnInFish(args, env)
-		} else if shell == "cmd" {
-			cp = ts.SpawnInCmd(args, env)
-		}
 		cp.Expect("Multiple project paths")
-		cp.SendLine("\n")      // just pick the first one
-		cp.Expect("Activated") // this means the selection prompt worked
-		if shell != "tcsh" {   // tcsh prompt does not behave like other shells' prompts
-			cp.Expect("[ActiveState-CLI/small-python]") // verify shell prompt contains the right info
+
+		// Just pick the first one and verify the selection prompt works.
+		cp.SendLine("\n")
+		cp.Expect("Activated")
+
+		// Verify that the command prompt contains the right info, except for tcsh, whose prompt does
+		// not behave like other shells'.
+		if shell != e2e.Tcsh {
+			cp.Expect("[ActiveState-CLI/small-python]")
 		}
+
+		// Verify the runtime is functioning properly.
 		cp.WaitForInput()
 		cp.SendLine("python3 --version")
-		cp.Expect("Python 3.10") // verify runtime is functioning properly
-		if shell == "cmd" {
+		cp.Expect("Python 3.10")
+
+		// Verify the expected shell is running.
+		switch shell {
+		case e2e.Cmd:
 			cp.SendLine("echo %COMSPEC%")
-			cp.Expect("cmd.exe") // verify the expected shell is running
-		} else if shell == "fish" {
+			cp.Expect(string(shell))
+		case e2e.Fish:
 			cp.SendLine("echo $fish_pid")
-			cp.ExpectRe("\\d+") // verify the expected shell is running
-		} else {
+			cp.ExpectRe("\\d+")
+		default:
 			cp.SendLine("echo $0")
-			cp.Expect(shell) // verify the expected shell is running
+			cp.Expect(string(shell))
 		}
+
+		// Verify exiting the shell works.
 		cp.SendLine("exit")
 		cp.Expect("Deactivated")
-		if shell != "fish" && shell != "cmd" {
-			cp.ExpectExitCode(0) // verify exiting the shell worked
+		if shell != e2e.Fish && shell != e2e.Cmd {
+			cp.ExpectExitCode(0)
 		}
 	}
 }

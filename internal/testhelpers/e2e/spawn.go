@@ -1,5 +1,11 @@
 package e2e
 
+import (
+	"strings"
+
+	"github.com/ActiveState/cli/internal/errs"
+)
+
 type SpawnOptions func(*Options) error
 
 func WithArgs(args ...string) SpawnOptions {
@@ -42,6 +48,32 @@ func NonWriteableBinDir() SpawnOptions {
 func BackgroundProcess() SpawnOptions {
 	return func(opts *Options) error {
 		opts.BackgroundProcess = true
+		return nil
+	}
+}
+
+type Shell string
+
+const (
+	Bash Shell = "bash"
+	Zsh        = "zsh"
+	Tcsh       = "tcsh"
+	Fish       = "fish"
+	Cmd        = "cmd.exe"
+)
+
+func WithShell(shell Shell, s *Session) SpawnOptions {
+	return func(opts *Options) error {
+		if len(opts.Options.Args) == 0 {
+			return errs.New("e2e.WithShell must come after e2e.WithArgs")
+		}
+		opts.Options.CmdName = string(shell)
+		shellArg := "-c"
+		if shell == Cmd {
+			shellArg = "/k"
+		}
+		cmd := s.Exe + " " + strings.Join(opts.Options.Args, " ")
+		opts.Options.Args = []string{shellArg, cmd} // e.g. -c "state activate project/org"
 		return nil
 	}
 }

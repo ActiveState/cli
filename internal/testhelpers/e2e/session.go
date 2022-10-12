@@ -242,36 +242,13 @@ func (s *Session) SpawnCmd(cmdName string, args ...string) *termtest.ConsoleProc
 	return s.SpawnCmdWithOpts(cmdName, WithArgs(args...))
 }
 
-func (s *Session) spawnInShell(exe string, shellArgs []string, cmd string, opts ...SpawnOptions) *termtest.ConsoleProcess {
-	return s.SpawnCmdWithOpts(exe, append(opts, WithArgs(append(shellArgs, cmd)...))...)
-}
-
-// SpawnInShell runs the given command in a bash or cmd shell
-func (s *Session) SpawnInShell(cmd string, opts ...SpawnOptions) *termtest.ConsoleProcess {
-	if runtime.GOOS == "windows" {
-		return s.spawnInShell("cmd.exe", []string{"/k"}, cmd, opts...)
+// SpawnInShell spawns the state tool executable with arguments in the given shell.
+func (s *Session) SpawnInShell(shell Shell, opts ...SpawnOptions) *termtest.ConsoleProcess {
+	opts = append(opts, WithShell(shell, s))
+	if shell != Cmd {
+		opts = append(opts, AppendEnv("SHELL="+string(shell)))
 	}
-	return s.spawnInShell("bash", []string{"-c"}, cmd, opts...)
-}
-
-func (s *Session) SpawnInBash(args string, opts ...SpawnOptions) *termtest.ConsoleProcess {
-	return s.spawnInShell("bash", []string{"-c"}, s.Exe+" "+args, opts...)
-}
-
-func (s *Session) SpawnInZsh(args string, opts ...SpawnOptions) *termtest.ConsoleProcess {
-	return s.spawnInShell("zsh", []string{"-c"}, s.Exe+" "+args, opts...)
-}
-
-func (s *Session) SpawnInTcsh(args string, opts ...SpawnOptions) *termtest.ConsoleProcess {
-	return s.spawnInShell("tcsh", []string{"-c"}, s.Exe+" "+args, opts...)
-}
-
-func (s *Session) SpawnInFish(args string, opts ...SpawnOptions) *termtest.ConsoleProcess {
-	return s.spawnInShell("fish", []string{"-c"}, s.Exe+" "+args, opts...)
-}
-
-func (s *Session) SpawnInCmd(args string, opts ...SpawnOptions) *termtest.ConsoleProcess {
-	return s.spawnInShell("cmd.exe", []string{"/k"}, s.Exe+" "+args, opts...)
+	return s.SpawnCmdWithOpts(string(shell), opts...)
 }
 
 // SpawnCmdWithOpts executes an executable in a pseudo-terminal for integration tests
