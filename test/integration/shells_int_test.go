@@ -1,6 +1,7 @@
 package integration
 
 import (
+	"fmt"
 	"runtime"
 	"testing"
 
@@ -35,59 +36,61 @@ func (suite *ShellsIntegrationTestSuite) TestShells() {
 	cp.ExpectExitCode(0)
 
 	for _, shell := range shells {
-		// Run the checkout in a particular shell.
-		cp := ts.SpawnInShell(
-			shell,
-			e2e.WithArgs("checkout", "ActiveState-CLI/small-python", string(shell)),
-		)
-		cp.Expect("Checked out project")
-		if shell != e2e.Cmd {
-			cp.ExpectExitCode(0)
-		}
+		suite.T().Run(fmt.Sprintf("using_"+string(shell)), func(t *testing.T) {
+			// Run the checkout in a particular shell.
+			cp := ts.SpawnInShell(
+				shell,
+				e2e.WithArgs("checkout", "ActiveState-CLI/small-python", string(shell)),
+			)
+			cp.Expect("Checked out project")
+			if shell != e2e.Cmd {
+				cp.ExpectExitCode(0)
+			}
 
-		// There are 2 or more instances checked out, so we should get a prompt in whichever shell we
-		// use.
-		cp = ts.SpawnInShell(
-			shell,
-			e2e.WithArgs("shell", "small-python"),
-			e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
-		)
-		cp.Expect("Multiple project paths")
+			// There are 2 or more instances checked out, so we should get a prompt in whichever shell we
+			// use.
+			cp = ts.SpawnInShell(
+				shell,
+				e2e.WithArgs("shell", "small-python"),
+				e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+			)
+			cp.Expect("Multiple project paths")
 
-		// Just pick the first one and verify the selection prompt works.
-		cp.SendLine("\n")
-		cp.Expect("Activated")
+			// Just pick the first one and verify the selection prompt works.
+			cp.SendLine("\n")
+			cp.Expect("Activated")
 
-		// Verify that the command prompt contains the right info, except for tcsh, whose prompt does
-		// not behave like other shells'.
-		if shell != e2e.Tcsh {
-			cp.Expect("[ActiveState-CLI/small-python]")
-		}
+			// Verify that the command prompt contains the right info, except for tcsh, whose prompt does
+			// not behave like other shells'.
+			if shell != e2e.Tcsh {
+				cp.Expect("[ActiveState-CLI/small-python]")
+			}
 
-		// Verify the runtime is functioning properly.
-		cp.WaitForInput()
-		cp.SendLine("python3 --version")
-		cp.Expect("Python 3.10")
+			// Verify the runtime is functioning properly.
+			cp.WaitForInput()
+			cp.SendLine("python3 --version")
+			cp.Expect("Python 3.10")
 
-		// Verify the expected shell is running.
-		switch shell {
-		case e2e.Cmd:
-			cp.SendLine("echo %COMSPEC%")
-			cp.Expect(string(shell))
-		case e2e.Fish:
-			cp.SendLine("echo $fish_pid")
-			cp.ExpectRe("\\d+")
-		default:
-			cp.SendLine("echo $0")
-			cp.Expect(string(shell))
-		}
+			// Verify the expected shell is running.
+			switch shell {
+			case e2e.Cmd:
+				cp.SendLine("echo %COMSPEC%")
+				cp.Expect(string(shell))
+			case e2e.Fish:
+				cp.SendLine("echo $fish_pid")
+				cp.ExpectRe("\\d+")
+			default:
+				cp.SendLine("echo $0")
+				cp.Expect(string(shell))
+			}
 
-		// Verify exiting the shell works.
-		cp.SendLine("exit")
-		cp.Expect("Deactivated")
-		if shell != e2e.Fish && shell != e2e.Cmd {
-			cp.ExpectExitCode(0)
-		}
+			// Verify exiting the shell works.
+			cp.SendLine("exit")
+			cp.Expect("Deactivated")
+			if shell != e2e.Fish && shell != e2e.Cmd {
+				cp.ExpectExitCode(0)
+			}
+		})
 	}
 }
 
