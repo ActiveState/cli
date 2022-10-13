@@ -964,7 +964,7 @@ func ListFilesUnsafe(sourcePath string) []string {
 	result := []string{}
 	files, err := ioutil.ReadDir(sourcePath)
 	if err != nil {
-		panic(err)
+		panic(fmt.Sprintf("Could not read dir: %s, error: %s", sourcePath, errs.JoinMessage(err)))
 	}
 	for _, file := range files {
 		result = append(result, filepath.Join(sourcePath, file.Name()))
