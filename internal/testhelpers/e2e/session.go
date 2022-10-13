@@ -189,6 +189,7 @@ func new(t *testing.T, retainDirs, updatePath bool, extraEnv ...string) *Session
 		constants.E2ETestEnvVarName + "=true",
 		constants.DisableUpdates + "=true",
 		constants.OptinUnstableEnvVarName + "=true",
+		constants.ServiceSockPath + "=" + dirs.SockRoot,
 	}...)
 
 	if updatePath {
