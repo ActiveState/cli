@@ -7,15 +7,13 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/ActiveState/cli/internal/installation"
-	"github.com/ActiveState/cli/internal/osutils"
-	"github.com/stretchr/testify/suite"
-
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
+	"github.com/ActiveState/cli/internal/installation"
+	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
-	"github.com/ActiveState/termtest"
+	"github.com/stretchr/testify/suite"
 )
 
 type UpdateGenIntegrationTestSuite struct {
@@ -46,7 +44,7 @@ func (suite *UpdateGenIntegrationTestSuite) TestUpdateBits() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	var cp *termtest.ConsoleProcess
+	var cp *e2e.SessionConsoleProcess
 
 	if runtime.GOOS == "windows" {
 		cp = ts.SpawnCmd("powershell.exe", "-nologo", "-noprofile", "-command",

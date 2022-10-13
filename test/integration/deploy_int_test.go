@@ -9,16 +9,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ActiveState/termtest"
-	"github.com/google/uuid"
-	"github.com/stretchr/testify/suite"
-
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
+	"github.com/google/uuid"
+	"github.com/stretchr/testify/suite"
 )
 
 type DeployIntegrationTestSuite struct {
@@ -34,7 +32,7 @@ func init() {
 }
 
 func (suite *DeployIntegrationTestSuite) deploy(ts *e2e.Session, prj string, targetPath string, targetID string) {
-	var cp *termtest.ConsoleProcess
+	var cp *e2e.SessionConsoleProcess
 	switch runtime.GOOS {
 	case "windows":
 		cp = ts.SpawnWithOpts(
@@ -94,7 +92,7 @@ func (suite *DeployIntegrationTestSuite) TestDeployPerl() {
 
 	suite.checkSymlink("perl", ts.Dirs.Bin, targetID.String())
 
-	var cp *termtest.ConsoleProcess
+	var cp *e2e.SessionConsoleProcess
 	if runtime.GOOS == "windows" {
 		cp = ts.SpawnCmdWithOpts(
 			"cmd.exe",
@@ -167,7 +165,7 @@ func (suite *DeployIntegrationTestSuite) TestDeployPython() {
 
 	suite.checkSymlink("python3", ts.Dirs.Bin, targetID.String())
 
-	var cp *termtest.ConsoleProcess
+	var cp *e2e.SessionConsoleProcess
 	if runtime.GOOS == "windows" {
 		cp = ts.SpawnCmdWithOpts(
 			"cmd.exe",

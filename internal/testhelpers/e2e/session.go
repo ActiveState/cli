@@ -228,7 +228,7 @@ func (s *Session) ClearCache() error {
 }
 
 // Spawn spawns the state tool executable to be tested with arguments
-func (s *Session) Spawn(args ...string) *termtest.ConsoleProcess {
+func (s *Session) Spawn(args ...string) *SessionConsoleProcess {
 	if runtime.GOOS == "windows" {
 		return s.SpawnInShell(Cmd, WithArgs(args...))
 	}
@@ -236,7 +236,7 @@ func (s *Session) Spawn(args ...string) *termtest.ConsoleProcess {
 }
 
 // SpawnWithOpts spawns the state tool executable to be tested with arguments
-func (s *Session) SpawnWithOpts(opts ...SpawnOptions) *termtest.ConsoleProcess {
+func (s *Session) SpawnWithOpts(opts ...SpawnOptions) *SessionConsoleProcess {
 	if runtime.GOOS == "windows" {
 		return s.SpawnInShell(Cmd, opts...)
 	}
@@ -244,12 +244,12 @@ func (s *Session) SpawnWithOpts(opts ...SpawnOptions) *termtest.ConsoleProcess {
 }
 
 // SpawnCmd executes an executable in a pseudo-terminal for integration tests
-func (s *Session) SpawnCmd(cmdName string, args ...string) *termtest.ConsoleProcess {
+func (s *Session) SpawnCmd(cmdName string, args ...string) *SessionConsoleProcess {
 	return s.SpawnCmdWithOpts(cmdName, WithArgs(args...))
 }
 
 // SpawnInShell spawns the state tool executable with arguments in the given shell.
-func (s *Session) SpawnInShell(shell Shell, opts ...SpawnOptions) *termtest.ConsoleProcess {
+func (s *Session) SpawnInShell(shell Shell, opts ...SpawnOptions) *SessionConsoleProcess {
 	opts = append(opts, WithShell(shell, s))
 	if shell != Cmd {
 		opts = append(opts, AppendEnv("SHELL="+string(shell)))
@@ -259,7 +259,7 @@ func (s *Session) SpawnInShell(shell Shell, opts ...SpawnOptions) *termtest.Cons
 
 // SpawnCmdWithOpts executes an executable in a pseudo-terminal for integration tests
 // Arguments and other parameters can be specified by specifying SpawnOptions
-func (s *Session) SpawnCmdWithOpts(exe string, opts ...SpawnOptions) *termtest.ConsoleProcess {
+func (s *Session) SpawnCmdWithOpts(exe string, opts ...SpawnOptions) *SessionConsoleProcess {
 	if s.cp != nil {
 		s.cp.Close()
 	}
@@ -299,7 +299,7 @@ func (s *Session) SpawnCmdWithOpts(exe string, opts ...SpawnOptions) *termtest.C
 
 	logging.Debug("Spawning CMD: %s, args: %v", pOpts.Options.CmdName, pOpts.Options.Args)
 
-	return console
+	return &SessionConsoleProcess{console, console}
 }
 
 // PrepareActiveStateYAML creates a projectfile.Project instance from the

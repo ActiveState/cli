@@ -16,7 +16,6 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
-	"github.com/ActiveState/termtest"
 	"github.com/stretchr/testify/suite"
 	"github.com/thoas/go-funk"
 )
@@ -49,7 +48,7 @@ func (suite *AnalyticsIntegrationTestSuite) TestActivateEvents() {
 		fmt.Sprintf("%s=%d", constants.HeartbeatIntervalEnvVarName, heartbeatInterval),
 	}
 
-	var cp *termtest.ConsoleProcess
+	var cp *e2e.SessionConsoleProcess
 	if runtime.GOOS == "windows" {
 		cp = ts.SpawnCmdWithOpts("cmd.exe",
 			e2e.WithArgs("/k", "state", "activate"),

@@ -10,15 +10,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/suite"
-
-	"github.com/ActiveState/termtest"
-
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/ActiveState/cli/pkg/projectfile"
+	"github.com/stretchr/testify/suite"
 )
 
 type RunIntegrationTestSuite struct {
@@ -86,7 +83,7 @@ func (suite *RunIntegrationTestSuite) TearDownTest() {
 	projectfile.Reset()
 }
 
-func (suite *RunIntegrationTestSuite) expectTerminateBatchJob(cp *termtest.ConsoleProcess) {
+func (suite *RunIntegrationTestSuite) expectTerminateBatchJob(cp *e2e.SessionConsoleProcess) {
 	if runtime.GOOS == "windows" {
 		// send N to "Terminate batch job (Y/N)" question
 		cp.Expect("Terminate batch job")

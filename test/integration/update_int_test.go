@@ -20,7 +20,6 @@ import (
 	"github.com/ActiveState/cli/internal/rtutils/singlethread"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
-	"github.com/ActiveState/termtest"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -286,7 +285,7 @@ func (suite *UpdateIntegrationTestSuite) testAutoUpdate(ts *e2e.Session, baseDir
 }
 
 func (suite *UpdateIntegrationTestSuite) installLatestReleaseVersion(ts *e2e.Session, dir string) {
-	var cp *termtest.ConsoleProcess
+	var cp *e2e.SessionConsoleProcess
 	if runtime.GOOS != "windows" {
 		oneLiner := fmt.Sprintf("sh <(curl -q https://platform.activestate.com/dl/cli/pdli01/install.sh) -f -n -t %s", dir)
 		cp = ts.SpawnCmdWithOpts(

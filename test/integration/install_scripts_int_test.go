@@ -17,7 +17,6 @@ import (
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
-	"github.com/ActiveState/termtest"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"github.com/thoas/go-funk"
@@ -87,7 +86,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 				argsWithActive = append(argsWithActive, "-c", cmd)
 			}
 
-			var cp *termtest.ConsoleProcess
+			var cp *e2e.SessionConsoleProcess
 			if runtime.GOOS != "windows" {
 				cp = ts.SpawnCmdWithOpts(
 					"bash", e2e.WithArgs(argsWithActive...),
@@ -151,7 +150,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall_NonEmptyTarget() {
 	argsPlain := []string{script, "-t", ts.Dirs.Work}
 	argsPlain = append(argsPlain, "-b", constants.BranchName)
 	argsWithActive := append(argsPlain, "-f")
-	var cp *termtest.ConsoleProcess
+	var cp *e2e.SessionConsoleProcess
 	if runtime.GOOS != "windows" {
 		cp = ts.SpawnCmdWithOpts("bash", e2e.WithArgs(argsWithActive...))
 	} else {
@@ -169,7 +168,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall_VersionDoesNotExist
 	script := scriptPath(suite.T(), ts.Dirs.Work)
 	args := []string{script, "-t", ts.Dirs.Work}
 	args = append(args, "-v", "does-not-exist")
-	var cp *termtest.ConsoleProcess
+	var cp *e2e.SessionConsoleProcess
 	if runtime.GOOS != "windows" {
 		cp = ts.SpawnCmdWithOpts("bash", e2e.WithArgs(args...))
 	} else {
@@ -202,7 +201,7 @@ func scriptPath(t *testing.T, targetDir string) string {
 	return target
 }
 
-func expectStateToolInstallation(cp *termtest.ConsoleProcess) {
+func expectStateToolInstallation(cp *e2e.SessionConsoleProcess) {
 	cp.Expect("Preparing Installer for State Tool Package Manager")
 	cp.Expect("Installation Complete", time.Minute)
 }
