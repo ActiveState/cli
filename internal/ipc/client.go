@@ -27,6 +27,7 @@ func (c *Client) Request(ctx context.Context, key string) (string, error) {
 	spath := c.sockpath.String()
 	conn, err := c.dialer.DialContext(ctx, network, spath)
 	if err != nil {
+		logging.Debug("Error dialing socket: %s", err)
 		err = asServerDownError(err)
 		return "", errs.Wrap(err, "Cannot connect to ipc via %q", spath)
 	}
