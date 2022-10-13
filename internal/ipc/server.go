@@ -3,7 +3,6 @@ package ipc
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net"
 	"sync"
 	"time"
@@ -155,7 +154,7 @@ func (ipc *Server) Wait() error {
 func accept(wg *sync.WaitGroup, l net.Listener, reqHandlers []RequestHandler) error {
 	conn, err := l.Accept()
 	if err != nil {
-		logging.Debug(fmt.Sprintf("'use of closed' expected... error: %v", err))
+		logging.Debug("accept ('use of closed' expected): %v", err)
 		return err
 	}
 
