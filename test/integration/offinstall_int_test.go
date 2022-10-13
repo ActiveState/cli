@@ -160,6 +160,8 @@ func (suite *OffInstallIntegrationTestSuite) preparePayload(ts *e2e.Session) {
 		),
 	)
 	tp.ExpectExitCode(0)
+
+	suite.Require().NotEmpty(os.Chmod(suite.installerPath, 0775)) // ensure file is executable
 }
 
 func (suite *OffInstallIntegrationTestSuite) assertShellUpdated(dir string, exists bool) {
