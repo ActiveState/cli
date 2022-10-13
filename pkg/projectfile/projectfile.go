@@ -835,7 +835,7 @@ func getProjectFilePathFromDefault() (_ string, rerr error) {
 		if !errors.Is(err, fileutils.ErrorFileNotFound) {
 			return "", errs.Wrap(err, "fileutils.FindFileInPath %s failed", defaultProjectPath)
 		}
-		return "", &ErrorNoDefaultProject{locale.NewInputError("err_no_default_project", "Could not find default project at: {{.V0}}", defaultProjectPath)}
+		return "", &ErrorNoDefaultProject{locale.NewInputError("err_no_default_project", "Could not find default project at: [ACTIONABLE]{{.V0}}[/RESET]", defaultProjectPath)}
 	}
 	return path, nil
 }
