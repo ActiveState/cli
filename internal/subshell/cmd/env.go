@@ -84,7 +84,7 @@ func cleanPath(keyValue, oldEntry string) string {
 	return strings.Join(newValue, string(os.PathListSeparator))
 }
 
-// setUserEnv sets a variable in the user environment and saves the original as a backup
+// Set sets a variable in the user environment and saves the original as a backup
 func (c *CmdEnv) Set(name, newValue string) error {
 	key, err := c.openKeyFn(getEnvironmentPath(c.userScope))
 	if err != nil {

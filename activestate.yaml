@@ -69,11 +69,12 @@ scripts:
       goflags="${GOFLAGS}"; unset GOFLAGS
       GOFLAGS="${goflags}"
       pushd ~
-      go install github.com/sanderhahn/gozip/cmd/gozip@latest
+      go install github.com/ActiveState/gozip/cmd/gozip@e455986
       popd
       $scripts.install-deps-os
   - name: install-deps-os
     language: bash
+    if: ne .OS.Name "Linux"
     description: Install OS specific deps
     value: ""
   - name: install-deps-os
@@ -81,17 +82,20 @@ scripts:
     language: bash
     description: Install OS specific deps
     value: |
-      if [ hash apt &> /dev/null ]; then
+      echo "Installing OS Deps"
+      if type "apt" &> /dev/null; then
+        echo "Using apt"
         pkgs=""
-        for pkg in "libgtk-3-dev libappindicator3-dev libwebkit2gtk-4.0-dev" ; do
+        for pkg in "libgtk-3-dev libappindicator3-dev libwebkit2gtk-4.0-dev zsh" ; do
           dpkg -s "${pkg}" &>/dev/null && continue
           pkgs="$pkgs ${pkg}"
         done
         if [ -n "${pkgs}" ]; then
           echo Installing packages "${pkgs}"
-          sudo apt-get update && sudo apt-get install ${pkgs} -y
+          sudo apt update && sudo apt install ${pkgs} -y
         fi
-      elif [ hash yum &> /dev/null ]; then
+      elif type "yum" &> /dev/null; then
+        echo "Using yum"
         yum install -y gtk3-devel libappindicator-gtk3 webkitgtk4
       fi
   - name: preprocess
