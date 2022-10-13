@@ -1,10 +1,9 @@
 package shell
 
 import (
-	"errors"
-
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/config"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
@@ -65,7 +64,7 @@ func (u *Shell) Run(params *Params) error {
 
 	proj, err := findproject.FromInputByPriority("", params.Namespace, u.config, u.prompt)
 	if err != nil {
-		if errors.As(err, &projectfile.ErrorNoDefaultProject{}) {
+		if errs.Matches(err, &projectfile.ErrorNoDefaultProject{}) {
 			return locale.WrapError(err, "err_use_default_project_does_not_exist")
 		}
 		return locale.WrapError(err, "err_shell_cannot_load_project")
