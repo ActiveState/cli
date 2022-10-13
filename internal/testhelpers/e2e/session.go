@@ -229,11 +229,17 @@ func (s *Session) ClearCache() error {
 
 // Spawn spawns the state tool executable to be tested with arguments
 func (s *Session) Spawn(args ...string) *termtest.ConsoleProcess {
+	if runtime.GOOS == "windows" {
+		return s.SpawnInShell(Cmd, WithArgs(args...))
+	}
 	return s.SpawnCmdWithOpts(s.Exe, WithArgs(args...))
 }
 
 // SpawnWithOpts spawns the state tool executable to be tested with arguments
 func (s *Session) SpawnWithOpts(opts ...SpawnOptions) *termtest.ConsoleProcess {
+	if runtime.GOOS == "windows" {
+		return s.SpawnInShell(Cmd, opts...)
+	}
 	return s.SpawnCmdWithOpts(s.Exe, opts...)
 }
 
