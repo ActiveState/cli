@@ -139,6 +139,18 @@ func countEvents(events []reporters.TestLogEntry, category, action string) int {
 	return len(filteredEvents)
 }
 
+func filterEvents(events []reporters.TestLogEntry, filters ...func(e reporters.TestLogEntry) bool) []reporters.TestLogEntry {
+	filteredEvents := funk.Filter(events, func(e reporters.TestLogEntry) bool {
+		for _, filter := range filters {
+			if !filter(e) {
+				return false
+			}
+		}
+		return true
+	}).([]reporters.TestLogEntry)
+	return filteredEvents
+}
+
 func (suite *AnalyticsIntegrationTestSuite) assertNEvents(events []reporters.TestLogEntry,
 	expectedN int, category, action string, errMsg string) {
 	suite.Assert().Equal(expectedN, countEvents(events, category, action),

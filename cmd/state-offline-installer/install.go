@@ -29,6 +29,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/runtime"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup/events"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
+	"github.com/ActiveState/cli/pkg/project"
 )
 
 const artifactsTarGZName = "artifacts.tar.gz"
@@ -122,9 +123,9 @@ func (r *runner) Run(params *Params) (rerr error) {
 	}
 
 	installerDimensions = &dimensions.Values{
-		ProjectID: config.ProjectID,
-		CommitID:  config.CommitID,
-		Trigger:   p.StrP(target.TriggerOfflineInstaller.String()),
+		ProjectNameSpace: p.StrP(project.NewNamespace(*config.OrgName, *config.ProjectName, "").String()),
+		CommitID:         config.CommitID,
+		Trigger:          p.StrP(target.TriggerOfflineInstaller.String()),
 	}
 	r.analytics.Event(ac.CatOfflineInstaller, "start", installerDimensions)
 
@@ -152,7 +153,7 @@ func (r *runner) Run(params *Params) (rerr error) {
 	}
 
 	/* Install Artifacts */
-	asrt, err := r.setupRuntime(artifactsPath, params.path, logfile)
+	asrt, err := r.setupRuntime(artifactsPath, params.path, logfile, config)
 	if err != nil {
 		return errs.Wrap(err, "Could not setup runtime")
 	}
@@ -239,10 +240,11 @@ func (r *runner) Run(params *Params) (rerr error) {
 	return nil
 }
 
-func (r *runner) setupRuntime(artifactsPath string, targetPath string, logfile *buildlogfile.BuildLogFile) (*runtime.Runtime, error) {
+func (r *runner) setupRuntime(artifactsPath string, targetPath string, logfile *buildlogfile.BuildLogFile, cfg InstallerConfig) (*runtime.Runtime, error) {
 	r.out.Print(fmt.Sprintf("Stage 3 of 3 Start: Installing artifacts from: %s", artifactsPath))
 
-	offlineTarget := target.NewOfflineTarget(targetPath, artifactsPath)
+	ns := project.NewNamespace(*cfg.OrgName, *cfg.ProjectName, *cfg.CommitID)
+	offlineTarget := target.NewOfflineTarget(ns, targetPath, artifactsPath)
 	offlineTarget.SetTrigger(target.TriggerOfflineInstaller)
 
 	offlineProgress := newOfflineProgressOutput(r.out)

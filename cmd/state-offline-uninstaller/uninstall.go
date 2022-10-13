@@ -13,6 +13,7 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/rtutils/p"
+	"github.com/ActiveState/cli/pkg/project"
 
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
@@ -93,16 +94,16 @@ func (r *runner) Run(params *Params) error {
 	if err != nil {
 		return errs.Wrap(err, "Failed to read config file, is this an install directory?")
 	}
-	installerConfig := InstallerConfig{}
+	config := InstallerConfig{}
 
-	if err := json.Unmarshal([]byte(configData), &installerConfig); err != nil {
+	if err := json.Unmarshal([]byte(configData), &config); err != nil {
 		return errs.Wrap(err, "Failed to decode config file")
 	}
 
 	installerDimensions := &dimensions.Values{
-		ProjectID: installerConfig.ProjectID,
-		CommitID:  installerConfig.CommitID,
-		Trigger:   p.StrP(target.TriggerOfflineUninstaller.String()),
+		ProjectNameSpace: p.StrP(project.NewNamespace(*config.OrgName, *config.ProjectName, "").String()),
+		CommitID:         config.CommitID,
+		Trigger:          p.StrP(target.TriggerOfflineUninstaller.String()),
 	}
 	r.analytics.Event(ac.CatOfflineInstaller, ac.ActOfflineInstallerStart, installerDimensions)
 

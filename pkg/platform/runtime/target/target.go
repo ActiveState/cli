@@ -182,31 +182,41 @@ func (c *CustomTarget) InstallFromDir() *string {
 }
 
 type OfflineTarget struct {
+	ns           *project.Namespaced
 	dir          string
 	artifactsDir string
 	trigger      Trigger
 }
 
-func NewOfflineTarget(dir string, artifactsDir string) *OfflineTarget {
+func NewOfflineTarget(namespace *project.Namespaced, dir string, artifactsDir string) *OfflineTarget {
 	cleanDir, err := fileutils.ResolveUniquePath(dir)
 	if err != nil {
 		multilog.Error("Could not resolve unique path for dir: %s, error: %s", dir, err.Error())
 	} else {
 		dir = cleanDir
 	}
-	return &OfflineTarget{dir, artifactsDir, TriggerOffline}
+	return &OfflineTarget{namespace, dir, artifactsDir, TriggerOffline}
 }
 
 func (i *OfflineTarget) Owner() string {
-	return ""
+	if i.ns == nil {
+		return ""
+	}
+	return i.ns.Owner
 }
 
 func (i *OfflineTarget) Name() string {
-	return ""
+	if i.ns == nil {
+		return ""
+	}
+	return i.ns.Project
 }
 
 func (i *OfflineTarget) CommitUUID() strfmt.UUID {
-	return ""
+	if i.ns == nil || i.ns.CommitID == nil {
+		return ""
+	}
+	return *i.ns.CommitID
 }
 
 func (i *OfflineTarget) Dir() string {
