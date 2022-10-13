@@ -54,7 +54,7 @@ func (suite *OffInstallIntegrationTestSuite) TestInstallAndUninstall() {
 		tp := ts.SpawnCmdWithOpts(
 			suite.installerPath,
 			e2e.WithArgs(targetDir),
-			e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+			e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false", "VERBOSE=true"),
 		)
 		tp.Expect("Stage 1 of 3 Finished")
 		tp.Expect("Do you accept the ActiveState License")
