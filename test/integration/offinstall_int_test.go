@@ -56,11 +56,11 @@ func (suite *OffInstallIntegrationTestSuite) TestInstallAndUninstall() {
 			e2e.WithArgs(targetDir),
 			e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false", "VERBOSE=true"),
 		)
-		tp.Expect("Stage 1 of 3 Finished")
+		// tp.Expect("Stage 1 of 3 Finished")
 		tp.Expect("Do you accept the ActiveState License")
 		tp.SendLine("")
-		tp.Expect("Stage 2 of 3 Finished")
-		tp.Expect("Stage 3 of 3 Finished")
+		// tp.Expect("Stage 2 of 3 Finished")
+		// tp.Expect("Stage 3 of 3 Finished")
 		tp.Expect("Setup environment for installed project?")
 		tp.Send("Y")
 		tp.ExpectExitCode(0)
