@@ -36,7 +36,7 @@ func (suite *ShellsIntegrationTestSuite) TestShells() {
 	cp.ExpectExitCode(0)
 
 	for _, shell := range shells {
-		suite.T().Run(fmt.Sprintf("using_"+string(shell)), func(t *testing.T) {
+		suite.T().Run(fmt.Sprintf("using_%s", shell), func(t *testing.T) {
 			// Run the checkout in a particular shell.
 			cp := ts.SpawnInShell(
 				shell,
