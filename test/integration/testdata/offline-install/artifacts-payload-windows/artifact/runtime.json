@@ -17,13 +17,6 @@
       "in": [
         "bin/test-offline-install.bat"
       ]
-    },
-    {
-      "pattern": "PLACEHOLDER",
-      "with": "REPLACEMENT",
-      "in": [
-        "bin/test-offline-install.sh"
-      ]
     }
   ],
   "installdir": "installdir"

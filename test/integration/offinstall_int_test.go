@@ -50,11 +50,18 @@ func (suite *OffInstallIntegrationTestSuite) TestInstallAndUninstall() {
 	suite.preparePayload(ts)
 	targetDir := filepath.Join(ts.Dirs.Work, "target")
 
+	env := []string{
+		"ACTIVESTATE_CLI_DISABLE_RUNTIME=false",
+		"VERBOSE=true",
+	}
+	if runtime.GOOS != "windows" {
+		env = append(env, "SHELL=zsh")
+	}
 	{ // Install
 		tp := ts.SpawnCmdWithOpts(
 			suite.installerPath,
 			e2e.WithArgs(targetDir),
-			e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false", "VERBOSE=true"),
+			e2e.AppendEnv(env...),
 		)
 		// tp.Expect("Stage 1 of 3 Finished")
 		tp.Expect("Do you accept the ActiveState License")
@@ -64,9 +71,10 @@ func (suite *OffInstallIntegrationTestSuite) TestInstallAndUninstall() {
 		tp.Expect("Setup environment for installed project?")
 		tp.Send("Y")
 		tp.ExpectExitCode(0)
+		fmt.Println(tp.Snapshot())
 
 		// Ensure shell env is updated
-		suite.assertShellUpdated(targetDir, true)
+		suite.assertShellUpdated(targetDir, true, ts)
 
 		// Ensure installation dir looks correct
 		suite.assertInstallDir(targetDir, true)
@@ -76,7 +84,10 @@ func (suite *OffInstallIntegrationTestSuite) TestInstallAndUninstall() {
 			refreshEnv := filepath.Join(environment.GetRootPathUnsafe(), "test", "integration", "testdata", "tools", "refreshenv", "refreshenv.bat")
 			tp = ts.SpawnCmd("cmd", "/C", refreshEnv+" && test-offline-install")
 		} else {
-			tp = ts.SpawnCmd("bash", "-c", "test-offline-install")
+			tp = ts.SpawnCmd("zsh")
+			tp.WaitForInput(time.Second * 5)
+			tp.Send("test-offline-install")
+			tp.Send("exit")
 		}
 		tp.Expect("TEST REPLACEMENT", 5*time.Second)
 		tp.ExpectExitCode(0)
@@ -86,13 +97,13 @@ func (suite *OffInstallIntegrationTestSuite) TestInstallAndUninstall() {
 		tp := ts.SpawnCmdWithOpts(
 			suite.uninstallerPath,
 			e2e.WithArgs(targetDir),
-			e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+			e2e.AppendEnv(env...),
 		)
 		tp.Expect("Uninstall Complete", 5*time.Second)
 		tp.ExpectExitCode(0)
 
 		// Ensure shell env is updated
-		suite.assertShellUpdated(targetDir, false)
+		suite.assertShellUpdated(targetDir, false, ts)
 
 		// Ensure installation files are removed
 		suite.assertInstallDir(targetDir, false)
@@ -102,8 +113,13 @@ func (suite *OffInstallIntegrationTestSuite) TestInstallAndUninstall() {
 func (suite *OffInstallIntegrationTestSuite) preparePayload(ts *e2e.Session) {
 	root := environment.GetRootPathUnsafe()
 
+	suffix := "-windows"
+	if runtime.GOOS != "windows" {
+		suffix = "-nix"
+	}
+
 	// The payload is an artifact that contains mocked installation files
-	payloadPath := filepath.Join(root, "test", "integration", "testdata", "offline-install", "artifacts-payload", "artifact")
+	payloadPath := filepath.Join(root, "test", "integration", "testdata", "offline-install", "artifacts-payload"+suffix, "artifact")
 
 	// The asset path contains additional files that we want to embed into the executable, such as the license
 	assetPath := filepath.Join(root, "test", "integration", "testdata", "offline-install", "assets")
@@ -161,32 +177,28 @@ func (suite *OffInstallIntegrationTestSuite) preparePayload(ts *e2e.Session) {
 	)
 	tp.ExpectExitCode(0)
 
-	suite.Require().NoError(os.Chmod(suite.installerPath, 0775)) // ensure file is executable
+	suite.Require().NoError(os.Chmod(suite.installerPath, 0775))   // ensure file is executable
+	suite.Require().NoError(os.Chmod(suite.uninstallerPath, 0775)) // ensure file is executable
 }
 
-func (suite *OffInstallIntegrationTestSuite) assertShellUpdated(dir string, exists bool) {
+func (suite *OffInstallIntegrationTestSuite) assertShellUpdated(dir string, exists bool, ts *e2e.Session) {
 	if runtime.GOOS != "windows" {
-		// Test bashrc
+		// Test zshrc
 		homeDir, err := os.UserHomeDir()
 		suite.Require().NoError(err)
 
-		fname := ".bashrc"
-		if runtime.GOOS == "darwin" {
-			fname = ".bash_profile"
-		}
-		if strings.Contains(os.Getenv("SHELL"), "zsh") {
-			fname = ".zshrc"
-		}
+		fname := ".zshrc"
 
 		assert := suite.Contains
 		if !exists {
 			assert = suite.NotContains
 		}
 
-		bashContents := fileutils.ReadFileUnsafe(filepath.Join(homeDir, fname))
-		assert(string(bashContents), constants.RCAppendOfflineInstallStartLine)
-		assert(string(bashContents), constants.RCAppendOfflineInstallStopLine)
-		assert(string(bashContents), dir)
+		fpath := filepath.Join(homeDir, fname)
+		rcContents := fileutils.ReadFileUnsafe(fpath)
+		assert(string(rcContents), constants.RCAppendOfflineInstallStartLine, fpath)
+		assert(string(rcContents), constants.RCAppendOfflineInstallStopLine, fpath)
+		assert(string(rcContents), dir)
 	} else {
 		// Test registry
 		out, err := exec.Command("reg", "query", `HKEY_CURRENT_USER\Environment`, "/v", "Path").Output()
@@ -213,8 +225,11 @@ func (suite *OffInstallIntegrationTestSuite) assertInstallDir(dir string, exists
 	if !exists {
 		assert = suite.Require().NoFileExists
 	}
-	assert(filepath.Join(dir, "bin", "test-offline-install.bat"))
-	assert(filepath.Join(dir, "bin", "test-offline-install.sh"))
+	if runtime.GOOS == "windows" {
+		assert(filepath.Join(dir, "bin", "test-offline-install.bat"))
+	} else {
+		assert(filepath.Join(dir, "bin", "test-offline-install"))
+	}
 	if runtime.GOOS == "windows" {
 		assert(filepath.Join(dir, "bin", "shell.bat"))
 	}
