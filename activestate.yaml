@@ -83,7 +83,7 @@ scripts:
     value: |
       if [ hash apt &> /dev/null ]; then
         pkgs=""
-        for pkg in "libgtk-3-dev libappindicator3-dev libwebkit2gtk-4.0-dev" ; do
+        for pkg in "libgtk-3-dev libappindicator3-dev libwebkit2gtk-4.0-dev zsh" ; do
           dpkg -s "${pkg}" &>/dev/null && continue
           pkgs="$pkgs ${pkg}"
         done
