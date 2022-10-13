@@ -69,7 +69,7 @@ scripts:
       goflags="${GOFLAGS}"; unset GOFLAGS
       GOFLAGS="${goflags}"
       pushd ~
-      go install github.com/sanderhahn/gozip/cmd/gozip@latest
+      go install github.com/ActiveState/gozip/cmd/gozip@e455986
       popd
       $scripts.install-deps-os
   - name: install-deps-os
