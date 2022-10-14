@@ -97,7 +97,6 @@ scripts:
           pushd /usr/local/share/zsh
           sudo chmod -R 755 ./site-functions
           sudo chown -R root:root ./site-functions
-          compaudit | xargs chmod g-w
           popd
         fi
       elif type "yum" &> /dev/null; then
