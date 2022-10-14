@@ -24,7 +24,7 @@ jobs:
   # === OS Specific Job (runs on each OS) ===
   os_specific:
     name: ${{ matrix.platform }}
-    timeout-minutes: 120
+    timeout-minutes: 240
     strategy:
       matrix:
         go-version:
@@ -296,7 +296,7 @@ jobs:
           export TEST_SUITE_TAGS="$TEST_SUITE_TAGS"
           TIMEOUT=15m
           if [[ "$TEST_SUITE_TAGS" == "all" ]]; then
-            TIMEOUT=120m
+            TIMEOUT=240m
           fi
           set +e
           SHELL='' go test -timeout $TIMEOUT -v `go list ./... | grep "integration\|automation"` &> build/integration-tests.out
