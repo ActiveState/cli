@@ -251,6 +251,16 @@ func (s *Session) SpawnInShell(cmd string, opts ...SpawnOptions) *termtest.Conso
 		shellArgs = []string{"/k"}
 	}
 
+	if cmd == "zsh" {
+		cp := s.SpawnCmd(exe, shellArgs...)
+		cp.Send("echo 'autoload -Uz compinit' > ${HOME}/.zshrc")
+		cp.Send("echo 'compinit' > ${HOME}/.zshrc")
+		cp.Send("cat ${HOME}/.zshrc")
+		//tp.Send("compaudit | xargs chmod g-w")
+		cp.Send("zsh")
+		return cp
+	}
+
 	return s.SpawnCmdWithOpts(exe, append(opts, WithArgs(append(shellArgs, cmd)...))...)
 }
 
