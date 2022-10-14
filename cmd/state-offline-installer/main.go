@@ -26,13 +26,11 @@ import (
 )
 
 type Params struct {
-	path string
+	path *string
 }
 
 func newParams() *Params {
-	return &Params{
-		path: "/tmp",
-	}
+	return &Params{}
 }
 
 func main() {

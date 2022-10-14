@@ -16,6 +16,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/offinstall"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
@@ -85,6 +86,12 @@ func (r *runner) Run(params *Params) (rerr error) {
 		}
 	}()
 
+	// Detect target path
+	targetPath, err := getTargetPath(params.path, r.prompt)
+	if err != nil {
+		return errs.Wrap(err, "Could not determine target path")
+	}
+
 	logfile, err := buildlogfile.New(outputhelper.NewCatcher())
 	if err != nil {
 		return errs.Wrap(err, "Unable to create new logfile object")
@@ -100,7 +107,7 @@ func (r *runner) Run(params *Params) (rerr error) {
 	r.out.Print(fmt.Sprintf("Installation directory is: %s", params.path))
 
 	/* Validate Target Path */
-	if err := r.validateTargetPath(params.path); err != nil {
+	if err := r.validateTargetPath(targetPath); err != nil {
 		return errs.Wrap(err, "Could not validate target path")
 	}
 
@@ -153,14 +160,14 @@ func (r *runner) Run(params *Params) (rerr error) {
 	}
 
 	/* Install Artifacts */
-	asrt, err := r.setupRuntime(artifactsPath, params.path, logfile, config)
+	asrt, err := r.setupRuntime(artifactsPath, targetPath, logfile, config)
 	if err != nil {
 		return errs.Wrap(err, "Could not setup runtime")
 	}
 
 	/* Manually Install License File */
 	{
-		err = fileutils.CopyFile(licenseFileAssetPath, filepath.Join(params.path, licenseFileName))
+		err = fileutils.CopyFile(licenseFileAssetPath, filepath.Join(targetPath, licenseFileName))
 		if err != nil {
 			return errs.Wrap(err, "Error copying license file")
 		}
@@ -170,7 +177,7 @@ func (r *runner) Run(params *Params) (rerr error) {
 	{
 		err = fileutils.CopyFile(
 			installerConfigPath,
-			filepath.Join(params.path, installerConfigFileName),
+			filepath.Join(targetPath, installerConfigFileName),
 		)
 		if err != nil {
 			return errs.Wrap(err, "Error copying config file")
@@ -183,7 +190,7 @@ func (r *runner) Run(params *Params) (rerr error) {
 	/* Manually Install uninstaller */
 	if rt.GOOS == "windows" {
 		/* shenanigans because windows won't let you delete an executable that's running */
-		installDir, err := filepath.Abs(params.path)
+		installDir, err := filepath.Abs(targetPath)
 		if err != nil {
 			return errs.Wrap(err, "Error determining absolute install directory")
 		}
@@ -212,7 +219,7 @@ func (r *runner) Run(params *Params) (rerr error) {
 		}
 	} else {
 		uninstallerSrc = filepath.Join(assetsPath, uninstallerFileNameRoot)
-		uninstallerDest = filepath.Join(params.path, uninstallerFileNameRoot)
+		uninstallerDest = filepath.Join(targetPath, uninstallerFileNameRoot)
 	}
 	{
 		err = fileutils.CopyFile(
@@ -229,7 +236,7 @@ func (r *runner) Run(params *Params) (rerr error) {
 	}
 
 	/* Configure Environment */
-	if err := r.configureEnvironment(params.path, asrt); err != nil {
+	if err := r.configureEnvironment(targetPath, asrt); err != nil {
 		return errs.Wrap(err, "Could not configure environment")
 	}
 
@@ -238,6 +245,25 @@ func (r *runner) Run(params *Params) (rerr error) {
 	r.out.Print("Runtime installation completed.")
 
 	return nil
+}
+
+func getTargetPath(inputPath *string, prompt prompt.Prompter) (string, error) {
+	var targetPath string
+	if inputPath != nil {
+		targetPath = *inputPath
+	} else {
+		var err error
+		targetPath, err = offinstall.DefaultInstallPath()
+		if err != nil {
+			return "", errs.Wrap(err, "Could not determine default install path")
+		}
+
+		targetPath, err = prompt.Input("", "Enter an installation directory", &targetPath)
+		if err != nil {
+			return "", errs.Wrap(err, "Could not retrieve installation directory")
+		}
+	}
+	return targetPath, nil
 }
 
 func (r *runner) setupRuntime(artifactsPath string, targetPath string, logfile *buildlogfile.BuildLogFile, cfg InstallerConfig) (*runtime.Runtime, error) {
