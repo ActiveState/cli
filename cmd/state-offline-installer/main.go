@@ -89,7 +89,7 @@ func main() {
 		}
 
 		errors.PanicOnMissingLocale = false
-		exitCode, err = errors.Unwrap(err)
+		exitCode, _ = errors.Unwrap(err)
 		fmt.Fprintln(os.Stderr, errs.JoinMessage(err))
 	}
 }

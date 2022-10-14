@@ -30,6 +30,8 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup/events"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
+	"github.com/vbauerster/mpb/v7"
+	"github.com/vbauerster/mpb/v7/decor"
 )
 
 const artifactsTarGZName = "artifacts.tar.gz"
@@ -263,8 +265,6 @@ func (r *runner) prepareInstallerConfig(assetsPath string) error {
 }
 
 func (r *runner) setupRuntime(artifactsPath string, targetPath string) (*runtime.Runtime, error) {
-	r.out.Print(fmt.Sprintf("Stage 3 of 3 Start: Installing artifacts from: %s", artifactsPath))
-
 	logfile, err := buildlogfile.New(outputhelper.NewCatcher())
 	if err != nil {
 		return nil, errs.Wrap(err, "Unable to create new logfile object")
@@ -286,7 +286,6 @@ func (r *runner) setupRuntime(artifactsPath string, targetPath string) (*runtime
 			return nil, errs.Wrap(err, "Had an installation error")
 		}
 	}
-	r.out.Print(fmt.Sprintf("Stage 3 of 3 Finished: Installing artifacts from: %s", artifactsPath))
 	return rti, nil
 }
 
@@ -295,7 +294,6 @@ func (r *runner) extractArtifacts(artifactsPath, assetsPath string) error {
 		return errs.Wrap(err, "Unable to create artifactsPath directory")
 	}
 
-	r.out.Print(fmt.Sprintf("Stage 2 of 3 Start: Decompressing artifacts into: %s", artifactsPath))
 	archivePath := filepath.Join(assetsPath, artifactsTarGZName)
 	ua := unarchiver.NewTarGz()
 	f, siz, err := ua.PrepareUnpacking(archivePath, artifactsPath)
@@ -303,9 +301,18 @@ func (r *runner) extractArtifacts(artifactsPath, assetsPath string) error {
 		return errs.Wrap(err, "Unable to prepare unpacking of artifact tarball")
 	}
 
+	pb := mpb.New(
+		mpb.WithWidth(40),
+	)
+	barName := "Extracting"
+	bar := pb.AddBar(
+		siz,
+		mpb.PrependDecorators(decor.Name(barName, decor.WC{W: len(barName) + 1, C: decor.DidentRight})),
+	)
+
 	ua.SetNotifier(func(filename string, _ int64, isDir bool) {
 		if !isDir {
-			r.out.Print(fmt.Sprintf("Unpacking artifact %s", filename))
+			bar.Increment()
 		}
 	})
 
@@ -314,7 +321,9 @@ func (r *runner) extractArtifacts(artifactsPath, assetsPath string) error {
 		return errs.Wrap(err, "Unable to unarchive artifacts to artifactsPath")
 	}
 
-	r.out.Print(fmt.Sprintf("Stage 2 of 3 Finished: Decompressing artifacts into: %s", artifactsPath))
+	bar.SetTotal(0, true)
+	bar.Abort(true)
+	pb.Wait()
 
 	return nil
 }
@@ -325,7 +334,6 @@ func (r *runner) extractAssets(assetsPath string, backpackZipFile string) error 
 	}
 
 	ua := unarchiver.NewZip()
-	r.out.Print(fmt.Sprintf("Stage 1 of 3 Start: Decompressing assets into: %s", assetsPath))
 	f, siz, err := ua.PrepareUnpacking(backpackZipFile, assetsPath)
 	if err != nil {
 		return errs.Wrap(err, "Unable to prepare unpacking of backpack")
@@ -336,7 +344,6 @@ func (r *runner) extractAssets(assetsPath string, backpackZipFile string) error 
 		return errs.Wrap(err, "Unable to unarchive Assets to assetsPath")
 	}
 
-	r.out.Print(fmt.Sprintf("Stage 1 of 3 Finished: Decompressing assets into: %s", assetsPath))
 	return nil
 }
 
@@ -451,8 +458,6 @@ func (r *runner) promptLicense(assetsPath string) (bool, error) {
 	if err != nil {
 		return false, errs.Wrap(err, "Unable to open License file")
 	}
-
-	r.out.Print(output.Heading("ActiveState Runtime Installer License Agreement"))
 	r.out.Print(licenseContents)
 
 	choice, err := r.prompt.Confirm("", "Do you accept the ActiveState Runtime Installer License Agreement?", p.BoolP(false))
