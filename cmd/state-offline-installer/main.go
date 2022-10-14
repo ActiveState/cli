@@ -114,7 +114,7 @@ func run(prime *primer.Values) error {
 				Name:        "path",
 				Description: "Install into target directory <path>",
 				Value:       &params.path,
-				Required:    true,
+				Required:    false,
 			},
 		},
 		func(ccmd *captain.Command, args []string) error {

@@ -7,7 +7,7 @@ import (
 	"github.com/mitchellh/go-homedir"
 )
 
-func DefaultInstallPath() (string, error) {
+func DefaultInstallParentDir() (string, error) {
 	home, err := homedir.Dir()
 	if err != nil {
 		return "", errs.Wrap(err, "Could not get home directory")

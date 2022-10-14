@@ -67,10 +67,10 @@ func NewRunner(prime primeable) *runner {
 }
 
 type InstallerConfig struct {
-	OrgName     *string `json:"org_name"`
-	ProjectID   *string `json:"project_id"`
-	ProjectName *string `json:"project_name"`
-	CommitID    *string `json:"commit_id"`
+	OrgName     string `json:"org_name"`
+	ProjectID   string `json:"project_id"`
+	ProjectName string `json:"project_name"`
+	CommitID    string `json:"commit_id"`
 }
 
 func (r *runner) Run(params *Params) (rerr error) {
@@ -86,8 +86,26 @@ func (r *runner) Run(params *Params) (rerr error) {
 		}
 	}()
 
+	tempDir, err := ioutil.TempDir("", "artifacts-")
+	if err != nil {
+		return errs.Wrap(err, "Unable to create temporary directory")
+	}
+	defer os.RemoveAll(tempDir)
+
+	/* Extract Assets */
+	backpackZipFile := os.Args[0]
+	assetsPath := filepath.Join(tempDir, assetsPathName)
+	if err := r.extractAssets(assetsPath, backpackZipFile); err != nil {
+		return errs.Wrap(err, "Could not extract assets")
+	}
+
+	icfg, err := getInstallerConfig(assetsPath)
+	if err != nil {
+		return errs.Wrap(err, "Could not read installer config, this installer appears to be corrupted.")
+	}
+
 	// Detect target path
-	targetPath, err := getTargetPath(params.path, r.prompt)
+	targetPath, err := getTargetPath(params.path, icfg.ProjectName, r.prompt)
 	if err != nil {
 		return errs.Wrap(err, "Could not determine target path")
 	}
@@ -97,12 +115,6 @@ func (r *runner) Run(params *Params) (rerr error) {
 		return errs.Wrap(err, "Unable to create new logfile object")
 	}
 
-	tempDir, err := ioutil.TempDir("", "artifacts-")
-	if err != nil {
-		return errs.Wrap(err, "Unable to create temporary directory")
-	}
-	defer os.RemoveAll(tempDir)
-
 	r.out.Print(fmt.Sprintf("Temp directory is: %s", tempDir))
 	r.out.Print(fmt.Sprintf("Installation directory is: %s", params.path))
 
@@ -111,27 +123,9 @@ func (r *runner) Run(params *Params) (rerr error) {
 		return errs.Wrap(err, "Could not validate target path")
 	}
 
-	/* Extract Assets */
-	backpackZipFile := os.Args[0]
-	assetsPath := filepath.Join(tempDir, assetsPathName)
-	if err := r.extractAssets(assetsPath, backpackZipFile); err != nil {
-		return errs.Wrap(err, "Could not extract assets")
-	}
-
-	config := InstallerConfig{}
-	installerConfigPath := filepath.Join(assetsPath, installerConfigFileName)
-	configData, err := os.ReadFile(installerConfigPath)
-	if err != nil {
-		return errs.Wrap(err, "Failed to read config_file")
-	}
-
-	if err := json.Unmarshal([]byte(configData), &config); err != nil {
-		return errs.Wrap(err, "Failed to decode config_file")
-	}
-
 	installerDimensions = &dimensions.Values{
-		ProjectNameSpace: p.StrP(project.NewNamespace(*config.OrgName, *config.ProjectName, "").String()),
-		CommitID:         config.CommitID,
+		ProjectNameSpace: p.StrP(project.NewNamespace(icfg.OrgName, icfg.ProjectName, "").String()),
+		CommitID:         &icfg.CommitID,
 		Trigger:          p.StrP(target.TriggerOfflineInstaller.String()),
 	}
 	r.analytics.Event(ac.CatOfflineInstaller, "start", installerDimensions)
@@ -160,7 +154,7 @@ func (r *runner) Run(params *Params) (rerr error) {
 	}
 
 	/* Install Artifacts */
-	asrt, err := r.setupRuntime(artifactsPath, targetPath, logfile, config)
+	asrt, err := r.setupRuntime(artifactsPath, targetPath, logfile, icfg)
 	if err != nil {
 		return errs.Wrap(err, "Could not setup runtime")
 	}
@@ -176,7 +170,7 @@ func (r *runner) Run(params *Params) (rerr error) {
 	/* Manually Install config File */
 	{
 		err = fileutils.CopyFile(
-			installerConfigPath,
+			filepath.Join(assetsPath, installerConfigFileName),
 			filepath.Join(targetPath, installerConfigFileName),
 		)
 		if err != nil {
@@ -198,7 +192,7 @@ func (r *runner) Run(params *Params) (rerr error) {
 		if err := os.Mkdir(uninstallDir, os.ModeDir); err != nil {
 			return errs.Wrap(err, "Error creating uninstall directory")
 		}
-		uninstallerDestName := fmt.Sprintf("%s-%s-%s.exe", *config.ProjectID, *config.CommitID, uninstallerFileNameRoot)
+		uninstallerDestName := fmt.Sprintf("%s-%s-%s.exe", icfg.ProjectID, icfg.CommitID, uninstallerFileNameRoot)
 
 		uninstallerSrc = filepath.Join(assetsPath, uninstallerFileNameRoot+".exe")
 		uninstallerDest = filepath.Join(uninstallDir, uninstallerDestName)
@@ -247,16 +241,42 @@ func (r *runner) Run(params *Params) (rerr error) {
 	return nil
 }
 
-func getTargetPath(inputPath *string, prompt prompt.Prompter) (string, error) {
+func getInstallerConfig(assetsPath string) (InstallerConfig, error) {
+	icfg := InstallerConfig{}
+	installerConfigPath := filepath.Join(assetsPath, installerConfigFileName)
+	configData, err := os.ReadFile(installerConfigPath)
+	if err != nil {
+		return icfg, errs.Wrap(err, "Failed to read config_file")
+	}
+	if err := json.Unmarshal(configData, &icfg); err != nil {
+		return icfg, errs.Wrap(err, "Failed to decode config_file")
+	}
+
+	if icfg.ProjectName == "" {
+		return icfg, errs.New("ProjectName is empty")
+	}
+
+	if icfg.OrgName == "" {
+		return icfg, errs.New("OrgName is empty")
+	}
+
+	if icfg.CommitID == "" {
+		return icfg, errs.New("CommitID is empty")
+	}
+
+	return icfg, nil
+}
+
+func getTargetPath(inputPath *string, projectName string, prompt prompt.Prompter) (string, error) {
 	var targetPath string
 	if inputPath != nil {
 		targetPath = *inputPath
 	} else {
-		var err error
-		targetPath, err = offinstall.DefaultInstallPath()
+		parentDir, err := offinstall.DefaultInstallParentDir()
 		if err != nil {
 			return "", errs.Wrap(err, "Could not determine default install path")
 		}
+		targetPath = filepath.Join(parentDir, projectName)
 
 		targetPath, err = prompt.Input("", "Enter an installation directory", &targetPath)
 		if err != nil {
@@ -269,7 +289,7 @@ func getTargetPath(inputPath *string, prompt prompt.Prompter) (string, error) {
 func (r *runner) setupRuntime(artifactsPath string, targetPath string, logfile *buildlogfile.BuildLogFile, cfg InstallerConfig) (*runtime.Runtime, error) {
 	r.out.Print(fmt.Sprintf("Stage 3 of 3 Start: Installing artifacts from: %s", artifactsPath))
 
-	ns := project.NewNamespace(*cfg.OrgName, *cfg.ProjectName, *cfg.CommitID)
+	ns := project.NewNamespace(cfg.OrgName, cfg.ProjectName, cfg.CommitID)
 	offlineTarget := target.NewOfflineTarget(ns, targetPath, artifactsPath)
 	offlineTarget.SetTrigger(target.TriggerOfflineInstaller)
 
