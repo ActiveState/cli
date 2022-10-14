@@ -67,6 +67,7 @@ func (suite *OffInstallIntegrationTestSuite) TestInstallAndUninstall() {
 	env := []string{
 		"ACTIVESTATE_CLI_DISABLE_RUNTIME=false",
 		"HOME=" + homeDir,
+		"VERBOSE=true",
 	}
 	if runtime.GOOS != "windows" {
 		env = append(env, "SHELL=zsh")
@@ -84,6 +85,8 @@ func (suite *OffInstallIntegrationTestSuite) TestInstallAndUninstall() {
 		tp.Expect("Setup environment for installed project?")
 		tp.Send("Y")
 		tp.ExpectExitCode(0)
+
+		fmt.Println(tp.Snapshot())
 
 		// Verify that our analytics event was fired
 		time.Sleep(2 * time.Second) // give time to let rtwatcher detect process has exited

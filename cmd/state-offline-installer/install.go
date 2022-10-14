@@ -16,6 +16,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/offinstall"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
@@ -46,6 +47,7 @@ type runner struct {
 	analytics analytics.Dispatcher
 	cfg       *config.Instance
 	shell     subshell.SubShell
+	icfg      InstallerConfig
 }
 
 type primeable interface {
@@ -63,6 +65,7 @@ func NewRunner(prime primeable) *runner {
 		prime.Analytics(),
 		prime.Config(),
 		prime.Subshell(),
+		InstallerConfig{},
 	}
 }
 
@@ -99,33 +102,28 @@ func (r *runner) Run(params *Params) (rerr error) {
 		return errs.Wrap(err, "Could not extract assets")
 	}
 
-	icfg, err := getInstallerConfig(assetsPath)
+	err = r.prepareInstallerConfig(assetsPath)
 	if err != nil {
 		return errs.Wrap(err, "Could not read installer config, this installer appears to be corrupted.")
 	}
 
 	// Detect target path
-	targetPath, err := getTargetPath(params.path, icfg.ProjectName, r.prompt)
+	targetPath, err := r.getTargetPath(params.path)
 	if err != nil {
 		return errs.Wrap(err, "Could not determine target path")
 	}
-
-	logfile, err := buildlogfile.New(outputhelper.NewCatcher())
-	if err != nil {
-		return errs.Wrap(err, "Unable to create new logfile object")
-	}
-
-	r.out.Print(fmt.Sprintf("Temp directory is: %s", tempDir))
-	r.out.Print(fmt.Sprintf("Installation directory is: %s", params.path))
 
 	/* Validate Target Path */
 	if err := r.validateTargetPath(targetPath); err != nil {
 		return errs.Wrap(err, "Could not validate target path")
 	}
 
+	logging.Debug("Temp directory is: %s", tempDir)
+	logging.Debug("Installation directory is: %s", params.path)
+
 	installerDimensions = &dimensions.Values{
-		ProjectNameSpace: p.StrP(project.NewNamespace(icfg.OrgName, icfg.ProjectName, "").String()),
-		CommitID:         &icfg.CommitID,
+		ProjectNameSpace: p.StrP(project.NewNamespace(r.icfg.OrgName, r.icfg.ProjectName, "").String()),
+		CommitID:         &r.icfg.CommitID,
 		Trigger:          p.StrP(target.TriggerOfflineInstaller.String()),
 	}
 	r.analytics.Event(ac.CatOfflineInstaller, "start", installerDimensions)
@@ -154,7 +152,7 @@ func (r *runner) Run(params *Params) (rerr error) {
 	}
 
 	/* Install Artifacts */
-	asrt, err := r.setupRuntime(artifactsPath, targetPath, logfile, icfg)
+	asrt, err := r.setupRuntime(artifactsPath, targetPath)
 	if err != nil {
 		return errs.Wrap(err, "Could not setup runtime")
 	}
@@ -192,7 +190,7 @@ func (r *runner) Run(params *Params) (rerr error) {
 		if err := os.Mkdir(uninstallDir, os.ModeDir); err != nil {
 			return errs.Wrap(err, "Error creating uninstall directory")
 		}
-		uninstallerDestName := fmt.Sprintf("%s-%s-%s.exe", icfg.ProjectID, icfg.CommitID, uninstallerFileNameRoot)
+		uninstallerDestName := fmt.Sprintf("%s-%s-%s.exe", r.icfg.ProjectID, r.icfg.CommitID, uninstallerFileNameRoot)
 
 		uninstallerSrc = filepath.Join(assetsPath, uninstallerFileNameRoot+".exe")
 		uninstallerDest = filepath.Join(uninstallDir, uninstallerDestName)
@@ -241,55 +239,43 @@ func (r *runner) Run(params *Params) (rerr error) {
 	return nil
 }
 
-func getInstallerConfig(assetsPath string) (InstallerConfig, error) {
+func (r *runner) prepareInstallerConfig(assetsPath string) error {
 	icfg := InstallerConfig{}
 	installerConfigPath := filepath.Join(assetsPath, installerConfigFileName)
 	configData, err := os.ReadFile(installerConfigPath)
 	if err != nil {
-		return icfg, errs.Wrap(err, "Failed to read config_file")
+		return errs.Wrap(err, "Failed to read config_file")
 	}
 	if err := json.Unmarshal(configData, &icfg); err != nil {
-		return icfg, errs.Wrap(err, "Failed to decode config_file")
+		return errs.Wrap(err, "Failed to decode config_file")
 	}
 
 	if icfg.ProjectName == "" {
-		return icfg, errs.New("ProjectName is empty")
+		return errs.New("ProjectName is empty")
 	}
 
 	if icfg.OrgName == "" {
-		return icfg, errs.New("OrgName is empty")
+		return errs.New("OrgName is empty")
 	}
 
 	if icfg.CommitID == "" {
-		return icfg, errs.New("CommitID is empty")
+		return errs.New("CommitID is empty")
 	}
 
-	return icfg, nil
+	r.icfg = icfg
+
+	return nil
 }
 
-func getTargetPath(inputPath *string, projectName string, prompt prompt.Prompter) (string, error) {
-	var targetPath string
-	if inputPath != nil {
-		targetPath = *inputPath
-	} else {
-		parentDir, err := offinstall.DefaultInstallParentDir()
-		if err != nil {
-			return "", errs.Wrap(err, "Could not determine default install path")
-		}
-		targetPath = filepath.Join(parentDir, projectName)
-
-		targetPath, err = prompt.Input("", "Enter an installation directory", &targetPath)
-		if err != nil {
-			return "", errs.Wrap(err, "Could not retrieve installation directory")
-		}
-	}
-	return targetPath, nil
-}
-
-func (r *runner) setupRuntime(artifactsPath string, targetPath string, logfile *buildlogfile.BuildLogFile, cfg InstallerConfig) (*runtime.Runtime, error) {
+func (r *runner) setupRuntime(artifactsPath string, targetPath string) (*runtime.Runtime, error) {
 	r.out.Print(fmt.Sprintf("Stage 3 of 3 Start: Installing artifacts from: %s", artifactsPath))
 
-	ns := project.NewNamespace(cfg.OrgName, cfg.ProjectName, cfg.CommitID)
+	logfile, err := buildlogfile.New(outputhelper.NewCatcher())
+	if err != nil {
+		return nil, errs.Wrap(err, "Unable to create new logfile object")
+	}
+
+	ns := project.NewNamespace(r.icfg.OrgName, r.icfg.ProjectName, r.icfg.CommitID)
 	offlineTarget := target.NewOfflineTarget(ns, targetPath, artifactsPath)
 	offlineTarget.SetTrigger(target.TriggerOfflineInstaller)
 
@@ -406,6 +392,25 @@ func (r *runner) configureEnvironment(path string, asrt *runtime.Runtime) error 
 	}
 
 	return nil
+}
+
+func (r *runner) getTargetPath(inputPath *string) (string, error) {
+	var targetPath string
+	if inputPath != nil {
+		targetPath = *inputPath
+	} else {
+		parentDir, err := offinstall.DefaultInstallParentDir()
+		if err != nil {
+			return "", errs.Wrap(err, "Could not determine default install path")
+		}
+		targetPath = filepath.Join(parentDir, r.icfg.ProjectName)
+
+		targetPath, err = r.prompt.Input("", "Enter an installation directory", &targetPath)
+		if err != nil {
+			return "", errs.Wrap(err, "Could not retrieve installation directory")
+		}
+	}
+	return targetPath, nil
 }
 
 func (r *runner) validateTargetPath(path string) error {
