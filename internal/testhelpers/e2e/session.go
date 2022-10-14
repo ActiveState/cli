@@ -255,8 +255,7 @@ func (s *Session) SpawnInShell(cmd string, opts ...SpawnOptions) *termtest.Conso
 		cp := s.SpawnCmd(exe)
 		cp.Send("echo 'autoload -Uz compinit' >> ${HOME}/.zshrc")
 		cp.Send("echo 'compinit' >> ${HOME}/.zshrc")
-		cp.Send("cat ${HOME}/.zshrc")
-		//tp.Send("compaudit | xargs chmod g-w")
+		cp.Send("echo 'compaudit | xargs chmod g-w' >> ${HOME}/.zshrc")
 		cp.Send("zsh")
 		return cp
 	}
