@@ -20,6 +20,7 @@ import (
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/rollbar"
+	"github.com/ActiveState/cli/internal/rtutils/p"
 	"github.com/ActiveState/cli/internal/runbits/panics"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/pkg/cmdlets/errors"
@@ -95,6 +96,8 @@ func main() {
 		exitCode, _ = errors.Unwrap(err)
 		fmt.Fprintln(os.Stderr, errs.JoinMessage(err))
 	}
+	out.Print("Press enter to exit.")
+	fmt.Scanln(p.StrP("")) // Wait for input from user
 }
 
 func run(prime *primer.Values) error {

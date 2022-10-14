@@ -646,6 +646,28 @@ func TestPathsMatch(t *testing.T) {
 	require.True(t, v, "PathsMatch should return true, path1: %s, path2: %s", v1, v2)
 }
 
+func TestIsWritableFile(t *testing.T) {
+	file, err := WriteTempFile(
+		"", t.Name(), []byte("Some data"), 0777,
+	)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if IsWritable(file) != true {
+		t.Fatal("File should be writable")
+	}
+
+	err = os.Chmod(file, 0444)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if IsWritable(file) != false {
+		t.Fatal("File should no longer be writable")
+	}
+}
+
 func TestIsWritableDir(t *testing.T) {
 	pathWithPermission, err := HomeDir()
 	if err != nil {

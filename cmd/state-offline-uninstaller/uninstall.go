@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -97,6 +98,16 @@ func (r *runner) Run(params *Params) (rerr error) {
 
 	if err := r.prepareInstallerConfig(targetPath); err != nil {
 		return errs.Wrap(err, "Could not read installer config, this installer appears to be corrupted.")
+	}
+
+	cont, err := r.prompt.Confirm("",
+		fmt.Sprintf("You are about to uninstall the runtime installed at %s, continue?", targetPath),
+		p.BoolP(false))
+	if err != nil {
+		return errs.Wrap(err, "Could not confirm uninstall")
+	}
+	if !cont {
+		return locale.NewInputError("err_uninstall_abort", "Uninstall aborted")
 	}
 
 	installerDimensions = &dimensions.Values{

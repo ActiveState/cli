@@ -81,9 +81,11 @@ func (suite *OffInstallIntegrationTestSuite) TestInstallAndUninstall() {
 		tp.SendLine("")
 		tp.ExpectLongString("Do you accept the ActiveState Runtime Installer License Agreement")
 		tp.SendLine("y")
-		tp.Expect("Extracting")
+		tp.Expect("Extracting", time.Second)
 		tp.Expect("Installing")
 		tp.Expect("Installation complete")
+		tp.Expect("Press enter to exit")
+		tp.SendLine("")
 		tp.ExpectExitCode(0)
 
 		fmt.Println(tp.Snapshot())
@@ -129,6 +131,8 @@ func (suite *OffInstallIntegrationTestSuite) TestInstallAndUninstall() {
 		tp.Expect("Enter an installation directory to uninstall")
 		tp.SendLine(defaultInstallDir)
 		tp.Expect("Uninstall Complete", 5*time.Second)
+		tp.Expect("Press enter to exit")
+		tp.SendLine("")
 		tp.ExpectExitCode(0)
 
 		// Ensure shell env is updated
