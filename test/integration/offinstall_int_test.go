@@ -84,7 +84,7 @@ func (suite *OffInstallIntegrationTestSuite) TestInstallAndUninstall() {
 			refreshEnv := filepath.Join(environment.GetRootPathUnsafe(), "test", "integration", "testdata", "tools", "refreshenv", "refreshenv.bat")
 			tp = ts.SpawnCmd("cmd", "/C", refreshEnv+" && test-offline-install")
 		} else {
-			tp = ts.SpawnCmd("zsh")
+			tp = ts.SpawnInShell("zsh")
 			tp.WaitForInput(time.Second * 5)
 			tp.Send("test-offline-install")
 			tp.Send("exit")
