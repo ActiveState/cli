@@ -32,6 +32,9 @@ func main() {
 	var cfg *config.Instance
 	rollbar.SetupRollbar(constants.OfflineInstallerRollbarToken)
 
+	// Allow starting the installer via a double click
+	captain.DisableMousetrap()
+
 	// Handle things like panics, exit codes and the closing of globals
 	defer func() {
 		if panics.HandlePanics(recover(), debug.Stack()) {

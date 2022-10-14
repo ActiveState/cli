@@ -124,9 +124,10 @@ func (suite *OffInstallIntegrationTestSuite) TestInstallAndUninstall() {
 	{ // Uninstall
 		tp := ts.SpawnCmdWithOpts(
 			suite.uninstallerPath,
-			e2e.WithArgs(defaultInstallDir),
 			e2e.AppendEnv(env...),
 		)
+		tp.Expect("Enter an installation directory to uninstall")
+		tp.SendLine(defaultInstallDir)
 		tp.Expect("Uninstall Complete", 5*time.Second)
 		tp.ExpectExitCode(0)
 
