@@ -67,7 +67,6 @@ func (suite *OffInstallIntegrationTestSuite) TestInstallAndUninstall() {
 	env := []string{
 		"ACTIVESTATE_CLI_DISABLE_RUNTIME=false",
 		"HOME=" + homeDir,
-		"VERBOSE=true",
 	}
 	if runtime.GOOS != "windows" {
 		env = append(env, "SHELL=zsh")
@@ -80,8 +79,8 @@ func (suite *OffInstallIntegrationTestSuite) TestInstallAndUninstall() {
 		tp.Expect("Enter an installation directory")
 		tp.Expect(defaultInstallDir)
 		tp.SendLine("")
-		tp.Expect("Do you accept the ActiveState License")
-		tp.SendLine("")
+		tp.ExpectLongString("Do you accept the ActiveState Runtime Installer License Agreement")
+		tp.SendLine("y")
 		tp.Expect("Setup environment for installed project?")
 		tp.Send("Y")
 		tp.ExpectExitCode(0)

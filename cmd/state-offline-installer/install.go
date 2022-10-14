@@ -26,7 +26,6 @@ import (
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
 	"github.com/ActiveState/cli/internal/testhelpers/outputhelper"
 	"github.com/ActiveState/cli/internal/unarchiver"
-	"github.com/ActiveState/cli/pkg/cmdlets/legalprompt"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup/events"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
@@ -133,20 +132,12 @@ func (r *runner) Run(params *Params) (rerr error) {
 	}
 
 	/* Prompt for License */
-	licenseFileAssetPath := filepath.Join(assetsPath, licenseFileName)
-	{
-		b, err := fileutils.ReadFile(licenseFileAssetPath)
-		if err != nil {
-			return errs.Wrap(err, "Unable to open License file")
-		}
-
-		accepted, err := legalprompt.CustomLicense(string(b), r.out, r.prompt)
-		if err != nil {
-			return errs.Wrap(err, "Error with license acceptance")
-		}
-		if !accepted {
-			return locale.NewInputError("License not accepted")
-		}
+	accepted, err := r.promptLicense(assetsPath)
+	if err != nil {
+		return errs.Wrap(err, "Could not prompt for license")
+	}
+	if !accepted {
+		return locale.NewInputError("License not accepted")
 	}
 
 	/* Extract Artifacts */
@@ -163,7 +154,7 @@ func (r *runner) Run(params *Params) (rerr error) {
 
 	/* Manually Install License File */
 	{
-		err = fileutils.CopyFile(licenseFileAssetPath, filepath.Join(targetPath, licenseFileName))
+		err = fileutils.CopyFile(filepath.Join(assetsPath, licenseFileName), filepath.Join(targetPath, licenseFileName))
 		if err != nil {
 			return errs.Wrap(err, "Error copying license file")
 		}
@@ -452,4 +443,26 @@ func (r *runner) validateTargetPath(path string) error {
 	}
 
 	return nil
+}
+
+func (r *runner) promptLicense(assetsPath string) (bool, error) {
+	licenseFileAssetPath := filepath.Join(assetsPath, licenseFileName)
+	licenseContents, err := fileutils.ReadFile(licenseFileAssetPath)
+	if err != nil {
+		return false, errs.Wrap(err, "Unable to open License file")
+	}
+
+	r.out.Print(output.Heading("ActiveState Runtime Installer License Agreement"))
+	r.out.Print(licenseContents)
+
+	choice, err := r.prompt.Confirm("", "Do you accept the ActiveState Runtime Installer License Agreement?", p.BoolP(false))
+	if err != nil {
+		return false, err
+	}
+
+	if err != nil {
+		return false, errs.Wrap(err, "Unable to confirm license")
+	}
+
+	return choice, nil
 }
