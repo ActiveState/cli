@@ -94,9 +94,10 @@ scripts:
           echo Installing packages "${pkgs}"
           sudo apt update && sudo apt install ${pkgs} -y
           # Work around Ubuntu/zsh bug -- https://unix.stackexchange.com/a/411871
-          cd /usr/local/share/zsh
+          pushd /usr/local/share/zsh
           sudo chmod -R 755 ./site-functions
           sudo chown -R root:root ./site-functions
+          popd
         fi
       elif type "yum" &> /dev/null; then
         echo "Using yum"
