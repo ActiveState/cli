@@ -81,8 +81,9 @@ func (suite *OffInstallIntegrationTestSuite) TestInstallAndUninstall() {
 		tp.SendLine("")
 		tp.ExpectLongString("Do you accept the ActiveState Runtime Installer License Agreement")
 		tp.SendLine("y")
-		tp.Expect("Setup environment for installed project?")
-		tp.Send("Y")
+		tp.Expect("Extracting")
+		tp.Expect("Installing")
+		tp.Expect("Installation complete")
 		tp.ExpectExitCode(0)
 
 		fmt.Println(tp.Snapshot())

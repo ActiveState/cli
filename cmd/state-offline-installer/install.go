@@ -231,7 +231,7 @@ func (r *runner) Run(params *Params) (rerr error) {
 
 	r.analytics.Event(ac.CatOfflineInstaller, ac.ActOfflineInstallerSuccess, installerDimensions)
 
-	r.out.Print("Runtime installation completed.")
+	r.out.Print(fmt.Sprintf("Installation complete. Installed to [ACTIONABLE]%s[/RESET].", targetPath))
 
 	return nil
 }
@@ -348,14 +348,6 @@ func (r *runner) extractAssets(assetsPath string, backpackZipFile string) error 
 }
 
 func (r *runner) configureEnvironment(path string, asrt *runtime.Runtime) error {
-	configureEnvironmentAccepted, err := r.prompt.Confirm("Setup", "Setup environment for installed project?", p.BoolP(true))
-	if err != nil {
-		return errs.Wrap(err, "Error getting confirmation")
-	}
-
-	if !configureEnvironmentAccepted {
-		return nil
-	}
 	env, err := asrt.Env(false, false)
 	if err != nil {
 		return errs.Wrap(err, "Error setting environment")
