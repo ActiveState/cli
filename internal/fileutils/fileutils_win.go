@@ -44,6 +44,10 @@ func IsExecutable(path string) bool {
 
 // IsWritable returns true if the given path is writable
 func IsWritable(path string) bool {
+	for !TargetExists(path) && path != "" {
+		path = filepath.Dir(path)
+	}
+
 	info, err := os.Stat(path)
 	if err != nil {
 		multilog.Error("Could not stat path: %s, got error: %v", path, err)

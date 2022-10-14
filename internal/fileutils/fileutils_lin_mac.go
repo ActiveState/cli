@@ -1,3 +1,4 @@
+//go:build !windows
 // +build !windows
 
 package fileutils
@@ -22,6 +23,9 @@ func IsExecutable(path string) bool {
 
 // IsWritable returns true if the given path is writable
 func IsWritable(path string) bool {
+	for !TargetExists(path) && path != "" {
+		path = filepath.Dir(path)
+	}
 	return unix.Access(path, unix.W_OK) == nil
 }
 

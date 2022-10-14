@@ -1,3 +1,4 @@
+//go:build !windows
 // +build !windows
 
 package fileutils
@@ -26,7 +27,7 @@ func TestSymlink(t *testing.T) {
 	assert.False(t, IsSymlink(target), "expected no symlink")
 }
 
-func TestIsWritable(t *testing.T) {
+func TestIsWritableFile(t *testing.T) {
 	file, err := WriteTempFile(
 		"", t.Name(), []byte("Some data"), 0777,
 	)
@@ -47,3 +48,5 @@ func TestIsWritable(t *testing.T) {
 		t.Fatal("File should no longer be writable")
 	}
 }
+
+

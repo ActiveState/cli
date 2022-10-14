@@ -16,7 +16,6 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/offinstall"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
@@ -76,6 +75,14 @@ type InstallerConfig struct {
 	CommitID    string `json:"commit_id"`
 }
 
+type Params struct {
+	path string
+}
+
+func newParams() *Params {
+	return &Params{}
+}
+
 func (r *runner) Run(params *Params) (rerr error) {
 	var installerDimensions *dimensions.Values
 	defer func() {
@@ -107,6 +114,13 @@ func (r *runner) Run(params *Params) (rerr error) {
 		return errs.Wrap(err, "Could not read installer config, this installer appears to be corrupted.")
 	}
 
+	installerDimensions = &dimensions.Values{
+		ProjectNameSpace: p.StrP(project.NewNamespace(r.icfg.OrgName, r.icfg.ProjectName, "").String()),
+		CommitID:         &r.icfg.CommitID,
+		Trigger:          p.StrP(target.TriggerOfflineInstaller.String()),
+	}
+	r.analytics.Event(ac.CatOfflineInstaller, "start", installerDimensions)
+
 	// Detect target path
 	targetPath, err := r.getTargetPath(params.path)
 	if err != nil {
@@ -117,16 +131,6 @@ func (r *runner) Run(params *Params) (rerr error) {
 	if err := r.validateTargetPath(targetPath); err != nil {
 		return errs.Wrap(err, "Could not validate target path")
 	}
-
-	logging.Debug("Temp directory is: %s", tempDir)
-	logging.Debug("Installation directory is: %s", params.path)
-
-	installerDimensions = &dimensions.Values{
-		ProjectNameSpace: p.StrP(project.NewNamespace(r.icfg.OrgName, r.icfg.ProjectName, "").String()),
-		CommitID:         &r.icfg.CommitID,
-		Trigger:          p.StrP(target.TriggerOfflineInstaller.String()),
-	}
-	r.analytics.Event(ac.CatOfflineInstaller, "start", installerDimensions)
 
 	/* Prompt for License */
 	licenseFileAssetPath := filepath.Join(assetsPath, licenseFileName)
@@ -394,10 +398,10 @@ func (r *runner) configureEnvironment(path string, asrt *runtime.Runtime) error 
 	return nil
 }
 
-func (r *runner) getTargetPath(inputPath *string) (string, error) {
+func (r *runner) getTargetPath(inputPath string) (string, error) {
 	var targetPath string
-	if inputPath != nil {
-		targetPath = *inputPath
+	if inputPath != "" {
+		targetPath = inputPath
 	} else {
 		parentDir, err := offinstall.DefaultInstallParentDir()
 		if err != nil {
@@ -414,31 +418,37 @@ func (r *runner) getTargetPath(inputPath *string) (string, error) {
 }
 
 func (r *runner) validateTargetPath(path string) error {
-	if !fileutils.DirExists(path) {
-		return nil
+	if !fileutils.IsWritable(path) {
+		return errs.New(
+			"Cannot write to [ACTIONABLE]%s[/RESET]. Please ensure that the directory is writeable without "+
+				"needing admin privileges or run this installer with Admin.", path)
 	}
 
-	empty, err := fileutils.IsEmptyDir(path)
-	if err != nil {
-		return errs.Wrap(err, "Test for directory empty failed")
-	}
-	if empty {
-		return nil
-	}
+	if fileutils.TargetExists(path) {
+		if !fileutils.IsDir(path) {
+			return errs.New("Target path [ACTIONABLE]%s[/RESET] is not a directory", path)
+		}
 
-	installNonEmpty, err := r.prompt.Confirm(
-		"Setup",
-		"Installation directory is not empty, install anyway?",
-		p.BoolP(true))
-	if err != nil {
-		return errs.Wrap(err, "Unable to get confirmation to install into non-empty directory")
-	}
+		empty, err := fileutils.IsEmptyDir(path)
+		if err != nil {
+			return errs.Wrap(err, "Test for directory empty failed")
+		}
+		if !empty {
+			installNonEmpty, err := r.prompt.Confirm(
+				"Setup",
+				"Installation directory is not empty, install anyway?",
+				p.BoolP(true))
+			if err != nil {
+				return errs.Wrap(err, "Unable to get confirmation to install into non-empty directory")
+			}
 
-	if !installNonEmpty {
-		return locale.NewInputError(
-			"offline_installer_err_installdir_notempty",
-			"Installation directory ({{.V0}}) not empty, installation aborted",
-			path)
+			if !installNonEmpty {
+				return locale.NewInputError(
+					"offline_installer_err_installdir_notempty",
+					"Installation directory ({{.V0}}) not empty, installation aborted",
+					path)
+			}
+		}
 	}
 
 	return nil

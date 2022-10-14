@@ -148,6 +148,27 @@ func (suite *OffInstallIntegrationTestSuite) TestInstallAndUninstall() {
 	}
 }
 
+func (suite *OffInstallIntegrationTestSuite) TestInstallNoPermission() {
+	suite.OnlyRunForTags(tagsuite.OffInstall)
+
+	ts := e2e.New(suite.T(), true)
+	defer ts.Close()
+
+	suite.preparePayload(ts)
+
+	pathWithNoPermission := "/opt/no-permission"
+	if runtime.GOOS == "windows" {
+		pathWithNoPermission = "C:\\Program Files\\No Permission"
+	}
+
+	tp := ts.SpawnCmdWithOpts(
+		suite.installerPath,
+		e2e.WithArgs(pathWithNoPermission),
+	)
+	tp.Expect("Please ensure that the directory is writeable", 5*time.Second)
+	tp.ExpectExitCode(1)
+}
+
 func (suite *OffInstallIntegrationTestSuite) preparePayload(ts *e2e.Session) {
 	root := environment.GetRootPathUnsafe()
 

@@ -25,14 +25,6 @@ import (
 	"github.com/ActiveState/cli/pkg/cmdlets/errors"
 )
 
-type Params struct {
-	path *string
-}
-
-func newParams() *Params {
-	return &Params{}
-}
-
 func main() {
 	var exitCode int
 
@@ -96,6 +88,7 @@ func main() {
 			multilog.Critical("state-offline-installer errored out: %s", errs.JoinMessage(err))
 		}
 
+		errors.PanicOnMissingLocale = false
 		exitCode, err = errors.Unwrap(err)
 		fmt.Fprintln(os.Stderr, errs.JoinMessage(err))
 	}
