@@ -11,6 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/rtutils/p"
 	"github.com/ActiveState/cli/pkg/project"
@@ -68,25 +69,19 @@ func newParams() *Params {
 	return &Params{path: "/tmp"}
 }
 
-func (r *runner) Event(eventType string, installerDimensions *dimensions.Values) {
-	r.analytics.Event(ac.CatOfflineInstaller, eventType, installerDimensions)
-}
+func (r *runner) Run(params *Params) (rerr error) {
+	var installerDimensions *dimensions.Values
+	defer func() {
+		if rerr == nil {
+			return
+		}
+		if locale.IsInputError(rerr) {
+			r.analytics.EventWithLabel(ac.CatOfflineInstaller, ac.ActOfflineInstallerAbort, errs.JoinMessage(rerr), installerDimensions)
+		} else {
+			r.analytics.EventWithLabel(ac.CatOfflineInstaller, ac.ActOfflineInstallerFailure, errs.JoinMessage(rerr), installerDimensions)
+		}
+	}()
 
-func (r *runner) EventWithLabel(eventType string, msg string, installerDimensions *dimensions.Values) {
-	r.analytics.EventWithLabel(ac.CatOfflineInstaller, eventType, msg, installerDimensions)
-}
-
-func (r *runner) handleFailure(err error, msg string, installerDimensions *dimensions.Values) error {
-	r.EventWithLabel(ac.ActOfflineInstallerFailure, msg, installerDimensions)
-	return errs.Wrap(err, msg)
-}
-
-func (r *runner) handleFailureNewErr(msg string, installerDimensions *dimensions.Values) error {
-	r.EventWithLabel(ac.ActOfflineInstallerFailure, msg, installerDimensions)
-	return errs.New(msg)
-}
-
-func (r *runner) Run(params *Params) error {
 	licenseFilePath := filepath.Join(params.path, licenseFileName)
 	installerConfigPath := filepath.Join(params.path, installerConfigFileName)
 
@@ -100,7 +95,7 @@ func (r *runner) Run(params *Params) error {
 		return errs.Wrap(err, "Failed to decode config file")
 	}
 
-	installerDimensions := &dimensions.Values{
+	installerDimensions = &dimensions.Values{
 		ProjectNameSpace: p.StrP(project.NewNamespace(*config.OrgName, *config.ProjectName, "").String()),
 		CommitID:         config.CommitID,
 		Trigger:          p.StrP(target.TriggerOfflineUninstaller.String()),
@@ -109,7 +104,7 @@ func (r *runner) Run(params *Params) error {
 
 	containsLicenseFile, err := fileutils.FileContains(licenseFilePath, []byte("ACTIVESTATE"))
 	if err != nil {
-		return r.handleFailure(err, "Failed to find valid license file, is this an install directory?", installerDimensions)
+		return errs.Wrap(err, "Failed to find valid license file, is this an install directory?")
 	}
 
 	if !containsLicenseFile {
@@ -118,24 +113,24 @@ func (r *runner) Run(params *Params) error {
 			"Directory does not look like an install directory, are you sure you want to proceed?",
 			p.BoolP(true))
 		if err != nil {
-			return r.handleFailure(err, "Error getting confirmation for installing", installerDimensions)
+			return errs.Wrap(err, "Error getting confirmation for installing")
 		}
 
 		if !confirmUninstall {
-			return r.handleFailureNewErr("ActiveState license not found in uninstall directory. Please specify a valid uninstall directory.", installerDimensions)
+			return errs.New("ActiveState license not found in uninstall directory. Please specify a valid uninstall directory.")
 		}
 	}
 
 	r.out.Print("Removing environment configuration")
 	err = r.removeEnvPaths()
 	if err != nil {
-		return r.handleFailure(err, "Error removing environment path", installerDimensions)
+		return errs.Wrap(err, "Error removing environment path")
 	}
 
 	r.out.Print("Removing installation directory")
 	err = os.RemoveAll(params.path)
 	if err != nil {
-		return r.handleFailure(err, "Error removing installation directory", installerDimensions)
+		return errs.Wrap(err, "Error removing installation directory")
 	}
 
 	r.analytics.Event(ac.CatOfflineInstaller, ac.ActOfflineInstallerSuccess, installerDimensions)
