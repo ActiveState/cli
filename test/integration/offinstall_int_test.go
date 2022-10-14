@@ -84,14 +84,12 @@ func (suite *OffInstallIntegrationTestSuite) TestInstallAndUninstall() {
 			refreshEnv := filepath.Join(environment.GetRootPathUnsafe(), "test", "integration", "testdata", "tools", "refreshenv", "refreshenv.bat")
 			tp = ts.SpawnCmd("cmd", "/C", refreshEnv+" && test-offline-install")
 		} else {
+			tp.Send("echo 'autoload -Uz compinit' > ${HOME}/.zshrc")
+			tp.Send("echo 'compinit' > ${HOME}/.zshrc")
+			tp.Send("cat ${HOME}/.zshrc")
+			//tp.Send("compaudit | xargs chmod g-w")
 			tp = ts.SpawnCmd("zsh")
 			tp.WaitForInput(time.Second * 5)
-
-			// Should probably be setup in framework's Shell helpers
-			//tp.Send("autoload -Uz compinit")
-			//tp.Send("compinit")
-			tp.Send("compaudit | xargs chmod g-w")
-
 			tp.Send("test-offline-install")
 			tp.Send("exit")
 		}
