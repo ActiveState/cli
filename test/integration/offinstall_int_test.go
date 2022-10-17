@@ -83,15 +83,17 @@ func (suite *OffInstallIntegrationTestSuite) TestInstallAndUninstall() {
 		if runtime.GOOS == "windows" {
 			refreshEnv := filepath.Join(environment.GetRootPathUnsafe(), "test", "integration", "testdata", "tools", "refreshenv", "refreshenv.bat")
 			tp = ts.SpawnCmd("cmd", "/C", refreshEnv+" && test-offline-install")
+			tp.Expect("TEST REPLACEMENT", 5*time.Second)
+			tp.ExpectExitCode(0)
 		} else {
 			// Disabled for now: DX-1307
 			// tp = ts.SpawnCmd("bash")
 			// tp.WaitForInput(time.Second * 5)
 			// tp.Send("test-offline-install")
 			// tp.Send("exit")
+			// tp.Expect("TEST REPLACEMENT", 5*time.Second)
+			// tp.ExpectExitCode(0)
 		}
-		tp.Expect("TEST REPLACEMENT", 5*time.Second)
-		tp.ExpectExitCode(0)
 	}
 
 	{ // Uninstall
