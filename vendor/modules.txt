@@ -74,12 +74,6 @@ github.com/alecthomas/template/parse
 # github.com/andygrunwald/go-jira v1.15.1
 ## explicit; go 1.15
 github.com/andygrunwald/go-jira
-# github.com/apenwarr/fixconsole v0.0.0-20191012055117-5a9f6489cc29
-## explicit; go 1.12
-github.com/apenwarr/fixconsole
-# github.com/apenwarr/w32 v0.0.0-20190407065021-aa00fece76ab
-## explicit
-github.com/apenwarr/w32
 # github.com/asaskevich/govalidator v0.0.0-20210307081110-f21760c49a8d
 ## explicit; go 1.13
 github.com/asaskevich/govalidator
