@@ -14,6 +14,7 @@ import (
 	"github.com/ActiveState/cli/internal/assets"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
@@ -191,9 +192,9 @@ func (r *runner) Run(params *Params) (rerr error) {
 		if err := os.Mkdir(uninstallDir, os.ModeDir); err != nil {
 			return errs.Wrap(err, "Error creating uninstall directory")
 		}
-		uninstallerDestName := fmt.Sprintf("%s-%s-%s.exe", *config.ProjectID, *config.CommitID, uninstallerFileNameRoot)
+		uninstallerDestName := fmt.Sprintf("%s-%s-%s"+exeutils.Extension, *config.ProjectID, *config.CommitID, uninstallerFileNameRoot)
 
-		uninstallerSrc = filepath.Join(assetsPath, uninstallerFileNameRoot+".exe")
+		uninstallerSrc = filepath.Join(assetsPath, uninstallerFileNameRoot+exeutils.Extension)
 		uninstallerDest = filepath.Join(uninstallDir, uninstallerDestName)
 
 		// create batch script
