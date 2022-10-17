@@ -217,7 +217,7 @@ func stepTitle(step SetupStep) string {
 
 func (eh *RuntimeEventConsumer) ResolveArtifactName(id artifact.ArtifactID) string {
 	if eh.artifactNames == nil {
-		multilog.Error("artifactNames resolver function has not been initialized")
+		logging.Debug("artifactNames resolver function has not been initialized")
 		return ""
 	}
 	return eh.artifactNames(id)

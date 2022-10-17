@@ -49,7 +49,7 @@ func TestArtifactCache(t *testing.T) {
 	assert.False(t, found)
 
 	// Test cache.Store().
-	testArtifactFile := osutil.GetTestFile(string(testArtifacts[1]))
+	testArtifactFile := osutil.GetTestFile("artifact-cache", string(testArtifacts[1]))
 	err = cache.Store(testArtifacts[1], testArtifactFile)
 	require.NoError(t, err)
 	assert.Equal(t, len(cache.Artifacts()), 1)
@@ -80,12 +80,12 @@ func TestArtifactCache(t *testing.T) {
 
 	// Test cache.Store() and removing least-recently accessed artifacts.
 	time.Sleep(1 * time.Second)
-	cache.Store(testArtifacts[3], osutil.GetTestFile(string(testArtifacts[3])))
-	cache.Store(testArtifacts[5], osutil.GetTestFile(string(testArtifacts[5])))
+	cache.Store(testArtifacts[3], osutil.GetTestFile("artifact-cache", string(testArtifacts[3])))
+	cache.Store(testArtifacts[5], osutil.GetTestFile("artifact-cache", string(testArtifacts[5])))
 	assert.Equal(t, cache.CurrentSize(), int64(9))
 	assert.Equal(t, len(cache.Artifacts()), 3)
 
-	cache.Store(testArtifacts[2], osutil.GetTestFile(string(testArtifacts[2])))
+	cache.Store(testArtifacts[2], osutil.GetTestFile("artifact-cache", string(testArtifacts[2])))
 	assert.Equal(t, cache.CurrentSize(), int64(10))
 	assert.Equal(t, len(cache.Artifacts()), 3)
 	assert.Nil(t, cache.Artifacts()[testArtifacts[1]])
@@ -113,8 +113,8 @@ func TestArtifactCache(t *testing.T) {
 
 	cache, err = artifactcache.NewTestArtifactCache(dir, 1) // bytes
 	require.NoError(t, err)
-	cache.Store(testArtifacts[1], osutil.GetTestFile(string(testArtifacts[1])))
-	cache.Store(testArtifacts[2], osutil.GetTestFile(string(testArtifacts[2]))) // should not store nor erase existing artifacts
+	cache.Store(testArtifacts[1], osutil.GetTestFile("artifact-cache", string(testArtifacts[1])))
+	cache.Store(testArtifacts[2], osutil.GetTestFile("artifact-cache", string(testArtifacts[2]))) // should not store nor erase existing artifacts
 	assert.Equal(t, cache.CurrentSize(), int64(1))
 	assert.Equal(t, len(cache.Artifacts()), 1)
 	assert.NotNil(t, cache.Artifacts()[testArtifacts[1]])

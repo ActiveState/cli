@@ -44,7 +44,7 @@ func TestOfflineInstaller(t *testing.T) {
 	require.NoError(t, err)
 	defer os.RemoveAll(dir)
 
-	artifactsDir := filepath.Join(osutil.GetTestDataDir(), "offlineInstaller")
+	artifactsDir := filepath.Join(osutil.GetTestDataDir(), "offline-runtime")
 	offlineTarget := target.NewOfflineTarget(dir, artifactsDir)
 
 	analytics := blackhole.New()
