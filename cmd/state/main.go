@@ -32,8 +32,8 @@ import (
 	"github.com/ActiveState/cli/internal/runbits/panics"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/svcctl"
-	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	cmdletErrors "github.com/ActiveState/cli/pkg/cmdlets/errors"
+	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
@@ -247,6 +247,7 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 			cmdName = childCmd.UseFull() + " "
 		}
 		err = errs.AddTips(err, locale.Tl("err_tip_run_help", "Run → [ACTIONABLE]`state {{.V0}}--help`[/RESET] for general help", cmdName))
+		cmdletErrors.ReportError(err, cmdName, an)
 	}
 
 	return err
