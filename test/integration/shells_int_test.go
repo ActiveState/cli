@@ -52,11 +52,15 @@ func (suite *ShellsIntegrationTestSuite) TestShells() {
 
 			// There are 2 or more instances checked out, so we should get a prompt in whichever shell we
 			// use.
-			cp = ts.SpawnInShell(
-				shell,
+			opts := []e2e.SpawnOptions{
 				e2e.WithArgs("shell", "small-python"),
 				e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
-			)
+			}
+			if shell == e2e.Zsh {
+				// Prevent Zsh from complaining and prompting about insecure folder permissions that CI has.
+				opts = append(opts, e2e.AppendEnv("ZSH_DISABLE_COMPFIX=true"))
+			}
+			cp = ts.SpawnInShell(shell, opts...)
 			cp.Expect("Multiple project paths")
 
 			// Just pick the first one and verify the selection prompt works.
