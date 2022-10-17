@@ -23,7 +23,7 @@ func (suite *ShellsIntegrationTestSuite) TestShells() {
 	var shells []e2e.Shell
 	switch runtime.GOOS {
 	case "linux":
-		shells = []e2e.Shell{e2e.Bash, e2e.Fish}
+		shells = []e2e.Shell{e2e.Bash, e2e.Fish, e2e.Tcsh, e2e.Zsh}
 	case "darwin":
 		shells = []e2e.Shell{e2e.Bash, e2e.Zsh, e2e.Tcsh}
 	case "windows":
@@ -31,7 +31,10 @@ func (suite *ShellsIntegrationTestSuite) TestShells() {
 	}
 
 	// Checkout the first instance. It doesn't matter which shell is used.
-	cp := ts.SpawnWithOpts(e2e.WithArgs("checkout", "ActiveState-CLI/small-python"))
+	cp := ts.SpawnWithOpts(
+		e2e.WithArgs("checkout", "ActiveState-CLI/small-python"),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
 	cp.Expect("Checked out project")
 	cp.ExpectExitCode(0)
 
@@ -57,7 +60,7 @@ func (suite *ShellsIntegrationTestSuite) TestShells() {
 			cp.Expect("Multiple project paths")
 
 			// Just pick the first one and verify the selection prompt works.
-			cp.SendLine("\n")
+			cp.SendLine("")
 			cp.Expect("Activated")
 
 			// Verify that the command prompt contains the right info, except for tcsh, whose prompt does
