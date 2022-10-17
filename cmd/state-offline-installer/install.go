@@ -38,7 +38,7 @@ const assetsPathName = "assets"
 const artifactsPathName = "artifacts"
 const licenseFileName = "LICENSE.txt"
 const installerConfigFileName = "installer_config.json"
-const uninstallerFileNameRoot = "uninstall"
+const uninstallerFileNameRoot = "uninstall" + exeutils.Extension
 
 type runner struct {
 	out       output.Outputer
@@ -192,20 +192,26 @@ func (r *runner) Run(params *Params) (rerr error) {
 		if err := os.Mkdir(uninstallDir, os.ModeDir); err != nil {
 			return errs.Wrap(err, "Error creating uninstall directory")
 		}
-		uninstallerDestName := fmt.Sprintf("%s-%s-%s"+exeutils.Extension, *config.ProjectID, *config.CommitID, uninstallerFileNameRoot)
 
-		uninstallerSrc = filepath.Join(assetsPath, uninstallerFileNameRoot+exeutils.Extension)
+		uninstallerSrc = filepath.Join(assetsPath, uninstallerFileNameRoot)
 		uninstallerDest = filepath.Join(uninstallDir, uninstallerDestName)
 
-		// create batch script
+		// create batch script which copies the uninstaller to a temp dir and runs it from there this is necessary
+		// because windows won't let you delete an executable that's running
+		// The last message about ignoring the error is because the uninstaller will delete the directory the batch file
+		// is in, which unlike with the exe is fine because batch files are "special", but it does result in a benign
+		// "File not Found" error
 		batch := fmt.Sprintf(
-			"@echo off\ncopy %s\\%s %%TEMP%%\\%s >nul 2>&1\n%%TEMP%%\\%s %s & del %%TEMP%%\\%s >nul 2>&1 & echo You can safely ignore the following error message:\n",
+			`
+				@echo off
+				copy %[1]s\%[2]s %%TEMP%%\%[2]s >nul 2>&1
+				%%TEMP%%\%[2]s %[3]s
+				del %%TEMP%%\%[2]s >nul 2>&1 
+				echo You can safely ignore any File not Found errors following this message.
+				`,
 			uninstallDir,
-			uninstallerDestName,
-			uninstallerDestName,
-			uninstallerDestName,
+			uninstallerFileNameRoot,
 			installDir,
-			uninstallerDestName,
 		)
 		err = os.WriteFile(filepath.Join(installDir, "uninstall.bat"), []byte(batch), 0755)
 		if err != nil {
