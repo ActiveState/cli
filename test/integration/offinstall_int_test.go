@@ -55,7 +55,7 @@ func (suite *OffInstallIntegrationTestSuite) TestInstallAndUninstall() {
 		"VERBOSE=true",
 	}
 	if runtime.GOOS != "windows" {
-		env = append(env, "SHELL=zsh")
+		env = append(env, "SHELL=bash")
 	}
 	{ // Install
 		tp := ts.SpawnCmdWithOpts(
@@ -84,10 +84,11 @@ func (suite *OffInstallIntegrationTestSuite) TestInstallAndUninstall() {
 			refreshEnv := filepath.Join(environment.GetRootPathUnsafe(), "test", "integration", "testdata", "tools", "refreshenv", "refreshenv.bat")
 			tp = ts.SpawnCmd("cmd", "/C", refreshEnv+" && test-offline-install")
 		} else {
-			tp = ts.SpawnCmd("zsh")
-			tp.WaitForInput(time.Second * 5)
-			tp.Send("test-offline-install")
-			tp.Send("exit")
+			// Disabled for now: DX-1307
+			// tp = ts.SpawnCmd("bash")
+			// tp.WaitForInput(time.Second * 5)
+			// tp.Send("test-offline-install")
+			// tp.Send("exit")
 		}
 		tp.Expect("TEST REPLACEMENT", 5*time.Second)
 		tp.ExpectExitCode(0)
@@ -183,11 +184,14 @@ func (suite *OffInstallIntegrationTestSuite) preparePayload(ts *e2e.Session) {
 
 func (suite *OffInstallIntegrationTestSuite) assertShellUpdated(dir string, exists bool, ts *e2e.Session) {
 	if runtime.GOOS != "windows" {
-		// Test zshrc
+		// Test bashrc
 		homeDir, err := os.UserHomeDir()
 		suite.Require().NoError(err)
 
-		fname := ".zshrc"
+		fname := ".bashrc"
+		if runtime.GOOS == "darwin" {
+			fname = ".bash_profile"
+		}
 
 		assert := suite.Contains
 		if !exists {
