@@ -194,7 +194,7 @@ func (r *runner) Run(params *Params) (rerr error) {
 		}
 
 		uninstallerSrc = filepath.Join(assetsPath, uninstallerFileNameRoot)
-		uninstallerDest = filepath.Join(uninstallDir, uninstallerDestName)
+		uninstallerDest = filepath.Join(uninstallDir, uninstallerFileNameRoot)
 
 		// create batch script which copies the uninstaller to a temp dir and runs it from there this is necessary
 		// because windows won't let you delete an executable that's running
