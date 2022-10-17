@@ -27,6 +27,7 @@ import (
 	"github.com/ActiveState/cli/internal/runbits/panics"
 	"github.com/ActiveState/cli/internal/svcctl"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
+	"github.com/apenwarr/fixconsole"
 	"github.com/inconshreveable/mousetrap"
 )
 
@@ -66,6 +67,12 @@ func main() {
 	}
 	rollbar.SetupRollbar(constants.StateServiceRollbarToken)
 	rollbar.SetConfig(cfg)
+
+	err = fixconsole.FixConsoleIfNeeded()
+	if err != nil {
+		exitCode = 1
+		return
+	}
 
 	if os.Getenv("VERBOSE") == "true" {
 		logging.CurrentHandler().SetVerbose(true)
