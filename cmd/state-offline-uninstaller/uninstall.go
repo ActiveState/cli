@@ -66,7 +66,7 @@ type Params struct {
 }
 
 func newParams() *Params {
-	return &Params{path: "/tmp"}
+	return &Params{}
 }
 
 func (r *runner) Run(params *Params) (rerr error) {
