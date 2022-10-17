@@ -81,6 +81,12 @@ jobs:
         run: |
           echo "${PSScriptRoot}/.github/deps/${{ runner.os }}/bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
+      - # == Setup macOS ==
+        name: Setup (macOS)
+        shell: bash
+        run: brew install fish
+        if: runner.os == 'macOS'
+
       - # === Preprocess ===
         name: Preprocess
         shell: bash
