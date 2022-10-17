@@ -59,6 +59,12 @@ func (suite *ShellsIntegrationTestSuite) TestShells() {
 			)
 			cp.Expect("Multiple project paths")
 
+			if runtime.GOOS == "linux" && shell == e2e.Zsh {
+				// Linux CI's zsh complains about insecure directories, so continue with 'y'.
+				cp.Expect("zsh compinit:")
+				cp.SendLine("y")
+			}
+
 			// Just pick the first one and verify the selection prompt works.
 			cp.SendLine("")
 			cp.Expect("Activated")
