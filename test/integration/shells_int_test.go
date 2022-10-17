@@ -61,6 +61,11 @@ func (suite *ShellsIntegrationTestSuite) TestShells() {
 
 			// Just pick the first one and verify the selection prompt works.
 			cp.SendLine("")
+			if runtime.GOOS == "linux" && shell == e2e.Zsh {
+				// zsh on Linux CI complains and prompts about insecure directories, so work around that.
+				cp.Expect("zsh compinit:")
+				cp.SendLine("y")
+			}
 			cp.Expect("Activated")
 
 			// Verify that the command prompt contains the right info, except for tcsh, whose prompt does
