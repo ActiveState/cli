@@ -55,6 +55,8 @@ type ErrorNoProject struct{ *locale.LocalizedError }
 
 type ErrorNoProjectFromEnv struct{ *locale.LocalizedError }
 
+type ErrorNoDefaultProject struct{ *locale.LocalizedError }
+
 // projectURL comprises all fields of a parsed project URL
 type projectURL struct {
 	Owner      string
@@ -829,8 +831,11 @@ func getProjectFilePathFromDefault() (_ string, rerr error) {
 	}
 
 	path, err := fileutils.FindFileInPath(defaultProjectPath, constants.ConfigFileName)
-	if err != nil && !errors.Is(err, fileutils.ErrorFileNotFound) {
-		return "", errs.Wrap(err, "fileutils.FindFileInPath %s failed", defaultProjectPath)
+	if err != nil {
+		if !errors.Is(err, fileutils.ErrorFileNotFound) {
+			return "", errs.Wrap(err, "fileutils.FindFileInPath %s failed", defaultProjectPath)
+		}
+		return "", &ErrorNoDefaultProject{locale.NewInputError("err_no_default_project", "Could not find default project at: [ACTIONABLE]{{.V0}}[/RESET]", defaultProjectPath)}
 	}
 	return path, nil
 }
