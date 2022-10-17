@@ -79,7 +79,7 @@ func (v *SubShell) WriteUserEnv(cfg sscommon.Configurable, env map[string]string
 		}
 
 		// Set key/value in the user environment
-		err := cmdEnv.set(k, value)
+		err := cmdEnv.Set(k, value)
 		if err != nil {
 			return err
 		}

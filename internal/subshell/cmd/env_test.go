@@ -182,7 +182,7 @@ func TestCmdEnv_set(t *testing.T) {
 					return tt.fields.registryMock, tt.fields.openKeyErr
 				},
 			}
-			if got := c.set(tt.args.name, tt.args.value); !reflect.DeepEqual(got, tt.want.returnValue) {
+			if got := c.Set(tt.args.name, tt.args.value); !reflect.DeepEqual(got, tt.want.returnValue) {
 				t.Errorf("set() = %v, want %v", got, tt.want)
 			}
 			rm := tt.fields.registryMock
