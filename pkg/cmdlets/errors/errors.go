@@ -6,6 +6,9 @@ import (
 	"os"
 	"strings"
 
+	"github.com/ActiveState/cli/internal/analytics/client/async"
+	anaConst "github.com/ActiveState/cli/internal/analytics/constants"
+	"github.com/ActiveState/cli/internal/analytics/dimensions"
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
@@ -14,6 +17,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/rtutils/p"
 )
 
 type ErrorTips interface {
@@ -79,13 +83,6 @@ func Unwrap(err error) (int, error) {
 		return 0, nil
 	}
 
-	var ee errs.Errorable
-	stack := "not provided"
-	isErrs := errors.As(err, &ee)
-	if isErrs {
-		stack = ee.Stack().String()
-	}
-
 	_, hasMarshaller := err.(output.Marshaller)
 
 	// unwrap exit code before we remove un-localized wrapped errors from err variable
@@ -94,13 +91,6 @@ func Unwrap(err error) (int, error) {
 	if errs.IsSilent(err) {
 		logging.Debug("Suppressing silent failure: %v", err.Error())
 		return code, nil
-	}
-
-	// Log error if this isn't a user input error
-	if !locale.IsInputError(err) {
-		multilog.Critical("Returning error:\n%s\nCreated at:\n%s", errs.Join(err, "\n").Error(), stack)
-	} else {
-		logging.Debug("Returning input error:\n%s\nCreated at:\n%s", errs.Join(err, "\n").Error(), stack)
 	}
 
 	var llerr *config.LocalizedError // workaround type used to avoid circular import in config pkg
@@ -115,6 +105,33 @@ func Unwrap(err error) (int, error) {
 		}
 	}
 
+	if hasMarshaller {
+		return code, err
+	}
+
+	return code, &OutputError{err}
+}
+
+func ReportError(err error, cmd string, an *async.Client) {
+	var ee errs.Errorable
+	stack := "not provided"
+	isErrs := errors.As(err, &ee)
+	if isErrs {
+		stack = ee.Stack().String()
+	}
+
+	_, hasMarshaller := err.(output.Marshaller)
+
+	// Log error if this isn't a user input error
+	if !locale.IsInputError(err) {
+		multilog.Critical("Returning error:\n%s\nCreated at:\n%s", errs.Join(err, "\n").Error(), stack)
+	} else {
+		logging.Debug("Returning input error:\n%s\nCreated at:\n%s", errs.Join(err, "\n").Error(), stack)
+		an.Event(anaConst.CatDebug, anaConst.ActInputError, &dimensions.Values{
+			Trigger: p.StrP(cmd),
+		})
+	}
+
 	if !locale.HasError(err) && isErrs && !hasMarshaller {
 		multilog.Error("MUST ADDRESS: Error does not have localization: %s", errs.Join(err, "\n").Error())
 
@@ -123,10 +140,4 @@ func Unwrap(err error) (int, error) {
 			panic(fmt.Sprintf("Errors must be localized! Please localize: %s, called at: %s\n", errs.JoinMessage(err), stack))
 		}
 	}
-
-	if hasMarshaller {
-		return code, err
-	}
-
-	return code, &OutputError{err}
 }

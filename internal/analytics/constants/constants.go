@@ -80,3 +80,9 @@ const CatStateSvc = "state-svc"
 
 // CatPackageOp is for `state packages` events
 const CatPackageOp = "package-operation"
+
+// CatDebug is the event category used for all debug events
+const CatDebug = "debug"
+
+// ActInputError is the event action used for input errors
+const ActInputError = "input-error"
