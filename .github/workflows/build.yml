@@ -208,7 +208,7 @@ jobs:
       - # === Sign Binaries (Windows only) ===
         name: Sign Binaries (Windows only)
         shell: bash
-        if: runner.os == 'Windows'
+        if: runner.os == 'Windows' && contains(fromJSON('["ref/heads/release", "ref/heads/beta", "ref/heads/version/"]'), github.ref)
         run: |
           echo $MSI_CERT_BASE64 | base64 --decode > Cert.p12
           export PATH=/c/Program\ Files\ \(x86\)/WiX\ Toolset\ v3.11/bin/:/c/Program\ Files\ \(x86\)/Windows\ Kits/10/bin/10.0.16299.0/x86/:$PATH
