@@ -88,8 +88,6 @@ func (suite *OffInstallIntegrationTestSuite) TestInstallAndUninstall() {
 		tp.SendLine("")
 		tp.ExpectExitCode(0)
 
-		fmt.Println(tp.Snapshot())
-
 		// Verify that our analytics event was fired
 		time.Sleep(2 * time.Second) // give time to let rtwatcher detect process has exited
 		events := parseAnalyticsEvents(suite, ts)
