@@ -129,6 +129,9 @@ const DisableAnalyticsEnvVarName = "ACTIVESTATE_CLI_DISABLE_ANALYTICS"
 // OptinUnstableEnvVarName is used to instruct State Tool to opt-in to unstable features
 const OptinUnstableEnvVarName = "ACTIVESTATE_OPTIN_UNSTABLE"
 
+// ServiceSockDir overrides the default socket path root diriectory used by the state service
+const ServiceSockDir = "ACTIVESTATE_SVC_SOCK"
+
 // AnalyticsLogEnvVarName is used to instruct State Tool to report analytics events to the given file
 const DeprecationOverrideEnvVarName = "ACTIVESTATE_DEPRECATION_OVERRIDE"
 
