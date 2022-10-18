@@ -739,7 +739,7 @@ func (s *Setup) fetchAndInstallArtifactsFromDir(installFunc artifactInstaller) (
 		return nil, errs.Wrap(err, "Cannot read from directory to install from")
 	}
 	s.events.TotalArtifacts(len(artifacts))
-	logging.Debug("Found %d artifacts to install from '%s'", len(artifacts), artifactsDir)
+	logging.Debug("Found %d artifacts to install from '%s'", len(artifacts), *artifactsDir)
 
 	installedArtifacts := make([]artifact.ArtifactID, len(artifacts))
 

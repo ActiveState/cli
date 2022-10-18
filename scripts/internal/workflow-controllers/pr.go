@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"strings"
 
 	"github.com/ActiveState/cli/internal/errs"
 	wh "github.com/ActiveState/cli/scripts/internal/workflow-helpers"
@@ -78,7 +79,10 @@ func CreateVersionPR(ghClient *github.Client, jiraClient *jira.Client, meta Meta
 	dryRun := os.Getenv("DRYRUN") == "true"
 	if !dryRun {
 		if err := wh.CreateBranch(ghClient, meta.GetVersionBranchName(), prevVersionRef); err != nil {
-			return errs.Wrap(err, "failed to create branch")
+			if !strings.Contains(err.Error(), "Reference already exists") {
+				return errs.Wrap(err, "failed to create branch")
+			}
+			Print("Branch already exists, continuing")
 		}
 	} else {
 		Print("DRYRUN: skip")

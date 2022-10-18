@@ -39,8 +39,8 @@ func GetTestDataDir() string {
 }
 
 // GetTestFile returns the path to the given fileName in the calling function's `testdata` directory.
-func GetTestFile(fileName string) string {
-	return filepath.Join(GetTestDataDir(), fileName)
+func GetTestFile(fileName ...string) string {
+	return filepath.Join(GetTestDataDir(), filepath.Join(fileName...))
 }
 
 // ReadTestFile will read the contents of a file from the `testdata` directory relative to the

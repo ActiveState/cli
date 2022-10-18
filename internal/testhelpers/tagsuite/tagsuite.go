@@ -22,6 +22,7 @@ const (
 	Config          = "config"
 	Critical        = "critical"
 	Cve             = "cve"
+	DeleteProjects  = "delete-uuid-projects"
 	Deploy          = "deploy"
 	Edit            = "edit"
 	Error           = "error"
@@ -65,11 +66,11 @@ const (
 	VSCode          = "vscode"
 	Performance     = "performance"
 	Service         = "service"
-	Executor        = "executor"
 	Deprecation     = "deprecation"
 	Compatibility   = "compatibility"
 	Automation      = "automation"
 	Checkout        = "checkout"
+	OffInstall      = "offline-install"
 )
 
 // Suite extends a testify suite Suite, such that tests allowing for dynamic skipping of tests

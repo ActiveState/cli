@@ -218,6 +218,26 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_PythonPath() {
 	// ensure that shell is functional
 	cp.WaitForInput()
 
+	// Verify that PYTHONPATH is set correctly to the installed site-packages, not a temp runtime
+	// setup directory.
+	if runtime.GOOS == "windows" {
+		cp.Send("echo %PYTHONPATH%")
+	} else {
+		cp.Send("echo $PYTHONPATH")
+	}
+	suite.Assert().NotContains(cp.TrimmedSnapshot(), constants.LocalRuntimeTempDirectory)
+	// Verify the temp runtime setup directory has been removed.
+	runtimeFound := false
+	entries, err := fileutils.ListDir(ts.Dirs.Cache, true)
+	suite.Require().NoError(err)
+	for _, entry := range entries {
+		if entry.IsDir() && fileutils.DirExists(filepath.Join(entry.Path(), constants.LocalRuntimeEnvironmentDirectory)) {
+			runtimeFound = true
+			suite.Assert().NoDirExists(filepath.Join(entry.Path(), constants.LocalRuntimeTempDirectory))
+		}
+	}
+	suite.Assert().True(runtimeFound, "runtime directory was not found in ts.Dirs.Cache")
+
 	// test that PYTHONPATH is preserved in environment (https://www.pivotaltracker.com/story/show/178458102)
 	if runtime.GOOS == "windows" {
 		cp.Send("set PYTHONPATH=/custom_pythonpath")

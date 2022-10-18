@@ -187,7 +187,7 @@ tos_disclaimer:
       {{.V0}}
 tos_disclaimer_prompt:
   other: |
-    
+
     By continuing you accept the Terms of Service. Continue?
 tos_acceptance:
   other: Do you accept the ActiveState Platform Terms of Service?
@@ -1359,15 +1359,13 @@ cache_description:
 config_description:
   other: Removes global State Tool configuration. Project configuration will not be affected.
 flag_state_clean_uninstall_force_description:
-  other: Run uninstall operation without prompts
+  other: Run uninstall operation without prompts and ignoring any errors stopping running services
 flag_state_clean_ignore_errors_description:
   other: Does not stop when an error occurs, removing as much as possible
-flag_state_clean_cache_force_description:
-  other: Run clean cache operation without prompts
 arg_state_clean_cache_project_description:
   other: The project to be removed from the local cache. Must be in the format of <org/project>
 flag_state_clean_config_force_description:
-  other: Run clean config operation without prompts
+  other: Run clean config operation without prompts and ignoring any errors stopping running services
 err_uninstall_activated:
   other: Cannot uninstall the State Tool while in an activated state. Please deactivate by entering [ACTIONABLE]exit[/RESET] or pressing [ACTIONABLE]Ctrl+D[/RESET] and then try again.
 err_clean_cache_activated:
@@ -1893,11 +1891,13 @@ err_update_corrupt_install:
     Uninstallation instructions: {{.V0}}/troubleshooting/uninstall/
     Installation instructions: {{.V0}}/install/
 arg_state_use_namespace:
-  other: org/project
+  other: org/project or project
 arg_state_use_namespace_description:
-  other: The org/project namespace of the project that you wish to use, or just the project name if previously used
+  other: "The fully qualified namespace (org/project) or just the project name (project) of the project to use. Must have been previously checked out using [ACTIONABLE]`state checkout`[/RESET]."
 err_use_commit_id_mismatch:
   other: "Cannot switch to the given commit ID. Please use [ACTIONABLE]`state checkout`[/RESET] to check out a specific commit ID and then try again."
+err_use_default_project_does_not_exist:
+  other: "The default project no longer exists. Please either check it out again with [ACTIONABLE]state checkout[/RESET] or run [ACTIONABLE]state use reset[/RESET] to unset your default project."
 err_shell_commit_id_mismatch:
   other: "Cannot start a shell/prompt for the given commit ID. Please use [ACTIONABLE]`state checkout`[/RESET] to check out a specific commit ID and then try again."
 err_shell_cannot_load_project:
@@ -1983,7 +1983,9 @@ install_remote_title:
 err_already_checked_out:
   other: There is already a project checked out at '[ACTIONABLE]{{.V0}}[/RESET]'.
 use_project_statement:
-  other: Switched to project [ACTIONABLE]{{.V0}}[/RESET] located at [ACTIONABLE]{{.V1}}[/RESET].
+  other: |
+    Switched to project [ACTIONABLE]{{.V0}}[/RESET] located at [ACTIONABLE]{{.V1}}[/RESET].
+    For editors and other tooling use the executables at: [ACTIONABLE]{{.V2}}[/RESET].
 shell_project_statement:
   other: |
     Opening shell for project [ACTIONABLE]{{.V0}}[/RESET] located at [ACTIONABLE]{{.V1}}[/RESET].

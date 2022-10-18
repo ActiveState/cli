@@ -1,4 +1,4 @@
-name: Verify
+name: Target & Verify
 
 # === Triggers ===
 "on":
@@ -13,9 +13,9 @@ name: Verify
 # === JOBS ===
 jobs:
 
-  # === Verify PR ===
+  # === Target & Verify PR ===
   verifypr:
-    name: Verify PR
+    name: Target & Verify PR
     runs-on: ubuntu-20.04
     env:
       ACTIVESTATE_CLI_DISABLE_RUNTIME: true
@@ -51,6 +51,12 @@ jobs:
         name: Preprocess
         shell: bash
         run: state run preprocess
+
+      - # === Set Target PR ===
+        name: Set Target PR
+        if: github.event.action == 'opened' || github.event.action == 'reopened'
+        shell: bash
+        run: go run scripts/ci/target-version-pr/main.go ${{ github.event.pull_request.number }}
 
       - # === Actually Verify PR ===
         name: Verify PR

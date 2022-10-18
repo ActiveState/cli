@@ -1,11 +1,5 @@
 {{if ne .Project ""}}
-__state_prompt() {
-  echo "[{{.Project}}]"
-}
-if [ "$PROMPT_COMMAND" != "" ]; then
-  PROMPT_COMMAND+=" "
-fi
-PROMPT_COMMAND+='__state_prompt'
+export PS1="[{{.Project}}] $PS1"
 {{end}}
 
 {{- range $K, $V := .Env}}

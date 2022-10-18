@@ -21,22 +21,24 @@ func (t Trigger) String() string {
 }
 
 const (
-	TriggerActivate  Trigger = "activate"
-	TriggerScript    Trigger = "script"
-	TriggerDeploy    Trigger = "deploy"
-	TriggerExec      Trigger = "exec"
-	TriggerResetExec Trigger = "reset-exec"
-	TriggerSwitch    Trigger = "switch"
-	TriggerImport    Trigger = "import"
-	TriggerPackage   Trigger = "package"
-	TriggerPull      Trigger = "pull"
-	TriggerReset     Trigger = "reset"
-	TriggerRevert    Trigger = "revert"
-	TriggerOffline   Trigger = "offline"
-	TriggerShell     Trigger = "shell"
-	TriggerCheckout  Trigger = "checkout"
-	TriggerUse       Trigger = "use"
-	triggerUnknown   Trigger = "unknown"
+	TriggerActivate           Trigger = "activate"
+	TriggerScript             Trigger = "script"
+	TriggerDeploy             Trigger = "deploy"
+	TriggerExec               Trigger = "exec"
+	TriggerResetExec          Trigger = "reset-exec"
+	TriggerSwitch             Trigger = "switch"
+	TriggerImport             Trigger = "import"
+	TriggerPackage            Trigger = "package"
+	TriggerPull               Trigger = "pull"
+	TriggerReset              Trigger = "reset"
+	TriggerRevert             Trigger = "revert"
+	TriggerOffline            Trigger = "offline"
+	TriggerShell              Trigger = "shell"
+	TriggerCheckout           Trigger = "checkout"
+	TriggerUse                Trigger = "use"
+	TriggerOfflineInstaller   Trigger = "offline-installer"
+	TriggerOfflineUninstaller Trigger = "offline-uninstaller"
+	triggerUnknown            Trigger = "unknown"
 )
 
 // usageTriggers are triggers that indicate actual usage of the runtime (as oppose to simply making changes to the runtime)
@@ -54,6 +56,8 @@ var usageTriggers = []Trigger{
 	TriggerShell,
 	TriggerCheckout,
 	TriggerUse,
+	TriggerOfflineInstaller,
+	TriggerOfflineUninstaller,
 }
 
 func NewExecTrigger(cmd string) Trigger {
@@ -178,38 +182,53 @@ func (c *CustomTarget) InstallFromDir() *string {
 }
 
 type OfflineTarget struct {
+	ns           *project.Namespaced
 	dir          string
 	artifactsDir string
+	trigger      Trigger
 }
 
-func NewOfflineTarget(dir string, artifactsDir string) *OfflineTarget {
+func NewOfflineTarget(namespace *project.Namespaced, dir string, artifactsDir string) *OfflineTarget {
 	cleanDir, err := fileutils.ResolveUniquePath(dir)
 	if err != nil {
 		multilog.Error("Could not resolve unique path for dir: %s, error: %s", dir, err.Error())
 	} else {
 		dir = cleanDir
 	}
-	return &OfflineTarget{dir, artifactsDir}
+	return &OfflineTarget{namespace, dir, artifactsDir, TriggerOffline}
 }
 
 func (i *OfflineTarget) Owner() string {
-	return ""
+	if i.ns == nil {
+		return ""
+	}
+	return i.ns.Owner
 }
 
 func (i *OfflineTarget) Name() string {
-	return ""
+	if i.ns == nil {
+		return ""
+	}
+	return i.ns.Project
 }
 
 func (i *OfflineTarget) CommitUUID() strfmt.UUID {
-	return ""
+	if i.ns == nil || i.ns.CommitID == nil {
+		return ""
+	}
+	return *i.ns.CommitID
 }
 
 func (i *OfflineTarget) Dir() string {
 	return i.dir
 }
 
+func (i *OfflineTarget) SetTrigger(t Trigger) {
+	i.trigger = t
+}
+
 func (i *OfflineTarget) Trigger() Trigger {
-	return TriggerOffline
+	return i.trigger
 }
 
 func (i *OfflineTarget) Headless() bool {

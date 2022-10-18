@@ -121,5 +121,4 @@ func (w *Watcher) Watch(pid int, exec string, dims *dimensions.Values) {
 	dims.Sequence = p.IntP(-1) // sequence is meaningless for heartbeat events
 	e := entry{pid, exec, dims}
 	w.watching = append(w.watching, e)
-	w.RecordUsage(e)
 }

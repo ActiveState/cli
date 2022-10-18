@@ -150,6 +150,10 @@ func (eh *RuntimeEventConsumer) handleArtifactEvent(ev ArtifactSetupEventer) err
 		return eh.handleBuildArtifactEvent(ev)
 	}
 	artifactName := eh.ResolveArtifactName(ev.ArtifactID())
+	if eh.installationCompleted {
+		multilog.Error("Received an artifact event after installation was completed: %s (step=%s, artifact=%s)", ev.String(), ev.Step().String(), artifactName)
+		return nil
+	}
 	switch t := ev.(type) {
 	case ArtifactStartEvent:
 		// first download event starts the installation process
@@ -173,6 +177,7 @@ func (eh *RuntimeEventConsumer) handleArtifactEvent(ev ArtifactSetupEventer) err
 				return err
 			}
 			if eh.numInstallCompleted == eh.installTotal {
+				eh.installationCompleted = true
 				err := eh.progress.InstallationCompleted(eh.numInstallFailures > 0)
 				if err != nil {
 					return err
@@ -212,7 +217,7 @@ func stepTitle(step SetupStep) string {
 
 func (eh *RuntimeEventConsumer) ResolveArtifactName(id artifact.ArtifactID) string {
 	if eh.artifactNames == nil {
-		multilog.Error("artifactNames resolver function has not been initialized")
+		logging.Debug("artifactNames resolver function has not been initialized")
 		return ""
 	}
 	return eh.artifactNames(id)

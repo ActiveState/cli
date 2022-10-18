@@ -19,6 +19,7 @@ import (
 	"github.com/ActiveState/cli/pkg/cmdlets/git"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -89,8 +90,9 @@ func (u *Use) Run(params *Params) error {
 
 	u.out.Notice(locale.Tl("use_project_statement", "",
 		proj.NamespaceString(),
-		proj.Dir()),
-	)
+		proj.Dir(),
+		setup.ExecDir(rti.Target().Dir()),
+	))
 
 	if rt.GOOS == "windows" {
 		u.out.Notice(locale.T("use_reset_notice_windows"))

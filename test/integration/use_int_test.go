@@ -1,6 +1,7 @@
 package integration
 
 import (
+	"os"
 	"path/filepath"
 	"runtime"
 	"testing"
@@ -101,6 +102,39 @@ func (suite *UseIntegrationTestSuite) TestUse() {
 	cp.ExpectExitCode(1)
 }
 
+func (suite *UseIntegrationTestSuite) TestUseCwd() {
+	suite.OnlyRunForTags(tagsuite.Use)
+
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	pythonDir := filepath.Join(ts.Dirs.Work, "MyPython3")
+
+	cp := ts.SpawnWithOpts(
+		e2e.WithArgs("checkout", "ActiveState-CLI/Python3", pythonDir),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
+	cp.Expect("Checked out project")
+	cp.ExpectExitCode(0)
+
+	cp = ts.SpawnWithOpts(
+		e2e.WithArgs("use"),
+		e2e.WithWorkDirectory(pythonDir),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
+	cp.Expect("Switched to project")
+	cp.ExpectExitCode(0)
+
+	emptyDir := filepath.Join(ts.Dirs.Work, "EmptyDir")
+	suite.Require().NoError(fileutils.Mkdir(emptyDir))
+	cp = ts.SpawnWithOpts(
+		e2e.WithArgs("use"),
+		e2e.WithWorkDirectory(emptyDir),
+	)
+	cp.Expect("Unable to use project")
+	cp.ExpectExitCode(1)
+}
+
 func (suite *UseIntegrationTestSuite) TestReset() {
 	suite.OnlyRunForTags(tagsuite.Use)
 
@@ -190,6 +224,13 @@ func (suite *UseIntegrationTestSuite) TestShow() {
 		cp.ExpectLongString(longPath)
 	}
 	cp.ExpectExitCode(0)
+
+	err := os.RemoveAll(projectDir)
+	suite.Require().NoError(err)
+
+	cp = ts.SpawnWithOpts(e2e.WithArgs("use", "show"))
+	cp.ExpectLongString("The default project no longer exists")
+	cp.ExpectExitCode(1)
 
 	cp = ts.SpawnWithOpts(e2e.WithArgs("use", "reset", "--non-interactive"))
 	cp.Expect("Reset")

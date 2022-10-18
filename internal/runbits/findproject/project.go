@@ -7,6 +7,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
@@ -52,10 +53,19 @@ func FromPath(path string, ns *project.Namespaced) (*project.Project, error) {
 	return pj, nil
 }
 
-// FromNamespaceLocal returns a local project (if any) that matches the given namespace.
+// FromNamespaceLocal returns a local project (if any) that matches the given namespace (or the
+// project in the current working directory if namespace was not given).
 // This is primarily used by `state use` in order to fetch a project to switch to if it already
 // exists locally. The namespace may omit the owner.
 func FromNamespaceLocal(ns *project.Namespaced, cfg projectfile.ConfigGetter, prompt prompt.Prompter) (*project.Project, error) {
+	if ns == nil || !ns.IsValid() {
+		root, err := osutils.Getwd()
+		if err != nil {
+			return nil, locale.WrapInputError(err, "Unable to determine current working directory. Please specify a project to use.")
+		}
+		return project.FromPath(root)
+	}
+
 	matchingProjects := make(map[string][]string)
 	matchingNamespaces := make([]string, 0)
 	for namespace, paths := range projectfile.GetProjectMapping(cfg) {
