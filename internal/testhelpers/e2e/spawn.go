@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/osutils"
 )
 
 type SpawnOptions func(*Options) error
@@ -67,12 +68,26 @@ func WithShell(shell Shell, s *Session) SpawnOptions {
 		if len(opts.Options.Args) == 0 {
 			return errs.New("e2e.WithShell must come after e2e.WithArgs")
 		}
+		cmdName := opts.Options.CmdName
+
 		opts.Options.CmdName = string(shell)
 		shellArg := "-c"
 		if shell == Cmd {
 			shellArg = "/k"
 		}
-		cmd := s.Exe + " " + strings.Join(opts.Options.Args, " ")
+
+		// Construct a command line string for the shell to evaluate.
+		escaper := osutils.NewBashEscaper()
+		if shell == Cmd {
+			escaper = osutils.NewBatchEscaper()
+		}
+		args := make([]string, len(opts.Options.Args)+1)
+		args[0] = cmdName
+		for i, arg := range opts.Options.Args {
+			args[i+1] = escaper.Quote(arg)
+		}
+		cmd := strings.Join(args, " ")
+
 		opts.Options.Args = []string{shellArg, cmd} // e.g. -c "state activate project/org"
 		return nil
 	}

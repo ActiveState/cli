@@ -248,7 +248,7 @@ func (s *Session) SpawnInShell(shell Shell, opts ...SpawnOptions) *termtest.Cons
 	if shell != Cmd {
 		opts = append(opts, AppendEnv("SHELL="+string(shell)))
 	}
-	return s.SpawnCmdWithOpts(string(shell), opts...)
+	return s.SpawnCmdWithOpts(s.Exe, opts...)
 }
 
 // SpawnCmdWithOpts executes an executable in a pseudo-terminal for integration tests
@@ -262,6 +262,7 @@ func (s *Session) SpawnCmdWithOpts(exe string, opts ...SpawnOptions) *termtest.C
 
 	pOpts := Options{
 		Options: termtest.Options{
+			CmdName:        exe,
 			DefaultTimeout: defaultTimeout,
 			Environment:    env,
 			WorkDirectory:  s.Dirs.Work,
@@ -275,8 +276,6 @@ func (s *Session) SpawnCmdWithOpts(exe string, opts ...SpawnOptions) *termtest.C
 	for _, opt := range opts {
 		opt(&pOpts)
 	}
-
-	pOpts.Options.CmdName = exe
 
 	if pOpts.NonWriteableBinDir {
 		// make bin dir read-only
