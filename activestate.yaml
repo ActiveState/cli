@@ -93,7 +93,11 @@ scripts:
         if [ -n "${pkgs}" ]; then
           echo Installing packages "${pkgs}"
           sudo apt update && sudo apt install ${pkgs} -y
-          compaudit | xargs chmod g-w # https://unix.stackexchange.com/a/412817
+          # Work around Ubuntu/zsh bug -- https://unix.stackexchange.com/a/411871
+          pushd /usr/local/share/zsh
+          sudo chmod -R 755 ./site-functions
+          sudo chown -R root:root ./site-functions
+          popd
         fi
       elif type "yum" &> /dev/null; then
         echo "Using yum"
