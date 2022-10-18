@@ -165,9 +165,9 @@ func executablePaths(t *testing.T) (string, string, string, string) {
 	if !fileutils.FileExists(trayExec) {
 		t.Fatal("E2E tests require a state-tray binary. Run `state run build-tray`.")
 	}
-	// if !fileutils.FileExists(executorExec) {
-	//	t.Fatal("E2E tests require a state-exec binary. Run `state run build-exec`.")
-	// }
+	if !fileutils.FileExists(executorExec) {
+		t.Fatal("E2E tests require a state-exec binary. Run `state run build-exec`.")
+	}
 
 	return stateExec, svcExec, trayExec, executorExec
 }
@@ -207,11 +207,11 @@ func new(t *testing.T, retainDirs, updatePath bool, extraEnv ...string) *Session
 	session := &Session{Dirs: dirs, env: env, retainDirs: retainDirs, t: t}
 
 	// Mock installation directory
-	exe, svcExe, trayExe, _ := executablePaths(t)
+	exe, svcExe, trayExe, execExe := executablePaths(t)
 	session.Exe = session.copyExeToBinDir(exe)
 	session.SvcExe = session.copyExeToBinDir(svcExe)
 	session.TrayExe = session.copyExeToBinDir(trayExe)
-	// session.ExecutorExe = session.copyExeToBinDir(execExe)
+	session.ExecutorExe = session.copyExeToBinDir(execExe)
 
 	err = fileutils.Touch(filepath.Join(dirs.Base, installation.InstallDirMarker))
 	require.NoError(session.t, err)

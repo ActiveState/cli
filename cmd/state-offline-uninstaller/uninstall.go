@@ -101,7 +101,7 @@ func (r *runner) Run(params *Params) (rerr error) {
 	}
 
 	cont, err := r.prompt.Confirm("",
-		fmt.Sprintf("You are about to uninstall the runtime installed at %s, continue?", targetPath),
+		fmt.Sprintf("You are about to uninstall the runtime installed at [[ACTIONABLE]%s[/RESET], continue?", targetPath),
 		p.BoolP(false))
 	if err != nil {
 		return errs.Wrap(err, "Could not confirm uninstall")
