@@ -20,6 +20,7 @@ import (
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/rollbar"
+	"github.com/ActiveState/cli/internal/rtutils/p"
 	"github.com/ActiveState/cli/internal/runbits/panics"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/pkg/cmdlets/errors"
@@ -31,6 +32,9 @@ func main() {
 	var an analytics.Dispatcher
 	var cfg *config.Instance
 	rollbar.SetupRollbar(constants.OfflineInstallerRollbarToken)
+
+	// Allow starting the installer via a double click
+	captain.DisableMousetrap()
 
 	// Handle things like panics, exit codes and the closing of globals
 	defer func() {
@@ -88,9 +92,12 @@ func main() {
 			multilog.Critical("state-offline-uninstaller errored out: %s", errs.JoinMessage(err))
 		}
 
-		exitCode, err = errors.Unwrap(err)
+		errors.PanicOnMissingLocale = false
+		exitCode, _ = errors.Unwrap(err)
 		fmt.Fprintln(os.Stderr, errs.JoinMessage(err))
 	}
+	out.Print("Press enter to exit.")
+	fmt.Scanln(p.StrP("")) // Wait for input from user
 }
 
 func run(prime *primer.Values) error {
@@ -105,7 +112,7 @@ func run(prime *primer.Values) error {
 				Name:        "path",
 				Description: "Directory to uninstall <path>",
 				Value:       &params.path,
-				Required:    true,
+				Required:    false,
 			},
 		},
 		func(ccmd *captain.Command, args []string) error {

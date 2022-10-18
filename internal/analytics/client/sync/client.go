@@ -163,6 +163,9 @@ func (a *Client) Event(category string, action string, dims ...*dimensions.Value
 func mergeDimensions(target *dimensions.Values, dims ...*dimensions.Values) *dimensions.Values {
 	actualDims := target.Clone()
 	for _, dim := range dims {
+		if dim == nil {
+			continue
+		}
 		actualDims.Merge(dim)
 	}
 	return actualDims
