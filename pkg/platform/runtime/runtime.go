@@ -186,11 +186,9 @@ func (r *Runtime) recordCompletion(err error) {
 		r.recordUsage()
 	}
 
-	if r.analytics != nil {
-		r.analytics.EventWithLabel(anaConsts.CatRuntime, action, anaConsts.LblRtFailEnv, &dimensions.Values{
-			CommitID: p.StrP(r.target.CommitUUID().String()),
-		})
-	}
+	r.analytics.EventWithLabel(anaConsts.CatRuntime, action, anaConsts.LblRtFailEnv, &dimensions.Values{
+		CommitID: p.StrP(r.target.CommitUUID().String()),
+	})
 }
 
 func (r *Runtime) recordUsage() {
@@ -208,7 +206,7 @@ func (r *Runtime) recordUsage() {
 	}
 
 	// Fire initial runtime usage event right away, subsequent events will be fired via the service so long as the process is running
-	r.analytics.Event(anaConsts.CatRuntime, anaConsts.ActRuntimeHeartbeat, dims)
+	r.analytics.Event(anaConsts.CatRuntimeUsage, anaConsts.ActRuntimeHeartbeat, dims)
 
 	dimsJson, err := dims.Marshal()
 	if err != nil {
