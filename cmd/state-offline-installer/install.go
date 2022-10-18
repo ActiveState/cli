@@ -238,7 +238,8 @@ func (r *runner) Run(params *Params) (rerr error) {
 
 	r.analytics.Event(ac.CatOfflineInstaller, ac.ActOfflineInstallerSuccess, installerDimensions)
 
-	r.out.Print(fmt.Sprintf("Installation complete. Installed to [ACTIONABLE]%s[/RESET].", targetPath))
+	r.out.Print(fmt.Sprintf(`Installation complete.
+Your language runtime has been installed in [ACTIONABLE]%s[/RESET].`, targetPath))
 
 	return nil
 }
