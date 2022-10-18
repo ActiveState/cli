@@ -79,7 +79,7 @@ func WithShell(shell Shell, s *Session) SpawnOptions {
 		// Construct a command line string for the shell to evaluate.
 		escaper := osutils.NewBashEscaper()
 		if shell == Cmd {
-			escaper = osutils.NewBatchEscaper()
+			escaper = osutils.NewCmdEscaper()
 		}
 		args := make([]string, len(opts.Options.Args)+1)
 		args[0] = cmdName
