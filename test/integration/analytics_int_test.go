@@ -352,6 +352,25 @@ func (suite *AnalyticsIntegrationTestSuite) TestSequenceAndFlags() {
 	suite.True(found, "Should have run-command event with flags, actual: %s", suite.summarizeEvents(events))
 }
 
+func (suite *AnalyticsIntegrationTestSuite) TestInputError() {
+	suite.OnlyRunForTags(tagsuite.Analytics)
+
+	ts := e2e.New(suite.T(), true)
+	defer ts.Close()
+
+	suite.eventsfile = filepath.Join(ts.Dirs.Config, reporters.TestReportFilename)
+
+	cp := ts.Spawn("--ver")
+	cp.ExpectExitCode(1)
+
+	events := suite.parseEvents(ts)
+	suite.assertSequentialEvents(events)
+
+	suite.assertNEvents(events, 1, anaConst.CatDebug, anaConst.ActInputError,
+		fmt.Sprintf("output:\n%s\nState Log:\n%s\nSvc Log:\n%s",
+			cp.Snapshot(), ts.MostRecentStateLog(), ts.SvcLog()))
+}
+
 func TestAnalyticsIntegrationTestSuite(t *testing.T) {
 	suite.Run(t, new(AnalyticsIntegrationTestSuite))
 }
