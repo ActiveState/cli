@@ -24,6 +24,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/language"
+	"github.com/ActiveState/cli/internal/osutils/user"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/ActiveState/cli/internal/testhelpers/outputhelper"
@@ -296,7 +297,7 @@ func (suite *ScriptRunSuite) TestPathProvidesLang() {
 
 	exec := language.Python3.Executable().Filename()
 
-	home, err := os.UserHomeDir()
+	home, err := user.HomeDir()
 	require.NoError(t, err)
 
 	paths := []string{temp, home}

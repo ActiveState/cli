@@ -13,6 +13,7 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/osutils/autostart"
+	"github.com/ActiveState/cli/internal/osutils/user"
 	"github.com/ActiveState/cli/internal/rtutils/singlethread"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
@@ -20,7 +21,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/runtime/executor"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
 	rt "github.com/ActiveState/cli/pkg/platform/runtime/target"
-	"github.com/mitchellh/go-homedir"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -62,7 +62,7 @@ func (suite *PrepareIntegrationTestSuite) TestPrepare() {
 
 	// When installed in a non-desktop environment (i.e. on a server), verify the user's ~/.profile was amended.
 	if runtime.GOOS == "linux" {
-		homeDir, err := homedir.Dir()
+		homeDir, err := user.HomeDir()
 		suite.Require().NoError(err)
 		profile := filepath.Join(homeDir, ".profile")
 		profileContents := string(fileutils.ReadFileUnsafe(profile))
@@ -78,7 +78,7 @@ func (suite *PrepareIntegrationTestSuite) TestPrepare() {
 
 	// When installed in a non-desktop environment (i.e. on a server), verify the user's ~/.profile was reverted.
 	if runtime.GOOS == "linux" {
-		homeDir, err := homedir.Dir()
+		homeDir, err := user.HomeDir()
 		suite.Require().NoError(err)
 		profile := filepath.Join(homeDir, ".profile")
 		profileContents := fileutils.ReadFileUnsafe(profile)

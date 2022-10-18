@@ -11,6 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
+	"github.com/ActiveState/cli/internal/osutils/user"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
@@ -80,7 +81,7 @@ func getSafeWorkDir() (string, error) {
 		return dir, nil
 	}
 
-	dir, err = os.UserHomeDir()
+	dir, err = user.HomeDir()
 	if err != nil {
 		return "", errs.Wrap(err, "Could not get home directory")
 	}
