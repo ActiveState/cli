@@ -273,10 +273,11 @@ func newStateCommand(globals *globalOptions, prime *primer.Values) *captain.Comm
 				Value:       &opts.ConfirmExit,
 			},
 			{
-				Name:      "non-interactive", // Name and Shorthand should be kept in sync with cmd/state/output.go
-				Shorthand: "n",
-				Persist:   true,
-				Value:     &globals.NonInteractive,
+				Name:        "non-interactive", // Name and Shorthand should be kept in sync with cmd/state/output.go
+				Description: locale.T("flag_state_non_interactive_description"),
+				Shorthand:   "n",
+				Persist:     true,
+				Value:       &globals.NonInteractive,
 			},
 			{
 				Name:        "version",
