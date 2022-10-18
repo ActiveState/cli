@@ -1,6 +1,7 @@
 package integration
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
@@ -11,6 +12,8 @@ import (
 	"time"
 
 	"github.com/ActiveState/archiver"
+	"github.com/ActiveState/cli/internal/analytics/client/sync/reporters"
+	anaConst "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/exeutils"
@@ -45,6 +48,9 @@ func (suite *OffInstallIntegrationTestSuite) TestInstallAndUninstall() {
 	ts := e2e.New(suite.T(), true)
 	defer ts.Close()
 
+	testReportFilename := filepath.Join(ts.Dirs.Config, reporters.TestReportFilename)
+	suite.Require().NoFileExists(testReportFilename)
+
 	fmt.Printf("Work dir: %s\n", ts.Dirs.Work)
 
 	suite.preparePayload(ts)
@@ -71,7 +77,19 @@ func (suite *OffInstallIntegrationTestSuite) TestInstallAndUninstall() {
 		tp.Expect("Setup environment for installed project?")
 		tp.Send("Y")
 		tp.ExpectExitCode(0)
-		fmt.Println(tp.Snapshot())
+
+		// Verify that our analytics event was fired
+		time.Sleep(2 * time.Second) // give time to let rtwatcher detect process has exited
+		events := parseAnalyticsEvents(suite, ts)
+		suite.Require().NotEmpty(events)
+
+		heartbeat := suite.filterEvent(events, anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat)
+		suite.assertDimensions(heartbeat)
+
+		nDelete := countEvents(events, anaConst.CatRuntimeUsage, anaConst.ActRuntimeDelete)
+		if nDelete != 0 {
+			suite.FailNow(fmt.Sprintf("Expected 0 delete events, got %d, events:\n%#v", nDelete, events))
+		}
 
 		// Ensure shell env is updated
 		suite.assertShellUpdated(targetDir, true, ts)
@@ -110,6 +128,16 @@ func (suite *OffInstallIntegrationTestSuite) TestInstallAndUninstall() {
 
 		// Ensure installation files are removed
 		suite.assertInstallDir(targetDir, false)
+
+		// Verify that our analytics event was fired
+		events := parseAnalyticsEvents(suite, ts)
+		suite.Require().NotEmpty(events)
+		nHeartbeat := countEvents(events, anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat)
+		if nHeartbeat != 1 {
+			suite.FailNow(fmt.Sprintf("Expected 1 heartbeat event, got %d, events:\n%#v", nHeartbeat, events))
+		}
+		del := suite.filterEvent(events, anaConst.CatRuntimeUsage, anaConst.ActRuntimeDelete)
+		suite.assertDimensions(del)
 	}
 }
 
@@ -226,6 +254,14 @@ func (suite *OffInstallIntegrationTestSuite) assertShellUpdated(dir string, exis
 	}
 }
 
+func (suite *OffInstallIntegrationTestSuite) filterEvent(events []reporters.TestLogEntry, category string, action string) reporters.TestLogEntry {
+	ev := filterEvents(events, func(e reporters.TestLogEntry) bool {
+		return e.Category == category && e.Action == action
+	})
+	suite.Require().Len(ev, 1)
+	return ev[0]
+}
+
 func (suite *OffInstallIntegrationTestSuite) assertInstallDir(dir string, exists bool) {
 	assert := suite.Require().FileExists
 	if !exists {
@@ -240,6 +276,16 @@ func (suite *OffInstallIntegrationTestSuite) assertInstallDir(dir string, exists
 		assert(filepath.Join(dir, "bin", "shell.bat"))
 	}
 	assert(filepath.Join(dir, "LICENSE.txt"))
+}
+
+func (suite *OffInstallIntegrationTestSuite) assertDimensions(event reporters.TestLogEntry) {
+	evdbg, err := json.Marshal(event)
+	suite.Require().NoError(err)
+	dbg := fmt.Sprintf("Event: %s", string(evdbg))
+	suite.Require().NotNil(event.Dimensions.ProjectNameSpace, dbg)
+	suite.Require().NotNil(event.Dimensions.CommitID, dbg)
+	suite.Require().Equal("ActiveState-Test/IntegrationTest", *event.Dimensions.ProjectNameSpace)
+	suite.Require().Equal("00000000-0000-0000-0000-000000000000", *event.Dimensions.CommitID)
 }
 
 func TestOffInstallIntegrationTestSuite(t *testing.T) {
