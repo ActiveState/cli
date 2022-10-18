@@ -41,22 +41,18 @@ func (suite *ShellsIntegrationTestSuite) TestShells() {
 	for _, shell := range shells {
 		suite.T().Run(fmt.Sprintf("using_%s", shell), func(t *testing.T) {
 			// Run the checkout in a particular shell.
-			cp := ts.SpawnInShell(
-				shell,
-				e2e.WithArgs("checkout", "ActiveState-CLI/small-python", string(shell)),
-			)
+			cp := ts.SpawnShellWithOpts(shell)
+			cp.SendLine(e2e.QuoteCommand(shell, ts.ExecutablePath(), "checkout", "ActiveState-CLI/small-python", string(shell)))
 			cp.Expect("Checked out project")
+			cp.SendLine("exit")
 			if shell != e2e.Cmd {
 				cp.ExpectExitCode(0)
 			}
 
 			// There are 2 or more instances checked out, so we should get a prompt in whichever shell we
 			// use.
-			cp = ts.SpawnInShell(
-				shell,
-				e2e.WithArgs("shell", "small-python"),
-				e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
-			)
+			cp = ts.SpawnShellWithOpts(shell, e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"))
+			cp.SendLine(e2e.QuoteCommand(shell, ts.ExecutablePath(), "shell", "small-python"))
 			cp.Expect("Multiple project paths")
 
 			// Just pick the first one and verify the selection prompt works.
@@ -95,9 +91,10 @@ func (suite *ShellsIntegrationTestSuite) TestShells() {
 			// Verify exiting the shell works.
 			cp.SendLine("exit")
 			cp.Expect("Deactivated")
-			if shell != e2e.Fish && shell != e2e.Cmd {
-				cp.ExpectExitCode(0)
-			}
+
+			// Exit the spawned shell.
+			cp.SendLine("exit")
+			cp.ExpectExitCode(0)
 		})
 	}
 }

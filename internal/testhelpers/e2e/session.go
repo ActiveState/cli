@@ -242,13 +242,12 @@ func (s *Session) SpawnCmd(cmdName string, args ...string) *termtest.ConsoleProc
 	return s.SpawnCmdWithOpts(cmdName, WithArgs(args...))
 }
 
-// SpawnInShell spawns the state tool executable with arguments in the given shell.
-func (s *Session) SpawnInShell(shell Shell, opts ...SpawnOptions) *termtest.ConsoleProcess {
-	opts = append(opts, WithShell(shell, s))
+// SpawnShellWithOpts spawns the given shell and options in interactive mode.
+func (s *Session) SpawnShellWithOpts(shell Shell, opts ...SpawnOptions) *termtest.ConsoleProcess {
 	if shell != Cmd {
 		opts = append(opts, AppendEnv("SHELL="+string(shell)))
 	}
-	return s.SpawnCmdWithOpts(s.Exe, opts...)
+	return s.SpawnCmdWithOpts(string(shell), opts...)
 }
 
 // SpawnCmdWithOpts executes an executable in a pseudo-terminal for integration tests
@@ -262,7 +261,6 @@ func (s *Session) SpawnCmdWithOpts(exe string, opts ...SpawnOptions) *termtest.C
 
 	pOpts := Options{
 		Options: termtest.Options{
-			CmdName:        exe,
 			DefaultTimeout: defaultTimeout,
 			Environment:    env,
 			WorkDirectory:  s.Dirs.Work,
@@ -276,6 +274,8 @@ func (s *Session) SpawnCmdWithOpts(exe string, opts ...SpawnOptions) *termtest.C
 	for _, opt := range opts {
 		opt(&pOpts)
 	}
+
+	pOpts.Options.CmdName = exe
 
 	if pOpts.NonWriteableBinDir {
 		// make bin dir read-only
