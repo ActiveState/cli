@@ -93,7 +93,6 @@ scripts:
         if [ -n "${pkgs}" ]; then
           echo Installing packages "${pkgs}"
           sudo apt update && sudo apt install ${pkgs} -y
-          popd
         fi
       elif type "yum" &> /dev/null; then
         echo "Using yum"
