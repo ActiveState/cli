@@ -7,13 +7,11 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 	"syscall"
 	"unsafe"
 
-	"github.com/ActiveState/cli/internal/assets"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
@@ -42,42 +40,22 @@ func IsExecutable(path string) bool {
 	return false
 }
 
+
 // IsWritable returns true if the given path is writable
 func IsWritable(path string) bool {
+	for !TargetExists(path) && path != "" {
+		path = filepath.Dir(path)
+	}
+
 	info, err := os.Stat(path)
 	if err != nil {
-		multilog.Error("Could not stat path: %s, got error: %v", path, err)
+		logging.Debug("os.Stat %s failed", path)
 		return false
 	}
 
-	// Check if read-only bit is set
-	if info.Mode().Perm()&(0222) == 0 {
-		return false
-	}
-
-	const filename = "IsWritable.ps1"
-	contents, err := assets.ReadFileBytes(filename)
-	if err != nil {
-		multilog.Error("Could not read asset: %s", filename)
-		return false
-	}
-	scriptFile, err := WriteTempFile("", filename, contents, 0700)
-	if err != nil {
-		multilog.Error("Could not create temporary powershell file: %v", err)
-		return false
-	}
-
-	cmd := exec.Command("powershell.exe", "-c", scriptFile, path)
-	bytes, err := cmd.Output()
-	if err != nil {
-		logging.Debug("Could not determine if path: %s is writable, got error: %v", path, err)
-		// Fallback on writing a tempfile
-		return isWritableTempFile(path)
-	}
-
-	output := strings.TrimSpace(string(bytes))
-	if output != "True" {
-		logging.Debug("Path %s is not writable, got output: %s", path, output)
+	// Check if the user bit is enabled in file permission
+	if info.Mode().Perm()&(1<<(uint(7))) == 0 {
+		logging.Debug("Write permission bit is not set on this file for user")
 		return false
 	}
 

@@ -16,6 +16,8 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 )
 
+var PanicOnMissingLocale = true
+
 type ErrorTips interface {
 	ErrorTips() []string
 }
@@ -119,7 +121,7 @@ func Unwrap(err error) (int, error) {
 		multilog.Error("MUST ADDRESS: Error does not have localization: %s", errs.Join(err, "\n").Error())
 
 		// If this wasn't built via CI then this is a dev workstation, and we should be more aggressive
-		if !condition.BuiltViaCI() {
+		if !condition.BuiltViaCI() && PanicOnMissingLocale {
 			panic(fmt.Sprintf("Errors must be localized! Please localize: %s, called at: %s\n", errs.JoinMessage(err), stack))
 		}
 	}

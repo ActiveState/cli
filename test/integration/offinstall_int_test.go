@@ -18,6 +18,7 @@ import (
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/offinstall"
 	"github.com/ActiveState/cli/internal/subshell/cmd"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
@@ -48,17 +49,24 @@ func (suite *OffInstallIntegrationTestSuite) TestInstallAndUninstall() {
 	ts := e2e.New(suite.T(), true)
 	defer ts.Close()
 
+	homeDir := filepath.Join(ts.Dirs.Base, "home")
+	suite.Require().NoError(fileutils.Mkdir(homeDir))
+	os.Setenv("HOME", homeDir)
+
 	testReportFilename := filepath.Join(ts.Dirs.Config, reporters.TestReportFilename)
 	suite.Require().NoFileExists(testReportFilename)
 
 	fmt.Printf("Work dir: %s\n", ts.Dirs.Work)
 
 	suite.preparePayload(ts)
-	targetDir := filepath.Join(ts.Dirs.Work, "target")
+
+	defaultInstallParentDir, err := offinstall.DefaultInstallParentDir()
+	suite.Require().NoError(err)
+	defaultInstallDir := filepath.Join(defaultInstallParentDir, "IntegrationTest")
 
 	env := []string{
 		"ACTIVESTATE_CLI_DISABLE_RUNTIME=false",
-		"VERBOSE=true",
+		"HOME=" + homeDir,
 	}
 	if runtime.GOOS != "windows" {
 		env = append(env, "SHELL=bash")
@@ -66,16 +74,18 @@ func (suite *OffInstallIntegrationTestSuite) TestInstallAndUninstall() {
 	{ // Install
 		tp := ts.SpawnCmdWithOpts(
 			suite.installerPath,
-			e2e.WithArgs(targetDir),
 			e2e.AppendEnv(env...),
 		)
-		// tp.Expect("Stage 1 of 3 Finished")
-		tp.Expect("Do you accept the ActiveState License")
+		tp.Expect("Enter an installation directory")
+		tp.Expect(defaultInstallDir)
 		tp.SendLine("")
-		// tp.Expect("Stage 2 of 3 Finished")
-		// tp.Expect("Stage 3 of 3 Finished")
-		tp.Expect("Setup environment for installed project?")
-		tp.Send("Y")
+		tp.ExpectLongString("Do you accept the ActiveState Runtime Installer License Agreement")
+		tp.SendLine("y")
+		tp.Expect("Extracting", time.Second)
+		tp.Expect("Installing")
+		tp.Expect("Installation complete")
+		tp.Expect("Press enter to exit")
+		tp.SendLine("")
 		tp.ExpectExitCode(0)
 
 		// Verify that our analytics event was fired
@@ -92,10 +102,10 @@ func (suite *OffInstallIntegrationTestSuite) TestInstallAndUninstall() {
 		}
 
 		// Ensure shell env is updated
-		suite.assertShellUpdated(targetDir, true, ts)
+		suite.assertShellUpdated(defaultInstallDir, true, ts)
 
 		// Ensure installation dir looks correct
-		suite.assertInstallDir(targetDir, true)
+		suite.assertInstallDir(defaultInstallDir, true)
 
 		// Run executable and validate that it has the relocated value
 		if runtime.GOOS == "windows" {
@@ -106,10 +116,10 @@ func (suite *OffInstallIntegrationTestSuite) TestInstallAndUninstall() {
 		} else {
 			// Disabled for now: DX-1307
 			// tp = ts.SpawnCmd("bash")
-			// tp.WaitForInput(time.Second * 5)
+			// time.Sleep(1 * time.Second) // Give zsh a second to start -- can't use WaitForInput as it doesn't respect a custom HOME dir
 			// tp.Send("test-offline-install")
-			// tp.Send("exit")
 			// tp.Expect("TEST REPLACEMENT", 5*time.Second)
+			// tp.Send("exit")
 			// tp.ExpectExitCode(0)
 		}
 	}
@@ -117,17 +127,20 @@ func (suite *OffInstallIntegrationTestSuite) TestInstallAndUninstall() {
 	{ // Uninstall
 		tp := ts.SpawnCmdWithOpts(
 			suite.uninstallerPath,
-			e2e.WithArgs(targetDir),
 			e2e.AppendEnv(env...),
 		)
+		tp.Expect("Enter an installation directory to uninstall")
+		tp.SendLine(defaultInstallDir)
 		tp.Expect("Uninstall Complete", 5*time.Second)
+		tp.Expect("Press enter to exit")
+		tp.SendLine("")
 		tp.ExpectExitCode(0)
 
 		// Ensure shell env is updated
-		suite.assertShellUpdated(targetDir, false, ts)
+		suite.assertShellUpdated(defaultInstallDir, false, ts)
 
 		// Ensure installation files are removed
-		suite.assertInstallDir(targetDir, false)
+		suite.assertInstallDir(defaultInstallDir, false)
 
 		// Verify that our analytics event was fired
 		events := parseAnalyticsEvents(suite, ts)
@@ -139,6 +152,27 @@ func (suite *OffInstallIntegrationTestSuite) TestInstallAndUninstall() {
 		del := suite.filterEvent(events, anaConst.CatRuntimeUsage, anaConst.ActRuntimeDelete)
 		suite.assertDimensions(del)
 	}
+}
+
+func (suite *OffInstallIntegrationTestSuite) TestInstallNoPermission() {
+	suite.OnlyRunForTags(tagsuite.OffInstall)
+
+	ts := e2e.New(suite.T(), true)
+	defer ts.Close()
+
+	suite.preparePayload(ts)
+
+	pathWithNoPermission := "/opt/no-permission"
+	if runtime.GOOS == "windows" {
+		pathWithNoPermission = "C:\\Program Files\\No Permission"
+	}
+
+	tp := ts.SpawnCmdWithOpts(
+		suite.installerPath,
+		e2e.WithArgs(pathWithNoPermission),
+	)
+	tp.Expect("Please ensure that the directory is writeable", 5*time.Second)
+	tp.ExpectExitCode(1)
 }
 
 func (suite *OffInstallIntegrationTestSuite) preparePayload(ts *e2e.Session) {

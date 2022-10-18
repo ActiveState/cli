@@ -1,11 +1,11 @@
 package main
 
 import (
-	"fmt"
-
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
+	"github.com/vbauerster/mpb/v7"
+	"github.com/vbauerster/mpb/v7/decor"
 )
 
 // New returns an error with the supplied message.
@@ -19,6 +19,8 @@ import (
 
 type offlineProgressOutput struct {
 	out output.Outputer
+	pb  *mpb.Progress
+	bar *mpb.Bar
 }
 
 func newOfflineProgressOutput(out output.Outputer) *offlineProgressOutput {
@@ -46,23 +48,29 @@ func (mpo *offlineProgressOutput) BuildArtifactProgress(artifactID artifact.Arti
 }
 
 func (mpo *offlineProgressOutput) InstallationCompleted(withFailures bool) error {
+	mpo.bar.SetTotal(0, true)
+	mpo.bar.Abort(true)
+	mpo.pb.Wait()
 	return nil
 }
 func (mpo *offlineProgressOutput) InstallationStarted(total int64) error {
+	mpo.pb = mpb.New(mpb.WithWidth(40))
+	barName := "Installing"
+	mpo.bar = mpo.pb.AddBar(total, mpb.PrependDecorators(decor.Name(barName, decor.WC{W: len(barName) + 1, C: decor.DidentRight})))
 	return nil
 }
 func (mpo *offlineProgressOutput) InstallationStatusUpdate(current, total int64) error {
+	mpo.bar.SetTotal(total, false)
+	mpo.bar.SetCurrent(current)
 	return nil
 }
 func (mpo *offlineProgressOutput) ArtifactStepStarted(artifactID artifact.ArtifactID, artifactName string, title string, total int64, counterCountsBytes bool) error {
-	mpo.out.Print(fmt.Sprintf("Starting:   %s%s%s", artifactName, title, artifactID))
 	return nil
 }
 func (mpo *offlineProgressOutput) ArtifactStepIncrement(artifactID artifact.ArtifactID, artifactName string, title string, total int64) error {
 	return nil
 }
 func (mpo *offlineProgressOutput) ArtifactStepCompleted(artifactID artifact.ArtifactID, artifactName string, title string) error {
-	mpo.out.Print(fmt.Sprintf("Completed:  %s:%s", title, artifactID))
 	return nil
 }
 func (mpo *offlineProgressOutput) ArtifactStepFailure(artifact.ArtifactID, string, string, string) error {
