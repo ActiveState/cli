@@ -682,7 +682,7 @@ func TestIsWritableDir(t *testing.T) {
 		t.Fatalf("Path should be writable: %s", nonExistPathWithPermission)
 	}
 
-	pathWithNoPermission := "/opt/no-permission"
+	pathWithNoPermission := "/no-permission"
 	if runtime.GOOS == "windows" {
 		pathWithNoPermission = "C:\\Program Files\\No Permission"
 	}
