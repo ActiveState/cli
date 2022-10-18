@@ -6,9 +6,10 @@ import (
 	"os"
 	"strings"
 
-	"github.com/ActiveState/cli/internal/analytics/client/async"
+	"github.com/ActiveState/cli/internal/analytics"
 	anaConst "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/analytics/dimensions"
+	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
@@ -114,7 +115,7 @@ func Unwrap(err error) (int, error) {
 	return code, &OutputError{err}
 }
 
-func ReportError(err error, cmd string, an *async.Client) {
+func ReportError(err error, flags []*captain.Flag, an analytics.Dispatcher) {
 	var ee errs.Errorable
 	stack := "not provided"
 	isErrs := errors.As(err, &ee)
@@ -128,9 +129,13 @@ func ReportError(err error, cmd string, an *async.Client) {
 	if !locale.IsInputError(err) {
 		multilog.Critical("Returning error:\n%s\nCreated at:\n%s", errs.Join(err, "\n").Error(), stack)
 	} else {
+		var flagNames []string
+		for _, flag := range flags {
+			flagNames = append(flagNames, fmt.Sprintf("--%s", flag.Name))
+		}
 		logging.Debug("Returning input error:\n%s\nCreated at:\n%s", errs.Join(err, "\n").Error(), stack)
 		an.Event(anaConst.CatDebug, anaConst.ActInputError, &dimensions.Values{
-			Trigger: p.StrP(cmd),
+			Trigger: p.StrP(strings.Join(flagNames, ", ")),
 		})
 	}
 

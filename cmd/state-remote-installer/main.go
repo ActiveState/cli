@@ -136,6 +136,7 @@ func main() {
 
 	err = cmd.Execute(os.Args[1:])
 	if err != nil {
+		errors.ReportError(err, cmd.ActiveFlags(), an)
 		if locale.IsInputError(err) {
 			logging.Error("Installer input error: " + errs.JoinMessage(err))
 		} else {
