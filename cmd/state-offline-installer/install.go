@@ -17,6 +17,7 @@ import (
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/offinstall"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
@@ -26,11 +27,12 @@ import (
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
 	"github.com/ActiveState/cli/internal/testhelpers/outputhelper"
 	"github.com/ActiveState/cli/internal/unarchiver"
-	"github.com/ActiveState/cli/pkg/cmdlets/legalprompt"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup/events"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
+	"github.com/vbauerster/mpb/v7"
+	"github.com/vbauerster/mpb/v7/decor"
 )
 
 const artifactsTarGZName = "artifacts.tar.gz"
@@ -46,6 +48,7 @@ type runner struct {
 	analytics analytics.Dispatcher
 	cfg       *config.Instance
 	shell     subshell.SubShell
+	icfg      InstallerConfig
 }
 
 type primeable interface {
@@ -63,14 +66,23 @@ func NewRunner(prime primeable) *runner {
 		prime.Analytics(),
 		prime.Config(),
 		prime.Subshell(),
+		InstallerConfig{},
 	}
 }
 
 type InstallerConfig struct {
-	OrgName     *string `json:"org_name"`
-	ProjectID   *string `json:"project_id"`
-	ProjectName *string `json:"project_name"`
-	CommitID    *string `json:"commit_id"`
+	OrgName     string `json:"org_name"`
+	ProjectID   string `json:"project_id"`
+	ProjectName string `json:"project_name"`
+	CommitID    string `json:"commit_id"`
+}
+
+type Params struct {
+	path string
+}
+
+func newParams() *Params {
+	return &Params{}
 }
 
 func (r *runner) Run(params *Params) (rerr error) {
@@ -86,24 +98,11 @@ func (r *runner) Run(params *Params) (rerr error) {
 		}
 	}()
 
-	logfile, err := buildlogfile.New(outputhelper.NewCatcher())
-	if err != nil {
-		return errs.Wrap(err, "Unable to create new logfile object")
-	}
-
 	tempDir, err := ioutil.TempDir("", "artifacts-")
 	if err != nil {
 		return errs.Wrap(err, "Unable to create temporary directory")
 	}
 	defer os.RemoveAll(tempDir)
-
-	r.out.Print(fmt.Sprintf("Temp directory is: %s", tempDir))
-	r.out.Print(fmt.Sprintf("Installation directory is: %s", params.path))
-
-	/* Validate Target Path */
-	if err := r.validateTargetPath(params.path); err != nil {
-		return errs.Wrap(err, "Could not validate target path")
-	}
 
 	/* Extract Assets */
 	backpackZipFile := os.Args[0]
@@ -112,39 +111,36 @@ func (r *runner) Run(params *Params) (rerr error) {
 		return errs.Wrap(err, "Could not extract assets")
 	}
 
-	config := InstallerConfig{}
-	installerConfigPath := filepath.Join(assetsPath, installerConfigFileName)
-	configData, err := os.ReadFile(installerConfigPath)
+	err = r.prepareInstallerConfig(assetsPath)
 	if err != nil {
-		return errs.Wrap(err, "Failed to read config_file")
-	}
-
-	if err := json.Unmarshal([]byte(configData), &config); err != nil {
-		return errs.Wrap(err, "Failed to decode config_file")
+		return errs.Wrap(err, "Could not read installer config, this installer appears to be corrupted.")
 	}
 
 	installerDimensions = &dimensions.Values{
-		ProjectNameSpace: p.StrP(project.NewNamespace(*config.OrgName, *config.ProjectName, "").String()),
-		CommitID:         config.CommitID,
+		ProjectNameSpace: p.StrP(project.NewNamespace(r.icfg.OrgName, r.icfg.ProjectName, "").String()),
+		CommitID:         &r.icfg.CommitID,
 		Trigger:          p.StrP(target.TriggerOfflineInstaller.String()),
 	}
 	r.analytics.Event(ac.CatOfflineInstaller, "start", installerDimensions)
 
-	/* Prompt for License */
-	licenseFileAssetPath := filepath.Join(assetsPath, licenseFileName)
-	{
-		b, err := fileutils.ReadFile(licenseFileAssetPath)
-		if err != nil {
-			return errs.Wrap(err, "Unable to open License file")
-		}
+	// Detect target path
+	targetPath, err := r.getTargetPath(params.path)
+	if err != nil {
+		return errs.Wrap(err, "Could not determine target path")
+	}
 
-		accepted, err := legalprompt.CustomLicense(string(b), r.out, r.prompt)
-		if err != nil {
-			return errs.Wrap(err, "Error with license acceptance")
-		}
-		if !accepted {
-			return locale.NewInputError("License not accepted")
-		}
+	/* Validate Target Path */
+	if err := r.validateTargetPath(targetPath); err != nil {
+		return errs.Wrap(err, "Could not validate target path")
+	}
+
+	/* Prompt for License */
+	accepted, err := r.promptLicense(assetsPath)
+	if err != nil {
+		return errs.Wrap(err, "Could not prompt for license")
+	}
+	if !accepted {
+		return locale.NewInputError("License not accepted")
 	}
 
 	/* Extract Artifacts */
@@ -154,14 +150,14 @@ func (r *runner) Run(params *Params) (rerr error) {
 	}
 
 	/* Install Artifacts */
-	asrt, err := r.setupRuntime(artifactsPath, params.path, logfile, config)
+	asrt, err := r.setupRuntime(artifactsPath, targetPath)
 	if err != nil {
 		return errs.Wrap(err, "Could not setup runtime")
 	}
 
 	/* Manually Install License File */
 	{
-		err = fileutils.CopyFile(licenseFileAssetPath, filepath.Join(params.path, licenseFileName))
+		err = fileutils.CopyFile(filepath.Join(assetsPath, licenseFileName), filepath.Join(targetPath, licenseFileName))
 		if err != nil {
 			return errs.Wrap(err, "Error copying license file")
 		}
@@ -170,8 +166,8 @@ func (r *runner) Run(params *Params) (rerr error) {
 	/* Manually Install config File */
 	{
 		err = fileutils.CopyFile(
-			installerConfigPath,
-			filepath.Join(params.path, installerConfigFileName),
+			filepath.Join(assetsPath, installerConfigFileName),
+			filepath.Join(targetPath, installerConfigFileName),
 		)
 		if err != nil {
 			return errs.Wrap(err, "Error copying config file")
@@ -184,7 +180,7 @@ func (r *runner) Run(params *Params) (rerr error) {
 	/* Manually Install uninstaller */
 	if rt.GOOS == "windows" {
 		/* shenanigans because windows won't let you delete an executable that's running */
-		installDir, err := filepath.Abs(params.path)
+		installDir, err := filepath.Abs(targetPath)
 		if err != nil {
 			return errs.Wrap(err, "Error determining absolute install directory")
 		}
@@ -219,7 +215,7 @@ func (r *runner) Run(params *Params) (rerr error) {
 		}
 	} else {
 		uninstallerSrc = filepath.Join(assetsPath, uninstallerFileNameRoot)
-		uninstallerDest = filepath.Join(params.path, uninstallerFileNameRoot)
+		uninstallerDest = filepath.Join(targetPath, uninstallerFileNameRoot)
 	}
 	{
 		err = fileutils.CopyFile(
@@ -236,21 +232,53 @@ func (r *runner) Run(params *Params) (rerr error) {
 	}
 
 	/* Configure Environment */
-	if err := r.configureEnvironment(params.path, asrt); err != nil {
+	if err := r.configureEnvironment(targetPath, asrt); err != nil {
 		return errs.Wrap(err, "Could not configure environment")
 	}
 
 	r.analytics.Event(ac.CatOfflineInstaller, ac.ActOfflineInstallerSuccess, installerDimensions)
 
-	r.out.Print("Runtime installation completed.")
+	r.out.Print(fmt.Sprintf(`Installation complete.
+Your language runtime has been installed in [ACTIONABLE]%s[/RESET].`, targetPath))
 
 	return nil
 }
 
-func (r *runner) setupRuntime(artifactsPath string, targetPath string, logfile *buildlogfile.BuildLogFile, cfg InstallerConfig) (*runtime.Runtime, error) {
-	r.out.Print(fmt.Sprintf("Stage 3 of 3 Start: Installing artifacts from: %s", artifactsPath))
+func (r *runner) prepareInstallerConfig(assetsPath string) error {
+	icfg := InstallerConfig{}
+	installerConfigPath := filepath.Join(assetsPath, installerConfigFileName)
+	configData, err := os.ReadFile(installerConfigPath)
+	if err != nil {
+		return errs.Wrap(err, "Failed to read config_file")
+	}
+	if err := json.Unmarshal(configData, &icfg); err != nil {
+		return errs.Wrap(err, "Failed to decode config_file")
+	}
 
-	ns := project.NewNamespace(*cfg.OrgName, *cfg.ProjectName, *cfg.CommitID)
+	if icfg.ProjectName == "" {
+		return errs.New("ProjectName is empty")
+	}
+
+	if icfg.OrgName == "" {
+		return errs.New("OrgName is empty")
+	}
+
+	if icfg.CommitID == "" {
+		return errs.New("CommitID is empty")
+	}
+
+	r.icfg = icfg
+
+	return nil
+}
+
+func (r *runner) setupRuntime(artifactsPath string, targetPath string) (*runtime.Runtime, error) {
+	logfile, err := buildlogfile.New(outputhelper.NewCatcher())
+	if err != nil {
+		return nil, errs.Wrap(err, "Unable to create new logfile object")
+	}
+
+	ns := project.NewNamespace(r.icfg.OrgName, r.icfg.ProjectName, r.icfg.CommitID)
 	offlineTarget := target.NewOfflineTarget(ns, targetPath, artifactsPath)
 	offlineTarget.SetTrigger(target.TriggerOfflineInstaller)
 
@@ -266,7 +294,6 @@ func (r *runner) setupRuntime(artifactsPath string, targetPath string, logfile *
 			return nil, errs.Wrap(err, "Had an installation error")
 		}
 	}
-	r.out.Print(fmt.Sprintf("Stage 3 of 3 Finished: Installing artifacts from: %s", artifactsPath))
 	return rti, nil
 }
 
@@ -275,7 +302,6 @@ func (r *runner) extractArtifacts(artifactsPath, assetsPath string) error {
 		return errs.Wrap(err, "Unable to create artifactsPath directory")
 	}
 
-	r.out.Print(fmt.Sprintf("Stage 2 of 3 Start: Decompressing artifacts into: %s", artifactsPath))
 	archivePath := filepath.Join(assetsPath, artifactsTarGZName)
 	ua := unarchiver.NewTarGz()
 	f, siz, err := ua.PrepareUnpacking(archivePath, artifactsPath)
@@ -283,9 +309,18 @@ func (r *runner) extractArtifacts(artifactsPath, assetsPath string) error {
 		return errs.Wrap(err, "Unable to prepare unpacking of artifact tarball")
 	}
 
+	pb := mpb.New(
+		mpb.WithWidth(40),
+	)
+	barName := "Extracting"
+	bar := pb.AddBar(
+		siz,
+		mpb.PrependDecorators(decor.Name(barName, decor.WC{W: len(barName) + 1, C: decor.DidentRight})),
+	)
+
 	ua.SetNotifier(func(filename string, _ int64, isDir bool) {
 		if !isDir {
-			r.out.Print(fmt.Sprintf("Unpacking artifact %s", filename))
+			bar.Increment()
 		}
 	})
 
@@ -294,7 +329,9 @@ func (r *runner) extractArtifacts(artifactsPath, assetsPath string) error {
 		return errs.Wrap(err, "Unable to unarchive artifacts to artifactsPath")
 	}
 
-	r.out.Print(fmt.Sprintf("Stage 2 of 3 Finished: Decompressing artifacts into: %s", artifactsPath))
+	bar.SetTotal(0, true)
+	bar.Abort(true)
+	pb.Wait()
 
 	return nil
 }
@@ -305,7 +342,6 @@ func (r *runner) extractAssets(assetsPath string, backpackZipFile string) error 
 	}
 
 	ua := unarchiver.NewZip()
-	r.out.Print(fmt.Sprintf("Stage 1 of 3 Start: Decompressing assets into: %s", assetsPath))
 	f, siz, err := ua.PrepareUnpacking(backpackZipFile, assetsPath)
 	if err != nil {
 		return errs.Wrap(err, "Unable to prepare unpacking of backpack")
@@ -316,19 +352,10 @@ func (r *runner) extractAssets(assetsPath string, backpackZipFile string) error 
 		return errs.Wrap(err, "Unable to unarchive Assets to assetsPath")
 	}
 
-	r.out.Print(fmt.Sprintf("Stage 1 of 3 Finished: Decompressing assets into: %s", assetsPath))
 	return nil
 }
 
 func (r *runner) configureEnvironment(path string, asrt *runtime.Runtime) error {
-	configureEnvironmentAccepted, err := r.prompt.Confirm("Setup", "Setup environment for installed project?", p.BoolP(true))
-	if err != nil {
-		return errs.Wrap(err, "Error getting confirmation")
-	}
-
-	if !configureEnvironmentAccepted {
-		return nil
-	}
 	env, err := asrt.Env(false, false)
 	if err != nil {
 		return errs.Wrap(err, "Error setting environment")
@@ -369,33 +396,78 @@ func (r *runner) configureEnvironment(path string, asrt *runtime.Runtime) error 
 	return nil
 }
 
+func (r *runner) getTargetPath(inputPath string) (string, error) {
+	var targetPath string
+	if inputPath != "" {
+		targetPath = inputPath
+	} else {
+		parentDir, err := offinstall.DefaultInstallParentDir()
+		if err != nil {
+			return "", errs.Wrap(err, "Could not determine default install path")
+		}
+		targetPath = filepath.Join(parentDir, r.icfg.ProjectName)
+
+		targetPath, err = r.prompt.Input("", "Enter an installation directory", &targetPath)
+		if err != nil {
+			return "", errs.Wrap(err, "Could not retrieve installation directory")
+		}
+	}
+	return targetPath, nil
+}
+
 func (r *runner) validateTargetPath(path string) error {
-	if !fileutils.DirExists(path) {
-		return nil
+	if !fileutils.IsWritable(path) {
+		return errs.New(
+			"Cannot write to [ACTIONABLE]%s[/RESET]. Please ensure that the directory is writeable without "+
+				"needing admin privileges or run this installer with Admin.", path)
 	}
 
-	empty, err := fileutils.IsEmptyDir(path)
-	if err != nil {
-		return errs.Wrap(err, "Test for directory empty failed")
-	}
-	if empty {
-		return nil
-	}
+	if fileutils.TargetExists(path) {
+		if !fileutils.IsDir(path) {
+			return errs.New("Target path [ACTIONABLE]%s[/RESET] is not a directory", path)
+		}
 
-	installNonEmpty, err := r.prompt.Confirm(
-		"Setup",
-		"Installation directory is not empty, install anyway?",
-		p.BoolP(true))
-	if err != nil {
-		return errs.Wrap(err, "Unable to get confirmation to install into non-empty directory")
-	}
+		empty, err := fileutils.IsEmptyDir(path)
+		if err != nil {
+			return errs.Wrap(err, "Test for directory empty failed")
+		}
+		if !empty {
+			installNonEmpty, err := r.prompt.Confirm(
+				"Setup",
+				"Installation directory is not empty, install anyway?",
+				p.BoolP(true))
+			if err != nil {
+				return errs.Wrap(err, "Unable to get confirmation to install into non-empty directory")
+			}
 
-	if !installNonEmpty {
-		return locale.NewInputError(
-			"offline_installer_err_installdir_notempty",
-			"Installation directory ({{.V0}}) not empty, installation aborted",
-			path)
+			if !installNonEmpty {
+				return locale.NewInputError(
+					"offline_installer_err_installdir_notempty",
+					"Installation directory ({{.V0}}) not empty, installation aborted",
+					path)
+			}
+		}
 	}
 
 	return nil
+}
+
+func (r *runner) promptLicense(assetsPath string) (bool, error) {
+	licenseFileAssetPath := filepath.Join(assetsPath, licenseFileName)
+	licenseContents, err := fileutils.ReadFile(licenseFileAssetPath)
+	if err != nil {
+		return false, errs.Wrap(err, "Unable to open License file")
+	}
+	r.out.Print(licenseContents)
+
+	choice, err := r.prompt.Confirm("", "Do you accept the ActiveState Runtime Installer License Agreement?", p.BoolP(false))
+	if err != nil {
+		return false, err
+	}
+
+	if err != nil {
+		return false, errs.Wrap(err, "Unable to confirm license")
+	}
+
+	return choice, nil
 }

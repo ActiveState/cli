@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -32,6 +33,7 @@ type runner struct {
 	analytics analytics.Dispatcher
 	cfg       *config.Instance
 	shell     subshell.SubShell
+	icfg      InstallerConfig
 }
 
 type primeable interface {
@@ -49,16 +51,17 @@ func NewRunner(prime primeable) *runner {
 		prime.Analytics(),
 		prime.Config(),
 		prime.Subshell(),
+		InstallerConfig{},
 	}
 }
 
 const installerConfigFileName = "installer_config.json"
 
 type InstallerConfig struct {
-	OrgName     *string `json:"org_name"`
-	ProjectID   *string `json:"project_id"`
-	ProjectName *string `json:"project_name"`
-	CommitID    *string `json:"commit_id"`
+	OrgName     string `json:"org_name"`
+	ProjectID   string `json:"project_id"`
+	ProjectName string `json:"project_name"`
+	CommitID    string `json:"commit_id"`
 }
 
 type Params struct {
@@ -82,44 +85,37 @@ func (r *runner) Run(params *Params) (rerr error) {
 		}
 	}()
 
-	licenseFilePath := filepath.Join(params.path, licenseFileName)
-	installerConfigPath := filepath.Join(params.path, installerConfigFileName)
-
-	configData, err := os.ReadFile(installerConfigPath)
+	// Detect target path
+	targetPath, err := r.getTargetPath(params.path)
 	if err != nil {
-		return errs.Wrap(err, "Failed to read config file, is this an install directory?")
+		return errs.Wrap(err, "Could not determine target path")
 	}
-	config := InstallerConfig{}
 
-	if err := json.Unmarshal([]byte(configData), &config); err != nil {
-		return errs.Wrap(err, "Failed to decode config file")
+	/* Validate Target Path */
+	if err := r.validateTargetPath(targetPath); err != nil {
+		return errs.Wrap(err, "Could not validate target path")
+	}
+
+	if err := r.prepareInstallerConfig(targetPath); err != nil {
+		return errs.Wrap(err, "Could not read installer config, this installer appears to be corrupted.")
+	}
+
+	cont, err := r.prompt.Confirm("",
+		fmt.Sprintf("You are about to uninstall the runtime installed at [[ACTIONABLE]%s[/RESET], continue?", targetPath),
+		p.BoolP(false))
+	if err != nil {
+		return errs.Wrap(err, "Could not confirm uninstall")
+	}
+	if !cont {
+		return locale.NewInputError("err_uninstall_abort", "Uninstall aborted")
 	}
 
 	installerDimensions = &dimensions.Values{
-		ProjectNameSpace: p.StrP(project.NewNamespace(*config.OrgName, *config.ProjectName, "").String()),
-		CommitID:         config.CommitID,
+		ProjectNameSpace: p.StrP(project.NewNamespace(r.icfg.OrgName, r.icfg.ProjectName, "").String()),
+		CommitID:         &r.icfg.CommitID,
 		Trigger:          p.StrP(target.TriggerOfflineUninstaller.String()),
 	}
 	r.analytics.Event(ac.CatOfflineInstaller, ac.ActOfflineInstallerStart, installerDimensions)
-
-	containsLicenseFile, err := fileutils.FileContains(licenseFilePath, []byte("ACTIVESTATE"))
-	if err != nil {
-		return errs.Wrap(err, "Failed to find valid license file, is this an install directory?")
-	}
-
-	if !containsLicenseFile {
-		confirmUninstall, err := r.prompt.Confirm(
-			"Uninstall",
-			"Directory does not look like an install directory, are you sure you want to proceed?",
-			p.BoolP(true))
-		if err != nil {
-			return errs.Wrap(err, "Error getting confirmation for installing")
-		}
-
-		if !confirmUninstall {
-			return errs.New("ActiveState license not found in uninstall directory. Please specify a valid uninstall directory.")
-		}
-	}
 
 	r.out.Print("Removing environment configuration")
 	err = r.removeEnvPaths()
@@ -128,7 +124,7 @@ func (r *runner) Run(params *Params) (rerr error) {
 	}
 
 	r.out.Print("Removing installation directory")
-	err = os.RemoveAll(params.path)
+	err = os.RemoveAll(targetPath)
 	if err != nil {
 		return errs.Wrap(err, "Error removing installation directory")
 	}
@@ -137,6 +133,82 @@ func (r *runner) Run(params *Params) (rerr error) {
 	r.analytics.Event(ac.CatRuntimeUsage, ac.ActRuntimeDelete, installerDimensions)
 
 	r.out.Print("Uninstall Complete")
+
+	return nil
+}
+
+func (r *runner) prepareInstallerConfig(assetsPath string) error {
+	icfg := InstallerConfig{}
+	installerConfigPath := filepath.Join(assetsPath, installerConfigFileName)
+
+	configData, err := os.ReadFile(installerConfigPath)
+	if err != nil {
+		return errs.Wrap(err, "Failed to read config_file")
+	}
+	if err := json.Unmarshal(configData, &icfg); err != nil {
+		return errs.Wrap(err, "Failed to decode config_file")
+	}
+
+	if icfg.ProjectName == "" {
+		return errs.New("ProjectName is empty")
+	}
+
+	if icfg.OrgName == "" {
+		return errs.New("OrgName is empty")
+	}
+
+	if icfg.CommitID == "" {
+		return errs.New("CommitID is empty")
+	}
+
+	r.icfg = icfg
+
+	return nil
+}
+
+func (r *runner) getTargetPath(inputPath string) (string, error) {
+	if inputPath != "" {
+		return inputPath, nil
+	}
+
+	cwd, err := os.Getwd()
+	if err != nil {
+		return "", errs.Wrap(err, "Could not determine current working directory")
+	}
+
+	var targetPath string
+	if fileutils.TargetExists(filepath.Join(cwd, installerConfigFileName)) {
+		targetPath = cwd
+	}
+
+	if targetPath != "" {
+		targetPath, err = r.prompt.Input("", "Enter an installation directory to uninstall", &targetPath)
+	} else {
+		targetPath, err = r.prompt.Input("", "Enter an installation directory to uninstall", nil, prompt.InputRequired)
+	}
+	if err != nil {
+		return "", errs.Wrap(err, "Could not retrieve installation directory")
+	}
+	return targetPath, nil
+}
+
+func (r *runner) validateTargetPath(path string) error {
+	if !fileutils.IsWritable(path) {
+		return errs.New(
+			"Cannot write to [ACTIONABLE]%s[/RESET]. Please ensure that the directory is writeable without "+
+				"needing admin privileges or run this installer with Admin.", path)
+	}
+
+	if !fileutils.IsDir(path) {
+		return errs.New("Target path [ACTIONABLE]%s[/RESET] is not a directory", path)
+	}
+
+	installerConfigPath := filepath.Join(path, installerConfigFileName)
+	if !fileutils.FileExists(installerConfigPath) {
+		return errs.New(
+			"The target directory does not appear to contain an ActiveState Runtime installation. Expected to find: %s.",
+			installerConfigPath)
+	}
 
 	return nil
 }
