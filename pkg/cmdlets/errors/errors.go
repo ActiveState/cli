@@ -133,7 +133,7 @@ func ReportError(err error, flags []*captain.Flag, an analytics.Dispatcher) {
 		for _, flag := range flags {
 			flagNames = append(flagNames, fmt.Sprintf("--%s", flag.Name))
 		}
-		logging.Debug("Returning input error:\n%s\nCreated at:\n%s", errs.Join(err, "\n").Error(), stack)
+		logging.Debug("Reporting input error:\n%s\nCreated at:\n%s", errs.Join(err, "\n").Error(), stack)
 		an.Event(anaConst.CatDebug, anaConst.ActInputError, &dimensions.Values{
 			Trigger: p.StrP(strings.Join(flagNames, ", ")),
 		})
