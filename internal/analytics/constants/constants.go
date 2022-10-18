@@ -24,6 +24,9 @@ const ActRuntimeHeartbeat = "heartbeat"
 // ActRuntimeStart is the event action sent when creating a runtime
 const ActRuntimeStart = "start"
 
+// ActRuntimeDelete is the event action sent when uninstalling a runtime
+const ActRuntimeDelete = "delete"
+
 // ActRuntimeCache is the event action sent when a runtime is constructed from the local cache alone
 const ActRuntimeCache = "cache"
 
@@ -86,3 +89,18 @@ const CatDebug = "debug"
 
 // ActInputError is the event action used for input errors
 const ActInputError = "input-error"
+
+// CatOfflineInstaller is the event category used for all data relating to offline installs and uninstalls
+const CatOfflineInstaller = "offline-installer"
+
+// ActOfflineInstallerStart is the event action for the offline installer/uninstaller being initiated
+const ActOfflineInstallerStart = "start"
+
+// ActOfflineInstallerFailure is the event action for the offline installer/uninstaller failing
+const ActOfflineInstallerFailure = "failure"
+
+// ActOfflineInstallerStart is the event action for the offline installer/uninstaller succeeding
+const ActOfflineInstallerSuccess = "success"
+
+// ActOfflineInstallerAbort is the event action for the offline installer being terminated by the user
+const ActOfflineInstallerAbort = "aborted"
