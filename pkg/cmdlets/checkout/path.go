@@ -3,15 +3,12 @@ package checkout
 import (
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/osutils"
-	"github.com/ActiveState/cli/internal/osutils/user"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
@@ -69,22 +66,4 @@ func validatePath(ns *project.Namespaced, path string) error {
 	}
 
 	return nil
-}
-
-func getSafeWorkDir() (string, error) {
-	dir, err := osutils.Getwd()
-	if err != nil {
-		return "", errs.Wrap(err, "Could not get working directory")
-	}
-
-	if !strings.HasPrefix(strings.ToLower(dir), `c:\windows`) {
-		return dir, nil
-	}
-
-	dir, err = user.HomeDir()
-	if err != nil {
-		return "", errs.Wrap(err, "Could not get home directory")
-	}
-
-	return dir, nil
 }
