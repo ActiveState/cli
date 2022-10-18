@@ -363,7 +363,7 @@ func (suite *AnalyticsIntegrationTestSuite) TestInputError() {
 	cp := ts.Spawn("--ver")
 	cp.ExpectExitCode(1)
 
-	events := suite.parseEvents(ts)
+	events := parseAnalyticsEvents(suite, ts)
 	suite.assertSequentialEvents(events)
 
 	suite.assertNEvents(events, 1, anaConst.CatDebug, anaConst.ActInputError,
