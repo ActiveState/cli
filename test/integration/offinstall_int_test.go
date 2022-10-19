@@ -131,6 +131,8 @@ func (suite *OffInstallIntegrationTestSuite) TestInstallAndUninstall() {
 		)
 		tp.Expect("Enter an installation directory to uninstall")
 		tp.SendLine(defaultInstallDir)
+		tp.Expect("continue?")
+		tp.SendLine("y")
 		tp.Expect("Uninstall Complete", 5*time.Second)
 		tp.Expect("Press enter to exit")
 		tp.SendLine("")
@@ -162,7 +164,7 @@ func (suite *OffInstallIntegrationTestSuite) TestInstallNoPermission() {
 
 	suite.preparePayload(ts)
 
-	pathWithNoPermission := "/opt/no-permission"
+	pathWithNoPermission := "/no-permission"
 	if runtime.GOOS == "windows" {
 		pathWithNoPermission = "C:\\Program Files\\No Permission"
 	}
@@ -172,6 +174,8 @@ func (suite *OffInstallIntegrationTestSuite) TestInstallNoPermission() {
 		e2e.WithArgs(pathWithNoPermission),
 	)
 	tp.Expect("Please ensure that the directory is writeable", 5*time.Second)
+	tp.Expect("Press enter to exit", 5*time.Second)
+	tp.SendLine("")
 	tp.ExpectExitCode(1)
 }
 
