@@ -33,14 +33,6 @@ func (suite *ActivateIntegrationTestSuite) TestActivatePython3_zsh() {
 	if _, err := exec.LookPath("zsh"); err != nil {
 		suite.T().Skip("This test requires a zsh shell in your PATH")
 	}
-	if runtime.GOOS == "linux" {
-		ts := e2e.New(suite.T(), false)
-		defer ts.Close()
-		cp := ts.SpawnShellWithOpts(e2e.Zsh)
-		cp.SendLine("y")
-		cp.SendLine("compaudit")
-		cp.Expect("this will fail; I want to see what compaudit returns")
-	}
 	suite.activatePython("3", "SHELL=zsh")
 }
 

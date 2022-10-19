@@ -43,11 +43,6 @@ func (suite *ShellsIntegrationTestSuite) TestShells() {
 			// Run the checkout in a particular shell.
 			cp := ts.SpawnShellWithOpts(shell)
 			cp.SendLine(e2e.QuoteCommand(shell, ts.ExecutablePath(), "checkout", "ActiveState-CLI/small-python", string(shell)))
-			if runtime.GOOS == "linux" && shell == e2e.Zsh {
-				cp.SendLine("y")
-				cp.SendLine("compaudit")
-				cp.Expect("this will fail; I want to see what compaudit returns")
-			}
 			cp.Expect("Checked out project")
 			cp.SendLine("exit")
 			if shell != e2e.Cmd {
