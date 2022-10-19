@@ -3,12 +3,14 @@ package uninstall
 import (
 	"os"
 	"runtime"
+	"strings"
 
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/analytics/dimensions"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/instanceid"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -21,7 +23,6 @@ import (
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
 	"github.com/ActiveState/cli/pkg/platform/runtime/store"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
-	"github.com/ActiveState/cli/pkg/project"
 )
 
 type Params struct {
@@ -74,13 +75,8 @@ func (u *Uninstall) Run(params *Params) error {
 		path = cwd
 	}
 
-	proj, err := project.FromPath(path)
-	if err != nil {
-		return locale.WrapError(err, "err_deploy_uninstall_project", "Could not load project from path: {{.V0}}", path)
-	}
-
-	logging.Debug("Attempting to uninstall deployment at %s", path)
-	if !store.New(path).HasMarker() {
+	store := store.New(path)
+	if !store.HasMarker() {
 		return errs.AddTips(
 			locale.NewError("err_deploy_uninstall_not_deployed", "There is no deployed runtime at '{{.V0}}' to uninstall.", path),
 			locale.Tl("err_deploy_uninstall_not_deployed_tip", "Either change the current directory to a deployment or supply '--path <path>' arguments."))
@@ -92,7 +88,7 @@ func (u *Uninstall) Run(params *Params) error {
 			"Cannot remove deployment in current working directory. Please cd elsewhere and run this command again with the '--path' flag.")
 	}
 
-	err = u.subshell.CleanUserEnv(u.cfg, sscommon.DeployID, params.UserScope)
+	err := u.subshell.CleanUserEnv(u.cfg, sscommon.DeployID, params.UserScope)
 	if err != nil {
 		return locale.WrapError(err, "err_deploy_uninstall_env", "Failed to remove deploy directory from PATH")
 	}
@@ -102,10 +98,25 @@ func (u *Uninstall) Run(params *Params) error {
 		return locale.WrapError(err, "err_deploy_uninstall", "Unable to remove deployed runtime at '{{.V0}}'", path)
 	}
 
+	contents, err := fileutils.ReadFile(store.MarkerFile())
+	if err != nil {
+		return locale.WrapError(err, "err_deploy_uninstall_marker", "Unable to read marker file at [ACTIONABLE]{{.V0}}[RESET]. Deployment may be corrupted.", store.MarkerFile())
+	}
+
+	var namespace string
+	var commitID string
+	lines := strings.Split(string(contents), "\n")
+	if len(lines) < 3 {
+		logging.Error("Marker file is incomplete, cannot determine all project information")
+	} else {
+		commitID = strings.TrimSpace(lines[0])
+		namespace = strings.TrimSpace(lines[2])
+	}
+
 	u.analytics.Event(constants.CatRuntimeUsage, constants.ActRuntimeDelete, &dimensions.Values{
 		Trigger:          p.StrP(target.TriggerDeploy.String()),
-		CommitID:         p.StrP(proj.CommitID()),
-		ProjectNameSpace: p.StrP(proj.NamespaceString()),
+		CommitID:         p.StrP(commitID),
+		ProjectNameSpace: p.StrP(namespace),
 		InstanceID:       p.StrP(instanceid.ID()),
 	})
 

@@ -176,7 +176,7 @@ func (s *Setup) Update() error {
 	}
 
 	// Mark installation as completed
-	if err := s.store.MarkInstallationComplete(s.target.CommitUUID()); err != nil {
+	if err := s.store.MarkInstallationComplete(s.target.CommitUUID(), fmt.Sprintf("%s/%s", s.target.Owner(), s.target.Name())); err != nil {
 		return errs.Wrap(err, "Could not mark install as complete.")
 	}
 
@@ -588,7 +588,7 @@ func (s *Setup) downloadArtifactWithProgress(unsignedURI string, targetFile stri
 // verifyArtifact verifies the checksum of the downloaded artifact matches the checksum given by the
 // platform, and returns an error if the verification fails.
 func (s *Setup) verifyArtifact(archivePath string, a artifact.ArtifactDownload) error {
-  return validate.Checksum(archivePath, a.Checksum)
+	return validate.Checksum(archivePath, a.Checksum)
 }
 
 // downloadArtifact downloads an artifact and returns the local path to that artifact's archive.

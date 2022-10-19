@@ -53,7 +53,7 @@ func New(installPath string) *Store {
 	}
 }
 
-func (s *Store) markerFile() string {
+func (s *Store) MarkerFile() string {
 	return filepath.Join(s.storagePath, constants.RuntimeInstallationCompleteMarker)
 }
 
@@ -66,7 +66,7 @@ func (s *Store) recipeFile() string {
 }
 
 func (s *Store) HasMarker() bool {
-	if fileutils.FileExists(s.markerFile()) {
+	if fileutils.FileExists(s.MarkerFile()) {
 		return true
 	}
 	return false
@@ -74,7 +74,7 @@ func (s *Store) HasMarker() bool {
 
 // MarkerIsValid checks if stored runtime is complete and can be loaded
 func (s *Store) MarkerIsValid(commitID strfmt.UUID) bool {
-	marker := s.markerFile()
+	marker := s.MarkerFile()
 	if !fileutils.FileExists(marker) {
 		logging.Debug("Marker does not exist: %s", marker)
 		return false
@@ -110,14 +110,15 @@ func (s *Store) MarkerIsValid(commitID strfmt.UUID) bool {
 }
 
 // MarkInstallationComplete writes the installation complete marker to the runtime directory
-func (s *Store) MarkInstallationComplete(commitID strfmt.UUID) error {
-	markerFile := s.markerFile()
+func (s *Store) MarkInstallationComplete(commitID strfmt.UUID, namespace string) error {
+	markerFile := s.MarkerFile()
 	markerDir := filepath.Dir(markerFile)
 	err := fileutils.MkdirUnlessExists(markerDir)
 	if err != nil {
 		return errs.Wrap(err, "could not create completion marker directory")
 	}
-	err = fileutils.WriteFile(markerFile, []byte(fmt.Sprintf("%s\n%s", commitID.String(), constants.Version)))
+	// TODO: Use strings.join?
+	err = fileutils.WriteFile(markerFile, []byte(fmt.Sprintf("%s\n%s\n%s", commitID.String(), constants.Version, namespace)))
 	if err != nil {
 		return errs.Wrap(err, "could not set completion marker")
 	}
