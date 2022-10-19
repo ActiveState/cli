@@ -71,7 +71,9 @@ jobs:
           if [ -x "$(command -v apt-get)" ]; then
             sudo apt-get update
             sudo apt-get install libgtk-3-dev libappindicator3-dev libwebkit2gtk-4.0-dev fish zsh tcsh -y
-            echo "ZSH_DISABLE_COMPFIX=true" > ~/.zshrc
+            # Prevent zsh insecure directory warning.
+            sudo chmod -R 755 /usr/local/share/zsh/site-functions
+            sudo chown -R root:root /usr/local/share/zsh/site-functions
           fi
 
           printenv
