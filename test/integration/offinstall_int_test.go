@@ -51,6 +51,7 @@ func (suite *OffInstallIntegrationTestSuite) TestInstallAndUninstall() {
 
 	homeDir := filepath.Join(ts.Dirs.Base, "home")
 	suite.Require().NoError(fileutils.Mkdir(homeDir))
+	suite.Require().NoError(fileutils.Touch(filepath.Join(homeDir, ".bashrc"))) // ensure bashrc exists
 	os.Setenv("HOME", homeDir)
 
 	testReportFilename := filepath.Join(ts.Dirs.Config, reporters.TestReportFilename)
