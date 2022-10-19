@@ -42,11 +42,6 @@ func (suite *ShellsIntegrationTestSuite) TestShells() {
 		suite.T().Run(fmt.Sprintf("using_%s", shell), func(t *testing.T) {
 			// Run the checkout in a particular shell.
 			cp := ts.SpawnShellWithOpts(shell)
-			if runtime.GOOS == "linux" && shell == e2e.Zsh {
-				// zsh on Linux CI complains and prompts about insecure directories, so work around that.
-				cp.Expect("zsh compinit:")
-				cp.SendLine("y")
-			}
 			cp.SendLine(e2e.QuoteCommand(shell, ts.ExecutablePath(), "checkout", "ActiveState-CLI/small-python", string(shell)))
 			cp.Expect("Checked out project")
 			cp.SendLine("exit")
@@ -57,11 +52,6 @@ func (suite *ShellsIntegrationTestSuite) TestShells() {
 			// There are 2 or more instances checked out, so we should get a prompt in whichever shell we
 			// use.
 			cp = ts.SpawnShellWithOpts(shell, e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"))
-			if runtime.GOOS == "linux" && shell == e2e.Zsh {
-				// zsh on Linux CI complains and prompts about insecure directories, so work around that.
-				cp.Expect("zsh compinit:")
-				cp.SendLine("y")
-			}
 			cp.SendLine(e2e.QuoteCommand(shell, ts.ExecutablePath(), "shell", "small-python"))
 			cp.Expect("Multiple project paths")
 

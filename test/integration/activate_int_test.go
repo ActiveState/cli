@@ -33,9 +33,6 @@ func (suite *ActivateIntegrationTestSuite) TestActivatePython3_zsh() {
 	if _, err := exec.LookPath("zsh"); err != nil {
 		suite.T().Skip("This test requires a zsh shell in your PATH")
 	}
-	if runtime.GOOS == "linux" {
-		suite.T().Skip("zsh on Linux CI prompts about insecure directories")
-	}
 	suite.activatePython("3", "SHELL=zsh")
 }
 
