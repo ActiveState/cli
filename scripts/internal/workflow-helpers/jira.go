@@ -3,9 +3,11 @@ package workflow_helpers
 import (
 	"os"
 	"regexp"
+	"sort"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/testhelpers/secrethelper"
 	"github.com/andygrunwald/go-jira"
 	"github.com/blang/semver"
@@ -59,7 +61,11 @@ func JqlUnpaged(client *jira.Client, jql string) ([]jira.Issue, error) {
 }
 
 func ParseJiraVersion(version string) (semver.Version, error) {
-	return semver.Parse(strings.TrimPrefix(version, "v"))
+	return semver.Parse(ParseJiraVersionRaw(version))
+}
+
+func ParseJiraVersionRaw(version string) string {
+	return strings.TrimPrefix(version, "v")
 }
 
 func FetchJiraIssue(jiraClient *jira.Client, jiraIssueID string) (*jira.Issue, error) {
@@ -71,9 +77,37 @@ func FetchJiraIssue(jiraClient *jira.Client, jiraIssueID string) (*jira.Issue, e
 	return jiraIssue, nil
 }
 
-var ErrVersionIsAny = errs.New("Version is '%s'", VersionAny)
+func FetchAvailableVersions(jiraClient *jira.Client) ([]semver.Version, error) {
+	pj, _, err := jiraClient.Project.Get("DX")
+	if err != nil {
+		return nil, errs.Wrap(err, "Failed to get JIRA project")
+	}
 
-func ParseTargetFixVersion(issue *jira.Issue, verifyActive bool) (semver.Version, *jira.FixVersion, error) {
+	result := []semver.Version{}
+	for _, version := range pj.Versions {
+		if version.Archived != nil || *version.Archived {
+			continue
+		}
+		if version.Released != nil || *version.Released {
+			continue
+		}
+		semversion, err := ParseJiraVersion(version.Name)
+		if err != nil {
+			logging.Debug("Not a semver version %s; skipping", version.Name)
+		}
+		result = append(result, semversion)
+	}
+
+	sort.Slice(result, func(i, j int) bool {
+		return result[i].LT(result[j])
+	})
+
+	return result, nil
+}
+
+var VersionMaster = semver.MustParse("0.0.0")
+
+func ParseTargetFixVersion(issue *jira.Issue, availableVersions []semver.Version) (semver.Version, *jira.FixVersion, error) {
 	if len(issue.Fields.FixVersions) < 1 {
 		return semver.Version{}, nil, errs.New("Jira issue does not have a fixVersion assigned: %s\n", issue.Key)
 	}
@@ -83,12 +117,18 @@ func ParseTargetFixVersion(issue *jira.Issue, verifyActive bool) (semver.Version
 	}
 
 	fixVersion := issue.Fields.FixVersions[0]
-	if verifyActive && (fixVersion.Archived != nil && *fixVersion.Archived) || (fixVersion.Released != nil && *fixVersion.Released) {
+	if fixVersion.Archived != nil && *fixVersion.Archived || fixVersion.Released != nil && *fixVersion.Released {
 		return semver.Version{}, nil, errs.New("fixVersion '%s' has either been archived or released\n", fixVersion.Name)
 	}
 
-	if fixVersion.Name == VersionAny {
-		return semver.Version{}, fixVersion, ErrVersionIsAny
+	switch fixVersion.Name {
+	case VersionNextFeasible:
+		if len(availableVersions) < 1 {
+			return semver.Version{}, nil, errs.New("No feasible versions available")
+		}
+		return availableVersions[0], fixVersion, nil
+	case VersionNextUnscheduled:
+		return VersionMaster, fixVersion, nil
 	}
 
 	v, err := ParseJiraVersion(fixVersion.Name)

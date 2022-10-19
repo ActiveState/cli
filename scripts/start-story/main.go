@@ -135,23 +135,34 @@ func fetchMeta(ghClient *github.Client, jiraClient *jira.Client, jiraIssueID str
 	}
 	finish()
 
+	finish = wc.PrintStart("Fetching Jira Versions")
+	availableVersions, err := wh.FetchAvailableVersions(jiraClient)
+	if err != nil {
+		return Meta{}, errs.Wrap(err, "Failed to fetch JIRA issue")
+	}
+	finish()
+
 	finish = wc.PrintStart("Parsing version")
-	version, jiraVersion, err := wh.ParseTargetFixVersion(jiraIssue, true)
+	version, jiraVersion, err := wh.ParseTargetFixVersion(jiraIssue, availableVersions)
 	if err != nil {
 		return Meta{}, errs.Wrap(err, "failed to parse version")
 	}
 	finish()
 
-	versionPRName := wh.VersionedPRTitle(version)
+	var versionPR *github.PullRequest
+	var versionPRName string
+	if version.NE(wh.VersionMaster) {
+		versionPRName = wh.VersionedPRTitle(version)
 
-	// Retrieve Relevant Fixversion Pr
-	finish = wc.PrintStart("Checking if Version PR with title '%s' exists", versionPRName)
-	versionPR, err := wh.FetchPRByTitle(ghClient, versionPRName)
-	if err != nil {
-		return Meta{}, errs.Wrap(err, "failed to get target PR")
+		// Retrieve Relevant Fixversion Pr
+		finish = wc.PrintStart("Checking if Version PR with title '%s' exists", versionPRName)
+		versionPR, err = wh.FetchPRByTitle(ghClient, versionPRName)
+		if err != nil {
+			return Meta{}, errs.Wrap(err, "failed to get target PR")
+		}
+		wc.Print("Exists: %v", versionPR != nil)
+		finish()
 	}
-	wc.Print("Exists: %v", versionPR != nil)
-	finish()
 
 	return Meta{
 		Version:           version,

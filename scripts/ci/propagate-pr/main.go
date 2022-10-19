@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"strconv"
@@ -19,11 +18,10 @@ import (
 )
 
 type Meta struct {
-	Repo              *github.Repository
-	ActivePR          *github.PullRequest
-	ActiveStory       *jira.Issue
-	ActiveVersion     semver.Version
-	ActiveJiraVersion string
+	Repo          *github.Repository
+	ActivePR      *github.PullRequest
+	ActiveStory   *jira.Issue
+	ActiveVersion semver.Version
 }
 
 type MergeIntends []MergeIntend
@@ -75,14 +73,14 @@ func run() error {
 	// Collect meta information about the PR and all it's related resources
 	meta, err := fetchMeta(ghClient, jiraClient, prNumber)
 	if err != nil {
-		if errors.Is(err, wh.ErrVersionIsAny) {
-			wc.Print("Version is '%s', skipping rest of job", wh.VersionAny)
-			finish()
-			return nil
-		}
 		return errs.Wrap(err, "failed to fetch meta")
 	}
 	finish()
+
+	if meta.ActiveVersion.EQ(wh.VersionMaster) {
+		wc.Print("Target version is master, no propagation required")
+		return nil
+	}
 
 	// Find open version PRs
 	finish = wc.PrintStart("Finding open version PRs that need to adopt this PR")
@@ -189,25 +187,31 @@ func fetchMeta(ghClient *github.Client, jiraClient *jira.Client, prNumber int) (
 	}
 	finish()
 
+	finish = wc.PrintStart("Fetching Jira Versions")
+	availableVersions, err := wh.FetchAvailableVersions(jiraClient)
+	if err != nil {
+		return Meta{}, errs.Wrap(err, "Failed to fetch JIRA issue")
+	}
+	finish()
+
 	// Retrieve Relevant Fixversion
 	finish = wc.PrintStart("Extracting target fixVersion from Jira issue")
-	fixVersion, jiraVersion, err := wh.ParseTargetFixVersion(jiraIssue, true)
+	fixVersion, _, err := wh.ParseTargetFixVersion(jiraIssue, availableVersions)
 	if err != nil {
 		return Meta{}, errs.Wrap(err, "failed to get fixVersion")
 	}
 	wc.Print("Extracted fixVersion: %s", fixVersion)
 	finish()
 
-	if err := wh.ValidVersionBranch(prBeingHandled.GetBase().GetRef()); err != nil {
-		return Meta{}, errs.Wrap(err, "Failed to validate that the target branch for the active PR is a valid version branch.")
+	if err := wh.ValidVersionBranch(prBeingHandled.GetBase().GetRef(), fixVersion); err != nil {
+		return Meta{}, errs.Wrap(err, "Failed to validate that the target branch for the active PR is correct.")
 	}
 
 	result := Meta{
-		Repo:              &github.Repository{},
-		ActivePR:          prBeingHandled,
-		ActiveStory:       jiraIssue,
-		ActiveVersion:     fixVersion,
-		ActiveJiraVersion: jiraVersion.Name,
+		Repo:          &github.Repository{},
+		ActivePR:      prBeingHandled,
+		ActiveStory:   jiraIssue,
+		ActiveVersion: fixVersion,
 	}
 
 	return result, nil
