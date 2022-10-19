@@ -2,6 +2,7 @@ package svcctl
 
 import (
 	"context"
+	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -12,6 +13,8 @@ import (
 	"github.com/ActiveState/cli/internal/ipc"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/rtutils/p"
+	"github.com/ActiveState/cli/internal/svcctl/svcmsg"
+	"github.com/ActiveState/cli/pkg/platform/runtime/executors/execmeta"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 )
 
@@ -68,55 +71,46 @@ type RuntimeUsageReporter interface {
 
 func HeartbeatHandler(reporter RuntimeUsageReporter) ipc.RequestHandler {
 	return func(input string) (string, bool) {
-		// format : heart<{proc-id}<{exec-path}<{namespace}<{commit-id}<{headless-bool}
-		// example: heart<123</home/user/.local/dir/beta/bin/state-exec<org/prj<1234abcd-1234-abcd-1234-abcd1234abcd<false
 		if !strings.HasPrefix(input, KeyHeartbeat) {
 			return "", false
 		}
 
 		data := input[len(KeyHeartbeat):]
-		var pid, exec, namespace, commit, headless string
+		hb := svcmsg.NewHeartbeatFromSvcMsg(data)
 
-		ss := strings.SplitN(data, "<", 5)
-		if len(ss) > 0 {
-			pid = ss[0]
-		}
-		if len(ss) > 1 {
-			exec = ss[1]
-		}
-		if len(ss) > 2 {
-			namespace = ss[2]
-		}
-		if len(ss) > 3 {
-			commit = ss[3]
-		}
-		if len(ss) > 4 {
-			headless = ss[4]
-		}
+		go func() {
+			pidNum, err := strconv.Atoi(hb.ProcessID)
+			if err != nil {
+				multilog.Error("Heartbeat: Could not convert pid string (%s) to int in heartbeat handler: %s", hb.ProcessID, err)
+			}
 
-		pidNum, err := strconv.Atoi(pid)
-		if err != nil {
-			multilog.Critical("Could not convert pid string (%s) to int in heartbeat handler: %s", pid, err)
-		}
+			metaFilePath := filepath.Join(filepath.Dir(hb.ExecPath), execmeta.MetaFileName)
+			metaData, err := execmeta.NewFromFile(metaFilePath)
+			if err != nil {
+				multilog.Critical("Heartbeat Failure: Could not create meta data from filepath (%s): %s", metaFilePath, err)
+				return
+			}
 
-		dims := &dimensions.Values{
-			Trigger:          p.StrP(target.TriggerExec.String()),
-			Headless:         &headless,
-			CommitID:         &commit,
-			ProjectNameSpace: &namespace,
-			InstanceID:       p.StrP(instanceid.Make()),
-		}
-		dimsJSON, err := dims.Marshal()
-		if err != nil {
-			multilog.Critical("Could not marshal dimensions in heartbeat handler: %s", err)
-		}
+			dims := &dimensions.Values{
+				Trigger:          p.StrP(target.TriggerExec.String()),
+				Headless:         p.StrP(strconv.FormatBool(metaData.Headless)),
+				CommitID:         p.StrP(metaData.CommitUUID),
+				ProjectNameSpace: p.StrP(metaData.Namespace),
+				InstanceID:       p.StrP(instanceid.Make()),
+			}
+			dimsJSON, err := dims.Marshal()
+			if err != nil {
+				multilog.Critical("Heartbeat Failure: Could not marshal dimensions in heartbeat handler: %s", err)
+				return
+			}
+			_, err = reporter.RuntimeUsage(context.Background(), pidNum, hb.ExecPath, dimsJSON)
+			if err != nil {
+				multilog.Critical("Heartbeat Failure: Failed to report runtime usage in heartbeat handler: %s", errs.JoinMessage(err))
+				return
+			}
+		}()
 
-		_, err = reporter.RuntimeUsage(context.Background(), pidNum, exec, dimsJSON)
-		if err != nil {
-			multilog.Critical("Failed to report runtime usage in heartbeat handler: %s", errs.JoinMessage(err))
-		}
-
-		return "", true
+		return "ok", true
 	}
 }
 

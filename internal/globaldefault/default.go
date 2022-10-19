@@ -12,8 +12,9 @@ import (
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
+	"github.com/ActiveState/cli/internal/svcctl"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
-	"github.com/ActiveState/cli/pkg/platform/runtime/executor"
+	"github.com/ActiveState/cli/pkg/platform/runtime/executors"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -77,8 +78,8 @@ func SetupDefaultActivation(subshell subshell.SubShell, cfg DefaultConfigurer, r
 	}
 
 	target := target.NewProjectTarget(proj, storage.GlobalBinDir(), nil, target.TriggerActivate)
-	fw := executor.NewWithBinPath(BinDir())
-	if err := fw.Update(target, env, exes); err != nil {
+	execInit := executors.New(BinDir())
+	if err := execInit.Apply(svcctl.NewIPCSockPathFromGlobals().String(), target, env, exes); err != nil {
 		return locale.WrapError(err, "err_globaldefault_fw", "Could not set up forwarders")
 	}
 
@@ -99,8 +100,8 @@ func ResetDefaultActivation(subshell subshell.SubShell, cfg DefaultConfigurer) (
 		return false, nil // nothing to reset
 	}
 
-	fw := executor.NewWithBinPath(BinDir())
-	if err := fw.Cleanup(); err != nil {
+	execInit := executors.New(BinDir())
+	if err := execInit.Clean(); err != nil {
 		return false, locale.WrapError(err, "err_globaldefault_fw_cleanup", "Could not clean up forwarders")
 	}
 
