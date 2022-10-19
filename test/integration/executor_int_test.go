@@ -65,6 +65,5 @@ func (suite *ExecutorIntegrationTestSuite) TestExecutorExitCode() {
 	cp.SendLine("python3 -c \"exit(42)\"")
 
 	cp.SendLine("exit")
-	cp.Expect("Deactivated")
-	cp.ExpectExitCode(0)
+	cp.ExpectExitCode(42)
 }
