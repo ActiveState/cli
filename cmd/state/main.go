@@ -247,7 +247,7 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 			cmdName = childCmd.UseFull() + " "
 		}
 		err = errs.AddTips(err, locale.Tl("err_tip_run_help", "Run → [ACTIONABLE]`state {{.V0}}--help`[/RESET] for general help", cmdName))
-		cmdletErrors.ReportError(err, cmds.Command().ActiveFlags(), an)
+		cmdletErrors.ReportError(err, cmds.Command(), an)
 	}
 
 	return err

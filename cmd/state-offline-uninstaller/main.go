@@ -124,7 +124,7 @@ func run(prime *primer.Values) error {
 
 	err := cmd.Execute(os.Args[1:])
 	if err != nil {
-		errors.ReportError(err, cmd.ActiveFlags(), prime.Analytics())
+		errors.ReportError(err, cmd, prime.Analytics())
 		return err
 	}
 

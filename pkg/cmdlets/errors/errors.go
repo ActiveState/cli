@@ -115,7 +115,7 @@ func Unwrap(err error) (int, error) {
 	return code, &OutputError{err}
 }
 
-func ReportError(err error, flags []*captain.Flag, an analytics.Dispatcher) {
+func ReportError(err error, cmd *captain.Command, an analytics.Dispatcher) {
 	var ee errs.Errorable
 	stack := "not provided"
 	isErrs := errors.As(err, &ee)
@@ -129,13 +129,20 @@ func ReportError(err error, flags []*captain.Flag, an analytics.Dispatcher) {
 	if !locale.IsInputError(err) {
 		multilog.Critical("Returning error:\n%s\nCreated at:\n%s", errs.Join(err, "\n").Error(), stack)
 	} else {
+		var cmdNames []string
+		commands := cmd.ActiveCommands(os.Args)
+		for _, c := range commands {
+			cmdNames = append(cmdNames, c.Name())
+		}
+
 		var flagNames []string
-		for _, flag := range flags {
+		for _, flag := range cmd.ActiveFlags() {
 			flagNames = append(flagNames, fmt.Sprintf("--%s", flag.Name))
 		}
+
 		logging.Debug("Reporting input error:\n%s\nCreated at:\n%s", errs.Join(err, "\n").Error(), stack)
 		an.Event(anaConst.CatDebug, anaConst.ActInputError, &dimensions.Values{
-			Trigger: p.StrP(strings.Join(flagNames, ", ")),
+			Trigger: p.StrP(strings.Join(cmdNames, ", ") + strings.Join(flagNames, ", ")),
 		})
 	}
 
