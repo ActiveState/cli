@@ -62,7 +62,6 @@ func (c *CmdEnv) unset(keyName, oldValue string) error {
 	// Special handling if the key is PATH
 	if keyName == "PATH" {
 		updatedPath := cleanPath(v, oldValue)
-		logging.Debug("Updating PATH\nOld:%s\nNew:%s", oldValue, updatedPath)
 		return key.SetExpandStringValue(keyName, updatedPath)
 	}
 
@@ -84,6 +83,7 @@ func cleanPath(keyValue, oldEntry string) string {
 	var newValue []string
 	for _, entry := range strings.Split(keyValue, string(os.PathListSeparator)) {
 		if oldEntries[filepath.Clean(entry)] {
+			logging.Debug("Dropping path entry: %s", entry)
 			continue
 		}
 		newValue = append(newValue, entry)
