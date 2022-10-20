@@ -81,26 +81,15 @@ func (u *Uninstall) Run(params *Params) error {
 			locale.Tl("err_deploy_uninstall_not_deployed_tip", "Either change the current directory to a deployment or supply '--path <path>' arguments."))
 	}
 
-	var namespace string
-	var err error
-	namespace, err = store.Namespace()
-	if err != nil {
-		return locale.WrapError(err, "err_deploy_uninstall_namespace", "Unable to read namespace from marker file.")
-	}
-
-	var commitID string
-	commitID, err = store.CommitID()
-	if err != nil {
-		return locale.WrapError(err, "err_deploy_uninstall_commit_id", "Unable to read commit ID from marker file.")
-	}
-
 	if runtime.GOOS == "windows" && path == cwd {
 		return locale.NewInputError(
 			"err_deploy_uninstall_cannot_chdir",
 			"Cannot remove deployment in current working directory. Please cd elsewhere and run this command again with the '--path' flag.")
 	}
 
-	err = u.subshell.CleanUserEnv(u.cfg, sscommon.DeployID, params.UserScope)
+	namespace, commitID := sourceAnalyticsInformation(store)
+
+	err := u.subshell.CleanUserEnv(u.cfg, sscommon.DeployID, params.UserScope)
 	if err != nil {
 		return locale.WrapError(err, "err_deploy_uninstall_env", "Failed to remove deploy directory from PATH")
 	}
@@ -120,4 +109,18 @@ func (u *Uninstall) Run(params *Params) error {
 	u.output.Notice(locale.T("deploy_uninstall_success"))
 
 	return nil
+}
+
+func sourceAnalyticsInformation(store *store.Store) (string, string) {
+	namespace, err := store.Namespace()
+	if err != nil {
+		logging.Error("Could not read namespace from marker file: %v", err)
+	}
+
+	commitID, err := store.CommitID()
+	if err != nil {
+		logging.Error("Could not read commit ID from marker file: %v", err)
+	}
+
+	return namespace, commitID
 }
