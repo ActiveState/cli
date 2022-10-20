@@ -75,6 +75,7 @@ func (u *Uninstall) Run(params *Params) error {
 		path = cwd
 	}
 
+	logging.Debug("Attempting to uninstall deployment at %s", path)
 	store := store.New(path)
 	if !store.HasMarker() {
 		return errs.AddTips(
