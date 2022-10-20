@@ -33,7 +33,8 @@ func StopRunning(installPath string) (rerr error) {
 
 	err = stopSvc(installPath)
 	if err != nil {
-		return locale.WrapInputError(err, "err_stop_svc")
+		multilog.Critical("Could not stop running service, error: %v", errs.JoinMessage(err))
+		return locale.WrapError(err, "err_stop_svc", "Unable to stop state-svc process. Please manually kill any running processes with name [NOTICE]state-svc[/RESET] and try again")
 	}
 
 	return nil
