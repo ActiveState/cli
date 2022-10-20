@@ -75,12 +75,10 @@ func (suite *OffInstallIntegrationTestSuite) TestInstallAndUninstall() {
 	{ // Install
 		tp := ts.SpawnCmdWithOpts(
 			suite.installerPath,
+			e2e.WithArgs(defaultInstallDir),
 			e2e.AppendEnv(env...),
 		)
-		tp.Expect("Enter an installation directory")
-		tp.Expect(defaultInstallDir)
-		tp.SendLine("")
-		tp.ExpectLongString("Do you accept the ActiveState Runtime Installer License Agreement")
+		tp.Expect("Do you accept the ActiveState Runtime Installer License Agreement? (y/N)", 5*time.Second)
 		tp.Send("y")
 		tp.Expect("Extracting", time.Second)
 		tp.Expect("Installing")
@@ -128,10 +126,9 @@ func (suite *OffInstallIntegrationTestSuite) TestInstallAndUninstall() {
 	{ // Uninstall
 		tp := ts.SpawnCmdWithOpts(
 			suite.uninstallerPath,
+			e2e.WithArgs(defaultInstallDir),
 			e2e.AppendEnv(env...),
 		)
-		tp.Expect("Enter an installation directory to uninstall")
-		tp.SendLine(defaultInstallDir)
 		tp.Expect("continue?")
 		tp.SendLine("y")
 		tp.Expect("Uninstall Complete", 5*time.Second)
