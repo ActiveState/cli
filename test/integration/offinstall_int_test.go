@@ -265,6 +265,9 @@ func (suite *OffInstallIntegrationTestSuite) assertShellUpdated(dir string, exis
 		assert(string(rcContents), constants.RCAppendOfflineInstallStopLine, fpath)
 		assert(string(rcContents), dir)
 	} else {
+		// It seems there is a race condition with updating the registry and asserting it was updated
+		time.Sleep(time.Second)
+
 		// Test registry
 		out, err := exec.Command("reg", "query", `HKEY_CURRENT_USER\Environment`, "/v", "Path").Output()
 		suite.Require().NoError(err)
