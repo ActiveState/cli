@@ -131,6 +131,8 @@ func (suite *OffInstallIntegrationTestSuite) TestInstallAndUninstall() {
 		tp.SendLine("")
 		tp.ExpectExitCode(0)
 
+		fmt.Println(tp.Snapshot())
+
 		// Ensure shell env is updated
 		suite.assertShellUpdated(defaultInstallDir, false, ts)
 
