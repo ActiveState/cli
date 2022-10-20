@@ -49,11 +49,6 @@ func (suite *OffInstallIntegrationTestSuite) TestInstallAndUninstall() {
 	ts := e2e.New(suite.T(), true)
 	defer ts.Close()
 
-	homeDir := filepath.Join(ts.Dirs.Base, "home")
-	suite.Require().NoError(fileutils.Mkdir(homeDir))
-	suite.Require().NoError(fileutils.Touch(filepath.Join(homeDir, ".bashrc"))) // ensure bashrc exists
-	os.Setenv("HOME", homeDir)
-
 	testReportFilename := filepath.Join(ts.Dirs.Config, reporters.TestReportFilename)
 	suite.Require().NoFileExists(testReportFilename)
 
@@ -67,7 +62,7 @@ func (suite *OffInstallIntegrationTestSuite) TestInstallAndUninstall() {
 
 	env := []string{
 		"ACTIVESTATE_CLI_DISABLE_RUNTIME=false",
-		"HOME=" + homeDir,
+		"VERBOSE=true",
 	}
 	if runtime.GOOS != "windows" {
 		env = append(env, "SHELL=bash")
