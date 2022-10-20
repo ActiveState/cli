@@ -143,7 +143,7 @@ func killProcess(proc *process.Process, name string) error {
 		for _, c := range children {
 			err = c.Kill()
 			if err != nil {
-				return errs.WrapInputError(err, "err_stop_svc_permissions")
+				return locale.WrapInputError(err, "err_stop_svc_permissions")
 			}
 		}
 	} else {
@@ -152,7 +152,7 @@ func killProcess(proc *process.Process, name string) error {
 
 	err = proc.Kill()
 	if err != nil {
-		return errs.WrapInputError(err, "err_stop_svc_permissions")
+		return locale.WrapInputError(err, "err_stop_svc_permissions")
 	}
 
 	logging.Debug("Stopped %s process with SIGKILL", name)
