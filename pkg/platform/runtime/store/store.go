@@ -2,7 +2,6 @@ package store
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -117,8 +116,7 @@ func (s *Store) MarkInstallationComplete(commitID strfmt.UUID, namespace string)
 	if err != nil {
 		return errs.Wrap(err, "could not create completion marker directory")
 	}
-	// TODO: Use strings.join?
-	err = fileutils.WriteFile(markerFile, []byte(fmt.Sprintf("%s\n%s\n%s", commitID.String(), constants.Version, namespace)))
+	err = fileutils.WriteFile(markerFile, []byte(strings.Join([]string{commitID.String(), constants.Version, namespace}, "\n")))
 	if err != nil {
 		return errs.Wrap(err, "could not set completion marker")
 	}
