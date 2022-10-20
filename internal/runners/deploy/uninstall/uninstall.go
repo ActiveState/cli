@@ -1,7 +1,6 @@
 package uninstall
 
 import (
-	"fmt"
 	"os"
 	"runtime"
 	"strings"
@@ -83,25 +82,7 @@ func (u *Uninstall) Run(params *Params) error {
 			locale.Tl("err_deploy_uninstall_not_deployed_tip", "Either change the current directory to a deployment or supply '--path <path>' arguments."))
 	}
 
-	if runtime.GOOS == "windows" && path == cwd {
-		return locale.NewInputError(
-			"err_deploy_uninstall_cannot_chdir",
-			"Cannot remove deployment in current working directory. Please cd elsewhere and run this command again with the '--path' flag.")
-	}
-
-	err := u.subshell.CleanUserEnv(u.cfg, sscommon.DeployID, params.UserScope)
-	if err != nil {
-		return locale.WrapError(err, "err_deploy_uninstall_env", "Failed to remove deploy directory from PATH")
-	}
-
-	err = os.RemoveAll(path)
-	if err != nil {
-		return locale.WrapError(err, "err_deploy_uninstall", "Unable to remove deployed runtime at '{{.V0}}'", path)
-	}
-
-	fmt.Println("Has marker:", store.HasMarker())
 	contents, err := fileutils.ReadFile(store.MarkerFile())
-	fmt.Println("err:", err)
 	if err != nil {
 		return locale.WrapError(err, "err_deploy_uninstall_marker", "Unable to read marker file at [ACTIONABLE]{{.V0}}[RESET]. Deployment may be corrupted.", store.MarkerFile())
 	}
@@ -114,6 +95,22 @@ func (u *Uninstall) Run(params *Params) error {
 	} else {
 		commitID = strings.TrimSpace(lines[0])
 		namespace = strings.TrimSpace(lines[2])
+	}
+
+	if runtime.GOOS == "windows" && path == cwd {
+		return locale.NewInputError(
+			"err_deploy_uninstall_cannot_chdir",
+			"Cannot remove deployment in current working directory. Please cd elsewhere and run this command again with the '--path' flag.")
+	}
+
+	err = u.subshell.CleanUserEnv(u.cfg, sscommon.DeployID, params.UserScope)
+	if err != nil {
+		return locale.WrapError(err, "err_deploy_uninstall_env", "Failed to remove deploy directory from PATH")
+	}
+
+	err = os.RemoveAll(path)
+	if err != nil {
+		return locale.WrapError(err, "err_deploy_uninstall", "Unable to remove deployed runtime at '{{.V0}}'", path)
 	}
 
 	u.analytics.Event(constants.CatRuntimeUsage, constants.ActRuntimeDelete, &dimensions.Values{
