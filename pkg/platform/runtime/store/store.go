@@ -52,7 +52,7 @@ func New(installPath string) *Store {
 	}
 }
 
-func (s *Store) MarkerFile() string {
+func (s *Store) markerfile() string {
 	return filepath.Join(s.storagePath, constants.RuntimeInstallationCompleteMarker)
 }
 
@@ -65,7 +65,7 @@ func (s *Store) recipeFile() string {
 }
 
 func (s *Store) HasMarker() bool {
-	if fileutils.FileExists(s.MarkerFile()) {
+	if fileutils.FileExists(s.markerfile()) {
 		return true
 	}
 	return false
@@ -73,7 +73,7 @@ func (s *Store) HasMarker() bool {
 
 // MarkerIsValid checks if stored runtime is complete and can be loaded
 func (s *Store) MarkerIsValid(commitID strfmt.UUID) bool {
-	marker := s.MarkerFile()
+	marker := s.markerfile()
 	if !fileutils.FileExists(marker) {
 		logging.Debug("Marker does not exist: %s", marker)
 		return false
@@ -110,7 +110,7 @@ func (s *Store) MarkerIsValid(commitID strfmt.UUID) bool {
 
 // MarkInstallationComplete writes the installation complete marker to the runtime directory
 func (s *Store) MarkInstallationComplete(commitID strfmt.UUID, namespace string) error {
-	markerFile := s.MarkerFile()
+	markerFile := s.markerfile()
 	markerDir := filepath.Dir(markerFile)
 	err := fileutils.MkdirUnlessExists(markerDir)
 	if err != nil {
@@ -180,9 +180,9 @@ func (s *Store) StoreRecipe(recipe *inventory_models.Recipe) error {
 }
 
 func (s *Store) CommitID() (string, error) {
-	contents, err := fileutils.ReadFile(s.MarkerFile())
+	contents, err := fileutils.ReadFile(s.markerfile())
 	if err != nil {
-		return "", locale.WrapError(err, "err_deploy_uninstall_marker", "Unable to read marker file at [ACTIONABLE]{{.V0}}[RESET]. Deployment may be corrupted.", s.MarkerFile())
+		return "", locale.WrapError(err, "err_deploy_uninstall_marker", "Unable to read marker file at [ACTIONABLE]{{.V0}}[RESET]. Deployment may be corrupted.", s.markerfile())
 	}
 
 	lines := strings.Split(string(contents), "\n")
@@ -194,9 +194,9 @@ func (s *Store) CommitID() (string, error) {
 }
 
 func (s *Store) Namespace() (string, error) {
-	contents, err := fileutils.ReadFile(s.MarkerFile())
+	contents, err := fileutils.ReadFile(s.markerfile())
 	if err != nil {
-		return "", locale.WrapError(err, "err_deploy_uninstall_marker", "Unable to read marker file at [ACTIONABLE]{{.V0}}[RESET]. Deployment may be corrupted.", s.MarkerFile())
+		return "", locale.WrapError(err, "err_deploy_uninstall_marker", "Unable to read marker file at [ACTIONABLE]{{.V0}}[RESET]. Deployment may be corrupted.", s.markerfile())
 	}
 
 	lines := strings.Split(string(contents), "\n")
