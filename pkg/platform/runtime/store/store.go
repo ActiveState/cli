@@ -187,7 +187,7 @@ func (s *Store) CommitID() (string, error) {
 
 	lines := strings.Split(string(contents), "\n")
 	if len(lines) < 1 {
-		// Older installations may not have a marker file
+		// Older installations may not have this information in the marker file
 		return "", nil
 	}
 
@@ -202,7 +202,7 @@ func (s *Store) Namespace() (string, error) {
 
 	lines := strings.Split(string(contents), "\n")
 	if len(lines) < 3 {
-		// Older installations may not have a marker file
+		// Older installations may not have this information in the marker file
 		return "", nil
 	}
 
