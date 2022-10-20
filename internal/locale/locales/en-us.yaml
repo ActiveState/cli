@@ -1935,6 +1935,11 @@ uninstall_warn_not_empty:
     [WARNING]Unable to remove all files in the directory the installation directory.[/RESET]
     The directory may contain unrecognized files.
     Encountered error: {{.V0}}
+err_stop_svc:
+  other: |
+    Could not stop running State Tool process due to insufficient permissions.
+
+    State Tool works best if you run it as a user, rather than an admin. You might be encountering this issue because you have originally installed or ran the State Tool as admin. If this is the case it is suggested that you uninstall the State Tool as admin, and install it again as a user.
 err_state_exec:
   other: Could not get state exec
 err_service_exec:
