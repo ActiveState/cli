@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	rt "runtime"
 	"strings"
 	"sync"
 
@@ -163,6 +164,13 @@ func NewWithModel(target Targeter, msgHandler Events, model ModelProvider, an an
 
 // Update installs the runtime locally (or updates it if it's already partially installed)
 func (s *Setup) Update() error {
+	// Do not allow users to deploy runtimes to the root directory (this can easily happen in docker
+	// images). Note that runtime targets are fully resolved via fileutils.ResolveUniquePath(), so
+	// paths like "/." and "/opt/.." resolve to simply "/" at this time.
+	if (rt.GOOS != "windows" && s.target.Dir() == "/") {
+		return locale.NewInputError("err_runtime_setup_root", "Cannot set up a runtime in the root directory. Please try in another directory.")
+	}
+
 	// Update all the runtime artifacts
 	artifacts, err := s.updateArtifacts()
 	if err != nil {

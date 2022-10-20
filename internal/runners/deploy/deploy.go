@@ -96,9 +96,6 @@ func (d *Deploy) Run(params *Params) error {
 
 	// Headless argument is simply false here as you cannot deploy a headless project
 	rtTarget := target.NewCustomTarget(params.Namespace.Owner, params.Namespace.Project, commitID, params.Path, target.TriggerDeploy, false) /* TODO: handle empty path */
-	if rt.GOOS != "windows" && rtTarget.Dir() == "/" {
-		return locale.NewInputError("err_deploy_root", "Cannot deploy in the root directory. Please deploy in another directory.")
-	}
 
 	logging.Debug("runSteps: %s", d.step.String())
 
