@@ -93,7 +93,7 @@ func (a *Client) Wait() {
 }
 
 func (a *Client) sendEvent(category, action, label string, dims ...*dimensions.Values) error {
-	if condition.InUnitTest() {
+	if a.svcModel == nil { // this is only true on CI
 		return nil
 	}
 
