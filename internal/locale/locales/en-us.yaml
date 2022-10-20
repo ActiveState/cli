@@ -1935,7 +1935,7 @@ uninstall_warn_not_empty:
     [WARNING]Unable to remove all files in the directory the installation directory.[/RESET]
     The directory may contain unrecognized files.
     Encountered error: {{.V0}}
-err_stop_svc:
+err_stop_svc_permissions:
   other: |
     Could not stop running State Tool process due to insufficient permissions.
 
