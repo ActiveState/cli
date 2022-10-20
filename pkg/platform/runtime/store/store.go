@@ -187,7 +187,8 @@ func (s *Store) CommitID() (string, error) {
 
 	lines := strings.Split(string(contents), "\n")
 	if len(lines) < 1 {
-		return "", locale.NewError("err_deploy_uninstall_marker", "Marker file is incomplete, cannot determine commitID")
+		// Older installations may not have a marker file
+		return "", nil
 	}
 
 	return strings.TrimSpace(lines[0]), nil
@@ -201,7 +202,8 @@ func (s *Store) Namespace() (string, error) {
 
 	lines := strings.Split(string(contents), "\n")
 	if len(lines) < 3 {
-		return "", locale.NewError("err_deploy_uninstall_marker", "Marker file is incomplete, cannot determine namespace")
+		// Older installations may not have a marker file
+		return "", nil
 	}
 
 	return strings.TrimSpace(lines[2]), nil
