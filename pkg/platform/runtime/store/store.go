@@ -179,6 +179,34 @@ func (s *Store) StoreRecipe(recipe *inventory_models.Recipe) error {
 	return nil
 }
 
+func (s *Store) CommitID() (string, error) {
+	contents, err := fileutils.ReadFile(s.MarkerFile())
+	if err != nil {
+		return "", locale.WrapError(err, "err_deploy_uninstall_marker", "Unable to read marker file at [ACTIONABLE]{{.V0}}[RESET]. Deployment may be corrupted.", s.MarkerFile())
+	}
+
+	lines := strings.Split(string(contents), "\n")
+	if len(lines) < 1 {
+		return "", locale.NewError("err_deploy_uninstall_marker", "Marker file is incomplete, cannot determine commitID")
+	}
+
+	return strings.TrimSpace(lines[0]), nil
+}
+
+func (s *Store) Namespace() (string, error) {
+	contents, err := fileutils.ReadFile(s.MarkerFile())
+	if err != nil {
+		return "", locale.WrapError(err, "err_deploy_uninstall_marker", "Unable to read marker file at [ACTIONABLE]{{.V0}}[RESET]. Deployment may be corrupted.", s.MarkerFile())
+	}
+
+	lines := strings.Split(string(contents), "\n")
+	if len(lines) < 3 {
+		return "", locale.NewError("err_deploy_uninstall_marker", "Marker file is incomplete, cannot determine namespace")
+	}
+
+	return strings.TrimSpace(lines[2]), nil
+}
+
 // Artifacts loads artifact information collected during the installation.
 // It includes the environment definition configuration and files installed for this artifact.
 func (s *Store) Artifacts() (StoredArtifactMap, error) {
