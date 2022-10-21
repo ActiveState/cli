@@ -48,9 +48,8 @@ func (s *Store) MarkerIsValid(commitID strfmt.UUID) bool {
 }
 
 func (s *Store) parseMarker() (*Marker, error) {
-	markerFile := s.markerFile()
-	if !fileutils.FileExists(markerFile) {
-		return nil, errs.New(`Marker file "%s" does not exist`, markerFile)
+	if !s.HasMarker() {
+		return nil, errs.New(`Marker file "%s" does not exist`, s.markerFile())
 	}
 
 	contents, err := fileutils.ReadFile(s.markerFile())
@@ -71,6 +70,8 @@ func (s *Store) parseMarker() (*Marker, error) {
 	return marker, nil
 }
 
+// updateMarker updates old marker files to the new format and
+// returns the stored marker data
 func (s *Store) updateMarker(contents []byte) (*Marker, error) {
 	lines := strings.Split(string(contents), "\n")
 	if len(lines) == 0 {
