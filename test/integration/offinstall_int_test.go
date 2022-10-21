@@ -19,6 +19,7 @@ import (
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/offinstall"
+	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/subshell/cmd"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
@@ -270,8 +271,16 @@ func (suite *OffInstallIntegrationTestSuite) assertShellUpdated(dir string, exis
 		// It seems there is a race condition with updating the registry and asserting it was updated
 		time.Sleep(time.Second)
 
+		envPath := `HKEY_CURRENT_USER\Environment`
+
+		isAdmin, err := osutils.IsAdmin()
+		suite.Require().NoError(err)
+		if isAdmin {
+			envPath = `SYSTEM\ControlSet001\Control\Session Manager\Environment`
+		}
+
 		// Test registry
-		out, err := exec.Command("reg", "query", `HKEY_CURRENT_USER\Environment`, "/v", "Path").Output()
+		out, err := exec.Command("reg", "query", envPath, "/v", "Path").Output()
 		suite.Require().NoError(err)
 
 		assert := strings.Contains
