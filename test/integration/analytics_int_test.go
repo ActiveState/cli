@@ -360,7 +360,7 @@ func (suite *AnalyticsIntegrationTestSuite) TestInputError() {
 
 	suite.eventsfile = filepath.Join(ts.Dirs.Config, reporters.TestReportFilename)
 
-	cp := ts.Spawn("--ver")
+	cp := ts.Spawn("clean", "uninstall", "badarg", "--mono")
 	cp.ExpectExitCode(1)
 
 	events := parseAnalyticsEvents(suite, ts)
@@ -369,6 +369,12 @@ func (suite *AnalyticsIntegrationTestSuite) TestInputError() {
 	suite.assertNEvents(events, 1, anaConst.CatDebug, anaConst.ActInputError,
 		fmt.Sprintf("output:\n%s\nState Log:\n%s\nSvc Log:\n%s",
 			cp.Snapshot(), ts.MostRecentStateLog(), ts.SvcLog()))
+
+	for _, event := range events {
+		if event.Category == anaConst.CatDebug && event.Action == anaConst.ActInputError {
+			suite.Equal("state clean uninstall --mono", *event.Dimensions.Trigger)
+		}
+	}
 }
 
 func TestAnalyticsIntegrationTestSuite(t *testing.T) {

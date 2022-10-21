@@ -129,10 +129,10 @@ func ReportError(err error, cmd *captain.Command, an analytics.Dispatcher) {
 	if !locale.IsInputError(err) {
 		multilog.Critical("Returning error:\n%s\nCreated at:\n%s", errs.Join(err, "\n").Error(), stack)
 	} else {
-		var cmdNames []string
-		commands := cmd.ActiveCommands(os.Args)
-		for _, c := range commands {
-			cmdNames = append(cmdNames, c.Name())
+		cmdName := cmd.Name()
+		childCmd, err := cmd.Find(os.Args[1:])
+		if err != nil {
+			logging.Error("Could not find child command: %v", err)
 		}
 
 		var flagNames []string
@@ -140,9 +140,12 @@ func ReportError(err error, cmd *captain.Command, an analytics.Dispatcher) {
 			flagNames = append(flagNames, fmt.Sprintf("--%s", flag.Name))
 		}
 
+		trigger := []string{cmdName, childCmd.UseFull()}
+		trigger = append(trigger, flagNames...)
+
 		logging.Debug("Reporting input error:\n%s\nCreated at:\n%s", errs.Join(err, "\n").Error(), stack)
 		an.Event(anaConst.CatDebug, anaConst.ActInputError, &dimensions.Values{
-			Trigger: p.StrP(strings.Join(cmdNames, ", ") + strings.Join(flagNames, ", ")),
+			Trigger: p.StrP(strings.Join(trigger, " ")),
 		})
 	}
 

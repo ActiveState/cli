@@ -30,7 +30,6 @@ import (
 	"github.com/ActiveState/cli/internal/table"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
-	"github.com/thoas/go-funk"
 )
 
 func init() {
@@ -356,17 +355,6 @@ func (c *Command) Description() string {
 
 func (c *Command) Flags() []*Flag {
 	return c.flags
-}
-
-func (c *Command) ActiveCommands(args []string) []*Command {
-	var cmds []*Command
-	cmds = append(cmds, c)
-	for _, child := range c.Children() {
-		if funk.Contains(args, child.Name()) {
-			cmds = append(cmds, child)
-		}
-	}
-	return cmds
 }
 
 func (c *Command) ActiveFlags() []*Flag {
