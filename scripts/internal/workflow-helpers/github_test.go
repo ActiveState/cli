@@ -59,6 +59,8 @@ func TestParseJiraKey(t *testing.T) {
 }
 
 func TestFetchPRs(t *testing.T) {
+	t.Skip("For debugging purposes, comment this line out if you want to test this locally")
+
 	type args struct {
 		ghClient *github.Client
 		cutoff   time.Time
@@ -104,6 +106,8 @@ func TestFetchPRs(t *testing.T) {
 }
 
 func TestFetchCommitsByRef(t *testing.T) {
+	t.Skip("For debugging purposes, comment this line out if you want to test this locally")
+
 	type args struct {
 		ghClient *github.Client
 		ref      string
@@ -166,6 +170,8 @@ func TestFetchCommitsByRef(t *testing.T) {
 }
 
 func TestSearchGithubIssues(t *testing.T) {
+	t.Skip("For debugging purposes, comment this line out if you want to test this locally")
+
 	type args struct {
 		client *github.Client
 		term   string
@@ -228,6 +234,8 @@ func TestSearchGithubIssues(t *testing.T) {
 }
 
 func TestFetchPRByTitle(t *testing.T) {
+	t.Skip("For debugging purposes, comment this line out if you want to test this locally")
+
 	type args struct {
 		ghClient *github.Client
 		prName   string
@@ -283,6 +291,8 @@ func TestFetchPRByTitle(t *testing.T) {
 }
 
 func TestActiveVersionsOnBranch(t *testing.T) {
+	t.Skip("For debugging purposes, comment this line out if you want to test this locally")
+	
 	jiraClient, err := InitJiraClient()
 	require.NoError(t, err)
 
