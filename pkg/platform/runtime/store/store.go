@@ -7,14 +7,11 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/go-openapi/strfmt"
-
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/ActiveState/cli/pkg/platform/runtime/envdef"
@@ -52,75 +49,12 @@ func New(installPath string) *Store {
 	}
 }
 
-func (s *Store) markerFile() string {
-	return filepath.Join(s.storagePath, constants.RuntimeInstallationCompleteMarker)
-}
-
 func (s *Store) buildEngineFile() string {
 	return filepath.Join(s.storagePath, constants.RuntimeBuildEngineStore)
 }
 
 func (s *Store) recipeFile() string {
 	return filepath.Join(s.storagePath, constants.RuntimeRecipeStore)
-}
-
-func (s *Store) HasMarker() bool {
-	if fileutils.FileExists(s.markerFile()) {
-		return true
-	}
-	return false
-}
-
-// MarkerIsValid checks if stored runtime is complete and can be loaded
-func (s *Store) MarkerIsValid(commitID strfmt.UUID) bool {
-	marker := s.markerFile()
-	if !fileutils.FileExists(marker) {
-		logging.Debug("Marker does not exist: %s", marker)
-		return false
-	}
-
-	contents, err := fileutils.ReadFile(marker)
-	if err != nil {
-		multilog.Error("Could not read marker file %s: %v", marker, err)
-	}
-	lines := strings.Split(string(contents), "\n")
-	if len(lines) < 1 {
-		logging.Debug("Expected commit ID in marker file, but was empty")
-		return false
-	}
-	parsedCommitID := strings.TrimSpace(lines[0])
-	if len(lines) < 2 {
-		logging.Debug("Expected State Tool version in marker file")
-		return false
-	}
-	parsedStateToolVersion := strings.TrimSpace(lines[1])
-
-	if parsedCommitID != commitID.String() {
-		logging.Debug("Could not match commitID in %s, expected: %s, got: %s", marker, commitID.String(), parsedCommitID)
-		return false
-	}
-
-	if parsedStateToolVersion != constants.Version {
-		logging.Debug("Could not match State Tool version in %s, expected: %s, got: %s", marker, constants.Version, parsedStateToolVersion)
-		return false
-	}
-
-	return true
-}
-
-// MarkInstallationComplete writes the installation complete marker to the runtime directory
-func (s *Store) MarkInstallationComplete(commitID strfmt.UUID, namespace string) error {
-	markerFile := s.markerFile()
-	markerDir := filepath.Dir(markerFile)
-	err := fileutils.MkdirUnlessExists(markerDir)
-	if err != nil {
-		return errs.Wrap(err, "could not create completion marker directory")
-	}
-	err = fileutils.WriteFile(markerFile, []byte(strings.Join([]string{commitID.String(), constants.Version, namespace}, "\n")))
-	if err != nil {
-		return errs.Wrap(err, "could not set completion marker")
-	}
-	return nil
 }
 
 // BuildEngine returns the runtime build engine value stored in the runtime directory
@@ -177,36 +111,6 @@ func (s *Store) StoreRecipe(recipe *inventory_models.Recipe) error {
 		return errs.Wrap(err, "Could not write recipe file.")
 	}
 	return nil
-}
-
-func (s *Store) CommitID() (string, error) {
-	contents, err := fileutils.ReadFile(s.markerFile())
-	if err != nil {
-		return "", locale.WrapError(err, "err_deploy_uninstall_marker", "Unable to read marker file at [ACTIONABLE]{{.V0}}[RESET]. Deployment may be corrupted.", s.markerFile())
-	}
-
-	lines := strings.Split(string(contents), "\n")
-	if len(lines) < 1 {
-		// Older installations may not have this information in the marker file
-		return "", nil
-	}
-
-	return strings.TrimSpace(lines[0]), nil
-}
-
-func (s *Store) Namespace() (string, error) {
-	contents, err := fileutils.ReadFile(s.markerFile())
-	if err != nil {
-		return "", locale.WrapError(err, "err_deploy_uninstall_marker", "Unable to read marker file at [ACTIONABLE]{{.V0}}[RESET]. Deployment may be corrupted.", s.markerFile())
-	}
-
-	lines := strings.Split(string(contents), "\n")
-	if len(lines) < 3 {
-		// Older installations may not have this information in the marker file
-		return "", nil
-	}
-
-	return strings.TrimSpace(lines[2]), nil
 }
 
 // Artifacts loads artifact information collected during the installation.
