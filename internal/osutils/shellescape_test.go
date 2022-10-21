@@ -32,6 +32,14 @@ func (suite *ShellEscaperTestSuite) TestBatchEscaper() {
 	suite.Equal(`"quote""quote"`, escaper.Quote(`quote"quote`))
 }
 
+func (suite *ShellEscaperTestSuite) TestCmdEscaper() {
+	escaper := osutils.NewCmdEscaper()
+	suite.Equal(`quoted`, escaper.Quote(`quoted`))
+	suite.Equal(`"quoted quote"`, escaper.Quote(`quoted quote`))
+	suite.Equal(`project/org`, escaper.Quote(`project/org`))
+	suite.Equal(`cmd.exe`, escaper.Quote(`cmd.exe`))
+}
+
 func TestShellEscaperTestSuite(t *testing.T) {
 	suite.Run(t, new(ShellEscaperTestSuite))
 }

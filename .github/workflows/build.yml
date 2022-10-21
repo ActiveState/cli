@@ -64,7 +64,11 @@ jobs:
 
           if [ -x "$(command -v apt-get)" ]; then
             sudo apt-get update
-            sudo apt-get install libgtk-3-dev libappindicator3-dev libwebkit2gtk-4.0-dev -y
+            sudo apt-get install libgtk-3-dev libappindicator3-dev libwebkit2gtk-4.0-dev fish zsh tcsh -y
+            # Prevent zsh insecure directory warning.
+            sudo chmod -R 755 /usr/share/zsh/vendor-completions /usr/share/zsh
+            sudo chown -R root:root /usr/share/zsh/vendor-completions /usr/share/zsh
+            touch ~/.zshrc
           fi
 
           printenv
@@ -74,6 +78,12 @@ jobs:
         shell: pwsh
         run: |
           echo "${PSScriptRoot}/.github/deps/${{ runner.os }}/bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
+      - # == Setup macOS ==
+        name: Setup (macOS)
+        shell: bash
+        run: brew install fish
+        if: runner.os == 'macOS'
 
       - # === Preprocess ===
         name: Preprocess
