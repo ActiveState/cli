@@ -168,7 +168,7 @@ func (s *Setup) Update() error {
 	// images). Note that runtime targets are fully resolved via fileutils.ResolveUniquePath(), so
 	// paths like "/." and "/opt/.." resolve to simply "/" at this time.
 	if (rt.GOOS != "windows" && s.target.Dir() == "/") {
-		return locale.NewInputError("err_runtime_setup_root", "Cannot set up a runtime in the root directory. Please try in another directory.")
+		return locale.NewInputError("err_runtime_setup_root", "Cannot set up a runtime in the root directory. Please specify or run from a user-writable directory.")
 	}
 
 	// Update all the runtime artifacts
