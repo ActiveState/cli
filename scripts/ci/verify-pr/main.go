@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -105,13 +106,13 @@ func verifyVersionRC(ghClient *github.Client, jiraClient *jira.Client, pr *githu
 		if issue.Fields == nil || issue.Fields.Status == nil {
 			return errs.New("Jira fields and/or status properties are nil, this should never happen..")
 		}
-		jiraIDs[strings.ToLower(issue.Key)] = issue
-		found[strings.ToLower(issue.Key)] = false
+		jiraIDs[strings.ToUpper(issue.Key)] = issue
+		found[strings.ToUpper(issue.Key)] = false
 	}
 	finish()
 
 	finish = wc.PrintStart("Fetching commits for PR %d", pr.GetNumber())
-	commits, err := wh.FetchCommitsByShaRange(ghClient, pr.GetHead().GetSHA(), pr.GetBase().GetSHA())
+	commits, err := wh.FetchCommitsByRef(ghClient, pr.GetHead().GetSHA(), nil)
 	if err != nil {
 		return errs.Wrap(err, "Failed to fetch commits")
 	}
@@ -123,6 +124,7 @@ func verifyVersionRC(ghClient *github.Client, jiraClient *jira.Client, pr *githu
 		if err != nil {
 			continue
 		}
+		key = strings.ToUpper(key) // ParseJiraKey already does this, but it's implicit
 
 		if _, ok := jiraIDs[key]; ok {
 			found[key] = true
@@ -141,6 +143,9 @@ func verifyVersionRC(ghClient *github.Client, jiraClient *jira.Client, pr *githu
 			}
 		}
 	}
+
+	sort.Strings(notFound)
+	sort.Strings(notFoundCritical)
 
 	if len(notFound) > 0 {
 		return errs.New("PR not ready as it's still missing commits for the following JIRA issues:\n"+
