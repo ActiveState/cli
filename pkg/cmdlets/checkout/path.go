@@ -1,6 +1,7 @@
 package checkout
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -54,7 +55,7 @@ func validatePath(ns *project.Namespaced, path string) error {
 	configFile := filepath.Join(path, constants.ConfigFileName)
 	if !fileutils.FileExists(configFile) {
 		// Directory is not empty and does not contain a config file
-		return locale.NewError("err_directory_in_use")
+		return locale.NewInputError("err_directory_in_use", "", path)
 	}
 
 	pj, err := project.Parse(configFile)
