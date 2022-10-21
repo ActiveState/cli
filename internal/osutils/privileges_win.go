@@ -1,12 +1,22 @@
+//go:build windows
 // +build windows
 
 package osutils
 
 import (
+	"os"
+
+	"github.com/ActiveState/cli/internal/constants"
 	"golang.org/x/sys/windows"
 )
 
+const EnvOverrideAdmin = "ACTIVESTATE_CLI_ISADMIN_OVERRIDE"
+
 func IsAdmin() (bool, error) {
+	// Work around weird CI bug: DX-1329
+	if isAdmin := os.Getenv(constants.IsAdminOverrideEnvVarName); isAdmin != "" {
+		return isAdmin == "true", nil
+	}
 	var sid *windows.SID
 
 	// See https://docs.microsoft.com/en-us/windows/desktop/api/securitybaseapi/nf-securitybaseapi-checktokenmembership
