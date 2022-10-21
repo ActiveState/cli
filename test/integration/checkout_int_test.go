@@ -37,11 +37,7 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckout() {
 	// Verify runtime was installed correctly and works.
 	targetDir := target.ProjectDirToTargetDir(python3Dir, ts.Dirs.Cache)
 	pythonExe := filepath.Join(setup.ExecDir(targetDir), "python3")
-	cp = ts.SpawnCmdWithOpts(
-		pythonExe,
-		e2e.WithArgs("--version"),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
-	)
+	cp = ts.SpawnCmd(pythonExe, "--version")
 	cp.Expect("Python 3")
 	cp.ExpectExitCode(0)
 }
