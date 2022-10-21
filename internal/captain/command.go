@@ -357,6 +357,25 @@ func (c *Command) Flags() []*Flag {
 	return c.flags
 }
 
+func (c *Command) ActiveFlags() []*Flag {
+	var flags []*Flag
+	flagMapping := map[string]*Flag{}
+	for _, flag := range c.flags {
+		flagMapping[flag.Name] = flag
+	}
+
+	c.cobra.Flags().VisitAll(func(f *pflag.Flag) {
+		if !f.Changed {
+			return
+		}
+		if flag, ok := flagMapping[f.Name]; ok {
+			flags = append(flags, flag)
+		}
+	})
+
+	return flags
+}
+
 func (c *Command) ExecuteFunc() ExecuteFunc {
 	return c.execute
 }
