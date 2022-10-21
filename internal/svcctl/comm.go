@@ -61,15 +61,6 @@ func (c *Comm) GetHTTPAddr(ctx context.Context) (string, error) {
 	return c.req.Request(ctx, KeyHTTPAddr)
 }
 
-func LogFileHandler(logFile string) ipc.RequestHandler {
-	return func(input string) (string, bool) {
-		if input == KeyLogFile {
-			return logFile, true
-		}
-		return "", false
-	}
-}
-
 func (c *Comm) GetLogFileName(ctx context.Context) (string, error) {
 	return c.req.Request(ctx, KeyLogFile)
 }
