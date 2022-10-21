@@ -13,7 +13,7 @@ import (
 const EnvOverrideAdmin = "ACTIVESTATE_CLI_ISADMIN_OVERRIDE"
 
 func IsAdmin() (bool, error) {
-	// Work around weird CI bug: DX-1329
+	// Work around weird CI bug where it detects isAdmin=true even though the user is not an admin -- DX-1329
 	if isAdmin := os.Getenv(constants.IsAdminOverrideEnvVarName); isAdmin != "" {
 		return isAdmin == "true", nil
 	}
