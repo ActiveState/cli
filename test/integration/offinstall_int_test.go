@@ -63,7 +63,6 @@ func (suite *OffInstallIntegrationTestSuite) TestInstallAndUninstall() {
 	env := []string{
 		constants.DisableRuntime + "=false",
 		constants.IsAdminOverrideEnvVarName + "=false",
-		"VERBOSE=true",
 	}
 	if runtime.GOOS != "windows" {
 		env = append(env, "SHELL=bash")
@@ -131,8 +130,6 @@ func (suite *OffInstallIntegrationTestSuite) TestInstallAndUninstall() {
 		tp.Expect("Press enter to exit")
 		tp.SendLine("")
 		tp.ExpectExitCode(0)
-
-		fmt.Println(tp.Snapshot())
 
 		// Ensure shell env is updated
 		suite.assertShellUpdated(defaultInstallDir, false, ts)
