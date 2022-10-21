@@ -49,10 +49,6 @@ func (suite *OffInstallIntegrationTestSuite) TestInstallAndUninstall() {
 	ts := e2e.New(suite.T(), true)
 	defer ts.Close()
 
-	homeDir := filepath.Join(ts.Dirs.Base, "home")
-	suite.Require().NoError(fileutils.Mkdir(homeDir))
-	os.Setenv("HOME", homeDir)
-
 	testReportFilename := filepath.Join(ts.Dirs.Config, reporters.TestReportFilename)
 	suite.Require().NoFileExists(testReportFilename)
 
@@ -65,8 +61,8 @@ func (suite *OffInstallIntegrationTestSuite) TestInstallAndUninstall() {
 	defaultInstallDir := filepath.Join(defaultInstallParentDir, "IntegrationTest")
 
 	env := []string{
-		"ACTIVESTATE_CLI_DISABLE_RUNTIME=false",
-		"HOME=" + homeDir,
+		constants.DisableRuntime + "=false",
+		constants.IsAdminOverrideEnvVarName + "=false",
 	}
 	if runtime.GOOS != "windows" {
 		env = append(env, "SHELL=bash")
@@ -74,13 +70,11 @@ func (suite *OffInstallIntegrationTestSuite) TestInstallAndUninstall() {
 	{ // Install
 		tp := ts.SpawnCmdWithOpts(
 			suite.installerPath,
+			e2e.WithArgs(defaultInstallDir),
 			e2e.AppendEnv(env...),
 		)
-		tp.Expect("Enter an installation directory")
-		tp.Expect(defaultInstallDir)
-		tp.SendLine("")
-		tp.ExpectLongString("Do you accept the ActiveState Runtime Installer License Agreement")
-		tp.SendLine("y")
+		tp.Expect("Do you accept the ActiveState Runtime Installer License Agreement? (y/N)", 5*time.Second)
+		tp.Send("y")
 		tp.Expect("Extracting", time.Second)
 		tp.Expect("Installing")
 		tp.Expect("Installation complete")
@@ -127,10 +121,11 @@ func (suite *OffInstallIntegrationTestSuite) TestInstallAndUninstall() {
 	{ // Uninstall
 		tp := ts.SpawnCmdWithOpts(
 			suite.uninstallerPath,
+			e2e.WithArgs(defaultInstallDir),
 			e2e.AppendEnv(env...),
 		)
-		tp.Expect("Enter an installation directory to uninstall")
-		tp.SendLine(defaultInstallDir)
+		tp.Expect("continue?")
+		tp.SendLine("y")
 		tp.Expect("Uninstall Complete", 5*time.Second)
 		tp.Expect("Press enter to exit")
 		tp.SendLine("")
@@ -162,7 +157,7 @@ func (suite *OffInstallIntegrationTestSuite) TestInstallNoPermission() {
 
 	suite.preparePayload(ts)
 
-	pathWithNoPermission := "/opt/no-permission"
+	pathWithNoPermission := "/no-permission"
 	if runtime.GOOS == "windows" {
 		pathWithNoPermission = "C:\\Program Files\\No Permission"
 	}
@@ -172,6 +167,8 @@ func (suite *OffInstallIntegrationTestSuite) TestInstallNoPermission() {
 		e2e.WithArgs(pathWithNoPermission),
 	)
 	tp.Expect("Please ensure that the directory is writeable", 5*time.Second)
+	tp.Expect("Press enter to exit", 5*time.Second)
+	tp.SendLine("")
 	tp.ExpectExitCode(1)
 }
 
@@ -268,6 +265,9 @@ func (suite *OffInstallIntegrationTestSuite) assertShellUpdated(dir string, exis
 		assert(string(rcContents), constants.RCAppendOfflineInstallStopLine, fpath)
 		assert(string(rcContents), dir)
 	} else {
+		// It seems there is a race condition with updating the registry and asserting it was updated
+		time.Sleep(time.Second)
+
 		// Test registry
 		out, err := exec.Command("reg", "query", `HKEY_CURRENT_USER\Environment`, "/v", "Path").Output()
 		suite.Require().NoError(err)
