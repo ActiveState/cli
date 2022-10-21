@@ -10,6 +10,8 @@ constants:
     value: ./cmd/state-svc
   - name: INSTALLER_PKGS
     value: ./cmd/state-installer
+  - name: EXECUTOR_PKGS
+    value: ./cmd/state-exec
   - name: BUILD_TARGET_PREFIX_DIR
     value: ./build
   - name: BUILD_TARGET
@@ -155,36 +157,13 @@ scripts:
         upx $BUILD_TARGET_DIR/$constants.BUILD_SYSTRAY_TARGET
       fi
   - name: build-exec
-    if: eq .OS.Name "Linux"
     description: Builds the State Executor application
     language: bash
     value: |
       set -e
       $constants.SET_ENV
 
-      zig build-exe --strip -static -O ReleaseFast -target "x86_64-linux" "./cmd/${BUILD_EXEC_TARGET}/${BUILD_EXEC_TARGET}.zig"
-      mv "$BUILD_EXEC_TARGET" "$constants.BUILD_TARGET_PREFIX_DIR"
-  - name: build-exec
-    if: eq .OS.Name "MacOS"
-    description: Builds the State Executor application
-    language: bash
-    value: |
-      set -e
-      $constants.SET_ENV
-
-      zig build-exe --strip -O ReleaseFast -target "x86_64-macos" "./cmd/${BUILD_EXEC_TARGET}/${BUILD_EXEC_TARGET}.zig"
-      mv "$BUILD_EXEC_TARGET" "$constants.BUILD_TARGET_PREFIX_DIR"
-  - name: build-exec
-    if: eq .OS.Name "Windows"
-    description: Builds the State Executor application
-    language: bash
-    value: |
-      set -e
-      $constants.SET_ENV
-
-      BUILD_EXEC_NAME="${BUILD_EXEC_TARGET%.*}" # trim extension
-      zig build-exe --strip -static -O ReleaseFast -target "x86_64-windows.win10_rs4" "./cmd/${BUILD_EXEC_NAME}/${BUILD_EXEC_NAME}.zig"
-      mv "${BUILD_EXEC_NAME}" "$constants.BUILD_TARGET_PREFIX_DIR/${BUILD_EXEC_TARGET}"
+      go build -tags "$GO_BUILD_TAGS" -o $BUILD_TARGET_DIR/$constants.BUILD_EXEC_TARGET $constants.CLI_BUILDFLAGS $constants.EXECUTOR_PKGS
   - name: build-all
     description: Builds all our tools
     standalone: true
@@ -512,11 +491,14 @@ scripts:
     value: |
       # example usage:
       # state run benchmark-exec -- state-exec /tmp/state-ipc/my.sock /home/me/.cache/abcd1234/bin/python3 -c "print('123');"
-      if [[ "$(cat /proc/sys/kernel/perf_event_paranoid)" != "-1" ]]; then
+      paranoid="$(cat /proc/sys/kernel/perf_event_paranoid)"
+      updated=false
+      if [[ "${paranoid}" != "-1" ]]; then
           sudo sh -c 'echo -1 >/proc/sys/kernel/perf_event_paranoid'
+          updated=true
       fi
-
-      perf stat -a -r 100 -B ${@} > /dev/null
+      perf stat -d -r 8 -e task-clock,page-faults,cycles,instructions -- ${@} >/dev/null 
+      ${updated} && sudo sh -c 'echo '${paranoid}' >/proc/sys/kernel/perf_event_paranoid'
 
 events:
   - name: activate
