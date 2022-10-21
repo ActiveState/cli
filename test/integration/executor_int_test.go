@@ -1,8 +1,12 @@
 package integration
 
 import (
+	"os"
+	"path/filepath"
 	"testing"
 
+	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/stretchr/testify/suite"
@@ -66,4 +70,18 @@ func (suite *ExecutorIntegrationTestSuite) TestExecutorExitCode() {
 
 	cp.SendLine("exit")
 	cp.ExpectExitCode(42)
+}
+
+func (suite *ExecutorIntegrationTestSuite) TestExecutorSizeOnDisk() {
+	suite.OnlyRunForTags(tagsuite.Executor)
+
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	execFilePath := filepath.Join(ts.Dirs.Bin, constants.StateExecutorCmd+exeutils.Extension)
+	fi, err := os.Stat(execFilePath)
+	suite.Require().NoError(err, "should be able to obtain executor file info")
+
+	maxSize := int64(4000000)
+	suite.Require().LessOrEqual(fi.Size(), maxSize, "executor (%d bytes) should be less than or equal to %d bytes", fi.Size(), maxSize)
 }
