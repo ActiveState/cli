@@ -3,6 +3,7 @@ package integration
 import (
 	"encoding/json"
 	"fmt"
+	"io/fs"
 	"path/filepath"
 	"runtime"
 	"sort"
@@ -13,6 +14,7 @@ import (
 	"github.com/ActiveState/cli/internal/analytics/client/sync/reporters"
 	anaConst "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
@@ -350,6 +352,31 @@ func (suite *AnalyticsIntegrationTestSuite) TestSequenceAndFlags() {
 	}
 
 	suite.True(found, "Should have run-command event with flags, actual: %s", suite.summarizeEvents(events))
+}
+
+func (suite *AnalyticsIntegrationTestSuite) TestInputError() {
+	suite.OnlyRunForTags(tagsuite.Analytics)
+
+	ts := e2e.New(suite.T(), true)
+	defer ts.Close()
+
+	suite.eventsfile = filepath.Join(ts.Dirs.Config, reporters.TestReportFilename)
+
+	cp := ts.Spawn("clean", "uninstall", "badarg", "--mono")
+	cp.ExpectExitCode(1)
+
+	events := parseAnalyticsEvents(suite, ts)
+	suite.assertSequentialEvents(events)
+
+	suite.assertNEvents(events, 1, anaConst.CatDebug, anaConst.ActInputError,
+		fmt.Sprintf("output:\n%s\nState Log:\n%s\nSvc Log:\n%s",
+			cp.Snapshot(), ts.MostRecentStateLog(), ts.SvcLog()))
+
+	for _, event := range events {
+		if event.Category == anaConst.CatDebug && event.Action == anaConst.ActInputError {
+			suite.Equal("state clean uninstall --mono", *event.Dimensions.Trigger)
+		}
+	}
 }
 
 func TestAnalyticsIntegrationTestSuite(t *testing.T) {

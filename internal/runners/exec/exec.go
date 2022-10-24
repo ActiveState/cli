@@ -27,7 +27,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
-	"github.com/ActiveState/cli/pkg/platform/runtime/executor"
+	"github.com/ActiveState/cli/pkg/platform/runtime/executors"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
@@ -150,7 +150,7 @@ func (s *Exec) Run(params *Params, args ...string) error {
 
 		// Report recursive execution of executor: The path for the executable should be different from the default bin dir
 		exesOnPath := exeutils.FilterExesOnPATH(args[0], RTPATH, func(exe string) bool {
-			v, err := executor.IsExecutor(exe)
+			v, err := executors.IsExecutor(exe)
 			if err != nil {
 				multilog.Error("Could not find out if executable is an executor: %s", errs.JoinMessage(err))
 				return true // This usually means there's a permission issue, which means we likely don't own it
@@ -167,7 +167,7 @@ func (s *Exec) Run(params *Params, args ...string) error {
 	if os.Getenv(constants.ExecRecursionAllowEnvVarName) != "true" && filepath.Base(exeTarget) == exeTarget { // not a full path
 		exe := exeutils.FindExeInside(exeTarget, env["PATH"])
 		if exe != exeTarget { // Found the exe name on our PATH
-			isExec, err := executor.IsExecutor(exe)
+			isExec, err := executors.IsExecutor(exe)
 			if err != nil {
 				multilog.Error("Could not find out if executable is an executor: %s", errs.JoinMessage(err))
 			} else if isExec {

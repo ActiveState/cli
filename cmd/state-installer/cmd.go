@@ -194,6 +194,7 @@ func main() {
 	an.Event(AnalyticsFunnelCat, "pre-exec")
 	err = cmd.Execute(processedArgs[1:])
 	if err != nil {
+		errors.ReportError(err, cmd, an)
 		if locale.IsInputError(err) {
 			an.EventWithLabel(AnalyticsCat, "input-error", errs.JoinMessage(err))
 			logging.Debug("Installer input error: " + errs.JoinMessage(err))

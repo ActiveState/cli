@@ -41,11 +41,8 @@ func (suite *UseIntegrationTestSuite) TestUse() {
 	cp.ExpectExitCode(0)
 
 	// Verify runtime works.
-	pythonExe := filepath.Join(ts.Dirs.DefaultBin, "python3")
-	if runtime.GOOS == "windows" {
-		pythonExe = pythonExe + ".bat"
-	}
-	cp = ts.SpawnCmdWithOpts(pythonExe, e2e.WithArgs("--version"))
+	pythonExe := filepath.Join(ts.Dirs.DefaultBin, "python3"+osutils.ExeExt)
+	cp = ts.SpawnCmd(pythonExe, "--version")
 	cp.Expect("Python 3")
 	cp.ExpectExitCode(0)
 
@@ -137,9 +134,6 @@ func (suite *UseIntegrationTestSuite) TestReset() {
 	cp.ExpectExitCode(0)
 
 	python3Exe := filepath.Join(ts.Dirs.DefaultBin, "python3"+osutils.ExeExt)
-	if runtime.GOOS == "windows" {
-		python3Exe = python3Exe + ".bat"
-	}
 	suite.True(fileutils.TargetExists(python3Exe), python3Exe+" not found")
 
 	cfg, err := config.New()

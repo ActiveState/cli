@@ -3,10 +3,10 @@ package integration
 import (
 	"bytes"
 	"path/filepath"
-	"runtime"
 	"testing"
 
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
@@ -37,11 +37,8 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckout() {
 
 	// Verify runtime was installed correctly and works.
 	targetDir := target.ProjectDirToTargetDir(python3Dir, ts.Dirs.Cache)
-	pythonExe := filepath.Join(setup.ExecDir(targetDir), "python3")
-	if runtime.GOOS == "windows" {
-		pythonExe = pythonExe + ".bat"
-	}
-	cp = ts.SpawnCmdWithOpts(pythonExe, e2e.WithArgs("--version"))
+	pythonExe := filepath.Join(setup.ExecDir(targetDir), "python3"+exeutils.Extension)
+	cp = ts.SpawnCmd(pythonExe, "--version")
 	cp.Expect("Python 3")
 	cp.ExpectExitCode(0)
 }
