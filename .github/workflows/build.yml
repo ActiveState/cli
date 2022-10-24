@@ -236,7 +236,7 @@ jobs:
 
       - # === Deploy for Integration Tests # NEVER run this against production branches. This is meant for PR deployments. ===
         name: Deploy for Integration Tests # NEVER run this against production branches. This is meant for PR deployments.
-        if: github.ref != 'refs/heads/release' && github.event.pull_request.head.ref != 'version/0-35-0-RC1'
+        if: github.ref != 'refs/heads/release'
         shell: bash
         run: |
           if [ "$GITHUB_EVENT_NAME" != "schedule" ]; then
@@ -263,7 +263,7 @@ jobs:
       - # === Integration Tests ===
         name: Integration Tests
         id: integration_tests
-        if: github.ref != 'refs/heads/release' && github.event.pull_request.head.ref != 'version/0-35-0-RC1'
+        if: github.ref != 'refs/heads/release'
         shell: bash
         run: |
           if [ "$GITHUB_EVENT_NAME" != "schedule" ]; then
