@@ -83,14 +83,14 @@ func stopSvc(installPath string) error {
 		svcName := constants.ServiceCommandName + exeutils.Extension
 		if n == svcName {
 			exe, err := p.Exe()
-			if err == nil {
-				if !strings.Contains(strings.ToLower(exe), "activestate") {
-					multilog.Error("Found state-svc process in unexpected directory: %s", exe)
-					continue
-				}
-			} else {
-				logging.Debug("Could not get executable path for state-svc process, error: %v", err) // permissions issue
-				exe = "<unknown>"
+			if err != nil {
+				multilog.Error("Could not get executable path for state-svc process, error: %v", err)
+				continue
+			}
+
+			if !strings.Contains(strings.ToLower(exe), "activestate") {
+				multilog.Error("Found state-svc process in unexpected directory: %s", exe)
+				continue
 			}
 
 			logging.Debug("Found running state-svc process with PID %d, at %s", p.Pid, exe)
