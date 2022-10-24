@@ -72,6 +72,10 @@ func (suite *ExecutorIntegrationTestSuite) TestExecutorExitCode() {
 	cp.ExpectExitCode(42)
 }
 
+func sizeByMegs(megabytes float64) int64 {
+	return int64(megabytes * float64(1000000))
+}
+
 func (suite *ExecutorIntegrationTestSuite) TestExecutorSizeOnDisk() {
 	suite.OnlyRunForTags(tagsuite.Executor)
 
@@ -82,6 +86,6 @@ func (suite *ExecutorIntegrationTestSuite) TestExecutorSizeOnDisk() {
 	fi, err := os.Stat(execFilePath)
 	suite.Require().NoError(err, "should be able to obtain executor file info")
 
-	maxSize := int64(4000000)
+	maxSize := sizeByMegs(4)
 	suite.Require().LessOrEqual(fi.Size(), maxSize, "executor (%d bytes) should be less than or equal to %d bytes", fi.Size(), maxSize)
 }
