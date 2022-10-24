@@ -1,7 +1,6 @@
 package checkout
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
