@@ -10,6 +10,7 @@ import (
 // from locale/errors.go because importing locale for NewInputError creates an import cycle.
 // Instead, return this error that looks like a LocalizedError.
 type HomeDirNotFoundError struct {
+	wrapped error
 }
 
 const homeDirNotFoundErrorMessage = "Could not proceed because your HOME environment variable is unset. " +
@@ -30,6 +31,10 @@ func (e *HomeDirNotFoundError) InputError() bool {
 	return true
 }
 
+func (e *HomeDirNotFoundError) Unwrap() error {
+	return e.wrapped
+}
+
 // HomeDir returns the user's homedir
 func HomeDir() (string, error) {
 	dir, err := os.UserHomeDir()
@@ -37,7 +42,7 @@ func HomeDir() (string, error) {
 		var exists bool
 		dir, exists = os.LookupEnv(constants.HomeEnvVarName)
 		if !exists {
-			return "", &HomeDirNotFoundError{}
+			return "", &HomeDirNotFoundError{err}
 		}
 	}
 	return dir, nil
