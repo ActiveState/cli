@@ -63,16 +63,16 @@ func run() error {
 	}
 	finish()
 
-	if !wh.IsVersionBranch(pr.GetHead().GetRef()) {
+	if wh.IsVersionBranch(pr.GetHead().GetRef()) {
 		finish = wc.PrintStart("Verifying Version PR")
 		if err := verifyVersionRC(ghClient, jiraClient, pr); err != nil {
-			return errs.Wrap(err, "Failed to verify RC")
+			return errs.Wrap(err, "Failed to Version PR")
 		}
 		finish()
 	}
-	finish = wc.PrintStart("Verifying Version PR")
+	finish = wc.PrintStart("Verifying PR")
 	if err := verifyPR(jiraClient, pr); err != nil {
-		return errs.Wrap(err, "Failed to verify RC")
+		return errs.Wrap(err, "Failed to verify PR")
 	}
 	finish()
 

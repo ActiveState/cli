@@ -168,7 +168,9 @@ func fetchMeta(ghClient *github.Client, jiraClient *jira.Client, prNumber int) (
 	finish()
 
 	if prBeingHandled.GetState() != "closed" && !prBeingHandled.GetMerged() {
-		return Meta{}, errs.New("Active PR should be merged before it can be propagated.")
+		if os.Getenv("DRYRUN") != "true" {
+			return Meta{}, errs.New("Active PR should be merged before it can be propagated.")
+		}
 	}
 
 	finish = wc.PrintStart("Extracting Jira Issue ID from Active PR: %s", prBeingHandled.GetTitle())
