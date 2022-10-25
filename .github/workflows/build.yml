@@ -40,6 +40,9 @@ jobs:
       GOFLAGS: -mod=vendor
       SHELL: bash
       GITHUB_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    concurrency:
+      group: ${{ github.ref }}
+      cancel-in-progress: true
 
     # === OS Specific Steps ===
     steps:
