@@ -140,7 +140,10 @@ func ReportError(err error, cmd *captain.Command, an analytics.Dispatcher) {
 			flagNames = append(flagNames, fmt.Sprintf("--%s", flag.Name))
 		}
 
-		trigger := []string{cmdName, childCmd.UseFull()}
+		trigger := []string{cmdName}
+		if childCmd != nil {
+			trigger = append(trigger, childCmd.UseFull())
+		}
 		trigger = append(trigger, flagNames...)
 
 		logging.Debug("Reporting input error:\n%s\nCreated at:\n%s", errs.Join(err, "\n").Error(), stack)
