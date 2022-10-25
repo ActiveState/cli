@@ -54,18 +54,6 @@ func run() error {
 	}
 	finish()
 
-	finish = wc.PrintStart("Checking if local repo is clean")
-	// We can't use go-git here as it does not respect autcrlf
-	stdout, stderr, err := exeutils.ExecSimpleFromDir(environment.GetRootPathUnsafe(), "git", []string{"status", "-s"}, nil)
-	if err != nil {
-		return errs.Wrap(err, "failed to check local repo status, stderr: %s", stderr)
-	}
-	stdout = strings.TrimSpace(stdout)
-	if stdout != "" {
-		return errs.New("Local repo is not clean, please make sure you have no pending changes. Status received:\n %s", stdout)
-	}
-	finish()
-
 	finish = wc.PrintStart("Verifying input")
 	// Grab input
 	if len(os.Args) < 2 {
@@ -96,7 +84,7 @@ func run() error {
 
 	ref := ""
 	if meta.VersionPR != nil {
-		ref = meta.VersionPR.Head.GetSHA()
+		ref = meta.VersionPR.Head.GetRef()
 	} else {
 		finish := wc.PrintStart("Detecting base ref to fork from")
 		ref, err = wc.DetectBaseRef(ghClient, jiraClient, meta)
@@ -106,8 +94,14 @@ func run() error {
 		finish()
 	}
 
-	finish = wc.PrintStart("Creating branch")
-	stdout, stderr, err = exeutils.ExecSimpleFromDir(environment.GetRootPathUnsafe(), "git", []string{"checkout", ref}, nil)
+	finish = wc.PrintStart("Creating branch: %s from ref: %s", branchName, ref)
+	if os.Getenv("DRYRUN") == "true" {
+		wc.Print("DRY RUN: Skipping")
+		finish()
+		return nil
+	}
+
+	stdout, stderr, err := exeutils.ExecSimpleFromDir(environment.GetRootPathUnsafe(), "git", []string{"checkout", ref}, nil)
 	if err != nil {
 		return errs.Wrap(err, "failed to checkout base ref, stdout:\n%s\nstderr:\n%s", stdout, stderr)
 	}

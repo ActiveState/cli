@@ -83,17 +83,19 @@ func FetchAvailableVersions(jiraClient *jira.Client) ([]semver.Version, error) {
 		return nil, errs.Wrap(err, "Failed to get JIRA project")
 	}
 
+	emptySemver := semver.Version{}
 	result := []semver.Version{}
 	for _, version := range pj.Versions {
-		if version.Archived != nil || *version.Archived {
+		if version.Archived != nil && *version.Archived {
 			continue
 		}
-		if version.Released != nil || *version.Released {
+		if version.Released != nil && *version.Released {
 			continue
 		}
 		semversion, err := ParseJiraVersion(version.Name)
-		if err != nil {
+		if err != nil || semversion.EQ(emptySemver) {
 			logging.Debug("Not a semver version %s; skipping", version.Name)
+			continue
 		}
 		result = append(result, semversion)
 	}
