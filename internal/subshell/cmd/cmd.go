@@ -47,7 +47,7 @@ func (v *SubShell) SetBinary(binary string) {
 }
 
 // WriteUserEnv - see subshell.SubShell
-func (v *SubShell) WriteUserEnv(cfg sscommon.Configurable, env map[string]string, envType sscommon.RcIdentification, userScope bool) error {
+func (v *SubShell) WriteUserEnv(cfg sscommon.Configurable, env map[string]string, envType sscommon.RcIdentification, userScope bool, _ bool) error {
 	cmdEnv := NewCmdEnv(userScope)
 
 	// Clean up old entries
@@ -121,7 +121,7 @@ func (v *SubShell) WriteCompletionScript(completionScript string) error {
 	return locale.NewError("err_writecompletions_notsupported", "{{.V0}} does not support completions.", v.Shell())
 }
 
-func (v *SubShell) RcFile() (string, error) {
+func (v *SubShell) RcFile(_ bool) (string, error) {
 	return "", locale.NewError("err_cmd_rcile", "cmd does not support RC files")
 }
 

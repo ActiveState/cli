@@ -109,10 +109,21 @@ func (i *Installer) Install() (rerr error) {
 	if err != nil {
 		return errs.Wrap(err, "Could not determine if running as Windows administrator")
 	}
+
+	// Set up the current shell
 	shell := subshell.New(i.cfg)
-	err = shell.WriteUserEnv(i.cfg, map[string]string{"PATH": binDir}, sscommon.InstallID, !isAdmin)
+	err = shell.WriteUserEnv(i.cfg, map[string]string{"PATH": binDir}, sscommon.InstallID, !isAdmin, true)
 	if err != nil {
 		return errs.Wrap(err, "Could not update PATH")
+	}
+
+	// Configure available shells
+	for _, shell := range subshell.AvailableShells() {
+		err = shell.WriteUserEnv(i.cfg, map[string]string{"PATH": binDir}, sscommon.InstallID, !isAdmin, false)
+		if err != nil {
+			logging.Error("Could not update PATH for shell %s: %v", shell.Shell(), err)
+			continue
+		}
 	}
 
 	err = installation.SaveContext(&installation.Context{InstalledAsAdmin: isAdmin})

@@ -47,8 +47,8 @@ func (v *SubShell) SetBinary(binary string) {
 }
 
 // WriteUserEnv - see subshell.SubShell
-func (v *SubShell) WriteUserEnv(cfg sscommon.Configurable, env map[string]string, envType sscommon.RcIdentification, _ bool) error {
-	rcFile, err := v.RcFile()
+func (v *SubShell) WriteUserEnv(cfg sscommon.Configurable, env map[string]string, envType sscommon.RcIdentification, _ bool, _ bool) error {
+	rcFile, err := v.RcFile(false)
 	if err != nil {
 		return errs.Wrap(err, "RcFile failure")
 	}
@@ -58,7 +58,7 @@ func (v *SubShell) WriteUserEnv(cfg sscommon.Configurable, env map[string]string
 }
 
 func (v *SubShell) CleanUserEnv(cfg sscommon.Configurable, envType sscommon.RcIdentification, _ bool) error {
-	rcFile, err := v.RcFile()
+	rcFile, err := v.RcFile(false)
 	if err != nil {
 		return errs.Wrap(err, "RcFile failure")
 	}
@@ -71,7 +71,7 @@ func (v *SubShell) CleanUserEnv(cfg sscommon.Configurable, envType sscommon.RcId
 }
 
 func (v *SubShell) RemoveLegacyInstallPath(cfg sscommon.Configurable) error {
-	rcFile, err := v.RcFile()
+	rcFile, err := v.RcFile(false)
 	if err != nil {
 		return errs.Wrap(err, "RcFile-failure")
 	}
@@ -83,7 +83,7 @@ func (v *SubShell) WriteCompletionScript(completionScript string) error {
 	return locale.NewError("err_writecompletions_notsupported", "{{.V0}} does not support completions.", v.Shell())
 }
 
-func (v *SubShell) RcFile() (string, error) {
+func (v *SubShell) RcFile(_ bool) (string, error) {
 	homeDir, err := fileutils.HomeDir()
 	if err != nil {
 		return "", errs.Wrap(err, "IO failure")

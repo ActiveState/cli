@@ -27,6 +27,8 @@ import (
 
 const ConfigKeyShell = "shell"
 
+var supportedShells []SubShell
+
 // SubShell defines the interface for our virtual environment packages, which should be contained in a sub-directory
 // under the same directory as this file
 type SubShell interface {
@@ -52,7 +54,7 @@ type SubShell interface {
 	SetBinary(string)
 
 	// WriteUserEnv writes the given env map to the users environment
-	WriteUserEnv(sscommon.Configurable, map[string]string, sscommon.RcIdentification, bool) error
+	WriteUserEnv(sscommon.Configurable, map[string]string, sscommon.RcIdentification, bool, bool) error
 
 	// CleanUserEnv removes the environment setting identified
 	CleanUserEnv(sscommon.Configurable, sscommon.RcIdentification, bool) error
@@ -64,7 +66,7 @@ type SubShell interface {
 	WriteCompletionScript(string) error
 
 	// RcFile return the path of the RC file
-	RcFile() (string, error)
+	RcFile(bool) (string, error)
 
 	// SetupShellRcFile writes a script or source-able file that updates the environment variables and sets the prompt
 	SetupShellRcFile(string, map[string]string, *project.Namespaced) error
@@ -138,6 +140,25 @@ func New(cfg sscommon.Configurable) SubShell {
 	subs.SetEnv(osutils.EnvSliceToMap(env))
 
 	return subs
+}
+
+func AvailableShells() []SubShell {
+	var shells []SubShell
+	for _, shell := range supportedShells {
+		rcFile, err := shell.RcFile(false)
+		if err != nil {
+			logging.Error("Could not determine rc file for shell %s: %v", shell.Shell(), err)
+			continue
+		}
+
+		if !fileutils.FileExists(rcFile) {
+			continue
+		}
+
+		shells = append(shells, shell)
+	}
+
+	return shells
 }
 
 func DetectShellBinary(cfg sscommon.Configurable) (binary string) {
