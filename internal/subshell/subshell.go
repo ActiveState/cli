@@ -142,7 +142,7 @@ func New(cfg sscommon.Configurable) SubShell {
 	return subs
 }
 
-func AvailableShells() []SubShell {
+func availableShells() []SubShell {
 	var shells []SubShell
 	for _, shell := range supportedShells {
 		rcFile, err := shell.RcFile(false)
@@ -163,7 +163,7 @@ func AvailableShells() []SubShell {
 
 func ConfigureAvailableShells(cfg sscommon.Configurable, env map[string]string, identifier sscommon.RcIdentification, isAdmin bool) error {
 	activeShell := New(cfg)
-	for _, s := range AvailableShells() {
+	for _, s := range availableShells() {
 		isActive := false
 		if s.Shell() == activeShell.Shell() {
 			isActive = true
