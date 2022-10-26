@@ -40,6 +40,10 @@ type Prompt struct {
 	isInteractive bool
 }
 
+type NonInteractiveError struct {
+	*locale.LocalizedError
+}
+
 // New creates a new prompter
 func New(isInteractive bool, an EventDispatcher) Prompter {
 	return &Prompt{output.Get(), an, isInteractive}
@@ -75,7 +79,7 @@ func (p *Prompt) InputAndValidate(title, message string, defaultResponse *string
 			logging.Debug("Selecting default choice %s for Input prompt %s in non-interactive mode", *defaultResponse, title)
 			return *defaultResponse, nil
 		}
-		return "", locale.NewInputError("err_non_interactive_prompt", message)
+		return "", &NonInteractiveError{locale.NewInputError("err_non_interactive_prompt", message)}
 	}
 
 	var response string
@@ -120,7 +124,7 @@ func (p *Prompt) Select(title, message string, choices []string, defaultChoice *
 			logging.Debug("Selecting default choice %s for Select prompt %s in non-interactive mode", *defaultChoice, title)
 			return *defaultChoice, nil
 		}
-		return "", locale.NewInputError("err_non_interactive_prompt", message)
+		return "", &NonInteractiveError{locale.NewInputError("err_non_interactive_prompt", message)}
 	}
 
 	if title != "" {
@@ -151,7 +155,7 @@ func (p *Prompt) Confirm(title, message string, defaultChoice *bool) (bool, erro
 			logging.Debug("Prompt %s confirmed with default choice %v in non-interactive mode", title, defaultChoice)
 			return *defaultChoice, nil
 		}
-		return false, locale.NewInputError("err_non_interactive_prompt", message)
+		return false, &NonInteractiveError{locale.NewInputError("err_non_interactive_prompt", message)}
 	}
 	if title != "" {
 		p.out.Notice(output.SubHeading(title))
@@ -191,7 +195,7 @@ func translateConfirm(confirm bool) string {
 // Will fail if empty.
 func (p *Prompt) InputSecret(title, message string, flags ...ValidatorFlag) (string, error) {
 	if !p.isInteractive {
-		return "", locale.NewInputError("err_non_interactive_prompt", message)
+		return "", &NonInteractiveError{locale.NewInputError("err_non_interactive_prompt", message)}
 	}
 	var response string
 	validators, err := processValidators(flags)
