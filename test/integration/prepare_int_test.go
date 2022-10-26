@@ -92,7 +92,7 @@ func (suite *PrepareIntegrationTestSuite) AssertConfig(target string) {
 		suite.Require().NoError(err)
 
 		subshell := subshell.New(cfg)
-		rcFile, err := subshell.RcFile()
+		rcFile, err := subshell.RcFile(false)
 		suite.Require().NoError(err)
 
 		bashContents := fileutils.ReadFileUnsafe(rcFile)

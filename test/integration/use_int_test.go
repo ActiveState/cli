@@ -11,6 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/subshell"
+	"github.com/ActiveState/cli/internal/subshell/zsh"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/stretchr/testify/suite"
@@ -126,6 +127,10 @@ func (suite *UseIntegrationTestSuite) TestReset() {
 	cp.Expect("Checked out project")
 	cp.ExpectExitCode(0)
 
+	zsh := &zsh.SubShell{}
+	zshRcFile, err := zsh.RcFile(true)
+	suite.NoError(err)
+
 	cp = ts.SpawnWithOpts(
 		e2e.WithArgs("use", "ActiveState-CLI/Python3"),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
@@ -138,10 +143,11 @@ func (suite *UseIntegrationTestSuite) TestReset() {
 
 	cfg, err := config.New()
 	suite.NoError(err)
-	rcfile, err := subshell.New(cfg).RcFile()
+	rcfile, err := subshell.New(cfg).RcFile(false)
 	if runtime.GOOS != "windows" {
 		suite.NoError(err)
 		suite.Contains(string(fileutils.ReadFileUnsafe(rcfile)), ts.Dirs.DefaultBin, "PATH does not have default project in it")
+		suite.Contains(string(fileutils.ReadFileUnsafe(zshRcFile)), ts.Dirs.DefaultBin, "PATH does not have default project in it")
 	}
 
 	cp = ts.SpawnWithOpts(e2e.WithArgs("use", "reset"))
