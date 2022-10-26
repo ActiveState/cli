@@ -30,6 +30,7 @@ import (
 	"github.com/ActiveState/cli/internal/table"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
+	"github.com/thoas/go-funk"
 )
 
 func init() {
@@ -174,7 +175,7 @@ func NewCommand(name, title, description string, prime primer, flags []*Flag, ar
 	cmd.cobra.SetFlagErrorFunc(func(c *cobra.Command, err error) error {
 		if cmd.shouldWarnUnstable() {
 			if !condition.OptInUnstable(cmd.cfg) {
-				cmd.out.Notice(locale.Tr("unstable_command_warning", cmd.Name()))
+				cmd.out.Notice(locale.Tr("unstable_command_warning", cmd.UsedName()))
 				return nil
 			}
 			cmd.outputTitleIfAny()
@@ -313,6 +314,19 @@ func (c *Command) SetDisableFlagParsing(b bool) {
 }
 
 func (c *Command) Name() string {
+	return c.name
+}
+
+func (c *Command) UsedName() string {
+	names := []string{c.name}
+	names = append(names, c.cobra.Aliases...)
+
+	for _, arg := range os.Args {
+		if funk.Contains(names, arg) {
+			return arg
+		}
+	}
+
 	return c.name
 }
 
@@ -590,7 +604,7 @@ func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
 	}
 
 	if c.shouldWarnUnstable() && !condition.OptInUnstable(c.cfg) {
-		c.out.Notice(locale.Tr("unstable_command_warning", c.Name()))
+		c.out.Notice(locale.Tr("unstable_command_warning", c.UsedName()))
 		return nil
 	}
 
