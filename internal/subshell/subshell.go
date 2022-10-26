@@ -161,6 +161,26 @@ func AvailableShells() []SubShell {
 	return shells
 }
 
+func ConfigureAvailableShells(cfg sscommon.Configurable, env map[string]string, identifier sscommon.RcIdentification, isAdmin bool) error {
+	activeShell := New(cfg)
+	for _, s := range AvailableShells() {
+		isActive := false
+		if s.Shell() == activeShell.Shell() {
+			isActive = true
+		}
+
+		err := s.WriteUserEnv(cfg, env, sscommon.DefaultID, true, isActive)
+		if err != nil {
+			if isActive {
+				return errs.Wrap(err, "Could not configure active shell %s", s.Shell())
+			}
+			logging.Error("Could not update PATH for shell %s: %v", s.Shell(), err)
+		}
+	}
+
+	return nil
+}
+
 func DetectShellBinary(cfg sscommon.Configurable) (binary string) {
 	configured := cfg.GetString(ConfigKeyShell)
 	defer func() {

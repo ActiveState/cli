@@ -17,7 +17,6 @@ import (
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/offinstall"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
@@ -376,20 +375,12 @@ func (r *runner) configureEnvironment(path string, asrt *runtime.Runtime) error 
 		}
 	}
 
-	err = r.shell.WriteUserEnv(r.cfg, env, sscommon.OfflineInstallID, true, true)
+	// Configure available shells
+	err = subshell.ConfigureAvailableShells(r.cfg, env, sscommon.OfflineInstallID, true)
 	if err != nil {
 		return locale.WrapError(err,
 			"err_deploy_subshell_write",
 			"Could not write environment information to your shell configuration.")
-	}
-
-	// Configure available shells
-	for _, shell := range subshell.AvailableShells() {
-		err = shell.WriteUserEnv(r.cfg, env, sscommon.OfflineInstallID, true, false)
-		if err != nil {
-			logging.Error("Could not update PATH for shell %s: %v", shell.Shell(), err)
-			continue
-		}
 	}
 
 	binPath := filepath.Join(path, "bin")

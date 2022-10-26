@@ -206,18 +206,10 @@ func (d *Deploy) configure(namespace project.Namespaced, rtTarget setup.Targeter
 
 	d.output.Notice(output.Heading(locale.Tr("deploy_configure_shell", d.subshell.Shell())))
 
-	err = d.subshell.WriteUserEnv(d.cfg, env, sscommon.DeployID, userScope, true)
+	// Configure available shells
+	err = subshell.ConfigureAvailableShells(d.cfg, env, sscommon.DefaultID, userScope)
 	if err != nil {
 		return locale.WrapError(err, "err_deploy_subshell_write", "Could not write environment information to your shell configuration.")
-	}
-
-	// Configure available shells
-	for _, shell := range subshell.AvailableShells() {
-		err = shell.WriteUserEnv(d.cfg, env, sscommon.DeployID, userScope, false)
-		if err != nil {
-			logging.Error("Could not update PATH for shell %s: %v", shell.Shell(), err)
-			continue
-		}
 	}
 
 	binPath := filepath.Join(rtTarget.Dir(), "bin")

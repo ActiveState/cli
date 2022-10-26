@@ -53,17 +53,10 @@ func Prepare(cfg DefaultConfigurer, shell subshell.SubShell) error {
 		"PATH": binDir,
 	}
 
-	if err := shell.WriteUserEnv(cfg, envUpdates, sscommon.DefaultID, true, true); err != nil {
-		return locale.WrapError(err, "err_globaldefault_update_env")
-	}
-
 	// Configure available shells
-	for _, shell := range subshell.AvailableShells() {
-		err = shell.WriteUserEnv(cfg, envUpdates, sscommon.DefaultID, true, false)
-		if err != nil {
-			logging.Error("Could not update PATH for shell %s: %v", shell.Shell(), err)
-			continue
-		}
+	err = subshell.ConfigureAvailableShells(cfg, envUpdates, sscommon.DefaultID, true)
+	if err != nil {
+		return locale.WrapError(err, "err_globaldefault_update_env")
 	}
 
 	return nil
@@ -100,7 +93,7 @@ func SetupDefaultActivation(subshell subshell.SubShell, cfg DefaultConfigurer, r
 	return nil
 }
 
-func ResetDefaultActivation(subshell subshell.SubShell, cfg DefaultConfigurer) (bool, error) {
+func ResetDefaultActivation(shell subshell.SubShell, cfg DefaultConfigurer) (bool, error) {
 	logging.Debug("Resetting globaldefault")
 
 	projectDir := cfg.GetString(constants.GlobalDefaultPrefname)
@@ -115,7 +108,9 @@ func ResetDefaultActivation(subshell subshell.SubShell, cfg DefaultConfigurer) (
 	}
 
 	envUpdates := map[string]string{}
-	err := subshell.WriteUserEnv(cfg, envUpdates, sscommon.DefaultID, true, true)
+
+	// Configure available shells
+	err := subshell.ConfigureAvailableShells(cfg, envUpdates, sscommon.DefaultID, true)
 	if err != nil {
 		return false, locale.WrapError(err, "err_globaldefault_update_env")
 	}
