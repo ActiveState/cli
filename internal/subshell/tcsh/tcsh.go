@@ -83,13 +83,21 @@ func (v *SubShell) WriteCompletionScript(completionScript string) error {
 	return locale.NewError("err_writecompletions_notsupported", "{{.V0}} does not support completions.", v.Shell())
 }
 
-func (v *SubShell) RcFile(_ bool) (string, error) {
+func (v *SubShell) RcFile(create bool) (string, error) {
 	homeDir, err := fileutils.HomeDir()
 	if err != nil {
 		return "", errs.Wrap(err, "IO failure")
 	}
 
-	return filepath.Join(homeDir, ".tcshrc"), nil
+	rcFilePath := filepath.Join(homeDir, ".tcshrc")
+	if !fileutils.TargetExists(rcFilePath) && create {
+		err = fileutils.Touch(rcFilePath)
+		if err != nil {
+			return "", errs.Wrap(err, "Failed to create RCFile at %s", rcFilePath)
+		}
+	}
+
+	return rcFilePath, nil
 }
 
 // SetupShellRcFile - subshell.SubShell
