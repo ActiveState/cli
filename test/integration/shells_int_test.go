@@ -27,7 +27,7 @@ func (suite *ShellsIntegrationTestSuite) TestShells() {
 	case "darwin":
 		shells = []e2e.Shell{e2e.Bash, e2e.Fish, e2e.Zsh, e2e.Tcsh}
 	case "windows":
-		shells = []e2e.Shell{e2e.Cmd}
+		shells = []e2e.Shell{e2e.Bash, e2e.Cmd}
 	}
 
 	// Checkout the first instance. It doesn't matter which shell is used.
