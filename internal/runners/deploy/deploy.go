@@ -211,6 +211,15 @@ func (d *Deploy) configure(namespace project.Namespaced, rtTarget setup.Targeter
 		return locale.WrapError(err, "err_deploy_subshell_write", "Could not write environment information to your shell configuration.")
 	}
 
+	// Configure available shells
+	for _, shell := range subshell.AvailableShells() {
+		err = shell.WriteUserEnv(d.cfg, env, sscommon.DeployID, userScope, false)
+		if err != nil {
+			logging.Error("Could not update PATH for shell %s: %v", shell.Shell(), err)
+			continue
+		}
+	}
+
 	binPath := filepath.Join(rtTarget.Dir(), "bin")
 	if err := fileutils.MkdirUnlessExists(binPath); err != nil {
 		return locale.WrapError(err, "err_deploy_binpath", "Could not create bin directory.")

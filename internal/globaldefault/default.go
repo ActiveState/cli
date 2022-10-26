@@ -28,7 +28,7 @@ func BinDir() string {
 	return storage.GlobalBinDir()
 }
 
-func Prepare(cfg DefaultConfigurer, subshell subshell.SubShell) error {
+func Prepare(cfg DefaultConfigurer, shell subshell.SubShell) error {
 	logging.Debug("Preparing globaldefault")
 	binDir := BinDir()
 
@@ -53,8 +53,17 @@ func Prepare(cfg DefaultConfigurer, subshell subshell.SubShell) error {
 		"PATH": binDir,
 	}
 
-	if err := subshell.WriteUserEnv(cfg, envUpdates, sscommon.DefaultID, true, true); err != nil {
+	if err := shell.WriteUserEnv(cfg, envUpdates, sscommon.DefaultID, true, true); err != nil {
 		return locale.WrapError(err, "err_globaldefault_update_env")
+	}
+
+	// Configure available shells
+	for _, shell := range subshell.AvailableShells() {
+		err = shell.WriteUserEnv(cfg, envUpdates, sscommon.DefaultID, true, false)
+		if err != nil {
+			logging.Error("Could not update PATH for shell %s: %v", shell.Shell(), err)
+			continue
+		}
 	}
 
 	return nil

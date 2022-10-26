@@ -112,14 +112,15 @@ func (i *Installer) Install() (rerr error) {
 
 	// Set up the current shell
 	shell := subshell.New(i.cfg)
-	err = shell.WriteUserEnv(i.cfg, map[string]string{"PATH": binDir}, sscommon.InstallID, !isAdmin, true)
+	env := map[string]string{"PATH": binDir}
+	err = shell.WriteUserEnv(i.cfg, env, sscommon.InstallID, !isAdmin, true)
 	if err != nil {
 		return errs.Wrap(err, "Could not update PATH")
 	}
 
 	// Configure available shells
 	for _, shell := range subshell.AvailableShells() {
-		err = shell.WriteUserEnv(i.cfg, map[string]string{"PATH": binDir}, sscommon.InstallID, !isAdmin, false)
+		err = shell.WriteUserEnv(i.cfg, env, sscommon.InstallID, !isAdmin, false)
 		if err != nil {
 			logging.Error("Could not update PATH for shell %s: %v", shell.Shell(), err)
 			continue
