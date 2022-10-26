@@ -22,6 +22,9 @@ const (
 )
 
 func DefaultInstallPath() (string, error) {
+	if v := os.Getenv(constants.InstallPathOverrideEnvVarName); v != "" {
+		return filepath.Clean(v), nil
+	}
 	return InstallPathForBranch(constants.BranchName)
 }
 

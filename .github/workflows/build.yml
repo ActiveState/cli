@@ -236,7 +236,7 @@ jobs:
 
       - # === Deploy for Integration Tests # NEVER run this against production branches. This is meant for PR deployments. ===
         name: Deploy for Integration Tests # NEVER run this against production branches. This is meant for PR deployments.
-        if: github.ref != 'refs/heads/release'
+        if: !contains(fromJSON('["refs/heads/beta", "refs/heads/release", "refs/heads/LTS"]'), github.ref)
         shell: bash
         run: |
           if [ "$GITHUB_EVENT_NAME" != "schedule" ]; then
@@ -256,6 +256,7 @@ jobs:
 
           state run deploy-updates
           state run deploy-installers
+          state run deploy-remote-installer
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -263,7 +264,7 @@ jobs:
       - # === Integration Tests ===
         name: Integration Tests
         id: integration_tests
-        if: github.ref != 'refs/heads/release'
+        if: !contains(fromJSON('["refs/heads/beta", "refs/heads/release", "refs/heads/LTS"]'), github.ref)
         shell: bash
         run: |
           if [ "$GITHUB_EVENT_NAME" != "schedule" ]; then
