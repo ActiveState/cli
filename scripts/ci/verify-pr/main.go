@@ -19,7 +19,7 @@ import (
 
 // cutoff tells the script not to look at PRs before this date.
 // We're assuming here that no release is under development for more than 3 months
-// This saves us having to process all PRs since we started development
+// This saves us having to process all PRs since we started development.
 var cutoff = time.Now().Add(-(3 * 31 * 24 * time.Hour))
 
 /*
