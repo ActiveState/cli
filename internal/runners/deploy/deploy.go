@@ -173,7 +173,7 @@ func (d *Deploy) install(rtTarget setup.Targeter) error {
 	// Todo Remove with https://www.pivotaltracker.com/story/show/178161240
 	// call rti.Environ as this completes the runtime activation cycle:
 	// It ensures that the analytics event for failure / success are sent
-	_, _ = rti.Env(false, false)
+	_, _ = rti.Env(false, false, false)
 
 	if rt.GOOS == "windows" {
 		contents, err := assets.ReadFileBytes("scripts/setenv.bat")
@@ -199,7 +199,7 @@ func (d *Deploy) configure(namespace project.Namespaced, rtTarget setup.Targeter
 		return locale.WrapError(err, "deploy_runtime_err", "Could not initialize runtime")
 	}
 
-	env, err := rti.Env(false, false)
+	env, err := rti.Env(false, false, false)
 	if err != nil {
 		return err
 	}
@@ -351,7 +351,7 @@ func (d *Deploy) report(rtTarget setup.Targeter) error {
 		return locale.WrapError(err, "deploy_runtime_err", "Could not initialize runtime")
 	}
 
-	env, err := rti.Env(false, false)
+	env, err := rti.Env(false, false, false)
 	if err != nil {
 		return err
 	}

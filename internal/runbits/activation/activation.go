@@ -40,7 +40,8 @@ func ActivateAndWait(
 		}
 	}
 
-	ve, err := venv.GetEnv(false, true, projectDir)
+	bashifyPaths := rt.GOOS == "windows" && ss.Shell() != "cmd"
+	ve, err := venv.GetEnv(false, true, bashifyPaths, projectDir)
 	if err != nil {
 		return locale.WrapError(err, "error_could_not_activate_venv", "Could not retrieve environment information.")
 	}

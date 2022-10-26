@@ -2,6 +2,7 @@ package globaldefault
 
 import (
 	"path/filepath"
+	rt "runtime"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -72,7 +73,8 @@ func SetupDefaultActivation(subshell subshell.SubShell, cfg DefaultConfigurer, r
 		return locale.WrapError(err, "err_globaldefault_rtexes", "Could not retrieve runtime executables")
 	}
 
-	env, err := runtime.Env(false, false)
+	bashifyPaths := rt.GOOS == "windows" && subshell.Shell() != "cmd"
+	env, err := runtime.Env(false, false, bashifyPaths)
 	if err != nil {
 		return locale.WrapError(err, "err_globaldefault_rtenv", "Could not construct runtime environment variables")
 	}

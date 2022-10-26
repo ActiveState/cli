@@ -44,7 +44,7 @@ func (e *Env) Run() error {
 		return locale.WrapError(err, "err_export_new_runtime", "Could not initialize runtime")
 	}
 
-	env, err := rt.Env(false, true)
+	env, err := rt.Env(false, true, false)
 	if err != nil {
 		return locale.WrapError(err, "err_env_get_env", "Could not get runtime environment")
 	}
