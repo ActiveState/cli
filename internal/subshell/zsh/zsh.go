@@ -8,6 +8,7 @@ import (
 	"os/exec"
 	"os/user"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/constants"
@@ -58,6 +59,10 @@ func (v *SubShell) WriteUserEnv(cfg sscommon.Configurable, env map[string]string
 	rcFile, err := v.RcFile()
 	if err != nil {
 		return errs.Wrap(err, "RcFile failure")
+	}
+
+	if _, pathExists := env["PATH"]; pathExists && runtime.GOOS == "windows" {
+		env["PATH"] = filepath.ToSlash(env["PATH"])
 	}
 
 	env = sscommon.EscapeEnv(env)

@@ -63,6 +63,10 @@ func (v *SubShell) WriteUserEnv(cfg sscommon.Configurable, env map[string]string
 		return errs.Wrap(err, "RcFile failure")
 	}
 
+	if _, pathExists := env["PATH"]; pathExists && runtime.GOOS == "windows" {
+		env["PATH"] = filepath.ToSlash(env["PATH"])
+	}
+
 	env = sscommon.EscapeEnv(env)
 	return sscommon.WriteRcFile("bashrc_append.sh", rcFile, envType, env)
 }
