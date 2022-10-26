@@ -151,8 +151,9 @@ func (v *SubShell) Activate(proj *project.Project, cfg sscommon.Configurable, ou
 	// available project files require more intensive modification of shell envs
 	if proj != nil {
 		env := sscommon.EscapeEnv(v.env)
+		bashifyPaths := runtime.GOOS == "windows" && v.Shell() != "cmd"
 		var err error
-		if v.rcFile, err = sscommon.SetupProjectRcFile(proj, "bashrc.sh", "", env, out, cfg); err != nil {
+		if v.rcFile, err = sscommon.SetupProjectRcFile(proj, "bashrc.sh", "", env, out, cfg, bashifyPaths); err != nil {
 			return err
 		}
 
