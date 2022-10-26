@@ -22,6 +22,10 @@ type Meta interface {
 }
 
 func DetectBaseRef(ghClient *github.Client, jiraClient *jira.Client, meta Meta) (string, error) {
+	if meta.GetVersion().EQ(wh.VersionMaster) {
+		return wh.MasterBranch, nil
+	}
+
 	// Check if master is safe to fork from
 	finish := PrintStart("Checking if master is safe to fork from for version %s", meta.GetVersion())
 	var ref *string
