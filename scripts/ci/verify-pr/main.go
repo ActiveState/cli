@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"sort"
@@ -9,17 +8,19 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ActiveState/cli/internal/download"
 	"github.com/ActiveState/cli/internal/errs"
 	wc "github.com/ActiveState/cli/scripts/internal/workflow-controllers"
 	wh "github.com/ActiveState/cli/scripts/internal/workflow-helpers"
 	"github.com/andygrunwald/go-jira"
+	"github.com/blang/semver"
 	"github.com/google/go-github/v45/github"
 	"golang.org/x/net/context"
 )
 
 // cutoff tells the script not to look at PRs before this date.
 // We're assuming here that no release is under development for more than 3 months
-// This saves us having to process all PRs since we started development
+// This saves us having to process all PRs since we started development.
 var cutoff = time.Now().Add(-(3 * 31 * 24 * time.Hour))
 
 /*
@@ -63,16 +64,16 @@ func run() error {
 	}
 	finish()
 
-	if err := wh.ValidVersionBranch(pr.GetHead().GetRef()); err == nil {
+	if wh.IsVersionBranch(pr.GetHead().GetRef()) {
 		finish = wc.PrintStart("Verifying Version PR")
 		if err := verifyVersionRC(ghClient, jiraClient, pr); err != nil {
-			return errs.Wrap(err, "Failed to verify RC")
+			return errs.Wrap(err, "Failed to Version PR")
 		}
 		finish()
 	}
-	finish = wc.PrintStart("Verifying Version PR")
-	if err := verifyPR(ghClient, jiraClient, pr); err != nil {
-		return errs.Wrap(err, "Failed to verify RC")
+	finish = wc.PrintStart("Verifying PR")
+	if err := verifyPR(jiraClient, pr); err != nil {
+		return errs.Wrap(err, "Failed to verify PR")
 	}
 	finish()
 
@@ -157,7 +158,7 @@ func verifyVersionRC(ghClient *github.Client, jiraClient *jira.Client, pr *githu
 	return nil
 }
 
-func verifyPR(ghClient *github.Client, jiraClient *jira.Client, pr *github.PullRequest) error {
+func verifyPR(jiraClient *jira.Client, pr *github.PullRequest) error {
 	finish := wc.PrintStart("Parsing Jira issue from PR title")
 	jiraIssueID, err := wh.ExtractJiraIssueID(pr)
 	if err != nil {
@@ -173,25 +174,42 @@ func verifyPR(ghClient *github.Client, jiraClient *jira.Client, pr *github.PullR
 	}
 	finish()
 
-	validateBranch := true
-	finish = wc.PrintStart("Verifying fixVersion")
-	if _, jiraVersion, err := wh.ParseTargetFixVersion(jiraIssue, true); err != nil {
-		if errors.Is(err, wh.ErrVersionIsAny) {
-			wc.Print("fixVersion is '%s', so skipping target branch validation", jiraVersion.Name)
-			validateBranch = false
-		} else {
-			return errs.Wrap(err, "Failed to parse fixVersion")
-		}
+	finish = wc.PrintStart("Fetching Jira Versions")
+	availableVersions, err := wh.FetchAvailableVersions(jiraClient)
+	if err != nil {
+		return errs.Wrap(err, "Failed to fetch JIRA issue")
 	}
 	finish()
 
-	if validateBranch {
-		finish = wc.PrintStart("Validating target branch")
-		if err := wh.ValidVersionBranch(pr.GetBase().GetRef()); err != nil {
-			return errs.Wrap(err, "Invalid target branch, ensure your PR is targeting a versioned branch")
-		}
-		finish()
+	// Grab latest version on release channel to use as cutoff
+	finish = wc.PrintStart("Fetching latest version on release channel")
+	latestReleaseversionBytes, err := download.Get("https://raw.githubusercontent.com/ActiveState/cli/release/version.txt")
+	latestReleaseversion, err := semver.Parse(strings.TrimSpace(string(latestReleaseversionBytes)))
+	if err != nil {
+		return errs.Wrap(err, "failed to parse version blob")
 	}
+	wc.Print("Latest version on release channel: %s", latestReleaseversion)
+	finish()
+
+	finish = wc.PrintStart("Verifying fixVersion")
+	version, _, err := wh.ParseTargetFixVersion(jiraIssue, availableVersions)
+	if err != nil {
+		return errs.Wrap(err, "Failed to parse fixVersion")
+	}
+	finish()
+
+	if !version.EQ(wh.VersionMaster) {
+		// Ensure we have a valid version
+		if version.LTE(latestReleaseversion) {
+			return errs.New("Target fixVersion is either is less than the latest release version")
+		}
+	}
+
+	finish = wc.PrintStart("Validating target branch")
+	if err := wh.ValidVersionBranch(pr.GetBase().GetRef(), version); err != nil {
+		return errs.Wrap(err, "Invalid target branch, ensure your PR is targeting a versioned branch")
+	}
+	finish()
 
 	return nil
 }

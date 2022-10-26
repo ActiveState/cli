@@ -54,18 +54,6 @@ func run() error {
 	}
 	finish()
 
-	finish = wc.PrintStart("Checking if local repo is clean")
-	// We can't use go-git here as it does not respect autcrlf
-	stdout, stderr, err := exeutils.ExecSimpleFromDir(environment.GetRootPathUnsafe(), "git", []string{"status", "-s"}, nil)
-	if err != nil {
-		return errs.Wrap(err, "failed to check local repo status, stderr: %s", stderr)
-	}
-	stdout = strings.TrimSpace(stdout)
-	if stdout != "" {
-		return errs.New("Local repo is not clean, please make sure you have no pending changes. Status received:\n %s", stdout)
-	}
-	finish()
-
 	finish = wc.PrintStart("Verifying input")
 	// Grab input
 	if len(os.Args) < 2 {
@@ -96,7 +84,7 @@ func run() error {
 
 	ref := ""
 	if meta.VersionPR != nil {
-		ref = meta.VersionPR.Head.GetSHA()
+		ref = meta.VersionPR.Head.GetRef()
 	} else {
 		finish := wc.PrintStart("Detecting base ref to fork from")
 		ref, err = wc.DetectBaseRef(ghClient, jiraClient, meta)
@@ -106,8 +94,14 @@ func run() error {
 		finish()
 	}
 
-	finish = wc.PrintStart("Creating branch")
-	stdout, stderr, err = exeutils.ExecSimpleFromDir(environment.GetRootPathUnsafe(), "git", []string{"checkout", ref}, nil)
+	finish = wc.PrintStart("Creating branch: %s from ref: %s", branchName, ref)
+	if os.Getenv("DRYRUN") == "true" {
+		wc.Print("DRY RUN: Skipping")
+		finish()
+		return nil
+	}
+
+	stdout, stderr, err := exeutils.ExecSimpleFromDir(environment.GetRootPathUnsafe(), "git", []string{"checkout", ref}, nil)
 	if err != nil {
 		return errs.Wrap(err, "failed to checkout base ref, stdout:\n%s\nstderr:\n%s", stdout, stderr)
 	}
@@ -135,23 +129,34 @@ func fetchMeta(ghClient *github.Client, jiraClient *jira.Client, jiraIssueID str
 	}
 	finish()
 
+	finish = wc.PrintStart("Fetching Jira Versions")
+	availableVersions, err := wh.FetchAvailableVersions(jiraClient)
+	if err != nil {
+		return Meta{}, errs.Wrap(err, "Failed to fetch JIRA issue")
+	}
+	finish()
+
 	finish = wc.PrintStart("Parsing version")
-	version, jiraVersion, err := wh.ParseTargetFixVersion(jiraIssue, true)
+	version, jiraVersion, err := wh.ParseTargetFixVersion(jiraIssue, availableVersions)
 	if err != nil {
 		return Meta{}, errs.Wrap(err, "failed to parse version")
 	}
 	finish()
 
-	versionPRName := wh.VersionedPRTitle(version)
+	var versionPR *github.PullRequest
+	var versionPRName string
+	if version.NE(wh.VersionMaster) {
+		versionPRName = wh.VersionedPRTitle(version)
 
-	// Retrieve Relevant Fixversion Pr
-	finish = wc.PrintStart("Checking if Version PR with title '%s' exists", versionPRName)
-	versionPR, err := wh.FetchPRByTitle(ghClient, versionPRName)
-	if err != nil {
-		return Meta{}, errs.Wrap(err, "failed to get target PR")
+		// Retrieve Relevant Fixversion Pr
+		finish = wc.PrintStart("Checking if Version PR with title '%s' exists", versionPRName)
+		versionPR, err = wh.FetchPRByTitle(ghClient, versionPRName)
+		if err != nil {
+			return Meta{}, errs.Wrap(err, "failed to get target PR")
+		}
+		wc.Print("Exists: %v", versionPR != nil)
+		finish()
 	}
-	wc.Print("Exists: %v", versionPR != nil)
-	finish()
 
 	return Meta{
 		Version:           version,
