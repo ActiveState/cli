@@ -169,7 +169,7 @@ func ConfigureAvailableShells(cfg sscommon.Configurable, env map[string]string, 
 			isActive = true
 		}
 
-		err := s.WriteUserEnv(cfg, env, sscommon.DefaultID, true, isActive)
+		err := s.WriteUserEnv(cfg, env, identifier, true, isActive)
 		if err != nil {
 			if isActive {
 				return errs.Wrap(err, "Could not configure active shell %s", s.Shell())
