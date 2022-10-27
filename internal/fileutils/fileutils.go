@@ -10,7 +10,6 @@ import (
 	"io/fs"
 	"io/ioutil"
 	"os"
-	"os/user"
 	"path/filepath"
 	"regexp"
 	"runtime"
@@ -831,16 +830,6 @@ func LogPath(path string) error {
 		}, "\n"))
 		return nil
 	})
-}
-
-// HomeDir returns the users homedir
-func HomeDir() (string, error) {
-	usr, err := user.Current()
-	if err != nil {
-		return "", err
-	}
-
-	return usr.HomeDir, nil
 }
 
 // IsDir returns true if the given path is a directory

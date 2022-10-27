@@ -12,7 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/osutils/autostart"
-	"github.com/mitchellh/go-homedir"
+	"github.com/ActiveState/cli/internal/osutils/user"
 )
 
 func (r *Prepare) prepareOS() error {
@@ -62,7 +62,7 @@ func (r *Prepare) prepareOS() error {
 }
 
 func prependHomeDir(path string) (string, error) {
-	homeDir, err := homedir.Dir()
+	homeDir, err := user.HomeDir()
 	if err != nil {
 		return "", errs.Wrap(err, "Could not get home directory")
 	}
