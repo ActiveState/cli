@@ -72,10 +72,10 @@ jobs:
             sudo chmod -R 755 /usr/share/zsh/vendor-completions /usr/share/zsh
             sudo chown -R root:root /usr/share/zsh/vendor-completions /usr/share/zsh
             touch ~/.zshrc
-          elif [ -f /c/msys64/usr/bin/pacman ]; then
+          elif [ -x "$(command -v pacman)" ]; then
             # GitHub Actions runners for Windows have MSYS2's pacman package manager, but msys2 is
             # not on PATH.
-            /c/msys64/usr/bin/pacman -S zsh
+            pacman -S zsh
             echo "/c/msys64/usr/bin" >> $GITHUB_PATH
           fi
 
