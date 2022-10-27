@@ -182,7 +182,7 @@ func (suite *UseIntegrationTestSuite) TestReset() {
 
 	cp = ts.SpawnWithOpts(
 		e2e.WithArgs("use", "reset", "-n"),
-		e2e.AppendEnv(env...),
+		e2e.AppendEnv("SHELL=bash"),
 	)
 	cp.Expect("No global default project to reset")
 	cp.ExpectExitCode(0)
