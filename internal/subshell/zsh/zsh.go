@@ -61,10 +61,6 @@ func (v *SubShell) WriteUserEnv(cfg sscommon.Configurable, env map[string]string
 		return errs.Wrap(err, "RcFile failure")
 	}
 
-	if _, pathExists := env["PATH"]; pathExists && runtime.GOOS == "windows" {
-		env["PATH"] = filepath.ToSlash(env["PATH"])
-	}
-
 	env = sscommon.EscapeEnv(env)
 	return sscommon.WriteRcFile("zshrc_append.sh", rcFile, envType, env)
 }
@@ -153,7 +149,7 @@ func (v *SubShell) Activate(proj *project.Project, cfg sscommon.Configurable, ou
 	// available project files require more intensive modification of shell envs
 	if proj != nil {
 		env := sscommon.EscapeEnv(v.env)
-		bashifyPaths := runtime.GOOS == "windows" && v.Shell() != "cmd"
+		bashifyPaths := runtime.GOOS == "windows"
 		var err error
 		if v.rcFile, err = sscommon.SetupProjectRcFile(proj, "zshrc.sh", "", env, out, cfg, bashifyPaths); err != nil {
 			return err
