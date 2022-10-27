@@ -54,7 +54,8 @@ func Prepare(cfg DefaultConfigurer) error {
 	}
 
 	// Configure available shells
-	err = subshell.ConfigureAvailableShells(cfg, envUpdates, sscommon.DefaultID, true)
+	shell := subshell.New(cfg)
+	err = subshell.ConfigureAvailableShells(shell, cfg, envUpdates, sscommon.DefaultID, true)
 	if err != nil {
 		return locale.WrapError(err, "err_globaldefault_update_env")
 	}
@@ -110,7 +111,8 @@ func ResetDefaultActivation(cfg DefaultConfigurer) (bool, error) {
 	envUpdates := map[string]string{}
 
 	// Configure available shells
-	err := subshell.ConfigureAvailableShells(cfg, envUpdates, sscommon.DefaultID, true)
+	shell := subshell.New(cfg)
+	err := subshell.ConfigureAvailableShells(shell, cfg, envUpdates, sscommon.DefaultID, true)
 	if err != nil {
 		return false, locale.WrapError(err, "err_globaldefault_update_env")
 	}

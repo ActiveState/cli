@@ -436,7 +436,7 @@ func Touch(path string) error {
 
 // TouchFileUnlessExists will attempt to "touch" a given filename if it doesn't already exists
 func TouchFileUnlessExists(path string) error {
-	if FileExists(path) {
+	if TargetExists(path) {
 		return nil
 	}
 	return Touch(path)

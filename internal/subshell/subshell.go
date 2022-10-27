@@ -27,8 +27,6 @@ import (
 
 const ConfigKeyShell = "shell"
 
-var supportedShells []SubShell
-
 // SubShell defines the interface for our virtual environment packages, which should be contained in a sub-directory
 // under the same directory as this file
 type SubShell interface {
@@ -54,7 +52,7 @@ type SubShell interface {
 	SetBinary(string)
 
 	// WriteUserEnv writes the given env map to the users environment
-	WriteUserEnv(sscommon.Configurable, map[string]string, sscommon.RcIdentification, bool, bool) error
+	WriteUserEnv(sscommon.Configurable, map[string]string, sscommon.RcIdentification, bool) error
 
 	// CleanUserEnv removes the environment setting identified
 	CleanUserEnv(sscommon.Configurable, sscommon.RcIdentification, bool) error
@@ -68,6 +66,9 @@ type SubShell interface {
 	// RcFile return the path of the RC file
 	RcFile() (string, error)
 
+	// EnsureRcFile ensures that the RC file exists
+	EnsureRcFile() error
+
 	// SetupShellRcFile writes a script or source-able file that updates the environment variables and sets the prompt
 	SetupShellRcFile(string, map[string]string, *project.Namespaced) error
 
@@ -79,6 +80,9 @@ type SubShell interface {
 
 	// Quote will quote the given string, escaping any characters that need escaping
 	Quote(value string) string
+
+	// IsAvailable returns whether the shell is available on the system
+	IsAvailable() bool
 }
 
 // New returns the subshell relevant to the current process, but does not activate it
@@ -142,38 +146,21 @@ func New(cfg sscommon.Configurable) SubShell {
 	return subs
 }
 
-func availableShells() []SubShell {
-	var shells []SubShell
-	for _, shell := range supportedShells {
-		rcFile, err := shell.RcFile()
+func ConfigureAvailableShells(shell SubShell, cfg sscommon.Configurable, env map[string]string, identifier sscommon.RcIdentification, isAdmin bool) error {
+	// Ensure active shell has RC file
+	if shell.IsActive() {
+		err := shell.EnsureRcFile()
 		if err != nil {
-			logging.Error("Could not determine rc file for shell %s: %v", shell.Shell(), err)
-			continue
+			return errs.Wrap(err, "Could not ensure RC file for active shell")
 		}
-
-		if !fileutils.FileExists(rcFile) {
-			continue
-		}
-
-		shells = append(shells, shell)
 	}
 
-	return shells
-}
-
-func ConfigureAvailableShells(cfg sscommon.Configurable, env map[string]string, identifier sscommon.RcIdentification, isAdmin bool) error {
-	activeShell := New(cfg)
-	for _, s := range availableShells() {
-		isActive := false
-		if s.Shell() == activeShell.Shell() {
-			isActive = true
+	for _, s := range supportedShells {
+		if !s.IsAvailable() {
+			continue
 		}
-
-		err := s.WriteUserEnv(cfg, env, identifier, isAdmin, isActive)
+		err := s.WriteUserEnv(cfg, env, identifier, isAdmin)
 		if err != nil {
-			if isActive {
-				return errs.Wrap(err, "Could not configure active shell %s", s.Shell())
-			}
 			logging.Error("Could not update PATH for shell %s: %v", s.Shell(), err)
 		}
 	}

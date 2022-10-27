@@ -11,12 +11,10 @@ import (
 	"github.com/ActiveState/cli/internal/subshell/zsh"
 )
 
-func init() {
-	supportedShells = []SubShell{
-		&bash.SubShell{},
-		&zsh.SubShell{},
-		&tcsh.SubShell{},
-		&fish.SubShell{},
-		&cmd.SubShell{},
-	}
+var supportedShells = []SubShell{
+	&bash.SubShell{},
+	&zsh.SubShell{},
+	&tcsh.SubShell{},
+	&fish.SubShell{},
+	&cmd.SubShell{},
 }

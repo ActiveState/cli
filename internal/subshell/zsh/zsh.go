@@ -54,16 +54,10 @@ func (v *SubShell) SetBinary(binary string) {
 }
 
 // WriteUserEnv - see subshell.SubShell
-func (v *SubShell) WriteUserEnv(cfg sscommon.Configurable, env map[string]string, envType sscommon.RcIdentification, _ bool, create bool) error {
+func (v *SubShell) WriteUserEnv(cfg sscommon.Configurable, env map[string]string, envType sscommon.RcIdentification, _ bool) error {
 	rcFile, err := v.RcFile()
 	if err != nil {
 		return errs.Wrap(err, "RcFile failure")
-	}
-	if create {
-		err := fileutils.TouchFileUnlessExists(rcFile)
-		if err != nil {
-			return errs.Wrap(err, "Failed to create rc file")
-		}
 	}
 
 	env = sscommon.EscapeEnv(env)
@@ -129,6 +123,15 @@ func (v *SubShell) RcFile() (string, error) {
 	}
 
 	return filepath.Join(homeDir, ".zshrc"), nil
+}
+
+func (v *SubShell) EnsureRcFile() error {
+	rcFile, err := v.RcFile()
+	if err != nil {
+		return errs.Wrap(err, "Could not determine rc file")
+	}
+
+	return fileutils.TouchFileUnlessExists(rcFile)
 }
 
 // SetupShellRcFile - subshell.SubShell
@@ -225,4 +228,13 @@ func (v *SubShell) Run(filename string, args ...string) error {
 // IsActive - see subshell.SubShell
 func (v *SubShell) IsActive() bool {
 	return v.cmd != nil && (v.cmd.ProcessState == nil || !v.cmd.ProcessState.Exited())
+}
+
+func (v *SubShell) IsAvailable() bool {
+	rcFile, err := v.RcFile()
+	if err != nil {
+		logging.Error("Could not determine rcFile: %s", err)
+		return false
+	}
+	return fileutils.FileExists(rcFile)
 }

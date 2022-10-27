@@ -47,7 +47,7 @@ func (v *SubShell) SetBinary(binary string) {
 }
 
 // WriteUserEnv - see subshell.SubShell
-func (v *SubShell) WriteUserEnv(cfg sscommon.Configurable, env map[string]string, envType sscommon.RcIdentification, userScope bool, _ bool) error {
+func (v *SubShell) WriteUserEnv(cfg sscommon.Configurable, env map[string]string, envType sscommon.RcIdentification, userScope bool) error {
 	cmdEnv := NewCmdEnv(userScope)
 
 	// Clean up old entries
@@ -125,6 +125,10 @@ func (v *SubShell) RcFile() (string, error) {
 	return "", locale.NewError("err_cmd_rcile", "cmd does not support RC files")
 }
 
+func (v *SubShell) EnsureRcFile() error {
+	return nil
+}
+
 // SetupShellRcFile - subshell.SubShell
 func (v *SubShell) SetupShellRcFile(targetDir string, env map[string]string, namespace *project.Namespaced) error {
 	env = sscommon.EscapeEnv(env)
@@ -191,4 +195,10 @@ func (v *SubShell) Run(filename string, args ...string) error {
 // IsActive - see subshell.SubShell
 func (v *SubShell) IsActive() bool {
 	return v.cmd != nil && (v.cmd.ProcessState == nil || !v.cmd.ProcessState.Exited())
+}
+
+// TODO: Is there another way to do this on Windows?
+func (v *SubShell) IsAvailable() bool {
+	// cmd is always available on Windows
+	return true
 }

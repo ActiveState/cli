@@ -111,7 +111,8 @@ func (i *Installer) Install() (rerr error) {
 	}
 
 	// Configure available shells
-	err = subshell.ConfigureAvailableShells(i.cfg, map[string]string{"PATH": binDir}, sscommon.InstallID, !isAdmin)
+	shell := subshell.New(i.cfg)
+	err = subshell.ConfigureAvailableShells(shell, i.cfg, map[string]string{"PATH": binDir}, sscommon.InstallID, !isAdmin)
 	if err != nil {
 		return errs.Wrap(err, "Could not configure available shells")
 	}
