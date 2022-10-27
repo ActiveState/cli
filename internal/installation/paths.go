@@ -22,10 +22,14 @@ const (
 )
 
 func DefaultInstallPath() (string, error) {
+	return InstallPathForBranch(constants.BranchName)
+}
+
+func InstallPathForBranch(branch string) (string, error) {
 	if v := os.Getenv(constants.InstallPathOverrideEnvVarName); v != "" {
 		return filepath.Clean(v), nil
 	}
-	return InstallPathForBranch(constants.BranchName)
+	return installPathForBranch(branch)
 }
 
 func InstallRoot(path string) (string, error) {
