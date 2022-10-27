@@ -37,13 +37,12 @@ func (e *HomeDirNotFoundError) Unwrap() error {
 
 // HomeDir returns the user's homedir
 func HomeDir() (string, error) {
+	if dir := os.Getenv(constants.HomeEnvVarName); dir != "" {
+		return dir, nil
+	}
 	dir, err := os.UserHomeDir()
 	if err != nil {
-		var exists bool
-		dir, exists = os.LookupEnv(constants.HomeEnvVarName)
-		if !exists {
-			return "", &HomeDirNotFoundError{err}
-		}
+		return "", &HomeDirNotFoundError{err}
 	}
 	return dir, nil
 }
