@@ -130,14 +130,10 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 
 			// Verify that we don't try to install it again
 			if runtime.GOOS != "windows" {
-				cp = ts.SpawnCmdWithOpts(
-					"bash", e2e.WithArgs(argsPlain...),
-					e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
-				)
+				cp = ts.SpawnCmdWithOpts("bash", e2e.WithArgs(argsPlain...))
 			} else {
 				cp = ts.SpawnCmdWithOpts("powershell.exe", e2e.WithArgs(argsPlain...),
 					e2e.AppendEnv("SHELL="),
-					e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 				)
 			}
 			cp.Expect("already installed")
@@ -157,15 +153,9 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall_NonEmptyTarget() {
 	argsWithActive := append(argsPlain, "-f")
 	var cp *termtest.ConsoleProcess
 	if runtime.GOOS != "windows" {
-		cp = ts.SpawnCmdWithOpts(
-			"bash", e2e.WithArgs(argsWithActive...),
-			e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
-		)
+		cp = ts.SpawnCmdWithOpts("bash", e2e.WithArgs(argsWithActive...))
 	} else {
-		cp = ts.SpawnCmdWithOpts("powershell.exe", e2e.WithArgs(argsWithActive...),
-			e2e.AppendEnv("SHELL="),
-			e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
-		)
+		cp = ts.SpawnCmdWithOpts("powershell.exe", e2e.WithArgs(argsWithActive...), e2e.AppendEnv("SHELL="))
 	}
 	cp.ExpectLongString("Installation path must be an empty directory")
 	cp.ExpectExitCode(1)
@@ -181,15 +171,9 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall_VersionDoesNotExist
 	args = append(args, "-v", "does-not-exist")
 	var cp *termtest.ConsoleProcess
 	if runtime.GOOS != "windows" {
-		cp = ts.SpawnCmdWithOpts(
-			"bash", e2e.WithArgs(args...),
-			e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
-		)
+		cp = ts.SpawnCmdWithOpts("bash", e2e.WithArgs(args...))
 	} else {
-		cp = ts.SpawnCmdWithOpts("powershell.exe", e2e.WithArgs(args...),
-			e2e.AppendEnv("SHELL="),
-			e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
-		)
+		cp = ts.SpawnCmdWithOpts("powershell.exe", e2e.WithArgs(args...), e2e.AppendEnv("SHELL="))
 	}
 	cp.Expect("Could not download")
 	cp.ExpectLongString("does-not-exist")

@@ -31,6 +31,8 @@ flag_state_monochrome_output_description:
   other: Force monochrome text output
 flag_state_output_description:
   other: "Set the output method, possible values: plain, simple, json, editor"
+flag_state_non_interactive_description:
+  other: Run the State Tool without any prompts and accepting all default options
 flag_state_version_description:
   other: Show the version of our state executable
 flag_state_activate_path_description:
@@ -354,7 +356,7 @@ unknown_value:
 total:
   other: Total
 projects_description:
-  other: Manage your projects
+  other: List your projects
 projects_list_description:
   other: List your platform projects
 err_api_not_authenticated:
@@ -723,13 +725,11 @@ warn_move_incompatible_modes:
 warn_move_destination_overwritten:
   other: "Overwriting existing file [NOTICE]{{.V1}}[/RESET] with file [NOTICE]{{.V0}}[/RESET]"
 err_file_not_found_in_path:
-  other: could not find file=[NOTICE]{{.V0}}[/RESET] in path=[NOTICE]{{.V1}}[/RESET]
-
+  other: Could not find file=[NOTICE]{{.V0}}[/RESET] in path=[NOTICE]{{.V1}}[/RESET]
 secrets_err_expand_noproject:
   other: Expanding of variable failed because a project was not passed along. This indicates a problem in the underlying code, and is unlikely to be something an end-user can address.
 developer_err_project_match:
   other: Encountered a situation where the tool is given different project paths. This indicates a bug in our code, please consider reporting it.
-
 err_version_parse:
   other: Could not determine the State Tool version to use to run this command. Please ensure the project field in your activestate.yaml is formatted correctly.
 err_invalid_lock:
@@ -1065,7 +1065,7 @@ language_name_unknown:
 language_unknown_options:
   other: Unknown options
 package_cmd_description:
-  other: Manage packages used in your project
+  other: List packages used in your project
 users_plural:
   other: users
 package_install_cmd_description:
@@ -1363,7 +1363,7 @@ flag_state_clean_uninstall_force_description:
 flag_state_clean_ignore_errors_description:
   other: Does not stop when an error occurs, removing as much as possible
 arg_state_clean_cache_project_description:
-  other: The project to be removed from the local cache. Must be in the format of <org/project>
+  other: The project to be removed from the local cache.
 flag_state_clean_config_force_description:
   other: Run clean config operation without prompts and ignoring any errors stopping running services
 err_uninstall_activated:
@@ -1702,6 +1702,8 @@ activate_default_prompt:
     This will allow you to operate on your project and run executables provided by its runtime without first "activating" it.
 err_no_projectfile:
   other: No activestate.yaml file exists in the current working directory or its parent directories.
+err_project_not_found:
+  other: Could not find project at [NOTICE]{{.V0}}[/RESET]
 err_non_interactive_prompt:
   other: Prompt "{{.V0}}" cannot be resolved in non-interactive mode.
 err_read_projectfile:
@@ -1914,6 +1916,8 @@ err_project_fromenv:
   other: Could not detect an appropriate project to use, please provide a valid path or namespace.
 err_local_project_not_checked_out:
   other: "Cannot find the [ACTIONABLE]{{.V0}}[/RESET] project. Please either check it out using [ACTIONABLE]`state checkout`[/RESET] or run this command again from the project directory."
+err_findproject_notfound:
+  other: "Could not load project [ACTIONABLE]{{.V0}}[/RESET] from path: [ACTIONABLE]{{.V1}}[/RESET]"
 arg_state_shell_namespace_description:
   other: The namespace of the project you wish to start a shell/prompt for, or just the project name if previously used
 err_language_by_commit:
@@ -1976,6 +1980,13 @@ svcctl_wait_timeout:
     Please try running your command again.
 
     If this problem persists please report it on our forums: [ACTIONABLE]{{.V2}}[/RESET]
+svcctl_file_not_found:
+  other: |
+    Could not find the State Tool service executable.
+
+    Please try running your command again.
+
+    If this problem persists please report it on our forums: [ACTIONABLE]{{.V0}}[/RESET]
 err_autostart_app:
   other: Could not create new autostart app
 install_remote_title:
@@ -1984,13 +1995,22 @@ err_already_checked_out:
   other: There is already a project checked out at '[ACTIONABLE]{{.V0}}[/RESET]'.
 use_project_statement:
   other: |
-    Switched to project [ACTIONABLE]{{.V0}}[/RESET] located at [ACTIONABLE]{{.V1}}[/RESET].
+    Switched to project [ACTIONABLE]{{.V0}}[/RESET], located at [ACTIONABLE]{{.V1}}[/RESET].
+    For editors and other tooling use the executables at: [ACTIONABLE]{{.V2}}[/RESET].
+use_show_project_statement:
+  other: |
+    The active project is [ACTIONABLE]{{.V0}}[/RESET], located at [ACTIONABLE]{{.V1}}[/RESET].
     For editors and other tooling use the executables at: [ACTIONABLE]{{.V2}}[/RESET].
 shell_project_statement:
   other: |
-    Opening shell for project [ACTIONABLE]{{.V0}}[/RESET] located at [ACTIONABLE]{{.V1}}[/RESET].
+    Opening shell for project [ACTIONABLE]{{.V0}}[/RESET], located at [ACTIONABLE]{{.V1}}[/RESET].
     For editors and other tooling use the executables at: [ACTIONABLE]{{.V2}}[/RESET].
 checkout_project_statement:
-  other: Checked out project [ACTIONABLE]{{.V0}}[/RESET] at [ACTIONABLE]{{.V1}}[/RESET].
+  other: Checked out project [ACTIONABLE]{{.V0}}[/RESET], located at [ACTIONABLE]{{.V1}}[/RESET].
 export_project_statement:
   other: Exporting env for project [ACTIONABLE]{{.V0}}[/RESET] located at [ACTIONABLE]{{.V1}}[/RESET].
+err_home_not_found:
+  other: |
+    Could not proceed because your HOME environment variable is unset. Please ensure that your HOME environment variable is set. Alternatively if you do not or cannot set this variable you can instead use the ACTIVESTATE_HOME variable.
+
+    This variable is used by the State Tool to determine things like the installation directory, config directory and cache directory.

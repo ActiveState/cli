@@ -5,13 +5,23 @@
 
 ## {{.Group.String}}{{end}}
 
-### {{.NameRecursive}}
+### {{.NameRecursive}} {{ if .Unstable }}(unstable) {{ end }}
 {{.Description}}
 
 **Usage**
 ```text
 {{.NameRecursive}} {{if .Flags}}[flags]{{end}}{{range .Arguments}} <{{ .Name }}>{{end}}
 ```
+
+{{- if .Examples }}
+
+**Examples**
+{{- range .Examples }}
+```text
+{{ . }}
+```
+{{- end }}
+{{- end }}
 
 {{- if .Arguments}}
 

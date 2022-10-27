@@ -13,7 +13,8 @@ import (
 
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/stretchr/testify/assert"
+  "github.com/ActiveState/cli/internal/osutils/user"
+  "github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/thoas/go-funk"
 )
@@ -669,7 +670,7 @@ func TestIsWritableFile(t *testing.T) {
 }
 
 func TestIsWritableDir(t *testing.T) {
-	pathWithPermission, err := HomeDir()
+	pathWithPermission, err := user.HomeDir()
 	if err != nil {
 		t.Error(err)
 	}

@@ -26,7 +26,8 @@ type SvcIntegrationTestSuite struct {
 }
 
 func (suite *SvcIntegrationTestSuite) TestStartStop() {
-	// https://activestatef.atlassian.net/browse/DX-1078
+	// Disable test until we can fix console output on Windows
+	// See issue here: https://activestatef.atlassian.net/browse/DX-1311
 	suite.T().SkipNow()
 	suite.OnlyRunForTags(tagsuite.Service)
 	ts := e2e.New(suite.T(), false)

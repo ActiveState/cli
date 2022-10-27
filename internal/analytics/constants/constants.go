@@ -98,3 +98,9 @@ const ActOfflineInstallerSuccess = "success"
 
 // ActOfflineInstallerAbort is the event action for the offline installer being terminated by the user
 const ActOfflineInstallerAbort = "aborted"
+
+// CatDebug is the event category used for all debug events
+const CatDebug = "debug"
+
+// ActInputError is the event action used for input errors
+const ActInputError = "input-error"

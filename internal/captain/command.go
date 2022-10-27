@@ -104,6 +104,8 @@ type Command struct {
 
 	unstable bool
 
+	examples []string
+
 	out       output.Outputer
 	analytics analytics.Dispatcher
 	cfg       *config.Instance
@@ -284,6 +286,11 @@ func (c *Command) Execute(args []string) error {
 	return setupSensibleErrors(err)
 }
 
+func (c *Command) SetExamples(examples ...string) *Command {
+	c.examples = append(c.examples, examples...)
+	return c
+}
+
 func (c *Command) SetAliases(aliases ...string) {
 	c.cobra.Aliases = aliases
 }
@@ -302,6 +309,14 @@ func (c *Command) SetHidden(value bool) {
 
 func (c *Command) Hidden() bool {
 	return c.cobra.Hidden
+}
+
+func (c *Command) Unstable() bool {
+	return c.unstable
+}
+
+func (c *Command) Examples() []string {
+	return c.examples
 }
 
 func (c *Command) SetDescription(description string) {
@@ -340,6 +355,25 @@ func (c *Command) Description() string {
 
 func (c *Command) Flags() []*Flag {
 	return c.flags
+}
+
+func (c *Command) ActiveFlags() []*Flag {
+	var flags []*Flag
+	flagMapping := map[string]*Flag{}
+	for _, flag := range c.flags {
+		flagMapping[flag.Name] = flag
+	}
+
+	c.cobra.Flags().VisitAll(func(f *pflag.Flag) {
+		if !f.Changed {
+			return
+		}
+		if flag, ok := flagMapping[f.Name]; ok {
+			flags = append(flags, flag)
+		}
+	})
+
+	return flags
 }
 
 func (c *Command) ExecuteFunc() ExecuteFunc {

@@ -21,7 +21,7 @@ github.com/ActiveState/archiver
 # github.com/ActiveState/go-ogle-analytics v0.0.0-20170510030904-9b3f14901527
 ## explicit
 github.com/ActiveState/go-ogle-analytics
-# github.com/ActiveState/termtest v0.7.1
+# github.com/ActiveState/termtest v0.7.2
 ## explicit; go 1.14
 github.com/ActiveState/termtest
 github.com/ActiveState/termtest/internal/osutils
@@ -597,6 +597,9 @@ go.mongodb.org/mongo-driver/bson/bsonrw
 go.mongodb.org/mongo-driver/bson/bsontype
 go.mongodb.org/mongo-driver/bson/primitive
 go.mongodb.org/mongo-driver/x/bsonx/bsoncore
+# go.mozilla.org/pkcs7 v0.0.0-20210826202110-33d05740a352
+## explicit; go 1.11
+go.mozilla.org/pkcs7
 # go.opencensus.io v0.22.4
 ## explicit; go 1.13
 go.opencensus.io

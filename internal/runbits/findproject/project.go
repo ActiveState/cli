@@ -66,20 +66,22 @@ func FromNamespaceLocal(ns *project.Namespaced, cfg projectfile.ConfigGetter, pr
 		return project.FromPath(root)
 	}
 
+	// Get the stale project mapping early as GetProjectMapping will clean stale projects
+	staleProjects := projectfile.GetStaleProjectMapping(cfg)
+
 	matchingProjects := make(map[string][]string)
 	matchingNamespaces := make([]string, 0)
 	for namespace, paths := range projectfile.GetProjectMapping(cfg) {
 		if len(paths) == 0 {
 			continue
 		}
-		var namespaced project.Namespaced
-		err := namespaced.Set(namespace)
+		namespaced, err := project.ParseNamespace(namespace)
 		if err != nil {
 			logging.Debug("Cannot parse namespace: %v") // should not happen since this is stored
 			continue
 		}
-		if (!ns.AllowOmitOwner && strings.ToLower(namespaced.String()) == strings.ToLower(ns.String())) ||
-			(ns.AllowOmitOwner && strings.ToLower(namespaced.Project) == strings.ToLower(ns.Project)) {
+		if !ns.AllowOmitOwner && strings.EqualFold(strings.ToLower(namespaced.String()), strings.ToLower(ns.String())) ||
+			(ns.AllowOmitOwner && strings.EqualFold(strings.ToLower(namespaced.Project), strings.ToLower(ns.Project))) {
 			matchingProjects[namespace] = paths
 			matchingNamespaces = append(matchingNamespaces, namespace)
 		}
@@ -120,6 +122,21 @@ func FromNamespaceLocal(ns *project.Namespaced, cfg projectfile.ConfigGetter, pr
 		}
 
 		return project.FromPath(path)
+	}
+
+	for namespace, paths := range staleProjects {
+		namespaced, err := project.ParseNamespace(namespace)
+		if err != nil {
+			logging.Debug("Cannot parse namespace: %v") // should not happen since this is stored
+			continue
+		}
+
+		if !ns.AllowOmitOwner && strings.EqualFold(strings.ToLower(namespaced.String()), strings.ToLower(ns.String())) ||
+			(ns.AllowOmitOwner && strings.EqualFold(strings.ToLower(namespaced.Project), strings.ToLower(ns.Project))) && len(paths) > 0 {
+			return nil, &LocalProjectDoesNotExist{
+				locale.NewInputError("err_findproject_notfound", "", ns.Project, paths[0]),
+			}
+		}
 	}
 
 	return nil, &LocalProjectDoesNotExist{

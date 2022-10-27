@@ -1,6 +1,7 @@
 package integration
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -43,6 +44,19 @@ func (suite *ShellIntegrationTestSuite) TestShell() {
 		cp.ExpectExitCode(0)
 	}
 
+	// Both Windows and MacOS can run into path comparison issues with symlinks and long paths.
+	projectName := "small-python"
+	if runtime.GOOS == "linux" {
+		projectDir := filepath.Join(ts.Dirs.Work, projectName)
+		// projectDir, err := fileutils.SymlinkTarget(projectDir)
+		// suite.Require().NoError(err)
+		err := os.RemoveAll(projectDir)
+		suite.Require().NoError(err)
+
+		cp = ts.Spawn("shell", projectName)
+		cp.ExpectLongString(fmt.Sprintf("Could not load project %s from path: %s", projectName, projectDir))
+	}
+
 	// Check for project not checked out.
 	args = []string{"Python-3.9", "ActiveState-CLI/Python-3.9"}
 	for _, arg := range args {
@@ -61,10 +75,8 @@ func (suite *ShellIntegrationTestSuite) TestDefaultShell() {
 	defer ts.Close()
 
 	// Checkout.
-	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("checkout", "ActiveState-CLI/small-python"),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
-	)
+	cp := ts.SpawnWithOpts(e2e.WithArgs("checkout", "ActiveState-CLI/small-python"))
+	cp.Expect("Skipping runtime setup")
 	cp.Expect("Checked out project")
 	cp.ExpectExitCode(0)
 
@@ -164,10 +176,8 @@ func (suite *ShellIntegrationTestSuite) TestDefaultNoLongerExists() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("checkout", "ActiveState-CLI/Python3"),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
-	)
+	cp := ts.SpawnWithOpts(e2e.WithArgs("checkout", "ActiveState-CLI/Python3"))
+	cp.Expect("Skipping runtime setup")
 	cp.Expect("Checked out project")
 	cp.ExpectExitCode(0)
 

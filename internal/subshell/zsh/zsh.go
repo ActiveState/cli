@@ -6,7 +6,6 @@ import (
 	"log"
 	"os"
 	"os/exec"
-	"os/user"
 	"path/filepath"
 	"strings"
 
@@ -16,6 +15,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
+	"github.com/ActiveState/cli/internal/osutils/user"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
 	"github.com/ActiveState/cli/pkg/project"
@@ -102,7 +102,7 @@ func (v *SubShell) WriteCompletionScript(completionScript string) error {
 		return errs.Wrap(err, "Could not write completions script")
 	}
 
-	homeDir, err := fileutils.HomeDir()
+	homeDir, err := user.HomeDir()
 	if err != nil {
 		return errs.Wrap(err, "IO failure")
 	}
@@ -117,7 +117,7 @@ func (v *SubShell) WriteCompletionScript(completionScript string) error {
 }
 
 func (v *SubShell) RcFile() (string, error) {
-	homeDir, err := fileutils.HomeDir()
+	homeDir, err := user.HomeDir()
 	if err != nil {
 		return "", errs.Wrap(err, "IO failure")
 	}
@@ -169,11 +169,11 @@ func (v *SubShell) Activate(proj *project.Project, cfg sscommon.Configurable, ou
 		// commands.
 		userzdotdir := os.Getenv("ZDOTDIR")
 		if userzdotdir == "" {
-			u, err := user.Current()
+			homeDir, err := user.HomeDir()
 			if err != nil {
 				log.Println(locale.T("Warning: Could not load home directory for current user"))
 			} else {
-				userzdotdir = u.HomeDir
+				userzdotdir = homeDir
 			}
 		}
 

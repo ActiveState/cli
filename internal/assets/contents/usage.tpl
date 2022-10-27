@@ -11,13 +11,16 @@ Usage:
 Aliases:
     {{.Cobra.NameAndAliases}}
 {{- end}}
-{{- if .Cobra.HasExample}}
+
+{{- if .Cmd.Examples  }}
 
 Examples:
-    {{.Cobra.Example}}
-{{- end}}
+{{- range  .Cmd.Examples }} 
+    {{ . -}}
+{{- end }}
+{{- end }}
 
-{{childCommands .Cmd}}
+{{- childCommands .Cmd}}
 {{- if .Cobra.HasAvailableFlags}}
 
 Flags:

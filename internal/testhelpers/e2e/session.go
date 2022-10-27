@@ -189,6 +189,7 @@ func new(t *testing.T, retainDirs, updatePath bool, extraEnv ...string) *Session
 		constants.E2ETestEnvVarName + "=true",
 		constants.DisableUpdates + "=true",
 		constants.OptinUnstableEnvVarName + "=true",
+		constants.ServiceSockDir + "=" + dirs.SockRoot,
 	}...)
 
 	if updatePath {
@@ -242,16 +243,12 @@ func (s *Session) SpawnCmd(cmdName string, args ...string) *termtest.ConsoleProc
 	return s.SpawnCmdWithOpts(cmdName, WithArgs(args...))
 }
 
-// SpawnInShell runs the given command in a bash or cmd shell
-func (s *Session) SpawnInShell(cmd string, opts ...SpawnOptions) *termtest.ConsoleProcess {
-	exe := "/bin/bash"
-	shellArgs := []string{"-c"}
-	if runtime.GOOS == "windows" {
-		exe = "cmd.exe"
-		shellArgs = []string{"/k"}
+// SpawnShellWithOpts spawns the given shell and options in interactive mode.
+func (s *Session) SpawnShellWithOpts(shell Shell, opts ...SpawnOptions) *termtest.ConsoleProcess {
+	if shell != Cmd {
+		opts = append(opts, AppendEnv("SHELL="+string(shell)))
 	}
-
-	return s.SpawnCmdWithOpts(exe, append(opts, WithArgs(append(shellArgs, cmd)...))...)
+	return s.SpawnCmdWithOpts(string(shell), opts...)
 }
 
 // SpawnCmdWithOpts executes an executable in a pseudo-terminal for integration tests

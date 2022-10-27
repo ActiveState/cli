@@ -55,6 +55,8 @@ type ErrorNoProject struct{ *locale.LocalizedError }
 
 type ErrorNoProjectFromEnv struct{ *locale.LocalizedError }
 
+type ErrorNoDefaultProject struct{ *locale.LocalizedError }
+
 // projectURL comprises all fields of a parsed project URL
 type projectURL struct {
 	Owner      string
@@ -829,8 +831,11 @@ func getProjectFilePathFromDefault() (_ string, rerr error) {
 	}
 
 	path, err := fileutils.FindFileInPath(defaultProjectPath, constants.ConfigFileName)
-	if err != nil && !errors.Is(err, fileutils.ErrorFileNotFound) {
-		return "", errs.Wrap(err, "fileutils.FindFileInPath %s failed", defaultProjectPath)
+	if err != nil {
+		if !errors.Is(err, fileutils.ErrorFileNotFound) {
+			return "", errs.Wrap(err, "fileutils.FindFileInPath %s failed", defaultProjectPath)
+		}
+		return "", &ErrorNoDefaultProject{locale.NewInputError("err_no_default_project", "Could not find default project at: [ACTIONABLE]{{.V0}}[/RESET]", defaultProjectPath)}
 	}
 	return path, nil
 }
@@ -892,7 +897,7 @@ func FromPath(path string) (*Project, error) {
 	// we do not want to use a path provided by state if we're running tests
 	projectFilePath, err := fileutils.FindFileInPath(path, constants.ConfigFileName)
 	if err != nil {
-		return nil, &ErrorNoProject{locale.WrapInputError(err, "err_no_projectfile")}
+		return nil, &ErrorNoProject{locale.WrapInputError(err, "err_project_not_found", "", path)}
 	}
 
 	_, err = ioutil.ReadFile(projectFilePath)
@@ -1200,6 +1205,18 @@ type ConfigGetter interface {
 func GetProjectMapping(config ConfigGetter) map[string][]string {
 	addDeprecatedProjectMappings(config)
 	CleanProjectMapping(config)
+	projects := config.GetStringMapStringSlice(LocalProjectsConfigKey)
+	if projects == nil {
+		return map[string][]string{}
+	}
+	return projects
+}
+
+// GetStaleProjectMapping returns a project mapping from the last time the
+// state tool was run. This mapping could include projects that are no longer
+// on the system.
+func GetStaleProjectMapping(config ConfigGetter) map[string][]string {
+	addDeprecatedProjectMappings(config)
 	projects := config.GetStringMapStringSlice(LocalProjectsConfigKey)
 	if projects == nil {
 		return map[string][]string{}

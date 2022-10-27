@@ -4,17 +4,23 @@ import (
 	"os"
 	"runtime"
 
+	"github.com/ActiveState/cli/internal/analytics"
+	"github.com/ActiveState/cli/internal/analytics/constants"
+	"github.com/ActiveState/cli/internal/analytics/dimensions"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/instanceid"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
+	"github.com/ActiveState/cli/internal/rtutils/p"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
 	"github.com/ActiveState/cli/pkg/platform/runtime/store"
+	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 )
 
 type Params struct {
@@ -23,19 +29,21 @@ type Params struct {
 }
 
 type Uninstall struct {
-	output   output.Outputer
-	subshell subshell.SubShell
-	cfg      *config.Instance
+	output    output.Outputer
+	subshell  subshell.SubShell
+	cfg       *config.Instance
+	analytics analytics.Dispatcher
 }
 
 type primeable interface {
 	primer.Outputer
 	primer.Subsheller
 	primer.Configurer
+	primer.Analyticer
 }
 
 func NewDeployUninstall(prime primeable) *Uninstall {
-	return &Uninstall{prime.Output(), prime.Subshell(), prime.Config()}
+	return &Uninstall{prime.Output(), prime.Subshell(), prime.Config(), prime.Analytics()}
 }
 
 func (u *Uninstall) Run(params *Params) error {
@@ -66,7 +74,8 @@ func (u *Uninstall) Run(params *Params) error {
 	}
 
 	logging.Debug("Attempting to uninstall deployment at %s", path)
-	if !store.New(path).HasMarker() {
+	store := store.New(path)
+	if !store.HasMarker() {
 		return errs.AddTips(
 			locale.NewError("err_deploy_uninstall_not_deployed", "There is no deployed runtime at '{{.V0}}' to uninstall.", path),
 			locale.Tl("err_deploy_uninstall_not_deployed_tip", "Either change the current directory to a deployment or supply '--path <path>' arguments."))
@@ -78,6 +87,8 @@ func (u *Uninstall) Run(params *Params) error {
 			"Cannot remove deployment in current working directory. Please cd elsewhere and run this command again with the '--path' flag.")
 	}
 
+	namespace, commitID := sourceAnalyticsInformation(store)
+
 	err := u.subshell.CleanUserEnv(u.cfg, sscommon.DeployID, params.UserScope)
 	if err != nil {
 		return locale.WrapError(err, "err_deploy_uninstall_env", "Failed to remove deploy directory from PATH")
@@ -88,7 +99,28 @@ func (u *Uninstall) Run(params *Params) error {
 		return locale.WrapError(err, "err_deploy_uninstall", "Unable to remove deployed runtime at '{{.V0}}'", path)
 	}
 
+	u.analytics.Event(constants.CatRuntimeUsage, constants.ActRuntimeDelete, &dimensions.Values{
+		Trigger:          p.StrP(target.TriggerDeploy.String()),
+		CommitID:         p.StrP(commitID),
+		ProjectNameSpace: p.StrP(namespace),
+		InstanceID:       p.StrP(instanceid.ID()),
+	})
+
 	u.output.Notice(locale.T("deploy_uninstall_success"))
 
 	return nil
+}
+
+func sourceAnalyticsInformation(store *store.Store) (string, string) {
+	namespace, err := store.Namespace()
+	if err != nil {
+		logging.Error("Could not read namespace from marker file: %v", err)
+	}
+
+	commitID, err := store.CommitID()
+	if err != nil {
+		logging.Error("Could not read commit ID from marker file: %v", err)
+	}
+
+	return namespace, commitID
 }

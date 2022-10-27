@@ -42,6 +42,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup/implementations/camel"
 	"github.com/ActiveState/cli/pkg/platform/runtime/store"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
+	"github.com/ActiveState/cli/pkg/platform/runtime/validate"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/faiface/mainthread"
 	"github.com/gammazero/workerpool"
@@ -184,7 +185,7 @@ func (s *Setup) Update() error {
 	}
 
 	// Mark installation as completed
-	if err := s.store.MarkInstallationComplete(s.target.CommitUUID()); err != nil {
+	if err := s.store.MarkInstallationComplete(s.target.CommitUUID(), fmt.Sprintf("%s/%s", s.target.Owner(), s.target.Name())); err != nil {
 		return errs.Wrap(err, "Could not mark install as complete.")
 	}
 
@@ -596,25 +597,7 @@ func (s *Setup) downloadArtifactWithProgress(unsignedURI string, targetFile stri
 // verifyArtifact verifies the checksum of the downloaded artifact matches the checksum given by the
 // platform, and returns an error if the verification fails.
 func (s *Setup) verifyArtifact(archivePath string, a artifact.ArtifactDownload) error {
-	if a.Checksum != "" {
-		logging.Debug("Validating checksum for %s", archivePath)
-	} else {
-		logging.Debug("Skipping checksum validation for %s because the Platform did not provide a checksum to validate against.")
-		return nil
-	}
-
-	checksum, err := fileutils.Sha256Hash(archivePath)
-	if err != nil {
-		return errs.Wrap(err, "Failed to compute checksum for "+a.ArtifactID.String())
-	}
-
-	if checksum != a.Checksum {
-		logging.Debug("Checksum validation failed. Expected '%s', but was '%s'", a.Checksum, checksum)
-		// Note: the artifact name will be reported higher up the chain
-		return locale.WrapError(err, "artifact_checksum_failed", "Checksum validation failed")
-	}
-
-	return nil
+	return validate.Checksum(archivePath, a.Checksum)
 }
 
 // downloadArtifact downloads an artifact and returns the local path to that artifact's archive.
