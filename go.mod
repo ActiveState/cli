@@ -45,7 +45,6 @@ require (
 	github.com/machinebox/graphql v0.2.2
 	github.com/mash/go-tempfile-suffix v0.0.0-20150731093933-48f0f8a3a5ab
 	github.com/mattn/go-runewidth v0.0.13
-	github.com/mitchellh/go-homedir v1.1.0
 	github.com/nicksnyder/go-i18n v1.10.0
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/phayes/permbits v0.0.0-20190108233746-1efae4548023
@@ -137,6 +136,7 @@ require (
 	github.com/mattn/go-isatty v0.0.13 // indirect
 	github.com/mattn/go-sqlite3 v1.14.7 // indirect
 	github.com/mgutz/ansi v0.0.0-20200706080929-d51e80ef957d // indirect
+	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/mitchellh/mapstructure v1.4.1 // indirect
 	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646 // indirect
 	github.com/nwaples/rardecode v0.0.0-20171029023500-e06696f847ae // indirect
