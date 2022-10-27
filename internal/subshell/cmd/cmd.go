@@ -4,6 +4,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
@@ -197,8 +198,6 @@ func (v *SubShell) IsActive() bool {
 	return v.cmd != nil && (v.cmd.ProcessState == nil || !v.cmd.ProcessState.Exited())
 }
 
-// TODO: Is there another way to do this on Windows?
 func (v *SubShell) IsAvailable() bool {
-	// cmd is always available on Windows
-	return true
+	return runtime.GOOS == "windows"
 }
