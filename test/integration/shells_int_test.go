@@ -66,7 +66,6 @@ func (suite *ShellsIntegrationTestSuite) TestShells() {
 			}
 
 			// Verify the runtime is functioning properly.
-			cp.WaitForInput()
 			cp.SendLine("python3 --version")
 			cp.Expect("Python 3.10")
 
