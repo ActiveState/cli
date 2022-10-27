@@ -134,10 +134,8 @@ func (suite *UseIntegrationTestSuite) TestReset() {
 		zsh := &zsh.SubShell{}
 		zshRcFile, err = zsh.RcFile()
 		suite.NoError(err)
-		if !fileutils.FileExists(zshRcFile) {
-			err = fileutils.Touch(zshRcFile)
-			suite.NoError(err)
-		}
+		err = fileutils.TouchFileUnlessExists(zshRcFile)
+		suite.NoError(err)
 	}
 
 	cp = ts.SpawnWithOpts(
