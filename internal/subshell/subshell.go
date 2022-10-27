@@ -66,7 +66,7 @@ type SubShell interface {
 	WriteCompletionScript(string) error
 
 	// RcFile return the path of the RC file
-	RcFile(bool) (string, error)
+	RcFile() (string, error)
 
 	// SetupShellRcFile writes a script or source-able file that updates the environment variables and sets the prompt
 	SetupShellRcFile(string, map[string]string, *project.Namespaced) error
@@ -145,7 +145,7 @@ func New(cfg sscommon.Configurable) SubShell {
 func availableShells() []SubShell {
 	var shells []SubShell
 	for _, shell := range supportedShells {
-		rcFile, err := shell.RcFile(false)
+		rcFile, err := shell.RcFile()
 		if err != nil {
 			logging.Error("Could not determine rc file for shell %s: %v", shell.Shell(), err)
 			continue
@@ -169,7 +169,7 @@ func ConfigureAvailableShells(cfg sscommon.Configurable, env map[string]string, 
 			isActive = true
 		}
 
-		err := s.WriteUserEnv(cfg, env, identifier, true, isActive)
+		err := s.WriteUserEnv(cfg, env, identifier, isAdmin, isActive)
 		if err != nil {
 			if isActive {
 				return errs.Wrap(err, "Could not configure active shell %s", s.Shell())

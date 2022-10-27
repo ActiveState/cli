@@ -58,9 +58,15 @@ func (v *SubShell) SetBinary(binary string) {
 
 // WriteUserEnv - see subshell.SubShell
 func (v *SubShell) WriteUserEnv(cfg sscommon.Configurable, env map[string]string, envType sscommon.RcIdentification, _ bool, create bool) error {
-	rcFile, err := v.RcFile(create)
+	rcFile, err := v.RcFile()
 	if err != nil {
 		return errs.Wrap(err, "RcFile failure")
+	}
+	if create {
+		err := fileutils.TouchFileUnlessExists(rcFile)
+		if err != nil {
+			return errs.Wrap(err, "Failed to create rc file")
+		}
 	}
 
 	env = sscommon.EscapeEnv(env)
@@ -68,7 +74,7 @@ func (v *SubShell) WriteUserEnv(cfg sscommon.Configurable, env map[string]string
 }
 
 func (v *SubShell) CleanUserEnv(cfg sscommon.Configurable, envType sscommon.RcIdentification, _ bool) error {
-	rcFile, err := v.RcFile(false)
+	rcFile, err := v.RcFile()
 	if err != nil {
 		return errs.Wrap(err, "RcFile-failure")
 	}
@@ -81,7 +87,7 @@ func (v *SubShell) CleanUserEnv(cfg sscommon.Configurable, envType sscommon.RcId
 }
 
 func (v *SubShell) RemoveLegacyInstallPath(cfg sscommon.Configurable) error {
-	rcFile, err := v.RcFile(false)
+	rcFile, err := v.RcFile()
 	if err != nil {
 		return errs.Wrap(err, "RcFile-failure")
 	}
@@ -105,22 +111,13 @@ func (v *SubShell) WriteCompletionScript(completionScript string) error {
 	return nil
 }
 
-func (v *SubShell) RcFile(create bool) (string, error) {
+func (v *SubShell) RcFile() (string, error) {
 	homeDir, err := fileutils.HomeDir()
 	if err != nil {
 		return "", errs.Wrap(err, "IO failure")
 	}
 
-	rcFilePath := filepath.Join(homeDir, rcFileName)
-	// Ensure the .bashrc file exists. On some platforms it is not created by default
-	if !fileutils.TargetExists(rcFilePath) && create {
-		err = fileutils.Touch(rcFilePath)
-		if err != nil {
-			return "", errs.Wrap(err, "Failed to create RCFile at %s", rcFilePath)
-		}
-	}
-
-	return rcFilePath, nil
+	return filepath.Join(homeDir, rcFileName), nil
 }
 
 // SetupShellRcFile - subshell.SubShell

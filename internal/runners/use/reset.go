@@ -9,14 +9,12 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/prompt"
-	"github.com/ActiveState/cli/internal/subshell"
 )
 
 type Reset struct {
-	prompt   prompt.Prompter
-	out      output.Outputer
-	config   *config.Instance
-	subshell subshell.SubShell
+	prompt prompt.Prompter
+	out    output.Outputer
+	config *config.Instance
 }
 
 type ResetParams struct {
@@ -28,7 +26,6 @@ func NewReset(prime primeable) *Reset {
 		prime.Prompt(),
 		prime.Output(),
 		prime.Config(),
-		prime.Subshell(),
 	}
 }
 
@@ -45,7 +42,7 @@ func (u *Reset) Run(params *ResetParams) error {
 		return locale.NewInputError("err_reset_aborted", "Reset aborted by user")
 	}
 
-	reset, err := globaldefault.ResetDefaultActivation(u.subshell, u.config)
+	reset, err := globaldefault.ResetDefaultActivation(u.config)
 	if err != nil {
 		return locale.WrapError(err, "err_use_reset", "Could not reset your global default project.")
 	} else if !reset {

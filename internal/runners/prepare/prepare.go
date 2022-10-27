@@ -81,7 +81,7 @@ func (r *Prepare) resetExecutors() error {
 		return errs.Wrap(err, "Could not initialize runtime for global default project.")
 	}
 
-	if err := globaldefault.SetupDefaultActivation(r.subshell, r.cfg, run, proj); err != nil {
+	if err := globaldefault.SetupDefaultActivation(r.cfg, run, proj); err != nil {
 		return errs.Wrap(err, "Failed to rewrite the default executors.")
 	}
 
@@ -92,7 +92,7 @@ func (r *Prepare) resetExecutors() error {
 func (r *Prepare) Run(cmd *captain.Command) error {
 	logging.Debug("ExecutePrepare")
 
-	if err := globaldefault.Prepare(r.cfg, r.subshell); err != nil {
+	if err := globaldefault.Prepare(r.cfg); err != nil {
 		msgLocale := fmt.Sprintf("prepare_instructions_%s", runtime.GOOS)
 		if runtime.GOOS != "linux" {
 			return locale.WrapError(err, msgLocale, globaldefault.BinDir())

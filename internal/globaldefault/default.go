@@ -28,7 +28,7 @@ func BinDir() string {
 	return storage.GlobalBinDir()
 }
 
-func Prepare(cfg DefaultConfigurer, shell subshell.SubShell) error {
+func Prepare(cfg DefaultConfigurer) error {
 	logging.Debug("Preparing globaldefault")
 	binDir := BinDir()
 
@@ -63,9 +63,9 @@ func Prepare(cfg DefaultConfigurer, shell subshell.SubShell) error {
 }
 
 // SetupDefaultActivation sets symlinks in the global bin directory to the currently activated runtime
-func SetupDefaultActivation(subshell subshell.SubShell, cfg DefaultConfigurer, runtime *runtime.Runtime, proj *project.Project) error {
+func SetupDefaultActivation(cfg DefaultConfigurer, runtime *runtime.Runtime, proj *project.Project) error {
 	logging.Debug("Setting up globaldefault")
-	if err := Prepare(cfg, subshell); err != nil {
+	if err := Prepare(cfg); err != nil {
 		return locale.WrapError(err, "err_globaldefault_prepare", "Could not prepare environment.")
 	}
 
@@ -93,7 +93,7 @@ func SetupDefaultActivation(subshell subshell.SubShell, cfg DefaultConfigurer, r
 	return nil
 }
 
-func ResetDefaultActivation(shell subshell.SubShell, cfg DefaultConfigurer) (bool, error) {
+func ResetDefaultActivation(cfg DefaultConfigurer) (bool, error) {
 	logging.Debug("Resetting globaldefault")
 
 	projectDir := cfg.GetString(constants.GlobalDefaultPrefname)

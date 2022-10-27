@@ -128,8 +128,12 @@ func (suite *UseIntegrationTestSuite) TestReset() {
 	cp.ExpectExitCode(0)
 
 	zsh := &zsh.SubShell{}
-	zshRcFile, err := zsh.RcFile(true)
+	zshRcFile, err := zsh.RcFile()
 	suite.NoError(err)
+	if !fileutils.FileExists(zshRcFile) {
+		err = fileutils.Touch(zshRcFile)
+		suite.NoError(err)
+	}
 
 	cp = ts.SpawnWithOpts(
 		e2e.WithArgs("use", "ActiveState-CLI/Python3"),
@@ -143,7 +147,7 @@ func (suite *UseIntegrationTestSuite) TestReset() {
 
 	cfg, err := config.New()
 	suite.NoError(err)
-	rcfile, err := subshell.New(cfg).RcFile(false)
+	rcfile, err := subshell.New(cfg).RcFile()
 	if runtime.GOOS != "windows" {
 		suite.NoError(err)
 		suite.Contains(string(fileutils.ReadFileUnsafe(rcfile)), ts.Dirs.DefaultBin, "PATH does not have default project in it")

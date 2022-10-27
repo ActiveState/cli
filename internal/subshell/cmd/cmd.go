@@ -121,7 +121,7 @@ func (v *SubShell) WriteCompletionScript(completionScript string) error {
 	return locale.NewError("err_writecompletions_notsupported", "{{.V0}} does not support completions.", v.Shell())
 }
 
-func (v *SubShell) RcFile(_ bool) (string, error) {
+func (v *SubShell) RcFile() (string, error) {
 	return "", locale.NewError("err_cmd_rcile", "cmd does not support RC files")
 }
 
