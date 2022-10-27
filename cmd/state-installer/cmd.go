@@ -204,7 +204,7 @@ func main() {
 
 		exitCode, err = errors.Unwrap(err)
 		an.EventWithLabel(AnalyticsFunnelCat, "fail", err.Error())
-		if !errs.IsSilent(err) {
+		if err != nil {
 			out.Error(err)
 		}
 	} else {

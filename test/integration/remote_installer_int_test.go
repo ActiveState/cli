@@ -64,7 +64,7 @@ func (suite *RemoteInstallIntegrationTestSuite) TestInstall() {
 			cp.Expect("Terms of Service")
 			cp.SendLine("y")
 			cp.Expect("Installing")
-			cp.Expect("Installation complete")
+			cp.Expect("Installation Complete")
 			cp.Expect("Press ENTER to exit")
 			cp.SendLine("")
 			cp.ExpectExitCode(0)
