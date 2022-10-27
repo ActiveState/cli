@@ -127,12 +127,17 @@ func (suite *UseIntegrationTestSuite) TestReset() {
 	cp.Expect("Checked out project")
 	cp.ExpectExitCode(0)
 
-	zsh := &zsh.SubShell{}
-	zshRcFile, err := zsh.RcFile()
-	suite.NoError(err)
-	if !fileutils.FileExists(zshRcFile) {
-		err = fileutils.Touch(zshRcFile)
+	// Create a zsh RC file to ensure that the path is updated for both bash and zsh.
+	var zshRcFile string
+	var err error
+	if runtime.GOOS != "windows" {
+		zsh := &zsh.SubShell{}
+		zshRcFile, err = zsh.RcFile()
 		suite.NoError(err)
+		if !fileutils.FileExists(zshRcFile) {
+			err = fileutils.Touch(zshRcFile)
+			suite.NoError(err)
+		}
 	}
 
 	cp = ts.SpawnWithOpts(
