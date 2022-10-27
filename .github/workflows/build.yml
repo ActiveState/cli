@@ -72,9 +72,6 @@ jobs:
             sudo chmod -R 755 /usr/share/zsh/vendor-completions /usr/share/zsh
             sudo chown -R root:root /usr/share/zsh/vendor-completions /usr/share/zsh
             touch ~/.zshrc
-          elif [ -x "$(command -v pacman)" ]; then
-            # GitHub Actions runners for Windows have MSYS2's pacman package manager.
-            pacman -S zsh
           fi
 
           printenv
