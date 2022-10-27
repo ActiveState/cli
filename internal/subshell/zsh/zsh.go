@@ -8,7 +8,6 @@ import (
 	"os/exec"
 	"os/user"
 	"path/filepath"
-	"runtime"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/constants"
