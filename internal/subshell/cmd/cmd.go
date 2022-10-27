@@ -127,6 +127,7 @@ func (v *SubShell) RcFile() (string, error) {
 }
 
 func (v *SubShell) EnsureRcFile() error {
+	// Windows does not use RC files
 	return nil
 }
 
