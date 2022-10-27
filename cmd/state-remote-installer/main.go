@@ -198,7 +198,7 @@ func execute(out output.Outputer, prompt prompt.Prompter, cfg *config.Instance, 
 		return errs.Wrap(err, "Could not run installer")
 	}
 
-	out.Print(locale.Tl("remote_install_exit_prompt", "Installation complete. Press enter to exit."))
+	out.Print(locale.Tl("remote_install_exit_prompt", "Press ENTER to exit."))
 	fmt.Scanln(p.StrP("")) // Wait for input from user
 
 	return nil
