@@ -27,7 +27,7 @@ func (suite *ShellsIntegrationTestSuite) TestShells() {
 	case "darwin":
 		shells = []e2e.Shell{e2e.Bash, e2e.Fish, e2e.Zsh, e2e.Tcsh}
 	case "windows":
-		shells = []e2e.Shell{e2e.Bash, e2e.Cmd, e2e.Zsh}
+		shells = []e2e.Shell{e2e.Bash, e2e.Cmd}
 	}
 
 	// Checkout the first instance. It doesn't matter which shell is used.
@@ -91,6 +91,60 @@ func (suite *ShellsIntegrationTestSuite) TestShells() {
 			cp.ExpectExitCode(0)
 		})
 	}
+}
+
+func (suite *ShellsIntegrationTestSuite) TestGitBashOnWindows() {
+	suite.OnlyRunForTags(tagsuite.Critical, tagsuite.Shell)
+	if runtime.GOOS != "windows" {
+		suite.T().Skip("Testing with Git Bash on Windows only")
+	}
+
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	// Run the checkout in Bash.
+	cp := ts.SpawnShellWithOpts(e2e.Bash)
+	cp.SendLine(e2e.QuoteCommand(e2e.Bash, ts.ExecutablePath(), "checkout", "ActiveState-CLI/small-python"))
+	cp.Expect("Checked out project")
+	cp.SendLine("exit")
+	cp.ExpectExitCode(0)
+
+	// Run `state shell` to start a shell for the project.
+	cp = ts.SpawnShellWithOpts(e2e.Bash, e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"))
+	cp.SendLine(e2e.QuoteCommand(e2e.Bash, ts.ExecutablePath(), "shell", "small-python"))
+	cp.Expect("Activated")
+	cp.Expect("[ActiveState-CLI/small-python]")
+
+	// Verify the runtime is functioning properly.
+	cp.WaitForInput()
+	cp.SendLine("python3 --version")
+	cp.Expect("Python 3.10")
+
+	// Verify the expected shell is running.
+	cp.SendLine("echo $0")
+	cp.Expect(string(e2e.Bash))
+
+	// Verify exiting the shell works.
+	cp.SendLine("exit")
+	cp.Expect("Deactivated")
+
+	// Exit the spawned shell.
+	cp.SendLine("exit")
+	cp.ExpectExitCode(0)
+
+	// Run another checkout in a separate directory.
+	cp = ts.SpawnShellWithOpts(e2e.Bash)
+	cp.SendLine(e2e.QuoteCommand(e2e.Bash, ts.ExecutablePath(), "checkout", "ActiveState-CLI/small-python", "small-python2"))
+	cp.Expect("Checked out project")
+	cp.SendLine("exit")
+	cp.ExpectExitCode(0)
+
+	// Git Bash on Windows uses MinTTY, which is not recognized as an interactive terminal by
+	// interactive command line programs like us or Python, so verify the user was notified of this.
+	cp = ts.SpawnShellWithOpts(e2e.Bash, e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"))
+	cp.SendLine(e2e.QuoteCommand(e2e.Bash, ts.ExecutablePath(), "shell", "small-python"))
+	cp.Expect("non-interactive terminal")
+	cp.ExpectExitCode(1)
 }
 
 func TestShellsIntegrationTestSuite(t *testing.T) {
