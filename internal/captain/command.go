@@ -176,7 +176,7 @@ func NewCommand(name, title, description string, prime primer, flags []*Flag, ar
 	cmd.cobra.SetFlagErrorFunc(func(c *cobra.Command, err error) error {
 		if cmd.shouldWarnUnstable() {
 			if !condition.OptInUnstable(cmd.cfg) {
-				cmd.out.Notice(locale.Tr("unstable_command_warning", cmd.Name()))
+				cmd.out.Notice(locale.Tr("unstable_command_warning"))
 				return nil
 			}
 			cmd.outputTitleIfAny()
@@ -624,7 +624,7 @@ func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
 	}
 
 	if c.shouldWarnUnstable() && !condition.OptInUnstable(c.cfg) {
-		c.out.Notice(locale.Tr("unstable_command_warning", c.Name()))
+		c.out.Notice(locale.Tr("unstable_command_warning"))
 		return nil
 	}
 
