@@ -11,23 +11,26 @@ import (
 )
 
 func TestUserHome(t *testing.T) {
-	// Fetch current home directory.
 	osHomeDir, err := os.UserHomeDir()
 	require.NoError(t, err)
 
-	// Verify user.HomeDir() returns the current home directory.
 	userHomeDir, err := HomeDir()
 	require.NoError(t, err)
 	assert.Equal(t, userHomeDir, osHomeDir)
+}
 
-	// Verify ACTIVESTATE_HOME overrides current home directory.
+func TestActiveStateHome(t *testing.T) {
 	os.Setenv(constants.HomeEnvVarName, "override")
-	userHomeDir, err = HomeDir()
+	defer func() { os.Unsetenv(constants.HomeEnvVarName) }()
+	userHomeDir, err := HomeDir()
 	require.NoError(t, err)
 	assert.Equal(t, userHomeDir, "override")
-	os.Unsetenv(constants.HomeEnvVarName)
+}
 
-	// Verify lack of HOME and ACTIVESTATE_HOME shows nice error message.
+func TestNoHome(t *testing.T) {
+	osHomeDir, err := os.UserHomeDir()
+	require.NoError(t, err)
+
 	if runtime.GOOS != "windows" {
 		os.Unsetenv("HOME")
 		defer func() { os.Setenv("HOME", osHomeDir) }()
@@ -35,7 +38,7 @@ func TestUserHome(t *testing.T) {
 		os.Unsetenv("USERPROFILE")
 		defer func() { os.Setenv("USERPROFILE", osHomeDir) }()
 	}
-	userHomeDir, err = HomeDir()
+	_, err = HomeDir()
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "HOME environment variable is unset")
 }
