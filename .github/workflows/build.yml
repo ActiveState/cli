@@ -75,7 +75,7 @@ jobs:
           elif [ -f /c/msys64/usr/bin/pacman ]; then
             # GitHub Actions runners for Windows have MSYS2's pacman package manager, but msys2 is
             # not on PATH.
-            export PATH=/c/msys64/usr/bin:/c/msys64/mingw64/bin:$PATH
+            export PATH=/c/msys64/usr/bin:$PATH
             pacman -S zsh
             echo "/c/msys64/usr/bin" >> $GITHUB_PATH
           fi
