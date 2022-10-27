@@ -122,14 +122,9 @@ func (suite *UseIntegrationTestSuite) TestReset() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	env := []string{
-		"ACTIVESTATE_CLI_DISABLE_RUNTIME=false",
-		"SHELL=bash",
-	}
-
 	cp := ts.SpawnWithOpts(
 		e2e.WithArgs("checkout", "ActiveState-CLI/Python3"),
-		e2e.AppendEnv(env...),
+		e2e.AppendEnv("SHELL=bash"),
 	)
 	cp.Expect("Skipping runtime setup")
 	cp.Expect("Checked out project")
@@ -148,7 +143,8 @@ func (suite *UseIntegrationTestSuite) TestReset() {
 
 	cp = ts.SpawnWithOpts(
 		e2e.WithArgs("use", "ActiveState-CLI/Python3"),
-		e2e.AppendEnv(env...),
+		e2e.AppendEnv("SHELL=bash"),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cp.Expect("Switched to project")
 	cp.ExpectExitCode(0)
@@ -167,7 +163,7 @@ func (suite *UseIntegrationTestSuite) TestReset() {
 
 	cp = ts.SpawnWithOpts(
 		e2e.WithArgs("use", "reset"),
-		e2e.AppendEnv(env...),
+		e2e.AppendEnv("SHELL=bash"),
 	)
 	cp.Expect("Continue?")
 	cp.SendLine("n")
@@ -176,7 +172,7 @@ func (suite *UseIntegrationTestSuite) TestReset() {
 
 	cp = ts.SpawnWithOpts(
 		e2e.WithArgs("use", "reset", "--non-interactive"),
-		e2e.AppendEnv(env...),
+		e2e.AppendEnv("SHELL=bash"),
 	)
 	cp.Expect("Reset default project runtime")
 	cp.Expect("Note you may need to")
