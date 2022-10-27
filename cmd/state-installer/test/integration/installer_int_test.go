@@ -14,6 +14,7 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/osutils"
+	"github.com/ActiveState/cli/internal/osutils/user"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/ActiveState/cli/pkg/sysinfo"
@@ -158,7 +159,7 @@ func (suite *InstallerIntegrationTestSuite) TestInstallErrorTips() {
 func (suite *InstallerIntegrationTestSuite) AssertConfig(ts *e2e.Session) {
 	if runtime.GOOS != "windows" {
 		// Test bashrc
-		homeDir, err := os.UserHomeDir()
+		homeDir, err := user.HomeDir()
 		suite.Require().NoError(err)
 
 		fname := ".bashrc"

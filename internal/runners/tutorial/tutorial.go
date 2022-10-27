@@ -13,6 +13,7 @@ import (
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/osutils/user"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runbits"
@@ -85,7 +86,7 @@ func (t *Tutorial) RunNewProject(params NewProjectParams) error {
 	}
 
 	// Prompt for project dir
-	homeDir, _ := fileutils.HomeDir()
+	homeDir, _ := user.HomeDir()
 	dir, err := t.prompt.Input("", locale.Tl(
 		"tutorial_prompt_projectdir",
 		"Where would you like your project directory to be mapped? This is usually the root of your repository, or the place where you have your project dotfiles."), &homeDir)

@@ -1,23 +1,22 @@
 package installation
 
 import (
-	"os/user"
 	"path/filepath"
 
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/mitchellh/go-homedir"
+	"github.com/ActiveState/cli/internal/osutils/user"
 )
 
 func InstallPathForBranch(branch string) (string, error) {
-	usr, err := user.Current()
+	home, err := user.HomeDir()
 	if err != nil {
-		return "", errs.Wrap(err, "Could not access info on current user")
+		return "", errs.Wrap(err, "Could not get home directory")
 	}
-	return filepath.Join(usr.HomeDir, ".local", "ActiveState", "StateTool", branch), nil
+	return filepath.Join(home, ".local", "ActiveState", "StateTool", branch), nil
 }
 
 func defaultSystemInstallPath() (string, error) {
-	home, err := homedir.Dir()
+	home, err := user.HomeDir()
 	if err != nil {
 		return "", errs.Wrap(err, "Could not get home directory")
 	}

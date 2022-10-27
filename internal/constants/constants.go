@@ -24,6 +24,9 @@ const ConfigFileName = "activestate.yaml"
 // InternalConfigNamespace holds the appdata folder name under which we store our config
 const InternalConfigNamespace = "activestate"
 
+// HomeEnvVarName is the fallback env var used to determine the user's home directory.
+const HomeEnvVarName = "ACTIVESTATE_HOME"
+
 // ConfigEnvVarName is the env var used to override the config dir that the State Tool uses
 const ConfigEnvVarName = "ACTIVESTATE_CLI_CONFIGDIR"
 

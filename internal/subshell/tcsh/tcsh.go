@@ -6,9 +6,9 @@ import (
 	"path/filepath"
 
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/osutils"
+	"github.com/ActiveState/cli/internal/osutils/user"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
 	"github.com/ActiveState/cli/pkg/project"
@@ -84,7 +84,7 @@ func (v *SubShell) WriteCompletionScript(completionScript string) error {
 }
 
 func (v *SubShell) RcFile() (string, error) {
-	homeDir, err := fileutils.HomeDir()
+	homeDir, err := user.HomeDir()
 	if err != nil {
 		return "", errs.Wrap(err, "IO failure")
 	}
