@@ -11,23 +11,23 @@ import (
 )
 
 func TestUserHome(t *testing.T) {
-  // Fetch current home directory.
+	// Fetch current home directory.
 	osHomeDir, err := os.UserHomeDir()
 	require.NoError(t, err)
 
-  // Verify user.HomeDir() returns the current home directory.
+	// Verify user.HomeDir() returns the current home directory.
 	userHomeDir, err := HomeDir()
 	require.NoError(t, err)
 	assert.Equal(t, userHomeDir, osHomeDir)
 
-  // Verify ACTIVESTATE_HOME overrides current home directory.
+	// Verify ACTIVESTATE_HOME overrides current home directory.
 	os.Setenv(constants.HomeEnvVarName, "override")
 	userHomeDir, err = HomeDir()
 	require.NoError(t, err)
 	assert.Equal(t, userHomeDir, "override")
 	os.Unsetenv(constants.HomeEnvVarName)
 
-  // Verify lack of HOME and ACTIVESTATE_HOME shows nice error message.
+	// Verify lack of HOME and ACTIVESTATE_HOME shows nice error message.
 	if runtime.GOOS != "windows" {
 		os.Unsetenv("HOME")
 		defer func() { os.Setenv("HOME", osHomeDir) }()
