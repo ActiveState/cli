@@ -122,15 +122,62 @@ func (suite *UseIntegrationTestSuite) TestReset() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("checkout", "ActiveState-CLI/Python3"),
-		e2e.AppendEnv("SHELL=bash"),
-	)
+	cp := ts.SpawnWithOpts(e2e.WithArgs("checkout", "ActiveState-CLI/Python3"))
 	cp.Expect("Skipping runtime setup")
 	cp.Expect("Checked out project")
 	cp.ExpectExitCode(0)
 
-	// Create a zsh RC file to ensure that the path is updated for both bash and zsh.
+	cp = ts.SpawnWithOpts(
+		e2e.WithArgs("use", "ActiveState-CLI/Python3"),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
+	cp.Expect("Switched to project")
+	cp.ExpectExitCode(0)
+
+	python3Exe := filepath.Join(ts.Dirs.DefaultBin, "python3"+osutils.ExeExt)
+	suite.True(fileutils.TargetExists(python3Exe), python3Exe+" not found")
+
+	cfg, err := config.New()
+	suite.NoError(err)
+	rcfile, err := subshell.New(cfg).RcFile()
+	if runtime.GOOS != "windows" {
+		suite.NoError(err)
+		suite.Contains(string(fileutils.ReadFileUnsafe(rcfile)), ts.Dirs.DefaultBin, "PATH does not have default project in it")
+	}
+
+	cp = ts.SpawnWithOpts(e2e.WithArgs("use", "reset"))
+	cp.Expect("Continue?")
+	cp.SendLine("n")
+	cp.Expect("Reset aborted by user")
+	cp.ExpectExitCode(1)
+
+	cp = ts.SpawnWithOpts(e2e.WithArgs("use", "reset", "--non-interactive"))
+	cp.Expect("Reset default project runtime")
+	cp.Expect("Note you may need to")
+	cp.ExpectExitCode(0)
+
+	suite.False(fileutils.TargetExists(python3Exe), python3Exe+" still exists")
+
+	cp = ts.SpawnWithOpts(e2e.WithArgs("use", "reset", "-n"))
+	cp.Expect("No global default project to reset")
+	cp.ExpectExitCode(0)
+
+	if runtime.GOOS != "windows" {
+		suite.NotContains(string(fileutils.ReadFileUnsafe(rcfile)), ts.Dirs.DefaultBin, "PATH still has default project in it")
+	}
+}
+
+func (suite *UseIntegrationTestSuite) TestUseShellUpdates() {
+	suite.OnlyRunForTags(tagsuite.Use)
+
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.Spawn("checkout", "ActiveState-CLI/Python3")
+	cp.Expect("Checked out project")
+	cp.ExpectExitCode(0)
+
+	// Create a zsh RC file
 	var zshRcFile string
 	var err error
 	if runtime.GOOS != "windows" {
@@ -149,9 +196,7 @@ func (suite *UseIntegrationTestSuite) TestReset() {
 	cp.Expect("Switched to project")
 	cp.ExpectExitCode(0)
 
-	python3Exe := filepath.Join(ts.Dirs.DefaultBin, "python3"+osutils.ExeExt)
-	suite.True(fileutils.TargetExists(python3Exe), python3Exe+" not found")
-
+	// Ensure both bash and zsh RC files are updated
 	cfg, err := config.New()
 	suite.NoError(err)
 	rcfile, err := subshell.New(cfg).RcFile()
@@ -159,36 +204,6 @@ func (suite *UseIntegrationTestSuite) TestReset() {
 		suite.NoError(err)
 		suite.Contains(string(fileutils.ReadFileUnsafe(rcfile)), ts.Dirs.DefaultBin, "PATH does not have default project in it")
 		suite.Contains(string(fileutils.ReadFileUnsafe(zshRcFile)), ts.Dirs.DefaultBin, "PATH does not have default project in it")
-	}
-
-	cp = ts.SpawnWithOpts(
-		e2e.WithArgs("use", "reset"),
-		e2e.AppendEnv("SHELL=bash"),
-	)
-	cp.Expect("Continue?")
-	cp.SendLine("n")
-	cp.Expect("Reset aborted by user")
-	cp.ExpectExitCode(1)
-
-	cp = ts.SpawnWithOpts(
-		e2e.WithArgs("use", "reset", "--non-interactive"),
-		e2e.AppendEnv("SHELL=bash"),
-	)
-	cp.Expect("Reset default project runtime")
-	cp.Expect("Note you may need to")
-	cp.ExpectExitCode(0)
-
-	suite.False(fileutils.TargetExists(python3Exe), python3Exe+" still exists")
-
-	cp = ts.SpawnWithOpts(
-		e2e.WithArgs("use", "reset", "-n"),
-		e2e.AppendEnv("SHELL=bash"),
-	)
-	cp.Expect("No global default project to reset")
-	cp.ExpectExitCode(0)
-
-	if runtime.GOOS != "windows" {
-		suite.NotContains(string(fileutils.ReadFileUnsafe(rcfile)), ts.Dirs.DefaultBin, "PATH still has default project in it")
 	}
 }
 
