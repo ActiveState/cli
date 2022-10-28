@@ -182,7 +182,7 @@ func (r *Activate) run(params *ActivateParams) error {
 	venv := virtualenvironment.New(rt)
 
 	if setDefault {
-		err := globaldefault.SetupDefaultActivation(r.config, rt, proj)
+		err := globaldefault.SetupDefaultActivation(r.subshell, r.config, rt, proj)
 		if err != nil {
 			return locale.WrapError(err, "err_activate_default", "Could not configure your project as the default.")
 		}

@@ -84,7 +84,7 @@ func (u *Use) Run(params *Params) error {
 		return locale.WrapError(err, "err_use_runtime_new", "Cannot use this project.")
 	}
 
-	if err := globaldefault.SetupDefaultActivation(u.config, rti, proj); err != nil {
+	if err := globaldefault.SetupDefaultActivation(u.subshell, u.config, rti, proj); err != nil {
 		return locale.WrapError(err, "err_use_default", "Could not configure your project as the global default.")
 	}
 
