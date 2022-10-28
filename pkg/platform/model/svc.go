@@ -2,6 +2,9 @@ package model
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -38,7 +41,21 @@ func (m *SvcModel) EnableDebugLog() {
 
 func (m *SvcModel) request(ctx context.Context, request gqlclient.Request, resp interface{}) error {
 	defer profile.Measure("SvcModel:request", time.Now())
-	return m.client.RunWithContext(ctx, request, resp)
+
+	err := m.client.RunWithContext(ctx, request, resp)
+	if err != nil {
+		reqError := &gqlclient.RequestError{}
+		if errors.As(err, &reqError) {
+			logging.Debug(
+				"svc client gql request failed - query: %q, vars: %q",
+				reqError.Request.Query(),
+				jsonFromMap(reqError.Request.Vars()),
+			)
+		}
+		return err
+	}
+
+	return nil
 }
 
 func (m *SvcModel) StateVersion(ctx context.Context) (*graph.Version, error) {
@@ -132,4 +149,21 @@ func (m *SvcModel) ConfigChanged(ctx context.Context, key string) error {
 	}
 
 	return nil
+}
+
+func jsonFromMap(m map[string]interface{}) string {
+	d, err := json.Marshal(m)
+	if err != nil {
+		return fmt.Sprintf("cannot marshal map (%q) as json: %v", stringFromMap(m), err)
+	}
+	return string(d)
+}
+
+func stringFromMap(m map[string]interface{}) string {
+	var s, sep string
+	for k, v := range m {
+		s += fmt.Sprintf("%s%s: %#v", sep, k, v)
+		sep = ", "
+	}
+	return s
 }
