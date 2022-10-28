@@ -6,7 +6,9 @@ import (
 	"path/filepath"
 
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/osutils/user"
 	"github.com/ActiveState/cli/internal/output"
@@ -92,6 +94,15 @@ func (v *SubShell) RcFile() (string, error) {
 	return filepath.Join(homeDir, ".tcshrc"), nil
 }
 
+func (v *SubShell) EnsureRcFileExists() error {
+	rcFile, err := v.RcFile()
+	if err != nil {
+		return errs.Wrap(err, "Could not determine rc file")
+	}
+
+	return fileutils.TouchFileUnlessExists(rcFile)
+}
+
 // SetupShellRcFile - subshell.SubShell
 func (v *SubShell) SetupShellRcFile(targetDir string, env map[string]string, namespace *project.Namespaced) error {
 	env = sscommon.EscapeEnv(env)
@@ -167,4 +178,13 @@ func (v *SubShell) Run(filename string, args ...string) error {
 // IsActive - see subshell.SubShell
 func (v *SubShell) IsActive() bool {
 	return v.cmd != nil && (v.cmd.ProcessState == nil || !v.cmd.ProcessState.Exited())
+}
+
+func (v *SubShell) IsAvailable() bool {
+	rcFile, err := v.RcFile()
+	if err != nil {
+		logging.Error("Could not determine rcFile: %s", err)
+		return false
+	}
+	return fileutils.FileExists(rcFile)
 }

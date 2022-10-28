@@ -125,6 +125,15 @@ func (v *SubShell) RcFile() (string, error) {
 	return filepath.Join(homeDir, ".zshrc"), nil
 }
 
+func (v *SubShell) EnsureRcFileExists() error {
+	rcFile, err := v.RcFile()
+	if err != nil {
+		return errs.Wrap(err, "Could not determine rc file")
+	}
+
+	return fileutils.TouchFileUnlessExists(rcFile)
+}
+
 // SetupShellRcFile - subshell.SubShell
 func (v *SubShell) SetupShellRcFile(targetDir string, env map[string]string, namespace *project.Namespaced) error {
 	env = sscommon.EscapeEnv(env)
@@ -219,4 +228,13 @@ func (v *SubShell) Run(filename string, args ...string) error {
 // IsActive - see subshell.SubShell
 func (v *SubShell) IsActive() bool {
 	return v.cmd != nil && (v.cmd.ProcessState == nil || !v.cmd.ProcessState.Exited())
+}
+
+func (v *SubShell) IsAvailable() bool {
+	rcFile, err := v.RcFile()
+	if err != nil {
+		logging.Error("Could not determine rcFile: %s", err)
+		return false
+	}
+	return fileutils.FileExists(rcFile)
 }

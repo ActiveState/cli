@@ -4,6 +4,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
@@ -125,6 +126,11 @@ func (v *SubShell) RcFile() (string, error) {
 	return "", locale.NewError("err_cmd_rcile", "cmd does not support RC files")
 }
 
+func (v *SubShell) EnsureRcFileExists() error {
+	// Windows does not use RC files
+	return nil
+}
+
 // SetupShellRcFile - subshell.SubShell
 func (v *SubShell) SetupShellRcFile(targetDir string, env map[string]string, namespace *project.Namespaced) error {
 	env = sscommon.EscapeEnv(env)
@@ -191,4 +197,8 @@ func (v *SubShell) Run(filename string, args ...string) error {
 // IsActive - see subshell.SubShell
 func (v *SubShell) IsActive() bool {
 	return v.cmd != nil && (v.cmd.ProcessState == nil || !v.cmd.ProcessState.Exited())
+}
+
+func (v *SubShell) IsAvailable() bool {
+	return runtime.GOOS == "windows"
 }
