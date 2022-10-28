@@ -8,7 +8,7 @@ import (
 	"github.com/mitchellh/go-homedir"
 )
 
-func InstallPathForBranch(branch string) (string, error) {
+func installPathForBranch(branch string) (string, error) {
 	usr, err := user.Current()
 	if err != nil {
 		return "", errs.Wrap(err, "Could not access info on current user")

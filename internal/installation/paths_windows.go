@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 )
 
-func InstallPathForBranch(branch string) (string, error) {
+func installPathForBranch(branch string) (string, error) {
 	return filepath.Join(os.Getenv("USERPROFILE"), "AppData", "Local", "ActiveState", "StateTool", branch), nil
 }
 

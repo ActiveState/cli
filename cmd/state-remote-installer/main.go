@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime/debug"
+	"syscall"
 	"time"
 
 	"github.com/ActiveState/cli/internal/analytics"
@@ -143,7 +144,9 @@ func main() {
 		}
 
 		exitCode, err = errors.Unwrap(err)
-		out.Error(err)
+		if err != nil {
+			out.Error(err)
+		}
 		return
 	}
 }
@@ -193,12 +196,17 @@ func execute(out output.Outputer, prompt prompt.Prompter, cfg *config.Instance, 
 	env := []string{
 		constants.InstallerNoSubshell + "=true",
 	}
-	_, _, err = exeutils.ExecuteAndPipeStd(filepath.Join(tmpDir, constants.StateInstallerCmd+exeutils.Extension), args, env)
+	_, cmd, err := exeutils.ExecuteAndPipeStd(filepath.Join(tmpDir, constants.StateInstallerCmd+exeutils.Extension), args, env)
 	if err != nil {
+		if cmd != nil && cmd.ProcessState.Sys().(syscall.WaitStatus).Exited() {
+			// The issue happened while running the command itself, meaning the responsibility for conveying the error
+			// is on the command, rather than us.
+			return errs.Silence(errs.Wrap(err, "Installer failed"))
+		}
 		return errs.Wrap(err, "Could not run installer")
 	}
 
-	out.Print(locale.Tl("remote_install_exit_prompt", "Installation complete. Press enter to exit."))
+	out.Print(locale.Tl("remote_install_exit_prompt", "Press ENTER to exit."))
 	fmt.Scanln(p.StrP("")) // Wait for input from user
 
 	return nil
