@@ -41,7 +41,7 @@ jobs:
       SHELL: bash
       GITHUB_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     concurrency:
-      group: ${{ github.ref }}-${{ matrix.platform }}
+      group: ${{ github.ref }}-${{ github.event_name }}-${{ matrix.platform }}
       cancel-in-progress: true
 
     # === OS Specific Steps ===
