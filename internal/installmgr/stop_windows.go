@@ -6,6 +6,6 @@ import (
 	"golang.org/x/sys/windows"
 )
 
-func IsAccessDeniedError(err error) bool {
+func isAccessDeniedError(err error) bool {
 	return errors.Is(err, windows.ERROR_ACCESS_DENIED)
 }
