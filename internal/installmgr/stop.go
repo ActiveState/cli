@@ -143,6 +143,9 @@ func killProcess(proc *process.Process, name string) error {
 		for _, c := range children {
 			err = c.Kill()
 			if err != nil {
+				if errs.IsAny(err, syscall.EIO) {
+					return locale.WrapInputError(err, "err_insufficient_permissions")
+				}
 				return errs.Wrap(err, "Could not kill child process of %s", name)
 			}
 		}
@@ -152,6 +155,9 @@ func killProcess(proc *process.Process, name string) error {
 
 	err = proc.Kill()
 	if err != nil {
+		if errs.IsAny(err, syscall.EIO) {
+			return locale.WrapInputError(err, "err_insufficient_permissions")
+		}
 		return errs.Wrap(err, "Could not kill %s process", name)
 	}
 
