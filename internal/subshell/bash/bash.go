@@ -112,16 +112,16 @@ func (v *SubShell) RcFile() (string, error) {
 		return "", errs.Wrap(err, "IO failure")
 	}
 
-	rcFilePath := filepath.Join(homeDir, rcFileName)
-	// Ensure the .bashrc file exists. On some platforms it is not created by default
-	if !fileutils.TargetExists(rcFilePath) {
-		err = fileutils.Touch(rcFilePath)
-		if err != nil {
-			return "", errs.Wrap(err, "Failed to create RCFile at %s", rcFilePath)
-		}
+	return filepath.Join(homeDir, rcFileName), nil
+}
+
+func (v *SubShell) EnsureRcFileExists() error {
+	rcFile, err := v.RcFile()
+	if err != nil {
+		return errs.Wrap(err, "Could not determine rc file")
 	}
 
-	return rcFilePath, nil
+	return fileutils.TouchFileUnlessExists(rcFile)
 }
 
 // SetupShellRcFile - subshell.SubShell
@@ -191,4 +191,13 @@ func (v *SubShell) Run(filename string, args ...string) error {
 // IsActive - see subshell.SubShell
 func (v *SubShell) IsActive() bool {
 	return v.cmd != nil && (v.cmd.ProcessState == nil || !v.cmd.ProcessState.Exited())
+}
+
+func (v *SubShell) IsAvailable() bool {
+	rcFile, err := v.RcFile()
+	if err != nil {
+		logging.Error("Could not determine rcFile: %s", err)
+		return false
+	}
+	return fileutils.FileExists(rcFile)
 }

@@ -434,6 +434,14 @@ func Touch(path string) error {
 	return nil
 }
 
+// TouchFileUnlessExists will attempt to "touch" a given filename if it doesn't already exists
+func TouchFileUnlessExists(path string) error {
+	if TargetExists(path) {
+		return nil
+	}
+	return Touch(path)
+}
+
 // IsEmptyDir returns true if the directory at the provided path has no files (including dirs) within it.
 func IsEmptyDir(path string) (bool, error) {
 	dir, err := os.Open(path)
