@@ -125,7 +125,7 @@ func (v *SubShell) RcFile() (string, error) {
 	return filepath.Join(homeDir, ".zshrc"), nil
 }
 
-func (v *SubShell) EnsureRcFile() error {
+func (v *SubShell) EnsureRcFileExists() error {
 	rcFile, err := v.RcFile()
 	if err != nil {
 		return errs.Wrap(err, "Could not determine rc file")

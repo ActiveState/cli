@@ -126,7 +126,7 @@ func (v *SubShell) RcFile() (string, error) {
 	return "", locale.NewError("err_cmd_rcile", "cmd does not support RC files")
 }
 
-func (v *SubShell) EnsureRcFile() error {
+func (v *SubShell) EnsureRcFileExists() error {
 	// Windows does not use RC files
 	return nil
 }

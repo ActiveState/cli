@@ -67,7 +67,7 @@ type SubShell interface {
 	RcFile() (string, error)
 
 	// EnsureRcFile ensures that the RC file exists
-	EnsureRcFile() error
+	EnsureRcFileExists() error
 
 	// SetupShellRcFile writes a script or source-able file that updates the environment variables and sets the prompt
 	SetupShellRcFile(string, map[string]string, *project.Namespaced) error
@@ -149,7 +149,7 @@ func New(cfg sscommon.Configurable) SubShell {
 func ConfigureAvailableShells(shell SubShell, cfg sscommon.Configurable, env map[string]string, identifier sscommon.RcIdentification, isAdmin bool) error {
 	// Ensure active shell has RC file
 	if shell.IsActive() {
-		err := shell.EnsureRcFile()
+		err := shell.EnsureRcFileExists()
 		if err != nil {
 			return errs.Wrap(err, "Could not ensure RC file for active shell")
 		}
