@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"runtime"
+	"strings"
 	"time"
 
 	"github.com/ActiveState/cli/cmd/state-exec/internal/logr"
@@ -90,6 +91,12 @@ func run() error {
 
 	logr.Debug("cmd - running: %s", meta.MatchingBin)
 	if err := runCmd(meta); err != nil {
+		logr.CallIfDebugIsSet(func() {
+			logr.Debug(
+				"      running - failed: bins (%s)",
+				strings.Join(meta.ExecMeta.Bins, ", "),
+			)
+		})
 		return fmt.Errorf("cannot run command: %w", err)
 	}
 
