@@ -11,7 +11,7 @@ import (
 // fdSupportsColors implements a heuristic checking whether a file descriptor supports colors
 func fdSupportsColors(fd int, lookupEnv func(string) (string, bool)) bool {
 	if runtime.GOOS == "windows" {
-		return true
+		return terminal.IsTerminal(fd)
 	}
 	termValue, ok := lookupEnv("TERM")
 	if !ok {
@@ -24,7 +24,6 @@ func fdSupportsColors(fd int, lookupEnv func(string) (string, bool)) bool {
 }
 
 // StdoutSupportsColors returns whether stdout supports color output
-// - It always returns true on Windows
 // - If the TERM variable is not set, or set to the "dumb" terminal, no color support
 //   is assumed.
 // - If stdout is not a terminal, color support is disabled

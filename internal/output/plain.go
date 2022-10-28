@@ -101,7 +101,7 @@ func (f *Plain) write(writer io.Writer, value interface{}) {
 func (f *Plain) writeNow(writer io.Writer, value string) {
 	_, err := colorize.Colorize(wordWrap(value), writer, !f.cfg.Colored)
 	if err != nil {
-		multilog.Log(logging.ErrorNoStacktrace, rollbar.Error)("Writing colored output failed: %v", err)
+		logging.ErrorNoStacktrace("Writing colored output failed: %v", err)
 	}
 }
 
