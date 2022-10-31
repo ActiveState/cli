@@ -3,7 +3,6 @@ package scriptrun
 import (
 	"os"
 	"path/filepath"
-	rt "runtime"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/analytics"
@@ -83,16 +82,15 @@ func (s *ScriptRun) PrepareVirtualEnv() error {
 	}
 	venv := virtualenvironment.New(rti)
 
-	bashifyPaths := rt.GOOS == "windows" && s.sub.Shell() != "cmd"
 	projDir := filepath.Dir(s.project.Source().Path())
-	env, err := venv.GetEnv(true, true, bashifyPaths, projDir)
+	env, err := venv.GetEnv(true, true, s.sub.UsesBashStylePaths(), projDir)
 	if err != nil {
 		return err
 	}
 	s.sub.SetEnv(env)
 
 	// search the "clean" path first (PATHS that are set by venv)
-	env, err = venv.GetEnv(false, true, bashifyPaths, "")
+	env, err = venv.GetEnv(false, true, s.sub.UsesBashStylePaths(), "")
 	if err != nil {
 		return err
 	}

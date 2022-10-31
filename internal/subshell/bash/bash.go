@@ -143,6 +143,11 @@ func (v *SubShell) Quote(value string) string {
 	return escaper.Quote(value)
 }
 
+// UsesBashStylePaths - see subshell.UsesBashStylePaths
+func (v *SubShell) UsesBashStylePaths() bool {
+	return true
+}
+
 // Activate - see subshell.SubShell
 func (v *SubShell) Activate(proj *project.Project, cfg sscommon.Configurable, out output.Outputer) error {
 	var shellArgs []string
@@ -151,9 +156,8 @@ func (v *SubShell) Activate(proj *project.Project, cfg sscommon.Configurable, ou
 	// available project files require more intensive modification of shell envs
 	if proj != nil {
 		env := sscommon.EscapeEnv(v.env)
-		bashifyPaths := runtime.GOOS == "windows" && v.Shell() != "cmd"
 		var err error
-		if v.rcFile, err = sscommon.SetupProjectRcFile(proj, "bashrc.sh", "", env, out, cfg, bashifyPaths); err != nil {
+		if v.rcFile, err = sscommon.SetupProjectRcFile(proj, "bashrc.sh", "", env, out, cfg, true); err != nil {
 			return err
 		}
 
