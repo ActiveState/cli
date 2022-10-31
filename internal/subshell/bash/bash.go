@@ -64,6 +64,9 @@ func (v *SubShell) WriteUserEnv(cfg sscommon.Configurable, env map[string]string
 	}
 
 	if _, pathExists := env["PATH"]; pathExists && runtime.GOOS == "windows" {
+		// Either the State Tool is being installed on Windows, or a runtime is being deployed on Windows.
+		// The incoming PATH may still have '\' instead of '/', so just switch the directory separators.
+		// We don't need to bashify individual paths because the result can still be read by Bash.
 		env["PATH"] = filepath.ToSlash(env["PATH"])
 	}
 
