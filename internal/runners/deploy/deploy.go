@@ -207,7 +207,7 @@ func (d *Deploy) configure(namespace project.Namespaced, rtTarget setup.Targeter
 	d.output.Notice(output.Heading(locale.Tr("deploy_configure_shell", d.subshell.Shell())))
 
 	// Configure available shells
-	err = subshell.ConfigureAvailableShells(d.subshell, d.cfg, env, sscommon.DefaultID, userScope)
+	err = subshell.ConfigureAvailableShells(d.subshell, d.cfg, env, sscommon.DeployID, userScope)
 	if err != nil {
 		return locale.WrapError(err, "err_deploy_subshell_write", "Could not write environment information to your shell configuration.")
 	}
