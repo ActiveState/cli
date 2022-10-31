@@ -173,7 +173,11 @@ func (r *Runtime) recordCompletion(err error) {
 		return
 	}
 	r.completed = true
+
 	logging.Debug("Recording runtime completion: %v", err == nil)
+
+	dims := r.usageDims()
+	r.recordAttempt(dims)
 
 	var action string
 	if err != nil {
@@ -183,7 +187,7 @@ func (r *Runtime) recordCompletion(err error) {
 		}
 	} else {
 		action = anaConsts.ActRuntimeSuccess
-		r.recordUsage()
+		r.recordUsage(dims)
 	}
 
 	r.analytics.EventWithLabel(anaConsts.CatRuntime, action, anaConsts.LblRtFailEnv, &dimensions.Values{
@@ -191,19 +195,13 @@ func (r *Runtime) recordCompletion(err error) {
 	})
 }
 
-func (r *Runtime) recordUsage() {
+func (r *Runtime) recordUsage(dims *dimensions.Values) {
 	if !r.target.Trigger().IndicatesUsage() {
 		logging.Debug("Not recording usage as %s is not a usage trigger", r.target.Trigger().String())
 		return
 	}
 
-	dims := &dimensions.Values{
-		Trigger:          p.StrP(r.target.Trigger().String()),
-		Headless:         p.StrP(strconv.FormatBool(r.target.Headless())),
-		CommitID:         p.StrP(r.target.CommitUUID().String()),
-		ProjectNameSpace: p.StrP(project.NewNamespace(r.target.Owner(), r.target.Name(), r.target.CommitUUID().String()).String()),
-		InstanceID:       p.StrP(instanceid.ID()),
-	}
+	dims.Headless = p.StrP(strconv.FormatBool(r.target.Headless()))
 
 	// Fire initial runtime usage event right away, subsequent events will be fired via the service so long as the process is running
 	r.analytics.Event(anaConsts.CatRuntimeUsage, anaConsts.ActRuntimeHeartbeat, dims)
@@ -214,6 +212,24 @@ func (r *Runtime) recordUsage() {
 	}
 	if r.svcm != nil {
 		r.svcm.RecordRuntimeUsage(context.Background(), os.Getpid(), osutils.Executable(), dimsJson)
+	}
+}
+
+func (r *Runtime) recordAttempt(dims *dimensions.Values) {
+	if !r.target.Trigger().IndicatesUsage() {
+		logging.Debug("Not recording usage attempt as %s is not a usage trigger", r.target.Trigger().String())
+		return
+	}
+
+	r.analytics.Event(anaConsts.CatRuntimeUsage, anaConsts.ActRuntimeAttempt, dims)
+}
+
+func (r *Runtime) usageDims() *dimensions.Values {
+	return &dimensions.Values{
+		Trigger:          p.StrP(r.target.Trigger().String()),
+		CommitID:         p.StrP(r.target.CommitUUID().String()),
+		ProjectNameSpace: p.StrP(project.NewNamespace(r.target.Owner(), r.target.Name(), r.target.CommitUUID().String()).String()),
+		InstanceID:       p.StrP(instanceid.ID()),
 	}
 }
 

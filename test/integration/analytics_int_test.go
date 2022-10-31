@@ -122,11 +122,20 @@ func (suite *AnalyticsIntegrationTestSuite) TestActivateEvents() {
 			cp.Snapshot(), ts.MostRecentStateLog(), ts.SvcLog()))
 
 	// Ensure any analytics events from the state tool have the instance ID set
+	// Ensure runtime attempt event exists
+	var foundAttempts int
 	for _, e := range events {
 		if strings.Contains(e.Category, "state-svc") || strings.Contains(e.Action, "state-svc") {
 			continue
 		}
+		if strings.Contains(e.Category, "runtime") && strings.Contains(e.Action, "attempt") {
+			foundAttempts++
+		}
 		suite.NotEmpty(e.Dimensions.InstanceID)
+	}
+
+	if foundAttempts == 0 {
+		suite.Fail("No runtime attempt events found")
 	}
 
 	suite.assertSequentialEvents(events)
@@ -374,6 +383,45 @@ func (suite *AnalyticsIntegrationTestSuite) TestInputError() {
 		if event.Category == anaConst.CatDebug && event.Action == anaConst.ActInputError {
 			suite.Equal("state clean uninstall --mono", *event.Dimensions.Trigger)
 		}
+	}
+}
+
+func (suite *AnalyticsIntegrationTestSuite) TestAttempts() {
+	suite.OnlyRunForTags(tagsuite.Analytics)
+
+	ts := e2e.New(suite.T(), true)
+	defer ts.Close()
+
+	asyData := strings.TrimSpace(`project: https://platform.activestate.com/ActiveState-CLI/test?commitID=9090c128-e948-4388-8f7f-96e2c1e00d98`)
+	ts.PrepareActiveStateYAML(asyData)
+
+	cp := ts.SpawnWithOpts(
+		e2e.WithArgs("activate", "ActiveState-CLI/Alternate-Python"),
+		e2e.AppendEnv(constants.DisableRuntime+"=false"),
+		e2e.WithWorkDirectory(ts.Dirs.Work),
+	)
+
+	cp.Expect("Creating a Virtual Environment")
+	cp.Expect("Activated")
+	cp.WaitForInput(120 * time.Second)
+
+	time.Sleep(time.Second) // Ensure state-svc has time to report events
+
+	cp = ts.SpawnCmd("python3", "--version")
+	cp.Wait()
+
+	suite.eventsfile = filepath.Join(ts.Dirs.Config, reporters.TestReportFilename)
+	events := parseAnalyticsEvents(suite, ts)
+
+	var foundAttempts int
+	for _, e := range events {
+		if strings.Contains(e.Category, "runtime") && strings.Contains(e.Action, "attempt") {
+			foundAttempts++
+		}
+	}
+
+	if foundAttempts < 2 {
+		suite.Fail("Should find multiple runtime attempts")
 	}
 }
 
