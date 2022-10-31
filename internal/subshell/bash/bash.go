@@ -5,6 +5,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strings"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
@@ -65,9 +66,16 @@ func (v *SubShell) WriteUserEnv(cfg sscommon.Configurable, env map[string]string
 
 	if _, pathExists := env["PATH"]; pathExists && runtime.GOOS == "windows" {
 		// Either the State Tool is being installed on Windows, or a runtime is being deployed on Windows.
-		// The incoming PATH may still have '\' instead of '/', so just switch the directory separators.
-		// We don't need to bashify individual paths because the result can still be read by Bash.
-		env["PATH"] = filepath.ToSlash(env["PATH"])
+		// The incoming PATH contains only State Tool paths, and they each need to be bashified.
+		dirs := strings.Split(env["PATH"], ";")
+		for i, dir := range dirs {
+			path, err := osutils.BashifyPath(dir)
+			if err != nil {
+				return errs.Wrap(err, "Unable to bashify path: %v", dir)
+			}
+			dirs[i] = path
+		}
+		env["PATH"] = strings.Join(dirs, ":") // bash uses ':' while Windows uses ';'
 	}
 
 	env = sscommon.EscapeEnv(env)
