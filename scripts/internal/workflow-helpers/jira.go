@@ -125,10 +125,19 @@ func ParseTargetFixVersion(issue *jira.Issue, availableVersions []semver.Version
 
 	switch fixVersion.Name {
 	case VersionNextFeasible:
+		target, err := ParseJiraVersion(strings.Split(fixVersion.Description, " ")[0])
+		if err != nil {
+			return semver.Version{}, nil, errs.Wrap(err, "Failed to parse Jira version from description: %s", fixVersion.Description)
+		}
 		if len(availableVersions) < 1 {
 			return semver.Version{}, nil, errs.New("No feasible versions available")
 		}
-		return availableVersions[0], fixVersion, nil
+		for _, version := range availableVersions {
+			if version.EQ(target) {
+				return version, fixVersion, nil
+			}
+		}
+		return semver.Version{}, nil, errs.New("Next feasible version does not exist: %s", target.String())
 	case VersionNextUnscheduled:
 		return VersionMaster, fixVersion, nil
 	}
