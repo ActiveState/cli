@@ -71,6 +71,10 @@ func TestBashifyPathEnv(t *testing.T) {
 		path, err = BashifyPathEnv(`C:\foo;C:\bar`)
 		require.NoError(t, err)
 		assert.Equal(t, "/c/foo:/c/bar", path)
+
+		path, err = BashifyPathEnv(`C:\foo bar;C:\baz`)
+		require.NoError(t, err)
+		assert.Equal(t, "/c/foo bar:/c/baz", path)
 	}
 }
 
