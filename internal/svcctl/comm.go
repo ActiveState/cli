@@ -85,12 +85,12 @@ func HeartbeatHandler(reporter RuntimeUsageReporter) ipc.RequestHandler {
 				multilog.Error("Heartbeat: Could not convert pid string (%s) to int in heartbeat handler: %s", hb.ProcessID, err)
 			}
 
-			metaFilePath := filepath.Join(filepath.Dir(hb.ExecPath), execmeta.MetaFileName)
-			dimsJSON, err := dimsJSONFromExecPath(metaFilePath)
+			dimsJSON, err := dimsJSONFromExecPath(hb.ExecPath)
 			if err != nil {
-				multilog.Critical("Heartbeat Failure: Could not marshal dimensions in heartbeat handler: %s", err)
+				multilog.Critical("Heartbeat Failure: Could not get JSON dims from exec path: %s", err)
 				return
 			}
+
 			_, err = reporter.RuntimeUsage(context.Background(), pidNum, hb.ExecPath, dimsJSON)
 			if err != nil {
 				multilog.Critical("Heartbeat Failure: Failed to report runtime usage in heartbeat handler: %s", errs.JoinMessage(err))
@@ -113,16 +113,16 @@ func AttemptHandler(reporter RuntimeAttemptReporter) ipc.RequestHandler {
 		}
 
 		data := input[len(KeyAttempt):]
-		hb := svcmsg.NewAttemptFromSvcMsg(data)
+		a := svcmsg.NewAttemptFromSvcMsg(data)
 
 		go func() {
-			metaFilePath := filepath.Join(filepath.Dir(hb.ExecPath), execmeta.MetaFileName)
-			dimsJSON, err := dimsJSONFromExecPath(metaFilePath)
+			dimsJSON, err := dimsJSONFromExecPath(a.ExecPath)
 			if err != nil {
-				multilog.Critical("Attempt Failure: Could not get JSON dims from exec meta filepath (%s): %s", metaFilePath, err)
+				multilog.Critical("Attempt Failure: Could not get JSON dims from exec path: %s", err)
 				return
 			}
-			_, err = reporter.RuntimeAttempt(context.Background(), hb.ExecPath, dimsJSON)
+
+			_, err = reporter.RuntimeAttempt(context.Background(), a.ExecPath, dimsJSON)
 			if err != nil {
 				multilog.Critical("Attempt Failure: Failed to report runtime usage in attempt handler: %s", errs.JoinMessage(err))
 				return
@@ -133,7 +133,8 @@ func AttemptHandler(reporter RuntimeAttemptReporter) ipc.RequestHandler {
 	}
 }
 
-func dimsJSONFromExecPath(metaFilePath string) (string, error) {
+func dimsJSONFromExecPath(execPath string) (string, error) {
+	metaFilePath := filepath.Join(filepath.Dir(execPath), execmeta.MetaFileName)
 	metaData, err := execmeta.NewFromFile(metaFilePath)
 	if err != nil {
 		return "", errs.Wrap(err, "Could not create meta data from filepath (%s)", metaFilePath)
