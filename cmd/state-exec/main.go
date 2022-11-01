@@ -6,7 +6,6 @@ import (
 	"os"
 	"os/exec"
 	"runtime"
-	"strings"
 	"time"
 
 	"github.com/ActiveState/cli/cmd/state-exec/internal/logr"
@@ -72,8 +71,8 @@ func run() error {
 	}
 	logr.CallIfDebugIsSet(func() {
 		logr.Debug("meta data - bins...")
-		for _, bin := range meta.Bins {
-			logr.Debug("            bins : %s", bin)
+		for name, bin := range meta.Bins {
+			logr.Debug("            bins : %s=%s", name, bin)
 		}
 	})
 	logr.Debug("meta data - matching bin: %s", meta.MatchingBin)
@@ -91,12 +90,7 @@ func run() error {
 
 	logr.Debug("cmd - running: %s", meta.MatchingBin)
 	if err := runCmd(meta); err != nil {
-		logr.CallIfDebugIsSet(func() {
-			logr.Debug(
-				"      running - failed: bins (%s)",
-				strings.Join(meta.ExecMeta.Bins, ", "),
-			)
-		})
+		logr.Debug("      running - failed: bins (%v)", meta.ExecMeta.Bins)
 		return fmt.Errorf("cannot run command: %w", err)
 	}
 
