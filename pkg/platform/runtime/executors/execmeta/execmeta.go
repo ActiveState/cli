@@ -34,13 +34,13 @@ const (
 type ExecMeta struct {
 	SockPath   string
 	Env        []string
-	Bins       []string
+	Bins       map[string]string
 	CommitUUID string
 	Namespace  string
 	Headless   bool
 }
 
-func New(sockPath string, env []string, t Target, bins []string) *ExecMeta {
+func New(sockPath string, env []string, t Target, bins map[string]string) *ExecMeta {
 	return &ExecMeta{
 		SockPath:   sockPath,
 		Env:        env,
