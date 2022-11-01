@@ -61,8 +61,11 @@ func (es *Executors) Apply(sockPath string, targeter Targeter, env map[string]st
 		path := exe
 
 		if rt.GOOS == "windows" { // .bat, .cmd, and similar should be executed by an executor with .exe extension
-			name = strings.TrimSuffix(name, filepath.Ext(name)) + exeutils.Extension
+			if ext := filepath.Ext(name); ext != "" {
+				name = strings.TrimSuffix(name, ext) + exeutils.Extension
+			}
 		}
+
 		// TODO: what happens if there's app.bat and app.exe?
 		// TODO: is it critical for the .bat extension to remain?
 
