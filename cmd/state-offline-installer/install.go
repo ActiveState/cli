@@ -202,7 +202,7 @@ func (r *runner) Run(params *Params) (rerr error) {
 				@echo off
 				copy %[1]s\%[2]s %%TEMP%%\%[2]s >nul 2>&1
 				%%TEMP%%\%[2]s %[3]s
-				del %%TEMP%%\%[2]s >nul 2>&1
+				del %%TEMP%%\%[2]s >nul 2>&1 
 				echo You can safely ignore any File not Found errors following this message.
 				`,
 			uninstallDir,
@@ -356,7 +356,7 @@ func (r *runner) extractAssets(assetsPath string, backpackZipFile string) error 
 }
 
 func (r *runner) configureEnvironment(path string, asrt *runtime.Runtime) error {
-	env, err := asrt.Env(false, false, false)
+	env, err := asrt.Env(false, false)
 	if err != nil {
 		return errs.Wrap(err, "Error setting environment")
 	}

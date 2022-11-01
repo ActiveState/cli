@@ -140,7 +140,7 @@ func (r *Runtime) Update(auth *authentication.Auth, msgHandler *events.RuntimeEv
 // Env returns a key-value map of the environment variables that need to be set for this runtime
 // It's different from envDef in that it merges in the current active environment and points the PATH variable to the
 // Executors directory if requested
-func (r *Runtime) Env(inherit, useExecutors bool) (map[string]string, error) {
+func (r *Runtime) Env(inherit bool, useExecutors bool) (map[string]string, error) {
 	logging.Debug("Getting runtime env, inherit: %v, useExec: %v", inherit, useExecutors)
 
 	envDef, err := r.envDef()
