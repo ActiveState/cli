@@ -76,8 +76,13 @@ type ComplexityRoot struct {
 		CheckDeprecation func(childComplexity int) int
 		ConfigChanged    func(childComplexity int, key string) int
 		Projects         func(childComplexity int) int
+		RuntimeAttempt   func(childComplexity int, exec string, dimensionsJSON string) int
 		RuntimeUsage     func(childComplexity int, pid int, exec string, dimensionsJSON string) int
 		Version          func(childComplexity int) int
+	}
+
+	RuntimeAttemptResponse struct {
+		Received func(childComplexity int) int
 	}
 
 	RuntimeUsageResponse struct {
@@ -103,6 +108,7 @@ type QueryResolver interface {
 	Projects(ctx context.Context) ([]*graph.Project, error)
 	AnalyticsEvent(ctx context.Context, category string, action string, label *string, dimensionsJSON string) (*graph.AnalyticsEventResponse, error)
 	RuntimeUsage(ctx context.Context, pid int, exec string, dimensionsJSON string) (*graph.RuntimeUsageResponse, error)
+	RuntimeAttempt(ctx context.Context, exec string, dimensionsJSON string) (*graph.RuntimeAttemptResponse, error)
 	CheckDeprecation(ctx context.Context) (*graph.DeprecationInfo, error)
 	ConfigChanged(ctx context.Context, key string) (*graph.ConfigChangedResponse, error)
 }
@@ -258,6 +264,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.Projects(childComplexity), true
 
+	case "Query.runtimeAttempt":
+		if e.complexity.Query.RuntimeAttempt == nil {
+			break
+		}
+
+		args, err := ec.field_Query_runtimeAttempt_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.RuntimeAttempt(childComplexity, args["exec"].(string), args["dimensionsJson"].(string)), true
+
 	case "Query.runtimeUsage":
 		if e.complexity.Query.RuntimeUsage == nil {
 			break
@@ -276,6 +294,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.Version(childComplexity), true
+
+	case "RuntimeAttemptResponse.received":
+		if e.complexity.RuntimeAttemptResponse.Received == nil {
+			break
+		}
+
+		return e.complexity.RuntimeAttemptResponse.Received(childComplexity), true
 
 	case "RuntimeUsageResponse.received":
 		if e.complexity.RuntimeUsageResponse.Received == nil {
@@ -409,6 +434,10 @@ type RuntimeUsageResponse {
   received: Boolean!
 }
 
+type RuntimeAttemptResponse {
+  received: Boolean!
+}
+
 type DeprecationInfo {
   version: String!
   date: String!
@@ -422,6 +451,7 @@ type Query {
   projects: [Project]!
   analyticsEvent(category: String!, action: String!, label: String, dimensionsJson: String!): AnalyticsEventResponse
   runtimeUsage(pid: Int!, exec: String!, dimensionsJson: String!): RuntimeUsageResponse
+  runtimeAttempt(exec: String!, dimensionsJson: String!): RuntimeAttemptResponse
   checkDeprecation: DeprecationInfo
   configChanged(key: String!): ConfigChangedResponse
 }
@@ -506,6 +536,30 @@ func (ec *executionContext) field_Query_configChanged_args(ctx context.Context, 
 		}
 	}
 	args["key"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_runtimeAttempt_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["exec"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("exec"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["exec"] = arg0
+	var arg1 string
+	if tmp, ok := rawArgs["dimensionsJson"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("dimensionsJson"))
+		arg1, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["dimensionsJson"] = arg1
 	return args, nil
 }
 
@@ -1212,6 +1266,45 @@ func (ec *executionContext) _Query_runtimeUsage(ctx context.Context, field graph
 	return ec.marshalORuntimeUsageResponse2ᚖgithubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐRuntimeUsageResponse(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Query_runtimeAttempt(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_runtimeAttempt_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().RuntimeAttempt(rctx, args["exec"].(string), args["dimensionsJson"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*graph.RuntimeAttemptResponse)
+	fc.Result = res
+	return ec.marshalORuntimeAttemptResponse2ᚖgithubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐRuntimeAttemptResponse(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Query_checkDeprecation(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -1352,6 +1445,41 @@ func (ec *executionContext) _Query___schema(ctx context.Context, field graphql.C
 	res := resTmp.(*introspection.Schema)
 	fc.Result = res
 	return ec.marshalO__Schema2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐSchema(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _RuntimeAttemptResponse_received(ctx context.Context, field graphql.CollectedField, obj *graph.RuntimeAttemptResponse) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "RuntimeAttemptResponse",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Received, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _RuntimeUsageResponse_received(ctx context.Context, field graphql.CollectedField, obj *graph.RuntimeUsageResponse) (ret graphql.Marshaler) {
@@ -2942,6 +3070,17 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				res = ec._Query_runtimeUsage(ctx, field)
 				return res
 			})
+		case "runtimeAttempt":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_runtimeAttempt(ctx, field)
+				return res
+			})
 		case "checkDeprecation":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
@@ -2968,6 +3107,33 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			out.Values[i] = ec._Query___type(ctx, field)
 		case "__schema":
 			out.Values[i] = ec._Query___schema(ctx, field)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var runtimeAttemptResponseImplementors = []string{"RuntimeAttemptResponse"}
+
+func (ec *executionContext) _RuntimeAttemptResponse(ctx context.Context, sel ast.SelectionSet, obj *graph.RuntimeAttemptResponse) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, runtimeAttemptResponseImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("RuntimeAttemptResponse")
+		case "received":
+			out.Values[i] = ec._RuntimeAttemptResponse_received(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -3733,6 +3899,13 @@ func (ec *executionContext) marshalOProject2ᚖgithubᚗcomᚋActiveStateᚋcli�
 		return graphql.Null
 	}
 	return ec._Project(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalORuntimeAttemptResponse2ᚖgithubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐRuntimeAttemptResponse(ctx context.Context, sel ast.SelectionSet, v *graph.RuntimeAttemptResponse) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._RuntimeAttemptResponse(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalORuntimeUsageResponse2ᚖgithubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐRuntimeUsageResponse(ctx context.Context, sel ast.SelectionSet, v *graph.RuntimeUsageResponse) graphql.Marshaler {

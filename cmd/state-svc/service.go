@@ -54,6 +54,7 @@ func (s *service) Start() error {
 		svcctl.HTTPAddrHandler(portText(s.server)),
 		svcctl.LogFileHandler(logging.FileName()),
 		svcctl.HeartbeatHandler(s.server.Resolver()),
+		svcctl.AttemptHandler(s.server.Resolver()),
 	}
 	s.ipcSrv = ipc.NewServer(s.ctx, spath, reqHandlers...)
 	err = s.ipcSrv.Start()

@@ -22,6 +22,7 @@ var (
 	KeyHTTPAddr  = "http-addr"
 	KeyLogFile   = "log-file"
 	KeyHeartbeat = "heart<"
+	KeyAttempt   = "attempt<"
 )
 
 type Requester interface {
@@ -85,20 +86,7 @@ func HeartbeatHandler(reporter RuntimeUsageReporter) ipc.RequestHandler {
 			}
 
 			metaFilePath := filepath.Join(filepath.Dir(hb.ExecPath), execmeta.MetaFileName)
-			metaData, err := execmeta.NewFromFile(metaFilePath)
-			if err != nil {
-				multilog.Critical("Heartbeat Failure: Could not create meta data from filepath (%s): %s", metaFilePath, err)
-				return
-			}
-
-			dims := &dimensions.Values{
-				Trigger:          p.StrP(target.TriggerExec.String()),
-				Headless:         p.StrP(strconv.FormatBool(metaData.Headless)),
-				CommitID:         p.StrP(metaData.CommitUUID),
-				ProjectNameSpace: p.StrP(metaData.Namespace),
-				InstanceID:       p.StrP(instanceid.Make()),
-			}
-			dimsJSON, err := dims.Marshal()
+			dimsJSON, err := dimsJSONFromExecPath(metaFilePath)
 			if err != nil {
 				multilog.Critical("Heartbeat Failure: Could not marshal dimensions in heartbeat handler: %s", err)
 				return
@@ -112,6 +100,53 @@ func HeartbeatHandler(reporter RuntimeUsageReporter) ipc.RequestHandler {
 
 		return "ok", true
 	}
+}
+
+type RuntimeAttemptReporter interface {
+	RuntimeAttempt(ctx context.Context, exec string, dimensionsJSON string) (*graph.RuntimeAttemptResponse, error)
+}
+
+func AttemptHandler(reporter RuntimeAttemptReporter) ipc.RequestHandler {
+	return func(input string) (string, bool) {
+		if !strings.HasPrefix(input, KeyAttempt) {
+			return "", false
+		}
+
+		data := input[len(KeyAttempt):]
+		hb := svcmsg.NewAttemptFromSvcMsg(data)
+
+		go func() {
+			metaFilePath := filepath.Join(filepath.Dir(hb.ExecPath), execmeta.MetaFileName)
+			dimsJSON, err := dimsJSONFromExecPath(metaFilePath)
+			if err != nil {
+				multilog.Critical("Attempt Failure: Could not get JSON dims from exec meta filepath (%s): %s", metaFilePath, err)
+				return
+			}
+			_, err = reporter.RuntimeAttempt(context.Background(), hb.ExecPath, dimsJSON)
+			if err != nil {
+				multilog.Critical("Attempt Failure: Failed to report runtime usage in attempt handler: %s", errs.JoinMessage(err))
+				return
+			}
+		}()
+
+		return "ok", true
+	}
+}
+
+func dimsJSONFromExecPath(metaFilePath string) (string, error) {
+	metaData, err := execmeta.NewFromFile(metaFilePath)
+	if err != nil {
+		return "", errs.Wrap(err, "Could not create meta data from filepath (%s)", metaFilePath)
+	}
+
+	dims := &dimensions.Values{
+		Trigger:          p.StrP(target.TriggerExec.String()),
+		Headless:         p.StrP(strconv.FormatBool(metaData.Headless)),
+		CommitID:         p.StrP(metaData.CommitUUID),
+		ProjectNameSpace: p.StrP(metaData.Namespace),
+		InstanceID:       p.StrP(instanceid.Make()),
+	}
+	return dims.Marshal()
 }
 
 func (c *Comm) SendHeartbeat(ctx context.Context, pid string) (string, error) {

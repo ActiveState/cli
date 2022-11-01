@@ -11,6 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/analytics/dimensions"
 	"github.com/ActiveState/cli/internal/cache/projectcache"
 	"github.com/ActiveState/cli/internal/poller"
+	"github.com/ActiveState/cli/internal/rtutils/p"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"golang.org/x/net/context"
 
@@ -168,6 +169,17 @@ func (r *Resolver) RuntimeUsage(ctx context.Context, pid int, exec string, dimen
 	r.rtwatch.Watch(pid, exec, dims)
 
 	return &graph.RuntimeUsageResponse{Received: true}, nil
+}
+
+func (r *Resolver) RuntimeAttempt(ctx context.Context, exec string, dimensionsJSON string) (*graph.RuntimeAttemptResponse, error) {
+	logging.Debug("Runtime attempt resolver: %d - %s", exec)
+
+	_, err := r.AnalyticsEvent(ctx, anaConsts.CatRuntimeUsage, anaConsts.ActRuntimeAttempt, p.StrP(""), dimensionsJSON)
+	if err != nil {
+		return &graph.RuntimeAttemptResponse{Received: false}, errs.Wrap(err, "Could not send analytics event")
+	}
+
+	return &graph.RuntimeAttemptResponse{Received: true}, nil
 }
 
 func (r *Resolver) CheckDeprecation(ctx context.Context) (*graph.DeprecationInfo, error) {
