@@ -177,6 +177,7 @@ func (r *Runtime) recordCompletion(err error) {
 	logging.Debug("Recording runtime completion: %v", err == nil)
 
 	dims := r.usageDims()
+	// Record attempt regarless of success
 	r.recordAttempt(dims)
 
 	var action string
