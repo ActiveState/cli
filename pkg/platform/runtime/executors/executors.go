@@ -55,21 +55,12 @@ func (es *Executors) ExecutorSrc() (string, error) {
 func (es *Executors) Apply(sockPath string, targeter Targeter, env map[string]string, exes envdef.ExecutablePaths) error {
 	logging.Debug("Creating executors at %s, exes: %v", es.executorPath, exes)
 
-	bins := make(map[string]string)
+	var executors []string
 	for _, exe := range exes {
-		name := filepath.Base(exe)
-		path := exe
-
-		if rt.GOOS == "windows" { // .bat, .cmd, and similar should be executed by an executor with .exe extension
-			if ext := filepath.Ext(name); ext != "" {
-				name = strings.TrimSuffix(name, ext) + exeutils.Extension
-			}
+		if rt.GOOS == "windows" && filepath.Ext(exe) != exeutils.Extension { // only for .exe
+			continue
 		}
-
-		// TODO: what happens if there's app.bat and app.exe?
-		// TODO: is it critical for the .bat extension to remain?
-
-		bins[name] = path
+		executors = append(executors, exe)
 	}
 
 	if err := es.Clean(); err != nil {
@@ -81,19 +72,19 @@ func (es *Executors) Apply(sockPath string, targeter Targeter, env map[string]st
 	}
 
 	t := execmeta.Target{}
-	m := execmeta.New(sockPath, osutils.EnvMapToSlice(env), t, bins)
+	m := execmeta.New(sockPath, osutils.EnvMapToSlice(env), t, executors)
 	if err := m.WriteToDisk(es.executorPath); err != nil {
 		return err
 	}
 
-	executorExec, err := es.ExecutorSrc()
+	executorSrc, err := es.ExecutorSrc()
 	if err != nil {
 		return locale.WrapError(err, "err_state_exec")
 	}
 
-	for name := range bins {
-		if err := copyExecutor(es.executorPath, name, executorExec); err != nil {
-			return locale.WrapError(err, "err_createexecutor", "Could not create executor for {{.V0}}.", name)
+	for _, executor := range executors {
+		if err := copyExecutor(es.executorPath, executor, executorSrc); err != nil {
+			return locale.WrapError(err, "err_createexecutor", "Could not create executor for {{.V0}}.", executor)
 		}
 	}
 
@@ -151,7 +142,8 @@ func isOwnedByUs(fileContents []byte) bool {
 		legacyIsOwnedByUs(fileContents)
 }
 
-func copyExecutor(destDir, name, srcExec string) error {
+func copyExecutor(destDir, executor, srcExec string) error {
+	name := filepath.Base(executor)
 	target := filepath.Clean(filepath.Join(destDir, name))
 
 	logging.Debug("Creating executor for %s at %s", name, target)
