@@ -19,7 +19,7 @@ func HandlePanics(recovered interface{}, stack []byte) bool {
 Error: %v
 Stack trace: %s
 Check the error log for more information: %s
-Please consider reportins your issue on the forums: %s`, recovered, string(stack), logging.FilePath(), constants.ForumsURL))
+Please consider reporting your issue on the forums: %s`, recovered, string(stack), logging.FilePath(), constants.ForumsURL))
 		return true
 	}
 	return false
