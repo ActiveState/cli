@@ -171,17 +171,17 @@ scripts:
     value: |
       set -e
       echo "Building State Tool"
-      $scripts.build.path._posix()
+      $scripts.build.path()
       echo "Building State Installer"
-      $scripts.build-installer.path._posix()
+      $scripts.build-installer.path()
       echo "Building State Remote Installer"
-      $scripts.build-remote-installer.path._posix()
+      $scripts.build-remote-installer.path()
       echo "Building State Service"
-      $scripts.build-svc.path._posix()
+      $scripts.build-svc.path()
       echo "Building State Executor"
-      $scripts.build-exec.path._posix()
+      $scripts.build-exec.path()
       echo "Building State Tray App"
-      $scripts.build-tray.path._posix()
+      $scripts.build-tray.path()
   - name: build-installer
     language: bash
     description: Builds the state-installer
@@ -335,9 +335,9 @@ scripts:
     language: bash
     description: Generates our github workflows
     value: |
-      $scripts.build-for.path._posix() "windows" ./.github/deps/Windows/bin/state.exe
-      $scripts.build-for.path._posix() "linux" ./.github/deps/Linux/bin/state
-      $scripts.build-for.path._posix() "darwin" ./.github/deps/macOS/bin/state
+      $scripts.build-for.path() "windows" ./.github/deps/Windows/bin/state.exe
+      $scripts.build-for.path() "linux" ./.github/deps/Linux/bin/state
+      $scripts.build-for.path() "darwin" ./.github/deps/macOS/bin/state
 
       GOOS=windows go build -o .github/deps/Windows/bin/parallelize.exe github.com/ActiveState/cli/scripts/ci/parallelize/
       GOOS=linux go build -o .github/deps/Linux/bin/parallelize github.com/ActiveState/cli/scripts/ci/parallelize/
@@ -497,7 +497,7 @@ scripts:
           sudo sh -c 'echo -1 >/proc/sys/kernel/perf_event_paranoid'
           updated=true
       fi
-      perf stat -d -r 8 -e task-clock,page-faults,cycles,instructions -- ${@} >/dev/null 
+      perf stat -d -r 8 -e task-clock,page-faults,cycles,instructions -- ${@} >/dev/null
       ${updated} && sudo sh -c 'echo '${paranoid}' >/proc/sys/kernel/perf_event_paranoid'
 
 events:
