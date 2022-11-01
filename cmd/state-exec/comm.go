@@ -27,7 +27,7 @@ func sendMsgToService(sockPath string, hb *svcmsg.Heartbeat) error {
 	buf := make([]byte, msgWidth)
 	_, err = conn.Read(buf)
 	if err != nil {
-		return fmt.Errorf("read from connection failed: %w", err)
+		return fmt.Errorf("read from connection failed (buffer: %q): %w", string(buf), err)
 	}
 
 	return nil
