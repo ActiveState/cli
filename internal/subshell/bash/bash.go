@@ -5,7 +5,6 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
-	"strings"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
@@ -66,16 +65,11 @@ func (v *SubShell) WriteUserEnv(cfg sscommon.Configurable, env map[string]string
 
 	if _, pathExists := env["PATH"]; pathExists && runtime.GOOS == "windows" {
 		// Either the State Tool is being installed on Windows, or a runtime is being deployed on Windows.
-		// The incoming PATH contains only State Tool paths, and they each need to be bashified.
-		dirs := strings.Split(env["PATH"], ";")
-		for i, dir := range dirs {
-			path, err := osutils.BashifyPath(dir)
-			if err != nil {
-				return errs.Wrap(err, "Unable to bashify path: %v", dir)
-			}
-			dirs[i] = path
+		path, err := osutils.BashifyPathEnv(env["PATH"])
+		if err != nil {
+			return errs.Wrap(err, "Unable to bashify PATH: %v", env["PATH"])
 		}
-		env["PATH"] = strings.Join(dirs, ":") // bash uses ':' while Windows uses ';'
+		env["PATH"] = path
 	}
 
 	env = sscommon.EscapeEnv(env)
@@ -146,17 +140,12 @@ func (v *SubShell) SetupShellRcFile(targetDir string, env map[string]string, nam
 
 // SetEnv - see subshell.SetEnv
 func (v *SubShell) SetEnv(env map[string]string) {
-	v.env = env
+	v.env = sscommon.BashifyEnvironment(env)
 }
 
 // Quote - see subshell.Quote
 func (v *SubShell) Quote(value string) string {
 	return escaper.Quote(value)
-}
-
-// UsesBashStylePaths - see subshell.UsesBashStylePaths
-func (v *SubShell) UsesBashStylePaths() bool {
-	return true
 }
 
 // Activate - see subshell.SubShell

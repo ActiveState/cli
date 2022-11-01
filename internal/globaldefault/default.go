@@ -72,7 +72,7 @@ func SetupDefaultActivation(subshell subshell.SubShell, cfg DefaultConfigurer, r
 		return locale.WrapError(err, "err_globaldefault_rtexes", "Could not retrieve runtime executables")
 	}
 
-	env, err := runtime.Env(false, false, subshell.UsesBashStylePaths())
+	env, err := runtime.Env(false, false)
 	if err != nil {
 		return locale.WrapError(err, "err_globaldefault_rtenv", "Could not construct runtime environment variables")
 	}

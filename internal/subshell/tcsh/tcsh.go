@@ -100,17 +100,12 @@ func (v *SubShell) SetupShellRcFile(targetDir string, env map[string]string, nam
 
 // SetEnv - see subshell.SetEnv
 func (v *SubShell) SetEnv(env map[string]string) {
-	v.env = env
+	v.env = sscommon.BashifyEnvironment(env)
 }
 
 // Quote - see subshell.Quote
 func (v *SubShell) Quote(value string) string {
 	return escaper.Quote(value)
-}
-
-// UsesBashStylePaths - see subshell.UsesBashStylePaths
-func (v *SubShell) UsesBashStylePaths() bool {
-	return true
 }
 
 // Activate - see subshell.SubShell

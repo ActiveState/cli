@@ -77,10 +77,6 @@ type SubShell interface {
 
 	// Quote will quote the given string, escaping any characters that need escaping
 	Quote(value string) string
-
-	// UsesBashStylePaths returns whether or not the subshell uses bash-style paths (as opposed to
-	// cmd-style paths).
-	UsesBashStylePaths() bool
 }
 
 // New returns the subshell relevant to the current process, but does not activate it

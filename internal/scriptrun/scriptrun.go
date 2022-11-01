@@ -83,14 +83,14 @@ func (s *ScriptRun) PrepareVirtualEnv() error {
 	venv := virtualenvironment.New(rti)
 
 	projDir := filepath.Dir(s.project.Source().Path())
-	env, err := venv.GetEnv(true, true, s.sub.UsesBashStylePaths(), projDir)
+	env, err := venv.GetEnv(true, true, projDir)
 	if err != nil {
 		return err
 	}
 	s.sub.SetEnv(env)
 
 	// search the "clean" path first (PATHS that are set by venv)
-	env, err = venv.GetEnv(false, true, s.sub.UsesBashStylePaths(), "")
+	env, err = venv.GetEnv(false, true, "")
 	if err != nil {
 		return err
 	}

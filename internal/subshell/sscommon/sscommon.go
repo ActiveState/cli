@@ -180,3 +180,20 @@ func runDirect(env []string, name string, args ...string) error {
 	}
 	return err
 }
+
+func BashifyEnvironment(env map[string]string) map[string]string {
+	for key, value := range env {
+		var bashified string
+		var err error
+		if key == "PATH" {
+			bashified, err = osutils.BashifyPathEnv(value)
+		} else {
+			bashified, err = osutils.BashifyPath(value)
+		}
+		if err != nil {
+			continue // ignore error because this probably isn't a path or path list to bashify
+		}
+		env[key] = bashified
+	}
+	return env
+}

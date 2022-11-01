@@ -141,11 +141,6 @@ func (v *SubShell) Quote(value string) string {
 	return escaper.Quote(value)
 }
 
-// UsesBashStylePaths - see subshell.UsesBashStylePaths
-func (v *SubShell) UsesBashStylePaths() bool {
-	return false
-}
-
 // Activate - see subshell.SubShell
 func (v *SubShell) Activate(prj *project.Project, cfg sscommon.Configurable, out output.Outputer) error {
 	var shellArgs []string

@@ -6,6 +6,7 @@ import (
 	"os/exec"
 	"path"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/errs"
@@ -32,12 +33,12 @@ func CmdString(c *exec.Cmd) string {
 // BashifyPath takes a windows style path and turns it into a bash style path
 // eg. C:\temp becomes /c/temp
 func BashifyPath(absolutePath string) (string, error) {
-	if absolutePath[0:1] == "/" {
+	if len(absolutePath) > 0 && absolutePath[0:1] == "/" {
 		// Already the format we want
 		return absolutePath, nil
 	}
 
-	if absolutePath[1:2] != ":" {
+	if len(absolutePath) < 2 || absolutePath[1:2] != ":" {
 		// Check for windows style paths
 		return "", errs.New("Unrecognized absolute path format: %s", absolutePath)
 	}
@@ -55,6 +56,24 @@ func BashifyPath(absolutePath string) (string, error) {
 	winPath = "/" + vol + filepath.ToSlash(absolutePath)
 	winPath = strings.Replace(winPath, ` `, `\ `, -1) // escape space
 	return winPath, nil
+}
+
+// BashifyPath takes a windows %PATH% list and turns it into a bash style PATH list.
+// e.g. C:\foo;C:\bar becomes /c/foo:/c/bar
+func BashifyPathEnv(pathList string) (string, error) {
+	if runtime.GOOS != "windows" {
+		return pathList, nil // already bashified
+	}
+
+	dirs := strings.Split(pathList, ";")
+	for i, dir := range dirs {
+		path, err := BashifyPath(dir)
+		if err != nil {
+			return "", errs.Wrap(err, "Unable to bashify path: %v", dir)
+		}
+		dirs[i] = path
+	}
+	return strings.Join(dirs, ":"), nil // bash uses ':' while Windows uses ';'
 }
 
 func winPathToLinPath(name string) (string, error) {
