@@ -239,7 +239,7 @@ func SetupProjectRcFile(prj *project.Project, templateName, ext string, env map[
 	// Yes this is awkward, issue here - https://www.pivotaltracker.com/story/show/175619373
 	activatedKey := fmt.Sprintf("activated_%s", prj.Namespace().String())
 	for _, eventType := range project.ActivateEvents() {
-		event := prj.EventByName(eventType.String())
+		event := prj.EventByName(eventType.String(), bashifyPaths)
 		if event == nil {
 			continue
 		}

@@ -48,7 +48,7 @@ scripts:
             "search": "search",
         })
 
-        print("Could not shim your command as it is not supported by the State Tool.\n" +
+        print("Could not shim your command as it is not supported by the State Tool.\n" + 
               "Please check 'state --help' to find the best analog for the command you're trying to run.\n")
         configure_message()
 
@@ -56,8 +56,4 @@ events:
   # This is the ACTIVATE event, it will run whenever a new virtual environment is created (eg. by running `state activate`)
   # On Linux and macOS this will be ran as part of your shell's rc file, so you can use it to set up aliases, functions, environment variables, etc.
   - name: ACTIVATE
-    if: ne .Shell "cmd"
-    value: {{.LangExe}} $scripts.activationMessage.path._posix()
-  - name: ACTIVATE
-    if: eq .Shell "cmd"
     value: {{.LangExe}} $scripts.activationMessage.path()

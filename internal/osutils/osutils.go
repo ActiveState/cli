@@ -58,24 +58,6 @@ func BashifyPath(absolutePath string) (string, error) {
 	return winPath, nil
 }
 
-// BashifyPath takes a windows %PATH% list and turns it into a bash style PATH list.
-// e.g. C:\foo;C:\bar becomes /c/foo:/c/bar
-func BashifyPathEnv(pathList string) (string, error) {
-	if runtime.GOOS != "windows" {
-		return pathList, nil // already bashified
-	}
-
-	dirs := strings.Split(pathList, ";")
-	for i, dir := range dirs {
-		path, err := BashifyPath(dir)
-		if err != nil {
-			return "", errs.Wrap(err, "Unable to bashify path: %v", dir)
-		}
-		dirs[i] = path
-	}
-	return strings.Join(dirs, ":"), nil // bash uses ':' while Windows uses ';'
-}
-
 func winPathToLinPath(name string) (string, error) {
 	cmd := exec.Command("bash", "-c", "pwd")
 	cmd.Dir = filepath.Dir(name)
@@ -88,6 +70,24 @@ func winPathToLinPath(name string) (string, error) {
 	path := strings.TrimSpace(string(out)) + "/" + filepath.Base(name)
 
 	return path, nil
+}
+
+// BashifyPath takes a windows %PATH% list and turns it into a bash style PATH list.
+// e.g. C:\foo;C:\bar becomes /c/foo:/c/bar
+func BashifyPathEnv(pathList string) (string, error) {
+  if runtime.GOOS != "windows" {
+    return pathList, nil // already bashified
+  }
+
+  dirs := strings.Split(pathList, ";")
+  for i, dir := range dirs {
+    path, err := BashifyPath(dir)
+    if err != nil {
+      return "", errs.Wrap(err, "Unable to bashify path: %v", dir)
+    }
+    dirs[i] = path
+  }
+  return strings.Join(dirs, ":"), nil // bash uses ':' while Windows uses ';'
 }
 
 // Getwd is an alias of osutils.Getwd which wraps the error in our localized error message and FailGetWd, which is user facing (doesn't get logged)
