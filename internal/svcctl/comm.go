@@ -85,12 +85,25 @@ func HeartbeatHandler(reporter RuntimeUsageReporter) ipc.RequestHandler {
 				multilog.Error("Heartbeat: Could not convert pid string (%s) to int in heartbeat handler: %s", hb.ProcessID, err)
 			}
 
-			dimsJSON, err := dimsJSONFromExecPath(hb.ExecPath)
+			metaFilePath := filepath.Join(filepath.Dir(hb.ExecPath), execmeta.MetaFileName)
+			metaData, err := execmeta.NewFromFile(metaFilePath)
 			if err != nil {
-				multilog.Critical("Heartbeat Failure: Could not get JSON dims from exec path: %s", err)
+				multilog.Critical("Heartbeat Failure: Could not create meta data from filepath (%s): %s", metaFilePath, err)
 				return
 			}
 
+			dims := &dimensions.Values{
+				Trigger:          p.StrP(target.TriggerExec.String()),
+				Headless:         p.StrP(strconv.FormatBool(metaData.Headless)),
+				CommitID:         p.StrP(metaData.CommitUUID),
+				ProjectNameSpace: p.StrP(metaData.Namespace),
+				InstanceID:       p.StrP(instanceid.Make()),
+			}
+			dimsJSON, err := dims.Marshal()
+			if err != nil {
+				multilog.Critical("Heartbeat Failure: Could not marshal dimensions in heartbeat handler: %s", err)
+				return
+			}
 			_, err = reporter.RuntimeUsage(context.Background(), pidNum, hb.ExecPath, dimsJSON)
 			if err != nil {
 				multilog.Critical("Heartbeat Failure: Failed to report runtime usage in heartbeat handler: %s", errs.JoinMessage(err))
@@ -116,12 +129,24 @@ func AttemptHandler(reporter RuntimeAttemptReporter) ipc.RequestHandler {
 		a := svcmsg.NewAttemptFromSvcMsg(data)
 
 		go func() {
-			dimsJSON, err := dimsJSONFromExecPath(a.ExecPath)
+			metaFilePath := filepath.Join(filepath.Dir(a.ExecPath), execmeta.MetaFileName)
+			metaData, err := execmeta.NewFromFile(metaFilePath)
 			if err != nil {
-				multilog.Critical("Attempt Failure: Could not get JSON dims from exec path: %s", err)
+				multilog.Critical("Attempt Failure: Could not create meta data from filepath (%s): %s", metaFilePath, err)
 				return
 			}
 
+			dims := &dimensions.Values{
+				Trigger:          p.StrP(target.TriggerExec.String()),
+				CommitID:         p.StrP(metaData.CommitUUID),
+				ProjectNameSpace: p.StrP(metaData.Namespace),
+				InstanceID:       p.StrP(instanceid.Make()),
+			}
+			dimsJSON, err := dims.Marshal()
+			if err != nil {
+				multilog.Critical("Attempt Failure: Could not marshal dimensions in attempt handler: %s", err)
+				return
+			}
 			_, err = reporter.RuntimeAttempt(context.Background(), a.ExecPath, dimsJSON)
 			if err != nil {
 				multilog.Critical("Attempt Failure: Failed to report runtime usage in attempt handler: %s", errs.JoinMessage(err))
@@ -131,23 +156,6 @@ func AttemptHandler(reporter RuntimeAttemptReporter) ipc.RequestHandler {
 
 		return "ok", true
 	}
-}
-
-func dimsJSONFromExecPath(execPath string) (string, error) {
-	metaFilePath := filepath.Join(filepath.Dir(execPath), execmeta.MetaFileName)
-	metaData, err := execmeta.NewFromFile(metaFilePath)
-	if err != nil {
-		return "", errs.Wrap(err, "Could not create meta data from filepath (%s)", metaFilePath)
-	}
-
-	dims := &dimensions.Values{
-		Trigger:          p.StrP(target.TriggerExec.String()),
-		Headless:         p.StrP(strconv.FormatBool(metaData.Headless)),
-		CommitID:         p.StrP(metaData.CommitUUID),
-		ProjectNameSpace: p.StrP(metaData.Namespace),
-		InstanceID:       p.StrP(instanceid.Make()),
-	}
-	return dims.Marshal()
 }
 
 func (c *Comm) SendHeartbeat(ctx context.Context, pid string) (string, error) {
