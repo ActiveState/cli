@@ -112,7 +112,7 @@ func (v *SubShell) SetupShellRcFile(targetDir string, env map[string]string, nam
 
 // SetEnv - see subshell.SetEnv
 func (v *SubShell) SetEnv(env map[string]string) {
-	v.env = sscommon.BashifyEnvironment(env)
+	v.env = env
 }
 
 // Quote - see subshell.Quote

@@ -140,7 +140,21 @@ func (v *SubShell) SetupShellRcFile(targetDir string, env map[string]string, nam
 
 // SetEnv - see subshell.SetEnv
 func (v *SubShell) SetEnv(env map[string]string) {
-	v.env = sscommon.BashifyEnvironment(env)
+	for key, value := range env {
+		var bashified string
+		var err error
+		if key == "PATH" {
+			bashified, err = osutils.BashifyPathEnv(value)
+		} else {
+			bashified, err = osutils.BashifyPath(value)
+		}
+		if err != nil {
+			continue // ignore error because this probably isn't a path or path list to bashify
+		}
+		env[key] = bashified
+	}
+
+	v.env = env
 }
 
 // Quote - see subshell.Quote
