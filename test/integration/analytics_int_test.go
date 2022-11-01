@@ -122,20 +122,11 @@ func (suite *AnalyticsIntegrationTestSuite) TestActivateEvents() {
 			cp.Snapshot(), ts.MostRecentStateLog(), ts.SvcLog()))
 
 	// Ensure any analytics events from the state tool have the instance ID set
-	// Ensure runtime attempt event exists
-	var foundAttempts int
 	for _, e := range events {
 		if strings.Contains(e.Category, "state-svc") || strings.Contains(e.Action, "state-svc") {
 			continue
 		}
-		if strings.Contains(e.Category, "runtime") && strings.Contains(e.Action, "attempt") {
-			foundAttempts++
-		}
 		suite.NotEmpty(e.Dimensions.InstanceID)
-	}
-
-	if foundAttempts == 0 {
-		suite.Fail("No runtime attempt events found")
 	}
 
 	suite.assertSequentialEvents(events)
