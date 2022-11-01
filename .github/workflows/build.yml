@@ -54,6 +54,12 @@ jobs:
         with:
           go-version: ${{ matrix.go-version }}
 
+      - # === Install Zig ===
+        name: Install Zig
+        uses: goto-bus-stop/setup-zig@v1
+        with:
+          version: 0.9.1
+
       - # === Setup ===
         name: Setup
         shell: bash
@@ -309,7 +315,6 @@ jobs:
           exit $CODE
         continue-on-error: ${{ github.event_name == 'schedule' }}
         env:
-          ACTIVESTATE_VERBOSE: true
           INTEGRATION_TEST_USERNAME: ${{ secrets.INTEGRATION_TEST_USERNAME }}
           INTEGRATION_TEST_PASSWORD: ${{ secrets.INTEGRATION_TEST_PASSWORD }}
           INTEGRATION_TEST_TOKEN: ${{ secrets.INTEGRATION_TEST_TOKEN }}
