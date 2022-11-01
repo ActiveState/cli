@@ -7,7 +7,7 @@ import (
 	"github.com/ActiveState/cli/internal/osutils/user"
 )
 
-func InstallPathForBranch(branch string) (string, error) {
+func installPathForBranch(branch string) (string, error) {
 	home, err := user.HomeDir()
 	if err != nil {
 		return "", errs.Wrap(err, "Could not get home directory")
