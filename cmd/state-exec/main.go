@@ -71,8 +71,8 @@ func run() error {
 	}
 	logr.CallIfDebugIsSet(func() {
 		logr.Debug("meta data - bins...")
-		for name, bin := range meta.Bins {
-			logr.Debug("            bins : %s=%s", name, bin)
+		for _, bin := range meta.Bins {
+			logr.Debug("            bins : %s", bin)
 		}
 	})
 	logr.Debug("meta data - matching bin: %s", meta.MatchingBin)
