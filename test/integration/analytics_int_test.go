@@ -405,10 +405,10 @@ func (suite *AnalyticsIntegrationTestSuite) TestAttempts() {
 	cp.Expect("Activated")
 	cp.WaitForInput(120 * time.Second)
 
-	time.Sleep(time.Second) // Ensure state-svc has time to report events
-
 	cp.SendLine("python3 --version")
 	cp.Expect("Python 3.")
+
+	time.Sleep(time.Second) // Ensure state-svc has time to report events
 
 	suite.eventsfile = filepath.Join(ts.Dirs.Config, reporters.TestReportFilename)
 	events := parseAnalyticsEvents(suite, ts)
