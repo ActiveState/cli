@@ -14,6 +14,7 @@ import (
 	"github.com/ActiveState/cli/pkg/cmdlets/git"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -73,14 +74,15 @@ func (u *Checkout) Run(params *Params) error {
 		return locale.WrapError(err, "err_project_frompath")
 	}
 
-	_, err = runtime.NewFromProject(proj, target.TriggerCheckout, u.analytics, u.svcModel, u.out, u.auth)
+	rti, err := runtime.NewFromProject(proj, target.TriggerCheckout, u.analytics, u.svcModel, u.out, u.auth)
 	if err != nil {
 		return locale.WrapError(err, "err_checkout_runtime_new", "Could not checkout this project.")
 	}
 
 	u.out.Notice(locale.Tl("checkout_project_statement", "",
 		proj.NamespaceString(),
-		proj.Dir()),
+		proj.Dir(),
+		setup.ExecDir(rti.Target().Dir())),
 	)
 
 	return nil
