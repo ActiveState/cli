@@ -101,7 +101,7 @@ func ExpandFromScript(s string, script *Script) (string, error) {
 	expansion := &Expansion{
 		Project:      script.project,
 		Script:       script,
-		BashifyPaths: runtime.GOOS == "windows" && script.LanguageSafe()[0] != language.Batch,
+		BashifyPaths: runtime.GOOS == "windows" && (script.LanguageSafe()[0] == language.Bash || script.LanguageSafe()[0] == language.Sh),
 	}
 	return expansion.ApplyWithMaxDepth(s, 0)
 }
