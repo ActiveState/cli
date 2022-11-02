@@ -15,6 +15,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
+	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/shirou/gopsutil/v3/process"
 )
@@ -143,6 +144,9 @@ func killProcess(proc *process.Process, name string) error {
 		for _, c := range children {
 			err = c.Kill()
 			if err != nil {
+				if osutils.IsAccessDeniedError(err) {
+					return locale.WrapInputError(err, "err_insufficient_permissions")
+				}
 				return errs.Wrap(err, "Could not kill child process of %s", name)
 			}
 		}
@@ -152,6 +156,9 @@ func killProcess(proc *process.Process, name string) error {
 
 	err = proc.Kill()
 	if err != nil {
+		if osutils.IsAccessDeniedError(err) {
+			return locale.WrapInputError(err, "err_insufficient_permissions")
+		}
 		return errs.Wrap(err, "Could not kill %s process", name)
 	}
 

@@ -6,6 +6,7 @@ package osutils
 import (
 	"os"
 	"os/exec"
+	"syscall"
 )
 
 // CmdExitCode returns the exit code of a command
@@ -22,4 +23,11 @@ func InheritEnv(env map[string]string) map[string]string {
 		}
 	}
 	return env
+}
+
+// IsAccessDeniedError is primarily used to determine if an operation failed due to insufficient
+// permissions (e.g. attempting to kill an admin process as a normal user)
+func IsAccessDeniedError(err error) bool {
+	errno, ok := err.(syscall.Errno)
+	return ok && errno == syscall.EPERM
 }
