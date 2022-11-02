@@ -40,7 +40,7 @@ func TestExecutor(t *testing.T) {
 	env := map[string]string{"PATH": "exePath"}
 
 	t.Run("Create executors", func(t *testing.T) {
-		err = execInit.Apply("/sock-path", target, env, exes)
+		err = execInit.Apply("/sock-path", target, env, allExes)
 		require.NoError(t, err, errs.Join(err, ": "))
 	})
 
