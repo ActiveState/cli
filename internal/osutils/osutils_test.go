@@ -39,41 +39,37 @@ func TestCmdExitCode(t *testing.T) {
 }
 
 func TestBashifyPath(t *testing.T) {
+	if runtime.GOOS != "windows" {
+		t.Skipf("Bashify path only runs on windows")
+	}
+	bashify := func(value string) string {
+		result, err := BashifyPath(value)
+		require.NoError(t, err)
+		return result
+	}
+	res := bashify(`C:\temp`)
+	assert.True(t, strings.HasSuffix(res, "/c/temp"), "Expected suffix '/c/temp', got %s", res)
+	res = bashify(`C:\temp temp`)
+	assert.True(t, strings.HasSuffix(res, "/c/temp\\ temp"), "Expected suffix 'c/temp\\ temp', got %s", res)
+	assert.Equal(t, "/foo", bashify(`/foo`))
+
 	_, err := BashifyPath("")
 	require.Error(t, err)
 	_, err = BashifyPath("not a valid path")
 	require.Error(t, err)
 	_, err = BashifyPath("../relative/path")
 	require.Error(t, err, "Relative paths should not work")
-
-	bashify := func(value string) string {
-		result, err := BashifyPath(value)
-		require.NoError(t, err)
-		return result
-	}
-
-	assert.Equal(t, "/foo", bashify(`/foo`))
-
-	if runtime.GOOS == "windows" {
-		res := bashify(`C:\temp`)
-		assert.True(t, strings.HasSuffix(res, "/c/temp"), "Expected suffix '/c/temp', got %s", res)
-		res = bashify(`C:\temp temp`)
-		assert.True(t, strings.HasSuffix(res, "/c/temp\\ temp"), "Expected suffix 'c/temp\\ temp', got %s", res)
-	}
 }
 
 func TestBashifyPathEnv(t *testing.T) {
-	path, err := BashifyPathEnv("/foo:/bar")
-	require.NoError(t, err)
+	path := BashifyPathEnv("/foo:/bar")
 	assert.Equal(t, "/foo:/bar", path)
 
 	if runtime.GOOS == "windows" {
-		path, err = BashifyPathEnv(`C:\foo;C:\bar`)
-		require.NoError(t, err)
+		path = BashifyPathEnv(`C:\foo;C:\bar`)
 		assert.Equal(t, "/c/foo:/c/bar", path)
 
-		path, err = BashifyPathEnv(`C:\foo bar;C:\baz`)
-		require.NoError(t, err)
+		path = BashifyPathEnv(`C:\foo bar;C:\baz`)
 		assert.Equal(t, "/c/foo bar:/c/baz", path)
 	}
 }

@@ -6,12 +6,11 @@ import (
 	"os/exec"
 	"path"
 	"path/filepath"
-	"runtime"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/multilog"
 )
 
 // CmdString returns a human-readable description of c.
@@ -33,18 +32,14 @@ func CmdString(c *exec.Cmd) string {
 // BashifyPath takes a windows style path and turns it into a bash style path
 // eg. C:\temp becomes /c/temp
 func BashifyPath(absolutePath string) (string, error) {
-	if len(absolutePath) > 0 && absolutePath[0:1] == "/" {
+	if absolutePath[0:1] == "/" {
 		// Already the format we want
 		return absolutePath, nil
 	}
 
-	if len(absolutePath) < 2 || absolutePath[1:2] != ":" {
+	if absolutePath[1:2] != ":" {
 		// Check for windows style paths
 		return "", errs.New("Unrecognized absolute path format: %s", absolutePath)
-	}
-
-	if strings.Contains(absolutePath, ";") {
-		return "", errs.New("Path is a list: %s", absolutePath)
 	}
 
 	winPath, err := winPathToLinPath(absolutePath)
@@ -52,9 +47,7 @@ func BashifyPath(absolutePath string) (string, error) {
 		winPath = strings.Replace(winPath, ` `, `\ `, -1) // escape space
 		return winPath, nil
 	}
-
-	// Do not log to rollbar because the path might not exist (yet).
-	logging.Error("Failed to bashify path using installed bash executable, falling back to slash replacement: %v", err)
+	multilog.Error("Failed to bashify path using installed bash executable, falling back to slash replacement: %v", err)
 
 	vol := filepath.VolumeName(absolutePath)
 	absolutePath = absolutePath[len(vol):]

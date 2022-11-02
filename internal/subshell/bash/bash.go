@@ -63,13 +63,9 @@ func (v *SubShell) WriteUserEnv(cfg sscommon.Configurable, env map[string]string
 		return errs.Wrap(err, "RcFile failure")
 	}
 
-	if _, pathExists := env["PATH"]; pathExists && runtime.GOOS == "windows" {
+	if path, pathExists := env["PATH"]; pathExists && runtime.GOOS == "windows" {
 		// Either the State Tool is being installed on Windows, or a runtime is being deployed on Windows.
-		path, err := osutils.BashifyPathEnv(env["PATH"])
-		if err != nil {
-			return errs.Wrap(err, "Unable to bashify PATH: %v", env["PATH"])
-		}
-		env["PATH"] = path
+		env["PATH"] = osutils.BashifyPathEnv(path)
 	}
 
 	env = sscommon.EscapeEnv(env)
@@ -140,20 +136,9 @@ func (v *SubShell) SetupShellRcFile(targetDir string, env map[string]string, nam
 
 // SetEnv - see subshell.SetEnv
 func (v *SubShell) SetEnv(env map[string]string) {
-	for key, value := range env {
-		var bashified string
-		var err error
-		if key == "PATH" {
-			bashified, err = osutils.BashifyPathEnv(value)
-		} else {
-			bashified, err = osutils.BashifyPath(value)
-		}
-		if err != nil {
-			continue // ignore error because this probably isn't a path or path list to bashify
-		}
-		env[key] = bashified
+	if path, pathExists := env["PATH"]; pathExists && runtime.GOOS == "windows" {
+		env["PATH"] = osutils.BashifyPathEnv(path)
 	}
-
 	v.env = env
 }
 

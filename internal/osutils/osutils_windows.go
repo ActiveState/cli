@@ -29,16 +29,18 @@ func CmdExitCode(cmd *exec.Cmd) (code int) {
 
 // BashifyPath takes a windows %PATH% list and turns it into a bash style PATH list.
 // e.g. C:\foo;C:\bar becomes /c/foo:/c/bar
-func BashifyPathEnv(pathList string) (string, error) {
+func BashifyPathEnv(pathList string) string {
 	dirs := strings.Split(pathList, ";")
 	for i, dir := range dirs {
-		path, err := BashifyPath(dir)
-		if err != nil {
-			return "", errs.Wrap(err, "Unable to bashify path: %v", dir)
-		}
-		dirs[i] = strings.Replace(path, `\ `, " ", -1)
+		// Calling out to bash like in BashifyPath is too slow. Just do a simple string transformation.
+		// The resulting paths will be valid in bash, they just may not be fully resolved/simplified.
+		// This is okay because bash really just needs to find executables to run.
+		vol := strings.ToLower(filepath.VolumeName(dir))    // "C:\foo bar\baz" -> "c:"
+		dir = dir[len(vol):]                                // "C:\foo bar\baz" -> "\foo bar\baz"
+		vol = strings.lowerstrings.Replace(vol, ":", "", 1) // "c:" -> "c"
+		dirs[i] = "/" + vol + filepath.ToSlash(dir)         // "C:\foo bar\baz" -> "/c/foo bar/baz"
 	}
-	return strings.Join(dirs, ":"), nil // bash uses ':' while Windows uses ';'
+	return strings.Join(dirs, ":") // bash uses ':' while Windows uses ';'
 }
 
 var dynamicEnvVarRe = regexp.MustCompile(`(^=.+)=(.+)`)
