@@ -27,6 +27,20 @@ func CmdExitCode(cmd *exec.Cmd) (code int) {
 	return cmd.ProcessState.Sys().(Status).ExitStatus()
 }
 
+// BashifyPath takes a windows %PATH% list and turns it into a bash style PATH list.
+// e.g. C:\foo;C:\bar becomes /c/foo:/c/bar
+func BashifyPathEnv(pathList string) (string, error) {
+	dirs := strings.Split(pathList, ";")
+	for i, dir := range dirs {
+		path, err := BashifyPath(dir)
+		if err != nil {
+			return "", errs.Wrap(err, "Unable to bashify path: %v", dir)
+		}
+		dirs[i] = strings.Replace(path, `\ `, " ", -1)
+	}
+	return strings.Join(dirs, ":"), nil // bash uses ':' while Windows uses ';'
+}
+
 var dynamicEnvVarRe = regexp.MustCompile(`(^=.+)=(.+)`)
 
 // InheritEnv returns a union of the given environment and os.Environ(). If the given environment
