@@ -61,7 +61,7 @@ func TestBashifyPath(t *testing.T) {
 
 func TestBashifyPathEnv(t *testing.T) {
 	if runtime.GOOS == "windows" {
-		path = BashifyPathEnv(`C:\foo;C:\bar`)
+		path := BashifyPathEnv(`C:\foo;C:\bar`)
 		assert.Equal(t, "/c/foo:/c/bar", path)
 
 		path = BashifyPathEnv(`C:\foo bar;C:\baz`)
