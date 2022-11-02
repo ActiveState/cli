@@ -85,9 +85,6 @@ func stopSvc(installPath string) error {
 		if n == svcName {
 			exe, err := p.Exe()
 			if err != nil {
-				if strings.HasPrefix(err.Error(), "bad call to lsof:") {
-					// This only happens on macOS.
-				}
 				multilog.Error("Could not get executable path for state-svc process, error: %v", err)
 				continue
 			}
