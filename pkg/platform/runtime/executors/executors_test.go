@@ -5,11 +5,13 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"runtime"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 )
@@ -30,6 +32,11 @@ func TestExecutor(t *testing.T) {
 
 	exePath := "/i/am/an/exe/"
 	exes := []string{exePath + "a", exePath + "b", exePath + "c"}
+	winExes := []string{exePath + "d" + exeutils.Extension, exePath + "e" + exeutils.Extension}
+	allExes := exes
+	if runtime.GOOS == "windows" {
+		allExes = append(allExes, winExes...)
+	}
 	env := map[string]string{"PATH": "exePath"}
 
 	t.Run("Create executors", func(t *testing.T) {
@@ -38,12 +45,21 @@ func TestExecutor(t *testing.T) {
 	})
 
 	// Verify executors
-	for _, exe := range exes {
+	for i, exe := range allExes {
 		path := filepath.Join(binPath, filepath.Base(exe))
+
+		if runtime.GOOS == "windows" && i < len(exes) { // ensure exes are not represented
+			t.Run("Executor Exists", func(t *testing.T) {
+				if fileutils.FileExists(path) {
+					t.Errorf("Should not locate exe: %s", path)
+				}
+			})
+			continue
+		}
+
 		t.Run("Executor Exists", func(t *testing.T) {
 			if !fileutils.FileExists(path) {
 				t.Errorf("Could not locate exe: %s", path)
-				t.FailNow()
 			}
 		})
 
@@ -52,7 +68,6 @@ func TestExecutor(t *testing.T) {
 			require.NoError(t, err, errs.Join(err, ": "))
 			if !contains {
 				t.Errorf("File %s does not contain %q, contents: %q", path, exe, fileutils.ReadFileUnsafe(path))
-				t.FailNow()
 			}
 		})
 	}
