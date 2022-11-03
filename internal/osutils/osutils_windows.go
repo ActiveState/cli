@@ -31,15 +31,31 @@ func CmdExitCode(cmd *exec.Cmd) (code int) {
 // BashifyPath takes a windows %PATH% list and turns it into a bash style PATH list.
 // e.g. C:\foo;C:\bar becomes /c/foo:/c/bar
 func BashifyPathEnv(pathList string) string {
+	// Calling out to bash like in BashifyPath is too slow.
+	// Just do a simple string transformation after computing the root prefix.
+	// The resulting paths will be valid in bash, they just may not be fully resolved/simplified.
+	// This is okay because bash really just needs to find executables to run.
+	windir := os.Getenv("WINDIR") // always defined; e.g. "C:\Windows"
+	var root string
+	if bashified, err := BashifyPath(windir); err == nil { // e.g. "/c/Windows"
+		dirNoVol := windir[len(filepath.VolumeName(windir))+1:] // e.g. "Windows"
+		if i := strings.Index(bashified, dirNoVol); i > 0 {
+			root = bashified[:i-1] // e.g. "/c"
+		} else {
+			multilog.Error("Could not find windir ('%s') in bashified dir ('%s')", dirNoVol, bashified)
+		}
+	} else {
+		multilog.Error("Could not bashify %WINDIR%: %v", err)
+	}
+	if root == "" {
+		// Fallback.
+		root = "/" + strings.ToLower(filepath.VolumeName(windir)) // e.g. "/c"
+	}
+
 	dirs := strings.Split(pathList, ";")
 	for i, dir := range dirs {
-		// Calling out to bash like in BashifyPath is too slow. Just do a simple string transformation.
-		// The resulting paths will be valid in bash, they just may not be fully resolved/simplified.
-		// This is okay because bash really just needs to find executables to run.
-		vol := strings.ToLower(filepath.VolumeName(dir)) // "C:\foo bar\baz" -> "c:"
-		dir = dir[len(vol):]                             // "C:\foo bar\baz" -> "\foo bar\baz"
-		vol = strings.Replace(vol, ":", "", 1)           // "c:" -> "c"
-		dirs[i] = "/" + vol + filepath.ToSlash(dir)      // "C:\foo bar\baz" -> "/c/foo bar/baz"
+		dir = dir[len(filepath.VolumeName(dir)):] // "C:\foo bar\baz" -> "\foo bar\baz"
+		dirs[i] = root + filepath.ToSlash(dir)    // "C:\foo bar\baz" -> "/c/foo bar/baz"
 	}
 	return strings.Join(dirs, ":") // bash uses ':' while Windows uses ';'
 }
