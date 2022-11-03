@@ -20,6 +20,7 @@ const (
 	tray
 	installer
 	update
+	executor
 )
 
 var execData = map[executableType]string{
@@ -28,6 +29,7 @@ var execData = map[executableType]string{
 	tray:      constants.StateTrayCmd + osutils.ExeExt,
 	installer: constants.StateInstallerCmd + osutils.ExeExt,
 	update:    constants.StateUpdateDialogCmd + osutils.ExeExt,
+	executor:  constants.StateExecutorCmd + osutils.ExeExt,
 }
 
 func newExec(exec executableType) (string, error) {
@@ -95,6 +97,14 @@ func UpdateExec() (string, error) {
 
 func NewUpdateExecFromDir(baseDir string) (string, error) {
 	return newExecFromDir(baseDir, update)
+}
+
+func ExecutorExec() (string, error) {
+	return newExec(executor)
+}
+
+func NewExecutorExecFromDir(baseDir string) (string, error) {
+	return newExecFromDir(baseDir, executor)
 }
 
 func Executables() ([]string, error) {
