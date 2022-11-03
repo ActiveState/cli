@@ -6,6 +6,7 @@ import (
 	"os/user"
 	"path/filepath"
 	rt "runtime"
+	"strings"
 
 	"github.com/ActiveState/cli/internal/analytics"
 	anaConsts "github.com/ActiveState/cli/internal/analytics/constants"
@@ -121,6 +122,8 @@ func (r *Activate) run(params *ActivateParams) error {
 				return nil
 			}
 
+			logging.Debug("Currently activated project: %s", activated)
+			logging.Debug("Activated environment: %s", strings.Join(os.Environ(), "\n"))
 			err = locale.NewInputError("err_already_activated",
 				"You cannot activate a new project when you are already in an activated state. "+
 					"To exit your activated state simply close your current shell by running [ACTIONABLE]exit[/RESET].",
