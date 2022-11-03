@@ -45,7 +45,7 @@ func BashifyPathEnv(pathList string) string {
 			multilog.Error("Could not find windir ('%s') in bashified dir ('%s')", dirNoVol, bashified)
 		}
 	} else {
-		multilog.Error("Could not bashify %WINDIR%: %v", err)
+		multilog.Error("Could not bashify WINDIR: %v", err)
 	}
 	if root == "" {
 		// Fallback.
