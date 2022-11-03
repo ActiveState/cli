@@ -4,6 +4,7 @@ import (
 	"os"
 
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -76,7 +77,13 @@ func (c *Cache) removeCache(path string, force bool) error {
 	}
 
 	logging.Debug("Removing cache path: %s", path)
-	return removeCache(c.path)
+	err := removeCache(c.path)
+	if err != nil {
+		return errs.Wrap(err, "Failed to remove cache")
+	}
+
+	c.output.Print(locale.Tl("clean_cache_success_message", "Successfully cleaned cache."))
+	return nil
 }
 
 func (c *Cache) removeProjectCache(projectDir, namespace string, force bool) error {
