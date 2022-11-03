@@ -123,10 +123,6 @@ jobs:
                 "Args": ["state", "run", "build-install-scripts"]
             },
             {
-                "ID": "Build-Executor",
-                "Args": ["state", "run", "build-exec"]
-            },
-            {
                 "ID": "Build-Offline-Installer",
                 "Args": ["state", "run", "build-offline-installer"]
             }
@@ -188,11 +184,6 @@ jobs:
         shell: bash
         if: runner.os == 'macOS'
         run: parallelize results Build-Systray-App
-
-      - # === "Build: Executor" ===
-        name: "Build: Executor"
-        shell: bash
-        run: parallelize results Build-Executor
 
       - # === "Build: Offline-Installer" ===
         name: "Build: Offline-Installer"
@@ -309,7 +300,6 @@ jobs:
           exit $CODE
         continue-on-error: ${{ github.event_name == 'schedule' }}
         env:
-          ACTIVESTATE_VERBOSE: true
           INTEGRATION_TEST_USERNAME: ${{ secrets.INTEGRATION_TEST_USERNAME }}
           INTEGRATION_TEST_PASSWORD: ${{ secrets.INTEGRATION_TEST_PASSWORD }}
           INTEGRATION_TEST_TOKEN: ${{ secrets.INTEGRATION_TEST_TOKEN }}

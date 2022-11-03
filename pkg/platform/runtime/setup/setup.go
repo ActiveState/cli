@@ -24,7 +24,6 @@ import (
 	"github.com/ActiveState/cli/internal/proxyreader"
 	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/ActiveState/cli/internal/rtutils/p"
-	"github.com/ActiveState/cli/internal/svcctl"
 	"github.com/ActiveState/cli/internal/unarchiver"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
@@ -34,7 +33,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifactcache"
 	"github.com/ActiveState/cli/pkg/platform/runtime/envdef"
-	"github.com/ActiveState/cli/pkg/platform/runtime/executors"
+	"github.com/ActiveState/cli/pkg/platform/runtime/executor"
 	"github.com/ActiveState/cli/pkg/platform/runtime/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup/buildlog"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup/events"
@@ -270,13 +269,8 @@ func (s *Setup) updateExecutors(artifacts []artifact.ArtifactID) error {
 		return locale.WrapError(err, "err_deploy_execpaths", "Could not retrieve runtime executable paths")
 	}
 
-	env, err := s.store.Environ(false)
-	if err != nil {
-		return locale.WrapError(err, "err_setup_get_runtime_env", "Could not retrieve runtime environment")
-	}
-
-	execInit := executors.New(execPath)
-	if err := execInit.Apply(svcctl.NewIPCSockPathFromGlobals().String(), s.target, env, exePaths); err != nil {
+	exec := executor.NewWithBinPath(s.target.Dir(), execPath)
+	if err := exec.Update(exePaths); err != nil {
 		return locale.WrapError(err, "err_deploy_executors", "Could not create executors")
 	}
 
