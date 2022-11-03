@@ -39,9 +39,10 @@ type ChangesetProvider interface {
 
 // ImportRunParams tracks the info required for running Import.
 type ImportRunParams struct {
-	FileName string
-	Language string
-	Force    bool
+	FileName       string
+	Language       string
+	Force          bool
+	NonInteractive bool
 }
 
 // NewImportRunParams prepares the info required for running Import with default
@@ -87,7 +88,7 @@ func NewImport(prime primeable) *Import {
 }
 
 // Run executes the import behavior.
-func (i *Import) Run(params ImportRunParams) error {
+func (i *Import) Run(params *ImportRunParams) error {
 	logging.Debug("ExecuteImport")
 
 	if params.FileName == "" {
@@ -116,8 +117,7 @@ func (i *Import) Run(params ImportRunParams) error {
 
 	packageReqs := model.FilterCheckpointPackages(reqs)
 	if len(packageReqs) > 0 {
-		force := params.Force
-		err = removeRequirements(i.Prompter, i.proj, force, packageReqs)
+		err = removeRequirements(i.Prompter, i.proj, params, packageReqs)
 		if err != nil {
 			return locale.WrapError(err, "err_cannot_remove_existing")
 		}
@@ -132,11 +132,12 @@ func (i *Import) Run(params ImportRunParams) error {
 	return runbits.RefreshRuntime(i.auth, i.out, i.analytics, i.proj, storage.CachePath(), commitID, true, target.TriggerImport, i.svcModel)
 }
 
-func removeRequirements(conf Confirmer, project *project.Project, force bool, reqs []*gqlModel.Requirement) error {
-	if !force {
+func removeRequirements(conf Confirmer, project *project.Project, params *ImportRunParams, reqs []*gqlModel.Requirement) error {
+	if !params.Force {
 		msg := locale.T("confirm_remove_existing_prompt")
 
-		confirmed, err := conf.Confirm(locale.T("confirm"), msg, new(bool))
+		defaultChoice := params.NonInteractive
+		confirmed, err := conf.Confirm(locale.T("confirm"), msg, &defaultChoice)
 		if err != nil {
 			return err
 		}

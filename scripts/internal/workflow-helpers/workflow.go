@@ -16,7 +16,8 @@ const (
 	ReleaseBranch = "release"
 )
 
-const VersionAny = "Any"
+const VersionNextFeasible = "Next Feasible"
+const VersionNextUnscheduled = "Next Unscheduled"
 
 const VersionedPRPrefix = "Version "
 
@@ -37,14 +38,25 @@ func VersionFromPRTitle(title string) (semver.Version, error) {
 
 const versionBranchPrefix = "version/"
 
-func ValidVersionBranch(branchName string) error {
+func IsVersionBranch(branchName string) bool {
 	if strings.HasPrefix(branchName, versionBranchPrefix) {
-		return nil
+		return true
 	}
-	return errs.New("Branch name: '%s' does not start with '%s'", branchName, versionBranchPrefix)
+	return false
+}
+
+func ValidVersionBranch(branchName string, version semver.Version) error {
+	desiredBranchName := VersionedBranchName(version)
+	if branchName != desiredBranchName {
+		return errs.New("Branch name: '%s' does not match desired branch name: '%s'", branchName, desiredBranchName)
+	}
+	return nil
 }
 
 func VersionedBranchName(version semver.Version) string {
+	if version.EQ(VersionMaster) {
+		return MasterBranch
+	}
 	return versionBranchPrefix + strings.Replace(version.String(), ".", "-", -1)
 }
 

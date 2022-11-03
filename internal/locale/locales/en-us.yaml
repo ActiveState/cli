@@ -1879,7 +1879,7 @@ unstable_feature_banner:
   other: "[NOTICE]Beta Feature: This feature is still in beta and may be unstable.[/RESET]\n"
 unstable_command_warning:
   other: |
-    The command '[ACTIONABLE]state {{.V0}}[/RESET]' is still in beta. If you want to opt-in to unstable features, run the following command:
+    This command is still in beta. If you want to opt-in to unstable features, run the following command:
 
     [ACTIONABLE]state config set optin.unstable true[/RESET]
 secrets_unstable_warning:
@@ -1951,6 +1951,11 @@ err_state_exec_dir:
   other: Could not get state exec from directory {{.V0}}
 err_service_exec_dir:
   other: Could not get service exec from directory {{.V0}}
+err_insufficient_permissions:
+  other: |
+    Could not stop running State Tool process due to insufficient permissions.
+
+    State Tool works best if you run it as a user, rather than an admin. You might be encountering this issue because you have originally installed or ran the State Tool as admin. If this is the case it is suggested that you uninstall the State Tool as admin, and install it again as a user.
 err_tray_exec_dir:
   other: Could not get tray exec from directory {{.V0}}
 err_update_exec_dir:
@@ -2008,6 +2013,13 @@ shell_project_statement:
     Opening shell for project [ACTIONABLE]{{.V0}}[/RESET], located at [ACTIONABLE]{{.V1}}[/RESET].
     For editors and other tooling use the executables at: [ACTIONABLE]{{.V2}}[/RESET].
 checkout_project_statement:
-  other: Checked out project [ACTIONABLE]{{.V0}}[/RESET], located at [ACTIONABLE]{{.V1}}[/RESET].
+  other: |
+    Checked out project [ACTIONABLE]{{.V0}}[/RESET], located at [ACTIONABLE]{{.V1}}[/RESET].
+    For editors and other tooling use the executables at: [ACTIONABLE]{{.V2}}[/RESET].
 export_project_statement:
   other: Exporting env for project [ACTIONABLE]{{.V0}}[/RESET] located at [ACTIONABLE]{{.V1}}[/RESET].
+err_home_not_found:
+  other: |
+    Could not proceed because your HOME environment variable is unset. Please ensure that your HOME environment variable is set. Alternatively if you do not or cannot set this variable you can instead use the ACTIVESTATE_HOME variable.
+
+    This variable is used by the State Tool to determine things like the installation directory, config directory and cache directory.

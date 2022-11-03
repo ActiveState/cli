@@ -1,6 +1,7 @@
 package osutils
 
 import (
+	"errors"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -10,6 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/rollbar"
+	"golang.org/x/sys/windows"
 )
 
 // CmdExitCode returns the exit code of a command in a platform agnostic way
@@ -96,4 +98,10 @@ func InheritEnv(env map[string]string) map[string]string {
 	}
 
 	return env
+}
+
+// IsAccessDeniedError is primarily used to determine if an operation failed due to insufficient
+// permissions (e.g. attempting to kill an admin process as a normal user)
+func IsAccessDeniedError(err error) bool {
+	return errors.Is(err, windows.ERROR_ACCESS_DENIED)
 }

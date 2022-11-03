@@ -12,8 +12,8 @@ import (
 	"github.com/ActiveState/cli/internal/assets"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/osutils/user"
 	"github.com/ActiveState/cli/internal/strutils"
-	"github.com/mitchellh/go-homedir"
 )
 
 const (
@@ -79,7 +79,7 @@ func (a *app) IsEnabled() (bool, error) {
 }
 
 func (a *app) InstallPath() (string, error) {
-	dir, err := homedir.Dir()
+	dir, err := user.HomeDir()
 	if err != nil {
 		return "", errs.Wrap(err, "Could not get home directory")
 	}

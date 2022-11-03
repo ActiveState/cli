@@ -66,6 +66,9 @@ type SubShell interface {
 	// RcFile return the path of the RC file
 	RcFile() (string, error)
 
+	// EnsureRcFile ensures that the RC file exists
+	EnsureRcFileExists() error
+
 	// SetupShellRcFile writes a script or source-able file that updates the environment variables and sets the prompt
 	SetupShellRcFile(string, map[string]string, *project.Namespaced) error
 
@@ -77,6 +80,9 @@ type SubShell interface {
 
 	// Quote will quote the given string, escaping any characters that need escaping
 	Quote(value string) string
+
+	// IsAvailable returns whether the shell is available on the system
+	IsAvailable() bool
 }
 
 // New returns the subshell relevant to the current process, but does not activate it
@@ -138,6 +144,28 @@ func New(cfg sscommon.Configurable) SubShell {
 	subs.SetEnv(osutils.EnvSliceToMap(env))
 
 	return subs
+}
+
+func ConfigureAvailableShells(shell SubShell, cfg sscommon.Configurable, env map[string]string, identifier sscommon.RcIdentification, isAdmin bool) error {
+	// Ensure active shell has RC file
+	if shell.IsActive() {
+		err := shell.EnsureRcFileExists()
+		if err != nil {
+			return errs.Wrap(err, "Could not ensure RC file for active shell")
+		}
+	}
+
+	for _, s := range supportedShells {
+		if !s.IsAvailable() {
+			continue
+		}
+		err := s.WriteUserEnv(cfg, env, identifier, isAdmin)
+		if err != nil {
+			logging.Error("Could not update PATH for shell %s: %v", s.Shell(), err)
+		}
+	}
+
+	return nil
 }
 
 func DetectShellBinary(cfg sscommon.Configurable) (binary string) {

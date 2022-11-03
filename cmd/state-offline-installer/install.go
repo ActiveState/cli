@@ -375,7 +375,8 @@ func (r *runner) configureEnvironment(path string, asrt *runtime.Runtime) error 
 		}
 	}
 
-	err = r.shell.WriteUserEnv(r.cfg, env, sscommon.OfflineInstallID, true)
+	// Configure available shells
+	err = subshell.ConfigureAvailableShells(r.shell, r.cfg, env, sscommon.OfflineInstallID, true)
 	if err != nil {
 		return locale.WrapError(err,
 			"err_deploy_subshell_write",

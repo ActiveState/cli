@@ -24,6 +24,9 @@ const ConfigFileName = "activestate.yaml"
 // InternalConfigNamespace holds the appdata folder name under which we store our config
 const InternalConfigNamespace = "activestate"
 
+// HomeEnvVarName is the fallback env var used to determine the user's home directory.
+const HomeEnvVarName = "ACTIVESTATE_HOME"
+
 // ConfigEnvVarName is the env var used to override the config dir that the State Tool uses
 const ConfigEnvVarName = "ACTIVESTATE_CLI_CONFIGDIR"
 
@@ -142,6 +145,10 @@ const DebugServiceRequestsEnvVarName = "ACTIVESTATE_DEBUG_SERVICE_REQUESTS"
 // IsAdminOverrideEnvVarName is used to override the admin status of the user, meant to work around issues with
 // admin detection on CI. The value should be either true or false, where true means that we're running as admin.
 const IsAdminOverrideEnvVarName = "ACTIVESTATE_CLI_ISADMIN_OVERRIDE"
+
+// InstallPathOverrideEnvVarName is used to override the default installation path of the state tool.
+// This is intended for use in our integration tests, not by end-users.
+const InstallPathOverrideEnvVarName = "ACTIVESTATE_CLI_INSTALLPATH_OVERRIDE"
 
 // APIUpdateInfoURL is the URL for our update info server
 const APIUpdateInfoURL = "https://platform.activestate.com/sv/state-update/api/v1"
@@ -423,9 +430,6 @@ const UpdateDialogName = "State Update Dialog"
 
 // StateUpdateDialogCmd is the name of the state update dialog binary
 const StateUpdateDialogCmd = "state-update-dialog"
-
-// StateExecutorCmd is the name of the state executor binary
-const StateExecutorCmd = "state-exec"
 
 // ToplevelInstallArchiveDir is the top-level directory for files in an installation archive
 // Cf., https://www.pivotaltracker.com/story/show/177781411

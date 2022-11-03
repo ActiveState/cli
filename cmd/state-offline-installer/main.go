@@ -94,7 +94,9 @@ func main() {
 
 		errors.PanicOnMissingLocale = false
 		exitCode, _ = errors.Unwrap(err)
-		fmt.Fprintln(os.Stderr, errs.JoinMessage(err))
+		if err != nil {
+			fmt.Fprintln(os.Stderr, errs.JoinMessage(err))
+		}
 	}
 	out.Print("Press enter to exit.")
 	fmt.Scanln(p.StrP("")) // Wait for input from user

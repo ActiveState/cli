@@ -88,7 +88,7 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 
 	installCmd := newInstallCommand(prime)
 	uninstallCmd := newUninstallCommand(prime)
-	importCmd := newImportCommand(prime)
+	importCmd := newImportCommand(prime, globals)
 	searchCmd := newSearchCommand(prime)
 	infoCmd := newInfoCommand(prime)
 

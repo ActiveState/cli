@@ -10,6 +10,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/osutils/user"
 	"github.com/google/uuid"
 	"github.com/shibukawa/configdir"
 )
@@ -33,17 +34,20 @@ func AppDataPath() (string, error) {
 	// This is a workaround for docker envs that don't usually have $HOME set
 	_, envSet = os.LookupEnv("HOME")
 	if !envSet && runtime.GOOS != "windows" {
-		localPath := filepath.Dir(os.Args[0])
-		if localPath == "" || condition.InUnitTest() {
-			// Use temp dir if we can't get the working directory OR we're in a test (we don't want to write to our src directory)
+		homeDir, err := user.HomeDir()
+		if err != nil {
+			if !condition.InUnitTest() {
+				return "", fmt.Errorf("Could not get user home directory: %w", err)
+			}
+			// Use temp dir if we're in a test (we don't want to write to our src directory)
 			var err error
 			localPath, err = ioutil.TempDir("", "cli-config-test")
 			if err != nil {
 				return "", fmt.Errorf("could not create temp dir: %w", err)
 			}
+			return AppDataPathWithParent(localPath)
 		}
-
-		return AppDataPathWithParent(localPath)
+		os.Setenv("HOME", homeDir)
 	}
 
 	dir := configDirs.QueryFolders(configdir.Global)[0].Path
