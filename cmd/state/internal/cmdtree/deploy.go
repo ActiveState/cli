@@ -52,7 +52,7 @@ func newDeployCommand(prime *primer.Values) *captain.Command {
 		func(cmd *captain.Command, args []string) error {
 			return runner.Run(params)
 		})
-	cmd.SetGroup(EnvironmentGroup)
+	cmd.SetGroup(EnvironmentSetupGroup)
 	cmd.SetHidden(true)
 	return cmd
 }

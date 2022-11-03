@@ -86,6 +86,6 @@ func newActivateCommand(prime *primer.Values) *captain.Command {
 			return err
 		},
 	)
-	cmd.SetGroup(EnvironmentGroup)
+	cmd.SetGroup(EnvironmentUsageGroup)
 	return cmd
 }

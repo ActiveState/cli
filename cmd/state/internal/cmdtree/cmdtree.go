@@ -210,12 +210,14 @@ type globalOptions struct {
 
 // Group instances are used to group command help output.
 var (
-	EnvironmentGroup = captain.NewCommandGroup(locale.Tl("group_environment", "Environment Management"), 10)
-	PackagesGroup    = captain.NewCommandGroup(locale.Tl("group_packages", "Package Management"), 9)
-	PlatformGroup    = captain.NewCommandGroup(locale.Tl("group_tools", "Platform"), 8)
-	VCSGroup         = captain.NewCommandGroup(locale.Tl("group_vcs", "Version Control"), 7)
-	AutomationGroup  = captain.NewCommandGroup(locale.Tl("group_automation", "Automation"), 6)
-	UtilsGroup       = captain.NewCommandGroup(locale.Tl("group_utils", "Utilities"), 5)
+	EnvironmentSetupGroup = captain.NewCommandGroup(locale.Tl("group_environment_setup", "Environment Setup"), 10)
+	EnvironmentUsageGroup = captain.NewCommandGroup(locale.Tl("group_environment_usage", "Environment Usage"), 9)
+	ProjectUsageGroup     = captain.NewCommandGroup(locale.Tl("group_project_usages", "Project Usage"), 8)
+	PackagesGroup         = captain.NewCommandGroup(locale.Tl("group_packages", "Package Management"), 7)
+	PlatformGroup         = captain.NewCommandGroup(locale.Tl("group_tools", "Platform"), 6)
+	VCSGroup              = captain.NewCommandGroup(locale.Tl("group_vcs", "Version Control"), 5)
+	AutomationGroup       = captain.NewCommandGroup(locale.Tl("group_automation", "Automation"), 4)
+	UtilsGroup            = captain.NewCommandGroup(locale.Tl("group_utils", "Utilities"), 3)
 )
 
 func newGlobalOptions() *globalOptions {
