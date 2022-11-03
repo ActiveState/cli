@@ -47,7 +47,6 @@ func Start(cmd *exec.Cmd) chan error {
 					logging.Debug("exit - valid: %t, code: %d", valid, code)
 					return
 				}
-				logging.Debug("exit - with non-zero: %s, %s", eerr, cmd.String())
 
 				errors <- errs.Silence(errs.WrapExitCode(eerr, code))
 				return

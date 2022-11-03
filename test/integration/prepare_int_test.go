@@ -18,6 +18,7 @@ import (
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
+	"github.com/ActiveState/cli/pkg/platform/runtime/executor"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
 	rt "github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/stretchr/testify/suite"
@@ -148,7 +149,7 @@ func (suite *PrepareIntegrationTestSuite) TestResetExecutors() {
 	err = os.Remove(filepath.Join(targetDir, constants.LocalRuntimeEnvironmentDirectory, constants.RuntimeInstallationCompleteMarker))
 	suite.Assert().NoError(err, "removal of complete marker should have worked")
 
-	suite.FileExists(filepath.Join(globalExecDir, "python3"+osutils.ExeExt))
+	suite.FileExists(filepath.Join(globalExecDir, executor.NameForExe("python3"+osutils.ExeExt)))
 	err = os.RemoveAll(projectExecDir)
 
 	cp = ts.Spawn("activate")

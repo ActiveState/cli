@@ -14,7 +14,7 @@ import (
 )
 
 var (
-	msgWidth = 640
+	msgWidth = 64
 	network  = "unix"
 )
 
