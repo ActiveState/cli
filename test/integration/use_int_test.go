@@ -42,7 +42,10 @@ func (suite *UseIntegrationTestSuite) TestUse() {
 	cp.ExpectExitCode(0)
 
 	// Verify runtime works.
-	pythonExe := filepath.Join(ts.Dirs.DefaultBin, "python3")
+	pythonExe := filepath.Join(ts.Dirs.DefaultBin, "python3"+osutils.ExeExt)
+	if runtime.GOOS == "windows" {
+		pythonExe = pythonExe + ".bat"
+	}
 	cp = ts.SpawnCmdWithOpts(
 		pythonExe,
 		e2e.WithArgs("--version"),
