@@ -71,7 +71,7 @@ func (c *Cache) removeCache(path string, force bool) error {
 			return err
 		}
 		if !ok {
-			return nil
+			return locale.NewInputError("err_clean_cache_not_confirmed", "Cleaning of cache aborted by user")
 		}
 	}
 
@@ -86,7 +86,7 @@ func (c *Cache) removeProjectCache(projectDir, namespace string, force bool) err
 			return err
 		}
 		if !ok {
-			return nil
+			return locale.NewInputError("err_clean_cache_artifact_not_confirmed", "Cleaning of cached runtime aborted by user")
 		}
 	}
 
