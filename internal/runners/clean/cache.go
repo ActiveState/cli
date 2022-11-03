@@ -78,7 +78,7 @@ func (c *Cache) removeCache(path string, force bool) error {
 	logging.Debug("Removing cache path: %s", path)
 	err := removeCache(c.path)
 	if err != nil {
-		return err
+		return errs.Wrap(err, "Failed to remove cache")
 	}
 
 	c.output.Print(locale.Tl("clean_cache_success_message", "Successfully cleaned cache."))
