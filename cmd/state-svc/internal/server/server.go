@@ -67,10 +67,6 @@ func (s *Server) Port() int {
 	return s.port
 }
 
-func (s *Server) Resolver() *resolver.Resolver {
-	return s.resolver
-}
-
 func (s *Server) Start() error {
 	s.analytics.Event(constants.CatStateSvc, "start")
 	err := s.httpServer.Start(s.listener.Addr().String())
