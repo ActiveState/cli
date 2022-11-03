@@ -1,11 +1,13 @@
 package integration
 
 import (
+	"fmt"
 	"path/filepath"
 	"testing"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
+	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
@@ -15,7 +17,7 @@ import (
 
 type RemoteInstallIntegrationTestSuite struct {
 	tagsuite.Suite
-	installerExe string
+	remoteInstallerExe string
 }
 
 func (suite *RemoteInstallIntegrationTestSuite) TestInstall() {
@@ -23,15 +25,67 @@ func (suite *RemoteInstallIntegrationTestSuite) TestInstall() {
 	ts := e2e.New(suite.T(), true)
 	defer ts.Close()
 
-	suite.setupTest(ts)
+	tests := []struct {
+		Name    string
+		Version string
+		Channel string
+	}{
+		// Disabled until the target installers support the installpath override env var: DX-1350
+		// {"install-release-latest", "", constants.ReleaseBranch},
+		// {"install-prbranch", "", ""},
+		// {"install-prbranch-with-version", constants.Version, constants.BranchName},
+		{"install-prbranch-and-branch", "", constants.BranchName},
+	}
 
-	cp := ts.SpawnCmdWithOpts(suite.installerExe, e2e.WithArgs("--channel", constants.ReleaseBranch))
-	cp.Expect("Terms of Service")
-	cp.SendLine("y")
-	cp.Expect("Installing")
-	cp.Expect("Installation complete. Press enter to exit")
-	cp.SendLine("")
-	cp.ExpectExitCode(0)
+	for _, tt := range tests {
+		suite.Run(fmt.Sprintf("%s (%s@%s)", tt.Name, tt.Version, tt.Channel), func() {
+			ts := e2e.New(suite.T(), false)
+			defer ts.Close()
+
+			suite.setupTest(ts)
+
+			installPath := filepath.Join(ts.Dirs.Work, "install")
+			stateExePath := filepath.Join(installPath, "bin", constants.StateCmd+exeutils.Extension)
+
+			args := []string{}
+			if tt.Version != "" {
+				args = append(args, "--version", tt.Version)
+			}
+			if tt.Channel != "" {
+				args = append(args, "--channel", tt.Channel)
+			}
+
+			cp := ts.SpawnCmdWithOpts(
+				suite.remoteInstallerExe,
+				e2e.WithArgs(args...),
+				e2e.AppendEnv(constants.InstallPathOverrideEnvVarName+"="+installPath),
+			)
+
+			cp.Expect("Terms of Service")
+			cp.SendLine("y")
+			cp.Expect("Installing")
+			cp.Expect("Installation Complete")
+			cp.Expect("Press ENTER to exit")
+			cp.SendLine("")
+			cp.ExpectExitCode(0)
+
+			suite.Require().FileExists(stateExePath)
+
+			cp = ts.SpawnCmdWithOpts(
+				stateExePath,
+				e2e.WithArgs("--version"),
+				e2e.AppendEnv(constants.InstallPathOverrideEnvVarName+"="+installPath),
+			)
+			if tt.Version != "" {
+				cp.Expect("Version " + tt.Version)
+			}
+			if tt.Channel != "" {
+				cp.Expect("Branch " + tt.Channel)
+			}
+			cp.Expect("Built")
+			cp.ExpectExitCode(0)
+		})
+	}
 }
 
 func (s *RemoteInstallIntegrationTestSuite) setupTest(ts *e2e.Session) {
@@ -41,7 +95,7 @@ func (s *RemoteInstallIntegrationTestSuite) setupTest(ts *e2e.Session) {
 	if !fileutils.FileExists(installerExe) {
 		s.T().Fatal("E2E tests require a state-remote-installer binary. Run `state run build-installer`.")
 	}
-	s.installerExe = ts.CopyExeToDir(installerExe, filepath.Join(ts.Dirs.Base, "installer"))
+	s.remoteInstallerExe = ts.CopyExeToDir(installerExe, filepath.Join(ts.Dirs.Base, "installer"))
 }
 
 func TestRemoteInstallIntegrationTestSuite(t *testing.T) {

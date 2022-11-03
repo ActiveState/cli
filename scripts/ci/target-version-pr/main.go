@@ -1,14 +1,10 @@
 package main
 
 import (
-	"errors"
 	"os"
 	"strconv"
-	"strings"
 
-	"github.com/ActiveState/cli/internal/download"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/rtutils/p"
 	wc "github.com/ActiveState/cli/scripts/internal/workflow-controllers"
 	wh "github.com/ActiveState/cli/scripts/internal/workflow-helpers"
 	"github.com/andygrunwald/go-jira"
@@ -74,17 +70,12 @@ func run() error {
 	// Collect meta information about the PR and all it's related resources
 	meta, err := fetchMeta(ghClient, jiraClient, prNumber)
 	if err != nil {
-		if errors.Is(err, wh.ErrVersionIsAny) {
-			wc.Print("Version is '%s', skipping rest of job", wh.VersionAny)
-			finish()
-			return nil
-		}
 		return errs.Wrap(err, "failed to fetch meta")
 	}
 	finish()
 
 	// Create version PR if it doesn't exist yet
-	if meta.VersionPR == nil {
+	if meta.VersionPR == nil && !meta.ActiveVersion.EQ(wh.VersionMaster) {
 		finish = wc.PrintStart("Creating version PR for fixVersion %s", meta.ActiveVersion)
 		err := wc.CreateVersionPR(ghClient, jiraClient, meta)
 		if err != nil {
@@ -110,18 +101,8 @@ func run() error {
 }
 
 func fetchMeta(ghClient *github.Client, jiraClient *jira.Client, prNumber int) (Meta, error) {
-	// Grab latest version on release channel to use as cutoff
-	finish := wc.PrintStart("Fetching latest version on release channel")
-	latestReleaseversionBytes, err := download.Get("https://raw.githubusercontent.com/ActiveState/cli/release/version.txt")
-	latestReleaseversion, err := semver.Parse(strings.TrimSpace(string(latestReleaseversionBytes)))
-	if err != nil {
-		return Meta{}, errs.Wrap(err, "failed to parse version blob")
-	}
-	wc.Print("Latest version on release channel: %s", latestReleaseversion)
-	finish()
-
 	// Grab PR information about the PR that this automation is being ran on
-	finish = wc.PrintStart("Fetching Active PR %d", prNumber)
+	finish := wc.PrintStart("Fetching Active PR %d", prNumber)
 	prBeingHandled, _, err := ghClient.PullRequests.Get(context.Background(), "ActiveState", "cli", prNumber)
 	if err != nil {
 		return Meta{}, errs.Wrap(err, "failed to get PR")
@@ -145,32 +126,38 @@ func fetchMeta(ghClient *github.Client, jiraClient *jira.Client, prNumber int) (
 	}
 	finish()
 
+	finish = wc.PrintStart("Fetching Jira Versions")
+	availableVersions, err := wh.FetchAvailableVersions(jiraClient)
+	if err != nil {
+		return Meta{}, errs.Wrap(err, "Failed to fetch JIRA issue")
+	}
+	finish()
+
 	// Retrieve Relevant Fixversion
 	finish = wc.PrintStart("Extracting target fixVersion from Jira issue")
-	fixVersion, jiraVersion, err := wh.ParseTargetFixVersion(jiraIssue, true)
+	fixVersion, jiraVersion, err := wh.ParseTargetFixVersion(jiraIssue, availableVersions)
 	if err != nil {
 		return Meta{}, errs.Wrap(err, "failed to get fixVersion")
-	}
-
-	// Ensure we have a valid fixVersion
-	if fixVersion.LTE(latestReleaseversion) || p.PBool(jiraVersion.Archived) || p.PBool(jiraVersion.Released) {
-		return Meta{}, errs.New("Target fixVersion is either archived, released or is less than the latest release version")
 	}
 	wc.Print("Extracted fixVersion: %s", fixVersion)
 	finish()
 
-	versionPRName := wh.VersionedPRTitle(fixVersion)
+	var versionPRName string
+	var versionPR *github.PullRequest
+	if fixVersion.NE(wh.VersionMaster) {
+		versionPRName := wh.VersionedPRTitle(fixVersion)
 
-	// Retrieve Relevant Fixversion Pr
-	finish = wc.PrintStart("Fetching Version PR")
-	versionPR, err := wh.FetchPRByTitle(ghClient, versionPRName)
-	if err != nil {
-		return Meta{}, errs.Wrap(err, "failed to get target PR")
+		// Retrieve Relevant Fixversion Pr
+		finish = wc.PrintStart("Fetching Version PR")
+		versionPR, err = wh.FetchPRByTitle(ghClient, versionPRName)
+		if err != nil {
+			return Meta{}, errs.Wrap(err, "failed to get target PR")
+		}
+		if versionPR != nil && versionPR.GetState() != "open" {
+			return Meta{}, errs.New("PR status for %s is not open, make sure your jira fixVersion is targeting an unreleased version", versionPR.GetTitle())
+		}
+		finish()
 	}
-	if versionPR != nil && versionPR.GetState() != "open" {
-		return Meta{}, errs.New("PR status for %s is not open, make sure your jira fixVersion is targeting an unreleased version", versionPR.GetTitle())
-	}
-	finish()
 
 	result := Meta{
 		Repo:              &github.Repository{},

@@ -205,19 +205,12 @@ func main() {
 
 		exitCode, err = errors.Unwrap(err)
 		an.EventWithLabel(AnalyticsFunnelCat, "fail", err.Error())
-		if !errs.IsSilent(err) {
+		if err != nil {
 			out.Error(err)
 		}
 	} else {
 		an.Event(AnalyticsFunnelCat, "success")
 	}
-
-	// Installer was likely started via a double click so we keep the terminal window open
-	if noArgs() {
-		out.Print(locale.Tl("installer_pause", "Press ENTER to exit..."))
-		fmt.Scanln()
-	}
-
 }
 
 func execute(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher, args []string, params *Params) error {
@@ -248,7 +241,7 @@ func execute(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher,
 			return errs.Wrap(err, "Could not check if install path is empty")
 		}
 		if !empty {
-			return locale.NewInputError("err_install_nonempty_dir", "Installation path must be an empty directory")
+			return locale.NewInputError("err_install_nonempty_dir", "Installation path must be an empty directory: {{.V0}}", params.path)
 		}
 	}
 

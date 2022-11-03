@@ -19,6 +19,7 @@ import (
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/offinstall"
+	"github.com/ActiveState/cli/internal/osutils/user"
 	"github.com/ActiveState/cli/internal/subshell/cmd"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
@@ -246,7 +247,7 @@ func (suite *OffInstallIntegrationTestSuite) preparePayload(ts *e2e.Session) {
 func (suite *OffInstallIntegrationTestSuite) assertShellUpdated(dir string, exists bool, ts *e2e.Session) {
 	if runtime.GOOS != "windows" {
 		// Test bashrc
-		homeDir, err := os.UserHomeDir()
+		homeDir, err := user.HomeDir()
 		suite.Require().NoError(err)
 
 		fname := ".bashrc"

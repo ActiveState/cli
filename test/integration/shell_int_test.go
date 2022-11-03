@@ -7,7 +7,10 @@ import (
 	"runtime"
 	"testing"
 
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/subshell"
+	"github.com/ActiveState/cli/internal/subshell/zsh"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/stretchr/testify/suite"
@@ -194,6 +197,46 @@ func (suite *ShellIntegrationTestSuite) TestDefaultNoLongerExists() {
 	cp = ts.SpawnWithOpts(e2e.WithArgs("shell"))
 	cp.Expect("The default project no longer exists")
 	cp.ExpectExitCode(1)
+}
+
+func (suite *ShellIntegrationTestSuite) TestUseShellUpdates() {
+	suite.OnlyRunForTags(tagsuite.Shell)
+
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.Spawn("checkout", "ActiveState-CLI/Python3")
+	cp.Expect("Checked out project")
+	cp.ExpectExitCode(0)
+
+	// Create a zsh RC file
+	var zshRcFile string
+	var err error
+	if runtime.GOOS != "windows" {
+		zsh := &zsh.SubShell{}
+		zshRcFile, err = zsh.RcFile()
+		suite.NoError(err)
+		err = fileutils.TouchFileUnlessExists(zshRcFile)
+		suite.NoError(err)
+	}
+
+	cp = ts.SpawnWithOpts(
+		e2e.WithArgs("use", "ActiveState-CLI/Python3"),
+		e2e.AppendEnv("SHELL=bash"),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
+	cp.Expect("Switched to project")
+	cp.ExpectExitCode(0)
+
+	// Ensure both bash and zsh RC files are updated
+	cfg, err := config.New()
+	suite.NoError(err)
+	rcfile, err := subshell.New(cfg).RcFile()
+	if runtime.GOOS != "windows" {
+		suite.NoError(err)
+		suite.Contains(string(fileutils.ReadFileUnsafe(rcfile)), ts.Dirs.DefaultBin, "PATH does not have default project in it")
+		suite.Contains(string(fileutils.ReadFileUnsafe(zshRcFile)), ts.Dirs.DefaultBin, "PATH does not have default project in it")
+	}
 }
 
 func TestShellIntegrationTestSuite(t *testing.T) {
