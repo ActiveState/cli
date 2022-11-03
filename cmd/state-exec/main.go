@@ -59,19 +59,19 @@ func run() error {
 	logr.Debug("hello")
 	defer logr.Debug("run goodbye")
 
-	hb, err := newHeartbeat()
-	if err != nil {
-		return fmt.Errorf("cannot create new heartbeat: %w", err)
-	}
-	logr.Debug("message data - pid: %s, exec: %s", hb.ProcessID, hb.ExecPath)
-
 	a, err := newAttempt()
 	if err != nil {
 		return fmt.Errorf("cannot create new attempt: %w", err)
 	}
 	logr.Debug("message data - exec: %s", a.ExecPath)
 
-	meta, err := newExecutorMeta(hb.ExecPath)
+	hb, err := newHeartbeat(a.ExecPath)
+	if err != nil {
+		return fmt.Errorf("cannot create new heartbeat: %w", err)
+	}
+	logr.Debug("message data - pid: %s, exec: %s", hb.ProcessID, hb.ExecPath)
+
+	meta, err := newExecutorMeta(a.ExecPath)
 	// Send attempt event regardless of whether we can get the meta data.
 	logr.Debug("communications - sock: %s", meta.SockPath)
 	if msgErr := sendMsgToService(meta.SockPath, a); msgErr != nil {
