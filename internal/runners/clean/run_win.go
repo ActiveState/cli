@@ -29,31 +29,37 @@ func (u *Uninstall) runUninstall() error {
 	var aggErr error
 	logFile, err := ioutil.TempFile("", "state-clean-uninstall")
 	if err != nil {
+		logging.Error("Could not create temporary log file: %s", errs.JoinMessage(err))
 		aggErr = locale.WrapError(aggErr, "err_clean_logfile", "Could not create temporary log file")
 	}
 
 	stateExec, err := installation.StateExec()
 	if err != nil {
+		logging.Debug("Could not get State Tool executable: %s", errs.JoinMessage(err))
 		aggErr = locale.WrapError(aggErr, "err_state_exec")
 	}
 
 	err = removeInstall(logFile.Name(), u.cfg)
 	if err != nil {
+		logging.Debug("Could not remove installation: %s", errs.JoinMessage(err))
 		aggErr = locale.WrapError(aggErr, "uninstall_remove_executables_err", "Failed to remove all State Tool files in installation directory {{.V0}}", filepath.Dir(stateExec))
 	}
 
 	err = removeCache(storage.CachePath())
 	if err != nil {
+		logging.Debug("Could not remove cache at %s: %s", storage.CachePath(), errs.JoinMessage(err))
 		aggErr = locale.WrapError(aggErr, "uninstall_remove_cache_err", "Failed to remove cache directory {{.V0}}.", storage.CachePath())
 	}
 
 	err = undoPrepare(u.cfg)
 	if err != nil {
+		logging.Debug("Could not undo prepare: %s", errs.JoinMessage(err))
 		aggErr = locale.WrapError(aggErr, "uninstall_prepare_err", "Failed to undo some installation steps.")
 	}
 
 	err = removeEnvPaths(u.cfg)
 	if err != nil {
+		logging.Debug("Could not remove environment paths: %s", errs.JoinMessage(err))
 		aggErr = locale.WrapError(aggErr, "uninstall_remove_paths_err", "Failed to remove PATH entries from environment")
 	}
 
