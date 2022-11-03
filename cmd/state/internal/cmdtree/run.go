@@ -46,7 +46,7 @@ func newRunCommand(prime *primer.Values) *captain.Command {
 		},
 	)
 
-	cmd.SetGroup(EnvironmentGroup)
+	cmd.SetGroup(ProjectUsageGroup)
 	cmd.SetDisableFlagParsing(true)
 	cmd.SetHasVariableArguments()
 
