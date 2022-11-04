@@ -37,10 +37,10 @@ func BashifyPathEnv(pathList string) string {
 		// Calling out to bash like in BashifyPath is too slow. Just do a simple string transformation.
 		// The resulting paths will be valid in bash, they just may not be fully resolved/simplified.
 		// This is okay because bash really just needs to find executables to run.
-		vol := strings.ToLower(filepath.VolumeName(dir)) // "C:\foo bar\baz" -> "c:"
-		dir = dir[len(vol):]                             // "C:\foo bar\baz" -> "\foo bar\baz"
-		vol = strings.Replace(vol, ":", "", 1)           // "c:" -> "c"
-		dirs[i] = "/" + vol + filepath.ToSlash(dir)      // "C:\foo bar\baz" -> "/c/foo bar/baz"
+		vol := strings.ToLower(filepath.VolumeName(dir))    // "C:\foo bar\baz" -> "c:"
+		dir = dir[len(vol):]                                // "C:\foo bar\baz" -> "\foo bar\baz"
+		vol = strings.lowerstrings.Replace(vol, ":", "", 1) // "c:" -> "c"
+		dirs[i] = "/" + vol + filepath.ToSlash(dir)         // "C:\foo bar\baz" -> "/c/foo bar/baz"
 	}
 	return strings.Join(dirs, ":") // bash uses ':' while Windows uses ';'
 }
