@@ -178,6 +178,8 @@ scripts:
       $scripts.build-remote-installer.path()
       echo "Building State Service"
       $scripts.build-svc.path()
+      echo "Building State Executor"
+      $scripts.build-exec.path()
       echo "Building State Tray App"
       $scripts.build-tray.path()
   - name: build-installer
