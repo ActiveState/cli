@@ -112,10 +112,6 @@ scripts:
       $constants.SET_ENV
 
       go build -tags "$GO_BUILD_TAGS" -o $BUILD_TARGET_DIR/$constants.BUILD_TARGET $constants.CLI_BUILDFLAGS $constants.CLI_PKGS
-
-      if [[ ! -z "${CI}" ]]; then
-        upx $BUILD_TARGET_DIR/$constants.BUILD_TARGET
-      fi
   - name: build-for
     language: bash
     description: Builds the project with the specified OS as the target OS. (valid values darwin, linux, windows)
@@ -134,9 +130,6 @@ scripts:
       $constants.SET_ENV
 
       go build -tags "$GO_BUILD_TAGS" -o $BUILD_TARGET_DIR/$constants.BUILD_DAEMON_TARGET $constants.SVC_BUILDFLAGS $constants.DAEMON_PKGS
-      if [[ ! -z "${CI}" ]]; then
-        upx $BUILD_TARGET_DIR/$constants.BUILD_DAEMON_TARGET
-      fi
   - name: build-tray
     description: Builds the State Tool system tray application
     language: bash
@@ -148,9 +141,6 @@ scripts:
       export CGO_ENABLED=1
 
       go build -tags "$GO_BUILD_TAGS" -o $BUILD_TARGET_DIR/$constants.BUILD_SYSTRAY_TARGET $constants.SYSTRAY_BUILDFLAGS $constants.SYSTRAY_PKGS
-      if [[ ! -z "${CI}" ]] && [[ ${ImageOS} != *mac* ]]; then
-        upx $BUILD_TARGET_DIR/$constants.BUILD_SYSTRAY_TARGET
-      fi
   - name: build-all
     description: Builds all our tools
     standalone: true
@@ -175,10 +165,6 @@ scripts:
       $constants.SET_ENV
 
       go build -tags "$GO_BUILD_TAGS" -o $BUILD_TARGET_DIR/$constants.BUILD_INSTALLER_TARGET $constants.INSTALLER_PKGS
-
-      if [[ ! -z "${CI}" ]]; then
-        upx $BUILD_TARGET_DIR/$constants.BUILD_INSTALLER_TARGET
-      fi
   - name: build-remote-installer
     language: bash
     description: Builds the state-remote-installer
