@@ -34,7 +34,7 @@ func CmdExitCode(cmd *exec.Cmd) (code int) {
 // e.g. C:\foo;C:\bar becomes /c/foo:/c/bar
 // Leverages MinGW/MSYS2/WSL's PATH transformation when it invokes a Unix command.
 func BashifyPathEnv(pathList string) (string, error) {
-	cmd := exec.Command("bash", "-c", `echo -n $PATH`)
+	cmd := exec.Command("bash", "-c", `echo -n "$PATH"`)
 	cmd.Env = []string{"PATH=" + pathList}
 	bashified, err := cmd.Output()
 	if err != nil {
