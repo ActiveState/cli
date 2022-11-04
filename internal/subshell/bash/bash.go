@@ -10,6 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/osutils/user"
 	"github.com/ActiveState/cli/internal/output"
@@ -142,11 +143,11 @@ func (v *SubShell) SetupShellRcFile(targetDir string, env map[string]string, nam
 // SetEnv - see subshell.SetEnv
 func (v *SubShell) SetEnv(env map[string]string) {
 	if path, pathExists := env["PATH"]; pathExists && runtime.GOOS == "windows" {
-		bashified, err := osutils.BashifyPathEnv(path)
-		if err != nil {
-			return errs.Wrap(err, "Unable to bashify PATH: %v", path)
+		if bashified, err := osutils.BashifyPathEnv(path); err == nil {
+			env["PATH"] = bashified
+		} else {
+			multilog.Error("Unable to bashify PATH: %v", err)
 		}
-		env["PATH"] = bashified
 	}
 
 	v.env = env
