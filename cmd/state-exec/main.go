@@ -65,17 +65,13 @@ func run() error {
 	}
 	logr.Debug("message data - exec: %s", a.ExecPath)
 
-	hb, err := newHeartbeat(a.ExecPath)
-	if err != nil {
-		return fmt.Errorf("cannot create new heartbeat: %w", err)
-	}
-	logr.Debug("message data - pid: %s, exec: %s", hb.ProcessID, hb.ExecPath)
-
 	meta, err := newExecutorMeta(a.ExecPath)
 	// Send attempt event regardless of whether we can get the meta data.
-	logr.Debug("communications - sock: %s", meta.SockPath)
-	if msgErr := sendMsgToService(meta.SockPath, a); msgErr != nil {
-		return fmt.Errorf("cannot send message to service: %w", msgErr)
+	if meta != nil && meta.SockPath != "" {
+		logr.Debug("communications - sock: %s", meta.SockPath)
+		if msgErr := sendMsgToService(meta.SockPath, a); msgErr != nil {
+			return fmt.Errorf("cannot send message to service: %w", msgErr)
+		}
 	}
 	if err != nil {
 		return fmt.Errorf("cannot create new executor meta: %w", err)
@@ -94,6 +90,12 @@ func run() error {
 			logr.Debug("            env - kv: %s", entry)
 		}
 	})
+
+	hb, err := newHeartbeat(a.ExecPath)
+	if err != nil {
+		return fmt.Errorf("cannot create new heartbeat: %w", err)
+	}
+	logr.Debug("message data - pid: %s, exec: %s", hb.ProcessID, hb.ExecPath)
 
 	logr.Debug("communications - sock: %s", meta.SockPath)
 	if err := sendMsgToService(meta.SockPath, hb); err != nil {
