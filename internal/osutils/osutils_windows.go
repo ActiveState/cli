@@ -32,16 +32,15 @@ func CmdExitCode(cmd *exec.Cmd) (code int) {
 
 // BashifyPath takes a windows %PATH% list and turns it into a bash style PATH list.
 // e.g. C:\foo;C:\bar becomes /c/foo:/c/bar
+// Leverages MinGW/MSYS2/WSL's PATH transformation when it invokes a Unix command.
 func BashifyPathEnv(pathList string) (string, error) {
-	dirs := strings.Split(pathList, ";")
-	for i, dir := range dirs {
-		path, err := BashifyPath(dir)
-		if err != nil {
-			return "", errs.Wrap(err, "Unable to bashify path: %v", dir)
-		}
-		dirs[i] = strings.Replace(path, `\ `, " ", -1)
+	cmd := exec.Command("bash", "-c", `echo -n $PATH`)
+	cmd.Env = []string{"PATH=" + pathList}
+	bashified, err := cmd.Output()
+	if err != nil {
+		return "", errs.Wrap(err, "Unable to bashify PATH: %s", pathList)
 	}
-	return strings.Join(dirs, ":"), nil // bash uses ':' while Windows uses ';'
+	return string(bashified), nil
 }
 
 var dynamicEnvVarRe = regexp.MustCompile(`(^=.+)=(.+)`)
