@@ -40,7 +40,6 @@ func IsExecutable(path string) bool {
 	return false
 }
 
-
 // IsWritable returns true if the given path is writable
 func IsWritable(path string) bool {
 	for !TargetExists(path) && path != "" {
@@ -108,4 +107,44 @@ func HideFile(path string) error {
 	}
 
 	return nil
+}
+
+func DeleteNowOrLater(path string) error {
+	err := os.RemoveAll(path)
+	if err != nil {
+		logging.Error("Could not delete %s: %v. Falling back to MoveFileEx", path, err)
+		moveErr := moveFileDelay(path, os.TempDir())
+		if moveErr != nil {
+			return errs.Wrap(moveErr, "Could not move %s to temp dir", path)
+		}
+	}
+
+	return nil
+}
+
+func MoveNowOrLater(from, to string) error {
+	err := MoveAllFilesCrossDisk(from, to)
+	if err != nil {
+		logging.Error("Could not move %s to %s: %v. Falling back to MoveFileEx", from, to, err)
+		moveErr := moveFileDelay(from, to)
+		if moveErr != nil {
+			return errs.Wrap(moveErr, "Could not move %s to %s", from, to)
+		}
+	}
+
+	return nil
+}
+
+func moveFileDelay(from, to string) error {
+	fromPtr, err := windows.UTF16PtrFromString(from)
+	if err != nil {
+		return errs.Wrap(err, "Could not convert path to UTF16")
+	}
+
+	toPtr, err := windows.UTF16PtrFromString(to)
+	if err != nil {
+		return errs.Wrap(err, "Could not convert path to UTF16")
+	}
+
+	return windows.MoveFileEx(fromPtr, toPtr, windows.MOVEFILE_DELAY_UNTIL_REBOOT)
 }
