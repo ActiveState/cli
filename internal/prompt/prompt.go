@@ -1,7 +1,7 @@
 package prompt
 
 import (
-	"os"
+	"runtime"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/analytics/dimensions"
@@ -12,7 +12,6 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
-	term "golang.org/x/crypto/ssh/terminal"
 )
 
 type EventDispatcher interface {
@@ -75,8 +74,8 @@ func (p *Prompt) Input(title, message string, defaultResponse *string, flags ...
 // Otherwise, the error simply states the prompt cannot be resolved in non-interactive mode.
 // The "message" argument is the prompt's user-facing message.
 func interactiveInputError(message string) error {
-	if !term.IsTerminal(int(os.Stdin.Fd())) {
-		return locale.NewInputError("err_non_interactive_terminal")
+	if runtime.GOOS == "windows" {
+		return locale.NewInputError("err_non_interactive_mode")
 	}
 	return locale.NewInputError("err_non_interactive_prompt", message)
 }
