@@ -598,6 +598,8 @@ func CopyAndRenameFiles(fromPath, toPath string) error {
 			if err != nil {
 				return errs.Wrap(err, "failed to set file permissions for %s", tmpToPath)
 			}
+			logging.Debug("Renaming %s -> %s", tmpToPath, toPath)
+			logging.Debug("To path exists: %b", TargetExists(toPath))
 			err = os.Rename(tmpToPath, toPath)
 			if err != nil {
 				// cleanup
