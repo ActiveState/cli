@@ -109,13 +109,13 @@ func HideFile(path string) error {
 	return nil
 }
 
-func DeleteNowOrLater(path string) error {
-	err := os.RemoveAll(path)
+func DeleteNowOrLater(file string) error {
+	err := os.Remove(file)
 	if err != nil {
-		logging.Error("Could not delete %s: %v. Falling back to MoveFileEx", path, err)
-		moveErr := moveFileDelay(path, os.TempDir())
+		logging.Error("Could not delete %s: %v. Falling back to MoveFileEx", file, err)
+		moveErr := moveFileDelay(fmt.Sprintf("%s.scheduled_delete", file), os.TempDir())
 		if moveErr != nil {
-			return errs.Wrap(moveErr, "Could not move %s to temp dir", path)
+			return errs.Wrap(moveErr, "Could not move %s to temp dir", file)
 		}
 	}
 

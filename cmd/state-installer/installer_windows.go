@@ -68,7 +68,7 @@ func (i *Installer) sanitizeInstallPath() error {
 		targetFile := filepath.Join(i.path, file.Name())
 		if isStateExecutable(fname) {
 			if err := fileutils.DeleteNowOrLater(targetFile); err != nil {
-				return errs.Wrap(err, "Could not delete corrupted executable: %s to %s", targetFile)
+				return errs.Wrap(err, "Could not delete corrupted executable: %s", targetFile)
 			}
 		}
 	}
