@@ -53,9 +53,7 @@ func TestBashifyPath(t *testing.T) {
 	assert.True(t, strings.HasSuffix(res, "/c/temp\\ temp"), "Expected suffix 'c/temp\\ temp', got %s", res)
 	assert.Equal(t, "/foo", bashify(`/foo`))
 
-	_, err := BashifyPath("")
-	require.Error(t, err)
-	_, err = BashifyPath("not a valid path")
+	_, err := BashifyPath("not a valid path")
 	require.Error(t, err)
 	_, err = BashifyPath("../relative/path")
 	require.Error(t, err, "Relative paths should not work")
