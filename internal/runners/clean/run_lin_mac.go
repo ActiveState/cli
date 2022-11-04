@@ -26,11 +26,13 @@ func (u *Uninstall) runUninstall() error {
 	var aggErr error
 	err := removeCache(storage.CachePath())
 	if err != nil {
+		logging.Debug("Could not remove cache at %s: %s", storage.CachePath(), errs.JoinMessage(err))
 		aggErr = locale.WrapError(aggErr, "uninstall_remove_cache_err", "Failed to remove cache directory {{.V0}}.", storage.CachePath())
 	}
 
 	err = undoPrepare(u.cfg)
 	if err != nil {
+		logging.Debug("Could not undo prepare: %s", errs.JoinMessage(err))
 		aggErr = locale.WrapError(aggErr, "uninstall_prepare_err", "Failed to undo some installation steps.")
 	}
 
@@ -38,21 +40,25 @@ func (u *Uninstall) runUninstall() error {
 	if errors.Is(err, errDirNotEmpty) {
 		u.out.Notice(locale.T("uninstall_warn_not_empty", errs.JoinMessage(err)))
 	} else if err != nil {
+		logging.Debug("Could not remove install: %s", errs.JoinMessage(err))
 		aggErr = locale.WrapError(aggErr, "uninstall_remove_executables_err", "Failed to remove all State Tool files in installation directory")
 	}
 
 	err = removeEnvPaths(u.cfg)
 	if err != nil {
+		logging.Debug("Could not remove env paths: %s", errs.JoinMessage(err))
 		aggErr = locale.WrapError(aggErr, "uninstall_remove_paths_err", "Failed to remove PATH entries from environment")
 	}
 
 	path := u.cfg.ConfigPath()
 	if err := u.cfg.Close(); err != nil {
+		logging.Debug("Could not close config: %s", errs.JoinMessage(err))
 		aggErr = locale.WrapError(aggErr, "uninstall_close_config", "Could not stop config database connection.")
 	}
 
 	err = removeConfig(path, u.out)
 	if err != nil {
+		logging.Debug("Could not remove config: %s", errs.JoinMessage(err))
 		aggErr = locale.WrapError(aggErr, "uninstall_remove_config_err", "Failed to remove configuration directory {{.V0}}", u.cfg.ConfigPath())
 
 	}

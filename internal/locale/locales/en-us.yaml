@@ -32,7 +32,7 @@ flag_state_monochrome_output_description:
 flag_state_output_description:
   other: "Set the output method, possible values: plain, simple, json, editor"
 flag_state_non_interactive_description:
-  other: Run the State Tool without any prompts and accepting all default options
+  other: Run the State Tool without any prompts
 flag_state_version_description:
   other: Show the version of our state executable
 flag_state_activate_path_description:

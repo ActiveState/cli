@@ -43,7 +43,7 @@ func newExecCommand(prime *primer.Values, args ...string) *captain.Command {
 	cmd.SetSkipChecks(true)
 	cmd.SetDeferAnalytics(true)
 
-	cmd.SetGroup(EnvironmentGroup)
+	cmd.SetGroup(EnvironmentUsageGroup)
 	cmd.SetHasVariableArguments()
 
 	return cmd
