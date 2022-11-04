@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 	"syscall"
+	"time"
 	"unsafe"
 
 	"github.com/ActiveState/cli/internal/errs"
@@ -113,8 +114,12 @@ func DeleteNowOrLater(file string) error {
 	err := os.Remove(file)
 	if err != nil {
 		logging.Error("Could not delete %s: %v. Falling back to MoveFileEx", file, err)
-		moveErr := moveFileDelay(fmt.Sprintf("%s.scheduled_delete", file), os.TempDir())
-		if moveErr != nil {
+		logging.Debug("Moving aside conflicting file: %s", file)
+		renamedFile := fmt.Sprintf("%s-%d.old", file, time.Now().Unix())
+		if renameErr := os.Rename(file, renamedFile); renameErr != nil {
+			return errs.Wrap(renameErr, "Could not move executable aside prior to install: %s to %s", file, renamedFile)
+		}
+		if moveErr := moveFileDelay(renamedFile, os.TempDir()); moveErr != nil {
 			return errs.Wrap(moveErr, "Could not move %s to temp dir", file)
 		}
 	}
