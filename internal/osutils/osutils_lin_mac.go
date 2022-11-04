@@ -14,8 +14,8 @@ func CmdExitCode(cmd *exec.Cmd) (code int) {
 	return cmd.ProcessState.ExitCode()
 }
 
-func BashifyPathEnv(pathList string) string {
-	return pathList // already bashified
+func BashifyPathEnv(pathList string) (string, error) {
+	return pathList, nil // already bashified
 }
 
 // InheritEnv returns a union of the given environment and os.Environ(). If the given environment

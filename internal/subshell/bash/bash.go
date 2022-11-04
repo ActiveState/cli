@@ -66,7 +66,11 @@ func (v *SubShell) WriteUserEnv(cfg sscommon.Configurable, env map[string]string
 
 	if path, pathExists := env["PATH"]; pathExists && runtime.GOOS == "windows" {
 		// Either the State Tool is being installed on Windows, or a runtime is being deployed on Windows.
-		env["PATH"] = osutils.BashifyPathEnv(path)
+		bashified, err := osutils.BashifyPathEnv(path)
+		if err != nil {
+			return errs.Wrap(err, "Unable to bashify PATH: %v", path)
+		}
+		env["PATH"] = bashified
 	}
 
 	env = sscommon.EscapeEnv(env)
@@ -138,8 +142,13 @@ func (v *SubShell) SetupShellRcFile(targetDir string, env map[string]string, nam
 // SetEnv - see subshell.SetEnv
 func (v *SubShell) SetEnv(env map[string]string) {
 	if path, pathExists := env["PATH"]; pathExists && runtime.GOOS == "windows" {
-		env["PATH"] = osutils.BashifyPathEnv(path)
+		bashified, err := osutils.BashifyPathEnv(path)
+		if err != nil {
+			return errs.Wrap(err, "Unable to bashify PATH: %v", path)
+		}
+		env["PATH"] = bashified
 	}
+
 	v.env = env
 }
 

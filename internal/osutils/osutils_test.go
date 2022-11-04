@@ -62,14 +62,17 @@ func TestBashifyPath(t *testing.T) {
 }
 
 func TestBashifyPathEnv(t *testing.T) {
-	path := BashifyPathEnv("/foo:/bar")
+	path, err := BashifyPathEnv("/foo:/bar")
+	require.NoError(t, err)
 	assert.Equal(t, "/foo:/bar", path)
 
 	if runtime.GOOS == "windows" {
-		path = BashifyPathEnv(`C:\foo;C:\bar`)
+		path, err = BashifyPathEnv(`C:\foo;C:\bar`)
+		require.NoError(t, err)
 		assert.Equal(t, "/c/foo:/c/bar", path)
 
-		path = BashifyPathEnv(`C:\foo bar;C:\baz`)
+		path, err = BashifyPathEnv(`C:\foo bar;C:\baz`)
+		require.NoError(t, err)
 		assert.Equal(t, "/c/foo bar:/c/baz", path)
 	}
 }
