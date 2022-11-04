@@ -48,6 +48,13 @@ func ActivationPID(cfg Configurable) int32 {
 			return -1
 		}
 
+		name, err := pproc.Ppid()
+		if err != nil {
+			multilog.Log(logging.ErrorNoStacktrace, rollbar.Error)(procInfoErrMsgFmt, err)
+		} else {
+			logging.Debug("Parent process name: %s", name)
+		}
+
 		pid = ppid
 		ppid, err = pproc.Ppid()
 		if err != nil {
