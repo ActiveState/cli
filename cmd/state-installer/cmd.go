@@ -253,13 +253,7 @@ func execute(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher,
 	// This code whould be removed in the future. See story here: https://activestatef.atlassian.net/browse/DX-985
 	if !params.isUpdate {
 		packagedStateExe := filepath.Join(payloadPath, installation.BinDirName, constants.StateCmd+exeutils.Extension)
-		params.isUpdate = determineLegacyUpdate(stateToolInstalled, packagedStateExe, payloadPath, params)
-	}
-
-	// If the state tool is already installed, but out of date, continue with update flow.
-	if stateToolInstalled && !params.isUpdate && !params.force && shouldUpdateInstalledStateTool(stateExePath) {
-		logging.Debug("Installed state tool should be updated, switching to update flow.")
-		params.isUpdate = true
+		params.isUpdate = determineLegacyUpdate(stateExePath, stateToolInstalled, packagedStateExe, payloadPath, params)
 	}
 
 	route := "install"
@@ -446,20 +440,25 @@ func assertCompatibility() error {
 	return nil
 }
 
-func determineLegacyUpdate(stateToolInstalled bool, packagedStateExe, payloadPath string, params *Params) bool {
+func determineLegacyUpdate(exePath string, isToolInstalled bool, pkgdStateExe, payloadPath string, params *Params) bool {
 	// Detect whether this is a fresh install or an update
 	var isUpdate bool
 	switch {
-	case (params.sourceInstaller == "install.sh" || params.sourceInstaller == "install.ps1" || noArgs()) && fileutils.FileExists(packagedStateExe):
-		logging.Debug("Not using update flow as installing via " + params.sourceInstaller)
+	case (params.sourceInstaller == "install.sh" || params.sourceInstaller == "install.ps1" || noArgs()) && fileutils.FileExists(pkgdStateExe):
+		if isToolInstalled && !params.force && shouldUpdateInstalledStateTool(exePath) {
+			logging.Debug("Installing via %s, found old install and updating.", params.sourceInstaller)
+			isUpdate = true
+		} else {
+			logging.Debug("Not using update flow as installing via " + params.sourceInstaller)
+		}
 	case params.force:
 		// When ran with `--force` we always use the install UX
 		logging.Debug("Not using update flow as --force was passed")
-	case payloadPath == "" && fileutils.FileExists(packagedStateExe):
+	case payloadPath == "" && fileutils.FileExists(pkgdStateExe):
 		// Facilitate older versions of state tool which do not invoke the installer with `--source-path`
 		logging.Debug("Using update flow as installer is alongside payload")
 		isUpdate = true
-	case stateToolInstalled:
+	case isToolInstalled:
 		// This should trigger AFTER the check above where sourcePath is defined
 		logging.Debug("Using update flow as state tool is already installed")
 		isUpdate = true
