@@ -3,6 +3,7 @@ package workflow_helpers
 import (
 	"testing"
 
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/andygrunwald/go-jira"
 	"github.com/blang/semver"
 	"github.com/stretchr/testify/require"
@@ -132,4 +133,15 @@ func TestParseTargetFixVersion(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestJqlUnpaged(t *testing.T) {
+	t.Skip("For debugging purposes, comment this line out if you want to test this locally")
+
+	client, err := InitJiraClient()
+	require.NoError(t, err)
+
+	issues, err := JqlUnpaged(client, "project = DX AND status=Done ORDER BY created")
+	require.NoError(t, err, errs.JoinMessage(err))
+	require.Greater(t, len(issues), 0)
 }
