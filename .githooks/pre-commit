@@ -20,6 +20,9 @@ exerr $? "Linting of staged files has failed"
 #
 # This script does not handle file names that contain spaces.
 
+gofiles=$(git diff --cached --name-only --diff-filter=ACM | grep '.go$' | grep -vE '^vendor/')
+[ -z "$gofiles" ] && exit 0
+
 unformatted=$(gofmt -l $gofiles)
 [ -z "$unformatted" ] && exit 0
 
