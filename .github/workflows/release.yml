@@ -13,7 +13,7 @@ jobs:
     name: Remote Installer
     timeout-minutes: 30
     runs-on: windows-2019
-    if: github.event.ref_type == 'tag' && contains(github.event.ref, 'release/remote-installer')
+    if: (github.event.ref_type == 'tag' && contains(github.event.ref, 'release/remote-installer')) || github.event_name == 'workflow_call'
     env:
       ACTIVESTATE_CLI_DISABLE_RUNTIME: true
       GOFLAGS: -mod=vendor
