@@ -398,7 +398,7 @@ jobs:
       SHELL: bash
       GITHUB_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     timeout-minutes: 10
-    if: contains(fromJSON('["refs/heads/master", "refs/heads/beta", "refs/heads/release", "refs/heads/LTS"]'), github.ref) || startsWith(github.event.pull_request.head.ref, 'version/')
+    #if: contains(fromJSON('["refs/heads/master", "refs/heads/beta", "refs/heads/release", "refs/heads/LTS"]'), github.ref) || startsWith(github.event.pull_request.head.ref, 'version/')
 
     # === Deploy Steps ===
     steps:
@@ -452,13 +452,13 @@ jobs:
         name: Deploy
         shell: bash
         run: |
-          state run deploy-updates
-          state run deploy-installers
+          #state run deploy-updates
+          #state run deploy-installers
 
           state run generate-remote-install-deployment windows amd64
           state run generate-remote-install-deployment linux amd64
           state run generate-remote-install-deployment darwin amd64
-          state run deploy-remote-installer
+          #state run deploy-remote-installer
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
