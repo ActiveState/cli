@@ -476,5 +476,6 @@ jobs:
 
   # === Remote Installer job ==
   remote_installer:
-    name: Remote Installer
-    uses: ActiveState/cli/.github/workflows/release.yml@master
+    - # === Remote Installer ===
+      name: Remote Installer
+      uses: ActiveState/cli/.github/workflows/release.yml@master
