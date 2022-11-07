@@ -41,12 +41,11 @@ func ParseJiraKey(v string) (string, error) {
 
 func JqlUnpaged(client *jira.Client, jql string) ([]jira.Issue, error) {
 	result := []jira.Issue{}
-	page := 0
 	perPage := 100
 
 	for x := 0; x < 100; x++ { // hard limit of 100,000 commits
-		issues, _, err := client.Issue.Search(jql, &jira.SearchOptions{
-			StartAt:    page * x,
+		issues, v, err := client.Issue.Search(jql, &jira.SearchOptions{
+			StartAt:    x * perPage,
 			MaxResults: perPage,
 		})
 		if err != nil {
