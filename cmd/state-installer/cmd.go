@@ -203,8 +203,8 @@ func main() {
 			multilog.Critical("Installer error: " + errs.JoinMessage(err))
 		}
 
+		an.EventWithLabel(AnalyticsFunnelCat, "fail", errs.JoinMessage(err))
 		exitCode, err = errors.Unwrap(err)
-		an.EventWithLabel(AnalyticsFunnelCat, "fail", err.Error())
 		if err != nil {
 			out.Error(err)
 		}
