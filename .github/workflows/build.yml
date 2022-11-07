@@ -457,10 +457,6 @@ jobs:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
-      - # === Remote Installer ==
-        name: Remote Installer
-        uses: ActiveState/cli/.github/workflows/release.yml@master
-
       - # === Cleanup Session Artifacts ===
         name: Cleanup Session Artifacts
         uses: geekyeggo/delete-artifact@v1
@@ -477,3 +473,8 @@ jobs:
         with:
           name: build
           path: build/
+
+  # === Remote Installer job ==
+  remote_installer:
+    name: Remote Installer
+    uses: ActiveState/cli/.github/workflows/release.yml@master
