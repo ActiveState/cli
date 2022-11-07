@@ -281,7 +281,11 @@ func ProjectExpander(_ string, name string, _ string, isFunction bool, ctx *Expa
 		if path == "" {
 			return path, nil
 		}
-		return filepath.Dir(path), nil
+		dir := filepath.Dir(path)
+		if ctx.BashifyPaths {
+			return osutils.BashifyPath(dir)
+		}
+		return dir, nil
 	}
 
 	return "", nil
