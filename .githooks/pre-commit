@@ -18,6 +18,7 @@ unformatted=$(gofmt -l $gofiles)
 
 # Format them.
 gofmt -w $unformatted
+exerr $? "Formatting of staged files has failed"
 
 # Notify the user of formatted files and fail.
 echo >&2 "The following files have been reformatted. Please verify and/or re-stage changes before attempting to commit again."
