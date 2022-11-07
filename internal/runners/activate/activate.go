@@ -273,5 +273,7 @@ func parentNamespace() (string, error) {
 	if err != nil {
 		return "", locale.WrapError(err, "err_activate_projectpath", "Could not get project from path {{.V0}}", path)
 	}
-	return proj.NamespaceString(), nil
+	ns := proj.NamespaceString()
+	logging.Debug("Parent namespace: %s", ns)
+	return ns, nil
 }
