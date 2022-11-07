@@ -68,6 +68,7 @@ func (c *Comm) GetLogFileName(ctx context.Context) (string, error) {
 
 type RuntimeUsageReporter interface {
 	RuntimeUsage(ctx context.Context, pid int, exec, dimensionsJSON string) (*graph.RuntimeUsageResponse, error)
+	RuntimeAttempt(ctx context.Context, exec string, dimensionsJSON string) (*graph.RuntimeAttemptResponse, error)
 }
 
 func HeartbeatHandler(reporter RuntimeUsageReporter) ipc.RequestHandler {
@@ -104,52 +105,13 @@ func HeartbeatHandler(reporter RuntimeUsageReporter) ipc.RequestHandler {
 				multilog.Critical("Heartbeat Failure: Could not marshal dimensions in heartbeat handler: %s", err)
 				return
 			}
+			_, err = reporter.RuntimeAttempt(context.Background(), hb.ExecPath, dimsJSON)
+			if err != nil {
+				multilog.Critical("Attempt Failure: Failed to report runtime attempt in heartbeat handler: %s", errs.JoinMessage(err))
+			}
 			_, err = reporter.RuntimeUsage(context.Background(), pidNum, hb.ExecPath, dimsJSON)
 			if err != nil {
 				multilog.Critical("Heartbeat Failure: Failed to report runtime usage in heartbeat handler: %s", errs.JoinMessage(err))
-				return
-			}
-		}()
-
-		return "ok", true
-	}
-}
-
-type RuntimeAttemptReporter interface {
-	RuntimeAttempt(ctx context.Context, exec string, dimensionsJSON string) (*graph.RuntimeAttemptResponse, error)
-}
-
-func AttemptHandler(reporter RuntimeAttemptReporter) ipc.RequestHandler {
-	return func(input string) (string, bool) {
-		if !strings.HasPrefix(input, KeyAttempt) {
-			return "", false
-		}
-
-		data := input[len(KeyAttempt):]
-		a := svcmsg.NewAttemptFromSvcMsg(data)
-
-		go func() {
-			metaFilePath := filepath.Join(filepath.Dir(a.ExecPath), execmeta.MetaFileName)
-			metaData, err := execmeta.NewFromFile(metaFilePath)
-			if err != nil {
-				multilog.Critical("Attempt Failure: Could not create meta data from filepath (%s): %s", metaFilePath, err)
-				return
-			}
-
-			dims := &dimensions.Values{
-				Trigger:          p.StrP(target.TriggerExec.String()),
-				CommitID:         p.StrP(metaData.CommitUUID),
-				ProjectNameSpace: p.StrP(metaData.Namespace),
-				InstanceID:       p.StrP(instanceid.Make()),
-			}
-			dimsJSON, err := dims.Marshal()
-			if err != nil {
-				multilog.Critical("Attempt Failure: Could not marshal dimensions in attempt handler: %s", err)
-				return
-			}
-			_, err = reporter.RuntimeAttempt(context.Background(), a.ExecPath, dimsJSON)
-			if err != nil {
-				multilog.Critical("Attempt Failure: Failed to report runtime usage in attempt handler: %s", errs.JoinMessage(err))
 				return
 			}
 		}()

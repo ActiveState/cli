@@ -411,7 +411,7 @@ func (suite *AnalyticsIntegrationTestSuite) TestAttempts() {
 		}
 	}
 
-	if foundAttempts < 2 {
+	if foundAttempts == 2 {
 		suite.Fail("Should find multiple runtime attempts")
 	}
 }
