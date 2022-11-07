@@ -476,6 +476,14 @@ jobs:
 
   # === Remote Installer job ==
   remote_installer:
-    - # === Remote Installer ===
-      name: Remote Installer
-      uses: ActiveState/cli/.github/workflows/release.yml@master
+    name: Remote Installer
+    needs:
+      - os_specific
+      - deploy
+    runs-on: windows-2019
+    if: contains(fromJSON('["refs/heads/master", "refs/heads/beta", "refs/heads/release", "refs/heads/LTS"]'), github.ref) || startsWith(github.event.pull_request.head.ref, 'version/')
+
+    steps:
+      - # === Remote Installer ===
+        name: Remote Installer
+        uses: ActiveState/cli/.github/workflows/release.yml@master
