@@ -30,10 +30,6 @@ type Project struct {
 	Locations []string `json:"locations"`
 }
 
-type RuntimeAttemptResponse struct {
-	Received bool `json:"received"`
-}
-
 type RuntimeUsageResponse struct {
 	Received bool `json:"received"`
 }

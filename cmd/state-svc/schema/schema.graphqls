@@ -31,10 +31,6 @@ type RuntimeUsageResponse {
   received: Boolean!
 }
 
-type RuntimeAttemptResponse {
-  received: Boolean!
-}
-
 type DeprecationInfo {
   version: String!
   date: String!
@@ -48,7 +44,6 @@ type Query {
   projects: [Project]!
   analyticsEvent(category: String!, action: String!, label: String, dimensionsJson: String!): AnalyticsEventResponse
   runtimeUsage(pid: Int!, exec: String!, dimensionsJson: String!): RuntimeUsageResponse
-  runtimeAttempt(exec: String!, dimensionsJson: String!): RuntimeAttemptResponse
   checkDeprecation: DeprecationInfo
   configChanged(key: String!): ConfigChangedResponse
 }

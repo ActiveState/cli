@@ -67,7 +67,6 @@ func (c *Comm) GetLogFileName(ctx context.Context) (string, error) {
 
 type RuntimeUsageReporter interface {
 	RuntimeUsage(ctx context.Context, pid int, exec, dimensionsJSON string) (*graph.RuntimeUsageResponse, error)
-	RuntimeAttempt(ctx context.Context, exec string, dimensionsJSON string) (*graph.RuntimeAttemptResponse, error)
 }
 
 func HeartbeatHandler(reporter RuntimeUsageReporter) ipc.RequestHandler {
@@ -103,10 +102,6 @@ func HeartbeatHandler(reporter RuntimeUsageReporter) ipc.RequestHandler {
 			if err != nil {
 				multilog.Critical("Heartbeat Failure: Could not marshal dimensions in heartbeat handler: %s", err)
 				return
-			}
-			_, err = reporter.RuntimeAttempt(context.Background(), hb.ExecPath, dimsJSON)
-			if err != nil {
-				multilog.Critical("Attempt Failure: Failed to report runtime attempt in heartbeat handler: %s", errs.JoinMessage(err))
 			}
 			_, err = reporter.RuntimeUsage(context.Background(), pidNum, hb.ExecPath, dimsJSON)
 			if err != nil {
