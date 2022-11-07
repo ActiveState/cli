@@ -408,7 +408,9 @@ scripts:
   - name: lint
     language: bash
     description: "Runs linting for untracked and unstaged changes (if any), or staged changes"
-    value: golangci-lint run --new
+    value: |
+      golangci-lint run --new
+      actionlint
   - name: lint-staged
     language: bash
     description: "Runs linting for staged changes (skipping untracked and unstaged-only files)"
@@ -417,10 +419,16 @@ scripts:
         --new-from-rev=HEAD~ \
         --skip-files="$(git ls-files --others --exclude-standard -z | xargs -0 -I{} echo "^"{})" \
         --skip-files="$(comm -13 <(git diff --cached --name-only | sort) <(git diff --name-only | sort))"
+
+      actionfiles=$(git diff --cached --name-only --diff-filter=ACM | grep '^.github/workflows/' | grep '.yml$')
+      [ -z "$actionfiles" ] && exit 0
+      actionlint $actionfiles
   - name: lint-all
     language: bash
     description: "Runs linting for all files"
-    value: golangci-lint run --no-config
+    value: |
+      golangci-lint run --no-config
+      actionlint
   - name: grab-mergecommits
     language: bash
     value: |
@@ -483,7 +491,7 @@ scripts:
           sudo sh -c 'echo -1 >/proc/sys/kernel/perf_event_paranoid'
           updated=true
       fi
-      perf stat -d -r 8 -e task-clock,page-faults,cycles,instructions -- ${@} >/dev/null 
+      perf stat -d -r 8 -e task-clock,page-faults,cycles,instructions -- ${@} >/dev/null
       ${updated} && sudo sh -c 'echo '${paranoid}' >/proc/sys/kernel/perf_event_paranoid'
 
 events:
@@ -502,6 +510,10 @@ events:
       if ! type "swagger" &> /dev/null; then
         echo "swagger was not found on your PATH, installing .."
         go install github.com/go-swagger/go-swagger/cmd/swagger@v0.27.0
+      fi
+      if ! type "actionlint" &> /dev/null; then
+        echo "actionlint was not found on your PATH, installing .."
+        go install github.com/rhysd/actionlint/cmd/actionlint@v1.6.22
       fi
   - name: file-changed
     scope: ["internal/locale/locales"]
