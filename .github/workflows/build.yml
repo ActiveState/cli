@@ -254,6 +254,11 @@ jobs:
         shell: bash
         run: state run generate-update
 
+      - # === Generate Remote Install Deployment ==
+        name: Generate Remote Install Deployment
+        shell: bash
+        run: state run generate-remote-install-deployment
+
       - # === Deploy for Integration Tests # NEVER run this against production branches. This is meant for PR deployments. ===
         name: Deploy for Integration Tests # NEVER run this against production branches. This is meant for PR deployments.
         if: "!contains(fromJSON('[\"refs/heads/beta\", \"refs/heads/release\", \"refs/heads/LTS\"]'), github.ref)"
@@ -454,10 +459,6 @@ jobs:
         run: |
           #state run deploy-updates
           #state run deploy-installers
-
-          state run generate-remote-install-deployment windows amd64
-          state run generate-remote-install-deployment linux amd64
-          state run generate-remote-install-deployment darwin amd64
           #state run deploy-remote-installer
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
