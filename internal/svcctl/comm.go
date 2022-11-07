@@ -22,7 +22,6 @@ var (
 	KeyHTTPAddr  = "http-addr"
 	KeyLogFile   = "log-file"
 	KeyHeartbeat = "heart<"
-	KeyAttempt   = "attempt<"
 )
 
 type Requester interface {
