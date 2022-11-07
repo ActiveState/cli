@@ -28,7 +28,7 @@ func (p *PrivateKey) Run(params *PrivateKeyParams) error {
 	logging.Debug("Execute")
 
 	if !p.Auth.Authenticated() {
-		return locale.NewError("User")
+		return locale.NewInputError("err_command_requires_auth")
 	}
 
 	filepath := keypairs.LocalKeyFilename(p.cfg.ConfigPath(), constants.KeypairLocalFileName)
