@@ -44,7 +44,7 @@ func JqlUnpaged(client *jira.Client, jql string) ([]jira.Issue, error) {
 	perPage := 100
 
 	for x := 0; x < 100; x++ { // hard limit of 100,000 commits
-		issues, v, err := client.Issue.Search(jql, &jira.SearchOptions{
+		issues, _, err := client.Issue.Search(jql, &jira.SearchOptions{
 			StartAt:    x * perPage,
 			MaxResults: perPage,
 		})
