@@ -362,6 +362,8 @@ func (suite *DeployIntegrationTestSuite) TestDeploySymlink() {
 
 	if runtime.GOOS != "windows" {
 		cp.Expect("Symlinking executables")
+	} else {
+		cp.Expect("Skipped")
 	}
 	cp.ExpectExitCode(0)
 
