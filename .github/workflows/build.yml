@@ -469,10 +469,9 @@ jobs:
         uses: geekyeggo/delete-artifact@v1
         with:
           name: |
-            session-shared-build
             session-build-ubuntu-20.04
             session-build-macos-11
-            session-build-windows-latest
+            session-build-windows-2019
 
       - # === Upload Artifacts ===
         name: Upload Artifacts
