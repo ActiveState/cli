@@ -76,7 +76,8 @@ jobs:
       - # === Deploy ===
         name: Deploy
         shell: bash
-        run: #state run deploy-remote-installer
+        run: |
+          #state run deploy-remote-installer
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
