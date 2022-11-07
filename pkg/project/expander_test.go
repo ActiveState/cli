@@ -106,7 +106,7 @@ func TestExpandProject(t *testing.T) {
 		prj.Source().SetPath(fmt.Sprintf(`c:\another\spoofed path\activestate.yaml`))
 		expanded, err = project.ExpandFromProjectBashifyPaths("$project.path()", prj)
 		require.NoError(t, err)
-		assert.Equal(t, "/c/another/spoofed path/activestate.yaml", expanded)
+		assert.Equal(t, `/c/another/spoofed\ path`, expanded)
 	}
 }
 
