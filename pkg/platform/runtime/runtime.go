@@ -106,6 +106,7 @@ func (r *Runtime) Update(auth *authentication.Auth, msgHandler *events.RuntimeEv
 
 	logging.Debug("Updating %s#%s @ %s", r.target.Name(), r.target.CommitUUID(), r.target.Dir())
 
+	r.recordAttempt()
 	// Run the setup function (the one that produces runtime events) in the background...
 	prod := events.NewRuntimeEventProducer()
 	var setupErr error
@@ -143,6 +144,7 @@ func (r *Runtime) Update(auth *authentication.Auth, msgHandler *events.RuntimeEv
 func (r *Runtime) Env(inherit bool, useExecutors bool) (map[string]string, error) {
 	logging.Debug("Getting runtime env, inherit: %v, useExec: %v", inherit, useExecutors)
 
+	r.recordAttempt()
 	envDef, err := r.envDef()
 	r.recordCompletion(err)
 	if err != nil {
@@ -175,9 +177,6 @@ func (r *Runtime) recordCompletion(err error) {
 	r.completed = true
 
 	logging.Debug("Recording runtime completion: %v", err == nil)
-
-	// Record attempt regarless of success
-	r.recordAttempt()
 
 	var action string
 	if err != nil {
