@@ -140,9 +140,3 @@ func TestInheritEnv_MultipleEquals(t *testing.T) {
 
 	assert.Equal(t, value, updated[key])
 }
-
-func TestIsAdmin(t *testing.T) {
-	isAdmin, err := IsAdmin()
-	assert.NoError(t, err)
-	assert.Equal(t, isAdmin, runtime.GOOS == "windows", "IsAdmin() should return true on Windows, false otherwise")
-}
