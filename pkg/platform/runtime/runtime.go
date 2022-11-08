@@ -220,7 +220,13 @@ func (r *Runtime) recordAttempt() {
 		return
 	}
 
-	r.analytics.Event(anaConsts.CatRuntimeUsage, anaConsts.ActRuntimeAttempt, r.usageDims())
+	dimsJson, err := r.usageDims().Marshal()
+	if err != nil {
+		multilog.Critical("Could not marshal dimensions for runtime-usage: %s", errs.JoinMessage(err))
+	}
+	if r.svcm != nil {
+		r.svcm.AnalyticsEvent(context.Background(), anaConsts.CatRuntimeUsage, anaConsts.ActRuntimeAttempt, "", dimsJson)
+	}
 }
 
 func (r *Runtime) usageDims() *dimensions.Values {
