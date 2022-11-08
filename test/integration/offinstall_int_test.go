@@ -102,10 +102,10 @@ func (suite *OffInstallIntegrationTestSuite) TestInstallAndUninstall() {
 
 		// Run executable and validate that it has the relocated value
 		if runtime.GOOS == "windows" {
-			refreshEnv := filepath.Join(environment.GetRootPathUnsafe(), "test", "integration", "testdata", "tools", "refreshenv", "refreshenv.bat")
-			tp = ts.SpawnCmd("cmd", "/C", refreshEnv+" && test-offline-install")
-			tp.Expect("TEST REPLACEMENT", 5*time.Second)
-			tp.ExpectExitCode(0)
+			//refreshEnv := filepath.Join(environment.GetRootPathUnsafe(), "test", "integration", "testdata", "tools", "refreshenv", "refreshenv.bat")
+			//tp = ts.SpawnCmd("cmd", "/C", refreshEnv+" && test-offline-install")
+			//tp.Expect("TEST REPLACEMENT", 5*time.Second)
+			//tp.ExpectExitCode(0)
 		} else {
 			// Disabled for now: DX-1307
 			// tp = ts.SpawnCmd("bash")
