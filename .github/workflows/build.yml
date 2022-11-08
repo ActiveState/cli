@@ -163,8 +163,10 @@ jobs:
 
       - # === Unit Tests ===
         name: Unit Tests
+        id: unit_tests
         shell: bash
         run: parallelize results Unit-Tests | gotestfmt
+        continue-on-error: ${{ github.event_name != 'schedule' }}
 
       - # === "Build: CLI" ===
         name: "Build: CLI"
@@ -335,6 +337,12 @@ jobs:
           PLATFORM_API_TOKEN: ${{ secrets.PLATFORM_API_TOKEN }}
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      - # === Fail If Unscheduled Unit Tests Failed (Expand 'Unit Tests' above for more information) ===
+        name: Fail If Unscheduled Unit Tests Failed
+        if: github.event_name != 'schedule' && steps.unit_tests.outcome == 'failure'
+        shell: bash
+        run: exit 1
 
       - # === Notify Slack of Nightly Integration Test Failures ===
         name: Notify Slack of Nightly Integration Test Failures
