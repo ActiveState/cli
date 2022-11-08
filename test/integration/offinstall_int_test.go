@@ -61,10 +61,7 @@ func (suite *OffInstallIntegrationTestSuite) TestInstallAndUninstall() {
 	suite.Require().NoError(err)
 	defaultInstallDir := filepath.Join(defaultInstallParentDir, "IntegrationTest")
 
-	env := []string{
-		constants.DisableRuntime + "=false",
-		constants.IsAdminOverrideEnvVarName + "=false",
-	}
+	env := []string{constants.DisableRuntime + "=false"}
 	if runtime.GOOS != "windows" {
 		env = append(env, "SHELL=bash")
 	}
