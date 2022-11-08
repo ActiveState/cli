@@ -200,7 +200,7 @@ func (r *Runtime) recordUsage() {
 	}
 
 	// Fire initial runtime usage event right away, subsequent events will be fired via the service so long as the process is running
-	dims := r.usageDims()
+	dims := usageDims(r.target)
 	r.analytics.Event(anaConsts.CatRuntimeUsage, anaConsts.ActRuntimeHeartbeat, dims)
 
 	dimsJson, err := dims.Marshal()
@@ -214,19 +214,19 @@ func (r *Runtime) recordUsage() {
 
 func recordAttempt(an analytics.Dispatcher, target setup.Targeter) {
 	if !target.Trigger().IndicatesUsage() {
-		logging.Debug("Not recording usage attempt as %s is not a usage trigger", r.target.Trigger().String())
+		logging.Debug("Not recording usage attempt as %s is not a usage trigger", target.Trigger().String())
 		return
 	}
 
-	an.Event(anaConsts.CatRuntimeUsage, anaConsts.ActRuntimeAttempt, r.usageDims())
+	an.Event(anaConsts.CatRuntimeUsage, anaConsts.ActRuntimeAttempt, usageDims(target))
 }
 
-func (r *Runtime) usageDims() *dimensions.Values {
+func usageDims(target setup.Targeter) *dimensions.Values {
 	return &dimensions.Values{
-		Trigger:          p.StrP(r.target.Trigger().String()),
-		CommitID:         p.StrP(r.target.CommitUUID().String()),
-		Headless:         p.StrP(strconv.FormatBool(r.target.Headless())),
-		ProjectNameSpace: p.StrP(project.NewNamespace(r.target.Owner(), r.target.Name(), r.target.CommitUUID().String()).String()),
+		Trigger:          p.StrP(target.Trigger().String()),
+		CommitID:         p.StrP(target.CommitUUID().String()),
+		Headless:         p.StrP(strconv.FormatBool(target.Headless())),
+		ProjectNameSpace: p.StrP(project.NewNamespace(target.Owner(), target.Name(), target.CommitUUID().String()).String()),
 		InstanceID:       p.StrP(instanceid.ID()),
 	}
 }
