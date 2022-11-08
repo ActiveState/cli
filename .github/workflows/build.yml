@@ -338,8 +338,8 @@ jobs:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
-      - # === Fail on Unscheduled Unit Test Failures ===
-        name: Fail on Unscheduled Unit Test Failures
+      - # === Fail If Unscheduled Unit Tests Failed (Expand 'Unit Tests' above for more information) ===
+        name: Fail If Unscheduled Unit Tests Failed
         if: github.event_name != 'schedule' && steps.unit_tests.outcome == 'failure'
         shell: bash
         run: exit 1
