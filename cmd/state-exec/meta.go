@@ -46,12 +46,10 @@ func newExecutorMeta(execPath string) (*executorMeta, error) {
 // matchingBinByPath receives a list of binaries (from the meta file), as well
 // as the path to this program. The base name of the path is used to match one
 // of the binaries that will then be forwarded to as a child process.
-func matchingBinByPath(bins []string, path string) (string, error) {
-	name := filepath.Base(path)
-	for _, bin := range bins {
-		if filepath.Base(bin) == name {
-			return bin, nil
-		}
+func matchingBinByPath(bins map[string]string, path string) (string, error) {
+	alias := filepath.Base(path)
+	if dest, ok := bins[alias]; ok {
+		return dest, nil
 	}
 	return "", fmt.Errorf("no matching binary by path %q", path)
 }

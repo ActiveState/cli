@@ -55,12 +55,17 @@ func (es *Executors) ExecutorSrc() (string, error) {
 func (es *Executors) Apply(sockPath string, targeter Targeter, env map[string]string, exes envdef.ExecutablePaths) error {
 	logging.Debug("Creating executors at %s, exes: %v", es.executorPath, exes)
 
-	var executors []string
-	for _, exe := range exes {
-		if rt.GOOS == "windows" && filepath.Ext(exe) != exeutils.Extension { // only for .exe
-			continue
+	executors := make(map[string]string) // map[alias]dest
+	for _, dest := range exes {
+		alias := filepath.Base(dest)
+		if rt.GOOS == "windows" {
+			ext := filepath.Ext(alias)
+			if ext != exeutils.Extension { // for non-.exe executables like pip.bat
+				executors[exeutils.WithExeExt(alias)] = dest                // alias pip.bat.exe -> pip.bat
+				alias = strings.TrimSuffix(alias, ext) + exeutils.Extension // and setup alias pip.exe -> pip.bat
+			}
 		}
-		executors = append(executors, exe)
+		executors[alias] = dest
 	}
 
 	if err := es.Clean(); err != nil {
@@ -82,7 +87,7 @@ func (es *Executors) Apply(sockPath string, targeter Targeter, env map[string]st
 		return locale.WrapError(err, "err_state_exec")
 	}
 
-	for _, executor := range executors {
+	for executor := range executors {
 		if err := copyExecutor(es.executorPath, executor, executorSrc); err != nil {
 			return locale.WrapError(err, "err_createexecutor", "Could not create executor for {{.V0}}.", executor)
 		}
