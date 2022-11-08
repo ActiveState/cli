@@ -271,9 +271,9 @@ func (suite *OffInstallIntegrationTestSuite) assertShellUpdated(dir string, exis
 		isAdmin, err := osutils.IsAdmin()
 		suite.Require().NoError(err)
 		regKey := `HKCU\Environment`
-		if isAdmin {
-			regKey = `HKLM\SYSTEM\ControlSet001\Control\Session Manager\Environment`
-		}
+		//if isAdmin {
+		//regKey = `HKLM\SYSTEM\ControlSet001\Control\Session Manager\Environment`
+		//}
 		out, err := exec.Command("reg", "query", regKey, "/v", "Path").Output()
 		suite.Require().NoError(err)
 
