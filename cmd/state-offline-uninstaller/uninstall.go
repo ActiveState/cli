@@ -214,7 +214,9 @@ func (r *runner) validateTargetPath(path string) error {
 
 func (r *runner) removeEnvPaths() error {
 	// remove shell file additions
-	if err := r.shell.CleanUserEnv(r.cfg, sscommon.OfflineInstallID, false); err != nil {
+	// Note: on Windows, runtimes are not installed to the Admin %PATH%, even if the user has admin
+	// privileges, so call CleanUserEnv with user scope.
+	if err := r.shell.CleanUserEnv(r.cfg, sscommon.OfflineInstallID, true); err != nil {
 		return errs.Wrap(err, "Failed to remove runtime PATH")
 	}
 
