@@ -14,6 +14,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
@@ -177,7 +178,7 @@ func (suite *ActivateIntegrationTestSuite) activatePython(version string, extraE
 	cp.SendLine("state activate --default")
 	cp.ExpectLongString("Creating a Virtual Environment")
 	cp.WaitForInput(40 * time.Second)
-	pythonShim := pythonExe
+	pythonShim := exeutils.WithExeExt(pythonExe)
 
 	// test that other executables that use python work as well
 	pipExe := "pip" + version
