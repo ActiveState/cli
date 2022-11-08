@@ -72,6 +72,7 @@ func New(target setup.Targeter, an analytics.Dispatcher, svcm *model.SvcModel) (
 		fmt.Fprintln(os.Stderr, locale.Tl("notice_runtime_disabled", "Skipping runtime setup because it was disabled by an environment variable"))
 		return &Runtime{disabled: true, target: target}, nil
 	}
+	recordAttempt(an, target)
 	an.Event(anaConsts.CatRuntime, anaConsts.ActRuntimeStart, &dimensions.Values{
 		Trigger:          p.StrP(target.Trigger().String()),
 		Headless:         p.StrP(strconv.FormatBool(target.Headless())),
@@ -106,7 +107,6 @@ func (r *Runtime) Update(auth *authentication.Auth, msgHandler *events.RuntimeEv
 
 	logging.Debug("Updating %s#%s @ %s", r.target.Name(), r.target.CommitUUID(), r.target.Dir())
 
-	r.recordAttempt()
 	// Run the setup function (the one that produces runtime events) in the background...
 	prod := events.NewRuntimeEventProducer()
 	var setupErr error
@@ -144,7 +144,6 @@ func (r *Runtime) Update(auth *authentication.Auth, msgHandler *events.RuntimeEv
 func (r *Runtime) Env(inherit bool, useExecutors bool) (map[string]string, error) {
 	logging.Debug("Getting runtime env, inherit: %v, useExec: %v", inherit, useExecutors)
 
-	r.recordAttempt()
 	envDef, err := r.envDef()
 	r.recordCompletion(err)
 	if err != nil {
@@ -213,13 +212,13 @@ func (r *Runtime) recordUsage() {
 	}
 }
 
-func (r *Runtime) recordAttempt() {
-	if !r.target.Trigger().IndicatesUsage() {
+func recordAttempt(an analytics.Dispatcher, target setup.Targeter) {
+	if !target.Trigger().IndicatesUsage() {
 		logging.Debug("Not recording usage attempt as %s is not a usage trigger", r.target.Trigger().String())
 		return
 	}
 
-	r.analytics.Event(anaConsts.CatRuntimeUsage, anaConsts.ActRuntimeAttempt, r.usageDims())
+	an.Event(anaConsts.CatRuntimeUsage, anaConsts.ActRuntimeAttempt, r.usageDims())
 }
 
 func (r *Runtime) usageDims() *dimensions.Values {
