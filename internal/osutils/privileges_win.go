@@ -4,6 +4,9 @@
 package osutils
 
 import (
+	"os"
+
+	"github.com/ActiveState/cli/internal/constants"
 	"golang.org/x/sys/windows"
 )
 
