@@ -17,7 +17,6 @@ import (
 	"github.com/ActiveState/cli/internal/rtutils/p"
 	"github.com/ActiveState/cli/pkg/project"
 
-	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/subshell"
@@ -214,13 +213,8 @@ func (r *runner) validateTargetPath(path string) error {
 }
 
 func (r *runner) removeEnvPaths() error {
-	isAdmin, err := osutils.IsAdmin()
-	if err != nil {
-		return errs.Wrap(err, "Could not determine if running as Windows administrator")
-	}
-
 	// remove shell file additions
-	if err := r.shell.CleanUserEnv(r.cfg, sscommon.OfflineInstallID, !isAdmin); err != nil {
+	if err := r.shell.CleanUserEnv(r.cfg, sscommon.OfflineInstallID, false); err != nil {
 		return errs.Wrap(err, "Failed to remove runtime PATH")
 	}
 
