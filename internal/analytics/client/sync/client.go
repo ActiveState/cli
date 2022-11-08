@@ -187,10 +187,10 @@ func (a *Client) EventWithLabel(category string, action, label string, dims ...*
 		a.customDimensions.UserID = p.StrP(string(*a.auth.UserID()))
 	}
 
-	actualDims := mergeDimensions(a.customDimensions, dims...)
-
-	actualDims.Sequence = p.IntP(a.sequence)
+	a.customDimensions.Sequence = p.IntP(a.sequence)
 	a.sequence++
+
+	actualDims := mergeDimensions(a.customDimensions, dims...)
 
 	if err := actualDims.PreProcess(); err != nil {
 		multilog.Critical("Analytics dimensions cannot be processed properly: %s", errs.JoinMessage(err))
