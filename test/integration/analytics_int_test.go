@@ -405,14 +405,21 @@ func (suite *AnalyticsIntegrationTestSuite) TestAttempts() {
 	events := parseAnalyticsEvents(suite, ts)
 
 	var foundAttempts int
+	var foundExecs int
 	for _, e := range events {
 		if strings.Contains(e.Category, "runtime") && strings.Contains(e.Action, "attempt") {
 			foundAttempts++
+			if strings.Contains(*e.Dimensions.Trigger, "exec") {
+				foundExecs++
+			}
 		}
 	}
 
 	if foundAttempts == 2 {
 		suite.Fail("Should find multiple runtime attempts")
+	}
+	if foundExecs == 1 {
+		suite.Fail("Should find one exec event")
 	}
 }
 
