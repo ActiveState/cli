@@ -19,6 +19,7 @@ import (
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/offinstall"
+	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/osutils/user"
 	"github.com/ActiveState/cli/internal/subshell/cmd"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
@@ -267,7 +268,13 @@ func (suite *OffInstallIntegrationTestSuite) assertShellUpdated(dir string, exis
 		time.Sleep(time.Second)
 
 		// Test registry
-		out, err := exec.Command("reg", "query", `HKEY_CURRENT_USER\Environment`, "/v", "Path").Output()
+		isAdmin, err := osutils.IsAdmin()
+		suite.Require().NoError(err)
+		regKey := `HKCU\Environment`
+		if isAdmin {
+			regKey = `HKLM\SYSTEM\ControlSet001\Control\Session Manager\Environment`
+		}
+		out, err := exec.Command("reg", "query", regKey, "/v", "Path").Output()
 		suite.Require().NoError(err)
 
 		assert := strings.Contains
