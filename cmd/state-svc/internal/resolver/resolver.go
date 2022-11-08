@@ -11,7 +11,6 @@ import (
 	"github.com/ActiveState/cli/internal/analytics/dimensions"
 	"github.com/ActiveState/cli/internal/cache/projectcache"
 	"github.com/ActiveState/cli/internal/poller"
-	"github.com/ActiveState/cli/internal/rtutils/p"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"golang.org/x/net/context"
 
@@ -164,11 +163,6 @@ func (r *Resolver) RuntimeUsage(ctx context.Context, pid int, exec string, dimen
 	var dims *dimensions.Values
 	if err := json.Unmarshal([]byte(dimensionsJSON), &dims); err != nil {
 		return &graph.RuntimeUsageResponse{Received: false}, errs.Wrap(err, "Could not unmarshal")
-	}
-
-	_, err := r.AnalyticsEvent(ctx, anaConsts.CatRuntimeUsage, anaConsts.ActRuntimeAttempt, p.StrP(""), dimensionsJSON)
-	if err != nil {
-		logging.Error("Could not send attempt analytics event: %v", err)
 	}
 
 	r.rtwatch.Watch(pid, exec, dims)

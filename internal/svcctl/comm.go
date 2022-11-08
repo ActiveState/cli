@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/analytics/dimensions"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/graph"
@@ -69,7 +70,11 @@ type RuntimeUsageReporter interface {
 	RuntimeUsage(ctx context.Context, pid int, exec, dimensionsJSON string) (*graph.RuntimeUsageResponse, error)
 }
 
-func HeartbeatHandler(reporter RuntimeUsageReporter) ipc.RequestHandler {
+type AnalyticsReporter interface {
+	EventWithLabel(category string, action, label string, dims ...*dimensions.Values)
+}
+
+func HeartbeatHandler(usageReporter RuntimeUsageReporter, analyticsReporter AnalyticsReporter) ipc.RequestHandler {
 	return func(input string) (string, bool) {
 		if !strings.HasPrefix(input, KeyHeartbeat) {
 			return "", false
@@ -103,7 +108,8 @@ func HeartbeatHandler(reporter RuntimeUsageReporter) ipc.RequestHandler {
 				multilog.Critical("Heartbeat Failure: Could not marshal dimensions in heartbeat handler: %s", err)
 				return
 			}
-			_, err = reporter.RuntimeUsage(context.Background(), pidNum, hb.ExecPath, dimsJSON)
+			analyticsReporter.EventWithLabel(constants.CatRuntimeUsage, constants.ActRuntimeAttempt, "", dims)
+			_, err = usageReporter.RuntimeUsage(context.Background(), pidNum, hb.ExecPath, dimsJSON)
 			if err != nil {
 				multilog.Critical("Heartbeat Failure: Failed to report runtime usage in heartbeat handler: %s", errs.JoinMessage(err))
 				return
