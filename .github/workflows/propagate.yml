@@ -48,6 +48,11 @@ jobs:
           git config user.name "AS-builds"
           git config user.email "nathanr+asbuilds@activestate.com"
 
+      - # === Install Deps ===
+        name: Install Deps
+        shell: bash
+        run: state run install-deps
+
       - # === Preprocess ===
         name: Preprocess
         shell: bash
