@@ -237,6 +237,21 @@ func BranchCommitID(ownerName, projectName, branchName string) (*strfmt.UUID, er
 	return branch.CommitID, nil
 }
 
+func CommitBelongsToBranch(ownerName, projectName, branchName string, commitID strfmt.UUID) (bool, error) {
+	history, err := CommitHistory(ownerName, projectName, branchName)
+	if err != nil {
+		return false, errs.Wrap(err, "Could not get commit history")
+	}
+
+	for _, commit := range history {
+		if commit.CommitID == commitID {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
 // CommitHistory will return the commit history for the given owner / project
 func CommitHistory(ownerName, projectName, branchName string) ([]*mono_models.Commit, error) {
 	latestCID, err := BranchCommitID(ownerName, projectName, branchName)
