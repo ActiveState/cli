@@ -50,7 +50,10 @@ jobs:
           ls -ahl $bin
           printenv
 
-          state run install-deps
+      - # === Install Deps ===
+        name: Install Deps
+        shell: bash
+        run: state run install-deps
 
       - # === Preprocess ===
         name: Preprocess

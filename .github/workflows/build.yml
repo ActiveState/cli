@@ -65,8 +65,6 @@ jobs:
           echo "Adding $bin to PATH"
           echo "$bin" >> $GITHUB_PATH
 
-          state run install-deps
-
           if [ -x "$(command -v apt-get)" ]; then
             sudo apt-get update
             sudo apt-get install fish zsh tcsh -y
@@ -89,6 +87,11 @@ jobs:
         shell: bash
         run: brew install fish
         if: runner.os == 'macOS'
+
+      - # === Install Deps ===
+        name: Install Deps
+        shell: bash
+        run: state run install-deps
 
       - # === Preprocess ===
         name: Preprocess
@@ -438,8 +441,6 @@ jobs:
           ls -ahl $bin
           printenv
 
-          state run install-deps
-
       - # === Download All Build Session Artifacts ===
         name: Download All Build Session Artifacts
         uses: actions/download-artifact@v2
@@ -454,6 +455,11 @@ jobs:
           rm -Rf session-shared-build
           find . -mindepth 2 -maxdepth 2 -print0 | xargs -0 -I file rsync -av file .
           rm -Rf session*
+
+      - # === Install Deps ===
+        name: Install Deps
+        shell: bash
+        run: state run install-deps
 
       - # === Preprocess ===
         name: Preprocess

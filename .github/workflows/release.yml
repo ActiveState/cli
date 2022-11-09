@@ -39,13 +39,16 @@ jobs:
           echo "Adding $bin to PATH"
           echo "$bin" >> $GITHUB_PATH
 
-          state run install-deps
-
       - # === Setup Windows ===
         name: Setup (Windows)
         shell: pwsh
         run: |
           echo "${PSScriptRoot}/.github/deps/${{ runner.os }}/bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
+      - # === Install Deps ===
+        name: Install Deps
+        shell: bash
+        run: state run install-deps
 
       - # === Preprocess ===
         name: Preprocess
