@@ -234,6 +234,7 @@ jobs:
           signtool.exe sign -d "ActiveState State Service" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/state-svc.exe
           signtool.exe sign -d "ActiveState State Tray" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/state-tray.exe
           signtool.exe sign -d "ActiveState State Installer" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/state-installer.exe
+          signtool.exe sign -d "ActiveState State Tool Remote Installer" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/state-remote-installer.exe
         env:
           CODE_SIGNING_PASSWD: ${{ secrets.CODE_SIGNING_PASSWD }}
 
@@ -254,6 +255,11 @@ jobs:
         name: Generate Update
         shell: bash
         run: state run generate-update
+
+      - # === Generate Remote Install Deployment ==
+        name: Generate Remote Install Deployment
+        shell: bash
+        run: state run generate-remote-install-deployment
 
       - # === Deploy for Integration Tests # NEVER run this against production branches. This is meant for PR deployments. ===
         name: Deploy for Integration Tests # NEVER run this against production branches. This is meant for PR deployments.
@@ -461,6 +467,7 @@ jobs:
         run: |
           state run deploy-updates
           state run deploy-installers
+          state run deploy-remote-installer
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -470,10 +477,9 @@ jobs:
         uses: geekyeggo/delete-artifact@v1
         with:
           name: |
-            session-shared-build
             session-build-ubuntu-20.04
             session-build-macos-11
-            session-build-windows-latest
+            session-build-windows-2019
 
       - # === Upload Artifacts ===
         name: Upload Artifacts
