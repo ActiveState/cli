@@ -39,6 +39,8 @@ jobs:
           echo "Adding $bin to PATH"
           echo "$bin" >> $GITHUB_PATH
 
+          state run install-deps
+
       - # === Setup Windows ===
         name: Setup (Windows)
         shell: pwsh

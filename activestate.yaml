@@ -105,7 +105,6 @@ scripts:
     description: Generates assets required by the project that aren't just specific to the build
     value: |
       set -e
-      $scripts.install-deps
       $constants.SET_ENV
       go run scripts/constants-generator/main.go -- internal/constants/generated.go
       mkdir -p build/msi
