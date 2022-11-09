@@ -178,7 +178,7 @@ func (suite *ActivateIntegrationTestSuite) activatePython(version string, extraE
 	cp.SendLine("state activate --default")
 	cp.ExpectLongString("Creating a Virtual Environment")
 	cp.WaitForInput(40 * time.Second)
-	pythonShim := exeutils.WithExeExt(pythonExe)
+	pythonShim := exeutils.WinExeExt(pythonExe)
 
 	// test that other executables that use python work as well
 	pipExe := "pip" + version

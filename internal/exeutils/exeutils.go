@@ -181,6 +181,6 @@ func DecodeCmd(cmd string) (string, []string) {
 	}
 }
 
-func WithExeExt(path string) string {
+func WinExeExt(path string) string {
 	return path + Extension
 }

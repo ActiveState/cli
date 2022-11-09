@@ -61,8 +61,7 @@ func (es *Executors) Apply(sockPath string, targeter Targeter, env map[string]st
 		if rt.GOOS == "windows" {
 			ext := filepath.Ext(alias)
 			if ext != "" && ext != exeutils.Extension { // for non-.exe executables like pip.bat
-				executors[exeutils.WithExeExt(alias)] = dest                // alias pip.bat.exe -> pip.bat
-				alias = strings.TrimSuffix(alias, ext) + exeutils.Extension // and setup alias pip.exe -> pip.bat
+				alias = strings.TrimSuffix(alias, ext) + exeutils.Extension // setup alias pip.exe -> pip.bat
 			}
 		}
 		executors[alias] = dest
