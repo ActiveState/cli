@@ -21,6 +21,9 @@ const CatRuntimeUsage = "runtime-use"
 // ActRuntimeHeartbeat is the event action sent when a runtime is in use
 const ActRuntimeHeartbeat = "heartbeat"
 
+// ActRuntimeSuccess is the event action sent attempting to use a runtime
+const ActRuntimeAttempt = "attempt"
+
 // ActRuntimeStart is the event action sent when creating a runtime
 const ActRuntimeStart = "start"
 

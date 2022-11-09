@@ -377,6 +377,52 @@ func (suite *AnalyticsIntegrationTestSuite) TestInputError() {
 	}
 }
 
+func (suite *AnalyticsIntegrationTestSuite) TestAttempts() {
+	suite.OnlyRunForTags(tagsuite.Analytics)
+
+	ts := e2e.New(suite.T(), true)
+	defer ts.Close()
+
+	asyData := strings.TrimSpace(`project: https://platform.activestate.com/ActiveState-CLI/test?commitID=9090c128-e948-4388-8f7f-96e2c1e00d98`)
+	ts.PrepareActiveStateYAML(asyData)
+
+	cp := ts.SpawnWithOpts(
+		e2e.WithArgs("activate", "ActiveState-CLI/Alternate-Python"),
+		e2e.AppendEnv(constants.DisableRuntime+"=false"),
+		e2e.WithWorkDirectory(ts.Dirs.Work),
+	)
+
+	cp.Expect("Creating a Virtual Environment")
+	cp.Expect("Activated")
+	cp.WaitForInput(120 * time.Second)
+
+	cp.SendLine("python3 --version")
+	cp.Expect("Python 3.")
+
+	time.Sleep(time.Second) // Ensure state-svc has time to report events
+
+	suite.eventsfile = filepath.Join(ts.Dirs.Config, reporters.TestReportFilename)
+	events := parseAnalyticsEvents(suite, ts)
+
+	var foundAttempts int
+	var foundExecs int
+	for _, e := range events {
+		if strings.Contains(e.Category, "runtime") && strings.Contains(e.Action, "attempt") {
+			foundAttempts++
+			if strings.Contains(*e.Dimensions.Trigger, "exec") {
+				foundExecs++
+			}
+		}
+	}
+
+	if foundAttempts == 2 {
+		suite.Fail("Should find multiple runtime attempts")
+	}
+	if foundExecs == 1 {
+		suite.Fail("Should find one exec event")
+	}
+}
+
 func TestAnalyticsIntegrationTestSuite(t *testing.T) {
 	suite.Run(t, new(AnalyticsIntegrationTestSuite))
 }
