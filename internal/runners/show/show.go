@@ -341,7 +341,12 @@ func commitsData(owner, project, branchName string, commitID strfmt.UUID, localP
 		return latestCommit.String(), nil
 	}
 
-	if localProject != nil && localProject.Owner() == owner && localProject.Name() == project {
+	belongs, err := model.CommitBelongsToBranch(owner, project, branchName, commitID)
+	if err != nil {
+		return "", locale.WrapError(err, "err_show_get_commit_belongs", "Could not determine if commit belongs to branch")
+	}
+
+	if localProject != nil && localProject.Owner() == owner && localProject.Name() == project && belongs {
 		var latestCommitID strfmt.UUID
 		if latestCommit != nil {
 			latestCommitID = *latestCommit
