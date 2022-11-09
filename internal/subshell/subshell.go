@@ -146,7 +146,7 @@ func New(cfg sscommon.Configurable) SubShell {
 	return subs
 }
 
-func ConfigureAvailableShells(shell SubShell, cfg sscommon.Configurable, env map[string]string, identifier sscommon.RcIdentification, isAdmin bool) error {
+func ConfigureAvailableShells(shell SubShell, cfg sscommon.Configurable, env map[string]string, identifier sscommon.RcIdentification, userScope bool) error {
 	// Ensure active shell has RC file
 	if shell.IsActive() {
 		err := shell.EnsureRcFileExists()
@@ -159,7 +159,7 @@ func ConfigureAvailableShells(shell SubShell, cfg sscommon.Configurable, env map
 		if !s.IsAvailable() {
 			continue
 		}
-		err := s.WriteUserEnv(cfg, env, identifier, isAdmin)
+		err := s.WriteUserEnv(cfg, env, identifier, userScope)
 		if err != nil {
 			logging.Error("Could not update PATH for shell %s: %v", s.Shell(), err)
 		}
