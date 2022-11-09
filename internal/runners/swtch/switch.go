@@ -100,6 +100,14 @@ func (s *Switch) Run(params SwitchParams) error {
 		}
 	}
 
+	belongs, err := model.CommitBelongsToBranch(s.project.Owner(), s.project.Name(), s.project.BranchName(), identifier.CommitID())
+	if err != nil {
+		return locale.WrapError(err, "err_identifier_branch", "Could not determine if commit belongs to branch")
+	}
+	if !belongs {
+		return locale.NewInputError("err_identifier_branch_not_on_branch", "Commit does not belong to history for branch [ACTIONABLE]{{.V0}}[/RESET]", s.project.BranchName())
+	}
+
 	err = s.project.SetCommit(identifier.CommitID().String())
 	if err != nil {
 		return locale.WrapError(err, "err_switch_set_commitID", "Could not update commit ID")
