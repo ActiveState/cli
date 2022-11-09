@@ -6,7 +6,6 @@ import (
 	"os/user"
 	"path/filepath"
 	rt "runtime"
-	"strings"
 
 	"github.com/ActiveState/cli/internal/analytics"
 	anaConsts "github.com/ActiveState/cli/internal/analytics/constants"
@@ -14,7 +13,6 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/globaldefault"
-	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
@@ -23,7 +21,9 @@ import (
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/process"
 	"github.com/ActiveState/cli/internal/prompt"
-	"github.com/ActiveState/cli/internal/runbits"
+	"github.com/ActiveState/cli/internal/runbits/activation"
+	"github.com/ActiveState/cli/internal/runbits/findproject"
+	"github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
 	"github.com/ActiveState/cli/pkg/cmdlets/checker"
@@ -31,10 +31,8 @@ import (
 	"github.com/ActiveState/cli/pkg/cmdlets/git"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/ActiveState/cli/pkg/platform/runtime"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 type Activate struct {
@@ -92,16 +90,22 @@ func (r *Activate) run(params *ActivateParams) error {
 
 	r.out.Notice(output.Title(locale.T("info_activating_state")))
 
-	// Detect target path
-	pathToUse, err := r.activateCheckout.Run(params.Namespace, params.Branch, params.PreferredPath)
+	proj, err := findproject.FromInputByPriority(params.PreferredPath, params.Namespace, r.config, r.prompt)
 	if err != nil {
-		return locale.WrapError(err, "err_activate_pathtouse", "Could not figure out what path to use.")
-	}
+		if !findproject.IsLocalProjectDoesNotExistError(err) {
+			return errs.Wrap(err, "could not get project") // runbits handles localization
+		}
 
-	// Detect target project
-	proj, err := r.pathToProject(pathToUse)
-	if err != nil {
-		return locale.WrapError(err, "err_activate_projecttouse", "Could not figure out what project to use.")
+		// Perform fresh checkout
+		pathToUse, err := r.activateCheckout.Run(params.Namespace, params.Branch, params.PreferredPath)
+		if err != nil {
+			return locale.WrapError(err, "err_activate_pathtouse", "Could not figure out what path to use.")
+		}
+		// Detect target project
+		proj, err = project.FromExactPath(pathToUse)
+		if err != nil {
+			return locale.WrapError(err, "err_activate_projecttouse", "Could not figure out what project to use.")
+		}
 	}
 
 	alreadyActivated := process.IsActivated(r.config)
@@ -170,40 +174,9 @@ func (r *Activate) run(params *ActivateParams) error {
 		}
 	}
 
-	// Determine branch name
-	branch := proj.BranchName()
-	if params.Branch != "" {
-		branch = params.Branch
-	}
-
-	rt, err := runtime.New(target.NewProjectTarget(proj, storage.CachePath(), nil, target.TriggerActivate), r.analytics, r.svcModel)
+	rt, err := runtime.NewFromProject(proj, target.TriggerActivate, r.analytics, r.svcModel, r.out, r.auth)
 	if err != nil {
-		if !runtime.IsNeedsUpdateError(err) {
-			return locale.WrapError(err, "err_activate_runtime", "Could not initialize a runtime for this project.")
-		}
-		eh, err := runbits.ActivateRuntimeEventHandler(r.out)
-		if err != nil {
-			return locale.WrapError(err, "err_initialize_runtime_event_handler")
-		}
-		if err = rt.Update(r.auth, eh); err != nil {
-			if errs.Matches(err, &model.ErrOrderAuth{}) {
-				return locale.WrapInputError(err, "err_update_auth", "Could not update runtime, if this is a private project you may need to authenticate with `[ACTIONABLE]state auth[/RESET]`")
-			}
-			return locale.WrapError(err, "err_update_runtime", "Could not update runtime installation.")
-		}
-		if err != nil {
-			if errs.Matches(err, &model.ErrNoMatchingPlatform{}) {
-				branches, err := model.BranchNamesForProjectFiltered(proj.Owner(), proj.Name(), branch)
-				if err == nil && len(branches) > 1 {
-					err = locale.NewInputError("err_activate_platfrom_alternate_branches", "", branch, strings.Join(branches, "\n - "))
-					return errs.AddTips(err, "Run → `[ACTIONABLE]state branch switch <NAME>[/RESET]` to switch branch")
-				}
-			}
-			if !authentication.LegacyGet().Authenticated() {
-				return locale.WrapError(err, "error_could_not_activate_venv_auth", "Could not activate project. If this is a private project ensure that you are authenticated.")
-			}
-			return locale.WrapError(err, "err_could_not_activate_venv", "Could not activate project")
-		}
+		return locale.WrapError(err, "err_could_not_activate_venv", "Could not activate project")
 	}
 
 	venv := virtualenvironment.New(rt)
@@ -226,7 +199,7 @@ func (r *Activate) run(params *ActivateParams) error {
 		return errs.AddTips(err, "Run → [ACTIONABLE]state push[/RESET] to create your project")
 	}
 
-	if err := r.activateAndWait(proj, venv); err != nil {
+	if err := activation.ActivateAndWait(proj, venv, r.out, r.subshell, r.config, r.analytics, true); err != nil {
 		return locale.WrapError(err, "err_activate_wait", "Could not activate runtime environment.")
 	}
 
@@ -269,18 +242,6 @@ func updateProjectFile(prj *project.Project, names *project.Namespaced, provided
 	return nil
 }
 
-func (r *Activate) pathToProject(path string) (*project.Project, error) {
-	path, err := filepath.Abs(path)
-	if err != nil {
-		return nil, locale.WrapInputError(err, "err_activate_abs_projectpath", "Could not determine a valid project path. Please try using an absolute path.")
-	}
-	projectToUse, err := project.FromExactPath(path)
-	if err != nil && !errs.Matches(err, &projectfile.ErrorNoProject{}) {
-		return nil, locale.WrapError(err, "err_activate_projectpath", "Could not find a valid project path.")
-	}
-	return projectToUse, nil
-}
-
 // warningForAdministrator prints a warning message if default activation is invoked by a Windows Administrator
 // The default activation will only be accessible by the underlying unprivileged user.
 func warningForAdministrator(out output.Outputer) {
@@ -309,7 +270,7 @@ func warningForAdministrator(out output.Outputer) {
 func parentNamespace() (string, error) {
 	path := os.Getenv(constants.ProjectEnvVarName)
 	proj, err := project.FromExactPath(filepath.Dir(path))
-	if err != nil && !errs.Matches(err, &projectfile.ErrorNoProject{}) {
+	if err != nil {
 		return "", locale.WrapError(err, "err_activate_projectpath", "Could not get project from path {{.V0}}", path)
 	}
 	return proj.NamespaceString(), nil

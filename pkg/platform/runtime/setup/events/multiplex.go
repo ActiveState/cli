@@ -71,6 +71,17 @@ func (mp *MultiPlexedProgress) InstallationStatusUpdate(current, total int64) er
 	return aggErr
 }
 
+func (mp *MultiPlexedProgress) InstallationCompleted(withFailures bool) error {
+	var aggErr error
+	for _, d := range mp.digesters {
+		err := d.InstallationCompleted(withFailures)
+		if err != nil {
+			aggErr = errs.Wrap(aggErr, "InstallationCompleted event error: %v", err)
+		}
+	}
+	return aggErr
+}
+
 func (mp *MultiPlexedProgress) BuildArtifactStarted(artifactID artifact.ArtifactID, name string) error {
 	var aggErr error
 	for _, d := range mp.digesters {

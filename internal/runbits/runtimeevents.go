@@ -30,5 +30,5 @@ func newRuntimeEventHandler(out output.Outputer, changeSummary events.ChangeSumm
 		return nil, errs.Wrap(err, "Failed to initialize buildlog file handler")
 	}
 
-	return events.NewRuntimeEventHandler(progressbar.NewRuntimeProgress(w), changeSummary, lc), nil
+	return events.NewRuntimeEventHandler(progressbar.NewRuntimeProgress(w, out), changeSummary, lc), nil
 }

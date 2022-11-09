@@ -9,9 +9,9 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/exeutils"
+	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/pkg/platform/runtime/envdef"
 
-	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/assets"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -143,8 +143,13 @@ func (f *Executor) createExecutor(exe string) error {
 		}
 	}
 
+	stateExec, err := installation.StateExec()
+	if err != nil {
+		return locale.WrapError(err, "err_state_exec")
+	}
+
 	tplParams := map[string]interface{}{
-		"state":      appinfo.StateApp().Exec(),
+		"state":      stateExec,
 		"exe":        filepath.Base(exe),
 		"targetPath": f.targetPath,
 		"denote":     []string{executorDenoter, denoteTarget},
@@ -173,7 +178,7 @@ func IsExecutor(filePath string) (bool, error) {
 	if fileutils.IsDir(filePath) {
 		return false, nil
 	}
-	
+
 	b, err := fileutils.ReadFile(filePath)
 	if err != nil {
 		return false, locale.WrapError(err, "err_cleanexecutor_noread", "Could not read potential executor file: {{.V0}}.", filePath)

@@ -30,15 +30,13 @@ import (
 )
 
 type Runtime struct {
+	disabled  bool
 	target    setup.Targeter
 	store     *store.Store
 	analytics analytics.Dispatcher
 	svcm      *model.SvcModel
 	completed bool
 }
-
-// DisabledRuntime is an empty runtime that is only created when constants.DisableRuntime is set to true in the environment
-var DisabledRuntime = &Runtime{}
 
 // NeedsUpdateError is an error returned when the runtime is not completely installed yet.
 type NeedsUpdateError struct{ error }
@@ -57,7 +55,7 @@ func newRuntime(target setup.Targeter, an analytics.Dispatcher, svcModel *model.
 	}
 
 	if !rt.store.MarkerIsValid(target.CommitUUID()) {
-		if target.OnlyUseCache() {
+		if target.ReadOnly() {
 			logging.Debug("Using forced cache")
 		} else {
 			return rt, &NeedsUpdateError{errs.New("Runtime requires setup.")}
@@ -70,7 +68,7 @@ func newRuntime(target setup.Targeter, an analytics.Dispatcher, svcModel *model.
 // New attempts to create a new runtime from local storage.  If it fails with a NeedsUpdateError, Update() needs to be called to update the locally stored runtime.
 func New(target setup.Targeter, an analytics.Dispatcher, svcm *model.SvcModel) (*Runtime, error) {
 	if strings.ToLower(os.Getenv(constants.DisableRuntime)) == "true" {
-		return DisabledRuntime, nil
+		return &Runtime{disabled: true, target: target}, nil
 	}
 	an.Event(anaConsts.CatRuntime, anaConsts.ActRuntimeStart, &dimensions.Values{
 		Trigger:          p.StrP(target.Trigger().String()),
@@ -89,9 +87,21 @@ func New(target setup.Targeter, an analytics.Dispatcher, svcm *model.SvcModel) (
 	return r, err
 }
 
+func (r *Runtime) Disabled() bool {
+	return r.disabled
+}
+
+func (r *Runtime) Target() setup.Targeter {
+	return r.target
+}
+
 // Update updates the runtime by downloading all necessary artifacts from the Platform and installing them locally.
 // This function is usually called, after New() returned with a NeedsUpdateError
 func (r *Runtime) Update(auth *authentication.Auth, msgHandler *events.RuntimeEventHandler) error {
+	if r.disabled {
+		return nil // nothing to do
+	}
+
 	logging.Debug("Updating %s#%s @ %s", r.target.Name(), r.target.CommitUUID(), r.target.Dir())
 
 	// Run the setup function (the one that produces runtime events) in the background...
@@ -192,6 +202,10 @@ func (r *Runtime) recordUsage() {
 		ProjectNameSpace: p.StrP(project.NewNamespace(r.target.Owner(), r.target.Name(), r.target.CommitUUID().String()).String()),
 		InstanceID:       p.StrP(instanceid.ID()),
 	}
+
+	// Fire initial runtime usage event right away, subsequent events will be fired via the service so long as the process is running
+	r.analytics.Event(anaConsts.CatRuntimeUsage, anaConsts.ActRuntimeHeartbeat, dims)
+
 	dimsJson, err := dims.Marshal()
 	if err != nil {
 		multilog.Critical("Could not marshal dimensions for runtime-usage: %s", errs.JoinMessage(err))
@@ -202,7 +216,7 @@ func (r *Runtime) recordUsage() {
 }
 
 func (r *Runtime) envDef() (*envdef.EnvironmentDefinition, error) {
-	if r == DisabledRuntime {
+	if r.disabled {
 		return nil, errs.New("Called envDef() on a disabled runtime.")
 	}
 	env, err := r.store.EnvDef()

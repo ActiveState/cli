@@ -127,3 +127,16 @@ func TestExecutableName(t *testing.T) {
 		t.Fatalf("Executable name should return a filename, not a filepath. Returned: %s", name)
 	}
 }
+
+func TestInheritEnv_MultipleEquals(t *testing.T) {
+	key := "MULTIPLEEQUALS"
+	value := "one=two two=three three=four"
+
+	os.Setenv(key, value)
+	defer os.Unsetenv(key)
+
+	env := map[string]string{}
+	updated := InheritEnv(env)
+
+	assert.Equal(t, value, updated[key])
+}

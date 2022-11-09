@@ -1,26 +1,42 @@
 package prepare
 
 import (
-	"github.com/ActiveState/cli/internal/appinfo"
-	"github.com/ActiveState/cli/internal/multilog"
+	svcAutostart "github.com/ActiveState/cli/cmd/state-svc/autostart"
+
+	"github.com/ActiveState/cli/internal/installation"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/osutils/autostart"
 )
 
-func (r *Prepare) prepareOS() {
-}
-
-// InstalledPreparedFiles returns the files installed by the prepare command
-func InstalledPreparedFiles(cfg autostart.Configurable) []string {
-	var files []string
-	trayInfo := appinfo.TrayApp()
-	name, exec := trayInfo.Name(), trayInfo.Exec()
-
-	sc, err := autostart.New(name, exec, cfg).Path()
+func (r *Prepare) prepareOS() error {
+	svcExec, err := installation.ServiceExec()
 	if err != nil {
-		multilog.Error("Failed to determine shortcut path for removal: %v", err)
-	} else if sc != "" {
-		files = append(files, sc)
+		r.reportError(locale.Tl(
+			"err_prepare_service_executable",
+			"Could not get service executable: {{.V0}}", err.Error(),
+		), err)
 	}
 
-	return files
+	svcShortcut, err := autostart.New(svcAutostart.App, svcExec, []string{"start"}, svcAutostart.Options, r.cfg)
+	if err != nil {
+		r.reportError(locale.T("err_autostart_app"), err)
+	}
+
+	err = svcShortcut.Enable()
+	if err != nil {
+		r.reportError(locale.Tl(
+			"err_prepare_autostart_enable",
+			"Could not enable autostart: {{.V0}}.", err.Error(),
+		), err)
+	}
+
+	return nil
+}
+
+func installedPreparedFiles(cfg autostart.Configurable) ([]string, error) {
+	return nil, nil
+}
+
+func cleanOS(cfg autostart.Configurable) error {
+	return nil
 }

@@ -42,3 +42,8 @@ func intsContain(ns []int, v int) bool {
 	}
 	return false
 }
+
+// InsertAt inserts v into data at position i
+func InsertStringAt(data []string, i int, v string) []string {
+	return append(data[:i], append([]string{v}, data[i:]...)...)
+}

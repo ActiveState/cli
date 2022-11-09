@@ -62,7 +62,7 @@ type SignupParams struct {
 func (a *Auth) Run(params *AuthParams) error {
 	if !a.Authenticated() {
 		if err := params.verify(); err != nil {
-			return locale.WrapInputError(err, "err_auth_params", "Invalid authentication params")
+			return locale.WrapError(err, "err_auth_params", "Invalid authentication params")
 		}
 
 		if err := a.authenticate(params); err != nil {

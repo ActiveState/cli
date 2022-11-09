@@ -3,6 +3,7 @@ package config
 import (
 	"context"
 	"fmt"
+	"strconv"
 
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
@@ -11,7 +12,6 @@ import (
 	configMediator "github.com/ActiveState/cli/internal/mediators/config"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/spf13/cast"
 )
 
 type Set struct {
@@ -38,9 +38,17 @@ func (s *Set) Run(params SetParams) error {
 	}
 	switch option.Type {
 	case configMediator.Bool:
-		value = cast.ToBool(params.Value)
+		var err error
+		value, err = strconv.ParseBool(params.Value)
+		if err != nil {
+			return locale.WrapInputError(err, "Invalid boolean value")
+		}
 	case configMediator.Int:
-		value = cast.ToInt(params.Value)
+		var err error
+		value, err = strconv.ParseInt(params.Value, 0, 0)
+		if err != nil {
+			return locale.WrapInputError(err, "Invalid integer value")
+		}
 	default:
 		value = params.Value
 	}

@@ -32,6 +32,7 @@ type PushIntegrationTestSuite struct {
 }
 
 func (suite *PushIntegrationTestSuite) SetupSuite() {
+	suite.username = e2e.PersistentUsername
 	suite.language = "perl"
 	suite.languageFull = "perl@5.32.0"
 	suite.baseProject = "ActiveState-CLI/Perl-5.32"
@@ -50,9 +51,8 @@ func (suite *PushIntegrationTestSuite) TestInitAndPush() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 	ts.LoginAsPersistentUser()
-	username := "cli-integration-tests"
 	pname := strutils.UUID()
-	namespace := fmt.Sprintf("%s/%s", username, pname)
+	namespace := fmt.Sprintf("%s/%s", suite.username, pname)
 	wd := filepath.Join(ts.Dirs.Work, namespace)
 	cp := ts.Spawn(
 		"init",
@@ -72,6 +72,7 @@ func (suite *PushIntegrationTestSuite) TestInitAndPush() {
 	cp.ExpectLongString("Creating project")
 	cp.ExpectLongString("Project created")
 	cp.ExpectExitCode(0)
+	ts.NotifyProjectCreated(suite.username, pname.String())
 
 	// Check that languages were reset
 	pjfile, err := projectfile.Parse(pjfilepath)
@@ -119,9 +120,8 @@ func (suite *PushIntegrationTestSuite) TestPush_HeadlessConvert_NewProject() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 	ts.LoginAsPersistentUser()
-	username := "cli-integration-tests"
 	pname := strutils.UUID()
-	namespace := fmt.Sprintf("%s/%s", username, pname)
+	namespace := fmt.Sprintf("%s/%s", suite.username, pname)
 
 	cp := ts.SpawnWithOpts(e2e.WithArgs("install", suite.extraPackage))
 
@@ -153,6 +153,7 @@ func (suite *PushIntegrationTestSuite) TestPush_HeadlessConvert_NewProject() {
 	cp.SendLine(pname.String())
 	cp.Expect("Project created")
 	cp.ExpectExitCode(0)
+	ts.NotifyProjectCreated(suite.username, pname.String())
 
 	pjfile, err = projectfile.Parse(pjfilepath)
 	suite.Require().NoError(err)
@@ -203,6 +204,8 @@ func (suite *PushIntegrationTestSuite) TestPush_NoPermission_NewProject() {
 	cp.SendLine(pname.String())
 	cp.Expect("Project created")
 	cp.ExpectExitCode(0)
+	// Note: no need for ts.NotifyProjectCreated because newly created users and their projects are
+	// auto-cleaned by e2e.
 
 	pjfile, err = projectfile.Parse(pjfilepath)
 	suite.Require().NoError(err)
@@ -214,9 +217,8 @@ func (suite *PushIntegrationTestSuite) TestCarlisle() {
 	suite.OnlyRunForTags(tagsuite.Push, tagsuite.Carlisle, tagsuite.Headless)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
-	username := "cli-integration-tests"
 	pname := strutils.UUID()
-	namespace := fmt.Sprintf("%s/%s", username, pname)
+	namespace := fmt.Sprintf("%s/%s", suite.username, pname)
 
 	wd := filepath.Join(ts.Dirs.Work, namespace)
 	cp := ts.SpawnWithOpts(
@@ -259,6 +261,7 @@ func (suite *PushIntegrationTestSuite) TestCarlisle() {
 	cp.Send("y")
 	cp.Expect("Project created")
 	cp.ExpectExitCode(0)
+	ts.NotifyProjectCreated(suite.username, pname.String())
 }
 
 func (suite *PushIntegrationTestSuite) TestPush_Outdated() {

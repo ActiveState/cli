@@ -5,11 +5,10 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 	"regexp"
 	"runtime"
 	"strings"
-
-	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/constraints"
 	"github.com/ActiveState/cli/internal/errs"
@@ -22,6 +21,7 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	"github.com/ActiveState/cli/pkg/projectfile"
+	"github.com/go-openapi/strfmt"
 )
 
 // Build covers the build structure
@@ -240,6 +240,11 @@ func (p *Project) Path() string {
 	return p.projectfile.Path()
 }
 
+// Dir returns the project dir
+func (p *Project) Dir() string {
+	return filepath.Dir(p.projectfile.Path())
+}
+
 func (p *Project) IsHeadless() bool {
 	match := projectfile.CommitURLRe.FindStringSubmatch(p.URL())
 	return len(match) > 1
@@ -265,7 +270,7 @@ func (p *Project) Lock() string { return p.projectfile.Lock }
 // Namespace returns project namespace
 func (p *Project) Namespace() *Namespaced {
 	commitID := strfmt.UUID(p.projectfile.CommitID())
-	return &Namespaced{p.projectfile.Owner(), p.projectfile.Name(), &commitID}
+	return &Namespaced{p.projectfile.Owner(), p.projectfile.Name(), &commitID, false}
 }
 
 // NamespaceString is a convenience function to make interfaces simpler
@@ -344,6 +349,16 @@ func FromPath(path string) (*Project, error) {
 	return project, nil
 }
 
+// FromEnv will return the project as per the environment configuration (eg. env var, working dir, global default, ..)
+func FromEnv() (*Project, error) {
+	path, err := projectfile.GetProjectFilePath()
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not get project file path")
+	}
+
+	return FromPath(path)
+}
+
 // FromExactPath will return the project that's located at the given path without walking up the directory tree
 func FromExactPath(path string) (*Project, error) {
 	pjFile, err := projectfile.FromExactPath(path)
@@ -372,27 +387,27 @@ func (p *Platform) Name() string { return p.platform.Name }
 
 // Os returned with all secrets evaluated
 func (p *Platform) Os() (string, error) {
-	return Expand(p.platform.Os)
+	return ExpandFromProject(p.platform.Os, p.project)
 }
 
 // Version returned with all secrets evaluated
 func (p *Platform) Version() (string, error) {
-	return Expand(p.platform.Version)
+	return ExpandFromProject(p.platform.Version, p.project)
 }
 
 // Architecture with all secrets evaluated
 func (p *Platform) Architecture() (string, error) {
-	return Expand(p.platform.Architecture)
+	return ExpandFromProject(p.platform.Architecture, p.project)
 }
 
 // Libc returned are constrained and all secrets evaluated
 func (p *Platform) Libc() (string, error) {
-	return Expand(p.platform.Libc)
+	return ExpandFromProject(p.platform.Libc, p.project)
 }
 
 // Compiler returned are constrained and all secrets evaluated
 func (p *Platform) Compiler() (string, error) {
-	return Expand(p.platform.Compiler)
+	return ExpandFromProject(p.platform.Compiler, p.project)
 }
 
 // Language covers the language structure
@@ -419,7 +434,7 @@ func (l *Language) ID() string {
 func (l *Language) Build() (*Build, error) {
 	build := Build{}
 	for key, val := range l.language.Build {
-		newVal, err := Expand(val)
+		newVal, err := ExpandFromProject(val, l.project)
 		if err != nil {
 			return nil, err
 		}
@@ -461,7 +476,7 @@ func (p *Package) Version() string { return p.pkg.Version }
 func (p *Package) Build() (*Build, error) {
 	build := Build{}
 	for key, val := range p.pkg.Build {
-		newVal, err := Expand(val)
+		newVal, err := ExpandFromProject(val, p.project)
 		if err != nil {
 			return nil, err
 		}
@@ -481,7 +496,7 @@ func (c *Constant) Name() string { return c.constant.Name }
 
 // Value returns constant value
 func (c *Constant) Value() (string, error) {
-	return Expand(c.constant.Value)
+	return ExpandFromProject(c.constant.Value, c.project)
 }
 
 // SecretScope defines the scope of a secret
@@ -559,7 +574,7 @@ func (s *Secret) ValueOrNil() (*string, error) {
 		category = UserCategory
 	}
 
-	value, err := secretsExpander.Expand("", category, s.secret.Name, false, s.project)
+	value, err := secretsExpander.Expand("", category, s.secret.Name, false, NewExpansion(s.project))
 	if err != nil {
 		if errors.Is(err, ErrSecretNotFound) {
 			return nil, nil
@@ -593,14 +608,14 @@ func (e *Event) Name() string { return e.event.Name }
 
 // Value returned with all secrets evaluated
 func (e *Event) Value() (string, error) {
-	return Expand(e.event.Value)
+	return ExpandFromProject(e.event.Value, e.project)
 }
 
 // Scope returns the scope property of the event
 func (e *Event) Scope() ([]string, error) {
 	result := []string{}
 	for _, s := range e.event.Scope {
-		v, err := Expand(s)
+		v, err := ExpandFromProject(s, e.project)
 		if err != nil {
 			return result, err
 		}
@@ -668,7 +683,7 @@ func (script *Script) Description() string { return script.script.Description }
 
 // Value returned with all secrets evaluated
 func (script *Script) Value() (string, error) {
-	return Expand(script.script.Value)
+	return ExpandFromScript(script.script.Value, script)
 }
 
 // Raw returns the script value with no secrets or constants expanded

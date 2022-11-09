@@ -76,8 +76,6 @@ func (w *Watcher) ticker(cb func()) {
 }
 
 func (w *Watcher) check() {
-	logging.Debug("Checking for runtime processes")
-
 	watching := w.watching[:0]
 	for i := range w.watching {
 		e := w.watching[i] // Must use index, because we are deleting indexes further down
@@ -105,7 +103,7 @@ func (w *Watcher) RecordUsage(e entry) {
 func (w *Watcher) Close() error {
 	logging.Debug("Closing runtime watcher")
 
-	w.stop <- struct{}{}
+	close(w.stop)
 
 	if len(w.watching) > 0 {
 		watchingJson, err := json.Marshal(w.watching)
@@ -123,5 +121,4 @@ func (w *Watcher) Watch(pid int, exec string, dims *dimensions.Values) {
 	dims.Sequence = p.IntP(-1) // sequence is meaningless for heartbeat events
 	e := entry{pid, exec, dims}
 	w.watching = append(w.watching, e)
-	w.RecordUsage(e)
 }

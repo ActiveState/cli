@@ -3,6 +3,8 @@ package sliceutils
 import (
 	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestRemoveFromStrings(t *testing.T) {
@@ -181,4 +183,8 @@ func TestRange(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestInsertStringAt(t *testing.T) {
+	assert.Equal(t, []string{"a", "b", "c", "d", "e", "f"}, InsertStringAt([]string{"a", "b", "c", "e", "f"}, 3, "d"))
 }

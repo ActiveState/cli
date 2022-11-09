@@ -11,6 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/analytics/client/blackhole"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/testhelpers/outputhelper"
 )
@@ -57,7 +58,8 @@ func (suite *CleanTestSuite) TestUninstall_PromptNo() {
 	runner, err := newUninstall(&outputhelper.TestOutputer{}, &confirmMock{}, newConfigMock(suite.T(), suite.cachePath, suite.configPath), nil, blackhole.New())
 	suite.Require().NoError(err)
 	err = runner.Run(&UninstallParams{})
-	suite.Require().NoError(err)
+	suite.Require().Error(err)
+	suite.Require().True(locale.IsInputError(err), "non-confirmed uninstall should return an error, not silently halt")
 
 	suite.Require().DirExists(suite.configPath)
 	suite.Require().DirExists(suite.cachePath)

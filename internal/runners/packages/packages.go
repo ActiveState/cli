@@ -163,6 +163,9 @@ func executePackageOperation(prime primeable, packageName, packageVersion string
 	var commitID strfmt.UUID
 	commitID, err = model.CommitPackage(parentCommitID, operation, packageName, ns, packageVersion)
 	if err != nil {
+		if operation == model.OperationRemoved && strings.Contains(err.Error(), "does not exist") {
+			return locale.WrapInputError(err, "err_package_remove_does_not_exist", "Package is not installed: {{.V0}}", packageName)
+		}
 		return locale.WrapError(err, fmt.Sprintf("err_%s_%s", ns.Type(), operation))
 	}
 

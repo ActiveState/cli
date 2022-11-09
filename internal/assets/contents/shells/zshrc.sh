@@ -6,8 +6,6 @@ cd "{{.WD}}"
 export PS1="[{{.Owner}}/{{.Name}}] $PS1"
 {{end}}
 
-precmd() { eval "$PROMPT_COMMAND" }
-
 {{- range $K, $V := .Env}}
 {{- if eq $K "PATH"}}
 export {{$K}}="{{$V}}:$PATH"

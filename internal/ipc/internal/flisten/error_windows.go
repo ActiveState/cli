@@ -25,7 +25,7 @@ func asConnRefusedError(err error) error {
 }
 
 func asConnLostError(err error) error {
-	if errs.IsAny(err, io.EOF, syscall.ECONNRESET, syscall.EPIPE, win.WSAECONNRESET, win.WSAENETRESET) {
+	if errs.IsAny(err, io.EOF, syscall.ECONNRESET, syscall.EPIPE, win.WSAECONNRESET, win.WSAENETRESET, win.WSAENOBUFS) {
 		return ErrConnLost
 	}
 	return err

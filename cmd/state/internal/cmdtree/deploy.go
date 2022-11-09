@@ -7,6 +7,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runners/deploy"
+	"github.com/ActiveState/cli/internal/runners/deploy/uninstall"
 )
 
 func newDeployCommand(prime *primer.Values) *captain.Command {
@@ -34,7 +35,7 @@ func newDeployCommand(prime *primer.Values) *captain.Command {
 		})
 	}
 
-	return captain.NewCommand(
+	cmd := captain.NewCommand(
 		"deploy",
 		locale.Tl("deploy_title", "Deploying Runtime"),
 		locale.T("deploy_cmd_description"),
@@ -50,7 +51,10 @@ func newDeployCommand(prime *primer.Values) *captain.Command {
 		},
 		func(cmd *captain.Command, args []string) error {
 			return runner.Run(params)
-		}).SetGroup(EnvironmentGroup)
+		})
+	cmd.SetGroup(EnvironmentGroup)
+	cmd.SetHidden(true)
+	return cmd
 }
 
 func newDeployInstallCommand(prime *primer.Values) *captain.Command {
@@ -182,6 +186,38 @@ func newDeployReportCommand(prime *primer.Values) *captain.Command {
 				Required:    true,
 			},
 		},
+		func(cmd *captain.Command, args []string) error {
+			return runner.Run(params)
+		})
+}
+
+func newDeployUninstallCommand(prime *primer.Values) *captain.Command {
+	runner := uninstall.NewDeployUninstall(prime)
+
+	params := &uninstall.Params{}
+
+	flags := []*captain.Flag{
+		{
+			Name:        "path",
+			Description: locale.Tl("flag_state_deploy_uninstall_path_description", "The path of the deployed runtime to uninstall if not the current directory"),
+			Value:       &params.Path,
+		},
+	}
+	if runtime.GOOS == "windows" {
+		flags = append(flags, &captain.Flag{
+			Name:        "user",
+			Description: locale.T("flag_state_deploy_user_path_description"),
+			Value:       &params.UserScope,
+		})
+	}
+
+	return captain.NewCommand(
+		"uninstall",
+		locale.Tl("deploy_uninstall_title", "Uninstall Deployed Runtime"),
+		locale.Tl("deploy_uninstall_cmd_description", "Removes a runtime that had previously been deployed"),
+		prime,
+		flags,
+		[]*captain.Argument{},
 		func(cmd *captain.Command, args []string) error {
 			return runner.Run(params)
 		})

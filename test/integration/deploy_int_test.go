@@ -13,8 +13,10 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/suite"
 
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 )
@@ -121,12 +123,6 @@ func (suite *DeployIntegrationTestSuite) TestDeployPerl() {
 	cp.SendLine("ptar -h")
 	cp.Expect("a tar-like program written in perl")
 
-	// Disabled for the moment: https://activestatef.atlassian.net/browse/DX-943
-	// cp.SendLine("ppm --version")
-	// cp.Expect("not found")
-	// cp.SendLine(errorLevel)
-	// cp.Expect("0")
-
 	cp.SendLine("exit 0")
 	cp.ExpectExitCode(0)
 }
@@ -220,6 +216,10 @@ func (suite *DeployIntegrationTestSuite) TestDeployPython() {
 
 func (suite *DeployIntegrationTestSuite) TestDeployInstall() {
 	suite.OnlyRunForTags(tagsuite.Deploy)
+	if !e2e.RunningOnCI() {
+		suite.T().Skipf("Skipping DeployIntegrationTestSuite when not running on CI, as it modifies bashrc/registry")
+	}
+
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -305,14 +305,18 @@ func (suite *DeployIntegrationTestSuite) TestDeployConfigure() {
 
 func (suite *DeployIntegrationTestSuite) AssertConfig(ts *e2e.Session, targetID string) {
 	if runtime.GOOS != "windows" {
-		// Test bashrc
-		homeDir, err := os.UserHomeDir()
+		// Test config file
+		cfg, err := config.New()
 		suite.Require().NoError(err)
 
-		bashContents := fileutils.ReadFileUnsafe(filepath.Join(homeDir, ".bashrc"))
-		suite.Contains(string(bashContents), constants.RCAppendDeployStartLine, "bashrc should contain our RC Append Start line")
-		suite.Contains(string(bashContents), constants.RCAppendDeployStopLine, "bashrc should contain our RC Append Stop line")
-		suite.Contains(string(bashContents), targetID, "bashrc should contain our target dir")
+		subshell := subshell.New(cfg)
+		rcFile, err := subshell.RcFile()
+		suite.Require().NoError(err)
+
+		bashContents := fileutils.ReadFileUnsafe(rcFile)
+		suite.Contains(string(bashContents), constants.RCAppendDeployStartLine, "config file should contain our RC Append Start line")
+		suite.Contains(string(bashContents), constants.RCAppendDeployStopLine, "config file should contain our RC Append Stop line")
+		suite.Contains(string(bashContents), targetID, "config file should contain our target dir")
 	} else {
 		// Test registry
 		out, err := exec.Command("reg", "query", `HKLM\SYSTEM\ControlSet001\Control\Session Manager\Environment`, "/v", "Path").Output()
@@ -432,6 +436,63 @@ func (suite *DeployIntegrationTestSuite) TestDeployTwice() {
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cpx.ExpectExitCode(0)
+}
+
+func (suite *DeployIntegrationTestSuite) TestDeployUninstall() {
+	suite.OnlyRunForTags(tagsuite.Deploy)
+	if !e2e.RunningOnCI() {
+		suite.T().Skipf("Skipping TestDeployUninstall when not running on CI, as it modifies bashrc/registry")
+	}
+
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	targetDir := filepath.Join(ts.Dirs.Work, "target")
+	if fileutils.TargetExists(targetDir) {
+		isEmpty, err := fileutils.IsEmptyDir(targetDir)
+		suite.Require().NoError(err)
+		suite.True(isEmpty, "Target dir should be empty before we start")
+	}
+
+	suite.InstallAndAssert(ts, targetDir)
+
+	// Uninstall deployed runtime.
+	cp := ts.SpawnWithOpts(
+		e2e.WithArgs("deploy", "uninstall", "--path", filepath.Join(ts.Dirs.Work, "target")),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
+	cp.Expect("Uninstall Deployed Runtime")
+	cp.Expect("Successful")
+	cp.ExpectExitCode(0)
+	suite.False(fileutils.TargetExists(filepath.Join(ts.Dirs.Work, "target")), "Deploy dir was not deleted")
+	suite.True(fileutils.IsDir(ts.Dirs.Work), "Work dir was unexpectedly deleted")
+
+	// Trying to uninstall again should fail
+	cp = ts.SpawnWithOpts(
+		e2e.WithArgs("deploy", "uninstall", "--path", filepath.Join(ts.Dirs.Work, "target")),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
+	cp.Expect("no deployed runtime")
+	cp.ExpectExitCode(1)
+	suite.True(fileutils.IsDir(ts.Dirs.Work), "Work dir was unexpectedly deleted")
+
+	// Trying to uninstall in a non-deployment directory should fail.
+	cp = ts.SpawnWithOpts(
+		e2e.WithArgs("deploy", "uninstall"),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
+	cp.Expect("no deployed runtime")
+	cp.ExpectExitCode(1)
+	suite.True(fileutils.IsDir(ts.Dirs.Work), "Work dir was unexpectedly deleted")
+
+	// Trying to uninstall in a non-deployment directory should not delete that directory.
+	cp = ts.SpawnWithOpts(
+		e2e.WithArgs("deploy", "uninstall", "--path", ts.Dirs.Work),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
+	cp.Expect("no deployed runtime")
+	cp.ExpectExitCode(1)
+	suite.True(fileutils.IsDir(ts.Dirs.Work), "Work dir was unexpectedly deleted")
 }
 
 func TestDeployIntegrationTestSuite(t *testing.T) {

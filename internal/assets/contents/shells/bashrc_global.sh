@@ -1,6 +1,6 @@
-if [ -z "$PROMPT_COMMAND" ]; then
-  export PS1="[{{.Project}}] $PS1"
-fi
+{{if ne .Project ""}}
+export PS1="[{{.Project}}] $PS1"
+{{end}}
 
 {{- range $K, $V := .Env}}
 {{- if eq $K "PATH"}}

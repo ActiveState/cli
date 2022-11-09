@@ -42,6 +42,8 @@ func (r *Role) Set(v string) error {
 		*r = Owner
 	case "member":
 		*r = Member
+	case "":
+		*r = Member
 	default:
 		*r = Unknown
 		return locale.NewInputError("err_invite_invalid_role", "Invalid role: {{.V0}}, should be one of: {{.V1}}", v, strings.Join(roleNames(), ", "))

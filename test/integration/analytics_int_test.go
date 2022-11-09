@@ -3,10 +3,8 @@ package integration
 import (
 	"encoding/json"
 	"fmt"
-	"io/fs"
 	"path/filepath"
 	"runtime"
-	"regexp"
 	"sort"
 	"strings"
 	"testing"
@@ -15,11 +13,11 @@ import (
 	"github.com/ActiveState/cli/internal/analytics/client/sync/reporters"
 	anaConst "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/ActiveState/termtest"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"github.com/thoas/go-funk"
 )
@@ -27,58 +25,6 @@ import (
 type AnalyticsIntegrationTestSuite struct {
 	tagsuite.Suite
 	eventsfile string
-}
-
-func (suite *AnalyticsIntegrationTestSuite) svcLog(configDir string) string {
-	logDir := filepath.Join(configDir, "logs")
-	files := fileutils.ListDirSimple(logDir, false)
-	lines := []string{}
-	for _, file := range files {
-		if !strings.HasPrefix(filepath.Base(file), "state-svc") {
-			continue
-		}
-		b := fileutils.ReadFileUnsafe(file)
-		lines = append(lines, filepath.Base(file)+":"+strings.Split(string(b), "\n")[0])
-		if !strings.Contains(string(b), fmt.Sprintf("state-svc%s foreground", exeutils.Extension)) {
-			continue
-		}
-
-		return string(b) + "\n\nCurrent time: " + time.Now().String()
-	}
-
-	suite.Fail(fmt.Sprintf("Could not find state-svc log, checked under %s, found: \n%v\n, files: \n%v\n", logDir, lines, files))
-	return ""
-}
-
-func (suite *AnalyticsIntegrationTestSuite) stateLog(configDir string) string {
-	rx := regexp.MustCompile(`state-\d`)
-	logDir := filepath.Join(configDir, "logs")
-	var result string
-	var newest time.Time
-	filepath.WalkDir(logDir, func(path string, f fs.DirEntry, err error) error {
-		if !rx.MatchString(f.Name()) {
-			return nil
-		}
-
-		info, err := f.Info()
-		suite.Require().NoError(err)
-
-		ts := info.ModTime()
-		if ts.After(newest) {
-			result = path
-			newest = ts
-		}
-
-		return nil
-	})
-
-	if result == "" {
-		suite.Fail("Could not find log file")
-		return ""
-	}
-
-	b := fileutils.ReadFileUnsafe(result)
-	return string(b) + "\n\nCurrent time: " + time.Now().String()
 }
 
 // TestActivateEvents ensures that the right events are sent when we activate
@@ -126,20 +72,20 @@ func (suite *AnalyticsIntegrationTestSuite) TestActivateEvents() {
 
 	suite.eventsfile = filepath.Join(ts.Dirs.Config, reporters.TestReportFilename)
 
-	events := suite.parseEvents(ts)
+	events := parseAnalyticsEvents(suite, ts)
 	suite.Require().NotEmpty(events)
 
 	// Runtime:start events
 	suite.assertNEvents(events, 1, anaConst.CatRuntime, anaConst.ActRuntimeStart,
 		fmt.Sprintf("output:\n%s\nState Log:\n%s\nSvc Log:\n%s",
-			cp.Snapshot(), suite.stateLog(ts.Dirs.Config), suite.svcLog(ts.Dirs.Config)))
+			cp.Snapshot(), ts.MostRecentStateLog(), ts.SvcLog()))
 
 	// Runtime:success events
 	suite.assertNEvents(events, 1, anaConst.CatRuntime, anaConst.ActRuntimeSuccess,
 		fmt.Sprintf("output:\n%s\nState Log:\n%s\nSvc Log:\n%s",
-			cp.Snapshot(), suite.stateLog(ts.Dirs.Config), suite.svcLog(ts.Dirs.Config)))
+			cp.Snapshot(), ts.MostRecentStateLog(), ts.SvcLog()))
 
-	heartbeatInitialCount := suite.countEvents(events, anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat)
+	heartbeatInitialCount := countEvents(events, anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat)
 	if heartbeatInitialCount < 2 {
 		// It's possible due to the timing of the heartbeats and the fact that they are async that we have gotten either
 		// one or two by this point. Technically more is possible, just very unlikely.
@@ -148,32 +94,32 @@ func (suite *AnalyticsIntegrationTestSuite) TestActivateEvents() {
 
 	time.Sleep(sleepTime)
 
-	events = suite.parseEvents(ts)
+	events = parseAnalyticsEvents(suite, ts)
 	suite.Require().NotEmpty(events)
 
 	// Runtime-use:heartbeat events - should now be at least +1 because we waited <heartbeatInterval>
 	suite.assertGtEvents(events, heartbeatInitialCount, anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat,
 		fmt.Sprintf("output:\n%s\nState Log:\n%s\nSvc Log:\n%s",
-			cp.Snapshot(), suite.stateLog(ts.Dirs.Config), suite.svcLog(ts.Dirs.Config)))
+			cp.Snapshot(), ts.MostRecentStateLog(), ts.SvcLog()))
 
 	cp.SendLine("exit")
 
 	time.Sleep(sleepTime) // give time to let rtwatcher detect process has exited
 
-	events = suite.parseEvents(ts)
+	events = parseAnalyticsEvents(suite, ts)
 	suite.Require().NotEmpty(events)
-	eventsAfterExit := suite.countEvents(events, anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat)
+	eventsAfterExit := countEvents(events, anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat)
 
 	time.Sleep(sleepTime)
 
-	events = suite.parseEvents(ts)
+	events = parseAnalyticsEvents(suite, ts)
 	suite.Require().NotEmpty(events)
-	eventsAfterWait := suite.countEvents(events, anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat)
+	eventsAfterWait := countEvents(events, anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat)
 
 	suite.Equal(eventsAfterExit, eventsAfterWait,
 		fmt.Sprintf("Heartbeats should stop ticking after exiting subshell.\n"+
 			"output:\n%s\nState Log:\n%s\nSvc Log:\n%s",
-			cp.Snapshot(), suite.stateLog(ts.Dirs.Config), suite.svcLog(ts.Dirs.Config)))
+			cp.Snapshot(), ts.MostRecentStateLog(), ts.SvcLog()))
 
 	// Ensure any analytics events from the state tool have the instance ID set
 	for _, e := range events {
@@ -186,23 +132,35 @@ func (suite *AnalyticsIntegrationTestSuite) TestActivateEvents() {
 	suite.assertSequentialEvents(events)
 }
 
-func (suite *AnalyticsIntegrationTestSuite) countEvents(events []reporters.TestLogEntry, category, action string) int {
+func countEvents(events []reporters.TestLogEntry, category, action string) int {
 	filteredEvents := funk.Filter(events, func(e reporters.TestLogEntry) bool {
 		return e.Category == category && e.Action == action
 	}).([]reporters.TestLogEntry)
 	return len(filteredEvents)
 }
 
+func filterEvents(events []reporters.TestLogEntry, filters ...func(e reporters.TestLogEntry) bool) []reporters.TestLogEntry {
+	filteredEvents := funk.Filter(events, func(e reporters.TestLogEntry) bool {
+		for _, filter := range filters {
+			if !filter(e) {
+				return false
+			}
+		}
+		return true
+	}).([]reporters.TestLogEntry)
+	return filteredEvents
+}
+
 func (suite *AnalyticsIntegrationTestSuite) assertNEvents(events []reporters.TestLogEntry,
 	expectedN int, category, action string, errMsg string) {
-	suite.Assert().Equal(expectedN, suite.countEvents(events, category, action),
+	suite.Assert().Equal(expectedN, countEvents(events, category, action),
 		"Expected %d %s:%s events.\nFile location: %s\nEvents received:\n%s\nError:\n%s",
 		expectedN, category, action, suite.eventsfile, suite.summarizeEvents(events), errMsg)
 }
 
 func (suite *AnalyticsIntegrationTestSuite) assertGtEvents(events []reporters.TestLogEntry,
 	greaterThanN int, category, action string, errMsg string) {
-	suite.Assert().Greater(suite.countEvents(events, category, action), greaterThanN,
+	suite.Assert().Greater(countEvents(events, category, action), greaterThanN,
 		fmt.Sprintf("Expected more than %d %s:%s events.\nFile location: %s\nEvents received:\n%s\nError:\n%s",
 			greaterThanN, category, action, suite.eventsfile, suite.summarizeEvents(events), errMsg))
 }
@@ -260,12 +218,17 @@ func (suite *AnalyticsIntegrationTestSuite) summarizeEventSequence(events []repo
 	return strings.Join(summary, "\n")
 }
 
-func (suite *AnalyticsIntegrationTestSuite) parseEvents(s *e2e.Session) []reporters.TestLogEntry {
+type TestingSuiteForAnalytics interface {
+	Require() *require.Assertions
+}
+
+func parseAnalyticsEvents(suite TestingSuiteForAnalytics, ts *e2e.Session) []reporters.TestLogEntry {
 	time.Sleep(time.Second) // give svc time to process events
 
-	suite.Require().FileExists(suite.eventsfile)
+	file := filepath.Join(ts.Dirs.Config, reporters.TestReportFilename)
+	suite.Require().FileExists(file, ts.DebugMessage(""))
 
-	b, err := fileutils.ReadFile(suite.eventsfile)
+	b, err := fileutils.ReadFile(file)
 	suite.Require().NoError(err)
 
 	var result []reporters.TestLogEntry
@@ -277,7 +240,7 @@ func (suite *AnalyticsIntegrationTestSuite) parseEvents(s *e2e.Session) []report
 
 		var parsedEntry reporters.TestLogEntry
 		err := json.Unmarshal([]byte(entry), &parsedEntry)
-		suite.Require().NoError(err, fmt.Sprintf("path: %s, value: \n%s\n", suite.eventsfile, entry))
+		suite.Require().NoError(err, fmt.Sprintf("path: %s, value: \n%s\n", file, entry))
 		result = append(result, parsedEntry)
 	}
 
@@ -317,7 +280,7 @@ scripts:
 	cp.Wait()
 
 	suite.eventsfile = filepath.Join(ts.Dirs.Config, reporters.TestReportFilename)
-	events := suite.parseEvents(ts)
+	events := parseAnalyticsEvents(suite, ts)
 
 	var found int
 	for _, event := range events {
@@ -350,14 +313,14 @@ func (suite *AnalyticsIntegrationTestSuite) TestSend() {
 	cp.Expect("Successfully")
 	cp.ExpectExitCode(0)
 
-	initialEvents := suite.parseEvents(ts)
+	initialEvents := parseAnalyticsEvents(suite, ts)
 	suite.assertSequentialEvents(initialEvents)
 
 	cp = ts.Spawn("--version")
 	cp.Expect("Version")
 	cp.ExpectExitCode(0)
 
-	events := suite.parseEvents(ts)
+	events := parseAnalyticsEvents(suite, ts)
 	currentEvents := len(events)
 	if currentEvents > len(initialEvents) {
 		suite.Failf("Should not get additional events", "Got %d additional events, should be 0", currentEvents-len(initialEvents))
@@ -377,7 +340,7 @@ func (suite *AnalyticsIntegrationTestSuite) TestSequenceAndFlags() {
 	cp.ExpectExitCode(0)
 
 	suite.eventsfile = filepath.Join(ts.Dirs.Config, reporters.TestReportFilename)
-	events := suite.parseEvents(ts)
+	events := parseAnalyticsEvents(suite, ts)
 	suite.assertSequentialEvents(events)
 
 	found := false

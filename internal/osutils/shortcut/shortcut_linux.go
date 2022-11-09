@@ -23,7 +23,7 @@ type SaveOpts struct {
 	IconPath    string
 }
 
-func Save(target, path string, opts SaveOpts) (file string, err error) {
+func Save(target, path string, args []string, opts SaveOpts) (file string, err error) {
 	if !fileutils.FileExists(target) {
 		return "", errs.New("Target does not exist")
 	}
@@ -36,11 +36,14 @@ func Save(target, path string, opts SaveOpts) (file string, err error) {
 		filepath.Base(path)
 	}
 
+	exec := []string{target}
+	exec = append(exec, args...)
+
 	data := desktopFileData{
 		Name:        name,
 		GenericName: opts.GenericName,
 		Comment:     opts.Comment,
-		Exec:        target,
+		Exec:        strings.Join(exec, " "),
 		Keywords:    opts.Keywords,
 		IconName:    iconName,
 	}

@@ -9,15 +9,17 @@ import (
 	"runtime/debug"
 	"time"
 
+	trayAutostart "github.com/ActiveState/cli/cmd/state-tray/autostart"
+
 	"github.com/ActiveState/cli/cmd/state-tray/internal/menu"
 	"github.com/ActiveState/cli/cmd/state-tray/internal/open"
-	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/events"
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/installmgr"
 	"github.com/ActiveState/cli/internal/ipc"
 	"github.com/ActiveState/cli/internal/locale"
@@ -30,7 +32,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/getlantern/systray"
-	"github.com/shirou/gopsutil/process"
+	"github.com/shirou/gopsutil/v3/process"
 	"github.com/spf13/cast"
 )
 
@@ -103,7 +105,7 @@ func run(cfg *config.Instance) (rerr error) {
 
 	systray.SetIcon(iconFile)
 
-	port, err := svcctl.EnsureStartedAndLocateHTTP()
+	port, err := svcctl.EnsureStartedAndLocateHTTP("tray-start")
 	if err != nil && !errors.Is(err, ipc.ErrInUse) {
 		return errs.Wrap(err, "Service failed to start")
 	}
@@ -153,9 +155,16 @@ func run(cfg *config.Instance) (rerr error) {
 	)
 	systray.AddSeparator()
 
-	trayInfo := appinfo.TrayApp()
+	trayExec, err := installation.TrayExec()
+	if err != nil {
+		return locale.WrapError(err, "err_tray_exec")
+	}
 
-	as := autostart.New(trayInfo.Name(), trayInfo.Exec(), cfg)
+	as, err := autostart.New(trayAutostart.App, trayExec, nil, trayAutostart.Options, cfg)
+	if err != nil {
+		return locale.WrapError(err, "err_autostart_app")
+	}
+
 	enabled, err := as.IsEnabled()
 	if err != nil {
 		return errs.Wrap(err, "Could not check if app autostart is enabled")
@@ -167,7 +176,10 @@ func run(cfg *config.Instance) (rerr error) {
 
 	mProjects := systray.AddMenuItem(locale.Tl("tray_projects_title", "Local Projects"), "")
 	mReload := mProjects.AddSubMenuItem("Reload", "Reload the local projects listing")
-	localProjectsUpdater := menu.NewLocalProjectsUpdater(mProjects)
+	localProjectsUpdater, err := menu.NewLocalProjectsUpdater(mProjects)
+	if err != nil {
+		return errs.Wrap(err, "Could not create local projects updater")
+	}
 
 	localProjects, err := model.LocalProjects(context.Background())
 	if err != nil {
@@ -179,11 +191,21 @@ func run(cfg *config.Instance) (rerr error) {
 
 	mQuit := systray.AddMenuItem(locale.Tl("tray_exit", "Exit"), "")
 
+	stateExec, err := installation.StateExec()
+	if err != nil {
+		return locale.WrapError(err, "err_state_exec")
+	}
+
+	updateExec, err := installation.UpdateExec()
+	if err != nil {
+		return locale.WrapError(err, "err_update_exec")
+	}
+
 	for {
 		select {
 		case <-mAbout.ClickedCh:
 			logging.Debug("About event")
-			err = open.TerminalAndWait(appinfo.StateApp().Exec() + " --version")
+			err = open.TerminalAndWait(stateExec + " --version")
 			if err != nil {
 				multilog.Error("Could not open command prompt: %v", err)
 			}
@@ -243,9 +265,8 @@ func run(cfg *config.Instance) (rerr error) {
 			}
 		case <-mUpdate.ClickedCh:
 			logging.Debug("Update event")
-			updlgInfo := appinfo.UpdateDialogApp()
-			if err := execute(updlgInfo.Exec(), nil); err != nil {
-				return errs.New("Could not execute: %s", updlgInfo.Name())
+			if err := execute(updateExec, nil); err != nil {
+				return errs.New("Could not execute: %s", constants.UpdateDialogName)
 			}
 		case <-mQuit.ClickedCh:
 			logging.Debug("Quit event")

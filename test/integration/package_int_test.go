@@ -454,6 +454,19 @@ func (suite *PackageIntegrationTestSuite) TestInstall_Empty() {
 	}
 }
 
+func (suite *PackageIntegrationTestSuite) TestPackage_UninstallDoesNotExist() {
+	suite.OnlyRunForTags(tagsuite.Package)
+
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	suite.PrepareActiveStateYAML(ts)
+
+	cp := ts.Spawn("uninstall", "doesNotExist")
+	cp.Expect("Package is not installed: doesNotExist")
+	cp.ExpectExitCode(1)
+}
+
 func TestPackageIntegrationTestSuite(t *testing.T) {
 	suite.Run(t, new(PackageIntegrationTestSuite))
 }
