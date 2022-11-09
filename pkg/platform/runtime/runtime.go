@@ -72,6 +72,7 @@ func New(target setup.Targeter, an analytics.Dispatcher, svcm *model.SvcModel) (
 		fmt.Fprintln(os.Stderr, locale.Tl("notice_runtime_disabled", "Skipping runtime setup because it was disabled by an environment variable"))
 		return &Runtime{disabled: true, target: target}, nil
 	}
+	recordAttempt(an, target)
 	an.Event(anaConsts.CatRuntime, anaConsts.ActRuntimeStart, &dimensions.Values{
 		Trigger:          p.StrP(target.Trigger().String()),
 		Headless:         p.StrP(strconv.FormatBool(target.Headless())),
@@ -173,6 +174,7 @@ func (r *Runtime) recordCompletion(err error) {
 		return
 	}
 	r.completed = true
+
 	logging.Debug("Recording runtime completion: %v", err == nil)
 
 	var action string
@@ -197,15 +199,8 @@ func (r *Runtime) recordUsage() {
 		return
 	}
 
-	dims := &dimensions.Values{
-		Trigger:          p.StrP(r.target.Trigger().String()),
-		Headless:         p.StrP(strconv.FormatBool(r.target.Headless())),
-		CommitID:         p.StrP(r.target.CommitUUID().String()),
-		ProjectNameSpace: p.StrP(project.NewNamespace(r.target.Owner(), r.target.Name(), r.target.CommitUUID().String()).String()),
-		InstanceID:       p.StrP(instanceid.ID()),
-	}
-
 	// Fire initial runtime usage event right away, subsequent events will be fired via the service so long as the process is running
+	dims := usageDims(r.target)
 	r.analytics.Event(anaConsts.CatRuntimeUsage, anaConsts.ActRuntimeHeartbeat, dims)
 
 	dimsJson, err := dims.Marshal()
@@ -214,6 +209,25 @@ func (r *Runtime) recordUsage() {
 	}
 	if r.svcm != nil {
 		r.svcm.RecordRuntimeUsage(context.Background(), os.Getpid(), osutils.Executable(), dimsJson)
+	}
+}
+
+func recordAttempt(an analytics.Dispatcher, target setup.Targeter) {
+	if !target.Trigger().IndicatesUsage() {
+		logging.Debug("Not recording usage attempt as %s is not a usage trigger", target.Trigger().String())
+		return
+	}
+
+	an.Event(anaConsts.CatRuntimeUsage, anaConsts.ActRuntimeAttempt, usageDims(target))
+}
+
+func usageDims(target setup.Targeter) *dimensions.Values {
+	return &dimensions.Values{
+		Trigger:          p.StrP(target.Trigger().String()),
+		CommitID:         p.StrP(target.CommitUUID().String()),
+		Headless:         p.StrP(strconv.FormatBool(target.Headless())),
+		ProjectNameSpace: p.StrP(project.NewNamespace(target.Owner(), target.Name(), target.CommitUUID().String()).String()),
+		InstanceID:       p.StrP(instanceid.ID()),
 	}
 }
 
