@@ -177,7 +177,10 @@ func (s *Exec) Run(params *Params, args ...string) error {
 		}
 	}
 
-	s.subshell.SetEnv(env)
+	err = s.subshell.SetEnv(env)
+	if err != nil {
+		return errs.Wrap(err, "Could not set subshell environment")
+	}
 
 	lang := language.Bash
 	scriptArgs := fmt.Sprintf(`%q "$@"`, exeTarget)

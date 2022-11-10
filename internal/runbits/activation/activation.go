@@ -71,7 +71,9 @@ func ActivateAndWait(
 		}
 	}()
 
-	ss.SetEnv(ve)
+	if err := ss.SetEnv(ve); err != nil {
+		return locale.WrapError(err, "error_could_not_set_subshell_env", "Could not setup an environment for a new subshell.")
+	}
 	if err := ss.Activate(proj, cfg, out); err != nil {
 		return locale.WrapError(err, "error_could_not_activate_subshell", "Could not activate a new subshell.")
 	}

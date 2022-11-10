@@ -141,8 +141,9 @@ func (v *SubShell) SetupShellRcFile(targetDir string, env map[string]string, nam
 }
 
 // SetEnv - see subshell.SetEnv
-func (v *SubShell) SetEnv(env map[string]string) {
+func (v *SubShell) SetEnv(env map[string]string) error {
 	v.env = env
+	return nil
 }
 
 // Quote - see subshell.Quote
