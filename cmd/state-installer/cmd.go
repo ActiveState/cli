@@ -384,7 +384,7 @@ func postInstallEvents(out output.Outputer, cfg *config.Instance, an analytics.D
 	case !params.isUpdate && terminal.IsTerminal(int(os.Stdin.Fd())) && os.Getenv(constants.InstallerNoSubshell) != "true":
 		ss := subshell.New(cfg)
 		if err := ss.SetEnv(osutils.InheritEnv(envMap(binPath))); err != nil {
-			return errs.Wrap(err, "Error setting subshell environment: %s", errs.JoinMessage(err))
+			return locale.WrapError(err, "err_subshell_setenv")
 		}
 		if err := ss.Activate(nil, cfg, out); err != nil {
 			return errs.Wrap(err, "Error activating subshell: %s", errs.JoinMessage(err))

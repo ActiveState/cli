@@ -127,11 +127,11 @@ func New(cfg sscommon.Configurable) SubShell {
 		logging.Debug("Unsupported shell: %s, defaulting to OS default.", name)
 		switch runtime.GOOS {
 		case "windows":
-			subs = &cmd.SubShell{}
+			return &cmd.SubShell{}
 		case "darwin":
-			subs = &zsh.SubShell{}
+			return &zsh.SubShell{}
 		default:
-			subs = &bash.SubShell{}
+			return &bash.SubShell{}
 		}
 	}
 
@@ -145,7 +145,7 @@ func New(cfg sscommon.Configurable) SubShell {
 	if err != nil {
 		// We cannot error here, but this error will resurface when activating a runtime, so we can
 		// notify the user at that point.
-		logging.Debug("Failed to set subshell environment: %v", err)
+		logging.Error("Failed to set subshell environment: %v", err)
 	}
 
 	return subs

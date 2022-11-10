@@ -179,7 +179,7 @@ func (s *Exec) Run(params *Params, args ...string) error {
 
 	err = s.subshell.SetEnv(env)
 	if err != nil {
-		return errs.Wrap(err, "Could not set subshell environment")
+		return locale.WrapError(err, "err_subshell_setenv")
 	}
 
 	lang := language.Bash

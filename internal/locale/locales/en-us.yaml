@@ -453,6 +453,8 @@ err_sscommon_binary_path:
   other: Could not find [NOTICE]{{.V0}}[/RESET] in PATH
 err_sscommon_unsupported_language:
   other: Unsupported language extension [NOTICE]{{.V0}}[/RESET]
+err_subshell_setenv:
+  other: Could not setup an environment for a new subshell.
 env_description:
   other: Manage Project Variables
 env_add_description:

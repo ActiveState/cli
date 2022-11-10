@@ -89,7 +89,7 @@ func (s *ScriptRun) PrepareVirtualEnv() error {
 	}
 	err = s.sub.SetEnv(env)
 	if err != nil {
-		return errs.Wrap(err, "Could not set subshell environment")
+		return locale.WrapError(err, "err_subshell_setenv")
 	}
 
 	// search the "clean" path first (PATHS that are set by venv)
