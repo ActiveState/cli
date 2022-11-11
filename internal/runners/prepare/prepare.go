@@ -70,7 +70,7 @@ func (r *Prepare) resetExecutors() error {
 
 	proj, err := project.FromPath(defaultProjectDir)
 	if err != nil {
-		return errs.Wrap(err, "Could not get project from default project directory")
+		return errs.Wrap(err, "Could not get project from its directory")
 	}
 
 	run, err := rt.New(target.NewCustomTarget(proj.Owner(), proj.Name(), proj.CommitUUID(), defaultTargetDir, target.TriggerResetExec, proj.IsHeadless()), r.analytics, r.svcModel)
@@ -78,11 +78,11 @@ func (r *Prepare) resetExecutors() error {
 		if rt.IsNeedsUpdateError(err) {
 			return nil // project was never set up, so no executors to reset
 		}
-		return errs.Wrap(err, "Could not initialize runtime for global default project.")
+		return errs.Wrap(err, "Could not initialize runtime for project.")
 	}
 
 	if err := globaldefault.SetupDefaultActivation(r.subshell, r.cfg, run, proj); err != nil {
-		return errs.Wrap(err, "Failed to rewrite the default executors.")
+		return errs.Wrap(err, "Failed to rewrite the executors.")
 	}
 
 	return nil

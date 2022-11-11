@@ -1672,18 +1672,6 @@ artifact_succeeded:
   other: "Completed: [NOTICE]{{.V0}} ({{.V1}}/{{.V2}})[/RESET]"
 artifact_failed:
   other: "Failed: [NOTICE]{{.V0}}[/RESET]. Error returned: [ERROR]{{.V1}}[/RESET]"
-prepare_instructions_linux:
-  other: |
-    Could not update user environment.
-    To add the global installations directory to your environment please add the line [ACTIONABLE]`export PATH={{.V0}}:$PATH`[/RESET] to your RC file.
-prepare_instructions_darwin:
-  other: |
-    Could not update user environment.
-    To add the global installations directory to your environment please add the line [ACTIONABLE]`export PATH={{.V0}}:$PATH`[/RESET] to your RC file.
-prepare_instructions_windows:
-  other: |
-    Could not update user environment.
-    To add the global installations directory to your environment please add the path [ACTIONABLE]`{{.V0}}`[/RESET] to your user PATH in the System Properties dialog.
 err_package_update_pjfile:
   other: "Could not update your activestate.yaml with the new commit ID. Please run [ACTIONABLE]`state pull`[/RESET] manually."
 prepare_protocol_warning:
@@ -1695,11 +1683,11 @@ err_preparestart_icon:
 confirm:
   other: Please Confirm
 err_no_project:
-  other: To run this command you need to be in an existing project. You can create a new project with [ACTIONABLE]state init[/RESET] or run this command from a directory that is in an existing project. You can also mark a project as the default to use by running [ACTIONABLE]`state activate --default`[/RESET] inside your project directory.
+  other: To run this command you need to be in an existing project. You can create a new project with [ACTIONABLE]state init[/RESET] or run this command from a directory that is in an existing project. You can also use an existing project by running [ACTIONABLE]`state activate --default`[/RESET] inside your project directory.
 activate_default_prompt:
   other: |
-    Would you like to make [NOTICE]{{.V0}}[/RESET] your default project?
-    This will allow you to operate on your project and run executables provided by its runtime without first "activating" it.
+    Would you like always use [NOTICE]{{.V0}}[/RESET]?
+    This will allow you to operate on this project and run executables provided by its runtime without first "activating" it.
 err_no_projectfile:
   other: No activestate.yaml file exists in the current working directory or its parent directories.
 err_project_not_found:
@@ -1899,7 +1887,7 @@ arg_state_use_namespace_description:
 err_use_commit_id_mismatch:
   other: "Cannot switch to the given commit ID. Please use [ACTIONABLE]`state checkout`[/RESET] to check out a specific commit ID and then try again."
 err_use_default_project_does_not_exist:
-  other: "The default project no longer exists. Please either check it out again with [ACTIONABLE]state checkout[/RESET] or run [ACTIONABLE]state use reset[/RESET] to unset your default project."
+  other: "Cannot find your project. Please either check it out again with [ACTIONABLE]state checkout[/RESET] or run [ACTIONABLE]state use reset[/RESET] to stop using it."
 err_shell_commit_id_mismatch:
   other: "Cannot start a shell/prompt for the given commit ID. Please use [ACTIONABLE]`state checkout`[/RESET] to check out a specific commit ID and then try again."
 err_shell_cannot_load_project:
