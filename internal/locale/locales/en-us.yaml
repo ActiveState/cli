@@ -1907,7 +1907,7 @@ err_local_project_not_checked_out:
 err_findproject_notfound:
   other: "Could not load project [ACTIONABLE]{{.V0}}[/RESET] from path: [ACTIONABLE]{{.V1}}[/RESET]"
 arg_state_shell_namespace_description:
-  other: The namespace of the project you wish to start a shell/prompt for, or just the project name if previously used
+  other: The namespace of the project you wish to start a virtual environment shell/prompt for, or just the project name if previously used
 err_language_by_commit:
   other: Could not get language from commit ID {{.V0}}
 err_make_language:
@@ -1997,6 +1997,7 @@ use_show_project_statement:
 shell_project_statement:
   other: |
     Opening shell for project [ACTIONABLE]{{.V0}}[/RESET], located at [ACTIONABLE]{{.V1}}[/RESET].
+    This shell is operating inside a virtual environment.
     For editors and other tooling use the executables at: [ACTIONABLE]{{.V2}}[/RESET].
 checkout_project_statement:
   other: |
