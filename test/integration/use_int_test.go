@@ -217,7 +217,7 @@ func (suite *UseIntegrationTestSuite) TestShow() {
 	cp.ExpectExitCode(1)
 
 	cp = ts.SpawnWithOpts(e2e.WithArgs("use", "reset", "--non-interactive"))
-	cp.Expect("Reset")
+	cp.Expect("Stopped using your project runtime")
 	cp.ExpectExitCode(0)
 
 	cp = ts.SpawnWithOpts(e2e.WithArgs("use", "show"))
