@@ -209,7 +209,7 @@ func (suite *UseIntegrationTestSuite) TestShow() {
 	suite.Require().NoError(err)
 
 	cp = ts.SpawnWithOpts(e2e.WithArgs("use", "show"))
-	cp.ExpectLongString("Your project no longer exists")
+	cp.ExpectLongString("Cannot find your project")
 	// Both Windows and MacOS can run into path comparison issues with symlinks and long paths.
 	if runtime.GOOS == "linux" {
 		cp.ExpectLongString(fmt.Sprintf("Could not find project at %s", projectDir))

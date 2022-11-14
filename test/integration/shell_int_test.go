@@ -195,7 +195,7 @@ func (suite *ShellIntegrationTestSuite) TestDefaultNoLongerExists() {
 	suite.Require().NoError(err)
 
 	cp = ts.SpawnWithOpts(e2e.WithArgs("shell"))
-	cp.Expect("Your project no longer exists")
+	cp.Expect("Cannot find your project")
 	cp.ExpectExitCode(1)
 }
 
