@@ -27,6 +27,7 @@ func ActivationPID(cfg Configurable) int32 {
 
 	procInfoErrMsgFmt := "Could not detect process information: %v"
 
+	seen := map[int32]bool{}
 	for pid != 0 && pid != ppid {
 		logging.Debug("Current PID: %d, Parent PID: %d", pid, ppid)
 		pidFileName := ActivationPIDFileName(cfg.ConfigPath(), int(pid))
@@ -39,6 +40,9 @@ func ActivationPID(cfg Configurable) int32 {
 		if ppid == 0 {
 			return -1
 		}
+		if seen[ppid] || seen[pid] {
+			return -1
+		}
 
 		pproc, err := process.NewProcess(ppid)
 		if err != nil {
@@ -48,13 +52,15 @@ func ActivationPID(cfg Configurable) int32 {
 			return -1
 		}
 
-		name, err := pproc.Ppid()
+		name, err := pproc.Name()
 		if err != nil {
 			logging.Error(procInfoErrMsgFmt, err)
 		} else {
 			logging.Debug("Parent process name: %s", name)
 		}
 
+		seen[pid] = true
+		seen[ppid] = true
 		pid = ppid
 		ppid, err = pproc.Ppid()
 		if err != nil {
