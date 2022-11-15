@@ -68,31 +68,39 @@ func (suite *PerformanceYamlIntegrationTestSuite) TestCallScript() {
 	suite.testScriptPerformance("call-script", "Hello World", DefaultSamples, DefaultMaxTime)
 }
 
-func (suite *PerformanceYamlIntegrationTestSuite) TestExpandProject() {
+func (suite *PerformanceYamlIntegrationTestSuite) TestExpandProjectURL() {
 	suite.OnlyRunForTags(tagsuite.Performance)
-	suite.Run("url", func() {
-		suite.testScriptPerformance("expand-project-url", "https://platform.activestate.com/ActiveState-CLI/Yaml-Test", DefaultSamples, DefaultMaxTime)
-	})
-	suite.Run("commit", func() {
-		suite.testScriptPerformance("expand-project-commit", "0476ac66-007c-4da7-8922-d6ea9b284fae", DefaultSamples, DefaultMaxTime)
-	})
-	suite.Run("branch", func() {
-		suite.testScriptPerformance("expand-project-branch", "main", DefaultSamples, DefaultMaxTime)
-	})
-	suite.Run("owner", func() {
-		suite.testScriptPerformance("expand-project-owner", "ActiveState-CLI", DefaultSamples, DefaultMaxTime)
-	})
-	suite.Run("owner", func() {
-		suite.testScriptPerformance("expand-project-name", "Yaml-Test", DefaultSamples, DefaultMaxTime)
-	})
-	suite.Run("namespace", func() {
-		suite.testScriptPerformance("expand-project-namespace", "ActiveState-CLI/Yaml-Test", DefaultSamples, DefaultMaxTime)
-	})
+	suite.testScriptPerformance("expand-project-url", "https://platform.activestate.com/ActiveState-CLI/Yaml-Test", DefaultSamples, DefaultMaxTime)
+}
+
+func (suite *PerformanceYamlIntegrationTestSuite) TestExpandProjectCommit() {
+	suite.OnlyRunForTags(tagsuite.Performance)
+	suite.testScriptPerformance("expand-project-commit", "0476ac66-007c-4da7-8922-d6ea9b284fae", DefaultSamples, DefaultMaxTime)
+}
+
+func (suite *PerformanceYamlIntegrationTestSuite) TestExpandProjectBranch() {
+	suite.OnlyRunForTags(tagsuite.Performance)
+	suite.testScriptPerformance("expand-project-branch", "main", DefaultSamples, DefaultMaxTime)
+}
+
+func (suite *PerformanceYamlIntegrationTestSuite) TestExpandProjectOwner() {
+	suite.OnlyRunForTags(tagsuite.Performance)
+	suite.testScriptPerformance("expand-project-owner", "ActiveState-CLI", DefaultSamples, DefaultMaxTime)
+}
+
+func (suite *PerformanceYamlIntegrationTestSuite) TestExpandProjectName() {
+	suite.OnlyRunForTags(tagsuite.Performance)
+	suite.testScriptPerformance("expand-project-name", "Yaml-Test", DefaultSamples, DefaultMaxTime)
+}
+
+func (suite *PerformanceYamlIntegrationTestSuite) TestExpandProjectNamespace() {
+	suite.OnlyRunForTags(tagsuite.Performance)
+	suite.testScriptPerformance("expand-project-namespace", "ActiveState-CLI/Yaml-Test", DefaultSamples, DefaultMaxTime)
 }
 
 func (suite *PerformanceYamlIntegrationTestSuite) testScriptPerformance(scriptName, expect string, samples int, max time.Duration) {
 	suite.OnlyRunForTags(tagsuite.Performance)
-	ts := e2e.New(suite.T(), false)
+	ts := e2e.New(suite.T(), true)
 	defer ts.Close()
 
 	suite.startSvc(ts)
