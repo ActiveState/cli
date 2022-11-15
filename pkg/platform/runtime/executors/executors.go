@@ -57,14 +57,7 @@ func (es *Executors) Apply(sockPath string, targeter Targeter, env map[string]st
 
 	executors := make(map[string]string) // map[alias]dest
 	for _, dest := range exes {
-		alias := filepath.Base(dest)
-		if rt.GOOS == "windows" {
-			ext := filepath.Ext(alias)
-			if ext != "" && ext != exeutils.Extension { // for non-.exe executables like pip.bat
-				alias = strings.TrimSuffix(alias, ext) + exeutils.Extension // setup alias pip.exe -> pip.bat
-			}
-		}
-		executors[alias] = dest
+		executors[makeAlias(dest)] = dest
 	}
 
 	if err := es.Clean(); err != nil {
@@ -93,6 +86,19 @@ func (es *Executors) Apply(sockPath string, targeter Targeter, env map[string]st
 	}
 
 	return nil
+}
+
+func makeAlias(destination string) string {
+	alias := filepath.Base(destination)
+
+	if rt.GOOS == "windows" {
+		ext := filepath.Ext(alias)
+		if ext != "" && ext != exeutils.Extension { // for non-.exe executables like pip.bat
+			alias = strings.TrimSuffix(alias, ext) + exeutils.Extension // setup alias pip.exe -> pip.bat
+		}
+	}
+
+	return alias
 }
 
 func (es *Executors) Clean() error {
