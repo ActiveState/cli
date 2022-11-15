@@ -20,9 +20,9 @@ func (suite *HistoryIntegrationTestSuite) TestHistory_History() {
 
 	ts.LoginAsPersistentUser()
 
-  cp := ts.Spawn("checkout", "ActiveState-CLI/History")
-  cp.Expect("Checked out")
-  cp.ExpectExitCode(0)
+	cp := ts.Spawn("checkout", "ActiveState-CLI/History")
+	cp.Expect("Checked out")
+	cp.ExpectExitCode(0)
 
 	cp = ts.SpawnWithOpts(
 		e2e.WithArgs("history"),
