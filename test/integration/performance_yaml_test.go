@@ -39,30 +39,37 @@ func (suite *PerformanceYamlIntegrationTestSuite) startSvc(ts *e2e.Session) {
 }
 
 func (suite *PerformanceYamlIntegrationTestSuite) TestExpandSecret() {
+	suite.OnlyRunForTags(tagsuite.Performance)
 	suite.testScriptPerformance("expand-secret", "WORLD", DefaultSamples, DefaultMaxTime)
 }
 
 func (suite *PerformanceYamlIntegrationTestSuite) TestExpandSecretMultiple() {
+	suite.OnlyRunForTags(tagsuite.Performance)
 	suite.testScriptPerformance("expand-secret-multiple", "FOO BAR BAZ", DefaultSamples, DefaultMaxTime)
 }
 
 func (suite *PerformanceYamlIntegrationTestSuite) TestEvaluateProjectPath() {
+	suite.OnlyRunForTags(tagsuite.Performance)
 	suite.testScriptPerformance("evaluate-project-path", "", DefaultSamples, DefaultMaxTime)
 }
 
 func (suite *PerformanceYamlIntegrationTestSuite) TestUseConstant() {
+	suite.OnlyRunForTags(tagsuite.Performance)
 	suite.testScriptPerformance("use-constant", "foo", DefaultSamples, DefaultMaxTime)
 }
 
 func (suite *PerformanceYamlIntegrationTestSuite) TestUseConstantsMultiple() {
+	suite.OnlyRunForTags(tagsuite.Performance)
 	suite.testScriptPerformance("use-constant-multiple", "foo bar baz", DefaultSamples, DefaultMaxTime)
 }
 
 func (suite *PerformanceYamlIntegrationTestSuite) TestCallScript() {
+	suite.OnlyRunForTags(tagsuite.Performance)
 	suite.testScriptPerformance("call-script", "Hello World", DefaultSamples, DefaultMaxTime)
 }
 
 func (suite *PerformanceYamlIntegrationTestSuite) TestExpandProject() {
+	suite.OnlyRunForTags(tagsuite.Performance)
 	suite.Run("url", func() {
 		suite.testScriptPerformance("expand-project-url", "https://platform.activestate.com/ActiveState-CLI/Yaml-Test", DefaultSamples, DefaultMaxTime)
 	})
