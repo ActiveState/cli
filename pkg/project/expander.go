@@ -1,6 +1,7 @@
 package project
 
 import (
+	"fmt"
 	"path/filepath"
 	"regexp"
 	"runtime"
@@ -63,6 +64,7 @@ func (ctx *Expansion) ApplyWithMaxDepth(s string, depth int) (string, error) {
 
 		var value string
 
+		fmt.Println("Category: ", category)
 		if expanderFn, foundExpander := expanderRegistry[category]; foundExpander {
 			var err2 error
 			if value, err2 = expanderFn(variable, name, meta, isFunction, ctx); err2 != nil {
@@ -135,6 +137,7 @@ func EventExpander(_ string, name string, meta string, isFunction bool, ctx *Exp
 		return "", err
 	}
 	for _, v := range constrained {
+		fmt.Println("Ident: ", v.ID())
 		if v.ID() == name {
 			return projectfile.MakeEventsFromConstrainedEntities([]projectfile.ConstrainedEntity{v})[0].Value, nil
 		}

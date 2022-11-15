@@ -1,0 +1,79 @@
+project: https://platform.activestate.com/ActiveState-CLI/Yaml-Test/?branch=main&commitID=0476ac66-007c-4da7-8922-d6ea9b284fae
+constants:
+  - name: foo
+    value: foo
+  - name: bar
+    value: bar
+  - name: baz
+    value: baz
+scripts:
+  - name: expand-secret
+    language: bash
+    description: Expand a secret
+    value: |
+      echo $secrets.project.HELLO
+  - name: expand-secret-multiple
+    language: bash
+    description: Expand a secret multiple times
+    value: |
+      echo $secrets.project.FOO $secrets.project.BAR $secrets.project.BAZ
+  - name: evaluate-project-path
+    language: bash
+    description: Print the project path
+    value: |
+      echo $project.path()
+  - name: call-script
+    language: bash
+    description: Call a script
+    value: |
+      echo $scripts.hello-world
+  - name: hello-world
+    language: bash
+    description: Script
+    value: |
+      echo "Hello World"
+  - name: use-constant
+    language: bash
+    description: Use a constant
+    value: |
+      echo $constants.foo
+  - name: use-constant-multiple
+    language: bash
+    description: Use a constant multiple times
+    value: |
+      echo $constants.foo $constants.bar $constants.baz
+  - name: expand-project-url
+    language: bash
+    description: Expand the project URL
+    value: |
+      echo $project.url()
+  - name: expand-project-commit
+    language: bash
+    description: Expand the project commit
+    value: |
+      echo $project.commit()
+  - name: expand-project-branch
+    language: bash
+    description: Expand the project branch
+    value: |
+      echo $project.branch()
+  - name: expand-project-owner
+    language: bash
+    description: Expand the project owner
+    value: |
+      echo $project.owner()
+  - name: expand-project-name
+    language: bash
+    description: Expand the project name
+    value: |
+      echo $project.name()
+  - name: expand-project-namespace
+    language: bash
+    description: Expand the project namespace
+    value: |
+      echo $project.namespace()
+  - name: expand-project-path
+    language: bash
+    description: Expand the project path
+    value: |
+      echo $project.path()
