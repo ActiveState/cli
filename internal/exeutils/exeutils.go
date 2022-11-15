@@ -180,7 +180,3 @@ func DecodeCmd(cmd string) (string, []string) {
 		return "sh", []string{"-c", cmd}
 	}
 }
-
-func WinExeExt(path string) string {
-	return path + Extension
-}
