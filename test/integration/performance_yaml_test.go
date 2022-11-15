@@ -68,6 +68,11 @@ func (suite *PerformanceYamlIntegrationTestSuite) TestCallScript() {
 	suite.testScriptPerformance("call-script", "Hello World", DefaultSamples, DefaultMaxTime)
 }
 
+func (suite *PerformanceYamlIntegrationTestSuite) TestGetScriptPath() {
+	suite.OnlyRunForTags(tagsuite.Performance)
+	suite.testScriptPerformance("script-path", ".sh", DefaultSamples, DefaultMaxTime)
+}
+
 func (suite *PerformanceYamlIntegrationTestSuite) TestExpandProjectURL() {
 	suite.OnlyRunForTags(tagsuite.Performance)
 	suite.testScriptPerformance("expand-project-url", "https://platform.activestate.com/ActiveState-CLI/Yaml-Test", DefaultSamples, DefaultMaxTime)

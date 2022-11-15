@@ -27,6 +27,11 @@ scripts:
     description: Call a script
     value: |
       echo $scripts.hello-world
+  - name: script-path
+    language: bash
+    description: Script
+    value: |
+      echo $scripts.hello-world.path()
   - name: hello-world
     language: bash
     description: Script
