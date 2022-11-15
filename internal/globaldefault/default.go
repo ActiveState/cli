@@ -93,6 +93,10 @@ func SetupDefaultActivation(subshell subshell.SubShell, cfg DefaultConfigurer, r
 	return nil
 }
 
+func IsSet(cfg DefaultConfigurer) bool {
+	return cfg.GetString(constants.GlobalDefaultPrefname) != ""
+}
+
 func ResetDefaultActivation(shell subshell.SubShell, cfg DefaultConfigurer) (bool, error) {
 	logging.Debug("Resetting globaldefault")
 

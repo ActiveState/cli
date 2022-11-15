@@ -1976,6 +1976,8 @@ beta_suffix:
   other: " (Beta)"
 err_globaldefault_update_env:
   other: Could not write to user environment
+use_reset_notice_not_reset:
+  other: No global default project to reset
 use_reset_notice_windows:
   other: Note you may need to start a new command prompt to fully update your environment.
 use_reset_notice:
