@@ -864,8 +864,9 @@ func (cmd *Command) Usage() error {
 
 	var out bytes.Buffer
 	if err := tpl.Execute(&out, map[string]interface{}{
-		"Cmd":   cmd,
-		"Cobra": cmd.cobra,
+		"Cmd":           cmd,
+		"Cobra":         cmd.cobra,
+		"OptinUnstable": condition.OptInUnstable(cmd.cfg),
 	}); err != nil {
 		return errs.Wrap(err, "Could not execute template")
 	}
