@@ -33,14 +33,17 @@ func ActivationPID(cfg Configurable) int32 {
 		pidFileName := ActivationPIDFileName(cfg.ConfigPath(), int(pid))
 		logging.Debug("Looking for activation pid file: %s", pidFileName)
 		if fileutils.FileExists(pidFileName) {
+			logging.Debug("Found activation pid file: %s", pidFileName)
 			return pid
 		}
 		logging.Debug("Activation pid file not found")
 
 		if ppid == 0 {
+			logging.Debug("Parent PID is 0")
 			return -1
 		}
-		if seen[ppid] || seen[pid] {
+		if seen[ppid] {
+			logging.Debug("Parent process PID has already been seen")
 			return -1
 		}
 
