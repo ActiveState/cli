@@ -453,6 +453,8 @@ err_sscommon_binary_path:
   other: Could not find [NOTICE]{{.V0}}[/RESET] in PATH
 err_sscommon_unsupported_language:
   other: Unsupported language extension [NOTICE]{{.V0}}[/RESET]
+err_subshell_setenv:
+  other: Could not setup an environment for a new subshell.
 env_description:
   other: Manage Project Variables
 env_add_description:
@@ -1718,6 +1720,8 @@ cve_needs_authentication:
   other: You need to be authenticated in order to access vulnerability information about your project.
 auth_tip:
   other: Run `state auth` to authenticate.
+err_non_interactive_mode:
+  other: You are running the State Tool in non-interactive mode, but interactive input was needed. Please re-run the State Tool in interactive mode. If you are using a non-interactive terminal like Git Bash on Windows, prefix your command with [ACTIONABLE]`winpty`[/RESET]. (See https://github.com/git-for-windows/git/wiki/FAQ#some-native-console-programs-dont-work-when-run-from-git-bash-how-to-fix-it for more information.)
 err_alternate_branches:
   other: |
     There are no valid dependencies for your platform in branch [ACTIONABLE]`{{.V0}}`[/RESET], perhaps you could try one of the alternate branches on your project:

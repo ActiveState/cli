@@ -76,7 +76,7 @@ type SubShell interface {
 	Shell() string
 
 	// SetEnv sets the environment up for the given subshell
-	SetEnv(env map[string]string)
+	SetEnv(env map[string]string) error
 
 	// Quote will quote the given string, escaping any characters that need escaping
 	Quote(value string) string
@@ -141,7 +141,12 @@ func New(cfg sscommon.Configurable) SubShell {
 	env := funk.FilterString(os.Environ(), func(s string) bool {
 		return !strings.HasPrefix(s, constants.ProjectEnvVarName)
 	})
-	subs.SetEnv(osutils.EnvSliceToMap(env))
+	err = subs.SetEnv(osutils.EnvSliceToMap(env))
+	if err != nil {
+		// We cannot error here, but this error will resurface when activating a runtime, so we can
+		// notify the user at that point.
+		logging.Error("Failed to set subshell environment: %v", err)
+	}
 
 	return subs
 }

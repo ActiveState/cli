@@ -110,8 +110,9 @@ func (v *SubShell) SetupShellRcFile(targetDir string, env map[string]string, nam
 }
 
 // SetEnv - see subshell.SetEnv
-func (v *SubShell) SetEnv(env map[string]string) {
+func (v *SubShell) SetEnv(env map[string]string) error {
 	v.env = env
+	return nil
 }
 
 // Quote - see subshell.Quote
@@ -136,7 +137,7 @@ func (v *SubShell) Activate(proj *project.Project, cfg sscommon.Configurable, ou
 	if proj != nil {
 		env := sscommon.EscapeEnv(v.env)
 		var err error
-		if v.rcFile, err = sscommon.SetupProjectRcFile(proj, "tcsh.sh", "", env, out, cfg); err != nil {
+		if v.rcFile, err = sscommon.SetupProjectRcFile(proj, "tcsh.sh", "", env, out, cfg, false); err != nil {
 			return err
 		}
 
