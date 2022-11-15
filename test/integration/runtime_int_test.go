@@ -11,16 +11,22 @@ import (
 	"github.com/ActiveState/cli/internal/runbits/buildlogfile"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/ActiveState/cli/internal/testhelpers/outputhelper"
+	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup/events"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/platform/runtime/testhelper"
 	"github.com/go-openapi/strfmt"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/suite"
 )
 
-func TestOfflineInstaller(t *testing.T) {
+type RuntimeIntegrationTestSuite struct {
+	tagsuite.Suite
+}
+
+func (suite *RuntimeIntegrationTestSuite) TestOfflineInstaller() {
+	suite.OnlyRunForTags(tagsuite.OffInstall)
+
 	// Each artifact of the form UUID.tar.gz has the following structure:
 	// - runtime.json (empty)
 	// - tmp (directory)
@@ -41,7 +47,7 @@ func TestOfflineInstaller(t *testing.T) {
 	const artifactsPerArtifact = 2 // files/artifacts per artifact.tar.gz
 
 	dir, err := os.MkdirTemp("", "")
-	require.NoError(t, err)
+	suite.Require().NoError(err)
 	defer os.RemoveAll(dir)
 
 	artifactsDir := filepath.Join(osutil.GetTestDataDir(), "offline-runtime")
@@ -50,7 +56,7 @@ func TestOfflineInstaller(t *testing.T) {
 	analytics := blackhole.New()
 	mockProgress := &testhelper.MockProgressOutput{}
 	logfile, err := buildlogfile.New(outputhelper.NewCatcher())
-	require.NoError(t, err)
+	suite.Require().NoError(err)
 	eventHandler := events.NewRuntimeEventHandler(mockProgress, nil, logfile)
 
 	if value, set := os.LookupEnv(constants.DisableRuntime); set {
@@ -59,25 +65,30 @@ func TestOfflineInstaller(t *testing.T) {
 	}
 
 	rt, err := runtime.New(offlineTarget, analytics, nil)
-	require.Error(t, err)
-	assert.True(t, runtime.IsNeedsUpdateError(err), "runtime should require an update")
+	suite.Require().Error(err)
+	suite.Assert().True(runtime.IsNeedsUpdateError(err), "runtime should require an update")
 	err = rt.Update(nil, eventHandler)
-	require.NoError(t, err)
+	suite.Require().NoError(err)
 
-	assert.False(t, mockProgress.BuildStartedCalled)
-	assert.False(t, mockProgress.BuildCompletedCalled)
-	assert.Equal(t, int64(0), mockProgress.BuildTotal)
-	assert.Equal(t, 0, mockProgress.BuildCurrent)
-	assert.Equal(t, true, mockProgress.InstallationStartedCalled)
-	assert.Equal(t, true, mockProgress.InstallationCompletedCalled)
-	assert.Equal(t, int64(len(testArtifacts)), mockProgress.InstallationTotal)
-	assert.Equal(t, len(testArtifacts)*artifactsPerArtifact, mockProgress.ArtifactStartedCalled)
-	assert.Equal(t, 2*len(testArtifacts)*artifactsPerArtifact, mockProgress.ArtifactIncrementCalled) // start and stop each have one count
-	assert.Equal(t, len(testArtifacts)*artifactsPerArtifact, mockProgress.ArtifactCompletedCalled)
-	assert.Equal(t, 0, mockProgress.ArtifactFailureCalled)
+	suite.Assert().False(mockProgress.IsUpdate) // new installation, not update
+	suite.Assert().False(mockProgress.BuildStartedCalled)
+	suite.Assert().False(mockProgress.BuildCompletedCalled)
+	suite.Assert().Equal(int64(0), mockProgress.BuildTotal)
+	suite.Assert().Equal(0, mockProgress.BuildCurrent)
+	suite.Assert().Equal(true, mockProgress.InstallationStartedCalled)
+	suite.Assert().Equal(true, mockProgress.InstallationCompletedCalled)
+	suite.Assert().Equal(int64(len(testArtifacts)), mockProgress.InstallationTotal)
+	suite.Assert().Equal(len(testArtifacts)*artifactsPerArtifact, mockProgress.ArtifactStartedCalled)
+	suite.Assert().Equal(2*len(testArtifacts)*artifactsPerArtifact, mockProgress.ArtifactIncrementCalled) // start and stop each have one count
+	suite.Assert().Equal(len(testArtifacts)*artifactsPerArtifact, mockProgress.ArtifactCompletedCalled)
+	suite.Assert().Equal(0, mockProgress.ArtifactFailureCalled)
 
 	for filename := range testArtifacts {
 		filename := filepath.Join(dir, "tmp", filename) // each file is in a "tmp" dir in the archive
-		assert.True(t, fileutils.FileExists(filename), "file '%s' was not extracted from its artifact", filename)
+		suite.Assert().True(fileutils.FileExists(filename), "file '%s' was not extracted from its artifact", filename)
 	}
+}
+
+func TestRuntimeIntegrationTestSuite(t *testing.T) {
+	suite.Run(t, new(RuntimeIntegrationTestSuite))
 }
