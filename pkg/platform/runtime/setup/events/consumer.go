@@ -19,6 +19,8 @@ type ChangeSummaryDigester interface {
 
 // ProgressDigester provides actions to display progress information during the setup of the runtime.
 type ProgressDigester interface {
+	UpdateStarted(isUpdate bool) error
+
 	SolverError(serr *model.SolverError) error
 	SolverStart() error
 	SolverSuccess() error
@@ -85,6 +87,8 @@ func (eh *RuntimeEventConsumer) Consume(events <-chan SetupEventer) error {
 // Consume consumes an setup event
 func (eh *RuntimeEventConsumer) handle(ev SetupEventer) error {
 	switch t := ev.(type) {
+	case UpdateStartedEvent:
+		return eh.progress.UpdateStarted(t.isUpdate)
 	case ChangeSummaryEvent:
 		return eh.summary.ChangeSummary(t.Artifacts(), t.RequestedChangeset(), t.CompleteChangeset())
 	case ArtifactResolverEvent: // called when the recipes has been downloaded, allowing us to resolve meta information about artifacts

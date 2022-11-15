@@ -100,6 +100,17 @@ func (rp *RuntimeProgress) artifactBar(id artifact.ArtifactID, title string) *ar
 	return bar
 }
 
+func (rp *RuntimeProgress) UpdateStarted(isUpdate bool) error {
+	if !isUpdate {
+		rp.out.Notice(output.Heading(locale.Tl("install_runtime", "Installing Runtime")))
+		rp.out.Notice(locale.Tl("install_runtime_info", "Installing your runtime and dependencies."))
+	} else {
+		rp.out.Notice(output.Heading(locale.Tl("update_runtime", "Updating Runtime")))
+		rp.out.Notice(locale.Tl("update_runtime_info", "Changes to your runtime may require some dependencies to be rebuilt."))
+	}
+	return nil
+}
+
 // BuildStarted adds a build progress bar
 func (rp *RuntimeProgress) BuildStarted(total int64) error {
 	if rp.buildBar == nil {

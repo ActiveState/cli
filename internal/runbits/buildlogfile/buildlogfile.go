@@ -57,6 +57,13 @@ func (bl *BuildLogFile) writeArtifactMessage(artifactID artifact.ArtifactID, art
 	return nil
 }
 
+func (bl *BuildLogFile) UpdateStarted(isUpdate bool) error {
+	if !isUpdate {
+		return bl.writeMessage("== Installing runtime == ")
+	}
+	return bl.writeMessage("== Updating runtime ==")
+}
+
 // BuildStarted writes a message that the build has started remotely
 func (bl *BuildLogFile) BuildStarted(totalArtifacts int64) error {
 	// also print out a message about the log file location

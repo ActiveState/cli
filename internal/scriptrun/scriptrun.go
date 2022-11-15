@@ -77,7 +77,7 @@ func (s *ScriptRun) PrepareVirtualEnv() error {
 			return locale.WrapError(err, "err_initialize_runtime_event_handler")
 		}
 		if err := rt.Update(s.auth, eh); err != nil {
-			return locale.WrapError(err, "err_update_runtime", "Could not update runtime installation.")
+			return locale.WrapError(err, "err_update_runtime")
 		}
 	}
 	venv := virtualenvironment.New(rt)

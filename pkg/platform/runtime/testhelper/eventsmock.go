@@ -6,6 +6,7 @@ import (
 )
 
 type MockProgressOutput struct {
+	IsUpdate                    bool
 	BuildStartedCalled          bool
 	BuildCompletedCalled        bool
 	BuildTotal                  int64
@@ -18,6 +19,11 @@ type MockProgressOutput struct {
 	ArtifactIncrementCalled     int
 	ArtifactCompletedCalled     int
 	ArtifactFailureCalled       int
+}
+
+func (mpo *MockProgressOutput) UpdateStarted(isUpdate bool) error {
+	mpo.IsUpdate = isUpdate
+	return nil
 }
 
 func (mpo *MockProgressOutput) BuildStarted(total int64) error {
