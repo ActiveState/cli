@@ -1348,10 +1348,6 @@ print_commit_description:
   other: "Description: {{.V0}}"
 history_cmd_description:
   other: View history of the active or given project
-arg_state_history_namespace_description:
-  other: "The namespace to view the history for in the format of <org/project>"
-err_history_namespace:
-  other: "Please provide a namespace or run [ACTIONABLE]`state history`[/RESET] in a project directory"
 clean_description:
   other: Clean caches, configuration files, or completely remove the state tool
 uninstall_description:

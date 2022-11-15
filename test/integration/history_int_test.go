@@ -1,6 +1,7 @@
 package integration
 
 import (
+	"path/filepath"
 	"testing"
 
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
@@ -18,7 +19,15 @@ func (suite *HistoryIntegrationTestSuite) TestHistory_History() {
 	defer ts.Close()
 
 	ts.LoginAsPersistentUser()
-	cp := ts.Spawn("history", "--namespace", "ActiveState-CLI/History")
+
+	cp := ts.Spawn("checkout", "ActiveState-CLI/History")
+	cp.Expect("Checked out")
+	cp.ExpectExitCode(0)
+
+	cp = ts.SpawnWithOpts(
+		e2e.WithArgs("history"),
+		e2e.WithWorkDirectory(filepath.Join(ts.Dirs.Work, "History")),
+	)
 	cp.Expect("Commit")
 	cp.Expect("Author")
 	cp.Expect("Date")
