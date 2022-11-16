@@ -139,7 +139,7 @@ func (suite *UseIntegrationTestSuite) TestReset() {
 	cfg, err := config.New()
 	suite.NoError(err)
 	rcfile, err := subshell.New(cfg).RcFile()
-	if runtime.GOOS != "windows" {
+	if runtime.GOOS != "windows" && fileutils.FileExists(rcfile) {
 		suite.NoError(err)
 		suite.Contains(string(fileutils.ReadFileUnsafe(rcfile)), ts.Dirs.DefaultBin, "PATH does not have your project in it")
 	}
@@ -157,11 +157,11 @@ func (suite *UseIntegrationTestSuite) TestReset() {
 
 	suite.False(fileutils.TargetExists(python3Exe), python3Exe+" still exists")
 
-	cp = ts.SpawnWithOpts(e2e.WithArgs("use", "reset", "-n"))
+	cp = ts.SpawnWithOpts(e2e.WithArgs("use", "reset"))
 	cp.Expect("No project to stop using")
 	cp.ExpectExitCode(0)
 
-	if runtime.GOOS != "windows" {
+	if runtime.GOOS != "windows" && fileutils.FileExists(rcfile) {
 		suite.NotContains(string(fileutils.ReadFileUnsafe(rcfile)), ts.Dirs.DefaultBin, "PATH still has your project in it")
 	}
 }
