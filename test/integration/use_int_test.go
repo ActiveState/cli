@@ -157,7 +157,7 @@ func (suite *UseIntegrationTestSuite) TestReset() {
 
 	suite.False(fileutils.TargetExists(python3Exe), python3Exe+" still exists")
 
-	cp = ts.SpawnWithOpts(e2e.WithArgs("use", "reset", "-n"))
+	cp = ts.SpawnWithOpts(e2e.WithArgs("use", "reset"))
 	cp.Expect("No project to stop using")
 	cp.ExpectExitCode(0)
 
