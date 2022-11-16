@@ -20,13 +20,13 @@ func newShellCommand(prime *primer.Values) *captain.Command {
 	cmd := captain.NewCommand(
 		shellCmdName,
 		"",
-		locale.Tl("shell_description", "Starts a shell/prompt for the given project runtime"),
+		locale.Tl("shell_description", "Starts a shell/prompt in a virtual environment for the given project runtime"),
 		prime,
 		[]*captain.Flag{
 			{
 				Name:        "cd",
 				Shorthand:   "",
-				Description: locale.Tl("flag_state_shell_cd_description", "Change to the project directory after starting shell/prompt"),
+				Description: locale.Tl("flag_state_shell_cd_description", "Change to the project directory after starting virtual environment shell/prompt"),
 				Value:       &params.ChangeDirectory,
 			},
 		},

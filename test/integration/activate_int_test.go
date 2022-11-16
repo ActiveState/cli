@@ -172,7 +172,7 @@ func (suite *ActivateIntegrationTestSuite) activatePython(version string, extraE
 	cp.Expect("unit and functional testing")
 
 	cp.SendLine("state activate --default ActiveState-CLI/cli")
-	cp.ExpectLongString("Cannot set ActiveState-CLI/cli as the global default project while in an activated state")
+	cp.ExpectLongString("Cannot make ActiveState-CLI/cli always available for use while in an activated state")
 
 	cp.SendLine("state activate --default")
 	cp.ExpectLongString("Creating a Virtual Environment")
