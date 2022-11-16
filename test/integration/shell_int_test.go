@@ -195,7 +195,7 @@ func (suite *ShellIntegrationTestSuite) TestDefaultNoLongerExists() {
 	suite.Require().NoError(err)
 
 	cp = ts.SpawnWithOpts(e2e.WithArgs("shell"))
-	cp.Expect("The default project no longer exists")
+	cp.Expect("Cannot find your project")
 	cp.ExpectExitCode(1)
 }
 
@@ -234,8 +234,8 @@ func (suite *ShellIntegrationTestSuite) TestUseShellUpdates() {
 	rcfile, err := subshell.New(cfg).RcFile()
 	if runtime.GOOS != "windows" {
 		suite.NoError(err)
-		suite.Contains(string(fileutils.ReadFileUnsafe(rcfile)), ts.Dirs.DefaultBin, "PATH does not have default project in it")
-		suite.Contains(string(fileutils.ReadFileUnsafe(zshRcFile)), ts.Dirs.DefaultBin, "PATH does not have default project in it")
+		suite.Contains(string(fileutils.ReadFileUnsafe(rcfile)), ts.Dirs.DefaultBin, "PATH does not have your project in it")
+		suite.Contains(string(fileutils.ReadFileUnsafe(zshRcFile)), ts.Dirs.DefaultBin, "PATH does not have your project in it")
 	}
 }
 

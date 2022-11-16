@@ -37,7 +37,7 @@ func newActivateCommand(prime *primer.Values) *captain.Command {
 			},
 			{
 				Name:        "default",
-				Description: locale.Tl("flag_state_activate_default_description", "Configures the project to be the global default project"),
+				Description: locale.Tl("flag_state_activate_default_description", "Configures the project to always be available for use"),
 				Value:       &params.Default,
 			},
 			{

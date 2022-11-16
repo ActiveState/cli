@@ -370,10 +370,10 @@ const RCAppendDefaultStartLine = "-- START ACTIVESTATE DEFAULT RUNTIME ENVIRONME
 // RCAppendDefaultStopLine is the end line used to denote our default environment config in RC files
 const RCAppendDefaultStopLine = "-- STOP ACTIVESTATE DEFAULT RUNTIME ENVIRONMENT"
 
-// RCAppendInstallStartLine is the start line used to denote our default environment config in RC files
+// RCAppendInstallStartLine is the start line used to denote our default installation config in RC files
 const RCAppendInstallStartLine = "-- START ACTIVESTATE INSTALLATION"
 
-// RCAppendInstallStopLine is the end line used to denote our default environment config in RC files
+// RCAppendInstallStopLine is the end line used to denote our default installation config in RC files
 const RCAppendInstallStopLine = "-- STOP ACTIVESTATE INSTALLATION"
 
 // ForumsURL is the URL to the state tool forums

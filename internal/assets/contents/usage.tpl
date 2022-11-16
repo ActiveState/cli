@@ -15,7 +15,7 @@ Aliases:
 {{- if .Cmd.Examples  }}
 
 Examples:
-{{- range  .Cmd.Examples }} 
+{{- range  .Cmd.Examples }}
     {{ . -}}
 {{- end }}
 {{- end }}
@@ -51,7 +51,15 @@ Additional help topics:
 
 Use "{{.Cobra.CommandPath}} [command] --help" for more information about a command.
 
+{{- if .OptinUnstable }}
+
+WARNING: You have an access to list of full commands, including unstable features still in beta, in order to hide these features run:
+
+"state config set optin.unstable false"
+{{- else }}
+
 To access the list of full commands, including unstable features still in beta, run:
 
 "state config set optin.unstable true"
+{{- end}}
 {{- end}}

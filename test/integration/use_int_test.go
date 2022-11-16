@@ -141,7 +141,7 @@ func (suite *UseIntegrationTestSuite) TestReset() {
 	rcfile, err := subshell.New(cfg).RcFile()
 	if runtime.GOOS != "windows" && fileutils.FileExists(rcfile) {
 		suite.NoError(err)
-		suite.Contains(string(fileutils.ReadFileUnsafe(rcfile)), ts.Dirs.DefaultBin, "PATH does not have default project in it")
+		suite.Contains(string(fileutils.ReadFileUnsafe(rcfile)), ts.Dirs.DefaultBin, "PATH does not have your project in it")
 	}
 
 	cp = ts.SpawnWithOpts(e2e.WithArgs("use", "reset"))
@@ -151,14 +151,14 @@ func (suite *UseIntegrationTestSuite) TestReset() {
 	cp.ExpectExitCode(1)
 
 	cp = ts.SpawnWithOpts(e2e.WithArgs("use", "reset", "--non-interactive"))
-	cp.Expect("Reset default project runtime")
+	cp.Expect("Stopped using your project runtime")
 	cp.Expect("Note you may need to")
 	cp.ExpectExitCode(0)
 
 	suite.False(fileutils.TargetExists(python3Exe), python3Exe+" still exists")
 
 	cp = ts.SpawnWithOpts(e2e.WithArgs("use", "reset"))
-	cp.Expect("No global default project to reset")
+	cp.Expect("No project to stop using")
 	cp.ExpectExitCode(0)
 
 	if runtime.GOOS != "windows" && fileutils.FileExists(rcfile) {
@@ -173,7 +173,7 @@ func (suite *UseIntegrationTestSuite) TestShow() {
 	defer ts.Close()
 
 	cp := ts.SpawnWithOpts(e2e.WithArgs("use", "show"))
-	cp.Expect("No default project is set")
+	cp.Expect("No project is being used")
 	cp.ExpectExitCode(1)
 
 	cp = ts.SpawnWithOpts(e2e.WithArgs("checkout", "ActiveState-CLI/Python3"))
@@ -209,7 +209,7 @@ func (suite *UseIntegrationTestSuite) TestShow() {
 	suite.Require().NoError(err)
 
 	cp = ts.SpawnWithOpts(e2e.WithArgs("use", "show"))
-	cp.ExpectLongString("The default project no longer exists")
+	cp.ExpectLongString("Cannot find your project")
 	// Both Windows and MacOS can run into path comparison issues with symlinks and long paths.
 	if runtime.GOOS == "linux" {
 		cp.ExpectLongString(fmt.Sprintf("Could not find project at %s", projectDir))
@@ -217,11 +217,11 @@ func (suite *UseIntegrationTestSuite) TestShow() {
 	cp.ExpectExitCode(1)
 
 	cp = ts.SpawnWithOpts(e2e.WithArgs("use", "reset", "--non-interactive"))
-	cp.Expect("Reset")
+	cp.Expect("Stopped using your project runtime")
 	cp.ExpectExitCode(0)
 
 	cp = ts.SpawnWithOpts(e2e.WithArgs("use", "show"))
-	cp.Expect("No default project is set")
+	cp.Expect("No project is being used")
 	cp.ExpectExitCode(1)
 }
 
