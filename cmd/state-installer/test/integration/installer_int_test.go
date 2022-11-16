@@ -46,6 +46,9 @@ func (suite *InstallerIntegrationTestSuite) TestInstallFromLocalSource() {
 	cp.Expect("Installing State Tool")
 	cp.Expect("Done")
 	cp.Expect("successfully installed")
+	if runtime.GOOS == "darwin" {
+		cp.Expect("You are running bash on macOS")
+	}
 	suite.NotContains(cp.TrimmedSnapshot(), "Downloading State Tool")
 
 	stateExec, err := installation.StateExecFromDir(target)
