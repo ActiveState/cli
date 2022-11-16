@@ -146,7 +146,7 @@ func main() {
 			},
 			{
 				Name:        "activate-default",
-				Description: "Activate a project and make it the system default",
+				Description: "Activate a project and make it always available for use",
 				Value:       params.activateDefault,
 			},
 			{

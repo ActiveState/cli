@@ -57,7 +57,7 @@ func removeEnvPaths(cfg configurable) error {
 	}
 	// Default projects will stop working, so we return them from the PATH as well
 	if err := s.CleanUserEnv(cfg, sscommon.DefaultID, !isAdmin); err != nil {
-		return errs.Wrap(err, "Failed to remove default directory from PATH")
+		return errs.Wrap(err, "Failed to remove project directory from PATH")
 	}
 
 	if err := s.RemoveLegacyInstallPath(cfg); err != nil {
