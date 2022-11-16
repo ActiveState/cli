@@ -162,7 +162,7 @@ func (suite *UseIntegrationTestSuite) TestReset() {
 	cp.ExpectExitCode(0)
 
 	if runtime.GOOS != "windows" && fileutils.FileExists(rcfile) {
-		suite.NotContains(string(fileutils.ReadFileUnsafe(rcfile)), ts.Dirs.DefaultBin, "PATH still has default project in it")
+		suite.NotContains(string(fileutils.ReadFileUnsafe(rcfile)), ts.Dirs.DefaultBin, "PATH still has your project in it")
 	}
 }
 
