@@ -146,6 +146,9 @@ func (r *Push) Run(params PushParams) error {
 			if err != nil {
 				return errs.Wrap(err, "Confirmation failed")
 			}
+			if !createProject {
+				return locale.WrapInputError(err, "push_create_project_aborted", "Project creation aborted by user")
+			}
 		}
 
 		r.out.Notice(locale.Tl("push_creating_project", "Creating project [NOTICE]{{.V1}}[/RESET] under [NOTICE]{{.V0}}[/RESET] on the ActiveState Platform", targetNamespace.Owner, targetNamespace.Project))
