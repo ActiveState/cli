@@ -139,7 +139,7 @@ func (suite *UseIntegrationTestSuite) TestReset() {
 	cfg, err := config.New()
 	suite.NoError(err)
 	rcfile, err := subshell.New(cfg).RcFile()
-	if runtime.GOOS != "windows" {
+	if runtime.GOOS != "windows" && fileutils.FileExists(rcfile) {
 		suite.NoError(err)
 		suite.Contains(string(fileutils.ReadFileUnsafe(rcfile)), ts.Dirs.DefaultBin, "PATH does not have default project in it")
 	}
@@ -161,7 +161,7 @@ func (suite *UseIntegrationTestSuite) TestReset() {
 	cp.Expect("No global default project to reset")
 	cp.ExpectExitCode(0)
 
-	if runtime.GOOS != "windows" {
+	if runtime.GOOS != "windows" && fileutils.FileExists(rcfile) {
 		suite.NotContains(string(fileutils.ReadFileUnsafe(rcfile)), ts.Dirs.DefaultBin, "PATH still has default project in it")
 	}
 }
@@ -223,6 +223,38 @@ func (suite *UseIntegrationTestSuite) TestShow() {
 	cp = ts.SpawnWithOpts(e2e.WithArgs("use", "show"))
 	cp.Expect("No default project is set")
 	cp.ExpectExitCode(1)
+}
+
+func (suite *UseIntegrationTestSuite) TestSetupNotice() {
+	suite.OnlyRunForTags(tagsuite.Use)
+
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.SpawnWithOpts(
+		e2e.WithArgs("checkout", "ActiveState-CLI/Python3"),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
+	cp.Expect("Setting Up Runtime")
+	cp.Expect("Checked out project")
+	cp.ExpectExitCode(0)
+
+	suite.Require().NoError(os.RemoveAll(filepath.Join(ts.Dirs.Work, "Python3"))) // runtime marker still exists
+
+	cp = ts.SpawnWithOpts(
+		e2e.WithArgs("checkout", "ActiveState-CLI/Python3#623dadf8-ebf9-4876-bfde-f45afafe5ea8"),
+	)
+	cp.Expect("Skipping runtime setup")
+	cp.Expect("Checked out project")
+	cp.ExpectExitCode(0)
+
+	cp = ts.SpawnWithOpts(
+		e2e.WithArgs("use", "Python3"),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
+	cp.Expect("Setting Up Runtime")
+	cp.Expect("Switched to project")
+	cp.ExpectExitCode(0)
 }
 
 func TestUseIntegrationTestSuite(t *testing.T) {

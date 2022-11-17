@@ -70,7 +70,6 @@ func (suite *RuntimeIntegrationTestSuite) TestOfflineInstaller() {
 	err = rt.Update(nil, eventHandler)
 	suite.Require().NoError(err)
 
-	suite.Assert().False(mockProgress.IsUpdate) // new installation, not update
 	suite.Assert().False(mockProgress.BuildStartedCalled)
 	suite.Assert().False(mockProgress.BuildCompletedCalled)
 	suite.Assert().Equal(int64(0), mockProgress.BuildTotal)
