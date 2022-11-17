@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"runtime/debug"
 	"strings"
 	"time"
@@ -29,6 +30,7 @@ import (
 	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/ActiveState/cli/internal/runbits/panics"
 	"github.com/ActiveState/cli/internal/subshell"
+	"github.com/ActiveState/cli/internal/subshell/bash"
 	"github.com/ActiveState/cli/pkg/cmdlets/errors"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/sysinfo"
@@ -345,6 +347,11 @@ func postInstallEvents(out output.Outputer, cfg *config.Instance, an analytics.D
 		return locale.WrapError(err, "err_state_exec")
 	}
 
+	ss := subshell.New(cfg)
+	if ss.Shell() == bash.Name && runtime.GOOS == "darwin" {
+		out.Print(locale.T("warning_macos_bash"))
+	}
+
 	// Execute requested command, these are mutually exclusive
 	switch {
 	// Execute provided --command
@@ -376,7 +383,6 @@ func postInstallEvents(out output.Outputer, cfg *config.Instance, an analytics.D
 			return errs.Silence(errs.Wrap(err, "Could not activate %s, error returned: %s", params.activateDefault.String(), errs.JoinMessage(err)))
 		}
 	case !params.isUpdate && terminal.IsTerminal(int(os.Stdin.Fd())) && os.Getenv(constants.InstallerNoSubshell) != "true":
-		ss := subshell.New(cfg)
 		if err := ss.SetEnv(osutils.InheritEnv(envMap(binPath))); err != nil {
 			return locale.WrapError(err, "err_subshell_setenv")
 		}
