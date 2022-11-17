@@ -225,6 +225,38 @@ func (suite *UseIntegrationTestSuite) TestShow() {
 	cp.ExpectExitCode(1)
 }
 
+func (suite *UseIntegrationTestSuite) TestSetupNotice() {
+	suite.OnlyRunForTags(tagsuite.Use)
+
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.SpawnWithOpts(
+		e2e.WithArgs("checkout", "ActiveState-CLI/Python3"),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
+	cp.Expect("Setting Up Runtime")
+	cp.Expect("Checked out project")
+	cp.ExpectExitCode(0)
+
+	suite.Require().NoError(os.RemoveAll(filepath.Join(ts.Dirs.Work, "Python3"))) // runtime marker still exists
+
+	cp = ts.SpawnWithOpts(
+		e2e.WithArgs("checkout", "ActiveState-CLI/Python3#623dadf8-ebf9-4876-bfde-f45afafe5ea8"),
+	)
+	cp.Expect("Skipping runtime setup")
+	cp.Expect("Checked out project")
+	cp.ExpectExitCode(0)
+
+	cp = ts.SpawnWithOpts(
+		e2e.WithArgs("use", "Python3"),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
+	cp.Expect("Setting Up Runtime")
+	cp.Expect("Switched to project")
+	cp.ExpectExitCode(0)
+}
+
 func TestUseIntegrationTestSuite(t *testing.T) {
 	suite.Run(t, new(UseIntegrationTestSuite))
 }
