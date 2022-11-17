@@ -348,7 +348,7 @@ func postInstallEvents(out output.Outputer, cfg *config.Instance, an analytics.D
 	}
 
 	ss := subshell.New(cfg)
-	if filepath.Base(ss.Shell()) == bash.Name && runtime.GOOS == "darwin" {
+	if ss.Shell() == bash.Name && runtime.GOOS == "darwin" {
 		out.Print(locale.T("warning_macos_bash"))
 	}
 
