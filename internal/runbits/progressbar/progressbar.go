@@ -229,6 +229,7 @@ func (rp *RuntimeProgress) ArtifactStepCompleted(artifactID artifact.ArtifactID,
 }
 
 func (rp *RuntimeProgress) SolverStart() error {
+	rp.out.Notice(output.Heading(locale.Tl("setup_runtime", "Setting Up Runtime")))
 	rp.solveBar = rp.addSpinnerBar(locale.Tl("progress_solve", "Resolving dependencies"))
 	return nil
 }
