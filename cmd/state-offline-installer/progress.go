@@ -27,10 +27,6 @@ func newOfflineProgressOutput(out output.Outputer) *offlineProgressOutput {
 	return &offlineProgressOutput{out: out}
 }
 
-func (mpo *offlineProgressOutput) UpdateStarted(bool) error {
-	return nil
-}
-
 func (mpo *offlineProgressOutput) BuildStarted(total int64) error {
 	return nil
 }

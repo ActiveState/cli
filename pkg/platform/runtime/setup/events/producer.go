@@ -40,10 +40,6 @@ func (r *RuntimeEventProducer) event(be SetupEventer) {
 	r.events <- be
 }
 
-func (r *RuntimeEventProducer) UpdateStarted(isUpdate bool) {
-	r.event(UpdateStartedEvent{isUpdate})
-}
-
 func (r *RuntimeEventProducer) ParsedArtifacts(artifactResolver ArtifactResolver, downloadable []artifact.ArtifactDownload, failedArtifactIDs []artifact.FailedArtifact) {
 	r.event(newArtifactResolverEvent(artifactResolver, downloadable, failedArtifactIDs))
 

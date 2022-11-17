@@ -87,8 +87,6 @@ func (a *ArtifactSetupErrors) UserError() string {
 type Events interface {
 	buildlog.Events
 
-	// UpdateStarted happens when a runtime is either being installed or updated.
-	UpdateStarted(isUpdate bool)
 	// ChangeSummary summarizes the changes to the current project during the InstallRuntime() call.
 	// This summary is printed as soon as possible, providing the State Tool user with an idea of the complexity of the requested build.
 	// The arguments are for the changes introduced in the latest commit that this Setup is setting up.
@@ -168,12 +166,10 @@ func NewWithModel(target Targeter, msgHandler Events, model ModelProvider, an an
 
 // Update installs the runtime locally (or updates it if it's already partially installed)
 func (s *Setup) Update() error {
-	s.events.UpdateStarted(s.store.HasMarker())
-
 	// Do not allow users to deploy runtimes to the root directory (this can easily happen in docker
 	// images). Note that runtime targets are fully resolved via fileutils.ResolveUniquePath(), so
 	// paths like "/." and "/opt/.." resolve to simply "/" at this time.
-	if rt.GOOS != "windows" && s.target.Dir() == "/" {
+	if (rt.GOOS != "windows" && s.target.Dir() == "/") {
 		return locale.NewInputError("err_runtime_setup_root", "Cannot set up a runtime in the root directory. Please specify or run from a user-writable directory.")
 	}
 

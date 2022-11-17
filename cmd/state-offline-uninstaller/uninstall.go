@@ -206,7 +206,7 @@ func (r *runner) validateTargetPath(path string) error {
 	installerConfigPath := filepath.Join(path, installerConfigFileName)
 	if !fileutils.FileExists(installerConfigPath) {
 		return errs.New(
-			"The target directory does not appear to contain an ActiveState Runtime. Expected to find: %s.",
+			"The target directory does not appear to contain an ActiveState Runtime installation. Expected to find: %s.",
 			installerConfigPath)
 	}
 

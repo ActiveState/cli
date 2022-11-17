@@ -90,14 +90,6 @@ func (be baseEvent) Step() SetupStep {
 	return be.step
 }
 
-type UpdateStartedEvent struct {
-	isUpdate bool
-}
-
-func (use UpdateStartedEvent) String() string {
-	return "runtime_update"
-}
-
 // artifactBaseEvent is a re-usable struct that implements the ArtifactEventer interface
 type artifactBaseEvent struct {
 	baseEvent

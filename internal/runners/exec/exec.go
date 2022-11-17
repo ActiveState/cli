@@ -124,7 +124,7 @@ func (s *Exec) Run(params *Params, args ...string) error {
 			return locale.WrapError(err, "err_initialize_runtime_event_handler")
 		}
 		if err := rt.Update(s.auth, eh); err != nil {
-			return locale.WrapError(err, "err_update_runtime")
+			return locale.WrapError(err, "err_update_runtime", "Could not update runtime installation.")
 		}
 	}
 	venv := virtualenvironment.New(rt)

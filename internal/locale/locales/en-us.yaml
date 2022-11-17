@@ -1488,7 +1488,7 @@ deploy_restart_cmd:
     Please log out and back in again in order to start using the newly configured Runtime Environment.
     Alternatively, you can run `setenv` from the installation directory to update your environment
 flag_state_deploy_path_description:
-  other: The path to deploy the runtime files to. This directory will not be affected by 'state clean'
+  other: The path to deploy the runtime installation files to. This directory will not be affected by 'state clean'
 flag_state_deploy_force_description:
   other: "Overwrites any existing files / configurations."
 flag_state_deploy_user_path_description:
@@ -1783,8 +1783,6 @@ operation_success_local:
 err_initialize_runtime_event_handler:
   other: |
     Could not determine how to display progress of runtime installation.
-err_update_runtime:
-  other: Could not update runtime.
 solver_err:
   other: "The Platform failed to resolve the dependencies for this build. {{.V0}}\n{{.V1}}"
 transient_solver_tip:

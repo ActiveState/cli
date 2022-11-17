@@ -16,17 +16,6 @@ func NewMultiPlexedProgress(digesters ...ProgressDigester) *MultiPlexedProgress 
 	return &MultiPlexedProgress{digesters}
 }
 
-func (mp *MultiPlexedProgress) UpdateStarted(isUpdate bool) error {
-	var aggErr error
-	for _, d := range mp.digesters {
-		err := d.UpdateStarted(isUpdate)
-		if err != nil {
-			aggErr = errs.Wrap(aggErr, "UpdateStarted event error: %v", err)
-		}
-	}
-	return aggErr
-}
-
 func (mp *MultiPlexedProgress) BuildStarted(totalArtifacts int64) error {
 	var aggErr error
 	for _, d := range mp.digesters {
