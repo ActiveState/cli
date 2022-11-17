@@ -95,7 +95,7 @@ func (r *Revert) Run(params *Params) error {
 		return locale.NewInputError("err_revert_aborted", "Revert aborted by user")
 	}
 
-	revertCommit, err := model.RevertCommit(r.project.CommitUUID(), commitID)
+	revertCommit, err := model.RevertCommitWithinHistory(r.project.CommitUUID(), commitID)
 	if err != nil {
 		return locale.WrapError(
 			err,
