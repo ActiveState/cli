@@ -41,7 +41,7 @@ import (
 	"golang.org/x/crypto/ssh/terminal"
 )
 
-func main() {
+func main() { // bump
 	startTime := time.Now()
 
 	var exitCode int
