@@ -3,8 +3,8 @@ package executors
 import (
 	"io/ioutil"
 	"os"
-	"path"
 	"path/filepath"
+	"runtime"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -15,57 +15,72 @@ import (
 )
 
 func TestExecutor(t *testing.T) {
-	binPath, err := ioutil.TempDir("", "executor")
+	tmpDir, err := ioutil.TempDir("", "as-executor-test")
 	require.NoError(t, err, errs.Join(err, ": "))
+	defer func() { _ = os.RemoveAll(tmpDir) }()
 
 	dummyExecData := []byte("junk state-exec junk")
-	dummyExecSrc := "binPath/SRC"
+	dummyExecSrc := filepath.Join(tmpDir, "_SRC")
+
 	err = fileutils.WriteFile(dummyExecSrc, dummyExecData)
-	defer func() { _ = os.RemoveAll(filepath.Dir(dummyExecSrc)) }()
 	require.NoError(t, err, errs.Join(err, ": "))
 
 	target := target.NewCustomTarget("owner", "project", "1234abcd-1234-abcd-1234-abcd1234abcd", "dummy/path", target.NewExecTrigger("test"), false)
-	execInit := New(binPath)
+	execDir := filepath.Join(tmpDir, "exec")
+	execInit := New(execDir)
 	execInit.altExecSrcPath = dummyExecSrc
 
-	exePath := "/i/am/an/exe/"
-	exes := []string{exePath + "a", exePath + "b", exePath + "c"}
-	env := map[string]string{"PATH": "exePath"}
+	exec := func(in string) string { return filepath.Join(tmpDir, in) }
+	exes := make(map[string]string) // map[string]string{ "executable": "executor" }
+	switch runtime.GOOS {
+	case "windows":
+		exes["a.exe"] = "exec/a.exe"
+		exes["b.bat"] = "exec/b.exe"
+		exes["c.cmd"] = "exec/c.exe"
+
+	default:
+		exes["bin/a"] = "exec/a"
+		exes["bin/b.sh"] = "exec/b.sh"
+	}
+	env := map[string]string{"PATH": execDir}
+	var inputExes []string
+	for exe := range exes {
+		inputExes = append(inputExes, exe)
+	}
 
 	t.Run("Create executors", func(t *testing.T) {
-		err = execInit.Apply("/sock-path", target, env, exes)
+		err = execInit.Apply("/sock-path", target, env, inputExes)
 		require.NoError(t, err, errs.Join(err, ": "))
 	})
 
 	// Verify executors
-	for _, exe := range exes {
-		path := filepath.Join(binPath, filepath.Base(exe))
+	for _, utor := range exes {
+		executor := exec(utor)
+
 		t.Run("Executor Exists", func(t *testing.T) {
-			if !fileutils.FileExists(path) {
-				t.Errorf("Could not locate exe: %s", path)
-				t.FailNow()
+			if !fileutils.FileExists(executor) {
+				t.Errorf("Could not locate executor: %s", executor)
 			}
 		})
 
 		t.Run("Executor contains expected executable", func(t *testing.T) {
-			contains, err := fileutils.FileContains(path, dummyExecData)
+			contains, err := fileutils.FileContains(executor, dummyExecData)
 			require.NoError(t, err, errs.Join(err, ": "))
 			if !contains {
-				t.Errorf("File %s does not contain %q, contents: %q", path, exe, fileutils.ReadFileUnsafe(path))
-				t.FailNow()
+				t.Errorf("File %s does not contain %q, contents: %q", executor, dummyExecData, fileutils.ReadFileUnsafe(executor))
 			}
 		})
 	}
 
 	// add legacy files - deprecated
-	require.NoError(t, fileutils.WriteFile(path.Join(binPath, "old_exec"), []byte(legacyExecutorDenoter)))
-	require.NoError(t, fileutils.WriteFile(path.Join(binPath, "old_shim"), []byte(legacyShimDenoter)))
+	require.NoError(t, fileutils.WriteFile(exec("exec/old_exec"), []byte(legacyExecutorDenoter)))
+	require.NoError(t, fileutils.WriteFile(exec("exec/old_shim"), []byte(legacyShimDenoter)))
 
 	t.Run("Cleanup old executors", func(t *testing.T) {
 		err = execInit.Clean()
 		require.NoError(t, err, errs.Join(err, ": "))
 
-		files := fileutils.ListDirSimple(binPath, false)
+		files := fileutils.ListDirSimple(exec("exec"), false)
 		require.Len(t, files, 0, "Cleanup should remove all exes")
 	})
 }
