@@ -267,6 +267,8 @@ func (d *Deploy) symlink(rtTarget setup.Targeter, overwrite bool) error {
 		if err := symlinkWithTarget(overwrite, path, exes, d.output); err != nil {
 			return locale.WrapError(err, "err_symlink", "Could not create symlinks to {{.V0}}.", path)
 		}
+	} else {
+		d.output.Notice(locale.Tl("deploy_symlink_skip", "Skipped on Windows"))
 	}
 
 	return nil

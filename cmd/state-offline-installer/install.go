@@ -18,6 +18,7 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/offinstall"
+	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
@@ -202,7 +203,7 @@ func (r *runner) Run(params *Params) (rerr error) {
 				@echo off
 				copy %[1]s\%[2]s %%TEMP%%\%[2]s >nul 2>&1
 				%%TEMP%%\%[2]s %[3]s
-				del %%TEMP%%\%[2]s >nul 2>&1 
+				del %%TEMP%%\%[2]s >nul 2>&1
 				echo You can safely ignore any File not Found errors following this message.
 				`,
 			uninstallDir,
@@ -376,7 +377,11 @@ func (r *runner) configureEnvironment(path string, asrt *runtime.Runtime) error 
 	}
 
 	// Configure available shells
-	err = subshell.ConfigureAvailableShells(r.shell, r.cfg, env, sscommon.OfflineInstallID, true)
+	isAdmin, err := osutils.IsAdmin()
+	if err != nil {
+		return errs.Wrap(err, "Could not determine if running as Windows administrator")
+	}
+	err = subshell.ConfigureAvailableShells(r.shell, r.cfg, env, sscommon.OfflineInstallID, !isAdmin)
 	if err != nil {
 		return locale.WrapError(err,
 			"err_deploy_subshell_write",

@@ -1,6 +1,7 @@
 package prompt
 
 import (
+	"runtime"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/analytics/dimensions"
@@ -68,6 +69,17 @@ func (p *Prompt) Input(title, message string, defaultResponse *string, flags ...
 	}, flags...)
 }
 
+// interactiveInputError returns the proper input error for a non-interactive prompt.
+// If the terminal cannot show prompts (e.g. Git Bash on Windows), the error mentions this.
+// Otherwise, the error simply states the prompt cannot be resolved in non-interactive mode.
+// The "message" argument is the prompt's user-facing message.
+func interactiveInputError(message string) error {
+	if runtime.GOOS == "windows" {
+		return locale.NewInputError("err_non_interactive_mode")
+	}
+	return locale.NewInputError("err_non_interactive_prompt", message)
+}
+
 // InputAndValidate prompts an input field and allows you to specfiy a custom validation function as well as the built in flags
 func (p *Prompt) InputAndValidate(title, message string, defaultResponse *string, validator ValidatorFunc, flags ...ValidatorFlag) (string, error) {
 	if !p.isInteractive {
@@ -75,7 +87,7 @@ func (p *Prompt) InputAndValidate(title, message string, defaultResponse *string
 			logging.Debug("Selecting default choice %s for Input prompt %s in non-interactive mode", *defaultResponse, title)
 			return *defaultResponse, nil
 		}
-		return "", locale.NewInputError("err_non_interactive_prompt", message)
+		return "", interactiveInputError(message)
 	}
 
 	var response string
@@ -120,7 +132,7 @@ func (p *Prompt) Select(title, message string, choices []string, defaultChoice *
 			logging.Debug("Selecting default choice %s for Select prompt %s in non-interactive mode", *defaultChoice, title)
 			return *defaultChoice, nil
 		}
-		return "", locale.NewInputError("err_non_interactive_prompt", message)
+		return "", interactiveInputError(message)
 	}
 
 	if title != "" {
@@ -151,7 +163,7 @@ func (p *Prompt) Confirm(title, message string, defaultChoice *bool) (bool, erro
 			logging.Debug("Prompt %s confirmed with default choice %v in non-interactive mode", title, defaultChoice)
 			return *defaultChoice, nil
 		}
-		return false, locale.NewInputError("err_non_interactive_prompt", message)
+		return false, interactiveInputError(message)
 	}
 	if title != "" {
 		p.out.Notice(output.SubHeading(title))
@@ -191,7 +203,7 @@ func translateConfirm(confirm bool) string {
 // Will fail if empty.
 func (p *Prompt) InputSecret(title, message string, flags ...ValidatorFlag) (string, error) {
 	if !p.isInteractive {
-		return "", locale.NewInputError("err_non_interactive_prompt", message)
+		return "", interactiveInputError(message)
 	}
 	var response string
 	validators, err := processValidators(flags)

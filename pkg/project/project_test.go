@@ -140,10 +140,10 @@ func (suite *ProjectTestSuite) TestEventByName() {
 		name = "baz"
 	}
 
-	event := suite.project.EventByName(name)
+	event := suite.project.EventByName(name, false)
 	suite.Equal(name, event.Name())
 
-	event = suite.project.EventByName("not-there")
+	event = suite.project.EventByName("not-there", false)
 	suite.Nil(event)
 }
 

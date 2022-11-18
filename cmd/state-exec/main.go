@@ -94,6 +94,7 @@ func run() error {
 
 	logr.Debug("cmd - running: %s", meta.MatchingBin)
 	if err := runCmd(meta); err != nil {
+		logr.Debug("      running - failed: bins (%v)", meta.ExecMeta.Bins)
 		return fmt.Errorf("cannot run command: %w", err)
 	}
 

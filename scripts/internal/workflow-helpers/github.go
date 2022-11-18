@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/rtutils/p"
 	"github.com/ActiveState/cli/internal/testhelpers/secrethelper"
 	"github.com/andygrunwald/go-jira"
@@ -306,7 +307,8 @@ func ActiveVersionsOnBranch(ghClient *github.Client, jiraClient *jira.Client, br
 		seen[versionValue] = struct{}{}
 		version, err := ParseJiraVersion(versionValue)
 		if err != nil {
-			return nil, errs.Wrap(err, "failed to parse version: %s", versionValue)
+			logging.Debug("Failed to parse version %s: %v", versionValue, err)
+			continue
 		}
 		result = append(result, version)
 	}

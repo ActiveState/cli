@@ -9,6 +9,7 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/osutils/user"
@@ -62,6 +63,14 @@ func (v *SubShell) WriteUserEnv(cfg sscommon.Configurable, env map[string]string
 	rcFile, err := v.RcFile()
 	if err != nil {
 		return errs.Wrap(err, "RcFile failure")
+	}
+
+	if path, pathExists := env["PATH"]; pathExists && runtime.GOOS == "windows" {
+		bashified, err := osutils.BashifyPathEnv(path)
+		if err != nil {
+			return errs.Wrap(err, "Unable to bashify PATH: %v", path)
+		}
+		env["PATH"] = bashified
 	}
 
 	env = sscommon.EscapeEnv(env)
@@ -131,8 +140,17 @@ func (v *SubShell) SetupShellRcFile(targetDir string, env map[string]string, nam
 }
 
 // SetEnv - see subshell.SetEnv
-func (v *SubShell) SetEnv(env map[string]string) {
+func (v *SubShell) SetEnv(env map[string]string) error {
+	if path, pathExists := env["PATH"]; pathExists && runtime.GOOS == "windows" {
+		bashified, err := osutils.BashifyPathEnv(path)
+		if err != nil {
+			return locale.WrapError(err, "err_unable_set_bashify_PATH", "Unable to setup bash-style PATH")
+		}
+		env["PATH"] = bashified
+	}
+
 	v.env = env
+	return nil
 }
 
 // Quote - see subshell.Quote
@@ -149,7 +167,7 @@ func (v *SubShell) Activate(proj *project.Project, cfg sscommon.Configurable, ou
 	if proj != nil {
 		env := sscommon.EscapeEnv(v.env)
 		var err error
-		if v.rcFile, err = sscommon.SetupProjectRcFile(proj, "bashrc.sh", "", env, out, cfg); err != nil {
+		if v.rcFile, err = sscommon.SetupProjectRcFile(proj, "bashrc.sh", "", env, out, cfg, true); err != nil {
 			return err
 		}
 

@@ -142,10 +142,6 @@ const DisableErrorTipsEnvVarName = "ACTIVESTATE_CLI_DISABLE_ERROR_TIPS"
 // DebugServiceRequestsEnvVarName is used to instruct State Tool to turn on debug logging of service requests
 const DebugServiceRequestsEnvVarName = "ACTIVESTATE_DEBUG_SERVICE_REQUESTS"
 
-// IsAdminOverrideEnvVarName is used to override the admin status of the user, meant to work around issues with
-// admin detection on CI. The value should be either true or false, where true means that we're running as admin.
-const IsAdminOverrideEnvVarName = "ACTIVESTATE_CLI_ISADMIN_OVERRIDE"
-
 // InstallPathOverrideEnvVarName is used to override the default installation path of the state tool.
 // This is intended for use in our integration tests, not by end-users.
 const InstallPathOverrideEnvVarName = "ACTIVESTATE_CLI_INSTALLPATH_OVERRIDE"
@@ -374,10 +370,10 @@ const RCAppendDefaultStartLine = "-- START ACTIVESTATE DEFAULT RUNTIME ENVIRONME
 // RCAppendDefaultStopLine is the end line used to denote our default environment config in RC files
 const RCAppendDefaultStopLine = "-- STOP ACTIVESTATE DEFAULT RUNTIME ENVIRONMENT"
 
-// RCAppendInstallStartLine is the start line used to denote our default environment config in RC files
+// RCAppendInstallStartLine is the start line used to denote our default installation config in RC files
 const RCAppendInstallStartLine = "-- START ACTIVESTATE INSTALLATION"
 
-// RCAppendInstallStopLine is the end line used to denote our default environment config in RC files
+// RCAppendInstallStopLine is the end line used to denote our default installation config in RC files
 const RCAppendInstallStopLine = "-- STOP ACTIVESTATE INSTALLATION"
 
 // ForumsURL is the URL to the state tool forums

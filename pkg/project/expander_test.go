@@ -101,6 +101,13 @@ func TestExpandProject(t *testing.T) {
 	expanded, err = project.ExpandFromProject("$project.path()", prj)
 	require.NoError(t, err)
 	assert.Equal(t, "spoofed path", expanded)
+
+	if runtime.GOOS == "windows" {
+		prj.Source().SetPath(fmt.Sprintf(`c:\another\spoofed path\activestate.yaml`))
+		expanded, err = project.ExpandFromProjectBashifyPaths("$project.path()", prj)
+		require.NoError(t, err)
+		assert.Equal(t, `/c/another/spoofed\ path`, expanded)
+	}
 }
 
 func TestExpandTopLevel(t *testing.T) {

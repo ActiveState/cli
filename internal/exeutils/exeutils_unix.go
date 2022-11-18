@@ -1,3 +1,4 @@
+//go:build !windows
 // +build !windows
 
 package exeutils
@@ -5,4 +6,3 @@ package exeutils
 const Extension = ""
 
 var exts = []string{}
-

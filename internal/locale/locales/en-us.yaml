@@ -453,6 +453,8 @@ err_sscommon_binary_path:
   other: Could not find [NOTICE]{{.V0}}[/RESET] in PATH
 err_sscommon_unsupported_language:
   other: Unsupported language extension [NOTICE]{{.V0}}[/RESET]
+err_subshell_setenv:
+  other: Could not setup an environment for a new subshell.
 env_description:
   other: Manage Project Variables
 env_add_description:
@@ -1346,10 +1348,6 @@ print_commit_description:
   other: "Description: {{.V0}}"
 history_cmd_description:
   other: View history of the active or given project
-arg_state_history_namespace_description:
-  other: "The namespace to view the history for in the format of <org/project>"
-err_history_namespace:
-  other: "Please provide a namespace or run [ACTIONABLE]`state history`[/RESET] in a project directory"
 clean_description:
   other: Clean caches, configuration files, or completely remove the state tool
 uninstall_description:
@@ -1672,18 +1670,6 @@ artifact_succeeded:
   other: "Completed: [NOTICE]{{.V0}} ({{.V1}}/{{.V2}})[/RESET]"
 artifact_failed:
   other: "Failed: [NOTICE]{{.V0}}[/RESET]. Error returned: [ERROR]{{.V1}}[/RESET]"
-prepare_instructions_linux:
-  other: |
-    Could not update user environment.
-    To add the global installations directory to your environment please add the line [ACTIONABLE]`export PATH={{.V0}}:$PATH`[/RESET] to your RC file.
-prepare_instructions_darwin:
-  other: |
-    Could not update user environment.
-    To add the global installations directory to your environment please add the line [ACTIONABLE]`export PATH={{.V0}}:$PATH`[/RESET] to your RC file.
-prepare_instructions_windows:
-  other: |
-    Could not update user environment.
-    To add the global installations directory to your environment please add the path [ACTIONABLE]`{{.V0}}`[/RESET] to your user PATH in the System Properties dialog.
 err_package_update_pjfile:
   other: "Could not update your activestate.yaml with the new commit ID. Please run [ACTIONABLE]`state pull`[/RESET] manually."
 prepare_protocol_warning:
@@ -1695,11 +1681,11 @@ err_preparestart_icon:
 confirm:
   other: Please Confirm
 err_no_project:
-  other: To run this command you need to be in an existing project. You can create a new project with [ACTIONABLE]state init[/RESET] or run this command from a directory that is in an existing project. You can also mark a project as the default to use by running [ACTIONABLE]`state activate --default`[/RESET] inside your project directory.
+  other: To run this command you need to be in an existing project. You can create a new project with [ACTIONABLE]state init[/RESET] or run this command from a directory that is in an existing project. You can also use an existing project by running [ACTIONABLE]`state activate --default`[/RESET] inside your project directory.
 activate_default_prompt:
   other: |
-    Would you like to make [NOTICE]{{.V0}}[/RESET] your default project?
-    This will allow you to operate on your project and run executables provided by its runtime without first "activating" it.
+    Would you like always use [NOTICE]{{.V0}}[/RESET]?
+    This will allow you to operate on this project and run executables provided by its runtime without first "activating" it.
 err_no_projectfile:
   other: No activestate.yaml file exists in the current working directory or its parent directories.
 err_project_not_found:
@@ -1718,6 +1704,8 @@ cve_needs_authentication:
   other: You need to be authenticated in order to access vulnerability information about your project.
 auth_tip:
   other: Run `state auth` to authenticate.
+err_non_interactive_mode:
+  other: You are running the State Tool in non-interactive mode, but interactive input was needed. Please re-run the State Tool in interactive mode. If you are using a non-interactive terminal like Git Bash on Windows, prefix your command with [ACTIONABLE]`winpty`[/RESET]. (See https://github.com/git-for-windows/git/wiki/FAQ#some-native-console-programs-dont-work-when-run-from-git-bash-how-to-fix-it for more information.)
 err_alternate_branches:
   other: |
     There are no valid dependencies for your platform in branch [ACTIONABLE]`{{.V0}}`[/RESET], perhaps you could try one of the alternate branches on your project:
@@ -1899,7 +1887,7 @@ arg_state_use_namespace_description:
 err_use_commit_id_mismatch:
   other: "Cannot switch to the given commit ID. Please use [ACTIONABLE]`state checkout`[/RESET] to check out a specific commit ID and then try again."
 err_use_default_project_does_not_exist:
-  other: "The default project no longer exists. Please either check it out again with [ACTIONABLE]state checkout[/RESET] or run [ACTIONABLE]state use reset[/RESET] to unset your default project."
+  other: "Cannot find your project. Please either check it out again with [ACTIONABLE]state checkout[/RESET] or run [ACTIONABLE]state use reset[/RESET] to stop using it."
 err_shell_commit_id_mismatch:
   other: "Cannot start a shell/prompt for the given commit ID. Please use [ACTIONABLE]`state checkout`[/RESET] to check out a specific commit ID and then try again."
 err_shell_cannot_load_project:
@@ -1919,7 +1907,7 @@ err_local_project_not_checked_out:
 err_findproject_notfound:
   other: "Could not load project [ACTIONABLE]{{.V0}}[/RESET] from path: [ACTIONABLE]{{.V1}}[/RESET]"
 arg_state_shell_namespace_description:
-  other: The namespace of the project you wish to start a shell/prompt for, or just the project name if previously used
+  other: The namespace of the project you wish to start a virtual environment shell/prompt for, or just the project name if previously used
 err_language_by_commit:
   other: Could not get language from commit ID {{.V0}}
 err_make_language:
@@ -1972,6 +1960,8 @@ beta_suffix:
   other: " (Beta)"
 err_globaldefault_update_env:
   other: Could not write to user environment
+use_reset_notice_not_reset:
+  other: No project to stop using
 use_reset_notice_windows:
   other: Note you may need to start a new command prompt to fully update your environment.
 use_reset_notice:
@@ -2009,6 +1999,7 @@ use_show_project_statement:
 shell_project_statement:
   other: |
     Opening shell for project [ACTIONABLE]{{.V0}}[/RESET], located at [ACTIONABLE]{{.V1}}[/RESET].
+    This shell is operating inside a virtual environment.
     For editors and other tooling use the executables at: [ACTIONABLE]{{.V2}}[/RESET].
 checkout_project_statement:
   other: |
@@ -2021,3 +2012,6 @@ err_home_not_found:
     Could not proceed because your HOME environment variable is unset. Please ensure that your HOME environment variable is set. Alternatively if you do not or cannot set this variable you can instead use the ACTIVESTATE_HOME variable.
 
     This variable is used by the State Tool to determine things like the installation directory, config directory and cache directory.
+warning_macos_bash:
+  other: |
+    You are running bash on macOS, which is no longer supported by Apple. To update your account to use zsh, please run 'chsh -s /bin/zsh'. If you continue to use bash you may run into issues finding binaries on your PATH, in order to work around these issues please read: https://scriptingosx.com/2017/04/about-bash_profile-and-bashrc-on-macos/

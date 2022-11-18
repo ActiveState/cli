@@ -12,10 +12,11 @@ func TestExecMeta(t *testing.T) {
 		"SAMPLE=other",
 		"THIRD=whatever",
 	}
-	bins := []string{
-		"/example/bin/abc",
-		"/example/bin/def",
-		"/example/bin/xyz",
+	bins := map[string]string{ // map[alias]dest
+		"abc":         "/bin/abc",
+		"def":         "/tools/def",
+		"xyz.bat.exe": "/Scripts/xyz.bat",
+		"xyz.exe":     "/Scripts/xyz.bat",
 	}
 	tgt := Target{
 		CommitUUID: "1234abcd-1234-abcd-1234-abcd1234",

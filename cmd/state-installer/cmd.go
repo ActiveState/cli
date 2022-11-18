@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"runtime/debug"
 	"strings"
 	"time"
@@ -29,6 +30,7 @@ import (
 	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/ActiveState/cli/internal/runbits/panics"
 	"github.com/ActiveState/cli/internal/subshell"
+	"github.com/ActiveState/cli/internal/subshell/bash"
 	"github.com/ActiveState/cli/pkg/cmdlets/errors"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/sysinfo"
@@ -146,7 +148,7 @@ func main() {
 			},
 			{
 				Name:        "activate-default",
-				Description: "Activate a project and make it the system default",
+				Description: "Activate a project and make it always available for use",
 				Value:       params.activateDefault,
 			},
 			{
@@ -203,8 +205,8 @@ func main() {
 			multilog.Critical("Installer error: " + errs.JoinMessage(err))
 		}
 
+		an.EventWithLabel(AnalyticsFunnelCat, "fail", errs.JoinMessage(err))
 		exitCode, err = errors.Unwrap(err)
-		an.EventWithLabel(AnalyticsFunnelCat, "fail", err.Error())
 		if err != nil {
 			out.Error(err)
 		}
@@ -253,13 +255,7 @@ func execute(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher,
 	// This code whould be removed in the future. See story here: https://activestatef.atlassian.net/browse/DX-985
 	if !params.isUpdate {
 		packagedStateExe := filepath.Join(payloadPath, installation.BinDirName, constants.StateCmd+exeutils.Extension)
-		params.isUpdate = determineLegacyUpdate(stateToolInstalled, packagedStateExe, payloadPath, params)
-	}
-
-	// If the state tool is already installed, but out of date, continue with update flow.
-	if stateToolInstalled && !params.isUpdate && !params.force && shouldUpdateInstalledStateTool(stateExePath) {
-		logging.Debug("Installed state tool should be updated, switching to update flow.")
-		params.isUpdate = true
+		params.isUpdate = determineLegacyUpdate(stateExePath, stateToolInstalled, packagedStateExe, payloadPath, params)
 	}
 
 	route := "install"
@@ -351,6 +347,11 @@ func postInstallEvents(out output.Outputer, cfg *config.Instance, an analytics.D
 		return locale.WrapError(err, "err_state_exec")
 	}
 
+	ss := subshell.New(cfg)
+	if ss.Shell() == bash.Name && runtime.GOOS == "darwin" {
+		out.Print(locale.T("warning_macos_bash"))
+	}
+
 	// Execute requested command, these are mutually exclusive
 	switch {
 	// Execute provided --command
@@ -382,13 +383,14 @@ func postInstallEvents(out output.Outputer, cfg *config.Instance, an analytics.D
 			return errs.Silence(errs.Wrap(err, "Could not activate %s, error returned: %s", params.activateDefault.String(), errs.JoinMessage(err)))
 		}
 	case !params.isUpdate && terminal.IsTerminal(int(os.Stdin.Fd())) && os.Getenv(constants.InstallerNoSubshell) != "true":
-		ss := subshell.New(cfg)
-		ss.SetEnv(osutils.InheritEnv(envMap(binPath)))
+		if err := ss.SetEnv(osutils.InheritEnv(envMap(binPath))); err != nil {
+			return locale.WrapError(err, "err_subshell_setenv")
+		}
 		if err := ss.Activate(nil, cfg, out); err != nil {
-			return errs.Wrap(err, "Subshell setup; error returned: %s", errs.JoinMessage(err))
+			return errs.Wrap(err, "Error activating subshell: %s", errs.JoinMessage(err))
 		}
 		if err = <-ss.Errors(); err != nil {
-			return errs.Wrap(err, "Subshell execution; error returned: %s", errs.JoinMessage(err))
+			return errs.Wrap(err, "Error during subshell execution: %s", errs.JoinMessage(err))
 		}
 	}
 
@@ -446,12 +448,17 @@ func assertCompatibility() error {
 	return nil
 }
 
-func determineLegacyUpdate(stateToolInstalled bool, packagedStateExe, payloadPath string, params *Params) bool {
+func determineLegacyUpdate(exePath string, isToolInstalled bool, packagedStateExe, payloadPath string, params *Params) bool {
 	// Detect whether this is a fresh install or an update
 	var isUpdate bool
 	switch {
 	case (params.sourceInstaller == "install.sh" || params.sourceInstaller == "install.ps1" || noArgs()) && fileutils.FileExists(packagedStateExe):
-		logging.Debug("Not using update flow as installing via " + params.sourceInstaller)
+		if isToolInstalled && !params.force && shouldUpdateInstalledStateTool(exePath) {
+			logging.Debug("Installing via %s, found old install and updating.", params.sourceInstaller)
+			isUpdate = true
+		} else {
+			logging.Debug("Not using update flow as installing via " + params.sourceInstaller)
+		}
 	case params.force:
 		// When ran with `--force` we always use the install UX
 		logging.Debug("Not using update flow as --force was passed")
@@ -459,7 +466,7 @@ func determineLegacyUpdate(stateToolInstalled bool, packagedStateExe, payloadPat
 		// Facilitate older versions of state tool which do not invoke the installer with `--source-path`
 		logging.Debug("Using update flow as installer is alongside payload")
 		isUpdate = true
-	case stateToolInstalled:
+	case isToolInstalled:
 		// This should trigger AFTER the check above where sourcePath is defined
 		logging.Debug("Using update flow as state tool is already installed")
 		isUpdate = true

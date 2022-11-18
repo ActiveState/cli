@@ -821,7 +821,7 @@ func getProjectFilePathFromWd() (string, error) {
 func getProjectFilePathFromDefault() (_ string, rerr error) {
 	cfg, err := config.New()
 	if err != nil {
-		return "", errs.Wrap(err, "Could not read configuration required to determine default project")
+		return "", errs.Wrap(err, "Could not read configuration required to determine which project to use")
 	}
 	defer rtutils.Closer(cfg.Close, &rerr)
 
@@ -835,7 +835,7 @@ func getProjectFilePathFromDefault() (_ string, rerr error) {
 		if !errors.Is(err, fileutils.ErrorFileNotFound) {
 			return "", errs.Wrap(err, "fileutils.FindFileInPath %s failed", defaultProjectPath)
 		}
-		return "", &ErrorNoDefaultProject{locale.NewInputError("err_no_default_project", "Could not find default project at: [ACTIONABLE]{{.V0}}[/RESET]", defaultProjectPath)}
+		return "", &ErrorNoDefaultProject{locale.NewInputError("err_no_default_project", "Could not find your project at: [ACTIONABLE]{{.V0}}[/RESET]", defaultProjectPath)}
 	}
 	return path, nil
 }

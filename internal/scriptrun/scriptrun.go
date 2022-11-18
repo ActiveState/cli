@@ -85,14 +85,17 @@ func (s *ScriptRun) PrepareVirtualEnv() error {
 	projDir := filepath.Dir(s.project.Source().Path())
 	env, err := venv.GetEnv(true, true, projDir)
 	if err != nil {
-		return err
+		return errs.Wrap(err, "Could not get venv environment")
 	}
-	s.sub.SetEnv(env)
+	err = s.sub.SetEnv(env)
+	if err != nil {
+		return locale.WrapError(err, "err_subshell_setenv")
+	}
 
 	// search the "clean" path first (PATHS that are set by venv)
 	env, err = venv.GetEnv(false, true, "")
 	if err != nil {
-		return err
+		return errs.Wrap(err, "Could not get venv environment")
 	}
 	s.venvExePath = env["PATH"]
 	s.venvPrepared = true

@@ -28,10 +28,13 @@ func ActivationPID(cfg Configurable) int32 {
 	procInfoErrMsgFmt := "Could not detect process information: %v"
 
 	for pid != 0 && pid != ppid {
+		logging.Debug("Current PID: %d, Parent PID: %d", pid, ppid)
 		pidFileName := ActivationPIDFileName(cfg.ConfigPath(), int(pid))
+		logging.Debug("Looking for activation pid file: %s", pidFileName)
 		if fileutils.FileExists(pidFileName) {
 			return pid
 		}
+		logging.Debug("Activation pid file not found")
 
 		if ppid == 0 {
 			return -1
@@ -43,6 +46,13 @@ func ActivationPID(cfg Configurable) int32 {
 				multilog.Log(logging.ErrorNoStacktrace, rollbar.Error)(procInfoErrMsgFmt, err)
 			}
 			return -1
+		}
+
+		name, err := pproc.Ppid()
+		if err != nil {
+			logging.Error(procInfoErrMsgFmt, err)
+		} else {
+			logging.Debug("Parent process name: %s", name)
 		}
 
 		pid = ppid

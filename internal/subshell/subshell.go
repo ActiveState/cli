@@ -76,7 +76,7 @@ type SubShell interface {
 	Shell() string
 
 	// SetEnv sets the environment up for the given subshell
-	SetEnv(env map[string]string)
+	SetEnv(env map[string]string) error
 
 	// Quote will quote the given string, escaping any characters that need escaping
 	Quote(value string) string
@@ -141,12 +141,17 @@ func New(cfg sscommon.Configurable) SubShell {
 	env := funk.FilterString(os.Environ(), func(s string) bool {
 		return !strings.HasPrefix(s, constants.ProjectEnvVarName)
 	})
-	subs.SetEnv(osutils.EnvSliceToMap(env))
+	err = subs.SetEnv(osutils.EnvSliceToMap(env))
+	if err != nil {
+		// We cannot error here, but this error will resurface when activating a runtime, so we can
+		// notify the user at that point.
+		logging.Error("Failed to set subshell environment: %v", err)
+	}
 
 	return subs
 }
 
-func ConfigureAvailableShells(shell SubShell, cfg sscommon.Configurable, env map[string]string, identifier sscommon.RcIdentification, isAdmin bool) error {
+func ConfigureAvailableShells(shell SubShell, cfg sscommon.Configurable, env map[string]string, identifier sscommon.RcIdentification, userScope bool) error {
 	// Ensure active shell has RC file
 	if shell.IsActive() {
 		err := shell.EnsureRcFileExists()
@@ -159,7 +164,7 @@ func ConfigureAvailableShells(shell SubShell, cfg sscommon.Configurable, env map
 		if !s.IsAvailable() {
 			continue
 		}
-		err := s.WriteUserEnv(cfg, env, identifier, isAdmin)
+		err := s.WriteUserEnv(cfg, env, identifier, userScope)
 		if err != nil {
 			logging.Error("Could not update PATH for shell %s: %v", s.Shell(), err)
 		}

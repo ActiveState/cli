@@ -108,7 +108,7 @@ func (s *Exec) Run(params *Params, args ...string) error {
 			}
 		}
 		if proj == nil {
-			return locale.NewInputError("exec_no_project_found", "Could not find a project.  You need to be in a project directory or specify a global default project via `state activate --default`")
+			return locale.NewInputError("err_no_project")
 		}
 		projectDir = filepath.Dir(proj.Source().Path())
 		rtTarget = target.NewProjectTarget(proj, storage.CachePath(), nil, trigger)
@@ -177,7 +177,10 @@ func (s *Exec) Run(params *Params, args ...string) error {
 		}
 	}
 
-	s.subshell.SetEnv(env)
+	err = s.subshell.SetEnv(env)
+	if err != nil {
+		return locale.WrapError(err, "err_subshell_setenv")
+	}
 
 	lang := language.Bash
 	scriptArgs := fmt.Sprintf(`%q "$@"`, exeTarget)

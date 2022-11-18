@@ -87,10 +87,14 @@ func SetupDefaultActivation(subshell subshell.SubShell, cfg DefaultConfigurer, r
 
 	projectDir := filepath.Dir(proj.Source().Path())
 	if err := cfg.Set(constants.GlobalDefaultPrefname, projectDir); err != nil {
-		return locale.WrapError(err, "err_set_default_config", "Could not set default project in config file")
+		return locale.WrapError(err, "err_set_default_config", "Could not update config file with your project")
 	}
 
 	return nil
+}
+
+func IsSet(cfg DefaultConfigurer) bool {
+	return cfg.GetString(constants.GlobalDefaultPrefname) != ""
 }
 
 func ResetDefaultActivation(shell subshell.SubShell, cfg DefaultConfigurer) (bool, error) {
@@ -117,7 +121,7 @@ func ResetDefaultActivation(shell subshell.SubShell, cfg DefaultConfigurer) (boo
 
 	err = cfg.Set(constants.GlobalDefaultPrefname, "")
 	if err != nil {
-		return false, locale.WrapError(err, "err_reset_default_config", "Could not reset default project in config file")
+		return false, locale.WrapError(err, "err_reset_default_config", "Could not remove your project from config file")
 	}
 
 	return true, nil

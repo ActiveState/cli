@@ -7,10 +7,6 @@ import (
 	"github.com/ActiveState/cli/internal/runners/history"
 )
 
-type historyOpts struct {
-	Namespace string
-}
-
 func newHistoryCommand(prime *primer.Values) *captain.Command {
 	initRunner := history.NewHistory(prime)
 
@@ -20,14 +16,7 @@ func newHistoryCommand(prime *primer.Values) *captain.Command {
 		locale.Tl("history_title", "Viewing Project History"),
 		locale.T("history_cmd_description"),
 		prime,
-		[]*captain.Flag{
-			{
-				Name:        "namespace",
-				Shorthand:   "",
-				Description: locale.T("arg_state_history_namespace_description"),
-				Value:       &params.Namespace,
-			},
-		},
+		[]*captain.Flag{},
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, _ []string) error {
 			return initRunner.Run(&params)
