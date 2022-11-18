@@ -29,8 +29,7 @@ func newUseCommand(prime *primer.Values) *captain.Command {
 		func(_ *captain.Command, _ []string) error {
 			return use.NewUse(prime).Run(params)
 		},
-	).SetGroup(EnvironmentUsageGroup)
-	cmd.SetUnstable(true)
+	).SetGroup(EnvironmentUsageGroup).SetUnstable(true)
 	return cmd
 }
 
@@ -63,6 +62,5 @@ func newUseShowCommand(prime *primer.Values) *captain.Command {
 			return use.NewShow(prime).Run()
 		},
 	)
-	cmd.SetUnstable(true)
 	return cmd
 }
