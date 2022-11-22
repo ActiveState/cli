@@ -80,8 +80,8 @@ func createRevertProject(ts *e2e.Session, namespace string, withUninstall bool) 
 	cp.ExpectExitCode(0)
 
 	if withUninstall {
-		cp = ts.Spawn("remove", "json2")
-		cp.ExpectRe("(?:Package removed|being built)", 30*time.Second)
+		cp = ts.Spawn("uninstall", "json2")
+		cp.ExpectRe("(?:Package uninstalled|being built)", 30*time.Second)
 		cp.ExpectExitCode(0)
 	}
 }
