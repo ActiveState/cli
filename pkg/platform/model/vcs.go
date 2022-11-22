@@ -951,6 +951,18 @@ func GetCommit(commitID strfmt.UUID) (*mono_models.Commit, error) {
 	return res.Payload, nil
 }
 
+func GetCommitWithinCommitHistory(currentCommitID, targetCommitID strfmt.UUID) (*mono_models.Commit, error) {
+	ok, err := CommitWithinCommitHistory(currentCommitID, targetCommitID)
+	if err != nil {
+		return nil, locale.WrapError(err, "err_get_commit_within_history_no_info", "Cannot determine if target commit is within the current commit's history.")
+	}
+	if !ok {
+		return nil, locale.WrapError(err, "err_get_commit_within_history_not_in", "The target commit is not within the current commit's history.")
+	}
+
+	return GetCommit(targetCommitID)
+}
+
 func AddRevertCommit(commit *mono_models.Commit) (*mono_models.Commit, error) {
 	params := vcsClient.NewAddCommitParams()
 

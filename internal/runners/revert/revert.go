@@ -71,7 +71,8 @@ func (r *Revert) Run(params *Params) error {
 		return locale.NewInputError("err_no_project")
 	}
 	commitID := strfmt.UUID(params.CommitID)
-	revertToCommit, err := model.GetCommit(commitID)
+
+	revertToCommit, err := model.GetCommitWithinCommitHistory(r.project.CommitUUID(), commitID)
 	if err != nil {
 		return locale.WrapError(err, "err_revert_get_commit", "Could not fetch commit details for commit with ID: {{.V0}}", params.CommitID)
 	}

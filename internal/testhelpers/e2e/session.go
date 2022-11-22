@@ -316,6 +316,12 @@ func (s *Session) PrepareActiveStateYAML(contents string) {
 	require.NoError(s.t, err, msg)
 }
 
+func (s *Session) CurrentProjectFile() *projectfile.Project {
+	projFile, err := projectfile.FromExactPath(filepath.Join(s.Dirs.Work, "activestate.yaml"))
+	require.NoError(s.t, err, "cannot get current projectfile")
+	return projFile
+}
+
 // PrepareFile writes a file to path with contents, expecting no error
 func (s *Session) PrepareFile(path, contents string) {
 	errMsg := fmt.Sprintf("cannot setup file %q", path)
