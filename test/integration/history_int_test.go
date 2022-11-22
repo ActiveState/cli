@@ -42,7 +42,7 @@ func (suite *HistoryIntegrationTestSuite) TestHistory_History() {
 	cp.ExpectExitCode(0)
 }
 
-func (suite *HistoryIntegrationTestSuite) TestRevert() {
+func (suite *HistoryIntegrationTestSuite) TestRevert_failsOnCommitNotInHistory() {
 	suite.OnlyRunForTags(tagsuite.History)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
@@ -58,6 +58,7 @@ func (suite *HistoryIntegrationTestSuite) TestRevert() {
 	createRevertProject(ts, namespace, false)
 
 	cp := ts.Spawn("revert", projFile.CommitID())
+	cp.SendLine("Y")
 	cp.ExpectExitCode(1)
 }
 
@@ -75,7 +76,7 @@ func createRevertProject(ts *e2e.Session, namespace string, withUninstall bool) 
 	cp.ExpectRe("(?:Package added|being built)", 30*time.Second)
 	cp.ExpectExitCode(0)
 
-	cp = ts.Spawn("push")
+	cp = ts.Spawn("push", "--non-interactive")
 	cp.ExpectExitCode(0)
 
 	if withUninstall {
