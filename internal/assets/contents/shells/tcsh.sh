@@ -5,6 +5,8 @@
 # `set` variables are not inherited when we spawn the sub shell via exec.  Only
 # `setenv` values are inherited.
 
+if ( -f ~/.cshrc ) source ~/.cshrc
+
 cd "{{.WD}}"
 
 {{- range $K, $V := .Env}}

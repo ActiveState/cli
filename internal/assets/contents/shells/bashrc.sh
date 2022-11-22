@@ -1,9 +1,7 @@
 if [ -f ~/.bashrc ]; then source ~/.bashrc; fi
 
 {{if ne .Owner ""}}
-if [ -z "$PROMPT_COMMAND" ]; then
-  export PS1="[{{.Owner}}/{{.Name}}] $PS1"
-fi
+export PS1="[{{.Owner}}/{{.Name}}] $PS1"
 {{end}}
 
 cd "{{.WD}}"

@@ -1,15 +1,26 @@
 package autostart
 
-import (
-	"github.com/ActiveState/cli/internal/errs"
-)
+type AppName string
 
-const ConfigKeyDisabled = "SystrayAutoStartDisabled"
+func (a AppName) String() string {
+	return string(a)
+}
 
-type App struct {
-	Name string
-	Exec string
-	cfg  Configurable
+type app struct {
+	Name    string
+	Exec    string
+	Args    []string
+	cfg     Configurable
+	options Options
+}
+
+type Options struct {
+	LaunchFileName string
+	IconFileName   string
+	IconFileSource string
+	GenericName    string
+	Comment        string
+	Keywords       string
 }
 
 type Configurable interface {
@@ -17,34 +28,20 @@ type Configurable interface {
 	IsSet(string) bool
 }
 
-func New(name, exec string, cfg Configurable) *App {
-	return &App{
-		Name: name,
-		Exec: exec,
-		cfg:  cfg,
-	}
+func New(name AppName, exec string, args []string, options Options, cfg Configurable) (*app, error) {
+	return &app{
+		Name:    name.String(),
+		Exec:    exec,
+		Args:    args,
+		cfg:     cfg,
+		options: options,
+	}, nil
 }
 
-func (a *App) Enable() error {
-	if err := a.cfg.Set(ConfigKeyDisabled, false); err != nil {
-		return errs.Wrap(err, "ConfigKeyDisabled=false failed")
-	}
+func (a *app) Enable() error {
 	return a.enable()
 }
 
-func (a *App) EnableFirstTime() error {
-	if a.cfg.IsSet(ConfigKeyDisabled) {
-		return nil
-	}
-	if err := a.cfg.Set(ConfigKeyDisabled, false); err != nil {
-		return errs.Wrap(err, "ConfigKeyDisabled=false failed")
-	}
-	return a.enable()
-}
-
-func (a *App) Disable() error {
-	if err := a.cfg.Set(ConfigKeyDisabled, true); err != nil {
-		return errs.Wrap(err, "ConfigKeyDisabled=true failed")
-	}
+func (a *app) Disable() error {
 	return a.disable()
 }

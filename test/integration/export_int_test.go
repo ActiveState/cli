@@ -1,6 +1,7 @@
 package integration
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -76,6 +77,24 @@ func (suite *ExportIntegrationTestSuite) TestExport_Config() {
 	cp.Expect(`dir: `)
 	cp.ExpectLongString(ts.Dirs.Config, time.Second)
 	cp.ExpectExitCode(0)
+}
+
+func (suite *ExportIntegrationTestSuite) TestExport_Env() {
+	suite.OnlyRunForTags(tagsuite.Export)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	suite.PrepareActiveStateYAML(ts)
+	asyData := fmt.Sprintf(`project: "https://platform.activestate.com/ActiveState-CLI/Export?branch=main&commitID=5397f645-da8a-4591-b106-9d7fa99545fe"`)
+	ts.PrepareActiveStateYAML(asyData)
+	cp := ts.SpawnWithOpts(
+		e2e.WithArgs("export", "env"),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
+	cp.Expect(`PATH: `)
+	cp.ExpectExitCode(0)
+
+	suite.Assert().NotContains(cp.TrimmedSnapshot(), "ACTIVESTATE_ACTIVATED")
 }
 
 func TestExportIntegrationTestSuite(t *testing.T) {

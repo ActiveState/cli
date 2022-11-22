@@ -13,12 +13,12 @@ import (
 
 	"github.com/ActiveState/cli/cmd/state/internal/cmdtree"
 	anAsync "github.com/ActiveState/cli/internal/analytics/client/async"
-	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/constraints"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/events"
+	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -33,6 +33,7 @@ import (
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/svcctl"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
+	cmdletErrors "github.com/ActiveState/cli/pkg/cmdlets/errors"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
@@ -100,7 +101,7 @@ func main() {
 	// Run our main command logic, which is logic that defers to the error handling logic below
 	err = run(os.Args, isInteractive, cfg, out)
 	if err != nil {
-		exitCode, err = unwrapError(err)
+		exitCode, err = cmdletErrors.Unwrap(err)
 		if err != nil {
 			out.Error(err)
 		}
@@ -130,14 +131,19 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 		defer cleanup()
 	}
 
-	verbose := os.Getenv("VERBOSE") != "" || argsHaveVerbose(args)
-	logging.CurrentHandler().SetVerbose(verbose)
+	logging.CurrentHandler().SetVerbose(os.Getenv("VERBOSE") != "" || argsHaveVerbose(args))
 
 	logging.Debug("ConfigPath: %s", cfg.ConfigPath())
 	logging.Debug("CachePath: %s", storage.CachePath())
 
+	svcExec, err := installation.ServiceExec()
+	if err != nil {
+		return errs.Wrap(err, "Could not get service info")
+	}
+
 	ipcClient := svcctl.NewDefaultIPCClient()
-	svcPort, err := svcctl.EnsureExecStartedAndLocateHTTP(ipcClient, appinfo.SvcApp().Exec())
+	argText := strings.Join(args, " ")
+	svcPort, err := svcctl.EnsureExecStartedAndLocateHTTP(ipcClient, svcExec, argText)
 	if err != nil {
 		return locale.WrapError(err, "start_svc_failed", "Failed to start state-svc at state tool invocation")
 	}
@@ -247,12 +253,20 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 }
 
 func argsHaveVerbose(args []string) bool {
-	for _, arg := range args {
+	var isRunOrExec bool
+	nextArg := 0
+
+	for i, arg := range args {
+		if arg == "run" || arg == "exec" {
+			isRunOrExec = true
+			nextArg = i + 1
+		}
+
 		// Skip looking for verbose args after --, eg. for `state shim -- perl -v`
 		if arg == "--" {
 			return false
 		}
-		if arg == "--verbose" || arg == "-v" {
+		if (arg == "--verbose" || arg == "-v") && (!isRunOrExec || i == nextArg) {
 			return true
 		}
 	}

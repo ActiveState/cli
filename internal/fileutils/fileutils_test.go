@@ -15,6 +15,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/thoas/go-funk"
 )
 
 // Copies the file associated with the given filename to a temp dir and returns
@@ -643,4 +644,49 @@ func TestPathsMatch(t *testing.T) {
 	require.NoError(t, err, errs.JoinMessage(err))
 
 	require.True(t, v, "PathsMatch should return true, path1: %s, path2: %s", v1, v2)
+}
+
+func TestIsWritableFile(t *testing.T) {
+	file, err := WriteTempFile(
+		"", t.Name(), []byte("Some data"), 0777,
+	)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if IsWritable(file) != true {
+		t.Fatal("File should be writable")
+	}
+
+	err = os.Chmod(file, 0444)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if IsWritable(file) != false {
+		t.Fatal("File should no longer be writable")
+	}
+}
+
+func TestIsWritableDir(t *testing.T) {
+	pathWithPermission, err := HomeDir()
+	if err != nil {
+		t.Error(err)
+	}
+	if IsWritable(pathWithPermission) != true {
+		t.Fatalf("Path should be writable: %s", pathWithPermission)
+	}
+
+	nonExistPathWithPermission := filepath.Join(pathWithPermission, funk.RandomString(10))
+	if IsWritable(nonExistPathWithPermission) != true {
+		t.Fatalf("Path should be writable: %s", nonExistPathWithPermission)
+	}
+
+	pathWithNoPermission := "/no-permission"
+	if runtime.GOOS == "windows" {
+		pathWithNoPermission = "C:\\Program Files\\No Permission"
+	}
+	if IsWritable(pathWithNoPermission) != false {
+		t.Fatalf("Path should not be writable: %s", pathWithNoPermission)
+	}
 }

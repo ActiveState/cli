@@ -139,6 +139,14 @@ const DisableErrorTipsEnvVarName = "ACTIVESTATE_CLI_DISABLE_ERROR_TIPS"
 // DebugServiceRequestsEnvVarName is used to instruct State Tool to turn on debug logging of service requests
 const DebugServiceRequestsEnvVarName = "ACTIVESTATE_DEBUG_SERVICE_REQUESTS"
 
+// IsAdminOverrideEnvVarName is used to override the admin status of the user, meant to work around issues with
+// admin detection on CI. The value should be either true or false, where true means that we're running as admin.
+const IsAdminOverrideEnvVarName = "ACTIVESTATE_CLI_ISADMIN_OVERRIDE"
+
+// InstallPathOverrideEnvVarName is used to override the default installation path of the state tool.
+// This is intended for use in our integration tests, not by end-users.
+const InstallPathOverrideEnvVarName = "ACTIVESTATE_CLI_INSTALLPATH_OVERRIDE"
+
 // APIUpdateInfoURL is the URL for our update info server
 const APIUpdateInfoURL = "https://platform.activestate.com/sv/state-update/api/v1"
 
@@ -159,6 +167,10 @@ const ArtifactCacheFileName = "artifact_cache.json"
 
 // ArtifactMetaDir is the directory in which we store meta information about artifacts
 const ArtifactMetaDir = "artifacts"
+
+// ArtifactCacheSizeEnvVarName is the maximum size in MB of the artifact cache.
+// The default is 500MB.
+const ArtifactCacheSizeEnvVarName = "ACTIVESTATE_ARTIFACT_CACHE_SIZE_MB"
 
 // DefaultNamespaceDomain is the domain used when no namespace is given and one has to be constructed
 const DefaultNamespaceDomain = "github.com"
@@ -277,17 +289,20 @@ const PlatformURL = "platform.activestate.com"
 const CheatSheetURL = "https://platform.activestate.com/state-tool-cheat-sheet"
 
 // StateToolRollbarToken is the token used by the State Tool to talk to rollbar
-const StateToolRollbarToken = "73cd77e321db4e929ca7c24b2e72a172"
+const StateToolRollbarToken = "0f77e52e25324b5a870f1f2ea769024e"
 
 // StateTrayRollbarToken is the token used by the State Tray to talk to rollbar
 const StateTrayRollbarToken = "84e7a358f8bd4bf99382a208459544bb"
 
 // StateServiceRollbarToken is the token used by the State Service to talk to rollbar
-const StateServiceRollbarToken = "110c508fb11547f5b3379167ae35a1f0"
+const StateServiceRollbarToken = "8d72ba6541394d2c99c006324b3a46a7"
 
 // StateInstallerRollbarToken is the token used by the State Installer to talk to rollbar
 // Todo It is currently the same as the State Tool's
-const StateInstallerRollbarToken = "11b13f236eb04703b199a48bb6227e66"
+const StateInstallerRollbarToken = "609d723b3d46474d88e31bd045d38c56"
+
+// OfflineInstallerRollbarToken is the token used by the Offline Installer to talk to rollbar
+const OfflineInstallerRollbarToken = "0ab5e19218bd494680bf8f5d08cf37ad"
 
 // {OS}Bit{Depth}UUID constants are the UUIDs associated with the relevant OSes
 // in the platform DB.
@@ -344,6 +359,12 @@ const RCAppendDeployStartLine = "-- START ACTIVESTATE DEPLOY RUNTIME ENVIRONMENT
 // RCAppendDeployStopLine is the end line used to denote our deploy environment config in RC files
 const RCAppendDeployStopLine = "-- STOP ACTIVESTATE DEPLOY RUNTIME ENVIRONMENT"
 
+// RCAppendOfflineInstallStartLine is the start line used to denote our deploy environment config in RC files
+const RCAppendOfflineInstallStartLine = "-- START ACTIVESTATE OFFLINE INSTALL RUNTIME ENVIRONMENT"
+
+// RCAppendOfflineInstallStopLine is the end line used to denote our deploy environment config in RC files
+const RCAppendOfflineInstallStopLine = "-- STOP ACTIVESTATE OFFLINE INSTALL RUNTIME ENVIRONMENT"
+
 // RCAppendDefaultStartLine is the start line used to denote our default environment config in RC files
 const RCAppendDefaultStartLine = "-- START ACTIVESTATE DEFAULT RUNTIME ENVIRONMENT"
 
@@ -392,11 +413,20 @@ const StateCmd = "state"
 // StateInstallerCmd is the name of the state installer binary
 const StateInstallerCmd = "state-installer"
 
+// StateRemoteInstallerCmd is the name of the state remote installer binary
+const StateRemoteInstallerCmd = "state-remote-installer"
+
+// InstallerName is the name we give to our state-installer executable
+const InstallerName = "State Installer"
+
 // StateTrayCmd is the name of the state tray binary
 const StateTrayCmd = "state-tray"
 
 // UpdateDialogName is the name we give our state-update-dialog executable
 const UpdateDialogName = "State Update Dialog"
+
+// StateUpdateDialogCmd is the name of the state update dialog binary
+const StateUpdateDialogCmd = "state-update-dialog"
 
 // ToplevelInstallArchiveDir is the top-level directory for files in an installation archive
 // Cf., https://www.pivotaltracker.com/story/show/177781411
@@ -431,3 +461,9 @@ const PipShim = "pip"
 
 // AutoUpdateConfigKey is the config key for storing whether or not autoupdates can be performed
 const AutoUpdateConfigKey = "autoupdate"
+
+// DefaultAnalyticsPixel is the default url for the analytics pixel
+const DefaultAnalyticsPixel = "https://state-tool.s3.amazonaws.com/pixel"
+
+// AnalyticsPixelOverrideEnv is the environment variable to check for overriding the analytics pixel url
+const AnalyticsPixelOverrideEnv = "ACTIVESTATE_CLI_ANALYTICS_PIXEL"

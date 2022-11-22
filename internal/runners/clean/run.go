@@ -21,7 +21,15 @@ func removeCache(cachePath string) error {
 }
 
 func undoPrepare(cfg configurable) error {
-	toRemove := prepare.InstalledPreparedFiles(cfg)
+	err := prepare.CleanOS(cfg)
+	if err != nil {
+		return locale.WrapError(err, "err_prepare_clean", "Could not perform OS-specific cleanup")
+	}
+
+	toRemove, err := prepare.InstalledPreparedFiles(cfg)
+	if err != nil {
+		return locale.WrapError(err, "err_prepared_files", "Could not determine files to remove")
+	}
 
 	var aggErr error
 	for _, f := range toRemove {
@@ -45,7 +53,7 @@ func removeEnvPaths(cfg configurable) error {
 	// remove shell file additions
 	s := subshell.New(cfg)
 	if err := s.CleanUserEnv(cfg, sscommon.InstallID, !isAdmin); err != nil {
-		return errs.Wrap(err, "Failed to State Tool installation PATH")
+		return errs.Wrap(err, "Failed to remove State Tool installation PATH")
 	}
 	// Default projects will stop working, so we return them from the PATH as well
 	if err := s.CleanUserEnv(cfg, sscommon.DefaultID, !isAdmin); err != nil {

@@ -7,12 +7,16 @@ name: Build-Test-Deploy
       - master
       - beta
       - release
+      - LTS*
   pull_request:
     types:
       - labeled
       - opened
       - synchronize
       - reopened
+  schedule:
+    -
+      cron: 0 0 * * *
 
 # === JOBS ===
 jobs:
@@ -20,6 +24,7 @@ jobs:
   # === OS Specific Job (runs on each OS) ===
   os_specific:
     name: ${{ matrix.platform }}
+    timeout-minutes: 90
     strategy:
       matrix:
         go-version:
@@ -73,6 +78,7 @@ jobs:
       - # === Preprocess ===
         name: Preprocess
         shell: bash
+        timeout-minutes: 1
         run: state run preprocess
 
       - # === Parallel Tasks ===
@@ -109,8 +115,16 @@ jobs:
                 "Args": ["state", "run", "build-installer"]
             },
             {
+                "ID": "Build-Remote-Installer",
+                "Args": ["state", "run", "build-remote-installer"]
+            },
+            {
                 "ID": "Build-Install-Scripts",
                 "Args": ["state", "run", "build-install-scripts"]
+            },
+            {
+                "ID": "Build-Offline-Installer",
+                "Args": ["state", "run", "build-offline-installer"]
             }
           ]
           EOF
@@ -118,6 +132,9 @@ jobs:
         env:
           CODE_SIGNING_PASSWD: ${{ secrets.CODE_SIGNING_PASSWD }}
           MSI_CERT_BASE64: ${{ secrets.MSI_CERT_BASE64 }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          JIRA_USERNAME: ${{ secrets.JIRA_EMAIL }}
+          JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}
 
       - # === Unit Tests (Raw) ===
         name: Unit Tests (Raw Results)
@@ -152,6 +169,11 @@ jobs:
         shell: bash
         run: parallelize results Build-Installer
 
+      - # === "Build: Remote Installer" ===
+        name: "Build: Remote Installer"
+        shell: bash
+        run: parallelize results Build-Remote-Installer
+
       - # === "Build: Install Scripts" ===
         name: "Build: Install Scripts"
         shell: bash
@@ -162,6 +184,11 @@ jobs:
         shell: bash
         if: runner.os == 'macOS'
         run: parallelize results Build-Systray-App
+
+      - # === "Build: Offline-Installer" ===
+        name: "Build: Offline-Installer"
+        shell: bash
+        run: parallelize results Build-Offline-Installer
 
       - # === Sign Binaries (Windows only) ===
         name: Sign Binaries (Windows only)
@@ -182,7 +209,7 @@ jobs:
       - # === Sign Install Scripts (Windows only) ===
         name: Sign Install Scripts (Windows only)
         shell: powershell
-        if: runner.os == 'Windows' && contains(fromJSON('["refs/heads/master", "refs/heads/beta", "refs/heads/release"]'), github.ref)
+        if: runner.os == 'Windows' && contains(fromJSON('["refs/heads/master", "refs/heads/beta", "refs/heads/release", "refs/heads/LTS"]'), github.ref)
         run: |
           $branchInfix = $Env:GITHUB_REF.Replace("refs/heads/", "").Replace("release", "")
           $cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
@@ -200,31 +227,35 @@ jobs:
 
       - # === Deploy for Integration Tests # NEVER run this against production branches. This is meant for PR deployments. ===
         name: Deploy for Integration Tests # NEVER run this against production branches. This is meant for PR deployments.
-        if: github.ref != 'refs/heads/release'
+        if: "!contains(fromJSON('[\"refs/heads/beta\", \"refs/heads/release\", \"refs/heads/LTS\"]'), github.ref)"
         shell: bash
         run: |
-          set +e
-          LABELS="${{ join(github.event.pull_request.labels.*.name, ',') }}"
-          LABELCHECK="$(echo $LABELS | grep "Test:")" # This line is causing a non-zero exit if `set -e` is set, and I can't figure out why
-          TARGET_BRANCH="${{ github.event.pull_request.base.ref }}"
-          set -e
-          echo "Labels: $LABELS"
-          echo "Target Branch: $TARGET_BRANCH"
+          if [ "$GITHUB_EVENT_NAME" != "schedule" ]; then
+            set +e
+            LABELS="${{ join(github.event.pull_request.labels.*.name, ',') }}"
+            LABELCHECK="$(echo $LABELS | grep "Test:")" # This line is causing a non-zero exit if `set -e` is set, and I can't figure out why
+            TARGET_BRANCH="${{ github.event.pull_request.base.ref }}"
+            set -e
+            echo "Labels: $LABELS"
+            echo "Target Branch: $TARGET_BRANCH"
 
-          if [ "$LABELCHECK" == "" ] && [ "$TARGET_BRANCH" != "beta" ] && [ "$TARGET_BRANCH" != "release" ]; then
-            echo "Not running because no test labels were set nor beta or release were targeted."
-            exit 0
+            if [ "$LABELCHECK" == "" ] && [ "$TARGET_BRANCH" != "beta" ] && [ "$TARGET_BRANCH" != "release" ] && [[ -z "`echo $TARGET_BRANCH | grep -o '^LTS'`" ]]; then
+              echo "Not running because no test labels were set nor beta, release or LTS were targeted."
+              exit 0
+            fi
           fi
 
           state run deploy-updates
           state run deploy-installers
+          state run deploy-remote-installer
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
       - # === Integration Tests ===
         name: Integration Tests
-        if: github.ref != 'refs/heads/release'
+        id: integration_tests
+        if: "!contains(fromJSON('[\"refs/heads/beta\", \"refs/heads/release\", \"refs/heads/LTS\"]'), github.ref)"
         shell: bash
         run: |
           if [ "$GITHUB_EVENT_NAME" != "schedule" ]; then
@@ -246,28 +277,28 @@ jobs:
 
             TARGET_BRANCH="${{ github.event.pull_request.base.ref }}"
             echo "Target branch: $TARGET_BRANCH"
-          
-            if [ "$TEST_SUITE_TAGS" == "" ] && [ "$TARGET_BRANCH" != "beta" ] && [ "$TARGET_BRANCH" != "release" ]; then
-              echo "Not running because no test labels were set nor beta or release were targeted."
+
+            if [ "$TEST_SUITE_TAGS" == "" ] && [ "$TARGET_BRANCH" != "master" ] && [ "$TARGET_BRANCH" != "beta" ] && [ "$TARGET_BRANCH" != "release" ] && [ "$TARGET_BRANCH" != "lts-release" ]; then
+              echo "Not running because no test labels were set nor master, beta or release were targeted."
               exit 0
             fi
-          
           else
             TEST_SUITE_TAGS="all"
           fi
 
-          echo "Running integration tests with tags: $TEST_SUITE_TAGS (empty means everything)"
+          echo "Running integration tests with tags: $TEST_SUITE_TAGS (empty means every test not specifically tagged)"
 
           export TEST_SUITE_TAGS="$TEST_SUITE_TAGS"
-          TIMEOUT=10m
+          TIMEOUT=15m
           if [[ "$TEST_SUITE_TAGS" == "all" ]]; then
             TIMEOUT=60m
           fi
           set +e
-          SHELL='' go test -timeout $TIMEOUT -v `go list ./... | grep integration` &> build/integration-tests.out
+          SHELL='' go test -timeout $TIMEOUT -v `go list ./... | grep "integration\|automation"` &> build/integration-tests.out
           CODE=$?
           cat build/integration-tests.out | gotestfmt
           exit $CODE
+        continue-on-error: ${{ github.event_name == 'schedule' }}
         env:
           INTEGRATION_TEST_USERNAME: ${{ secrets.INTEGRATION_TEST_USERNAME }}
           INTEGRATION_TEST_PASSWORD: ${{ secrets.INTEGRATION_TEST_PASSWORD }}
@@ -275,6 +306,48 @@ jobs:
           PLATFORM_API_TOKEN: ${{ secrets.PLATFORM_API_TOKEN }}
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      - # === Notify Slack of Nightly Integration Test Failures ===
+        name: Notify Slack of Nightly Integration Test Failures
+        if: github.event_name == 'schedule' && steps.integration_tests.outcome == 'failure'
+        uses: slackapi/slack-github-action@v1.18.0
+        with:
+          payload: |
+            {
+              "text": "Nightly integration test failure(s) on ${{ runner.os }}",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "plain_text",
+                    "text": "Nightly integration test failure(s) on ${{ runner.os }}"
+                  }
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                  }
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "plain_text",
+                    "text": "Select the '${{ matrix.platform }}' job and expand 'Integration Tests' to inspect the failures."
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
+
+      - # === Fail If Nightly Integration Tests Failed (Expand 'Integration Tests' above for more information) ===
+        name: Fail If Nightly Integration Tests Failed
+        if: github.event_name == 'schedule' && steps.integration_tests.outcome == 'failure'
+        shell: bash
+        run: exit 1
 
       - # === Upload Session Artifacts ===
         name: Upload Session Artifacts
@@ -295,7 +368,7 @@ jobs:
       SHELL: bash
       GITHUB_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     timeout-minutes: 10
-    if: contains(fromJSON('["refs/heads/master", "refs/heads/beta", "refs/heads/release"]'), github.ref) || startsWith(github.event.pull_request.head.ref, 'version/')
+    if: contains(fromJSON('["refs/heads/master", "refs/heads/beta", "refs/heads/release", "refs/heads/LTS"]'), github.ref) || startsWith(github.event.pull_request.head.ref, 'version/')
 
     # === Deploy Steps ===
     steps:

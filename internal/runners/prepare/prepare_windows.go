@@ -6,9 +6,12 @@ import (
 	"os/user"
 	"path/filepath"
 
-	"github.com/ActiveState/cli/internal/appinfo"
+	svcAutostart "github.com/ActiveState/cli/cmd/state-svc/autostart"
+
 	"github.com/ActiveState/cli/internal/assets"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/osutils"
@@ -18,7 +21,7 @@ import (
 
 var shortcutDir = filepath.Join(os.Getenv("USERPROFILE"), "AppData", "Roaming", "Microsoft", "Windows", "Start Menu", "Programs", "ActiveState")
 
-func (r *Prepare) prepareOS() {
+func (r *Prepare) prepareOS() error {
 	err := setStateProtocol()
 	if err != nil {
 		r.reportError(locale.T("prepare_protocol_warning"), err)
@@ -27,6 +30,24 @@ func (r *Prepare) prepareOS() {
 	if err := r.prepareStartShortcut(); err != nil {
 		r.reportError(locale.Tl("err_prepare_shortcut", "Could not create start menu shortcut, error received: {{.V0}}.", err.Error()), err)
 	}
+
+	svcExec, err := installation.ServiceExec()
+	if err != nil {
+		r.reportError(locale.Tl("err_prepare_svc_exec", "Could not get service exec, error recieved: {{.V0}}", err.Error()), err)
+	}
+
+	if svcExec != "" {
+		as, err := autostart.New(svcAutostart.App, svcExec, []string{"start"}, svcAutostart.Options, r.cfg)
+		if err != nil {
+			return locale.WrapError(err, "err_autostart_app")
+		}
+
+		if err := as.Enable(); err != nil {
+			r.reportError(locale.Tl("err_prepare_service_autostart", "Could not setup service autostart, error recieved: {{.V0}}", err.Error()), err)
+		}
+	}
+
+	return nil
 }
 
 func (r *Prepare) prepareStartShortcut() error {
@@ -34,9 +55,14 @@ func (r *Prepare) prepareStartShortcut() error {
 		return locale.WrapInputError(err, "err_preparestart_mkdir", "Could not create start menu entry: %s", shortcutDir)
 	}
 
-	appInfo := appinfo.TrayApp()
-	sc := shortcut.New(shortcutDir, appInfo.Name(), appInfo.Exec())
-	err := sc.Enable()
+	trayExec, err := installation.TrayExec()
+	if err != nil {
+		return locale.WrapError(err, "err_tray_exec")
+	}
+
+	sc := shortcut.New(shortcutDir, constants.TrayAppName, trayExec)
+
+	err = sc.Enable()
 	if err != nil {
 		return locale.WrapError(err, "err_preparestart_shortcut", "", sc.Path())
 	}
@@ -82,8 +108,8 @@ func setStateProtocol() error {
 		if err != nil {
 			return locale.WrapError(err, "err_prepare_username", "Could not get current username")
 		}
-		protocolKeyPath = fmt.Sprintf(`%s\%s`, user.Gid, protocolKey)
-		protocolCommandKeyPath = fmt.Sprintf(`%s\%s`, user.Gid, protocolCommandKey)
+		protocolKeyPath = fmt.Sprintf(`%s\%s`, user.Uid, protocolKey)
+		protocolCommandKeyPath = fmt.Sprintf(`%s\%s`, user.Uid, protocolCommandKey)
 	}
 
 	protocolKey, _, err := createFunc(protocolKeyPath)
@@ -116,21 +142,20 @@ func setStateProtocol() error {
 	return nil
 }
 
-// InstalledPreparedFiles returns the files installed by the state _prepare command
-func InstalledPreparedFiles(cfg autostart.Configurable) []string {
+func installedPreparedFiles(cfg autostart.Configurable) ([]string, error) {
 	var files []string
-	trayInfo := appinfo.TrayApp()
-	name, exec := trayInfo.Name(), trayInfo.Exec()
 
-	as, err := autostart.New(name, exec, cfg).Path()
+	trayExec, err := installation.TrayExec()
 	if err != nil {
-		multilog.Error("Failed to determine autostart path for removal: %v", err)
-	} else if as != "" {
-		files = append(files, as)
+		return nil, locale.WrapError(err, "err_tray_exec")
 	}
-	appInfo := appinfo.TrayApp()
-	sc := shortcut.New(shortcutDir, appInfo.Name(), appInfo.Exec())
+
+	sc := shortcut.New(shortcutDir, constants.TrayAppName, trayExec)
 	files = append(files, filepath.Dir(sc.Path()))
 
-	return files
+	return files, nil
+}
+
+func cleanOS(cfg autostart.Configurable) error {
+	return nil
 }

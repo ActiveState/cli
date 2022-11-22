@@ -9,6 +9,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/termutils"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
@@ -41,6 +42,7 @@ type RuntimeProgress struct {
 	buildBar       *mpb.Bar
 	installBar     *mpb.Bar
 	artifactStates map[artifact.ArtifactID]map[string]*artifactStepBar
+	out            output.Outputer
 
 	// mpb.Progress synchronization fields
 	cancel           context.CancelFunc
@@ -48,7 +50,7 @@ type RuntimeProgress struct {
 }
 
 // NewRuntimeProgress initializes the ProgressBar based on an mpb.Progress container
-func NewRuntimeProgress(w io.Writer) *RuntimeProgress {
+func NewRuntimeProgress(w io.Writer, out output.Outputer) *RuntimeProgress {
 	ctx, cancel := context.WithCancel(context.Background())
 	shutdownNotifier := make(chan struct{})
 	prg := mpb.NewWithContext(
@@ -63,6 +65,7 @@ func NewRuntimeProgress(w io.Writer) *RuntimeProgress {
 		artifactStates:   make(map[artifact.ArtifactID]map[string]*artifactStepBar),
 		cancel:           cancel,
 		shutdownNotifier: shutdownNotifier,
+		out:              out,
 	}
 }
 
@@ -184,6 +187,8 @@ func (rp *RuntimeProgress) InstallationCompleted(anyFailures bool) error {
 		rp.installBar.Abort(false)
 	} else {
 		rp.installBar.SetTotal(0, true)
+		rp.prg.Wait()
+		rp.out.Notice(locale.Tl("runtime_verification_notice", "[SUCCESS]✔ All dependencies have been installed and verified.[/RESET]"))
 	}
 	return nil
 }

@@ -35,6 +35,9 @@ func (suite *ConfigIntegrationTestSuite) TestConfig() {
 
 	cp = ts.Spawn("config", "get", constants.UnstableConfig)
 	cp.Expect("false")
+
+	cp = ts.Spawn("config", "set", constants.UnstableConfig, "oops")
+	cp.Expect("Invalid boolean value")
 }
 
 func TestConfigIntegrationTestSuite(t *testing.T) {

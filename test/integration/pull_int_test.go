@@ -72,11 +72,7 @@ func (suite *PullIntegrationTestSuite) TestPullSetProjectUnrelated() {
 }
 
 func (suite *PullIntegrationTestSuite) TestPull_Merge() {
-	// https://activestatef.atlassian.net/browse/DX-542
-	if runtime.GOOS == "windows" {
-		suite.T().Skip("Working directory is not working correctly on Windows")
-	}
-	suite.OnlyRunForTags(tagsuite.Push)
+	suite.OnlyRunForTags(tagsuite.Pull)
 	projectLine := "project: https://platform.activestate.com/ActiveState-CLI/cli?branch=main&commitID="
 	unPulledCommit := "882ae76e-fbb7-4989-acc9-9a8b87d49388"
 
@@ -98,7 +94,12 @@ func (suite *PullIntegrationTestSuite) TestPull_Merge() {
 	cp.ExpectLongString("Merging history")
 	cp.ExpectExitCode(0)
 
-	cp = ts.SpawnCmd("bash", "-c", fmt.Sprintf("cd %s && %s history | head -n 10", wd, ts.ExecutablePath()))
+	exe := ts.ExecutablePath()
+	if runtime.GOOS == "windows" {
+		wd = filepath.ToSlash(wd)
+		exe = filepath.ToSlash(exe)
+	}
+	cp = ts.SpawnCmd("bash", "-c", fmt.Sprintf("cd %s && %s history | head -n 10", wd, exe))
 	cp.ExpectLongString("Merged")
 	cp.ExpectExitCode(0)
 }

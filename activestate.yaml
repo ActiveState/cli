@@ -15,6 +15,9 @@ constants:
   - name: BUILD_TARGET
     if: ne .OS.Name "Windows"
     value: state
+  - name: SVC_BUILDFLAGS
+    if: ne .OS.Name "Windows"
+    value: $constants.CLI_BUILDFLAGS
   - name: BUILD_SYSTRAY_TARGET
     if: ne .OS.Name "Windows"
     value: state-tray
@@ -38,6 +41,8 @@ constants:
   - name: BUILD_INSTALLER_TARGET
     if: ne .OS.Name "Windows"
     value: state-installer
+  - name: BUILD_REMOTE_INSTALLER_TARGET
+    value: state-remote-installer
   - name: SET_ENV
     description: The environment settings used throughout our project
     value: |
@@ -46,6 +51,7 @@ constants:
       GOROOT="${GOROOT:=`go env GOROOT`}"
       export CGO_ENABLED=0
       PATH="${GOROOT}/bin:${GOPATH}/bin:${PATH}"
+      BUILD_EXEC_TARGET=$constants.BUILD_EXEC_TARGET
 
       # add the GOARCH as infix to BUILD_TARGET_DIR if not amd64
       BUILD_TARGET_DIR=$constants.BUILD_TARGET_PREFIX_DIR/${GOARCH#amd64}
@@ -59,9 +65,13 @@ scripts:
       export GO111MODULE=on
       goflags="${GOFLAGS}"; unset GOFLAGS
       GOFLAGS="${goflags}"
+      pushd ~
+      go install github.com/ActiveState/gozip/cmd/gozip@e455986
+      popd
       $scripts.install-deps-os
   - name: install-deps-os
     language: bash
+    if: ne .OS.Name "Linux"
     description: Install OS specific deps
     value: ""
   - name: install-deps-os
@@ -69,18 +79,22 @@ scripts:
     language: bash
     description: Install OS specific deps
     value: |
-      aptin() {
+      echo "Installing OS Deps"
+      if type "apt" &> /dev/null; then
+        echo "Using apt"
         pkgs=""
-        for pkg in "${@}"; do
+        for pkg in "libgtk-3-dev libappindicator3-dev libwebkit2gtk-4.0-dev" ; do
           dpkg -s "${pkg}" &>/dev/null && continue
           pkgs="$pkgs ${pkg}"
         done
         if [ -n "${pkgs}" ]; then
           echo Installing packages "${pkgs}"
-          sudo apt-get update && sudo apt-get install ${pkgs} -y
+          sudo apt update && sudo apt install ${pkgs} -y
         fi
-      }
-      aptin libgtk-3-dev libappindicator3-dev libwebkit2gtk-4.0-dev
+      elif type "yum" &> /dev/null; then
+        echo "Using yum"
+        yum install -y gtk3-devel libappindicator-gtk3 webkitgtk4
+      fi
   - name: preprocess
     language: bash
     description: Generates assets required by the project that aren't just specific to the build
@@ -98,10 +112,6 @@ scripts:
       $constants.SET_ENV
 
       go build -tags "$GO_BUILD_TAGS" -o $BUILD_TARGET_DIR/$constants.BUILD_TARGET $constants.CLI_BUILDFLAGS $constants.CLI_PKGS
-
-      if [[ ! -z "${CI}" ]]; then
-        upx $BUILD_TARGET_DIR/$constants.BUILD_TARGET
-      fi
   - name: build-for
     language: bash
     description: Builds the project with the specified OS as the target OS. (valid values darwin, linux, windows)
@@ -119,10 +129,7 @@ scripts:
       set -e
       $constants.SET_ENV
 
-      go build -tags "$GO_BUILD_TAGS" -o $BUILD_TARGET_DIR/$constants.BUILD_DAEMON_TARGET $constants.CLI_BUILDFLAGS $constants.DAEMON_PKGS
-      if [[ ! -z "${CI}" ]]; then
-        upx $BUILD_TARGET_DIR/$constants.BUILD_DAEMON_TARGET
-      fi
+      go build -tags "$GO_BUILD_TAGS" -o $BUILD_TARGET_DIR/$constants.BUILD_DAEMON_TARGET $constants.SVC_BUILDFLAGS $constants.DAEMON_PKGS
   - name: build-tray
     description: Builds the State Tool system tray application
     language: bash
@@ -134,9 +141,6 @@ scripts:
       export CGO_ENABLED=1
 
       go build -tags "$GO_BUILD_TAGS" -o $BUILD_TARGET_DIR/$constants.BUILD_SYSTRAY_TARGET $constants.SYSTRAY_BUILDFLAGS $constants.SYSTRAY_PKGS
-      if [[ ! -z "${CI}" ]] && [[ ${ImageOS} != *mac* ]]; then
-        upx $BUILD_TARGET_DIR/$constants.BUILD_SYSTRAY_TARGET
-      fi
   - name: build-all
     description: Builds all our tools
     standalone: true
@@ -147,6 +151,8 @@ scripts:
       $scripts.build.path._posix()
       echo "Building State Installer"
       $scripts.build-installer.path._posix()
+      echo "Building State Remote Installer"
+      $scripts.build-remote-installer.path._posix()
       echo "Building State Service"
       $scripts.build-svc.path._posix()
       echo "Building State Tray App"
@@ -159,10 +165,20 @@ scripts:
       $constants.SET_ENV
 
       go build -tags "$GO_BUILD_TAGS" -o $BUILD_TARGET_DIR/$constants.BUILD_INSTALLER_TARGET $constants.INSTALLER_PKGS
-
-      if [[ ! -z "${CI}" ]]; then
-        upx $BUILD_TARGET_DIR/$constants.BUILD_INSTALLER_TARGET
+  - name: build-remote-installer
+    language: bash
+    description: Builds the state-remote-installer
+    value: |
+      set -e
+      $constants.SET_ENV
+      TARGET=$BUILD_REMOTE_INSTALLER_TARGET
+      if [[ "$GOOS" == "windows" || "$OS" == "Windows_NT" ]]; then
+        TARGET="${BUILD_REMOTE_INSTALLER_TARGET}.exe"
       fi
+      GOFLAGS="" go install github.com/josephspurrier/goversioninfo/cmd/goversioninfo@latest
+      cd cmd/state-remote-installer
+      go generate
+      go build -tags "$GO_BUILD_TAGS" -o ../../$BUILD_TARGET_DIR/$TARGET .
   - name: build-updlg-all
     description: Invokes all build steps for the update dialog
     standalone: true
@@ -235,7 +251,7 @@ scripts:
 
       echo "If using tokens make sure to run 'go run extras/aws-mfa-auth/main.go' on TheHomeRepot first."
 
-      go run scripts/s3-deployer/main.go ${constants.BUILD_TARGET_PREFIX_DIR}/update us-east-1 state-tool update/state
+      go run scripts/ci/s3-deployer/main.go ${constants.BUILD_TARGET_PREFIX_DIR}/update us-east-1 state-tool update/state
   - name: build-install-scripts
     language: bash
     standalone: true
@@ -275,11 +291,17 @@ scripts:
     language: bash
     description: Deploys update files to S3. This steps is automated by CI and should never be ran manually unless you KNOW WHAT YOU'RE DOING.
     value: |
-      go run scripts/s3-deployer/main.go build/installers us-east-1 state-tool update/state
+      go run scripts/ci/s3-deployer/main.go build/installers us-east-1 state-tool update/state
+  - name: deploy-remote-installer
+    language: bash
+    value: |
+      set -e
+      $constants.SET_ENV
+      go run scripts/ci/s3-deployer/main.go $BUILD_TARGET_DIR/remote-installer us-east-1 state-tool remote-installer
   - name: deploy-msi
     language: bash
     value: |
-      go run scripts/s3-deployer/main.go build/msi us-east-1 cli-msi /
+      go run scripts/ci/s3-deployer/main.go build/msi us-east-1 cli-msi /
   - name: build-workflow-assets
     language: bash
     description: Generates our github workflows
@@ -288,16 +310,15 @@ scripts:
       $scripts.build-for.path._posix() "linux" ./.github/deps/Linux/bin/state
       $scripts.build-for.path._posix() "darwin" ./.github/deps/macOS/bin/state
 
-      GOOS=windows go build -o .github/deps/Windows/bin/parallelize.exe github.com/ActiveState/cli/scripts/parallelize/
-      GOOS=linux go build -o .github/deps/Linux/bin/parallelize github.com/ActiveState/cli/scripts/parallelize/
-      GOOS=darwin go build -o .github/deps/macOS/bin/parallelize github.com/ActiveState/cli/scripts/parallelize/
-  -
-    name: update-workflow-assets
+      GOOS=windows go build -o .github/deps/Windows/bin/parallelize.exe github.com/ActiveState/cli/scripts/ci/parallelize/
+      GOOS=linux go build -o .github/deps/Linux/bin/parallelize github.com/ActiveState/cli/scripts/ci/parallelize/
+      GOOS=darwin go build -o .github/deps/macOS/bin/parallelize github.com/ActiveState/cli/scripts/ci/parallelize/
+  - name: update-workflow-assets
     language: bash
     description: Generates our github workflows
     value: |
       [ -z "${2}" ] && >&2 echo "Usage: update-workflow-assets [branch] [version]" && exit 1
-      
+
       tmpDir=$(mktemp -d)
       pushd $tmpDir
       wget https://state-tool.s3.amazonaws.com/update/state/${1}/${2}/darwin-amd64/state-darwin-amd64-${2}.tar.gz
@@ -306,7 +327,7 @@ scripts:
       cp -Rfv state-install/bin/state-svc $project.path()/.github/deps/macOS/bin
       popd
       rm -Rf $tmpDir
-      
+
       tmpDir=$(mktemp -d)
       pushd $tmpDir
       wget https://state-tool.s3.amazonaws.com/update/state/${1}/${2}/linux-amd64/state-linux-amd64-${2}.tar.gz
@@ -315,7 +336,7 @@ scripts:
       cp -Rfv state-install/bin/state-svc $project.path()/.github/deps/Linux/bin
       popd
       rm -Rf $tmpDir
-      
+
       tmpDir=$(mktemp -d)
       pushd $tmpDir
       wget https://state-tool.s3.amazonaws.com/update/state/${1}/${2}/windows-amd64/state-windows-amd64-${2}.zip
@@ -328,7 +349,7 @@ scripts:
     language: bash
     description: Runs unit tests (not integration tests)
     value: |
-      ACTIVESTATE_PROJECT="" go test -v `go list ./... | grep -v api | grep -v integration | grep -v expect | grep -v state-tray | grep -v state-svc`
+      ACTIVESTATE_PROJECT="" go test -v `go list ./... | grep -v api | grep -v integration | grep -v automation | grep -v expect | grep -v state-tray | grep -v state-svc`
     standalone: true
   - name: integration-tests
     language: bash
@@ -337,7 +358,7 @@ scripts:
       unset ACTIVESTATE_ACTIVATED
       export INTEGRATION_TEST_USERNAME=$secrets.project.INTEGRATION_TEST_USERNAME
       export INTEGRATION_TEST_PASSWORD=$secrets.project.INTEGRATION_TEST_PASSWORD
-      go test ./test/integration -v "${@:1}" -timeout 20m
+      go test `go list ./... | grep "integration\|automation"` -v "${@:1}" -timeout 20m
   - name: clean
     language: bash
     description: Cleans out the build dir.
@@ -385,6 +406,68 @@ scripts:
     language: bash
     description: "Runs linting for all files"
     value: golangci-lint run --no-config
+  - name: grab-mergecommits
+    language: bash
+    value: |
+      export JIRA_USERNAME=${secrets.user.JIRA_USERNAME}
+      export JIRA_TOKEN=${secrets.user.JIRA_TOKEN}
+      export GITHUB_TOKEN=${secrets.user.GITHUB_TOKEN}
+      go run $project.path()/scripts/grab-mergecommits/main.go $1
+  - name: target-version-pr
+    language: bash
+    value: |
+      export JIRA_USERNAME=${secrets.user.JIRA_USERNAME}
+      export JIRA_TOKEN=${secrets.user.JIRA_TOKEN}
+      export GITHUB_TOKEN=${secrets.user.GITHUB_TOKEN}
+      go run $project.path()/scripts/ci/target-version-pr/main.go $1
+  - name: create-version-pr
+    language: bash
+    value: |
+      export JIRA_USERNAME=${secrets.user.JIRA_USERNAME}
+      export JIRA_TOKEN=${secrets.user.JIRA_TOKEN}
+      export GITHUB_TOKEN=${secrets.user.GITHUB_TOKEN}
+      go run $project.path()/scripts/create-version-pr/main.go $1
+  - name: propagate-pr
+    language: bash
+    value: |
+      export JIRA_USERNAME=${secrets.user.JIRA_USERNAME}
+      export JIRA_TOKEN=${secrets.user.JIRA_TOKEN}
+      export GITHUB_TOKEN=${secrets.user.GITHUB_TOKEN}
+      go run $project.path()/scripts/ci/propagate-pr/main.go $1
+  - name: verify-pr
+    language: bash
+    value: |
+      export JIRA_USERNAME=${secrets.user.JIRA_USERNAME}
+      export JIRA_TOKEN=${secrets.user.JIRA_TOKEN}
+      export GITHUB_TOKEN=${secrets.user.GITHUB_TOKEN}
+      go run $project.path()/scripts/ci/verify-pr/main.go $1
+  - name: start-story
+    language: bash
+    value: |
+      export JIRA_USERNAME=${secrets.user.JIRA_USERNAME}
+      export JIRA_TOKEN=${secrets.user.JIRA_TOKEN}
+      export GITHUB_TOKEN=${secrets.user.GITHUB_TOKEN}
+      go run $project.path()/scripts/start-story/main.go "$@"
+  - name: ghapi
+    language: bash
+    value: |
+      curl \
+        -H "Accept: application/vnd.github+json" \
+        -H "Authorization: token ${secrets.user.GITHUB_TOKEN}" \
+        https://api.github.com/repos/ActiveState/cli/${1}
+  - name: benchmark-exec
+    if: eq .OS.Name "Linux"
+    language: bash
+    description: "Benchmarks executable leveraging highly sensitive/accurate tooling"
+    value: |
+      # example usage:
+      # state run benchmark-exec -- state-exec /tmp/state-ipc/my.sock /home/me/.cache/abcd1234/bin/python3 -c "print('123');"
+      if [[ "$(cat /proc/sys/kernel/perf_event_paranoid)" != "-1" ]]; then
+          sudo sh -c 'echo -1 >/proc/sys/kernel/perf_event_paranoid'
+      fi
+
+      perf stat -a -r 100 -B ${@} > /dev/null
+
 events:
   - name: activate
     if: ne .Shell "cmd"
@@ -403,5 +486,5 @@ events:
         go install github.com/go-swagger/go-swagger/cmd/swagger@v0.27.0
       fi
   - name: file-changed
-    scope: [ "internal/locale/locales" ]
+    scope: ["internal/locale/locales"]
     value: build

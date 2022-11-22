@@ -46,6 +46,7 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 		newExportConfigCommand(prime),
 		newExportGithubActionCommand(prime),
 		newExportDocsCommand(prime),
+		newExportEnvCommand(prime),
 	)
 
 	platformsCmd := newPlatformsCommand(prime)
@@ -65,7 +66,7 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 
 	cleanCmd := newCleanCommand(prime)
 	cleanCmd.AddChildren(
-		newCleanUninstallCommand(prime),
+		newCleanUninstallCommand(prime, globals),
 		newCleanCacheCommand(prime, globals),
 		newCleanConfigCommand(prime),
 	)
@@ -76,6 +77,7 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 		newDeployConfigureCommand(prime),
 		newDeploySymlinkCommand(prime),
 		newDeployReportCommand(prime),
+		newDeployUninstallCommand(prime),
 	)
 
 	tutorialCmd := newTutorialCommand(prime)
@@ -120,7 +122,9 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 	projectsCmd.AddChildren(newRemoteProjectsCommand(prime))
 
 	updateCmd := newUpdateCommand(prime)
-	updateCmd.AddChildren(newUpdateLockCommand(prime))
+	updateCmd.AddChildren(
+		newUpdateLockCommand(prime),
+		newUpdateUnlockCommand(prime))
 
 	branchCmd := newBranchCommand(prime)
 	branchCmd.AddChildren(
@@ -134,6 +138,16 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 
 	configCmd := newConfigCommand(prime)
 	configCmd.AddChildren(newConfigGetCommand(prime), newConfigSetCommand(prime))
+
+	checkoutCmd := newCheckoutCommand(prime)
+
+	useCmd := newUseCommand(prime)
+	useCmd.AddChildren(
+		newUseResetCommand(prime, globals),
+		newUseShowCommand(prime),
+	)
+
+	shellCmd := newShellCommand(prime)
 
 	stateCmd := newStateCommand(globals, prime)
 	stateCmd.AddChildren(
@@ -170,13 +184,16 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 		prepareCmd,
 		newProtocolCommand(prime),
 		newExecCommand(prime, args...),
-		newRevertCommand(prime),
-		newResetCommand(prime),
+		newRevertCommand(prime, globals),
+		newResetCommand(prime, globals),
 		secretsCmd,
 		branchCmd,
 		newLearnCommand(prime),
 		configCmd,
-		newUseCommand(prime),
+		checkoutCmd,
+		useCmd,
+		shellCmd,
+		newSwitchCommand(prime),
 	)
 
 	return &CmdTree{
@@ -279,6 +296,7 @@ func newStateCommand(globals *globalOptions, prime *primer.Values) *captain.Comm
 
 	cmdCall := cmdcall.New(prime)
 
+	cmd.SetHasVariableArguments()
 	cmd.SetInterceptChain(cmdCall.InterceptExec)
 
 	return cmd
@@ -322,6 +340,7 @@ func (a *addCmdAs) deprecatedAlias(aliased *captain.Command, name string) {
 	)
 
 	cmd.SetHidden(true)
+	cmd.SetHasVariableArguments()
 
 	a.parent.AddChildren(cmd)
 }

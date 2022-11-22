@@ -32,7 +32,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
-	"github.com/shirou/gopsutil/process"
+	"github.com/shirou/gopsutil/v3/process"
 )
 
 type Exec struct {
@@ -107,8 +107,8 @@ func (s *Exec) Run(params *Params, args ...string) error {
 				return locale.WrapInputError(err, "exec_no_project_at_path", "Could not find project file at {{.V0}}", params.Path)
 			}
 		}
-		if s.proj == nil {
-			return locale.NewError("exec_no_project_found", "Could not find a project.  You need to be in a project directory or specify a global default project via `state activate --default`")
+		if proj == nil {
+			return locale.NewInputError("exec_no_project_found", "Could not find a project.  You need to be in a project directory or specify a global default project via `state activate --default`")
 		}
 		projectDir = filepath.Dir(proj.Source().Path())
 		rtTarget = target.NewProjectTarget(proj, storage.CachePath(), nil, trigger)

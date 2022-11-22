@@ -94,8 +94,8 @@ type userJSON struct {
 
 func (suite *AuthIntegrationTestSuite) authOutput(method string) {
 	user := userJSON{
-		Username:        "cli-integration-tests",
-		URLName:         "cli-integration-tests",
+		Username:        e2e.PersistentUsername,
+		URLName:         e2e.PersistentUsername,
 		Tier:            "free_legacy",
 		PrivateProjects: false,
 	}

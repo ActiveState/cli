@@ -33,7 +33,7 @@ func (v *VirtualEnvironment) GetEnv(inherit bool, useExecutors bool, projectDir 
 	envMap := make(map[string]string)
 
 	// Source runtime environment information
-	if v.runtime != runtime.DisabledRuntime {
+	if !v.runtime.Disabled() {
 		var err error
 		envMap, err = v.runtime.Env(inherit, useExecutors)
 		if err != nil {
@@ -61,7 +61,7 @@ func (v *VirtualEnvironment) GetEnv(inherit bool, useExecutors bool, projectDir 
 	}
 
 	if inherit {
-		envMap = inheritEnv(envMap)
+		envMap = osutils.InheritEnv(envMap)
 	}
 
 	return envMap, nil

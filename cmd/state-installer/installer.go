@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	anaConst "github.com/ActiveState/cli/internal/analytics/constants"
-	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
@@ -121,15 +120,25 @@ func (i *Installer) Install() (rerr error) {
 		return errs.Wrap(err, "Failed to set current privilege level in config")
 	}
 
+	stateExec, err := installation.StateExecFromDir(binDir)
+	if err != nil {
+		return locale.WrapError(err, "err_state_exec")
+	}
+
 	// Run state _prepare after updates to facilitate anything the new version of the state tool might need to set up
 	// Yes this is awkward, followup story here: https://www.pivotaltracker.com/story/show/176507898
-	if stdout, stderr, err := exeutils.ExecSimple(appinfo.StateApp(binDir).Exec(), []string{"_prepare"}, []string{}); err != nil {
+	if stdout, stderr, err := exeutils.ExecSimple(stateExec, []string{"_prepare"}, []string{}); err != nil {
 		multilog.Error("_prepare failed after update: %v\n\nstdout: %s\n\nstderr: %s", err, stdout, stderr)
 	}
 
 	// Restart ActiveState Desktop, if it was running prior to installing
 	if trayRunning {
-		if _, err := exeutils.ExecuteAndForget(appinfo.TrayApp(binDir).Exec(), []string{}); err != nil {
+		trayExec, err := installation.TrayExecFromDir(binDir)
+		if err != nil {
+			return locale.WrapError(err, "err_tray_exec_dir", "", binDir)
+		}
+
+		if _, err := exeutils.ExecuteAndForget(trayExec, []string{}); err != nil {
 			multilog.Error("Could not start state-tray: %s", errs.JoinMessage(err))
 		}
 	}
@@ -201,9 +210,9 @@ func isStateExecutable(name string) bool {
 	return false
 }
 
-func installedOnPath(installRoot, branch string) (bool, string, error) {
+func installedOnPath(installRoot, branch string) (bool, string, string, error) {
 	if !fileutils.DirExists(installRoot) {
-		return false, "", nil
+		return false, "", "", nil
 	}
 
 	// This is not using appinfo on purpose because we want to deal with legacy installation formats, which appinfo does not
@@ -219,9 +228,9 @@ func installedOnPath(installRoot, branch string) (bool, string, error) {
 	}
 	for _, candidate := range candidates {
 		if fileutils.TargetExists(candidate) {
-			return true, installRoot, nil
+			return true, installRoot, candidate, nil
 		}
 	}
 
-	return false, installRoot, nil
+	return false, installRoot, stateCmd, nil
 }

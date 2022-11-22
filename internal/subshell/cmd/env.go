@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
 )
 
@@ -23,6 +24,7 @@ func NewCmdEnv(userScope bool) *CmdEnv {
 	if userScope {
 		openKeyFn = osutils.OpenUserKey
 	}
+	logging.Debug("Opening registry, userScope: %v", userScope)
 	return &CmdEnv{
 		openKeyFn: openKeyFn,
 		userScope: userScope,
@@ -40,11 +42,14 @@ func getEnvironmentPath(userScope bool) string {
 // It only does this if the value equals the expected value (meaning if we can verify that state tool was in fact
 // responsible for setting it)
 func (c *CmdEnv) unset(keyName, oldValue string) error {
-	key, err := c.openKeyFn(getEnvironmentPath(c.userScope))
+	envPath := getEnvironmentPath(c.userScope)
+	key, err := c.openKeyFn(envPath)
 	if err != nil {
 		return locale.WrapError(err, "err_windows_registry")
 	}
 	defer key.Close()
+
+	logging.Debug("Unsetting key %s in %s", keyName, envPath)
 
 	v, _, err := key.GetStringValue(keyName)
 	if err != nil {
@@ -62,6 +67,7 @@ func (c *CmdEnv) unset(keyName, oldValue string) error {
 
 	// Check if we are responsible for the value and delete if so
 	if v == oldValue {
+		logging.Debug("Removing environment key %s", keyName)
 		return key.DeleteValue(keyName)
 	}
 
@@ -69,9 +75,15 @@ func (c *CmdEnv) unset(keyName, oldValue string) error {
 }
 
 func cleanPath(keyValue, oldEntry string) string {
+	oldEntries := make(map[string]bool)
+	for _, entry := range strings.Split(oldEntry, string(os.PathListSeparator)) {
+		oldEntries[filepath.Clean(entry)] = true
+	}
+
 	var newValue []string
 	for _, entry := range strings.Split(keyValue, string(os.PathListSeparator)) {
-		if filepath.Clean(entry) == filepath.Clean(oldEntry) {
+		if oldEntries[filepath.Clean(entry)] {
+			logging.Debug("Dropping path entry: %s", entry)
 			continue
 		}
 		newValue = append(newValue, entry)
@@ -79,8 +91,8 @@ func cleanPath(keyValue, oldEntry string) string {
 	return strings.Join(newValue, string(os.PathListSeparator))
 }
 
-// setUserEnv sets a variable in the user environment and saves the original as a backup
-func (c *CmdEnv) set(name, newValue string) error {
+// Set sets a variable in the user environment and saves the original as a backup
+func (c *CmdEnv) Set(name, newValue string) error {
 	key, err := c.openKeyFn(getEnvironmentPath(c.userScope))
 	if err != nil {
 		return locale.WrapError(err, "err_windows_registry")

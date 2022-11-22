@@ -22,20 +22,22 @@ import (
 	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/installmgr"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/osutils/stacktrace"
 	"github.com/ActiveState/cli/internal/rtutils/singlethread"
 	"github.com/ActiveState/cli/internal/strutils"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
-	auth "github.com/ActiveState/cli/pkg/platform/authentication"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
+	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/ActiveState/termtest"
 	"github.com/ActiveState/termtest/expect"
+	"github.com/go-openapi/strfmt"
 	"github.com/google/uuid"
 	"github.com/phayes/permbits"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v2"
-
-	"github.com/ActiveState/cli/internal/appinfo"
 )
 
 // Session represents an end-to-end testing session during which several console process can be spawned and tested
@@ -44,17 +46,17 @@ import (
 // The session is approximately the equivalent of a terminal session, with the
 // main difference processes in this session are not spawned by a shell.
 type Session struct {
-	cp         *termtest.ConsoleProcess
-	Dirs       *Dirs
-	env        []string
-	retainDirs bool
+	cp              *termtest.ConsoleProcess
+	Dirs            *Dirs
+	env             []string
+	retainDirs      bool
+	createdProjects []*project.Namespaced
 	// users created during session
-	users        []string
-	t            *testing.T
-	Exe          string
-	SvcExe       string
-	TrayExe      string
-	InstallerExe string
+	users   []string
+	t       *testing.T
+	Exe     string
+	SvcExe  string
+	TrayExe string
 }
 
 // Options for spawning a testable terminal process
@@ -143,30 +145,26 @@ func (s *Session) copyExeToBinDir(executable string) string {
 	return s.CopyExeToDir(executable, s.Dirs.Bin)
 }
 
-// sourceExecutablePath returns the path to the state tool that we want to test
-func executablePaths(t *testing.T) (string, string, string, string) {
+// executablePaths returns the paths to the executables that we want to test
+func executablePaths(t *testing.T) (string, string, string) {
 	root := environment.GetRootPathUnsafe()
 	buildDir := fileutils.Join(root, "build")
 
-	stateInfo := appinfo.StateApp(buildDir)
-	svcInfo := appinfo.SvcApp(buildDir)
-	trayInfo := appinfo.TrayApp(buildDir)
-	installInfo := appinfo.InstallerApp(buildDir)
+	stateExec := filepath.Join(buildDir, constants.StateCmd+osutils.ExeExt)
+	svcExec := filepath.Join(buildDir, constants.StateSvcCmd+osutils.ExeExt)
+	trayExec := filepath.Join(buildDir, constants.StateTrayCmd+osutils.ExeExt)
 
-	if !fileutils.FileExists(stateInfo.Exec()) {
+	if !fileutils.FileExists(stateExec) {
 		t.Fatal("E2E tests require a State Tool binary. Run `state run build`.")
 	}
-	if !fileutils.FileExists(svcInfo.Exec()) {
+	if !fileutils.FileExists(svcExec) {
 		t.Fatal("E2E tests require a state-svc binary. Run `state run build-svc`.")
 	}
-	if !fileutils.FileExists(trayInfo.Exec()) {
+	if !fileutils.FileExists(trayExec) {
 		t.Fatal("E2E tests require a state-tray binary. Run `state run build-tray`.")
 	}
-	if !fileutils.FileExists(installInfo.Exec()) {
-		t.Fatal("E2E tests require a state-installer binary. Run `state run build-installer`.")
-	}
 
-	return stateInfo.Exec(), svcInfo.Exec(), trayInfo.Exec(), installInfo.Exec()
+	return stateExec, svcExec, trayExec
 }
 
 func New(t *testing.T, retainDirs bool, extraEnv ...string) *Session {
@@ -204,11 +202,10 @@ func new(t *testing.T, retainDirs, updatePath bool, extraEnv ...string) *Session
 	session := &Session{Dirs: dirs, env: env, retainDirs: retainDirs, t: t}
 
 	// Mock installation directory
-	exe, svcExe, trayExe, installExe := executablePaths(t)
+	exe, svcExe, trayExe := executablePaths(t)
 	session.Exe = session.copyExeToBinDir(exe)
 	session.SvcExe = session.copyExeToBinDir(svcExe)
 	session.TrayExe = session.copyExeToBinDir(trayExe)
-	session.InstallerExe = session.CopyExeToDir(installExe, dirs.Base)
 
 	err = fileutils.Touch(filepath.Join(dirs.Base, installation.InstallDirMarker))
 	require.NoError(session.t, err)
@@ -387,6 +384,25 @@ func (s *Session) CreateNewUser() string {
 	return username
 }
 
+// NotifyProjectCreated indicates that the given project was created on the Platform and needs to
+// be deleted when the session is closed.
+// This only needs to be called for projects created by PersistentUsername, not projects created by
+// users created with CreateNewUser(). Created users' projects are auto-deleted.
+func (s *Session) NotifyProjectCreated(org, name string) {
+	s.createdProjects = append(s.createdProjects, project.NewNamespace(org, name, ""))
+}
+
+const deleteUUIDProjects = "__delete_uuid_projects" // some unique project name
+
+// DeleteUUIDProjects indicates that all projects with UUID names (i.e. autogenerated) for the given
+// org should be deleted when the session is closed.
+// This should not be called from generic integration tests. Use NotifyProjectCreated() instead,
+// because there could be race conditions if multiple platforms are creating and using UUID
+// projects.
+func (s *Session) DeleteUUIDProjects(org string) {
+	s.NotifyProjectCreated(org, deleteUUIDProjects)
+}
+
 func observeSendFn(s *Session) func(string, int, error) {
 	return func(msg string, num int, err error) {
 		if err == nil {
@@ -415,7 +431,7 @@ func (s *Session) DebugMessage(prefix string) string {
 	}
 
 	v, err := strutils.ParseTemplate(`
-{{.Prefix}}{{.A}}Stack: 
+{{.Prefix}}{{.A}}Stack:
 {{.Stacktrace}}{{.Z}}
 {{.A}}Terminal snapshot:
 {{.FullSnapshot}}{{.Z}}
@@ -423,12 +439,15 @@ func (s *Session) DebugMessage(prefix string) string {
 {{.StateLog}}{{.Z}}
 {{.A}}State Svc Log:
 {{.SvcLog}}{{.Z}}
+{{.A}}State Installer Log:
+{{.InstallerLog}}{{.Z}}
 `, map[string]interface{}{
 		"Prefix":       prefix,
 		"Stacktrace":   stacktrace.Get().String(),
 		"FullSnapshot": snapshot,
 		"StateLog":     s.MostRecentStateLog(),
 		"SvcLog":       s.SvcLog(),
+		"InstallerLog": s.InstallerLog(),
 		"A":            sectionStart,
 		"Z":            sectionEnd,
 	})
@@ -474,6 +493,8 @@ Error: {{.Error}}
 {{.StateLog}}{{.Z}}
 {{.A}}State Svc Log:
 {{.SvcLog}}{{.Z}}
+{{.A}}State Installer Log:
+{{.InstallerLog}}{{.Z}}
 `, map[string]interface{}{
 			"Expectation":     value,
 			"Error":           err,
@@ -483,6 +504,7 @@ Error: {{.Error}}
 			"ParsedOutput":    fmt.Sprintf("%+q", ms.Buf.String()),
 			"StateLog":        s.MostRecentStateLog(),
 			"SvcLog":          s.SvcLog(),
+			"InstallerLog":    s.InstallerLog(),
 			"A":               sectionStart,
 			"Z":               sectionEnd,
 		})
@@ -519,16 +541,76 @@ func (s *Session) Close() error {
 		return nil
 	}
 
-	a := auth.New(cfg)
+	auth := authentication.New(cfg)
+
+	if os.Getenv(constants.APIHostEnvVarName) == "" {
+		err := os.Setenv(constants.APIHostEnvVarName, constants.DefaultAPIHost)
+		if err != nil {
+			return err
+		}
+		defer func() {
+			os.Unsetenv(constants.APIHostEnvVarName)
+		}()
+	}
+
+	err = auth.AuthenticateWithModel(&mono_models.Credentials{
+		Token: os.Getenv("PLATFORM_API_TOKEN"),
+	})
+	if err != nil {
+		return err
+	}
+
+	if len(s.createdProjects) > 0 && s.createdProjects[0].Project == deleteUUIDProjects {
+		org := s.createdProjects[0].Owner
+		s.createdProjects = make([]*project.Namespaced, 0) // reset
+		// When deleting UUID projects, only do it on one platform in order to avoid race conditions.
+		if runtime.GOOS == "linux" {
+			projects, err := getProjects(org, auth)
+			if err != nil {
+				s.t.Errorf("Could not fetch projects: %v", errs.JoinMessage(err))
+			}
+			for _, proj := range projects {
+				if strfmt.IsUUID(proj.Name) {
+					s.NotifyProjectCreated(org, proj.Name)
+				}
+			}
+		}
+	}
+
+	for _, proj := range s.createdProjects {
+		err := deleteProject(proj.Owner, proj.Project, auth)
+		if err != nil {
+			s.t.Errorf("Could not delete project %s: %v", proj.Project, errs.JoinMessage(err))
+		}
+	}
 
 	for _, user := range s.users {
-		err := cleanUser(s.t, user, a)
+		err := cleanUser(s.t, user, auth)
 		if err != nil {
 			s.t.Errorf("Could not delete user %s: %v", user, errs.JoinMessage(err))
 		}
 	}
 
 	return nil
+}
+
+func (s *Session) InstallerLog() string {
+	logDir := filepath.Join(s.Dirs.Config, "logs")
+	if !fileutils.DirExists(logDir) {
+		return ""
+	}
+	files := fileutils.ListDirSimple(logDir, false)
+	lines := []string{}
+	for _, file := range files {
+		if !strings.HasPrefix(filepath.Base(file), "state-installer") {
+			continue
+		}
+		b := fileutils.ReadFileUnsafe(file)
+		lines = append(lines, filepath.Base(file)+":"+strings.Split(string(b), "\n")[0])
+		return string(b) + "\n\nCurrent time: " + time.Now().String()
+	}
+
+	return fmt.Sprintf("Could not find state-installer log, checked under %s, found: \n%v\n, files: \n%v\n", logDir, lines, files)
 }
 
 func (s *Session) SvcLog() string {

@@ -6,6 +6,93 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+### 0.35.0
+
+We are introducing a set of new environment management commands that will
+eventually replace `state activate`. The intend behind this is to make the
+use-cases currently covered by the activate command more explicit, so that users
+have more control over their workflow.
+
+In short; we're introducing the following commands:
+
+- *checkout* - Checkout the given project and setup its runtime
+    - A checkout is required before you can use any of the following commands
+- *use* - Use the given project runtime as the default for your system
+    - *reset* - Reset your default project runtime (this also resets the project
+      configured via `state activate --default`)
+    - *show* - Show your default project runtime
+- *shell* - Starts a shell/prompt for the given project runtime (equivalent of
+  virtualenv)
+- *switch* - Switch to a branch or commit
+
+All of the above commands are currently marked as unstable, meaning you cannot
+use them unless you opt-in to unstable commands with
+`state config set optin.unstable true`.
+This is to give us time to test and improve the commands without necessarily
+ensuring backward compatibility. These commands have been thoroughly tested, but
+since they are new bugs are still more likely than with stable commands.
+
+Note that `state activate` will still be available for the foreseeable future.
+
+### Added
+
+- Added new environment management commands (see above for details)
+    - Added `state checkout` command.
+    - Added `state use` command.
+    - Added `state use reset` command.
+    - Added `state use show` command.
+    - Added `state shell` command.
+    - Added `state switch` command.
+- Added `state export env` command - Export the environment variables associated
+  with your runtime.
+- Added `state deploy uninstall` command for reverting a `state deploy`.
+- Added `state update unlock` command, which undoes what `state update lock`
+  does.
+- Runtime artifacts are now cached, speeding up runtime setup and reducing
+  network traffic.
+    - The cache is capped at 500mb. This can be overridden with
+      the `ACTIVESTATE_ARTIFACT_CACHE_SIZE_MB` environment variable (value is
+      MB's as an int).
+
+### Changed
+
+- State tool will now error out when passed superfluous arguments (
+  eg. `state activate name/space superfluos-arg`).
+- The installer will no longer show debug error messages.
+- We now start the background service automatically when you boot your machine.
+- State tool now configures all compatible shells that were found on the users
+  system.
+- We now report how far ahead / behind you are from your branch when
+  running `state show`.
+
+### Fixed
+
+- Fixed State Tool being unusable on M1 Macs running Ventura.
+- Fixed `~/.cshrc` not being respected when using `tcsh`.
+- Fixed `-v` flag not working when using `install.sh` to install State Tool.
+- Fixed state tool background service closing prematurely.
+- Fixed bash scripts on Windows using the wrong path format.
+- Fixed a variety of missing/wrong localisation issues.
+- Fixed `state invite` resulting with response code error message.
+- Fixed various issues where running with `--non-interactive` would not have
+  the desired behavior.
+- Fixed `state config set` accepting invalid values for booleans.
+- Fixed `state exec` not respecting the `--path` flag.
+- Fixed issue where PYTHONPATH would be set up with a temp directory on macOS.
+    - This still worked as expected in the end, but is obviously awkward.
+- Fixed panic when running `state secrets get` without a project.
+- Fixed issue where `state learn` would give an unhelpful error when it could
+  not reach the browser.
+- Fixed `state show` not working for private projects.
+- Fixed variables as arguments to executors (eg. python3.exe) not being expanded
+  properly.
+- Fixed state tool interpreting `-v` flag when its passed through `state run` or
+  `state exec` but not intended for the state tool.
+- Fixed State Tool being added to PATH multiple times.
+- Fixed unstable commands reporting `--help` info when passed invalid
+  arguments, instead of saying the command is unstable and you should opt in.
+- Fixed `state uninstall` with a non-existent package reporting the wrong error.
+
 ### 0.34.1
 
 ### Changed

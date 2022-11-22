@@ -34,6 +34,22 @@ func TestParseNamespace_Invalid(t *testing.T) {
 	assert.Error(t, err, "should get error with valid namespace and invalid commit id (basic hex and dash filter)")
 }
 
+func TestParseProjectNoOwner(t *testing.T) {
+	parsed, err := ParseProjectNoOwner("project")
+	assert.NoError(t, err, "should be able to parse project part of namspace")
+	assert.Empty(t, parsed.Owner)
+	assert.Equal(t, parsed.Project, "project")
+	assert.Empty(t, parsed.CommitID)
+	assert.True(t, parsed.AllowOmitOwner)
+
+	parsed, err = ParseProjectNoOwner("project#a10-b11c12-d13e14-f15")
+	assert.NoError(t, err, "should be able to parse project part of namspace")
+	assert.Empty(t, parsed.Owner)
+	assert.Equal(t, parsed.Project, "project")
+	assert.Equal(t, *parsed.CommitID, strfmt.UUID("a10-b11c12-d13e14-f15"))
+	assert.True(t, parsed.AllowOmitOwner)
+}
+
 func TestParseNamespaceOrConfigfile(t *testing.T) {
 	rootpath, err := environment.GetRootPath()
 	if err != nil {

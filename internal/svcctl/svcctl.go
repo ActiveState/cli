@@ -13,11 +13,11 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/ipc"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -56,7 +56,7 @@ func NewDefaultIPCClient() *ipc.Client {
 	return ipc.NewClient(NewIPCSockPathFromGlobals())
 }
 
-func EnsureExecStartedAndLocateHTTP(ipComm IPCommunicator, exec string) (addr string, err error) {
+func EnsureExecStartedAndLocateHTTP(ipComm IPCommunicator, exec, argText string) (addr string, err error) {
 	defer profile.Measure("svcctl:EnsureExecStartedAndLocateHTTP", time.Now())
 
 	addr, err = LocateHTTP(ipComm)
@@ -70,7 +70,7 @@ func EnsureExecStartedAndLocateHTTP(ipComm IPCommunicator, exec string) (addr st
 		ctx, cancel := context.WithTimeout(context.Background(), commonTimeout)
 		defer cancel()
 
-		if err := startAndWait(ctx, ipComm, exec); err != nil {
+		if err := startAndWait(ctx, ipComm, exec, argText); err != nil {
 			return "", errs.Wrap(err, "Cannot start service at %q", exec)
 		}
 
@@ -83,8 +83,12 @@ func EnsureExecStartedAndLocateHTTP(ipComm IPCommunicator, exec string) (addr st
 	return addr, nil
 }
 
-func EnsureStartedAndLocateHTTP() (addr string, err error) {
-	return EnsureExecStartedAndLocateHTTP(NewDefaultIPCClient(), appinfo.SvcApp().Exec())
+func EnsureStartedAndLocateHTTP(argText string) (addr string, err error) {
+	svcExec, err := installation.ServiceExec()
+	if err != nil {
+		return "", locale.WrapError(err, "err_service_exec")
+	}
+	return EnsureExecStartedAndLocateHTTP(NewDefaultIPCClient(), svcExec, argText)
 }
 
 func LocateHTTP(ipComm IPCommunicator) (addr string, err error) {
@@ -133,14 +137,17 @@ func StopServer(ipComm IPCommunicator) error {
 	return nil
 }
 
-func startAndWait(ctx context.Context, ipComm IPCommunicator, exec string) error {
+func startAndWait(ctx context.Context, ipComm IPCommunicator, exec, argText string) error {
 	defer profile.Measure("svcmanager:Start", time.Now())
 
 	if !fileutils.FileExists(exec) {
 		return locale.NewError("svcctl_file_not_found", "Service executable not found")
 	}
 
-	args := []string{"foreground"}
+	args := []string{"foreground", argText}
+	if argText == "" {
+		args = args[:len(args)-1]
+	}
 
 	if _, err := exeutils.ExecuteAndForget(exec, args); err != nil {
 		return locale.WrapError(err, "svcctl_cannot_exec_and_forget", "Cannot execute service in background: {{.V0}}", err.Error())

@@ -37,7 +37,7 @@ func (o projectWithOrgs) MarshalOutput(f output.Format) interface{} {
 	for _, v := range o {
 		checkouts := []string{}
 		for _, checkout := range v.LocalCheckouts {
-			checkouts = append(checkouts, locale.Tl("projects_local_chekcout", " └─ ✔ Local Checkout → {{.V0}}", checkout))
+			checkouts = append(checkouts, locale.Tl("projects_local_checkout", " └─ ✔ Local Checkout → {{.V0}}", checkout))
 		}
 		r = append(r, projectOutputPlain{v.Name, v.Organization, strings.Join(checkouts, "\n")})
 	}
@@ -99,6 +99,9 @@ func (r *Projects) Run(params *Params) error {
 		})
 	}
 	sort.SliceStable(projects, func(i, j int) bool {
+		if projects[i].Organization == projects[j].Organization {
+			return projects[i].Name < projects[j].Name
+		}
 		return projects[i].Organization < projects[j].Organization
 	})
 

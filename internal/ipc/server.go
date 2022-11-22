@@ -47,7 +47,6 @@ func NewServer(topCtx context.Context, spath *SockPath, reqHandlers ...RequestHa
 		reqHandlers: make([]RequestHandler, 0, len(reqHandlers)+2),
 		ctx:         ctx,
 		cancel:      cancel,
-		errsc:       make(chan error),
 		donec:       make(chan struct{}),
 	}
 
@@ -86,6 +85,8 @@ func (ipc *Server) Start() error {
 			return errs.Wrap(err, "Cannot construct file listener after file cleanup")
 		}
 	}
+
+	ipc.errsc = make(chan error) // errsc setup here so wait fn can know if start call was ok
 
 	go func() {
 		var wg sync.WaitGroup
@@ -137,6 +138,10 @@ func (ipc *Server) Shutdown() {
 }
 
 func (ipc *Server) Wait() error {
+	if ipc.errsc == nil {
+		return nil
+	}
+
 	var retErr error
 	for err := range ipc.errsc {
 		if err != nil && retErr == nil {

@@ -27,6 +27,7 @@ import (
 	"github.com/ActiveState/cli/internal/runbits/panics"
 	"github.com/ActiveState/cli/internal/svcctl"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
+	"github.com/inconshreveable/mousetrap"
 )
 
 const (
@@ -99,6 +100,12 @@ func run(cfg *config.Instance) error {
 		return errs.Wrap(err, "Could not initialize outputer")
 	}
 
+	if mousetrap.StartedByExplorer() {
+		// Allow starting the svc via a double click
+		captain.DisableMousetrap()
+		return runStart(out, "svc-start:mouse")
+	}
+
 	p := primer.New(nil, out, nil, nil, nil, nil, cfg, nil, nil, an)
 
 	cmd := captain.NewCommand(
@@ -109,6 +116,8 @@ func run(cfg *config.Instance) error {
 		},
 	)
 
+	var foregroundArgText string
+
 	cmd.AddChildren(
 		captain.NewCommand(
 			cmdStart,
@@ -117,7 +126,7 @@ func run(cfg *config.Instance) error {
 			p, nil, nil,
 			func(ccmd *captain.Command, args []string) error {
 				logging.Debug("Running CmdStart")
-				return runStart(out)
+				return runStart(out, "svc-start:cli")
 			},
 		),
 		captain.NewCommand(
@@ -144,13 +153,20 @@ func run(cfg *config.Instance) error {
 			cmdForeground,
 			"Starting the ActiveState Service",
 			"Start the ActiveState Service (Foreground)",
-			p, nil, nil,
+			p, nil,
+			[]*captain.Argument{
+				{
+					Name:        "Arg text",
+					Description: "Argument text of calling process to be reported if this application is started too often",
+					Value:       &foregroundArgText,
+				},
+			},
 			func(ccmd *captain.Command, args []string) error {
 				logging.Debug("Running CmdForeground")
 				if err := auth.Sync(); err != nil {
 					logging.Warning("Could not sync authenticated state: %s", err.Error())
 				}
-				return runForeground(cfg, an, auth)
+				return runForeground(cfg, an, auth, foregroundArgText)
 			},
 		),
 	)
@@ -158,7 +174,7 @@ func run(cfg *config.Instance) error {
 	return cmd.Execute(args[1:])
 }
 
-func runForeground(cfg *config.Instance, an *anaSync.Client, auth *authentication.Auth) error {
+func runForeground(cfg *config.Instance, an *anaSync.Client, auth *authentication.Auth, argText string) error {
 	logging.Debug("Running in Foreground")
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -166,8 +182,12 @@ func runForeground(cfg *config.Instance, an *anaSync.Client, auth *authenticatio
 
 	p := NewService(ctx, cfg, an, auth)
 
+	if argText != "" {
+		argText = fmt.Sprintf(" (invoked by %q)", argText)
+	}
+
 	if err := p.Start(); err != nil {
-		return errs.Wrap(err, "Could not start service")
+		return errs.Wrap(err, "Could not start service"+argText)
 	}
 
 	// Handle sigterm
@@ -192,6 +212,15 @@ func runForeground(cfg *config.Instance, an *anaSync.Client, auth *authenticatio
 	signal.Notify(sig, os.Interrupt, syscall.SIGTERM)
 	defer signal.Stop(sig)
 
+	p.RunIfNotAuthority(time.Second*3, svcctl.NewDefaultIPCClient(), func(err error) {
+		fmt.Fprintln(os.Stderr, err)
+
+		cancel()
+		if err := p.Stop(); err != nil {
+			multilog.Critical("Service stop failed: %v", errs.JoinMessage(err))
+		}
+	})
+
 	if err := p.Wait(); err != nil {
 		return errs.Wrap(err, "Failure while waiting for server stop")
 	}
@@ -199,8 +228,8 @@ func runForeground(cfg *config.Instance, an *anaSync.Client, auth *authenticatio
 	return nil
 }
 
-func runStart(out output.Outputer) error {
-	if _, err := svcctl.EnsureStartedAndLocateHTTP(); err != nil {
+func runStart(out output.Outputer, argText string) error {
+	if _, err := svcctl.EnsureStartedAndLocateHTTP(argText); err != nil {
 		if errors.Is(err, ipc.ErrInUse) {
 			out.Print("A State Service instance is already running in the background.")
 			return nil

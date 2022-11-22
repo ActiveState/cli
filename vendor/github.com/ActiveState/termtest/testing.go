@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/ActiveState/termtest/expect"
+	expect "github.com/ActiveState/termtest/expect"
 	"github.com/ActiveState/termtest/internal/osutils/stacktrace"
 )
 
@@ -39,7 +39,7 @@ func TestExpectObserveFn(t *testing.T) expect.ExpectObserver {
 
 		t.Fatalf(
 			"Could not meet expectation: Expectation: '%s'\nError: %v at\n%s\n---\nTerminal snapshot:\n%s\n---\nParsed output:\n%+q\n",
-			value, err, stacktrace.Get().String(), ms.TermState.String(), ms.Buf.String(),
+			value, err, stacktrace.Get().String(), ms.TermState.StringBeforeCursor(), ms.Buf.String(),
 		)
 	}
 }

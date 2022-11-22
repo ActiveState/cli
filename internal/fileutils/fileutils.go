@@ -171,8 +171,8 @@ func DirExists(path string) bool {
 	return mode.IsDir()
 }
 
-// Hash will sha256 hash the given file
-func Hash(path string) (string, error) {
+// Sha256Hash will sha256 hash the given file
+func Sha256Hash(path string) (string, error) {
 	hasher := sha256.New()
 	b, err := ioutil.ReadFile(path)
 	if err != nil {
@@ -263,6 +263,16 @@ func CopyFile(src, target string) error {
 	err = out.Close()
 	if err != nil {
 		return errs.Wrap(err, "out.Close failed")
+	}
+	return nil
+}
+
+func CopyMultipleFiles(files map[string]string) error {
+	for src, target := range files {
+		err := CopyFile(src, target)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -946,6 +956,19 @@ func ListDirSimple(sourcePath string, includeDirs bool) []string {
 		result = append(result, path)
 		return nil
 	})
+	return result
+}
+
+// ListFilesUnsafe lists filepaths under the given sourcePath non-recursively
+func ListFilesUnsafe(sourcePath string) []string {
+	result := []string{}
+	files, err := ioutil.ReadDir(sourcePath)
+	if err != nil {
+		panic(fmt.Sprintf("Could not read dir: %s, error: %s", sourcePath, errs.JoinMessage(err)))
+	}
+	for _, file := range files {
+		result = append(result, filepath.Join(sourcePath, file.Name()))
+	}
 	return result
 }
 

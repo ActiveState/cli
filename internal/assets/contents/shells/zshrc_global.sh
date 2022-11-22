@@ -1,6 +1,6 @@
+{{if ne .Project ""}}
 export PS1="[{{.Project}}] $PS1"
-
-precmd() { eval "$PROMPT_COMMAND" }
+{{- end}}
 
 {{- range $K, $V := .Env}}
 {{- if eq $K "PATH"}}

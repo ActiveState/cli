@@ -3,7 +3,17 @@ package export
 import (
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/primer"
 )
+
+type primeable interface {
+	primer.Auther
+	primer.Outputer
+	primer.Configurer
+	primer.Projecter
+	primer.Analyticer
+	primer.SvcModeler
+}
 
 type Export struct{}
 

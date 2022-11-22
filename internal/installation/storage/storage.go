@@ -121,6 +121,12 @@ func GlobalBinDir() string {
 	return filepath.Join(CachePath(), "bin")
 }
 
+// ArtifactCacheDir is where cached artifacts are stored.
+// This is a shared cache for downloaded artifacts, not installed artifacts.
+func ArtifactCacheDir() string {
+	return filepath.Join(CachePath(), constants.ArtifactMetaDir)
+}
+
 // InstallSource returns the installation source of the State Tool
 func InstallSource() (string, error) {
 	path, err := AppDataPath()
@@ -135,4 +141,10 @@ func InstallSource() (string, error) {
 	}
 
 	return strings.TrimSpace(string(installFileData)), nil
+}
+
+// Avoid circular import of "internal/config"
+type configReader interface {
+	IsSet(string) bool
+	GetString(string) string
 }

@@ -70,3 +70,30 @@ func newUpdateLockCommand(prime *primer.Values) *captain.Command {
 	cmd.SetSkipChecks(true)
 	return cmd
 }
+
+func newUpdateUnlockCommand(prime *primer.Values) *captain.Command {
+	runner := update.NewUnlock(prime)
+	params := update.UnlockParams{}
+
+	cmd := captain.NewCommand(
+		"unlock",
+		locale.Tl("unlock_title", "Unlock the State Tool version"),
+		locale.Tl("unlock_description", "Unlock the State Tool version for the current project."),
+		prime,
+		[]*captain.Flag{
+			{
+				Name: "force",
+				Description: locale.Tl(
+					"flag_update_unlock_force",
+					"Automatically confirm that you would like to remove the lock."),
+				Value: &params.Force,
+			},
+		},
+		[]*captain.Argument{},
+		func(cmd *captain.Command, args []string) error {
+			return runner.Run(&params)
+		},
+	)
+	cmd.SetSkipChecks(true)
+	return cmd
+}

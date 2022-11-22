@@ -20,7 +20,6 @@ func (suite *InfoIntegrationTestSuite) TestInfo_LatestVersion() {
 	cp := ts.Spawn("info", "pylint", "--language", "python")
 	cp.Expect("Details for version")
 	cp.Expect("Authors")
-	cp.Expect("Python Code Quality Authority")
 	cp.Expect("Version(s) Available")
 	cp.ExpectExitCode(0)
 }

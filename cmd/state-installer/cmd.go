@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -10,7 +11,6 @@ import (
 
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/analytics/client/sync"
-	"github.com/ActiveState/cli/internal/appinfo"
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
@@ -29,8 +29,10 @@ import (
 	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/ActiveState/cli/internal/runbits/panics"
 	"github.com/ActiveState/cli/internal/subshell"
+	"github.com/ActiveState/cli/pkg/cmdlets/errors"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/sysinfo"
+	"golang.org/x/crypto/ssh/terminal"
 )
 
 const AnalyticsCat = "installer"
@@ -78,6 +80,9 @@ func main() {
 	logging.CurrentHandler().SetVerbose(os.Getenv("VERBOSE") != "")
 	// Set up rollbar reporting
 	rollbar.SetupRollbar(constants.StateInstallerRollbarToken)
+
+	// Allow starting the installer via a double click
+	captain.DisableMousetrap()
 
 	// Set up configuration handler
 	var err error
@@ -191,21 +196,20 @@ func main() {
 	if err != nil {
 		if locale.IsInputError(err) {
 			an.EventWithLabel(AnalyticsCat, "input-error", errs.JoinMessage(err))
-			multilog.Error("Installer input error: " + errs.JoinMessage(err))
+			logging.Debug("Installer input error: " + errs.JoinMessage(err))
 		} else {
 			an.EventWithLabel(AnalyticsCat, "error", errs.JoinMessage(err))
 			multilog.Critical("Installer error: " + errs.JoinMessage(err))
 		}
 
-		exitCode = errs.UnwrapExitCode(err)
-		an.EventWithLabel(AnalyticsFunnelCat, "fail", err.Error())
-		if !errs.IsSilent(err) {
-			out.Error(err.Error())
+		an.EventWithLabel(AnalyticsFunnelCat, "fail", errs.JoinMessage(err))
+		exitCode, err = errors.Unwrap(err)
+		if err != nil {
+			out.Error(err)
 		}
-		return
+	} else {
+		an.Event(AnalyticsFunnelCat, "success")
 	}
-
-	an.Event(AnalyticsFunnelCat, "success")
 }
 
 func execute(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher, args []string, params *Params) error {
@@ -220,7 +224,7 @@ func execute(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher,
 	}
 
 	// Detect installed state tool
-	stateToolInstalled, installPath, err := installedOnPath(params.path, constants.BranchName)
+	stateToolInstalled, installPath, stateExePath, err := installedOnPath(params.path, constants.BranchName)
 	if err != nil {
 		return errs.Wrap(err, "Could not detect if State Tool is already installed.")
 	}
@@ -236,7 +240,7 @@ func execute(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher,
 			return errs.Wrap(err, "Could not check if install path is empty")
 		}
 		if !empty {
-			return locale.NewInputError("err_install_nonempty_dir", "Installation path must be an empty directory")
+			return locale.NewInputError("err_install_nonempty_dir", "Installation path must be an empty directory: {{.V0}}", params.path)
 		}
 	}
 
@@ -249,6 +253,12 @@ func execute(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher,
 	if !params.isUpdate {
 		packagedStateExe := filepath.Join(payloadPath, installation.BinDirName, constants.StateCmd+exeutils.Extension)
 		params.isUpdate = determineLegacyUpdate(stateToolInstalled, packagedStateExe, payloadPath, params)
+	}
+
+	// If the state tool is already installed, but out of date, continue with update flow.
+	if stateToolInstalled && !params.isUpdate && !params.force && shouldUpdateInstalledStateTool(stateExePath) {
+		logging.Debug("Installed state tool should be updated, switching to update flow.")
+		params.isUpdate = true
 	}
 
 	route := "install"
@@ -330,10 +340,14 @@ func postInstallEvents(out output.Outputer, cfg *config.Instance, an analytics.D
 		return errs.Wrap(err, "Could not resolve installation path")
 	}
 
-	stateExe := appinfo.StateApp(installPath).Exec()
 	binPath, err := installation.BinPathFromInstallPath(installPath)
 	if err != nil {
 		return errs.Wrap(err, "Could not detect installation bin path")
+	}
+
+	stateExe, err := installation.StateExecFromDir(installPath)
+	if err != nil {
+		return locale.WrapError(err, "err_state_exec")
 	}
 
 	// Execute requested command, these are mutually exclusive
@@ -366,9 +380,9 @@ func postInstallEvents(out output.Outputer, cfg *config.Instance, an analytics.D
 			an.EventWithLabel(AnalyticsFunnelCat, "forward-activate-default-err", err.Error())
 			return errs.Silence(errs.Wrap(err, "Could not activate %s, error returned: %s", params.activateDefault.String(), errs.JoinMessage(err)))
 		}
-	case !params.isUpdate && os.Getenv(constants.InstallerNoSubshell) != "true":
+	case !params.isUpdate && terminal.IsTerminal(int(os.Stdin.Fd())) && os.Getenv(constants.InstallerNoSubshell) != "true":
 		ss := subshell.New(cfg)
-		ss.SetEnv(envMap(binPath))
+		ss.SetEnv(osutils.InheritEnv(envMap(binPath)))
 		if err := ss.Activate(nil, cfg, out); err != nil {
 			return errs.Wrap(err, "Subshell setup; error returned: %s", errs.JoinMessage(err))
 		}
@@ -390,7 +404,6 @@ func envSlice(binPath string) []string {
 func envMap(binPath string) map[string]string {
 	return map[string]string{
 		"PATH": binPath + string(os.PathListSeparator) + os.Getenv("PATH"),
-		constants.DisableErrorTipsEnvVarName: "true",
 	}
 }
 
@@ -436,7 +449,7 @@ func determineLegacyUpdate(stateToolInstalled bool, packagedStateExe, payloadPat
 	// Detect whether this is a fresh install or an update
 	var isUpdate bool
 	switch {
-	case (params.sourceInstaller == "install.sh" || params.sourceInstaller == "install.ps1") && fileutils.FileExists(packagedStateExe):
+	case (params.sourceInstaller == "install.sh" || params.sourceInstaller == "install.ps1" || noArgs()) && fileutils.FileExists(packagedStateExe):
 		logging.Debug("Not using update flow as installing via " + params.sourceInstaller)
 	case params.force:
 		// When ran with `--force` we always use the install UX
@@ -452,4 +465,38 @@ func determineLegacyUpdate(stateToolInstalled bool, packagedStateExe, payloadPat
 	}
 
 	return isUpdate
+}
+
+func noArgs() bool {
+	return len(os.Args[1:]) == 0
+}
+
+func shouldUpdateInstalledStateTool(stateExePath string) bool {
+	logging.Debug("Checking if installed state tool is an older version.")
+
+	stdout, _, err := exeutils.ExecSimple(stateExePath, []string{"--version", "--output", "json"}, os.Environ())
+	if err != nil {
+		logging.Debug("Could not determine state tool version.")
+		return true // probably corrupted install
+	}
+	stdout = strings.Split(stdout, "\x00")[0] // TODO: DX-328
+
+	versionData := installation.VersionData{}
+	err = json.Unmarshal([]byte(stdout), &versionData)
+	if err != nil {
+		logging.Debug("Could not read state tool version output")
+		return true
+	}
+
+	if versionData.Branch != constants.BranchName {
+		logging.Debug("State tool branch is different from installer.")
+		return false // do not update, require --force
+	}
+
+	if versionData.Version != constants.Version {
+		logging.Debug("State tool version is different from installer.")
+		return true
+	}
+
+	return false
 }
