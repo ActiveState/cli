@@ -8,6 +8,8 @@ import (
 
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
+	"github.com/ActiveState/cli/pkg/projectfile"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -48,42 +50,44 @@ func (suite *HistoryIntegrationTestSuite) TestRevert_failsOnCommitNotInHistory()
 	defer ts.Close()
 
 	username := ts.CreateNewUser()
-	namespace := fmt.Sprintf("%s/%s", username, "revert-a")
 
-	createRevertProject(ts, namespace, true)
+	namespaceA := fmt.Sprintf("%s/%s", username, "revert-a")
+	wdA := createRevertProject(ts, namespaceA, true)
 
-	projFile := ts.CurrentProjectFile()
+	projFile, err := projectfile.FromPath(filepath.Join(wdA, "activestate.yaml"))
+	require.NoError(suite.T(), err, "cannot get current projectfile")
 
-	namespace = fmt.Sprintf("%s/%s", username, "revert-b")
-	createRevertProject(ts, namespace, false)
+	namespaceB := fmt.Sprintf("%s/%s", username, "revert-b")
+	wdB := createRevertProject(ts, namespaceB, false)
 
-	cp := ts.Spawn("revert", projFile.CommitID())
+	cp := ts.SpawnWithOpts(e2e.WithArgs("revert", projFile.CommitID()), e2e.WithWorkDirectory(wdB))
 	cp.SendLine("Y")
-	cp.ExpectExitCode(1)
+	cp.ExpectNotExitCode(0)
 }
 
-func createRevertProject(ts *e2e.Session, namespace string, withUninstall bool) {
-	cp := ts.Spawn("init", namespace, "python3", "--path="+ts.Dirs.Work, "--skeleton=editor")
+func createRevertProject(ts *e2e.Session, namespace string, withUninstall bool) (workingDir string) {
+	wd := filepath.Join(ts.Dirs.Work, namespace)
+	cp := ts.Spawn("init", namespace, "python3", "--path="+wd, "--skeleton=editor")
 	cp.ExpectExitCode(0)
 
-	cp = ts.Spawn("shell")
-
-	cp = ts.Spawn("install", "json2")
+	cp = ts.SpawnWithOpts(e2e.WithArgs("install", "json2"), e2e.WithWorkDirectory(wd))
 	cp.ExpectRe("(?:Package added|being built)", 30*time.Second)
 	cp.ExpectExitCode(0)
 
-	cp = ts.Spawn("install", "dateparser@0.7.2")
+	cp = ts.SpawnWithOpts(e2e.WithArgs("install", "dateparser@0.7.2"), e2e.WithWorkDirectory(wd))
 	cp.ExpectRe("(?:Package added|being built)", 30*time.Second)
 	cp.ExpectExitCode(0)
 
-	cp = ts.Spawn("push", "--non-interactive")
+	cp = ts.SpawnWithOpts(e2e.WithArgs("push", "--non-interactive"), e2e.WithWorkDirectory(wd))
 	cp.ExpectExitCode(0)
 
 	if withUninstall {
-		cp = ts.Spawn("uninstall", "json2")
+		cp = ts.SpawnWithOpts(e2e.WithArgs("uninstall", "json2"), e2e.WithWorkDirectory(wd))
 		cp.ExpectRe("(?:Package uninstalled|being built)", 30*time.Second)
 		cp.ExpectExitCode(0)
 	}
+
+	return wd
 }
 
 func TestHistoryIntegrationTestSuite(t *testing.T) {
