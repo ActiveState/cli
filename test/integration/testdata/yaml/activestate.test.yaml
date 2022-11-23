@@ -1,0 +1,8 @@
+constants:
+  - name: merged
+    value: merged
+scripts:
+  - name: merged-script
+    language: bash
+    value: |
+      echo "Hello World"

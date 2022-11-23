@@ -5,16 +5,20 @@ import (
 	"path/filepath"
 	"regexp"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
+	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/stretchr/testify/suite"
+	"gopkg.in/yaml.v2"
 )
 
 // Configuration values for the performance tests
@@ -22,7 +26,7 @@ const (
 	DefaultMaxTime  = 1000 * time.Millisecond
 	DefaultSamples  = 10
 	DefaultVariance = 0.2
-	SecretsVariance = 2.3
+	SecretsVariance = 2.4
 	// Add other configuration values on per-test basis if needed
 )
 
@@ -47,6 +51,10 @@ func (suite *PerformanceYamlIntegrationTestSuite) TestYamlPerformance() {
 		avg := suite.testScriptPerformance("call-script", "Hello World", DefaultSamples, DefaultMaxTime)
 		variance := float64(avg) + (float64(avg) * DefaultVariance)
 		baseline = time.Duration(variance)
+	})
+
+	suite.Run("CallScriptFromMerged", func() {
+		suite.testScriptPerformance("merged-script", "Hello World", DefaultSamples, baseline)
 	})
 
 	suite.Run("EvaluateProjectPath", func() {
@@ -101,6 +109,10 @@ func (suite *PerformanceYamlIntegrationTestSuite) TestYamlPerformance() {
 		suite.testScriptPerformance("use-constant-multiple", "foo bar baz", DefaultSamples, baseline)
 	})
 
+	suite.Run("UseConstantFromMerged", func() {
+		suite.testScriptPerformance("use-constant-multiple", "foo bar baz", DefaultSamples, baseline)
+	})
+
 }
 
 func (suite *PerformanceYamlIntegrationTestSuite) testScriptPerformance(scriptName, expect string, samples int, max time.Duration) time.Duration {
@@ -119,6 +131,13 @@ func (suite *PerformanceYamlIntegrationTestSuite) testScriptPerformance(scriptNa
 	suite.NoError(err)
 
 	ts.PrepareActiveStateYAML(string(contents))
+
+	alternateFileName := "activestate.test.yaml"
+	alternatePrjPath := filepath.Join(root, "test", "integration", "testdata", "yaml", alternateFileName)
+	contents, err = fileutils.ReadFile(alternatePrjPath)
+	suite.NoError(err)
+
+	suite.prepareAlternateActiveStateYaml(alternateFileName, string(contents), ts)
 
 	var times []time.Duration
 	var total time.Duration
@@ -157,6 +176,25 @@ func (suite *PerformanceYamlIntegrationTestSuite) testScriptPerformance(scriptNa
 			scriptName, avg.String(), max.String()))
 	}
 	return avg
+}
+
+func (suite *PerformanceYamlIntegrationTestSuite) prepareAlternateActiveStateYaml(name, contents string, ts *e2e.Session) {
+	msg := "cannot setup activestate.yaml file"
+
+	contents = strings.TrimSpace(contents)
+	projectFile := &projectfile.Project{}
+
+	err := yaml.Unmarshal([]byte(contents), projectFile)
+	suite.NoError(err, msg)
+
+	cfg, err := config.New()
+	suite.NoError(err)
+	defer func() { suite.NoError(cfg.Close()) }()
+
+	path := filepath.Join(ts.Dirs.Work, name)
+	err = fileutils.WriteFile(path, []byte(contents))
+	suite.NoError(err, msg)
+	suite.True(fileutils.FileExists(path))
 }
 
 func TestPerformanceYamlIntegrationTestSuite(t *testing.T) {

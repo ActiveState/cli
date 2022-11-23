@@ -82,3 +82,8 @@ scripts:
     description: Expand the project path
     value: |
       echo $project.path()
+  - name: use-constant-merged
+    language: bash
+    description: Use a constant from a merged as.yaml
+    value: |
+      echo $constants.merged
