@@ -19,8 +19,10 @@ import (
 
 // Configuration values for the performance tests
 const (
-	DefaultMaxTime = 100 * time.Millisecond
-	DefaultSamples = 10
+	DefaultMaxTime  = 1000 * time.Millisecond
+	DefaultSamples  = 10
+	DefaultVariance = 0.2
+	SecretsVariance = 2.3
 	// Add other configuration values on per-test basis if needed
 )
 
@@ -38,72 +40,70 @@ func (suite *PerformanceYamlIntegrationTestSuite) startSvc(ts *e2e.Session) {
 	suite.Require().NoError(err, fmt.Sprintf("Full error:\n%v\nstdout:\n%s\nstderr:\n%s", errs.JoinMessage(err), stdout, stderr))
 }
 
-func (suite *PerformanceYamlIntegrationTestSuite) TestExpandSecret() {
+func (suite *PerformanceYamlIntegrationTestSuite) TestYamlPerformance() {
 	suite.OnlyRunForTags(tagsuite.Performance)
-	suite.testScriptPerformance("expand-secret", "WORLD", DefaultSamples, DefaultMaxTime)
+	baseline := DefaultMaxTime
+	suite.Run("CallScript", func() {
+		avg := suite.testScriptPerformance("call-script", "Hello World", DefaultSamples, DefaultMaxTime)
+		variance := float64(avg) + (float64(avg) * DefaultVariance)
+		baseline = time.Duration(variance)
+	})
+
+	suite.Run("EvaluateProjectPath", func() {
+		suite.testScriptPerformance("evaluate-project-path", "", DefaultSamples, baseline)
+	})
+
+	suite.Run("ExpandProjectBranch", func() {
+		suite.testScriptPerformance("expand-project-branch", "main", DefaultSamples, baseline)
+	})
+
+	suite.Run("ExpandProjectCommit", func() {
+		suite.testScriptPerformance("expand-project-commit", "0476ac66-007c-4da7-8922-d6ea9b284fae", DefaultSamples, baseline)
+	})
+
+	suite.Run("ExpandProjectName", func() {
+		suite.testScriptPerformance("expand-project-name", "Yaml-Test", DefaultSamples, baseline)
+	})
+
+	suite.Run("ExpandProjectNamespace", func() {
+		suite.testScriptPerformance("expand-project-namespace", "ActiveState-CLI/Yaml-Test", DefaultSamples, baseline)
+	})
+
+	suite.Run("ExpandProjectOwner", func() {
+		suite.testScriptPerformance("expand-project-owner", "ActiveState-CLI", DefaultSamples, baseline)
+	})
+
+	suite.Run("ExpandProjectURL", func() {
+		suite.testScriptPerformance("expand-project-url", "https://platform.activestate.com/ActiveState-CLI/Yaml-Test", DefaultSamples, baseline)
+	})
+
+	suite.Run("ExpandSecret", func() {
+		secretsVariance := float64(baseline) * SecretsVariance
+		secretsBaseline := time.Duration(secretsVariance)
+		suite.testScriptPerformance("expand-secret", "WORLD", DefaultSamples, secretsBaseline)
+	})
+
+	suite.Run("ExpandSecretMultiple", func() {
+		secretsMultipleVariance := float64(baseline) * (1.25 * SecretsVariance)
+		secretsMultipleBaseline := time.Duration(secretsMultipleVariance)
+		suite.testScriptPerformance("expand-secret-multiple", "FOO BAR BAZ", DefaultSamples, secretsMultipleBaseline)
+	})
+
+	suite.Run("GetScriptPath", func() {
+		suite.testScriptPerformance("script-path", ".sh", DefaultSamples, baseline)
+	})
+
+	suite.Run("UseConstant", func() {
+		suite.testScriptPerformance("use-constant", "foo", DefaultSamples, baseline)
+	})
+
+	suite.Run("UseConstantMultiple", func() {
+		suite.testScriptPerformance("use-constant-multiple", "foo bar baz", DefaultSamples, baseline)
+	})
+
 }
 
-func (suite *PerformanceYamlIntegrationTestSuite) TestExpandSecretMultiple() {
-	suite.OnlyRunForTags(tagsuite.Performance)
-	suite.testScriptPerformance("expand-secret-multiple", "FOO BAR BAZ", DefaultSamples, DefaultMaxTime)
-}
-
-func (suite *PerformanceYamlIntegrationTestSuite) TestEvaluateProjectPath() {
-	suite.OnlyRunForTags(tagsuite.Performance)
-	suite.testScriptPerformance("evaluate-project-path", "", DefaultSamples, DefaultMaxTime)
-}
-
-func (suite *PerformanceYamlIntegrationTestSuite) TestUseConstant() {
-	suite.OnlyRunForTags(tagsuite.Performance)
-	suite.testScriptPerformance("use-constant", "foo", DefaultSamples, DefaultMaxTime)
-}
-
-func (suite *PerformanceYamlIntegrationTestSuite) TestUseConstantsMultiple() {
-	suite.OnlyRunForTags(tagsuite.Performance)
-	suite.testScriptPerformance("use-constant-multiple", "foo bar baz", DefaultSamples, DefaultMaxTime)
-}
-
-func (suite *PerformanceYamlIntegrationTestSuite) TestCallScript() {
-	suite.OnlyRunForTags(tagsuite.Performance)
-	suite.testScriptPerformance("call-script", "Hello World", DefaultSamples, DefaultMaxTime)
-}
-
-func (suite *PerformanceYamlIntegrationTestSuite) TestGetScriptPath() {
-	suite.OnlyRunForTags(tagsuite.Performance)
-	suite.testScriptPerformance("script-path", ".sh", DefaultSamples, DefaultMaxTime)
-}
-
-func (suite *PerformanceYamlIntegrationTestSuite) TestExpandProjectURL() {
-	suite.OnlyRunForTags(tagsuite.Performance)
-	suite.testScriptPerformance("expand-project-url", "https://platform.activestate.com/ActiveState-CLI/Yaml-Test", DefaultSamples, DefaultMaxTime)
-}
-
-func (suite *PerformanceYamlIntegrationTestSuite) TestExpandProjectCommit() {
-	suite.OnlyRunForTags(tagsuite.Performance)
-	suite.testScriptPerformance("expand-project-commit", "0476ac66-007c-4da7-8922-d6ea9b284fae", DefaultSamples, DefaultMaxTime)
-}
-
-func (suite *PerformanceYamlIntegrationTestSuite) TestExpandProjectBranch() {
-	suite.OnlyRunForTags(tagsuite.Performance)
-	suite.testScriptPerformance("expand-project-branch", "main", DefaultSamples, DefaultMaxTime)
-}
-
-func (suite *PerformanceYamlIntegrationTestSuite) TestExpandProjectOwner() {
-	suite.OnlyRunForTags(tagsuite.Performance)
-	suite.testScriptPerformance("expand-project-owner", "ActiveState-CLI", DefaultSamples, DefaultMaxTime)
-}
-
-func (suite *PerformanceYamlIntegrationTestSuite) TestExpandProjectName() {
-	suite.OnlyRunForTags(tagsuite.Performance)
-	suite.testScriptPerformance("expand-project-name", "Yaml-Test", DefaultSamples, DefaultMaxTime)
-}
-
-func (suite *PerformanceYamlIntegrationTestSuite) TestExpandProjectNamespace() {
-	suite.OnlyRunForTags(tagsuite.Performance)
-	suite.testScriptPerformance("expand-project-namespace", "ActiveState-CLI/Yaml-Test", DefaultSamples, DefaultMaxTime)
-}
-
-func (suite *PerformanceYamlIntegrationTestSuite) testScriptPerformance(scriptName, expect string, samples int, max time.Duration) {
+func (suite *PerformanceYamlIntegrationTestSuite) testScriptPerformance(scriptName, expect string, samples int, max time.Duration) time.Duration {
 	suite.OnlyRunForTags(tagsuite.Performance)
 	ts := e2e.New(suite.T(), true)
 	defer ts.Close()
@@ -122,7 +122,7 @@ func (suite *PerformanceYamlIntegrationTestSuite) testScriptPerformance(scriptNa
 
 	var times []time.Duration
 	var total time.Duration
-	for x := 0; x < samples; x++ {
+	for x := 0; x < samples+1; x++ {
 		cp := ts.SpawnWithOpts(
 			e2e.WithArgs("run", scriptName),
 			e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_UPDATES=true", "ACTIVESTATE_PROFILE=true"))
@@ -136,6 +136,10 @@ func (suite *PerformanceYamlIntegrationTestSuite) testScriptPerformance(scriptNa
 		}
 		durMS, err := strconv.Atoi(v[1])
 		suite.Require().NoError(err)
+
+		if x == 0 {
+			continue
+		}
 		dur := time.Millisecond * time.Duration(durMS)
 		times = append(times, dur)
 		total = total + dur
@@ -143,8 +147,16 @@ func (suite *PerformanceYamlIntegrationTestSuite) testScriptPerformance(scriptNa
 
 	avg := total / time.Duration(samples)
 	fmt.Println("Average:", avg)
+	fmt.Println("Max:", max)
 
-	// TODO: Add check to ensure that the average is within the expected range
+	// TODO: Improve output here
+	if avg.Milliseconds() > max.Milliseconds() {
+		suite.FailNow(fmt.Sprintf(`
+	script %s is taking too long to execute.
+	Average time: %s, Max time: %s`,
+			scriptName, avg.String(), max.String()))
+	}
+	return avg
 }
 
 func TestPerformanceYamlIntegrationTestSuite(t *testing.T) {
