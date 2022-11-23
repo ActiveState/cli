@@ -62,6 +62,8 @@ func (suite *HistoryIntegrationTestSuite) TestRevert_failsOnCommitNotInHistory()
 
 	cp := ts.SpawnWithOpts(e2e.WithArgs("revert", projFile.CommitID()), e2e.WithWorkDirectory(wdB))
 	cp.SendLine("Y")
+	cp.Expect("Successfully reverted")
+	cp.Expect(projFile.CommitID())
 	cp.ExpectNotExitCode(0)
 }
 
