@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"path/filepath"
 	"regexp"
-	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -139,43 +138,7 @@ func (suite *PerformanceYamlIntegrationTestSuite) testScriptPerformance(scriptNa
 
 	suite.prepareAlternateActiveStateYaml(alternateFileName, string(contents), ts)
 
-	var times []time.Duration
-	var total time.Duration
-	for x := 0; x < samples+1; x++ {
-		cp := ts.SpawnWithOpts(
-			e2e.WithArgs("run", scriptName),
-			e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_UPDATES=true", "ACTIVESTATE_PROFILE=true"))
-		if expect != "" {
-			cp.Expect(expect)
-		}
-		cp.ExpectExitCode(0)
-		v := rx.FindStringSubmatch(cp.Snapshot())
-		if len(v) < 2 {
-			suite.T().Fatalf("Could not find '%s' in output: %s", rx.String(), cp.Snapshot())
-		}
-		durMS, err := strconv.Atoi(v[1])
-		suite.Require().NoError(err)
-
-		if x == 0 {
-			continue
-		}
-		dur := time.Millisecond * time.Duration(durMS)
-		times = append(times, dur)
-		total = total + dur
-	}
-
-	avg := total / time.Duration(samples)
-	fmt.Println("Average:", avg)
-	fmt.Println("Max:", max)
-
-	// TODO: Improve output here
-	if avg.Milliseconds() > max.Milliseconds() {
-		suite.FailNow(fmt.Sprintf(`
-	script %s is taking too long to execute.
-	Average time: %s, Max time: %s`,
-			scriptName, avg.String(), max.String()))
-	}
-	return avg
+	return performanceTest([]string{"run", scriptName}, expect, samples, max, suite.Suite, ts)
 }
 
 func (suite *PerformanceYamlIntegrationTestSuite) prepareAlternateActiveStateYaml(name, contents string, ts *e2e.Session) {
