@@ -44,6 +44,7 @@ func ActivationPID(cfg Configurable) int32 {
 		}
 		if seen[ppid] {
 			logging.Debug("Parent process PID has already been seen")
+			return -1
 		}
 
 		pproc, err := process.NewProcess(ppid)
@@ -61,7 +62,6 @@ func ActivationPID(cfg Configurable) int32 {
 			logging.Debug("Parent process name: %s", name)
 		}
 
-		seen[pid] = true
 		seen[ppid] = true
 		pid = ppid
 		ppid, err = pproc.Ppid()
