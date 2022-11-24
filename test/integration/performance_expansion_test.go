@@ -47,81 +47,83 @@ func (suite *PerformanceYamlIntegrationTestSuite) TestYamlPerformance() {
 	suite.OnlyRunForTags(tagsuite.Performance)
 	baseline := DefaultMaxTime
 	suite.Run("CallScript", func() {
-		avg := suite.testScriptPerformance("call-script", "Hello World", DefaultSamples, DefaultMaxTime)
+		avg := suite.testScriptPerformance("call-script", "Hello World", DefaultSamples, DefaultMaxTime, false)
 		variance := float64(avg) + (float64(avg) * DefaultVariance)
 		baseline = time.Duration(variance)
 	})
 
 	suite.Run("CallScriptFromMerged", func() {
-		suite.testScriptPerformance("merged-script", "Hello World", DefaultSamples, baseline)
+		suite.testScriptPerformance("merged-script", "Hello World", DefaultSamples, baseline, false)
 	})
 
 	suite.Run("EvaluateProjectPath", func() {
-		suite.testScriptPerformance("evaluate-project-path", "", DefaultSamples, baseline)
+		suite.testScriptPerformance("evaluate-project-path", "", DefaultSamples, baseline, false)
 	})
 
 	suite.Run("ExpandProjectBranch", func() {
-		suite.testScriptPerformance("expand-project-branch", "main", DefaultSamples, baseline)
+		suite.testScriptPerformance("expand-project-branch", "main", DefaultSamples, baseline, false)
 	})
 
 	suite.Run("ExpandProjectCommit", func() {
-		suite.testScriptPerformance("expand-project-commit", "0476ac66-007c-4da7-8922-d6ea9b284fae", DefaultSamples, baseline)
+		suite.testScriptPerformance("expand-project-commit", "0476ac66-007c-4da7-8922-d6ea9b284fae", DefaultSamples, baseline, false)
 	})
 
 	suite.Run("ExpandProjectName", func() {
-		suite.testScriptPerformance("expand-project-name", "Yaml-Test", DefaultSamples, baseline)
+		suite.testScriptPerformance("expand-project-name", "Yaml-Test", DefaultSamples, baseline, false)
 	})
 
 	suite.Run("ExpandProjectNamespace", func() {
-		suite.testScriptPerformance("expand-project-namespace", "ActiveState-CLI/Yaml-Test", DefaultSamples, baseline)
+		suite.testScriptPerformance("expand-project-namespace", "ActiveState-CLI/Yaml-Test", DefaultSamples, baseline, false)
 	})
 
 	suite.Run("ExpandProjectOwner", func() {
-		suite.testScriptPerformance("expand-project-owner", "ActiveState-CLI", DefaultSamples, baseline)
+		suite.testScriptPerformance("expand-project-owner", "ActiveState-CLI", DefaultSamples, baseline, false)
 	})
 
 	suite.Run("ExpandProjectURL", func() {
-		suite.testScriptPerformance("expand-project-url", "https://platform.activestate.com/ActiveState-CLI/Yaml-Test", DefaultSamples, baseline)
+		suite.testScriptPerformance("expand-project-url", "https://platform.activestate.com/ActiveState-CLI/Yaml-Test", DefaultSamples, baseline, false)
 	})
 
 	suite.Run("ExpandSecret", func() {
 		secretsVariance := float64(baseline) * SecretsVariance
 		secretsBaseline := time.Duration(secretsVariance)
-		suite.testScriptPerformance("expand-secret", "WORLD", DefaultSamples, secretsBaseline)
+		suite.testScriptPerformance("expand-secret", "WORLD", DefaultSamples, secretsBaseline, true)
 	})
 
 	suite.Run("ExpandSecretMultiple", func() {
 		secretsMultipleVariance := float64(baseline) * (1.25 * SecretsVariance)
 		secretsMultipleBaseline := time.Duration(secretsMultipleVariance)
-		suite.testScriptPerformance("expand-secret-multiple", "FOO BAR BAZ", DefaultSamples, secretsMultipleBaseline)
+		suite.testScriptPerformance("expand-secret-multiple", "FOO BAR BAZ", DefaultSamples, secretsMultipleBaseline, true)
 	})
 
 	suite.Run("GetScriptPath", func() {
-		suite.testScriptPerformance("script-path", ".sh", DefaultSamples, baseline)
+		suite.testScriptPerformance("script-path", ".sh", DefaultSamples, baseline, false)
 	})
 
 	suite.Run("UseConstant", func() {
-		suite.testScriptPerformance("use-constant", "foo", DefaultSamples, baseline)
+		suite.testScriptPerformance("use-constant", "foo", DefaultSamples, baseline, false)
 	})
 
 	suite.Run("UseConstantMultiple", func() {
-		suite.testScriptPerformance("use-constant-multiple", "foo bar baz", DefaultSamples, baseline)
+		suite.testScriptPerformance("use-constant-multiple", "foo bar baz", DefaultSamples, baseline, false)
 	})
 
 	suite.Run("UseConstantFromMerged", func() {
-		suite.testScriptPerformance("use-constant-multiple", "foo bar baz", DefaultSamples, baseline)
+		suite.testScriptPerformance("use-constant-multiple", "foo bar baz", DefaultSamples, baseline, false)
 	})
 
 }
 
-func (suite *PerformanceYamlIntegrationTestSuite) testScriptPerformance(scriptName, expect string, samples int, max time.Duration) time.Duration {
+func (suite *PerformanceYamlIntegrationTestSuite) testScriptPerformance(scriptName, expect string, samples int, max time.Duration, authRequired bool) time.Duration {
 	suite.OnlyRunForTags(tagsuite.Performance)
 	ts := e2e.New(suite.T(), true)
 	defer ts.Close()
 
 	suite.startSvc(ts)
 
-	ts.LoginAsPersistentUser()
+	if authRequired {
+		ts.LoginAsPersistentUser()
+	}
 
 	root, err := environment.GetRootPath()
 	suite.NoError(err)
