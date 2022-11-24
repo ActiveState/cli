@@ -48,7 +48,7 @@ func ActivationPID(cfg Configurable) int32 {
 			return -1
 		}
 
-		name, err := pproc.Ppid()
+		name, err := pproc.Name()
 		if err != nil {
 			logging.Error(procInfoErrMsgFmt, err)
 		} else {
