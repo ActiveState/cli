@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"regexp"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -42,7 +43,7 @@ func TestPerformanceIntegrationTestSuite(t *testing.T) {
 
 func performanceTest(commands []string, expect string, samples int, maxTime time.Duration, suite tagsuite.Suite, ts *e2e.Session) time.Duration {
 	rx := regexp.MustCompile(`Profiling: main took .*\((\d+)\)`)
-	// var firstEntry, firstStateLog, firstSvcLog string
+	var firstEntry, firstStateLog, firstSvcLog string
 	times := []time.Duration{}
 	var total time.Duration
 	for x := 0; x < samples+1; x++ {
@@ -61,11 +62,11 @@ func performanceTest(commands []string, expect string, samples int, maxTime time
 		suite.Require().NoError(err)
 		dur := time.Millisecond * time.Duration(durMS)
 
-		// if firstEntry == "" {
-		// 	firstEntry = cp.Snapshot()
-		// 	firstStateLog = ts.MostRecentStateLog()
-		// 	firstSvcLog = ts.SvcLog()
-		// }
+		if firstEntry == "" {
+			firstEntry = cp.Snapshot()
+			firstStateLog = ts.MostRecentStateLog()
+			firstSvcLog = ts.SvcLog()
+		}
 		if x == 0 {
 			// Skip the first one as this one will always be slower due to having to wait for state-svc or sourcing a runtime
 			continue
@@ -75,31 +76,31 @@ func performanceTest(commands []string, expect string, samples int, maxTime time
 	}
 
 	var avg = total / time.Duration(samples)
-	// 	if avg.Milliseconds() > maxTime.Milliseconds() {
-	// 		suite.FailNow(
-	// 			fmt.Sprintf(`'%s' is performing poorly!
-	// Average duration: %s
-	// Minimum: %s
-	// Total: %s
-	// Totals: %v
+	if avg.Milliseconds() > maxTime.Milliseconds() {
+		suite.FailNow(
+			fmt.Sprintf(`'%s' is performing poorly!
+	Average duration: %s
+	Minimum: %s
+	Total: %s
+	Totals: %v
 
-	// Output of first run:
-	// %s
+	Output of first run:
+	%s
 
-	// State Tool log:
-	// %s
+	State Tool log:
+	%s
 
-	// Svc log:
-	// %s`,
-	// 				strings.Join(commands, " "),
-	// 				avg.String(),
-	// 				maxTime.String(),
-	// 				time.Duration(total).String(),
-	// 				times,
-	// 				firstEntry,
-	// 				firstStateLog,
-	// 				firstSvcLog))
-	// 	}
+	Svc log:
+	%s`,
+				strings.Join(commands, " "),
+				avg.String(),
+				maxTime.String(),
+				time.Duration(total).String(),
+				times,
+				firstEntry,
+				firstStateLog,
+				firstSvcLog))
+	}
 
 	return avg
 }
