@@ -25,8 +25,8 @@ const (
 
 	DefaultMaxTime  = 1000 * time.Millisecond
 	DefaultSamples  = 10
-	DefaultVariance = 0.2
-	SecretsVariance = 2.4
+	DefaultVariance = 0.5
+	SecretsVariance = 4.5
 	// Add other configuration values on per-test basis if needed
 )
 
