@@ -24,10 +24,10 @@ import (
 const (
 	DefaultProject = "https://platform.activestate.com/ActiveState-CLI/Yaml-Test/?branch=main&commitID=0476ac66-007c-4da7-8922-d6ea9b284fae"
 
-	DefaultMaxTime  = 1000 * time.Millisecond
-	DefaultSamples  = 10
-	DefaultVariance = 0.5
-	SecretsVariance = 4.5
+	DefaultMaxTime        = 1000 * time.Millisecond
+	DefaultSamples        = 10
+	DefaultVariance       = 0.5
+	DefaultSecretsMaxTime = 1500 * time.Millisecond
 	// Add other configuration values on per-test basis if needed
 )
 
@@ -178,11 +178,6 @@ func (suite *PerformanceExpansionIntegrationTestSuite) TestExpansionPerformance(
 	})
 
 	suite.Run("ExpandSecret", func() {
-		fmt.Println("Baseline: ", baseline)
-		secretsVariance := float64(baseline) * SecretsVariance
-		fmt.Println("variance: ", secretsVariance)
-		secretsBaseline := time.Duration(secretsVariance)
-		fmt.Println("Secrets baseline: ", secretsBaseline)
 		suite.testScriptPerformance(scriptPerformanceOptions{
 			script: projectfile.Script{
 				Name:     "expand-secret",
@@ -191,13 +186,13 @@ func (suite *PerformanceExpansionIntegrationTestSuite) TestExpansionPerformance(
 			},
 			expect:       "WORLD",
 			samples:      DefaultSamples,
-			max:          secretsBaseline,
+			max:          DefaultSecretsMaxTime,
 			authRequired: true,
 		})
 	})
 
 	suite.Run("ExpandSecretMultiple", func() {
-		secretsMultipleVariance := float64(baseline) * (1.25 * SecretsVariance)
+		secretsMultipleVariance := float64(DefaultSecretsMaxTime) * 1.25
 		secretsMultipleBaseline := time.Duration(secretsMultipleVariance)
 		suite.testScriptPerformance(scriptPerformanceOptions{
 			script: projectfile.Script{
