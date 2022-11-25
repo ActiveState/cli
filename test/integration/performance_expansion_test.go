@@ -177,8 +177,11 @@ func (suite *PerformanceExpansionIntegrationTestSuite) TestExpansionPerformance(
 	})
 
 	suite.Run("ExpandSecret", func() {
+		fmt.Println("Baseline: ", baseline)
 		secretsVariance := float64(baseline) * SecretsVariance
+		fmt.Println("variance: ", secretsVariance)
 		secretsBaseline := time.Duration(secretsVariance)
+		fmt.Println("Secrets baseline: ", secretsBaseline)
 		suite.testScriptPerformance(scriptPerformanceOptions{
 			script: projectfile.Script{
 				Name:     "expand-secret",
