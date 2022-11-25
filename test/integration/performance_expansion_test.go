@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"path/filepath"
 	"regexp"
-	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -27,7 +26,7 @@ const (
 	DefaultMaxTime  = 1000 * time.Millisecond
 	DefaultSamples  = 10
 	DefaultVariance = 0.5
-	SecretsVariance = 4.25
+	SecretsVariance = 4.3
 	// Add other configuration values on per-test basis if needed
 )
 
@@ -213,17 +212,13 @@ func (suite *PerformanceExpansionIntegrationTestSuite) TestExpansionPerformance(
 	})
 
 	suite.Run("GetScriptPath", func() {
-		expect := ".sh"
-		if runtime.GOOS == "windows" {
-			expect = ".bat"
-		}
 		suite.testScriptPerformance(scriptPerformanceOptions{
 			script: projectfile.Script{
 				Name:     "script-path",
 				Value:    `echo $scripts.hello-world.path()`,
 				Language: "bash",
 			},
-			expect:            expect,
+			expect:            ".sh",
 			samples:           DefaultSamples,
 			max:               baseline,
 			additionalScripts: projectfile.Scripts{{Name: "hello-world", Value: `echo "Hello World"`}},
