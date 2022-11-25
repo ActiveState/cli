@@ -76,11 +76,13 @@ func performanceTest(commands []string, expect string, samples int, maxTime time
 	}
 
 	var avg = total / time.Duration(samples)
+	fmt.Println("Average: ", avg)
+	fmt.Println("Max: ", maxTime)
 	if avg.Milliseconds() > maxTime.Milliseconds() {
 		suite.FailNow(
 			fmt.Sprintf(`'%s' is performing poorly!
 	Average duration: %s
-	Minimum: %s
+	Maximum: %s
 	Total: %s
 	Totals: %v
 
