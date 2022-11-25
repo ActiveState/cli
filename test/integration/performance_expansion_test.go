@@ -3,7 +3,6 @@ package integration
 import (
 	"fmt"
 	"path/filepath"
-	"regexp"
 	"runtime"
 	"strings"
 	"testing"
@@ -31,10 +30,6 @@ const (
 	// Add other configuration values on per-test basis if needed
 )
 
-var (
-	rx = regexp.MustCompile(`Profiling: main took .*\((\d+)\)`)
-)
-
 type PerformanceExpansionIntegrationTestSuite struct {
 	tagsuite.Suite
 }
@@ -43,12 +38,6 @@ func (suite *PerformanceExpansionIntegrationTestSuite) startSvc(ts *e2e.Session)
 	// Start svc first, as we don't want to measure svc startup time which would only happen the very first invocation
 	stdout, stderr, err := exeutils.ExecSimple(ts.SvcExe, []string{"start"}, []string{})
 	suite.Require().NoError(err, fmt.Sprintf("Full error:\n%v\nstdout:\n%s\nstderr:\n%s", errs.JoinMessage(err), stdout, stderr))
-}
-
-type test struct {
-	name       string
-	runOptions scriptPerformanceOptions
-	expect     string
 }
 
 func (suite *PerformanceExpansionIntegrationTestSuite) TestExpansionPerformance() {
@@ -70,8 +59,8 @@ func (suite *PerformanceExpansionIntegrationTestSuite) TestExpansionPerformance(
 	})
 
 	suite.Run("CallScriptFromMerged", func() {
-		additionalYaml := make(map[string]projectfile.Project)
-		additionalYaml["activestate.test.yaml"] = projectfile.Project{
+		additionalYamls := make(map[string]projectfile.Project)
+		additionalYamls["activestate.test.yaml"] = projectfile.Project{
 			Scripts: []projectfile.Script{{Name: "call-script", Value: `echo "Hello World"`}},
 		}
 		suite.testScriptPerformance(scriptPerformanceOptions{
@@ -83,7 +72,7 @@ func (suite *PerformanceExpansionIntegrationTestSuite) TestExpansionPerformance(
 			expect:              "Hello World",
 			samples:             DefaultSamples,
 			max:                 baseline,
-			additionalYamlFiles: additionalYaml,
+			additionalYamlFiles: additionalYamls,
 		})
 	})
 
