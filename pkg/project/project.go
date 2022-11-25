@@ -153,15 +153,16 @@ func (p *Project) Events() []*Event {
 	es := projectfile.MakeEventsFromConstrainedEntities(constrained)
 	events := make([]*Event, 0, len(es))
 	for _, e := range es {
-		events = append(events, &Event{e, p})
+		events = append(events, &Event{e, p, false})
 	}
 	return events
 }
 
 // EventByName returns a reference to a projectfile.Script with a given name.
-func (p *Project) EventByName(name string) *Event {
+func (p *Project) EventByName(name string, bashifyPaths bool) *Event {
 	for _, event := range p.Events() {
 		if strings.ToLower(event.Name()) == strings.ToLower(name) {
+			event.BashifyPaths = bashifyPaths
 			return event
 		}
 	}
@@ -596,8 +597,9 @@ func (s *Secret) Value() (string, error) {
 
 // Event covers the hook structure
 type Event struct {
-	event   *projectfile.Event
-	project *Project
+	event        *projectfile.Event
+	project      *Project
+	BashifyPaths bool // for script path() calls, which varies by subshell
 }
 
 // Source returns the source projectfile
@@ -608,6 +610,9 @@ func (e *Event) Name() string { return e.event.Name }
 
 // Value returned with all secrets evaluated
 func (e *Event) Value() (string, error) {
+	if e.BashifyPaths {
+		return ExpandFromProjectBashifyPaths(e.event.Value, e.project)
+	}
 	return ExpandFromProject(e.event.Value, e.project)
 }
 
@@ -615,7 +620,13 @@ func (e *Event) Value() (string, error) {
 func (e *Event) Scope() ([]string, error) {
 	result := []string{}
 	for _, s := range e.event.Scope {
-		v, err := ExpandFromProject(s, e.project)
+		var v string
+		var err error
+		if e.BashifyPaths {
+			v, err = ExpandFromProjectBashifyPaths(s, e.project)
+		} else {
+			v, err = ExpandFromProject(s, e.project)
+		}
 		if err != nil {
 			return result, err
 		}

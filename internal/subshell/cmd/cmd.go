@@ -138,8 +138,9 @@ func (v *SubShell) SetupShellRcFile(targetDir string, env map[string]string, nam
 }
 
 // SetEnv - see subshell.SetEnv
-func (v *SubShell) SetEnv(env map[string]string) {
+func (v *SubShell) SetEnv(env map[string]string) error {
 	v.env = env
+	return nil
 }
 
 // Quote - see subshell.Quote
@@ -155,7 +156,7 @@ func (v *SubShell) Activate(prj *project.Project, cfg sscommon.Configurable, out
 	if prj != nil {
 		env := sscommon.EscapeEnv(v.env)
 		var err error
-		if v.rcFile, err = sscommon.SetupProjectRcFile(prj, "config.bat", ".bat", env, out, cfg); err != nil {
+		if v.rcFile, err = sscommon.SetupProjectRcFile(prj, "config.bat", ".bat", env, out, cfg, false); err != nil {
 			return err
 		}
 

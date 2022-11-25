@@ -85,6 +85,11 @@ func stopSvc(installPath string) error {
 		if n == svcName {
 			exe, err := p.Exe()
 			if err != nil {
+				if runtime.GOOS == "darwin" && strings.Contains(err.Error(), "bad call to lsof") {
+					// There's nothing we can do about this, so just debug log it.
+					logging.Debug("Could not get executable path for state-svc process, error: %v", err)
+					continue
+				}
 				multilog.Error("Could not get executable path for state-svc process, error: %v", err)
 				continue
 			}

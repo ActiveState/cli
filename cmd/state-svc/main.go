@@ -213,7 +213,7 @@ func runForeground(cfg *config.Instance, an *anaSync.Client, auth *authenticatio
 	defer signal.Stop(sig)
 
 	p.RunIfNotAuthority(time.Second*3, svcctl.NewDefaultIPCClient(), func(err error) {
-		fmt.Fprintln(os.Stderr, err)
+		logging.Debug("This instance is not the authority: %v", err)
 
 		cancel()
 		if err := p.Stop(); err != nil {

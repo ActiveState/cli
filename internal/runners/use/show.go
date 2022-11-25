@@ -41,7 +41,7 @@ func (f *outputFormat) MarshalOutput(format output.Format) interface{} {
 func (s *Show) Run() error {
 	projectDir := s.cfg.GetString(constants.GlobalDefaultPrefname)
 	if projectDir == "" {
-		return locale.NewInputError("err_use_show_no_default_project", "No default project is set.")
+		return locale.NewInputError("err_use_show_no_default_project", "No project is being used.")
 	}
 
 	proj, err := project.FromPath(projectDir)
@@ -49,7 +49,7 @@ func (s *Show) Run() error {
 		if errs.Matches(err, &projectfile.ErrorNoProject{}) {
 			return locale.WrapError(err, "err_use_default_project_does_not_exist")
 		}
-		return locale.WrapError(err, "err_use_show_get_project", "Could not get default project.")
+		return locale.WrapError(err, "err_use_show_get_project", "Could not get your project.")
 	}
 
 	projectTarget := target.NewProjectTarget(proj, storage.CachePath(), nil, "")

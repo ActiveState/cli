@@ -154,7 +154,7 @@ func (ipc *Server) Wait() error {
 func accept(wg *sync.WaitGroup, l net.Listener, reqHandlers []RequestHandler) error {
 	conn, err := l.Accept()
 	if err != nil {
-		logging.Debug(err.Error())
+		logging.Debug("accept ('use of closed' expected): %v", err)
 		return err
 	}
 

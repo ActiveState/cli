@@ -55,15 +55,9 @@ func (es *Executors) ExecutorSrc() (string, error) {
 func (es *Executors) Apply(sockPath string, targeter Targeter, env map[string]string, exes envdef.ExecutablePaths) error {
 	logging.Debug("Creating executors at %s, exes: %v", es.executorPath, exes)
 
-	// We need to cover the use case of someone running perl.exe/python.exe
-	// Proper fix scheduled here https://www.pivotaltracker.com/story/show/177845386
-	if rt.GOOS == "windows" {
-		for _, exe := range exes {
-			if !strings.HasSuffix(exe, exeutils.Extension) {
-				continue
-			}
-			exes = append(exes, exe+exeutils.Extension) // Double up on the ext so only the first on gets dropped
-		}
+	executors := make(map[string]string) // map[alias]dest
+	for _, dest := range exes {
+		executors[makeAlias(dest)] = dest
 	}
 
 	if err := es.Clean(); err != nil {
@@ -75,23 +69,36 @@ func (es *Executors) Apply(sockPath string, targeter Targeter, env map[string]st
 	}
 
 	t := execmeta.Target{}
-	m := execmeta.New(sockPath, osutils.EnvMapToSlice(env), t, exes)
+	m := execmeta.New(sockPath, osutils.EnvMapToSlice(env), t, executors)
 	if err := m.WriteToDisk(es.executorPath); err != nil {
 		return err
 	}
 
-	executorExec, err := es.ExecutorSrc()
+	executorSrc, err := es.ExecutorSrc()
 	if err != nil {
 		return locale.WrapError(err, "err_state_exec")
 	}
 
-	for _, exe := range exes {
-		if err := copyExecutor(es.executorPath, exe, executorExec); err != nil {
-			return locale.WrapError(err, "err_createexecutor", "Could not create executor for {{.V0}}.", exe)
+	for executor := range executors {
+		if err := copyExecutor(es.executorPath, executor, executorSrc); err != nil {
+			return locale.WrapError(err, "err_createexecutor", "Could not create executor for {{.V0}}.", executor)
 		}
 	}
 
 	return nil
+}
+
+func makeAlias(destination string) string {
+	alias := filepath.Base(destination)
+
+	if rt.GOOS == "windows" {
+		ext := filepath.Ext(alias)
+		if ext != "" && ext != exeutils.Extension { // for non-.exe executables like pip.bat
+			alias = strings.TrimSuffix(alias, ext) + exeutils.Extension // setup alias pip.exe -> pip.bat
+		}
+	}
+
+	return alias
 }
 
 func (es *Executors) Clean() error {
@@ -145,17 +152,11 @@ func isOwnedByUs(fileContents []byte) bool {
 		legacyIsOwnedByUs(fileContents)
 }
 
-func copyExecutor(destDir, exe, srcExec string) error {
-	name := filepath.Base(exe)
+func copyExecutor(destDir, executor, srcExec string) error {
+	name := filepath.Base(executor)
 	target := filepath.Clean(filepath.Join(destDir, name))
 
-	if strings.HasSuffix(exe, exeutils.Extension+exeutils.Extension) {
-		// This is super awkward, but we have a double .exe to temporarily work around an issue that will be fixed
-		// more correctly here - https://www.pivotaltracker.com/story/show/177845386
-		exe = strings.TrimSuffix(exe, exeutils.Extension)
-	}
-
-	logging.Debug("w/Creating executor for %s at %s", exe, target)
+	logging.Debug("Creating executor for %s at %s", name, target)
 
 	if fileutils.TargetExists(target) {
 		b, err := fileutils.ReadFile(target)

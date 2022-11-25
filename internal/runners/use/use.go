@@ -85,7 +85,7 @@ func (u *Use) Run(params *Params) error {
 	}
 
 	if err := globaldefault.SetupDefaultActivation(u.subshell, u.config, rti, proj); err != nil {
-		return locale.WrapError(err, "err_use_default", "Could not configure your project as the global default.")
+		return locale.WrapError(err, "err_use_default", "Could not setup your project for use.")
 	}
 
 	u.out.Notice(locale.Tl("use_project_statement", "",
