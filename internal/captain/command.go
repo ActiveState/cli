@@ -451,6 +451,10 @@ func (c *Command) SortBefore(c2 *Command) bool {
 
 func (c *Command) AddChildren(children ...*Command) {
 	for _, child := range children {
+		if c.unstable {
+			child.SetUnstable(true)
+		}
+
 		c.commands = append(c.commands, child)
 		c.cobra.AddCommand(child.cobra)
 
@@ -900,5 +904,5 @@ func childCommands(cmd *Command) string {
 		}
 	}
 
-	return fmt.Sprintf("Available Commands:\n%s", table.Render())
+	return fmt.Sprintf("\n\nAvailable Commands:\n%s", table.Render())
 }
