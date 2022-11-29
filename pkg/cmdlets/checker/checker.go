@@ -74,5 +74,5 @@ func RunUpdateNotifier(svc *model.SvcModel, out output.Outputer) {
 		return
 	}
 	out.Notice(output.Heading(locale.Tr("update_available_header")))
-	out.Notice(locale.Tr("update_available", constants.VersionNumber, up.Version))
+	out.Notice(locale.Tr("update_available", constants.Version, up.Version))
 }
