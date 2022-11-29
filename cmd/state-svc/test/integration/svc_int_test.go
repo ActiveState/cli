@@ -10,10 +10,13 @@ import (
 	"testing"
 	"time"
 
+	svcAutostart "github.com/ActiveState/cli/cmd/state-svc/autostart"
 	"github.com/ActiveState/cli/internal/condition"
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/osutils/autostart"
 	"github.com/ActiveState/cli/internal/svcctl"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
@@ -202,6 +205,37 @@ func (suite *SvcIntegrationTestSuite) GetNumStateSvcProcesses() int {
 	}
 
 	return count
+}
+
+func (suite *SvcIntegrationTestSuite) TestAutostartConfigEnableDisable() {
+	suite.OnlyRunForTags(tagsuite.Service)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	// Verify autostart is enabled (the default).
+	cfg, err := config.New()
+	suite.Require().NoError(err)
+	as, err := autostart.New(svcAutostart.App, ts.SvcExe, nil, svcAutostart.Options, cfg)
+	suite.Require().NoError(err)
+	enabled, err := as.IsEnabled() // checks if the proper files are in place, not the config key setting
+	suite.Require().NoError(err)
+	suite.Assert().True(enabled, "autostart is not enabled")
+
+	// Disable it via state tool config.
+	cp := ts.SpawnWithOpts(e2e.WithArgs("config", "set", constants.AutostartSvcConfigKey, "false"))
+	cp.ExpectExitCode(0)
+	time.Sleep(1 * time.Second)   // allow time to remove startup files
+	enabled, err = as.IsEnabled() // checks if the proper files are in place, not the config key setting
+	suite.Require().NoError(err)
+	suite.Assert().False(enabled, "autostart is still enabled")
+
+	// Re-enable it via state tool config.
+	cp = ts.SpawnWithOpts(e2e.WithArgs("config", "set", constants.AutostartSvcConfigKey, "true"))
+	cp.ExpectExitCode(0)
+	time.Sleep(1 * time.Second)   // allow time to copy startup files into place
+	enabled, err = as.IsEnabled() // checks if the proper files are in place, not the config key setting
+	suite.Require().NoError(err)
+	suite.Assert().True(enabled, "autostart is still disabled")
 }
 
 func TestSvcIntegrationTestSuite(t *testing.T) {

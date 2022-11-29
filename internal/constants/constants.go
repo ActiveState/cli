@@ -406,6 +406,9 @@ const StateAppName = "State Tool"
 // StateSvcCmd is the name of the state-svc binary
 const StateSvcCmd = "state-svc"
 
+// AutostartSvcConfigKey is the config key used to determine if the service should be run on startup.
+const AutostartSvcConfigKey = "autostart.svc"
+
 // StateCmd is the name of the state tool binary
 const StateCmd = "state"
 
