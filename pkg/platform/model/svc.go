@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/gqlclient"
 	"github.com/ActiveState/cli/internal/graph"
@@ -45,7 +46,7 @@ func (m *SvcModel) request(ctx context.Context, request gqlclient.Request, resp 
 	err := m.client.RunWithContext(ctx, request, resp)
 	if err != nil {
 		reqError := &gqlclient.RequestError{}
-		if errors.As(err, &reqError) {
+		if errors.As(err, &reqError) && condition.InTest() {
 			logging.Debug(
 				"svc client gql request failed - query: %q, vars: %q",
 				reqError.Request.Query(),
