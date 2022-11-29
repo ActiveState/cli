@@ -223,7 +223,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchWithWrongLang() {
 	defer ts.Close()
 	suite.PrepareActiveStateYAML(ts)
 
-	cp := ts.Spawn("search", "numpy", "--language=perl")
+	cp := ts.Spawn("search", "xxxjunkxxx", "--language=perl")
 	cp.ExpectLongString("No packages in our catalog match")
 	cp.ExpectExitCode(1)
 }
