@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime"
+	"strconv"
 	"syscall"
 	"testing"
 	"time"
@@ -212,30 +213,28 @@ func (suite *SvcIntegrationTestSuite) TestAutostartConfigEnableDisable() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	// Verify autostart is enabled (the default).
 	cfg, err := config.New()
 	suite.Require().NoError(err)
 	as, err := autostart.New(svcAutostart.App, ts.SvcExe, nil, svcAutostart.Options, cfg)
 	suite.Require().NoError(err)
 	enabled, err := as.IsEnabled() // checks if the proper files are in place, not the config key setting
 	suite.Require().NoError(err)
-	suite.Assert().True(enabled, "autostart is not enabled")
 
-	// Disable it via state tool config.
-	cp := ts.SpawnWithOpts(e2e.WithArgs("config", "set", constants.AutostartSvcConfigKey, "false"))
+	// Toggle it via state tool config.
+	cp := ts.SpawnWithOpts(e2e.WithArgs("config", "set", constants.AutostartSvcConfigKey, strconv.FormatBool(!enabled)))
 	cp.ExpectExitCode(0)
-	time.Sleep(1 * time.Second)   // allow time to remove startup files
-	enabled, err = as.IsEnabled() // checks if the proper files are in place, not the config key setting
+	time.Sleep(500 * time.Millisecond) // allow time to remove startup files
+	toggled, err := as.IsEnabled()     // checks if the proper files are in place, not the config key setting
 	suite.Require().NoError(err)
-	suite.Assert().False(enabled, "autostart is still enabled")
+	suite.Assert().Equal(!enabled, toggled, "autostart has not been changed")
 
 	// Re-enable it via state tool config.
-	cp = ts.SpawnWithOpts(e2e.WithArgs("config", "set", constants.AutostartSvcConfigKey, "true"))
+	cp = ts.SpawnWithOpts(e2e.WithArgs("config", "set", constants.AutostartSvcConfigKey, strconv.FormatBool(enabled)))
 	cp.ExpectExitCode(0)
-	time.Sleep(1 * time.Second)   // allow time to copy startup files into place
-	enabled, err = as.IsEnabled() // checks if the proper files are in place, not the config key setting
+	time.Sleep(500 * time.Millisecond) // allow time to copy startup files into place
+	toggled, err = as.IsEnabled()      // checks if the proper files are in place, not the config key setting
 	suite.Require().NoError(err)
-	suite.Assert().True(enabled, "autostart is still disabled")
+	suite.Assert().Equal(enabled, toggled, "autostart has not been changed")
 }
 
 func TestSvcIntegrationTestSuite(t *testing.T) {
