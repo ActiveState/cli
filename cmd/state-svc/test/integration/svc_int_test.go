@@ -228,7 +228,7 @@ func (suite *SvcIntegrationTestSuite) TestAutostartConfigEnableDisable() {
 	suite.Require().NoError(err)
 	suite.Assert().Equal(!enabled, toggled, "autostart has not been changed")
 
-	// Re-enable it via state tool config.
+	// Toggle it again via state tool config.
 	cp = ts.SpawnWithOpts(e2e.WithArgs("config", "set", constants.AutostartSvcConfigKey, strconv.FormatBool(enabled)))
 	cp.ExpectExitCode(0)
 	time.Sleep(500 * time.Millisecond) // allow time to copy startup files into place

@@ -117,7 +117,7 @@ func run(cfg *config.Instance) error {
 			multilog.Error("state-svc could not find its autostart")
 		}
 	} else {
-		multilog.Error("state-svc could not find it's executable")
+		multilog.Error("state-svc could not find its executable")
 	}
 
 	if mousetrap.StartedByExplorer() {
