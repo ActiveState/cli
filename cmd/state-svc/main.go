@@ -11,6 +11,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/ActiveState/cli/cmd/state-svc/autostart"
 	anaSync "github.com/ActiveState/cli/internal/analytics/client/sync"
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/config"
@@ -99,6 +100,8 @@ func run(cfg *config.Instance) error {
 	if err != nil {
 		return errs.Wrap(err, "Could not initialize outputer")
 	}
+
+	autostart.RegisterConfigListener(cfg)
 
 	if mousetrap.StartedByExplorer() {
 		// Allow starting the svc via a double click
