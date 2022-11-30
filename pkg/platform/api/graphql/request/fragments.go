@@ -72,7 +72,6 @@ build {
     }
   }
   ... on PlanningError {
-    error
     subErrors {
       __typename
       ... on GenericSolveError {

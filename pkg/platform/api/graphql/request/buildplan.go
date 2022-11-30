@@ -23,6 +23,7 @@ query ($organization: String!, $project: String!, $commitID: String!) {
       commit(vcsRef: $commitID) {
         ... on Commit {
           __typename
+          graph
           %s
         }
         ... on CommitNotFound {

@@ -1,6 +1,8 @@
 package model
 
 import (
+	"encoding/json"
+	"fmt"
 	"net/http"
 	"os"
 	"strings"
@@ -9,10 +11,11 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/gqlclient"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/logging"
 	model "github.com/ActiveState/cli/pkg/platform/api/graphql/model/buildplan"
 	"github.com/ActiveState/cli/pkg/platform/api/graphql/request"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
-	platformModel "github.com/ActiveState/cli/pkg/platform/model"
+	vcsModel "github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/sysinfo"
 	"github.com/go-openapi/strfmt"
 	"github.com/machinebox/graphql"
@@ -61,6 +64,7 @@ func NewBuildPlanner(auth *authentication.Auth) *BuildPlanner {
 	if url, ok := os.LookupEnv("_TEST_BUILDPLAN_URL"); ok {
 		bpURL = url
 	}
+	logging.Debug("Using build planner at: %s", bpURL)
 
 	return &BuildPlanner{
 		auth:   auth,
@@ -111,14 +115,14 @@ func (bp *BuildPlanner) FetchBuildResult(commitID strfmt.UUID, owner, project st
 		bpPlatforms = append(bpPlatforms, strfmt.UUID(strings.TrimPrefix(t.Tag, "platform:")))
 	}
 
-	platformID, err := platformModel.FilterCurrentPlatform(HostPlatform, bpPlatforms)
-	if err != nil {
-		return nil, locale.WrapError(err, "err_filter_current_platform")
-	}
+	// platformID, err := platformModel.FilterCurrentPlatform(HostPlatform, bpPlatforms)
+	// if err != nil {
+	// 	return nil, locale.WrapError(err, "err_filter_current_platform")
+	// }
 
 	var filteredTerminals []*model.NamedTarget
 	for _, t := range resp.Project.Commit.Build.Terminals {
-		if string(platformID) == strings.TrimPrefix(t.Tag, "platform:") {
+		if string(bpPlatforms[0]) == strings.TrimPrefix(t.Tag, "platform:") {
 			filteredTerminals = append(filteredTerminals, t)
 		}
 	}
@@ -144,6 +148,17 @@ func (bp *BuildPlanner) FetchBuildResult(commitID strfmt.UUID, owner, project st
 		}
 	}
 
+	if resp.Project.Commit.Graph != nil {
+		logging.Debug("Not nil!")
+		thing, err := json.MarshalIndent(resp.Project.Commit.Graph, "", "  ")
+		if err != nil {
+			return nil, err
+		}
+		fmt.Println(string(thing))
+	} else {
+		logging.Debug("Nil!")
+	}
+	return nil, errs.New("Temporary error")
 	return &res, nil
 }
 
@@ -175,4 +190,66 @@ func removeEmptyTargets(bp *model.BuildPlan) {
 	bp.Project.Commit.Build.Steps = steps
 	bp.Project.Commit.Build.Sources = sources
 	bp.Project.Commit.Build.Artifacts = artifacts
+}
+
+type SaveAndBuildParams struct {
+	Owner            string
+	Project          string
+	ParentCommit     string
+	Description      string
+	BranchRef        string
+	PackageName      string
+	PackageVersion   string
+	PackageNamespace vcsModel.Namespace
+	Operation        model.Operation
+}
+
+func (bp *BuildPlanner) SaveAndBuild(params *SaveAndBuildParams) (string, error) {
+	// Steps
+	// If parent commit is provided then get the build graph
+	// If it is not create a blank build graph
+	var err error
+	graph := model.NewBuildGraph()
+	if params.ParentCommit != "" {
+		graph, err = bp.GetBuildGraph(params.Owner, params.Project, params.ParentCommit)
+		if err != nil {
+			return "", errs.Wrap(err, "Failed to get build graph")
+		}
+	}
+
+	// Call the build graph update function with the operation
+	graph, err = graph.Update(params.Operation, []model.Requirement{{
+		Namespace: params.PackageNamespace.String(),
+		Name:      params.PackageName,
+		// TODO: need a way to resolve the version requirements from the initial request
+		VersionRequirement: []model.VersionRequirement{{}},
+	}})
+	if err != nil {
+		return "", errs.Wrap(err, "Failed to update build graph")
+	}
+
+	// graphData, err := json.Marshal(graph)
+	// if err != nil {
+	// 	return "", errs.Wrap(err, "Could not marshal build graph")
+	// }
+
+	// With the updated build graph call the save and build mutation
+	req := request.SaveAndBuild(params.Owner, params.Project, params.ParentCommit, params.BranchRef, params.Description, graph)
+	resp := model.Commit{}
+	err = bp.client.Run(req, resp)
+	if err != nil {
+		return "", errs.Wrap(err, "failed to fetch build plan")
+	}
+
+	return resp.CommitID, nil
+}
+
+func (bp *BuildPlanner) GetBuildGraph(owner, project, commitID string) (*model.BuildGraph, error) {
+	resp := &model.BuildGraph{}
+	err := bp.client.Run(request.BuildGraph(owner, project, commitID), resp)
+	if err != nil {
+		return nil, errs.Wrap(err, "failed to fetch build graph")
+	}
+
+	return resp, nil
 }

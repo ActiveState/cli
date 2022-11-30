@@ -2,6 +2,7 @@ package packages
 
 import (
 	"github.com/ActiveState/cli/internal/logging"
+	bgModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model/buildplan"
 	"github.com/ActiveState/cli/pkg/platform/model"
 )
 
@@ -23,5 +24,5 @@ func NewInstall(prime primeable) *Install {
 // Run executes the install behavior.
 func (a *Install) Run(params InstallRunParams, nstype model.NamespaceType) error {
 	logging.Debug("ExecuteInstall")
-	return executePackageOperation(a.prime, params.Package.Name(), params.Package.Version(), model.OperationAdded, nstype)
+	return executePackageOperationWithBuildPlan(a.prime, params.Package.Name(), params.Package.Version(), bgModel.OperationAdd, nstype)
 }
