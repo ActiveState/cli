@@ -46,7 +46,7 @@ func (m *SvcModel) request(ctx context.Context, request gqlclient.Request, resp 
 	err := m.client.RunWithContext(ctx, request, resp)
 	if err != nil {
 		reqError := &gqlclient.RequestError{}
-		if errors.As(err, &reqError) && condition.InTest() {
+		if errors.As(err, &reqError) && (!condition.BuiltViaCI() || condition.InTest()) {
 			logging.Debug(
 				"svc client gql request failed - query: %q, vars: %q",
 				reqError.Request.Query(),
