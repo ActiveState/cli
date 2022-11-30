@@ -3,20 +3,14 @@
 <plist version="1.0">
     <dict>
         <key>Label</key>
-        <string>my.everydaytasks</string>
+        <string>com.activestate.StateToolService</string>
         <key>ProgramArguments</key>
         <array>
-            <!-- Wrap in `sh -c` so that $HOME is expanded -->
-            <string>sh</string>
-            <string>-c</string>
-            {{- if .Args }}
-            <string>{{.Exec}} {{.Args}}</string>
-            {{- else}}
-            <string>{{.Exec}}</string>
-            {{- end}}
+          <string>{{.Exec}}</string>
+          {{- if .Args }}
+          <string>{{.Args}}</string>
+          {{- end}}
         </array>
-        <key>ProcessType</key>
-        <string>Interactive</string>
         <key>RunAtLoad</key>
         <true/>
         <key>KeepAlive</key>
