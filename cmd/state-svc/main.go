@@ -11,20 +11,17 @@ import (
 	"syscall"
 	"time"
 
-	svcAutostart "github.com/ActiveState/cli/cmd/state-svc/autostart"
+	"github.com/ActiveState/cli/cmd/state-svc/autostart"
 	anaSync "github.com/ActiveState/cli/internal/analytics/client/sync"
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/events"
-	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/ipc"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	configMediator "github.com/ActiveState/cli/internal/mediators/config"
 	"github.com/ActiveState/cli/internal/multilog"
-	"github.com/ActiveState/cli/internal/osutils/autostart"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/rollbar"
@@ -104,21 +101,7 @@ func run(cfg *config.Instance) error {
 		return errs.Wrap(err, "Could not initialize outputer")
 	}
 
-	if svcExec, err := installation.ServiceExec(); err == nil {
-		if as, err := autostart.New(svcAutostart.App, svcExec, nil, svcAutostart.Options, cfg); err == nil {
-			configMediator.AddListener(constants.AutostartSvcConfigKey, func() {
-				if cfg.GetBool(constants.AutostartSvcConfigKey) {
-					as.Enable()
-				} else {
-					as.Disable()
-				}
-			})
-		} else {
-			multilog.Error("state-svc could not find its autostart")
-		}
-	} else {
-		multilog.Error("state-svc could not find its executable")
-	}
+	autostart.RegisterConfigListener(cfg)
 
 	if mousetrap.StartedByExplorer() {
 		// Allow starting the svc via a double click
