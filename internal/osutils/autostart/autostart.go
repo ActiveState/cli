@@ -1,6 +1,15 @@
 package autostart
 
+import (
+	"github.com/ActiveState/cli/internal/constants"
+	configMediator "github.com/ActiveState/cli/internal/mediators/config"
+)
+
 type AppName string
+
+func init() {
+	configMediator.RegisterOption(constants.AutostartSvcConfigKey, configMediator.Bool, configMediator.EmptyEvent, configMediator.EmptyEvent)
+}
 
 func (a AppName) String() string {
 	return string(a)
