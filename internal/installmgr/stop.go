@@ -1,6 +1,8 @@
 package installmgr
 
 import (
+	"errors"
+	"os"
 	"runtime"
 	"strings"
 	"syscall"
@@ -151,6 +153,8 @@ func killProcess(proc *process.Process, name string) error {
 			if err != nil {
 				if osutils.IsAccessDeniedError(err) {
 					return locale.WrapInputError(err, "err_insufficient_permissions")
+				} else if errors.Is(err, os.ErrProcessDone) {
+					return nil
 				}
 				return errs.Wrap(err, "Could not kill child process of %s", name)
 			}
@@ -163,6 +167,8 @@ func killProcess(proc *process.Process, name string) error {
 	if err != nil {
 		if osutils.IsAccessDeniedError(err) {
 			return locale.WrapInputError(err, "err_insufficient_permissions")
+		} else if errors.Is(err, os.ErrProcessDone) {
+			return nil
 		}
 		return errs.Wrap(err, "Could not kill %s process", name)
 	}
