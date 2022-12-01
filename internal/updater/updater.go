@@ -132,7 +132,7 @@ func (u *AvailableUpdate) InstallBlocking(installTargetPath string, args ...stri
 		return err
 	}
 
-	envs := []string{constants.DisableErrorTipsEnvVarName + "=true"}
+	var envs []string
 	if u.Tag != nil {
 		envs = append(envs, fmt.Sprintf("%s=%s", constants.UpdateTagEnvVarName, *u.Tag))
 	}
