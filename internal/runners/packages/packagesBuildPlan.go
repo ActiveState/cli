@@ -24,7 +24,7 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-func executePackageOperationWithBuildPlan(prime primeable, packageName, packageVersion string, operation bgModel.Operation, nsType model.NamespaceType) (rerr error) {
+func executePackageOperationWithBuildPlan(prime primeable, packageName string, packageVersion string, operation bgModel.Operation, nsType model.NamespaceType) (rerr error) {
 	var ns model.Namespace
 	var langVersion string
 	langName := "undetermined"
@@ -116,8 +116,8 @@ func executePackageOperationWithBuildPlan(prime primeable, packageName, packageV
 
 	pg = output.NewDotProgress(out, locale.T("progress_commit"), 10*time.Second)
 
-	// Check if this is an addition or an update
 	// TODO: This will not work with the test harness
+	// Check if this is an addition or an update
 	// if operation == bgModel.OperationAdd && parentCommitID != "" {
 	// 	req, err := model.GetRequirement(parentCommitID, ns.String(), packageName)
 	// 	if err != nil {

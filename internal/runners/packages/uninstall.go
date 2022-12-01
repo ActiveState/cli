@@ -3,6 +3,7 @@ package packages
 import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	bgModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model/buildplan"
 	"github.com/ActiveState/cli/pkg/platform/model"
 )
 
@@ -28,5 +29,5 @@ func (r *Uninstall) Run(params UninstallRunParams, nstype model.NamespaceType) e
 		return locale.NewInputError("err_no_project")
 	}
 
-	return executePackageOperation(r.prime, params.Name, "", model.OperationRemoved, nstype)
+	return executePackageOperationWithBuildPlan(r.prime, params.Name, "", bgModel.OperationRemove, nstype)
 }

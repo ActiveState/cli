@@ -1,8 +1,6 @@
 package model
 
 import (
-	"encoding/json"
-	"fmt"
 	"net/http"
 	"os"
 	"strings"
@@ -115,6 +113,7 @@ func (bp *BuildPlanner) FetchBuildResult(commitID strfmt.UUID, owner, project st
 		bpPlatforms = append(bpPlatforms, strfmt.UUID(strings.TrimPrefix(t.Tag, "platform:")))
 	}
 
+	// TODO: Re-enable this once the build mutations are in place
 	// platformID, err := platformModel.FilterCurrentPlatform(HostPlatform, bpPlatforms)
 	// if err != nil {
 	// 	return nil, locale.WrapError(err, "err_filter_current_platform")
@@ -148,17 +147,6 @@ func (bp *BuildPlanner) FetchBuildResult(commitID strfmt.UUID, owner, project st
 		}
 	}
 
-	if resp.Project.Commit.Graph != nil {
-		logging.Debug("Not nil!")
-		thing, err := json.MarshalIndent(resp.Project.Commit.Graph, "", "  ")
-		if err != nil {
-			return nil, err
-		}
-		fmt.Println(string(thing))
-	} else {
-		logging.Debug("Nil!")
-	}
-	return nil, errs.New("Temporary error")
 	return &res, nil
 }
 
@@ -205,7 +193,6 @@ type SaveAndBuildParams struct {
 }
 
 func (bp *BuildPlanner) SaveAndBuild(params *SaveAndBuildParams) (string, error) {
-	// Steps
 	// If parent commit is provided then get the build graph
 	// If it is not create a blank build graph
 	var err error
@@ -217,26 +204,25 @@ func (bp *BuildPlanner) SaveAndBuild(params *SaveAndBuildParams) (string, error)
 		}
 	}
 
-	// Call the build graph update function with the operation
-	graph, err = graph.Update(params.Operation, []model.Requirement{{
+	requirement := model.Requirement{
 		Namespace: params.PackageNamespace.String(),
 		Name:      params.PackageName,
-		// TODO: need a way to resolve the version requirements from the initial request
-		VersionRequirement: []model.VersionRequirement{{}},
-	}})
+	}
+
+	if params.PackageVersion != "" {
+		requirement.VersionRequirement = []model.VersionRequirement{{model.ComparatorEQ: params.PackageVersion}}
+	}
+
+	// Call the build graph update function with the operation
+	graph, err = graph.Update(params.Operation, []model.Requirement{requirement})
 	if err != nil {
 		return "", errs.Wrap(err, "Failed to update build graph")
 	}
 
-	// graphData, err := json.Marshal(graph)
-	// if err != nil {
-	// 	return "", errs.Wrap(err, "Could not marshal build graph")
-	// }
-
 	// With the updated build graph call the save and build mutation
-	req := request.SaveAndBuild(params.Owner, params.Project, params.ParentCommit, params.BranchRef, params.Description, graph)
+	request := request.SaveAndBuild(params.Owner, params.Project, params.ParentCommit, params.BranchRef, params.Description, graph)
 	resp := model.Commit{}
-	err = bp.client.Run(req, resp)
+	err = bp.client.Run(request, resp)
 	if err != nil {
 		return "", errs.Wrap(err, "failed to fetch build plan")
 	}

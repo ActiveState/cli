@@ -100,7 +100,12 @@ func (bg *BuildGraph) remove(requirements []Requirement) *BuildGraph {
 }
 
 func (bg *BuildGraph) update(requirements []Requirement) *BuildGraph {
-	// TODO: Fetch the latest version from the platform and update the version requirement
-	// for the given requirements
+	for _, req := range bg.Let.Runtime.SolveLegacy.Requirements {
+		for _, updateReq := range requirements {
+			if req.Name == updateReq.Name && req.Namespace == updateReq.Namespace {
+				req.VersionRequirement = updateReq.VersionRequirement
+			}
+		}
+	}
 	return bg
 }
