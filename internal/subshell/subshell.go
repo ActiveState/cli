@@ -16,6 +16,7 @@ import (
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/ActiveState/cli/internal/subshell/bash"
 	"github.com/ActiveState/cli/internal/subshell/cmd"
 	"github.com/ActiveState/cli/internal/subshell/fish"
@@ -87,19 +88,7 @@ type SubShell interface {
 
 // New returns the subshell relevant to the current process, but does not activate it
 func New(cfg sscommon.Configurable) SubShell {
-	binary := DetectShellBinary(cfg)
-
-	// try to find the binary on the PATH
-	binaryPath, err := exec.LookPath(binary)
-	if err == nil {
-		// if we found it, resolve all symlinks, for many Linux distributions the SHELL is "sh" but symlinked to a different default shell like bash or zsh
-		resolved, err := fileutils.ResolvePath(binaryPath)
-		if err == nil {
-			binary = resolved
-		} else {
-			logging.Debug("Failed to resolve path to shell binary %s: %v", binaryPath, err)
-		}
-	}
+	binary := resolveBinaryPath(DetectShellBinary(cfg))
 
 	name := filepath.Base(binary)
 	name = strings.TrimSuffix(name, filepath.Ext(name))
@@ -125,14 +114,19 @@ func New(cfg sscommon.Configurable) SubShell {
 		subs = &cmd.SubShell{}
 	default:
 		logging.Debug("Unsupported shell: %s, defaulting to OS default.", name)
+		rollbar.Error("Unsupported shell: %s", name) // we just want to know what this person is using
 		switch runtime.GOOS {
 		case "windows":
-			return &cmd.SubShell{}
+			binary = "cmd.exe"
+			subs = &cmd.SubShell{}
 		case "darwin":
-			return &zsh.SubShell{}
+			binary = "zsh"
+			subs = &zsh.SubShell{}
 		default:
-			return &bash.SubShell{}
+			binary = "bash"
+			subs = &bash.SubShell{}
 		}
+		binary = resolveBinaryPath(binary)
 	}
 
 	logging.Debug("Using binary: %s", binary)
@@ -141,7 +135,7 @@ func New(cfg sscommon.Configurable) SubShell {
 	env := funk.FilterString(os.Environ(), func(s string) bool {
 		return !strings.HasPrefix(s, constants.ProjectEnvVarName)
 	})
-	err = subs.SetEnv(osutils.EnvSliceToMap(env))
+	err := subs.SetEnv(osutils.EnvSliceToMap(env))
 	if err != nil {
 		// We cannot error here, but this error will resurface when activating a runtime, so we can
 		// notify the user at that point.
@@ -149,6 +143,21 @@ func New(cfg sscommon.Configurable) SubShell {
 	}
 
 	return subs
+}
+
+// resolveBinaryPath tries to find the named binary on PATH
+func resolveBinaryPath(name string) string {
+	binaryPath, err := exec.LookPath(name)
+	if err == nil {
+		// if we found it, resolve all symlinks, for many Linux distributions the SHELL is "sh" but symlinked to a different default shell like bash or zsh
+		resolved, err := fileutils.ResolvePath(binaryPath)
+		if err == nil {
+			return resolved
+		} else {
+			logging.Debug("Failed to resolve path to shell binary %s: %v", binaryPath, err)
+		}
+	}
+	return name
 }
 
 func ConfigureAvailableShells(shell SubShell, cfg sscommon.Configurable, env map[string]string, identifier sscommon.RcIdentification, userScope bool) error {
