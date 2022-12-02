@@ -423,6 +423,46 @@ func (suite *AnalyticsIntegrationTestSuite) TestAttempts() {
 	}
 }
 
+func (suite *AnalyticsIntegrationTestSuite) TestHeapEvents() {
+	suite.OnlyRunForTags(tagsuite.Analytics)
+
+	ts := e2e.New(suite.T(), true)
+	defer ts.Close()
+
+	ts.LoginAsPersistentUser()
+
+	cp := ts.SpawnWithOpts(e2e.WithArgs("activate", "ActiveState-CLI/Alternate-Python"),
+		e2e.WithWorkDirectory(ts.Dirs.Work),
+	)
+
+	cp.Expect("Creating a Virtual Environment")
+	cp.Expect("Activated")
+	cp.WaitForInput(120 * time.Second)
+
+	time.Sleep(time.Second) // Ensure state-svc has time to report events
+
+	suite.eventsfile = filepath.Join(ts.Dirs.Config, reporters.TestReportFilename)
+
+	events := parseAnalyticsEvents(suite, ts)
+	suite.Require().NotEmpty(events)
+
+	// Ensure analytics events have required/important fields
+	for _, e := range events {
+		if strings.Contains(e.Category, "state-svc") || strings.Contains(e.Action, "state-svc") || strings.Contains(e.Action, "auth") {
+			continue
+		}
+
+		// UserID is used to identify the user
+		suite.NotEmpty(e.Dimensions.UserID, "Event should have a user ID")
+
+		// Category and Action are primary attributes reported to Heap and should be set
+		suite.NotEmpty(e.Category, "Event category should not be empty")
+		suite.NotEmpty(e.Action, "Event action should not be empty")
+	}
+
+	suite.assertSequentialEvents(events)
+}
+
 func TestAnalyticsIntegrationTestSuite(t *testing.T) {
 	suite.Run(t, new(AnalyticsIntegrationTestSuite))
 }
