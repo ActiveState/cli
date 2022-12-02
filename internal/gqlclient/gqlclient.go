@@ -103,5 +103,10 @@ func (c *Client) RunWithContext(ctx context.Context, request Request, response i
 
 	graphRequest.Header.Set("X-Requestor", uniqid.Text())
 
-	return c.graphqlClient.Run(ctx, graphRequest, &response)
+	err := c.graphqlClient.Run(ctx, graphRequest, &response)
+	if err != nil {
+		return NewRequestError(err, request)
+	}
+
+	return nil
 }
