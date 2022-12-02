@@ -11,10 +11,6 @@
           <string>{{.Args}}</string>
           {{- end}}
         </array>
-        {{- if .Interactive }}
-        <key>ProcessType</key>
-        <string>Interactive</string>
-        {{- end}}
         <key>RunAtLoad</key>
         <true/>
         <key>KeepAlive</key>
