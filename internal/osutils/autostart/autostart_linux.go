@@ -1,7 +1,6 @@
 package autostart
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -82,8 +81,7 @@ func (a *app) enableOnServer() error {
 	}
 
 	esc := osutils.NewBashEscaper()
-	// Avoid output to the console when starting up
-	exec := fmt.Sprintf("%s > /dev/null 2>&1", a.Exec)
+	exec := esc.Quote(a.Exec)
 	for _, arg := range a.Args {
 		exec += " " + esc.Quote(arg)
 	}
