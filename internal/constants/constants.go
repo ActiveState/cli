@@ -379,6 +379,12 @@ const RCAppendInstallStartLine = "-- START ACTIVESTATE INSTALLATION"
 // RCAppendInstallStopLine is the end line used to denote our default installation config in RC files
 const RCAppendInstallStopLine = "-- STOP ACTIVESTATE INSTALLATION"
 
+// RCAppendAutostartStartLine is the start line used to denote our autostart executables in RC files
+const RCAppendAutostartStartLine = "## START ACTIVESTATE AUTOSTART"
+
+// RCAppendAutostartStartLine is the end line used to denote our autostart executables in RC files
+const RCAppendAutostartStopLine = "## STOP ACTIVESTATE AUTOSTART"
+
 // ForumsURL is the URL to the state tool forums
 const ForumsURL = "https://community.activestate.com/c/state-tool/"
 

@@ -1,6 +1,7 @@
 package autostart
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -81,12 +82,13 @@ func (a *app) enableOnServer() error {
 	}
 
 	esc := osutils.NewBashEscaper()
-	exec := esc.Quote(a.Exec)
+	// Avoid output to the console when starting up
+	exec := fmt.Sprintf("%s > /dev/null 2>&1", a.Exec)
 	for _, arg := range a.Args {
 		exec += " " + esc.Quote(arg)
 	}
 
-	return sscommon.WriteRcData(exec, profile, sscommon.InstallID)
+	return sscommon.WriteRcData(exec, profile, sscommon.AutostartID)
 }
 
 // Path returns the path to the installed autostart shortcut file.
@@ -133,8 +135,12 @@ func (a *app) disable() error {
 	if err != nil {
 		return errs.Wrap(err, "Could not find ~/.profile")
 	}
+	// Some older versions of the State Tool used a different ID for the autostart entry.
 	if fileutils.FileExists(profile) {
 		return sscommon.CleanRcFile(profile, sscommon.InstallID)
+	}
+	if fileutils.FileExists(profile) {
+		return sscommon.CleanRcFile(profile, sscommon.AutostartID)
 	}
 
 	return nil
