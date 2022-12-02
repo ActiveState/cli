@@ -43,7 +43,12 @@ func (a *app) enable() error {
 
 	content, err := strutils.ParseTemplate(
 		string(asset),
-		map[string]interface{}{"Exec": a.Exec, "Args": strings.Join(a.Args, " ")})
+		map[string]interface{}{
+			"Label":       a.options.MacLabel,
+			"Exec":        a.Exec,
+			"Args":        strings.Join(a.Args, " "),
+			"Interactive": a.options.MacInteractive,
+		})
 	if err != nil {
 		return errs.Wrap(err, "Could not parse %s", fmt.Sprintf(launchFileFormatName, filepath.Base(a.Exec)))
 	}
