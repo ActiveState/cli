@@ -3,7 +3,7 @@
 <plist version="1.0">
     <dict>
         <key>Label</key>
-        <string>com.activestate.StateToolService</string>
+        <string>{{.Label}}</string>
         <key>ProgramArguments</key>
         <array>
           <string>{{.Exec}}</string>
