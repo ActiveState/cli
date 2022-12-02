@@ -223,6 +223,9 @@ func (r *runner) removeEnvPaths() error {
 	if err := r.shell.CleanUserEnv(r.cfg, sscommon.OfflineInstallID, !isAdmin); err != nil {
 		return errs.Wrap(err, "Failed to remove runtime PATH")
 	}
+	if err := r.shell.CleanUserEnv(r.cfg, sscommon.AutostartID, !isAdmin); err != nil {
+		return errs.Wrap(err, "Failed to remove runtime PATH")
+	}
 
 	return nil
 }
