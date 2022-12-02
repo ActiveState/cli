@@ -85,7 +85,11 @@ func run() error {
 
 	logr.Debug("communications - sock: %s", meta.SockPath)
 	if err := sendMsgToService(meta.SockPath, hb); err != nil {
-		return fmt.Errorf("cannot send message to service: %w", err)
+		logr.Debug("                 sock - error: %v", err)
+
+		if onCI() { // halt control flow on CI only
+			return fmt.Errorf("cannot send message to service: %w", err)
+		}
 	}
 
 	logr.Debug("cmd - running: %s", meta.MatchingBin)

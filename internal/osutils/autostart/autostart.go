@@ -30,6 +30,8 @@ type Options struct {
 	GenericName    string
 	Comment        string
 	Keywords       string
+	MacLabel       string // macOS plist Label
+	MacInteractive bool   // macOS plist Interactive ProcessType
 }
 
 type Configurable interface {

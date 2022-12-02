@@ -18,7 +18,7 @@ var Options = autostart.Options{}
 
 func RegisterConfigListener(cfg *config.Instance) {
 	if svcExec, err := installation.ServiceExec(); err == nil {
-		if as, err := autostart.New(App, svcExec, nil, Options, cfg); err == nil {
+		if as, err := autostart.New(App, svcExec, []string{"start"}, Options, cfg); err == nil {
 			configMediator.AddListener(constants.AutostartSvcConfigKey, func() {
 				if cfg.GetBool(constants.AutostartSvcConfigKey) {
 					logging.Debug("Enabling autostart")
