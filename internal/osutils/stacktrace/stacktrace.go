@@ -2,9 +2,12 @@ package stacktrace
 
 import (
 	"fmt"
+	"go/build"
+	"path/filepath"
 	"runtime"
 	"strings"
 
+	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/rtutils"
 )
 
@@ -31,10 +34,33 @@ type Frame struct {
 var FrameCap = 20
 
 // String returns a string representation of a stacktrace
+// For example:
+//   ./package/file.go:123:file.func
+//   ./another/package.go:456:package.(*Struct).method
+//   <go>/src/runtime.s:789:runtime.func
 func (t *Stacktrace) String() string {
 	result := []string{}
 	for _, frame := range t.Frames {
-		result = append(result, fmt.Sprintf(`%s:%s:%d`, frame.Path, frame.Func, frame.Line))
+		// Shorten path from its absolute path.
+		path := frame.Path
+		if strings.HasPrefix(path, build.Default.GOROOT) {
+			// Convert "/path/to/go/distribution/file" to "<go>/file".
+			path = strings.Replace(path, build.Default.GOROOT, "<go>", 1)
+		} else if root, err := environment.GetRootPath(); err == nil {
+			// Convert "/path/to/cli/file" to "./file".
+			if relPath, err2 := filepath.Rel(root, path); err2 == nil {
+				path = "./" + relPath
+			}
+		}
+
+		// Shorten fully qualified function name to its local package name.
+		funcName := frame.Func
+		if index := strings.LastIndex(frame.Func, "/"); index > 0 {
+			// Convert "example.com/project/package/name.func" to "name.func".
+			funcName = frame.Func[index+1:]
+		}
+
+		result = append(result, fmt.Sprintf(`%s:%d:%s`, path, frame.Line, funcName))
 	}
 	return strings.Join(result, "\n")
 }
