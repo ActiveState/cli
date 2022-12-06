@@ -33,6 +33,13 @@ type Frame struct {
 // for purpose of performance optimisation.
 var FrameCap = 20
 
+var environmentRootPath string
+
+func init() {
+	// Note: ignore any error. It cannot be logged due to logging's dependence on this package.
+	environmentRootPath, _ = environment.GetRootPath()
+}
+
 // String returns a string representation of a stacktrace
 // For example:
 //   ./package/file.go:123:file.func
@@ -46,9 +53,9 @@ func (t *Stacktrace) String() string {
 		if strings.HasPrefix(path, build.Default.GOROOT) {
 			// Convert "/path/to/go/distribution/file" to "<go>/file".
 			path = strings.Replace(path, build.Default.GOROOT, "<go>", 1)
-		} else if root, err := environment.GetRootPath(); err == nil {
+		} else if environmentRootPath != "" {
 			// Convert "/path/to/cli/file" to "./file".
-			if relPath, err2 := filepath.Rel(root, path); err2 == nil {
+			if relPath, err := filepath.Rel(environmentRootPath, path); err == nil {
 				path = "./" + relPath
 			}
 		}
