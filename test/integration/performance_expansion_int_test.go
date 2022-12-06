@@ -56,8 +56,9 @@ func (suite *PerformanceExpansionIntegrationTestSuite) TestExpansionPerformance(
 		})
 		variance := float64(avg) + (float64(avg) * DefaultVariance)
 		baseline = time.Duration(variance)
-		suite.Require().NotEqual(baseline, DefaultMaxTime)
 	})
+
+	suite.Require().NotEqual(baseline, DefaultMaxTime)
 
 	suite.Run("CallScriptFromMerged", func() {
 		additionalYamls := make(map[string]projectfile.Project)
