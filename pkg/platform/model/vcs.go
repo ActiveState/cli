@@ -885,7 +885,7 @@ func GetRevertCommit(from, to strfmt.UUID) (*mono_models.Commit, error) {
 func RevertCommitWithinHistory(from, to strfmt.UUID) (*mono_models.Commit, error) {
 	ok, err := CommitWithinCommitHistory(from, to)
 	if err != nil {
-		return nil, locale.WrapError(err, "err_revert_commit_within_history_no_info", "API communication failed.")
+		return nil, errs.Wrap(err, "API communication failed.")
 	}
 	if !ok {
 		return nil, locale.WrapError(err, "err_revert_commit_within_history_not_in", "The commit being reverted to is not within the current commit's history.")
@@ -954,7 +954,7 @@ func GetCommit(commitID strfmt.UUID) (*mono_models.Commit, error) {
 func GetCommitWithinCommitHistory(currentCommitID, targetCommitID strfmt.UUID) (*mono_models.Commit, error) {
 	ok, err := CommitWithinCommitHistory(currentCommitID, targetCommitID)
 	if err != nil {
-		return nil, locale.WrapError(err, "err_get_commit_within_history_no_info", "API communication failed.")
+		return nil, errs.Wrap(err, "API communication failed.")
 	}
 	if !ok {
 		return nil, locale.WrapError(err, "err_get_commit_within_history_not_in", "The target commit is not within the current commit's history.")
