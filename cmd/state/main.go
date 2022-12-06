@@ -150,6 +150,17 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 
 	svcmodel := model.NewSvcModel(svcPort)
 
+	// Give the logger a way to fetch the state-svc log tail. This cannot be done inside the logger
+	// package itself because importing pkg/platform/model creates an import cycle.
+	logging.SetSvcTailProvider(func() string {
+		ctx, cancel := context.WithTimeout(context.Background(), model.SvcTimeoutMinimal)
+		defer cancel()
+		if tail, err := svcmodel.FetchLogTail(ctx); err == nil {
+			return tail
+		}
+		return ""
+	})
+
 	// Retrieve project file
 	pjPath, err := projectfile.GetProjectFilePath()
 	if err != nil && errs.Matches(err, &projectfile.ErrorNoProjectFromEnv{}) {

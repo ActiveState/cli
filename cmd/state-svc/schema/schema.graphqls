@@ -46,6 +46,7 @@ type Query {
   runtimeUsage(pid: Int!, exec: String!, dimensionsJson: String!): RuntimeUsageResponse
   checkDeprecation: DeprecationInfo
   configChanged(key: String!): ConfigChangedResponse
+  fetchLogTail: String!
 }
 
 type ConfigChangedResponse {

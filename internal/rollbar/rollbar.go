@@ -14,7 +14,6 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	configMediator "github.com/ActiveState/cli/internal/mediators/config"
 	"github.com/ActiveState/cli/internal/singleton/uniqid"
-
 	"github.com/rollbar/rollbar-go"
 )
 
@@ -111,6 +110,13 @@ func logToRollbar(critical bool, message string, args ...interface{}) {
 	logData := logging.ReadTail()
 	if len(logData) == logging.TailSize {
 		logData = "<truncated>\n" + logData
+	}
+	if svcLogData := logging.ReadSvcTail(); svcLogData != "" { // will be "" if called from state-svc
+		logData += "\nstate-svc log:\n"
+		if len(svcLogData) == logging.TailSize {
+			logData += "<truncated>\n"
+		}
+		logData += svcLogData
 	}
 	data["log_file_data"] = logData
 
