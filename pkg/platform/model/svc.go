@@ -156,9 +156,9 @@ func (m *SvcModel) FetchLogTail(ctx context.Context) (string, error) {
 	logging.Debug("Fetching log svc log")
 	defer profile.Measure("svc:FetchLogTail", time.Now())
 
-	request := request.NewFetchLogTail()
+	req := request.NewFetchLogTail()
 	response := make(map[string]string)
-	if err := m.request(ctx, request, &response); err != nil {
+	if err := m.request(ctx, req, &response); err != nil {
 		return "", errs.Wrap(err, "Error sending FetchLogTail request to state-svc")
 	}
 	if log, ok := response["fetchLogTail"]; ok {
