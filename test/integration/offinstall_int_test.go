@@ -386,7 +386,7 @@ func (suite *OffInstallIntegrationTestSuite) assertShellUpdated(dir, namespace s
 			}
 		}
 
-		// we need to look for  the short and the long version of the target PATH, because Windows translates between them arbitrarily
+		// we need to look for the short and the long version of the target PATH, because Windows translates between them arbitrarily
 		shortPath, _ := fileutils.GetShortPathName(dir)
 		longPath, _ := fileutils.GetLongPathName(dir)
 		if !assert(string(out), shortPath) && !assert(string(out), longPath) && !assert(string(out), dir) {

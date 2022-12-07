@@ -386,6 +386,7 @@ func (r *runner) configureEnvironment(path, namespace string, asrt *runtime.Runt
 	id := sscommon.OfflineInstallID
 	id.Start = fmt.Sprintf("%s-%s", id.Start, namespace)
 	id.Stop = fmt.Sprintf("%s-%s", id.Stop, namespace)
+	id.Key = fmt.Sprintf("%s_%s", id.Key, namespace)
 	err = subshell.ConfigureAvailableShells(r.shell, r.cfg, env, id, !isAdmin)
 	if err != nil {
 		return locale.WrapError(err,

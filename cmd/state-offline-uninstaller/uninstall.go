@@ -224,6 +224,7 @@ func (r *runner) removeEnvPaths(namespace string) error {
 	id := sscommon.OfflineInstallID
 	id.Start = fmt.Sprintf("%s-%s", id.Start, namespace)
 	id.Stop = fmt.Sprintf("%s-%s", id.Stop, namespace)
+	id.Key = fmt.Sprintf("%s_%s", id.Key, namespace)
 	if err := r.shell.CleanUserEnv(r.cfg, id, !isAdmin); err != nil {
 		return errs.Wrap(err, "Failed to remove runtime PATH")
 	}
