@@ -171,6 +171,77 @@ func (suite *OffInstallIntegrationTestSuite) TestInstallNoPermission() {
 	tp.ExpectExitCode(1)
 }
 
+func (suite *OffInstallIntegrationTestSuite) TestInstallTwice() {
+	suite.OnlyRunForTags(tagsuite.OffInstall)
+
+	// Clean up env after test (windows only for now)
+	if runtime.GOOS == "windows" {
+		env := cmd.NewCmdEnv(true)
+		origPath, err := env.Get("PATH")
+		suite.Require().NoError(err)
+		defer func() {
+			suite.Require().NoError(env.Set("PATH", origPath))
+		}()
+	}
+
+	ts := e2e.New(suite.T(), true)
+	defer ts.Close()
+
+	suite.preparePayload(ts)
+
+	defaultInstallParentDir, err := offinstall.DefaultInstallParentDir()
+	suite.Require().NoError(err)
+	defaultInstallDir := filepath.Join(defaultInstallParentDir, "IntegrationTest")
+
+	env := []string{constants.DisableRuntime + "=false"}
+	if runtime.GOOS != "windows" {
+		env = append(env, "SHELL=bash")
+	}
+
+	tp := ts.SpawnCmdWithOpts(
+		suite.installerPath,
+		e2e.WithArgs(defaultInstallDir),
+		e2e.AppendEnv(env...),
+	)
+	tp.Expect("Do you accept the ActiveState Runtime Installer License Agreement? (y/N)", 5*time.Second)
+	tp.Send("y")
+	tp.Expect("Extracting", time.Second)
+	tp.Expect("Installing")
+	tp.Expect("Installation complete")
+	tp.Expect("Press enter to exit")
+	tp.SendLine("")
+	tp.ExpectExitCode(0)
+
+	// Running offline installer again should not cause an error
+	tp = ts.SpawnCmdWithOpts(
+		suite.installerPath,
+		e2e.WithArgs(defaultInstallDir),
+		e2e.AppendEnv(env...),
+	)
+	tp.Expect("Installation directory is not empty")
+	tp.Send("y")
+	tp.Expect("Do you accept the ActiveState Runtime Installer License Agreement? (y/N)", 5*time.Second)
+	tp.Send("y")
+	tp.Expect("Extracting", time.Second)
+	tp.Expect("Installation complete")
+	tp.Expect("Press enter to exit")
+	tp.SendLine("")
+	tp.ExpectExitCode(0)
+
+	// Uninstall
+	tp = ts.SpawnCmdWithOpts(
+		suite.uninstallerPath,
+		e2e.WithArgs(defaultInstallDir),
+		e2e.AppendEnv(env...),
+	)
+	tp.Expect("continue?")
+	tp.SendLine("y")
+	tp.Expect("Uninstall Complete", 5*time.Second)
+	tp.Expect("Press enter to exit")
+	tp.SendLine("")
+	tp.ExpectExitCode(0)
+}
+
 func (suite *OffInstallIntegrationTestSuite) preparePayload(ts *e2e.Session) {
 	root := environment.GetRootPathUnsafe()
 
