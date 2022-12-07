@@ -117,8 +117,9 @@ func (r *runner) Run(params *Params) (rerr error) {
 		return errs.Wrap(err, "Could not read installer config, this installer appears to be corrupted.")
 	}
 
+	namespace := project.NewNamespace(r.icfg.OrgName, r.icfg.ProjectName, "")
 	installerDimensions = &dimensions.Values{
-		ProjectNameSpace: p.StrP(project.NewNamespace(r.icfg.OrgName, r.icfg.ProjectName, "").String()),
+		ProjectNameSpace: p.StrP(namespace.String()),
 		CommitID:         &r.icfg.CommitID,
 		Trigger:          p.StrP(target.TriggerOfflineInstaller.String()),
 	}
@@ -233,7 +234,7 @@ func (r *runner) Run(params *Params) (rerr error) {
 	}
 
 	/* Configure Environment */
-	if err := r.configureEnvironment(targetPath, asrt); err != nil {
+	if err := r.configureEnvironment(targetPath, namespace.String(), asrt); err != nil {
 		return errs.Wrap(err, "Could not configure environment")
 	}
 
@@ -356,7 +357,7 @@ func (r *runner) extractAssets(assetsPath string, backpackZipFile string) error 
 	return nil
 }
 
-func (r *runner) configureEnvironment(path string, asrt *runtime.Runtime) error {
+func (r *runner) configureEnvironment(path, namespace string, asrt *runtime.Runtime) error {
 	env, err := asrt.Env(false, false)
 	if err != nil {
 		return errs.Wrap(err, "Error setting environment")
@@ -381,7 +382,11 @@ func (r *runner) configureEnvironment(path string, asrt *runtime.Runtime) error 
 	if err != nil {
 		return errs.Wrap(err, "Could not determine if running as Windows administrator")
 	}
-	err = subshell.ConfigureAvailableShells(r.shell, r.cfg, env, sscommon.OfflineInstallID, !isAdmin)
+
+	id := sscommon.OfflineInstallID
+	id.Start = fmt.Sprintf("%s-%s", id.Start, namespace)
+	id.Stop = fmt.Sprintf("%s-%s", id.Stop, namespace)
+	err = subshell.ConfigureAvailableShells(r.shell, r.cfg, env, id, !isAdmin)
 	if err != nil {
 		return locale.WrapError(err,
 			"err_deploy_subshell_write",
