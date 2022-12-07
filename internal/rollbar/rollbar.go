@@ -99,6 +99,14 @@ func UpdateRollbarPerson(userID, username, email string) {
 // Wait is a wrapper around rollbar.Wait().
 func Wait() { rollbar.Wait() }
 
+var logDataAmender func(string) string
+
+// SetLogDataAmender routes log data to be sent to Rollbar through the given function first.
+// For example, that function might add more log data to be sent.
+func SetLogDataAmender(f func(string) string) {
+	logDataAmender = f
+}
+
 func logToRollbar(critical bool, message string, args ...interface{}) {
 	// only log to rollbar when on release, beta or unstable branch and when built via CI (ie., non-local build)
 	isPublicChannel := constants.BranchName == constants.ReleaseBranch || constants.BranchName == constants.BetaBranch || constants.BranchName == constants.ExperimentalBranch
@@ -111,12 +119,9 @@ func logToRollbar(critical bool, message string, args ...interface{}) {
 	if len(logData) == logging.TailSize {
 		logData = "<truncated>\n" + logData
 	}
-	svcLogData := logging.ReadSvcTail() // will show up in state-svc Rollbar errors, but there's no harmful recursion, etc.
-	logData += "\nstate-svc log:\n"
-	if len(svcLogData) == logging.TailSize {
-		logData += "<truncated>\n"
+	if logDataAmender != nil {
+		logData = logDataAmender(logData)
 	}
-	logData += svcLogData
 	data["log_file_data"] = logData
 
 	exec := CurrentCmd

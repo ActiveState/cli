@@ -150,16 +150,21 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 
 	svcmodel := model.NewSvcModel(svcPort)
 
-	// Give the logger a way to fetch the state-svc log tail. This cannot be done inside the logger
+	// Amend Rollbar data to also send the state-svc log tail. This cannot be done inside the rollbar
 	// package itself because importing pkg/platform/model creates an import cycle.
-	logging.SetSvcTailProvider(func() string {
+	rollbar.SetLogDataAmender(func(logData string) string {
 		ctx, cancel := context.WithTimeout(context.Background(), model.SvcTimeoutMinimal)
 		defer cancel()
-		tail, err := svcmodel.FetchLogTail(ctx)
+		svcLogData, err := svcmodel.FetchLogTail(ctx)
 		if err != nil {
-			return fmt.Sprintf("Could not fetch state-svc log: %v", err)
+			svcLogData = fmt.Sprintf("Could not fetch state-svc log: %v", err)
 		}
-		return tail
+		logData += "\nstate-svc log:\n"
+		if len(svcLogData) == logging.TailSize {
+			logData += "<truncated>\n"
+		}
+		logData += svcLogData
+		return logData
 	})
 
 	// Retrieve project file

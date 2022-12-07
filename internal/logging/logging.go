@@ -237,26 +237,6 @@ func ReadTail() string {
 	return logTail.Read()
 }
 
-var svcTailProvider func() string
-
-// SetSvcTailProvider registers the given function as providing the state-svc log tail.
-// Fetching that log via pkg/platform/model is not possible here due to an import cycle, so the
-// given function is expected to do that.
-func SetSvcTailProvider(f func() string) {
-	svcTailProvider = f
-}
-
-// ReadSvcTail returns the tail end of the state-svc log, just like ReadTail().
-// This exists in order to have Rollbar send both state logs and state-svc logs together.
-// If no provider function was given earlier, this function returns a constant, so calling it
-// from state-svc is safe. (i.e. state-svc is sending its own error log to Rollbar.)
-func ReadSvcTail() string {
-	if svcTailProvider != nil {
-		return svcTailProvider()
-	}
-	return "No svc tail log provider set"
-}
-
 func writeMessageDepth(depth int, level string, msg string, args ...interface{}) {
 	ctx := getContext(level, depth)
 
