@@ -155,10 +155,11 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 	logging.SetSvcTailProvider(func() string {
 		ctx, cancel := context.WithTimeout(context.Background(), model.SvcTimeoutMinimal)
 		defer cancel()
-		if tail, err := svcmodel.FetchLogTail(ctx); err == nil {
-			return tail
+		tail, err := svcmodel.FetchLogTail(ctx)
+		if err != nil {
+			return fmt.Sprintf("Could not fetch state-svc log: %v", err)
 		}
-		return ""
+		return tail
 	})
 
 	// Retrieve project file
