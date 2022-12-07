@@ -234,7 +234,7 @@ func (r *runner) Run(params *Params) (rerr error) {
 	}
 
 	/* Configure Environment */
-	if err := r.configureEnvironment(targetPath, namespace.String(), asrt); err != nil {
+	if err := r.configureEnvironment(targetPath, namespace, asrt); err != nil {
 		return errs.Wrap(err, "Could not configure environment")
 	}
 
@@ -357,7 +357,7 @@ func (r *runner) extractAssets(assetsPath string, backpackZipFile string) error 
 	return nil
 }
 
-func (r *runner) configureEnvironment(path, namespace string, asrt *runtime.Runtime) error {
+func (r *runner) configureEnvironment(path string, namespace *project.Namespaced, asrt *runtime.Runtime) error {
 	env, err := asrt.Env(false, false)
 	if err != nil {
 		return errs.Wrap(err, "Error setting environment")
@@ -383,10 +383,7 @@ func (r *runner) configureEnvironment(path, namespace string, asrt *runtime.Runt
 		return errs.Wrap(err, "Could not determine if running as Windows administrator")
 	}
 
-	id := sscommon.OfflineInstallID
-	id.Start = fmt.Sprintf("%s-%s", id.Start, namespace)
-	id.Stop = fmt.Sprintf("%s-%s", id.Stop, namespace)
-	id.Key = fmt.Sprintf("%s_%s", id.Key, namespace)
+	id := sscommon.ProjectRCIdentifier(sscommon.OfflineInstallID, namespace)
 	err = subshell.ConfigureAvailableShells(r.shell, r.cfg, env, id, !isAdmin)
 	if err != nil {
 		return locale.WrapError(err,

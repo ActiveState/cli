@@ -119,7 +119,7 @@ func (r *runner) Run(params *Params) (rerr error) {
 	r.analytics.Event(ac.CatOfflineInstaller, ac.ActOfflineInstallerStart, installerDimensions)
 
 	r.out.Print("Removing environment configuration")
-	err = r.removeEnvPaths(namespace.String())
+	err = r.removeEnvPaths(namespace)
 	if err != nil {
 		return errs.Wrap(err, "Error removing environment path")
 	}
@@ -214,17 +214,14 @@ func (r *runner) validateTargetPath(path string) error {
 	return nil
 }
 
-func (r *runner) removeEnvPaths(namespace string) error {
+func (r *runner) removeEnvPaths(namespace *project.Namespaced) error {
 	isAdmin, err := osutils.IsAdmin()
 	if err != nil {
 		return errs.Wrap(err, "Could not determine if running as Windows administrator")
 	}
 
 	// remove shell file additions
-	id := sscommon.OfflineInstallID
-	id.Start = fmt.Sprintf("%s-%s", id.Start, namespace)
-	id.Stop = fmt.Sprintf("%s-%s", id.Stop, namespace)
-	id.Key = fmt.Sprintf("%s_%s", id.Key, namespace)
+	id := sscommon.ProjectRCIdentifier(sscommon.OfflineInstallID, namespace)
 	if err := r.shell.CleanUserEnv(r.cfg, id, !isAdmin); err != nil {
 		return errs.Wrap(err, "Failed to remove runtime PATH")
 	}
