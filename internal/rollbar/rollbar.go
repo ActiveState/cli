@@ -111,13 +111,12 @@ func logToRollbar(critical bool, message string, args ...interface{}) {
 	if len(logData) == logging.TailSize {
 		logData = "<truncated>\n" + logData
 	}
-	if svcLogData := logging.ReadSvcTail(); svcLogData != logging.SvcTailProviderNotSet {
-		logData += "\nstate-svc log:\n"
-		if len(svcLogData) == logging.TailSize {
-			logData += "<truncated>\n"
-		}
-		logData += svcLogData
+	svcLogData := logging.ReadSvcTail()
+	logData += "\nstate-svc log:\n"
+	if len(svcLogData) == logging.TailSize {
+		logData += "<truncated>\n"
 	}
+	logData += svcLogData
 	data["log_file_data"] = logData
 
 	exec := CurrentCmd

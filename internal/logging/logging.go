@@ -238,7 +238,6 @@ func ReadTail() string {
 }
 
 var svcTailProvider func() string
-var SvcTailProviderNotSet = "no svc tail log provider set"
 
 // SetSvcTailProvider registers the given function as providing the state-svc log tail.
 // Fetching that log via pkg/platform/model is not possible here due to an import cycle, so the
@@ -255,7 +254,7 @@ func ReadSvcTail() string {
 	if svcTailProvider != nil {
 		return svcTailProvider()
 	}
-	return SvcTailProviderNotSet
+	return "No svc tail log provider set"
 }
 
 func writeMessageDepth(depth int, level string, msg string, args ...interface{}) {
