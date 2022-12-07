@@ -24,6 +24,7 @@ import (
 	"github.com/ActiveState/cli/internal/subshell/cmd"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
+	"github.com/ActiveState/cli/pkg/project"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/suite"
 )
@@ -36,6 +37,7 @@ type OffInstallIntegrationTestSuite struct {
 }
 
 const (
+	defaultOrg                 = "ActiveState-Test"
 	defaultProject             = "IntegrationTest"
 	anotherProject             = "Another-IntegrationTest"
 	defaultArtifactsPayload    = "artifacts-payload"
@@ -75,6 +77,7 @@ func (suite *OffInstallIntegrationTestSuite) TestInstallAndUninstall() {
 	if runtime.GOOS != "windows" {
 		env = append(env, "SHELL=bash")
 	}
+	namespace := project.NewNamespace(defaultOrg, defaultProject, "")
 	{ // Install
 		suite.runOfflineInstaller(ts, defaultInstallDir, env)
 
@@ -92,7 +95,7 @@ func (suite *OffInstallIntegrationTestSuite) TestInstallAndUninstall() {
 		}
 
 		// Ensure shell env is updated
-		suite.assertShellUpdated(defaultInstallDir, true, ts)
+		suite.assertShellUpdated(defaultInstallDir, namespace.String(), true, ts)
 
 		// Ensure installation dir looks correct
 		suite.assertInstallDir(defaultInstallDir, defaultInstalledExecutable, true)
@@ -128,7 +131,7 @@ func (suite *OffInstallIntegrationTestSuite) TestInstallAndUninstall() {
 		tp.ExpectExitCode(0)
 
 		// Ensure shell env is updated
-		suite.assertShellUpdated(defaultInstallDir, false, ts)
+		suite.assertShellUpdated(defaultInstallDir, namespace.String(), false, ts)
 
 		// Ensure installation files are removed
 		suite.assertInstallDir(defaultInstallDir, defaultInstalledExecutable, false)
@@ -194,6 +197,9 @@ func (suite *OffInstallIntegrationTestSuite) TestInstallMultiple() {
 	firstInstallDir := filepath.Join(defaultInstallParentDir, "IntegrationTest")
 	secondInstallDir := filepath.Join(defaultInstallParentDir, "Another-IntegrationTest")
 
+	firstNamespace := project.NewNamespace(defaultOrg, defaultProject, "")
+	secondNamespace := project.NewNamespace(defaultOrg, anotherProject, "")
+
 	env := []string{constants.DisableRuntime + "=false"}
 	if runtime.GOOS != "windows" {
 		env = append(env, "SHELL=bash")
@@ -207,12 +213,30 @@ func (suite *OffInstallIntegrationTestSuite) TestInstallMultiple() {
 	suite.runOfflineInstaller(ts, secondInstallDir, env)
 
 	// Assert first projects updates are still in place
-	suite.assertShellUpdated(firstInstallDir, true, ts)
+	suite.assertShellUpdated(firstInstallDir, firstNamespace.String(), true, ts)
 	suite.assertInstallDir(firstInstallDir, defaultInstalledExecutable, true)
 
 	// Assert second projects updates are also in place
-	suite.assertShellUpdated(secondInstallDir, true, ts)
+	suite.assertShellUpdated(secondInstallDir, firstNamespace.String(), true, ts)
 	suite.assertInstallDir(secondInstallDir, anotherInstalledExecutable, true)
+
+	// Uninstall first project
+	suite.runOfflineUninstaller(ts, firstInstallDir, env)
+
+	// Assert first project's update are removed
+	suite.assertShellUpdated(firstInstallDir, firstNamespace.String(), false, ts)
+
+	// Assert first project's installation files are removed
+	suite.assertInstallDir(firstInstallDir, defaultInstalledExecutable, false)
+
+	// Uninstall second project
+	suite.runOfflineUninstaller(ts, secondInstallDir, env)
+
+	// Assert second project's update are removed
+	suite.assertShellUpdated(secondInstallDir, secondNamespace.String(), false, ts)
+
+	// Assert second project's installation files are removed
+	suite.assertInstallDir(secondInstallDir, anotherInstalledExecutable, false)
 }
 
 func (suite *OffInstallIntegrationTestSuite) runOfflineInstaller(ts *e2e.Session, installDir string, env []string) {
@@ -226,6 +250,20 @@ func (suite *OffInstallIntegrationTestSuite) runOfflineInstaller(ts *e2e.Session
 	tp.Expect("Extracting", time.Second)
 	tp.Expect("Installing")
 	tp.Expect("Installation complete")
+	tp.Expect("Press enter to exit")
+	tp.SendLine("")
+	tp.ExpectExitCode(0)
+}
+
+func (suite *OffInstallIntegrationTestSuite) runOfflineUninstaller(ts *e2e.Session, installDir string, env []string) {
+	tp := ts.SpawnCmdWithOpts(
+		suite.uninstallerPath,
+		e2e.WithArgs(installDir),
+		e2e.AppendEnv(env...),
+	)
+	tp.Expect("continue?")
+	tp.SendLine("y")
+	tp.Expect("Uninstall Complete", 5*time.Second)
 	tp.Expect("Press enter to exit")
 	tp.SendLine("")
 	tp.ExpectExitCode(0)
@@ -306,7 +344,7 @@ func (suite *OffInstallIntegrationTestSuite) preparePayload(ts *e2e.Session, pay
 	suite.Require().NoError(os.Chmod(suite.uninstallerPath, 0775)) // ensure file is executable
 }
 
-func (suite *OffInstallIntegrationTestSuite) assertShellUpdated(dir string, exists bool, ts *e2e.Session) {
+func (suite *OffInstallIntegrationTestSuite) assertShellUpdated(dir, namespace string, exists bool, ts *e2e.Session) {
 	if runtime.GOOS != "windows" {
 		// Test bashrc
 		homeDir, err := user.HomeDir()
@@ -324,8 +362,8 @@ func (suite *OffInstallIntegrationTestSuite) assertShellUpdated(dir string, exis
 
 		fpath := filepath.Join(homeDir, fname)
 		rcContents := fileutils.ReadFileUnsafe(fpath)
-		assert(string(rcContents), constants.RCAppendOfflineInstallStartLine, fpath)
-		assert(string(rcContents), constants.RCAppendOfflineInstallStopLine, fpath)
+		assert(string(rcContents), fmt.Sprintf("%s-%s", constants.RCAppendOfflineInstallStartLine, namespace), fpath)
+		assert(string(rcContents), fmt.Sprintf("%s-%s", constants.RCAppendOfflineInstallStopLine, namespace), fpath)
 		assert(string(rcContents), dir)
 	} else {
 		// It seems there is a race condition with updating the registry and asserting it was updated
