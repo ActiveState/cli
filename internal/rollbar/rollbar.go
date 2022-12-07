@@ -111,7 +111,7 @@ func logToRollbar(critical bool, message string, args ...interface{}) {
 	if len(logData) == logging.TailSize {
 		logData = "<truncated>\n" + logData
 	}
-	svcLogData := logging.ReadSvcTail()
+	svcLogData := logging.ReadSvcTail() // will show up in state-svc Rollbar errors, but there's no harmful recursion, etc.
 	logData += "\nstate-svc log:\n"
 	if len(svcLogData) == logging.TailSize {
 		logData += "<truncated>\n"
