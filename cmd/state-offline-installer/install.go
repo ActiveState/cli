@@ -219,7 +219,7 @@ func (r *runner) Run(params *Params) (rerr error) {
 		uninstallerDest = filepath.Join(targetPath, uninstallerFileNameRoot)
 	}
 	{
-		if rt.GOOS == "windows" && fileutils.TargetExists(uninstallerDest) {
+		if fileutils.TargetExists(uninstallerDest) {
 			err := os.Remove(uninstallerDest)
 			if err != nil {
 				return errs.Wrap(err, "Error removing existing uninstaller")
@@ -232,7 +232,7 @@ func (r *runner) Run(params *Params) (rerr error) {
 		if err != nil {
 			return errs.Wrap(err, "Error copying uninstaller")
 		}
-		err = os.Chmod(uninstallerDest, 0555)
+		err = os.Chmod(uninstallerDest, 0777)
 		if err != nil {
 			return errs.Wrap(err, "Error making uninstaller executable")
 		}
