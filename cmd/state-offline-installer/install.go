@@ -237,7 +237,7 @@ func (r *runner) Run(params *Params) (rerr error) {
 		if err != nil {
 			return errs.Wrap(err, "Error copying uninstaller")
 		}
-		err = os.Chmod(uninstallerDest, 0777)
+		err = os.Chmod(uninstallerDest, 0555)
 		if err != nil {
 			return errs.Wrap(err, "Error making uninstaller executable")
 		}
