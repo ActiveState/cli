@@ -38,6 +38,7 @@ func main() {
 
 	// Handle things like panics, exit codes and the closing of globals
 	defer func() {
+		panics.RecoverMessage = "offline_installer_recover_message"
 		if panics.HandlePanics(recover(), debug.Stack()) {
 			exitCode = 1
 		}
@@ -92,7 +93,6 @@ func main() {
 			multilog.Critical("state-offline-uninstaller errored out: %s", errs.JoinMessage(err))
 		}
 
-		errors.PanicOnMissingLocale = false
 		exitCode, _ = errors.Unwrap(err)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, errs.JoinMessage(err))
@@ -126,6 +126,7 @@ func run(prime *primer.Values) error {
 
 	err := cmd.Execute(os.Args[1:])
 	if err != nil {
+		errors.PanicOnMissingLocale = false
 		errors.ReportError(err, cmd, prime.Analytics())
 		return err
 	}
