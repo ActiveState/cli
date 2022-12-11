@@ -169,7 +169,7 @@ func (s *Setup) Update() error {
 	// Do not allow users to deploy runtimes to the root directory (this can easily happen in docker
 	// images). Note that runtime targets are fully resolved via fileutils.ResolveUniquePath(), so
 	// paths like "/." and "/opt/.." resolve to simply "/" at this time.
-	if (rt.GOOS != "windows" && s.target.Dir() == "/") {
+	if rt.GOOS != "windows" && s.target.Dir() == "/" {
 		return locale.NewInputError("err_runtime_setup_root", "Cannot set up a runtime in the root directory. Please specify or run from a user-writable directory.")
 	}
 
@@ -198,7 +198,7 @@ func (s *Setup) updateArtifacts() ([]artifact.ArtifactID, error) {
 	// Fetch and install each runtime artifact.
 	artifacts, err := s.fetchAndInstallArtifacts(func(a artifact.ArtifactID, archivePath string, as ArtifactSetuper) error {
 		// Set up target and unpack directories
-		targetDir := filepath.Join(s.store.InstallPath(), constants.LocalRuntimeTempDirectory)
+		targetDir := s.store.InstallPath()
 		if err := fileutils.MkdirUnlessExists(targetDir); err != nil {
 			return errs.Wrap(err, "Could not create temp runtime dir")
 		}
