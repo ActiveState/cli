@@ -38,7 +38,6 @@ func main() {
 
 	// Handle things like panics, exit codes and the closing of globals
 	defer func() {
-		panics.RecoverLocale = "offline_installer_recover_message"
 		if panics.HandlePanics(recover(), debug.Stack()) {
 			exitCode = 1
 		}

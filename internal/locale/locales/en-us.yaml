@@ -2015,17 +2015,3 @@ err_home_not_found:
 warning_macos_bash:
   other: |
     You are running bash on macOS, which is no longer supported by Apple. To update your account to use zsh, please run 'chsh -s /bin/zsh'. If you continue to use bash you may run into issues finding binaries on your PATH, in order to work around these issues please read: https://scriptingosx.com/2017/04/about-bash_profile-and-bashrc-on-macos/
-state_tool_panic_recovery:
-  other: |
-    An unexpected error occurred while running the State Tool.
-    Error: {{.V0}}
-    Stack trace: {{.V1}}
-    Check the error log for more information: {{.V2}}
-    Please consider reporting your issue on the forums: {{.V3}}
-offline_installer_recover_message:
-  other: |
-    An unexpected error occurred while running the offline installer.
-    Error: {{.V0}}
-    Stack trace: {{.V1}}
-    Check the error log for more information: {{.V2}}
-    Please consider reporting your issue on the forums: {{.V3}}
