@@ -106,9 +106,11 @@ func (eh *RuntimeEventConsumer) handle(ev SetupEventer) error {
 		eh.buildsTotal = int64(t.Total() - eh.alreadyBuilt)
 		eh.lastBuildEventRcvd = time.Now()
 		eh.isBuilding = true
+		logging.Debug("BuildStartEvent: %d", eh.buildsTotal)
 		return eh.progress.BuildStarted(eh.buildsTotal)
 	case BuildCompleteEvent:
 		eh.isBuilding = false
+		logging.Debug("BuildCompleteEvent, failures: %d", eh.numBuildFailures)
 		return eh.progress.BuildCompleted(eh.numBuildFailures > 0)
 	case ArtifactSetupEventer:
 		return eh.handleArtifactEvent(t)
@@ -129,14 +131,18 @@ func (eh *RuntimeEventConsumer) handleBuildArtifactEvent(ev ArtifactSetupEventer
 	artifactName := eh.ResolveArtifactName(ev.ArtifactID())
 	switch t := ev.(type) {
 	case ArtifactStartEvent:
+		logging.Debug("Build artifact started: %s", artifactName)
 		return eh.progress.BuildArtifactStarted(t.artifactID, artifactName)
 	case ArtifactCompleteEvent:
+		logging.Debug("Build artifact completed: %s", artifactName)
 		eh.numBuildCompleted++
 		return eh.progress.BuildArtifactCompleted(t.artifactID, artifactName, t.logURI, false)
 	case ArtifactFailureEvent:
+		logging.Debug("Build artifact failed: %s", artifactName)
 		eh.numBuildFailures++
 		return eh.progress.BuildArtifactFailure(t.artifactID, artifactName, t.logURI, t.errorMessage, false)
 	case ArtifactBuildProgressEvent:
+		logging.Debug("Build artifact progress: %s", artifactName)
 		return eh.progress.BuildArtifactProgress(t.artifactID, artifactName, t.TimeStamp(), t.Message(), t.Facility(), t.PipeName(), t.Source())
 	default:
 		logging.Debug("unhandled build artifact event: %s", t.String())
@@ -145,17 +151,20 @@ func (eh *RuntimeEventConsumer) handleBuildArtifactEvent(ev ArtifactSetupEventer
 }
 
 func (eh *RuntimeEventConsumer) handleArtifactEvent(ev ArtifactSetupEventer) error {
+	logging.Debug("Handle artifact event: %s for artifact: %s", ev.Step().String(), ev.ArtifactID())
 	// Build updates do not have progress event, so we handle them separately.
 	if ev.Step() == Build {
 		return eh.handleBuildArtifactEvent(ev)
 	}
 	artifactName := eh.ResolveArtifactName(ev.ArtifactID())
+	logging.Debug("Resolved artifact name: %s", artifactName)
 	if eh.installationCompleted {
 		multilog.Error("Received an artifact event after installation was completed: %s (step=%s, artifact=%s)", ev.String(), ev.Step().String(), artifactName)
 		return nil
 	}
 	switch t := ev.(type) {
 	case ArtifactStartEvent:
+		logging.Debug("Artifact start")
 		// first download event starts the installation process
 		err := eh.ensureInstallationStarted()
 		if err != nil {
@@ -166,9 +175,11 @@ func (eh *RuntimeEventConsumer) handleArtifactEvent(ev ArtifactSetupEventer) err
 		countsBytes := t.Step() != Install
 		return eh.progress.ArtifactStepStarted(t.ArtifactID(), artifactName, stepTitle(t.Step()), int64(artBytes), countsBytes)
 	case ArtifactProgressEvent:
+		logging.Debug("Artifact progress")
 		by := t.Progress()
 		return eh.progress.ArtifactStepIncrement(t.ArtifactID(), artifactName, stepTitle(t.Step()), int64(by))
 	case ArtifactCompleteEvent:
+		logging.Debug("Artifact complete")
 		// a completed installation event translates to a completed artifact
 		if t.Step() == Install {
 			eh.numInstallCompleted++
@@ -177,6 +188,7 @@ func (eh *RuntimeEventConsumer) handleArtifactEvent(ev ArtifactSetupEventer) err
 				return err
 			}
 			if eh.numInstallCompleted == eh.installTotal {
+				logging.Debug("Install completed")
 				eh.installationCompleted = true
 				err := eh.progress.InstallationCompleted(eh.numInstallFailures > 0)
 				if err != nil {

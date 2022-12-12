@@ -103,13 +103,18 @@ func (rp *RuntimeProgress) artifactBar(id artifact.ArtifactID, title string) *ar
 // BuildStarted adds a build progress bar
 func (rp *RuntimeProgress) BuildStarted(total int64) error {
 	if rp.buildBar == nil {
+		logging.Debug("Initializing build progress bar")
 		rp.buildBar = rp.addTotalBar(locale.Tl("progress_building", "Building"), total)
 	}
 	return nil
 }
 
 // BuildArtifactCompleted increments the build progress bar counter
-func (rp *RuntimeProgress) BuildArtifactCompleted(_ artifact.ArtifactID, _ string, _ string, isCached bool) error {
+func (rp *RuntimeProgress) BuildArtifactCompleted(artifactID artifact.ArtifactID, artifactName string, logURI string, isCached bool) error {
+	logging.Debug("Artifact completed")
+	logging.Debug("Artifact ID: %s", artifactID)
+	logging.Debug("Artifact Name: %s", artifactName)
+	logging.Debug("Artifact Log URI: %s", logURI)
 	if isCached {
 		return nil
 	}
