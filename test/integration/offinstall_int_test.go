@@ -49,13 +49,23 @@ const (
 func (suite *OffInstallIntegrationTestSuite) TestInstallAndUninstall() {
 	suite.OnlyRunForTags(tagsuite.OffInstall)
 
-	// Clean up env after test
-	originalEnv := cmd.NewCmdEnv(true)
-	origPath, err := originalEnv.Get("PATH")
-	suite.Require().NoError(err)
-	defer func() {
-		suite.Require().NoError(originalEnv.Set("PATH", origPath))
-	}()
+	// Clean up env after test (windows only for now)
+	if runtime.GOOS == "windows" {
+		env := cmd.NewCmdEnv(true)
+		origPath, err := env.Get("PATH")
+		suite.Require().NoError(err)
+		defer func() {
+			suite.Require().NoError(env.Set("PATH", origPath))
+		}()
+	} else {
+		originalPath, exists := os.LookupEnv("PATH")
+		defer func() {
+			if !exists {
+				return
+			}
+			suite.Require().NoError(os.Setenv("PATH", originalPath))
+		}()
+	}
 
 	ts := e2e.New(suite.T(), true)
 	defer ts.Close()
@@ -172,13 +182,23 @@ func (suite *OffInstallIntegrationTestSuite) TestInstallNoPermission() {
 func (suite *OffInstallIntegrationTestSuite) TestInstallMultiple() {
 	suite.OnlyRunForTags(tagsuite.OffInstall)
 
-	// Clean up env after test
-	originalEnv := cmd.NewCmdEnv(true)
-	origPath, err := originalEnv.Get("PATH")
-	suite.Require().NoError(err)
-	defer func() {
-		suite.Require().NoError(originalEnv.Set("PATH", origPath))
-	}()
+	// Clean up env after test (windows only for now)
+	if runtime.GOOS == "windows" {
+		env := cmd.NewCmdEnv(true)
+		origPath, err := env.Get("PATH")
+		suite.Require().NoError(err)
+		defer func() {
+			suite.Require().NoError(env.Set("PATH", origPath))
+		}()
+	} else {
+		originalPath, exists := os.LookupEnv("PATH")
+		defer func() {
+			if !exists {
+				return
+			}
+			suite.Require().NoError(os.Setenv("PATH", originalPath))
+		}()
+	}
 
 	ts := e2e.New(suite.T(), true)
 	defer ts.Close()
@@ -238,13 +258,23 @@ func (suite *OffInstallIntegrationTestSuite) TestInstallMultiple() {
 func (suite *OffInstallIntegrationTestSuite) TestInstallTwice() {
 	suite.OnlyRunForTags(tagsuite.OffInstall)
 
-	// Clean up env after test
-	originalEnv := cmd.NewCmdEnv(true)
-	origPath, err := originalEnv.Get("PATH")
-	suite.Require().NoError(err)
-	defer func() {
-		suite.Require().NoError(originalEnv.Set("PATH", origPath))
-	}()
+	// Clean up env after test (windows only for now)
+	if runtime.GOOS == "windows" {
+		env := cmd.NewCmdEnv(true)
+		origPath, err := env.Get("PATH")
+		suite.Require().NoError(err)
+		defer func() {
+			suite.Require().NoError(env.Set("PATH", origPath))
+		}()
+	} else {
+		originalPath, exists := os.LookupEnv("PATH")
+		defer func() {
+			if !exists {
+				return
+			}
+			suite.Require().NoError(os.Setenv("PATH", originalPath))
+		}()
+	}
 
 	ts := e2e.New(suite.T(), true)
 	defer ts.Close()
