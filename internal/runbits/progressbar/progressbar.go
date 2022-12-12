@@ -144,12 +144,14 @@ func (rp *RuntimeProgress) BuildCompleted(anyFailures bool) error {
 	}
 
 	// ensure that the build bar reports a completion event even if some builds have failed
-	if anyFailures {
-		rp.buildBar.Abort(false)
-	} else {
+	if !anyFailures {
 		// otherwise ensure that total count is set to current count
+		logging.Debug("Forcing progressbar total update")
 		rp.buildBar.SetTotal(0, true)
 	}
+	logging.Debug("Aborting progressbar")
+	rp.buildBar.Abort(false)
+	logging.Debug("Aborted progressbar")
 	return nil
 }
 
