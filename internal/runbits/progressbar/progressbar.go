@@ -106,6 +106,7 @@ func (rp *RuntimeProgress) BuildStarted(total int64) error {
 		logging.Debug("Initializing build progress bar")
 		rp.buildBar = rp.addTotalBar(locale.Tl("progress_building", "Building"), total)
 	}
+	logging.Debug("Build bar already initialized")
 	return nil
 }
 
