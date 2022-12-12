@@ -89,7 +89,7 @@ func NewWithCustomConnections(artifactMap map[artifact.ArtifactID]artifact.Artif
 				errCh <- err
 				return
 			}
-			logging.Debug("Received response: %d", msg.MessageType())
+			logging.Debug("Received response: %d:%s", msg.MessageType(), msg.MessageType().String())
 
 			switch msg.MessageType() {
 			case BuildFailed:

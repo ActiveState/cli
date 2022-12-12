@@ -22,6 +22,29 @@ const (
 	Heartbeat
 )
 
+func (m MessageEnum) String() string {
+	switch m {
+	case BuildStarted:
+		return "build_started"
+	case BuildSucceeded:
+		return "build_succeeded"
+	case BuildFailed:
+		return "build_failed"
+	case ArtifactStarted:
+		return "artifact_started"
+	case ArtifactSucceeded:
+		return "artifact_succeeded"
+	case ArtifactFailed:
+		return "artifact_failed"
+	case ArtifactProgress:
+		return "artifact_progress"
+	case Heartbeat:
+		return "heartbeat"
+	default:
+		return "unknown"
+	}
+}
+
 type messager interface {
 	MessageType() MessageEnum
 }
