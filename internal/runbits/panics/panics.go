@@ -10,7 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/multilog"
 )
 
-var RecoverMessage = "state_tool_panic_recovery"
+var RecoverLocale = "state_tool_panic_recovery"
 
 // HandlePanics produces actionable output for panic events (that shouldn't happen) and returns whether a panic event has been handled
 func HandlePanics(recovered interface{}, stack []byte) bool {
@@ -18,7 +18,7 @@ func HandlePanics(recovered interface{}, stack []byte) bool {
 		multilog.Error("Panic: %v", recovered)
 		logging.Debug("Stack: %s", string(stack))
 
-		fmt.Fprintln(os.Stderr, locale.Tl(RecoverMessage, "", fmt.Sprintf("%v", recovered), string(stack), logging.FilePath(), constants.ForumsURL))
+		fmt.Fprintln(os.Stderr, locale.Tl(RecoverLocale, "", fmt.Sprintf("%v", recovered), string(stack), logging.FilePath(), constants.ForumsURL))
 		return true
 	}
 	return false
