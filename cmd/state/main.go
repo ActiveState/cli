@@ -152,7 +152,7 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 
 	// Amend Rollbar data to also send the state-svc log tail. This cannot be done inside the rollbar
 	// package itself because importing pkg/platform/model creates an import cycle.
-	rollbar.SetLogDataAmender(func(logData string) string {
+	rollbar.AddLogDataAmender(func(logData string) string {
 		ctx, cancel := context.WithTimeout(context.Background(), model.SvcTimeoutMinimal)
 		defer cancel()
 		svcLogData, err := svcmodel.FetchLogTail(ctx)

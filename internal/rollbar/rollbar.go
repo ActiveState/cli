@@ -99,12 +99,12 @@ func UpdateRollbarPerson(userID, username, email string) {
 // Wait is a wrapper around rollbar.Wait().
 func Wait() { rollbar.Wait() }
 
-var logDataAmender func(string) string
+var logDataAmenders []func(string) string
 
-// SetLogDataAmender routes log data to be sent to Rollbar through the given function first.
+// AddLogDataAmender routes log data to be sent to Rollbar through the given function first.
 // For example, that function might add more log data to be sent.
-func SetLogDataAmender(f func(string) string) {
-	logDataAmender = f
+func AddLogDataAmender(f func(string) string) {
+	logDataAmenders = append(logDataAmenders, f)
 }
 
 func logToRollbar(critical bool, message string, args ...interface{}) {
@@ -119,8 +119,8 @@ func logToRollbar(critical bool, message string, args ...interface{}) {
 	if len(logData) == logging.TailSize {
 		logData = "<truncated>\n" + logData
 	}
-	if logDataAmender != nil {
-		logData = logDataAmender(logData)
+	for _, f := range logDataAmenders {
+		logData = f(logData)
 	}
 	data["log_file_data"] = logData
 
