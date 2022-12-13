@@ -187,6 +187,11 @@ func (r *runner) Run(params *Params) (rerr error) {
 			return errs.Wrap(err, "Error determining absolute install directory")
 		}
 		uninstallDir := filepath.Join(installDir, "uninstall-data")
+		if fileutils.DirExists(uninstallDir) {
+			if err := os.RemoveAll(uninstallDir); err != nil {
+				return errs.Wrap(err, "Error removing uninstall directory")
+			}
+		}
 		if err := os.Mkdir(uninstallDir, os.ModeDir); err != nil {
 			return errs.Wrap(err, "Error creating uninstall directory")
 		}
@@ -220,6 +225,12 @@ func (r *runner) Run(params *Params) (rerr error) {
 		uninstallerDest = filepath.Join(targetPath, uninstallerFileNameRoot)
 	}
 	{
+		if fileutils.TargetExists(uninstallerDest) {
+			err := os.Remove(uninstallerDest)
+			if err != nil {
+				return errs.Wrap(err, "Error removing existing uninstaller")
+			}
+		}
 		err = fileutils.CopyFile(
 			uninstallerSrc,
 			uninstallerDest,
