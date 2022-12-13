@@ -225,6 +225,9 @@ func (r *runner) removeEnvPaths(namespace *project.Namespaced) error {
 	if err := r.shell.CleanUserEnv(r.cfg, id, !isAdmin); err != nil {
 		return errs.Wrap(err, "Failed to remove runtime PATH")
 	}
+	if err := r.shell.CleanUserEnv(r.cfg, sscommon.AutostartID, !isAdmin); err != nil {
+		return errs.Wrap(err, "Failed to remove runtime PATH")
+	}
 
 	return nil
 }
