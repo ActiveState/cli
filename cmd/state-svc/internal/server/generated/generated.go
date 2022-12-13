@@ -75,6 +75,7 @@ type ComplexityRoot struct {
 		AvailableUpdate  func(childComplexity int) int
 		CheckDeprecation func(childComplexity int) int
 		ConfigChanged    func(childComplexity int, key string) int
+		FetchLogTail     func(childComplexity int) int
 		Projects         func(childComplexity int) int
 		RuntimeUsage     func(childComplexity int, pid int, exec string, dimensionsJSON string) int
 		Version          func(childComplexity int) int
@@ -105,6 +106,7 @@ type QueryResolver interface {
 	RuntimeUsage(ctx context.Context, pid int, exec string, dimensionsJSON string) (*graph.RuntimeUsageResponse, error)
 	CheckDeprecation(ctx context.Context) (*graph.DeprecationInfo, error)
 	ConfigChanged(ctx context.Context, key string) (*graph.ConfigChangedResponse, error)
+	FetchLogTail(ctx context.Context) (string, error)
 }
 
 type executableSchema struct {
@@ -250,6 +252,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.ConfigChanged(childComplexity, args["key"].(string)), true
+
+	case "Query.fetchLogTail":
+		if e.complexity.Query.FetchLogTail == nil {
+			break
+		}
+
+		return e.complexity.Query.FetchLogTail(childComplexity), true
 
 	case "Query.projects":
 		if e.complexity.Query.Projects == nil {
@@ -424,6 +433,7 @@ type Query {
   runtimeUsage(pid: Int!, exec: String!, dimensionsJson: String!): RuntimeUsageResponse
   checkDeprecation: DeprecationInfo
   configChanged(key: String!): ConfigChangedResponse
+  fetchLogTail: String!
 }
 
 type ConfigChangedResponse {
@@ -1281,6 +1291,41 @@ func (ec *executionContext) _Query_configChanged(ctx context.Context, field grap
 	res := resTmp.(*graph.ConfigChangedResponse)
 	fc.Result = res
 	return ec.marshalOConfigChangedResponse2ᚖgithubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐConfigChangedResponse(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_fetchLogTail(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().FetchLogTail(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -2962,6 +3007,20 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_configChanged(ctx, field)
+				return res
+			})
+		case "fetchLogTail":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_fetchLogTail(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
 				return res
 			})
 		case "__type":
