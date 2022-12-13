@@ -1690,6 +1690,8 @@ err_no_projectfile:
   other: No activestate.yaml file exists in the current working directory or its parent directories.
 err_project_not_found:
   other: Could not find project at [NOTICE]{{.V0}}[/RESET]
+err_projectfile_parse:
+  other: Unable to parse {{.V0}}. Please try checking out your project again.
 err_non_interactive_prompt:
   other: Prompt "{{.V0}}" cannot be resolved in non-interactive mode.
 err_read_projectfile:

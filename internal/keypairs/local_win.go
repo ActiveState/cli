@@ -1,3 +1,4 @@
+//go:build windows
 // +build windows
 
 package keypairs
@@ -9,7 +10,7 @@ import (
 
 func validateKeyFile(keyFilename string) error {
 	if !fileutils.FileExists(keyFilename) {
-		return locale.NewError("keypairs_err_load_not_found")
+		return locale.NewInputError("keypairs_err_load_not_found")
 	}
 
 	return nil
