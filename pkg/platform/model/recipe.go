@@ -125,11 +125,7 @@ func fetchRawRecipe(commitID strfmt.UUID, owner, project string, hostPlatform *s
 			orderBody = []byte(fmt.Sprintf("Could not marshal order, error: %v", err2))
 		}
 
-		serr := resolveSolverError(err)
-		if !locale.IsInputError(serr) {
-			multilog.Error("Solver returned error: %s, order: %s", errs.JoinMessage(err), string(orderBody))
-		}
-		return "", serr
+		return "", resolveSolverError(err)
 	}
 
 	return recipe, nil
@@ -180,11 +176,7 @@ func FetchRecipe(commitID strfmt.UUID, owner, project string, hostPlatform *stri
 		}
 
 		orderBody, _ := json.Marshal(params.Order)
-		serr := resolveSolverError(err)
-		if !locale.IsInputError(serr) {
-			multilog.Error("Solver returned error: %s, order: %s", errs.JoinMessage(err), string(orderBody))
-		}
-		return nil, serr
+		return nil, resolveSolverError(err)
 	}
 
 	platformIDs, err := filterPlatformIDs(*hostPlatform, runtime.GOARCH, params.Order.Platforms)
