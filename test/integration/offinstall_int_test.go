@@ -49,7 +49,7 @@ const (
 func (suite *OffInstallIntegrationTestSuite) TestInstallAndUninstall() {
 	suite.OnlyRunForTags(tagsuite.OffInstall)
 
-	// Clean up env after test (windows only for now)
+	// Clean up env after test
 	if runtime.GOOS == "windows" {
 		env := cmd.NewCmdEnv(true)
 		origPath, err := env.Get("PATH")
@@ -182,7 +182,7 @@ func (suite *OffInstallIntegrationTestSuite) TestInstallNoPermission() {
 func (suite *OffInstallIntegrationTestSuite) TestInstallMultiple() {
 	suite.OnlyRunForTags(tagsuite.OffInstall)
 
-	// Clean up env after test (windows only for now)
+	// Clean up env after test
 	if runtime.GOOS == "windows" {
 		env := cmd.NewCmdEnv(true)
 		origPath, err := env.Get("PATH")
@@ -258,7 +258,7 @@ func (suite *OffInstallIntegrationTestSuite) TestInstallMultiple() {
 func (suite *OffInstallIntegrationTestSuite) TestInstallTwice() {
 	suite.OnlyRunForTags(tagsuite.OffInstall)
 
-	// Clean up env after test (windows only for now)
+	// Clean up env after test
 	if runtime.GOOS == "windows" {
 		env := cmd.NewCmdEnv(true)
 		origPath, err := env.Get("PATH")
