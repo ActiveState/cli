@@ -169,7 +169,7 @@ func (s *Setup) Update() error {
 	// Do not allow users to deploy runtimes to the root directory (this can easily happen in docker
 	// images). Note that runtime targets are fully resolved via fileutils.ResolveUniquePath(), so
 	// paths like "/." and "/opt/.." resolve to simply "/" at this time.
-	if (rt.GOOS != "windows" && s.target.Dir() == "/") {
+	if rt.GOOS != "windows" && s.target.Dir() == "/" {
 		return locale.NewInputError("err_runtime_setup_root", "Cannot set up a runtime in the root directory. Please specify or run from a user-writable directory.")
 	}
 
@@ -198,23 +198,23 @@ func (s *Setup) updateArtifacts() ([]artifact.ArtifactID, error) {
 	// Fetch and install each runtime artifact.
 	artifacts, err := s.fetchAndInstallArtifacts(func(a artifact.ArtifactID, archivePath string, as ArtifactSetuper) error {
 		// Set up target and unpack directories
-		targetDir := filepath.Join(s.store.InstallPath(), constants.LocalRuntimeTempDirectory)
-		if err := fileutils.MkdirUnlessExists(targetDir); err != nil {
+		runtimeTempDir := filepath.Join(s.store.InstallPath(), constants.LocalRuntimeTempDirectory)
+		if err := fileutils.MkdirUnlessExists(runtimeTempDir); err != nil {
 			return errs.Wrap(err, "Could not create temp runtime dir")
 		}
-		unpackedDir := filepath.Join(targetDir, a.String())
+		tempUnpackedDir := filepath.Join(runtimeTempDir, a.String())
 
-		logging.Debug("Unarchiving %s to %s", archivePath, unpackedDir)
+		logging.Debug("Unarchiving %s to %s", archivePath, tempUnpackedDir)
 
 		// ensure that the unpack dir is empty
-		err := os.RemoveAll(unpackedDir)
+		err := os.RemoveAll(tempUnpackedDir)
 		if err != nil {
 			return errs.Wrap(err, "Could not remove previous temporary installation directory.")
 		}
 
 		// Unpack artifact archive
 		unpackProgress := events.NewIncrementalProgress(s.events, events.Unpack, a)
-		numFiles, err := s.unpackArtifact(as.Unarchiver(), archivePath, unpackedDir, unpackProgress)
+		numFiles, err := s.unpackArtifact(as.Unarchiver(), archivePath, tempUnpackedDir, unpackProgress)
 		if err != nil {
 			err := errs.Wrap(err, "Could not unpack artifact %s", archivePath)
 			s.events.ArtifactStepFailed(events.Unpack, a, err.Error())
@@ -229,21 +229,21 @@ func (s *Setup) updateArtifacts() ([]artifact.ArtifactID, error) {
 		}
 
 		// Retrieve environment definitions for artifact
-		envDef, err := as.EnvDef(unpackedDir)
+		envDef, err := as.EnvDef(tempUnpackedDir)
 		if err != nil {
 			return errs.Wrap(err, "Could not collect env info for artifact")
 		}
 
 		// Expand environment definitions using constants
 		envDef = envDef.ExpandVariables(cnst)
-		err = envDef.ApplyFileTransforms(filepath.Join(unpackedDir, envDef.InstallDir), cnst)
+		err = envDef.ApplyFileTransforms(filepath.Join(tempUnpackedDir, envDef.InstallDir), cnst)
 		if err != nil {
 			return locale.WrapError(err, "runtime_alternative_file_transforms_err", "", "Could not apply necessary file transformations after unpacking")
 		}
 
 		// Move files to installation path, ensuring file operations are synchronized
 		mutex.Lock()
-		err = s.moveToInstallPath(a, unpackedDir, envDef, numFiles)
+		err = s.moveToInstallPath(a, tempUnpackedDir, envDef, numFiles)
 		mutex.Unlock()
 
 		return err
