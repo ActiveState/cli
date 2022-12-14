@@ -715,7 +715,7 @@ keypairs_err_passphrase_incorrect:
 keypairs_err_invalid_rsa_publickey:
   other: provided key not an RSA public-key
 keypairs_err_load_not_found:
-  other: Authorized keypair not found
+  other: Authorized keypair not found. Please refer to the docs for more info: https://docs.activestate.com/platform/state/advanced-topics/secrets/#setting-up-a-key-pair
 keypairs_err_load_requires_mode:
   other: 'Keypair [NOTICE]"{{.V0}}"[/RESET] file is too permissive, expects no more than [NOTICE]"{{.V1}}"[/RESET] permissions'
 keypairs_err_base64_decoding:
