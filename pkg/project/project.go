@@ -351,43 +351,6 @@ func FromExactPath(path string) (*Project, error) {
 	return project, nil
 }
 
-// Platform covers the platform structure
-type Platform struct {
-	platform *projectfile.Platform
-	project  *Project
-}
-
-// Source returns the source projectfile
-func (p *Platform) Source() *projectfile.Project { return p.project.projectfile }
-
-// Name returns platform name
-func (p *Platform) Name() string { return p.platform.Name }
-
-// Os returned with all secrets evaluated
-func (p *Platform) Os() (string, error) {
-	return ExpandFromProject(p.platform.Os, p.project)
-}
-
-// Version returned with all secrets evaluated
-func (p *Platform) Version() (string, error) {
-	return ExpandFromProject(p.platform.Version, p.project)
-}
-
-// Architecture with all secrets evaluated
-func (p *Platform) Architecture() (string, error) {
-	return ExpandFromProject(p.platform.Architecture, p.project)
-}
-
-// Libc returned are constrained and all secrets evaluated
-func (p *Platform) Libc() (string, error) {
-	return ExpandFromProject(p.platform.Libc, p.project)
-}
-
-// Compiler returned are constrained and all secrets evaluated
-func (p *Platform) Compiler() (string, error) {
-	return ExpandFromProject(p.platform.Compiler, p.project)
-}
-
 // Language covers the language structure
 type Language struct {
 	language *projectfile.Language

@@ -47,23 +47,6 @@ environments: valueForEnvironments`)
 	assert.Equal(t, "", project.Path(), "Path should be empty")
 }
 
-func TestPlatformStruct(t *testing.T) {
-	platform := Platform{}
-	dat := strings.TrimSpace(`
-name: valueForName
-os: valueForOS
-version: valueForVersion
-architecture: valueForArch`)
-
-	err := yaml.Unmarshal([]byte(dat), &platform)
-	assert.Nil(t, err, "Should not throw an error")
-
-	assert.Equal(t, "valueForName", platform.Name, "Name should be set")
-	assert.Equal(t, "valueForOS", platform.Os, "OS should be set")
-	assert.Equal(t, "valueForVersion", platform.Version, "Version should be set")
-	assert.Equal(t, "valueForArch", platform.Architecture, "Architecture should be set")
-}
-
 func TestBuildStruct(t *testing.T) {
 	build := make(Build)
 	dat := strings.TrimSpace(`

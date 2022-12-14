@@ -99,16 +99,6 @@ type Project struct {
 	parsedVersion string
 }
 
-// Platform covers the platform structure of our yaml
-type Platform struct {
-	Name         string `yaml:"name,omitempty"`
-	Os           string `yaml:"os,omitempty"`
-	Version      string `yaml:"version,omitempty"`
-	Architecture string `yaml:"architecture,omitempty"`
-	Libc         string `yaml:"libc,omitempty"`
-	Compiler     string `yaml:"compiler,omitempty"`
-}
-
 // Build covers the build map, which can go under languages or packages
 // Build can hold variable keys, so we cannot predict what they are, hence why it is a map
 type Build map[string]string

@@ -371,16 +371,6 @@ func compilerMatches(compiler string) bool {
 	return false // no matching compilers found
 }
 
-// PlatformMatches returns whether or not the given platform matches the current
-// platform, as determined by the sysinfo package.
-func PlatformMatches(platform projectfile.Platform) bool {
-	return (platform.Os == "" || osMatches(platform.Os)) &&
-		(platform.Version == "" || osVersionMatches(platform.Version)) &&
-		(platform.Architecture == "" || archMatches(platform.Architecture)) &&
-		(platform.Libc == "" || libcMatches(platform.Libc)) &&
-		(platform.Compiler == "" || compilerMatches(platform.Compiler))
-}
-
 //Returns whether or not the current OS is constrained by the given
 // named constraints, which are defined in the given project configuration.
 func osIsConstrained(constraintOSes string) bool {
