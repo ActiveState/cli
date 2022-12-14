@@ -1,22 +1,6 @@
 project: https://platform.activestate.com/ActiveState/CodeIntel?branch=main&commitID=00000000-0000-0000-0000-00000d7ebc72
 namespace: github.com/ActiveState/CodeIntel
 environments: dev,qa,prod
-languages:
-  - name: Go
-    version: 1.10
-    constraints:
-        os: windows,linux,macos
-        platform: Windows10Label,Linux64Label
-        environment: dev,qa,prod
-    packages:
-      - name: golang.org/x/crypto
-        version: "*"
-        build:
-          debug: $variable.DEBUG
-      - name: gopkg.in/yaml.v2
-        version: "2.*"
-        build:
-          override: --foo --bar --debug $variable.DEBUG --libDir $variable.PYTHONPATH
 constants:
   - name: DEBUG
     value: true

@@ -57,20 +57,6 @@ func (p *Project) SetCommit(commitID string) error {
 	return p.Source().SetCommit(commitID, p.IsHeadless())
 }
 
-// Languages returns a reference to projectfile.Languages
-func (p *Project) Languages() []*Language {
-	constrained, err := constraints.FilterUnconstrained(pConditional, p.projectfile.Languages.AsConstrainedEntities())
-	if err != nil {
-		logging.Warning("Could not filter unconstrained languages: %v", err)
-	}
-	ls := projectfile.MakeLanguagesFromConstrainedEntities(constrained)
-	languages := []*Language{}
-	for _, l := range ls {
-		languages = append(languages, &Language{l, p})
-	}
-	return languages
-}
-
 // Constants returns a reference to projectfile.Constants
 func (p *Project) Constants() []*Constant {
 	constrained, err := constraints.FilterUnconstrained(pConditional, p.projectfile.Constants.AsConstrainedEntities())

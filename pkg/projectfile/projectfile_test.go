@@ -190,22 +190,6 @@ func TestParse(t *testing.T) {
 	assert.NotEmpty(t, project.Project, "Project should be set")
 	assert.NotEmpty(t, project.Environments, "Environments should be set")
 
-	assert.NotEmpty(t, project.Languages[0].Name, "Language name should be set")
-	assert.NotEmpty(t, project.Languages[0].Version, "Language version should be set")
-
-	assert.NotEmpty(t, project.Languages[0].Packages[0].Name, "Package name should be set")
-	assert.NotEmpty(t, project.Languages[0].Packages[0].Version, "Package version should be set")
-
-	assert.NotEmpty(t, project.Languages[0].Packages[0].Build, "Package build should be set")
-	assert.NotEmpty(t, project.Languages[0].Packages[0].Build["debug"], "Build debug should be set")
-
-	assert.NotEmpty(t, project.Languages[0].Packages[1].Build, "Package build should be set")
-	assert.NotEmpty(t, project.Languages[0].Packages[1].Build["override"], "Build override should be set")
-
-	assert.NotEmpty(t, project.Languages[0].Constraints.OS, "Platform constraint should be set")
-	assert.NotEmpty(t, project.Languages[0].Constraints.Platform, "Platform constraint should be set")
-	assert.NotEmpty(t, project.Languages[0].Constraints.Environment, "Environment constraint should be set")
-
 	assert.NotEmpty(t, project.Constants[0].Name, "Constant name should be set")
 	assert.NotEmpty(t, project.Constants[0].Value, "Constant value should be set")
 

@@ -87,7 +87,6 @@ type Project struct {
 	Project       string        `yaml:"project"`
 	Lock          string        `yaml:"lock,omitempty"`
 	Environments  string        `yaml:"environments,omitempty"`
-	Languages     Languages     `yaml:"languages,omitempty"`
 	Constants     Constants     `yaml:"constants,omitempty"`
 	Secrets       *SecretScopes `yaml:"secrets,omitempty"`
 	Events        Events        `yaml:"events,omitempty"`
@@ -138,28 +137,6 @@ func (l Language) ConstraintsFilter() Constraint {
 
 func (l Language) ConditionalFilter() Conditional {
 	return l.Conditional
-}
-
-// Languages is a slice of Language definitions
-type Languages []Language
-
-// AsConstrainedEntities boxes languages as a slice of ConstrainedEntities
-func (languages Languages) AsConstrainedEntities() (items []ConstrainedEntity) {
-	for i := range languages {
-		items = append(items, &languages[i])
-	}
-	return items
-}
-
-// MakeLanguagesFromConstrainedEntities unboxes ConstraintedEntities as Languages
-func MakeLanguagesFromConstrainedEntities(items []ConstrainedEntity) (languages []*Language) {
-	languages = make([]*Language, 0, len(items))
-	for _, v := range items {
-		if o, ok := v.(*Language); ok {
-			languages = append(languages, o)
-		}
-	}
-	return languages
 }
 
 // Constant covers the constant structure, which goes under Project

@@ -2,21 +2,6 @@ name: CodeIntel
 owner: ActiveState
 version: master
 environments: dev,qa,prod
-languages:
-  - name: Go
-    version: 1.10
-    constraints:
-        platform: Windows10Label,Linux64Label
-        environment: dev,qa,prod
-    packages:
-      - name: golang.org/x/crypto
-        version: "*"
-        build:
-          debug: $variable.DEBUG
-      - name: gopkg.in/yaml.v2
-        version: "2.*"
-        build:
-          override: --foo --bar --debug $variable.DEBUG --libDir $variable.PYTHONPATH
 variables:
   - name: DEBUG
     value: true

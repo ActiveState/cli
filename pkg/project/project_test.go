@@ -105,43 +105,6 @@ func (suite *ProjectTestSuite) TestEventByName() {
 	suite.Nil(event)
 }
 
-func (suite *ProjectTestSuite) TestLanguages() {
-	languages := suite.project.Languages()
-
-	lang := languages[0]
-	name := lang.Name()
-	version := lang.Version()
-	id := lang.ID()
-	build, err := lang.Build()
-	suite.NoError(err)
-
-	suite.Equal("foo", name, "Names should match")
-	suite.Equal("1.1", version, "Version should match")
-	suite.Equal("foo1.1", id, "ID should match")
-	suite.Equal("--foo project", (*build)["override"], "Build value should match")
-}
-
-func (suite *ProjectTestSuite) TestPackages() {
-	languages := suite.project.Languages()
-	var language *project.Language
-	for _, l := range languages {
-		if l.Name() == "packages" {
-			language = l
-		}
-	}
-	packages := language.Packages()
-
-	pkg := packages[0]
-	name := pkg.Name()
-	version := pkg.Version()
-	build, err := pkg.Build()
-	suite.NoError(err)
-
-	suite.Equal("foo", name, "Names should match")
-	suite.Equal("1.1", version, "Version should match")
-	suite.Equal("--foo project", (*build)["override"], "Build value should match")
-}
-
 func (suite *ProjectTestSuite) TestScripts() {
 	scripts := suite.project.Scripts()
 
