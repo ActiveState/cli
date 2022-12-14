@@ -86,7 +86,12 @@ func (a *app) enableOnServer() error {
 		exec += " " + esc.Quote(arg)
 	}
 
-	return sscommon.WriteRcData(exec, profile, sscommon.InstallID)
+	// Some older versions of the State Tool used a different ID for the autostart entry.
+	err = sscommon.CleanRcFile(profile, sscommon.InstallID)
+	if err != nil {
+		return errs.Wrap(err, "Could not clean old autostart entry from %s", profile)
+	}
+	return sscommon.WriteRcData(exec, profile, sscommon.AutostartID)
 }
 
 // Path returns the path to the installed autostart shortcut file.
@@ -133,8 +138,12 @@ func (a *app) disable() error {
 	if err != nil {
 		return errs.Wrap(err, "Could not find ~/.profile")
 	}
+	// Some older versions of the State Tool used a different ID for the autostart entry.
 	if fileutils.FileExists(profile) {
 		return sscommon.CleanRcFile(profile, sscommon.InstallID)
+	}
+	if fileutils.FileExists(profile) {
+		return sscommon.CleanRcFile(profile, sscommon.AutostartID)
 	}
 
 	return nil

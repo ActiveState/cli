@@ -238,13 +238,22 @@ func BranchCommitID(ownerName, projectName, branchName string) (*strfmt.UUID, er
 }
 
 func CommitBelongsToBranch(ownerName, projectName, branchName string, commitID strfmt.UUID) (bool, error) {
-	history, err := CommitHistory(ownerName, projectName, branchName)
+	latestCID, err := BranchCommitID(ownerName, projectName, branchName)
 	if err != nil {
-		return false, errs.Wrap(err, "Could not get commit history")
+		return false, errs.Wrap(err, "Could not get latest commit ID of branch")
+	}
+
+	return CommitWithinCommitHistory(*latestCID, commitID)
+}
+
+func CommitWithinCommitHistory(latestCommitID, searchCommitID strfmt.UUID) (bool, error) {
+	history, err := CommitHistoryFromID(latestCommitID)
+	if err != nil {
+		return false, errs.Wrap(err, "Could not get commit history from commit ID")
 	}
 
 	for _, commit := range history {
-		if commit.CommitID == commitID {
+		if commit.CommitID == searchCommitID {
 			return true, nil
 		}
 	}
@@ -873,6 +882,18 @@ func GetRevertCommit(from, to strfmt.UUID) (*mono_models.Commit, error) {
 	return res.Payload, nil
 }
 
+func RevertCommitWithinHistory(from, to strfmt.UUID) (*mono_models.Commit, error) {
+	ok, err := CommitWithinCommitHistory(from, to)
+	if err != nil {
+		return nil, errs.Wrap(err, "API communication failed.")
+	}
+	if !ok {
+		return nil, locale.WrapError(err, "err_revert_commit_within_history_not_in", "The commit being reverted to is not within the current commit's history.")
+	}
+
+	return RevertCommit(from, to)
+}
+
 func RevertCommit(from strfmt.UUID, to strfmt.UUID) (*mono_models.Commit, error) {
 	revertCommit, err := GetRevertCommit(from, to)
 	if err != nil {
@@ -928,6 +949,23 @@ func GetCommit(commitID strfmt.UUID) (*mono_models.Commit, error) {
 		return nil, locale.WrapError(err, "err_get_commit", "Could not get commit from ID: {{.V0}}", commitID.String())
 	}
 	return res.Payload, nil
+}
+
+func GetCommitWithinCommitHistory(currentCommitID, targetCommitID strfmt.UUID) (*mono_models.Commit, error) {
+	commit, err := GetCommit(targetCommitID)
+	if err != nil {
+		return nil, err
+	}
+
+	ok, err := CommitWithinCommitHistory(currentCommitID, targetCommitID)
+	if err != nil {
+		return nil, errs.Wrap(err, "API communication failed.")
+	}
+	if !ok {
+		return nil, locale.WrapError(err, "err_get_commit_within_history_not_in", "The target commit is not within the current commit's history.")
+	}
+
+	return commit, nil
 }
 
 func AddRevertCommit(commit *mono_models.Commit) (*mono_models.Commit, error) {

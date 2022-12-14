@@ -30,7 +30,8 @@ type SvcIntegrationTestSuite struct {
 }
 
 func (suite *SvcIntegrationTestSuite) TestStartStop() {
-	// https://activestatef.atlassian.net/browse/DX-1078
+	// Disable test until we can fix console output on Windows
+	// See issue here: https://activestatef.atlassian.net/browse/DX-1311
 	suite.T().SkipNow()
 	suite.OnlyRunForTags(tagsuite.Service)
 	ts := e2e.New(suite.T(), false)
@@ -128,9 +129,6 @@ func (suite *SvcIntegrationTestSuite) TestStartDuplicateErrorOutput() {
 	if runtime.GOOS == "windows" {
 		suite.T().Skip("Windows doesn't seem to read from svc at the moment")
 	}
-
-	// https://activestatef.atlassian.net/browse/DX-1078
-	suite.T().Skip("Failing on master, unclear why, skipping for now")
 
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()

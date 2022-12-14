@@ -132,6 +132,9 @@ const DisableAnalyticsEnvVarName = "ACTIVESTATE_CLI_DISABLE_ANALYTICS"
 // OptinUnstableEnvVarName is used to instruct State Tool to opt-in to unstable features
 const OptinUnstableEnvVarName = "ACTIVESTATE_OPTIN_UNSTABLE"
 
+// ServiceSockDir overrides the default socket path root diriectory used by the state service
+const ServiceSockDir = "ACTIVESTATE_SVC_SOCK"
+
 // AnalyticsLogEnvVarName is used to instruct State Tool to report analytics events to the given file
 const DeprecationOverrideEnvVarName = "ACTIVESTATE_DEPRECATION_OVERRIDE"
 
@@ -375,6 +378,12 @@ const RCAppendInstallStartLine = "-- START ACTIVESTATE INSTALLATION"
 
 // RCAppendInstallStopLine is the end line used to denote our default installation config in RC files
 const RCAppendInstallStopLine = "-- STOP ACTIVESTATE INSTALLATION"
+
+// RCAppendAutostartStartLine is the start line used to denote our autostart executables in RC files
+const RCAppendAutostartStartLine = "## START ACTIVESTATE AUTOSTART"
+
+// RCAppendAutostartStartLine is the end line used to denote our autostart executables in RC files
+const RCAppendAutostartStopLine = "## STOP ACTIVESTATE AUTOSTART"
 
 // ForumsURL is the URL to the state tool forums
 const ForumsURL = "https://community.activestate.com/c/state-tool/"
