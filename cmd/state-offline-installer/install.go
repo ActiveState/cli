@@ -117,9 +117,8 @@ func (r *runner) Run(params *Params) (rerr error) {
 		return errs.Wrap(err, "Could not read installer config, this installer appears to be corrupted.")
 	}
 
-	namespace := project.NewNamespace(r.icfg.OrgName, r.icfg.ProjectName, "")
 	installerDimensions = &dimensions.Values{
-		ProjectNameSpace: p.StrP(namespace.String()),
+		ProjectNameSpace: p.StrP(project.NewNamespace(r.icfg.OrgName, r.icfg.ProjectName, "").String()),
 		CommitID:         &r.icfg.CommitID,
 		Trigger:          p.StrP(target.TriggerOfflineInstaller.String()),
 	}
@@ -187,11 +186,6 @@ func (r *runner) Run(params *Params) (rerr error) {
 			return errs.Wrap(err, "Error determining absolute install directory")
 		}
 		uninstallDir := filepath.Join(installDir, "uninstall-data")
-		if fileutils.DirExists(uninstallDir) {
-			if err := os.RemoveAll(uninstallDir); err != nil {
-				return errs.Wrap(err, "Error removing uninstall directory")
-			}
-		}
 		if err := os.Mkdir(uninstallDir, os.ModeDir); err != nil {
 			return errs.Wrap(err, "Error creating uninstall directory")
 		}
@@ -225,12 +219,6 @@ func (r *runner) Run(params *Params) (rerr error) {
 		uninstallerDest = filepath.Join(targetPath, uninstallerFileNameRoot)
 	}
 	{
-		if fileutils.TargetExists(uninstallerDest) {
-			err := os.Remove(uninstallerDest)
-			if err != nil {
-				return errs.Wrap(err, "Error removing existing uninstaller")
-			}
-		}
 		err = fileutils.CopyFile(
 			uninstallerSrc,
 			uninstallerDest,
@@ -245,7 +233,7 @@ func (r *runner) Run(params *Params) (rerr error) {
 	}
 
 	/* Configure Environment */
-	if err := r.configureEnvironment(targetPath, namespace, asrt); err != nil {
+	if err := r.configureEnvironment(targetPath, asrt); err != nil {
 		return errs.Wrap(err, "Could not configure environment")
 	}
 
@@ -368,7 +356,7 @@ func (r *runner) extractAssets(assetsPath string, backpackZipFile string) error 
 	return nil
 }
 
-func (r *runner) configureEnvironment(path string, namespace *project.Namespaced, asrt *runtime.Runtime) error {
+func (r *runner) configureEnvironment(path string, asrt *runtime.Runtime) error {
 	env, err := asrt.Env(false, false)
 	if err != nil {
 		return errs.Wrap(err, "Error setting environment")
@@ -393,9 +381,7 @@ func (r *runner) configureEnvironment(path string, namespace *project.Namespaced
 	if err != nil {
 		return errs.Wrap(err, "Could not determine if running as Windows administrator")
 	}
-
-	id := sscommon.ProjectRCIdentifier(sscommon.OfflineInstallID, namespace)
-	err = subshell.ConfigureAvailableShells(r.shell, r.cfg, env, id, !isAdmin)
+	err = subshell.ConfigureAvailableShells(r.shell, r.cfg, env, sscommon.OfflineInstallID, !isAdmin)
 	if err != nil {
 		return locale.WrapError(err,
 			"err_deploy_subshell_write",

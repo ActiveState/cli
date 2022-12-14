@@ -71,8 +71,7 @@ func (r *Revert) Run(params *Params) error {
 		return locale.NewInputError("err_no_project")
 	}
 	commitID := strfmt.UUID(params.CommitID)
-
-	revertToCommit, err := model.GetCommitWithinCommitHistory(r.project.CommitUUID(), commitID)
+	revertToCommit, err := model.GetCommit(commitID)
 	if err != nil {
 		return locale.WrapError(err, "err_revert_get_commit", "Could not fetch commit details for commit with ID: {{.V0}}", params.CommitID)
 	}
@@ -96,7 +95,7 @@ func (r *Revert) Run(params *Params) error {
 		return locale.NewInputError("err_revert_aborted", "Revert aborted by user")
 	}
 
-	revertCommit, err := model.RevertCommitWithinHistory(r.project.CommitUUID(), commitID)
+	revertCommit, err := model.RevertCommit(r.project.CommitUUID(), commitID)
 	if err != nil {
 		return locale.WrapError(
 			err,

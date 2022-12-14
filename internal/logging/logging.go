@@ -7,10 +7,16 @@
 // 		logging.Info("This object is %s and that is %s", obj, that)
 //
 // example output:
+//	2013/05/07 01:20:26 INFO @ db.go:528: Registering plugin REPLICATION
+//	2013/05/07 01:20:26 INFO @ db.go:562: Registered 6 plugins and 22 commands
+//	2013/05/07 01:20:26 INFO @ slave.go:277: Running replication watchdog loop!
+//	2013/05/07 01:20:26 INFO @ redis.go:49: Redis adapter listening on 0.0.0.0:2000
+//	2013/05/07 01:20:26 WARN @ main.go:69: Starting adapter...
+//	2013/05/07 01:20:26 INFO @ db.go:966: Finished dump load. Loaded 2 objects from dump
+//	2013/05/07 01:22:26 INFO @ db.go:329: Checking persistence... 0 changes since 2m0.000297531s
+//	2013/05/07 01:22:26 INFO @ db.go:337: No need to save the db. no changes...
+//	2013/05/07 01:22:26 DEBUG @ db.go:341: Sleeping for 2m0s
 //
-// [DBG 1670353253256778 instance.go:123] Setting config: projects
-// [DBG 1670353253259897 subshell.go:95] Detected SHELL: zsh
-// [DBG 1670353253259915 subshell.go:132] Using binary: /bin/zsh
 package logging
 
 // This package may NOT depend on failures (directly or indirectly)
@@ -47,7 +53,7 @@ const (
 
 var levels_ascending = []int{DEBUG, INFO, WARNING, ERROR, NOTICE, CRITICAL}
 
-var LevelsByName = map[string]int{
+var LevlelsByName = map[string]int{
 	"DEBUG":    DEBUG,
 	"INFO":     INFO,
 	"WARNING":  WARN,
@@ -99,7 +105,7 @@ func SetMinimalLevel(l int) {
 // Possible level names are DEBUG, INFO, WARNING, ERROR, NOTICE, CRITICAL
 func SetMinimalLevelByName(l string) error {
 	l = strings.ToUpper(strings.Trim(l, " "))
-	level, found := LevelsByName[l]
+	level, found := LevlelsByName[l]
 	if !found {
 		Error("Could not set level - not found level %s", l)
 		return fmt.Errorf("Invalid level %s", l)
@@ -149,7 +155,7 @@ func (l *strandardHandler) Emit(ctx *MessageContext, message string, args ...int
 // logging handlers to 3rd party libraries
 func (l *strandardHandler) Printf(msg string, args ...interface{}) {
 	logMsg := fmt.Sprintf("Third party log message: %s", msg)
-	l.Emit(getContext("DBG", 1), logMsg, args...)
+	l.Emit(getContext("DEBUG", 1), logMsg, args...)
 }
 
 func (l *strandardHandler) Close() {}
@@ -191,7 +197,7 @@ func getContext(level string, skipDepth int) *MessageContext {
 // Output debug logging messages
 func Debug(msg string, args ...interface{}) {
 	if level&DEBUG != 0 {
-		writeMessage("DBG", msg, args...)
+		writeMessage("DEBUG", msg, args...)
 	}
 }
 
@@ -199,7 +205,7 @@ type writer struct{}
 
 func (w *writer) Write(p []byte) (n int, err error) {
 	if level&DEBUG != 0 {
-		writeMessage("DBG", string(p))
+		writeMessage("DEBUG", string(p))
 	}
 	return len(p), nil
 }
@@ -273,7 +279,7 @@ func Info(msg string, args ...interface{}) {
 
 	if level&INFO != 0 {
 
-		writeMessage("INF", msg, args...)
+		writeMessage("INFO", msg, args...)
 
 	}
 }
@@ -281,7 +287,7 @@ func Info(msg string, args ...interface{}) {
 // Output WARNING level messages
 func Warning(msg string, args ...interface{}) {
 	if level&WARN != 0 {
-		writeMessage("WRN", msg, args...)
+		writeMessage("WARNING", msg, args...)
 	}
 }
 
@@ -289,21 +295,21 @@ func Warning(msg string, args ...interface{}) {
 // This should be used sparingly, as multilog.Error() is preferred.
 func Error(msg string, args ...interface{}) {
 	if level&ERROR != 0 {
-		writeMessage("ERR", msg+"\n\nStacktrace: "+stacktrace.Get().String()+"\n", args...)
+		writeMessage("ERROR", msg+"\n\nStacktrace: "+stacktrace.Get().String()+"\n", args...)
 	}
 }
 
 // Same as Error() but without a stacktrace.
 func ErrorNoStacktrace(msg string, args ...interface{}) {
 	if level&ERROR != 0 {
-		writeMessage("ERR", msg, args...)
+		writeMessage("ERROR", msg, args...)
 	}
 }
 
 // Output NOTICE level messages
 func Notice(msg string, args ...interface{}) {
 	if level&NOTICE != 0 {
-		writeMessage("NOT", msg, args...)
+		writeMessage("NOTICE", msg, args...)
 	}
 }
 
@@ -311,7 +317,7 @@ func Notice(msg string, args ...interface{}) {
 // This should be called sparingly, as multilog.Critical() is preferred.
 func Critical(msg string, args ...interface{}) {
 	if level&CRITICAL != 0 {
-		writeMessage("CRT", msg, args...)
+		writeMessage("CRITICAL", msg, args...)
 		log.Println(string(debug.Stack()))
 	}
 }
@@ -347,7 +353,7 @@ func (lb bridge) Write(p []byte) (n int, err error) {
 // through this logger, at a given level.
 func BridgeStdLog(level int) {
 
-	for k, l := range LevelsByName {
+	for k, l := range LevlelsByName {
 		if l == level {
 			b := bridge{
 				level:     l,

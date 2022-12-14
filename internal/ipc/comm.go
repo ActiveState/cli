@@ -3,8 +3,6 @@ package ipc
 import (
 	"context"
 	"errors"
-
-	"github.com/ActiveState/cli/internal/logging"
 )
 
 // Key/Value associations. Keys start with rare characters to try to ensure
@@ -20,7 +18,6 @@ var (
 func pingHandler() RequestHandler {
 	return func(key string) (string, bool) {
 		if key == keyPing {
-			logging.Debug("handling ping request")
 			return valPong, true
 		}
 
@@ -45,7 +42,6 @@ func getPing(ctx context.Context, c *Client) (string, error) {
 func stopHandler(stop func()) RequestHandler {
 	return func(key string) (string, bool) {
 		if key == keyStop {
-			logging.Debug("handling stop request")
 			stop()
 			return valStop, true
 		}

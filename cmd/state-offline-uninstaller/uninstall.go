@@ -110,16 +110,15 @@ func (r *runner) Run(params *Params) (rerr error) {
 		return locale.NewInputError("err_uninstall_abort", "Uninstall aborted")
 	}
 
-	namespace := project.NewNamespace(r.icfg.OrgName, r.icfg.ProjectName, "")
 	installerDimensions = &dimensions.Values{
-		ProjectNameSpace: p.StrP(namespace.String()),
+		ProjectNameSpace: p.StrP(project.NewNamespace(r.icfg.OrgName, r.icfg.ProjectName, "").String()),
 		CommitID:         &r.icfg.CommitID,
 		Trigger:          p.StrP(target.TriggerOfflineUninstaller.String()),
 	}
 	r.analytics.Event(ac.CatOfflineInstaller, ac.ActOfflineInstallerStart, installerDimensions)
 
 	r.out.Print("Removing environment configuration")
-	err = r.removeEnvPaths(namespace)
+	err = r.removeEnvPaths()
 	if err != nil {
 		return errs.Wrap(err, "Error removing environment path")
 	}
@@ -214,18 +213,14 @@ func (r *runner) validateTargetPath(path string) error {
 	return nil
 }
 
-func (r *runner) removeEnvPaths(namespace *project.Namespaced) error {
+func (r *runner) removeEnvPaths() error {
 	isAdmin, err := osutils.IsAdmin()
 	if err != nil {
 		return errs.Wrap(err, "Could not determine if running as Windows administrator")
 	}
 
 	// remove shell file additions
-	id := sscommon.ProjectRCIdentifier(sscommon.OfflineInstallID, namespace)
-	if err := r.shell.CleanUserEnv(r.cfg, id, !isAdmin); err != nil {
-		return errs.Wrap(err, "Failed to remove runtime PATH")
-	}
-	if err := r.shell.CleanUserEnv(r.cfg, sscommon.AutostartID, !isAdmin); err != nil {
+	if err := r.shell.CleanUserEnv(r.cfg, sscommon.OfflineInstallID, !isAdmin); err != nil {
 		return errs.Wrap(err, "Failed to remove runtime PATH")
 	}
 

@@ -15,7 +15,7 @@ func HandlePanics(recovered interface{}, stack []byte) bool {
 		multilog.Error("Panic: %v", recovered)
 		logging.Debug("Stack: %s", string(stack))
 
-		fmt.Fprintln(os.Stderr, fmt.Sprintf(`An unexpected error occurred.
+		fmt.Fprintln(os.Stderr, fmt.Sprintf(`An unexpected error occurred while running the State Tool.
 Error: %v
 Stack trace: %s
 Check the error log for more information: %s

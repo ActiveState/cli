@@ -38,7 +38,7 @@ jobs:
         name: Install Go
         uses: actions/setup-go@v2
         with:
-          go-version: 1.18.x
+          go-version: ${{ matrix.go-version }}
 
       - # === Setup ===
         name: Setup
@@ -49,11 +49,6 @@ jobs:
           echo "$bin" >> $GITHUB_PATH
           ls -ahl $bin
           printenv
-
-      - # === Install Deps ===
-        name: Install Deps
-        shell: bash
-        run: state run install-deps
 
       - # === Preprocess ===
         name: Preprocess

@@ -27,15 +27,14 @@ For usage information please refer to the [State Tool Documentation](http://docs
 ## Development
 
 ### Requirements
-* Go 1.18 or above
+* Go 1.16 or above
 
 ### Building & Testing
 
-First run `state run install-deps` followed by `state run preprocess` if you are building for the first time.
-
 * **Building:** `state run build`
   * The built executable will be stored in the `build` directory
-  * If you modified assets or switched branches, you need to re-run `state run preprocess` first
+  * If you modified assets, switched branches or are building for the first time you will need to first
+    run `state run preprocess`
 * **Testing:**
   * **Unit tests\*:** `state run test`
   * **Integration tests:** `state run integration-tests`
