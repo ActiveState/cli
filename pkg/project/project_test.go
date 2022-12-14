@@ -119,7 +119,11 @@ func (suite *ProjectTestSuite) TestScripts() {
 	suite.Equal("foo", name, "Names should match")
 	suite.Equal("foo project", value, "Value should match")
 	suite.Equal("foo $project.name()", raw, "Raw value should match")
-	suite.Equal([]language.Language{language.Sh}, safe, "Safe language should match")
+	if runtime.GOOS == "windows" {
+		suite.Equal([]language.Language{language.Batch}, safe, "Safe language should match")
+	} else {
+		suite.Equal([]language.Language{language.Sh}, safe, "Safe language should match")
+	}
 	suite.True(standalone, "Standalone value should match")
 }
 
