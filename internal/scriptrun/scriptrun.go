@@ -9,6 +9,7 @@ import (
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/exeutils"
+	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
@@ -180,6 +181,8 @@ func (s *ScriptRun) Run(script *project.Script, args []string) error {
 		return locale.WrapError(err, "error_state_run_setup_scriptfile")
 	}
 	defer sf.Clean()
+
+	logging.Debug("Scriptfile exists: %t\n", fileutils.FileExists(sf.Filename()))
 
 	// ignore code for now, passing via failure
 	err = s.sub.Run(sf.Filename(), args...)
