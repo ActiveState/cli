@@ -10,6 +10,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/exeutils"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/thoas/go-funk"
 
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -205,6 +206,17 @@ func (ed EnvironmentDefinition) Merge(other *EnvironmentDefinition) (*Environmen
 	}
 	res.Env = newEnv
 	return &res, nil
+}
+
+func (ed *EnvironmentDefinition) ReplacePath(original, updated string) {
+	for _, ev := range ed.Env {
+		for i, val := range ev.Values {
+			if strings.Contains(val, original) {
+				logging.Debug("Replacing %s with %s in %s", original, updated, val)
+				ev.Values[i] = strings.ReplaceAll(val, original, updated)
+			}
+		}
+	}
 }
 
 // ReplaceString replaces the string 'from' with 'replacement' in
