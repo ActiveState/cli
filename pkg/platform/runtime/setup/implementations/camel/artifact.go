@@ -32,7 +32,23 @@ func NewArtifactSetup(artifactID artifact.ArtifactID, store *store.Store) *Artif
 	return &ArtifactSetup{artifactID, store}
 }
 
-func (as *ArtifactSetup) EnvDef(tmpDir string) (*envdef.EnvironmentDefinition, error) {
+func (as *ArtifactSetup) PrepareEnvDef(tmpDir, installDir string, constants envdef.Constants) (*envdef.EnvironmentDefinition, error) {
+	// Source the environment definition from the extracted archive
+	ed, err := as.newEnvDef(tmpDir)
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not load environment definitions for artifact.")
+	}
+
+	// Expand the environment definition variables
+	ed = ed.ExpandVariables(constants)
+
+	// Ensure that the replacement values are set to the correct directory
+	ed.ReplacePath(filepath.Join(tmpDir, ed.InstallDir), installDir)
+
+	return ed, nil
+}
+
+func (as *ArtifactSetup) newEnvDef(tmpDir string) (*envdef.EnvironmentDefinition, error) {
 	// camel archives are structured like this
 	// <archiveName>/
 	//    <relInstallDir>/

@@ -144,7 +144,7 @@ type Setuper interface {
 // ArtifactSetuper is the interface for an implementation of artifact setup functions
 // These need to be specialized for each BuildEngine type
 type ArtifactSetuper interface {
-	EnvDef(tmpInstallDir string) (*envdef.EnvironmentDefinition, error)
+	PrepareEnvDef(tmpDir, installDir string, constants envdef.Constants) (*envdef.EnvironmentDefinition, error)
 	Unarchiver() unarchiver.Unarchiver
 }
 
@@ -229,13 +229,11 @@ func (s *Setup) updateArtifacts() ([]artifact.ArtifactID, error) {
 		}
 
 		// Retrieve environment definitions for artifact
-		envDef, err := as.EnvDef(tempUnpackedDir)
+		envDef, err := as.PrepareEnvDef(tempUnpackedDir, s.store.InstallPath(), cnst)
 		if err != nil {
 			return errs.Wrap(err, "Could not collect env info for artifact")
 		}
 
-		// Expand environment definitions using constants
-		envDef = envDef.ExpandVariables(cnst)
 		err = envDef.ApplyFileTransforms(filepath.Join(tempUnpackedDir, envDef.InstallDir), cnst)
 		if err != nil {
 			return locale.WrapError(err, "runtime_alternative_file_transforms_err", "", "Could not apply necessary file transformations after unpacking")
@@ -553,6 +551,7 @@ func (s *Setup) moveToInstallPath(a artifact.ArtifactID, unpackedDir string, env
 		s.events.ArtifactStepProgress(events.Install, a, 1)
 	}
 	s.events.ArtifactStepStarting(events.Install, a, numFiles)
+	logging.Debug("Moving %d files from %s to %s", numFiles, filepath.Join(unpackedDir, envDef.InstallDir), s.store.InstallPath())
 	err := fileutils.MoveAllFilesRecursively(
 		filepath.Join(unpackedDir, envDef.InstallDir),
 		s.store.InstallPath(), onMoveFile,
