@@ -57,15 +57,6 @@ func (p *Project) SetCommit(commitID string) error {
 	return p.Source().SetCommit(commitID, p.IsHeadless())
 }
 
-// Platforms gets platforms
-func (p *Project) Platforms() []*Platform {
-	platforms := []*Platform{}
-	for i := range p.projectfile.Platforms {
-		platforms = append(platforms, &Platform{&p.projectfile.Platforms[i], p})
-	}
-	return platforms
-}
-
 // Languages returns a reference to projectfile.Languages
 func (p *Project) Languages() []*Language {
 	constrained, err := constraints.FilterUnconstrained(pConditional, p.projectfile.Languages.AsConstrainedEntities())

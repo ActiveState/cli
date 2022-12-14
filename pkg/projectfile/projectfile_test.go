@@ -188,14 +188,7 @@ func TestParse(t *testing.T) {
 	require.NoError(t, err, "Should not throw an error")
 
 	assert.NotEmpty(t, project.Project, "Project should be set")
-	assert.NotEmpty(t, project.Platforms, "Platforms should be set")
 	assert.NotEmpty(t, project.Environments, "Environments should be set")
-
-	assert.NotEmpty(t, project.Platforms[0].Name, "Platform name should be set")
-	assert.NotEmpty(t, project.Platforms[0].Os, "Platform OS name should be set")
-	assert.NotEmpty(t, project.Platforms[0].Architecture, "Platform architecture name should be set")
-	assert.NotEmpty(t, project.Platforms[0].Libc, "Platform libc name should be set")
-	assert.NotEmpty(t, project.Platforms[0].Compiler, "Platform compiler name should be set")
 
 	assert.NotEmpty(t, project.Languages[0].Name, "Language name should be set")
 	assert.NotEmpty(t, project.Languages[0].Version, "Language version should be set")
@@ -303,15 +296,16 @@ func TestGetProjectFilePath(t *testing.T) {
 	assert.Equal(t, expectedPath, configPath, "Project path is properly detected using the ProjectEnvVarName")
 
 	os.Unsetenv(constants.ProjectEnvVarName)
+	cfg, err := config.New()
+	require.NoError(t, err)
+	defer func() { require.NoError(t, cfg.Close()) }()
+	cfg.Set(constants.GlobalDefaultPrefname, "") // ensure it is unset
 	tmpDir, err := ioutil.TempDir("", "")
 	assert.NoError(t, err, "Should create temp dir")
 	defer os.RemoveAll(tmpDir)
 	os.Chdir(tmpDir)
 	_, err = GetProjectFilePath()
 	assert.Error(t, err, "GetProjectFilePath should fail")
-	cfg, err := config.New()
-	require.NoError(t, err)
-	defer func() { require.NoError(t, cfg.Close()) }()
 	cfg.Set(constants.GlobalDefaultPrefname, expectedPath)
 	configPath, err = GetProjectFilePath()
 	assert.NoError(t, err, "GetProjectFilePath should succeed")

@@ -87,7 +87,6 @@ type Project struct {
 	Project       string        `yaml:"project"`
 	Lock          string        `yaml:"lock,omitempty"`
 	Environments  string        `yaml:"environments,omitempty"`
-	Platforms     []Platform    `yaml:"platforms,omitempty"`
 	Languages     Languages     `yaml:"languages,omitempty"`
 	Constants     Constants     `yaml:"constants,omitempty"`
 	Secrets       *SecretScopes `yaml:"secrets,omitempty"`
