@@ -425,10 +425,10 @@ func AddChangeset(parentCommitID strfmt.UUID, commitMessage string, changeset Ch
 	res, err := mono.New().VersionControl.AddCommit(params, authentication.ClientAuth())
 	if err != nil {
 		switch err.(type) {
-		case *version_control.AddCommitBadRequest:
-		case *version_control.AddCommitConflict:
-		case *version_control.AddCommitForbidden:
-		case *version_control.AddCommitNotFound:
+		case *version_control.AddCommitBadRequest,
+			*version_control.AddCommitConflict,
+			*version_control.AddCommitForbidden,
+			*version_control.AddCommitNotFound:
 			return nil, locale.WrapInputError(err, "err_add_commit", "", api.ErrorMessageFromPayload(err))
 		default:
 			return nil, locale.WrapError(err, "err_add_commit", "", api.ErrorMessageFromPayload(err))
