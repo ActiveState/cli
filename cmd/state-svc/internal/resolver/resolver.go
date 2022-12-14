@@ -185,3 +185,7 @@ func (r *Resolver) ConfigChanged(ctx context.Context, key string) (*graph.Config
 	go configMediator.NotifyListeners(key)
 	return &graph.ConfigChangedResponse{Received: true}, nil
 }
+
+func (r *Resolver) FetchLogTail(ctx context.Context) (string, error) {
+	return logging.ReadTail(), nil
+}

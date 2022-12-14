@@ -2,6 +2,7 @@ package validate
 
 import (
 	"path/filepath"
+	"runtime"
 	"testing"
 
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
@@ -9,6 +10,9 @@ import (
 )
 
 func TestValidate(t *testing.T) {
+	if runtime.GOOS == "darwin" {
+		t.Skip("Disabled on macOS due to non-standards compliant signing certificate") // DX-1451
+	}
 	attestationFile := filepath.Join(osutil.GetTestDataDir(), "bzip2_attestation.json")
 	err := Attestation(attestationFile)
 	assert.NoError(t, err)

@@ -8,6 +8,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
@@ -66,6 +67,10 @@ func stopSvc(installPath string) error {
 		} else if exitCode != 0 {
 			multilog.Error("Stopping %s exited with code %d", constants.SvcAppName, exitCode)
 		}
+	}
+
+	if condition.OnCI() { // prevent killing valid parallel instances while on CI
+		return nil
 	}
 
 	procs, err := process.Processes()
