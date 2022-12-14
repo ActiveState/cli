@@ -60,19 +60,6 @@ key2: val2`)
 	assert.Equal(t, "val2", build["key2"], "Key2 should be set")
 }
 
-func TestLanguageStruct(t *testing.T) {
-	language := Language{}
-	dat := strings.TrimSpace(`
-name: valueForName
-version: valueForVersion`)
-
-	err := yaml.Unmarshal([]byte(dat), &language)
-	assert.Nil(t, err, "Should not throw an error")
-
-	assert.Equal(t, "valueForName", language.Name, "Name should be set")
-	assert.Equal(t, "valueForVersion", language.Version, "Version should be set")
-}
-
 func TestConstraintStruct(t *testing.T) {
 	constraint := Constraint{}
 	dat := strings.TrimSpace(`

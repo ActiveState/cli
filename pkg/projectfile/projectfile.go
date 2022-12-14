@@ -103,32 +103,6 @@ type Project struct {
 // Build can hold variable keys, so we cannot predict what they are, hence why it is a map
 type Build map[string]string
 
-// Language covers the language structure, which goes under Project
-type Language struct {
-	Name        string      `yaml:"name"`
-	Version     string      `yaml:"version,omitempty"`
-	Conditional Conditional `yaml:"if"`
-	Constraints Constraint  `yaml:"constraints,omitempty"`
-	Build       Build       `yaml:"build,omitempty"`
-	Packages    Packages    `yaml:"packages,omitempty"`
-}
-
-var _ ConstrainedEntity = Language{}
-
-// ID returns the language name
-func (l Language) ID() string {
-	return l.Name
-}
-
-// ConstraintsFilter returns the language constraints
-func (l Language) ConstraintsFilter() Constraint {
-	return l.Constraints
-}
-
-func (l Language) ConditionalFilter() Conditional {
-	return l.Conditional
-}
-
 // Constant covers the constant structure, which goes under Project
 type Constant struct {
 	Name        string      `yaml:"name"`
