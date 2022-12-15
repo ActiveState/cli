@@ -34,6 +34,9 @@ func (as *ArtifactSetup) PrepareEnvDef(tmpDir, installDir string, constants envd
 	ed = ed.ExpandVariables(constants)
 
 	// Ensure that the replacement values are set to the correct directory
+	// In some cases the environment definition will contain values that point
+	// to the temporary directory that the artifact was unpacked to. In this case
+	// we need to replace those values with the actual install directory.
 	ed.ReplacePath(filepath.Join(tmpDir, ed.InstallDir), installDir)
 
 	return ed, nil

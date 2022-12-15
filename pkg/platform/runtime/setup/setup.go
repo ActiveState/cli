@@ -144,6 +144,8 @@ type Setuper interface {
 // ArtifactSetuper is the interface for an implementation of artifact setup functions
 // These need to be specialized for each BuildEngine type
 type ArtifactSetuper interface {
+	// PrepareEnvDef creates a new environment definition for the given artifact
+	// and ensures that the definition is ready to be used in artifact installation
 	PrepareEnvDef(tmpDir, installDir string, constants envdef.Constants) (*envdef.EnvironmentDefinition, error)
 	Unarchiver() unarchiver.Unarchiver
 }
