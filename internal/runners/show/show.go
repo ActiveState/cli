@@ -225,14 +225,12 @@ func (s *Show) Run(params Params) error {
 	}
 
 	projectDir := filepath.Dir(s.project.Path())
-	logging.Debug("Original project directory: %s", projectDir)
 	if fileutils.IsSymlink(projectDir) {
 		projectDir, err = fileutils.SymlinkTarget(projectDir)
 		if err != nil {
 			return locale.WrapError(err, "err_show_projectdir", "Could not resolve project directory symlink")
 		}
 	}
-	logging.Debug("Project directory: %s", projectDir)
 
 	rd := RuntimeDetails{
 		NameSpace:    fmt.Sprintf("%s/%s", owner, projectName),
