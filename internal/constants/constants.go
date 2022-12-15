@@ -287,10 +287,6 @@ const CheatSheetURL = "https://platform.activestate.com/state-tool-cheat-sheet"
 // StateToolRollbarToken is the token used by the State Tool to talk to rollbar
 const StateToolRollbarToken = "0f77e52e25324b5a870f1f2ea769024e"
 
-// StateTrayRollbarToken is the token used by the State Update Dialog to talk to rollbar
-// Note: it shared the same token with State Tray
-const StateTrayRollbarToken = "84e7a358f8bd4bf99382a208459544bb"
-
 // StateServiceRollbarToken is the token used by the State Service to talk to rollbar
 const StateServiceRollbarToken = "8d72ba6541394d2c99c006324b3a46a7"
 
@@ -415,12 +411,6 @@ const StateRemoteInstallerCmd = "state-remote-installer"
 
 // InstallerName is the name we give to our state-installer executable
 const InstallerName = "State Installer"
-
-// UpdateDialogName is the name we give our state-update-dialog executable
-const UpdateDialogName = "State Update Dialog"
-
-// StateUpdateDialogCmd is the name of the state update dialog binary
-const StateUpdateDialogCmd = "state-update-dialog"
 
 // StateExecutorCmd is the name of the state executor binary
 const StateExecutorCmd = "state-exec"

@@ -7,12 +7,8 @@ constants:
     value: state-exec.exe
   - name: BUILD_INSTALLER_TARGET
     value: state-installer.exe
-  - name: BUILD_UPDLG_TARGET
-    value: state-update-dialog.exe
   - name: SVC_BUILDFLAGS
     value: -ldflags="-s -w -H=windowsgui"
-  - name: UPDLG_BUILDFLAGS
-    value: -ldflags "-extldflags=-static -w -s -H windowsgui -X github.com/wailsapp/wails.BuildMode=${1:-debug}"
   - name: SCRIPT_EXT
     value: .ps1
 scripts:
@@ -79,10 +75,3 @@ scripts:
       state run build-msi-language ActivePerl Public ActiveState/ActivePerl-5.28 5.28.1001
       signtool.exe sign -d "ActiveState Language Installer" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/msi/ActivePerl-5.28.msi
       state run build-base-language-msi
-  - name: run-updlg
-    description: Runs the update dialog in debug mode
-    standalone: true
-    language: bash
-    value: |
-      /c/Windows/System32/F12/IEChooser.exe & // debugger
-      go run $constants.UPDLG_BUILDFLAGS github.com/ActiveState/cli/cmd/state-update-dialog

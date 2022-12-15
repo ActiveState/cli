@@ -18,14 +18,6 @@ constants:
   - name: SVC_BUILDFLAGS
     if: ne .OS.Name "Windows"
     value: $constants.CLI_BUILDFLAGS
-  - name: BUILD_UPDLG_TARGET
-    if: ne .OS.Name "Windows"
-    value: state-update-dialog
-  - name: UPDLG_BUILDFLAGS
-    value: -ldflags="-w -X github.com/wailsapp/wails.BuildMode=${1:-debug}"
-  - name: UPDLG_BUILDFLAGS
-    if: eq .OS.Name "Linux"
-    value: -ldflags="-w -X github.com/wailsapp/wails.BuildMode=${1:-debug} -extldflags '-Wl,--wrap,pthread_sigmask $4' -linkmode external"
   - name: BUILD_DAEMON_TARGET
     if: ne .OS.Name "Windows"
     value: state-svc
@@ -170,63 +162,6 @@ scripts:
       cd cmd/state-remote-installer
       go generate
       go build -tags "$GO_BUILD_TAGS" -o ../../$BUILD_TARGET_DIR/$TARGET .
-  - name: build-updlg-all
-    description: Invokes all build steps for the update dialog
-    standalone: true
-    language: bash
-    value: |
-      set -e
-      state run build-updlg-assets
-      state run build-updlg-front
-      state run build-updlg
-  - name: build-updlg
-    description: Builds the State Tool update dialog app. Run with `prod` argument to build non-dev version.
-    standalone: true
-    language: bash
-    value: |
-      set -e
-      $constants.SET_ENV
-      CGO_ENABLED=1
-      go build -o $BUILD_TARGET_DIR/$constants.BUILD_UPDLG_TARGET $constants.UPDLG_BUILDFLAGS ./cmd/state-update-dialog
-  - name: build-updlg-front
-    description: Builds the State Tool update dialog app's frontend. Be sure to run build-updlg-assets first if you changed image assets.
-    language: bash
-    value: |
-      set -e
-      pushd cmd/state-update-dialog/frontend
-      echo "Running NPM install"
-      npm install
-      echo "Building frontend. If you updated img assets be sure to first run build-updlg-assets"
-      npm run build
-      npm run build-scss
-      popd
-  - name: build-updlg-assets
-    description: Builds the State Tool update dialog app's assets.
-    language: python3
-    value: |
-      import base64
-      import os
-      lines = []
-      for root, dirs, filenames in os.walk("./cmd/state-update-dialog/frontend/scss/img"):
-          for filename in filenames:
-              fpath = os.path.join(root, filename)
-              name, ext = os.path.splitext(os.path.basename(fpath))
-              if ext != ".png":
-                raise Exception("Only PNG's are supported, found: %s" % filename)
-              with open(fpath, "rb") as file:
-                  lines.append(".img-" + name + "{")
-                  lines.append("  background-image: url(\"data:image/png;base64," + base64.b64encode(file.read()).decode("utf-8") + "\");")
-                  lines.append("}")
-          break
-      with open("./cmd/state-update-dialog/frontend/scss/_img.scss", "w") as file:
-          file.write("\n".join(lines) + "\n")
-  - name: run-updlg
-    if: ne .OS.Name "Windows"
-    description: Runs the update dialog in debug mode
-    standalone: true
-    language: bash
-    value: |
-      go run -ldflags "-w -X github.com/wailsapp/wails.BuildMode=${1:-debug}" github.com/ActiveState/cli/cmd/state-update-dialog
   - name: install
     language: bash
     description: Installs the current HEAD version into GOBIN

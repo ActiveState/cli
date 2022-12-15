@@ -18,7 +18,6 @@ const (
 	state executableType = iota
 	service
 	installer
-	update
 	executor
 )
 
@@ -26,7 +25,6 @@ var execData = map[executableType]string{
 	state:     constants.StateCmd + osutils.ExeExt,
 	service:   constants.StateSvcCmd + osutils.ExeExt,
 	installer: constants.StateInstallerCmd + osutils.ExeExt,
-	update:    constants.StateUpdateDialogCmd + osutils.ExeExt,
 	executor:  constants.StateExecutorCmd + osutils.ExeExt,
 }
 
@@ -79,14 +77,6 @@ func InstallerExec() (string, error) {
 
 func InstallerExecFromDir(baseDir string) (string, error) {
 	return newExecFromDir(baseDir, installer)
-}
-
-func UpdateExec() (string, error) {
-	return newExec(update)
-}
-
-func NewUpdateExecFromDir(baseDir string) (string, error) {
-	return newExecFromDir(baseDir, update)
 }
 
 func ExecutorExec() (string, error) {

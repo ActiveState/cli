@@ -1,8 +1,7 @@
 # Architecture
 
 This document describes the high-level architecture of the State Tool and
-related applications (currently: State Service, State Installer, and State
-Update Dialog).
+related applications (currently: State Service and State Installer).
 
 ## Applications Overviews
 
@@ -24,11 +23,6 @@ like caching.
 
 The State Installer provides a cross-platform installer for the suite of State
 Tool applications. Shell script wrappers are provided as a convenience.
-
-### State Update Dialog
-
-The State Update Dialog provides a cross-platform updater for the suite of State
-Tool Applications.
 
 ## Directory Structure
 
