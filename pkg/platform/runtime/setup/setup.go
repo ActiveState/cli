@@ -2,6 +2,7 @@ package setup
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/url"
@@ -236,17 +237,26 @@ func (s *Setup) updateArtifacts() ([]artifact.ArtifactID, error) {
 			return errs.Wrap(err, "Could not collect env info for artifact")
 		}
 
-		err = envDef.ApplyFileTransforms(filepath.Join(tempUnpackedDir, envDef.InstallDir), cnst)
+		data, err := json.MarshalIndent(envDef, "", "  ")
 		if err != nil {
-			return locale.WrapError(err, "runtime_alternative_file_transforms_err", "", "Could not apply necessary file transformations after unpacking")
+			return errs.Wrap(err, "Could not marshal environment definition")
 		}
+		logging.Debug("Environment definition: %s", string(data))
 
 		// Move files to installation path, ensuring file operations are synchronized
 		mutex.Lock()
 		err = s.moveToInstallPath(a, tempUnpackedDir, envDef, numFiles)
 		mutex.Unlock()
+		if err != nil {
+			return locale.WrapError(err, "runtime_alternative_move_err", "", "Could not move files to installation path")
+		}
 
-		return err
+		err = envDef.ApplyFileTransforms(s.store.InstallPath(), cnst)
+		if err != nil {
+			return locale.WrapError(err, "runtime_alternative_file_transforms_err", "", "Could not apply necessary file transformations after unpacking")
+		}
+
+		return nil
 	})
 	if err != nil {
 		return artifacts, errs.Wrap(err, "Error setting up runtime")
