@@ -1,6 +1,6 @@
 module github.com/ActiveState/cli
 
-go 1.18
+go 1.17
 
 require (
 	cloud.google.com/go v0.64.0
