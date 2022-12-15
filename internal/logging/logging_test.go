@@ -187,7 +187,7 @@ func Test_Formatting(t *testing.T) {
 	msg := formatter.Format(ctx, "FOO %s", "bar")
 
 	//fmt.Println("Message: ", msg)
-	if msg != "[TEST -62135596800000000 testung:100] FOO bar" {
+	if msg != "[TEST -6795364578871345152 testung:100] FOO bar" {
 		t.Fatal("Got wrong formatting:", msg)
 	}
 
@@ -199,7 +199,7 @@ func Test_Formatting(t *testing.T) {
 
 	s := formatter.Format(ctx, mesg, "BAR")
 	fmt.Println(s)
-	if s != "FOO BAR @ 100:testung: -62135596800000000 TEST" {
+	if s != "FOO BAR @ 100:testung: -6795364578871345152 TEST" {
 		t.Fatal(s)
 	}
 
