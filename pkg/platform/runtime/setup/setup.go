@@ -551,7 +551,6 @@ func (s *Setup) moveToInstallPath(a artifact.ArtifactID, unpackedDir string, env
 		s.events.ArtifactStepProgress(events.Install, a, 1)
 	}
 	s.events.ArtifactStepStarting(events.Install, a, numFiles)
-	logging.Debug("Moving %d files from %s to %s", numFiles, filepath.Join(unpackedDir, envDef.InstallDir), s.store.InstallPath())
 	err := fileutils.MoveAllFilesRecursively(
 		filepath.Join(unpackedDir, envDef.InstallDir),
 		s.store.InstallPath(), onMoveFile,
