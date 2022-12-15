@@ -173,7 +173,7 @@ func TestExpandProjectAlternateSyntax(t *testing.T) {
 
 	expanded, err := project.ExpandFromProject("${project.name()}", prj)
 	assert.NoError(t, err, "Ran without failure")
-	assert.Equal(t, "general", expanded, "Expanded platform variable")
+	assert.Equal(t, "general", expanded, "Expanded project variable")
 }
 
 func TestExpandProjectUnknownCategory(t *testing.T) {
