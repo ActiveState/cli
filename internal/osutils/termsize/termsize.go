@@ -1,4 +1,4 @@
-// +build !windows,!plan9,!solaris,!appengine,!wasm
+//go:build linux
 
 package termsize
 

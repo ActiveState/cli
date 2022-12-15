@@ -1,4 +1,4 @@
-// +build windows
+//go:build windows
 
 package fileutils
 
@@ -31,4 +31,3 @@ func TestIsExecutable(t *testing.T) {
 		t.Errorf("%s should not be executable", invalid)
 	}
 }
-

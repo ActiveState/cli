@@ -1,5 +1,4 @@
 //go:build windows
-// +build windows
 
 package fileutils
 
@@ -39,7 +38,6 @@ func IsExecutable(path string) bool {
 	}
 	return false
 }
-
 
 // IsWritable returns true if the given path is writable
 func IsWritable(path string) bool {

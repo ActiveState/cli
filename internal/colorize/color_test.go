@@ -1,4 +1,5 @@
-// +build !windows
+//go:build !windows
+
 // Can't test this on Windows since on Windows it sends process instructions to change colors
 
 package colorize

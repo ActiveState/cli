@@ -1,4 +1,4 @@
-// +build !windows,!darwin
+//go:build linux
 
 package osutils
 
