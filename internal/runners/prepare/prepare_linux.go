@@ -5,11 +5,9 @@ import (
 
 	svcAutostart "github.com/ActiveState/cli/cmd/state-svc/autostart"
 
-	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/osutils/autostart"
 	"github.com/ActiveState/cli/internal/osutils/user"
 )
@@ -48,7 +46,7 @@ func prependHomeDir(path string) (string, error) {
 }
 
 func installedPreparedFiles(cfg autostart.Configurable) ([]string, error) {
-	return []string, nil
+	return []string{}, nil
 }
 
 func cleanOS(cfg autostart.Configurable) error {

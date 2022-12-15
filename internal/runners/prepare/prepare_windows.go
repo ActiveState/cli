@@ -8,8 +8,6 @@ import (
 
 	svcAutostart "github.com/ActiveState/cli/cmd/state-svc/autostart"
 
-	"github.com/ActiveState/cli/internal/assets"
-	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/locale"
@@ -56,7 +54,7 @@ func (r *Prepare) prepareStartShortcut() error {
 	}
 
 	sc := shortcut.New(shortcutDir, "Uninstall State Tool", r.subshell.Binary(), "/C \"state clean uninstall\"")
-	err = sc.Enable()
+	err := sc.Enable()
 	if err != nil {
 		return locale.WrapError(err, "err_preparestart_shortcut", "", sc.Path())
 	}
@@ -122,7 +120,7 @@ func setStateProtocol() error {
 }
 
 func installedPreparedFiles(cfg autostart.Configurable) ([]string, error) {
-	return []string, nil
+	return []string{}, nil
 }
 
 func cleanOS(cfg autostart.Configurable) error {
