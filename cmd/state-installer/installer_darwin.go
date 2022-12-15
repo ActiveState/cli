@@ -11,7 +11,6 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/installation"
-	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/multilog"
 )
 
@@ -45,32 +44,6 @@ func (i *Installer) installLauncher() error {
 		return errs.Wrap(err, "Could not create application directory")
 	}
 
-	trayExec, err := installation.TrayExecFromDir(i.path)
-	if err != nil {
-		return locale.WrapError(err, "err_tray_exec")
-	}
-
-	exeName := filepath.Base(trayExec)
-	toTray := filepath.Join(launcherPath, constants.MacOSApplicationName, "Contents", "MacOS", exeName)
-	err = createNewSymlink(trayExec, toTray)
-	if err != nil {
-		return errs.Wrap(err, "Could not create state-tray symlink")
-	}
-
-	return nil
-}
-
-func createNewSymlink(target, filename string) error {
-	if fileutils.TargetExists(filename) {
-		if err := os.Remove(filename); err != nil {
-			return errs.Wrap(err, "Could not delete existing symlink")
-		}
-	}
-
-	err := os.Symlink(target, filename)
-	if err != nil {
-		return errs.Wrap(err, "Could not create symlink")
-	}
 	return nil
 }
 

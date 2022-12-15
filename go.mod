@@ -21,7 +21,6 @@ require (
 	github.com/felixge/fgprof v0.9.0
 	github.com/fsnotify/fsnotify v1.4.7
 	github.com/gammazero/workerpool v1.1.1
-	github.com/getlantern/systray v1.1.0
 	github.com/go-ole/go-ole v1.2.6
 	github.com/go-openapi/errors v0.20.0
 	github.com/go-openapi/runtime v0.19.29

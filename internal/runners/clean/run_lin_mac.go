@@ -95,12 +95,6 @@ func removeConfig(configPath string, out output.Outputer) error {
 }
 
 func removeInstall(cfg configurable) error {
-	// Todo: https://www.pivotaltracker.com/story/show/177585085
-	// Yes this is awkward right now
-	if err := installmgr.StopTrayApp(cfg); err != nil {
-		return errs.Wrap(err, "Failed to stop %s", constants.TrayAppName)
-	}
-
 	var aggErr error
 
 	// Get the install path before we remove the actual executable
@@ -177,11 +171,6 @@ func cleanInstallDir(dir string) error {
 	// bin directory
 	asFiles = append(asFiles, execs...)
 	asFiles = append(asFiles, installation.BinDirName)
-
-	// The system directory is on MacOS only and contains the tray
-	// application files. It is safe for us to remove this directory
-	// without first inspecting the contents.
-	asFiles = append(asFiles, "system")
 
 	for _, file := range asFiles {
 		f := filepath.Join(dir, file)

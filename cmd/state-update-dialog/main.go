@@ -30,7 +30,7 @@ func main() {
 
 		if cfg != nil {
 			if err := cfg.Close(); err != nil {
-				multilog.Error("Failed to close config after exiting systray: %v", err)
+				multilog.Error("Failed to close config after exiting update dialog: %v", err)
 			}
 		}
 

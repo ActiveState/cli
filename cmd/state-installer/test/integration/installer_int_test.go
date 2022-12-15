@@ -205,7 +205,6 @@ func (s *InstallerIntegrationTestSuite) setupTest(ts *e2e.Session) {
 	payloadDir := filepath.Dir(s.installerExe)
 	ts.CopyExeToDir(ts.Exe, filepath.Join(payloadDir, installation.BinDirName))
 	ts.CopyExeToDir(ts.SvcExe, filepath.Join(payloadDir, installation.BinDirName))
-	ts.CopyExeToDir(ts.TrayExe, filepath.Join(payloadDir, installation.BinDirName))
 }
 
 func TestInstallerIntegrationTestSuite(t *testing.T) {

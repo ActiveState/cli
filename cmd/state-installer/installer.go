@@ -64,16 +64,12 @@ func (i *Installer) Install() (rerr error) {
 	}
 
 	// Stop any running processes that might interfere
-	trayRunning, err := installmgr.IsTrayAppRunning(i.cfg)
-	if err != nil {
-		multilog.Error("Could not determine if state-tray is running: %s", errs.JoinMessage(err))
-	}
 	if err := installmgr.StopRunning(i.path); err != nil {
 		return errs.Wrap(err, "Failed to stop running services")
 	}
 
 	// Detect if existing installation needs to be cleaned
-	err = detectCorruptedInstallDir(i.path)
+	err := detectCorruptedInstallDir(i.path)
 	if errors.Is(err, errCorruptedInstall) {
 		err = i.sanitizeInstallPath()
 		if err != nil {
@@ -131,18 +127,6 @@ func (i *Installer) Install() (rerr error) {
 	// Yes this is awkward, followup story here: https://www.pivotaltracker.com/story/show/176507898
 	if stdout, stderr, err := exeutils.ExecSimple(stateExec, []string{"_prepare"}, []string{}); err != nil {
 		multilog.Error("_prepare failed after update: %v\n\nstdout: %s\n\nstderr: %s", err, stdout, stderr)
-	}
-
-	// Restart ActiveState Desktop, if it was running prior to installing
-	if trayRunning {
-		trayExec, err := installation.TrayExecFromDir(binDir)
-		if err != nil {
-			return locale.WrapError(err, "err_tray_exec_dir", "", binDir)
-		}
-
-		if _, err := exeutils.ExecuteAndForget(trayExec, []string{}); err != nil {
-			multilog.Error("Could not start state-tray: %s", errs.JoinMessage(err))
-		}
 	}
 
 	logging.Debug("Installation was successful")
@@ -206,7 +190,7 @@ func detectCorruptedInstallDir(path string) error {
 }
 
 func isStateExecutable(name string) bool {
-	if name == constants.StateCmd+exeutils.Extension || name == constants.StateSvcCmd+exeutils.Extension || name == constants.StateTrayCmd+exeutils.Extension {
+	if name == constants.StateCmd+exeutils.Extension || name == constants.StateSvcCmd+exeutils.Extension {
 		return true
 	}
 	return false

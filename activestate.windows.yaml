@@ -7,12 +7,8 @@ constants:
     value: state-exec.exe
   - name: BUILD_INSTALLER_TARGET
     value: state-installer.exe
-  - name: BUILD_SYSTRAY_TARGET
-    value: state-tray.exe
   - name: BUILD_UPDLG_TARGET
     value: state-update-dialog.exe
-  - name: SYSTRAY_BUILDFLAGS
-    value: -ldflags="-s -w -H=windowsgui"
   - name: SVC_BUILDFLAGS
     value: -ldflags="-s -w -H=windowsgui"
   - name: UPDLG_BUILDFLAGS

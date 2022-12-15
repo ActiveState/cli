@@ -87,14 +87,9 @@ func removeInstall(logFile string, cfg configurable) error {
 		return locale.WrapError(err, "err_service_exec")
 	}
 
-	trayExec, err := installation.TrayExec()
-	if err != nil {
-		return locale.WrapError(err, "err_tray_exec")
-	}
-
 	transitionalStateTool := cfg.GetString(installation.CfgTransitionalStateToolPath)
 	var aggErr error
-	for _, exec := range []string{svcExec, trayExec} {
+	for _, exec := range []string{svcExec} {
 		err := os.Remove(exec)
 		if err != nil {
 			if errors.Is(err, os.ErrNotExist) {
