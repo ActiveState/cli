@@ -226,7 +226,7 @@ func (s *Show) Run(params Params) error {
 
 	projectDir := filepath.Dir(s.project.Path())
 	if fileutils.IsSymlink(projectDir) {
-		projectDir, err = fileutils.SymlinkTarget(projectDir)
+		projectDir, err = fileutils.ResolveUniquePath(projectDir)
 		if err != nil {
 			return locale.WrapError(err, "err_show_projectdir", "Could not resolve project directory symlink")
 		}
