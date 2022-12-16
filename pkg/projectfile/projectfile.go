@@ -885,7 +885,7 @@ func GetOnce() (*Project, error) {
 
 	project, err := Parse(projectFilePath)
 	if err != nil {
-		return nil, errs.Wrap(err, "Parse %s failed", projectFilePath)
+		return nil, locale.WrapInputError(err, "err_projectfile_parse", "", projectFilePath)
 	}
 
 	return project, nil
@@ -907,7 +907,7 @@ func FromPath(path string) (*Project, error) {
 	}
 	project, err := Parse(projectFilePath)
 	if err != nil {
-		return nil, errs.Wrap(err, "Parse %s failed", projectFilePath)
+		return nil, locale.WrapInputError(err, "err_projectfile_parse", "", projectFilePath)
 	}
 
 	return project, nil
@@ -929,7 +929,7 @@ func FromExactPath(path string) (*Project, error) {
 	}
 	project, err := Parse(projectFilePath)
 	if err != nil {
-		return nil, errs.Wrap(err, "Parse %s failed", projectFilePath)
+		return nil, locale.WrapInputError(err, "err_projectfile_parse", projectFilePath)
 	}
 
 	return project, nil

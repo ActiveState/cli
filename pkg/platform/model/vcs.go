@@ -424,8 +424,15 @@ func AddChangeset(parentCommitID strfmt.UUID, commitMessage string, changeset Ch
 
 	res, err := mono.New().VersionControl.AddCommit(params, authentication.ClientAuth())
 	if err != nil {
-		multilog.Error("AddCommit Error: %s", err.Error())
-		return nil, locale.WrapError(err, "err_add_commit", "", api.ErrorMessageFromPayload(err))
+		switch err.(type) {
+		case *version_control.AddCommitBadRequest,
+			*version_control.AddCommitConflict,
+			*version_control.AddCommitForbidden,
+			*version_control.AddCommitNotFound:
+			return nil, locale.WrapInputError(err, "err_add_commit", "", api.ErrorMessageFromPayload(err))
+		default:
+			return nil, locale.WrapError(err, "err_add_commit", "", api.ErrorMessageFromPayload(err))
+		}
 	}
 	return res.Payload, nil
 }
@@ -613,7 +620,6 @@ func CommitInitial(hostPlatform string, langName, langVersion string) (strfmt.UU
 
 	res, err := mono.New().VersionControl.AddCommit(params, authentication.ClientAuth())
 	if err != nil {
-		multilog.Error("AddCommit Error: %s", err.Error())
 		return "", locale.WrapError(err, "err_add_commit", "", api.ErrorMessageFromPayload(err))
 	}
 
