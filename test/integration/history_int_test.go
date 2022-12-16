@@ -21,6 +21,7 @@ func (suite *HistoryIntegrationTestSuite) TestHistory_History() {
 	ts.LoginAsPersistentUser()
 
 	cp := ts.Spawn("checkout", "ActiveState-CLI/History")
+	cp.ExpectLongString("Operating on project ActiveState-CLI/History")
 	cp.Expect("Checked out")
 	cp.ExpectExitCode(0)
 

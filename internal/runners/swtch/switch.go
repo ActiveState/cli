@@ -78,6 +78,7 @@ func New(prime primeable) *Switch {
 
 func (s *Switch) Run(params SwitchParams) error {
 	logging.Debug("ExecuteSwitch")
+	s.out.Print(locale.Tl("operating_message", "", s.project.NamespaceString(), s.project.Dir()))
 
 	if s.project == nil {
 		return locale.NewInputError("err_no_project")

@@ -83,6 +83,7 @@ func executePackageOperation(prime primeable, packageName, packageVersion string
 			langName = language.Name
 			ns = model.NewNamespacePkgOrBundle(langName, nsType)
 		}
+		out.Print(locale.Tl("operating_message", "", pj.NamespaceString(), pj.Dir()))
 	}
 
 	var validatePkg = operation == model.OperationAdded

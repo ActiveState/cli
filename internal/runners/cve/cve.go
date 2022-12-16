@@ -56,6 +56,7 @@ func (c *Cve) Run() error {
 	if c.proj == nil {
 		return locale.NewError("cve_no_project", "No project found at the current directory.")
 	}
+	c.out.Print(locale.Tl("operating_message", "", c.proj.NamespaceString(), c.proj.Dir()))
 
 	if !c.auth.Authenticated() {
 		return errs.AddTips(

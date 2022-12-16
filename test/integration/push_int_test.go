@@ -67,6 +67,7 @@ func (suite *PushIntegrationTestSuite) TestInitAndPush() {
 	suite.Require().FileExists(pjfilepath)
 
 	cp = ts.SpawnWithOpts(e2e.WithArgs("push"), e2e.WithWorkDirectory(wd))
+	cp.ExpectLongString(fmt.Sprintf("Operating on project %s", namespace))
 	cp.Expect("continue?")
 	cp.Send("y")
 	cp.ExpectLongString("Creating project")
