@@ -246,8 +246,6 @@ func (s *Show) Run(params Params) error {
 		rd.Executables = setup.ExecDir(projectTarget)
 	}
 
-	fileutils.IsSymlink(filepath.Dir(s.project.Path()))
-
 	outputData := outputData{
 		ProjectURL:     projectURL,
 		RuntimeDetails: rd,
