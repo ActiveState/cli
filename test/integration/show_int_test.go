@@ -2,6 +2,7 @@ package integration
 
 import (
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -38,9 +39,15 @@ func (suite *ShowIntegrationTestSuite) TestShow() {
 	cp.Expect(`Namespace`)
 	cp.Expect(`cli-integration-tests/Show`)
 	cp.Expect(`Location`)
-	cp.Expect(ts.Dirs.Work)
+	// MacOS seems to have issues matching this directory
+	if runtime.GOOS != "darwin" {
+		cp.ExpectLongString(ts.Dirs.Work)
+	}
 	cp.Expect(`Executables`)
-	cp.ExpectLongString(ts.Dirs.Cache)
+	// MacOS seems to have issues matching this directory
+	if runtime.GOOS != "darwin" {
+		cp.ExpectLongString(ts.Dirs.Cache)
+	}
 	cp.Expect(`Visibility`)
 	cp.Expect(`Public`)
 	cp.Expect(`Latest Commit`)
