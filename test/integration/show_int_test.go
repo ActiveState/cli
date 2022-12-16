@@ -2,6 +2,7 @@ package integration
 
 import (
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -24,11 +25,29 @@ func (suite *ShowIntegrationTestSuite) TestShow() {
 
 	suite.PrepareActiveStateYAML(ts)
 
-	cp := ts.Spawn("show")
+	cp := ts.SpawnWithOpts(
+		e2e.WithArgs("activate"),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
+	cp.WaitForInput()
+
+	cp = ts.Spawn("show")
 	cp.Expect(`Name`)
 	cp.Expect(`Show`)
 	cp.Expect(`Organization`)
 	cp.Expect(`cli-integration-tests`)
+	cp.Expect(`Namespace`)
+	cp.Expect(`cli-integration-tests/Show`)
+	cp.Expect(`Location`)
+	// MacOS seems to have issues matching this directory
+	if runtime.GOOS != "darwin" {
+		cp.ExpectLongString(ts.Dirs.Work)
+	}
+	cp.Expect(`Executables`)
+	// MacOS seems to have issues matching this directory
+	if runtime.GOOS != "darwin" {
+		cp.ExpectLongString(ts.Dirs.Cache)
+	}
 	cp.Expect(`Visibility`)
 	cp.Expect(`Public`)
 	cp.Expect(`Latest Commit`)
