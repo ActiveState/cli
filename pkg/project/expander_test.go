@@ -120,15 +120,6 @@ func TestExpandTopLevel(t *testing.T) {
 	assert.Equal(t, "$notcovered", expanded)
 }
 
-func TestExpandProjectPlatformOs(t *testing.T) {
-	prj := loadProject(t)
-
-	expanded, err := project.ExpandFromProject("$project.name()", prj)
-	assert.NoError(t, err, "Ran without failure")
-
-	assert.Equal(t, "general", expanded, "Expanded project variable")
-}
-
 func TestExpandProjectScript(t *testing.T) {
 	prj := loadProject(t)
 
