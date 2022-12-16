@@ -87,8 +87,6 @@ type Project struct {
 	Project       string        `yaml:"project"`
 	Lock          string        `yaml:"lock,omitempty"`
 	Environments  string        `yaml:"environments,omitempty"`
-	Platforms     []Platform    `yaml:"platforms,omitempty"`
-	Languages     Languages     `yaml:"languages,omitempty"`
 	Constants     Constants     `yaml:"constants,omitempty"`
 	Secrets       *SecretScopes `yaml:"secrets,omitempty"`
 	Events        Events        `yaml:"events,omitempty"`
@@ -101,67 +99,9 @@ type Project struct {
 	parsedVersion string
 }
 
-// Platform covers the platform structure of our yaml
-type Platform struct {
-	Name         string `yaml:"name,omitempty"`
-	Os           string `yaml:"os,omitempty"`
-	Version      string `yaml:"version,omitempty"`
-	Architecture string `yaml:"architecture,omitempty"`
-	Libc         string `yaml:"libc,omitempty"`
-	Compiler     string `yaml:"compiler,omitempty"`
-}
-
 // Build covers the build map, which can go under languages or packages
 // Build can hold variable keys, so we cannot predict what they are, hence why it is a map
 type Build map[string]string
-
-// Language covers the language structure, which goes under Project
-type Language struct {
-	Name        string      `yaml:"name"`
-	Version     string      `yaml:"version,omitempty"`
-	Conditional Conditional `yaml:"if"`
-	Constraints Constraint  `yaml:"constraints,omitempty"`
-	Build       Build       `yaml:"build,omitempty"`
-	Packages    Packages    `yaml:"packages,omitempty"`
-}
-
-var _ ConstrainedEntity = Language{}
-
-// ID returns the language name
-func (l Language) ID() string {
-	return l.Name
-}
-
-// ConstraintsFilter returns the language constraints
-func (l Language) ConstraintsFilter() Constraint {
-	return l.Constraints
-}
-
-func (l Language) ConditionalFilter() Conditional {
-	return l.Conditional
-}
-
-// Languages is a slice of Language definitions
-type Languages []Language
-
-// AsConstrainedEntities boxes languages as a slice of ConstrainedEntities
-func (languages Languages) AsConstrainedEntities() (items []ConstrainedEntity) {
-	for i := range languages {
-		items = append(items, &languages[i])
-	}
-	return items
-}
-
-// MakeLanguagesFromConstrainedEntities unboxes ConstraintedEntities as Languages
-func MakeLanguagesFromConstrainedEntities(items []ConstrainedEntity) (languages []*Language) {
-	languages = make([]*Language, 0, len(items))
-	for _, v := range items {
-		if o, ok := v.(*Language); ok {
-			languages = append(languages, o)
-		}
-	}
-	return languages
-}
 
 // Constant covers the constant structure, which goes under Project
 type Constant struct {

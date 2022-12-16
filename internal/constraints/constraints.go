@@ -371,16 +371,6 @@ func compilerMatches(compiler string) bool {
 	return false // no matching compilers found
 }
 
-// PlatformMatches returns whether or not the given platform matches the current
-// platform, as determined by the sysinfo package.
-func PlatformMatches(platform projectfile.Platform) bool {
-	return (platform.Os == "" || osMatches(platform.Os)) &&
-		(platform.Version == "" || osVersionMatches(platform.Version)) &&
-		(platform.Architecture == "" || archMatches(platform.Architecture)) &&
-		(platform.Libc == "" || libcMatches(platform.Libc)) &&
-		(platform.Compiler == "" || compilerMatches(platform.Compiler))
-}
-
 //Returns whether or not the current OS is constrained by the given
 // named constraints, which are defined in the given project configuration.
 func osIsConstrained(constraintOSes string) bool {
@@ -400,21 +390,7 @@ func osIsConstrained(constraintOSes string) bool {
 // Returns whether or not the current platform is constrained by the given
 // named constraints, which are defined in the given project configuration.
 func platformIsConstrained(constraintNames string) bool {
-	project := projectfile.Get()
-	names := strings.Split(constraintNames, ",")
-	constrained := true
-	for _, name := range names {
-		for _, platform := range project.Platforms {
-			if platform.Name == strings.TrimLeft(name, "-") && PlatformMatches(platform) {
-				if strings.HasPrefix(name, "-") {
-					return true
-				}
-				constrained = false // can't return here because an exclude might still occur
-			}
-		}
-	}
-
-	return constrained
+	return false // project.Platforms no longer exists
 }
 
 // Returns whether or not the current environment is constrained by the given

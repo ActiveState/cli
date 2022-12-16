@@ -1,21 +1,2 @@
 project: https://platform.activestate.com/constraints-tests/ActiveState?branch=main&commitID=00010001-0001-0001-0001-000100010001
-platforms: 
-  - name: windows-label
-    os: windows
-  - name: linux-label
-    os: linux
-  - name: macos-label
-    os: macos
-  - name: Linux64Label
-    os: linux
-    architecture: amd64
-    libc: glibc-2.25
-    compiler: gcc-7
-  - name: Windows10Label
-    os: windows
-    version: 10
-  - name: MacOSLabel
-    os: macos
-    version: 10.9
-    compiler: clang-4
 environments: "itworks"

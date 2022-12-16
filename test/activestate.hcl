@@ -29,7 +29,7 @@ language "Go" {
   package "gopkg.in/yaml.v2" {
     version = "2"
     build {
-      override = "--foo --bar --debug $variable.DEBUG --libDir $variable.PYTHONPATH --libc $platform.libc"
+      override = "--foo --bar --debug $variable.DEBUG --libDir $variable.PYTHONPATH"
     }
   }
 }
