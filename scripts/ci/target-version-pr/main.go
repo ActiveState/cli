@@ -4,7 +4,7 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal-as/errs"
 	wc "github.com/ActiveState/cli/scripts/internal/workflow-controllers"
 	wh "github.com/ActiveState/cli/scripts/internal/workflow-helpers"
 	"github.com/andygrunwald/go-jira"

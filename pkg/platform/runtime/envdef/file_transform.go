@@ -8,12 +8,12 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/multilog"
-	"github.com/ActiveState/cli/internal/rollbar"
+	"github.com/ActiveState/cli/internal-as/errs"
+	"github.com/ActiveState/cli/internal-as/fileutils"
+	"github.com/ActiveState/cli/internal-as/locale"
+	"github.com/ActiveState/cli/internal-as/logging"
+	"github.com/ActiveState/cli/internal-as/multilog"
+	"github.com/ActiveState/cli/internal-as/rollbar"
 )
 
 // FileTransform specifies a single transformation to be performed on files in artifacts post-installation

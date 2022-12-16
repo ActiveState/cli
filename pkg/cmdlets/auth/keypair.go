@@ -1,12 +1,12 @@
 package auth
 
 import (
-	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal-as/constants"
+	"github.com/ActiveState/cli/internal-as/errs"
+	"github.com/ActiveState/cli/internal-as/locale"
+	"github.com/ActiveState/cli/internal-as/output"
+	"github.com/ActiveState/cli/internal-as/prompt"
 	"github.com/ActiveState/cli/internal/keypairs"
-	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/prompt"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	secretsModels "github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_models"
 )

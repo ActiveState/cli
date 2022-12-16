@@ -3,9 +3,9 @@ package languages
 import (
 	"strings"
 
-	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal-as/errs"
+	"github.com/ActiveState/cli/internal-as/locale"
+	"github.com/ActiveState/cli/internal-as/output"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 )

@@ -3,8 +3,8 @@ package installation
 import (
 	"path/filepath"
 
-	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/osutils/user"
+	"github.com/ActiveState/cli/internal-as/errs"
+	"github.com/ActiveState/cli/internal-as/osutils/user"
 )
 
 func installPathForBranch(branch string) (string, error) {

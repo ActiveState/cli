@@ -4,8 +4,8 @@ import (
 	"strings"
 	"unicode/utf8"
 
+	"github.com/ActiveState/cli/internal-as/logging"
 	"github.com/ActiveState/cli/internal/colorize"
-	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/mathutils"
 	"github.com/ActiveState/cli/internal/sliceutils"
 	"github.com/ActiveState/cli/internal/termutils"

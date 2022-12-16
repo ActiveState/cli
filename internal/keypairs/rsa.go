@@ -8,8 +8,8 @@ import (
 	"encoding/base64"
 	"encoding/pem"
 
-	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal-as/errs"
+	"github.com/ActiveState/cli/internal-as/locale"
 )
 
 // MinimumRSABitLength is the minimum allowed bit-length when generating RSA keys.

@@ -7,7 +7,7 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/ActiveState/cli/internal/unarchiver"
+	"github.com/ActiveState/cli/internal-as/unarchiver"
 	"github.com/stretchr/testify/suite"
 )
 

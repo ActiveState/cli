@@ -1,8 +1,8 @@
 package keypairs
 
 import (
-	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal-as/errs"
+	"github.com/ActiveState/cli/internal-as/locale"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	"github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_client/keys"
 	secretsModels "github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_models"

@@ -1,9 +1,9 @@
 package cmdtree
 
 import (
-	"github.com/ActiveState/cli/internal/captain"
-	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/primer"
+	"github.com/ActiveState/cli/internal-as/captain"
+	"github.com/ActiveState/cli/internal-as/locale"
+	"github.com/ActiveState/cli/internal-as/primer"
 	"github.com/ActiveState/cli/internal/runners/ppm"
 )
 

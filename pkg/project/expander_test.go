@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/yaml.v2"
 
-	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal-as/fileutils"
 	"github.com/ActiveState/cli/internal/language"
 
 	"github.com/ActiveState/cli/pkg/project"

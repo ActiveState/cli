@@ -5,7 +5,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal-as/errs"
 	"github.com/blang/semver"
 	"github.com/google/go-github/v45/github"
 )

@@ -1,8 +1,8 @@
 package multilog
 
 import (
-	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/rollbar"
+	"github.com/ActiveState/cli/internal-as/logging"
+	"github.com/ActiveState/cli/internal-as/rollbar"
 )
 
 type LogFunc func(string, ...interface{})

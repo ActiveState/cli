@@ -1,8 +1,8 @@
 package platforms
 
 import (
-	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal-as/locale"
+	"github.com/ActiveState/cli/internal-as/logging"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 )

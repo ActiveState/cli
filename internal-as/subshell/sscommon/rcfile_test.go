@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal-as/constants"
+	"github.com/ActiveState/cli/internal-as/fileutils"
 )
 
 func fakeContents(before, contents, after string) string {
@@ -46,7 +46,7 @@ func TestWriteRcFile(t *testing.T) {
 	tests := []struct {
 		name         string
 		args         args
-		want error
+		want         error
 		wantContents string
 	}{
 		{

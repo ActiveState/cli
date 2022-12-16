@@ -10,11 +10,11 @@ import (
 	"github.com/stretchr/testify/suite"
 	"gopkg.in/yaml.v2"
 
-	"github.com/ActiveState/cli/internal/config"
-	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal-as/config"
+	"github.com/ActiveState/cli/internal-as/fileutils"
+	"github.com/ActiveState/cli/internal-as/locale"
+	"github.com/ActiveState/cli/internal-as/testhelpers/outputhelper"
 	"github.com/ActiveState/cli/internal/scriptfile"
-	"github.com/ActiveState/cli/internal/testhelpers/outputhelper"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )

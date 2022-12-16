@@ -8,10 +8,10 @@ import (
 	gqlModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model"
 	"github.com/go-openapi/strfmt"
 
-	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal-as/errs"
+	"github.com/ActiveState/cli/internal-as/locale"
+	"github.com/ActiveState/cli/internal-as/logging"
+	"github.com/ActiveState/cli/internal-as/output"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 )

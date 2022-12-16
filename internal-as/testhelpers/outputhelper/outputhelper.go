@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"fmt"
 
-	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal-as/output"
 )
 
 type Catcher struct {

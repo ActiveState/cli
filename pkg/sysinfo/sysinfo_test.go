@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ActiveState/cli/internal/testhelpers/performance"
+	"github.com/ActiveState/cli/internal-as/testhelpers/performance"
 	"github.com/patrickmn/go-cache"
 	"github.com/stretchr/testify/assert"
 )

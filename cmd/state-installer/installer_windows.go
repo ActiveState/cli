@@ -8,12 +8,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal-as/errs"
+	"github.com/ActiveState/cli/internal-as/fileutils"
+	"github.com/ActiveState/cli/internal-as/logging"
+	"github.com/ActiveState/cli/internal-as/subshell"
+	"github.com/ActiveState/cli/internal-as/subshell/sscommon"
 	"github.com/ActiveState/cli/internal/installation"
-	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/subshell"
-	"github.com/ActiveState/cli/internal/subshell/sscommon"
 )
 
 func InstallSystemFiles(_, _, _ string) error {

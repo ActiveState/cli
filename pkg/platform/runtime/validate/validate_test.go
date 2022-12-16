@@ -5,7 +5,7 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/ActiveState/cli/internal/testhelpers/osutil"
+	"github.com/ActiveState/cli/internal-as/testhelpers/osutil"
 	"github.com/stretchr/testify/assert"
 )
 

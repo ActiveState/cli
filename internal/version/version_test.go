@@ -3,7 +3,7 @@ package version
 import (
 	"testing"
 
-	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal-as/constants"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

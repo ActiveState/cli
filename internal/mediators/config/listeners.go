@@ -1,7 +1,7 @@
 package config
 
 import (
-	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal-as/logging"
 )
 
 type listener struct {

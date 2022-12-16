@@ -3,7 +3,7 @@ package e2e
 import (
 	"strings"
 
-	"github.com/ActiveState/cli/internal/osutils"
+	"github.com/ActiveState/cli/internal-as/osutils"
 )
 
 type Shell string

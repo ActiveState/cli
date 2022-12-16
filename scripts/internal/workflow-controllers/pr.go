@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal-as/errs"
 	wh "github.com/ActiveState/cli/scripts/internal/workflow-helpers"
 	"github.com/andygrunwald/go-jira"
 	"github.com/blang/semver"

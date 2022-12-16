@@ -7,8 +7,8 @@ import (
 
 	"github.com/go-openapi/strfmt"
 
-	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal-as/errs"
+	"github.com/ActiveState/cli/internal-as/locale"
 	"github.com/ActiveState/cli/internal/retryhttp"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_client/inventory_operations"

@@ -3,7 +3,7 @@ package outputhelper
 import (
 	"io"
 
-	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal-as/output"
 )
 
 type TestOutputer struct{}

@@ -6,8 +6,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal-as/locale"
+	"github.com/ActiveState/cli/internal-as/output"
 	"github.com/ActiveState/cli/internal/termutils"
 )
 

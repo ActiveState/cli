@@ -1,7 +1,7 @@
 package model
 
 import (
-	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal-as/errs"
 	"github.com/ActiveState/cli/pkg/platform/api/mediator"
 	"github.com/ActiveState/cli/pkg/platform/api/mediator/model"
 	"github.com/ActiveState/cli/pkg/platform/api/mediator/request"

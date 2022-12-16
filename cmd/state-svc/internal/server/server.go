@@ -10,17 +10,17 @@ import (
 	"github.com/99designs/gqlgen/graphql/handler/extension"
 	"github.com/99designs/gqlgen/graphql/handler/lru"
 	"github.com/99designs/gqlgen/graphql/handler/transport"
-	"github.com/ActiveState/cli/internal/analytics/client/sync"
+	"github.com/ActiveState/cli/internal-as/analytics/client/sync"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 
 	"github.com/ActiveState/cli/cmd/state-svc/internal/resolver"
 	genserver "github.com/ActiveState/cli/cmd/state-svc/internal/server/generated"
-	"github.com/ActiveState/cli/internal/analytics/constants"
-	"github.com/ActiveState/cli/internal/config"
-	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal-as/analytics/constants"
+	"github.com/ActiveState/cli/internal-as/config"
+	"github.com/ActiveState/cli/internal-as/errs"
+	"github.com/ActiveState/cli/internal-as/logging"
 )
 
 type Server struct {

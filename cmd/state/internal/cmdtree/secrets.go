@@ -3,9 +3,9 @@ package cmdtree
 import (
 	"strings"
 
-	"github.com/ActiveState/cli/internal/captain"
-	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/primer"
+	"github.com/ActiveState/cli/internal-as/captain"
+	"github.com/ActiveState/cli/internal-as/locale"
+	"github.com/ActiveState/cli/internal-as/primer"
 	"github.com/ActiveState/cli/internal/runners/secrets"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 )

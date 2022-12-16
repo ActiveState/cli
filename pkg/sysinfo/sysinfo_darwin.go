@@ -10,10 +10,10 @@ import (
 	"regexp"
 	"strconv"
 
-	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal-as/errs"
+	"github.com/ActiveState/cli/internal-as/fileutils"
+	"github.com/ActiveState/cli/internal-as/locale"
+	"github.com/ActiveState/cli/internal-as/logging"
 	"github.com/patrickmn/go-cache"
 )
 

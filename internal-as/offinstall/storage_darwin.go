@@ -3,7 +3,7 @@ package offinstall
 import (
 	"path/filepath"
 
-	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal-as/errs"
 	"github.com/mitchellh/go-homedir"
 )
 

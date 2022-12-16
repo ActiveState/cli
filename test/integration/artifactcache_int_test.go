@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/internal/testhelpers/osutil"
+	"github.com/ActiveState/cli/internal-as/fileutils"
+	"github.com/ActiveState/cli/internal-as/testhelpers/osutil"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifactcache"
 	"github.com/go-openapi/strfmt"
 	"github.com/stretchr/testify/assert"

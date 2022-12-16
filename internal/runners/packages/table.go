@@ -4,7 +4,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal-as/output"
 )
 
 type packageTable struct {

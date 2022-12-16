@@ -4,8 +4,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/ActiveState/cli/internal/multilog"
-	"github.com/ActiveState/cli/internal/subshell/cmd"
+	"github.com/ActiveState/cli/internal-as/multilog"
+	"github.com/ActiveState/cli/internal-as/subshell/cmd"
 	"github.com/thoas/go-funk"
 )
 

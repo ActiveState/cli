@@ -13,7 +13,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal-as/constants"
 	"github.com/ActiveState/cli/internal/installation/storage"
 )
 

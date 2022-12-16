@@ -1,6 +1,6 @@
 package autostart
 
-import "github.com/ActiveState/cli/internal/constants"
+import "github.com/ActiveState/cli/internal-as/constants"
 
 func init() {
 	Options.LaunchFileName = constants.ServiceLaunchFileName

@@ -11,10 +11,10 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/ActiveState/cli/internal-as/errs"
+	"github.com/ActiveState/cli/internal-as/osutils/user"
 	"github.com/ActiveState/cli/internal/environment"
-	"github.com/ActiveState/cli/internal/errs"
-  "github.com/ActiveState/cli/internal/osutils/user"
-  "github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/thoas/go-funk"
 )
@@ -40,12 +40,12 @@ func TestFindFileInPath(t *testing.T) {
 	root, err := environment.GetRootPath()
 	assert.NoError(t, err, "should detect root path")
 
-	expectpath := filepath.Join(root, "internal", "fileutils", "testdata")
+	expectpath := filepath.Join(root, "internal-as", "fileutils", "testdata")
 	expectfile := filepath.Join(expectpath, "test.go")
 	testpath := filepath.Join(expectpath, "extra-dir", "another-dir")
 	resultpath, err := FindFileInPath(testpath, "test.go")
 	assert.Nilf(t, err, "No failure expected")
-	assert.Equal(t, resultpath, expectfile)
+	assert.Equal(t, expectfile, resultpath)
 
 	nonExistentPath := filepath.FromSlash("/dir1/dir2")
 	_, err = FindFileInPath(nonExistentPath, "FILE_THAT_SHOULD_NOT_EXIST")
@@ -58,7 +58,7 @@ func TestReplaceAllTextFile(t *testing.T) {
 	assert.NoError(t, err, "Should detect root path")
 
 	// Copy test.go to temp dir.
-	testfile := filepath.Join(root, "internal", "fileutils", "testdata", "test.go")
+	testfile := filepath.Join(root, "internal-as", "fileutils", "testdata", "test.go")
 	tmpfile := copyFileToTempDir(t, testfile)
 	defer os.RemoveAll(filepath.Dir(tmpfile))
 
@@ -510,13 +510,13 @@ func TestIsSameOrInsideOf(t *testing.T) {
 		return strings.ReplaceAll(path, "/", string(os.PathSeparator))
 	}
 
-	insideOf := resolvedPathContainsParent(setSep("../../internal/fileutils"), setSep("../../internal"))
+	insideOf := resolvedPathContainsParent(setSep("../../internal-as/fileutils"), setSep("../../internal-as"))
 	assert.True(t, insideOf)
 
-	insideOf = resolvedPathContainsParent(setSep("../../internal/fileutils"), setSep("../../cmd"))
+	insideOf = resolvedPathContainsParent(setSep("../../internal-as/fileutils"), setSep("../../cmd"))
 	assert.False(t, insideOf)
 
-	insideOf = resolvedPathContainsParent(setSep("../../internalfileutils"), setSep("../../internal"))
+	insideOf = resolvedPathContainsParent(setSep("../../internal-asfileutils"), setSep("../../internal-as"))
 	assert.False(t, insideOf)
 }
 

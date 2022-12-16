@@ -1,11 +1,11 @@
 package auth
 
 import (
+	"github.com/ActiveState/cli/internal-as/locale"
+	"github.com/ActiveState/cli/internal-as/multilog"
+	"github.com/ActiveState/cli/internal-as/output"
+	"github.com/ActiveState/cli/internal-as/prompt"
 	"github.com/ActiveState/cli/internal/keypairs"
-	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/multilog"
-	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/prompt"
 
 	"github.com/ActiveState/cli/pkg/cmdlets/legalprompt"
 	"github.com/ActiveState/cli/pkg/platform/api"

@@ -8,11 +8,11 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/ActiveState/cli/internal-as/errs"
+	"github.com/ActiveState/cli/internal-as/logging"
 	"github.com/ActiveState/cli/internal/condition"
-	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/gqlclient"
 	"github.com/ActiveState/cli/internal/graph"
-	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/profile"
 	"github.com/ActiveState/cli/pkg/platform/api/svc/request"
 	"github.com/machinebox/graphql"

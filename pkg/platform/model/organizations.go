@@ -6,9 +6,9 @@ import (
 	"github.com/go-openapi/strfmt"
 	"github.com/thoas/go-funk"
 
-	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal-as/errs"
+	"github.com/ActiveState/cli/internal-as/locale"
+	"github.com/ActiveState/cli/internal-as/logging"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/api/graphql"
 	"github.com/ActiveState/cli/pkg/platform/api/graphql/model"

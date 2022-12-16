@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"runtime"
 
-	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal-as/fileutils"
 )
 
 // CreateConfigFile will create a file in the config dir with the given file name.

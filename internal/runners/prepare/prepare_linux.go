@@ -5,11 +5,11 @@ import (
 
 	svcAutostart "github.com/ActiveState/cli/cmd/state-svc/autostart"
 
-	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal-as/errs"
+	"github.com/ActiveState/cli/internal-as/locale"
+	"github.com/ActiveState/cli/internal-as/osutils/autostart"
+	"github.com/ActiveState/cli/internal-as/osutils/user"
 	"github.com/ActiveState/cli/internal/installation"
-	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/osutils/autostart"
-	"github.com/ActiveState/cli/internal/osutils/user"
 )
 
 func (r *Prepare) prepareOS() error {

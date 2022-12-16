@@ -9,8 +9,8 @@ import (
 
 	parent "github.com/jarcoal/httpmock"
 
-	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal-as/fileutils"
+	"github.com/ActiveState/cli/internal-as/logging"
 )
 
 // HTTPMock encapsulate the functionality for mocking requests to a specific base-url.

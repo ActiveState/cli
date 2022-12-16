@@ -4,10 +4,10 @@ import (
 	"encoding/json"
 	"io"
 
+	"github.com/ActiveState/cli/internal-as/locale"
+	"github.com/ActiveState/cli/internal-as/logging"
+	"github.com/ActiveState/cli/internal-as/multilog"
 	"github.com/ActiveState/cli/internal/colorize"
-	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/multilog"
 )
 
 // JSON is our JSON outputer, there's not much going on here, just forwards it to the JSON marshaller and provides

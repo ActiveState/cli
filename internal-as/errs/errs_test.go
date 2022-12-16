@@ -9,9 +9,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal-as/errs"
+	"github.com/ActiveState/cli/internal-as/rtutils"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/hashicorp/go-multierror"
 )
 

@@ -15,13 +15,13 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/ActiveState/cli/internal/config"
+	"github.com/ActiveState/cli/internal-as/config"
+	"github.com/ActiveState/cli/internal-as/errs"
+	"github.com/ActiveState/cli/internal-as/logging"
+	"github.com/ActiveState/cli/internal-as/multilog"
+	"github.com/ActiveState/cli/internal-as/rtutils"
 	"github.com/ActiveState/cli/internal/environment"
-	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/profile"
-	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/nicksnyder/go-i18n/i18n"
 	"github.com/thoas/go-funk"
 )
@@ -81,7 +81,7 @@ func init() {
 }
 
 // getLocalePath exists to facilitate running Go test scripts from their sub-directories, if no tests are being run
-// this just returns `internal/locale/`
+// this just returns `internal-as/locale/`
 func getLocalePath() string {
 	rootpath, err := environment.GetRootPath()
 	if err != nil {

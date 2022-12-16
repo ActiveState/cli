@@ -5,7 +5,7 @@ import (
 
 	"github.com/go-openapi/strfmt"
 
-	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal-as/locale"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"

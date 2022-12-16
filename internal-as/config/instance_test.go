@@ -8,16 +8,16 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ActiveState/cli/internal-as/errs"
+	"github.com/ActiveState/cli/internal-as/rtutils/singlethread"
 	"github.com/ActiveState/cli/internal/condition"
-	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/installation/storage"
-	"github.com/ActiveState/cli/internal/rtutils/singlethread"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/ActiveState/cli/internal/config"
-	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal-as/config"
+	"github.com/ActiveState/cli/internal-as/constants"
 )
 
 type ConfigTestSuite struct {

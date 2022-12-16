@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/testhelpers/outputhelper"
+	"github.com/ActiveState/cli/internal-as/output"
+	"github.com/ActiveState/cli/internal-as/testhelpers/outputhelper"
 	"github.com/stretchr/testify/require"
 )
 

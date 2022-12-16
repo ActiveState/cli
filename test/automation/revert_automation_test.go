@@ -1,12 +1,13 @@
 package automation
 
 import (
-	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/internal/testhelpers/e2e"
-	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
-	"github.com/stretchr/testify/suite"
 	"path/filepath"
 	"testing"
+
+	"github.com/ActiveState/cli/internal-as/fileutils"
+	"github.com/ActiveState/cli/internal-as/testhelpers/e2e"
+	"github.com/ActiveState/cli/internal-as/testhelpers/tagsuite"
+	"github.com/stretchr/testify/suite"
 )
 
 type RevertAutomationTestSuite struct {

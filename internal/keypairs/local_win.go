@@ -4,8 +4,8 @@
 package keypairs
 
 import (
-	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal-as/fileutils"
+	"github.com/ActiveState/cli/internal-as/locale"
 )
 
 func validateKeyFile(keyFilename string) error {

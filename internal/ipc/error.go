@@ -3,7 +3,7 @@ package ipc
 import (
 	"fmt"
 
-	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal-as/errs"
 	"github.com/ActiveState/cli/internal/ipc/internal/flisten"
 )
 

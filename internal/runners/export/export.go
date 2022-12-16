@@ -1,9 +1,9 @@
 package export
 
 import (
-	"github.com/ActiveState/cli/internal/captain"
-	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/primer"
+	"github.com/ActiveState/cli/internal-as/captain"
+	"github.com/ActiveState/cli/internal-as/logging"
+	"github.com/ActiveState/cli/internal-as/primer"
 )
 
 type primeable interface {

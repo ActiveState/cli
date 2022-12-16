@@ -7,17 +7,17 @@ import (
 	rt "runtime"
 	"strings"
 
-	"github.com/ActiveState/cli/internal/exeutils"
+	"github.com/ActiveState/cli/internal-as/exeutils"
+	"github.com/ActiveState/cli/internal-as/osutils"
 	"github.com/ActiveState/cli/internal/installation"
-	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/pkg/platform/runtime/envdef"
 	"github.com/ActiveState/cli/pkg/platform/runtime/executors/execmeta"
 	"github.com/go-openapi/strfmt"
 
-	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal-as/errs"
+	"github.com/ActiveState/cli/internal-as/fileutils"
+	"github.com/ActiveState/cli/internal-as/locale"
+	"github.com/ActiveState/cli/internal-as/logging"
 )
 
 // executorTarget tracks the target executable of the executor and is used to determine whether an existing

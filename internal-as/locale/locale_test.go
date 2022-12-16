@@ -4,7 +4,7 @@ import (
 	"regexp"
 	"testing"
 
-	_ "github.com/ActiveState/cli/internal/config"
+	_ "github.com/ActiveState/cli/internal-as/config"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -15,7 +15,7 @@ func TestInitAndT(t *testing.T) {
 
 func TestGetLocalePath(t *testing.T) {
 	path := getLocalePath()
-	assert.Regexp(t, regexp.MustCompile(`[/internal/locale/|\\internal\\locale\\]`), path, "Should detect locale path")
+	assert.Regexp(t, regexp.MustCompile(`[/internal\-as/locale/|\\internal\-as\\locale\\]`), path, "Should detect locale path")
 }
 
 func TestGetLocaleFlag(t *testing.T) {

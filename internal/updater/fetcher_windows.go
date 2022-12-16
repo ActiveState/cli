@@ -1,10 +1,10 @@
 package updater
 
 import (
-	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal-as/errs"
+	"github.com/ActiveState/cli/internal-as/osutils"
+	"github.com/ActiveState/cli/internal-as/unarchiver"
 	"github.com/ActiveState/cli/internal/installation"
-	"github.com/ActiveState/cli/internal/osutils"
-	"github.com/ActiveState/cli/internal/unarchiver"
 )
 
 func blobUnarchiver(blob []byte) *unarchiver.ZipBlob {

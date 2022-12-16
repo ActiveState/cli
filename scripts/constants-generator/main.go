@@ -9,13 +9,13 @@ import (
 
 	"github.com/dave/jennifer/jen"
 
-	"github.com/ActiveState/cli/internal/constants/preprocess"
+	"github.com/ActiveState/cli/internal-as/constants/preprocess"
 )
 
 var inTest = false
 
 func main() {
-	if ! inTest {
+	if !inTest {
 		run(os.Args)
 	}
 }

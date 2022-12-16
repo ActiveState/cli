@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"runtime"
 
-	"github.com/ActiveState/cli/internal/osutils/user"
+	"github.com/ActiveState/cli/internal-as/osutils/user"
 	"github.com/google/uuid"
 )
 

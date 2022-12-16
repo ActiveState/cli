@@ -3,8 +3,8 @@ package camel
 import (
 	"os"
 
-	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/multilog"
+	"github.com/ActiveState/cli/internal-as/locale"
+	"github.com/ActiveState/cli/internal-as/multilog"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/ActiveState/cli/pkg/platform/runtime/store"

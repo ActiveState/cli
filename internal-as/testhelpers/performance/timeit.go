@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal-as/errs"
 )
 
 // TimeIt tests if the average duration of the function is less than the maxDuration

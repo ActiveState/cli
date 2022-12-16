@@ -1,9 +1,9 @@
 package export
 
 import (
-	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal-as/locale"
+	"github.com/ActiveState/cli/internal-as/logging"
+	"github.com/ActiveState/cli/internal-as/output"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 )
 

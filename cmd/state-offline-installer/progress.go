@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal-as/output"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/vbauerster/mpb/v7"

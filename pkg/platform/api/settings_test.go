@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal-as/constants"
 	"github.com/stretchr/testify/assert"
 )
 

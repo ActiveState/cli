@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ActiveState/cli/internal/testhelpers/outputhelper"
+	"github.com/ActiveState/cli/internal-as/testhelpers/outputhelper"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

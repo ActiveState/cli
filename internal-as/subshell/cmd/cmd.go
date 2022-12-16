@@ -6,12 +6,12 @@ import (
 	"path/filepath"
 	"runtime"
 
-	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/osutils"
-	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/subshell/sscommon"
+	"github.com/ActiveState/cli/internal-as/errs"
+	"github.com/ActiveState/cli/internal-as/locale"
+	"github.com/ActiveState/cli/internal-as/logging"
+	"github.com/ActiveState/cli/internal-as/osutils"
+	"github.com/ActiveState/cli/internal-as/output"
+	"github.com/ActiveState/cli/internal-as/subshell/sscommon"
 	"github.com/ActiveState/cli/pkg/project"
 )
 

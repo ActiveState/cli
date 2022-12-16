@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ActiveState/cli/internal/rtutils/p"
+	"github.com/ActiveState/cli/internal-as/rtutils/p"
 )
 
 func TestMap_Merge(t *testing.T) {

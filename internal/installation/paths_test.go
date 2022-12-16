@@ -4,7 +4,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal-as/fileutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

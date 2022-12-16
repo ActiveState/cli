@@ -6,14 +6,14 @@ import (
 
 	"github.com/go-openapi/strfmt"
 
-	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal-as/errs"
 	"github.com/ActiveState/cli/pkg/platform/api/graphql"
 	"github.com/ActiveState/cli/pkg/platform/api/graphql/model"
 	"github.com/ActiveState/cli/pkg/platform/api/graphql/request"
 
-	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal-as/constants"
+	"github.com/ActiveState/cli/internal-as/locale"
+	"github.com/ActiveState/cli/internal-as/logging"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/projects"
 	clientProjects "github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/projects"

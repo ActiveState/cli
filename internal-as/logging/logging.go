@@ -28,7 +28,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ActiveState/cli/internal/osutils/stacktrace"
+	"github.com/ActiveState/cli/internal-as/osutils/stacktrace"
 )
 
 const (

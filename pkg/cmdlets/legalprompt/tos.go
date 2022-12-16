@@ -5,12 +5,12 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/prompt"
-	"github.com/ActiveState/cli/internal/rtutils/p"
+	"github.com/ActiveState/cli/internal-as/constants"
+	"github.com/ActiveState/cli/internal-as/errs"
+	"github.com/ActiveState/cli/internal-as/locale"
+	"github.com/ActiveState/cli/internal-as/output"
+	"github.com/ActiveState/cli/internal-as/prompt"
+	"github.com/ActiveState/cli/internal-as/rtutils/p"
 )
 
 func DownloadTOS() (string, error) {

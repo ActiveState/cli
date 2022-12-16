@@ -1,8 +1,8 @@
 package blackhole
 
 import (
-	"github.com/ActiveState/cli/internal/analytics"
-	"github.com/ActiveState/cli/internal/analytics/dimensions"
+	"github.com/ActiveState/cli/internal-as/analytics"
+	"github.com/ActiveState/cli/internal-as/analytics/dimensions"
 )
 
 type Client struct{}

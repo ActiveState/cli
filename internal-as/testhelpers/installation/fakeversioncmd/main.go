@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal-as/constants"
 )
 
 // This command is used in our test-updates as the State Tool executable.

@@ -3,9 +3,9 @@ package config
 import (
 	"testing"
 
-	"github.com/ActiveState/cli/internal/config"
+	"github.com/ActiveState/cli/internal-as/config"
+	"github.com/ActiveState/cli/internal-as/testhelpers/outputhelper"
 	configMediator "github.com/ActiveState/cli/internal/mediators/config"
-	"github.com/ActiveState/cli/internal/testhelpers/outputhelper"
 	"github.com/stretchr/testify/assert"
 )
 

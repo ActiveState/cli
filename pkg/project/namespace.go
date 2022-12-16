@@ -6,8 +6,8 @@ import (
 
 	"github.com/go-openapi/strfmt"
 
-	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal-as/fileutils"
+	"github.com/ActiveState/cli/internal-as/locale"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 

@@ -6,9 +6,9 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
+	"github.com/ActiveState/cli/internal-as/testhelpers/e2e"
+	"github.com/ActiveState/cli/internal-as/testhelpers/tagsuite"
 	"github.com/ActiveState/cli/internal/runners/secrets"
-	"github.com/ActiveState/cli/internal/testhelpers/e2e"
-	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 )
 
 type SecretsIntegrationTestSuite struct {

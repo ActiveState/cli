@@ -7,10 +7,10 @@ import (
 	"github.com/go-openapi/strfmt"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/ActiveState/cli/internal/config"
+	"github.com/ActiveState/cli/internal-as/config"
+	"github.com/ActiveState/cli/internal-as/testhelpers/httpmock"
+	"github.com/ActiveState/cli/internal-as/testhelpers/secretsapi_test"
 	"github.com/ActiveState/cli/internal/keypairs"
-	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
-	"github.com/ActiveState/cli/internal/testhelpers/secretsapi_test"
 	apiModels "github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	"github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_models"

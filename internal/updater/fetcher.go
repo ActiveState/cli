@@ -4,10 +4,10 @@ import (
 	"crypto/sha256"
 	"fmt"
 
-	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal-as/errs"
+	"github.com/ActiveState/cli/internal-as/fileutils"
+	"github.com/ActiveState/cli/internal-as/logging"
 	"github.com/ActiveState/cli/internal/httpreq"
-	"github.com/ActiveState/cli/internal/logging"
 )
 
 const CfgUpdateTag = "update_tag"

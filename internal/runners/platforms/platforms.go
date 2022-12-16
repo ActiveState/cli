@@ -7,9 +7,9 @@ import (
 
 	"github.com/go-openapi/strfmt"
 
-	"github.com/ActiveState/cli/internal/captain"
-	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal-as/captain"
+	"github.com/ActiveState/cli/internal-as/locale"
+	"github.com/ActiveState/cli/internal-as/output"
 	"github.com/ActiveState/cli/pkg/platform/model"
 )
 

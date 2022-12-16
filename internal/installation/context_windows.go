@@ -5,9 +5,9 @@ import (
 	"os/user"
 	"strconv"
 
-	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/multilog"
-	"github.com/ActiveState/cli/internal/osutils"
+	"github.com/ActiveState/cli/internal-as/errs"
+	"github.com/ActiveState/cli/internal-as/multilog"
+	"github.com/ActiveState/cli/internal-as/osutils"
 )
 
 const (

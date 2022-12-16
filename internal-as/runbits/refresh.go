@@ -1,10 +1,10 @@
 package runbits
 
 import (
-	"github.com/ActiveState/cli/internal/analytics"
-	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/rtutils"
+	"github.com/ActiveState/cli/internal-as/analytics"
+	"github.com/ActiveState/cli/internal-as/locale"
+	"github.com/ActiveState/cli/internal-as/output"
+	"github.com/ActiveState/cli/internal-as/rtutils"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime"

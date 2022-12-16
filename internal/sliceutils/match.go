@@ -7,9 +7,9 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/multilog"
-	"github.com/ActiveState/cli/internal/rollbar"
+	"github.com/ActiveState/cli/internal-as/logging"
+	"github.com/ActiveState/cli/internal-as/multilog"
+	"github.com/ActiveState/cli/internal-as/rollbar"
 )
 
 // isEmpty gets whether the specified object is considered empty or not.

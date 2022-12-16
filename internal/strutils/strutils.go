@@ -9,7 +9,7 @@ import (
 	"github.com/go-openapi/strfmt"
 	"github.com/google/uuid"
 
-	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal-as/errs"
 )
 
 func UUID() strfmt.UUID {

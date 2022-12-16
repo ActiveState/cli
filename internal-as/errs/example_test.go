@@ -8,8 +8,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal-as/errs"
+	"github.com/ActiveState/cli/internal-as/locale"
 )
 
 // Create our own error, but ALL errors should be funneled through errs to add stack traces (FOR NOW, due to legacy code)

@@ -20,31 +20,25 @@ package integration
 		"10": "009D20C9-0E38-44E8-A095-7B6FEF01D7DA",
 	}
 	const artifactsPerArtifact = 2 // files/artifacts per artifact.tar.gz
-
 	dir, err := os.MkdirTemp("", "")
 	suite.Require().NoError(err)
 	defer os.RemoveAll(dir)
-
 	artifactsDir := filepath.Join(osutil.GetTestDataDir(), "offline-runtime")
 	offlineTarget := target.NewOfflineTarget(nil, dir, artifactsDir)
-
 	analytics := blackhole.New()
 	mockProgress := &testhelper.MockProgressOutput{}
 	logfile, err := buildlogfile.New(outputhelper.NewCatcher())
 	suite.Require().NoError(err)
 	eventHandler := events.NewRuntimeEventHandler(mockProgress, nil, logfile)
-
 	if value, set := os.LookupEnv(constants.DisableRuntime); set {
 		os.Setenv(constants.DisableRuntime, "false")
 		defer os.Setenv(constants.DisableRuntime, value)
 	}
-
 	rt, err := runtime.New(offlineTarget, analytics, nil)
 	suite.Require().Error(err)
 	suite.Assert().True(runtime.IsNeedsUpdateError(err), "runtime should require an update")
 	err = rt.Update(nil, eventHandler)
 	suite.Require().NoError(err)
-
 	suite.Assert().False(mockProgress.BuildStartedCalled)
 	suite.Assert().False(mockProgress.BuildCompletedCalled)
 	suite.Assert().Equal(int64(0), mockProgress.BuildTotal)
@@ -56,13 +50,11 @@ package integration
 	suite.Assert().Equal(2*len(testArtifacts)*artifactsPerArtifact, mockProgress.ArtifactIncrementCalled) // start and stop each have one count
 	suite.Assert().Equal(len(testArtifacts)*artifactsPerArtifact, mockProgress.ArtifactCompletedCalled)
 	suite.Assert().Equal(0, mockProgress.ArtifactFailureCalled)
-
 	for filename := range testArtifacts {
 		filename := filepath.Join(dir, "tmp", filename) // each file is in a "tmp" dir in the archive
 		suite.Assert().True(fileutils.FileExists(filename), "file '%s' was not extracted from its artifact", filename)
 	}
 }
-
 func TestRuntimeIntegrationTestSuite(t *testing.T) {
 	suite.Run(t, new(RuntimeIntegrationTestSuite))
 }*/

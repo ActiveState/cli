@@ -8,10 +8,10 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
-	"github.com/ActiveState/cli/internal/config"
+	"github.com/ActiveState/cli/internal-as/config"
+	"github.com/ActiveState/cli/internal-as/testhelpers/httpmock"
+	"github.com/ActiveState/cli/internal-as/testhelpers/secretsapi_test"
 	"github.com/ActiveState/cli/internal/keypairs"
-	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
-	"github.com/ActiveState/cli/internal/testhelpers/secretsapi_test"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	"github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_models"
 )

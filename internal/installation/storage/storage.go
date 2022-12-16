@@ -8,9 +8,9 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/ActiveState/cli/internal-as/constants"
+	"github.com/ActiveState/cli/internal-as/osutils/user"
 	"github.com/ActiveState/cli/internal/condition"
-	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/osutils/user"
 	"github.com/google/uuid"
 	"github.com/shibukawa/configdir"
 )
@@ -147,7 +147,7 @@ func InstallSource() (string, error) {
 	return strings.TrimSpace(string(installFileData)), nil
 }
 
-// Avoid circular import of "internal/config"
+// Avoid circular import of "internal-as/config"
 type configReader interface {
 	IsSet(string) bool
 	GetString(string) string

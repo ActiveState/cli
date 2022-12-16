@@ -11,10 +11,10 @@ import (
 
 	"github.com/thoas/go-funk"
 
-	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/osutils"
+	"github.com/ActiveState/cli/internal-as/errs"
+	"github.com/ActiveState/cli/internal-as/fileutils"
+	"github.com/ActiveState/cli/internal-as/logging"
+	"github.com/ActiveState/cli/internal-as/osutils"
 )
 
 // Executables will return all the Executables that need to be symlinked in the various provided bin directories

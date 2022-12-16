@@ -3,7 +3,7 @@ package termsize_test
 import (
 	"testing"
 
-	"github.com/ActiveState/cli/internal/osutils/termsize"
+	"github.com/ActiveState/cli/internal-as/osutils/termsize"
 	"github.com/stretchr/testify/suite"
 )
 

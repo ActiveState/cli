@@ -26,6 +26,3 @@ func TestSymlink(t *testing.T) {
 	assert.True(t, IsSymlink(symlink), "expected symlink")
 	assert.False(t, IsSymlink(target), "expected no symlink")
 }
-
-
-
