@@ -136,15 +136,12 @@ func (suite *SvcIntegrationTestSuite) TestStartDuplicateErrorOutput() {
 	defer ts.Close()
 
 	cp := ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("stop"))
-	cp.Expect("Stopping")
 	cp.ExpectExitCode(0)
 
 	cp = ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("status"))
-	cp.Expect("Checking")
 	cp.ExpectNotExitCode(0)
 
 	cp = ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("start"))
-	cp.Expect("Starting")
 	cp.ExpectExitCode(0)
 
 	cp = ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("foreground"))
@@ -156,7 +153,6 @@ func (suite *SvcIntegrationTestSuite) TestStartDuplicateErrorOutput() {
 	cp.ExpectExitCode(1)
 
 	cp = ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("stop"))
-	cp.Expect("Stopping")
 	cp.ExpectExitCode(0)
 }
 
@@ -223,16 +219,16 @@ func (suite *SvcIntegrationTestSuite) TestAutostartConfigEnableDisable() {
 	// Toggle it via state tool config.
 	cp := ts.SpawnWithOpts(e2e.WithArgs("config", "set", constants.AutostartSvcConfigKey, strconv.FormatBool(!enabled)))
 	cp.ExpectExitCode(0)
-	time.Sleep(500 * time.Millisecond) // allow time to remove startup files
-	toggled, err := as.IsEnabled()     // checks if the proper files are in place, not the config key setting
+	time.Sleep(5 * time.Second)    // allow time to remove startup files
+	toggled, err := as.IsEnabled() // checks if the proper files are in place, not the config key setting
 	suite.Require().NoError(err)
 	suite.Assert().Equal(!enabled, toggled, "autostart has not been changed")
 
 	// Toggle it again via state tool config.
 	cp = ts.SpawnWithOpts(e2e.WithArgs("config", "set", constants.AutostartSvcConfigKey, strconv.FormatBool(enabled)))
 	cp.ExpectExitCode(0)
-	time.Sleep(500 * time.Millisecond) // allow time to copy startup files into place
-	toggled, err = as.IsEnabled()      // checks if the proper files are in place, not the config key setting
+	time.Sleep(5 * time.Second)   // allow time to copy startup files into place
+	toggled, err = as.IsEnabled() // checks if the proper files are in place, not the config key setting
 	suite.Require().NoError(err)
 	suite.Assert().Equal(enabled, toggled, "autostart has not been changed")
 }
