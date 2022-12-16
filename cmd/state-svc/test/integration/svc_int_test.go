@@ -136,15 +136,12 @@ func (suite *SvcIntegrationTestSuite) TestStartDuplicateErrorOutput() {
 	defer ts.Close()
 
 	cp := ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("stop"))
-	cp.Expect("Stopping")
 	cp.ExpectExitCode(0)
 
 	cp = ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("status"))
-	cp.Expect("Checking")
 	cp.ExpectNotExitCode(0)
 
 	cp = ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("start"))
-	cp.Expect("Starting")
 	cp.ExpectExitCode(0)
 
 	cp = ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("foreground"))
@@ -156,7 +153,6 @@ func (suite *SvcIntegrationTestSuite) TestStartDuplicateErrorOutput() {
 	cp.ExpectExitCode(1)
 
 	cp = ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("stop"))
-	cp.Expect("Stopping")
 	cp.ExpectExitCode(0)
 }
 
