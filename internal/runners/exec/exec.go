@@ -117,7 +117,7 @@ func (s *Exec) Run(params *Params, args ...string) error {
 		rtTarget = target.NewProjectTarget(proj, storage.CachePath(), nil, trigger)
 	}
 
-	s.out.Print(locale.Tl("operating_message", "", projectNamespace, projectDir))
+	s.out.Notice(locale.Tl("operating_message", "", projectNamespace, projectDir))
 
 	rt, err := runtime.New(rtTarget, s.analytics, s.svcModel)
 	if err != nil {

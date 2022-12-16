@@ -91,7 +91,7 @@ func NewImport(prime primeable) *Import {
 func (i *Import) Run(params *ImportRunParams) error {
 	logging.Debug("ExecuteImport")
 
-	i.out.Print(locale.Tl("operating_message", "", i.proj.NamespaceString(), i.proj.Dir()))
+	i.out.Notice(locale.Tl("operating_message", "", i.proj.NamespaceString(), i.proj.Dir()))
 
 	if params.FileName == "" {
 		params.FileName = defaultImportFile

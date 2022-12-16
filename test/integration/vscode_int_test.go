@@ -34,7 +34,6 @@ func (suite *PushIntegrationTestSuite) TestInitAndPush_VSCode() {
 		e2e.WithWorkDirectory(wd),
 	)
 	cp.ExpectExitCode(0)
-	cp.ExpectLongString(fmt.Sprintf("Operating on project %s", namespace))
 	suite.Equal("", cp.TrimmedSnapshot())
 
 	// check that pushed project exists

@@ -42,7 +42,7 @@ func (s *Scripts) Run() error {
 	if s.project == nil {
 		return locale.NewInputError("err_no_project")
 	}
-	s.output.Print(locale.Tl("operating_message", "", s.project.NamespaceString(), s.project.Dir()))
+	s.output.Notice(locale.Tl("operating_message", "", s.project.NamespaceString(), s.project.Dir()))
 
 	scripts := s.project.Scripts()
 

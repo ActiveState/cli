@@ -65,7 +65,7 @@ func (r *Push) Run(params PushParams) error {
 	if err := r.verifyInput(); err != nil {
 		return errs.Wrap(err, "verifyInput failed")
 	}
-	r.out.Print(locale.Tl("operating_message", "", r.project.NamespaceString(), r.project.Dir()))
+	r.out.Notice(locale.Tl("operating_message", "", r.project.NamespaceString(), r.project.Dir()))
 
 	commitID := r.project.CommitUUID() // The commit we want to push
 

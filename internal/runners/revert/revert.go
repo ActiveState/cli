@@ -70,7 +70,7 @@ func (r *Revert) Run(params *Params) error {
 	if r.project == nil {
 		return locale.NewInputError("err_no_project")
 	}
-	r.out.Print(locale.Tl("operating_message", "", r.project.NamespaceString(), r.project.Dir()))
+	r.out.Notice(locale.Tl("operating_message", "", r.project.NamespaceString(), r.project.Dir()))
 	commitID := strfmt.UUID(params.CommitID)
 
 	revertToCommit, err := model.GetCommitWithinCommitHistory(r.project.CommitUUID(), commitID)

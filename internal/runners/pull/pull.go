@@ -80,7 +80,7 @@ func (p *Pull) Run(params *PullParams) error {
 	if p.project == nil {
 		return locale.NewInputError("err_no_project")
 	}
-	p.out.Print(locale.Tl("operating_message", "", p.project.NamespaceString(), p.project.Dir()))
+	p.out.Notice(locale.Tl("operating_message", "", p.project.NamespaceString(), p.project.Dir()))
 
 	if p.project.IsHeadless() && params.SetProject == "" {
 		return locale.NewInputError("err_pull_headless", "You must first create a project. Please visit {{.V0}} to create your project.", p.project.URL())
