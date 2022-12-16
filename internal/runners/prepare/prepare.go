@@ -172,13 +172,6 @@ func InstalledPreparedFiles(cfg autostart.Configurable) ([]string, error) {
 		files = append(files, path)
 	}
 
-	osSpecificFiles, err := installedPreparedFiles(cfg)
-	if err != nil {
-		return nil, locale.WrapError(err, "err_prepare_os_files", "Could not get list of OS specific prepared files")
-	}
-
-	files = append(files, osSpecificFiles...)
-
 	return files, nil
 }
 

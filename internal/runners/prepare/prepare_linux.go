@@ -45,10 +45,6 @@ func prependHomeDir(path string) (string, error) {
 	return filepath.Join(homeDir, path), nil
 }
 
-func installedPreparedFiles(cfg autostart.Configurable) ([]string, error) {
-	return []string{}, nil
-}
-
 func cleanOS(cfg autostart.Configurable) error {
 	svcExec, err := installation.ServiceExec()
 	if err != nil {

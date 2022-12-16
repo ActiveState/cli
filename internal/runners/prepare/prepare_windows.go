@@ -119,10 +119,6 @@ func setStateProtocol() error {
 	return nil
 }
 
-func installedPreparedFiles(cfg autostart.Configurable) ([]string, error) {
-	return []string{}, nil
-}
-
 func cleanOS(cfg autostart.Configurable) error {
 	return nil
 }

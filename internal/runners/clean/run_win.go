@@ -87,20 +87,9 @@ func removeInstall(logFile string, cfg configurable) error {
 		return locale.WrapError(err, "err_service_exec")
 	}
 
-	transitionalStateTool := cfg.GetString(installation.CfgTransitionalStateToolPath)
-	var aggErr error
-	for _, exec := range []string{svcExec} {
-		err := os.Remove(exec)
-		if err != nil {
-			if errors.Is(err, os.ErrNotExist) {
-				continue
-			}
-			aggErr = locale.WrapError(aggErr, "uninstall_rm_exec", "Could not remove executable: {{.V0}}. Error: {{.V1}}.", exec, err.Error())
-		}
-	}
-
-	if aggErr != nil {
-		return aggErr
+	err = os.Remove(svcExec)
+	if err != nil && !errors.Is(err, os.ErrNotExist) {
+		return locale.WrapError(err, "uninstall_rm_exec", "Could not remove executable: {{.V0}}. Error: {{.V1}}.", svcExec, err.Error())
 	}
 
 	stateExec, err := installation.StateExec()
@@ -111,7 +100,7 @@ func removeInstall(logFile string, cfg configurable) error {
 	// Schedule removal of the branch name directory and the config directory
 	paths := []string{filepath.Dir(filepath.Dir(stateExec)), cfg.ConfigPath()}
 	// If the transitional state tool path is known, we remove it. This is done in the background, because the transitional State Tool can be the initiator of the uninstall request
-	if transitionalStateTool != "" {
+	if transitionalStateTool := cfg.GetString(installation.CfgTransitionalStateToolPath); transitionalStateTool != "" {
 		paths = append(paths, transitionalStateTool)
 	}
 
