@@ -219,16 +219,16 @@ func (suite *SvcIntegrationTestSuite) TestAutostartConfigEnableDisable() {
 	// Toggle it via state tool config.
 	cp := ts.SpawnWithOpts(e2e.WithArgs("config", "set", constants.AutostartSvcConfigKey, strconv.FormatBool(!enabled)))
 	cp.ExpectExitCode(0)
-	time.Sleep(500 * time.Millisecond) // allow time to remove startup files
-	toggled, err := as.IsEnabled()     // checks if the proper files are in place, not the config key setting
+	time.Sleep(1 * time.Second)    // allow time to remove startup files
+	toggled, err := as.IsEnabled() // checks if the proper files are in place, not the config key setting
 	suite.Require().NoError(err)
 	suite.Assert().Equal(!enabled, toggled, "autostart has not been changed")
 
 	// Toggle it again via state tool config.
 	cp = ts.SpawnWithOpts(e2e.WithArgs("config", "set", constants.AutostartSvcConfigKey, strconv.FormatBool(enabled)))
 	cp.ExpectExitCode(0)
-	time.Sleep(500 * time.Millisecond) // allow time to copy startup files into place
-	toggled, err = as.IsEnabled()      // checks if the proper files are in place, not the config key setting
+	time.Sleep(1 * time.Second)   // allow time to copy startup files into place
+	toggled, err = as.IsEnabled() // checks if the proper files are in place, not the config key setting
 	suite.Require().NoError(err)
 	suite.Assert().Equal(enabled, toggled, "autostart has not been changed")
 }
