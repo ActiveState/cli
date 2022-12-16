@@ -7,8 +7,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ActiveState/cli/internal/runbits"
-	"github.com/ActiveState/cli/internal/testhelpers/outputhelper"
+	"github.com/ActiveState/cli/internal-as/runbits"
+	"github.com/ActiveState/cli/internal-as/testhelpers/outputhelper"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup/events"
 	"github.com/go-openapi/strfmt"

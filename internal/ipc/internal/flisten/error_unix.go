@@ -8,7 +8,7 @@ import (
 	"io"
 	"syscall"
 
-	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal-as/errs"
 )
 
 func asInUseError(err error) error {

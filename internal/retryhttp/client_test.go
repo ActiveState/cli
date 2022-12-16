@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ActiveState/cli/internal/testhelpers/srvstatus"
+	"github.com/ActiveState/cli/internal-as/testhelpers/srvstatus"
 )
 
 func TestClient_Get(t *testing.T) {

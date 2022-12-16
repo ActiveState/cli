@@ -3,9 +3,9 @@ package prepare
 import (
 	svcAutostart "github.com/ActiveState/cli/cmd/state-svc/autostart"
 
+	"github.com/ActiveState/cli/internal-as/locale"
+	"github.com/ActiveState/cli/internal-as/osutils/autostart"
 	"github.com/ActiveState/cli/internal/installation"
-	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/osutils/autostart"
 )
 
 func (r *Prepare) prepareOS() error {

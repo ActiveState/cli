@@ -187,7 +187,6 @@ func (suite *RSAKeypairTestSuite) TestParseEncryptedRSA_IncorrectPassphrase() {
 	suite.Error(err)
 }
 
-
 func Test_RSAKeypair_TestSuite(t *testing.T) {
 	suite.Run(t, new(RSAKeypairTestSuite))
 }

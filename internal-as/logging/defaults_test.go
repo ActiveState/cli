@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal-as/logging"
 	"github.com/stretchr/testify/assert"
 )
 

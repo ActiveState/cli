@@ -5,7 +5,7 @@ import (
 
 	"github.com/go-openapi/strfmt"
 
-	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal-as/errs"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 

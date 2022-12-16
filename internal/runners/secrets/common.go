@@ -3,8 +3,8 @@ package secrets
 import (
 	"strings"
 
+	"github.com/ActiveState/cli/internal-as/locale"
 	"github.com/ActiveState/cli/internal/keypairs"
-	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/pkg/project"
 )
 

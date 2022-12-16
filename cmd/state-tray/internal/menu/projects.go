@@ -5,11 +5,11 @@ import (
 	"unicode/utf8"
 
 	"github.com/ActiveState/cli/cmd/state-tray/internal/open"
-	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal-as/constants"
+	"github.com/ActiveState/cli/internal-as/locale"
+	"github.com/ActiveState/cli/internal-as/multilog"
 	"github.com/ActiveState/cli/internal/graph"
 	"github.com/ActiveState/cli/internal/installation"
-	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/getlantern/systray"
 )

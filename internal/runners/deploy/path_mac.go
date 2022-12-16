@@ -5,8 +5,8 @@ package deploy
 import (
 	"os"
 
-	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal-as/fileutils"
+	"github.com/ActiveState/cli/internal-as/locale"
 	"github.com/thoas/go-funk"
 )
 

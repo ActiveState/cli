@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal-as/errs"
 	"github.com/google/go-github/v45/github"
 	"github.com/stretchr/testify/require"
 )
@@ -278,7 +278,7 @@ func TestFetchPRByTitle(t *testing.T) {
 
 func TestActiveVersionsOnBranch(t *testing.T) {
 	t.Skip("For debugging purposes, comment this line out if you want to test this locally")
-	
+
 	jiraClient, err := InitJiraClient()
 	require.NoError(t, err)
 

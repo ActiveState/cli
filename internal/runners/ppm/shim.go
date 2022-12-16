@@ -4,13 +4,13 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/ActiveState/cli/internal/analytics"
-	"github.com/ActiveState/cli/internal/analytics/constants"
-	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/primer"
-	"github.com/ActiveState/cli/internal/runbits"
+	"github.com/ActiveState/cli/internal-as/analytics"
+	"github.com/ActiveState/cli/internal-as/analytics/constants"
+	"github.com/ActiveState/cli/internal-as/errs"
+	"github.com/ActiveState/cli/internal-as/locale"
+	"github.com/ActiveState/cli/internal-as/output"
+	"github.com/ActiveState/cli/internal-as/primer"
+	"github.com/ActiveState/cli/internal-as/runbits"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 

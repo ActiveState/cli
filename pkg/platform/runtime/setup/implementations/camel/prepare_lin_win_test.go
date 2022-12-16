@@ -9,7 +9,7 @@ import (
 	rt "runtime"
 	"strings"
 
-	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal-as/fileutils"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup/implementations/camel"
 )
 

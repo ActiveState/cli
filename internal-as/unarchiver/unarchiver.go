@@ -11,7 +11,7 @@ import (
 
 	"github.com/ActiveState/archiver"
 
-	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal-as/fileutils"
 )
 
 // SingleUnarchiver is an interface for an unarchiver that can unpack the next file

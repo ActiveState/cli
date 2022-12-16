@@ -7,8 +7,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/osutils/stacktrace"
+	"github.com/ActiveState/cli/internal-as/errs"
+	"github.com/ActiveState/cli/internal-as/osutils/stacktrace"
 )
 
 // PidLock represents a lock file that can be used for exclusive access to

@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/exeutils"
-	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal-as/constants"
+	"github.com/ActiveState/cli/internal-as/exeutils"
+	"github.com/ActiveState/cli/internal-as/locale"
 )
 
 // Language tracks the languages potentially used.

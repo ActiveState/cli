@@ -3,7 +3,7 @@ package artifact
 import (
 	"fmt"
 
-	"github.com/ActiveState/cli/internal/multilog"
+	"github.com/ActiveState/cli/internal-as/multilog"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 	monomodel "github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/go-openapi/strfmt"

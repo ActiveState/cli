@@ -8,12 +8,12 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
-	"github.com/ActiveState/cli/internal/analytics/client/blackhole"
-	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/osutils"
-	"github.com/ActiveState/cli/internal/testhelpers/outputhelper"
+	"github.com/ActiveState/cli/internal-as/analytics/client/blackhole"
+	"github.com/ActiveState/cli/internal-as/constants"
+	"github.com/ActiveState/cli/internal-as/fileutils"
+	"github.com/ActiveState/cli/internal-as/locale"
+	"github.com/ActiveState/cli/internal-as/osutils"
+	"github.com/ActiveState/cli/internal-as/testhelpers/outputhelper"
 )
 
 type confirmMock struct {

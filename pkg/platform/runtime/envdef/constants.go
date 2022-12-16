@@ -1,8 +1,8 @@
 package envdef
 
 import (
-	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal-as/errs"
+	"github.com/ActiveState/cli/internal-as/fileutils"
 )
 
 // Constants is a map of constants that are being expanded in environment variables and file transformations to their installation-specific values

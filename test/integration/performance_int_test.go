@@ -8,12 +8,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/exeutils"
+	"github.com/ActiveState/cli/internal-as/errs"
+	"github.com/ActiveState/cli/internal-as/exeutils"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/ActiveState/cli/internal/testhelpers/e2e"
-	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
+	"github.com/ActiveState/cli/internal-as/testhelpers/e2e"
+	"github.com/ActiveState/cli/internal-as/testhelpers/tagsuite"
 )
 
 // The max time is based on the average execution times across platforms at the time that this was configured

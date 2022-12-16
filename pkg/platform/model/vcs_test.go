@@ -129,4 +129,3 @@ func (suite *VCSTestSuite) TestChangesetFromRequirements() {
 func TestVCSTestSuite(t *testing.T) {
 	suite.Run(t, new(VCSTestSuite))
 }
-

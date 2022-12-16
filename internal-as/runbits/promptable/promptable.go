@@ -1,9 +1,9 @@
 package promptable
 
 import (
-	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/multilog"
-	"github.com/ActiveState/cli/internal/rollbar"
+	"github.com/ActiveState/cli/internal-as/logging"
+	"github.com/ActiveState/cli/internal-as/multilog"
+	"github.com/ActiveState/cli/internal-as/rollbar"
 )
 
 // Contextualizer describes any type which can provide needed contextual info.

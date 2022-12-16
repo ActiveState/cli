@@ -5,9 +5,9 @@ package open
 import (
 	"os/exec"
 
-	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal-as/fileutils"
+	"github.com/ActiveState/cli/internal-as/locale"
 	"github.com/ActiveState/cli/internal/language"
-	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/scriptfile"
 )
 

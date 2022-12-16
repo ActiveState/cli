@@ -7,9 +7,9 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/multilog"
+	"github.com/ActiveState/cli/internal-as/errs"
+	"github.com/ActiveState/cli/internal-as/locale"
+	"github.com/ActiveState/cli/internal-as/multilog"
 )
 
 var projectFieldRE = regexp.MustCompile(`(?m:^project:["' ]*(https?:\/\/.*?)["' ]*$)`)

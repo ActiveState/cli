@@ -5,14 +5,14 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/ActiveState/cli/internal/assets"
-	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/internal/osutils"
-	"github.com/ActiveState/cli/internal/osutils/shortcut"
-	"github.com/ActiveState/cli/internal/osutils/user"
-	"github.com/ActiveState/cli/internal/subshell/sscommon"
+	"github.com/ActiveState/cli/internal-as/assets"
+	"github.com/ActiveState/cli/internal-as/constants"
+	"github.com/ActiveState/cli/internal-as/errs"
+	"github.com/ActiveState/cli/internal-as/fileutils"
+	"github.com/ActiveState/cli/internal-as/osutils"
+	"github.com/ActiveState/cli/internal-as/osutils/shortcut"
+	"github.com/ActiveState/cli/internal-as/osutils/user"
+	"github.com/ActiveState/cli/internal-as/subshell/sscommon"
 )
 
 const (

@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ActiveState/cli/internal/analytics/client/blackhole"
+	"github.com/ActiveState/cli/internal-as/analytics/client/blackhole"
 	"github.com/stretchr/testify/require"
 )
 

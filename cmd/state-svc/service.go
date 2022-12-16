@@ -8,11 +8,11 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/cmd/state-svc/internal/server"
-	anaSvc "github.com/ActiveState/cli/internal/analytics/client/sync"
-	"github.com/ActiveState/cli/internal/config"
-	"github.com/ActiveState/cli/internal/errs"
+	anaSvc "github.com/ActiveState/cli/internal-as/analytics/client/sync"
+	"github.com/ActiveState/cli/internal-as/config"
+	"github.com/ActiveState/cli/internal-as/errs"
+	"github.com/ActiveState/cli/internal-as/logging"
 	"github.com/ActiveState/cli/internal/ipc"
-	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/svcctl"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 )

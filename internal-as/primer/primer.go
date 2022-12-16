@@ -1,12 +1,12 @@
 package primer
 
 import (
-	"github.com/ActiveState/cli/internal/analytics"
-	"github.com/ActiveState/cli/internal/config"
+	"github.com/ActiveState/cli/internal-as/analytics"
+	"github.com/ActiveState/cli/internal-as/config"
+	"github.com/ActiveState/cli/internal-as/output"
+	"github.com/ActiveState/cli/internal-as/prompt"
+	"github.com/ActiveState/cli/internal-as/subshell"
 	"github.com/ActiveState/cli/internal/constraints"
-	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/prompt"
-	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/svcctl"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"

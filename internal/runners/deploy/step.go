@@ -3,7 +3,7 @@ package deploy
 import (
 	"strings"
 
-	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal-as/locale"
 )
 
 // Step is the --step flag for the --deploy command, it implements captain.FlagMarshaler

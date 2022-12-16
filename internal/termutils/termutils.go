@@ -5,7 +5,7 @@ import (
 
 	"golang.org/x/crypto/ssh/terminal"
 
-	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal-as/logging"
 )
 
 const fallbackWidth = 100

@@ -6,9 +6,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal-as/constants"
 
-	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal-as/fileutils"
 
 	"github.com/go-openapi/strfmt"
 )

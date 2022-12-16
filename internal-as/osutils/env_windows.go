@@ -5,7 +5,7 @@ import (
 	"syscall"
 	"unsafe"
 
-	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal-as/errs"
 	"golang.org/x/sys/windows/registry"
 )
 

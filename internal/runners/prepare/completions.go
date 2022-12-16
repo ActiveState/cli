@@ -1,14 +1,14 @@
 package prepare
 
 import (
-	"github.com/ActiveState/cli/internal/captain"
+	"github.com/ActiveState/cli/internal-as/captain"
+	"github.com/ActiveState/cli/internal-as/locale"
+	"github.com/ActiveState/cli/internal-as/output"
+	"github.com/ActiveState/cli/internal-as/subshell"
+	"github.com/ActiveState/cli/internal-as/subshell/bash"
+	"github.com/ActiveState/cli/internal-as/subshell/fish"
+	"github.com/ActiveState/cli/internal-as/subshell/zsh"
 	"github.com/ActiveState/cli/internal/globaldefault"
-	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/subshell"
-	"github.com/ActiveState/cli/internal/subshell/bash"
-	"github.com/ActiveState/cli/internal/subshell/fish"
-	"github.com/ActiveState/cli/internal/subshell/zsh"
 )
 
 type ErrorNotSupported struct{ *locale.LocalizedError }

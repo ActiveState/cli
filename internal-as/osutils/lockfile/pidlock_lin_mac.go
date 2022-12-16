@@ -7,7 +7,7 @@ import (
 	"os"
 	"syscall"
 
-	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal-as/errs"
 )
 
 // PidExists checks if a process with the given PID exists and is running

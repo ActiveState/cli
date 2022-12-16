@@ -9,7 +9,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/ActiveState/cli/internal/osutils/lockfile"
+	"github.com/ActiveState/cli/internal-as/osutils/lockfile"
 )
 
 func main() {

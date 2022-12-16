@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal-as/errs"
 	"github.com/ActiveState/cli/internal/ipc"
 	"github.com/ActiveState/cli/internal/svcctl"
 )

@@ -15,7 +15,7 @@ func (m *Mediator) Fprint(writer io.Writer, v interface{}) {
 	if v = mediatorValue(v, m.format); v == Suppress {
 		return
 	}
-	
+
 	m.Outputer.Fprint(writer, v)
 }
 

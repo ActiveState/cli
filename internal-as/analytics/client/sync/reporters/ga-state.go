@@ -4,12 +4,12 @@ import (
 	"strconv"
 	"strings"
 
-	anaConsts "github.com/ActiveState/cli/internal/analytics/constants"
-	"github.com/ActiveState/cli/internal/analytics/dimensions"
-	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/rtutils/p"
+	anaConsts "github.com/ActiveState/cli/internal-as/analytics/constants"
+	"github.com/ActiveState/cli/internal-as/analytics/dimensions"
+	"github.com/ActiveState/cli/internal-as/constants"
+	"github.com/ActiveState/cli/internal-as/errs"
+	"github.com/ActiveState/cli/internal-as/logging"
+	"github.com/ActiveState/cli/internal-as/rtutils/p"
 	ga "github.com/ActiveState/go-ogle-analytics"
 )
 

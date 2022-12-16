@@ -5,7 +5,7 @@ package open
 import (
 	"os/exec"
 
-	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal-as/locale"
 )
 
 func TerminalAndWait(command string) error {

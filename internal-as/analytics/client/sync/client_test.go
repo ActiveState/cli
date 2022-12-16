@@ -4,8 +4,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/ActiveState/cli/internal/analytics/dimensions"
-	"github.com/ActiveState/cli/internal/rtutils/p"
+	"github.com/ActiveState/cli/internal-as/analytics/dimensions"
+	"github.com/ActiveState/cli/internal-as/rtutils/p"
 )
 
 func Test_mergeDimensions(t *testing.T) {

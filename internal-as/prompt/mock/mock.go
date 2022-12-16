@@ -3,7 +3,7 @@ package mock
 import (
 	"reflect"
 
-	"github.com/ActiveState/cli/internal/prompt"
+	"github.com/ActiveState/cli/internal-as/prompt"
 
 	tmock "github.com/stretchr/testify/mock"
 )

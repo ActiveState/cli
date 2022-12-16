@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal-as/errs"
+	"github.com/ActiveState/cli/internal-as/logging"
 	"github.com/ActiveState/cli/internal/profile"
 )
 
@@ -47,4 +47,3 @@ func WaitForEvents(t time.Duration, events ...func()) error {
 		return nil
 	}
 }
-

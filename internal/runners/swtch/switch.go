@@ -1,13 +1,13 @@
 package swtch
 
 import (
-	"github.com/ActiveState/cli/internal/analytics"
+	"github.com/ActiveState/cli/internal-as/analytics"
+	"github.com/ActiveState/cli/internal-as/locale"
+	"github.com/ActiveState/cli/internal-as/logging"
+	"github.com/ActiveState/cli/internal-as/output"
+	"github.com/ActiveState/cli/internal-as/primer"
+	"github.com/ActiveState/cli/internal-as/runbits"
 	"github.com/ActiveState/cli/internal/installation/storage"
-	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/primer"
-	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"

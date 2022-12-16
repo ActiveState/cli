@@ -11,21 +11,21 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/ActiveState/cli/internal/analytics"
-	anaConsts "github.com/ActiveState/cli/internal/analytics/constants"
-	"github.com/ActiveState/cli/internal/analytics/dimensions"
-	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal-as/analytics"
+	anaConsts "github.com/ActiveState/cli/internal-as/analytics/constants"
+	"github.com/ActiveState/cli/internal-as/analytics/dimensions"
+	"github.com/ActiveState/cli/internal-as/constants"
+	"github.com/ActiveState/cli/internal-as/errs"
+	"github.com/ActiveState/cli/internal-as/fileutils"
+	"github.com/ActiveState/cli/internal-as/locale"
+	"github.com/ActiveState/cli/internal-as/logging"
+	"github.com/ActiveState/cli/internal-as/multilog"
+	"github.com/ActiveState/cli/internal-as/rollbar"
+	"github.com/ActiveState/cli/internal-as/rtutils/p"
+	"github.com/ActiveState/cli/internal-as/unarchiver"
 	"github.com/ActiveState/cli/internal/download"
-	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/proxyreader"
-	"github.com/ActiveState/cli/internal/rollbar"
-	"github.com/ActiveState/cli/internal/rtutils/p"
 	"github.com/ActiveState/cli/internal/svcctl"
-	"github.com/ActiveState/cli/internal/unarchiver"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
@@ -169,7 +169,7 @@ func (s *Setup) Update() error {
 	// Do not allow users to deploy runtimes to the root directory (this can easily happen in docker
 	// images). Note that runtime targets are fully resolved via fileutils.ResolveUniquePath(), so
 	// paths like "/." and "/opt/.." resolve to simply "/" at this time.
-	if (rt.GOOS != "windows" && s.target.Dir() == "/") {
+	if rt.GOOS != "windows" && s.target.Dir() == "/" {
 		return locale.NewInputError("err_runtime_setup_root", "Cannot set up a runtime in the root directory. Please specify or run from a user-writable directory.")
 	}
 

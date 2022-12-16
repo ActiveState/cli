@@ -3,20 +3,20 @@ package auth
 import (
 	"time"
 
-	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal-as/errs"
+	"github.com/ActiveState/cli/internal-as/locale"
+	"github.com/ActiveState/cli/internal-as/logging"
+	"github.com/ActiveState/cli/internal-as/osutils"
+	"github.com/ActiveState/cli/internal-as/output"
+	"github.com/ActiveState/cli/internal-as/prompt"
+	"github.com/ActiveState/cli/internal-as/rtutils/p"
 	"github.com/ActiveState/cli/internal/keypairs"
-	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/osutils"
-	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/prompt"
-	"github.com/ActiveState/cli/internal/rtutils/p"
 	"github.com/ActiveState/cli/pkg/platform/api/mono"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/users"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
-	"github.com/ActiveState/cli/pkg/platform/model/auth"
+	model "github.com/ActiveState/cli/pkg/platform/model/auth"
 	"github.com/go-openapi/strfmt"
 )
 

@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/rtutils"
+	"github.com/ActiveState/cli/internal-as/errs"
+	"github.com/ActiveState/cli/internal-as/rtutils"
 )
 
 func TestErrs(t *testing.T) {

@@ -3,7 +3,7 @@ package config
 import (
 	"strings"
 
-	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal-as/locale"
 )
 
 type Term int

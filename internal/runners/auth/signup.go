@@ -1,10 +1,10 @@
 package auth
 
 import (
+	"github.com/ActiveState/cli/internal-as/locale"
+	"github.com/ActiveState/cli/internal-as/output"
+	"github.com/ActiveState/cli/internal-as/prompt"
 	"github.com/ActiveState/cli/internal/keypairs"
-	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/prompt"
 	authlet "github.com/ActiveState/cli/pkg/cmdlets/auth"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 )

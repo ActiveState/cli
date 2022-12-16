@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ActiveState/cli/internal/osutils"
+	"github.com/ActiveState/cli/internal-as/osutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/thoas/go-funk"
 )

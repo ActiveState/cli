@@ -3,7 +3,7 @@ package stacktrace
 import (
 	"testing"
 
-	"github.com/ActiveState/cli/internal/rtutils"
+	"github.com/ActiveState/cli/internal-as/rtutils"
 )
 
 func TestGet(t *testing.T) {

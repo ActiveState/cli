@@ -1,6 +1,6 @@
 package output
 
-import "github.com/ActiveState/cli/internal/errs"
+import "github.com/ActiveState/cli/internal-as/errs"
 
 type Editor struct {
 	JSON

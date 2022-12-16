@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal-as/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )

@@ -5,7 +5,7 @@ import (
 	"os/signal"
 	"sync"
 
-	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal-as/errs"
 )
 
 type signalStack struct {

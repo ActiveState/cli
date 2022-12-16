@@ -8,10 +8,10 @@ import (
 	"gopkg.in/AlecAivazis/survey.v1"
 	"gopkg.in/AlecAivazis/survey.v1/core"
 
+	"github.com/ActiveState/cli/internal-as/osutils/termsize"
 	"github.com/ActiveState/cli/internal/colorize"
-	"github.com/ActiveState/cli/internal/osutils/termsize"
 
-	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal-as/locale"
 )
 
 func init() {

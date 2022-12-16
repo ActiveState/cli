@@ -8,13 +8,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal-as/fileutils"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal-as/constants"
+	"github.com/ActiveState/cli/internal-as/testhelpers/e2e"
+	"github.com/ActiveState/cli/internal-as/testhelpers/tagsuite"
 	"github.com/ActiveState/cli/internal/strutils"
-	"github.com/ActiveState/cli/internal/testhelpers/e2e"
-	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )

@@ -11,10 +11,10 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/ActiveState/cli/internal-as/errs"
+	"github.com/ActiveState/cli/internal-as/osutils/user"
 	"github.com/ActiveState/cli/internal/environment"
-	"github.com/ActiveState/cli/internal/errs"
-  "github.com/ActiveState/cli/internal/osutils/user"
-  "github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/thoas/go-funk"
 )
@@ -510,10 +510,10 @@ func TestIsSameOrInsideOf(t *testing.T) {
 		return strings.ReplaceAll(path, "/", string(os.PathSeparator))
 	}
 
-	insideOf := resolvedPathContainsParent(setSep("../../internal/fileutils"), setSep("../../internal"))
+	insideOf := resolvedPathContainsParent(setSep("../../internal-as/fileutils"), setSep("../../internal"))
 	assert.True(t, insideOf)
 
-	insideOf = resolvedPathContainsParent(setSep("../../internal/fileutils"), setSep("../../cmd"))
+	insideOf = resolvedPathContainsParent(setSep("../../internal-as/fileutils"), setSep("../../cmd"))
 	assert.False(t, insideOf)
 
 	insideOf = resolvedPathContainsParent(setSep("../../internalfileutils"), setSep("../../internal"))

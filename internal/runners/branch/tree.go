@@ -5,7 +5,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal-as/output"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/model"
 )

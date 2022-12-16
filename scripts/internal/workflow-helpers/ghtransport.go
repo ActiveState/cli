@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal-as/logging"
 	"github.com/google/go-github/v45/github"
 )
 

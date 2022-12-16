@@ -6,4 +6,3 @@ import (
 
 // ArtifactID represents an artifact ID
 type ArtifactID = strfmt.UUID
-

@@ -1,11 +1,11 @@
 package cmdtree
 
 import (
-	"github.com/ActiveState/cli/internal/primer"
+	"github.com/ActiveState/cli/internal-as/primer"
 	"github.com/ActiveState/cli/internal/runners/update"
 
-	"github.com/ActiveState/cli/internal/captain"
-	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal-as/captain"
+	"github.com/ActiveState/cli/internal-as/locale"
 )
 
 func newUpdateCommand(prime *primer.Values) *captain.Command {

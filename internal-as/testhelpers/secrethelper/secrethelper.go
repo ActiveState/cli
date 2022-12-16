@@ -3,9 +3,9 @@ package secrethelper
 import (
 	"strings"
 
+	"github.com/ActiveState/cli/internal-as/errs"
+	"github.com/ActiveState/cli/internal-as/exeutils"
 	"github.com/ActiveState/cli/internal/environment"
-	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/exeutils"
 )
 
 func GetSecretIfEmpty(value string, key string) string {

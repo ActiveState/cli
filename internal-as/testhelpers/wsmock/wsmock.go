@@ -7,9 +7,9 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/multilog"
+	"github.com/ActiveState/cli/internal-as/fileutils"
+	"github.com/ActiveState/cli/internal-as/logging"
+	"github.com/ActiveState/cli/internal-as/multilog"
 	"github.com/gorilla/websocket"
 	"github.com/posener/wstest"
 )

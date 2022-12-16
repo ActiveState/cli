@@ -1,8 +1,8 @@
 package autostart
 
 import (
-	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/osutils/autostart"
+	"github.com/ActiveState/cli/internal-as/constants"
+	"github.com/ActiveState/cli/internal-as/osutils/autostart"
 )
 
 const (

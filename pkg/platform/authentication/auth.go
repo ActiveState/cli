@@ -6,23 +6,23 @@ import (
 	"os"
 	"time"
 
+	"github.com/ActiveState/cli/internal-as/config"
+	"github.com/ActiveState/cli/internal-as/constants"
+	"github.com/ActiveState/cli/internal-as/errs"
+	"github.com/ActiveState/cli/internal-as/locale"
+	"github.com/ActiveState/cli/internal-as/logging"
+	"github.com/ActiveState/cli/internal-as/multilog"
+	"github.com/ActiveState/cli/internal-as/rollbar"
 	"github.com/ActiveState/cli/internal/ci/gcloud"
 	"github.com/ActiveState/cli/internal/colorize"
-	"github.com/ActiveState/cli/internal/config"
-	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/profile"
-	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/ActiveState/cli/internal/singleton/uniqid"
 	"github.com/ActiveState/cli/pkg/platform/api/mono"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/authentication"
 	apiAuth "github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/authentication"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
-	"github.com/ActiveState/cli/pkg/platform/model/auth"
+	model "github.com/ActiveState/cli/pkg/platform/model/auth"
 	"github.com/go-openapi/runtime"
 	httptransport "github.com/go-openapi/runtime/client"
 	"github.com/go-openapi/strfmt"
@@ -65,7 +65,7 @@ func LegacyGet() *Auth {
 			os.Exit(1)
 		}
 		defer cfg.Close()
-		
+
 		persist = New(cfg)
 		if err := persist.Sync(); err != nil {
 			logging.Warning("Could not sync authenticated state: %s", err.Error())

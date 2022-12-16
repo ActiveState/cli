@@ -3,7 +3,7 @@ package invite
 import (
 	"strings"
 
-	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal-as/locale"
 )
 
 // Role is an enumeration of the roles that user can have in an organization

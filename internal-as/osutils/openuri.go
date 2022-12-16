@@ -3,7 +3,7 @@
 package osutils
 
 import (
-	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal-as/logging"
 	"github.com/skratchdot/open-golang/open"
 )
 

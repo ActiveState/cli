@@ -1,16 +1,16 @@
 package revert
 
 import (
-	"github.com/ActiveState/cli/internal/analytics"
+	"github.com/ActiveState/cli/internal-as/analytics"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/go-openapi/strfmt"
 
+	"github.com/ActiveState/cli/internal-as/locale"
+	"github.com/ActiveState/cli/internal-as/output"
+	"github.com/ActiveState/cli/internal-as/primer"
+	"github.com/ActiveState/cli/internal-as/prompt"
+	"github.com/ActiveState/cli/internal-as/runbits"
 	"github.com/ActiveState/cli/internal/installation/storage"
-	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/primer"
-	"github.com/ActiveState/cli/internal/prompt"
-	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/pkg/cmdlets/commit"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"

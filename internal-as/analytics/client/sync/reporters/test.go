@@ -4,11 +4,11 @@ import (
 	"encoding/json"
 	"path/filepath"
 
-	"github.com/ActiveState/cli/internal/analytics/dimensions"
-	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal-as/analytics/dimensions"
+	"github.com/ActiveState/cli/internal-as/errs"
+	"github.com/ActiveState/cli/internal-as/fileutils"
+	"github.com/ActiveState/cli/internal-as/logging"
 	"github.com/ActiveState/cli/internal/installation/storage"
-	"github.com/ActiveState/cli/internal/logging"
 )
 
 type TestReporter struct {

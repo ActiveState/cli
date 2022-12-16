@@ -1,14 +1,14 @@
 package checkout
 
 import (
-	"github.com/ActiveState/cli/internal/analytics"
-	"github.com/ActiveState/cli/internal/config"
-	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/primer"
-	"github.com/ActiveState/cli/internal/runbits/runtime"
-	"github.com/ActiveState/cli/internal/subshell"
+	"github.com/ActiveState/cli/internal-as/analytics"
+	"github.com/ActiveState/cli/internal-as/config"
+	"github.com/ActiveState/cli/internal-as/locale"
+	"github.com/ActiveState/cli/internal-as/logging"
+	"github.com/ActiveState/cli/internal-as/output"
+	"github.com/ActiveState/cli/internal-as/primer"
+	"github.com/ActiveState/cli/internal-as/runbits/runtime"
+	"github.com/ActiveState/cli/internal-as/subshell"
 	"github.com/ActiveState/cli/pkg/cmdlets/checker"
 	"github.com/ActiveState/cli/pkg/cmdlets/checkout"
 	"github.com/ActiveState/cli/pkg/cmdlets/git"

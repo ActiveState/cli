@@ -6,8 +6,8 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/ActiveState/cli/internal/config"
-	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal-as/config"
+	"github.com/ActiveState/cli/internal-as/errs"
 	"github.com/ActiveState/cli/pkg/projectfile"
 
 	"github.com/stretchr/testify/suite"

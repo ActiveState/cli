@@ -3,7 +3,7 @@ package osutils_test
 import (
 	"testing"
 
-	"github.com/ActiveState/cli/internal/osutils"
+	"github.com/ActiveState/cli/internal-as/osutils"
 	"github.com/stretchr/testify/suite"
 )
 

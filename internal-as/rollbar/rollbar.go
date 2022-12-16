@@ -7,11 +7,11 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/ActiveState/cli/internal-as/constants"
+	"github.com/ActiveState/cli/internal-as/logging"
 	"github.com/ActiveState/cli/internal/condition"
-	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/instanceid"
-	"github.com/ActiveState/cli/internal/logging"
 	configMediator "github.com/ActiveState/cli/internal/mediators/config"
 	"github.com/ActiveState/cli/internal/singleton/uniqid"
 	"github.com/rollbar/rollbar-go"

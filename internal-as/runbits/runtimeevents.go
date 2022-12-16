@@ -4,11 +4,11 @@ import (
 	"io"
 	"os"
 
-	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/runbits/buildlogfile"
-	"github.com/ActiveState/cli/internal/runbits/changesummary"
-	"github.com/ActiveState/cli/internal/runbits/progressbar"
+	"github.com/ActiveState/cli/internal-as/errs"
+	"github.com/ActiveState/cli/internal-as/output"
+	"github.com/ActiveState/cli/internal-as/runbits/buildlogfile"
+	"github.com/ActiveState/cli/internal-as/runbits/changesummary"
+	"github.com/ActiveState/cli/internal-as/runbits/progressbar"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup/events"
 )
 

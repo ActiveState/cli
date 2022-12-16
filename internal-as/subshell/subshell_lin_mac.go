@@ -4,11 +4,11 @@
 package subshell
 
 import (
-	"github.com/ActiveState/cli/internal/subshell/bash"
-	"github.com/ActiveState/cli/internal/subshell/cmd"
-	"github.com/ActiveState/cli/internal/subshell/fish"
-	"github.com/ActiveState/cli/internal/subshell/tcsh"
-	"github.com/ActiveState/cli/internal/subshell/zsh"
+	"github.com/ActiveState/cli/internal-as/subshell/bash"
+	"github.com/ActiveState/cli/internal-as/subshell/cmd"
+	"github.com/ActiveState/cli/internal-as/subshell/fish"
+	"github.com/ActiveState/cli/internal-as/subshell/tcsh"
+	"github.com/ActiveState/cli/internal-as/subshell/zsh"
 )
 
 var supportedShells = []SubShell{

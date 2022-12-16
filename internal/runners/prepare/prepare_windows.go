@@ -8,15 +8,15 @@ import (
 
 	svcAutostart "github.com/ActiveState/cli/cmd/state-svc/autostart"
 
-	"github.com/ActiveState/cli/internal/assets"
-	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal-as/assets"
+	"github.com/ActiveState/cli/internal-as/constants"
+	"github.com/ActiveState/cli/internal-as/fileutils"
+	"github.com/ActiveState/cli/internal-as/locale"
+	"github.com/ActiveState/cli/internal-as/multilog"
+	"github.com/ActiveState/cli/internal-as/osutils"
+	"github.com/ActiveState/cli/internal-as/osutils/autostart"
+	"github.com/ActiveState/cli/internal-as/osutils/shortcut"
 	"github.com/ActiveState/cli/internal/installation"
-	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/multilog"
-	"github.com/ActiveState/cli/internal/osutils"
-	"github.com/ActiveState/cli/internal/osutils/autostart"
-	"github.com/ActiveState/cli/internal/osutils/shortcut"
 )
 
 var shortcutDir = filepath.Join(os.Getenv("USERPROFILE"), "AppData", "Roaming", "Microsoft", "Windows", "Start Menu", "Programs", "ActiveState")

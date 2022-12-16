@@ -4,9 +4,9 @@ import (
 	"context"
 	"time"
 
-	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal-as/errs"
+	"github.com/ActiveState/cli/internal-as/logging"
 	"github.com/ActiveState/cli/internal/ipc/internal/flisten"
-	"github.com/ActiveState/cli/internal/logging"
 )
 
 type Client struct {

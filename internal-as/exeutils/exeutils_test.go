@@ -6,8 +6,8 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/testhelpers/osutil"
+	"github.com/ActiveState/cli/internal-as/logging"
+	"github.com/ActiveState/cli/internal-as/testhelpers/osutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

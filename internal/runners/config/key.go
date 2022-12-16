@@ -3,7 +3,7 @@ package config
 import (
 	"regexp"
 
-	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal-as/locale"
 )
 
 type Key string

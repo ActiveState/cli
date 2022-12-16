@@ -6,7 +6,7 @@ import (
 	"os"
 	"syscall"
 
-	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal-as/errs"
 )
 
 // ErrorLockViolation is the error no returned if a lock fails on Windows

@@ -8,7 +8,7 @@ import (
 
 	"github.com/fsnotify/fsnotify"
 
-	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal-as/errs"
 )
 
 // Received represents the data related to a message sent via watched file.

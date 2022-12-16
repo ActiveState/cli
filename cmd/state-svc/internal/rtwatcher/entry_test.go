@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/ActiveState/cli/internal/analytics/dimensions"
+	"github.com/ActiveState/cli/internal-as/analytics/dimensions"
 )
 
 func Test_entry_IsRunning(t *testing.T) {

@@ -17,7 +17,7 @@ import (
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/thoas/go-funk"
 
-	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal-as/constants"
 )
 
 // datadir is the base directory at which the log is saved

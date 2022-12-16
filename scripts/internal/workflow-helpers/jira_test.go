@@ -3,7 +3,7 @@ package workflow_helpers
 import (
 	"testing"
 
-	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal-as/errs"
 	"github.com/andygrunwald/go-jira"
 	"github.com/blang/semver"
 	"github.com/stretchr/testify/require"

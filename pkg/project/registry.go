@@ -3,7 +3,7 @@ package project
 import (
 	"strings"
 
-	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal-as/errs"
 )
 
 // expanderRegistry maps category names to their Expander Func implementations.

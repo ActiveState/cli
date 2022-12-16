@@ -12,9 +12,9 @@ import (
 	"syscall"
 	"unsafe"
 
-	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/multilog"
+	"github.com/ActiveState/cli/internal-as/errs"
+	"github.com/ActiveState/cli/internal-as/logging"
+	"github.com/ActiveState/cli/internal-as/multilog"
 	"github.com/google/uuid"
 	"golang.org/x/sys/windows"
 )
@@ -39,7 +39,6 @@ func IsExecutable(path string) bool {
 	}
 	return false
 }
-
 
 // IsWritable returns true if the given path is writable
 func IsWritable(path string) bool {

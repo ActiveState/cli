@@ -15,4 +15,3 @@ func init() {
 	PATHEXT := os.Getenv("PATHEXT")
 	exts = funk.Uniq(funk.Map(strings.Split(PATHEXT, string(os.PathListSeparator)), strings.ToLower).([]string)).([]string)
 }
-

@@ -3,8 +3,8 @@ package installmgr
 import (
 	"errors"
 
-	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal-as/errs"
+	"github.com/ActiveState/cli/internal-as/logging"
 	"github.com/shirou/gopsutil/v3/process"
 )
 

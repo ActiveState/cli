@@ -3,8 +3,8 @@ package mock
 import (
 	rt "runtime"
 
+	"github.com/ActiveState/cli/internal-as/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/download"
-	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	graphMock "github.com/ActiveState/cli/pkg/platform/api/graphql/request/mock"
 	hcMock "github.com/ActiveState/cli/pkg/platform/api/headchef/mock"
 	invMock "github.com/ActiveState/cli/pkg/platform/api/inventory/mock"

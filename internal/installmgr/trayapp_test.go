@@ -3,7 +3,7 @@ package installmgr
 import (
 	"testing"
 
-	"github.com/ActiveState/cli/internal/config"
+	"github.com/ActiveState/cli/internal-as/config"
 	"github.com/stretchr/testify/assert"
 )
 

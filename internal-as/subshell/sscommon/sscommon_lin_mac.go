@@ -5,7 +5,7 @@ package sscommon
 import (
 	"strings"
 
-	"github.com/ActiveState/cli/internal/osutils"
+	"github.com/ActiveState/cli/internal-as/osutils"
 )
 
 var escaper *osutils.ShellEscape

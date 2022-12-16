@@ -7,8 +7,8 @@ import (
 	"regexp"
 	"time"
 
-	"github.com/ActiveState/cli/internal/multilog"
-	"github.com/ActiveState/cli/internal/output/colorstyle"
+	"github.com/ActiveState/cli/internal-as/multilog"
+	"github.com/ActiveState/cli/internal-as/output/colorstyle"
 	"github.com/ActiveState/cli/internal/profile"
 )
 
