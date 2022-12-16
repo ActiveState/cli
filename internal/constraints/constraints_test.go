@@ -57,22 +57,6 @@ func TestOsConstraints(t *testing.T) {
 	assert.True(t, osIsConstrained(fmt.Sprintf("linux,windows,macos,%s", exclude)))
 }
 
-func TestPlatformConstraints(t *testing.T) {
-	setProjectDir(t)
-	exclude := "-linux-label"
-	if sysinfo.OS() == sysinfo.Windows {
-		exclude = "-windows-label"
-	} else if sysinfo.OS() == sysinfo.Mac {
-		exclude = "-macos-label"
-	}
-	if sysinfo.OS() != sysinfo.Windows {
-		assert.True(t, platformIsConstrained("Windows10Label"))
-	}
-	assert.False(t, platformIsConstrained("windows-label,linux-label,macos-label"), "No matter the platform, this should never be constrained.")
-	assert.True(t, platformIsConstrained(fmt.Sprintf("windows-label,linux-label,macos-label,%s", exclude)), "Exclude at the end is still considered.")
-	assert.True(t, platformIsConstrained(fmt.Sprintf("%s,windows-label,linux-label,macos-label", exclude)), "Exclude at the start means (or any part really) means fail.")
-}
-
 func TestEnvironmentConstraints(t *testing.T) {
 	os.Setenv(constants.EnvironmentEnvVarName, "dev")
 	assert.False(t, environmentIsConstrained("dev"), "The current environment is in 'dev'")
@@ -95,7 +79,7 @@ func TestMatchConstraint(t *testing.T) {
 
 	constraint := projectfile.Constraint{sysinfo.OS().String(), variableLabel, "dev"}
 	constrained, specificity := IsConstrained(constraint)
-	assert.True(t, constrained)
+	assert.False(t, constrained) // platform is not constrained
 	assert.Equal(t, 3, specificity)
 	beConstrained := "windows"
 	if sysinfo.OS() == sysinfo.Windows {
@@ -134,7 +118,7 @@ func TestMatchConstraint(t *testing.T) {
 	assert.True(t, constrained)
 	assert.Equal(t, 1, specificity)
 	constrained, specificity = IsConstrained(projectfile.Constraint{"", variableLabel, ""})
-	assert.True(t, constrained)
+	assert.False(t, constrained) // platform is not constrained
 	assert.Equal(t, 1, specificity)
 	constrained, specificity = IsConstrained(projectfile.Constraint{"", "", "dev"})
 	assert.True(t, constrained)

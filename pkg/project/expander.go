@@ -111,34 +111,6 @@ func ExpandFromScript(s string, script *Script) (string, error) {
 // or a Failure if expansion was unsuccessful.
 type ExpanderFunc func(variable, name, meta string, isFunction bool, ctx *Expansion) (string, error)
 
-// PlatformExpander expends metadata about the current platform.
-func PlatformExpander(_ string, name string, meta string, isFunction bool, ctx *Expansion) (string, error) {
-	projectFile := ctx.Project.Source()
-	for _, platform := range projectFile.Platforms {
-		if !constraints.PlatformMatches(platform) {
-			continue
-		}
-
-		switch name {
-		case "name":
-			return platform.Name, nil
-		case "os":
-			return platform.Os, nil
-		case "version":
-			return platform.Version, nil
-		case "architecture":
-			return platform.Architecture, nil
-		case "libc":
-			return platform.Libc, nil
-		case "compiler":
-			return platform.Compiler, nil
-		default:
-			return "", locale.NewInputError("err_expand_platform", "Unrecognized platform variable '{{.V0}}'", name)
-		}
-	}
-	return "", nil
-}
-
 // EventExpander expands events defined in the project-file.
 func EventExpander(_ string, name string, meta string, isFunction bool, ctx *Expansion) (string, error) {
 	projectFile := ctx.Project.Source()
