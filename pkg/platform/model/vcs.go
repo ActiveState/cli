@@ -675,50 +675,7 @@ func (cs indexedCommits) countBetween(first, last string) (int, error) {
 }
 
 // CommitPlatform commits a single platform commit
-func CommitPlatform(pj ProjectInfo, op Operation, name, version string, word int) error {
-	platform, err := FetchPlatformByDetails(name, version, word)
-	if err != nil {
-		return err
-	}
-
-	pjm, err := FetchProjectByName(pj.Owner(), pj.Name())
-	if err != nil {
-		return errs.Wrap(err, "Could not fetch project")
-	}
-
-	branch, err := BranchForProjectByName(pjm, pj.BranchName())
-	if err != nil {
-		return errs.Wrap(err, "Could not fetch branch: %s", pj.BranchName())
-	}
-
-	if branch.CommitID == nil {
-		return locale.NewError("err_project_no_languages")
-	}
-
-	var msgL10nKey string
-	switch op {
-	case OperationAdded:
-		msgL10nKey = "commit_message_add_platform"
-	case OperationUpdated:
-		return errs.New("this is not supported yet")
-	case OperationRemoved:
-		msgL10nKey = "commit_message_removed_platform"
-	}
-
-	bCommitID := *branch.CommitID
-	msg := locale.Tr(msgL10nKey, name, strconv.Itoa(word), version)
-	platformID := platform.PlatformID.String()
-
-	// version is not the value that AddCommit needs - platforms do not post a version
-	commit, err := AddCommit(bCommitID, msg, op, NewNamespacePlatform(), platformID, "")
-	if err != nil {
-		return err
-	}
-
-	return UpdateBranchCommit(branch.BranchID, commit.CommitID)
-}
-
-func CommitPlatform2(parentCommitID strfmt.UUID, op Operation, name, version string, word int) (*mono_models.Commit, error) {
+func CommitPlatform(parentCommitID strfmt.UUID, op Operation, name, version string, word int) (*mono_models.Commit, error) {
 	platform, err := FetchPlatformByDetails(name, version, word)
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not fetch platform")

@@ -43,7 +43,7 @@ func (a *Add) Run(ps AddRunParams) error {
 		return locale.NewInputError("err_no_project")
 	}
 
-	commit, err := model.CommitPlatform2(
+	commit, err := model.CommitPlatform(
 		a.project.CommitUUID(),
 		model.OperationAdded,
 		params.name, params.version, params.BitWidth,
