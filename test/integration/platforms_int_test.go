@@ -66,19 +66,14 @@ func (suite *PlatformsIntegrationTestSuite) TestPlatforms_addRemove() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	username := ts.CreateNewUser()
-	namespace := fmt.Sprintf("%s/%s", username, "platform-test")
+	ts.LoginAsPersistentUser()
 
-	cp := ts.Spawn("fork", "ActiveState-CLI/Platforms", "--org", username, "--name", "platform-test")
-	cp.ExpectExitCode(0)
-
-	cp = ts.Spawn("activate", namespace, "--path="+ts.Dirs.Work, "--output=json")
-	cp.ExpectExitCode(0)
+	ts.PrepareActiveStateYAML(`project: "https://platform.activestate.com/ActiveState-CLI/Platforms?commitID=e685d3d8-98bc-4703-927f-e1d7225c6457&branch=main`)
 
 	platform := "Windows"
 	version := "10.0.17134.1"
 
-	cp = ts.Spawn("platforms", "add", fmt.Sprintf("%s@%s", platform, version))
+	cp := ts.Spawn("platforms", "add", fmt.Sprintf("%s@%s", platform, version))
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("platforms")
@@ -107,19 +102,14 @@ func (suite *PlatformsIntegrationTestSuite) TestPlatforms_addRemoveLatest() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	username := ts.CreateNewUser()
-	namespace := fmt.Sprintf("%s/%s", username, "platform-test")
+	ts.LoginAsPersistentUser()
 
-	cp := ts.Spawn("fork", "ActiveState-CLI/Platforms", "--org", username, "--name", "platform-test")
-	cp.ExpectExitCode(0)
-
-	cp = ts.Spawn("activate", namespace, "--path="+ts.Dirs.Work, "--output=json")
-	cp.ExpectExitCode(0)
+	ts.PrepareActiveStateYAML(`project: "https://platform.activestate.com/ActiveState-CLI/Platforms?commitID=e685d3d8-98bc-4703-927f-e1d7225c6457&branch=main`)
 
 	platform := "Windows"
 	version := "10.0.17134.1"
 
-	cp = ts.Spawn("platforms", "add", "windows")
+	cp := ts.Spawn("platforms", "add", "windows")
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("platforms")

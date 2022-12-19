@@ -43,13 +43,17 @@ func (a *Add) Run(ps AddRunParams) error {
 		return locale.NewInputError("err_no_project")
 	}
 
-	err = model.CommitPlatform(
-		a.project,
+	commit, err := model.CommitPlatform2(
+		a.project.CommitUUID(),
 		model.OperationAdded,
 		params.name, params.version, params.BitWidth,
 	)
 	if err != nil {
-		return err
+		return locale.WrapError(err, "err_add_platform", "Could not add platform.")
+	}
+
+	if err := a.project.SetCommit(commit.CommitID.String()); err != nil {
+		return locale.WrapError(err, "err_package_update_pjfile")
 	}
 
 	a.out.Notice(locale.Tr("platform_added", params.name, params.version))

@@ -3,6 +3,7 @@ package platforms
 import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -14,19 +15,20 @@ type RemoveRunParams struct {
 
 // Remove manages the removeing execution context.
 type Remove struct {
-	*project.Project
+	project *project.Project
+	out     output.Outputer
 }
 
 // NewRemove prepares a remove execution context for use.
 func NewRemove(prime primeable) *Remove {
-	return &Remove{prime.Project()}
+	return &Remove{prime.Project(), prime.Output()}
 }
 
 // Run executes the remove behavior.
 func (r *Remove) Run(ps RemoveRunParams) error {
 	logging.Debug("Execute platforms remove")
 
-	if r.Project == nil {
+	if r.project == nil {
 		return locale.NewInputError("err_no_project")
 	}
 
@@ -35,9 +37,20 @@ func (r *Remove) Run(ps RemoveRunParams) error {
 		return nil
 	}
 
-	return model.CommitPlatform(
-		r.Project,
+	commit, err := model.CommitPlatform2(
+		r.project.CommitUUID(),
 		model.OperationRemoved,
 		params.name, params.version, params.BitWidth,
 	)
+	if err != nil {
+		return locale.WrapError(err, "err_remove_platform", "Could not remove platform.")
+	}
+
+	if err := r.project.SetCommit(commit.CommitID.String()); err != nil {
+		return locale.WrapError(err, "err_package_update_pjfile")
+	}
+
+	r.out.Notice(locale.Tr("platform_removed", params.name, params.version))
+
+	return nil
 }
