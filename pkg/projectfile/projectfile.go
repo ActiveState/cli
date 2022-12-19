@@ -13,7 +13,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ActiveState/cli/internal-as/assets"
 	"github.com/ActiveState/cli/internal-as/config"
 	"github.com/ActiveState/cli/internal-as/constants"
 	"github.com/ActiveState/cli/internal-as/errs"
@@ -24,6 +23,7 @@ import (
 	"github.com/ActiveState/cli/internal-as/osutils"
 	"github.com/ActiveState/cli/internal-as/rollbar"
 	"github.com/ActiveState/cli/internal-as/rtutils"
+	"github.com/ActiveState/cli/internal/assets"
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/hash"
 	"github.com/ActiveState/cli/internal/language"

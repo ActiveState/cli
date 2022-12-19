@@ -9,10 +9,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/ActiveState/cli/internal-as/assets"
 	"github.com/ActiveState/cli/internal-as/errs"
 	"github.com/ActiveState/cli/internal-as/fileutils"
 	"github.com/ActiveState/cli/internal-as/osutils/user"
+	"github.com/ActiveState/cli/internal/assets"
 	"github.com/ActiveState/cli/internal/strutils"
 )
 

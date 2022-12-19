@@ -11,7 +11,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/go-openapi/strfmt"
 
-	"github.com/ActiveState/cli/internal-as/assets"
 	"github.com/ActiveState/cli/internal-as/config"
 	"github.com/ActiveState/cli/internal-as/errs"
 	"github.com/ActiveState/cli/internal-as/exeutils"
@@ -25,6 +24,7 @@ import (
 	"github.com/ActiveState/cli/internal-as/runbits"
 	"github.com/ActiveState/cli/internal-as/subshell"
 	"github.com/ActiveState/cli/internal-as/subshell/sscommon"
+	"github.com/ActiveState/cli/internal/assets"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
