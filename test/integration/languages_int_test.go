@@ -26,7 +26,7 @@ func (suite *LanguagesIntegrationTestSuite) TestLanguages_list() {
 	cp := ts.Spawn("languages")
 	cp.Expect("Name")
 	cp.Expect("Python")
-	cp.Expect("3.6.6")
+	cp.Expect("3.9.15")
 	cp.ExpectExitCode(0)
 }
 
@@ -59,8 +59,8 @@ func (suite *LanguagesIntegrationTestSuite) TestLanguages_install() {
 	cp.Expect("Language: python is already installed")
 	cp.ExpectExitCode(1)
 
-	cp = ts.Spawn("languages", "install", "python@3.8.2")
-	cp.Expect("Language added: python@3.8.2")
+	cp = ts.Spawn("languages", "install", "python@3.9.16")
+	cp.Expect("Language added: python@3.9.16")
 	// This can take a little while
 	cp.ExpectExitCode(0, 60*time.Second)
 
@@ -81,12 +81,12 @@ func (suite *LanguagesIntegrationTestSuite) TestLanguages_install() {
 }
 
 func (suite *LanguagesIntegrationTestSuite) PrepareActiveStateYAML(ts *e2e.Session) {
-	asyData := `project: "https://platform.activestate.com/cli-integration-tests/Languages?commitID=e7df00bc-df4d-4e4a-97f7-efa741159bd2&branch=main"`
+	asyData := `project: "https://platform.activestate.com/ActiveState-CLI/Languages?commitID=e7df00bc-df4d-4e4a-97f7-efa741159bd2&branch=main"`
 	ts.PrepareActiveStateYAML(asyData)
 }
 
 func (suite *LanguagesIntegrationTestSuite) PrepareActiveStateYAMLNoCommitID(ts *e2e.Session) {
-	asyData := `project: "https://platform.activestate.com/cli-integration-tests/Languages"`
+	asyData := `project: "https://platform.activestate.com/ActiveState-CLI/Languages"`
 	ts.PrepareActiveStateYAML(asyData)
 }
 
