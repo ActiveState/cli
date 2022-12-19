@@ -68,7 +68,7 @@ func (suite *PlatformsIntegrationTestSuite) TestPlatforms_addRemove() {
 
 	ts.LoginAsPersistentUser()
 
-	ts.PrepareActiveStateYAML(`project: "https://platform.activestate.com/ActiveState-CLI/Platforms?commitID=e685d3d8-98bc-4703-927f-e1d7225c6457&branch=main`)
+	ts.PrepareActiveStateYAML(`project: "https://platform.activestate.com/ActiveState-CLI/Platforms?commitID=e685d3d8-98bc-4703-927f-e1d7225c6457&branch=main"`)
 
 	platform := "Windows"
 	version := "10.0.17134.1"
@@ -104,7 +104,7 @@ func (suite *PlatformsIntegrationTestSuite) TestPlatforms_addRemoveLatest() {
 
 	ts.LoginAsPersistentUser()
 
-	ts.PrepareActiveStateYAML(`project: "https://platform.activestate.com/ActiveState-CLI/Platforms?commitID=e685d3d8-98bc-4703-927f-e1d7225c6457&branch=main`)
+	ts.PrepareActiveStateYAML(`project: "https://platform.activestate.com/ActiveState-CLI/Platforms?commitID=e685d3d8-98bc-4703-927f-e1d7225c6457&branch=main"`)
 
 	platform := "Windows"
 	version := "10.0.17134.1"
