@@ -44,9 +44,13 @@ type IPCommunicator interface {
 
 func NewIPCSockPathFromGlobals() *ipc.SockPath {
 	subdir := fmt.Sprintf("%s-%s", constants.CommandName, "ipc")
+	rootDir := filepath.Join(os.TempDir(), subdir)
+	if os.Getenv(constants.ServiceSockDir) != "" {
+		rootDir = os.Getenv(constants.ServiceSockDir)
+	}
 
 	return &ipc.SockPath{
-		RootDir:    filepath.Join(os.TempDir(), subdir),
+		RootDir:    rootDir,
 		AppName:    constants.CommandName,
 		AppChannel: constants.BranchName,
 	}
