@@ -23,6 +23,7 @@ func (suite *RevertIntegrationTestSuite) TestRevert_failsOnCommitNotInHistory() 
 	namespace := fmt.Sprintf("%s/%s", username, project)
 
 	cp := ts.SpawnWithOpts(e2e.WithArgs("checkout", namespace))
+	cp.ExpectLongString(fmt.Sprintf("Operating on project %s", namespace))
 	cp.Expect("Checked out project")
 	cp.ExpectExitCode(0)
 

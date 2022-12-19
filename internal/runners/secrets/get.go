@@ -47,6 +47,7 @@ func NewGet(p getPrimeable) *Get {
 
 // Run executes the get behavior.
 func (g *Get) Run(params GetRunParams) error {
+	g.out.Notice(locale.Tl("operating_message", "", g.proj.NamespaceString(), g.proj.Dir()))
 	if err := checkSecretsAccess(g.proj); err != nil {
 		return locale.WrapError(err, "secrets_err_check_access")
 	}

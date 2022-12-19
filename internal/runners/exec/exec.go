@@ -77,6 +77,7 @@ func NewParams() *Params {
 
 func (s *Exec) Run(params *Params, args ...string) error {
 	var projectDir string
+	var projectNamespace string
 	var rtTarget setup.Targeter
 
 	if len(args) == 0 {
@@ -98,6 +99,7 @@ func (s *Exec) Run(params *Params, args ...string) error {
 		} else {
 			rtTarget = target.NewProjectTarget(proj, storage.CachePath(), nil, trigger)
 		}
+		projectNamespace = proj.NamespaceString()
 	} else {
 		proj := s.proj
 		if params.Path != "" {
@@ -111,8 +113,11 @@ func (s *Exec) Run(params *Params, args ...string) error {
 			return locale.NewInputError("err_no_project")
 		}
 		projectDir = filepath.Dir(proj.Source().Path())
+		projectNamespace = proj.NamespaceString()
 		rtTarget = target.NewProjectTarget(proj, storage.CachePath(), nil, trigger)
 	}
+
+	s.out.Notice(locale.Tl("operating_message", "", projectNamespace, projectDir))
 
 	rt, err := runtime.New(rtTarget, s.analytics, s.svcModel)
 	if err != nil {
