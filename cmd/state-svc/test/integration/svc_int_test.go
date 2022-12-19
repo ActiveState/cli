@@ -221,7 +221,7 @@ func (suite *SvcIntegrationTestSuite) TestAutostartConfigEnableDisable() {
 	cp.ExpectExitCode(0)
 	// allow time to remove startup files
 	if condition.OnCI() {
-		time.Sleep(30 * time.Second)
+		time.Sleep(1 * time.Minute)
 	} else {
 		time.Sleep(5 * time.Second)
 	}
@@ -234,7 +234,7 @@ func (suite *SvcIntegrationTestSuite) TestAutostartConfigEnableDisable() {
 	cp.ExpectExitCode(0)
 	// allow time to remove startup files
 	if condition.OnCI() {
-		time.Sleep(30 * time.Second)
+		time.Sleep(1 * time.Minute)
 	} else {
 		time.Sleep(5 * time.Second)
 	}
