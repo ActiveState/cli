@@ -36,6 +36,7 @@ func (suite *SwitchIntegrationTestSuite) TestSwitch_Branch() {
 	mainBranchCommitID := pjfile.CommitID()
 
 	cp := ts.SpawnWithOpts(e2e.WithArgs("switch", "secondbranch"))
+	cp.ExpectLongString("Operating on project ActiveState-CLI/Branches")
 	cp.ExpectLongString("Successfully switched to branch:")
 	if runtime.GOOS != "windows" {
 		cp.ExpectExitCode(0)

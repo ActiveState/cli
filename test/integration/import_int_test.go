@@ -37,13 +37,13 @@ func (suite *ImportIntegrationTestSuite) TestImport_headless() {
 	suite.Require().NoError(err)
 
 	cp = ts.Spawn("import", importPath)
+	cp.ExpectLongString("Operating on project ActiveState-CLI/Python3-Import")
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("packages")
 	cp.Expect("requests")
 	cp.Expect("urllib3")
 	cp.ExpectExitCode(0)
-
 }
 
 func TestImportIntegrationTestSuite(t *testing.T) {

@@ -28,6 +28,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_listingSimple() {
 	suite.PrepareActiveStateYAML(ts)
 
 	cp := ts.Spawn("packages")
+	cp.ExpectLongString("Operating on project ActiveState-CLI/List")
 	cp.Expect("Name")
 	cp.Expect("pytest")
 	cp.ExpectExitCode(0)
@@ -386,18 +387,21 @@ func (suite *PackageIntegrationTestSuite) TestPackage_operation() {
 
 	suite.Run("install", func() {
 		cp := ts.Spawn("install", "urllib3@1.25.6")
+		cp.ExpectLongString(fmt.Sprintf("Operating on project %s/python3-pkgtest", username))
 		cp.ExpectRe("(?:Package added|being built)", 30*time.Second)
 		cp.Wait()
 	})
 
 	suite.Run("install (update)", func() {
 		cp := ts.Spawn("install", "urllib3@1.25.8")
+		cp.ExpectLongString(fmt.Sprintf("Operating on project %s/python3-pkgtest", username))
 		cp.ExpectRe("(?:Package updated|being built)", 30*time.Second)
 		cp.Wait()
 	})
 
 	suite.Run("uninstall", func() {
 		cp := ts.Spawn("uninstall", "urllib3")
+		cp.ExpectLongString(fmt.Sprintf("Operating on project %s/python3-pkgtest", username))
 		cp.ExpectRe("(?:Package uninstalled|being built)", 30*time.Second)
 		cp.Wait()
 	})

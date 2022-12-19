@@ -114,6 +114,7 @@ func (suite *RunIntegrationTestSuite) TestInActivatedEnv() {
 	cp.WaitForInput(10 * time.Second)
 
 	cp.SendLine(fmt.Sprintf("%s run testMultipleLanguages", cp.Executable()))
+	cp.ExpectLongString("Operating on project ActiveState-CLI/Python3")
 	cp.Expect("3")
 
 	cp.SendLine(fmt.Sprintf("%s run test-interrupt", cp.Executable()))
