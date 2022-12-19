@@ -3,25 +3,45 @@ package languages
 import (
 	"strings"
 
+	"github.com/ActiveState/cli/internal/analytics"
+	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
+	"github.com/ActiveState/cli/internal/runbits"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
+	"github.com/go-openapi/strfmt"
 )
 
 type Update struct {
-	out     output.Outputer
-	project *project.Project
+	out       output.Outputer
+	project   *project.Project
+	auth      *authentication.Auth
+	analytics analytics.Dispatcher
+	svcModel  *model.SvcModel
 }
 
 type primeable interface {
-	primer.Projecter
 	primer.Outputer
+	primer.Projecter
+	primer.Auther
+	primer.Analyticer
+	primer.SvcModeler
 }
 
 func NewUpdate(prime primeable) *Update {
-	return &Update{prime.Output(), prime.Project()}
+	return &Update{
+		prime.Output(),
+		prime.Project(),
+		prime.Auth(),
+		prime.Analytics(),
+		prime.SvcModel(),
+	}
 }
 
 type UpdateParams struct {
@@ -56,14 +76,19 @@ func (u *Update) Run(params *UpdateParams) error {
 		return err
 	}
 
-	err = removeLanguage(u.project, lang.Name)
+	updateCommit, err := updateLanguage(u.project.CommitUUID(), lang)
+	if err != nil {
+		return locale.WrapError(err, "err_add_language", "Could not add language.")
+	}
+
+	// refresh or install runtime
+	err = runbits.RefreshRuntime(u.auth, u.out, u.analytics, u.project, storage.CachePath(), updateCommit.CommitID, true, target.TriggerPackage, u.svcModel)
 	if err != nil {
 		return err
 	}
 
-	err = addLanguage(u.project, lang)
-	if err != nil {
-		return locale.WrapError(err, "err_add_language", "Could not add language.")
+	if err := u.project.SetCommit(updateCommit.CommitID.String()); err != nil {
+		return locale.WrapError(err, "err_package_update_pjfile")
 	}
 
 	langName := lang.Name
@@ -152,30 +177,20 @@ func ensureVersionTestable(language *model.Language, fetchVersions fetchVersions
 	return locale.NewInputError("err_language_version_not_found", "", language.Version, language.Name)
 }
 
-func removeLanguage(project *project.Project, current string) error {
-	targetCommitID, err := model.BranchCommitID(project.Owner(), project.Name(), project.BranchName())
+func updateLanguage(parentCommit strfmt.UUID, lang *model.Language) (*mono_models.Commit, error) {
+	removeCommit, err := removeCurrentLanguage(parentCommit)
 	if err != nil {
-		return err
+		return nil, errs.Wrap(err, "Could not remove current language.")
 	}
 
-	platformLanguage, err := model.FetchLanguageForCommit(*targetCommitID)
-	if err != nil {
-		return err
-	}
-
-	err = model.CommitLanguage(project, model.OperationRemoved, platformLanguage.Name, platformLanguage.Version)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return model.CommitLanguage(removeCommit.CommitID, model.OperationAdded, lang.Name, lang.Version)
 }
 
-func addLanguage(project *project.Project, lang *model.Language) error {
-	err := model.CommitLanguage(project, model.OperationAdded, lang.Name, lang.Version)
+func removeCurrentLanguage(parentCommit strfmt.UUID) (*mono_models.Commit, error) {
+	platformLanguage, err := model.FetchLanguageForCommit(parentCommit)
 	if err != nil {
-		return err
+		return nil, errs.Wrap(err, "Could not fetch language for commit.")
 	}
 
-	return nil
+	return model.CommitLanguage(parentCommit, model.OperationRemoved, platformLanguage.Name, platformLanguage.Version)
 }

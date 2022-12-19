@@ -719,24 +719,10 @@ func CommitPlatform(pj ProjectInfo, op Operation, name, version string, word int
 }
 
 // CommitLanguage commits a single language to the platform
-func CommitLanguage(pj ProjectInfo, op Operation, name, version string) error {
+func CommitLanguage(commitID strfmt.UUID, op Operation, name, version string) (*mono_models.Commit, error) {
 	lang, err := FetchLanguageByDetails(name, version)
 	if err != nil {
-		return err
-	}
-
-	pjm, err := FetchProjectByName(pj.Owner(), pj.Name())
-	if err != nil {
-		return errs.Wrap(err, "Could not fetch project")
-	}
-
-	branch, err := BranchForProjectByName(pjm, pj.BranchName())
-	if err != nil {
-		return errs.Wrap(err, "Could not fetch branch: %s", pj.BranchName())
-	}
-
-	if branch.CommitID == nil {
-		return locale.NewError("err_project_no_languages")
+		return nil, errs.Wrap(err, "Could not fetch language")
 	}
 
 	var msgL10nKey string
@@ -744,20 +730,14 @@ func CommitLanguage(pj ProjectInfo, op Operation, name, version string) error {
 	case OperationAdded:
 		msgL10nKey = "commit_message_add_language"
 	case OperationUpdated:
-		return errs.New("this is not supported yet")
+		return nil, errs.New("update is not currently supported")
 	case OperationRemoved:
 		msgL10nKey = "commit_message_removed_language"
 	}
 
-	branchCommitID := *branch.CommitID
 	msg := locale.Tr(msgL10nKey, name, version)
 
-	commit, err := AddCommit(branchCommitID, msg, op, NewNamespaceLanguage(), lang.Name, lang.Version)
-	if err != nil {
-		return err
-	}
-
-	return UpdateBranchCommit(branch.BranchID, commit.CommitID)
+	return AddCommit(commitID, msg, op, NewNamespaceLanguage(), lang.Name, lang.Version)
 }
 
 func ChangesetFromRequirements(op Operation, reqs []*gqlModel.Requirement) Changeset {
