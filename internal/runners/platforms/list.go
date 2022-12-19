@@ -32,7 +32,7 @@ func (l *List) Run() error {
 		return locale.NewInputError("err_no_project")
 	}
 
-	listing, err := newListing("", l.proj.Name(), l.proj.Owner(), l.proj.BranchName())
+	listing, err := newListing(l.proj.CommitID(), l.proj.Name(), l.proj.Owner(), l.proj.BranchName())
 	if err != nil {
 		return err
 	}
