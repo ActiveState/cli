@@ -149,6 +149,7 @@ func (s *Show) Run(params Params) error {
 	)
 
 	var projectDir string
+	var projectTarget string
 	if params.Remote != "" {
 		namespaced, err := project.ParseNamespace(params.Remote)
 		if err != nil {
@@ -200,6 +201,8 @@ func (s *Show) Run(params Params) error {
 				return locale.WrapError(err, "err_show_projectdir", "Could not resolve project directory symlink")
 			}
 		}
+
+		projectTarget = target.NewProjectTarget(s.project, storage.CachePath(), nil, "").Dir()
 	}
 
 	remoteProject, err := model.FetchProjectByName(owner, projectName)
@@ -245,7 +248,6 @@ func (s *Show) Run(params Params) error {
 		rd.Location = projectDir
 	}
 
-	projectTarget := target.NewProjectTarget(s.project, storage.CachePath(), nil, "").Dir()
 	if projectTarget != "" {
 		rd.Executables = setup.ExecDir(projectTarget)
 	}
