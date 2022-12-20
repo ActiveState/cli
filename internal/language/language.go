@@ -84,7 +84,7 @@ var lookup = [...]languageData{
 		Executable{constants.ActivePython2Executable, false},
 	},
 	{
-		"ruby", "Ruby", ".rb", true, "ruby", "3.1.2",
+		"ruby", "Ruby", ".rb", true, "ruby", "3.0.4",
 		Executable{constants.RubyExecutable, false},
 	},
 }
