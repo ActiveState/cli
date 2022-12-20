@@ -12,6 +12,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	rt "github.com/ActiveState/cli/pkg/platform/runtime"
+	"github.com/ActiveState/cli/pkg/platform/runtime/setup/events"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -24,7 +25,8 @@ func NewFromProject(
 	an analytics.Dispatcher,
 	svcModel *model.SvcModel,
 	out output.Outputer,
-	auth *authentication.Auth) (*rt.Runtime, error) {
+	auth *authentication.Auth,
+	nonInteractive bool) (*rt.Runtime, error) {
 	projectTarget := target.NewProjectTarget(proj, storage.CachePath(), nil, trigger)
 	rti, err := rt.New(projectTarget, an, svcModel)
 	if err != nil {
@@ -32,9 +34,17 @@ func NewFromProject(
 			return nil, locale.WrapError(err, "err_activate_runtime", "Could not initialize a runtime for this project.")
 		}
 
-		eh, err := runbits.ActivateRuntimeEventHandler(out)
-		if err != nil {
-			return nil, locale.WrapError(err, "err_initialize_runtime_event_handler")
+		var eh *events.RuntimeEventHandler
+		if nonInteractive {
+			eh, err = runbits.ActivateNonInteractiveRuntimeEventHandler(out)
+			if err != nil {
+				return nil, locale.WrapError(err, "err_initialize_runtime_event_handler")
+			}
+		} else {
+			eh, err = runbits.ActivateRuntimeEventHandler(out)
+			if err != nil {
+				return nil, locale.WrapError(err, "err_initialize_runtime_event_handler")
+			}
 		}
 
 		if err = rti.Update(auth, eh); err != nil {

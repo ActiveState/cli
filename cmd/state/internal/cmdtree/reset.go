@@ -26,6 +26,7 @@ func newResetCommand(prime *primer.Values, globals *globalOptions) *captain.Comm
 		},
 		func(ccmd *captain.Command, args []string) error {
 			params.Force = globals.NonInteractive
+			params.NonInteractive = globals.NonInteractive
 			return runner.Run(params)
 		},
 	).SetGroup(VCSGroup)

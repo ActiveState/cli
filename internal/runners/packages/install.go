@@ -7,7 +7,8 @@ import (
 
 // InstallRunParams tracks the info required for running Install.
 type InstallRunParams struct {
-	Package PackageVersion
+	Package        PackageVersion
+	NonInteractive bool
 }
 
 // Install manages the installing execution context.
@@ -23,5 +24,5 @@ func NewInstall(prime primeable) *Install {
 // Run executes the install behavior.
 func (a *Install) Run(params InstallRunParams, nstype model.NamespaceType) error {
 	logging.Debug("ExecuteInstall")
-	return executePackageOperation(a.prime, params.Package.Name(), params.Package.Version(), model.OperationAdded, nstype)
+	return executePackageOperation(a.prime, params.Package.Name(), params.Package.Version(), model.OperationAdded, nstype, params.NonInteractive)
 }

@@ -34,8 +34,9 @@ type Pull struct {
 }
 
 type PullParams struct {
-	Force      bool
-	SetProject string
+	Force          bool
+	SetProject     string
+	NonInteractive bool
 }
 
 type primeable interface {
@@ -162,7 +163,7 @@ func (p *Pull) Run(params *PullParams) error {
 		})
 	}
 
-	err = runbits.RefreshRuntime(p.auth, p.out, p.analytics, p.project, storage.CachePath(), *resultingCommit, true, target.TriggerPull, p.svcModel)
+	err = runbits.RefreshRuntime(p.auth, p.out, p.analytics, p.project, storage.CachePath(), *resultingCommit, true, target.TriggerPull, p.svcModel, params.NonInteractive)
 	if err != nil {
 		return locale.WrapError(err, "err_pull_refresh", "Could not refresh runtime after pull")
 	}

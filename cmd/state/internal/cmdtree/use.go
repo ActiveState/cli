@@ -8,7 +8,7 @@ import (
 	"github.com/ActiveState/cli/pkg/project"
 )
 
-func newUseCommand(prime *primer.Values) *captain.Command {
+func newUseCommand(prime *primer.Values, globals *globalOptions) *captain.Command {
 	params := &use.Params{
 		Namespace: &project.Namespaced{AllowOmitOwner: true},
 	}
@@ -27,6 +27,7 @@ func newUseCommand(prime *primer.Values) *captain.Command {
 			},
 		},
 		func(_ *captain.Command, _ []string) error {
+			params.NonInteractive = globals.NonInteractive
 			return use.NewUse(prime).Run(params)
 		},
 	).SetGroup(EnvironmentUsageGroup).SetUnstable(true)

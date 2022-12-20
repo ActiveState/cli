@@ -16,7 +16,7 @@ import (
 
 const activateCmdName = "activate"
 
-func newActivateCommand(prime *primer.Values) *captain.Command {
+func newActivateCommand(prime *primer.Values, globals *globalOptions) *captain.Command {
 	runner := activate.NewActivate(prime)
 
 	params := activate.ActivateParams{
@@ -58,6 +58,7 @@ func newActivateCommand(prime *primer.Values) *captain.Command {
 			sighandler.Push(as)
 			defer sighandler.Pop()
 			err := as.WaitForFunc(func() error {
+				params.NonInteractive = globals.NonInteractive
 				return runner.Run(&params)
 			})
 

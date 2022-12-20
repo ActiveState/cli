@@ -10,13 +10,15 @@ import (
 
 // CmdCall manages the event handling flow triggered by command calls.
 type CmdCall struct {
-	primer *primer.Values
+	primer         *primer.Values
+	nonInteractive bool
 }
 
 // New returns a pointer to a prepared CmdCall instance.
-func New(p *primer.Values) *CmdCall {
+func New(p *primer.Values, nonInteractive bool) *CmdCall {
 	return &CmdCall{
-		primer: p,
+		primer:         p,
+		nonInteractive: nonInteractive,
 	}
 }
 
@@ -24,7 +26,7 @@ func New(p *primer.Values) *CmdCall {
 // and then handles the after command logic.
 func (c *CmdCall) InterceptExec(next captain.ExecuteFunc) captain.ExecuteFunc {
 	return func(cmd *captain.Command, args []string) error {
-		cc := cmdcall.New(c.primer, cmd.UseFull())
+		cc := cmdcall.New(c.primer, cmd.UseFull(), c.nonInteractive)
 
 		if err := cc.Run(project.BeforeCmd); err != nil {
 			return errs.Wrap(err, "before-command event run failure")

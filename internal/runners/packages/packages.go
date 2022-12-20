@@ -47,7 +47,7 @@ type configurable interface {
 
 const latestVersion = "latest"
 
-func executePackageOperation(prime primeable, packageName, packageVersion string, operation model.Operation, nsType model.NamespaceType) (rerr error) {
+func executePackageOperation(prime primeable, packageName, packageVersion string, operation model.Operation, nsType model.NamespaceType, nonInteractive bool) (rerr error) {
 	var ns model.Namespace
 	var langVersion string
 	langName := "undetermined"
@@ -183,7 +183,7 @@ func executePackageOperation(prime primeable, packageName, packageVersion string
 	pg.Stop(locale.T("progress_success"))
 
 	// refresh or install runtime
-	err = runbits.RefreshRuntime(prime.Auth(), prime.Output(), prime.Analytics(), pj, storage.CachePath(), commitID, orderChanged, target.TriggerPackage, prime.SvcModel())
+	err = runbits.RefreshRuntime(prime.Auth(), prime.Output(), prime.Analytics(), pj, storage.CachePath(), commitID, orderChanged, target.TriggerPackage, prime.SvcModel(), nonInteractive)
 	if err != nil {
 		return err
 	}

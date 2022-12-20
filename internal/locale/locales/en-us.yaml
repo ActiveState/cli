@@ -2020,3 +2020,9 @@ warning_macos_bash:
 operating_message:
   other: |
     Operating on project [ACTIONABLE]{{.V0}}[/RESET], located at [ACTIONABLE]{{.V1}}[/RESET].
+runtime_dotprogress_start:
+  other: |
+    Setting up runtime
+runtime_dotprogress_end:
+  other: |
+    Runtime setup complete

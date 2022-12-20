@@ -16,8 +16,9 @@ import (
 )
 
 type Params struct {
-	Force    bool
-	CommitID string
+	Force          bool
+	CommitID       string
+	NonInteractive bool
 }
 
 type Reset struct {
@@ -96,7 +97,7 @@ func (r *Reset) Run(params *Params) error {
 		return locale.WrapError(err, "err_reset_set_commit", "Could not update commit ID")
 	}
 
-	err = runbits.RefreshRuntime(r.auth, r.out, r.analytics, r.project, storage.CachePath(), commitID, true, target.TriggerReset, r.svcModel)
+	err = runbits.RefreshRuntime(r.auth, r.out, r.analytics, r.project, storage.CachePath(), commitID, true, target.TriggerReset, r.svcModel, params.NonInteractive)
 	if err != nil {
 		return locale.WrapError(err, "err_refresh_runtime")
 	}

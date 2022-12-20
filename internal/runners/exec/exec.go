@@ -29,6 +29,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/runtime"
 	"github.com/ActiveState/cli/pkg/platform/runtime/executors"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
+	"github.com/ActiveState/cli/pkg/platform/runtime/setup/events"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
@@ -56,7 +57,8 @@ type primeable interface {
 }
 
 type Params struct {
-	Path string
+	Path           string
+	NonInteractive bool
 }
 
 func New(prime primeable) *Exec {
@@ -124,7 +126,12 @@ func (s *Exec) Run(params *Params, args ...string) error {
 		if !runtime.IsNeedsUpdateError(err) {
 			return locale.WrapError(err, "err_activate_runtime", "Could not initialize a runtime for this project.")
 		}
-		eh, err := runbits.DefaultRuntimeEventHandler(s.out)
+		var eh *events.RuntimeEventHandler
+		if params.NonInteractive {
+			eh, err = runbits.DefaultNonInteractiveRuntimeEventHandler(s.out)
+		} else {
+			eh, err = runbits.DefaultRuntimeEventHandler(s.out)
+		}
 		if err != nil {
 			return locale.WrapError(err, "err_initialize_runtime_event_handler")
 		}

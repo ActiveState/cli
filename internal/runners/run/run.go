@@ -29,6 +29,12 @@ type Run struct {
 	analytics analytics.Dispatcher
 }
 
+type Params struct {
+	ScriptName     string
+	Args           []string
+	NonInteractive bool
+}
+
 type primeable interface {
 	primer.Auther
 	primer.Outputer
@@ -53,7 +59,7 @@ func New(prime primeable) *Run {
 }
 
 // Run runs the Run run runner.
-func (r *Run) Run(name string, args []string) error {
+func (r *Run) Run(params Params) error {
 	logging.Debug("Execute")
 
 	checker.RunUpdateNotifier(r.svcModel, r.out)
@@ -63,22 +69,22 @@ func (r *Run) Run(name string, args []string) error {
 	}
 	r.out.Notice(locale.Tl("operating_message", "", r.proj.NamespaceString(), r.proj.Dir()))
 
-	if name == "" {
+	if params.ScriptName == "" {
 		return locale.NewError("error_state_run_undefined_name")
 	}
 
-	r.out.Notice(output.Title(locale.Tl("run_script_title", "Running Script: [ACTIONABLE]{{.V0}}[/RESET]", name)))
+	r.out.Notice(output.Title(locale.Tl("run_script_title", "Running Script: [ACTIONABLE]{{.V0}}[/RESET]", params.ScriptName)))
 
 	if authentication.LegacyGet().Authenticated() {
 		checker.RunCommitsBehindNotifier(r.proj, r.out)
 	}
 
-	script := r.proj.ScriptByName(name)
+	script := r.proj.ScriptByName(params.ScriptName)
 	if script == nil {
-		return locale.NewInputError("error_state_run_unknown_name", "", name)
+		return locale.NewInputError("error_state_run_unknown_name", "", params.ScriptName)
 	}
 
-	scriptrunner := scriptrun.New(r.auth, r.out, r.subshell, r.proj, r.cfg, r.analytics, r.svcModel)
+	scriptrunner := scriptrun.New(r.auth, r.out, r.subshell, r.proj, r.cfg, r.analytics, r.svcModel, params.NonInteractive)
 	if !script.Standalone() && scriptrunner.NeedsActivation() {
 		if err := scriptrunner.PrepareVirtualEnv(); err != nil {
 			return locale.WrapError(err, "err_script_run_preparevenv", "Could not prepare virtual environment.")
@@ -94,5 +100,5 @@ func (r *Run) Run(name string, args []string) error {
 	}
 
 	r.out.Notice(output.Heading(locale.Tl("script_output", "Script Output")))
-	return scriptrunner.Run(script, args)
+	return scriptrunner.Run(script, params.Args)
 }

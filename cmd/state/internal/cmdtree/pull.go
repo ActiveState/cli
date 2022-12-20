@@ -28,6 +28,7 @@ func newPullCommand(prime *primer.Values, globals *globalOptions) *captain.Comma
 		[]*captain.Argument{},
 		func(cmd *captain.Command, args []string) error {
 			params.Force = globals.NonInteractive
+			params.NonInteractive = globals.NonInteractive
 			return runner.Run(params)
 		}).SetGroup(VCSGroup)
 }

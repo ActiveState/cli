@@ -25,7 +25,8 @@ type Switch struct {
 }
 
 type SwitchParams struct {
-	Identifier string
+	Identifier     string
+	NonInteractive bool
 }
 
 type primeable interface {
@@ -114,7 +115,7 @@ func (s *Switch) Run(params SwitchParams) error {
 		return locale.WrapError(err, "err_switch_set_commitID", "Could not update commit ID")
 	}
 
-	err = runbits.RefreshRuntime(s.auth, s.out, s.analytics, s.project, storage.CachePath(), identifier.CommitID(), false, target.TriggerSwitch, s.svcModel)
+	err = runbits.RefreshRuntime(s.auth, s.out, s.analytics, s.project, storage.CachePath(), identifier.CommitID(), false, target.TriggerSwitch, s.svcModel, params.NonInteractive)
 	if err != nil {
 		return locale.WrapError(err, "err_refresh_runtime")
 	}

@@ -131,7 +131,7 @@ func (i *Import) Run(params *ImportRunParams) error {
 		return locale.WrapError(err, "err_commit_changeset", "Could not commit import changes")
 	}
 
-	return runbits.RefreshRuntime(i.auth, i.out, i.analytics, i.proj, storage.CachePath(), commitID, true, target.TriggerImport, i.svcModel)
+	return runbits.RefreshRuntime(i.auth, i.out, i.analytics, i.proj, storage.CachePath(), commitID, true, target.TriggerImport, i.svcModel, params.NonInteractive)
 }
 
 func removeRequirements(conf Confirmer, project *project.Project, params *ImportRunParams, reqs []*gqlModel.Requirement) error {

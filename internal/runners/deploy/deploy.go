@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/analytics"
+	"github.com/ActiveState/cli/pkg/platform/runtime/setup/events"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/go-openapi/strfmt"
 
@@ -33,10 +34,11 @@ import (
 )
 
 type Params struct {
-	Namespace project.Namespaced
-	Path      string
-	Force     bool
-	UserScope bool
+	Namespace      project.Namespaced
+	Path           string
+	Force          bool
+	UserScope      bool
+	NonInteractive bool
 }
 
 // RequiresAdministratorRights checks if the requested deploy command requires administrator privileges.
@@ -101,7 +103,7 @@ func (d *Deploy) Run(params *Params) error {
 
 	if d.step == UnsetStep || d.step == InstallStep {
 		logging.Debug("Running install step")
-		if err := d.install(rtTarget); err != nil {
+		if err := d.install(rtTarget, params.NonInteractive); err != nil {
 			return err
 		}
 	}
@@ -151,7 +153,7 @@ func (d *Deploy) commitID(namespace project.Namespaced) (strfmt.UUID, error) {
 	return *commitID, nil
 }
 
-func (d *Deploy) install(rtTarget setup.Targeter) error {
+func (d *Deploy) install(rtTarget setup.Targeter, nonInteractive bool) error {
 	d.output.Notice(output.Heading(locale.T("deploy_install")))
 
 	rti, err := runtime.New(rtTarget, d.analytics, d.svcModel)
@@ -162,7 +164,12 @@ func (d *Deploy) install(rtTarget setup.Targeter) error {
 	if !runtime.IsNeedsUpdateError(err) {
 		return locale.WrapError(err, "deploy_runtime_err", "Could not initialize runtime")
 	}
-	eh, err := runbits.DefaultRuntimeEventHandler(d.output)
+	var eh *events.RuntimeEventHandler
+	if nonInteractive {
+		eh, err = runbits.DefaultNonInteractiveRuntimeEventHandler(d.output)
+	} else {
+		eh, err = runbits.DefaultRuntimeEventHandler(d.output)
+	}
 	if err != nil {
 		return locale.WrapError(err, "err_initialize_runtime_event_handler")
 	}

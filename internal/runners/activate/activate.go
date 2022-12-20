@@ -48,10 +48,11 @@ type Activate struct {
 }
 
 type ActivateParams struct {
-	Namespace     *project.Namespaced
-	PreferredPath string
-	Default       bool
-	Branch        string
+	Namespace      *project.Namespaced
+	PreferredPath  string
+	Default        bool
+	Branch         string
+	NonInteractive bool
 }
 
 type primeable interface {
@@ -174,7 +175,8 @@ func (r *Activate) run(params *ActivateParams) error {
 		}
 	}
 
-	rt, err := runtime.NewFromProject(proj, target.TriggerActivate, r.analytics, r.svcModel, r.out, r.auth)
+	fmt.Println("NonInteractive: ", params.NonInteractive)
+	rt, err := runtime.NewFromProject(proj, target.TriggerActivate, r.analytics, r.svcModel, r.out, r.auth, params.NonInteractive)
 	if err != nil {
 		return locale.WrapError(err, "err_could_not_activate_venv", "Could not activate project")
 	}

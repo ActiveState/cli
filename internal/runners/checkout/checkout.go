@@ -20,9 +20,10 @@ import (
 )
 
 type Params struct {
-	Namespace     *project.Namespaced
-	PreferredPath string
-	Branch        string
+	Namespace      *project.Namespaced
+	PreferredPath  string
+	Branch         string
+	NonInteractive bool
 }
 
 type primeable interface {
@@ -74,7 +75,7 @@ func (u *Checkout) Run(params *Params) error {
 		return locale.WrapError(err, "err_project_frompath")
 	}
 
-	rti, err := runtime.NewFromProject(proj, target.TriggerCheckout, u.analytics, u.svcModel, u.out, u.auth)
+	rti, err := runtime.NewFromProject(proj, target.TriggerCheckout, u.analytics, u.svcModel, u.out, u.auth, params.NonInteractive)
 	if err != nil {
 		return locale.WrapError(err, "err_checkout_runtime_new", "Could not checkout this project.")
 	}

@@ -46,7 +46,7 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 		newExportConfigCommand(prime),
 		newExportGithubActionCommand(prime),
 		newExportDocsCommand(prime),
-		newExportEnvCommand(prime),
+		newExportEnvCommand(prime, globals),
 	)
 
 	platformsCmd := newPlatformsCommand(prime)
@@ -71,9 +71,9 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 		newCleanConfigCommand(prime),
 	)
 
-	deployCmd := newDeployCommand(prime)
+	deployCmd := newDeployCommand(prime, globals)
 	deployCmd.AddChildren(
-		newDeployInstallCommand(prime),
+		newDeployInstallCommand(prime, globals),
 		newDeployConfigureCommand(prime),
 		newDeploySymlinkCommand(prime),
 		newDeployReportCommand(prime),
@@ -86,8 +86,8 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 	eventsCmd := newEventsCommand(prime)
 	eventsCmd.AddChildren(newEventsLogCommand(prime))
 
-	installCmd := newInstallCommand(prime)
-	uninstallCmd := newUninstallCommand(prime)
+	installCmd := newInstallCommand(prime, globals)
+	uninstallCmd := newUninstallCommand(prime, globals)
 	importCmd := newImportCommand(prime, globals)
 	searchCmd := newSearchCommand(prime)
 	infoCmd := newInfoCommand(prime)
@@ -131,7 +131,7 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 		/*  Disabled as per https://www.pivotaltracker.com/story/show/177051006
 		newBranchAddCommand(prime),
 		*/
-		newBranchSwitchCommand(prime),
+		newBranchSwitchCommand(prime, globals),
 	)
 	prepareCmd := newPrepareCommand(prime)
 	prepareCmd.AddChildren(newPrepareCompletionsCommand(prime))
@@ -139,19 +139,19 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 	configCmd := newConfigCommand(prime)
 	configCmd.AddChildren(newConfigGetCommand(prime), newConfigSetCommand(prime))
 
-	checkoutCmd := newCheckoutCommand(prime)
+	checkoutCmd := newCheckoutCommand(prime, globals)
 
-	useCmd := newUseCommand(prime)
+	useCmd := newUseCommand(prime, globals)
 	useCmd.AddChildren(
 		newUseResetCommand(prime, globals),
 		newUseShowCommand(prime),
 	)
 
-	shellCmd := newShellCommand(prime)
+	shellCmd := newShellCommand(prime, globals)
 
 	stateCmd := newStateCommand(globals, prime)
 	stateCmd.AddChildren(
-		newActivateCommand(prime),
+		newActivateCommand(prime, globals),
 		newInitCommand(prime),
 		newPushCommand(prime),
 		cveCmd,
@@ -159,7 +159,7 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 		authCmd,
 		exportCmd,
 		newOrganizationsCommand(prime),
-		newRunCommand(prime),
+		newRunCommand(prime, globals),
 		newShowCommand(prime),
 		installCmd,
 		uninstallCmd,
@@ -193,7 +193,7 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 		checkoutCmd,
 		useCmd,
 		shellCmd,
-		newSwitchCommand(prime),
+		newSwitchCommand(prime, globals),
 	)
 
 	return &CmdTree{
@@ -297,7 +297,7 @@ func newStateCommand(globals *globalOptions, prime *primer.Values) *captain.Comm
 		},
 	)
 
-	cmdCall := cmdcall.New(prime)
+	cmdCall := cmdcall.New(prime, globals.NonInteractive)
 
 	cmd.SetHasVariableArguments()
 	cmd.SetInterceptChain(cmdCall.InterceptExec)

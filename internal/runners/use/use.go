@@ -25,7 +25,8 @@ import (
 )
 
 type Params struct {
-	Namespace *project.Namespaced
+	Namespace      *project.Namespaced
+	NonInteractive bool
 }
 
 type primeable interface {
@@ -79,7 +80,7 @@ func (u *Use) Run(params *Params) error {
 		return locale.NewInputError("err_use_commit_id_mismatch")
 	}
 
-	rti, err := runtime.NewFromProject(proj, target.TriggerUse, u.analytics, u.svcModel, u.out, u.auth)
+	rti, err := runtime.NewFromProject(proj, target.TriggerUse, u.analytics, u.svcModel, u.out, u.auth, params.NonInteractive)
 	if err != nil {
 		return locale.WrapError(err, "err_use_runtime_new", "Cannot use this project.")
 	}

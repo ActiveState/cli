@@ -47,7 +47,7 @@ func newPackagesCommand(prime *primer.Values) *captain.Command {
 	return cmd
 }
 
-func newInstallCommand(prime *primer.Values) *captain.Command {
+func newInstallCommand(prime *primer.Values, globals *globalOptions) *captain.Command {
 	runner := packages.NewInstall(prime)
 
 	params := packages.InstallRunParams{}
@@ -67,12 +67,13 @@ func newInstallCommand(prime *primer.Values) *captain.Command {
 			},
 		},
 		func(_ *captain.Command, _ []string) error {
+			params.NonInteractive = globals.NonInteractive
 			return runner.Run(params, model.NamespacePackage)
 		},
 	).SetGroup(PackagesGroup)
 }
 
-func newUninstallCommand(prime *primer.Values) *captain.Command {
+func newUninstallCommand(prime *primer.Values, globals *globalOptions) *captain.Command {
 	runner := packages.NewUninstall(prime)
 
 	params := packages.UninstallRunParams{}
@@ -92,6 +93,7 @@ func newUninstallCommand(prime *primer.Values) *captain.Command {
 			},
 		},
 		func(_ *captain.Command, _ []string) error {
+			params.NonInteractive = globals.NonInteractive
 			return runner.Run(params, model.NamespacePackage)
 		},
 	).SetGroup(PackagesGroup)

@@ -8,6 +8,7 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/runbits/buildlogfile"
 	"github.com/ActiveState/cli/internal/runbits/changesummary"
+	"github.com/ActiveState/cli/internal/runbits/dotprogress"
 	"github.com/ActiveState/cli/internal/runbits/progressbar"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup/events"
 )
@@ -16,8 +17,16 @@ func DefaultRuntimeEventHandler(out output.Outputer) (*events.RuntimeEventHandle
 	return newRuntimeEventHandler(out, changesummary.New(out))
 }
 
+func DefaultNonInteractiveRuntimeEventHandler(out output.Outputer) (*events.RuntimeEventHandler, error) {
+	return newNonInteractiveRuntimeEventHandler(out, changesummary.New(out))
+}
+
 func ActivateRuntimeEventHandler(out output.Outputer) (*events.RuntimeEventHandler, error) {
 	return newRuntimeEventHandler(out, changesummary.NewEmpty())
+}
+
+func ActivateNonInteractiveRuntimeEventHandler(out output.Outputer) (*events.RuntimeEventHandler, error) {
+	return newNonInteractiveRuntimeEventHandler(out, changesummary.NewEmpty())
 }
 
 func newRuntimeEventHandler(out output.Outputer, changeSummary events.ChangeSummaryDigester) (*events.RuntimeEventHandler, error) {
@@ -31,4 +40,13 @@ func newRuntimeEventHandler(out output.Outputer, changeSummary events.ChangeSumm
 	}
 
 	return events.NewRuntimeEventHandler(progressbar.NewRuntimeProgress(w, out), changeSummary, lc), nil
+}
+
+func newNonInteractiveRuntimeEventHandler(out output.Outputer, changeSummary events.ChangeSummaryDigester) (*events.RuntimeEventHandler, error) {
+	lc, err := buildlogfile.New(out)
+	if err != nil {
+		return nil, errs.Wrap(err, "Failed to initialize buildlog file handler")
+	}
+
+	return events.NewRuntimeEventHandler(dotprogress.NewRuntimeProgress(out), changeSummary, lc), nil
 }

@@ -30,8 +30,9 @@ type Revert struct {
 }
 
 type Params struct {
-	CommitID string
-	Force    bool
+	CommitID       string
+	Force          bool
+	NonInteractive bool
 }
 
 type primeable interface {
@@ -107,7 +108,7 @@ func (r *Revert) Run(params *Params) error {
 		)
 	}
 
-	err = runbits.RefreshRuntime(r.auth, r.out, r.analytics, r.project, storage.CachePath(), revertCommit.CommitID, true, target.TriggerRevert, r.svcModel)
+	err = runbits.RefreshRuntime(r.auth, r.out, r.analytics, r.project, storage.CachePath(), revertCommit.CommitID, true, target.TriggerRevert, r.svcModel, params.NonInteractive)
 	if err != nil {
 		return locale.WrapError(err, "err_refresh_runtime")
 	}

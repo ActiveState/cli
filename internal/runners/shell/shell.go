@@ -25,6 +25,7 @@ import (
 type Params struct {
 	Namespace       *project.Namespaced
 	ChangeDirectory bool
+	NonInteractive  bool
 }
 
 type primeable interface {
@@ -74,7 +75,7 @@ func (u *Shell) Run(params *Params) error {
 		return locale.NewInputError("err_shell_commit_id_mismatch")
 	}
 
-	rti, err := runtime.NewFromProject(proj, target.TriggerShell, u.analytics, u.svcModel, u.out, u.auth)
+	rti, err := runtime.NewFromProject(proj, target.TriggerShell, u.analytics, u.svcModel, u.out, u.auth, params.NonInteractive)
 	if err != nil {
 		return locale.WrapInputError(err, "err_shell_runtime_new", "Could not start a shell/prompt for this project.")
 	}

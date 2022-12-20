@@ -47,7 +47,7 @@ func newBranchAddCommand(prime *primer.Values) *captain.Command {
 		})
 }
 
-func newBranchSwitchCommand(prime *primer.Values) *captain.Command {
+func newBranchSwitchCommand(prime *primer.Values, globals *globalOptions) *captain.Command {
 	runner := swtch.New(prime)
 
 	params := swtch.SwitchParams{}
@@ -67,6 +67,7 @@ func newBranchSwitchCommand(prime *primer.Values) *captain.Command {
 			},
 		},
 		func(_ *captain.Command, _ []string) error {
+			params.NonInteractive = globals.NonInteractive
 			return runner.Run(params)
 		})
 	// We set this command to hidden for backwards compatibility as we cannot

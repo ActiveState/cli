@@ -7,10 +7,10 @@ import (
 	"github.com/ActiveState/cli/internal/runners/run"
 )
 
-func newRunCommand(prime *primer.Values) *captain.Command {
+func newRunCommand(prime *primer.Values, globals *globalOptions) *captain.Command {
 	runner := run.New(prime)
 
-	var name string
+	params := run.Params{}
 
 	cmd := captain.NewCommand(
 		"run",
@@ -22,27 +22,28 @@ func newRunCommand(prime *primer.Values) *captain.Command {
 			{
 				Name:        locale.T("arg_state_run_name"),
 				Description: locale.T("arg_state_run_name_description"),
-				Value:       &name,
+				Value:       &params.ScriptName,
 				Required:    true,
 			},
 		},
 		func(ccmd *captain.Command, args []string) error {
-			if name == "-h" || name == "--help" {
+			if params.ScriptName == "-h" || params.ScriptName == "--help" {
 				prime.Output().Print(ccmd.UsageText())
 				return nil
-			} else if name == "-v" || name == "--verbose" {
+			} else if params.ScriptName == "-v" || params.ScriptName == "--verbose" {
 				if len(args) > 1 {
-					name, args = args[1], args[1:]
+					params.ScriptName, args = args[1], args[1:]
 				} else {
-					name, args = "", []string{}
+					params.ScriptName, args = "", []string{}
 				}
 			}
 
-			if name != "" && len(args) > 0 {
+			if params.ScriptName != "" && len(args) > 0 {
 				args = args[1:]
 			}
-
-			return runner.Run(name, args)
+			params.Args = args
+			params.NonInteractive = globals.NonInteractive
+			return runner.Run(params)
 		},
 	)
 

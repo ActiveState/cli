@@ -22,6 +22,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
+	"github.com/ActiveState/cli/pkg/platform/runtime/setup/events"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -36,12 +37,13 @@ type ScriptRun struct {
 	analytics analytics.Dispatcher
 	svcModel  *model.SvcModel
 
-	venvPrepared bool
-	venvExePath  string
+	nonInteractive bool
+	venvPrepared   bool
+	venvExePath    string
 }
 
 // New returns a pointer to a prepared instance of ScriptRun.
-func New(auth *authentication.Auth, out output.Outputer, subs subshell.SubShell, proj *project.Project, cfg *config.Instance, analytics analytics.Dispatcher, svcModel *model.SvcModel) *ScriptRun {
+func New(auth *authentication.Auth, out output.Outputer, subs subshell.SubShell, proj *project.Project, cfg *config.Instance, analytics analytics.Dispatcher, svcModel *model.SvcModel, nonInteractive bool) *ScriptRun {
 	return &ScriptRun{
 		auth,
 		out,
@@ -51,6 +53,7 @@ func New(auth *authentication.Auth, out output.Outputer, subs subshell.SubShell,
 		analytics,
 		svcModel,
 
+		nonInteractive,
 		false,
 
 		// venvExePath stores a virtual environment's PATH value. If the script
@@ -72,7 +75,12 @@ func (s *ScriptRun) PrepareVirtualEnv() error {
 		if !runtime.IsNeedsUpdateError(err) {
 			return locale.WrapError(err, "err_activate_runtime", "Could not initialize a runtime for this project.")
 		}
-		eh, err := runbits.DefaultRuntimeEventHandler(s.out)
+		var eh *events.RuntimeEventHandler
+		if s.nonInteractive {
+			eh, err = runbits.DefaultNonInteractiveRuntimeEventHandler(s.out)
+		} else {
+			eh, err = runbits.DefaultRuntimeEventHandler(s.out)
+		}
 		if err != nil {
 			return locale.WrapError(err, "err_initialize_runtime_event_handler")
 		}

@@ -10,7 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/runners/deploy/uninstall"
 )
 
-func newDeployCommand(prime *primer.Values) *captain.Command {
+func newDeployCommand(prime *primer.Values, globals *globalOptions) *captain.Command {
 	runner := deploy.NewDeploy(deploy.UnsetStep, prime)
 
 	params := &deploy.Params{}
@@ -50,6 +50,7 @@ func newDeployCommand(prime *primer.Values) *captain.Command {
 			},
 		},
 		func(cmd *captain.Command, args []string) error {
+			params.NonInteractive = globals.NonInteractive
 			return runner.Run(params)
 		})
 	cmd.SetGroup(EnvironmentSetupGroup)
@@ -57,7 +58,7 @@ func newDeployCommand(prime *primer.Values) *captain.Command {
 	return cmd
 }
 
-func newDeployInstallCommand(prime *primer.Values) *captain.Command {
+func newDeployInstallCommand(prime *primer.Values, globals *globalOptions) *captain.Command {
 	runner := deploy.NewDeploy(deploy.InstallStep, prime)
 
 	params := &deploy.Params{}
@@ -83,6 +84,7 @@ func newDeployInstallCommand(prime *primer.Values) *captain.Command {
 			},
 		},
 		func(cmd *captain.Command, args []string) error {
+			params.NonInteractive = globals.NonInteractive
 			return runner.Run(params)
 		})
 }

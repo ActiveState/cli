@@ -10,7 +10,7 @@ import (
 
 const shellCmdName = "shell"
 
-func newShellCommand(prime *primer.Values) *captain.Command {
+func newShellCommand(prime *primer.Values, globals *globalOptions) *captain.Command {
 	runner := shell.New(prime)
 
 	params := &shell.Params{
@@ -38,6 +38,7 @@ func newShellCommand(prime *primer.Values) *captain.Command {
 			},
 		},
 		func(_ *captain.Command, _ []string) error {
+			params.NonInteractive = globals.NonInteractive
 			return runner.Run(params)
 		},
 	)

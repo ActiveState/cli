@@ -8,7 +8,7 @@ import (
 	"github.com/ActiveState/cli/pkg/project"
 )
 
-func newCheckoutCommand(prime *primer.Values) *captain.Command {
+func newCheckoutCommand(prime *primer.Values, globals *globalOptions) *captain.Command {
 	params := &checkout.Params{
 		Namespace: &project.Namespaced{AllowOmitOwner: true},
 	}
@@ -39,6 +39,7 @@ func newCheckoutCommand(prime *primer.Values) *captain.Command {
 			},
 		},
 		func(_ *captain.Command, _ []string) error {
+			params.NonInteractive = globals.NonInteractive
 			return checkout.NewCheckout(prime).Run(params)
 		},
 	)

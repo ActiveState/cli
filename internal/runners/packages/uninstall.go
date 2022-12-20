@@ -8,7 +8,8 @@ import (
 
 // UninstallRunParams tracks the info required for running Uninstall.
 type UninstallRunParams struct {
-	Name string
+	Name           string
+	NonInteractive bool
 }
 
 // Uninstall manages the uninstalling execution context.
@@ -28,5 +29,5 @@ func (r *Uninstall) Run(params UninstallRunParams, nstype model.NamespaceType) e
 		return locale.NewInputError("err_no_project")
 	}
 
-	return executePackageOperation(r.prime, params.Name, "", model.OperationRemoved, nstype)
+	return executePackageOperation(r.prime, params.Name, "", model.OperationRemoved, nstype, params.NonInteractive)
 }

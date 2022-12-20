@@ -181,7 +181,7 @@ func newExportDocsCommand(prime *primer.Values) *captain.Command {
 	return cmd
 }
 
-func newExportEnvCommand(prime *primer.Values) *captain.Command {
+func newExportEnvCommand(prime *primer.Values, globals *globalOptions) *captain.Command {
 	runner := export.NewEnv(prime)
 
 	cmd := captain.NewCommand(
@@ -192,7 +192,7 @@ func newExportEnvCommand(prime *primer.Values) *captain.Command {
 		[]*captain.Flag{},
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, _ []string) error {
-			return runner.Run()
+			return runner.Run(globals.NonInteractive)
 		})
 
 	cmd.SetUnstable(true)
