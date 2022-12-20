@@ -148,6 +148,8 @@ func (s *Show) Run(params Params) error {
 		err         error
 	)
 
+	var projectDir string
+	var projectTarget string
 	if params.Remote != "" {
 		namespaced, err := project.ParseNamespace(params.Remote)
 		if err != nil {
@@ -191,6 +193,16 @@ func (s *Show) Run(params Params) error {
 		}
 
 		commitID = strfmt.UUID(s.project.CommitID())
+
+		projectDir = filepath.Dir(s.project.Path())
+		if fileutils.IsSymlink(projectDir) {
+			projectDir, err = fileutils.ResolveUniquePath(projectDir)
+			if err != nil {
+				return locale.WrapError(err, "err_show_projectdir", "Could not resolve project directory symlink")
+			}
+		}
+
+		projectTarget = target.NewProjectTarget(s.project, storage.CachePath(), nil, "").Dir()
 	}
 
 	remoteProject, err := model.FetchProjectByName(owner, projectName)
@@ -224,24 +236,18 @@ func (s *Show) Run(params Params) error {
 		return locale.WrapError(err, "err_show_secrets", "Could not get secret information")
 	}
 
-	projectDir := filepath.Dir(s.project.Path())
-	if fileutils.IsSymlink(projectDir) {
-		projectDir, err = fileutils.ResolveUniquePath(projectDir)
-		if err != nil {
-			return locale.WrapError(err, "err_show_projectdir", "Could not resolve project directory symlink")
-		}
-	}
-
 	rd := RuntimeDetails{
 		NameSpace:    fmt.Sprintf("%s/%s", owner, projectName),
 		Name:         projectName,
 		Organization: owner,
 		Visibility:   visibilityData(owner, projectName, remoteProject),
 		LastCommit:   commit,
-		Location:     projectDir,
 	}
 
-	projectTarget := target.NewProjectTarget(s.project, storage.CachePath(), nil, "").Dir()
+	if projectDir != "" {
+		rd.Location = projectDir
+	}
+
 	if projectTarget != "" {
 		rd.Executables = setup.ExecDir(projectTarget)
 	}
