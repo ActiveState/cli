@@ -14,7 +14,6 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/installation/storage"
-	"github.com/ActiveState/cli/internal/installmgr"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
@@ -108,15 +107,6 @@ func removeInstall(cfg configurable) error {
 		if err := os.Remove(transitionalStatePath); err != nil && !errors.Is(err, os.ErrNotExist) {
 			aggErr = errs.Wrap(aggErr, "Could not remove %s: %v", transitionalStatePath, err)
 		}
-	}
-
-	appPath, err := installation.LauncherInstallPath()
-	if err != nil {
-		return errs.Wrap(aggErr, "Could not determine OS specific launcher install path")
-	}
-
-	if err := installmgr.RemoveSystemFiles(appPath); err != nil {
-		aggErr = errs.Wrap(aggErr, "Failed to remove system files at %s: %v", appPath, err)
 	}
 
 	if fileutils.DirExists(installPath) {
