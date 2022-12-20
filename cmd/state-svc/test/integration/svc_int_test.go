@@ -219,28 +219,33 @@ func (suite *SvcIntegrationTestSuite) TestAutostartConfigEnableDisable() {
 	// Toggle it via state tool config.
 	cp := ts.SpawnWithOpts(e2e.WithArgs("config", "set", constants.AutostartSvcConfigKey, strconv.FormatBool(!enabled)))
 	cp.ExpectExitCode(0)
-	// allow time to remove startup files
-	if condition.OnCI() {
-		time.Sleep(1 * time.Minute)
-	} else {
-		time.Sleep(5 * time.Second)
-	}
-	toggled, err := as.IsEnabled() // checks if the proper files are in place, not the config key setting
-	suite.Require().NoError(err)
-	suite.Assert().Equal(!enabled, toggled, "autostart has not been changed")
+	suite.checkEnabled(as, !enabled)
 
 	// Toggle it again via state tool config.
 	cp = ts.SpawnWithOpts(e2e.WithArgs("config", "set", constants.AutostartSvcConfigKey, strconv.FormatBool(enabled)))
 	cp.ExpectExitCode(0)
-	// allow time to remove startup files
-	if condition.OnCI() {
-		time.Sleep(1 * time.Minute)
-	} else {
-		time.Sleep(5 * time.Second)
+	suite.checkEnabled(as, enabled)
+}
+
+type autostartApp interface {
+	IsEnabled() (bool, error)
+}
+
+func (suite *SvcIntegrationTestSuite) checkEnabled(as autostartApp, expect bool) {
+	timeout := time.After(1 * time.Minute)
+	tick := time.Tick(1 * time.Second)
+	for {
+		select {
+		case <-timeout:
+			suite.Fail("autostart has not been changed")
+		case <-tick:
+			toggled, err := as.IsEnabled()
+			suite.Require().NoError(err)
+			if suite.Equal(expect, toggled) {
+				return
+			}
+		}
 	}
-	toggled, err = as.IsEnabled() // checks if the proper files are in place, not the config key setting
-	suite.Require().NoError(err)
-	suite.Assert().Equal(enabled, toggled, "autostart has not been changed")
 }
 
 func TestSvcIntegrationTestSuite(t *testing.T) {
