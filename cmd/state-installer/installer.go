@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/ActiveState/cli/cmd/state-installer/internal/legacytray"
 	anaConst "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
@@ -77,6 +78,11 @@ func (i *Installer) Install() (rerr error) {
 		}
 	} else if err != nil {
 		return locale.WrapInputError(err, "err_update_corrupt_install", constants.DocumentationURL)
+	}
+
+	err = legacytray.DetectAndRemove(i.path, i.cfg)
+	if err != nil {
+		multilog.Error("Unable to detect and/or remove legacy tray. Will try again next update. Error: %v", err)
 	}
 
 	// Create target dir
