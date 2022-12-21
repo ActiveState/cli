@@ -238,7 +238,9 @@ func (suite *SvcIntegrationTestSuite) checkEnabled(as autostartApp, expect bool)
 			suite.Fail("autostart has not been changed")
 		case <-tick:
 			toggled, err := as.IsEnabled()
-			suite.Require().NoError(err)
+			if err != nil {
+				suite.FailNow("failed to check autostart", err.Error())
+			}
 			if suite.Equal(expect, toggled) {
 				return
 			}
