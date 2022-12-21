@@ -217,12 +217,12 @@ func (suite *SvcIntegrationTestSuite) TestAutostartConfigEnableDisable() {
 	// Toggle it via state tool config.
 	cp := ts.SpawnWithOpts(e2e.WithArgs("config", "set", constants.AutostartSvcConfigKey, strconv.FormatBool(!enabled)))
 	cp.ExpectExitCode(0)
-	suite.True(suite.expectEnabled(as, !enabled), ts.DebugMessage(fmt.Sprintf("autostart should be %v", !enabled)))
+	suite.Require().True(suite.expectEnabled(as, !enabled), ts.DebugMessage(fmt.Sprintf("autostart should be %v", !enabled)))
 
 	// Toggle it again via state tool config.
 	cp = ts.SpawnWithOpts(e2e.WithArgs("config", "set", constants.AutostartSvcConfigKey, strconv.FormatBool(enabled)))
 	cp.ExpectExitCode(0)
-	suite.True(suite.expectEnabled(as, enabled), ts.DebugMessage(fmt.Sprintf("autostart should be %v", enabled)))
+	suite.Require().True(suite.expectEnabled(as, enabled), ts.DebugMessage(fmt.Sprintf("autostart should be %v", enabled)))
 }
 
 type autostartApp interface {
