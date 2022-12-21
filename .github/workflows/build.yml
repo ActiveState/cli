@@ -320,6 +320,7 @@ jobs:
             fi
           else
             TEST_SUITE_TAGS="all"
+            # On scheduled runs, we only run one test at a time
             TEST_FLAGS="-p 1"
           fi
 
