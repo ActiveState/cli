@@ -217,32 +217,34 @@ func (suite *SvcIntegrationTestSuite) TestAutostartConfigEnableDisable() {
 	// Toggle it via state tool config.
 	cp := ts.SpawnWithOpts(e2e.WithArgs("config", "set", constants.AutostartSvcConfigKey, strconv.FormatBool(!enabled)))
 	cp.ExpectExitCode(0)
-	suite.checkEnabled(as, !enabled)
+	suite.True(suite.expectEnabled(as, !enabled), ts.DebugMessage(fmt.Sprintf("autostart should be %v", !enabled)))
 
 	// Toggle it again via state tool config.
 	cp = ts.SpawnWithOpts(e2e.WithArgs("config", "set", constants.AutostartSvcConfigKey, strconv.FormatBool(enabled)))
 	cp.ExpectExitCode(0)
-	suite.checkEnabled(as, enabled)
+	suite.True(suite.expectEnabled(as, enabled), ts.DebugMessage(fmt.Sprintf("autostart should be %v", enabled)))
 }
 
 type autostartApp interface {
 	IsEnabled() (bool, error)
 }
 
-func (suite *SvcIntegrationTestSuite) checkEnabled(as autostartApp, expect bool) {
+func (suite *SvcIntegrationTestSuite) expectEnabled(as autostartApp, expect bool) bool {
 	timeout := time.After(1 * time.Minute)
 	tick := time.Tick(1 * time.Second)
 	for {
 		select {
 		case <-timeout:
 			suite.Fail("autostart has not been changed")
+			return false
 		case <-tick:
 			toggled, err := as.IsEnabled()
 			if err != nil {
 				suite.FailNow("failed to check autostart", err.Error())
+				return false
 			}
-			if suite.Equal(expect, toggled) {
-				return
+			if expect == toggled {
+				return true
 			}
 		}
 	}

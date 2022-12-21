@@ -320,6 +320,7 @@ jobs:
             fi
           else
             TEST_SUITE_TAGS="all"
+            TEST_FLAGS="-p 1"
           fi
 
           echo "Running integration tests with tags: $TEST_SUITE_TAGS (empty means every test not specifically tagged)"
@@ -330,7 +331,7 @@ jobs:
             TIMEOUT=60m
           fi
           set +e
-          SHELL='' go test -p 1 -timeout $TIMEOUT -v `go list ./... | grep "integration\|automation" | grep -v -e "svc"` >> build/integration-tests.out
+          SHELL='' go test $TEST_FLAGS -timeout $TIMEOUT -v `go list ./... | grep "integration\|automation" | grep -v -e "svc"` >> build/integration-tests.out
           CODE=$?
           cat build/integration-tests.out | gotestfmt
           exit $CODE
