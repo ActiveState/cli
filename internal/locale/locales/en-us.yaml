@@ -2023,6 +2023,6 @@ operating_message:
 runtime_dotprogress_start:
   other: |
     Setting up runtime
-runtime_dotprogress_end:
+runtime_dotprogress_stop:
   other: |
     Runtime setup complete

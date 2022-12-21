@@ -43,6 +43,23 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckout() {
 	cp.ExpectExitCode(0)
 }
 
+func (suite *CheckoutIntegrationTestSuite) TestCheckoutNonInteractive() {
+	suite.OnlyRunForTags(tagsuite.Checkout)
+
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	// Checkout and verify.
+	cp := ts.SpawnWithOpts(
+		e2e.WithArgs("checkout", "ActiveState-CLI/Python3", "--non-interactive"),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
+	cp.Expect("Setting up runtime")
+	cp.Expect("...")
+	cp.Expect("Runtime setup complete")
+	cp.ExpectExitCode(0)
+}
+
 func (suite *CheckoutIntegrationTestSuite) TestCheckoutMultiDir() {
 	suite.OnlyRunForTags(tagsuite.Checkout)
 
