@@ -12,6 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/assets"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils/user"
 	"github.com/ActiveState/cli/internal/strutils"
 )
@@ -80,6 +81,7 @@ func (a *app) IsEnabled() (bool, error) {
 	if err != nil {
 		return false, errs.Wrap(err, "Could not get launch file")
 	}
+	logging.Debug("Checking if %s exists", path)
 	return fileutils.FileExists(path), nil
 }
 
