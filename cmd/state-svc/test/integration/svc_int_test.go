@@ -207,20 +207,35 @@ func (suite *SvcIntegrationTestSuite) TestAutostartConfigEnableDisable() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
+	autostartDir := filepath.Join(ts.Dirs.Config, "autostart")
+	err := fileutils.Mkdir(autostartDir)
+	suite.Require().NoError(err)
+	suite.T().Setenv("_TEST_AUTOSTART_DIR", autostartDir)
+
+	if runtime.GOOS == "linux" {
+		err = fileutils.Touch(filepath.Join(autostartDir, ".profile"))
+		suite.Require().NoError(err)
+	}
+
 	cfg, err := config.New()
 	suite.Require().NoError(err)
 	as, err := autostart.New(svcAutostart.App, ts.SvcExe, nil, svcAutostart.Options, cfg)
 	suite.Require().NoError(err)
-	enabled, err := as.IsEnabled() // checks if the proper files are in place, not the config key setting
-	suite.Require().NoError(err)
 
+	var enabled bool
 	// Toggle it via state tool config.
-	cp := ts.SpawnWithOpts(e2e.WithArgs("config", "set", constants.AutostartSvcConfigKey, strconv.FormatBool(!enabled)))
+	cp := ts.SpawnWithOpts(
+		e2e.WithArgs("config", "set", constants.AutostartSvcConfigKey, strconv.FormatBool(!enabled)),
+		e2e.AppendEnv(fmt.Sprintf("_TEST_AUTOSTART_DIR=%s", autostartDir)),
+	)
 	cp.ExpectExitCode(0)
 	suite.Require().True(suite.expectEnabled(as, !enabled), ts.DebugMessage(fmt.Sprintf("autostart should be %v", !enabled)))
 
 	// Toggle it again via state tool config.
-	cp = ts.SpawnWithOpts(e2e.WithArgs("config", "set", constants.AutostartSvcConfigKey, strconv.FormatBool(enabled)))
+	cp = ts.SpawnWithOpts(
+		e2e.WithArgs("config", "set", constants.AutostartSvcConfigKey, strconv.FormatBool(enabled)),
+		e2e.AppendEnv(fmt.Sprintf("_TEST_AUTOSTART_DIR=%s", autostartDir)),
+	)
 	cp.ExpectExitCode(0)
 	suite.Require().True(suite.expectEnabled(as, enabled), ts.DebugMessage(fmt.Sprintf("autostart should be %v", enabled)))
 }

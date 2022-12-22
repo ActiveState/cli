@@ -67,6 +67,7 @@ func (a *app) disable() error {
 	}
 
 	if !enabled {
+		logging.Debug("Autostart is already disabled for %s", a.Name)
 		return nil
 	}
 	path, err := a.InstallPath()
@@ -81,7 +82,6 @@ func (a *app) IsEnabled() (bool, error) {
 	if err != nil {
 		return false, errs.Wrap(err, "Could not get launch file")
 	}
-	logging.Debug("Checking if %s exists", path)
 	return fileutils.FileExists(path), nil
 }
 
@@ -89,6 +89,9 @@ func (a *app) InstallPath() (string, error) {
 	dir, err := user.HomeDir()
 	if err != nil {
 		return "", errs.Wrap(err, "Could not get home directory")
+	}
+	if testDir, ok := os.LookupEnv("_TEST_AUTOSTART_DIR"); ok {
+		dir = testDir
 	}
 	path := filepath.Join(dir, "Library/LaunchAgents", fmt.Sprintf(launchFileFormatName, filepath.Base(a.Exec)))
 	return path, nil

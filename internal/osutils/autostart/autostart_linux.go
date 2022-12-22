@@ -177,5 +177,8 @@ func prependHomeDir(path string) (string, error) {
 	if err != nil {
 		return "", errs.Wrap(err, "Could not get home directory")
 	}
+	if testDir, ok := os.LookupEnv("_TEST_AUTOSTART_DIR"); ok {
+		homeDir = testDir
+	}
 	return filepath.Join(homeDir, path), nil
 }
