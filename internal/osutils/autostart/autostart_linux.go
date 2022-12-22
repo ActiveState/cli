@@ -9,7 +9,6 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/osutils/shortcut"
 	"github.com/ActiveState/cli/internal/osutils/user"
@@ -148,9 +147,7 @@ func (a *app) IsEnabled() (bool, error) {
 		return false, errs.Wrap(err, "Could not find autostart directory")
 	}
 	path := filepath.Join(dir, a.options.LaunchFileName)
-	logging.Debug("Checkint for autostart file at %s", path)
 	if fileutils.FileExists(path) {
-		logging.Debug("Autostart file exists")
 		return true, nil
 	}
 
@@ -159,13 +156,11 @@ func (a *app) IsEnabled() (bool, error) {
 	if err != nil {
 		return false, errs.Wrap(err, "Could not find ~/.profile")
 	}
-	logging.Debug("Searching for profile at %s", profile)
 	if fileutils.FileExists(profile) {
 		data, err := fileutils.ReadFile(profile)
 		if err != nil {
 			return false, errs.Wrap(err, "Could not read ~/.profile")
 		}
-		logging.Debug("Profile data: %s", string(data))
 		return strings.Contains(string(data), a.Exec), nil
 	}
 
