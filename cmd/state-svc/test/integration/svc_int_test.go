@@ -3,6 +3,7 @@ package integration
 import (
 	"fmt"
 	"net"
+	"os"
 	"path/filepath"
 	"regexp"
 	"runtime"
@@ -210,7 +211,9 @@ func (suite *SvcIntegrationTestSuite) TestAutostartConfigEnableDisable() {
 	autostartDir := filepath.Join(ts.Dirs.Config, "autostart")
 	err := fileutils.Mkdir(autostartDir)
 	suite.Require().NoError(err)
-	suite.T().Setenv("_TEST_AUTOSTART_DIR", autostartDir)
+	err = os.Setenv("_TEST_AUTOSTART_DIR", autostartDir)
+	suite.Require().NoError(err)
+	defer os.Unsetenv("_TEST_AUTOSTART_DIR")
 
 	if runtime.GOOS == "linux" {
 		err = fileutils.Touch(filepath.Join(autostartDir, ".profile"))
