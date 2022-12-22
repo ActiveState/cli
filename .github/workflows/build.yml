@@ -332,7 +332,7 @@ jobs:
             TIMEOUT=60m
           fi
           set +e
-          SHELL='' go test $TEST_FLAGS -timeout $TIMEOUT -v `go list ./... | grep "integration\|automation" | grep -v -e "svc"` >> build/integration-tests.out
+          SHELL='' go test $TEST_FLAGS -timeout $TIMEOUT -v `go list ./... | grep "integration\|automation" | grep -v -e "svc"` &> build/integration-tests.out
           CODE=$?
           cat build/integration-tests.out | gotestfmt
           exit $CODE
