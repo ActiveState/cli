@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/exeutils"
@@ -94,7 +95,7 @@ func removeConfig(configPath string, out output.Outputer) error {
 	return nil
 }
 
-func removeInstall(cfg configurable) error {
+func removeInstall(cfg *config.Instance) error {
 	var aggErr error
 
 	// Get the install path before we remove the actual executable
@@ -147,7 +148,7 @@ func removeEmptyDir(dir string) error {
 	return nil
 }
 
-func cleanInstallDir(dir string, cfg configurable) error {
+func cleanInstallDir(dir string, cfg *config.Instance) error {
 	err := legacytray.DetectAndRemove(dir, cfg)
 	if err != nil {
 		return errs.Wrap(err, "Could not remove legacy tray")

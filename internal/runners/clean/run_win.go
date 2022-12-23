@@ -82,7 +82,7 @@ func removeConfig(configPath string, out output.Outputer) error {
 	return removePaths(logFile.Name(), configPath)
 }
 
-func removeInstall(logFile string, cfg configurable) error {
+func removeInstall(logFile string, cfg *config.Instance) error {
 	svcExec, err := installation.ServiceExec()
 	if err != nil {
 		return locale.WrapError(err, "err_service_exec")
