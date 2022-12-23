@@ -37,16 +37,16 @@ func (suite *PrepareIntegrationTestSuite) TestPrepare() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	autostartDir := filepath.Join(ts.Dirs.Config, "autostart")
+	autostartDir := filepath.Join(ts.Dirs.Work, "autostart")
 	err := fileutils.Mkdir(autostartDir)
 	suite.Require().NoError(err)
-	err = os.Setenv("_TEST_AUTOSTART_DIR", autostartDir)
+	err = os.Setenv(constants.AutostartPathOverrideEnvVarName, autostartDir)
 	suite.Require().NoError(err)
-	defer os.Unsetenv("_TEST_AUTOSTART_DIR")
+	defer os.Unsetenv(constants.AutostartPathOverrideEnvVarName)
 
 	cp := ts.SpawnWithOpts(
 		e2e.WithArgs("_prepare"),
-		e2e.AppendEnv(fmt.Sprintf("_TEST_AUTOSTART_DIR=%s", autostartDir)),
+		e2e.AppendEnv(fmt.Sprintf("%s=%s", constants.AutostartPathOverrideEnvVarName, autostartDir)),
 		// e2e.AppendEnv(fmt.Sprintf("ACTIVESTATE_CLI_CONFIGDIR=%s", ts.Dirs.Work)),
 	)
 	cp.ExpectExitCode(0)

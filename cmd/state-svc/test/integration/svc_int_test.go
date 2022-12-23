@@ -16,6 +16,7 @@ import (
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/osutils/autostart"
@@ -208,17 +209,12 @@ func (suite *SvcIntegrationTestSuite) TestAutostartConfigEnableDisable() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	autostartDir := filepath.Join(ts.Dirs.Config, "autostart")
+	autostartDir := filepath.Join(ts.Dirs.Work, "autostart")
 	err := fileutils.Mkdir(autostartDir)
 	suite.Require().NoError(err)
-	err = os.Setenv("_TEST_AUTOSTART_DIR", autostartDir)
+	err = os.Setenv(constants.AutostartPathOverrideEnvVarName, autostartDir)
 	suite.Require().NoError(err)
-	defer os.Unsetenv("_TEST_AUTOSTART_DIR")
-
-	if runtime.GOOS == "linux" {
-		err = fileutils.Touch(filepath.Join(autostartDir, ".profile"))
-		suite.Require().NoError(err)
-	}
+	defer os.Unsetenv(constants.AutostartPathOverrideEnvVarName)
 
 	cfg, err := config.New()
 	suite.Require().NoError(err)
@@ -229,40 +225,38 @@ func (suite *SvcIntegrationTestSuite) TestAutostartConfigEnableDisable() {
 	// Toggle it via state tool config.
 	cp := ts.SpawnWithOpts(
 		e2e.WithArgs("config", "set", constants.AutostartSvcConfigKey, strconv.FormatBool(!enabled)),
-		e2e.AppendEnv(fmt.Sprintf("_TEST_AUTOSTART_DIR=%s", autostartDir)),
+		e2e.AppendEnv(fmt.Sprintf("%s=%s", constants.AutostartPathOverrideEnvVarName, autostartDir)),
 	)
 	cp.ExpectExitCode(0)
-	suite.Require().True(suite.expectEnabled(as, !enabled), ts.DebugMessage(fmt.Sprintf("autostart should be %v", !enabled)))
+	suite.Require().NoError(suite.expectEnabled(as, !enabled), ts.DebugMessage(fmt.Sprintf("autostart should be %v", !enabled)))
 
 	// Toggle it again via state tool config.
 	cp = ts.SpawnWithOpts(
 		e2e.WithArgs("config", "set", constants.AutostartSvcConfigKey, strconv.FormatBool(enabled)),
-		e2e.AppendEnv(fmt.Sprintf("_TEST_AUTOSTART_DIR=%s", autostartDir)),
+		e2e.AppendEnv(fmt.Sprintf("%s=%s", constants.AutostartPathOverrideEnvVarName, autostartDir)),
 	)
 	cp.ExpectExitCode(0)
-	suite.Require().True(suite.expectEnabled(as, enabled), ts.DebugMessage(fmt.Sprintf("autostart should be %v", enabled)))
+	suite.Require().NoError(suite.expectEnabled(as, enabled), ts.DebugMessage(fmt.Sprintf("autostart should be %v", enabled)))
 }
 
 type autostartApp interface {
 	IsEnabled() (bool, error)
 }
 
-func (suite *SvcIntegrationTestSuite) expectEnabled(as autostartApp, expect bool) bool {
+func (suite *SvcIntegrationTestSuite) expectEnabled(as autostartApp, expect bool) error {
 	timeout := time.After(1 * time.Minute)
 	tick := time.Tick(1 * time.Second)
 	for {
 		select {
 		case <-timeout:
-			suite.Fail("autostart has not been changed")
-			return false
+			return errs.New("timed out waiting for autostart to be changed")
 		case <-tick:
 			toggled, err := as.IsEnabled()
 			if err != nil {
-				suite.FailNow("failed to check autostart", err.Error())
-				return false
+				return errs.Wrap(err, "Could not check if autostart is enabled")
 			}
 			if expect == toggled {
-				return true
+				return nil
 			}
 		}
 	}

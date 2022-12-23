@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/assets"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/logging"
@@ -90,7 +91,7 @@ func (a *app) InstallPath() (string, error) {
 	if err != nil {
 		return "", errs.Wrap(err, "Could not get home directory")
 	}
-	if testDir, ok := os.LookupEnv("_TEST_AUTOSTART_DIR"); ok {
+	if testDir, ok := os.LookupEnv(constants.AutostartPathOverrideEnvVarName); ok {
 		dir = testDir
 	}
 	path := filepath.Join(dir, "Library/LaunchAgents", fmt.Sprintf(launchFileFormatName, filepath.Base(a.Exec)))

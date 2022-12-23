@@ -68,7 +68,7 @@ func (a *app) InstallPath() (string, error) {
 
 func (a *app) shortcutFilename() string {
 	name := formattedName(a.Name)
-	if testDir, ok := os.LookupEnv("_TEST_AUTOSTART_DIR"); ok {
+	if testDir, ok := os.LookupEnv(constants.AutostartPathOverrideEnvVarName); ok {
 		startupPath = testDir
 	}
 	return filepath.Join(startupPath, name+".lnk")
