@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -18,11 +19,7 @@ const trayAppName = "ActiveState Desktop (Preview)"
 const stateUpdateDialogCmd = "state-update-dialog"
 const trayLaunchFileName = "state-tray.desktop"
 
-type configurable interface {
-	GetInt(string) int
-}
-
-func DetectAndRemove(path string, cfg configurable) error {
+func DetectAndRemove(path string, cfg *config.Instance) error {
 	binDir := filepath.Join(path, installation.BinDirName)
 	trayExec := filepath.Join(binDir, stateTrayCmd+exeutils.Extension)
 	if !fileutils.FileExists(trayExec) {
@@ -69,7 +66,7 @@ func DetectAndRemove(path string, cfg configurable) error {
 
 const configKeyTrayPid = "tray-pid"
 
-func stopTrayApp(cfg configurable) error {
+func stopTrayApp(cfg *config.Instance) error {
 	proc, err := getTrayProcess(cfg)
 	if err != nil {
 		if errors.Is(err, process.ErrorProcessNotRunning) {
@@ -85,7 +82,7 @@ func stopTrayApp(cfg configurable) error {
 	return nil
 }
 
-func getTrayProcess(cfg configurable) (*process.Process, error) {
+func getTrayProcess(cfg *config.Instance) (*process.Process, error) {
 	trayPid := cfg.GetInt(configKeyTrayPid)
 	if trayPid <= 0 {
 		return nil, errs.Wrap(process.ErrorProcessNotRunning, "state-tray pid not set in config")
