@@ -228,7 +228,7 @@ func (suite *SvcIntegrationTestSuite) TestAutostartConfigEnableDisable() {
 		e2e.AppendEnv(fmt.Sprintf("%s=%s", constants.AutostartPathOverrideEnvVarName, autostartDir)),
 	)
 	cp.ExpectExitCode(0)
-	suite.Require().NoError(suite.expectEnabled(as, !enabled), ts.DebugMessage(fmt.Sprintf("autostart should be %v", !enabled)))
+	suite.Require().NoError(checkEnabled(as, !enabled), ts.DebugMessage(fmt.Sprintf("autostart should be %v", !enabled)))
 
 	// Toggle it again via state tool config.
 	cp = ts.SpawnWithOpts(
@@ -236,14 +236,14 @@ func (suite *SvcIntegrationTestSuite) TestAutostartConfigEnableDisable() {
 		e2e.AppendEnv(fmt.Sprintf("%s=%s", constants.AutostartPathOverrideEnvVarName, autostartDir)),
 	)
 	cp.ExpectExitCode(0)
-	suite.Require().NoError(suite.expectEnabled(as, enabled), ts.DebugMessage(fmt.Sprintf("autostart should be %v", enabled)))
+	suite.Require().NoError(checkEnabled(as, enabled), ts.DebugMessage(fmt.Sprintf("autostart should be %v", enabled)))
 }
 
 type autostartApp interface {
 	IsEnabled() (bool, error)
 }
 
-func (suite *SvcIntegrationTestSuite) expectEnabled(as autostartApp, expect bool) error {
+func checkEnabled(as autostartApp, expect bool) error {
 	timeout := time.After(1 * time.Minute)
 	tick := time.Tick(1 * time.Second)
 	for {
