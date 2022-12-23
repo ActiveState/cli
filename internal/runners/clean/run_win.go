@@ -16,6 +16,7 @@ import (
 	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/language"
+	"github.com/ActiveState/cli/internal/legacytray"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
@@ -85,6 +86,11 @@ func removeInstall(logFile string, cfg configurable) error {
 	svcExec, err := installation.ServiceExec()
 	if err != nil {
 		return locale.WrapError(err, "err_service_exec")
+	}
+
+	err = legacytray.DetectAndRemove(filepath.Dir(svcExec), cfg)
+	if err != nil {
+		return locale.WrapError(err, "err_remove_legacy_tray", "Could not remove legacy tray application")
 	}
 
 	err = os.Remove(svcExec)

@@ -14,6 +14,7 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/installation/storage"
+	"github.com/ActiveState/cli/internal/legacytray"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
@@ -110,7 +111,7 @@ func removeInstall(cfg configurable) error {
 	}
 
 	if fileutils.DirExists(installPath) {
-		err = cleanInstallDir(installPath)
+		err = cleanInstallDir(installPath, cfg)
 		if err != nil {
 			aggErr = errs.Wrap(err, "Could not clean install path")
 		}
@@ -146,7 +147,12 @@ func removeEmptyDir(dir string) error {
 	return nil
 }
 
-func cleanInstallDir(dir string) error {
+func cleanInstallDir(dir string, cfg configurable) error {
+	err := legacytray.DetectAndRemove(dir, cfg)
+	if err != nil {
+		return errs.Wrap(err, "Could not remove legacy tray")
+	}
+
 	execs, err := installation.Executables()
 	if err != nil {
 		return errs.Wrap(err, "Could not get executable paths")

@@ -219,6 +219,15 @@ func (suite *InstallerIntegrationTestSuite) TestStateTrayRemoval() {
 	cp = ts.SpawnCmdWithOpts(stateExec, e2e.WithArgs("--version"))
 	suite.Assert().NotContains(cp.TrimmedSnapshot(), version)
 	cp.ExpectExitCode(0)
+
+	// Uninstall.
+	cp = ts.SpawnCmdWithOpts(stateExec, e2e.WithArgs("clean", "uninstall", "--force"))
+	if runtime.GOOS == "windows" {
+		cp.ExpectLongString("Deletion of State Tool has been scheduled.")
+	} else {
+		cp.ExpectLongString("Successfully removed State Tool and related files")
+	}
+	cp.ExpectExitCode(0)
 }
 
 func (suite *InstallerIntegrationTestSuite) AssertConfig(ts *e2e.Session) {
