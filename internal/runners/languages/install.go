@@ -63,7 +63,7 @@ func (u *Update) Run(params *UpdateParams) error {
 		return err
 	}
 
-	err = requirements.ExecuteRequirementOperation(u.prime, lang.Name, lang.Version, model.OperationUpdated, model.NewNamespaceLanguage())
+	err = requirements.ExecuteRequirementOperation(u.prime, lang.Name, lang.Version, model.OperationUpdated, model.NamespaceLanguage)
 	if err != nil {
 		return locale.WrapError(err, "err_language_update", "Could not update language: {{.V0}}", lang.Name)
 	}

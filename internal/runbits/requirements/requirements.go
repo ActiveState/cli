@@ -58,7 +58,8 @@ type configurable interface {
 
 const latestVersion = "latest"
 
-func ExecuteRequirementOperation(prime primeable, requirementName, requirementVersion string, operation model.Operation, ns model.Namespace) (rerr error) {
+func ExecuteRequirementOperation(prime primeable, requirementName, requirementVersion string, operation model.Operation, nsType model.NamespaceType) (rerr error) {
+	var ns model.Namespace
 	var langVersion string
 	langName := "undetermined"
 
@@ -93,6 +94,10 @@ func ExecuteRequirementOperation(prime primeable, requirementName, requirementVe
 			langName = language.Name
 		}
 		out.Notice(locale.Tl("operating_message", "", pj.NamespaceString(), pj.Dir()))
+	}
+
+	if nsType == model.NamespaceLanguage {
+		ns = model.NewNamespaceLanguage()
 	}
 
 	var validatePkg = operation == model.OperationAdded && ns.Type() == model.NamespacePackage

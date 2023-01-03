@@ -2,6 +2,7 @@ package packages
 
 import (
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/runbits/requirements"
 	"github.com/ActiveState/cli/pkg/platform/model"
 )
 
@@ -21,7 +22,7 @@ func NewInstall(prime primeable) *Install {
 }
 
 // Run executes the install behavior.
-func (a *Install) Run(params InstallRunParams, nstype model.NamespaceType) error {
+func (a *Install) Run(params InstallRunParams, nsType model.NamespaceType) error {
 	logging.Debug("ExecuteInstall")
-	return executePackageOperation(a.prime, params.Package.Name(), params.Package.Version(), model.OperationAdded, nstype)
+	return requirements.ExecuteRequirementOperation(a.prime, params.Package.Name(), params.Package.Version(), model.OperationAdded, nsType)
 }
