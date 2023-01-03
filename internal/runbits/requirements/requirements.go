@@ -201,7 +201,7 @@ func ExecuteRequirementOperation(prime primeable, requirementName, requirementVe
 	case model.NamespacePlatform:
 		trigger = target.TriggerPlatform
 	default:
-		return errs.Wrap(err, "Unsupported namespace type: %s", ns.Type().String)
+		return errs.Wrap(err, "Unsupported namespace type: %s", ns.Type().String())
 	}
 
 	// refresh or install runtime
