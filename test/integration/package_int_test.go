@@ -330,7 +330,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_headless_operation() {
 	cp.ExpectExitCode(0)
 
 	suite.Run("install non-existing", func() {
-		cp := ts.Spawn("install", "json-123")
+		cp := ts.Spawn("install", "json")
 		cp.Expect("No results found for search term")
 		cp.Expect("json2")
 		cp.Wait()
