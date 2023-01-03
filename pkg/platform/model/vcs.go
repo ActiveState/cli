@@ -721,6 +721,91 @@ func CommitLanguage(commitID strfmt.UUID, op Operation, name, version string) (*
 	return AddCommit(commitID, msg, op, NewNamespaceLanguage(), lang.Name, lang.Version)
 }
 
+// CommitRequirement commits a single requirement to the platform
+func CommitRequirement(commitID strfmt.UUID, op Operation, name, version string, namespace Namespace) (strfmt.UUID, error) {
+	msgL10nKey := commitMessage(op, namespace)
+	msg := locale.Tr(msgL10nKey, name, version)
+
+	commit, err := AddCommit(commitID, msg, op, namespace, name, version)
+	if err != nil {
+		return "", errs.Wrap(err, "Could not add changeset")
+	}
+	return commit.CommitID, nil
+}
+
+func commitMessage(op Operation, namespace Namespace) string {
+	switch namespace.Type() {
+	case NamespaceLanguage:
+		return languageCommitMessage(op)
+	case NamespacePlatform:
+		return platformCommitMessage(op)
+	case NamespacePackage, NamespaceBundle:
+		return packageCommitMessage(op)
+	}
+
+	return ""
+}
+
+func languageCommitMessage(op Operation) string {
+	switch op {
+	case OperationAdded:
+		return locale.T("commit_message_add_language")
+	case OperationUpdated:
+		return locale.T("commit_message_update_language")
+	case OperationRemoved:
+		return locale.T("commit_message_remove_language")
+	}
+
+	return ""
+}
+
+func platformCommitMessage(op Operation) string {
+	switch op {
+	case OperationAdded:
+		return locale.T("commit_message_add_platform")
+	case OperationUpdated:
+		return locale.T("commit_message_update_platform")
+	case OperationRemoved:
+		return locale.T("commit_message_remove_platform")
+	}
+
+	return ""
+}
+
+func packageCommitMessage(op Operation) string {
+	switch op {
+	case OperationAdded:
+		return locale.T("commit_message_add_package")
+	case OperationUpdated:
+		return locale.T("commit_message_update_package")
+	case OperationRemoved:
+		return locale.T("commit_message_remove_package")
+	}
+
+	return ""
+}
+
+func commitChangeset(parentCommit strfmt.UUID, op Operation, ns Namespace, requirement, version string) ([]*mono_models.CommitChangeEditable, error) {
+	var res []*mono_models.CommitChangeEditable
+	if ns.Type() == NamespaceLanguage {
+		res = append(res, &mono_models.CommitChangeEditable{
+			Operation:         string(OperationUpdated),
+			Namespace:         ns.String(),
+			Requirement:       requirement,
+			VersionConstraint: version,
+		})
+	} else {
+		res = append(res, &mono_models.CommitChangeEditable{
+			Operation:         string(op),
+			Namespace:         ns.String(),
+			Requirement:       requirement,
+			VersionConstraint: version,
+		})
+	}
+
+	return res, nil
+}
+
 func ChangesetFromRequirements(op Operation, reqs []*gqlModel.Requirement) Changeset {
 	var changeset Changeset
 

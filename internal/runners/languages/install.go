@@ -1,46 +1,33 @@
 package languages
 
 import (
+	"fmt"
 	"strings"
 
-	"github.com/ActiveState/cli/internal/analytics"
-	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
-	"github.com/ActiveState/cli/internal/runbits"
-	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
-	"github.com/ActiveState/cli/pkg/platform/authentication"
+	"github.com/ActiveState/cli/internal/runbits/requirements"
 	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/go-openapi/strfmt"
 )
 
 type Update struct {
-	out       output.Outputer
-	project   *project.Project
-	auth      *authentication.Auth
-	analytics analytics.Dispatcher
-	svcModel  *model.SvcModel
+	prime primeable
 }
 
 type primeable interface {
 	primer.Outputer
+	primer.Prompter
 	primer.Projecter
 	primer.Auther
+	primer.Configurer
 	primer.Analyticer
 	primer.SvcModeler
 }
 
 func NewUpdate(prime primeable) *Update {
 	return &Update{
-		prime.Output(),
-		prime.Project(),
-		prime.Auth(),
-		prime.Analytics(),
-		prime.SvcModel(),
+		prime: prime,
 	}
 }
 
@@ -54,11 +41,11 @@ func (u *Update) Run(params *UpdateParams) error {
 		return err
 	}
 
-	if u.project == nil {
+	if u.prime.Project() == nil {
 		return locale.NewInputError("err_no_project")
 	}
 
-	err = ensureLanguageProject(lang, u.project)
+	err = ensureLanguageProject(lang, u.prime.Project())
 	if err != nil {
 		return err
 	}
@@ -76,26 +63,16 @@ func (u *Update) Run(params *UpdateParams) error {
 		return err
 	}
 
-	updateCommit, err := updateLanguage(u.project.CommitUUID(), lang)
+	err = requirements.ExecuteRequirementOperation(u.prime, lang.Name, lang.Version, model.OperationUpdated, model.NewNamespaceLanguage())
 	if err != nil {
-		return locale.WrapError(err, "err_add_language", "Could not add language.")
-	}
-
-	// refresh or install runtime
-	err = runbits.RefreshRuntime(u.auth, u.out, u.analytics, u.project, storage.CachePath(), updateCommit.CommitID, true, target.TriggerPackage, u.svcModel)
-	if err != nil {
-		return err
-	}
-
-	if err := u.project.SetCommit(updateCommit.CommitID.String()); err != nil {
-		return locale.WrapError(err, "err_package_update_pjfile")
+		return locale.WrapError(err, "err_language_update", "Could not update language: {{.V0}}", lang.Name)
 	}
 
 	langName := lang.Name
 	if lang.Version != "" {
 		langName = langName + "@" + lang.Version
 	}
-	u.out.Notice(locale.Tl("language_added", "Language added: {{.V0}}", langName))
+	u.prime.Output().Notice(locale.Tl("language_added", "Language added: {{.V0}}", langName))
 	return nil
 }
 
@@ -146,6 +123,8 @@ func ensureLanguageProject(language *model.Language, project *project.Project) e
 		return err
 	}
 
+	fmt.Println("platformLanguage.Name", platformLanguage.Name)
+	fmt.Println("language.Name", language.Name)
 	if platformLanguage.Name != language.Name {
 		return locale.NewInputError("err_language_mismatch")
 	}
@@ -175,22 +154,4 @@ func ensureVersionTestable(language *model.Language, fetchVersions fetchVersions
 	}
 
 	return locale.NewInputError("err_language_version_not_found", "", language.Version, language.Name)
-}
-
-func updateLanguage(parentCommit strfmt.UUID, lang *model.Language) (*mono_models.Commit, error) {
-	removeCommit, err := removeCurrentLanguage(parentCommit)
-	if err != nil {
-		return nil, errs.Wrap(err, "Could not remove current language.")
-	}
-
-	return model.CommitLanguage(removeCommit.CommitID, model.OperationAdded, lang.Name, lang.Version)
-}
-
-func removeCurrentLanguage(parentCommit strfmt.UUID) (*mono_models.Commit, error) {
-	platformLanguage, err := model.FetchLanguageForCommit(parentCommit)
-	if err != nil {
-		return nil, errs.Wrap(err, "Could not fetch language for commit.")
-	}
-
-	return model.CommitLanguage(parentCommit, model.OperationRemoved, platformLanguage.Name, platformLanguage.Version)
 }
