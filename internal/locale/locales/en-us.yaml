@@ -1142,6 +1142,8 @@ err_package_added:
   other: Failed to add package
 err_bundle_added:
   other: Failed to add bundle
+err_language_updated:
+  other: Failed to update language
 package_err_cannot_fetch_checkpoint:
   other: Cannot fetch checkpoint for package listing
 bundle_err_cannot_fetch_checkpoint:

@@ -330,7 +330,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_headless_operation() {
 	cp.ExpectExitCode(0)
 
 	suite.Run("install non-existing", func() {
-		cp := ts.Spawn("install", "json")
+		cp := ts.Spawn("install", "json-123")
 		cp.Expect("No results found for search term")
 		cp.Expect("json2")
 		cp.Wait()
@@ -467,7 +467,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_UninstallDoesNotExist() {
 	suite.PrepareActiveStateYAML(ts)
 
 	cp := ts.Spawn("uninstall", "doesNotExist")
-	cp.Expect("Package is not installed: doesNotExist")
+	cp.Expect(`"No results found for search term "doesNotExist"`)
 	cp.ExpectExitCode(1)
 }
 

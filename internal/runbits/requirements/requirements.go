@@ -179,9 +179,6 @@ func ExecuteRequirementOperation(prime primeable, requirementName, requirementVe
 	var commitID strfmt.UUID
 	commitID, err = model.CommitRequirement(parentCommitID, operation, requirementName, requirementVersion, ns)
 	if err != nil {
-		if operation == model.OperationRemoved && strings.Contains(err.Error(), "does not exist") {
-			return locale.WrapInputError(err, "err_package_remove_does_not_exist", "Package is not installed: {{.V0}}", requirementName)
-		}
 		return locale.WrapError(err, fmt.Sprintf("err_%s_%s", ns.Type(), operation))
 	}
 
