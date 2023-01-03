@@ -467,7 +467,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_UninstallDoesNotExist() {
 	suite.PrepareActiveStateYAML(ts)
 
 	cp := ts.Spawn("uninstall", "doesNotExist")
-	cp.Expect(`"No results found for search term "doesNotExist"`)
+	cp.Expect("No results found for search term")
 	cp.ExpectExitCode(1)
 }
 

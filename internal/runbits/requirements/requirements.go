@@ -110,7 +110,7 @@ func ExecuteRequirementOperation(prime primeable, requirementName, requirementVe
 		}
 
 		var supportedLang *medmodel.SupportedLanguage
-		requirementName, ns, supportedLang, err = resolvePkgAndNamespace(prime.Prompt(), requirementName, ns.Type(), supported)
+		requirementName, ns, supportedLang, err = resolvePkgAndNamespace(prime.Prompt(), requirementName, nsType, supported)
 		if err != nil {
 			return errs.Wrap(err, "Could not resolve pkg and namespace")
 		}
@@ -247,10 +247,24 @@ func resolvePkgAndNamespace(prompt prompt.Prompter, packageName string, nsType m
 		return "", ns, nil, locale.WrapError(err, "err_pkgop_search_err", "Failed to check for ingredients.")
 	}
 
+	fmt.Println("Ingredients:", ingredients)
+
+	// for _, i := range ingredients {
+	// 	data, err := json.MarshalIndent(i, "", "  ")
+	// 	if err != nil {
+	// 		return "", ns, nil, errs.Wrap(err, "Failed to marshal ingredient")
+	// 	}
+	// 	logging.Debug("Ingredient: %s", string(data))
+	// }
+
+	fmt.Println("Supported:", supported)
+
 	ingredients, err = model.FilterSupportedIngredients(supported, ingredients)
 	if err != nil {
 		return "", ns, nil, errs.Wrap(err, "Failed to filter out unsupported packages")
 	}
+
+	fmt.Println("Ingredients:", ingredients)
 
 	choices := []string{}
 	values := map[string][]string{}
