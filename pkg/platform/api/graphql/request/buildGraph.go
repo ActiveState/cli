@@ -21,15 +21,15 @@ query ($organization: String!, $project: String!, $commitID: String!) {
       commit(vcsRef: $commitID) {
         ... on Commit {
           __typename
-          graph
+          script
         }
-        ... on CommitNotFound {
+        ... on NotFound {
           __typename
           message
         }
       }
     }
-    ... on ProjectNotFound {
+    ... on NotFound {
       __typename
       message
     }

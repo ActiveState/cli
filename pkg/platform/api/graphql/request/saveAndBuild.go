@@ -6,7 +6,7 @@ import (
 	model "github.com/ActiveState/cli/pkg/platform/api/graphql/model/buildplan"
 )
 
-func SaveAndBuild(owner, project, parentCommit, branchRef, description string, graph *model.BuildGraph) *buildPlanBySaveAndBuild {
+func SaveAndBuild(owner, project, parentCommit, branchRef, description string, graph *model.BuildScript) *buildPlanBySaveAndBuild {
 	return &buildPlanBySaveAndBuild{map[string]interface{}{
 		"organization": owner,
 		"project":      project,
@@ -23,7 +23,7 @@ type buildPlanBySaveAndBuild struct {
 
 func (b *buildPlanBySaveAndBuild) Query() string {
 	return fmt.Sprintf(`
-mutation ($organization: String!, $project: String!, $parentCommit: String!, $graph: BuildGraph!, $branchRef: String!, $description:String!) {
+mutation ($organization: String!, $project: String!, $parentCommit: String!, $script: BuildScript!, $branchRef: String!, $description:String!) {
   saveAndBuild(organization: $organization, project: $project, parentCommit: $parentCommit, graph: $graph, branchRef: $branchRef, description:$description) {
     ... on Commit {
       __typename

@@ -33,8 +33,8 @@ func (o Operation) String() string {
 }
 
 // TODO: We will likely need some sort of parser or other solution for the build graph
-func NewBuildGraph() *BuildGraph {
-	return &BuildGraph{
+func NewBuildScript() *BuildScript {
+	return &BuildScript{
 		Let: LetStatement{
 			Runtime: Runtime{
 				SolveLegacy: SolveLegacy{
@@ -45,7 +45,7 @@ func NewBuildGraph() *BuildGraph {
 	}
 }
 
-type BuildGraph struct {
+type BuildScript struct {
 	Let LetStatement `json:"let"`
 }
 
@@ -70,25 +70,25 @@ type Requirement struct {
 
 type VersionRequirement map[Comparator]string
 
-func (bg *BuildGraph) Update(operation Operation, requirements []Requirement) (*BuildGraph, error) {
+func (bs *BuildScript) Update(operation Operation, requirements []Requirement) (*BuildScript, error) {
 	switch operation {
 	case OperationAdd:
-		return bg.add(requirements), nil
+		return bs.add(requirements), nil
 	case OperationRemove:
-		return bg.remove(requirements), nil
+		return bs.remove(requirements), nil
 	case OperationUpdate:
-		return bg.update(requirements), nil
+		return bs.update(requirements), nil
 	default:
 		return nil, errs.New("Invalid operation")
 	}
 }
 
-func (bg *BuildGraph) add(requirements []Requirement) *BuildGraph {
+func (bg *BuildScript) add(requirements []Requirement) *BuildScript {
 	bg.Let.Runtime.SolveLegacy.Requirements = append(bg.Let.Runtime.SolveLegacy.Requirements, requirements...)
 	return bg
 }
 
-func (bg *BuildGraph) remove(requirements []Requirement) *BuildGraph {
+func (bg *BuildScript) remove(requirements []Requirement) *BuildScript {
 	for i, req := range bg.Let.Runtime.SolveLegacy.Requirements {
 		for _, removeReq := range requirements {
 			if req.Name == removeReq.Name && req.Namespace == removeReq.Namespace {
@@ -99,7 +99,7 @@ func (bg *BuildGraph) remove(requirements []Requirement) *BuildGraph {
 	return bg
 }
 
-func (bg *BuildGraph) update(requirements []Requirement) *BuildGraph {
+func (bg *BuildScript) update(requirements []Requirement) *BuildScript {
 	for _, req := range bg.Let.Runtime.SolveLegacy.Requirements {
 		for _, updateReq := range requirements {
 			if req.Name == updateReq.Name && req.Namespace == updateReq.Namespace {

@@ -196,7 +196,7 @@ func (bp *BuildPlanner) SaveAndBuild(params *SaveAndBuildParams) (string, error)
 	// If parent commit is provided then get the build graph
 	// If it is not create a blank build graph
 	var err error
-	graph := model.NewBuildGraph()
+	graph := model.NewBuildScript()
 	if params.ParentCommit != "" {
 		graph, err = bp.GetBuildGraph(params.Owner, params.Project, params.ParentCommit)
 		if err != nil {
@@ -230,8 +230,8 @@ func (bp *BuildPlanner) SaveAndBuild(params *SaveAndBuildParams) (string, error)
 	return resp.CommitID, nil
 }
 
-func (bp *BuildPlanner) GetBuildGraph(owner, project, commitID string) (*model.BuildGraph, error) {
-	resp := &model.BuildGraph{}
+func (bp *BuildPlanner) GetBuildGraph(owner, project, commitID string) (*model.BuildScript, error) {
+	resp := &model.BuildScript{}
 	err := bp.client.Run(request.BuildGraph(owner, project, commitID), resp)
 	if err != nil {
 		return nil, errs.Wrap(err, "failed to fetch build graph")

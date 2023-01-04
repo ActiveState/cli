@@ -42,10 +42,10 @@ type Project struct {
 }
 
 type Commit struct {
-	Type     string      `json:"__typename"`
-	Graph    *BuildGraph `json:"graph"`
-	CommitID string      `json:"commitId"`
-	Build    *Build      `json:"build"`
+	Type     string       `json:"__typename"`
+	Graph    *BuildScript `json:"graph"`
+	CommitID string       `json:"commitId"`
+	Build    *Build       `json:"build"`
 
 	// Error field
 	Message string `json:"message"`
