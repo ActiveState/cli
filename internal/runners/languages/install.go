@@ -1,7 +1,6 @@
 package languages
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/locale"
@@ -123,8 +122,6 @@ func ensureLanguageProject(language *model.Language, project *project.Project) e
 		return err
 	}
 
-	fmt.Println("platformLanguage.Name", platformLanguage.Name)
-	fmt.Println("language.Name", language.Name)
 	if platformLanguage.Name != language.Name {
 		return locale.NewInputError("err_language_mismatch")
 	}
