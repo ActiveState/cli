@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal-as/errs"
-	"github.com/ActiveState/cli/internal-as/exeutils"
+	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/thoas/go-funk"
 
 	"github.com/ActiveState/cli/internal-as/fileutils"

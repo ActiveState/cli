@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal-as/osutils/stacktrace"
-	"github.com/ActiveState/cli/internal-as/rtutils"
+	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/hashicorp/go-multierror"
 )
 

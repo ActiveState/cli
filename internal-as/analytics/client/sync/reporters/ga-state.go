@@ -9,7 +9,7 @@ import (
 	"github.com/ActiveState/cli/internal-as/constants"
 	"github.com/ActiveState/cli/internal-as/errs"
 	"github.com/ActiveState/cli/internal-as/logging"
-	"github.com/ActiveState/cli/internal-as/rtutils/p"
+	"github.com/ActiveState/cli/internal/rtutils/p"
 	ga "github.com/ActiveState/go-ogle-analytics"
 )
 

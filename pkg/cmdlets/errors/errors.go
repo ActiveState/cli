@@ -17,8 +17,8 @@ import (
 	"github.com/ActiveState/cli/internal-as/logging"
 	"github.com/ActiveState/cli/internal-as/multilog"
 	"github.com/ActiveState/cli/internal-as/output"
-	"github.com/ActiveState/cli/internal-as/rtutils/p"
 	"github.com/ActiveState/cli/internal/condition"
+	"github.com/ActiveState/cli/internal/rtutils/p"
 )
 
 var PanicOnMissingLocale = true

@@ -14,7 +14,6 @@ import (
 
 	"github.com/ActiveState/cli/internal-as/config"
 	"github.com/ActiveState/cli/internal-as/errs"
-	"github.com/ActiveState/cli/internal-as/exeutils"
 	"github.com/ActiveState/cli/internal-as/fileutils"
 	"github.com/ActiveState/cli/internal-as/locale"
 	"github.com/ActiveState/cli/internal-as/logging"
@@ -26,6 +25,7 @@ import (
 	"github.com/ActiveState/cli/internal-as/subshell"
 	"github.com/ActiveState/cli/internal-as/subshell/sscommon"
 	"github.com/ActiveState/cli/internal/assets"
+	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
