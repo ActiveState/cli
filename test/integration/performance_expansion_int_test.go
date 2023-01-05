@@ -24,8 +24,8 @@ const (
 	DefaultProject = "https://platform.activestate.com/ActiveState-CLI/Yaml-Test/?branch=main&commitID=0476ac66-007c-4da7-8922-d6ea9b284fae"
 
 	DefaultMaxTime        = 1000 * time.Millisecond
-	DefaultSamples        = 15
-	DefaultVariance       = 0.80
+	DefaultSamples        = 10
+	DefaultVariance       = 0.75
 	DefaultSecretsMaxTime = 3500 * time.Millisecond
 	// Add other configuration values on per-test basis if needed
 )

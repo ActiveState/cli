@@ -69,6 +69,8 @@ func performanceTest(commands []string, expect string, samples int, maxTime time
 		}
 		if x == 0 {
 			// Skip the first one as this one will always be slower due to having to wait for state-svc or sourcing a runtime
+			// Also pause for a second to address any potential caching issues
+			time.Sleep(1 * time.Second)
 			continue
 		}
 		times = append(times, dur)
