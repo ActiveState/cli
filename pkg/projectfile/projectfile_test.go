@@ -14,8 +14,8 @@ import (
 
 	"github.com/ActiveState/cli/internal-as/config"
 	"github.com/ActiveState/cli/internal-as/constants"
+	"github.com/ActiveState/cli/internal-as/environment"
 	"github.com/ActiveState/cli/internal-as/errs"
-	"github.com/ActiveState/cli/internal/environment"
 )
 
 func setCwd(t *testing.T, subdir string) {

@@ -7,7 +7,7 @@ import (
 	"testing"
 	"text/template"
 
-	"github.com/ActiveState/cli/internal/environment"
+	"github.com/ActiveState/cli/internal-as/environment"
 	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/ActiveState/cli/pkg/sysinfo"
 	"github.com/stretchr/testify/assert"

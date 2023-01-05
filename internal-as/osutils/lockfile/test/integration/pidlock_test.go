@@ -12,8 +12,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ActiveState/cli/internal-as/environment"
 	"github.com/ActiveState/cli/internal-as/osutils/lockfile"
-	"github.com/ActiveState/cli/internal/environment"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

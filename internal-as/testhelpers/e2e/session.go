@@ -14,6 +14,7 @@ import (
 
 	"github.com/ActiveState/cli/internal-as/config"
 	"github.com/ActiveState/cli/internal-as/constants"
+	"github.com/ActiveState/cli/internal-as/environment"
 	"github.com/ActiveState/cli/internal-as/errs"
 	"github.com/ActiveState/cli/internal-as/exeutils"
 	"github.com/ActiveState/cli/internal-as/fileutils"
@@ -23,7 +24,6 @@ import (
 	"github.com/ActiveState/cli/internal-as/rtutils/singlethread"
 	"github.com/ActiveState/cli/internal-as/testhelpers/tagsuite"
 	"github.com/ActiveState/cli/internal/condition"
-	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/strutils"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
