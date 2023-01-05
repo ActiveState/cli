@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/ActiveState/cli/internal-as/constants"
-	"github.com/ActiveState/cli/internal/environment"
+	"github.com/ActiveState/cli/internal-as/environment"
 	rtmock "github.com/ActiveState/cli/pkg/platform/runtime/mock"
 	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/stretchr/testify/assert"

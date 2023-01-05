@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	_ "github.com/ActiveState/cli/internal-as/config"
-	"github.com/ActiveState/cli/internal/environment"
+	"github.com/ActiveState/cli/internal-as/environment"
 )
 
 func TestGetRootPath(t *testing.T) {
@@ -17,6 +17,6 @@ func TestGetRootPath(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	file := filepath.Join(rootPath, "internal/environment/environment_test.go")
+	file := filepath.Join(rootPath, "internal-as/environment/environment_test.go")
 	require.FileExists(t, file)
 }

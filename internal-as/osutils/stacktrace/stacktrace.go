@@ -7,8 +7,8 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/ActiveState/cli/internal-as/environment"
 	"github.com/ActiveState/cli/internal-as/rtutils"
-	"github.com/ActiveState/cli/internal/environment"
 )
 
 // Stacktrace represents a stacktrace

@@ -12,7 +12,7 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
-	"github.com/ActiveState/cli/internal/environment"
+	"github.com/ActiveState/cli/internal-as/environment"
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/pkg/project"
 )

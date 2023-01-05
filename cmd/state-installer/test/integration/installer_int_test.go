@@ -10,12 +10,12 @@ import (
 	"testing"
 
 	"github.com/ActiveState/cli/internal-as/constants"
+	"github.com/ActiveState/cli/internal-as/environment"
 	"github.com/ActiveState/cli/internal-as/fileutils"
 	"github.com/ActiveState/cli/internal-as/osutils"
 	"github.com/ActiveState/cli/internal-as/osutils/user"
 	"github.com/ActiveState/cli/internal-as/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal-as/testhelpers/tagsuite"
-	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/pkg/sysinfo"
 	"github.com/stretchr/testify/suite"
