@@ -7,9 +7,9 @@ import (
 
 	"github.com/ActiveState/cli/internal-as/constants"
 	"github.com/ActiveState/cli/internal-as/errs"
-	"github.com/ActiveState/cli/internal-as/exeutils"
 	"github.com/ActiveState/cli/internal-as/fileutils"
 	"github.com/ActiveState/cli/internal/condition"
+	"github.com/ActiveState/cli/internal/exeutils"
 )
 
 const (

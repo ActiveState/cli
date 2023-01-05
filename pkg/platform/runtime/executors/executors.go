@@ -7,8 +7,8 @@ import (
 	rt "runtime"
 	"strings"
 
-	"github.com/ActiveState/cli/internal-as/exeutils"
 	"github.com/ActiveState/cli/internal-as/osutils"
+	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/pkg/platform/runtime/envdef"
 	"github.com/ActiveState/cli/pkg/platform/runtime/executors/execmeta"

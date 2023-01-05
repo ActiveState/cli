@@ -9,7 +9,7 @@ import (
 	"testing"
 
 	"github.com/ActiveState/cli/internal-as/errs"
-	"github.com/ActiveState/cli/internal-as/rtutils"
+	"github.com/ActiveState/cli/internal/rtutils"
 )
 
 func TestErrs(t *testing.T) {

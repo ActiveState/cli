@@ -15,10 +15,10 @@ import (
 	"github.com/ActiveState/cli/internal-as/osutils"
 	"github.com/ActiveState/cli/internal-as/output"
 	"github.com/ActiveState/cli/internal-as/primer"
-	"github.com/ActiveState/cli/internal-as/rtutils/p"
 	"github.com/ActiveState/cli/internal-as/subshell"
 	"github.com/ActiveState/cli/internal-as/subshell/sscommon"
 	"github.com/ActiveState/cli/internal/instanceid"
+	"github.com/ActiveState/cli/internal/rtutils/p"
 	"github.com/ActiveState/cli/pkg/platform/runtime/store"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 )

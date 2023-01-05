@@ -14,8 +14,8 @@ import (
 	"github.com/ActiveState/cli/internal-as/errs"
 	"github.com/ActiveState/cli/internal-as/logging"
 	"github.com/ActiveState/cli/internal-as/multilog"
-	"github.com/ActiveState/cli/internal-as/rtutils/p"
 	"github.com/ActiveState/cli/internal-as/runbits/panics"
+	"github.com/ActiveState/cli/internal/rtutils/p"
 )
 
 const defaultInterval = 1 * time.Minute

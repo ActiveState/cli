@@ -10,10 +10,10 @@ import (
 
 	"github.com/ActiveState/cli/internal-as/config"
 	"github.com/ActiveState/cli/internal-as/errs"
-	"github.com/ActiveState/cli/internal-as/exeutils"
 	"github.com/ActiveState/cli/internal-as/fileutils"
 	"github.com/ActiveState/cli/internal-as/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal-as/testhelpers/tagsuite"
+	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/stretchr/testify/suite"
 	"gopkg.in/yaml.v2"

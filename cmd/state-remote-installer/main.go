@@ -15,7 +15,6 @@ import (
 	"github.com/ActiveState/cli/internal-as/constants"
 	"github.com/ActiveState/cli/internal-as/errs"
 	"github.com/ActiveState/cli/internal-as/events"
-	"github.com/ActiveState/cli/internal-as/exeutils"
 	"github.com/ActiveState/cli/internal-as/locale"
 	"github.com/ActiveState/cli/internal-as/logging"
 	"github.com/ActiveState/cli/internal-as/multilog"
@@ -23,8 +22,9 @@ import (
 	"github.com/ActiveState/cli/internal-as/primer"
 	"github.com/ActiveState/cli/internal-as/prompt"
 	"github.com/ActiveState/cli/internal-as/rollbar"
-	"github.com/ActiveState/cli/internal-as/rtutils/p"
 	"github.com/ActiveState/cli/internal-as/runbits/panics"
+	"github.com/ActiveState/cli/internal/exeutils"
+	"github.com/ActiveState/cli/internal/rtutils/p"
 	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/pkg/cmdlets/errors"
 )

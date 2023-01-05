@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/internal-as/errs"
-	"github.com/ActiveState/cli/internal-as/exeutils"
+	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/sliceutils"
 	wh "github.com/ActiveState/cli/scripts/internal/workflow-helpers"
 	"github.com/thoas/go-funk"

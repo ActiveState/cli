@@ -15,7 +15,7 @@ import (
 	"github.com/ActiveState/cli/internal-as/locale"
 	"github.com/ActiveState/cli/internal-as/logging"
 	"github.com/ActiveState/cli/internal-as/multilog"
-	"github.com/ActiveState/cli/internal-as/rtutils/p"
+	"github.com/ActiveState/cli/internal/rtutils/p"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/ActiveState/cli/pkg/sysinfo"

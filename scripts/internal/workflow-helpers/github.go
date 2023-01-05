@@ -9,8 +9,8 @@ import (
 
 	"github.com/ActiveState/cli/internal-as/errs"
 	"github.com/ActiveState/cli/internal-as/logging"
-	"github.com/ActiveState/cli/internal-as/rtutils/p"
 	"github.com/ActiveState/cli/internal-as/testhelpers/secrethelper"
+	"github.com/ActiveState/cli/internal/rtutils/p"
 	"github.com/andygrunwald/go-jira"
 	"github.com/blang/semver"
 	"github.com/google/go-github/v45/github"

@@ -5,8 +5,8 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal-as/constants"
-	"github.com/ActiveState/cli/internal-as/exeutils"
 	"github.com/ActiveState/cli/internal-as/locale"
+	"github.com/ActiveState/cli/internal/exeutils"
 )
 
 // Language tracks the languages potentially used.

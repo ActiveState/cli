@@ -6,11 +6,11 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal-as/errs"
-	"github.com/ActiveState/cli/internal-as/exeutils"
 	"github.com/ActiveState/cli/internal-as/fileutils"
 	"github.com/ActiveState/cli/internal-as/logging"
 	"github.com/ActiveState/cli/internal-as/multilog"
 	"github.com/ActiveState/cli/internal-as/rollbar"
+	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/strutils"
 )
 

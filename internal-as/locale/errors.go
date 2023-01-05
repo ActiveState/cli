@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal-as/osutils/stacktrace"
-	"github.com/ActiveState/cli/internal-as/rtutils"
+	"github.com/ActiveState/cli/internal/rtutils"
 )
 
 // LocalizedError is an error that has the concept of user facing (localized) errors as well as whether an error is due

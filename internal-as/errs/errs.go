@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal-as/osutils/stacktrace"
-	"github.com/ActiveState/cli/internal-as/rtutils"
+	"github.com/ActiveState/cli/internal/rtutils"
 )
 
 // WrapperError enforces errors that include a stacktrace
