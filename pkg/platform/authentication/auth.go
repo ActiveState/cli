@@ -64,7 +64,6 @@ func LegacyGet() *Auth {
 			multilog.Error("Could not get configuration required by auth: %v", err)
 			os.Exit(1)
 		}
-		defer cfg.Close()
 
 		persist = New(cfg)
 		if err := persist.Sync(); err != nil {
