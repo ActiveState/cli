@@ -40,9 +40,6 @@ func (suite *PrepareIntegrationTestSuite) TestPrepare() {
 	autostartDir := filepath.Join(ts.Dirs.Work, "autostart")
 	err := fileutils.Mkdir(autostartDir)
 	suite.Require().NoError(err)
-	err = os.Setenv(constants.AutostartPathOverrideEnvVarName, autostartDir)
-	suite.Require().NoError(err)
-	defer os.Unsetenv(constants.AutostartPathOverrideEnvVarName)
 
 	cp := ts.SpawnWithOpts(
 		e2e.WithArgs("_prepare"),
