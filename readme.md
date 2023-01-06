@@ -27,7 +27,7 @@ For usage information please refer to the [State Tool Documentation](http://docs
 ## Development
 
 ### Requirements
-* Go 1.16 or above
+* Go 1.18 or above
 
 ### Building & Testing
 

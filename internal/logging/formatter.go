@@ -14,7 +14,7 @@ type SimpleFormatter struct {
 }
 
 func (f *SimpleFormatter) Format(ctx *MessageContext, message string, args ...interface{}) string {
-	return fmt.Sprintf(f.FormatString, ctx.Level, ctx.TimeStamp.UnixNano(), ctx.File, ctx.Line, fmt.Sprintf(message, args...))
+	return fmt.Sprintf(f.FormatString, ctx.Level, ctx.TimeStamp.UnixMicro(), ctx.File, ctx.Line, fmt.Sprintf(message, args...))
 }
 
 var DefaultFormatter Formatter = &SimpleFormatter{
