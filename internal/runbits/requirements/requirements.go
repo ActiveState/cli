@@ -90,10 +90,11 @@ func ExecuteRequirementOperation(prime primeable, requirementName, requirementVe
 		}()
 	} else {
 		language, err := model.LanguageByCommit(pj.CommitUUID())
-		if err != nil {
-			return locale.WrapError(err, "err_package_get_language", "Could not get language from project")
+		if err == nil {
+			langName = language.Name
+		} else {
+			logging.Error("Could not get language from project: %v", err)
 		}
-		langName = language.Name
 
 		if nsType == model.NamespacePackage || nsType == model.NamespaceBundle {
 			ns = model.NewNamespacePkgOrBundle(langName, nsType)
@@ -186,6 +187,9 @@ func ExecuteRequirementOperation(prime primeable, requirementName, requirementVe
 	var commitID strfmt.UUID
 	commitID, err = model.CommitRequirement(parentCommitID, operation, requirementName, requirementVersion, bitWidth, ns)
 	if err != nil {
+		if operation == model.OperationRemoved && strings.Contains(err.Error(), "does not exist") {
+			return locale.WrapInputError(err, "err_package_remove_does_not_exist", "Requirement is not installed: {{.V0}}", requirementName)
+		}
 		return locale.WrapError(err, fmt.Sprintf("err_%s_%s", ns.Type(), operation))
 	}
 

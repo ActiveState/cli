@@ -681,53 +681,6 @@ func (cs indexedCommits) countBetween(first, last string) (int, error) {
 	return ct, nil
 }
 
-// CommitPlatform commits a single platform commit
-func CommitPlatform(parentCommitID strfmt.UUID, op Operation, name, version string, word int) (*mono_models.Commit, error) {
-	platform, err := FetchPlatformByDetails(name, version, word)
-	if err != nil {
-		return nil, errs.Wrap(err, "Could not fetch platform")
-	}
-
-	var msgL10nKey string
-	switch op {
-	case OperationAdded:
-		msgL10nKey = "commit_message_add_platform"
-	case OperationUpdated:
-		return nil, errs.New("updating platforms is not supported yet")
-	case OperationRemoved:
-		msgL10nKey = "commit_message_removed_platform"
-	}
-
-	msg := locale.Tr(msgL10nKey, name, strconv.Itoa(word), version)
-	platformID := platform.PlatformID.String()
-
-	// version is not the value that AddCommit needs - platforms do not post a version
-	return AddCommit(parentCommitID, msg, op, NewNamespacePlatform(), platformID, "")
-
-}
-
-// CommitLanguage commits a single language to the platform
-func CommitLanguage(commitID strfmt.UUID, op Operation, name, version string) (*mono_models.Commit, error) {
-	lang, err := FetchLanguageByDetails(name, version)
-	if err != nil {
-		return nil, errs.Wrap(err, "Could not fetch language")
-	}
-
-	var msgL10nKey string
-	switch op {
-	case OperationAdded:
-		msgL10nKey = "commit_message_add_language"
-	case OperationUpdated:
-		return nil, errs.New("update is not currently supported")
-	case OperationRemoved:
-		msgL10nKey = "commit_message_removed_language"
-	}
-
-	msg := locale.Tr(msgL10nKey, name, version)
-
-	return AddCommit(commitID, msg, op, NewNamespaceLanguage(), lang.Name, lang.Version)
-}
-
 // CommitRequirement commits a single requirement to the platform
 func CommitRequirement(commitID strfmt.UUID, op Operation, name, version string, word int, namespace Namespace) (strfmt.UUID, error) {
 	msgL10nKey := commitMessage(op, name, version, namespace, word)
