@@ -17,7 +17,7 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/internal/osutils/autostart"
+	"github.com/ActiveState/cli/internal/installation/app"
 	"github.com/ActiveState/cli/internal/svcctl"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
@@ -209,24 +209,24 @@ func (suite *SvcIntegrationTestSuite) TestAutostartConfigEnableDisable() {
 
 	cfg, err := config.New()
 	suite.Require().NoError(err)
-	as, err := autostart.New(svcAutostart.App, ts.SvcExe, nil, svcAutostart.Options, cfg)
+	app, err := app.New(constants.SvcAppName, ts.SvcExe, nil, svcAutostart.Options, cfg)
 	suite.Require().NoError(err)
-	enabled, err := as.IsEnabled() // checks if the proper files are in place, not the config key setting
+	enabled, err := app.IsAutostartEnabled() // checks if the proper files are in place, not the config key setting
 	suite.Require().NoError(err)
 
 	// Toggle it via state tool config.
 	cp := ts.SpawnWithOpts(e2e.WithArgs("config", "set", constants.AutostartSvcConfigKey, strconv.FormatBool(!enabled)))
 	cp.ExpectExitCode(0)
-	suite.checkEnabled(as, !enabled)
+	suite.checkEnabled(app, !enabled)
 
 	// Toggle it again via state tool config.
 	cp = ts.SpawnWithOpts(e2e.WithArgs("config", "set", constants.AutostartSvcConfigKey, strconv.FormatBool(enabled)))
 	cp.ExpectExitCode(0)
-	suite.checkEnabled(as, enabled)
+	suite.checkEnabled(app, enabled)
 }
 
 type autostartApp interface {
-	IsEnabled() (bool, error)
+	IsAutostartEnabled() (bool, error)
 }
 
 func (suite *SvcIntegrationTestSuite) checkEnabled(as autostartApp, expect bool) {
@@ -237,7 +237,7 @@ func (suite *SvcIntegrationTestSuite) checkEnabled(as autostartApp, expect bool)
 		case <-timeout:
 			suite.Fail("autostart has not been changed")
 		case <-tick:
-			toggled, err := as.IsEnabled()
+			toggled, err := as.IsAutostartEnabled()
 			suite.Require().NoError(err)
 			if suite.Equal(expect, toggled) {
 				return

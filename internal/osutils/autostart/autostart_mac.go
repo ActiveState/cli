@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	launchFileSource     = "com.activestate.platform.state.plist.tpl"
+	launchFileSource     = "com.activestate.platform.autostart.plist.tpl"
 	launchFileFormatName = "com.activestate.platform.%s.plist"
 )
 
