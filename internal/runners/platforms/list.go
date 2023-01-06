@@ -1,6 +1,8 @@
 package platforms
 
 import (
+	"fmt"
+
 	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/locale"
@@ -52,6 +54,7 @@ func newListing(commitID, projName, projOrg string, branchName string) (*Listing
 		return nil, err
 	}
 
+	fmt.Println("targetCommitID:", targetCommitID.String())
 	platforms, err := model.FetchPlatformsForCommit(*targetCommitID)
 	if err != nil {
 		return nil, err

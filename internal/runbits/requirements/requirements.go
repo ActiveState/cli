@@ -101,8 +101,11 @@ func ExecuteRequirementOperation(prime primeable, requirementName, requirementVe
 		out.Notice(locale.Tl("operating_message", "", pj.NamespaceString(), pj.Dir()))
 	}
 
-	if nsType == model.NamespaceLanguage {
+	switch nsType {
+	case model.NamespaceLanguage:
 		ns = model.NewNamespaceLanguage()
+	case model.NamespacePlatform:
+		ns = model.NewNamespacePlatform()
 	}
 
 	var validatePkg = operation == model.OperationAdded && ns.Type() == model.NamespacePackage

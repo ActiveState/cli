@@ -1,6 +1,7 @@
 package model
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"regexp"
@@ -448,6 +449,12 @@ func AddCommit(parentCommitID strfmt.UUID, commitMessage string, operation Opera
 		},
 	}
 
+	data, err := json.MarshalIndent(changeset, "", "  ")
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not marshal changeset")
+	}
+	fmt.Println("Changeset: ", string(data))
+
 	return AddChangeset(parentCommitID, commitMessage, changeset)
 }
 
@@ -726,6 +733,11 @@ func CommitRequirement(commitID strfmt.UUID, op Operation, name, version string,
 	msgL10nKey := commitMessage(op, name, version, namespace, word)
 	msg := locale.Tr(msgL10nKey, name, version)
 
+	name, version, err := resolveRequirementNameAndVersion(name, version, word, namespace)
+	if err != nil {
+		return "", errs.Wrap(err, "Could not resolve requirement name and version")
+	}
+
 	commit, err := AddCommit(commitID, msg, op, namespace, name, version)
 	if err != nil {
 		return "", errs.Wrap(err, "Could not add changeset")
@@ -786,6 +798,19 @@ func packageCommitMessage(op Operation, name, version string) string {
 	}
 
 	return locale.Tr(msgL10nKey, name, version)
+}
+
+func resolveRequirementNameAndVersion(name, version string, word int, namespace Namespace) (string, string, error) {
+	if namespace.Type() == NamespacePlatform {
+		platform, err := FetchPlatformByDetails(name, version, word)
+		if err != nil {
+			return "", "", errs.Wrap(err, "Could not fetch platform")
+		}
+		name = platform.PlatformID.String()
+		version = ""
+	}
+
+	return name, version, nil
 }
 
 func commitChangeset(parentCommit strfmt.UUID, op Operation, ns Namespace, requirement, version string) ([]*mono_models.CommitChangeEditable, error) {
