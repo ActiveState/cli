@@ -38,8 +38,8 @@ scripts:
     description: A script that sleeps for a very long time.  It should be interrupted.  The first interrupt does not terminate.
     standalone: true
     value: |
-        ls $(dirname $(which go))
         go build -o ./interrupt ./interrupt.go
+        ls $(dirname $(which go))
         ./interrupt
     constraints:
         os: linux,macos
