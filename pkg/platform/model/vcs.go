@@ -1,7 +1,6 @@
 package model
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"regexp"
@@ -448,12 +447,6 @@ func AddCommit(parentCommitID strfmt.UUID, commitMessage string, operation Opera
 			VersionConstraint: version,
 		},
 	}
-
-	data, err := json.MarshalIndent(changeset, "", "  ")
-	if err != nil {
-		return nil, errs.Wrap(err, "Could not marshal changeset")
-	}
-	fmt.Println("Changeset: ", string(data))
 
 	return AddChangeset(parentCommitID, commitMessage, changeset)
 }

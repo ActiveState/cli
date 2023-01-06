@@ -92,13 +92,13 @@ func ExecuteRequirementOperation(prime primeable, requirementName, requirementVe
 		language, err := model.LanguageByCommit(pj.CommitUUID())
 		if err == nil {
 			langName = language.Name
+			if nsType == model.NamespacePackage || nsType == model.NamespaceBundle {
+				ns = model.NewNamespacePkgOrBundle(langName, nsType)
+			}
 		} else {
 			logging.Error("Could not get language from project: %v", err)
 		}
 
-		if nsType == model.NamespacePackage || nsType == model.NamespaceBundle {
-			ns = model.NewNamespacePkgOrBundle(langName, nsType)
-		}
 		out.Notice(locale.Tl("operating_message", "", pj.NamespaceString(), pj.Dir()))
 	}
 
