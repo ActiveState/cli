@@ -14,6 +14,7 @@ import (
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/installation"
+	"github.com/ActiveState/cli/internal/installation/app"
 	"github.com/ActiveState/cli/internal/installmgr"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -103,6 +104,10 @@ func (i *Installer) Install() (rerr error) {
 		return errs.Wrap(err, "Installation of system files failed.")
 	}
 
+	if err := i.installSvcApp(); err != nil {
+		return errs.Wrap(err, "Installation of service app failed.")
+	}
+
 	// Set up the environment
 	binDir := filepath.Join(i.path, installation.BinDirName)
 	isAdmin, err := osutils.IsAdmin()
@@ -166,6 +171,30 @@ func (i *Installer) sanitizeInput() error {
 	var err error
 	if i.path, err = resolveInstallPath(i.path); err != nil {
 		return errs.Wrap(err, "Could not resolve installation path")
+	}
+
+	return nil
+}
+
+func (i *Installer) installSvcApp() error {
+	svcExec, err := installation.ServiceExec()
+	if err != nil {
+		return errs.Wrap(err, "Could not determine service executable")
+	}
+
+	app, err := app.New(constants.SvcAppName, svcExec, []string{"start"}, app.Options{}, i.cfg)
+	if err != nil {
+		return errs.Wrap(err, "Could not create app")
+	}
+
+	err = app.Install()
+	if err != nil {
+		return errs.Wrap(err, "Could not install app")
+	}
+
+	err = app.EnableAutostart()
+	if err != nil {
+		return errs.Wrap(err, "Could not enable autostart")
 	}
 
 	return nil
