@@ -722,8 +722,8 @@ func CommitLanguage(commitID strfmt.UUID, op Operation, name, version string) (*
 }
 
 // CommitRequirement commits a single requirement to the platform
-func CommitRequirement(commitID strfmt.UUID, op Operation, name, version string, namespace Namespace) (strfmt.UUID, error) {
-	msgL10nKey := commitMessage(op, namespace)
+func CommitRequirement(commitID strfmt.UUID, op Operation, name, version string, word int, namespace Namespace) (strfmt.UUID, error) {
+	msgL10nKey := commitMessage(op, name, version, namespace, word)
 	msg := locale.Tr(msgL10nKey, name, version)
 
 	commit, err := AddCommit(commitID, msg, op, namespace, name, version)
@@ -733,56 +733,59 @@ func CommitRequirement(commitID strfmt.UUID, op Operation, name, version string,
 	return commit.CommitID, nil
 }
 
-func commitMessage(op Operation, namespace Namespace) string {
+func commitMessage(op Operation, name, version string, namespace Namespace, word int) string {
 	switch namespace.Type() {
 	case NamespaceLanguage:
-		return languageCommitMessage(op)
+		return languageCommitMessage(op, name, version)
 	case NamespacePlatform:
-		return platformCommitMessage(op)
+		return platformCommitMessage(op, name, version, word)
 	case NamespacePackage, NamespaceBundle:
-		return packageCommitMessage(op)
+		return packageCommitMessage(op, name, version)
 	}
 
 	return ""
 }
 
-func languageCommitMessage(op Operation) string {
+func languageCommitMessage(op Operation, name, version string) string {
+	var msgL10nKey string
 	switch op {
 	case OperationAdded:
-		return locale.T("commit_message_add_language")
+		msgL10nKey = locale.T("commit_message_add_language")
 	case OperationUpdated:
-		return locale.T("commit_message_update_language")
+		msgL10nKey = locale.T("commit_message_update_language")
 	case OperationRemoved:
-		return locale.T("commit_message_remove_language")
+		msgL10nKey = locale.T("commit_message_remove_language")
 	}
 
-	return ""
+	return locale.Tr(msgL10nKey, name, version)
 }
 
-func platformCommitMessage(op Operation) string {
+func platformCommitMessage(op Operation, name, version string, word int) string {
+	var msgL10nKey string
 	switch op {
 	case OperationAdded:
-		return locale.T("commit_message_add_platform")
+		msgL10nKey = locale.T("commit_message_add_platform")
 	case OperationUpdated:
-		return locale.T("commit_message_update_platform")
+		msgL10nKey = locale.T("commit_message_update_platform")
 	case OperationRemoved:
-		return locale.T("commit_message_remove_platform")
+		msgL10nKey = locale.T("commit_message_remove_platform")
 	}
 
-	return ""
+	return locale.Tr(msgL10nKey, name, strconv.Itoa(word), version)
 }
 
-func packageCommitMessage(op Operation) string {
+func packageCommitMessage(op Operation, name, version string) string {
+	var msgL10nKey string
 	switch op {
 	case OperationAdded:
-		return locale.T("commit_message_add_package")
+		msgL10nKey = locale.T("commit_message_add_package")
 	case OperationUpdated:
-		return locale.T("commit_message_update_package")
+		msgL10nKey = locale.T("commit_message_update_package")
 	case OperationRemoved:
-		return locale.T("commit_message_remove_package")
+		msgL10nKey = locale.T("commit_message_remove_package")
 	}
 
-	return ""
+	return locale.Tr(msgL10nKey, name, version)
 }
 
 func commitChangeset(parentCommit strfmt.UUID, op Operation, ns Namespace, requirement, version string) ([]*mono_models.CommitChangeEditable, error) {

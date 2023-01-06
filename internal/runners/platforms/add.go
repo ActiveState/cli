@@ -3,10 +3,9 @@ package platforms
 import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
+	"github.com/ActiveState/cli/internal/runbits/requirements"
 	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/ActiveState/cli/pkg/project"
 )
 
 // AddRunParams tracks the info required for running Add.
@@ -16,18 +15,22 @@ type AddRunParams struct {
 
 // Add manages the adding execution context.
 type Add struct {
-	out     output.Outputer
-	project *project.Project
+	prime primeable
 }
 
 type primeable interface {
 	primer.Outputer
+	primer.Prompter
 	primer.Projecter
+	primer.Auther
+	primer.Configurer
+	primer.Analyticer
+	primer.SvcModeler
 }
 
 // NewAdd prepares an add execution context for use.
 func NewAdd(prime primeable) *Add {
-	return &Add{prime.Output(), prime.Project()}
+	return &Add{prime: prime}
 }
 
 // Run executes the add behavior.
@@ -39,24 +42,16 @@ func (a *Add) Run(ps AddRunParams) error {
 		return err
 	}
 
-	if a.project == nil {
+	if a.prime.Project() == nil {
 		return locale.NewInputError("err_no_project")
 	}
 
-	commit, err := model.CommitPlatform(
-		a.project.CommitUUID(),
-		model.OperationAdded,
-		params.name, params.version, params.BitWidth,
-	)
+	err = requirements.ExecuteRequirementOperation(a.prime, params.name, params.version, params.BitWidth, model.OperationAdded, model.NamespacePlatform)
 	if err != nil {
 		return locale.WrapError(err, "err_add_platform", "Could not add platform.")
 	}
 
-	if err := a.project.SetCommit(commit.CommitID.String()); err != nil {
-		return locale.WrapError(err, "err_package_update_pjfile")
-	}
-
-	a.out.Notice(locale.Tr("platform_added", params.name, params.version))
+	a.prime.Output().Notice(locale.Tr("platform_added", params.name, params.version))
 
 	return nil
 }

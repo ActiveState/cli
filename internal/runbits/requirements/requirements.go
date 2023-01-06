@@ -58,7 +58,7 @@ type configurable interface {
 
 const latestVersion = "latest"
 
-func ExecuteRequirementOperation(prime primeable, requirementName, requirementVersion string, operation model.Operation, nsType model.NamespaceType) (rerr error) {
+func ExecuteRequirementOperation(prime primeable, requirementName, requirementVersion string, bitWidth int, operation model.Operation, nsType model.NamespaceType) (rerr error) {
 	var ns model.Namespace
 	var langVersion string
 	langName := "undetermined"
@@ -157,7 +157,6 @@ func ExecuteRequirementOperation(prime primeable, requirementName, requirementVe
 
 	pg = output.NewDotProgress(out, locale.T("progress_commit"), 10*time.Second)
 
-	logging.Debug("Namespace type: %s", ns.Type())
 	// Check if this is an addition or an update
 	if operation == model.OperationAdded && parentCommitID != "" {
 		req, err := model.GetRequirement(parentCommitID, ns.String(), requirementName)
@@ -182,7 +181,7 @@ func ExecuteRequirementOperation(prime primeable, requirementName, requirementVe
 	}
 
 	var commitID strfmt.UUID
-	commitID, err = model.CommitRequirement(parentCommitID, operation, requirementName, requirementVersion, ns)
+	commitID, err = model.CommitRequirement(parentCommitID, operation, requirementName, requirementVersion, bitWidth, ns)
 	if err != nil {
 		return locale.WrapError(err, fmt.Sprintf("err_%s_%s", ns.Type(), operation))
 	}
