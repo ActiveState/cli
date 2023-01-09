@@ -6,12 +6,11 @@ import (
 	"os/user"
 	"path/filepath"
 
-	svcAutostart "github.com/ActiveState/cli/cmd/state-svc/autostart"
-
 	"github.com/ActiveState/cli/internal/assets"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/installation"
+	"github.com/ActiveState/cli/internal/installation/app"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/osutils"
@@ -37,12 +36,12 @@ func (r *Prepare) prepareOS() error {
 	}
 
 	if svcExec != "" {
-		as, err := autostart.New(svcAutostart.App, svcExec, []string{"start"}, svcAutostart.Options, r.cfg)
+		a, err := app.New(constants.SvcAppName, svcExec, []string{"start"}, app.Options{}, r.cfg)
 		if err != nil {
 			return locale.WrapError(err, "err_autostart_app")
 		}
 
-		if err := as.Enable(); err != nil {
+		if err := a.EnableAutostart(); err != nil {
 			r.reportError(locale.Tl("err_prepare_service_autostart", "Could not setup service autostart, error recieved: {{.V0}}", err.Error()), err)
 		}
 	}
