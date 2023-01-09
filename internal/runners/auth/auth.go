@@ -127,7 +127,7 @@ type userData struct {
 
 func (a *Auth) userData() (*userData, error) {
 	username := a.Auth.WhoAmI()
-	organization, err := model.FetchOrgByURLName(username)
+	organization, err := model.FetchOrgByURLName(username, a.Auth)
 	if err != nil {
 		return nil, err
 	}
