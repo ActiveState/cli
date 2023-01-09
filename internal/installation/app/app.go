@@ -2,7 +2,6 @@ package app
 
 import (
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/errs"
 	configMediator "github.com/ActiveState/cli/internal/mediators/config"
 )
 
@@ -63,8 +62,4 @@ func (a *App) IsAutostartEnabled() (bool, error) {
 
 func (a *App) AutostartInstallPath() (string, error) {
 	return a.autostartInstallPath()
-}
-
-func (a *App) autostartInstallPath() (string, error) {
-	return "", errs.New("Not implemented")
 }
