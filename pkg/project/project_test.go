@@ -8,6 +8,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/projectfile"
 
 	"github.com/stretchr/testify/suite"
@@ -177,17 +178,18 @@ func (suite *ProjectTestSuite) TestSecrets() {
 	cfg, err := config.New()
 	suite.Require().NoError(err)
 	defer func() { suite.Require().NoError(cfg.Close()) }()
-	secrets := prj.Secrets(cfg)
+	auth := authentication.New(cfg)
+	secrets := prj.Secrets(cfg, auth)
 	suite.Len(secrets, 2)
 
-	userSecret := prj.SecretByName("secret", project.SecretScopeUser, cfg)
+	userSecret := prj.SecretByName("secret", project.SecretScopeUser, cfg, auth)
 	suite.Require().NotNil(userSecret)
 	suite.Equal("secret-user", userSecret.Description())
 	suite.True(userSecret.IsUser())
 	suite.False(userSecret.IsProject())
 	suite.Equal("user", userSecret.Scope())
 
-	projectSecret := prj.SecretByName("secret", project.SecretScopeProject, cfg)
+	projectSecret := prj.SecretByName("secret", project.SecretScopeProject, cfg, auth)
 	suite.Require().NotNil(projectSecret)
 	suite.Equal("secret-project", projectSecret.Description())
 	suite.True(projectSecret.IsProject())

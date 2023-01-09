@@ -20,6 +20,7 @@ import (
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/go-openapi/strfmt"
 )
@@ -82,7 +83,7 @@ func (p *Project) ConstantByName(name string) *Constant {
 }
 
 // Secrets returns a reference to projectfile.Secrets
-func (p *Project) Secrets(cfg keypairs.Configurable) []*Secret {
+func (p *Project) Secrets(cfg keypairs.Configurable, auth *authentication.Auth) []*Secret {
 	secrets := []*Secret{}
 	if p.projectfile.Secrets == nil {
 		return secrets
@@ -94,7 +95,7 @@ func (p *Project) Secrets(cfg keypairs.Configurable) []*Secret {
 		}
 		secs := projectfile.MakeSecretsFromConstrainedEntities(constrained)
 		for _, s := range secs {
-			secrets = append(secrets, p.NewSecret(s, SecretScopeUser, cfg))
+			secrets = append(secrets, p.NewSecret(s, SecretScopeUser, cfg, auth))
 		}
 	}
 	if p.projectfile.Secrets.Project != nil {
@@ -104,15 +105,15 @@ func (p *Project) Secrets(cfg keypairs.Configurable) []*Secret {
 		}
 		secs := projectfile.MakeSecretsFromConstrainedEntities(constrained)
 		for _, secret := range secs {
-			secrets = append(secrets, p.NewSecret(secret, SecretScopeProject, cfg))
+			secrets = append(secrets, p.NewSecret(secret, SecretScopeProject, cfg, auth))
 		}
 	}
 	return secrets
 }
 
 // SecretByName returns a secret matching the given name (if any)
-func (p *Project) SecretByName(name string, scope SecretScope, cfg keypairs.Configurable) *Secret {
-	for _, secret := range p.Secrets(cfg) {
+func (p *Project) SecretByName(name string, scope SecretScope, cfg keypairs.Configurable, auth *authentication.Auth) *Secret {
+	for _, secret := range p.Secrets(cfg, auth) {
 		if secret.Name() == name && secret.scope == scope {
 			return secret
 		}
@@ -399,18 +400,19 @@ type Secret struct {
 	project *Project
 	scope   SecretScope
 	cfg     keypairs.Configurable
+	auth    *authentication.Auth
 }
 
 // InitSecret creates a new secret with the given name and all default settings
-func (p *Project) InitSecret(name string, scope SecretScope, cfg keypairs.Configurable) *Secret {
+func (p *Project) InitSecret(name string, scope SecretScope, cfg keypairs.Configurable, auth *authentication.Auth) *Secret {
 	return p.NewSecret(&projectfile.Secret{
 		Name: name,
-	}, scope, cfg)
+	}, scope, cfg, auth)
 }
 
 // NewSecret creates a new secret struct
-func (p *Project) NewSecret(s *projectfile.Secret, scope SecretScope, cfg keypairs.Configurable) *Secret {
-	return &Secret{s, p, scope, cfg}
+func (p *Project) NewSecret(s *projectfile.Secret, scope SecretScope, cfg keypairs.Configurable, auth *authentication.Auth) *Secret {
+	return &Secret{s, p, scope, cfg, auth}
 }
 
 // Source returns the source projectfile
@@ -433,7 +435,7 @@ func (s *Secret) IsProject() bool { return s.scope == SecretScopeProject }
 
 // ValueOrNil acts as Value() except it can return a nil
 func (s *Secret) ValueOrNil() (*string, error) {
-	secretsExpander := NewSecretExpander(secretsapi.GetClient(), nil, nil, s.cfg)
+	secretsExpander := NewSecretExpander(secretsapi.GetClient(), nil, nil, s.cfg, s.auth)
 
 	category := ProjectCategory
 	if s.IsUser() {
