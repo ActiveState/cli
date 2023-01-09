@@ -1929,12 +1929,8 @@ err_state_exec:
   other: Could not get state exec
 err_service_exec:
   other: Could not get service exec
-err_tray_exec:
-  other: Could not get state tray exec
 err_svc_exec:
   other: Could not get state service exec
-err_update_exec:
-  other: Could not get update dialog exec
 err_state_exec_dir:
   other: Could not get state exec from directory {{.V0}}
 err_service_exec_dir:
@@ -1944,10 +1940,6 @@ err_insufficient_permissions:
     Could not stop running State Tool process due to insufficient permissions.
 
     State Tool works best if you run it as a user, rather than an admin. You might be encountering this issue because you have originally installed or ran the State Tool as admin. If this is the case it is suggested that you uninstall the State Tool as admin, and install it again as a user.
-err_tray_exec_dir:
-  other: Could not get tray exec from directory {{.V0}}
-err_update_exec_dir:
-  other: Could not get update dialog app exec from directory {{.V0}}
 err_search_no_package:
   other: |
     No packages in our catalog match [NOTICE]"{{.V0}}"[/RESET].

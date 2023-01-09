@@ -5,7 +5,6 @@ import (
 	"runtime"
 
 	svcAutostart "github.com/ActiveState/cli/cmd/state-svc/autostart"
-	trayAutostart "github.com/ActiveState/cli/cmd/state-tray/autostart"
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/config"
@@ -156,23 +155,6 @@ func updateConfigKey(cfg *config.Instance, oldKey, newKey string) error {
 // InstalledPreparedFiles returns the files installed by state _prepare
 func InstalledPreparedFiles(cfg autostart.Configurable) ([]string, error) {
 	var files []string
-	trayExec, err := installation.TrayExec()
-	if err != nil {
-		return nil, locale.WrapError(err, "err_tray_exec")
-	}
-
-	trayShortcut, err := autostart.New(trayAutostart.App, trayExec, nil, trayAutostart.Options, cfg)
-	if err != nil {
-		return nil, locale.WrapError(err, "err_autostart_app")
-	}
-
-	path, err := trayShortcut.InstallPath()
-	if err != nil {
-		multilog.Error("Failed to determine shortcut path for removal: %v", err)
-	} else if path != "" {
-		files = append(files, path)
-	}
-
 	svcExec, err := installation.ServiceExec()
 	if err != nil {
 		return nil, locale.WrapError(err, "err_svc_exec")
@@ -183,19 +165,12 @@ func InstalledPreparedFiles(cfg autostart.Configurable) ([]string, error) {
 		return nil, locale.WrapError(err, "err_autostart_app")
 	}
 
-	path, err = svcShortcut.InstallPath()
+	path, err := svcShortcut.InstallPath()
 	if err != nil {
 		multilog.Error("Failed to determine shortcut path for removal: %v", err)
 	} else if path != "" {
 		files = append(files, path)
 	}
-
-	osSpecificFiles, err := installedPreparedFiles(cfg)
-	if err != nil {
-		return nil, locale.WrapError(err, "err_prepare_os_files", "Could not get list of OS specific prepared files")
-	}
-
-	files = append(files, osSpecificFiles...)
 
 	return files, nil
 }

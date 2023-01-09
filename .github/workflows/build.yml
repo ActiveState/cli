@@ -120,15 +120,6 @@ jobs:
                 "Args": ["state", "run", "build-svc"]
             },
             {
-                "ID": "Build-Tray",
-                "Args": ["state", "run", "build-tray"]
-            },
-            {
-                "ID": "Build-Systray-App",
-                "Args": ["state", "run", "build-systray-app"],
-                "If": "eq .OS.Name \"MacOS\""
-            },
-            {
                 "ID": "Build-Installer",
                 "Args": ["state", "run", "build-installer"]
             },
@@ -183,11 +174,6 @@ jobs:
         shell: bash
         run: parallelize results Build-Service
 
-      - # === "Build: Tray App" ===
-        name: "Build: Tray App"
-        shell: bash
-        run: parallelize results Build-Tray
-
       - # === "Build: Installer" ===
         name: "Build: Installer"
         shell: bash
@@ -202,12 +188,6 @@ jobs:
         name: "Build: Install Scripts"
         shell: bash
         run: parallelize results Build-Install-Scripts
-
-      - # === "Build: Systray App" ===
-        name: "Build: Systray App"
-        shell: bash
-        if: runner.os == 'macOS'
-        run: parallelize results Build-Systray-App
 
       - # === "Build: Executor" ===
         name: "Build: Executor"
@@ -237,7 +217,6 @@ jobs:
 
           signtool.exe sign -d "ActiveState State Tool" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/state.exe
           signtool.exe sign -d "ActiveState State Service" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/state-svc.exe
-          signtool.exe sign -d "ActiveState State Tray" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/state-tray.exe
           signtool.exe sign -d "ActiveState State Installer" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/state-installer.exe
           signtool.exe sign -d "ActiveState State Tool Remote Installer" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/state-remote-installer.exe
         env:
