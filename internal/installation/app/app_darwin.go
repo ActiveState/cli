@@ -2,6 +2,7 @@ package app
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -9,15 +10,17 @@ import (
 	"github.com/ActiveState/cli/internal/assets"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils/user"
 	"github.com/ActiveState/cli/internal/strutils"
 )
 
 const (
 	execFileSource       = "exec.sh.tpl"
-	launchFileSource     = "com.activestate.platform.state.plist.tpl"
-	launchFileLabel      = "com.activestate.state-svc"
+	launchFileSource     = "com.activestate.platform.app.plist.tpl"
 	launchFileFormatName = "com.activestate.platform.%s.plist"
+	autostartFileSource  = "com.activestate.platform.autostart.plist.tpl"
+	iconFile             = "icon.icns"
 )
 
 type target struct {
@@ -35,14 +38,20 @@ var targets = []target{
 func (a *App) install() error {
 	// Create all of the necessary directories and files in a temporary directory
 	// Then move the temporary directory to the final location which for macOS will be the Applications directory
-	tmpPath := filepath.Join(os.TempDir(), fmt.Sprintf("%s.app", a.Name))
-	err := fileutils.Mkdir(tmpPath)
+	tmpDir, err := ioutil.TempDir("", "state-svc-")
+	if err != nil {
+		return errs.Wrap(err, "Could not create temporary directory")
+	}
+	defer os.RemoveAll(tmpDir)
+
+	tmpAppPath := filepath.Join(tmpDir, fmt.Sprintf("%s.app", a.Name))
+	err = fileutils.Mkdir(tmpAppPath)
 	if err != nil {
 		return errs.Wrap(err, "Could not create .app directory")
 	}
 
 	for _, t := range targets {
-		path := filepath.Join(tmpPath, t.path)
+		path := filepath.Join(tmpAppPath, t.path)
 		if t.dir {
 			err = fileutils.Mkdir(path)
 			if err != nil {
@@ -56,25 +65,25 @@ func (a *App) install() error {
 		}
 	}
 
-	err = a.createExecFile(filepath.Join(tmpPath, "Contents", "MacOS"))
-	if err != nil {
-		return errs.Wrap(err, "Could not create exec file")
-	}
-
-	err = a.createInfoFile(filepath.Join(tmpPath, "Contents"))
-	if err != nil {
-		return errs.Wrap(err, "Could not create info file")
-	}
-
 	// TODO: Rename icon file
 	icon, err := assets.ReadFileBytes("state-tray.icns")
 	if err != nil {
 		return errs.Wrap(err, "Could not read asset")
 	}
 
-	err = fileutils.WriteFile(filepath.Join(tmpPath, "Contents", "Resources", "icon.icns"), icon)
+	err = fileutils.WriteFile(filepath.Join(tmpAppPath, "Contents", "Resources", iconFile), icon)
 	if err != nil {
 		return errs.Wrap(err, "Could not write icon file")
+	}
+
+	err = a.createExecFile(filepath.Join(tmpAppPath, "Contents", "MacOS"))
+	if err != nil {
+		return errs.Wrap(err, "Could not create exec file")
+	}
+
+	err = a.createInfoFile(filepath.Join(tmpAppPath, "Contents"))
+	if err != nil {
+		return errs.Wrap(err, "Could not create info file")
 	}
 
 	dir, err := user.HomeDir()
@@ -82,7 +91,8 @@ func (a *App) install() error {
 		return errs.Wrap(err, "Could not get home directory")
 	}
 
-	err = fileutils.MoveAllFiles(tmpPath, filepath.Join(dir, "/Applications"))
+	logging.Debug("Moving files from %s to %s", tmpDir, filepath.Join(dir, "/Applications"))
+	err = fileutils.MoveAllFiles(tmpDir, filepath.Join(dir, "/Applications"))
 	if err != nil {
 		return errs.Wrap(err, "Could not move .app to Applications directory")
 	}
@@ -96,6 +106,8 @@ func (a *App) createExecFile(path string) error {
 		return errs.Wrap(err, "Could not read asset")
 	}
 
+	scriptFile := fmt.Sprintf("%s.sh", filepath.Base(a.Exec))
+
 	content, err := strutils.ParseTemplate(
 		string(asset),
 		map[string]interface{}{
@@ -106,12 +118,12 @@ func (a *App) createExecFile(path string) error {
 		return errs.Wrap(err, "Could not parse launch file source")
 	}
 
-	err = fileutils.WriteFile(filepath.Join(path, fmt.Sprintf("%s.sh", a.Name)), []byte(content))
+	err = fileutils.WriteFile(filepath.Join(path, scriptFile), []byte(content))
 	if err != nil {
 		return errs.Wrap(err, "Could not write Info.plist file")
 	}
 
-	err = os.Chmod(filepath.Join(path, fmt.Sprintf("%s.sh", a.Name)), 0755)
+	err = os.Chmod(filepath.Join(path, scriptFile), 0755)
 	if err != nil {
 		return errs.Wrap(err, "Could not make executable")
 	}
@@ -125,12 +137,14 @@ func (a *App) createInfoFile(path string) error {
 		return errs.Wrap(err, "Could not read asset")
 	}
 
+	scriptFile := fmt.Sprintf("%s.sh", filepath.Base(a.Exec))
+
 	content, err := strutils.ParseTemplate(
 		string(asset),
 		map[string]interface{}{
-			"Exec":        a.Exec,
-			"Args":        strings.Join(a.Args, " "),
+			"Exec":        scriptFile,
 			"Interactive": true,
+			"Icon":        iconFile,
 		})
 	if err != nil {
 		return errs.Wrap(err, "Could not parse launch file source")
@@ -173,7 +187,12 @@ func (a *App) enableAutostart() error {
 		return errs.Wrap(err, "Could not get launch file")
 	}
 
-	asset, err := assets.ReadFileBytes(launchFileSource)
+	installPath, err := a.installPath()
+	if err != nil {
+		return errs.Wrap(err, "Could not get install path")
+	}
+
+	asset, err := assets.ReadFileBytes(autostartFileSource)
 	if err != nil {
 		return errs.Wrap(err, "Could not read asset")
 	}
@@ -182,8 +201,7 @@ func (a *App) enableAutostart() error {
 		string(asset),
 		map[string]interface{}{
 			"Label":       a.options.MacLabel,
-			"Exec":        a.Exec,
-			"Args":        strings.Join(a.Args, " "),
+			"Exec":        installPath,
 			"Interactive": a.options.MacInteractive,
 		})
 	if err != nil {
@@ -214,5 +232,14 @@ func (a *App) autostartInstallPath() (string, error) {
 		return "", errs.Wrap(err, "Could not get home directory")
 	}
 	path := filepath.Join(dir, "Library/LaunchAgents", fmt.Sprintf(launchFileFormatName, filepath.Base(a.Exec)))
+	return path, nil
+}
+
+func (a *App) installPath() (string, error) {
+	dir, err := user.HomeDir()
+	if err != nil {
+		return "", errs.Wrap(err, "Could not get home directory")
+	}
+	path := filepath.Join(dir, "Applications", fmt.Sprintf("%s.app", a.Name))
 	return path, nil
 }
