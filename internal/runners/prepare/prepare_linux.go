@@ -3,15 +3,12 @@ package prepare
 import (
 	"path/filepath"
 
-	trayAutostart "github.com/ActiveState/cli/cmd/state-tray/autostart"
-
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/installation/app"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/multilog"
-	"github.com/ActiveState/cli/internal/osutils/autostart"
 	"github.com/ActiveState/cli/internal/osutils/user"
 )
 
@@ -24,12 +21,12 @@ func (r *Prepare) prepareOS() error {
 		), err)
 	}
 
-	trayShortcut, err := autostart.New(trayAutostart.App, trayExec, nil, trayAutostart.Options, r.cfg)
+	trayShortcut, err := app.New(constants.TrayAppName, trayExec, nil, app.Options{}, r.cfg)
 	if err != nil {
 		r.reportError(locale.T("err_autostart_app"), err)
 	}
 
-	err = trayShortcut.Enable()
+	err = trayShortcut.EnableAutostart()
 	if err != nil {
 		r.reportError(locale.Tl(
 			"err_prepare_autostart_enable",
@@ -69,7 +66,7 @@ func prependHomeDir(path string) (string, error) {
 	return filepath.Join(homeDir, path), nil
 }
 
-func installedPreparedFiles(cfg autostart.Configurable) ([]string, error) {
+func installedPreparedFiles(cfg app.Configurable) ([]string, error) {
 	var files []string
 	dir, err := prependHomeDir(constants.ApplicationDir)
 	if err != nil {
@@ -88,7 +85,7 @@ func installedPreparedFiles(cfg autostart.Configurable) ([]string, error) {
 	return files, nil
 }
 
-func cleanOS(cfg autostart.Configurable) error {
+func cleanOS(cfg app.Configurable) error {
 	svcExec, err := installation.ServiceExec()
 	if err != nil {
 		return locale.WrapError(err, "Could not get state-svc location")

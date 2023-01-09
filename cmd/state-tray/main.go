@@ -9,8 +9,6 @@ import (
 	"runtime/debug"
 	"time"
 
-	trayAutostart "github.com/ActiveState/cli/cmd/state-tray/autostart"
-
 	"github.com/ActiveState/cli/cmd/state-tray/internal/menu"
 	"github.com/ActiveState/cli/cmd/state-tray/internal/open"
 	"github.com/ActiveState/cli/internal/config"
@@ -20,12 +18,12 @@ import (
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/installation"
+	"github.com/ActiveState/cli/internal/installation/app"
 	"github.com/ActiveState/cli/internal/installmgr"
 	"github.com/ActiveState/cli/internal/ipc"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
-	"github.com/ActiveState/cli/internal/osutils/autostart"
 	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/ActiveState/cli/internal/runbits/panics"
 	"github.com/ActiveState/cli/internal/svcctl"
@@ -160,12 +158,12 @@ func run(cfg *config.Instance) (rerr error) {
 		return locale.WrapError(err, "err_tray_exec")
 	}
 
-	as, err := autostart.New(trayAutostart.App, trayExec, nil, trayAutostart.Options, cfg)
+	trayApp, err := app.New(constants.TrayAppName, trayExec, nil, app.Options{}, cfg)
 	if err != nil {
 		return locale.WrapError(err, "err_autostart_app")
 	}
 
-	enabled, err := as.IsEnabled()
+	enabled, err := trayApp.IsAutostartEnabled()
 	if err != nil {
 		return errs.Wrap(err, "Could not check if app autostart is enabled")
 	}
@@ -243,19 +241,19 @@ func run(cfg *config.Instance) (rerr error) {
 		case <-mAutoStart.ClickedCh:
 			logging.Debug("Autostart event")
 			var err error
-			enabled, err := as.IsEnabled()
+			enabled, err := trayApp.IsAutostartEnabled()
 			if err != nil {
 				multilog.Error("Could not check if autostart is enabled: %v", err)
 			}
 			if enabled {
 				logging.Debug("Disable")
-				err = as.Disable()
+				err = trayApp.DisableAutostart()
 				if err == nil {
 					mAutoStart.Uncheck()
 				}
 			} else {
 				logging.Debug("Enable")
-				err = as.Enable()
+				err = trayApp.EnableAutostart()
 				if err == nil {
 					mAutoStart.Check()
 				}

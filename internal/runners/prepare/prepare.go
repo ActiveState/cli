@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"runtime"
 
-	svcAutostart "github.com/ActiveState/cli/cmd/state-svc/autostart"
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/config"
@@ -17,7 +16,6 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
-	"github.com/ActiveState/cli/internal/osutils/autostart"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/subshell"
@@ -154,7 +152,7 @@ func updateConfigKey(cfg *config.Instance, oldKey, newKey string) error {
 }
 
 // InstalledPreparedFiles returns the files installed by state _prepare
-func InstalledPreparedFiles(cfg autostart.Configurable) ([]string, error) {
+func InstalledPreparedFiles(cfg app.Configurable) ([]string, error) {
 	var files []string
 	trayExec, err := installation.TrayExec()
 	if err != nil {
@@ -178,7 +176,7 @@ func InstalledPreparedFiles(cfg autostart.Configurable) ([]string, error) {
 		return nil, locale.WrapError(err, "err_svc_exec")
 	}
 
-	svcShortcut, err := app.New(constants.SvcAppName, svcExec, []string{"start"}, svcAutostart.Options, cfg)
+	svcShortcut, err := app.New(constants.SvcAppName, svcExec, []string{"start"}, app.Options{}, cfg)
 	if err != nil {
 		return nil, locale.WrapError(err, "err_autostart_app")
 	}
@@ -201,6 +199,6 @@ func InstalledPreparedFiles(cfg autostart.Configurable) ([]string, error) {
 }
 
 // CleanOS performs any OS-specific cleanup that is needed other than deleting installed files.
-func CleanOS(cfg autostart.Configurable) error {
+func CleanOS(cfg app.Configurable) error {
 	return cleanOS(cfg)
 }

@@ -1,12 +1,7 @@
 package autostart
 
 import (
-	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/osutils/autostart"
+	"github.com/ActiveState/cli/internal/installation/app"
 )
 
-const (
-	App autostart.AppName = constants.TrayAppName
-)
-
-var Options = autostart.Options{}
+var Options = app.Options{}

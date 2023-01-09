@@ -8,11 +8,6 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	configMediator "github.com/ActiveState/cli/internal/mediators/config"
 	"github.com/ActiveState/cli/internal/multilog"
-	"github.com/ActiveState/cli/internal/osutils/autostart"
-)
-
-const (
-	App autostart.AppName = constants.SvcAppName
 )
 
 var Options = app.Options{}
