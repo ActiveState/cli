@@ -70,7 +70,7 @@ func (a *App) isAutostartEnabled() (bool, error) {
 	return fileutils.FileExists(a.shortcutFilename()), nil
 }
 
-func (a *App) installPath() (string, error) {
+func (a *App) autostartInstallPath() (string, error) {
 	return a.shortcutFilename(), nil
 }
 

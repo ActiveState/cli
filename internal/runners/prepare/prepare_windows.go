@@ -14,7 +14,6 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/osutils"
-	"github.com/ActiveState/cli/internal/osutils/autostart"
 	"github.com/ActiveState/cli/internal/osutils/shortcut"
 )
 
@@ -141,7 +140,7 @@ func setStateProtocol() error {
 	return nil
 }
 
-func installedPreparedFiles(cfg autostart.Configurable) ([]string, error) {
+func installedPreparedFiles(cfg app.Configurable) ([]string, error) {
 	var files []string
 
 	trayExec, err := installation.TrayExec()
@@ -155,6 +154,6 @@ func installedPreparedFiles(cfg autostart.Configurable) ([]string, error) {
 	return files, nil
 }
 
-func cleanOS(cfg autostart.Configurable) error {
+func cleanOS(cfg app.Configurable) error {
 	return nil
 }
