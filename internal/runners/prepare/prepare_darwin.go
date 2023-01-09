@@ -1,13 +1,10 @@
 package prepare
 
 import (
-	svcAutostart "github.com/ActiveState/cli/cmd/state-svc/autostart"
-
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/installation/app"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/osutils/autostart"
 )
 
 func (r *Prepare) prepareOS() error {
@@ -19,7 +16,7 @@ func (r *Prepare) prepareOS() error {
 		), err)
 	}
 
-	svcShortcut, err := app.New(constants.SvcAppName, svcExec, []string{"start"}, svcAutostart.Options, r.cfg)
+	svcShortcut, err := app.New(constants.SvcAppName, svcExec, []string{"start"}, app.Options{}, r.cfg)
 	if err != nil {
 		r.reportError(locale.T("err_autostart_app"), err)
 	}
@@ -35,10 +32,10 @@ func (r *Prepare) prepareOS() error {
 	return nil
 }
 
-func installedPreparedFiles(cfg autostart.Configurable) ([]string, error) {
+func installedPreparedFiles(cfg app.Configurable) ([]string, error) {
 	return nil, nil
 }
 
-func cleanOS(cfg autostart.Configurable) error {
+func cleanOS(cfg app.Configurable) error {
 	return nil
 }
