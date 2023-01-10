@@ -53,6 +53,7 @@ func (suite *RevertIntegrationTestSuite) TestRevert() {
 		e2e.WithArgs("shell", "Revert"),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
+	cp.WaitForInput()
 	cp.SendLine("python3")
 	cp.Expect("3.9.15")
 	cp.SendLine("import urllib3")
