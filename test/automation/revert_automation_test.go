@@ -22,7 +22,7 @@ func (suite *RevertAutomationTestSuite) TestRevert_MissingArg() {
 	cp := ts.Spawn("revert")
 	cp.ExpectLongString("The following argument is required")
 	cp.ExpectLongString("Name: commit-id")
-	cp.ExpectLongString("Description: The commit ID to revert changes from")
+	cp.ExpectLongString("Description: The commit ID to revert to")
 	cp.ExpectExitCode(1)
 }
 
@@ -127,7 +127,7 @@ func (suite *RevertAutomationTestSuite) TestRevert_PublicProject() {
 	// Testing if user choose YES for reset and reset have been successful
 	cp = ts.Spawn("revert", "66e5a9ba-6762-4027-a001-6e9c54437dde")
 	cp.SendLine("y")
-	cp.ExpectLongString("Successfully reverted commit: 66e5a9ba-6762-4027-a001-6e9c54437dde")
+	cp.ExpectLongString("Successfully reverted to commit: 66e5a9ba-6762-4027-a001-6e9c54437dde")
 	cp.ExpectExitCode(0)
 }
 
@@ -153,7 +153,7 @@ func (suite *RevertAutomationTestSuite) TestRevert_PrivateProject() {
 	// Testing if user choose YES for reset and reset have been successful
 	cp = ts.Spawn("revert", "d5b7cf36-bcc2-4ba9-a910-6b8ad1098eb2")
 	cp.SendLine("y")
-	cp.ExpectLongString("Successfully reverted commit: d5b7cf36-bcc2-4ba9-a910-6b8ad1098eb2")
+	cp.ExpectLongString("Successfully reverted to commit: d5b7cf36-bcc2-4ba9-a910-6b8ad1098eb2")
 	cp.ExpectExitCode(0)
 }
 

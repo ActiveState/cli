@@ -50,11 +50,12 @@ func (suite *RevertIntegrationTestSuite) TestRevert() {
 	cp.Expect("+ python")   // initial commit
 
 	// Verify that argparse still exists (it was not reverted along with urllib3).
-	cp = ts.SpawnWithOpts(e2e.WithArgs("shell"), e2e.WithWorkDirectory(wd))
+	cp = ts.SpawnWithOpts(e2e.WithArgs("shell", "Revert"))
 	cp.SendLine("python3")
-	cp.Expect("3.9.15")
-	cp.SendLine("__import__('argparse').__version__")
-	cp.Expect("1.1")
+	cp.SendLine("import urllib3")
+	cp.Expect("No module named 'urllib3'")
+	cp.SendLine("import argparse")
+	suite.Assert().NotContains(cp.TrimmedSnapshot(), "No module named 'argparse'")
 	cp.SendLine("exit()") // exit python3
 	cp.SendLine("exit")   // exit state shell
 	cp.ExpectExitCode(0)
