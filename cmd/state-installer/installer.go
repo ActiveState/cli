@@ -101,6 +101,7 @@ func (i *Installer) Install() (rerr error) {
 		return errs.Wrap(err, "Failed to copy installation files to dir %s. Error received: %s", i.path, errs.JoinMessage(err))
 	}
 
+	// Install the state service as an app if necessary
 	if err := i.installSvcApp(); err != nil {
 		return errs.Wrap(err, "Installation of service app failed.")
 	}

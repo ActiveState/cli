@@ -6,8 +6,6 @@ import (
 	"os/user"
 	"path/filepath"
 
-	svcAutostart "github.com/ActiveState/cli/cmd/state-svc/autostart"
-
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/installation/app"
