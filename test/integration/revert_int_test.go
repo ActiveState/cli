@@ -53,8 +53,7 @@ func (suite *RevertIntegrationTestSuite) TestRevert() {
 	// Verify that argparse still exists (it was not reverted along with urllib3).
 	cp = ts.SpawnWithOpts(e2e.WithArgs("shell", "Revert"))
 	if runtime.GOOS == "linux" {
-		cp.SendLine("echo $PATH")
-		cp.SendLine("which python3")
+		cp.SendLine("hash -r")
 	}
 	cp.SendLine("python3")
 	cp.SendLine("import urllib3")
