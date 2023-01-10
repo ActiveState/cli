@@ -34,9 +34,10 @@ type Configurable interface {
 
 func New(name string, exec string, args []string, opts Options, cfg Configurable) (*App, error) {
 	return &App{
-		Name: name,
-		Exec: exec,
-		Args: args,
+		Name:    name,
+		Exec:    exec,
+		Args:    args,
+		options: opts,
 	}, nil
 }
 
