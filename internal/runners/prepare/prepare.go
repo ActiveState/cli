@@ -164,7 +164,7 @@ func InstalledPreparedFiles(cfg app.Configurable) ([]string, error) {
 		return nil, locale.WrapError(err, "err_autostart_app")
 	}
 
-	path, err = svcShortcut.AutostartInstallPath()
+	path, err := svcShortcut.AutostartInstallPath()
 	if err != nil {
 		multilog.Error("Failed to determine shortcut path for removal: %v", err)
 	} else if path != "" {
