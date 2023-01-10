@@ -4,8 +4,6 @@ constants:
     value: -ldflags="-s -w"
   - name: CLI_PKGS
     value: ./cmd/state
-  - name: SYSTRAY_PKGS
-    value: ./cmd/state-tray
   - name: DAEMON_PKGS
     value: ./cmd/state-svc
   - name: INSTALLER_PKGS
@@ -20,23 +18,6 @@ constants:
   - name: SVC_BUILDFLAGS
     if: ne .OS.Name "Windows"
     value: $constants.CLI_BUILDFLAGS
-  - name: BUILD_SYSTRAY_TARGET
-    if: ne .OS.Name "Windows"
-    value: state-tray
-  - name: BUILD_UPDLG_TARGET
-    if: ne .OS.Name "Windows"
-    value: state-update-dialog
-  - name: UPDLG_BUILDFLAGS
-    value: -ldflags="-w -X github.com/wailsapp/wails.BuildMode=${1:-debug}"
-  - name: UPDLG_BUILDFLAGS
-    if: eq .OS.Name "Linux"
-    value: -ldflags="-w -X github.com/wailsapp/wails.BuildMode=${1:-debug} -extldflags '-Wl,--wrap,pthread_sigmask $4' -linkmode external"
-  - name: SYSTRAY_BUILDFLAGS
-    if: ne .OS.Name "Windows"
-    value: $constants.CLI_BUILDFLAGS
-  - name: SYSTRAY_BUILDFLAGS
-    if: eq .OS.Name "Linux"
-    value: -ldflags="-s -w -extldflags '-Wl,--wrap,pthread_sigmask $4' -linkmode external"
   - name: BUILD_DAEMON_TARGET
     if: ne .OS.Name "Windows"
     value: state-svc
@@ -79,33 +60,11 @@ scripts:
     if: ne .OS.Name "Linux"
     description: Install OS specific deps
     value: ""
-  - name: install-deps-os
-    if: eq .OS.Name "Linux"
-    language: bash
-    description: Install OS specific deps
-    value: |
-      echo "Installing OS Deps"
-      if type "apt" &> /dev/null; then
-        echo "Using apt"
-        pkgs=""
-        for pkg in "libgtk-3-dev libappindicator3-dev libwebkit2gtk-4.0-dev" ; do
-          dpkg -s "${pkg}" &>/dev/null && continue
-          pkgs="$pkgs ${pkg}"
-        done
-        if [ -n "${pkgs}" ]; then
-          echo Installing packages "${pkgs}"
-          sudo apt update && sudo apt install ${pkgs} -y
-        fi
-      elif type "yum" &> /dev/null; then
-        echo "Using yum"
-        yum install -y gtk3-devel libappindicator-gtk3 webkitgtk4
-      fi
   - name: preprocess
     language: bash
     description: Generates assets required by the project that aren't just specific to the build
     value: |
       set -e
-      $scripts.install-deps
       $constants.SET_ENV
       go run scripts/constants-generator/main.go -- internal/constants/generated.go
       mkdir -p build/msi
@@ -135,17 +94,6 @@ scripts:
       $constants.SET_ENV
 
       go build -tags "$GO_BUILD_TAGS" -o $BUILD_TARGET_DIR/$constants.BUILD_DAEMON_TARGET $constants.SVC_BUILDFLAGS $constants.DAEMON_PKGS
-  - name: build-tray
-    description: Builds the State Tool system tray application
-    language: bash
-    value: |
-      set -e
-      $constants.SET_ENV
-
-      # Explicitly enable CGO for systray app. We need CGO for the web bindings
-      export CGO_ENABLED=1
-
-      go build -tags "$GO_BUILD_TAGS" -o $BUILD_TARGET_DIR/$constants.BUILD_SYSTRAY_TARGET $constants.SYSTRAY_BUILDFLAGS $constants.SYSTRAY_PKGS
   - name: build-exec
     description: Builds the State Executor application
     language: bash
@@ -170,8 +118,6 @@ scripts:
       $scripts.build-svc.path()
       echo "Building State Executor"
       $scripts.build-exec.path()
-      echo "Building State Tray App"
-      $scripts.build-tray.path()
   - name: build-installer
     language: bash
     description: Builds the state-installer
@@ -194,63 +140,6 @@ scripts:
       cd cmd/state-remote-installer
       go generate
       go build -tags "$GO_BUILD_TAGS" -o ../../$BUILD_TARGET_DIR/$TARGET .
-  - name: build-updlg-all
-    description: Invokes all build steps for the update dialog
-    standalone: true
-    language: bash
-    value: |
-      set -e
-      state run build-updlg-assets
-      state run build-updlg-front
-      state run build-updlg
-  - name: build-updlg
-    description: Builds the State Tool update dialog app. Run with `prod` argument to build non-dev version.
-    standalone: true
-    language: bash
-    value: |
-      set -e
-      $constants.SET_ENV
-      CGO_ENABLED=1
-      go build -o $BUILD_TARGET_DIR/$constants.BUILD_UPDLG_TARGET $constants.UPDLG_BUILDFLAGS ./cmd/state-update-dialog
-  - name: build-updlg-front
-    description: Builds the State Tool update dialog app's frontend. Be sure to run build-updlg-assets first if you changed image assets.
-    language: bash
-    value: |
-      set -e
-      pushd cmd/state-update-dialog/frontend
-      echo "Running NPM install"
-      npm install
-      echo "Building frontend. If you updated img assets be sure to first run build-updlg-assets"
-      npm run build
-      npm run build-scss
-      popd
-  - name: build-updlg-assets
-    description: Builds the State Tool update dialog app's assets.
-    language: python3
-    value: |
-      import base64
-      import os
-      lines = []
-      for root, dirs, filenames in os.walk("./cmd/state-update-dialog/frontend/scss/img"):
-          for filename in filenames:
-              fpath = os.path.join(root, filename)
-              name, ext = os.path.splitext(os.path.basename(fpath))
-              if ext != ".png":
-                raise Exception("Only PNG's are supported, found: %s" % filename)
-              with open(fpath, "rb") as file:
-                  lines.append(".img-" + name + "{")
-                  lines.append("  background-image: url(\"data:image/png;base64," + base64.b64encode(file.read()).decode("utf-8") + "\");")
-                  lines.append("}")
-          break
-      with open("./cmd/state-update-dialog/frontend/scss/_img.scss", "w") as file:
-          file.write("\n".join(lines) + "\n")
-  - name: run-updlg
-    if: ne .OS.Name "Windows"
-    description: Runs the update dialog in debug mode
-    standalone: true
-    language: bash
-    value: |
-      go run -ldflags "-w -X github.com/wailsapp/wails.BuildMode=${1:-debug}" github.com/ActiveState/cli/cmd/state-update-dialog
   - name: install
     language: bash
     description: Installs the current HEAD version into GOBIN
@@ -364,7 +253,7 @@ scripts:
     language: bash
     description: Runs unit tests (not integration tests)
     value: |
-      ACTIVESTATE_PROJECT="" go test -v `go list ./... | grep -v api | grep -v integration | grep -v automation | grep -v expect | grep -v state-tray | grep -v state-svc`
+      ACTIVESTATE_PROJECT="" go test -v `go list ./... | grep -v api | grep -v integration | grep -v automation | grep -v expect | grep -v state-svc`
     standalone: true
   - name: integration-tests
     language: bash

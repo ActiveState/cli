@@ -94,7 +94,12 @@ func (a *App) enableOnServer() error {
 		exec += " " + esc.Quote(arg)
 	}
 
-	return sscommon.WriteRcData(exec, profile, sscommon.InstallID)
+	// Some older versions of the State Tool used a different ID for the autostart entry.
+	err = sscommon.CleanRcFile(profile, sscommon.InstallID)
+	if err != nil {
+		return errs.Wrap(err, "Could not clean old autostart entry from %s", profile)
+	}
+	return sscommon.WriteRcData(exec, profile, sscommon.AutostartID)
 }
 
 func (a *App) disableAutostart() error {
@@ -124,8 +129,12 @@ func (a *App) disableAutostart() error {
 	if err != nil {
 		return errs.Wrap(err, "Could not find ~/.profile")
 	}
+	// Some older versions of the State Tool used a different ID for the autostart entry.
 	if fileutils.FileExists(profile) {
 		return sscommon.CleanRcFile(profile, sscommon.InstallID)
+	}
+	if fileutils.FileExists(profile) {
+		return sscommon.CleanRcFile(profile, sscommon.AutostartID)
 	}
 
 	return nil
@@ -181,6 +190,9 @@ func prependHomeDir(path string) (string, error) {
 	homeDir, err := user.HomeDir()
 	if err != nil {
 		return "", errs.Wrap(err, "Could not get home directory")
+	}
+	if testDir, ok := os.LookupEnv(constants.AutostartPathOverrideEnvVarName); ok {
+		homeDir = testDir
 	}
 	return filepath.Join(homeDir, path), nil
 }

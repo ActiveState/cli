@@ -46,6 +46,11 @@ var (
 		constants.RCAppendOfflineInstallStopLine,
 		"user_offlineinstall_env",
 	}
+	AutostartID RcIdentification = RcIdentification{
+		constants.RCAppendAutostartStartLine,
+		constants.RCAppendAutostartStopLine,
+		"user_autostart_env",
+	}
 )
 
 // Configurable defines an interface to store and get configuration data
@@ -370,4 +375,12 @@ func SetupProjectRcFile(prj *project.Project, templateName, ext string, env map[
 	logging.Debug("Using project RC: (%s) %s", tmpFile.Name(), o.String())
 
 	return tmpFile, nil
+}
+
+func ProjectRCIdentifier(base RcIdentification, namespace *project.Namespaced) RcIdentification {
+	id := base
+	id.Start = fmt.Sprintf("%s-%s", id.Start, namespace.String())
+	id.Stop = fmt.Sprintf("%s-%s", id.Stop, namespace.String())
+	id.Key = fmt.Sprintf("%s_%s", id.Key, namespace.String())
+	return id
 }

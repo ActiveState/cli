@@ -32,10 +32,6 @@ func (r *Prepare) prepareOS() error {
 	return nil
 }
 
-func installedPreparedFiles(cfg app.Configurable) ([]string, error) {
-	return nil, nil
-}
-
 func cleanOS(cfg app.Configurable) error {
 	return nil
 }

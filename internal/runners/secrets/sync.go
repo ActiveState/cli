@@ -23,6 +23,7 @@ type syncPrimeable interface {
 	primer.Projecter
 	primer.Outputer
 	primer.Configurer
+	primer.Auther
 }
 
 // Sync manages the synchronization execution context.
@@ -31,6 +32,7 @@ type Sync struct {
 	proj          *project.Project
 	out           output.Outputer
 	cfg           keypairs.Configurable
+	auth          *authentication.Auth
 }
 
 // NewSync prepares a sync execution context for use.
@@ -40,22 +42,23 @@ func NewSync(client *secretsapi.Client, p syncPrimeable) *Sync {
 		proj:          p.Project(),
 		out:           p.Output(),
 		cfg:           p.Config(),
+		auth:          p.Auth(),
 	}
 }
 
 // Run executes the sync behavior.
 func (s *Sync) Run() error {
 	s.out.Notice(locale.Tl("operating_message", "", s.proj.NamespaceString(), s.proj.Dir()))
-	if err := checkSecretsAccess(s.proj); err != nil {
+	if err := checkSecretsAccess(s.proj, s.auth); err != nil {
 		return locale.WrapError(err, "secrets_err_check_access")
 	}
 
-	org, err := model.FetchOrgByURLName(s.proj.Owner())
+	org, err := model.FetchOrgByURLName(s.proj.Owner(), s.auth)
 	if err != nil {
 		return locale.WrapError(err, "secrets_err_fetch_org", "Cannot fetch org")
 	}
 
-	updatedCount, err := synchronizeEachOrgMember(s.secretsClient, org, s.cfg)
+	updatedCount, err := synchronizeEachOrgMember(s.secretsClient, org, s.cfg, s.auth)
 	if err != nil {
 		return locale.WrapError(err, "secrets_err_sync", "Cannot synchronize secrets")
 	}
@@ -65,13 +68,13 @@ func (s *Sync) Run() error {
 	return nil
 }
 
-func synchronizeEachOrgMember(secretsClient *secretsapi.Client, org *mono_models.Organization, cfg keypairs.Configurable) (count int, f error) {
+func synchronizeEachOrgMember(secretsClient *secretsapi.Client, org *mono_models.Organization, cfg keypairs.Configurable, auth *authentication.Auth) (count int, f error) {
 	sourceKeypair, err := secrets.LoadKeypairFromConfigDir(cfg)
 	if err != nil {
 		return 0, err
 	}
 
-	members, err := model.FetchOrgMembers(org.URLname)
+	members, err := model.FetchOrgMembers(org.URLname, auth)
 	if err != nil {
 		return 0, err
 	}
@@ -87,7 +90,7 @@ func synchronizeEachOrgMember(secretsClient *secretsapi.Client, org *mono_models
 			params := secretsapiClient.NewDiffUserSecretsParams()
 			params.OrganizationID = org.OrganizationID
 			params.UserID = member.User.UserID
-			diffPayloadOk, err := secretsClient.Secrets.Secrets.DiffUserSecrets(params, authentication.LegacyGet().ClientAuth())
+			diffPayloadOk, err := secretsClient.Secrets.Secrets.DiffUserSecrets(params, auth.ClientAuth())
 
 			if err != nil {
 				switch statusCode := api.ErrorCode(err); statusCode {
