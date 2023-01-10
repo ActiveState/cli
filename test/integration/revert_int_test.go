@@ -3,7 +3,6 @@ package integration
 import (
 	"fmt"
 	"path/filepath"
-	"runtime"
 	"testing"
 
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
@@ -52,9 +51,6 @@ func (suite *RevertIntegrationTestSuite) TestRevert() {
 
 	// Verify that argparse still exists (it was not reverted along with urllib3).
 	cp = ts.SpawnWithOpts(e2e.WithArgs("shell", "Revert"))
-	if runtime.GOOS == "linux" {
-		cp.SendLine("hash -r")
-	}
 	cp.SendLine("python3")
 	cp.SendLine("import urllib3")
 	cp.Expect("No module named 'urllib3'")
