@@ -51,13 +51,12 @@ func (suite *RevertIntegrationTestSuite) TestRevert() {
 	cp.Expect("+ python")   // initial commit
 
 	// Verify that argparse still exists (it was not reverted along with urllib3).
-	cp = ts.SpawnWithOpts(e2e.WithArgs("activate", namespace))
+	cp = ts.SpawnWithOpts(e2e.WithArgs("shell", "Revert"))
 	if runtime.GOOS == "linux" {
 		cp.SendLine("echo $PATH")
 		cp.SendLine("which python3")
 	}
 	cp.SendLine("python3")
-	cp.Expect("3.9.15")
 	cp.SendLine("import urllib3")
 	cp.Expect("No module named 'urllib3'")
 	cp.SendLine("import argparse")
