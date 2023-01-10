@@ -6,6 +6,7 @@ import (
 	"os/user"
 	"path/filepath"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/installation/app"
