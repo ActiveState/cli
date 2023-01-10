@@ -41,7 +41,6 @@ func (suite *RevertIntegrationTestSuite) TestRevert() {
 	cp = ts.SpawnWithOpts(
 		e2e.WithArgs("history"),
 		e2e.WithWorkDirectory(wd),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cp.Expect("Revert commit " + commitID)
 	cp.Expect("- urllib3")
@@ -50,7 +49,10 @@ func (suite *RevertIntegrationTestSuite) TestRevert() {
 	cp.Expect("+ python")   // initial commit
 
 	// Verify that argparse still exists (it was not reverted along with urllib3).
-	cp = ts.SpawnWithOpts(e2e.WithArgs("shell", "Revert"))
+	cp = ts.SpawnWithOpts(
+		e2e.WithArgs("shell", "Revert"),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
 	cp.SendLine("python3")
 	cp.SendLine("import urllib3")
 	cp.Expect("No module named 'urllib3'")
