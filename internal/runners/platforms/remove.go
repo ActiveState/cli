@@ -36,7 +36,7 @@ func (r *Remove) Run(ps RemoveRunParams) error {
 		return errs.Wrap(err, "Could not prepare parameters.")
 	}
 
-	if err := requirements.ExecuteRequirementOperation(r.prime, params.name, params.version, params.BitWidth, model.OperationRemoved, model.NamespacePlatform); err := nil {
+	if err := requirements.ExecuteRequirementOperation(r.prime, params.name, params.version, params.BitWidth, model.OperationRemoved, model.NamespacePlatform); err != nil {
 		return locale.WrapError(err, "err_remove_platform", "Could not remove platform.")
 	}
 

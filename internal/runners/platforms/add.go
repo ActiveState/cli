@@ -46,8 +46,7 @@ func (a *Add) Run(ps AddRunParams) error {
 		return locale.NewInputError("err_no_project")
 	}
 
-	err = requirements.ExecuteRequirementOperation(a.prime, params.name, params.version, params.BitWidth, model.OperationAdded, model.NamespacePlatform)
-	if err != nil {
+	if err := requirements.ExecuteRequirementOperation(a.prime, params.name, params.version, params.BitWidth, model.OperationAdded, model.NamespacePlatform); err != nil {
 		return locale.WrapError(err, "err_add_platform", "Could not add platform.")
 	}
 
