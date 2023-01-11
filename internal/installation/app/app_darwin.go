@@ -10,7 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/assets"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/osutils/user"
 	"github.com/ActiveState/cli/internal/strutils"
 )
@@ -65,8 +65,7 @@ func (a *App) install() error {
 		}
 	}
 
-	// TODO: Rename icon file
-	icon, err := assets.ReadFileBytes("state-tray.icns")
+	icon, err := assets.ReadFileBytes(a.options.IconFileSource)
 	if err != nil {
 		return errs.Wrap(err, "Could not read asset")
 	}
@@ -86,13 +85,12 @@ func (a *App) install() error {
 		return errs.Wrap(err, "Could not create info file")
 	}
 
-	dir, err := user.HomeDir()
+	installDir, err := installation.ApplicationInstallPath()
 	if err != nil {
-		return errs.Wrap(err, "Could not get home directory")
+		return errs.Wrap(err, "Could not get installation path")
 	}
 
-	logging.Debug("Moving files from %s to %s", tmpDir, filepath.Join(dir, "/Applications"))
-	err = fileutils.MoveAllFiles(tmpDir, filepath.Join(dir, "/Applications"))
+	err = fileutils.MoveAllFiles(tmpDir, installDir)
 	if err != nil {
 		return errs.Wrap(err, "Could not move .app to Applications directory")
 	}
@@ -143,8 +141,8 @@ func (a *App) createInfoFile(path string) error {
 		string(asset),
 		map[string]interface{}{
 			"Exec":        scriptFile,
-			"Interactive": true,
-			"Icon":        iconFile,
+			"Interactive": a.options.MacInteractive,
+			"Icon":        a.options.IconFileName,
 		})
 	if err != nil {
 		return errs.Wrap(err, "Could not parse launch file source")
