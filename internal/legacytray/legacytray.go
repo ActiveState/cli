@@ -2,6 +2,7 @@ package legacytray
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -24,8 +25,9 @@ func DetectAndRemove(path string, cfg *config.Instance) error {
 	binDir := filepath.Join(path, installation.BinDirName)
 	trayExec := filepath.Join(binDir, stateTrayCmd+exeutils.Extension)
 	logging.Debug("trayExec: %s", trayExec)
+	fmt.Println("trayExec: ", trayExec)
 	if !fileutils.FileExists(trayExec) {
-		logging.Debug("No tray executable found, nothing to do")
+		fmt.Println("No tray executable found, nothing to do")
 		return nil // nothing to do
 	}
 
@@ -55,6 +57,7 @@ func DetectAndRemove(path string, cfg *config.Instance) error {
 	}
 
 	logging.Debug("Names of files to remove: %s", []string{trayExec, trayLaunchFileName})
+	fmt.Println("Names of files to remove: ", []string{trayExec, trayLaunchFileName})
 	// Finally, remove state-tray and state-update-dialog executables.
 	for _, name := range []string{stateTrayCmd, stateUpdateDialogCmd} {
 		// TODO: This isn't printing on CI
