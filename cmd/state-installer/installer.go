@@ -103,8 +103,14 @@ func (i *Installer) Install() (rerr error) {
 	}
 
 	// Install the state service as an app if necessary
-	if err := i.installSvcApp(); err != nil {
+	app, err := i.installSvcApp()
+	if err != nil {
 		return errs.Wrap(err, "Installation of service app failed.")
+	}
+
+	err = app.EnableAutostart()
+	if err != nil {
+		return errs.Wrap(err, "Failed to enable autostart for service app.")
 	}
 
 	// Set up the environment
@@ -163,28 +169,23 @@ func (i *Installer) sanitizeInput() error {
 	return nil
 }
 
-func (i *Installer) installSvcApp() error {
+func (i *Installer) installSvcApp() (*app.App, error) {
 	svcExec, err := installation.ServiceExec()
 	if err != nil {
-		return errs.Wrap(err, "Could not determine service executable")
+		return nil, errs.Wrap(err, "Could not determine service executable")
 	}
 
 	app, err := app.New(constants.SvcAppName, svcExec, []string{"start"}, svcAutostart.Options, i.cfg)
 	if err != nil {
-		return errs.Wrap(err, "Could not create app")
+		return nil, errs.Wrap(err, "Could not create app")
 	}
 
 	err = app.Install()
 	if err != nil {
-		return errs.Wrap(err, "Could not install app")
+		return nil, errs.Wrap(err, "Could not install app")
 	}
 
-	err = app.EnableAutostart()
-	if err != nil {
-		return errs.Wrap(err, "Could not enable autostart")
-	}
-
-	return nil
+	return app, err
 }
 
 var errCorruptedInstall = errs.New("Corrupted install")
