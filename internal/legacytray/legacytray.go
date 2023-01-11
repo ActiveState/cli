@@ -2,7 +2,6 @@ package legacytray
 
 import (
 	"errors"
-	"fmt"
 	"os"
 	"path/filepath"
 
@@ -12,6 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/installation/app"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/shirou/gopsutil/v3/process"
 )
 
@@ -23,9 +23,9 @@ const trayLaunchFileName = "state-tray.desktop"
 func DetectAndRemove(path string, cfg *config.Instance) error {
 	binDir := filepath.Join(path, installation.BinDirName)
 	trayExec := filepath.Join(binDir, stateTrayCmd+exeutils.Extension)
-	fmt.Println("trayExec:", trayExec)
+	logging.Debug("trayExec: %s", trayExec)
 	if !fileutils.FileExists(trayExec) {
-		fmt.Println("File does not exist")
+		logging.Debug("No tray executable found, nothing to do")
 		return nil // nothing to do
 	}
 
@@ -54,9 +54,11 @@ func DetectAndRemove(path string, cfg *config.Instance) error {
 		return err
 	}
 
+	logging.Debug("Names of files to remove: %s", []string{trayExec, trayLaunchFileName})
 	// Finally, remove state-tray and state-update-dialog executables.
 	for _, name := range []string{stateTrayCmd, stateUpdateDialogCmd} {
-		fmt.Println("Removing:", filepath.Join(binDir, name+exeutils.Extension))
+		// TODO: This isn't printing on CI
+		logging.Debug("Removing: %s", filepath.Join(binDir, name+exeutils.Extension))
 		if exec := filepath.Join(binDir, name+exeutils.Extension); fileutils.FileExists(exec) {
 			err = os.Remove(exec)
 			if err != nil {

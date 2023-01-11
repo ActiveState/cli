@@ -225,7 +225,7 @@ func (suite *InstallerIntegrationTestSuite) TestStateTrayRemoval() {
 	cp.Expect("Installing", 10*time.Second)
 	cp.Expect("Done", 30*time.Second)
 
-	fmt.Println("cp.TrimmedSnapshot():", cp.TrimmedSnapshot())
+	fmt.Println("Installer log:", ts.InstallerLog())
 
 	// Verify state-tray is no longer there.
 	suite.NoFileExists(trayExec)
