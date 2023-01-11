@@ -7,20 +7,21 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ActiveState/cli/internal/analytics"
 	anaConsts "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/captain"
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/installation/storage"
-	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runbits"
 	medmodel "github.com/ActiveState/cli/pkg/platform/api/mediator/model"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
@@ -42,28 +43,29 @@ func (pv *PackageVersion) Set(arg string) error {
 	return nil
 }
 
-type primeable interface {
-	primer.Outputer
-	primer.Prompter
-	primer.Projecter
-	primer.Auther
-	primer.Configurer
-	primer.Analyticer
-	primer.SvcModeler
-}
-
-type configurable interface {
-	keypairs.Configurable
-}
-
 const latestVersion = "latest"
 
-func ExecuteRequirementOperation(prime primeable, requirementName, requirementVersion string, bitWidth int, operation model.Operation, nsType model.NamespaceType) (rerr error) {
+type RequirementOperationParams struct {
+	Output              output.Outputer
+	Prompt              prompt.Prompter
+	Project             *project.Project
+	Auth                *authentication.Auth
+	Config              *config.Instance
+	Analytics           analytics.Dispatcher
+	SvcModel            *model.SvcModel
+	RequirementName     string
+	RequirementVersion  string
+	RequirementBitWidth int
+	Operation           model.Operation
+	NsType              model.NamespaceType
+}
+
+func ExecuteRequirementOperation(params RequirementOperationParams) (rerr error) {
 	var ns model.Namespace
 	var langVersion string
 	langName := "undetermined"
 
-	out := prime.Output()
+	out := params.Output
 	var pg *output.DotProgress
 	defer func() {
 		if pg != nil && !pg.Stopped() {
@@ -72,9 +74,9 @@ func ExecuteRequirementOperation(prime primeable, requirementName, requirementVe
 	}()
 
 	var err error
-	pj := prime.Project()
+	pj := params.Project
 	if pj == nil {
-		pg = output.NewDotProgress(out, locale.Tl("progress_project", "", requirementName), 10*time.Second)
+		pg = output.NewDotProgress(params.Output, locale.Tl("progress_project", "", params.RequirementName), 10*time.Second)
 		pj, err = initializeProject()
 		if err != nil {
 			return locale.WrapError(err, "err_package_get_project", "Could not get project from path")
@@ -89,28 +91,30 @@ func ExecuteRequirementOperation(prime primeable, requirementName, requirementVe
 			}
 		}()
 	} else {
+		out.Notice(locale.Tl("operating_message", "", pj.NamespaceString(), pj.Dir()))
+	}
+
+	switch params.NsType {
+	case model.NamespacePackage, model.NamespaceBundle:
+		if pj == nil {
+			break
+		}
 		language, err := model.LanguageByCommit(pj.CommitUUID())
 		if err == nil {
 			langName = language.Name
 		} else {
 			logging.Debug("Could not get language from project: %v", err)
 		}
-
-		out.Notice(locale.Tl("operating_message", "", pj.NamespaceString(), pj.Dir()))
-	}
-
-	switch nsType {
-	case model.NamespacePackage, model.NamespaceBundle:
-		ns = model.NewNamespacePkgOrBundle(langName, nsType)
+		ns = model.NewNamespacePkgOrBundle(langName, params.NsType)
 	case model.NamespaceLanguage:
 		ns = model.NewNamespaceLanguage()
 	case model.NamespacePlatform:
 		ns = model.NewNamespacePlatform()
 	}
 
-	var validatePkg = operation == model.OperationAdded && (ns.Type() == model.NamespacePackage || ns.Type() == model.NamespaceBundle)
+	var validatePkg = params.Operation == model.OperationAdded && (ns.Type() == model.NamespacePackage || ns.Type() == model.NamespaceBundle)
 	if !ns.IsValid() {
-		pg = output.NewDotProgress(out, locale.Tl("progress_pkg_nolang", "", requirementName), 10*time.Second)
+		pg = output.NewDotProgress(out, locale.Tl("progress_pkg_nolang", "", params.RequirementName), 10*time.Second)
 
 		supported, err := model.FetchSupportedLanguages(model.HostPlatform)
 		if err != nil {
@@ -118,7 +122,7 @@ func ExecuteRequirementOperation(prime primeable, requirementName, requirementVe
 		}
 
 		var supportedLang *medmodel.SupportedLanguage
-		requirementName, ns, supportedLang, err = resolvePkgAndNamespace(prime.Prompt(), requirementName, nsType, supported)
+		params.RequirementName, ns, supportedLang, err = resolvePkgAndNamespace(params.Prompt, params.RequirementName, params.NsType, supported)
 		if err != nil {
 			return errs.Wrap(err, "Could not resolve pkg and namespace")
 		}
@@ -130,26 +134,26 @@ func ExecuteRequirementOperation(prime primeable, requirementName, requirementVe
 		pg.Stop(locale.T("progress_found"))
 	}
 
-	if strings.ToLower(requirementVersion) == latestVersion {
-		requirementVersion = ""
+	if strings.ToLower(params.RequirementVersion) == latestVersion {
+		params.RequirementVersion = ""
 	}
 
 	if validatePkg {
-		pg = output.NewDotProgress(out, locale.Tl("progress_search", "", requirementName), 10*time.Second)
+		pg = output.NewDotProgress(out, locale.Tl("progress_search", "", params.RequirementName), 10*time.Second)
 
-		packages, err := model.SearchIngredientsStrict(ns, requirementName, false, false)
+		packages, err := model.SearchIngredientsStrict(ns, params.RequirementName, false, false)
 		if err != nil {
 			return locale.WrapError(err, "package_err_cannot_obtain_search_results")
 		}
 		if len(packages) == 0 {
-			suggestions, err := getSuggestions(ns, requirementName)
+			suggestions, err := getSuggestions(ns, params.RequirementName)
 			if err != nil {
 				multilog.Error("Failed to retrieve suggestions: %v", err)
 			}
 			if len(suggestions) == 0 {
-				return locale.WrapInputError(err, "package_ingredient_alternatives_nosuggest", "", requirementName)
+				return locale.WrapInputError(err, "package_ingredient_alternatives_nosuggest", "", params.RequirementName)
 			}
-			return locale.WrapInputError(err, "package_ingredient_alternatives", "", requirementName, strings.Join(suggestions, "\n"))
+			return locale.WrapInputError(err, "package_ingredient_alternatives", "", params.RequirementName, strings.Join(suggestions, "\n"))
 		}
 
 		pg.Stop(locale.T("progress_found"))
@@ -161,18 +165,18 @@ func ExecuteRequirementOperation(prime primeable, requirementName, requirementVe
 	pg = output.NewDotProgress(out, locale.T("progress_commit"), 10*time.Second)
 
 	// Check if this is an addition or an update
-	if operation == model.OperationAdded && parentCommitID != "" {
-		req, err := model.GetRequirement(parentCommitID, ns.String(), requirementName)
+	if params.Operation == model.OperationAdded && parentCommitID != "" {
+		req, err := model.GetRequirement(parentCommitID, ns.String(), params.RequirementName)
 		if err != nil {
 			return errs.Wrap(err, "Could not get requirement")
 		}
 		if req != nil {
-			operation = model.OperationUpdated
+			params.Operation = model.OperationUpdated
 		}
 	}
 
-	prime.Analytics().EventWithLabel(
-		anaConsts.CatPackageOp, fmt.Sprintf("%s-%s", operation, langName), requirementName,
+	params.Analytics.EventWithLabel(
+		anaConsts.CatPackageOp, fmt.Sprintf("%s-%s", params.Operation, langName), params.RequirementName,
 	)
 
 	if !hasParentCommit {
@@ -184,12 +188,12 @@ func ExecuteRequirementOperation(prime primeable, requirementName, requirementVe
 	}
 
 	var commitID strfmt.UUID
-	commitID, err = model.CommitRequirement(parentCommitID, operation, requirementName, requirementVersion, bitWidth, ns)
+	commitID, err = model.CommitRequirement(parentCommitID, params.Operation, params.RequirementName, params.RequirementVersion, params.RequirementBitWidth, ns)
 	if err != nil {
-		if operation == model.OperationRemoved && strings.Contains(err.Error(), "does not exist") {
-			return locale.WrapInputError(err, "err_package_remove_does_not_exist", "Requirement is not installed: {{.V0}}", requirementName)
+		if params.Operation == model.OperationRemoved && strings.Contains(err.Error(), "does not exist") {
+			return locale.WrapInputError(err, "err_package_remove_does_not_exist", "Requirement is not installed: {{.V0}}", params.RequirementName)
 		}
-		return locale.WrapError(err, fmt.Sprintf("err_%s_%s", ns.Type(), operation))
+		return locale.WrapError(err, fmt.Sprintf("err_%s_%s", ns.Type(), params.Operation))
 	}
 
 	orderChanged := !hasParentCommit
@@ -217,7 +221,7 @@ func ExecuteRequirementOperation(prime primeable, requirementName, requirementVe
 	}
 
 	// refresh or install runtime
-	err = runbits.RefreshRuntime(prime.Auth(), prime.Output(), prime.Analytics(), pj, storage.CachePath(), commitID, orderChanged, trigger, prime.SvcModel())
+	err = runbits.RefreshRuntime(params.Auth, params.Output, params.Analytics, pj, storage.CachePath(), commitID, orderChanged, trigger, params.SvcModel)
 	if err != nil {
 		return err
 	}
@@ -233,10 +237,10 @@ func ExecuteRequirementOperation(prime primeable, requirementName, requirementVe
 		out.Print(locale.Tr("install_initial_success", pj.Source().Path()))
 	}
 
-	if requirementVersion != "" {
-		out.Print(locale.Tr(fmt.Sprintf("%s_version_%s", ns.Type(), operation), requirementName, requirementVersion))
+	if params.RequirementVersion != "" {
+		out.Print(locale.Tr(fmt.Sprintf("%s_version_%s", ns.Type(), params.Operation), params.RequirementName, params.RequirementVersion))
 	} else {
-		out.Print(locale.Tr(fmt.Sprintf("%s_%s", ns.Type(), operation), requirementName))
+		out.Print(locale.Tr(fmt.Sprintf("%s_%s", ns.Type(), params.Operation), params.RequirementName))
 	}
 
 	out.Print(locale.T("operation_success_local"))
