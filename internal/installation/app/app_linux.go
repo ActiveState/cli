@@ -99,7 +99,7 @@ func (a *App) enableOnServer() error {
 	if err != nil {
 		return errs.Wrap(err, "Could not clean old autostart entry from %s", profile)
 	}
-	return sscommon.WriteRcData(exec, profile, sscommon.AutostartID)
+	return sscommon.WriteRcData(exec, profile, sscommon.InstallID)
 }
 
 func (a *App) disableAutostart() error {
