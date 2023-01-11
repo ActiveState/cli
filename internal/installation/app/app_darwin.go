@@ -24,16 +24,10 @@ const (
 	iconFile             = "icon.icns"
 )
 
-type target struct {
-	path string
-	dir  bool
-}
-
-var targets = []target{
-	{"/Contents", true},
-	{"/Contents/MacOS", true},
-	{"/Contents/Resources", true},
-	{"/Contents/MacOS/.placeholder", false},
+var targetDirs = []string{
+	"/Contents",
+	"/Contents/MacOS",
+	"/Contents/Resources",
 }
 
 func (a *App) install() error {
@@ -51,18 +45,11 @@ func (a *App) install() error {
 		return errs.Wrap(err, "Could not create .app directory")
 	}
 
-	for _, t := range targets {
-		path := filepath.Join(tmpAppPath, t.path)
-		if t.dir {
-			err = fileutils.Mkdir(path)
-			if err != nil {
-				return errs.Wrap(err, "Could not create directory at %s", path)
-			}
-		} else {
-			err = fileutils.Touch(path)
-			if err != nil {
-				return errs.Wrap(err, "Could not create file at %s", path)
-			}
+	for _, t := range targetDirs {
+		path := filepath.Join(tmpAppPath, t)
+		err = fileutils.Mkdir(path)
+		if err != nil {
+			return errs.Wrap(err, "Could not create directory at %s", path)
 		}
 	}
 
