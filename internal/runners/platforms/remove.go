@@ -1,6 +1,7 @@
 package platforms
 
 import (
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/runbits/requirements"
@@ -32,11 +33,10 @@ func (r *Remove) Run(ps RemoveRunParams) error {
 
 	params, err := prepareParams(ps.Params)
 	if err != nil {
-		return nil
+		return errs.Wrap(err, "Could not prepare parameters.")
 	}
 
-	err = requirements.ExecuteRequirementOperation(r.prime, params.name, params.version, params.BitWidth, model.OperationRemoved, model.NamespacePlatform)
-	if err != nil {
+	if err := requirements.ExecuteRequirementOperation(r.prime, params.name, params.version, params.BitWidth, model.OperationRemoved, model.NamespacePlatform); err := nil {
 		return locale.WrapError(err, "err_remove_platform", "Could not remove platform.")
 	}
 
