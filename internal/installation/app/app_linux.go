@@ -134,7 +134,7 @@ func (a *App) disableAutostart() error {
 		return sscommon.CleanRcFile(profile, sscommon.InstallID)
 	}
 	if fileutils.FileExists(profile) {
-		return sscommon.CleanRcFile(profile, sscommon.AutostartID)
+		return sscommon.CleanRcFile(profile, sscommon.InstallID)
 	}
 
 	return nil
