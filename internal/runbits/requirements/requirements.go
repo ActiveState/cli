@@ -92,24 +92,23 @@ func ExecuteRequirementOperation(prime primeable, requirementName, requirementVe
 		language, err := model.LanguageByCommit(pj.CommitUUID())
 		if err == nil {
 			langName = language.Name
-			if nsType == model.NamespacePackage || nsType == model.NamespaceBundle {
-				ns = model.NewNamespacePkgOrBundle(langName, nsType)
-			}
 		} else {
-			logging.Error("Could not get language from project: %v", err)
+			logging.Debug("Could not get language from project: %v", err)
 		}
 
 		out.Notice(locale.Tl("operating_message", "", pj.NamespaceString(), pj.Dir()))
 	}
 
 	switch nsType {
+	case model.NamespacePackage, model.NamespaceBundle:
+		ns = model.NewNamespacePkgOrBundle(langName, nsType)
 	case model.NamespaceLanguage:
 		ns = model.NewNamespaceLanguage()
 	case model.NamespacePlatform:
 		ns = model.NewNamespacePlatform()
 	}
 
-	var validatePkg = operation == model.OperationAdded && ns.Type() == model.NamespacePackage
+	var validatePkg = operation == model.OperationAdded && (ns.Type() == model.NamespacePackage || ns.Type() == model.NamespaceBundle)
 	if !ns.IsValid() {
 		pg = output.NewDotProgress(out, locale.Tl("progress_pkg_nolang", "", requirementName), 10*time.Second)
 
