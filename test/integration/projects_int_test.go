@@ -2,8 +2,10 @@ package integration
 
 import (
 	"path/filepath"
+	"runtime"
 	"testing"
 
+	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/stretchr/testify/suite"
@@ -27,12 +29,24 @@ func (suite *ProjectsIntegrationTestSuite) TestProjects() {
 	cp = ts.SpawnWithOpts(e2e.WithArgs("projects"))
 	cp.Expect("Python3")
 	cp.Expect("Local Checkout")
-	cp.ExpectLongString(ts.Dirs.Work)
+	if runtime.GOOS != "windows" {
+		cp.ExpectLongString(ts.Dirs.Work)
+	} else {
+		// Windows uses the long path here.
+		longPath, _ := fileutils.GetLongPathName(ts.Dirs.Work)
+		cp.ExpectLongString(longPath)
+	}
 	cp.Expect("Executables")
 	cp.ExpectLongString(ts.Dirs.Cache)
 	cp.Expect("small-python")
 	cp.Expect("Local Checkout")
-	cp.ExpectLongString(ts.Dirs.Work)
+	if runtime.GOOS != "windows" {
+		cp.ExpectLongString(ts.Dirs.Work)
+	} else {
+		// Windows uses the long path here.
+		longPath, _ := fileutils.GetLongPathName(ts.Dirs.Work)
+		cp.ExpectLongString(longPath)
+	}
 	cp.Expect("Executables")
 	cp.ExpectLongString(ts.Dirs.Cache)
 	cp.ExpectExitCode(0)
