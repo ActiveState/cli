@@ -2,6 +2,7 @@ package legacytray
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -22,6 +23,7 @@ const trayLaunchFileName = "state-tray.desktop"
 func DetectAndRemove(path string, cfg *config.Instance) error {
 	binDir := filepath.Join(path, installation.BinDirName)
 	trayExec := filepath.Join(binDir, stateTrayCmd+exeutils.Extension)
+	fmt.Println("trayExec:", trayExec)
 	if !fileutils.FileExists(trayExec) {
 		return nil // nothing to do
 	}
