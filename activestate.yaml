@@ -2,6 +2,7 @@ project: https://platform.activestate.com/ActiveState/cli?branch=main&commitID=7
 constants:
   - name: CLI_BUILDFLAGS
     value: -ldflags="-s -w"
+    value: -ldflags=""
   - name: CLI_PKGS
     value: ./cmd/state
   - name: DAEMON_PKGS
@@ -138,26 +139,9 @@ scripts:
         TARGET="${BUILD_REMOTE_INSTALLER_TARGET}.exe"
       fi
       GOFLAGS="" go install github.com/josephspurrier/goversioninfo/cmd/goversioninfo@latest
-
-      if [ "$GITHUB_HEAD_REF" != "" ]; then
-        BRANCH=${GITHUB_HEAD_REF}
-      elif [ "$GITHUB_REF" != "" ]; then
-        BRANCH=$(echo $GITHUB_REF | awk -F'/' '{print $NF}')
-      else
-        BRANCH=$(git rev-parse --abbrev-ref HEAD)
-      fi
-
-      if [ "$BRANCH" == "" ]; then
-        echo "Branch cannot be empty"
-        exit 1
-      fi
-      if [ "$BRANCH" == "release" ]; then
-        BRANCH=""
-      fi
-
       cd cmd/state-remote-installer
       go generate
-      go build -tags "$GO_BUILD_TAGS" -o ../../$BUILD_TARGET_DIR/$BRANCH/$TARGET .
+      go build -tags "$GO_BUILD_TAGS" -o ../../$BUILD_TARGET_DIR/$TARGET .
   - name: install
     language: bash
     description: Installs the current HEAD version into GOBIN
