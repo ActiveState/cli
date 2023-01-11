@@ -79,7 +79,7 @@ func (u *Update) Run(params *UpdateParams) error {
 		return err
 	}
 
-	err = requirements.ExecuteRequirementOperation(requirements.RequirementOperationParams{
+	err = requirements.ExecuteRequirementOperation(&requirements.RequirementOperationParams{
 		Output:             u.output,
 		Prompt:             u.prompt,
 		Project:            u.project,

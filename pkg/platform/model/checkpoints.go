@@ -38,8 +38,6 @@ func GetRequirement(commitID strfmt.UUID, namespace, requirement string) (*gqlMo
 		return nil, err
 	}
 
-	chkPt = FilterCheckpointPackages(chkPt)
-
 	for _, req := range chkPt {
 		if req.Namespace == namespace && req.Requirement == requirement {
 			return req, nil

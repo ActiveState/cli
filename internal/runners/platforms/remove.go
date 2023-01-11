@@ -56,7 +56,7 @@ func (r *Remove) Run(ps RemoveRunParams) error {
 		return errs.Wrap(err, "Could not prepare parameters.")
 	}
 
-	if err := requirements.ExecuteRequirementOperation(requirements.RequirementOperationParams{
+	if err := requirements.ExecuteRequirementOperation(&requirements.RequirementOperationParams{
 		Output:              r.output,
 		Prompt:              r.prompt,
 		Project:             r.project,

@@ -60,7 +60,7 @@ type RequirementOperationParams struct {
 	NsType              model.NamespaceType
 }
 
-func ExecuteRequirementOperation(params RequirementOperationParams) (rerr error) {
+func ExecuteRequirementOperation(params *RequirementOperationParams) (rerr error) {
 	var ns model.Namespace
 	var langVersion string
 	langName := "undetermined"

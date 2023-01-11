@@ -49,7 +49,7 @@ func (r *Uninstall) Run(params UninstallRunParams, nstype model.NamespaceType) e
 		return locale.NewInputError("err_no_project")
 	}
 
-	return requirements.ExecuteRequirementOperation(requirements.RequirementOperationParams{
+	return requirements.ExecuteRequirementOperation(&requirements.RequirementOperationParams{
 		Output:          r.output,
 		Prompt:          r.prompt,
 		Project:         r.project,

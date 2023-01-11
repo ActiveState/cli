@@ -66,7 +66,7 @@ func (a *Add) Run(ps AddRunParams) error {
 		return locale.NewInputError("err_no_project")
 	}
 
-	if err := requirements.ExecuteRequirementOperation(requirements.RequirementOperationParams{
+	if err := requirements.ExecuteRequirementOperation(&requirements.RequirementOperationParams{
 		Output:              a.output,
 		Prompt:              a.prompt,
 		Project:             a.project,
