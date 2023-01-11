@@ -25,6 +25,7 @@ func DetectAndRemove(path string, cfg *config.Instance) error {
 	trayExec := filepath.Join(binDir, stateTrayCmd+exeutils.Extension)
 	fmt.Println("trayExec:", trayExec)
 	if !fileutils.FileExists(trayExec) {
+		fmt.Println("File does not exist")
 		return nil // nothing to do
 	}
 
@@ -55,6 +56,7 @@ func DetectAndRemove(path string, cfg *config.Instance) error {
 
 	// Finally, remove state-tray and state-update-dialog executables.
 	for _, name := range []string{stateTrayCmd, stateUpdateDialogCmd} {
+		fmt.Println("Removing:", filepath.Join(binDir, name+exeutils.Extension))
 		if exec := filepath.Join(binDir, name+exeutils.Extension); fileutils.FileExists(exec) {
 			err = os.Remove(exec)
 			if err != nil {
