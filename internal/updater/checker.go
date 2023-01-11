@@ -123,6 +123,7 @@ func (u *Checker) GetUpdateInfo(desiredChannel, desiredVersion string) (*Availab
 		} else if code == 403 || code == 503 {
 			// The request could not be satisfied or service is unavailable. This happens when Cloudflare
 			// blocks access, or the service is unavailable in a particular geographic location.
+			logging.Warning("Update info request blocked or service unavailable: %v", err)
 			return nil, nil
 		}
 		return nil, errs.Wrap(err, "Could not fetch update info from %s", infoURL)
