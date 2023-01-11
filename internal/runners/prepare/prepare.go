@@ -12,11 +12,11 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/globaldefault"
 	"github.com/ActiveState/cli/internal/installation"
+	"github.com/ActiveState/cli/internal/installation/app"
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
-	"github.com/ActiveState/cli/internal/osutils/autostart"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/subshell"
@@ -153,19 +153,19 @@ func updateConfigKey(cfg *config.Instance, oldKey, newKey string) error {
 }
 
 // InstalledPreparedFiles returns the files installed by state _prepare
-func InstalledPreparedFiles(cfg autostart.Configurable) ([]string, error) {
+func InstalledPreparedFiles(cfg app.Configurable) ([]string, error) {
 	var files []string
 	svcExec, err := installation.ServiceExec()
 	if err != nil {
 		return nil, locale.WrapError(err, "err_svc_exec")
 	}
 
-	svcShortcut, err := autostart.New(svcAutostart.App, svcExec, []string{"start"}, svcAutostart.Options, cfg)
+	svcShortcut, err := app.New(constants.SvcAppName, svcExec, []string{"start"}, svcAutostart.Options, cfg)
 	if err != nil {
 		return nil, locale.WrapError(err, "err_autostart_app")
 	}
 
-	path, err := svcShortcut.InstallPath()
+	path, err := svcShortcut.AutostartInstallPath()
 	if err != nil {
 		multilog.Error("Failed to determine shortcut path for removal: %v", err)
 	} else if path != "" {
@@ -176,6 +176,6 @@ func InstalledPreparedFiles(cfg autostart.Configurable) ([]string, error) {
 }
 
 // CleanOS performs any OS-specific cleanup that is needed other than deleting installed files.
-func CleanOS(cfg autostart.Configurable) error {
+func CleanOS(cfg app.Configurable) error {
 	return cleanOS(cfg)
 }

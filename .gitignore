@@ -17,3 +17,4 @@ node_modules
 **/zig-cache/
 cmd/state-offline-installer/artifacts.tar.gz
 cmd/state-offline-installer/LICENSE.txt
+cmd/state-remove-installer/resource.syso

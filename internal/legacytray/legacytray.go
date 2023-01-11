@@ -10,7 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/installation"
-	"github.com/ActiveState/cli/internal/osutils/autostart"
+	"github.com/ActiveState/cli/internal/installation/app"
 	"github.com/shirou/gopsutil/v3/process"
 )
 
@@ -33,11 +33,11 @@ func DetectAndRemove(path string, cfg *config.Instance) error {
 	}
 
 	// Disable autostart of state-tray.
-	options := autostart.Options{
+	options := app.Options{
 		LaunchFileName: trayLaunchFileName, // only used for Linux; ignored on macOS, Windows
 	}
-	if as, err := autostart.New(trayAppName, trayExec, nil, options, cfg); err == nil {
-		err = as.Disable()
+	if app, err := app.New(trayAppName, trayExec, nil, options, cfg); err == nil {
+		err = app.DisableAutostart()
 		if err != nil {
 			return errs.Wrap(err, "Unable to disable tray autostart")
 		}

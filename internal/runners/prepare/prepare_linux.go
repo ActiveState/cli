@@ -3,12 +3,11 @@ package prepare
 import (
 	"path/filepath"
 
-	svcAutostart "github.com/ActiveState/cli/cmd/state-svc/autostart"
-
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/installation"
+	"github.com/ActiveState/cli/internal/installation/app"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/osutils/autostart"
 	"github.com/ActiveState/cli/internal/osutils/user"
 )
 
@@ -21,12 +20,12 @@ func (r *Prepare) prepareOS() error {
 		), err)
 	}
 
-	svcShortcut, err := autostart.New(svcAutostart.App, svcExec, []string{"start"}, svcAutostart.Options, r.cfg)
+	svcApp, err := app.New(constants.SvcAppName, svcExec, []string{"start"}, app.Options{}, r.cfg)
 	if err != nil {
 		r.reportError(locale.T("err_autostart_app"), err)
 	}
 
-	err = svcShortcut.Enable()
+	err = svcApp.EnableAutostart()
 	if err != nil {
 		r.reportError(locale.Tl(
 			"err_prepare_autostart",
@@ -45,14 +44,14 @@ func prependHomeDir(path string) (string, error) {
 	return filepath.Join(homeDir, path), nil
 }
 
-func cleanOS(cfg autostart.Configurable) error {
+func cleanOS(cfg app.Configurable) error {
 	svcExec, err := installation.ServiceExec()
 	if err != nil {
 		return locale.WrapError(err, "Could not get state-svc location")
 	}
-	svcShortcut, err := autostart.New(svcAutostart.App, svcExec, nil, svcAutostart.Options, cfg)
+	svcApp, err := app.New(constants.SvcAppName, svcExec, []string{"start"}, app.Options{}, cfg)
 	if err != nil {
 		return locale.WrapError(err, "Could not get svc autostart shortcut")
 	}
-	return svcShortcut.Disable() // cleans ~/.profile if necessary
+	return svcApp.DisableAutostart() // cleans ~/.profile if necessary
 }

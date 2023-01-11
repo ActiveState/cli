@@ -1,4 +1,4 @@
-package autostart
+package app
 
 import (
 	"os"
@@ -20,8 +20,16 @@ const (
 	autostartFile = ".profile"
 )
 
-func (a *app) enable() error {
-	enabled, err := a.IsEnabled()
+func (a *App) install() error {
+	return nil
+}
+
+func (a *App) uninstall() error {
+	return nil
+}
+
+func (a *App) enableAutostart() error {
+	enabled, err := a.isAutostartEnabled()
 	if err != nil {
 		return errs.Wrap(err, "Could not check if app autostart is enabled")
 	}
@@ -37,11 +45,11 @@ func (a *app) enable() error {
 	return a.enableOnServer()
 }
 
-func (a *app) onDesktop() bool {
+func (a *App) onDesktop() bool {
 	return os.Getenv("WAYLAND_DISPLAY") != "" || os.Getenv("DISPLAY") != ""
 }
 
-func (a *app) enableOnDesktop() error {
+func (a *App) enableOnDesktop() error {
 	dir, err := prependHomeDir(autostartDir)
 	if err != nil {
 		return errs.Wrap(err, "Could not find autostart directory")
@@ -74,7 +82,7 @@ func (a *app) enableOnDesktop() error {
 	return nil
 }
 
-func (a *app) enableOnServer() error {
+func (a *App) enableOnServer() error {
 	profile, err := prependHomeDir(autostartFile)
 	if err != nil {
 		return errs.Wrap(err, "Could not find ~/.profile")
@@ -86,28 +94,16 @@ func (a *app) enableOnServer() error {
 		exec += " " + esc.Quote(arg)
 	}
 
-	return sscommon.WriteRcData(exec, profile, sscommon.InstallID)
-}
-
-// Path returns the path to the installed autostart shortcut file.
-// The installer keeps track of this file for later removal on uninstall.
-func (a *app) InstallPath() (string, error) {
-	dir, err := prependHomeDir(autostartDir)
+	// Some older versions of the State Tool used a different ID for the autostart entry.
+	err = sscommon.CleanRcFile(profile, sscommon.InstallID)
 	if err != nil {
-		return "", errs.Wrap(err, "Could not find autostart directory")
+		return errs.Wrap(err, "Could not clean old autostart entry from %s", profile)
 	}
-	path := filepath.Join(dir, a.options.LaunchFileName)
-
-	if fileutils.FileExists(path) {
-		return path, nil
-	}
-
-	// If on server, do not report ~/.profile as installed, as it would be removed on uninstall.
-	return "", nil
+	return sscommon.WriteRcData(exec, profile, sscommon.AutostartID)
 }
 
-func (a *app) disable() error {
-	enabled, err := a.IsEnabled()
+func (a *App) disableAutostart() error {
+	enabled, err := a.isAutostartEnabled()
 	if err != nil {
 		return errs.Wrap(err, "Could not check if app autostart is enabled")
 	}
@@ -115,7 +111,7 @@ func (a *app) disable() error {
 		return nil
 	}
 
-	path, err := a.InstallPath()
+	path, err := a.installPath()
 	if err != nil {
 		return err
 	}
@@ -133,14 +129,18 @@ func (a *app) disable() error {
 	if err != nil {
 		return errs.Wrap(err, "Could not find ~/.profile")
 	}
+	// Some older versions of the State Tool used a different ID for the autostart entry.
 	if fileutils.FileExists(profile) {
 		return sscommon.CleanRcFile(profile, sscommon.InstallID)
+	}
+	if fileutils.FileExists(profile) {
+		return sscommon.CleanRcFile(profile, sscommon.AutostartID)
 	}
 
 	return nil
 }
 
-func (a *app) IsEnabled() (bool, error) {
+func (a *App) isAutostartEnabled() (bool, error) {
 	// Check for desktop autostart shortcut file.
 	dir, err := prependHomeDir(autostartDir)
 	if err != nil {
@@ -165,6 +165,25 @@ func (a *app) IsEnabled() (bool, error) {
 	}
 
 	return false, nil
+}
+
+func (a *App) autostartInstallPath() (string, error) {
+	return "", errs.New("Not implemented")
+}
+
+func (a *App) installPath() (string, error) {
+	dir, err := prependHomeDir(autostartDir)
+	if err != nil {
+		return "", errs.Wrap(err, "Could not find autostart directory")
+	}
+	path := filepath.Join(dir, a.options.LaunchFileName)
+
+	if fileutils.FileExists(path) {
+		return path, nil
+	}
+
+	// If on server, do not report ~/.profile as installed, as it would be removed on uninstall.
+	return "", nil
 }
 
 func prependHomeDir(path string) (string, error) {
