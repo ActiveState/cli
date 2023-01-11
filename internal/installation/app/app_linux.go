@@ -111,7 +111,7 @@ func (a *App) disableAutostart() error {
 		return nil
 	}
 
-	path, err := a.installPath()
+	path, err := a.autostartInstallPath()
 	if err != nil {
 		return err
 	}
