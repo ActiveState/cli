@@ -11,6 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/installation"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils/user"
 	"github.com/ActiveState/cli/internal/strutils"
 )
@@ -213,7 +214,20 @@ func (a *App) enableAutostart() error {
 }
 
 func (a *App) disableAutostart() error {
-	return errs.New("Not implemented")
+	enabled, err := a.isAutostartEnabled()
+	if err != nil {
+		return errs.Wrap(err, "Could not check if app autostart is enabled")
+	}
+
+	if !enabled {
+		logging.Debug("Autostart is already disabled for %s", a.Name)
+		return nil
+	}
+	path, err := a.autostartInstallPath()
+	if err != nil {
+		return errs.Wrap(err, "Could not get launch file")
+	}
+	return os.Remove(path)
 }
 
 func (a *App) isAutostartEnabled() (bool, error) {
