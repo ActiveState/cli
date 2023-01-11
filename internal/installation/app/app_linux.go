@@ -129,10 +129,6 @@ func (a *App) disableAutostart() error {
 	if err != nil {
 		return errs.Wrap(err, "Could not find ~/.profile")
 	}
-	// Some older versions of the State Tool used a different ID for the autostart entry.
-	if fileutils.FileExists(profile) {
-		return sscommon.CleanRcFile(profile, sscommon.InstallID)
-	}
 	if fileutils.FileExists(profile) {
 		return sscommon.CleanRcFile(profile, sscommon.InstallID)
 	}
@@ -168,10 +164,6 @@ func (a *App) isAutostartEnabled() (bool, error) {
 }
 
 func (a *App) autostartInstallPath() (string, error) {
-	return "", errs.New("Not implemented")
-}
-
-func (a *App) installPath() (string, error) {
 	dir, err := prependHomeDir(autostartDir)
 	if err != nil {
 		return "", errs.Wrap(err, "Could not find autostart directory")
