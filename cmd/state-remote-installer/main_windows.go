@@ -1,3 +1,3 @@
-//go:generate goversioninfo -o=resource_windows.syso
+//go:generate goversioninfo
 
 package main
