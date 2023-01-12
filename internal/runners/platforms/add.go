@@ -78,7 +78,7 @@ func (a *Add) Run(ps AddRunParams) error {
 		RequirementVersion:  params.version,
 		RequirementBitWidth: params.BitWidth,
 		Operation:           model.OperationAdded,
-		NsType:              model.NamespaceLanguage,
+		NsType:              model.NamespacePlatform,
 	}); err != nil {
 		return locale.WrapError(err, "err_add_platform", "Could not add platform.")
 	}

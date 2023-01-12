@@ -58,7 +58,7 @@ func (r *Uninstall) Run(params UninstallRunParams, nstype model.NamespaceType) e
 		Analytics:       r.analytics,
 		SvcModel:        r.svcModel,
 		RequirementName: params.Name,
-		Operation:       model.OperationAdded,
-		NsType:          model.NamespaceLanguage,
+		Operation:       model.OperationRemoved,
+		NsType:          model.NamespacePackage,
 	})
 }

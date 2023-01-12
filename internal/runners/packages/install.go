@@ -69,6 +69,6 @@ func (a *Install) Run(params InstallRunParams, nsType model.NamespaceType) error
 		RequirementName:    params.Package.Name(),
 		RequirementVersion: params.Package.Version(),
 		Operation:          model.OperationAdded,
-		NsType:             model.NamespaceLanguage,
+		NsType:             model.NamespacePackage,
 	})
 }

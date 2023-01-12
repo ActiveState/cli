@@ -67,8 +67,8 @@ func (r *Remove) Run(ps RemoveRunParams) error {
 		RequirementName:     params.name,
 		RequirementVersion:  params.version,
 		RequirementBitWidth: params.BitWidth,
-		Operation:           model.OperationAdded,
-		NsType:              model.NamespaceLanguage,
+		Operation:           model.OperationRemoved,
+		NsType:              model.NamespacePlatform,
 	}); err != nil {
 		return locale.WrapError(err, "err_remove_platform", "Could not remove platform.")
 	}
