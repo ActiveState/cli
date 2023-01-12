@@ -32,14 +32,16 @@ type Language struct {
 }
 
 // GetRequirement searches a commit for a requirement by name.
-func GetRequirement(commitID strfmt.UUID, namespace, requirement string) (*gqlModel.Requirement, error) {
+func GetRequirement(commitID strfmt.UUID, namespace Namespace, requirement string) (*gqlModel.Requirement, error) {
 	chkPt, _, err := FetchCheckpointForCommit(commitID)
 	if err != nil {
 		return nil, err
 	}
 
+	chkPt = FilterCheckpointNamespace(chkPt, namespace)
+
 	for _, req := range chkPt {
-		if req.Namespace == namespace && req.Requirement == requirement {
+		if req.Namespace == namespace.String() && req.Requirement == requirement {
 			return req, nil
 		}
 	}
@@ -115,6 +117,23 @@ func FilterCheckpointPackages(chkPt []*gqlModel.Requirement) []*gqlModel.Require
 	}
 
 	return checkpoint
+}
+
+func FilterCheckpointNamespace(checkpoint []*gqlModel.Requirement, namespace Namespace) []*gqlModel.Requirement {
+	if checkpoint == nil {
+		return nil
+	}
+
+	result := []*gqlModel.Requirement{}
+	for _, requirement := range checkpoint {
+		if !NamespaceMatch(requirement.Namespace, NamespaceMatchable(namespace.String())) {
+			continue
+		}
+
+		result = append(result, requirement)
+	}
+
+	return result
 }
 
 // CheckpointToRequirements converts a checkpoint to a list of requirements for use with the head-chef

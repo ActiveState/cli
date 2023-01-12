@@ -166,7 +166,7 @@ func ExecuteRequirementOperation(params *RequirementOperationParams) (rerr error
 
 	// Check if this is an addition or an update
 	if params.Operation == model.OperationAdded && parentCommitID != "" {
-		req, err := model.GetRequirement(parentCommitID, ns.String(), params.RequirementName)
+		req, err := model.GetRequirement(parentCommitID, ns, params.RequirementName)
 		if err != nil {
 			return errs.Wrap(err, "Could not get requirement")
 		}
