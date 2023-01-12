@@ -102,10 +102,10 @@ func ExecuteRequirementOperation(params *RequirementOperationParams) (rerr error
 		language, err := model.LanguageByCommit(pj.CommitUUID())
 		if err == nil {
 			langName = language.Name
+			ns = model.NewNamespacePkgOrBundle(langName, params.NsType)
 		} else {
 			logging.Debug("Could not get language from project: %v", err)
 		}
-		ns = model.NewNamespacePkgOrBundle(langName, params.NsType)
 	case model.NamespaceLanguage:
 		ns = model.NewNamespaceLanguage()
 	case model.NamespacePlatform:
