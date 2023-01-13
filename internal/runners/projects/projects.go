@@ -26,7 +26,7 @@ type projectWithOrg struct {
 
 type projectWithOrgs []projectWithOrg
 
-func newProjectWithOrg(name, org string, checkouts []string) *projectWithOrg {
+func newProjectWithOrg(name, org string, checkouts []string) projectWithOrg {
 	p := projectWithOrg{Name: name, Organization: org, LocalCheckouts: checkouts}
 	for _, checkout := range checkouts {
 		var execDir string
@@ -38,7 +38,7 @@ func newProjectWithOrg(name, org string, checkouts []string) *projectWithOrg {
 		}
 		p.Executables = append(p.Executables, execDir)
 	}
-	return &p
+	return p
 }
 
 func (o projectWithOrgs) MarshalOutput(f output.Format) interface{} {
@@ -125,7 +125,7 @@ func (r *Projects) Run(params *Params) error {
 			continue
 		}
 
-		projects = append(projects, *newProjectWithOrg(ns.Project, ns.Owner, checkouts))
+		projects = append(projects, newProjectWithOrg(ns.Project, ns.Owner, checkouts))
 	}
 	sort.SliceStable(projects, func(i, j int) bool {
 		if projects[i].Organization == projects[j].Organization {
