@@ -49,6 +49,7 @@ const (
 	Perl            = "perl"
 	Platforms       = "platforms"
 	Prepare         = "prepare"
+	Projects        = "projects"
 	Pull            = "pull"
 	Push            = "push"
 	Python          = "python"
