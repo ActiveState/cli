@@ -3,26 +3,16 @@ package languages
 import (
 	"strings"
 
-	"github.com/ActiveState/cli/internal/analytics"
-	"github.com/ActiveState/cli/internal/config"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
-	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runbits/requirements"
-	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
 type Update struct {
-	output    output.Outputer
-	prompt    prompt.Prompter
-	project   *project.Project
-	auth      *authentication.Auth
-	config    *config.Instance
-	analytics analytics.Dispatcher
-	svcModel  *model.SvcModel
+	prime primeable
 }
 
 type primeable interface {
@@ -37,13 +27,7 @@ type primeable interface {
 
 func NewUpdate(prime primeable) *Update {
 	return &Update{
-		output:    prime.Output(),
-		prompt:    prime.Prompt(),
-		project:   prime.Project(),
-		auth:      prime.Auth(),
-		config:    prime.Config(),
-		analytics: prime.Analytics(),
-		svcModel:  prime.SvcModel(),
+		prime: prime,
 	}
 }
 
@@ -57,11 +41,11 @@ func (u *Update) Run(params *UpdateParams) error {
 		return err
 	}
 
-	if u.project == nil {
+	if u.prime.Project() == nil {
 		return locale.NewInputError("err_no_project")
 	}
 
-	err = ensureLanguageProject(lang, u.project)
+	err = ensureLanguageProject(lang, u.prime.Project())
 	if err != nil {
 		return err
 	}
@@ -79,19 +63,12 @@ func (u *Update) Run(params *UpdateParams) error {
 		return err
 	}
 
-	err = requirements.ExecuteRequirementOperation(&requirements.RequirementOperationParams{
-		Output:             u.output,
-		Prompt:             u.prompt,
-		Project:            u.project,
-		Auth:               u.auth,
-		Config:             u.config,
-		Analytics:          u.analytics,
-		SvcModel:           u.svcModel,
-		RequirementName:    lang.Name,
-		RequirementVersion: lang.Version,
-		Operation:          model.OperationAdded,
-		NsType:             model.NamespaceLanguage,
-	})
+	op := requirements.NewRequirementOperation(u.prime)
+	if err != nil {
+		return errs.Wrap(err, "Could not create requirement operation.")
+	}
+
+	err = op.ExecuteRequirementOperation(lang.Name, lang.Version, 0, model.OperationAdded, model.NamespaceLanguage)
 	if err != nil {
 		return locale.WrapError(err, "err_language_update", "Could not update language: {{.V0}}", lang.Name)
 	}
@@ -100,7 +77,7 @@ func (u *Update) Run(params *UpdateParams) error {
 	if lang.Version != "" {
 		langName = langName + "@" + lang.Version
 	}
-	u.output.Notice(locale.Tl("language_added", "Language added: {{.V0}}", langName))
+	u.prime.Output().Notice(locale.Tl("language_added", "Language added: {{.V0}}", langName))
 	return nil
 }
 

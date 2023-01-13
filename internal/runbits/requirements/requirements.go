@@ -18,6 +18,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runbits"
 	medmodel "github.com/ActiveState/cli/pkg/platform/api/mediator/model"
@@ -54,24 +55,24 @@ type RequirementOperation struct {
 }
 
 type primeable interface {
-	Output() output.Outputer
-	Prompt() prompt.Prompter
-	Project() *project.Project
-	Auth() *authentication.Auth
-	Config() *config.Instance
-	Analytics() analytics.Dispatcher
-	Model() *model.SvcModel
+	primer.Outputer
+	primer.Prompter
+	primer.Projecter
+	primer.Auther
+	primer.Configurer
+	primer.Analyticer
+	primer.SvcModeler
 }
 
 func NewRequirementOperation(prime primeable) *RequirementOperation {
 	return &RequirementOperation{
-		Output:    prime.Output(),
-		Prompt:    prime.Prompt(),
-		Project:   prime.Project(),
-		Auth:      prime.Auth(),
-		Config:    prime.Config(),
-		Analytics: prime.Analytics(),
-		SvcModel:  prime.Model(),
+		prime.Output(),
+		prime.Prompt(),
+		prime.Project(),
+		prime.Auth(),
+		prime.Config(),
+		prime.Analytics(),
+		prime.SvcModel(),
 	}
 }
 
@@ -90,7 +91,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 	var langVersion string
 	langName := "undetermined"
 
-	out := params.Output
+	out := r.Output
 	var pg *output.DotProgress
 	defer func() {
 		if pg != nil && !pg.Stopped() {
@@ -99,9 +100,9 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 	}()
 
 	var err error
-	pj := params.Project
+	pj := r.Project
 	if pj == nil {
-		pg = output.NewDotProgress(params.Output, locale.Tl("progress_project", "", params.RequirementName), 10*time.Second)
+		pg = output.NewDotProgress(r.Output, locale.Tl("progress_project", "", requirementName), 10*time.Second)
 		pj, err = initializeProject()
 		if err != nil {
 			return locale.WrapError(err, "err_package_get_project", "Could not get project from path")
@@ -119,7 +120,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 		out.Notice(locale.Tl("operating_message", "", pj.NamespaceString(), pj.Dir()))
 	}
 
-	switch params.NsType {
+	switch nsType {
 	case model.NamespacePackage, model.NamespaceBundle:
 		if pj == nil {
 			break
@@ -127,7 +128,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 		language, err := model.LanguageByCommit(pj.CommitUUID())
 		if err == nil {
 			langName = language.Name
-			ns = model.NewNamespacePkgOrBundle(langName, params.NsType)
+			ns = model.NewNamespacePkgOrBundle(langName, nsType)
 		} else {
 			logging.Debug("Could not get language from project: %v", err)
 		}
@@ -137,9 +138,9 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 		ns = model.NewNamespacePlatform()
 	}
 
-	var validatePkg = params.Operation == model.OperationAdded && (ns.Type() == model.NamespacePackage || ns.Type() == model.NamespaceBundle)
+	var validatePkg = Operation == model.OperationAdded && (ns.Type() == model.NamespacePackage || ns.Type() == model.NamespaceBundle)
 	if !ns.IsValid() {
-		pg = output.NewDotProgress(out, locale.Tl("progress_pkg_nolang", "", params.RequirementName), 10*time.Second)
+		pg = output.NewDotProgress(out, locale.Tl("progress_pkg_nolang", "", requirementName), 10*time.Second)
 
 		supported, err := model.FetchSupportedLanguages(model.HostPlatform)
 		if err != nil {
@@ -147,7 +148,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 		}
 
 		var supportedLang *medmodel.SupportedLanguage
-		params.RequirementName, ns, supportedLang, err = resolvePkgAndNamespace(params.Prompt, params.RequirementName, params.NsType, supported)
+		requirementName, ns, supportedLang, err = resolvePkgAndNamespace(r.Prompt, requirementName, nsType, supported)
 		if err != nil {
 			return errs.Wrap(err, "Could not resolve pkg and namespace")
 		}
@@ -159,26 +160,26 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 		pg.Stop(locale.T("progress_found"))
 	}
 
-	if strings.ToLower(params.RequirementVersion) == latestVersion {
-		params.RequirementVersion = ""
+	if strings.ToLower(requirementVersion) == latestVersion {
+		requirementVersion = ""
 	}
 
 	if validatePkg {
-		pg = output.NewDotProgress(out, locale.Tl("progress_search", "", params.RequirementName), 10*time.Second)
+		pg = output.NewDotProgress(out, locale.Tl("progress_search", "", requirementName), 10*time.Second)
 
-		packages, err := model.SearchIngredientsStrict(ns, params.RequirementName, false, false)
+		packages, err := model.SearchIngredientsStrict(ns, requirementName, false, false)
 		if err != nil {
 			return locale.WrapError(err, "package_err_cannot_obtain_search_results")
 		}
 		if len(packages) == 0 {
-			suggestions, err := getSuggestions(ns, params.RequirementName)
+			suggestions, err := getSuggestions(ns, requirementName)
 			if err != nil {
 				multilog.Error("Failed to retrieve suggestions: %v", err)
 			}
 			if len(suggestions) == 0 {
-				return locale.WrapInputError(err, "package_ingredient_alternatives_nosuggest", "", params.RequirementName)
+				return locale.WrapInputError(err, "package_ingredient_alternatives_nosuggest", "", requirementName)
 			}
-			return locale.WrapInputError(err, "package_ingredient_alternatives", "", params.RequirementName, strings.Join(suggestions, "\n"))
+			return locale.WrapInputError(err, "package_ingredient_alternatives", "", requirementName, strings.Join(suggestions, "\n"))
 		}
 
 		pg.Stop(locale.T("progress_found"))
@@ -190,18 +191,18 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 	pg = output.NewDotProgress(out, locale.T("progress_commit"), 10*time.Second)
 
 	// Check if this is an addition or an update
-	if params.Operation == model.OperationAdded && parentCommitID != "" {
-		req, err := model.GetRequirement(parentCommitID, ns, params.RequirementName)
+	if Operation == model.OperationAdded && parentCommitID != "" {
+		req, err := model.GetRequirement(parentCommitID, ns, requirementName)
 		if err != nil {
 			return errs.Wrap(err, "Could not get requirement")
 		}
 		if req != nil {
-			params.Operation = model.OperationUpdated
+			Operation = model.OperationUpdated
 		}
 	}
 
-	params.Analytics.EventWithLabel(
-		anaConsts.CatPackageOp, fmt.Sprintf("%s-%s", params.Operation, langName), params.RequirementName,
+	r.Analytics.EventWithLabel(
+		anaConsts.CatPackageOp, fmt.Sprintf("%s-%s", Operation, langName), requirementName,
 	)
 
 	if !hasParentCommit {
@@ -213,12 +214,12 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 	}
 
 	var commitID strfmt.UUID
-	commitID, err = model.CommitRequirement(parentCommitID, params.Operation, params.RequirementName, params.RequirementVersion, params.RequirementBitWidth, ns)
+	commitID, err = model.CommitRequirement(parentCommitID, Operation, requirementName, requirementVersion, requirementBitWidth, ns)
 	if err != nil {
-		if params.Operation == model.OperationRemoved && strings.Contains(err.Error(), "does not exist") {
-			return locale.WrapInputError(err, "err_package_remove_does_not_exist", "Requirement is not installed: {{.V0}}", params.RequirementName)
+		if Operation == model.OperationRemoved && strings.Contains(err.Error(), "does not exist") {
+			return locale.WrapInputError(err, "err_package_remove_does_not_exist", "Requirement is not installed: {{.V0}}", requirementName)
 		}
-		return locale.WrapError(err, fmt.Sprintf("err_%s_%s", ns.Type(), params.Operation))
+		return locale.WrapError(err, fmt.Sprintf("err_%s_%s", ns.Type(), Operation))
 	}
 
 	orderChanged := !hasParentCommit
@@ -246,7 +247,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 	}
 
 	// refresh or install runtime
-	err = runbits.RefreshRuntime(params.Auth, params.Output, params.Analytics, pj, storage.CachePath(), commitID, orderChanged, trigger, params.SvcModel)
+	err = runbits.RefreshRuntime(r.Auth, r.Output, r.Analytics, pj, storage.CachePath(), commitID, orderChanged, trigger, r.SvcModel)
 	if err != nil {
 		return err
 	}
@@ -262,10 +263,10 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 		out.Print(locale.Tr("install_initial_success", pj.Source().Path()))
 	}
 
-	if params.RequirementVersion != "" {
-		out.Print(locale.Tr(fmt.Sprintf("%s_version_%s", ns.Type(), params.Operation), params.RequirementName, params.RequirementVersion))
+	if requirementVersion != "" {
+		out.Print(locale.Tr(fmt.Sprintf("%s_version_%s", ns.Type(), Operation), requirementName, requirementVersion))
 	} else {
-		out.Print(locale.Tr(fmt.Sprintf("%s_%s", ns.Type(), params.Operation), params.RequirementName))
+		out.Print(locale.Tr(fmt.Sprintf("%s_%s", ns.Type(), Operation), requirementName))
 	}
 
 	out.Print(locale.T("operation_success_local"))

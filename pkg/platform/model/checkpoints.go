@@ -119,21 +119,22 @@ func FilterCheckpointPackages(chkPt []*gqlModel.Requirement) []*gqlModel.Require
 	return checkpoint
 }
 
-func FilterCheckpointNamespace(checkpoint []*gqlModel.Requirement, namespace Namespace) []*gqlModel.Requirement {
-	if checkpoint == nil {
+// FilterCheckpointNamespace filters a Checkpoint removing requirements that do not match the given namespace.
+func FilterCheckpointNamespace(chkPt []*gqlModel.Requirement, namespace Namespace) []*gqlModel.Requirement {
+	if chkPt == nil {
 		return nil
 	}
 
-	result := []*gqlModel.Requirement{}
-	for _, requirement := range checkpoint {
+	checkpoint := []*gqlModel.Requirement{}
+	for _, requirement := range chkPt {
 		if !NamespaceMatch(requirement.Namespace, NamespaceMatchable(namespace.String())) {
 			continue
 		}
 
-		result = append(result, requirement)
+		checkpoint = append(checkpoint, requirement)
 	}
 
-	return result
+	return checkpoint
 }
 
 // CheckpointToRequirements converts a checkpoint to a list of requirements for use with the head-chef

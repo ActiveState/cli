@@ -1,17 +1,11 @@
 package platforms
 
 import (
-	"github.com/ActiveState/cli/internal/analytics"
-	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runbits/requirements"
-	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/ActiveState/cli/pkg/project"
 )
 
 // RemoveRunParams tracks the info required for running Remove.
@@ -21,25 +15,13 @@ type RemoveRunParams struct {
 
 // Remove manages the removeing execution context.
 type Remove struct {
-	output    output.Outputer
-	prompt    prompt.Prompter
-	project   *project.Project
-	auth      *authentication.Auth
-	config    *config.Instance
-	analytics analytics.Dispatcher
-	svcModel  *model.SvcModel
+	prime primeable
 }
 
 // NewRemove prepares a remove execution context for use.
 func NewRemove(prime primeable) *Remove {
 	return &Remove{
-		output:    prime.Output(),
-		prompt:    prime.Prompt(),
-		project:   prime.Project(),
-		auth:      prime.Auth(),
-		config:    prime.Config(),
-		analytics: prime.Analytics(),
-		svcModel:  prime.SvcModel(),
+		prime: prime,
 	}
 }
 
@@ -47,7 +29,7 @@ func NewRemove(prime primeable) *Remove {
 func (r *Remove) Run(ps RemoveRunParams) error {
 	logging.Debug("Execute platforms remove")
 
-	if r.project == nil {
+	if r.prime.Project() == nil {
 		return locale.NewInputError("err_no_project")
 	}
 
@@ -56,24 +38,17 @@ func (r *Remove) Run(ps RemoveRunParams) error {
 		return errs.Wrap(err, "Could not prepare parameters.")
 	}
 
-	if err := requirements.ExecuteRequirementOperation(&requirements.RequirementOperationParams{
-		Output:              r.output,
-		Prompt:              r.prompt,
-		Project:             r.project,
-		Auth:                r.auth,
-		Config:              r.config,
-		Analytics:           r.analytics,
-		SvcModel:            r.svcModel,
-		RequirementName:     params.name,
-		RequirementVersion:  params.version,
-		RequirementBitWidth: params.BitWidth,
-		Operation:           model.OperationRemoved,
-		NsType:              model.NamespacePlatform,
-	}); err != nil {
+	if err := requirements.NewRequirementOperation(r.prime).ExecuteRequirementOperation(
+		params.name,
+		params.version,
+		params.BitWidth,
+		model.OperationRemoved,
+		model.NamespacePlatform,
+	); err != nil {
 		return locale.WrapError(err, "err_remove_platform", "Could not remove platform.")
 	}
 
-	r.output.Notice(locale.Tr("platform_removed", params.name, params.version))
+	r.prime.Output().Notice(locale.Tr("platform_removed", params.name, params.version))
 
 	return nil
 }
