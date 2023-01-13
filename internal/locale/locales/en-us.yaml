@@ -1923,8 +1923,7 @@ err_update_privilege_mismatch:
 uninstall_warn_not_empty:
   other: |
     [ERROR]Unable to remove all files in the directory the installation directory.[/RESET]
-    The directory may contain unrecognized files.
-    Encountered error: {{.V0}}
+    There were unrecognized files in that directory.
 err_state_exec:
   other: Could not get state exec
 err_service_exec:
