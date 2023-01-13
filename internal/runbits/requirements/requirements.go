@@ -43,16 +43,41 @@ func (pv *PackageVersion) Set(arg string) error {
 	return nil
 }
 
+type RequirementOperation struct {
+	Output    output.Outputer
+	Prompt    prompt.Prompter
+	Project   *project.Project
+	Auth      *authentication.Auth
+	Config    *config.Instance
+	Analytics analytics.Dispatcher
+	SvcModel  *model.SvcModel
+}
+
+type primeable interface {
+	Output() output.Outputer
+	Prompt() prompt.Prompter
+	Project() *project.Project
+	Auth() *authentication.Auth
+	Config() *config.Instance
+	Analytics() analytics.Dispatcher
+	Model() *model.SvcModel
+}
+
+func NewRequirementOperation(prime primeable) *RequirementOperation {
+	return &RequirementOperation{
+		Output:    prime.Output(),
+		Prompt:    prime.Prompt(),
+		Project:   prime.Project(),
+		Auth:      prime.Auth(),
+		Config:    prime.Config(),
+		Analytics: prime.Analytics(),
+		SvcModel:  prime.Model(),
+	}
+}
+
 const latestVersion = "latest"
 
 type RequirementOperationParams struct {
-	Output              output.Outputer
-	Prompt              prompt.Prompter
-	Project             *project.Project
-	Auth                *authentication.Auth
-	Config              *config.Instance
-	Analytics           analytics.Dispatcher
-	SvcModel            *model.SvcModel
 	RequirementName     string
 	RequirementVersion  string
 	RequirementBitWidth int
@@ -60,7 +85,7 @@ type RequirementOperationParams struct {
 	NsType              model.NamespaceType
 }
 
-func ExecuteRequirementOperation(params *RequirementOperationParams) (rerr error) {
+func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requirementVersion string, requirementBitWidth int, Operation model.Operation, nsType model.NamespaceType) (rerr error) {
 	var ns model.Namespace
 	var langVersion string
 	langName := "undetermined"
