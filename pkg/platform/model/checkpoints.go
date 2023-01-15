@@ -32,7 +32,7 @@ type Language struct {
 }
 
 // GetRequirement searches a commit for a requirement by name.
-func GetRequirement(commitID strfmt.UUID, namespace Namespace, requirement string) (*gqlModel.Requirement, error) {
+func GetRequirement(commitID strfmt.UUID, namespace NamespaceType, requirement string) (*gqlModel.Requirement, error) {
 	chkPt, _, err := FetchCheckpointForCommit(commitID)
 	if err != nil {
 		return nil, err
@@ -99,36 +99,19 @@ func GqlReqsToMonoCheckpoint(requirements []*gqlModel.Requirement) []*mono_model
 	return result
 }
 
-// FilterCheckpointPackages filters a Checkpoint removing requirements that
-// are not packages. If nil data is provided, a nil slice is returned. If no
-// packages remain after filtering, an empty slice is returned.
-func FilterCheckpointPackages(chkPt []*gqlModel.Requirement) []*gqlModel.Requirement {
-	if chkPt == nil {
-		return nil
-	}
-
-	checkpoint := []*gqlModel.Requirement{}
-	for _, requirement := range chkPt {
-		if !NamespaceMatch(requirement.Namespace, NamespacePackageMatch) && !NamespaceMatch(requirement.Namespace, NamespaceBundlesMatch) {
-			continue
-		}
-
-		checkpoint = append(checkpoint, requirement)
-	}
-
-	return checkpoint
-}
-
 // FilterCheckpointNamespace filters a Checkpoint removing requirements that do not match the given namespace.
-func FilterCheckpointNamespace(chkPt []*gqlModel.Requirement, namespace Namespace) []*gqlModel.Requirement {
+func FilterCheckpointNamespace(chkPt []*gqlModel.Requirement, namespace ...NamespaceType) []*gqlModel.Requirement {
 	if chkPt == nil {
 		return nil
 	}
 
 	checkpoint := []*gqlModel.Requirement{}
 	for _, requirement := range chkPt {
-		if !NamespaceMatch(requirement.Namespace, NamespaceMatchable(namespace.String())) {
-			continue
+		for _, ns := range namespace {
+			if NamespaceMatch(requirement.Namespace, NamespaceMatchable(ns.String())) {
+				checkpoint = append(checkpoint, requirement)
+				break
+			}
 		}
 
 		checkpoint = append(checkpoint, requirement)

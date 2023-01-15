@@ -116,15 +116,11 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 				}
 			}
 		}()
-	} else {
-		out.Notice(locale.Tl("operating_message", "", pj.NamespaceString(), pj.Dir()))
 	}
+	out.Notice(locale.Tl("operating_message", "", pj.NamespaceString(), pj.Dir()))
 
 	switch nsType {
 	case model.NamespacePackage, model.NamespaceBundle:
-		if pj == nil {
-			break
-		}
 		language, err := model.LanguageByCommit(pj.CommitUUID())
 		if err == nil {
 			langName = language.Name
@@ -139,7 +135,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 	}
 
 	var validatePkg = Operation == model.OperationAdded && (ns.Type() == model.NamespacePackage || ns.Type() == model.NamespaceBundle)
-	if !ns.IsValid() {
+	if !ns.IsValid() && (ns.Type() == model.NamespacePackage || ns.Type() == model.NamespaceBundle) {
 		pg = output.NewDotProgress(out, locale.Tl("progress_pkg_nolang", "", requirementName), 10*time.Second)
 
 		supported, err := model.FetchSupportedLanguages(model.HostPlatform)
@@ -192,7 +188,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 
 	// Check if this is an addition or an update
 	if Operation == model.OperationAdded && parentCommitID != "" {
-		req, err := model.GetRequirement(parentCommitID, ns, requirementName)
+		req, err := model.GetRequirement(parentCommitID, ns.Type(), requirementName)
 		if err != nil {
 			return errs.Wrap(err, "Could not get requirement")
 		}
