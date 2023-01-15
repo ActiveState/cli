@@ -135,7 +135,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 	}
 
 	var validatePkg = Operation == model.OperationAdded && (ns.Type() == model.NamespacePackage || ns.Type() == model.NamespaceBundle)
-	if !ns.IsValid() && (ns.Type() == model.NamespacePackage || ns.Type() == model.NamespaceBundle) {
+	if !ns.IsValid() && (nsType == model.NamespacePackage || nsType == model.NamespaceBundle) {
 		pg = output.NewDotProgress(out, locale.Tl("progress_pkg_nolang", "", requirementName), 10*time.Second)
 
 		supported, err := model.FetchSupportedLanguages(model.HostPlatform)
@@ -231,6 +231,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 	pg.Stop(locale.T("progress_success"))
 
 	var trigger target.Trigger
+	fmt.Println("Namespace type: ", ns.Type().String())
 	switch ns.Type() {
 	case model.NamespaceLanguage:
 		trigger = target.TriggerLanguage
