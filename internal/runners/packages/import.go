@@ -122,7 +122,7 @@ func (i *Import) Run(params *ImportRunParams) error {
 		return locale.WrapError(err, "err_obtaining_change_request", "Could not process change set: {{.V0}}.", api.ErrorMessageFromPayload(err))
 	}
 
-	packageReqs := model.FilterCheckpointNamespace(reqs, model.NamespacePackage, model.NamespaceBundle)
+	packageReqs := model.FilterCheckpointNamespace(reqs, model.NamespacePackageMatch, model.NamespaceBundlesMatch)
 	if len(packageReqs) > 0 {
 		err = removeRequirements(i.Prompter, i.proj, params, packageReqs)
 		if err != nil {

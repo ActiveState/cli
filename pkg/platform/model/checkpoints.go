@@ -38,7 +38,7 @@ func GetRequirement(commitID strfmt.UUID, namespace NamespaceType, requirement s
 		return nil, err
 	}
 
-	chkPt = FilterCheckpointNamespace(chkPt, namespace)
+	chkPt = FilterCheckpointNamespace(chkPt, NamespaceMatchable(namespace.String()))
 
 	for _, req := range chkPt {
 		if req.Namespace == namespace.String() && req.Requirement == requirement {
@@ -100,17 +100,16 @@ func GqlReqsToMonoCheckpoint(requirements []*gqlModel.Requirement) []*mono_model
 }
 
 // FilterCheckpointNamespace filters a Checkpoint removing requirements that do not match the given namespace.
-func FilterCheckpointNamespace(chkPt []*gqlModel.Requirement, namespace ...NamespaceType) []*gqlModel.Requirement {
+func FilterCheckpointNamespace(chkPt []*gqlModel.Requirement, namespace ...NamespaceMatchable) []*gqlModel.Requirement {
 	if chkPt == nil {
 		return nil
 	}
 
 	checkpoint := []*gqlModel.Requirement{}
-	for _, requirement := range chkPt {
-		for _, ns := range namespace {
-			if NamespaceMatch(requirement.Namespace, NamespaceMatchable(ns.String())) {
+	for _, ns := range namespace {
+		for _, requirement := range chkPt {
+			if NamespaceMatch(requirement.Namespace, ns) {
 				checkpoint = append(checkpoint, requirement)
-				break
 			}
 		}
 	}
