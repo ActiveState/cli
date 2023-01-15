@@ -113,8 +113,6 @@ func FilterCheckpointNamespace(chkPt []*gqlModel.Requirement, namespace ...Names
 				break
 			}
 		}
-
-		checkpoint = append(checkpoint, requirement)
 	}
 
 	return checkpoint
