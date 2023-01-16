@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"runtime"
 
-	svcAutostart "github.com/ActiveState/cli/cmd/state-svc/autostart"
+	svcApp "github.com/ActiveState/cli/cmd/state-svc/app"
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/app"
 	"github.com/ActiveState/cli/internal/captain"
@@ -160,7 +160,7 @@ func InstalledPreparedFiles(cfg app.Configurable) ([]string, error) {
 		return nil, locale.WrapError(err, "err_svc_exec")
 	}
 
-	svcShortcut, err := app.New(constants.SvcAppName, svcExec, []string{"start"}, svcAutostart.Options, cfg)
+	svcShortcut, err := app.New(constants.SvcAppName, svcExec, []string{"start"}, svcApp.Options, cfg)
 	if err != nil {
 		return nil, locale.WrapError(err, "err_autostart_app")
 	}

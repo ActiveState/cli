@@ -8,7 +8,7 @@ import (
 	"runtime"
 	"testing"
 
-	svcAutostart "github.com/ActiveState/cli/cmd/state-svc/autostart"
+	svcApp "github.com/ActiveState/cli/cmd/state-svc/app"
 	"github.com/ActiveState/cli/internal/app"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
@@ -59,7 +59,7 @@ func (suite *PrepareIntegrationTestSuite) TestPrepare() {
 	// Verify autostart was enabled.
 	cfg, err := config.New()
 	suite.Require().NoError(err)
-	as, err := app.New(constants.SvcAppName, ts.SvcExe, nil, svcAutostart.Options, cfg)
+	as, err := app.New(constants.SvcAppName, ts.SvcExe, nil, svcApp.Options, cfg)
 	suite.Require().NoError(err)
 	enabled, err := as.IsAutostartEnabled()
 	suite.Require().NoError(err)

@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	svcApp "github.com/ActiveState/cli/cmd/state-svc/app"
 	svcAutostart "github.com/ActiveState/cli/cmd/state-svc/autostart"
 	anaConst "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/app"
@@ -22,6 +23,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/osutils"
+	"github.com/ActiveState/cli/internal/osutils/autostart"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
@@ -108,7 +110,7 @@ func (i *Installer) Install() (rerr error) {
 		return errs.Wrap(err, "Installation of service app failed.")
 	}
 
-	err = app.EnableAutostart()
+	err = autostart.Enable(app.Exec, svcAutostart.AutostartOptions)
 	if err != nil {
 		return errs.Wrap(err, "Failed to enable autostart for service app.")
 	}
@@ -175,7 +177,7 @@ func (i *Installer) installSvcApp() (*app.App, error) {
 		return nil, errs.Wrap(err, "Could not determine service executable")
 	}
 
-	app, err := app.New(constants.SvcAppName, svcExec, []string{"start"}, svcAutostart.Options, i.cfg)
+	app, err := app.New(constants.SvcAppName, svcExec, []string{"start"}, svcApp.Options, i.cfg)
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not create app")
 	}

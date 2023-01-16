@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	svcAutostart "github.com/ActiveState/cli/cmd/state-svc/autostart"
+	svcApp "github.com/ActiveState/cli/cmd/state-svc/app"
 	"github.com/ActiveState/cli/internal/app"
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/config"
@@ -209,7 +209,7 @@ func (suite *SvcIntegrationTestSuite) TestAutostartConfigEnableDisable() {
 
 	cfg, err := config.New()
 	suite.Require().NoError(err)
-	app, err := app.New(constants.SvcAppName, ts.SvcExe, nil, svcAutostart.Options, cfg)
+	app, err := app.New(constants.SvcAppName, ts.SvcExe, nil, svcApp.Options, cfg)
 	suite.Require().NoError(err)
 	enabled, err := app.IsAutostartEnabled() // checks if the proper files are in place, not the config key setting
 	suite.Require().NoError(err)
