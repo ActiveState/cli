@@ -185,7 +185,7 @@ func (i *Installer) installSvcApp() (*app.App, error) {
 		return nil, errs.Wrap(err, "Could not install app")
 	}
 
-	return app, err
+	return app, nil
 }
 
 var errCorruptedInstall = errs.New("Corrupted install")
