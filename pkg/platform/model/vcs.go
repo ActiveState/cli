@@ -119,16 +119,17 @@ func NamespaceMatch(query string, namespace NamespaceMatchable) bool {
 }
 
 type NamespaceType struct {
-	name   string
-	prefix string
+	name      string
+	prefix    string
+	matchable NamespaceMatchable
 }
 
 var (
-	NamespacePackage  = NamespaceType{"package", "language"} // these values should match the namespace prefix
-	NamespaceBundle   = NamespaceType{"bundle", "bundles"}
-	NamespaceLanguage = NamespaceType{"language", ""}
-	NamespacePlatform = NamespaceType{"platform", ""}
-	NamespaceBlank    = NamespaceType{"", ""}
+	NamespacePackage  = NamespaceType{"package", "language", NamespacePackageMatch} // these values should match the namespace prefix
+	NamespaceBundle   = NamespaceType{"bundle", "bundles", NamespaceBundlesMatch}
+	NamespaceLanguage = NamespaceType{"language", "", NamespaceLanguageMatch}
+	NamespacePlatform = NamespaceType{"platform", "", NamespacePlatformMatch}
+	NamespaceBlank    = NamespaceType{"", "", ""}
 )
 
 func (t NamespaceType) String() string {
@@ -137,6 +138,10 @@ func (t NamespaceType) String() string {
 
 func (t NamespaceType) Prefix() string {
 	return t.prefix
+}
+
+func (t NamespaceType) Matchable() NamespaceMatchable {
+	return t.matchable
 }
 
 // Namespace is the type used for communicating namespaces, mainly just allows for self documenting code

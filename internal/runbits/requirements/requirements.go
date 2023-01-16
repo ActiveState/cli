@@ -188,7 +188,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 
 	// Check if this is an addition or an update
 	if Operation == model.OperationAdded && parentCommitID != "" {
-		req, err := model.GetRequirement(parentCommitID, ns.Type(), requirementName)
+		req, err := model.GetRequirement(parentCommitID, ns, requirementName)
 		if err != nil {
 			return errs.Wrap(err, "Could not get requirement")
 		}

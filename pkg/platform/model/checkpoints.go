@@ -32,16 +32,16 @@ type Language struct {
 }
 
 // GetRequirement searches a commit for a requirement by name.
-func GetRequirement(commitID strfmt.UUID, namespace NamespaceType, requirement string) (*gqlModel.Requirement, error) {
+func GetRequirement(commitID strfmt.UUID, nsType Namespace, requirement string) (*gqlModel.Requirement, error) {
 	chkPt, _, err := FetchCheckpointForCommit(commitID)
 	if err != nil {
 		return nil, err
 	}
 
-	chkPt = FilterCheckpointNamespace(chkPt, NamespaceMatchable(namespace.String()))
+	chkPt = FilterCheckpointNamespace(chkPt, nsType.Type().Matchable())
 
 	for _, req := range chkPt {
-		if req.Namespace == namespace.String() && req.Requirement == requirement {
+		if req.Namespace == nsType.String() && req.Requirement == requirement {
 			return req, nil
 		}
 	}
