@@ -19,12 +19,10 @@ project: "https://platform.activestate.com/ScriptOrg/ScriptProject?commitID=0001
 scripts:
   - name: first-script
     value: echo "first script"
-    constraints:
-      os: macos,linux
+    if: ne .OS.Name "Windows"
   - name: first-script
     value: echo first script
-    constraints:
-      os: windows
+    if: eq .OS.Name "Windows"
   - name: second-script
     value: print("second script")
     language: python3
