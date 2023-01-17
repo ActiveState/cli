@@ -349,7 +349,7 @@ func TestArtifactDownloads(t *testing.T) {
 			if tt.IsCamel {
 				downloads, err = artifact.NewDownloadsFromCamelBuild(build)
 			} else {
-				downloads, _, err = artifact.NewDownloadsFromBuild(build)
+				downloads, err = artifact.NewDownloadsFromBuild(build)
 			}
 			assert.NoError(t, err)
 			assert.Equal(t, tt.Expected, downloads)
