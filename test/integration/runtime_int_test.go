@@ -61,8 +61,8 @@ package integration
 		filename := filepath.Join(dir, "tmp", filename) // each file is in a "tmp" dir in the archive
 		suite.Assert().True(fileutils.FileExists(filename), "file '%s' was not extracted from its artifact", filename)
 	}
-}*/
+}
 
 func TestRuntimeIntegrationTestSuite(t *testing.T) {
 	suite.Run(t, new(RuntimeIntegrationTestSuite))
-}
+}*/
