@@ -1,359 +1,238 @@
-// Package events handles the processing of setup events. As these events can be
-// sent in parallel, all events are collected in a single go-routine to simplify
-// their processing.
-//
-// The events are generated in the RuntimeEventProducer which exposes an events
-// channel that can be consumed by the RuntimeEventConsumer. The consumer then
-// delegates the event handling to digesters: ProgressDigester and
-// ChangeSummaryDigester
-//                                     +--- RuntimeEventHandler -------------------------------------+
-//                                     |                                                             |
-//                                     |                                   +-----------------------+ |
-//                                     |                               ,-> | ChangeSummaryDigester | |
-// +----------------------+            |  +----------------------+    /    +-----------------------+ |
-// | RuntimeEventProducer | ---------> |  | RuntimeEventConsumer | ---+                              |
-// +----------------------+  .Events() |  +----------------------+    \    +------------------+      |
-//                                     |                               `-> | ProgressDigester |      |
-//                                     |                                   +------------------+      |
-//                                     +-------------------------------------------------------------+
-// The runbits package has default implementations for digesters, and the
-// RuntimeEventHandler combines the consumer with its digesters.
 package events
 
-// This file contains the definition of all events that the RuntimeEventProducer creates.
-
 import (
-	"fmt"
-	"time"
-
-	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
+	"github.com/ActiveState/cli/pkg/platform/runtime/store"
 )
 
-// SetupStep is the step the runtime setup routine is currently at.
-type SetupStep int
+/*
+These events are intentionally low level and with minimal abstraction so as to avoid this mechanic becoming unwieldy.
+The naming format of events should be in the form of <Component>[<Action>]<Outcome>.
+*/
 
-const (
-	// Build refers to a remote building artifact
-	Build SetupStep = iota
-	// Download refers to a currently downloading artifact
-	Download
-	// Unpack refers to the step where an artifact tarball is currently being unpacked
-	Unpack
-	// Install refers to all the post-processing that needs to happen to get an artifact ready for use.
-	Install
-)
-
-func (s SetupStep) String() string {
-	switch s {
-	case Build:
-		return "build"
-	case Download:
-		return "download"
-	case Unpack:
-		return "unpack"
-	case Install:
-		return "install"
-	default:
-		return "invalid"
-	}
+type Handler interface {
+	Handle(ev Eventer) error
+	Close() error
 }
 
-// SetupEventer is the interface that every setup event should implement
-type SetupEventer interface {
-	// String returns a description of the event
-	String() string
+type Event struct{}
+
+type Eventer interface {
+	IsEvent() Event
 }
 
-// ArtifactSetupEventer describes the methods for an event that reports progress on a specific artifact
-type ArtifactSetupEventer interface {
-	SetupEventer
-	Step() SetupStep
-	ArtifactID() artifact.ArtifactID
+type Start struct {
 }
 
-// baseEvent is a re-usable struct that implements the Step() and String() methods
-type baseEvent struct {
-	name string
-	step SetupStep
+func (Start) IsEvent() Event {
+	return Event{}
 }
 
-func newBaseEvent(name string, step SetupStep) baseEvent {
-	return baseEvent{name, step}
+type Complete struct {
 }
 
-func (be baseEvent) String() string {
-	return be.name
+func (Complete) IsEvent() Event {
+	return Event{}
 }
 
-func (be baseEvent) Step() SetupStep {
-	return be.step
+type BuildSkipped struct {
 }
 
-// artifactBaseEvent is a re-usable struct that implements the ArtifactEventer interface
-type artifactBaseEvent struct {
-	baseEvent
-	artifactID artifact.ArtifactID
+func (BuildSkipped) IsEvent() Event {
+	return Event{}
 }
 
-func newArtifactBaseEvent(suffix string, step SetupStep, artifactID artifact.ArtifactID) artifactBaseEvent {
-	return artifactBaseEvent{newBaseEvent(fmt.Sprintf("artifact_%s_%s", step.String(), suffix), step), artifactID}
+type BuildStarted struct {
+	Artifacts   int64
+	LogFilePath string
 }
 
-type artifactBuildEvent struct {
-	artifactBaseEvent
-	logURI string
+func (BuildStarted) IsEvent() Event {
+	return Event{}
 }
 
-func newArtifactBuildEvent(suffix string, step SetupStep, artifactID artifact.ArtifactID, logURI string) artifactBuildEvent {
-	return artifactBuildEvent{newArtifactBaseEvent(suffix, step, artifactID), logURI}
+type BuildSuccess struct {
 }
 
-// ArtifactResolverEvents forwards a function to resolve artifact names (as soon as that information becomes available)
-type ArtifactResolverEvent struct {
-	resolver        ArtifactResolver
-	downloadable    []artifact.ArtifactDownload
-	failedArtifacts []artifact.FailedArtifact
+func (BuildSuccess) IsEvent() Event {
+	return Event{}
 }
 
-// Resolver returns a function that resolves artifact names
-func (ae ArtifactResolverEvent) Resolver() ArtifactResolver {
-	return ae.resolver
+type BuildFailure struct {
 }
 
-// Resolver returns a function that resolves artifact names
-func (ae ArtifactResolverEvent) DownloadableArtifacts() []artifact.ArtifactDownload {
-	return ae.downloadable
+func (BuildFailure) IsEvent() Event {
+	return Event{}
 }
 
-// Resolver returns a function that resolves artifact names
-func (ae ArtifactResolverEvent) FailedArtifacts() []artifact.FailedArtifact {
-	return ae.failedArtifacts
+type ArtifactBuildStarted struct {
+	ArtifactID artifact.ArtifactID
+	FromCache  bool
 }
 
-func (ae ArtifactResolverEvent) String() string {
-	return "artifact_resolver"
+func (ArtifactBuildStarted) IsEvent() Event {
+	return Event{}
 }
 
-func newArtifactResolverEvent(resolver ArtifactResolver, downloadable []artifact.ArtifactDownload, failedArtifacts []artifact.FailedArtifact) ArtifactResolverEvent {
-	return ArtifactResolverEvent{resolver, downloadable, failedArtifacts}
+type ArtifactBuildProgress struct {
+	ArtifactID   artifact.ArtifactID
+	LogTimestamp string
+	LogLevel     string // eg. (INFO/ERROR/...)
+	LogChannel   string // channel through which this log line was generated (stdout/stderr/...)
+	LogMessage   string
+	LogSource    string // source of this log (eg., builder/build-wrapper/...)
 }
 
-// SolverStartEvent is triggered when a solve is started
-type SolverStartEvent struct{}
-
-func (se SolverStartEvent) String() string {
-	return "solver_start"
+func (ArtifactBuildProgress) IsEvent() Event {
+	return Event{}
 }
 
-// SolverSuccessEvent is triggered when the solver returns an error
-type SolverSuccessEvent struct{}
-
-func (se SolverSuccessEvent) String() string {
-	return "solver_success"
+type ArtifactBuildFailure struct {
+	ArtifactID   artifact.ArtifactID
+	LogURI       string
+	ErrorMessage string
 }
 
-// SolverErrorEvent is triggered when the solver returns an error
-type SolverErrorEvent struct {
-	serr *model.SolverError
+func (ArtifactBuildFailure) IsEvent() Event {
+	return Event{}
 }
 
-// Error returns the SolverError
-func (se SolverErrorEvent) Error() *model.SolverError {
-	return se.serr
+type ArtifactBuildSuccess struct {
+	ArtifactID artifact.ArtifactID
+	LogURI     string
 }
 
-func (se SolverErrorEvent) String() string {
-	return "solver_error"
+func (ArtifactBuildSuccess) IsEvent() Event {
+	return Event{}
 }
 
-func newSolverErrorEvent(serr *model.SolverError) SolverErrorEvent {
-	return SolverErrorEvent{serr}
+type ArtifactDownloadStarted struct {
+	ArtifactID artifact.ArtifactID
+	TotalSize  int
 }
 
-// TotalArtifactEvent reports the number of total artifacts as soon as they are known
-type TotalArtifactEvent struct {
-	total int
+func (ArtifactDownloadStarted) IsEvent() Event {
+	return Event{}
 }
 
-// Total returns the number of artifacts that we are dealing with
-func (te TotalArtifactEvent) Total() int {
-	return te.total
+type ArtifactDownloadSkipped struct {
+	ArtifactID artifact.ArtifactID
 }
 
-func (te TotalArtifactEvent) String() string {
-	return "artifact_total"
+func (ArtifactDownloadSkipped) IsEvent() Event {
+	return Event{}
 }
 
-func newTotalArtifactEvent(total int) TotalArtifactEvent {
-	return TotalArtifactEvent{total}
+type ArtifactDownloadProgress struct {
+	ArtifactID      artifact.ArtifactID
+	IncrementBySize int
 }
 
-// BuildStartEvent reports the beginning of the remote build process
-type BuildStartEvent struct {
-	baseEvent
-	totalBuilds int
+func (ArtifactDownloadProgress) IsEvent() Event {
+	return Event{}
 }
 
-// Total number of artifacts that we have to build
-func (be BuildStartEvent) Total() int {
-	return be.totalBuilds
+type ArtifactDownloadFailure struct {
+	ArtifactID artifact.ArtifactID
+	Error      error
 }
 
-func newBuildStartEvent(totalBuilds int) BuildStartEvent {
-	return BuildStartEvent{newBaseEvent("build_start", Build), totalBuilds}
+func (ArtifactDownloadFailure) IsEvent() Event {
+	return Event{}
 }
 
-// BuildCompleteEvent reports the successful completion of a build
-type BuildCompleteEvent struct {
-	baseEvent
+type ArtifactDownloadSuccess struct {
+	ArtifactID artifact.ArtifactID
 }
 
-func newBuildCompleteEvent() BuildCompleteEvent {
-	return BuildCompleteEvent{newBaseEvent("build_complete", Build)}
+func (ArtifactDownloadSuccess) IsEvent() Event {
+	return Event{}
 }
 
-func (be artifactBaseEvent) ArtifactID() artifact.ArtifactID {
-	return be.artifactID
+type ArtifactInstallStarted struct {
+	ArtifactID artifact.ArtifactID
+	TotalSize  int
 }
 
-// ArtifactStartEvent is sent when an artifact enters a new processing step
-type ArtifactStartEvent struct {
-	artifactBaseEvent
-	total int
+func (ArtifactInstallStarted) IsEvent() Event {
+	return Event{}
 }
 
-func newArtifactStartEvent(step SetupStep, artifactID artifact.ArtifactID, total int) ArtifactStartEvent {
-	return ArtifactStartEvent{newArtifactBaseEvent("start", step, artifactID), total}
+type ArtifactInstallProgress struct {
+	ArtifactID      artifact.ArtifactID
+	IncrementBySize int
 }
 
-// Total returns the total number of elements (usually bytes) that we expect for this artifact in the given step
-func (ase ArtifactStartEvent) Total() int {
-	return ase.total
+func (ArtifactInstallSkipped) IsEvent() Event {
+	return Event{}
 }
 
-// ArtifactBuildProgressEvent serializes a log line in a build log file
-type ArtifactBuildProgressEvent struct {
-	artifactBaseEvent
-
-	timeStamp string
-	message   string
-	facility  string
-	pipeName  string
-	source    string
+type ArtifactInstallSkipped struct {
+	ArtifactID artifact.ArtifactID
 }
 
-// TimeStamp resturns the timestamp when the logline was generated
-func (ae ArtifactBuildProgressEvent) TimeStamp() string {
-	return ae.timeStamp
+func (ArtifactInstallProgress) IsEvent() Event {
+	return Event{}
 }
 
-// Message returns the log message
-func (ae ArtifactBuildProgressEvent) Message() string {
-	return ae.message
+type ArtifactInstallFailure struct {
+	ArtifactID artifact.ArtifactID
+	Error      error
 }
 
-// Facility returns the log facility (INFO/ERROR/...)
-func (ae ArtifactBuildProgressEvent) Facility() string {
-	return ae.facility
+func (ArtifactInstallFailure) IsEvent() Event {
+	return Event{}
 }
 
-// PipeName returns the pipe through which this log line was generated (stdout/stderr/...)
-func (ae ArtifactBuildProgressEvent) PipeName() string {
-	return ae.pipeName
+type ArtifactInstallSuccess struct {
+	ArtifactID artifact.ArtifactID
 }
 
-// Source is a descriptor for the source of this log (eg., builder/build-wrapper/...)
-func (ae ArtifactBuildProgressEvent) Source() string {
-	return ae.source
+func (ArtifactInstallSuccess) IsEvent() Event {
+	return Event{}
 }
 
-func newArtifactBuildProgressEvent(artifactID artifact.ArtifactID, timeStamp string, msg, facility, pipeName, source string) ArtifactBuildProgressEvent {
-	return ArtifactBuildProgressEvent{newArtifactBaseEvent("progress", Build, artifactID), timeStamp, msg, facility, pipeName, source}
+type ArtifactsParsed struct {
+	RequiresBuild bool
+	ArtifactNames artifact.Named
+	LogFilePath   string
+
+	ArtifactsToBuild    []artifact.ArtifactID
+	ArtifactsToDownload []artifact.ArtifactID
+	ArtifactsToInstall  []artifact.ArtifactID
 }
 
-// ArtifactProgressEvent is sent when the artifact has progressed in the given step
-type ArtifactProgressEvent struct {
-	artifactBaseEvent
-	increment int
+type ArtifactsParsedOld struct {
+	BuildReady             bool
+	ArtifactNames          artifact.Named
+	ArtifactRecipe         artifact.ArtifactRecipeMap
+	Requested              artifact.ArtifactChangeset  // Artifacts that were directly requested by the user
+	ChangedFromLastRequest artifact.ArtifactChangeset  // Artifacts that were changed from the previously installed runtime
+	AlreadyInstalled       store.StoredArtifactMap     // Artifacts that are already installed (changed doesn't mean installed)
+	DownloadableResults    []artifact.ArtifactDownload // Artifacts that can have a download URI
+	FailedResults          []artifact.FailedArtifact   // Artifacts that failed to resolve / build
 }
 
-// Progress returns the increment by which the artifact has progressed
-func (ue ArtifactProgressEvent) Progress() int {
-	return ue.increment
+func (ArtifactsParsed) IsEvent() Event {
+	return Event{}
 }
 
-func newArtifactProgressEvent(step SetupStep, artifactID artifact.ArtifactID, increment int) ArtifactProgressEvent {
-	return ArtifactProgressEvent{newArtifactBaseEvent("progress", step, artifactID), increment}
+type SolveStart struct{}
+
+func (SolveStart) IsEvent() Event {
+	return Event{}
 }
 
-// ArtifactCompleteEvent is sent when an artifact step completed
-type ArtifactCompleteEvent struct {
-	artifactBuildEvent
+type SolveError struct {
+	Error error
 }
 
-func newArtifactCompleteEvent(step SetupStep, artifactID artifact.ArtifactID, logURI string) ArtifactCompleteEvent {
-	return ArtifactCompleteEvent{newArtifactBuildEvent("complete", step, artifactID, logURI)}
+func (SolveError) IsEvent() Event {
+	return Event{}
 }
 
-// ArtifactFailureEvent is sent when an artifact failed to process through the given step
-type ArtifactFailureEvent struct {
-	artifactBuildEvent
-	errorMessage string
-}
+type SolveSuccess struct{}
 
-// Failure returns a description of the error message
-func (fe ArtifactFailureEvent) Failure() string {
-	return fe.errorMessage
-}
-
-func newArtifactFailureEvent(step SetupStep, artifactID artifact.ArtifactID, logURI, errorMessage string) ArtifactFailureEvent {
-	return ArtifactFailureEvent{newArtifactBuildEvent("failure", step, artifactID, logURI), errorMessage}
-}
-
-// ChangeSummaryEvent is sent when a the information to summarize the changes introduced by this runtime is available
-type ChangeSummaryEvent struct {
-	artifacts map[artifact.ArtifactID]artifact.ArtifactRecipe
-	requested artifact.ArtifactChangeset
-	changed   artifact.ArtifactChangeset
-}
-
-func (cse ChangeSummaryEvent) String() string {
-	return "change_summary"
-}
-
-// Artifacts returns the map of ArtifactRecipe structs extracted from the recipe
-func (cse ChangeSummaryEvent) Artifacts() map[artifact.ArtifactID]artifact.ArtifactRecipe {
-	return cse.artifacts
-}
-
-// RequestedChangeset returns the changeset information for artifacts that the user requested to change (add/remove/update)
-func (cse ChangeSummaryEvent) RequestedChangeset() artifact.ArtifactChangeset {
-	return cse.requested
-}
-
-// CompleteChangeset returns the changeset information for all artifacts that have changed relative to the locally installed runtime
-func (cse ChangeSummaryEvent) CompleteChangeset() artifact.ArtifactChangeset {
-	return cse.changed
-}
-
-func newChangeSummaryEvent(artifacts map[artifact.ArtifactID]artifact.ArtifactRecipe, requested artifact.ArtifactChangeset, changed artifact.ArtifactChangeset) ChangeSummaryEvent {
-	return ChangeSummaryEvent{
-		artifacts, requested, changed,
-	}
-}
-
-// HeartbeatEvent is produced when nothing else is written to the websocket connection
-type HeartbeatEvent struct {
-	baseEvent
-	timeStamp time.Time
-}
-
-// TimeStamp returns the time of the heart beat
-func (he HeartbeatEvent) TimeStamp() time.Time {
-	return he.timeStamp
-}
-
-func newHeartbeatEvent(timeStamp time.Time) HeartbeatEvent {
-	return HeartbeatEvent{newBaseEvent("heartbeat", Build), timeStamp}
+func (SolveSuccess) IsEvent() Event {
+	return Event{}
 }

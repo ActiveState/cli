@@ -298,7 +298,8 @@ func ActiveVersionsOnBranch(ghClient *github.Client, jiraClient *jira.Client, br
 		seen[versionValue] = struct{}{}
 		version, err := ParseJiraVersion(versionValue)
 		if err != nil {
-			return nil, errs.Wrap(err, "failed to parse version: %s", versionValue)
+			fmt.Printf("Skipping invalid semver: %s (%s)\n", versionValue, err)
+			continue
 		}
 		result = append(result, version)
 	}

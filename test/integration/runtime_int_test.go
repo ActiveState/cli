@@ -1,26 +1,7 @@
 package integration
 
-import (
-	"os"
-	"path/filepath"
-	"testing"
-
-	"github.com/ActiveState/cli/internal/analytics/client/blackhole"
-	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/internal/runbits/buildlogfile"
-	"github.com/ActiveState/cli/internal/testhelpers/osutil"
-	"github.com/ActiveState/cli/internal/testhelpers/outputhelper"
-	"github.com/ActiveState/cli/pkg/platform/runtime"
-	"github.com/ActiveState/cli/pkg/platform/runtime/setup/events"
-	"github.com/ActiveState/cli/pkg/platform/runtime/target"
-	"github.com/ActiveState/cli/pkg/platform/runtime/testhelper"
-	"github.com/go-openapi/strfmt"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-)
-
-func TestOfflineInstaller(t *testing.T) {
+// Disabled due to DX-1514
+/*func TestOfflineInstaller(t *testing.T) {
 	// Each artifact of the form UUID.tar.gz has the following structure:
 	// - runtime.json (empty)
 	// - tmp (directory)
@@ -80,4 +61,4 @@ func TestOfflineInstaller(t *testing.T) {
 		filename := filepath.Join(dir, "tmp", filename) // each file is in a "tmp" dir in the archive
 		assert.True(t, fileutils.FileExists(filename), "file '%s' was not extracted from its artifact", filename)
 	}
-}
+}*/

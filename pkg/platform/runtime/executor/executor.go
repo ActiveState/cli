@@ -126,7 +126,7 @@ func (f *Executor) createExecutor(exe string) error {
 		return locale.WrapError(err, "err_mkdir", "Could not create directory: {{.V0}}", f.executorPath)
 	}
 
-	logging.Debug("Creating executor for %s at %s", exe, target)
+	// logging.Debug("Creating executor for %s at %s", exe, target)
 
 	denoteTarget := executorTarget + exe
 

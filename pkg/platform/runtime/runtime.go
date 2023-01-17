@@ -97,7 +97,7 @@ func (r *Runtime) Target() setup.Targeter {
 
 // Update updates the runtime by downloading all necessary artifacts from the Platform and installing them locally.
 // This function is usually called, after New() returned with a NeedsUpdateError
-func (r *Runtime) Update(auth *authentication.Auth, msgHandler *events.RuntimeEventHandler) error {
+func (r *Runtime) Update(auth *authentication.Auth, eventHandler events.Handler) (rerr error) {
 	if r.disabled {
 		return nil // nothing to do
 	}
@@ -105,34 +105,25 @@ func (r *Runtime) Update(auth *authentication.Auth, msgHandler *events.RuntimeEv
 	logging.Debug("Updating %s#%s @ %s", r.target.Name(), r.target.CommitUUID(), r.target.Dir())
 
 	// Run the setup function (the one that produces runtime events) in the background...
-	prod := events.NewRuntimeEventProducer()
-	var setupErr error
-	go func() {
-		defer func() {
-			r.recordCompletion(setupErr)
-			prod.Close()
-		}()
-
-		if err := setup.New(r.target, prod, auth, r.analytics).Update(); err != nil {
-			setupErr = errs.Wrap(err, "Update failed")
-			return
+	defer func() {
+		r.recordCompletion(rerr)
+		if err := eventHandler.Close(); err != nil {
+			rerr = errs.Wrap(err, "Could not close event handler, original error (if any): %v", errs.JoinMessage(rerr))
 		}
-		rt, err := newRuntime(r.target, r.analytics, r.svcm)
-		if err != nil {
-			setupErr = errs.Wrap(err, "Could not reinitialize runtime after update")
-			return
-		}
-		*r = *rt
 	}()
 
-	// ... and handle and wait for the runtime events in the main thread
-	err := msgHandler.WaitForAllEvents(prod.Events())
-	if err != nil {
-		multilog.Error("Error handling update events: %v", err)
+	if err := setup.New(r.target, eventHandler, auth, r.analytics).Update(); err != nil {
+		return errs.Wrap(err, "Update failed")
 	}
 
-	// when the msg handler returns, *r and setupErr are updated.
-	return msgHandler.AddHints(setupErr)
+	// Reinitialize
+	rt, err := newRuntime(r.target, r.analytics, r.svcm)
+	if err != nil {
+		return errs.Wrap(err, "Could not reinitialize runtime after update")
+	}
+	*r = *rt
+
+	return nil
 }
 
 // Env returns a key-value map of the environment variables that need to be set for this runtime
@@ -171,7 +162,7 @@ func (r *Runtime) recordCompletion(err error) {
 		return
 	}
 	r.completed = true
-	logging.Debug("Recording runtime completion: %v", err == nil)
+	logging.Debug("Recording runtime completion, error: %v", err == nil)
 
 	var action string
 	if err != nil {

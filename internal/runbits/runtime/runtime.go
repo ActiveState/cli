@@ -32,12 +32,7 @@ func NewFromProject(
 			return nil, locale.WrapError(err, "err_activate_runtime", "Could not initialize a runtime for this project.")
 		}
 
-		eh, err := runbits.ActivateRuntimeEventHandler(out)
-		if err != nil {
-			return nil, locale.WrapError(err, "err_initialize_runtime_event_handler")
-		}
-
-		if err = rti.Update(auth, eh); err != nil {
+		if err = rti.Update(auth, runbits.DefaultRuntimeEventHandler(out)); err != nil {
 			if errs.Matches(err, &model.ErrOrderAuth{}) {
 				return nil, locale.WrapInputError(err, "err_update_auth", "Could not update runtime, if this is a private project you may need to authenticate with `[ACTIONABLE]state auth[/RESET]`")
 			}

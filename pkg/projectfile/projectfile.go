@@ -510,8 +510,6 @@ func (p *Project) Init() error {
 	}
 	p.parsedURL = parsedURL
 
-	logging.Debug("Parsed URL: %v", p.parsedURL)
-
 	// Ensure branch name is set
 	if p.parsedURL.Owner != "" && p.parsedURL.BranchName == "" {
 		logging.Debug("Appending default branch as none is set")

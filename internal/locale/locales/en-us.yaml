@@ -345,6 +345,8 @@ project_empty:
   other: You have not created any projects yet
 project_checkout_empty:
   other: You have not activated any projects yet
+building:
+  other: Building
 downloading:
   other: Downloading
 installing:
@@ -1861,6 +1863,8 @@ progress_project:
   other: " • Initializing Project"
 progress_search:
   other: " • Searching for [ACTIONABLE]{{.V0}}[/RESET] in the ActiveState Catalog"
+progress_solve:
+  other: "Resolving Dependencies"
 progress_success:
   other: " [SUCCESS]✔ Done[/RESET]"
 progress_found:
@@ -1871,6 +1875,10 @@ progress_commit:
   other: " • Creating commit"
 progress_pkg_nolang:
   other: " • Searching for [ACTIONABLE]{{.V0}}[/RESET] across all languages in the ActiveState Catalog"
+progress_build_log:
+  other: "Build starting remotely, to follow along in greater detail tail the log file at: [ACTIONABLE]{{.V0}}[/RESET]"
+progress_nothing_to_do:
+  other: "Runtime is already up to date"
 unstable_feature_banner:
   other: "[NOTICE]Beta Feature: This feature is still in beta and may be unstable.[/RESET]\n"
 unstable_command_warning:
@@ -2000,3 +2008,8 @@ checkout_project_statement:
     For editors and other tooling use the executables at: [ACTIONABLE]{{.V2}}[/RESET].
 export_project_statement:
   other: Exporting env for project [ACTIONABLE]{{.V0}}[/RESET] located at [ACTIONABLE]{{.V1}}[/RESET].
+err_rtprogress_outofsync:
+  other: |
+    Received events that appear to be out of order. 
+    Please report this issue on [ACTIONABLE]{{.V0}}[/RESET] and include your log file at [ACTIONABLE]{{.V1}}[/RESET].
+
