@@ -28,10 +28,17 @@ func (Start) IsEvent() Event {
 	return Event{}
 }
 
-type Complete struct {
+type Success struct {
 }
 
-func (Complete) IsEvent() Event {
+func (Success) IsEvent() Event {
+	return Event{}
+}
+
+type Failure struct {
+}
+
+func (Failure) IsEvent() Event {
 	return Event{}
 }
 

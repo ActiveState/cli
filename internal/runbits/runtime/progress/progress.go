@@ -76,6 +76,11 @@ type ProgressDigester struct {
 
 	// The cancel function for the mpb package
 	cancelMpb context.CancelFunc
+
+	// Record whether changes were made
+	changesMade bool
+	// Record whether the runtime install was succesful
+	success bool
 }
 
 func NewProgressDigester(w io.Writer, out output.Outputer) *ProgressDigester {
@@ -106,6 +111,9 @@ func (p *ProgressDigester) Handle(ev events.Eventer) error {
 	defer p.mutex.Unlock()
 
 	switch v := ev.(type) {
+
+	case events.Success:
+		p.success = true
 
 	case events.SolveStart:
 		p.solveSpinner = output.StartSpinner(p.out, locale.T("progress_solve"), refreshRate)
@@ -167,6 +175,8 @@ func (p *ProgressDigester) Handle(ev events.Eventer) error {
 
 		if len(v.ArtifactsToBuild)+len(v.ArtifactsToDownload)+len(v.ArtifactsToInstall) == 0 {
 			p.out.Notice(locale.T("progress_nothing_to_do"))
+		} else {
+			p.changesMade = true
 		}
 
 		return nil
@@ -343,8 +353,12 @@ Event log:
 		}
 	}
 
+	// Success message. Can't happen in event loop as progressbar lib clears new lines when it closes.
+	if p.success && p.changesMade {
+		p.out.Notice(locale.T("progress_completed"))
+	}
+
 	// Blank line to separate progress from rest of output
-	// Can't happen in event loop as progressbar lib clears new lines when it closes
 	p.out.Notice("")
 
 	return nil

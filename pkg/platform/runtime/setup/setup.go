@@ -146,9 +146,21 @@ func NewWithModel(target Targeter, eventHandler events.Handler, model ModelProvi
 }
 
 // Update installs the runtime locally (or updates it if it's already partially installed)
-func (s *Setup) Update() error {
-	s.eventHandler.Handle(events.Start{})
-	defer s.eventHandler.Handle(events.Complete{})
+func (s *Setup) Update() (rerr error) {
+	if err := s.eventHandler.Handle(events.Start{}); err != nil {
+		return errs.Wrap(err, "Could not handle Start event")
+	}
+	defer func() {
+		var err error
+		if rerr == nil {
+			err = s.eventHandler.Handle(events.Success{})
+		} else {
+			err = s.eventHandler.Handle(events.Failure{})
+		}
+		if err != nil {
+			logging.Error("Could not handle Success/Failure event: %s", errs.JoinMessage(err))
+		}
+	}()
 
 	// Do not allow users to deploy runtimes to the root directory (this can easily happen in docker
 	// images). Note that runtime targets are fully resolved via fileutils.ResolveUniquePath(), so

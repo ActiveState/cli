@@ -1868,7 +1868,9 @@ progress_commit:
 progress_pkg_nolang:
   other: " • Searching for [ACTIONABLE]{{.V0}}[/RESET] across all languages in the ActiveState Catalog"
 progress_build_log:
-  other: "Build starting remotely, to follow along in greater detail tail the log file at: [ACTIONABLE]{{.V0}}[/RESET]"
+  other: "Build Log [ACTIONABLE]{{.V0}}[/RESET]"
+progress_completed:
+  other: "[SUCCESS]✔ All dependencies have been installed and verified[/RESET]"
 progress_nothing_to_do:
   other: "Runtime is already up to date"
 unstable_feature_banner:
