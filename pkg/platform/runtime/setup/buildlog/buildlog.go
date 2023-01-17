@@ -261,12 +261,12 @@ Artifact Build Failed.
 
 // Wait waits for the build log to close because the build is done and all downloadable artifacts are here
 func (bl *BuildLog) Wait() error {
-	var errs []error
+	var errors []error
 	for err := range bl.errCh {
-		errs = append(errs, err)
+		errors = append(errors, err)
 	}
-	if len(errs) > 0 {
-		return errs[0]
+	if len(errors) > 0 {
+		return errors[0]
 	}
 	return nil
 }

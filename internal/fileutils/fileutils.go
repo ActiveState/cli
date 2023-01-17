@@ -761,6 +761,12 @@ func TempFileUnsafe() *os.File {
 	return f
 }
 
+func TempFilePathUnsafe() string {
+	f := TempFileUnsafe()
+	defer f.Close()
+	return f.Name()
+}
+
 // TempDirUnsafe returns a temp path or panics if it cannot be created
 // This is for use in tests, do not use it outside tests!
 func TempDirUnsafe() string {

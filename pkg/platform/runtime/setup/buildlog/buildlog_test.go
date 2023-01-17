@@ -4,11 +4,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"reflect"
 	"testing"
-	"time"
 
-	"github.com/go-openapi/strfmt"
-	"github.com/stretchr/testify/assert"
+	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/pkg/platform/runtime/setup/events"
 	"github.com/stretchr/testify/require"
 
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
@@ -94,107 +94,89 @@ func (cm *connectionMock) ReadError(errMsg string) {
 	cm.messages = append(cm.messages, errors.New(errMsg))
 }
 
-type artifactFailedArg struct {
-	ArtifactID artifact.ArtifactID
-	ErrMessage string
-}
-type mockMessageHandler struct {
-	BuildStartingCalls          []int
-	BuildFinishedCallCount      int
-	ArtifactBuildStartingCalls  []artifact.ArtifactID
-	ArtifactBuildCachedCalls    []artifact.ArtifactID
-	ArtifactBuildSucceededCalls []artifact.ArtifactID
-	ArtifactBuildFailedCalls    []artifactFailedArg
+type eventMock struct {
+	handled map[string]int
 }
 
-func (mh *mockMessageHandler) BuildStarting(total int) {
-	mh.BuildStartingCalls = append(mh.BuildStartingCalls, total)
+func (e *eventMock) Handle(ev events.Eventer) error {
+	if e.handled == nil {
+		e.handled = make(map[string]int)
+	}
+	id := fmt.Sprintf("%T", ev)
+	if _, ok := e.handled[id]; !ok {
+		e.handled[id] = 0
+	}
+	e.handled[id]++
+	return nil
 }
-func (mh *mockMessageHandler) BuildFinished() {
-	mh.BuildFinishedCallCount++
+
+func (e *eventMock) Close() error {
+	return nil
 }
-func (mh *mockMessageHandler) ArtifactBuildStarting(artifactID artifact.ArtifactID) {
-	mh.ArtifactBuildStartingCalls = append(mh.ArtifactBuildStartingCalls, artifactID)
-}
-func (mh *mockMessageHandler) ArtifactBuildCached(artifactID artifact.ArtifactID, _ string) {
-	mh.ArtifactBuildCachedCalls = append(mh.ArtifactBuildCachedCalls, artifactID)
-}
-func (mh *mockMessageHandler) ArtifactBuildCompleted(artifactID artifact.ArtifactID, _ string) {
-	mh.ArtifactBuildSucceededCalls = append(mh.ArtifactBuildSucceededCalls, artifactID)
-}
-func (mh *mockMessageHandler) ArtifactBuildFailed(artifactID artifact.ArtifactID, _ string, errorMessage string) {
-	mh.ArtifactBuildFailedCalls = append(mh.ArtifactBuildFailedCalls, artifactFailedArg{artifactID, errorMessage})
-}
-func (mh *mockMessageHandler) ArtifactBuildProgress(artifactID artifact.ArtifactID, timeStamp, message, facility, pipeName, source string) {
-}
-func (mh *mockMessageHandler) Heartbeat(time.Time) {}
 
 func TestBuildLog(t *testing.T) {
-	recipeID := strfmt.UUID("10000000-0000-0000-0000-000000000001")
-	ids := []artifact.ArtifactID{
-		"00000000-0000-0000-0000-000000000001",
-		"00000000-0000-0000-0000-000000000002",
-	}
-	names := []string{
-		"artifact1",
-		"artifact2",
-	}
-	artifacts := []artifact.ArtifactRecipe{
-		{ArtifactID: ids[0], Name: names[0]},
-		{ArtifactID: ids[1], Name: names[1]},
-		{ArtifactID: recipeID, Name: "terminal-node"},
-	}
+	eventType := func(v events.Eventer) string { return fmt.Sprintf("%T", v) }
+
+	genericArtifact1 := artifact.ArtifactRecipe{ArtifactID: "00000000-0000-0000-0000-000000000001", Name: "artifact1"}
+	genericArtifact2 := artifact.ArtifactRecipe{ArtifactID: "00000000-0000-0000-0000-000000000002", Name: "artifact2"}
+	recipeArtifact := artifact.ArtifactRecipe{ArtifactID: "10000000-0000-0000-0000-000000000001", Name: "recipeArtifact"}
 	artifactMap := map[artifact.ArtifactID]artifact.ArtifactRecipe{
-		ids[0]: artifacts[0],
-		ids[1]: artifacts[1],
+		genericArtifact1.ArtifactID: genericArtifact1,
+		genericArtifact2.ArtifactID: genericArtifact2,
 	}
 
 	tests := []struct {
-		Name                      string
-		ConnectionMock            func(t *testing.T, cm *connectionMock)
-		AlreadyBuiltArtifacts     map[artifact.ArtifactID]struct{}
-		ExpectError               bool
-		ExpectedDownloads         int
-		ExpectedArtifactStarting  []artifact.ArtifactID
-		ExpectedArtifactCached    []artifact.ArtifactID
-		ExpectedArtifactSucceeded []artifact.ArtifactID
-		ExpectedArtifactFailed    []artifactFailedArg
+		Name            string
+		ConnectionMock  func(t *testing.T, cm *connectionMock)
+		ExpectError     bool
+		ExpectDownloads []artifact.ArtifactID
+		ExpectEvents    map[string]int
 	}{
 		{
 			Name: "successful",
 			ConnectionMock: func(t *testing.T, cm *connectionMock) {
 				cm.SendBuildStartedMessage(t)
-				cm.SendArtifactStartedMessage(t, artifacts[0])
-				cm.SendArtifactStartedMessage(t, artifacts[1])
-				cm.SendArtifactStartedMessage(t, artifacts[2])
-				cm.SendArtifactSucceededMessage(t, artifacts[0])
-				cm.SendArtifactSucceededMessage(t, artifacts[1])
-				cm.SendArtifactSucceededMessage(t, artifacts[2])
+				cm.SendArtifactStartedMessage(t, genericArtifact1)
+				cm.SendArtifactStartedMessage(t, genericArtifact2)
+				cm.SendArtifactStartedMessage(t, recipeArtifact)
+				cm.SendArtifactSucceededMessage(t, genericArtifact1)
+				cm.SendArtifactSucceededMessage(t, genericArtifact2)
+				cm.SendArtifactSucceededMessage(t, recipeArtifact)
 				cm.SendBuildSucceededMessage(t)
 			},
-			AlreadyBuiltArtifacts: map[artifact.ArtifactID]struct{}{
-				ids[1]: {},
+			ExpectError: false,
+			ExpectDownloads: []artifact.ArtifactID{
+				genericArtifact1.ArtifactID,
+				genericArtifact2.ArtifactID,
 			},
-			ExpectError:               false,
-			ExpectedDownloads:         2,
-			ExpectedArtifactStarting:  []artifact.ArtifactID{ids[0]},
-			ExpectedArtifactSucceeded: []artifact.ArtifactID{ids[0]},
+			ExpectEvents: map[string]int{
+				eventType(events.BuildStarted{}):         1,
+				eventType(events.ArtifactBuildStarted{}): 2,
+				eventType(events.ArtifactBuildSuccess{}): 2,
+				eventType(events.BuildSuccess{}):         1,
+			},
 		},
 		{
 			Name: "failed",
 			ConnectionMock: func(t *testing.T, cm *connectionMock) {
 				cm.SendBuildStartedMessage(t)
-				cm.SendArtifactStartedMessage(t, artifacts[0])
-				cm.SendArtifactStartedMessage(t, artifacts[1])
-				cm.SendArtifactSucceededMessage(t, artifacts[0])
-				cm.SendArtifactFailedMessage(t, artifacts[1], "oh no")
+				cm.SendArtifactStartedMessage(t, genericArtifact1)
+				cm.SendArtifactStartedMessage(t, genericArtifact2)
+				cm.SendArtifactSucceededMessage(t, genericArtifact1)
+				cm.SendArtifactFailedMessage(t, genericArtifact2, "oh no")
 				cm.SendBuildFailedMessage(t, "what a shame")
 			},
-			ExpectError:               true,
-			ExpectedDownloads:         1,
-			ExpectedArtifactStarting:  ids,
-			ExpectedArtifactSucceeded: []artifact.ArtifactID{ids[0]},
-			ExpectedArtifactFailed:    []artifactFailedArg{{ids[1], "oh no"}},
+			ExpectError: true,
+			ExpectDownloads: []artifact.ArtifactID{
+				genericArtifact1.ArtifactID,
+			},
+			ExpectEvents: map[string]int{
+				eventType(events.BuildStarted{}):         1,
+				eventType(events.ArtifactBuildStarted{}): 2,
+				eventType(events.ArtifactBuildSuccess{}): 1,
+				eventType(events.ArtifactBuildFailure{}): 1,
+				eventType(events.BuildFailure{}):         1,
+			},
 		},
 		{
 			Name: "connection read error",
@@ -202,27 +184,28 @@ func TestBuildLog(t *testing.T) {
 				cm.SendBuildStartedMessage(t)
 				cm.ReadError("connection failure")
 			},
-			ExpectError:       true,
-			ExpectedDownloads: 0,
+			ExpectError: true,
+			ExpectEvents: map[string]int{
+				eventType(events.BuildStarted{}): 1,
+			},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.Name, func(t *testing.T) {
-
-			mmh := &mockMessageHandler{}
+			em := &eventMock{}
 			cm := &connectionMock{}
 			tt.ConnectionMock(t, cm)
 
-			bl, err := NewWithCustomConnections(artifactMap, tt.AlreadyBuiltArtifacts, cm, mmh, recipeID)
+			bl, err := NewWithCustomConnections(artifactMap, cm, em, recipeArtifact.ArtifactID, fileutils.TempFilePathUnsafe())
 			require.NoError(t, err)
 
-			var downloads []artifact.ArtifactDownload
+			var downloads []artifact.ArtifactID
 			done := make(chan struct{})
 			go func() {
 				defer func() { done <- struct{}{} }()
 				for d := range bl.BuiltArtifactsChannel() {
-					downloads = append(downloads, d)
+					downloads = append(downloads, d.ArtifactID)
 				}
 			}()
 
@@ -231,14 +214,12 @@ func TestBuildLog(t *testing.T) {
 				t.Fatalf("Unexpected error value: %v", err)
 			}
 			<-done
-			assert.Len(t, downloads, tt.ExpectedDownloads)
-			assert.Equal(t, 1, cm.CalledWrite)
-			assert.Equal(t, []int{2}, mmh.BuildStartingCalls)
-			assert.Equal(t, 1, mmh.BuildFinishedCallCount)
-			assert.Equal(t, tt.ExpectedArtifactStarting, mmh.ArtifactBuildStartingCalls, "expected these artifact starting calls")
-			assert.Equal(t, tt.ExpectedArtifactCached, mmh.ArtifactBuildCachedCalls, "expected these artifact cached calls")
-			assert.Equal(t, tt.ExpectedArtifactSucceeded, mmh.ArtifactBuildSucceededCalls, "expected these artifact succeeded calls")
-			assert.Equal(t, tt.ExpectedArtifactFailed, mmh.ArtifactBuildFailedCalls)
+			if !reflect.DeepEqual(downloads, tt.ExpectDownloads) {
+				t.Errorf("downloads = %v, want %v", downloads, tt.ExpectDownloads)
+			}
+			if !reflect.DeepEqual(em.handled, tt.ExpectEvents) {
+				t.Errorf("handled events = %v, want %v", em.handled, tt.ExpectEvents)
+			}
 		})
 	}
 }
