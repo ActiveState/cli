@@ -11,8 +11,8 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/osutils/shortcut"
+	"github.com/ActiveState/cli/internal/osutils/user"
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
-	"github.com/mitchellh/go-homedir"
 )
 
 const (
@@ -168,9 +168,12 @@ func (a *app) IsEnabled() (bool, error) {
 }
 
 func prependHomeDir(path string) (string, error) {
-	homeDir, err := homedir.Dir()
+	homeDir, err := user.HomeDir()
 	if err != nil {
 		return "", errs.Wrap(err, "Could not get home directory")
+	}
+	if testDir, ok := os.LookupEnv(constants.AutostartPathOverrideEnvVarName); ok {
+		homeDir = testDir
 	}
 	return filepath.Join(homeDir, path), nil
 }

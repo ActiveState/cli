@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
-	"regexp"
 	"runtime"
 	"testing"
 	"time"
@@ -28,6 +27,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_listingSimple() {
 	suite.PrepareActiveStateYAML(ts)
 
 	cp := ts.Spawn("packages")
+	cp.ExpectLongString("Operating on project ActiveState-CLI/List")
 	cp.Expect("Name")
 	cp.Expect("pytest")
 	cp.ExpectExitCode(0)
@@ -223,7 +223,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchWithWrongLang() {
 	defer ts.Close()
 	suite.PrepareActiveStateYAML(ts)
 
-	cp := ts.Spawn("search", "numpy", "--language=perl")
+	cp := ts.Spawn("search", "xxxjunkxxx", "--language=perl")
 	cp.ExpectLongString("No packages in our catalog match")
 	cp.ExpectExitCode(1)
 }
@@ -355,7 +355,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_headless_operation() {
 }
 
 func (suite *PackageIntegrationTestSuite) TestPackage_operation() {
-	suite.OnlyRunForTags(tagsuite.Package, tagsuite.Revert)
+	suite.OnlyRunForTags(tagsuite.Package, tagsuite.Package)
 	if runtime.GOOS == "darwin" {
 		suite.T().Skip("Skipping mac for now as the builds are still too unreliable")
 		return
@@ -366,7 +366,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_operation() {
 	username := ts.CreateNewUser()
 	namespace := fmt.Sprintf("%s/%s", username, "python3-pkgtest")
 
-	cp := ts.Spawn("fork", "ActiveState-CLI/Revert", "--org", username, "--name", "python3-pkgtest")
+	cp := ts.Spawn("fork", "ActiveState-CLI/Packages", "--org", username, "--name", "python3-pkgtest")
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("activate", namespace, "--path="+ts.Dirs.Work, "--output=json")
@@ -375,44 +375,26 @@ func (suite *PackageIntegrationTestSuite) TestPackage_operation() {
 	cp = ts.Spawn("history", "--output=json")
 	cp.ExpectExitCode(0)
 
-	// Get the first commitID we find, which should be the first commit for the project
-	snapshot := cp.TrimmedSnapshot()
-	commitRe := regexp.MustCompile(`[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}`)
-	firstCommit := commitRe.FindString(snapshot)
-
-	if firstCommit == "" {
-		suite.FailNow("Could not match commitID against output:\n" + snapshot)
-	}
-
 	suite.Run("install", func() {
 		cp := ts.Spawn("install", "urllib3@1.25.6")
+		cp.ExpectLongString(fmt.Sprintf("Operating on project %s/python3-pkgtest", username))
 		cp.ExpectRe("(?:Package added|being built)", 30*time.Second)
 		cp.Wait()
 	})
 
 	suite.Run("install (update)", func() {
 		cp := ts.Spawn("install", "urllib3@1.25.8")
+		cp.ExpectLongString(fmt.Sprintf("Operating on project %s/python3-pkgtest", username))
 		cp.ExpectRe("(?:Package updated|being built)", 30*time.Second)
 		cp.Wait()
 	})
 
 	suite.Run("uninstall", func() {
 		cp := ts.Spawn("uninstall", "urllib3")
+		cp.ExpectLongString(fmt.Sprintf("Operating on project %s/python3-pkgtest", username))
 		cp.ExpectRe("(?:Package uninstalled|being built)", 30*time.Second)
 		cp.Wait()
 	})
-
-	cp = ts.Spawn("revert", firstCommit)
-	cp.Send("y")
-	cp.ExpectExitCode(0)
-
-	cp = ts.Spawn("pull")
-	cp.ExpectExitCode(0)
-
-	// expecting json output, as table wraps message in column
-	cp = ts.Spawn("history", "--output=json")
-	cp.ExpectLongString(fmt.Sprintf("Reverting to commit %s", firstCommit))
-	cp.ExpectExitCode(0)
 }
 
 func (suite *PackageIntegrationTestSuite) PrepareActiveStateYAML(ts *e2e.Session) {

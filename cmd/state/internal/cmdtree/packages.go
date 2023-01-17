@@ -97,7 +97,7 @@ func newUninstallCommand(prime *primer.Values) *captain.Command {
 	).SetGroup(PackagesGroup)
 }
 
-func newImportCommand(prime *primer.Values) *captain.Command {
+func newImportCommand(prime *primer.Values, globals *globalOptions) *captain.Command {
 	runner := packages.NewImport(prime)
 
 	params := packages.NewImportRunParams()
@@ -123,7 +123,8 @@ func newImportCommand(prime *primer.Values) *captain.Command {
 			},
 		},
 		func(_ *captain.Command, _ []string) error {
-			return runner.Run(*params)
+			params.NonInteractive = globals.NonInteractive
+			return runner.Run(params)
 		},
 	).SetGroup(PackagesGroup)
 }

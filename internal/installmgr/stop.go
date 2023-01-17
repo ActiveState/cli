@@ -1,11 +1,14 @@
 package installmgr
 
 import (
+	"errors"
+	"os"
 	"runtime"
 	"strings"
 	"syscall"
 	"time"
 
+	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
@@ -15,6 +18,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
+	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/shirou/gopsutil/v3/process"
 )
@@ -26,26 +30,12 @@ func StopRunning(installPath string) (rerr error) {
 	}
 	defer rtutils.Closer(cfg.Close, &rerr)
 
-	err = stopTray(installPath, cfg)
-	if err != nil {
-		return errs.Wrap(err, "Could not stop tray")
-	}
-
 	err = stopSvc(installPath)
 	if err != nil {
 		multilog.Critical("Could not stop running service, error: %v", errs.JoinMessage(err))
 		return locale.WrapError(err, "err_stop_svc", "Unable to stop state-svc process. Please manually kill any running processes with name [NOTICE]state-svc[/RESET] and try again")
 	}
 
-	return nil
-}
-
-func stopTray(installPath string, cfg *config.Instance) error {
-	// Todo: https://www.pivotaltracker.com/story/show/177585085
-	// Yes this is awkward right now
-	if err := StopTrayApp(cfg); err != nil {
-		return errs.Wrap(err, "Failed to stop %s", constants.TrayAppName)
-	}
 	return nil
 }
 
@@ -63,6 +53,10 @@ func stopSvc(installPath string) error {
 		} else if exitCode != 0 {
 			multilog.Error("Stopping %s exited with code %d", constants.SvcAppName, exitCode)
 		}
+	}
+
+	if condition.OnCI() { // prevent killing valid parallel instances while on CI
+		return nil
 	}
 
 	procs, err := process.Processes()
@@ -84,6 +78,11 @@ func stopSvc(installPath string) error {
 		if n == svcName {
 			exe, err := p.Exe()
 			if err != nil {
+				if runtime.GOOS == "darwin" && strings.Contains(err.Error(), "bad call to lsof") {
+					// There's nothing we can do about this, so just debug log it.
+					logging.Debug("Could not get executable path for state-svc process, error: %v", err)
+					continue
+				}
 				multilog.Error("Could not get executable path for state-svc process, error: %v", err)
 				continue
 			}
@@ -143,6 +142,11 @@ func killProcess(proc *process.Process, name string) error {
 		for _, c := range children {
 			err = c.Kill()
 			if err != nil {
+				if osutils.IsAccessDeniedError(err) {
+					return locale.WrapInputError(err, "err_insufficient_permissions")
+				} else if errors.Is(err, os.ErrProcessDone) {
+					return nil
+				}
 				return errs.Wrap(err, "Could not kill child process of %s", name)
 			}
 		}
@@ -152,6 +156,11 @@ func killProcess(proc *process.Process, name string) error {
 
 	err = proc.Kill()
 	if err != nil {
+		if osutils.IsAccessDeniedError(err) {
+			return locale.WrapInputError(err, "err_insufficient_permissions")
+		} else if errors.Is(err, os.ErrProcessDone) {
+			return nil
+		}
 		return errs.Wrap(err, "Could not kill %s process", name)
 	}
 

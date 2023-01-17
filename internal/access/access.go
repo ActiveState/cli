@@ -9,25 +9,23 @@ import (
 
 // Secrets determines whether the authorized user has access
 // to the current project's secrets
-func Secrets(orgName string) (bool, error) {
-	if isProjectOwner(orgName) {
+func Secrets(orgName string, auth *authentication.Auth) (bool, error) {
+	if isProjectOwner(orgName, auth) {
 		return true, nil
 	}
 
-	return isOrgMember(orgName)
+	return isOrgMember(orgName, auth)
 }
 
-func isProjectOwner(orgName string) bool {
-	auth := authentication.LegacyGet()
+func isProjectOwner(orgName string, auth *authentication.Auth) bool {
 	if orgName != auth.WhoAmI() {
 		return false
 	}
 	return true
 }
 
-func isOrgMember(orgName string) (bool, error) {
-	auth := authentication.LegacyGet()
-	_, err := model.FetchOrgMember(orgName, auth.WhoAmI())
+func isOrgMember(orgName string, auth *authentication.Auth) (bool, error) {
+	_, err := model.FetchOrgMember(orgName, auth.WhoAmI(), auth)
 	if err != nil {
 		if errors.Is(err, model.ErrMemberNotFound) {
 			return false, nil

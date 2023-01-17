@@ -21,7 +21,7 @@ func newProjectsCommand(prime *primer.Values) *captain.Command {
 		func(ccmd *captain.Command, args []string) error {
 			return runner.Run(params)
 		},
-	).SetGroup(EnvironmentGroup)
+	).SetGroup(ProjectUsageGroup)
 }
 
 func newRemoteProjectsCommand(prime *primer.Values) *captain.Command {
@@ -31,12 +31,12 @@ func newRemoteProjectsCommand(prime *primer.Values) *captain.Command {
 	return captain.NewCommand(
 		"remote",
 		locale.Tl("projects_remote_title", "Listing Remote Projects"),
-		locale.Tl("projects_remote_description", "Manage all projects, including ones you have not checked out locally"),
+		locale.Tl("projects_remote_description", "List all projects, including ones you have not checked out locally"),
 		prime,
 		[]*captain.Flag{},
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, args []string) error {
 			return runner.RunRemote(params)
 		},
-	).SetGroup(EnvironmentGroup)
+	).SetGroup(ProjectUsageGroup)
 }

@@ -63,7 +63,7 @@ func newConfigSetCommand(prime *primer.Values) *captain.Command {
 			},
 			{
 				Name:        "value",
-				Description: locale.Tl("arg_config_set_value", "Config key"),
+				Description: locale.Tl("arg_config_set_value", "Config value"),
 				Required:    true,
 				Value:       &params.Value,
 			},

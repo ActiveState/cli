@@ -2,12 +2,15 @@ package show
 
 import (
 	"fmt"
+	"path/filepath"
 	"strings"
 
 	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/constraints"
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
@@ -17,6 +20,8 @@ import (
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
+	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
@@ -49,6 +54,8 @@ type RuntimeDetails struct {
 	Name         string `locale:"state_show_details_name,Name"`
 	Organization string `locale:"state_show_details_organization,Organization"`
 	NameSpace    string `locale:"state_show_details_namespace,Namespace"`
+	Location     string `locale:"state_show_details_location,Location"`
+	Executables  string `locale:"state_show_details_executables,Executables"`
 	Visibility   string `locale:"state_show_details_visibility,Visibility"`
 	LastCommit   string `locale:"state_show_details_latest_commit,Latest Commit"`
 }
@@ -141,6 +148,8 @@ func (s *Show) Run(params Params) error {
 		err         error
 	)
 
+	var projectDir string
+	var projectTarget string
 	if params.Remote != "" {
 		namespaced, err := project.ParseNamespace(params.Remote)
 		if err != nil {
@@ -184,6 +193,16 @@ func (s *Show) Run(params Params) error {
 		}
 
 		commitID = strfmt.UUID(s.project.CommitID())
+
+		projectDir = filepath.Dir(s.project.Path())
+		if fileutils.IsSymlink(projectDir) {
+			projectDir, err = fileutils.ResolveUniquePath(projectDir)
+			if err != nil {
+				return locale.WrapError(err, "err_show_projectdir", "Could not resolve project directory symlink")
+			}
+		}
+
+		projectTarget = target.NewProjectTarget(s.project, storage.CachePath(), nil, "").Dir()
 	}
 
 	remoteProject, err := model.FetchProjectByName(owner, projectName)
@@ -223,6 +242,14 @@ func (s *Show) Run(params Params) error {
 		Organization: owner,
 		Visibility:   visibilityData(owner, projectName, remoteProject),
 		LastCommit:   commit,
+	}
+
+	if projectDir != "" {
+		rd.Location = projectDir
+	}
+
+	if projectTarget != "" {
+		rd.Executables = setup.ExecDir(projectTarget)
 	}
 
 	outputData := outputData{
@@ -341,7 +368,12 @@ func commitsData(owner, project, branchName string, commitID strfmt.UUID, localP
 		return latestCommit.String(), nil
 	}
 
-	if localProject != nil && localProject.Owner() == owner && localProject.Name() == project {
+	belongs, err := model.CommitBelongsToBranch(owner, project, branchName, commitID)
+	if err != nil {
+		return "", locale.WrapError(err, "err_show_get_commit_belongs", "Could not determine if commit belongs to branch")
+	}
+
+	if localProject != nil && localProject.Owner() == owner && localProject.Name() == project && belongs {
 		var latestCommitID strfmt.UUID
 		if latestCommit != nil {
 			latestCommitID = *latestCommit

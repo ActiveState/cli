@@ -19,6 +19,8 @@ import (
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/offinstall"
+	"github.com/ActiveState/cli/internal/osutils"
+	"github.com/ActiveState/cli/internal/osutils/user"
 	"github.com/ActiveState/cli/internal/subshell/cmd"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
@@ -60,10 +62,7 @@ func (suite *OffInstallIntegrationTestSuite) TestInstallAndUninstall() {
 	suite.Require().NoError(err)
 	defaultInstallDir := filepath.Join(defaultInstallParentDir, "IntegrationTest")
 
-	env := []string{
-		constants.DisableRuntime + "=false",
-		constants.IsAdminOverrideEnvVarName + "=false",
-	}
+	env := []string{constants.DisableRuntime + "=false"}
 	if runtime.GOOS != "windows" {
 		env = append(env, "SHELL=bash")
 	}
@@ -246,7 +245,7 @@ func (suite *OffInstallIntegrationTestSuite) preparePayload(ts *e2e.Session) {
 func (suite *OffInstallIntegrationTestSuite) assertShellUpdated(dir string, exists bool, ts *e2e.Session) {
 	if runtime.GOOS != "windows" {
 		// Test bashrc
-		homeDir, err := os.UserHomeDir()
+		homeDir, err := user.HomeDir()
 		suite.Require().NoError(err)
 
 		fname := ".bashrc"
@@ -269,7 +268,13 @@ func (suite *OffInstallIntegrationTestSuite) assertShellUpdated(dir string, exis
 		time.Sleep(time.Second)
 
 		// Test registry
-		out, err := exec.Command("reg", "query", `HKEY_CURRENT_USER\Environment`, "/v", "Path").Output()
+		isAdmin, err := osutils.IsAdmin()
+		suite.Require().NoError(err)
+		regKey := `HKCU\Environment`
+		if isAdmin {
+			regKey = `HKLM\SYSTEM\ControlSet001\Control\Session Manager\Environment`
+		}
+		out, err := exec.Command("reg", "query", regKey, "/v", "Path").Output()
 		suite.Require().NoError(err)
 
 		assert := strings.Contains

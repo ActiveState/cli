@@ -18,16 +18,17 @@ import (
 )
 
 type service struct {
-	ctx    context.Context
-	cfg    *config.Instance
-	an     *anaSvc.Client
-	auth   *authentication.Auth
-	server *server.Server
-	ipcSrv *ipc.Server
+	ctx     context.Context
+	cfg     *config.Instance
+	an      *anaSvc.Client
+	auth    *authentication.Auth
+	server  *server.Server
+	ipcSrv  *ipc.Server
+	logFile string
 }
 
-func NewService(ctx context.Context, cfg *config.Instance, an *anaSvc.Client, auth *authentication.Auth) *service {
-	return &service{ctx: ctx, cfg: cfg, an: an, auth: auth}
+func NewService(ctx context.Context, cfg *config.Instance, an *anaSvc.Client, auth *authentication.Auth, logFile string) *service {
+	return &service{ctx: ctx, cfg: cfg, an: an, auth: auth, logFile: logFile}
 }
 
 func (s *service) Start() error {
@@ -52,7 +53,8 @@ func (s *service) Start() error {
 	spath := svcctl.NewIPCSockPathFromGlobals()
 	reqHandlers := []ipc.RequestHandler{ // caller-defined handlers to expand ipc capabilities
 		svcctl.HTTPAddrHandler(portText(s.server)),
-		svcctl.LogFileHandler(logging.FileName()),
+		svcctl.LogFileHandler(s.logFile),
+		svcctl.HeartbeatHandler(s.server.Resolver(), s.an),
 	}
 	s.ipcSrv = ipc.NewServer(s.ctx, spath, reqHandlers...)
 	err = s.ipcSrv.Start()

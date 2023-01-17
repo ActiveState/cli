@@ -94,7 +94,7 @@ func (suite *SecretsExpanderTestSuite) prepareWorkingExpander() project.Expander
 	osutil.CopyTestFileToConfigDir(suite.cfg.ConfigPath(), "self-private.key", constants.KeypairLocalFileName+".key", 0600)
 
 	suite.secretsMock.RegisterWithCode("GET", "/organizations/00010001-0001-0001-0001-000100010002/user_secrets", 200)
-	return project.NewSecretQuietExpander(suite.secretsClient, suite.cfg)
+	return project.NewSecretQuietExpander(suite.secretsClient, suite.cfg, authentication.LegacyGet())
 }
 
 func (suite *SecretsExpanderTestSuite) assertExpansionFailure(secretName string) {
@@ -114,7 +114,7 @@ func (suite *SecretsExpanderTestSuite) assertExpansionSuccess(secretName string,
 }
 
 func (suite *SecretsExpanderTestSuite) TestKeypairNotFound() {
-	expanderFn := project.NewSecretQuietExpander(suite.secretsClient, suite.cfg)
+	expanderFn := project.NewSecretQuietExpander(suite.secretsClient, suite.cfg, authentication.LegacyGet())
 	value, err := expanderFn("", project.ProjectCategory, "undefined-secret", false, project.NewExpansion(suite.project))
 	suite.Error(err)
 	suite.Zero(value)

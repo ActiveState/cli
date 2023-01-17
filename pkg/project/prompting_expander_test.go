@@ -85,7 +85,7 @@ func (suite *VarPromptingExpanderTestSuite) prepareWorkingExpander() project.Exp
 	suite.secretsMock.RegisterWithResponder("GET", "/organizations/00010001-0001-0001-0001-000100010002/user_secrets", func(req *http.Request) (int, string) {
 		return 200, "user_secrets-empty"
 	})
-	return project.NewSecretPromptingExpander(suite.secretsClient, suite.promptMock, suite.cfg)
+	return project.NewSecretPromptingExpander(suite.secretsClient, suite.promptMock, suite.cfg, authentication.LegacyGet())
 }
 
 func (suite *VarPromptingExpanderTestSuite) assertExpansionSaveFailure(secretName, expectedValue string) {

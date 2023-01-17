@@ -267,14 +267,12 @@ scripts:
 	cp := ts.SpawnWithOpts(
 		e2e.WithArgs("activate", "ActiveState-CLI/Alternate-Python"),
 		e2e.WithWorkDirectory(ts.Dirs.Work),
-		e2e.AppendEnv(
-			"ACTIVESTATE_CLI_DISABLE_RUNTIME=false",
-		),
 	)
 
 	cp.Expect("Creating a Virtual Environment")
+	cp.Expect("Skipping runtime setup")
 	cp.Expect("Activated")
-	cp.WaitForInput(120 * time.Second)
+	cp.WaitForInput(10 * time.Second)
 
 	cp = ts.Spawn("run", "pip")
 	cp.Wait()
@@ -352,6 +350,117 @@ func (suite *AnalyticsIntegrationTestSuite) TestSequenceAndFlags() {
 	}
 
 	suite.True(found, "Should have run-command event with flags, actual: %s", suite.summarizeEvents(events))
+}
+
+func (suite *AnalyticsIntegrationTestSuite) TestInputError() {
+	suite.OnlyRunForTags(tagsuite.Analytics)
+
+	ts := e2e.New(suite.T(), true)
+	defer ts.Close()
+
+	suite.eventsfile = filepath.Join(ts.Dirs.Config, reporters.TestReportFilename)
+
+	cp := ts.Spawn("clean", "uninstall", "badarg", "--mono")
+	cp.ExpectExitCode(1)
+
+	events := parseAnalyticsEvents(suite, ts)
+	suite.assertSequentialEvents(events)
+
+	suite.assertNEvents(events, 1, anaConst.CatDebug, anaConst.ActInputError,
+		fmt.Sprintf("output:\n%s\nState Log:\n%s\nSvc Log:\n%s",
+			cp.Snapshot(), ts.MostRecentStateLog(), ts.SvcLog()))
+
+	for _, event := range events {
+		if event.Category == anaConst.CatDebug && event.Action == anaConst.ActInputError {
+			suite.Equal("state clean uninstall --mono", *event.Dimensions.Trigger)
+		}
+	}
+}
+
+func (suite *AnalyticsIntegrationTestSuite) TestAttempts() {
+	suite.OnlyRunForTags(tagsuite.Analytics)
+
+	ts := e2e.New(suite.T(), true)
+	defer ts.Close()
+
+	asyData := strings.TrimSpace(`project: https://platform.activestate.com/ActiveState-CLI/test?commitID=9090c128-e948-4388-8f7f-96e2c1e00d98`)
+	ts.PrepareActiveStateYAML(asyData)
+
+	cp := ts.SpawnWithOpts(
+		e2e.WithArgs("activate", "ActiveState-CLI/Alternate-Python"),
+		e2e.AppendEnv(constants.DisableRuntime+"=false"),
+		e2e.WithWorkDirectory(ts.Dirs.Work),
+	)
+
+	cp.Expect("Creating a Virtual Environment")
+	cp.Expect("Activated")
+	cp.WaitForInput(120 * time.Second)
+
+	cp.SendLine("python3 --version")
+	cp.Expect("Python 3.")
+
+	time.Sleep(time.Second) // Ensure state-svc has time to report events
+
+	suite.eventsfile = filepath.Join(ts.Dirs.Config, reporters.TestReportFilename)
+	events := parseAnalyticsEvents(suite, ts)
+
+	var foundAttempts int
+	var foundExecs int
+	for _, e := range events {
+		if strings.Contains(e.Category, "runtime") && strings.Contains(e.Action, "attempt") {
+			foundAttempts++
+			if strings.Contains(*e.Dimensions.Trigger, "exec") {
+				foundExecs++
+			}
+		}
+	}
+
+	if foundAttempts == 2 {
+		suite.Fail("Should find multiple runtime attempts")
+	}
+	if foundExecs == 1 {
+		suite.Fail("Should find one exec event")
+	}
+}
+
+func (suite *AnalyticsIntegrationTestSuite) TestHeapEvents() {
+	suite.OnlyRunForTags(tagsuite.Analytics)
+
+	ts := e2e.New(suite.T(), true)
+	defer ts.Close()
+
+	ts.LoginAsPersistentUser()
+
+	cp := ts.SpawnWithOpts(e2e.WithArgs("activate", "ActiveState-CLI/Alternate-Python"),
+		e2e.WithWorkDirectory(ts.Dirs.Work),
+	)
+
+	cp.Expect("Creating a Virtual Environment")
+	cp.Expect("Activated")
+	cp.WaitForInput(120 * time.Second)
+
+	time.Sleep(time.Second) // Ensure state-svc has time to report events
+
+	suite.eventsfile = filepath.Join(ts.Dirs.Config, reporters.TestReportFilename)
+
+	events := parseAnalyticsEvents(suite, ts)
+	suite.Require().NotEmpty(events)
+
+	// Ensure analytics events have required/important fields
+	for _, e := range events {
+		if strings.Contains(e.Category, "state-svc") || strings.Contains(e.Action, "state-svc") || strings.Contains(e.Action, "auth") {
+			continue
+		}
+
+		// UserID is used to identify the user
+		suite.NotEmpty(e.Dimensions.UserID, "Event should have a user ID")
+
+		// Category and Action are primary attributes reported to Heap and should be set
+		suite.NotEmpty(e.Category, "Event category should not be empty")
+		suite.NotEmpty(e.Action, "Event action should not be empty")
+	}
+
+	suite.assertSequentialEvents(events)
 }
 
 func TestAnalyticsIntegrationTestSuite(t *testing.T) {

@@ -30,8 +30,8 @@ func run() error {
 	}
 	platform := goos + "-" + goarch
 
-	relPath := filepath.Join("remote-installer", platform)
-	relVersionedPath := filepath.Join("remote-installer", version, platform)
+	relPath := filepath.Join("remote-installer", constants.BranchName, platform)
+	relVersionedPath := filepath.Join("remote-installer", constants.BranchName, version, platform)
 
 	buildPath := filepath.Join(environment.GetRootPathUnsafe(), "build")
 

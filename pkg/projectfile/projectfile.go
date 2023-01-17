@@ -55,6 +55,8 @@ type ErrorNoProject struct{ *locale.LocalizedError }
 
 type ErrorNoProjectFromEnv struct{ *locale.LocalizedError }
 
+type ErrorNoDefaultProject struct{ *locale.LocalizedError }
+
 // projectURL comprises all fields of a parsed project URL
 type projectURL struct {
 	Owner      string
@@ -85,8 +87,6 @@ type Project struct {
 	Project       string        `yaml:"project"`
 	Lock          string        `yaml:"lock,omitempty"`
 	Environments  string        `yaml:"environments,omitempty"`
-	Platforms     []Platform    `yaml:"platforms,omitempty"`
-	Languages     Languages     `yaml:"languages,omitempty"`
 	Constants     Constants     `yaml:"constants,omitempty"`
 	Secrets       *SecretScopes `yaml:"secrets,omitempty"`
 	Events        Events        `yaml:"events,omitempty"`
@@ -99,67 +99,9 @@ type Project struct {
 	parsedVersion string
 }
 
-// Platform covers the platform structure of our yaml
-type Platform struct {
-	Name         string `yaml:"name,omitempty"`
-	Os           string `yaml:"os,omitempty"`
-	Version      string `yaml:"version,omitempty"`
-	Architecture string `yaml:"architecture,omitempty"`
-	Libc         string `yaml:"libc,omitempty"`
-	Compiler     string `yaml:"compiler,omitempty"`
-}
-
 // Build covers the build map, which can go under languages or packages
 // Build can hold variable keys, so we cannot predict what they are, hence why it is a map
 type Build map[string]string
-
-// Language covers the language structure, which goes under Project
-type Language struct {
-	Name        string      `yaml:"name"`
-	Version     string      `yaml:"version,omitempty"`
-	Conditional Conditional `yaml:"if"`
-	Constraints Constraint  `yaml:"constraints,omitempty"`
-	Build       Build       `yaml:"build,omitempty"`
-	Packages    Packages    `yaml:"packages,omitempty"`
-}
-
-var _ ConstrainedEntity = Language{}
-
-// ID returns the language name
-func (l Language) ID() string {
-	return l.Name
-}
-
-// ConstraintsFilter returns the language constraints
-func (l Language) ConstraintsFilter() Constraint {
-	return l.Constraints
-}
-
-func (l Language) ConditionalFilter() Conditional {
-	return l.Conditional
-}
-
-// Languages is a slice of Language definitions
-type Languages []Language
-
-// AsConstrainedEntities boxes languages as a slice of ConstrainedEntities
-func (languages Languages) AsConstrainedEntities() (items []ConstrainedEntity) {
-	for i := range languages {
-		items = append(items, &languages[i])
-	}
-	return items
-}
-
-// MakeLanguagesFromConstrainedEntities unboxes ConstraintedEntities as Languages
-func MakeLanguagesFromConstrainedEntities(items []ConstrainedEntity) (languages []*Language) {
-	languages = make([]*Language, 0, len(items))
-	for _, v := range items {
-		if o, ok := v.(*Language); ok {
-			languages = append(languages, o)
-		}
-	}
-	return languages
-}
 
 // Constant covers the constant structure, which goes under Project
 type Constant struct {
@@ -817,7 +759,7 @@ func getProjectFilePathFromWd() (string, error) {
 func getProjectFilePathFromDefault() (_ string, rerr error) {
 	cfg, err := config.New()
 	if err != nil {
-		return "", errs.Wrap(err, "Could not read configuration required to determine default project")
+		return "", errs.Wrap(err, "Could not read configuration required to determine which project to use")
 	}
 	defer rtutils.Closer(cfg.Close, &rerr)
 
@@ -827,8 +769,11 @@ func getProjectFilePathFromDefault() (_ string, rerr error) {
 	}
 
 	path, err := fileutils.FindFileInPath(defaultProjectPath, constants.ConfigFileName)
-	if err != nil && !errors.Is(err, fileutils.ErrorFileNotFound) {
-		return "", errs.Wrap(err, "fileutils.FindFileInPath %s failed", defaultProjectPath)
+	if err != nil {
+		if !errors.Is(err, fileutils.ErrorFileNotFound) {
+			return "", errs.Wrap(err, "fileutils.FindFileInPath %s failed", defaultProjectPath)
+		}
+		return "", &ErrorNoDefaultProject{locale.NewInputError("err_no_default_project", "Could not find your project at: [ACTIONABLE]{{.V0}}[/RESET]", defaultProjectPath)}
 	}
 	return path, nil
 }
@@ -878,7 +823,7 @@ func GetOnce() (*Project, error) {
 
 	project, err := Parse(projectFilePath)
 	if err != nil {
-		return nil, errs.Wrap(err, "Parse %s failed", projectFilePath)
+		return nil, locale.WrapInputError(err, "err_projectfile_parse", "", projectFilePath)
 	}
 
 	return project, nil
@@ -890,7 +835,7 @@ func FromPath(path string) (*Project, error) {
 	// we do not want to use a path provided by state if we're running tests
 	projectFilePath, err := fileutils.FindFileInPath(path, constants.ConfigFileName)
 	if err != nil {
-		return nil, &ErrorNoProject{locale.WrapInputError(err, "err_no_projectfile")}
+		return nil, &ErrorNoProject{locale.WrapInputError(err, "err_project_not_found", "", path)}
 	}
 
 	_, err = ioutil.ReadFile(projectFilePath)
@@ -900,7 +845,7 @@ func FromPath(path string) (*Project, error) {
 	}
 	project, err := Parse(projectFilePath)
 	if err != nil {
-		return nil, errs.Wrap(err, "Parse %s failed", projectFilePath)
+		return nil, locale.WrapInputError(err, "err_projectfile_parse", "", projectFilePath)
 	}
 
 	return project, nil
@@ -922,7 +867,7 @@ func FromExactPath(path string) (*Project, error) {
 	}
 	project, err := Parse(projectFilePath)
 	if err != nil {
-		return nil, errs.Wrap(err, "Parse %s failed", projectFilePath)
+		return nil, locale.WrapInputError(err, "err_projectfile_parse", projectFilePath)
 	}
 
 	return project, nil
@@ -1198,6 +1143,18 @@ type ConfigGetter interface {
 func GetProjectMapping(config ConfigGetter) map[string][]string {
 	addDeprecatedProjectMappings(config)
 	CleanProjectMapping(config)
+	projects := config.GetStringMapStringSlice(LocalProjectsConfigKey)
+	if projects == nil {
+		return map[string][]string{}
+	}
+	return projects
+}
+
+// GetStaleProjectMapping returns a project mapping from the last time the
+// state tool was run. This mapping could include projects that are no longer
+// on the system.
+func GetStaleProjectMapping(config ConfigGetter) map[string][]string {
+	addDeprecatedProjectMappings(config)
 	projects := config.GetStringMapStringSlice(LocalProjectsConfigKey)
 	if projects == nil {
 		return map[string][]string{}

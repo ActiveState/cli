@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"runtime"
 
+	"github.com/ActiveState/cli/internal/osutils/user"
 	"github.com/google/uuid"
 )
 
@@ -95,7 +96,7 @@ func storageDirectory(base BaseDirLocation) (string, error) {
 		dir = filepath.Join(os.TempDir(), persistDir)
 
 	default:
-		home, err := os.UserHomeDir()
+		home, err := user.HomeDir()
 		if err != nil {
 			return "", fmt.Errorf("cannot get home dir for uniqid file: %w", err)
 		}

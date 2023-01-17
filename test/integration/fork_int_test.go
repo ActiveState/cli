@@ -44,13 +44,9 @@ func (suite *ForkIntegrationTestSuite) TestFork_FailNameExists() {
 	defer suite.cleanup(ts)
 	ts.LoginAsPersistentUser()
 
-	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("fork", "ActiveState-CLI/Python3", "--org", e2e.PersistentUsername),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
-	)
+	cp := ts.SpawnWithOpts(e2e.WithArgs("fork", "ActiveState-CLI/Python3", "--org", e2e.PersistentUsername))
 	cp.Expect("You already have a project with the name 'Python3'", 30*time.Second)
 	cp.ExpectNotExitCode(0)
-	suite.NotContains(cp.TrimmedSnapshot(), "Successfully forked project")
 }
 
 func TestForkIntegrationTestSuite(t *testing.T) {

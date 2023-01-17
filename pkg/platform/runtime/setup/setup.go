@@ -25,6 +25,7 @@ import (
 	"github.com/ActiveState/cli/internal/proxyreader"
 	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/ActiveState/cli/internal/rtutils/p"
+	"github.com/ActiveState/cli/internal/svcctl"
 	"github.com/ActiveState/cli/internal/unarchiver"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
@@ -34,7 +35,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifactcache"
 	"github.com/ActiveState/cli/pkg/platform/runtime/envdef"
-	"github.com/ActiveState/cli/pkg/platform/runtime/executor"
+	"github.com/ActiveState/cli/pkg/platform/runtime/executors"
 	"github.com/ActiveState/cli/pkg/platform/runtime/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup/buildlog"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup/events"
@@ -43,6 +44,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup/implementations/camel"
 	"github.com/ActiveState/cli/pkg/platform/runtime/store"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
+	"github.com/ActiveState/cli/pkg/platform/runtime/validate"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/faiface/mainthread"
 	"github.com/gammazero/workerpool"
@@ -167,7 +169,7 @@ func (s *Setup) Update() error {
 	}
 
 	// Mark installation as completed
-	if err := s.store.MarkInstallationComplete(s.target.CommitUUID()); err != nil {
+	if err := s.store.MarkInstallationComplete(s.target.CommitUUID(), fmt.Sprintf("%s/%s", s.target.Owner(), s.target.Name())); err != nil {
 		return errs.Wrap(err, "Could not mark install as complete.")
 	}
 
@@ -276,8 +278,13 @@ func (s *Setup) updateExecutors(artifacts []artifact.ArtifactID) error {
 		return locale.WrapError(err, "err_deploy_execpaths", "Could not retrieve runtime executable paths")
 	}
 
-	exec := executor.NewWithBinPath(s.target.Dir(), execPath)
-	if err := exec.Update(exePaths); err != nil {
+	env, err := s.store.Environ(false)
+	if err != nil {
+		return locale.WrapError(err, "err_setup_get_runtime_env", "Could not retrieve runtime environment")
+	}
+
+	execInit := executors.New(execPath)
+	if err := execInit.Apply(svcctl.NewIPCSockPathFromGlobals().String(), s.target, env, exePaths); err != nil {
 		return locale.WrapError(err, "err_deploy_executors", "Could not create executors")
 	}
 
@@ -724,25 +731,7 @@ func (s *Setup) downloadArtifact(a artifact.ArtifactDownload, targetFile string)
 // verifyArtifact verifies the checksum of the downloaded artifact matches the checksum given by the
 // platform, and returns an error if the verification fails.
 func (s *Setup) verifyArtifact(archivePath string, a artifact.ArtifactDownload) error {
-	if a.Checksum != "" {
-		logging.Debug("Validating checksum for %s", archivePath)
-	} else {
-		logging.Debug("Skipping checksum validation for %s because the Platform did not provide a checksum to validate against.")
-		return nil
-	}
-
-	checksum, err := fileutils.Sha256Hash(archivePath)
-	if err != nil {
-		return errs.Wrap(err, "Failed to compute checksum for "+a.ArtifactID.String())
-	}
-
-	if checksum != a.Checksum {
-		logging.Debug("Checksum validation failed. Expected '%s', but was '%s'", a.Checksum, checksum)
-		// Note: the artifact name will be reported higher up the chain
-		return locale.WrapError(err, "artifact_checksum_failed", "Checksum validation failed")
-	}
-
-	return nil
+	return validate.Checksum(archivePath, a.Checksum)
 }
 
 // obtainArtifact obtains an artifact and returns the local path to that artifact's archive.

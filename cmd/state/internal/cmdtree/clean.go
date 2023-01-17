@@ -61,7 +61,7 @@ func newCleanCacheCommand(prime *primer.Values, globals *globalOptions) *captain
 		[]*captain.Flag{},
 		[]*captain.Argument{
 			{
-				Name:        "project",
+				Name:        "org/project",
 				Description: locale.T("arg_state_clean_cache_project_description"),
 				Required:    false,
 				Value:       &params.Project,

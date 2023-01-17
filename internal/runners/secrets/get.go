@@ -5,6 +5,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
@@ -12,6 +13,7 @@ type getPrimeable interface {
 	primer.Outputer
 	primer.Projecter
 	primer.Configurer
+	primer.Auther
 }
 
 // GetRunParams tracks the info required for running Get.
@@ -24,6 +26,7 @@ type Get struct {
 	proj *project.Project
 	out  output.Outputer
 	cfg  keypairs.Configurable
+	auth *authentication.Auth
 }
 
 // SecretExport defines important information about a secret that should be
@@ -42,16 +45,18 @@ func NewGet(p getPrimeable) *Get {
 		out:  p.Output(),
 		proj: p.Project(),
 		cfg:  p.Config(),
+		auth: p.Auth(),
 	}
 }
 
 // Run executes the get behavior.
 func (g *Get) Run(params GetRunParams) error {
-	if err := checkSecretsAccess(g.proj); err != nil {
+	g.out.Notice(locale.Tl("operating_message", "", g.proj.NamespaceString(), g.proj.Dir()))
+	if err := checkSecretsAccess(g.proj, g.auth); err != nil {
 		return locale.WrapError(err, "secrets_err_check_access")
 	}
 
-	secret, valuePtr, err := getSecretWithValue(g.proj, params.Name, g.cfg)
+	secret, valuePtr, err := getSecretWithValue(g.proj, params.Name, g.cfg, g.auth)
 	if err != nil {
 		return locale.WrapError(err, "secrets_err_values")
 	}

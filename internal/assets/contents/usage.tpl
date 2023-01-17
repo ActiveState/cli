@@ -11,13 +11,16 @@ Usage:
 Aliases:
     {{.Cobra.NameAndAliases}}
 {{- end}}
-{{- if .Cobra.HasExample}}
+
+{{- if .Cmd.Examples  }}
 
 Examples:
-    {{.Cobra.Example}}
-{{- end}}
+{{- range  .Cmd.Examples }}
+    {{ . -}}
+{{- end }}
+{{- end }}
 
-{{childCommands .Cmd}}
+{{- childCommands .Cmd}}
 {{- if .Cobra.HasAvailableFlags}}
 
 Flags:
@@ -48,7 +51,15 @@ Additional help topics:
 
 Use "{{.Cobra.CommandPath}} [command] --help" for more information about a command.
 
+{{- if .OptinUnstable }}
+
+WARNING: You have an access to list of full commands, including unstable features still in beta, in order to hide these features run:
+
+"state config set optin.unstable false"
+{{- else }}
+
 To access the list of full commands, including unstable features still in beta, run:
 
 "state config set optin.unstable true"
+{{- end}}
 {{- end}}

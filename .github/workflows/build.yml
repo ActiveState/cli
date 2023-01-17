@@ -40,6 +40,9 @@ jobs:
       GOFLAGS: -mod=vendor
       SHELL: bash
       GITHUB_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    concurrency:
+      group: ${{ github.ref }}-${{ github.event_name }}-${{ matrix.platform }}
+      cancel-in-progress: true
 
     # === OS Specific Steps ===
     steps:
@@ -64,7 +67,11 @@ jobs:
 
           if [ -x "$(command -v apt-get)" ]; then
             sudo apt-get update
-            sudo apt-get install libgtk-3-dev libappindicator3-dev libwebkit2gtk-4.0-dev -y
+            sudo apt-get install fish zsh tcsh -y
+            # Prevent zsh insecure directory warning.
+            sudo chmod -R 755 /usr/share/zsh/vendor-completions /usr/share/zsh
+            sudo chown -R root:root /usr/share/zsh/vendor-completions /usr/share/zsh
+            touch ~/.zshrc
           fi
 
           printenv
@@ -74,6 +81,12 @@ jobs:
         shell: pwsh
         run: |
           echo "${PSScriptRoot}/.github/deps/${{ runner.os }}/bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
+      - # == Setup macOS ==
+        name: Setup (macOS)
+        shell: bash
+        run: brew install fish
+        if: runner.os == 'macOS'
 
       - # === Preprocess ===
         name: Preprocess
@@ -102,15 +115,6 @@ jobs:
                 "Args": ["state", "run", "build-svc"]
             },
             {
-                "ID": "Build-Tray",
-                "Args": ["state", "run", "build-tray"]
-            },
-            {
-                "ID": "Build-Systray-App",
-                "Args": ["state", "run", "build-systray-app"],
-                "If": "eq .OS.Name \"MacOS\""
-            },
-            {
                 "ID": "Build-Installer",
                 "Args": ["state", "run", "build-installer"]
             },
@@ -121,6 +125,10 @@ jobs:
             {
                 "ID": "Build-Install-Scripts",
                 "Args": ["state", "run", "build-install-scripts"]
+            },
+            {
+                "ID": "Build-Executor",
+                "Args": ["state", "run", "build-exec"]
             },
             {
                 "ID": "Build-Offline-Installer",
@@ -146,8 +154,10 @@ jobs:
 
       - # === Unit Tests ===
         name: Unit Tests
+        id: unit_tests
         shell: bash
         run: parallelize results Unit-Tests | gotestfmt
+        continue-on-error: ${{ github.event_name != 'schedule' }}
 
       - # === "Build: CLI" ===
         name: "Build: CLI"
@@ -158,11 +168,6 @@ jobs:
         name: "Build: Service"
         shell: bash
         run: parallelize results Build-Service
-
-      - # === "Build: Tray App" ===
-        name: "Build: Tray App"
-        shell: bash
-        run: parallelize results Build-Tray
 
       - # === "Build: Installer" ===
         name: "Build: Installer"
@@ -179,37 +184,43 @@ jobs:
         shell: bash
         run: parallelize results Build-Install-Scripts
 
-      - # === "Build: Systray App" ===
-        name: "Build: Systray App"
+      - # === "Build: Executor" ===
+        name: "Build: Executor"
         shell: bash
-        if: runner.os == 'macOS'
-        run: parallelize results Build-Systray-App
+        run: parallelize results Build-Executor
 
       - # === "Build: Offline-Installer" ===
         name: "Build: Offline-Installer"
         shell: bash
         run: parallelize results Build-Offline-Installer
 
-      - # === Sign Binaries (Windows only) ===
-        name: Sign Binaries (Windows only)
+      - # === Prepare Windows Cert ===
+        name: Prepare Windows Cert
         shell: bash
         if: runner.os == 'Windows'
         run: |
           echo $MSI_CERT_BASE64 | base64 --decode > Cert.p12
+        env:
+          MSI_CERT_BASE64: ${{ secrets.MSI_CERT_BASE64 }}
+
+      - # === Sign Binaries (Windows only) ===
+        name: Sign Binaries (Windows only)
+        shell: bash
+        if: runner.os == 'Windows' && contains(fromJSON('["refs/heads/beta", "refs/heads/release", "refs/heads/LTS"]'), github.ref)
+        run: |
           export PATH=/c/Program\ Files\ \(x86\)/WiX\ Toolset\ v3.11/bin/:/c/Program\ Files\ \(x86\)/Windows\ Kits/10/bin/10.0.16299.0/x86/:$PATH
 
           signtool.exe sign -d "ActiveState State Tool" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/state.exe
           signtool.exe sign -d "ActiveState State Service" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/state-svc.exe
-          signtool.exe sign -d "ActiveState State Tray" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/state-tray.exe
           signtool.exe sign -d "ActiveState State Installer" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/state-installer.exe
+          signtool.exe sign -d "ActiveState State Tool Remote Installer" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/state-remote-installer.exe
         env:
           CODE_SIGNING_PASSWD: ${{ secrets.CODE_SIGNING_PASSWD }}
-          MSI_CERT_BASE64: ${{ secrets.MSI_CERT_BASE64 }}
 
       - # === Sign Install Scripts (Windows only) ===
         name: Sign Install Scripts (Windows only)
         shell: powershell
-        if: runner.os == 'Windows' && contains(fromJSON('["refs/heads/master", "refs/heads/beta", "refs/heads/release", "refs/heads/LTS"]'), github.ref)
+        if: runner.os == 'Windows' && contains(fromJSON('["refs/heads/beta", "refs/heads/release", "refs/heads/LTS"]'), github.ref)
         run: |
           $branchInfix = $Env:GITHUB_REF.Replace("refs/heads/", "").Replace("release", "")
           $cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
@@ -218,12 +229,16 @@ jobs:
           Set-AuthenticodeSignature -FilePath build\installers\$branchInfix\legacy-install.ps1 -Certificate $cert
         env:
           CODE_SIGNING_PASSWD: ${{ secrets.CODE_SIGNING_PASSWD }}
-          MSI_CERT_BASE64: ${{ secrets.MSI_CERT_BASE64 }}
 
       - # === Generate Update ===
         name: Generate Update
         shell: bash
         run: state run generate-update
+
+      - # === Generate Remote Install Deployment ==
+        name: Generate Remote Install Deployment
+        shell: bash
+        run: state run generate-remote-install-deployment
 
       - # === Deploy for Integration Tests # NEVER run this against production branches. This is meant for PR deployments. ===
         name: Deploy for Integration Tests # NEVER run this against production branches. This is meant for PR deployments.
@@ -294,18 +309,25 @@ jobs:
             TIMEOUT=60m
           fi
           set +e
-          SHELL='' go test -timeout $TIMEOUT -v `go list ./... | grep "integration\|automation"` &> build/integration-tests.out
+          SHELL='' go test -timeout $TIMEOUT -v `go list ./... | grep "integration"` &> build/integration-tests.out
           CODE=$?
           cat build/integration-tests.out | gotestfmt
           exit $CODE
         continue-on-error: ${{ github.event_name == 'schedule' }}
         env:
+          ACTIVESTATE_VERBOSE: true
           INTEGRATION_TEST_USERNAME: ${{ secrets.INTEGRATION_TEST_USERNAME }}
           INTEGRATION_TEST_PASSWORD: ${{ secrets.INTEGRATION_TEST_PASSWORD }}
           INTEGRATION_TEST_TOKEN: ${{ secrets.INTEGRATION_TEST_TOKEN }}
           PLATFORM_API_TOKEN: ${{ secrets.PLATFORM_API_TOKEN }}
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      - # === Fail If Unscheduled Unit Tests Failed (Expand 'Unit Tests' above for more information) ===
+        name: Fail If Unscheduled Unit Tests Failed
+        if: github.event_name != 'schedule' && steps.unit_tests.outcome == 'failure'
+        shell: bash
+        run: exit 1
 
       - # === Notify Slack of Nightly Integration Test Failures ===
         name: Notify Slack of Nightly Integration Test Failures
@@ -424,6 +446,7 @@ jobs:
         run: |
           state run deploy-updates
           state run deploy-installers
+          state run deploy-remote-installer
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -433,10 +456,9 @@ jobs:
         uses: geekyeggo/delete-artifact@v1
         with:
           name: |
-            session-shared-build
             session-build-ubuntu-20.04
             session-build-macos-11
-            session-build-windows-latest
+            session-build-windows-2019
 
       - # === Upload Artifacts ===
         name: Upload Artifacts

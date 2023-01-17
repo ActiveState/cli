@@ -54,6 +54,7 @@ func (r *Reset) Run(params *Params) error {
 	if r.project == nil {
 		return locale.NewInputError("err_no_project")
 	}
+	r.out.Notice(locale.Tl("operating_message", "", r.project.NamespaceString(), r.project.Dir()))
 
 	var commitID strfmt.UUID
 	if params.CommitID == "" {

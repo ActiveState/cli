@@ -21,6 +21,9 @@ const CatRuntimeUsage = "runtime-use"
 // ActRuntimeHeartbeat is the event action sent when a runtime is in use
 const ActRuntimeHeartbeat = "heartbeat"
 
+// ActRuntimeSuccess is the event action sent attempting to use a runtime
+const ActRuntimeAttempt = "attempt"
+
 // ActRuntimeStart is the event action sent when creating a runtime
 const ActRuntimeStart = "start"
 
@@ -98,3 +101,9 @@ const ActOfflineInstallerSuccess = "success"
 
 // ActOfflineInstallerAbort is the event action for the offline installer being terminated by the user
 const ActOfflineInstallerAbort = "aborted"
+
+// CatDebug is the event category used for all debug events
+const CatDebug = "debug"
+
+// ActInputError is the event action used for input errors
+const ActInputError = "input-error"

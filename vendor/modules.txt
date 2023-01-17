@@ -21,7 +21,7 @@ github.com/ActiveState/archiver
 # github.com/ActiveState/go-ogle-analytics v0.0.0-20170510030904-9b3f14901527
 ## explicit
 github.com/ActiveState/go-ogle-analytics
-# github.com/ActiveState/termtest v0.7.1
+# github.com/ActiveState/termtest v0.7.2
 ## explicit; go 1.14
 github.com/ActiveState/termtest
 github.com/ActiveState/termtest/internal/osutils
@@ -176,25 +176,16 @@ github.com/gammazero/deque
 github.com/gammazero/workerpool
 # github.com/getlantern/context v0.0.0-20190109183933-c447772a6520
 ## explicit
-github.com/getlantern/context
 # github.com/getlantern/errors v0.0.0-20190325191628-abdb3e3e36f7
 ## explicit
-github.com/getlantern/errors
 # github.com/getlantern/golog v0.0.0-20190830074920-4ef2e798c2d7
 ## explicit; go 1.12
-github.com/getlantern/golog
 # github.com/getlantern/hex v0.0.0-20190417191902-c6586a6fe0b7
 ## explicit
-github.com/getlantern/hex
 # github.com/getlantern/hidden v0.0.0-20190325191715-f02dbb02be55
 ## explicit
-github.com/getlantern/hidden
 # github.com/getlantern/ops v0.0.0-20190325191751-d70cb0d6f85f
 ## explicit
-github.com/getlantern/ops
-# github.com/getlantern/systray v1.1.0
-## explicit; go 1.13
-github.com/getlantern/systray
 # github.com/go-ole/go-ole v1.2.6
 ## explicit; go 1.12
 github.com/go-ole/go-ole
@@ -432,7 +423,6 @@ github.com/opentracing/opentracing-go/ext
 github.com/opentracing/opentracing-go/log
 # github.com/oxtoacart/bpool v0.0.0-20190530202638-03653db5a59c
 ## explicit; go 1.12
-github.com/oxtoacart/bpool
 # github.com/patrickmn/go-cache v2.1.0+incompatible
 ## explicit
 github.com/patrickmn/go-cache
@@ -597,6 +587,9 @@ go.mongodb.org/mongo-driver/bson/bsonrw
 go.mongodb.org/mongo-driver/bson/bsontype
 go.mongodb.org/mongo-driver/bson/primitive
 go.mongodb.org/mongo-driver/x/bsonx/bsoncore
+# go.mozilla.org/pkcs7 v0.0.0-20210826202110-33d05740a352
+## explicit; go 1.11
+go.mozilla.org/pkcs7
 # go.opencensus.io v0.22.4
 ## explicit; go 1.13
 go.opencensus.io

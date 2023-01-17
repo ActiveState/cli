@@ -12,8 +12,10 @@ import (
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
+	"github.com/ActiveState/cli/internal/svcctl"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
-	"github.com/ActiveState/cli/pkg/platform/runtime/executor"
+	"github.com/ActiveState/cli/pkg/platform/runtime/executors"
+	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
@@ -26,7 +28,7 @@ func BinDir() string {
 	return storage.GlobalBinDir()
 }
 
-func Prepare(cfg DefaultConfigurer, subshell subshell.SubShell) error {
+func Prepare(cfg DefaultConfigurer, shell subshell.SubShell) error {
 	logging.Debug("Preparing globaldefault")
 	binDir := BinDir()
 
@@ -51,7 +53,9 @@ func Prepare(cfg DefaultConfigurer, subshell subshell.SubShell) error {
 		"PATH": binDir,
 	}
 
-	if err := subshell.WriteUserEnv(cfg, envUpdates, sscommon.DefaultID, true); err != nil {
+	// Configure available shells
+	err = subshell.ConfigureAvailableShells(shell, cfg, envUpdates, sscommon.DefaultID, true)
+	if err != nil {
 		return locale.WrapError(err, "err_globaldefault_update_env")
 	}
 
@@ -70,20 +74,30 @@ func SetupDefaultActivation(subshell subshell.SubShell, cfg DefaultConfigurer, r
 		return locale.WrapError(err, "err_globaldefault_rtexes", "Could not retrieve runtime executables")
 	}
 
-	projectDir := filepath.Dir(proj.Source().Path())
-	fw := executor.NewWithBinPath(projectDir, BinDir())
-	if err := fw.Update(exes); err != nil {
+	env, err := runtime.Env(false, false)
+	if err != nil {
+		return locale.WrapError(err, "err_globaldefault_rtenv", "Could not construct runtime environment variables")
+	}
+
+	target := target.NewProjectTarget(proj, storage.GlobalBinDir(), nil, target.TriggerActivate)
+	execInit := executors.New(BinDir())
+	if err := execInit.Apply(svcctl.NewIPCSockPathFromGlobals().String(), target, env, exes); err != nil {
 		return locale.WrapError(err, "err_globaldefault_fw", "Could not set up forwarders")
 	}
 
+	projectDir := filepath.Dir(proj.Source().Path())
 	if err := cfg.Set(constants.GlobalDefaultPrefname, projectDir); err != nil {
-		return locale.WrapError(err, "err_set_default_config", "Could not set default project in config file")
+		return locale.WrapError(err, "err_set_default_config", "Could not update config file with your project")
 	}
 
 	return nil
 }
 
-func ResetDefaultActivation(subshell subshell.SubShell, cfg DefaultConfigurer) (bool, error) {
+func IsSet(cfg DefaultConfigurer) bool {
+	return cfg.GetString(constants.GlobalDefaultPrefname) != ""
+}
+
+func ResetDefaultActivation(shell subshell.SubShell, cfg DefaultConfigurer) (bool, error) {
 	logging.Debug("Resetting globaldefault")
 
 	projectDir := cfg.GetString(constants.GlobalDefaultPrefname)
@@ -92,20 +106,22 @@ func ResetDefaultActivation(subshell subshell.SubShell, cfg DefaultConfigurer) (
 		return false, nil // nothing to reset
 	}
 
-	fw := executor.NewWithBinPath(projectDir, BinDir())
-	if err := fw.Cleanup(); err != nil {
+	execInit := executors.New(BinDir())
+	if err := execInit.Clean(); err != nil {
 		return false, locale.WrapError(err, "err_globaldefault_fw_cleanup", "Could not clean up forwarders")
 	}
 
 	envUpdates := map[string]string{}
-	err := subshell.WriteUserEnv(cfg, envUpdates, sscommon.DefaultID, true)
+
+	// Configure available shells
+	err := subshell.ConfigureAvailableShells(shell, cfg, envUpdates, sscommon.DefaultID, true)
 	if err != nil {
 		return false, locale.WrapError(err, "err_globaldefault_update_env")
 	}
 
 	err = cfg.Set(constants.GlobalDefaultPrefname, "")
 	if err != nil {
-		return false, locale.WrapError(err, "err_reset_default_config", "Could not reset default project in config file")
+		return false, locale.WrapError(err, "err_reset_default_config", "Could not remove your project from config file")
 	}
 
 	return true, nil

@@ -32,8 +32,8 @@ import (
 	"github.com/ActiveState/cli/internal/runbits/panics"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/svcctl"
-	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	cmdletErrors "github.com/ActiveState/cli/pkg/cmdlets/errors"
+	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
@@ -150,6 +150,23 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 
 	svcmodel := model.NewSvcModel(svcPort)
 
+	// Amend Rollbar data to also send the state-svc log tail. This cannot be done inside the rollbar
+	// package itself because importing pkg/platform/model creates an import cycle.
+	rollbar.AddLogDataAmender(func(logData string) string {
+		ctx, cancel := context.WithTimeout(context.Background(), model.SvcTimeoutMinimal)
+		defer cancel()
+		svcLogData, err := svcmodel.FetchLogTail(ctx)
+		if err != nil {
+			svcLogData = fmt.Sprintf("Could not fetch state-svc log: %v", err)
+		}
+		logData += "\nstate-svc log:\n"
+		if len(svcLogData) == logging.TailSize {
+			logData += "<truncated>\n"
+		}
+		logData += svcLogData
+		return logData
+	})
+
 	// Retrieve project file
 	pjPath, err := projectfile.GetProjectFilePath()
 	if err != nil && errs.Matches(err, &projectfile.ErrorNoProjectFromEnv{}) {
@@ -198,7 +215,7 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 	conditional := constraints.NewPrimeConditional(auth, pj, sshell.Shell())
 	project.RegisterConditional(conditional)
 	project.RegisterExpander("mixin", project.NewMixin(auth).Expander)
-	project.RegisterExpander("secrets", project.NewSecretPromptingExpander(secretsapi.Get(), prompter, cfg))
+	project.RegisterExpander("secrets", project.NewSecretPromptingExpander(secretsapi.Get(), prompter, cfg, auth))
 
 	// Run the actual command
 	cmds := cmdtree.New(primer.New(pj, out, auth, prompter, sshell, conditional, cfg, ipcClient, svcmodel, an), args...)
@@ -247,6 +264,7 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 			cmdName = childCmd.UseFull() + " "
 		}
 		err = errs.AddTips(err, locale.Tl("err_tip_run_help", "Run → [ACTIONABLE]`state {{.V0}}--help`[/RESET] for general help", cmdName))
+		cmdletErrors.ReportError(err, cmds.Command(), an)
 	}
 
 	return err

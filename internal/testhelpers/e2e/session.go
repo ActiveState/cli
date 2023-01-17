@@ -20,7 +20,6 @@ import (
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/installation"
-	"github.com/ActiveState/cli/internal/installmgr"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/osutils/stacktrace"
@@ -52,11 +51,11 @@ type Session struct {
 	retainDirs      bool
 	createdProjects []*project.Namespaced
 	// users created during session
-	users   []string
-	t       *testing.T
-	Exe     string
-	SvcExe  string
-	TrayExe string
+	users       []string
+	t           *testing.T
+	Exe         string
+	SvcExe      string
+	ExecutorExe string
 }
 
 // Options for spawning a testable terminal process
@@ -152,7 +151,7 @@ func executablePaths(t *testing.T) (string, string, string) {
 
 	stateExec := filepath.Join(buildDir, constants.StateCmd+osutils.ExeExt)
 	svcExec := filepath.Join(buildDir, constants.StateSvcCmd+osutils.ExeExt)
-	trayExec := filepath.Join(buildDir, constants.StateTrayCmd+osutils.ExeExt)
+	executorExec := filepath.Join(buildDir, constants.StateExecutorCmd+osutils.ExeExt)
 
 	if !fileutils.FileExists(stateExec) {
 		t.Fatal("E2E tests require a State Tool binary. Run `state run build`.")
@@ -160,11 +159,11 @@ func executablePaths(t *testing.T) (string, string, string) {
 	if !fileutils.FileExists(svcExec) {
 		t.Fatal("E2E tests require a state-svc binary. Run `state run build-svc`.")
 	}
-	if !fileutils.FileExists(trayExec) {
-		t.Fatal("E2E tests require a state-tray binary. Run `state run build-tray`.")
+	if !fileutils.FileExists(executorExec) {
+		t.Fatal("E2E tests require a state-exec binary. Run `state run build-exec`.")
 	}
 
-	return stateExec, svcExec, trayExec
+	return stateExec, svcExec, executorExec
 }
 
 func New(t *testing.T, retainDirs bool, extraEnv ...string) *Session {
@@ -184,6 +183,7 @@ func new(t *testing.T, retainDirs, updatePath bool, extraEnv ...string) *Session
 		constants.E2ETestEnvVarName + "=true",
 		constants.DisableUpdates + "=true",
 		constants.OptinUnstableEnvVarName + "=true",
+		constants.ServiceSockDir + "=" + dirs.SockRoot,
 	}...)
 
 	if updatePath {
@@ -202,10 +202,10 @@ func new(t *testing.T, retainDirs, updatePath bool, extraEnv ...string) *Session
 	session := &Session{Dirs: dirs, env: env, retainDirs: retainDirs, t: t}
 
 	// Mock installation directory
-	exe, svcExe, trayExe := executablePaths(t)
+	exe, svcExe, execExe := executablePaths(t)
 	session.Exe = session.copyExeToBinDir(exe)
 	session.SvcExe = session.copyExeToBinDir(svcExe)
-	session.TrayExe = session.copyExeToBinDir(trayExe)
+	session.ExecutorExe = session.copyExeToBinDir(execExe)
 
 	err = fileutils.Touch(filepath.Join(dirs.Base, installation.InstallDirMarker))
 	require.NoError(session.t, err)
@@ -236,16 +236,12 @@ func (s *Session) SpawnCmd(cmdName string, args ...string) *termtest.ConsoleProc
 	return s.SpawnCmdWithOpts(cmdName, WithArgs(args...))
 }
 
-// SpawnInShell runs the given command in a bash or cmd shell
-func (s *Session) SpawnInShell(cmd string, opts ...SpawnOptions) *termtest.ConsoleProcess {
-	exe := "/bin/bash"
-	shellArgs := []string{"-c"}
-	if runtime.GOOS == "windows" {
-		exe = "cmd.exe"
-		shellArgs = []string{"/k"}
+// SpawnShellWithOpts spawns the given shell and options in interactive mode.
+func (s *Session) SpawnShellWithOpts(shell Shell, opts ...SpawnOptions) *termtest.ConsoleProcess {
+	if shell != Cmd {
+		opts = append(opts, AppendEnv("SHELL="+string(shell)))
 	}
-
-	return s.SpawnCmdWithOpts(exe, append(opts, WithArgs(append(shellArgs, cmd)...))...)
+	return s.SpawnCmdWithOpts(string(shell), opts...)
 }
 
 // SpawnCmdWithOpts executes an executable in a pseudo-terminal for integration tests
@@ -517,7 +513,7 @@ Error: {{.Error}}
 
 // Close removes the temporary directory unless RetainDirs is specified
 func (s *Session) Close() error {
-	// stop service and tray if they exist
+	// stop service if it exists
 	if fileutils.TargetExists(s.SvcExe) {
 		cp := s.SpawnCmd(s.SvcExe, "stop")
 		cp.ExpectExitCode(0)
@@ -525,8 +521,6 @@ func (s *Session) Close() error {
 
 	cfg, err := config.NewCustom(s.Dirs.Config, singlethread.New(), true)
 	require.NoError(s.t, err, "Could not read e2e session configuration: %s", errs.JoinMessage(err))
-	err = installmgr.StopTrayApp(cfg)
-	require.NoError(s.t, err, "Could not stop tray app")
 
 	if !s.retainDirs {
 		defer s.Dirs.Close()

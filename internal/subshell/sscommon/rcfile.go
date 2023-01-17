@@ -228,7 +228,7 @@ func SetupShellRcFile(rcFileName, templateName string, env map[string]string, na
 
 // SetupProjectRcFile creates a temporary RC file that our shell is initiated from, this allows us to template the logic
 // used for initialising the subshell
-func SetupProjectRcFile(prj *project.Project, templateName, ext string, env map[string]string, out output.Outputer, cfg Configurable) (*os.File, error) {
+func SetupProjectRcFile(prj *project.Project, templateName, ext string, env map[string]string, out output.Outputer, cfg Configurable, bashifyPaths bool) (*os.File, error) {
 	tpl, err := assets.ReadFileBytes(fmt.Sprintf("shells/%s", templateName))
 	if err != nil {
 		return nil, errs.Wrap(err, "Failed to read asset")
@@ -239,7 +239,7 @@ func SetupProjectRcFile(prj *project.Project, templateName, ext string, env map[
 	// Yes this is awkward, issue here - https://www.pivotaltracker.com/story/show/175619373
 	activatedKey := fmt.Sprintf("activated_%s", prj.Namespace().String())
 	for _, eventType := range project.ActivateEvents() {
-		event := prj.EventByName(eventType.String())
+		event := prj.EventByName(eventType.String(), bashifyPaths)
 		if event == nil {
 			continue
 		}
@@ -329,6 +329,12 @@ func SetupProjectRcFile(prj *project.Project, templateName, ext string, env map[
 
 	currExec := osutils.Executable()
 	currExecAbsDir := filepath.Dir(currExec)
+	if bashifyPaths {
+		currExec, err = osutils.BashifyPath(currExec)
+		if err != nil {
+			return nil, errs.Wrap(err, "Could not bashify executable: %s", currExec)
+		}
+	}
 
 	listSep := string(os.PathListSeparator)
 	pathList, ok := env["PATH"]

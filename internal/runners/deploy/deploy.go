@@ -202,7 +202,8 @@ func (d *Deploy) configure(namespace project.Namespaced, rtTarget setup.Targeter
 
 	d.output.Notice(output.Heading(locale.Tr("deploy_configure_shell", d.subshell.Shell())))
 
-	err = d.subshell.WriteUserEnv(d.cfg, env, sscommon.DeployID, userScope)
+	// Configure available shells
+	err = subshell.ConfigureAvailableShells(d.subshell, d.cfg, env, sscommon.DeployID, userScope)
 	if err != nil {
 		return locale.WrapError(err, "err_deploy_subshell_write", "Could not write environment information to your shell configuration.")
 	}
@@ -262,6 +263,8 @@ func (d *Deploy) symlink(rtTarget setup.Targeter, overwrite bool) error {
 		if err := symlinkWithTarget(overwrite, path, exes, d.output); err != nil {
 			return locale.WrapError(err, "err_symlink", "Could not create symlinks to {{.V0}}.", path)
 		}
+	} else {
+		d.output.Notice(locale.Tl("deploy_symlink_skip", "Skipped on Windows"))
 	}
 
 	return nil

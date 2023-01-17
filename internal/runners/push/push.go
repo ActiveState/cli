@@ -65,6 +65,7 @@ func (r *Push) Run(params PushParams) error {
 	if err := r.verifyInput(); err != nil {
 		return errs.Wrap(err, "verifyInput failed")
 	}
+	r.out.Notice(locale.Tl("operating_message", "", r.project.NamespaceString(), r.project.Dir()))
 
 	commitID := r.project.CommitUUID() // The commit we want to push
 
@@ -145,6 +146,9 @@ func (r *Push) Run(params PushParams) error {
 				&createProject)
 			if err != nil {
 				return errs.Wrap(err, "Confirmation failed")
+			}
+			if !createProject {
+				return locale.WrapInputError(err, "push_create_project_aborted", "Project creation aborted by user")
 			}
 		}
 

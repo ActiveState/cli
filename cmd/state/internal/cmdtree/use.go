@@ -16,7 +16,7 @@ func newUseCommand(prime *primer.Values) *captain.Command {
 	cmd := captain.NewCommand(
 		"use",
 		"",
-		locale.Tl("use_description", "Use the given project runtime as the default for your system"),
+		locale.Tl("use_description", "Use the given project runtime"),
 		prime,
 		[]*captain.Flag{},
 		[]*captain.Argument{
@@ -29,8 +29,7 @@ func newUseCommand(prime *primer.Values) *captain.Command {
 		func(_ *captain.Command, _ []string) error {
 			return use.NewUse(prime).Run(params)
 		},
-	).SetGroup(EnvironmentGroup)
-	cmd.SetUnstable(true)
+	).SetGroup(EnvironmentUsageGroup).SetUnstable(true)
 	return cmd
 }
 
@@ -40,7 +39,7 @@ func newUseResetCommand(prime *primer.Values, globals *globalOptions) *captain.C
 	return captain.NewCommand(
 		"reset",
 		"",
-		locale.Tl("reset_description", "Reset your default project runtime"),
+		locale.Tl("reset_description", "Stop using your project runtime"),
 		prime,
 		[]*captain.Flag{},
 		[]*captain.Argument{},
@@ -52,10 +51,10 @@ func newUseResetCommand(prime *primer.Values, globals *globalOptions) *captain.C
 }
 
 func newUseShowCommand(prime *primer.Values) *captain.Command {
-	return captain.NewCommand(
+	cmd := captain.NewCommand(
 		"show",
 		"",
-		locale.Tl("use_show_description", "Show your default project runtime"),
+		locale.Tl("use_show_description", "Show the project runtime you are using"),
 		prime,
 		[]*captain.Flag{},
 		[]*captain.Argument{},
@@ -63,4 +62,5 @@ func newUseShowCommand(prime *primer.Values) *captain.Command {
 			return use.NewShow(prime).Run()
 		},
 	)
+	return cmd
 }

@@ -8,6 +8,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/projectfile"
 
 	"github.com/stretchr/testify/suite"
@@ -75,58 +76,16 @@ func (suite *ProjectTestSuite) TestWhenInSubDirectories() {
 	suite.Equal("1.0.0-SHA123", suite.project.Version(), "Values should match")
 }
 
-func (suite *ProjectTestSuite) TestPlatforms() {
-	val := suite.project.Platforms()
-	plat := val[0]
-	suite.Equal(4, len(val), "Values should match")
-
-	name := plat.Name()
-	suite.Equal("fullexample", name, "Names should match")
-
-	os, err := plat.Os()
-	suite.NoError(err)
-	suite.Equal("darwin", os, "OS should match")
-
-	var version string
-	suite.NoError(err)
-	version, err = plat.Version()
-	suite.Equal("10.0", version, "Version should match")
-
-	var arch string
-	arch, err = plat.Architecture()
-	suite.NoError(err)
-	suite.Equal("x386", arch, "Arch should match")
-
-	var libc string
-	libc, err = plat.Libc()
-	suite.NoError(err)
-	suite.Equal("gnu", libc, "Libc should match")
-
-	var compiler string
-	compiler, err = plat.Compiler()
-	suite.NoError(err)
-	suite.Equal("gcc", compiler, "Compiler should match")
-}
-
 func (suite *ProjectTestSuite) TestEvents() {
 	events := suite.project.Events()
-	suite.Equal(1, len(events), "Should match 1 out of three constrained items")
 
 	event := events[0]
 	name := event.Name()
 	value, err := event.Value()
 	suite.NoError(err)
 
-	if runtime.GOOS == "linux" {
-		suite.Equal("foo", name, "Names should match (Linux)")
-		suite.Equal("foo Linux", value, "Value should match (Linux)")
-	} else if runtime.GOOS == "windows" {
-		suite.Equal("bar", name, "Name should match (Windows)")
-		suite.Equal("bar Windows", value, "Value should match (Windows)")
-	} else if runtime.GOOS == "darwin" {
-		suite.Equal("baz", name, "Names should match (OSX)")
-		suite.Equal("baz OSX", value, "Value should match (OSX)")
-	}
+	suite.Equal("bar", name, "Names should match")
+	suite.Equal("bar project", value, "Value should match")
 }
 
 func (suite *ProjectTestSuite) TestEventByName() {
@@ -140,77 +99,15 @@ func (suite *ProjectTestSuite) TestEventByName() {
 		name = "baz"
 	}
 
-	event := suite.project.EventByName(name)
+	event := suite.project.EventByName(name, false)
 	suite.Equal(name, event.Name())
 
-	event = suite.project.EventByName("not-there")
+	event = suite.project.EventByName("not-there", false)
 	suite.Nil(event)
-}
-
-func (suite *ProjectTestSuite) TestLanguages() {
-	languages := suite.project.Languages()
-	suite.Equal(2, len(languages), "Should match 2 out of three constrained items")
-
-	lang := languages[0]
-	name := lang.Name()
-	version := lang.Version()
-	id := lang.ID()
-	build, err := lang.Build()
-	suite.NoError(err)
-
-	if runtime.GOOS == "linux" {
-		suite.Equal("foo", name, "Names should match (Linux)")
-		suite.Equal("1.1", version, "Version should match (Linux)")
-		suite.Equal("foo1.1", id, "ID should match (Linux)")
-		suite.Equal("--foo Linux", (*build)["override"], "Build value should match (Linux)")
-	} else if runtime.GOOS == "windows" {
-		suite.Equal("bar", name, "Name should match (Windows)")
-		suite.Equal("1.2", version, "Version should match (Windows)")
-		suite.Equal("bar1.2", id, "ID should match (Windows)")
-		suite.Equal("--bar Windows", (*build)["override"], "Build value should match (Windows)")
-	} else if runtime.GOOS == "darwin" {
-		suite.Equal("baz", name, "Names should match (OSX)")
-		suite.Equal("1.3", version, "Version should match (OSX)")
-		suite.Equal("baz1.3", id, "ID should match (OSX)")
-		suite.Equal("--baz OSX", (*build)["override"], "Build value should match (OSX)")
-	}
-}
-
-func (suite *ProjectTestSuite) TestPackages() {
-	languages := suite.project.Languages()
-	var language *project.Language
-	for _, l := range languages {
-		if l.Name() == "packages" {
-			language = l
-		}
-	}
-	packages := language.Packages()
-	suite.Equal(1, len(packages), "Should match 1 out of three constrained items")
-
-	pkg := packages[0]
-	name := pkg.Name()
-	version := pkg.Version()
-	build, err := pkg.Build()
-	suite.NoError(err)
-
-	if runtime.GOOS == "linux" {
-		suite.Equal("foo", name, "Names should match (Linux)")
-		suite.Equal("1.1", version, "Version should match (Linux)")
-		suite.Equal("--foo Linux", (*build)["override"], "Build value should match (Linux)")
-	} else if runtime.GOOS == "windows" {
-		suite.Equal("bar", name, "Name should match (Windows)")
-		suite.Equal("1.2", version, "Version should match (Windows)")
-		suite.Equal("--bar Windows", (*build)["override"], "Build value should match (Windows)")
-	} else if runtime.GOOS == "darwin" {
-		suite.Equal("baz", name, "Names should match (OSX)")
-		suite.Equal("1.3", version, "Version should match (OSX)")
-		suite.Equal("--baz OSX", (*build)["override"], "Build value should match (OSX)")
-	}
 }
 
 func (suite *ProjectTestSuite) TestScripts() {
 	scripts := suite.project.Scripts()
-	suite.Equal(1, len(scripts), "Should match 1 out of three constrained items")
 
 	script := scripts[0]
 	name := script.Name()
@@ -220,25 +117,15 @@ func (suite *ProjectTestSuite) TestScripts() {
 	safe := script.LanguageSafe()
 	standalone := script.Standalone()
 
-	if runtime.GOOS == "linux" {
-		suite.Equal("foo", name, "Names should match (Linux)")
-		suite.Equal("foo Linux", value, "Value should match (Linux)")
-		suite.Equal("foo $platform.name", raw, "Raw value should match (Linux)")
-		suite.Equal([]language.Language{language.Sh}, safe, "Safe language should match (Linux)")
-		suite.True(standalone, "Standalone value should match (Linux)")
-	} else if runtime.GOOS == "windows" {
-		suite.Equal("bar", name, "Name should match (Windows)")
-		suite.Equal("bar Windows", value, "Value should match (Windows)")
-		suite.Equal("bar $platform.name", raw, "Raw value should match (Windows)")
-		suite.Equal([]language.Language{language.Batch}, safe, "Safe language should match (Windows)")
-		suite.True(standalone, "Standalone value should match (Windows)")
-	} else if runtime.GOOS == "darwin" {
-		suite.Equal("baz", name, "Names should match (OSX)")
-		suite.Equal("baz OSX", value, "Value should match (OSX)")
-		suite.Equal("baz $platform.name", raw, "Raw value should match (OSX)")
-		suite.Equal([]language.Language{language.Sh}, safe, "Language should match (OSX)")
-		suite.True(standalone, "Standalone value should match (OSX)")
+	suite.Equal("foo", name, "Names should match")
+	suite.Equal("foo project", value, "Value should match")
+	suite.Equal("foo $project.name()", raw, "Raw value should match")
+	if runtime.GOOS == "windows" {
+		suite.Equal([]language.Language{language.Batch}, safe, "Safe language should match")
+	} else {
+		suite.Equal([]language.Language{language.Sh}, safe, "Safe language should match")
 	}
+	suite.True(standalone, "Standalone value should match")
 }
 
 func (suite *ProjectTestSuite) TestScriptByName() {
@@ -251,7 +138,7 @@ func (suite *ProjectTestSuite) TestScriptByName() {
 		suite.Equal("foo", script.Name(), "Names should match (Linux)")
 		v, err := script.Value()
 		suite.NoError(err)
-		suite.Equal("foo Linux", v, "Value should match (Linux)")
+		suite.Equal("foo project", v, "Value should match (Linux)")
 		suite.True(script.Standalone(), "Standalone value should match (Linux)")
 	} else if runtime.GOOS == "windows" {
 		script = suite.project.ScriptByName("bar")
@@ -259,7 +146,7 @@ func (suite *ProjectTestSuite) TestScriptByName() {
 		suite.Equal("bar", script.Name(), "Name should match (Windows)")
 		v, err := script.Value()
 		suite.NoError(err)
-		suite.Equal("bar Windows", v, "Value should match (Windows)")
+		suite.Equal("bar project", v, "Value should match (Windows)")
 		suite.True(script.Standalone(), "Standalone value should match (Windows)")
 	} else if runtime.GOOS == "darwin" {
 		script = suite.project.ScriptByName("baz")
@@ -267,7 +154,7 @@ func (suite *ProjectTestSuite) TestScriptByName() {
 		suite.Equal("baz", script.Name(), "Names should match (OSX)")
 		v, err := script.Value()
 		suite.NoError(err)
-		suite.Equal("baz OSX", v, "Value should match (OSX)")
+		suite.Equal("baz project", v, "Value should match (OSX)")
 		suite.True(script.Standalone(), "Standalone value should match (OSX)")
 	}
 }
@@ -281,16 +168,8 @@ func (suite *ProjectTestSuite) TestConstants() {
 	value, err := constant.Value()
 	suite.NoError(err)
 
-	if runtime.GOOS == "linux" {
-		suite.Equal("foo", name, "Names should match (Linux)")
-		suite.Equal("foo Linux", value, "Value should match (Linux)")
-	} else if runtime.GOOS == "windows" {
-		suite.Equal("bar", name, "Name should match (Windows)")
-		suite.Equal("bar Windows", value, "Value should match (Windows)")
-	} else if runtime.GOOS == "darwin" {
-		suite.Equal("baz", name, "Names should match (OSX)")
-		suite.Equal("baz OSX", value, "Value should match (OSX)")
-	}
+	suite.Equal("foo", name, "Names should match")
+	suite.Equal("foo project", value, "Value should match")
 }
 
 func (suite *ProjectTestSuite) TestSecrets() {
@@ -299,17 +178,18 @@ func (suite *ProjectTestSuite) TestSecrets() {
 	cfg, err := config.New()
 	suite.Require().NoError(err)
 	defer func() { suite.Require().NoError(cfg.Close()) }()
-	secrets := prj.Secrets(cfg)
+	auth := authentication.New(cfg)
+	secrets := prj.Secrets(cfg, auth)
 	suite.Len(secrets, 2)
 
-	userSecret := prj.SecretByName("secret", project.SecretScopeUser, cfg)
+	userSecret := prj.SecretByName("secret", project.SecretScopeUser, cfg, auth)
 	suite.Require().NotNil(userSecret)
 	suite.Equal("secret-user", userSecret.Description())
 	suite.True(userSecret.IsUser())
 	suite.False(userSecret.IsProject())
 	suite.Equal("user", userSecret.Scope())
 
-	projectSecret := prj.SecretByName("secret", project.SecretScopeProject, cfg)
+	projectSecret := prj.SecretByName("secret", project.SecretScopeProject, cfg, auth)
 	suite.Require().NotNil(projectSecret)
 	suite.Equal("secret-project", projectSecret.Description())
 	suite.True(projectSecret.IsProject())

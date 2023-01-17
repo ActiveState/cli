@@ -10,7 +10,6 @@ import (
 	"io/fs"
 	"io/ioutil"
 	"os"
-	"os/user"
 	"path/filepath"
 	"regexp"
 	"runtime"
@@ -435,6 +434,14 @@ func Touch(path string) error {
 	return nil
 }
 
+// TouchFileUnlessExists will attempt to "touch" a given filename if it doesn't already exists
+func TouchFileUnlessExists(path string) error {
+	if TargetExists(path) {
+		return nil
+	}
+	return Touch(path)
+}
+
 // IsEmptyDir returns true if the directory at the provided path has no files (including dirs) within it.
 func IsEmptyDir(path string) (bool, error) {
 	dir, err := os.Open(path)
@@ -823,16 +830,6 @@ func LogPath(path string) error {
 		}, "\n"))
 		return nil
 	})
-}
-
-// HomeDir returns the users homedir
-func HomeDir() (string, error) {
-	usr, err := user.Current()
-	if err != nil {
-		return "", err
-	}
-
-	return usr.HomeDir, nil
 }
 
 // IsDir returns true if the given path is a directory

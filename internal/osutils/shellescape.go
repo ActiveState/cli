@@ -21,10 +21,19 @@ func NewBashEscaper() *ShellEscape {
 	}
 }
 
-// NewBatchEscaper creates a new isntance of ShellEscape that's configured for escaping batch style arguments
+// NewBatchEscaper creates a new instance of ShellEscape that's configured for escaping batch style arguments
 func NewBatchEscaper() *ShellEscape {
 	return &ShellEscape{
 		regexp.MustCompile(`^[\w]+$`),
+		regexp.MustCompile(`"`),
+		`""`,
+	}
+}
+
+// NewCmdEscaper creates a new instance of ShellEscape that's configured for escaping cmd arguments
+func NewCmdEscaper() *ShellEscape {
+	return &ShellEscape{
+		regexp.MustCompile(`^[^ &()\[\]{}^=;!'+,~]+$`), // cmd.exe /? lists these characters as requiring quotes
 		regexp.MustCompile(`"`),
 		`""`,
 	}

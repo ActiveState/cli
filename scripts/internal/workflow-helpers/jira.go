@@ -11,6 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/secrethelper"
 	"github.com/andygrunwald/go-jira"
 	"github.com/blang/semver"
+	"github.com/google/go-github/v45/github"
 )
 
 var jiraIssueRx = regexp.MustCompile(`(?i)(DX-\d+)`)
@@ -35,17 +36,16 @@ func ParseJiraKey(v string) (string, error) {
 	if len(matches) < 1 {
 		return "", errs.New("Could not extract jira key from %s, please ensure it matches the regex: %s", v, jiraIssueRx.String())
 	}
-	return matches[1], nil
+	return strings.ToUpper(matches[1]), nil
 }
 
 func JqlUnpaged(client *jira.Client, jql string) ([]jira.Issue, error) {
 	result := []jira.Issue{}
-	page := 0
 	perPage := 100
 
 	for x := 0; x < 100; x++ { // hard limit of 100,000 commits
 		issues, _, err := client.Issue.Search(jql, &jira.SearchOptions{
-			StartAt:    page * x,
+			StartAt:    x * perPage,
 			MaxResults: perPage,
 		})
 		if err != nil {
@@ -151,4 +151,16 @@ func IsMergedStatus(status string) bool {
 		return true
 	}
 	return false
+}
+
+func FetchJiraIDsInCommits(commits []*github.RepositoryCommit) []string {
+	found := []string{}
+	for _, commit := range commits {
+		key, err := ParseJiraKey(commit.GetCommit().GetMessage())
+		if err != nil {
+			continue
+		}
+		found = append(found, strings.ToUpper(key))
+	}
+	return found
 }

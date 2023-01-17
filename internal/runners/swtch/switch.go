@@ -78,6 +78,7 @@ func New(prime primeable) *Switch {
 
 func (s *Switch) Run(params SwitchParams) error {
 	logging.Debug("ExecuteSwitch")
+	s.out.Notice(locale.Tl("operating_message", "", s.project.NamespaceString(), s.project.Dir()))
 
 	if s.project == nil {
 		return locale.NewInputError("err_no_project")
@@ -98,6 +99,14 @@ func (s *Switch) Run(params SwitchParams) error {
 		if err != nil {
 			return locale.WrapError(err, "err_switch_set_branch", "Could not update branch")
 		}
+	}
+
+	belongs, err := model.CommitBelongsToBranch(s.project.Owner(), s.project.Name(), s.project.BranchName(), identifier.CommitID())
+	if err != nil {
+		return locale.WrapError(err, "err_identifier_branch", "Could not determine if commit belongs to branch")
+	}
+	if !belongs {
+		return locale.NewInputError("err_identifier_branch_not_on_branch", "Commit does not belong to history for branch [ACTIONABLE]{{.V0}}[/RESET]", s.project.BranchName())
 	}
 
 	err = s.project.SetCommit(identifier.CommitID().String())
