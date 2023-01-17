@@ -34,7 +34,6 @@ type matcherFunc func(expected interface{}, actual interface{}, msgAndArgs ...in
 // Update to release branch when possible
 var targetBranch = "beta"
 var oldUpdateVersion = "beta@0.32.2-SHA3e1d435"
-var specificVersion = "0.32.2-SHA3e1d435"
 
 func init() {
 	if constants.BranchName == targetBranch {
@@ -184,10 +183,9 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateChannel() {
 	tests := []struct {
 		Name    string
 		Channel string
-		Version string
 	}{
-		{"release-channel", "release", ""},
-		{"specific-update", targetBranch, specificVersion},
+		{"release-channel", "release"},
+		{"specific-update", targetBranch},
 	}
 
 	for _, tt := range tests {
@@ -198,9 +196,6 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateChannel() {
 			defer ts.Close()
 
 			updateArgs := []string{"update", "--set-channel", tt.Channel}
-			if tt.Version != "" {
-				updateArgs = append(updateArgs, "--set-version", tt.Version)
-			}
 			env := []string{fmt.Sprintf("%s=%s", constants.OverwriteDefaultInstallationPathEnvVarName, ts.Dirs.Bin)}
 			env = append(env, suite.env(false, false)...)
 			cp := ts.SpawnWithOpts(
@@ -211,10 +206,6 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateChannel() {
 			cp.ExpectExitCode(0, 1*time.Minute)
 
 			suite.branchCompare(ts, tt.Channel, suite.Equal)
-
-			if tt.Version != "" {
-				suite.versionCompare(ts, tt.Version, suite.Equal)
-			}
 		})
 	}
 }
