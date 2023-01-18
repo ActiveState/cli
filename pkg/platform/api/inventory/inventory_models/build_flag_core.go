@@ -15,7 +15,7 @@ import (
 
 // BuildFlagCore Build Flag Core
 //
-// The properties of a build flag needed to create a new one
+// # The properties of a build flag needed to create a new one
 //
 // swagger:model buildFlagCore
 type BuildFlagCore struct {

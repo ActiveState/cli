@@ -4,11 +4,11 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/internal-as/config"
-	"github.com/ActiveState/cli/internal-as/constants"
 	"github.com/ActiveState/cli/internal-as/locale"
 	"github.com/ActiveState/cli/internal-as/logging"
 	"github.com/ActiveState/cli/internal-as/output"
 	"github.com/ActiveState/cli/internal-as/primer"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/profile"
 	"github.com/ActiveState/cli/pkg/cmdlets/checker"

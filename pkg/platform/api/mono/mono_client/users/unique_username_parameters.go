@@ -52,10 +52,12 @@ func NewUniqueUsernameParamsWithHTTPClient(client *http.Client) *UniqueUsernameP
 	}
 }
 
-/* UniqueUsernameParams contains all the parameters to send to the API endpoint
-   for the unique username operation.
+/*
+UniqueUsernameParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the unique username operation.
+
+	Typically these are written to a http.Request.
 */
 type UniqueUsernameParams struct {
 

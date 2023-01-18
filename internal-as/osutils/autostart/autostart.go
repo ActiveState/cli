@@ -1,7 +1,7 @@
 package autostart
 
 import (
-	"github.com/ActiveState/cli/internal-as/constants"
+	"github.com/ActiveState/cli/internal/constants"
 	configMediator "github.com/ActiveState/cli/internal/mediators/config"
 )
 

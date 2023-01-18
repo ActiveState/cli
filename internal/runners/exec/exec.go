@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal-as/analytics"
-	"github.com/ActiveState/cli/internal-as/constants"
 	"github.com/ActiveState/cli/internal-as/errs"
 	"github.com/ActiveState/cli/internal-as/fileutils"
 	"github.com/ActiveState/cli/internal-as/locale"
@@ -19,6 +18,7 @@ import (
 	"github.com/ActiveState/cli/internal-as/rtutils"
 	"github.com/ActiveState/cli/internal-as/runbits"
 	"github.com/ActiveState/cli/internal-as/subshell"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/hash"
 	"github.com/ActiveState/cli/internal/installation/storage"

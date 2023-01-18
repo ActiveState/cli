@@ -11,13 +11,13 @@ import (
 	"github.com/ActiveState/cli/internal-as/analytics/dimensions"
 	"github.com/ActiveState/cli/internal-as/captain"
 	"github.com/ActiveState/cli/internal-as/config"
-	"github.com/ActiveState/cli/internal-as/constants"
 	"github.com/ActiveState/cli/internal-as/errs"
 	"github.com/ActiveState/cli/internal-as/locale"
 	"github.com/ActiveState/cli/internal-as/logging"
 	"github.com/ActiveState/cli/internal-as/multilog"
 	"github.com/ActiveState/cli/internal-as/output"
 	"github.com/ActiveState/cli/internal/condition"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/rtutils/p"
 )
 

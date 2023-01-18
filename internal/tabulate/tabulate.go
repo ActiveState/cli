@@ -219,15 +219,15 @@ func (t *Tabulate) buildRow(elements []string, padded_widths []int, paddings []i
 	return buffer.String()
 }
 
-//SetWrapDelimiter assigns the character ina  string that the rednderer
-//will attempt to split strings on when a cell must be wrapped
+// SetWrapDelimiter assigns the character ina  string that the rednderer
+// will attempt to split strings on when a cell must be wrapped
 func (t *Tabulate) SetWrapDelimiter(r rune) {
 	t.WrapDelimiter = r
 }
 
-//SetSplitConcat assigns the character that will be used when a WrapDelimiter is
-//set but the renderer cannot abide by the desired split.  This may happen when
-//the WrapDelimiter is a space ' ' but a single word is longer than the width of a cell
+// SetSplitConcat assigns the character that will be used when a WrapDelimiter is
+// set but the renderer cannot abide by the desired split.  This may happen when
+// the WrapDelimiter is a space ' ' but a single word is longer than the width of a cell
 func (t *Tabulate) SetSplitConcat(r string) {
 	t.SplitConcat = r
 }

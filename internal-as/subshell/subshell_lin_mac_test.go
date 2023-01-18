@@ -1,3 +1,4 @@
+//go:build !windows
 // +build !windows
 
 package subshell
@@ -13,9 +14,9 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/ActiveState/cli/internal-as/config"
-	"github.com/ActiveState/cli/internal-as/constants"
 	"github.com/ActiveState/cli/internal-as/fileutils"
 	"github.com/ActiveState/cli/internal-as/testhelpers/osutil"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 

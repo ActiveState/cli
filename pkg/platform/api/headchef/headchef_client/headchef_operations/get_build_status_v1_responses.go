@@ -56,7 +56,8 @@ func NewGetBuildStatusV1OK() *GetBuildStatusV1OK {
 	return &GetBuildStatusV1OK{}
 }
 
-/*GetBuildStatusV1OK handles this case with default header values.
+/*
+GetBuildStatusV1OK handles this case with default header values.
 
 A build has already been requested with that request ID
 */
@@ -85,7 +86,8 @@ func NewGetBuildStatusV1NotFound() *GetBuildStatusV1NotFound {
 	return &GetBuildStatusV1NotFound{}
 }
 
-/*GetBuildStatusV1NotFound handles this case with default header values.
+/*
+GetBuildStatusV1NotFound handles this case with default header values.
 
 No build has been requested with that request ID
 */
@@ -116,7 +118,8 @@ func NewGetBuildStatusV1Default(code int) *GetBuildStatusV1Default {
 	}
 }
 
-/*GetBuildStatusV1Default handles this case with default header values.
+/*
+GetBuildStatusV1Default handles this case with default header values.
 
 If there is an error processing the request
 */

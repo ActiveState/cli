@@ -9,7 +9,6 @@ import (
 
 	"github.com/ActiveState/cli/internal-as/analytics"
 	anaConsts "github.com/ActiveState/cli/internal-as/analytics/constants"
-	"github.com/ActiveState/cli/internal-as/constants"
 	"github.com/ActiveState/cli/internal-as/errs"
 	"github.com/ActiveState/cli/internal-as/fileutils"
 	"github.com/ActiveState/cli/internal-as/locale"
@@ -17,6 +16,7 @@ import (
 	"github.com/ActiveState/cli/internal-as/multilog"
 	"github.com/ActiveState/cli/internal-as/output"
 	"github.com/ActiveState/cli/internal-as/rollbar"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"

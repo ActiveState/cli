@@ -13,9 +13,9 @@ import (
 	"gopkg.in/yaml.v2"
 
 	"github.com/ActiveState/cli/internal-as/config"
-	"github.com/ActiveState/cli/internal-as/constants"
 	"github.com/ActiveState/cli/internal-as/environment"
 	"github.com/ActiveState/cli/internal-as/errs"
+	"github.com/ActiveState/cli/internal/constants"
 )
 
 func setCwd(t *testing.T, subdir string) {

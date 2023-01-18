@@ -9,10 +9,10 @@ import (
 	"github.com/ActiveState/cli/internal-as/primer"
 	"github.com/go-openapi/strfmt"
 
-	"github.com/ActiveState/cli/internal-as/constants"
 	"github.com/ActiveState/cli/internal-as/errs"
 	"github.com/ActiveState/cli/internal-as/fileutils"
 	"github.com/ActiveState/cli/internal-as/output"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/pkg/cmdlets/git"
 	"github.com/ActiveState/cli/pkg/platform/model"

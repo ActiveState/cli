@@ -59,7 +59,8 @@ func NewSaveAllUserSecretsParamsWithHTTPClient(client *http.Client) *SaveAllUser
 	}
 }
 
-/*SaveAllUserSecretsParams contains all the parameters to send to the API endpoint
+/*
+SaveAllUserSecretsParams contains all the parameters to send to the API endpoint
 for the save all user secrets operation typically these are written to a http.Request
 */
 type SaveAllUserSecretsParams struct {

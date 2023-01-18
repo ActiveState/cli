@@ -17,7 +17,7 @@ import (
 
 // Requirements Requirements
 //
-// The version constraints that an ingredient version's requirement or condition puts on a feature
+// # The version constraints that an ingredient version's requirement or condition puts on a feature
 //
 // swagger:model requirements
 type Requirements []*Requirement

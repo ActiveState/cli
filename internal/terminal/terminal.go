@@ -24,9 +24,9 @@ func fdSupportsColors(fd int, lookupEnv func(string) (string, bool)) bool {
 }
 
 // StdoutSupportsColors returns whether stdout supports color output
-// - If the TERM variable is not set, or set to the "dumb" terminal, no color support
-//   is assumed.
-// - If stdout is not a terminal, color support is disabled
+//   - If the TERM variable is not set, or set to the "dumb" terminal, no color support
+//     is assumed.
+//   - If stdout is not a terminal, color support is disabled
 func StdoutSupportsColors() bool {
 	return fdSupportsColors(int(os.Stdout.Fd()), os.LookupEnv)
 }

@@ -8,7 +8,6 @@ import (
 	"github.com/skratchdot/open-golang/open"
 
 	anaConsts "github.com/ActiveState/cli/internal-as/analytics/constants"
-	"github.com/ActiveState/cli/internal-as/constants"
 	"github.com/ActiveState/cli/internal-as/fileutils"
 	"github.com/ActiveState/cli/internal-as/locale"
 	"github.com/ActiveState/cli/internal-as/osutils/user"
@@ -16,6 +15,7 @@ import (
 	"github.com/ActiveState/cli/internal-as/primer"
 	"github.com/ActiveState/cli/internal-as/prompt"
 	"github.com/ActiveState/cli/internal-as/runbits"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 )

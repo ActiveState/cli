@@ -91,7 +91,6 @@ DiffUserSecrets relatives to current user determine what secrets another user is
 
 Relative to current user, determine what secrets another user is missing or are out-of-date and return
 those specs along with the user's public-key. User-scoped secrets will not be considered.
-
 */
 func (a *Client) DiffUserSecrets(params *DiffUserSecretsParams, authInfo runtime.ClientAuthInfoWriter) (*DiffUserSecretsOK, error) {
 	// TODO: Validate the params before sending

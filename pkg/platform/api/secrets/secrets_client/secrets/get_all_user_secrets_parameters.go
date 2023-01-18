@@ -57,7 +57,8 @@ func NewGetAllUserSecretsParamsWithHTTPClient(client *http.Client) *GetAllUserSe
 	}
 }
 
-/*GetAllUserSecretsParams contains all the parameters to send to the API endpoint
+/*
+GetAllUserSecretsParams contains all the parameters to send to the API endpoint
 for the get all user secrets operation typically these are written to a http.Request
 */
 type GetAllUserSecretsParams struct {

@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/ActiveState/cli/internal-as/constants"
 	"github.com/ActiveState/cli/internal-as/logging"
 	"github.com/ActiveState/cli/internal-as/multilog"
+	"github.com/ActiveState/cli/internal/constants"
 )
 
 // HandlePanics produces actionable output for panic events (that shouldn't happen) and returns whether a panic event has been handled

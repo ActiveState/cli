@@ -12,7 +12,7 @@ type ShellEscape struct {
 	escapeWith    string
 }
 
-//NewBashEscaper creates a new instance of ShellEscape that's configured for escaping bash style arguments
+// NewBashEscaper creates a new instance of ShellEscape that's configured for escaping bash style arguments
 func NewBashEscaper() *ShellEscape {
 	return &ShellEscape{
 		regexp.MustCompile(`^[\w]+$`),

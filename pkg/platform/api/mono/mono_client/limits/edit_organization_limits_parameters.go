@@ -54,10 +54,12 @@ func NewEditOrganizationLimitsParamsWithHTTPClient(client *http.Client) *EditOrg
 	}
 }
 
-/* EditOrganizationLimitsParams contains all the parameters to send to the API endpoint
-   for the edit organization limits operation.
+/*
+EditOrganizationLimitsParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the edit organization limits operation.
+
+	Typically these are written to a http.Request.
 */
 type EditOrganizationLimitsParams struct {
 

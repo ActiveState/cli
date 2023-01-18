@@ -7,9 +7,9 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/ActiveState/cli/internal-as/constants"
 	"github.com/ActiveState/cli/internal-as/errs"
 	"github.com/ActiveState/cli/internal-as/logging"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/httpreq"
 )
 

@@ -42,9 +42,10 @@ func init() {
 
 // String returns a string representation of a stacktrace
 // For example:
-//   ./package/file.go:123:file.func
-//   ./another/package.go:456:package.(*Struct).method
-//   <go>/src/runtime.s:789:runtime.func
+//
+//	./package/file.go:123:file.func
+//	./another/package.go:456:package.(*Struct).method
+//	<go>/src/runtime.s:789:runtime.func
 func (t *Stacktrace) String() string {
 	result := []string{}
 	for _, frame := range t.Frames {

@@ -4,7 +4,6 @@ import (
 	"os"
 
 	"github.com/ActiveState/cli/internal-as/config"
-	"github.com/ActiveState/cli/internal-as/constants"
 	"github.com/ActiveState/cli/internal-as/errs"
 	"github.com/ActiveState/cli/internal-as/locale"
 	"github.com/ActiveState/cli/internal-as/logging"
@@ -12,6 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal-as/output"
 	"github.com/ActiveState/cli/internal-as/primer"
 	"github.com/ActiveState/cli/internal-as/prompt"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/pkg/project"

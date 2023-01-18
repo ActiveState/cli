@@ -52,10 +52,12 @@ func NewGetDomainsByUserParamsWithHTTPClient(client *http.Client) *GetDomainsByU
 	}
 }
 
-/* GetDomainsByUserParams contains all the parameters to send to the API endpoint
-   for the get domains by user operation.
+/*
+GetDomainsByUserParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the get domains by user operation.
+
+	Typically these are written to a http.Request.
 */
 type GetDomainsByUserParams struct {
 

@@ -63,7 +63,8 @@ func NewSaveKeypairNoContent() *SaveKeypairNoContent {
 	return &SaveKeypairNoContent{}
 }
 
-/*SaveKeypairNoContent handles this case with default header values.
+/*
+SaveKeypairNoContent handles this case with default header values.
 
 Success
 */
@@ -84,7 +85,8 @@ func NewSaveKeypairBadRequest() *SaveKeypairBadRequest {
 	return &SaveKeypairBadRequest{}
 }
 
-/*SaveKeypairBadRequest handles this case with default header values.
+/*
+SaveKeypairBadRequest handles this case with default header values.
 
 Bad Request
 */
@@ -113,7 +115,8 @@ func NewSaveKeypairUnauthorized() *SaveKeypairUnauthorized {
 	return &SaveKeypairUnauthorized{}
 }
 
-/*SaveKeypairUnauthorized handles this case with default header values.
+/*
+SaveKeypairUnauthorized handles this case with default header values.
 
 Invalid credentials
 */
@@ -142,7 +145,8 @@ func NewSaveKeypairInternalServerError() *SaveKeypairInternalServerError {
 	return &SaveKeypairInternalServerError{}
 }
 
-/*SaveKeypairInternalServerError handles this case with default header values.
+/*
+SaveKeypairInternalServerError handles this case with default header values.
 
 Server Error
 */

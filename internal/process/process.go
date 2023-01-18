@@ -6,13 +6,13 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/ActiveState/cli/internal-as/constants"
 	"github.com/ActiveState/cli/internal-as/errs"
 	"github.com/ActiveState/cli/internal-as/fileutils"
 	"github.com/ActiveState/cli/internal-as/logging"
 	"github.com/ActiveState/cli/internal-as/multilog"
 	"github.com/ActiveState/cli/internal-as/osutils/lockfile"
 	"github.com/ActiveState/cli/internal-as/rollbar"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/shirou/gopsutil/v3/process"
 )
 

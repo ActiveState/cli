@@ -16,7 +16,7 @@ import (
 
 // LatestTimestamp LatestTimestamp
 //
-// The latest timestamp that should be used with other inventory service requests, such as solve requests
+// # The latest timestamp that should be used with other inventory service requests, such as solve requests
 //
 // swagger:model latestTimestamp
 type LatestTimestamp struct {

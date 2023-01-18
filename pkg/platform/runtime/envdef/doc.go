@@ -26,22 +26,24 @@
 // is prepended to the existing `PATH` that is already set in the environment.
 //
 // ```json
-// {
-//	"env": [{
-//		    "env_name": "PATH",
-//		    "values": ["${INSTALLDIR}/bin", "${INSTALLDIR}/usr/bin"],
-//		    "join": "prepend",
-//		    "inherit": true,
-//          "separator": ":"
-//		}, {
-//			"env_name": "LD_LIBRARY_PATH",
-//			"values": ["${INSTALLDIR}/lib"],
-//			"join": "prepend",
-//			"inherit": false,
-//          "separator": ":"
-//		}],
-//    "installdir": "installdir"
-// }
+//
+//	{
+//		"env": [{
+//			    "env_name": "PATH",
+//			    "values": ["${INSTALLDIR}/bin", "${INSTALLDIR}/usr/bin"],
+//			    "join": "prepend",
+//			    "inherit": true,
+//	         "separator": ":"
+//			}, {
+//				"env_name": "LD_LIBRARY_PATH",
+//				"values": ["${INSTALLDIR}/lib"],
+//				"join": "prepend",
+//				"inherit": false,
+//	         "separator": ":"
+//			}],
+//	   "installdir": "installdir"
+//	}
+//
 // ```
 //
 // The installdir is used during the unpacking step to identify the directory
@@ -52,22 +54,24 @@
 // Assume we have a second environment definition file exists with the following contents:
 //
 // ```json
-// {
-//	"env": [{
-//		    "env_name": "PATH",
-//		    "values": ["${INSTALLDIR}/bin", "${INSTALLDIR}/usr/local/bin"],
-//		    "join": "prepend",
-//		    "inherit": true,
-//          "separator": ":"
-//		}, {
-//			"env_name": "LD_LIBRARY_PATH",
-//			"values": ["${INSTALLDIR}/lib", "${INSTALLDIR}/lib64"],
-//			"join": "prepend",
-//			"inherit": false,
-//          "separator": ":"
-//		}],
-//    "installdir": "installdir"
-// }
+//
+//	{
+//		"env": [{
+//			    "env_name": "PATH",
+//			    "values": ["${INSTALLDIR}/bin", "${INSTALLDIR}/usr/local/bin"],
+//			    "join": "prepend",
+//			    "inherit": true,
+//	         "separator": ":"
+//			}, {
+//				"env_name": "LD_LIBRARY_PATH",
+//				"values": ["${INSTALLDIR}/lib", "${INSTALLDIR}/lib64"],
+//				"join": "prepend",
+//				"inherit": false,
+//	         "separator": ":"
+//			}],
+//	   "installdir": "installdir"
+//	}
+//
 // ```
 //
 // Merging this environment definition into the previous one sets
@@ -85,9 +89,9 @@
 //
 // ## Usage
 //
-// - Environment definition files can be parsed from a file with the `NewEnvironmentDefinition()` function.
-// - Two environment definitions `ed1` and `ed2` can be merged like so:
+//   - Environment definition files can be parsed from a file with the `NewEnvironmentDefinition()` function.
+//   - Two environment definitions `ed1` and `ed2` can be merged like so:
 //     ed1.Merge(ed2)
-// - Once the installation directory is specified, the variable values can be expanded:
+//   - Once the installation directory is specified, the variable values can be expanded:
 //     ed.ExpandVariables("/home/user/.cache/installdir")
 package envdef

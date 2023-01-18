@@ -5,7 +5,6 @@ import (
 	"github.com/skratchdot/open-golang/open"
 
 	anaConsts "github.com/ActiveState/cli/internal-as/analytics/constants"
-	"github.com/ActiveState/cli/internal-as/constants"
 	"github.com/ActiveState/cli/internal-as/errs"
 	"github.com/ActiveState/cli/internal-as/locale"
 	"github.com/ActiveState/cli/internal-as/multilog"
@@ -13,6 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal-as/primer"
 	"github.com/ActiveState/cli/internal-as/prompt"
 	"github.com/ActiveState/cli/internal-as/runbits"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/pkg/project"
 )
 

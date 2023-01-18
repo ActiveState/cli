@@ -8,7 +8,6 @@ import (
 
 	anaConsts "github.com/ActiveState/cli/internal-as/analytics/constants"
 	"github.com/ActiveState/cli/internal-as/captain"
-	"github.com/ActiveState/cli/internal-as/constants"
 	"github.com/ActiveState/cli/internal-as/errs"
 	"github.com/ActiveState/cli/internal-as/locale"
 	"github.com/ActiveState/cli/internal-as/logging"
@@ -16,6 +15,7 @@ import (
 	"github.com/ActiveState/cli/internal-as/output"
 	"github.com/ActiveState/cli/internal-as/prompt"
 	"github.com/ActiveState/cli/internal-as/runbits"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/keypairs"
 	medmodel "github.com/ActiveState/cli/pkg/platform/api/mediator/model"

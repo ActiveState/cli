@@ -4,7 +4,8 @@
 // allows you to set the logging level of your app in runtime.
 //
 // Logging is done just like calling fmt.Sprintf:
-// 		logging.Info("This object is %s and that is %s", obj, that)
+//
+//	logging.Info("This object is %s and that is %s", obj, that)
 //
 // example output:
 //
@@ -61,7 +62,7 @@ var LevelsByName = map[string]int{
 	"NOTHING":  NOTHING,
 }
 
-//default logging level is ALL
+// default logging level is ALL
 var level int = ALL
 
 // Set the logging level.
@@ -70,11 +71,12 @@ var level int = ALL
 // of active levels.
 //
 // e.g. for INFO and ERROR use:
-// 		SetLevel(logging.INFO | logging.ERROR)
+//
+//	SetLevel(logging.INFO | logging.ERROR)
 //
 // For everything but debug and info use:
-// 		SetLevel(logging.ALL &^ (logging.INFO | logging.DEBUG))
 //
+//	SetLevel(logging.ALL &^ (logging.INFO | logging.DEBUG))
 func SetLevel(l int) {
 	level = l
 }
@@ -114,7 +116,7 @@ func SetOutput(w io.Writer) {
 	log.SetOutput(w)
 }
 
-//a pluggable logger interface
+// a pluggable logger interface
 type LoggingHandler interface {
 	SetFormatter(Formatter)
 	SetVerbose(bool)
@@ -174,7 +176,7 @@ type MessageContext struct {
 	TimeStamp time.Time
 }
 
-//get the stack (line + file) context to return the caller to the log
+// get the stack (line + file) context to return the caller to the log
 func getContext(level string, skipDepth int) *MessageContext {
 
 	_, file, line, _ := runtime.Caller(skipDepth)
@@ -268,7 +270,7 @@ func printLogError(err error, ctx *MessageContext, msg string, args ...interface
 	fmt.Fprintln(os.Stderr, DefaultFormatter.Format(ctx, msg, args...))
 }
 
-//output INFO level messages
+// output INFO level messages
 func Info(msg string, args ...interface{}) {
 
 	if level&INFO != 0 {

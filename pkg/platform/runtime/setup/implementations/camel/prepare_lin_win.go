@@ -1,3 +1,4 @@
+//go:build !darwin
 // +build !darwin
 
 package camel
@@ -5,9 +6,9 @@ package camel
 import (
 	"runtime"
 
-	"github.com/ActiveState/cli/internal-as/constants"
 	"github.com/ActiveState/cli/internal-as/locale"
 	"github.com/ActiveState/cli/internal-as/logging"
+	"github.com/ActiveState/cli/internal/constants"
 )
 
 // Prepare will assume the LibLocation in cases where the metadata

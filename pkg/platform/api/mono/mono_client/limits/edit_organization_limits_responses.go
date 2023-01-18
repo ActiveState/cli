@@ -63,7 +63,8 @@ func NewEditOrganizationLimitsOK() *EditOrganizationLimitsOK {
 	return &EditOrganizationLimitsOK{}
 }
 
-/* EditOrganizationLimitsOK describes a response with status code 200, with default header values.
+/*
+	EditOrganizationLimitsOK describes a response with status code 200, with default header values.
 
 Success
 */
@@ -95,7 +96,8 @@ func NewEditOrganizationLimitsBadRequest() *EditOrganizationLimitsBadRequest {
 	return &EditOrganizationLimitsBadRequest{}
 }
 
-/* EditOrganizationLimitsBadRequest describes a response with status code 400, with default header values.
+/*
+	EditOrganizationLimitsBadRequest describes a response with status code 400, with default header values.
 
 Bad Request
 */
@@ -127,7 +129,8 @@ func NewEditOrganizationLimitsForbidden() *EditOrganizationLimitsForbidden {
 	return &EditOrganizationLimitsForbidden{}
 }
 
-/* EditOrganizationLimitsForbidden describes a response with status code 403, with default header values.
+/*
+	EditOrganizationLimitsForbidden describes a response with status code 403, with default header values.
 
 Forbidden
 */
@@ -159,7 +162,8 @@ func NewEditOrganizationLimitsNotFound() *EditOrganizationLimitsNotFound {
 	return &EditOrganizationLimitsNotFound{}
 }
 
-/* EditOrganizationLimitsNotFound describes a response with status code 404, with default header values.
+/*
+	EditOrganizationLimitsNotFound describes a response with status code 404, with default header values.
 
 Not Found
 */
@@ -191,7 +195,8 @@ func NewEditOrganizationLimitsInternalServerError() *EditOrganizationLimitsInter
 	return &EditOrganizationLimitsInternalServerError{}
 }
 
-/* EditOrganizationLimitsInternalServerError describes a response with status code 500, with default header values.
+/*
+	EditOrganizationLimitsInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */

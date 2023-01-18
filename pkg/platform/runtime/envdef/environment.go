@@ -156,10 +156,10 @@ func (ed *EnvironmentDefinition) ReplaceString(from string, replacement string) 
 
 // Merge merges two environment definitions according to the join strategy of
 // the second one.
-// - Environment variables that are defined in both definitions, are merged with
-//   EnvironmentVariable.Merge() and added to the result
-// - Environment variables that are defined in only one of the two definitions,
-//   are added to the result directly
+//   - Environment variables that are defined in both definitions, are merged with
+//     EnvironmentVariable.Merge() and added to the result
+//   - Environment variables that are defined in only one of the two definitions,
+//     are added to the result directly
 func (ed EnvironmentDefinition) Merge(other *EnvironmentDefinition) (*EnvironmentDefinition, error) {
 	res := ed
 	if other == nil {

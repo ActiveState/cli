@@ -56,7 +56,8 @@ func NewShareUserSecretsNoContent() *ShareUserSecretsNoContent {
 	return &ShareUserSecretsNoContent{}
 }
 
-/*ShareUserSecretsNoContent handles this case with default header values.
+/*
+ShareUserSecretsNoContent handles this case with default header values.
 
 Success
 */
@@ -77,7 +78,8 @@ func NewShareUserSecretsUnauthorized() *ShareUserSecretsUnauthorized {
 	return &ShareUserSecretsUnauthorized{}
 }
 
-/*ShareUserSecretsUnauthorized handles this case with default header values.
+/*
+ShareUserSecretsUnauthorized handles this case with default header values.
 
 Invalid credentials
 */
@@ -106,7 +108,8 @@ func NewShareUserSecretsInternalServerError() *ShareUserSecretsInternalServerErr
 	return &ShareUserSecretsInternalServerError{}
 }
 
-/*ShareUserSecretsInternalServerError handles this case with default header values.
+/*
+ShareUserSecretsInternalServerError handles this case with default header values.
 
 Server Error
 */
