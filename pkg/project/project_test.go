@@ -7,15 +7,15 @@ import (
 	"testing"
 
 	"github.com/ActiveState/cli/internal/config"
-	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/pkg/platform/authentication"
-	"github.com/ActiveState/cli/pkg/projectfile"
-
-	"github.com/stretchr/testify/suite"
-
+	"github.com/ActiveState/cli/internal/constraints"
 	"github.com/ActiveState/cli/internal/environment"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/language"
+	"github.com/ActiveState/cli/internal/subshell"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/project"
+	"github.com/ActiveState/cli/pkg/projectfile"
+	"github.com/stretchr/testify/suite"
 )
 
 type ProjectTestSuite struct {
@@ -42,6 +42,10 @@ func (suite *ProjectTestSuite) BeforeTest(suiteName, testName string) {
 	suite.Require().Nil(err, "Should retrieve projectfile without issue.")
 	suite.project, err = project.GetSafe()
 	suite.Require().Nil(err, "Should retrieve project without issue.")
+
+	cfg, err := config.New()
+	suite.Require().NoError(err)
+	project.RegisterConditional(constraints.NewPrimeConditional(nil, suite.project, subshell.New(cfg).Shell()))
 }
 
 func (suite *ProjectTestSuite) TestGet() {
@@ -78,14 +82,22 @@ func (suite *ProjectTestSuite) TestWhenInSubDirectories() {
 
 func (suite *ProjectTestSuite) TestEvents() {
 	events := suite.project.Events()
+	var name string
+	switch runtime.GOOS {
+	case "linux":
+		name = "foo"
+	case "windows":
+		name = "bar"
+	case "darwin":
+		name = "baz"
+	}
 
 	event := events[0]
-	name := event.Name()
 	value, err := event.Value()
 	suite.NoError(err)
 
-	suite.Equal("bar", name, "Names should match")
-	suite.Equal("bar project", value, "Value should match")
+	suite.Equal(name, event.Name(), "Names should match")
+	suite.Equal(name+" project", value, "Value should match")
 }
 
 func (suite *ProjectTestSuite) TestEventByName() {
@@ -108,18 +120,26 @@ func (suite *ProjectTestSuite) TestEventByName() {
 
 func (suite *ProjectTestSuite) TestScripts() {
 	scripts := suite.project.Scripts()
+	var name string
+	switch runtime.GOOS {
+	case "linux":
+		name = "foo"
+	case "windows":
+		name = "bar"
+	case "darwin":
+		name = "baz"
+	}
 
 	script := scripts[0]
-	name := script.Name()
 	value, err := script.Value()
 	suite.NoError(err)
 	raw := script.Raw()
 	safe := script.LanguageSafe()
 	standalone := script.Standalone()
 
-	suite.Equal("foo", name, "Names should match")
-	suite.Equal("foo project", value, "Value should match")
-	suite.Equal("foo $project.name()", raw, "Raw value should match")
+	suite.Equal(name, script.Name(), "Names should match")
+	suite.Equal(name+" project", value, "Value should match")
+	suite.Equal(name+" $project.name()", raw, "Raw value should match")
 	if runtime.GOOS == "windows" {
 		suite.Equal([]language.Language{language.Batch}, safe, "Safe language should match")
 	} else {
@@ -161,15 +181,23 @@ func (suite *ProjectTestSuite) TestScriptByName() {
 
 func (suite *ProjectTestSuite) TestConstants() {
 	constants := suite.project.Constants()
+	var name string
+	switch runtime.GOOS {
+	case "linux":
+		name = "foo"
+	case "windows":
+		name = "bar"
+	case "darwin":
+		name = "baz"
+	}
 
 	constant := constants[0]
 
-	name := constant.Name()
 	value, err := constant.Value()
 	suite.NoError(err)
 
-	suite.Equal("foo", name, "Names should match")
-	suite.Equal("foo project", value, "Value should match")
+	suite.Equal(name, constant.Name(), "Names should match")
+	suite.Equal(name+" project", value, "Value should match")
 }
 
 func (suite *ProjectTestSuite) TestSecrets() {
