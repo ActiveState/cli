@@ -86,7 +86,7 @@ type RequirementOperationParams struct {
 	NsType              model.NamespaceType
 }
 
-func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requirementVersion string, requirementBitWidth int, Operation model.Operation, nsType model.NamespaceType) (rerr error) {
+func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requirementVersion string, requirementBitWidth int, operation model.Operation, nsType model.NamespaceType) (rerr error) {
 	var ns model.Namespace
 	var langVersion string
 	langName := "undetermined"
@@ -134,7 +134,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 		ns = model.NewNamespacePlatform()
 	}
 
-	var validatePkg = Operation == model.OperationAdded && (ns.Type() == model.NamespacePackage || ns.Type() == model.NamespaceBundle)
+	var validatePkg = operation == model.OperationAdded && (ns.Type() == model.NamespacePackage || ns.Type() == model.NamespaceBundle)
 	if !ns.IsValid() && (nsType == model.NamespacePackage || nsType == model.NamespaceBundle) {
 		pg = output.NewDotProgress(out, locale.Tl("progress_pkg_nolang", "", requirementName), 10*time.Second)
 
@@ -187,18 +187,18 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 	pg = output.NewDotProgress(out, locale.T("progress_commit"), 10*time.Second)
 
 	// Check if this is an addition or an update
-	if Operation == model.OperationAdded && parentCommitID != "" {
+	if operation == model.OperationAdded && parentCommitID != "" {
 		req, err := model.GetRequirement(parentCommitID, ns, requirementName)
 		if err != nil {
 			return errs.Wrap(err, "Could not get requirement")
 		}
 		if req != nil {
-			Operation = model.OperationUpdated
+			operation = model.OperationUpdated
 		}
 	}
 
 	r.Analytics.EventWithLabel(
-		anaConsts.CatPackageOp, fmt.Sprintf("%s-%s", Operation, langName), requirementName,
+		anaConsts.CatPackageOp, fmt.Sprintf("%s-%s", operation, langName), requirementName,
 	)
 
 	if !hasParentCommit {
@@ -210,12 +210,12 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 	}
 
 	var commitID strfmt.UUID
-	commitID, err = model.CommitRequirement(parentCommitID, Operation, requirementName, requirementVersion, requirementBitWidth, ns)
+	commitID, err = model.CommitRequirement(parentCommitID, operation, requirementName, requirementVersion, requirementBitWidth, ns)
 	if err != nil {
-		if Operation == model.OperationRemoved && strings.Contains(err.Error(), "does not exist") {
+		if operation == model.OperationRemoved && strings.Contains(err.Error(), "does not exist") {
 			return locale.WrapInputError(err, "err_package_remove_does_not_exist", "Requirement is not installed: {{.V0}}", requirementName)
 		}
-		return locale.WrapError(err, fmt.Sprintf("err_%s_%s", ns.Type(), Operation))
+		return locale.WrapError(err, fmt.Sprintf("err_%s_%s", ns.Type(), operation))
 	}
 
 	orderChanged := !hasParentCommit
@@ -261,9 +261,9 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 	}
 
 	if requirementVersion != "" {
-		out.Print(locale.Tr(fmt.Sprintf("%s_version_%s", ns.Type(), Operation), requirementName, requirementVersion))
+		out.Print(locale.Tr(fmt.Sprintf("%s_version_%s", ns.Type(), operation), requirementName, requirementVersion))
 	} else {
-		out.Print(locale.Tr(fmt.Sprintf("%s_%s", ns.Type(), Operation), requirementName))
+		out.Print(locale.Tr(fmt.Sprintf("%s_%s", ns.Type(), operation), requirementName))
 	}
 
 	out.Print(locale.T("operation_success_local"))
