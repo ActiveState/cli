@@ -57,7 +57,8 @@ func NewDeleteUserSecretParamsWithHTTPClient(client *http.Client) *DeleteUserSec
 	}
 }
 
-/*DeleteUserSecretParams contains all the parameters to send to the API endpoint
+/*
+DeleteUserSecretParams contains all the parameters to send to the API endpoint
 for the delete user secret operation typically these are written to a http.Request
 */
 type DeleteUserSecretParams struct {

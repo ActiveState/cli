@@ -6,12 +6,12 @@ import (
 	"testing"
 
 	"github.com/ActiveState/cli/internal-as/analytics/client/blackhole"
-	"github.com/ActiveState/cli/internal-as/constants"
 	"github.com/ActiveState/cli/internal-as/fileutils"
 	"github.com/ActiveState/cli/internal-as/runbits/buildlogfile"
 	"github.com/ActiveState/cli/internal-as/testhelpers/osutil"
 	"github.com/ActiveState/cli/internal-as/testhelpers/outputhelper"
 	"github.com/ActiveState/cli/internal-as/testhelpers/tagsuite"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup/events"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"

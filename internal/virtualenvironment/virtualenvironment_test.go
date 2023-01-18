@@ -5,8 +5,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/ActiveState/cli/internal-as/constants"
 	"github.com/ActiveState/cli/internal-as/environment"
+	"github.com/ActiveState/cli/internal/constants"
 	rtmock "github.com/ActiveState/cli/pkg/platform/runtime/mock"
 	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/stretchr/testify/assert"

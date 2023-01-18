@@ -10,7 +10,7 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/ActiveState/cli/internal-as/constants"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/google/uuid"
 )
 

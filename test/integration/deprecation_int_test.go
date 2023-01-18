@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ActiveState/cli/internal-as/constants"
 	"github.com/ActiveState/cli/internal-as/fileutils"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/ActiveState/cli/internal-as/testhelpers/e2e"

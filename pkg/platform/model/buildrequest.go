@@ -1,8 +1,8 @@
 package model
 
 import (
-	"github.com/ActiveState/cli/internal-as/constants"
 	"github.com/ActiveState/cli/internal-as/locale"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"

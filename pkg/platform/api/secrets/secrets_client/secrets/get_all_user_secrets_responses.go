@@ -56,7 +56,8 @@ func NewGetAllUserSecretsOK() *GetAllUserSecretsOK {
 	return &GetAllUserSecretsOK{}
 }
 
-/*GetAllUserSecretsOK handles this case with default header values.
+/*
+GetAllUserSecretsOK handles this case with default header values.
 
 Success
 */
@@ -83,7 +84,8 @@ func NewGetAllUserSecretsUnauthorized() *GetAllUserSecretsUnauthorized {
 	return &GetAllUserSecretsUnauthorized{}
 }
 
-/*GetAllUserSecretsUnauthorized handles this case with default header values.
+/*
+GetAllUserSecretsUnauthorized handles this case with default header values.
 
 Invalid credentials
 */
@@ -112,7 +114,8 @@ func NewGetAllUserSecretsInternalServerError() *GetAllUserSecretsInternalServerE
 	return &GetAllUserSecretsInternalServerError{}
 }
 
-/*GetAllUserSecretsInternalServerError handles this case with default header values.
+/*
+GetAllUserSecretsInternalServerError handles this case with default header values.
 
 Server Error
 */

@@ -1,3 +1,4 @@
+//go:build !test
 // +build !test
 
 package logging
@@ -17,7 +18,7 @@ import (
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/thoas/go-funk"
 
-	"github.com/ActiveState/cli/internal-as/constants"
+	"github.com/ActiveState/cli/internal/constants"
 )
 
 // datadir is the base directory at which the log is saved

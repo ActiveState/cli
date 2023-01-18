@@ -57,7 +57,8 @@ func NewDiffUserSecretsParamsWithHTTPClient(client *http.Client) *DiffUserSecret
 	}
 }
 
-/*DiffUserSecretsParams contains all the parameters to send to the API endpoint
+/*
+DiffUserSecretsParams contains all the parameters to send to the API endpoint
 for the diff user secrets operation typically these are written to a http.Request
 */
 type DiffUserSecretsParams struct {

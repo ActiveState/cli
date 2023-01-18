@@ -11,10 +11,10 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/ActiveState/cli/internal-as/constants"
 	"github.com/ActiveState/cli/internal-as/locale"
 	"github.com/ActiveState/cli/internal-as/logging"
 	"github.com/ActiveState/cli/internal-as/multilog"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/rtutils/p"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/projectfile"
@@ -381,7 +381,7 @@ func PlatformMatches(platform projectfile.Platform) bool {
 		(platform.Compiler == "" || compilerMatches(platform.Compiler))
 }
 
-//Returns whether or not the current OS is constrained by the given
+// Returns whether or not the current OS is constrained by the given
 // named constraints, which are defined in the given project configuration.
 func osIsConstrained(constraintOSes string) bool {
 	names := strings.Split(constraintOSes, ",")

@@ -5,13 +5,13 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/ActiveState/cli/internal-as/constants"
 	"github.com/ActiveState/cli/internal-as/errs"
 	"github.com/ActiveState/cli/internal-as/fileutils"
 	"github.com/ActiveState/cli/internal-as/locale"
 	"github.com/ActiveState/cli/internal-as/logging"
 	"github.com/ActiveState/cli/internal-as/multilog"
 	"github.com/ActiveState/cli/internal-as/rollbar"
+	"github.com/ActiveState/cli/internal/constants"
 )
 
 // InstallFromArchive will unpack the installer archive, locate the install script, and then use the installer

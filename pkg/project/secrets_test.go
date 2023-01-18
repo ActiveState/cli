@@ -7,12 +7,12 @@ import (
 	"github.com/stretchr/testify/suite"
 	"gopkg.in/yaml.v2"
 
-	"github.com/ActiveState/cli/internal-as/constants"
 	"github.com/ActiveState/cli/internal-as/locale"
 	configMock "github.com/ActiveState/cli/internal-as/testhelpers/config_test"
 	"github.com/ActiveState/cli/internal-as/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal-as/testhelpers/osutil"
 	"github.com/ActiveState/cli/internal-as/testhelpers/secretsapi_test"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/api/graphql/request/mock"

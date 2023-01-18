@@ -9,8 +9,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ActiveState/cli/internal-as/constants"
-	"github.com/ActiveState/cli/internal-as/constants/version"
+	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/constants/version"
 	"github.com/blang/semver"
 )
 

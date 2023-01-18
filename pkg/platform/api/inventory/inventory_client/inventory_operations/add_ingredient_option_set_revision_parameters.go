@@ -54,10 +54,12 @@ func NewAddIngredientOptionSetRevisionParamsWithHTTPClient(client *http.Client) 
 	}
 }
 
-/* AddIngredientOptionSetRevisionParams contains all the parameters to send to the API endpoint
-   for the add ingredient option set revision operation.
+/*
+AddIngredientOptionSetRevisionParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the add ingredient option set revision operation.
+
+	Typically these are written to a http.Request.
 */
 type AddIngredientOptionSetRevisionParams struct {
 

@@ -16,7 +16,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/rxutils"
 
-	"github.com/ActiveState/cli/internal-as/constants"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/constraints"
 )
 

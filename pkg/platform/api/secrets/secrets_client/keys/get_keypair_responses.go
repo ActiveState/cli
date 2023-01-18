@@ -63,7 +63,8 @@ func NewGetKeypairOK() *GetKeypairOK {
 	return &GetKeypairOK{}
 }
 
-/*GetKeypairOK handles this case with default header values.
+/*
+GetKeypairOK handles this case with default header values.
 
 Success
 */
@@ -92,7 +93,8 @@ func NewGetKeypairUnauthorized() *GetKeypairUnauthorized {
 	return &GetKeypairUnauthorized{}
 }
 
-/*GetKeypairUnauthorized handles this case with default header values.
+/*
+GetKeypairUnauthorized handles this case with default header values.
 
 Invalid credentials
 */
@@ -121,7 +123,8 @@ func NewGetKeypairNotFound() *GetKeypairNotFound {
 	return &GetKeypairNotFound{}
 }
 
-/*GetKeypairNotFound handles this case with default header values.
+/*
+GetKeypairNotFound handles this case with default header values.
 
 Not Found
 */
@@ -150,7 +153,8 @@ func NewGetKeypairInternalServerError() *GetKeypairInternalServerError {
 	return &GetKeypairInternalServerError{}
 }
 
-/*GetKeypairInternalServerError handles this case with default header values.
+/*
+GetKeypairInternalServerError handles this case with default header values.
 
 Server Error
 */

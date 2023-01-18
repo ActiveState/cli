@@ -38,7 +38,7 @@ type ClientService interface {
 }
 
 /*
-  CalculateTax calculates the tax for the given address and options
+CalculateTax calculates the tax for the given address and options
 */
 func (a *Client) CalculateTax(params *CalculateTaxParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CalculateTaxOK, error) {
 	// TODO: Validate the params before sending
@@ -77,9 +77,9 @@ func (a *Client) CalculateTax(params *CalculateTaxParams, authInfo runtime.Clien
 }
 
 /*
-  CreateInvoice creates new invoice
+CreateInvoice creates new invoice
 
-  Creates a new invoice for the organization
+Creates a new invoice for the organization
 */
 func (a *Client) CreateInvoice(params *CreateInvoiceParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateInvoiceOK, error) {
 	// TODO: Validate the params before sending

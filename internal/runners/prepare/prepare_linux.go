@@ -6,12 +6,12 @@ import (
 	svcAutostart "github.com/ActiveState/cli/cmd/state-svc/autostart"
 	trayAutostart "github.com/ActiveState/cli/cmd/state-tray/autostart"
 
-	"github.com/ActiveState/cli/internal-as/constants"
 	"github.com/ActiveState/cli/internal-as/errs"
 	"github.com/ActiveState/cli/internal-as/locale"
 	"github.com/ActiveState/cli/internal-as/multilog"
 	"github.com/ActiveState/cli/internal-as/osutils/autostart"
 	"github.com/ActiveState/cli/internal-as/osutils/user"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/installation"
 )
 

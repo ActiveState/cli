@@ -7,10 +7,10 @@ import (
 
 	"github.com/ActiveState/cli/cmd/state-update-dialog/internal/lockedprj"
 	"github.com/ActiveState/cli/internal-as/config"
-	"github.com/ActiveState/cli/internal-as/constants"
 	"github.com/ActiveState/cli/internal-as/errs"
 	"github.com/ActiveState/cli/internal-as/logging"
 	"github.com/ActiveState/cli/internal-as/multilog"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/updater"
 	"github.com/skratchdot/open-golang/open"
 	"github.com/wailsapp/wails"

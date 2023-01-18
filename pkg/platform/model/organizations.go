@@ -85,7 +85,7 @@ func FetchOrgMember(orgName, name string) (*mono_models.Member, error) {
 // InviteUserToOrg invites a single user (via email address) to a given
 // organization.
 //
-// The invited user can be added as an owner or a member
+// # The invited user can be added as an owner or a member
 //
 // Note: This method only returns the invitation for the new user, not existing
 // users.

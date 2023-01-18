@@ -8,13 +8,13 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/internal-as/config"
-	"github.com/ActiveState/cli/internal-as/constants"
 	"github.com/ActiveState/cli/internal-as/errs"
 	"github.com/ActiveState/cli/internal-as/events"
 	"github.com/ActiveState/cli/internal-as/logging"
 	"github.com/ActiveState/cli/internal-as/multilog"
 	"github.com/ActiveState/cli/internal-as/rollbar"
 	"github.com/ActiveState/cli/internal-as/runbits/panics"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 )

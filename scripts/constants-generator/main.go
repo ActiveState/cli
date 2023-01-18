@@ -9,7 +9,7 @@ import (
 
 	"github.com/dave/jennifer/jen"
 
-	"github.com/ActiveState/cli/internal-as/constants/preprocess"
+	"github.com/ActiveState/cli/internal/constants/preprocess"
 )
 
 var inTest = false

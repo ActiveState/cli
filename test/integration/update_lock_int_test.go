@@ -7,10 +7,10 @@ import (
 	"regexp"
 
 	"github.com/ActiveState/cli/internal-as/config"
-	"github.com/ActiveState/cli/internal-as/constants"
 	"github.com/ActiveState/cli/internal-as/fileutils"
 	"github.com/ActiveState/cli/internal-as/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal-as/testhelpers/tagsuite"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/rtutils/singlethread"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )

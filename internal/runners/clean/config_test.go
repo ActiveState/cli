@@ -3,9 +3,9 @@ package clean
 import (
 	"os"
 
-	"github.com/ActiveState/cli/internal-as/constants"
 	"github.com/ActiveState/cli/internal-as/locale"
 	"github.com/ActiveState/cli/internal-as/testhelpers/outputhelper"
+	"github.com/ActiveState/cli/internal/constants"
 )
 
 func (suite *CleanTestSuite) TestConfig_PromptNo() {

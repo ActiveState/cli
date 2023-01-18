@@ -77,7 +77,8 @@ func NewStartBuildV1Created() *StartBuildV1Created {
 	return &StartBuildV1Created{}
 }
 
-/*StartBuildV1Created handles this case with default header values.
+/*
+StartBuildV1Created handles this case with default header values.
 
 The requested build has already ended. The response's type field is one of: build_completed or build_failed.
 */
@@ -106,7 +107,8 @@ func NewStartBuildV1Accepted() *StartBuildV1Accepted {
 	return &StartBuildV1Accepted{}
 }
 
-/*StartBuildV1Accepted handles this case with default header values.
+/*
+StartBuildV1Accepted handles this case with default header values.
 
 The requested build has been started but hasn't yet completed.  The response's type field is build_started.
 */
@@ -135,7 +137,8 @@ func NewStartBuildV1BadRequest() *StartBuildV1BadRequest {
 	return &StartBuildV1BadRequest{}
 }
 
-/*StartBuildV1BadRequest handles this case with default header values.
+/*
+StartBuildV1BadRequest handles this case with default header values.
 
 The submitted build request was invalid. Consult the message and error code in the response body for further details.
 */
@@ -164,7 +167,8 @@ func NewStartBuildV1Unauthorized() *StartBuildV1Unauthorized {
 	return &StartBuildV1Unauthorized{}
 }
 
-/*StartBuildV1Unauthorized handles this case with default header values.
+/*
+StartBuildV1Unauthorized handles this case with default header values.
 
 The submitted build request contains a private recipe ID but the request couldn't be authenticated
 */
@@ -193,7 +197,8 @@ func NewStartBuildV1Forbidden() *StartBuildV1Forbidden {
 	return &StartBuildV1Forbidden{}
 }
 
-/*StartBuildV1Forbidden handles this case with default header values.
+/*
+StartBuildV1Forbidden handles this case with default header values.
 
 The submitted build request contains a private recipe ID but the authenticated user isn't allow to access it
 */
@@ -224,7 +229,8 @@ func NewStartBuildV1Default(code int) *StartBuildV1Default {
 	}
 }
 
-/*StartBuildV1Default handles this case with default header values.
+/*
+StartBuildV1Default handles this case with default header values.
 
 If there is an error processing the request
 */

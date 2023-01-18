@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ActiveState/cli/internal-as/constants"
 	"github.com/ActiveState/cli/internal-as/fileutils"
+	"github.com/ActiveState/cli/internal/constants"
 )
 
 func fakeContents(before, contents, after string) string {

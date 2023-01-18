@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ActiveState/cli/internal-as/constants"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/hashicorp/go-cleanhttp"
 	"github.com/hashicorp/go-retryablehttp"
 

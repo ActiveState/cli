@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/internal-as/config"
-	"github.com/ActiveState/cli/internal-as/constants"
 	"github.com/ActiveState/cli/internal-as/errs"
 	"github.com/ActiveState/cli/internal-as/locale"
 	"github.com/ActiveState/cli/internal-as/logging"
@@ -15,6 +14,7 @@ import (
 	"github.com/ActiveState/cli/internal-as/rollbar"
 	"github.com/ActiveState/cli/internal/ci/gcloud"
 	"github.com/ActiveState/cli/internal/colorize"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/profile"
 	"github.com/ActiveState/cli/internal/singleton/uniqid"
 	"github.com/ActiveState/cli/pkg/platform/api/mono"

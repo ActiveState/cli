@@ -11,10 +11,10 @@ import (
 	"github.com/ActiveState/cli/internal/installation"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/ActiveState/cli/internal-as/constants"
 	"github.com/ActiveState/cli/internal-as/environment"
 	"github.com/ActiveState/cli/internal-as/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal-as/testhelpers/tagsuite"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/termtest"
 )
 

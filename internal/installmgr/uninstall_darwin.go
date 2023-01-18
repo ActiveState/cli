@@ -7,7 +7,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/ActiveState/cli/internal-as/constants"
+	"github.com/ActiveState/cli/internal/constants"
 )
 
 func RemoveSystemFiles(systemInstallPath string) error {

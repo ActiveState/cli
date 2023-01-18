@@ -2,10 +2,10 @@ package autostart
 
 import (
 	"github.com/ActiveState/cli/internal-as/config"
-	"github.com/ActiveState/cli/internal-as/constants"
 	"github.com/ActiveState/cli/internal-as/logging"
 	"github.com/ActiveState/cli/internal-as/multilog"
 	"github.com/ActiveState/cli/internal-as/osutils/autostart"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/installation"
 	configMediator "github.com/ActiveState/cli/internal/mediators/config"
 )

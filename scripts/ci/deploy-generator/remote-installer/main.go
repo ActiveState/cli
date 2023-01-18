@@ -6,10 +6,10 @@ import (
 	"path/filepath"
 	"runtime"
 
-	"github.com/ActiveState/cli/internal-as/constants"
 	"github.com/ActiveState/cli/internal-as/environment"
 	"github.com/ActiveState/cli/internal-as/errs"
 	"github.com/ActiveState/cli/internal-as/fileutils"
+	"github.com/ActiveState/cli/internal/constants"
 )
 
 func main() {

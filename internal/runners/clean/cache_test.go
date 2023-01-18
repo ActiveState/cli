@@ -5,8 +5,8 @@ import (
 	"testing"
 
 	"github.com/ActiveState/cli/internal-as/config"
-	"github.com/ActiveState/cli/internal-as/constants"
 	"github.com/ActiveState/cli/internal-as/testhelpers/outputhelper"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/stretchr/testify/require"
 )
 

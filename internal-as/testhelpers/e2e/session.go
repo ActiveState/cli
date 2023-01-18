@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/internal-as/config"
-	"github.com/ActiveState/cli/internal-as/constants"
 	"github.com/ActiveState/cli/internal-as/environment"
 	"github.com/ActiveState/cli/internal-as/errs"
 	"github.com/ActiveState/cli/internal-as/fileutils"
@@ -22,6 +21,7 @@ import (
 	"github.com/ActiveState/cli/internal-as/osutils/stacktrace"
 	"github.com/ActiveState/cli/internal-as/testhelpers/tagsuite"
 	"github.com/ActiveState/cli/internal/condition"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/installmgr"

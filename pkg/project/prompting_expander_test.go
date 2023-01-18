@@ -9,7 +9,6 @@ import (
 	"github.com/go-openapi/strfmt"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/ActiveState/cli/internal-as/constants"
 	"github.com/ActiveState/cli/internal-as/locale"
 	promptMock "github.com/ActiveState/cli/internal-as/prompt/mock"
 	configMock "github.com/ActiveState/cli/internal-as/testhelpers/config_test"
@@ -17,6 +16,7 @@ import (
 	"github.com/ActiveState/cli/internal-as/testhelpers/osutil"
 	"github.com/ActiveState/cli/internal-as/testhelpers/outputhelper"
 	"github.com/ActiveState/cli/internal-as/testhelpers/secretsapi_test"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/api/graphql/request/mock"

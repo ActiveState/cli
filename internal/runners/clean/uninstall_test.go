@@ -9,11 +9,11 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/ActiveState/cli/internal-as/analytics/client/blackhole"
-	"github.com/ActiveState/cli/internal-as/constants"
 	"github.com/ActiveState/cli/internal-as/fileutils"
 	"github.com/ActiveState/cli/internal-as/locale"
 	"github.com/ActiveState/cli/internal-as/osutils"
 	"github.com/ActiveState/cli/internal-as/testhelpers/outputhelper"
+	"github.com/ActiveState/cli/internal/constants"
 )
 
 type confirmMock struct {

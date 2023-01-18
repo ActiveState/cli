@@ -9,7 +9,6 @@ import (
 
 	svcAutostart "github.com/ActiveState/cli/cmd/state-svc/autostart"
 	"github.com/ActiveState/cli/internal-as/config"
-	"github.com/ActiveState/cli/internal-as/constants"
 	"github.com/ActiveState/cli/internal-as/fileutils"
 	"github.com/ActiveState/cli/internal-as/osutils"
 	"github.com/ActiveState/cli/internal-as/osutils/autostart"
@@ -17,6 +16,7 @@ import (
 	"github.com/ActiveState/cli/internal-as/subshell"
 	"github.com/ActiveState/cli/internal-as/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal-as/testhelpers/tagsuite"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/rtutils/singlethread"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
 	rt "github.com/ActiveState/cli/pkg/platform/runtime/target"

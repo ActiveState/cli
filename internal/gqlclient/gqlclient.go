@@ -6,8 +6,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/ActiveState/cli/internal-as/constants"
 	"github.com/ActiveState/cli/internal-as/logging"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/profile"
 	"github.com/ActiveState/cli/internal/strutils"
 	"github.com/machinebox/graphql"

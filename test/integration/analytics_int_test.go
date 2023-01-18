@@ -12,10 +12,10 @@ import (
 
 	"github.com/ActiveState/cli/internal-as/analytics/client/sync/reporters"
 	anaConst "github.com/ActiveState/cli/internal-as/analytics/constants"
-	"github.com/ActiveState/cli/internal-as/constants"
 	"github.com/ActiveState/cli/internal-as/fileutils"
 	"github.com/ActiveState/cli/internal-as/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal-as/testhelpers/tagsuite"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/termtest"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"

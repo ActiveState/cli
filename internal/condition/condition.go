@@ -4,7 +4,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/ActiveState/cli/internal-as/constants"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/thoas/go-funk"
 )
 

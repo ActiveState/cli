@@ -63,7 +63,8 @@ func NewDeleteUserSecretNoContent() *DeleteUserSecretNoContent {
 	return &DeleteUserSecretNoContent{}
 }
 
-/*DeleteUserSecretNoContent handles this case with default header values.
+/*
+DeleteUserSecretNoContent handles this case with default header values.
 
 Success
 */
@@ -84,7 +85,8 @@ func NewDeleteUserSecretUnauthorized() *DeleteUserSecretUnauthorized {
 	return &DeleteUserSecretUnauthorized{}
 }
 
-/*DeleteUserSecretUnauthorized handles this case with default header values.
+/*
+DeleteUserSecretUnauthorized handles this case with default header values.
 
 Invalid credentials
 */
@@ -113,7 +115,8 @@ func NewDeleteUserSecretNotFound() *DeleteUserSecretNotFound {
 	return &DeleteUserSecretNotFound{}
 }
 
-/*DeleteUserSecretNotFound handles this case with default header values.
+/*
+DeleteUserSecretNotFound handles this case with default header values.
 
 Not Found
 */
@@ -142,7 +145,8 @@ func NewDeleteUserSecretInternalServerError() *DeleteUserSecretInternalServerErr
 	return &DeleteUserSecretInternalServerError{}
 }
 
-/*DeleteUserSecretInternalServerError handles this case with default header values.
+/*
+DeleteUserSecretInternalServerError handles this case with default header values.
 
 Server Error
 */

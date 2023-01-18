@@ -13,7 +13,6 @@ import (
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/mash/go-tempfile-suffix"
 
-	"github.com/ActiveState/cli/internal-as/constants"
 	"github.com/ActiveState/cli/internal-as/errs"
 	"github.com/ActiveState/cli/internal-as/fileutils"
 	"github.com/ActiveState/cli/internal-as/locale"
@@ -22,6 +21,7 @@ import (
 	"github.com/ActiveState/cli/internal-as/output"
 	"github.com/ActiveState/cli/internal/assets"
 	"github.com/ActiveState/cli/internal/colorize"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/pkg/project"
 )
 

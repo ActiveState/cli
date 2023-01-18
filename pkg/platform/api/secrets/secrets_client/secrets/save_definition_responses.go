@@ -56,7 +56,8 @@ func NewSaveDefinitionNoContent() *SaveDefinitionNoContent {
 	return &SaveDefinitionNoContent{}
 }
 
-/*SaveDefinitionNoContent handles this case with default header values.
+/*
+SaveDefinitionNoContent handles this case with default header values.
 
 Success
 */
@@ -77,7 +78,8 @@ func NewSaveDefinitionUnauthorized() *SaveDefinitionUnauthorized {
 	return &SaveDefinitionUnauthorized{}
 }
 
-/*SaveDefinitionUnauthorized handles this case with default header values.
+/*
+SaveDefinitionUnauthorized handles this case with default header values.
 
 Invalid credentials
 */
@@ -106,7 +108,8 @@ func NewSaveDefinitionInternalServerError() *SaveDefinitionInternalServerError {
 	return &SaveDefinitionInternalServerError{}
 }
 
-/*SaveDefinitionInternalServerError handles this case with default header values.
+/*
+SaveDefinitionInternalServerError handles this case with default header values.
 
 Server Error
 */

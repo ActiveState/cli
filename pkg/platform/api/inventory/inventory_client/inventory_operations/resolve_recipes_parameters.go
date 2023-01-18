@@ -55,10 +55,12 @@ func NewResolveRecipesParamsWithHTTPClient(client *http.Client) *ResolveRecipesP
 	}
 }
 
-/* ResolveRecipesParams contains all the parameters to send to the API endpoint
-   for the resolve recipes operation.
+/*
+ResolveRecipesParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the resolve recipes operation.
+
+	Typically these are written to a http.Request.
 */
 type ResolveRecipesParams struct {
 

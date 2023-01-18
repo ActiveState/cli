@@ -52,10 +52,12 @@ func NewPostOrganizationTrialParamsWithHTTPClient(client *http.Client) *PostOrga
 	}
 }
 
-/* PostOrganizationTrialParams contains all the parameters to send to the API endpoint
-   for the post organization trial operation.
+/*
+PostOrganizationTrialParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the post organization trial operation.
+
+	Typically these are written to a http.Request.
 */
 type PostOrganizationTrialParams struct {
 

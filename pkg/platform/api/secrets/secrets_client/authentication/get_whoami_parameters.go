@@ -57,7 +57,8 @@ func NewGetWhoamiParamsWithHTTPClient(client *http.Client) *GetWhoamiParams {
 	}
 }
 
-/*GetWhoamiParams contains all the parameters to send to the API endpoint
+/*
+GetWhoamiParams contains all the parameters to send to the API endpoint
 for the get whoami operation typically these are written to a http.Request
 */
 type GetWhoamiParams struct {

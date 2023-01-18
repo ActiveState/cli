@@ -8,7 +8,6 @@ import (
 
 	svcAutostart "github.com/ActiveState/cli/cmd/state-svc/autostart"
 
-	"github.com/ActiveState/cli/internal-as/constants"
 	"github.com/ActiveState/cli/internal-as/fileutils"
 	"github.com/ActiveState/cli/internal-as/locale"
 	"github.com/ActiveState/cli/internal-as/multilog"
@@ -16,6 +15,7 @@ import (
 	"github.com/ActiveState/cli/internal-as/osutils/autostart"
 	"github.com/ActiveState/cli/internal-as/osutils/shortcut"
 	"github.com/ActiveState/cli/internal/assets"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/installation"
 )
 

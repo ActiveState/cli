@@ -3,7 +3,7 @@ package user
 import (
 	"os"
 
-	"github.com/ActiveState/cli/internal-as/constants"
+	"github.com/ActiveState/cli/internal/constants"
 )
 
 // HomeDirNotFoundError is an error that implements the ErrorLocalier and ErrorInput interfaces

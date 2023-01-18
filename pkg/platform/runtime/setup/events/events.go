@@ -6,16 +6,20 @@
 // channel that can be consumed by the RuntimeEventConsumer. The consumer then
 // delegates the event handling to digesters: ProgressDigester and
 // ChangeSummaryDigester
-//                                     +--- RuntimeEventHandler -------------------------------------+
-//                                     |                                                             |
-//                                     |                                   +-----------------------+ |
-//                                     |                               ,-> | ChangeSummaryDigester | |
+//
+//	+--- RuntimeEventHandler -------------------------------------+
+//	|                                                             |
+//	|                                   +-----------------------+ |
+//	|                               ,-> | ChangeSummaryDigester | |
+//
 // +----------------------+            |  +----------------------+    /    +-----------------------+ |
 // | RuntimeEventProducer | ---------> |  | RuntimeEventConsumer | ---+                              |
 // +----------------------+  .Events() |  +----------------------+    \    +------------------+      |
-//                                     |                               `-> | ProgressDigester |      |
-//                                     |                                   +------------------+      |
-//                                     +-------------------------------------------------------------+
+//
+//	|                               `-> | ProgressDigester |      |
+//	|                                   +------------------+      |
+//	+-------------------------------------------------------------+
+//
 // The runbits package has default implementations for digesters, and the
 // RuntimeEventHandler combines the consumer with its digesters.
 package events
