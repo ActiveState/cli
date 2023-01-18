@@ -71,7 +71,6 @@ const (
 	Compatibility   = "compatibility"
 	Automation      = "automation"
 	Checkout        = "checkout"
-	OffInstall      = "offline-install"
 	Help            = "help"
 )
 
