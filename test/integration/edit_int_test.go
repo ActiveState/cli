@@ -36,13 +36,7 @@ func (suite *EditIntegrationTestSuite) setup() (*e2e.Session, e2e.SpawnOptions) 
 project: "https://platform.activestate.com/EditOrg/EditProject?commitID=00010001-0001-0001-0001-000100010001"
 scripts:
   - name: test-script
-    value: echo "hello test"
-    constraints:
-      os: macos,linux
-  - name: test-script
     value: echo hello test
-    constraints:
-      os: windows
 `)
 	ts.PrepareActiveStateYAML(configFileContent)
 
