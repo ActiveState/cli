@@ -20,8 +20,8 @@ const (
 	autostartFile = ".profile"
 )
 
-func enable(params Params) error {
-	enabled, err := isEnabled(params.Exec, params.options.LaunchFileName)
+func enable(exec string, opts Options) error {
+	enabled, err := isEnabled(exec, opts)
 	if err != nil {
 		return errs.Wrap(err, "Could not check if app autostart is enabled")
 	}
@@ -31,58 +31,58 @@ func enable(params Params) error {
 
 	if onDesktop() {
 		// The user is installing while in a desktop environment. Install an autostart shortcut file.
-		return enableOnDesktop(params)
+		return enableOnDesktop(exec, opts)
 	}
 	// Probably in a server environment. Install to the user's ~/.profile.
-	return enableOnServer(params)
+	return enableOnServer(exec, opts)
 }
 
 func onDesktop() bool {
 	return os.Getenv("WAYLAND_DISPLAY") != "" || os.Getenv("DISPLAY") != ""
 }
 
-func enableOnDesktop(params Params) error {
+func enableOnDesktop(exec string, opts Options) error {
 	dir, err := prependHomeDir(autostartDir)
 	if err != nil {
 		return errs.Wrap(err, "Could not find autostart directory")
 	}
-	path := filepath.Join(dir, params.options.LaunchFileName)
+	path := filepath.Join(dir, opts.LaunchFileName)
 
 	iconsDir, err := prependHomeDir(constants.IconsDir)
 	if err != nil {
 		return errs.Wrap(err, "")
 	}
-	iconsPath := filepath.Join(iconsDir, params.options.IconFileName)
+	iconsPath := filepath.Join(iconsDir, opts.IconFileName)
 
-	iconData, err := assets.ReadFileBytes(params.options.IconFileSource)
+	iconData, err := assets.ReadFileBytes(opts.IconFileSource)
 	if err != nil {
 		return errs.Wrap(err, "Could not read asset")
 	}
 
 	scutOpts := shortcut.SaveOpts{
-		Name:        params.Name,
-		GenericName: params.options.GenericName,
-		Comment:     params.options.Comment,
-		Keywords:    params.options.Keywords,
+		Name:        opts.Name,
+		GenericName: opts.GenericName,
+		Comment:     opts.Comment,
+		Keywords:    opts.Keywords,
 		IconData:    iconData,
 		IconPath:    iconsPath,
 	}
-	if _, err := shortcut.Save(params.Exec, path, params.Args, scutOpts); err != nil {
+	if _, err := shortcut.Save(exec, path, opts.Args, scutOpts); err != nil {
 		return errs.Wrap(err, "Could not save autostart shortcut")
 	}
 
 	return nil
 }
 
-func enableOnServer(params Params) error {
+func enableOnServer(exec string, opts Options) error {
 	profile, err := prependHomeDir(autostartFile)
 	if err != nil {
 		return errs.Wrap(err, "Could not find ~/.profile")
 	}
 
 	esc := osutils.NewBashEscaper()
-	exec := esc.Quote(params.Exec)
-	for _, arg := range params.Args {
+	exec = esc.Quote(exec)
+	for _, arg := range opts.Args {
 		exec += " " + esc.Quote(arg)
 	}
 
@@ -105,8 +105,8 @@ func prependHomeDir(path string) (string, error) {
 	return filepath.Join(homeDir, path), nil
 }
 
-func disable(params Params) error {
-	enabled, err := isEnabled(params.Exec, params.options.LaunchFileName)
+func disable(exec string, opts Options) error {
+	enabled, err := isEnabled(exec, opts)
 	if err != nil {
 		return errs.Wrap(err, "Could not check if app autostart is enabled")
 	}
@@ -114,7 +114,7 @@ func disable(params Params) error {
 		return nil
 	}
 
-	path, err := autostartPath(params.options.LaunchFileName)
+	path, err := autostartPath(opts.LaunchFileName)
 	if err != nil {
 		return err
 	}
@@ -143,13 +143,13 @@ func disable(params Params) error {
 	return nil
 }
 
-func isEnabled(params Params) (bool, error) {
+func isEnabled(exec string, opts Options) (bool, error) {
 	// Check for desktop autostart shortcut file.
 	dir, err := prependHomeDir(autostartDir)
 	if err != nil {
 		return false, errs.Wrap(err, "Could not find autostart directory")
 	}
-	path := filepath.Join(dir, params.options.LaunchFileName)
+	path := filepath.Join(dir, opts.LaunchFileName)
 	if fileutils.FileExists(path) {
 		return true, nil
 	}
@@ -164,7 +164,7 @@ func isEnabled(params Params) (bool, error) {
 		if err != nil {
 			return false, errs.Wrap(err, "Could not read ~/.profile")
 		}
-		return strings.Contains(string(data), params.Exec), nil
+		return strings.Contains(string(data), exec), nil
 	}
 
 	return false, nil
