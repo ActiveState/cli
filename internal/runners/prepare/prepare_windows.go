@@ -6,7 +6,6 @@ import (
 	"os/user"
 	"path/filepath"
 
-	svcAutostart "github.com/ActiveState/cli/cmd/state-svc/autostart"
 	"github.com/ActiveState/cli/internal/app"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -35,7 +34,7 @@ func (r *Prepare) prepareOS() error {
 	}
 
 	if svcExec != "" {
-		a, err := app.New(constants.SvcAppName, svcExec, []string{"start"}, svcAutostart.AutostartOptions, r.cfg)
+		a, err := app.New(constants.SvcAppName, svcExec, []string{"start"}, app.Options{}, r.cfg)
 		if err != nil {
 			return locale.WrapError(err, "err_autostart_app")
 		}
