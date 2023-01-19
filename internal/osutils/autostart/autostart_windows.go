@@ -14,8 +14,8 @@ import (
 
 var startupPath = filepath.Join(os.Getenv("USERPROFILE"), "AppData", "Roaming", "Microsoft", "Windows", "Start Menu", "Programs", "Startup")
 
-func enable(params Params) error {
-	enabled, err := IsEnabled(params)
+func enable(exec string, opts Options) error {
+	enabled, err := IsEnabled(exec, opts)
 	if err != nil {
 		return errs.Wrap(err, "Could not check if app is enabled")
 	}
@@ -23,13 +23,13 @@ func enable(params Params) error {
 		return nil
 	}
 
-	name := formattedName(params.Name)
-	s := shortcut.New(startupPath, name, params.Exec, params.Args...)
+	name := formattedName(opts.Name)
+	s := shortcut.New(startupPath, name, exec, opts.Args...)
 	if err := s.Enable(); err != nil {
 		return errs.Wrap(err, "Could not create shortcut")
 	}
 
-	icon, err := assets.ReadFileBytes(params.options.IconFileSource)
+	icon, err := assets.ReadFileBytes(opts.IconFileSource)
 	if err != nil {
 		return errs.Wrap(err, "Could not read asset")
 	}
@@ -47,8 +47,8 @@ func enable(params Params) error {
 	return nil
 }
 
-func disable(params Params) error {
-	enabled, err := isEnabled(params)
+func disable(exec string, opts Options) error {
+	enabled, err := isEnabled(exec, opts)
 	if err != nil {
 		return errs.Wrap(err, "Could not check if app autostart is enabled")
 	}
@@ -56,11 +56,11 @@ func disable(params Params) error {
 	if !enabled {
 		return nil
 	}
-	return os.Remove(shortcutFilename(params.Name))
+	return os.Remove(shortcutFilename(opts.Name))
 }
 
-func isEnabled(params Params) (bool, error) {
-	return fileutils.FileExists(shortcutFilename(params.Name)), nil
+func isEnabled(_ string, opts Options) (bool, error) {
+	return fileutils.FileExists(shortcutFilename(opts.Name)), nil
 }
 
 func shortcutFilename(name string) string {
