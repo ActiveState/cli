@@ -46,6 +46,11 @@ var (
 		constants.RCAppendOfflineInstallStopLine,
 		"user_offlineinstall_env",
 	}
+	AutoStartID RcIdentification = RcIdentification{
+		constants.RCAppendAutostartStartLine,
+		constants.RCAppendAutostartStopLine,
+		"user_autostart_env",
+	}
 )
 
 // Configurable defines an interface to store and get configuration data
