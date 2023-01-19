@@ -35,7 +35,7 @@ func (r *Prepare) prepareOS() error {
 	}
 
 	if svcExec != "" {
-		a, err := app.New(constants.SvcAppName, svcExec, []string{"start"}, svcAutostart.Options, r.cfg)
+		a, err := app.New(constants.SvcAppName, svcExec, []string{"start"}, svcAutostart.AutostartOptions, r.cfg)
 		if err != nil {
 			return locale.WrapError(err, "err_autostart_app")
 		}
