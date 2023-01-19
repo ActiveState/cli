@@ -54,12 +54,10 @@ func NewAddKernelVersionRevisionParamsWithHTTPClient(client *http.Client) *AddKe
 	}
 }
 
-/*
-AddKernelVersionRevisionParams contains all the parameters to send to the API endpoint
+/* AddKernelVersionRevisionParams contains all the parameters to send to the API endpoint
+   for the add kernel version revision operation.
 
-	for the add kernel version revision operation.
-
-	Typically these are written to a http.Request.
+   Typically these are written to a http.Request.
 */
 type AddKernelVersionRevisionParams struct {
 

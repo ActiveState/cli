@@ -63,8 +63,7 @@ func NewClearAllUserSecretsNoContent() *ClearAllUserSecretsNoContent {
 	return &ClearAllUserSecretsNoContent{}
 }
 
-/*
-ClearAllUserSecretsNoContent handles this case with default header values.
+/*ClearAllUserSecretsNoContent handles this case with default header values.
 
 success
 */
@@ -85,8 +84,7 @@ func NewClearAllUserSecretsUnauthorized() *ClearAllUserSecretsUnauthorized {
 	return &ClearAllUserSecretsUnauthorized{}
 }
 
-/*
-ClearAllUserSecretsUnauthorized handles this case with default header values.
+/*ClearAllUserSecretsUnauthorized handles this case with default header values.
 
 Invalid credentials
 */
@@ -115,8 +113,7 @@ func NewClearAllUserSecretsNotFound() *ClearAllUserSecretsNotFound {
 	return &ClearAllUserSecretsNotFound{}
 }
 
-/*
-ClearAllUserSecretsNotFound handles this case with default header values.
+/*ClearAllUserSecretsNotFound handles this case with default header values.
 
 Not Found
 */
@@ -145,8 +142,7 @@ func NewClearAllUserSecretsInternalServerError() *ClearAllUserSecretsInternalSer
 	return &ClearAllUserSecretsInternalServerError{}
 }
 
-/*
-ClearAllUserSecretsInternalServerError handles this case with default header values.
+/*ClearAllUserSecretsInternalServerError handles this case with default header values.
 
 Server Error
 */

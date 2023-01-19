@@ -54,12 +54,10 @@ func NewAddOrganizationParamsWithHTTPClient(client *http.Client) *AddOrganizatio
 	}
 }
 
-/*
-AddOrganizationParams contains all the parameters to send to the API endpoint
+/* AddOrganizationParams contains all the parameters to send to the API endpoint
+   for the add organization operation.
 
-	for the add organization operation.
-
-	Typically these are written to a http.Request.
+   Typically these are written to a http.Request.
 */
 type AddOrganizationParams struct {
 

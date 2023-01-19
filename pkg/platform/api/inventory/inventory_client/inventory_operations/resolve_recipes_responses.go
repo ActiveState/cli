@@ -52,8 +52,7 @@ func NewResolveRecipesOK() *ResolveRecipesOK {
 	return &ResolveRecipesOK{}
 }
 
-/*
-	ResolveRecipesOK describes a response with status code 200, with default header values.
+/* ResolveRecipesOK describes a response with status code 200, with default header values.
 
 Returns one or more recipes that fulfill the requirements of the order
 */
@@ -85,8 +84,7 @@ func NewResolveRecipesBadRequest() *ResolveRecipesBadRequest {
 	return &ResolveRecipesBadRequest{}
 }
 
-/*
-	ResolveRecipesBadRequest describes a response with status code 400, with default header values.
+/* ResolveRecipesBadRequest describes a response with status code 400, with default header values.
 
 If the order is invalid
 */
@@ -120,8 +118,7 @@ func NewResolveRecipesDefault(code int) *ResolveRecipesDefault {
 	}
 }
 
-/*
-	ResolveRecipesDefault describes a response with status code -1, with default header values.
+/* ResolveRecipesDefault describes a response with status code -1, with default header values.
 
 If there is an error processing the order
 */

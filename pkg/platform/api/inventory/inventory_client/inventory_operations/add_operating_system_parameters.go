@@ -54,12 +54,10 @@ func NewAddOperatingSystemParamsWithHTTPClient(client *http.Client) *AddOperatin
 	}
 }
 
-/*
-AddOperatingSystemParams contains all the parameters to send to the API endpoint
+/* AddOperatingSystemParams contains all the parameters to send to the API endpoint
+   for the add operating system operation.
 
-	for the add operating system operation.
-
-	Typically these are written to a http.Request.
+   Typically these are written to a http.Request.
 */
 type AddOperatingSystemParams struct {
 

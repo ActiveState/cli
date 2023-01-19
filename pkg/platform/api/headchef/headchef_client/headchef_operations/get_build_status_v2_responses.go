@@ -56,8 +56,7 @@ func NewGetBuildStatusV2OK() *GetBuildStatusV2OK {
 	return &GetBuildStatusV2OK{}
 }
 
-/*
-GetBuildStatusV2OK handles this case with default header values.
+/*GetBuildStatusV2OK handles this case with default header values.
 
 The status of the build started with that build plan ID
 */
@@ -86,8 +85,7 @@ func NewGetBuildStatusV2NotFound() *GetBuildStatusV2NotFound {
 	return &GetBuildStatusV2NotFound{}
 }
 
-/*
-GetBuildStatusV2NotFound handles this case with default header values.
+/*GetBuildStatusV2NotFound handles this case with default header values.
 
 No build plan build has been started with the provided build plan ID
 */
@@ -118,8 +116,7 @@ func NewGetBuildStatusV2Default(code int) *GetBuildStatusV2Default {
 	}
 }
 
-/*
-GetBuildStatusV2Default handles this case with default header values.
+/*GetBuildStatusV2Default handles this case with default header values.
 
 If there is an error processing the request
 */

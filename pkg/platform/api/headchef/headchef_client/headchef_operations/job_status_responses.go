@@ -56,8 +56,7 @@ func NewJobStatusOK() *JobStatusOK {
 	return &JobStatusOK{}
 }
 
-/*
-JobStatusOK handles this case with default header values.
+/*JobStatusOK handles this case with default header values.
 
 Job completion has been recorded
 */
@@ -78,8 +77,7 @@ func NewJobStatusNotFound() *JobStatusNotFound {
 	return &JobStatusNotFound{}
 }
 
-/*
-JobStatusNotFound handles this case with default header values.
+/*JobStatusNotFound handles this case with default header values.
 
 No build exists with that request ID
 */
@@ -110,8 +108,7 @@ func NewJobStatusDefault(code int) *JobStatusDefault {
 	}
 }
 
-/*
-JobStatusDefault handles this case with default header values.
+/*JobStatusDefault handles this case with default header values.
 
 If there is an error processing the request
 */

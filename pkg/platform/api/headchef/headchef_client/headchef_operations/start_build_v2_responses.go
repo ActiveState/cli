@@ -77,8 +77,7 @@ func NewStartBuildV2Created() *StartBuildV2Created {
 	return &StartBuildV2Created{}
 }
 
-/*
-StartBuildV2Created handles this case with default header values.
+/*StartBuildV2Created handles this case with default header values.
 
 The requested build has already ended. The response's build_state field is one of: build_succeeded or build_failed.
 */
@@ -107,8 +106,7 @@ func NewStartBuildV2Accepted() *StartBuildV2Accepted {
 	return &StartBuildV2Accepted{}
 }
 
-/*
-StartBuildV2Accepted handles this case with default header values.
+/*StartBuildV2Accepted handles this case with default header values.
 
 The requested build has been started but hasn't yet completed.  The response's build_state field is build_running.
 */
@@ -137,8 +135,7 @@ func NewStartBuildV2BadRequest() *StartBuildV2BadRequest {
 	return &StartBuildV2BadRequest{}
 }
 
-/*
-StartBuildV2BadRequest handles this case with default header values.
+/*StartBuildV2BadRequest handles this case with default header values.
 
 The submitted build request was invalid. Consult the message and error code in the response body for further details.
 */
@@ -167,8 +164,7 @@ func NewStartBuildV2Unauthorized() *StartBuildV2Unauthorized {
 	return &StartBuildV2Unauthorized{}
 }
 
-/*
-StartBuildV2Unauthorized handles this case with default header values.
+/*StartBuildV2Unauthorized handles this case with default header values.
 
 The submitted build request contains a private recipe ID but the request couldn't be authenticated
 */
@@ -197,8 +193,7 @@ func NewStartBuildV2Forbidden() *StartBuildV2Forbidden {
 	return &StartBuildV2Forbidden{}
 }
 
-/*
-StartBuildV2Forbidden handles this case with default header values.
+/*StartBuildV2Forbidden handles this case with default header values.
 
 The submitted build request contains a private recipe ID but the authenticated user isn't allow to access it
 */
@@ -229,8 +224,7 @@ func NewStartBuildV2Default(code int) *StartBuildV2Default {
 	}
 }
 
-/*
-StartBuildV2Default handles this case with default header values.
+/*StartBuildV2Default handles this case with default header values.
 
 If there is an error processing the request
 */

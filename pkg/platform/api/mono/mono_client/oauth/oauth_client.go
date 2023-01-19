@@ -40,7 +40,7 @@ type ClientService interface {
 }
 
 /*
-AuthDeviceGet gets the status of a particular device code authorization flow based on device code
+  AuthDeviceGet gets the status of a particular device code authorization flow based on device code
 */
 func (a *Client) AuthDeviceGet(params *AuthDeviceGetParams, opts ...ClientOption) (*AuthDeviceGetOK, error) {
 	// TODO: Validate the params before sending
@@ -78,7 +78,7 @@ func (a *Client) AuthDeviceGet(params *AuthDeviceGetParams, opts ...ClientOption
 }
 
 /*
-AuthDevicePost initializes device o a u t h flow with the API
+  AuthDevicePost initializes device o a u t h flow with the API
 */
 func (a *Client) AuthDevicePost(params *AuthDevicePostParams, opts ...ClientOption) (*AuthDevicePostOK, error) {
 	// TODO: Validate the params before sending
@@ -116,7 +116,7 @@ func (a *Client) AuthDevicePost(params *AuthDevicePostParams, opts ...ClientOpti
 }
 
 /*
-AuthDevicePut authorizes user code this endpoint completes the device authorization grant flow successfully
+  AuthDevicePut authorizes user code this endpoint completes the device authorization grant flow successfully
 */
 func (a *Client) AuthDevicePut(params *AuthDevicePutParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AuthDevicePutOK, error) {
 	// TODO: Validate the params before sending

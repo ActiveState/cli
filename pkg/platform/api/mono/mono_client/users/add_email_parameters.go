@@ -52,12 +52,10 @@ func NewAddEmailParamsWithHTTPClient(client *http.Client) *AddEmailParams {
 	}
 }
 
-/*
-AddEmailParams contains all the parameters to send to the API endpoint
+/* AddEmailParams contains all the parameters to send to the API endpoint
+   for the add email operation.
 
-	for the add email operation.
-
-	Typically these are written to a http.Request.
+   Typically these are written to a http.Request.
 */
 type AddEmailParams struct {
 

@@ -49,8 +49,7 @@ func NewGetWhoamiOK() *GetWhoamiOK {
 	return &GetWhoamiOK{}
 }
 
-/*
-GetWhoamiOK handles this case with default header values.
+/*GetWhoamiOK handles this case with default header values.
 
 Success
 */
@@ -79,8 +78,7 @@ func NewGetWhoamiUnauthorized() *GetWhoamiUnauthorized {
 	return &GetWhoamiUnauthorized{}
 }
 
-/*
-GetWhoamiUnauthorized handles this case with default header values.
+/*GetWhoamiUnauthorized handles this case with default header values.
 
 Invalid credentials
 */

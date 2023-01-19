@@ -15,7 +15,7 @@ import (
 
 // IngredientOptionSetRevisionCore Ingredient Option Set Revision Core
 //
-// # The properties of an ingredient option set revision needed to create a new one
+// The properties of an ingredient option set revision needed to create a new one
 //
 // swagger:model ingredientOptionSetRevisionCore
 type IngredientOptionSetRevisionCore struct {

@@ -15,7 +15,7 @@ import (
 
 // GpuArchitectureCore GPU Architecture Core
 //
-// # The properties of a GPU architecture needed to create a new one
+// The properties of a GPU architecture needed to create a new one
 //
 // swagger:model gpuArchitectureCore
 type GpuArchitectureCore struct {

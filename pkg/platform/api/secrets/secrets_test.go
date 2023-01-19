@@ -8,8 +8,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/ActiveState/cli/internal-as/testhelpers/httpmock"
-	"github.com/ActiveState/cli/internal-as/testhelpers/secretsapi_test"
+	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
+	"github.com/ActiveState/cli/internal/testhelpers/secretsapi_test"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 )

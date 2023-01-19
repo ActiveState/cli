@@ -53,12 +53,10 @@ func NewGetAuthorsParamsWithHTTPClient(client *http.Client) *GetAuthorsParams {
 	}
 }
 
-/*
-GetAuthorsParams contains all the parameters to send to the API endpoint
+/* GetAuthorsParams contains all the parameters to send to the API endpoint
+   for the get authors operation.
 
-	for the get authors operation.
-
-	Typically these are written to a http.Request.
+   Typically these are written to a http.Request.
 */
 type GetAuthorsParams struct {
 

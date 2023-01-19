@@ -52,12 +52,10 @@ func NewDisableTOTPParamsWithHTTPClient(client *http.Client) *DisableTOTPParams 
 	}
 }
 
-/*
-DisableTOTPParams contains all the parameters to send to the API endpoint
+/* DisableTOTPParams contains all the parameters to send to the API endpoint
+   for the disable t o t p operation.
 
-	for the disable t o t p operation.
-
-	Typically these are written to a http.Request.
+   Typically these are written to a http.Request.
 */
 type DisableTOTPParams struct {
 	timeout    time.Duration

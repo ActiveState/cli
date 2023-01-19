@@ -63,8 +63,7 @@ func NewGetDefinitionsOK() *GetDefinitionsOK {
 	return &GetDefinitionsOK{}
 }
 
-/*
-GetDefinitionsOK handles this case with default header values.
+/*GetDefinitionsOK handles this case with default header values.
 
 Success
 */
@@ -91,8 +90,7 @@ func NewGetDefinitionsUnauthorized() *GetDefinitionsUnauthorized {
 	return &GetDefinitionsUnauthorized{}
 }
 
-/*
-GetDefinitionsUnauthorized handles this case with default header values.
+/*GetDefinitionsUnauthorized handles this case with default header values.
 
 Invalid credentials
 */
@@ -121,8 +119,7 @@ func NewGetDefinitionsNotFound() *GetDefinitionsNotFound {
 	return &GetDefinitionsNotFound{}
 }
 
-/*
-GetDefinitionsNotFound handles this case with default header values.
+/*GetDefinitionsNotFound handles this case with default header values.
 
 Not Found
 */
@@ -151,8 +148,7 @@ func NewGetDefinitionsInternalServerError() *GetDefinitionsInternalServerError {
 	return &GetDefinitionsInternalServerError{}
 }
 
-/*
-GetDefinitionsInternalServerError handles this case with default header values.
+/*GetDefinitionsInternalServerError handles this case with default header values.
 
 Server Error
 */

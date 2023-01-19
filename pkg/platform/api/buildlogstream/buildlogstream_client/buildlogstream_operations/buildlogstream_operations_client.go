@@ -33,9 +33,9 @@ type ClientService interface {
 }
 
 /*
-Get starts streaming build logs
+  Get starts streaming build logs
 
-streams build logs for a given build_id
+  streams build logs for a given build_id
 */
 func (a *Client) Get(params *GetParams) (*GetOK, error) {
 	// TODO: Validate the params before sending

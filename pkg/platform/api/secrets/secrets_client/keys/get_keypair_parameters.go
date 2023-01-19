@@ -57,8 +57,7 @@ func NewGetKeypairParamsWithHTTPClient(client *http.Client) *GetKeypairParams {
 	}
 }
 
-/*
-GetKeypairParams contains all the parameters to send to the API endpoint
+/*GetKeypairParams contains all the parameters to send to the API endpoint
 for the get keypair operation typically these are written to a http.Request
 */
 type GetKeypairParams struct {

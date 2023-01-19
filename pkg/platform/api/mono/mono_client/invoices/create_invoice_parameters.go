@@ -54,12 +54,10 @@ func NewCreateInvoiceParamsWithHTTPClient(client *http.Client) *CreateInvoicePar
 	}
 }
 
-/*
-CreateInvoiceParams contains all the parameters to send to the API endpoint
+/* CreateInvoiceParams contains all the parameters to send to the API endpoint
+   for the create invoice operation.
 
-	for the create invoice operation.
-
-	Typically these are written to a http.Request.
+   Typically these are written to a http.Request.
 */
 type CreateInvoiceParams struct {
 

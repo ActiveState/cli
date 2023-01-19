@@ -57,8 +57,7 @@ func NewGetDefinitionsParamsWithHTTPClient(client *http.Client) *GetDefinitionsP
 	}
 }
 
-/*
-GetDefinitionsParams contains all the parameters to send to the API endpoint
+/*GetDefinitionsParams contains all the parameters to send to the API endpoint
 for the get definitions operation typically these are written to a http.Request
 */
 type GetDefinitionsParams struct {

@@ -19,3 +19,4 @@ type Checkpoint struct {
 	Requirements []*Requirement `json:"vcs_checkpoints"`
 	Commit       *Commit        `json:"vcs_commits_by_pk"`
 }
+

@@ -15,7 +15,7 @@ import (
 
 // KernelVersionCore Kernel Version Core
 //
-// # The properties of a kernel version needed to create a new one
+// The properties of a kernel version needed to create a new one
 //
 // swagger:model kernelVersionCore
 type KernelVersionCore struct {

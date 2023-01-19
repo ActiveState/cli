@@ -17,7 +17,7 @@ import (
 
 // AuthorCore Author Core
 //
-// # The core fields of a author
+// The core fields of a author
 //
 // swagger:model authorCore
 type AuthorCore struct {

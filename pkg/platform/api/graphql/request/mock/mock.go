@@ -7,11 +7,11 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/ActiveState/cli/internal-as/logging"
+	"github.com/ActiveState/cli/internal/logging"
 
 	"github.com/ActiveState/cli/pkg/platform/api/graphql/request"
 
-	"github.com/ActiveState/cli/internal-as/testhelpers/httpmock"
+	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/pkg/platform/api"
 )
 
