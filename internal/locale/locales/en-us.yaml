@@ -1768,9 +1768,6 @@ operation_success_local:
   other: |
     Your local project has been updated.
     Run [ACTIONABLE]state push[/RESET] to save changes to the platform.
-err_initialize_runtime_event_handler:
-  other: |
-    Could not determine how to display progress of runtime installation.
 solver_err:
   other: "The Platform failed to resolve the dependencies for this build. {{.V0}}\n{{.V1}}"
 transient_solver_tip:

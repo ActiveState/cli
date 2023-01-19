@@ -2,7 +2,6 @@ package events
 
 import (
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
-	"github.com/ActiveState/cli/pkg/platform/runtime/store"
 )
 
 /*
@@ -22,6 +21,13 @@ type Eventer interface {
 }
 
 type Start struct {
+	RequiresBuild bool
+	ArtifactNames artifact.Named
+	LogFilePath   string
+
+	ArtifactsToBuild    []artifact.ArtifactID
+	ArtifactsToDownload []artifact.ArtifactID
+	ArtifactsToInstall  []artifact.ArtifactID
 }
 
 func (Start) IsEvent() Event {
@@ -196,31 +202,6 @@ type ArtifactInstallSuccess struct {
 }
 
 func (ArtifactInstallSuccess) IsEvent() Event {
-	return Event{}
-}
-
-type ArtifactsParsed struct {
-	RequiresBuild bool
-	ArtifactNames artifact.Named
-	LogFilePath   string
-
-	ArtifactsToBuild    []artifact.ArtifactID
-	ArtifactsToDownload []artifact.ArtifactID
-	ArtifactsToInstall  []artifact.ArtifactID
-}
-
-type ArtifactsParsedOld struct {
-	BuildReady             bool
-	ArtifactNames          artifact.Named
-	ArtifactRecipe         artifact.ArtifactRecipeMap
-	Requested              artifact.ArtifactChangeset  // Artifacts that were directly requested by the user
-	ChangedFromLastRequest artifact.ArtifactChangeset  // Artifacts that were changed from the previously installed runtime
-	AlreadyInstalled       store.StoredArtifactMap     // Artifacts that are already installed (changed doesn't mean installed)
-	DownloadableResults    []artifact.ArtifactDownload // Artifacts that can have a download URI
-	FailedResults          []artifact.FailedArtifact   // Artifacts that failed to resolve / build
-}
-
-func (ArtifactsParsed) IsEvent() Event {
 	return Event{}
 }
 

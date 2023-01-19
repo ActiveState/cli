@@ -12,6 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/analytics/dimensions"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/instanceid"
 	"github.com/ActiveState/cli/internal/locale"
@@ -107,7 +108,6 @@ func (r *Runtime) Update(auth *authentication.Auth, eventHandler events.Handler)
 
 	logging.Debug("Updating %s#%s @ %s", r.target.Name(), r.target.CommitUUID(), r.target.Dir())
 
-	// Run the setup function (the one that produces runtime events) in the background...
 	defer func() {
 		r.recordCompletion(rerr)
 		if err := eventHandler.Close(); err != nil {
@@ -127,6 +127,11 @@ func (r *Runtime) Update(auth *authentication.Auth, eventHandler events.Handler)
 	*r = *rt
 
 	return nil
+}
+
+// HasCache tells us whether this runtime has any cached files. Note this does NOT tell you whether the cache is valid.
+func (r *Runtime) HasCache() bool {
+	return fileutils.DirExists(r.target.Dir())
 }
 
 // Env returns a key-value map of the environment variables that need to be set for this runtime

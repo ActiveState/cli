@@ -55,6 +55,7 @@ func executePackageOperation(prime primeable, packageName, packageVersion string
 	var pg *output.Spinner
 	defer func() {
 		if pg != nil {
+			// This is a bit awkward, but it would be even more awkward to manually address this for every error condition
 			pg.Stop(locale.T("progress_fail"))
 		}
 	}()
@@ -68,7 +69,7 @@ func executePackageOperation(prime primeable, packageName, packageVersion string
 			return locale.WrapError(err, "err_package_get_project", "Could not get project from path")
 		}
 		pg.Stop(locale.T("progress_success"))
-		pg = nil
+		pg = nil // The defer above will redundantly call pg.Stop on success if we don't set this to nil
 
 		defer func() {
 			if rerr != nil && !errors.Is(err, artifact.CamelRuntimeBuilding) {

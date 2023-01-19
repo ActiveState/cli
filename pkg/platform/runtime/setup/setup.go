@@ -147,9 +147,6 @@ func NewWithModel(target Targeter, eventHandler events.Handler, model ModelProvi
 
 // Update installs the runtime locally (or updates it if it's already partially installed)
 func (s *Setup) Update() (rerr error) {
-	if err := s.eventHandler.Handle(events.Start{}); err != nil {
-		return errs.Wrap(err, "Could not handle Start event")
-	}
 	defer func() {
 		var err error
 		if rerr == nil {
@@ -442,22 +439,18 @@ func (s *Setup) fetchAndInstallArtifactsFromRecipe(installFunc artifactInstaller
 		buildResult.BuildReady, artifactNamesList, installedList, downloadList,
 	)
 
-	// Calculate how many builds have already happened
-	numSkipBuild := 0
-	for _, a := range buildResult.BuildStatusResponse.Artifacts {
-		if a.BuildState != nil && *a.BuildState == headchef_models.V1ArtifactBuildStateSucceeded {
-			numSkipBuild++
-		}
-	}
-
 	artifactsToInstall := []artifact.ArtifactID{}
 	if buildResult.BuildReady {
+		// If the build is already done we can just look at the downloadable artifacts as they will be a fully accurate
+		// prediction of what we will be installing.
 		for _, a := range downloadablePrebuiltResults {
 			if _, alreadyInstalled := alreadyInstalled[a.ArtifactID]; !alreadyInstalled {
 				artifactsToInstall = append(artifactsToInstall, a.ArtifactID)
 			}
 		}
 	} else {
+		// If the build is not yet complete then we have to speculate as to the artifacts that will be installed.
+		// The actual number of installable artifacts may be lower than what we have here, we can only do a best effort.
 		for _, a := range installableArtifacts {
 			if _, alreadyInstalled := alreadyInstalled[a.ArtifactID]; !alreadyInstalled {
 				artifactsToInstall = append(artifactsToInstall, a.ArtifactID)
@@ -468,18 +461,20 @@ func (s *Setup) fetchAndInstallArtifactsFromRecipe(installFunc artifactInstaller
 	// The log file we want to use for builds
 	logFilePath := logging.FilePathFor(fmt.Sprintf("build-%s.log", s.target.CommitUUID().String()+"-"+time.Now().Format("20060102150405")))
 
-	if err := s.eventHandler.Handle(events.ArtifactsParsed{
-		!buildResult.BuildReady,
-		artifactNames,
-		logFilePath,
-		func() []artifact.ArtifactID {
+	if err := s.eventHandler.Handle(events.Start{
+		RequiresBuild: !buildResult.BuildReady,
+		ArtifactNames: artifactNames,
+		LogFilePath:   logFilePath,
+		ArtifactsToBuild: func() []artifact.ArtifactID {
 			if !buildResult.BuildReady {
 				return artifact.ArtifactIDsFromRecipeMap(artifacts) // This does not account for cached builds
 			}
 			return []artifact.ArtifactID{}
 		}(),
-		artifactsToInstall,
-		artifactsToInstall,
+		// Yes these have the same value; this is intentional.
+		// Separating these out just allows us to be more explicit and intentional in our event handling logic.
+		ArtifactsToDownload: artifactsToInstall,
+		ArtifactsToInstall:  artifactsToInstall,
 	}); err != nil {
 		return nil, errs.Wrap(err, "Could not handle ArtifactsParsed event")
 	}
@@ -547,7 +542,6 @@ func (s *Setup) installArtifactsFromBuild(buildResult *model.BuildResult, artifa
 	// - The second stage moves all files into its final destination is running in a single thread (using the mainthread library) to avoid file conflicts
 
 	var err error
-	// Todo: Revert this prior to commit!!
 	if buildResult.BuildReady {
 		if err := s.eventHandler.Handle(events.BuildSkipped{}); err != nil {
 			return errs.Wrap(err, "Could not handle BuildSkipped event")
@@ -583,8 +577,6 @@ func (s *Setup) setupArtifactSubmitFunction(a artifact.ArtifactDownload, expecte
 			return
 		}
 
-		logging.Debug("Obtaining %#v with ext %s", a, filepath.Ext(a.UnsignedURI))
-
 		unarchiver := as.Unarchiver()
 		archivePath, err := s.obtainArtifact(a, unarchiver.Ext())
 		if err != nil {
@@ -592,8 +584,6 @@ func (s *Setup) setupArtifactSubmitFunction(a artifact.ArtifactDownload, expecte
 			errors <- locale.WrapError(err, "artifact_download_failed", "", name, a.ArtifactID.String())
 			return
 		}
-
-		logging.Debug("Obtained artifact at %s", archivePath)
 
 		err = installFunc(a.ArtifactID, archivePath, as)
 		if err != nil {
@@ -749,7 +739,6 @@ func (s *Setup) verifyArtifact(archivePath string, a artifact.ArtifactDownload) 
 // obtainArtifact obtains an artifact and returns the local path to that artifact's archive.
 func (s *Setup) obtainArtifact(a artifact.ArtifactDownload, extension string) (string, error) {
 	if cachedPath, found := s.artifactCache.Get(a.ArtifactID); found {
-		logging.Debug("Using cached artifact %s", a.ArtifactID)
 		if err := s.verifyArtifact(cachedPath, a); err == nil {
 			return cachedPath, nil
 		}
@@ -762,7 +751,6 @@ func (s *Setup) obtainArtifact(a artifact.ArtifactDownload, extension string) (s
 	}
 
 	archivePath := filepath.Join(targetDir, a.ArtifactID.String()+extension)
-	logging.Debug("Created archivePath: %s", archivePath)
 	if err := s.downloadArtifact(a, archivePath); err != nil {
 		return "", errs.Wrap(err, "Could not download artifact %s", a.UnsignedURI)
 	}
@@ -777,7 +765,6 @@ func (s *Setup) obtainArtifact(a artifact.ArtifactDownload, extension string) (s
 		multilog.Error("Could not store artifact in cache: %v", err)
 	}
 
-	logging.Debug("Returning archivePath: %s", archivePath)
 	return archivePath, nil
 }
 

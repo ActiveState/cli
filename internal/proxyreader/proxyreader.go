@@ -47,7 +47,9 @@ func (pr *ProxyReader) ReadAt(p []byte, offset int64) (int, error) {
 	n, err := prAt.ReadAt(p, offset)
 	if n > 0 {
 		if offset == 0 {
-			pr.increment.ReportIncrement(n)
+			if err := pr.increment.ReportIncrement(n); err != nil {
+				return n, errs.Wrap(err, "Could not report increment")
+			}
 		}
 	}
 	return n, err

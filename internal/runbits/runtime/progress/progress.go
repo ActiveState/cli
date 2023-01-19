@@ -77,9 +77,13 @@ type ProgressDigester struct {
 	// The cancel function for the mpb package
 	cancelMpb context.CancelFunc
 
+	// Record whether we have received the first event, to ensure we always start with the `Start` event
+	// This is to help prevent us inadvertently breaking things as the order of the Start event is crucial.
+	receivedFirstEvent bool
+
 	// Record whether changes were made
 	changesMade bool
-	// Record whether the runtime install was succesful
+	// Record whether the runtime install was successful
 	success bool
 }
 
@@ -105,12 +109,42 @@ func NewProgressDigester(w io.Writer, out output.Outputer) *ProgressDigester {
 }
 
 func (p *ProgressDigester) Handle(ev events.Eventer) error {
+	defer func() {
+		p.receivedFirstEvent = true
+	}()
 	p.dbgEventLog = append(p.dbgEventLog, fmt.Sprintf("%T", ev))
 
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 
 	switch v := ev.(type) {
+
+	case events.Start:
+		logging.Debug("Initialize Event: %#v", v)
+
+		// Ensure Start event is first.. because otherwise the prints below will cause output to be malformed.
+		if p.receivedFirstEvent {
+			return errs.New("Received Start event after receiving another event")
+		}
+
+		// Report the log file we'll be using. This has to happen here and not in the BuildStarted even as there's no
+		// guarantee that no downloads or installs might have triggered before BuildStarted, in which case there's
+		// already progressbars being displayed which won't play nice with newly printed output.
+		if v.RequiresBuild {
+			p.out.Notice(locale.Tr("progress_build_log", v.LogFilePath))
+		}
+
+		p.artifactNames = v.ArtifactNames
+
+		p.buildsExpected = artifact.ArtifactIDsToMap(v.ArtifactsToBuild)
+		p.downloadsExpected = artifact.ArtifactIDsToMap(v.ArtifactsToDownload)
+		p.installsExpected = artifact.ArtifactIDsToMap(v.ArtifactsToInstall)
+
+		if len(v.ArtifactsToBuild)+len(v.ArtifactsToDownload)+len(v.ArtifactsToInstall) == 0 {
+			p.out.Notice(locale.T("progress_nothing_to_do"))
+		} else {
+			p.changesMade = true
+		}
 
 	case events.Success:
 		p.success = true
@@ -124,7 +158,6 @@ func (p *ProgressDigester) Handle(ev events.Eventer) error {
 		}
 		p.solveSpinner.Stop(locale.T("progress_fail"))
 		p.solveSpinner = nil
-		return nil
 
 	case events.SolveSuccess:
 		if p.solveSpinner == nil {
@@ -132,54 +165,25 @@ func (p *ProgressDigester) Handle(ev events.Eventer) error {
 		}
 		p.solveSpinner.Stop(locale.T("progress_success"))
 		p.solveSpinner = nil
-		return nil
 
 	case events.BuildSkipped:
 		if p.buildBar != nil {
 			return errs.New("BuildSkipped called, but buildBar was initialized.. this should not happen as they should be mutually exclusive")
 		}
-		return nil
 
 	case events.BuildStarted:
 		p.buildBar = p.addTotalBar(locale.Tl("progress_building", "Building"), v.Artifacts, mpb.BarPriority(StepBuild.priority))
-		return nil
 
 	case events.BuildSuccess:
 		if p.buildBar == nil {
-			return errs.New("BuildCompleted called before buildbar was initialized")
+			return errs.New("BuildSuccess called before buildbar was initialized")
 		}
-		return nil
 
 	case events.BuildFailure:
 		if p.buildBar == nil {
 			return errs.New("BuildFailure called before buildbar was initialized")
 		}
 		p.buildBar.Abort(false) // mpb has been known to stick around after it was told not to
-		return nil
-
-	case events.ArtifactsParsed:
-		logging.Debug("ArtifactsParsed Event: %#v", v)
-
-		// Report the log file we'll be using. This has to happen here and not in the BuildStarted even as there's no
-		// guarantee that no downloads or installs might have triggered before BuildStarted, in which case there's
-		// already progressbars being displayed which won't play nice with newly printed output.
-		if v.RequiresBuild {
-			p.out.Notice(locale.Tr("progress_build_log", v.LogFilePath))
-		}
-
-		p.artifactNames = v.ArtifactNames
-
-		p.buildsExpected = artifact.ArtifactIDsToMap(v.ArtifactsToBuild)
-		p.downloadsExpected = artifact.ArtifactIDsToMap(v.ArtifactsToInstall)
-		p.installsExpected = artifact.ArtifactIDsToMap(v.ArtifactsToDownload)
-
-		if len(v.ArtifactsToBuild)+len(v.ArtifactsToDownload)+len(v.ArtifactsToInstall) == 0 {
-			p.out.Notice(locale.T("progress_nothing_to_do"))
-		} else {
-			p.changesMade = true
-		}
-
-		return nil
 
 	case events.ArtifactBuildStarted:
 		if p.buildBar == nil {
@@ -188,11 +192,10 @@ func (p *ProgressDigester) Handle(ev events.Eventer) error {
 		if _, ok := p.buildsExpected[v.ArtifactID]; !ok {
 			return errs.New("ArtifactBuildStarted called for an artifact that was not expected: %s", v.ArtifactID.String())
 		}
-		return nil
 
 	case events.ArtifactBuildSuccess:
 		if p.buildBar == nil {
-			return errs.New("ArtifactBuildCompleted called before buildbar was initialized")
+			return errs.New("ArtifactBuildSuccess called before buildbar was initialized")
 		}
 		if _, ok := p.buildsExpected[v.ArtifactID]; !ok {
 			return errs.New("ArtifactBuildSuccess called for an artifact that was not expected: %s", v.ArtifactID.String())
@@ -202,7 +205,6 @@ func (p *ProgressDigester) Handle(ev events.Eventer) error {
 		}
 		delete(p.buildsExpected, v.ArtifactID)
 		p.buildBar.Increment()
-		return nil
 
 	case events.ArtifactDownloadStarted:
 		if p.downloadBar == nil {
@@ -215,13 +217,11 @@ func (p *ProgressDigester) Handle(ev events.Eventer) error {
 		if err := p.addArtifactBar(v.ArtifactID, StepDownload, int64(v.TotalSize), true); err != nil {
 			return errs.Wrap(err, "Failed to add or update artifact bar")
 		}
-		return nil
 
 	case events.ArtifactDownloadProgress:
 		if err := p.updateArtifactBar(v.ArtifactID, StepDownload, v.IncrementBySize); err != nil {
 			return errs.Wrap(err, "Failed to add or update artifact bar")
 		}
-		return nil
 
 	case events.ArtifactDownloadSkipped:
 		if p.downloadBar == nil {
@@ -245,7 +245,6 @@ func (p *ProgressDigester) Handle(ev events.Eventer) error {
 		}
 		delete(p.downloadsExpected, v.ArtifactID)
 		p.downloadBar.Increment()
-		return nil
 
 	case events.ArtifactInstallStarted:
 		if p.installBar == nil {
@@ -257,7 +256,6 @@ func (p *ProgressDigester) Handle(ev events.Eventer) error {
 		if err := p.addArtifactBar(v.ArtifactID, StepInstall, int64(v.TotalSize), true); err != nil {
 			return errs.Wrap(err, "Failed to add or update artifact bar")
 		}
-		return nil
 
 	case events.ArtifactInstallSkipped:
 		if p.installBar == nil {
@@ -281,13 +279,11 @@ func (p *ProgressDigester) Handle(ev events.Eventer) error {
 		}
 		delete(p.installsExpected, v.ArtifactID)
 		p.installBar.Increment()
-		return nil
 
 	case events.ArtifactInstallProgress:
 		if err := p.updateArtifactBar(v.ArtifactID, StepInstall, v.IncrementBySize); err != nil {
 			return errs.Wrap(err, "Failed to add or update artifact bar")
 		}
-		return nil
 
 	}
 

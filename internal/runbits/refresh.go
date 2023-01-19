@@ -2,7 +2,6 @@ package runbits
 
 import (
 	"github.com/ActiveState/cli/internal/analytics"
-	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -32,7 +31,7 @@ func RefreshRuntime(auth *authentication.Auth, out output.Outputer, an analytics
 	}
 
 	if !isCached {
-		if !fileutils.DirExists(target.Dir()) {
+		if !rt.HasCache() {
 			out.Notice(output.Heading(locale.Tl("install_runtime", "Installing Runtime")))
 			out.Notice(locale.Tl("install_runtime_info", "Installing your runtime and dependencies."))
 		} else {
