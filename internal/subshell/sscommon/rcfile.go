@@ -46,7 +46,7 @@ var (
 		constants.RCAppendOfflineInstallStopLine,
 		"user_offlineinstall_env",
 	}
-	AutoStartID RcIdentification = RcIdentification{
+	AutostartID RcIdentification = RcIdentification{
 		constants.RCAppendAutostartStartLine,
 		constants.RCAppendAutostartStopLine,
 		"user_autostart_env",
