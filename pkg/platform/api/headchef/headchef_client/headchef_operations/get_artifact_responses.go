@@ -56,8 +56,7 @@ func NewGetArtifactOK() *GetArtifactOK {
 	return &GetArtifactOK{}
 }
 
-/*
-GetArtifactOK handles this case with default header values.
+/*GetArtifactOK handles this case with default header values.
 
 The requested artifact
 */
@@ -86,8 +85,7 @@ func NewGetArtifactNotFound() *GetArtifactNotFound {
 	return &GetArtifactNotFound{}
 }
 
-/*
-GetArtifactNotFound handles this case with default header values.
+/*GetArtifactNotFound handles this case with default header values.
 
 No artifact with the specified artifact ID has been submitted to the Head Chef.
 */
@@ -118,8 +116,7 @@ func NewGetArtifactDefault(code int) *GetArtifactDefault {
 	}
 }
 
-/*
-GetArtifactDefault handles this case with default header values.
+/*GetArtifactDefault handles this case with default header values.
 
 If there is an error processing the request
 */

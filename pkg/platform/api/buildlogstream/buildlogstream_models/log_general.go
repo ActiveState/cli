@@ -16,7 +16,7 @@ import (
 
 // LogGeneral General log message
 //
-// # A general status message
+// A general status message
 //
 // swagger:model logGeneral
 type LogGeneral struct {

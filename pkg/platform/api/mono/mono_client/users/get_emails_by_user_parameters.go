@@ -52,12 +52,10 @@ func NewGetEmailsByUserParamsWithHTTPClient(client *http.Client) *GetEmailsByUse
 	}
 }
 
-/*
-GetEmailsByUserParams contains all the parameters to send to the API endpoint
+/* GetEmailsByUserParams contains all the parameters to send to the API endpoint
+   for the get emails by user operation.
 
-	for the get emails by user operation.
-
-	Typically these are written to a http.Request.
+   Typically these are written to a http.Request.
 */
 type GetEmailsByUserParams struct {
 

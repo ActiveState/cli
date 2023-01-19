@@ -52,12 +52,10 @@ func NewGetInvitationByCodeParamsWithHTTPClient(client *http.Client) *GetInvitat
 	}
 }
 
-/*
-GetInvitationByCodeParams contains all the parameters to send to the API endpoint
+/* GetInvitationByCodeParams contains all the parameters to send to the API endpoint
+   for the get invitation by code operation.
 
-	for the get invitation by code operation.
-
-	Typically these are written to a http.Request.
+   Typically these are written to a http.Request.
 */
 type GetInvitationByCodeParams struct {
 

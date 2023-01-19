@@ -52,12 +52,10 @@ func NewAuthDevicePutParamsWithHTTPClient(client *http.Client) *AuthDevicePutPar
 	}
 }
 
-/*
-AuthDevicePutParams contains all the parameters to send to the API endpoint
+/* AuthDevicePutParams contains all the parameters to send to the API endpoint
+   for the auth device put operation.
 
-	for the auth device put operation.
-
-	Typically these are written to a http.Request.
+   Typically these are written to a http.Request.
 */
 type AuthDevicePutParams struct {
 

@@ -17,7 +17,7 @@ import (
 
 // NamespaceCore Namespace Core
 //
-// # The properties of a namespace needed to create a new one
+// The properties of a namespace needed to create a new one
 //
 // swagger:model namespaceCore
 type NamespaceCore struct {

@@ -52,12 +52,10 @@ func NewGetProjectByIDParamsWithHTTPClient(client *http.Client) *GetProjectByIDP
 	}
 }
 
-/*
-GetProjectByIDParams contains all the parameters to send to the API endpoint
+/* GetProjectByIDParams contains all the parameters to send to the API endpoint
+   for the get project by ID operation.
 
-	for the get project by ID operation.
-
-	Typically these are written to a http.Request.
+   Typically these are written to a http.Request.
 */
 type GetProjectByIDParams struct {
 

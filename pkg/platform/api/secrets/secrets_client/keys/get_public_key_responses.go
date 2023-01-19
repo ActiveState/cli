@@ -63,8 +63,7 @@ func NewGetPublicKeyOK() *GetPublicKeyOK {
 	return &GetPublicKeyOK{}
 }
 
-/*
-GetPublicKeyOK handles this case with default header values.
+/*GetPublicKeyOK handles this case with default header values.
 
 Success
 */
@@ -93,8 +92,7 @@ func NewGetPublicKeyUnauthorized() *GetPublicKeyUnauthorized {
 	return &GetPublicKeyUnauthorized{}
 }
 
-/*
-GetPublicKeyUnauthorized handles this case with default header values.
+/*GetPublicKeyUnauthorized handles this case with default header values.
 
 Invalid credentials
 */
@@ -123,8 +121,7 @@ func NewGetPublicKeyNotFound() *GetPublicKeyNotFound {
 	return &GetPublicKeyNotFound{}
 }
 
-/*
-GetPublicKeyNotFound handles this case with default header values.
+/*GetPublicKeyNotFound handles this case with default header values.
 
 Not Found
 */
@@ -153,8 +150,7 @@ func NewGetPublicKeyInternalServerError() *GetPublicKeyInternalServerError {
 	return &GetPublicKeyInternalServerError{}
 }
 
-/*
-GetPublicKeyInternalServerError handles this case with default header values.
+/*GetPublicKeyInternalServerError handles this case with default header values.
 
 Server Error
 */

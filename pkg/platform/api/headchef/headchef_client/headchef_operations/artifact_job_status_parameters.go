@@ -59,8 +59,7 @@ func NewArtifactJobStatusParamsWithHTTPClient(client *http.Client) *ArtifactJobS
 	}
 }
 
-/*
-ArtifactJobStatusParams contains all the parameters to send to the API endpoint
+/*ArtifactJobStatusParams contains all the parameters to send to the API endpoint
 for the artifact job status operation typically these are written to a http.Request
 */
 type ArtifactJobStatusParams struct {

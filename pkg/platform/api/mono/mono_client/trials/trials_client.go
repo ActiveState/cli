@@ -36,9 +36,9 @@ type ClientService interface {
 }
 
 /*
-PostOrganizationTrial organizations team tier trial
+  PostOrganizationTrial organizations team tier trial
 
-Starts the org on a (fake) team-tier trial.
+  Starts the org on a (fake) team-tier trial.
 */
 func (a *Client) PostOrganizationTrial(params *PostOrganizationTrialParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*PostOrganizationTrialOK, error) {
 	// TODO: Validate the params before sending

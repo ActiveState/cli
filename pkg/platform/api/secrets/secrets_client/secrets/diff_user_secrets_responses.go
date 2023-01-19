@@ -63,8 +63,7 @@ func NewDiffUserSecretsOK() *DiffUserSecretsOK {
 	return &DiffUserSecretsOK{}
 }
 
-/*
-DiffUserSecretsOK handles this case with default header values.
+/*DiffUserSecretsOK handles this case with default header values.
 
 Success
 */
@@ -93,8 +92,7 @@ func NewDiffUserSecretsUnauthorized() *DiffUserSecretsUnauthorized {
 	return &DiffUserSecretsUnauthorized{}
 }
 
-/*
-DiffUserSecretsUnauthorized handles this case with default header values.
+/*DiffUserSecretsUnauthorized handles this case with default header values.
 
 Invalid credentials
 */
@@ -123,8 +121,7 @@ func NewDiffUserSecretsNotFound() *DiffUserSecretsNotFound {
 	return &DiffUserSecretsNotFound{}
 }
 
-/*
-DiffUserSecretsNotFound handles this case with default header values.
+/*DiffUserSecretsNotFound handles this case with default header values.
 
 Not Found
 */
@@ -153,8 +150,7 @@ func NewDiffUserSecretsInternalServerError() *DiffUserSecretsInternalServerError
 	return &DiffUserSecretsInternalServerError{}
 }
 
-/*
-DiffUserSecretsInternalServerError handles this case with default header values.
+/*DiffUserSecretsInternalServerError handles this case with default header values.
 
 Server Error
 */

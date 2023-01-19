@@ -57,8 +57,7 @@ func NewClearAllUserSecretsParamsWithHTTPClient(client *http.Client) *ClearAllUs
 	}
 }
 
-/*
-ClearAllUserSecretsParams contains all the parameters to send to the API endpoint
+/*ClearAllUserSecretsParams contains all the parameters to send to the API endpoint
 for the clear all user secrets operation typically these are written to a http.Request
 */
 type ClearAllUserSecretsParams struct {

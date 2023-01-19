@@ -72,9 +72,9 @@ type ClientService interface {
 }
 
 /*
-AddEmail creates new email for a user
+  AddEmail creates new email for a user
 
-Create new email
+  Create new email
 */
 func (a *Client) AddEmail(params *AddEmailParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddEmailOK, error) {
 	// TODO: Validate the params before sending
@@ -113,9 +113,9 @@ func (a *Client) AddEmail(params *AddEmailParams, authInfo runtime.ClientAuthInf
 }
 
 /*
-AddUser creates a new user
+  AddUser creates a new user
 
-Create a new user
+  Create a new user
 */
 func (a *Client) AddUser(params *AddUserParams, opts ...ClientOption) (*AddUserOK, error) {
 	// TODO: Validate the params before sending
@@ -153,9 +153,9 @@ func (a *Client) AddUser(params *AddUserParams, opts ...ClientOption) (*AddUserO
 }
 
 /*
-DeleteEmail deletes email for a user
+  DeleteEmail deletes email for a user
 
-Delete email
+  Delete email
 */
 func (a *Client) DeleteEmail(params *DeleteEmailParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteEmailOK, error) {
 	// TODO: Validate the params before sending
@@ -194,9 +194,9 @@ func (a *Client) DeleteEmail(params *DeleteEmailParams, authInfo runtime.ClientA
 }
 
 /*
-DeleteUser deletes a user
+  DeleteUser deletes a user
 
-Delete a user
+  Delete a user
 */
 func (a *Client) DeleteUser(params *DeleteUserParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteUserOK, error) {
 	// TODO: Validate the params before sending
@@ -235,9 +235,9 @@ func (a *Client) DeleteUser(params *DeleteUserParams, authInfo runtime.ClientAut
 }
 
 /*
-EditUser edits a user
+  EditUser edits a user
 
-Edit a user record
+  Edit a user record
 */
 func (a *Client) EditUser(params *EditUserParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*EditUserOK, error) {
 	// TODO: Validate the params before sending
@@ -276,9 +276,9 @@ func (a *Client) EditUser(params *EditUserParams, authInfo runtime.ClientAuthInf
 }
 
 /*
-GetDomainsByUser retrieves a user s verified domains
+  GetDomainsByUser retrieves a user s verified domains
 
-Return a list of domains suitable for auto-invite
+  Return a list of domains suitable for auto-invite
 */
 func (a *Client) GetDomainsByUser(params *GetDomainsByUserParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetDomainsByUserOK, error) {
 	// TODO: Validate the params before sending
@@ -317,9 +317,9 @@ func (a *Client) GetDomainsByUser(params *GetDomainsByUserParams, authInfo runti
 }
 
 /*
-GetEmailVerificationLink gets the verification link for the given unverified email
+  GetEmailVerificationLink gets the verification link for the given unverified email
 
-Returns the link needed to verify ownership of the provided email address, if it exists and is unverified. Only available to superusers.
+  Returns the link needed to verify ownership of the provided email address, if it exists and is unverified. Only available to superusers.
 */
 func (a *Client) GetEmailVerificationLink(params *GetEmailVerificationLinkParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetEmailVerificationLinkOK, error) {
 	// TODO: Validate the params before sending
@@ -358,9 +358,9 @@ func (a *Client) GetEmailVerificationLink(params *GetEmailVerificationLinkParams
 }
 
 /*
-GetEmailsByUser retrieves a user s emails
+  GetEmailsByUser retrieves a user s emails
 
-Return a list of emails matching username
+  Return a list of emails matching username
 */
 func (a *Client) GetEmailsByUser(params *GetEmailsByUserParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetEmailsByUserOK, error) {
 	// TODO: Validate the params before sending
@@ -399,9 +399,9 @@ func (a *Client) GetEmailsByUser(params *GetEmailsByUserParams, authInfo runtime
 }
 
 /*
-GetInvitationByCode returns the invitation with the corresponding code
+  GetInvitationByCode returns the invitation with the corresponding code
 
-Returns the invitation with the corresponding code
+  Returns the invitation with the corresponding code
 */
 func (a *Client) GetInvitationByCode(params *GetInvitationByCodeParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInvitationByCodeOK, error) {
 	// TODO: Validate the params before sending
@@ -440,9 +440,9 @@ func (a *Client) GetInvitationByCode(params *GetInvitationByCodeParams, authInfo
 }
 
 /*
-GetUser retrieves a user record
+  GetUser retrieves a user record
 
-Return a specific user matching username
+  Return a specific user matching username
 */
 func (a *Client) GetUser(params *GetUserParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetUserOK, error) {
 	// TODO: Validate the params before sending
@@ -481,9 +481,9 @@ func (a *Client) GetUser(params *GetUserParams, authInfo runtime.ClientAuthInfoW
 }
 
 /*
-GetUserByID retrieves a user record by their user ID
+  GetUserByID retrieves a user record by their user ID
 
-Return a specific user matching user ID
+  Return a specific user matching user ID
 */
 func (a *Client) GetUserByID(params *GetUserByIDParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetUserByIDOK, error) {
 	// TODO: Validate the params before sending
@@ -522,9 +522,9 @@ func (a *Client) GetUserByID(params *GetUserByIDParams, authInfo runtime.ClientA
 }
 
 /*
-ListInvitations lists of pending invitations for an email address
+  ListInvitations lists of pending invitations for an email address
 
-Has this email address been invited to any orginzations
+  Has this email address been invited to any orginzations
 */
 func (a *Client) ListInvitations(params *ListInvitationsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListInvitationsOK, error) {
 	// TODO: Validate the params before sending
@@ -563,9 +563,9 @@ func (a *Client) ListInvitations(params *ListInvitationsParams, authInfo runtime
 }
 
 /*
-ListUsers lists of visible users
+  ListUsers lists of visible users
 
-Retrieve all users from the system that the user has access to
+  Retrieve all users from the system that the user has access to
 */
 func (a *Client) ListUsers(params *ListUsersParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListUsersOK, error) {
 	// TODO: Validate the params before sending
@@ -604,7 +604,7 @@ func (a *Client) ListUsers(params *ListUsersParams, authInfo runtime.ClientAuthI
 }
 
 /*
-SearchEmails Search for users by email address, requires superuser
+  SearchEmails Search for users by email address, requires superuser
 */
 func (a *Client) SearchEmails(params *SearchEmailsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*SearchEmailsOK, error) {
 	// TODO: Validate the params before sending
@@ -643,7 +643,7 @@ func (a *Client) SearchEmails(params *SearchEmailsParams, authInfo runtime.Clien
 }
 
 /*
-SearchUsernames Search for users, requires superuser
+  SearchUsernames Search for users, requires superuser
 */
 func (a *Client) SearchUsernames(params *SearchUsernamesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*SearchUsernamesOK, error) {
 	// TODO: Validate the params before sending
@@ -682,9 +682,9 @@ func (a *Client) SearchUsernames(params *SearchUsernamesParams, authInfo runtime
 }
 
 /*
-SendEmailVerification sends a verification email to user
+  SendEmailVerification sends a verification email to user
 
-Send a verification email to user
+  Send a verification email to user
 */
 func (a *Client) SendEmailVerification(params *SendEmailVerificationParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*SendEmailVerificationOK, error) {
 	// TODO: Validate the params before sending
@@ -723,9 +723,9 @@ func (a *Client) SendEmailVerification(params *SendEmailVerificationParams, auth
 }
 
 /*
-SetPreferredEmail updates preferred email
+  SetPreferredEmail updates preferred email
 
-Update preferred email
+  Update preferred email
 */
 func (a *Client) SetPreferredEmail(params *SetPreferredEmailParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*SetPreferredEmailOK, error) {
 	// TODO: Validate the params before sending
@@ -764,9 +764,9 @@ func (a *Client) SetPreferredEmail(params *SetPreferredEmailParams, authInfo run
 }
 
 /*
-UniqueUsername checks if a username is already taken in the system
+  UniqueUsername checks if a username is already taken in the system
 
-Is the supplied username already assigned
+  Is the supplied username already assigned
 */
 func (a *Client) UniqueUsername(params *UniqueUsernameParams, opts ...ClientOption) (*UniqueUsernameOK, error) {
 	// TODO: Validate the params before sending
@@ -804,9 +804,9 @@ func (a *Client) UniqueUsername(params *UniqueUsernameParams, opts ...ClientOpti
 }
 
 /*
-VerifyEmail verifies the designated email
+  VerifyEmail verifies the designated email
 
-Verify the designated email
+  Verify the designated email
 */
 func (a *Client) VerifyEmail(params *VerifyEmailParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*VerifyEmailOK, error) {
 	// TODO: Validate the params before sending

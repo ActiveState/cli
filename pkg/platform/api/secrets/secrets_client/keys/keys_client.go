@@ -6,7 +6,7 @@ package keys
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	"github.com/ActiveState/cli/internal-as/errs"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/go-openapi/runtime"
 
 	"github.com/go-openapi/strfmt"

@@ -53,12 +53,10 @@ func NewGetIngredientsParamsWithHTTPClient(client *http.Client) *GetIngredientsP
 	}
 }
 
-/*
-GetIngredientsParams contains all the parameters to send to the API endpoint
+/* GetIngredientsParams contains all the parameters to send to the API endpoint
+   for the get ingredients operation.
 
-	for the get ingredients operation.
-
-	Typically these are written to a http.Request.
+   Typically these are written to a http.Request.
 */
 type GetIngredientsParams struct {
 

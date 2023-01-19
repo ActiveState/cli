@@ -53,12 +53,10 @@ func NewGetLibcVersionParamsWithHTTPClient(client *http.Client) *GetLibcVersionP
 	}
 }
 
-/*
-GetLibcVersionParams contains all the parameters to send to the API endpoint
+/* GetLibcVersionParams contains all the parameters to send to the API endpoint
+   for the get libc version operation.
 
-	for the get libc version operation.
-
-	Typically these are written to a http.Request.
+   Typically these are written to a http.Request.
 */
 type GetLibcVersionParams struct {
 

@@ -54,12 +54,10 @@ func NewAddImageParamsWithHTTPClient(client *http.Client) *AddImageParams {
 	}
 }
 
-/*
-AddImageParams contains all the parameters to send to the API endpoint
+/* AddImageParams contains all the parameters to send to the API endpoint
+   for the add image operation.
 
-	for the add image operation.
-
-	Typically these are written to a http.Request.
+   Typically these are written to a http.Request.
 */
 type AddImageParams struct {
 

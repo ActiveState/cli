@@ -16,7 +16,7 @@ import (
 
 // SolutionRecipe SolverRecipe
 //
-// # A recipe with a URL, created by a solver, containing all required information to build for a single platform
+// A recipe with a URL, created by a solver, containing all required information to build for a single platform
 //
 // swagger:model solutionRecipe
 type SolutionRecipe struct {

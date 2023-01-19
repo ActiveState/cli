@@ -17,7 +17,7 @@ import (
 
 // NamespacePagedList Namespace Paged List
 //
-// # A paginated list of namespaces
+// A paginated list of namespaces
 //
 // swagger:model namespacePagedList
 type NamespacePagedList struct {

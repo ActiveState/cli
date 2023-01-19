@@ -49,8 +49,7 @@ func NewHealthCheckOK() *HealthCheckOK {
 	return &HealthCheckOK{}
 }
 
-/*
-HealthCheckOK handles this case with default header values.
+/*HealthCheckOK handles this case with default header values.
 
 Indicates whether the server is healthy
 */
@@ -79,8 +78,7 @@ func NewHealthCheckDefault(code int) *HealthCheckDefault {
 	}
 }
 
-/*
-HealthCheckDefault handles this case with default header values.
+/*HealthCheckDefault handles this case with default header values.
 
 generic error response
 */

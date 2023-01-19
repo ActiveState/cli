@@ -53,12 +53,10 @@ func NewSearchIngredientsParamsWithHTTPClient(client *http.Client) *SearchIngred
 	}
 }
 
-/*
-SearchIngredientsParams contains all the parameters to send to the API endpoint
+/* SearchIngredientsParams contains all the parameters to send to the API endpoint
+   for the search ingredients operation.
 
-	for the search ingredients operation.
-
-	Typically these are written to a http.Request.
+   Typically these are written to a http.Request.
 */
 type SearchIngredientsParams struct {
 

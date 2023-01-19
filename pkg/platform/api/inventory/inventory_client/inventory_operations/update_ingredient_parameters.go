@@ -54,12 +54,10 @@ func NewUpdateIngredientParamsWithHTTPClient(client *http.Client) *UpdateIngredi
 	}
 }
 
-/*
-UpdateIngredientParams contains all the parameters to send to the API endpoint
+/* UpdateIngredientParams contains all the parameters to send to the API endpoint
+   for the update ingredient operation.
 
-	for the update ingredient operation.
-
-	Typically these are written to a http.Request.
+   Typically these are written to a http.Request.
 */
 type UpdateIngredientParams struct {
 

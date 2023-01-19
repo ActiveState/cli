@@ -54,12 +54,10 @@ func NewEditUserParamsWithHTTPClient(client *http.Client) *EditUserParams {
 	}
 }
 
-/*
-EditUserParams contains all the parameters to send to the API endpoint
+/* EditUserParams contains all the parameters to send to the API endpoint
+   for the edit user operation.
 
-	for the edit user operation.
-
-	Typically these are written to a http.Request.
+   Typically these are written to a http.Request.
 */
 type EditUserParams struct {
 

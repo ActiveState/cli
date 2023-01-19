@@ -17,7 +17,7 @@ import (
 
 // SolverIncompatibility Solver Incompatibility
 //
-// # A requirement, transitive dependency or platform that is part of a solver error
+// A requirement, transitive dependency or platform that is part of a solver error
 //
 // swagger:model solverIncompatibility
 type SolverIncompatibility struct {

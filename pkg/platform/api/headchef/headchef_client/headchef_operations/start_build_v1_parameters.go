@@ -59,8 +59,7 @@ func NewStartBuildV1ParamsWithHTTPClient(client *http.Client) *StartBuildV1Param
 	}
 }
 
-/*
-StartBuildV1Params contains all the parameters to send to the API endpoint
+/*StartBuildV1Params contains all the parameters to send to the API endpoint
 for the start build v1 operation typically these are written to a http.Request
 */
 type StartBuildV1Params struct {

@@ -57,8 +57,7 @@ func NewHealthCheckParamsWithHTTPClient(client *http.Client) *HealthCheckParams 
 	}
 }
 
-/*
-HealthCheckParams contains all the parameters to send to the API endpoint
+/*HealthCheckParams contains all the parameters to send to the API endpoint
 for the health check operation typically these are written to a http.Request
 */
 type HealthCheckParams struct {

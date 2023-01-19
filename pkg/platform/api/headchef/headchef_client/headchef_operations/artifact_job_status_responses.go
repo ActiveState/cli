@@ -56,8 +56,7 @@ func NewArtifactJobStatusOK() *ArtifactJobStatusOK {
 	return &ArtifactJobStatusOK{}
 }
 
-/*
-ArtifactJobStatusOK handles this case with default header values.
+/*ArtifactJobStatusOK handles this case with default header values.
 
 Job completion has been recorded
 */
@@ -78,8 +77,7 @@ func NewArtifactJobStatusNotFound() *ArtifactJobStatusNotFound {
 	return &ArtifactJobStatusNotFound{}
 }
 
-/*
-ArtifactJobStatusNotFound handles this case with default header values.
+/*ArtifactJobStatusNotFound handles this case with default header values.
 
 No artifact exists with the request artifact ID
 */
@@ -110,8 +108,7 @@ func NewArtifactJobStatusDefault(code int) *ArtifactJobStatusDefault {
 	}
 }
 
-/*
-ArtifactJobStatusDefault handles this case with default header values.
+/*ArtifactJobStatusDefault handles this case with default header values.
 
 If there is an error processing the request
 */

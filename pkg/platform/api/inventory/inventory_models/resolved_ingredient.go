@@ -17,7 +17,7 @@ import (
 
 // ResolvedIngredient Resolved Ingredient
 //
-// # An ingredient that is part of a recipe's resolved requirements
+// An ingredient that is part of a recipe's resolved requirements
 //
 // swagger:model resolvedIngredient
 type ResolvedIngredient struct {

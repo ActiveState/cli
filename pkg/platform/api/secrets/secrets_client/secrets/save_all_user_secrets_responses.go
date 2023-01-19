@@ -56,8 +56,7 @@ func NewSaveAllUserSecretsNoContent() *SaveAllUserSecretsNoContent {
 	return &SaveAllUserSecretsNoContent{}
 }
 
-/*
-SaveAllUserSecretsNoContent handles this case with default header values.
+/*SaveAllUserSecretsNoContent handles this case with default header values.
 
 Success
 */
@@ -78,8 +77,7 @@ func NewSaveAllUserSecretsUnauthorized() *SaveAllUserSecretsUnauthorized {
 	return &SaveAllUserSecretsUnauthorized{}
 }
 
-/*
-SaveAllUserSecretsUnauthorized handles this case with default header values.
+/*SaveAllUserSecretsUnauthorized handles this case with default header values.
 
 Invalid credentials
 */
@@ -108,8 +106,7 @@ func NewSaveAllUserSecretsInternalServerError() *SaveAllUserSecretsInternalServe
 	return &SaveAllUserSecretsInternalServerError{}
 }
 
-/*
-SaveAllUserSecretsInternalServerError handles this case with default header values.
+/*SaveAllUserSecretsInternalServerError handles this case with default header values.
 
 Server Error
 */

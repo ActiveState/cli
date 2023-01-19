@@ -59,8 +59,7 @@ func NewSaveDefinitionParamsWithHTTPClient(client *http.Client) *SaveDefinitionP
 	}
 }
 
-/*
-SaveDefinitionParams contains all the parameters to send to the API endpoint
+/*SaveDefinitionParams contains all the parameters to send to the API endpoint
 for the save definition operation typically these are written to a http.Request
 */
 type SaveDefinitionParams struct {

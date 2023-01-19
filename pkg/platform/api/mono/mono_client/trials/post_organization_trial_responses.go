@@ -63,8 +63,7 @@ func NewPostOrganizationTrialOK() *PostOrganizationTrialOK {
 	return &PostOrganizationTrialOK{}
 }
 
-/*
-	PostOrganizationTrialOK describes a response with status code 200, with default header values.
+/* PostOrganizationTrialOK describes a response with status code 200, with default header values.
 
 Success
 */
@@ -94,8 +93,7 @@ func NewPostOrganizationTrialBadRequest() *PostOrganizationTrialBadRequest {
 	return &PostOrganizationTrialBadRequest{}
 }
 
-/*
-	PostOrganizationTrialBadRequest describes a response with status code 400, with default header values.
+/* PostOrganizationTrialBadRequest describes a response with status code 400, with default header values.
 
 Bad Request
 */
@@ -127,8 +125,7 @@ func NewPostOrganizationTrialForbidden() *PostOrganizationTrialForbidden {
 	return &PostOrganizationTrialForbidden{}
 }
 
-/*
-	PostOrganizationTrialForbidden describes a response with status code 403, with default header values.
+/* PostOrganizationTrialForbidden describes a response with status code 403, with default header values.
 
 Forbidden
 */
@@ -160,8 +157,7 @@ func NewPostOrganizationTrialNotFound() *PostOrganizationTrialNotFound {
 	return &PostOrganizationTrialNotFound{}
 }
 
-/*
-	PostOrganizationTrialNotFound describes a response with status code 404, with default header values.
+/* PostOrganizationTrialNotFound describes a response with status code 404, with default header values.
 
 Not Found
 */
@@ -193,8 +189,7 @@ func NewPostOrganizationTrialInternalServerError() *PostOrganizationTrialInterna
 	return &PostOrganizationTrialInternalServerError{}
 }
 
-/*
-	PostOrganizationTrialInternalServerError describes a response with status code 500, with default header values.
+/* PostOrganizationTrialInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */

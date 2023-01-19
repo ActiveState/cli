@@ -64,8 +64,7 @@ func NewGetOK() *GetOK {
 	return &GetOK{}
 }
 
-/*
-GetOK handles this case with default header values.
+/*GetOK handles this case with default header values.
 
 Open websocket connection to stream build logs
 */
@@ -98,8 +97,7 @@ func NewGetBadRequest() *GetBadRequest {
 	return &GetBadRequest{}
 }
 
-/*
-GetBadRequest handles this case with default header values.
+/*GetBadRequest handles this case with default header values.
 
 Bad Request
 */
@@ -132,8 +130,7 @@ func NewGetForbidden() *GetForbidden {
 	return &GetForbidden{}
 }
 
-/*
-GetForbidden handles this case with default header values.
+/*GetForbidden handles this case with default header values.
 
 Forbidden
 */
@@ -166,8 +163,7 @@ func NewGetNotFound() *GetNotFound {
 	return &GetNotFound{}
 }
 
-/*
-GetNotFound handles this case with default header values.
+/*GetNotFound handles this case with default header values.
 
 Not Found
 */
@@ -200,8 +196,7 @@ func NewGetInternalServerError() *GetInternalServerError {
 	return &GetInternalServerError{}
 }
 
-/*
-GetInternalServerError handles this case with default header values.
+/*GetInternalServerError handles this case with default header values.
 
 Server Error
 */

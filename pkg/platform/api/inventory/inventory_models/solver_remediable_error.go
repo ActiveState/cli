@@ -18,7 +18,7 @@ import (
 
 // SolverRemediableError Solver Remediable Error
 //
-// # A solver error with suggested remediation steps
+// A solver error with suggested remediation steps
 //
 // swagger:model solverRemediableError
 type SolverRemediableError struct {
