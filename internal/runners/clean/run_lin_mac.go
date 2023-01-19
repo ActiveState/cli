@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/ActiveState/cli/internal-as/config"
 	"github.com/ActiveState/cli/internal-as/errs"
 	"github.com/ActiveState/cli/internal-as/fileutils"
 	"github.com/ActiveState/cli/internal-as/locale"
@@ -17,7 +18,7 @@ import (
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/installation/storage"
-	"github.com/ActiveState/cli/internal/installmgr"
+	"github.com/ActiveState/cli/internal/legacytray"
 )
 
 func (u *Uninstall) runUninstall() error {
@@ -38,7 +39,7 @@ func (u *Uninstall) runUninstall() error {
 
 	err = removeInstall(u.cfg)
 	if errors.Is(err, errDirNotEmpty) {
-		u.out.Notice(locale.Tr("uninstall_warn_not_empty", errs.JoinMessage(err)))
+		u.out.Notice(locale.T("uninstall_warn_not_empty"))
 	} else if err != nil {
 		logging.Debug("Could not remove install: %s", errs.JoinMessage(err))
 		aggErr = locale.WrapError(aggErr, "uninstall_remove_executables_err", "Failed to remove all State Tool files in installation directory")
@@ -94,13 +95,7 @@ func removeConfig(configPath string, out output.Outputer) error {
 	return nil
 }
 
-func removeInstall(cfg configurable) error {
-	// Todo: https://www.pivotaltracker.com/story/show/177585085
-	// Yes this is awkward right now
-	if err := installmgr.StopTrayApp(cfg); err != nil {
-		return errs.Wrap(err, "Failed to stop %s", constants.TrayAppName)
-	}
-
+func removeInstall(cfg *config.Instance) error {
 	var aggErr error
 
 	// Get the install path before we remove the actual executable
@@ -116,17 +111,8 @@ func removeInstall(cfg configurable) error {
 		}
 	}
 
-	appPath, err := installation.LauncherInstallPath()
-	if err != nil {
-		return errs.Wrap(aggErr, "Could not determine OS specific launcher install path")
-	}
-
-	if err := installmgr.RemoveSystemFiles(appPath); err != nil {
-		aggErr = errs.Wrap(aggErr, "Failed to remove system files at %s: %v", appPath, err)
-	}
-
 	if fileutils.DirExists(installPath) {
-		err = cleanInstallDir(installPath)
+		err = cleanInstallDir(installPath, cfg)
 		if err != nil {
 			aggErr = errs.Wrap(err, "Could not clean install path")
 		}
@@ -162,7 +148,12 @@ func removeEmptyDir(dir string) error {
 	return nil
 }
 
-func cleanInstallDir(dir string) error {
+func cleanInstallDir(dir string, cfg *config.Instance) error {
+	err := legacytray.DetectAndRemove(dir, cfg)
+	if err != nil {
+		return errs.Wrap(err, "Could not remove legacy tray")
+	}
+
 	execs, err := installation.Executables()
 	if err != nil {
 		return errs.Wrap(err, "Could not get executable paths")
@@ -177,11 +168,6 @@ func cleanInstallDir(dir string) error {
 	// bin directory
 	asFiles = append(asFiles, execs...)
 	asFiles = append(asFiles, installation.BinDirName)
-
-	// The system directory is on MacOS only and contains the tray
-	// application files. It is safe for us to remove this directory
-	// without first inspecting the contents.
-	asFiles = append(asFiles, "system")
 
 	for _, file := range asFiles {
 		f := filepath.Join(dir, file)

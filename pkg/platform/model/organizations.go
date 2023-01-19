@@ -37,10 +37,10 @@ func FetchOrganizations() ([]*mono_models.Organization, error) {
 }
 
 // FetchOrgByURLName fetches an organization accessible to the current user by it's URL Name.
-func FetchOrgByURLName(urlName string) (*mono_models.Organization, error) {
+func FetchOrgByURLName(urlName string, auth *authentication.Auth) (*mono_models.Organization, error) {
 	params := clientOrgs.NewGetOrganizationParams()
 	params.OrganizationIdentifier = urlName
-	authClient, err := authentication.LegacyGet().ClientSafe()
+	authClient, err := auth.ClientSafe()
 	if err != nil {
 		return nil, err
 	}
@@ -52,10 +52,10 @@ func FetchOrgByURLName(urlName string) (*mono_models.Organization, error) {
 }
 
 // FetchOrgMembers fetches the members of an organization accessible to the current user by it's URL Name.
-func FetchOrgMembers(urlName string) ([]*mono_models.Member, error) {
+func FetchOrgMembers(urlName string, auth *authentication.Auth) ([]*mono_models.Member, error) {
 	params := clientOrgs.NewGetOrganizationMembersParams()
 	params.OrganizationName = urlName
-	authClient, err := authentication.LegacyGet().ClientSafe()
+	authClient, err := auth.ClientSafe()
 	if err != nil {
 		return nil, err
 	}
@@ -67,8 +67,8 @@ func FetchOrgMembers(urlName string) ([]*mono_models.Member, error) {
 }
 
 // FetchOrgMember fetches the member of an organization accessible to the current user by it's URL Name.
-func FetchOrgMember(orgName, name string) (*mono_models.Member, error) {
-	members, err := FetchOrgMembers(orgName)
+func FetchOrgMember(orgName, name string, auth *authentication.Auth) (*mono_models.Member, error) {
+	members, err := FetchOrgMembers(orgName, auth)
 	if err != nil {
 		return nil, err
 	}

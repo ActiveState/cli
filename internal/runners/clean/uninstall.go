@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/internal-as/analytics"
+	"github.com/ActiveState/cli/internal-as/config"
 	"github.com/ActiveState/cli/internal-as/errs"
 	"github.com/ActiveState/cli/internal-as/events"
 	"github.com/ActiveState/cli/internal-as/locale"
@@ -22,7 +23,7 @@ type confirmAble interface {
 type Uninstall struct {
 	out     output.Outputer
 	confirm confirmAble
-	cfg     configurable
+	cfg     *config.Instance
 	ipComm  svcctl.IPCommunicator
 	an      analytics.Dispatcher
 }
@@ -44,7 +45,7 @@ func NewUninstall(prime primeable) (*Uninstall, error) {
 	return newUninstall(prime.Output(), prime.Prompt(), prime.Config(), prime.IPComm(), prime.Analytics())
 }
 
-func newUninstall(out output.Outputer, confirm confirmAble, cfg configurable, ipComm svcctl.IPCommunicator, an analytics.Dispatcher) (*Uninstall, error) {
+func newUninstall(out output.Outputer, confirm confirmAble, cfg *config.Instance, ipComm svcctl.IPCommunicator, an analytics.Dispatcher) (*Uninstall, error) {
 	return &Uninstall{
 		out:     out,
 		confirm: confirm,

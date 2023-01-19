@@ -67,6 +67,7 @@ func (suite *PushIntegrationTestSuite) TestInitAndPush() {
 	suite.Require().FileExists(pjfilepath)
 
 	cp = ts.SpawnWithOpts(e2e.WithArgs("push"), e2e.WithWorkDirectory(wd))
+	cp.ExpectLongString(fmt.Sprintf("Operating on project %s", namespace))
 	cp.Expect("continue?")
 	cp.Send("y")
 	cp.ExpectLongString("Creating project")
@@ -77,9 +78,6 @@ func (suite *PushIntegrationTestSuite) TestInitAndPush() {
 	// Check that languages were reset
 	pjfile, err := projectfile.Parse(pjfilepath)
 	suite.Require().NoError(err)
-	if pjfile.Languages != nil {
-		suite.FailNow("Expected languages to be nil, but got: %v", pjfile.Languages)
-	}
 	if pjfile.CommitID() == "" {
 		suite.FailNow("commitID was not set after running push for project creation")
 	}

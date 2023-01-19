@@ -424,8 +424,15 @@ func AddChangeset(parentCommitID strfmt.UUID, commitMessage string, changeset Ch
 
 	res, err := mono.New().VersionControl.AddCommit(params, authentication.ClientAuth())
 	if err != nil {
-		multilog.Error("AddCommit Error: %s", err.Error())
-		return nil, locale.WrapError(err, "err_add_commit", "", api.ErrorMessageFromPayload(err))
+		switch err.(type) {
+		case *version_control.AddCommitBadRequest,
+			*version_control.AddCommitConflict,
+			*version_control.AddCommitForbidden,
+			*version_control.AddCommitNotFound:
+			return nil, locale.WrapInputError(err, "err_add_commit", "", api.ErrorMessageFromPayload(err))
+		default:
+			return nil, locale.WrapError(err, "err_add_commit", "", api.ErrorMessageFromPayload(err))
+		}
 	}
 	return res.Payload, nil
 }
@@ -613,7 +620,6 @@ func CommitInitial(hostPlatform string, langName, langVersion string) (strfmt.UU
 
 	res, err := mono.New().VersionControl.AddCommit(params, authentication.ClientAuth())
 	if err != nil {
-		multilog.Error("AddCommit Error: %s", err.Error())
 		return "", locale.WrapError(err, "err_add_commit", "", api.ErrorMessageFromPayload(err))
 	}
 
@@ -882,23 +888,30 @@ func GetRevertCommit(from, to strfmt.UUID) (*mono_models.Commit, error) {
 	return res.Payload, nil
 }
 
-func RevertCommitWithinHistory(from, to strfmt.UUID) (*mono_models.Commit, error) {
-	ok, err := CommitWithinCommitHistory(from, to)
+func RevertCommitWithinHistory(from, to, latest strfmt.UUID) (*mono_models.Commit, error) {
+	ok, err := CommitWithinCommitHistory(latest, from)
 	if err != nil {
 		return nil, errs.Wrap(err, "API communication failed.")
 	}
 	if !ok {
-		return nil, locale.WrapError(err, "err_revert_commit_within_history_not_in", "The commit being reverted to is not within the current commit's history.")
+		return nil, locale.WrapError(err, "err_revert_commit_within_history_not_in", "The commit being reverted is not within the current commit's history.")
 	}
 
-	return RevertCommit(from, to)
+	return RevertCommit(from, to, latest)
 }
 
-func RevertCommit(from strfmt.UUID, to strfmt.UUID) (*mono_models.Commit, error) {
+func RevertCommit(from, to, latest strfmt.UUID) (*mono_models.Commit, error) {
 	revertCommit, err := GetRevertCommit(from, to)
 	if err != nil {
 		return nil, err
 	}
+	// The platform assumes revert commits are reverting to a particular commit, rather than reverting
+	// the changes in a commit. As a result, commit messages are of the form "Revert to commit X" and
+	// parent commit IDs are X. Change the message to reflect the fact we're reverting changes from
+	// X and change the parent to be the latest commit so that the revert commit applies to the latest
+	// project commit.
+	revertCommit.Message = locale.Tl("revert_commit", "Revert commit {{.V0}}", from.String())
+	revertCommit.ParentCommitID = latest
 
 	addCommit, err := AddRevertCommit(revertCommit)
 	if err != nil {

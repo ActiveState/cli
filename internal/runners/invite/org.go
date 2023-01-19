@@ -5,6 +5,7 @@ import (
 
 	"github.com/ActiveState/cli/internal-as/locale"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 )
 
@@ -25,7 +26,7 @@ func (o *Org) String() string {
 
 func (o *Org) Set(v string) error {
 	var err error
-	o.Organization, err = model.FetchOrgByURLName(v)
+	o.Organization, err = model.FetchOrgByURLName(v, authentication.LegacyGet())
 	return err
 }
 

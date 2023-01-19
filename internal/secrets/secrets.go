@@ -48,13 +48,13 @@ func Save(secretsClient *secretsapi.Client, encrypter keypairs.Encrypter, org *m
 
 // ShareWithOrgUsers will share the provided secret with all other users in the organization
 // who have a valid public-key available.
-func ShareWithOrgUsers(secretsClient *secretsapi.Client, org *mono_models.Organization, project *mono_models.Project, secretName, secretValue string) error {
+func ShareWithOrgUsers(secretsClient *secretsapi.Client, org *mono_models.Organization, project *mono_models.Project, secretName, secretValue string, auth *authentication.Auth) error {
 	currentUserID, err := secretsClient.AuthenticatedUserID()
 	if err != nil {
 		return err
 	}
 
-	members, err := model.FetchOrgMembers(org.URLname)
+	members, err := model.FetchOrgMembers(org.URLname, auth)
 	if err != nil {
 		return err
 	}
@@ -117,7 +117,7 @@ func DefsByProject(secretsClient *secretsapi.Client, owner string, projectName s
 }
 
 // ByProject fetches the secrets for the current user relevant to the given project
-func ByProject(secretsClient *secretsapi.Client, owner string, projectName string) ([]*secretsModels.UserSecret, error) {
+func ByProject(secretsClient *secretsapi.Client, owner string, projectName string, auth *authentication.Auth) ([]*secretsModels.UserSecret, error) {
 	result := []*secretsModels.UserSecret{}
 
 	pjm, err := model.FetchProjectByName(owner, projectName)
@@ -125,7 +125,7 @@ func ByProject(secretsClient *secretsapi.Client, owner string, projectName strin
 		return result, err
 	}
 
-	org, err := model.FetchOrgByURLName(owner)
+	org, err := model.FetchOrgByURLName(owner, auth)
 	if err != nil {
 		return result, err
 	}

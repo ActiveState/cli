@@ -64,7 +64,6 @@ func LegacyGet() *Auth {
 			multilog.Error("Could not get configuration required by auth: %v", err)
 			os.Exit(1)
 		}
-		defer cfg.Close()
 
 		persist = New(cfg)
 		if err := persist.Sync(); err != nil {
@@ -189,6 +188,9 @@ func (s *Auth) AuthenticateWithModel(credentials *mono_models.Credentials) error
 		case *apiAuth.PostLoginRetryWith:
 			return errs.AddTips(&ErrTokenRequired{locale.WrapInputError(err, "err_auth_fail_totp")}, tips...)
 		default:
+			if os.IsTimeout(err) {
+				return locale.NewInputError("err_api_auth_timeout", "Timed out waiting for authentication response. Please try again.")
+			}
 			multilog.Error("Authentication API returned %v", err)
 			return errs.AddTips(locale.WrapError(err, "err_api_auth", "Authentication failed: {{.V0}}", err.Error()), tips...)
 		}

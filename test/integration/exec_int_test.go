@@ -175,8 +175,6 @@ func (suite *ExecIntegrationTestSuite) TestExecWithPath() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	suite.createProjectFile(ts)
-
 	pythonDir := filepath.Join(ts.Dirs.Work, "MyPython3")
 
 	cp := ts.SpawnWithOpts(e2e.WithArgs("checkout", "ActiveState-CLI/Python-3.9", pythonDir))
@@ -188,6 +186,7 @@ func (suite *ExecIntegrationTestSuite) TestExecWithPath() {
 		e2e.WithArgs("exec", "--path", pythonDir, "which", "python3"),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
+	cp.ExpectLongString("Operating on project ActiveState-CLI/Python-3.9")
 	cp.ExpectRe(regexp.MustCompile("cache/[0-9A-Fa-f]+/usr/bin/python3").String())
 	cp.ExpectExitCode(0)
 

@@ -26,6 +26,7 @@ func (suite *PullIntegrationTestSuite) TestPull() {
 	ts.PrepareActiveStateYAML(`project: "https://platform.activestate.com/ActiveState-CLI/Python3"`)
 
 	cp := ts.Spawn("pull")
+	cp.ExpectLongString("Operating on project ActiveState-CLI/Python3")
 	cp.Expect("activestate.yaml has been updated")
 	cp.ExpectExitCode(0)
 

@@ -19,7 +19,6 @@ import (
 
 type Params struct {
 	Channel string
-	Version string
 }
 
 type Update struct {
@@ -48,25 +47,17 @@ func New(prime primeable) *Update {
 func (u *Update) Run(params *Params) error {
 	// Check for available update
 	checker := updater.NewDefaultChecker(u.cfg)
-	up, err := checker.CheckFor(params.Channel, params.Version)
+	up, err := checker.CheckFor(params.Channel, "")
 	if err != nil {
 		return locale.WrapError(err, "err_update_check", "Could not check for updates.")
 	}
 	if up == nil {
 		logging.Debug("No update found")
-		if params.Version == "" {
-			u.out.Notice(locale.T("update_none_found"))
-		} else {
-			u.out.Notice(locale.Tl("update_to_version_not_found", "No update to version {{.V0}} available", params.Version))
-		}
+		u.out.Notice(locale.T("update_none_found"))
 		return nil
 	}
 
-	if params.Version == "" {
-		u.out.Notice(locale.Tr("updating_version", up.Version))
-	} else {
-		u.out.Notice(locale.Tr("updating_version", params.Version))
-	}
+	u.out.Notice(locale.Tr("updating_version", up.Version))
 
 	// Handle switching channels
 	var installPath string

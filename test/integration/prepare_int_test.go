@@ -1,6 +1,7 @@
 package integration
 
 import (
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -36,8 +37,13 @@ func (suite *PrepareIntegrationTestSuite) TestPrepare() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
+	autostartDir := filepath.Join(ts.Dirs.Work, "autostart")
+	err := fileutils.Mkdir(autostartDir)
+	suite.Require().NoError(err)
+
 	cp := ts.SpawnWithOpts(
 		e2e.WithArgs("_prepare"),
+		e2e.AppendEnv(fmt.Sprintf("%s=%s", constants.AutostartPathOverrideEnvVarName, autostartDir)),
 		// e2e.AppendEnv(fmt.Sprintf("ACTIVESTATE_CLI_CONFIGDIR=%s", ts.Dirs.Work)),
 	)
 	cp.ExpectExitCode(0)

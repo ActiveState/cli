@@ -211,7 +211,6 @@ func expectStateToolInstallation(cp *termtest.ConsoleProcess) {
 func (suite *InstallScriptsIntegrationTestSuite) assertBinDirContents(dir string) {
 	binFiles := listFilesOnly(dir)
 	suite.Contains(binFiles, "state"+osutils.ExeExt)
-	suite.Contains(binFiles, "state-tray"+osutils.ExeExt)
 	suite.Contains(binFiles, "state-svc"+osutils.ExeExt)
 }
 

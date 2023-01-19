@@ -28,6 +28,7 @@ func (suite *HistoryIntegrationTestSuite) TestHistory_History() {
 		e2e.WithArgs("history"),
 		e2e.WithWorkDirectory(filepath.Join(ts.Dirs.Work, "History")),
 	)
+	cp.ExpectLongString("Operating on project ActiveState-CLI/History")
 	cp.Expect("Commit")
 	cp.Expect("Author")
 	cp.Expect("Date")

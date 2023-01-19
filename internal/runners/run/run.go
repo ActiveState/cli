@@ -61,6 +61,7 @@ func (r *Run) Run(name string, args []string) error {
 	if r.proj == nil {
 		return locale.NewInputError("err_no_project")
 	}
+	r.out.Notice(locale.Tl("operating_message", "", r.proj.NamespaceString(), r.proj.Dir()))
 
 	if name == "" {
 		return locale.NewError("error_state_run_undefined_name")

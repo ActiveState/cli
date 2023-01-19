@@ -13,6 +13,8 @@ import (
 	"github.com/ActiveState/cli/internal-as/fileutils"
 	"github.com/ActiveState/cli/internal-as/osutils/user"
 	"github.com/ActiveState/cli/internal/assets"
+	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/strutils"
 )
 
@@ -66,6 +68,7 @@ func (a *app) disable() error {
 	}
 
 	if !enabled {
+		logging.Debug("Autostart is already disabled for %s", a.Name)
 		return nil
 	}
 	path, err := a.InstallPath()
@@ -87,6 +90,9 @@ func (a *app) InstallPath() (string, error) {
 	dir, err := user.HomeDir()
 	if err != nil {
 		return "", errs.Wrap(err, "Could not get home directory")
+	}
+	if testDir, ok := os.LookupEnv(constants.AutostartPathOverrideEnvVarName); ok {
+		dir = testDir
 	}
 	path := filepath.Join(dir, "Library/LaunchAgents", fmt.Sprintf(launchFileFormatName, filepath.Base(a.Exec)))
 	return path, nil

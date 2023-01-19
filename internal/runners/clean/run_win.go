@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/ActiveState/cli/internal-as/config"
 	"github.com/ActiveState/cli/internal-as/errs"
 	"github.com/ActiveState/cli/internal-as/locale"
 	"github.com/ActiveState/cli/internal-as/logging"
@@ -20,6 +21,7 @@ import (
 	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/language"
+	"github.com/ActiveState/cli/internal/legacytray"
 	"github.com/ActiveState/cli/internal/scriptfile"
 )
 
@@ -81,31 +83,20 @@ func removeConfig(configPath string, out output.Outputer) error {
 	return removePaths(logFile.Name(), configPath)
 }
 
-func removeInstall(logFile string, cfg configurable) error {
+func removeInstall(logFile string, cfg *config.Instance) error {
 	svcExec, err := installation.ServiceExec()
 	if err != nil {
 		return locale.WrapError(err, "err_service_exec")
 	}
 
-	trayExec, err := installation.TrayExec()
+	err = legacytray.DetectAndRemove(filepath.Dir(svcExec), cfg)
 	if err != nil {
-		return locale.WrapError(err, "err_tray_exec")
+		return locale.WrapError(err, "err_remove_legacy_tray", "Could not remove legacy tray application")
 	}
 
-	transitionalStateTool := cfg.GetString(installation.CfgTransitionalStateToolPath)
-	var aggErr error
-	for _, exec := range []string{svcExec, trayExec} {
-		err := os.Remove(exec)
-		if err != nil {
-			if errors.Is(err, os.ErrNotExist) {
-				continue
-			}
-			aggErr = locale.WrapError(aggErr, "uninstall_rm_exec", "Could not remove executable: {{.V0}}. Error: {{.V1}}.", exec, err.Error())
-		}
-	}
-
-	if aggErr != nil {
-		return aggErr
+	err = os.Remove(svcExec)
+	if err != nil && !errors.Is(err, os.ErrNotExist) {
+		return locale.WrapError(err, "uninstall_rm_exec", "Could not remove executable: {{.V0}}. Error: {{.V1}}.", svcExec, err.Error())
 	}
 
 	stateExec, err := installation.StateExec()
@@ -116,7 +107,7 @@ func removeInstall(logFile string, cfg configurable) error {
 	// Schedule removal of the branch name directory and the config directory
 	paths := []string{filepath.Dir(filepath.Dir(stateExec)), cfg.ConfigPath()}
 	// If the transitional state tool path is known, we remove it. This is done in the background, because the transitional State Tool can be the initiator of the uninstall request
-	if transitionalStateTool != "" {
+	if transitionalStateTool := cfg.GetString(installation.CfgTransitionalStateToolPath); transitionalStateTool != "" {
 		paths = append(paths, transitionalStateTool)
 	}
 

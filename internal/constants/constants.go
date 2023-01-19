@@ -132,6 +132,9 @@ const DisableAnalyticsEnvVarName = "ACTIVESTATE_CLI_DISABLE_ANALYTICS"
 // OptinUnstableEnvVarName is used to instruct State Tool to opt-in to unstable features
 const OptinUnstableEnvVarName = "ACTIVESTATE_OPTIN_UNSTABLE"
 
+// ServiceSockDir overrides the default socket path root diriectory used by the state service
+const ServiceSockDir = "ACTIVESTATE_SVC_SOCK"
+
 // AnalyticsLogEnvVarName is used to instruct State Tool to report analytics events to the given file
 const DeprecationOverrideEnvVarName = "ACTIVESTATE_DEPRECATION_OVERRIDE"
 
@@ -145,6 +148,9 @@ const DebugServiceRequestsEnvVarName = "ACTIVESTATE_DEBUG_SERVICE_REQUESTS"
 // InstallPathOverrideEnvVarName is used to override the default installation path of the state tool.
 // This is intended for use in our integration tests, not by end-users.
 const InstallPathOverrideEnvVarName = "ACTIVESTATE_CLI_INSTALLPATH_OVERRIDE"
+
+// AutostartPathOverrideEnvVarName is used to override the default autostart path of the state service.
+const AutostartPathOverrideEnvVarName = "ACTIVESTATE_CLI_AUTOSTARTPATH_OVERRIDE"
 
 // APIUpdateInfoURL is the URL for our update info server
 const APIUpdateInfoURL = "https://platform.activestate.com/sv/state-update/api/v1"
@@ -245,9 +251,6 @@ const DateTimeFormatRecord = "Mon Jan 2 2006 15:04:05 -0700 MST"
 // PlatformSignupURL is the account creation url used by the platform
 const PlatformSignupURL = "https://platform.activestate.com" + "/create-account"
 
-// TrayDocumentationURL is the url for the state tool documentation to be used in the state tray application
-const TrayDocumentationURL = "http://docs.activestate.com/platform/state/?utm_source=platform-application-gui&utm_medium=activestate-desktop&utm_content=drop-down&utm_campaign=maru"
-
 // DocumentationURL is the url for the state tool documentation
 const DocumentationURL = "http://docs.activestate.com/platform/state/"
 
@@ -289,9 +292,6 @@ const CheatSheetURL = "https://platform.activestate.com/state-tool-cheat-sheet"
 
 // StateToolRollbarToken is the token used by the State Tool to talk to rollbar
 const StateToolRollbarToken = "0f77e52e25324b5a870f1f2ea769024e"
-
-// StateTrayRollbarToken is the token used by the State Tray to talk to rollbar
-const StateTrayRollbarToken = "84e7a358f8bd4bf99382a208459544bb"
 
 // StateServiceRollbarToken is the token used by the State Service to talk to rollbar
 const StateServiceRollbarToken = "8d72ba6541394d2c99c006324b3a46a7"
@@ -391,9 +391,6 @@ const ReportErrorsConfig = "report.errors"
 // ReportAnalyticsConfig is the config key used to determine if we will send analytics reports
 const ReportAnalyticsConfig = "report.analytics"
 
-// TrayAppName is the name we give our systray application
-const TrayAppName = "ActiveState Desktop (Preview)"
-
 // SvcAppName is the name we give our state-svc application
 const SvcAppName = "State Service"
 
@@ -417,15 +414,6 @@ const StateRemoteInstallerCmd = "state-remote-installer"
 
 // InstallerName is the name we give to our state-installer executable
 const InstallerName = "State Installer"
-
-// StateTrayCmd is the name of the state tray binary
-const StateTrayCmd = "state-tray"
-
-// UpdateDialogName is the name we give our state-update-dialog executable
-const UpdateDialogName = "State Update Dialog"
-
-// StateUpdateDialogCmd is the name of the state update dialog binary
-const StateUpdateDialogCmd = "state-update-dialog"
 
 // StateExecutorCmd is the name of the state executor binary
 const StateExecutorCmd = "state-exec"

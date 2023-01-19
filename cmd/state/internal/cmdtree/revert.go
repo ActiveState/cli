@@ -20,7 +20,7 @@ func newRevertCommand(prime *primer.Values, globals *globalOptions) *captain.Com
 		[]*captain.Argument{
 			{
 				Name:        "commit-id",
-				Description: locale.Tl("revert_arg_commit_id", "The commit ID to revert to"),
+				Description: locale.Tl("revert_arg_commit_id", "The commit ID to revert changes from"),
 				Required:    true,
 				Value:       &params.CommitID,
 			},

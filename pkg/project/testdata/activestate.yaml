@@ -1,35 +1,19 @@
 project: https://platform.activestate.com/ActiveState/project?branch=main&commitID=00010001-0001-0001-0001-000100010001
-platforms:
-  - name: fullexample
-    os: darwin
-    version: "10.0"
-    architecture: x386
-    libc: "gnu"
-    compiler: "gcc"
-  - name: Windows
-    os: windows
-  - name: Linux
-    os: linux
-  - name: OSX
-    os: macos
 environments: "something"
 lock: "master@1.0.0-SHA123"
 namespace: "my/name/space"
 constants:
   - name: foo
-    value: foo $platform.name
-    constraints:
-      platform: Linux
+    value: foo $project.name()
+    if: eq .OS.Name "Linux"
   - name: bar
-    value: bar $platform.name
-    constraints:
-      platform: Windows
+    value: bar $project.name()
+    if: eq .OS.Name "Windows"
   - name: baz
-    value: baz $platform.name
-    constraints:
-      platform: OSX
+    value: baz $project.name()
+    if: eq .OS.Name "MacOS"
 secrets:
-  user: 
+  user:
     - name: secret
       description: secret-user
   project:
@@ -37,70 +21,24 @@ secrets:
       description: secret-project
 events:
   - name: bar
-    value: bar $platform.name
-    constraints:
-      platform: Windows
+    value: bar $project.name()
+    if: eq .OS.Name "Windows"
   - name: baz
-    value: baz $platform.name
-    constraints:
-      platform: OSX
+    value: baz $project.name()
+    if: eq .OS.Name "MacOS"
   - name: foo
-    value: foo $platform.name
-    constraints:
-      platform: Linux
+    value: foo $project.name()
+    if: eq .OS.Name "Linux"
 scripts:
   - name: foo
-    value: foo $platform.name
+    value: foo $project.name()
     standalone: true
-    constraints:
-      platform: Linux
+    if: eq .OS.Name "Linux"
   - name: bar
-    value: bar $platform.name
+    value: bar $project.name()
     standalone: true
-    constraints:
-      platform: Windows
+    if: eq .OS.Name "Windows"
   - name: baz
-    value: baz $platform.name
+    value: baz $project.name()
     standalone: true
-    constraints:
-      platform: OSX
-languages:
-  - name: foo
-    version: "1.1"
-    build:
-      override: --foo $platform.name
-    constraints:
-      platform: Linux
-  - name: bar
-    version: "1.2"
-    build:
-      override: --bar $platform.name
-    constraints:
-      platform: Windows
-  - name: baz
-    version: "1.3"
-    build:
-      override: --baz $platform.name
-    constraints:
-      platform: OSX
-  - name: packages
-    version: "1.0"
-    packages:
-      - name: foo
-        version: "1.1"
-        constraints:
-          platform: Linux
-        build:
-          override: --foo $platform.name
-      - name: bar
-        version: "1.2"
-        constraints:
-            platform: Windows
-        build:
-          override: --bar $platform.name
-      - name: baz
-        version: "1.3"
-        constraints:
-          platform: OSX
-        build:
-          override: --baz $platform.name
+    if: eq .OS.Name "MacOS"

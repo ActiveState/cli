@@ -30,26 +30,12 @@ func StopRunning(installPath string) (rerr error) {
 	}
 	defer rtutils.Closer(cfg.Close, &rerr)
 
-	err = stopTray(installPath, cfg)
-	if err != nil {
-		return errs.Wrap(err, "Could not stop tray")
-	}
-
 	err = stopSvc(installPath)
 	if err != nil {
 		multilog.Critical("Could not stop running service, error: %v", errs.JoinMessage(err))
 		return locale.WrapError(err, "err_stop_svc", "Unable to stop state-svc process. Please manually kill any running processes with name [NOTICE]state-svc[/RESET] and try again")
 	}
 
-	return nil
-}
-
-func stopTray(installPath string, cfg *config.Instance) error {
-	// Todo: https://www.pivotaltracker.com/story/show/177585085
-	// Yes this is awkward right now
-	if err := StopTrayApp(cfg); err != nil {
-		return errs.Wrap(err, "Failed to stop %s", constants.TrayAppName)
-	}
 	return nil
 }
 

@@ -17,18 +17,14 @@ type executableType int
 const (
 	state executableType = iota
 	service
-	tray
 	installer
-	update
 	executor
 )
 
 var execData = map[executableType]string{
 	state:     constants.StateCmd + osutils.ExeExt,
 	service:   constants.StateSvcCmd + osutils.ExeExt,
-	tray:      constants.StateTrayCmd + osutils.ExeExt,
 	installer: constants.StateInstallerCmd + osutils.ExeExt,
-	update:    constants.StateUpdateDialogCmd + osutils.ExeExt,
 	executor:  constants.StateExecutorCmd + osutils.ExeExt,
 }
 
@@ -75,28 +71,12 @@ func ServiceExecFromDir(baseDir string) (string, error) {
 	return newExecFromDir(baseDir, service)
 }
 
-func TrayExec() (string, error) {
-	return newExec(tray)
-}
-
-func TrayExecFromDir(baseDir string) (string, error) {
-	return newExecFromDir(baseDir, tray)
-}
-
 func InstallerExec() (string, error) {
 	return newExec(installer)
 }
 
 func InstallerExecFromDir(baseDir string) (string, error) {
 	return newExecFromDir(baseDir, installer)
-}
-
-func UpdateExec() (string, error) {
-	return newExec(update)
-}
-
-func NewUpdateExecFromDir(baseDir string) (string, error) {
-	return newExecFromDir(baseDir, update)
 }
 
 func ExecutorExec() (string, error) {

@@ -47,23 +47,6 @@ environments: valueForEnvironments`)
 	assert.Equal(t, "", project.Path(), "Path should be empty")
 }
 
-func TestPlatformStruct(t *testing.T) {
-	platform := Platform{}
-	dat := strings.TrimSpace(`
-name: valueForName
-os: valueForOS
-version: valueForVersion
-architecture: valueForArch`)
-
-	err := yaml.Unmarshal([]byte(dat), &platform)
-	assert.Nil(t, err, "Should not throw an error")
-
-	assert.Equal(t, "valueForName", platform.Name, "Name should be set")
-	assert.Equal(t, "valueForOS", platform.Os, "OS should be set")
-	assert.Equal(t, "valueForVersion", platform.Version, "Version should be set")
-	assert.Equal(t, "valueForArch", platform.Architecture, "Architecture should be set")
-}
-
 func TestBuildStruct(t *testing.T) {
 	build := make(Build)
 	dat := strings.TrimSpace(`
@@ -75,34 +58,6 @@ key2: val2`)
 
 	assert.Equal(t, "val1", build["key1"], "Key1 should be set")
 	assert.Equal(t, "val2", build["key2"], "Key2 should be set")
-}
-
-func TestLanguageStruct(t *testing.T) {
-	language := Language{}
-	dat := strings.TrimSpace(`
-name: valueForName
-version: valueForVersion`)
-
-	err := yaml.Unmarshal([]byte(dat), &language)
-	assert.Nil(t, err, "Should not throw an error")
-
-	assert.Equal(t, "valueForName", language.Name, "Name should be set")
-	assert.Equal(t, "valueForVersion", language.Version, "Version should be set")
-}
-
-func TestConstraintStruct(t *testing.T) {
-	constraint := Constraint{}
-	dat := strings.TrimSpace(`
-os: valueForOS
-platform: valueForPlatform
-environment: valueForEnvironment`)
-
-	err := yaml.Unmarshal([]byte(dat), &constraint)
-	assert.Nil(t, err, "Should not throw an error")
-
-	assert.Equal(t, "valueForOS", constraint.OS, "Os should be set")
-	assert.Equal(t, "valueForPlatform", constraint.Platform, "Platform should be set")
-	assert.Equal(t, "valueForEnvironment", constraint.Environment, "Environment should be set")
 }
 
 func TestPackageStruct(t *testing.T) {
@@ -188,30 +143,7 @@ func TestParse(t *testing.T) {
 	require.NoError(t, err, "Should not throw an error")
 
 	assert.NotEmpty(t, project.Project, "Project should be set")
-	assert.NotEmpty(t, project.Platforms, "Platforms should be set")
 	assert.NotEmpty(t, project.Environments, "Environments should be set")
-
-	assert.NotEmpty(t, project.Platforms[0].Name, "Platform name should be set")
-	assert.NotEmpty(t, project.Platforms[0].Os, "Platform OS name should be set")
-	assert.NotEmpty(t, project.Platforms[0].Architecture, "Platform architecture name should be set")
-	assert.NotEmpty(t, project.Platforms[0].Libc, "Platform libc name should be set")
-	assert.NotEmpty(t, project.Platforms[0].Compiler, "Platform compiler name should be set")
-
-	assert.NotEmpty(t, project.Languages[0].Name, "Language name should be set")
-	assert.NotEmpty(t, project.Languages[0].Version, "Language version should be set")
-
-	assert.NotEmpty(t, project.Languages[0].Packages[0].Name, "Package name should be set")
-	assert.NotEmpty(t, project.Languages[0].Packages[0].Version, "Package version should be set")
-
-	assert.NotEmpty(t, project.Languages[0].Packages[0].Build, "Package build should be set")
-	assert.NotEmpty(t, project.Languages[0].Packages[0].Build["debug"], "Build debug should be set")
-
-	assert.NotEmpty(t, project.Languages[0].Packages[1].Build, "Package build should be set")
-	assert.NotEmpty(t, project.Languages[0].Packages[1].Build["override"], "Build override should be set")
-
-	assert.NotEmpty(t, project.Languages[0].Constraints.OS, "Platform constraint should be set")
-	assert.NotEmpty(t, project.Languages[0].Constraints.Platform, "Platform constraint should be set")
-	assert.NotEmpty(t, project.Languages[0].Constraints.Environment, "Environment constraint should be set")
 
 	assert.NotEmpty(t, project.Constants[0].Name, "Constant name should be set")
 	assert.NotEmpty(t, project.Constants[0].Value, "Constant value should be set")
@@ -303,15 +235,16 @@ func TestGetProjectFilePath(t *testing.T) {
 	assert.Equal(t, expectedPath, configPath, "Project path is properly detected using the ProjectEnvVarName")
 
 	os.Unsetenv(constants.ProjectEnvVarName)
+	cfg, err := config.New()
+	require.NoError(t, err)
+	defer func() { require.NoError(t, cfg.Close()) }()
+	cfg.Set(constants.GlobalDefaultPrefname, "") // ensure it is unset
 	tmpDir, err := ioutil.TempDir("", "")
 	assert.NoError(t, err, "Should create temp dir")
 	defer os.RemoveAll(tmpDir)
 	os.Chdir(tmpDir)
 	_, err = GetProjectFilePath()
 	assert.Error(t, err, "GetProjectFilePath should fail")
-	cfg, err := config.New()
-	require.NoError(t, err)
-	defer func() { require.NoError(t, cfg.Close()) }()
 	cfg.Set(constants.GlobalDefaultPrefname, expectedPath)
 	configPath, err = GetProjectFilePath()
 	assert.NoError(t, err, "GetProjectFilePath should succeed")

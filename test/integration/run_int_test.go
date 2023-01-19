@@ -40,26 +40,22 @@ scripts:
     value: |
         go build -o ./interrupt ./interrupt.go
         ./interrupt
-    constraints:
-        os: linux,macos
+    if: ne .OS.Name "Windows"
   - name: test-interrupt
     description: A script that sleeps for a very long time.  It should be interrupted.  The first interrupt does not terminate.
     standalone: true
     value: |
         go build -o .\interrupt.exe .\interrupt.go
         .\interrupt.exe
-    constraints:
-        os: windows
+    if: eq .OS.Name "Windows"
   - name: helloWorld
     value: echo "Hello World!"
     standalone: true
-    constraints:
-      os: linux,macos
+    if: ne .OS.Name "Windows"
   - name: helloWorld
     standalone: true
     value: echo Hello World!
-    constraints:
-    os: windows
+    if: eq .OS.Name "Windows"
   - name: testMultipleLanguages
     value: |
       import sys
@@ -114,6 +110,7 @@ func (suite *RunIntegrationTestSuite) TestInActivatedEnv() {
 	cp.WaitForInput(10 * time.Second)
 
 	cp.SendLine(fmt.Sprintf("%s run testMultipleLanguages", cp.Executable()))
+	cp.ExpectLongString("Operating on project ActiveState-CLI/Python3")
 	cp.Expect("3")
 
 	cp.SendLine(fmt.Sprintf("%s run test-interrupt", cp.Executable()))

@@ -22,6 +22,7 @@ import (
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/installmgr"
+	"github.com/ActiveState/cli/internal/legacytray"
 	"github.com/ActiveState/cli/internal/updater"
 )
 
@@ -64,16 +65,12 @@ func (i *Installer) Install() (rerr error) {
 	}
 
 	// Stop any running processes that might interfere
-	trayRunning, err := installmgr.IsTrayAppRunning(i.cfg)
-	if err != nil {
-		multilog.Error("Could not determine if state-tray is running: %s", errs.JoinMessage(err))
-	}
 	if err := installmgr.StopRunning(i.path); err != nil {
 		return errs.Wrap(err, "Failed to stop running services")
 	}
 
 	// Detect if existing installation needs to be cleaned
-	err = detectCorruptedInstallDir(i.path)
+	err := detectCorruptedInstallDir(i.path)
 	if errors.Is(err, errCorruptedInstall) {
 		err = i.sanitizeInstallPath()
 		if err != nil {
@@ -81,6 +78,11 @@ func (i *Installer) Install() (rerr error) {
 		}
 	} else if err != nil {
 		return locale.WrapInputError(err, "err_update_corrupt_install", constants.DocumentationURL)
+	}
+
+	err = legacytray.DetectAndRemove(i.path, i.cfg)
+	if err != nil {
+		multilog.Error("Unable to detect and/or remove legacy tray. Will try again next update. Error: %v", err)
 	}
 
 	// Create target dir
@@ -96,11 +98,6 @@ func (i *Installer) Install() (rerr error) {
 	// Copy all the files
 	if err := fileutils.CopyAndRenameFiles(i.payloadPath, i.path); err != nil {
 		return errs.Wrap(err, "Failed to copy installation files to dir %s. Error received: %s", i.path, errs.JoinMessage(err))
-	}
-
-	// Install Launcher
-	if err := i.installLauncher(); err != nil {
-		return errs.Wrap(err, "Installation of system files failed.")
 	}
 
 	// Set up the environment
@@ -131,18 +128,6 @@ func (i *Installer) Install() (rerr error) {
 	// Yes this is awkward, followup story here: https://www.pivotaltracker.com/story/show/176507898
 	if stdout, stderr, err := exeutils.ExecSimple(stateExec, []string{"_prepare"}, []string{}); err != nil {
 		multilog.Error("_prepare failed after update: %v\n\nstdout: %s\n\nstderr: %s", err, stdout, stderr)
-	}
-
-	// Restart ActiveState Desktop, if it was running prior to installing
-	if trayRunning {
-		trayExec, err := installation.TrayExecFromDir(binDir)
-		if err != nil {
-			return locale.WrapError(err, "err_tray_exec_dir", "", binDir)
-		}
-
-		if _, err := exeutils.ExecuteAndForget(trayExec, []string{}); err != nil {
-			multilog.Error("Could not start state-tray: %s", errs.JoinMessage(err))
-		}
 	}
 
 	logging.Debug("Installation was successful")
@@ -206,7 +191,7 @@ func detectCorruptedInstallDir(path string) error {
 }
 
 func isStateExecutable(name string) bool {
-	if name == constants.StateCmd+exeutils.Extension || name == constants.StateSvcCmd+exeutils.Extension || name == constants.StateTrayCmd+exeutils.Extension {
+	if name == constants.StateCmd+exeutils.Extension || name == constants.StateSvcCmd+exeutils.Extension {
 		return true
 	}
 	return false

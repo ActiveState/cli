@@ -14,8 +14,6 @@ import (
 	"github.com/ActiveState/cli/internal-as/osutils"
 	"github.com/ActiveState/cli/internal-as/osutils/autostart"
 	"github.com/ActiveState/cli/internal-as/osutils/shortcut"
-	"github.com/ActiveState/cli/internal/assets"
-	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/installation"
 )
 
@@ -55,29 +53,8 @@ func (r *Prepare) prepareStartShortcut() error {
 		return locale.WrapInputError(err, "err_preparestart_mkdir", "Could not create start menu entry: %s", shortcutDir)
 	}
 
-	trayExec, err := installation.TrayExec()
-	if err != nil {
-		return locale.WrapError(err, "err_tray_exec")
-	}
-
-	sc := shortcut.New(shortcutDir, constants.TrayAppName, trayExec)
-
-	err = sc.Enable()
-	if err != nil {
-		return locale.WrapError(err, "err_preparestart_shortcut", "", sc.Path())
-	}
-
-	icon, err := assets.ReadFileBytes("icon.ico")
-	if err != nil {
-		return err
-	}
-	err = sc.SetIconBlob(icon)
-	if err != nil {
-		return locale.WrapError(err, "err_preparestart_icon", "", sc.Path())
-	}
-
-	sc = shortcut.New(shortcutDir, "Uninstall State Tool", r.subshell.Binary(), "/C \"state clean uninstall\"")
-	err = sc.Enable()
+	sc := shortcut.New(shortcutDir, "Uninstall State Tool", r.subshell.Binary(), "/C \"state clean uninstall\"")
+	err := sc.Enable()
 	if err != nil {
 		return locale.WrapError(err, "err_preparestart_shortcut", "", sc.Path())
 	}
@@ -140,20 +117,6 @@ func setStateProtocol() error {
 	}
 
 	return nil
-}
-
-func installedPreparedFiles(cfg autostart.Configurable) ([]string, error) {
-	var files []string
-
-	trayExec, err := installation.TrayExec()
-	if err != nil {
-		return nil, locale.WrapError(err, "err_tray_exec")
-	}
-
-	sc := shortcut.New(shortcutDir, constants.TrayAppName, trayExec)
-	files = append(files, filepath.Dir(sc.Path()))
-
-	return files, nil
 }
 
 func cleanOS(cfg autostart.Configurable) error {

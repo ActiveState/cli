@@ -126,7 +126,9 @@ func fetchRawRecipe(commitID strfmt.UUID, owner, project string, hostPlatform *s
 		}
 
 		serr := resolveSolverError(err)
-		multilog.Error("Solver returned error: %s, order: %s", errs.JoinMessage(err), string(orderBody))
+		if !locale.IsInputError(serr) {
+			multilog.Error("Solver returned error: %s, order: %s", errs.JoinMessage(err), string(orderBody))
+		}
 		return "", serr
 	}
 
@@ -179,7 +181,9 @@ func FetchRecipe(commitID strfmt.UUID, owner, project string, hostPlatform *stri
 
 		orderBody, _ := json.Marshal(params.Order)
 		serr := resolveSolverError(err)
-		multilog.Error("Solver returned error: %s, order: %s", errs.JoinMessage(err), string(orderBody))
+		if !locale.IsInputError(serr) {
+			multilog.Error("Solver returned error: %s, order: %s", errs.JoinMessage(err), string(orderBody))
+		}
 		return nil, serr
 	}
 
@@ -220,7 +224,7 @@ func resolveSolverError(err error) error {
 			validationErrors = append(validationErrors, lines...)
 		}
 		return &SolverError{
-			wrapped:          locale.WrapError(errs.Wrap(err, "ResolveRecipesBadRequest"), "", p.PStr(serr.Payload.SolverError.Message)),
+			wrapped:          locale.WrapInputError(errs.Wrap(err, "ResolveRecipesBadRequest"), "", p.PStr(serr.Payload.SolverError.Message)),
 			validationErrors: validationErrors,
 			isTransient:      p.PBool(serr.GetPayload().IsTransient),
 		}
