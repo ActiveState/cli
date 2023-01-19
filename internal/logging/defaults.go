@@ -1,23 +1,20 @@
+//go:build !test
 // +build !test
 
 package logging
 
 import (
 	"fmt"
-	"io/fs"
 	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
-	"sort"
 	"strings"
 	"sync"
 	"time"
 
-	"github.com/ActiveState/cli/internal/installation/storage"
-	"github.com/thoas/go-funk"
-
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/installation/storage"
 )
 
 // datadir is the base directory at which the log is saved
@@ -105,20 +102,16 @@ func init() {
 		return
 	}
 
-	sort.Slice(files, func(i, j int) bool { return files[i].ModTime().After(files[j].ModTime()) })
-	files = funk.Filter(files, func(f fs.FileInfo) bool {
-		return f.ModTime().Before(time.Now().Add(-time.Hour))
-	}).([]fs.FileInfo)
+	// Prevent running over this logic too often as it affects performance
+	// https://activestatef.atlassian.net/browse/DX-1516
+	if len(files) < 30 {
+		return
+	}
 
-	c := 0
-	for _, file := range files {
-		if strings.HasPrefix(file.Name(), FileNamePrefix()) && strings.HasSuffix(file.Name(), FileNameSuffix) {
-			c = c + 1
-			if c > 9 {
-				if err := os.Remove(filepath.Join(datadir, file.Name())); err != nil {
-					Error("Could not clean up old log: %s, error: %v", file.Name(), err)
-				}
-			}
+	rotate := rotateLogs(files, time.Now().Add(-time.Hour), 10)
+	for _, file := range rotate {
+		if err := os.Remove(filepath.Join(datadir, file.Name())); err != nil {
+			Error("Could not clean up old log: %s, error: %v", file.Name(), err)
 		}
 	}
 
