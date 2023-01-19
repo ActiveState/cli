@@ -3,10 +3,10 @@ package autostart
 import "github.com/ActiveState/cli/internal/constants"
 
 func init() {
-	Options.LaunchFileName = constants.ServiceLaunchFileName
-	Options.IconFileName = constants.ServiceIconFileName
-	Options.IconFileSource = constants.IconFileSource
-	Options.GenericName = constants.ServiceGenericName
-	Options.Comment = constants.ServiceComment
-	Options.Keywords = constants.ServiceKeywords
+	AutostartOptions.LaunchFileName = constants.ServiceLaunchFileName
+	AutostartOptions.IconFileName = constants.ServiceIconFileName
+	AutostartOptions.IconFileSource = constants.IconFileSource
+	AutostartOptions.GenericName = constants.ServiceGenericName
+	AutostartOptions.Comment = constants.ServiceComment
+	AutostartOptions.Keywords = constants.ServiceKeywords
 }
