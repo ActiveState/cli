@@ -3,7 +3,7 @@ package mock
 import (
 	"runtime"
 
-	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
+	"github.com/ActiveState/cli/internal-as/testhelpers/httpmock"
 	"github.com/ActiveState/cli/pkg/platform/api"
 )
 
