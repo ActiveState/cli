@@ -127,7 +127,7 @@ func TestUnwrapError(t *testing.T) {
 		{
 			"Localized wrapped with plain",
 			errLocaleWrapWithPlain,
-			[]error{errLocalized},
+			[]error{errLocaleWrapWithPlain},
 		},
 		{
 			"Plain wrapped with localized",
@@ -137,7 +137,7 @@ func TestUnwrapError(t *testing.T) {
 		{
 			"Multi error",
 			errMulti,
-			[]error{errLocalized, errLocalized2},
+			[]error{errLocalized, errLocalized2, errLocalizedForWrapWithLocale, errLocaleWrapWithPlain},
 		},
 		{
 			"Plain wrapped Multi error",
