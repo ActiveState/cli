@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/analytics"
+	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/go-openapi/strfmt"
 
@@ -151,7 +152,7 @@ func (d *Deploy) commitID(namespace project.Namespaced) (strfmt.UUID, error) {
 	return *commitID, nil
 }
 
-func (d *Deploy) install(rtTarget setup.Targeter) error {
+func (d *Deploy) install(rtTarget setup.Targeter) (rerr error) {
 	d.output.Notice(output.Heading(locale.T("deploy_install")))
 
 	rti, err := runtime.New(rtTarget, d.analytics, d.svcModel)
@@ -162,7 +163,10 @@ func (d *Deploy) install(rtTarget setup.Targeter) error {
 	if !runtime.IsNeedsUpdateError(err) {
 		return locale.WrapError(err, "deploy_runtime_err", "Could not initialize runtime")
 	}
-	if err := rti.Update(d.auth, runbits.DefaultRuntimeEventHandler(d.output)); err != nil {
+
+	pg := runbits.NewRuntimeProgressIndicator(d.output)
+	defer rtutils.Closer(pg.Close, &rerr)
+	if err := rti.Update(d.auth, pg); err != nil {
 		return locale.WrapError(err, "deploy_install_failed", "Installation failed.")
 	}
 

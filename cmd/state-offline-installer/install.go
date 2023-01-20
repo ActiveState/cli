@@ -23,7 +23,6 @@ import (
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/rtutils/p"
-	"github.com/ActiveState/cli/internal/runbits/buildlogfile"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
 	"github.com/ActiveState/cli/internal/testhelpers/outputhelper"

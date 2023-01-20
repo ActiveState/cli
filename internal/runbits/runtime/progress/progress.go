@@ -77,17 +77,13 @@ type ProgressDigester struct {
 	// The cancel function for the mpb package
 	cancelMpb context.CancelFunc
 
-	// Record whether we have received the first event, to ensure we always start with the `Start` event
-	// This is to help prevent us inadvertently breaking things as the order of the Start event is crucial.
-	receivedFirstEvent bool
-
 	// Record whether changes were made
 	changesMade bool
 	// Record whether the runtime install was successful
 	success bool
 }
 
-func NewProgressDigester(w io.Writer, out output.Outputer) *ProgressDigester {
+func NewProgressIndicator(w io.Writer, out output.Outputer) *ProgressDigester {
 	ctx, cancel := context.WithCancel(context.Background())
 	return &ProgressDigester{
 		mainProgress: mpb.NewWithContext(
@@ -109,9 +105,6 @@ func NewProgressDigester(w io.Writer, out output.Outputer) *ProgressDigester {
 }
 
 func (p *ProgressDigester) Handle(ev events.Eventer) error {
-	defer func() {
-		p.receivedFirstEvent = true
-	}()
 	p.dbgEventLog = append(p.dbgEventLog, fmt.Sprintf("%T", ev))
 
 	p.mutex.Lock()
@@ -123,8 +116,8 @@ func (p *ProgressDigester) Handle(ev events.Eventer) error {
 		logging.Debug("Initialize Event: %#v", v)
 
 		// Ensure Start event is first.. because otherwise the prints below will cause output to be malformed.
-		if p.receivedFirstEvent {
-			return errs.New("Received Start event after receiving another event")
+		if p.buildBar != nil || p.downloadBar != nil || p.installBar != nil || p.solveSpinner != nil {
+			return errs.New("Received Start event after bars were already initialized, event log: %v", p.dbgEventLog)
 		}
 
 		// Report the log file we'll be using. This has to happen here and not in the BuildStarted even as there's no

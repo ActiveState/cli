@@ -97,3 +97,72 @@ func TestIsError(t *testing.T) {
 		})
 	}
 }
+
+func TestUnwrapError(t *testing.T) {
+	errPlain := errors.New("plain error")
+	errLocalized := locale.NewError("localized error")
+	errLocalized2 := locale.NewError("localized error 2")
+	errLocalizedForWrapWithLocale := locale.NewError("localized error for wrap with locale")
+	errLocaleWrapWithPlain := locale.WrapError(errPlain, "wrapped localized error")
+	errPlainWrapWithLocale := errs.Wrap(errLocalizedForWrapWithLocale, "wrapped plain error")
+	errMultiWithLocaleWrap := errs.Combine(errPlain, errPlainWrapWithLocale)
+	errMulti := errs.Combine(errLocalized, errLocalized2, errPlain, errPlainWrapWithLocale, errLocaleWrapWithPlain)
+	errPlainWrappedMulti := errs.Wrap(errMulti, "wrapped plain error")
+
+	tests := []struct {
+		name       string
+		inError    error
+		wantErrors []error
+	}{
+		{
+			"Plain",
+			errPlain,
+			[]error{},
+		},
+		{
+			"Localized",
+			errLocalized,
+			[]error{errLocalized},
+		},
+		{
+			"Localized wrapped with plain",
+			errLocaleWrapWithPlain,
+			[]error{errLocalized},
+		},
+		{
+			"Plain wrapped with localized",
+			errPlainWrapWithLocale,
+			[]error{errLocalizedForWrapWithLocale},
+		},
+		{
+			"Multi error",
+			errMulti,
+			[]error{errLocalized, errLocalized2},
+		},
+		{
+			"Plain wrapped Multi error",
+			errPlainWrappedMulti,
+			[]error{errLocalized, errLocalized2, errLocalizedForWrapWithLocale, errLocaleWrapWithPlain},
+		},
+		{
+			"Multi error with locale wrap",
+			errMultiWithLocaleWrap,
+			[]error{errLocalizedForWrapWithLocale},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := locale.UnwrapError(tt.inError)
+
+			if len(got) != len(tt.wantErrors) {
+				t.Errorf("UnwrapError() has %d results: %v, want %d results: %v", len(got), got, len(tt.wantErrors), tt.wantErrors)
+			}
+
+			for n, wantErr := range tt.wantErrors {
+				if got[n].Error() != wantErr.Error() {
+					t.Errorf("Resulting error: %s, did not match: %s", got[n].Error(), wantErr.Error())
+				}
+			}
+		})
+	}
+}

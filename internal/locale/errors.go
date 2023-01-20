@@ -53,7 +53,12 @@ func (e *LocalizedError) AddTips(tips ...string) {
 
 // ErrorLocalizer represents a localized error
 type ErrorLocalizer interface {
+	error
 	UserError() string
+}
+
+type AsError interface {
+	As(interface{}) bool
 }
 
 // ErrorInput represents a user input error
@@ -153,8 +158,9 @@ func IsInputErrorNonRecursive(err error) bool {
 func JoinErrors(err error, sep string) *LocalizedError {
 	var message []string
 	for err != nil {
-		if errr, ok := err.(ErrorLocalizer); ok {
-			message = append(message, errr.UserError())
+		var localizedError ErrorLocalizer
+		if errors.As(err, &localizedError) {
+			message = append(message, localizedError.UserError())
 		}
 		err = errors.Unwrap(err)
 	}
@@ -174,6 +180,15 @@ func UnwrapError(err error) []error {
 		_, isLocaleError := err.(ErrorLocalizer)
 		if isLocaleError {
 			errs = append(errs, err)
+		}
+
+		// MultiError uses a custom type to wrap multiple errors, so the type casting above won't work.
+		// Instead it satisfied `errors.As()`, but here we want to specifically check the current error and not any wrapped errors.
+		if asError, ok := err.(AsError); ok {
+			var target ErrorLocalizer
+			if asError.As(&target) {
+				errs = append(errs, target)
+			}
 		}
 		err = errors.Unwrap(err)
 	}

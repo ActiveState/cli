@@ -110,9 +110,6 @@ func (r *Runtime) Update(auth *authentication.Auth, eventHandler events.Handler)
 
 	defer func() {
 		r.recordCompletion(rerr)
-		if err := eventHandler.Close(); err != nil {
-			rerr = errs.Wrap(err, "Could not close event handler, original error (if any): %v", errs.JoinMessage(rerr))
-		}
 	}()
 
 	if err := setup.New(r.target, eventHandler, auth, r.analytics).Update(); err != nil {

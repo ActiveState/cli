@@ -9,14 +9,14 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup/events"
 )
 
-func DefaultRuntimeEventHandler(out output.Outputer) events.Handler {
-	return newRuntimeEventHandler(out)
+func NewRuntimeProgressIndicator(out output.Outputer) events.Handler {
+	return newRuntimeProgressIndicator(out)
 }
 
-func newRuntimeEventHandler(out output.Outputer) events.Handler {
+func newRuntimeProgressIndicator(out output.Outputer) events.Handler {
 	var w io.Writer = os.Stdout
 	if out.Type() != output.PlainFormatName {
 		w = nil
 	}
-	return progress.NewProgressDigester(w, out)
+	return progress.NewProgressIndicator(w, out)
 }

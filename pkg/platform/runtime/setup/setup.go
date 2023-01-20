@@ -476,7 +476,7 @@ func (s *Setup) fetchAndInstallArtifactsFromRecipe(installFunc artifactInstaller
 		ArtifactsToDownload: artifactsToInstall,
 		ArtifactsToInstall:  artifactsToInstall,
 	}); err != nil {
-		return nil, errs.Wrap(err, "Could not handle ArtifactsParsed event")
+		return nil, errs.Wrap(err, "Could not handle Start event")
 	}
 
 	err = setup.DeleteOutdatedArtifacts(changedArtifacts, storedArtifacts, alreadyInstalled)
