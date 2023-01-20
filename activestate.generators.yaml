@@ -107,7 +107,7 @@ scripts:
       TEST_STATE_SVC=./build/test/state-install/bin/$constants.BUILD_DAEMON_TARGET
       TEST_STATE_EXEC=./build/test/state-install/bin/$constants.BUILD_EXEC_TARGET
       TEST_INSTALLER=./build/test/state-install/$constants.BUILD_INSTALLER_TARGET
-      go build -o $TEST_STATE_TOOL ./internal/testhelpers/installation/fakeversioncmd
+      go build -o $TEST_STATE_TOOL ./internal-as/testhelpers/installation/fakeversioncmd
       cp -a $TEST_STATE_TOOL $TEST_STATE_SVC
       cp -a $TEST_STATE_TOOL $TEST_STATE_EXEC
       cp -a $BUILD_TARGET_DIR/$constants.BUILD_INSTALLER_TARGET $TEST_INSTALLER
@@ -115,7 +115,7 @@ scripts:
       go run scripts/ci/update-generator/main.go -v ${TEST_VERSION} -o ./build/test-update ./build/test/state-install
 
       echo "compile ${TEST_CHANNEL} update"
-      go build -o $TEST_STATE_TOOL -ldflags "-X main.channel=${TEST_CHANNEL}" ./internal/testhelpers/installation/fakeversioncmd
+      go build -o $TEST_STATE_TOOL -ldflags "-X main.channel=${TEST_CHANNEL}" ./internal-as/testhelpers/installation/fakeversioncmd
       cp -a $TEST_STATE_TOOL $TEST_STATE_SVC
       cp -a $TEST_STATE_TOOL $TEST_STATE_EXEC
 
