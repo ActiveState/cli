@@ -159,10 +159,11 @@ func JoinErrors(err error, sep string) *LocalizedError {
 	var message []string
 	for err != nil {
 		var localizedError ErrorLocalizer
-		if errors.As(err, &localizedError) {
-			message = append(message, localizedError.UserError())
+		if !errors.As(err, &localizedError) {
+			break
 		}
-		err = errors.Unwrap(err)
+		message = append(message, localizedError.UserError())
+		err = errors.Unwrap(localizedError)
 	}
 	return WrapError(err, "", strings.Join(message, sep))
 }
