@@ -12,24 +12,25 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ActiveState/cli/internal-as/environment"
 	"github.com/ActiveState/cli/internal-as/osutils/lockfile"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func buildTestExecutable(t *testing.T, dir string) string {
-	root, err := environment.GetRootPath()
-	require.NoError(t, err)
 	lockerExe := filepath.Join(dir, "locker")
 	if runtime.GOOS == "windows" {
 		lockerExe += ".exe"
 	}
 
+	wd, err := os.Getwd()
+	require.NoError(t, err)
+
 	cmd := exec.Command(
 		"go", "build", "-o", lockerExe,
-		filepath.Join(root, "internal", "osutils", "testdata", "locker"),
+		filepath.Join(wd, "../../../", "testdata", "locker"),
 	)
+
 	err = cmd.Run()
 	require.NoError(t, err)
 
