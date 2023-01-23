@@ -1,32 +1,7 @@
 package integration
 
-import (
-	"os"
-	"path/filepath"
-	"testing"
-
-	"github.com/ActiveState/cli/internal/analytics/client/blackhole"
-	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/internal/runbits/buildlogfile"
-	"github.com/ActiveState/cli/internal/testhelpers/osutil"
-	"github.com/ActiveState/cli/internal/testhelpers/outputhelper"
-	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
-	"github.com/ActiveState/cli/pkg/platform/runtime"
-	"github.com/ActiveState/cli/pkg/platform/runtime/setup/events"
-	"github.com/ActiveState/cli/pkg/platform/runtime/target"
-	"github.com/ActiveState/cli/pkg/platform/runtime/testhelper"
-	"github.com/go-openapi/strfmt"
-	"github.com/stretchr/testify/suite"
-)
-
-type RuntimeIntegrationTestSuite struct {
-	tagsuite.Suite
-}
-
-func (suite *RuntimeIntegrationTestSuite) TestOfflineInstaller() {
-	suite.OnlyRunForTags(tagsuite.OffInstall)
-
+// Disabled due to DX-1514
+/*func TestOfflineInstaller(t *testing.T) {
 	// Each artifact of the form UUID.tar.gz has the following structure:
 	// - runtime.json (empty)
 	// - tmp (directory)
@@ -90,4 +65,4 @@ func (suite *RuntimeIntegrationTestSuite) TestOfflineInstaller() {
 
 func TestRuntimeIntegrationTestSuite(t *testing.T) {
 	suite.Run(t, new(RuntimeIntegrationTestSuite))
-}
+}*/

@@ -15,6 +15,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/process"
+	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/internal/scriptfile"
 	"github.com/ActiveState/cli/internal/subshell"
@@ -66,17 +67,15 @@ func (s *ScriptRun) NeedsActivation() bool {
 }
 
 // PrepareVirtualEnv sets up the relevant runtime and prepares the environment.
-func (s *ScriptRun) PrepareVirtualEnv() error {
+func (s *ScriptRun) PrepareVirtualEnv() (rerr error) {
 	rt, err := runtime.New(target.NewProjectTarget(s.project, storage.CachePath(), nil, target.TriggerScript), s.analytics, s.svcModel)
 	if err != nil {
 		if !runtime.IsNeedsUpdateError(err) {
 			return locale.WrapError(err, "err_activate_runtime", "Could not initialize a runtime for this project.")
 		}
-		eh, err := runbits.DefaultRuntimeEventHandler(s.out)
-		if err != nil {
-			return locale.WrapError(err, "err_initialize_runtime_event_handler")
-		}
-		if err := rt.Update(s.auth, eh); err != nil {
+		pg := runbits.NewRuntimeProgressIndicator(s.out)
+		defer rtutils.Closer(pg.Close, &rerr)
+		if err := rt.Update(s.auth, pg); err != nil {
 			return locale.WrapError(err, "err_update_runtime", "Could not update runtime installation.")
 		}
 	}

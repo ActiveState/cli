@@ -1,5 +1,7 @@
 package constants
 
+import "time"
+
 // LibraryName contains the main name of this library
 const LibraryName = "cli"
 
@@ -460,3 +462,6 @@ const DefaultAnalyticsPixel = "https://state-tool.s3.amazonaws.com/pixel"
 
 // AnalyticsPixelOverrideEnv is the environment variable to check for overriding the analytics pixel url
 const AnalyticsPixelOverrideEnv = "ACTIVESTATE_CLI_ANALYTICS_PIXEL"
+
+// TerminalAnimationInterval is the interval we use for terminal animations
+const TerminalAnimationInterval = 150 * time.Millisecond

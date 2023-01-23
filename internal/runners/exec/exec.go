@@ -20,6 +20,7 @@ import (
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
+	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/internal/scriptfile"
 	"github.com/ActiveState/cli/internal/subshell"
@@ -75,7 +76,7 @@ func NewParams() *Params {
 	return &Params{}
 }
 
-func (s *Exec) Run(params *Params, args ...string) error {
+func (s *Exec) Run(params *Params, args ...string) (rerr error) {
 	var projectDir string
 	var projectNamespace string
 	var rtTarget setup.Targeter
@@ -124,13 +125,12 @@ func (s *Exec) Run(params *Params, args ...string) error {
 		if !runtime.IsNeedsUpdateError(err) {
 			return locale.WrapError(err, "err_activate_runtime", "Could not initialize a runtime for this project.")
 		}
-		eh, err := runbits.DefaultRuntimeEventHandler(s.out)
-		if err != nil {
-			return locale.WrapError(err, "err_initialize_runtime_event_handler")
-		}
-		if err := rt.Update(s.auth, eh); err != nil {
+		pg := runbits.NewRuntimeProgressIndicator(s.out)
+		defer rtutils.Closer(pg.Close, &rerr)
+		if err := rt.Update(s.auth, pg); err != nil {
 			return locale.WrapError(err, "err_update_runtime", "Could not update runtime installation.")
 		}
+		return locale.NewError("test error")
 	}
 	venv := virtualenvironment.New(rt)
 

@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"runtime"
 	"time"
+
+	"github.com/hashicorp/go-multierror"
 )
 
 // Returns path of currently running Go file
@@ -31,7 +33,7 @@ func Closer(closer func() error, rerr *error) {
 	err := closer()
 	if err != nil {
 		if *rerr != nil {
-			*rerr = fmt.Errorf("%s: %w", err.Error(), *rerr)
+			*rerr = multierror.Append(*rerr, err)
 		} else {
 			*rerr = err
 		}
