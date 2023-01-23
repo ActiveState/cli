@@ -70,7 +70,7 @@ func (l *List) Run(params ListRunParams, nstype model.NamespaceType) error {
 		return locale.WrapError(err, fmt.Sprintf("%s_err_cannot_fetch_checkpoint", nstype))
 	}
 
-	table := newFilteredRequirementsTable(model.FilterCheckpointNamespace(checkpoint, model.NamespacePackageMatch, model.NamespaceBundlesMatch), params.Name, nstype)
+	table := newFilteredRequirementsTable(model.FilterCheckpointNamespace(checkpoint, model.NamespacePackage, model.NamespaceBundle), params.Name, nstype)
 	table.sortByPkg()
 
 	l.out.Print(table)
