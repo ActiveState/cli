@@ -36,6 +36,10 @@ func BuiltViaCI() bool {
 	return constants.OnCI == "true"
 }
 
+func BuiltOnDevMachine() bool {
+	return !BuiltViaCI()
+}
+
 func OptInUnstable(cfg Configurable) bool {
 	if v := os.Getenv(constants.OptinUnstableEnvVarName); v != "" {
 		return v == "true"

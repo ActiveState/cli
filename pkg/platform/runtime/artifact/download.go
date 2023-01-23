@@ -23,11 +23,12 @@ var CamelRuntimeBuilding error = errs.New("camel runtime is currently being buil
 const InstallerTestsSubstr = "-tests."
 
 // NewDownloadsFromBuild extracts downloadable artifact information from the build status response
-func NewDownloadsFromBuild(buildStatus *headchef_models.V1BuildStatusResponse) ([]ArtifactDownload, error) {
+func NewDownloadsFromBuild(buildStatus *headchef_models.V1BuildStatusResponse) (download []ArtifactDownload, err error) {
 	var downloads []ArtifactDownload
 	for _, a := range buildStatus.Artifacts {
 		if a.BuildState != nil && *a.BuildState == headchef_models.V1ArtifactBuildStateSucceeded && a.URI != "" {
 			if strings.HasPrefix(a.URI.String(), "s3://as-builds/noop/") {
+				logging.Debug("Skipping download of noop artifact: %s", a.ArtifactID)
 				continue
 			}
 

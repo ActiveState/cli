@@ -9,16 +9,22 @@ import (
 
 type Catcher struct {
 	output.Outputer
+	cfg       *output.Config
 	outWriter *bytes.Buffer
 	errWriter *bytes.Buffer
 }
 
 func NewCatcher() *Catcher {
-	return NewCatcherByFormat(output.PlainFormatName)
+	return NewCatcherByFormat(output.PlainFormatName, false)
 }
 
-func NewCatcherByFormat(format output.Format) *Catcher {
+func NewCatcherByFormat(format output.Format, interactive bool) *Catcher {
 	catch := &Catcher{}
+
+	catch.cfg = &output.Config{
+		Colored:     false,
+		Interactive: interactive,
+	}
 
 	catch.outWriter = &bytes.Buffer{}
 	catch.errWriter = &bytes.Buffer{}

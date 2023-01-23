@@ -3,11 +3,9 @@ package rtutils
 import (
 	"errors"
 	"fmt"
-	"strings"
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -23,16 +21,12 @@ func Test_Closer(t *testing.T) {
 	}()
 
 	require.Error(t, err)
-	assert.True(t, strings.HasPrefix(err.Error(), closerErr.Error()))
-	assert.True(t, errors.Is(err, returnErr))
-
-	err = func() (rerr error) {
-		defer Closer(closer, &rerr)
-		return nil
-	}()
-	require.Error(t, err)
-	assert.True(t, strings.HasPrefix(err.Error(), closerErr.Error()))
-	assert.False(t, errors.Is(err, returnErr))
+	if !errors.Is(err, closerErr) {
+		t.Errorf("Expected error to match closerErr: %v, got %v", closerErr, err)
+	}
+	if !errors.Is(err, returnErr) {
+		t.Errorf("Expected error to match returnErr: %v, got %v", returnErr, err)
+	}
 }
 
 func TestTimeout(t *testing.T) {

@@ -7,7 +7,7 @@ import (
 )
 
 type ByIncrementer interface {
-	IncrBy(int)
+	ReportIncrement(int) error
 }
 
 var _ io.Reader = &ProxyReader{}
@@ -27,9 +27,14 @@ func NewProxyReader(inc ByIncrementer, r io.Reader) *ProxyReader {
 
 func (pr *ProxyReader) Read(buf []byte) (int, error) {
 	n, err := pr.r.Read(buf)
-	pr.increment.IncrBy(n)
+	if err != nil {
+		return n, errs.Wrap(err, "Read failed")
+	}
+	if err := pr.increment.ReportIncrement(n); err != nil {
+		return n, errs.Wrap(err, "Could not report increment")
+	}
 
-	return n, err
+	return n, nil
 }
 
 // ReadAt reads into buffer starting at offset and reports progress
@@ -42,7 +47,9 @@ func (pr *ProxyReader) ReadAt(p []byte, offset int64) (int, error) {
 	n, err := prAt.ReadAt(p, offset)
 	if n > 0 {
 		if offset == 0 {
-			pr.increment.IncrBy(n)
+			if err := pr.increment.ReportIncrement(n); err != nil {
+				return n, errs.Wrap(err, "Could not report increment")
+			}
 		}
 	}
 	return n, err

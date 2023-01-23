@@ -25,7 +25,7 @@ const (
 	DeleteProjects  = "delete-uuid-projects"
 	Deploy          = "deploy"
 	Edit            = "edit"
-	Error           = "error"
+	Errors          = "error"
 	Events          = "events"
 	Export          = "export"
 	ExitCode        = "exit-code"

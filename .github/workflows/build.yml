@@ -134,10 +134,6 @@ jobs:
             {
                 "ID": "Build-Executor",
                 "Args": ["state", "run", "build-exec"]
-            },
-            {
-                "ID": "Build-Offline-Installer",
-                "Args": ["state", "run", "build-offline-installer"]
             }
           ]
           EOF
@@ -193,11 +189,6 @@ jobs:
         name: "Build: Executor"
         shell: bash
         run: parallelize results Build-Executor
-
-      - # === "Build: Offline-Installer" ===
-        name: "Build: Offline-Installer"
-        shell: bash
-        run: parallelize results Build-Offline-Installer
 
       - # === Prepare Windows Cert ===
         name: Prepare Windows Cert

@@ -97,7 +97,7 @@ func replaceInFile(buf []byte, oldpath, newpath string) (bool, []byte, error) {
 		quoteEscapeFind = strings.ReplaceAll(quoteEscapeFind, `\\`, `(\\|\\\\)`)
 	}
 	if IsBinary(buf) {
-		//logging.Debug("Assuming file '%s' is a binary file", filename)
+		// logging.Debug("Assuming file '%s' is a binary file", filename)
 
 		regexExpandBytes := []byte("${1}")
 		// Must account for the expand characters (ie. '${1}') in the
@@ -111,14 +111,14 @@ func replaceInFile(buf []byte, oldpath, newpath string) (bool, []byte, error) {
 			return false, nil, errors.New("replacement text cannot be longer than search text in a binary file")
 		} else if len(findBytes) > replaceBytesLen {
 			// Pad replacement with NUL bytes.
-			//logging.Debug("Padding replacement text by %d byte(s)", len(findBytes)-len(replaceBytes))
+			// logging.Debug("Padding replacement text by %d byte(s)", len(findBytes)-len(replaceBytes))
 			paddedReplaceBytes := make([]byte, len(findBytes)+len(regexExpandBytes))
 			copy(paddedReplaceBytes, replaceBytes)
 			replaceBytes = paddedReplaceBytes
 		}
 	} else {
 		replaceRegex = regexp.MustCompile(fmt.Sprintf(`%s`, quoteEscapeFind))
-		//logging.Debug("Assuming file '%s' is a text file", filename)
+		// logging.Debug("Assuming file '%s' is a text file", filename)
 	}
 
 	replaced := replaceRegex.ReplaceAll(buf, replaceBytes)
@@ -761,6 +761,12 @@ func TempFileUnsafe() *os.File {
 	return f
 }
 
+func TempFilePathUnsafe() string {
+	f := TempFileUnsafe()
+	defer f.Close()
+	return f.Name()
+}
+
 // TempDirUnsafe returns a temp path or panics if it cannot be created
 // This is for use in tests, do not use it outside tests!
 func TempDirUnsafe() string {
@@ -836,7 +842,6 @@ func LogPath(path string) error {
 func IsDir(path string) bool {
 	info, err := os.Stat(path)
 	if err != nil {
-		logging.Debug("Could not stat path: %s, got error: %v", path, err)
 		return false
 	}
 	return info.IsDir()

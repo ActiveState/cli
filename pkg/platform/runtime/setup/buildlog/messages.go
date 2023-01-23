@@ -23,6 +23,7 @@ const (
 )
 
 type messager interface {
+	MessageTypeValue() string
 	MessageType() MessageEnum
 }
 
@@ -32,6 +33,10 @@ type Message struct {
 
 type BaseMessage struct {
 	Type string `json:"type"`
+}
+
+func (bm BaseMessage) MessageTypeValue() string {
+	return bm.Type
 }
 
 func (bm BaseMessage) MessageType() MessageEnum {

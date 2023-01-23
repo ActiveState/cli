@@ -8,7 +8,14 @@ import (
 
 	"github.com/ActiveState/cli/internal/osutils/stacktrace"
 	"github.com/ActiveState/cli/internal/rtutils"
+	"github.com/hashicorp/go-multierror"
 )
+
+const TipMessage = "wrapped tips"
+
+type AsError interface {
+	As(interface{}) bool
+}
 
 // WrapperError enforces errors that include a stacktrace
 type Errorable interface {
@@ -17,6 +24,7 @@ type Errorable interface {
 }
 
 type ErrorTips interface {
+	error
 	AddTips(...string)
 	ErrorTips() []string
 }
@@ -73,6 +81,10 @@ func Wrap(wrapTarget error, message string, args ...interface{}) *WrapperError {
 	return newError(msg, wrapTarget)
 }
 
+func Combine(err error, errs ...error) error {
+	return multierror.Append(err, errs...)
+}
+
 // Join all error messages in the Unwrap stack
 func Join(err error, sep string) *WrapperError {
 	var message []string
@@ -88,12 +100,22 @@ func JoinMessage(err error) string {
 }
 
 func AddTips(err error, tips ...string) error {
-	if _, ok := err.(ErrorTips); !ok {
+	var errTips ErrorTips
+	// MultiError uses a custom type to wrap multiple errors, so the type casting above won't work.
+	// Instead it satisfied `errors.As()`, but here we want to specifically check the current error and not any wrapped errors.
+	if asError, ok := err.(AsError); ok {
+		asError.As(&errTips)
+	}
+	if _, ok := err.(ErrorTips); ok {
+		errTips = err.(ErrorTips)
+	}
+	if errTips == nil {
 		// use original error message with identifier in case this bubbles all the way up
 		// this helps us identify it on rollbar without affecting the UX too much
-		err = newError(err.Error()+" (wrapped)", err)
+		errTips = newError(TipMessage, err)
+		err = errTips
 	}
-	err.(ErrorTips).AddTips(tips...)
+	errTips.AddTips(tips...)
 	return err
 }
 
