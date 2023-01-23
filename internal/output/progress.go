@@ -41,7 +41,7 @@ func StartSpinner(out Outputer, msg string, interval time.Duration) *Spinner {
 	return d
 }
 
-func (d *Spinner) clear() int {
+func (d *Spinner) moveCaretBack() int {
 	if !d.out.Config().Interactive {
 		return 0
 	}
@@ -58,9 +58,9 @@ func (d *Spinner) clear() int {
 func (d *Spinner) tick(isFirstFrame bool) {
 	clear := ""
 	if !isFirstFrame {
-		nCleared := d.clear()
-		if nCleared > 0 {
-			clear = strings.Repeat(" ", nCleared-1)
+		nMoved := d.moveCaretBack()
+		if nMoved > 0 {
+			clear = strings.Repeat(" ", nMoved-1)
 		}
 	}
 	d.out.Fprint(d.out.Config().ErrWriter, d.frames[d.frame]+clear)
@@ -86,8 +86,6 @@ func (d *Spinner) ticker() {
 func (d *Spinner) Stop(msg string) {
 	d.stop <- struct{}{}
 	close(d.stop)
-
-	d.clear()
 
 	if msg != "" {
 		if !d.out.Config().Interactive {
