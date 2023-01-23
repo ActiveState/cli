@@ -347,6 +347,8 @@ project_empty:
   other: You have not created any projects yet
 project_checkout_empty:
   other: You have not activated any projects yet
+building:
+  other: Building
 downloading:
   other: Downloading
 installing:
@@ -1770,9 +1772,6 @@ operation_success_local:
   other: |
     Your local project has been updated.
     Run [ACTIONABLE]state push[/RESET] to save changes to the platform.
-err_initialize_runtime_event_handler:
-  other: |
-    Could not determine how to display progress of runtime installation.
 solver_err:
   other: "The Platform failed to resolve the dependencies for this build. {{.V0}}\n{{.V1}}"
 transient_solver_tip:
@@ -1857,6 +1856,8 @@ progress_project:
   other: " • Initializing Project"
 progress_search:
   other: " • Searching for [ACTIONABLE]{{.V0}}[/RESET] in the ActiveState Catalog"
+progress_solve:
+  other: "Resolving Dependencies"
 progress_success:
   other: " [SUCCESS]✔ Done[/RESET]"
 progress_found:
@@ -1867,6 +1868,12 @@ progress_commit:
   other: " • Creating commit"
 progress_pkg_nolang:
   other: " • Searching for [ACTIONABLE]{{.V0}}[/RESET] across all languages in the ActiveState Catalog"
+progress_build_log:
+  other: "Build Log [ACTIONABLE]{{.V0}}[/RESET]"
+progress_completed:
+  other: "[SUCCESS]✔ All dependencies have been installed and verified[/RESET]"
+progress_nothing_to_do:
+  other: "Runtime is already up to date"
 unstable_feature_banner:
   other: "[NOTICE]Beta Feature: This feature is still in beta and may be unstable.[/RESET]\n"
 unstable_command_warning:
@@ -1927,18 +1934,13 @@ err_update_privilege_mismatch:
 uninstall_warn_not_empty:
   other: |
     [ERROR]Unable to remove all files in the directory the installation directory.[/RESET]
-    The directory may contain unrecognized files.
-    Encountered error: {{.V0}}
+    There were unrecognized files in that directory.
 err_state_exec:
   other: Could not get state exec
 err_service_exec:
   other: Could not get service exec
-err_tray_exec:
-  other: Could not get state tray exec
 err_svc_exec:
   other: Could not get state service exec
-err_update_exec:
-  other: Could not get update dialog exec
 err_state_exec_dir:
   other: Could not get state exec from directory {{.V0}}
 err_service_exec_dir:
@@ -1948,10 +1950,6 @@ err_insufficient_permissions:
     Could not stop running State Tool process due to insufficient permissions.
 
     State Tool works best if you run it as a user, rather than an admin. You might be encountering this issue because you have originally installed or ran the State Tool as admin. If this is the case it is suggested that you uninstall the State Tool as admin, and install it again as a user.
-err_tray_exec_dir:
-  other: Could not get tray exec from directory {{.V0}}
-err_update_exec_dir:
-  other: Could not get update dialog app exec from directory {{.V0}}
 err_search_no_package:
   other: |
     No packages in our catalog match [NOTICE]"{{.V0}}"[/RESET].
@@ -2013,6 +2011,10 @@ checkout_project_statement:
     For editors and other tooling use the executables at: [ACTIONABLE]{{.V2}}[/RESET].
 export_project_statement:
   other: Exporting env for project [ACTIONABLE]{{.V0}}[/RESET] located at [ACTIONABLE]{{.V1}}[/RESET].
+err_rtprogress_outofsync:
+  other: |
+    Received events that appear to be out of order. 
+    Please report this issue on [ACTIONABLE]{{.V0}}[/RESET] and include your log file at [ACTIONABLE]{{.V1}}[/RESET].
 err_home_not_found:
   other: |
     Could not proceed because your HOME environment variable is unset. Please ensure that your HOME environment variable is set. Alternatively if you do not or cannot set this variable you can instead use the ACTIVESTATE_HOME variable.

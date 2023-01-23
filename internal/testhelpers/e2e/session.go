@@ -20,7 +20,6 @@ import (
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/installation"
-	"github.com/ActiveState/cli/internal/installmgr"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/osutils/stacktrace"
@@ -56,7 +55,6 @@ type Session struct {
 	t           *testing.T
 	Exe         string
 	SvcExe      string
-	TrayExe     string
 	ExecutorExe string
 }
 
@@ -147,13 +145,12 @@ func (s *Session) copyExeToBinDir(executable string) string {
 }
 
 // executablePaths returns the paths to the executables that we want to test
-func executablePaths(t *testing.T) (string, string, string, string) {
+func executablePaths(t *testing.T) (string, string, string) {
 	root := environment.GetRootPathUnsafe()
 	buildDir := fileutils.Join(root, "build")
 
 	stateExec := filepath.Join(buildDir, constants.StateCmd+osutils.ExeExt)
 	svcExec := filepath.Join(buildDir, constants.StateSvcCmd+osutils.ExeExt)
-	trayExec := filepath.Join(buildDir, constants.StateTrayCmd+osutils.ExeExt)
 	executorExec := filepath.Join(buildDir, constants.StateExecutorCmd+osutils.ExeExt)
 
 	if !fileutils.FileExists(stateExec) {
@@ -162,14 +159,11 @@ func executablePaths(t *testing.T) (string, string, string, string) {
 	if !fileutils.FileExists(svcExec) {
 		t.Fatal("E2E tests require a state-svc binary. Run `state run build-svc`.")
 	}
-	if !fileutils.FileExists(trayExec) {
-		t.Fatal("E2E tests require a state-tray binary. Run `state run build-tray`.")
-	}
 	if !fileutils.FileExists(executorExec) {
 		t.Fatal("E2E tests require a state-exec binary. Run `state run build-exec`.")
 	}
 
-	return stateExec, svcExec, trayExec, executorExec
+	return stateExec, svcExec, executorExec
 }
 
 func New(t *testing.T, retainDirs bool, extraEnv ...string) *Session {
@@ -189,6 +183,7 @@ func new(t *testing.T, retainDirs, updatePath bool, extraEnv ...string) *Session
 		constants.E2ETestEnvVarName + "=true",
 		constants.DisableUpdates + "=true",
 		constants.OptinUnstableEnvVarName + "=true",
+		constants.ServiceSockDir + "=" + dirs.SockRoot,
 	}...)
 
 	if updatePath {
@@ -207,10 +202,9 @@ func new(t *testing.T, retainDirs, updatePath bool, extraEnv ...string) *Session
 	session := &Session{Dirs: dirs, env: env, retainDirs: retainDirs, t: t}
 
 	// Mock installation directory
-	exe, svcExe, trayExe, execExe := executablePaths(t)
+	exe, svcExe, execExe := executablePaths(t)
 	session.Exe = session.copyExeToBinDir(exe)
 	session.SvcExe = session.copyExeToBinDir(svcExe)
-	session.TrayExe = session.copyExeToBinDir(trayExe)
 	session.ExecutorExe = session.copyExeToBinDir(execExe)
 
 	err = fileutils.Touch(filepath.Join(dirs.Base, installation.InstallDirMarker))
@@ -519,7 +513,7 @@ Error: {{.Error}}
 
 // Close removes the temporary directory unless RetainDirs is specified
 func (s *Session) Close() error {
-	// stop service and tray if they exist
+	// stop service if it exists
 	if fileutils.TargetExists(s.SvcExe) {
 		cp := s.SpawnCmd(s.SvcExe, "stop")
 		cp.ExpectExitCode(0)
@@ -527,8 +521,6 @@ func (s *Session) Close() error {
 
 	cfg, err := config.NewCustom(s.Dirs.Config, singlethread.New(), true)
 	require.NoError(s.t, err, "Could not read e2e session configuration: %s", errs.JoinMessage(err))
-	err = installmgr.StopTrayApp(cfg)
-	require.NoError(s.t, err, "Could not stop tray app")
 
 	if !s.retainDirs {
 		defer s.Dirs.Close()

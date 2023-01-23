@@ -60,21 +60,6 @@ key2: val2`)
 	assert.Equal(t, "val2", build["key2"], "Key2 should be set")
 }
 
-func TestConstraintStruct(t *testing.T) {
-	constraint := Constraint{}
-	dat := strings.TrimSpace(`
-os: valueForOS
-platform: valueForPlatform
-environment: valueForEnvironment`)
-
-	err := yaml.Unmarshal([]byte(dat), &constraint)
-	assert.Nil(t, err, "Should not throw an error")
-
-	assert.Equal(t, "valueForOS", constraint.OS, "Os should be set")
-	assert.Equal(t, "valueForPlatform", constraint.Platform, "Platform should be set")
-	assert.Equal(t, "valueForEnvironment", constraint.Environment, "Environment should be set")
-}
-
 func TestPackageStruct(t *testing.T) {
 	pkg := Package{}
 	dat := strings.TrimSpace(`

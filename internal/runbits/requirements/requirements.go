@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"strings"
-	"time"
 
 	"github.com/ActiveState/cli/internal/analytics"
 	anaConsts "github.com/ActiveState/cli/internal/analytics/constants"
@@ -92,9 +91,10 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 	langName := "undetermined"
 
 	out := r.Output
-	var pg *output.DotProgress
+	var pg *output.Spinner
 	defer func() {
-		if pg != nil && !pg.Stopped() {
+		if pg != nil {
+			// This is a bit awkward, but it would be even more awkward to manually address this for every error condition
 			pg.Stop(locale.T("progress_fail"))
 		}
 	}()
@@ -102,12 +102,13 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 	var err error
 	pj := r.Project
 	if pj == nil {
-		pg = output.NewDotProgress(r.Output, locale.Tl("progress_project", "", requirementName), 10*time.Second)
+		pg = output.StartSpinner(out, locale.Tl("progress_project", "", requirementName), constants.TerminalAnimationInterval)
 		pj, err = initializeProject()
 		if err != nil {
 			return locale.WrapError(err, "err_package_get_project", "Could not get project from path")
 		}
 		pg.Stop(locale.T("progress_success"))
+		pg = nil // The defer above will redundantly call pg.Stop on success if we don't set this to nil
 
 		defer func() {
 			if rerr != nil && !errors.Is(err, artifact.CamelRuntimeBuilding) {
@@ -136,7 +137,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 
 	var validatePkg = operation == model.OperationAdded && (ns.Type() == model.NamespacePackage || ns.Type() == model.NamespaceBundle)
 	if !ns.IsValid() && (nsType == model.NamespacePackage || nsType == model.NamespaceBundle) {
-		pg = output.NewDotProgress(out, locale.Tl("progress_pkg_nolang", "", requirementName), 10*time.Second)
+		pg = output.StartSpinner(out, locale.Tl("progress_pkg_nolang", "", requirementName), constants.TerminalAnimationInterval)
 
 		supported, err := model.FetchSupportedLanguages(model.HostPlatform)
 		if err != nil {
@@ -154,6 +155,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 		validatePkg = false
 
 		pg.Stop(locale.T("progress_found"))
+		pg = nil
 	}
 
 	if strings.ToLower(requirementVersion) == latestVersion {
@@ -161,7 +163,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 	}
 
 	if validatePkg {
-		pg = output.NewDotProgress(out, locale.Tl("progress_search", "", requirementName), 10*time.Second)
+		pg = output.StartSpinner(out, locale.Tl("progress_search", "", requirementName), constants.TerminalAnimationInterval)
 
 		packages, err := model.SearchIngredientsStrict(ns, requirementName, false, false)
 		if err != nil {
@@ -179,12 +181,13 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 		}
 
 		pg.Stop(locale.T("progress_found"))
+		pg = nil
 	}
 
 	parentCommitID := pj.CommitUUID()
 	hasParentCommit := parentCommitID != ""
 
-	pg = output.NewDotProgress(out, locale.T("progress_commit"), 10*time.Second)
+	pg = output.StartSpinner(out, locale.T("progress_commit"), constants.TerminalAnimationInterval)
 
 	// Check if this is an addition or an update
 	if operation == model.OperationAdded && parentCommitID != "" {
@@ -229,6 +232,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 	logging.Debug("Order changed: %v", orderChanged)
 
 	pg.Stop(locale.T("progress_success"))
+	pg = nil
 
 	var trigger target.Trigger
 	fmt.Println("Namespace type: ", ns.Type().String())

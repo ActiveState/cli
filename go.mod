@@ -21,7 +21,6 @@ require (
 	github.com/felixge/fgprof v0.9.0
 	github.com/fsnotify/fsnotify v1.4.7
 	github.com/gammazero/workerpool v1.1.1
-	github.com/getlantern/systray v1.1.0
 	github.com/go-ole/go-ole v1.2.6
 	github.com/go-openapi/errors v0.20.0
 	github.com/go-openapi/runtime v0.19.29
@@ -114,6 +113,8 @@ require (
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/google/pprof v0.0.0-20200708004538-1a94d8640e99 // indirect
 	github.com/googleapis/gax-go/v2 v2.0.5 // indirect
+	github.com/hashicorp/errwrap v1.0.0 // indirect
+	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/hashicorp/golang-lru v0.5.4 // indirect
 	github.com/jackmordaunt/icns v1.0.0 // indirect
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect

@@ -120,6 +120,11 @@ func (u *Checker) GetUpdateInfo(desiredChannel, desiredVersion string) (*Availab
 			// The above string match can be removed once https://www.pivotaltracker.com/story/show/179426519 is resolved
 			logging.Debug("Update info 404s: %v", errs.JoinMessage(err))
 			return nil, nil
+		} else if code == 403 || code == 503 {
+			// The request could not be satisfied or service is unavailable. This happens when Cloudflare
+			// blocks access, or the service is unavailable in a particular geographic location.
+			logging.Warning("Update info request blocked or service unavailable: %v", err)
+			return nil, nil
 		}
 		return nil, errs.Wrap(err, "Could not fetch update info from %s", infoURL)
 	}

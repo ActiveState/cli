@@ -6,7 +6,6 @@ import (
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/installation"
-	"github.com/ActiveState/cli/internal/installmgr"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/svcctl"
@@ -15,21 +14,10 @@ import (
 func stopServices(cfg configurable, out output.Outputer, ipComm svcctl.IPCommunicator, ignoreErrors bool) error {
 	cleanForceTip := locale.Tl("clean_force_tip", "You can re-run the command with the [ACTIONABLE]--force[/RESET] flag.")
 
-	// On Windows we need to halt the state tray and the state service before we can remove them
+	// On Windows we need to halt the state service before we can remove them
 	svcExec, err := installation.ServiceExec()
 	if err != nil {
 		return locale.WrapError(err, "err_service_exec")
-	}
-
-	// Todo: https://www.pivotaltracker.com/story/show/177585085
-	// Yes this is awkward right now
-	if err := installmgr.StopTrayApp(cfg); err != nil {
-		if !ignoreErrors {
-			return errs.AddTips(
-				locale.WrapError(err, "clean_stop_tray_failure", "Cleanup interrupted, because a running {{.V0}} process could not be stopped.", constants.TrayAppName),
-				cleanForceTip)
-		}
-		out.Error(locale.Tl("clean_stop_tray_warning", "Failed to stop running {{.V0}} process. Continuing anyways, because --force flag was provided.", constants.TrayAppName))
 	}
 
 	// Stop state-svc before accessing its files

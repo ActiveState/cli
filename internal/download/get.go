@@ -2,6 +2,7 @@ package download
 
 import (
 	"bytes"
+	"errors"
 	"io"
 	"io/ioutil"
 	"path/filepath"
@@ -16,6 +17,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/proxyreader"
 	"github.com/ActiveState/cli/internal/retryhttp"
+	"github.com/ActiveState/cli/pkg/platform/runtime/setup/events/progress"
 )
 
 // Get takes a URL and returns the contents as bytes
@@ -23,13 +25,8 @@ var Get func(url string) ([]byte, error)
 
 var GetDirect = httpGet
 
-type DownloadProgress interface {
-	TotalSize(int)
-	IncrBy(int)
-}
-
 // GetWithProgress takes a URL and returns the contents as bytes, it takes an optional second arg which will spawn a progressbar
-var GetWithProgress func(url string, progress DownloadProgress) ([]byte, error)
+var GetWithProgress func(url string, progress progress.Reporter) ([]byte, error)
 
 func init() {
 	SetMocking(condition.InUnitTest())
@@ -47,16 +44,14 @@ func SetMocking(useMocking bool) {
 }
 
 func httpGet(url string) ([]byte, error) {
-	logging.Debug("Retrieving url: %s", url)
 	return httpGetWithProgress(url, nil)
 }
 
-func httpGetWithProgress(url string, progress DownloadProgress) ([]byte, error) {
+func httpGetWithProgress(url string, progress progress.Reporter) ([]byte, error) {
 	return httpGetWithProgressRetry(url, progress, 1, 3)
 }
 
-func httpGetWithProgressRetry(url string, prg DownloadProgress, attempt int, retries int) ([]byte, error) {
-	logging.Debug("Retrieving url: %s, attempt: %d", url, attempt)
+func httpGetWithProgressRetry(url string, prg progress.Reporter, attempt int, retries int) ([]byte, error) {
 	client := retryhttp.NewClient(0 /* 0 = no timeout */, retries)
 	resp, err := client.Get(url)
 	if err != nil {
@@ -79,7 +74,6 @@ func httpGetWithProgressRetry(url string, prg DownloadProgress, attempt int, ret
 	} else {
 		total, err = strconv.Atoi(length)
 		if err != nil {
-			logging.Debug("Content-length: %v", length)
 			return nil, errs.Wrap(err, "Could not convert header length to int, value: %s", length)
 		}
 	}
@@ -88,14 +82,16 @@ func httpGetWithProgressRetry(url string, prg DownloadProgress, attempt int, ret
 	defer resp.Body.Close()
 
 	if prg != nil {
-		prg.TotalSize(total)
+		if err := prg.ReportSize(total); err != nil {
+			return nil, errs.Wrap(err, "Could not report size")
+		}
 		src = proxyreader.NewProxyReader(prg, resp.Body)
 	}
 
 	var dst bytes.Buffer
 	_, err = io.Copy(&dst, src)
-	if err != nil {
-		logging.Debug("Reading body failed: %s", err)
+	if err != nil && !errors.Is(err, io.EOF) {
+		logging.Debug("Reading body failed: %s", errs.JoinMessage(err))
 		if attempt <= retries {
 			return httpGetWithProgressRetry(url, prg, attempt+1, retries)
 		}
@@ -105,7 +101,7 @@ func httpGetWithProgressRetry(url string, prg DownloadProgress, attempt int, ret
 	return dst.Bytes(), nil
 }
 
-func _testHTTPGetWithProgress(url string, progress DownloadProgress) ([]byte, error) {
+func _testHTTPGetWithProgress(url string, progress progress.Reporter) ([]byte, error) {
 	return _testHTTPGet(url)
 }
 

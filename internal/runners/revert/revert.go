@@ -73,20 +73,25 @@ func (r *Revert) Run(params *Params) error {
 	r.out.Notice(locale.Tl("operating_message", "", r.project.NamespaceString(), r.project.Dir()))
 	commitID := strfmt.UUID(params.CommitID)
 
-	revertToCommit, err := model.GetCommitWithinCommitHistory(r.project.CommitUUID(), commitID)
+	priorCommits, err := model.CommitHistoryPaged(commitID, 0, 2)
 	if err != nil {
 		return locale.WrapError(err, "err_revert_get_commit", "Could not fetch commit details for commit with ID: {{.V0}}", params.CommitID)
 	}
+	if priorCommits.TotalCommits < 2 {
+		return locale.NewInputError("err_revert_no_history", "Cannot revert commit {{.V0}}: no prior history", params.CommitID)
+	}
+	commitToRevert := priorCommits.Commits[0]
+	parentCommit := priorCommits.Commits[1]
 
 	var orgs []gqlmodel.Organization
-	if revertToCommit.Author != nil {
-		orgs, err = model.FetchOrganizationsByIDs([]strfmt.UUID{*revertToCommit.Author})
+	if commitToRevert.Author != nil {
+		orgs, err = model.FetchOrganizationsByIDs([]strfmt.UUID{*commitToRevert.Author})
 		if err != nil {
 			return locale.WrapError(err, "err_revert_get_organizations", "Could not get organizations for current user")
 		}
 	}
-	r.out.Print(locale.Tl("revert_info", "You are about to revert to the following commit:"))
-	commit.PrintCommit(r.out, revertToCommit, orgs)
+	r.out.Print(locale.Tl("revert_info", "You are about to revert the following commit:"))
+	commit.PrintCommit(r.out, commitToRevert, orgs)
 
 	defaultChoice := params.Force
 	revert, err := r.prompt.Confirm("", locale.Tl("revert_confirm", "Continue?"), &defaultChoice)
@@ -97,12 +102,12 @@ func (r *Revert) Run(params *Params) error {
 		return locale.NewInputError("err_revert_aborted", "Revert aborted by user")
 	}
 
-	revertCommit, err := model.RevertCommitWithinHistory(r.project.CommitUUID(), commitID)
+	revertCommit, err := model.RevertCommitWithinHistory(commitID, parentCommit.CommitID, r.project.CommitUUID())
 	if err != nil {
 		return locale.WrapError(
 			err,
 			"err_revert_commit",
-			"Could not revert to commit: {{.V0}} please ensure that the local project is synchronized with the platform and that the given commit ID belongs to the current project",
+			"Could not revert commit: {{.V0}} please ensure that the local project is synchronized with the platform and that the given commit ID belongs to the current project",
 			params.CommitID,
 		)
 	}
@@ -117,7 +122,7 @@ func (r *Revert) Run(params *Params) error {
 		return locale.WrapError(err, "err_revert_set_commit", "Could not set revert commit ID in projectfile")
 	}
 
-	r.out.Print(locale.Tl("revert_success", "Successfully reverted to commit: {{.V0}}", params.CommitID))
+	r.out.Print(locale.Tl("revert_success", "Successfully reverted commit: {{.V0}}", params.CommitID))
 	r.out.Print(locale.T("operation_success_local"))
 	return nil
 }

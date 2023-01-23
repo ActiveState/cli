@@ -82,8 +82,6 @@ constants:
     value: true
   - name: PYTHONPATH
     value: '%projectDir%/src:%projectDir%/tests'
-    constraints:
-        environment: dev,qa
   - name: PYTHONPATH
     value: '%projectDir%/src:%projectDir%/tests'
 events:

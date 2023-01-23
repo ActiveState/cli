@@ -20,10 +20,6 @@ func InstallSystemFiles(_, _, _ string) error {
 	return nil
 }
 
-func (i *Installer) installLauncher() error {
-	return nil
-}
-
 // PrepareBinTargets will move aside any targets in the bin dir that we would otherwise overwrite.
 // This guards us from file in use errors as well as false positives by security software
 func (i *Installer) PrepareBinTargets() error {
