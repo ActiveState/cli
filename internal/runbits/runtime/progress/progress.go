@@ -165,6 +165,9 @@ func (p *ProgressDigester) Handle(ev events.Eventer) error {
 		}
 
 	case events.BuildStarted:
+		if p.buildBar != nil {
+			return errs.New("BuildStarted called after buildbar was already initialized")
+		}
 		p.buildBar = p.addTotalBar(locale.Tl("progress_building", "Building"), v.Artifacts, mpb.BarPriority(StepBuild.priority))
 
 	case events.BuildSuccess:
