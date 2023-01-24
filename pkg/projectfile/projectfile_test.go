@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v2"
@@ -429,6 +430,78 @@ func TestProject_Init(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if err := tt.project.Init(); (err != nil) != tt.wantErr {
 				t.Errorf("Init() error = %v, wantErr %v", errs.Join(err, ": "), tt.wantErr)
+			}
+		})
+	}
+}
+
+func Test_detectDeprecations(t *testing.T) {
+	tests := []struct {
+		name           string
+		dat            string
+		wantMatchError []string
+	}{
+		{
+			"Constraints",
+			`constraints: 0`,
+			[]string{
+				locale.Tr("pjfile_deprecation_entry", "constraints", "0"),
+			},
+		},
+		{
+			"Platforms",
+			`platforms: 0"`,
+			[]string{
+				locale.Tr("pjfile_deprecation_entry", "platforms", "0"),
+			},
+		},
+		{
+			"Languages",
+			`languages: 0`,
+			[]string{
+				locale.Tr("pjfile_deprecation_entry", "languages", "0"),
+			},
+		},
+		{
+			"Mixed",
+			"foo: 0\nconstraints: 0\nbar: 0\nlanguages: 0, platforms: 0",
+			[]string{
+				locale.Tr("pjfile_deprecation_entry", "constraints", "6"),
+				locale.Tr("pjfile_deprecation_entry", "languages", "28"),
+				locale.Tr("pjfile_deprecation_entry", "platforms", "42"),
+			},
+		},
+		{
+			"Real world",
+			`project: https://platform.activestate.com/ActiveState-CLI/test?commitID=9090c128-e948-4388-8f7f-96e2c1e00d98
+platforms:
+  - name: Linux64Label
+languages:
+  - name: Go
+    constraints:
+        platform: Windows10Label,Linux64Label`,
+			[]string{
+				locale.Tr("pjfile_deprecation_entry", "platforms", "108"),
+				locale.Tr("pjfile_deprecation_entry", "languages", "142"),
+				locale.Tr("pjfile_deprecation_entry", "constraints", "166"),
+			},
+		},
+		{
+			"Valid",
+			"foo: 0\nbar: 0",
+			[]string{},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := detectDeprecations([]byte(tt.dat), "activestate.yaml")
+			if len(tt.wantMatchError) == 0 {
+				assert.NoError(t, err)
+				return
+			}
+			require.Error(t, err)
+			for _, want := range tt.wantMatchError {
+				assert.Contains(t, err.Error(), want)
 			}
 		})
 	}

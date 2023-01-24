@@ -50,6 +50,7 @@ const (
 	Platforms       = "platforms"
 	Prepare         = "prepare"
 	Projects        = "projects"
+	Projectfile     = "projectfile"
 	Pull            = "pull"
 	Push            = "push"
 	Python          = "python"

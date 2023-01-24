@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -47,6 +48,8 @@ var (
 	ProjectURLRe = regexp.MustCompile(urlProjectRegexStr)
 	// CommitURLRe Regex used to validate commit info /commit/someUUID
 	CommitURLRe = regexp.MustCompile(urlCommitRegexStr)
+	// deprecatedRegex covers the deprecated fields in the project file
+	deprecatedRegex = regexp.MustCompile(`\s*(?:constraints|platforms|languages):`)
 )
 
 type ErrorParseProject struct{ *locale.LocalizedError }
@@ -485,18 +488,38 @@ func parse(configFilepath string) (*Project, error) {
 		return nil, errs.Wrap(err, "ioutil.ReadFile %s failure", configFilepath)
 	}
 
+	if err := detectDeprecations(dat, configFilepath); err != nil {
+		return nil, errs.Wrap(err, "deprecations found")
+	}
+
 	project := Project{}
-	err = yaml.Unmarshal([]byte(dat), &project)
+	err = yaml.Unmarshal(dat, &project)
 	project.path = configFilepath
 
 	if err != nil {
-		return nil, &ErrorParseProject{locale.NewError(
+		return nil, &ErrorParseProject{locale.NewInputError(
 			"err_project_parsed",
 			"Project file `{{.V1}}` could not be parsed, the parser produced the following error: {{.V0}}", err.Error(), configFilepath),
 		}
 	}
 
 	return &project, nil
+}
+
+func detectDeprecations(dat []byte, configFilepath string) error {
+	deprecations := deprecatedRegex.FindAllIndex(dat, -1)
+	if len(deprecations) == 0 {
+		return nil
+	}
+	deplist := []string{}
+	for _, depIdxs := range deprecations {
+		dep := strings.TrimSpace(strings.TrimSuffix(string(dat[depIdxs[0]:depIdxs[1]]), ":"))
+		deplist = append(deplist, locale.Tr("pjfile_deprecation_entry", dep, strconv.Itoa(depIdxs[0])))
+	}
+	return &ErrorParseProject{locale.NewInputError(
+		"pjfile_deprecation_msg",
+		"", configFilepath, strings.Join(deplist, "\n"), constants.DocumentationURL+"config/#deprecation"),
+	}
 }
 
 // Owner returns the project namespace's organization
