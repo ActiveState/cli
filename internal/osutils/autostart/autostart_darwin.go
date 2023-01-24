@@ -28,7 +28,7 @@ func enable(exec string, opts Options) error {
 		return nil
 	}
 
-	path, err := autostartPath(exec)
+	path, err := autostartPath(exec, opts)
 	if err != nil {
 		return errs.Wrap(err, "Could not get launch file")
 	}
@@ -70,7 +70,7 @@ func disable(exec string, opts Options) error {
 		logging.Debug("Autostart is already disabled for %s", opts.Name)
 		return nil
 	}
-	path, err := autostartPath(exec)
+	path, err := autostartPath(exec, opts)
 	if err != nil {
 		return errs.Wrap(err, "Could not get launch file")
 	}
@@ -78,14 +78,14 @@ func disable(exec string, opts Options) error {
 }
 
 func isEnabled(exec string, opts Options) (bool, error) {
-	path, err := autostartPath(exec)
+	path, err := autostartPath(exec, opts)
 	if err != nil {
 		return false, errs.Wrap(err, "Could not get launch file")
 	}
 	return fileutils.FileExists(path), nil
 }
 
-func autostartPath(exec string) (string, error) {
+func autostartPath(exec string, _ Options) (string, error) {
 	dir, err := user.HomeDir()
 	if err != nil {
 		return "", errs.Wrap(err, "Could not get home directory")

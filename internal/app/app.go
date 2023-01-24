@@ -17,7 +17,6 @@ type App struct {
 }
 
 type Options struct {
-	LaunchFileName  string
 	IconFileName    string
 	IconFileSource  string
 	GenericName     string
@@ -49,20 +48,4 @@ func (a *App) Install() error {
 
 func (a *App) Uninstall() error {
 	return a.uninstall()
-}
-
-func (a *App) EnableAutostart() error {
-	return a.enableAutostart()
-}
-
-func (a *App) DisableAutostart() error {
-	return a.disableAutostart()
-}
-
-func (a *App) IsAutostartEnabled() (bool, error) {
-	return a.isAutostartEnabled()
-}
-
-func (a *App) AutostartInstallPath() (string, error) {
-	return a.autostartInstallPath()
 }

@@ -1,10 +1,13 @@
 package prepare
 
 import (
+	svcAutostart "github.com/ActiveState/cli/cmd/state-svc/autostart"
 	"github.com/ActiveState/cli/internal/app"
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/osutils/autostart"
 )
 
 func (r *Prepare) prepareOS() error {
@@ -21,12 +24,8 @@ func (r *Prepare) prepareOS() error {
 		r.reportError(locale.T("err_autostart_app"), err)
 	}
 
-	err = svcShortcut.EnableAutostart()
-	if err != nil {
-		r.reportError(locale.Tl(
-			"err_prepare_autostart_enable",
-			"Could not enable autostart: {{.V0}}.", err.Error(),
-		), err)
+	if err = autostart.Enable(svcShortcut.Exec, svcAutostart.AutostartOptions); err != nil {
+		return errs.Wrap(err, "Failed to enable autostart for service app.")
 	}
 
 	return nil

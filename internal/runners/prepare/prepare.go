@@ -17,6 +17,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
+	"github.com/ActiveState/cli/internal/osutils/autostart"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/subshell"
@@ -165,7 +166,8 @@ func InstalledPreparedFiles(cfg app.Configurable) ([]string, error) {
 		return nil, locale.WrapError(err, "err_autostart_app")
 	}
 
-	path, err := svcShortcut.AutostartInstallPath()
+	// TODO: Properly setup autostart options
+	path, err := autostart.AutostartPath(svcShortcut.Exec, autostart.Options{})
 	if err != nil {
 		multilog.Error("Failed to determine shortcut path for removal: %v", err)
 	} else if path != "" {

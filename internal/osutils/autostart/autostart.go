@@ -38,3 +38,7 @@ func Disable(exec string, opts Options) error {
 func IsEnabled(exec string, opts Options) (bool, error) {
 	return isEnabled(exec, opts)
 }
+
+func AutostartPath(exec string, opts Options) (string, error) {
+	return autostartPath(exec, opts)
+}

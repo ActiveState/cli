@@ -11,8 +11,6 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/installation"
-	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/osutils/user"
 	"github.com/ActiveState/cli/internal/strutils"
 )
 
@@ -157,89 +155,4 @@ func (a *App) uninstall() error {
 	}
 
 	return nil
-}
-
-func (a *App) enableAutostart() error {
-	enabled, err := a.IsAutostartEnabled()
-	if err != nil {
-		return errs.Wrap(err, "Could not check if app autostart is enabled")
-	}
-
-	if enabled {
-		return nil
-	}
-
-	path, err := a.AutostartInstallPath()
-	if err != nil {
-		return errs.Wrap(err, "Could not get launch file")
-	}
-
-	installPath, err := a.installPath()
-	if err != nil {
-		return errs.Wrap(err, "Could not get install path")
-	}
-
-	asset, err := assets.ReadFileBytes(autostartFileSource)
-	if err != nil {
-		return errs.Wrap(err, "Could not read asset")
-	}
-
-	content, err := strutils.ParseTemplate(
-		string(asset),
-		map[string]interface{}{
-			"Label":       a.options.MacLabel,
-			"Exec":        installPath,
-			"Interactive": a.options.MacInteractive,
-		})
-	if err != nil {
-		return errs.Wrap(err, "Could not parse %s", fmt.Sprintf(launchFileFormatName, filepath.Base(a.Exec)))
-	}
-
-	if err = fileutils.WriteFile(path, []byte(content)); err != nil {
-		return errs.Wrap(err, "Could not write launch file")
-	}
-	return nil
-}
-
-func (a *App) disableAutostart() error {
-	enabled, err := a.isAutostartEnabled()
-	if err != nil {
-		return errs.Wrap(err, "Could not check if app autostart is enabled")
-	}
-
-	if !enabled {
-		logging.Debug("Autostart is already disabled for %s", a.Name)
-		return nil
-	}
-	path, err := a.autostartInstallPath()
-	if err != nil {
-		return errs.Wrap(err, "Could not get launch file")
-	}
-	return os.Remove(path)
-}
-
-func (a *App) isAutostartEnabled() (bool, error) {
-	path, err := a.AutostartInstallPath()
-	if err != nil {
-		return false, errs.Wrap(err, "Could not get launch file")
-	}
-	return fileutils.FileExists(path), nil
-}
-
-func (a *App) autostartInstallPath() (string, error) {
-	dir, err := user.HomeDir()
-	if err != nil {
-		return "", errs.Wrap(err, "Could not get home directory")
-	}
-	path := filepath.Join(dir, "Library/LaunchAgents", fmt.Sprintf(launchFileFormatName, filepath.Base(a.Exec)))
-	return path, nil
-}
-
-func (a *App) installPath() (string, error) {
-	dir, err := user.HomeDir()
-	if err != nil {
-		return "", errs.Wrap(err, "Could not get home directory")
-	}
-	path := filepath.Join(dir, "Applications", fmt.Sprintf("%s.app", a.Name))
-	return path, nil
 }
