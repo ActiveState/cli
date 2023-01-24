@@ -493,10 +493,10 @@ func parse(configFilepath string) (*Project, error) {
 	}
 
 	project := Project{}
-	err = yaml.Unmarshal(dat, &project)
+	err2 := yaml.Unmarshal(dat, &project)
 	project.path = configFilepath
 
-	if err != nil {
+	if err2 != nil {
 		return nil, &ErrorParseProject{locale.NewInputError(
 			"err_project_parsed",
 			"Project file `{{.V1}}` could not be parsed, the parser produced the following error: {{.V0}}", err.Error(), configFilepath),
