@@ -40,8 +40,7 @@ func (a *App) install() error {
 	defer os.RemoveAll(tmpDir)
 
 	tmpAppPath := filepath.Join(tmpDir, fmt.Sprintf("%s.app", a.Name))
-	err = fileutils.Mkdir(tmpAppPath)
-	if err != nil {
+	if err := fileutils.Mkdir(tmpAppPath); err != nil {
 		return errs.Wrap(err, "Could not create .app directory")
 	}
 
