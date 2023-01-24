@@ -8,9 +8,13 @@
         <string>{{.Icon}}</string>
         <key>CFBundleIdentifier</key>
         <string>com.activestate.platform.{{.Exec}}</string>
+        {{- if .IsGUIApp }}
         <key>NSHighResolutionCapable</key>
         <true/>
+        {{- end }}
+        {{- if .HideDockIcon }}
         <key>LSUIElement</key>
         <true/>
+        {{- end }}
     </dict>
 </plist>
