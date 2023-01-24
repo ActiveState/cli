@@ -25,7 +25,6 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/google/uuid"
-	"github.com/stretchr/testify/suite"
 )
 
 type OffInstallIntegrationTestSuite struct {
@@ -328,5 +327,6 @@ func (suite *OffInstallIntegrationTestSuite) assertDimensions(event reporters.Te
 }
 
 func TestOffInstallIntegrationTestSuite(t *testing.T) {
-	suite.Run(t, new(OffInstallIntegrationTestSuite))
+	t.Skip("Skipping offline installer tests as they will soon live in a separate repo")
+	// suite.Run(t, new(OffInstallIntegrationTestSuite))
 }
