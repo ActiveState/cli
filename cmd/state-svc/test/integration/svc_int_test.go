@@ -205,6 +205,10 @@ func (suite *SvcIntegrationTestSuite) GetNumStateSvcProcesses() int {
 }
 
 func (suite *SvcIntegrationTestSuite) TestAutostartConfigEnableDisable() {
+	// Disable test for v0.36: https://activestatef.atlassian.net/browse/DX-1501.
+	// This test should be re-enabled by https://activestatef.atlassian.net/browse/DX-1435.
+	suite.T().SkipNow()
+
 	suite.OnlyRunForTags(tagsuite.Service)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
