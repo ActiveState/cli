@@ -2015,7 +2015,7 @@ pjfile_deprecation_msg:
   other: |
     Your activestate.yaml located at [ACTIONABLE]{{.V0}}[/RESET] appears to be using deprecated keys. Please update the following keys:
     {{.V1}}
-    For information on how to update these please read the deprecation information at:
+    To find out how to update these please read the deprecation information at:
     [ACTIONABLE]{{.V2}}[/RESET]
 pjfile_deprecation_entry:
   other: " - '[ACTIONABLE]{{.V0}}[/RESET]' located at byte [ACTIONABLE]{{.V1}}[/RESET]"
