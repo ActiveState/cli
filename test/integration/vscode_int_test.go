@@ -7,6 +7,7 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/ActiveState/cli/internal-as/fileutils"
 	"github.com/ActiveState/cli/internal-as/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal-as/testhelpers/tagsuite"
 )
@@ -188,4 +189,34 @@ project: "https://platform.activestate.com/ActiveState-CLI/Python3"
 	out := cp.TrimmedSnapshot()
 	suite.Contains(out, "ACTIVESTATE_ACTIVATED")
 	suite.Contains(out, "ACTIVESTATE_ACTIVATED_ID")
+}
+
+func (suite *ProjectsIntegrationTestSuite) TestProjects_VSCode() {
+	suite.OnlyRunForTags(tagsuite.Projects, tagsuite.VSCode)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.SpawnWithOpts(e2e.WithArgs("checkout", "ActiveState-CLI/small-python"))
+	cp.ExpectExitCode(0)
+	cp = ts.SpawnWithOpts(e2e.WithArgs("checkout", "ActiveState-CLI/Python3"))
+	cp.ExpectExitCode(0)
+
+	// Verify separate "local_checkouts" and "executables" fields for editor output.
+	cp = ts.SpawnWithOpts(e2e.WithArgs("projects", "--output", "editor"))
+	cp.Expect(`"name":"Python3"`)
+	cp.Expect(`"local_checkouts":["`)
+	if runtime.GOOS != "windows" {
+		cp.ExpectLongString(filepath.Join(ts.Dirs.Work, "Python3") + `"]`)
+	} else {
+		// Windows uses the long path here.
+		longPath, _ := fileutils.GetLongPathName(filepath.Join(ts.Dirs.Work, "Python3"))
+		cp.ExpectLongString(strings.ReplaceAll(longPath, "\\", "\\\\") + `"]`)
+	}
+	cp.Expect(`"executables":["`)
+	if runtime.GOOS != "windows" {
+		cp.ExpectLongString(ts.Dirs.Cache)
+	} else {
+		cp.ExpectLongString(strings.ReplaceAll(ts.Dirs.Cache, "\\", "\\\\"))
+	}
+	cp.ExpectExitCode(0)
 }

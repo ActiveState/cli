@@ -1,9 +1,7 @@
 package integration
 
 import (
-	"path/filepath"
 	"runtime"
-	"strings"
 	"testing"
 
 	"github.com/ActiveState/cli/internal-as/fileutils"
@@ -17,7 +15,7 @@ type ProjectsIntegrationTestSuite struct {
 }
 
 func (suite *ProjectsIntegrationTestSuite) TestProjects() {
-	suite.OnlyRunForTags(tagsuite.Projects, tagsuite.VSCode)
+	suite.OnlyRunForTags(tagsuite.Projects)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -50,25 +48,6 @@ func (suite *ProjectsIntegrationTestSuite) TestProjects() {
 	}
 	cp.Expect("Executables")
 	cp.ExpectLongString(ts.Dirs.Cache)
-	cp.ExpectExitCode(0)
-
-	// Verify separate "local_checkouts" and "executables" fields for JSON output.
-	cp = ts.SpawnWithOpts(e2e.WithArgs("projects", "--output", "json"))
-	cp.Expect(`"name":"Python3"`)
-	cp.Expect(`"local_checkouts":["`)
-	if runtime.GOOS != "windows" {
-		cp.ExpectLongString(filepath.Join(ts.Dirs.Work, "Python3") + `"]`)
-	} else {
-		// Windows uses the long path here.
-		longPath, _ := fileutils.GetLongPathName(filepath.Join(ts.Dirs.Work, "Python3"))
-		cp.ExpectLongString(strings.ReplaceAll(longPath, "\\", "\\\\") + `"]`)
-	}
-	cp.Expect(`"executables":["`)
-	if runtime.GOOS != "windows" {
-		cp.ExpectLongString(ts.Dirs.Cache)
-	} else {
-		cp.ExpectLongString(strings.ReplaceAll(ts.Dirs.Cache, "\\", "\\\\"))
-	}
 	cp.ExpectExitCode(0)
 }
 

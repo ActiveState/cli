@@ -130,7 +130,6 @@ func (s *Exec) Run(params *Params, args ...string) (rerr error) {
 		if err := rt.Update(s.auth, pg); err != nil {
 			return locale.WrapError(err, "err_update_runtime", "Could not update runtime installation.")
 		}
-		return locale.NewError("test error")
 	}
 	venv := virtualenvironment.New(rt)
 

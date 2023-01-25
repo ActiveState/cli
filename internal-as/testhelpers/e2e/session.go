@@ -29,14 +29,12 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/ActiveState/termtest"
 	"github.com/ActiveState/termtest/expect"
 	"github.com/go-openapi/strfmt"
 	"github.com/google/uuid"
 	"github.com/phayes/permbits"
 	"github.com/stretchr/testify/require"
-	"gopkg.in/yaml.v2"
 )
 
 // Session represents an end-to-end testing session during which several console process can be spawned and tested
@@ -293,21 +291,7 @@ func (s *Session) SpawnCmdWithOpts(exe string, opts ...SpawnOptions) *termtest.C
 // provided contents and saves the output to an as.y file within the named
 // directory.
 func (s *Session) PrepareActiveStateYAML(contents string) {
-	msg := "cannot setup activestate.yaml file"
-
-	contents = strings.TrimSpace(contents)
-	projectFile := &projectfile.Project{}
-
-	err := yaml.Unmarshal([]byte(contents), projectFile)
-	require.NoError(s.t, err, msg)
-
-	cfg, err := config.New()
-	require.NoError(s.t, err)
-	defer func() { require.NoError(s.t, cfg.Close()) }()
-
-	projectFile.SetPath(filepath.Join(s.Dirs.Work, "activestate.yaml"))
-	err = projectFile.Save(cfg)
-	require.NoError(s.t, err, msg)
+	require.NoError(s.t, fileutils.WriteFile(filepath.Join(s.Dirs.Work, "activestate.yaml"), []byte(contents)))
 }
 
 // PrepareFile writes a file to path with contents, expecting no error

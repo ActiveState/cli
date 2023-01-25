@@ -91,6 +91,10 @@ func NewImport(prime primeable) *Import {
 func (i *Import) Run(params *ImportRunParams) error {
 	logging.Debug("ExecuteImport")
 
+	if i.proj == nil {
+		return locale.NewInputError("err_no_project")
+	}
+
 	i.out.Notice(locale.Tl("operating_message", "", i.proj.NamespaceString(), i.proj.Dir()))
 
 	if params.FileName == "" {

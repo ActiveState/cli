@@ -18,7 +18,7 @@ type ShowIntegrationTestSuite struct {
 }
 
 func (suite *ShowIntegrationTestSuite) TestShow() {
-	suite.OnlyRunForTags(tagsuite.Show, tagsuite.VSCode)
+	suite.OnlyRunForTags(tagsuite.Show)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -76,7 +76,7 @@ func (suite *ShowIntegrationTestSuite) TestShowWithoutBranch() {
 
 func (suite *ShowIntegrationTestSuite) PrepareActiveStateYAML(ts *e2e.Session) {
 	asyData := strings.TrimSpace(`
-project: "https://platform.activestate.com/cli-integration-tests/Show?commitID=e8f3b07b-502f-4763-83c1-763b9b952e18&branch=main"
+project: "https://platform.activestate.com/cli-integration-tests/Show?commitID=d5d84598-fc2e-4a45-b075-a845e587b5bf&branch=main"
 constants:
   - name: DEBUG
     value: true
