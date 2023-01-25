@@ -1,6 +1,8 @@
 package platforms
 
 import (
+	"fmt"
+
 	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/locale"
@@ -32,7 +34,7 @@ func (l *List) Run() error {
 		return locale.NewInputError("err_no_project")
 	}
 
-	listing, err := newListing("", l.proj.Name(), l.proj.Owner(), l.proj.BranchName())
+	listing, err := newListing(l.proj.CommitID(), l.proj.Name(), l.proj.Owner(), l.proj.BranchName())
 	if err != nil {
 		return err
 	}
@@ -52,6 +54,7 @@ func newListing(commitID, projName, projOrg string, branchName string) (*Listing
 		return nil, err
 	}
 
+	fmt.Println("targetCommitID:", targetCommitID.String())
 	platforms, err := model.FetchPlatformsForCommit(*targetCommitID)
 	if err != nil {
 		return nil, err
