@@ -449,6 +449,11 @@ func Test_detectDeprecations(t *testing.T) {
 			},
 		},
 		{
+			"Constraints Commented Out",
+			`#constraints: 0`,
+			[]string{},
+		},
+		{
 			"Platforms",
 			`platforms: 0"`,
 			[]string{
@@ -464,10 +469,10 @@ func Test_detectDeprecations(t *testing.T) {
 		},
 		{
 			"Mixed",
-			"foo: 0\nconstraints: 0\nbar: 0\nlanguages: 0, platforms: 0",
+			"foo: 0\nconstraints: 0\nbar: 0\nlanguages: 0\nplatforms: 0",
 			[]string{
-				locale.Tr("pjfile_deprecation_entry", "constraints", "6"),
-				locale.Tr("pjfile_deprecation_entry", "languages", "28"),
+				locale.Tr("pjfile_deprecation_entry", "constraints", "7"),
+				locale.Tr("pjfile_deprecation_entry", "languages", "29"),
 				locale.Tr("pjfile_deprecation_entry", "platforms", "42"),
 			},
 		},
@@ -481,9 +486,9 @@ languages:
     constraints:
         platform: Windows10Label,Linux64Label`,
 			[]string{
-				locale.Tr("pjfile_deprecation_entry", "platforms", "108"),
-				locale.Tr("pjfile_deprecation_entry", "languages", "142"),
-				locale.Tr("pjfile_deprecation_entry", "constraints", "166"),
+				locale.Tr("pjfile_deprecation_entry", "platforms", "109"),
+				locale.Tr("pjfile_deprecation_entry", "languages", "143"),
+				locale.Tr("pjfile_deprecation_entry", "constraints", "167"),
 			},
 		},
 		{
