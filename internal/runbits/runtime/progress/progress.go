@@ -98,7 +98,8 @@ func NewProgressIndicator(w io.Writer, out output.Outputer) *ProgressDigester {
 
 		cancelMpb:    cancel,
 		maxNameWidth: maxNameWidth(),
-		out:          out,
+
+		out: out,
 
 		mutex: &sync.Mutex{},
 	}

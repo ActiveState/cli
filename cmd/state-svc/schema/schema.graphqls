@@ -27,8 +27,13 @@ type AnalyticsEventResponse {
   sent: Boolean!
 }
 
-type RuntimeUsageResponse {
+type ReportRuntimeUsageResponse {
   received: Boolean!
+}
+
+type CheckRuntimeUsageResponse {
+  limit: Int!
+  usage: Int!
 }
 
 type DeprecationInfo {
@@ -38,19 +43,14 @@ type DeprecationInfo {
   reason: String!
 }
 
-type RuntimeUsageInfo {
-  limit: Int!
-  usage: Int!
-}
-
 type Query {
   version: Version
   availableUpdate: AvailableUpdate
   projects: [Project]!
   analyticsEvent(category: String!, action: String!, label: String, dimensionsJson: String!): AnalyticsEventResponse
-  runtimeUsage(pid: Int!, exec: String!, dimensionsJson: String!): RuntimeUsageResponse
+  reportRuntimeUsage(pid: Int!, exec: String!, dimensionsJson: String!): ReportRuntimeUsageResponse
+  checkRuntimeUsage(organizationName: String!): CheckRuntimeUsageResponse
   checkDeprecation: DeprecationInfo
-  checkRuntimeUsage(organizationID: String!): RuntimeUsageInfo
   configChanged(key: String!): ConfigChangedResponse
   fetchLogTail: String!
 }

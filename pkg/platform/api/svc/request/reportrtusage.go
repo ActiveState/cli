@@ -1,28 +1,28 @@
 package request
 
-type RuntimeUsage struct {
+type ReportRuntimeUsage struct {
 	pid            int
 	exec           string
 	dimensionsJson string
 }
 
-func NewRuntimeUsage(pid int, exec string, dimensionsJson string) *RuntimeUsage {
-	return &RuntimeUsage{
+func NewReportRuntimeUsage(pid int, exec string, dimensionsJson string) *ReportRuntimeUsage {
+	return &ReportRuntimeUsage{
 		pid:            pid,
 		exec:           exec,
 		dimensionsJson: dimensionsJson,
 	}
 }
 
-func (e *RuntimeUsage) Query() string {
+func (e *ReportRuntimeUsage) Query() string {
 	return `query($pid: Int!, $exec: String!, $dimensionsJson: String!) {
-		runtimeUsage(pid: $pid, exec: $exec, dimensionsJson: $dimensionsJson) {
+		reportRuntimeUsage(pid: $pid, exec: $exec, dimensionsJson: $dimensionsJson) {
 			received
 		}
 	}`
 }
 
-func (e *RuntimeUsage) Vars() map[string]interface{} {
+func (e *ReportRuntimeUsage) Vars() map[string]interface{} {
 	return map[string]interface{}{
 		"pid":            e.pid,
 		"exec":           e.exec,

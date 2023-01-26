@@ -11,6 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runbits/activation"
 	"github.com/ActiveState/cli/internal/runbits/findproject"
+	"github.com/ActiveState/cli/internal/runbits/rtusage"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
@@ -69,6 +70,8 @@ func (u *Shell) Run(params *Params) error {
 		}
 		return locale.WrapError(err, "err_shell_cannot_load_project")
 	}
+
+	rtusage.ReportRuntimeUsage(u.svcModel, u.out, proj.Owner())
 
 	if cid := params.Namespace.CommitID; cid != nil && *cid != proj.CommitUUID() {
 		return locale.NewInputError("err_shell_commit_id_mismatch")

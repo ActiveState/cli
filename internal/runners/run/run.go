@@ -1,6 +1,7 @@
 package run
 
 import (
+	"github.com/ActiveState/cli/internal/runbits/rtusage"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/analytics"
@@ -56,11 +57,13 @@ func New(prime primeable) *Run {
 func (r *Run) Run(name string, args []string) error {
 	logging.Debug("Execute")
 
-	checker.RunUpdateNotifier(r.svcModel, r.out)
-
 	if r.proj == nil {
 		return locale.NewInputError("err_no_project")
 	}
+
+	rtusage.ReportRuntimeUsage(r.svcModel, r.out, r.proj.Owner())
+	checker.RunUpdateNotifier(r.svcModel, r.out)
+
 	r.out.Notice(locale.Tl("operating_message", "", r.proj.NamespaceString(), r.proj.Dir()))
 
 	if name == "" {

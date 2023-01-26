@@ -105,6 +105,11 @@ func New(cfg Configurable) *Auth {
 	return auth
 }
 
+func (s *Auth) SyncRequired() bool {
+	expectAuth := s.AvailableAPIToken() != ""
+	return expectAuth != s.Authenticated()
+}
+
 // Sync will ensure that the authenticated state is in sync with what is in the config database.
 // This is mainly useful if you want to instrument the auth package without creating unnecessary API calls.
 func (s *Auth) Sync() error {

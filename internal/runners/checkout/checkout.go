@@ -7,6 +7,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
+	"github.com/ActiveState/cli/internal/runbits/rtusage"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/pkg/cmdlets/checker"
@@ -73,6 +74,8 @@ func (u *Checkout) Run(params *Params) error {
 	if err != nil {
 		return locale.WrapError(err, "err_project_frompath")
 	}
+
+	rtusage.ReportRuntimeUsage(u.svcModel, u.out, proj.Owner())
 
 	rti, err := runtime.NewFromProject(proj, target.TriggerCheckout, u.analytics, u.svcModel, u.out, u.auth)
 	if err != nil {

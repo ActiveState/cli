@@ -2,6 +2,7 @@ package activate
 
 import (
 	"fmt"
+	"github.com/ActiveState/cli/internal/runbits/rtusage"
 	"os"
 	"os/user"
 	"path/filepath"
@@ -107,6 +108,8 @@ func (r *Activate) run(params *ActivateParams) error {
 			return locale.WrapError(err, "err_activate_projecttouse", "Could not figure out what project to use.")
 		}
 	}
+
+	rtusage.ReportRuntimeUsage(r.svcModel, r.out, proj.Owner())
 
 	alreadyActivated := process.IsActivated(r.config)
 	if alreadyActivated {

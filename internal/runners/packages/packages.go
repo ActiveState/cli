@@ -3,6 +3,7 @@ package packages
 import (
 	"errors"
 	"fmt"
+	"github.com/ActiveState/cli/internal/runbits/rtusage"
 	"os"
 	"strings"
 
@@ -86,6 +87,8 @@ func executePackageOperation(prime primeable, packageName, packageVersion string
 		}
 		out.Notice(locale.Tl("operating_message", "", pj.NamespaceString(), pj.Dir()))
 	}
+
+	rtusage.ReportRuntimeUsage(prime.SvcModel(), out, pj.Owner())
 
 	var validatePkg = operation == model.OperationAdded
 	if !ns.IsValid() {

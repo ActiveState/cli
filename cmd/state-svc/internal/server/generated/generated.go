@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"strconv"
 	"sync"
-	"sync/atomic"
 
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/introspection"
@@ -37,9 +36,6 @@ type Config struct {
 
 type ResolverRoot interface {
 	Query() QueryResolver
-	__Directive() __DirectiveResolver
-	__Schema() __SchemaResolver
-	__Type() __TypeResolver
 }
 
 type DirectiveRoot struct {
@@ -56,6 +52,11 @@ type ComplexityRoot struct {
 		Platform func(childComplexity int) int
 		Sha256   func(childComplexity int) int
 		Version  func(childComplexity int) int
+	}
+
+	CheckRuntimeUsageResponse struct {
+		Limit func(childComplexity int) int
+		Usage func(childComplexity int) int
 	}
 
 	ConfigChangedResponse struct {
@@ -75,23 +76,18 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		AnalyticsEvent    func(childComplexity int, category string, action string, label *string, dimensionsJSON string) int
-		AvailableUpdate   func(childComplexity int) int
-		CheckDeprecation  func(childComplexity int) int
-		CheckRuntimeUsage func(childComplexity int, organizationID string) int
-		ConfigChanged     func(childComplexity int, key string) int
-		FetchLogTail      func(childComplexity int) int
-		Projects          func(childComplexity int) int
-		RuntimeUsage      func(childComplexity int, pid int, exec string, dimensionsJSON string) int
-		Version           func(childComplexity int) int
+		AnalyticsEvent     func(childComplexity int, category string, action string, label *string, dimensionsJSON string) int
+		AvailableUpdate    func(childComplexity int) int
+		CheckDeprecation   func(childComplexity int) int
+		CheckRuntimeUsage  func(childComplexity int, organizationName string) int
+		ConfigChanged      func(childComplexity int, key string) int
+		FetchLogTail       func(childComplexity int) int
+		Projects           func(childComplexity int) int
+		ReportRuntimeUsage func(childComplexity int, pid int, exec string, dimensionsJSON string) int
+		Version            func(childComplexity int) int
 	}
 
-	RuntimeUsageInfo struct {
-		Limit func(childComplexity int) int
-		Usage func(childComplexity int) int
-	}
-
-	RuntimeUsageResponse struct {
+	ReportRuntimeUsageResponse struct {
 		Received func(childComplexity int) int
 	}
 
@@ -113,20 +109,11 @@ type QueryResolver interface {
 	AvailableUpdate(ctx context.Context) (*graph.AvailableUpdate, error)
 	Projects(ctx context.Context) ([]*graph.Project, error)
 	AnalyticsEvent(ctx context.Context, category string, action string, label *string, dimensionsJSON string) (*graph.AnalyticsEventResponse, error)
-	RuntimeUsage(ctx context.Context, pid int, exec string, dimensionsJSON string) (*graph.RuntimeUsageResponse, error)
+	ReportRuntimeUsage(ctx context.Context, pid int, exec string, dimensionsJSON string) (*graph.ReportRuntimeUsageResponse, error)
+	CheckRuntimeUsage(ctx context.Context, organizationName string) (*graph.CheckRuntimeUsageResponse, error)
 	CheckDeprecation(ctx context.Context) (*graph.DeprecationInfo, error)
-	CheckRuntimeUsage(ctx context.Context, organizationID string) (*graph.RuntimeUsageInfo, error)
 	ConfigChanged(ctx context.Context, key string) (*graph.ConfigChangedResponse, error)
 	FetchLogTail(ctx context.Context) (string, error)
-}
-type __DirectiveResolver interface {
-	IsRepeatable(ctx context.Context, obj *introspection.Directive) (bool, error)
-}
-type __SchemaResolver interface {
-	Description(ctx context.Context, obj *introspection.Schema) (*string, error)
-}
-type __TypeResolver interface {
-	SpecifiedByURL(ctx context.Context, obj *introspection.Type) (*string, error)
 }
 
 type executableSchema struct {
@@ -185,6 +172,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.AvailableUpdate.Version(childComplexity), true
+
+	case "CheckRuntimeUsageResponse.limit":
+		if e.complexity.CheckRuntimeUsageResponse.Limit == nil {
+			break
+		}
+
+		return e.complexity.CheckRuntimeUsageResponse.Limit(childComplexity), true
+
+	case "CheckRuntimeUsageResponse.usage":
+		if e.complexity.CheckRuntimeUsageResponse.Usage == nil {
+			break
+		}
+
+		return e.complexity.CheckRuntimeUsageResponse.Usage(childComplexity), true
 
 	case "ConfigChangedResponse.received":
 		if e.complexity.ConfigChangedResponse.Received == nil {
@@ -271,7 +272,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.CheckRuntimeUsage(childComplexity, args["organizationID"].(string)), true
+		return e.complexity.Query.CheckRuntimeUsage(childComplexity, args["organizationName"].(string)), true
 
 	case "Query.configChanged":
 		if e.complexity.Query.ConfigChanged == nil {
@@ -299,17 +300,17 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.Projects(childComplexity), true
 
-	case "Query.runtimeUsage":
-		if e.complexity.Query.RuntimeUsage == nil {
+	case "Query.reportRuntimeUsage":
+		if e.complexity.Query.ReportRuntimeUsage == nil {
 			break
 		}
 
-		args, err := ec.field_Query_runtimeUsage_args(context.TODO(), rawArgs)
+		args, err := ec.field_Query_reportRuntimeUsage_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Query.RuntimeUsage(childComplexity, args["pid"].(int), args["exec"].(string), args["dimensionsJson"].(string)), true
+		return e.complexity.Query.ReportRuntimeUsage(childComplexity, args["pid"].(int), args["exec"].(string), args["dimensionsJson"].(string)), true
 
 	case "Query.version":
 		if e.complexity.Query.Version == nil {
@@ -318,26 +319,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.Version(childComplexity), true
 
-	case "RuntimeUsageInfo.limit":
-		if e.complexity.RuntimeUsageInfo.Limit == nil {
+	case "ReportRuntimeUsageResponse.received":
+		if e.complexity.ReportRuntimeUsageResponse.Received == nil {
 			break
 		}
 
-		return e.complexity.RuntimeUsageInfo.Limit(childComplexity), true
-
-	case "RuntimeUsageInfo.usage":
-		if e.complexity.RuntimeUsageInfo.Usage == nil {
-			break
-		}
-
-		return e.complexity.RuntimeUsageInfo.Usage(childComplexity), true
-
-	case "RuntimeUsageResponse.received":
-		if e.complexity.RuntimeUsageResponse.Received == nil {
-			break
-		}
-
-		return e.complexity.RuntimeUsageResponse.Received(childComplexity), true
+		return e.complexity.ReportRuntimeUsageResponse.Received(childComplexity), true
 
 	case "StateVersion.branch":
 		if e.complexity.StateVersion.Branch == nil {
@@ -433,7 +420,7 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 }
 
 var sources = []*ast.Source{
-	{Name: "schema/schema.graphqls", Input: `type Version {
+	{Name: "../../../schema/schema.graphqls", Input: `type Version {
   state: StateVersion!
 }
 
@@ -462,8 +449,13 @@ type AnalyticsEventResponse {
   sent: Boolean!
 }
 
-type RuntimeUsageResponse {
+type ReportRuntimeUsageResponse {
   received: Boolean!
+}
+
+type CheckRuntimeUsageResponse {
+  limit: Int!
+  usage: Int!
 }
 
 type DeprecationInfo {
@@ -473,19 +465,14 @@ type DeprecationInfo {
   reason: String!
 }
 
-type RuntimeUsageInfo {
-  limit: Int!
-  usage: Int!
-}
-
 type Query {
   version: Version
   availableUpdate: AvailableUpdate
   projects: [Project]!
   analyticsEvent(category: String!, action: String!, label: String, dimensionsJson: String!): AnalyticsEventResponse
-  runtimeUsage(pid: Int!, exec: String!, dimensionsJson: String!): RuntimeUsageResponse
+  reportRuntimeUsage(pid: Int!, exec: String!, dimensionsJson: String!): ReportRuntimeUsageResponse
+  checkRuntimeUsage(organizationName: String!): CheckRuntimeUsageResponse
   checkDeprecation: DeprecationInfo
-  checkRuntimeUsage(organizationID: String!): RuntimeUsageInfo
   configChanged(key: String!): ConfigChangedResponse
   fetchLogTail: String!
 }
@@ -562,14 +549,14 @@ func (ec *executionContext) field_Query_checkRuntimeUsage_args(ctx context.Conte
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
-	if tmp, ok := rawArgs["organizationID"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("organizationID"))
+	if tmp, ok := rawArgs["organizationName"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("organizationName"))
 		arg0, err = ec.unmarshalNString2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["organizationID"] = arg0
+	args["organizationName"] = arg0
 	return args, nil
 }
 
@@ -588,7 +575,7 @@ func (ec *executionContext) field_Query_configChanged_args(ctx context.Context, 
 	return args, nil
 }
 
-func (ec *executionContext) field_Query_runtimeUsage_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Query_reportRuntimeUsage_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 int
@@ -923,6 +910,94 @@ func (ec *executionContext) fieldContext_AvailableUpdate_sha256(ctx context.Cont
 	return fc, nil
 }
 
+func (ec *executionContext) _CheckRuntimeUsageResponse_limit(ctx context.Context, field graphql.CollectedField, obj *graph.CheckRuntimeUsageResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CheckRuntimeUsageResponse_limit(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Limit, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CheckRuntimeUsageResponse_limit(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CheckRuntimeUsageResponse",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CheckRuntimeUsageResponse_usage(ctx context.Context, field graphql.CollectedField, obj *graph.CheckRuntimeUsageResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CheckRuntimeUsageResponse_usage(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Usage, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CheckRuntimeUsageResponse_usage(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CheckRuntimeUsageResponse",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _ConfigChangedResponse_received(ctx context.Context, field graphql.CollectedField, obj *graph.ConfigChangedResponse) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_ConfigChangedResponse_received(ctx, field)
 	if err != nil {
@@ -1249,7 +1324,6 @@ func (ec *executionContext) _Query_version(ctx context.Context, field graphql.Co
 	})
 	if err != nil {
 		ec.Error(ctx, err)
-		return graphql.Null
 	}
 	if resTmp == nil {
 		return graphql.Null
@@ -1294,7 +1368,6 @@ func (ec *executionContext) _Query_availableUpdate(ctx context.Context, field gr
 	})
 	if err != nil {
 		ec.Error(ctx, err)
-		return graphql.Null
 	}
 	if resTmp == nil {
 		return graphql.Null
@@ -1347,7 +1420,6 @@ func (ec *executionContext) _Query_projects(ctx context.Context, field graphql.C
 	})
 	if err != nil {
 		ec.Error(ctx, err)
-		return graphql.Null
 	}
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
@@ -1397,7 +1469,6 @@ func (ec *executionContext) _Query_analyticsEvent(ctx context.Context, field gra
 	})
 	if err != nil {
 		ec.Error(ctx, err)
-		return graphql.Null
 	}
 	if resTmp == nil {
 		return graphql.Null
@@ -1435,8 +1506,8 @@ func (ec *executionContext) fieldContext_Query_analyticsEvent(ctx context.Contex
 	return fc, nil
 }
 
-func (ec *executionContext) _Query_runtimeUsage(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Query_runtimeUsage(ctx, field)
+func (ec *executionContext) _Query_reportRuntimeUsage(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_reportRuntimeUsage(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -1449,21 +1520,20 @@ func (ec *executionContext) _Query_runtimeUsage(ctx context.Context, field graph
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().RuntimeUsage(rctx, fc.Args["pid"].(int), fc.Args["exec"].(string), fc.Args["dimensionsJson"].(string))
+		return ec.resolvers.Query().ReportRuntimeUsage(rctx, fc.Args["pid"].(int), fc.Args["exec"].(string), fc.Args["dimensionsJson"].(string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
-		return graphql.Null
 	}
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*graph.RuntimeUsageResponse)
+	res := resTmp.(*graph.ReportRuntimeUsageResponse)
 	fc.Result = res
-	return ec.marshalORuntimeUsageResponse2ᚖgithubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐRuntimeUsageResponse(ctx, field.Selections, res)
+	return ec.marshalOReportRuntimeUsageResponse2ᚖgithubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐReportRuntimeUsageResponse(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Query_runtimeUsage(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Query_reportRuntimeUsage(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Query",
 		Field:      field,
@@ -1472,9 +1542,9 @@ func (ec *executionContext) fieldContext_Query_runtimeUsage(ctx context.Context,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "received":
-				return ec.fieldContext_RuntimeUsageResponse_received(ctx, field)
+				return ec.fieldContext_ReportRuntimeUsageResponse_received(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type RuntimeUsageResponse", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type ReportRuntimeUsageResponse", field.Name)
 		},
 	}
 	defer func() {
@@ -1484,7 +1554,64 @@ func (ec *executionContext) fieldContext_Query_runtimeUsage(ctx context.Context,
 		}
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Query_runtimeUsage_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+	if fc.Args, err = ec.field_Query_reportRuntimeUsage_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_checkRuntimeUsage(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_checkRuntimeUsage(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().CheckRuntimeUsage(rctx, fc.Args["organizationName"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*graph.CheckRuntimeUsageResponse)
+	fc.Result = res
+	return ec.marshalOCheckRuntimeUsageResponse2ᚖgithubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐCheckRuntimeUsageResponse(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_checkRuntimeUsage(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "limit":
+				return ec.fieldContext_CheckRuntimeUsageResponse_limit(ctx, field)
+			case "usage":
+				return ec.fieldContext_CheckRuntimeUsageResponse_usage(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type CheckRuntimeUsageResponse", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_checkRuntimeUsage_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return
 	}
@@ -1509,7 +1636,6 @@ func (ec *executionContext) _Query_checkDeprecation(ctx context.Context, field g
 	})
 	if err != nil {
 		ec.Error(ctx, err)
-		return graphql.Null
 	}
 	if resTmp == nil {
 		return graphql.Null
@@ -1542,64 +1668,6 @@ func (ec *executionContext) fieldContext_Query_checkDeprecation(ctx context.Cont
 	return fc, nil
 }
 
-func (ec *executionContext) _Query_checkRuntimeUsage(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Query_checkRuntimeUsage(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().CheckRuntimeUsage(rctx, fc.Args["organizationID"].(string))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*graph.RuntimeUsageInfo)
-	fc.Result = res
-	return ec.marshalORuntimeUsageInfo2ᚖgithubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐRuntimeUsageInfo(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Query_checkRuntimeUsage(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Query",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "limit":
-				return ec.fieldContext_RuntimeUsageInfo_limit(ctx, field)
-			case "usage":
-				return ec.fieldContext_RuntimeUsageInfo_usage(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type RuntimeUsageInfo", field.Name)
-		},
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			err = ec.Recover(ctx, r)
-			ec.Error(ctx, err)
-		}
-	}()
-	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Query_checkRuntimeUsage_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
-		ec.Error(ctx, err)
-		return
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _Query_configChanged(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Query_configChanged(ctx, field)
 	if err != nil {
@@ -1618,7 +1686,6 @@ func (ec *executionContext) _Query_configChanged(ctx context.Context, field grap
 	})
 	if err != nil {
 		ec.Error(ctx, err)
-		return graphql.Null
 	}
 	if resTmp == nil {
 		return graphql.Null
@@ -1674,7 +1741,6 @@ func (ec *executionContext) _Query_fetchLogTail(ctx context.Context, field graph
 	})
 	if err != nil {
 		ec.Error(ctx, err)
-		return graphql.Null
 	}
 	if resTmp == nil {
 		if !graphql.HasFieldError(ctx, fc) {
@@ -1718,7 +1784,6 @@ func (ec *executionContext) _Query___type(ctx context.Context, field graphql.Col
 	})
 	if err != nil {
 		ec.Error(ctx, err)
-		return graphql.Null
 	}
 	if resTmp == nil {
 		return graphql.Null
@@ -1792,7 +1857,6 @@ func (ec *executionContext) _Query___schema(ctx context.Context, field graphql.C
 	})
 	if err != nil {
 		ec.Error(ctx, err)
-		return graphql.Null
 	}
 	if resTmp == nil {
 		return graphql.Null
@@ -1829,96 +1893,8 @@ func (ec *executionContext) fieldContext_Query___schema(ctx context.Context, fie
 	return fc, nil
 }
 
-func (ec *executionContext) _RuntimeUsageInfo_limit(ctx context.Context, field graphql.CollectedField, obj *graph.RuntimeUsageInfo) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_RuntimeUsageInfo_limit(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Limit, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(int)
-	fc.Result = res
-	return ec.marshalNInt2int(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_RuntimeUsageInfo_limit(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "RuntimeUsageInfo",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _RuntimeUsageInfo_usage(ctx context.Context, field graphql.CollectedField, obj *graph.RuntimeUsageInfo) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_RuntimeUsageInfo_usage(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Usage, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(int)
-	fc.Result = res
-	return ec.marshalNInt2int(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_RuntimeUsageInfo_usage(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "RuntimeUsageInfo",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _RuntimeUsageResponse_received(ctx context.Context, field graphql.CollectedField, obj *graph.RuntimeUsageResponse) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_RuntimeUsageResponse_received(ctx, field)
+func (ec *executionContext) _ReportRuntimeUsageResponse_received(ctx context.Context, field graphql.CollectedField, obj *graph.ReportRuntimeUsageResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ReportRuntimeUsageResponse_received(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -1948,9 +1924,9 @@ func (ec *executionContext) _RuntimeUsageResponse_received(ctx context.Context, 
 	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_RuntimeUsageResponse_received(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_ReportRuntimeUsageResponse_received(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
-		Object:     "RuntimeUsageResponse",
+		Object:     "ReportRuntimeUsageResponse",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -2295,7 +2271,7 @@ func (ec *executionContext) ___Directive_description(ctx context.Context, field 
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Description, nil
+		return obj.Description(), nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2304,16 +2280,16 @@ func (ec *executionContext) ___Directive_description(ctx context.Context, field 
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*string)
 	fc.Result = res
-	return ec.marshalOString2string(ctx, field.Selections, res)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext___Directive_description(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "__Directive",
 		Field:      field,
-		IsMethod:   false,
+		IsMethod:   true,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
@@ -2434,7 +2410,7 @@ func (ec *executionContext) ___Directive_isRepeatable(ctx context.Context, field
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.__Directive().IsRepeatable(rctx, obj)
+		return obj.IsRepeatable, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2455,8 +2431,8 @@ func (ec *executionContext) fieldContext___Directive_isRepeatable(ctx context.Co
 	fc = &graphql.FieldContext{
 		Object:     "__Directive",
 		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Boolean does not have child fields")
 		},
@@ -2522,7 +2498,7 @@ func (ec *executionContext) ___EnumValue_description(ctx context.Context, field 
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Description, nil
+		return obj.Description(), nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2531,16 +2507,16 @@ func (ec *executionContext) ___EnumValue_description(ctx context.Context, field 
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*string)
 	fc.Result = res
-	return ec.marshalOString2string(ctx, field.Selections, res)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext___EnumValue_description(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "__EnumValue",
 		Field:      field,
-		IsMethod:   false,
+		IsMethod:   true,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
@@ -2692,7 +2668,7 @@ func (ec *executionContext) ___Field_description(ctx context.Context, field grap
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Description, nil
+		return obj.Description(), nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2701,16 +2677,16 @@ func (ec *executionContext) ___Field_description(ctx context.Context, field grap
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*string)
 	fc.Result = res
-	return ec.marshalOString2string(ctx, field.Selections, res)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext___Field_description(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "__Field",
 		Field:      field,
-		IsMethod:   false,
+		IsMethod:   true,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
@@ -2982,7 +2958,7 @@ func (ec *executionContext) ___InputValue_description(ctx context.Context, field
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Description, nil
+		return obj.Description(), nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2991,16 +2967,16 @@ func (ec *executionContext) ___InputValue_description(ctx context.Context, field
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*string)
 	fc.Result = res
-	return ec.marshalOString2string(ctx, field.Selections, res)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext___InputValue_description(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "__InputValue",
 		Field:      field,
-		IsMethod:   false,
+		IsMethod:   true,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
@@ -3130,7 +3106,7 @@ func (ec *executionContext) ___Schema_description(ctx context.Context, field gra
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.__Schema().Description(rctx, obj)
+		return obj.Description(), nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3149,7 +3125,7 @@ func (ec *executionContext) fieldContext___Schema_description(ctx context.Contex
 		Object:     "__Schema",
 		Field:      field,
 		IsMethod:   true,
-		IsResolver: true,
+		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
 		},
@@ -3579,9 +3555,9 @@ func (ec *executionContext) ___Type_description(ctx context.Context, field graph
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*string)
 	fc.Result = res
-	return ec.marshalOString2string(ctx, field.Selections, res)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext___Type_description(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -3979,7 +3955,7 @@ func (ec *executionContext) ___Type_specifiedByURL(ctx context.Context, field gr
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.__Type().SpecifiedByURL(rctx, obj)
+		return obj.SpecifiedByURL(), nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3998,7 +3974,7 @@ func (ec *executionContext) fieldContext___Type_specifiedByURL(ctx context.Conte
 		Object:     "__Type",
 		Field:      field,
 		IsMethod:   true,
-		IsResolver: true,
+		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
 		},
@@ -4087,6 +4063,41 @@ func (ec *executionContext) _AvailableUpdate(ctx context.Context, sel ast.Select
 		case "sha256":
 
 			out.Values[i] = ec._AvailableUpdate_sha256(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var checkRuntimeUsageResponseImplementors = []string{"CheckRuntimeUsageResponse"}
+
+func (ec *executionContext) _CheckRuntimeUsageResponse(ctx context.Context, sel ast.SelectionSet, obj *graph.CheckRuntimeUsageResponse) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, checkRuntimeUsageResponseImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("CheckRuntimeUsageResponse")
+		case "limit":
+
+			out.Values[i] = ec._CheckRuntimeUsageResponse_limit(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "usage":
+
+			out.Values[i] = ec._CheckRuntimeUsageResponse_usage(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
 				invalids++
@@ -4223,7 +4234,6 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 	})
 
 	out := graphql.NewFieldSet(fields)
-	var invalids uint32
 	for i, field := range fields {
 		innerCtx := graphql.WithRootFieldContext(ctx, &graphql.RootFieldContext{
 			Object: field.Name,
@@ -4283,9 +4293,6 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_projects(ctx, field)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
 				return res
 			}
 
@@ -4316,7 +4323,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			out.Concurrently(i, func() graphql.Marshaler {
 				return rrm(innerCtx)
 			})
-		case "runtimeUsage":
+		case "reportRuntimeUsage":
 			field := field
 
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
@@ -4325,27 +4332,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Query_runtimeUsage(ctx, field)
-				return res
-			}
-
-			rrm := func(ctx context.Context) graphql.Marshaler {
-				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
-			}
-
-			out.Concurrently(i, func() graphql.Marshaler {
-				return rrm(innerCtx)
-			})
-		case "checkDeprecation":
-			field := field
-
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Query_checkDeprecation(ctx, field)
+				res = ec._Query_reportRuntimeUsage(ctx, field)
 				return res
 			}
 
@@ -4366,6 +4353,26 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_checkRuntimeUsage(ctx, field)
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return rrm(innerCtx)
+			})
+		case "checkDeprecation":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_checkDeprecation(ctx, field)
 				return res
 			}
 
@@ -4406,9 +4413,6 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_fetchLogTail(ctx, field)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
 				return res
 			}
 
@@ -4436,60 +4440,22 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 		}
 	}
 	out.Dispatch()
-	if invalids > 0 {
-		return graphql.Null
-	}
 	return out
 }
 
-var runtimeUsageInfoImplementors = []string{"RuntimeUsageInfo"}
+var reportRuntimeUsageResponseImplementors = []string{"ReportRuntimeUsageResponse"}
 
-func (ec *executionContext) _RuntimeUsageInfo(ctx context.Context, sel ast.SelectionSet, obj *graph.RuntimeUsageInfo) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, runtimeUsageInfoImplementors)
+func (ec *executionContext) _ReportRuntimeUsageResponse(ctx context.Context, sel ast.SelectionSet, obj *graph.ReportRuntimeUsageResponse) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, reportRuntimeUsageResponseImplementors)
 	out := graphql.NewFieldSet(fields)
 	var invalids uint32
 	for i, field := range fields {
 		switch field.Name {
 		case "__typename":
-			out.Values[i] = graphql.MarshalString("RuntimeUsageInfo")
-		case "limit":
-
-			out.Values[i] = ec._RuntimeUsageInfo_limit(ctx, field, obj)
-
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "usage":
-
-			out.Values[i] = ec._RuntimeUsageInfo_usage(ctx, field, obj)
-
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch()
-	if invalids > 0 {
-		return graphql.Null
-	}
-	return out
-}
-
-var runtimeUsageResponseImplementors = []string{"RuntimeUsageResponse"}
-
-func (ec *executionContext) _RuntimeUsageResponse(ctx context.Context, sel ast.SelectionSet, obj *graph.RuntimeUsageResponse) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, runtimeUsageResponseImplementors)
-	out := graphql.NewFieldSet(fields)
-	var invalids uint32
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("RuntimeUsageResponse")
+			out.Values[i] = graphql.MarshalString("ReportRuntimeUsageResponse")
 		case "received":
 
-			out.Values[i] = ec._RuntimeUsageResponse_received(ctx, field, obj)
+			out.Values[i] = ec._ReportRuntimeUsageResponse_received(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
 				invalids++
@@ -4604,7 +4570,7 @@ func (ec *executionContext) ___Directive(ctx context.Context, sel ast.SelectionS
 			out.Values[i] = ec.___Directive_name(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
+				invalids++
 			}
 		case "description":
 
@@ -4615,35 +4581,22 @@ func (ec *executionContext) ___Directive(ctx context.Context, sel ast.SelectionS
 			out.Values[i] = ec.___Directive_locations(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
+				invalids++
 			}
 		case "args":
 
 			out.Values[i] = ec.___Directive_args(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
+				invalids++
 			}
 		case "isRepeatable":
-			field := field
 
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec.___Directive_isRepeatable(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
+			out.Values[i] = ec.___Directive_isRepeatable(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
 			}
-
-			out.Concurrently(i, func() graphql.Marshaler {
-				return innerFunc(ctx)
-
-			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -4809,35 +4762,22 @@ func (ec *executionContext) ___Schema(ctx context.Context, sel ast.SelectionSet,
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("__Schema")
 		case "description":
-			field := field
 
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec.___Schema_description(ctx, field, obj)
-				return res
-			}
+			out.Values[i] = ec.___Schema_description(ctx, field, obj)
 
-			out.Concurrently(i, func() graphql.Marshaler {
-				return innerFunc(ctx)
-
-			})
 		case "types":
 
 			out.Values[i] = ec.___Schema_types(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
+				invalids++
 			}
 		case "queryType":
 
 			out.Values[i] = ec.___Schema_queryType(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
+				invalids++
 			}
 		case "mutationType":
 
@@ -4852,7 +4792,7 @@ func (ec *executionContext) ___Schema(ctx context.Context, sel ast.SelectionSet,
 			out.Values[i] = ec.___Schema_directives(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
+				invalids++
 			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
@@ -4880,7 +4820,7 @@ func (ec *executionContext) ___Type(ctx context.Context, sel ast.SelectionSet, o
 			out.Values[i] = ec.___Type_kind(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
+				invalids++
 			}
 		case "name":
 
@@ -4915,22 +4855,9 @@ func (ec *executionContext) ___Type(ctx context.Context, sel ast.SelectionSet, o
 			out.Values[i] = ec.___Type_ofType(ctx, field, obj)
 
 		case "specifiedByURL":
-			field := field
 
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec.___Type_specifiedByURL(ctx, field, obj)
-				return res
-			}
+			out.Values[i] = ec.___Type_specifiedByURL(ctx, field, obj)
 
-			out.Concurrently(i, func() graphql.Marshaler {
-				return innerFunc(ctx)
-
-			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -5364,6 +5291,13 @@ func (ec *executionContext) marshalOBoolean2ᚖbool(ctx context.Context, sel ast
 	return res
 }
 
+func (ec *executionContext) marshalOCheckRuntimeUsageResponse2ᚖgithubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐCheckRuntimeUsageResponse(ctx context.Context, sel ast.SelectionSet, v *graph.CheckRuntimeUsageResponse) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._CheckRuntimeUsageResponse(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalOConfigChangedResponse2ᚖgithubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐConfigChangedResponse(ctx context.Context, sel ast.SelectionSet, v *graph.ConfigChangedResponse) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
@@ -5385,28 +5319,11 @@ func (ec *executionContext) marshalOProject2ᚖgithubᚗcomᚋActiveStateᚋcli�
 	return ec._Project(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalORuntimeUsageInfo2ᚖgithubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐRuntimeUsageInfo(ctx context.Context, sel ast.SelectionSet, v *graph.RuntimeUsageInfo) graphql.Marshaler {
+func (ec *executionContext) marshalOReportRuntimeUsageResponse2ᚖgithubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐReportRuntimeUsageResponse(ctx context.Context, sel ast.SelectionSet, v *graph.ReportRuntimeUsageResponse) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
-	return ec._RuntimeUsageInfo(ctx, sel, v)
-}
-
-func (ec *executionContext) marshalORuntimeUsageResponse2ᚖgithubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐRuntimeUsageResponse(ctx context.Context, sel ast.SelectionSet, v *graph.RuntimeUsageResponse) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return ec._RuntimeUsageResponse(ctx, sel, v)
-}
-
-func (ec *executionContext) unmarshalOString2string(ctx context.Context, v interface{}) (string, error) {
-	res, err := graphql.UnmarshalString(v)
-	return res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) marshalOString2string(ctx context.Context, sel ast.SelectionSet, v string) graphql.Marshaler {
-	res := graphql.MarshalString(v)
-	return res
+	return ec._ReportRuntimeUsageResponse(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOString2ᚖstring(ctx context.Context, v interface{}) (*string, error) {

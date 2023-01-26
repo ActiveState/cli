@@ -109,16 +109,29 @@ func (m *SvcModel) AnalyticsEvent(ctx context.Context, category, action, label s
 	return nil
 }
 
-func (m *SvcModel) RecordRuntimeUsage(ctx context.Context, pid int, exec string, dimJson string) error {
-	defer profile.Measure("svc:RecordRuntimeUsage", time.Now())
+func (m *SvcModel) ReportRuntimeUsage(ctx context.Context, pid int, exec string, dimJson string) error {
+	defer profile.Measure("svc:ReportRuntimeUsage", time.Now())
 
-	r := request.NewRuntimeUsage(pid, exec, dimJson)
-	u := graph.RuntimeUsageResponse{}
+	r := request.NewReportRuntimeUsage(pid, exec, dimJson)
+	u := graph.ReportRuntimeUsageResponse{}
 	if err := m.request(ctx, r, &u); err != nil {
-		return errs.Wrap(err, "Error sending runtime usage event via state-svc")
+		return errs.Wrap(err, "Error sending report runtime usage event via state-svc")
 	}
 
 	return nil
+}
+
+func (m *SvcModel) CheckRuntimeUsage(ctx context.Context, organizationName string) (*graph.CheckRuntimeUsageResponse, error) {
+	defer profile.Measure("svc:CheckRuntimeUsage", time.Now())
+
+	m.client.EnableDebugLog()
+	r := request.NewCheckRuntimeUsage(organizationName)
+	u := graph.CheckRuntimeUsageResponseOuter{}
+	if err := m.request(ctx, r, &u); err != nil {
+		return nil, errs.Wrap(err, "Error sending check runtime usage event via state-svc")
+	}
+
+	return &u.Usage, nil
 }
 
 func (m *SvcModel) CheckDeprecation(ctx context.Context) (*graph.DeprecationInfo, error) {

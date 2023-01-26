@@ -2,6 +2,7 @@ package exec
 
 import (
 	"fmt"
+	"github.com/ActiveState/cli/internal/runbits/rtusage"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -117,6 +118,8 @@ func (s *Exec) Run(params *Params, args ...string) (rerr error) {
 		projectNamespace = proj.NamespaceString()
 		rtTarget = target.NewProjectTarget(proj, storage.CachePath(), nil, trigger)
 	}
+
+	rtusage.ReportRuntimeUsage(s.svcModel, s.out, rtTarget.Owner())
 
 	s.out.Notice(locale.Tl("operating_message", "", projectNamespace, projectDir))
 
