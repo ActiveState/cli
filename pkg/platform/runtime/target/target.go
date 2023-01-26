@@ -89,6 +89,9 @@ func NewProjectTarget(pj *project.Project, runtimeCacheDir string, customCommit 
 }
 
 func (p *ProjectTarget) Dir() string {
+	if p.Project.Cache() != "" {
+		return p.Project.Cache()
+	}
 	return ProjectDirToTargetDir(filepath.Dir(p.Project.Source().Path()), p.cacheDir)
 }
 

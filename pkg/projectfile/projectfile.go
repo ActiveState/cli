@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"net/url"
 	"os"
+	"os/user"
 	"path/filepath"
 	"regexp"
 	"runtime"
@@ -96,6 +97,7 @@ type Project struct {
 	Scripts       Scripts       `yaml:"scripts,omitempty"`
 	Jobs          Jobs          `yaml:"jobs,omitempty"`
 	Private       bool          `yaml:"private,omitempty"`
+	Cache         string        `yaml:"cache,omitempty"`
 	path          string        // "private"
 	parsedURL     projectURL    // parsed url data
 	parsedBranch  string
@@ -868,6 +870,7 @@ type CreateParams struct {
 	Private    bool
 	path       string
 	ProjectURL string
+	Cache      string
 }
 
 // TestOnlyCreateWithProjectURL a new activestate.yaml with default content
@@ -972,7 +975,43 @@ func createCustom(params *CreateParams, lang language.Language) (*Project, error
 		return nil, err
 	}
 
+	if params.Cache != "" {
+		createErr := createCacheFile(params.Directory, params.Cache)
+		if createErr != nil {
+			return nil, errs.Wrap(createErr, "Could not create cache file")
+		}
+	}
+
 	return Parse(params.path)
+}
+
+func createCacheFile(filePath, cachePath string) error {
+	user, err := user.Current()
+	if err != nil {
+		return errs.Wrap(err, "Could not get current user")
+	}
+
+	data := map[string]interface{}{
+		"Cache": cachePath,
+	}
+
+	tplName := "activestate.yaml.cache.tpl"
+	tplContents, err := assets.ReadFileBytes(tplName)
+	if err != nil {
+		return errs.Wrap(err, "Could not read asset")
+	}
+
+	fileContents, err := strutils.ParseTemplate(string(tplContents), data)
+	if err != nil {
+		return errs.Wrap(err, "Could not parse %s", tplName)
+	}
+
+	err = fileutils.WriteFile(filepath.Join(filePath, fmt.Sprintf("activestate.%s.yaml", strings.TrimSpace(user.Username))), []byte(fileContents))
+	if err != nil {
+		return errs.Wrap(err, "Could not write cache file")
+	}
+
+	return nil
 }
 
 func validateCreateParams(params *CreateParams) error {

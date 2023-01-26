@@ -92,7 +92,7 @@ func AppDataPathWithParent(parentDir string) (string, error) {
 }
 
 // CachePath returns the path at which our cache is stored
-func CachePath() string {
+func CachePath(override ...string) string {
 	var err error
 	var cachePath string
 	// When running tests we use a unique cache dir that's located in a temp folder, to avoid collisions
@@ -110,6 +110,8 @@ func CachePath() string {
 		}
 	} else if path := os.Getenv(constants.CacheEnvVarName); path != "" {
 		cachePath = path
+	} else if len(override) > 0 {
+		cachePath = override[0]
 	} else {
 		cachePath = configdir.New(constants.InternalConfigNamespace, "").QueryCacheFolder().Path
 		if runtime.GOOS == "windows" {

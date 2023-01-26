@@ -24,6 +24,11 @@ func newCheckoutCommand(prime *primer.Values) *captain.Command {
 				Description: locale.Tl("flag_state_checkout_branch_description", "Defines the branch to checkout"),
 				Value:       &params.Branch,
 			},
+			{
+				Name:        locale.Tl("flag_state_checkout_cache", "set-cache"),
+				Description: locale.Tl("flag_state_checkout_cache_description", "Defines the cache to use"),
+				Value:       &params.Cache,
+			},
 		},
 		[]*captain.Argument{
 			{

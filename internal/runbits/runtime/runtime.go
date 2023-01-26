@@ -26,7 +26,7 @@ func NewFromProject(
 	svcModel *model.SvcModel,
 	out output.Outputer,
 	auth *authentication.Auth) (_ *rt.Runtime, rerr error) {
-	projectTarget := target.NewProjectTarget(proj, storage.CachePath(), nil, trigger)
+	projectTarget := target.NewProjectTarget(proj, storage.CachePath(proj.Cache()), nil, trigger)
 	rti, err := rt.New(projectTarget, an, svcModel)
 	if err != nil {
 		if !rt.IsNeedsUpdateError(err) {

@@ -98,7 +98,7 @@ func (s *Exec) Run(params *Params, args ...string) (rerr error) {
 			// as there is no head
 			rtTarget = target.NewCustomTarget("", "", "", params.Path, trigger, true)
 		} else {
-			rtTarget = target.NewProjectTarget(proj, storage.CachePath(), nil, trigger)
+			rtTarget = target.NewProjectTarget(proj, storage.CachePath(proj.Cache()), nil, trigger)
 		}
 		projectNamespace = proj.NamespaceString()
 	} else {
@@ -115,7 +115,7 @@ func (s *Exec) Run(params *Params, args ...string) (rerr error) {
 		}
 		projectDir = filepath.Dir(proj.Source().Path())
 		projectNamespace = proj.NamespaceString()
-		rtTarget = target.NewProjectTarget(proj, storage.CachePath(), nil, trigger)
+		rtTarget = target.NewProjectTarget(proj, storage.CachePath(proj.Cache()), nil, trigger)
 	}
 
 	s.out.Notice(locale.Tl("operating_message", "", projectNamespace, projectDir))
