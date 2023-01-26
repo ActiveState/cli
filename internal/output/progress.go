@@ -2,8 +2,12 @@ package output
 
 import (
 	"fmt"
+	"os"
+	"runtime"
 	"strings"
 	"time"
+
+	"golang.org/x/crypto/ssh/terminal"
 )
 
 const moveCaretBack = "\x1b[%dD" // %d is the number of characters to move back
@@ -24,7 +28,7 @@ func (d *Spinner) MarshalOutput(f Format) interface{} {
 
 func StartSpinner(out Outputer, msg string, interval time.Duration) *Spinner {
 	frames := []string{".", "..", "..."}
-	if out.Config().Interactive {
+	if isInteractive(out) {
 		frames = []string{`|`, `/`, `-`, `\`}
 	}
 	d := &Spinner{0, frames, out, make(chan struct{}, 1), interval}
@@ -42,7 +46,7 @@ func StartSpinner(out Outputer, msg string, interval time.Duration) *Spinner {
 }
 
 func (d *Spinner) moveCaretBack() int {
-	if !d.out.Config().Interactive {
+	if !isInteractive(d.out) {
 		return 0
 	}
 	prevPos := d.frame - 1
@@ -95,4 +99,8 @@ func (d *Spinner) Stop(msg string) {
 	}
 
 	d.out.Fprint(d.out.Config().ErrWriter, "\n")
+}
+
+func isInteractive(out Outputer) bool {
+	return out.Config().Interactive && terminal.IsTerminal(int(os.Stdin.Fd())) && (runtime.GOOS != "windows" || os.Getenv("SHELL") != "")
 }
