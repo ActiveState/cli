@@ -457,7 +457,7 @@ func parse(configFilepath string) (*Project, error) {
 	if err2 != nil {
 		return nil, &ErrorParseProject{locale.NewInputError(
 			"err_project_parsed",
-			"Project file `{{.V1}}` could not be parsed, the parser produced the following error: {{.V0}}", err.Error(), configFilepath),
+			"Project file `{{.V1}}` could not be parsed, the parser produced the following error: {{.V0}}", err2.Error(), configFilepath),
 		}
 	}
 
