@@ -1,6 +1,7 @@
 package transport
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -13,39 +14,34 @@ import (
 	"github.com/99designs/gqlgen/graphql"
 )
 
-// POST implements the POST side of the default HTTP transport
-// defined in https://github.com/APIs-guru/graphql-over-http#post
-type POST struct{}
+type SSE struct{}
 
-var _ graphql.Transport = POST{}
+var _ graphql.Transport = SSE{}
 
-func (h POST) Supports(r *http.Request) bool {
-	if r.Header.Get("Upgrade") != "" {
+func (t SSE) Supports(r *http.Request) bool {
+	if !strings.Contains(r.Header.Get("Accept"), "text/event-stream") {
 		return false
 	}
-
 	mediaType, _, err := mime.ParseMediaType(r.Header.Get("Content-Type"))
 	if err != nil {
 		return false
 	}
-
-	return r.Method == "POST" && mediaType == "application/json"
+	return r.Method == http.MethodPost && mediaType == "application/json"
 }
 
-func getRequestBody(r *http.Request) (string, error) {
-	if r == nil || r.Body == nil {
-		return "", nil
-	}
-	body, err := io.ReadAll(r.Body)
-	if err != nil {
-		return "", fmt.Errorf("unable to get Request Body %w", err)
-	}
-	return string(body), nil
-}
-
-func (h POST) Do(w http.ResponseWriter, r *http.Request, exec graphql.GraphExecutor) {
+func (t SSE) Do(w http.ResponseWriter, r *http.Request, exec graphql.GraphExecutor) {
 	ctx := r.Context()
+	flusher, ok := w.(http.Flusher)
+	if !ok {
+		SendErrorf(w, http.StatusInternalServerError, "streaming unsupported")
+		return
+	}
+	defer flusher.Flush()
+
+	w.Header().Set("Cache-Control", "no-cache")
+	w.Header().Set("Connection", "keep-alive")
 	w.Header().Set("Content-Type", "application/json")
+
 	params := &graphql.RawParams{}
 	start := graphql.Now()
 	params.Headers = r.Header
@@ -60,6 +56,7 @@ func (h POST) Do(w http.ResponseWriter, r *http.Request, exec graphql.GraphExecu
 		resp := exec.DispatchError(ctx, gqlerror.List{gqlErr})
 		log.Printf("could not get json request body: %+v", err.Error())
 		writeJson(w, resp)
+		return
 	}
 
 	bodyReader := io.NopCloser(strings.NewReader(bodyString))
@@ -84,7 +81,30 @@ func (h POST) Do(w http.ResponseWriter, r *http.Request, exec graphql.GraphExecu
 		return
 	}
 
-	var responses graphql.ResponseHandler
-	responses, ctx = exec.DispatchOperation(ctx, rc)
-	writeJson(w, responses(ctx))
+	ctx = graphql.WithOperationContext(ctx, rc)
+
+	w.Header().Set("Content-Type", "text/event-stream")
+	fmt.Fprint(w, ":\n\n")
+	flusher.Flush()
+
+	responses, ctx := exec.DispatchOperation(ctx, rc)
+
+	for {
+		response := responses(ctx)
+		if response == nil {
+			break
+		}
+		writeJsonWithSSE(w, response)
+		flusher.Flush()
+	}
+
+	fmt.Fprint(w, "event: complete\n\n")
+}
+
+func writeJsonWithSSE(w io.Writer, response *graphql.Response) {
+	b, err := json.Marshal(response)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Fprintf(w, "event: next\ndata: %s\n\n", b)
 }
