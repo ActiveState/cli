@@ -3,6 +3,7 @@ package integration
 import (
 	"bytes"
 	"fmt"
+	"io/ioutil"
 	"path/filepath"
 	"runtime"
 	"testing"
@@ -117,8 +118,11 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckoutCustomCache() {
 	cp.Expect("Checked out project")
 
 	if runtime.GOOS == "windows" {
-		cp = ts.SpawnCmd("dir", ts.Dirs.Work)
-		fmt.Println("Snapshot: ", cp.Snapshot())
+		files, err := ioutil.ReadDir(customCache)
+		suite.Require().NoError(err)
+		for _, f := range files {
+			fmt.Println("file: ", f.Name())
+		}
 	}
 
 	// Verify runtime was installed correctly and works.
