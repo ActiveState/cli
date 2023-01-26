@@ -17,6 +17,6 @@ func TestGetRootPath(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	file := filepath.Join(rootPath, "internal-as/environment/environment_test.go")
+	file := filepath.Join(rootPath, "internal/environment/environment_test.go")
 	require.FileExists(t, file)
 }
