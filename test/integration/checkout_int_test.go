@@ -123,6 +123,14 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckoutCustomCache() {
 		fmt.Println("Found files:", len(files))
 		for _, f := range files {
 			fmt.Println("file: ", f.Name())
+			if f.IsDir() {
+				subFiles, err := ioutil.ReadDir(filepath.Join(ts.Dirs.Work, f.Name()))
+				suite.Require().NoError(err)
+				fmt.Println(fmt.Sprintf("Found %d files in dir %s", len(files), f.Name()))
+				for _, subFile := range subFiles {
+					fmt.Println("subfile: ", subFile.Name())
+				}
+			}
 		}
 	}
 
