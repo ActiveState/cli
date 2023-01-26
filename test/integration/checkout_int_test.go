@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"path/filepath"
+	"runtime"
 	"testing"
 
 	"github.com/ActiveState/cli/internal/constants"
@@ -115,12 +116,16 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckoutCustomCache() {
 	)
 	cp.Expect("Checked out project")
 
+	if runtime.GOOS == "windows" {
+		cp = ts.SpawnCmd("dir", setup.ExecDir(customCache))
+		fmt.Println("Snapshot: ", cp.Snapshot())
+	}
+
 	// Verify runtime was installed correctly and works.
 	pythonExe := filepath.Join(setup.ExecDir(customCache), "python3"+exeutils.Extension)
 	cp = ts.SpawnCmd(pythonExe, "--version")
 	cp.Expect("Python 3")
 	cp.ExpectExitCode(0)
-	// cp.SendLine(fmt.Sprintf("cd %s", filepath.Join(ts.Dirs.Work, "Python3")))
 
 	// Verify that state exec works with custom cache.
 	cp = ts.SpawnWithOpts(
