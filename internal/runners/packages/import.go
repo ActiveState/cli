@@ -11,6 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal-as/primer"
 	"github.com/ActiveState/cli/internal-as/prompt"
 	"github.com/ActiveState/cli/internal/installation/storage"
+	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	gqlModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model"
@@ -25,6 +26,10 @@ import (
 const (
 	defaultImportFile = "requirements.txt"
 )
+
+type configurable interface {
+	keypairs.Configurable
+}
 
 // Confirmer describes the behavior required to prompt a user for confirmation.
 type Confirmer interface {
@@ -121,7 +126,7 @@ func (i *Import) Run(params *ImportRunParams) error {
 		return locale.WrapError(err, "err_obtaining_change_request", "Could not process change set: {{.V0}}.", api.ErrorMessageFromPayload(err))
 	}
 
-	packageReqs := model.FilterCheckpointPackages(reqs)
+	packageReqs := model.FilterCheckpointNamespace(reqs, model.NamespacePackage, model.NamespaceBundle)
 	if len(packageReqs) > 0 {
 		err = removeRequirements(i.Prompter, i.proj, params, packageReqs)
 		if err != nil {

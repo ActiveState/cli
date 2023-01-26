@@ -1,10 +1,7 @@
 package integration
 
 import (
-	"fmt"
-	"path/filepath"
 	"regexp"
-	"runtime"
 	"testing"
 	"time"
 
@@ -29,7 +26,7 @@ func (suite *LanguagesIntegrationTestSuite) TestLanguages_list() {
 	cp := ts.Spawn("languages")
 	cp.Expect("Name")
 	cp.Expect("Python")
-	cp.Expect("3.6.6")
+	cp.Expect("3.9.15")
 	cp.ExpectExitCode(0)
 }
 
@@ -49,32 +46,11 @@ func (suite *LanguagesIntegrationTestSuite) TestLanguages_install() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	username := ts.CreateNewUser()
-	cp := ts.Spawn(tagsuite.Auth, "--username", username, "--password", username)
-	cp.Expect("You are logged in")
-	cp.ExpectExitCode(0)
-	cp.MatchState().TermState.StringBeforeCursor()
+	suite.PrepareActiveStateYAML(ts)
 
-	path := cp.WorkDirectory()
-	var err error
-	if runtime.GOOS != "windows" {
-		// On MacOS the tempdir is symlinked
-		path, err = filepath.EvalSymlinks(cp.WorkDirectory())
-		suite.Require().NoError(err)
-	}
+	ts.LoginAsPersistentUser()
 
-	cp = ts.Spawn("init", fmt.Sprintf("%s/%s", username, "Languages"), "python3", "--path", path)
-	cp.ExpectLongString("successfully initialized")
-	cp.ExpectExitCode(0)
-
-	cp = ts.Spawn("push")
-	cp.Expect("continue?")
-	cp.Send("Y")
-	cp.Expect("Creating project")
-	cp.Expect("Project created")
-	cp.ExpectExitCode(0)
-
-	cp = ts.Spawn("languages")
+	cp := ts.Spawn("languages")
 	cp.Expect("Name")
 	cp.Expect("Python")
 	cp.ExpectExitCode(0)
@@ -83,14 +59,10 @@ func (suite *LanguagesIntegrationTestSuite) TestLanguages_install() {
 	cp.Expect("Language: python is already installed")
 	cp.ExpectExitCode(1)
 
-	cp = ts.Spawn("languages", "install", "python@3.8.2")
-	cp.Expect("Language added: python@3.8.2")
+	cp = ts.Spawn("languages", "install", "python@3.9.16")
+	cp.Expect("Language added: python@3.9.16")
 	// This can take a little while
 	cp.ExpectExitCode(0, 60*time.Second)
-
-	cp = ts.Spawn("pull")
-	cp.ExpectLongString("Your project in the activestate.yaml has been updated")
-	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("languages")
 	cp.Expect("Name")
@@ -109,12 +81,12 @@ func (suite *LanguagesIntegrationTestSuite) TestLanguages_install() {
 }
 
 func (suite *LanguagesIntegrationTestSuite) PrepareActiveStateYAML(ts *e2e.Session) {
-	asyData := `project: "https://platform.activestate.com/cli-integration-tests/Languages?commitID=e7df00bc-df4d-4e4a-97f7-efa741159bd2&branch=main"`
+	asyData := `project: "https://platform.activestate.com/ActiveState-CLI/Languages?commitID=1eb82b25-a564-42ee-a7d4-d51d2ea73cd5&branch=main"`
 	ts.PrepareActiveStateYAML(asyData)
 }
 
 func (suite *LanguagesIntegrationTestSuite) PrepareActiveStateYAMLNoCommitID(ts *e2e.Session) {
-	asyData := `project: "https://platform.activestate.com/cli-integration-tests/Languages"`
+	asyData := `project: "https://platform.activestate.com/ActiveState-CLI/Languages"`
 	ts.PrepareActiveStateYAML(asyData)
 }
 

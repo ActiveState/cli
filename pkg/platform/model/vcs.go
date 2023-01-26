@@ -119,16 +119,17 @@ func NamespaceMatch(query string, namespace NamespaceMatchable) bool {
 }
 
 type NamespaceType struct {
-	name   string
-	prefix string
+	name      string
+	prefix    string
+	matchable NamespaceMatchable
 }
 
 var (
-	NamespacePackage  = NamespaceType{"package", "language"} // these values should match the namespace prefix
-	NamespaceBundle   = NamespaceType{"bundle", "bundles"}
-	NamespaceLanguage = NamespaceType{"language", ""}
-	NamespacePlatform = NamespaceType{"platform", ""}
-	NamespaceBlank    = NamespaceType{"", ""}
+	NamespacePackage  = NamespaceType{"package", "language", NamespacePackageMatch} // these values should match the namespace prefix
+	NamespaceBundle   = NamespaceType{"bundle", "bundles", NamespaceBundlesMatch}
+	NamespaceLanguage = NamespaceType{"language", "", NamespaceLanguageMatch}
+	NamespacePlatform = NamespaceType{"platform", "", NamespacePlatformMatch}
+	NamespaceBlank    = NamespaceType{"", "", ""}
 )
 
 func (t NamespaceType) String() string {
@@ -137,6 +138,10 @@ func (t NamespaceType) String() string {
 
 func (t NamespaceType) Prefix() string {
 	return t.prefix
+}
+
+func (t NamespaceType) Matchable() NamespaceMatchable {
+	return t.matchable
 }
 
 // Namespace is the type used for communicating namespaces, mainly just allows for self documenting code
@@ -674,90 +679,110 @@ func (cs indexedCommits) countBetween(first, last string) (int, error) {
 	return ct, nil
 }
 
-// CommitPlatform commits a single platform commit
-func CommitPlatform(pj ProjectInfo, op Operation, name, version string, word int) error {
-	platform, err := FetchPlatformByDetails(name, version, word)
-	if err != nil {
-		return err
-	}
-
-	pjm, err := FetchProjectByName(pj.Owner(), pj.Name())
-	if err != nil {
-		return errs.Wrap(err, "Could not fetch project")
-	}
-
-	branch, err := BranchForProjectByName(pjm, pj.BranchName())
-	if err != nil {
-		return errs.Wrap(err, "Could not fetch branch: %s", pj.BranchName())
-	}
-
-	if branch.CommitID == nil {
-		return locale.NewError("err_project_no_languages")
-	}
-
-	var msgL10nKey string
-	switch op {
-	case OperationAdded:
-		msgL10nKey = "commit_message_add_platform"
-	case OperationUpdated:
-		return errs.New("this is not supported yet")
-	case OperationRemoved:
-		msgL10nKey = "commit_message_removed_platform"
-	}
-
-	bCommitID := *branch.CommitID
-	msg := locale.Tr(msgL10nKey, name, strconv.Itoa(word), version)
-	platformID := platform.PlatformID.String()
-
-	// version is not the value that AddCommit needs - platforms do not post a version
-	commit, err := AddCommit(bCommitID, msg, op, NewNamespacePlatform(), platformID, "")
-	if err != nil {
-		return err
-	}
-
-	return UpdateBranchCommit(branch.BranchID, commit.CommitID)
-}
-
-// CommitLanguage commits a single language to the platform
-func CommitLanguage(pj ProjectInfo, op Operation, name, version string) error {
-	lang, err := FetchLanguageByDetails(name, version)
-	if err != nil {
-		return err
-	}
-
-	pjm, err := FetchProjectByName(pj.Owner(), pj.Name())
-	if err != nil {
-		return errs.Wrap(err, "Could not fetch project")
-	}
-
-	branch, err := BranchForProjectByName(pjm, pj.BranchName())
-	if err != nil {
-		return errs.Wrap(err, "Could not fetch branch: %s", pj.BranchName())
-	}
-
-	if branch.CommitID == nil {
-		return locale.NewError("err_project_no_languages")
-	}
-
-	var msgL10nKey string
-	switch op {
-	case OperationAdded:
-		msgL10nKey = "commit_message_add_language"
-	case OperationUpdated:
-		return errs.New("this is not supported yet")
-	case OperationRemoved:
-		msgL10nKey = "commit_message_removed_language"
-	}
-
-	branchCommitID := *branch.CommitID
+// CommitRequirement commits a single requirement to the platform
+func CommitRequirement(commitID strfmt.UUID, op Operation, name, version string, word int, namespace Namespace) (strfmt.UUID, error) {
+	msgL10nKey := commitMessage(op, name, version, namespace, word)
 	msg := locale.Tr(msgL10nKey, name, version)
 
-	commit, err := AddCommit(branchCommitID, msg, op, NewNamespaceLanguage(), lang.Name, lang.Version)
+	name, version, err := resolveRequirementNameAndVersion(name, version, word, namespace)
 	if err != nil {
-		return err
+		return "", errs.Wrap(err, "Could not resolve requirement name and version")
 	}
 
-	return UpdateBranchCommit(branch.BranchID, commit.CommitID)
+	commit, err := AddCommit(commitID, msg, op, namespace, name, version)
+	if err != nil {
+		return "", errs.Wrap(err, "Could not add changeset")
+	}
+	return commit.CommitID, nil
+}
+
+func commitMessage(op Operation, name, version string, namespace Namespace, word int) string {
+	switch namespace.Type() {
+	case NamespaceLanguage:
+		return languageCommitMessage(op, name, version)
+	case NamespacePlatform:
+		return platformCommitMessage(op, name, version, word)
+	case NamespacePackage, NamespaceBundle:
+		return packageCommitMessage(op, name, version)
+	}
+
+	return ""
+}
+
+func languageCommitMessage(op Operation, name, version string) string {
+	var msgL10nKey string
+	switch op {
+	case OperationAdded:
+		msgL10nKey = locale.T("commit_message_add_language")
+	case OperationUpdated:
+		msgL10nKey = locale.T("commit_message_update_language")
+	case OperationRemoved:
+		msgL10nKey = locale.T("commit_message_remove_language")
+	}
+
+	return locale.Tr(msgL10nKey, name, version)
+}
+
+func platformCommitMessage(op Operation, name, version string, word int) string {
+	var msgL10nKey string
+	switch op {
+	case OperationAdded:
+		msgL10nKey = locale.T("commit_message_add_platform")
+	case OperationUpdated:
+		msgL10nKey = locale.T("commit_message_update_platform")
+	case OperationRemoved:
+		msgL10nKey = locale.T("commit_message_remove_platform")
+	}
+
+	return locale.Tr(msgL10nKey, name, strconv.Itoa(word), version)
+}
+
+func packageCommitMessage(op Operation, name, version string) string {
+	var msgL10nKey string
+	switch op {
+	case OperationAdded:
+		msgL10nKey = locale.T("commit_message_add_package")
+	case OperationUpdated:
+		msgL10nKey = locale.T("commit_message_update_package")
+	case OperationRemoved:
+		msgL10nKey = locale.T("commit_message_remove_package")
+	}
+
+	return locale.Tr(msgL10nKey, name, version)
+}
+
+func resolveRequirementNameAndVersion(name, version string, word int, namespace Namespace) (string, string, error) {
+	if namespace.Type() == NamespacePlatform {
+		platform, err := FetchPlatformByDetails(name, version, word)
+		if err != nil {
+			return "", "", errs.Wrap(err, "Could not fetch platform")
+		}
+		name = platform.PlatformID.String()
+		version = ""
+	}
+
+	return name, version, nil
+}
+
+func commitChangeset(parentCommit strfmt.UUID, op Operation, ns Namespace, requirement, version string) ([]*mono_models.CommitChangeEditable, error) {
+	var res []*mono_models.CommitChangeEditable
+	if ns.Type() == NamespaceLanguage {
+		res = append(res, &mono_models.CommitChangeEditable{
+			Operation:         string(OperationUpdated),
+			Namespace:         ns.String(),
+			Requirement:       requirement,
+			VersionConstraint: version,
+		})
+	} else {
+		res = append(res, &mono_models.CommitChangeEditable{
+			Operation:         string(op),
+			Namespace:         ns.String(),
+			Requirement:       requirement,
+			VersionConstraint: version,
+		})
+	}
+
+	return res, nil
 }
 
 func ChangesetFromRequirements(op Operation, reqs []*gqlModel.Requirement) Changeset {

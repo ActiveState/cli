@@ -1144,6 +1144,8 @@ err_package_added:
   other: Failed to add package
 err_bundle_added:
   other: Failed to add bundle
+err_language_updated:
+  other: Failed to update language
 package_err_cannot_fetch_checkpoint:
   other: Cannot fetch checkpoint for package listing
 bundle_err_cannot_fetch_checkpoint:
@@ -1522,6 +1524,8 @@ err_bad_platform_version:
   other: You have to supply a platform version.
 platform_added:
   other: "[NOTICE]{{.V0}}@{{.V1}}[/RESET] has been added."
+platform_removed:
+  other: "[NOTICE]{{.V0}}@{{.V1}}[/RESET] has been removed."
 err_getwd:
   other: |
     Could not retrieve your working directory, error received: [NOTICE]{{.V0}}[/RESET].

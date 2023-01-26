@@ -49,7 +49,7 @@ var (
 	// CommitURLRe Regex used to validate commit info /commit/someUUID
 	CommitURLRe = regexp.MustCompile(urlCommitRegexStr)
 	// deprecatedRegex covers the deprecated fields in the project file
-	deprecatedRegex = regexp.MustCompile(`\s*(?:constraints|platforms|languages):`)
+	deprecatedRegex = regexp.MustCompile(`(?m)^\s*(?:constraints|platforms|languages):`)
 )
 
 type ErrorParseProject struct{ *locale.LocalizedError }

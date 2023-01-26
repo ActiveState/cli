@@ -29,6 +29,8 @@ const (
 	TriggerSwitch             Trigger = "switch"
 	TriggerImport             Trigger = "import"
 	TriggerPackage            Trigger = "package"
+	TriggerLanguage           Trigger = "language"
+	TriggerPlatform           Trigger = "platform"
 	TriggerPull               Trigger = "pull"
 	TriggerReset              Trigger = "reset"
 	TriggerRevert             Trigger = "revert"

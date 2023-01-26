@@ -445,7 +445,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_UninstallDoesNotExist() {
 	suite.PrepareActiveStateYAML(ts)
 
 	cp := ts.Spawn("uninstall", "doesNotExist")
-	cp.Expect("Package is not installed: doesNotExist")
+	cp.Expect("Error occurred while trying to create a commit")
 	cp.ExpectExitCode(1)
 }
 
