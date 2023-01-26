@@ -120,13 +120,17 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckoutCustomCache() {
 	if runtime.GOOS == "windows" {
 		files, err := ioutil.ReadDir(customCache)
 		suite.Require().NoError(err)
+		fmt.Println("Found files:", len(files))
 		for _, f := range files {
 			fmt.Println("file: ", f.Name())
 		}
 	}
 
-	// Verify runtime was installed correctly and works.
 	pythonExe := filepath.Join(setup.ExecDir(customCache), "python3"+exeutils.Extension)
+	suite.Require().True(fileutils.DirExists(customCache))
+	suite.Require().True(fileutils.FileExists(pythonExe))
+
+	// Verify runtime was installed correctly and works.
 	cp = ts.SpawnCmd(pythonExe, "--version")
 	cp.Expect("Python 3")
 	cp.ExpectExitCode(0)
