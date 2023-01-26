@@ -1,10 +1,10 @@
 package cmdtree
 
 import (
-	"github.com/ActiveState/cli/internal/captain"
-	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/primer"
+	"github.com/ActiveState/cli/internal-as/captain"
+	"github.com/ActiveState/cli/internal-as/errs"
+	"github.com/ActiveState/cli/internal-as/locale"
+	"github.com/ActiveState/cli/internal-as/primer"
 )
 
 func newTestCommand(prime *primer.Values) *captain.Command {

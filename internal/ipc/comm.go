@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal-as/logging"
 )
 
 // Key/Value associations. Keys start with rare characters to try to ensure

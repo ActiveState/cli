@@ -10,7 +10,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ActiveState/cli/internal-as/environment"
 	"github.com/ActiveState/cli/internal-as/fileutils"
 	"github.com/ActiveState/cli/internal-as/osutils"
 	"github.com/ActiveState/cli/internal-as/osutils/user"
@@ -18,6 +17,7 @@ import (
 	"github.com/ActiveState/cli/internal-as/testhelpers/tagsuite"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/download"
+	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/pkg/sysinfo"
 	"github.com/ActiveState/termtest"

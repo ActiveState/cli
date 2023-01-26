@@ -7,7 +7,7 @@ import (
 	"github.com/go-openapi/strfmt"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/ActiveState/cli/internal-as/environment"
+	"github.com/ActiveState/cli/internal/environment"
 )
 
 func newUUID(uuid string) *strfmt.UUID {

@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/ActiveState/cli/internal-as/environment"
+	"github.com/ActiveState/cli/internal/environment"
 	"github.com/blang/semver"
 )
 

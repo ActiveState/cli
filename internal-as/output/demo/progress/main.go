@@ -4,7 +4,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal-as/output"
 )
 
 func main() {

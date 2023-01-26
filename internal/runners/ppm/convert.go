@@ -11,8 +11,8 @@ import (
 	"github.com/ActiveState/cli/internal-as/output"
 	"github.com/ActiveState/cli/internal-as/primer"
 	"github.com/ActiveState/cli/internal-as/prompt"
-	"github.com/ActiveState/cli/internal-as/runbits"
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/pkg/project"
 )
 

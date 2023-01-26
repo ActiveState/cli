@@ -6,8 +6,8 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
-	"github.com/ActiveState/cli/internal/testhelpers/e2e"
-	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
+	"github.com/ActiveState/cli/internal-as/testhelpers/e2e"
+	"github.com/ActiveState/cli/internal-as/testhelpers/tagsuite"
 )
 
 type PjFileIntegrationTestSuite struct {

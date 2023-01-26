@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	_ "github.com/ActiveState/cli/internal-as/config"
-	"github.com/ActiveState/cli/internal-as/environment"
+	"github.com/ActiveState/cli/internal/environment"
 )
 
 func TestGetRootPath(t *testing.T) {
