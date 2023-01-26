@@ -33,6 +33,18 @@ type Schema struct {
 
 	PossibleTypes map[string][]*Definition
 	Implements    map[string][]*Definition
+
+	Description string
+}
+
+// AddTypes is the helper to add types definition to the schema
+func (s *Schema) AddTypes(defs ...*Definition) {
+	if s.Types == nil {
+		s.Types = make(map[string]*Definition)
+	}
+	for _, def := range defs {
+		s.Types[def.Name] = def
+	}
 }
 
 func (s *Schema) AddPossibleType(name string, def *Definition) {

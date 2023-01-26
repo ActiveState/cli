@@ -83,7 +83,7 @@ func (f MultipartForm) Do(w http.ResponseWriter, r *http.Request, exec graphql.G
 		return
 	}
 
-	var uploadsMap = map[string][]string{}
+	uploadsMap := map[string][]string{}
 	if err = json.Unmarshal([]byte(r.Form.Get("map")), &uploadsMap); err != nil {
 		w.WriteHeader(http.StatusUnprocessableEntity)
 		writeJsonError(w, "map form field could not be decoded")
@@ -190,6 +190,8 @@ func (f MultipartForm) Do(w http.ResponseWriter, r *http.Request, exec graphql.G
 			}
 		}
 	}
+
+	params.Headers = r.Header
 
 	params.ReadTime = graphql.TraceTiming{
 		Start: start,

@@ -30,6 +30,11 @@ type Project struct {
 	Locations []string `json:"locations"`
 }
 
+type RuntimeUsageInfo struct {
+	Limit int `json:"limit"`
+	Usage int `json:"usage"`
+}
+
 type RuntimeUsageResponse struct {
 	Received bool `json:"received"`
 }

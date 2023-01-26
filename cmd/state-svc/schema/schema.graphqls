@@ -38,6 +38,11 @@ type DeprecationInfo {
   reason: String!
 }
 
+type RuntimeUsageInfo {
+  limit: Int!
+  usage: Int!
+}
+
 type Query {
   version: Version
   availableUpdate: AvailableUpdate
@@ -45,6 +50,7 @@ type Query {
   analyticsEvent(category: String!, action: String!, label: String, dimensionsJson: String!): AnalyticsEventResponse
   runtimeUsage(pid: Int!, exec: String!, dimensionsJson: String!): RuntimeUsageResponse
   checkDeprecation: DeprecationInfo
+  checkRuntimeUsage(organizationID: String!): RuntimeUsageInfo
   configChanged(key: String!): ConfigChangedResponse
   fetchLogTail: String!
 }
