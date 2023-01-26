@@ -118,7 +118,7 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckoutCustomCache() {
 	cp.Expect("Checked out project")
 
 	if runtime.GOOS == "windows" {
-		files, err := ioutil.ReadDir(customCache)
+		files, err := ioutil.ReadDir(ts.Dirs.Work)
 		suite.Require().NoError(err)
 		fmt.Println("Found files:", len(files))
 		for _, f := range files {
