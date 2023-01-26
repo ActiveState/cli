@@ -357,12 +357,6 @@ const RCAppendDeployStartLine = "-- START ACTIVESTATE DEPLOY RUNTIME ENVIRONMENT
 // RCAppendDeployStopLine is the end line used to denote our deploy environment config in RC files
 const RCAppendDeployStopLine = "-- STOP ACTIVESTATE DEPLOY RUNTIME ENVIRONMENT"
 
-// RCAppendOfflineInstallStartLine is the start line used to denote our deploy environment config in RC files
-const RCAppendOfflineInstallStartLine = "-- START ACTIVESTATE OFFLINE INSTALL RUNTIME ENVIRONMENT"
-
-// RCAppendOfflineInstallStopLine is the end line used to denote our deploy environment config in RC files
-const RCAppendOfflineInstallStopLine = "-- STOP ACTIVESTATE OFFLINE INSTALL RUNTIME ENVIRONMENT"
-
 // RCAppendDefaultStartLine is the start line used to denote our default environment config in RC files
 const RCAppendDefaultStartLine = "-- START ACTIVESTATE DEFAULT RUNTIME ENVIRONMENT"
 
