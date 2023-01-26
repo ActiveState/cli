@@ -117,7 +117,7 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckoutCustomCache() {
 	cp.Expect("Checked out project")
 
 	if runtime.GOOS == "windows" {
-		cp = ts.SpawnCmd("dir", customCache)
+		cp = ts.SpawnCmd("dir", ts.Dirs.Work)
 		fmt.Println("Snapshot: ", cp.Snapshot())
 	}
 
