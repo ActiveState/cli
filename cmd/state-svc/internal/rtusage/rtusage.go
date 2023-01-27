@@ -39,8 +39,7 @@ func NewChecker(configuration configurable, auth *authentication.Auth) *Checker 
 	return checker
 }
 
-// Check will Check if the current version of the tool is deprecated and returns deprecation info if it is.
-// This uses a fairly short timeout to Check against our deprecation url, so this should not be considered conclusive.
+// Check will check the runtime usage for the given organization, it may return a cached result
 func (c *Checker) Check(organizationName string) (*model.RuntimeUsage, error) {
 	if cached, ok := c.cache.Get(cacheKey + organizationName); ok {
 		return cached.(*model.RuntimeUsage), nil
