@@ -4,15 +4,14 @@ import (
 	"errors"
 	"os"
 
-	"github.com/jessevdk/go-flags"
-
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/ActiveState/cli/internal/terminal"
-
+	"github.com/jessevdk/go-flags"
+	"golang.org/x/term"
 	survey "gopkg.in/AlecAivazis/survey.v1/core"
 )
 
@@ -56,7 +55,7 @@ func initOutput(flags outputFlags, formatName string) (output.Outputer, error) {
 		OutWriter:   os.Stdout,
 		ErrWriter:   os.Stderr,
 		Colored:     !flags.DisableColor(),
-		Interactive: true,
+		Interactive: term.IsTerminal(int(os.Stdin.Fd())),
 	})
 	if err != nil {
 		if errors.Is(err, output.ErrNotRecognized) {
