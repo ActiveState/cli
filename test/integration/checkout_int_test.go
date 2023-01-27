@@ -135,6 +135,8 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckoutCustomCache() {
 	)
 	if runtime.GOOS == "windows" {
 		customCache = strings.ToLower(customCache)
+		customCache, err = fileutils.GetLongPathName(customCache)
+		suite.Require().NoError(err)
 	}
 	cp.Expect(customCache)
 }
