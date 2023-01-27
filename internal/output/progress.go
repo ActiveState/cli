@@ -9,11 +9,12 @@ import (
 const moveCaretBackEscapeSequence = "\x1b[%dD" // %d is the number of characters to move back
 
 type Spinner struct {
-	frame    int
-	frames   []string
-	out      Outputer
-	stop     chan struct{}
-	interval time.Duration
+	frame         int
+	frames        []string
+	out           Outputer
+	stop          chan struct{}
+	interval      time.Duration
+	reportedError bool
 }
 
 var _ Marshaller = &Spinner{}
@@ -27,7 +28,7 @@ func StartSpinner(out Outputer, msg string, interval time.Duration) *Spinner {
 	if out.Config().Interactive {
 		frames = []string{`|`, `/`, `-`, `\`}
 	}
-	d := &Spinner{0, frames, out, make(chan struct{}, 1), interval}
+	d := &Spinner{0, frames, out, make(chan struct{}, 1), interval, false}
 
 	if msg != "" {
 		d.out.Fprint(d.out.Config().ErrWriter, strings.TrimSuffix(msg, " ")+" ")

@@ -7,6 +7,8 @@ import (
 	"os"
 	"syscall"
 	"unsafe"
+
+	"github.com/ActiveState/cli/internal/rollbar"
 )
 
 var kernel32 = syscall.NewLazyDLL("kernel32.dll")
@@ -45,8 +47,13 @@ func (d *Spinner) moveCaretBackInCommandPrompt(n int) {
 		cursor.x = csbi.cursorPosition.x + short(-n)
 		cursor.y = csbi.cursorPosition.y
 
-		_, _, _ = procSetConsoleCursorPosition.Call(uintptr(handle), uintptr(*(*int32)(unsafe.Pointer(&cursor))))
+		_, _, err2 = procSetConsoleCursorPosition.Call(uintptr(handle), uintptr(*(*int32)(unsafe.Pointer(&cursor))))
+		if err2 != nil && !d.reportedError {
+			rollbar.Error("Error calling SetConsoleCursorPosition: %v", err2)
+			d.reportedError = true
+		}
+	} else if !d.reportedError {
+		rollbar.Error("Error calling GetConsoleScreenBufferInfo: %v", err)
+		d.reportedError = true
 	}
-	// Note: do not log or report errors because they would be logged/reported for every tick, which
-	// could be disastrous. Instead, 	rely on manual and unit testing to catch any errors in display.
 }

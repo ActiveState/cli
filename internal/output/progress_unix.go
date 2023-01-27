@@ -3,7 +3,13 @@
 
 package output
 
+import (
+	"github.com/ActiveState/cli/internal/rollbar"
+)
+
 func (d *Spinner) moveCaretBackInCommandPrompt(n int) {
-	// No-op (logging to Rollbar every tick would be a disaster)
-	// Rely on manual and unit testing to catch any errors in display.
+	if !d.reportedError {
+		rollbar.Error("Incorrectly detected Windows command prompt in Unix environment")
+		d.reportedError = true
+	}
 }
