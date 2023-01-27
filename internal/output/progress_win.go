@@ -47,7 +47,7 @@ func (d *Spinner) moveCaretBackInCommandPrompt(n int) {
 		cursor.x = csbi.cursorPosition.x + short(-n)
 		cursor.y = csbi.cursorPosition.y
 
-		_, _, err2 = procSetConsoleCursorPosition.Call(uintptr(handle), uintptr(*(*int32)(unsafe.Pointer(&cursor))))
+		_, _, err2 := procSetConsoleCursorPosition.Call(uintptr(handle), uintptr(*(*int32)(unsafe.Pointer(&cursor))))
 		if err2 != nil && !d.reportedError {
 			rollbar.Error("Error calling SetConsoleCursorPosition: %v", err2)
 			d.reportedError = true
