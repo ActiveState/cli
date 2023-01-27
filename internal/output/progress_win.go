@@ -40,11 +40,13 @@ func (d *Spinner) moveCaretBackInCommandPrompt(n int) {
 	handle := syscall.Handle(os.Stdout.Fd())
 
 	var csbi consoleScreenBufferInfo
-	_, _, _ = procGetConsoleScreenBufferInfo.Call(uintptr(handle), uintptr(unsafe.Pointer(&csbi)))
+	if _, _, err := procGetConsoleScreenBufferInfo.Call(uintptr(handle), uintptr(unsafe.Pointer(&csbi))); err != nil {
+		var cursor coord
+		cursor.x = csbi.cursorPosition.x + short(-n)
+		cursor.y = csbi.cursorPosition.y
 
-	var cursor coord
-	cursor.x = csbi.cursorPosition.x + short(-n)
-	cursor.y = csbi.cursorPosition.y
-
-	_, _, _ = procSetConsoleCursorPosition.Call(uintptr(handle), uintptr(*(*int32)(unsafe.Pointer(&cursor))))
+		_, _, _ = procSetConsoleCursorPosition.Call(uintptr(handle), uintptr(*(*int32)(unsafe.Pointer(&cursor))))
+	}
+	// Note: do not log or report errors because they would be logged/reported for every tick, which
+	// could be disastrous. Instead, 	rely on manual and unit testing to catch any errors in display.
 }
