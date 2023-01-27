@@ -2,6 +2,9 @@ package svcctl
 
 import (
 	"context"
+	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/runbits/rtusage"
+	"github.com/ActiveState/cli/pkg/project"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -66,15 +69,16 @@ func (c *Comm) GetLogFileName(ctx context.Context) (string, error) {
 	return c.req.Request(ctx, KeyLogFile)
 }
 
-type RuntimeUsageReporter interface {
+type Resolver interface {
 	ReportRuntimeUsage(ctx context.Context, pid int, exec, dimensionsJSON string) (*graph.ReportRuntimeUsageResponse, error)
+	CheckRuntimeUsage(ctx context.Context, organizationName string) (*graph.CheckRuntimeUsageResponse, error)
 }
 
 type AnalyticsReporter interface {
 	EventWithLabel(category string, action, label string, dims ...*dimensions.Values)
 }
 
-func HeartbeatHandler(usageReporter RuntimeUsageReporter, analyticsReporter AnalyticsReporter) ipc.RequestHandler {
+func HeartbeatHandler(resolver Resolver, analyticsReporter AnalyticsReporter) ipc.RequestHandler {
 	return func(input string) (string, bool) {
 		if !strings.HasPrefix(input, KeyHeartbeat) {
 			return "", false
@@ -90,10 +94,15 @@ func HeartbeatHandler(usageReporter RuntimeUsageReporter, analyticsReporter Anal
 			}
 
 			metaFilePath := filepath.Join(filepath.Dir(hb.ExecPath), execmeta.MetaFileName)
+			logging.Debug("Reading meta data from filepath (%s)", metaFilePath)
 			metaData, err := execmeta.NewFromFile(metaFilePath)
 			if err != nil {
-				multilog.Critical("Heartbeat Failure: Could not create meta data from filepath (%s): %s", metaFilePath, err)
+				multilog.Critical("Heartbeat Failure: Could not read meta data from filepath (%s): %s", metaFilePath, err)
 				return
+			}
+
+			if metaData.Namespace == "" && metaData.CommitUUID == "" {
+				multilog.Critical("Heartbeat Failure: Meta data is missing namespace and commitUUID: %v", metaData)
 			}
 
 			dims := &dimensions.Values{
@@ -108,8 +117,20 @@ func HeartbeatHandler(usageReporter RuntimeUsageReporter, analyticsReporter Anal
 				multilog.Critical("Heartbeat Failure: Could not marshal dimensions in heartbeat handler: %s", err)
 				return
 			}
+
+			// Soft limit notification
+			logging.Debug("Checking runtime usage for %s", metaData.Namespace)
+			if metaData.Namespace != "" {
+				ns, err := project.ParseNamespace(metaData.Namespace)
+				if err != nil {
+					multilog.Error("Soft limit: Could not parse namespace in heartbeat handler: %s", err)
+				} else {
+					rtusage.NotifyRuntimeUsage(resolver, ns.Owner)
+				}
+			}
+
 			analyticsReporter.EventWithLabel(constants.CatRuntimeUsage, constants.ActRuntimeAttempt, "", dims)
-			_, err = usageReporter.ReportRuntimeUsage(context.Background(), pidNum, hb.ExecPath, dimsJSON)
+			_, err = resolver.ReportRuntimeUsage(context.Background(), pidNum, hb.ExecPath, dimsJSON)
 			if err != nil {
 				multilog.Critical("Heartbeat Failure: Failed to report runtime usage in heartbeat handler: %s", errs.JoinMessage(err))
 				return

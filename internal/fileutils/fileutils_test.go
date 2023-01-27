@@ -13,8 +13,8 @@ import (
 
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/errs"
-  "github.com/ActiveState/cli/internal/osutils/user"
-  "github.com/stretchr/testify/assert"
+	"github.com/ActiveState/cli/internal/osutils/user"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/thoas/go-funk"
 )
@@ -238,7 +238,7 @@ func TestCreateTempExecutable(t *testing.T) {
 	pattern := patPrefix + "*" + patSuffix
 	data := []byte("this is a test")
 
-	name, err := WriteTempFile("", pattern, data, 0700)
+	name, err := WriteTempFileToDir("", pattern, data, 0700)
 	require.NoError(t, err)
 	require.FileExists(t, name)
 	defer os.Remove(name)
@@ -648,7 +648,7 @@ func TestPathsMatch(t *testing.T) {
 }
 
 func TestIsWritableFile(t *testing.T) {
-	file, err := WriteTempFile(
+	file, err := WriteTempFileToDir(
 		"", t.Name(), []byte("Some data"), 0777,
 	)
 	if err != nil {

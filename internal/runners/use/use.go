@@ -76,7 +76,7 @@ func (u *Use) Run(params *Params) error {
 		return locale.WrapInputError(err, "err_use_cannot_find_local_project", "Local project cannot be found.")
 	}
 
-	rtusage.ReportRuntimeUsage(u.svcModel, u.out, proj.Owner())
+	rtusage.PrintRuntimeUsage(u.svcModel, u.out, proj.Owner())
 
 	if cid := params.Namespace.CommitID; cid != nil && *cid != proj.CommitUUID() {
 		return locale.NewInputError("err_use_commit_id_mismatch")

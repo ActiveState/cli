@@ -156,7 +156,7 @@ func (d *Deploy) commitID(namespace project.Namespaced) (strfmt.UUID, error) {
 func (d *Deploy) install(rtTarget setup.Targeter) (rerr error) {
 	d.output.Notice(output.Heading(locale.T("deploy_install")))
 
-	rtusage.ReportRuntimeUsage(d.svcModel, d.output, rtTarget.Owner())
+	rtusage.PrintRuntimeUsage(d.svcModel, d.output, rtTarget.Owner())
 
 	rti, err := runtime.New(rtTarget, d.analytics, d.svcModel)
 	if err == nil {

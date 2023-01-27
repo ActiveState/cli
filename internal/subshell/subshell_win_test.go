@@ -1,3 +1,4 @@
+//go:build windows
 // +build windows
 
 package subshell
@@ -56,7 +57,7 @@ func TestRunCommandNoProjectEnv(t *testing.T) {
 	subs := New(cfg)
 
 	data := []byte("echo --EMPTY-- %ACTIVESTATE_PROJECT% --EMPTY--")
-	filename, err := fileutils.WriteTempFile("", "test*.bat", data, 0700)
+	filename, err := fileutils.WriteTempFileToDir("", "test*.bat", data, 0700)
 	require.NoError(t, err)
 	defer os.Remove(filename)
 
@@ -88,7 +89,7 @@ func TestRunCommandError(t *testing.T) {
 	assert.Error(t, err, "Returns an error")
 
 	data := []byte("exit 2")
-	filename, err := fileutils.WriteTempFile("", "test*.bat", data, 0700)
+	filename, err := fileutils.WriteTempFileToDir("", "test*.bat", data, 0700)
 	require.NoError(t, err)
 	defer os.Remove(filename)
 

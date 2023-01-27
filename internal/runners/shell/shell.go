@@ -71,7 +71,7 @@ func (u *Shell) Run(params *Params) error {
 		return locale.WrapError(err, "err_shell_cannot_load_project")
 	}
 
-	rtusage.ReportRuntimeUsage(u.svcModel, u.out, proj.Owner())
+	rtusage.PrintRuntimeUsage(u.svcModel, u.out, proj.Owner())
 
 	if cid := params.Namespace.CommitID; cid != nil && *cid != proj.CommitUUID() {
 		return locale.NewInputError("err_shell_commit_id_mismatch")

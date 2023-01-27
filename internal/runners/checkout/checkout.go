@@ -75,7 +75,7 @@ func (u *Checkout) Run(params *Params) error {
 		return locale.WrapError(err, "err_project_frompath")
 	}
 
-	rtusage.ReportRuntimeUsage(u.svcModel, u.out, proj.Owner())
+	rtusage.PrintRuntimeUsage(u.svcModel, u.out, proj.Owner())
 
 	rti, err := runtime.NewFromProject(proj, target.TriggerCheckout, u.analytics, u.svcModel, u.out, u.auth)
 	if err != nil {

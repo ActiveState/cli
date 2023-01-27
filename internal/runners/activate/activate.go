@@ -109,7 +109,7 @@ func (r *Activate) run(params *ActivateParams) error {
 		}
 	}
 
-	rtusage.ReportRuntimeUsage(r.svcModel, r.out, proj.Owner())
+	rtusage.PrintRuntimeUsage(r.svcModel, r.out, proj.Owner())
 
 	alreadyActivated := process.IsActivated(r.config)
 	if alreadyActivated {

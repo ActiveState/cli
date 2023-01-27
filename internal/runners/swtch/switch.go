@@ -85,7 +85,7 @@ func (s *Switch) Run(params SwitchParams) error {
 		return locale.NewInputError("err_no_project")
 	}
 
-	rtusage.ReportRuntimeUsage(s.svcModel, s.out, s.project.Owner())
+	rtusage.PrintRuntimeUsage(s.svcModel, s.out, s.project.Owner())
 
 	project, err := model.FetchProjectByName(s.project.Owner(), s.project.Name())
 	if err != nil {
