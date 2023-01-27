@@ -124,7 +124,6 @@ func (m *SvcModel) ReportRuntimeUsage(ctx context.Context, pid int, exec string,
 func (m *SvcModel) CheckRuntimeUsage(ctx context.Context, organizationName string) (*graph.CheckRuntimeUsageResponse, error) {
 	defer profile.Measure("svc:CheckRuntimeUsage", time.Now())
 
-	m.client.EnableDebugLog()
 	r := request.NewCheckRuntimeUsage(organizationName)
 	u := graph.CheckRuntimeUsageResponseOuter{}
 	if err := m.request(ctx, r, &u); err != nil {

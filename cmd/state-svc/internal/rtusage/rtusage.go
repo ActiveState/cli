@@ -47,7 +47,6 @@ func (c *Checker) Check(organizationName string) (*model.RuntimeUsage, error) {
 	}
 
 	client := graphql.New()
-	client.EnableDebugLog()
 
 	orgsResponse := model.Organizations{}
 	if err := client.Run(request.OrganizationsByName(organizationName), &orgsResponse); err != nil {
