@@ -1,9 +1,11 @@
 package request
 
 import (
-	"github.com/ActiveState/cli/pkg/platform/api/graphql/model"
-	"github.com/go-openapi/strfmt"
 	"time"
+
+	"github.com/go-openapi/strfmt"
+
+	"github.com/ActiveState/cli/pkg/platform/api/graphql/model"
 )
 
 // RuntimeUsage reports rtusage for the last 8 days, ensuring we reach into the previous week regardless of timezone.
@@ -26,11 +28,6 @@ func (p *usage) Query() string {
 	return `
 		query ($organization_id: uuid!, $week: date) {
 			  organizations_runtime_usage(limit: 1, order_by: [{week_of: desc}], where: {_and: [{organization_id: {_eq: $organization_id}}, {week_of: {_gte: $week}}]}) {
-					week_of
-					total_runtimes
-					static_runtimes_state_deploy
-					static_runtimes_next_gen_installer
-					organization_id
 					limit_runtimes
 					active_runtimes
 			  }

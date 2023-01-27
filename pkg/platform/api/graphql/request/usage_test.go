@@ -1,12 +1,14 @@
 package request
 
 import (
+	"testing"
+
+	"github.com/go-openapi/strfmt"
+	"github.com/stretchr/testify/require"
+
 	"github.com/ActiveState/cli/pkg/platform/api/graphql"
 	"github.com/ActiveState/cli/pkg/platform/api/graphql/model"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
-	"github.com/go-openapi/strfmt"
-	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestUsage(t *testing.T) {
@@ -39,7 +41,7 @@ func TestUsage(t *testing.T) {
 
 			require.NoError(t, err)
 			require.NotEmpty(t, resp.Usage)
-			require.NotEmpty(t, usage.ActiveRuntimesDynamicAndStatic)
+			require.NotEmpty(t, usage.ActiveDynamicRuntimes)
 
 		})
 	}
