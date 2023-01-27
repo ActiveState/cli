@@ -1006,7 +1006,14 @@ func createCacheFile(filePath, cachePath string) error {
 		return errs.Wrap(err, "Could not parse %s", tplName)
 	}
 
-	err = fileutils.WriteFile(filepath.Join(filePath, fmt.Sprintf("activestate.%s.yaml", strings.TrimSpace(user.Username))), []byte(fileContents))
+	// Username on Windows is  DOMAIN\username, we only want the username
+	// rather than trimming the domain, we just take the last part of the
+	// home directory's path
+	name := strings.TrimSpace(user.Username)
+	if runtime.GOOS == "windows" {
+		name = strings.TrimSpace(filepath.Base(user.HomeDir))
+	}
+	err = fileutils.WriteFile(filepath.Join(filePath, fmt.Sprintf("activestate.%s.yaml", strings.TrimSpace(name))), []byte(fileContents))
 	if err != nil {
 		return errs.Wrap(err, "Could not write cache file")
 	}
