@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-// Usage reports rtusage for the last 8 days, ensuring we reach into the previous week regardless of timezone.
+// RuntimeUsage reports rtusage for the last 8 days, ensuring we reach into the previous week regardless of timezone.
 // The use-case of this function is to get the current rtusage, but in order to do this we have to request the last 78
 // days rather than the current time, because the week field does not have timezone data, and so requesting the current
 // date will result in timezone miss-match issues.
