@@ -2,14 +2,16 @@ package protocol
 
 import (
 	"fmt"
+	"net/url"
+
+	"github.com/skratchdot/open-golang/open"
+
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/skratchdot/open-golang/open"
-	"net/url"
 )
 
 type primeable interface {
@@ -38,7 +40,9 @@ func (p *Protocol) Run(params Params) error {
 
 	// Host=platform means we're trying to open a link to the platform
 	if parsed.Host == "platform" {
-		open.Run("https://platform.activestate.com" + parsed.Path)
+		if err := open.Run("https://platform.activestate.com" + parsed.Path); err != nil {
+			return locale.WrapInputError(err, "err_protocol_open", "Could not open URL: {{.V0}}", params.URL)
+		}
 		return nil
 	}
 
