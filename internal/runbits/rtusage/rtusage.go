@@ -22,8 +22,6 @@ type dataHandler interface {
 	CheckRuntimeUsage(ctx context.Context, organizationName string) (*graph.CheckRuntimeUsageResponse, error)
 }
 
-type checkFunc func(ctx context.Context, organizationName string) (*graph.CheckRuntimeUsageResponse, error)
-
 func PrintRuntimeUsage(data dataHandler, out output.Outputer, orgName string) {
 	if orgName == "" {
 		return
