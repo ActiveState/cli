@@ -134,9 +134,9 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckoutCustomCache() {
 		e2e.WithWorkDirectory(filepath.Join(ts.Dirs.Work, "Python3")),
 	)
 	if runtime.GOOS == "windows" {
-		customCache = strings.ToLower(customCache)
 		customCache, err = fileutils.GetLongPathName(customCache)
 		suite.Require().NoError(err)
+		customCache = strings.ToLower(customCache)
 	}
 	cp.Expect(customCache)
 }
