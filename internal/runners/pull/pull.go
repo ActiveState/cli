@@ -2,25 +2,25 @@ package pull
 
 import (
 	"errors"
-	"github.com/ActiveState/cli/internal/runbits/rtusage"
 	"strings"
 
-	"github.com/ActiveState/cli/internal/analytics"
-	"github.com/ActiveState/cli/internal/installation/storage"
-	"github.com/ActiveState/cli/pkg/cmdlets/commit"
-	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
-	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/go-openapi/strfmt"
 
+	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runbits"
+	"github.com/ActiveState/cli/internal/runbits/rtusage"
+	"github.com/ActiveState/cli/pkg/cmdlets/commit"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
 )
 

@@ -2,11 +2,12 @@ package exec
 
 import (
 	"fmt"
-	"github.com/ActiveState/cli/internal/runbits/rtusage"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
+
+	"github.com/shirou/gopsutil/v3/process"
 
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/constants"
@@ -23,6 +24,7 @@ import (
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/cli/internal/runbits"
+	"github.com/ActiveState/cli/internal/runbits/rtusage"
 	"github.com/ActiveState/cli/internal/scriptfile"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
@@ -34,7 +36,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
-	"github.com/shirou/gopsutil/v3/process"
 )
 
 type Exec struct {

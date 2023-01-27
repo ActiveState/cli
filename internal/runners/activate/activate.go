@@ -2,7 +2,6 @@ package activate
 
 import (
 	"fmt"
-	"github.com/ActiveState/cli/internal/runbits/rtusage"
 	"os"
 	"os/user"
 	"path/filepath"
@@ -24,6 +23,7 @@ import (
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runbits/activation"
 	"github.com/ActiveState/cli/internal/runbits/findproject"
+	"github.com/ActiveState/cli/internal/runbits/rtusage"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/virtualenvironment"

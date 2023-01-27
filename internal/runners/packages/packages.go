@@ -3,9 +3,11 @@ package packages
 import (
 	"errors"
 	"fmt"
-	"github.com/ActiveState/cli/internal/runbits/rtusage"
 	"os"
 	"strings"
+
+	"github.com/go-openapi/strfmt"
+	"github.com/thoas/go-funk"
 
 	anaConsts "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/captain"
@@ -19,14 +21,13 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runbits"
+	"github.com/ActiveState/cli/internal/runbits/rtusage"
 	medmodel "github.com/ActiveState/cli/pkg/platform/api/mediator/model"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
-	"github.com/go-openapi/strfmt"
-	"github.com/thoas/go-funk"
 )
 
 type PackageVersion struct {

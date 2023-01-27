@@ -1,7 +1,6 @@
 package run
 
 import (
-	"github.com/ActiveState/cli/internal/runbits/rtusage"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/analytics"
@@ -11,6 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
+	"github.com/ActiveState/cli/internal/runbits/rtusage"
 	"github.com/ActiveState/cli/internal/scriptrun"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/pkg/cmdlets/checker"

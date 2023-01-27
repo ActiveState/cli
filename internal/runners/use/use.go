@@ -1,7 +1,6 @@
 package use
 
 import (
-	"github.com/ActiveState/cli/internal/runbits/rtusage"
 	rt "runtime"
 
 	"github.com/ActiveState/cli/internal/analytics"
@@ -13,6 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runbits/findproject"
+	"github.com/ActiveState/cli/internal/runbits/rtusage"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/pkg/cmdlets/checker"

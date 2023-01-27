@@ -2,25 +2,25 @@ package svcctl
 
 import (
 	"context"
-	"github.com/ActiveState/cli/internal/config"
-	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/runbits/rtusage"
-	"github.com/ActiveState/cli/pkg/project"
 	"path/filepath"
 	"strconv"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/analytics/dimensions"
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/graph"
 	"github.com/ActiveState/cli/internal/instanceid"
 	"github.com/ActiveState/cli/internal/ipc"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/rtutils/p"
+	"github.com/ActiveState/cli/internal/runbits/rtusage"
 	"github.com/ActiveState/cli/internal/svcctl/svcmsg"
 	"github.com/ActiveState/cli/pkg/platform/runtime/executors/execmeta"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
+	"github.com/ActiveState/cli/pkg/project"
 )
 
 var (
