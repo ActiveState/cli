@@ -92,31 +92,26 @@ func New(cfg sscommon.Configurable) SubShell {
 
 	var subs SubShell
 	switch name {
-	case "bash":
+	case bash.Name:
 		subs = &bash.SubShell{}
-	case "zsh":
+	case zsh.Name:
 		subs = &zsh.SubShell{}
-	case "tcsh":
+	case tcsh.Name:
 		subs = &tcsh.SubShell{}
-	case "fish":
+	case fish.Name:
 		subs = &fish.SubShell{}
-	case "cmd":
+	case cmd.Name:
 		subs = &cmd.SubShell{}
 	default:
-		logging.Debug("Unsupported shell: %s, defaulting to OS default.", name)
-		rollbar.Error("Unsupported shell: %s", name) // we just want to know what this person is using
+		rollbar.Error("subshell.DetectShell did not return a known name: %s", name)
 		switch runtime.GOOS {
 		case "windows":
-			path = resolveBinaryPath("cmd.exe")
 			subs = &cmd.SubShell{}
 		case "darwin":
-			path = resolveBinaryPath("zsh")
 			subs = &zsh.SubShell{}
 		default:
-			path = resolveBinaryPath("bash")
 			subs = &bash.SubShell{}
 		}
-
 	}
 
 	logging.Debug("Using binary: %s", path)
@@ -214,6 +209,29 @@ func DetectShell(cfg sscommon.Configurable) (string, string) {
 		// For some reason Go or MSYS doesn't translate paths with spaces correctly, so we have to strip out the
 		// invalid escape characters for spaces
 		path = strings.ReplaceAll(path, `\ `, ` `)
+	}
+
+	isKnownShell := false
+	for _, ssName := range []string{bash.Name, cmd.Name, fish.Name, tcsh.Name, zsh.Name} {
+		if name == ssName {
+			isKnownShell = true
+			break
+		}
+	}
+	if !isKnownShell {
+		logging.Debug("Unsupported shell: %s, defaulting to OS default.", name)
+		rollbar.Error("Unsupported shell: %s", name) // we just want to know what this person is using
+		switch runtime.GOOS {
+		case "windows":
+			name = cmd.Name
+			path = resolveBinaryPath("cmd.exe")
+		case "darwin":
+			name = zsh.Name
+			path = resolveBinaryPath("zsh")
+		default:
+			name = bash.Name
+			path = resolveBinaryPath("bash")
+		}
 	}
 
 	return name, path
