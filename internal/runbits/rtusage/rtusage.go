@@ -54,15 +54,6 @@ func NotifyRuntimeUsage(cfg *config.Instance, data dataHandler, orgName string) 
 		return
 	}
 
-	if cfg == nil {
-		var err error
-		cfg, err = config.New()
-		if err != nil {
-			multilog.Error("Soft limit: Failed to create config instance: %s", errs.JoinMessage(err))
-			return
-		}
-	}
-
 	if time.Now().Sub(cfg.GetTime(CfgKeyLastNotify)).Minutes() < float64(60) {
 		return
 	}

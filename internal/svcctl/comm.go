@@ -2,6 +2,7 @@ package svcctl
 
 import (
 	"context"
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/runbits/rtusage"
 	"github.com/ActiveState/cli/pkg/project"
@@ -78,7 +79,7 @@ type AnalyticsReporter interface {
 	EventWithLabel(category string, action, label string, dims ...*dimensions.Values)
 }
 
-func HeartbeatHandler(resolver Resolver, analyticsReporter AnalyticsReporter) ipc.RequestHandler {
+func HeartbeatHandler(cfg *config.Instance, resolver Resolver, analyticsReporter AnalyticsReporter) ipc.RequestHandler {
 	return func(input string) (string, bool) {
 		if !strings.HasPrefix(input, KeyHeartbeat) {
 			return "", false
@@ -125,7 +126,7 @@ func HeartbeatHandler(resolver Resolver, analyticsReporter AnalyticsReporter) ip
 				if err != nil {
 					multilog.Error("Soft limit: Could not parse namespace in heartbeat handler: %s", err)
 				} else {
-					rtusage.NotifyRuntimeUsage(resolver, ns.Owner)
+					rtusage.NotifyRuntimeUsage(cfg, resolver, ns.Owner)
 				}
 			}
 
