@@ -2042,7 +2042,7 @@ runtime_usage_limit_reached:
 runtime_limit_reached_title:
   other: Runtime Limit Reached
 runtime_limit_reached_msg:
-  other: Heads up! You've reached your runtime limit for ActiveState-Labs.
+  other: Heads up! You've reached your runtime limit for {{.V0}}.
 runtime_limit_reached_action:
   other: Upgrade
 pjfile_deprecation_entry:

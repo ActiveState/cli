@@ -77,7 +77,7 @@ func NotifyRuntimeUsage(cfg *config.Instance, data dataHandler, orgName string) 
 
 	if usage > res.Limit {
 		err := notify.Send(locale.T("runtime_limit_reached_title"),
-			locale.T("runtime_limit_reached_msg"),
+			locale.Tr("runtime_limit_reached_msg", orgName),
 			locale.T("runtime_limit_reached_action"),
 			"state://platform/upgrade") // We have to use the state protocol because https:// is backgrounded by the OS
 		if err != nil {
