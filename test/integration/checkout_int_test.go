@@ -3,9 +3,7 @@ package integration
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
 	"path/filepath"
-	"runtime"
 	"testing"
 
 	"github.com/ActiveState/cli/internal/constants"
@@ -106,8 +104,9 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckoutCustomCache() {
 	ts := e2e.New(suite.T(), true)
 	defer ts.Close()
 
-	customCache := filepath.Join(ts.Dirs.Work, "custom-cache")
-	err := fileutils.Mkdir(customCache)
+	customCache, err := fileutils.ResolveUniquePath(filepath.Join(ts.Dirs.Work, "custom-cache"))
+	suite.Require().NoError(err)
+	err = fileutils.Mkdir(customCache)
 	suite.Require().NoError(err)
 
 	// Checkout and verify.
@@ -116,23 +115,6 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckoutCustomCache() {
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cp.Expect("Checked out project")
-
-	if runtime.GOOS == "windows" {
-		files, err := ioutil.ReadDir(ts.Dirs.Work)
-		suite.Require().NoError(err)
-		fmt.Println("Found files:", len(files))
-		for _, f := range files {
-			fmt.Println("file: ", f.Name())
-			if f.IsDir() {
-				subFiles, err := ioutil.ReadDir(filepath.Join(ts.Dirs.Work, f.Name()))
-				suite.Require().NoError(err)
-				fmt.Println(fmt.Sprintf("Found %d files in dir %s", len(files), f.Name()))
-				for _, subFile := range subFiles {
-					fmt.Println("subfile: ", subFile.Name())
-				}
-			}
-		}
-	}
 
 	pythonExe := filepath.Join(setup.ExecDir(customCache), "python3"+exeutils.Extension)
 	suite.Require().True(fileutils.DirExists(customCache))
