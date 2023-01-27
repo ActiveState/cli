@@ -1013,8 +1013,7 @@ func createCacheFile(filePath, cachePath string) error {
 	if runtime.GOOS == "windows" {
 		name = strings.TrimSpace(filepath.Base(user.HomeDir))
 	}
-	err = fileutils.WriteFile(filepath.Join(filePath, fmt.Sprintf("activestate.%s.yaml", strings.TrimSpace(name))), []byte(fileContents))
-	if err != nil {
+	if err := fileutils.WriteFile(filepath.Join(filePath, fmt.Sprintf("activestate.%s.yaml", strings.TrimSpace(name))), []byte(fileContents)); err != nil {
 		return errs.Wrap(err, "Could not write cache file")
 	}
 
