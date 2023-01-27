@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"fmt"
 	"path/filepath"
+	"runtime"
+	"strings"
 	"testing"
 
 	"github.com/ActiveState/cli/internal/constants"
@@ -131,6 +133,9 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckoutCustomCache() {
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 		e2e.WithWorkDirectory(filepath.Join(ts.Dirs.Work, "Python3")),
 	)
+	if runtime.GOOS == "windows" {
+		customCache = strings.ToLower(customCache)
+	}
 	cp.Expect(customCache)
 }
 
