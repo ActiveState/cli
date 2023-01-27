@@ -2,6 +2,8 @@ package rtusage
 
 import (
 	"context"
+	"github.com/ActiveState/cli/internal/config"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/graph"
 	"github.com/ActiveState/cli/internal/locale"
@@ -9,8 +11,12 @@ import (
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/notify"
 	"github.com/ActiveState/cli/internal/output"
+	"os"
 	"strconv"
+	"time"
 )
+
+const CfgKeyLastNotify = "notify.rtusage.last"
 
 type dataHandler interface {
 	CheckRuntimeUsage(ctx context.Context, organizationName string) (*graph.CheckRuntimeUsageResponse, error)
@@ -29,26 +35,59 @@ func PrintRuntimeUsage(data dataHandler, out output.Outputer, orgName string) {
 	if err != nil {
 		// Runtime usage is not enforced, so any errors should not interrupt the user either
 		multilog.Error("Could not check runtime usage: %v", errs.JoinMessage(err))
-	} else if res.Usage > res.Limit {
-		out.Notice(locale.Tr("runtime_usage_limit_reached", orgName, strconv.Itoa(res.Usage), strconv.Itoa(res.Limit)))
+		return
+	}
+
+	usage := res.Usage
+	if override := os.Getenv(constants.RuntimeUsageOverrideEnvVarName); override != "" {
+		logging.Debug("Overriding usage with %s", override)
+		usage, _ = strconv.Atoi(override)
+	}
+
+	if usage > res.Limit {
+		out.Notice(locale.Tr("runtime_usage_limit_reached", orgName, strconv.Itoa(usage), strconv.Itoa(res.Limit)))
 	}
 }
 
-func NotifyRuntimeUsage(data dataHandler, orgName string) {
+func NotifyRuntimeUsage(cfg *config.Instance, data dataHandler, orgName string) {
 	if orgName == "" {
 		return
 	}
 
-	usage, err := data.CheckRuntimeUsage(context.Background(), orgName)
+	if cfg == nil {
+		var err error
+		cfg, err = config.New()
+		if err != nil {
+			multilog.Error("Soft limit: Failed to create config instance: %s", errs.JoinMessage(err))
+			return
+		}
+	}
+
+	if time.Now().Sub(cfg.GetTime(CfgKeyLastNotify)).Minutes() < float64(60) {
+		return
+	}
+
+	if err := cfg.Set(CfgKeyLastNotify, time.Now()); err != nil {
+		multilog.Error("Soft limit: Failed to set last notify time: %s", errs.JoinMessage(err))
+		return
+	}
+
+	res, err := data.CheckRuntimeUsage(context.Background(), orgName)
 	if err != nil {
 		multilog.Error("Soft limit: Failed to check runtime usage in heartbeat handler: %s", errs.JoinMessage(err))
 		return
 	}
 
-	if usage.Usage > usage.Limit {
-		err := notify.Send(locale.Tl("runtime_limit_reached_title", "Runtime Limit Reached"),
-			locale.Tl("runtime_limit_reached_msg", "Heads up! You've reached your runtime limit for ActiveState-Labs."),
-			locale.Tl("runtime_limit_reached_action", "Upgrade"),
+	usage := res.Usage
+	if override := os.Getenv(constants.RuntimeUsageOverrideEnvVarName); override != "" {
+		logging.Debug("Overriding usage with %s", override)
+		usage, _ = strconv.Atoi(override)
+	}
+
+	if usage > res.Limit {
+		err := notify.Send(locale.T("runtime_limit_reached_title"),
+			locale.T("runtime_limit_reached_msg"),
+			locale.T("runtime_limit_reached_action"),
 			"state://platform/upgrade") // We have to use the state protocol because https:// is backgrounded by the OS
 		if err != nil {
 			multilog.Error("Soft limit: Failed to send notification: %s", errs.JoinMessage(err))
