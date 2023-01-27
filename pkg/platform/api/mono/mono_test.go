@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/ActiveState/cli/internal-as/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/api/mono"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/authentication"
