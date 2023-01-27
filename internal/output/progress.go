@@ -1,9 +1,12 @@
 package output
 
 import (
+	"fmt"
 	"strings"
 	"time"
 )
+
+const moveCaretBackEscapeSequence = "\x1b[%dD" // %d is the number of characters to move back
 
 type Spinner struct {
 	frame    int
@@ -47,7 +50,11 @@ func (d *Spinner) moveCaretBack() int {
 		prevPos = len(d.frames) - 1
 	}
 	prevFrame := d.frames[prevPos]
-	d.moveCaretBackInTerminal(len(prevFrame))
+	if d.out.Config().ShellName != "cmd" { // cannot use subshell/cmd.Name due to import cycle
+		d.moveCaretBackInTerminal(len(prevFrame))
+	} else {
+		d.moveCaretBackInCommandPrompt(len(prevFrame))
+	}
 
 	return len(prevFrame)
 }
@@ -92,4 +99,8 @@ func (d *Spinner) Stop(msg string) {
 	}
 
 	d.out.Fprint(d.out.Config().ErrWriter, "\n")
+}
+
+func (d *Spinner) moveCaretBackInTerminal(n int) {
+	d.out.Fprint(d.out.Config().ErrWriter, fmt.Sprintf(moveCaretBackEscapeSequence, n))
 }

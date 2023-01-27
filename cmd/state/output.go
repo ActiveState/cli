@@ -46,7 +46,7 @@ func parseOutputFlags(args []string) outputFlags {
 	return flagSet
 }
 
-func initOutput(flags outputFlags, formatName string) (output.Outputer, error) {
+func initOutput(flags outputFlags, formatName string, shellName string) (output.Outputer, error) {
 	if formatName == "" {
 		formatName = flags.Output
 	}
@@ -56,12 +56,13 @@ func initOutput(flags outputFlags, formatName string) (output.Outputer, error) {
 		ErrWriter:   os.Stderr,
 		Colored:     !flags.DisableColor(),
 		Interactive: term.IsTerminal(int(os.Stdin.Fd())),
+		ShellName:   shellName,
 	})
 	if err != nil {
 		if errors.Is(err, output.ErrNotRecognized) {
 			// The formatter might still be registered, so default to plain for now
 			logging.Warning("Output format not recognized: %s, defaulting to plain output instead", formatName)
-			return initOutput(flags, string(output.PlainFormatName))
+			return initOutput(flags, string(output.PlainFormatName), shellName)
 		}
 		multilog.Log(logging.ErrorNoStacktrace, rollbar.Error)("Could not create outputer, name: %s, error: %s", formatName, err.Error())
 		return nil, errs.Wrap(err, "output.New %s failed", formatName)

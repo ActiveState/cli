@@ -36,7 +36,7 @@ type consoleScreenBufferInfo struct {
 	maximumWindowSize coord
 }
 
-func (d *Spinner) moveCaretBackInTerminal(n int) {
+func (d *Spinner) moveCaretBackInCommandPrompt(n int) {
 	handle := syscall.Handle(os.Stdout.Fd())
 
 	var csbi consoleScreenBufferInfo

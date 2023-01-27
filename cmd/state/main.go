@@ -82,7 +82,7 @@ func main() {
 
 	// Set up our output formatter/writer
 	outFlags := parseOutputFlags(os.Args)
-	out, err := initOutput(outFlags, "")
+	out, err := initOutput(outFlags, "", subshell.New(cfg).Shell())
 	if err != nil {
 		multilog.Critical("Could not initialize outputer: %s", errs.JoinMessage(err))
 		os.Stderr.WriteString(locale.Tr("err_main_outputer", err.Error()))
