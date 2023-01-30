@@ -4,15 +4,14 @@ import (
 	"errors"
 	"os"
 
-	"github.com/jessevdk/go-flags"
-
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/ActiveState/cli/internal/terminal"
-
+	"github.com/jessevdk/go-flags"
+	"golang.org/x/term"
 	survey "gopkg.in/AlecAivazis/survey.v1/core"
 )
 
@@ -47,7 +46,7 @@ func parseOutputFlags(args []string) outputFlags {
 	return flagSet
 }
 
-func initOutput(flags outputFlags, formatName string) (output.Outputer, error) {
+func initOutput(flags outputFlags, formatName string, shellName string) (output.Outputer, error) {
 	if formatName == "" {
 		formatName = flags.Output
 	}
@@ -56,13 +55,14 @@ func initOutput(flags outputFlags, formatName string) (output.Outputer, error) {
 		OutWriter:   os.Stdout,
 		ErrWriter:   os.Stderr,
 		Colored:     !flags.DisableColor(),
-		Interactive: true,
+		Interactive: term.IsTerminal(int(os.Stdin.Fd())),
+		ShellName:   shellName,
 	})
 	if err != nil {
 		if errors.Is(err, output.ErrNotRecognized) {
 			// The formatter might still be registered, so default to plain for now
 			logging.Warning("Output format not recognized: %s, defaulting to plain output instead", formatName)
-			return initOutput(flags, string(output.PlainFormatName))
+			return initOutput(flags, string(output.PlainFormatName), shellName)
 		}
 		multilog.Log(logging.ErrorNoStacktrace, rollbar.Error)("Could not create outputer, name: %s, error: %s", formatName, err.Error())
 		return nil, errs.Wrap(err, "output.New %s failed", formatName)
