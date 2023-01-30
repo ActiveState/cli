@@ -43,6 +43,6 @@ func (a *Install) Run(params InstallRunParams, nsType model.NamespaceType) error
 		params.Package.Version(),
 		0,
 		model.OperationAdded,
-		model.NamespacePackage,
+		nsType,
 	)
 }
