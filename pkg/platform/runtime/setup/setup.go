@@ -617,6 +617,9 @@ func (s *Setup) installFromBuildLog(buildResult *model.BuildResult, artifacts ar
 	defer cancel()
 
 	buildLog, err := buildlog.New(ctx, artifacts, s.eventHandler, *buildResult.Recipe.RecipeID, logFilePath)
+	if err != nil {
+		return errs.Wrap(err, "Cannot establish connection with BuildLog")
+	}
 	defer func() {
 		if err := buildLog.Close(); err != nil {
 			logging.Debug("Failed to close build log: %v", errs.JoinMessage(err))
