@@ -92,6 +92,13 @@ func (d *Spinner) Stop(msg string) {
 	d.stop <- struct{}{}
 	close(d.stop)
 
+	if d.out.Config().Interactive {
+		nMoved := d.moveCaretBack()
+		if nMoved > len(msg) {
+			msg += strings.Repeat(" ", nMoved-len(msg)-1)
+		}
+	}
+
 	if msg != "" {
 		if !d.out.Config().Interactive {
 			d.out.Fprint(d.out.Config().ErrWriter, " ")
