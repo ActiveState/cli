@@ -15,37 +15,37 @@ type MainTestSuite struct {
 
 func (suite *MainTestSuite) TestOutputer() {
 	{
-		outputer, err := initOutput(outputFlags{"", false, false, false}, "")
+		outputer, err := initOutput(outputFlags{"", false, false, false}, "", "")
 		suite.Require().NoError(err, errs.Join(err, "\n").Error())
 		suite.Equal(output.PlainFormatName, outputer.Type(), "Returns Plain outputer")
 	}
 
 	{
-		outputer, err := initOutput(outputFlags{string(output.PlainFormatName), false, false, false}, "")
+		outputer, err := initOutput(outputFlags{string(output.PlainFormatName), false, false, false}, "", "")
 		suite.Require().NoError(err)
 		suite.Equal(output.PlainFormatName, outputer.Type(), "Returns Plain outputer")
 	}
 
 	{
-		outputer, err := initOutput(outputFlags{string(output.JSONFormatName), false, false, false}, "")
+		outputer, err := initOutput(outputFlags{string(output.JSONFormatName), false, false, false}, "", "")
 		suite.Require().NoError(err)
 		suite.Equal(output.JSONFormatName, outputer.Type(), "Returns JSON outputer")
 	}
 
 	{
-		outputer, err := initOutput(outputFlags{"", false, false, false}, string(output.JSONFormatName))
+		outputer, err := initOutput(outputFlags{"", false, false, false}, string(output.JSONFormatName), "")
 		suite.Require().NoError(err)
 		suite.Equal(output.JSONFormatName, outputer.Type(), "Returns JSON outputer")
 	}
 
 	{
-		outputer, err := initOutput(outputFlags{"", false, false, false}, string(output.EditorFormatName))
+		outputer, err := initOutput(outputFlags{"", false, false, false}, string(output.EditorFormatName), "")
 		suite.Require().NoError(err)
 		suite.Equal(output.EditorFormatName, outputer.Type(), "Returns JSON outputer")
 	}
 
 	{
-		outputer, err := initOutput(outputFlags{"", false, false, false}, string(output.EditorV0FormatName))
+		outputer, err := initOutput(outputFlags{"", false, false, false}, string(output.EditorV0FormatName), "")
 		suite.Require().NoError(err)
 		suite.Equal(output.EditorV0FormatName, outputer.Type(), "Returns JSON outputer")
 	}

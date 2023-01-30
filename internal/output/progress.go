@@ -6,14 +6,15 @@ import (
 	"time"
 )
 
-const moveCaretBack = "\x1b[%dD" // %d is the number of characters to move back
+const moveCaretBackEscapeSequence = "\x1b[%dD" // %d is the number of characters to move back
 
 type Spinner struct {
-	frame    int
-	frames   []string
-	out      Outputer
-	stop     chan struct{}
-	interval time.Duration
+	frame         int
+	frames        []string
+	out           Outputer
+	stop          chan struct{}
+	interval      time.Duration
+	reportedError bool
 }
 
 var _ Marshaller = &Spinner{}
@@ -27,7 +28,7 @@ func StartSpinner(out Outputer, msg string, interval time.Duration) *Spinner {
 	if out.Config().Interactive {
 		frames = []string{`|`, `/`, `-`, `\`}
 	}
-	d := &Spinner{0, frames, out, make(chan struct{}, 1), interval}
+	d := &Spinner{0, frames, out, make(chan struct{}, 1), interval, false}
 
 	if msg != "" {
 		d.out.Fprint(d.out.Config().ErrWriter, strings.TrimSuffix(msg, " ")+" ")
@@ -50,7 +51,11 @@ func (d *Spinner) moveCaretBack() int {
 		prevPos = len(d.frames) - 1
 	}
 	prevFrame := d.frames[prevPos]
-	d.out.Fprint(d.out.Config().ErrWriter, fmt.Sprintf(moveCaretBack, len(prevFrame)))
+	if d.out.Config().ShellName != "cmd" { // cannot use subshell/cmd.Name due to import cycle
+		d.moveCaretBackInTerminal(len(prevFrame))
+	} else {
+		d.moveCaretBackInCommandPrompt(len(prevFrame))
+	}
 
 	return len(prevFrame)
 }
@@ -95,4 +100,8 @@ func (d *Spinner) Stop(msg string) {
 	}
 
 	d.out.Fprint(d.out.Config().ErrWriter, "\n")
+}
+
+func (d *Spinner) moveCaretBackInTerminal(n int) {
+	d.out.Fprint(d.out.Config().ErrWriter, fmt.Sprintf(moveCaretBackEscapeSequence, n))
 }
