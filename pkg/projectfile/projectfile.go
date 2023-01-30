@@ -1006,18 +1006,28 @@ func createCacheFile(filePath, cachePath string) error {
 		return errs.Wrap(err, "Could not parse %s", tplName)
 	}
 
-	// Username on Windows is  DOMAIN\username, we only want the username
-	// rather than trimming the domain, we just take the last part of the
-	// home directory's path
-	name := strings.TrimSpace(user.Username)
-	if runtime.GOOS == "windows" {
-		name = strings.TrimSpace(filepath.Base(user.HomeDir))
-	}
-	if err := fileutils.WriteFile(filepath.Join(filePath, fmt.Sprintf("activestate.%s.yaml", strings.TrimSpace(name))), []byte(fileContents)); err != nil {
+	if err := fileutils.WriteFile(filepath.Join(filePath, fmt.Sprintf("activestate.%s.yaml", trimmedUsername(user.Username))), []byte(fileContents)); err != nil {
 		return errs.Wrap(err, "Could not write cache file")
 	}
 
 	return nil
+}
+
+func trimmedUsername(username string) string {
+	// Windows usernames can be one of two formats:
+	// 1. DOMAIN\username
+	// 2. username@DOMAIN
+	// We only want the username, so we trim the domain
+	result := username
+	if runtime.GOOS == "windows" {
+		if strings.Contains(username, "\\") {
+			result = username[strings.Index(username, "\\")+1:]
+		} else if strings.Contains(username, "@") {
+			result = username[:strings.Index(username, "@")]
+		}
+	}
+
+	return strings.TrimSpace(result)
 }
 
 func validateCreateParams(params *CreateParams) error {
