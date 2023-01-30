@@ -20,7 +20,7 @@ Test several important paths for the soft limit notification to show.
 We're not testing all possible paths as it would be too expensive both in terms of testing time as well as maintenance of those tests.
 */
 func (suite *SoftLimitIntegrationTestSuite) TestCheckout() {
-	suite.OnlyRunForTags(tagsuite.SoftLimit)
+	suite.OnlyRunForTags(tagsuite.SoftLimit, tagsuite.Critical)
 
 	ts := e2e.New(suite.T(), true)
 	defer ts.Close()
