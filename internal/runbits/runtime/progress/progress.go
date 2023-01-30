@@ -143,6 +143,7 @@ func (p *ProgressDigester) Handle(ev events.Eventer) error {
 		p.success = true
 
 	case events.SolveStart:
+		p.out.Notice(locale.Tl("setup_runtime", "Setting Up Runtime"))
 		p.solveSpinner = output.StartSpinner(p.out, locale.T("progress_solve"), refreshRate)
 
 	case events.SolveError:
