@@ -350,7 +350,6 @@ func (c *wsConnection) subscribe(start time.Time, msg *message) {
 	c.mu.Unlock()
 
 	go func() {
-		ctx = withSubscriptionErrorContext(ctx)
 		defer func() {
 			if r := recover(); r != nil {
 				err := rc.Recover(ctx, r)
@@ -363,11 +362,7 @@ func (c *wsConnection) subscribe(start time.Time, msg *message) {
 				}
 				c.sendError(msg.id, gqlerr)
 			}
-			if errs := getSubscriptionError(ctx); len(errs) != 0 {
-				c.sendError(msg.id, errs...)
-			} else {
-				c.complete(msg.id)
-			}
+			c.complete(msg.id)
 			c.mu.Lock()
 			delete(c.active, msg.id)
 			c.mu.Unlock()
