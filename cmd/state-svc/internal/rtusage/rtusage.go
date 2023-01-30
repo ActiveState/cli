@@ -1,14 +1,16 @@
 package rtusage
 
 import (
+	"time"
+
+	"github.com/patrickmn/go-cache"
+
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/platform/api/graphql"
 	"github.com/ActiveState/cli/pkg/platform/api/graphql/model"
 	"github.com/ActiveState/cli/pkg/platform/api/graphql/request"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
-	"github.com/patrickmn/go-cache"
-	"time"
 )
 
 const cacheKey = "runtime-usage-"
@@ -41,6 +43,12 @@ func NewChecker(configuration configurable, auth *authentication.Auth) *Checker 
 
 // Check will check the runtime usage for the given organization, it may return a cached result
 func (c *Checker) Check(organizationName string) (*model.RuntimeUsage, error) {
+	if !c.auth.Authenticated() {
+		// Usage information can only be given to authenticated users, and the API doesn't support authentication errors
+		// so we just don't even attempt it if not authenticated.
+		return nil, nil
+	}
+
 	if cached, ok := c.cache.Get(cacheKey + organizationName); ok {
 		return cached.(*model.RuntimeUsage), nil
 	}
