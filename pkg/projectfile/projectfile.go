@@ -1006,28 +1006,13 @@ func createCacheFile(filePath, cachePath string) error {
 		return errs.Wrap(err, "Could not parse %s", tplName)
 	}
 
-	if err := fileutils.WriteFile(filepath.Join(filePath, fmt.Sprintf("activestate.%s.yaml", trimmedUsername(user.Username))), []byte(fileContents)); err != nil {
+	// Trim any non-alphanumeric characters from the username
+	nonAlphanumericRegex := regexp.MustCompile(`[^a-zA-Z0-9 ]+`)
+	if err := fileutils.WriteFile(filepath.Join(filePath, fmt.Sprintf("activestate.%s.yaml", nonAlphanumericRegex.ReplaceAllString(user.Username, ""))), []byte(fileContents)); err != nil {
 		return errs.Wrap(err, "Could not write cache file")
 	}
 
 	return nil
-}
-
-func trimmedUsername(username string) string {
-	// Windows usernames can be one of two formats:
-	// 1. DOMAIN\username
-	// 2. username@DOMAIN
-	// We only want the username, so we trim the domain
-	result := username
-	if runtime.GOOS == "windows" {
-		if strings.Contains(username, "\\") {
-			result = username[strings.Index(username, "\\")+1:]
-		} else if strings.Contains(username, "@") {
-			result = username[:strings.Index(username, "@")]
-		}
-	}
-
-	return strings.TrimSpace(result)
 }
 
 func validateCreateParams(params *CreateParams) error {

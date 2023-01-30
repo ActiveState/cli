@@ -6,7 +6,6 @@ import (
 	"path/filepath"
 	"reflect"
 	"strings"
-	"runtime"
 	"testing"
 
 	"github.com/ActiveState/cli/internal/locale"
@@ -493,36 +492,6 @@ languages:
 			require.Error(t, err)
 			for _, want := range tt.wantMatchError {
 				assert.Contains(t, err.Error(), want)
-			}
-		})
-	}
-}
-
-func Test_trimmedUsername(t *testing.T) {
-	if runtime.GOOS != "windows" {
-		t.Skip("Skipping test on non-Windows OS")
-	}
-
-	tests := []struct {
-		name string
-		username string
-		expected string
-	}{
-		{
-			"User Principal Name Format",
-			"test@test.domain",
-			"test",
-		},
-		{
-			"Down-Level Logon Format",
-			"DOMIAN\\test",
-			"test",
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := trimmedUsername(tt.username); got != tt.expected {
-				t.Errorf("trimmedUsername() = %v, want %v", got, tt.expected)
 			}
 		})
 	}
