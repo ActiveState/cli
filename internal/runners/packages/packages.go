@@ -6,6 +6,9 @@ import (
 	"os"
 	"strings"
 
+	"github.com/go-openapi/strfmt"
+	"github.com/thoas/go-funk"
+
 	anaConsts "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/constants"
@@ -18,14 +21,13 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runbits"
+	"github.com/ActiveState/cli/internal/runbits/rtusage"
 	medmodel "github.com/ActiveState/cli/pkg/platform/api/mediator/model"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
-	"github.com/go-openapi/strfmt"
-	"github.com/thoas/go-funk"
 )
 
 type PackageVersion struct {
@@ -86,6 +88,8 @@ func executePackageOperation(prime primeable, packageName, packageVersion string
 		}
 		out.Notice(locale.Tl("operating_message", "", pj.NamespaceString(), pj.Dir()))
 	}
+
+	rtusage.PrintRuntimeUsage(prime.SvcModel(), out, pj.Owner())
 
 	var validatePkg = operation == model.OperationAdded
 	if !ns.IsValid() {

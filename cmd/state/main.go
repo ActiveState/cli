@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/ActiveState/cli/internal/captain"
 	"os"
 	"os/exec"
 	"runtime/debug"
@@ -47,6 +48,9 @@ func main() {
 	var exitCode int
 	// Set up logging
 	rollbar.SetupRollbar(constants.StateToolRollbarToken)
+
+	// We have to disable mouse trap as without it the state:// protocol cannot work
+	captain.DisableMousetrap()
 
 	var cfg *config.Instance
 	defer func() {

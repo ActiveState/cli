@@ -4,9 +4,10 @@ import (
 	"os"
 	"strings"
 
-	"github.com/ActiveState/cli/internal/condition"
 	"github.com/stretchr/testify/suite"
 	"github.com/thoas/go-funk"
+
+	"github.com/ActiveState/cli/internal/condition"
 )
 
 const (
@@ -68,6 +69,7 @@ const (
 	VSCode          = "vscode"
 	Performance     = "performance"
 	Service         = "service"
+	SoftLimit       = "softlimit"
 	Executor        = "executor"
 	Deprecation     = "deprecation"
 	Compatibility   = "compatibility"

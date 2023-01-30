@@ -10,19 +10,24 @@ import (
 type ErrorPresenterFunc func(ctx context.Context, err error) *gqlerror.Error
 
 func DefaultErrorPresenter(ctx context.Context, err error) *gqlerror.Error {
-	return err.(*gqlerror.Error)
+	var gqlErr *gqlerror.Error
+	if errors.As(err, &gqlErr) {
+		return gqlErr
+	}
+	return gqlerror.WrapPath(GetPath(ctx), err)
 }
 
 func ErrorOnPath(ctx context.Context, err error) error {
 	if err == nil {
 		return nil
 	}
-	var gqlerr *gqlerror.Error
-	if errors.As(err, &gqlerr) {
-		if gqlerr.Path == nil {
-			gqlerr.Path = GetPath(ctx)
+	var gqlErr *gqlerror.Error
+	if errors.As(err, &gqlErr) {
+		if gqlErr.Path == nil {
+			gqlErr.Path = GetPath(ctx)
 		}
-		return gqlerr
+		// Return the original error to avoid losing any attached annotation
+		return err
 	}
 	return gqlerror.WrapPath(GetPath(ctx), err)
 }

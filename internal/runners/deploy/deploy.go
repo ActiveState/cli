@@ -7,11 +7,9 @@ import (
 	rt "runtime"
 	"strings"
 
-	"github.com/ActiveState/cli/internal/analytics"
-	"github.com/ActiveState/cli/internal/rtutils"
-	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/go-openapi/strfmt"
 
+	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/assets"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
@@ -23,13 +21,16 @@ import (
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
+	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/cli/internal/runbits"
+	"github.com/ActiveState/cli/internal/runbits/rtusage"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
+	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
@@ -154,6 +155,8 @@ func (d *Deploy) commitID(namespace project.Namespaced) (strfmt.UUID, error) {
 
 func (d *Deploy) install(rtTarget setup.Targeter) (rerr error) {
 	d.output.Notice(output.Heading(locale.T("deploy_install")))
+
+	rtusage.PrintRuntimeUsage(d.svcModel, d.output, rtTarget.Owner())
 
 	rti, err := runtime.New(rtTarget, d.analytics, d.svcModel)
 	if err == nil {
