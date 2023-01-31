@@ -54,7 +54,7 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckoutNonEmptyDir() {
 	tmpdir := fileutils.TempDirUnsafe()
 	_, err := projectfile.Create(&projectfile.CreateParams{Owner: "foo", Project: "bar", Directory: tmpdir})
 	suite.Require().NoError(err, "could not write project file")
-	_, err2 := fileutils.WriteTempFile(tmpdir, "active", []byte("test"), 0600)
+	_, err2 := fileutils.WriteTempFile("bogus.txt", []byte("test"))
 	suite.Require().NoError(err2, "could not write test file")
 
 	// Checkout and verify.
