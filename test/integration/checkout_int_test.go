@@ -2,6 +2,7 @@ package integration
 
 import (
 	"bytes"
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -12,6 +13,7 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
+	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -40,6 +42,36 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckout() {
 	pythonExe := filepath.Join(setup.ExecDir(targetDir), "python3"+exeutils.Extension)
 	cp = ts.SpawnCmd(pythonExe, "--version")
 	cp.Expect("Python 3")
+	cp.ExpectExitCode(0)
+}
+
+func (suite *CheckoutIntegrationTestSuite) TestCheckoutNonEmptyDir() {
+	suite.OnlyRunForTags(tagsuite.Checkout)
+
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	tmpdir := fileutils.TempDirUnsafe()
+	_, err := projectfile.Create(&projectfile.CreateParams{Owner: "foo", Project: "bar", Directory: tmpdir})
+	suite.Require().NoError(err, "could not write project file")
+	_, err2 := fileutils.WriteTempFile(tmpdir, "active", []byte("test"), 0600)
+	suite.Require().NoError(err2, "could not write test file")
+
+	// Checkout and verify.
+	cp := ts.SpawnWithOpts(
+		e2e.WithArgs("checkout", "ActiveState-CLI/Python3", tmpdir),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=true"),
+	)
+	cp.Expect("project at the target path does not match")
+	cp.ExpectExitCode(1)
+
+	// remove file
+	suite.Require().NoError(os.Remove(filepath.Join(tmpdir, constants.ConfigFileName)))
+	cp = ts.SpawnWithOpts(
+		e2e.WithArgs("checkout", "ActiveState-CLI/Python3", tmpdir),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=true"),
+	)
+	cp.Expect("Checked out project")
 	cp.ExpectExitCode(0)
 }
 
