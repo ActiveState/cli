@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/ActiveState/cli/internal/captain"
 	"os"
 	"os/exec"
 	"runtime/debug"
@@ -48,6 +49,9 @@ func main() {
 	// Set up logging
 	rollbar.SetupRollbar(constants.StateToolRollbarToken)
 
+	// We have to disable mouse trap as without it the state:// protocol cannot work
+	captain.DisableMousetrap()
+
 	var cfg *config.Instance
 	defer func() {
 		// Handle panics gracefully, and ensure that we exit with non-zero code
@@ -82,7 +86,8 @@ func main() {
 
 	// Set up our output formatter/writer
 	outFlags := parseOutputFlags(os.Args)
-	out, err := initOutput(outFlags, "")
+	shellName, _ := subshell.DetectShell(cfg)
+	out, err := initOutput(outFlags, "", shellName)
 	if err != nil {
 		multilog.Critical("Could not initialize outputer: %s", errs.JoinMessage(err))
 		os.Stderr.WriteString(locale.Tr("err_main_outputer", err.Error()))

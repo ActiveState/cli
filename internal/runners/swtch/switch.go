@@ -7,6 +7,7 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runbits"
+	"github.com/ActiveState/cli/internal/runbits/rtusage"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -82,6 +83,8 @@ func (s *Switch) Run(params SwitchParams) error {
 	if s.project == nil {
 		return locale.NewInputError("err_no_project")
 	}
+
+	rtusage.PrintRuntimeUsage(s.svcModel, s.out, s.project.Owner())
 
 	project, err := model.FetchProjectByName(s.project.Owner(), s.project.Name())
 	if err != nil {

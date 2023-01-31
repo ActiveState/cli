@@ -1,3 +1,7 @@
+app_name:
+  other: State Tool
+org_name:
+  other: ActiveState
 undefined:
   other: undefined
 confirmation:
@@ -1816,10 +1820,6 @@ err_ping_version_mismatch:
     If this issue persists please reinstall the State Tool.
 err_get_wd:
   other: Unable to get appropriate parent directory for project, please ensure you have write permissions in your current directory.
-err_directory_in_use:
-  other: |
-    Project directory at {{.V0}} is not empty. When activating a new project the project directory must be empty.
-    To use a custom path when activating a project use the [ACTIONABLE]--path <path/to/project>[/RESET] flag
 err_jwt_not_authenticated:
   other: |
     You are not authenticated. In order to export a JWT please first authenticate with [ACTIONABLE]state auth[/RESET]
@@ -2032,5 +2032,18 @@ pjfile_deprecation_msg:
     {{.V1}}
     To find out how to update these please read the deprecation information at:
     [ACTIONABLE]{{.V2}}[/RESET]
+runtime_usage_limit_reached:
+  other: |
+    [WARNING]Heads up! You've reached your runtime limit for [/RESET][ACTIONABLE]{{.V0}}[/RESET][WARNING].[/RESET]
+    [WARNING]You can upgrade your plan or enroll in a free trial by visiting: [/RESET][ACTIONABLE]https://platform.activestate.com/upgrade[/RESET][WARNING].[/RESET]
+    
+    [WARNING]You are using [/RESET][ACTIONABLE]{{.V1}}[/RESET][WARNING] out of [/RESET][ACTIONABLE]{{.V2}}[/RESET][WARNING] available runtimes.[/RESET]
+
+runtime_limit_reached_title:
+  other: Runtime Limit Reached
+runtime_limit_reached_msg:
+  other: Heads up! You've reached your runtime limit for {{.V0}}.
+runtime_limit_reached_action:
+  other: Upgrade
 pjfile_deprecation_entry:
   other: " - '[ACTIONABLE]{{.V0}}[/RESET]' located at byte [ACTIONABLE]{{.V1}}[/RESET]"

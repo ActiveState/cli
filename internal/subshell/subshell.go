@@ -88,49 +88,34 @@ type SubShell interface {
 
 // New returns the subshell relevant to the current process, but does not activate it
 func New(cfg sscommon.Configurable) SubShell {
-	binary := resolveBinaryPath(DetectShellBinary(cfg))
-
-	name := filepath.Base(binary)
-	name = strings.TrimSuffix(name, filepath.Ext(name))
-	logging.Debug("Detected SHELL: %s", name)
-
-	if runtime.GOOS == "windows" {
-		// For some reason Go or MSYS doesn't translate paths with spaces correctly, so we have to strip out the
-		// invalid escape characters for spaces
-		binary = strings.ReplaceAll(binary, `\ `, ` `)
-	}
+	name, path := DetectShell(cfg)
 
 	var subs SubShell
 	switch name {
-	case "bash":
+	case bash.Name:
 		subs = &bash.SubShell{}
-	case "zsh":
+	case zsh.Name:
 		subs = &zsh.SubShell{}
-	case "tcsh":
+	case tcsh.Name:
 		subs = &tcsh.SubShell{}
-	case "fish":
+	case fish.Name:
 		subs = &fish.SubShell{}
-	case "cmd":
+	case cmd.Name:
 		subs = &cmd.SubShell{}
 	default:
-		logging.Debug("Unsupported shell: %s, defaulting to OS default.", name)
-		rollbar.Error("Unsupported shell: %s", name) // we just want to know what this person is using
+		rollbar.Error("subshell.DetectShell did not return a known name: %s", name)
 		switch runtime.GOOS {
 		case "windows":
-			binary = "cmd.exe"
 			subs = &cmd.SubShell{}
 		case "darwin":
-			binary = "zsh"
 			subs = &zsh.SubShell{}
 		default:
-			binary = "bash"
 			subs = &bash.SubShell{}
 		}
-		binary = resolveBinaryPath(binary)
 	}
 
-	logging.Debug("Using binary: %s", binary)
-	subs.SetBinary(binary)
+	logging.Debug("Using binary: %s", path)
+	subs.SetBinary(path)
 
 	env := funk.FilterString(os.Environ(), func(s string) bool {
 		return !strings.HasPrefix(s, constants.ProjectEnvVarName)
@@ -182,8 +167,10 @@ func ConfigureAvailableShells(shell SubShell, cfg sscommon.Configurable, env map
 	return nil
 }
 
-func DetectShellBinary(cfg sscommon.Configurable) (binary string) {
+// DetectShell detects the shell relevant to the current process and returns its name and path.
+func DetectShell(cfg sscommon.Configurable) (string, string) {
 	configured := cfg.GetString(ConfigKeyShell)
+	var binary string
 	defer func() {
 		// do not re-write shell binary to config, if the value did not change.
 		if configured == binary {
@@ -196,25 +183,56 @@ func DetectShellBinary(cfg sscommon.Configurable) (binary string) {
 		}
 	}()
 
-	if binary := os.Getenv("SHELL"); binary != "" {
-		return binary
+	binary = os.Getenv("SHELL")
+	if binary == "" && runtime.GOOS == "windows" {
+		binary = os.Getenv("ComSpec")
 	}
+
+	if binary == "" {
+		binary = configured
+	}
+	if binary == "" {
+		if runtime.GOOS == "windows" {
+			binary = "cmd.exe"
+		} else {
+			binary = "bash"
+		}
+	}
+
+	path := resolveBinaryPath(binary)
+
+	name := filepath.Base(path)
+	name = strings.TrimSuffix(name, filepath.Ext(name))
+	logging.Debug("Detected SHELL: %s", name)
 
 	if runtime.GOOS == "windows" {
-		binary = os.Getenv("ComSpec")
-		if binary != "" {
-			return binary
+		// For some reason Go or MSYS doesn't translate paths with spaces correctly, so we have to strip out the
+		// invalid escape characters for spaces
+		path = strings.ReplaceAll(path, `\ `, ` `)
+	}
+
+	isKnownShell := false
+	for _, ssName := range []string{bash.Name, cmd.Name, fish.Name, tcsh.Name, zsh.Name} {
+		if name == ssName {
+			isKnownShell = true
+			break
+		}
+	}
+	if !isKnownShell {
+		logging.Debug("Unsupported shell: %s, defaulting to OS default.", name)
+		rollbar.Error("Unsupported shell: %s", name) // we just want to know what this person is using
+		switch runtime.GOOS {
+		case "windows":
+			name = cmd.Name
+			path = resolveBinaryPath("cmd.exe")
+		case "darwin":
+			name = zsh.Name
+			path = resolveBinaryPath("zsh")
+		default:
+			name = bash.Name
+			path = resolveBinaryPath("bash")
 		}
 	}
 
-	fallback := configured
-	if fallback == "" {
-		if runtime.GOOS == "windows" {
-			fallback = "cmd.exe"
-		} else {
-			fallback = "bash"
-		}
-	}
-
-	return fallback
+	return name, path
 }

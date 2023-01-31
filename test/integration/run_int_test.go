@@ -31,7 +31,7 @@ func (suite *RunIntegrationTestSuite) createProjectFile(ts *e2e.Session, pythonV
 	fileutils.CopyFile(interruptScript, filepath.Join(ts.Dirs.Work, "interrupt.go"))
 
 	// ActiveState-CLI/Python3 is just a place-holder that is never used
-	configFileContent := strings.TrimSpace(fmt.Sprintf(`
+	configFileContent := strings.TrimPrefix(fmt.Sprintf(`
 project: https://platform.activestate.com/ActiveState-CLI/Python%d?commitID=fbc613d6-b0b1-4f84-b26e-4aa5869c4e54
 scripts:
   - name: test-interrupt
@@ -65,7 +65,7 @@ scripts:
     value: |
       exit 123
     standalone: true
-`, pythonVersion))
+`, pythonVersion), "\n")
 
 	ts.PrepareActiveStateYAML(configFileContent)
 }
@@ -266,9 +266,9 @@ func (suite *RunIntegrationTestSuite) TestRun_BadLanguage() {
 	defer asyFile.Close()
 
 	_, err = asyFile.WriteString(strings.TrimPrefix(`
-- name: badLanguage
-  language: bax
-  value: echo "shouldn't show"
+  - name: badLanguage
+    language: bax
+    value: echo "shouldn't show"
 `, "\n"))
 	suite.Require().NoError(err, "extra config is appended")
 

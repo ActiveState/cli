@@ -2,9 +2,9 @@ package scriptfile
 
 import (
 	"fmt"
-	"os"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/language"
+	"os"
 )
 
 // ScriptFile represents an on-disk executable file.
@@ -33,7 +33,7 @@ func NewAsSource(l language.Language, name, script string) (*ScriptFile, error) 
 }
 
 func new(l language.Language, name string, script []byte) (*ScriptFile, error) {
-	file, err := fileutils.WriteTempFile(
+	file, err := fileutils.WriteTempFileToDir(
 		"", fmt.Sprintf("%s*%s", name, l.Ext()), []byte(script), 0700,
 	)
 	if err != nil {

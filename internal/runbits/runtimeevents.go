@@ -10,10 +10,6 @@ import (
 )
 
 func NewRuntimeProgressIndicator(out output.Outputer) events.Handler {
-	return newRuntimeProgressIndicator(out)
-}
-
-func newRuntimeProgressIndicator(out output.Outputer) events.Handler {
 	var w io.Writer = os.Stdout
 	if out.Type() != output.PlainFormatName {
 		w = nil

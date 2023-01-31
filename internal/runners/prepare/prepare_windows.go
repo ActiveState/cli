@@ -111,7 +111,7 @@ func setStateProtocol() error {
 		return locale.WrapError(err, "err_prepare_executable", "Could not get current executable")
 	}
 
-	err = commandKey.SetStringValue("", fmt.Sprintf(`cmd /k "%s _protocol %%1"`, exe))
+	err = commandKey.SetStringValue("", fmt.Sprintf(`%s _protocol %%1`, exe))
 	if err != nil {
 		return locale.WrapError(err, "err_prepare_command_set", "Could not set command value in registry")
 	}

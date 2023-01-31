@@ -200,7 +200,7 @@ func (r *Runtime) recordUsage() {
 		multilog.Critical("Could not marshal dimensions for runtime-usage: %s", errs.JoinMessage(err))
 	}
 	if r.svcm != nil {
-		r.svcm.RecordRuntimeUsage(context.Background(), os.Getpid(), osutils.Executable(), dimsJson)
+		r.svcm.ReportRuntimeUsage(context.Background(), os.Getpid(), osutils.Executable(), dimsJson)
 	}
 }
 

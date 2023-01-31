@@ -1,6 +1,7 @@
 package executors
 
 import (
+	"github.com/ActiveState/cli/pkg/project"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -68,7 +69,13 @@ func (es *Executors) Apply(sockPath string, targeter Targeter, env map[string]st
 		return locale.WrapError(err, "err_mkdir", "Could not create directory: {{.V0}}", es.executorPath)
 	}
 
-	t := execmeta.Target{}
+	ns := project.NewNamespace(targeter.Owner(), targeter.Name(), "")
+	t := execmeta.Target{
+		CommitUUID: targeter.CommitUUID().String(),
+		Namespace:  ns.String(),
+		Dir:        targeter.Dir(),
+		Headless:   targeter.Headless(),
+	}
 	m := execmeta.New(sockPath, osutils.EnvMapToSlice(env), t, executors)
 	if err := m.WriteToDisk(es.executorPath); err != nil {
 		return err
