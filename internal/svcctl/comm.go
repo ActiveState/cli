@@ -3,6 +3,7 @@ package svcctl
 import (
 	"context"
 	"path/filepath"
+	"runtime/debug"
 	"strconv"
 	"strings"
 
@@ -16,6 +17,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/rtutils/p"
+	"github.com/ActiveState/cli/internal/runbits/panics"
 	"github.com/ActiveState/cli/internal/runbits/rtusage"
 	"github.com/ActiveState/cli/internal/svcctl/svcmsg"
 	"github.com/ActiveState/cli/pkg/platform/runtime/executors/execmeta"
@@ -89,6 +91,8 @@ func HeartbeatHandler(cfg *config.Instance, resolver Resolver, analyticsReporter
 		hb := svcmsg.NewHeartbeatFromSvcMsg(data)
 
 		go func() {
+			defer panics.HandlePanics(recover(), debug.Stack())
+			
 			pidNum, err := strconv.Atoi(hb.ProcessID)
 			if err != nil {
 				multilog.Error("Heartbeat: Could not convert pid string (%s) to int in heartbeat handler: %s", hb.ProcessID, err)
