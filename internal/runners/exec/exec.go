@@ -7,6 +7,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/shirou/gopsutil/v3/process"
+
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
@@ -22,6 +24,7 @@ import (
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/cli/internal/runbits"
+	"github.com/ActiveState/cli/internal/runbits/rtusage"
 	"github.com/ActiveState/cli/internal/scriptfile"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
@@ -33,7 +36,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
-	"github.com/shirou/gopsutil/v3/process"
 )
 
 type Exec struct {
@@ -117,6 +119,8 @@ func (s *Exec) Run(params *Params, args ...string) (rerr error) {
 		projectNamespace = proj.NamespaceString()
 		rtTarget = target.NewProjectTarget(proj, storage.CachePath(), nil, trigger)
 	}
+
+	rtusage.PrintRuntimeUsage(s.svcModel, s.out, rtTarget.Owner())
 
 	s.out.Notice(locale.Tl("operating_message", "", projectNamespace, projectDir))
 

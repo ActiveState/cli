@@ -7,6 +7,9 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/analytics"
+	"github.com/go-openapi/strfmt"
+	"github.com/thoas/go-funk"
+
 	anaConsts "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/config"
@@ -20,6 +23,7 @@ import (
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runbits"
+	"github.com/ActiveState/cli/internal/runbits/rtusage"
 	medmodel "github.com/ActiveState/cli/pkg/platform/api/mediator/model"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -27,8 +31,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
-	"github.com/go-openapi/strfmt"
-	"github.com/thoas/go-funk"
 )
 
 type PackageVersion struct {
@@ -134,6 +136,8 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 	case model.NamespacePlatform:
 		ns = model.NewNamespacePlatform()
 	}
+
+	rtusage.PrintRuntimeUsage(r.SvcModel, out, pj.Owner())
 
 	var validatePkg = operation == model.OperationAdded && (ns.Type() == model.NamespacePackage || ns.Type() == model.NamespaceBundle)
 	if !ns.IsValid() && (nsType == model.NamespacePackage || nsType == model.NamespaceBundle) {

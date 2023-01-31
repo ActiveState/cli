@@ -2,6 +2,7 @@ package resolver
 
 import (
 	"encoding/json"
+	"github.com/ActiveState/cli/cmd/state-svc/internal/rtusage"
 	"sort"
 	"time"
 
@@ -30,6 +31,8 @@ type Resolver struct {
 	cfg            *config.Instance
 	depPoller      *poller.Poller
 	updatePoller   *poller.Poller
+	authPoller     *poller.Poller
+	usageChecker   *rtusage.Checker
 	projectIDCache *projectcache.ID
 	an             *sync.Client
 	anForClient    *sync.Client // Use separate client for events sent through service so we don't contaminate one with the other
@@ -49,11 +52,22 @@ func New(cfg *config.Instance, an *sync.Client, auth *authentication.Auth) (*Res
 		return upchecker.Check()
 	})
 
+	pollAuth := poller.New(1*time.Minute, func() (interface{}, error) {
+		if auth.SyncRequired() {
+			return nil, auth.Sync()
+		}
+		return nil, nil
+	})
+
+	usageChecker := rtusage.NewChecker(cfg, auth)
+
 	anForClient := sync.New(cfg, auth)
 	return &Resolver{
 		cfg,
 		pollDep,
 		pollUpdate,
+		pollAuth,
+		usageChecker,
 		projectcache.NewID(),
 		an,
 		anForClient,
@@ -64,6 +78,7 @@ func New(cfg *config.Instance, an *sync.Client, auth *authentication.Auth) (*Res
 func (r *Resolver) Close() error {
 	r.depPoller.Close()
 	r.updatePoller.Close()
+	r.authPoller.Close()
 	r.anForClient.Close()
 	return r.rtwatch.Close()
 }
@@ -158,16 +173,34 @@ func (r *Resolver) AnalyticsEvent(_ context.Context, category, action string, _l
 	return &graph.AnalyticsEventResponse{Sent: true}, nil
 }
 
-func (r *Resolver) RuntimeUsage(ctx context.Context, pid int, exec string, dimensionsJSON string) (*graph.RuntimeUsageResponse, error) {
+func (r *Resolver) ReportRuntimeUsage(_ context.Context, pid int, exec string, dimensionsJSON string) (*graph.ReportRuntimeUsageResponse, error) {
 	logging.Debug("Runtime usage resolver: %d - %s", pid, exec)
 	var dims *dimensions.Values
 	if err := json.Unmarshal([]byte(dimensionsJSON), &dims); err != nil {
-		return &graph.RuntimeUsageResponse{Received: false}, errs.Wrap(err, "Could not unmarshal")
+		return &graph.ReportRuntimeUsageResponse{Received: false}, errs.Wrap(err, "Could not unmarshal")
 	}
 
 	r.rtwatch.Watch(pid, exec, dims)
 
-	return &graph.RuntimeUsageResponse{Received: true}, nil
+	return &graph.ReportRuntimeUsageResponse{Received: true}, nil
+}
+
+func (r *Resolver) CheckRuntimeUsage(_ context.Context, organizationName string) (*graph.CheckRuntimeUsageResponse, error) {
+	logging.Debug("CheckRuntimeUsage resolver")
+
+	usage, err := r.usageChecker.Check(organizationName)
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not check runtime usage: %s", errs.JoinMessage(err))
+	}
+
+	result := &graph.CheckRuntimeUsageResponse{
+		Limit: int(usage.LimitDynamicRuntimes),
+		Usage: int(usage.ActiveDynamicRuntimes),
+	}
+
+	logging.Debug("Returning %v, based on %v", result, usage)
+
+	return result, nil
 }
 
 func (r *Resolver) CheckDeprecation(ctx context.Context) (*graph.DeprecationInfo, error) {

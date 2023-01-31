@@ -651,7 +651,13 @@ func MoveAllFiles(fromPath, toPath string) error {
 }
 
 // WriteTempFile writes data to a temp file.
-func WriteTempFile(dir, pattern string, data []byte, perm os.FileMode) (string, error) {
+func WriteTempFile(pattern string, data []byte) (string, error) {
+	tempDir := os.TempDir()
+	return WriteTempFileToDir(tempDir, pattern, data, os.ModePerm)
+}
+
+// WriteTempFileToDir writes data to a temp file in the given dir
+func WriteTempFileToDir(dir, pattern string, data []byte, perm os.FileMode) (string, error) {
 	f, err := ioutil.TempFile(dir, pattern)
 	if err != nil {
 		return "", errs.Wrap(err, "ioutil.TempFile %s (%s) failed", dir, pattern)

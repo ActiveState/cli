@@ -74,6 +74,11 @@ func (s *Server) AroundFields(f graphql.FieldMiddleware) {
 	s.exec.AroundFields(f)
 }
 
+// AroundRootFields is a convenience method for creating an extension that only implements field middleware
+func (s *Server) AroundRootFields(f graphql.RootFieldMiddleware) {
+	s.exec.AroundRootFields(f)
+}
+
 // AroundOperations is a convenience method for creating an extension that only implements operation middleware
 func (s *Server) AroundOperations(f graphql.OperationMiddleware) {
 	s.exec.AroundOperations(f)
@@ -97,7 +102,8 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	defer func() {
 		if err := recover(); err != nil {
 			err := s.exec.PresentRecoveredError(r.Context(), err)
-			resp := &graphql.Response{Errors: []*gqlerror.Error{err}}
+			gqlErr, _ := err.(*gqlerror.Error)
+			resp := &graphql.Response{Errors: []*gqlerror.Error{gqlErr}}
 			b, _ := json.Marshal(resp)
 			w.WriteHeader(http.StatusUnprocessableEntity)
 			w.Write(b)

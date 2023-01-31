@@ -7,6 +7,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/vbauerster/mpb/v7"
+	"golang.org/x/net/context"
+
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
@@ -14,8 +17,6 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup/events"
-	"github.com/vbauerster/mpb/v7"
-	"golang.org/x/net/context"
 )
 
 type step struct {
@@ -98,7 +99,8 @@ func NewProgressIndicator(w io.Writer, out output.Outputer) *ProgressDigester {
 
 		cancelMpb:    cancel,
 		maxNameWidth: maxNameWidth(),
-		out:          out,
+
+		out: out,
 
 		mutex: &sync.Mutex{},
 	}
@@ -180,7 +182,14 @@ func (p *ProgressDigester) Handle(ev events.Eventer) error {
 		if p.buildBar == nil {
 			return errs.New("BuildFailure called before buildbar was initialized")
 		}
+		logging.Debug("BuildFailure called, aborting bars")
 		p.buildBar.Abort(false) // mpb has been known to stick around after it was told not to
+		if p.downloadBar != nil {
+			p.downloadBar.Abort(false)
+		}
+		if p.installBar != nil {
+			p.installBar.Abort(false)
+		}
 
 	case events.ArtifactBuildStarted:
 		if p.buildBar == nil {
@@ -304,27 +313,31 @@ func (p *ProgressDigester) Close() error {
 	case <-time.After(time.Second):
 		p.cancelMpb() // mpb doesn't have a Close, just a Wait. We force it as we don't want to give it the opportunity to block.
 
-		bars := map[string]*bar{
-			"build bar":    p.buildBar,
-			"download bar": p.downloadBar,
-			"install bar":  p.installBar,
-		}
+		// Only if the installation was successful do we want to verify that our progress indication was successful.
+		// There's no point in doing this if it failed as due to the multithreaded nature the failure can bubble up
+		// in different ways that are difficult to predict and thus verify.
+		if p.success {
+			bars := map[string]*bar{
+				"build bar":    p.buildBar,
+				"download bar": p.downloadBar,
+				"install bar":  p.installBar,
+			}
 
-		pending := 0
-		debugMsg := []string{}
-		for name, bar := range bars {
-			debugMsg = append(debugMsg, fmt.Sprintf("%s is at %v", name, func() string {
-				if bar == nil {
-					return "nil"
-				}
-				if !bar.Completed() {
-					pending++
-				}
-				return fmt.Sprintf("%d out of %d", bar.Current(), bar.total)
-			}()))
-		}
+			pending := 0
+			debugMsg := []string{}
+			for name, bar := range bars {
+				debugMsg = append(debugMsg, fmt.Sprintf("%s is at %v", name, func() string {
+					if bar == nil {
+						return "nil"
+					}
+					if !bar.Completed() {
+						pending++
+					}
+					return fmt.Sprintf("%d out of %d", bar.Current(), bar.total)
+				}()))
+			}
 
-		logging.Debug(`
+			logging.Debug(`
 Timed out waiting for progress bars to close.
 Progress bars status:
 %s
@@ -334,15 +347,16 @@ Still expecting:
  - Installs: %v
 Event log:
 %s`,
-			strings.Join(debugMsg, "\n"),
-			p.buildsExpected, p.downloadsExpected, p.installsExpected,
-			strings.Join(p.dbgEventLog, " > "),
-		)
+				strings.Join(debugMsg, "\n"),
+				p.buildsExpected, p.downloadsExpected, p.installsExpected,
+				strings.Join(p.dbgEventLog, " > "),
+			)
 
-		if pending > 0 {
-			// We only error out if we determine the issue is down to one of our bars not completing.
-			// Otherwise this is an issue with the mpb package which is currently a known limitation, end goal is to get rid of mpb.
-			return locale.NewError("err_rtprogress_outofsync", "", constants.BugTrackerURL, logging.FilePath())
+			if pending > 0 {
+				// We only error out if we determine the issue is down to one of our bars not completing.
+				// Otherwise this is an issue with the mpb package which is currently a known limitation, end goal is to get rid of mpb.
+				return locale.NewError("err_rtprogress_outofsync", "", constants.BugTrackerURL, logging.FilePath())
+			}
 		}
 	}
 
