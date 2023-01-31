@@ -4,7 +4,6 @@ import (
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
@@ -52,7 +51,7 @@ func (s *Show) Run() error {
 		return locale.WrapError(err, "err_use_show_get_project", "Could not get your project.")
 	}
 
-	projectTarget := target.NewProjectTarget(proj, storage.CachePath(), nil, "")
+	projectTarget := target.NewProjectTarget(proj, nil, "")
 
 	s.out.Print(&outputFormat{
 		locale.Tl("use_show_project_statement", "",

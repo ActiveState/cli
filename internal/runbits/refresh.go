@@ -14,9 +14,8 @@ import (
 )
 
 // RefreshRuntime should be called after runtime mutations.
-func RefreshRuntime(auth *authentication.Auth, out output.Outputer, an analytics.Dispatcher, proj *project.Project,
-	cachePath string, commitID strfmt.UUID, changed bool, trigger target.Trigger, svcm *model.SvcModel) (rerr error) {
-	target := target.NewProjectTarget(proj, cachePath, &commitID, trigger)
+func RefreshRuntime(auth *authentication.Auth, out output.Outputer, an analytics.Dispatcher, proj *project.Project, commitID strfmt.UUID, changed bool, trigger target.Trigger, svcm *model.SvcModel) (rerr error) {
+	target := target.NewProjectTarget(proj, &commitID, trigger)
 	isCached := true
 	rt, err := runtime.New(target, an, svcm)
 	if err != nil {

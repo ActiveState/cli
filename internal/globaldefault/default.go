@@ -79,7 +79,7 @@ func SetupDefaultActivation(subshell subshell.SubShell, cfg DefaultConfigurer, r
 		return locale.WrapError(err, "err_globaldefault_rtenv", "Could not construct runtime environment variables")
 	}
 
-	target := target.NewProjectTarget(proj, storage.GlobalBinDir(), nil, target.TriggerActivate)
+	target := target.NewProjectTargetCache(proj, storage.GlobalBinDir(), nil, target.TriggerActivate)
 	execInit := executors.New(BinDir())
 	if err := execInit.Apply(svcctl.NewIPCSockPathFromGlobals().String(), target, env, exes); err != nil {
 		return locale.WrapError(err, "err_globaldefault_fw", "Could not set up forwarders")
