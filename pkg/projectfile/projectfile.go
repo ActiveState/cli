@@ -978,7 +978,7 @@ func createCustom(params *CreateParams, lang language.Language) (*Project, error
 	}
 
 	if params.Cache != "" {
-		createErr := createCacheFile(params.Directory, params.Cache)
+		createErr := createHostFile(params.Directory, params.Cache)
 		if createErr != nil {
 			return nil, errs.Wrap(createErr, "Could not create cache file")
 		}
@@ -987,7 +987,7 @@ func createCustom(params *CreateParams, lang language.Language) (*Project, error
 	return Parse(params.path)
 }
 
-func createCacheFile(filePath, cachePath string) error {
+func createHostFile(filePath, cachePath string) error {
 	user, err := user.Current()
 	if err != nil {
 		return errs.Wrap(err, "Could not get current user")
