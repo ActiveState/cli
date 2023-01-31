@@ -51,6 +51,8 @@ var (
 	CommitURLRe = regexp.MustCompile(urlCommitRegexStr)
 	// deprecatedRegex covers the deprecated fields in the project file
 	deprecatedRegex = regexp.MustCompile(`(?m)^\s*(?:constraints|platforms|languages):`)
+	// nonAlphanumericRegex covers all non alphanumeric characters
+	nonAlphanumericRegex = regexp.MustCompile(`[^a-zA-Z0-9 ]+`)
 )
 
 type ErrorParseProject struct{ *locale.LocalizedError }
@@ -1007,7 +1009,6 @@ func createCacheFile(filePath, cachePath string) error {
 	}
 
 	// Trim any non-alphanumeric characters from the username
-	nonAlphanumericRegex := regexp.MustCompile(`[^a-zA-Z0-9 ]+`)
 	if err := fileutils.WriteFile(filepath.Join(filePath, fmt.Sprintf("activestate.%s.yaml", nonAlphanumericRegex.ReplaceAllString(user.Username, ""))), []byte(fileContents)); err != nil {
 		return errs.Wrap(err, "Could not write cache file")
 	}
