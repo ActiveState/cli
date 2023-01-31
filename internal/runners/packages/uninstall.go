@@ -23,7 +23,7 @@ func NewUninstall(prime primeable) *Uninstall {
 }
 
 // Run executes the uninstall behavior.
-func (u *Uninstall) Run(params UninstallRunParams, nstype model.NamespaceType) error {
+func (u *Uninstall) Run(params UninstallRunParams, nsType model.NamespaceType) error {
 	logging.Debug("ExecuteUninstall")
 	if u.prime.Project() == nil {
 		return locale.NewInputError("err_no_project")
@@ -34,6 +34,6 @@ func (u *Uninstall) Run(params UninstallRunParams, nstype model.NamespaceType) e
 		"",
 		0,
 		model.OperationRemoved,
-		model.NamespacePackage,
+		nsType,
 	)
 }
