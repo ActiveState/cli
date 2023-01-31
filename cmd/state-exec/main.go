@@ -88,7 +88,7 @@ func run() error {
 		logr.Debug("                 sock - error: %v", err)
 
 		if onCI() { // halt control flow on CI only
-			return fmt.Errorf("cannot send message to service: %w", err)
+			return fmt.Errorf("cannot send message to service (this error is handled in CI only): %w", err)
 		}
 	}
 
