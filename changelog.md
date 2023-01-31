@@ -55,6 +55,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Fixed `state export private-key` giving an uninformative error message when 
   improperly authenticated.
 - Fixed `state show` not working with commits that haven't been pushed to the platform.
+- Fixed `state checkout` failing if target dir is non-empty but does not contain an activestate.yaml.
 
 ### Removed
 
