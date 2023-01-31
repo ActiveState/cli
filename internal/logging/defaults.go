@@ -87,6 +87,7 @@ func init() {
 	SetHandler(handler)
 
 	log.SetOutput(&writer{})
+	Debug("Args: %v", os.Args)
 
 	// Clean up old log files
 	var err error
@@ -115,5 +116,4 @@ func init() {
 		}
 	}
 
-	Debug("Args: %v", os.Args)
 }
