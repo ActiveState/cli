@@ -82,14 +82,8 @@ func FilePathForCmd(cmd string, pid int) string {
 
 func init() {
 	defer handlePanics(recover())
-	timestamp = time.Now().UnixNano()
-	handler := newFileHandler()
-	SetHandler(handler)
 
-	log.SetOutput(&writer{})
-	Debug("Args: %v", os.Args)
-
-	// Clean up old log files
+	// Set up datadir
 	var err error
 	datadir, err = storage.AppDataPath()
 	if err != nil {
@@ -97,7 +91,16 @@ func init() {
 		return
 	}
 
-	files, err := ioutil.ReadDir(datadir)
+	// Set up handler
+	timestamp = time.Now().UnixNano()
+	handler := newFileHandler()
+	SetHandler(handler)
+	log.SetOutput(&writer{})
+
+	Debug("Args: %v", os.Args)
+
+	// Clean up old log files
+	files, err := ioutil.ReadDir(filepath.Dir(FilePath()))
 	if err != nil && !os.IsNotExist(err) {
 		Error("Could not scan config dir to clean up stale logs: %v", err)
 		return
