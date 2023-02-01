@@ -75,7 +75,6 @@ func NotifyRuntimeUsage(cfg *config.Instance, data dataHandler, orgName string) 
 	}
 
 	if usage > res.Limit {
-		logging.Debug("Soft limit: Sending notification for %s", orgName)
 		err := notify.Send(locale.T("runtime_limit_reached_title"),
 			locale.Tr("runtime_limit_reached_msg", orgName),
 			locale.T("runtime_limit_reached_action"),
