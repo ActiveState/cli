@@ -77,6 +77,8 @@ func (suite *ActivateIntegrationTestSuite) addForegroundSvc(ts *e2e.Session) fun
 			errCh <- cmd.Wait()
 		}()
 
+		verifyExit := true
+
 		var err error
 		select {
 		case err = <-errCh:
@@ -84,13 +86,23 @@ func (suite *ActivateIntegrationTestSuite) addForegroundSvc(ts *e2e.Session) fun
 		case <-time.After(10 * time.Second):
 			suite.Fail(fmt.Sprintf("svc did not stop in time, Stdout:\n%s\n\nStderr:\n%s", stdout.String(), stderr.String()))
 			cmd.Process.Kill()
+
+			// If we have to kill it we can't verify the exit code as it will be non-zero due to the fact that we killed it
+			// thing is; due to the nature of our integration testing framework there are too many factors to consider here
+			// and we there's going to be cases where the stop call above didn't work due to reasons other than "it broke".
+			// Sadly we just can't fail on that, as we'd have periodic failures happening constantly.
+			// We'll address this properly with the refactor: DX-1312
+			// All that said; we should still be able to verify the output, which is the real meat of this function anyway.
+			verifyExit = false
 			break
 		}
 
 		errMsg := fmt.Sprintf("svc foreground did not complete as expected. Stdout:\n%s\n\nStderr:\n%s", stdout.String(), stderr.String())
-		suite.Require().NoError(err, errMsg)
-		if cmd.ProcessState.ExitCode() != 0 {
-			suite.FailNow(errMsg)
+		if verifyExit {
+			suite.Require().NoError(err, errMsg)
+			if cmd.ProcessState.ExitCode() != 0 {
+				suite.FailNow(errMsg)
+			}
 		}
 
 		// Goroutines don't necessarily cause the process to exit non-zero, so check for common errors/panics
