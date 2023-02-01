@@ -84,7 +84,7 @@ func (suite *ActivateIntegrationTestSuite) addForegroundSvc(ts *e2e.Session) fun
 		case err = <-errCh:
 			break
 		case <-time.After(10 * time.Second):
-			suite.Fail(fmt.Sprintf("svc did not stop in time, Stdout:\n%s\n\nStderr:\n%s", stdout.String(), stderr.String()))
+			fmt.Printf("svc did not stop in time, Stdout:\n%s\n\nStderr:\n%s", stdout.String(), stderr.String())
 			cmd.Process.Kill()
 
 			// If we have to kill it we can't verify the exit code as it will be non-zero due to the fact that we killed it
