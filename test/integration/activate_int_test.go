@@ -72,7 +72,21 @@ func (suite *ActivateIntegrationTestSuite) addForegroundSvc(ts *e2e.Session) fun
 			suite.Require().NoError(err, "svc stop failed: %s\n%s", stdout, stderr)
 		}()
 
-		err := cmd.Wait()
+		errCh := make(chan error)
+		go func() {
+			errCh <- cmd.Wait()
+		}()
+
+		var err error
+		select {
+		case err = <-errCh:
+			break
+		case <-time.After(10 * time.Second):
+			suite.Fail("svc did not stop in time, Stdout:\n%s\n\nStderr:\n%s", stdout.String(), stderr.String())
+			cmd.Process.Kill()
+			break
+		}
+
 		errMsg := fmt.Sprintf("svc foreground did not complete as expected. Stdout:\n%s\n\nStderr:\n%s", stdout.String(), stderr.String())
 		suite.Require().NoError(err, errMsg)
 		if cmd.ProcessState.ExitCode() != 0 {
