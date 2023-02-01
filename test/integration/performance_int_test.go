@@ -43,7 +43,7 @@ func TestPerformanceIntegrationTestSuite(t *testing.T) {
 
 func performanceTest(commands []string, expect string, samples int, maxTime time.Duration, suite tagsuite.Suite, ts *e2e.Session) time.Duration {
 	rx := regexp.MustCompile(`Profiling: main took .*\((\d+)\)`)
-	var firstEntry, firstStateLog, firstSvcLog string
+	var firstEntry, firstLogs string
 	times := []time.Duration{}
 	var total time.Duration
 	for x := 0; x < samples+1; x++ {
@@ -64,8 +64,7 @@ func performanceTest(commands []string, expect string, samples int, maxTime time
 
 		if firstEntry == "" {
 			firstEntry = cp.Snapshot()
-			firstStateLog = ts.MostRecentStateLog()
-			firstSvcLog = ts.SvcLog()
+			firstLogs = ts.DebugLogs()
 		}
 		if x == 0 {
 			// Skip the first one as this one will always be slower due to having to wait for state-svc or sourcing a runtime
@@ -89,10 +88,6 @@ func performanceTest(commands []string, expect string, samples int, maxTime time
 	Output of first run:
 	%s
 
-	State Tool log:
-	%s
-
-	Svc log:
 	%s`,
 				strings.Join(commands, " "),
 				avg.String(),
@@ -100,8 +95,7 @@ func performanceTest(commands []string, expect string, samples int, maxTime time
 				time.Duration(total).String(),
 				times,
 				firstEntry,
-				firstStateLog,
-				firstSvcLog))
+				firstLogs))
 	}
 
 	return avg
