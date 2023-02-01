@@ -207,14 +207,17 @@ func (r *Resolver) CheckRuntimeUsage(_ context.Context, organizationName string)
 		return nil, errs.Wrap(err, "Could not check runtime usage: %s", errs.JoinMessage(err))
 	}
 
-	result := &graph.CheckRuntimeUsageResponse{
-		Limit: int(usage.LimitDynamicRuntimes),
-		Usage: int(usage.ActiveDynamicRuntimes),
+	if usage == nil {
+		return &graph.CheckRuntimeUsageResponse{
+			Limit: 0,
+			Usage: 0,
+		}, nil
 	}
 
-	logging.Debug("Returning %v, based on %v", result, usage)
-
-	return result, nil
+	return &graph.CheckRuntimeUsageResponse{
+		Limit: int(usage.LimitDynamicRuntimes),
+		Usage: int(usage.ActiveDynamicRuntimes),
+	}, nil
 }
 
 func (r *Resolver) CheckDeprecation(ctx context.Context) (*graph.DeprecationInfo, error) {
