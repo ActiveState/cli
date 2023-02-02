@@ -61,16 +61,18 @@ func (suite *ActivateIntegrationTestSuite) TestActivateWithoutRuntime() {
 // addForegroundSvc launches the state-svc in a way where we can track its output for debugging purposes
 // without this we are mostly blind to the svc exiting prematurely
 func (suite *ActivateIntegrationTestSuite) addForegroundSvc(ts *e2e.Session) func() {
+	stop := func() {
+		stdout, stderr, err := exeutils.ExecSimple(ts.SvcExe, []string{"stop"}, ts.Env)
+		suite.Require().NoError(err, "svc stop failed: %s\n%s", stdout, stderr)
+	}
+	stop() // make sure we're not already running
 	cmd, stdout, stderr, err := exeutils.ExecuteInBackground(ts.SvcExe, []string{"foreground"}, func(cmd *exec.Cmd) error {
 		cmd.Env = append(ts.Env, "VERBOSE=true", "") // For whatever reason the last entry is ignored..
 		return nil
 	})
 	suite.Require().NoError(err)
 	return func() {
-		go func() {
-			stdout, stderr, err := exeutils.ExecSimple(ts.SvcExe, []string{"stop"}, ts.Env)
-			suite.Require().NoError(err, "svc stop failed: %s\n%s", stdout, stderr)
-		}()
+		go stop()
 
 		errCh := make(chan error)
 		go func() {
