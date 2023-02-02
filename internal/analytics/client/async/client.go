@@ -121,7 +121,7 @@ func (a *Client) sendEvent(category, action, label string, dims ...*dimensions.V
 
 	a.eventWaitGroup.Add(1)
 	go func() {
-		defer handlePanics(recover(), debug.Stack())
+		defer func() { handlePanics(recover(), debug.Stack()) }()
 		defer a.eventWaitGroup.Done()
 
 		if err := a.svcModel.AnalyticsEvent(context.Background(), category, action, label, string(dimMarshalled)); err != nil {

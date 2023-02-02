@@ -2,15 +2,17 @@ package resolver
 
 import (
 	"encoding/json"
-	"github.com/ActiveState/cli/cmd/state-svc/internal/rtusage"
+	"runtime/debug"
 	"sort"
 	"time"
 
 	"github.com/ActiveState/cli/cmd/state-svc/internal/deprecation"
+	"github.com/ActiveState/cli/cmd/state-svc/internal/rtusage"
 	"github.com/ActiveState/cli/cmd/state-svc/internal/rtwatcher"
 	"github.com/ActiveState/cli/internal/analytics/client/sync"
 	"github.com/ActiveState/cli/internal/analytics/dimensions"
 	"github.com/ActiveState/cli/internal/cache/projectcache"
+	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/poller"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"golang.org/x/net/context"
@@ -88,6 +90,8 @@ func (r *Resolver) Close() error {
 func (r *Resolver) Query() genserver.QueryResolver { return r }
 
 func (r *Resolver) Version(ctx context.Context) (*graph.Version, error) {
+	defer func() { handlePanics(recover(), debug.Stack()) }()
+
 	r.an.EventWithLabel(anaConsts.CatStateSvc, "endpoint", "Version")
 	logging.Debug("Version resolver")
 	return &graph.Version{
@@ -102,6 +106,8 @@ func (r *Resolver) Version(ctx context.Context) (*graph.Version, error) {
 }
 
 func (r *Resolver) AvailableUpdate(ctx context.Context) (*graph.AvailableUpdate, error) {
+	defer func() { handlePanics(recover(), debug.Stack()) }()
+
 	r.an.EventWithLabel(anaConsts.CatStateSvc, "endpoint", "AvailableUpdate")
 	logging.Debug("AvailableUpdate resolver")
 	defer logging.Debug("AvailableUpdate done")
@@ -124,6 +130,8 @@ func (r *Resolver) AvailableUpdate(ctx context.Context) (*graph.AvailableUpdate,
 }
 
 func (r *Resolver) Projects(ctx context.Context) ([]*graph.Project, error) {
+	defer func() { handlePanics(recover(), debug.Stack()) }()
+
 	r.an.EventWithLabel(anaConsts.CatStateSvc, "endpoint", "Projects")
 	logging.Debug("Projects resolver")
 	var projects []*graph.Project
@@ -142,6 +150,8 @@ func (r *Resolver) Projects(ctx context.Context) ([]*graph.Project, error) {
 }
 
 func (r *Resolver) AnalyticsEvent(_ context.Context, category, action string, _label *string, dimensionsJson string) (*graph.AnalyticsEventResponse, error) {
+	defer func() { handlePanics(recover(), debug.Stack()) }()
+
 	logging.Debug("Analytics event resolver: %s - %s", category, action)
 
 	label := ""
@@ -174,6 +184,8 @@ func (r *Resolver) AnalyticsEvent(_ context.Context, category, action string, _l
 }
 
 func (r *Resolver) ReportRuntimeUsage(_ context.Context, pid int, exec string, dimensionsJSON string) (*graph.ReportRuntimeUsageResponse, error) {
+	defer func() { handlePanics(recover(), debug.Stack()) }()
+
 	logging.Debug("Runtime usage resolver: %d - %s", pid, exec)
 	var dims *dimensions.Values
 	if err := json.Unmarshal([]byte(dimensionsJSON), &dims); err != nil {
@@ -186,6 +198,8 @@ func (r *Resolver) ReportRuntimeUsage(_ context.Context, pid int, exec string, d
 }
 
 func (r *Resolver) CheckRuntimeUsage(_ context.Context, organizationName string) (*graph.CheckRuntimeUsageResponse, error) {
+	defer func() { handlePanics(recover(), debug.Stack()) }()
+
 	logging.Debug("CheckRuntimeUsage resolver")
 
 	usage, err := r.usageChecker.Check(organizationName)
@@ -193,17 +207,22 @@ func (r *Resolver) CheckRuntimeUsage(_ context.Context, organizationName string)
 		return nil, errs.Wrap(err, "Could not check runtime usage: %s", errs.JoinMessage(err))
 	}
 
-	result := &graph.CheckRuntimeUsageResponse{
-		Limit: int(usage.LimitDynamicRuntimes),
-		Usage: int(usage.ActiveDynamicRuntimes),
+	if usage == nil {
+		return &graph.CheckRuntimeUsageResponse{
+			Limit: 0,
+			Usage: 0,
+		}, nil
 	}
 
-	logging.Debug("Returning %v, based on %v", result, usage)
-
-	return result, nil
+	return &graph.CheckRuntimeUsageResponse{
+		Limit: int(usage.LimitDynamicRuntimes),
+		Usage: int(usage.ActiveDynamicRuntimes),
+	}, nil
 }
 
 func (r *Resolver) CheckDeprecation(ctx context.Context) (*graph.DeprecationInfo, error) {
+	defer func() { handlePanics(recover(), debug.Stack()) }()
+
 	logging.Debug("Check deprecation resolver")
 
 	deprecated, ok := r.depPoller.ValueFromCache().(*graph.DeprecationInfo)
@@ -215,10 +234,22 @@ func (r *Resolver) CheckDeprecation(ctx context.Context) (*graph.DeprecationInfo
 }
 
 func (r *Resolver) ConfigChanged(ctx context.Context, key string) (*graph.ConfigChangedResponse, error) {
+	defer func() { handlePanics(recover(), debug.Stack()) }()
+
 	go configMediator.NotifyListeners(key)
 	return &graph.ConfigChangedResponse{Received: true}, nil
 }
 
 func (r *Resolver) FetchLogTail(ctx context.Context) (string, error) {
+	defer func() { handlePanics(recover(), debug.Stack()) }()
+
 	return logging.ReadTail(), nil
+}
+
+func handlePanics(recovered interface{}, stack []byte) {
+	if recovered != nil {
+		multilog.Error("Panic: %v", recovered)
+		logging.Debug("Stack: %s", string(stack))
+		panic(recovered) // We're only logging the panic, not interrupting it
+	}
 }
