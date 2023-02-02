@@ -2,6 +2,10 @@ package rtusage
 
 import (
 	"context"
+	"os"
+	"strconv"
+	"time"
+
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
@@ -11,9 +15,6 @@ import (
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/notify"
 	"github.com/ActiveState/cli/internal/output"
-	"os"
-	"strconv"
-	"time"
 )
 
 const CfgKeyLastNotify = "notify.rtusage.last"

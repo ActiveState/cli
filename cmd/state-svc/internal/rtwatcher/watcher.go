@@ -60,7 +60,7 @@ func New(cfg *config.Instance, an analytics) *Watcher {
 }
 
 func (w *Watcher) ticker(cb func()) {
-	defer panics.LogPanics(recover(), debug.Stack())
+	defer func() { panics.LogPanics(recover(), debug.Stack()) }()
 
 	logging.Debug("Starting watcher ticker with interval %s", w.interval.String())
 	ticker := time.NewTicker(w.interval)
