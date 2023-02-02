@@ -200,7 +200,7 @@ func (a *Client) EventWithLabel(category string, action, label string, dims ...*
 	// We do not wait for the events to be processed, just scheduling them
 	go func() {
 		defer a.eventWaitGroup.Done()
-		defer handlePanics(recover(), debug.Stack())
+		defer func() { handlePanics(recover(), debug.Stack()) }()
 		a.report(category, action, label, actualDims)
 	}()
 }

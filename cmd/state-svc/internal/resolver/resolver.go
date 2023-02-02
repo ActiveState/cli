@@ -90,7 +90,7 @@ func (r *Resolver) Close() error {
 func (r *Resolver) Query() genserver.QueryResolver { return r }
 
 func (r *Resolver) Version(ctx context.Context) (*graph.Version, error) {
-	defer handlePanics(recover(), debug.Stack())
+	defer func() { handlePanics(recover(), debug.Stack()) }()
 
 	r.an.EventWithLabel(anaConsts.CatStateSvc, "endpoint", "Version")
 	logging.Debug("Version resolver")
@@ -106,7 +106,7 @@ func (r *Resolver) Version(ctx context.Context) (*graph.Version, error) {
 }
 
 func (r *Resolver) AvailableUpdate(ctx context.Context) (*graph.AvailableUpdate, error) {
-	defer handlePanics(recover(), debug.Stack())
+	defer func() { handlePanics(recover(), debug.Stack()) }()
 
 	r.an.EventWithLabel(anaConsts.CatStateSvc, "endpoint", "AvailableUpdate")
 	logging.Debug("AvailableUpdate resolver")
@@ -130,7 +130,7 @@ func (r *Resolver) AvailableUpdate(ctx context.Context) (*graph.AvailableUpdate,
 }
 
 func (r *Resolver) Projects(ctx context.Context) ([]*graph.Project, error) {
-	defer handlePanics(recover(), debug.Stack())
+	defer func() { handlePanics(recover(), debug.Stack()) }()
 
 	r.an.EventWithLabel(anaConsts.CatStateSvc, "endpoint", "Projects")
 	logging.Debug("Projects resolver")
@@ -150,7 +150,7 @@ func (r *Resolver) Projects(ctx context.Context) ([]*graph.Project, error) {
 }
 
 func (r *Resolver) AnalyticsEvent(_ context.Context, category, action string, _label *string, dimensionsJson string) (*graph.AnalyticsEventResponse, error) {
-	defer handlePanics(recover(), debug.Stack())
+	defer func() { handlePanics(recover(), debug.Stack()) }()
 
 	logging.Debug("Analytics event resolver: %s - %s", category, action)
 
@@ -184,7 +184,7 @@ func (r *Resolver) AnalyticsEvent(_ context.Context, category, action string, _l
 }
 
 func (r *Resolver) ReportRuntimeUsage(_ context.Context, pid int, exec string, dimensionsJSON string) (*graph.ReportRuntimeUsageResponse, error) {
-	defer handlePanics(recover(), debug.Stack())
+	defer func() { handlePanics(recover(), debug.Stack()) }()
 
 	logging.Debug("Runtime usage resolver: %d - %s", pid, exec)
 	var dims *dimensions.Values
@@ -198,7 +198,7 @@ func (r *Resolver) ReportRuntimeUsage(_ context.Context, pid int, exec string, d
 }
 
 func (r *Resolver) CheckRuntimeUsage(_ context.Context, organizationName string) (*graph.CheckRuntimeUsageResponse, error) {
-	defer handlePanics(recover(), debug.Stack())
+	defer func() { handlePanics(recover(), debug.Stack()) }()
 
 	logging.Debug("CheckRuntimeUsage resolver")
 
@@ -221,7 +221,7 @@ func (r *Resolver) CheckRuntimeUsage(_ context.Context, organizationName string)
 }
 
 func (r *Resolver) CheckDeprecation(ctx context.Context) (*graph.DeprecationInfo, error) {
-	defer handlePanics(recover(), debug.Stack())
+	defer func() { handlePanics(recover(), debug.Stack()) }()
 
 	logging.Debug("Check deprecation resolver")
 
@@ -234,14 +234,14 @@ func (r *Resolver) CheckDeprecation(ctx context.Context) (*graph.DeprecationInfo
 }
 
 func (r *Resolver) ConfigChanged(ctx context.Context, key string) (*graph.ConfigChangedResponse, error) {
-	defer handlePanics(recover(), debug.Stack())
+	defer func() { handlePanics(recover(), debug.Stack()) }()
 
 	go configMediator.NotifyListeners(key)
 	return &graph.ConfigChangedResponse{Received: true}, nil
 }
 
 func (r *Resolver) FetchLogTail(ctx context.Context) (string, error) {
-	defer handlePanics(recover(), debug.Stack())
+	defer func() { handlePanics(recover(), debug.Stack()) }()
 
 	return logging.ReadTail(), nil
 }

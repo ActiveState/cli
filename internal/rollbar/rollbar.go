@@ -42,7 +42,7 @@ func init() {
 var CurrentCmd string
 
 func SetupRollbar(token string) {
-	defer handlePanics(recover())
+	defer func() { handlePanics(recover()) }()
 	// set user to unknown (if it has not been set yet)
 	if _, ok := rollbar.Custom()["UserID"]; !ok {
 		UpdateRollbarPerson("unknown", "unknown", "unknown")
@@ -82,7 +82,7 @@ func SetConfig(cfg config) {
 }
 
 func UpdateRollbarPerson(userID, username, email string) {
-	defer handlePanics(recover())
+	defer func() { handlePanics(recover()) }()
 	rollbar.SetPerson(uniqid.Text(), username, email)
 
 	custom := rollbar.Custom()
