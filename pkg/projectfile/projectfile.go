@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"net/url"
 	"os"
+	"os/user"
 	"path/filepath"
 	"regexp"
 	"runtime"
@@ -50,6 +51,8 @@ var (
 	CommitURLRe = regexp.MustCompile(urlCommitRegexStr)
 	// deprecatedRegex covers the deprecated fields in the project file
 	deprecatedRegex = regexp.MustCompile(`(?m)^\s*(?:constraints|platforms|languages):`)
+	// nonAlphanumericRegex covers all non alphanumeric characters
+	nonAlphanumericRegex = regexp.MustCompile(`[^a-zA-Z0-9 ]+`)
 )
 
 type ErrorParseProject struct{ *locale.LocalizedError }
@@ -96,6 +99,7 @@ type Project struct {
 	Scripts       Scripts       `yaml:"scripts,omitempty"`
 	Jobs          Jobs          `yaml:"jobs,omitempty"`
 	Private       bool          `yaml:"private,omitempty"`
+	Cache         string        `yaml:"cache,omitempty"`
 	path          string        // "private"
 	parsedURL     projectURL    // parsed url data
 	parsedBranch  string
@@ -868,6 +872,7 @@ type CreateParams struct {
 	Private    bool
 	path       string
 	ProjectURL string
+	Cache      string
 }
 
 // TestOnlyCreateWithProjectURL a new activestate.yaml with default content
@@ -972,7 +977,43 @@ func createCustom(params *CreateParams, lang language.Language) (*Project, error
 		return nil, err
 	}
 
+	if params.Cache != "" {
+		createErr := createHostFile(params.Directory, params.Cache)
+		if createErr != nil {
+			return nil, errs.Wrap(createErr, "Could not create cache file")
+		}
+	}
+
 	return Parse(params.path)
+}
+
+func createHostFile(filePath, cachePath string) error {
+	user, err := user.Current()
+	if err != nil {
+		return errs.Wrap(err, "Could not get current user")
+	}
+
+	data := map[string]interface{}{
+		"Cache": cachePath,
+	}
+
+	tplName := "activestate.yaml.cache.tpl"
+	tplContents, err := assets.ReadFileBytes(tplName)
+	if err != nil {
+		return errs.Wrap(err, "Could not read asset")
+	}
+
+	fileContents, err := strutils.ParseTemplate(string(tplContents), data)
+	if err != nil {
+		return errs.Wrap(err, "Could not parse %s", tplName)
+	}
+
+	// Trim any non-alphanumeric characters from the username
+	if err := fileutils.WriteFile(filepath.Join(filePath, fmt.Sprintf("activestate.%s.yaml", nonAlphanumericRegex.ReplaceAllString(user.Username, ""))), []byte(fileContents)); err != nil {
+		return errs.Wrap(err, "Could not write cache file")
+	}
+
+	return nil
 }
 
 func validateCreateParams(params *CreateParams) error {

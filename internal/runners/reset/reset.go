@@ -2,7 +2,6 @@ package reset
 
 import (
 	"github.com/ActiveState/cli/internal/analytics"
-	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
@@ -96,7 +95,7 @@ func (r *Reset) Run(params *Params) error {
 		return locale.WrapError(err, "err_reset_set_commit", "Could not update commit ID")
 	}
 
-	err = runbits.RefreshRuntime(r.auth, r.out, r.analytics, r.project, storage.CachePath(), commitID, true, target.TriggerReset, r.svcModel)
+	err = runbits.RefreshRuntime(r.auth, r.out, r.analytics, r.project, commitID, true, target.TriggerReset, r.svcModel)
 	if err != nil {
 		return locale.WrapError(err, "err_refresh_runtime")
 	}

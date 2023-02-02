@@ -10,7 +10,6 @@ import (
 	"github.com/ActiveState/cli/internal/constraints"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
@@ -202,7 +201,7 @@ func (s *Show) Run(params Params) error {
 			}
 		}
 
-		projectTarget = target.NewProjectTarget(s.project, storage.CachePath(), nil, "").Dir()
+		projectTarget = target.NewProjectTarget(s.project, nil, "").Dir()
 	}
 
 	remoteProject, err := model.FetchProjectByName(owner, projectName)

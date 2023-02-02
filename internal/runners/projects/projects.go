@@ -4,7 +4,6 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/output"
@@ -31,7 +30,7 @@ func newProjectWithOrg(name, org string, checkouts []string) projectWithOrg {
 	for _, checkout := range checkouts {
 		var execDir string
 		if proj, err := project.FromPath(checkout); err == nil {
-			projectTarget := target.NewProjectTarget(proj, storage.CachePath(), nil, "")
+			projectTarget := target.NewProjectTarget(proj, nil, "")
 			execDir = setup.ExecDir(projectTarget.Dir())
 		} else {
 			multilog.Error("Unable to get project %s from checkout: %v", checkout, err)
