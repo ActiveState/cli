@@ -50,12 +50,6 @@ func NewMapFromRecipe(recipe *inventory_models.Recipe) ArtifactRecipeMap {
 	}
 	for _, ri := range recipe.ResolvedIngredients {
 		namespace := *ri.Ingredient.PrimaryNamespace
-		if !monomodel.NamespaceMatch(namespace, monomodel.NamespaceLanguageMatch) &&
-			!monomodel.NamespaceMatch(namespace, monomodel.NamespacePackageMatch) &&
-			!monomodel.NamespaceMatch(namespace, monomodel.NamespaceBundlesMatch) &&
-			!monomodel.NamespaceMatch(namespace, monomodel.NamespaceSharedMatch) {
-			continue
-		}
 		a := ri.ArtifactID
 		name := *ri.Ingredient.Name
 		version := ri.IngredientVersion.Version

@@ -256,7 +256,7 @@ func (r *Runtime) Artifacts() (map[artifact.ArtifactID]artifact.ArtifactRecipe, 
 	if err != nil {
 		return nil, locale.WrapError(err, "runtime_artifacts_recipe_load_err", "Failed to load recipe for your runtime.  Please re-install the runtime.")
 	}
-	artifacts := artifact.NewMapFromRecipe(recipe)
+	artifacts := artifact.NewMapFromRecipe(recipe, artifact.FilterInstallable)
 	return artifacts, nil
 }
 
