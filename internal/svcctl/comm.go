@@ -91,8 +91,8 @@ func HeartbeatHandler(cfg *config.Instance, resolver Resolver, analyticsReporter
 		hb := svcmsg.NewHeartbeatFromSvcMsg(data)
 
 		go func() {
-			defer panics.HandlePanics(recover(), debug.Stack())
-			
+			defer func() { panics.HandlePanics(recover(), debug.Stack()) }()
+
 			pidNum, err := strconv.Atoi(hb.ProcessID)
 			if err != nil {
 				multilog.Error("Heartbeat: Could not convert pid string (%s) to int in heartbeat handler: %s", hb.ProcessID, err)

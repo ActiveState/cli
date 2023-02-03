@@ -44,7 +44,7 @@ import (
 type Session struct {
 	cp              *termtest.ConsoleProcess
 	Dirs            *Dirs
-	env             []string
+	Env             []string
 	retainDirs      bool
 	createdProjects []*project.Namespaced
 	// users created during session
@@ -196,7 +196,7 @@ func new(t *testing.T, retainDirs, updatePath bool, extraEnv ...string) *Session
 	// add session environment variables
 	env = append(env, extraEnv...)
 
-	session := &Session{Dirs: dirs, env: env, retainDirs: retainDirs, t: t}
+	session := &Session{Dirs: dirs, Env: env, retainDirs: retainDirs, t: t}
 
 	// Mock installation directory
 	exe, svcExe, execExe := executablePaths(t)
@@ -248,7 +248,7 @@ func (s *Session) SpawnCmdWithOpts(exe string, opts ...SpawnOptions) *termtest.C
 		s.cp.Close()
 	}
 
-	env := s.env
+	env := s.Env
 
 	pOpts := Options{
 		Options: termtest.Options{

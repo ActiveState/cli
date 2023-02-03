@@ -81,7 +81,7 @@ func FilePathForCmd(cmd string, pid int) string {
 }
 
 func init() {
-	defer handlePanics(recover())
+	defer func() { handlePanics(recover()) }()
 
 	// Set up datadir
 	var err error
