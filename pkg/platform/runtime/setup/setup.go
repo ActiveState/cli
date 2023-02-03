@@ -356,17 +356,11 @@ func (s *Setup) fetchAndInstallArtifactsFromRecipe(installFunc artifactInstaller
 	// Not all artifacts produced by the build are meant to be installed.
 	// Notably we ignore bundle artifacts here, as they currently only produce no-op artifacts in terms of how recipes
 	// link the artifacts to the ingredient. This will be solved by buildplans.
-	installableArtifacts := artifact.ArtifactRecipeMap{}
-	for _, artifact := range artifacts {
-		if !apimodel.NamespaceMatch(artifact.Namespace, apimodel.NamespaceLanguageMatch) &&
-			!apimodel.NamespaceMatch(artifact.Namespace, apimodel.NamespacePackageMatch) &&
-			!apimodel.NamespaceMatch(artifact.Namespace, apimodel.NamespaceSharedMatch) {
-			continue
+	installableArtifacts := artifact.FilterInstallable(artifacts)
+	for id, _ := range installableArtifacts {
+		if _, noop := noopArtifacts[id]; noop {
+			delete(installableArtifacts, id)
 		}
-		if _, noop := noopArtifacts[artifact.ArtifactID]; noop {
-			continue
-		}
-		installableArtifacts[artifact.ArtifactID] = artifact
 	}
 
 	downloadablePrebuiltResults, err := setup.DownloadsFromBuild(buildResult.BuildStatusResponse)
