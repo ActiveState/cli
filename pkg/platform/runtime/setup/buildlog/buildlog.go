@@ -164,7 +164,7 @@ func NewWithCustomConnections(artifactMap map[artifact.ArtifactID]artifact.Artif
 				}
 
 				if err := eventHandler.Handle(events.ArtifactBuildStarted{m.ArtifactID, m.CacheHit}); err != nil {
-					errCh <- errs.Wrap(err, "Could not handle ArifactBuildStarted event")
+					errCh <- errs.Wrap(err, "Could not handle ArtifactBuildStarted event")
 				}
 
 				// if verbose build logging is requested: Also subscribe to log messages for this artifacts

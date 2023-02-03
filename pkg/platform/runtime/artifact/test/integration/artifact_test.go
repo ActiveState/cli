@@ -109,8 +109,6 @@ func TestArtifactsFromRecipe(t *testing.T) {
 			"alternative with bundles",
 			"perl-alternative-one-bundle",
 			artifact.ArtifactRecipeMap{
-				strfmt.UUID("c894fa23-0416-556d-9ca5-fdf9375595bc"): artifact.ArtifactRecipe{
-					Name: "Testing", Namespace: "bundles/perl", ArtifactID: strfmt.UUID("c894fa23-0416-556d-9ca5-fdf9375595bc"), Dependencies: []artifact.ArtifactID{"288aa0db-c0e4-55e7-8f67-fc2da409be70", "5ad88c8a-bc8f-50a0-9f61-74856cd28017", "30dc7965-0a69-5686-831a-e563fa73a98c", "8c2f830d-1b31-5448-a0a4-aa9d8fcacc4b"}, RequestedByOrder: true, Version: version("1.00")},
 				strfmt.UUID("b30ab2e5-4074-572c-8146-da692b1c9e45"): artifact.ArtifactRecipe{
 					Name: "perl", Namespace: "language", ArtifactID: strfmt.UUID("b30ab2e5-4074-572c-8146-da692b1c9e45"), Dependencies: nil, RequestedByOrder: true, Version: version("5.32.1")},
 				strfmt.UUID("48951744-f839-5031-8cf4-6e82a4be2089"): artifact.ArtifactRecipe{
@@ -158,6 +156,7 @@ func TestArtifactsFromRecipe(t *testing.T) {
 		t.Run(tt.Name, func(t *testing.T) {
 			recipe := testhelper.LoadRecipe(t, tt.recipeName)
 			res := artifact.NewMapFromRecipe(recipe)
+			res = artifact.FilterInstallable(res)
 			assert.Equal(t, tt.expected, res)
 		})
 	}
@@ -288,7 +287,7 @@ func TestResolvedArtifactChanges(t *testing.T) {
 			"perl-alternative-base",
 			"perl-alternative-one-bundle",
 			artifact.ArtifactChangeset{
-				Added: []strfmt.UUID{"288aa0db-c0e4-55e7-8f67-fc2da409be70", "c1e8c6c4-ea11-55a4-b415-97da2d32121e", "48951744-f839-5031-8cf4-6e82a4be2089", "0029ae25-8497-5130-8268-1f0fe26ccc77", "7f8a7197-b277-5621-a6f3-7f2ef32d871b", "29983a5b-49c4-5cf4-a2c5-2490647d6910", "c3e652a7-676e-594f-b87f-93d19122f3f4", "5ad88c8a-bc8f-50a0-9f61-74856cd28017", "30dc7965-0a69-5686-831a-e563fa73a98c", "c894fa23-0416-556d-9ca5-fdf9375595bc", "6591f01d-939d-5080-bb1a-7816ff4d020b", "7c541a6a-4dfd-5135-8b98-2b44b5d1a816", "4d95557d-2200-5a56-a809-4ea3d3502b20", "282e3768-e12a-51ed-831f-7cbc212ba8bd"},
+				Added: []strfmt.UUID{"288aa0db-c0e4-55e7-8f67-fc2da409be70", "c1e8c6c4-ea11-55a4-b415-97da2d32121e", "48951744-f839-5031-8cf4-6e82a4be2089", "0029ae25-8497-5130-8268-1f0fe26ccc77", "7f8a7197-b277-5621-a6f3-7f2ef32d871b", "29983a5b-49c4-5cf4-a2c5-2490647d6910", "c3e652a7-676e-594f-b87f-93d19122f3f4", "5ad88c8a-bc8f-50a0-9f61-74856cd28017", "30dc7965-0a69-5686-831a-e563fa73a98c", "6591f01d-939d-5080-bb1a-7816ff4d020b", "7c541a6a-4dfd-5135-8b98-2b44b5d1a816", "4d95557d-2200-5a56-a809-4ea3d3502b20", "282e3768-e12a-51ed-831f-7cbc212ba8bd"},
 			},
 		},
 	}
@@ -297,8 +296,10 @@ func TestResolvedArtifactChanges(t *testing.T) {
 		t.Run(tt.Name, func(t *testing.T) {
 			old := testhelper.LoadRecipe(t, tt.baseRecipeName)
 			oldArts := artifact.NewMapFromRecipe(old)
+			oldArts = artifact.FilterInstallable(oldArts)
 			new := testhelper.LoadRecipe(t, tt.newRecipeName)
 			newArts := artifact.NewMapFromRecipe(new)
+			newArts = artifact.FilterInstallable(newArts)
 			res := artifact.NewArtifactChangesetByIDMap(oldArts, newArts, false)
 
 			assert.ElementsMatch(t, tt.expectedChanges.Added, res.Added, "mis-matched added ids")
