@@ -22,7 +22,6 @@ import (
 	"github.com/ActiveState/cli/internal/rtutils/p"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/ActiveState/cli/pkg/platform/runtime/envdef"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup/events"
@@ -248,16 +247,6 @@ func (r *Runtime) ExecutableDirs() (envdef.ExecutablePaths, error) {
 		return nil, errs.Wrap(err, "Could not retrieve environment info")
 	}
 	return env.ExecutableDirs()
-}
-
-// Artifacts returns a map of artifact information extracted from the recipe
-func (r *Runtime) Artifacts() (map[artifact.ArtifactID]artifact.ArtifactRecipe, error) {
-	recipe, err := r.store.Recipe()
-	if err != nil {
-		return nil, locale.WrapError(err, "runtime_artifacts_recipe_load_err", "Failed to load recipe for your runtime.  Please re-install the runtime.")
-	}
-	artifacts := artifact.NewMapFromRecipe(recipe)
-	return artifacts, nil
 }
 
 func IsRuntimeDir(dir string) bool {

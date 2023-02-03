@@ -85,6 +85,18 @@ func NewMapFromRecipe(recipe *inventory_models.Recipe) ArtifactRecipeMap {
 	return res
 }
 
+func FilterInstallable(artifacts ArtifactRecipeMap) ArtifactRecipeMap {
+	res := make(map[ArtifactID]ArtifactRecipe)
+	for _, a := range artifacts {
+		if monomodel.NamespaceMatch(a.Namespace, monomodel.NamespaceLanguageMatch) ||
+			monomodel.NamespaceMatch(a.Namespace, monomodel.NamespacePackageMatch) ||
+			monomodel.NamespaceMatch(a.Namespace, monomodel.NamespaceSharedMatch) {
+			res[a.ArtifactID] = a
+		}
+	}
+	return res
+}
+
 // RecursiveDependenciesFor computes the recursive dependencies for an ArtifactID a using artifacts as a lookup table
 func RecursiveDependenciesFor(a ArtifactID, artifacts ArtifactRecipeMap) []ArtifactID {
 	allDeps := make(map[ArtifactID]struct{})
