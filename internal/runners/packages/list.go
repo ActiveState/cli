@@ -117,7 +117,7 @@ func targetFromProjectFile(proj *project.Project) (*strfmt.UUID, error) {
 func prepareCommit(commit string) (*strfmt.UUID, error) {
 	logging.Debug("commit %s selected", commit)
 	if ok := strfmt.Default.Validates("uuid", commit); !ok {
-		return nil, locale.NewInputError("err_invalid_commit", "Invalid commit: %s", commit)
+		return nil, locale.NewInputError("err_invalid_commit", "Invalid commit: {{.V0}}", commit)
 	}
 
 	var uuid strfmt.UUID
