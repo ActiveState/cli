@@ -58,6 +58,9 @@ func (o projectWithOrgs) MarshalOutput(f output.Format) interface{} {
 		checkouts := []string{}
 		executables := []string{}
 		for i, checkout := range v.LocalCheckouts {
+			if len(v.Executables) <= i {
+				continue // remote project listings do not have executables
+			}
 			execDir := v.Executables[i]
 			if execDir != "" {
 				checkouts = append(checkouts, locale.Tl("projects_local_checkout_exec", " ├─ Local Checkout → {{.V0}}", checkout))
