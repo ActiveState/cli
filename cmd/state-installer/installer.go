@@ -110,7 +110,7 @@ func (i *Installer) Install() (rerr error) {
 		return errs.Wrap(err, "Installation of service app failed.")
 	}
 
-	if err = autostart.Enable(app.Exec, svcAutostart.AutostartOptions); err != nil {
+	if err = autostart.Enable(app.Exec, svcAutostart.Options); err != nil {
 		return errs.Wrap(err, "Failed to enable autostart for service app.")
 	}
 

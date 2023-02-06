@@ -10,7 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/osutils/autostart"
 )
 
-var AutostartOptions = autostart.Options{
+var Options = autostart.Options{
 	Name: constants.SvcAppName,
 	Args: []string{"start"},
 }
@@ -20,10 +20,10 @@ func RegisterConfigListener(cfg *config.Instance) {
 		configMediator.AddListener(constants.AutostartSvcConfigKey, func() {
 			if cfg.GetBool(constants.AutostartSvcConfigKey) {
 				logging.Debug("Enabling autostart")
-				autostart.Enable(svcExec, AutostartOptions)
+				autostart.Enable(svcExec, Options)
 			} else {
 				logging.Debug("Disabling autostart")
-				autostart.Disable(svcExec, AutostartOptions)
+				autostart.Disable(svcExec, Options)
 			}
 		})
 	} else {

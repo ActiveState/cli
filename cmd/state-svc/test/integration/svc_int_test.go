@@ -12,12 +12,14 @@ import (
 	"time"
 
 	svcApp "github.com/ActiveState/cli/cmd/state-svc/app"
+	svcAutostart "github.com/ActiveState/cli/cmd/state-svc/autostart"
 	"github.com/ActiveState/cli/internal/app"
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/osutils/autostart"
 	"github.com/ActiveState/cli/internal/svcctl"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
@@ -211,25 +213,25 @@ func (suite *SvcIntegrationTestSuite) TestAutostartConfigEnableDisable() {
 	suite.Require().NoError(err)
 	app, err := app.New(constants.SvcAppName, ts.SvcExe, nil, svcApp.Options, cfg)
 	suite.Require().NoError(err)
-	enabled, err := app.IsAutostartEnabled() // checks if the proper files are in place, not the config key setting
+	enabled, err := autostart.IsEnabled(app.Exec, svcAutostart.Options)
 	suite.Require().NoError(err)
 
 	// Toggle it via state tool config.
 	cp := ts.SpawnWithOpts(e2e.WithArgs("config", "set", constants.AutostartSvcConfigKey, strconv.FormatBool(!enabled)))
 	cp.ExpectExitCode(0)
-	suite.checkEnabled(app, !enabled)
+	suite.checkEnabled(app.Exec, svcAutostart.Options, !enabled)
 
 	// Toggle it again via state tool config.
 	cp = ts.SpawnWithOpts(e2e.WithArgs("config", "set", constants.AutostartSvcConfigKey, strconv.FormatBool(enabled)))
 	cp.ExpectExitCode(0)
-	suite.checkEnabled(app, enabled)
+	suite.checkEnabled(app.Exec, svcAutostart.Options, enabled)
 }
 
 type autostartApp interface {
 	IsAutostartEnabled() (bool, error)
 }
 
-func (suite *SvcIntegrationTestSuite) checkEnabled(as autostartApp, expect bool) {
+func (suite *SvcIntegrationTestSuite) checkEnabled(exec string, opts autostart.Options, expect bool) {
 	timeout := time.After(1 * time.Minute)
 	tick := time.Tick(1 * time.Second)
 	for {
@@ -237,7 +239,7 @@ func (suite *SvcIntegrationTestSuite) checkEnabled(as autostartApp, expect bool)
 		case <-timeout:
 			suite.Fail("autostart has not been changed")
 		case <-tick:
-			toggled, err := as.IsAutostartEnabled()
+			toggled, err := autostart.IsEnabled(exec, opts)
 			suite.Require().NoError(err)
 			if suite.Equal(expect, toggled) {
 				return

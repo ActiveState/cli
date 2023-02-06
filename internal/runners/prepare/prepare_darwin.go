@@ -24,7 +24,7 @@ func (r *Prepare) prepareOS() error {
 		r.reportError(locale.T("err_autostart_app"), err)
 	}
 
-	if err = autostart.Enable(svcShortcut.Exec, svcAutostart.AutostartOptions); err != nil {
+	if err = autostart.Enable(svcShortcut.Exec, svcAutostart.Options); err != nil {
 		return errs.Wrap(err, "Failed to enable autostart for service app.")
 	}
 
