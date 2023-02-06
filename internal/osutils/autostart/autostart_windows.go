@@ -63,6 +63,10 @@ func isEnabled(_ string, opts Options) (bool, error) {
 	return fileutils.FileExists(shortcutFilename(opts.Name)), nil
 }
 
+func autostartPath(name string, _ Options) (string, error) {
+	return shortcutFilename(name), nil
+}
+
 func shortcutFilename(name string) string {
 	name = formattedName(name)
 	if testDir, ok := os.LookupEnv(constants.AutostartPathOverrideEnvVarName); ok {
