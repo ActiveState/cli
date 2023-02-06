@@ -2,8 +2,10 @@ package resolver
 
 import (
 	"encoding/json"
+	"os"
 	"runtime/debug"
 	"sort"
+	"strconv"
 	"time"
 
 	"github.com/ActiveState/cli/cmd/state-svc/internal/deprecation"
@@ -54,7 +56,16 @@ func New(cfg *config.Instance, an *sync.Client, auth *authentication.Auth) (*Res
 		return upchecker.Check()
 	})
 
-	pollAuth := poller.New(1*time.Minute, func() (interface{}, error) {
+	pollRate := time.Minute.Milliseconds()
+	if override := os.Getenv(constants.SvcAuthPollingRateEnvVarName); override != "" {
+		overrideInt, err := strconv.ParseInt(override, 10, 64)
+		if err != nil {
+			return nil, errs.New("Failed to parse svc polling time override: %v", err)
+		}
+		pollRate = overrideInt
+	}
+
+	pollAuth := poller.New(time.Duration(int64(time.Millisecond)*pollRate), func() (interface{}, error) {
 		if auth.SyncRequired() {
 			return nil, auth.Sync()
 		}
