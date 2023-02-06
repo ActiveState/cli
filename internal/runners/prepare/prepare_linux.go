@@ -54,8 +54,8 @@ func cleanOS(cfg app.Configurable) error {
 	if err != nil {
 		return locale.WrapError(err, "Could not get svc autostart shortcut")
 	}
+	// cleans ~/.profile if necessary
 	if err = autostart.Disable(svcApp.Exec, svcAutostart.Options); err != nil {
 		return errs.Wrap(err, "Failed to enable autostart for service app.")
 	}
-	return svcApp.DisableAutostart() // cleans ~/.profile if necessary
 }
