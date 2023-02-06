@@ -9,11 +9,13 @@ import (
 	"testing"
 
 	svcApp "github.com/ActiveState/cli/cmd/state-svc/app"
+	svcAutostart "github.com/ActiveState/cli/cmd/state-svc/autostart"
 	"github.com/ActiveState/cli/internal/app"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/osutils"
+	"github.com/ActiveState/cli/internal/osutils/autostart"
 	"github.com/ActiveState/cli/internal/osutils/user"
 	"github.com/ActiveState/cli/internal/rtutils/singlethread"
 	"github.com/ActiveState/cli/internal/subshell"
@@ -61,7 +63,7 @@ func (suite *PrepareIntegrationTestSuite) TestPrepare() {
 	suite.Require().NoError(err)
 	as, err := app.New(constants.SvcAppName, ts.SvcExe, nil, svcApp.Options, cfg)
 	suite.Require().NoError(err)
-	enabled, err := as.IsAutostartEnabled()
+	enabled, err := autostart.IsEnabled(as.Exec, svcAutostart.Options)
 	suite.Require().NoError(err)
 	suite.Assert().True(enabled, "autostart is not enabled")
 
@@ -75,9 +77,9 @@ func (suite *PrepareIntegrationTestSuite) TestPrepare() {
 	}
 
 	// Verify autostart can be disabled.
-	err = as.DisableAutostart()
+	err = autostart.Disable(as.Exec, svcAutostart.Options)
 	suite.Require().NoError(err)
-	enabled, err = as.IsAutostartEnabled()
+	enabled, err = autostart.IsEnabled(as.Exec, svcAutostart.Options)
 	suite.Require().NoError(err)
 	suite.Assert().False(enabled, "autostart is still enabled")
 
