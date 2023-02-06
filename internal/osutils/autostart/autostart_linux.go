@@ -114,7 +114,7 @@ func disable(exec string, opts Options) error {
 		return nil
 	}
 
-	path, err := autostartPath(exec, opts.LaunchFileName)
+	path, err := autostartPath(exec, opts)
 	if err != nil {
 		return err
 	}
