@@ -737,6 +737,9 @@ func (s *Setup) verifyArtifact(archivePath string, a artifact.ArtifactDownload) 
 func (s *Setup) obtainArtifact(a artifact.ArtifactDownload, extension string) (string, error) {
 	if cachedPath, found := s.artifactCache.Get(a.ArtifactID); found {
 		if err := s.verifyArtifact(cachedPath, a); err == nil {
+			if err := s.eventHandler.Handle(events.ArtifactDownloadSkipped{a.ArtifactID}); err != nil {
+				return "", errs.Wrap(err, "Could not handle ArtifactDownloadSkipped event")
+			}
 			return cachedPath, nil
 		}
 		// otherwise re-download it; do not return an error

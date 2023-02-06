@@ -112,6 +112,12 @@ func (p *ProgressDigester) Handle(ev events.Eventer) error {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 
+	initDownloadBar := func() {
+		if p.downloadBar == nil {
+			p.downloadBar = p.addTotalBar(locale.Tl("progress_building", "Downloading"), int64(len(p.downloadsExpected)), mpb.BarPriority(StepDownload.priority))
+		}
+	}
+
 	switch v := ev.(type) {
 
 	case events.Start:
@@ -213,9 +219,7 @@ func (p *ProgressDigester) Handle(ev events.Eventer) error {
 		p.buildBar.Increment()
 
 	case events.ArtifactDownloadStarted:
-		if p.downloadBar == nil {
-			p.downloadBar = p.addTotalBar(locale.Tl("progress_building", "Downloading"), int64(len(p.downloadsExpected)), mpb.BarPriority(StepDownload.priority))
-		}
+		initDownloadBar()
 		if _, ok := p.downloadsExpected[v.ArtifactID]; !ok {
 			return errs.New("ArtifactDownloadStarted called for an artifact that was not expected: %s", v.ArtifactID.String())
 		}
@@ -230,9 +234,7 @@ func (p *ProgressDigester) Handle(ev events.Eventer) error {
 		}
 
 	case events.ArtifactDownloadSkipped:
-		if p.downloadBar == nil {
-			return errs.New("ArtifactDownloadSkipped called before downloadBar was initialized")
-		}
+		initDownloadBar()
 		delete(p.downloadsExpected, v.ArtifactID)
 		p.downloadBar.Increment()
 
@@ -344,12 +346,9 @@ Progress bars status:
 Still expecting:
  - Builds: %v
  - Downloads: %v
- - Installs: %v
-Event log:
-%s`,
+ - Installs: %v`,
 				strings.Join(debugMsg, "\n"),
 				p.buildsExpected, p.downloadsExpected, p.installsExpected,
-				strings.Join(p.dbgEventLog, " > "),
 			)
 
 			if pending > 0 {
