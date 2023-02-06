@@ -8,7 +8,7 @@ import (
 	"syscall"
 	"unsafe"
 
-	"github.com/ActiveState/cli/internal/rollbar"
+	"github.com/ActiveState/cli/internal/multilog"
 )
 
 var kernel32 = syscall.NewLazyDLL("kernel32.dll")
@@ -49,11 +49,11 @@ func (d *Spinner) moveCaretBackInCommandPrompt(n int) {
 
 		_, _, err2 := procSetConsoleCursorPosition.Call(uintptr(handle), uintptr(*(*int32)(unsafe.Pointer(&cursor))))
 		if err2 != nil && !d.reportedError {
-			rollbar.Error("Error calling SetConsoleCursorPosition: %v", err2)
+			multilog.Error("Error calling SetConsoleCursorPosition: %v", err2)
 			d.reportedError = true
 		}
 	} else if !d.reportedError {
-		rollbar.Error("Error calling GetConsoleScreenBufferInfo: %v", err)
+		multilog.Error("Error calling GetConsoleScreenBufferInfo: %v", err)
 		d.reportedError = true
 	}
 }
