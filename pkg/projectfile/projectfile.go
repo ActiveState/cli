@@ -6,9 +6,11 @@ import (
 	"io/ioutil"
 	"net/url"
 	"os"
+	"os/user"
 	"path/filepath"
 	"regexp"
 	"runtime"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -47,6 +49,10 @@ var (
 	ProjectURLRe = regexp.MustCompile(urlProjectRegexStr)
 	// CommitURLRe Regex used to validate commit info /commit/someUUID
 	CommitURLRe = regexp.MustCompile(urlCommitRegexStr)
+	// deprecatedRegex covers the deprecated fields in the project file
+	deprecatedRegex = regexp.MustCompile(`(?m)^\s*(?:constraints|platforms|languages):`)
+	// nonAlphanumericRegex covers all non alphanumeric characters
+	nonAlphanumericRegex = regexp.MustCompile(`[^a-zA-Z0-9 ]+`)
 )
 
 type ErrorParseProject struct{ *locale.LocalizedError }
@@ -93,6 +99,7 @@ type Project struct {
 	Scripts       Scripts       `yaml:"scripts,omitempty"`
 	Jobs          Jobs          `yaml:"jobs,omitempty"`
 	Private       bool          `yaml:"private,omitempty"`
+	Cache         string        `yaml:"cache,omitempty"`
 	path          string        // "private"
 	parsedURL     projectURL    // parsed url data
 	parsedBranch  string
@@ -108,7 +115,6 @@ type Constant struct {
 	Name        string      `yaml:"name"`
 	Value       string      `yaml:"value"`
 	Conditional Conditional `yaml:"if"`
-	Constraints Constraint  `yaml:"constraints,omitempty"`
 }
 
 var _ ConstrainedEntity = &Constant{}
@@ -116,11 +122,6 @@ var _ ConstrainedEntity = &Constant{}
 // ID returns the constant name
 func (c *Constant) ID() string {
 	return c.Name
-}
-
-// ConstraintsFilter returns the constant constraints
-func (c *Constant) ConstraintsFilter() Constraint {
-	return c.Constraints
 }
 
 func (c *Constant) ConditionalFilter() Conditional {
@@ -160,7 +161,6 @@ type Secret struct {
 	Name        string      `yaml:"name"`
 	Description string      `yaml:"description"`
 	Conditional Conditional `yaml:"if"`
-	Constraints Constraint  `yaml:"constraints"`
 }
 
 var _ ConstrainedEntity = &Secret{}
@@ -168,11 +168,6 @@ var _ ConstrainedEntity = &Secret{}
 // ID returns the secret name
 func (s *Secret) ID() string {
 	return s.Name
-}
-
-// ConstraintsFilter returns the secret constraints
-func (s *Secret) ConstraintsFilter() Constraint {
-	return s.Constraints
 }
 
 func (s *Secret) ConditionalFilter() Conditional {
@@ -205,20 +200,10 @@ func MakeSecretsFromConstrainedEntities(items []ConstrainedEntity) (secrets []*S
 // it is meant to replace Constraints
 type Conditional string
 
-// Constraint covers the constraint structure, which can go under almost any other struct
-type Constraint struct {
-	OS          string `yaml:"os,omitempty"`
-	Platform    string `yaml:"platform,omitempty"`
-	Environment string `yaml:"environment,omitempty"`
-}
-
 // ConstrainedEntity is an entity in a project file that can be filtered with constraints
 type ConstrainedEntity interface {
 	// ID returns the name of the entity
 	ID() string
-
-	// ConstraintsFilter returns the specified constraints for this entity
-	ConstraintsFilter() Constraint
 
 	ConditionalFilter() Conditional
 }
@@ -228,7 +213,6 @@ type Package struct {
 	Name        string      `yaml:"name"`
 	Version     string      `yaml:"version"`
 	Conditional Conditional `yaml:"if"`
-	Constraints Constraint  `yaml:"constraints,omitempty"`
 	Build       Build       `yaml:"build,omitempty"`
 }
 
@@ -237,11 +221,6 @@ var _ ConstrainedEntity = Package{}
 // ID returns the package name
 func (p Package) ID() string {
 	return p.Name
-}
-
-// ConstraintsFilter returns the package constraints
-func (p Package) ConstraintsFilter() Constraint {
-	return p.Constraints
 }
 
 func (p Package) ConditionalFilter() Conditional {
@@ -276,7 +255,6 @@ type Event struct {
 	Value       string      `yaml:"value"`
 	Scope       []string    `yaml:"scope"`
 	Conditional Conditional `yaml:"if"`
-	Constraints Constraint  `yaml:"constraints,omitempty"`
 	id          string
 }
 
@@ -294,11 +272,6 @@ func (e Event) ID() string {
 		}
 	}
 	return e.id
-}
-
-// ConstraintsFilter returns the event constraints
-func (e Event) ConstraintsFilter() Constraint {
-	return e.Constraints
 }
 
 func (e Event) ConditionalFilter() Conditional {
@@ -336,7 +309,6 @@ type Script struct {
 	Standalone  bool        `yaml:"standalone,omitempty"`
 	Language    string      `yaml:"language,omitempty"`
 	Conditional Conditional `yaml:"if"`
-	Constraints Constraint  `yaml:"constraints,omitempty"`
 }
 
 var _ ConstrainedEntity = Script{}
@@ -344,11 +316,6 @@ var _ ConstrainedEntity = Script{}
 // ID returns the script name
 func (s Script) ID() string {
 	return s.Name
-}
-
-// ConstraintsFilter returns the script constraints
-func (s Script) ConstraintsFilter() Constraint {
-	return s.Constraints
 }
 
 func (s Script) ConditionalFilter() Conditional {
@@ -452,8 +419,6 @@ func (p *Project) Init() error {
 	}
 	p.parsedURL = parsedURL
 
-	logging.Debug("Parsed URL: %v", p.parsedURL)
-
 	// Ensure branch name is set
 	if p.parsedURL.Owner != "" && p.parsedURL.BranchName == "" {
 		logging.Debug("Appending default branch as none is set")
@@ -485,18 +450,38 @@ func parse(configFilepath string) (*Project, error) {
 		return nil, errs.Wrap(err, "ioutil.ReadFile %s failure", configFilepath)
 	}
 
+	if err := detectDeprecations(dat, configFilepath); err != nil {
+		return nil, errs.Wrap(err, "deprecations found")
+	}
+
 	project := Project{}
-	err = yaml.Unmarshal([]byte(dat), &project)
+	err2 := yaml.Unmarshal(dat, &project)
 	project.path = configFilepath
 
-	if err != nil {
-		return nil, &ErrorParseProject{locale.NewError(
+	if err2 != nil {
+		return nil, &ErrorParseProject{locale.NewInputError(
 			"err_project_parsed",
-			"Project file `{{.V1}}` could not be parsed, the parser produced the following error: {{.V0}}", err.Error(), configFilepath),
+			"Project file `{{.V1}}` could not be parsed, the parser produced the following error: {{.V0}}", err2.Error(), configFilepath),
 		}
 	}
 
 	return &project, nil
+}
+
+func detectDeprecations(dat []byte, configFilepath string) error {
+	deprecations := deprecatedRegex.FindAllIndex(dat, -1)
+	if len(deprecations) == 0 {
+		return nil
+	}
+	deplist := []string{}
+	for _, depIdxs := range deprecations {
+		dep := strings.TrimSpace(strings.TrimSuffix(string(dat[depIdxs[0]:depIdxs[1]]), ":"))
+		deplist = append(deplist, locale.Tr("pjfile_deprecation_entry", dep, strconv.Itoa(depIdxs[0])))
+	}
+	return &ErrorParseProject{locale.NewInputError(
+		"pjfile_deprecation_msg",
+		"", configFilepath, strings.Join(deplist, "\n"), constants.DocumentationURL+"config/#deprecation"),
+	}
 }
 
 // Owner returns the project namespace's organization
@@ -887,6 +872,7 @@ type CreateParams struct {
 	Private    bool
 	path       string
 	ProjectURL string
+	Cache      string
 }
 
 // TestOnlyCreateWithProjectURL a new activestate.yaml with default content
@@ -991,7 +977,43 @@ func createCustom(params *CreateParams, lang language.Language) (*Project, error
 		return nil, err
 	}
 
+	if params.Cache != "" {
+		createErr := createHostFile(params.Directory, params.Cache)
+		if createErr != nil {
+			return nil, errs.Wrap(createErr, "Could not create cache file")
+		}
+	}
+
 	return Parse(params.path)
+}
+
+func createHostFile(filePath, cachePath string) error {
+	user, err := user.Current()
+	if err != nil {
+		return errs.Wrap(err, "Could not get current user")
+	}
+
+	data := map[string]interface{}{
+		"Cache": cachePath,
+	}
+
+	tplName := "activestate.yaml.cache.tpl"
+	tplContents, err := assets.ReadFileBytes(tplName)
+	if err != nil {
+		return errs.Wrap(err, "Could not read asset")
+	}
+
+	fileContents, err := strutils.ParseTemplate(string(tplContents), data)
+	if err != nil {
+		return errs.Wrap(err, "Could not parse %s", tplName)
+	}
+
+	// Trim any non-alphanumeric characters from the username
+	if err := fileutils.WriteFile(filepath.Join(filePath, fmt.Sprintf("activestate.%s.yaml", nonAlphanumericRegex.ReplaceAllString(user.Username, ""))), []byte(fileContents)); err != nil {
+		return errs.Wrap(err, "Could not write cache file")
+	}
+
+	return nil
 }
 
 func validateCreateParams(params *CreateParams) error {

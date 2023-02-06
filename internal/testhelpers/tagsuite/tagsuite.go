@@ -4,9 +4,10 @@ import (
 	"os"
 	"strings"
 
-	"github.com/ActiveState/cli/internal/condition"
 	"github.com/stretchr/testify/suite"
 	"github.com/thoas/go-funk"
+
+	"github.com/ActiveState/cli/internal/condition"
 )
 
 const (
@@ -25,7 +26,7 @@ const (
 	DeleteProjects  = "delete-uuid-projects"
 	Deploy          = "deploy"
 	Edit            = "edit"
-	Error           = "error"
+	Errors          = "error"
 	Events          = "events"
 	Export          = "export"
 	ExitCode        = "exit-code"
@@ -49,6 +50,8 @@ const (
 	Perl            = "perl"
 	Platforms       = "platforms"
 	Prepare         = "prepare"
+	Projects        = "projects"
+	Projectfile     = "projectfile"
 	Pull            = "pull"
 	Push            = "push"
 	Python          = "python"
@@ -66,6 +69,7 @@ const (
 	VSCode          = "vscode"
 	Performance     = "performance"
 	Service         = "service"
+	SoftLimit       = "softlimit"
 	Executor        = "executor"
 	Deprecation     = "deprecation"
 	Compatibility   = "compatibility"

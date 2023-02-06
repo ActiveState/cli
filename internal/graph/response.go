@@ -1,6 +1,5 @@
 package graph
 
-
 type VersionResponse struct {
 	Version Version `json:"version"`
 }
@@ -17,3 +16,6 @@ type DeprecationResponse struct {
 	CheckDeprecation DeprecationInfo `json:"checkDeprecation"`
 }
 
+type CheckRuntimeUsageResponseOuter struct {
+	Usage CheckRuntimeUsageResponse `json:"checkRuntimeUsage"`
+}

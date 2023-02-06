@@ -4,5 +4,4 @@ scripts:
     value: printenv
   - name: run
     value: cmd.exe /C SET
-    constraints:
-        os: windows
+    if: eq .OS.Name "Windows"

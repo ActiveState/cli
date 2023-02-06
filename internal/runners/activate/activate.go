@@ -23,6 +23,7 @@ import (
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runbits/activation"
 	"github.com/ActiveState/cli/internal/runbits/findproject"
+	"github.com/ActiveState/cli/internal/runbits/rtusage"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
@@ -97,7 +98,7 @@ func (r *Activate) run(params *ActivateParams) error {
 		}
 
 		// Perform fresh checkout
-		pathToUse, err := r.activateCheckout.Run(params.Namespace, params.Branch, params.PreferredPath)
+		pathToUse, err := r.activateCheckout.Run(params.Namespace, params.Branch, "", params.PreferredPath)
 		if err != nil {
 			return locale.WrapError(err, "err_activate_pathtouse", "Could not figure out what path to use.")
 		}
@@ -107,6 +108,8 @@ func (r *Activate) run(params *ActivateParams) error {
 			return locale.WrapError(err, "err_activate_projecttouse", "Could not figure out what project to use.")
 		}
 	}
+
+	rtusage.PrintRuntimeUsage(r.svcModel, r.out, proj.Owner())
 
 	alreadyActivated := process.IsActivated(r.config)
 	if alreadyActivated {

@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v2"
@@ -58,21 +59,6 @@ key2: val2`)
 
 	assert.Equal(t, "val1", build["key1"], "Key1 should be set")
 	assert.Equal(t, "val2", build["key2"], "Key2 should be set")
-}
-
-func TestConstraintStruct(t *testing.T) {
-	constraint := Constraint{}
-	dat := strings.TrimSpace(`
-os: valueForOS
-platform: valueForPlatform
-environment: valueForEnvironment`)
-
-	err := yaml.Unmarshal([]byte(dat), &constraint)
-	assert.Nil(t, err, "Should not throw an error")
-
-	assert.Equal(t, "valueForOS", constraint.OS, "Os should be set")
-	assert.Equal(t, "valueForPlatform", constraint.Platform, "Platform should be set")
-	assert.Equal(t, "valueForEnvironment", constraint.Environment, "Environment should be set")
 }
 
 func TestPackageStruct(t *testing.T) {
@@ -429,6 +415,83 @@ func TestProject_Init(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if err := tt.project.Init(); (err != nil) != tt.wantErr {
 				t.Errorf("Init() error = %v, wantErr %v", errs.Join(err, ": "), tt.wantErr)
+			}
+		})
+	}
+}
+
+func Test_detectDeprecations(t *testing.T) {
+	tests := []struct {
+		name           string
+		dat            string
+		wantMatchError []string
+	}{
+		{
+			"Constraints",
+			`constraints: 0`,
+			[]string{
+				locale.Tr("pjfile_deprecation_entry", "constraints", "0"),
+			},
+		},
+		{
+			"Constraints Commented Out",
+			`#constraints: 0`,
+			[]string{},
+		},
+		{
+			"Platforms",
+			`platforms: 0"`,
+			[]string{
+				locale.Tr("pjfile_deprecation_entry", "platforms", "0"),
+			},
+		},
+		{
+			"Languages",
+			`languages: 0`,
+			[]string{
+				locale.Tr("pjfile_deprecation_entry", "languages", "0"),
+			},
+		},
+		{
+			"Mixed",
+			"foo: 0\nconstraints: 0\nbar: 0\nlanguages: 0\nplatforms: 0",
+			[]string{
+				locale.Tr("pjfile_deprecation_entry", "constraints", "7"),
+				locale.Tr("pjfile_deprecation_entry", "languages", "29"),
+				locale.Tr("pjfile_deprecation_entry", "platforms", "42"),
+			},
+		},
+		{
+			"Real world",
+			`project: https://platform.activestate.com/ActiveState-CLI/test?commitID=9090c128-e948-4388-8f7f-96e2c1e00d98
+platforms:
+  - name: Linux64Label
+languages:
+  - name: Go
+    constraints:
+        platform: Windows10Label,Linux64Label`,
+			[]string{
+				locale.Tr("pjfile_deprecation_entry", "platforms", "109"),
+				locale.Tr("pjfile_deprecation_entry", "languages", "143"),
+				locale.Tr("pjfile_deprecation_entry", "constraints", "167"),
+			},
+		},
+		{
+			"Valid",
+			"foo: 0\nbar: 0",
+			[]string{},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := detectDeprecations([]byte(tt.dat), "activestate.yaml")
+			if len(tt.wantMatchError) == 0 {
+				assert.NoError(t, err)
+				return
+			}
+			require.Error(t, err)
+			for _, want := range tt.wantMatchError {
+				assert.Contains(t, err.Error(), want)
 			}
 		})
 	}

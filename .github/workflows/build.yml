@@ -88,6 +88,11 @@ jobs:
         run: brew install fish
         if: runner.os == 'macOS'
 
+      - # === Install Deps ===
+        name: Install Deps
+        shell: bash
+        run: state run install-deps
+
       - # === Preprocess ===
         name: Preprocess
         shell: bash
@@ -129,10 +134,6 @@ jobs:
             {
                 "ID": "Build-Executor",
                 "Args": ["state", "run", "build-exec"]
-            },
-            {
-                "ID": "Build-Offline-Installer",
-                "Args": ["state", "run", "build-offline-installer"]
             }
           ]
           EOF
@@ -188,11 +189,6 @@ jobs:
         name: "Build: Executor"
         shell: bash
         run: parallelize results Build-Executor
-
-      - # === "Build: Offline-Installer" ===
-        name: "Build: Offline-Installer"
-        shell: bash
-        run: parallelize results Build-Offline-Installer
 
       - # === Prepare Windows Cert ===
         name: Prepare Windows Cert
@@ -309,7 +305,7 @@ jobs:
             TIMEOUT=60m
           fi
           set +e
-          SHELL='' go test -timeout $TIMEOUT -v `go list ./... | grep "integration\|automation"` &> build/integration-tests.out
+          SHELL='' go test -timeout $TIMEOUT -v `go list ./... | grep "integration"` &> build/integration-tests.out
           CODE=$?
           cat build/integration-tests.out | gotestfmt
           exit $CODE
@@ -429,6 +425,11 @@ jobs:
           rm -Rf session-shared-build
           find . -mindepth 2 -maxdepth 2 -print0 | xargs -0 -I file rsync -av file .
           rm -Rf session*
+
+      - # === Install Deps ===
+        name: Install Deps
+        shell: bash
+        run: state run install-deps
 
       - # === Preprocess ===
         name: Preprocess

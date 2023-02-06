@@ -1,5 +1,7 @@
 package constants
 
+import "time"
+
 // LibraryName contains the main name of this library
 const LibraryName = "cli"
 
@@ -151,6 +153,9 @@ const InstallPathOverrideEnvVarName = "ACTIVESTATE_CLI_INSTALLPATH_OVERRIDE"
 
 // AutostartPathOverrideEnvVarName is used to override the default autostart path of the state service.
 const AutostartPathOverrideEnvVarName = "ACTIVESTATE_CLI_AUTOSTARTPATH_OVERRIDE"
+
+// RuntimeUsageOverrideEnvVarName is used to override the default usage of the runtime intended for use in integration testing
+const RuntimeUsageOverrideEnvVarName = "ACTIVESTATE_OVERRIDE_RTUSAGE"
 
 // APIUpdateInfoURL is the URL for our update info server
 const APIUpdateInfoURL = "https://platform.activestate.com/sv/state-update/api/v1"
@@ -376,11 +381,11 @@ const RCAppendInstallStartLine = "-- START ACTIVESTATE INSTALLATION"
 // RCAppendInstallStopLine is the end line used to denote our default installation config in RC files
 const RCAppendInstallStopLine = "-- STOP ACTIVESTATE INSTALLATION"
 
-// RCAppendAutostartStartLine is the start line used to denote our autostart config in RC files
-const RCAppendAutostartStartLine = "-- START ACTIVESTATE AUTOSTART"
+// RCAppendAutostartStartLine is the start line used to denote our autostart executables in RC files
+const RCAppendAutostartStartLine = "## START ACTIVESTATE AUTOSTART"
 
-// RCAppendAutostartStopLine is the end line used to denote our autostart config in RC files
-const RCAppendAutostartStopLine = "-- STOP ACTIVESTATE AUTOSTART"
+// RCAppendAutostartStartLine is the end line used to denote our autostart executables in RC files
+const RCAppendAutostartStopLine = "## STOP ACTIVESTATE AUTOSTART"
 
 // ForumsURL is the URL to the state tool forums
 const ForumsURL = "https://community.activestate.com/c/state-tool/"
@@ -466,3 +471,6 @@ const DefaultAnalyticsPixel = "https://state-tool.s3.amazonaws.com/pixel"
 
 // AnalyticsPixelOverrideEnv is the environment variable to check for overriding the analytics pixel url
 const AnalyticsPixelOverrideEnv = "ACTIVESTATE_CLI_ANALYTICS_PIXEL"
+
+// TerminalAnimationInterval is the interval we use for terminal animations
+const TerminalAnimationInterval = 150 * time.Millisecond

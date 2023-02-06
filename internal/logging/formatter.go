@@ -14,9 +14,9 @@ type SimpleFormatter struct {
 }
 
 func (f *SimpleFormatter) Format(ctx *MessageContext, message string, args ...interface{}) string {
-	return fmt.Sprintf(f.FormatString, ctx.Level, ctx.TimeStamp.UnixNano(), ctx.File, ctx.Line, fmt.Sprintf(message, args...))
+	return fmt.Sprintf(f.FormatString, ctx.Level, ctx.TimeStamp.Format("15:04:05.000"), ctx.File, ctx.Line, fmt.Sprintf(message, args...))
 }
 
 var DefaultFormatter Formatter = &SimpleFormatter{
-	FormatString: "[%[1]s %[2]d %[3]s:%[4]d] %[5]s",
+	FormatString: "[%[1]s %[2]s %[3]s:%[4]d] %[5]s",
 }

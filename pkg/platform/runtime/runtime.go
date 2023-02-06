@@ -12,6 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/analytics/dimensions"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/instanceid"
 	"github.com/ActiveState/cli/internal/locale"
@@ -21,7 +22,6 @@ import (
 	"github.com/ActiveState/cli/internal/rtutils/p"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/ActiveState/cli/pkg/platform/runtime/envdef"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup/events"
@@ -100,42 +100,34 @@ func (r *Runtime) Target() setup.Targeter {
 
 // Update updates the runtime by downloading all necessary artifacts from the Platform and installing them locally.
 // This function is usually called, after New() returned with a NeedsUpdateError
-func (r *Runtime) Update(auth *authentication.Auth, msgHandler *events.RuntimeEventHandler) error {
+func (r *Runtime) Update(auth *authentication.Auth, eventHandler events.Handler) (rerr error) {
 	if r.disabled {
 		return nil // nothing to do
 	}
 
 	logging.Debug("Updating %s#%s @ %s", r.target.Name(), r.target.CommitUUID(), r.target.Dir())
 
-	// Run the setup function (the one that produces runtime events) in the background...
-	prod := events.NewRuntimeEventProducer()
-	var setupErr error
-	go func() {
-		defer func() {
-			r.recordCompletion(setupErr)
-			prod.Close()
-		}()
-
-		if err := setup.New(r.target, prod, auth, r.analytics).Update(); err != nil {
-			setupErr = errs.Wrap(err, "Update failed")
-			return
-		}
-		rt, err := newRuntime(r.target, r.analytics, r.svcm)
-		if err != nil {
-			setupErr = errs.Wrap(err, "Could not reinitialize runtime after update")
-			return
-		}
-		*r = *rt
+	defer func() {
+		r.recordCompletion(rerr)
 	}()
 
-	// ... and handle and wait for the runtime events in the main thread
-	err := msgHandler.WaitForAllEvents(prod.Events())
-	if err != nil {
-		multilog.Error("Error handling update events: %v", err)
+	if err := setup.New(r.target, eventHandler, auth, r.analytics).Update(); err != nil {
+		return errs.Wrap(err, "Update failed")
 	}
 
-	// when the msg handler returns, *r and setupErr are updated.
-	return msgHandler.AddHints(setupErr)
+	// Reinitialize
+	rt, err := newRuntime(r.target, r.analytics, r.svcm)
+	if err != nil {
+		return errs.Wrap(err, "Could not reinitialize runtime after update")
+	}
+	*r = *rt
+
+	return nil
+}
+
+// HasCache tells us whether this runtime has any cached files. Note this does NOT tell you whether the cache is valid.
+func (r *Runtime) HasCache() bool {
+	return fileutils.DirExists(r.target.Dir())
 }
 
 // Env returns a key-value map of the environment variables that need to be set for this runtime
@@ -174,8 +166,7 @@ func (r *Runtime) recordCompletion(err error) {
 		return
 	}
 	r.completed = true
-
-	logging.Debug("Recording runtime completion: %v", err == nil)
+	logging.Debug("Recording runtime completion, error: %v", err == nil)
 
 	var action string
 	if err != nil {
@@ -208,7 +199,7 @@ func (r *Runtime) recordUsage() {
 		multilog.Critical("Could not marshal dimensions for runtime-usage: %s", errs.JoinMessage(err))
 	}
 	if r.svcm != nil {
-		r.svcm.RecordRuntimeUsage(context.Background(), os.Getpid(), osutils.Executable(), dimsJson)
+		r.svcm.ReportRuntimeUsage(context.Background(), os.Getpid(), osutils.Executable(), dimsJson)
 	}
 }
 
@@ -256,16 +247,6 @@ func (r *Runtime) ExecutableDirs() (envdef.ExecutablePaths, error) {
 		return nil, errs.Wrap(err, "Could not retrieve environment info")
 	}
 	return env.ExecutableDirs()
-}
-
-// Artifacts returns a map of artifact information extracted from the recipe
-func (r *Runtime) Artifacts() (map[artifact.ArtifactID]artifact.ArtifactRecipe, error) {
-	recipe, err := r.store.Recipe()
-	if err != nil {
-		return nil, locale.WrapError(err, "runtime_artifacts_recipe_load_err", "Failed to load recipe for your runtime.  Please re-install the runtime.")
-	}
-	artifacts := artifact.NewMapFromRecipe(recipe)
-	return artifacts, nil
 }
 
 func IsRuntimeDir(dir string) bool {

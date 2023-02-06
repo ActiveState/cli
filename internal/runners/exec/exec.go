@@ -7,20 +7,23 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/shirou/gopsutil/v3/process"
+
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/hash"
-	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
+	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/cli/internal/runbits"
+	"github.com/ActiveState/cli/internal/runbits/rtusage"
 	"github.com/ActiveState/cli/internal/scriptfile"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
@@ -32,7 +35,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
-	"github.com/shirou/gopsutil/v3/process"
 )
 
 type Exec struct {
@@ -75,7 +77,7 @@ func NewParams() *Params {
 	return &Params{}
 }
 
-func (s *Exec) Run(params *Params, args ...string) error {
+func (s *Exec) Run(params *Params, args ...string) (rerr error) {
 	var projectDir string
 	var projectNamespace string
 	var rtTarget setup.Targeter
@@ -97,7 +99,7 @@ func (s *Exec) Run(params *Params, args ...string) error {
 			// as there is no head
 			rtTarget = target.NewCustomTarget("", "", "", params.Path, trigger, true)
 		} else {
-			rtTarget = target.NewProjectTarget(proj, storage.CachePath(), nil, trigger)
+			rtTarget = target.NewProjectTarget(proj, nil, trigger)
 		}
 		projectNamespace = proj.NamespaceString()
 	} else {
@@ -114,8 +116,10 @@ func (s *Exec) Run(params *Params, args ...string) error {
 		}
 		projectDir = filepath.Dir(proj.Source().Path())
 		projectNamespace = proj.NamespaceString()
-		rtTarget = target.NewProjectTarget(proj, storage.CachePath(), nil, trigger)
+		rtTarget = target.NewProjectTarget(proj, nil, trigger)
 	}
+
+	rtusage.PrintRuntimeUsage(s.svcModel, s.out, rtTarget.Owner())
 
 	s.out.Notice(locale.Tl("operating_message", "", projectNamespace, projectDir))
 
@@ -124,11 +128,9 @@ func (s *Exec) Run(params *Params, args ...string) error {
 		if !runtime.IsNeedsUpdateError(err) {
 			return locale.WrapError(err, "err_activate_runtime", "Could not initialize a runtime for this project.")
 		}
-		eh, err := runbits.DefaultRuntimeEventHandler(s.out)
-		if err != nil {
-			return locale.WrapError(err, "err_initialize_runtime_event_handler")
-		}
-		if err := rt.Update(s.auth, eh); err != nil {
+		pg := runbits.NewRuntimeProgressIndicator(s.out)
+		defer rtutils.Closer(pg.Close, &rerr)
+		if err := rt.Update(s.auth, pg); err != nil {
 			return locale.WrapError(err, "err_update_runtime", "Could not update runtime installation.")
 		}
 	}

@@ -77,13 +77,13 @@ func (suite *AnalyticsIntegrationTestSuite) TestActivateEvents() {
 
 	// Runtime:start events
 	suite.assertNEvents(events, 1, anaConst.CatRuntime, anaConst.ActRuntimeStart,
-		fmt.Sprintf("output:\n%s\nState Log:\n%s\nSvc Log:\n%s",
-			cp.Snapshot(), ts.MostRecentStateLog(), ts.SvcLog()))
+		fmt.Sprintf("output:\n%s\n%s",
+			cp.Snapshot(), ts.DebugLogs()))
 
 	// Runtime:success events
 	suite.assertNEvents(events, 1, anaConst.CatRuntime, anaConst.ActRuntimeSuccess,
-		fmt.Sprintf("output:\n%s\nState Log:\n%s\nSvc Log:\n%s",
-			cp.Snapshot(), ts.MostRecentStateLog(), ts.SvcLog()))
+		fmt.Sprintf("output:\n%s\n%s",
+			cp.Snapshot(), ts.DebugLogs()))
 
 	heartbeatInitialCount := countEvents(events, anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat)
 	if heartbeatInitialCount < 2 {
@@ -99,8 +99,8 @@ func (suite *AnalyticsIntegrationTestSuite) TestActivateEvents() {
 
 	// Runtime-use:heartbeat events - should now be at least +1 because we waited <heartbeatInterval>
 	suite.assertGtEvents(events, heartbeatInitialCount, anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat,
-		fmt.Sprintf("output:\n%s\nState Log:\n%s\nSvc Log:\n%s",
-			cp.Snapshot(), ts.MostRecentStateLog(), ts.SvcLog()))
+		fmt.Sprintf("output:\n%s\n%s",
+			cp.Snapshot(), ts.DebugLogs()))
 
 	cp.SendLine("exit")
 
@@ -119,7 +119,7 @@ func (suite *AnalyticsIntegrationTestSuite) TestActivateEvents() {
 	suite.Equal(eventsAfterExit, eventsAfterWait,
 		fmt.Sprintf("Heartbeats should stop ticking after exiting subshell.\n"+
 			"output:\n%s\nState Log:\n%s\nSvc Log:\n%s",
-			cp.Snapshot(), ts.MostRecentStateLog(), ts.SvcLog()))
+			cp.Snapshot(), ts.DebugLogs(), ts.SvcLog()))
 
 	// Ensure any analytics events from the state tool have the instance ID set
 	for _, e := range events {
@@ -367,8 +367,8 @@ func (suite *AnalyticsIntegrationTestSuite) TestInputError() {
 	suite.assertSequentialEvents(events)
 
 	suite.assertNEvents(events, 1, anaConst.CatDebug, anaConst.ActInputError,
-		fmt.Sprintf("output:\n%s\nState Log:\n%s\nSvc Log:\n%s",
-			cp.Snapshot(), ts.MostRecentStateLog(), ts.SvcLog()))
+		fmt.Sprintf("output:\n%s\n%s",
+			cp.Snapshot(), ts.DebugLogs()))
 
 	for _, event := range events {
 		if event.Category == anaConst.CatDebug && event.Action == anaConst.ActInputError {

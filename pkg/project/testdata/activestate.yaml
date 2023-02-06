@@ -5,16 +5,13 @@ namespace: "my/name/space"
 constants:
   - name: foo
     value: foo $project.name()
-    constraints:
-      platform: Linux
+    if: eq .OS.Name "Linux"
   - name: bar
     value: bar $project.name()
-    constraints:
-      platform: Windows
+    if: eq .OS.Name "Windows"
   - name: baz
     value: baz $project.name()
-    constraints:
-      platform: OSX
+    if: eq .OS.Name "MacOS"
 secrets:
   user:
     - name: secret
@@ -25,29 +22,23 @@ secrets:
 events:
   - name: bar
     value: bar $project.name()
-    constraints:
-      platform: Windows
+    if: eq .OS.Name "Windows"
   - name: baz
     value: baz $project.name()
-    constraints:
-      platform: OSX
+    if: eq .OS.Name "MacOS"
   - name: foo
     value: foo $project.name()
-    constraints:
-      platform: Linux
+    if: eq .OS.Name "Linux"
 scripts:
   - name: foo
     value: foo $project.name()
     standalone: true
-    constraints:
-      platform: Linux
+    if: eq .OS.Name "Linux"
   - name: bar
     value: bar $project.name()
     standalone: true
-    constraints:
-      platform: Windows
+    if: eq .OS.Name "Windows"
   - name: baz
     value: baz $project.name()
     standalone: true
-    constraints:
-      platform: OSX
+    if: eq .OS.Name "MacOS"

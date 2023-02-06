@@ -7,6 +7,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
+	"github.com/ActiveState/cli/internal/runbits/rtusage"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/pkg/cmdlets/checker"
@@ -23,6 +24,7 @@ type Params struct {
 	Namespace     *project.Namespaced
 	PreferredPath string
 	Branch        string
+	Cache         string
 }
 
 type primeable interface {
@@ -64,7 +66,7 @@ func (u *Checkout) Run(params *Params) error {
 
 	logging.Debug("Checking out %s to %s", params.Namespace.String(), params.PreferredPath)
 	var err error
-	projectDir, err := u.checkout.Run(params.Namespace, params.Branch, params.PreferredPath)
+	projectDir, err := u.checkout.Run(params.Namespace, params.Branch, params.Cache, params.PreferredPath)
 	if err != nil {
 		return locale.WrapError(err, "err_checkout_project", "", params.Namespace.String())
 	}
@@ -73,6 +75,8 @@ func (u *Checkout) Run(params *Params) error {
 	if err != nil {
 		return locale.WrapError(err, "err_project_frompath")
 	}
+
+	rtusage.PrintRuntimeUsage(u.svcModel, u.out, proj.Owner())
 
 	rti, err := runtime.NewFromProject(proj, target.TriggerCheckout, u.analytics, u.svcModel, u.out, u.auth)
 	if err != nil {

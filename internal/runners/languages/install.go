@@ -3,25 +3,32 @@ package languages
 import (
 	"strings"
 
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
+	"github.com/ActiveState/cli/internal/runbits/requirements"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
 type Update struct {
-	out     output.Outputer
-	project *project.Project
+	prime primeable
 }
 
 type primeable interface {
-	primer.Projecter
 	primer.Outputer
+	primer.Prompter
+	primer.Projecter
+	primer.Auther
+	primer.Configurer
+	primer.Analyticer
+	primer.SvcModeler
 }
 
 func NewUpdate(prime primeable) *Update {
-	return &Update{prime.Output(), prime.Project()}
+	return &Update{
+		prime: prime,
+	}
 }
 
 type UpdateParams struct {
@@ -34,11 +41,11 @@ func (u *Update) Run(params *UpdateParams) error {
 		return err
 	}
 
-	if u.project == nil {
+	if u.prime.Project() == nil {
 		return locale.NewInputError("err_no_project")
 	}
 
-	err = ensureLanguageProject(lang, u.project)
+	err = ensureLanguageProject(lang, u.prime.Project())
 	if err != nil {
 		return err
 	}
@@ -56,21 +63,21 @@ func (u *Update) Run(params *UpdateParams) error {
 		return err
 	}
 
-	err = removeLanguage(u.project, lang.Name)
+	op := requirements.NewRequirementOperation(u.prime)
 	if err != nil {
-		return err
+		return errs.Wrap(err, "Could not create requirement operation.")
 	}
 
-	err = addLanguage(u.project, lang)
+	err = op.ExecuteRequirementOperation(lang.Name, lang.Version, 0, model.OperationAdded, model.NamespaceLanguage)
 	if err != nil {
-		return locale.WrapError(err, "err_add_language", "Could not add language.")
+		return locale.WrapError(err, "err_language_update", "Could not update language: {{.V0}}", lang.Name)
 	}
 
 	langName := lang.Name
 	if lang.Version != "" {
 		langName = langName + "@" + lang.Version
 	}
-	u.out.Notice(locale.Tl("language_added", "Language added: {{.V0}}", langName))
+	u.prime.Output().Notice(locale.Tl("language_added", "Language added: {{.V0}}", langName))
 	return nil
 }
 
@@ -150,32 +157,4 @@ func ensureVersionTestable(language *model.Language, fetchVersions fetchVersions
 	}
 
 	return locale.NewInputError("err_language_version_not_found", "", language.Version, language.Name)
-}
-
-func removeLanguage(project *project.Project, current string) error {
-	targetCommitID, err := model.BranchCommitID(project.Owner(), project.Name(), project.BranchName())
-	if err != nil {
-		return err
-	}
-
-	platformLanguage, err := model.FetchLanguageForCommit(*targetCommitID)
-	if err != nil {
-		return err
-	}
-
-	err = model.CommitLanguage(project, model.OperationRemoved, platformLanguage.Name, platformLanguage.Version)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func addLanguage(project *project.Project, lang *model.Language) error {
-	err := model.CommitLanguage(project, model.OperationAdded, lang.Name, lang.Version)
-	if err != nil {
-		return err
-	}
-
-	return nil
 }

@@ -124,7 +124,7 @@ func run(cfg *config.Instance) error {
 	cmd.AddChildren(
 		captain.NewCommand(
 			cmdStart,
-			"Starting the ActiveState Service",
+			"",
 			"Start the ActiveState Service (Background)",
 			p, nil, nil,
 			func(ccmd *captain.Command, args []string) error {
@@ -134,7 +134,7 @@ func run(cfg *config.Instance) error {
 		),
 		captain.NewCommand(
 			cmdStop,
-			"Stopping the ActiveState Service",
+			"",
 			"Stop the ActiveState Service",
 			p, nil, nil,
 			func(ccmd *captain.Command, args []string) error {
@@ -144,7 +144,7 @@ func run(cfg *config.Instance) error {
 		),
 		captain.NewCommand(
 			cmdStatus,
-			"Checking the ActiveState Service",
+			"",
 			"Display the Status of the ActiveState Service",
 			p, nil, nil,
 			func(ccmd *captain.Command, args []string) error {
@@ -154,7 +154,7 @@ func run(cfg *config.Instance) error {
 		),
 		captain.NewCommand(
 			cmdForeground,
-			"Starting the ActiveState Service",
+			"",
 			"Start the ActiveState Service (Foreground)",
 			p, nil,
 			[]*captain.Argument{
@@ -219,7 +219,7 @@ func runForeground(cfg *config.Instance, an *anaSync.Client, auth *authenticatio
 	defer signal.Stop(sig)
 
 	p.RunIfNotAuthority(time.Second*3, svcctl.NewDefaultIPCClient(), func(err error) {
-		fmt.Fprintln(os.Stderr, err)
+		logging.Debug("This instance is not the authority: %v", err)
 
 		cancel()
 		if err := p.Stop(); err != nil {

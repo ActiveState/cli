@@ -3,6 +3,7 @@ package packages
 import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/runbits/requirements"
 	"github.com/ActiveState/cli/pkg/platform/model"
 )
 
@@ -22,11 +23,17 @@ func NewUninstall(prime primeable) *Uninstall {
 }
 
 // Run executes the uninstall behavior.
-func (r *Uninstall) Run(params UninstallRunParams, nstype model.NamespaceType) error {
+func (u *Uninstall) Run(params UninstallRunParams, nsType model.NamespaceType) error {
 	logging.Debug("ExecuteUninstall")
-	if r.prime.Project() == nil {
+	if u.prime.Project() == nil {
 		return locale.NewInputError("err_no_project")
 	}
 
-	return executePackageOperation(r.prime, params.Name, "", model.OperationRemoved, nstype)
+	return requirements.NewRequirementOperation(u.prime).ExecuteRequirementOperation(
+		params.Name,
+		"",
+		0,
+		model.OperationRemoved,
+		nsType,
+	)
 }

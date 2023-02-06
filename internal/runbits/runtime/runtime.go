@@ -5,9 +5,9 @@ import (
 
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -24,20 +24,18 @@ func NewFromProject(
 	an analytics.Dispatcher,
 	svcModel *model.SvcModel,
 	out output.Outputer,
-	auth *authentication.Auth) (*rt.Runtime, error) {
-	projectTarget := target.NewProjectTarget(proj, storage.CachePath(), nil, trigger)
+	auth *authentication.Auth) (_ *rt.Runtime, rerr error) {
+	projectTarget := target.NewProjectTarget(proj, nil, trigger)
 	rti, err := rt.New(projectTarget, an, svcModel)
 	if err != nil {
 		if !rt.IsNeedsUpdateError(err) {
 			return nil, locale.WrapError(err, "err_activate_runtime", "Could not initialize a runtime for this project.")
 		}
 
-		eh, err := runbits.ActivateRuntimeEventHandler(out)
-		if err != nil {
-			return nil, locale.WrapError(err, "err_initialize_runtime_event_handler")
-		}
+		pg := runbits.NewRuntimeProgressIndicator(out)
+		defer rtutils.Closer(pg.Close, &rerr)
 
-		if err = rti.Update(auth, eh); err != nil {
+		if err = rti.Update(auth, pg); err != nil {
 			if errs.Matches(err, &model.ErrOrderAuth{}) {
 				return nil, locale.WrapInputError(err, "err_update_auth", "Could not update runtime, if this is a private project you may need to authenticate with `[ACTIONABLE]state auth[/RESET]`")
 			}

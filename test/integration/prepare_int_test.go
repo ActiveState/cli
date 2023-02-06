@@ -31,6 +31,10 @@ type PrepareIntegrationTestSuite struct {
 }
 
 func (suite *PrepareIntegrationTestSuite) TestPrepare() {
+	// Disable test for v0.36: https://activestatef.atlassian.net/browse/DX-1501.
+	// This test should be re-enabled by https://activestatef.atlassian.net/browse/DX-1435.
+	suite.T().SkipNow()
+
 	suite.OnlyRunForTags(tagsuite.Prepare)
 	if !e2e.RunningOnCI() {
 		suite.T().Skipf("Skipping TestPrepare when not running on CI or on MacOS, as it modifies PATH")

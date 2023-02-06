@@ -6,7 +6,6 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"regexp"
 	"runtime"
 	"strings"
 	"testing"
@@ -29,14 +28,12 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/ActiveState/termtest"
 	"github.com/ActiveState/termtest/expect"
 	"github.com/go-openapi/strfmt"
 	"github.com/google/uuid"
 	"github.com/phayes/permbits"
 	"github.com/stretchr/testify/require"
-	"gopkg.in/yaml.v2"
 )
 
 // Session represents an end-to-end testing session during which several console process can be spawned and tested
@@ -47,7 +44,7 @@ import (
 type Session struct {
 	cp              *termtest.ConsoleProcess
 	Dirs            *Dirs
-	env             []string
+	Env             []string
 	retainDirs      bool
 	createdProjects []*project.Namespaced
 	// users created during session
@@ -199,7 +196,7 @@ func new(t *testing.T, retainDirs, updatePath bool, extraEnv ...string) *Session
 	// add session environment variables
 	env = append(env, extraEnv...)
 
-	session := &Session{Dirs: dirs, env: env, retainDirs: retainDirs, t: t}
+	session := &Session{Dirs: dirs, Env: env, retainDirs: retainDirs, t: t}
 
 	// Mock installation directory
 	exe, svcExe, execExe := executablePaths(t)
@@ -251,7 +248,7 @@ func (s *Session) SpawnCmdWithOpts(exe string, opts ...SpawnOptions) *termtest.C
 		s.cp.Close()
 	}
 
-	env := s.env
+	env := s.Env
 
 	pOpts := Options{
 		Options: termtest.Options{
@@ -293,21 +290,7 @@ func (s *Session) SpawnCmdWithOpts(exe string, opts ...SpawnOptions) *termtest.C
 // provided contents and saves the output to an as.y file within the named
 // directory.
 func (s *Session) PrepareActiveStateYAML(contents string) {
-	msg := "cannot setup activestate.yaml file"
-
-	contents = strings.TrimSpace(contents)
-	projectFile := &projectfile.Project{}
-
-	err := yaml.Unmarshal([]byte(contents), projectFile)
-	require.NoError(s.t, err, msg)
-
-	cfg, err := config.New()
-	require.NoError(s.t, err)
-	defer func() { require.NoError(s.t, cfg.Close()) }()
-
-	projectFile.SetPath(filepath.Join(s.Dirs.Work, "activestate.yaml"))
-	err = projectFile.Save(cfg)
-	require.NoError(s.t, err, msg)
+	require.NoError(s.t, fileutils.WriteFile(filepath.Join(s.Dirs.Work, "activestate.yaml"), []byte(contents)))
 }
 
 // PrepareFile writes a file to path with contents, expecting no error
@@ -431,19 +414,12 @@ func (s *Session) DebugMessage(prefix string) string {
 {{.Stacktrace}}{{.Z}}
 {{.A}}Terminal snapshot:
 {{.FullSnapshot}}{{.Z}}
-{{.A}}State Tool Log:
-{{.StateLog}}{{.Z}}
-{{.A}}State Svc Log:
-{{.SvcLog}}{{.Z}}
-{{.A}}State Installer Log:
-{{.InstallerLog}}{{.Z}}
+{{.Logs}}
 `, map[string]interface{}{
 		"Prefix":       prefix,
 		"Stacktrace":   stacktrace.Get().String(),
 		"FullSnapshot": snapshot,
-		"StateLog":     s.MostRecentStateLog(),
-		"SvcLog":       s.SvcLog(),
-		"InstallerLog": s.InstallerLog(),
+		"Logs":         s.DebugLogs(),
 		"A":            sectionStart,
 		"Z":            sectionEnd,
 	})
@@ -467,47 +443,9 @@ func observeExpectFn(s *Session) expect.ExpectObserver {
 			sep = ", "
 		}
 
-		var sectionStart, sectionEnd string
-		sectionStart = "\n=== "
-		if os.Getenv("GITHUB_ACTIONS") == "true" {
-			sectionStart = "##[group]"
-			sectionEnd = "##[endgroup]"
-		}
-
-		v, err := strutils.ParseTemplate(`
-Could not meet expectation: '{{.Expectation}}'
-Error: {{.Error}}
-{{.A}}Stack:
-{{.Stacktrace}}{{.Z}}
-{{.A}}Partial Terminal snapshot:
-{{.PartialSnapshot}}{{.Z}}
-{{.A}}Full Terminal snapshot:
-{{.FullSnapshot}}{{.Z}}
-{{.A}}Parsed output:
-{{.ParsedOutput}}{{.Z}}
-{{.A}}State Tool Log:
-{{.StateLog}}{{.Z}}
-{{.A}}State Svc Log:
-{{.SvcLog}}{{.Z}}
-{{.A}}State Installer Log:
-{{.InstallerLog}}{{.Z}}
-`, map[string]interface{}{
-			"Expectation":     value,
-			"Error":           err,
-			"Stacktrace":      stacktrace.Get().String(),
-			"PartialSnapshot": ms.TermState.String(),
-			"FullSnapshot":    s.cp.Snapshot(),
-			"ParsedOutput":    fmt.Sprintf("%+q", ms.Buf.String()),
-			"StateLog":        s.MostRecentStateLog(),
-			"SvcLog":          s.SvcLog(),
-			"InstallerLog":    s.InstallerLog(),
-			"A":               sectionStart,
-			"Z":               sectionEnd,
-		})
-		if err != nil {
-			s.t.Fatalf("Parsing template failed: %s", err)
-		}
-		s.t.Fatal(v)
+		s.t.Fatal(s.DebugMessage(fmt.Sprintf(`
+Could not meet expectation: '%s'
+Error: %s`, value, err)))
 	}
 }
 
@@ -630,45 +568,36 @@ func (s *Session) SvcLog() string {
 	return fmt.Sprintf("Could not find state-svc log, checked under %s, found: \n%v\n, files: \n%v\n", logDir, lines, files)
 }
 
-func (s *Session) MostRecentStateLog() string {
-	rx := regexp.MustCompile(`state-\d`)
+func (s *Session) DebugLogs() string {
 	logDir := filepath.Join(s.Dirs.Config, "logs")
 	if !fileutils.DirExists(logDir) {
-		return ""
+		return "No logs found in " + logDir
 	}
-	var result string
-	var newest time.Time
+
+	var sectionStart, sectionEnd string
+	sectionStart = "\n=== "
+	if os.Getenv("GITHUB_ACTIONS") == "true" {
+		sectionStart = "##[group]"
+		sectionEnd = "##[endgroup]"
+	}
+
+	result := "Logs:\n"
 	err := filepath.WalkDir(logDir, func(path string, f fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
-		if !rx.MatchString(f.Name()) {
+		if f.IsDir() {
 			return nil
 		}
 
-		info, err := f.Info()
-		if err != nil {
-			panic("Could not get file info")
-		}
-
-		ts := info.ModTime()
-		if ts.After(newest) {
-			result = path
-			newest = ts
-		}
-
+		result += fmt.Sprintf("%s%s:\n%s%s\n", sectionStart, filepath.Base(path), fileutils.ReadFileUnsafe(path), sectionEnd)
 		return nil
 	})
 	if err != nil {
-		panic(fmt.Sprintf("Could not walk log dir: %v", err))
+		return errs.JoinMessage(err)
 	}
 
-	if result == "" {
-		return fmt.Sprintf("Could not find state log, checked under %s", logDir)
-	}
-
-	b := fileutils.ReadFileUnsafe(result)
-	return string(b) + "\n\nCurrent time: " + time.Now().String()
+	return result
 }
 
 func RunningOnCI() bool {

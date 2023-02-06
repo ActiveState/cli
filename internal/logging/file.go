@@ -47,7 +47,8 @@ func newFileHandler() *fileHandler {
 }
 
 func (l *fileHandler) start() {
-	defer handlePanics(recover())
+	defer func() { handlePanics(recover()) }()
+
 	for {
 		select {
 		case entry := <-l.queue:

@@ -5,7 +5,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/installation/storage"
+	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
@@ -25,6 +25,10 @@ import (
 const (
 	defaultImportFile = "requirements.txt"
 )
+
+type configurable interface {
+	keypairs.Configurable
+}
 
 // Confirmer describes the behavior required to prompt a user for confirmation.
 type Confirmer interface {
@@ -91,6 +95,10 @@ func NewImport(prime primeable) *Import {
 func (i *Import) Run(params *ImportRunParams) error {
 	logging.Debug("ExecuteImport")
 
+	if i.proj == nil {
+		return locale.NewInputError("err_no_project")
+	}
+
 	i.out.Notice(locale.Tl("operating_message", "", i.proj.NamespaceString(), i.proj.Dir()))
 
 	if params.FileName == "" {
@@ -117,7 +125,7 @@ func (i *Import) Run(params *ImportRunParams) error {
 		return locale.WrapError(err, "err_obtaining_change_request", "Could not process change set: {{.V0}}.", api.ErrorMessageFromPayload(err))
 	}
 
-	packageReqs := model.FilterCheckpointPackages(reqs)
+	packageReqs := model.FilterCheckpointNamespace(reqs, model.NamespacePackage, model.NamespaceBundle)
 	if len(packageReqs) > 0 {
 		err = removeRequirements(i.Prompter, i.proj, params, packageReqs)
 		if err != nil {
@@ -131,7 +139,7 @@ func (i *Import) Run(params *ImportRunParams) error {
 		return locale.WrapError(err, "err_commit_changeset", "Could not commit import changes")
 	}
 
-	return runbits.RefreshRuntime(i.auth, i.out, i.analytics, i.proj, storage.CachePath(), commitID, true, target.TriggerImport, i.svcModel)
+	return runbits.RefreshRuntime(i.auth, i.out, i.analytics, i.proj, commitID, true, target.TriggerImport, i.svcModel)
 }
 
 func removeRequirements(conf Confirmer, project *project.Project, params *ImportRunParams, reqs []*gqlModel.Requirement) error {

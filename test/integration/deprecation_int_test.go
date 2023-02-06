@@ -23,7 +23,7 @@ func (suite *DeprecationIntegrationTestSuite) TestHardDeprecation() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	f, err := fileutils.WriteTempFile("", "TestDeprecation", []byte(fmt.Sprintf(`
+	f, err := fileutils.WriteTempFileToDir("", "TestDeprecation", []byte(fmt.Sprintf(`
 		[
 		  {
 		    "version": "%s",
@@ -47,7 +47,7 @@ func (suite *DeprecationIntegrationTestSuite) TestDeprecationVersionTooLow() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	f, err := fileutils.WriteTempFile("", "TestDeprecation", []byte(fmt.Sprintf(`
+	f, err := fileutils.WriteTempFileToDir("", "TestDeprecation", []byte(fmt.Sprintf(`
 		[
 		  {
 		    "version": "9999.9999.9999",
@@ -71,7 +71,7 @@ func (suite *DeprecationIntegrationTestSuite) TestDeprecationVersionHigher() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	f, err := fileutils.WriteTempFile("", "TestDeprecation", []byte(fmt.Sprintf(`
+	f, err := fileutils.WriteTempFileToDir("", "TestDeprecation", []byte(fmt.Sprintf(`
 		[
 		  {
 		    "version": "0.0.0",
@@ -94,7 +94,7 @@ func (suite *DeprecationIntegrationTestSuite) TestSoftDeprecation() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	f, err := fileutils.WriteTempFile("", "TestDeprecation", []byte(fmt.Sprintf(`
+	f, err := fileutils.WriteTempFileToDir("", "TestDeprecation", []byte(fmt.Sprintf(`
 		[
 		  {
 		    "version": "%s",

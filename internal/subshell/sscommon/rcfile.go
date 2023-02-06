@@ -376,3 +376,11 @@ func SetupProjectRcFile(prj *project.Project, templateName, ext string, env map[
 
 	return tmpFile, nil
 }
+
+func ProjectRCIdentifier(base RcIdentification, namespace *project.Namespaced) RcIdentification {
+	id := base
+	id.Start = fmt.Sprintf("%s-%s", id.Start, namespace.String())
+	id.Stop = fmt.Sprintf("%s-%s", id.Stop, namespace.String())
+	id.Key = fmt.Sprintf("%s_%s", id.Key, namespace.String())
+	return id
+}
