@@ -78,11 +78,11 @@ func New(prime primeable) *Switch {
 
 func (s *Switch) Run(params SwitchParams) error {
 	logging.Debug("ExecuteSwitch")
-	s.out.Notice(locale.Tl("operating_message", "", s.project.NamespaceString(), s.project.Dir()))
 
 	if s.project == nil {
 		return locale.NewInputError("err_no_project")
 	}
+	s.out.Notice(locale.Tl("operating_message", "", s.project.NamespaceString(), s.project.Dir()))
 
 	rtusage.PrintRuntimeUsage(s.svcModel, s.out, s.project.Owner())
 
