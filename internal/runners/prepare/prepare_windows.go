@@ -13,6 +13,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/osutils"
+	"github.com/ActiveState/cli/internal/osutils/autostart"
 	"github.com/ActiveState/cli/internal/osutils/shortcut"
 )
 
@@ -39,7 +40,7 @@ func (r *Prepare) prepareOS() error {
 			return locale.WrapError(err, "err_autostart_app")
 		}
 
-		if err := a.EnableAutostart(); err != nil {
+		if err = autostart.Enable(a.Exec, svcAutostart.Options); err != nil {
 			r.reportError(locale.Tl("err_prepare_service_autostart", "Could not setup service autostart, error recieved: {{.V0}}", err.Error()), err)
 		}
 	}

@@ -8,6 +8,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/osutils/autostart"
 	"github.com/ActiveState/cli/internal/osutils/user"
 )
 
@@ -25,8 +26,7 @@ func (r *Prepare) prepareOS() error {
 		r.reportError(locale.T("err_autostart_app"), err)
 	}
 
-	err = svcApp.EnableAutostart()
-	if err != nil {
+	if err = autostart.Enable(svcApp.Exec, svcAutostart.Options); err != nil {
 		r.reportError(locale.Tl(
 			"err_prepare_autostart",
 			"Could not enable autostart: {{.V0}}.", err.Error(),
@@ -52,6 +52,9 @@ func cleanOS(cfg app.Configurable) error {
 	svcApp, err := app.New(constants.SvcAppName, svcExec, []string{"start"}, app.Options{}, cfg)
 	if err != nil {
 		return locale.WrapError(err, "Could not get svc autostart shortcut")
+	}
+	if err = autostart.Disable(svcApp.Exec, svcAutostart.Options); err != nil {
+		return errs.Wrap(err, "Failed to enable autostart for service app.")
 	}
 	return svcApp.DisableAutostart() // cleans ~/.profile if necessary
 }
