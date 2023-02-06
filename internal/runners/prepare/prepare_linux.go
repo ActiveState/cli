@@ -58,4 +58,6 @@ func cleanOS(cfg app.Configurable) error {
 	if err = autostart.Disable(svcApp.Exec, svcAutostart.Options); err != nil {
 		return errs.Wrap(err, "Failed to enable autostart for service app.")
 	}
+
+	return nil
 }
