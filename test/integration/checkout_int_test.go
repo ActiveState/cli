@@ -24,7 +24,7 @@ type CheckoutIntegrationTestSuite struct {
 func (suite *CheckoutIntegrationTestSuite) TestCheckout() {
 	suite.OnlyRunForTags(tagsuite.Checkout)
 
-	ts := e2e.New(suite.T(), true)
+	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
 	// Checkout and verify.
