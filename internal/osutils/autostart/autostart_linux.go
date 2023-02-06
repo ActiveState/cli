@@ -170,7 +170,7 @@ func isEnabled(exec string, opts Options) (bool, error) {
 	return false, nil
 }
 
-func autostartPath(name string) (string, error) {
+func autostartPath(name string, _ Options) (string, error) {
 	dir, err := prependHomeDir(autostartDir)
 	if err != nil {
 		return "", errs.Wrap(err, "Could not find autostart directory")
