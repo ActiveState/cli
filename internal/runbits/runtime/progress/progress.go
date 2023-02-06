@@ -344,12 +344,9 @@ Progress bars status:
 Still expecting:
  - Builds: %v
  - Downloads: %v
- - Installs: %v
-Event log:
-%s`,
+ - Installs: %v`,
 				strings.Join(debugMsg, "\n"),
 				p.buildsExpected, p.downloadsExpected, p.installsExpected,
-				strings.Join(p.dbgEventLog, " > "),
 			)
 
 			if pending > 0 {

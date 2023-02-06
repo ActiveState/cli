@@ -80,7 +80,7 @@ func (p *ProgressDigester) addArtifactBar(id artifact.ArtifactID, step step, tot
 	if !ok {
 		name = locale.Tl("artifact_unknown_name", "Unnamed Artifact")
 	}
-	logging.Debug("Adding artifact bar: %s", name)
+	logging.Debug("Adding %s artifact bar: %s", step.verb, name)
 
 	aStep := artifactStep{id, step}
 	if _, ok := p.artifactBars[aStep.ID()]; ok {
@@ -94,7 +94,7 @@ func (p *ProgressDigester) addArtifactBar(id artifact.ArtifactID, step step, tot
 func (p *ProgressDigester) updateArtifactBar(id artifact.ArtifactID, step step, inc int) error {
 	aStep := artifactStep{id, step}
 	if _, ok := p.artifactBars[aStep.ID()]; !ok {
-		return errs.New("Artifact bar doesn't exists")
+		return errs.New("%s Artifact bar doesn't exists", step.verb)
 	}
 	p.artifactBars[aStep.ID()].IncrBy(inc)
 
@@ -103,7 +103,7 @@ func (p *ProgressDigester) updateArtifactBar(id artifact.ArtifactID, step step, 
 		name = locale.Tl("artifact_unknown_name", "Unnamed Artifact")
 	}
 	if p.artifactBars[aStep.ID()].Current() >= p.artifactBars[aStep.ID()].total {
-		logging.Debug("Artifact bar reached total: %s", name)
+		logging.Debug("%s Artifact bar reached total: %s", step.verb, name)
 	}
 
 	return nil
@@ -115,7 +115,7 @@ func (p *ProgressDigester) dropArtifactBar(id artifact.ArtifactID, step step) er
 	if !ok {
 		name = locale.Tl("artifact_unknown_name", "Unnamed Artifact")
 	}
-	logging.Debug("Dropping artifact bar: %s", name)
+	logging.Debug("Dropping %s artifact bar: %s", step.verb, name)
 
 	aStep := artifactStep{id, step}
 	if _, ok := p.artifactBars[aStep.ID()]; !ok {
