@@ -71,6 +71,9 @@ const (
 	// NamespacePackageMatch is the namespace used for language package requirements
 	NamespacePackageMatch = `^language\/(\w+)$`
 
+	// NamespacePackageMatch is the namespace used for language package requirements
+	NamespaceBuilderMatch = `^builder(-lib){0,1}$`
+
 	// NamespaceBundlesMatch is the namespace used for bundle package requirements
 	NamespaceBundlesMatch = `^bundles\/(\w+)$`
 
