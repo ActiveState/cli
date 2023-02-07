@@ -15,7 +15,6 @@ import (
 	svcAutostart "github.com/ActiveState/cli/cmd/state-svc/autostart"
 	"github.com/ActiveState/cli/internal/app"
 	"github.com/ActiveState/cli/internal/condition"
-	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -213,9 +212,7 @@ func (suite *SvcIntegrationTestSuite) TestAutostartConfigEnableDisable() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	cfg, err := config.New()
-	suite.Require().NoError(err)
-	app, err := app.New(constants.SvcAppName, ts.SvcExe, nil, svcApp.Options, cfg)
+	app, err := app.New(constants.SvcAppName, ts.SvcExe, nil, svcApp.Options)
 	suite.Require().NoError(err)
 	enabled, err := autostart.IsEnabled(app.Exec, svcAutostart.Options)
 	suite.Require().NoError(err)
