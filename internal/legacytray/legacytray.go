@@ -34,11 +34,10 @@ func DetectAndRemove(path string, cfg *config.Instance) error {
 	}
 
 	// Disable autostart of state-tray.
-	options := autostart.Options{
-		LaunchFileName: trayLaunchFileName, // only used for Linux; ignored on macOS, Windows
-	}
-	if app, err := app.New(trayAppName, trayExec, nil, app.Options{}, cfg); err == nil {
-		disableErr := autostart.Disable(app.Exec, options)
+	if app, err := app.New(trayAppName, trayExec, nil, app.Options{}); err == nil {
+		disableErr := autostart.Disable(app.Exec, autostart.Options{
+			LaunchFileName: trayLaunchFileName, // only used for Linux; ignored on macOS, Windows
+		})
 		if disableErr != nil {
 			return errs.Wrap(err, "Unable to disable tray autostart")
 		}

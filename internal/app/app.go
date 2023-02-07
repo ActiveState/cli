@@ -23,12 +23,7 @@ type Options struct {
 	MacHideDockIcon bool // macOS plist HideDockIcon
 }
 
-type Configurable interface {
-	Set(string, interface{}) error
-	IsSet(string) bool
-}
-
-func New(name string, exec string, args []string, opts Options, cfg Configurable) (*App, error) {
+func New(name string, exec string, args []string, opts Options) (*App, error) {
 	return &App{
 		Name:    name,
 		Exec:    exec,

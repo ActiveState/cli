@@ -36,7 +36,7 @@ func (r *Prepare) prepareOS() error {
 	}
 
 	if svcExec != "" {
-		a, err := app.New(constants.SvcAppName, svcExec, []string{"start"}, app.Options{}, r.cfg)
+		a, err := app.New(constants.SvcAppName, svcExec, []string{"start"}, app.Options{})
 		if err != nil {
 			return locale.WrapError(err, "err_autostart_app")
 		}
@@ -120,6 +120,6 @@ func setStateProtocol() error {
 	return nil
 }
 
-func cleanOS(cfg app.Configurable) error {
+func cleanOS() error {
 	return nil
 }

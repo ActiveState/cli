@@ -5,6 +5,7 @@ import (
 	"runtime"
 
 	svcApp "github.com/ActiveState/cli/cmd/state-svc/app"
+	svcAutostart "github.com/ActiveState/cli/cmd/state-svc/autostart"
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/app"
 	"github.com/ActiveState/cli/internal/captain"
@@ -154,20 +155,19 @@ func updateConfigKey(cfg *config.Instance, oldKey, newKey string) error {
 }
 
 // InstalledPreparedFiles returns the files installed by state _prepare
-func InstalledPreparedFiles(cfg app.Configurable) ([]string, error) {
+func InstalledPreparedFiles() ([]string, error) {
 	var files []string
 	svcExec, err := installation.ServiceExec()
 	if err != nil {
 		return nil, locale.WrapError(err, "err_svc_exec")
 	}
 
-	svcShortcut, err := app.New(constants.SvcAppName, svcExec, []string{"start"}, svcApp.Options, cfg)
+	svcApp, err := app.New(constants.SvcAppName, svcExec, []string{"start"}, svcApp.Options)
 	if err != nil {
 		return nil, locale.WrapError(err, "err_autostart_app")
 	}
 
-	// TODO: Properly setup autostart options
-	path, err := autostart.AutostartPath(svcShortcut.Exec, autostart.Options{})
+	path, err := autostart.AutostartPath(svcApp.Exec, svcAutostart.Options)
 	if err != nil {
 		multilog.Error("Failed to determine shortcut path for removal: %v", err)
 	} else if path != "" {
@@ -178,6 +178,6 @@ func InstalledPreparedFiles(cfg app.Configurable) ([]string, error) {
 }
 
 // CleanOS performs any OS-specific cleanup that is needed other than deleting installed files.
-func CleanOS(cfg app.Configurable) error {
-	return cleanOS(cfg)
+func CleanOS() error {
+	return cleanOS()
 }

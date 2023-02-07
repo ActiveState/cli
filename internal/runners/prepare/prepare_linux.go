@@ -22,7 +22,7 @@ func (r *Prepare) prepareOS() error {
 		), err)
 	}
 
-	svcApp, err := app.New(constants.SvcAppName, svcExec, []string{"start"}, app.Options{}, r.cfg)
+	svcApp, err := app.New(constants.SvcAppName, svcExec, []string{"start"}, app.Options{})
 	if err != nil {
 		r.reportError(locale.T("err_autostart_app"), err)
 	}
@@ -45,12 +45,12 @@ func prependHomeDir(path string) (string, error) {
 	return filepath.Join(homeDir, path), nil
 }
 
-func cleanOS(cfg app.Configurable) error {
+func cleanOS() error {
 	svcExec, err := installation.ServiceExec()
 	if err != nil {
 		return locale.WrapError(err, "Could not get state-svc location")
 	}
-	svcApp, err := app.New(constants.SvcAppName, svcExec, []string{"start"}, app.Options{}, cfg)
+	svcApp, err := app.New(constants.SvcAppName, svcExec, []string{"start"}, app.Options{})
 	if err != nil {
 		return locale.WrapError(err, "Could not get svc autostart shortcut")
 	}

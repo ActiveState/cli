@@ -19,7 +19,7 @@ func (r *Prepare) prepareOS() error {
 		), err)
 	}
 
-	svcShortcut, err := app.New(constants.SvcAppName, svcExec, []string{"start"}, app.Options{}, r.cfg)
+	svcShortcut, err := app.New(constants.SvcAppName, svcExec, []string{"start"}, app.Options{})
 	if err != nil {
 		r.reportError(locale.T("err_autostart_app"), err)
 	}
@@ -31,6 +31,6 @@ func (r *Prepare) prepareOS() error {
 	return nil
 }
 
-func cleanOS(cfg app.Configurable) error {
+func cleanOS() error {
 	return nil
 }

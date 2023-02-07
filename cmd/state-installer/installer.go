@@ -176,7 +176,7 @@ func (i *Installer) installSvcApp() (*app.App, error) {
 		return nil, errs.Wrap(err, "Could not determine service executable")
 	}
 
-	app, err := app.New(constants.SvcAppName, svcExec, []string{"start"}, svcApp.Options, i.cfg)
+	app, err := app.New(constants.SvcAppName, svcExec, []string{"start"}, svcApp.Options)
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not create app")
 	}
