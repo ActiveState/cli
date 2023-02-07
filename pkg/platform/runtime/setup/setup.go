@@ -461,7 +461,7 @@ func (s *Setup) fetchAndInstallArtifactsFromRecipe(installFunc artifactInstaller
 		LogFilePath:   logFilePath,
 		ArtifactsToBuild: func() []artifact.ArtifactID {
 			if !buildResult.BuildReady {
-				return artifact.ArtifactIDsFromRecipeMap(artifacts) // This does not account for cached builds
+				return artifact.ArtifactIDsFromRecipeMap(artifact.FilterBuildable(artifacts)) // This does not account for cached builds
 			}
 			return []artifact.ArtifactID{}
 		}(),
