@@ -63,9 +63,7 @@ func (suite *PrepareIntegrationTestSuite) TestPrepare() {
 	suite.AssertConfig(filepath.Join(ts.Dirs.Cache, "bin"))
 
 	// Verify autostart was enabled.
-	cfg, err := config.New()
-	suite.Require().NoError(err)
-	as, err := app.New(constants.SvcAppName, ts.SvcExe, nil, svcApp.Options, cfg)
+	as, err := app.New(constants.SvcAppName, ts.SvcExe, nil, svcApp.Options)
 	suite.Require().NoError(err)
 	enabled, err := autostart.IsEnabled(as.Exec, svcAutostart.Options)
 	suite.Require().NoError(err)
