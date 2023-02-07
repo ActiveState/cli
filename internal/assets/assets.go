@@ -21,7 +21,3 @@ func OpenFile(filename string) (iofs.File, error) {
 func ReadDir(dirname string) ([]iofs.DirEntry, error) {
 	return fs.ReadDir("contents/" + dirname)
 }
-
-func ListAssets() ([]iofs.DirEntry, error) {
-	return fs.ReadDir("contents")
-}

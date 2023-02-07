@@ -67,8 +67,7 @@ func (a *App) install() error {
 		return errs.Wrap(err, "Could not get installation path")
 	}
 
-	err = fileutils.MoveAllFiles(tmpDir, installDir)
-	if err != nil {
+	if err := fileutils.MoveAllFiles(tmpDir, installDir); err != nil {
 		return errs.Wrap(err, "Could not move .app to Applications directory")
 	}
 
