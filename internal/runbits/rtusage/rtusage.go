@@ -53,15 +53,6 @@ func NotifyRuntimeUsage(cfg *config.Instance, data dataHandler, orgName string) 
 		return
 	}
 
-	if time.Now().Sub(cfg.GetTime(CfgKeyLastNotify)).Minutes() < float64(60) {
-		return
-	}
-
-	if err := cfg.Set(CfgKeyLastNotify, time.Now()); err != nil {
-		multilog.Error("Soft limit: Failed to set last notify time: %s", errs.JoinMessage(err))
-		return
-	}
-
 	res, err := data.CheckRuntimeUsage(context.Background(), orgName)
 	if err != nil {
 		multilog.Error("Soft limit: Failed to check runtime usage in heartbeat handler: %s", errs.JoinMessage(err))
@@ -74,13 +65,36 @@ func NotifyRuntimeUsage(cfg *config.Instance, data dataHandler, orgName string) 
 		usage, _ = strconv.Atoi(override)
 	}
 
-	if usage > res.Limit {
-		err := notify.Send(locale.T("runtime_limit_reached_title"),
-			locale.Tr("runtime_limit_reached_msg", orgName),
-			locale.T("runtime_limit_reached_action"),
-			"state://platform/upgrade") // We have to use the state protocol because https:// is backgrounded by the OS
+	if usage <= res.Limit {
+		return
+	}
+
+	// Override silence time
+	silenceMs := time.Hour.Milliseconds()
+	if override := os.Getenv(constants.RuntimeUsageSilenceTimeOverrideEnvVarName); override != "" {
+		overrideInt, err := strconv.ParseInt(override, 10, 64)
 		if err != nil {
-			multilog.Error("Soft limit: Failed to send notification: %s", errs.JoinMessage(err))
+			logging.Error("Failed to parse runtime usage silence time override: %v", err)
+		} else {
+			silenceMs = overrideInt
 		}
+	}
+
+	// Don't notify if we already notified recently
+	if time.Now().Sub(cfg.GetTime(CfgKeyLastNotify)).Milliseconds() <= silenceMs {
+		return
+	}
+
+	if err := cfg.Set(CfgKeyLastNotify, time.Now()); err != nil {
+		multilog.Error("Soft limit: Failed to set last notify time: %s", errs.JoinMessage(err))
+		return
+	}
+
+	err2 := notify.Send(locale.T("runtime_limit_reached_title"),
+		locale.Tr("runtime_limit_reached_msg", orgName),
+		locale.T("runtime_limit_reached_action"),
+		"state://platform/upgrade") // We have to use the state protocol because https:// is backgrounded by the OS
+	if err2 != nil {
+		multilog.Error("Soft limit: Failed to send notification: %s", errs.JoinMessage(err))
 	}
 }
