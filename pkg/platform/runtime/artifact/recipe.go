@@ -97,6 +97,17 @@ func FilterInstallable(artifacts ArtifactRecipeMap) ArtifactRecipeMap {
 	return res
 }
 
+func FilterBuildable(artifacts ArtifactRecipeMap) ArtifactRecipeMap {
+	res := make(map[ArtifactID]ArtifactRecipe)
+	for _, a := range artifacts {
+		// Artifacts in the builder namespace aren't real artifacts, they are only used by the builder
+		if !monomodel.NamespaceMatch(a.Namespace, monomodel.NamespaceBuilderMatch) {
+			res[a.ArtifactID] = a
+		}
+	}
+	return res
+}
+
 // RecursiveDependenciesFor computes the recursive dependencies for an ArtifactID a using artifacts as a lookup table
 func RecursiveDependenciesFor(a ArtifactID, artifacts ArtifactRecipeMap) []ArtifactID {
 	allDeps := make(map[ArtifactID]struct{})
