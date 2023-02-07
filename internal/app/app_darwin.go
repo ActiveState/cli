@@ -15,18 +15,11 @@ import (
 )
 
 const (
-	execFileSource       = "exec.sh.tpl"
-	launchFileSource     = "com.activestate.platform.app.plist.tpl"
-	launchFileFormatName = "com.activestate.platform.%s.plist"
-	autostartFileSource  = "com.activestate.platform.autostart.plist.tpl"
-	iconFile             = "icon.icns"
+	execFileSource   = "exec.sh.tpl"
+	launchFileSource = "com.activestate.platform.app.plist.tpl"
+	iconFile         = "icon.icns"
+	assetAppDir      = "placeholder.app"
 )
-
-var targetDirs = []string{
-	"/Contents",
-	"/Contents/MacOS",
-	"/Contents/Resources",
-}
 
 func (a *App) install() error {
 	// Create all of the necessary directories and files in a temporary directory
@@ -42,31 +35,30 @@ func (a *App) install() error {
 		return errs.Wrap(err, "Could not create .app directory")
 	}
 
-	for _, t := range targetDirs {
-		path := filepath.Join(tmpAppPath, t)
-		err = fileutils.Mkdir(path)
-		if err != nil {
-			return errs.Wrap(err, "Could not create directory at %s", path)
-		}
+	appDir, err := assets.OpenFile(assetAppDir)
+	if err != nil {
+		return errs.Wrap(err, "Could not read app directory asset")
 	}
 
-	icon, err := assets.ReadFileBytes(a.options.IconFileSource)
+	info, err := appDir.Stat()
 	if err != nil {
-		return errs.Wrap(err, "Could not read asset")
+		return errs.Wrap(err, "Could not stat app directory asset")
 	}
 
-	err = fileutils.WriteFile(filepath.Join(tmpAppPath, "Contents", "Resources", iconFile), icon)
+	err = generateAppDir(tmpAppPath, info.Name())
 	if err != nil {
-		return errs.Wrap(err, "Could not write icon file")
+		return errs.Wrap(err, "Could not generate app directory")
 	}
 
-	err = a.createExecFile(filepath.Join(tmpAppPath, "Contents", "MacOS"))
-	if err != nil {
+	if err := a.createIcon(tmpAppPath); err != nil {
+		return errs.Wrap(err, "Could not create icon")
+	}
+
+	if err := a.createExecFile(tmpAppPath); err != nil {
 		return errs.Wrap(err, "Could not create exec file")
 	}
 
-	err = a.createInfoFile(filepath.Join(tmpAppPath, "Contents"))
-	if err != nil {
+	if err := a.createInfoFile(tmpAppPath); err != nil {
 		return errs.Wrap(err, "Could not create info file")
 	}
 
@@ -83,7 +75,46 @@ func (a *App) install() error {
 	return nil
 }
 
-func (a *App) createExecFile(path string) error {
+func generateAppDir(createPath, assetName string) error {
+	listing, err := assets.ReadDir(assetName)
+	if err != nil {
+		return errs.Wrap(err, "Could not read app directory asset")
+	}
+
+	for _, entry := range listing {
+		if !entry.IsDir() {
+			continue
+		}
+
+		err := fileutils.Mkdir(createPath, entry.Name())
+		if err != nil {
+			return errs.Wrap(err, "Could not create directory")
+		}
+
+		err = generateAppDir(filepath.Join(createPath, entry.Name()), filepath.Join(assetName, entry.Name()))
+		if err != nil {
+			return errs.Wrap(err, "Could not generate app directory")
+		}
+	}
+
+	return nil
+}
+
+func (a *App) createIcon(path string) error {
+	icon, err := assets.ReadFileBytes(a.options.IconFileSource)
+	if err != nil {
+		return errs.Wrap(err, "Could not read asset")
+	}
+
+	if err = fileutils.WriteFile(filepath.Join(path, "Contents", "Resources", iconFile), icon); err != nil {
+		return errs.Wrap(err, "Could not write icon file")
+	}
+
+	return nil
+}
+
+func (a *App) createExecFile(base string) error {
+	path := filepath.Join(base, "Contents", "MacOS")
 	asset, err := assets.ReadFileBytes(execFileSource)
 	if err != nil {
 		return errs.Wrap(err, "Could not read asset")
@@ -114,7 +145,8 @@ func (a *App) createExecFile(path string) error {
 	return nil
 }
 
-func (a *App) createInfoFile(path string) error {
+func (a *App) createInfoFile(base string) error {
+	path := filepath.Join(base, "Contents")
 	asset, err := assets.ReadFileBytes(launchFileSource)
 	if err != nil {
 		return errs.Wrap(err, "Could not read asset")
