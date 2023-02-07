@@ -19,13 +19,8 @@ type App struct {
 type Options struct {
 	IconFileName    string
 	IconFileSource  string
-	GenericName     string
-	Comment         string
-	Keywords        string
 	IsGUIApp        bool
-	MacLabel        string // macOS autostart plist Label
-	MacInteractive  bool   // macOS autostart plist Interactive ProcessType
-	MacHideDockIcon bool
+	MacHideDockIcon bool // macOS plist HideDockIcon
 }
 
 type Configurable interface {

@@ -126,7 +126,6 @@ func (a *App) createInfoFile(path string) error {
 		string(asset),
 		map[string]interface{}{
 			"Exec":         scriptFile,
-			"Interactive":  a.options.MacInteractive,
 			"Icon":         a.options.IconFileName,
 			"HideDockIcon": a.options.MacHideDockIcon,
 			"IsGUIApp":     a.options.IsGUIApp,
