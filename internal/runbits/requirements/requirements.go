@@ -238,7 +238,6 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 	pg = nil
 
 	var trigger target.Trigger
-	fmt.Println("Namespace type: ", ns.Type().String())
 	switch ns.Type() {
 	case model.NamespaceLanguage:
 		trigger = target.TriggerLanguage
