@@ -2,6 +2,7 @@ package events
 
 import (
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
+	"github.com/go-openapi/strfmt"
 )
 
 /*
@@ -21,6 +22,8 @@ type Eventer interface {
 }
 
 type Start struct {
+	RecipeID strfmt.UUID
+	
 	RequiresBuild bool
 	ArtifactNames artifact.Named
 	LogFilePath   string
