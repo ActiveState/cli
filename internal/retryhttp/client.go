@@ -14,7 +14,6 @@ import (
 
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
 )
 
@@ -114,7 +113,8 @@ func NewClient(timeout time.Duration, retries int) *Client {
 	}
 
 	retryClient := retryablehttp.NewClient()
-	retryClient.Logger = logging.CurrentHandler()
+	retryClient.Logger = nil
+	// retryClient.Logger = logging.CurrentHandler() // Enable this to get debug info in our logs
 	retryClient.HTTPClient = &http.Client{
 		Transport: transport(),
 		Timeout:   timeout,

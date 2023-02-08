@@ -11,6 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runbits/activation"
 	"github.com/ActiveState/cli/internal/runbits/findproject"
+	"github.com/ActiveState/cli/internal/runbits/rtusage"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
@@ -64,11 +65,13 @@ func (u *Shell) Run(params *Params) error {
 
 	proj, err := findproject.FromInputByPriority("", params.Namespace, u.config, u.prompt)
 	if err != nil {
-		if errs.Matches(err, &projectfile.ErrorNoProject{}) {
+		if errs.Matches(err, &projectfile.ErrorNoDefaultProject{}) {
 			return locale.WrapError(err, "err_use_default_project_does_not_exist")
 		}
 		return locale.WrapError(err, "err_shell_cannot_load_project")
 	}
+
+	rtusage.PrintRuntimeUsage(u.svcModel, u.out, proj.Owner())
 
 	if cid := params.Namespace.CommitID; cid != nil && *cid != proj.CommitUUID() {
 		return locale.NewInputError("err_shell_commit_id_mismatch")

@@ -14,7 +14,6 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	configMediator "github.com/ActiveState/cli/internal/mediators/config"
 	"github.com/ActiveState/cli/internal/singleton/uniqid"
-
 	"github.com/rollbar/rollbar-go"
 )
 
@@ -43,7 +42,7 @@ func init() {
 var CurrentCmd string
 
 func SetupRollbar(token string) {
-	defer handlePanics(recover())
+	defer func() { handlePanics(recover()) }()
 	// set user to unknown (if it has not been set yet)
 	if _, ok := rollbar.Custom()["UserID"]; !ok {
 		UpdateRollbarPerson("unknown", "unknown", "unknown")
@@ -83,7 +82,7 @@ func SetConfig(cfg config) {
 }
 
 func UpdateRollbarPerson(userID, username, email string) {
-	defer handlePanics(recover())
+	defer func() { handlePanics(recover()) }()
 	rollbar.SetPerson(uniqid.Text(), username, email)
 
 	custom := rollbar.Custom()
@@ -100,6 +99,14 @@ func UpdateRollbarPerson(userID, username, email string) {
 // Wait is a wrapper around rollbar.Wait().
 func Wait() { rollbar.Wait() }
 
+var logDataAmenders []func(string) string
+
+// AddLogDataAmender routes log data to be sent to Rollbar through the given function first.
+// For example, that function might add more log data to be sent.
+func AddLogDataAmender(f func(string) string) {
+	logDataAmenders = append(logDataAmenders, f)
+}
+
 func logToRollbar(critical bool, message string, args ...interface{}) {
 	// only log to rollbar when on release, beta or unstable branch and when built via CI (ie., non-local build)
 	isPublicChannel := constants.BranchName == constants.ReleaseBranch || constants.BranchName == constants.BetaBranch || constants.BranchName == constants.ExperimentalBranch
@@ -111,6 +118,9 @@ func logToRollbar(critical bool, message string, args ...interface{}) {
 	logData := logging.ReadTail()
 	if len(logData) == logging.TailSize {
 		logData = "<truncated>\n" + logData
+	}
+	for _, f := range logDataAmenders {
+		logData = f(logData)
 	}
 	data["log_file_data"] = logData
 

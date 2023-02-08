@@ -2,6 +2,7 @@ package exeutils
 
 import (
 	"bytes"
+	"io"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -169,6 +170,44 @@ func ExecuteAndForget(command string, args []string, opts ...func(cmd *exec.Cmd)
 	}()
 
 	return cmd.Process, nil
+}
+
+// ExecuteInBackground runs the command in background and returns a buffers for stdout and stderr
+func ExecuteInBackground(command string, args []string, opts ...func(cmd *exec.Cmd) error) (*exec.Cmd, *bytes.Buffer, *bytes.Buffer, error) {
+	logging.Debug("Executing: %s %v", command, args)
+
+	cmd := exec.Command(command, args...)
+	var stdoutBuf, stderrBuf bytes.Buffer
+
+	for _, optSetter := range opts {
+		if err := optSetter(cmd); err != nil {
+			return nil, nil, nil, err
+		}
+	}
+
+	stdoutIn, err := cmd.StdoutPipe()
+	if err != nil {
+		return nil, nil, nil, errs.Wrap(err, "Error creating StdoutPipe for Cmd")
+	}
+
+	stderrIn, err := cmd.StderrPipe()
+	if err != nil {
+		return nil, nil, nil, errs.Wrap(err, "Error creating StderrPipe for Cmd")
+	}
+
+	if err := cmd.Start(); err != nil {
+		return nil, nil, nil, errs.Wrap(err, "Could not start %s %v", command, args)
+	}
+
+	// Copy the output in a separate goroutine so printing can't block indefinitely.
+	// We use a WaitGroup to wait for the command to exit and for the goroutine to return.
+	go func() {
+		io.Copy(&stdoutBuf, stdoutIn)
+		io.Copy(&stderrBuf, stderrIn)
+	}()
+
+	// Return a function that can be called to get the output so far
+	return cmd, &stdoutBuf, &stderrBuf, nil
 }
 
 // DecodeCmd takes an encoded command and decodes it by returning a shell variant based on the OS we're on

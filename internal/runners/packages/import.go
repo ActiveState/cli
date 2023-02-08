@@ -6,6 +6,7 @@ import (
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/installation/storage"
+	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
@@ -26,6 +27,10 @@ const (
 	defaultImportFile = "requirements.txt"
 )
 
+type configurable interface {
+	keypairs.Configurable
+}
+
 // Confirmer describes the behavior required to prompt a user for confirmation.
 type Confirmer interface {
 	Confirm(title, msg string, defaultOpt *bool) (bool, error)
@@ -39,9 +44,10 @@ type ChangesetProvider interface {
 
 // ImportRunParams tracks the info required for running Import.
 type ImportRunParams struct {
-	FileName string
-	Language string
-	Force    bool
+	FileName       string
+	Language       string
+	Force          bool
+	NonInteractive bool
 }
 
 // NewImportRunParams prepares the info required for running Import with default
@@ -87,8 +93,14 @@ func NewImport(prime primeable) *Import {
 }
 
 // Run executes the import behavior.
-func (i *Import) Run(params ImportRunParams) error {
+func (i *Import) Run(params *ImportRunParams) error {
 	logging.Debug("ExecuteImport")
+
+	if i.proj == nil {
+		return locale.NewInputError("err_no_project")
+	}
+
+	i.out.Notice(locale.Tl("operating_message", "", i.proj.NamespaceString(), i.proj.Dir()))
 
 	if params.FileName == "" {
 		params.FileName = defaultImportFile
@@ -114,10 +126,9 @@ func (i *Import) Run(params ImportRunParams) error {
 		return locale.WrapError(err, "err_obtaining_change_request", "Could not process change set: {{.V0}}.", api.ErrorMessageFromPayload(err))
 	}
 
-	packageReqs := model.FilterCheckpointPackages(reqs)
+	packageReqs := model.FilterCheckpointNamespace(reqs, model.NamespacePackage, model.NamespaceBundle)
 	if len(packageReqs) > 0 {
-		force := params.Force
-		err = removeRequirements(i.Prompter, i.proj, force, packageReqs)
+		err = removeRequirements(i.Prompter, i.proj, params, packageReqs)
 		if err != nil {
 			return locale.WrapError(err, "err_cannot_remove_existing")
 		}
@@ -132,11 +143,12 @@ func (i *Import) Run(params ImportRunParams) error {
 	return runbits.RefreshRuntime(i.auth, i.out, i.analytics, i.proj, storage.CachePath(), commitID, true, target.TriggerImport, i.svcModel)
 }
 
-func removeRequirements(conf Confirmer, project *project.Project, force bool, reqs []*gqlModel.Requirement) error {
-	if !force {
+func removeRequirements(conf Confirmer, project *project.Project, params *ImportRunParams, reqs []*gqlModel.Requirement) error {
+	if !params.Force {
 		msg := locale.T("confirm_remove_existing_prompt")
 
-		confirmed, err := conf.Confirm(locale.T("confirm"), msg, new(bool))
+		defaultChoice := params.NonInteractive
+		confirmed, err := conf.Confirm(locale.T("confirm"), msg, &defaultChoice)
 		if err != nil {
 			return err
 		}

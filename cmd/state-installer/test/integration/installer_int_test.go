@@ -8,15 +8,19 @@ import (
 	"runtime"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/download"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/osutils"
+	"github.com/ActiveState/cli/internal/osutils/user"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/ActiveState/cli/pkg/sysinfo"
+	"github.com/ActiveState/termtest"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -45,6 +49,9 @@ func (suite *InstallerIntegrationTestSuite) TestInstallFromLocalSource() {
 	cp.Expect("Installing State Tool")
 	cp.Expect("Done")
 	cp.Expect("successfully installed")
+	if runtime.GOOS == "darwin" {
+		cp.Expect("You are running bash on macOS")
+	}
 	suite.NotContains(cp.TrimmedSnapshot(), "Downloading State Tool")
 
 	stateExec, err := installation.StateExecFromDir(target)
@@ -155,10 +162,69 @@ func (suite *InstallerIntegrationTestSuite) TestInstallErrorTips() {
 	suite.Assert().Contains(cp.TrimmedSnapshot(), "Need More Help?", "error tips should be displayed in shell created by installer")
 }
 
+func (suite *InstallerIntegrationTestSuite) TestStateTrayRemoval() {
+	suite.OnlyRunForTags(tagsuite.Installer, tagsuite.Critical)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	suite.setupTest(ts)
+
+	dir := filepath.Join(ts.Dirs.Work, "installation")
+
+	// Install a release version that still has state-tray.
+	version := "0.35.0-SHAb78e2a4"
+	var cp *termtest.ConsoleProcess
+	if runtime.GOOS != "windows" {
+		oneLiner := fmt.Sprintf("sh <(curl -q https://platform.activestate.com/dl/cli/pdli01/install.sh) -f -n -t %s -v %s", dir, version)
+		cp = ts.SpawnCmdWithOpts(
+			"bash", e2e.WithArgs("-c", oneLiner),
+		)
+	} else {
+		b, err := download.GetDirect("https://platform.activestate.com/dl/cli/pdli01/install.ps1")
+		suite.Require().NoError(err)
+
+		ps1File := filepath.Join(ts.Dirs.Work, "install.ps1")
+		suite.Require().NoError(fileutils.WriteFile(ps1File, b))
+
+		cp = ts.SpawnCmdWithOpts("powershell.exe", e2e.WithArgs(ps1File, "-f", "-n", "-t", dir, "-v", version),
+			e2e.AppendEnv("SHELL="),
+		)
+	}
+	cp.Expect("Installation Complete", 5*time.Minute)
+
+	// Verify state-tray is there.
+	svcExec, err := installation.ServiceExecFromDir(dir)
+	suite.Require().NoError(err)
+	trayExec := strings.Replace(svcExec, constants.StateSvcCmd, "state-tray", 1)
+	suite.FileExists(trayExec)
+	updateDialogExec := strings.Replace(svcExec, constants.StateSvcCmd, "state-update-dialog", 1)
+	//suite.FileExists(updateDialogExec) // this is not actually installed...
+
+	// Run the installer, which should remove state-tray and clean up after it.
+	cp = ts.SpawnCmdWithOpts(
+		suite.installerExe,
+		e2e.WithArgs("-f", "-n", "-t", dir),
+		e2e.AppendEnv(constants.UpdateBranchEnvVarName+"=release"),
+	)
+	cp.Expect("Installing", 10*time.Second)
+	cp.Expect("Done", 30*time.Second)
+
+	// Verify state-tray is no longer there.
+	suite.NoFileExists(trayExec)
+	suite.NoFileExists(updateDialogExec)
+
+	// Verify state can still be run and has a newly updated version.
+	stateExec, err := installation.StateExecFromDir(dir)
+	suite.Require().NoError(err)
+	cp = ts.SpawnCmdWithOpts(stateExec, e2e.WithArgs("--version"))
+	suite.Assert().NotContains(cp.TrimmedSnapshot(), version)
+	cp.ExpectExitCode(0)
+}
+
 func (suite *InstallerIntegrationTestSuite) AssertConfig(ts *e2e.Session) {
 	if runtime.GOOS != "windows" {
 		// Test bashrc
-		homeDir, err := os.UserHomeDir()
+		homeDir, err := user.HomeDir()
 		suite.Require().NoError(err)
 
 		fname := ".bashrc"
@@ -201,7 +267,6 @@ func (s *InstallerIntegrationTestSuite) setupTest(ts *e2e.Session) {
 	payloadDir := filepath.Dir(s.installerExe)
 	ts.CopyExeToDir(ts.Exe, filepath.Join(payloadDir, installation.BinDirName))
 	ts.CopyExeToDir(ts.SvcExe, filepath.Join(payloadDir, installation.BinDirName))
-	ts.CopyExeToDir(ts.TrayExe, filepath.Join(payloadDir, installation.BinDirName))
 }
 
 func TestInstallerIntegrationTestSuite(t *testing.T) {

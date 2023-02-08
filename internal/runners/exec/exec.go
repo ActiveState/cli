@@ -7,6 +7,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/shirou/gopsutil/v3/process"
+
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
@@ -20,19 +22,20 @@ import (
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
+	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/cli/internal/runbits"
+	"github.com/ActiveState/cli/internal/runbits/rtusage"
 	"github.com/ActiveState/cli/internal/scriptfile"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
-	"github.com/ActiveState/cli/pkg/platform/runtime/executor"
+	"github.com/ActiveState/cli/pkg/platform/runtime/executors"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
-	"github.com/shirou/gopsutil/v3/process"
 )
 
 type Exec struct {
@@ -75,8 +78,9 @@ func NewParams() *Params {
 	return &Params{}
 }
 
-func (s *Exec) Run(params *Params, args ...string) error {
+func (s *Exec) Run(params *Params, args ...string) (rerr error) {
 	var projectDir string
+	var projectNamespace string
 	var rtTarget setup.Targeter
 
 	if len(args) == 0 {
@@ -98,6 +102,7 @@ func (s *Exec) Run(params *Params, args ...string) error {
 		} else {
 			rtTarget = target.NewProjectTarget(proj, storage.CachePath(), nil, trigger)
 		}
+		projectNamespace = proj.NamespaceString()
 	} else {
 		proj := s.proj
 		if params.Path != "" {
@@ -108,22 +113,25 @@ func (s *Exec) Run(params *Params, args ...string) error {
 			}
 		}
 		if proj == nil {
-			return locale.NewInputError("exec_no_project_found", "Could not find a project.  You need to be in a project directory or specify a global default project via `state activate --default`")
+			return locale.NewInputError("err_no_project")
 		}
 		projectDir = filepath.Dir(proj.Source().Path())
+		projectNamespace = proj.NamespaceString()
 		rtTarget = target.NewProjectTarget(proj, storage.CachePath(), nil, trigger)
 	}
+
+	rtusage.PrintRuntimeUsage(s.svcModel, s.out, rtTarget.Owner())
+
+	s.out.Notice(locale.Tl("operating_message", "", projectNamespace, projectDir))
 
 	rt, err := runtime.New(rtTarget, s.analytics, s.svcModel)
 	if err != nil {
 		if !runtime.IsNeedsUpdateError(err) {
 			return locale.WrapError(err, "err_activate_runtime", "Could not initialize a runtime for this project.")
 		}
-		eh, err := runbits.DefaultRuntimeEventHandler(s.out)
-		if err != nil {
-			return locale.WrapError(err, "err_initialize_runtime_event_handler")
-		}
-		if err := rt.Update(s.auth, eh); err != nil {
+		pg := runbits.NewRuntimeProgressIndicator(s.out)
+		defer rtutils.Closer(pg.Close, &rerr)
+		if err := rt.Update(s.auth, pg); err != nil {
 			return locale.WrapError(err, "err_update_runtime", "Could not update runtime installation.")
 		}
 	}
@@ -150,9 +158,9 @@ func (s *Exec) Run(params *Params, args ...string) error {
 
 		// Report recursive execution of executor: The path for the executable should be different from the default bin dir
 		exesOnPath := exeutils.FilterExesOnPATH(args[0], RTPATH, func(exe string) bool {
-			v, err := executor.IsExecutor(exe)
+			v, err := executors.IsExecutor(exe)
 			if err != nil {
-				multilog.Error("Could not find out if executable is an executor: %s", errs.JoinMessage(err))
+				logging.Error("Could not find out if executable is an executor: %s", errs.JoinMessage(err))
 				return true // This usually means there's a permission issue, which means we likely don't own it
 			}
 			return !v
@@ -167,9 +175,9 @@ func (s *Exec) Run(params *Params, args ...string) error {
 	if os.Getenv(constants.ExecRecursionAllowEnvVarName) != "true" && filepath.Base(exeTarget) == exeTarget { // not a full path
 		exe := exeutils.FindExeInside(exeTarget, env["PATH"])
 		if exe != exeTarget { // Found the exe name on our PATH
-			isExec, err := executor.IsExecutor(exe)
+			isExec, err := executors.IsExecutor(exe)
 			if err != nil {
-				multilog.Error("Could not find out if executable is an executor: %s", errs.JoinMessage(err))
+				logging.Error("Could not find out if executable is an executor: %s", errs.JoinMessage(err))
 			} else if isExec {
 				// If the exe we resolve to is an executor then we have ourselves a recursive loop
 				return locale.NewError("err_exec_recursion", "", constants.ForumsURL, constants.ExecRecursionAllowEnvVarName)
@@ -177,7 +185,10 @@ func (s *Exec) Run(params *Params, args ...string) error {
 		}
 	}
 
-	s.subshell.SetEnv(env)
+	err = s.subshell.SetEnv(env)
+	if err != nil {
+		return locale.WrapError(err, "err_subshell_setenv")
+	}
 
 	lang := language.Bash
 	scriptArgs := fmt.Sprintf(`%q "$@"`, exeTarget)

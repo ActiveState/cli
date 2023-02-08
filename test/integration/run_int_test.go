@@ -31,7 +31,7 @@ func (suite *RunIntegrationTestSuite) createProjectFile(ts *e2e.Session, pythonV
 	fileutils.CopyFile(interruptScript, filepath.Join(ts.Dirs.Work, "interrupt.go"))
 
 	// ActiveState-CLI/Python3 is just a place-holder that is never used
-	configFileContent := strings.TrimSpace(fmt.Sprintf(`
+	configFileContent := strings.TrimPrefix(fmt.Sprintf(`
 project: https://platform.activestate.com/ActiveState-CLI/Python%d?commitID=fbc613d6-b0b1-4f84-b26e-4aa5869c4e54
 scripts:
   - name: test-interrupt
@@ -40,26 +40,22 @@ scripts:
     value: |
         go build -o ./interrupt ./interrupt.go
         ./interrupt
-    constraints:
-        os: linux,macos
+    if: ne .OS.Name "Windows"
   - name: test-interrupt
     description: A script that sleeps for a very long time.  It should be interrupted.  The first interrupt does not terminate.
     standalone: true
     value: |
         go build -o .\interrupt.exe .\interrupt.go
         .\interrupt.exe
-    constraints:
-        os: windows
+    if: eq .OS.Name "Windows"
   - name: helloWorld
     value: echo "Hello World!"
     standalone: true
-    constraints:
-      os: linux,macos
+    if: ne .OS.Name "Windows"
   - name: helloWorld
     standalone: true
     value: echo Hello World!
-    constraints:
-    os: windows
+    if: eq .OS.Name "Windows"
   - name: testMultipleLanguages
     value: |
       import sys
@@ -69,7 +65,7 @@ scripts:
     value: |
       exit 123
     standalone: true
-`, pythonVersion))
+`, pythonVersion), "\n")
 
 	ts.PrepareActiveStateYAML(configFileContent)
 }
@@ -114,6 +110,7 @@ func (suite *RunIntegrationTestSuite) TestInActivatedEnv() {
 	cp.WaitForInput(10 * time.Second)
 
 	cp.SendLine(fmt.Sprintf("%s run testMultipleLanguages", cp.Executable()))
+	cp.ExpectLongString("Operating on project ActiveState-CLI/Python3")
 	cp.Expect("3")
 
 	cp.SendLine(fmt.Sprintf("%s run test-interrupt", cp.Executable()))
@@ -231,12 +228,10 @@ func (suite *RunIntegrationTestSuite) TestRun_Unauthenticated() {
 
 	suite.createProjectFile(ts, 2)
 
-	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("activate"),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
-	)
-	cp.Expect("Activated", 40*time.Second)
-	cp.WaitForInput(120 * time.Second)
+	cp := ts.SpawnWithOpts(e2e.WithArgs("activate"))
+	cp.Expect("Skipping runtime setup")
+	cp.Expect("Activated")
+	cp.WaitForInput(10 * time.Second)
 
 	cp.SendLine(fmt.Sprintf("%s run testMultipleLanguages", cp.Executable()))
 	cp.Expect("2")
@@ -271,9 +266,9 @@ func (suite *RunIntegrationTestSuite) TestRun_BadLanguage() {
 	defer asyFile.Close()
 
 	_, err = asyFile.WriteString(strings.TrimPrefix(`
-- name: badLanguage
-  language: bax
-  value: echo "shouldn't show"
+  - name: badLanguage
+    language: bax
+    value: echo "shouldn't show"
 `, "\n"))
 	suite.Require().NoError(err, "extra config is appended")
 

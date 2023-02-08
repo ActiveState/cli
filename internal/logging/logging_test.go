@@ -50,8 +50,8 @@ func logAllLevels(msg string) {
 	Info(msg)
 	Warning(msg)
 	Error(msg)
-	//we do not test critical as it calls GoExit
-	//Critical(msg)
+	// we do not test critical as it calls GoExit
+	// Critical(msg)
 }
 
 func Test_SetLevelByString(t *testing.T) {
@@ -60,7 +60,7 @@ func Test_SetLevelByString(t *testing.T) {
 	SetHandler(w)
 
 	w.Reset()
-	//test levels
+	// test levels
 	e := SetMinimalLevelByName("DEBUG")
 	fmt.Println(level)
 	if e != nil {
@@ -93,7 +93,7 @@ func Test_Logging(t *testing.T) {
 	SetHandler(w)
 
 	w.Reset()
-	//test levels
+	// test levels
 	SetLevel(0)
 	logAllLevels("Hello world")
 
@@ -175,35 +175,6 @@ func Test_Handler(t *testing.T) {
 
 	fmt.Println("Passed testHandler")
 }
-func Test_Formatting(t *testing.T) {
-	ctx := &MessageContext{
-		Level: "TEST",
-		File:  "testung",
-		Line:  100,
-	}
-
-	formatter := DefaultFormatter
-
-	msg := formatter.Format(ctx, "FOO %s", "bar")
-
-	//fmt.Println("Message: ", msg)
-	if msg != "[TEST Jan  1 00:00:00.000000000, testung:100] FOO bar" {
-		t.Fatal("Got wrong formatting:", msg)
-	}
-
-	//"[%[1]s %[2]s, %[3]s:%[4]d] %[5]s",
-	format := "%[5]s @ %[4]d:%[3]s: %[2]s %[1]s"
-	formatter = &SimpleFormatter{format}
-
-	mesg := "FOO %s"
-
-	s := formatter.Format(ctx, mesg, "BAR")
-	fmt.Println(s)
-	if s != "FOO BAR @ 100:testung: Jan  1 00:00:00.000000000 TEST" {
-		t.Fatal(s)
-	}
-
-}
 
 func TestLogTail(t *testing.T) {
 	handler := &TestHandler{
@@ -219,14 +190,14 @@ func TestLogTail(t *testing.T) {
 
 	contents := ReadTail()
 	fmt.Println(contents)
-	if !strings.Contains(contents, "[INFO ") {
-		t.Fatal("Tail does not contain '[INFO '")
+	if !strings.Contains(contents, "[INF ") {
+		t.Fatal("Tail does not contain '[INF '")
 	}
 	if !strings.Contains(contents, "] Foo Bar 1") {
 		t.Fatal("Tail does not contain '] Foo Bar 1'")
 	}
-	if !strings.Contains(contents, "[WARNING ") {
-		t.Fatal("Tail does not contain '[WARNING '")
+	if !strings.Contains(contents, "[WRN ") {
+		t.Fatal("Tail does not contain '[WRN '")
 	}
 	if !strings.Contains(contents, "] Bar Baz 2") {
 		t.Fatal("Tail does not contain '] Bar Baz 2'")

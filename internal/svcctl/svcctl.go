@@ -44,9 +44,13 @@ type IPCommunicator interface {
 
 func NewIPCSockPathFromGlobals() *ipc.SockPath {
 	subdir := fmt.Sprintf("%s-%s", constants.CommandName, "ipc")
+	rootDir := filepath.Join(os.TempDir(), subdir)
+	if os.Getenv(constants.ServiceSockDir) != "" {
+		rootDir = os.Getenv(constants.ServiceSockDir)
+	}
 
 	return &ipc.SockPath{
-		RootDir:    filepath.Join(os.TempDir(), subdir),
+		RootDir:    rootDir,
 		AppName:    constants.CommandName,
 		AppChannel: constants.BranchName,
 	}
@@ -141,7 +145,7 @@ func startAndWait(ctx context.Context, ipComm IPCommunicator, exec, argText stri
 	defer profile.Measure("svcmanager:Start", time.Now())
 
 	if !fileutils.FileExists(exec) {
-		return locale.NewError("svcctl_file_not_found", "Service executable not found")
+		return locale.NewError("svcctl_file_not_found", constants.ForumsURL)
 	}
 
 	args := []string{"foreground", argText}

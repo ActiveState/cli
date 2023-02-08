@@ -26,13 +26,6 @@ func loadProject(t *testing.T) *project.Project {
 	contents := strings.TrimSpace(`
 project: "https://platform.activestate.com/Expander/general?branch=main&commitID=00010001-0001-0001-0001-000100010001"
 lock: branchname@0.0.0-SHA123abcd
-platforms:
-  - name: Linux
-    os: linux
-  - name: Windows
-    os: windows
-  - name: macOS
-    os: macos
 constants:
   - name: constant
     value: value
@@ -101,6 +94,13 @@ func TestExpandProject(t *testing.T) {
 	expanded, err = project.ExpandFromProject("$project.path()", prj)
 	require.NoError(t, err)
 	assert.Equal(t, "spoofed path", expanded)
+
+	if runtime.GOOS == "windows" {
+		prj.Source().SetPath(fmt.Sprintf(`c:\another\spoofed path\activestate.yaml`))
+		expanded, err = project.ExpandFromProjectBashifyPaths("$project.path()", prj)
+		require.NoError(t, err)
+		assert.Equal(t, `/c/another/spoofed\ path`, expanded)
+	}
 }
 
 func TestExpandTopLevel(t *testing.T) {
@@ -118,19 +118,6 @@ func TestExpandTopLevel(t *testing.T) {
 	expanded, err = project.ExpandFromProject("$notcovered", prj)
 	assert.NoError(t, err, "Ran without failure")
 	assert.Equal(t, "$notcovered", expanded)
-}
-
-func TestExpandProjectPlatformOs(t *testing.T) {
-	prj := loadProject(t)
-
-	expanded, err := project.ExpandFromProject("$platform.os", prj)
-	assert.NoError(t, err, "Ran without failure")
-
-	if runtime.GOOS != "darwin" {
-		assert.Equal(t, runtime.GOOS, expanded, "Expanded platform variable")
-	} else {
-		assert.Equal(t, "macos", expanded, "Expanded platform variable")
-	}
 }
 
 func TestExpandProjectScript(t *testing.T) {
@@ -175,13 +162,9 @@ func TestExpandProjectSecret(t *testing.T) {
 func TestExpandProjectAlternateSyntax(t *testing.T) {
 	prj := loadProject(t)
 
-	expanded, err := project.ExpandFromProject("${platform.os}", prj)
+	expanded, err := project.ExpandFromProject("${project.name()}", prj)
 	assert.NoError(t, err, "Ran without failure")
-	if runtime.GOOS != "darwin" {
-		assert.Equal(t, runtime.GOOS, expanded, "Expanded platform variable")
-	} else {
-		assert.Equal(t, "macos", expanded, "Expanded platform variable")
-	}
+	assert.Equal(t, "general", expanded, "Expanded project variable")
 }
 
 func TestExpandProjectUnknownCategory(t *testing.T) {
@@ -192,41 +175,12 @@ func TestExpandProjectUnknownCategory(t *testing.T) {
 	assert.Equal(t, "$unknown.unknown", expanded, "Didn't expand variable it doesnt own")
 }
 
-func TestExpandProjectUnknownName(t *testing.T) {
-	prj := loadProject(t)
-
-	expanded, err := project.ExpandFromProject("$platform.unknown", prj)
-	assert.Error(t, err, "Ran with failure")
-	assert.Equal(t, "", expanded, "Failed to expand")
-	assert.Contains(t, err.Error(), "Could not expand platform.unknown", "Handled unknown category")
-}
-
 func TestExpandProjectInfiniteRecursion(t *testing.T) {
 	prj := loadProject(t)
 
 	_, err := project.ExpandFromProject("$scripts.recursive", prj)
 	require.Error(t, err, "Ran with failure")
 	assert.Contains(t, err.Error(), "Infinite recursion trying to expand variable", "Handled unknown category")
-}
-
-// Tests all possible $platform.[name] variable expansions.
-func TestExpandProjectPlatform(t *testing.T) {
-	projectFile := &projectfile.Project{}
-	contents := strings.TrimSpace(`
-project: https://platform.activestate.com/Expander/Plarforms?commitID=00010001-0001-0001-0001-000100010001"
-platforms:
-  - name: Any
-`)
-
-	err := yaml.Unmarshal([]byte(contents), projectFile)
-	assert.Nil(t, err, "Unmarshalled YAML")
-	projectFile.Persist()
-	prj := project.Get()
-
-	for _, name := range []string{"name", "os", "version", "architecture", "libc", "compiler"} {
-		project.ExpandFromProject(fmt.Sprintf("$platform.%s", name), prj)
-		assert.NoError(t, err, "Ran without failure")
-	}
 }
 
 func TestExpandDashed(t *testing.T) {

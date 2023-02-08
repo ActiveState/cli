@@ -1,14 +1,17 @@
 package osutils
 
 import (
+	"errors"
 	"os"
 	"os/exec"
 	"regexp"
 	"strings"
 
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/rollbar"
+	"golang.org/x/sys/windows"
 )
 
 // CmdExitCode returns the exit code of a command in a platform agnostic way
@@ -25,6 +28,19 @@ func CmdExitCode(cmd *exec.Cmd) (code int) {
 		ExitStatus() int
 	}
 	return cmd.ProcessState.Sys().(Status).ExitStatus()
+}
+
+// BashifyPath takes a windows %PATH% list and turns it into a bash style PATH list.
+// e.g. C:\foo;C:\bar becomes /c/foo:/c/bar
+// Leverages MinGW/MSYS2/WSL's PATH transformation when it invokes a Unix command.
+func BashifyPathEnv(pathList string) (string, error) {
+	cmd := exec.Command("bash", "-c", `echo -n "$PATH"`)
+	cmd.Env = []string{"PATH=" + pathList}
+	bashified, err := cmd.Output()
+	if err != nil {
+		return "", errs.Wrap(err, "Unable to bashify PATH: %s", pathList)
+	}
+	return string(bashified), nil
 }
 
 var dynamicEnvVarRe = regexp.MustCompile(`(^=.+)=(.+)`)
@@ -63,4 +79,10 @@ func InheritEnv(env map[string]string) map[string]string {
 	}
 
 	return env
+}
+
+// IsAccessDeniedError is primarily used to determine if an operation failed due to insufficient
+// permissions (e.g. attempting to kill an admin process as a normal user)
+func IsAccessDeniedError(err error) bool {
+	return errors.Is(err, windows.ERROR_ACCESS_DENIED)
 }

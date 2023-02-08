@@ -19,6 +19,8 @@ type Dirs struct {
 	Work string
 	// DefaultBin is the bin directory for our default installation
 	DefaultBin string
+	// SockRoot is the directory for the state service's socket file
+	SockRoot string
 }
 
 // NewDirs creates all temporary directories
@@ -36,6 +38,7 @@ func NewDirs(base string) (*Dirs, error) {
 	bin := filepath.Join(base, "bin")
 	work := filepath.Join(base, "work")
 	defaultBin := filepath.Join(base, "cache", "bin")
+	sockRoot := filepath.Join(base, "sock")
 
 	subdirs := []string{config, cache, bin, work, defaultBin}
 	for _, subdir := range subdirs {
@@ -51,6 +54,7 @@ func NewDirs(base string) (*Dirs, error) {
 		Bin:        bin,
 		Work:       work,
 		DefaultBin: defaultBin,
+		SockRoot:   sockRoot,
 	}
 
 	return &dirs, nil

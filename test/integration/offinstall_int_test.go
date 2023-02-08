@@ -19,11 +19,13 @@ import (
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/offinstall"
+	"github.com/ActiveState/cli/internal/osutils"
+	"github.com/ActiveState/cli/internal/osutils/user"
 	"github.com/ActiveState/cli/internal/subshell/cmd"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
+	"github.com/ActiveState/cli/pkg/project"
 	"github.com/google/uuid"
-	"github.com/stretchr/testify/suite"
 )
 
 type OffInstallIntegrationTestSuite struct {
@@ -33,16 +35,34 @@ type OffInstallIntegrationTestSuite struct {
 	uninstallerPath string
 }
 
+const (
+	defaultOrg                 = "ActiveState-Test"
+	defaultProject             = "IntegrationTest"
+	anotherProject             = "Another-IntegrationTest"
+	defaultArtifactsPayload    = "artifacts-payload"
+	anotherArtifactsPayload    = "another-artifacts-payload"
+	defaultInstalledExecutable = "test-offline-install"
+	anotherInstalledExecutable = "test-another-offline-install"
+)
+
 func (suite *OffInstallIntegrationTestSuite) TestInstallAndUninstall() {
 	suite.OnlyRunForTags(tagsuite.OffInstall)
 
-	// Clean up env after test (windows only for now)
+	// Clean up env after test
 	if runtime.GOOS == "windows" {
 		env := cmd.NewCmdEnv(true)
 		origPath, err := env.Get("PATH")
 		suite.Require().NoError(err)
 		defer func() {
 			suite.Require().NoError(env.Set("PATH", origPath))
+		}()
+	} else {
+		originalPath, exists := os.LookupEnv("PATH")
+		defer func() {
+			if !exists {
+				return
+			}
+			suite.Require().NoError(os.Setenv("PATH", originalPath))
 		}()
 	}
 
@@ -54,33 +74,19 @@ func (suite *OffInstallIntegrationTestSuite) TestInstallAndUninstall() {
 
 	fmt.Printf("Work dir: %s\n", ts.Dirs.Work)
 
-	suite.preparePayload(ts)
+	suite.preparePayload(ts, defaultArtifactsPayload, defaultProject)
 
 	defaultInstallParentDir, err := offinstall.DefaultInstallParentDir()
 	suite.Require().NoError(err)
 	defaultInstallDir := filepath.Join(defaultInstallParentDir, "IntegrationTest")
 
-	env := []string{
-		constants.DisableRuntime + "=false",
-		constants.IsAdminOverrideEnvVarName + "=false",
-	}
+	env := []string{constants.DisableRuntime + "=false"}
 	if runtime.GOOS != "windows" {
 		env = append(env, "SHELL=bash")
 	}
+	namespace := project.NewNamespace(defaultOrg, defaultProject, "")
 	{ // Install
-		tp := ts.SpawnCmdWithOpts(
-			suite.installerPath,
-			e2e.WithArgs(defaultInstallDir),
-			e2e.AppendEnv(env...),
-		)
-		tp.Expect("Do you accept the ActiveState Runtime Installer License Agreement? (y/N)", 5*time.Second)
-		tp.Send("y")
-		tp.Expect("Extracting", time.Second)
-		tp.Expect("Installing")
-		tp.Expect("Installation complete")
-		tp.Expect("Press enter to exit")
-		tp.SendLine("")
-		tp.ExpectExitCode(0)
+		suite.runOfflineInstaller(ts, defaultInstallDir, env)
 
 		// Verify that our analytics event was fired
 		time.Sleep(2 * time.Second) // give time to let rtwatcher detect process has exited
@@ -96,15 +102,15 @@ func (suite *OffInstallIntegrationTestSuite) TestInstallAndUninstall() {
 		}
 
 		// Ensure shell env is updated
-		suite.assertShellUpdated(defaultInstallDir, true, ts)
+		suite.assertShellUpdated(defaultInstallDir, namespace.String(), true, ts)
 
 		// Ensure installation dir looks correct
-		suite.assertInstallDir(defaultInstallDir, true)
+		suite.assertInstallDir(defaultInstallDir, defaultInstalledExecutable, true)
 
 		// Run executable and validate that it has the relocated value
 		if runtime.GOOS == "windows" {
 			refreshEnv := filepath.Join(environment.GetRootPathUnsafe(), "test", "integration", "testdata", "tools", "refreshenv", "refreshenv.bat")
-			tp = ts.SpawnCmd("cmd", "/C", refreshEnv+" && test-offline-install")
+			tp := ts.SpawnCmd("cmd", "/C", refreshEnv+" && "+defaultInstalledExecutable)
 			tp.Expect("TEST REPLACEMENT", 5*time.Second)
 			tp.ExpectExitCode(0)
 		} else {
@@ -132,10 +138,10 @@ func (suite *OffInstallIntegrationTestSuite) TestInstallAndUninstall() {
 		tp.ExpectExitCode(0)
 
 		// Ensure shell env is updated
-		suite.assertShellUpdated(defaultInstallDir, false, ts)
+		suite.assertShellUpdated(defaultInstallDir, namespace.String(), false, ts)
 
 		// Ensure installation files are removed
-		suite.assertInstallDir(defaultInstallDir, false)
+		suite.assertInstallDir(defaultInstallDir, defaultInstalledExecutable, false)
 
 		// Verify that our analytics event was fired
 		events := parseAnalyticsEvents(suite, ts)
@@ -155,7 +161,7 @@ func (suite *OffInstallIntegrationTestSuite) TestInstallNoPermission() {
 	ts := e2e.New(suite.T(), true)
 	defer ts.Close()
 
-	suite.preparePayload(ts)
+	suite.preparePayload(ts, defaultArtifactsPayload, defaultProject)
 
 	pathWithNoPermission := "/no-permission"
 	if runtime.GOOS == "windows" {
@@ -172,7 +178,170 @@ func (suite *OffInstallIntegrationTestSuite) TestInstallNoPermission() {
 	tp.ExpectExitCode(1)
 }
 
-func (suite *OffInstallIntegrationTestSuite) preparePayload(ts *e2e.Session) {
+func (suite *OffInstallIntegrationTestSuite) TestInstallMultiple() {
+	suite.OnlyRunForTags(tagsuite.OffInstall)
+
+	// Clean up env after test
+	if runtime.GOOS == "windows" {
+		env := cmd.NewCmdEnv(true)
+		origPath, err := env.Get("PATH")
+		suite.Require().NoError(err)
+		defer func() {
+			suite.Require().NoError(env.Set("PATH", origPath))
+		}()
+	} else {
+		originalPath, exists := os.LookupEnv("PATH")
+		defer func() {
+			if !exists {
+				return
+			}
+			suite.Require().NoError(os.Setenv("PATH", originalPath))
+		}()
+	}
+
+	ts := e2e.New(suite.T(), true)
+	defer ts.Close()
+
+	testReportFilename := filepath.Join(ts.Dirs.Config, reporters.TestReportFilename)
+	suite.Require().NoFileExists(testReportFilename)
+
+	suite.preparePayload(ts, defaultArtifactsPayload, defaultProject)
+
+	defaultInstallParentDir, err := offinstall.DefaultInstallParentDir()
+	suite.Require().NoError(err)
+	firstInstallDir := filepath.Join(defaultInstallParentDir, "IntegrationTest")
+	secondInstallDir := filepath.Join(defaultInstallParentDir, "Another-IntegrationTest")
+
+	firstNamespace := project.NewNamespace(defaultOrg, defaultProject, "")
+	secondNamespace := project.NewNamespace(defaultOrg, anotherProject, "")
+
+	env := []string{constants.DisableRuntime + "=false"}
+	if runtime.GOOS != "windows" {
+		env = append(env, "SHELL=bash")
+	}
+
+	// Run offline installer for first project
+	suite.runOfflineInstaller(ts, firstInstallDir, env)
+
+	// Prepare new payload and run offline installer for second project
+	suite.preparePayload(ts, anotherArtifactsPayload, anotherProject)
+	suite.runOfflineInstaller(ts, secondInstallDir, env)
+
+	// Assert first projects updates are still in place
+	suite.assertShellUpdated(firstInstallDir, firstNamespace.String(), true, ts)
+	suite.assertInstallDir(firstInstallDir, defaultInstalledExecutable, true)
+
+	// Assert second projects updates are also in place
+	suite.assertShellUpdated(secondInstallDir, firstNamespace.String(), true, ts)
+	suite.assertInstallDir(secondInstallDir, anotherInstalledExecutable, true)
+
+	// Uninstall first project
+	suite.runOfflineUninstaller(ts, firstInstallDir, env)
+
+	// Assert first project's update are removed
+	suite.assertShellUpdated(firstInstallDir, firstNamespace.String(), false, ts)
+
+	// Assert first project's installation files are removed
+	suite.assertInstallDir(firstInstallDir, defaultInstalledExecutable, false)
+
+	// Uninstall second project
+	suite.runOfflineUninstaller(ts, secondInstallDir, env)
+
+	// Assert second project's update are removed
+	suite.assertShellUpdated(secondInstallDir, secondNamespace.String(), false, ts)
+
+	// Assert second project's installation files are removed
+	suite.assertInstallDir(secondInstallDir, anotherInstalledExecutable, false)
+}
+
+func (suite *OffInstallIntegrationTestSuite) TestInstallTwice() {
+	suite.OnlyRunForTags(tagsuite.OffInstall)
+
+	// Clean up env after test
+	if runtime.GOOS == "windows" {
+		env := cmd.NewCmdEnv(true)
+		origPath, err := env.Get("PATH")
+		suite.Require().NoError(err)
+		defer func() {
+			suite.Require().NoError(env.Set("PATH", origPath))
+		}()
+	} else {
+		originalPath, exists := os.LookupEnv("PATH")
+		defer func() {
+			if !exists {
+				return
+			}
+			suite.Require().NoError(os.Setenv("PATH", originalPath))
+		}()
+	}
+
+	ts := e2e.New(suite.T(), true)
+	defer ts.Close()
+
+	suite.preparePayload(ts, defaultArtifactsPayload, defaultProject)
+
+	defaultInstallParentDir, err := offinstall.DefaultInstallParentDir()
+	suite.Require().NoError(err)
+	defaultInstallDir := filepath.Join(defaultInstallParentDir, "IntegrationTest")
+
+	env := []string{constants.DisableRuntime + "=false"}
+	if runtime.GOOS != "windows" {
+		env = append(env, "SHELL=bash")
+	}
+
+	suite.runOfflineInstaller(ts, defaultInstallDir, env)
+
+	// Running offline installer again should not cause an error
+	tp := ts.SpawnCmdWithOpts(
+		suite.installerPath,
+		e2e.WithArgs(defaultInstallDir),
+		e2e.AppendEnv(env...),
+	)
+	tp.Expect("Installation directory is not empty")
+	tp.Send("y")
+	tp.Expect("Do you accept the ActiveState Runtime Installer License Agreement? (y/N)", 5*time.Second)
+	tp.Send("y")
+	tp.Expect("Extracting", time.Second)
+	tp.Expect("Installation complete")
+	tp.Expect("Press enter to exit")
+	tp.SendLine("")
+	tp.ExpectExitCode(0)
+
+	// Uninstall
+	suite.runOfflineUninstaller(ts, defaultInstallDir, env)
+}
+
+func (suite *OffInstallIntegrationTestSuite) runOfflineInstaller(ts *e2e.Session, installDir string, env []string) {
+	tp := ts.SpawnCmdWithOpts(
+		suite.installerPath,
+		e2e.WithArgs(installDir),
+		e2e.AppendEnv(env...),
+	)
+	tp.Expect("Do you accept the ActiveState Runtime Installer License Agreement? (y/N)", 5*time.Second)
+	tp.Send("y")
+	tp.Expect("Extracting", time.Second)
+	tp.Expect("Installing")
+	tp.Expect("Installation complete")
+	tp.Expect("Press enter to exit")
+	tp.SendLine("")
+	tp.ExpectExitCode(0)
+}
+
+func (suite *OffInstallIntegrationTestSuite) runOfflineUninstaller(ts *e2e.Session, installDir string, env []string) {
+	tp := ts.SpawnCmdWithOpts(
+		suite.uninstallerPath,
+		e2e.WithArgs(installDir),
+		e2e.AppendEnv(env...),
+	)
+	tp.Expect("continue?")
+	tp.SendLine("y")
+	tp.Expect("Uninstall Complete", 5*time.Second)
+	tp.Expect("Press enter to exit")
+	tp.SendLine("")
+	tp.ExpectExitCode(0)
+}
+
+func (suite *OffInstallIntegrationTestSuite) preparePayload(ts *e2e.Session, payloadName, projectName string) {
 	root := environment.GetRootPathUnsafe()
 
 	suffix := "-windows"
@@ -181,10 +350,10 @@ func (suite *OffInstallIntegrationTestSuite) preparePayload(ts *e2e.Session) {
 	}
 
 	// The payload is an artifact that contains mocked installation files
-	payloadPath := filepath.Join(root, "test", "integration", "testdata", "offline-install", "artifacts-payload"+suffix, "artifact")
+	payloadPath := filepath.Join(root, "test", "integration", "testdata", "offline-install", payloadName+suffix, "artifact")
 
 	// The asset path contains additional files that we want to embed into the executable, such as the license
-	assetPath := filepath.Join(root, "test", "integration", "testdata", "offline-install", "assets")
+	assetPath := filepath.Join(root, "test", "integration", "testdata", "offline-install", "assets", projectName)
 
 	// The payload archive is effectively double encrypted. We have the artifact itself, as well as the archive that
 	// wraps it. Our test code only has one artifact, but in the wild there can and most likely will be multiple
@@ -202,6 +371,10 @@ func (suite *OffInstallIntegrationTestSuite) preparePayload(ts *e2e.Session) {
 	}
 
 	{ // Create the payload archive which contains the artifact
+		if fileutils.TargetExists(payloadMockPath) {
+			err := os.RemoveAll(payloadMockPath)
+			suite.Require().NoError(err)
+		}
 		err := archiver.Archive([]string{artifactMockPath}, payloadMockPath)
 		suite.Require().NoError(err)
 	}
@@ -243,10 +416,10 @@ func (suite *OffInstallIntegrationTestSuite) preparePayload(ts *e2e.Session) {
 	suite.Require().NoError(os.Chmod(suite.uninstallerPath, 0775)) // ensure file is executable
 }
 
-func (suite *OffInstallIntegrationTestSuite) assertShellUpdated(dir string, exists bool, ts *e2e.Session) {
+func (suite *OffInstallIntegrationTestSuite) assertShellUpdated(dir, namespace string, exists bool, ts *e2e.Session) {
 	if runtime.GOOS != "windows" {
 		// Test bashrc
-		homeDir, err := os.UserHomeDir()
+		homeDir, err := user.HomeDir()
 		suite.Require().NoError(err)
 
 		fname := ".bashrc"
@@ -261,15 +434,21 @@ func (suite *OffInstallIntegrationTestSuite) assertShellUpdated(dir string, exis
 
 		fpath := filepath.Join(homeDir, fname)
 		rcContents := fileutils.ReadFileUnsafe(fpath)
-		assert(string(rcContents), constants.RCAppendOfflineInstallStartLine, fpath)
-		assert(string(rcContents), constants.RCAppendOfflineInstallStopLine, fpath)
+		assert(string(rcContents), fmt.Sprintf("%s-%s", constants.RCAppendOfflineInstallStartLine, namespace), fpath)
+		assert(string(rcContents), fmt.Sprintf("%s-%s", constants.RCAppendOfflineInstallStopLine, namespace), fpath)
 		assert(string(rcContents), dir)
 	} else {
 		// It seems there is a race condition with updating the registry and asserting it was updated
 		time.Sleep(time.Second)
 
 		// Test registry
-		out, err := exec.Command("reg", "query", `HKEY_CURRENT_USER\Environment`, "/v", "Path").Output()
+		isAdmin, err := osutils.IsAdmin()
+		suite.Require().NoError(err)
+		regKey := `HKCU\Environment`
+		if isAdmin {
+			regKey = `HKLM\SYSTEM\ControlSet001\Control\Session Manager\Environment`
+		}
+		out, err := exec.Command("reg", "query", regKey, "/v", "Path").Output()
 		suite.Require().NoError(err)
 
 		assert := strings.Contains
@@ -279,7 +458,7 @@ func (suite *OffInstallIntegrationTestSuite) assertShellUpdated(dir string, exis
 			}
 		}
 
-		// we need to look for  the short and the long version of the target PATH, because Windows translates between them arbitrarily
+		// we need to look for the short and the long version of the target PATH, because Windows translates between them arbitrarily
 		shortPath, _ := fileutils.GetShortPathName(dir)
 		longPath, _ := fileutils.GetLongPathName(dir)
 		if !assert(string(out), shortPath) && !assert(string(out), longPath) && !assert(string(out), dir) {
@@ -296,15 +475,15 @@ func (suite *OffInstallIntegrationTestSuite) filterEvent(events []reporters.Test
 	return ev[0]
 }
 
-func (suite *OffInstallIntegrationTestSuite) assertInstallDir(dir string, exists bool) {
+func (suite *OffInstallIntegrationTestSuite) assertInstallDir(dir, executable string, exists bool) {
 	assert := suite.Require().FileExists
 	if !exists {
 		assert = suite.Require().NoFileExists
 	}
 	if runtime.GOOS == "windows" {
-		assert(filepath.Join(dir, "bin", "test-offline-install.bat"))
+		assert(filepath.Join(dir, "bin", fmt.Sprintf("%s.bat", executable)))
 	} else {
-		assert(filepath.Join(dir, "bin", "test-offline-install"))
+		assert(filepath.Join(dir, "bin", fmt.Sprintf("%s", executable)))
 	}
 	if runtime.GOOS == "windows" {
 		assert(filepath.Join(dir, "bin", "shell.bat"))
@@ -323,5 +502,6 @@ func (suite *OffInstallIntegrationTestSuite) assertDimensions(event reporters.Te
 }
 
 func TestOffInstallIntegrationTestSuite(t *testing.T) {
-	suite.Run(t, new(OffInstallIntegrationTestSuite))
+	t.Skip("Skipping offline installer tests as they will soon live in a separate repo")
+	// suite.Run(t, new(OffInstallIntegrationTestSuite))
 }

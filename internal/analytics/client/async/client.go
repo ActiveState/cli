@@ -93,6 +93,10 @@ func (a *Client) Wait() {
 }
 
 func (a *Client) sendEvent(category, action, label string, dims ...*dimensions.Values) error {
+	if a.svcModel == nil { // this is only true on CI
+		return nil
+	}
+
 	if a.closed {
 		logging.Debug("Client is closed, not sending event")
 		return nil
@@ -101,13 +105,6 @@ func (a *Client) sendEvent(category, action, label string, dims ...*dimensions.V
 	userID := ""
 	if a.auth != nil && a.auth.UserID() != nil {
 		userID = string(*a.auth.UserID())
-	}
-
-	if a.svcModel == nil {
-		if condition.InUnitTest() {
-			return nil
-		}
-		return errs.New("Could not send analytics event, not connected to state-svc yet")
 	}
 
 	dim := dimensions.NewDefaultDimensions(a.projectNameSpace, a.sessionToken, a.updateTag)
@@ -124,7 +121,7 @@ func (a *Client) sendEvent(category, action, label string, dims ...*dimensions.V
 
 	a.eventWaitGroup.Add(1)
 	go func() {
-		defer handlePanics(recover(), debug.Stack())
+		defer func() { handlePanics(recover(), debug.Stack()) }()
 		defer a.eventWaitGroup.Done()
 
 		if err := a.svcModel.AnalyticsEvent(context.Background(), category, action, label, string(dimMarshalled)); err != nil {

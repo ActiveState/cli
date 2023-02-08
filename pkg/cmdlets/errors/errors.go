@@ -6,6 +6,10 @@ import (
 	"os"
 	"strings"
 
+	"github.com/ActiveState/cli/internal/analytics"
+	anaConst "github.com/ActiveState/cli/internal/analytics/constants"
+	"github.com/ActiveState/cli/internal/analytics/dimensions"
+	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
@@ -14,6 +18,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/rtutils/p"
 )
 
 var PanicOnMissingLocale = true
@@ -39,12 +44,13 @@ func (o *OutputError) MarshalOutput(f output.Format) interface{} {
 		outLines = append(outLines, output.Heading(locale.Tl("err_what_happened", "[ERROR]Something Went Wrong[/RESET]")).String())
 	}
 
-	errs := locale.UnwrapError(o.error)
-	if len(errs) == 0 {
+	rerrs := locale.UnwrapError(o.error)
+	if len(rerrs) == 0 {
 		// It's possible the error came from cobra or something else low level that doesn't use localization
-		errs = []error{o.error}
+		logging.Warning("Error does not have localization: %s", errs.JoinMessage(o.error))
+		rerrs = []error{o.error}
 	}
-	for _, errv := range errs {
+	for _, errv := range rerrs {
 		outLines = append(outLines, fmt.Sprintf(" [NOTICE][ERROR]x[/RESET] %s", trimError(locale.ErrorMessage(errv))))
 	}
 
@@ -81,13 +87,6 @@ func Unwrap(err error) (int, error) {
 		return 0, nil
 	}
 
-	var ee errs.Errorable
-	stack := "not provided"
-	isErrs := errors.As(err, &ee)
-	if isErrs {
-		stack = ee.Stack().String()
-	}
-
 	_, hasMarshaller := err.(output.Marshaller)
 
 	// unwrap exit code before we remove un-localized wrapped errors from err variable
@@ -96,13 +95,6 @@ func Unwrap(err error) (int, error) {
 	if errs.IsSilent(err) {
 		logging.Debug("Suppressing silent failure: %v", err.Error())
 		return code, nil
-	}
-
-	// Log error if this isn't a user input error
-	if !locale.IsInputError(err) {
-		multilog.Critical("Returning error:\n%s\nCreated at:\n%s", errs.Join(err, "\n").Error(), stack)
-	} else {
-		logging.Debug("Returning input error:\n%s\nCreated at:\n%s", errs.Join(err, "\n").Error(), stack)
 	}
 
 	var llerr *config.LocalizedError // workaround type used to avoid circular import in config pkg
@@ -117,6 +109,50 @@ func Unwrap(err error) (int, error) {
 		}
 	}
 
+	if hasMarshaller {
+		return code, err
+	}
+
+	return code, &OutputError{err}
+}
+
+func ReportError(err error, cmd *captain.Command, an analytics.Dispatcher) {
+	var ee errs.Errorable
+	stack := "not provided"
+	isErrs := errors.As(err, &ee)
+	if isErrs {
+		stack = ee.Stack().String()
+	}
+
+	_, hasMarshaller := err.(output.Marshaller)
+
+	// Log error if this isn't a user input error
+	if !locale.IsInputError(err) {
+		multilog.Critical("Returning error:\n%s\nCreated at:\n%s", errs.Join(err, "\n").Error(), stack)
+	} else {
+		cmdName := cmd.Name()
+		childCmd, err := cmd.Find(os.Args[1:])
+		if err != nil {
+			logging.Error("Could not find child command: %v", err)
+		}
+
+		var flagNames []string
+		for _, flag := range cmd.ActiveFlags() {
+			flagNames = append(flagNames, fmt.Sprintf("--%s", flag.Name))
+		}
+
+		trigger := []string{cmdName}
+		if childCmd != nil {
+			trigger = append(trigger, childCmd.UseFull())
+		}
+		trigger = append(trigger, flagNames...)
+
+		logging.Debug("Reporting input error:\n%s\nCreated at:\n%s", errs.Join(err, "\n").Error(), stack)
+		an.Event(anaConst.CatDebug, anaConst.ActInputError, &dimensions.Values{
+			Trigger: p.StrP(strings.Join(trigger, " ")),
+		})
+	}
+
 	if !locale.HasError(err) && isErrs && !hasMarshaller {
 		multilog.Error("MUST ADDRESS: Error does not have localization: %s", errs.Join(err, "\n").Error())
 
@@ -125,10 +161,4 @@ func Unwrap(err error) (int, error) {
 			panic(fmt.Sprintf("Errors must be localized! Please localize: %s, called at: %s\n", errs.JoinMessage(err), stack))
 		}
 	}
-
-	if hasMarshaller {
-		return code, err
-	}
-
-	return code, &OutputError{err}
 }

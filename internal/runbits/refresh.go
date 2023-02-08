@@ -2,9 +2,9 @@ package runbits
 
 import (
 	"github.com/ActiveState/cli/internal/analytics"
-	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
@@ -14,11 +14,8 @@ import (
 )
 
 // RefreshRuntime should be called after runtime mutations.
-func RefreshRuntime(auth *authentication.Auth, out output.Outputer, an analytics.Dispatcher, proj *project.Project, cachePath string, commitID strfmt.UUID, changed bool, trigger target.Trigger, svcm *model.SvcModel) error {
-	rtMessages, err := DefaultRuntimeEventHandler(out)
-	if err != nil {
-		return locale.WrapError(err, "err_initialize_runtime_event_handler")
-	}
+func RefreshRuntime(auth *authentication.Auth, out output.Outputer, an analytics.Dispatcher, proj *project.Project,
+	cachePath string, commitID strfmt.UUID, changed bool, trigger target.Trigger, svcm *model.SvcModel) (rerr error) {
 	target := target.NewProjectTarget(proj, cachePath, &commitID, trigger)
 	isCached := true
 	rt, err := runtime.New(target, an, svcm)
@@ -36,14 +33,17 @@ func RefreshRuntime(auth *authentication.Auth, out output.Outputer, an analytics
 	}
 
 	if !isCached {
-		if !fileutils.DirExists(target.Dir()) {
+		if !rt.HasCache() {
 			out.Notice(output.Heading(locale.Tl("install_runtime", "Installing Runtime")))
 			out.Notice(locale.Tl("install_runtime_info", "Installing your runtime and dependencies."))
 		} else {
 			out.Notice(output.Heading(locale.Tl("update_runtime", "Updating Runtime")))
-			out.Notice(locale.Tl("update_runtime_info", "Changes to your runtime may require some dependencies to be rebuilt."))
+			out.Notice(locale.Tl("update_runtime_info", "Changes to your runtime may require some dependencies to be rebuilt.\n"))
 		}
-		err := rt.Update(auth, rtMessages)
+		pg := NewRuntimeProgressIndicator(out)
+		defer rtutils.Closer(pg.Close, &rerr)
+
+		err := rt.Update(auth, pg)
 		if err != nil {
 			return locale.WrapError(err, "err_packages_update_runtime_install", "Could not install dependencies.")
 		}

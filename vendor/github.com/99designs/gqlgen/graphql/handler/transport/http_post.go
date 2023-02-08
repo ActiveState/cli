@@ -36,6 +36,9 @@ func (h POST) Do(w http.ResponseWriter, r *http.Request, exec graphql.GraphExecu
 		writeJsonErrorf(w, "json body could not be decoded: "+err.Error())
 		return
 	}
+
+	params.Headers = r.Header
+
 	params.ReadTime = graphql.TraceTiming{
 		Start: start,
 		End:   graphql.Now(),
@@ -48,7 +51,6 @@ func (h POST) Do(w http.ResponseWriter, r *http.Request, exec graphql.GraphExecu
 		writeJson(w, resp)
 		return
 	}
-	ctx := graphql.WithOperationContext(r.Context(), rc)
-	responses, ctx := exec.DispatchOperation(ctx, rc)
+	responses, ctx := exec.DispatchOperation(r.Context(), rc)
 	writeJson(w, responses(ctx))
 }

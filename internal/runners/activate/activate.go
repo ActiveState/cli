@@ -23,6 +23,7 @@ import (
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runbits/activation"
 	"github.com/ActiveState/cli/internal/runbits/findproject"
+	"github.com/ActiveState/cli/internal/runbits/rtusage"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
@@ -108,6 +109,8 @@ func (r *Activate) run(params *ActivateParams) error {
 		}
 	}
 
+	rtusage.PrintRuntimeUsage(r.svcModel, r.out, proj.Owner())
+
 	alreadyActivated := process.IsActivated(r.config)
 	if alreadyActivated {
 		if !params.Default {
@@ -133,7 +136,7 @@ func (r *Activate) run(params *ActivateParams) error {
 		}
 
 		if params.Namespace == nil || params.Namespace.IsValid() {
-			return locale.NewInputError("err_conflicting_default_while_activated", "Cannot set [NOTICE]{{.V0}}[/RESET] as the global default project while in an activated state.", params.Namespace.String())
+			return locale.NewInputError("err_conflicting_default_while_activated", "Cannot make [NOTICE]{{.V0}}[/RESET] always available for use while in an activated state.", params.Namespace.String())
 		}
 	}
 
@@ -164,12 +167,12 @@ func (r *Activate) run(params *ActivateParams) error {
 		if setDefault {
 			r.out.Notice(locale.Tl(
 				"activate_default_explain_msg",
-				"This project will be set as the default, meaning you can use it from anywhere on your system without activating.",
+				"This project will always be available for use, meaning you can use it from anywhere on your system without activating.",
 			))
 		} else {
 			r.out.Notice(locale.Tl(
 				"activate_default_optin_msg",
-				"To use this project without activating it in the future, make it your default by running your activate command with the `[ACTIONABLE]--default[/RESET]` flag.",
+				"To make this project always available for use without activating it in the future, run your activate command with the `[ACTIONABLE]--default[/RESET]` flag.",
 			))
 		}
 	}
@@ -184,7 +187,7 @@ func (r *Activate) run(params *ActivateParams) error {
 	if setDefault {
 		err := globaldefault.SetupDefaultActivation(r.subshell, r.config, rt, proj)
 		if err != nil {
-			return locale.WrapError(err, "err_activate_default", "Could not configure your project as the default.")
+			return locale.WrapError(err, "err_activate_default", "Could not make your project always available for use.")
 		}
 
 		warningForAdministrator(r.out)
@@ -261,7 +264,7 @@ func warningForAdministrator(out output.Outputer) {
 		}
 		out.Notice(locale.Tl(
 			"default_admin_activation_warning",
-			"[NOTICE]The default activation is added to the environment of user {{.V0}}.  The project may be inaccessible when run with Administrator privileges or authenticated as a different user.[/RESET]",
+			"[NOTICE]Your project has been added to the environment of user {{.V0}}.  The project may be inaccessible when run with Administrator privileges or authenticated as a different user.[/RESET]",
 			u.Username,
 		))
 	}
@@ -273,5 +276,7 @@ func parentNamespace() (string, error) {
 	if err != nil {
 		return "", locale.WrapError(err, "err_activate_projectpath", "Could not get project from path {{.V0}}", path)
 	}
-	return proj.NamespaceString(), nil
+	ns := proj.NamespaceString()
+	logging.Debug("Parent namespace: %s", ns)
+	return ns, nil
 }

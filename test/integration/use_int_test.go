@@ -1,6 +1,7 @@
 package integration
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -26,10 +27,8 @@ func (suite *UseIntegrationTestSuite) TestUse() {
 	defer ts.Close()
 
 	// Checkout.
-	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("checkout", "ActiveState-CLI/Python3"),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
-	)
+	cp := ts.SpawnWithOpts(e2e.WithArgs("checkout", "ActiveState-CLI/Python3"))
+	cp.Expect("Skipping runtime setup")
 	cp.Expect("Checked out project")
 	cp.ExpectExitCode(0)
 
@@ -43,22 +42,13 @@ func (suite *UseIntegrationTestSuite) TestUse() {
 
 	// Verify runtime works.
 	pythonExe := filepath.Join(ts.Dirs.DefaultBin, "python3"+osutils.ExeExt)
-	if runtime.GOOS == "windows" {
-		pythonExe = pythonExe + ".bat"
-	}
-	cp = ts.SpawnCmdWithOpts(
-		pythonExe,
-		e2e.WithArgs("--version"),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
-	)
+	cp = ts.SpawnCmd(pythonExe, "--version")
 	cp.Expect("Python 3")
 	cp.ExpectExitCode(0)
 
 	// Checkout another project.
-	cp = ts.SpawnWithOpts(
-		e2e.WithArgs("checkout", "ActiveState-CLI/Python-3.9"),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
-	)
+	cp = ts.SpawnWithOpts(e2e.WithArgs("checkout", "ActiveState-CLI/Python-3.9"))
+	cp.Expect("Skipping runtime setup")
 	cp.Expect("Checked out project")
 	cp.ExpectExitCode(0)
 
@@ -71,11 +61,7 @@ func (suite *UseIntegrationTestSuite) TestUse() {
 	cp.ExpectExitCode(0)
 
 	// Verify the new runtime works.
-	cp = ts.SpawnCmdWithOpts(
-		pythonExe,
-		e2e.WithArgs("--version"),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
-	)
+	cp = ts.SpawnCmdWithOpts(pythonExe, e2e.WithArgs("--version"))
 	cp.Expect("Python 3")
 	cp.ExpectExitCode(0)
 
@@ -88,19 +74,12 @@ func (suite *UseIntegrationTestSuite) TestUse() {
 	cp.ExpectExitCode(0)
 
 	// Verify the first runtime is set up correctly and usable.
-	cp = ts.SpawnCmdWithOpts(
-		pythonExe,
-		e2e.WithArgs("--version"),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
-	)
+	cp = ts.SpawnCmdWithOpts(pythonExe, e2e.WithArgs("--version"))
 	cp.Expect("Python 3")
 	cp.ExpectExitCode(0)
 
 	// Test failure switching to project name that was not checked out.
-	cp = ts.SpawnWithOpts(
-		e2e.WithArgs("use", "NotCheckedOut"),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
-	)
+	cp = ts.SpawnWithOpts(e2e.WithArgs("use", "NotCheckedOut"))
 	cp.Expect("Cannot find the NotCheckedOut project.")
 	cp.ExpectExitCode(1)
 }
@@ -113,10 +92,8 @@ func (suite *UseIntegrationTestSuite) TestUseCwd() {
 
 	pythonDir := filepath.Join(ts.Dirs.Work, "MyPython3")
 
-	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("checkout", "ActiveState-CLI/Python3", pythonDir),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
-	)
+	cp := ts.SpawnWithOpts(e2e.WithArgs("checkout", "ActiveState-CLI/Python3", pythonDir))
+	cp.Expect("Skipping runtime setup")
 	cp.Expect("Checked out project")
 	cp.ExpectExitCode(0)
 
@@ -144,10 +121,8 @@ func (suite *UseIntegrationTestSuite) TestReset() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("checkout", "ActiveState-CLI/Python3"),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
-	)
+	cp := ts.SpawnWithOpts(e2e.WithArgs("checkout", "ActiveState-CLI/Python3"))
+	cp.Expect("Skipping runtime setup")
 	cp.Expect("Checked out project")
 	cp.ExpectExitCode(0)
 
@@ -159,17 +134,14 @@ func (suite *UseIntegrationTestSuite) TestReset() {
 	cp.ExpectExitCode(0)
 
 	python3Exe := filepath.Join(ts.Dirs.DefaultBin, "python3"+osutils.ExeExt)
-	if runtime.GOOS == "windows" {
-		python3Exe = python3Exe + ".bat"
-	}
 	suite.True(fileutils.TargetExists(python3Exe), python3Exe+" not found")
 
 	cfg, err := config.New()
 	suite.NoError(err)
 	rcfile, err := subshell.New(cfg).RcFile()
-	if runtime.GOOS != "windows" {
+	if runtime.GOOS != "windows" && fileutils.FileExists(rcfile) {
 		suite.NoError(err)
-		suite.Contains(string(fileutils.ReadFileUnsafe(rcfile)), ts.Dirs.DefaultBin, "PATH does not have default project in it")
+		suite.Contains(string(fileutils.ReadFileUnsafe(rcfile)), ts.Dirs.DefaultBin, "PATH does not have your project in it")
 	}
 
 	cp = ts.SpawnWithOpts(e2e.WithArgs("use", "reset"))
@@ -179,18 +151,18 @@ func (suite *UseIntegrationTestSuite) TestReset() {
 	cp.ExpectExitCode(1)
 
 	cp = ts.SpawnWithOpts(e2e.WithArgs("use", "reset", "--non-interactive"))
-	cp.Expect("Reset default project runtime")
+	cp.Expect("Stopped using your project runtime")
 	cp.Expect("Note you may need to")
 	cp.ExpectExitCode(0)
 
 	suite.False(fileutils.TargetExists(python3Exe), python3Exe+" still exists")
 
-	cp = ts.SpawnWithOpts(e2e.WithArgs("use", "reset", "-n"))
-	cp.Expect("No global default project to reset")
+	cp = ts.SpawnWithOpts(e2e.WithArgs("use", "reset"))
+	cp.Expect("No project to stop using")
 	cp.ExpectExitCode(0)
 
-	if runtime.GOOS != "windows" {
-		suite.NotContains(string(fileutils.ReadFileUnsafe(rcfile)), ts.Dirs.DefaultBin, "PATH still has default project in it")
+	if runtime.GOOS != "windows" && fileutils.FileExists(rcfile) {
+		suite.NotContains(string(fileutils.ReadFileUnsafe(rcfile)), ts.Dirs.DefaultBin, "PATH still has your project in it")
 	}
 }
 
@@ -201,13 +173,11 @@ func (suite *UseIntegrationTestSuite) TestShow() {
 	defer ts.Close()
 
 	cp := ts.SpawnWithOpts(e2e.WithArgs("use", "show"))
-	cp.Expect("No default project is set")
+	cp.Expect("No project is being used")
 	cp.ExpectExitCode(1)
 
-	cp = ts.SpawnWithOpts(
-		e2e.WithArgs("checkout", "ActiveState-CLI/Python3"),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
-	)
+	cp = ts.SpawnWithOpts(e2e.WithArgs("checkout", "ActiveState-CLI/Python3"))
+	cp.Expect("Skipping runtime setup")
 	cp.Expect("Checked out project")
 	cp.ExpectExitCode(0)
 
@@ -239,16 +209,52 @@ func (suite *UseIntegrationTestSuite) TestShow() {
 	suite.Require().NoError(err)
 
 	cp = ts.SpawnWithOpts(e2e.WithArgs("use", "show"))
-	cp.ExpectLongString("The default project no longer exists")
+	cp.ExpectLongString("Cannot find your project")
+	// Both Windows and MacOS can run into path comparison issues with symlinks and long paths.
+	if runtime.GOOS == "linux" {
+		cp.ExpectLongString(fmt.Sprintf("Could not find project at %s", projectDir))
+	}
 	cp.ExpectExitCode(1)
 
 	cp = ts.SpawnWithOpts(e2e.WithArgs("use", "reset", "--non-interactive"))
-	cp.Expect("Reset")
+	cp.Expect("Stopped using your project runtime")
 	cp.ExpectExitCode(0)
 
 	cp = ts.SpawnWithOpts(e2e.WithArgs("use", "show"))
-	cp.Expect("No default project is set")
+	cp.Expect("No project is being used")
 	cp.ExpectExitCode(1)
+}
+
+func (suite *UseIntegrationTestSuite) TestSetupNotice() {
+	suite.OnlyRunForTags(tagsuite.Use)
+
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.SpawnWithOpts(
+		e2e.WithArgs("checkout", "ActiveState-CLI/Python3"),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
+	cp.Expect("Setting Up Runtime")
+	cp.Expect("Checked out project")
+	cp.ExpectExitCode(0)
+
+	suite.Require().NoError(os.RemoveAll(filepath.Join(ts.Dirs.Work, "Python3"))) // runtime marker still exists
+
+	cp = ts.SpawnWithOpts(
+		e2e.WithArgs("checkout", "ActiveState-CLI/Python3#623dadf8-ebf9-4876-bfde-f45afafe5ea8"),
+	)
+	cp.Expect("Skipping runtime setup")
+	cp.Expect("Checked out project")
+	cp.ExpectExitCode(0)
+
+	cp = ts.SpawnWithOpts(
+		e2e.WithArgs("use", "Python3"),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
+	cp.Expect("Setting Up Runtime")
+	cp.Expect("Switched to project")
+	cp.ExpectExitCode(0)
 }
 
 func TestUseIntegrationTestSuite(t *testing.T) {

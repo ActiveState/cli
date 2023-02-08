@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/rtutils/p"
 	"github.com/ActiveState/cli/internal/testhelpers/secrethelper"
 	"github.com/andygrunwald/go-jira"
@@ -52,21 +53,24 @@ func FetchPRs(ghClient *github.Client, cutoff time.Time, opts *github.PullReques
 	opts.Sort = "updated"
 	opts.Direction = "desc"
 
+	nextPage := 1
+
 	for x := 0; x < 10; x++ { // Hard limit of 1000 most recent PRs
 		opts.ListOptions = github.ListOptions{
-			Page:    x,
+			Page:    nextPage,
 			PerPage: 100,
 		}
 		// Grab github PRs to compare against jira stories, cause Jira's API does not tell us what the linker PR is
-		prs, _, err := ghClient.PullRequests.List(context.Background(), "ActiveState", "cli", opts)
+		prs, v, err := ghClient.PullRequests.List(context.Background(), "ActiveState", "cli", opts)
 		if err != nil {
 			return nil, errs.Wrap(err, "Could not find PRs")
 		}
+		nextPage = v.NextPage
 		if len(prs) > 0 && prs[0].UpdatedAt.Before(cutoff) {
 			break // The rest of the PRs are too old to care about
 		}
 		result = append(result, prs...)
-		if len(prs) < opts.ListOptions.PerPage {
+		if nextPage == 0 {
 			break // Last page
 		}
 	}
@@ -82,20 +86,21 @@ func FetchCommitsByShaRange(ghClient *github.Client, startSha string, stopSha st
 
 func FetchCommitsByRef(ghClient *github.Client, ref string, stop func(commit *github.RepositoryCommit) bool) ([]*github.RepositoryCommit, error) {
 	result := []*github.RepositoryCommit{}
-	page := 0
 	perPage := 100
+	nextPage := 1
 
 	for x := 0; x < 100; x++ { // hard limit of 100,000 commits
-		commits, _, err := ghClient.Repositories.ListCommits(context.Background(), "ActiveState", "cli", &github.CommitsListOptions{
+		commits, v, err := ghClient.Repositories.ListCommits(context.Background(), "ActiveState", "cli", &github.CommitsListOptions{
 			SHA: ref,
 			ListOptions: github.ListOptions{
-				Page:    page * x,
+				Page:    nextPage,
 				PerPage: perPage,
 			},
 		})
 		if err != nil {
 			return nil, errs.Wrap(err, "ListCommits failed")
 		}
+		nextPage = v.NextPage
 
 		for _, commit := range commits {
 			if stop != nil && stop(commit) {
@@ -104,11 +109,13 @@ func FetchCommitsByRef(ghClient *github.Client, ref string, stop func(commit *gi
 			result = append(result, commit)
 		}
 
-		if len(commits) < perPage {
+		if nextPage == 0 {
 			break // Last page
 		}
 
-		page++
+		if x == 99 {
+			fmt.Println("WARNING: Hard limit of 100,000 commits reached")
+		}
 	}
 
 	return result, nil
@@ -116,20 +123,22 @@ func FetchCommitsByRef(ghClient *github.Client, ref string, stop func(commit *gi
 
 func SearchGithubIssues(client *github.Client, term string) ([]*github.Issue, error) {
 	issues := []*github.Issue{}
-	page := 0
 	perPage := 100
+	nextPage := 1
+
 	for x := 0; x < 10; x++ { // hard limit of 1,000 issues
-		result, _, err := client.Search.Issues(context.Background(), "repo:ActiveState/cli  "+term, &github.SearchOptions{
+		result, v, err := client.Search.Issues(context.Background(), "repo:ActiveState/cli  "+term, &github.SearchOptions{
 			ListOptions: github.ListOptions{
-				Page:    page * x,
+				Page:    nextPage,
 				PerPage: perPage,
 			},
 		})
 		if err != nil {
 			return nil, errs.Wrap(err, "Search.Issues failed")
 		}
+		nextPage = v.NextPage
 		issues = append(issues, result.Issues...)
-		if result.GetTotal() == len(issues) || len(result.Issues) < perPage {
+		if nextPage == 0 {
 			break // Last page
 		}
 	}
@@ -298,7 +307,8 @@ func ActiveVersionsOnBranch(ghClient *github.Client, jiraClient *jira.Client, br
 		seen[versionValue] = struct{}{}
 		version, err := ParseJiraVersion(versionValue)
 		if err != nil {
-			return nil, errs.Wrap(err, "failed to parse version: %s", versionValue)
+			logging.Debug("Failed to parse version %s: %v", versionValue, err)
+			continue
 		}
 		result = append(result, version)
 	}

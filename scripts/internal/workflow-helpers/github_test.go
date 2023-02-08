@@ -150,21 +150,7 @@ func TestFetchCommitsByRef(t *testing.T) {
 				t.Errorf("FetchCommitsByRef() error = %s", errs.JoinMessage(err))
 				return
 			}
-			if len(got) != tt.wantN {
-				t.Errorf("FetchCommitsByRef() has %d results, want %d", len(got), tt.wantN)
-			}
-			for _, sha := range tt.wantSHAs {
-				found := false
-				for _, commit := range got {
-					if commit.GetSHA() == sha {
-						found = true
-						break
-					}
-				}
-				if !found {
-					t.Errorf("FetchCommitsByRef() did not return sha %s", sha)
-				}
-			}
+			validateCommits(t, got, tt.wantSHAs, tt.wantN)
 		})
 	}
 }
@@ -340,5 +326,70 @@ func Test_sanitizeSearchTerm(t *testing.T) {
 				t.Errorf("sanitizeSearchTerm() = %v, want %v", got, tt.want)
 			}
 		})
+	}
+}
+
+func TestFetchCommitsByShaRange(t *testing.T) {
+	t.Skip("For debugging purposes, comment this line out if you want to test this locally")
+
+	type args struct {
+		ghClient *github.Client
+		startSha string
+		stopSha  string
+	}
+	tests := []struct {
+		name     string
+		args     args
+		wantSHAs []string
+		wantN    int
+	}{
+		{
+			name: "small range",
+			args: args{
+				ghClient: InitGHClient(),
+				startSha: "97cc4d358ba249493222cd2e8928015714881000",
+				stopSha:  "69bbdf1466135094efe0ef77108eae9953d76ac3",
+			},
+			wantSHAs: []string{"a2fe40506b564ab00b1fe46e2bd170898c46244b"},
+			wantN:    -1,
+		},
+		{
+			name: "large range",
+			args: args{
+				ghClient: InitGHClient(),
+				startSha: "5d6e103384849ad2cb6f604da84c4dc9f2245c31",
+				stopSha:  "69bbdf1466135094efe0ef77108eae9953d76ac3",
+			},
+			wantSHAs: []string{"a2fe40506b564ab00b1fe46e2bd170898c46244b"},
+			wantN:    -1,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := FetchCommitsByShaRange(tt.args.ghClient, tt.args.startSha, tt.args.stopSha)
+			if err != nil {
+				t.Errorf("FetchCommitsByShaRange() error = %s", errs.JoinMessage(err))
+				return
+			}
+			validateCommits(t, got, tt.wantSHAs, tt.wantN)
+		})
+	}
+}
+
+func validateCommits(t *testing.T, commits []*github.RepositoryCommit, wantSHAs []string, wantN int) {
+	if wantN != -1 && len(commits) != wantN {
+		t.Errorf("FetchCommitsByRef() has %d results, want %d", len(commits), wantN)
+	}
+	for _, sha := range wantSHAs {
+		found := false
+		for _, commit := range commits {
+			if commit.GetSHA() == sha {
+				found = true
+				break
+			}
+		}
+		if !found {
+			t.Errorf("FetchCommitsByRef() did not return sha %s (got %d commits)", sha, len(commits))
+		}
 	}
 }

@@ -59,6 +59,22 @@ func TestBashifyPath(t *testing.T) {
 	require.Error(t, err, "Relative paths should not work")
 }
 
+func TestBashifyPathEnv(t *testing.T) {
+	path, err := BashifyPathEnv("/foo:/bar")
+	require.NoError(t, err)
+	assert.Equal(t, "/foo:/bar", path)
+
+	if runtime.GOOS == "windows" {
+		path, err = BashifyPathEnv(`C:\foo;C:\bar`)
+		require.NoError(t, err)
+		assert.Equal(t, "/c/foo:/c/bar", path)
+
+		path, err = BashifyPathEnv(`C:\foo bar;C:\baz`)
+		require.NoError(t, err)
+		assert.Equal(t, "/c/foo bar:/c/baz", path)
+	}
+}
+
 func TestEnvSliceToMap(t *testing.T) {
 	tests := []struct {
 		name     string

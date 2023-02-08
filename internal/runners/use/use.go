@@ -12,6 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runbits/findproject"
+	"github.com/ActiveState/cli/internal/runbits/rtusage"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/pkg/cmdlets/checker"
@@ -75,6 +76,8 @@ func (u *Use) Run(params *Params) error {
 		return locale.WrapInputError(err, "err_use_cannot_find_local_project", "Local project cannot be found.")
 	}
 
+	rtusage.PrintRuntimeUsage(u.svcModel, u.out, proj.Owner())
+
 	if cid := params.Namespace.CommitID; cid != nil && *cid != proj.CommitUUID() {
 		return locale.NewInputError("err_use_commit_id_mismatch")
 	}
@@ -85,7 +88,7 @@ func (u *Use) Run(params *Params) error {
 	}
 
 	if err := globaldefault.SetupDefaultActivation(u.subshell, u.config, rti, proj); err != nil {
-		return locale.WrapError(err, "err_use_default", "Could not configure your project as the global default.")
+		return locale.WrapError(err, "err_use_default", "Could not setup your project for use.")
 	}
 
 	u.out.Notice(locale.Tl("use_project_statement", "",

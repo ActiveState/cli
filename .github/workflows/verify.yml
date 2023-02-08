@@ -23,6 +23,9 @@ jobs:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       JIRA_USERNAME: ${{ secrets.JIRA_EMAIL }}
       JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}
+    concurrency:
+      group: ${{ github.ref }}
+      cancel-in-progress: true
     timeout-minutes: 5
 
     steps:
@@ -46,6 +49,11 @@ jobs:
           echo "$bin" >> $GITHUB_PATH
           ls -ahl $bin
           printenv
+
+      - # === Install Deps ===
+        name: Install Deps
+        shell: bash
+        run: state run install-deps
 
       - # === Preprocess ===
         name: Preprocess

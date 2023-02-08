@@ -2,9 +2,13 @@ package model
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
+	"fmt"
 	"net/http"
 	"time"
 
+	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/gqlclient"
 	"github.com/ActiveState/cli/internal/graph"
@@ -38,7 +42,21 @@ func (m *SvcModel) EnableDebugLog() {
 
 func (m *SvcModel) request(ctx context.Context, request gqlclient.Request, resp interface{}) error {
 	defer profile.Measure("SvcModel:request", time.Now())
-	return m.client.RunWithContext(ctx, request, resp)
+
+	err := m.client.RunWithContext(ctx, request, resp)
+	if err != nil {
+		reqError := &gqlclient.RequestError{}
+		if errors.As(err, &reqError) && (!condition.BuiltViaCI() || condition.InTest()) {
+			logging.Debug(
+				"svc client gql request failed - query: %q, vars: %q",
+				reqError.Request.Query(),
+				jsonFromMap(reqError.Request.Vars()),
+			)
+		}
+		return err
+	}
+
+	return nil
 }
 
 func (m *SvcModel) StateVersion(ctx context.Context) (*graph.Version, error) {
@@ -91,16 +109,28 @@ func (m *SvcModel) AnalyticsEvent(ctx context.Context, category, action, label s
 	return nil
 }
 
-func (m *SvcModel) RecordRuntimeUsage(ctx context.Context, pid int, exec string, dimJson string) error {
-	defer profile.Measure("svc:RecordRuntimeUsage", time.Now())
+func (m *SvcModel) ReportRuntimeUsage(ctx context.Context, pid int, exec string, dimJson string) error {
+	defer profile.Measure("svc:ReportRuntimeUsage", time.Now())
 
-	r := request.NewRuntimeUsage(pid, exec, dimJson)
-	u := graph.RuntimeUsageResponse{}
+	r := request.NewReportRuntimeUsage(pid, exec, dimJson)
+	u := graph.ReportRuntimeUsageResponse{}
 	if err := m.request(ctx, r, &u); err != nil {
-		return errs.Wrap(err, "Error sending runtime usage event via state-svc")
+		return errs.Wrap(err, "Error sending report runtime usage event via state-svc")
 	}
 
 	return nil
+}
+
+func (m *SvcModel) CheckRuntimeUsage(ctx context.Context, organizationName string) (*graph.CheckRuntimeUsageResponse, error) {
+	defer profile.Measure("svc:CheckRuntimeUsage", time.Now())
+
+	r := request.NewCheckRuntimeUsage(organizationName)
+	u := graph.CheckRuntimeUsageResponseOuter{}
+	if err := m.request(ctx, r, &u); err != nil {
+		return nil, errs.Wrap(err, "Error sending check runtime usage event via state-svc")
+	}
+
+	return &u.Usage, nil
 }
 
 func (m *SvcModel) CheckDeprecation(ctx context.Context) (*graph.DeprecationInfo, error) {
@@ -123,7 +153,7 @@ func (m *SvcModel) CheckDeprecation(ctx context.Context) (*graph.DeprecationInfo
 }
 
 func (m *SvcModel) ConfigChanged(ctx context.Context, key string) error {
-	defer profile.Measure("svc:RecordRuntimeUsage", time.Now())
+	defer profile.Measure("svc:ConfigChanged", time.Now())
 
 	r := request.NewConfigChanged(key)
 	u := graph.ConfigChangedResponse{}
@@ -132,4 +162,36 @@ func (m *SvcModel) ConfigChanged(ctx context.Context, key string) error {
 	}
 
 	return nil
+}
+
+func (m *SvcModel) FetchLogTail(ctx context.Context) (string, error) {
+	logging.Debug("Fetching log svc log")
+	defer profile.Measure("svc:FetchLogTail", time.Now())
+
+	req := request.NewFetchLogTail()
+	response := make(map[string]string)
+	if err := m.request(ctx, req, &response); err != nil {
+		return "", errs.Wrap(err, "Error sending FetchLogTail request to state-svc")
+	}
+	if log, ok := response["fetchLogTail"]; ok {
+		return log, nil
+	}
+	return "", errs.New("svcModel.FetchLogTail() did not return an expected value")
+}
+
+func jsonFromMap(m map[string]interface{}) string {
+	d, err := json.Marshal(m)
+	if err != nil {
+		return fmt.Sprintf("cannot marshal map (%q) as json: %v", stringFromMap(m), err)
+	}
+	return string(d)
+}
+
+func stringFromMap(m map[string]interface{}) string {
+	var s, sep string
+	for k, v := range m {
+		s += fmt.Sprintf("%s%s: %#v", sep, k, v)
+		sep = ", "
+	}
+	return s
 }

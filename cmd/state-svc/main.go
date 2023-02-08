@@ -11,6 +11,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/ActiveState/cli/cmd/state-svc/autostart"
 	anaSync "github.com/ActiveState/cli/internal/analytics/client/sync"
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/config"
@@ -100,6 +101,8 @@ func run(cfg *config.Instance) error {
 		return errs.Wrap(err, "Could not initialize outputer")
 	}
 
+	autostart.RegisterConfigListener(cfg)
+
 	if mousetrap.StartedByExplorer() {
 		// Allow starting the svc via a double click
 		captain.DisableMousetrap()
@@ -121,7 +124,7 @@ func run(cfg *config.Instance) error {
 	cmd.AddChildren(
 		captain.NewCommand(
 			cmdStart,
-			"Starting the ActiveState Service",
+			"",
 			"Start the ActiveState Service (Background)",
 			p, nil, nil,
 			func(ccmd *captain.Command, args []string) error {
@@ -131,7 +134,7 @@ func run(cfg *config.Instance) error {
 		),
 		captain.NewCommand(
 			cmdStop,
-			"Stopping the ActiveState Service",
+			"",
 			"Stop the ActiveState Service",
 			p, nil, nil,
 			func(ccmd *captain.Command, args []string) error {
@@ -141,7 +144,7 @@ func run(cfg *config.Instance) error {
 		),
 		captain.NewCommand(
 			cmdStatus,
-			"Checking the ActiveState Service",
+			"",
 			"Display the Status of the ActiveState Service",
 			p, nil, nil,
 			func(ccmd *captain.Command, args []string) error {
@@ -151,7 +154,7 @@ func run(cfg *config.Instance) error {
 		),
 		captain.NewCommand(
 			cmdForeground,
-			"Starting the ActiveState Service",
+			"",
 			"Start the ActiveState Service (Foreground)",
 			p, nil,
 			[]*captain.Argument{
@@ -180,7 +183,10 @@ func runForeground(cfg *config.Instance, an *anaSync.Client, auth *authenticatio
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	p := NewService(ctx, cfg, an, auth)
+	logFile := logging.FilePath()
+	logging.Debug("Logging to %q", logFile)
+
+	p := NewService(ctx, cfg, an, auth, logFile)
 
 	if argText != "" {
 		argText = fmt.Sprintf(" (invoked by %q)", argText)
@@ -213,7 +219,7 @@ func runForeground(cfg *config.Instance, an *anaSync.Client, auth *authenticatio
 	defer signal.Stop(sig)
 
 	p.RunIfNotAuthority(time.Second*3, svcctl.NewDefaultIPCClient(), func(err error) {
-		fmt.Fprintln(os.Stderr, err)
+		logging.Debug("This instance is not the authority: %v", err)
 
 		cancel()
 		if err := p.Stop(); err != nil {

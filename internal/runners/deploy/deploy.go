@@ -7,10 +7,9 @@ import (
 	rt "runtime"
 	"strings"
 
-	"github.com/ActiveState/cli/internal/analytics"
-	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/go-openapi/strfmt"
 
+	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/assets"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
@@ -22,13 +21,16 @@ import (
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
+	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/cli/internal/runbits"
+	"github.com/ActiveState/cli/internal/runbits/rtusage"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
+	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
@@ -151,8 +153,10 @@ func (d *Deploy) commitID(namespace project.Namespaced) (strfmt.UUID, error) {
 	return *commitID, nil
 }
 
-func (d *Deploy) install(rtTarget setup.Targeter) error {
+func (d *Deploy) install(rtTarget setup.Targeter) (rerr error) {
 	d.output.Notice(output.Heading(locale.T("deploy_install")))
+
+	rtusage.PrintRuntimeUsage(d.svcModel, d.output, rtTarget.Owner())
 
 	rti, err := runtime.New(rtTarget, d.analytics, d.svcModel)
 	if err == nil {
@@ -162,11 +166,10 @@ func (d *Deploy) install(rtTarget setup.Targeter) error {
 	if !runtime.IsNeedsUpdateError(err) {
 		return locale.WrapError(err, "deploy_runtime_err", "Could not initialize runtime")
 	}
-	eh, err := runbits.DefaultRuntimeEventHandler(d.output)
-	if err != nil {
-		return locale.WrapError(err, "err_initialize_runtime_event_handler")
-	}
-	if err := rti.Update(d.auth, eh); err != nil {
+
+	pg := runbits.NewRuntimeProgressIndicator(d.output)
+	defer rtutils.Closer(pg.Close, &rerr)
+	if err := rti.Update(d.auth, pg); err != nil {
 		return locale.WrapError(err, "deploy_install_failed", "Installation failed.")
 	}
 
@@ -206,7 +209,8 @@ func (d *Deploy) configure(namespace project.Namespaced, rtTarget setup.Targeter
 
 	d.output.Notice(output.Heading(locale.Tr("deploy_configure_shell", d.subshell.Shell())))
 
-	err = d.subshell.WriteUserEnv(d.cfg, env, sscommon.DeployID, userScope)
+	// Configure available shells
+	err = subshell.ConfigureAvailableShells(d.subshell, d.cfg, env, sscommon.DeployID, userScope)
 	if err != nil {
 		return locale.WrapError(err, "err_deploy_subshell_write", "Could not write environment information to your shell configuration.")
 	}
@@ -266,6 +270,8 @@ func (d *Deploy) symlink(rtTarget setup.Targeter, overwrite bool) error {
 		if err := symlinkWithTarget(overwrite, path, exes, d.output); err != nil {
 			return locale.WrapError(err, "err_symlink", "Could not create symlinks to {{.V0}}.", path)
 		}
+	} else {
+		d.output.Notice(locale.Tl("deploy_symlink_skip", "Skipped on Windows"))
 	}
 
 	return nil

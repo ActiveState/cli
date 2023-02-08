@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/assets"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/osutils/shortcut"
@@ -68,6 +69,9 @@ func (a *app) InstallPath() (string, error) {
 
 func (a *app) shortcutFilename() string {
 	name := formattedName(a.Name)
+	if testDir, ok := os.LookupEnv(constants.AutostartPathOverrideEnvVarName); ok {
+		startupPath = testDir
+	}
 	return filepath.Join(startupPath, name+".lnk")
 }
 

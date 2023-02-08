@@ -18,7 +18,6 @@ const TopLevelExpanderName = "toplevel"
 
 func init() {
 	expanderRegistry = map[string]ExpanderFunc{
-		"platform":           PlatformExpander,
 		"events":             EventExpander,
 		"scripts":            ScriptExpander,
 		"constants":          ConstantExpander,

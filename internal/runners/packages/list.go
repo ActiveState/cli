@@ -41,6 +41,10 @@ func NewList(prime primeable) *List {
 func (l *List) Run(params ListRunParams, nstype model.NamespaceType) error {
 	logging.Debug("ExecuteList")
 
+	if l.project != nil {
+		l.out.Notice(locale.Tl("operating_message", "", l.project.NamespaceString(), l.project.Dir()))
+	}
+
 	var commit *strfmt.UUID
 	var err error
 	switch {
@@ -66,7 +70,7 @@ func (l *List) Run(params ListRunParams, nstype model.NamespaceType) error {
 		return locale.WrapError(err, fmt.Sprintf("%s_err_cannot_fetch_checkpoint", nstype))
 	}
 
-	table := newFilteredRequirementsTable(model.FilterCheckpointPackages(checkpoint), params.Name, nstype)
+	table := newFilteredRequirementsTable(model.FilterCheckpointNamespace(checkpoint, model.NamespacePackage, model.NamespaceBundle), params.Name, nstype)
 	table.sortByPkg()
 
 	l.out.Print(table)
@@ -113,7 +117,7 @@ func targetFromProjectFile(proj *project.Project) (*strfmt.UUID, error) {
 func prepareCommit(commit string) (*strfmt.UUID, error) {
 	logging.Debug("commit %s selected", commit)
 	if ok := strfmt.Default.Validates("uuid", commit); !ok {
-		return nil, errs.New("Invalid commit: %s", commit)
+		return nil, locale.NewInputError("err_invalid_commit", "Invalid commit: {{.V0}}", commit)
 	}
 
 	var uuid strfmt.UUID

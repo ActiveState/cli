@@ -50,12 +50,6 @@ func NewMapFromRecipe(recipe *inventory_models.Recipe) ArtifactRecipeMap {
 	}
 	for _, ri := range recipe.ResolvedIngredients {
 		namespace := *ri.Ingredient.PrimaryNamespace
-		if !monomodel.NamespaceMatch(namespace, monomodel.NamespaceLanguageMatch) &&
-			!monomodel.NamespaceMatch(namespace, monomodel.NamespacePackageMatch) &&
-			!monomodel.NamespaceMatch(namespace, monomodel.NamespaceBundlesMatch) &&
-			!monomodel.NamespaceMatch(namespace, monomodel.NamespaceSharedMatch) {
-			continue
-		}
 		a := ri.ArtifactID
 		name := *ri.Ingredient.Name
 		version := ri.IngredientVersion.Version
@@ -88,6 +82,29 @@ func NewMapFromRecipe(recipe *inventory_models.Recipe) ArtifactRecipeMap {
 		}
 	}
 
+	return res
+}
+
+func FilterInstallable(artifacts ArtifactRecipeMap) ArtifactRecipeMap {
+	res := make(map[ArtifactID]ArtifactRecipe)
+	for _, a := range artifacts {
+		if monomodel.NamespaceMatch(a.Namespace, monomodel.NamespaceLanguageMatch) ||
+			monomodel.NamespaceMatch(a.Namespace, monomodel.NamespacePackageMatch) ||
+			monomodel.NamespaceMatch(a.Namespace, monomodel.NamespaceSharedMatch) {
+			res[a.ArtifactID] = a
+		}
+	}
+	return res
+}
+
+func FilterBuildable(artifacts ArtifactRecipeMap) ArtifactRecipeMap {
+	res := make(map[ArtifactID]ArtifactRecipe)
+	for _, a := range artifacts {
+		// Artifacts in the builder namespace aren't real artifacts, they are only used by the builder
+		if !monomodel.NamespaceMatch(a.Namespace, monomodel.NamespaceBuilderMatch) {
+			res[a.ArtifactID] = a
+		}
+	}
 	return res
 }
 

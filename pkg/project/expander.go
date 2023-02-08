@@ -21,8 +21,9 @@ import (
 )
 
 type Expansion struct {
-	Project *Project
-	Script  *Script
+	Project      *Project
+	Script       *Script
+	BashifyPaths bool
 }
 
 func NewExpansion(p *Project) *Expansion {
@@ -89,8 +90,19 @@ func ExpandFromProject(s string, p *Project) (string, error) {
 	return NewExpansion(p).ApplyWithMaxDepth(s, 0)
 }
 
+// ExpandFromProjectBashifyPaths is like ExpandFromProject, but bashifies all instances of
+// $script.name.path().
+func ExpandFromProjectBashifyPaths(s string, p *Project) (string, error) {
+	expansion := &Expansion{Project: p, BashifyPaths: true}
+	return expansion.ApplyWithMaxDepth(s, 0)
+}
+
 func ExpandFromScript(s string, script *Script) (string, error) {
-	expansion := &Expansion{Project: script.project, Script: script}
+	expansion := &Expansion{
+		Project:      script.project,
+		Script:       script,
+		BashifyPaths: runtime.GOOS == "windows" && (script.LanguageSafe()[0] == language.Bash || script.LanguageSafe()[0] == language.Sh),
+	}
 	return expansion.ApplyWithMaxDepth(s, 0)
 }
 
@@ -98,34 +110,6 @@ func ExpandFromScript(s string, script *Script) (string, error) {
 // to be expanded along with the project-file definition. It will return the expanded value of the name
 // or a Failure if expansion was unsuccessful.
 type ExpanderFunc func(variable, name, meta string, isFunction bool, ctx *Expansion) (string, error)
-
-// PlatformExpander expends metadata about the current platform.
-func PlatformExpander(_ string, name string, meta string, isFunction bool, ctx *Expansion) (string, error) {
-	projectFile := ctx.Project.Source()
-	for _, platform := range projectFile.Platforms {
-		if !constraints.PlatformMatches(platform) {
-			continue
-		}
-
-		switch name {
-		case "name":
-			return platform.Name, nil
-		case "os":
-			return platform.Os, nil
-		case "version":
-			return platform.Version, nil
-		case "architecture":
-			return platform.Architecture, nil
-		case "libc":
-			return platform.Libc, nil
-		case "compiler":
-			return platform.Compiler, nil
-		default:
-			return "", locale.NewInputError("err_expand_platform", "Unrecognized platform variable '{{.V0}}'", name)
-		}
-	}
-	return "", nil
-}
 
 // EventExpander expands events defined in the project-file.
 func EventExpander(_ string, name string, meta string, isFunction bool, ctx *Expansion) (string, error) {
@@ -159,15 +143,8 @@ func ScriptExpander(_ string, name string, meta string, isFunction bool, ctx *Ex
 			return "", err
 		}
 
-		if meta == "path._posix" {
+		if ctx.BashifyPaths || meta == "path._posix" {
 			return osutils.BashifyPath(path)
-		}
-
-		if runtime.GOOS == "windows" && ctx.Script != nil {
-			lang := ctx.Script.LanguageSafe()[0]
-			if lang == language.Bash || lang == language.Sh {
-				return osutils.BashifyPath(path)
-			}
 		}
 
 		return path, nil
@@ -276,7 +253,11 @@ func ProjectExpander(_ string, name string, _ string, isFunction bool, ctx *Expa
 		if path == "" {
 			return path, nil
 		}
-		return filepath.Dir(path), nil
+		dir := filepath.Dir(path)
+		if ctx.BashifyPaths {
+			return osutils.BashifyPath(dir)
+		}
+		return dir, nil
 	}
 
 	return "", nil

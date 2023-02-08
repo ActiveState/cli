@@ -10,7 +10,6 @@ import (
 	"io/fs"
 	"io/ioutil"
 	"os"
-	"os/user"
 	"path/filepath"
 	"regexp"
 	"runtime"
@@ -98,7 +97,7 @@ func replaceInFile(buf []byte, oldpath, newpath string) (bool, []byte, error) {
 		quoteEscapeFind = strings.ReplaceAll(quoteEscapeFind, `\\`, `(\\|\\\\)`)
 	}
 	if IsBinary(buf) {
-		//logging.Debug("Assuming file '%s' is a binary file", filename)
+		// logging.Debug("Assuming file '%s' is a binary file", filename)
 
 		regexExpandBytes := []byte("${1}")
 		// Must account for the expand characters (ie. '${1}') in the
@@ -112,14 +111,14 @@ func replaceInFile(buf []byte, oldpath, newpath string) (bool, []byte, error) {
 			return false, nil, errors.New("replacement text cannot be longer than search text in a binary file")
 		} else if len(findBytes) > replaceBytesLen {
 			// Pad replacement with NUL bytes.
-			//logging.Debug("Padding replacement text by %d byte(s)", len(findBytes)-len(replaceBytes))
+			// logging.Debug("Padding replacement text by %d byte(s)", len(findBytes)-len(replaceBytes))
 			paddedReplaceBytes := make([]byte, len(findBytes)+len(regexExpandBytes))
 			copy(paddedReplaceBytes, replaceBytes)
 			replaceBytes = paddedReplaceBytes
 		}
 	} else {
 		replaceRegex = regexp.MustCompile(fmt.Sprintf(`%s`, quoteEscapeFind))
-		//logging.Debug("Assuming file '%s' is a text file", filename)
+		// logging.Debug("Assuming file '%s' is a text file", filename)
 	}
 
 	replaced := replaceRegex.ReplaceAll(buf, replaceBytes)
@@ -435,6 +434,14 @@ func Touch(path string) error {
 	return nil
 }
 
+// TouchFileUnlessExists will attempt to "touch" a given filename if it doesn't already exists
+func TouchFileUnlessExists(path string) error {
+	if TargetExists(path) {
+		return nil
+	}
+	return Touch(path)
+}
+
 // IsEmptyDir returns true if the directory at the provided path has no files (including dirs) within it.
 func IsEmptyDir(path string) (bool, error) {
 	dir, err := os.Open(path)
@@ -644,7 +651,13 @@ func MoveAllFiles(fromPath, toPath string) error {
 }
 
 // WriteTempFile writes data to a temp file.
-func WriteTempFile(dir, pattern string, data []byte, perm os.FileMode) (string, error) {
+func WriteTempFile(pattern string, data []byte) (string, error) {
+	tempDir := os.TempDir()
+	return WriteTempFileToDir(tempDir, pattern, data, os.ModePerm)
+}
+
+// WriteTempFileToDir writes data to a temp file in the given dir
+func WriteTempFileToDir(dir, pattern string, data []byte, perm os.FileMode) (string, error) {
 	f, err := ioutil.TempFile(dir, pattern)
 	if err != nil {
 		return "", errs.Wrap(err, "ioutil.TempFile %s (%s) failed", dir, pattern)
@@ -754,6 +767,12 @@ func TempFileUnsafe() *os.File {
 	return f
 }
 
+func TempFilePathUnsafe() string {
+	f := TempFileUnsafe()
+	defer f.Close()
+	return f.Name()
+}
+
 // TempDirUnsafe returns a temp path or panics if it cannot be created
 // This is for use in tests, do not use it outside tests!
 func TempDirUnsafe() string {
@@ -825,21 +844,10 @@ func LogPath(path string) error {
 	})
 }
 
-// HomeDir returns the users homedir
-func HomeDir() (string, error) {
-	usr, err := user.Current()
-	if err != nil {
-		return "", err
-	}
-
-	return usr.HomeDir, nil
-}
-
 // IsDir returns true if the given path is a directory
 func IsDir(path string) bool {
 	info, err := os.Stat(path)
 	if err != nil {
-		logging.Debug("Could not stat path: %s, got error: %v", path, err)
 		return false
 	}
 	return info.IsDir()

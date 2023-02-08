@@ -10,10 +10,12 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/assets"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/osutils/user"
 	"github.com/ActiveState/cli/internal/strutils"
-	"github.com/mitchellh/go-homedir"
 )
 
 const (
@@ -43,7 +45,12 @@ func (a *app) enable() error {
 
 	content, err := strutils.ParseTemplate(
 		string(asset),
-		map[string]interface{}{"Exec": a.Exec, "Args": strings.Join(a.Args, " ")})
+		map[string]interface{}{
+			"Label":       a.options.MacLabel,
+			"Exec":        a.Exec,
+			"Args":        strings.Join(a.Args, " "),
+			"Interactive": a.options.MacInteractive,
+		})
 	if err != nil {
 		return errs.Wrap(err, "Could not parse %s", fmt.Sprintf(launchFileFormatName, filepath.Base(a.Exec)))
 	}
@@ -61,6 +68,7 @@ func (a *app) disable() error {
 	}
 
 	if !enabled {
+		logging.Debug("Autostart is already disabled for %s", a.Name)
 		return nil
 	}
 	path, err := a.InstallPath()
@@ -79,9 +87,12 @@ func (a *app) IsEnabled() (bool, error) {
 }
 
 func (a *app) InstallPath() (string, error) {
-	dir, err := homedir.Dir()
+	dir, err := user.HomeDir()
 	if err != nil {
 		return "", errs.Wrap(err, "Could not get home directory")
+	}
+	if testDir, ok := os.LookupEnv(constants.AutostartPathOverrideEnvVarName); ok {
+		dir = testDir
 	}
 	path := filepath.Join(dir, "Library/LaunchAgents", fmt.Sprintf(launchFileFormatName, filepath.Base(a.Exec)))
 	return path, nil

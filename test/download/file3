@@ -2,37 +2,11 @@ name: CodeIntel
 owner: ActiveState
 version: master
 environments: dev,qa,prod
-platforms:
-  - name: Linux64Label
-    os: linux
-    architecture: amd64
-    libc: glibc-2.25
-    compiler: gcc-7
-  - name: Windows10Label
-    os: windows
-    version: 10
-languages:
-  - name: Go
-    version: 1.10
-    constraints:
-        platform: Windows10Label,Linux64Label
-        environment: dev,qa,prod
-    packages:
-      - name: golang.org/x/crypto
-        version: "*"
-        build:
-          debug: $variable.DEBUG
-      - name: gopkg.in/yaml.v2
-        version: "2.*"
-        build: 
-          override: --foo --bar --debug $variable.DEBUG --libDir $variable.PYTHONPATH --libc $platform.libc
 variables:
   - name: DEBUG
     value: true
   - name: PYTHONPATH
     value: '%projectDir%/src:%projectDir%/tests'
-    constraints:
-        environment: dev,qa
   - name: PYTHONPATH
     value: '%projectDir%/src:%projectDir%/tests'
 hooks:

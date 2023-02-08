@@ -20,7 +20,7 @@ func newExecCommand(prime *primer.Values, args ...string) *captain.Command {
 		[]*captain.Flag{
 			{
 				Name:        "path",
-				Description: locale.Tl("flag_state_exec_path_description", "Path to project that is providing the default environment."),
+				Description: locale.Tl("flag_state_exec_path_description", "Path to the project you are using"),
 				Value:       &params.Path,
 			},
 		},
@@ -43,7 +43,7 @@ func newExecCommand(prime *primer.Values, args ...string) *captain.Command {
 	cmd.SetSkipChecks(true)
 	cmd.SetDeferAnalytics(true)
 
-	cmd.SetGroup(EnvironmentGroup)
+	cmd.SetGroup(EnvironmentUsageGroup)
 	cmd.SetHasVariableArguments()
 
 	return cmd

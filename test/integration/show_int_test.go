@@ -18,17 +18,29 @@ type ShowIntegrationTestSuite struct {
 }
 
 func (suite *ShowIntegrationTestSuite) TestShow() {
-	suite.OnlyRunForTags(tagsuite.Show, tagsuite.VSCode)
+	suite.OnlyRunForTags(tagsuite.Show)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
 	suite.PrepareActiveStateYAML(ts)
 
-	cp := ts.Spawn("show")
+	cp := ts.SpawnWithOpts(
+		e2e.WithArgs("activate"),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
+	cp.WaitForInput()
+
+	cp = ts.Spawn("show")
 	cp.Expect(`Name`)
 	cp.Expect(`Show`)
 	cp.Expect(`Organization`)
 	cp.Expect(`cli-integration-tests`)
+	cp.Expect(`Namespace`)
+	cp.Expect(`cli-integration-tests/Show`)
+	cp.Expect(`Location`)
+	cp.ExpectLongString(ts.Dirs.Work)
+	cp.Expect(`Executables`)
+	cp.ExpectLongString(ts.Dirs.Cache)
 	cp.Expect(`Visibility`)
 	cp.Expect(`Public`)
 	cp.Expect(`Latest Commit`)
@@ -64,14 +76,12 @@ func (suite *ShowIntegrationTestSuite) TestShowWithoutBranch() {
 
 func (suite *ShowIntegrationTestSuite) PrepareActiveStateYAML(ts *e2e.Session) {
 	asyData := strings.TrimSpace(`
-project: "https://platform.activestate.com/cli-integration-tests/Show?commitID=e8f3b07b-502f-4763-83c1-763b9b952e18&branch=main"
+project: "https://platform.activestate.com/cli-integration-tests/Show?commitID=d5d84598-fc2e-4a45-b075-a845e587b5bf&branch=main"
 constants:
   - name: DEBUG
     value: true
   - name: PYTHONPATH
     value: '%projectDir%/src:%projectDir%/tests'
-    constraints:
-        environment: dev,qa
   - name: PYTHONPATH
     value: '%projectDir%/src:%projectDir%/tests'
 events:

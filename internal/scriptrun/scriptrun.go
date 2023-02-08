@@ -15,6 +15,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/process"
+	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/internal/scriptfile"
 	"github.com/ActiveState/cli/internal/subshell"
@@ -66,32 +67,34 @@ func (s *ScriptRun) NeedsActivation() bool {
 }
 
 // PrepareVirtualEnv sets up the relevant runtime and prepares the environment.
-func (s *ScriptRun) PrepareVirtualEnv() error {
+func (s *ScriptRun) PrepareVirtualEnv() (rerr error) {
 	rt, err := runtime.New(target.NewProjectTarget(s.project, storage.CachePath(), nil, target.TriggerScript), s.analytics, s.svcModel)
 	if err != nil {
 		if !runtime.IsNeedsUpdateError(err) {
 			return locale.WrapError(err, "err_activate_runtime", "Could not initialize a runtime for this project.")
 		}
-		eh, err := runbits.DefaultRuntimeEventHandler(s.out)
-		if err != nil {
-			return locale.WrapError(err, "err_initialize_runtime_event_handler")
-		}
-		if err := rt.Update(s.auth, eh); err != nil {
+		pg := runbits.NewRuntimeProgressIndicator(s.out)
+		defer rtutils.Closer(pg.Close, &rerr)
+		if err := rt.Update(s.auth, pg); err != nil {
 			return locale.WrapError(err, "err_update_runtime", "Could not update runtime installation.")
 		}
 	}
 	venv := virtualenvironment.New(rt)
 
-	env, err := venv.GetEnv(true, true, filepath.Dir(s.project.Source().Path()))
+	projDir := filepath.Dir(s.project.Source().Path())
+	env, err := venv.GetEnv(true, true, projDir)
 	if err != nil {
-		return err
+		return errs.Wrap(err, "Could not get venv environment")
 	}
-	s.sub.SetEnv(env)
+	err = s.sub.SetEnv(env)
+	if err != nil {
+		return locale.WrapError(err, "err_subshell_setenv")
+	}
 
 	// search the "clean" path first (PATHS that are set by venv)
 	env, err = venv.GetEnv(false, true, "")
 	if err != nil {
-		return err
+		return errs.Wrap(err, "Could not get venv environment")
 	}
 	s.venvExePath = env["PATH"]
 	s.venvPrepared = true

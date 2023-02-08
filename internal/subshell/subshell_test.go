@@ -47,7 +47,7 @@ func TestRunCommand(t *testing.T) {
 	defer func() { require.NoError(t, cfg.Close()) }()
 	subs := New(cfg)
 
-	filename, err := fileutils.WriteTempFile("", "testRunCommand*.bat", data, 0700)
+	filename, err := fileutils.WriteTempFileToDir("", "testRunCommand*.bat", data, 0700)
 	require.NoError(t, err)
 	defer os.Remove(filename)
 

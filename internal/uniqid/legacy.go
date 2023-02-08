@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+
+	"github.com/ActiveState/cli/internal/osutils/user"
 )
 
 const legacyPersistDir = "activestate/persist"
@@ -42,7 +44,7 @@ func moveUniqidFile(destination string) error {
 }
 
 func legacyStorageDir() (string, error) {
-	home, err := os.UserHomeDir()
+	home, err := user.HomeDir()
 	if err != nil {
 		return "", fmt.Errorf("cannot get home dir for uniqid file: %w", err)
 	}

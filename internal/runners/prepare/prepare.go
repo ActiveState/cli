@@ -5,7 +5,6 @@ import (
 	"runtime"
 
 	svcAutostart "github.com/ActiveState/cli/cmd/state-svc/autostart"
-	trayAutostart "github.com/ActiveState/cli/cmd/state-tray/autostart"
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/config"
@@ -70,7 +69,7 @@ func (r *Prepare) resetExecutors() error {
 
 	proj, err := project.FromPath(defaultProjectDir)
 	if err != nil {
-		return errs.Wrap(err, "Could not get project from default project directory")
+		return errs.Wrap(err, "Could not get project from its directory")
 	}
 
 	run, err := rt.New(target.NewCustomTarget(proj.Owner(), proj.Name(), proj.CommitUUID(), defaultTargetDir, target.TriggerResetExec, proj.IsHeadless()), r.analytics, r.svcModel)
@@ -78,11 +77,11 @@ func (r *Prepare) resetExecutors() error {
 		if rt.IsNeedsUpdateError(err) {
 			return nil // project was never set up, so no executors to reset
 		}
-		return errs.Wrap(err, "Could not initialize runtime for global default project.")
+		return errs.Wrap(err, "Could not initialize runtime for project.")
 	}
 
 	if err := globaldefault.SetupDefaultActivation(r.subshell, r.cfg, run, proj); err != nil {
-		return errs.Wrap(err, "Failed to rewrite the default executors.")
+		return errs.Wrap(err, "Failed to rewrite the executors.")
 	}
 
 	return nil
@@ -156,23 +155,6 @@ func updateConfigKey(cfg *config.Instance, oldKey, newKey string) error {
 // InstalledPreparedFiles returns the files installed by state _prepare
 func InstalledPreparedFiles(cfg autostart.Configurable) ([]string, error) {
 	var files []string
-	trayExec, err := installation.TrayExec()
-	if err != nil {
-		return nil, locale.WrapError(err, "err_tray_exec")
-	}
-
-	trayShortcut, err := autostart.New(trayAutostart.App, trayExec, nil, trayAutostart.Options, cfg)
-	if err != nil {
-		return nil, locale.WrapError(err, "err_autostart_app")
-	}
-
-	path, err := trayShortcut.InstallPath()
-	if err != nil {
-		multilog.Error("Failed to determine shortcut path for removal: %v", err)
-	} else if path != "" {
-		files = append(files, path)
-	}
-
 	svcExec, err := installation.ServiceExec()
 	if err != nil {
 		return nil, locale.WrapError(err, "err_svc_exec")
@@ -183,19 +165,12 @@ func InstalledPreparedFiles(cfg autostart.Configurable) ([]string, error) {
 		return nil, locale.WrapError(err, "err_autostart_app")
 	}
 
-	path, err = svcShortcut.InstallPath()
+	path, err := svcShortcut.InstallPath()
 	if err != nil {
 		multilog.Error("Failed to determine shortcut path for removal: %v", err)
 	} else if path != "" {
 		files = append(files, path)
 	}
-
-	osSpecificFiles, err := installedPreparedFiles(cfg)
-	if err != nil {
-		return nil, locale.WrapError(err, "err_prepare_os_files", "Could not get list of OS specific prepared files")
-	}
-
-	files = append(files, osSpecificFiles...)
 
 	return files, nil
 }

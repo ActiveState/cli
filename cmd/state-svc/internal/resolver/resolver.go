@@ -2,14 +2,19 @@ package resolver
 
 import (
 	"encoding/json"
+	"os"
+	"runtime/debug"
 	"sort"
+	"strconv"
 	"time"
 
 	"github.com/ActiveState/cli/cmd/state-svc/internal/deprecation"
+	"github.com/ActiveState/cli/cmd/state-svc/internal/rtusage"
 	"github.com/ActiveState/cli/cmd/state-svc/internal/rtwatcher"
 	"github.com/ActiveState/cli/internal/analytics/client/sync"
 	"github.com/ActiveState/cli/internal/analytics/dimensions"
 	"github.com/ActiveState/cli/internal/cache/projectcache"
+	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/poller"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"golang.org/x/net/context"
@@ -30,6 +35,8 @@ type Resolver struct {
 	cfg            *config.Instance
 	depPoller      *poller.Poller
 	updatePoller   *poller.Poller
+	authPoller     *poller.Poller
+	usageChecker   *rtusage.Checker
 	projectIDCache *projectcache.ID
 	an             *sync.Client
 	anForClient    *sync.Client // Use separate client for events sent through service so we don't contaminate one with the other
@@ -49,11 +56,31 @@ func New(cfg *config.Instance, an *sync.Client, auth *authentication.Auth) (*Res
 		return upchecker.Check()
 	})
 
+	pollRate := time.Minute.Milliseconds()
+	if override := os.Getenv(constants.SvcAuthPollingRateEnvVarName); override != "" {
+		overrideInt, err := strconv.ParseInt(override, 10, 64)
+		if err != nil {
+			return nil, errs.New("Failed to parse svc polling time override: %v", err)
+		}
+		pollRate = overrideInt
+	}
+
+	pollAuth := poller.New(time.Duration(int64(time.Millisecond)*pollRate), func() (interface{}, error) {
+		if auth.SyncRequired() {
+			return nil, auth.Sync()
+		}
+		return nil, nil
+	})
+
+	usageChecker := rtusage.NewChecker(cfg, auth)
+
 	anForClient := sync.New(cfg, auth)
 	return &Resolver{
 		cfg,
 		pollDep,
 		pollUpdate,
+		pollAuth,
+		usageChecker,
 		projectcache.NewID(),
 		an,
 		anForClient,
@@ -64,6 +91,7 @@ func New(cfg *config.Instance, an *sync.Client, auth *authentication.Auth) (*Res
 func (r *Resolver) Close() error {
 	r.depPoller.Close()
 	r.updatePoller.Close()
+	r.authPoller.Close()
 	r.anForClient.Close()
 	return r.rtwatch.Close()
 }
@@ -73,6 +101,8 @@ func (r *Resolver) Close() error {
 func (r *Resolver) Query() genserver.QueryResolver { return r }
 
 func (r *Resolver) Version(ctx context.Context) (*graph.Version, error) {
+	defer func() { handlePanics(recover(), debug.Stack()) }()
+
 	r.an.EventWithLabel(anaConsts.CatStateSvc, "endpoint", "Version")
 	logging.Debug("Version resolver")
 	return &graph.Version{
@@ -87,6 +117,8 @@ func (r *Resolver) Version(ctx context.Context) (*graph.Version, error) {
 }
 
 func (r *Resolver) AvailableUpdate(ctx context.Context) (*graph.AvailableUpdate, error) {
+	defer func() { handlePanics(recover(), debug.Stack()) }()
+
 	r.an.EventWithLabel(anaConsts.CatStateSvc, "endpoint", "AvailableUpdate")
 	logging.Debug("AvailableUpdate resolver")
 	defer logging.Debug("AvailableUpdate done")
@@ -109,6 +141,8 @@ func (r *Resolver) AvailableUpdate(ctx context.Context) (*graph.AvailableUpdate,
 }
 
 func (r *Resolver) Projects(ctx context.Context) ([]*graph.Project, error) {
+	defer func() { handlePanics(recover(), debug.Stack()) }()
+
 	r.an.EventWithLabel(anaConsts.CatStateSvc, "endpoint", "Projects")
 	logging.Debug("Projects resolver")
 	var projects []*graph.Project
@@ -127,6 +161,8 @@ func (r *Resolver) Projects(ctx context.Context) ([]*graph.Project, error) {
 }
 
 func (r *Resolver) AnalyticsEvent(_ context.Context, category, action string, _label *string, dimensionsJson string) (*graph.AnalyticsEventResponse, error) {
+	defer func() { handlePanics(recover(), debug.Stack()) }()
+
 	logging.Debug("Analytics event resolver: %s - %s", category, action)
 
 	label := ""
@@ -158,19 +194,46 @@ func (r *Resolver) AnalyticsEvent(_ context.Context, category, action string, _l
 	return &graph.AnalyticsEventResponse{Sent: true}, nil
 }
 
-func (r *Resolver) RuntimeUsage(ctx context.Context, pid int, exec string, dimensionsJSON string) (*graph.RuntimeUsageResponse, error) {
+func (r *Resolver) ReportRuntimeUsage(_ context.Context, pid int, exec string, dimensionsJSON string) (*graph.ReportRuntimeUsageResponse, error) {
+	defer func() { handlePanics(recover(), debug.Stack()) }()
+
 	logging.Debug("Runtime usage resolver: %d - %s", pid, exec)
 	var dims *dimensions.Values
 	if err := json.Unmarshal([]byte(dimensionsJSON), &dims); err != nil {
-		return &graph.RuntimeUsageResponse{Received: false}, errs.Wrap(err, "Could not unmarshal")
+		return &graph.ReportRuntimeUsageResponse{Received: false}, errs.Wrap(err, "Could not unmarshal")
 	}
 
 	r.rtwatch.Watch(pid, exec, dims)
 
-	return &graph.RuntimeUsageResponse{Received: true}, nil
+	return &graph.ReportRuntimeUsageResponse{Received: true}, nil
+}
+
+func (r *Resolver) CheckRuntimeUsage(_ context.Context, organizationName string) (*graph.CheckRuntimeUsageResponse, error) {
+	defer func() { handlePanics(recover(), debug.Stack()) }()
+
+	logging.Debug("CheckRuntimeUsage resolver")
+
+	usage, err := r.usageChecker.Check(organizationName)
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not check runtime usage: %s", errs.JoinMessage(err))
+	}
+
+	if usage == nil {
+		return &graph.CheckRuntimeUsageResponse{
+			Limit: 0,
+			Usage: 0,
+		}, nil
+	}
+
+	return &graph.CheckRuntimeUsageResponse{
+		Limit: int(usage.LimitDynamicRuntimes),
+		Usage: int(usage.ActiveDynamicRuntimes),
+	}, nil
 }
 
 func (r *Resolver) CheckDeprecation(ctx context.Context) (*graph.DeprecationInfo, error) {
+	defer func() { handlePanics(recover(), debug.Stack()) }()
+
 	logging.Debug("Check deprecation resolver")
 
 	deprecated, ok := r.depPoller.ValueFromCache().(*graph.DeprecationInfo)
@@ -182,6 +245,22 @@ func (r *Resolver) CheckDeprecation(ctx context.Context) (*graph.DeprecationInfo
 }
 
 func (r *Resolver) ConfigChanged(ctx context.Context, key string) (*graph.ConfigChangedResponse, error) {
+	defer func() { handlePanics(recover(), debug.Stack()) }()
+
 	go configMediator.NotifyListeners(key)
 	return &graph.ConfigChangedResponse{Received: true}, nil
+}
+
+func (r *Resolver) FetchLogTail(ctx context.Context) (string, error) {
+	defer func() { handlePanics(recover(), debug.Stack()) }()
+
+	return logging.ReadTail(), nil
+}
+
+func handlePanics(recovered interface{}, stack []byte) {
+	if recovered != nil {
+		multilog.Error("Panic: %v", recovered)
+		logging.Debug("Stack: %s", string(stack))
+		panic(recovered) // We're only logging the panic, not interrupting it
+	}
 }

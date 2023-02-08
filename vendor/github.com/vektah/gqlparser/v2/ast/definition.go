@@ -11,7 +11,7 @@ const (
 	InputObject DefinitionKind = "INPUT_OBJECT"
 )
 
-// ObjectDefinition is the core type definition object, it includes all of the definable types
+// Definition is the core type definition object, it includes all of the definable types
 // but does *not* cover schema or directives.
 //
 // @vektah: Javascript implementation has different types for all of these, but they are
@@ -85,9 +85,10 @@ type EnumValueDefinition struct {
 }
 
 type DirectiveDefinition struct {
-	Description string
-	Name        string
-	Arguments   ArgumentDefinitionList
-	Locations   []DirectiveLocation
-	Position    *Position `dump:"-"`
+	Description  string
+	Name         string
+	Arguments    ArgumentDefinitionList
+	Locations    []DirectiveLocation
+	IsRepeatable bool
+	Position     *Position `dump:"-"`
 }

@@ -90,4 +90,5 @@ type Config struct {
 	ErrWriter   io.Writer
 	Colored     bool
 	Interactive bool
+	ShellName   string
 }
