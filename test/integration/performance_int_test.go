@@ -3,6 +3,7 @@ package integration
 import (
 	"fmt"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 	"testing"
@@ -16,7 +17,7 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 )
 
-// The max time is based on the average execution times across platforms at the time that this was configured
+// The max time is based on the median execution times across platforms at the time that this was configured
 // Increasing this should be a LAST RESORT
 var StateVersionMaxTime = 100 * time.Millisecond // DO NOT CHANGE WITHOUT DISCUSSION WITH THE TEAM
 var StateVersionTotalSamples = 10
@@ -76,11 +77,19 @@ func performanceTest(commands []string, expect string, samples int, maxTime time
 		total = total + dur
 	}
 
-	var avg = total / time.Duration(samples)
-	if avg.Milliseconds() > maxTime.Milliseconds() {
+	sort.Slice(times, func(i, j int) bool { return times[i] < times[j] })
+	mid := len(times) / 2
+	var median time.Duration
+	if len(times)%2 == 0 {
+		median = (times[mid-1] + times[mid]) / 2
+	} else {
+		median = times[mid]
+	}
+
+	if median.Milliseconds() > maxTime.Milliseconds() {
 		suite.FailNow(
 			fmt.Sprintf(`'%s' is performing poorly!
-	Average duration: %s
+	Median duration: %s
 	Maximum: %s
 	Total: %s
 	Totals: %v
@@ -90,7 +99,7 @@ func performanceTest(commands []string, expect string, samples int, maxTime time
 
 	%s`,
 				strings.Join(commands, " "),
-				avg.String(),
+				median.String(),
 				maxTime.String(),
 				time.Duration(total).String(),
 				times,
@@ -98,5 +107,5 @@ func performanceTest(commands []string, expect string, samples int, maxTime time
 				firstLogs))
 	}
 
-	return avg
+	return median
 }

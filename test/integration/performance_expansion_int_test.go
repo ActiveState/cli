@@ -44,7 +44,7 @@ func (suite *PerformanceExpansionIntegrationTestSuite) TestExpansionPerformance(
 	suite.OnlyRunForTags(tagsuite.Performance)
 	baseline := DefaultMaxTime
 	suite.Run("CallScript", func() {
-		avg := suite.testScriptPerformance(scriptPerformanceOptions{
+		median := suite.testScriptPerformance(scriptPerformanceOptions{
 			script: projectfile.Script{
 				Name:     "call-script",
 				Value:    `echo "Hello World"`,
@@ -54,7 +54,7 @@ func (suite *PerformanceExpansionIntegrationTestSuite) TestExpansionPerformance(
 			samples: DefaultSamples,
 			max:     DefaultMaxTime,
 		})
-		variance := float64(avg) + (float64(avg) * DefaultVariance)
+		variance := float64(median) + (float64(median) * DefaultVariance)
 		baseline = time.Duration(variance)
 	})
 
