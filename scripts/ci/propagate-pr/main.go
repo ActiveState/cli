@@ -205,7 +205,7 @@ func fetchMeta(ghClient *github.Client, jiraClient *jira.Client, prNumber int) (
 	wc.Print("Extracted fixVersion: %s", fixVersion)
 	finish()
 
-	if err := wh.ValidVersionBranch(prBeingHandled.GetBase().GetRef(), fixVersion); err != nil {
+	if err := wh.ValidVersionBranch(prBeingHandled.GetBase().GetRef(), fixVersion.Version); err != nil {
 		return Meta{}, errs.Wrap(err, "Failed to validate that the target branch for the active PR is correct.")
 	}
 
@@ -213,7 +213,7 @@ func fetchMeta(ghClient *github.Client, jiraClient *jira.Client, prNumber int) (
 		Repo:          &github.Repository{},
 		ActivePR:      prBeingHandled,
 		ActiveStory:   jiraIssue,
-		ActiveVersion: fixVersion,
+		ActiveVersion: fixVersion.Version,
 	}
 
 	return result, nil

@@ -146,7 +146,7 @@ func fetchMeta(ghClient *github.Client, jiraClient *jira.Client, jiraIssueID str
 	var versionPR *github.PullRequest
 	var versionPRName string
 	if version.NE(wh.VersionMaster) {
-		versionPRName = wh.VersionedPRTitle(version)
+		versionPRName = wh.VersionedPRTitle(version.Version)
 
 		// Retrieve Relevant Fixversion Pr
 		finish = wc.PrintStart("Checking if Version PR with title '%s' exists", versionPRName)
@@ -159,10 +159,10 @@ func fetchMeta(ghClient *github.Client, jiraClient *jira.Client, jiraIssueID str
 	}
 
 	return Meta{
-		Version:           version,
+		Version:           version.Version,
 		JiraVersion:       jiraVersion.Name,
 		VersionPR:         versionPR,
 		VersionPRName:     versionPRName,
-		VersionBranchName: wh.VersionedBranchName(version),
+		VersionBranchName: wh.VersionedBranchName(version.Version),
 	}, nil
 }
