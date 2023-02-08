@@ -93,7 +93,7 @@ func NotifyRuntimeUsage(cfg *config.Instance, data dataHandler, orgName string) 
 	err2 := notify.Send(locale.T("runtime_limit_reached_title"),
 		locale.Tr("runtime_limit_reached_msg", orgName),
 		locale.T("runtime_limit_reached_action"),
-		"state://platform/upgrade") // We have to use the state protocol because https:// is backgrounded by the OS
+		"state://platform/upgrade/?org="+orgName) // We have to use the state protocol because https:// is backgrounded by the OS
 	if err2 != nil {
 		multilog.Error("Soft limit: Failed to send notification: %s", errs.JoinMessage(err))
 	}
