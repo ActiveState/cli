@@ -87,6 +87,7 @@ func init() {
 	var err error
 	datadir, err = storage.AppDataPath()
 	if err != nil {
+		log.SetOutput(os.Stderr)
 		Error("Could not detect AppData dir: %v", err)
 		return
 	}
