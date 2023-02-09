@@ -32,3 +32,11 @@ func ArtifactIDsFromRecipeMap(from ArtifactRecipeMap) []ArtifactID {
 	}
 	return ids
 }
+
+func ArtifactIDsFromBuildPlanMap(from ArtifactBuildPlanMap) []ArtifactID {
+	ids := make([]ArtifactID, 0, len(from))
+	for id := range from {
+		ids = append(ids, id)
+	}
+	return ids
+}

@@ -2,9 +2,10 @@ package download
 
 import (
 	"bytes"
-	"errors"
 	"io"
 	"io/ioutil"
+	"net/http"
+	"net/url"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -18,15 +19,24 @@ import (
 	"github.com/ActiveState/cli/internal/proxyreader"
 	"github.com/ActiveState/cli/internal/retryhttp"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup/events/progress"
+	"github.com/hashicorp/go-retryablehttp"
 )
 
 // Get takes a URL and returns the contents as bytes
-var Get func(url string) ([]byte, error)
+var Get func(req *Request) ([]byte, error)
+
+var GetURL func(url string) ([]byte, error)
+
+var GetDirectURL = httpGetURL
 
 var GetDirect = httpGet
 
 // GetWithProgress takes a URL and returns the contents as bytes, it takes an optional second arg which will spawn a progressbar
-var GetWithProgress func(url string, progress progress.Reporter) ([]byte, error)
+var GetWithProgress func(req *Request, prg progress.Reporter) ([]byte, error)
+
+type Request struct {
+	*retryablehttp.Request
+}
 
 func init() {
 	SetMocking(condition.InUnitTest())
@@ -36,24 +46,46 @@ func init() {
 func SetMocking(useMocking bool) {
 	if useMocking {
 		Get = _testHTTPGet
+		GetURL = _testHTTPGetURL
 		GetWithProgress = _testHTTPGetWithProgress
 	} else {
 		Get = httpGet
+		GetURL = httpGetURL
 		GetWithProgress = httpGetWithProgress
 	}
 }
 
-func httpGet(url string) ([]byte, error) {
-	return httpGetWithProgress(url, nil)
+func NewRequest(url string) (*Request, error) {
+	req, err := retryablehttp.NewRequest(http.MethodGet, url, nil)
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not intialize new retryable http request")
+	}
+
+	return &Request{req}, nil
 }
 
-func httpGetWithProgress(url string, progress progress.Reporter) ([]byte, error) {
-	return httpGetWithProgressRetry(url, progress, 1, 3)
+func httpGetURL(url string) ([]byte, error) {
+	req, err := NewRequest(url)
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not create new request")
+	}
+
+	return httpGet(req)
 }
 
-func httpGetWithProgressRetry(url string, prg progress.Reporter, attempt int, retries int) ([]byte, error) {
+func httpGet(req *Request) ([]byte, error) {
+	logging.Debug("Retrieving url: %s", req.URL.String())
+	return httpGetWithProgress(req, nil)
+}
+
+func httpGetWithProgress(req *Request, prg progress.Reporter) ([]byte, error) {
+	return httpGetWithProgressRetry(req, prg, 1, 3)
+}
+
+func httpGetWithProgressRetry(req *Request, prg progress.Reporter, attempt int, retries int) ([]byte, error) {
+	logging.Debug("Retrieving url: %s, attempt: %d", req.URL.String(), attempt)
 	client := retryhttp.NewClient(0 /* 0 = no timeout */, retries)
-	resp, err := client.Get(url)
+	resp, err := client.Do(req.Request)
 	if err != nil {
 		code := -1
 		if resp != nil {
@@ -74,6 +106,7 @@ func httpGetWithProgressRetry(url string, prg progress.Reporter, attempt int, re
 	} else {
 		total, err = strconv.Atoi(length)
 		if err != nil {
+			logging.Debug("Content-length: %v", length)
 			return nil, errs.Wrap(err, "Could not convert header length to int, value: %s", length)
 		}
 	}
@@ -81,7 +114,7 @@ func httpGetWithProgressRetry(url string, prg progress.Reporter, attempt int, re
 	var src io.Reader = resp.Body
 	defer resp.Body.Close()
 
-	if prg != nil {
+	if prg != nil && attempt == 1 {
 		if err := prg.ReportSize(total); err != nil {
 			return nil, errs.Wrap(err, "Could not report size")
 		}
@@ -90,10 +123,10 @@ func httpGetWithProgressRetry(url string, prg progress.Reporter, attempt int, re
 
 	var dst bytes.Buffer
 	_, err = io.Copy(&dst, src)
-	if err != nil && !errors.Is(err, io.EOF) {
-		logging.Debug("Reading body failed: %s", errs.JoinMessage(err))
+	if err != nil {
+		logging.Debug("Reading body failed: %s", err)
 		if attempt <= retries {
-			return httpGetWithProgressRetry(url, prg, attempt+1, retries)
+			return httpGetWithProgressRetry(req, prg, attempt+1, retries)
 		}
 		return nil, errs.Wrap(err, "Could not copy network stream")
 	}
@@ -101,13 +134,26 @@ func httpGetWithProgressRetry(url string, prg progress.Reporter, attempt int, re
 	return dst.Bytes(), nil
 }
 
-func _testHTTPGetWithProgress(url string, progress progress.Reporter) ([]byte, error) {
-	return _testHTTPGet(url)
+func _testHTTPGetURL(url string) ([]byte, error) {
+	req, err := NewRequest(url)
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not create new request")
+	}
+
+	return _testHTTPGet(req)
+}
+
+func _testHTTPGetWithProgress(req *Request, prg progress.Reporter) ([]byte, error) {
+	return _testHTTPGet(req)
 }
 
 // _testHTTPGet is used when in tests, this cannot be in the test itself as that would limit it to only that one test
-func _testHTTPGet(url string) ([]byte, error) {
-	path := strings.Replace(url, constants.APIArtifactURL, "", 1)
+func _testHTTPGet(req *Request) ([]byte, error) {
+	path := strings.Replace(req.URL.String(), constants.APIArtifactURL, "", 1)
+	path, err := url.QueryUnescape(path)
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not unescape path: %s", path)
+	}
 	path = filepath.Join(environment.GetRootPathUnsafe(), "test", path)
 
 	body, err := ioutil.ReadFile(path)

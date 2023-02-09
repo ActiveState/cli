@@ -12,29 +12,31 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
+
+	bpModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model/buildplanner"
 )
 
 // var _ runtime.ClientProvider = &Default{}
 
-// Model is the default client that actually talks to the backend
-type Model struct {
+// Recipe is the default client that actually talks to the backend
+type Recipe struct {
 	auth *authentication.Auth
 }
 
-// NewDefault is the constructor for the Model client
-func NewDefault(auth *authentication.Auth) *Model {
-	return &Model{auth}
+// NewRecipe is the constructor for the Model client
+func NewRecipe(auth *authentication.Auth) *Recipe {
+	return &Recipe{auth}
 }
 
-func (m *Model) ResolveRecipe(commitID strfmt.UUID, owner, projectName string) (*inventory_models.Recipe, error) {
+func (m *Recipe) ResolveRecipe(commitID strfmt.UUID, owner, projectName string) (*inventory_models.Recipe, error) {
 	return model.ResolveRecipe(commitID, owner, projectName)
 }
 
-func (m *Model) RequestBuild(recipeID, commitID strfmt.UUID, owner, project string) (headchef.BuildStatusEnum, *headchef_models.V1BuildStatusResponse, error) {
+func (m *Recipe) RequestBuild(recipeID, commitID strfmt.UUID, owner, project string) (headchef.BuildStatusEnum, *headchef_models.V1BuildStatusResponse, error) {
 	return model.RequestBuild(m.auth, recipeID, commitID, owner, project)
 }
 
-func (m *Model) SignS3URL(uri *url.URL) (*url.URL, error) {
+func (m *Recipe) SignS3URL(uri *url.URL) (*url.URL, error) {
 	return model.SignS3URL(uri)
 }
 
@@ -42,21 +44,22 @@ func (m *Model) SignS3URL(uri *url.URL) (*url.URL, error) {
 type BuildResult struct {
 	BuildEngine         BuildEngine
 	Recipe              *inventory_models.Recipe
+	Build               *bpModel.Build
 	BuildStatusResponse *headchef_models.V1BuildStatusResponse
 	BuildStatus         headchef.BuildStatusEnum
 	BuildReady          bool
 }
 
 func (b *BuildResult) OrderedArtifacts() []artifact.ArtifactID {
-	res := make([]artifact.ArtifactID, 0, len(b.BuildStatusResponse.Artifacts))
-	for _, a := range b.BuildStatusResponse.Artifacts {
-		res = append(res, *a.ArtifactID)
+	res := make([]artifact.ArtifactID, 0, len(b.Build.Artifacts))
+	for _, a := range b.Build.Artifacts {
+		res = append(res, strfmt.UUID(a.TargetID))
 	}
 	return res
 }
 
 // FetchBuildResult requests a build for a resolved recipe and returns the result in a BuildResult struct
-func (m *Model) FetchBuildResult(commitID strfmt.UUID, owner, project string) (*BuildResult, error) {
+func (m *Recipe) FetchBuildResult(commitID strfmt.UUID, owner, project string) (*BuildResult, error) {
 	recipe, err := m.ResolveRecipe(commitID, owner, project)
 	if err != nil {
 		return nil, locale.WrapError(err, "setup_build_resolve_recipe_err", "Could not resolve recipe for project {{.V0}}/{{.V1}}#{{.V2}}", owner, project, commitID.String())
