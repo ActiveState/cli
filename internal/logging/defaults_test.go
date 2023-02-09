@@ -107,10 +107,10 @@ func Test_rotateLogs(t *testing.T) {
 				[]fs.FileInfo{
 					&mockFile{"prefix-123-keep1.log", time.Now()},
 					&mockFile{"prefix-123-keep2.log", time.Now()},
-					&mockFile{"prefix-123-expired1.log", time.Now().Add(-time.Hour)},
+					&mockFile{"prefix-123-expired1.log", time.Now().Add(-time.Hour * 2)},
 					&mockFile{"prefix-overlap-123-keep1.log", time.Now()},
 					&mockFile{"prefix-overlap-123-keep2.log", time.Now()},
-					&mockFile{"prefix-overlap-123-expired1.log", time.Now().Add(-time.Hour)},
+					&mockFile{"prefix-overlap-123-expired1.log", time.Now().Add(-time.Hour * 2)},
 				},
 				time.Now().Add(-time.Hour),
 				2,
