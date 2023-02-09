@@ -86,6 +86,22 @@ func Test_rotateLogs(t *testing.T) {
 			},
 			[]string{"prefixA-123-expired1.log", "prefixB-123-expired1.log"},
 		},
+		{
+			"Prefix overlap",
+			args{
+				[]fs.FileInfo{
+					&mockFile{"prefix-123-keep1.log", time.Now()},
+					&mockFile{"prefix-123-keep2.log", time.Now()},
+					&mockFile{"prefix-123-expired1.log", time.Now().Add(-time.Hour)},
+					&mockFile{"prefix-overlap-123-keep1.log", time.Now()},
+					&mockFile{"prefix-overlap-123-keep2.log", time.Now()},
+					&mockFile{"prefix-overlap-123-expired1.log", time.Now().Add(-time.Hour)},
+				},
+				time.Now().Add(-time.Hour),
+				2,
+			},
+			[]string{"prefix-123-expired1.log", "prefix-overlap-123-expired1.log"},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

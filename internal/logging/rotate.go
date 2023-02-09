@@ -28,7 +28,8 @@ func rotateLogs(files []fs.FileInfo, timeCutoff time.Time, amountCutoff int) []f
 	for prefix := range prefixes {
 		c := 0
 		for _, file := range files {
-			if strings.HasPrefix(file.Name(), prefix) && strings.HasSuffix(file.Name(), FileNameSuffix) {
+			currentPrefix := LogPrefixRx.FindString(filepath.Base(file.Name()))
+			if currentPrefix == prefix && strings.HasSuffix(file.Name(), FileNameSuffix) {
 				c = c + 1
 				if c > amountCutoff && file.ModTime().Before(timeCutoff) {
 					rotate = append(rotate, file)
