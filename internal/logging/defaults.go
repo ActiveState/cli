@@ -96,6 +96,7 @@ func init() {
 	timestamp = time.Now().UnixNano()
 	handler := newFileHandler()
 	SetHandler(handler)
+	handler.SetVerbose(os.Getenv("VERBOSE") != "")
 	log.SetOutput(&writer{})
 
 	Debug("Args: %v", os.Args)
