@@ -59,7 +59,7 @@ func TestFetchAvailableVersions(t *testing.T) {
 
 	emptySemver := semver.Version{}
 	for _, v := range versions {
-		if emptySemver.EQ(v) {
+		if emptySemver.EQ(v.Version) {
 			t.Errorf("Empty version found: %#v", v)
 		}
 	}
@@ -81,7 +81,7 @@ func TestParseTargetFixVersion(t *testing.T) {
 
 	type args struct {
 		issue             *jira.Issue
-		availableVersions []semver.Version
+		availableVersions []Version
 	}
 	tests := []struct {
 		name    string
@@ -93,10 +93,10 @@ func TestParseTargetFixVersion(t *testing.T) {
 			name: "Next Feasible",
 			args: args{
 				getIssue("Next Feasible", "v1.2.5-RC1 -- bogus."),
-				[]semver.Version{
-					{Major: 1, Minor: 2, Patch: 3},
-					{Major: 2, Minor: 3, Patch: 4},
-					{Major: 1, Minor: 2, Patch: 5, Pre: []semver.PRVersion{{VersionStr: "RC1"}}},
+				[]Version{
+					{semver.Version{Major: 1, Minor: 2, Patch: 3}, ""},
+					{semver.Version{Major: 2, Minor: 3, Patch: 4}, ""},
+					{semver.Version{Major: 1, Minor: 2, Patch: 5, Pre: []semver.PRVersion{{VersionStr: "RC1"}}}, ""},
 				},
 			},
 			want: semver.Version{Major: 1, Minor: 2, Patch: 5, Pre: []semver.PRVersion{{VersionStr: "RC1"}}},
@@ -105,10 +105,10 @@ func TestParseTargetFixVersion(t *testing.T) {
 			name: "Next Unscheduled",
 			args: args{
 				getIssue("Next Unscheduled", ""),
-				[]semver.Version{
-					{Major: 1, Minor: 2, Patch: 3},
-					{Major: 2, Minor: 3, Patch: 4},
-					{Major: 1, Minor: 2, Patch: 5},
+				[]Version{
+					{semver.Version{Major: 1, Minor: 2, Patch: 3}, ""},
+					{semver.Version{Major: 2, Minor: 3, Patch: 4}, ""},
+					{semver.Version{Major: 1, Minor: 2, Patch: 5}, ""},
 				},
 			},
 			want: VersionMaster,
@@ -117,7 +117,7 @@ func TestParseTargetFixVersion(t *testing.T) {
 			name: "Custom Version",
 			args: args{
 				getIssue("1.2.3", ""),
-				[]semver.Version{},
+				[]Version{},
 			},
 			want: semver.Version{Major: 1, Minor: 2, Patch: 3},
 		},
