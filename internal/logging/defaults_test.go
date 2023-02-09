@@ -57,6 +57,21 @@ func Test_rotateLogs(t *testing.T) {
 			[]string{"prefixA-123-expired1.log", "prefixA-123-expired2.log", "prefixA-123-expired3.log"},
 		},
 		{
+			"Rotate 2 files based on cutoff, with absolute path",
+			args{
+				[]fs.FileInfo{
+					&mockFile{"/path/to/prefixA-123-expired1.log", time.Now().Add(-time.Hour * 2)},
+					&mockFile{"/path/to/prefixA-123-notexpired1.log", time.Now()},
+					&mockFile{"/path/to/prefixA-123-expired2.log", time.Now().Add(-time.Hour * 2)},
+					&mockFile{"/path/to/prefixA-123-expired3.log", time.Now().Add(-time.Hour * 2)},
+					&mockFile{"/path/to/prefixA-123-notexpired2.log", time.Now()},
+				},
+				time.Now().Add(-time.Hour),
+				2,
+			},
+			[]string{"/path/to/prefixA-123-expired1.log", "/path/to/prefixA-123-expired2.log", "/path/to/prefixA-123-expired3.log"},
+		},
+		{
 			"Rotate 2 files, keep most recent",
 			args{
 				[]fs.FileInfo{
