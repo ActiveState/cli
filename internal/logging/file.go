@@ -24,6 +24,7 @@ type fileHandler struct {
 	wg        *sync.WaitGroup
 	queue     chan entry
 	quit      chan struct{}
+	ready     chan struct{}
 	closed    bool
 }
 
@@ -36,6 +37,7 @@ func newFileHandler() *fileHandler {
 		&sync.WaitGroup{},
 		make(chan entry, defaultMaxEntries),
 		make(chan struct{}),
+		make(chan struct{}),
 		false,
 	}
 	handler.wg.Add(1)
@@ -43,12 +45,14 @@ func newFileHandler() *fileHandler {
 		defer handler.wg.Done()
 		handler.start()
 	}()
+	<-handler.ready
 	return &handler
 }
 
 func (l *fileHandler) start() {
 	defer func() { handlePanics(recover()) }()
 
+	readySent := false
 	for {
 		select {
 		case entry := <-l.queue:
@@ -59,6 +63,11 @@ func (l *fileHandler) start() {
 				l.emit(entry.ctx, entry.message, entry.args...)
 			}
 			return
+		default:
+			if !readySent {
+				l.ready <- struct{}{}
+				readySent = true
+			}
 		}
 	}
 }
