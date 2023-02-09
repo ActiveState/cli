@@ -180,7 +180,7 @@ func (suite *InstallerIntegrationTestSuite) TestStateTrayRemoval() {
 			"bash", e2e.WithArgs("-c", oneLiner),
 		)
 	} else {
-		b, err := download.GetDirect("https://platform.activestate.com/dl/cli/pdli01/install.ps1")
+		b, err := download.GetDirectURL("https://platform.activestate.com/dl/cli/pdli01/install.ps1")
 		suite.Require().NoError(err)
 
 		ps1File := filepath.Join(ts.Dirs.Work, "install.ps1")
