@@ -2,7 +2,6 @@ package logging
 
 import (
 	"io/fs"
-	"path/filepath"
 	"regexp"
 	"sort"
 	"strings"
@@ -19,7 +18,7 @@ func rotateLogs(files []fs.FileInfo, timeCutoff time.Time, amountCutoff int) []f
 	// Collect the possible file prefixes that we're going to want to run through
 	prefixes := map[string]struct{}{}
 	for _, file := range files {
-		prefix := LogPrefixRx.FindString(filepath.Base(file.Name()))
+		prefix := LogPrefixRx.FindString(file.Name())
 		if _, exists := prefixes[prefix]; !exists {
 			prefixes[prefix] = struct{}{}
 		}
@@ -28,7 +27,8 @@ func rotateLogs(files []fs.FileInfo, timeCutoff time.Time, amountCutoff int) []f
 	for prefix := range prefixes {
 		c := 0
 		for _, file := range files {
-			if strings.HasPrefix(file.Name(), prefix) && strings.HasSuffix(file.Name(), FileNameSuffix) {
+			currentPrefix := LogPrefixRx.FindString(file.Name())
+			if currentPrefix == prefix && strings.HasSuffix(file.Name(), FileNameSuffix) {
 				c = c + 1
 				if c > amountCutoff && file.ModTime().Before(timeCutoff) {
 					rotate = append(rotate, file)
