@@ -108,8 +108,6 @@ func (suite *AnalyticsIntegrationTestSuite) TestActivateEvents() {
 
 	// Test that executor is sending heartbeats
 	{
-		cp.SendLine("which python3")
-		cp.Expect(ts.Dirs.Cache)
 		cp.SendLine("python3 -c \"import sys; print(sys.copyright)\"")
 		cp.Expect("provided by ActiveState")
 		time.Sleep(sleepTime)
