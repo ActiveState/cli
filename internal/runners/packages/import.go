@@ -122,7 +122,7 @@ func (i *Import) Run(params *ImportRunParams) error {
 
 	changeset, err := fetchImportChangeset(reqsimport.Init(), params.FileName, lang.Name)
 	if err != nil {
-		return locale.WrapError(err, "err_obtaining_change_request", "Could not process change set: {{.V0}}.", api.ErrorMessageFromPayload(err))
+		return err
 	}
 
 	packageReqs := model.FilterCheckpointNamespace(reqs, model.NamespacePackage, model.NamespaceBundle)
@@ -165,12 +165,12 @@ func removeRequirements(conf Confirmer, project *project.Project, params *Import
 func fetchImportChangeset(cp ChangesetProvider, file string, lang string) (model.Changeset, error) {
 	data, err := ioutil.ReadFile(file)
 	if err != nil {
-		return nil, err
+		return nil, locale.WrapInputError(err, "err_reading_changeset_file", "Cannot read import file: {{.V0}}", err.Error())
 	}
 
 	changeset, err := cp.Changeset(data, lang)
 	if err != nil {
-		return nil, err
+		return nil, locale.WrapError(err, "err_obtaining_change_request", "Could not process change set: {{.V0}}.", api.ErrorMessageFromPayload(err))
 	}
 
 	return changeset, err
