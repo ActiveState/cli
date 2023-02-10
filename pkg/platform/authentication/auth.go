@@ -121,9 +121,9 @@ func (s *Auth) Sync() error {
 			return errs.Wrap(err, "Failed to authenticate with API token")
 		}
 	} else {
-		if err := s.Logout(); err != nil {
-			return errs.Wrap(err, "Failed to logout during sync")
-		}
+		// Ensure properties aren't out of sync
+		s.bearerToken = ""
+		s.user = nil
 	}
 	return nil
 }
