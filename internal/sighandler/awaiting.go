@@ -45,8 +45,8 @@ func (as *Awaiting) WaitForFunc(f func() error) error {
 	as.Resume()
 
 	go func() {
-		defer close(errCh)
 		defer func() { panics.HandlePanics(recover(), debug.Stack()) }()
+		defer close(errCh)
 		errCh <- f()
 	}()
 
