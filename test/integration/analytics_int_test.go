@@ -134,7 +134,7 @@ func (suite *AnalyticsIntegrationTestSuite) TestActivateEvents() {
 	}
 
 	cp.SendLine("exit")
-	cp.ExpectExitCode(0)
+	cp.ExpectExitCode(0, 5*time.Second)
 
 	time.Sleep(sleepTime) // give time to let rtwatcher detect process has exited
 
