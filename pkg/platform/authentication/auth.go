@@ -120,6 +120,10 @@ func (s *Auth) Sync() error {
 		if err := s.Authenticate(); err != nil {
 			return errs.Wrap(err, "Failed to authenticate with API token")
 		}
+	} else {
+		if err := s.Logout(); err != nil {
+			return errs.Wrap(err, "Failed to logout during sync")
+		}
 	}
 	return nil
 }
