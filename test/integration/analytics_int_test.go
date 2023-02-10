@@ -135,6 +135,10 @@ func (suite *AnalyticsIntegrationTestSuite) TestActivateEvents() {
 	}
 
 	cp.SendLine("exit")
+	if runtime.GOOS == "windows" {
+		// We have to exit twice on windows, as we're running through `cmd /k`
+		cp.SendLine("exit")
+	}
 	suite.Require().NoError(rtutils.Timeout(func() error {
 		_, err := cp.ExpectExitCode(0)
 		return err
