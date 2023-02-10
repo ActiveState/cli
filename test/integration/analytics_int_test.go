@@ -131,11 +131,12 @@ func (suite *AnalyticsIntegrationTestSuite) TestActivateEvents() {
 			}
 		}
 		suite.Require().NotNil(heartbeatEvent, "Should have a heartbeat event")
-		suite.Require().Equal(heartbeatEvent.Dimensions.ProjectNameSpace, namespace)
-		suite.Require().Equal(heartbeatEvent.Dimensions.CommitID, commitID)
+		suite.Require().Equal(*heartbeatEvent.Dimensions.ProjectNameSpace, namespace)
+		suite.Require().Equal(*heartbeatEvent.Dimensions.CommitID, commitID)
 	}
 
 	cp.SendLine("exit")
+	cp.ExpectExitCode(0)
 
 	time.Sleep(sleepTime) // give time to let rtwatcher detect process has exited
 
@@ -145,14 +146,14 @@ func (suite *AnalyticsIntegrationTestSuite) TestActivateEvents() {
 
 	time.Sleep(sleepTime)
 
-	events = parseAnalyticsEvents(suite, ts)
-	suite.Require().NotEmpty(events)
-	eventsAfterWait := countEvents(events, anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat)
+	eventsAfter := parseAnalyticsEvents(suite, ts)
+	suite.Require().NotEmpty(eventsAfter)
+	eventsAfterWait := countEvents(eventsAfter, anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat)
 
 	suite.Equal(eventsAfterExit, eventsAfterWait,
 		fmt.Sprintf("Heartbeats should stop ticking after exiting subshell.\n"+
-			"output:\n%s\nState Log:\n%s\nSvc Log:\n%s",
-			cp.Snapshot(), ts.DebugLogs(), ts.SvcLog()))
+			"Unexpected events: %s", debugEvents(suite.T(), filterHeartbeats(eventsAfter[len(events):])),
+		))
 
 	// Ensure any analytics events from the state tool have the instance ID set
 	for _, e := range events {
@@ -170,6 +171,12 @@ func countEvents(events []reporters.TestLogEntry, category, action string) int {
 		return e.Category == category && e.Action == action
 	}).([]reporters.TestLogEntry)
 	return len(filteredEvents)
+}
+
+func filterHeartbeats(events []reporters.TestLogEntry) []reporters.TestLogEntry {
+	return filterEvents(events, func(e reporters.TestLogEntry) bool {
+		return e.Category == anaConst.CatRuntimeUsage && e.Action == anaConst.ActRuntimeHeartbeat
+	})
 }
 
 func filterEvents(events []reporters.TestLogEntry, filters ...func(e reporters.TestLogEntry) bool) []reporters.TestLogEntry {
