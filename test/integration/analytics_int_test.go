@@ -14,6 +14,7 @@ import (
 	anaConst "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
@@ -134,7 +135,10 @@ func (suite *AnalyticsIntegrationTestSuite) TestActivateEvents() {
 	}
 
 	cp.SendLine("exit")
-	cp.ExpectExitCode(0, 5*time.Second)
+	suite.Require().NoError(rtutils.Timeout(func() error {
+		_, err := cp.ExpectExitCode(0)
+		return err
+	}, 5*time.Second), ts.DebugMessage("Timed out waiting for exit code"))
 
 	time.Sleep(sleepTime) // give time to let rtwatcher detect process has exited
 
