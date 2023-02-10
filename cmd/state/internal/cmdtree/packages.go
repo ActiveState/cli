@@ -107,13 +107,7 @@ func newImportCommand(prime *primer.Values, globals *globalOptions) *captain.Com
 		locale.Tl("package_import_title", "Importing Packages"),
 		locale.T("package_import_cmd_description"),
 		prime,
-		[]*captain.Flag{
-			{
-				Name:        "force",
-				Description: locale.T("package_import_flag_force_description"),
-				Value:       &params.Force,
-			},
-		},
+		[]*captain.Flag{},
 		[]*captain.Argument{
 			{
 				Name:        locale.Tl("import_file", "File"),
