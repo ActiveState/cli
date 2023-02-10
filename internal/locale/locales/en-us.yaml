@@ -1166,8 +1166,6 @@ package_err_cannot_obtain_search_results:
   other: Cannot obtain search results
 err_cannot_commit_changeset:
   other: Cannot commit changeset
-err_obtaining_change_request:
-  other: Cannot obtain change request
 package_no_data:
   other: No data found - Please verify the provided commit id
 package_list_no_packages:
