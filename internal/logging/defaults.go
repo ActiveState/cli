@@ -117,7 +117,7 @@ func init() {
 
 	rotate := rotateLogs(files, time.Now().Add(-time.Hour), 10)
 	for _, file := range rotate {
-		if err := os.Remove(filepath.Join(datadir, file.Name())); err != nil {
+		if err := os.Remove(filepath.Join(logDir, file.Name())); err != nil {
 			Error("Could not clean up old log: %s, error: %v", file.Name(), err)
 		}
 	}
