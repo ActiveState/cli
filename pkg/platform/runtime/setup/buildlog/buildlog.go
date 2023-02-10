@@ -80,7 +80,7 @@ func NewWithCustomConnections(artifactMap map[artifact.ArtifactID]artifact.Artif
 	ch := make(chan artifact.ArtifactDownload)
 	errCh := make(chan error)
 
-	if err := eventHandler.Handle(events.BuildStarted{int64(len(artifactMap)), logFilePath}); err != nil {
+	if err := eventHandler.Handle(events.BuildStarted{logFilePath}); err != nil {
 		return nil, errs.Wrap(err, "Could not handle BuildStarted event")
 	}
 
