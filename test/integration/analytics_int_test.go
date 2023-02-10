@@ -16,6 +16,7 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
+	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/termtest"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -37,8 +38,11 @@ func (suite *AnalyticsIntegrationTestSuite) TestActivateEvents() {
 	ts := e2e.New(suite.T(), true)
 	defer ts.Close()
 
+	namespace := "ActiveState-CLI/Alternate-Python"
+	commitID := "efcc851f-1451-4d0a-9dcb-074ac3f35f0a"
+
 	// We want to do a clean test without an activate event, so we have to manually seed the yaml
-	url := "https://platform.activestate.com/ActiveState-CLI/Alternate-Python?branch=main&commitID=efcc851f-1451-4d0a-9dcb-074ac3f35f0a"
+	url := fmt.Sprintf("https://platform.activestate.com/%s?branch=main&commitID=%s", namespace, commitID)
 	suite.Require().NoError(fileutils.WriteFile(filepath.Join(ts.Dirs.Work, "activestate.yaml"), []byte("project: "+url)))
 
 	heartbeatInterval := 1000 // in milliseconds
@@ -101,6 +105,35 @@ func (suite *AnalyticsIntegrationTestSuite) TestActivateEvents() {
 	suite.assertGtEvents(events, heartbeatInitialCount, anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat,
 		fmt.Sprintf("output:\n%s\n%s",
 			cp.Snapshot(), ts.DebugLogs()))
+
+	// Test that executor is sending heartbeats
+	{
+		cp.SendLine("which python3")
+		cp.Expect(ts.Dirs.Cache)
+		cp.SendLine("python3 -c \"import sys; print(sys.copyright)\"")
+		cp.Expect("provided by ActiveState")
+		time.Sleep(sleepTime)
+		eventsAfterExecutor := parseAnalyticsEvents(suite, ts)
+		suite.Require().Greater(len(eventsAfterExecutor), len(events), "Should have received more events after running executor")
+		executorEvents := filterEvents(eventsAfterExecutor, func(e reporters.TestLogEntry) bool {
+			if e.Dimensions == nil || e.Dimensions.Trigger == nil {
+				return false
+			}
+			return (*e.Dimensions.Trigger) == target.TriggerExec.String()
+		})
+		suite.Require().Equal(1, countEvents(executorEvents, anaConst.CatRuntimeUsage, anaConst.ActRuntimeAttempt),
+			ts.DebugMessage("Should have a runtime attempt, events:\n"+debugEvents(suite.T(), executorEvents)))
+		suite.Require().Equal(1, countEvents(executorEvents, anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat), "Should have a heartbeat")
+		var heartbeatEvent *reporters.TestLogEntry
+		for _, e := range executorEvents {
+			if e.Action == anaConst.ActRuntimeHeartbeat {
+				heartbeatEvent = &e
+			}
+		}
+		suite.Require().NotNil(heartbeatEvent, "Should have a heartbeat event")
+		suite.Require().Equal(heartbeatEvent.Dimensions.ProjectNameSpace, namespace)
+		suite.Require().Equal(heartbeatEvent.Dimensions.CommitID, commitID)
+	}
 
 	cp.SendLine("exit")
 
@@ -220,6 +253,12 @@ func (suite *AnalyticsIntegrationTestSuite) summarizeEventSequence(events []repo
 
 type TestingSuiteForAnalytics interface {
 	Require() *require.Assertions
+}
+
+func debugEvents(t *testing.T, events []reporters.TestLogEntry) string {
+	v, err := json.Marshal(events)
+	require.NoError(t, err)
+	return string(v)
 }
 
 func parseAnalyticsEvents(suite TestingSuiteForAnalytics, ts *e2e.Session) []reporters.TestLogEntry {
