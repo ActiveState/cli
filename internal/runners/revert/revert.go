@@ -69,6 +69,9 @@ func (r *Revert) Run(params *Params) error {
 	if r.project == nil {
 		return locale.NewInputError("err_no_project")
 	}
+	if !strfmt.IsUUID(params.CommitID) {
+		return locale.NewInputError("err_invalid_commit_id", "Invalid commit ID")
+	}
 	r.out.Notice(locale.Tl("operating_message", "", r.project.NamespaceString(), r.project.Dir()))
 	commitID := strfmt.UUID(params.CommitID)
 
