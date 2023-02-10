@@ -69,6 +69,7 @@ func (suite *RevertIntegrationTestSuite) TestRevert_failsOnCommitNotInHistory() 
 	suite.OnlyRunForTags(tagsuite.Revert)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
+	ts.LoginAsPersistentUser()
 
 	namespace := "activestate-cli/small-python"
 	cp := ts.SpawnWithOpts(e2e.WithArgs("checkout", namespace))
