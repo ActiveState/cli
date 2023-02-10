@@ -122,7 +122,7 @@ func (i *Import) Run(params *ImportRunParams) error {
 
 	changeset, err := fetchImportChangeset(reqsimport.Init(), params.FileName, lang.Name)
 	if err != nil {
-		return err
+		return errs.Wrap(err, "Could not import changeset")
 	}
 
 	packageReqs := model.FilterCheckpointNamespace(reqs, model.NamespacePackage, model.NamespaceBundle)
