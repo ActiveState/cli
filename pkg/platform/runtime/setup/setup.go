@@ -447,6 +447,12 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 		buildResult.BuildReady, artifactNamesList, installedList, downloadList,
 	)
 
+	data, err = json.MarshalIndent(buildResult, "", "  ")
+	if err != nil {
+		return nil, errs.Wrap(err, "Failed to marshal build result")
+	}
+	logging.Debug("Build result: %s", string(data))
+
 	artifactsToInstall := []artifact.ArtifactID{}
 	if buildResult.BuildReady {
 		// If the build is already done we can just look at the downloadable artifacts as they will be a fully accurate
