@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	anaConsts "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/constants"
@@ -15,14 +16,16 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/internal/runbits/rtusage"
+	bgModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model/buildplanner"
 	medmodel "github.com/ActiveState/cli/pkg/platform/api/mediator/model"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
+	bpModel "github.com/ActiveState/cli/pkg/platform/runtime/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/go-openapi/strfmt"
 )
 
-func (r *RequirementOperation) ExecuteRequirementOperationBuildPlan(requirementName string, requirementVersion string, requirementBitWidth int, operation model.Operation, nsType model.NamespaceType) (rerr error) {
+func (r *RequirementOperation) ExecuteRequirementOperationBuildPlan(requirementName string, requirementVersion string, requirementBitWidth int, operation bgModel.Operation, nsType model.NamespaceType) (rerr error) {
 	var ns model.Namespace
 	var langVersion string
 	langName := "undetermined"
@@ -74,7 +77,7 @@ func (r *RequirementOperation) ExecuteRequirementOperationBuildPlan(requirementN
 
 	rtusage.PrintRuntimeUsage(r.SvcModel, out, pj.Owner())
 
-	var validatePkg = operation == model.OperationAdded && (ns.Type() == model.NamespacePackage || ns.Type() == model.NamespaceBundle)
+	var validatePkg = operation == bgModel.OperationAdd && (ns.Type() == model.NamespacePackage || ns.Type() == model.NamespaceBundle)
 	if !ns.IsValid() && (nsType == model.NamespacePackage || nsType == model.NamespaceBundle) {
 		pg = output.StartSpinner(out, locale.Tl("progress_pkg_nolang", "", requirementName), constants.TerminalAnimationInterval)
 
@@ -129,13 +132,13 @@ func (r *RequirementOperation) ExecuteRequirementOperationBuildPlan(requirementN
 	pg = output.StartSpinner(out, locale.T("progress_commit"), constants.TerminalAnimationInterval)
 
 	// Check if this is an addition or an update
-	if operation == model.OperationAdded && parentCommitID != "" {
+	if operation == bgModel.OperationAdd && parentCommitID != "" {
 		req, err := model.GetRequirement(parentCommitID, ns, requirementName)
 		if err != nil {
 			return errs.Wrap(err, "Could not get requirement")
 		}
 		if req != nil {
-			operation = model.OperationUpdated
+			operation = bgModel.OperationUpdate
 		}
 	}
 
@@ -151,18 +154,26 @@ func (r *RequirementOperation) ExecuteRequirementOperationBuildPlan(requirementN
 		}
 	}
 
-	var commitID strfmt.UUID
-	commitID, err = model.CommitRequirement(parentCommitID, operation, requirementName, requirementVersion, requirementBitWidth, ns)
+	bp := bpModel.NewBuildPlanner(r.Auth)
+	commitID, err := bp.PushCommit(&bpModel.PushCommitParams{
+		Owner:            pj.Owner(),
+		Project:          pj.Name(),
+		ParentCommit:     string(parentCommitID),
+		BranchRef:        pj.BranchName(),
+		Description:      fmt.Sprintf("%s-%s", operation, requirementName),
+		PackageName:      requirementName,
+		PackageVersion:   requirementVersion,
+		PackageNamespace: ns,
+		Operation:        operation,
+		Time:             time.Now(),
+	})
 	if err != nil {
-		if operation == model.OperationRemoved && strings.Contains(err.Error(), "does not exist") {
-			return locale.WrapInputError(err, "err_package_remove_does_not_exist", "Requirement is not installed: {{.V0}}", requirementName)
-		}
-		return locale.WrapError(err, fmt.Sprintf("err_%s_%s", ns.Type(), operation))
+		return locale.WrapError(err, "err_package_save_and_build", "Could not save and build project")
 	}
 
 	orderChanged := !hasParentCommit
 	if hasParentCommit {
-		revertCommit, err := model.GetRevertCommit(pj.CommitUUID(), commitID)
+		revertCommit, err := model.GetRevertCommit(pj.CommitUUID(), strfmt.UUID(commitID))
 		if err != nil {
 			return locale.WrapError(err, "err_revert_refresh")
 		}
@@ -187,13 +198,13 @@ func (r *RequirementOperation) ExecuteRequirementOperationBuildPlan(requirementN
 	}
 
 	// refresh or install runtime
-	err = runbits.RefreshRuntime(r.Auth, r.Output, r.Analytics, pj, commitID, orderChanged, trigger, r.SvcModel)
+	err = runbits.RefreshRuntime(r.Auth, r.Output, r.Analytics, pj, strfmt.UUID(commitID), orderChanged, trigger, r.SvcModel)
 	if err != nil {
 		return err
 	}
 
 	if orderChanged {
-		if err := pj.SetCommit(commitID.String()); err != nil {
+		if err := pj.SetCommit(commitID); err != nil {
 			return locale.WrapError(err, "err_package_update_pjfile")
 		}
 	}

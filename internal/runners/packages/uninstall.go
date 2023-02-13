@@ -4,6 +4,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/runbits/requirements"
+	bgModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model/buildplanner"
 	"github.com/ActiveState/cli/pkg/platform/model"
 )
 
@@ -29,11 +30,11 @@ func (u *Uninstall) Run(params UninstallRunParams, nsType model.NamespaceType) e
 		return locale.NewInputError("err_no_project")
 	}
 
-	return requirements.NewRequirementOperation(u.prime).ExecuteRequirementOperation(
+	return requirements.NewRequirementOperation(u.prime).ExecuteRequirementOperationBuildPlan(
 		params.Name,
 		"",
 		0,
-		model.OperationRemoved,
+		bgModel.OperationRemove,
 		nsType,
 	)
 }

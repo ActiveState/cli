@@ -5,6 +5,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runbits/requirements"
+	bgModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model/buildplanner"
 	"github.com/ActiveState/cli/pkg/platform/model"
 )
 
@@ -48,11 +49,11 @@ func (a *Add) Run(ps AddRunParams) error {
 		return locale.NewInputError("err_no_project")
 	}
 
-	if err := requirements.NewRequirementOperation(a.prime).ExecuteRequirementOperation(
+	if err := requirements.NewRequirementOperation(a.prime).ExecuteRequirementOperationBuildPlan(
 		params.name,
 		params.version,
 		params.BitWidth,
-		model.OperationAdded,
+		bgModel.OperationAdd,
 		model.NamespacePlatform,
 	); err != nil {
 		return locale.WrapError(err, "err_add_platform", "Could not add platform.")

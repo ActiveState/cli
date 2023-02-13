@@ -1,18 +1,18 @@
 package request
 
-func BuildGraph(owner, project, commitID string) *buildGraphByCommitID {
-	return &buildGraphByCommitID{map[string]interface{}{
+func BuildScript(owner, project, commitID string) *buildScriptByCommitID {
+	return &buildScriptByCommitID{map[string]interface{}{
 		"organization": owner,
 		"project":      project,
 		"commitID":     commitID,
 	}}
 }
 
-type buildGraphByCommitID struct {
+type buildScriptByCommitID struct {
 	vars map[string]interface{}
 }
 
-func (b *buildGraphByCommitID) Query() string {
+func (b *buildScriptByCommitID) Query() string {
 	return `
 query ($organization: String!, $project: String!, $commitID: String!) {
   project(organization: $organization, project: $project) {
@@ -38,6 +38,6 @@ query ($organization: String!, $project: String!, $commitID: String!) {
 `
 }
 
-func (b *buildGraphByCommitID) Vars() map[string]interface{} {
+func (b *buildScriptByCommitID) Vars() map[string]interface{} {
 	return b.vars
 }

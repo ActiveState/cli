@@ -6,35 +6,35 @@ import (
 	model "github.com/ActiveState/cli/pkg/platform/api/graphql/model/buildplanner"
 )
 
-func SaveAndBuild(owner, project, parentCommit, branchRef, description string, graph *model.BuildScript) *buildPlanBySaveAndBuild {
-	return &buildPlanBySaveAndBuild{map[string]interface{}{
+func PushCommit(owner, project, parentCommit, branchRef, description string, script *model.BuildScript) *buildPlanByPushCommit {
+	return &buildPlanByPushCommit{map[string]interface{}{
 		"organization": owner,
 		"project":      project,
 		"parentCommit": parentCommit,
 		"branchRef":    branchRef,
 		"description":  description,
-		"graph":        graph,
+		"script":       script,
 	}}
 }
 
-type buildPlanBySaveAndBuild struct {
+type buildPlanByPushCommit struct {
 	vars map[string]interface{}
 }
 
-func (b *buildPlanBySaveAndBuild) Query() string {
+func (b *buildPlanByPushCommit) Query() string {
 	return fmt.Sprintf(`
 mutation ($organization: String!, $project: String!, $parentCommit: String!, $script: BuildScript!, $branchRef: String!, $description:String!) {
-  saveAndBuild(organization: $organization, project: $project, parentCommit: $parentCommit, graph: $graph, branchRef: $branchRef, description:$description) {
+  pushCommit(input:{org: $organization, project: $project, parentCommit: $parentCommit, script: $script, branchRef: $branchRef, description:$description}) {
     ... on Commit {
       __typename
-      graph
+      script
       commitId
       %s
     }
-    ... on CommitNotFound {
+    ... on NotFound {
       message
     }
-    ... on BuildSubmissionError {
+    ... on Error {
       message
     }
   }
@@ -42,6 +42,6 @@ mutation ($organization: String!, $project: String!, $parentCommit: String!, $sc
 `, buildResultFragment)
 }
 
-func (b *buildPlanBySaveAndBuild) Vars() map[string]interface{} {
+func (b *buildPlanByPushCommit) Vars() map[string]interface{} {
 	return b.vars
 }

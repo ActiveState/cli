@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
@@ -64,9 +65,15 @@ func NewBuildPlanner(auth *authentication.Auth) *BuildPlanner {
 	}
 	logging.Debug("Using build planner at: %s", bpURL)
 
+	client := gqlclient.NewWithOpts(bpURL, 0, graphql.WithHTTPClient(&http.Client{}))
+
+	if auth.Authenticated() {
+		client.SetTokenProvider(auth)
+	}
+
 	return &BuildPlanner{
 		auth:   auth,
-		client: gqlclient.NewWithOpts(bpURL, 0, graphql.WithHTTPClient(&http.Client{})),
+		client: client,
 		def:    NewRecipe(auth),
 	}
 }
@@ -180,7 +187,7 @@ func removeEmptyTargets(bp *model.BuildPlan) {
 	bp.Project.Commit.Build.Artifacts = artifacts
 }
 
-type SaveAndBuildParams struct {
+type PushCommitParams struct {
 	Owner            string
 	Project          string
 	ParentCommit     string
@@ -190,15 +197,16 @@ type SaveAndBuildParams struct {
 	PackageVersion   string
 	PackageNamespace vcsModel.Namespace
 	Operation        model.Operation
+	Time             time.Time
 }
 
-func (bp *BuildPlanner) SaveAndBuild(params *SaveAndBuildParams) (string, error) {
+func (bp *BuildPlanner) PushCommit(params *PushCommitParams) (string, error) {
 	// If parent commit is provided then get the build graph
 	// If it is not create a blank build graph
 	var err error
-	graph := model.NewBuildScript()
+	script := model.NewBuildScript()
 	if params.ParentCommit != "" {
-		graph, err = bp.GetBuildGraph(params.Owner, params.Project, params.ParentCommit)
+		script, err = bp.GetBuildScript(params.Owner, params.Project, params.ParentCommit)
 		if err != nil {
 			return "", errs.Wrap(err, "Failed to get build graph")
 		}
@@ -214,28 +222,49 @@ func (bp *BuildPlanner) SaveAndBuild(params *SaveAndBuildParams) (string, error)
 	}
 
 	// Call the build graph update function with the operation
-	graph, err = graph.Update(params.Operation, []model.Requirement{requirement})
+	script, err = script.Update(params.Operation, []model.Requirement{requirement})
 	if err != nil {
 		return "", errs.Wrap(err, "Failed to update build graph")
 	}
+	script.Let.Runtime.SolveLegacy.AtTime = params.Time.Format(time.RFC3339)
 
 	// With the updated build graph call the save and build mutation
-	request := request.SaveAndBuild(params.Owner, params.Project, params.ParentCommit, params.BranchRef, params.Description, graph)
-	resp := model.Commit{}
+	request := request.PushCommit(params.Owner, params.Project, params.ParentCommit, params.BranchRef, params.Description, script)
+	resp := &model.PushCommitResult{}
 	err = bp.client.Run(request, resp)
 	if err != nil {
 		return "", errs.Wrap(err, "failed to fetch build plan")
 	}
 
-	return resp.CommitID, nil
+	if resp.NotFound != nil {
+		return "", errs.New("Commit not found: %s", resp.NotFound.Message)
+	}
+
+	if resp.Error != nil {
+		return "", errs.New("PushCommit failed: %s", resp.Error.Message)
+	}
+
+	return resp.Commit.CommitID, nil
 }
 
-func (bp *BuildPlanner) GetBuildGraph(owner, project, commitID string) (*model.BuildScript, error) {
-	resp := &model.BuildScript{}
-	err := bp.client.Run(request.BuildGraph(owner, project, commitID), resp)
+func (bp *BuildPlanner) GetBuildScript(owner, project, commitID string) (*model.BuildScript, error) {
+	resp := &model.BuildPlan{}
+	err := bp.client.Run(request.BuildScript(owner, project, commitID), resp)
 	if err != nil {
 		return nil, errs.Wrap(err, "failed to fetch build graph")
 	}
 
-	return resp, nil
+	if resp.Project == nil {
+		return nil, errs.New("Project not found")
+	}
+
+	if resp.Project.Commit == nil {
+		return nil, errs.New("Commit not found")
+	}
+
+	if resp.Project.Commit.Script == nil {
+		return nil, errs.New("Commit script not found")
+	}
+
+	return resp.Project.Commit.Script, nil
 }

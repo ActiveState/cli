@@ -5,6 +5,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/runbits/requirements"
+	bgModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model/buildplanner"
 	"github.com/ActiveState/cli/pkg/platform/model"
 )
 
@@ -38,11 +39,11 @@ func (r *Remove) Run(ps RemoveRunParams) error {
 		return errs.Wrap(err, "Could not prepare parameters.")
 	}
 
-	if err := requirements.NewRequirementOperation(r.prime).ExecuteRequirementOperation(
+	if err := requirements.NewRequirementOperation(r.prime).ExecuteRequirementOperationBuildPlan(
 		params.name,
 		params.version,
 		params.BitWidth,
-		model.OperationRemoved,
+		bgModel.OperationRemove,
 		model.NamespacePlatform,
 	); err != nil {
 		return locale.WrapError(err, "err_remove_platform", "Could not remove platform.")

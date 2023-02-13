@@ -5,6 +5,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/runbits/requirements"
+	bgModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model/buildplanner"
 	"github.com/ActiveState/cli/pkg/platform/model"
 )
 
@@ -38,11 +39,11 @@ func NewInstall(prime primeable) *Install {
 // Run executes the install behavior.
 func (a *Install) Run(params InstallRunParams, nsType model.NamespaceType) error {
 	logging.Debug("ExecuteInstall")
-	return requirements.NewRequirementOperation(a.prime).ExecuteRequirementOperation(
+	return requirements.NewRequirementOperation(a.prime).ExecuteRequirementOperationBuildPlan(
 		params.Package.Name(),
 		params.Package.Version(),
 		0,
-		model.OperationAdded,
+		bgModel.OperationAdd,
 		nsType,
 	)
 }

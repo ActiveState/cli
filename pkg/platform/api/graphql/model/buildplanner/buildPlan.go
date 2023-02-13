@@ -33,6 +33,20 @@ type BuildPlan struct {
 	Project *Project `json:"project"`
 }
 
+type PushCommitResult struct {
+	Commit   *Commit   `json:"pushCommit"`
+	NotFound *NotFound `json:"notFound"`
+	Error    *Error    `json:"error"`
+}
+
+type NotFound struct {
+	Message string `json:"message"`
+}
+
+type Error struct {
+	Message string `json:"message"`
+}
+
 type Project struct {
 	Type   string  `json:"__typename"`
 	Commit *Commit `json:"commit"`
@@ -43,7 +57,7 @@ type Project struct {
 
 type Commit struct {
 	Type     string       `json:"__typename"`
-	Graph    *BuildScript `json:"graph"`
+	Script   *BuildScript `json:"script"`
 	CommitID string       `json:"commitId"`
 	Build    *Build       `json:"build"`
 

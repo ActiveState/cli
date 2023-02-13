@@ -50,6 +50,7 @@ type BuildScript struct {
 }
 
 type LetStatement struct {
+	In      string  `json:"in"`
 	Runtime Runtime `json:"runtime"`
 }
 
@@ -59,7 +60,12 @@ type Runtime struct {
 }
 
 type SolveLegacy struct {
-	Requirements []Requirement `json:"requirements"`
+	BuildFlags    []string      `json:"build_flags,omitempty"`
+	CamelFlags    []string      `json:"camel_flags,omitempty"`
+	Platforms     []string      `json:"platforms"`
+	SolverVersion string        `json:"solver_version,omitempty"`
+	AtTime        string        `json:"at_time"`
+	Requirements  []Requirement `json:"requirements"`
 }
 
 type Requirement struct {
@@ -83,29 +89,29 @@ func (bs *BuildScript) Update(operation Operation, requirements []Requirement) (
 	}
 }
 
-func (bg *BuildScript) add(requirements []Requirement) *BuildScript {
-	bg.Let.Runtime.SolveLegacy.Requirements = append(bg.Let.Runtime.SolveLegacy.Requirements, requirements...)
-	return bg
+func (bs *BuildScript) add(requirements []Requirement) *BuildScript {
+	bs.Let.Runtime.SolveLegacy.Requirements = append(bs.Let.Runtime.SolveLegacy.Requirements, requirements...)
+	return bs
 }
 
-func (bg *BuildScript) remove(requirements []Requirement) *BuildScript {
-	for i, req := range bg.Let.Runtime.SolveLegacy.Requirements {
+func (bs *BuildScript) remove(requirements []Requirement) *BuildScript {
+	for i, req := range bs.Let.Runtime.SolveLegacy.Requirements {
 		for _, removeReq := range requirements {
 			if req.Name == removeReq.Name && req.Namespace == removeReq.Namespace {
-				bg.Let.Runtime.SolveLegacy.Requirements = append(bg.Let.Runtime.SolveLegacy.Requirements[:i], bg.Let.Runtime.SolveLegacy.Requirements[i+1:]...)
+				bs.Let.Runtime.SolveLegacy.Requirements = append(bs.Let.Runtime.SolveLegacy.Requirements[:i], bs.Let.Runtime.SolveLegacy.Requirements[i+1:]...)
 			}
 		}
 	}
-	return bg
+	return bs
 }
 
-func (bg *BuildScript) update(requirements []Requirement) *BuildScript {
-	for _, req := range bg.Let.Runtime.SolveLegacy.Requirements {
+func (bs *BuildScript) update(requirements []Requirement) *BuildScript {
+	for _, req := range bs.Let.Runtime.SolveLegacy.Requirements {
 		for _, updateReq := range requirements {
 			if req.Name == updateReq.Name && req.Namespace == updateReq.Namespace {
 				req.VersionRequirement = updateReq.VersionRequirement
 			}
 		}
 	}
-	return bg
+	return bs
 }
