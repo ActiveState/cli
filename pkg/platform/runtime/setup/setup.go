@@ -2,6 +2,7 @@ package setup
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/url"
@@ -369,12 +370,12 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 	// }
 	// }
 
-	// data, err := json.MarshalIndent(buildResult.Build, "", "  ")
-	// if err != nil {
-	// 	return nil, errs.Wrap(err, "Failed to marshal build result")
-	// }
+	data, err := json.MarshalIndent(buildResult, "", "  ")
+	if err != nil {
+		return nil, errs.Wrap(err, "Failed to marshal build result")
+	}
 
-	// logging.Debug("Build result: %s", string(data))
+	logging.Debug("Build result: %s", string(data))
 
 	downloadablePrebuiltResults, err := setup.DownloadsFromBuild(*buildResult.Build, installableArtifacts)
 	if err != nil {
