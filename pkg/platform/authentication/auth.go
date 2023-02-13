@@ -122,8 +122,7 @@ func (s *Auth) Sync() error {
 		}
 	} else {
 		// Ensure properties aren't out of sync
-		s.bearerToken = ""
-		s.user = nil
+		s.resetSession()
 	}
 	return nil
 }
@@ -159,6 +158,22 @@ func (s *Auth) updateRollbarPerson() {
 		return
 	}
 	rollbar.UpdateRollbarPerson(uid.String(), s.WhoAmI(), s.Email())
+}
+
+func (s *Auth) resetSession() {
+	s.bearerToken = ""
+	s.user = nil
+}
+
+func (s *Auth) Refresh() error {
+	s.resetSession()
+
+	apiToken := s.AvailableAPIToken()
+	if apiToken == "" {
+		return nil
+	}
+
+	return s.AuthenticateWithToken(apiToken)
 }
 
 // Authenticate will try to authenticate using stored credentials
