@@ -14,6 +14,7 @@ import (
 	model "github.com/ActiveState/cli/pkg/platform/api/graphql/model/buildplanner"
 	"github.com/ActiveState/cli/pkg/platform/api/graphql/request"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
+	platformModel "github.com/ActiveState/cli/pkg/platform/model"
 	vcsModel "github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/sysinfo"
 	"github.com/go-openapi/strfmt"
@@ -120,15 +121,14 @@ func (bp *BuildPlanner) FetchBuildResult(commitID strfmt.UUID, owner, project st
 		bpPlatforms = append(bpPlatforms, strfmt.UUID(strings.TrimPrefix(t.Tag, "platform:")))
 	}
 
-	// TODO: Re-enable this once the build mutations are in place
-	// platformID, err := platformModel.FilterCurrentPlatform(HostPlatform, bpPlatforms)
-	// if err != nil {
-	// 	return nil, locale.WrapError(err, "err_filter_current_platform")
-	// }
+	platformID, err := platformModel.FilterCurrentPlatform(HostPlatform, bpPlatforms)
+	if err != nil {
+		return nil, locale.WrapError(err, "err_filter_current_platform")
+	}
 
 	var filteredTerminals []*model.NamedTarget
 	for _, t := range resp.Project.Commit.Build.Terminals {
-		if string(bpPlatforms[0]) == strings.TrimPrefix(t.Tag, "platform:") {
+		if platformID.String() == strings.TrimPrefix(t.Tag, "platform:") {
 			filteredTerminals = append(filteredTerminals, t)
 		}
 	}
