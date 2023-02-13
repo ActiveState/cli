@@ -78,7 +78,7 @@ type Resolver interface {
 }
 
 type AnalyticsReporter interface {
-	EventWithLabel(category string, action, label string, dims ...*dimensions.Values)
+	Event(category string, action string, dims ...*dimensions.Values)
 }
 
 func HeartbeatHandler(cfg *config.Instance, resolver Resolver, analyticsReporter AnalyticsReporter) ipc.RequestHandler {
@@ -86,6 +86,8 @@ func HeartbeatHandler(cfg *config.Instance, resolver Resolver, analyticsReporter
 		if !strings.HasPrefix(input, KeyHeartbeat) {
 			return "", false
 		}
+
+		logging.Debug("Heartbeat: Received heartbeat through ipc")
 
 		data := input[len(KeyHeartbeat):]
 		hb := svcmsg.NewHeartbeatFromSvcMsg(data)
@@ -116,6 +118,7 @@ func HeartbeatHandler(cfg *config.Instance, resolver Resolver, analyticsReporter
 				CommitID:         p.StrP(metaData.CommitUUID),
 				ProjectNameSpace: p.StrP(metaData.Namespace),
 				InstanceID:       p.StrP(instanceid.Make()),
+				Sequence:         p.IntP(-1), // Sequence is irrelevant for attempt / heartbeats
 			}
 			dimsJSON, err := dims.Marshal()
 			if err != nil {
@@ -134,7 +137,9 @@ func HeartbeatHandler(cfg *config.Instance, resolver Resolver, analyticsReporter
 				}
 			}
 
-			analyticsReporter.EventWithLabel(constants.CatRuntimeUsage, constants.ActRuntimeAttempt, "", dims)
+			logging.Debug("Firing runtime usage events for %s", metaData.Namespace)
+			analyticsReporter.Event(constants.CatRuntimeUsage, constants.ActRuntimeAttempt, dims)
+			analyticsReporter.Event(constants.CatRuntimeUsage, constants.ActRuntimeHeartbeat, dims) // Initial event
 			_, err = resolver.ReportRuntimeUsage(context.Background(), pidNum, hb.ExecPath, dimsJSON)
 			if err != nil {
 				multilog.Critical("Heartbeat Failure: Failed to report runtime usage in heartbeat handler: %s", errs.JoinMessage(err))
