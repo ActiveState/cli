@@ -43,14 +43,18 @@ func NewChecker(configuration configurable, auth *authentication.Auth) *Checker 
 
 // Check will check the runtime usage for the given organization, it may return a cached result
 func (c *Checker) Check(organizationName string) (*model.RuntimeUsage, error) {
+	if cached, ok := c.cache.Get(cacheKey + organizationName); ok {
+		return cached.(*model.RuntimeUsage), nil
+	}
+
+	if err := c.auth.Sync(); err != nil {
+		return nil, errs.Wrap(err, "Could not sync authentication")
+	}
+
 	if !c.auth.Authenticated() {
 		// Usage information can only be given to authenticated users, and the API doesn't support authentication errors
 		// so we just don't even attempt it if not authenticated.
 		return nil, nil
-	}
-
-	if cached, ok := c.cache.Get(cacheKey + organizationName); ok {
-		return cached.(*model.RuntimeUsage), nil
 	}
 
 	client := graphql.New()
