@@ -2,7 +2,6 @@ package setup
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/url"
@@ -370,13 +369,6 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 	// }
 	// }
 
-	data, err := json.MarshalIndent(buildResult, "", "  ")
-	if err != nil {
-		return nil, errs.Wrap(err, "Failed to marshal build result")
-	}
-
-	logging.Debug("Build result: %s", string(data))
-
 	downloadablePrebuiltResults, err := setup.DownloadsFromBuild(*buildResult.Build, installableArtifacts)
 	if err != nil {
 		if errors.Is(err, artifact.CamelRuntimeBuilding) {
@@ -447,12 +439,6 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 		buildResult.BuildReady, artifactNamesList, installedList, downloadList,
 	)
 
-	data, err = json.MarshalIndent(buildResult, "", "  ")
-	if err != nil {
-		return nil, errs.Wrap(err, "Failed to marshal build result")
-	}
-	logging.Debug("Build result: %s", string(data))
-
 	artifactsToInstall := []artifact.ArtifactID{}
 	if buildResult.BuildReady {
 		// If the build is already done we can just look at the downloadable artifacts as they will be a fully accurate
@@ -476,7 +462,8 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 	logFilePath := logging.FilePathFor(fmt.Sprintf("build-%s.log", s.target.CommitUUID().String()+"-"+time.Now().Format("20060102150405")))
 
 	if err := s.eventHandler.Handle(events.Start{
-		RequiresBuild: !buildResult.BuildReady,
+		// TODO: Temporary
+		RequiresBuild: false,
 		ArtifactNames: artifactNames,
 		LogFilePath:   logFilePath,
 		ArtifactsToBuild: func() []artifact.ArtifactID {
