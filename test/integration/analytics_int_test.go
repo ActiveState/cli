@@ -14,6 +14,7 @@ import (
 	anaConst "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
@@ -108,8 +109,6 @@ func (suite *AnalyticsIntegrationTestSuite) TestActivateEvents() {
 
 	// Test that executor is sending heartbeats
 	{
-		cp.SendLine("which python3")
-		cp.Expect(ts.Dirs.Cache)
 		cp.SendLine("python3 -c \"import sys; print(sys.copyright)\"")
 		cp.Expect("provided by ActiveState")
 		time.Sleep(sleepTime)
@@ -131,11 +130,19 @@ func (suite *AnalyticsIntegrationTestSuite) TestActivateEvents() {
 			}
 		}
 		suite.Require().NotNil(heartbeatEvent, "Should have a heartbeat event")
-		suite.Require().Equal(heartbeatEvent.Dimensions.ProjectNameSpace, namespace)
-		suite.Require().Equal(heartbeatEvent.Dimensions.CommitID, commitID)
+		suite.Require().Equal(*heartbeatEvent.Dimensions.ProjectNameSpace, namespace)
+		suite.Require().Equal(*heartbeatEvent.Dimensions.CommitID, commitID)
 	}
 
 	cp.SendLine("exit")
+	if runtime.GOOS == "windows" {
+		// We have to exit twice on windows, as we're running through `cmd /k`
+		cp.SendLine("exit")
+	}
+	suite.Require().NoError(rtutils.Timeout(func() error {
+		_, err := cp.ExpectExitCode(0)
+		return err
+	}, 5*time.Second), ts.DebugMessage("Timed out waiting for exit code"))
 
 	time.Sleep(sleepTime) // give time to let rtwatcher detect process has exited
 
@@ -145,14 +152,14 @@ func (suite *AnalyticsIntegrationTestSuite) TestActivateEvents() {
 
 	time.Sleep(sleepTime)
 
-	events = parseAnalyticsEvents(suite, ts)
-	suite.Require().NotEmpty(events)
-	eventsAfterWait := countEvents(events, anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat)
+	eventsAfter := parseAnalyticsEvents(suite, ts)
+	suite.Require().NotEmpty(eventsAfter)
+	eventsAfterWait := countEvents(eventsAfter, anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat)
 
 	suite.Equal(eventsAfterExit, eventsAfterWait,
 		fmt.Sprintf("Heartbeats should stop ticking after exiting subshell.\n"+
-			"output:\n%s\nState Log:\n%s\nSvc Log:\n%s",
-			cp.Snapshot(), ts.DebugLogs(), ts.SvcLog()))
+			"Unexpected events: %s", debugEvents(suite.T(), filterHeartbeats(eventsAfter[len(events):])),
+		))
 
 	// Ensure any analytics events from the state tool have the instance ID set
 	for _, e := range events {
@@ -170,6 +177,12 @@ func countEvents(events []reporters.TestLogEntry, category, action string) int {
 		return e.Category == category && e.Action == action
 	}).([]reporters.TestLogEntry)
 	return len(filteredEvents)
+}
+
+func filterHeartbeats(events []reporters.TestLogEntry) []reporters.TestLogEntry {
+	return filterEvents(events, func(e reporters.TestLogEntry) bool {
+		return e.Category == anaConst.CatRuntimeUsage && e.Action == anaConst.ActRuntimeHeartbeat
+	})
 }
 
 func filterEvents(events []reporters.TestLogEntry, filters ...func(e reporters.TestLogEntry) bool) []reporters.TestLogEntry {
