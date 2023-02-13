@@ -45,7 +45,6 @@ type ChangesetProvider interface {
 type ImportRunParams struct {
 	FileName       string
 	Language       string
-	Force          bool
 	NonInteractive bool
 }
 
@@ -143,7 +142,7 @@ func (i *Import) Run(params *ImportRunParams) error {
 }
 
 func removeRequirements(conf Confirmer, project *project.Project, params *ImportRunParams, reqs []*gqlModel.Requirement) error {
-	if !params.Force {
+	if !params.NonInteractive {
 		msg := locale.T("confirm_remove_existing_prompt")
 
 		defaultChoice := params.NonInteractive
