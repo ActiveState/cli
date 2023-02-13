@@ -47,6 +47,9 @@ func NewDownloadsFromBuildPlan(build bpModel.Build, artifacts map[strfmt.UUID]Ar
 	for id := range artifacts {
 		for _, a := range build.Artifacts {
 			if a.Status == string(bpModel.ArtifactSucceeded) && a.TargetID == id.String() && a.URL != "" {
+				if strings.Contains(a.URL, InstallerTestsSubstr) {
+					continue
+				}
 				if strings.HasPrefix(a.URL, "s3://as-builds/noop/") {
 					continue
 				}
@@ -87,10 +90,14 @@ func NewDownloadsFromCamelBuildPlan(build bpModel.Build, artifacts map[strfmt.UU
 	for id := range artifacts {
 		for _, a := range build.Artifacts {
 			if a.Status == string(bpModel.ArtifactSucceeded) && a.TargetID == id.String() && a.URL != "" {
+				if strings.Contains(a.URL, InstallerTestsSubstr) {
+					continue
+				}
 				if strings.HasPrefix(a.URL, "s3://as-builds/noop/") {
 					continue
 				}
 				if strings.HasSuffix(a.URL, ".tar.gz") || strings.HasSuffix(a.URL, ".zip") {
+					logging.Debug("Found download for artifact %s: %s", a.TargetID, a.URL)
 					return []ArtifactDownload{{ArtifactID: strfmt.UUID(a.TargetID), UnsignedURI: a.URL, UnsignedLogURI: a.LogURL, Checksum: a.Checksum}}, nil
 				}
 			}
