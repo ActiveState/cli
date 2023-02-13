@@ -159,7 +159,7 @@ func (suite *UseIntegrationTestSuite) TestReset() {
 
 	cp = ts.SpawnWithOpts(e2e.WithArgs("use", "reset"))
 	cp.Expect("No project to stop using")
-	cp.ExpectExitCode(0)
+	cp.ExpectExitCode(1)
 
 	if runtime.GOOS != "windows" && fileutils.FileExists(rcfile) {
 		suite.NotContains(string(fileutils.ReadFileUnsafe(rcfile)), ts.Dirs.DefaultBin, "PATH still has your project in it")

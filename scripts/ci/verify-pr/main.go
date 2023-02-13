@@ -206,7 +206,7 @@ func verifyPR(jiraClient *jira.Client, pr *github.PullRequest) error {
 	}
 
 	finish = wc.PrintStart("Validating target branch")
-	if err := wh.ValidVersionBranch(pr.GetBase().GetRef(), version); err != nil {
+	if err := wh.ValidVersionBranch(pr.GetBase().GetRef(), version.Version); err != nil {
 		return errs.Wrap(err, "Invalid target branch, ensure your PR is targeting a versioned branch")
 	}
 	finish()

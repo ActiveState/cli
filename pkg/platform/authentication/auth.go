@@ -17,6 +17,7 @@ import (
 	"github.com/ActiveState/cli/internal/profile"
 	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/ActiveState/cli/internal/singleton/uniqid"
+	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/api/mono"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/authentication"
@@ -120,6 +121,10 @@ func (s *Auth) Sync() error {
 		if err := s.Authenticate(); err != nil {
 			return errs.Wrap(err, "Failed to authenticate with API token")
 		}
+	} else {
+		// Ensure properties aren't out of sync
+		s.bearerToken = ""
+		s.user = nil
 	}
 	return nil
 }
@@ -195,6 +200,9 @@ func (s *Auth) AuthenticateWithModel(credentials *mono_models.Credentials) error
 		default:
 			if os.IsTimeout(err) {
 				return locale.NewInputError("err_api_auth_timeout", "Timed out waiting for authentication response. Please try again.")
+			}
+			if api.ErrorCode(err) == 403 {
+				return locale.NewInputError("err_auth_forbidden", "You are not allowed to login now. Please try again later.")
 			}
 			multilog.Error("Authentication API returned %v", err)
 			return errs.AddTips(locale.WrapError(err, "err_api_auth", "Authentication failed: {{.V0}}", err.Error()), tips...)

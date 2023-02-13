@@ -87,6 +87,7 @@ func init() {
 	var err error
 	datadir, err = storage.AppDataPath()
 	if err != nil {
+		log.SetOutput(os.Stderr)
 		Error("Could not detect AppData dir: %v", err)
 		return
 	}
@@ -95,12 +96,14 @@ func init() {
 	timestamp = time.Now().UnixNano()
 	handler := newFileHandler()
 	SetHandler(handler)
+	handler.SetVerbose(os.Getenv("VERBOSE") != "")
 	log.SetOutput(&writer{})
 
 	Debug("Args: %v", os.Args)
 
 	// Clean up old log files
-	files, err := ioutil.ReadDir(filepath.Dir(FilePath()))
+	logDir := filepath.Dir(FilePath())
+	files, err := ioutil.ReadDir(logDir)
 	if err != nil && !os.IsNotExist(err) {
 		Error("Could not scan config dir to clean up stale logs: %v", err)
 		return
@@ -114,7 +117,7 @@ func init() {
 
 	rotate := rotateLogs(files, time.Now().Add(-time.Hour), 10)
 	for _, file := range rotate {
-		if err := os.Remove(filepath.Join(datadir, file.Name())); err != nil {
+		if err := os.Remove(filepath.Join(logDir, file.Name())); err != nil {
 			Error("Could not clean up old log: %s, error: %v", file.Name(), err)
 		}
 	}
