@@ -21,8 +21,23 @@ query ($organization: String!, $project: String!, $commitID: String!) {
       commit(vcsRef: $commitID) {
         ... on Commit {
           __typename
+          script
           build {
             __typename
+            ... on BuildReady {
+              buildLogIds {
+                id
+                type
+                platformId
+              }
+            }
+            ... on BuildStarted {
+              buildLogIds {
+                id
+                type
+                platformId
+              }
+            }
             ... on Build {
               status
               terminals {

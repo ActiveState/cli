@@ -148,9 +148,13 @@ func (bp *BuildPlanner) FetchBuildResult(commitID strfmt.UUID, owner, project st
 	}
 
 	if resp.Project.Commit.Build.Status == model.Building {
-		res.Recipe, err = bp.def.ResolveRecipe(commitID, owner, project)
-		if err != nil {
-			return nil, locale.WrapError(err, "setup_build_resolve_recipe_err", "Could not resolve recipe for project {{.V0}}/{{.V1}}#{{.V2}}", owner, project, commitID.String())
+		// If the build is alternative the ID type will identify it as a recipe ID.
+		// The other buildLogID type is for camel builds which we don't use for
+		// builds in progress.
+		for _, id := range resp.Project.Commit.Build.BuildLogIDs {
+			if id.Type == model.BuildLogRecipeID {
+				res.RecipeID = strfmt.UUID(id.ID)
+			}
 		}
 	}
 

@@ -43,7 +43,7 @@ func (m *Recipe) SignS3URL(uri *url.URL) (*url.URL, error) {
 // BuildResult is the unified response of a Build request
 type BuildResult struct {
 	BuildEngine         BuildEngine
-	Recipe              *inventory_models.Recipe
+	RecipeID            strfmt.UUID
 	Build               *bpModel.Build
 	BuildStatusResponse *headchef_models.V1BuildStatusResponse
 	BuildStatus         headchef.BuildStatusEnum
@@ -74,7 +74,6 @@ func (m *Recipe) FetchBuildResult(commitID strfmt.UUID, owner, project string) (
 
 	return &BuildResult{
 		BuildEngine:         engine,
-		Recipe:              recipe,
 		BuildStatusResponse: resp,
 		BuildStatus:         bse,
 		BuildReady:          bse == headchef.Completed,

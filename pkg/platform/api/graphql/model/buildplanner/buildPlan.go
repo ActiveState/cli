@@ -27,6 +27,10 @@ const (
 	TagDependency = "dep"
 	TagBuilder    = "builder"
 	TagOrphan     = "orphans"
+
+	// BuildLogID types
+	BuildLogRecipeID = "RECIPE_ID"
+	BuildRequestID   = "BUILD_REQUEST_ID"
 )
 
 type BuildPlan struct {
@@ -73,7 +77,14 @@ type Build struct {
 	Artifacts   []*Artifact    `json:"artifacts"`
 	Steps       []*Step        `json:"steps"`
 	Sources     []*Source      `json:"sources"`
+	BuildLogIDs []*BuildLogID  `json:"buildLogIds"`
 	*PlanningError
+}
+
+type BuildLogID struct {
+	ID         string `json:"id"`
+	Type       string `json:"type"`
+	PlatformID string `json:"platformID"`
 }
 
 type NamedTarget struct {

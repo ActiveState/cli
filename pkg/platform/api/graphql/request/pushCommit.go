@@ -1,8 +1,6 @@
 package request
 
 import (
-	"fmt"
-
 	model "github.com/ActiveState/cli/pkg/platform/api/graphql/model/buildplanner"
 )
 
@@ -22,24 +20,136 @@ type buildPlanByPushCommit struct {
 }
 
 func (b *buildPlanByPushCommit) Query() string {
-	return fmt.Sprintf(`
-mutation ($organization: String!, $project: String!, $parentCommit: String!, $script: BuildScript!, $branchRef: String!, $description:String!) {
-  pushCommit(input:{org: $organization, project: $project, parentCommit: $parentCommit, script: $script, branchRef: $branchRef, description:$description}) {
+	return `
+mutation ($organization: String!, $project: String!, $parentCommit: String!, $branchRef: String!, $description: String!) {
+  pushCommit(input:{org:$organization, project:$project, parentCommit:$parentCommit, script:{let: {in: "$runtime", runtime: {solve_legacy: {at_time: "2023-02-06T19:15:45.283Z", solver_version: null, platforms: ["96b7e6f2-bebf-564c-bc1c-f04482398f38"], camel_flags: [], build_flags: [], requirements: [{name: "requests", namespace: "language/python", version_requirements: []}, {name: "python", namespace: "language", version_requirements: [{comparator: "eq", version: "3.9.14"}]}]}}}}, branchRef:$branchRef, description:$description}) {
     ... on Commit {
       __typename
-      script
+			script
       commitId
-      %s
+      build {
+        __typename
+        ... on BuildReady {
+          buildLogIds {
+            id
+            type
+          }
+        }
+        ... on BuildStarted {
+          buildLogIds {
+            id
+            type
+          }
+        }
+        ... on Build {
+          status
+          terminals {
+            tag
+            targetIDs
+          }
+          sources: targets {
+            ... on Source {
+              targetID
+              name
+              namespace
+              version
+            }
+          }
+          steps: targets {
+            ... on Step {
+              targetID
+              inputs {
+                tag
+                targetIDs
+              }
+              outputs
+            }
+          }
+          artifacts: targets {
+            ... on ArtifactSucceeded {
+              targetID
+              mimeType
+              generatedBy
+              runtimeDependencies
+              status
+              logURL
+              url
+              checksum
+            }
+            ... on ArtifactUnbuilt {
+              targetID
+              mimeType
+              generatedBy
+              runtimeDependencies
+              status
+            }
+            ... on ArtifactBuilding {
+              targetID
+              mimeType
+              generatedBy
+              runtimeDependencies
+              status
+            }
+            ... on ArtifactTransientlyFailed {
+              targetID
+              mimeType
+              generatedBy
+              runtimeDependencies
+              status
+              logURL
+              errors
+              attempts
+              nextAttemptAt
+            }
+            ... on ArtifactPermanentlyFailed {
+              targetID
+              mimeType
+              generatedBy
+              runtimeDependencies
+              status
+              logURL
+              errors
+            }
+          }
+        }
+        ... on PlanningError {
+          subErrors {
+            __typename
+            ... on GenericSolveError {
+              path
+              message
+              isTransient
+              validationErrors {
+                jsonPath
+              }
+            }
+            ... on RemediableSolveError {
+              path
+              message
+              isTransient
+              errorType
+              validationErrors {
+                jsonPath
+              }
+              suggestedRemediations {
+                remediationType
+                command
+                parameters
+              }
+            }
+          }
+        }
+      }
     }
     ... on NotFound {
       message
     }
-    ... on Error {
+    ... on Error{
       message
     }
   }
 }
-`, buildResultFragment)
+`
 }
 
 func (b *buildPlanByPushCommit) Vars() map[string]interface{} {
