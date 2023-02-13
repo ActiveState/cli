@@ -120,6 +120,10 @@ func (s *Auth) Sync() error {
 		if err := s.Authenticate(); err != nil {
 			return errs.Wrap(err, "Failed to authenticate with API token")
 		}
+	} else {
+		// Ensure properties aren't out of sync
+		s.bearerToken = ""
+		s.user = nil
 	}
 	return nil
 }
