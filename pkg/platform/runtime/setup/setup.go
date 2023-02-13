@@ -461,12 +461,14 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 	// The log file we want to use for builds
 	logFilePath := logging.FilePathFor(fmt.Sprintf("build-%s.log", s.target.CommitUUID().String()+"-"+time.Now().Format("20060102150405")))
 
-	var recipeID strfmt.UUID
-	if buildResult.Recipe.RecipeID != nil {
-		recipeID = *buildResult.Recipe.RecipeID
-	}
+	// TODO: Get recipeID from the buildplan, or whatever they are using now.
+	// There might be a new way to get this. (ie. not using the recipeID but something else)
+	// var recipeID strfmt.UUID
+	// if buildResult.Recipe.RecipeID != nil {
+	// 	recipeID = *buildResult.Recipe.RecipeID
+	// }
 	if err := s.eventHandler.Handle(events.Start{
-		RecipeID: recipeID,
+		// RecipeID: recipeID,
 		// TODO: Temporary
 		RequiresBuild: false,
 		ArtifactNames: artifactNames,
