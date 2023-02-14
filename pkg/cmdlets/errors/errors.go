@@ -41,7 +41,7 @@ func (o *OutputError) MarshalOutput(f output.Format) interface{} {
 
 	// Print what happened
 	if !isInputError {
-		outLines = append(outLines, output.Heading(locale.Tl("err_what_happened", "[ERROR]Something Went Wrong[/RESET]")).String())
+		outLines = append(outLines, output.Title(locale.Tl("err_what_happened", "[ERROR]Something Went Wrong[/RESET]")).String())
 	}
 
 	rerrs := locale.UnwrapError(o.error)
@@ -67,7 +67,7 @@ func (o *OutputError) MarshalOutput(f output.Format) interface{} {
 
 	// Print tips
 	if enableTips := os.Getenv(constants.DisableErrorTipsEnvVarName) != "true"; enableTips {
-		outLines = append(outLines, output.Heading(locale.Tl("err_more_help", "Need More Help?")).String())
+		outLines = append(outLines, output.Title(locale.Tl("err_more_help", "Need More Help?")).String())
 		for _, tip := range errorTips {
 			outLines = append(outLines, fmt.Sprintf(" [DISABLED]•[/RESET] %s", trimError(tip)))
 		}

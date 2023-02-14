@@ -172,7 +172,7 @@ func (p *Pull) Run(params *PullParams) error {
 }
 
 func (p *Pull) performMerge(strategies *mono_models.MergeStrategies, remoteCommit strfmt.UUID) (strfmt.UUID, error) {
-	p.out.Notice(output.Heading(locale.Tl("pull_diverged", "Merging history")))
+	p.out.Notice(output.Title(locale.Tl("pull_diverged", "Merging history")))
 	p.out.Notice(locale.Tr(
 		"pull_diverged_message",
 		p.project.Namespace().String(), p.project.BranchName(), p.project.CommitID(), remoteCommit.String()))

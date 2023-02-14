@@ -55,12 +55,12 @@ func autoUpdate(args []string, cfg *config.Instance, out output.Outputer) (bool,
 
 	if !isEnabled(cfg) {
 		logging.Debug("Not performing autoupdates because user turned off autoupdates.")
-		out.Notice(output.Heading(locale.Tl("update_available_header", "Auto Update")))
+		out.Notice(output.Title(locale.Tl("update_available_header", "Auto Update")))
 		out.Notice(locale.Tr("update_available", constants.Version, up.Version))
 		return false, nil
 	}
 
-	out.Notice(output.Heading(locale.Tl("auto_update_title", "Auto Update")))
+	out.Notice(output.Title(locale.Tl("auto_update_title", "Auto Update")))
 	out.Notice(locale.Tr("auto_update_to_version", constants.Version, up.Version))
 
 	logging.Debug("Auto updating to %s", up.Version)
