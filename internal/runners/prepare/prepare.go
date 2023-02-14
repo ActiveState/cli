@@ -125,7 +125,7 @@ func (r *Prepare) Run(cmd *captain.Command) error {
 
 func (r *Prepare) reportError(message string, err error) {
 	multilog.Error("prepare error, message: %s, error: %v", message, errs.Join(err, ": "))
-	r.out.Notice(output.Heading(locale.Tl("warning", "Warning")))
+	r.out.Notice(output.Title(locale.Tl("warning", "Warning")))
 	r.out.Notice(message)
 }
 
