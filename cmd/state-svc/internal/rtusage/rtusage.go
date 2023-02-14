@@ -47,8 +47,8 @@ func (c *Checker) Check(organizationName string) (*model.RuntimeUsage, error) {
 		return cached.(*model.RuntimeUsage), nil
 	}
 
-	if err := c.auth.Sync(); err != nil {
-		return nil, errs.Wrap(err, "Could not sync authentication")
+	if err := c.auth.Refresh(); err != nil {
+		return nil, errs.Wrap(err, "Could not refresh authentication")
 	}
 
 	if !c.auth.Authenticated() {
