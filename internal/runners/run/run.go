@@ -89,13 +89,13 @@ func (r *Run) Run(name string, args []string) error {
 	}
 
 	if len(script.Languages()) == 0 {
-		r.out.Notice(output.Heading(locale.Tl("deprecation_warning", "Deprecation Warning!")))
+		r.out.Notice(output.Title(locale.Tl("deprecation_warning", "Deprecation Warning!")))
 		r.out.Notice(locale.Tl(
 			"run_warn_deprecated_script_without_language",
 			"Scripts without a defined language currently fall back to using the default shell for your platform. This fallback mechanic will soon stop working and a language will need to be explicitly defined for each script. Please configure the '[ACTIONABLE]language[/RESET]' field with a valid option (one of [ACTIONABLE]{{.V0}}[/RESET])",
 			strings.Join(language.RecognizedNames(), ", ")))
 	}
 
-	r.out.Notice(output.Heading(locale.Tl("script_output", "Script Output")))
+	r.out.Notice(output.Title(locale.Tl("script_output", "Script Output")))
 	return scriptrunner.Run(script, args)
 }

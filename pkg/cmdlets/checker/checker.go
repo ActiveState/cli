@@ -24,7 +24,7 @@ func RunCommitsBehindNotifier(p *project.Project, out output.Outputer) {
 	count, err := CommitsBehind(p)
 	if err != nil {
 		if errors.Is(err, model.ErrCommitCountUnknowable) {
-			out.Notice(output.Heading(locale.Tr("runtime_update_notice_unknown_count")))
+			out.Notice(output.Title(locale.Tr("runtime_update_notice_unknown_count")))
 			out.Notice(locale.Tr("runtime_update_help", p.Owner(), p.Name()))
 			return
 		}
@@ -34,7 +34,7 @@ func RunCommitsBehindNotifier(p *project.Project, out output.Outputer) {
 	}
 	if count > 0 {
 		ct := strconv.Itoa(count)
-		out.Notice(output.Heading(locale.Tr("runtime_update_notice_known_count", ct)))
+		out.Notice(output.Title(locale.Tr("runtime_update_notice_known_count", ct)))
 		out.Notice(locale.Tr("runtime_update_help", p.Owner(), p.Name()))
 	}
 }
@@ -73,6 +73,6 @@ func RunUpdateNotifier(svc *model.SvcModel, out output.Outputer) {
 	if up == nil {
 		return
 	}
-	out.Notice(output.Heading(locale.Tr("update_available_header")))
+	out.Notice(output.Title(locale.Tr("update_available_header")))
 	out.Notice(locale.Tr("update_available", constants.Version, up.Version))
 }

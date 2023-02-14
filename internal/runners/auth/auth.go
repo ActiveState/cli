@@ -110,7 +110,7 @@ func (a *Auth) verifyAuthentication() error {
 		return locale.NewInputError("login_err_auth")
 	}
 
-	a.Outputer.Notice(output.Heading(locale.Tl("authentication_title", "Authentication")))
+	a.Outputer.Notice(output.Title(locale.Tl("authentication_title", "Authentication")))
 	a.Outputer.Notice(locale.T("login_success_welcome_back", map[string]string{
 		"Name": a.Auth.WhoAmI(),
 	}))

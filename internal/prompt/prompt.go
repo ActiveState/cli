@@ -100,7 +100,7 @@ func (p *Prompt) InputAndValidate(title, message string, defaultResponse *string
 	}
 
 	if title != "" {
-		p.out.Notice(output.SubHeading(title))
+		p.out.Notice(output.Emphasize(title))
 	}
 
 	// We handle defaults more clearly than the survey package can
@@ -136,7 +136,7 @@ func (p *Prompt) Select(title, message string, choices []string, defaultChoice *
 	}
 
 	if title != "" {
-		p.out.Notice(output.SubHeading(title))
+		p.out.Notice(output.Emphasize(title))
 	}
 
 	var defChoice string
@@ -166,7 +166,7 @@ func (p *Prompt) Confirm(title, message string, defaultChoice *bool) (bool, erro
 		return false, interactiveInputError(message)
 	}
 	if title != "" {
-		p.out.Notice(output.SubHeading(title))
+		p.out.Notice(output.Emphasize(title))
 	}
 
 	p.analytics.EventWithLabel(constants.CatPrompt, title, "present")
@@ -212,7 +212,7 @@ func (p *Prompt) InputSecret(title, message string, flags ...ValidatorFlag) (str
 	}
 
 	if title != "" {
-		p.out.Notice(output.SubHeading(title))
+		p.out.Notice(output.Emphasize(title))
 	}
 
 	err = survey.AskOne(&Password{&survey.Password{
