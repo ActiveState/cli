@@ -32,12 +32,8 @@ echo "Waiting for process %exe% with PID %pid% to end..." >> %logfile%
 echo "Process %exe% has ended" >> %logfile%
 for /d %%i in (%paths%) do (
     echo "Attempting to remove path %%i" >> %logfile%
-    if exist %%i\* (
-        rmdir /s /q %%i >> %logfile%
-    ) else (
-        del /q %%i >> %logfile%
-    )
-    if %ERRORLEVEL% NEQ 0 (
+    rmdir /s /q %%i >> %logfile%
+    if exist %%i (
         echo "Could not remove directory: %%i" >> %logfile%
     ) else (
         echo "Successfully removed path %%i" >> %logfile%
