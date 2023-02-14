@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/patrickmn/go-cache"
@@ -37,6 +38,9 @@ func (i *ID) FromNamespace(projectNameSpace string) (string, error) {
 		return "", errs.Wrap(err, "Failed to parse project namespace %s", projectNameSpace)
 	}
 
+	if err := authentication.LegacyGet().Refresh(); err != nil {
+		return "", errs.Wrap(err, "Failed to refresh authentication")
+	}
 	pj, err := model.FetchProjectByName(pn.Owner, pn.Project)
 	if err != nil {
 		return "", errs.Wrap(err, "Failed get project by name")
