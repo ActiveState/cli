@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/ActiveState/archiver"
-	"github.com/ActiveState/cli/internal/analytics/client/sync/reporters"
 	anaConst "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
@@ -24,6 +23,7 @@ import (
 	"github.com/ActiveState/cli/internal/subshell/cmd"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
+	"github.com/ActiveState/cli/pkg/platform/analytics/sync/reporters"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/google/uuid"
 )

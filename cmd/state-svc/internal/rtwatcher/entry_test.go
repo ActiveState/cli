@@ -4,14 +4,14 @@ import (
 	"os"
 	"testing"
 
-	"github.com/ActiveState/cli/internal/analytics/dimensions"
+	analytics2 "github.com/ActiveState/cli/internal/analytics"
 )
 
 func Test_entry_IsRunning(t *testing.T) {
 	type fields struct {
 		PID  int
 		Exec string
-		Dims *dimensions.Values
+		Dims *analytics2.Dimensions
 	}
 	tests := []struct {
 		name    string

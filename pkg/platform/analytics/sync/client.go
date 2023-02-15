@@ -7,11 +7,8 @@ import (
 	"sync"
 
 	"github.com/ActiveState/cli/internal/analytics"
-	"github.com/ActiveState/cli/internal/analytics/client/sync/reporters"
 	anaConsts "github.com/ActiveState/cli/internal/analytics/constants"
-	"github.com/ActiveState/cli/internal/analytics/dimensions"
 	"github.com/ActiveState/cli/internal/condition"
-	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/installation/storage"
@@ -24,32 +21,42 @@ import (
 	"github.com/ActiveState/cli/internal/rtutils/p"
 	"github.com/ActiveState/cli/internal/singleton/uniqid"
 	"github.com/ActiveState/cli/internal/updater"
-	"github.com/ActiveState/cli/pkg/platform/authentication"
+	reporters2 "github.com/ActiveState/cli/pkg/platform/analytics/sync/reporters"
 	"github.com/ActiveState/cli/pkg/sysinfo"
-	ga "github.com/ActiveState/go-ogle-analytics"
+	"github.com/go-openapi/strfmt"
 )
 
 type Reporter interface {
 	ID() string
-	Event(category, action, label string, dimensions *dimensions.Values) error
+	Event(category, action, label string, dimensions *analytics.Dimensions) error
 }
 
 // Client instances send analytics events to GA and S3 endpoints without delay. It is only supposed to be used inside the `state-svc`.  All other processes should use the DefaultClient.
 type Client struct {
-	gaClient         *ga.Client
-	customDimensions *dimensions.Values
-	cfg              *config.Instance
+	customDimensions *analytics.Dimensions
 	eventWaitGroup   *sync.WaitGroup
 	sendReports      bool
 	reporters        []Reporter
 	sequence         int
-	auth             *authentication.Auth
+	cfg              Configer
+	auth             Auther
+}
+
+type Configer interface {
+	GetString(string) string
+	GetBool(string) bool
+	IsSet(string) bool
+	Closed() bool
+}
+
+type Auther interface {
+	UserID() *strfmt.UUID
 }
 
 var _ analytics.Dispatcher = &Client{}
 
 // New initializes the analytics instance with all custom dimensions known at this time
-func New(cfg *config.Instance, auth *authentication.Auth) *Client {
+func New(cfg Configer, auth Auther, version, branchName string) *Client {
 	a := &Client{
 		eventWaitGroup: &sync.WaitGroup{},
 		sendReports:    true,
@@ -93,9 +100,9 @@ func New(cfg *config.Instance, auth *authentication.Auth) *Client {
 		userID = string(*auth.UserID())
 	}
 
-	customDimensions := &dimensions.Values{
-		Version:       p.StrP(constants.Version),
-		BranchName:    p.StrP(constants.BranchName),
+	customDimensions := &analytics.Dimensions{
+		Version:       p.StrP(version),
+		BranchName:    p.StrP(branchName),
 		OSName:        p.StrP(osName),
 		OSVersion:     p.StrP(osVersion),
 		InstallSource: p.StrP(installSource),
@@ -103,7 +110,7 @@ func New(cfg *config.Instance, auth *authentication.Auth) *Client {
 		SessionToken:  p.StrP(sessionToken),
 		UpdateTag:     p.StrP(tag),
 		UserID:        p.StrP(userID),
-		Flags:         p.StrP(dimensions.CalculateFlags()),
+		Flags:         p.StrP(analytics.CalculateFlags()),
 		InstanceID:    p.StrP(instanceid.ID()),
 		Command:       p.StrP(osutils.ExecutableName()),
 		Sequence:      p.IntP(0),
@@ -114,12 +121,12 @@ func New(cfg *config.Instance, auth *authentication.Auth) *Client {
 	// Register reporters
 	if condition.InTest() {
 		logging.Debug("Using test reporter")
-		a.NewReporter(reporters.NewTestReporter(reporters.TestReportFilepath()))
+		a.NewReporter(reporters2.NewTestReporter(reporters2.TestReportFilepath()))
 		logging.Debug("Using test reporter as instructed by env")
 	} else if v := os.Getenv(constants.AnalyticsLogEnvVarName); v != "" {
-		a.NewReporter(reporters.NewTestReporter(v))
+		a.NewReporter(reporters2.NewTestReporter(v))
 	} else {
-		a.NewReporter(reporters.NewPixelReporter())
+		a.NewReporter(reporters2.NewPixelReporter())
 	}
 
 	return a
@@ -141,7 +148,7 @@ func (a *Client) Wait() {
 }
 
 // Events returns a channel to feed eventData directly to the report loop
-func (a *Client) report(category, action, label string, dimensions *dimensions.Values) {
+func (a *Client) report(category, action, label string, dimensions *analytics.Dimensions) {
 	if !a.sendReports {
 		return
 	}
@@ -156,11 +163,11 @@ func (a *Client) report(category, action, label string, dimensions *dimensions.V
 	}
 }
 
-func (a *Client) Event(category string, action string, dims ...*dimensions.Values) {
+func (a *Client) Event(category string, action string, dims ...*analytics.Dimensions) {
 	a.EventWithLabel(category, action, "", dims...)
 }
 
-func mergeDimensions(target *dimensions.Values, dims ...*dimensions.Values) *dimensions.Values {
+func mergeDimensions(target *analytics.Dimensions, dims ...*analytics.Dimensions) *analytics.Dimensions {
 	actualDims := target.Clone()
 	for _, dim := range dims {
 		if dim == nil {
@@ -171,7 +178,7 @@ func mergeDimensions(target *dimensions.Values, dims ...*dimensions.Values) *dim
 	return actualDims
 }
 
-func (a *Client) EventWithLabel(category string, action, label string, dims ...*dimensions.Values) {
+func (a *Client) EventWithLabel(category string, action, label string, dims ...*analytics.Dimensions) {
 	if a.customDimensions == nil {
 		if condition.InUnitTest() {
 			return

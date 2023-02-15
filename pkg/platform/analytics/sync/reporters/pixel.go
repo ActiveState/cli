@@ -6,7 +6,7 @@ import (
 	"net/url"
 	"os"
 
-	"github.com/ActiveState/cli/internal/analytics/dimensions"
+	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 )
@@ -29,7 +29,7 @@ func (r *PixelReporter) ID() string {
 	return "PixelReporter"
 }
 
-func (r *PixelReporter) Event(category, action, label string, d *dimensions.Values) error {
+func (r *PixelReporter) Event(category, action, label string, d *analytics.Dimensions) error {
 	pixelURL, err := url.Parse(r.url)
 	if err != nil {
 		return errs.Wrap(err, "Invalid pixel URL: %s", r.url)

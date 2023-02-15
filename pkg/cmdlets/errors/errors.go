@@ -8,7 +8,6 @@ import (
 
 	"github.com/ActiveState/cli/internal/analytics"
 	anaConst "github.com/ActiveState/cli/internal/analytics/constants"
-	"github.com/ActiveState/cli/internal/analytics/dimensions"
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/config"
@@ -148,7 +147,7 @@ func ReportError(err error, cmd *captain.Command, an analytics.Dispatcher) {
 		trigger = append(trigger, flagNames...)
 
 		logging.Debug("Reporting input error:\n%s\nCreated at:\n%s", errs.Join(err, "\n").Error(), stack)
-		an.Event(anaConst.CatDebug, anaConst.ActInputError, &dimensions.Values{
+		an.Event(anaConst.CatDebug, anaConst.ActInputError, &analytics.Dimensions{
 			Trigger: p.StrP(strings.Join(trigger, " ")),
 		})
 	}

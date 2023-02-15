@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/cmd/state-svc/autostart"
-	anaSync "github.com/ActiveState/cli/internal/analytics/client/sync"
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
@@ -27,6 +26,7 @@ import (
 	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/ActiveState/cli/internal/runbits/panics"
 	"github.com/ActiveState/cli/internal/svcctl"
+	anaSync "github.com/ActiveState/cli/pkg/platform/analytics/sync"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/inconshreveable/mousetrap"
 )

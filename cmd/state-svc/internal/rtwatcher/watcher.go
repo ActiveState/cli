@@ -7,8 +7,8 @@ import (
 	"strconv"
 	"time"
 
+	analytics2 "github.com/ActiveState/cli/internal/analytics"
 	anaConst "github.com/ActiveState/cli/internal/analytics/constants"
-	"github.com/ActiveState/cli/internal/analytics/dimensions"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
@@ -30,7 +30,7 @@ type Watcher struct {
 }
 
 type analytics interface {
-	Event(category string, action string, dim ...*dimensions.Values)
+	Event(category string, action string, dim ...*analytics2.Dimensions)
 }
 
 func New(cfg *config.Instance, an analytics) *Watcher {
@@ -116,7 +116,7 @@ func (w *Watcher) Close() error {
 	return nil
 }
 
-func (w *Watcher) Watch(pid int, exec string, dims *dimensions.Values) {
+func (w *Watcher) Watch(pid int, exec string, dims *analytics2.Dimensions) {
 	logging.Debug("Watching %s (%d)", exec, pid)
 	dims.Sequence = p.IntP(-1) // sequence is meaningless for heartbeat events
 	e := entry{pid, exec, dims}

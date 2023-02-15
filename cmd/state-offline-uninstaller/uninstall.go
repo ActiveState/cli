@@ -8,7 +8,6 @@ import (
 
 	"github.com/ActiveState/cli/internal/analytics"
 	ac "github.com/ActiveState/cli/internal/analytics/constants"
-	"github.com/ActiveState/cli/internal/analytics/dimensions"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -73,7 +72,7 @@ func newParams() *Params {
 }
 
 func (r *runner) Run(params *Params) (rerr error) {
-	var installerDimensions *dimensions.Values
+	var installerDimensions *analytics.Dimensions
 	defer func() {
 		if rerr == nil {
 			return
@@ -111,7 +110,7 @@ func (r *runner) Run(params *Params) (rerr error) {
 	}
 
 	namespace := project.NewNamespace(r.icfg.OrgName, r.icfg.ProjectName, "")
-	installerDimensions = &dimensions.Values{
+	installerDimensions = &analytics.Dimensions{
 		ProjectNameSpace: p.StrP(namespace.String()),
 		CommitID:         &r.icfg.CommitID,
 		Trigger:          p.StrP(target.TriggerOfflineUninstaller.String()),

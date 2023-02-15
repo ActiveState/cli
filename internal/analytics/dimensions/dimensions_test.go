@@ -6,33 +6,34 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/rtutils/p"
 )
 
 func TestMap_Merge(t *testing.T) {
 	tests := []struct {
 		name      string
-		input     *Values
-		mergeWith *Values
-		expected  *Values
+		input     *analytics.Dimensions
+		mergeWith *analytics.Dimensions
+		expected  *analytics.Dimensions
 	}{
 		{
 			"Simple",
-			&Values{Version: p.StrP("inputVersion")},
-			&Values{BranchName: p.StrP("mergeBranchName")},
-			&Values{Version: p.StrP("inputVersion"), BranchName: p.StrP("mergeBranchName")},
+			&analytics.Dimensions{Version: p.StrP("inputVersion")},
+			&analytics.Dimensions{BranchName: p.StrP("mergeBranchName")},
+			&analytics.Dimensions{Version: p.StrP("inputVersion"), BranchName: p.StrP("mergeBranchName")},
 		},
 		{
 			"Override",
-			&Values{Version: p.StrP("inputVersion")},
-			&Values{Version: p.StrP("mergeVersion")},
-			&Values{Version: p.StrP("mergeVersion")},
+			&analytics.Dimensions{Version: p.StrP("inputVersion")},
+			&analytics.Dimensions{Version: p.StrP("mergeVersion")},
+			&analytics.Dimensions{Version: p.StrP("mergeVersion")},
 		},
 		{
 			"Nils don't count",
-			&Values{Version: p.StrP("inputVersion")},
-			&Values{Version: nil},
-			&Values{Version: p.StrP("inputVersion")},
+			&analytics.Dimensions{Version: p.StrP("inputVersion")},
+			&analytics.Dimensions{Version: nil},
+			&analytics.Dimensions{Version: p.StrP("inputVersion")},
 		},
 	}
 	for _, tt := range tests {
@@ -46,7 +47,7 @@ func TestMap_Merge(t *testing.T) {
 	}
 }
 
-func diff(m1 *Values, m2 *Values) (bool, string) {
+func diff(m1 *analytics.Dimensions, m2 *analytics.Dimensions) (bool, string) {
 	fields1 := reflect.ValueOf(m1).Elem().Type()
 	fields2 := reflect.ValueOf(m2).Elem().Type()
 	values1 := reflect.ValueOf(m1)

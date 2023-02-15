@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"path/filepath"
 
-	"github.com/ActiveState/cli/internal/analytics/dimensions"
+	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/installation/storage"
@@ -37,10 +37,10 @@ type TestLogEntry struct {
 	Category   string
 	Action     string
 	Label      string
-	Dimensions *dimensions.Values
+	Dimensions *analytics.Dimensions
 }
 
-func (r *TestReporter) Event(category, action, label string, d *dimensions.Values) error {
+func (r *TestReporter) Event(category, action, label string, d *analytics.Dimensions) error {
 	b, err := json.Marshal(TestLogEntry{category, action, label, d})
 	if err != nil {
 		return errs.Wrap(err, "Could not marshal test log entry")

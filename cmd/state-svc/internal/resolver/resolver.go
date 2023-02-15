@@ -11,11 +11,11 @@ import (
 	"github.com/ActiveState/cli/cmd/state-svc/internal/deprecation"
 	"github.com/ActiveState/cli/cmd/state-svc/internal/rtusage"
 	"github.com/ActiveState/cli/cmd/state-svc/internal/rtwatcher"
-	"github.com/ActiveState/cli/internal/analytics/client/sync"
-	"github.com/ActiveState/cli/internal/analytics/dimensions"
+	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/cache/projectcache"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/poller"
+	"github.com/ActiveState/cli/pkg/platform/analytics/sync"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"golang.org/x/net/context"
 
@@ -74,7 +74,7 @@ func New(cfg *config.Instance, an *sync.Client, auth *authentication.Auth) (*Res
 
 	usageChecker := rtusage.NewChecker(cfg, auth)
 
-	anForClient := sync.New(cfg, auth)
+	anForClient := sync.New(cfg, auth, constants.Version, constants.BranchName)
 	return &Resolver{
 		cfg,
 		pollDep,
@@ -170,13 +170,13 @@ func (r *Resolver) AnalyticsEvent(_ context.Context, category, action string, _l
 		label = *_label
 	}
 
-	var dims *dimensions.Values
+	var dims *analytics.Dimensions
 	if err := json.Unmarshal([]byte(dimensionsJson), &dims); err != nil {
 		return &graph.AnalyticsEventResponse{Sent: false}, errs.Wrap(err, "Could not unmarshal")
 	}
 
 	// Resolve the project ID - this is a little awkward since I had to work around an import cycle
-	dims.RegisterPreProcessor(func(values *dimensions.Values) error {
+	dims.RegisterPreProcessor(func(values *analytics.Dimensions) error {
 		values.ProjectID = nil
 		if values.ProjectNameSpace == nil || *values.ProjectNameSpace == "" {
 			return nil
@@ -198,7 +198,7 @@ func (r *Resolver) ReportRuntimeUsage(_ context.Context, pid int, exec string, d
 	defer func() { handlePanics(recover(), debug.Stack()) }()
 
 	logging.Debug("Runtime usage resolver: %d - %s", pid, exec)
-	var dims *dimensions.Values
+	var dims *analytics.Dimensions
 	if err := json.Unmarshal([]byte(dimensionsJSON), &dims); err != nil {
 		return &graph.ReportRuntimeUsageResponse{Received: false}, errs.Wrap(err, "Could not unmarshal")
 	}

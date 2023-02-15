@@ -4,7 +4,7 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/ActiveState/cli/internal/analytics/dimensions"
+	"github.com/ActiveState/cli/internal/analytics"
 	"gopkg.in/AlecAivazis/survey.v1"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
@@ -15,7 +15,7 @@ import (
 )
 
 type EventDispatcher interface {
-	EventWithLabel(category string, action string, label string, dim ...*dimensions.Values)
+	EventWithLabel(category string, action string, label string, dim ...*analytics.Dimensions)
 }
 
 // Prompter is the interface used to run our prompt from, useful for mocking in tests

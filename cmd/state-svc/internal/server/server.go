@@ -10,7 +10,7 @@ import (
 	"github.com/99designs/gqlgen/graphql/handler/extension"
 	"github.com/99designs/gqlgen/graphql/handler/lru"
 	"github.com/99designs/gqlgen/graphql/handler/transport"
-	"github.com/ActiveState/cli/internal/analytics/client/sync"
+	"github.com/ActiveState/cli/pkg/platform/analytics/sync"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"

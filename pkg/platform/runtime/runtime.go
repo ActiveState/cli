@@ -9,7 +9,6 @@ import (
 
 	"github.com/ActiveState/cli/internal/analytics"
 	anaConsts "github.com/ActiveState/cli/internal/analytics/constants"
-	"github.com/ActiveState/cli/internal/analytics/dimensions"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -73,7 +72,7 @@ func New(target setup.Targeter, an analytics.Dispatcher, svcm *model.SvcModel) (
 		return &Runtime{disabled: true, target: target}, nil
 	}
 	recordAttempt(an, target)
-	an.Event(anaConsts.CatRuntime, anaConsts.ActRuntimeStart, &dimensions.Values{
+	an.Event(anaConsts.CatRuntime, anaConsts.ActRuntimeStart, &analytics.Dimensions{
 		Trigger:          p.StrP(target.Trigger().String()),
 		Headless:         p.StrP(strconv.FormatBool(target.Headless())),
 		CommitID:         p.StrP(target.CommitUUID().String()),
@@ -83,7 +82,7 @@ func New(target setup.Targeter, an analytics.Dispatcher, svcm *model.SvcModel) (
 
 	r, err := newRuntime(target, an, svcm)
 	if err == nil {
-		an.Event(anaConsts.CatRuntime, anaConsts.ActRuntimeCache, &dimensions.Values{
+		an.Event(anaConsts.CatRuntime, anaConsts.ActRuntimeCache, &analytics.Dimensions{
 			CommitID: p.StrP(target.CommitUUID().String()),
 		})
 	}
@@ -179,7 +178,7 @@ func (r *Runtime) recordCompletion(err error) {
 		r.recordUsage()
 	}
 
-	r.analytics.EventWithLabel(anaConsts.CatRuntime, action, anaConsts.LblRtFailEnv, &dimensions.Values{
+	r.analytics.EventWithLabel(anaConsts.CatRuntime, action, anaConsts.LblRtFailEnv, &analytics.Dimensions{
 		CommitID: p.StrP(r.target.CommitUUID().String()),
 	})
 }
@@ -212,8 +211,8 @@ func recordAttempt(an analytics.Dispatcher, target setup.Targeter) {
 	an.Event(anaConsts.CatRuntimeUsage, anaConsts.ActRuntimeAttempt, usageDims(target))
 }
 
-func usageDims(target setup.Targeter) *dimensions.Values {
-	return &dimensions.Values{
+func usageDims(target setup.Targeter) *analytics.Dimensions {
+	return &analytics.Dimensions{
 		Trigger:          p.StrP(target.Trigger().String()),
 		CommitID:         p.StrP(target.CommitUUID().String()),
 		Headless:         p.StrP(strconv.FormatBool(target.Headless())),

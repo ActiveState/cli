@@ -69,12 +69,12 @@ func New(svcModel *model.SvcModel, cfg *config.Instance, auth *authentication.Au
 }
 
 // Event logs an event to google analytics
-func (a *Client) Event(category string, action string, dims ...*dimensions.Values) {
+func (a *Client) Event(category string, action string, dims ...*analytics.Dimensions) {
 	a.EventWithLabel(category, action, "", dims...)
 }
 
 // EventWithLabel logs an event with a label to google analytics
-func (a *Client) EventWithLabel(category string, action string, label string, dims ...*dimensions.Values) {
+func (a *Client) EventWithLabel(category string, action string, label string, dims ...*analytics.Dimensions) {
 	err := a.sendEvent(category, action, label, dims...)
 	if err != nil {
 		multilog.Error("Error during analytics.sendEvent: %v", errs.Join(err, ":"))
@@ -92,7 +92,7 @@ func (a *Client) Wait() {
 	a.eventWaitGroup.Wait()
 }
 
-func (a *Client) sendEvent(category, action, label string, dims ...*dimensions.Values) error {
+func (a *Client) sendEvent(category, action, label string, dims ...*analytics.Dimensions) error {
 	if a.svcModel == nil { // this is only true on CI
 		return nil
 	}

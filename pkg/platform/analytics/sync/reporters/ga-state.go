@@ -4,8 +4,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/ActiveState/cli/internal/analytics"
 	anaConsts "github.com/ActiveState/cli/internal/analytics/constants"
-	"github.com/ActiveState/cli/internal/analytics/dimensions"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/logging"
@@ -44,7 +44,7 @@ func (r *GaCLIReporter) AddOmitCategory(category string) {
 	r.omit[category] = struct{}{}
 }
 
-func (r *GaCLIReporter) Event(category, action, label string, d *dimensions.Values) error {
+func (r *GaCLIReporter) Event(category, action, label string, d *analytics.Dimensions) error {
 	if _, ok := r.omit[category]; ok {
 		logging.Debug("Not sending event with category: %s to Google Analytics", category)
 		return nil
@@ -71,7 +71,7 @@ func (r *GaCLIReporter) Event(category, action, label string, d *dimensions.Valu
 	return nil
 }
 
-func legacyDimensionMap(d *dimensions.Values) map[string]string {
+func legacyDimensionMap(d *analytics.Dimensions) map[string]string {
 	return map[string]string{
 		// Commented out idx 1 so it's clear why we start with 2. We used to log the hostname while dogfooding internally.
 		// "1": "hostname (deprecated)"

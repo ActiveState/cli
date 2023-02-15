@@ -3,7 +3,7 @@ package rtwatcher
 import (
 	"errors"
 
-	"github.com/ActiveState/cli/internal/analytics/dimensions"
+	analytics2 "github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/logging"
@@ -11,9 +11,9 @@ import (
 )
 
 type entry struct {
-	PID  int                `json:"pid"`
-	Exec string             `json:"exec"`
-	Dims *dimensions.Values `json:"dims"`
+	PID  int                    `json:"pid"`
+	Exec string                 `json:"exec"`
+	Dims *analytics2.Dimensions `json:"dims"`
 }
 
 func (e entry) IsRunning() (bool, error) {

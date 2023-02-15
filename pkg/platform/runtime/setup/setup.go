@@ -14,7 +14,6 @@ import (
 
 	"github.com/ActiveState/cli/internal/analytics"
 	anaConsts "github.com/ActiveState/cli/internal/analytics/constants"
-	"github.com/ActiveState/cli/internal/analytics/dimensions"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/download"
 	"github.com/ActiveState/cli/internal/errs"
@@ -378,7 +377,7 @@ func (s *Setup) fetchAndInstallArtifactsFromRecipe(installFunc artifactInstaller
 	}
 
 	// Analytics data to send.
-	dimensions := &dimensions.Values{
+	dimensions := &analytics.Dimensions{
 		CommitID: p.StrP(s.target.CommitUUID().String()),
 	}
 
