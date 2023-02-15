@@ -49,7 +49,7 @@ func (a *Add) Run(ps AddRunParams) error {
 		return locale.NewInputError("err_no_project")
 	}
 
-	if err := requirements.NewRequirementOperation(a.prime).ExecuteRequirementOperationBuildPlan(
+	if err := requirements.NewRequirementOperation(a.prime).ExecuteRequirementOperation(
 		params.name,
 		params.version,
 		params.BitWidth,

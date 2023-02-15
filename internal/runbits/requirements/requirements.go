@@ -89,7 +89,7 @@ type RequirementOperationParams struct {
 	NsType              model.NamespaceType
 }
 
-func (r *RequirementOperation) ExecuteRequirementOperationBuildPlan(requirementName string, requirementVersion string, requirementBitWidth int, operation bgModel.Operation, nsType model.NamespaceType) (rerr error) {
+func (r *RequirementOperation) ExecuteRequirementOperation(requirementName string, requirementVersion string, requirementBitWidth int, operation bgModel.Operation, nsType model.NamespaceType) (rerr error) {
 	var ns model.Namespace
 	var langVersion string
 	langName := "undetermined"

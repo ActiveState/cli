@@ -39,7 +39,7 @@ func NewInstall(prime primeable) *Install {
 // Run executes the install behavior.
 func (a *Install) Run(params InstallRunParams, nsType model.NamespaceType) error {
 	logging.Debug("ExecuteInstall")
-	return requirements.NewRequirementOperation(a.prime).ExecuteRequirementOperationBuildPlan(
+	return requirements.NewRequirementOperation(a.prime).ExecuteRequirementOperation(
 		params.Package.Name(),
 		params.Package.Version(),
 		0,

@@ -30,7 +30,7 @@ func (u *Uninstall) Run(params UninstallRunParams, nsType model.NamespaceType) e
 		return locale.NewInputError("err_no_project")
 	}
 
-	return requirements.NewRequirementOperation(u.prime).ExecuteRequirementOperationBuildPlan(
+	return requirements.NewRequirementOperation(u.prime).ExecuteRequirementOperation(
 		params.Name,
 		"",
 		0,

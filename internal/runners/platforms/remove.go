@@ -39,7 +39,7 @@ func (r *Remove) Run(ps RemoveRunParams) error {
 		return errs.Wrap(err, "Could not prepare parameters.")
 	}
 
-	if err := requirements.NewRequirementOperation(r.prime).ExecuteRequirementOperationBuildPlan(
+	if err := requirements.NewRequirementOperation(r.prime).ExecuteRequirementOperation(
 		params.name,
 		params.version,
 		params.BitWidth,
