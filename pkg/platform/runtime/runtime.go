@@ -19,6 +19,7 @@ import (
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/rtutils/p"
+	analytics2 "github.com/ActiveState/cli/pkg/platform/analytics"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/envdef"
@@ -72,7 +73,7 @@ func New(target setup.Targeter, an analytics.Dispatcher, svcm *model.SvcModel) (
 		return &Runtime{disabled: true, target: target}, nil
 	}
 	recordAttempt(an, target)
-	an.Event(anaConsts.CatRuntime, anaConsts.ActRuntimeStart, &analytics.Dimensions{
+	an.Event(anaConsts.CatRuntime, anaConsts.ActRuntimeStart, &analytics2.Dimensions{
 		Trigger:          p.StrP(target.Trigger().String()),
 		Headless:         p.StrP(strconv.FormatBool(target.Headless())),
 		CommitID:         p.StrP(target.CommitUUID().String()),
@@ -82,7 +83,7 @@ func New(target setup.Targeter, an analytics.Dispatcher, svcm *model.SvcModel) (
 
 	r, err := newRuntime(target, an, svcm)
 	if err == nil {
-		an.Event(anaConsts.CatRuntime, anaConsts.ActRuntimeCache, &analytics.Dimensions{
+		an.Event(anaConsts.CatRuntime, anaConsts.ActRuntimeCache, &analytics2.Dimensions{
 			CommitID: p.StrP(target.CommitUUID().String()),
 		})
 	}
@@ -178,7 +179,7 @@ func (r *Runtime) recordCompletion(err error) {
 		r.recordUsage()
 	}
 
-	r.analytics.EventWithLabel(anaConsts.CatRuntime, action, anaConsts.LblRtFailEnv, &analytics.Dimensions{
+	r.analytics.EventWithLabel(anaConsts.CatRuntime, action, anaConsts.LblRtFailEnv, &analytics2.Dimensions{
 		CommitID: p.StrP(r.target.CommitUUID().String()),
 	})
 }
@@ -211,8 +212,8 @@ func recordAttempt(an analytics.Dispatcher, target setup.Targeter) {
 	an.Event(anaConsts.CatRuntimeUsage, anaConsts.ActRuntimeAttempt, usageDims(target))
 }
 
-func usageDims(target setup.Targeter) *analytics.Dimensions {
-	return &analytics.Dimensions{
+func usageDims(target setup.Targeter) *analytics2.Dimensions {
+	return &analytics2.Dimensions{
 		Trigger:          p.StrP(target.Trigger().String()),
 		CommitID:         p.StrP(target.CommitUUID().String()),
 		Headless:         p.StrP(strconv.FormatBool(target.Headless())),

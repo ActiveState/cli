@@ -2,6 +2,7 @@ package blackhole
 
 import (
 	"github.com/ActiveState/cli/internal/analytics"
+	analytics2 "github.com/ActiveState/cli/pkg/platform/analytics"
 )
 
 type Client struct{}
@@ -12,10 +13,10 @@ func New() *Client {
 	return &Client{}
 }
 
-func (c Client) Event(category string, action string, dim ...*analytics.Dimensions) {
+func (c Client) Event(category string, action string, dim ...*analytics2.Dimensions) {
 }
 
-func (c Client) EventWithLabel(category string, action string, label string, dim ...*analytics.Dimensions) {
+func (c Client) EventWithLabel(category string, action string, label string, dim ...*analytics2.Dimensions) {
 }
 
 func (c Client) Wait() {

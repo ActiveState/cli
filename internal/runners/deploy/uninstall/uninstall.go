@@ -18,6 +18,7 @@ import (
 	"github.com/ActiveState/cli/internal/rtutils/p"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
+	analytics2 "github.com/ActiveState/cli/pkg/platform/analytics"
 	"github.com/ActiveState/cli/pkg/platform/runtime/store"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 )
@@ -98,7 +99,7 @@ func (u *Uninstall) Run(params *Params) error {
 		return locale.WrapError(err, "err_deploy_uninstall", "Unable to remove deployed runtime at '{{.V0}}'", path)
 	}
 
-	u.analytics.Event(constants.CatRuntimeUsage, constants.ActRuntimeDelete, &analytics.Dimensions{
+	u.analytics.Event(constants.CatRuntimeUsage, constants.ActRuntimeDelete, &analytics2.Dimensions{
 		Trigger:          p.StrP(target.TriggerDeploy.String()),
 		CommitID:         p.StrP(commitID),
 		ProjectNameSpace: p.StrP(namespace),

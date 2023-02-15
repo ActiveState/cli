@@ -26,6 +26,7 @@ import (
 	"github.com/ActiveState/cli/internal/rtutils/p"
 	"github.com/ActiveState/cli/internal/svcctl"
 	"github.com/ActiveState/cli/internal/unarchiver"
+	analytics2 "github.com/ActiveState/cli/pkg/platform/analytics"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
@@ -377,7 +378,7 @@ func (s *Setup) fetchAndInstallArtifactsFromRecipe(installFunc artifactInstaller
 	}
 
 	// Analytics data to send.
-	dimensions := &analytics.Dimensions{
+	dimensions := &analytics2.Dimensions{
 		CommitID: p.StrP(s.target.CommitUUID().String()),
 	}
 

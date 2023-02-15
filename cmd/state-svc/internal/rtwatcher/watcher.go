@@ -7,7 +7,6 @@ import (
 	"strconv"
 	"time"
 
-	analytics2 "github.com/ActiveState/cli/internal/analytics"
 	anaConst "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
@@ -16,6 +15,7 @@ import (
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/rtutils/p"
 	"github.com/ActiveState/cli/internal/runbits/panics"
+	analytics2 "github.com/ActiveState/cli/pkg/platform/analytics"
 )
 
 const defaultInterval = 1 * time.Minute

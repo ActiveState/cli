@@ -6,9 +6,9 @@ import (
 	"net/url"
 	"os"
 
-	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/pkg/platform/analytics"
 )
 
 type PixelReporter struct {

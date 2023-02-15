@@ -20,6 +20,7 @@ import (
 	"github.com/ActiveState/cli/internal/profile"
 	"github.com/ActiveState/cli/internal/rtutils/p"
 	"github.com/ActiveState/cli/internal/updater"
+	analytics2 "github.com/ActiveState/cli/pkg/platform/analytics"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 )
@@ -69,12 +70,12 @@ func New(svcModel *model.SvcModel, cfg *config.Instance, auth *authentication.Au
 }
 
 // Event logs an event to google analytics
-func (a *Client) Event(category string, action string, dims ...*analytics.Dimensions) {
+func (a *Client) Event(category string, action string, dims ...*analytics2.Dimensions) {
 	a.EventWithLabel(category, action, "", dims...)
 }
 
 // EventWithLabel logs an event with a label to google analytics
-func (a *Client) EventWithLabel(category string, action string, label string, dims ...*analytics.Dimensions) {
+func (a *Client) EventWithLabel(category string, action string, label string, dims ...*analytics2.Dimensions) {
 	err := a.sendEvent(category, action, label, dims...)
 	if err != nil {
 		multilog.Error("Error during analytics.sendEvent: %v", errs.Join(err, ":"))
@@ -92,7 +93,7 @@ func (a *Client) Wait() {
 	a.eventWaitGroup.Wait()
 }
 
-func (a *Client) sendEvent(category, action, label string, dims ...*analytics.Dimensions) error {
+func (a *Client) sendEvent(category, action, label string, dims ...*analytics2.Dimensions) error {
 	if a.svcModel == nil { // this is only true on CI
 		return nil
 	}

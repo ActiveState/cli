@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	analytics2 "github.com/ActiveState/cli/internal/analytics"
+	analytics2 "github.com/ActiveState/cli/pkg/platform/analytics"
 )
 
 func Test_entry_IsRunning(t *testing.T) {

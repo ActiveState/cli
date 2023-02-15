@@ -6,7 +6,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/ActiveState/cli/internal/analytics"
+	internalAnalytics "github.com/ActiveState/cli/internal/analytics"
 	anaConsts "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/constants"
@@ -21,7 +21,8 @@ import (
 	"github.com/ActiveState/cli/internal/rtutils/p"
 	"github.com/ActiveState/cli/internal/singleton/uniqid"
 	"github.com/ActiveState/cli/internal/updater"
-	reporters2 "github.com/ActiveState/cli/pkg/platform/analytics/sync/reporters"
+	"github.com/ActiveState/cli/pkg/platform/analytics"
+	"github.com/ActiveState/cli/pkg/platform/analytics/sync/reporters"
 	"github.com/ActiveState/cli/pkg/sysinfo"
 	"github.com/go-openapi/strfmt"
 )
@@ -53,7 +54,7 @@ type Auther interface {
 	UserID() *strfmt.UUID
 }
 
-var _ analytics.Dispatcher = &Client{}
+var _ internalAnalytics.Dispatcher = &Client{}
 
 // New initializes the analytics instance with all custom dimensions known at this time
 func New(cfg Configer, auth Auther, version, branchName string) *Client {
@@ -110,7 +111,7 @@ func New(cfg Configer, auth Auther, version, branchName string) *Client {
 		SessionToken:  p.StrP(sessionToken),
 		UpdateTag:     p.StrP(tag),
 		UserID:        p.StrP(userID),
-		Flags:         p.StrP(analytics.CalculateFlags()),
+		Flags:         p.StrP(internalAnalytics.CalculateFlags()),
 		InstanceID:    p.StrP(instanceid.ID()),
 		Command:       p.StrP(osutils.ExecutableName()),
 		Sequence:      p.IntP(0),
@@ -121,12 +122,12 @@ func New(cfg Configer, auth Auther, version, branchName string) *Client {
 	// Register reporters
 	if condition.InTest() {
 		logging.Debug("Using test reporter")
-		a.NewReporter(reporters2.NewTestReporter(reporters2.TestReportFilepath()))
+		a.NewReporter(reporters.NewTestReporter(reporters.TestReportFilepath()))
 		logging.Debug("Using test reporter as instructed by env")
 	} else if v := os.Getenv(constants.AnalyticsLogEnvVarName); v != "" {
-		a.NewReporter(reporters2.NewTestReporter(v))
+		a.NewReporter(reporters.NewTestReporter(v))
 	} else {
-		a.NewReporter(reporters2.NewPixelReporter())
+		a.NewReporter(reporters.NewPixelReporter())
 	}
 
 	return a

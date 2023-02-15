@@ -18,6 +18,7 @@ import (
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/rtutils/p"
+	analytics2 "github.com/ActiveState/cli/pkg/platform/analytics"
 )
 
 var PanicOnMissingLocale = true
@@ -147,7 +148,7 @@ func ReportError(err error, cmd *captain.Command, an analytics.Dispatcher) {
 		trigger = append(trigger, flagNames...)
 
 		logging.Debug("Reporting input error:\n%s\nCreated at:\n%s", errs.Join(err, "\n").Error(), stack)
-		an.Event(anaConst.CatDebug, anaConst.ActInputError, &analytics.Dimensions{
+		an.Event(anaConst.CatDebug, anaConst.ActInputError, &analytics2.Dimensions{
 			Trigger: p.StrP(strings.Join(trigger, " ")),
 		})
 	}

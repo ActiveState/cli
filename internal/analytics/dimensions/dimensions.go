@@ -13,11 +13,12 @@ import (
 	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/ActiveState/cli/internal/rtutils/p"
 	"github.com/ActiveState/cli/internal/singleton/uniqid"
+	analytics2 "github.com/ActiveState/cli/pkg/platform/analytics"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/sysinfo"
 )
 
-func NewDefaultDimensions(pjNamespace, sessionToken, updateTag string) *analytics.Dimensions {
+func NewDefaultDimensions(pjNamespace, sessionToken, updateTag string) *analytics2.Dimensions {
 	installSource, err := storage.InstallSource()
 	if err != nil {
 		multilog.Error("Could not detect installSource: %s", errs.Join(err, " :: ").Error())
@@ -41,7 +42,7 @@ func NewDefaultDimensions(pjNamespace, sessionToken, updateTag string) *analytic
 		osVersion = osvInfo.Version
 	}
 
-	return &analytics.Dimensions{
+	return &analytics2.Dimensions{
 		p.StrP(constants.Version),
 		p.StrP(constants.BranchName),
 		p.StrP(userIDString),
