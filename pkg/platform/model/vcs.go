@@ -1018,7 +1018,7 @@ func AddRevertCommit(commit *mono_models.Commit) (*mono_models.Commit, error) {
 	}
 	params.SetCommit(editableCommit)
 
-	res, err := authentication.Client().VersionControl.AddCommit(params, authentication.ClientAuth())
+	res, err := mono.New().VersionControl.AddCommit(params, authentication.ClientAuth())
 	if err != nil {
 		return nil, locale.WrapError(err, "err_add_revert_commit", "Could not add revert commit")
 	}
