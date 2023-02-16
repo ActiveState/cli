@@ -72,10 +72,6 @@ func (r *Revert) Run(params *Params) error {
 	if !strfmt.IsUUID(params.CommitID) {
 		return locale.NewInputError("err_invalid_commit_id", "Invalid commit ID")
 	}
-	if !r.auth.Authenticated() {
-		// Authentication is required in order to make a revert commit. Fail now rather than later.
-		return locale.NewInputError("err_api_not_authenticated")
-	}
 	r.out.Notice(locale.Tl("operating_message", "", r.project.NamespaceString(), r.project.Dir()))
 	commitID := strfmt.UUID(params.CommitID)
 
