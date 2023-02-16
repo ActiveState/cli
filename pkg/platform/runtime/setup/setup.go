@@ -469,8 +469,7 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 	// }
 	if err := s.eventHandler.Handle(events.Start{
 		// RecipeID: recipeID,
-		// TODO: Temporary
-		RequiresBuild: false,
+		RequiresBuild: !buildResult.BuildReady,
 		ArtifactNames: artifactNames,
 		LogFilePath:   logFilePath,
 		ArtifactsToBuild: func() []artifact.ArtifactID {

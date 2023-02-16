@@ -21,8 +21,8 @@ type buildPlanByPushCommit struct {
 
 func (b *buildPlanByPushCommit) Query() string {
 	return `
-mutation ($organization: String!, $project: String!, $parentCommit: String!, $branchRef: String!, $description: String!) {
-  pushCommit(input:{org:$organization, project:$project, parentCommit:$parentCommit, script:{let: {in: "$runtime", runtime: {solve_legacy: {at_time: "2023-02-06T19:15:45.283Z", solver_version: null, platforms: ["96b7e6f2-bebf-564c-bc1c-f04482398f38"], camel_flags: [], build_flags: [], requirements: [{name: "requests", namespace: "language/python", version_requirements: []}, {name: "python", namespace: "language", version_requirements: [{comparator: "eq", version: "3.9.14"}]}]}}}}, branchRef:$branchRef, description:$description}) {
+mutation ($organization: String!, $project: String!, $parentCommit: String!, $branchRef: String!, $script:BuildScript! $description: String!) {
+  pushCommit(input:{org:$organization, project:$project, parentCommit:$parentCommit, script:$script, branchRef:$branchRef, description:$description}) {
     ... on Commit {
       __typename
 			script

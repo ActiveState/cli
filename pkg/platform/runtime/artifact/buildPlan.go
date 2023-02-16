@@ -114,7 +114,6 @@ func buildMap(baseID string, lookup map[string]interface{}, result ArtifactBuild
 		GeneratedBy:      artifact.GeneratedBy,
 		Dependencies:     uniqueDeps,
 	}
-
 }
 
 type SourceInfo struct {

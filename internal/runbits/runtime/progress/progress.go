@@ -225,7 +225,6 @@ func (p *ProgressDigester) Handle(ev events.Eventer) error {
 
 	case events.ArtifactDownloadStarted:
 		logging.Debug("ArtifactDownloadStarted called for %s", v.ArtifactID.String())
-		// logging.Debug("Stacktrace: %s", debug.Stack())
 		initDownloadBar()
 		if _, ok := p.downloadsExpected[v.ArtifactID]; !ok {
 			return errs.New("ArtifactDownloadStarted called for an artifact that was not expected: %s", v.ArtifactID.String())
@@ -236,7 +235,6 @@ func (p *ProgressDigester) Handle(ev events.Eventer) error {
 		}
 
 	case events.ArtifactDownloadProgress:
-		// logging.Debug("ArtifactDownloadProgress called for %s", v.ArtifactID.String())
 		if err := p.updateArtifactBar(v.ArtifactID, StepDownload, v.IncrementBySize); err != nil {
 			return errs.Wrap(err, "Failed to add or update artifact bar")
 		}
