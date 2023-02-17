@@ -9,7 +9,6 @@ import (
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runbits/rtusage"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
-	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/pkg/cmdlets/checker"
 	"github.com/ActiveState/cli/pkg/cmdlets/checkout"
 	"github.com/ActiveState/cli/pkg/cmdlets/git"
@@ -18,6 +17,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
+	"github.com/ActiveState/cli/pkg/subshell"
 )
 
 type Params struct {

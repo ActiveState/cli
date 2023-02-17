@@ -12,8 +12,8 @@ import (
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/osutils/user"
 	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/subshell/sscommon"
 	"github.com/ActiveState/cli/pkg/project"
+	sscommon2 "github.com/ActiveState/cli/pkg/subshell/sscommon"
 )
 
 var escaper *osutils.ShellEscape
@@ -49,36 +49,36 @@ func (v *SubShell) SetBinary(binary string) {
 }
 
 // WriteUserEnv - see subshell.SubShell
-func (v *SubShell) WriteUserEnv(cfg sscommon.Configurable, env map[string]string, envType sscommon.RcIdentification, _ bool) error {
+func (v *SubShell) WriteUserEnv(cfg sscommon2.Configurable, env map[string]string, envType sscommon2.RcIdentification, _ bool) error {
 	rcFile, err := v.RcFile()
 	if err != nil {
 		return errs.Wrap(err, "RcFile failure")
 	}
 
-	env = sscommon.EscapeEnv(env)
-	return sscommon.WriteRcFile("tcshrc_append.sh", rcFile, envType, env)
+	env = sscommon2.EscapeEnv(env)
+	return sscommon2.WriteRcFile("tcshrc_append.sh", rcFile, envType, env)
 }
 
-func (v *SubShell) CleanUserEnv(cfg sscommon.Configurable, envType sscommon.RcIdentification, _ bool) error {
+func (v *SubShell) CleanUserEnv(cfg sscommon2.Configurable, envType sscommon2.RcIdentification, _ bool) error {
 	rcFile, err := v.RcFile()
 	if err != nil {
 		return errs.Wrap(err, "RcFile failure")
 	}
 
-	if err := sscommon.CleanRcFile(rcFile, envType); err != nil {
+	if err := sscommon2.CleanRcFile(rcFile, envType); err != nil {
 		return errs.Wrap(err, "Failed to remove %s from rcFile", envType)
 	}
 
 	return nil
 }
 
-func (v *SubShell) RemoveLegacyInstallPath(cfg sscommon.Configurable) error {
+func (v *SubShell) RemoveLegacyInstallPath(cfg sscommon2.Configurable) error {
 	rcFile, err := v.RcFile()
 	if err != nil {
 		return errs.Wrap(err, "RcFile-failure")
 	}
 
-	return sscommon.RemoveLegacyInstallPath(rcFile)
+	return sscommon2.RemoveLegacyInstallPath(rcFile)
 }
 
 func (v *SubShell) WriteCompletionScript(completionScript string) error {
@@ -105,8 +105,8 @@ func (v *SubShell) EnsureRcFileExists() error {
 
 // SetupShellRcFile - subshell.SubShell
 func (v *SubShell) SetupShellRcFile(targetDir string, env map[string]string, namespace *project.Namespaced) error {
-	env = sscommon.EscapeEnv(env)
-	return sscommon.SetupShellRcFile(filepath.Join(targetDir, "shell.tcsh"), "tcsh_global.sh", env, namespace)
+	env = sscommon2.EscapeEnv(env)
+	return sscommon2.SetupShellRcFile(filepath.Join(targetDir, "shell.tcsh"), "tcsh_global.sh", env, namespace)
 }
 
 // SetEnv - see subshell.SetEnv
@@ -121,7 +121,7 @@ func (v *SubShell) Quote(value string) string {
 }
 
 // Activate - see subshell.SubShell
-func (v *SubShell) Activate(proj *project.Project, cfg sscommon.Configurable, out output.Outputer) error {
+func (v *SubShell) Activate(proj *project.Project, cfg sscommon2.Configurable, out output.Outputer) error {
 	// This is horrible but it works.  tcsh doesn't offer a way to override the rc file and
 	// doesn't let us run a script and then drop to interactive mode.  So we source the
 	// state rc file and then chain an exec which inherits the environment we just set up.
@@ -135,19 +135,19 @@ func (v *SubShell) Activate(proj *project.Project, cfg sscommon.Configurable, ou
 
 	// available project files require more intensive modification of shell envs
 	if proj != nil {
-		env := sscommon.EscapeEnv(v.env)
+		env := sscommon2.EscapeEnv(v.env)
 		var err error
-		if v.rcFile, err = sscommon.SetupProjectRcFile(proj, "tcsh.sh", "", env, out, cfg, false); err != nil {
+		if v.rcFile, err = sscommon2.SetupProjectRcFile(proj, "tcsh.sh", "", env, out, cfg, false); err != nil {
 			return err
 		}
 
 		shellArgs = []string{"-c", "source " + v.rcFile.Name() + " ; exec " + v.Binary()}
 	} else {
-		directEnv = sscommon.EnvSlice(v.env)
+		directEnv = sscommon2.EnvSlice(v.env)
 	}
 
-	cmd := sscommon.NewCommand(v.Binary(), shellArgs, directEnv)
-	v.errs = sscommon.Start(cmd)
+	cmd := sscommon2.NewCommand(v.Binary(), shellArgs, directEnv)
+	v.errs = sscommon2.Start(cmd)
 	v.cmd = cmd
 	return nil
 }
@@ -163,7 +163,7 @@ func (v *SubShell) Deactivate() error {
 		return nil
 	}
 
-	if err := sscommon.Stop(v.cmd); err != nil {
+	if err := sscommon2.Stop(v.cmd); err != nil {
 		return err
 	}
 
@@ -173,7 +173,7 @@ func (v *SubShell) Deactivate() error {
 
 // Run - see subshell.SubShell
 func (v *SubShell) Run(filename string, args ...string) error {
-	return sscommon.RunFuncByBinary(v.Binary())(osutils.EnvMapToSlice(v.env), filename, args...)
+	return sscommon2.RunFuncByBinary(v.Binary())(osutils.EnvMapToSlice(v.env), filename, args...)
 }
 
 // IsActive - see subshell.SubShell

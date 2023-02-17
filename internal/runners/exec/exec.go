@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/ActiveState/cli/pkg/subshell"
 	"github.com/shirou/gopsutil/v3/process"
 
 	"github.com/ActiveState/cli/internal/analytics"
@@ -26,7 +27,6 @@ import (
 	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/internal/runbits/rtusage"
 	"github.com/ActiveState/cli/internal/scriptfile"
-	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"

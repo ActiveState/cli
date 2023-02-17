@@ -7,6 +7,8 @@ import (
 	rt "runtime"
 	"strings"
 
+	"github.com/ActiveState/cli/pkg/subshell"
+	"github.com/ActiveState/cli/pkg/subshell/sscommon"
 	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/analytics"
@@ -24,8 +26,6 @@ import (
 	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/internal/runbits/rtusage"
-	"github.com/ActiveState/cli/internal/subshell"
-	"github.com/ActiveState/cli/internal/subshell/sscommon"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime"

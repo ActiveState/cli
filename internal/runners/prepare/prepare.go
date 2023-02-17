@@ -19,11 +19,11 @@ import (
 	"github.com/ActiveState/cli/internal/osutils/autostart"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
-	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	rt "github.com/ActiveState/cli/pkg/platform/runtime"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
+	"github.com/ActiveState/cli/pkg/subshell"
 	"github.com/thoas/go-funk"
 )
 

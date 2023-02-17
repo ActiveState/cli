@@ -12,8 +12,8 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/subshell"
-	"github.com/ActiveState/cli/internal/subshell/sscommon"
+	"github.com/ActiveState/cli/pkg/subshell"
+	"github.com/ActiveState/cli/pkg/subshell/sscommon"
 )
 
 func InstallSystemFiles(_, _, _ string) error {

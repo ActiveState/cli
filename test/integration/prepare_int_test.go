@@ -16,11 +16,11 @@ import (
 	"github.com/ActiveState/cli/internal/osutils/autostart"
 	"github.com/ActiveState/cli/internal/osutils/user"
 	"github.com/ActiveState/cli/internal/rtutils/singlethread"
-	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
 	rt "github.com/ActiveState/cli/pkg/platform/runtime/target"
+	"github.com/ActiveState/cli/pkg/subshell"
 	"github.com/stretchr/testify/suite"
 )
 

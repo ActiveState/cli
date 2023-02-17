@@ -7,6 +7,12 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/ActiveState/cli/pkg/subshell/bash"
+	"github.com/ActiveState/cli/pkg/subshell/cmd"
+	"github.com/ActiveState/cli/pkg/subshell/fish"
+	"github.com/ActiveState/cli/pkg/subshell/sscommon"
+	"github.com/ActiveState/cli/pkg/subshell/tcsh"
+	"github.com/ActiveState/cli/pkg/subshell/zsh"
 	"github.com/thoas/go-funk"
 
 	"github.com/ActiveState/cli/internal/constants"
@@ -17,12 +23,6 @@ import (
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/rollbar"
-	"github.com/ActiveState/cli/internal/subshell/bash"
-	"github.com/ActiveState/cli/internal/subshell/cmd"
-	"github.com/ActiveState/cli/internal/subshell/fish"
-	"github.com/ActiveState/cli/internal/subshell/sscommon"
-	"github.com/ActiveState/cli/internal/subshell/tcsh"
-	"github.com/ActiveState/cli/internal/subshell/zsh"
 	"github.com/ActiveState/cli/pkg/project"
 )
 

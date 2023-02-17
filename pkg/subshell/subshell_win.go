@@ -3,7 +3,9 @@
 
 package subshell
 
-import "github.com/ActiveState/cli/internal/subshell/cmd"
+import (
+	"github.com/ActiveState/cli/pkg/subshell/cmd"
+)
 
 var supportedShells = []SubShell{
 	&cmd.SubShell{},

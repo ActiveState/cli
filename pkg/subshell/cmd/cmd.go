@@ -11,8 +11,8 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/subshell/sscommon"
 	"github.com/ActiveState/cli/pkg/project"
+	sscommon2 "github.com/ActiveState/cli/pkg/subshell/sscommon"
 )
 
 var escaper *osutils.ShellEscape
@@ -48,7 +48,7 @@ func (v *SubShell) SetBinary(binary string) {
 }
 
 // WriteUserEnv - see subshell.SubShell
-func (v *SubShell) WriteUserEnv(cfg sscommon.Configurable, env map[string]string, envType sscommon.RcIdentification, userScope bool) error {
+func (v *SubShell) WriteUserEnv(cfg sscommon2.Configurable, env map[string]string, envType sscommon2.RcIdentification, userScope bool) error {
 	cmdEnv := NewCmdEnv(userScope)
 
 	// Clean up old entries
@@ -92,7 +92,7 @@ func (v *SubShell) WriteUserEnv(cfg sscommon.Configurable, env map[string]string
 	return nil
 }
 
-func (v *SubShell) CleanUserEnv(cfg sscommon.Configurable, envType sscommon.RcIdentification, userScope bool) error {
+func (v *SubShell) CleanUserEnv(cfg sscommon2.Configurable, envType sscommon2.RcIdentification, userScope bool) error {
 	cmdEnv := NewCmdEnv(userScope)
 
 	// Clean up old entries
@@ -114,7 +114,7 @@ func (v *SubShell) CleanUserEnv(cfg sscommon.Configurable, envType sscommon.RcId
 	return nil
 }
 
-func (v *SubShell) RemoveLegacyInstallPath(_ sscommon.Configurable) error {
+func (v *SubShell) RemoveLegacyInstallPath(_ sscommon2.Configurable) error {
 	return nil
 }
 
@@ -133,8 +133,8 @@ func (v *SubShell) EnsureRcFileExists() error {
 
 // SetupShellRcFile - subshell.SubShell
 func (v *SubShell) SetupShellRcFile(targetDir string, env map[string]string, namespace *project.Namespaced) error {
-	env = sscommon.EscapeEnv(env)
-	return sscommon.SetupShellRcFile(filepath.Join(targetDir, "shell.bat"), "config_global.bat", env, namespace)
+	env = sscommon2.EscapeEnv(env)
+	return sscommon2.SetupShellRcFile(filepath.Join(targetDir, "shell.bat"), "config_global.bat", env, namespace)
 }
 
 // SetEnv - see subshell.SetEnv
@@ -149,24 +149,24 @@ func (v *SubShell) Quote(value string) string {
 }
 
 // Activate - see subshell.SubShell
-func (v *SubShell) Activate(prj *project.Project, cfg sscommon.Configurable, out output.Outputer) error {
+func (v *SubShell) Activate(prj *project.Project, cfg sscommon2.Configurable, out output.Outputer) error {
 	var shellArgs []string
 	var directEnv []string
 
 	if prj != nil {
-		env := sscommon.EscapeEnv(v.env)
+		env := sscommon2.EscapeEnv(v.env)
 		var err error
-		if v.rcFile, err = sscommon.SetupProjectRcFile(prj, "config.bat", ".bat", env, out, cfg, false); err != nil {
+		if v.rcFile, err = sscommon2.SetupProjectRcFile(prj, "config.bat", ".bat", env, out, cfg, false); err != nil {
 			return err
 		}
 
 		shellArgs = append(shellArgs, "/K", v.rcFile.Name())
 	} else {
-		directEnv = sscommon.EnvSlice(v.env)
+		directEnv = sscommon2.EnvSlice(v.env)
 	}
 
-	cmd := sscommon.NewCommand("cmd", shellArgs, directEnv)
-	v.errs = sscommon.Start(cmd)
+	cmd := sscommon2.NewCommand("cmd", shellArgs, directEnv)
+	v.errs = sscommon2.Start(cmd)
 	v.cmd = cmd
 	return nil
 }
@@ -182,7 +182,7 @@ func (v *SubShell) Deactivate() error {
 		return nil
 	}
 
-	if err := sscommon.Stop(v.cmd); err != nil {
+	if err := sscommon2.Stop(v.cmd); err != nil {
 		return err
 	}
 
@@ -192,7 +192,7 @@ func (v *SubShell) Deactivate() error {
 
 // Run - see subshell.SubShell
 func (v *SubShell) Run(filename string, args ...string) error {
-	return sscommon.RunFuncByBinary(v.Binary())(osutils.EnvMapToSlice(v.env), filename, args...)
+	return sscommon2.RunFuncByBinary(v.Binary())(osutils.EnvMapToSlice(v.env), filename, args...)
 }
 
 // IsActive - see subshell.SubShell

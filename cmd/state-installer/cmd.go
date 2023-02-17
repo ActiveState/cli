@@ -28,11 +28,11 @@ import (
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/ActiveState/cli/internal/runbits/panics"
-	"github.com/ActiveState/cli/internal/subshell"
-	"github.com/ActiveState/cli/internal/subshell/bash"
 	"github.com/ActiveState/cli/pkg/cmdlets/errors"
 	"github.com/ActiveState/cli/pkg/platform/analytics/sync"
 	"github.com/ActiveState/cli/pkg/project"
+	"github.com/ActiveState/cli/pkg/subshell"
+	"github.com/ActiveState/cli/pkg/subshell/bash"
 	"github.com/ActiveState/cli/pkg/sysinfo"
 	"golang.org/x/crypto/ssh/terminal"
 )

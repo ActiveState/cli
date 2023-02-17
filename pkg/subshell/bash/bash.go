@@ -1,13 +1,10 @@
-package zsh
+package bash
 
 import (
-	"fmt"
-	"io/ioutil"
-	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
-	"strings"
+	"runtime"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
@@ -17,14 +14,22 @@ import (
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/osutils/user"
 	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/subshell/sscommon"
 	"github.com/ActiveState/cli/pkg/project"
+	sscommon2 "github.com/ActiveState/cli/pkg/subshell/sscommon"
 )
 
 var escaper *osutils.ShellEscape
 
+var rcFileName = ".bashrc"
+
 func init() {
 	escaper = osutils.NewBashEscaper()
+
+	// On macOS all terminal windows run login shells, this means that
+	// .bashrc can be ignored so we instead use .bash_profile
+	if runtime.GOOS == "darwin" {
+		rcFileName = ".bash_profile"
+	}
 }
 
 // SubShell covers the subshell.SubShell interface, reference that for documentation
@@ -36,7 +41,7 @@ type SubShell struct {
 	errs   chan error
 }
 
-const Name string = "zsh"
+const Name string = "bash"
 
 // Shell - see subshell.SubShell
 func (v *SubShell) Shell() string {
@@ -54,63 +59,57 @@ func (v *SubShell) SetBinary(binary string) {
 }
 
 // WriteUserEnv - see subshell.SubShell
-func (v *SubShell) WriteUserEnv(cfg sscommon.Configurable, env map[string]string, envType sscommon.RcIdentification, _ bool) error {
+func (v *SubShell) WriteUserEnv(cfg sscommon2.Configurable, env map[string]string, envType sscommon2.RcIdentification, _ bool) error {
 	rcFile, err := v.RcFile()
 	if err != nil {
 		return errs.Wrap(err, "RcFile failure")
 	}
 
-	env = sscommon.EscapeEnv(env)
-	return sscommon.WriteRcFile("zshrc_append.sh", rcFile, envType, env)
+	if path, pathExists := env["PATH"]; pathExists && runtime.GOOS == "windows" {
+		bashified, err := osutils.BashifyPathEnv(path)
+		if err != nil {
+			return errs.Wrap(err, "Unable to bashify PATH: %v", path)
+		}
+		env["PATH"] = bashified
+	}
+
+	env = sscommon2.EscapeEnv(env)
+	return sscommon2.WriteRcFile("bashrc_append.sh", rcFile, envType, env)
 }
 
-func (v *SubShell) CleanUserEnv(cfg sscommon.Configurable, envType sscommon.RcIdentification, _ bool) error {
+func (v *SubShell) CleanUserEnv(cfg sscommon2.Configurable, envType sscommon2.RcIdentification, _ bool) error {
 	rcFile, err := v.RcFile()
 	if err != nil {
-		return errs.Wrap(err, "RcFile failure")
+		return errs.Wrap(err, "RcFile-failure")
 	}
 
-	if err := sscommon.CleanRcFile(rcFile, envType); err != nil {
+	if err := sscommon2.CleanRcFile(rcFile, envType); err != nil {
 		return errs.Wrap(err, "Failed to remove %s from rcFile", envType)
 	}
 
 	return nil
 }
 
-func (v *SubShell) RemoveLegacyInstallPath(cfg sscommon.Configurable) error {
+func (v *SubShell) RemoveLegacyInstallPath(cfg sscommon2.Configurable) error {
 	rcFile, err := v.RcFile()
 	if err != nil {
 		return errs.Wrap(err, "RcFile-failure")
 	}
 
-	return sscommon.RemoveLegacyInstallPath(rcFile)
+	return sscommon2.RemoveLegacyInstallPath(rcFile)
 }
 
 func (v *SubShell) WriteCompletionScript(completionScript string) error {
-	dir := "/usr/local/share/zsh/site-functions"
-	if fpath := os.Getenv("FPATH"); fpath != "" {
-		fpathv := strings.Split(fpath, ":")
-		if len(fpathv) > 0 {
-			dir = fpathv[0]
-		}
+	dir := "/usr/local/etc/bash_completion.d/"
+	if runtime.GOOS != "darwin" {
+		dir = "/etc/bash_completion.d/"
 	}
 
-	fpath := filepath.Join(dir, "_"+constants.CommandName)
+	fpath := filepath.Join(dir, constants.CommandName)
 	logging.Debug("Writing to %s: %s", fpath, completionScript)
 	err := fileutils.WriteFile(fpath, []byte(completionScript))
 	if err != nil {
-		return errs.Wrap(err, "Could not write completions script")
-	}
-
-	homeDir, err := user.HomeDir()
-	if err != nil {
-		return errs.Wrap(err, "IO failure")
-	}
-
-	// Remove the zsh completions cache so our completion script actually gets picked up
-	if err := os.Remove(filepath.Join(homeDir, ".zcompdump")); err != nil {
-		// non-critical, we're just trying to eliminate any issues caused by zsh's caching
-		logging.Debug("Could not delete .zcompdump: %v", err)
+		logging.Debug("Could not write completions script '%s', likely due to non-admin privileges", fpath)
 	}
 
 	return nil
@@ -122,7 +121,7 @@ func (v *SubShell) RcFile() (string, error) {
 		return "", errs.Wrap(err, "IO failure")
 	}
 
-	return filepath.Join(homeDir, ".zshrc"), nil
+	return filepath.Join(homeDir, rcFileName), nil
 }
 
 func (v *SubShell) EnsureRcFileExists() error {
@@ -136,12 +135,20 @@ func (v *SubShell) EnsureRcFileExists() error {
 
 // SetupShellRcFile - subshell.SubShell
 func (v *SubShell) SetupShellRcFile(targetDir string, env map[string]string, namespace *project.Namespaced) error {
-	env = sscommon.EscapeEnv(env)
-	return sscommon.SetupShellRcFile(filepath.Join(targetDir, "shell.zsh"), "zshrc_global.sh", env, namespace)
+	env = sscommon2.EscapeEnv(env)
+	return sscommon2.SetupShellRcFile(filepath.Join(targetDir, "shell.sh"), "bashrc_global.sh", env, namespace)
 }
 
 // SetEnv - see subshell.SetEnv
 func (v *SubShell) SetEnv(env map[string]string) error {
+	if path, pathExists := env["PATH"]; pathExists && runtime.GOOS == "windows" {
+		bashified, err := osutils.BashifyPathEnv(path)
+		if err != nil {
+			return locale.WrapError(err, "err_unable_set_bashify_PATH", "Unable to setup bash-style PATH")
+		}
+		env["PATH"] = bashified
+	}
+
 	v.env = env
 	return nil
 }
@@ -152,52 +159,25 @@ func (v *SubShell) Quote(value string) string {
 }
 
 // Activate - see subshell.SubShell
-func (v *SubShell) Activate(proj *project.Project, cfg sscommon.Configurable, out output.Outputer) error {
+func (v *SubShell) Activate(proj *project.Project, cfg sscommon2.Configurable, out output.Outputer) error {
+	var shellArgs []string
 	var directEnv []string
 
 	// available project files require more intensive modification of shell envs
 	if proj != nil {
-		env := sscommon.EscapeEnv(v.env)
+		env := sscommon2.EscapeEnv(v.env)
 		var err error
-		if v.rcFile, err = sscommon.SetupProjectRcFile(proj, "zshrc.sh", "", env, out, cfg, false); err != nil {
+		if v.rcFile, err = sscommon2.SetupProjectRcFile(proj, "bashrc.sh", "", env, out, cfg, true); err != nil {
 			return err
 		}
 
-		path, err := ioutil.TempDir("", "state-zsh")
-		if err != nil {
-			return errs.Wrap(err, "OS failure")
-		}
-
-		activeZsrcPath := filepath.Join(path, ".zshrc")
-		err = fileutils.CopyFile(v.rcFile.Name(), activeZsrcPath)
-		if err != nil {
-			return err
-		}
-
-		// If users have set $ZDOTDIR then we need to make sure their zshrc file uses it
-		// and if it hasn't been set, user $HOME as that is often a default for zsh setup
-		// commands.
-		userzdotdir := os.Getenv("ZDOTDIR")
-		if userzdotdir == "" {
-			homeDir, err := user.HomeDir()
-			if err != nil {
-				log.Println(locale.T("Warning: Could not load home directory for current user"))
-			} else {
-				userzdotdir = homeDir
-			}
-		}
-
-		err = fileutils.PrependToFile(activeZsrcPath, []byte(fmt.Sprintf("export ZDOTDIR=%s\n", userzdotdir)))
-		if err != nil {
-			return err
-		}
-		os.Setenv("ZDOTDIR", path)
+		shellArgs = append(shellArgs, "--rcfile", v.rcFile.Name())
 	} else {
-		directEnv = sscommon.EnvSlice(v.env)
+		directEnv = sscommon2.EnvSlice(v.env)
 	}
 
-	cmd := sscommon.NewCommand(v.Binary(), nil, directEnv)
-	v.errs = sscommon.Start(cmd)
+	cmd := sscommon2.NewCommand(v.Binary(), shellArgs, directEnv)
+	v.errs = sscommon2.Start(cmd)
 	v.cmd = cmd
 	return nil
 }
@@ -213,7 +193,7 @@ func (v *SubShell) Deactivate() error {
 		return nil
 	}
 
-	if err := sscommon.Stop(v.cmd); err != nil {
+	if err := sscommon2.Stop(v.cmd); err != nil {
 		return err
 	}
 
@@ -223,7 +203,7 @@ func (v *SubShell) Deactivate() error {
 
 // Run - see subshell.SubShell
 func (v *SubShell) Run(filename string, args ...string) error {
-	return sscommon.RunFuncByBinary(v.Binary())(osutils.EnvMapToSlice(v.env), filename, args...)
+	return sscommon2.RunFuncByBinary(v.Binary())(osutils.EnvMapToSlice(v.env), filename, args...)
 }
 
 // IsActive - see subshell.SubShell

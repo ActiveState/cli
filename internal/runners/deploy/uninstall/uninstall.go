@@ -16,11 +16,11 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/rtutils/p"
-	"github.com/ActiveState/cli/internal/subshell"
-	"github.com/ActiveState/cli/internal/subshell/sscommon"
 	analytics2 "github.com/ActiveState/cli/pkg/platform/analytics"
 	"github.com/ActiveState/cli/pkg/platform/runtime/store"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
+	"github.com/ActiveState/cli/pkg/subshell"
+	"github.com/ActiveState/cli/pkg/subshell/sscommon"
 )
 
 type Params struct {
