@@ -18,9 +18,8 @@ const (
 	ArtifactSucceeded         = "SUCCEEDED"
 
 	// Types
+	NotFound                 = "NotFound"
 	BuildResultPlanningError = "PlanningError"
-	ProjectResultNotFound    = "ProjectNotFound"
-	CommitResultNotFound     = "CommitNotFound"
 
 	// Tag types
 	TagSource     = "src"
@@ -38,12 +37,11 @@ type BuildPlan struct {
 }
 
 type PushCommitResult struct {
-	Commit   *Commit   `json:"pushCommit"`
-	NotFound *NotFound `json:"notFound"`
-	Error    *Error    `json:"error"`
+	Commit *Commit `json:"pushCommit"`
+	*NotFoundError
 }
 
-type NotFound struct {
+type NotFoundError struct {
 	Message string `json:"message"`
 }
 
@@ -54,9 +52,7 @@ type Error struct {
 type Project struct {
 	Type   string  `json:"__typename"`
 	Commit *Commit `json:"commit"`
-
-	// Not found error field
-	Message string `json:"message"`
+	*NotFoundError
 }
 
 type Commit struct {
@@ -64,9 +60,7 @@ type Commit struct {
 	Script   *BuildScript `json:"script"`
 	CommitID string       `json:"commitId"`
 	Build    *Build       `json:"build"`
-
-	// Not found error field
-	Message string `json:"message"`
+	*NotFoundError
 }
 
 type Build struct {
