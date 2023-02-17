@@ -86,13 +86,11 @@ func (bp *BuildPlanner) FetchBuildResult(commitID strfmt.UUID, owner, project st
 		return nil, errs.Wrap(err, "failed to fetch build plan")
 	}
 
-	// This is a lot of awkward error checking
-	// This error checking should go away with the new commit query
-	// TODO: Investigate commit not found errors
-	if resp.Project.Type == model.ProjectResultNotFound {
+	// Check for errors in the response
+	if resp.Project.Type == model.NotFound {
 		return nil, locale.NewError("err_buildplanner_project_not_found", "Build plan does not contain project")
 	}
-	if resp.Project.Commit.Type == model.CommitResultNotFound {
+	if resp.Project.Commit.Type == model.NotFound {
 		return nil, locale.NewError("err_buildplanner_commit_not_found", "Build plan does not contain commit")
 	}
 	if resp.Project.Commit.Build.Type == model.BuildResultPlanningError {
@@ -141,6 +139,7 @@ func (bp *BuildPlanner) FetchBuildResult(commitID strfmt.UUID, owner, project st
 	for _, s := range resp.Project.Commit.Build.Sources {
 		if s.Namespace == "builder" && s.Name == "camel" {
 			buildEngine = Camel
+			break
 		}
 	}
 
@@ -151,11 +150,14 @@ func (bp *BuildPlanner) FetchBuildResult(commitID strfmt.UUID, owner, project st
 	}
 
 	if resp.Project.Commit.Build.Status == model.Building {
-		// If the build is alternative the ID type will identify it as a recipe ID.
-		// The other buildLogID type is for camel builds which we don't use for
-		// builds in progress.
+		// If the build is alternative the buildLogID type will identify it as a recipe ID.
+		// The other buildLogID type is for camel builds which we don't use for builds in progress.
+		// There should one be one build log ID for alternative builds.
 		for _, id := range resp.Project.Commit.Build.BuildLogIDs {
 			if id.Type == model.BuildLogRecipeID {
+				if res.RecipeID != "" {
+					return nil, errs.Wrap(err, "Build plan contains multiple recipe IDs")
+				}
 				res.RecipeID = strfmt.UUID(id.ID)
 			}
 		}
@@ -243,12 +245,8 @@ func (bp *BuildPlanner) PushCommit(params *PushCommitParams) (string, error) {
 		return "", errs.Wrap(err, "failed to fetch build plan")
 	}
 
-	if resp.NotFound != nil {
-		return "", errs.New("Commit not found: %s", resp.NotFound.Message)
-	}
-
-	if resp.Error != nil {
-		return "", errs.New("PushCommit failed: %s", resp.Error.Message)
+	if resp.Commit.Type == model.NotFound {
+		return "", errs.New("Commit not found: %s", resp.Commit.Message)
 	}
 
 	return resp.Commit.CommitID, nil
@@ -261,16 +259,11 @@ func (bp *BuildPlanner) GetBuildScript(owner, project, commitID string) (*model.
 		return nil, errs.Wrap(err, "failed to fetch build graph")
 	}
 
-	if resp.Project == nil {
-		return nil, errs.New("Project not found")
+	if resp.Project.Type == model.NotFound {
+		return nil, errs.New("Project not found: %s", resp.Project.Message)
 	}
-
-	if resp.Project.Commit == nil {
-		return nil, errs.New("Commit not found")
-	}
-
-	if resp.Project.Commit.Script == nil {
-		return nil, errs.New("Commit script not found")
+	if resp.Project.Commit.Type == model.NotFound {
+		return nil, errs.New("Commit not found: %s", resp.Project.Commit.Message)
 	}
 
 	return resp.Project.Commit.Script, nil
