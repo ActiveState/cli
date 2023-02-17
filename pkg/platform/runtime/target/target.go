@@ -110,6 +110,10 @@ func (p *ProjectTarget) Headless() bool {
 	return p.Project.IsHeadless()
 }
 
+func (p *ProjectTarget) Executors() bool {
+	return true
+}
+
 func (p *ProjectTarget) ReadOnly() bool {
 	return false
 }
@@ -173,6 +177,10 @@ func (c *CustomTarget) Trigger() Trigger {
 
 func (c *CustomTarget) Headless() bool {
 	return c.headless
+}
+
+func (c *CustomTarget) Executors() bool {
+	return true
 }
 
 func (c *CustomTarget) ReadOnly() bool {

@@ -90,6 +90,7 @@ type Targeter interface {
 	Owner() string
 	Dir() string
 	Headless() bool
+	Executors() bool
 	Trigger() target.Trigger
 
 	// ReadOnly communicates that this target should only use cached runtime information (ie. don't check for updates)
@@ -172,9 +173,11 @@ func (s *Setup) Update() (rerr error) {
 		return errs.Wrap(err, "Failed to update artifacts")
 	}
 
-	// Update executors
-	if err := s.updateExecutors(artifacts); err != nil {
-		return errs.Wrap(err, "Failed to update executors")
+	if s.target.Executors() {
+		// Update executors
+		if err := s.updateExecutors(artifacts); err != nil {
+			return errs.Wrap(err, "Failed to update executors")
+		}
 	}
 
 	// Mark installation as completed
