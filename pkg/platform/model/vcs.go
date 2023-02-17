@@ -435,9 +435,10 @@ func AddChangeset(parentCommitID strfmt.UUID, commitMessage string, changeset Ch
 		switch err.(type) {
 		case *version_control.AddCommitBadRequest,
 			*version_control.AddCommitConflict,
-			*version_control.AddCommitForbidden,
 			*version_control.AddCommitNotFound:
 			return nil, locale.WrapInputError(err, "err_add_commit", "", api.ErrorMessageFromPayload(err))
+		case *version_control.AddCommitForbidden:
+			return nil, locale.WrapInputError(err, "err_add_commit", "", locale.T("err_auth_required"))
 		default:
 			return nil, locale.WrapError(err, "err_add_commit", "", api.ErrorMessageFromPayload(err))
 		}
