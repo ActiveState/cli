@@ -53,12 +53,17 @@ var (
 	}
 )
 
+// ConfigurableStringMap defines an interface to store and get configuration data
+type ConfigurableStringMap interface {
+	GetStringMap(string) map[string]interface{}
+}
+
 // Configurable defines an interface to store and get configuration data
 type Configurable interface {
+	ConfigurableStringMap
 	Set(string, interface{}) error
 	GetBool(string) bool
 	GetString(string) string
-	GetStringMap(string) map[string]interface{}
 }
 
 type RcIdentification struct {

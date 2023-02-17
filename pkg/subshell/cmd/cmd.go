@@ -101,7 +101,7 @@ func (v *SubShell) WriteUserEnv(cfg sscommon2.Configurable, env map[string]strin
 	return nil
 }
 
-func (v *SubShell) CleanUserEnv(cfg sscommon2.Configurable, envType sscommon2.RcIdentification, userScope bool) error {
+func (v *SubShell) CleanUserEnv(cfg sscommon2.ConfigurableStringMap, envType sscommon2.RcIdentification, userScope bool) error {
 	cmdEnv := NewCmdEnv(userScope)
 
 	// Clean up old entries

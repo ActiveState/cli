@@ -64,7 +64,7 @@ func (v *SubShell) WriteUserEnv(cfg sscommon2.Configurable, env map[string]strin
 	return sscommon2.WriteRcFile("zshrc_append.sh", rcFile, envType, env)
 }
 
-func (v *SubShell) CleanUserEnv(cfg sscommon2.Configurable, envType sscommon2.RcIdentification, _ bool) error {
+func (v *SubShell) CleanUserEnv(cfg sscommon2.ConfigurableStringMap, envType sscommon2.RcIdentification, _ bool) error {
 	rcFile, err := v.RcFile()
 	if err != nil {
 		return errs.Wrap(err, "RcFile failure")
