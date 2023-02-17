@@ -63,9 +63,9 @@ query ($organization: String!, $project: String!, $commitID: String!) {
                 }
               }
               artifacts: targets {
-                __typename
-                targetID
                 ... on ArtifactSucceeded {
+                  __typename
+                  targetID
                   mimeType
                   generatedBy
                   runtimeDependencies
@@ -75,18 +75,24 @@ query ($organization: String!, $project: String!, $commitID: String!) {
                   checksum
                 }
                 ... on ArtifactUnbuilt {
+                  __typename
+                  targetID
                   mimeType
                   generatedBy
                   runtimeDependencies
                   status
                 }
                 ... on ArtifactBuilding {
+                  __typename
+                  targetID
                   mimeType
                   generatedBy
                   runtimeDependencies
                   status
                 }
                 ... on ArtifactTransientlyFailed {
+                  __typename
+                  targetID
                   mimeType
                   generatedBy
                   runtimeDependencies
@@ -97,6 +103,8 @@ query ($organization: String!, $project: String!, $commitID: String!) {
                   nextAttemptAt
                 }
                 ... on ArtifactPermanentlyFailed {
+                  __typename
+                  targetID
                   mimeType
                   generatedBy
                   runtimeDependencies
