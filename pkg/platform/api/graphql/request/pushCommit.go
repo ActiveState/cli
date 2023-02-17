@@ -67,6 +67,7 @@ mutation ($organization: String!, $project: String!, $parentCommit: String!, $br
           }
           artifacts: targets {
             ... on ArtifactSucceeded {
+              __typename
               targetID
               mimeType
               generatedBy
@@ -77,6 +78,7 @@ mutation ($organization: String!, $project: String!, $parentCommit: String!, $br
               checksum
             }
             ... on ArtifactUnbuilt {
+              __typename
               targetID
               mimeType
               generatedBy
@@ -84,6 +86,7 @@ mutation ($organization: String!, $project: String!, $parentCommit: String!, $br
               status
             }
             ... on ArtifactBuilding {
+              __typename
               targetID
               mimeType
               generatedBy
@@ -91,6 +94,7 @@ mutation ($organization: String!, $project: String!, $parentCommit: String!, $br
               status
             }
             ... on ArtifactTransientlyFailed {
+              __typename
               targetID
               mimeType
               generatedBy
@@ -102,6 +106,7 @@ mutation ($organization: String!, $project: String!, $parentCommit: String!, $br
               nextAttemptAt
             }
             ... on ArtifactPermanentlyFailed {
+              __typename
               targetID
               mimeType
               generatedBy
