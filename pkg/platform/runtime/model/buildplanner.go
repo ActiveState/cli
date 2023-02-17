@@ -149,17 +149,15 @@ func (bp *BuildPlanner) FetchBuildResult(commitID strfmt.UUID, owner, project st
 		BuildReady:  resp.Project.Commit.Build.Status == model.Ready,
 	}
 
-	if resp.Project.Commit.Build.Status == model.Building {
-		// If the build is alternative the buildLogID type will identify it as a recipe ID.
-		// The other buildLogID type is for camel builds which we don't use for builds in progress.
-		// There should one be one build log ID for alternative builds.
-		for _, id := range resp.Project.Commit.Build.BuildLogIDs {
-			if id.Type == model.BuildLogRecipeID {
-				if res.RecipeID != "" {
-					return nil, errs.Wrap(err, "Build plan contains multiple recipe IDs")
-				}
-				res.RecipeID = strfmt.UUID(id.ID)
+	// If the build is alternative the buildLogID type will identify it as a recipe ID.
+	// The other buildLogID type is for camel builds which we don't use for builds in progress.
+	// There should one be one build log ID for alternative builds.
+	for _, id := range resp.Project.Commit.Build.BuildLogIDs {
+		if id.Type == model.BuildLogRecipeID {
+			if res.RecipeID != "" {
+				return nil, errs.Wrap(err, "Build plan contains multiple recipe IDs")
 			}
+			res.RecipeID = strfmt.UUID(id.ID)
 		}
 	}
 
