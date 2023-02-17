@@ -867,7 +867,25 @@ func (s *Setup) fetchAndInstallArtifactsFromDir(installFunc artifactInstaller) (
 	}
 	logging.Debug("Found %d artifacts to install from '%s'", len(artifacts), *artifactsDir)
 
-	installedArtifacts := make([]artifact.ArtifactID, len(artifacts))
+	// Calculate artifact IDs
+	artifactIDs := make([]artifact.ArtifactID, len(artifacts))
+	for i, a := range artifacts {
+		filename := a.Path()
+		basename := filepath.Base(filename)
+		extIndex := strings.Index(basename, ".")
+		if extIndex == -1 {
+			extIndex = len(basename)
+		}
+		artifactID := artifact.ArtifactID(basename[0:extIndex])
+		artifactIDs[i] = artifactID
+	}
+
+	if err := s.eventHandler.Handle(events.Start{
+		RequiresBuild:      false,
+		ArtifactsToInstall: artifactIDs,
+	}); err != nil {
+		return nil, errs.Wrap(err, "Could not handle Start event")
+	}
 
 	errors, aggregatedErr := aggregateErrors()
 	mainthread.Run(func() {
@@ -876,22 +894,12 @@ func (s *Setup) fetchAndInstallArtifactsFromDir(installFunc artifactInstaller) (
 		wp := workerpool.New(MaxConcurrency)
 
 		for i, a := range artifacts {
-			// Each artifact is of the form artifactID.tar.gz, so extract the artifactID from the name.
-			filename := a.Path()
-			basename := filepath.Base(filename)
-			extIndex := strings.Index(basename, ".")
-			if extIndex == -1 {
-				extIndex = len(basename)
-			}
-			artifactID := artifact.ArtifactID(basename[0:extIndex])
-			installedArtifacts[i] = artifactID
-
 			// Submit the artifact for setup and install.
 			wp.Submit(func() {
-				as := alternative.NewArtifactSetup(artifactID, s.store) // offline installer artifacts are in this format
-				err = installFunc(artifactID, filename, as)
+				as := alternative.NewArtifactSetup(artifactIDs[i], s.store) // offline installer artifacts are in this format
+				err = installFunc(artifactIDs[i], a.Path(), as)
 				if err != nil {
-					errors <- locale.WrapError(err, "artifact_setup_failed", "", artifactID.String(), "")
+					errors <- locale.WrapError(err, "artifact_setup_failed", "", artifactIDs[i].String(), "")
 				}
 			})
 		}
@@ -899,5 +907,5 @@ func (s *Setup) fetchAndInstallArtifactsFromDir(installFunc artifactInstaller) (
 		wp.StopWait()
 	})
 
-	return installedArtifacts, <-aggregatedErr
+	return artifactIDs, <-aggregatedErr
 }
