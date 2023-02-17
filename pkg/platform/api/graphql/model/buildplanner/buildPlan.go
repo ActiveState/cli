@@ -55,7 +55,7 @@ type Project struct {
 	Type   string  `json:"__typename"`
 	Commit *Commit `json:"commit"`
 
-	// Error field
+	// Not found error field
 	Message string `json:"message"`
 }
 
@@ -65,7 +65,7 @@ type Commit struct {
 	CommitID string       `json:"commitId"`
 	Build    *Build       `json:"build"`
 
-	// Error field
+	// Not found error field
 	Message string `json:"message"`
 }
 
@@ -123,17 +123,16 @@ type Source struct {
 }
 
 type PlanningError struct {
-	Error     string      `json:"error"`
-	SubErrors []*SubError `json:"subErrors"`
+	Error     string                 `json:"error"`
+	SubErrors []*BuildScriptLocation `json:"subErrors"`
 }
 
-type SubError struct {
+type BuildScriptLocation struct {
 	Type             string                        `json:"__typename"`
 	Path             string                        `json:"path"`
 	Message          string                        `json:"message"`
 	IsTransient      bool                          `json:"isTransient"`
 	ValidationErrors []*SolverErrorValidationError `json:"validationErrors"`
-	Remediations     []*SolverErrorRemediation     `json:"suggestedRemediations"`
 	*RemediableSolveError
 }
 
@@ -143,11 +142,14 @@ type SolverErrorValidationError struct {
 }
 
 type RemediableSolveError struct {
-	ErrorType string `json:"errorType"`
+	ErrorType         string                       `json:"errorType"`
+	Remediations      []*SolverErrorRemediation    `json:"suggestedRemediations"`
+	Requirements      []*Requirement               `json:"requirements"`
+	Incompatibilities []*SolveErrorIncompatibility `json:"incompatibilities"`
 }
 
 type SolverErrorRemediation struct {
-	RemediationType string `json:"remediationType"`
+	RemediationType string `json:"solveErrorRemediationType"`
 	Command         string `json:"command"`
 }
 
