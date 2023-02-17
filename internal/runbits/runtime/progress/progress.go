@@ -224,7 +224,6 @@ func (p *ProgressDigester) Handle(ev events.Eventer) error {
 		p.buildBar.Increment()
 
 	case events.ArtifactDownloadStarted:
-		logging.Debug("ArtifactDownloadStarted called for %s", v.ArtifactID.String())
 		initDownloadBar()
 		if _, ok := p.downloadsExpected[v.ArtifactID]; !ok {
 			return errs.New("ArtifactDownloadStarted called for an artifact that was not expected: %s", v.ArtifactID.String())
@@ -240,7 +239,6 @@ func (p *ProgressDigester) Handle(ev events.Eventer) error {
 		}
 
 	case events.ArtifactDownloadSkipped:
-		logging.Debug("ArtifactDownloadSkipped called for %s", v.ArtifactID.String())
 		initDownloadBar()
 		delete(p.downloadsExpected, v.ArtifactID)
 		p.downloadBar.Increment()
