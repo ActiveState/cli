@@ -1,7 +1,6 @@
 /build/
 debug
 debug.test
-internal/constants/generated.go
 **/testdata/generated/**
 .DS_Store
 __PYCACHE__
