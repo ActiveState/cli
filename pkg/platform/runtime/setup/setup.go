@@ -326,14 +326,10 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 			if err := s.eventHandler.Handle(events.SolveError{serr}); err != nil {
 				return nil, errs.Wrap(err, "Could not handle SolveError event")
 			}
-			// TODO: Revert this comment
-			// return nil, formatSolverError(serr)
+			return nil, formatBuildPlanError(serr)
 		}
 		return nil, errs.Wrap(err, "Failed to fetch build result")
 	}
-
-	// logging.Debug("Interacting with build for recipe ID: %s: %s",
-	// 	buildResult.Recipe.RecipeID.String(), buildResult.BuildStatusResponse.Message)
 
 	if err := s.eventHandler.Handle(events.SolveSuccess{}); err != nil {
 		return nil, errs.Wrap(err, "Could not handle SolveSuccess event")
@@ -348,26 +344,25 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 
 	// If some artifacts were already build then we can detect whether they need to be installed ahead of time
 	// Note there may still be more noop artifacts, but we won't know until they have finished building.
-	// TODO: This appears to cause no artifacts to be installed with build plans. Needs some investigation
-	// noopArtifacts := map[string]struct{}{}
-	// for _, prebuiltArtf := range buildResult.Build.Artifacts {
-	// 	if prebuiltArtf.TargetID != "" && prebuiltArtf.Status != "" &&
-	// 		prebuiltArtf.Status == bpModel.ArtifactSucceeded &&
-	// 		strings.HasPrefix(prebuiltArtf.URL, "s3://as-builds/noop/") {
-	// 		noopArtifacts[prebuiltArtf.TargetID] = struct{}{}
-	// 	}
-	// }
+	noopArtifacts := map[string]struct{}{}
+	for _, prebuiltArtf := range buildResult.Build.Artifacts {
+		if prebuiltArtf.TargetID != "" && prebuiltArtf.Status != "" &&
+			prebuiltArtf.Status == bpModel.ArtifactSucceeded &&
+			strings.HasPrefix(prebuiltArtf.URL, "s3://as-builds/noop/") {
+			noopArtifacts[prebuiltArtf.TargetID] = struct{}{}
+		}
+	}
 
 	// installableArtifacts are the artifacts that this build produces that can be installed
 	// Not all artifacts produced by the build are meant to be installed.
 	// Notably we ignore bundle artifacts here, as they currently only produce no-op artifacts in terms of how recipes
 	// link the artifacts to the ingredient. This will be solved by buildplans.
 	installableArtifacts := artifact.FilterInstallable(artifacts)
-	// for id, art := range installableArtifacts {
-	// if _, noop := noopArtifacts[id.String()]; noop {
-	// 	delete(installableArtifacts, id)
-	// }
-	// }
+	for id := range installableArtifacts {
+		if _, noop := noopArtifacts[id.String()]; noop {
+			delete(installableArtifacts, id)
+		}
+	}
 
 	downloadablePrebuiltResults, err := setup.DownloadsFromBuild(*buildResult.Build, installableArtifacts)
 	if err != nil {
@@ -461,14 +456,13 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 	// The log file we want to use for builds
 	logFilePath := logging.FilePathFor(fmt.Sprintf("build-%s.log", s.target.CommitUUID().String()+"-"+time.Now().Format("20060102150405")))
 
-	// TODO: Get recipeID from the buildplan, or whatever they are using now.
-	// There might be a new way to get this. (ie. not using the recipeID but something else)
-	// var recipeID strfmt.UUID
-	// if buildResult.Recipe.RecipeID != nil {
-	// 	recipeID = *buildResult.Recipe.RecipeID
-	// }
+	var recipeID strfmt.UUID
+	if buildResult.RecipeID != "" {
+		recipeID = buildResult.RecipeID
+	}
+
 	if err := s.eventHandler.Handle(events.Start{
-		// RecipeID: recipeID,
+		RecipeID:      recipeID,
 		RequiresBuild: !buildResult.BuildReady,
 		ArtifactNames: artifactNames,
 		LogFilePath:   logFilePath,
@@ -712,19 +706,9 @@ func (s *Setup) downloadArtifact(a artifact.ArtifactDownload, targetFile string)
 		return errs.Wrap(err, "Could not parse artifact URL %s.", a.UnsignedURI)
 	}
 
-	// downloadURL, err := s.model.SignS3URL(artifactURL)
-	// if err != nil {
-	// 	return errs.Wrap(err, "Could not sign artifact URL %s.", a.UnsignedURI)
-	// }
-
 	req, err := download.NewRequest(artifactURL.String())
 	if err != nil {
 		return errs.Wrap(err, "Could not create artifact download request for %s.", artifactURL.String())
-	}
-	// TODO: Remove when underlying mediator bug is fixed
-	// https://activestatef.atlassian.net/browse/PB-3465
-	if strings.Contains(req.URL.String(), "dl.activestate.com") {
-		req.Header.Set("Authorization", "Placeholder")
 	}
 
 	b, err := download.GetWithProgress(req, &progress.Report{
