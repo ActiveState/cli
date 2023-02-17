@@ -110,9 +110,10 @@ func (bp *BuildPlanner) FetchBuildResult(commitID strfmt.UUID, owner, project st
 	}
 
 	// The type aliasing in the query populates the
-	// response with emtpy targets that we have to remove
+	// response with emtpy targets that we should remove
 	removeEmptyTargets(resp)
 
+	// Extract the available platforms from the build plan
 	var bpPlatforms []strfmt.UUID
 	for _, t := range resp.Project.Commit.Build.Terminals {
 		if t.Tag == model.TagOrphan {
@@ -121,11 +122,13 @@ func (bp *BuildPlanner) FetchBuildResult(commitID strfmt.UUID, owner, project st
 		bpPlatforms = append(bpPlatforms, strfmt.UUID(strings.TrimPrefix(t.Tag, "platform:")))
 	}
 
+	// Get the platform ID for the current platform
 	platformID, err := platformModel.FilterCurrentPlatform(HostPlatform, bpPlatforms)
 	if err != nil {
 		return nil, locale.WrapError(err, "err_filter_current_platform")
 	}
 
+	// Filter the build terminals to only include the current platform
 	var filteredTerminals []*model.NamedTarget
 	for _, t := range resp.Project.Commit.Build.Terminals {
 		if platformID.String() == strings.TrimPrefix(t.Tag, "platform:") {
@@ -206,7 +209,7 @@ type PushCommitParams struct {
 
 func (bp *BuildPlanner) PushCommit(params *PushCommitParams) (string, error) {
 	// If parent commit is provided then get the build graph
-	// If it is not create a blank build graph
+	// If it is not then create a blank build graph
 	var err error
 	script := model.NewBuildScript()
 	if params.ParentCommit != "" {
@@ -232,7 +235,7 @@ func (bp *BuildPlanner) PushCommit(params *PushCommitParams) (string, error) {
 	}
 	script.Let.Runtime.SolveLegacy.AtTime = params.Time.Format(time.RFC3339)
 
-	// With the updated build graph call the save and build mutation
+	// With the updated build graph call the push commit mutation
 	request := request.PushCommit(params.Owner, params.Project, params.ParentCommit, params.BranchRef, params.Description, script)
 	resp := &model.PushCommitResult{}
 	err = bp.client.Run(request, resp)
