@@ -13,7 +13,6 @@ import (
 	"github.com/ActiveState/cli/internal/runbits/findproject"
 	"github.com/ActiveState/cli/internal/runbits/rtusage"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
-	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -21,6 +20,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
+	"github.com/ActiveState/cli/pkg/subshell"
 )
 
 type Params struct {

@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/analytics/constants"
-	"github.com/ActiveState/cli/internal/analytics/dimensions"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/graph"
@@ -20,6 +19,7 @@ import (
 	"github.com/ActiveState/cli/internal/runbits/panics"
 	"github.com/ActiveState/cli/internal/runbits/rtusage"
 	"github.com/ActiveState/cli/internal/svcctl/svcmsg"
+	"github.com/ActiveState/cli/pkg/platform/analytics"
 	"github.com/ActiveState/cli/pkg/platform/runtime/executors/execmeta"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
@@ -78,7 +78,7 @@ type Resolver interface {
 }
 
 type AnalyticsReporter interface {
-	Event(category string, action string, dims ...*dimensions.Values)
+	Event(category string, action string, dims ...*analytics.Dimensions)
 }
 
 func HeartbeatHandler(cfg *config.Instance, resolver Resolver, analyticsReporter AnalyticsReporter) ipc.RequestHandler {
@@ -112,7 +112,7 @@ func HeartbeatHandler(cfg *config.Instance, resolver Resolver, analyticsReporter
 				multilog.Critical("Heartbeat Failure: Meta data is missing namespace and commitUUID: %v", metaData)
 			}
 
-			dims := &dimensions.Values{
+			dims := &analytics.Dimensions{
 				Trigger:          p.StrP(target.TriggerExec.String()),
 				Headless:         p.StrP(strconv.FormatBool(metaData.Headless)),
 				CommitID:         p.StrP(metaData.CommitUUID),

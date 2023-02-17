@@ -12,11 +12,11 @@ import (
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runbits/rtusage"
 	"github.com/ActiveState/cli/internal/scriptrun"
-	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/pkg/cmdlets/checker"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
+	"github.com/ActiveState/cli/pkg/subshell"
 )
 
 // Run contains the run execution context.

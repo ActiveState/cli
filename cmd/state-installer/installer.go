@@ -21,9 +21,9 @@ import (
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/subshell"
-	"github.com/ActiveState/cli/internal/subshell/sscommon"
 	"github.com/ActiveState/cli/internal/updater"
+	"github.com/ActiveState/cli/pkg/subshell"
+	"github.com/ActiveState/cli/pkg/subshell/sscommon"
 )
 
 type Installer struct {

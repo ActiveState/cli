@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/multilog"
-	"github.com/ActiveState/cli/internal/subshell/cmd"
+	"github.com/ActiveState/cli/pkg/subshell/cmd"
 	"github.com/thoas/go-funk"
 )
 

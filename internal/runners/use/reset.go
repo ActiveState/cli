@@ -9,7 +9,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/prompt"
-	"github.com/ActiveState/cli/internal/subshell"
+	"github.com/ActiveState/cli/pkg/subshell"
 )
 
 type Reset struct {

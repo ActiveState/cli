@@ -5,12 +5,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/ActiveState/cli/internal/captain"
 	"os"
 	"os/exec"
 	"runtime/debug"
 	"strings"
 	"time"
+
+	"github.com/ActiveState/cli/internal/captain"
+	"github.com/ActiveState/cli/pkg/subshell"
 
 	"github.com/ActiveState/cli/cmd/state/internal/cmdtree"
 	anAsync "github.com/ActiveState/cli/internal/analytics/client/async"
@@ -31,7 +33,6 @@ import (
 	_ "github.com/ActiveState/cli/internal/prompt" // Sets up survey defaults
 	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/ActiveState/cli/internal/runbits/panics"
-	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/svcctl"
 	cmdletErrors "github.com/ActiveState/cli/pkg/cmdlets/errors"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"

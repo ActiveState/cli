@@ -5,10 +5,10 @@ import (
 	"github.com/ActiveState/cli/internal/globaldefault"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/subshell"
-	"github.com/ActiveState/cli/internal/subshell/bash"
-	"github.com/ActiveState/cli/internal/subshell/fish"
-	"github.com/ActiveState/cli/internal/subshell/zsh"
+	"github.com/ActiveState/cli/pkg/subshell"
+	"github.com/ActiveState/cli/pkg/subshell/bash"
+	"github.com/ActiveState/cli/pkg/subshell/fish"
+	"github.com/ActiveState/cli/pkg/subshell/zsh"
 )
 
 type ErrorNotSupported struct{ *locale.LocalizedError }

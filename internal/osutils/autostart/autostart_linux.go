@@ -12,7 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/osutils/shortcut"
 	"github.com/ActiveState/cli/internal/osutils/user"
-	"github.com/ActiveState/cli/internal/subshell/sscommon"
+	"github.com/ActiveState/cli/pkg/subshell/sscommon"
 )
 
 const (

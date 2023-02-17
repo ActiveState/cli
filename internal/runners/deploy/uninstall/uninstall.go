@@ -6,7 +6,6 @@ import (
 
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/analytics/constants"
-	"github.com/ActiveState/cli/internal/analytics/dimensions"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/instanceid"
@@ -17,10 +16,11 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/rtutils/p"
-	"github.com/ActiveState/cli/internal/subshell"
-	"github.com/ActiveState/cli/internal/subshell/sscommon"
+	analytics2 "github.com/ActiveState/cli/pkg/platform/analytics"
 	"github.com/ActiveState/cli/pkg/platform/runtime/store"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
+	"github.com/ActiveState/cli/pkg/subshell"
+	"github.com/ActiveState/cli/pkg/subshell/sscommon"
 )
 
 type Params struct {
@@ -99,7 +99,7 @@ func (u *Uninstall) Run(params *Params) error {
 		return locale.WrapError(err, "err_deploy_uninstall", "Unable to remove deployed runtime at '{{.V0}}'", path)
 	}
 
-	u.analytics.Event(constants.CatRuntimeUsage, constants.ActRuntimeDelete, &dimensions.Values{
+	u.analytics.Event(constants.CatRuntimeUsage, constants.ActRuntimeDelete, &analytics2.Dimensions{
 		Trigger:          p.StrP(target.TriggerDeploy.String()),
 		CommitID:         p.StrP(commitID),
 		ProjectNameSpace: p.StrP(namespace),

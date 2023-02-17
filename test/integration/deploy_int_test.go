@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ActiveState/cli/pkg/subshell"
 	"github.com/ActiveState/termtest"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/suite"
@@ -16,7 +17,6 @@ import (
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 )

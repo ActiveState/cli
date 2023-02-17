@@ -6,12 +6,12 @@ import (
 	"github.com/ActiveState/cli/internal/constraints"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/prompt"
-	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/svcctl"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
+	"github.com/ActiveState/cli/pkg/subshell"
 )
 
 type Values struct {
