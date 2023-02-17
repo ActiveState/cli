@@ -91,10 +91,9 @@ func New(cfg Configer, auth Auther, version, branchName string) *Client {
 			tag = cfg.GetString(updater.CfgUpdateTag)
 		}
 		a.cfg = cfg
+		a.readConfig()
+		configMediator.AddListener(constants.ReportAnalyticsConfig, a.readConfig)
 	}
-
-	a.readConfig()
-	configMediator.AddListener(constants.ReportAnalyticsConfig, a.readConfig)
 
 	userID := ""
 	if auth != nil && auth.UserID() != nil {
