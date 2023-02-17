@@ -59,9 +59,6 @@ func NewMapFromBuildPlan(build *model.Build) ArtifactBuildPlanMap {
 
 	var terminalTargetIDs []string
 	for _, terminal := range build.Terminals {
-		// May have to do futher filtering here for platform IDs
-		// There is currently an open discussion about this here:
-		// https://docs.google.com/document/d/1FRWiy4TQfiMr9eWStEbE003exi29oKemmJUEbGnoyAU/edit?disco=AAAAelvOB00
 		terminalTargetIDs = append(terminalTargetIDs, terminal.TargetIDs...)
 	}
 
