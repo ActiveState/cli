@@ -51,18 +51,27 @@ func (v *SubShell) SetBinary(binary string) {
 func (v *SubShell) WriteUserEnv(cfg sscommon2.Configurable, env map[string]string, envType sscommon2.RcIdentification, userScope bool) error {
 	cmdEnv := NewCmdEnv(userScope)
 
-	// Clean up old entries
-	oldEnv := cfg.GetStringMap(envType.Key)
-	for k, v := range oldEnv {
-		if err := cmdEnv.unset(k, v.(string)); err != nil {
-			return err
+	if cfg != nil {
+		// Clean up old entries
+		oldEnv := cfg.GetStringMap(envType.Key)
+		for k, v := range oldEnv {
+			if err := cmdEnv.unset(k, v.(string)); err != nil {
+				return err
+			}
+		}
+
+		// Store new entries
+		err := cfg.Set(envType.Key, env)
+		if err != nil {
+			return errs.Wrap(err, "Could not set env infomation in config")
 		}
 	}
 
-	// Store new entries
-	err := cfg.Set(envType.Key, env)
-	if err != nil {
-		return errs.Wrap(err, "Could not set env infomation in config")
+	// Avoid duplicates
+	for k, v := range env {
+		if err := cmdEnv.unset(k, v); err != nil {
+			return err
+		}
 	}
 
 	for k, v := range env {
