@@ -169,17 +169,22 @@ func ConfigureAvailableShells(shell SubShell, cfg sscommon.Configurable, env map
 
 // DetectShell detects the shell relevant to the current process and returns its name and path.
 func DetectShell(cfg sscommon.Configurable) (string, string) {
-	configured := cfg.GetString(ConfigKeyShell)
+	var configured string
+	if cfg != nil {
+		configured = cfg.GetString(ConfigKeyShell)
+	}
 	var binary string
 	defer func() {
 		// do not re-write shell binary to config, if the value did not change.
 		if configured == binary {
 			return
 		}
-		// We save and use the detected shell to our config so that we can use it when running code through
-		// a non-interactive shell
-		if err := cfg.Set(ConfigKeyShell, binary); err != nil {
-			multilog.Error("Could not save shell binary: %v", errs.Join(err, ": "))
+		if cfg != nil {
+			// We save and use the detected shell to our config so that we can use it when running code through
+			// a non-interactive shell
+			if err := cfg.Set(ConfigKeyShell, binary); err != nil {
+				multilog.Error("Could not save shell binary: %v", errs.Join(err, ": "))
+			}
 		}
 	}()
 
