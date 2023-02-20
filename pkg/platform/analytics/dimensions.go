@@ -28,7 +28,7 @@ type Dimensions struct {
 	Command          *string
 	Sequence         *int
 
-	PreProcessor func(*Dimensions) error
+	PreProcessor func(*Dimensions) error `json:"-"`
 }
 
 func (v *Dimensions) Clone() *Dimensions {
