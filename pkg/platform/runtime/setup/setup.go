@@ -173,6 +173,11 @@ func (s *Setup) Update() (rerr error) {
 		return errs.Wrap(err, "Failed to update artifacts")
 	}
 
+	// Save the environment information
+	if _, err := s.store.UpdateEnviron(artifacts); err != nil {
+		return errs.Wrap(err, "Could not save combined environment file")
+	}
+
 	if s.target.Executors() {
 		// Update executors
 		if err := s.updateExecutors(artifacts); err != nil {
@@ -280,9 +285,9 @@ func (s *Setup) updateExecutors(artifacts []artifact.ArtifactID) error {
 		return locale.WrapError(err, "err_deploy_execpath", "Could not create exec directory.")
 	}
 
-	edGlobal, err := s.store.UpdateEnviron(artifacts)
+	edGlobal, err := s.store.EnvDef()
 	if err != nil {
-		return errs.Wrap(err, "Could not save combined environment file")
+		return errs.Wrap(err, "Could not get combined environment file")
 	}
 
 	exePaths, err := edGlobal.ExecutablePaths()
