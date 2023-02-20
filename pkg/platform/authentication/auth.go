@@ -8,6 +8,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/ci/gcloud"
 	"github.com/ActiveState/cli/internal/colorize"
+	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
@@ -219,7 +220,9 @@ func (s *Auth) AuthenticateWithModel(credentials *mono_models.Credentials) error
 			if api.ErrorCode(err) == 403 {
 				return locale.NewInputError("err_auth_forbidden", "You are not allowed to login now. Please try again later.")
 			}
-			multilog.Error("Authentication API returned %v", err)
+			if !condition.IsNetworkingError(err) {
+				multilog.Error("Authentication API returned %v", err)
+			}
 			return errs.AddTips(locale.WrapError(err, "err_api_auth", "Authentication failed: {{.V0}}", err.Error()), tips...)
 		}
 	}
