@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/thoas/go-funk"
 )
 
@@ -45,4 +46,15 @@ func OptInUnstable(cfg Configurable) bool {
 		return v == "true"
 	}
 	return cfg.GetBool(constants.UnstableConfig)
+}
+
+func IsNetworkingError(err error) bool {
+	msg := errs.JoinMessage(err)
+	switch {
+	case strings.Contains(msg, "no such host"):
+		return true
+	case strings.Contains(msg, "no route to host"):
+		return true
+	}
+	return false
 }
