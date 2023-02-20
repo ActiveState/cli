@@ -8,6 +8,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/ci/gcloud"
 	"github.com/ActiveState/cli/internal/colorize"
+	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
@@ -215,7 +216,9 @@ func (s *Auth) AuthenticateWithModel(credentials *mono_models.Credentials) error
 			if os.IsTimeout(err) {
 				return locale.NewInputError("err_api_auth_timeout", "Timed out waiting for authentication response. Please try again.")
 			}
-			multilog.Error("Authentication API returned %v", err)
+			if !condition.IsNetworkingError(err) {
+				multilog.Error("Authentication API returned %v", err)
+			}
 			return errs.AddTips(locale.WrapError(err, "err_api_auth", "Authentication failed: {{.V0}}", err.Error()), tips...)
 		}
 	}
