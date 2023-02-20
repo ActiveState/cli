@@ -3,7 +3,9 @@
 
 package updater
 
-import "github.com/ActiveState/cli/internal/unarchiver"
+import (
+	"github.com/ActiveState/cli/pkg/unarchiver"
+)
 
 func blobUnarchiver(blob []byte) *unarchiver.TarGzBlob {
 	return unarchiver.NewTarGzBlob(blob)

@@ -4,7 +4,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/osutils"
-	"github.com/ActiveState/cli/internal/unarchiver"
+	"github.com/ActiveState/cli/pkg/unarchiver"
 )
 
 func blobUnarchiver(blob []byte) *unarchiver.ZipBlob {
