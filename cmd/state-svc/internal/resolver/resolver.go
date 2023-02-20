@@ -20,7 +20,6 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/graph"
-	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	configMediator "github.com/ActiveState/cli/internal/mediators/config"
 	"github.com/ActiveState/cli/internal/multilog"
@@ -67,10 +66,7 @@ func New(cfg *config.Instance, an *sync.Client, auth *authentication.Auth) (*Res
 
 	pollAuth := poller.New(time.Duration(int64(time.Millisecond)*pollRate), func() (interface{}, error) {
 		if auth.SyncRequired() {
-			err := auth.Sync()
-			if err != nil {
-				return nil, locale.WrapInputError(err, "err_api_not_authenticated")
-			}
+			return nil, auth.Sync()
 		}
 		return nil, nil
 	})
