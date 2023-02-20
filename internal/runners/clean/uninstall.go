@@ -31,6 +31,7 @@ type Uninstall struct {
 type UninstallParams struct {
 	Force          bool
 	NonInteractive bool
+	All            bool
 }
 
 type primeable interface {
@@ -80,7 +81,7 @@ func (u *Uninstall) Run(params *UninstallParams) error {
 		return errs.Wrap(err, "Failed to stop services.")
 	}
 
-	err = u.runUninstall()
+	err = u.runUninstall(params)
 	if err != nil {
 		return errs.Wrap(err, "Could not complete uninstallation")
 	}
