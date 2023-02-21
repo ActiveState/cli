@@ -207,7 +207,7 @@ type PushCommitParams struct {
 	Time             time.Time
 }
 
-func (bp *BuildPlanner) PushCommit(params *PushCommitParams) (string, error) {
+func (bp *BuildPlanner) PushCommit(params PushCommitParams) (string, error) {
 	// If parent commit is provided then get the build graph
 	// If it is not then create a blank build graph
 	var err error

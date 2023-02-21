@@ -219,7 +219,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName strin
 	}
 
 	bp := bpModel.NewBuildPlanner(r.Auth)
-	commitID, err := bp.PushCommit(&bpModel.PushCommitParams{
+	commitID, err := bp.PushCommit(bpModel.PushCommitParams{
 		Owner:            pj.Owner(),
 		Project:          pj.Name(),
 		ParentCommit:     string(parentCommitID),
