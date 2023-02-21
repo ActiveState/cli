@@ -1,14 +1,5 @@
 package app
 
-import (
-	"github.com/ActiveState/cli/internal/constants"
-	configMediator "github.com/ActiveState/cli/internal/mediators/config"
-)
-
-func init() {
-	configMediator.RegisterOption(constants.AutostartSvcConfigKey, configMediator.Bool, configMediator.EmptyEvent, configMediator.EmptyEvent)
-}
-
 type App struct {
 	Name    string
 	Exec    string
