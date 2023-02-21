@@ -33,7 +33,7 @@ func newCleanUninstallCommand(prime *primer.Values, globals *globalOptions) *cap
 			{
 				Name:        "all",
 				Shorthand:   "a",
-				Description: locale.Tl("flag_state_clean_uninstall_all", "Also remove user configuration and cache files"),
+				Description: locale.Tl("flag_state_clean_uninstall_all", "Also delete all associated config and cache files"),
 				Value:       &params.All,
 			},
 			{
