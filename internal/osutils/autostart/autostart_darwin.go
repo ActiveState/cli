@@ -8,6 +8,7 @@ import (
 	"github.com/ActiveState/cli/internal/assets"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils/user"
 	"github.com/ActiveState/cli/internal/strutils"
@@ -95,10 +96,10 @@ func autostartPath(exec string, _ Options) (string, error) {
 }
 
 func installPath(name string) (string, error) {
-	dir, err := user.HomeDir()
+	dir, err := installation.ApplicationInstallPath()
 	if err != nil {
 		return "", errs.Wrap(err, "Could not get home directory")
 	}
-	path := filepath.Join(dir, "Applications", fmt.Sprintf("%s.app", name))
+	path := filepath.Join(dir, fmt.Sprintf("%s.app", name))
 	return path, nil
 }
