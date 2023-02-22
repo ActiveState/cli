@@ -5,6 +5,11 @@ import (
 	iofs "io/fs"
 )
 
+const (
+	// PlaceholderFileName is the name of the file that is used to populate the directory structure of the embedded assets.
+	PlaceholderFileName = "placeholder"
+)
+
 //go:embed contents/*
 var fs embed.FS
 

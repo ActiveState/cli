@@ -35,19 +35,8 @@ func (a *App) install() error {
 		return errs.Wrap(err, "Could not create .app directory")
 	}
 
-	appDir, err := assets.OpenFile(assetAppDir)
-	if err != nil {
-		return errs.Wrap(err, "Could not read app directory asset")
-	}
-
-	info, err := appDir.Stat()
-	if err != nil {
-		return errs.Wrap(err, "Could not stat app directory asset")
-	}
-
-	err = generateAppDir(tmpAppPath, info.Name())
-	if err != nil {
-		return errs.Wrap(err, "Could not generate app directory")
+	if err := fileutils.CopyFilesFromAssets(assetAppDir, tmpAppPath); err != nil {
+		return errs.Wrap(err, "Could not copy files from assets")
 	}
 
 	if err := a.createIcon(tmpAppPath); err != nil {
@@ -69,31 +58,6 @@ func (a *App) install() error {
 
 	if err := fileutils.MoveAllFiles(tmpDir, installDir); err != nil {
 		return errs.Wrap(err, "Could not move .app to Applications directory")
-	}
-
-	return nil
-}
-
-func generateAppDir(createPath, assetName string) error {
-	listing, err := assets.ReadDir(assetName)
-	if err != nil {
-		return errs.Wrap(err, "Could not read app directory asset")
-	}
-
-	for _, entry := range listing {
-		if !entry.IsDir() {
-			continue
-		}
-
-		err := fileutils.Mkdir(createPath, entry.Name())
-		if err != nil {
-			return errs.Wrap(err, "Could not create directory")
-		}
-
-		err = generateAppDir(filepath.Join(createPath, entry.Name()), filepath.Join(assetName, entry.Name()))
-		if err != nil {
-			return errs.Wrap(err, "Could not generate app directory")
-		}
 	}
 
 	return nil

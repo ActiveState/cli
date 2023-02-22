@@ -17,6 +17,7 @@ import (
 	"time"
 	"unicode"
 
+	"github.com/ActiveState/cli/internal/assets"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -263,6 +264,20 @@ func CopyFile(src, target string) error {
 	if err != nil {
 		return errs.Wrap(err, "out.Close failed")
 	}
+	return nil
+}
+
+func CopyAsset(assetName, dest string) error {
+	asset, err := assets.ReadFileBytes(assetName)
+	if err != nil {
+		return errs.Wrap(err, "Asset %s failed", assetName)
+	}
+
+	err = ioutil.WriteFile(dest, asset, 0644)
+	if err != nil {
+		return errs.Wrap(err, "ioutil.WriteFile %s failed", dest)
+	}
+
 	return nil
 }
 
@@ -679,6 +694,56 @@ func WriteTempFileToDir(dir, pattern string, data []byte, perm os.FileMode) (str
 	}
 
 	return f.Name(), nil
+}
+
+func CopyFilesFromAssets(assetDir, dst string) error {
+	entries, err := assets.ReadDir(assetDir)
+	if err != nil {
+		return errs.Wrap(err, "asset.ReadDir %s failed", assetDir)
+	}
+
+	for _, entry := range entries {
+		srcPath := filepath.Join(assetDir, entry.Name())
+		destPath := filepath.Join(dst, entry.Name())
+
+		switch entry.Type() & os.ModeType {
+		case os.ModeDir:
+			err := MkdirUnlessExists(destPath)
+			if err != nil {
+				return errs.Wrap(err, "MkdirUnlessExists %s failed", destPath)
+			}
+
+			err = CopyFilesFromAssets(srcPath, destPath)
+			if err != nil {
+				return errs.Wrap(err, "CopyFiles %s:%s failed", srcPath, destPath)
+			}
+		default:
+			err := CopyAsset(srcPath, destPath)
+			if err != nil {
+				return errs.Wrap(err, "CopyFile %s:%s failed", srcPath, destPath)
+			}
+		}
+	}
+
+	walkErr := filepath.Walk(dst, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		if info.Name() == assets.PlaceholderFileName {
+			err := os.Remove(path)
+			if err != nil {
+				return errs.Wrap(err, "os.Remove %s failed", path)
+			}
+		}
+
+		return nil
+	})
+	if walkErr != nil {
+		return errs.Wrap(walkErr, "filepath.Walk %s failed", dst)
+	}
+
+	return nil
 }
 
 // CopyFiles will copy all of the files/dirs within one directory to another.
