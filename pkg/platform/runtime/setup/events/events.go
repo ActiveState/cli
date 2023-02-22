@@ -12,7 +12,6 @@ The naming format of events should be in the form of <Component>[<Action>]<Outco
 
 type Handler interface {
 	Handle(ev Eventer) error
-	Close() error
 }
 
 type Event struct{}

@@ -6,10 +6,9 @@ import (
 
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/runbits/runtime/progress"
-	"github.com/ActiveState/cli/pkg/platform/runtime/setup/events"
 )
 
-func NewRuntimeProgressIndicator(out output.Outputer) events.Handler {
+func NewRuntimeProgressIndicator(out output.Outputer) *progress.ProgressDigester {
 	var w io.Writer = os.Stdout
 	if out.Type() != output.PlainFormatName {
 		w = nil
