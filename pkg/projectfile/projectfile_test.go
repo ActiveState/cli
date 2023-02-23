@@ -496,3 +496,17 @@ languages:
 		})
 	}
 }
+
+func TestShorthand(t *testing.T) {
+	dataDir := filepath.Join("testdata", "shorthand")
+
+	asyLongFile := filepath.Join(dataDir, "activestate.yaml")
+	pl, err := Parse(asyLongFile)
+	require.NoError(t, err, "parse longhand file")
+
+	asyShortFile := filepath.Join(dataDir, "shorthand-activestate.yaml")
+	ps, err := Parse(asyShortFile)
+	require.NoError(t, err, "parse shorthand file")
+
+	require.Equal(t, pl.Constants, ps.Constants)
+}
