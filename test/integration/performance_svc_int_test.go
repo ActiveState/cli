@@ -18,7 +18,7 @@ import (
 )
 
 var SvcEnsureStartMaxTime = 1000 * time.Millisecond // https://activestatef.atlassian.net/browse/DX-935
-var SvcRequestMaxTime = 50 * time.Millisecond
+var SvcRequestMaxTime = 100 * time.Millisecond
 var SvcStopMaxTime = 50 * time.Millisecond
 
 type PerformanceSvcIntegrationTestSuite struct {
@@ -90,9 +90,8 @@ func (suite *PerformanceIntegrationTestSuite) TestSvcPerformance() {
 		suite.Require().NoError(err, ts.DebugMessage(fmt.Sprintf("Error: %s\nLog Tail:\n%s", errs.JoinMessage(err), logging.ReadTail())))
 		duration := time.Since(t)
 
-		queryMaxTime := 2 * SvcRequestMaxTime // account for CI network latency
-		if duration.Nanoseconds() > queryMaxTime.Nanoseconds() {
-			suite.Fail(fmt.Sprintf("Service update request took too long: %s (should be under %s)", duration.String(), queryMaxTime.String()))
+		if duration.Nanoseconds() > SvcRequestMaxTime.Nanoseconds() {
+			suite.Fail(fmt.Sprintf("Service update request took too long: %s (should be under %s)", duration.String(), SvcRequestMaxTime.String()))
 		}
 	})
 
