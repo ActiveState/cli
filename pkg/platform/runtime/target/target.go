@@ -25,8 +25,8 @@ const (
 	TriggerActivate           Trigger = "activate"
 	TriggerScript             Trigger = "script"
 	TriggerDeploy             Trigger = "deploy"
-	TriggerExec               Trigger = "exec"
-	TriggerExecutor           Trigger = "executor"
+	TriggerExec               Trigger = "exec-cmd"
+	TriggerExecutor           Trigger = "exec"
 	TriggerResetExec          Trigger = "reset-exec"
 	TriggerSwitch             Trigger = "switch"
 	TriggerImport             Trigger = "import"
@@ -82,8 +82,9 @@ var (
 )
 
 func (t Trigger) IsExecTrigger() bool {
-	s := t.String()
-	return strings.HasPrefix(s, triggerExecPrefix) || strings.HasPrefix(s, triggerExecutorPrefix)
+	trigger := t.String()
+	return strings.HasPrefix(trigger, triggerExecutorPrefix) ||
+		strings.HasPrefix(trigger, triggerExecPrefix)
 }
 
 type ProjectTarget struct {
