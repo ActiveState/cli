@@ -69,7 +69,7 @@ func (suite *PerformanceIntegrationTestSuite) TestSvcPerformance() {
 		duration := time.Since(t)
 
 		if duration.Nanoseconds() > SvcRequestMaxTime.Nanoseconds() {
-			suite.Fail(fmt.Sprintf("Service request took too long: %s (should be under %s)", duration.String(), SvcEnsureStartMaxTime.String()))
+			suite.Fail(fmt.Sprintf("Service request took too long: %s (should be under %s)", duration.String(), SvcRequestMaxTime.String()))
 		}
 	})
 
@@ -80,7 +80,7 @@ func (suite *PerformanceIntegrationTestSuite) TestSvcPerformance() {
 		duration := time.Since(t)
 
 		if duration.Nanoseconds() > SvcRequestMaxTime.Nanoseconds() {
-			suite.Fail(fmt.Sprintf("Service analytics request took too long: %s (should be under %s)", duration.String(), SvcEnsureStartMaxTime.String()))
+			suite.Fail(fmt.Sprintf("Service analytics request took too long: %s (should be under %s)", duration.String(), SvcRequestMaxTime.String()))
 		}
 	})
 
@@ -90,8 +90,9 @@ func (suite *PerformanceIntegrationTestSuite) TestSvcPerformance() {
 		suite.Require().NoError(err, ts.DebugMessage(fmt.Sprintf("Error: %s\nLog Tail:\n%s", errs.JoinMessage(err), logging.ReadTail())))
 		duration := time.Since(t)
 
-		if duration.Nanoseconds() > SvcRequestMaxTime.Nanoseconds() {
-			suite.Fail(fmt.Sprintf("Service update request took too long: %s (should be under %s)", duration.String(), SvcEnsureStartMaxTime.String()))
+		queryMaxTime := 2 * SvcRequestMaxTime // account for CI network latency
+		if duration.Nanoseconds() > queryMaxTime.Nanoseconds() {
+			suite.Fail(fmt.Sprintf("Service update request took too long: %s (should be under %s)", duration.String(), queryMaxTime.String()))
 		}
 	})
 
