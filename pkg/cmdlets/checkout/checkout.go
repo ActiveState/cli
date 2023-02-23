@@ -102,7 +102,7 @@ func (r *Checkout) Run(ns *project.Namespaced, branchName, cachePath, targetPath
 		return "", errs.Wrap(err, "Could not get language from commitID")
 	}
 
-	if !filepath.IsAbs(cachePath) {
+	if cachePath != "" && !filepath.IsAbs(cachePath) {
 		cachePath, err = filepath.Abs(cachePath)
 		if err != nil {
 			return "", errs.Wrap(err, "Could not get absolute path for cache")
