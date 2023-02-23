@@ -26,6 +26,7 @@ const (
 	TriggerScript             Trigger = "script"
 	TriggerDeploy             Trigger = "deploy"
 	TriggerExec               Trigger = "exec"
+	TriggerExecutor           Trigger = "executor"
 	TriggerResetExec          Trigger = "reset-exec"
 	TriggerSwitch             Trigger = "switch"
 	TriggerImport             Trigger = "import"
@@ -50,6 +51,7 @@ var usageTriggers = []Trigger{
 	TriggerScript,
 	TriggerDeploy,
 	TriggerExec,
+	TriggerExecutor,
 	TriggerSwitch,
 	TriggerImport,
 	TriggerPackage,
@@ -74,8 +76,14 @@ func (t Trigger) IndicatesUsage() bool {
 	return t.IsExecTrigger() && funk.Contains(usageTriggers, TriggerExec)
 }
 
+var (
+	triggerExecPrefix     = TriggerExec.String() + ": "
+	triggerExecutorPrefix = TriggerExecutor.String() + ": "
+)
+
 func (t Trigger) IsExecTrigger() bool {
-	return strings.HasPrefix(string(t), string(TriggerExec)+": ")
+	s := t.String()
+	return strings.HasPrefix(s, triggerExecPrefix) || strings.HasPrefix(s, triggerExecutorPrefix)
 }
 
 type ProjectTarget struct {
