@@ -218,6 +218,7 @@ func DetectShell(cfg sscommon.Configurable) (string, string) {
 			break
 		}
 	}
+
 	if !isKnownShell {
 		logging.Debug("Unsupported shell: %s, defaulting to OS default.", name)
 		rollbar.Error("Unsupported shell: %s", name) // we just want to know what this person is using

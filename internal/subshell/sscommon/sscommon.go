@@ -7,18 +7,31 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/sighandler"
 )
 
-func NewCommand(command string, args []string, env []string) *exec.Cmd {
+func NewCommand(command string, args []string, env []string) (*exec.Cmd, error) {
+	if !fileutils.IsExecutable(command) {
+		err := locale.NewInputError(
+			"err_sscommon_command_not_executable",
+			"Command '{{.V0}}' is not an executable.",
+			command,
+		)
+		return nil, errs.AddTips(err,
+			"Ensure that the targeted command is a valid executable.",
+			"Checking environment vars like SHELL may help resolve this.",
+		)
+	}
+
 	cmd := exec.Command(command, args...)
 	if env != nil {
 		cmd.Env = append(os.Environ(), env...)
 	}
-	return cmd
+	return cmd, nil
 }
 
 // Start wires stdin/stdout/stderr into the provided command, starts it, and
