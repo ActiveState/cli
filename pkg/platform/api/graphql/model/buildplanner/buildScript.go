@@ -55,8 +55,17 @@ type LetStatement struct {
 }
 
 type Runtime struct {
-	// TODO: Will this also need a solve field?
-	SolveLegacy SolveLegacy `json:"solve_legacy"`
+	Solve       Solve       `json:"solve,omitempty"`
+	SolveLegacy SolveLegacy `json:"solve_legacy,omitempty"`
+}
+
+type Solve struct {
+	BuildFlags    []string      `json:"build_flags,omitempty"`
+	CamelFlags    []string      `json:"camel_flags,omitempty"`
+	Platforms     []string      `json:"platforms"`
+	SolverVersion string        `json:"solver_version,omitempty"`
+	AtTime        string        `json:"at_time"`
+	Requirements  []Requirement `json:"requirements"`
 }
 
 type SolveLegacy struct {
