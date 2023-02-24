@@ -76,15 +76,8 @@ func (t Trigger) IndicatesUsage() bool {
 	return t.IsExecTrigger() && funk.Contains(usageTriggers, TriggerExec)
 }
 
-var (
-	triggerExecPrefix     = TriggerExec.String() + ": "
-	triggerExecutorPrefix = TriggerExecutor.String() + ": "
-)
-
 func (t Trigger) IsExecTrigger() bool {
-	trigger := t.String()
-	return strings.HasPrefix(trigger, triggerExecutorPrefix) ||
-		strings.HasPrefix(trigger, triggerExecPrefix)
+	return strings.HasPrefix(string(t), string(TriggerExec)+": ")
 }
 
 type ProjectTarget struct {
