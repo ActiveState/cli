@@ -112,8 +112,7 @@ type Build map[string]string
 
 // Constant covers the constant structure, which goes under Project
 type Constant struct {
-	Name        string      `yaml:"name"`
-	Value       string      `yaml:"value"`
+	NameVal     `yaml:",inline"`
 	Conditional Conditional `yaml:"if"`
 }
 
@@ -251,8 +250,7 @@ func MakePackagesFromConstrainedEntities(items []ConstrainedEntity) (packages []
 
 // Event covers the event structure, which goes under Project
 type Event struct {
-	Name        string      `yaml:"name"`
-	Value       string      `yaml:"value"`
+	NameVal     `yaml:",inline"`
 	Scope       []string    `yaml:"scope"`
 	Conditional Conditional `yaml:"if"`
 	id          string
@@ -302,9 +300,8 @@ func MakeEventsFromConstrainedEntities(items []ConstrainedEntity) (events []*Eve
 
 // Script covers the script structure, which goes under Project
 type Script struct {
-	Name        string      `yaml:"name"`
+	NameVal     `yaml:",inline"`
 	Description string      `yaml:"description,omitempty"`
-	Value       string      `yaml:"value"`
 	Filename    string      `yaml:"filename,omitempty"`
 	Standalone  bool        `yaml:"standalone,omitempty"`
 	Language    string      `yaml:"language,omitempty"`
