@@ -7,31 +7,18 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/sighandler"
 )
 
-func NewCommand(command string, args []string, env []string) (*exec.Cmd, error) {
-	if !fileutils.IsExecutable(command) {
-		err := locale.NewInputError(
-			"err_sscommon_command_not_executable",
-			"Command '{{.V0}}' is not an executable.",
-			command,
-		)
-		return nil, errs.AddTips(err,
-			"Ensure that the targeted command is a valid executable.",
-			"Checking environment vars like SHELL may help resolve this.",
-		)
-	}
-
+func NewCommand(command string, args []string, env []string) *exec.Cmd {
 	cmd := exec.Command(command, args...)
 	if env != nil {
 		cmd.Env = append(os.Environ(), env...)
 	}
-	return cmd, nil
+	return cmd
 }
 
 // Start wires stdin/stdout/stderr into the provided command, starts it, and
@@ -66,7 +53,11 @@ func Start(cmd *exec.Cmd) chan error {
 				return
 			}
 
-			errors <- errs.Wrap(err, "Command Failed: %s", cmd.String())
+			err = errs.AddTips(errs.Wrap(err, "Command Failed: %s", cmd.String()),
+				"Checking environment vars like SHELL may help resolve this.",
+			)
+			errors <- err
+
 			return
 		}
 	}()
