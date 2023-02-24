@@ -165,11 +165,7 @@ func (v *SubShell) Activate(prj *project.Project, cfg sscommon.Configurable, out
 		directEnv = sscommon.EnvSlice(v.env)
 	}
 
-	cmd, err := sscommon.NewCommand("cmd", shellArgs, directEnv)
-	if err != nil {
-		return err
-	}
-
+	cmd := sscommon.NewCommand("cmd", shellArgs, directEnv)
 	v.errs = sscommon.Start(cmd)
 	v.cmd = cmd
 	return nil
