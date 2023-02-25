@@ -447,6 +447,10 @@ func parse(configFilepath string) (*Project, error) {
 		return nil, errs.Wrap(err, "ioutil.ReadFile %s failure", configFilepath)
 	}
 
+	return parseData(dat, configFilepath)
+}
+
+func parseData(dat []byte, configFilepath string) (*Project, error) {
 	if err := detectDeprecations(dat, configFilepath); err != nil {
 		return nil, errs.Wrap(err, "deprecations found")
 	}

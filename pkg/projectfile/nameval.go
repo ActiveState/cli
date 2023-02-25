@@ -1,5 +1,11 @@
 package projectfile
 
+import (
+	"bytes"
+
+	"gopkg.in/yaml.v2"
+)
+
 type NameVal struct {
 	Name  string `yaml:"name"`
 	Value string `yaml:"value"`
@@ -11,26 +17,47 @@ func (nv *NameVal) UnmarshalYAML(unmarshal func(interface{}) error) error {
 		return err
 	}
 
-	switch entries := len(data); {
-	case entries < 1:
-		return nil
+	if len(data) == 1 {
+		ssData, err := sanitizeMap(data)
+		if err != nil {
+			return err
+		}
 
-	case entries > 1:
-		if name, ok := data["name"]; ok {
-			nv.Name = name.(string)
+		for k, v := range ssData {
+			nv.Name, nv.Value = k, v
+			break
 		}
-		if value, ok := data["value"]; ok {
-			nv.Value = value.(string)
-		}
-	default:
-		for k, v := range data {
-			val, ok := v.(string)
-			if !ok {
-				continue
+
+	} else {
+		for k := range data {
+			if k != "name" && k != "value" {
+				delete(data, k)
 			}
-			nv.Name, nv.Value = k, val
 		}
+
+		ssData, err := sanitizeMap(data)
+		if err != nil {
+			return err
+		}
+
+		nv.Name, nv.Value = ssData["name"], ssData["value"]
 	}
 
 	return nil
+}
+
+func sanitizeMap(m map[string]interface{}) (map[string]string, error) {
+	data, err := yaml.Marshal(m)
+	if err != nil {
+		return nil, err
+	}
+
+	data = bytes.TrimSpace(data)
+
+	ssm := make(map[string]string)
+	if err := yaml.Unmarshal(data, &ssm); err != nil {
+		return nil, err
+	}
+
+	return ssm, nil
 }
