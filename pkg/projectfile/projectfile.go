@@ -110,10 +110,26 @@ type Project struct {
 // Build can hold variable keys, so we cannot predict what they are, hence why it is a map
 type Build map[string]string
 
+type ConstantFields struct {
+	Conditional Conditional `yaml:"if"`
+}
+
 // Constant covers the constant structure, which goes under Project
 type Constant struct {
-	NameVal     `yaml:",inline"`
-	Conditional Conditional `yaml:"if"`
+	NameVal        `yaml:",inline"`
+	ConstantFields `yaml:",inline"`
+}
+
+func (c *Constant) UnmarshalYAML(unmarshal func(interface{}) error) error {
+	var tmp Constant
+	if err := unmarshal(&tmp.NameVal); err != nil {
+		return err
+	}
+	if err := unmarshal(&tmp.ConstantFields); err != nil {
+		return err
+	}
+	*c = tmp
+	return nil
 }
 
 var _ ConstrainedEntity = &Constant{}
@@ -248,12 +264,28 @@ func MakePackagesFromConstrainedEntities(items []ConstrainedEntity) (packages []
 	return packages
 }
 
-// Event covers the event structure, which goes under Project
-type Event struct {
-	NameVal     `yaml:",inline"`
+type EventFields struct {
 	Scope       []string    `yaml:"scope"`
 	Conditional Conditional `yaml:"if"`
 	id          string
+}
+
+// Event covers the event structure, which goes under Project
+type Event struct {
+	NameVal     `yaml:",inline"`
+	EventFields `yaml:",inline"`
+}
+
+func (e *Event) UnmarshalYAML(unmarshal func(interface{}) error) error {
+	var tmp Event
+	if err := unmarshal(&tmp.NameVal); err != nil {
+		return err
+	}
+	if err := unmarshal(&tmp.EventFields); err != nil {
+		return err
+	}
+	*e = tmp
+	return nil
 }
 
 var _ ConstrainedEntity = Event{}
@@ -298,14 +330,30 @@ func MakeEventsFromConstrainedEntities(items []ConstrainedEntity) (events []*Eve
 	return events
 }
 
-// Script covers the script structure, which goes under Project
-type Script struct {
-	NameVal     `yaml:",inline"`
+type ScriptFields struct {
 	Description string      `yaml:"description,omitempty"`
 	Filename    string      `yaml:"filename,omitempty"`
 	Standalone  bool        `yaml:"standalone,omitempty"`
 	Language    string      `yaml:"language,omitempty"`
 	Conditional Conditional `yaml:"if"`
+}
+
+// Script covers the script structure, which goes under Project
+type Script struct {
+	NameVal      `yaml:",inline"`
+	ScriptFields `yaml:",inline"`
+}
+
+func (s *Script) UnmarshalYAML(unmarshal func(interface{}) error) error {
+	var tmp Script
+	if err := unmarshal(&tmp.NameVal); err != nil {
+		return err
+	}
+	if err := unmarshal(&tmp.ScriptFields); err != nil {
+		return err
+	}
+	*s = tmp
+	return nil
 }
 
 var _ ConstrainedEntity = Script{}
