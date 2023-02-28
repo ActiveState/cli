@@ -121,14 +121,12 @@ type Constant struct {
 }
 
 func (c *Constant) UnmarshalYAML(unmarshal func(interface{}) error) error {
-	var tmp Constant
-	if err := unmarshal(&tmp.NameVal); err != nil {
+	if err := unmarshal(&c.NameVal); err != nil {
 		return err
 	}
-	if err := unmarshal(&tmp.ConstantFields); err != nil {
+	if err := unmarshal(&c.ConstantFields); err != nil {
 		return err
 	}
-	*c = tmp
 	return nil
 }
 
@@ -277,14 +275,12 @@ type Event struct {
 }
 
 func (e *Event) UnmarshalYAML(unmarshal func(interface{}) error) error {
-	var tmp Event
-	if err := unmarshal(&tmp.NameVal); err != nil {
+	if err := unmarshal(&e.NameVal); err != nil {
 		return err
 	}
-	if err := unmarshal(&tmp.EventFields); err != nil {
+	if err := unmarshal(&e.EventFields); err != nil {
 		return err
 	}
-	*e = tmp
 	return nil
 }
 
@@ -345,14 +341,12 @@ type Script struct {
 }
 
 func (s *Script) UnmarshalYAML(unmarshal func(interface{}) error) error {
-	var tmp Script
-	if err := unmarshal(&tmp.NameVal); err != nil {
+	if err := unmarshal(&s.NameVal); err != nil {
 		return err
 	}
-	if err := unmarshal(&tmp.ScriptFields); err != nil {
+	if err := unmarshal(&s.ScriptFields); err != nil {
 		return err
 	}
-	*s = tmp
 	return nil
 }
 

@@ -76,14 +76,12 @@ type Custom struct {
 }
 
 func (c *Custom) UnmarshalYAML(unmarshal func(interface{}) error) error {
-	var tmp Custom
-	if err := unmarshal(&tmp.NameVal); err != nil {
+	if err := unmarshal(&c.NameVal); err != nil {
 		return err
 	}
-	if err := unmarshal(&tmp.CustomFields); err != nil {
+	if err := unmarshal(&c.CustomFields); err != nil {
 		return err
 	}
-	*c = tmp
 	return nil
 }
 
