@@ -44,6 +44,9 @@ func (suite *UninstallIntegrationTestSuite) testUninstall(all bool) {
 		cp = ts.Spawn("clean", "uninstall")
 	}
 	cp.Expect("You are about to remove")
+	if !all {
+		cp.Expect("--all") // verify mention of "--all" to remove everything
+	}
 	cp.SendLine("y")
 	if runtime.GOOS == "windows" {
 		cp.ExpectLongString("Deletion of State Tool has been scheduled.")
