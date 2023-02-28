@@ -1,8 +1,6 @@
 package projectfile
 
 import (
-	"bytes"
-
 	"gopkg.in/yaml.v2"
 )
 
@@ -29,18 +27,12 @@ func (nv *NameVal) UnmarshalYAML(unmarshal func(interface{}) error) error {
 		}
 
 	} else {
-		for k := range data {
-			if k != "name" && k != "value" {
-				delete(data, k)
-			}
-		}
-
-		ssData, err := sanitizeMap(data)
-		if err != nil {
+		type Tmp NameVal
+		var tmp Tmp
+		if err := unmarshal(&tmp); err != nil {
 			return err
 		}
-
-		nv.Name, nv.Value = ssData["name"], ssData["value"]
+		*nv = NameVal(tmp)
 	}
 
 	return nil
@@ -51,8 +43,6 @@ func sanitizeMap(m map[string]interface{}) (map[string]string, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	data = bytes.TrimSpace(data)
 
 	ssm := make(map[string]string)
 	if err := yaml.Unmarshal(data, &ssm); err != nil {
