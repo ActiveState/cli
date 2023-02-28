@@ -13,6 +13,7 @@ import (
 	"time"
 
 	bpModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model/buildplanner"
+	"github.com/ActiveState/cli/pkg/platform/runtime/orderfile"
 
 	"github.com/ActiveState/cli/internal/analytics"
 	anaConsts "github.com/ActiveState/cli/internal/analytics/constants"
@@ -30,8 +31,6 @@ import (
 	"github.com/ActiveState/cli/internal/svcctl"
 	"github.com/ActiveState/cli/internal/unarchiver"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef"
-	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
-	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	apimodel "github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
@@ -93,6 +92,8 @@ type Targeter interface {
 	Dir() string
 	Headless() bool
 	Trigger() target.Trigger
+	HasProject() bool
+	ProjectDir() string
 
 	// ReadOnly communicates that this target should only use cached runtime information (ie. don't check for updates)
 	ReadOnly() bool
@@ -112,10 +113,7 @@ type Setup struct {
 
 // ModelProvider is the interface for all functions that involve backend communication
 type ModelProvider interface {
-	ResolveRecipe(commitID strfmt.UUID, owner, projectName string) (*inventory_models.Recipe, error)
-	RequestBuild(recipeID, commitID strfmt.UUID, owner, project string) (headchef.BuildStatusEnum, *headchef_models.V1BuildStatusResponse, error)
-	FetchBuildResult(commitID strfmt.UUID, owner, project string) (*model.BuildResult, error)
-	SignS3URL(uri *url.URL) (*url.URL, error)
+	GetBuildScript(owner, project, commitID string) (*bpModel.BuildScript, error)
 }
 
 type Setuper interface {
@@ -136,7 +134,7 @@ type artifactInstaller func(artifact.ArtifactID, string, ArtifactSetuper) error
 
 // New returns a new Setup instance that can install a Runtime locally on the machine.
 func New(target Targeter, eventHandler events.Handler, auth *authentication.Auth, an analytics.Dispatcher) *Setup {
-	return NewWithModel(target, eventHandler, model.NewRecipe(auth), auth, an)
+	return NewWithModel(target, eventHandler, model.NewBuildPlanner(auth), auth, an)
 }
 
 // NewWithModel returns a new Setup instance with a customized model eg., for testing purposes
@@ -319,6 +317,7 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 	}
 
 	bp := model.NewBuildPlanner(s.auth)
+	logging.Debug("Fetching build result for %s/%s@%s", s.target.Owner(), s.target.Name(), s.target.CommitUUID())
 	buildResult, err := bp.FetchBuildResult(s.target.CommitUUID(), s.target.Owner(), s.target.Name())
 	if err != nil {
 		serr := &model.BuildPlannerError{}
@@ -515,7 +514,38 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 		return nil, errs.Wrap(err, "Could not save recipe file.")
 	}
 
+	if err := s.saveOrderFile(buildResult.BuildScript); err != nil {
+		return nil, errs.Wrap(err, "Could not save orderfile.")
+	}
+
 	return buildResult.OrderedArtifacts(), nil
+}
+
+func (s *Setup) saveOrderFile(script *bpModel.BuildScript) error {
+	if !s.target.HasProject() {
+		return nil
+	}
+
+	orderfilePath := filepath.Join(s.target.ProjectDir(), constants.OrderFileName)
+	of, err := orderfile.FromPath(orderfilePath)
+	if err != nil {
+		if !orderfile.IsErrOrderFileDoesNotExist(err) {
+			return errs.Wrap(err, "Could not load orderfile")
+		}
+
+		_, creatErr := orderfile.Create(orderfilePath, script)
+		if creatErr != nil {
+			return errs.Wrap(creatErr, "Could not create orderfile")
+		}
+
+		return nil
+	}
+
+	if of.Script().Equals(script) {
+		return nil
+	}
+
+	return of.Update(script)
 }
 
 func aggregateErrors() (chan<- error, <-chan error) {

@@ -4,7 +4,6 @@ import (
 	"net/http"
 	"os"
 	"strings"
-	"time"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
@@ -15,7 +14,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/graphql/request"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	platformModel "github.com/ActiveState/cli/pkg/platform/model"
-	vcsModel "github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/sysinfo"
 	"github.com/go-openapi/strfmt"
 	"github.com/machinebox/graphql"
@@ -147,6 +145,7 @@ func (bp *BuildPlanner) FetchBuildResult(commitID strfmt.UUID, owner, project st
 		BuildEngine: buildEngine,
 		Build:       resp.Project.Commit.Build,
 		BuildReady:  resp.Project.Commit.Build.Status == model.Ready,
+		BuildScript: resp.Project.Commit.Script,
 	}
 
 	// If the build is alternative the buildLogID type will identify it as a recipe ID.
@@ -195,59 +194,28 @@ func removeEmptyTargets(bp *model.BuildPlan) {
 }
 
 type PushCommitParams struct {
-	Owner            string
-	Project          string
-	ParentCommit     string
-	Description      string
-	BranchRef        string
-	PackageName      string
-	PackageVersion   string
-	PackageNamespace vcsModel.Namespace
-	Operation        model.Operation
-	Time             time.Time
+	Owner        string
+	Project      string
+	ParentCommit string
+	Description  string
+	BranchRef    string
+	Script       *model.BuildScript
 }
 
-func (bp *BuildPlanner) PushCommit(params PushCommitParams) (string, error) {
-	// If parent commit is provided then get the build graph
-	// If it is not then create a blank build graph
-	var err error
-	script := model.NewBuildScript()
-	if params.ParentCommit != "" {
-		script, err = bp.GetBuildScript(params.Owner, params.Project, params.ParentCommit)
-		if err != nil {
-			return "", errs.Wrap(err, "Failed to get build graph")
-		}
-	}
-
-	requirement := model.Requirement{
-		Namespace: params.PackageNamespace.String(),
-		Name:      params.PackageName,
-	}
-
-	if params.PackageVersion != "" {
-		requirement.VersionRequirement = []model.VersionRequirement{{model.ComparatorEQ: params.PackageVersion}}
-	}
-
-	// Call the build graph update function with the operation
-	script, err = script.Update(params.Operation, []model.Requirement{requirement})
-	if err != nil {
-		return "", errs.Wrap(err, "Failed to update build graph")
-	}
-	script.Let.Runtime.SolveLegacy.AtTime = params.Time.Format(time.RFC3339)
-
+func (bp *BuildPlanner) PushCommit(params PushCommitParams) (*model.Commit, error) {
 	// With the updated build graph call the push commit mutation
-	request := request.PushCommit(params.Owner, params.Project, params.ParentCommit, params.BranchRef, params.Description, script)
+	request := request.PushCommit(params.Owner, params.Project, params.ParentCommit, params.BranchRef, params.Description, params.Script)
 	resp := &model.PushCommitResult{}
-	err = bp.client.Run(request, resp)
+	err := bp.client.Run(request, resp)
 	if err != nil {
-		return "", errs.Wrap(err, "failed to fetch build plan")
+		return nil, errs.Wrap(err, "failed to fetch build plan")
 	}
 
 	if resp.Commit.Type == model.NotFound {
-		return "", errs.New("Commit not found: %s", resp.Commit.Message)
+		return nil, errs.New("Commit not found: %s", resp.Commit.Message)
 	}
 
-	return resp.Commit.CommitID, nil
+	return resp.Commit, nil
 }
 
 func (bp *BuildPlanner) GetBuildScript(owner, project, commitID string) (*model.BuildScript, error) {

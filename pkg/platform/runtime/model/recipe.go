@@ -48,6 +48,7 @@ type BuildResult struct {
 	BuildStatusResponse *headchef_models.V1BuildStatusResponse
 	BuildStatus         headchef.BuildStatusEnum
 	BuildReady          bool
+	BuildScript         *bpModel.BuildScript
 }
 
 func (b *BuildResult) OrderedArtifacts() []artifact.ArtifactID {

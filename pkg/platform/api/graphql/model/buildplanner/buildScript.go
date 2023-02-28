@@ -1,6 +1,9 @@
 package model
 
-import "github.com/ActiveState/cli/internal/errs"
+import (
+	"github.com/ActiveState/cli/internal/errs"
+	"github.com/thoas/go-funk"
+)
 
 type Comparator string
 
@@ -35,57 +38,58 @@ func (o Operation) String() string {
 // TODO: We will likely need some sort of parser or other solution for the build graph
 func NewBuildScript() *BuildScript {
 	return &BuildScript{
-		Let: LetStatement{
-			Runtime: Runtime{
-				SolveLegacy: SolveLegacy{
-					Requirements: []Requirement{},
+		Let: &LetStatement{
+			Runtime: &Runtime{
+				SolveLegacy: &SolveLegacy{
+					Requirements: []*Requirement{},
 				},
 			},
 		},
 	}
 }
 
+// TODO: We may want to move this out of the model package
 type BuildScript struct {
-	Let LetStatement `json:"let"`
+	Let *LetStatement `json:"let" yaml:"let"`
 }
 
 type LetStatement struct {
-	In      string  `json:"in"`
-	Runtime Runtime `json:"runtime"`
+	In      string   `json:"in" yaml:"in"`
+	Runtime *Runtime `json:"runtime" yaml:"runtime"`
 }
 
 type Runtime struct {
-	Solve       Solve       `json:"solve,omitempty"`
-	SolveLegacy SolveLegacy `json:"solve_legacy,omitempty"`
+	Solve       *Solve       `json:"solve,omitempty" yaml:"solve,omitempty"`
+	SolveLegacy *SolveLegacy `json:"solve_legacy,omitempty" yaml:"solve_legacy,omitempty"`
 }
 
 type Solve struct {
-	BuildFlags    []string      `json:"build_flags,omitempty"`
-	CamelFlags    []string      `json:"camel_flags,omitempty"`
-	Platforms     []string      `json:"platforms"`
-	SolverVersion string        `json:"solver_version,omitempty"`
-	AtTime        string        `json:"at_time"`
-	Requirements  []Requirement `json:"requirements"`
+	BuildFlags    []string       `json:"build_flags,omitempty" yaml:"build_flags,omitempty"`
+	CamelFlags    []string       `json:"camel_flags,omitempty" yaml:"camel_flags,omitempty"`
+	Platforms     []string       `json:"platforms" yaml:"platforms"`
+	SolverVersion string         `json:"solver_version,omitempty" yaml:"solver_version,omitempty"`
+	AtTime        string         `json:"at_time" yaml:"at_time"`
+	Requirements  []*Requirement `json:"requirements" yaml:"requirements"`
 }
 
 type SolveLegacy struct {
-	BuildFlags    []string      `json:"build_flags,omitempty"`
-	CamelFlags    []string      `json:"camel_flags,omitempty"`
-	Platforms     []string      `json:"platforms"`
-	SolverVersion string        `json:"solver_version,omitempty"`
-	AtTime        string        `json:"at_time"`
-	Requirements  []Requirement `json:"requirements"`
+	BuildFlags    []string       `json:"build_flags,omitempty" yaml:"build_flags,omitempty"`
+	CamelFlags    []string       `json:"camel_flags,omitempty" yaml:"camel_flags,omitempty"`
+	Platforms     []string       `json:"platforms" yaml:"platforms"`
+	SolverVersion string         `json:"solver_version,omitempty" yaml:"solver_version,omitempty"`
+	AtTime        string         `json:"at_time" yaml:"at_time"`
+	Requirements  []*Requirement `json:"requirements" yaml:"requirements"`
 }
 
 type Requirement struct {
-	Name               string               `json:"name"`
-	Namespace          string               `json:"namespace"`
-	VersionRequirement []VersionRequirement `json:"version_requirements,omitempty"`
+	Name               string                `json:"name" yaml:"name"`
+	Namespace          string                `json:"namespace" yaml:"namespace"`
+	VersionRequirement []*VersionRequirement `json:"version_requirements,omitempty" yaml:"version_requirements,omitempty"`
 }
 
 type VersionRequirement map[Comparator]string
 
-func (bs *BuildScript) Update(operation Operation, requirements []Requirement) (*BuildScript, error) {
+func (bs *BuildScript) Update(operation Operation, requirements []*Requirement) (*BuildScript, error) {
 	switch operation {
 	case OperationAdd:
 		return bs.add(requirements), nil
@@ -98,12 +102,12 @@ func (bs *BuildScript) Update(operation Operation, requirements []Requirement) (
 	}
 }
 
-func (bs *BuildScript) add(requirements []Requirement) *BuildScript {
+func (bs *BuildScript) add(requirements []*Requirement) *BuildScript {
 	bs.Let.Runtime.SolveLegacy.Requirements = append(bs.Let.Runtime.SolveLegacy.Requirements, requirements...)
 	return bs
 }
 
-func (bs *BuildScript) remove(requirements []Requirement) *BuildScript {
+func (bs *BuildScript) remove(requirements []*Requirement) *BuildScript {
 	for i, req := range bs.Let.Runtime.SolveLegacy.Requirements {
 		for _, removeReq := range requirements {
 			if req.Name == removeReq.Name && req.Namespace == removeReq.Namespace {
@@ -114,7 +118,7 @@ func (bs *BuildScript) remove(requirements []Requirement) *BuildScript {
 	return bs
 }
 
-func (bs *BuildScript) update(requirements []Requirement) *BuildScript {
+func (bs *BuildScript) update(requirements []*Requirement) *BuildScript {
 	for _, req := range bs.Let.Runtime.SolveLegacy.Requirements {
 		for _, updateReq := range requirements {
 			if req.Name == updateReq.Name && req.Namespace == updateReq.Namespace {
@@ -123,4 +127,21 @@ func (bs *BuildScript) update(requirements []Requirement) *BuildScript {
 		}
 	}
 	return bs
+}
+
+// TODO: Verify this is the correct way to compare build scripts
+func (bs *BuildScript) Equals(other *BuildScript) bool {
+	if len(bs.Let.Runtime.SolveLegacy.Requirements) != len(other.Let.Runtime.SolveLegacy.Requirements) {
+		return false
+	}
+
+	if !funk.Equal(bs.Let.Runtime.SolveLegacy.Platforms, other.Let.Runtime.SolveLegacy.Platforms) {
+		return false
+	}
+
+	if !funk.Equal(bs.Let.Runtime.SolveLegacy.Requirements, other.Let.Runtime.SolveLegacy.Requirements) {
+		return false
+	}
+
+	return true
 }

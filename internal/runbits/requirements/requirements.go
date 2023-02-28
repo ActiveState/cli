@@ -219,17 +219,40 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName strin
 	}
 
 	bp := bpModel.NewBuildPlanner(r.Auth)
-	commitID, err := bp.PushCommit(bpModel.PushCommitParams{
-		Owner:            pj.Owner(),
-		Project:          pj.Name(),
-		ParentCommit:     string(parentCommitID),
-		BranchRef:        pj.BranchName(),
-		Description:      fmt.Sprintf("%s-%s", operation, requirementName),
-		PackageName:      requirementName,
-		PackageVersion:   requirementVersion,
-		PackageNamespace: ns,
-		Operation:        operation,
-		Time:             time.Now(),
+
+	// If parent commit is provided then get the build graph
+	// If it is not then create a blank build graph
+	script := bgModel.NewBuildScript()
+	if parentCommitID != "" {
+		script, err = bp.GetBuildScript(pj.Owner(), pj.Name(), parentCommitID.String())
+		if err != nil {
+			return errs.Wrap(err, "Failed to get build graph")
+		}
+	}
+
+	requirement := bgModel.Requirement{
+		Namespace: ns.String(),
+		Name:      requirementName,
+	}
+
+	if requirementVersion != "" {
+		requirement.VersionRequirement = []*bgModel.VersionRequirement{{bgModel.ComparatorEQ: requirementVersion}}
+	}
+
+	// Call the build graph update function with the operation
+	script, err = script.Update(operation, []*bgModel.Requirement{&requirement})
+	if err != nil {
+		return errs.Wrap(err, "Failed to update build graph")
+	}
+	script.Let.Runtime.SolveLegacy.AtTime = time.Now().Format(time.RFC3339)
+
+	commit, err := bp.PushCommit(bpModel.PushCommitParams{
+		Owner:        pj.Owner(),
+		Project:      pj.Name(),
+		ParentCommit: string(parentCommitID),
+		BranchRef:    pj.BranchName(),
+		Script:       script,
+		Description:  fmt.Sprintf("%s-%s", operation, requirementName),
 	})
 	if err != nil {
 		return locale.WrapError(err, "err_package_save_and_build", "Could not save and build project")
@@ -237,7 +260,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName strin
 
 	orderChanged := !hasParentCommit
 	if hasParentCommit {
-		revertCommit, err := model.GetRevertCommit(pj.CommitUUID(), strfmt.UUID(commitID))
+		revertCommit, err := model.GetRevertCommit(pj.CommitUUID(), strfmt.UUID(commit.CommitID))
 		if err != nil {
 			return locale.WrapError(err, "err_revert_refresh")
 		}
@@ -261,13 +284,13 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName strin
 	}
 
 	// refresh or install runtime
-	err = runbits.RefreshRuntime(r.Auth, r.Output, r.Analytics, pj, strfmt.UUID(commitID), orderChanged, trigger, r.SvcModel)
+	err = runbits.RefreshRuntime(r.Auth, r.Output, r.Analytics, pj, strfmt.UUID(commit.CommitID), orderChanged, trigger, r.SvcModel)
 	if err != nil {
 		return err
 	}
 
 	if orderChanged {
-		if err := pj.SetCommit(commitID); err != nil {
+		if err := pj.SetCommit(commit.CommitID); err != nil {
 			return locale.WrapError(err, "err_package_update_pjfile")
 		}
 	}
