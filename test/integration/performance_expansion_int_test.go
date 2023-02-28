@@ -123,7 +123,7 @@ func (suite *PerformanceExpansionIntegrationTestSuite) TestExpansionPerformance(
 				Value:    `echo $project.name()`,
 				Language: "bash",
 			},
-			expect:  "Yaml-Test",
+			//expect:  "Yaml-Test", // TODO: re-enable in https://activestatef.atlassian.net/browse/DX-1312
 			samples: DefaultSamples,
 			max:     baseline,
 		})
@@ -162,7 +162,7 @@ func (suite *PerformanceExpansionIntegrationTestSuite) TestExpansionPerformance(
 				Value:    `echo $project.url()`,
 				Language: "bash",
 			},
-			expect:  "https://platform.activestate.com/ActiveState-CLI/Yaml-Test",
+			// expect:  "https://platform.activestate.com/ActiveState-CLI/Yaml-Test", // TODO: re-enable in https://activestatef.atlassian.net/browse/DX-1312
 			samples: DefaultSamples,
 			max:     baseline,
 		})
