@@ -38,7 +38,7 @@ func Check(params *CheckParams) (strfmt.UUID, error) {
 		return resultCommitID, nil
 	}
 
-	params.Out.Notice(output.Heading(locale.Tl("orderfile_outdated", "Order file is outdated")))
+	params.Out.Notice(locale.Tl("orderfile_outdated", "Order file is outdated"))
 	params.Out.Print(locale.Tl("orderfile_update", "Updating project to reflect order file changes..."))
 
 	var commitExists bool
