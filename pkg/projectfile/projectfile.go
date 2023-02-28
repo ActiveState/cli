@@ -110,6 +110,8 @@ type Project struct {
 // Build can hold variable keys, so we cannot predict what they are, hence why it is a map
 type Build map[string]string
 
+// ConstantFields are the common fields for the Constant type. This is required
+// for type composition related to its yaml.Unmarshaler implementation.
 type ConstantFields struct {
 	Conditional Conditional `yaml:"if"`
 }
@@ -262,6 +264,8 @@ func MakePackagesFromConstrainedEntities(items []ConstrainedEntity) (packages []
 	return packages
 }
 
+// EventFields are the common fields for the Event type. This is required
+// for type composition related to its yaml.Unmarshaler implementation.
 type EventFields struct {
 	Scope       []string    `yaml:"scope"`
 	Conditional Conditional `yaml:"if"`
@@ -326,6 +330,8 @@ func MakeEventsFromConstrainedEntities(items []ConstrainedEntity) (events []*Eve
 	return events
 }
 
+// ScriptFields are the common fields for the Script type. This is required
+// for type composition related to its yaml.Unmarshaler implementation.
 type ScriptFields struct {
 	Description string      `yaml:"description,omitempty"`
 	Filename    string      `yaml:"filename,omitempty"`
