@@ -1375,6 +1375,12 @@ err_clean_cache_activated:
 err_clean_config_activated:
   other: Cannot remove the config directory while in an activated state. Please deactivate by entering [ACTIONABLE]exit[/RESET] or pressing [ACTIONABLE]Ctrl+D[/RESET] and then try again.
 uninstall_confirm:
+  other: |
+    You are about to remove the State Tool.
+    Your config and cache files will remain.
+    If you would also like to remove those files, add the [ACTIONABLE]--all[/RESET] flag.
+    Continue?
+uninstall_confirm_all:
   other: You are about to remove the State Tool, installed language runtimes, and all configuration information. Continue?
 clean_cache_confirm:
   other: You are about to reset the State Tool cache. Continue?
