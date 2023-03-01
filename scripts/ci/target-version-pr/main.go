@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 	"strconv"
+	"strings"
 
 	"github.com/ActiveState/cli/internal/errs"
 	wc "github.com/ActiveState/cli/scripts/internal/workflow-controllers"
@@ -24,7 +25,7 @@ type Meta struct {
 	Repo              *github.Repository
 	ActivePR          *github.PullRequest
 	ActiveStory       *jira.Issue
-	ActiveVersion     semver.Version
+	ActiveVersion     wh.Version
 	ActiveJiraVersion string
 	VersionPRName     string
 	VersionBranchName string
@@ -32,7 +33,7 @@ type Meta struct {
 }
 
 func (m Meta) GetVersion() semver.Version {
-	return m.ActiveVersion
+	return m.ActiveVersion.Version
 }
 
 func (m Meta) GetJiraVersion() string {
@@ -86,12 +87,31 @@ func run() error {
 
 	// Set the target branch for our PR
 	finish = wc.PrintStart("Setting target branch to %s", meta.VersionBranchName)
-	if os.Getenv("DRYRUN") != "true" {
-		if err := wh.UpdatePRTargetBranch(ghClient, meta.ActivePR.GetNumber(), meta.VersionBranchName); err != nil {
-			return errs.Wrap(err, "failed to update PR target branch")
+	if strings.HasSuffix(meta.ActivePR.GetBase().GetRef(), meta.VersionBranchName) {
+		wc.Print("PR already targets version branch %s", meta.VersionBranchName)
+	} else {
+		if os.Getenv("DRYRUN") != "true" {
+			if err := wh.UpdatePRTargetBranch(ghClient, meta.ActivePR.GetNumber(), meta.VersionBranchName); err != nil {
+				return errs.Wrap(err, "failed to update PR target branch")
+			}
+		} else {
+			wc.Print("DRYRUN: would update PR target branch to %s", meta.VersionBranchName)
+		}
+	}
+	finish()
+
+	// Set the fixVersion
+	finish = wc.PrintStart("Setting fixVersion to %s", meta.ActiveVersion)
+	if len(meta.ActiveStory.Fields.FixVersions) == 0 || meta.ActiveStory.Fields.FixVersions[0].ID != meta.ActiveVersion.JiraID {
+		if os.Getenv("DRYRUN") != "true" {
+			if err := wh.UpdateJiraFixVersion(jiraClient, meta.ActiveStory, meta.ActiveVersion.JiraID); err != nil {
+				return errs.Wrap(err, "failed to update Jira fixVersion")
+			}
+		} else {
+			wc.Print("DRYRUN: would set fixVersion to %s", meta.ActiveVersion.String())
 		}
 	} else {
-		wc.Print("DRYRUN: would update PR target branch to %s", meta.VersionBranchName)
+		wc.Print("Jira issue already has fixVersion %s", meta.ActiveVersion.String())
 	}
 	finish()
 
@@ -145,7 +165,7 @@ func fetchMeta(ghClient *github.Client, jiraClient *jira.Client, prNumber int) (
 	var versionPRName string
 	var versionPR *github.PullRequest
 	if fixVersion.NE(wh.VersionMaster) {
-		versionPRName := wh.VersionedPRTitle(fixVersion)
+		versionPRName := wh.VersionedPRTitle(fixVersion.Version)
 
 		// Retrieve Relevant Fixversion Pr
 		finish = wc.PrintStart("Fetching Version PR")
@@ -166,7 +186,7 @@ func fetchMeta(ghClient *github.Client, jiraClient *jira.Client, prNumber int) (
 		ActiveVersion:     fixVersion,
 		ActiveJiraVersion: jiraVersion.Name,
 		VersionPRName:     versionPRName,
-		VersionBranchName: wh.VersionedBranchName(fixVersion),
+		VersionBranchName: wh.VersionedBranchName(fixVersion.Version),
 		VersionPR:         versionPR,
 	}
 

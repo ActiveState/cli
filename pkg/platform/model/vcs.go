@@ -71,6 +71,9 @@ const (
 	// NamespacePackageMatch is the namespace used for language package requirements
 	NamespacePackageMatch = `^language\/(\w+)$`
 
+	// NamespacePackageMatch is the namespace used for language package requirements
+	NamespaceBuilderMatch = `^builder(-lib){0,1}$`
+
 	// NamespaceBundlesMatch is the namespace used for bundle package requirements
 	NamespaceBundlesMatch = `^bundles\/(\w+)$`
 
@@ -432,9 +435,10 @@ func AddChangeset(parentCommitID strfmt.UUID, commitMessage string, changeset Ch
 		switch err.(type) {
 		case *version_control.AddCommitBadRequest,
 			*version_control.AddCommitConflict,
-			*version_control.AddCommitForbidden,
 			*version_control.AddCommitNotFound:
 			return nil, locale.WrapInputError(err, "err_add_commit", "", api.ErrorMessageFromPayload(err))
+		case *version_control.AddCommitForbidden:
+			return nil, locale.WrapInputError(err, "err_add_commit", "", locale.T("err_auth_required"))
 		default:
 			return nil, locale.WrapError(err, "err_add_commit", "", api.ErrorMessageFromPayload(err))
 		}
@@ -1015,7 +1019,7 @@ func AddRevertCommit(commit *mono_models.Commit) (*mono_models.Commit, error) {
 	}
 	params.SetCommit(editableCommit)
 
-	res, err := authentication.Client().VersionControl.AddCommit(params, authentication.ClientAuth())
+	res, err := mono.New().VersionControl.AddCommit(params, authentication.ClientAuth())
 	if err != nil {
 		return nil, locale.WrapError(err, "err_add_revert_commit", "Could not add revert commit")
 	}

@@ -1120,8 +1120,6 @@ package_search_flag_exact-term_description:
   other: Ensures that search results match search term exactly
 package_import_flag_filename_description:
   other: The file to import
-package_import_flag_force_description:
-  other: Run import operation without prompts
 commit_message_add_package:
   other: "Added package: {{.V0}}@{{.V1}}"
 commit_message_removed_package:
@@ -1166,8 +1164,6 @@ package_err_cannot_obtain_search_results:
   other: Cannot obtain search results
 err_cannot_commit_changeset:
   other: Cannot commit changeset
-err_obtaining_change_request:
-  other: Cannot obtain change request
 package_no_data:
   other: No data found - Please verify the provided commit id
 package_list_no_packages:
@@ -1379,6 +1375,12 @@ err_clean_cache_activated:
 err_clean_config_activated:
   other: Cannot remove the config directory while in an activated state. Please deactivate by entering [ACTIONABLE]exit[/RESET] or pressing [ACTIONABLE]Ctrl+D[/RESET] and then try again.
 uninstall_confirm:
+  other: |
+    You are about to remove the State Tool.
+    Your config and cache files will remain.
+    If you would also like to remove those files, add the [ACTIONABLE]--all[/RESET] flag.
+    Continue?
+uninstall_confirm_all:
   other: You are about to remove the State Tool, installed language runtimes, and all configuration information. Continue?
 clean_cache_confirm:
   other: You are about to reset the State Tool cache. Continue?
@@ -2035,7 +2037,7 @@ pjfile_deprecation_msg:
 runtime_usage_limit_reached:
   other: |
     [WARNING]Heads up! You've reached your runtime limit for [/RESET][ACTIONABLE]{{.V0}}[/RESET][WARNING].[/RESET]
-    [WARNING]You can upgrade your plan or enroll in a free trial by visiting: [/RESET][ACTIONABLE]https://platform.activestate.com/upgrade[/RESET][WARNING].[/RESET]
+    [WARNING]You can upgrade your plan or enroll in a free trial by visiting: [/RESET][ACTIONABLE]https://platform.activestate.com/upgrade/?org={{.V0}}[/RESET][WARNING].[/RESET]
     
     [WARNING]You are using [/RESET][ACTIONABLE]{{.V1}}[/RESET][WARNING] out of [/RESET][ACTIONABLE]{{.V2}}[/RESET][WARNING] available runtimes.[/RESET]
 

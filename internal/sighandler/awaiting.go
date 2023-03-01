@@ -3,6 +3,9 @@ package sighandler
 import (
 	"fmt"
 	"os"
+	"runtime/debug"
+
+	"github.com/ActiveState/cli/internal/runbits/panics"
 )
 
 var _ signalStacker = &Awaiting{}
@@ -42,6 +45,7 @@ func (as *Awaiting) WaitForFunc(f func() error) error {
 	as.Resume()
 
 	go func() {
+		defer func() { panics.HandlePanics(recover(), debug.Stack()) }()
 		defer close(errCh)
 		errCh <- f()
 	}()

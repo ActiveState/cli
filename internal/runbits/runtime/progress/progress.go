@@ -7,10 +7,11 @@ import (
 	"sync"
 	"time"
 
+	"github.com/ActiveState/cli/internal/multilog"
+	"github.com/go-openapi/strfmt"
 	"github.com/vbauerster/mpb/v7"
 	"golang.org/x/net/context"
 
-	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -60,6 +61,9 @@ type ProgressDigester struct {
 
 	// Artifact name lookup map
 	artifactNames artifact.Named
+
+	// Recipe that we're performing progress for
+	recipeID strfmt.UUID
 
 	// Track the totals required as the bars for these are only initialized for the first artifact received, at which
 	// time we won't have the totals unless we previously recorded them.
@@ -135,6 +139,7 @@ func (p *ProgressDigester) Handle(ev events.Eventer) error {
 			p.out.Notice(locale.Tr("progress_build_log", v.LogFilePath))
 		}
 
+		p.recipeID = v.RecipeID
 		p.artifactNames = v.ArtifactNames
 
 		p.buildsExpected = artifact.ArtifactIDsToMap(v.ArtifactsToBuild)
@@ -177,7 +182,7 @@ func (p *ProgressDigester) Handle(ev events.Eventer) error {
 		if p.buildBar != nil {
 			return errs.New("BuildStarted called after buildbar was already initialized")
 		}
-		p.buildBar = p.addTotalBar(locale.Tl("progress_building", "Building"), v.Artifacts, mpb.BarPriority(StepBuild.priority))
+		p.buildBar = p.addTotalBar(locale.Tl("progress_building", "Building"), int64(len(p.buildsExpected)), mpb.BarPriority(StepBuild.priority))
 
 	case events.BuildSuccess:
 		if p.buildBar == nil {
@@ -339,23 +344,26 @@ func (p *ProgressDigester) Close() error {
 				}()))
 			}
 
-			logging.Debug(`
-Timed out waiting for progress bars to close.
+			multilog.Error(`
+Timed out waiting for progress bars to close. Recipe: %s
 Progress bars status:
 %s
 Still expecting:
  - Builds: %v
  - Downloads: %v
  - Installs: %v`,
+				p.recipeID.String(),
 				strings.Join(debugMsg, "\n"),
 				p.buildsExpected, p.downloadsExpected, p.installsExpected,
 			)
 
+			/* Disabled for v0.36 as we're still ironing out the kinks
 			if pending > 0 {
 				// We only error out if we determine the issue is down to one of our bars not completing.
 				// Otherwise this is an issue with the mpb package which is currently a known limitation, end goal is to get rid of mpb.
 				return locale.NewError("err_rtprogress_outofsync", "", constants.BugTrackerURL, logging.FilePath())
 			}
+			*/
 		}
 	}
 

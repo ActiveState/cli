@@ -154,7 +154,7 @@ func (d *Deploy) commitID(namespace project.Namespaced) (strfmt.UUID, error) {
 }
 
 func (d *Deploy) install(rtTarget setup.Targeter) (rerr error) {
-	d.output.Notice(output.Heading(locale.T("deploy_install")))
+	d.output.Notice(output.Title(locale.T("deploy_install")))
 
 	rtusage.PrintRuntimeUsage(d.svcModel, d.output, rtTarget.Owner())
 
@@ -207,7 +207,7 @@ func (d *Deploy) configure(namespace project.Namespaced, rtTarget setup.Targeter
 		return err
 	}
 
-	d.output.Notice(output.Heading(locale.Tr("deploy_configure_shell", d.subshell.Shell())))
+	d.output.Notice(output.Title(locale.Tr("deploy_configure_shell", d.subshell.Shell())))
 
 	// Configure available shells
 	err = subshell.ConfigureAvailableShells(d.subshell, d.cfg, env, sscommon.DeployID, userScope)
@@ -295,7 +295,7 @@ func symlinkTargetPath(targetDir string, path string) string {
 // target (with the same or a different extension) from a different directory.
 // Also: Only the executable with the highest priority according to pathExt is symlinked.
 func symlinkWithTarget(overwrite bool, symlinkPath string, exePaths []string, out output.Outputer) error {
-	out.Notice(output.Heading(locale.Tr("deploy_symlink", symlinkPath)))
+	out.Notice(output.Title(locale.Tr("deploy_symlink", symlinkPath)))
 
 	if err := fileutils.MkdirUnlessExists(symlinkPath); err != nil {
 		return locale.WrapInputError(
@@ -368,14 +368,14 @@ func (d *Deploy) report(rtTarget setup.Targeter) error {
 		bins = strings.Split(path, string(os.PathListSeparator))
 	}
 
-	d.output.Notice(output.Heading(locale.T("deploy_info")))
+	d.output.Notice(output.Title(locale.T("deploy_info")))
 
 	d.output.Print(Report{
 		BinaryDirectories: bins,
 		Environment:       env,
 	})
 
-	d.output.Notice(output.Heading(locale.T("deploy_restart")))
+	d.output.Notice(output.Title(locale.T("deploy_restart")))
 
 	if rt.GOOS == "windows" {
 		d.output.Notice(locale.Tr("deploy_restart_cmd", filepath.Join(rtTarget.Dir(), "setenv.bat")))

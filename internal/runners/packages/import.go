@@ -45,7 +45,6 @@ type ChangesetProvider interface {
 type ImportRunParams struct {
 	FileName       string
 	Language       string
-	Force          bool
 	NonInteractive bool
 }
 
@@ -122,7 +121,7 @@ func (i *Import) Run(params *ImportRunParams) error {
 
 	changeset, err := fetchImportChangeset(reqsimport.Init(), params.FileName, lang.Name)
 	if err != nil {
-		return locale.WrapError(err, "err_obtaining_change_request", "Could not process change set: {{.V0}}.", api.ErrorMessageFromPayload(err))
+		return errs.Wrap(err, "Could not import changeset")
 	}
 
 	packageReqs := model.FilterCheckpointNamespace(reqs, model.NamespacePackage, model.NamespaceBundle)
@@ -143,7 +142,7 @@ func (i *Import) Run(params *ImportRunParams) error {
 }
 
 func removeRequirements(conf Confirmer, project *project.Project, params *ImportRunParams, reqs []*gqlModel.Requirement) error {
-	if !params.Force {
+	if !params.NonInteractive {
 		msg := locale.T("confirm_remove_existing_prompt")
 
 		defaultChoice := params.NonInteractive
@@ -165,12 +164,12 @@ func removeRequirements(conf Confirmer, project *project.Project, params *Import
 func fetchImportChangeset(cp ChangesetProvider, file string, lang string) (model.Changeset, error) {
 	data, err := ioutil.ReadFile(file)
 	if err != nil {
-		return nil, err
+		return nil, locale.WrapInputError(err, "err_reading_changeset_file", "Cannot read import file: {{.V0}}", err.Error())
 	}
 
 	changeset, err := cp.Changeset(data, lang)
 	if err != nil {
-		return nil, err
+		return nil, locale.WrapError(err, "err_obtaining_change_request", "Could not process change set: {{.V0}}.", api.ErrorMessageFromPayload(err))
 	}
 
 	return changeset, err

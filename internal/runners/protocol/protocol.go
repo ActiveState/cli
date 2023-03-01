@@ -40,7 +40,11 @@ func (p *Protocol) Run(params Params) error {
 
 	// Host=platform means we're trying to open a link to the platform
 	if parsed.Host == "platform" {
-		if err := open.Run("https://platform.activestate.com" + parsed.Path); err != nil {
+		query := ""
+		if parsed.RawQuery != "" {
+			query = "?" + parsed.RawQuery
+		}
+		if err := open.Run("https://platform.activestate.com" + parsed.Path + query); err != nil {
 			return locale.WrapInputError(err, "err_protocol_open", "Could not open URL: {{.V0}}", params.URL)
 		}
 		return nil

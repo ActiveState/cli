@@ -21,6 +21,11 @@ type UninstallIntegrationTestSuite struct {
 
 func (suite *UninstallIntegrationTestSuite) TestUninstall() {
 	suite.OnlyRunForTags(tagsuite.Uninstall, tagsuite.Critical)
+	suite.T().Run("Partial uninstall", func(t *testing.T) { suite.testUninstall(false) })
+	suite.T().Run("Full uninstall", func(t *testing.T) { suite.testUninstall(true) })
+}
+
+func (suite *UninstallIntegrationTestSuite) testUninstall(all bool) {
 	ts := e2e.New(suite.T(), true)
 	defer ts.Close()
 
@@ -33,8 +38,15 @@ func (suite *UninstallIntegrationTestSuite) TestUninstall() {
 	cp := ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("start"))
 	cp.ExpectExitCode(0)
 
-	cp = ts.Spawn("clean", "uninstall")
+	if all {
+		cp = ts.Spawn("clean", "uninstall", "--all")
+	} else {
+		cp = ts.Spawn("clean", "uninstall")
+	}
 	cp.Expect("You are about to remove")
+	if !all {
+		cp.Expect("--all") // verify mention of "--all" to remove everything
+	}
 	cp.SendLine("y")
 	if runtime.GOOS == "windows" {
 		cp.ExpectLongString("Deletion of State Tool has been scheduled.")
@@ -48,12 +60,12 @@ func (suite *UninstallIntegrationTestSuite) TestUninstall() {
 		time.Sleep(500 * time.Millisecond)
 	}
 
-	if fileutils.DirExists(ts.Dirs.Cache) {
-		suite.Fail("Cache dir should not exist after uninstall")
-	}
-
-	if fileutils.DirExists(ts.Dirs.Config) {
-		suite.Fail("Config dir should not exist after uninstall")
+	if all {
+		suite.NoDirExists(ts.Dirs.Cache, "Cache dir should not exist after full uninstall")
+		suite.NoDirExists(ts.Dirs.Config, "Config dir should not exist after full uninstall")
+	} else {
+		suite.DirExists(ts.Dirs.Cache, "Cache dir should still exist after partial uninstall")
+		suite.DirExists(ts.Dirs.Config, "Config dir should still exist after partial uninstall")
 	}
 
 	if fileutils.FileExists(ts.Exe) {

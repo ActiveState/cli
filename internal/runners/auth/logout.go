@@ -27,7 +27,7 @@ func (l *Logout) Run() error {
 	if err != nil {
 		return locale.WrapError(err, "err_auth_logout", "Failed to delete authentication key")
 	}
-	l.Outputer.Notice(output.Heading(locale.Tl("authentication_title", "Authentication")))
+	l.Outputer.Notice(output.Title(locale.Tl("authentication_title", "Authentication")))
 	if l.Auth.AvailableAPIToken() == "" {
 		l.Outputer.Notice(locale.T("logged_out"))
 	} else {

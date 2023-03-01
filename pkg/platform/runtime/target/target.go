@@ -25,7 +25,8 @@ const (
 	TriggerActivate           Trigger = "activate"
 	TriggerScript             Trigger = "script"
 	TriggerDeploy             Trigger = "deploy"
-	TriggerExec               Trigger = "exec"
+	TriggerExec               Trigger = "exec-cmd"
+	TriggerExecutor           Trigger = "exec"
 	TriggerResetExec          Trigger = "reset-exec"
 	TriggerSwitch             Trigger = "switch"
 	TriggerImport             Trigger = "import"
@@ -50,6 +51,7 @@ var usageTriggers = []Trigger{
 	TriggerScript,
 	TriggerDeploy,
 	TriggerExec,
+	TriggerExecutor,
 	TriggerSwitch,
 	TriggerImport,
 	TriggerPackage,

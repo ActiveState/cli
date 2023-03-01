@@ -36,8 +36,7 @@ func (u *Reset) Run(params *ResetParams) error {
 	logging.Debug("Resetting default project runtime")
 
 	if !globaldefault.IsSet(u.config) {
-		u.out.Notice(locale.T("use_reset_notice_not_reset"))
-		return nil
+		return locale.NewInputError(locale.T("use_reset_notice_not_reset"))
 	}
 
 	defaultChoice := params.Force
@@ -54,8 +53,7 @@ func (u *Reset) Run(params *ResetParams) error {
 	if err != nil {
 		return locale.WrapError(err, "err_use_reset", "Could not stop using your project.")
 	} else if !reset {
-		u.out.Notice(locale.T("use_reset_notice_not_reset"))
-		return nil
+		return locale.NewInputError(locale.T("use_reset_notice_not_reset"))
 	}
 
 	u.out.Notice(locale.Tl("use_reset_notice_reset", "Stopped using your project runtime"))

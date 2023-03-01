@@ -53,7 +53,11 @@ func Start(cmd *exec.Cmd) chan error {
 				return
 			}
 
-			errors <- errs.Wrap(err, "Command Failed: %s", cmd.String())
+			err = errs.AddTips(errs.Wrap(err, "Command Failed: %s", cmd.String()),
+				"Checking environment vars like SHELL may help resolve this.",
+			)
+			errors <- err
+
 			return
 		}
 	}()

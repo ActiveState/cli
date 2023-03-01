@@ -2,31 +2,32 @@ package resolver
 
 import (
 	"encoding/json"
+	"os"
 	"runtime/debug"
 	"sort"
+	"strconv"
 	"time"
 
 	"github.com/ActiveState/cli/cmd/state-svc/internal/deprecation"
 	"github.com/ActiveState/cli/cmd/state-svc/internal/rtusage"
 	"github.com/ActiveState/cli/cmd/state-svc/internal/rtwatcher"
+	genserver "github.com/ActiveState/cli/cmd/state-svc/internal/server/generated"
 	"github.com/ActiveState/cli/internal/analytics/client/sync"
+	anaConsts "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/analytics/dimensions"
 	"github.com/ActiveState/cli/internal/cache/projectcache"
-	"github.com/ActiveState/cli/internal/multilog"
-	"github.com/ActiveState/cli/internal/poller"
-	"github.com/ActiveState/cli/pkg/platform/authentication"
-	"golang.org/x/net/context"
-
-	genserver "github.com/ActiveState/cli/cmd/state-svc/internal/server/generated"
-	anaConsts "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/graph"
 	"github.com/ActiveState/cli/internal/logging"
 	configMediator "github.com/ActiveState/cli/internal/mediators/config"
+	"github.com/ActiveState/cli/internal/multilog"
+	"github.com/ActiveState/cli/internal/poller"
 	"github.com/ActiveState/cli/internal/updater"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/projectfile"
+	"golang.org/x/net/context"
 )
 
 type Resolver struct {
@@ -54,7 +55,16 @@ func New(cfg *config.Instance, an *sync.Client, auth *authentication.Auth) (*Res
 		return upchecker.Check()
 	})
 
-	pollAuth := poller.New(1*time.Minute, func() (interface{}, error) {
+	pollRate := time.Minute.Milliseconds()
+	if override := os.Getenv(constants.SvcAuthPollingRateEnvVarName); override != "" {
+		overrideInt, err := strconv.ParseInt(override, 10, 64)
+		if err != nil {
+			return nil, errs.New("Failed to parse svc polling time override: %v", err)
+		}
+		pollRate = overrideInt
+	}
+
+	pollAuth := poller.New(time.Duration(int64(time.Millisecond)*pollRate), func() (interface{}, error) {
 		if auth.SyncRequired() {
 			return nil, auth.Sync()
 		}

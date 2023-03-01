@@ -23,14 +23,16 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 )
 
-func (u *Uninstall) runUninstall() error {
+func (u *Uninstall) runUninstall(params *UninstallParams) error {
 	// we aggregate installation errors, such that we can display all installation problems in the end
 	// TODO: This behavior should be replaced with a proper rollback mechanism https://www.pivotaltracker.com/story/show/178134918
-	var aggErr error
-	err := removeCache(storage.CachePath())
-	if err != nil {
-		logging.Debug("Could not remove cache at %s: %s", storage.CachePath(), errs.JoinMessage(err))
-		aggErr = locale.WrapError(aggErr, "uninstall_remove_cache_err", "Failed to remove cache directory {{.V0}}.", storage.CachePath())
+	var aggErr, err error
+	if params.All {
+		err := removeCache(storage.CachePath())
+		if err != nil {
+			logging.Debug("Could not remove cache at %s: %s", storage.CachePath(), errs.JoinMessage(err))
+			aggErr = locale.WrapError(aggErr, "uninstall_remove_cache_err", "Failed to remove cache directory {{.V0}}.", storage.CachePath())
+		}
 	}
 
 	err = undoPrepare()
@@ -59,17 +61,18 @@ func (u *Uninstall) runUninstall() error {
 		aggErr = locale.WrapError(aggErr, "uninstall_remove_paths_err", "Failed to remove PATH entries from environment")
 	}
 
-	path := u.cfg.ConfigPath()
-	if err := u.cfg.Close(); err != nil {
-		logging.Debug("Could not close config: %s", errs.JoinMessage(err))
-		aggErr = locale.WrapError(aggErr, "uninstall_close_config", "Could not stop config database connection.")
-	}
+	if params.All {
+		path := u.cfg.ConfigPath()
+		if err := u.cfg.Close(); err != nil {
+			logging.Debug("Could not close config: %s", errs.JoinMessage(err))
+			aggErr = locale.WrapError(aggErr, "uninstall_close_config", "Could not stop config database connection.")
+		}
 
-	err = removeConfig(path, u.out)
-	if err != nil {
-		logging.Debug("Could not remove config: %s", errs.JoinMessage(err))
-		aggErr = locale.WrapError(aggErr, "uninstall_remove_config_err", "Failed to remove configuration directory {{.V0}}", u.cfg.ConfigPath())
-
+		err = removeConfig(path, u.out)
+		if err != nil {
+			logging.Debug("Could not remove config: %s", errs.JoinMessage(err))
+			aggErr = locale.WrapError(aggErr, "uninstall_remove_config_err", "Failed to remove configuration directory {{.V0}}", u.cfg.ConfigPath())
+		}
 	}
 
 	if aggErr != nil {

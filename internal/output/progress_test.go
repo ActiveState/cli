@@ -20,5 +20,9 @@ func Test_Dotprogress(t *testing.T) {
 	time.Sleep(sleepTime)
 	dp.Stop("Done")
 	dots := strings.Repeat(".", (noIntervals / 20)) // To avoid race conditions we're only counting half the supposed dots
-	require.Regexp(t, regexp.MustCompile("Progress..."+dots+"\\.* Done"), out.ErrorOutput())
+
+	// GitHub CI's shell sometimes glitches and mixes up stdout, mostly on Windows, but
+	// occasionally on other platforms. Allow for the final space before "Done" to occur anywhere
+	// before it.
+	require.Regexp(t, regexp.MustCompile("Progress..."+dots+"(\\.* |\\.* \\.+)Done"), out.ErrorOutput())
 }

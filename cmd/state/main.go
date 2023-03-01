@@ -243,7 +243,7 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 		}
 		if deprecationInfo != nil {
 			if !deprecationInfo.DateReached {
-				out.Notice(output.Heading(locale.Tl("deprecation_title", "Deprecation Warning")))
+				out.Notice(output.Title(locale.Tl("deprecation_title", "Deprecation Warning")))
 				out.Notice(locale.Tr("warn_deprecation", deprecationInfo.Date, deprecationInfo.Reason))
 			} else {
 				return locale.NewInputError("err_deprecation", "You are running a version of the State Tool that is no longer supported! Reason: {{.V1}}", deprecationInfo.Date, deprecationInfo.Reason)

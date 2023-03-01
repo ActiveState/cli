@@ -8,6 +8,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/ci/gcloud"
 	"github.com/ActiveState/cli/internal/colorize"
+	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
@@ -17,6 +18,7 @@ import (
 	"github.com/ActiveState/cli/internal/profile"
 	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/ActiveState/cli/internal/singleton/uniqid"
+	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/api/mono"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/authentication"
@@ -120,6 +122,9 @@ func (s *Auth) Sync() error {
 		if err := s.Authenticate(); err != nil {
 			return errs.Wrap(err, "Failed to authenticate with API token")
 		}
+	} else {
+		// Ensure properties aren't out of sync
+		s.resetSession()
 	}
 	return nil
 }
@@ -155,6 +160,22 @@ func (s *Auth) updateRollbarPerson() {
 		return
 	}
 	rollbar.UpdateRollbarPerson(uid.String(), s.WhoAmI(), s.Email())
+}
+
+func (s *Auth) resetSession() {
+	s.bearerToken = ""
+	s.user = nil
+}
+
+func (s *Auth) Refresh() error {
+	s.resetSession()
+
+	apiToken := s.AvailableAPIToken()
+	if apiToken == "" {
+		return nil
+	}
+
+	return s.AuthenticateWithToken(apiToken)
 }
 
 // Authenticate will try to authenticate using stored credentials
@@ -196,7 +217,12 @@ func (s *Auth) AuthenticateWithModel(credentials *mono_models.Credentials) error
 			if os.IsTimeout(err) {
 				return locale.NewInputError("err_api_auth_timeout", "Timed out waiting for authentication response. Please try again.")
 			}
-			multilog.Error("Authentication API returned %v", err)
+			if api.ErrorCode(err) == 403 {
+				return locale.NewInputError("err_auth_forbidden", "You are not allowed to login now. Please try again later.")
+			}
+			if !condition.IsNetworkingError(err) {
+				multilog.Error("Authentication API returned %v", err)
+			}
 			return errs.AddTips(locale.WrapError(err, "err_api_auth", "Authentication failed: {{.V0}}", err.Error()), tips...)
 		}
 	}
