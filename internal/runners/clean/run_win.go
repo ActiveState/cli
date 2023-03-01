@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 
 	"github.com/ActiveState/cli/internal/assets"
+	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/exeutils"
@@ -106,14 +107,18 @@ func removeInstall(logFile string, params *UninstallParams, cfg *config.Instance
 		return locale.WrapError(err, "err_state_exec")
 	}
 
-	paths := []string{}
+	// Schedule removal of the entire branch name directory.
+	// This is because Windows often thinks the installation.InstallDirMarker and
+	// constants.StateInstallerCmd files are still in use.
+	branchDir := filepath.Dir(filepath.Dir(stateExec))
+	if condition.InTest() && !params.All {
+		// On CI, the installation root also contains cache and config directories, and they should
+		// not be removed. Instead, just remove the installation bin directory.
+		branchDir = filepath.Dir(stateExec)
+	}
+	paths := []string{branchDir}
 	if params.All {
-		// Schedule removal of the branch name directory and the config directory
-		paths = append(paths, filepath.Dir(filepath.Dir(stateExec)))
-		paths = append(paths, cfg.ConfigPath())
-	} else {
-		// Schedule the removal of just the bin directory.
-		paths = append(paths, filepath.Dir(stateExec))
+		paths = append(paths, cfg.ConfigPath()) // also remove the config directory
 	}
 	// If the transitional state tool path is known, we remove it. This is done in the background, because the transitional State Tool can be the initiator of the uninstall request
 	if transitionalStateTool := cfg.GetString(installation.CfgTransitionalStateToolPath); transitionalStateTool != "" {
