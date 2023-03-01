@@ -118,7 +118,7 @@ func (suite *AnalyticsIntegrationTestSuite) TestActivateEvents() {
 			if e.Dimensions == nil || e.Dimensions.Trigger == nil {
 				return false
 			}
-			return (*e.Dimensions.Trigger) == target.TriggerExec.String()
+			return (*e.Dimensions.Trigger) == target.TriggerExecutor.String()
 		})
 		suite.Require().Equal(1, countEvents(executorEvents, anaConst.CatRuntimeUsage, anaConst.ActRuntimeAttempt),
 			ts.DebugMessage("Should have a runtime attempt, events:\n"+debugEvents(suite.T(), executorEvents)))

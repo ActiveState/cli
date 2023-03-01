@@ -113,7 +113,7 @@ func HeartbeatHandler(cfg *config.Instance, resolver Resolver, analyticsReporter
 			}
 
 			dims := &dimensions.Values{
-				Trigger:          p.StrP(target.TriggerExec.String()),
+				Trigger:          p.StrP(target.TriggerExecutor.String()),
 				Headless:         p.StrP(strconv.FormatBool(metaData.Headless)),
 				CommitID:         p.StrP(metaData.CommitUUID),
 				ProjectNameSpace: p.StrP(metaData.Namespace),
