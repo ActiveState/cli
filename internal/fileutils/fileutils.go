@@ -696,14 +696,18 @@ func WriteTempFileToDir(dir, pattern string, data []byte, perm os.FileMode) (str
 	return f.Name(), nil
 }
 
-func CopyFilesFromAssets(assetDir, dst string) error {
-	entries, err := assets.ReadDir(assetDir)
+type DirReader interface {
+	ReadDir(string) ([]os.DirEntry, error)
+}
+
+func CopyFilesDirReader(reader DirReader, src, dst string) error {
+	entries, err := reader.ReadDir(src)
 	if err != nil {
-		return errs.Wrap(err, "asset.ReadDir %s failed", assetDir)
+		return errs.Wrap(err, "asset.ReadDir %s failed", src)
 	}
 
 	for _, entry := range entries {
-		srcPath := filepath.Join(assetDir, entry.Name())
+		srcPath := filepath.Join(src, entry.Name())
 		destPath := filepath.Join(dst, entry.Name())
 
 		switch entry.Type() & os.ModeType {
@@ -713,34 +717,25 @@ func CopyFilesFromAssets(assetDir, dst string) error {
 				return errs.Wrap(err, "MkdirUnlessExists %s failed", destPath)
 			}
 
-			err = CopyFilesFromAssets(srcPath, destPath)
+			err = CopyFilesDirReader(reader, srcPath, destPath)
 			if err != nil {
 				return errs.Wrap(err, "CopyFiles %s:%s failed", srcPath, destPath)
 			}
+		case os.ModeSymlink:
+			err := CopySymlink(srcPath, destPath)
+			if err != nil {
+				return errs.Wrap(err, "CopySymlink %s:%s failed", srcPath, destPath)
+			}
 		default:
+			if entry.Name() == assets.PlaceholderFileName {
+				continue
+			}
+
 			err := CopyAsset(srcPath, destPath)
 			if err != nil {
 				return errs.Wrap(err, "CopyFile %s:%s failed", srcPath, destPath)
 			}
 		}
-	}
-
-	walkErr := filepath.Walk(dst, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-
-		if info.Name() == assets.PlaceholderFileName {
-			err := os.Remove(path)
-			if err != nil {
-				return errs.Wrap(err, "os.Remove %s failed", path)
-			}
-		}
-
-		return nil
-	})
-	if walkErr != nil {
-		return errs.Wrap(walkErr, "filepath.Walk %s failed", dst)
 	}
 
 	return nil

@@ -13,6 +13,18 @@ const (
 //go:embed contents/*
 var fs embed.FS
 
+type AssetsFS struct {
+	fs embed.FS
+}
+
+func NewAssetsFS() *AssetsFS {
+	return &AssetsFS{fs: fs}
+}
+
+func (a *AssetsFS) ReadDir(name string) ([]iofs.DirEntry, error) {
+	return a.fs.ReadDir("contents/" + name)
+}
+
 // ReadFileBytes reads and returns bytes from the given file in this package's embedded assets.
 // Filenames should use forward slashes, not `filepath.Join()`, because go:embed requires '/'.
 func ReadFileBytes(filename string) ([]byte, error) {

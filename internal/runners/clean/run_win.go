@@ -10,8 +10,11 @@ import (
 	"os"
 	"path/filepath"
 
+	svcApp "github.com/ActiveState/cli/cmd/state-svc/app"
+	"github.com/ActiveState/cli/internal/app"
 	"github.com/ActiveState/cli/internal/assets"
 	"github.com/ActiveState/cli/internal/config"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/installation"
@@ -45,6 +48,12 @@ func (u *Uninstall) runUninstall() error {
 	if err != nil {
 		logging.Debug("Could not remove installation: %s", errs.JoinMessage(err))
 		aggErr = locale.WrapError(aggErr, "uninstall_remove_executables_err", "Failed to remove all State Tool files in installation directory {{.V0}}", filepath.Dir(stateExec))
+	}
+
+	err = removeApp()
+	if err != nil {
+		logging.Debug("Could not remove app: %s", errs.JoinMessage(err))
+		aggErr = locale.WrapError(aggErr, "uninstall_remove_app_err", "Failed to remove service application")
 	}
 
 	err = removeCache(storage.CachePath())
@@ -137,6 +146,25 @@ func removePaths(logFile string, paths ...string) error {
 	_, err = exeutils.ExecuteAndForget("cmd.exe", args)
 	if err != nil {
 		return locale.WrapError(err, "err_clean_start", "Could not start remove direcotry script")
+	}
+
+	return nil
+}
+
+func removeApp() error {
+	svcExec, err := installation.ServiceExec()
+	if err != nil {
+		return locale.WrapError(err, "err_svc_exec")
+	}
+
+	svcApp, err := app.New(constants.SvcAppName, svcExec, []string{"start"}, svcApp.Options)
+	if err != nil {
+		return locale.WrapError(err, "err_autostart_app")
+	}
+
+	err = svcApp.Uninstall()
+	if err != nil {
+		return locale.WrapError(err, "err_uninstall_app", "Could not uninstall the State Tool service app.")
 	}
 
 	return nil

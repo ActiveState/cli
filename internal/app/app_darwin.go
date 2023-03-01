@@ -11,6 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/installation"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/strutils"
 )
 
@@ -35,7 +36,7 @@ func (a *App) install() error {
 		return errs.Wrap(err, "Could not create .app directory")
 	}
 
-	if err := fileutils.CopyFilesFromAssets(assetAppDir, tmpAppPath); err != nil {
+	if err := fileutils.CopyFilesDirReader(assets.NewAssetsFS(), assetAppDir, tmpAppPath); err != nil {
 		return errs.Wrap(err, "Could not copy files from assets")
 	}
 
@@ -138,13 +139,19 @@ func (a *App) createInfoFile(base string) error {
 }
 
 func (a *App) uninstall() error {
-	installDir := filepath.Join("/Applications", fmt.Sprintf("%s.app", a.Name))
+	defaultPath, err := installation.ApplicationInstallPath()
+	if err != nil {
+		return errs.Wrap(err, "Could not get installation path")
+	}
+
+	installDir := filepath.Join(defaultPath, fmt.Sprintf("%s.app", a.Name))
 	if !fileutils.DirExists(installDir) {
+		logging.Debug("Directory does not exist, nothing to do")
 		return nil
 	}
 
-	err := os.RemoveAll(installDir)
-	if err != nil {
+	if err := os.RemoveAll(installDir); err != nil {
+		logging.Debug("Could not remove %s: %v", installDir, err)
 		return errs.Wrap(err, "Could not remove .app from Applications directory")
 	}
 
