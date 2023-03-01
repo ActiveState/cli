@@ -111,7 +111,7 @@ func removeInstall(logFile string, params *UninstallParams, cfg *config.Instance
 	// This is because Windows often thinks the installation.InstallDirMarker and
 	// constants.StateInstallerCmd files are still in use.
 	branchDir := filepath.Dir(filepath.Dir(stateExec))
-	if condition.OnCI() && !params.All {
+	if condition.InTest() && !params.All {
 		// On CI, the installation root also contains cache and config directories, and they should
 		// not be removed. Instead, just remove the installation bin directory.
 		branchDir = filepath.Dir(stateExec)
