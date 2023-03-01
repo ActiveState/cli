@@ -30,6 +30,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	bpModel "github.com/ActiveState/cli/pkg/platform/runtime/model"
+	"github.com/ActiveState/cli/pkg/platform/runtime/orderfile"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
@@ -283,16 +284,31 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName strin
 		return errs.Wrap(err, "Unsupported namespace type: %s", ns.Type().String())
 	}
 
+	if orderChanged {
+		of, err := orderfile.FromPath(pj.Dir())
+		if err != nil {
+			if !orderfile.IsErrOrderFileDoesNotExist(err) {
+				return locale.WrapError(err, "err_requirement_open_orderfile", "Could not open orderfile")
+			}
+			_, createErr := orderfile.Create(pj.Dir(), commit.Script)
+			if createErr != nil {
+				return locale.WrapError(createErr, "err_requirement_create_orderfile", "Could not create orderfile")
+			}
+		}
+
+		if err := of.Update(commit.Script); err != nil {
+			return locale.WrapError(err, "err_package_update_orderfile", "Could not update orderfile")
+		}
+
+		if err := pj.SetCommit(commit.CommitID); err != nil {
+			return locale.WrapError(err, "err_package_update_pjfile")
+		}
+	}
+
 	// refresh or install runtime
 	err = runbits.RefreshRuntime(r.Auth, r.Output, r.Analytics, pj, strfmt.UUID(commit.CommitID), orderChanged, trigger, r.SvcModel)
 	if err != nil {
 		return err
-	}
-
-	if orderChanged {
-		if err := pj.SetCommit(commit.CommitID); err != nil {
-			return locale.WrapError(err, "err_package_update_pjfile")
-		}
 	}
 
 	// Print the result

@@ -526,16 +526,15 @@ func (s *Setup) saveOrderFile(script *bpModel.BuildScript) error {
 		return nil
 	}
 
-	orderfilePath := filepath.Join(s.target.ProjectDir(), constants.OrderFileName)
-	of, err := orderfile.FromPath(orderfilePath)
+	of, err := orderfile.FromPath(s.target.ProjectDir())
 	if err != nil {
 		if !orderfile.IsErrOrderFileDoesNotExist(err) {
 			return errs.Wrap(err, "Could not load orderfile")
 		}
 
-		_, creatErr := orderfile.Create(orderfilePath, script)
-		if creatErr != nil {
-			return errs.Wrap(creatErr, "Could not create orderfile")
+		_, createErr := orderfile.Create(s.target.ProjectDir(), script)
+		if createErr != nil {
+			return errs.Wrap(createErr, "Could not create orderfile")
 		}
 
 		return nil

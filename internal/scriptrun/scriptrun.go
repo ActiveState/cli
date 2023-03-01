@@ -7,7 +7,6 @@ import (
 
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/config"
-	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/language"
@@ -17,7 +16,7 @@ import (
 	"github.com/ActiveState/cli/internal/process"
 	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/cli/internal/runbits"
-	"github.com/ActiveState/cli/internal/runbits/order"
+	"github.com/ActiveState/cli/internal/runbits/localorder"
 	"github.com/ActiveState/cli/internal/scriptfile"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
@@ -69,9 +68,8 @@ func (s *ScriptRun) NeedsActivation() bool {
 
 // PrepareVirtualEnv sets up the relevant runtime and prepares the environment.
 func (s *ScriptRun) PrepareVirtualEnv() (rerr error) {
-	// TODO: May need this commit ID
-	_, err := order.Check(&order.CheckParams{
-		Path:    filepath.Join(filepath.Dir(s.project.Path()), constants.OrderFileName),
+	_, err := localorder.Check(&localorder.CheckParams{
+		Path:    s.project.Dir(),
 		Project: s.project,
 		Out:     s.out,
 		Auth:    s.auth,

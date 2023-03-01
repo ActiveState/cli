@@ -59,7 +59,7 @@ type LetStatement struct {
 }
 
 type Runtime struct {
-	Solve       *Solve       `json:"solve,omitempty" yaml:"solve,omitempty"`
+	// Solve       *Solve       `json:"solve,omitempty" yaml:"solve,omitempty"`
 	SolveLegacy *SolveLegacy `json:"solve_legacy,omitempty" yaml:"solve_legacy,omitempty"`
 }
 

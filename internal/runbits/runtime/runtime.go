@@ -1,17 +1,15 @@
 package runtime
 
 import (
-	"path/filepath"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/analytics"
-	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/cli/internal/runbits"
-	"github.com/ActiveState/cli/internal/runbits/order"
+	"github.com/ActiveState/cli/internal/runbits/localorder"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	rt "github.com/ActiveState/cli/pkg/platform/runtime"
@@ -28,8 +26,8 @@ func NewFromProject(
 	svcModel *model.SvcModel,
 	out output.Outputer,
 	auth *authentication.Auth) (_ *rt.Runtime, rerr error) {
-	_, err := order.Check(&order.CheckParams{
-		Path:    filepath.Join(filepath.Dir(proj.Path()), constants.OrderFileName),
+	_, err := localorder.Check(&localorder.CheckParams{
+		Path:    proj.Dir(),
 		Project: proj,
 		Out:     out,
 		Auth:    auth,

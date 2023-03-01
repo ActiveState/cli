@@ -23,7 +23,7 @@ import (
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/cli/internal/runbits"
-	"github.com/ActiveState/cli/internal/runbits/order"
+	"github.com/ActiveState/cli/internal/runbits/localorder"
 	"github.com/ActiveState/cli/internal/runbits/rtusage"
 	"github.com/ActiveState/cli/internal/scriptfile"
 	"github.com/ActiveState/cli/internal/subshell"
@@ -122,9 +122,8 @@ func (s *Exec) Run(params *Params, args ...string) (rerr error) {
 		rtTarget = target.NewProjectTarget(proj, nil, trigger)
 	}
 
-	// TODO: May need this commitID
-	_, checkErr := order.Check(&order.CheckParams{
-		Path:    filepath.Join(filepath.Dir(proj.Path()), constants.OrderFileName),
+	_, checkErr := localorder.Check(&localorder.CheckParams{
+		Path:    proj.Dir(),
 		Project: proj,
 		Out:     s.out,
 		Auth:    s.auth,
