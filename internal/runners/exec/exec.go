@@ -129,7 +129,7 @@ func (s *Exec) Run(params *Params, args ...string) (rerr error) {
 		Auth:    s.auth,
 	})
 	if checkErr != nil {
-		locale.WrapError(checkErr, "err_packages_update_runtime_order", "Failed to verify local order file.")
+		return locale.WrapError(checkErr, "err_packages_update_runtime_order", "Failed to verify local order file.")
 	}
 
 	rtusage.PrintRuntimeUsage(s.svcModel, s.out, rtTarget.Owner())

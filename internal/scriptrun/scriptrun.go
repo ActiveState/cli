@@ -75,7 +75,7 @@ func (s *ScriptRun) PrepareVirtualEnv() (rerr error) {
 		Auth:    s.auth,
 	})
 	if err != nil {
-		locale.WrapError(err, "err_packages_update_runtime_order", "Failed to verify local order file.")
+		return locale.WrapError(err, "err_packages_update_runtime_order", "Failed to verify local order file.")
 	}
 
 	rt, err := runtime.New(target.NewProjectTarget(s.project, nil, target.TriggerScript), s.analytics, s.svcModel)

@@ -33,7 +33,7 @@ func NewFromProject(
 		Auth:    auth,
 	})
 	if err != nil {
-		locale.WrapError(err, "err_packages_update_runtime_order", "Failed to verify local order file.")
+		return nil, locale.WrapError(err, "err_packages_update_runtime_order", "Failed to verify local order file.")
 	}
 
 	projectTarget := target.NewProjectTarget(proj, nil, trigger)

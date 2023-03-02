@@ -24,7 +24,7 @@ func RefreshRuntime(auth *authentication.Auth, out output.Outputer, an analytics
 		Auth:         auth,
 	})
 	if err != nil {
-		locale.WrapError(err, "err_packages_update_runtime_order", "Failed to verify local order file.")
+		return locale.WrapError(err, "err_packages_update_runtime_order", "Failed to verify local order file.")
 	}
 
 	target := target.NewProjectTarget(proj, &checkCommitID, trigger)
