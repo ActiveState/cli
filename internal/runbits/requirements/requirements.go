@@ -86,14 +86,15 @@ type RequirementOperationParams struct {
 	RequirementName     string
 	RequirementVersion  string
 	RequirementBitWidth int
+	RequirementLanguage string
 	Operation           model.Operation
 	NsType              model.NamespaceType
 }
 
-func (r *RequirementOperation) ExecuteRequirementOperation(requirementName string, requirementVersion string, requirementBitWidth int, operation bgModel.Operation, nsType model.NamespaceType) (rerr error) {
+func (r *RequirementOperation) ExecuteRequirementOperation(requirementName string, requirementVersion string, requirementLangauge string, requirementBitWidth int, operation bgModel.Operation, nsType model.NamespaceType) (rerr error) {
 	var ns model.Namespace
 	var langVersion string
-	langName := "undetermined"
+	langName := requirementLangauge
 
 	out := r.Output
 	var pg *output.Spinner
@@ -127,9 +128,18 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName strin
 
 	switch nsType {
 	case model.NamespacePackage, model.NamespaceBundle:
-		language, err := model.LanguageByCommit(pj.CommitUUID())
+		languages, err := model.LanguagesByCommit(pj.CommitUUID())
 		if err == nil {
-			langName = language.Name
+			if len(languages) > 0 && langName == "" {
+				return locale.NewError("err_requirement_multiple_languges", "This project has multiple languges, please specify a language with the --language flag")
+			}
+
+			for _, l := range languages {
+				if l.Name == langName {
+					langName = l.Name
+					break
+				}
+			}
 			ns = model.NewNamespacePkgOrBundle(langName, nsType)
 		} else {
 			logging.Debug("Could not get language from project: %v", err)

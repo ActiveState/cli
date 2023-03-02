@@ -72,6 +72,19 @@ func LanguageByCommit(commitID strfmt.UUID) (Language, error) {
 	return languages[0], nil
 }
 
+func LanguagesByCommit(commitID strfmt.UUID) ([]Language, error) {
+	languages, err := FetchLanguagesForCommit(commitID)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(languages) == 0 {
+		return nil, locale.NewInputError("err_no_languages")
+	}
+
+	return languages, nil
+}
+
 // DefaultBranchForProjectName retrieves the default branch for the given project owner/name.
 func DefaultBranchForProjectName(owner, name string) (*mono_models.Branch, error) {
 	proj, err := FetchProjectByName(owner, name)

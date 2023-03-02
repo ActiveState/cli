@@ -57,7 +57,13 @@ func newInstallCommand(prime *primer.Values) *captain.Command {
 		locale.Tl("package_install_title", "Installing Package"),
 		locale.T("package_install_cmd_description"),
 		prime,
-		[]*captain.Flag{},
+		[]*captain.Flag{
+			{
+				Name:        "language",
+				Description: locale.Tl("package_install_flag_language_description", "The language to install the package for"),
+				Value:       &params.Language,
+			},
+		},
 		[]*captain.Argument{
 			{
 				Name:        locale.T("package_arg_nameversion"),
@@ -82,7 +88,13 @@ func newUninstallCommand(prime *primer.Values) *captain.Command {
 		locale.Tl("package_uninstall_title", "Uninstalling Package"),
 		locale.T("package_uninstall_cmd_description"),
 		prime,
-		[]*captain.Flag{},
+		[]*captain.Flag{
+			{
+				Name:        "language",
+				Description: locale.Tl("package_install_flag_language_description", "The language to install the package for"),
+				Value:       &params.Language,
+			},
+		},
 		[]*captain.Argument{
 			{
 				Name:        locale.T("package_arg_name"),

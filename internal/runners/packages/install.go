@@ -23,7 +23,8 @@ func (pv *PackageVersion) Set(arg string) error {
 
 // InstallRunParams tracks the info required for running Install.
 type InstallRunParams struct {
-	Package PackageVersion
+	Package  PackageVersion
+	Language string
 }
 
 // Install manages the installing execution context.
@@ -42,6 +43,7 @@ func (a *Install) Run(params InstallRunParams, nsType model.NamespaceType) error
 	return requirements.NewRequirementOperation(a.prime).ExecuteRequirementOperation(
 		params.Package.Name(),
 		params.Package.Version(),
+		params.Language,
 		0,
 		bgModel.OperationAdd,
 		nsType,

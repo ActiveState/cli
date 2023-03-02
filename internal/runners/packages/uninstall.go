@@ -10,7 +10,8 @@ import (
 
 // UninstallRunParams tracks the info required for running Uninstall.
 type UninstallRunParams struct {
-	Name string
+	Name     string
+	Language string
 }
 
 // Uninstall manages the uninstalling execution context.
@@ -33,6 +34,7 @@ func (u *Uninstall) Run(params UninstallRunParams, nsType model.NamespaceType) e
 	return requirements.NewRequirementOperation(u.prime).ExecuteRequirementOperation(
 		params.Name,
 		"",
+		params.Language,
 		0,
 		bgModel.OperationRemove,
 		nsType,
