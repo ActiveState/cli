@@ -27,6 +27,9 @@ func Check(params *CheckParams) (strfmt.UUID, error) {
 
 	of, err := orderfile.FromPath(params.Path)
 	if err != nil {
+		if orderfile.IsErrOrderFileDoesNotExist(err) {
+			return commitID, nil
+		}
 		return "", errs.Wrap(err, "Could not read order file")
 	}
 
