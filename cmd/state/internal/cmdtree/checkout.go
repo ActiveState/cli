@@ -25,9 +25,9 @@ func newCheckoutCommand(prime *primer.Values) *captain.Command {
 				Value:       &params.Branch,
 			},
 			{
-				Name:        locale.Tl("flag_state_checkout_cache", "set-cache"),
-				Description: locale.Tl("flag_state_checkout_cache_description", "Path to store the runtime files"),
-				Value:       &params.Cache,
+				Name:        locale.Tl("flag_state_checkout_runtime-path", "runtime-path"),
+				Description: locale.Tl("flag_state_checkout_runtime-path_description", "Path to store the runtime files"),
+				Value:       &params.RuntimePath,
 			},
 		},
 		[]*captain.Argument{
