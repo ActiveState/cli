@@ -29,11 +29,11 @@ func (a *app) enable() error {
 		return nil
 	}
 
-	if a.onDesktop() {
-		// The user is installing while in a desktop environment. Install an autostart shortcut file.
-		return a.enableOnDesktop()
+	// Enable for both Desktop and Server. Only error out for Desktop if on Desktop.
+	if err := a.enableOnDesktop(); err != nil && a.onDesktop() {
+		return err
 	}
-	// Probably in a server environment. Install to the user's ~/.profile.
+
 	return a.enableOnServer()
 }
 
