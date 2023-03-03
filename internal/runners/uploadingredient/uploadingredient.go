@@ -96,30 +96,8 @@ func (r *Runner) Run(params *Params) error {
 	}
 
 	if params.Edit {
-		// Prepare file for editing
-		b, err := p.MarshalYaml()
-		if err != nil {
-			return locale.WrapError(err, "err_uploadingredient_publish", "Could not marshal publish request")
-		}
-		b = append([]byte("# Edit the following file and confirm in your terminal when done\n"), b...)
-		fn, err := fileutils.WriteTempFile("*.ingredient.yaml", b)
-		if err != nil {
-			return locale.WrapError(err, "err_uploadingredient_publish", "Could not write publish request to file")
-		}
-
-		// Open file
-		if err := open.Start(fn); err != nil {
-			return locale.WrapError(err, "err_uploadingredient_publish", "Could not open publish request file")
-		}
-
-		// Wait for confirmation
-		if _, err := r.prompt.Input("", locale.Tl("uploadingredient_edit_confirm", "Press enter when done editing"), p2.StrP("")); err != nil {
-			return errs.Wrap(err, "Confirmation failed")
-		}
-
-		// Write changes to request
-		if err := p.UnmarshalYaml(b); err != nil {
-			return locale.WrapError(err, "err_uploadingredient_publish", "Could not unmarshal publish request")
+		if err := r.Edit(p); err != nil {
+			return err
 		}
 	} else {
 		cont, err := r.prompt.Confirm(
@@ -153,6 +131,36 @@ Ingredient ID: {{.V0}}
 Ingredient Version ID: {{.V1}}
 Revision: {{.V2}}
 `, result.IngredientID, result.IngredientVersionID, strconv.Itoa(result.Revision)))
+
+	return nil
+}
+
+func (r *Runner) Edit(p *request.PublishRequest) error {
+	// Prepare file for editing
+	b, err := p.MarshalYaml()
+	if err != nil {
+		return locale.WrapError(err, "err_uploadingredient_publish", "Could not marshal publish request")
+	}
+	b = append([]byte("# Edit the following file and confirm in your terminal when done\n"), b...)
+	fn, err := fileutils.WriteTempFile("*.ingredient.yaml", b)
+	if err != nil {
+		return locale.WrapError(err, "err_uploadingredient_publish", "Could not write publish request to file")
+	}
+
+	// Open file
+	if err := open.Start(fn); err != nil {
+		return locale.WrapError(err, "err_uploadingredient_publish", "Could not open publish request file")
+	}
+
+	// Wait for confirmation
+	if _, err := r.prompt.Input("", locale.Tl("uploadingredient_edit_confirm", "Press enter when done editing"), p2.StrP("")); err != nil {
+		return errs.Wrap(err, "Confirmation failed")
+	}
+
+	// Write changes to request
+	if err := p.UnmarshalYaml(b); err != nil {
+		return locale.WrapError(err, "err_uploadingredient_publish", "Could not unmarshal publish request")
+	}
 
 	return nil
 }
