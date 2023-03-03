@@ -1,6 +1,8 @@
 package learn
 
 import (
+	"fmt"
+
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -21,7 +23,14 @@ func New(prime primeable) *Learn {
 	return &Learn{prime.Output()}
 }
 
-func (l *Learn) Run() error {
+func (l *Learn) Run(s *string, n *int, b *bool) error {
+	fmt.Printf("%#v", s)
+	fmt.Printf("%#v", n)
+	fmt.Printf("%#v", b)
+	fmt.Println()
+	if true {
+		return nil
+	}
 	l.out.Print(locale.Tl("learn_info", "Opening [ACTIONABLE]{{.V0}}[/RESET] in browser", constants.CheatSheetURL))
 
 	err := open.Run(constants.CheatSheetURL)
