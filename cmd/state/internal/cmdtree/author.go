@@ -57,6 +57,11 @@ func newAuthorUpload(prime *primer.Values) *captain.Command {
 				),
 				Value: &params.Platform,
 			},
+			{
+				Name:        "edit",
+				Description: locale.Tl("author_upload_edit_description", "Edit the ingredient information in your editor before uploading."),
+				Value:       &params.Edit,
+			},
 		},
 		[]*captain.Argument{
 			{
