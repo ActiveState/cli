@@ -3,6 +3,7 @@ package gqlclient
 import (
 	"context"
 	"fmt"
+	"io"
 	"os"
 	"time"
 
@@ -16,7 +17,25 @@ import (
 	"github.com/ActiveState/cli/internal/singleton/uniqid"
 )
 
+type File struct {
+	Field string
+	Name  string
+	R     io.Reader
+}
+
+type Request0 interface {
+	Query() string
+	Vars() map[string]interface{}
+}
+
+type RequestBase struct{}
+
+func (r *RequestBase) Files() []File {
+	return []File{}
+}
+
 type Request interface {
+	Files() []File
 	Query() string
 	Vars() map[string]interface{}
 }
@@ -91,6 +110,10 @@ func (c *Client) RunWithContext(ctx context.Context, request Request, response i
 	graphRequest := graphql.NewRequest(request.Query())
 	for key, value := range request.Vars() {
 		graphRequest.Var(key, value)
+	}
+
+	for _, file := range request.Files() {
+		graphRequest.File(file.Field, file.Name, file.R)
 	}
 
 	var bearerToken string

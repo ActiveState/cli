@@ -1,6 +1,9 @@
 package request
 
+import "github.com/ActiveState/cli/internal/gqlclient"
+
 type CheckRuntimeUsage struct {
+	gqlclient.RequestBase
 	organizationName string
 }
 

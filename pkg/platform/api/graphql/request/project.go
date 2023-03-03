@@ -1,13 +1,16 @@
 package request
 
+import "github.com/ActiveState/cli/internal/gqlclient"
+
 func ProjectByOrgAndName(org string, project string) *projectByOrgAndName {
-	return &projectByOrgAndName{map[string]interface{}{
+	return &projectByOrgAndName{vars: map[string]interface{}{
 		"org":  org,
 		"name": project,
 	}}
 }
 
 type projectByOrgAndName struct {
+	gqlclient.RequestBase
 	vars map[string]interface{}
 }
 

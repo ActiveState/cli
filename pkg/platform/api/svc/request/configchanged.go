@@ -1,11 +1,14 @@
 package request
 
+import "github.com/ActiveState/cli/internal/gqlclient"
+
 type ConfigChanged struct {
+	gqlclient.RequestBase
 	key string
 }
 
 func NewConfigChanged(key string) *ConfigChanged {
-	return &ConfigChanged{key}
+	return &ConfigChanged{key: key}
 }
 
 func (e *ConfigChanged) Query() string {

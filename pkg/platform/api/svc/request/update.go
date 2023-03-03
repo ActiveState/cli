@@ -1,6 +1,9 @@
 package request
 
+import "github.com/ActiveState/cli/internal/gqlclient"
+
 type UpdateRequest struct {
+	gqlclient.RequestBase
 	channel string
 	version string
 }

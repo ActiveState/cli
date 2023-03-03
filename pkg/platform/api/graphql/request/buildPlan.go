@@ -1,7 +1,9 @@
 package request
 
+import "github.com/ActiveState/cli/internal/gqlclient"
+
 func BuildPlan(owner, project, commitID string) *buildPlanByCommitID {
-	return &buildPlanByCommitID{map[string]interface{}{
+	return &buildPlanByCommitID{vars: map[string]interface{}{
 		"organization": owner,
 		"project":      project,
 		"commitID":     commitID,
@@ -9,6 +11,7 @@ func BuildPlan(owner, project, commitID string) *buildPlanByCommitID {
 }
 
 type buildPlanByCommitID struct {
+	gqlclient.RequestBase
 	vars map[string]interface{}
 }
 

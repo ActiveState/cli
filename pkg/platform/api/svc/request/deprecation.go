@@ -1,6 +1,10 @@
 package request
 
-type DeprecationRequest struct{}
+import "github.com/ActiveState/cli/internal/gqlclient"
+
+type DeprecationRequest struct {
+	gqlclient.RequestBase
+}
 
 func NewDeprecationRequest() *DeprecationRequest {
 	return &DeprecationRequest{}

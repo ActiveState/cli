@@ -1,20 +1,23 @@
 package request
 
+import "github.com/ActiveState/cli/internal/gqlclient"
+
 type AnalyticsEvent struct {
-	category         string
-	action           string
-	label            string
-	dimensionsJson  string
-	outputType       string
-	userID           string
+	gqlclient.RequestBase
+	category       string
+	action         string
+	label          string
+	dimensionsJson string
+	outputType     string
+	userID         string
 }
 
 func NewAnalyticsEvent(category, action, label, dimensionsJson string) *AnalyticsEvent {
 	return &AnalyticsEvent{
-		category:         category,
-		action:           action,
-		label:            label,
-		dimensionsJson:   dimensionsJson,
+		category:       category,
+		action:         action,
+		label:          label,
+		dimensionsJson: dimensionsJson,
 	}
 }
 
@@ -28,9 +31,9 @@ func (e *AnalyticsEvent) Query() string {
 
 func (e *AnalyticsEvent) Vars() map[string]interface{} {
 	return map[string]interface{}{
-		"category":     e.category,
-		"action":       e.action,
-		"label":        e.label,
+		"category":       e.category,
+		"action":         e.action,
+		"label":          e.label,
 		"dimensionsJson": e.dimensionsJson,
 	}
 }

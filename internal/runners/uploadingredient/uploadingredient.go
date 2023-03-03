@@ -1,0 +1,128 @@
+package uploadingredient
+
+import (
+	"fmt"
+	"path/filepath"
+	"strconv"
+
+	"github.com/ActiveState/cli/internal/captain"
+	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/gqlclient"
+	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/primer"
+	"github.com/ActiveState/cli/internal/prompt"
+	"github.com/ActiveState/cli/internal/retryhttp"
+	p2 "github.com/ActiveState/cli/internal/rtutils/p"
+	"github.com/ActiveState/cli/pkg/platform/api"
+	"github.com/ActiveState/cli/pkg/platform/api/graphql/model"
+	"github.com/ActiveState/cli/pkg/platform/api/graphql/request"
+	auth "github.com/ActiveState/cli/pkg/platform/authentication"
+	"github.com/ActiveState/cli/pkg/project"
+	"github.com/machinebox/graphql"
+)
+
+type Params struct {
+	NameVersion captain.NameVersion
+	Namespace   string
+	Platform    string
+	Filepath    string
+}
+
+type Runner struct {
+	auth    *auth.Auth
+	out     output.Outputer
+	prompt  prompt.Prompter
+	project *project.Project
+	client  *gqlclient.Client
+}
+
+type primeable interface {
+	primer.Outputer
+	primer.Auther
+	primer.Projecter
+	primer.Prompter
+}
+
+func New(prime primeable) *Runner {
+	client := gqlclient.NewWithOpts(
+		api.GetServiceURL(api.ServiceBuildPlan).String(), 0,
+		graphql.WithHTTPClient(retryhttp.DefaultClient.StandardClient()),
+		graphql.UseMultipartForm(),
+	)
+	client.EnableDebugLog()
+	return &Runner{auth: prime.Auth(), out: prime.Output(), prompt: prime.Prompt(), project: prime.Project(), client: client}
+}
+
+func (r *Runner) Run(params *Params) error {
+	if !r.auth.Authenticated() {
+		return locale.NewInputError("err_auth_required")
+	}
+
+	if !fileutils.FileExists(params.Filepath) {
+		return locale.NewInputError("err_uploadingredient_file_not_found", "File not found: {{.V0}}", params.Filepath)
+	}
+
+	name := params.NameVersion.Name()
+	if name == "" {
+		name = filepath.Base(params.Filepath)
+	}
+	version := params.NameVersion.Version()
+	if version == "" {
+		version = "0.0.1"
+	}
+
+	namespace := params.Namespace
+	if namespace == "" {
+		if r.project == nil {
+			return locale.NewInputError("err_no_project")
+		}
+		namespace = r.project.Owner() + "/shared"
+	}
+
+	path := fmt.Sprintf("%s/%s", namespace, name)
+
+	checksum, err := fileutils.Sha256Hash(params.Filepath)
+	if err != nil {
+		return locale.WrapError(err, "err_uploadingredient_checksum", "Could not calculate checksum for file")
+	}
+
+	cont, err := r.prompt.Confirm(
+		"",
+		locale.Tl("uploadingredient_confirm", `Upload following ingredient?
+Name: {{.V0}}
+Version: {{.V1}}
+Namespace: {{.V2}}
+Path: {{.V3}}
+Checksum: {{.V4}}
+
+`, name, version, namespace, path, checksum),
+		p2.BoolP(true),
+	)
+	if err != nil {
+		return errs.Wrap(err, "Confirmation failed")
+	}
+	if !cont {
+		r.out.Print(locale.Tl("uploadingredient_cancel", "Upload cancelled"))
+		return nil
+	}
+
+	p, err := request.Publish(path, version, params.Filepath, checksum)
+	if err != nil {
+		return locale.WrapError(err, "err_uploadingredient_publish", "Could not create publish request")
+	}
+
+	result := model.PublishResult{}
+	if err := r.client.Run(p, &result); err != nil {
+		return locale.WrapError(err, "err_uploadingredient_publish", "Could not publish ingredient")
+	}
+
+	r.out.Print(locale.Tl("uploadingredient_success", `Successfully uploaded as:
+Ingredient ID: {{.V0}}
+Ingredient Version ID: {{.V1}}
+Revision: {{.V2}}
+`, result.IngredientID, result.IngredientVersionID, strconv.Itoa(result.Revision)))
+
+	return nil
+}
