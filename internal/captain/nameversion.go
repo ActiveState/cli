@@ -12,6 +12,8 @@ type NameVersion struct {
 	version string
 }
 
+var _ FlagMarshaler = &NameVersion{}
+
 func (nv *NameVersion) Set(arg string) error {
 	nameArg := strings.Split(arg, "@")
 	nv.name = nameArg[0]
@@ -37,4 +39,8 @@ func (nv *NameVersion) Name() string {
 
 func (nv *NameVersion) Version() string {
 	return nv.version
+}
+
+func (nv *NameVersion) Type() string {
+	return "NameVersion"
 }

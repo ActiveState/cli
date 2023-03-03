@@ -1,12 +1,15 @@
 package request
 
+import "github.com/ActiveState/cli/internal/gqlclient"
+
 func SupportedLanguages(osName string) *supportedLanguages {
-	return &supportedLanguages{map[string]interface{}{
+	return &supportedLanguages{vars: map[string]interface{}{
 		"os_name": osName,
 	}}
 }
 
 type supportedLanguages struct {
+	gqlclient.RequestBase
 	vars map[string]interface{}
 }
 

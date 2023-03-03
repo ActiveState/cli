@@ -21,6 +21,14 @@ Examples:
 {{- end }}
 
 {{- childCommands .Cmd}}
+{{- if gt (len .Cmd.Arguments) 0}}
+
+Arguments:
+{{-  range .Cmd.Arguments }}
+  <{{ .Name }}> {{ if .Required }}          {{ else }}(optional){{ end }} {{ .Description }}
+{{-  end }}
+{{-  end }}
+
 {{- if .Cobra.HasAvailableFlags}}
 
 Flags:
@@ -31,13 +39,7 @@ Flags:
 Global Flags:
 {{.Cobra.InheritedFlags.FlagUsages | trimTrailingWhitespaces}}
 {{- end}}
-{{- if gt (len .Cmd.Arguments) 0}}
 
-Arguments:
-    {{-  range .Cmd.Arguments }}
-  <{{ .Name }}> {{ if .Required }}          {{ else }}(optional){{ end }} {{ .Description }}
-    {{-  end }}
-{{- end}}
 {{- if .Cobra.HasHelpSubCommands}}
 
 Additional help topics:

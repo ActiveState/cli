@@ -56,7 +56,7 @@ func (c *Command) setFlags(flags []*Flag) error {
 			)
 		default:
 			return errs.New(
-				fmt.Sprintf("Unknown type: %s (%v)"+reflect.TypeOf(v).Name(), v),
+				fmt.Sprintf("Unknown type for flag %s: %s (%v)", flag.Name, reflect.TypeOf(v).Name(), v),
 			)
 		}
 

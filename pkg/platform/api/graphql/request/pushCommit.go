@@ -1,11 +1,12 @@
 package request
 
 import (
+	"github.com/ActiveState/cli/internal/gqlclient"
 	model "github.com/ActiveState/cli/pkg/platform/api/graphql/model/buildplanner"
 )
 
 func PushCommit(owner, project, parentCommit, branchRef, description string, script *model.BuildScript) *buildPlanByPushCommit {
-	return &buildPlanByPushCommit{map[string]interface{}{
+	return &buildPlanByPushCommit{vars: map[string]interface{}{
 		"organization": owner,
 		"project":      project,
 		"parentCommit": parentCommit,
@@ -16,6 +17,7 @@ func PushCommit(owner, project, parentCommit, branchRef, description string, scr
 }
 
 type buildPlanByPushCommit struct {
+	gqlclient.RequestBase
 	vars map[string]interface{}
 }
 

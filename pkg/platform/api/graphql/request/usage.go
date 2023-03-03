@@ -3,6 +3,7 @@ package request
 import (
 	"time"
 
+	"github.com/ActiveState/cli/internal/gqlclient"
 	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/pkg/platform/api/graphql/model"
@@ -14,13 +15,14 @@ import (
 // date will result in timezone miss-match issues.
 // It is then up to the consuming code to use the most recent rtusage week (ie. the first element in the slice)
 func RuntimeUsage(organizationID strfmt.UUID) *usage {
-	return &usage{map[string]interface{}{
+	return &usage{vars: map[string]interface{}{
 		"organization_id": organizationID,
 		"week":            model.Date{time.Now().Add(-(8 * 24 * time.Hour))},
 	}}
 }
 
 type usage struct {
+	gqlclient.RequestBase
 	vars map[string]interface{}
 }
 

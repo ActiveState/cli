@@ -1,6 +1,10 @@
 package request
 
-type FetchLogTail struct{}
+import "github.com/ActiveState/cli/internal/gqlclient"
+
+type FetchLogTail struct {
+	gqlclient.RequestBase
+}
 
 func NewFetchLogTail() *FetchLogTail {
 	return &FetchLogTail{}

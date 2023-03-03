@@ -1,6 +1,9 @@
 package request
 
+import "github.com/ActiveState/cli/internal/gqlclient"
+
 type ReportRuntimeUsage struct {
+	gqlclient.RequestBase
 	pid            int
 	exec           string
 	dimensionsJson string

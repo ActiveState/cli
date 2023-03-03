@@ -1,15 +1,19 @@
 package request
 
-import "github.com/go-openapi/strfmt"
+import (
+	"github.com/ActiveState/cli/internal/gqlclient"
+	"github.com/go-openapi/strfmt"
+)
 
 // OrganizationsByIDs returns the query for retrieving orgs by ids
 func OrganizationsByIDs(orgIDs []strfmt.UUID) *organizationByIDs {
-	return &organizationByIDs{map[string]interface{}{
+	return &organizationByIDs{vars: map[string]interface{}{
 		"organization_ids": orgIDs,
 	}}
 }
 
 type organizationByIDs struct {
+	gqlclient.RequestBase
 	vars map[string]interface{}
 }
 
@@ -30,12 +34,13 @@ func (p *organizationByIDs) Vars() map[string]interface{} {
 
 // OrganizationsByName returns the query for retrieving org by name
 func OrganizationsByName(name string) *organizationByName {
-	return &organizationByName{map[string]interface{}{
+	return &organizationByName{vars: map[string]interface{}{
 		"name": name,
 	}}
 }
 
 type organizationByName struct {
+	gqlclient.RequestBase
 	vars map[string]interface{}
 }
 

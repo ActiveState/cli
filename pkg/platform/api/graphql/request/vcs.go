@@ -1,16 +1,18 @@
 package request
 
 import (
+	"github.com/ActiveState/cli/internal/gqlclient"
 	"github.com/go-openapi/strfmt"
 )
 
 func CheckpointByCommit(commitID strfmt.UUID) *checkpointByCommit {
-	return &checkpointByCommit{map[string]interface{}{
+	return &checkpointByCommit{vars: map[string]interface{}{
 		"commit_id": commitID,
 	}}
 }
 
 type checkpointByCommit struct {
+	gqlclient.RequestBase
 	vars map[string]interface{}
 }
 
