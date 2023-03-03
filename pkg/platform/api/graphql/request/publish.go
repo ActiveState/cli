@@ -7,6 +7,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/gqlclient"
 	"github.com/ActiveState/cli/internal/locale"
+	"gopkg.in/yaml.v2"
 )
 
 func Publish(path string, version, filepath, checksum string) (*publish, error) {
@@ -58,4 +59,12 @@ func (p *publish) Query() string {
 
 func (p *publish) Vars() map[string]interface{} {
 	return p.vars
+}
+
+func (p *publish) MarshalYaml() ([]byte, error) {
+	return yaml.Marshal(p.vars)
+}
+
+func (p *publish) UnmarshalYaml(b []byte) error {
+	return yaml.Unmarshal(b, &p.vars)
 }
