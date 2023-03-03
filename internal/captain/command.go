@@ -281,9 +281,9 @@ func (c *Command) ShortDescription() string {
 func (c *Command) Execute(args []string) error {
 	defer profile.Measure(fmt.Sprintf("cobra:Execute"), time.Now())
 	c.cobra.SetArgs(args)
-	err := c.cobra.Execute()
+	cmd, err := c.cobra.ExecuteC()
 	c.cobra.SetArgs(nil)
-	return setupSensibleErrors(err)
+	return setupSensibleErrors(cmd, args, err)
 }
 
 func (c *Command) SetExamples(examples ...string) *Command {
@@ -737,7 +737,7 @@ func (c *Command) argValidator(cobraCmd *cobra.Command, args []string) error {
 
 // setupSensibleErrors inspects an error value for certain errors and returns a
 // wrapped error that can be checked and that is localized.
-func setupSensibleErrors(err error) error {
+func setupSensibleErrors(cmd *cobra.Command, args []string, err error) error {
 	if err, ok := err.(error); ok && err == nil {
 		return nil
 	}
@@ -799,13 +799,59 @@ func setupSensibleErrors(err error) error {
 			multilog.Error("Unable to parse cobra error message: %v", err)
 			return locale.NewInputError("err_cmd_unexpected_arguments", "Unexpected argument(s) given")
 		}
+		if len(cmd.Commands()) == 0 {
+			return locale.NewInputError(
+				"err_cmd_too_many_arguments",
+				"Too many arguments given: {{.V0}} expected, {{.V1}} received",
+				strconv.Itoa(max), strconv.Itoa(received),
+			)
+		}
+
+		failedArg := failedArgument(cmd, args)
+
 		return locale.NewInputError(
-			"err_cmd_too_many_arguments",
-			"Too many arguments given: {{.V0}} expected, {{.V1}} received",
-			strconv.Itoa(max), strconv.Itoa(received))
+			"err_cmd_no_such_argument",
+			"No such argument: {{.V0}}",
+			failedArg,
+		)
 	}
 
 	return err
+}
+
+func failedArgument(cmd *cobra.Command, args []string) string {
+	calledAs := cmd.CalledAs()
+	var tracking bool
+	var onFlag bool
+	for _, arg := range args {
+		if onFlag {
+			onFlag = false
+			continue
+		}
+
+		if !tracking {
+			if arg != calledAs {
+				continue
+			}
+			tracking = true
+			continue
+		}
+		if !onFlag {
+			if !strings.HasPrefix(arg, "-") {
+				return arg
+			}
+			if strings.Contains(arg, "=") {
+				continue
+			}
+			flag := cmd.Flags().Lookup(strings.TrimPrefix(arg, "-"))
+			if flag != nil && flag.Value.Type() == "bool" {
+				continue
+			}
+			onFlag = true
+			continue
+		}
+	}
+	return "<cannot parse value>"
 }
 
 // pflag: flag.go: errors are not detectable
