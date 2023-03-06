@@ -992,16 +992,16 @@ field_version:
   other: Version
 field_bitwidth:
   other: Bit Width
-commit_message_add_platform:
+commit_message_added_platform:
   other: "Added platform: {{.V0}} {{.V1}}bit {{.V2}}"
 commit_message_updated_platform:
   other: "Updated platform: {{.V0}} to {{.V1}}"
 commit_message_removed_platform:
   other: "Removed platform: {{.V0}} {{.V1}}bit {{.V2}}"
-commit_message_add_language:
+commit_message_added_language:
   other: "Added language: {{.V0}} {{.V1}}"
 commit_message_updated_language:
-  other: "Updated language: {{.V0}} {{.V1}}"
+  other: "Updated language: {{.V0}} to {{.V1}}"
 commit_message_removed_language:
   other: "Removed language: {{.V0}} {{.V1}}"
 downloading_artifacts:
@@ -1124,7 +1124,7 @@ package_search_flag_exact-term_description:
   other: Ensures that search results match search term exactly
 package_import_flag_filename_description:
   other: The file to import
-commit_message_add_package:
+commit_message_added_package:
   other: "Added package: {{.V0}}@{{.V1}}"
 commit_message_removed_package:
   other: "Removed package: {{.V0}}"
