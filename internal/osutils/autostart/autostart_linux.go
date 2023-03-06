@@ -29,12 +29,19 @@ func (a *app) enable() error {
 		return nil
 	}
 
-	// Enable for both Desktop and Server. Only error out for Desktop if on Desktop.
+	// Enable for both Desktop and Server.
+
+	// Only error out for Desktop if on Desktop.
 	if err := a.enableOnDesktop(); err != nil && a.onDesktop() {
 		return err
 	}
 
-	return a.enableOnServer()
+	// Only error out for Server if on Server.
+	if err := a.enableOnServer(); err != nil && !a.onDesktop() {
+		return err
+	}
+
+	return nil
 }
 
 func (a *app) onDesktop() bool {
