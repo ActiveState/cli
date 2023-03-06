@@ -717,11 +717,11 @@ func languageCommitMessage(op Operation, name, version string) string {
 	var msgL10nKey string
 	switch op {
 	case OperationAdded:
-		msgL10nKey = locale.T("commit_message_add_language")
+		msgL10nKey = "commit_message_add_language"
 	case OperationUpdated:
-		msgL10nKey = locale.T("commit_message_update_language")
+		msgL10nKey = "commit_message_updated_language"
 	case OperationRemoved:
-		msgL10nKey = locale.T("commit_message_remove_language")
+		msgL10nKey = "commit_message_removed_language"
 	}
 
 	return locale.Tr(msgL10nKey, name, version)
@@ -731,11 +731,11 @@ func platformCommitMessage(op Operation, name, version string, word int) string 
 	var msgL10nKey string
 	switch op {
 	case OperationAdded:
-		msgL10nKey = locale.T("commit_message_add_platform")
+		msgL10nKey = "commit_message_add_platform"
 	case OperationUpdated:
-		msgL10nKey = locale.T("commit_message_update_platform")
+		msgL10nKey = "commit_message_updated_platform"
 	case OperationRemoved:
-		msgL10nKey = locale.T("commit_message_remove_platform")
+		msgL10nKey = "commit_message_removed_platform"
 	}
 
 	return locale.Tr(msgL10nKey, name, strconv.Itoa(word), version)
@@ -745,11 +745,11 @@ func packageCommitMessage(op Operation, name, version string) string {
 	var msgL10nKey string
 	switch op {
 	case OperationAdded:
-		msgL10nKey = locale.T("commit_message_add_package")
+		msgL10nKey = "commit_message_add_package"
 	case OperationUpdated:
-		msgL10nKey = locale.T("commit_message_update_package")
+		msgL10nKey = "commit_message_updated_package"
 	case OperationRemoved:
-		msgL10nKey = locale.T("commit_message_remove_package")
+		msgL10nKey = "commit_message_removed_package"
 	}
 
 	return locale.Tr(msgL10nKey, name, version)

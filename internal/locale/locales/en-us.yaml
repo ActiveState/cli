@@ -994,10 +994,14 @@ field_bitwidth:
   other: Bit Width
 commit_message_add_platform:
   other: "Added platform: {{.V0}} {{.V1}}bit {{.V2}}"
+commit_message_updated_platform:
+  other: "Updated platform: {{.V0}} to {{.V1}}"
 commit_message_removed_platform:
   other: "Removed platform: {{.V0}} {{.V1}}bit {{.V2}}"
 commit_message_add_language:
   other: "Added language: {{.V0}} {{.V1}}"
+commit_message_updated_language:
+  other: "Updated language: {{.V0}} {{.V1}}"
 commit_message_removed_language:
   other: "Removed language: {{.V0}} {{.V1}}"
 downloading_artifacts:
@@ -2015,7 +2019,7 @@ export_project_statement:
   other: Exporting env for project [ACTIONABLE]{{.V0}}[/RESET] located at [ACTIONABLE]{{.V1}}[/RESET].
 err_rtprogress_outofsync:
   other: |
-    Received events that appear to be out of order. 
+    Received events that appear to be out of order.
     Please report this issue on [ACTIONABLE]{{.V0}}[/RESET] and include your log file at [ACTIONABLE]{{.V1}}[/RESET].
 err_home_not_found:
   other: |
