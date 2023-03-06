@@ -122,6 +122,8 @@ Checksum: {{.V4}}
 	}
 
 	result := model.PublishResult{}
+	// Currently runs with: Content-Disposition: form-data; name="query"
+	// but it should be Content-Disposition: form-data; name="operations"
 	if err := r.client.Run(p, &result); err != nil {
 		return locale.WrapError(err, "err_uploadingredient_publish", "Could not publish ingredient")
 	}

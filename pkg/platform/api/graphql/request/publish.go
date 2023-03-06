@@ -20,9 +20,11 @@ func Publish(path string, version, filepath, checksum string) (*PublishRequest, 
 	}
 	return &PublishRequest{
 		vars: map[string]interface{}{
-			"path":     path,
-			"version":  version,
-			"checksum": checksum,
+			"input": map[string]interface{}{
+				"path":     path,
+				"version":  version,
+				"checksum": checksum,
+			},
 		},
 		file: f,
 	}, nil
@@ -49,11 +51,13 @@ func (p *PublishRequest) Files() []gqlclient.File {
 
 func (p *PublishRequest) Query() string {
 	return `
-	mutate ($path: string!, $version: string!, $checksum: string!) {
-		publish(path: $path, version: $version, checksum: $checksum) {
-			fileChecksum
-		}
-	}
+       mutation ($input: PublishInput!) {
+            publish(input: $input) {
+                ingredientID
+				ingredientVersionID
+				revision
+            }
+        }
 `
 }
 
