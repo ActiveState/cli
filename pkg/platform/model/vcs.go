@@ -752,6 +752,9 @@ func packageCommitMessage(op Operation, name, version string) string {
 		msgL10nKey = "commit_message_removed_package"
 	}
 
+	if version == "" {
+		version = locale.Tl("package_version_auto", "auto")
+	}
 	return locale.Tr(msgL10nKey, name, version)
 }
 
