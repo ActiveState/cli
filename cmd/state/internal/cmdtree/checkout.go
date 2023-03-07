@@ -48,6 +48,5 @@ func newCheckoutCommand(prime *primer.Values) *captain.Command {
 		},
 	)
 	cmd.SetGroup(EnvironmentSetupGroup)
-	cmd.SetUnstable(true)
 	return cmd
 }

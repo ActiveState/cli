@@ -187,5 +187,5 @@ func newInfoCommand(prime *primer.Values) *captain.Command {
 		func(_ *captain.Command, _ []string) error {
 			return runner.Run(params, model.NamespacePackage)
 		},
-	).SetGroup(PackagesGroup).SetUnstable(true)
+	).SetGroup(PackagesGroup)
 }
