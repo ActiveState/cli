@@ -8,10 +8,7 @@ import (
 
 	svcApp "github.com/ActiveState/cli/cmd/state-svc/app"
 	svcAutostart "github.com/ActiveState/cli/cmd/state-svc/autostart"
-	"github.com/ActiveState/cli/internal/app"
-	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/osutils"
