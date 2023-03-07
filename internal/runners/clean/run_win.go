@@ -11,11 +11,9 @@ import (
 	"path/filepath"
 
 	svcApp "github.com/ActiveState/cli/cmd/state-svc/app"
-	"github.com/ActiveState/cli/internal/app"
 	"github.com/ActiveState/cli/internal/assets"
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/config"
-	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/installation"
