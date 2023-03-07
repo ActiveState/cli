@@ -19,7 +19,7 @@ func newScriptsCommand(prime *primer.Values) *captain.Command {
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, args []string) error {
 			return runner.Run()
-		}).SetGroup(AutomationGroup).SetUnstable(true)
+		}).SetGroup(AutomationGroup)
 }
 
 func newScriptsEditCommand(prime *primer.Values) *captain.Command {

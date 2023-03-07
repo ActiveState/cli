@@ -29,7 +29,7 @@ func newUseCommand(prime *primer.Values) *captain.Command {
 		func(_ *captain.Command, _ []string) error {
 			return use.NewUse(prime).Run(params)
 		},
-	).SetGroup(EnvironmentUsageGroup).SetUnstable(true)
+	).SetGroup(EnvironmentUsageGroup)
 	return cmd
 }
 
