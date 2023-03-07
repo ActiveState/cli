@@ -703,7 +703,7 @@ type DirReader interface {
 func CopyFilesDirReader(reader DirReader, src, dst string) error {
 	entries, err := reader.ReadDir(src)
 	if err != nil {
-		return errs.Wrap(err, "asset.ReadDir %s failed", src)
+		return errs.Wrap(err, "reader.ReadDir %s failed", src)
 	}
 
 	for _, entry := range entries {

@@ -49,8 +49,7 @@ func (u *Uninstall) runUninstall(params *UninstallParams) error {
 		aggErr = locale.WrapError(aggErr, "uninstall_remove_executables_err", "Failed to remove all State Tool files in installation directory")
 	}
 
-	err = removeApp()
-	if err != nil {
+	if err := removeApp(); err != nil {
 		logging.Debug("Could not remove app: %s", errs.JoinMessage(err))
 		aggErr = locale.WrapError(aggErr, "uninstall_remove_app_err", "Failed to remove service application")
 	}
