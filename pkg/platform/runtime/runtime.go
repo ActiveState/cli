@@ -192,8 +192,6 @@ func (r *Runtime) recordUsage() {
 
 	// Fire initial runtime usage event right away, subsequent events will be fired via the service so long as the process is running
 	dims := usageDims(r.target)
-	r.analytics.Event(anaConsts.CatRuntimeUsage, anaConsts.ActRuntimeHeartbeat, dims)
-
 	dimsJson, err := dims.Marshal()
 	if err != nil {
 		multilog.Critical("Could not marshal dimensions for runtime-usage: %s", errs.JoinMessage(err))
