@@ -9,7 +9,6 @@ import (
 	"path/filepath"
 
 	svcApp "github.com/ActiveState/cli/cmd/state-svc/app"
-	"github.com/ActiveState/cli/internal/app"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
@@ -135,12 +134,7 @@ func removeInstall(cfg *config.Instance) error {
 }
 
 func removeApp() error {
-	svcExec, err := installation.ServiceExec()
-	if err != nil {
-		return locale.WrapError(err, "err_svc_exec")
-	}
-
-	svcApp, err := app.New(constants.SvcAppName, svcExec, []string{"start"}, svcApp.Options)
+	svcApp, err := svcApp.New()
 	if err != nil {
 		return locale.WrapError(err, "err_autostart_app")
 	}

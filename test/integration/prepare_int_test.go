@@ -10,7 +10,6 @@ import (
 
 	svcApp "github.com/ActiveState/cli/cmd/state-svc/app"
 	svcAutostart "github.com/ActiveState/cli/cmd/state-svc/autostart"
-	"github.com/ActiveState/cli/internal/app"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -63,9 +62,9 @@ func (suite *PrepareIntegrationTestSuite) TestPrepare() {
 	suite.AssertConfig(filepath.Join(ts.Dirs.Cache, "bin"))
 
 	// Verify autostart was enabled.
-	as, err := app.New(constants.SvcAppName, ts.SvcExe, nil, svcApp.Options)
+	app, err := svcApp.New()
 	suite.Require().NoError(err)
-	enabled, err := autostart.IsEnabled(as.Exec, svcAutostart.Options)
+	enabled, err := autostart.IsEnabled(app.Exec, svcAutostart.Options)
 	suite.Require().NoError(err)
 	suite.Assert().True(enabled, "autostart is not enabled")
 
@@ -75,13 +74,13 @@ func (suite *PrepareIntegrationTestSuite) TestPrepare() {
 		suite.Require().NoError(err)
 		profile := filepath.Join(homeDir, ".profile")
 		profileContents := string(fileutils.ReadFileUnsafe(profile))
-		suite.Contains(profileContents, as.Exec, "autostart should be configured for Linux server environment")
+		suite.Contains(profileContents, app.Exec, "autostart should be configured for Linux server environment")
 	}
 
 	// Verify autostart can be disabled.
-	err = autostart.Disable(as.Exec, svcAutostart.Options)
+	err = autostart.Disable(app.Exec, svcAutostart.Options)
 	suite.Require().NoError(err)
-	enabled, err = autostart.IsEnabled(as.Exec, svcAutostart.Options)
+	enabled, err = autostart.IsEnabled(app.Exec, svcAutostart.Options)
 	suite.Require().NoError(err)
 	suite.Assert().False(enabled, "autostart is still enabled")
 
@@ -91,7 +90,7 @@ func (suite *PrepareIntegrationTestSuite) TestPrepare() {
 		suite.Require().NoError(err)
 		profile := filepath.Join(homeDir, ".profile")
 		profileContents := fileutils.ReadFileUnsafe(profile)
-		suite.NotContains(profileContents, as.Exec, "autostart should not be configured for Linux server environment anymore")
+		suite.NotContains(profileContents, app.Exec, "autostart should not be configured for Linux server environment anymore")
 	}
 }
 

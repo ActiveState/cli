@@ -166,12 +166,7 @@ func removePaths(logFile string, paths ...string) error {
 }
 
 func removeApp() error {
-	svcExec, err := installation.ServiceExec()
-	if err != nil {
-		return locale.WrapError(err, "err_svc_exec")
-	}
-
-	svcApp, err := app.New(constants.SvcAppName, svcExec, []string{"start"}, svcApp.Options)
+	svcApp, err := svcApp.New()
 	if err != nil {
 		return locale.WrapError(err, "err_autostart_app")
 	}

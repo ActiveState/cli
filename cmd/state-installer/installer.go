@@ -10,7 +10,6 @@ import (
 	svcApp "github.com/ActiveState/cli/cmd/state-svc/app"
 	svcAutostart "github.com/ActiveState/cli/cmd/state-svc/autostart"
 	anaConst "github.com/ActiveState/cli/internal/analytics/constants"
-	"github.com/ActiveState/cli/internal/app"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
@@ -166,12 +165,7 @@ func (i *Installer) sanitizeInput() error {
 }
 
 func (i *Installer) installSvcApp() error {
-	svcExec, err := installation.ServiceExec()
-	if err != nil {
-		return errs.Wrap(err, "Could not determine service executable")
-	}
-
-	app, err := app.New(constants.SvcAppName, svcExec, []string{"start"}, svcApp.Options)
+	app, err := svcApp.New()
 	if err != nil {
 		return errs.Wrap(err, "Could not create app")
 	}

@@ -7,13 +7,11 @@ import (
 	svcApp "github.com/ActiveState/cli/cmd/state-svc/app"
 	svcAutostart "github.com/ActiveState/cli/cmd/state-svc/autostart"
 	"github.com/ActiveState/cli/internal/analytics"
-	"github.com/ActiveState/cli/internal/app"
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/globaldefault"
-	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -157,12 +155,7 @@ func updateConfigKey(cfg *config.Instance, oldKey, newKey string) error {
 // InstalledPreparedFiles returns the files installed by state _prepare
 func InstalledPreparedFiles() ([]string, error) {
 	var files []string
-	svcExec, err := installation.ServiceExec()
-	if err != nil {
-		return nil, locale.WrapError(err, "err_svc_exec")
-	}
-
-	svcApp, err := app.New(constants.SvcAppName, svcExec, []string{"start"}, svcApp.Options)
+	svcApp, err := svcApp.New()
 	if err != nil {
 		return nil, locale.WrapError(err, "err_autostart_app")
 	}
