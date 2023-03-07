@@ -700,7 +700,7 @@ type DirReader interface {
 	ReadDir(string) ([]os.DirEntry, error)
 }
 
-func CopyFilesDirReader(reader DirReader, src, dst string) error {
+func CopyFilesDirReader(reader DirReader, src, dst, placeholderFileName string) error {
 	entries, err := reader.ReadDir(src)
 	if err != nil {
 		return errs.Wrap(err, "reader.ReadDir %s failed", src)
@@ -717,7 +717,7 @@ func CopyFilesDirReader(reader DirReader, src, dst string) error {
 				return errs.Wrap(err, "MkdirUnlessExists %s failed", destPath)
 			}
 
-			err = CopyFilesDirReader(reader, srcPath, destPath)
+			err = CopyFilesDirReader(reader, srcPath, destPath, placeholderFileName)
 			if err != nil {
 				return errs.Wrap(err, "CopyFiles %s:%s failed", srcPath, destPath)
 			}
@@ -727,7 +727,7 @@ func CopyFilesDirReader(reader DirReader, src, dst string) error {
 				return errs.Wrap(err, "CopySymlink %s:%s failed", srcPath, destPath)
 			}
 		default:
-			if entry.Name() == assets.PlaceholderFileName {
+			if entry.Name() == placeholderFileName {
 				continue
 			}
 

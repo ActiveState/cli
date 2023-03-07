@@ -36,7 +36,7 @@ func (a *App) install() error {
 		return errs.Wrap(err, "Could not create .app directory")
 	}
 
-	if err := fileutils.CopyFilesDirReader(assets.NewAssetsFS(), assetAppDir, tmpAppPath); err != nil {
+	if err := fileutils.CopyFilesDirReader(assets.NewAssetsFS(), assetAppDir, tmpAppPath, assets.PlaceholderFileName); err != nil {
 		return errs.Wrap(err, "Could not copy files from assets")
 	}
 
