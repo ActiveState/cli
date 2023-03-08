@@ -34,7 +34,7 @@ func newUpdateCommand(prime *primer.Values) *captain.Command {
 	return cmd
 }
 
-func newUpdateLockCommand(prime *primer.Values) *captain.Command {
+func newUpdateLockCommand(prime *primer.Values, globals *globalOptions) *captain.Command {
 	runner := update.NewLock(prime)
 	params := update.LockParams{}
 
@@ -49,16 +49,10 @@ func newUpdateLockCommand(prime *primer.Values) *captain.Command {
 				Description: locale.Tl("update_channel", "Switches to the given update channel, eg. 'release'."),
 				Value:       &params.Channel,
 			},
-			{
-				Name: "force",
-				Description: locale.Tl(
-					"flag_update_force",
-					"Automatically confirm that you would like to update the State Tool version that your project is locked to."),
-				Value: &params.Force,
-			},
 		},
 		[]*captain.Argument{},
 		func(cmd *captain.Command, args []string) error {
+			params.NonInteractive = globals.NonInteractive
 			return runner.Run(&params)
 		},
 	)
@@ -66,7 +60,7 @@ func newUpdateLockCommand(prime *primer.Values) *captain.Command {
 	return cmd
 }
 
-func newUpdateUnlockCommand(prime *primer.Values) *captain.Command {
+func newUpdateUnlockCommand(prime *primer.Values, globals *globalOptions) *captain.Command {
 	runner := update.NewUnlock(prime)
 	params := update.UnlockParams{}
 
@@ -75,17 +69,10 @@ func newUpdateUnlockCommand(prime *primer.Values) *captain.Command {
 		locale.Tl("unlock_title", "Unlock the State Tool version"),
 		locale.Tl("unlock_description", "Unlock the State Tool version for the current project."),
 		prime,
-		[]*captain.Flag{
-			{
-				Name: "force",
-				Description: locale.Tl(
-					"flag_update_unlock_force",
-					"Automatically confirm that you would like to remove the lock."),
-				Value: &params.Force,
-			},
-		},
+		[]*captain.Flag{},
 		[]*captain.Argument{},
 		func(cmd *captain.Command, args []string) error {
+			params.NonInteractive = globals.NonInteractive
 			return runner.Run(&params)
 		},
 	)
