@@ -34,6 +34,7 @@ const (
 	TriggerLanguage           Trigger = "language"
 	TriggerPlatform           Trigger = "platform"
 	TriggerPull               Trigger = "pull"
+	TriggerRefresh            Trigger = "refresh"
 	TriggerReset              Trigger = "reset"
 	TriggerRevert             Trigger = "revert"
 	TriggerOffline            Trigger = "offline"

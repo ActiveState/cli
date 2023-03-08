@@ -55,6 +55,7 @@ const (
 	Pull            = "pull"
 	Push            = "push"
 	Python          = "python"
+	Refresh         = "refresh"
 	Revert          = "revert"
 	Run             = "run"
 	Scripts         = "scripts"
