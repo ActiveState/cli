@@ -33,6 +33,5 @@ func newRefreshCommand(prime *primer.Values) *captain.Command {
 		},
 	)
 	cmd.SetGroup(EnvironmentUsageGroup)
-	cmd.SetAliases("sync")
 	return cmd
 }
