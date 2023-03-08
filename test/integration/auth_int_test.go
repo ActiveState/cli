@@ -96,7 +96,7 @@ func (suite *AuthIntegrationTestSuite) authOutput(method string) {
 	user := userJSON{
 		Username:        e2e.PersistentUsername,
 		URLName:         e2e.PersistentUsername,
-		Tier:            "free_legacy",
+		Tier:            "free",
 		PrivateProjects: false,
 	}
 	data, err := json.Marshal(user)
