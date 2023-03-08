@@ -101,7 +101,7 @@ func (suite *PushIntegrationTestSuite) TestOrganizations_VSCode() {
 	}{
 		"Test-Organization",
 		"Test-Organization",
-		"Community Tier (Free)",
+		"Free Tier",
 		false,
 	}
 
@@ -118,7 +118,7 @@ func (suite *AuthIntegrationTestSuite) TestAuth_VSCode() {
 	user := userJSON{
 		Username: e2e.PersistentUsername,
 		URLName:  e2e.PersistentUsername,
-		Tier:     "free_legacy", // was "Community Tier (Free)"
+		Tier:     "free",
 	}
 	data, err := json.Marshal(user)
 	suite.Require().NoError(err)
