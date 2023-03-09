@@ -232,8 +232,10 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 
 	if childCmd != nil && !childCmd.SkipChecks() {
 		// Auto update to latest state tool version
-		if updated, err := autoUpdate(args, cfg, out); err != nil || updated {
-			return err
+		if updated, err := autoUpdate(args, cfg, out); err == nil && updated {
+			return nil // command will be run by updated exe
+		} else if err != nil {
+			multilog.Error("Failed to autoupdate: %v", err)
 		}
 
 		// Check for deprecation
