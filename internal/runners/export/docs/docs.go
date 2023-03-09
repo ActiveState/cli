@@ -2,6 +2,7 @@ package docs
 
 import (
 	_ "embed"
+	"sort"
 
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/errs"
@@ -30,8 +31,7 @@ var tpl string
 func (d *Docs) Run(p *Params, cmd *captain.Command) error {
 	stateCmd := cmd.TopParent()
 	commands := make([][]*captain.Command, 0)
-	commands = append(commands, grabChildren(stateCmd, false))
-	commands = append(commands, grabChildren(stateCmd, true))
+	commands = append(commands, grabChildren(stateCmd))
 
 	var output string
 	for _, cmds := range commands {
@@ -49,24 +49,19 @@ func (d *Docs) Run(p *Params, cmd *captain.Command) error {
 	return nil
 }
 
-func grabChildren(cmd *captain.Command, includeUnstable bool) []*captain.Command {
+func grabChildren(cmd *captain.Command) []*captain.Command {
 	children := []*captain.Command{}
 	for _, child := range cmd.Children() {
-		if skipCommand(child, includeUnstable) {
+		if child.Hidden() {
 			continue
 		}
 		children = append(children, child)
-		children = append(children, grabChildren(child, includeUnstable)...)
+		children = append(children, grabChildren(child)...)
 	}
+
+	sort.Slice(children, func(i, j int) bool {
+		return children[i].SortBefore(children[j])
+	})
 
 	return children
-}
-
-func skipCommand(cmd *captain.Command, includeUnstable bool) bool {
-	check := cmd.Hidden() || cmd.Unstable()
-	if includeUnstable {
-		check = !cmd.Unstable()
-	}
-
-	return check
 }
