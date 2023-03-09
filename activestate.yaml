@@ -49,6 +49,11 @@ scripts:
     language: bash
     if: ne .Shell "cmd"
     value: |
+      oldGOFLAGS="${GOFLAGS}"
+      # strip mod flag in CI only
+      if [ -z ${CI+x} ]; then
+        export GOFLAGS="$(echo ${GOFLAGS} | sed 's#-mod=vendor \?##')"
+      fi
       if ! type "go" &> /dev/null; then
         echo "go is not installed. Please install Go version 1.11 or above."
         exit 1
@@ -70,6 +75,7 @@ scripts:
         echo "gozip was not found on your PATH, installing .."
         go install github.com/ActiveState/gozip/cmd/gozip@e455986
       fi
+      export GOFLAGS="${oldGOFLAGS}"
   - name: install-deps-os
     language: bash
     if: ne .OS.Name "Linux"
