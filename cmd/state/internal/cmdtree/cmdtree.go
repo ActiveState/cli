@@ -123,8 +123,8 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 
 	updateCmd := newUpdateCommand(prime)
 	updateCmd.AddChildren(
-		newUpdateLockCommand(prime),
-		newUpdateUnlockCommand(prime))
+		newUpdateLockCommand(prime, globals),
+		newUpdateUnlockCommand(prime, globals))
 
 	branchCmd := newBranchCommand(prime)
 	branchCmd.AddChildren(

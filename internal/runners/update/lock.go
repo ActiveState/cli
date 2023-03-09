@@ -33,7 +33,7 @@ func (stv *StateToolChannelVersion) Type() string {
 
 type LockParams struct {
 	Channel StateToolChannelVersion
-	Force   bool
+	NonInteractive bool
 }
 
 type Lock struct {
@@ -55,7 +55,7 @@ func NewLock(prime primeable) *Lock {
 func (l *Lock) Run(params *LockParams) error {
 	l.out.Notice(locale.Tl("locking_version", "Locking State Tool version for current project."))
 
-	if l.project.IsLocked() && !params.Force {
+	if l.project.IsLocked() && !params.NonInteractive {
 		if err := confirmLock(l.prompt); err != nil {
 			return locale.WrapError(err, "err_update_lock_confirm", "Could not confirm whether to lock update.")
 		}
