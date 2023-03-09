@@ -10,7 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/prompt"
-	"github.com/ActiveState/cli/internal/rtutils/p"
+	"github.com/ActiveState/cli/internal/rtutils/ptr"
 )
 
 func DownloadTOS() (string, error) {
@@ -57,7 +57,7 @@ func TOS(out output.Outputer, prompt prompt.Prompter) (bool, error) {
 			return false, locale.WrapInputError(err, "err_download_tos")
 		}
 		out.Print(tosText)
-		return prompt.Confirm("", locale.T("tos_acceptance"), p.BoolP(true))
+		return prompt.Confirm("", locale.T("tos_acceptance"), ptr.BoolP(true))
 	}
 
 	return false, nil

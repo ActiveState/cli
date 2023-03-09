@@ -9,7 +9,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/rtutils/p"
+	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/testhelpers/secrethelper"
 	"github.com/andygrunwald/go-jira"
 	"github.com/blang/semver"
@@ -190,8 +190,8 @@ func CreatePR(ghClient *github.Client, prName, branchName, baseBranch, body stri
 	payload := &github.NewPullRequest{
 		Title: &prName,
 		Head:  &branchName,
-		Base:  p.StrP(baseBranch),
-		Body:  p.StrP(body),
+		Base:  ptr.StrP(baseBranch),
+		Body:  ptr.StrP(body),
 	}
 
 	pr, _, err := ghClient.PullRequests.Create(context.Background(), "ActiveState", "cli", payload)
@@ -342,7 +342,7 @@ func CreateBranch(ghClient *github.Client, branchName string, SHA string) error 
 	_, _, err := ghClient.Git.CreateRef(context.Background(), "ActiveState", "cli", &github.Reference{
 		Ref: github.String(fmt.Sprintf("refs/heads/%s", branchName)),
 		Object: &github.GitObject{
-			SHA: p.StrP(SHA),
+			SHA: ptr.StrP(SHA),
 		},
 	})
 	if err != nil {
@@ -361,11 +361,11 @@ func CreateFileUpdateCommit(ghClient *github.Client, branchName string, path str
 
 	resp, _, err := ghClient.Repositories.UpdateFile(context.Background(), "ActiveState", "cli", path, &github.RepositoryContentFileOptions{
 		Author: &github.CommitAuthor{
-			Name:  p.StrP("ActiveState CLI Automation"),
-			Email: p.StrP("support@activestate.com"),
+			Name:  ptr.StrP("ActiveState CLI Automation"),
+			Email: ptr.StrP("support@activestate.com"),
 		},
 		Branch:  &branchName,
-		Message: p.StrP(fmt.Sprintf("Update %s", path)),
+		Message: ptr.StrP(fmt.Sprintf("Update %s", path)),
 		Content: []byte(contents),
 		SHA:     fileContents.SHA,
 	})

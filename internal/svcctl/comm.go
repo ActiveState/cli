@@ -16,7 +16,7 @@ import (
 	"github.com/ActiveState/cli/internal/ipc"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
-	"github.com/ActiveState/cli/internal/rtutils/p"
+	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/runbits/panics"
 	"github.com/ActiveState/cli/internal/runbits/rtusage"
 	"github.com/ActiveState/cli/internal/svcctl/svcmsg"
@@ -113,12 +113,12 @@ func HeartbeatHandler(cfg *config.Instance, resolver Resolver, analyticsReporter
 			}
 
 			dims := &dimensions.Values{
-				Trigger:          p.StrP(target.TriggerExecutor.String()),
-				Headless:         p.StrP(strconv.FormatBool(metaData.Headless)),
-				CommitID:         p.StrP(metaData.CommitUUID),
-				ProjectNameSpace: p.StrP(metaData.Namespace),
-				InstanceID:       p.StrP(instanceid.Make()),
-				Sequence:         p.IntP(-1), // Sequence is irrelevant for attempt / heartbeats
+				Trigger:          ptr.StrP(target.TriggerExecutor.String()),
+				Headless:         ptr.StrP(strconv.FormatBool(metaData.Headless)),
+				CommitID:         ptr.StrP(metaData.CommitUUID),
+				ProjectNameSpace: ptr.StrP(metaData.Namespace),
+				InstanceID:       ptr.StrP(instanceid.Make()),
+				Sequence:         ptr.IntP(-1), // Sequence is irrelevant for attempt / heartbeats
 			}
 			dimsJSON, err := dims.Marshal()
 			if err != nil {

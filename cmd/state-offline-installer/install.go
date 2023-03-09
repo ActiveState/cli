@@ -22,7 +22,7 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
-	"github.com/ActiveState/cli/internal/rtutils/p"
+	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
 	"github.com/ActiveState/cli/internal/testhelpers/outputhelper"
@@ -118,9 +118,9 @@ func (r *runner) Run(params *Params) (rerr error) {
 
 	namespace := project.NewNamespace(r.icfg.OrgName, r.icfg.ProjectName, "")
 	installerDimensions = &dimensions.Values{
-		ProjectNameSpace: p.StrP(namespace.String()),
+		ProjectNameSpace: ptr.StrP(namespace.String()),
 		CommitID:         &r.icfg.CommitID,
-		Trigger:          p.StrP(target.TriggerOfflineInstaller.String()),
+		Trigger:          ptr.StrP(target.TriggerOfflineInstaller.String()),
 	}
 	r.analytics.Event(ac.CatOfflineInstaller, "start", installerDimensions)
 
@@ -454,7 +454,7 @@ func (r *runner) validateTargetPath(path string) error {
 			installNonEmpty, err := r.prompt.Confirm(
 				"Setup",
 				"Installation directory is not empty, install anyway?",
-				p.BoolP(true))
+				ptr.BoolP(true))
 			if err != nil {
 				return errs.Wrap(err, "Unable to get confirmation to install into non-empty directory")
 			}
@@ -479,7 +479,7 @@ func (r *runner) promptLicense(assetsPath string) (bool, error) {
 	}
 	r.out.Print(licenseContents)
 
-	choice, err := r.prompt.Confirm("", "Do you accept the ActiveState Runtime Installer License Agreement?", p.BoolP(false))
+	choice, err := r.prompt.Confirm("", "Do you accept the ActiveState Runtime Installer License Agreement?", ptr.BoolP(false))
 	if err != nil {
 		return false, err
 	}

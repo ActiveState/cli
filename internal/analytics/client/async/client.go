@@ -18,7 +18,7 @@ import (
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/profile"
-	"github.com/ActiveState/cli/internal/rtutils/p"
+	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -110,7 +110,7 @@ func (a *Client) sendEvent(category, action, label string, dims ...*dimensions.V
 	dim := dimensions.NewDefaultDimensions(a.projectNameSpace, a.sessionToken, a.updateTag)
 	dim.OutputType = &a.output
 	dim.UserID = &userID
-	dim.Sequence = p.IntP(a.sequence)
+	dim.Sequence = ptr.IntP(a.sequence)
 	a.sequence++
 	dim.Merge(dims...)
 

@@ -8,7 +8,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/rtutils/p"
+	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/svcctl"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -54,7 +54,7 @@ func (c *Config) Run(params *ConfigParams) error {
 	}
 
 	if !params.Force {
-		ok, err := c.confirm.Confirm(locale.T("confirm"), locale.T("clean_config_confirm"), p.BoolP(true))
+		ok, err := c.confirm.Confirm(locale.T("confirm"), locale.T("clean_config_confirm"), ptr.BoolP(true))
 		if err != nil {
 			return locale.WrapError(err, "err_clean_config_confirm", "Could not confirm clean config choice")
 		}

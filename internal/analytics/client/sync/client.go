@@ -21,7 +21,7 @@ import (
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/rollbar"
-	"github.com/ActiveState/cli/internal/rtutils/p"
+	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/singleton/uniqid"
 	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -94,19 +94,19 @@ func New(cfg *config.Instance, auth *authentication.Auth) *Client {
 	}
 
 	customDimensions := &dimensions.Values{
-		Version:       p.StrP(constants.Version),
-		BranchName:    p.StrP(constants.BranchName),
-		OSName:        p.StrP(osName),
-		OSVersion:     p.StrP(osVersion),
-		InstallSource: p.StrP(installSource),
-		UniqID:        p.StrP(deviceID),
-		SessionToken:  p.StrP(sessionToken),
-		UpdateTag:     p.StrP(tag),
-		UserID:        p.StrP(userID),
-		Flags:         p.StrP(dimensions.CalculateFlags()),
-		InstanceID:    p.StrP(instanceid.ID()),
-		Command:       p.StrP(osutils.ExecutableName()),
-		Sequence:      p.IntP(0),
+		Version:       ptr.StrP(constants.Version),
+		BranchName:    ptr.StrP(constants.BranchName),
+		OSName:        ptr.StrP(osName),
+		OSVersion:     ptr.StrP(osVersion),
+		InstallSource: ptr.StrP(installSource),
+		UniqID:        ptr.StrP(deviceID),
+		SessionToken:  ptr.StrP(sessionToken),
+		UpdateTag:     ptr.StrP(tag),
+		UserID:        ptr.StrP(userID),
+		Flags:         ptr.StrP(dimensions.CalculateFlags()),
+		InstanceID:    ptr.StrP(instanceid.ID()),
+		Command:       ptr.StrP(osutils.ExecutableName()),
+		Sequence:      ptr.IntP(0),
 	}
 
 	a.customDimensions = customDimensions
@@ -184,10 +184,10 @@ func (a *Client) EventWithLabel(category string, action, label string, dims ...*
 	}
 
 	if a.auth != nil && a.auth.UserID() != nil {
-		a.customDimensions.UserID = p.StrP(string(*a.auth.UserID()))
+		a.customDimensions.UserID = ptr.StrP(string(*a.auth.UserID()))
 	}
 
-	a.customDimensions.Sequence = p.IntP(a.sequence)
+	a.customDimensions.Sequence = ptr.IntP(a.sequence)
 	a.sequence++
 
 	actualDims := mergeDimensions(a.customDimensions, dims...)

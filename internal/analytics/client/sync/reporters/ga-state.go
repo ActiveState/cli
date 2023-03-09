@@ -9,7 +9,7 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/rtutils/p"
+	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	ga "github.com/ActiveState/go-ogle-analytics"
 )
 
@@ -75,24 +75,24 @@ func legacyDimensionMap(d *dimensions.Values) map[string]string {
 	return map[string]string{
 		// Commented out idx 1 so it's clear why we start with 2. We used to log the hostname while dogfooding internally.
 		// "1": "hostname (deprecated)"
-		"2": p.PStr(d.Version),
-		"3": p.PStr(d.BranchName),
-		"4": p.PStr(d.UserID),
-		"5": p.PStr(d.OutputType),
-		"6": p.PStr(d.OSName),
-		"7": p.PStr(d.OSVersion),
-		"8": p.PStr(d.InstallSource),
+		"2": ptr.PStr(d.Version),
+		"3": ptr.PStr(d.BranchName),
+		"4": ptr.PStr(d.UserID),
+		"5": ptr.PStr(d.OutputType),
+		"6": ptr.PStr(d.OSName),
+		"7": ptr.PStr(d.OSVersion),
+		"8": ptr.PStr(d.InstallSource),
 		// "9":  "machineID (deprecated in favor of uniqID)"
-		"10": p.PStr(d.ProjectNameSpace),
-		"11": p.PStr(d.SessionToken),
-		"12": p.PStr(d.UniqID),
-		"13": p.PStr(d.UpdateTag),
-		"14": p.PStr(d.ProjectID),
-		"16": p.PStr(d.Trigger),
-		"17": p.PStr(d.InstanceID),
-		"18": p.PStr(d.Headless),
-		"19": p.PStr(d.CommitID),
-		"20": p.PStr(d.Command),
-		"21": strconv.Itoa(p.PInt(d.Sequence)),
+		"10": ptr.PStr(d.ProjectNameSpace),
+		"11": ptr.PStr(d.SessionToken),
+		"12": ptr.PStr(d.UniqID),
+		"13": ptr.PStr(d.UpdateTag),
+		"14": ptr.PStr(d.ProjectID),
+		"16": ptr.PStr(d.Trigger),
+		"17": ptr.PStr(d.InstanceID),
+		"18": ptr.PStr(d.Headless),
+		"19": ptr.PStr(d.CommitID),
+		"20": ptr.PStr(d.Command),
+		"21": strconv.Itoa(ptr.PInt(d.Sequence)),
 	}
 }

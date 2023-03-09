@@ -14,7 +14,7 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/primer"
-	"github.com/ActiveState/cli/internal/rtutils/p"
+	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/pkg/project"
 
 	"github.com/ActiveState/cli/internal/osutils"
@@ -102,7 +102,7 @@ func (r *runner) Run(params *Params) (rerr error) {
 
 	cont, err := r.prompt.Confirm("",
 		fmt.Sprintf("You are about to uninstall the runtime installed at [[ACTIONABLE]%s[/RESET], continue?", targetPath),
-		p.BoolP(false))
+		ptr.BoolP(false))
 	if err != nil {
 		return errs.Wrap(err, "Could not confirm uninstall")
 	}
@@ -112,9 +112,9 @@ func (r *runner) Run(params *Params) (rerr error) {
 
 	namespace := project.NewNamespace(r.icfg.OrgName, r.icfg.ProjectName, "")
 	installerDimensions = &dimensions.Values{
-		ProjectNameSpace: p.StrP(namespace.String()),
+		ProjectNameSpace: ptr.StrP(namespace.String()),
 		CommitID:         &r.icfg.CommitID,
-		Trigger:          p.StrP(target.TriggerOfflineUninstaller.String()),
+		Trigger:          ptr.StrP(target.TriggerOfflineUninstaller.String()),
 	}
 	r.analytics.Event(ac.CatOfflineInstaller, ac.ActOfflineInstallerStart, installerDimensions)
 

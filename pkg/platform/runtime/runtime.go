@@ -19,7 +19,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/osutils"
-	"github.com/ActiveState/cli/internal/rtutils/p"
+	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/envdef"
@@ -74,17 +74,17 @@ func New(target setup.Targeter, an analytics.Dispatcher, svcm *model.SvcModel) (
 	}
 	recordAttempt(an, target)
 	an.Event(anaConsts.CatRuntime, anaConsts.ActRuntimeStart, &dimensions.Values{
-		Trigger:          p.StrP(target.Trigger().String()),
-		Headless:         p.StrP(strconv.FormatBool(target.Headless())),
-		CommitID:         p.StrP(target.CommitUUID().String()),
-		ProjectNameSpace: p.StrP(project.NewNamespace(target.Owner(), target.Name(), target.CommitUUID().String()).String()),
-		InstanceID:       p.StrP(instanceid.ID()),
+		Trigger:          ptr.StrP(target.Trigger().String()),
+		Headless:         ptr.StrP(strconv.FormatBool(target.Headless())),
+		CommitID:         ptr.StrP(target.CommitUUID().String()),
+		ProjectNameSpace: ptr.StrP(project.NewNamespace(target.Owner(), target.Name(), target.CommitUUID().String()).String()),
+		InstanceID:       ptr.StrP(instanceid.ID()),
 	})
 
 	r, err := newRuntime(target, an, svcm)
 	if err == nil {
 		an.Event(anaConsts.CatRuntime, anaConsts.ActRuntimeCache, &dimensions.Values{
-			CommitID: p.StrP(target.CommitUUID().String()),
+			CommitID: ptr.StrP(target.CommitUUID().String()),
 		})
 	}
 	return r, err
@@ -180,7 +180,7 @@ func (r *Runtime) recordCompletion(err error) {
 	}
 
 	r.analytics.EventWithLabel(anaConsts.CatRuntime, action, anaConsts.LblRtFailEnv, &dimensions.Values{
-		CommitID: p.StrP(r.target.CommitUUID().String()),
+		CommitID: ptr.StrP(r.target.CommitUUID().String()),
 	})
 }
 
@@ -212,11 +212,11 @@ func recordAttempt(an analytics.Dispatcher, target setup.Targeter) {
 
 func usageDims(target setup.Targeter) *dimensions.Values {
 	return &dimensions.Values{
-		Trigger:          p.StrP(target.Trigger().String()),
-		CommitID:         p.StrP(target.CommitUUID().String()),
-		Headless:         p.StrP(strconv.FormatBool(target.Headless())),
-		ProjectNameSpace: p.StrP(project.NewNamespace(target.Owner(), target.Name(), target.CommitUUID().String()).String()),
-		InstanceID:       p.StrP(instanceid.ID()),
+		Trigger:          ptr.StrP(target.Trigger().String()),
+		CommitID:         ptr.StrP(target.CommitUUID().String()),
+		Headless:         ptr.StrP(strconv.FormatBool(target.Headless())),
+		ProjectNameSpace: ptr.StrP(project.NewNamespace(target.Owner(), target.Name(), target.CommitUUID().String()).String()),
+		InstanceID:       ptr.StrP(instanceid.ID()),
 	}
 }
 

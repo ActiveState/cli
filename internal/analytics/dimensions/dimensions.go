@@ -14,7 +14,7 @@ import (
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/rollbar"
-	"github.com/ActiveState/cli/internal/rtutils/p"
+	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/singleton/uniqid"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/sysinfo"
@@ -69,50 +69,50 @@ func NewDefaultDimensions(pjNamespace, sessionToken, updateTag string) *Values {
 	}
 
 	return &Values{
-		p.StrP(constants.Version),
-		p.StrP(constants.BranchName),
-		p.StrP(userIDString),
-		p.StrP(osName),
-		p.StrP(osVersion),
-		p.StrP(installSource),
-		p.StrP(deviceID),
-		p.StrP(sessionToken),
-		p.StrP(updateTag),
-		p.StrP(pjNamespace),
-		p.StrP(string(output.PlainFormatName)),
-		p.StrP(""),
-		p.StrP(CalculateFlags()),
-		p.StrP(""),
-		p.StrP(""),
-		p.StrP(instanceid.ID()),
-		p.StrP(""),
-		p.StrP(osutils.ExecutableName()),
-		p.IntP(0),
+		ptr.StrP(constants.Version),
+		ptr.StrP(constants.BranchName),
+		ptr.StrP(userIDString),
+		ptr.StrP(osName),
+		ptr.StrP(osVersion),
+		ptr.StrP(installSource),
+		ptr.StrP(deviceID),
+		ptr.StrP(sessionToken),
+		ptr.StrP(updateTag),
+		ptr.StrP(pjNamespace),
+		ptr.StrP(string(output.PlainFormatName)),
+		ptr.StrP(""),
+		ptr.StrP(CalculateFlags()),
+		ptr.StrP(""),
+		ptr.StrP(""),
+		ptr.StrP(instanceid.ID()),
+		ptr.StrP(""),
+		ptr.StrP(osutils.ExecutableName()),
+		ptr.IntP(0),
 		nil,
 	}
 }
 
 func (v *Values) Clone() *Values {
 	return &Values{
-		Version:          p.PstrP(v.Version),
-		BranchName:       p.PstrP(v.BranchName),
-		UserID:           p.PstrP(v.UserID),
-		OSName:           p.PstrP(v.OSName),
-		OSVersion:        p.PstrP(v.OSVersion),
-		InstallSource:    p.PstrP(v.InstallSource),
-		UniqID:           p.PstrP(v.UniqID),
-		SessionToken:     p.PstrP(v.SessionToken),
-		UpdateTag:        p.PstrP(v.UpdateTag),
-		ProjectNameSpace: p.PstrP(v.ProjectNameSpace),
-		OutputType:       p.PstrP(v.OutputType),
-		ProjectID:        p.PstrP(v.ProjectID),
-		Flags:            p.PstrP(v.Flags),
-		Trigger:          p.PstrP(v.Trigger),
-		Headless:         p.PstrP(v.Headless),
-		InstanceID:       p.PstrP(v.InstanceID),
-		CommitID:         p.PstrP(v.CommitID),
-		Command:          p.PstrP(v.Command),
-		Sequence:         p.PintP(v.Sequence),
+		Version:          ptr.PstrP(v.Version),
+		BranchName:       ptr.PstrP(v.BranchName),
+		UserID:           ptr.PstrP(v.UserID),
+		OSName:           ptr.PstrP(v.OSName),
+		OSVersion:        ptr.PstrP(v.OSVersion),
+		InstallSource:    ptr.PstrP(v.InstallSource),
+		UniqID:           ptr.PstrP(v.UniqID),
+		SessionToken:     ptr.PstrP(v.SessionToken),
+		UpdateTag:        ptr.PstrP(v.UpdateTag),
+		ProjectNameSpace: ptr.PstrP(v.ProjectNameSpace),
+		OutputType:       ptr.PstrP(v.OutputType),
+		ProjectID:        ptr.PstrP(v.ProjectID),
+		Flags:            ptr.PstrP(v.Flags),
+		Trigger:          ptr.PstrP(v.Trigger),
+		Headless:         ptr.PstrP(v.Headless),
+		InstanceID:       ptr.PstrP(v.InstanceID),
+		CommitID:         ptr.PstrP(v.CommitID),
+		Command:          ptr.PstrP(v.Command),
+		Sequence:         ptr.PintP(v.Sequence),
 		preProcessor:     v.preProcessor,
 	}
 }
@@ -195,7 +195,7 @@ func (v *Values) PreProcess() error {
 		}
 	}
 
-	if p.PStr(v.UniqID) == "" {
+	if ptr.PStr(v.UniqID) == "" {
 		return errs.New("device id is unset when creating analytics event")
 	}
 

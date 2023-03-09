@@ -1,4 +1,4 @@
-package p
+package ptr
 
 import "reflect"
 
