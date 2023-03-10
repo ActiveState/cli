@@ -118,9 +118,9 @@ func (r *runner) Run(params *Params) (rerr error) {
 
 	namespace := project.NewNamespace(r.icfg.OrgName, r.icfg.ProjectName, "")
 	installerDimensions = &dimensions.Values{
-		ProjectNameSpace: ptr.StrP(namespace.String()),
+		ProjectNameSpace: ptr.To(namespace.String()),
 		CommitID:         &r.icfg.CommitID,
-		Trigger:          ptr.StrP(target.TriggerOfflineInstaller.String()),
+		Trigger:          ptr.To(target.TriggerOfflineInstaller.String()),
 	}
 	r.analytics.Event(ac.CatOfflineInstaller, "start", installerDimensions)
 
@@ -454,7 +454,7 @@ func (r *runner) validateTargetPath(path string) error {
 			installNonEmpty, err := r.prompt.Confirm(
 				"Setup",
 				"Installation directory is not empty, install anyway?",
-				ptr.BoolP(true))
+				ptr.To(true))
 			if err != nil {
 				return errs.Wrap(err, "Unable to get confirmation to install into non-empty directory")
 			}

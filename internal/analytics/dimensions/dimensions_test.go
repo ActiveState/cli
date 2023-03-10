@@ -18,21 +18,21 @@ func TestMap_Merge(t *testing.T) {
 	}{
 		{
 			"Simple",
-			&Values{Version: ptr.StrP("inputVersion")},
-			&Values{BranchName: ptr.StrP("mergeBranchName")},
-			&Values{Version: ptr.StrP("inputVersion"), BranchName: ptr.StrP("mergeBranchName")},
+			&Values{Version: ptr.To("inputVersion")},
+			&Values{BranchName: ptr.To("mergeBranchName")},
+			&Values{Version: ptr.To("inputVersion"), BranchName: ptr.To("mergeBranchName")},
 		},
 		{
 			"Override",
-			&Values{Version: ptr.StrP("inputVersion")},
-			&Values{Version: ptr.StrP("mergeVersion")},
-			&Values{Version: ptr.StrP("mergeVersion")},
+			&Values{Version: ptr.To("inputVersion")},
+			&Values{Version: ptr.To("mergeVersion")},
+			&Values{Version: ptr.To("mergeVersion")},
 		},
 		{
 			"Nils don't count",
-			&Values{Version: ptr.StrP("inputVersion")},
+			&Values{Version: ptr.To("inputVersion")},
 			&Values{Version: nil},
-			&Values{Version: ptr.StrP("inputVersion")},
+			&Values{Version: ptr.To("inputVersion")},
 		},
 	}
 	for _, tt := range tests {

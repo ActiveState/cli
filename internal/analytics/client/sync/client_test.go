@@ -22,29 +22,29 @@ func Test_mergeDimensions(t *testing.T) {
 			"Sequence favours source",
 			args{
 				&dimensions.Values{
-					Sequence: ptr.IntP(10),
+					Sequence: ptr.To(10),
 				},
 				[]*dimensions.Values{
 					{
-						Sequence: ptr.IntP(100),
+						Sequence: ptr.To(100),
 					},
 				},
 			},
-			&dimensions.Values{Sequence: ptr.IntP(100)},
+			&dimensions.Values{Sequence: ptr.To(100)},
 		},
 		{
 			"Sequence favours source and accepts 0 value",
 			args{
 				&dimensions.Values{
-					Sequence: ptr.IntP(10),
+					Sequence: ptr.To(10),
 				},
 				[]*dimensions.Values{
 					{
-						Sequence: ptr.IntP(0),
+						Sequence: ptr.To(0),
 					},
 				},
 			},
-			&dimensions.Values{Sequence: ptr.IntP(0)},
+			&dimensions.Values{Sequence: ptr.To(0)},
 		},
 	}
 	for _, tt := range tests {

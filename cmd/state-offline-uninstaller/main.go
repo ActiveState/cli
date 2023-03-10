@@ -98,7 +98,7 @@ func main() {
 		}
 	}
 	out.Print("Press enter to exit.")
-	fmt.Scanln(ptr.StrP("")) // Wait for input from user
+	fmt.Scanln(ptr.To("")) // Wait for input from user
 }
 
 func run(prime *primer.Values) error {

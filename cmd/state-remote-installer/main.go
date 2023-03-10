@@ -155,7 +155,7 @@ func main() {
 func execute(out output.Outputer, prompt prompt.Prompter, cfg *config.Instance, an analytics.Dispatcher, args []string, params *Params) error {
 	msg := locale.Tr("tos_disclaimer", constants.TermsOfServiceURLLatest)
 	msg += locale.Tr("tos_disclaimer_prompt", constants.TermsOfServiceURLLatest)
-	cont, err := prompt.Confirm(locale.Tr("install_remote_title"), msg, ptr.BoolP(true))
+	cont, err := prompt.Confirm(locale.Tr("install_remote_title"), msg, ptr.To(true))
 	if err != nil {
 		return errs.Wrap(err, "Could not prompt for confirmation")
 	}
@@ -208,7 +208,7 @@ func execute(out output.Outputer, prompt prompt.Prompter, cfg *config.Instance, 
 	}
 
 	out.Print(locale.Tl("remote_install_exit_prompt", "Press ENTER to exit."))
-	fmt.Scanln(ptr.StrP("")) // Wait for input from user
+	fmt.Scanln(ptr.To("")) // Wait for input from user
 
 	return nil
 }

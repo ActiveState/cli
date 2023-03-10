@@ -102,7 +102,7 @@ func (r *runner) Run(params *Params) (rerr error) {
 
 	cont, err := r.prompt.Confirm("",
 		fmt.Sprintf("You are about to uninstall the runtime installed at [[ACTIONABLE]%s[/RESET], continue?", targetPath),
-		ptr.BoolP(false))
+		ptr.To(false))
 	if err != nil {
 		return errs.Wrap(err, "Could not confirm uninstall")
 	}
@@ -112,9 +112,9 @@ func (r *runner) Run(params *Params) (rerr error) {
 
 	namespace := project.NewNamespace(r.icfg.OrgName, r.icfg.ProjectName, "")
 	installerDimensions = &dimensions.Values{
-		ProjectNameSpace: ptr.StrP(namespace.String()),
+		ProjectNameSpace: ptr.To(namespace.String()),
 		CommitID:         &r.icfg.CommitID,
-		Trigger:          ptr.StrP(target.TriggerOfflineUninstaller.String()),
+		Trigger:          ptr.To(target.TriggerOfflineUninstaller.String()),
 	}
 	r.analytics.Event(ac.CatOfflineInstaller, ac.ActOfflineInstallerStart, installerDimensions)
 
