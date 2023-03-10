@@ -20,7 +20,8 @@ func Renew[T any](v *T) *T {
 	if v == nil {
 		return nil
 	}
-	return &(*v)
+	t := *v
+	return &t
 }
 
 func DerefInt[D Integer](v *D) D {
