@@ -94,19 +94,19 @@ func New(cfg *config.Instance, auth *authentication.Auth) *Client {
 	}
 
 	customDimensions := &dimensions.Values{
-		Version:       ptr.StrP(constants.Version),
-		BranchName:    ptr.StrP(constants.BranchName),
-		OSName:        ptr.StrP(osName),
-		OSVersion:     ptr.StrP(osVersion),
-		InstallSource: ptr.StrP(installSource),
-		UniqID:        ptr.StrP(deviceID),
-		SessionToken:  ptr.StrP(sessionToken),
-		UpdateTag:     ptr.StrP(tag),
-		UserID:        ptr.StrP(userID),
-		Flags:         ptr.StrP(dimensions.CalculateFlags()),
-		InstanceID:    ptr.StrP(instanceid.ID()),
-		Command:       ptr.StrP(osutils.ExecutableName()),
-		Sequence:      ptr.IntP(0),
+		Version:       ptr.To(constants.Version),
+		BranchName:    ptr.To(constants.BranchName),
+		OSName:        ptr.To(osName),
+		OSVersion:     ptr.To(osVersion),
+		InstallSource: ptr.To(installSource),
+		UniqID:        ptr.To(deviceID),
+		SessionToken:  ptr.To(sessionToken),
+		UpdateTag:     ptr.To(tag),
+		UserID:        ptr.To(userID),
+		Flags:         ptr.To(dimensions.CalculateFlags()),
+		InstanceID:    ptr.To(instanceid.ID()),
+		Command:       ptr.To(osutils.ExecutableName()),
+		Sequence:      ptr.To(0),
 	}
 
 	a.customDimensions = customDimensions
@@ -184,10 +184,10 @@ func (a *Client) EventWithLabel(category string, action, label string, dims ...*
 	}
 
 	if a.auth != nil && a.auth.UserID() != nil {
-		a.customDimensions.UserID = ptr.StrP(string(*a.auth.UserID()))
+		a.customDimensions.UserID = ptr.To(string(*a.auth.UserID()))
 	}
 
-	a.customDimensions.Sequence = ptr.IntP(a.sequence)
+	a.customDimensions.Sequence = ptr.To(a.sequence)
 	a.sequence++
 
 	actualDims := mergeDimensions(a.customDimensions, dims...)

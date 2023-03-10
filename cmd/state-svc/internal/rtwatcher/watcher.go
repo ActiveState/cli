@@ -118,7 +118,7 @@ func (w *Watcher) Close() error {
 
 func (w *Watcher) Watch(pid int, exec string, dims *dimensions.Values) {
 	logging.Debug("Watching %s (%d)", exec, pid)
-	dims.Sequence = ptr.IntP(-1) // sequence is meaningless for heartbeat events
+	dims.Sequence = ptr.To(-1) // sequence is meaningless for heartbeat events
 	e := entry{pid, exec, dims}
 	w.watching = append(w.watching, e)
 	go w.RecordUsage(e) // initial event
