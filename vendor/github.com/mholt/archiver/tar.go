@@ -237,10 +237,7 @@ func (t *Tar) untarFile(f File, to string) error {
 	case tar.TypeSymlink:
 		return writeNewSymbolicLink(to, hdr.Linkname)
 	case tar.TypeLink:
-		// NOTE: this is a hack that fixes an issue for choosing the correct path to the old file
-		// that is being linked to. This fix will only address calls to Unarchive, not Extract and
-		// is generally only known to be useful for ActiveState, at the moment.
-		return writeNewHardLink(to, path.Join(path.Dir(to), path.Base(hdr.Linkname)))
+		return writeNewHardLink(to, filepath.Join(to, hdr.Linkname))
 	case tar.TypeXGlobalHeader:
 		return nil // ignore the pax global header from git-generated tarballs
 	default:
