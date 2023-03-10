@@ -38,6 +38,7 @@ jobs:
     env:
       ACTIVESTATE_CLI_DISABLE_RUNTIME: true
       GOFLAGS: -mod=vendor
+      GOTMPDIR: ~/.go/tmp
       SHELL: bash
       GITHUB_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     concurrency:
@@ -47,7 +48,14 @@ jobs:
     # === OS Specific Steps ===
     steps:
 
-      - # Checkout Code
+      - # === Setup Cache Dirs ===
+        name: Setup cache dirs
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.go/tmp
+
+      - # === Checkout Code ===
         name: Checkout code
         uses: actions/checkout@v2
 
