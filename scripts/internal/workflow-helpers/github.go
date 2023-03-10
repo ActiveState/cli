@@ -9,7 +9,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/rtutils/ptr"
+	"github.com/ActiveState/cli/internal/ptr"
 	"github.com/ActiveState/cli/internal/testhelpers/secrethelper"
 	"github.com/andygrunwald/go-jira"
 	"github.com/blang/semver"

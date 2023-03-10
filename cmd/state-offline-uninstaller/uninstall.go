@@ -14,7 +14,7 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/primer"
-	"github.com/ActiveState/cli/internal/rtutils/ptr"
+	"github.com/ActiveState/cli/internal/ptr"
 	"github.com/ActiveState/cli/pkg/project"
 
 	"github.com/ActiveState/cli/internal/osutils"

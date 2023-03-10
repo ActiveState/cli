@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/ActiveState/cli/internal/analytics/dimensions"
-	"github.com/ActiveState/cli/internal/rtutils/ptr"
+	"github.com/ActiveState/cli/internal/ptr"
 )
 
 func Test_mergeDimensions(t *testing.T) {
