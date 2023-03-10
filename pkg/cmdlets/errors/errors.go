@@ -150,7 +150,7 @@ func ReportError(err error, cmd *captain.Command, an analytics.Dispatcher) {
 
 		logging.Debug("Reporting input error:\n%s\nCreated at:\n%s", errs.Join(err, "\n").Error(), stack)
 		an.Event(anaConst.CatDebug, anaConst.ActInputError, &dimensions.Values{
-			Trigger: ptr.StrP(strings.Join(trigger, " ")),
+			Trigger: ptr.To(strings.Join(trigger, " ")),
 		})
 	}
 

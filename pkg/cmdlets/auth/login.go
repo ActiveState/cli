@@ -251,7 +251,7 @@ func AuthenticateWithBrowser(out output.Outputer, auth *authentication.Auth, pro
 		var cont bool
 		var err error
 		for !cont {
-			cont, err = prompt.Confirm(locale.Tl("continue", "Continue?"), locale.T("auth_press_enter"), ptr.BoolP(false))
+			cont, err = prompt.Confirm(locale.Tl("continue", "Continue?"), locale.T("auth_press_enter"), ptr.To(false))
 			if err != nil {
 				return errs.Wrap(err, "Prompt failed")
 			}

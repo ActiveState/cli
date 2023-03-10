@@ -379,7 +379,7 @@ func (s *Setup) fetchAndInstallArtifactsFromRecipe(installFunc artifactInstaller
 
 	// Analytics data to send.
 	dimensions := &dimensions.Values{
-		CommitID: ptr.StrP(s.target.CommitUUID().String()),
+		CommitID: ptr.To(s.target.CommitUUID().String()),
 	}
 
 	// send analytics build event, if a new runtime has to be built in the cloud

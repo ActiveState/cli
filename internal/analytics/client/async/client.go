@@ -110,7 +110,7 @@ func (a *Client) sendEvent(category, action, label string, dims ...*dimensions.V
 	dim := dimensions.NewDefaultDimensions(a.projectNameSpace, a.sessionToken, a.updateTag)
 	dim.OutputType = &a.output
 	dim.UserID = &userID
-	dim.Sequence = ptr.IntP(a.sequence)
+	dim.Sequence = ptr.To(a.sequence)
 	a.sequence++
 	dim.Merge(dims...)
 

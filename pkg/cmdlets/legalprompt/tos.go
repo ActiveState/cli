@@ -57,7 +57,7 @@ func TOS(out output.Outputer, prompt prompt.Prompter) (bool, error) {
 			return false, locale.WrapInputError(err, "err_download_tos")
 		}
 		out.Print(tosText)
-		return prompt.Confirm("", locale.T("tos_acceptance"), ptr.BoolP(true))
+		return prompt.Confirm("", locale.T("tos_acceptance"), ptr.To(true))
 	}
 
 	return false, nil

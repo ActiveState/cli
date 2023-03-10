@@ -69,50 +69,50 @@ func NewDefaultDimensions(pjNamespace, sessionToken, updateTag string) *Values {
 	}
 
 	return &Values{
-		ptr.StrP(constants.Version),
-		ptr.StrP(constants.BranchName),
-		ptr.StrP(userIDString),
-		ptr.StrP(osName),
-		ptr.StrP(osVersion),
-		ptr.StrP(installSource),
-		ptr.StrP(deviceID),
-		ptr.StrP(sessionToken),
-		ptr.StrP(updateTag),
-		ptr.StrP(pjNamespace),
-		ptr.StrP(string(output.PlainFormatName)),
-		ptr.StrP(""),
-		ptr.StrP(CalculateFlags()),
-		ptr.StrP(""),
-		ptr.StrP(""),
-		ptr.StrP(instanceid.ID()),
-		ptr.StrP(""),
-		ptr.StrP(osutils.ExecutableName()),
-		ptr.IntP(0),
+		ptr.To(constants.Version),
+		ptr.To(constants.BranchName),
+		ptr.To(userIDString),
+		ptr.To(osName),
+		ptr.To(osVersion),
+		ptr.To(installSource),
+		ptr.To(deviceID),
+		ptr.To(sessionToken),
+		ptr.To(updateTag),
+		ptr.To(pjNamespace),
+		ptr.To(string(output.PlainFormatName)),
+		ptr.To(""),
+		ptr.To(CalculateFlags()),
+		ptr.To(""),
+		ptr.To(""),
+		ptr.To(instanceid.ID()),
+		ptr.To(""),
+		ptr.To(osutils.ExecutableName()),
+		ptr.To(0),
 		nil,
 	}
 }
 
 func (v *Values) Clone() *Values {
 	return &Values{
-		Version:          ptr.PstrP(v.Version),
-		BranchName:       ptr.PstrP(v.BranchName),
-		UserID:           ptr.PstrP(v.UserID),
-		OSName:           ptr.PstrP(v.OSName),
-		OSVersion:        ptr.PstrP(v.OSVersion),
-		InstallSource:    ptr.PstrP(v.InstallSource),
-		UniqID:           ptr.PstrP(v.UniqID),
-		SessionToken:     ptr.PstrP(v.SessionToken),
-		UpdateTag:        ptr.PstrP(v.UpdateTag),
-		ProjectNameSpace: ptr.PstrP(v.ProjectNameSpace),
-		OutputType:       ptr.PstrP(v.OutputType),
-		ProjectID:        ptr.PstrP(v.ProjectID),
-		Flags:            ptr.PstrP(v.Flags),
-		Trigger:          ptr.PstrP(v.Trigger),
-		Headless:         ptr.PstrP(v.Headless),
-		InstanceID:       ptr.PstrP(v.InstanceID),
-		CommitID:         ptr.PstrP(v.CommitID),
-		Command:          ptr.PstrP(v.Command),
-		Sequence:         ptr.PintP(v.Sequence),
+		Version:          ptr.Renew(v.Version),
+		BranchName:       ptr.Renew(v.BranchName),
+		UserID:           ptr.Renew(v.UserID),
+		OSName:           ptr.Renew(v.OSName),
+		OSVersion:        ptr.Renew(v.OSVersion),
+		InstallSource:    ptr.Renew(v.InstallSource),
+		UniqID:           ptr.Renew(v.UniqID),
+		SessionToken:     ptr.Renew(v.SessionToken),
+		UpdateTag:        ptr.Renew(v.UpdateTag),
+		ProjectNameSpace: ptr.Renew(v.ProjectNameSpace),
+		OutputType:       ptr.Renew(v.OutputType),
+		ProjectID:        ptr.Renew(v.ProjectID),
+		Flags:            ptr.Renew(v.Flags),
+		Trigger:          ptr.Renew(v.Trigger),
+		Headless:         ptr.Renew(v.Headless),
+		InstanceID:       ptr.Renew(v.InstanceID),
+		CommitID:         ptr.Renew(v.CommitID),
+		Command:          ptr.Renew(v.Command),
+		Sequence:         ptr.Renew(v.Sequence),
 		preProcessor:     v.preProcessor,
 	}
 }
@@ -195,7 +195,7 @@ func (v *Values) PreProcess() error {
 		}
 	}
 
-	if ptr.PStr(v.UniqID) == "" {
+	if ptr.Deref(v.UniqID) == "" {
 		return errs.New("device id is unset when creating analytics event")
 	}
 

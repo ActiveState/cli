@@ -74,17 +74,17 @@ func New(target setup.Targeter, an analytics.Dispatcher, svcm *model.SvcModel) (
 	}
 	recordAttempt(an, target)
 	an.Event(anaConsts.CatRuntime, anaConsts.ActRuntimeStart, &dimensions.Values{
-		Trigger:          ptr.StrP(target.Trigger().String()),
-		Headless:         ptr.StrP(strconv.FormatBool(target.Headless())),
-		CommitID:         ptr.StrP(target.CommitUUID().String()),
-		ProjectNameSpace: ptr.StrP(project.NewNamespace(target.Owner(), target.Name(), target.CommitUUID().String()).String()),
-		InstanceID:       ptr.StrP(instanceid.ID()),
+		Trigger:          ptr.To(target.Trigger().String()),
+		Headless:         ptr.To(strconv.FormatBool(target.Headless())),
+		CommitID:         ptr.To(target.CommitUUID().String()),
+		ProjectNameSpace: ptr.To(project.NewNamespace(target.Owner(), target.Name(), target.CommitUUID().String()).String()),
+		InstanceID:       ptr.To(instanceid.ID()),
 	})
 
 	r, err := newRuntime(target, an, svcm)
 	if err == nil {
 		an.Event(anaConsts.CatRuntime, anaConsts.ActRuntimeCache, &dimensions.Values{
-			CommitID: ptr.StrP(target.CommitUUID().String()),
+			CommitID: ptr.To(target.CommitUUID().String()),
 		})
 	}
 	return r, err
@@ -180,7 +180,7 @@ func (r *Runtime) recordCompletion(err error) {
 	}
 
 	r.analytics.EventWithLabel(anaConsts.CatRuntime, action, anaConsts.LblRtFailEnv, &dimensions.Values{
-		CommitID: ptr.StrP(r.target.CommitUUID().String()),
+		CommitID: ptr.To(r.target.CommitUUID().String()),
 	})
 }
 
@@ -212,11 +212,11 @@ func recordAttempt(an analytics.Dispatcher, target setup.Targeter) {
 
 func usageDims(target setup.Targeter) *dimensions.Values {
 	return &dimensions.Values{
-		Trigger:          ptr.StrP(target.Trigger().String()),
-		CommitID:         ptr.StrP(target.CommitUUID().String()),
-		Headless:         ptr.StrP(strconv.FormatBool(target.Headless())),
-		ProjectNameSpace: ptr.StrP(project.NewNamespace(target.Owner(), target.Name(), target.CommitUUID().String()).String()),
-		InstanceID:       ptr.StrP(instanceid.ID()),
+		Trigger:          ptr.To(target.Trigger().String()),
+		CommitID:         ptr.To(target.CommitUUID().String()),
+		Headless:         ptr.To(strconv.FormatBool(target.Headless())),
+		ProjectNameSpace: ptr.To(project.NewNamespace(target.Owner(), target.Name(), target.CommitUUID().String()).String()),
+		InstanceID:       ptr.To(instanceid.ID()),
 	}
 }
 

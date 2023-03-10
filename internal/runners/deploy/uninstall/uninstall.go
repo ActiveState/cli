@@ -100,10 +100,10 @@ func (u *Uninstall) Run(params *Params) error {
 	}
 
 	u.analytics.Event(constants.CatRuntimeUsage, constants.ActRuntimeDelete, &dimensions.Values{
-		Trigger:          ptr.StrP(target.TriggerDeploy.String()),
-		CommitID:         ptr.StrP(commitID),
-		ProjectNameSpace: ptr.StrP(namespace),
-		InstanceID:       ptr.StrP(instanceid.ID()),
+		Trigger:          ptr.To(target.TriggerDeploy.String()),
+		CommitID:         ptr.To(commitID),
+		ProjectNameSpace: ptr.To(namespace),
+		InstanceID:       ptr.To(instanceid.ID()),
 	})
 
 	u.output.Notice(locale.T("deploy_uninstall_success"))

@@ -113,12 +113,12 @@ func HeartbeatHandler(cfg *config.Instance, resolver Resolver, analyticsReporter
 			}
 
 			dims := &dimensions.Values{
-				Trigger:          ptr.StrP(target.TriggerExecutor.String()),
-				Headless:         ptr.StrP(strconv.FormatBool(metaData.Headless)),
-				CommitID:         ptr.StrP(metaData.CommitUUID),
-				ProjectNameSpace: ptr.StrP(metaData.Namespace),
-				InstanceID:       ptr.StrP(instanceid.Make()),
-				Sequence:         ptr.IntP(-1), // Sequence is irrelevant for attempt / heartbeats
+				Trigger:          ptr.To(target.TriggerExecutor.String()),
+				Headless:         ptr.To(strconv.FormatBool(metaData.Headless)),
+				CommitID:         ptr.To(metaData.CommitUUID),
+				ProjectNameSpace: ptr.To(metaData.Namespace),
+				InstanceID:       ptr.To(instanceid.Make()),
+				Sequence:         ptr.To(-1), // Sequence is irrelevant for attempt / heartbeats
 			}
 			dimsJSON, err := dims.Marshal()
 			if err != nil {

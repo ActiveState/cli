@@ -211,8 +211,8 @@ func resolveSolverError(err error) error {
 	switch serr := err.(type) {
 	case *iop.ResolveRecipesDefault:
 		return &SolverError{
-			wrapped:     locale.WrapError(errs.Wrap(err, "ResolveRecipesDefault"), "", ptr.PStr(serr.Payload.Message)),
-			isTransient: ptr.PBool(serr.GetPayload().IsTransient),
+			wrapped:     locale.WrapError(errs.Wrap(err, "ResolveRecipesDefault"), "", ptr.Deref(serr.Payload.Message)),
+			isTransient: ptr.Deref(serr.GetPayload().IsTransient),
 		}
 	case *iop.ResolveRecipesBadRequest:
 		var validationErrors []string
@@ -224,9 +224,9 @@ func resolveSolverError(err error) error {
 			validationErrors = append(validationErrors, lines...)
 		}
 		return &SolverError{
-			wrapped:          locale.WrapInputError(errs.Wrap(err, "ResolveRecipesBadRequest"), "", ptr.PStr(serr.Payload.SolverError.Message)),
+			wrapped:          locale.WrapInputError(errs.Wrap(err, "ResolveRecipesBadRequest"), "", ptr.Deref(serr.Payload.SolverError.Message)),
 			validationErrors: validationErrors,
-			isTransient:      ptr.PBool(serr.GetPayload().IsTransient),
+			isTransient:      ptr.Deref(serr.GetPayload().IsTransient),
 		}
 	default:
 		return locale.WrapError(errs.Wrap(err, "unknown error"), "err_order_unknown")
