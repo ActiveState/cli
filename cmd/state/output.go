@@ -55,7 +55,7 @@ func initOutput(flags outputFlags, formatName string, shellName string) (output.
 		OutWriter:   os.Stdout,
 		ErrWriter:   os.Stderr,
 		Colored:     !flags.DisableColor(),
-		Interactive: term.IsTerminal(int(os.Stdin.Fd())),
+		Interactive: !flags.NonInteractive && term.IsTerminal(int(os.Stdin.Fd())),
 		ShellName:   shellName,
 	})
 	if err != nil {

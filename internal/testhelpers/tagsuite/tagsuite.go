@@ -50,6 +50,7 @@ const (
 	Perl            = "perl"
 	Platforms       = "platforms"
 	Prepare         = "prepare"
+	Progress        = "progress"
 	Projects        = "projects"
 	Projectfile     = "projectfile"
 	Pull            = "pull"
