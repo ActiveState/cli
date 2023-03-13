@@ -302,14 +302,14 @@ const PlatformURL = "platform.activestate.com"
 const CheatSheetURL = "https://platform.activestate.com/state-tool-cheat-sheet"
 
 // StateToolRollbarToken is the token used by the State Tool to talk to rollbar
-const StateToolRollbarToken = "0f77e52e25324b5a870f1f2ea769024e"
+const StateToolRollbarToken = "8ddf0c31267b49ca9680083cf850f1e3"
 
 // StateServiceRollbarToken is the token used by the State Service to talk to rollbar
-const StateServiceRollbarToken = "8d72ba6541394d2c99c006324b3a46a7"
+const StateServiceRollbarToken = "c03b12fa567e4753bc9c1d97111b8767"
 
 // StateInstallerRollbarToken is the token used by the State Installer to talk to rollbar
 // Todo It is currently the same as the State Tool's
-const StateInstallerRollbarToken = "609d723b3d46474d88e31bd045d38c56"
+const StateInstallerRollbarToken = "0d6d1440fafe44058f3a0a9fc8d44e29"
 
 // OfflineInstallerRollbarToken is the token used by the Offline Installer to talk to rollbar
 const OfflineInstallerRollbarToken = "0ab5e19218bd494680bf8f5d08cf37ad"
