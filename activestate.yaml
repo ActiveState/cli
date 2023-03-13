@@ -86,12 +86,7 @@ scripts:
     description: Generates assets required by the project that aren't just specific to the build
     value: |
       set -e
-      echo "Sourcing SET_ENV"
       $constants.SET_ENV
-      echo "Sourcing complete"
-      echo "Calling 'go list' for debugging"
-      go list github.com/ActiveState/cli/cmd/state
-      echo "Calling 'go run' on constants-generator"
       go run scripts/constants-generator/main.go -- internal/constants/generated.go
       mkdir -p build/msi
   - name: build
