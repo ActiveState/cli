@@ -17,6 +17,10 @@ jobs:
   verifypr:
     name: Target & Verify PR
     runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        go-version:
+          - 1.20.x
     env:
       ACTIVESTATE_CLI_DISABLE_RUNTIME: true
       SHELL: bash
