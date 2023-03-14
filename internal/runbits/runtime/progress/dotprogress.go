@@ -17,6 +17,10 @@ type DotProgressDigester struct {
 	success bool
 }
 
+// NewDotProgressIndicator prints dots at an interval while a runtime is being setup (during solve,
+// download, and install steps).
+// The primary goal is to indicate to various CI systems (or during non-interactive mode) that
+// progress is being made.
 func NewDotProgressIndicator(out output.Outputer) *DotProgressDigester {
 	return &DotProgressDigester{out: out}
 }
