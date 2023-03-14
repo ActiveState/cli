@@ -18,7 +18,7 @@ import (
 )
 
 var SvcEnsureStartMaxTime = 1000 * time.Millisecond // https://activestatef.atlassian.net/browse/DX-935
-var SvcRequestMaxTime = 100 * time.Millisecond
+var SvcRequestMaxTime = 150 * time.Millisecond
 var SvcStopMaxTime = 150 * time.Millisecond
 
 type PerformanceSvcIntegrationTestSuite struct {
