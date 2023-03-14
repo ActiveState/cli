@@ -39,7 +39,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
-	"golang.org/x/crypto/ssh/terminal"
 )
 
 func main() {
@@ -99,8 +98,7 @@ func main() {
 	setPrinterColors(outFlags)
 
 	isInteractive := strings.ToLower(os.Getenv(constants.NonInteractiveEnvVarName)) != "true" &&
-		!outFlags.NonInteractive &&
-		terminal.IsTerminal(int(os.Stdin.Fd())) &&
+		out.Config().Interactive &&
 		out.Type() != output.EditorV0FormatName &&
 		out.Type() != output.EditorFormatName
 	// Run our main command logic, which is logic that defers to the error handling logic below

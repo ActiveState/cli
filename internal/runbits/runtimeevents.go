@@ -14,5 +14,8 @@ func NewRuntimeProgressIndicator(out output.Outputer) events.Handler {
 	if out.Type() != output.PlainFormatName {
 		w = nil
 	}
-	return progress.NewProgressIndicator(w, out)
+	if out.Config().Interactive {
+		return progress.NewProgressIndicator(w, out)
+	}
+	return progress.NewDotProgressIndicator(out)
 }
