@@ -91,8 +91,6 @@ func (suite *PushIntegrationTestSuite) TestOrganizations_VSCode() {
 	cp := ts.Spawn("orgs", "--output", "editor")
 	cp.ExpectExitCode(0)
 
-	// TODO: Response change from "free" to "Community Tier (Free)".  Check that vs code extension is okay with that.
-	// https://www.pivotaltracker.com/story/show/178544144
 	org := struct {
 		Name            string `json:"name,omitempty"`
 		URLName         string `json:"URLName,omitempty"`
@@ -101,7 +99,7 @@ func (suite *PushIntegrationTestSuite) TestOrganizations_VSCode() {
 	}{
 		"Test-Organization",
 		"Test-Organization",
-		"Community Tier (Free)",
+		"Free Tier",
 		false,
 	}
 
@@ -113,12 +111,10 @@ func (suite *PushIntegrationTestSuite) TestOrganizations_VSCode() {
 
 func (suite *AuthIntegrationTestSuite) TestAuth_VSCode() {
 	suite.OnlyRunForTags(tagsuite.Auth, tagsuite.VSCode, tagsuite.Komodo)
-	// TODO: Response change from "free" to "Community Tier (Free)".  Check that vs code extension is okay with that.
-	// https://www.pivotaltracker.com/story/show/178544144
 	user := userJSON{
 		Username: e2e.PersistentUsername,
 		URLName:  e2e.PersistentUsername,
-		Tier:     "free_legacy", // was "Community Tier (Free)"
+		Tier:     "free",
 	}
 	data, err := json.Marshal(user)
 	suite.Require().NoError(err)

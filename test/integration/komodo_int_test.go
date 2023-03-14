@@ -33,7 +33,7 @@ func (suite *AuthIntegrationTestSuite) TestAuth_EditorV0() {
 	user := userJSON{
 		Username: e2e.PersistentUsername,
 		URLName:  e2e.PersistentUsername,
-		Tier:     "free_legacy",
+		Tier:     "free",
 	}
 	data, err := json.Marshal(user)
 	suite.Require().NoError(err)
@@ -121,7 +121,7 @@ func (suite *OrganizationsIntegrationTestSuite) TestOrganizations_EditorV0() {
 	}{
 		"Test-Organization",
 		"Test-Organization",
-		"Community Tier (Free)",
+		"Free Tier",
 		false,
 	}
 
