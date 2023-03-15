@@ -73,15 +73,15 @@ func (r *Revert) Run(params *Params) error {
 	if !strfmt.IsUUID(params.CommitID) {
 		return locale.NewInputError("err_invalid_commit_id", "Invalid commit ID")
 	}
-	if params.CommitID == r.project.CommitID() && params.To {
-		return locale.NewInputError("err_revert_to_current_commit", "Cannot revert to current commit")
+	latestCommit := r.project.CommitUUID()
+	if params.CommitID == latestCommit.String() && params.To {
+		return locale.NewInputError("err_revert_to_current_commit", "The commit to revert to cannot be the latest commit")
 	}
 	r.out.Notice(locale.Tl("operating_message", "", r.project.NamespaceString(), r.project.Dir()))
 	commitID := strfmt.UUID(params.CommitID)
 
-	var targetCommit *mono_models.Commit
+	var targetCommit *mono_models.Commit // the commit to revert the contents of, or the commit to revert to
 	var fromCommit, toCommit strfmt.UUID
-	latestCommit := r.project.CommitUUID()
 	if !params.To {
 		priorCommits, err := model.CommitHistoryPaged(commitID, 0, 2)
 		if err != nil {
