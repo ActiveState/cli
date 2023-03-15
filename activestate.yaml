@@ -50,10 +50,20 @@ scripts:
     if: ne .Shell "cmd"
     value: |
       oldGOFLAGS="${GOFLAGS}"
-      # strip mod flag in CI only
+      # Strip mod flag to search original repos for source rather than being
+      # restricted to the vendor dir.
       if [ -z ${CI+x} ]; then
         export GOFLAGS="$(echo ${GOFLAGS} | sed 's#-mod=vendor \?##')"
       fi
+      if ! type "gozip" &> /dev/null; then
+        echo "gozip was not found on your PATH, installing .."
+        go install github.com/ActiveState/gozip/cmd/gozip@e455986
+      fi
+      export GOFLAGS="${oldGOFLAGS}"
+  - name: install-deps-dev
+    language: bash
+    if: ne .Shell "cmd"
+    value: |
       if ! type "go" &> /dev/null; then
         echo "go is not installed. Please install Go version 1.20 or above."
         exit 1
@@ -71,11 +81,6 @@ scripts:
         echo "actionlint was not found on your PATH, installing .."
         go install github.com/rhysd/actionlint/cmd/actionlint@v1.6.23
       fi
-      if ! type "gozip" &> /dev/null; then
-        echo "gozip was not found on your PATH, installing .."
-        go install github.com/ActiveState/gozip/cmd/gozip@e455986
-      fi
-      export GOFLAGS="${oldGOFLAGS}"
   - name: install-deps-os
     language: bash
     if: ne .OS.Name "Linux"
@@ -408,6 +413,7 @@ events:
   - name: activate
     if: ne .Shell "cmd"
     value: |
+      $scripts.install-deps-dev
       $scripts.install-deps
   - name: file-changed
     scope: ["internal/locale/locales"]
