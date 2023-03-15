@@ -55,7 +55,7 @@ scripts:
         export GOFLAGS="$(echo ${GOFLAGS} | sed 's#-mod=vendor \?##')"
       fi
       if ! type "go" &> /dev/null; then
-        echo "go is not installed. Please install Go version 1.11 or above."
+        echo "go is not installed. Please install Go version 1.20 or above."
         exit 1
       fi
       if ! type "golangci-lint" &> /dev/null; then
