@@ -263,7 +263,7 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 	}
 
 	err = cmds.Execute(args[1:])
-	if err != nil {
+	if err != nil && !errs.IsSilent(err) {
 		cmdName := ""
 		if childCmd != nil {
 			cmdName = childCmd.UseFull() + " "
