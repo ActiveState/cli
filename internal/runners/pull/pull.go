@@ -8,6 +8,7 @@ import (
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
@@ -103,6 +104,7 @@ func (p *Pull) Run(params *PullParams) error {
 		localCommit = &v
 	}
 
+	previousNamespace := p.project.Namespace()
 	if params.SetProject != "" {
 		defaultChoice := params.Force
 		confirmed, err := p.prompt.Confirm(
@@ -133,12 +135,14 @@ func (p *Pull) Run(params *PullParams) error {
 				// No merge necessary
 				resultingCommit = localCommit
 			} else if !errors.Is(err, model.ErrMergeCommitInHistory) {
+				restoreNamespace(p.project, previousNamespace)
 				return locale.WrapError(err, "err_mergecommit", "Could not detect if merge is necessary.")
 			}
 		}
 		if err == nil && strategies != nil {
 			c, err := p.performMerge(strategies, *remoteCommit)
 			if err != nil {
+				restoreNamespace(p.project, previousNamespace)
 				return errs.Wrap(err, "performing merge commit failed")
 			}
 			resultingCommit = &c
@@ -169,6 +173,17 @@ func (p *Pull) Run(params *PullParams) error {
 	}
 
 	return nil
+}
+
+func restoreNamespace(proj *project.Project, namespace *project.Namespaced) {
+	if err := proj.Source().SetNamespace(namespace.Owner, namespace.Project); err == nil && namespace.CommitID != nil {
+		err2 := proj.Source().SetCommit(namespace.CommitID.String(), false)
+		if err2 != nil {
+			multilog.Error("Unable to restore project namespace commit: %v", err)
+		}
+	} else if err != nil {
+		multilog.Error("Unable to restore project namespace: %v", err)
+	}
 }
 
 func (p *Pull) performMerge(strategies *mono_models.MergeStrategies, remoteCommit strfmt.UUID) (strfmt.UUID, error) {

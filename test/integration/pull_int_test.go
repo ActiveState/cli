@@ -105,6 +105,24 @@ func (suite *PullIntegrationTestSuite) TestPull_Merge() {
 	cp.ExpectExitCode(0)
 }
 
+func (suite *PullIntegrationTestSuite) TestPull_RestoreNamespace() {
+	suite.OnlyRunForTags(tagsuite.Pull)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	ts.PrepareActiveStateYAML(`project: https://platform.activestate.com/ActiveState-CLI/small-python?commitID=9733d11a-dfb3-41de-a37a-843b7c421db4`)
+
+	// Attempt to update to unrelated project.
+	cp := ts.Spawn("pull", "--non-interactive", "--set-project", "ActiveState-CLI/Python3")
+	cp.ExpectLongString("Could not detect common parent")
+	cp.ExpectNotExitCode(0)
+
+	// Verify namespace is unchanged.
+	cp = ts.Spawn("show")
+	cp.Expect("ActiveState-CLI/small-python")
+	cp.ExpectExitCode(0)
+}
+
 func TestPullIntegrationTestSuite(t *testing.T) {
 	suite.Run(t, new(PullIntegrationTestSuite))
 }
