@@ -15,8 +15,8 @@ func (nv *NameVal) UnmarshalYAML(unmarshal func(interface{}) error) error {
 		return err
 	}
 
-	if len(data) == 1 {
-		ssData, err := sanitizeMap(data)
+	if len(data) == 1 { // likely short-hand `{name}: {value}` field
+		ssData, err := ensureMapStrStr(data)
 		if err != nil {
 			return err
 		}
@@ -26,7 +26,7 @@ func (nv *NameVal) UnmarshalYAML(unmarshal func(interface{}) error) error {
 			break
 		}
 
-	} else {
+	} else { // likely long-form `name: {name}` and `value: {value}` fields
 		type Tmp NameVal
 		var tmp Tmp
 		if err := unmarshal(&tmp); err != nil {
@@ -38,7 +38,10 @@ func (nv *NameVal) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	return nil
 }
 
-func sanitizeMap(m map[string]interface{}) (map[string]string, error) {
+// ensureMapStrStr will run the map[string]interface{} back through the yaml
+// unmarshalling so that any invalid values retain the yaml package error
+// messages (as much as possible).
+func ensureMapStrStr(m map[string]interface{}) (map[string]string, error) {
 	data, err := yaml.Marshal(m)
 	if err != nil {
 		return nil, err
