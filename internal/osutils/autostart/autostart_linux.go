@@ -20,7 +20,7 @@ const (
 
 func (a *App) enable() error {
 	if err := legacyDisableOnDesktop(a.options.LaunchFileName); err != nil {
-		logging.Error("Cannot properly disable autostart on desktoptop: %v", err)
+		logging.Error("Cannot properly disable autostart (desktop): %v", err)
 	}
 
 	isEnabled, err := a.IsEnabled()
