@@ -23,7 +23,7 @@ const (
 	launchFileFormatName = "com.activestate.platform.%s.plist"
 )
 
-func (a *app) enable() error {
+func (a *App) enable() error {
 	enabled, err := a.isEnabled()
 	if err != nil {
 		return errs.Wrap(err, "Could not check if app autostart is enabled")
@@ -61,7 +61,7 @@ func (a *app) enable() error {
 	return nil
 }
 
-func (a *app) disable() error {
+func (a *App) disable() error {
 	enabled, err := a.isEnabled()
 	if err != nil {
 		return errs.Wrap(err, "Could not check if app autostart is enabled")
@@ -78,7 +78,7 @@ func (a *app) disable() error {
 	return os.Remove(path)
 }
 
-func (a *app) isEnabled() (bool, error) {
+func (a *App) isEnabled() (bool, error) {
 	path, err := a.installPath()
 	if err != nil {
 		return false, errs.Wrap(err, "Could not get launch file")
@@ -86,7 +86,7 @@ func (a *app) isEnabled() (bool, error) {
 	return fileutils.FileExists(path), nil
 }
 
-func (a *app) installPath() (string, error) {
+func (a *App) installPath() (string, error) {
 	dir, err := user.HomeDir()
 	if err != nil {
 		return "", errs.Wrap(err, "Could not get home directory")

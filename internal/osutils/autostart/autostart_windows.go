@@ -14,7 +14,7 @@ import (
 
 var startupPath = filepath.Join(os.Getenv("USERPROFILE"), "AppData", "Roaming", "Microsoft", "Windows", "Start Menu", "Programs", "Startup")
 
-func (a *app) enable() error {
+func (a *App) enable() error {
 	enabled, err := a.isEnabled()
 	if err != nil {
 		return errs.Wrap(err, "Could not check if app is enabled")
@@ -47,7 +47,7 @@ func (a *app) enable() error {
 	return nil
 }
 
-func (a *app) disable() error {
+func (a *App) disable() error {
 	enabled, err := a.isEnabled()
 	if err != nil {
 		return errs.Wrap(err, "Could not check if app autostart is enabled")
@@ -59,15 +59,15 @@ func (a *app) disable() error {
 	return os.Remove(a.shortcutFilename())
 }
 
-func (a *app) isEnabled() (bool, error) {
+func (a *App) isEnabled() (bool, error) {
 	return fileutils.FileExists(a.shortcutFilename()), nil
 }
 
-func (a *app) installPath() (string, error) {
+func (a *App) installPath() (string, error) {
 	return a.shortcutFilename(), nil
 }
 
-func (a *app) shortcutFilename() string {
+func (a *App) shortcutFilename() string {
 	name := formattedName(a.Name)
 	if testDir, ok := os.LookupEnv(constants.AutostartPathOverrideEnvVarName); ok {
 		startupPath = testDir
