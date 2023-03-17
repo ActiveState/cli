@@ -1,0 +1,10 @@
+file :== <expression>
+<expression> :== <application> | [let][:] <binding> [in] <expression> | <identifier>
+<binding> :== <assignment>*
+<assignment> :== <identifier> = <application> | <identifier> = <list>
+<application> ::== <function_identifier> [(] <argument>* [)]
+<argument> ::== <binding> | <list>
+<list> ::== [[]<list_element>* []]
+<list_element> ::== <identifier>
+<function_identifier> ::== [solve] | [solve_legacy]
+<identifier> ::== [a-zA-Z0-9]+

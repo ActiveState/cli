@@ -1,0 +1,5 @@
+We have a set of rules that we apply when we encounter different node types.
+We iterate though the graph and apply those rules to each node.
+Some rules will consume the node and its children, some will not.
+It will likely be similar to the parser in that it starts with the top node
+and cascades down the tree.
