@@ -24,7 +24,7 @@ const (
 )
 
 func (a *app) enable() error {
-	enabled, err := a.IsEnabled()
+	enabled, err := a.isEnabled()
 	if err != nil {
 		return errs.Wrap(err, "Could not check if app autostart is enabled")
 	}
@@ -33,7 +33,7 @@ func (a *app) enable() error {
 		return nil
 	}
 
-	path, err := a.InstallPath()
+	path, err := a.installPath()
 	if err != nil {
 		return errs.Wrap(err, "Could not get launch file")
 	}
@@ -62,7 +62,7 @@ func (a *app) enable() error {
 }
 
 func (a *app) disable() error {
-	enabled, err := a.IsEnabled()
+	enabled, err := a.isEnabled()
 	if err != nil {
 		return errs.Wrap(err, "Could not check if app autostart is enabled")
 	}
@@ -71,22 +71,22 @@ func (a *app) disable() error {
 		logging.Debug("Autostart is already disabled for %s", a.Name)
 		return nil
 	}
-	path, err := a.InstallPath()
+	path, err := a.installPath()
 	if err != nil {
 		return errs.Wrap(err, "Could not get launch file")
 	}
 	return os.Remove(path)
 }
 
-func (a *app) IsEnabled() (bool, error) {
-	path, err := a.InstallPath()
+func (a *app) isEnabled() (bool, error) {
+	path, err := a.installPath()
 	if err != nil {
 		return false, errs.Wrap(err, "Could not get launch file")
 	}
 	return fileutils.FileExists(path), nil
 }
 
-func (a *app) InstallPath() (string, error) {
+func (a *app) installPath() (string, error) {
 	dir, err := user.HomeDir()
 	if err != nil {
 		return "", errs.Wrap(err, "Could not get home directory")

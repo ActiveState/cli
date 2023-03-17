@@ -5,83 +5,32 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/ActiveState/cli/internal/assets"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
-	"github.com/ActiveState/cli/internal/osutils/shortcut"
 	"github.com/ActiveState/cli/internal/osutils/user"
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
 )
 
 const (
-	autostartDir  = ".config/autostart"
 	autostartFile = ".profile"
 )
 
-func (a *app) enable() error {
-	enabled, err := a.IsEnabled()
-	if err != nil {
-		return errs.Wrap(err, "Could not check if app autostart is enabled")
+func (a *App) enable() error {
+	if err := legacyDisableOnDesktop(a.options.LaunchFileName); err != nil {
+		logging.Error("Cannot properly disable autostart on desktoptop: %v", err)
 	}
-	if enabled {
+
+	isEnabled, err := a.IsEnabled()
+	if err != nil {
+		return err
+	}
+	if isEnabled {
 		return nil
 	}
 
-	// Enable for both Desktop and Server.
-
-	// Only error out for Desktop if on Desktop.
-	if err := a.enableOnDesktop(); err != nil && a.onDesktop() {
-		return err
-	}
-
-	// Only error out for Server if on Server.
-	if err := a.enableOnServer(); err != nil && !a.onDesktop() {
-		return err
-	}
-
-	return nil
-}
-
-func (a *app) onDesktop() bool {
-	return os.Getenv("WAYLAND_DISPLAY") != "" || os.Getenv("DISPLAY") != ""
-}
-
-func (a *app) enableOnDesktop() error {
-	dir, err := prependHomeDir(autostartDir)
-	if err != nil {
-		return errs.Wrap(err, "Could not find autostart directory")
-	}
-	path := filepath.Join(dir, a.options.LaunchFileName)
-
-	iconsDir, err := prependHomeDir(constants.IconsDir)
-	if err != nil {
-		return errs.Wrap(err, "")
-	}
-	iconsPath := filepath.Join(iconsDir, a.options.IconFileName)
-
-	iconData, err := assets.ReadFileBytes(a.options.IconFileSource)
-	if err != nil {
-		return errs.Wrap(err, "Could not read asset")
-	}
-
-	scutOpts := shortcut.SaveOpts{
-		Name:        a.Name,
-		GenericName: a.options.GenericName,
-		Comment:     a.options.Comment,
-		Keywords:    a.options.Keywords,
-		IconData:    iconData,
-		IconPath:    iconsPath,
-	}
-	if _, err := shortcut.Save(a.Exec, path, a.Args, scutOpts); err != nil {
-		return errs.Wrap(err, "Could not save autostart shortcut")
-	}
-
-	return nil
-}
-
-func (a *app) enableOnServer() error {
 	profile, err := prependHomeDir(autostartFile)
 	if err != nil {
 		return errs.Wrap(err, "Could not find ~/.profile")
@@ -101,43 +50,9 @@ func (a *app) enableOnServer() error {
 	return sscommon.WriteRcData(exec, profile, sscommon.AutostartID)
 }
 
-// Path returns the path to the installed autostart shortcut file.
-// The installer keeps track of this file for later removal on uninstall.
-func (a *app) InstallPath() (string, error) {
-	dir, err := prependHomeDir(autostartDir)
-	if err != nil {
-		return "", errs.Wrap(err, "Could not find autostart directory")
-	}
-	path := filepath.Join(dir, a.options.LaunchFileName)
-
-	if fileutils.FileExists(path) {
-		return path, nil
-	}
-
-	// If on server, do not report ~/.profile as installed, as it would be removed on uninstall.
-	return "", nil
-}
-
-func (a *app) disable() error {
-	enabled, err := a.IsEnabled()
-	if err != nil {
-		return errs.Wrap(err, "Could not check if app autostart is enabled")
-	}
-	if !enabled {
-		return nil
-	}
-
-	path, err := a.InstallPath()
-	if err != nil {
+func (a *App) disable() error {
+	if err := legacyDisableOnDesktop(a.options.LaunchFileName); err != nil {
 		return err
-	}
-
-	// Remove the desktop autostart shortcut file if it's there.
-	if fileutils.FileExists(path) {
-		err := os.Remove(path)
-		if err != nil {
-			return errs.Wrap(err, "Could not remove autostart shortcut")
-		}
 	}
 
 	// Remove the ~/.profile modification if it's there.
@@ -145,6 +60,7 @@ func (a *app) disable() error {
 	if err != nil {
 		return errs.Wrap(err, "Could not find ~/.profile")
 	}
+
 	// Some older versions of the State Tool used a different ID for the autostart entry.
 	if fileutils.FileExists(profile) {
 		return sscommon.CleanRcFile(profile, sscommon.InstallID)
@@ -156,18 +72,10 @@ func (a *app) disable() error {
 	return nil
 }
 
-func (a *app) IsEnabled() (bool, error) {
-	// Check for desktop autostart shortcut file.
-	dir, err := prependHomeDir(autostartDir)
-	if err != nil {
-		return false, errs.Wrap(err, "Could not find autostart directory")
-	}
-	path := filepath.Join(dir, a.options.LaunchFileName)
-	if fileutils.FileExists(path) {
-		return true, nil
-	}
-
-	// Or check for ~/.profile modification.
+// isEnabled does not verify legacy "Desktop" autostart setups, so should not be
+// used apart from Enable/Disable, and should be used only within tests.
+func (a *App) isEnabled() (bool, error) {
+	// check for ~/.profile modification.
 	profile, err := prependHomeDir(autostartFile)
 	if err != nil {
 		return false, errs.Wrap(err, "Could not find ~/.profile")
@@ -183,6 +91,11 @@ func (a *app) IsEnabled() (bool, error) {
 	return false, nil
 }
 
+func (a *App) installPath() (string, error) {
+	// do not report ~/.profile as installed, as it would be removed on uninstall.
+	return "", nil
+}
+
 func prependHomeDir(path string) (string, error) {
 	homeDir, err := user.HomeDir()
 	if err != nil {
@@ -192,4 +105,23 @@ func prependHomeDir(path string) (string, error) {
 		homeDir = testDir
 	}
 	return filepath.Join(homeDir, path), nil
+}
+
+// https://activestatef.atlassian.net/browse/DX-1677
+func legacyDisableOnDesktop(launchFileName string) error {
+	dir, err := prependHomeDir(".config/autostart")
+	if err != nil {
+		return errs.Wrap(err, "Could not find autostart directory")
+	}
+
+	path := filepath.Join(dir, launchFileName)
+
+	if fileutils.FileExists(path) {
+		err := os.Remove(path)
+		if err != nil {
+			return errs.Wrap(err, "Could not remove autostart shortcut")
+		}
+	}
+
+	return nil
 }

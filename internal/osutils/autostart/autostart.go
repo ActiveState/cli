@@ -15,7 +15,7 @@ func (a AppName) String() string {
 	return string(a)
 }
 
-type app struct {
+type App struct {
 	Name    string
 	Exec    string
 	Args    []string
@@ -39,8 +39,8 @@ type Configurable interface {
 	IsSet(string) bool
 }
 
-func New(name AppName, exec string, args []string, options Options, cfg Configurable) (*app, error) {
-	return &app{
+func New(name AppName, exec string, args []string, options Options, cfg Configurable) (*App, error) {
+	return &App{
 		Name:    name.String(),
 		Exec:    exec,
 		Args:    args,
@@ -49,10 +49,19 @@ func New(name AppName, exec string, args []string, options Options, cfg Configur
 	}, nil
 }
 
-func (a *app) Enable() error {
+func (a *App) Enable() error {
 	return a.enable()
 }
 
-func (a *app) Disable() error {
+func (a *App) Disable() error {
 	return a.disable()
+}
+
+// IsEnabled is provided for testing only.
+func (a *App) IsEnabled() (bool, error) {
+	return a.isEnabled()
+}
+
+func (a *App) InstallPath() (string, error) {
+	return a.installPath()
 }
