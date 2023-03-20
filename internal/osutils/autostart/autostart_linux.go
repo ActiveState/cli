@@ -8,7 +8,6 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/osutils/user"
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
@@ -20,12 +19,12 @@ const (
 
 func (a *App) enable() error {
 	if err := legacyDisableOnDesktop(a.options.LaunchFileName); err != nil {
-		logging.Error("Cannot properly disable autostart (desktop): %v", err)
+		return errs.Wrap(err, "Could not properly disable autostart (desktop): %v", err)
 	}
 
 	isEnabled, err := a.isEnabled()
 	if err != nil {
-		return err
+		return errs.Wrap(err, "Could not check if autostart is already enabled")
 	}
 	if isEnabled {
 		return nil
