@@ -23,7 +23,7 @@ func (a *App) enable() error {
 		logging.Error("Cannot properly disable autostart (desktop): %v", err)
 	}
 
-	isEnabled, err := a.IsEnabled()
+	isEnabled, err := a.isEnabled()
 	if err != nil {
 		return err
 	}
@@ -72,8 +72,9 @@ func (a *App) disable() error {
 	return nil
 }
 
-// isEnabled does not verify legacy "Desktop" autostart setups, so should not be
-// used apart from Enable/Disable, and should be used only within tests.
+// isEnabled, for Linux, does not verify legacy "Desktop" autostart setups, so
+// should not be used apart from enable/disable, and external code should only
+// use it within tests.
 func (a *App) isEnabled() (bool, error) {
 	// check for ~/.profile modification.
 	profile, err := prependHomeDir(autostartFile)
