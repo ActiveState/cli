@@ -32,7 +32,6 @@ constants:
   - name: SET_ENV
     description: The environment settings used throughout our project
     value: |
-      GOFLAGS='-mod=vendor'
       GOPATH="${GOPATH:=`go env GOPATH`}"
       GOROOT="${GOROOT:=`go env GOROOT`}"
       export CGO_ENABLED=0
@@ -49,17 +48,10 @@ scripts:
     language: bash
     if: ne .Shell "cmd"
     value: |
-      oldGOFLAGS="${GOFLAGS}"
-      # Strip mod flag to search original repos for source rather than being
-      # restricted to the vendor dir.
-      if [ -z ${CI+x} ]; then
-        export GOFLAGS="$(echo ${GOFLAGS} | sed 's#-mod=vendor \?##')"
-      fi
       if ! type "gozip" &> /dev/null; then
         echo "gozip was not found on your PATH, installing .."
         go install github.com/ActiveState/gozip/cmd/gozip@e455986
       fi
-      export GOFLAGS="${oldGOFLAGS}"
   - name: install-deps-dev
     language: bash
     if: ne .Shell "cmd"
