@@ -15,6 +15,7 @@ type primeable interface {
 	primer.Outputer
 	primer.Configurer
 	primer.SvcModeler
+	primer.Analyticer
 }
 
 func NewConfig(prime primeable) (*Config, error) {
