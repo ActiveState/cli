@@ -6,10 +6,9 @@ import (
 	"os/user"
 	"path/filepath"
 
+	svcApp "github.com/ActiveState/cli/cmd/state-svc/app"
 	svcAutostart "github.com/ActiveState/cli/cmd/state-svc/autostart"
-
 	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/osutils"
@@ -29,20 +28,13 @@ func (r *Prepare) prepareOS() error {
 		r.reportError(locale.Tl("err_prepare_shortcut", "Could not create start menu shortcut, error received: {{.V0}}.", err.Error()), err)
 	}
 
-	svcExec, err := installation.ServiceExec()
+	a, err := svcApp.New()
 	if err != nil {
-		r.reportError(locale.Tl("err_prepare_svc_exec", "Could not get service exec, error recieved: {{.V0}}", err.Error()), err)
+		return locale.WrapError(err, "err_autostart_app")
 	}
 
-	if svcExec != "" {
-		as, err := autostart.New(svcAutostart.App, svcExec, []string{"start"}, svcAutostart.Options, r.cfg)
-		if err != nil {
-			return locale.WrapError(err, "err_autostart_app")
-		}
-
-		if err := as.Enable(); err != nil {
-			r.reportError(locale.Tl("err_prepare_service_autostart", "Could not setup service autostart, error recieved: {{.V0}}", err.Error()), err)
-		}
+	if err = autostart.Enable(a.Exec, svcAutostart.Options); err != nil {
+		r.reportError(locale.Tl("err_prepare_service_autostart", "Could not setup service autostart, error recieved: {{.V0}}", err.Error()), err)
 	}
 
 	return nil
@@ -119,6 +111,6 @@ func setStateProtocol() error {
 	return nil
 }
 
-func cleanOS(cfg autostart.Configurable) error {
+func cleanOS() error {
 	return nil
 }

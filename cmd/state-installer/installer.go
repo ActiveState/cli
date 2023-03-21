@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	svcApp "github.com/ActiveState/cli/cmd/state-svc/app"
+	svcAutostart "github.com/ActiveState/cli/cmd/state-svc/autostart"
 	anaConst "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
@@ -20,6 +22,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/osutils"
+	"github.com/ActiveState/cli/internal/osutils/autostart"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
@@ -100,6 +103,11 @@ func (i *Installer) Install() (rerr error) {
 		return errs.Wrap(err, "Failed to copy installation files to dir %s. Error received: %s", i.path, errs.JoinMessage(err))
 	}
 
+	// Install the state service as an app if necessary
+	if err := i.installSvcApp(); err != nil {
+		return errs.Wrap(err, "Installation of service app failed.")
+	}
+
 	// Set up the environment
 	binDir := filepath.Join(i.path, installation.BinDirName)
 	isAdmin, err := osutils.IsAdmin()
@@ -151,6 +159,24 @@ func (i *Installer) sanitizeInput() error {
 	var err error
 	if i.path, err = resolveInstallPath(i.path); err != nil {
 		return errs.Wrap(err, "Could not resolve installation path")
+	}
+
+	return nil
+}
+
+func (i *Installer) installSvcApp() error {
+	app, err := svcApp.New()
+	if err != nil {
+		return errs.Wrap(err, "Could not create app")
+	}
+
+	err = app.Install()
+	if err != nil {
+		return errs.Wrap(err, "Could not install app")
+	}
+
+	if err = autostart.Enable(app.Exec, svcAutostart.Options); err != nil {
+		return errs.Wrap(err, "Failed to enable autostart for service app.")
 	}
 
 	return nil

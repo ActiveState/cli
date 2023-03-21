@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 
+	svcApp "github.com/ActiveState/cli/cmd/state-svc/app"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
@@ -33,7 +34,7 @@ func (u *Uninstall) runUninstall(params *UninstallParams) error {
 		}
 	}
 
-	err = undoPrepare(u.cfg)
+	err = undoPrepare()
 	if err != nil {
 		logging.Debug("Could not undo prepare: %s", errs.JoinMessage(err))
 		aggErr = locale.WrapError(aggErr, "uninstall_prepare_err", "Failed to undo some installation steps.")
@@ -45,6 +46,11 @@ func (u *Uninstall) runUninstall(params *UninstallParams) error {
 	} else if err != nil {
 		logging.Debug("Could not remove install: %s", errs.JoinMessage(err))
 		aggErr = locale.WrapError(aggErr, "uninstall_remove_executables_err", "Failed to remove all State Tool files in installation directory")
+	}
+
+	if err := removeApp(); err != nil {
+		logging.Debug("Could not remove app: %s", errs.JoinMessage(err))
+		aggErr = locale.WrapError(aggErr, "uninstall_remove_app_err", "Failed to remove service application")
 	}
 
 	err = removeEnvPaths(u.cfg)
@@ -125,6 +131,20 @@ func removeInstall(cfg *config.Instance) error {
 	}
 
 	return aggErr
+}
+
+func removeApp() error {
+	svcApp, err := svcApp.New()
+	if err != nil {
+		return locale.WrapError(err, "err_autostart_app")
+	}
+
+	err = svcApp.Uninstall()
+	if err != nil {
+		return locale.WrapError(err, "err_uninstall_app", "Could not uninstall the State Tool service app.")
+	}
+
+	return nil
 }
 
 func verifyInstallation() error {

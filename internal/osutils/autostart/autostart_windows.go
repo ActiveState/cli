@@ -14,8 +14,8 @@ import (
 
 var startupPath = filepath.Join(os.Getenv("USERPROFILE"), "AppData", "Roaming", "Microsoft", "Windows", "Start Menu", "Programs", "Startup")
 
-func (a *app) enable() error {
-	enabled, err := a.IsEnabled()
+func enable(exec string, opts Options) error {
+	enabled, err := IsEnabled(exec, opts)
 	if err != nil {
 		return errs.Wrap(err, "Could not check if app is enabled")
 	}
@@ -23,13 +23,13 @@ func (a *app) enable() error {
 		return nil
 	}
 
-	name := formattedName(a.Name)
-	s := shortcut.New(startupPath, name, a.Exec, a.Args...)
+	name := formattedName(opts.Name)
+	s := shortcut.New(startupPath, name, exec, opts.Args...)
 	if err := s.Enable(); err != nil {
 		return errs.Wrap(err, "Could not create shortcut")
 	}
 
-	icon, err := assets.ReadFileBytes(a.options.IconFileSource)
+	icon, err := assets.ReadFileBytes(opts.IconFileSource)
 	if err != nil {
 		return errs.Wrap(err, "Could not read asset")
 	}
@@ -47,8 +47,8 @@ func (a *app) enable() error {
 	return nil
 }
 
-func (a *app) disable() error {
-	enabled, err := a.IsEnabled()
+func disable(exec string, opts Options) error {
+	enabled, err := isEnabled(exec, opts)
 	if err != nil {
 		return errs.Wrap(err, "Could not check if app autostart is enabled")
 	}
@@ -56,19 +56,19 @@ func (a *app) disable() error {
 	if !enabled {
 		return nil
 	}
-	return os.Remove(a.shortcutFilename())
+	return os.Remove(shortcutFilename(opts.Name))
 }
 
-func (a *app) IsEnabled() (bool, error) {
-	return fileutils.FileExists(a.shortcutFilename()), nil
+func isEnabled(_ string, opts Options) (bool, error) {
+	return fileutils.FileExists(shortcutFilename(opts.Name)), nil
 }
 
-func (a *app) InstallPath() (string, error) {
-	return a.shortcutFilename(), nil
+func autostartPath(name string, _ Options) (string, error) {
+	return shortcutFilename(name), nil
 }
 
-func (a *app) shortcutFilename() string {
-	name := formattedName(a.Name)
+func shortcutFilename(name string) string {
+	name = formattedName(name)
 	if testDir, ok := os.LookupEnv(constants.AutostartPathOverrideEnvVarName); ok {
 		startupPath = testDir
 	}

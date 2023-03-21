@@ -10,27 +10,22 @@ import (
 	"github.com/ActiveState/cli/internal/osutils/autostart"
 )
 
-const (
-	App autostart.AppName = constants.SvcAppName
-)
-
-var Options = autostart.Options{}
+var Options = autostart.Options{
+	Name: constants.SvcAppName,
+	Args: []string{"start"},
+}
 
 func RegisterConfigListener(cfg *config.Instance) {
 	if svcExec, err := installation.ServiceExec(); err == nil {
-		if as, err := autostart.New(App, svcExec, []string{"start"}, Options, cfg); err == nil {
-			configMediator.AddListener(constants.AutostartSvcConfigKey, func() {
-				if cfg.GetBool(constants.AutostartSvcConfigKey) {
-					logging.Debug("Enabling autostart")
-					as.Enable()
-				} else {
-					logging.Debug("Disabling autostart")
-					as.Disable()
-				}
-			})
-		} else {
-			multilog.Error("Could not add config listener: state-svc could not find its autostart")
-		}
+		configMediator.AddListener(constants.AutostartSvcConfigKey, func() {
+			if cfg.GetBool(constants.AutostartSvcConfigKey) {
+				logging.Debug("Enabling autostart")
+				autostart.Enable(svcExec, Options)
+			} else {
+				logging.Debug("Disabling autostart")
+				autostart.Disable(svcExec, Options)
+			}
+		})
 	} else {
 		multilog.Error("Could not add config listener state-svc could not find its executable")
 	}
