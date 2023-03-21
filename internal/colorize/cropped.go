@@ -36,8 +36,33 @@ func GetCroppedText(text string, maxLen int, includeLineEnds bool) CroppedLines 
 
 		// Ensure the next position is not within a color tag and check conditions that would end this entry
 		if isLineEnd || (!inRange(pos+1, colorCodes) && (entry.Length == maxLen || pos == len(text)-1)) {
+			wrapped := ""
+			wrappedLength := 0
+			nextCharIsSpace := pos+1 < len(text) && isSpace(text[pos+1])
+			if !isLineEnd && entry.Length == maxLen && !nextCharIsSpace {
+				// Put the current word on the next line, if possible.
+				// Find the start of the current word and its printed length, taking color ranges and
+				// multi-byte characters into account.
+				i := len(entry.Line) - 1
+				for ; i > 0; i-- {
+					if isSpace(entry.Line[i]) {
+						break
+					}
+					if !inRange(pos-(len(entry.Line)-i), colorCodes) && !isUTF8TrailingByte(entry.Line[i]) {
+						wrappedLength++
+					}
+				}
+				// Extract the word from the current line if it doesn't start the line.
+				if i > 0 && i < len(entry.Line)-1 {
+					wrapped = entry.Line[i+1:]
+					entry.Line = entry.Line[:i]
+					entry.Length -= wrappedLength + 1 // also strip space
+				} else {
+					wrappedLength = 0 // reset
+				}
+			}
 			entries = append(entries, entry)
-			entry = CroppedLine{}
+			entry = CroppedLine{Line: wrapped, Length: wrappedLength}
 		}
 
 		if isLineEnd && includeLineEnds {
@@ -56,4 +81,10 @@ func inRange(pos int, ranges [][]int) bool {
 		}
 	}
 	return false
+}
+
+func isSpace(b byte) bool { return b == ' ' || b == '\t' }
+
+func isUTF8TrailingByte(b byte) bool {
+	return b >= 0x80 && b < 0xC0
 }
