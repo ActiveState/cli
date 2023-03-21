@@ -37,7 +37,6 @@ jobs:
     runs-on: ${{ matrix.platform }}
     env:
       ACTIVESTATE_CLI_DISABLE_RUNTIME: true
-      GOFLAGS: -mod=vendor
       SHELL: bash
       GITHUB_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     concurrency:
@@ -382,7 +381,6 @@ jobs:
     runs-on: ubuntu-20.04
     env:
       ACTIVESTATE_CLI_DISABLE_RUNTIME: true
-      GOFLAGS: -mod=vendor
       SHELL: bash
       GITHUB_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     timeout-minutes: 10

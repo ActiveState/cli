@@ -19,7 +19,6 @@ jobs:
           - 1.20.x
     env:
       ACTIVESTATE_CLI_DISABLE_RUNTIME: true
-      GOFLAGS: -mod=vendor
       SHELL: bash
       GITHUB_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
