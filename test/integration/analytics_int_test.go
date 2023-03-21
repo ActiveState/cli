@@ -122,7 +122,11 @@ func (suite *AnalyticsIntegrationTestSuite) TestActivateEvents() {
 		})
 		suite.Require().Equal(1, countEvents(executorEvents, anaConst.CatRuntimeUsage, anaConst.ActRuntimeAttempt),
 			ts.DebugMessage("Should have a runtime attempt, events:\n"+debugEvents(suite.T(), executorEvents)))
-		suite.Require().Equal(1, countEvents(executorEvents, anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat), "Should have a heartbeat")
+		// It's possible due to the timing of the heartbeats and the fact that they are async that we have gotten either
+		// one or two by this point. Technically more is possible, just very unlikely.
+		numHeartbeats := countEvents(executorEvents, anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat)
+		suite.Require().Greater(numHeartbeats, 0, "Should have a heartbeat")
+		suite.Require().LessOrEqual(numHeartbeats, 2, "Should not have excessive heartbeats")
 		var heartbeatEvent *reporters.TestLogEntry
 		for _, e := range executorEvents {
 			if e.Action == anaConst.ActRuntimeHeartbeat {
