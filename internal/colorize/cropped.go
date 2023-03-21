@@ -39,13 +39,14 @@ func GetCroppedText(text string, maxLen int, includeLineEnds bool) CroppedLines 
 			wrapped := ""
 			wrappedLength := 0
 			nextCharIsSpace := pos+1 < len(text) && isSpace(text[pos+1])
-			if !isLineEnd && entry.Length == maxLen && !nextCharIsSpace {
+			if !isLineEnd && entry.Length == maxLen && !nextCharIsSpace && pos < len(text)-1 {
 				// Put the current word on the next line, if possible.
 				// Find the start of the current word and its printed length, taking color ranges and
 				// multi-byte characters into account.
 				i := len(entry.Line) - 1
 				for ; i > 0; i-- {
 					if isSpace(entry.Line[i]) {
+						i++ // preserve trailing space
 						break
 					}
 					if !inRange(pos-(len(entry.Line)-i), colorCodes) && !isUTF8TrailingByte(entry.Line[i]) {
@@ -54,9 +55,10 @@ func GetCroppedText(text string, maxLen int, includeLineEnds bool) CroppedLines 
 				}
 				// Extract the word from the current line if it doesn't start the line.
 				if i > 0 && i < len(entry.Line)-1 {
-					wrapped = entry.Line[i+1:]
+					wrapped = entry.Line[i:]
 					entry.Line = entry.Line[:i]
-					entry.Length -= wrappedLength + 1 // also strip space
+					entry.Length -= wrappedLength
+					isLineEnd = true // emulate for wrapping purposes
 				} else {
 					wrappedLength = 0 // reset
 				}
