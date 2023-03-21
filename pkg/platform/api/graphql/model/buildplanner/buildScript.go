@@ -42,6 +42,7 @@ func NewBuildScript() *BuildScript {
 			Runtime: &Runtime{
 				SolveLegacy: &SolveLegacy{
 					Requirements: []*Requirement{},
+					Platforms:    []string{},
 				},
 			},
 		},
