@@ -6,5 +6,5 @@ file :== <expression>
 <argument> ::== <binding> | <list>
 <list> ::== [[]<list_element>* []]
 <list_element> ::== <identifier>
-<function_identifier> ::== [solve] | [solve_legacy]
+<function_identifier> ::== [a-zA-Z] <identifier>*
 <identifier> ::== [a-zA-Z0-9]+
