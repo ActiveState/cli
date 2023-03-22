@@ -88,6 +88,8 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 			}
 
 			appInstallDir := filepath.Join(ts.Dirs.Work, "app")
+			suite.NoError(fileutils.Mkdir(appInstallDir))
+
 			var cp *termtest.ConsoleProcess
 			if runtime.GOOS != "windows" {
 				cp = ts.SpawnCmdWithOpts(
