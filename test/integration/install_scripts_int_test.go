@@ -84,6 +84,12 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 				if !fileutils.DirExists(appsDir) {
 					suite.Require().NoError(fileutils.Mkdir(appsDir))
 				}
+
+				// Remove service app installation from other test runs
+				serviceApp := filepath.Join(appsDir, fmt.Sprintf("%s.app", constants.SvcAppName))
+				if fileutils.DirExists(serviceApp) {
+					suite.Require().NoError(os.RemoveAll(serviceApp))
+				}
 			}
 
 			argsWithActive := append(argsPlain, "-f")
