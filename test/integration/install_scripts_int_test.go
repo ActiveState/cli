@@ -87,16 +87,21 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 				argsWithActive = append(argsWithActive, "-c", cmd)
 			}
 
+			appInstallDir := filepath.Join(ts.Dirs.Work, "app")
+			suite.NoError(fileutils.Mkdir(appInstallDir))
+
 			var cp *termtest.ConsoleProcess
 			if runtime.GOOS != "windows" {
 				cp = ts.SpawnCmdWithOpts(
 					"bash", e2e.WithArgs(argsWithActive...),
 					e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+					e2e.AppendEnv(fmt.Sprintf("%s=%s", constants.AppInstallDirOverrideEnvVarName, appInstallDir)),
 				)
 			} else {
 				cp = ts.SpawnCmdWithOpts("powershell.exe", e2e.WithArgs(argsWithActive...),
 					e2e.AppendEnv("SHELL="),
 					e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+					e2e.AppendEnv(fmt.Sprintf("%s=%s", constants.AppInstallDirOverrideEnvVarName, appInstallDir)),
 				)
 			}
 

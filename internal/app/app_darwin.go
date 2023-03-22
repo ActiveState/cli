@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/assets"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/installation"
@@ -52,9 +53,12 @@ func (a *App) install() error {
 		return errs.Wrap(err, "Could not create info file")
 	}
 
-	installDir, err := installation.ApplicationInstallPath()
-	if err != nil {
-		return errs.Wrap(err, "Could not get installation path")
+	installDir := os.Getenv(constants.AppInstallDirOverrideEnvVarName)
+	if installDir == "" {
+		installDir, err = installation.ApplicationInstallPath()
+		if err != nil {
+			return errs.Wrap(err, "Could not get installation path")
+		}
 	}
 
 	if err := fileutils.MoveAllFiles(tmpDir, installDir); err != nil {
