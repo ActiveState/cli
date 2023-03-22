@@ -47,7 +47,7 @@ func (s *Search) Run(params SearchRunParams, nstype model.NamespaceType) error {
 
 	var packages []*model.IngredientAndVersion
 	if params.ExactTerm {
-		packages, err = model.SearchIngredientsStrict(ns, params.Name, false, true)
+		packages, err = model.SearchIngredientsStrict(ns, params.Name, true, true)
 	} else {
 		packages, err = model.SearchIngredients(ns, params.Name, true)
 	}
