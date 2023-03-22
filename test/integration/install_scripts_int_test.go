@@ -95,13 +95,13 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 				cp = ts.SpawnCmdWithOpts(
 					"bash", e2e.WithArgs(argsWithActive...),
 					e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
-					e2e.AppendEnv(fmt.Sprintf("ACTIVESTATE_CLI_APPINSTALLDIR_OVERRIDE=%s", appInstallDir)),
+					e2e.AppendEnv(fmt.Sprintf("%s=%s", constants.AppInstallDirOverrideEnvVarName, appInstallDir)),
 				)
 			} else {
 				cp = ts.SpawnCmdWithOpts("powershell.exe", e2e.WithArgs(argsWithActive...),
 					e2e.AppendEnv("SHELL="),
 					e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
-					e2e.AppendEnv(fmt.Sprintf("ACTIVESTATE_CLI_APPINSTALLDIR_OVERRIDE=%s", appInstallDir)),
+					e2e.AppendEnv(fmt.Sprintf("%s=%s", constants.AppInstallDirOverrideEnvVarName, appInstallDir)),
 				)
 			}
 
