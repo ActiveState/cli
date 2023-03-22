@@ -80,7 +80,7 @@ var lookup = [...]languageData{
 		Executable{constants.ActivePython3Executable, false},
 	},
 	{
-		"python2", "Python 2", ".py", true, "python", "2.7.14",
+		"python2", "Python 2", ".py", true, "python", "2.7.18.5",
 		Executable{constants.ActivePython2Executable, false},
 	},
 	{
