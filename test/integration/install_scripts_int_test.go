@@ -3,6 +3,7 @@ package integration
 import (
 	"encoding/json"
 	"fmt"
+	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -73,6 +74,16 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 			}
 			if tt.Version != "" {
 				argsPlain = append(argsPlain, "-v", tt.Version)
+			}
+
+			if runtime.GOOS == "darwin" {
+				// Create the ~/Applications directory if it doesn't exist
+				dir, err := os.UserHomeDir()
+				suite.Require().NoError(err)
+				appsDir := filepath.Join(dir, "Applications")
+				if !fileutils.DirExists(appsDir) {
+					suite.Require().NoError(fileutils.Mkdir(appsDir))
+				}
 			}
 
 			argsWithActive := append(argsPlain, "-f")
