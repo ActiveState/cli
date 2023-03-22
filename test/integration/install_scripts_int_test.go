@@ -3,7 +3,6 @@ package integration
 import (
 	"encoding/json"
 	"fmt"
-	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -76,22 +75,6 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 				argsPlain = append(argsPlain, "-v", tt.Version)
 			}
 
-			if runtime.GOOS == "darwin" {
-				// Create the ~/Applications directory if it doesn't exist
-				dir, err := os.UserHomeDir()
-				suite.Require().NoError(err)
-				appsDir := filepath.Join(dir, "Applications")
-				if !fileutils.DirExists(appsDir) {
-					suite.Require().NoError(fileutils.Mkdir(appsDir))
-				}
-
-				// Remove service app installation from other test runs
-				serviceApp := filepath.Join(appsDir, fmt.Sprintf("%s.app", constants.SvcAppName))
-				if fileutils.DirExists(serviceApp) {
-					suite.Require().NoError(os.RemoveAll(serviceApp))
-				}
-			}
-
 			argsWithActive := append(argsPlain, "-f")
 			if tt.Activate != "" {
 				argsWithActive = append(argsWithActive, "--activate", tt.Activate)
@@ -104,16 +87,19 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 				argsWithActive = append(argsWithActive, "-c", cmd)
 			}
 
+			appInstallDir := filepath.Join(ts.Dirs.Work, "app")
 			var cp *termtest.ConsoleProcess
 			if runtime.GOOS != "windows" {
 				cp = ts.SpawnCmdWithOpts(
 					"bash", e2e.WithArgs(argsWithActive...),
 					e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+					e2e.AppendEnv(fmt.Sprintf("ACTIVESTATE_CLI_APPINSTALLDIR_OVERRIDE=%s", appInstallDir)),
 				)
 			} else {
 				cp = ts.SpawnCmdWithOpts("powershell.exe", e2e.WithArgs(argsWithActive...),
 					e2e.AppendEnv("SHELL="),
 					e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+					e2e.AppendEnv(fmt.Sprintf("ACTIVESTATE_CLI_APPINSTALLDIR_OVERRIDE=%s", appInstallDir)),
 				)
 			}
 
