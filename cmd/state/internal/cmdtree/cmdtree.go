@@ -230,6 +230,7 @@ func newGlobalOptions() *globalOptions {
 
 func newStateCommand(globals *globalOptions, prime *primer.Values) *captain.Command {
 	opts := state.NewOptions()
+	var help bool
 
 	runner := state.New(opts, prime)
 	cmd := captain.NewCommand(
@@ -289,6 +290,13 @@ func newStateCommand(globals *globalOptions, prime *primer.Values) *captain.Comm
 				Name:        "version",
 				Description: locale.T("flag_state_version_description"),
 				Value:       &opts.Version,
+			},
+			{
+				Name:        "help",
+				Description: locale.Tl("flag_help", "Help for this command"),
+				Shorthand:   "h",
+				Persist:     true,
+				Value:       &help, // need to store the value somewhere, but Cobra handles this flag by itself
 			},
 		},
 		[]*captain.Argument{},
