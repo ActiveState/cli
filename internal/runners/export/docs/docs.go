@@ -2,7 +2,6 @@ package docs
 
 import (
 	_ "embed"
-	"sort"
 
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/errs"
@@ -58,10 +57,6 @@ func grabChildren(cmd *captain.Command) []*captain.Command {
 		children = append(children, child)
 		children = append(children, grabChildren(child)...)
 	}
-
-	sort.Slice(children, func(i, j int) bool {
-		return children[i].SortBefore(children[j])
-	})
 
 	return children
 }
