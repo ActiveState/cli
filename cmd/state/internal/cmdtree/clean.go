@@ -42,6 +42,14 @@ func newCleanUninstallCommand(prime *primer.Values, globals *globalOptions) *cap
 				Description: locale.T("flag_state_clean_uninstall_force_description"),
 				Value:       &params.Force,
 			},
+			{
+				// This option is only used on Windows to prevent the popup cmd from closing before the
+				// user can take note of the printed log path.
+				Name:        "confirm-exit",
+				Description: "Prompts the user to press enter before exiting",
+				Hidden:      true, // this is not a user-facing flag
+				Value:       &params.ConfirmExit,
+			},
 		},
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, _ []string) error {
