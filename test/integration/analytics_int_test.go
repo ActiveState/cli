@@ -526,6 +526,8 @@ func (suite *AnalyticsIntegrationTestSuite) TestConfigEvents() {
 	)
 	cp.Expect("Successfully set config key")
 
+	time.Sleep(time.Second) // Ensure state-svc has time to report events
+
 	cp = ts.SpawnWithOpts(e2e.WithArgs("config", "set", "optin.unstable", "true"),
 		e2e.WithWorkDirectory(ts.Dirs.Work),
 	)
