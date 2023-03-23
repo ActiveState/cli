@@ -18,6 +18,9 @@ const CatRuntime = "runtime"
 // CatRuntimeUsage is the event category used for all runtime usage
 const CatRuntimeUsage = "runtime-use"
 
+// CatConfig is the event category used for all configuration events
+const CatConfig = "config"
+
 // ActRuntimeHeartbeat is the event action sent when a runtime is in use
 const ActRuntimeHeartbeat = "heartbeat"
 
@@ -47,6 +50,12 @@ const ActRuntimeFailure = "failure"
 
 // ActRuntimeUserFailure is the event action sent when a user failure occurred anytime during a runtime operation
 const ActRuntimeUserFailure = "user_failure"
+
+// ActConfigSet is the event action sent when a configuration value is set
+const ActConfigSet = "set"
+
+// ActConfigUnset is the event action sent when a configuration value is unset
+const ActConfigUnset = "unset"
 
 // LblRtFailUpdate is the label sent with an ActRuntimeFailure event if an error occurred during a runtime update
 const LblRtFailUpdate = "update"
