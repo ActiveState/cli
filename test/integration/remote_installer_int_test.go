@@ -55,10 +55,14 @@ func (suite *RemoteInstallIntegrationTestSuite) TestInstall() {
 				args = append(args, "--channel", tt.Channel)
 			}
 
+			appInstallDir := filepath.Join(ts.Dirs.Work, "app")
+			suite.NoError(fileutils.Mkdir(appInstallDir))
+
 			cp := ts.SpawnCmdWithOpts(
 				suite.remoteInstallerExe,
 				e2e.WithArgs(args...),
 				e2e.AppendEnv(constants.InstallPathOverrideEnvVarName+"="+installPath),
+				e2e.AppendEnv(fmt.Sprintf("%s=%s", constants.AppInstallDirOverrideEnvVarName, appInstallDir)),
 			)
 
 			cp.Expect("Terms of Service")
