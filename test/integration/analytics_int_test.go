@@ -540,17 +540,9 @@ func (suite *AnalyticsIntegrationTestSuite) TestConfigEvents() {
 
 	// Ensure analytics events have required/important fields
 	var found int
-	var setFound int
-	var unsetFound int
 	for _, e := range events {
 		if !strings.Contains(e.Category, anaConst.CatConfig) {
 			continue
-		}
-
-		if e.Action == anaConst.ActConfigSet {
-			setFound++
-		} else if e.Action == anaConst.ActConfigUnset {
-			unsetFound++
 		}
 
 		if e.Label != "optin.unstable" {
@@ -562,13 +554,9 @@ func (suite *AnalyticsIntegrationTestSuite) TestConfigEvents() {
 	if found < 2 {
 		suite.Fail("Should find multiple config events")
 	}
-	if setFound != 1 {
-		suite.Fail("Should find one config set event")
-	}
-	if unsetFound != 1 {
-		suite.Fail("Should find one config unset event")
-	}
 
+	suite.assertNEvents(events, 1, anaConst.CatConfig, anaConst.ActConfigSet, "Should be at one config set event")
+	suite.assertNEvents(events, 1, anaConst.CatConfig, anaConst.ActConfigUnset, "Should be at one config unset event")
 	suite.assertSequentialEvents(events)
 }
 
