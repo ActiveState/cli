@@ -86,7 +86,7 @@ scripts:
     value: |
       set -e
       $constants.SET_ENV
-      go run scripts/constants-generator/main.go -- internal/constants/generated.go
+      go run scripts/constants-generator/main.go ${@} -- internal/constants/generated.go
       mkdir -p build/msi
   - name: build
     language: bash

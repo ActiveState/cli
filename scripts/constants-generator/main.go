@@ -2,9 +2,11 @@ package main
 
 import (
 	"bytes"
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/dave/jennifer/jen"
@@ -12,17 +14,23 @@ import (
 	"github.com/ActiveState/cli/internal/constants/preprocess"
 )
 
-var inTest = false
-
 var (
-	start = time.Now()
+	start   = time.Now()
+	verbose bool
 )
 
-func log(format string, as ...any) {
+func logit(format string, as ...any) {
 	d := time.Since(start)
 	fmt.Fprintf(os.Stderr, "[%08dμs] ", d.Microseconds())
 	fmt.Fprintf(os.Stderr, format, as...)
 	fmt.Fprintln(os.Stderr)
+}
+
+func log(format string, as ...any) {
+	if !verbose {
+		return
+	}
+	logit(format, as...)
 }
 
 func logFatal(format string, as ...any) {
@@ -31,15 +39,16 @@ func logFatal(format string, as ...any) {
 }
 
 func main() {
-	if !inTest {
-		run(os.Args)
-	}
+	flag.BoolVar(&verbose, "v", verbose, "Use verbose output")
+	flag.Parse()
+
+	run(os.Args)
 }
 
 func run(args []string) {
 	log("Starting run logic")
-	if len(args) < 2 || (args[1] == "--" && len(args) < 3) {
-		logFatal("Usage: %s <target-file>", args[0])
+	if len(args) < 2 || strings.HasPrefix(args[len(args)-1], "-") {
+		logFatal("Usage: %s [-v] <target-file>", args[0])
 	}
 
 	log("Storing constants data in file buffer")
@@ -59,10 +68,7 @@ func run(args []string) {
 		logFatal("Rendering failed: %v", err)
 	}
 
-	target := args[1]
-	if target == "--" {
-		target = args[2]
-	}
+	target := args[len(args)-1]
 
 	wd, _ := os.Getwd()
 	log("Writing generated constants to: %s (pwd: %s)", target, wd)
