@@ -219,7 +219,7 @@ func (r *Resolver) CheckRuntimeUsage(_ context.Context, organizationName string)
 
 	if usage == nil {
 		return &graph.CheckRuntimeUsageResponse{
-			Limit: 0,
+			Limit: 1,
 			Usage: 0,
 		}, nil
 	}

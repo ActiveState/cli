@@ -88,7 +88,7 @@ func BinPathFromInstallPath(installPath string) (string, error) {
 	return filepath.Join(installPath, BinDirName), nil
 }
 
-func LauncherInstallPath() (string, error) {
+func ApplicationInstallPath() (string, error) {
 	if path, ok := os.LookupEnv(constants.OverwriteDefaultSystemPathEnvVarName); ok {
 		return path, nil
 	}

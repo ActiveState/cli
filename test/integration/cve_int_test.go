@@ -93,7 +93,7 @@ func (suite *CveIntegrationTestSuite) TestCveInvalidProject() {
 	ts.LoginAsPersistentUser()
 
 	cp := ts.Spawn("cve", "report", "invalid/invalid")
-	cp.Expect("Found no project with specified organization and name")
+	cp.ExpectLongString("Found no project with specified organization and name")
 
 	cp.ExpectNotExitCode(0)
 }

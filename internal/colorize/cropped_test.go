@@ -58,6 +58,11 @@ func Test_GetCroppedText(t *testing.T) {
 			[]CroppedLine{{"[HEADING]✔ Some", 6}, {" Text[/RESET]", 5}},
 		},
 		{
+			"Split multi-byte character with tags by words",
+			args{"[HEADING]✔ Some Text[/RESET]", 10},
+			[]CroppedLine{{"[HEADING]✔ Some ", 7}, {"Text[/RESET]", 4}},
+		},
+		{
 			"Split line break",
 			args{"[HEADING]Hel\nlo[/RESET]", 5},
 			[]CroppedLine{{"[HEADING]Hel", 3}, {"lo[/RESET]", 2}},

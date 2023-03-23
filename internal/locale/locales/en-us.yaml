@@ -1362,7 +1362,7 @@ uninstall_description:
   other: Remove the State Tool, installed languages, and any configuration files
 cache_description:
   other: Removes cached Runtime Environments
-config_description:
+clean_config_description:
   other: Removes global State Tool configuration. Project configuration will not be affected.
 flag_state_clean_uninstall_force_description:
   other: Run uninstall operation without prompts and ignoring any errors stopping running services
@@ -1862,6 +1862,8 @@ progress_project:
   other: " • Initializing Project"
 progress_search:
   other: " • Searching for [ACTIONABLE]{{.V0}}[/RESET] in the ActiveState Catalog"
+setup_runtime:
+  other: "Setting Up Runtime"
 progress_solve:
   other: "Resolving Dependencies"
 progress_success:

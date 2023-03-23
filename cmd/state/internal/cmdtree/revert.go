@@ -16,7 +16,13 @@ func newRevertCommand(prime *primer.Values, globals *globalOptions) *captain.Com
 		locale.Tl("revert_title", "Reverting Commit"),
 		locale.Tl("revert_description", "Revert a commit"),
 		prime,
-		[]*captain.Flag{},
+		[]*captain.Flag{
+			{
+				Name:        "to",
+				Description: locale.Tl("revert_arg_to", "Create a new commit that brings the runtime back to the same state as the commit given"),
+				Value:       &params.To,
+			},
+		},
 		[]*captain.Argument{
 			{
 				Name:        "commit-id",

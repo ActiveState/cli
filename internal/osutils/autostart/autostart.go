@@ -5,25 +5,18 @@ import (
 	configMediator "github.com/ActiveState/cli/internal/mediators/config"
 )
 
-type AppName string
-
 func init() {
 	configMediator.RegisterOption(constants.AutostartSvcConfigKey, configMediator.Bool, configMediator.EmptyEvent, configMediator.EmptyEvent)
 }
 
-func (a AppName) String() string {
-	return string(a)
-}
-
-type app struct {
-	Name    string
-	Exec    string
-	Args    []string
-	cfg     Configurable
-	options Options
+type Configurable interface {
+	Set(string, interface{}) error
+	IsSet(string) bool
 }
 
 type Options struct {
+	Name           string
+	Args           []string
 	LaunchFileName string
 	IconFileName   string
 	IconFileSource string
@@ -34,25 +27,18 @@ type Options struct {
 	MacInteractive bool   // macOS plist Interactive ProcessType
 }
 
-type Configurable interface {
-	Set(string, interface{}) error
-	IsSet(string) bool
+func Enable(exec string, opts Options) error {
+	return enable(exec, opts)
 }
 
-func New(name AppName, exec string, args []string, options Options, cfg Configurable) (*app, error) {
-	return &app{
-		Name:    name.String(),
-		Exec:    exec,
-		Args:    args,
-		cfg:     cfg,
-		options: options,
-	}, nil
+func Disable(exec string, opts Options) error {
+	return disable(exec, opts)
 }
 
-func (a *app) Enable() error {
-	return a.enable()
+func IsEnabled(exec string, opts Options) (bool, error) {
+	return isEnabled(exec, opts)
 }
 
-func (a *app) Disable() error {
-	return a.disable()
+func AutostartPath(exec string, opts Options) (string, error) {
+	return autostartPath(exec, opts)
 }

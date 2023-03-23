@@ -17,6 +17,7 @@ import (
 	"time"
 	"unicode"
 
+	"github.com/ActiveState/cli/internal/assets"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -263,6 +264,20 @@ func CopyFile(src, target string) error {
 	if err != nil {
 		return errs.Wrap(err, "out.Close failed")
 	}
+	return nil
+}
+
+func CopyAsset(assetName, dest string) error {
+	asset, err := assets.ReadFileBytes(assetName)
+	if err != nil {
+		return errs.Wrap(err, "Asset %s failed", assetName)
+	}
+
+	err = ioutil.WriteFile(dest, asset, 0644)
+	if err != nil {
+		return errs.Wrap(err, "ioutil.WriteFile %s failed", dest)
+	}
+
 	return nil
 }
 
@@ -679,6 +694,51 @@ func WriteTempFileToDir(dir, pattern string, data []byte, perm os.FileMode) (str
 	}
 
 	return f.Name(), nil
+}
+
+type DirReader interface {
+	ReadDir(string) ([]os.DirEntry, error)
+}
+
+func CopyFilesDirReader(reader DirReader, src, dst, placeholderFileName string) error {
+	entries, err := reader.ReadDir(src)
+	if err != nil {
+		return errs.Wrap(err, "reader.ReadDir %s failed", src)
+	}
+
+	for _, entry := range entries {
+		srcPath := filepath.Join(src, entry.Name())
+		destPath := filepath.Join(dst, entry.Name())
+
+		switch entry.Type() & os.ModeType {
+		case os.ModeDir:
+			err := MkdirUnlessExists(destPath)
+			if err != nil {
+				return errs.Wrap(err, "MkdirUnlessExists %s failed", destPath)
+			}
+
+			err = CopyFilesDirReader(reader, srcPath, destPath, placeholderFileName)
+			if err != nil {
+				return errs.Wrap(err, "CopyFiles %s:%s failed", srcPath, destPath)
+			}
+		case os.ModeSymlink:
+			err := CopySymlink(srcPath, destPath)
+			if err != nil {
+				return errs.Wrap(err, "CopySymlink %s:%s failed", srcPath, destPath)
+			}
+		default:
+			if entry.Name() == placeholderFileName {
+				continue
+			}
+
+			err := CopyAsset(srcPath, destPath)
+			if err != nil {
+				return errs.Wrap(err, "CopyFile %s:%s failed", srcPath, destPath)
+			}
+		}
+	}
+
+	return nil
 }
 
 // CopyFiles will copy all of the files/dirs within one directory to another.

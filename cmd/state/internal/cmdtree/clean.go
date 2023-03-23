@@ -86,7 +86,7 @@ func newCleanConfigCommand(prime *primer.Values) *captain.Command {
 	return captain.NewCommand(
 		"config",
 		locale.Tl("clean_config_title", "Cleaning Configuration"),
-		locale.T("config_description"),
+		locale.T("clean_config_description"),
 		prime,
 		[]*captain.Flag{
 			{

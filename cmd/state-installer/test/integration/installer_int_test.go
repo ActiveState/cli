@@ -2,6 +2,7 @@ package integration
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -38,11 +39,15 @@ func (suite *InstallerIntegrationTestSuite) TestInstallFromLocalSource() {
 
 	target := filepath.Join(ts.Dirs.Work, "installation")
 
+	dir, err := ioutil.TempDir("", "system*")
+	suite.NoError(err)
+
 	// Run installer with source-path flag (ie. install from this local path)
 	cp := ts.SpawnCmdWithOpts(
 		suite.installerExe,
 		e2e.WithArgs(target),
 		e2e.AppendEnv(constants.DisableUpdates+"=false"),
+		e2e.AppendEnv(fmt.Sprintf("%s=%s", constants.OverwriteDefaultSystemPathEnvVarName, dir)),
 	)
 
 	// Assert output
@@ -129,10 +134,14 @@ func (suite *InstallerIntegrationTestSuite) TestInstallNoErrorTips() {
 
 	target := filepath.Join(ts.Dirs.Work, "installation")
 
+	dir, err := ioutil.TempDir("", "system*")
+	suite.NoError(err)
+
 	cp := ts.SpawnCmdWithOpts(
 		suite.installerExe,
 		e2e.WithArgs(target, "--activate", "ActiveState/DoesNotExist"),
 		e2e.AppendEnv(constants.DisableUpdates+"=true"),
+		e2e.AppendEnv(fmt.Sprintf("%s=%s", constants.OverwriteDefaultSystemPathEnvVarName, dir)),
 	)
 
 	cp.ExpectExitCode(1)
@@ -148,10 +157,14 @@ func (suite *InstallerIntegrationTestSuite) TestInstallErrorTips() {
 
 	target := filepath.Join(ts.Dirs.Work, "installation")
 
+	dir, err := ioutil.TempDir("", "system*")
+	suite.NoError(err)
+
 	cp := ts.SpawnCmdWithOpts(
 		suite.installerExe,
 		e2e.WithArgs(target, "--activate", "ActiveState-CLI/Python3"),
 		e2e.AppendEnv(constants.DisableUpdates+"=true"),
+		e2e.AppendEnv(fmt.Sprintf("%s=%s", constants.OverwriteDefaultSystemPathEnvVarName, dir)),
 	)
 
 	cp.WaitForInput()
@@ -178,6 +191,7 @@ func (suite *InstallerIntegrationTestSuite) TestStateTrayRemoval() {
 		oneLiner := fmt.Sprintf("sh <(curl -q https://platform.activestate.com/dl/cli/pdli01/install.sh) -f -n -t %s -v %s", dir, version)
 		cp = ts.SpawnCmdWithOpts(
 			"bash", e2e.WithArgs("-c", oneLiner),
+			e2e.AppendEnv(fmt.Sprintf("%s=%s", constants.OverwriteDefaultSystemPathEnvVarName, dir)),
 		)
 	} else {
 		b, err := download.GetDirect("https://platform.activestate.com/dl/cli/pdli01/install.ps1")
@@ -188,6 +202,7 @@ func (suite *InstallerIntegrationTestSuite) TestStateTrayRemoval() {
 
 		cp = ts.SpawnCmdWithOpts("powershell.exe", e2e.WithArgs(ps1File, "-f", "-n", "-t", dir, "-v", version),
 			e2e.AppendEnv("SHELL="),
+			e2e.AppendEnv(fmt.Sprintf("%s=%s", constants.OverwriteDefaultSystemPathEnvVarName, dir)),
 		)
 	}
 	cp.Expect("Installation Complete", 5*time.Minute)
@@ -205,6 +220,7 @@ func (suite *InstallerIntegrationTestSuite) TestStateTrayRemoval() {
 		suite.installerExe,
 		e2e.WithArgs("-f", "-n", "-t", dir),
 		e2e.AppendEnv(constants.UpdateBranchEnvVarName+"=release"),
+		e2e.AppendEnv(fmt.Sprintf("%s=%s", constants.OverwriteDefaultSystemPathEnvVarName, dir)),
 	)
 	cp.Expect("Installing", 10*time.Second)
 	cp.Expect("Done", 30*time.Second)
