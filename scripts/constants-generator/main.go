@@ -15,6 +15,7 @@ import (
 )
 
 var (
+	inTest  bool
 	start   = time.Now()
 	verbose bool
 )
@@ -42,7 +43,9 @@ func main() {
 	flag.BoolVar(&verbose, "v", verbose, "Use verbose output")
 	flag.Parse()
 
-	run(os.Args)
+	if !inTest {
+		run(os.Args)
+	}
 }
 
 func run(args []string) {
