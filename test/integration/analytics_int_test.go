@@ -515,6 +515,63 @@ func (suite *AnalyticsIntegrationTestSuite) TestHeapEvents() {
 	suite.assertSequentialEvents(events)
 }
 
+func (suite *AnalyticsIntegrationTestSuite) TestConfigEvents() {
+	suite.OnlyRunForTags(tagsuite.Analytics, tagsuite.Config)
+
+	ts := e2e.New(suite.T(), true)
+	defer ts.Close()
+
+	cp := ts.SpawnWithOpts(e2e.WithArgs("config", "set", "optin.unstable", "false"),
+		e2e.WithWorkDirectory(ts.Dirs.Work),
+	)
+	cp.Expect("Successfully set config key")
+
+	cp = ts.SpawnWithOpts(e2e.WithArgs("config", "set", "optin.unstable", "true"),
+		e2e.WithWorkDirectory(ts.Dirs.Work),
+	)
+	cp.Expect("Successfully set config key")
+
+	time.Sleep(time.Second) // Ensure state-svc has time to report events
+
+	suite.eventsfile = filepath.Join(ts.Dirs.Config, reporters.TestReportFilename)
+
+	events := parseAnalyticsEvents(suite, ts)
+	suite.Require().NotEmpty(events)
+
+	// Ensure analytics events have required/important fields
+	var found int
+	var setFound int
+	var unsetFound int
+	for _, e := range events {
+		if !strings.Contains(e.Category, anaConst.CatConfig) {
+			continue
+		}
+
+		if e.Action == anaConst.ActConfigSet {
+			setFound++
+		} else if e.Action == anaConst.ActConfigUnset {
+			unsetFound++
+		}
+
+		if e.Label != "optin.unstable" {
+			suite.Fail("Incorrect config event label")
+		}
+		found++
+	}
+
+	if found < 2 {
+		suite.Fail("Should find multiple config events")
+	}
+	if setFound != 1 {
+		suite.Fail("Should find one config set event")
+	}
+	if unsetFound != 1 {
+		suite.Fail("Should find one config unset event")
+	}
+
+	suite.assertSequentialEvents(events)
+}
+
 func TestAnalyticsIntegrationTestSuite(t *testing.T) {
 	suite.Run(t, new(AnalyticsIntegrationTestSuite))
 }
