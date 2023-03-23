@@ -96,7 +96,7 @@ jobs:
         name: Preprocess
         shell: bash
         timeout-minutes: 3
-        run: state run preprocess
+        run: state run preprocess -v
 
       - # === Parallel Tasks ===
         name: Parallel Tasks
@@ -432,7 +432,7 @@ jobs:
       - # === Preprocess ===
         name: Preprocess
         shell: bash
-        run: state run preprocess
+        run: state run preprocess -v
 
       - # === Cleanup Build Dir ===
         name: Cleanup Build Dir

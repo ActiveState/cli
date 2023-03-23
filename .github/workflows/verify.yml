@@ -62,7 +62,7 @@ jobs:
       - # === Preprocess ===
         name: Preprocess
         shell: bash
-        run: state run preprocess
+        run: state run preprocess -v
 
       - # === Set Target PR & FixVersion ===
         name: Set Target PR and FixVersion

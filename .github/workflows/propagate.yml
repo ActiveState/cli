@@ -60,7 +60,7 @@ jobs:
       - # === Preprocess ===
         name: Preprocess
         shell: bash
-        run: state run preprocess
+        run: state run preprocess -v
 
       - # === Propagate PR ===
         name: Propagate PR
