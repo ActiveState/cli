@@ -22,7 +22,16 @@ func (m *httpGetMock) Get(url string) ([]byte, int, error) {
 }
 
 func mockUpdate(channel, version, tag string) *AvailableUpdate {
-	return NewAvailableUpdate(version, channel, "platform", "path/to/zipfile.zip", "123456", tag)
+	return &AvailableUpdate{
+		Version:  version,
+		Channel:  channel,
+		Platform: "platform",
+		Path:     "path/to/zipfile.zip",
+		Sha256:   "123456",
+		Tag:      &tag,
+		an:       blackhole.New(),
+	}
+
 }
 
 func newMock(t *testing.T, channel, version, tag string) *httpGetMock {
