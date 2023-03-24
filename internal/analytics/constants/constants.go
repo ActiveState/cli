@@ -21,6 +21,9 @@ const CatRuntimeUsage = "runtime-use"
 // CatConfig is the event category used for all configuration events
 const CatConfig = "config"
 
+// CatUpdate is the event category used for all update events
+const CatUpdates = "updates"
+
 // ActRuntimeHeartbeat is the event action sent when a runtime is in use
 const ActRuntimeHeartbeat = "heartbeat"
 
@@ -56,6 +59,21 @@ const ActConfigSet = "set"
 
 // ActConfigUnset is the event action sent when a configuration value is unset
 const ActConfigUnset = "unset"
+
+// ActConfigGet is the event action sent when determining if an update should be checked
+const ActShouldUpdate = "should-update"
+
+// ActConfigGet is the event action sent when an update is checked
+const ActUpdateCheck = "update-check"
+
+// ActUpdateDownload is the event action sent when an update retrieved
+const ActUpdateDownload = "download"
+
+// ActUpdateInstall is the event action sent when an update is installed
+const ActUpdateInstall = "install"
+
+// ActUpdateRelaunch is the event action sent after and update is installed and the state tool is relaunched
+const ActUpdateRelaunch = "relaunch"
 
 // LblRtFailUpdate is the label sent with an ActRuntimeFailure event if an error occurred during a runtime update
 const LblRtFailUpdate = "update"
