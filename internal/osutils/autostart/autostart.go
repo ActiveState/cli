@@ -35,6 +35,7 @@ func Disable(exec string, opts Options) error {
 	return disable(exec, opts)
 }
 
+// IsEnabled is provided for testing only.
 func IsEnabled(exec string, opts Options) (bool, error) {
 	return isEnabled(exec, opts)
 }
