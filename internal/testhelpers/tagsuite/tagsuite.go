@@ -79,6 +79,7 @@ const (
 	Checkout        = "checkout"
 	OffInstall      = "offline-install"
 	Help            = "help"
+	Oops            = "oops"
 )
 
 // Suite extends a testify suite Suite, such that tests allowing for dynamic skipping of tests
