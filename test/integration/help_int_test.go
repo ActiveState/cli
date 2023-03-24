@@ -17,7 +17,7 @@ func TestHelpIntegrationTestSuite(t *testing.T) {
 }
 
 func (suite *HelpIntegrationTestSuite) TestCommandListing() {
-	suite.OnlyRunForTags(tagsuite.Oops)
+	suite.OnlyRunForTags(tagsuite.Help)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -33,6 +33,4 @@ func (suite *HelpIntegrationTestSuite) TestCommandListing() {
 	cp.Expect("Utilities:")
 	cp.Expect("    remove") // wrapped on word, not character
 	cp.Expect("Flags:")
-
-	suite.Fail("oops!")
 }
