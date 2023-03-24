@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
+	"github.com/ActiveState/cli/internal/analytics/client/blackhole"
 	"github.com/ActiveState/cli/internal/constants"
 	configMock "github.com/ActiveState/cli/internal/testhelpers/config_test"
 	"github.com/stretchr/testify/assert"
@@ -77,7 +78,7 @@ func TestCheckerCheckFor(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.Name, func(t *testing.T) {
 			m := newMock(t, tt.MockChannel, tt.MockVersion, tt.MockTag)
-			check := NewChecker(&configMock.Mock{}, constants.APIUpdateInfoURL, constants.APIUpdateURL, "master", "1.2.3", m)
+			check := NewChecker(&configMock.Mock{}, blackhole.New(), constants.APIUpdateInfoURL, constants.APIUpdateURL, "master", "1.2.3", m)
 			res, err := check.CheckFor(tt.CheckChannel, tt.CheckVersion)
 			require.NoError(t, err)
 			if res != nil {
