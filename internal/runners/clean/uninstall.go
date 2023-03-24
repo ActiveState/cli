@@ -32,6 +32,7 @@ type UninstallParams struct {
 	Force          bool
 	NonInteractive bool
 	All            bool
+	ConfirmExit    bool
 }
 
 type primeable interface {
