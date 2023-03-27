@@ -2,8 +2,11 @@ package integration
 
 import (
 	"bytes"
+	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
+	"strings"
 	"testing"
 
 	"github.com/ActiveState/cli/internal/constants"
@@ -144,7 +147,47 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckoutWithFlags() {
 	cp = ts.SpawnWithOpts(e2e.WithArgs("checkout", "ActiveState-CLI/Python-3.9", branchPath, "--branch", "doesNotExist"))
 	cp.ExpectLongString("This project has no branch with label matching doesNotExist")
 	cp.ExpectExitCode(1)
+}
 
+func (suite *CheckoutIntegrationTestSuite) TestCheckoutCustomRTPath() {
+	suite.OnlyRunForTags(tagsuite.Checkout)
+
+	ts := e2e.New(suite.T(), true)
+	defer ts.Close()
+
+	customRTPath, err := fileutils.ResolveUniquePath(filepath.Join(ts.Dirs.Work, "custom-cache"))
+	suite.Require().NoError(err)
+	err = fileutils.Mkdir(customRTPath)
+	suite.Require().NoError(err)
+
+	// Checkout and verify.
+	cp := ts.SpawnWithOpts(
+		e2e.WithArgs("checkout", "ActiveState-CLI/Python3", fmt.Sprintf("--runtime-path=%s", customRTPath)),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
+	cp.Expect("Checked out project")
+
+	pythonExe := filepath.Join(setup.ExecDir(customRTPath), "python3"+exeutils.Extension)
+	suite.Require().True(fileutils.DirExists(customRTPath))
+	suite.Require().True(fileutils.FileExists(pythonExe))
+
+	// Verify runtime was installed correctly and works.
+	cp = ts.SpawnCmd(pythonExe, "--version")
+	cp.Expect("Python 3")
+	cp.ExpectExitCode(0)
+
+	// Verify that state exec works with custom cache.
+	cp = ts.SpawnWithOpts(
+		e2e.WithArgs("exec", "python3", "--", "-c", "import sys;print(sys.executable)"),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.WithWorkDirectory(filepath.Join(ts.Dirs.Work, "Python3")),
+	)
+	if runtime.GOOS == "windows" {
+		customRTPath, err = fileutils.GetLongPathName(customRTPath)
+		suite.Require().NoError(err)
+		customRTPath = strings.ToLower(customRTPath)
+	}
+	cp.Expect(customRTPath)
 }
 
 func TestCheckoutIntegrationTestSuite(t *testing.T) {

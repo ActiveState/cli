@@ -31,6 +31,7 @@ type Uninstall struct {
 type UninstallParams struct {
 	Force          bool
 	NonInteractive bool
+	All            bool
 }
 
 type primeable interface {
@@ -62,7 +63,11 @@ func (u *Uninstall) Run(params *UninstallParams) error {
 
 	if !params.Force {
 		defaultChoice := params.NonInteractive
-		ok, err := u.confirm.Confirm(locale.T("confirm"), locale.T("uninstall_confirm"), &defaultChoice)
+		confirmMessage := locale.T("uninstall_confirm")
+		if params.All {
+			confirmMessage = locale.T("uninstall_confirm_all")
+		}
+		ok, err := u.confirm.Confirm(locale.T("confirm"), confirmMessage, &defaultChoice)
 		if err != nil {
 			return locale.WrapError(err, "err_uninstall_confirm", "Could not confirm uninstall choice")
 		}
@@ -80,7 +85,7 @@ func (u *Uninstall) Run(params *UninstallParams) error {
 		return errs.Wrap(err, "Failed to stop services.")
 	}
 
-	err = u.runUninstall()
+	err = u.runUninstall(params)
 	if err != nil {
 		return errs.Wrap(err, "Could not complete uninstallation")
 	}

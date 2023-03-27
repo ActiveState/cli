@@ -10,7 +10,6 @@ import (
 	"github.com/ActiveState/cli/internal/constraints"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
@@ -106,13 +105,13 @@ func (od *outputDataPrinter) MarshalOutput(format output.Format) interface{} {
 			*RuntimeDetails `opts:"verticalTable"`
 		}{&od.data.RuntimeDetails},
 	)
-	od.output.Print(output.Heading(locale.Tl("state_show_events_header", "Events")))
+	od.output.Print(output.Title(locale.Tl("state_show_events_header", "Events")))
 	od.output.Print(formatSlice(od.data.Events))
-	od.output.Print(output.Heading(locale.Tl("state_show_scripts_header", "Scripts")))
+	od.output.Print(output.Title(locale.Tl("state_show_scripts_header", "Scripts")))
 	od.output.Print(formatScripts(od.data.Scripts))
-	od.output.Print(output.Heading(locale.Tl("state_show_platforms_header", "Platforms")))
+	od.output.Print(output.Title(locale.Tl("state_show_platforms_header", "Platforms")))
 	od.output.Print(od.data.Platforms)
-	od.output.Print(output.Heading(locale.Tl("state_show_languages_header", "Languages")))
+	od.output.Print(output.Title(locale.Tl("state_show_languages_header", "Languages")))
 	od.output.Print(od.data.Languages)
 
 	return output.Suppress
@@ -202,7 +201,7 @@ func (s *Show) Run(params Params) error {
 			}
 		}
 
-		projectTarget = target.NewProjectTarget(s.project, storage.CachePath(), nil, "").Dir()
+		projectTarget = target.NewProjectTarget(s.project, nil, "").Dir()
 	}
 
 	remoteProject, err := model.FetchProjectByName(owner, projectName)

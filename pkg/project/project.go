@@ -246,6 +246,9 @@ func (p *Project) IsLocked() bool { return p.Lock() != "" }
 // Lock returns the lock information for this project
 func (p *Project) Lock() string { return p.projectfile.Lock }
 
+// Cache returns the cache information for this project
+func (p *Project) Cache() string { return p.projectfile.Cache }
+
 // Namespace returns project namespace
 func (p *Project) Namespace() *Namespaced {
 	commitID := strfmt.UUID(p.projectfile.CommitID())

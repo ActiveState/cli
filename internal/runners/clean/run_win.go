@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 
 	"github.com/ActiveState/cli/internal/assets"
+	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/exeutils"
@@ -25,7 +26,7 @@ import (
 	"github.com/ActiveState/cli/internal/scriptfile"
 )
 
-func (u *Uninstall) runUninstall() error {
+func (u *Uninstall) runUninstall(params *UninstallParams) error {
 	// we aggregate installation errors, such that we can display all installation problems in the end
 	// TODO: This behavior should be replaced with a proper rollback mechanism https://www.pivotaltracker.com/story/show/178134918
 	var aggErr error
@@ -41,16 +42,18 @@ func (u *Uninstall) runUninstall() error {
 		aggErr = locale.WrapError(aggErr, "err_state_exec")
 	}
 
-	err = removeInstall(logFile.Name(), u.cfg)
+	err = removeInstall(logFile.Name(), params, u.cfg)
 	if err != nil {
 		logging.Debug("Could not remove installation: %s", errs.JoinMessage(err))
 		aggErr = locale.WrapError(aggErr, "uninstall_remove_executables_err", "Failed to remove all State Tool files in installation directory {{.V0}}", filepath.Dir(stateExec))
 	}
 
-	err = removeCache(storage.CachePath())
-	if err != nil {
-		logging.Debug("Could not remove cache at %s: %s", storage.CachePath(), errs.JoinMessage(err))
-		aggErr = locale.WrapError(aggErr, "uninstall_remove_cache_err", "Failed to remove cache directory {{.V0}}.", storage.CachePath())
+	if params.All {
+		err = removeCache(storage.CachePath())
+		if err != nil {
+			logging.Debug("Could not remove cache at %s: %s", storage.CachePath(), errs.JoinMessage(err))
+			aggErr = locale.WrapError(aggErr, "uninstall_remove_cache_err", "Failed to remove cache directory {{.V0}}.", storage.CachePath())
+		}
 	}
 
 	err = undoPrepare(u.cfg)
@@ -83,7 +86,7 @@ func removeConfig(configPath string, out output.Outputer) error {
 	return removePaths(logFile.Name(), configPath)
 }
 
-func removeInstall(logFile string, cfg *config.Instance) error {
+func removeInstall(logFile string, params *UninstallParams, cfg *config.Instance) error {
 	svcExec, err := installation.ServiceExec()
 	if err != nil {
 		return locale.WrapError(err, "err_service_exec")
@@ -104,8 +107,19 @@ func removeInstall(logFile string, cfg *config.Instance) error {
 		return locale.WrapError(err, "err_state_exec")
 	}
 
-	// Schedule removal of the branch name directory and the config directory
-	paths := []string{filepath.Dir(filepath.Dir(stateExec)), cfg.ConfigPath()}
+	// Schedule removal of the entire branch name directory.
+	// This is because Windows often thinks the installation.InstallDirMarker and
+	// constants.StateInstallerCmd files are still in use.
+	branchDir := filepath.Dir(filepath.Dir(stateExec))
+	if condition.InTest() && !params.All {
+		// On CI, the installation root also contains cache and config directories, and they should
+		// not be removed. Instead, just remove the installation bin directory.
+		branchDir = filepath.Dir(stateExec)
+	}
+	paths := []string{branchDir}
+	if params.All {
+		paths = append(paths, cfg.ConfigPath()) // also remove the config directory
+	}
 	// If the transitional state tool path is known, we remove it. This is done in the background, because the transitional State Tool can be the initiator of the uninstall request
 	if transitionalStateTool := cfg.GetString(installation.CfgTransitionalStateToolPath); transitionalStateTool != "" {
 		paths = append(paths, transitionalStateTool)

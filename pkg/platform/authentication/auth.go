@@ -18,6 +18,7 @@ import (
 	"github.com/ActiveState/cli/internal/profile"
 	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/ActiveState/cli/internal/singleton/uniqid"
+	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/api/mono"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/authentication"
@@ -215,6 +216,9 @@ func (s *Auth) AuthenticateWithModel(credentials *mono_models.Credentials) error
 		default:
 			if os.IsTimeout(err) {
 				return locale.NewInputError("err_api_auth_timeout", "Timed out waiting for authentication response. Please try again.")
+			}
+			if api.ErrorCode(err) == 403 {
+				return locale.NewInputError("err_auth_forbidden", "You are not allowed to login now. Please try again later.")
 			}
 			if !condition.IsNetworkingError(err) {
 				multilog.Error("Authentication API returned %v", err)

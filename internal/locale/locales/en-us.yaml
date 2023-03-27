@@ -992,12 +992,16 @@ field_version:
   other: Version
 field_bitwidth:
   other: Bit Width
-commit_message_add_platform:
+commit_message_added_platform:
   other: "Added platform: {{.V0}} {{.V1}}bit {{.V2}}"
+commit_message_updated_platform:
+  other: "Updated platform: {{.V0}} to {{.V1}}"
 commit_message_removed_platform:
   other: "Removed platform: {{.V0}} {{.V1}}bit {{.V2}}"
-commit_message_add_language:
+commit_message_added_language:
   other: "Added language: {{.V0}} {{.V1}}"
+commit_message_updated_language:
+  other: "Updated language: {{.V0}} to {{.V1}}"
 commit_message_removed_language:
   other: "Removed language: {{.V0}} {{.V1}}"
 downloading_artifacts:
@@ -1120,9 +1124,7 @@ package_search_flag_exact-term_description:
   other: Ensures that search results match search term exactly
 package_import_flag_filename_description:
   other: The file to import
-package_import_flag_force_description:
-  other: Run import operation without prompts
-commit_message_add_package:
+commit_message_added_package:
   other: "Added package: {{.V0}}@{{.V1}}"
 commit_message_removed_package:
   other: "Removed package: {{.V0}}"
@@ -1166,8 +1168,6 @@ package_err_cannot_obtain_search_results:
   other: Cannot obtain search results
 err_cannot_commit_changeset:
   other: Cannot commit changeset
-err_obtaining_change_request:
-  other: Cannot obtain change request
 package_no_data:
   other: No data found - Please verify the provided commit id
 package_list_no_packages:
@@ -1379,6 +1379,12 @@ err_clean_cache_activated:
 err_clean_config_activated:
   other: Cannot remove the config directory while in an activated state. Please deactivate by entering [ACTIONABLE]exit[/RESET] or pressing [ACTIONABLE]Ctrl+D[/RESET] and then try again.
 uninstall_confirm:
+  other: |
+    You are about to remove the State Tool.
+    Your config and cache files will remain.
+    If you would also like to remove those files, add the [ACTIONABLE]--all[/RESET] flag.
+    Continue?
+uninstall_confirm_all:
   other: You are about to remove the State Tool, installed language runtimes, and all configuration information. Continue?
 clean_cache_confirm:
   other: You are about to reset the State Tool cache. Continue?
@@ -2013,7 +2019,7 @@ export_project_statement:
   other: Exporting env for project [ACTIONABLE]{{.V0}}[/RESET] located at [ACTIONABLE]{{.V1}}[/RESET].
 err_rtprogress_outofsync:
   other: |
-    Received events that appear to be out of order. 
+    Received events that appear to be out of order.
     Please report this issue on [ACTIONABLE]{{.V0}}[/RESET] and include your log file at [ACTIONABLE]{{.V1}}[/RESET].
 err_home_not_found:
   other: |

@@ -151,10 +151,10 @@ func (rd *reportDataPrinter) MarshalOutput(format output.Format) interface{} {
 		}
 		hist = append(hist, ho)
 	}
-	rd.output.Print(output.Heading(fmt.Sprintf("%d Vulnerabilities", totalCount)))
+	rd.output.Print(output.Title(fmt.Sprintf("%d Vulnerabilities", totalCount)))
 	rd.output.Print(hist)
 
-	rd.output.Print(output.Heading(fmt.Sprintf("%d Affected Packages", len(rd.data.Packages))))
+	rd.output.Print(output.Title(fmt.Sprintf("%d Affected Packages", len(rd.data.Packages))))
 	for _, ap := range rd.data.Packages {
 		rd.output.Print(fmt.Sprintf("[NOTICE]%s %s[/RESET]", ap.Name, ap.Version))
 		rd.output.Print(locale.Tl("report_package_vulnerabilities", "{{.V0}} Vulnerabilities", strconv.Itoa(len(ap.Details))))

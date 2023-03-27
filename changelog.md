@@ -6,28 +6,76 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+### 0.37.0
+
+### Changed
+
+- The following commands have been marked as stable, you no longer need to
+  opt-in to unstable to use them:
+    - `state checkout`
+    - `state info`
+    - `state scripts`
+    - `state shell`
+    - `state switch`
+    - `state use reset`
+    - `state use show`
+    - `state use`
+- All titles/headings are now consistently formatted.
+- Better use of whitespace in the error output.
+- `state clean uninstall` now only removes the application files. Use `--all` to
+  also delete config and cache files.
+- Runtime progress will now fail rather than silently continue if we received
+  out of progress events, preventing vague failures later on.
+- Dropped the `--force` flag from `state import`. The same use-case is addressed
+  with `--non-interactive`.
+- Using `state shell` with an invalid SHELL environment variable will now give
+  a more informative error message.
+- `state init` now uses more recent default language versions.
+
+### Added
+
+- `state checkout` has a new flag named `--runtime-path`, which allows you to
+  specify where the runtime files should be stored.
+
+### Fixed
+
+- Fixed commit messages containing empty information.
+- Fixed installation failing because "State Tool is already installed" even
+  though it was uninstalled.
+- Fixed `state revert` failing when not authenticated, even when no
+  authentication is required.
+- Fixed `state revert` failing with a vague error if provided an invalid commit
+  ID.
+- Fixed `state clean uninstall` giving a success message even when there were
+  failures.
+- Fixed `state import` giving a vague error message when the file specified does
+  not exist.
+- Fixed issue where a panic in the code would not be handled gracefully.
+
 ### 0.36.0
 
-### Added 
+### Added
 
-- All commands have been updated to proactively mention project and runtime 
-  information, making it easier to understand what is going on and how to configure
+- All commands have been updated to proactively mention project and runtime
+  information, making it easier to understand what is going on and how to
+  configure
   your tooling.
 - State Tool will now give you a heads-up if the organization you're accessing
   has gone over its runtime limit.
-- State Tool will now configure itself for all supported shells on your system, 
+- State Tool will now configure itself for all supported shells on your system,
   rather than just the currently active shell.
-- Better support for Bash on Windows. 
+- Better support for Bash on Windows.
 
 ### Changed
 
 - Significantly improved the performance of runtime executors.
-- `state revert` now reverts "a" commit, rather than reverting "to" a commit. This
+- `state revert` now reverts "a" commit, rather than reverting "to" a commit.
+  This
   is meant to bring the user-experience in line with that of git.
 - Bash on macOS is no longer supported as a shell. This is due to the fact that
   macOS has deprecated the use of bash in favor of zsh. Using bash should still
   work, but you will receive warnings, and it may stop working in the future.
-- The state-svc is now installed as an App on macOS. Solving the issue of macOS 
+- The state-svc is now installed as an App on macOS. Solving the issue of macOS
   referring to it as an sh script which isn't very useful for end-users.
 - Progress indication for runtime installations will now show build progress for
   all artifacts, even if they are cached.
@@ -35,35 +83,44 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
-- Fixed error message received when running State Tool without the `HOME` env var
+- Fixed error message received when running State Tool without the `HOME` env
+  var
   not being indicative of that root cause.
 - Fixed progress count being off when installing runtimes.
 - Fixed progress sometimes hangs or panics while installing runtimes.
-- Fixed `state languages install` and `state platforms add` should not modify the 
+- Fixed `state languages install` and `state platforms add` should not modify
+  the
   remote project (that's what `state push` is for).
 - Fixed `state import` panics when ran outside of a project folder.
 - Fixed malformed error message when `state clean uninstall` fails.
-- Fixed `state push` creating the remote project even if the user told it not to.
-- Fixed unstable subcommands not showing a warning explaining that they are unstable.
-- Fixed `state shell` giving a misleading error when no default project is configured.
+- Fixed `state push` creating the remote project even if the user told it not
+  to.
+- Fixed unstable subcommands not showing a warning explaining that they are
+  unstable.
+- Fixed `state shell` giving a misleading error when no default project is
+  configured.
 - Fixed `state update` showing redundant output.
-- Fixed `state import --non-interactive` cancelling out of import rather than 
+- Fixed `state import --non-interactive` cancelling out of import rather than
   continuing without prompting.
-- Fixed `state revert <commit ID>` should not work on a commit that doesn't exist in
+- Fixed `state revert <commit ID>` should not work on a commit that doesn't
+  exist in
   the history.
 - Fixed `state clean cache` not giving a success or abort messaging.
-- Fixed `state export private-key` giving an uninformative error message when 
+- Fixed `state export private-key` giving an uninformative error message when
   improperly authenticated.
-- Fixed `state show` not working with commits that haven't been pushed to the platform.
-- Fixed `state checkout` failing if target dir is non-empty but does not contain an activestate.yaml.
+- Fixed `state show` not working with commits that haven't been pushed to the
+  platform.
+- Fixed `state checkout` failing if target dir is non-empty but does not contain
+  an activestate.yaml.
 
 ### Removed
 
 - Removed the `--set-version` flag from `state update`. Instead, you can run the
   installation script with the `-v` flag.
-- The experimental tray tool (ActiveState Desktop) has been removed. It will be 
+- The experimental tray tool (ActiveState Desktop) has been removed. It will be
   making a reappearance in the future.
-- The `--namespace` flag has been removed from `state history`. To inspect projects
+- The `--namespace` flag has been removed from `state history`. To inspect
+  projects
   without checking them out you can use the website.
 
 ### 0.35.0

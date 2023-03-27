@@ -7,6 +7,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/hash"
+	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/pkg/project"
@@ -24,7 +25,8 @@ const (
 	TriggerActivate           Trigger = "activate"
 	TriggerScript             Trigger = "script"
 	TriggerDeploy             Trigger = "deploy"
-	TriggerExec               Trigger = "exec"
+	TriggerExec               Trigger = "exec-cmd"
+	TriggerExecutor           Trigger = "exec"
 	TriggerResetExec          Trigger = "reset-exec"
 	TriggerSwitch             Trigger = "switch"
 	TriggerImport             Trigger = "import"
@@ -49,6 +51,7 @@ var usageTriggers = []Trigger{
 	TriggerScript,
 	TriggerDeploy,
 	TriggerExec,
+	TriggerExecutor,
 	TriggerSwitch,
 	TriggerImport,
 	TriggerPackage,
@@ -84,11 +87,22 @@ type ProjectTarget struct {
 	trigger      Trigger
 }
 
-func NewProjectTarget(pj *project.Project, runtimeCacheDir string, customCommit *strfmt.UUID, trigger Trigger) *ProjectTarget {
+func NewProjectTarget(pj *project.Project, customCommit *strfmt.UUID, trigger Trigger) *ProjectTarget {
+	runtimeCacheDir := storage.CachePath()
+	if pj.Cache() != "" {
+		runtimeCacheDir = pj.Cache()
+	}
 	return &ProjectTarget{pj, runtimeCacheDir, customCommit, trigger}
 }
 
+func NewProjectTargetCache(pj *project.Project, cacheDir string, customCommit *strfmt.UUID, trigger Trigger) *ProjectTarget {
+	return &ProjectTarget{pj, cacheDir, customCommit, trigger}
+}
+
 func (p *ProjectTarget) Dir() string {
+	if p.Project.Cache() != "" {
+		return p.Project.Cache()
+	}
 	return ProjectDirToTargetDir(filepath.Dir(p.Project.Source().Path()), p.cacheDir)
 }
 

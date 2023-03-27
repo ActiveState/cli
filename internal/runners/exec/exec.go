@@ -15,7 +15,6 @@ import (
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/hash"
-	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -100,7 +99,7 @@ func (s *Exec) Run(params *Params, args ...string) (rerr error) {
 			// as there is no head
 			rtTarget = target.NewCustomTarget("", "", "", params.Path, trigger, true)
 		} else {
-			rtTarget = target.NewProjectTarget(proj, storage.CachePath(), nil, trigger)
+			rtTarget = target.NewProjectTarget(proj, nil, trigger)
 		}
 		projectNamespace = proj.NamespaceString()
 	} else {
@@ -117,7 +116,7 @@ func (s *Exec) Run(params *Params, args ...string) (rerr error) {
 		}
 		projectDir = filepath.Dir(proj.Source().Path())
 		projectNamespace = proj.NamespaceString()
-		rtTarget = target.NewProjectTarget(proj, storage.CachePath(), nil, trigger)
+		rtTarget = target.NewProjectTarget(proj, nil, trigger)
 	}
 
 	rtusage.PrintRuntimeUsage(s.svcModel, s.out, rtTarget.Owner())
