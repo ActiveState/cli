@@ -102,7 +102,8 @@ func isEnabled(exec string, opts Options) (bool, error) {
 }
 
 func autostartPath(name string, _ Options) (string, error) {
-	// do not report ~/.profile as installed, as it would be removed on uninstall.
+	// Linux uses ~/.profile modification for autostart, there is no actual
+	// autostartPath.
 	return "", nil
 }
 
