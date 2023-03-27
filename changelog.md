@@ -34,7 +34,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
-- `state checkout` has a new flag named `--set-cache`, which allows you to
+- `state checkout` has a new flag named `--runtime-path`, which allows you to
   specify where the runtime files should be stored.
 
 ### Fixed
