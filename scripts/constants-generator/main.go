@@ -18,29 +18,33 @@ var (
 	inTest  bool
 	start   = time.Now()
 	verbose bool
+	silent  bool
 )
 
 func logit(format string, as ...any) {
-	d := time.Since(start)
-	fmt.Fprintf(os.Stderr, "[%08dμs] ", d.Microseconds())
+	if verbose {
+		d := time.Since(start)
+		fmt.Fprintf(os.Stderr, "[%08dμs] ", d.Microseconds())
+	}
 	fmt.Fprintf(os.Stderr, format, as...)
 	fmt.Fprintln(os.Stderr)
 }
 
 func log(format string, as ...any) {
-	if !verbose {
+	if silent {
 		return
 	}
 	logit(format, as...)
 }
 
 func logFatal(format string, as ...any) {
-	log(format, as...)
+	logit(format, as...)
 	os.Exit(1)
 }
 
 func main() {
-	flag.BoolVar(&verbose, "v", verbose, "Use verbose output")
+	flag.BoolVar(&verbose, "v", verbose, "Turn on verbose output")
+	flag.BoolVar(&silent, "s", silent, "Silence all non-critical output")
 	flag.Parse()
 
 	if !inTest {
