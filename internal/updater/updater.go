@@ -198,6 +198,10 @@ func (u *AvailableUpdate) InstallWithProgress(installTargetPath string, progress
 }
 
 func (u *AvailableUpdate) analyticsEvent(action, label, version, msg string) {
+	if u.an == nil {
+		return
+	}
+
 	dims := &dimensions.Values{
 		TargetVersion: p.StrP(version),
 	}
