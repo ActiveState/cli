@@ -976,8 +976,6 @@ platforms_remove_cmd_description:
   other: Remove a platform from your project
 platforms_search_cmd_description:
   other: Search for available platforms that can be added to your project
-flag_platforms_shared_bitwidth:
-  other: bit-width
 flag_platforms_shared_bitwidth_description:
   other: Platform architecture word size/width in bits (32,64)
 arg_platforms_shared_name:
@@ -1261,8 +1259,6 @@ arg_state_init_language:
   other: Language[@version]
 arg_state_init_language_description:
   other: The language that this project should use, and optionally the version of that language
-flag_state_init_path:
-  other: Path
 flag_state_init_path_description:
   other: Where to initialize the project
 err_wd:

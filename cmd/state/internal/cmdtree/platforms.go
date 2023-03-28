@@ -51,7 +51,7 @@ func newPlatformsAddCommand(prime *primer.Values) *captain.Command {
 		prime,
 		[]*captain.Flag{
 			{
-				Name:        locale.T("flag_platforms_shared_bitwidth"),
+				Name:        "bit-width",
 				Description: locale.T("flag_platforms_shared_bitwidth_description"),
 				Value:       &params.BitWidth,
 			},
@@ -82,7 +82,7 @@ func newPlatformsRemoveCommand(prime *primer.Values) *captain.Command {
 		prime,
 		[]*captain.Flag{
 			{
-				Name:        locale.T("flag_platforms_shared_bitwidth"),
+				Name:        "bit-width",
 				Description: locale.T("flag_platforms_shared_bitwidth_description"),
 				Value:       &params.BitWidth,
 			},
