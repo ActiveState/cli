@@ -28,15 +28,7 @@ import (
 
 type ErrorInProgress struct{ *locale.LocalizedError }
 
-const (
-	CfgKeyInstallVersion = "state_tool_installer_version"
-
-	// Ananlytics labels
-	anaLabelSuccess     = "success"
-	anaLabelFailed      = "failed"
-	anaLabelAvailable   = "available"
-	anaLabelUnavailable = "unavailable"
-)
+const CfgKeyInstallVersion = "state_tool_installer_version"
 
 var errPrivilegeMistmatch = errs.New("Privilege mismatch")
 
@@ -78,7 +70,7 @@ func (u *AvailableUpdate) DownloadAndUnpack() (string, error) {
 	tmpDir, err := ioutil.TempDir("", "state-update")
 	if err != nil {
 		msg := "Could not create temp dir"
-		u.analyticsEvent(anaLabelFailed, u.Version, msg)
+		u.analyticsEvent(anaConst.ActUpdateDownload, anaConst.AutoUpdateLabelFailed, u.Version, msg)
 		return "", errs.Wrap(err, msg)
 	}
 
@@ -95,13 +87,13 @@ func (u *AvailableUpdate) prepareInstall(installTargetPath string, args []string
 	if err != nil {
 		return "", nil, err
 	}
-	u.analyticsEvent("success", u.Version, "")
+	u.analyticsEvent(anaConst.ActUpdateDownload, "success", u.Version, "")
 
 	installerPath := filepath.Join(sourcePath, InstallerName)
 	logging.Debug("Using installer: %s", installerPath)
 	if !fileutils.FileExists(installerPath) {
 		msg := "Downloaded update does not have installer"
-		u.analyticsEvent(anaLabelFailed, u.Version, msg)
+		u.analyticsEvent(anaConst.ActUpdateInstall, anaConst.AutoUpdateLabelFailed, u.Version, msg)
 		return "", nil, errs.Wrap(err, msg)
 	}
 
@@ -109,7 +101,7 @@ func (u *AvailableUpdate) prepareInstall(installTargetPath string, args []string
 		installTargetPath, err = installation.InstallPathFromExecPath()
 		if err != nil {
 			msg := "Could not detect install path"
-			u.analyticsEvent(anaLabelFailed, u.Version, msg)
+			u.analyticsEvent(anaConst.ActUpdateInstall, anaConst.AutoUpdateLabelFailed, u.Version, msg)
 			return "", nil, errs.Wrap(err, msg)
 		}
 	}
@@ -205,7 +197,7 @@ func (u *AvailableUpdate) InstallWithProgress(installTargetPath string, progress
 	return proc, nil
 }
 
-func (u *AvailableUpdate) analyticsEvent(label, version, msg string) {
+func (u *AvailableUpdate) analyticsEvent(action, label, version, msg string) {
 	dims := &dimensions.Values{
 		TargetVersion: p.StrP(version),
 	}

@@ -170,3 +170,9 @@ const AutoUpdateLabelLocked = "locked"
 
 // AutoUpdateLabelTooFreq is the sent if we should not auto-update as the last check was too recent
 const AutoUpdateLabelTooFreq = "too-frequent"
+
+// AutoUpdateLabelAvailable is the sent if the update information is available
+const AutoUpdateLabelAvailable = "available"
+
+// AutoUpdateLabelUnavailable is the sent if the update information is unavailable
+const AutoUpdateLabelUnavailable = "unavailable"
