@@ -120,31 +120,34 @@ func (u *Checker) GetUpdateInfo(desiredChannel, desiredVersion string) (*Availab
 	tag := u.cfg.GetString(CfgUpdateTag)
 	infoURL := u.infoURL(tag, desiredVersion, desiredChannel, runtime.GOOS)
 	logging.Debug("Getting update info: %s", infoURL)
+	var label string
+	var msg string
 	res, code, err := u.httpreq.Get(infoURL)
 	if err != nil {
 		if code == 404 || strings.Contains(string(res), "Could not retrieve update info") {
 			// The above string match can be removed once https://www.pivotaltracker.com/story/show/179426519 is resolved
 			logging.Debug("Update info 404s: %v", errs.JoinMessage(err))
-			u.an.EventWithLabel(anaConst.CatConfig, anaConst.ActUpdateCheck, anaLabelUnavailable, &dimensions.Values{
-				Version: p.StrP(desiredVersion),
-				Error:   p.StrP("Update info 404"),
-			})
-			return nil, nil
+			label = anaLabelUnavailable
+			msg = "Update info 404"
+			err = nil
 		} else if code == 403 || code == 503 {
 			// The request could not be satisfied or service is unavailable. This happens when Cloudflare
 			// blocks access, or the service is unavailable in a particular geographic location.
 			logging.Warning("Update info request blocked or service unavailable: %v", err)
-			u.an.EventWithLabel(anaConst.CatConfig, anaConst.ActUpdateCheck, anaLabelUnavailable, &dimensions.Values{
-				Version: p.StrP(desiredVersion),
-				Error:   p.StrP("Update info request blocked or service unavailable"),
-			})
-			return nil, nil
+			label = anaLabelUnavailable
+			msg = "Update info request blocked or service unavailable"
+			err = nil
+		} else {
+			label = anaLabelFailed
+			msg = "Could not fetch update info"
+			err = errs.Wrap(err, "Could not fetch update info from %s", infoURL)
 		}
-		u.an.EventWithLabel(anaConst.CatConfig, anaConst.ActUpdateCheck, anaLabelFailed, &dimensions.Values{
+
+		u.an.EventWithLabel(anaConst.CatConfig, anaConst.ActUpdateCheck, label, &dimensions.Values{
 			Version: p.StrP(desiredVersion),
-			Error:   p.StrP("Could not fetch update info"),
+			Error:   p.StrP(msg),
 		})
-		return nil, errs.Wrap(err, "Could not fetch update info from %s", infoURL)
+		return nil, err
 	}
 
 	info := &AvailableUpdate{
