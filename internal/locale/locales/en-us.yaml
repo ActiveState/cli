@@ -1228,8 +1228,6 @@ err_fetch_languages:
   other: "Could not retrieve languages for your project. Does your project exist on the Platform?"
 err_no_languages:
   other: "Your project does not have any language configured"
-err_target_path_namespace_match:
-  other: "The project at the target path does not match the namespace you provided. Expected: [NOTICE]{{.V0}}[/RESET], Actual: [NOTICE]{{.V1}}[/RESET]."
 err_project_notexist_push_first:
   other: The project does not exist on the ActiveState Platform. Please run 'state push' first.
 err_project_notexist_asyaml:
