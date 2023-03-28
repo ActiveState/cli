@@ -134,3 +134,39 @@ const CatDebug = "debug"
 
 // ActInputError is the event action used for input errors
 const ActInputError = "input-error"
+
+// AutoUpdateLabelSuccess is the sent if an auto-update was successful
+const AutoUpdateLabelSuccess = "success"
+
+// AutoUpdateLabelFailed is the sent if an auto-update failed
+const AutoUpdateLabelFailed = "failure"
+
+// AutoUpdateLabelTrue is the sent if we should auto-update
+const AutoUpdateLabelTrue = "true"
+
+// AutoUpdateLabelForward is the sent if we should not auto-update as we are forwarding a command
+const AutoUpdateLabelForward = "forward"
+
+// AutoUpdateLabelUnitTest is the sent if we should not auto-update as we are running unit tests
+const AutoUpdateLabelUnitTest = "unittest"
+
+// AutoUpdateLabelConflict is the sent if we should not auto-update as the current command might conflict
+const AutoUpdateLabelConflict = "conflict"
+
+// AutoUpdateLabelDisabledEnv is the sent if we should not auto-update as the user has disabled auto-updates via the environment
+const AutoUpdateLabelDisabledEnv = "disabled-env"
+
+// AutoUpdateLabelDisabledConfig is the sent if we should not auto-update as the user has disabled auto-updates via the config
+const AutoUpdateLabelDisabledConfig = "disabled-config"
+
+// AutoUpdateLabelDisabledCI is the sent if we should not auto-update as we are on CI
+const AutoUpdateLabelCI = "ci"
+
+// AutoUpdateLabelFreshInstall is the sent if we should not auto-update as we are on a fresh install
+const AutoUpdateLabelFreshInstall = "fresh-install"
+
+// AutoUpdateLabelLocked is the sent if we should not auto-update as the state tool is locked
+const AutoUpdateLabelLocked = "locked"
+
+// AutoUpdateLabelTooFreq is the sent if we should not auto-update as the last check was too recent
+const AutoUpdateLabelTooFreq = "too-frequent"

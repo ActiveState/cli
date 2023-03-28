@@ -27,23 +27,7 @@ import (
 	"github.com/thoas/go-funk"
 )
 
-const (
-	CfgKeyLastCheck = "auto_update_lastcheck"
-
-	// Ananlytics labels
-	anaLabelSuccess         = "success"
-	anaLabelFailed          = "failure"
-	anaLabelTrue            = "true"
-	anaLabelForward         = "forward"
-	anaLabelUnitTest        = "unittest"
-	anaLabelConflict        = "conflict"
-	anaLabelDisabledEnv     = "disabled-env"
-	anaLabelDisabledConfig  = "disabled-config"
-	anaLabelCI              = "ci"
-	anaLabelFreshInstall    = "fresh-install"
-	anaLabelLocked          = "locked"
-	anaLabelTooFreq         = "too-frequent"
-)
+const CfgKeyLastCheck = "auto_update_lastcheck"
 
 func init() {
 	configMediator.RegisterOption(constants.AutoUpdateConfigKey, configMediator.Bool, configMediator.EmptyEvent, configMediator.EmptyEvent)
@@ -75,7 +59,7 @@ func autoUpdate(args []string, cfg *config.Instance, an analytics.Dispatcher, ou
 
 	if !isEnabled(cfg) {
 		logging.Debug("Not performing autoupdates because user turned off autoupdates.")
-		an.EventWithLabel(anaConst.CatUpdates, anaConst.ActShouldUpdate, anaLabelDisabledConfig)
+		an.EventWithLabel(anaConst.CatUpdates, anaConst.ActShouldUpdate, anaConst.AutoUpdateLabelDisabledConfig)
 		out.Notice(output.Title(locale.Tl("update_available_header", "Auto Update")))
 		out.Notice(locale.Tr("update_available", constants.Version, up.Version))
 		return false, nil
@@ -91,7 +75,7 @@ func autoUpdate(args []string, cfg *config.Instance, an analytics.Dispatcher, ou
 		innerErr := errs.InnerError(err)
 		if os.IsPermission(innerErr) {
 			msg := locale.Tl("auto_update_permission_err", "", constants.DocumentationURL, errs.JoinMessage(err))
-			an.EventWithLabel(anaConst.CatUpdates, anaConst.ActUpdateInstall, anaLabelFailed, &dimensions.Values{
+			an.EventWithLabel(anaConst.CatUpdates, anaConst.ActUpdateInstall, anaConst.AutoUpdateLabelFailed, &dimensions.Values{
 				Version: p.StrP(up.Version),
 				Error:   p.StrP(msg),
 			})
@@ -99,14 +83,14 @@ func autoUpdate(args []string, cfg *config.Instance, an analytics.Dispatcher, ou
 		}
 		if errs.Matches(err, &updater.ErrorInProgress{}) {
 			msg := "Update already in progress"
-			an.EventWithLabel(anaConst.CatUpdates, anaConst.ActUpdateInstall, anaLabelFailed, &dimensions.Values{
+			an.EventWithLabel(anaConst.CatUpdates, anaConst.ActUpdateInstall, anaConst.AutoUpdateLabelFailed, &dimensions.Values{
 				Version: p.StrP(up.Version),
 				Error:   p.StrP(msg),
 			})
 			return false, nil
 		}
 		msg := locale.T("auto_update_failed")
-		an.EventWithLabel(anaConst.CatUpdates, anaConst.ActUpdateInstall, anaLabelFailed, &dimensions.Values{
+		an.EventWithLabel(anaConst.CatUpdates, anaConst.ActUpdateInstall, anaConst.AutoUpdateLabelFailed, &dimensions.Values{
 			Version: p.StrP(up.Version),
 			Error:   p.StrP(msg),
 		})
@@ -118,14 +102,14 @@ func autoUpdate(args []string, cfg *config.Instance, an analytics.Dispatcher, ou
 
 	code, err := relaunch(args)
 	if err != nil {
-		an.EventWithLabel(anaConst.CatUpdates, anaConst.ActUpdateRelaunch, anaLabelFailed, &dimensions.Values{
+		an.EventWithLabel(anaConst.CatUpdates, anaConst.ActUpdateRelaunch, anaConst.AutoUpdateLabelFailed, &dimensions.Values{
 			Version: p.StrP(up.Version),
 			Error:   p.StrP("Failed to relaunch after update"),
 		})
 		return true, errs.Silence(errs.WrapExitCode(err, code))
 	}
 
-	an.EventWithLabel(anaConst.CatUpdates, anaConst.ActUpdateRelaunch, anaLabelSuccess, &dimensions.Values{
+	an.EventWithLabel(anaConst.CatUpdates, anaConst.ActUpdateRelaunch, anaConst.AutoUpdateLabelSuccess, &dimensions.Values{
 		Version: p.StrP(up.Version),
 	})
 	return true, nil
@@ -149,54 +133,54 @@ func shouldRunAutoUpdate(args []string, cfg *config.Instance, an analytics.Dispa
 	case os.Getenv(constants.ForwardedStateEnvVarName) == "true":
 		logging.Debug("Not running auto updates because we're in a forward")
 		shouldUpdate = false
-		label = anaLabelForward
+		label = anaConst.AutoUpdateLabelForward
 
 	// Forced enabled (breaks out of switch)
 	case os.Getenv(constants.TestAutoUpdateEnvVarName) == "true":
 		logging.Debug("Forcing auto update as it was forced by env var")
 		shouldUpdate = true
-		label = anaLabelTrue
+		label = anaConst.AutoUpdateLabelTrue
 
 	// In unit test
 	case condition.InUnitTest():
 		logging.Debug("Not running auto updates in unit tests")
 		shouldUpdate = false
-		label = anaLabelUnitTest
+		label = anaConst.AutoUpdateLabelUnitTest
 
 	// Running command that could conflict
 	case funk.Contains(args, "update") || funk.Contains(args, "export") || funk.Contains(args, "_prepare") || funk.Contains(args, "clean"):
 		logging.Debug("Not running auto updates because current command might conflict")
 		shouldUpdate = false
-		label = anaLabelConflict
+		label = anaConst.AutoUpdateLabelConflict
 
 	// Updates are disabled
 	case strings.ToLower(os.Getenv(constants.DisableUpdates)) == "true":
 		logging.Debug("Not running auto updates because updates are disabled by env var")
 		shouldUpdate = false
-		label = anaLabelDisabledEnv
+		label = anaConst.AutoUpdateLabelDisabledEnv
 
 	// We're on CI
 	case (condition.OnCI()) && strings.ToLower(os.Getenv(constants.DisableUpdates)) != "false":
 		logging.Debug("Not running auto updates because we're on CI")
 		shouldUpdate = false
-		label = anaLabelCI
+		label = anaConst.AutoUpdateLabelCI
 
 	// Exe is not old enough
 	case isFreshInstall():
 		logging.Debug("Not running auto updates because we just freshly installed")
 		shouldUpdate = false
-		label = anaLabelFreshInstall
+		label = anaConst.AutoUpdateLabelFreshInstall
 
 	// Already checked less than 60 minutes ago
 	case time.Now().Sub(cfg.GetTime(CfgKeyLastCheck)).Minutes() < float64(60):
 		logging.Debug("Not running auto update because we already checked it less than 60 minutes ago")
 		shouldUpdate = false
-		label = anaLabelTooFreq
+		label = anaConst.AutoUpdateLabelTooFreq
 
 	case cfg.GetString(updater.CfgKeyInstallVersion) != "":
 		logging.Debug("Not running auto update because a specific version had been installed on purpose")
 		shouldUpdate = false
-		label = anaLabelLocked
+		label = anaConst.AutoUpdateLabelLocked
 	}
 
 	an.EventWithLabel(anaConst.CatUpdates, anaConst.ActShouldUpdate, label)
