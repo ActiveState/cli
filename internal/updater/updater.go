@@ -69,8 +69,8 @@ func (u *AvailableUpdate) DownloadAndUnpack() (string, error) {
 
 	tmpDir, err := ioutil.TempDir("", "state-update")
 	if err != nil {
-		msg := "Could not create temp dir"
-		u.analyticsEvent(anaConst.ActUpdateDownload, anaConst.AutoUpdateLabelFailed, u.Version, msg)
+		msg := anaConst.UpdateErrorTempDir
+		u.analyticsEvent(anaConst.ActUpdateDownload, anaConst.UpdateLabelFailed, u.Version, msg)
 		return "", errs.Wrap(err, msg)
 	}
 
@@ -92,16 +92,16 @@ func (u *AvailableUpdate) prepareInstall(installTargetPath string, args []string
 	installerPath := filepath.Join(sourcePath, InstallerName)
 	logging.Debug("Using installer: %s", installerPath)
 	if !fileutils.FileExists(installerPath) {
-		msg := "Downloaded update does not have installer"
-		u.analyticsEvent(anaConst.ActUpdateInstall, anaConst.AutoUpdateLabelFailed, u.Version, msg)
+		msg := anaConst.UpdateErrorNoInstaller
+		u.analyticsEvent(anaConst.ActUpdateInstall, anaConst.UpdateLabelFailed, u.Version, msg)
 		return "", nil, errs.Wrap(err, msg)
 	}
 
 	if installTargetPath == "" {
 		installTargetPath, err = installation.InstallPathFromExecPath()
 		if err != nil {
-			msg := "Could not detect install path"
-			u.analyticsEvent(anaConst.ActUpdateInstall, anaConst.AutoUpdateLabelFailed, u.Version, msg)
+			msg := anaConst.UpdateErrorInstallPath
+			u.analyticsEvent(anaConst.ActUpdateInstall, anaConst.UpdateLabelFailed, u.Version, msg)
 			return "", nil, errs.Wrap(err, msg)
 		}
 	}

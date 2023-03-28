@@ -63,7 +63,7 @@ func autoUpdate(args []string, cfg *config.Instance, an analytics.Dispatcher, ou
 
 	if !isEnabled(cfg) {
 		logging.Debug("Not performing autoupdates because user turned off autoupdates.")
-		an.EventWithLabel(anaConst.CatUpdates, anaConst.ActShouldUpdate, anaConst.AutoUpdateLabelDisabledConfig)
+		an.EventWithLabel(anaConst.CatUpdates, anaConst.ActShouldUpdate, anaConst.UpdateLabelDisabledConfig)
 		out.Notice(output.Title(locale.Tl("update_available_header", "Auto Update")))
 		out.Notice(locale.Tr("update_available", constants.Version, up.Version))
 		return false, nil
@@ -78,26 +78,24 @@ func autoUpdate(args []string, cfg *config.Instance, an analytics.Dispatcher, ou
 	if err != nil {
 		innerErr := errs.InnerError(err)
 		if os.IsPermission(innerErr) {
-			an.EventWithLabel(anaConst.CatUpdates, anaConst.ActUpdateInstall, anaConst.AutoUpdateLabelFailed, &dimensions.Values{
+			an.EventWithLabel(anaConst.CatUpdates, anaConst.ActUpdateInstall, anaConst.UpdateLabelFailed, &dimensions.Values{
 				Version: p.StrP(up.Version),
 				Error:   p.StrP("Could not update the state tool due to insufficient permissions."),
 			})
 			return false, locale.WrapInputError(err, locale.Tl("auto_update_permission_err", "", constants.DocumentationURL, errs.JoinMessage(err)))
 		}
 		if errs.Matches(err, &updater.ErrorInProgress{}) {
-			msg := "Update already in progress"
-			an.EventWithLabel(anaConst.CatUpdates, anaConst.ActUpdateInstall, anaConst.AutoUpdateLabelFailed, &dimensions.Values{
+			an.EventWithLabel(anaConst.CatUpdates, anaConst.ActUpdateInstall, anaConst.UpdateLabelFailed, &dimensions.Values{
 				Version: p.StrP(up.Version),
-				Error:   p.StrP(msg),
+				Error:   p.StrP(anaConst.UpdateErrorInProgress),
 			})
 			return false, nil
 		}
-		msg := locale.T("auto_update_failed")
-		an.EventWithLabel(anaConst.CatUpdates, anaConst.ActUpdateInstall, anaConst.AutoUpdateLabelFailed, &dimensions.Values{
+		an.EventWithLabel(anaConst.CatUpdates, anaConst.ActUpdateInstall, anaConst.UpdateLabelFailed, &dimensions.Values{
 			Version: p.StrP(up.Version),
-			Error:   p.StrP(msg),
+			Error:   p.StrP(anaConst.UpdateErrorInstallFailed),
 		})
-		return false, locale.WrapError(err, msg)
+		return false, locale.WrapError(err, locale.T("auto_update_failed"))
 	}
 
 	out.Notice(locale.Tr("auto_update_relaunch"))
@@ -107,19 +105,19 @@ func autoUpdate(args []string, cfg *config.Instance, an analytics.Dispatcher, ou
 	if err != nil {
 		var msg string
 		if errs.Matches(err, &ErrStateExe{}) {
-			msg = "Could not locate state executable for relaunch"
+			msg = anaConst.UpdateErrorExecutable
 		}
 		if errs.Matches(err, &ErrExecuteRelaunch{}) {
-			msg = "Could not execute relaunch"
+			msg = anaConst.UpdateErrorRelaunch
 		}
-		an.EventWithLabel(anaConst.CatUpdates, anaConst.ActUpdateRelaunch, anaConst.AutoUpdateLabelFailed, &dimensions.Values{
+		an.EventWithLabel(anaConst.CatUpdates, anaConst.ActUpdateRelaunch, anaConst.UpdateLabelFailed, &dimensions.Values{
 			Version: p.StrP(up.Version),
 			Error:   p.StrP(msg),
 		})
 		return true, errs.Silence(errs.WrapExitCode(err, code))
 	}
 
-	an.EventWithLabel(anaConst.CatUpdates, anaConst.ActUpdateRelaunch, anaConst.AutoUpdateLabelSuccess, &dimensions.Values{
+	an.EventWithLabel(anaConst.CatUpdates, anaConst.ActUpdateRelaunch, anaConst.UpdateLabelSuccess, &dimensions.Values{
 		Version: p.StrP(up.Version),
 	})
 	return true, nil
@@ -143,54 +141,54 @@ func shouldRunAutoUpdate(args []string, cfg *config.Instance, an analytics.Dispa
 	case os.Getenv(constants.ForwardedStateEnvVarName) == "true":
 		logging.Debug("Not running auto updates because we're in a forward")
 		shouldUpdate = false
-		label = anaConst.AutoUpdateLabelForward
+		label = anaConst.UpdateLabelForward
 
 	// Forced enabled (breaks out of switch)
 	case os.Getenv(constants.TestAutoUpdateEnvVarName) == "true":
 		logging.Debug("Forcing auto update as it was forced by env var")
 		shouldUpdate = true
-		label = anaConst.AutoUpdateLabelTrue
+		label = anaConst.UpdateLabelTrue
 
 	// In unit test
 	case condition.InUnitTest():
 		logging.Debug("Not running auto updates in unit tests")
 		shouldUpdate = false
-		label = anaConst.AutoUpdateLabelUnitTest
+		label = anaConst.UpdateLabelUnitTest
 
 	// Running command that could conflict
 	case funk.Contains(args, "update") || funk.Contains(args, "export") || funk.Contains(args, "_prepare") || funk.Contains(args, "clean"):
 		logging.Debug("Not running auto updates because current command might conflict")
 		shouldUpdate = false
-		label = anaConst.AutoUpdateLabelConflict
+		label = anaConst.UpdateLabelConflict
 
 	// Updates are disabled
 	case strings.ToLower(os.Getenv(constants.DisableUpdates)) == "true":
 		logging.Debug("Not running auto updates because updates are disabled by env var")
 		shouldUpdate = false
-		label = anaConst.AutoUpdateLabelDisabledEnv
+		label = anaConst.UpdateLabelDisabledEnv
 
 	// We're on CI
 	case (condition.OnCI()) && strings.ToLower(os.Getenv(constants.DisableUpdates)) != "false":
 		logging.Debug("Not running auto updates because we're on CI")
 		shouldUpdate = false
-		label = anaConst.AutoUpdateLabelCI
+		label = anaConst.UpdateLabelCI
 
 	// Exe is not old enough
 	case isFreshInstall():
 		logging.Debug("Not running auto updates because we just freshly installed")
 		shouldUpdate = false
-		label = anaConst.AutoUpdateLabelFreshInstall
+		label = anaConst.UpdateLabelFreshInstall
 
 	// Already checked less than 60 minutes ago
 	case time.Now().Sub(cfg.GetTime(CfgKeyLastCheck)).Minutes() < float64(60):
 		logging.Debug("Not running auto update because we already checked it less than 60 minutes ago")
 		shouldUpdate = false
-		label = anaConst.AutoUpdateLabelTooFreq
+		label = anaConst.UpdateLabelTooFreq
 
 	case cfg.GetString(updater.CfgKeyInstallVersion) != "":
 		logging.Debug("Not running auto update because a specific version had been installed on purpose")
 		shouldUpdate = false
-		label = anaConst.AutoUpdateLabelLocked
+		label = anaConst.UpdateLabelLocked
 	}
 
 	an.EventWithLabel(anaConst.CatUpdates, anaConst.ActShouldUpdate, label)

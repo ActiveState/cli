@@ -135,44 +135,74 @@ const CatDebug = "debug"
 // ActInputError is the event action used for input errors
 const ActInputError = "input-error"
 
-// AutoUpdateLabelSuccess is the sent if an auto-update was successful
-const AutoUpdateLabelSuccess = "success"
+// UpdateLabelSuccess is the sent if an auto-update was successful
+const UpdateLabelSuccess = "success"
 
-// AutoUpdateLabelFailed is the sent if an auto-update failed
-const AutoUpdateLabelFailed = "failure"
+// UpdateLabelFailed is the sent if an auto-update failed
+const UpdateLabelFailed = "failure"
 
-// AutoUpdateLabelTrue is the sent if we should auto-update
-const AutoUpdateLabelTrue = "true"
+// UpdateLabelTrue is the sent if we should auto-update
+const UpdateLabelTrue = "true"
 
-// AutoUpdateLabelForward is the sent if we should not auto-update as we are forwarding a command
-const AutoUpdateLabelForward = "forward"
+// UpdateLabelForward is the sent if we should not auto-update as we are forwarding a command
+const UpdateLabelForward = "forward"
 
-// AutoUpdateLabelUnitTest is the sent if we should not auto-update as we are running unit tests
-const AutoUpdateLabelUnitTest = "unittest"
+// UpdateLabelUnitTest is the sent if we should not auto-update as we are running unit tests
+const UpdateLabelUnitTest = "unittest"
 
-// AutoUpdateLabelConflict is the sent if we should not auto-update as the current command might conflict
-const AutoUpdateLabelConflict = "conflict"
+// UpdateLabelConflict is the sent if we should not auto-update as the current command might conflict
+const UpdateLabelConflict = "conflict"
 
-// AutoUpdateLabelDisabledEnv is the sent if we should not auto-update as the user has disabled auto-updates via the environment
-const AutoUpdateLabelDisabledEnv = "disabled-env"
+// UpdateLabelDisabledEnv is the sent if we should not auto-update as the user has disabled auto-updates via the environment
+const UpdateLabelDisabledEnv = "disabled-env"
 
-// AutoUpdateLabelDisabledConfig is the sent if we should not auto-update as the user has disabled auto-updates via the config
-const AutoUpdateLabelDisabledConfig = "disabled-config"
+// UpdateLabelDisabledConfig is the sent if we should not auto-update as the user has disabled auto-updates via the config
+const UpdateLabelDisabledConfig = "disabled-config"
 
 // AutoUpdateLabelDisabledCI is the sent if we should not auto-update as we are on CI
-const AutoUpdateLabelCI = "ci"
+const UpdateLabelCI = "ci"
 
-// AutoUpdateLabelFreshInstall is the sent if we should not auto-update as we are on a fresh install
-const AutoUpdateLabelFreshInstall = "fresh-install"
+// UpdateLabelFreshInstall is the sent if we should not auto-update as we are on a fresh install
+const UpdateLabelFreshInstall = "fresh-install"
 
-// AutoUpdateLabelLocked is the sent if we should not auto-update as the state tool is locked
-const AutoUpdateLabelLocked = "locked"
+// UpdateLabelLocked is the sent if we should not auto-update as the state tool is locked
+const UpdateLabelLocked = "locked"
 
-// AutoUpdateLabelTooFreq is the sent if we should not auto-update as the last check was too recent
-const AutoUpdateLabelTooFreq = "too-frequent"
+// UpdateLabelTooFreq is the sent if we should not auto-update as the last check was too recent
+const UpdateLabelTooFreq = "too-frequent"
 
-// AutoUpdateLabelAvailable is the sent if the update information is available
-const AutoUpdateLabelAvailable = "available"
+// UpdateLabelAvailable is the sent if the update information is available
+const UpdateLabelAvailable = "available"
 
-// AutoUpdateLabelUnavailable is the sent if the update information is unavailable
-const AutoUpdateLabelUnavailable = "unavailable"
+// UpdateLabelUnavailable is the sent if the update information is unavailable
+const UpdateLabelUnavailable = "unavailable"
+
+// UpdateErrorInProgress is sent if an update is already in progress
+const UpdateErrorInProgress = "Update already in progress"
+
+// UpdateErrorInstallFailed is sent if an update failed at the install step
+const UpdateErrorInstallFailed = "Could not install update"
+
+// UpdateErrorExecutable is sent if the state executable could not be located
+const UpdateErrorExecutable = "Could not locate state executable for relaunch"
+
+// UpdateErrorRelaunch is sent if the updated state executable could not be relaunched
+const UpdateErrorRelaunch = "Could not execute relaunch"
+
+// UpdateErrorNotFound is sent if the update information could not be found
+const UpdateErrorNotFound = "Update info could not be found"
+
+// UpdateErrorBlocked is sent if the update information was blocked or the service was unavailable
+const UpdateErrorBlocked = "Update info request blocked or service unavailable"
+
+// UpdateErrorFetch is sent if the update information could not be fetched
+const UpdateErrorFetch = "Could not fetch update info"
+
+// UpdateErrorTempDir is sent if the temp dir for update unpacking could not be created
+const UpdateErrorTempDir = "Could not create temp dir"
+
+// UpdateErrorNoInstaller is sent if the downloaded update does not have an installer
+const UpdateErrorNoInstaller = "Downloaded update does not have installer"
+
+// UpdateErrorInstallPath is sent if the install path could not be detected
+const UpdateErrorInstallPath = "Could not detect install path"

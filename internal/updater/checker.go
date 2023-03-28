@@ -127,19 +127,19 @@ func (u *Checker) GetUpdateInfo(desiredChannel, desiredVersion string) (*Availab
 		if code == 404 || strings.Contains(string(res), "Could not retrieve update info") {
 			// The above string match can be removed once https://www.pivotaltracker.com/story/show/179426519 is resolved
 			logging.Debug("Update info 404s: %v", errs.JoinMessage(err))
-			label = anaConst.AutoUpdateLabelUnavailable
-			msg = "Update info 404"
+			label = anaConst.UpdateLabelUnavailable
+			msg = anaConst.UpdateErrorNotFound
 			err = nil
 		} else if code == 403 || code == 503 {
 			// The request could not be satisfied or service is unavailable. This happens when Cloudflare
 			// blocks access, or the service is unavailable in a particular geographic location.
 			logging.Warning("Update info request blocked or service unavailable: %v", err)
-			label = anaConst.AutoUpdateLabelUnavailable
-			msg = "Update info request blocked or service unavailable"
+			label = anaConst.UpdateLabelUnavailable
+			msg = anaConst.UpdateErrorBlocked
 			err = nil
 		} else {
-			label = anaConst.AutoUpdateLabelFailed
-			msg = "Could not fetch update info"
+			label = anaConst.UpdateLabelFailed
+			msg = anaConst.UpdateErrorFetch
 			err = errs.Wrap(err, "Could not fetch update info from %s", infoURL)
 		}
 
@@ -159,6 +159,6 @@ func (u *Checker) GetUpdateInfo(desiredChannel, desiredVersion string) (*Availab
 
 	info.url = u.fileURL + "/" + info.Path
 
-	u.an.EventWithLabel(anaConst.CatConfig, anaConst.ActUpdateCheck, anaConst.AutoUpdateLabelAvailable, &dimensions.Values{Version: p.StrP(info.Version)})
+	u.an.EventWithLabel(anaConst.CatConfig, anaConst.ActUpdateCheck, anaConst.UpdateLabelAvailable, &dimensions.Values{Version: p.StrP(info.Version)})
 	return info, nil
 }
