@@ -1,11 +1,13 @@
 package integration
 
 import (
+	"fmt"
 	"path/filepath"
 	"runtime"
 	"testing"
 	"time"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/osutils"
@@ -28,6 +30,13 @@ func (suite *UninstallIntegrationTestSuite) TestUninstall() {
 func (suite *UninstallIntegrationTestSuite) testUninstall(all bool) {
 	ts := e2e.New(suite.T(), true)
 	defer ts.Close()
+
+	mockBinDir := filepath.Join(ts.Dirs.Work, fmt.Sprintf("%s", constants.BranchName, "bin"))
+	err := fileutils.Mkdir(mockBinDir)
+	suite.NoError(err)
+
+	ts.Exe = ts.CopyExeToDir(ts.Exe, filepath.Join(mockBinDir, "state"+osutils.ExeExt))
+	ts.SvcExe = ts.CopyExeToDir(ts.SvcExe, filepath.Join(mockBinDir, "state-svc"+osutils.ExeExt))
 
 	isAdmin, err := osutils.IsAdmin()
 	suite.NoError(err)
