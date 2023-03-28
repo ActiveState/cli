@@ -74,12 +74,11 @@ func autoUpdate(args []string, cfg *config.Instance, an analytics.Dispatcher, ou
 	if err != nil {
 		innerErr := errs.InnerError(err)
 		if os.IsPermission(innerErr) {
-			msg := locale.Tl("auto_update_permission_err", "", constants.DocumentationURL, errs.JoinMessage(err))
 			an.EventWithLabel(anaConst.CatUpdates, anaConst.ActUpdateInstall, anaConst.AutoUpdateLabelFailed, &dimensions.Values{
 				Version: p.StrP(up.Version),
-				Error:   p.StrP(msg),
+				Error:   p.StrP("Could not update the state tool due to insufficient permissions."),
 			})
-			return false, locale.WrapInputError(err, msg)
+			return false, locale.WrapInputError(err, locale.Tl("auto_update_permission_err", "", constants.DocumentationURL, errs.JoinMessage(err)))
 		}
 		if errs.Matches(err, &updater.ErrorInProgress{}) {
 			msg := "Update already in progress"
