@@ -50,18 +50,8 @@ func validatePath(ns *project.Namespaced, path string) error {
 	}
 
 	configFile := filepath.Join(path, constants.ConfigFileName)
-	if !fileutils.FileExists(configFile) {
-		return nil
-	}
-
-	pj, err := project.Parse(configFile)
-	if err != nil {
-		return locale.WrapError(err, "err_parse_project", "", configFile)
-	}
-
-	pjns := pj.Namespace()
-	if ns != nil && ns.IsValid() && !pj.IsHeadless() && (pjns.Owner != ns.Owner || pjns.Project != ns.Project) {
-		return locale.NewInputError("err_target_path_namespace_match", "", ns.String(), pjns.String())
+	if fileutils.FileExists(configFile) {
+		return locale.NewInputError("err_already_checked_out", "", path)
 	}
 
 	return nil

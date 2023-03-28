@@ -87,7 +87,6 @@ scripts:
       set -e
       $constants.SET_ENV
       go run scripts/constants-generator/main.go ${@} -- internal/constants/generated.go
-      mkdir -p build/msi
   - name: build
     language: bash
     description: Builds the project with the host OS as the target OS.
@@ -222,10 +221,6 @@ scripts:
       set -e
       $constants.SET_ENV
       go run scripts/ci/s3-deployer/main.go $BUILD_TARGET_DIR/remote-installer us-east-1 state-tool remote-installer
-  - name: deploy-msi
-    language: bash
-    value: |
-      go run scripts/ci/s3-deployer/main.go build/msi us-east-1 cli-msi /
   - name: build-workflow-assets
     language: bash
     description: Generates our github workflows

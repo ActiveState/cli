@@ -20,12 +20,12 @@ func newCheckoutCommand(prime *primer.Values) *captain.Command {
 		prime,
 		[]*captain.Flag{
 			{
-				Name:        locale.Tl("flag_state_checkout_branch", "branch"),
+				Name:        "branch",
 				Description: locale.Tl("flag_state_checkout_branch_description", "Defines the branch to checkout"),
 				Value:       &params.Branch,
 			},
 			{
-				Name:        locale.Tl("flag_state_checkout_runtime-path", "runtime-path"),
+				Name:        "runtime-path",
 				Description: locale.Tl("flag_state_checkout_runtime-path_description", "Path to store the runtime files"),
 				Value:       &params.RuntimePath,
 			},

@@ -82,7 +82,7 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckoutNonEmptyDir() {
 		e2e.WithArgs("checkout", "ActiveState-CLI/Python3", tmpdir),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=true"),
 	)
-	cp.Expect("project at the target path does not match")
+	cp.Expect("already a project checked out at")
 	cp.ExpectExitCode(1)
 
 	// remove file
@@ -188,6 +188,21 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckoutCustomRTPath() {
 		customRTPath = strings.ToLower(customRTPath)
 	}
 	cp.Expect(customRTPath)
+}
+
+func (suite *CheckoutIntegrationTestSuite) TestCheckoutAlreadyCheckedOut() {
+	suite.OnlyRunForTags(tagsuite.Checkout)
+
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.SpawnWithOpts(e2e.WithArgs("checkout", "ActiveState-CLI/small-python"))
+	cp.Expect("Checked out project")
+	cp.ExpectExitCode(0)
+
+	cp = ts.SpawnWithOpts(e2e.WithArgs("checkout", "ActiveState-CLI/small-python"))
+	cp.Expect("already a project checked out at")
+	cp.ExpectNotExitCode(0)
 }
 
 func TestCheckoutIntegrationTestSuite(t *testing.T) {
