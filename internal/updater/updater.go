@@ -78,7 +78,7 @@ func (u *AvailableUpdate) DownloadAndUnpack() (string, error) {
 	tmpDir, err := ioutil.TempDir("", "state-update")
 	if err != nil {
 		msg := "Could not create temp dir"
-		u.event(anaLabelFailed, u.Version, msg)
+		u.analyticsEvent(anaLabelFailed, u.Version, msg)
 		return "", errs.Wrap(err, msg)
 	}
 
@@ -95,13 +95,13 @@ func (u *AvailableUpdate) prepareInstall(installTargetPath string, args []string
 	if err != nil {
 		return "", nil, err
 	}
-	u.event("success", u.Version, "")
+	u.analyticsEvent("success", u.Version, "")
 
 	installerPath := filepath.Join(sourcePath, InstallerName)
 	logging.Debug("Using installer: %s", installerPath)
 	if !fileutils.FileExists(installerPath) {
 		msg := "Downloaded update does not have installer"
-		u.event(anaLabelFailed, u.Version, msg)
+		u.analyticsEvent(anaLabelFailed, u.Version, msg)
 		return "", nil, errs.Wrap(err, msg)
 	}
 
@@ -109,7 +109,7 @@ func (u *AvailableUpdate) prepareInstall(installTargetPath string, args []string
 		installTargetPath, err = installation.InstallPathFromExecPath()
 		if err != nil {
 			msg := "Could not detect install path"
-			u.event(anaLabelFailed, u.Version, msg)
+			u.analyticsEvent(anaLabelFailed, u.Version, msg)
 			return "", nil, errs.Wrap(err, msg)
 		}
 	}
