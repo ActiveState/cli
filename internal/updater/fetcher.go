@@ -42,7 +42,7 @@ func (f *Fetcher) Fetch(update *AvailableUpdate, targetDir string) error {
 
 	logging.Debug("Preparing target dir: %s", targetDir)
 	if err := fileutils.MkdirUnlessExists(targetDir); err != nil {
-		msg := fmt.Sprintf("Could not create target dir: %s", targetDir)
+		msg := "Could not create target dir"
 		f.event(update.Version, msg)
 		return errs.Wrap(err, msg)
 	}
@@ -54,7 +54,7 @@ func (f *Fetcher) Fetch(update *AvailableUpdate, targetDir string) error {
 		return errs.Wrap(err, msg)
 	}
 	if !isEmpty {
-		msg := fmt.Sprintf("Target dir is not empty: %s", targetDir)
+		msg := "Target dir is not empty"
 		f.event(update.Version, msg)
 		return errs.Wrap(err, msg)
 	}
@@ -69,7 +69,7 @@ func (f *Fetcher) Fetch(update *AvailableUpdate, targetDir string) error {
 	return nil
 }
 
-func (f *Fetcher) event(version, msg string) {
+func (f *Fetcher) analyticsEvent(version, msg string) {
 	f.an.EventWithLabel(anaConst.CatUpdates, anaConst.ActUpdateDownload, anaLabelFailed, &dimensions.Values{
 		TargetVersion: p.StrP(version),
 		Error:         p.StrP(msg),

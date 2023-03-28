@@ -61,7 +61,7 @@ const ActConfigSet = "set"
 const ActConfigUnset = "unset"
 
 // ActConfigGet is the event action sent when determining if an update should be checked
-const ActShouldUpdate = "should-update"
+const ActShouldUpdate = "should-autoupdate"
 
 // ActConfigGet is the event action sent when an update is checked
 const ActUpdateCheck = "update-check"

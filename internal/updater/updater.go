@@ -205,7 +205,7 @@ func (u *AvailableUpdate) InstallWithProgress(installTargetPath string, progress
 	return proc, nil
 }
 
-func (u *AvailableUpdate) event(label, version, msg string) {
+func (u *AvailableUpdate) analyticsEvent(label, version, msg string) {
 	dims := &dimensions.Values{
 		TargetVersion: p.StrP(version),
 	}

@@ -32,18 +32,17 @@ const (
 
 	// Ananlytics labels
 	anaLabelSuccess         = "success"
-	anaLabelFailed          = "failed"
+	anaLabelFailed          = "failure"
 	anaLabelTrue            = "true"
 	anaLabelForward         = "forward"
 	anaLabelUnitTest        = "unittest"
 	anaLabelConflict        = "conflict"
-	anaLabelDisabledEnv     = "disabled_env"
-	anaLabelDisabledConfig  = "disabled_config"
+	anaLabelDisabledEnv     = "disabled-env"
+	anaLabelDisabledConfig  = "disabled-config"
 	anaLabelCI              = "ci"
 	anaLabelFreshInstall    = "fresh-install"
 	anaLabelLocked          = "locked"
 	anaLabelTooFreq         = "too-frequent"
-	anaLabelSpecificVersion = "specific-version"
 )
 
 func init() {
@@ -100,7 +99,6 @@ func autoUpdate(args []string, cfg *config.Instance, an analytics.Dispatcher, ou
 		}
 		if errs.Matches(err, &updater.ErrorInProgress{}) {
 			msg := "Update already in progress"
-			logging.Debug(msg)
 			an.EventWithLabel(anaConst.CatUpdates, anaConst.ActUpdateInstall, anaLabelFailed, &dimensions.Values{
 				Version: p.StrP(up.Version),
 				Error:   p.StrP(msg),
@@ -198,7 +196,7 @@ func shouldRunAutoUpdate(args []string, cfg *config.Instance, an analytics.Dispa
 	case cfg.GetString(updater.CfgKeyInstallVersion) != "":
 		logging.Debug("Not running auto update because a specific version had been installed on purpose")
 		shouldUpdate = false
-		label = anaLabelSpecificVersion
+		label = anaLabelLocked
 	}
 
 	an.EventWithLabel(anaConst.CatUpdates, anaConst.ActShouldUpdate, label)
