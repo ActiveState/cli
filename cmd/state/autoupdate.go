@@ -27,6 +27,10 @@ import (
 	"github.com/thoas/go-funk"
 )
 
+type ErrStateExe struct{ *locale.LocalizedError }
+
+type ErrExecuteRelaunch struct{ *errs.WrapperError }
+
 const CfgKeyLastCheck = "auto_update_lastcheck"
 
 func init() {
@@ -101,9 +105,16 @@ func autoUpdate(args []string, cfg *config.Instance, an analytics.Dispatcher, ou
 
 	code, err := relaunch(args)
 	if err != nil {
+		var msg string
+		if errs.Matches(err, &ErrStateExe{}) {
+			msg = "Could not locate state executable for relaunch"
+		}
+		if errs.Matches(err, &ErrExecuteRelaunch{}) {
+			msg = "Could not execute relaunch"
+		}
 		an.EventWithLabel(anaConst.CatUpdates, anaConst.ActUpdateRelaunch, anaConst.AutoUpdateLabelFailed, &dimensions.Values{
 			Version: p.StrP(up.Version),
-			Error:   p.StrP("Failed to relaunch after update"),
+			Error:   p.StrP(msg),
 		})
 		return true, errs.Silence(errs.WrapExitCode(err, code))
 	}
@@ -191,12 +202,12 @@ func shouldRunAutoUpdate(args []string, cfg *config.Instance, an analytics.Dispa
 func relaunch(args []string) (int, error) {
 	exec, err := installation.StateExec()
 	if err != nil {
-		return -1, locale.WrapError(err, "err_state_exec")
+		return -1, &ErrStateExe{locale.WrapError(err, "err_state_exec")}
 	}
 
 	code, _, err := exeutils.ExecuteAndPipeStd(exec, args[1:], []string{fmt.Sprintf("%s=true", constants.ForwardedStateEnvVarName)})
 	if err != nil {
-		return code, errs.Wrap(err, "Forwarded command after auto-updating failed. Exit code: %d", code)
+		return code, &ErrExecuteRelaunch{errs.Wrap(err, "Forwarded command after auto-updating failed. Exit code: %d", code)}
 	}
 
 	return code, nil
