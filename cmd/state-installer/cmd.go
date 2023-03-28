@@ -165,7 +165,7 @@ func main() {
 			},
 			{
 				Name:   "source-installer",
-				Hidden: true, // This is internally routed in via the install frontend (eg. install.sh, MSI, etc)
+				Hidden: true, // This is internally routed in via the install frontend (eg. install.sh, etc)
 				Value:  &params.sourceInstaller,
 			},
 			{
