@@ -1,7 +1,7 @@
 package integration
 
 import (
-	"fmt"
+	"os"
 	"path/filepath"
 	"runtime"
 	"testing"
@@ -31,12 +31,21 @@ func (suite *UninstallIntegrationTestSuite) testUninstall(all bool) {
 	ts := e2e.New(suite.T(), true)
 	defer ts.Close()
 
-	mockBinDir := filepath.Join(ts.Dirs.Work, fmt.Sprintf("%s", constants.BranchName, "bin"))
+	mockBranchDir := filepath.Join(ts.Dirs.Work, "StateTool", constants.BranchName)
+	mockBinDir := filepath.Join(mockBranchDir, "bin")
 	err := fileutils.Mkdir(mockBinDir)
 	suite.NoError(err)
 
-	ts.Exe = ts.CopyExeToDir(ts.Exe, filepath.Join(mockBinDir, "state"+osutils.ExeExt))
-	ts.SvcExe = ts.CopyExeToDir(ts.SvcExe, filepath.Join(mockBinDir, "state-svc"+osutils.ExeExt))
+	ts.Exe = ts.CopyExeToDir(ts.Exe, mockBinDir)
+	ts.SvcExe = ts.CopyExeToDir(ts.SvcExe, mockBinDir)
+	ts.Dirs.Bin = mockBinDir
+
+	defaultMarker := filepath.Join(filepath.Dir(ts.Dirs.Work), installation.InstallDirMarker)
+	err = fileutils.CopyFile(defaultMarker, filepath.Join(mockBranchDir, installation.InstallDirMarker))
+	suite.NoError(err)
+
+	err = os.Remove(filepath.Join(defaultMarker))
+	suite.NoError(err)
 
 	isAdmin, err := osutils.IsAdmin()
 	suite.NoError(err)
@@ -48,9 +57,15 @@ func (suite *UninstallIntegrationTestSuite) testUninstall(all bool) {
 	cp.ExpectExitCode(0)
 
 	if all {
-		cp = ts.Spawn("clean", "uninstall", "--all")
+		cp = ts.SpawnWithOpts(
+			e2e.WithArgs("clean", "uninstall", "--all"),
+			e2e.WithWorkDirectory(mockBinDir),
+		)
 	} else {
-		cp = ts.Spawn("clean", "uninstall")
+		cp = ts.SpawnWithOpts(
+			e2e.WithArgs("clean", "uninstall"),
+			e2e.WithWorkDirectory(mockBinDir),
+		)
 	}
 	cp.Expect("You are about to remove")
 	if !all {
@@ -93,14 +108,8 @@ func (suite *UninstallIntegrationTestSuite) testUninstall(all bool) {
 		suite.NotContains(string(fileutils.ReadFileUnsafe(profile)), ts.SvcExe, "autostart should not be configured for Linux server environment anymore")
 	}
 
-	if runtime.GOOS == "darwin" {
-		if fileutils.DirExists(filepath.Join(ts.Dirs.Bin, "system")) {
-			suite.Fail("system directory should not exist after uninstall")
-		}
-	}
-
 	if fileutils.DirExists(ts.Dirs.Bin) {
-		suite.Fail("system directory should not exist after uninstall")
+		suite.Fail("bin directory should not exist after uninstall")
 	}
 }
 
