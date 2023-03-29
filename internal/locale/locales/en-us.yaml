@@ -1668,6 +1668,7 @@ windows_compatibility_error:
     Unfortunately State Tool is not compatible with your version of Windows.
 
     The minimum version supported is Windows 10 build 17134.1.
+    The detected version is {{.V0}} {{.V1}}.
 exec_description:
   other: Intercept and run a script via a project runtime environment
 flag_state_exec_path_description:
