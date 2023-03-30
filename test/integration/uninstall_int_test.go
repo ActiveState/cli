@@ -59,12 +59,10 @@ func (suite *UninstallIntegrationTestSuite) testUninstall(all bool) {
 	if all {
 		cp = ts.SpawnWithOpts(
 			e2e.WithArgs("clean", "uninstall", "--all"),
-			e2e.WithWorkDirectory(mockBinDir),
 		)
 	} else {
 		cp = ts.SpawnWithOpts(
 			e2e.WithArgs("clean", "uninstall"),
-			e2e.WithWorkDirectory(mockBinDir),
 		)
 	}
 	cp.Expect("You are about to remove")
@@ -109,7 +107,7 @@ func (suite *UninstallIntegrationTestSuite) testUninstall(all bool) {
 	}
 
 	if fileutils.DirExists(ts.Dirs.Bin) {
-		suite.Fail("bin directory should not exist after uninstall")
+		suite.Fail("bin directory should not exist after uninstall at " + ts.Dirs.Bin)
 	}
 }
 
