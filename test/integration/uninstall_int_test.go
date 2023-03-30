@@ -106,6 +106,12 @@ func (suite *UninstallIntegrationTestSuite) testUninstall(all bool) {
 		suite.NotContains(string(fileutils.ReadFileUnsafe(profile)), ts.SvcExe, "autostart should not be configured for Linux server environment anymore")
 	}
 
+	if runtime.GOOS == "darwin" {
+		if fileutils.DirExists(filepath.Join(ts.Dirs.Bin, "system")) {
+			suite.Fail("system directory should not exist after uninstall")
+		}
+	}
+
 	if fileutils.DirExists(ts.Dirs.Bin) {
 		suite.Fail("bin directory should not exist after uninstall")
 	}
