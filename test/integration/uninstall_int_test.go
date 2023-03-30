@@ -107,7 +107,7 @@ func (suite *UninstallIntegrationTestSuite) testUninstall(all bool) {
 	}
 
 	if fileutils.DirExists(ts.Dirs.Bin) {
-		suite.Fail("bin directory should not exist after uninstall at " + ts.Dirs.Bin)
+		suite.Fail("bin directory should not exist after uninstall")
 	}
 }
 
