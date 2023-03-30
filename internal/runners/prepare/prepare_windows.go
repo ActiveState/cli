@@ -45,7 +45,7 @@ func (r *Prepare) prepareStartShortcut() error {
 		return locale.WrapInputError(err, "err_preparestart_mkdir", "Could not create start menu entry: %s", shortcutDir)
 	}
 
-	sc := shortcut.New(shortcutDir, "Uninstall State Tool", r.subshell.Binary(), "/C \"state clean uninstall --confirm-exit\"")
+	sc := shortcut.New(shortcutDir, "Uninstall State Tool", r.subshell.Binary(), "/C \"state clean uninstall --prompt\"")
 	err := sc.Enable()
 	if err != nil {
 		return locale.WrapError(err, "err_preparestart_shortcut", "", sc.Path())
