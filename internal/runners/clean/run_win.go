@@ -122,7 +122,7 @@ func removeInstall(logFile string, params *UninstallParams, cfg *config.Instance
 	// This is because Windows often thinks the installation.InstallDirMarker and
 	// constants.StateInstallerCmd files are still in use.
 	branchDir := filepath.Dir(filepath.Dir(stateExec))
-	paths := []string{branchDir}
+	paths := []string{stateExec, branchDir}
 	if params.All {
 		paths = append(paths, cfg.ConfigPath()) // also remove the config directory
 	}
