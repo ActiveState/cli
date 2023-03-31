@@ -56,6 +56,9 @@ const InternalConfigFileNameLegacy = "config.yaml"
 // InternalConfigFileName is the filename used for our sqlite based settings db
 const InternalConfigFileName = "config.db"
 
+// InternalTrackingFileName is the filename used for our sqlite based tracking db
+const InternalTrackingFileName = "tracking.db"
+
 // AutoUpdateTimeoutEnvVarName is the name of the environment variable that can be set to override the allowed timeout to check for an available auto-update
 const AutoUpdateTimeoutEnvVarName = "ACTIVESTATE_CLI_UPDATE_TIMEOUT"
 
