@@ -69,7 +69,7 @@ func (suite *EditIntegrationTestSuite) TestEdit() {
 	cp.Expect("Watching file changes")
 	cp.Expect("Script changes detected")
 	cp.Send("Y")
-	cp.ExpectNotExitCode(0)
+	cp.ExpectExitCode(0)
 }
 
 func (suite *EditIntegrationTestSuite) TestEdit_NonInteractive() {
