@@ -24,5 +24,5 @@ func Test_Dotprogress(t *testing.T) {
 	// GitHub CI's shell sometimes glitches and mixes up stdout, mostly on Windows, but
 	// occasionally on other platforms. Allow for the final space before "Done" to occur anywhere
 	// before it.
-	require.Regexp(t, regexp.MustCompile("Progress..."+dots+"(\\.* |\\.* \\.+)Done"), out.ErrorOutput())
+	require.Regexp(t, regexp.MustCompile("NoProgress..."+dots+"(\\.* |\\.* \\.+)Done"), out.ErrorOutput())
 }
