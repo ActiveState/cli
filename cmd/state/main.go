@@ -5,7 +5,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/ActiveState/cli/internal/captain"
 	"os"
 	"os/exec"
 	"runtime/debug"
@@ -14,6 +13,7 @@ import (
 
 	"github.com/ActiveState/cli/cmd/state/internal/cmdtree"
 	anAsync "github.com/ActiveState/cli/internal/analytics/client/async"
+	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/constraints"
@@ -39,6 +39,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
+	"github.com/ActiveState/cli/pkg/projectfile/vars"
 )
 
 func main() {
@@ -215,9 +216,12 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 	// Set up conditional, which accesses a lot of primer data
 	sshell := subshell.New(cfg)
 
-	conditional := constraints.NewPrimeConditional(auth, pj, sshell.Shell())
+	projVars := vars.New(auth, pj, sshell.Shell())
+
+	conditional := constraints.NewPrimeConditional(projVars)
 	project.RegisterConditional(conditional)
-	project.RegisterExpander("mixin", project.NewMixin(auth).Expander)
+	project.RegisterComplexExpander(projVars)
+	//project.RegisterExpander("mixin", project.NewMixin(auth).Expander)
 	project.RegisterExpander("secrets", project.NewSecretPromptingExpander(secretsapi.Get(), prompter, cfg, auth))
 
 	// Run the actual command
