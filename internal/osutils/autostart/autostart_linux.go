@@ -18,7 +18,7 @@ const (
 )
 
 func enable(exec string, opts Options) error {
-	if err := legacyDisableOnDesktop(exec, opts); err != nil {
+	if err := legacyDisableOnDesktop(opts.LaunchFileName); err != nil {
 		return errs.Wrap(err, "Could not properly disable autostart (desktop): %v", err)
 	}
 
@@ -61,7 +61,7 @@ func prependHomeDir(path string) (string, error) {
 }
 
 func disable(exec string, opts Options) error {
-	if err := legacyDisableOnDesktop(exec, opts); err != nil {
+	if err := legacyDisableOnDesktop(opts.LaunchFileName); err != nil {
 		return err
 	}
 
@@ -108,13 +108,13 @@ func autostartPath(name string, _ Options) (string, error) {
 }
 
 // https://activestatef.atlassian.net/browse/DX-1677
-func legacyDisableOnDesktop(exec string, opts Options) error {
+func legacyDisableOnDesktop(launchFileName string) error {
 	dir, err := prependHomeDir(".config/autostart")
 	if err != nil {
 		return errs.Wrap(err, "Could not find autostart directory")
 	}
 
-	path := filepath.Join(dir, exec)
+	path := filepath.Join(dir, launchFileName)
 
 	if fileutils.FileExists(path) {
 		err := os.Remove(path)
