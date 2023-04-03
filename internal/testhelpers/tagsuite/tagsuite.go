@@ -38,6 +38,7 @@ const (
 	Init            = "init"
 	InstallScripts  = "install-scripts"
 	Installer       = "installer"
+	Invite          = "invite"
 	RemoteInstaller = "remote-installer"
 	Interrupt       = "interrupt"
 	JSON            = "json"
