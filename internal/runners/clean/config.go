@@ -26,7 +26,7 @@ type configurable interface {
 
 type Config struct {
 	output  output.Outputer
-	confirm confirmAble
+	confirm promptable
 	cfg     configurable
 	ipComm  svcctl.IPCommunicator
 }
@@ -39,7 +39,7 @@ func NewConfig(prime primeable) *Config {
 	return newConfig(prime.Output(), prime.Prompt(), prime.Config(), prime.IPComm())
 }
 
-func newConfig(out output.Outputer, confirm confirmAble, cfg configurable, ipComm svcctl.IPCommunicator) *Config {
+func newConfig(out output.Outputer, confirm promptable, cfg configurable, ipComm svcctl.IPCommunicator) *Config {
 	return &Config{
 		output:  out,
 		confirm: confirm,

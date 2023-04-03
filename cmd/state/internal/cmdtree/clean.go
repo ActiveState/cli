@@ -43,12 +43,13 @@ func newCleanUninstallCommand(prime *primer.Values, globals *globalOptions) *cap
 				Value:       &params.Force,
 			},
 			{
-				// This option is only used on Windows to prevent the popup cmd from closing before the
-				// user can take note of the printed log path.
-				Name:        "confirm-exit",
-				Description: "Prompts the user to press enter before exiting",
+				// This option is only used by the Windows uninstall shortcut to ask the user if they wish
+				// to delete everything or keep cache and config. The user is also asked to press Enter
+				// after the uninstall process is scheduled so they may note the printed log file path.
+				Name:        "prompt",
+				Description: "Asks the user if everything should be deleted or to keep cache and config",
 				Hidden:      true, // this is not a user-facing flag
-				Value:       &params.ConfirmExit,
+				Value:       &params.Prompt,
 			},
 		},
 		[]*captain.Argument{},

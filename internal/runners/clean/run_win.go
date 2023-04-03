@@ -80,7 +80,7 @@ func (u *Uninstall) runUninstall(params *UninstallParams) error {
 	}
 
 	u.out.Print(locale.Tr("clean_message_windows", logFile.Name()))
-	if params.ConfirmExit {
+	if params.Prompt {
 		u.out.Print(locale.Tl("clean_uninstall_confirm_exit", "Press enter to exit."))
 		fmt.Scanln(p.StrP("")) // Wait for input from user
 	}
