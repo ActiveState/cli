@@ -13,26 +13,26 @@ import (
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
 )
 
-const (
-	autostartFile = ".profile"
-)
-
 func enable(exec string, opts Options) error {
 	if err := legacyDisableOnDesktop(opts.LaunchFileName); err != nil {
-		return errs.Wrap(err, "Could not properly disable autostart (desktop): %v", err)
+		return errs.Wrap(err, "Could not disable legacy autostart (desktop): %v", err)
+	}
+
+	profile, err := profilePath()
+	if err != nil {
+		return errs.Wrap(err, "Could not get profile path")
+	}
+
+	if err := legacyRemoveAutostartEntry(profile); err != nil {
+		return errs.Wrap(err, "Could not clean up legacy autostart entry (server)")
 	}
 
 	enabled, err := isEnabled(exec, opts)
 	if err != nil {
-		return errs.Wrap(err, "Could not check if app autostart is already enabled")
+		return errs.Wrap(err, "Could not check if autostart is already enabled")
 	}
 	if enabled {
 		return nil
-	}
-
-	profile, err := prependHomeDir(autostartFile)
-	if err != nil {
-		return errs.Wrap(err, "Could not find ~/.profile")
 	}
 
 	esc := osutils.NewBashEscaper()
@@ -41,12 +41,59 @@ func enable(exec string, opts Options) error {
 		exec += " " + esc.Quote(arg)
 	}
 
-	// Some older versions of the State Tool used a different ID for the autostart entry.
-	err = sscommon.CleanRcFile(profile, sscommon.InstallID)
-	if err != nil {
-		return errs.Wrap(err, "Could not clean old autostart entry from %s", profile)
+	if err := sscommon.WriteRcData(exec, profile, sscommon.AutostartID); err != nil {
+		return errs.Wrap(err, "Could not update %s with autostart entry", profile)
 	}
-	return sscommon.WriteRcData(exec, profile, sscommon.AutostartID)
+
+	return nil
+}
+
+func disable(exec string, opts Options) error {
+	if err := legacyDisableOnDesktop(opts.LaunchFileName); err != nil {
+		return errs.Wrap(err, "Could not disable legacy autostart (desktop): %v", err)
+	}
+
+	profile, err := profilePath()
+	if err != nil {
+		return errs.Wrap(err, "Could not get profile path")
+	}
+
+	if err := legacyRemoveAutostartEntry(profile); err != nil {
+		return errs.Wrap(err, "Could not clean up legacy autostart entry (server)")
+	}
+	if fileutils.FileExists(profile) {
+		if err := sscommon.CleanRcFile(profile, sscommon.AutostartID); err != nil {
+			return errs.Wrap(err, "Could not clean up legacy autostart entry")
+		}
+	}
+
+	return nil
+}
+
+// isEnabled, for Linux, does not verify legacy "Desktop" autostart setups, so
+// should be used carefully with that in mind. External code should only use it
+// within tests.
+func isEnabled(exec string, opts Options) (bool, error) {
+	profile, err := profilePath()
+	if err != nil {
+		return false, errs.Wrap(err, "Could not get profile path")
+	}
+
+	if fileutils.FileExists(profile) {
+		data, err := fileutils.ReadFile(profile)
+		if err != nil {
+			return false, errs.Wrap(err, "Could not read %s", profile)
+		}
+		return strings.Contains(string(data), exec), nil
+	}
+
+	return false, nil
+}
+
+func autostartPath(name string, opts Options) (string, error) {
+	// Linux uses ~/.profile modification for autostart, there is no actual
+	// autostartPath.
+	return "", nil
 }
 
 func prependHomeDir(path string) (string, error) {
@@ -60,51 +107,15 @@ func prependHomeDir(path string) (string, error) {
 	return filepath.Join(homeDir, path), nil
 }
 
-func disable(exec string, opts Options) error {
-	if err := legacyDisableOnDesktop(opts.LaunchFileName); err != nil {
-		return err
-	}
+func profilePath() (string, error) {
+	autostartFile := ".profile"
 
-	// Remove the ~/.profile modification if it's there.
 	profile, err := prependHomeDir(autostartFile)
 	if err != nil {
-		return errs.Wrap(err, "Could not find ~/.profile")
-	}
-	// Some older versions of the State Tool used a different ID for the autostart entry.
-	if fileutils.FileExists(profile) {
-		return sscommon.CleanRcFile(profile, sscommon.InstallID)
-	}
-	if fileutils.FileExists(profile) {
-		return sscommon.CleanRcFile(profile, sscommon.AutostartID)
+		return "", errs.Wrap(err, "Could not find ~/%s", autostartFile)
 	}
 
-	return nil
-}
-
-// isEnabled, for Linux, does not verify legacy "Desktop" autostart setups, so
-// should not be used carefully with that in mind. External code should only
-// use it within tests.
-func isEnabled(exec string, opts Options) (bool, error) {
-	// check for ~/.profile modification.
-	profile, err := prependHomeDir(autostartFile)
-	if err != nil {
-		return false, errs.Wrap(err, "Could not find ~/.profile")
-	}
-	if fileutils.FileExists(profile) {
-		data, err := fileutils.ReadFile(profile)
-		if err != nil {
-			return false, errs.Wrap(err, "Could not read ~/.profile")
-		}
-		return strings.Contains(string(data), exec), nil
-	}
-
-	return false, nil
-}
-
-func autostartPath(name string, _ Options) (string, error) {
-	// Linux uses ~/.profile modification for autostart, there is no actual
-	// autostartPath.
-	return "", nil
+	return profile, nil
 }
 
 // https://activestatef.atlassian.net/browse/DX-1677
@@ -121,6 +132,19 @@ func legacyDisableOnDesktop(launchFileName string) error {
 		if err != nil {
 			return errs.Wrap(err, "Could not remove autostart shortcut")
 		}
+	}
+
+	return nil
+}
+
+// https://activestatef.atlassian.net/browse/DX-1677
+func legacyRemoveAutostartEntry(profileFile string) error {
+	if !fileutils.FileExists(profileFile) {
+		return nil
+	}
+
+	if err := sscommon.CleanRcFile(profileFile, sscommon.InstallID); err != nil {
+		return errs.Wrap(err, "Could not clean %s", profileFile)
 	}
 
 	return nil
