@@ -1,4 +1,4 @@
--- schema.sql
+-- tracking-schema.sql
 CREATE TABLE IF NOT EXISTS files (
 	id INT AUTO_INCREMENT PRIMARY KEY,
 	value TEXT NOT NULL UNIQUE

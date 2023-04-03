@@ -21,6 +21,7 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/installation/storage"
+	"github.com/ActiveState/cli/internal/installation/track"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
@@ -128,6 +129,14 @@ func main() {
 	an = sync.New(cfg, nil)
 	an.Event(AnalyticsFunnelCat, "start")
 
+	tracker, err := track.New()
+	if err != nil {
+		multilog.Error("Could not set up tracker: " + errs.JoinMessage(err))
+		fmt.Fprintln(os.Stderr, err.Error())
+		exitCode = 1
+		return
+	}
+
 	params := newParams()
 	cmd := captain.NewCommand(
 		"state-installer",
@@ -189,7 +198,7 @@ func main() {
 			},
 		},
 		func(ccmd *captain.Command, _ []string) error {
-			return execute(out, cfg, an, processedArgs[1:], params)
+			return execute(out, cfg, an, track, processedArgs[1:], params)
 		},
 	)
 
@@ -215,7 +224,7 @@ func main() {
 	}
 }
 
-func execute(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher, args []string, params *Params) error {
+func execute(out output.Outputer, cfg *config.Instance, track track.Tracker, an analytics.Dispatcher, args []string, params *Params) error {
 	an.Event(AnalyticsFunnelCat, "exec")
 
 	if params.path == "" {

@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/ActiveState/cli/internal/assets"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/installation/storage"
@@ -65,8 +66,13 @@ func NewCustom(localPath string) (*Tracker, error) {
 	}
 	profile.Measure("tracker.sqlOpen", t)
 
+	schema, err := assets.ReadFileBytes("tracking-schema.sql")
+	if err != nil {
+		return nil, errs.Wrap(err, "Error reading file bytes")
+	}
+
 	t = time.Now()
-	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS tracking (key string NOT NULL PRIMARY KEY, value text)`)
+	_, err = db.Exec(string(schema))
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not seed tracker database")
 	}
