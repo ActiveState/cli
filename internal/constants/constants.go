@@ -167,7 +167,7 @@ const RuntimeUsageSilenceTimeOverrideEnvVarName = "ACTIVESTATE_OVERRIDE_RTUSAGE_
 const SvcAuthPollingRateEnvVarName = "ACTIVESTATE_SVC_AUTH_POLLING_RATE"
 
 // APIUpdateInfoURL is the URL for our update info server
-const APIUpdateInfoURL = "https://platform.activestate.com/sv/state-update/api/v1"
+const APIUpdateInfoURL = "https://pr10565-public.activestate.build/sv/state-update/api/v1"
 
 // APIUpdateURL is the URL for our update files
 const APIUpdateURL = "https://state-tool.s3.amazonaws.com/update/state"
@@ -224,13 +224,13 @@ const ExperimentalBranch = "master"
 const MonoAPIPath = "/api/v1"
 
 // DefaultAPIHost is the host used for platform api calls when on production
-const DefaultAPIHost = "platform.activestate.com"
+const DefaultAPIHost = "pr10565-public.activestate.build"
 
 // SecretsAPIPath is the api path used for the secrets api
 const SecretsAPIPath = "/api/secrets/v1"
 
 // SecretsURL is the host used for secrets api calls when on production
-const SecretsURL = "https://platform.activestate.com" + SecretsAPIPath
+const SecretsURL = "https://pr10565-public.activestate.build" + SecretsAPIPath
 
 // HeadChefAPIPath is the api path used for the headchef api
 const HeadChefAPIPath = "/sv/head-chef"
@@ -263,7 +263,7 @@ const DateTimeFormatUser = "2 Jan 2006 15:04"
 const DateTimeFormatRecord = "Mon Jan 2 2006 15:04:05 -0700 MST"
 
 // PlatformSignupURL is the account creation url used by the platform
-const PlatformSignupURL = "https://platform.activestate.com" + "/create-account"
+const PlatformSignupURL = "https://pr10565-public.activestate.build" + "/create-account"
 
 // DocumentationURL is the url for the state tool documentation
 const DocumentationURL = "http://docs.activestate.com/platform/state/"
@@ -290,7 +290,7 @@ const ActiveStateSupportURL = "https://www.activestate.com/support/?utm_source=p
 const ActiveStateDashboardURL = "https://platform.activestate.com/?utm_source=platform-application-gui&utm_medium=activestate-desktop&utm_content=drop-down&utm_campaign=maru"
 
 // DashboardCommitURL is the URL used to inspect commits
-const DashboardCommitURL = "https://platform.activestate.com/commit/"
+const DashboardCommitURL = "https://pr10565-public.activestate.build/commit/"
 
 // BugTrackerURL is the URL of our bug tracker
 const BugTrackerURL = "https://github.com/ActiveState/state-tool/issues"
@@ -299,10 +299,10 @@ const BugTrackerURL = "https://github.com/ActiveState/state-tool/issues"
 const UserAgentTemplate = "{{.UserAgent}} ({{.OS}}; {{.OSVersion}}; {{.Architecture}})"
 
 // PlatformURL is the base domain for the production platform
-const PlatformURL = "platform.activestate.com"
+const PlatformURL = "pr10565-public.activestate.build"
 
 // CheatSheetURL is the URL for the State Tool Cheat Sheet
-const CheatSheetURL = "https://platform.activestate.com/state-tool-cheat-sheet"
+const CheatSheetURL = "https://pr10565-public.activestate.build/state-tool-cheat-sheet"
 
 // StateToolRollbarToken is the token used by the State Tool to talk to rollbar
 const StateToolRollbarToken = "8ddf0c31267b49ca9680083cf850f1e3"
