@@ -32,15 +32,11 @@ type OutputError struct {
 }
 
 func (o *OutputError) MarshalOutput(f output.Format) interface{} {
-	if f != output.PlainFormatName {
-		return o.error
-	}
-
 	var outLines []string
 	isInputError := locale.IsInputError(o.error)
 
 	// Print what happened
-	if !isInputError {
+	if !isInputError && f == output.PlainFormatName {
 		outLines = append(outLines, output.Title(locale.Tl("err_what_happened", "[ERROR]Something Went Wrong[/RESET]")).String())
 	}
 
@@ -51,7 +47,12 @@ func (o *OutputError) MarshalOutput(f output.Format) interface{} {
 		rerrs = []error{o.error}
 	}
 	for _, errv := range rerrs {
-		outLines = append(outLines, fmt.Sprintf(" [NOTICE][ERROR]x[/RESET] %s", trimError(locale.ErrorMessage(errv))))
+		message := trimError(locale.ErrorMessage(errv))
+		if f == output.PlainFormatName {
+			outLines = append(outLines, fmt.Sprintf(" [NOTICE][ERROR]x[/RESET] %s", message))
+		} else {
+			outLines = append(outLines, message)
+		}
 	}
 
 	// Concatenate error tips
@@ -66,7 +67,8 @@ func (o *OutputError) MarshalOutput(f output.Format) interface{} {
 	errorTips = append(errorTips, locale.Tl("err_help_forum", "[NOTICE]Ask For Help →[/RESET] [ACTIONABLE]{{.V0}}[/RESET]", constants.ForumsURL))
 
 	// Print tips
-	if enableTips := os.Getenv(constants.DisableErrorTipsEnvVarName) != "true"; enableTips {
+	enableTips := os.Getenv(constants.DisableErrorTipsEnvVarName) != "true" && f == output.PlainFormatName
+	if enableTips {
 		outLines = append(outLines, "") // separate error from "Need More Help?" header
 		outLines = append(outLines, output.Title(locale.Tl("err_more_help", "Need More Help?")).String())
 		for _, tip := range errorTips {
