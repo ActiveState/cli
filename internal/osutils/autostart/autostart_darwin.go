@@ -128,5 +128,6 @@ func cleanLegacyFile(exec string, opts Options) error {
 		return nil
 	}
 
+	logging.Debug("Legacy autostart file found, removing: %s", path)
 	return os.Remove(path)
 }
