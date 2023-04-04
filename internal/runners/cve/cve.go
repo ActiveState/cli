@@ -145,10 +145,10 @@ func (od *outputDataPrinter) MarshalOutput(format output.Format) interface{} {
 		}
 		hist = append(hist, ho)
 	}
-	od.output.Print(output.Heading(fmt.Sprintf("%d Vulnerabilities", totalCount)))
+	od.output.Print(output.Title(fmt.Sprintf("%d Vulnerabilities", totalCount)))
 	od.output.Print(hist)
 
-	od.output.Print(output.Heading(fmt.Sprintf("%d Affected Packages", len(od.data.Packages))))
+	od.output.Print(output.Title(fmt.Sprintf("%d Affected Packages", len(od.data.Packages))))
 	od.output.Print(od.data.Packages)
 
 	od.printFooter()

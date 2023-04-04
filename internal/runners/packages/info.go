@@ -182,7 +182,7 @@ func (ro *infoResultOutput) MarshalOutput(format output.Format) interface{} {
 
 	print, res := ro.out.Print, ro.res
 	{
-		print(output.Heading(
+		print(output.Title(
 			locale.Tl(
 				"package_info_description_header",
 				"Details for version {{.V0}}",
@@ -199,7 +199,7 @@ func (ro *infoResultOutput) MarshalOutput(format output.Format) interface{} {
 	}
 
 	{
-		print(output.Heading(
+		print(output.Title(
 			locale.Tl(
 				"packages_info_versions_available",
 				"{{.V0}} Version(s) Available",
@@ -210,7 +210,7 @@ func (ro *infoResultOutput) MarshalOutput(format output.Format) interface{} {
 	}
 
 	{
-		print(output.Heading(locale.Tl("packages_info_next_header", "What's next?")))
+		print(output.Title(locale.Tl("packages_info_next_header", "What's next?")))
 		print(ro.next)
 	}
 

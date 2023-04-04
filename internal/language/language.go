@@ -72,11 +72,11 @@ var lookup = [...]languageData{
 		Executable{"powershell.exe", true},
 	},
 	{
-		"perl", "Perl", ".pl", true, "perl", "5.32.1",
+		"perl", "Perl", ".pl", true, "perl", "5.36.0",
 		Executable{constants.ActivePerlExecutable, false},
 	},
 	{
-		"python3", "Python 3", ".py", true, "python", "3.9.6",
+		"python3", "Python 3", ".py", true, "python", "3.10.8",
 		Executable{constants.ActivePython3Executable, false},
 	},
 	{

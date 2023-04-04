@@ -113,7 +113,7 @@ func HeartbeatHandler(cfg *config.Instance, resolver Resolver, analyticsReporter
 			}
 
 			dims := &dimensions.Values{
-				Trigger:          p.StrP(target.TriggerExec.String()),
+				Trigger:          p.StrP(target.TriggerExecutor.String()),
 				Headless:         p.StrP(strconv.FormatBool(metaData.Headless)),
 				CommitID:         p.StrP(metaData.CommitUUID),
 				ProjectNameSpace: p.StrP(metaData.Namespace),
@@ -139,7 +139,6 @@ func HeartbeatHandler(cfg *config.Instance, resolver Resolver, analyticsReporter
 
 			logging.Debug("Firing runtime usage events for %s", metaData.Namespace)
 			analyticsReporter.Event(constants.CatRuntimeUsage, constants.ActRuntimeAttempt, dims)
-			analyticsReporter.Event(constants.CatRuntimeUsage, constants.ActRuntimeHeartbeat, dims) // Initial event
 			_, err = resolver.ReportRuntimeUsage(context.Background(), pidNum, hb.ExecPath, dimsJSON)
 			if err != nil {
 				multilog.Critical("Heartbeat Failure: Failed to report runtime usage in heartbeat handler: %s", errs.JoinMessage(err))

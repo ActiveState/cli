@@ -1,6 +1,7 @@
 package workflow_helpers
 
 import (
+	"io/ioutil"
 	"os"
 	"regexp"
 	"sort"
@@ -77,14 +78,19 @@ func FetchJiraIssue(jiraClient *jira.Client, jiraIssueID string) (*jira.Issue, e
 	return jiraIssue, nil
 }
 
-func FetchAvailableVersions(jiraClient *jira.Client) ([]semver.Version, error) {
+type Version struct {
+	semver.Version
+	JiraID string
+}
+
+func FetchAvailableVersions(jiraClient *jira.Client) ([]Version, error) {
 	pj, _, err := jiraClient.Project.Get("DX")
 	if err != nil {
 		return nil, errs.Wrap(err, "Failed to get JIRA project")
 	}
 
 	emptySemver := semver.Version{}
-	result := []semver.Version{}
+	result := []Version{}
 	for _, version := range pj.Versions {
 		if version.Archived != nil && *version.Archived {
 			continue
@@ -97,11 +103,11 @@ func FetchAvailableVersions(jiraClient *jira.Client) ([]semver.Version, error) {
 			logging.Debug("Not a semver version %s; skipping", version.Name)
 			continue
 		}
-		result = append(result, semversion)
+		result = append(result, Version{semversion, version.ID})
 	}
 
 	sort.Slice(result, func(i, j int) bool {
-		return result[i].LT(result[j])
+		return result[i].LT(result[j].Version)
 	})
 
 	return result, nil
@@ -109,41 +115,41 @@ func FetchAvailableVersions(jiraClient *jira.Client) ([]semver.Version, error) {
 
 var VersionMaster = semver.MustParse("0.0.0")
 
-func ParseTargetFixVersion(issue *jira.Issue, availableVersions []semver.Version) (semver.Version, *jira.FixVersion, error) {
+func ParseTargetFixVersion(issue *jira.Issue, availableVersions []Version) (target Version, original *jira.FixVersion, err error) {
 	if len(issue.Fields.FixVersions) < 1 {
-		return semver.Version{}, nil, errs.New("Jira issue does not have a fixVersion assigned: %s\n", issue.Key)
+		return Version{}, nil, errs.New("Jira issue does not have a fixVersion assigned: %s\n", issue.Key)
 	}
 
 	if len(issue.Fields.FixVersions) > 1 {
-		return semver.Version{}, nil, errs.New("Jira issue has multiple fixVersions assigned: %s. This is incompatible with our workflow.", issue.Key)
+		return Version{}, nil, errs.New("Jira issue has multiple fixVersions assigned: %s. This is incompatible with our workflow.", issue.Key)
 	}
 
 	fixVersion := issue.Fields.FixVersions[0]
 	if fixVersion.Archived != nil && *fixVersion.Archived || fixVersion.Released != nil && *fixVersion.Released {
-		return semver.Version{}, nil, errs.New("fixVersion '%s' has either been archived or released\n", fixVersion.Name)
+		return Version{}, nil, errs.New("fixVersion '%s' has either been archived or released\n", fixVersion.Name)
 	}
 
 	switch fixVersion.Name {
 	case VersionNextFeasible:
 		target, err := ParseJiraVersion(strings.Split(fixVersion.Description, " ")[0])
 		if err != nil {
-			return semver.Version{}, nil, errs.Wrap(err, "Failed to parse Jira version from description: %s", fixVersion.Description)
+			return Version{}, nil, errs.Wrap(err, "Failed to parse Jira version from description: %s", fixVersion.Description)
 		}
 		if len(availableVersions) < 1 {
-			return semver.Version{}, nil, errs.New("No feasible versions available")
+			return Version{}, nil, errs.New("No feasible versions available")
 		}
 		for _, version := range availableVersions {
 			if version.EQ(target) {
 				return version, fixVersion, nil
 			}
 		}
-		return semver.Version{}, nil, errs.New("Next feasible version does not exist: %s", target.String())
+		return Version{}, nil, errs.New("Next feasible version does not exist: %s", target.String())
 	case VersionNextUnscheduled:
-		return VersionMaster, fixVersion, nil
+		return Version{VersionMaster, ""}, fixVersion, nil
 	}
 
 	v, err := ParseJiraVersion(fixVersion.Name)
-	return v, fixVersion, err
+	return Version{v, fixVersion.ID}, fixVersion, err
 }
 
 func IsMergedStatus(status string) bool {
@@ -163,4 +169,37 @@ func FetchJiraIDsInCommits(commits []*github.RepositoryCommit) []string {
 		found = append(found, strings.ToUpper(key))
 	}
 	return found
+}
+
+func UpdateJiraFixVersion(client *jira.Client, issue *jira.Issue, versionID string) error {
+	issueUpdate := &jira.Issue{
+		ID:  issue.ID,
+		Key: issue.Key,
+		Fields: &jira.IssueFields{
+			FixVersions: []*jira.FixVersion{{ID: versionID}},
+		},
+	}
+
+	if len(issue.Fields.FixVersions) > 0 {
+		fixVersion := issue.Fields.FixVersions[0]
+		switch fixVersion.Name {
+		case VersionNextFeasible:
+			issueUpdate.Fields.Labels = append(issueUpdate.Fields.Labels, "WasNextFeasible")
+			break
+		case VersionNextUnscheduled:
+			issueUpdate.Fields.Labels = append(issueUpdate.Fields.Labels, "WasNextUnscheduled")
+			break
+		}
+	}
+
+	issueUpdate.Fields.FixVersions = []*jira.FixVersion{{ID: versionID}}
+	_, response, err := client.Issue.Update(issueUpdate)
+	res, err2 := ioutil.ReadAll(response.Body)
+	if err2 != nil {
+		res = []byte(err2.Error())
+	}
+	if err != nil {
+		return errs.Wrap(err, string(res))
+	}
+	return nil
 }

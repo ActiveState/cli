@@ -14,9 +14,8 @@ import (
 )
 
 // RefreshRuntime should be called after runtime mutations.
-func RefreshRuntime(auth *authentication.Auth, out output.Outputer, an analytics.Dispatcher, proj *project.Project,
-	cachePath string, commitID strfmt.UUID, changed bool, trigger target.Trigger, svcm *model.SvcModel) (rerr error) {
-	target := target.NewProjectTarget(proj, cachePath, &commitID, trigger)
+func RefreshRuntime(auth *authentication.Auth, out output.Outputer, an analytics.Dispatcher, proj *project.Project, commitID strfmt.UUID, changed bool, trigger target.Trigger, svcm *model.SvcModel) (rerr error) {
+	target := target.NewProjectTarget(proj, &commitID, trigger)
 	isCached := true
 	rt, err := runtime.New(target, an, svcm)
 	if err != nil {
@@ -34,10 +33,10 @@ func RefreshRuntime(auth *authentication.Auth, out output.Outputer, an analytics
 
 	if !isCached {
 		if !rt.HasCache() {
-			out.Notice(output.Heading(locale.Tl("install_runtime", "Installing Runtime")))
+			out.Notice(output.Title(locale.Tl("install_runtime", "Installing Runtime")))
 			out.Notice(locale.Tl("install_runtime_info", "Installing your runtime and dependencies."))
 		} else {
-			out.Notice(output.Heading(locale.Tl("update_runtime", "Updating Runtime")))
+			out.Notice(output.Title(locale.Tl("update_runtime", "Updating Runtime")))
 			out.Notice(locale.Tl("update_runtime_info", "Changes to your runtime may require some dependencies to be rebuilt.\n"))
 		}
 		pg := NewRuntimeProgressIndicator(out)

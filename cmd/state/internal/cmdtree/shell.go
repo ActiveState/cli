@@ -43,6 +43,5 @@ func newShellCommand(prime *primer.Values) *captain.Command {
 	)
 	cmd.SetGroup(EnvironmentUsageGroup)
 	cmd.SetAliases("prompt")
-	cmd.SetUnstable(true)
 	return cmd
 }

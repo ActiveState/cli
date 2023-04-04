@@ -60,9 +60,8 @@ jobs:
         shell: bash
         run: state run preprocess
 
-      - # === Set Target PR ===
-        name: Set Target PR
-        if: github.event.action == 'opened' || github.event.action == 'reopened'
+      - # === Set Target PR & FixVersion ===
+        name: Set Target PR and FixVersion
         shell: bash
         run: go run scripts/ci/target-version-pr/main.go ${{ github.event.pull_request.number }}
 
