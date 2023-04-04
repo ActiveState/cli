@@ -24,6 +24,8 @@ const (
 )
 
 func (a *App) install() error {
+	// TODO: This function should remove the old installation file if it exists.
+	// It should be a plist file in the ~/Library/LaunchAgents directory.
 	// Create all of the necessary directories and files in a temporary directory
 	// Then move the temporary directory to the final location which for macOS will be the Applications directory
 	tmpDir, err := ioutil.TempDir("", fmt.Sprintf("%s-", a.Name))
