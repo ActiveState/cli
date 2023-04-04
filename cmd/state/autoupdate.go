@@ -106,8 +106,7 @@ func autoUpdate(args []string, cfg *config.Instance, an analytics.Dispatcher, ou
 		var msg string
 		if errs.Matches(err, &ErrStateExe{}) {
 			msg = anaConst.UpdateErrorExecutable
-		}
-		if errs.Matches(err, &ErrExecuteRelaunch{}) {
+		} else {
 			msg = anaConst.UpdateErrorRelaunch
 		}
 		an.EventWithLabel(anaConst.CatUpdates, anaConst.ActUpdateRelaunch, anaConst.UpdateLabelFailed, &dimensions.Values{
