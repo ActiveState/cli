@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/fileutils"
 	"howett.net/plist"
 )
 
@@ -13,6 +14,10 @@ type LegacyPlist struct {
 }
 
 func isLegacyPlist(path string) (bool, error) {
+	if !fileutils.FileExists(path) {
+		return false, errs.New("Plist file does not exist")
+	}
+
 	reader, err := os.Open(path)
 	if err != nil {
 		fmt.Println("error opening file: ", err)
