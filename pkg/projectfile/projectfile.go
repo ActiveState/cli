@@ -42,8 +42,8 @@ import (
 )
 
 var (
-	urlProjectRegexStr = fmt.Sprintf(`https:\/\/[\w\.]+\/([\w_.-]*)\/([\w_.-]*)(?:\?commitID=)*([^&]*)(?:\&branch=)*(.*)`)
-	urlCommitRegexStr  = fmt.Sprintf(`https:\/\/[\w\.]+\/commit\/(.*)`)
+	urlProjectRegexStr = fmt.Sprintf(`https:\/\/[\w\.-]+\/([\w_.-]*)\/([\w_.-]*)(?:\?commitID=)*([^&]*)(?:\&branch=)*(.*)`)
+	urlCommitRegexStr  = fmt.Sprintf(`https:\/\/[\w\.-]+\/commit\/(.*)`)
 
 	// ProjectURLRe Regex used to validate project fields /orgname/projectname[?commitID=someUUID]
 	ProjectURLRe = regexp.MustCompile(urlProjectRegexStr)
