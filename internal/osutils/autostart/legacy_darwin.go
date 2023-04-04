@@ -15,7 +15,7 @@ type LegacyPlist struct {
 
 func isLegacyPlist(path string) (bool, error) {
 	if !fileutils.FileExists(path) {
-		return false, errs.New("Plist file does not exist")
+		return false, nil
 	}
 
 	reader, err := os.Open(path)
