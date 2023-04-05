@@ -23,8 +23,9 @@ func (pv *PackageVersion) Set(arg string) error {
 
 // InstallRunParams tracks the info required for running Install.
 type InstallRunParams struct {
-	Package  PackageVersion
-	Language string
+	Package   PackageVersion
+	Language  string
+	Namespace string
 }
 
 // Install manages the installing execution context.
@@ -40,6 +41,14 @@ func NewInstall(prime primeable) *Install {
 // Run executes the install behavior.
 func (a *Install) Run(params InstallRunParams, nsType model.NamespaceType) error {
 	logging.Debug("ExecuteInstall")
+	if params.Namespace == "" {
+		var err error
+		nsType, err = model.NewNamespaceType(params.Namespace)
+		if err != nil {
+			return locale.WrapError(err, "err_namespace_type", "Could not determine namespace type")
+		}
+	}
+
 	return requirements.NewRequirementOperation(a.prime).ExecuteRequirementOperation(
 		params.Package.Name(),
 		params.Package.Version(),

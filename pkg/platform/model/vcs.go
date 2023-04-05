@@ -149,6 +149,21 @@ func (t NamespaceType) Matchable() NamespaceMatchable {
 	return t.matchable
 }
 
+func NewNamespaceType(ns string) (NamespaceType, error) {
+	switch ns {
+	case NamespacePackage.String():
+		return NamespacePackage, nil
+	case NamespaceBundle.String():
+		return NamespaceBundle, nil
+	case NamespaceLanguage.String():
+		return NamespaceLanguage, nil
+	case NamespacePlatform.String():
+		return NamespacePlatform, nil
+	default:
+		return NamespaceBlank, errs.New("Unknown namespace type: %s", ns)
+	}
+}
+
 // Namespace is the type used for communicating namespaces, mainly just allows for self documenting code
 type Namespace struct {
 	nsType NamespaceType
