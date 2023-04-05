@@ -159,7 +159,7 @@ func newSearchCommand(prime *primer.Values) *captain.Command {
 			},
 			{
 				Name:        "namespace",
-				Description: locale.Tl("package_search_flag_namespace_description"),
+				Description: locale.T("package_search_flag_namespace_description"),
 				Value:       &params.Namespace,
 				Hidden:      true,
 			},
