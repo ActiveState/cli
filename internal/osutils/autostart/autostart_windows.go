@@ -67,6 +67,10 @@ func autostartPath(name string, _ Options) (string, error) {
 	return shortcutFilename(name), nil
 }
 
+func upgrade(exec string, opts Options) error {
+	return nil
+}
+
 func shortcutFilename(name string) string {
 	name = formattedName(name)
 	if testDir, ok := os.LookupEnv(constants.AutostartPathOverrideEnvVarName); ok {

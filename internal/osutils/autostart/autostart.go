@@ -43,3 +43,7 @@ func IsEnabled(exec string, opts Options) (bool, error) {
 func AutostartPath(exec string, opts Options) (string, error) {
 	return autostartPath(exec, opts)
 }
+
+func Upgrade(exec string, opts Options) error {
+	return upgrade(exec, opts)
+}

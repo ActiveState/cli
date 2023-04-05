@@ -14,17 +14,9 @@ import (
 )
 
 func enable(exec string, opts Options) error {
-	if err := legacyDisableOnDesktop(opts.LaunchFileName); err != nil {
-		return errs.Wrap(err, "Could not disable legacy autostart (desktop): %v", err)
-	}
-
 	profile, err := profilePath()
 	if err != nil {
 		return errs.Wrap(err, "Could not get profile path")
-	}
-
-	if err := legacyRemoveAutostartEntry(profile); err != nil {
-		return errs.Wrap(err, "Could not clean up legacy autostart entry (server)")
 	}
 
 	enabled, err := isEnabled(exec, opts)
@@ -49,18 +41,11 @@ func enable(exec string, opts Options) error {
 }
 
 func disable(exec string, opts Options) error {
-	if err := legacyDisableOnDesktop(opts.LaunchFileName); err != nil {
-		return errs.Wrap(err, "Could not disable legacy autostart (desktop): %v", err)
-	}
-
 	profile, err := profilePath()
 	if err != nil {
 		return errs.Wrap(err, "Could not get profile path")
 	}
 
-	if err := legacyRemoveAutostartEntry(profile); err != nil {
-		return errs.Wrap(err, "Could not clean up legacy autostart entry (server)")
-	}
 	if fileutils.FileExists(profile) {
 		if err := sscommon.CleanRcFile(profile, sscommon.AutostartID); err != nil {
 			return errs.Wrap(err, "Could not clean up legacy autostart entry")
@@ -94,6 +79,23 @@ func autostartPath(name string, opts Options) (string, error) {
 	// Linux uses ~/.profile modification for autostart, there is no actual
 	// autostartPath.
 	return "", nil
+}
+
+func upgrade(exec string, opts Options) error {
+	if err := legacyDisableOnDesktop(opts.LaunchFileName); err != nil {
+		return errs.Wrap(err, "Could not disable legacy autostart (desktop): %v", err)
+	}
+
+	profile, err := profilePath()
+	if err != nil {
+		return errs.Wrap(err, "Could not get profile path")
+	}
+
+	if err := legacyRemoveAutostartEntry(profile); err != nil {
+		return errs.Wrap(err, "Could not clean up legacy autostart entry (server)")
+	}
+
+	return nil
 }
 
 func prependHomeDir(path string) (string, error) {
