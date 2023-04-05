@@ -29,10 +29,11 @@ constants:
     value: state-installer
   - name: BUILD_REMOTE_INSTALLER_TARGET
     value: state-remote-installer
+  - name: INTEGRATION_TEST_REGEX
+    value: 'integration\|automation'
   - name: SET_ENV
     description: The environment settings used throughout our project
     value: |
-      GOFLAGS='-mod=vendor'
       GOPATH="${GOPATH:=`go env GOPATH`}"
       GOROOT="${GOROOT:=`go env GOROOT`}"
       export CGO_ENABLED=0
@@ -47,14 +48,33 @@ constants:
 scripts:
   - name: install-deps
     language: bash
+    if: ne .Shell "cmd"
     value: |
-      export GO111MODULE=on
-      goflags="${GOFLAGS}"; unset GOFLAGS
-      GOFLAGS="${goflags}"
-      pushd ~
-      go install github.com/ActiveState/gozip/cmd/gozip@e455986
-      popd
-      $scripts.install-deps-os
+      if ! type "gozip" &> /dev/null; then
+        echo "gozip was not found on your PATH, installing .."
+        go install github.com/ActiveState/gozip/cmd/gozip@e455986
+      fi
+  - name: install-deps-dev
+    language: bash
+    if: ne .Shell "cmd"
+    value: |
+      if ! type "go" &> /dev/null; then
+        echo "go is not installed. Please install Go version 1.20 or above."
+        exit 1
+      fi
+      if ! type "golangci-lint" &> /dev/null; then
+        echo "golangci-lint was not found on your PATH, installing .."
+        go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.51.2
+      fi
+      git config core.hooksPath .githooks
+      if ! type "swagger" &> /dev/null; then
+        echo "swagger was not found on your PATH, installing .."
+        go install github.com/go-swagger/go-swagger/cmd/swagger@v0.27.0
+      fi
+      if ! type "actionlint" &> /dev/null; then
+        echo "actionlint was not found on your PATH, installing .."
+        go install github.com/rhysd/actionlint/cmd/actionlint@v1.6.23
+      fi
   - name: install-deps-os
     language: bash
     if: ne .OS.Name "Linux"
@@ -66,8 +86,7 @@ scripts:
     value: |
       set -e
       $constants.SET_ENV
-      go run scripts/constants-generator/main.go -- internal/constants/generated.go
-      mkdir -p build/msi
+      go run scripts/constants-generator/main.go ${@} -- internal/constants/generated.go
   - name: build
     language: bash
     description: Builds the project with the host OS as the target OS.
@@ -136,7 +155,7 @@ scripts:
       if [[ "$GOOS" == "windows" || "$OS" == "Windows_NT" ]]; then
         TARGET="${BUILD_REMOTE_INSTALLER_TARGET}.exe"
       fi
-      GOFLAGS="" go install github.com/josephspurrier/goversioninfo/cmd/goversioninfo@latest
+      GOFLAGS="" go install github.com/josephspurrier/goversioninfo/cmd/goversioninfo@v1.4.0
       cd cmd/state-remote-installer
       go generate
       go build -tags "$GO_BUILD_TAGS" -o ../../$BUILD_TARGET_DIR/$TARGET .
@@ -202,10 +221,6 @@ scripts:
       set -e
       $constants.SET_ENV
       go run scripts/ci/s3-deployer/main.go $BUILD_TARGET_DIR/remote-installer us-east-1 state-tool remote-installer
-  - name: deploy-msi
-    language: bash
-    value: |
-      go run scripts/ci/s3-deployer/main.go build/msi us-east-1 cli-msi /
   - name: build-workflow-assets
     language: bash
     description: Generates our github workflows
@@ -253,7 +268,7 @@ scripts:
     language: bash
     description: Runs unit tests (not integration tests)
     value: |
-      ACTIVESTATE_PROJECT="" go test -v `go list ./... | grep -v api | grep -v integration | grep -v automation | grep -v expect | grep -v state-svc | grep -v state-offline`
+      ACTIVESTATE_PROJECT="" go test -v `go list ./... | grep -v integration | grep -v automation | grep -v expect | grep -v state-svc | grep -v state-offline` $@
     standalone: true
   - name: integration-tests
     language: bash
@@ -262,7 +277,14 @@ scripts:
       unset ACTIVESTATE_ACTIVATED
       export INTEGRATION_TEST_USERNAME=$secrets.project.INTEGRATION_TEST_USERNAME
       export INTEGRATION_TEST_PASSWORD=$secrets.project.INTEGRATION_TEST_PASSWORD
-      go test `go list ./... | grep "integration\|automation"` -v "${@:1}" -timeout 20m
+      go test `go list ./... | grep "${INTEGRATION_TEST_REGEX}"` -v "${@:1}" -timeout 20m
+  - name: integration-tests-build-check
+    language: bash
+    description: Builds integration tests and removes the executable artifact(s).
+    value: |
+      out="x.test"
+      go list ./... | grep "${INTEGRATION_TEST_REGEX}" | xargs -L 1 go test -o $out -c
+      [ -f $out ] && rm $out
   - name: clean
     language: bash
     description: Cleans out the build dir.
@@ -387,23 +409,8 @@ events:
   - name: activate
     if: ne .Shell "cmd"
     value: |
-      if ! type "go" &> /dev/null; then
-        echo "go is not installed. Please install Go version 1.11 or above."
-        exit 1
-      fi
-      if ! type "golangci-lint" &> /dev/null; then
-        echo "golangci-lint was not found on your PATH, installing .."
-        go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.43.0
-      fi
-      git config core.hooksPath .githooks
-      if ! type "swagger" &> /dev/null; then
-        echo "swagger was not found on your PATH, installing .."
-        go install github.com/go-swagger/go-swagger/cmd/swagger@v0.27.0
-      fi
-      if ! type "actionlint" &> /dev/null; then
-        echo "actionlint was not found on your PATH, installing .."
-        go install github.com/rhysd/actionlint/cmd/actionlint@v1.6.22
-      fi
+      $scripts.install-deps-dev
+      $scripts.install-deps
   - name: file-changed
     scope: ["internal/locale/locales"]
     value: build

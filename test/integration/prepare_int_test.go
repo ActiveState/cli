@@ -8,6 +8,7 @@ import (
 	"runtime"
 	"testing"
 
+	svcApp "github.com/ActiveState/cli/cmd/state-svc/app"
 	svcAutostart "github.com/ActiveState/cli/cmd/state-svc/autostart"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
@@ -61,11 +62,9 @@ func (suite *PrepareIntegrationTestSuite) TestPrepare() {
 	suite.AssertConfig(filepath.Join(ts.Dirs.Cache, "bin"))
 
 	// Verify autostart was enabled.
-	cfg, err := config.New()
+	app, err := svcApp.New()
 	suite.Require().NoError(err)
-	as, err := autostart.New(svcAutostart.App, ts.SvcExe, nil, svcAutostart.Options, cfg)
-	suite.Require().NoError(err)
-	enabled, err := as.IsEnabled()
+	enabled, err := autostart.IsEnabled(app.Exec, svcAutostart.Options)
 	suite.Require().NoError(err)
 	suite.Assert().True(enabled, "autostart is not enabled")
 
@@ -75,13 +74,13 @@ func (suite *PrepareIntegrationTestSuite) TestPrepare() {
 		suite.Require().NoError(err)
 		profile := filepath.Join(homeDir, ".profile")
 		profileContents := string(fileutils.ReadFileUnsafe(profile))
-		suite.Contains(profileContents, as.Exec, "autostart should be configured for Linux server environment")
+		suite.Contains(profileContents, app.Exec, "autostart should be configured for Linux server environment")
 	}
 
 	// Verify autostart can be disabled.
-	err = as.Disable()
+	err = autostart.Disable(app.Exec, svcAutostart.Options)
 	suite.Require().NoError(err)
-	enabled, err = as.IsEnabled()
+	enabled, err = autostart.IsEnabled(app.Exec, svcAutostart.Options)
 	suite.Require().NoError(err)
 	suite.Assert().False(enabled, "autostart is still enabled")
 
@@ -91,7 +90,7 @@ func (suite *PrepareIntegrationTestSuite) TestPrepare() {
 		suite.Require().NoError(err)
 		profile := filepath.Join(homeDir, ".profile")
 		profileContents := fileutils.ReadFileUnsafe(profile)
-		suite.NotContains(profileContents, as.Exec, "autostart should not be configured for Linux server environment anymore")
+		suite.NotContains(profileContents, app.Exec, "autostart should not be configured for Linux server environment anymore")
 	}
 }
 

@@ -18,6 +18,12 @@ const CatRuntime = "runtime"
 // CatRuntimeUsage is the event category used for all runtime usage
 const CatRuntimeUsage = "runtime-use"
 
+// CatConfig is the event category used for all configuration events
+const CatConfig = "config"
+
+// CatUpdate is the event category used for all update events
+const CatUpdates = "updates"
+
 // ActRuntimeHeartbeat is the event action sent when a runtime is in use
 const ActRuntimeHeartbeat = "heartbeat"
 
@@ -47,6 +53,27 @@ const ActRuntimeFailure = "failure"
 
 // ActRuntimeUserFailure is the event action sent when a user failure occurred anytime during a runtime operation
 const ActRuntimeUserFailure = "user_failure"
+
+// ActConfigSet is the event action sent when a configuration value is set
+const ActConfigSet = "set"
+
+// ActConfigUnset is the event action sent when a configuration value is unset
+const ActConfigUnset = "unset"
+
+// ActConfigGet is the event action sent when determining if an update should be checked
+const ActShouldUpdate = "should-autoupdate"
+
+// ActConfigGet is the event action sent when an update is checked
+const ActUpdateCheck = "update-check"
+
+// ActUpdateDownload is the event action sent when an update retrieved
+const ActUpdateDownload = "download"
+
+// ActUpdateInstall is the event action sent when an update is installed
+const ActUpdateInstall = "install"
+
+// ActUpdateRelaunch is the event action sent after and update is installed and the state tool is relaunched
+const ActUpdateRelaunch = "relaunch"
 
 // LblRtFailUpdate is the label sent with an ActRuntimeFailure event if an error occurred during a runtime update
 const LblRtFailUpdate = "update"
@@ -107,3 +134,75 @@ const CatDebug = "debug"
 
 // ActInputError is the event action used for input errors
 const ActInputError = "input-error"
+
+// UpdateLabelSuccess is the sent if an auto-update was successful
+const UpdateLabelSuccess = "success"
+
+// UpdateLabelFailed is the sent if an auto-update failed
+const UpdateLabelFailed = "failure"
+
+// UpdateLabelTrue is the sent if we should auto-update
+const UpdateLabelTrue = "true"
+
+// UpdateLabelForward is the sent if we should not auto-update as we are forwarding a command
+const UpdateLabelForward = "forward"
+
+// UpdateLabelUnitTest is the sent if we should not auto-update as we are running unit tests
+const UpdateLabelUnitTest = "unittest"
+
+// UpdateLabelConflict is the sent if we should not auto-update as the current command might conflict
+const UpdateLabelConflict = "conflict"
+
+// UpdateLabelDisabledEnv is the sent if we should not auto-update as the user has disabled auto-updates via the environment
+const UpdateLabelDisabledEnv = "disabled-env"
+
+// UpdateLabelDisabledConfig is the sent if we should not auto-update as the user has disabled auto-updates via the config
+const UpdateLabelDisabledConfig = "disabled-config"
+
+// AutoUpdateLabelDisabledCI is the sent if we should not auto-update as we are on CI
+const UpdateLabelCI = "ci"
+
+// UpdateLabelFreshInstall is the sent if we should not auto-update as we are on a fresh install
+const UpdateLabelFreshInstall = "fresh-install"
+
+// UpdateLabelLocked is the sent if we should not auto-update as the state tool is locked
+const UpdateLabelLocked = "locked"
+
+// UpdateLabelTooFreq is the sent if we should not auto-update as the last check was too recent
+const UpdateLabelTooFreq = "too-frequent"
+
+// UpdateLabelAvailable is the sent if the update information is available
+const UpdateLabelAvailable = "available"
+
+// UpdateLabelUnavailable is the sent if the update information is unavailable
+const UpdateLabelUnavailable = "unavailable"
+
+// UpdateErrorInProgress is sent if an update is already in progress
+const UpdateErrorInProgress = "Update already in progress"
+
+// UpdateErrorInstallFailed is sent if an update failed at the install step
+const UpdateErrorInstallFailed = "Could not install update"
+
+// UpdateErrorExecutable is sent if the state executable could not be located
+const UpdateErrorExecutable = "Could not locate state executable for relaunch"
+
+// UpdateErrorRelaunch is sent if the updated state executable could not be relaunched
+const UpdateErrorRelaunch = "Could not execute relaunch"
+
+// UpdateErrorNotFound is sent if the update information could not be found
+const UpdateErrorNotFound = "Update info could not be found"
+
+// UpdateErrorBlocked is sent if the update information was blocked or the service was unavailable
+const UpdateErrorBlocked = "Update info request blocked or service unavailable"
+
+// UpdateErrorFetch is sent if the update information could not be fetched
+const UpdateErrorFetch = "Could not fetch update info"
+
+// UpdateErrorTempDir is sent if the temp dir for update unpacking could not be created
+const UpdateErrorTempDir = "Could not create temp dir"
+
+// UpdateErrorNoInstaller is sent if the downloaded update does not have an installer
+const UpdateErrorNoInstaller = "Downloaded update does not have installer"
+
+// UpdateErrorInstallPath is sent if the install path could not be detected
+const UpdateErrorInstallPath = "Could not detect install path"

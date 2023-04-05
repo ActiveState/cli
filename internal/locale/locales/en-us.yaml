@@ -976,8 +976,6 @@ platforms_remove_cmd_description:
   other: Remove a platform from your project
 platforms_search_cmd_description:
   other: Search for available platforms that can be added to your project
-flag_platforms_shared_bitwidth:
-  other: bit-width
 flag_platforms_shared_bitwidth_description:
   other: Platform architecture word size/width in bits (32,64)
 arg_platforms_shared_name:
@@ -1230,8 +1228,6 @@ err_fetch_languages:
   other: "Could not retrieve languages for your project. Does your project exist on the Platform?"
 err_no_languages:
   other: "Your project does not have any language configured"
-err_target_path_namespace_match:
-  other: "The project at the target path does not match the namespace you provided. Expected: [NOTICE]{{.V0}}[/RESET], Actual: [NOTICE]{{.V1}}[/RESET]."
 err_project_notexist_push_first:
   other: The project does not exist on the ActiveState Platform. Please run 'state push' first.
 err_project_notexist_asyaml:
@@ -1261,8 +1257,6 @@ arg_state_init_language:
   other: Language[@version]
 arg_state_init_language_description:
   other: The language that this project should use, and optionally the version of that language
-flag_state_init_path:
-  other: Path
 flag_state_init_path_description:
   other: Where to initialize the project
 err_wd:
@@ -1362,7 +1356,7 @@ uninstall_description:
   other: Remove the State Tool, installed languages, and any configuration files
 cache_description:
   other: Removes cached Runtime Environments
-config_description:
+clean_config_description:
   other: Removes global State Tool configuration. Project configuration will not be affected.
 flag_state_clean_uninstall_force_description:
   other: Run uninstall operation without prompts and ignoring any errors stopping running services
@@ -1674,6 +1668,7 @@ windows_compatibility_error:
     Unfortunately State Tool is not compatible with your version of Windows.
 
     The minimum version supported is Windows 10 build 17134.1.
+    The detected version is {{.V0}} {{.V1}}.
 exec_description:
   other: Intercept and run a script via a project runtime environment
 flag_state_exec_path_description:

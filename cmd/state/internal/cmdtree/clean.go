@@ -42,6 +42,15 @@ func newCleanUninstallCommand(prime *primer.Values, globals *globalOptions) *cap
 				Description: locale.T("flag_state_clean_uninstall_force_description"),
 				Value:       &params.Force,
 			},
+			{
+				// This option is only used by the Windows uninstall shortcut to ask the user if they wish
+				// to delete everything or keep cache and config. The user is also asked to press Enter
+				// after the uninstall process is scheduled so they may note the printed log file path.
+				Name:        "prompt",
+				Description: "Asks the user if everything should be deleted or to keep cache and config",
+				Hidden:      true, // this is not a user-facing flag
+				Value:       &params.Prompt,
+			},
 		},
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, _ []string) error {
@@ -86,7 +95,7 @@ func newCleanConfigCommand(prime *primer.Values) *captain.Command {
 	return captain.NewCommand(
 		"config",
 		locale.Tl("clean_config_title", "Cleaning Configuration"),
-		locale.T("config_description"),
+		locale.T("clean_config_description"),
 		prime,
 		[]*captain.Flag{
 			{

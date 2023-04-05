@@ -154,6 +154,9 @@ const InstallPathOverrideEnvVarName = "ACTIVESTATE_CLI_INSTALLPATH_OVERRIDE"
 // AutostartPathOverrideEnvVarName is used to override the default autostart path of the state service.
 const AutostartPathOverrideEnvVarName = "ACTIVESTATE_CLI_AUTOSTARTPATH_OVERRIDE"
 
+// AppInstallDirOverrideEnvVarName is used to override the default app installation path of the state tool.
+const AppInstallDirOverrideEnvVarName = "ACTIVESTATE_CLI_APPINSTALLDIR_OVERRIDE"
+
 // RuntimeUsageOverrideEnvVarName is used to override the default usage of the runtime intended for use in integration testing
 const RuntimeUsageOverrideEnvVarName = "ACTIVESTATE_OVERRIDE_RTUSAGE_USAGE"
 

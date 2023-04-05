@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/ActiveState/cli/internal/app"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/exeutils"
@@ -33,12 +34,11 @@ func DetectAndRemove(path string, cfg *config.Instance) error {
 	}
 
 	// Disable autostart of state-tray.
-	options := autostart.Options{
-		LaunchFileName: trayLaunchFileName, // only used for Linux; ignored on macOS, Windows
-	}
-	if as, err := autostart.New(trayAppName, trayExec, nil, options, cfg); err == nil {
-		err = as.Disable()
-		if err != nil {
+	if app, err := app.New(trayAppName, trayExec, nil, app.Options{}); err == nil {
+		disableErr := autostart.Disable(app.Exec, autostart.Options{
+			LaunchFileName: trayLaunchFileName, // only used for Linux; ignored on macOS, Windows
+		})
+		if disableErr != nil {
 			return errs.Wrap(err, "Unable to disable tray autostart")
 		}
 	} else {
