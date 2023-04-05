@@ -135,7 +135,7 @@ Checksum: {{.V4}}
 Ingredient ID: {{.V0}}
 Ingredient Version ID: {{.V1}}
 Revision: {{.V2}}
-`, result.IngredientID, result.IngredientVersionID, strconv.Itoa(result.Revision)))
+`, result.Publish.IngredientID, result.Publish.IngredientVersionID, strconv.Itoa(result.Publish.Revision)))
 
 	return nil
 }

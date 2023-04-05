@@ -58,11 +58,12 @@ func (p *PublishRequest) Query() string {
 				file_checksum: $file_checksum,
 				version: $version,
 				description: $description,
-				authors: [],
 			}) {
-				ingredientID
-				ingredientVersionID
-				revision
+				... on CreatedIngredientVersionRevision {
+					ingredientID
+					ingredientVersionID
+					revision
+				}
 			}
 		}
 `
