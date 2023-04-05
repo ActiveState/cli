@@ -207,11 +207,16 @@ func NewNamedMapFromBuildPlan(build *model.Build) ArtifactNamedBuildPlanMap {
 func FilterInstallable(artifacts ArtifactBuildPlanMap) ArtifactBuildPlanMap {
 	res := make(ArtifactBuildPlanMap)
 	for _, a := range artifacts {
-		if monomodel.NamespaceMatch(a.Namespace, monomodel.NamespaceLanguageMatch) ||
-			monomodel.NamespaceMatch(a.Namespace, monomodel.NamespacePackageMatch) ||
-			monomodel.NamespaceMatch(a.Namespace, monomodel.NamespaceSharedMatch) {
+		if isNamespaceInstallable(a.Namespace) {
 			res[a.ArtifactID] = a
 		}
 	}
 	return res
+}
+
+func isNamespaceInstallable(ns string) bool {
+	return monomodel.NamespaceMatch(ns, monomodel.NamespaceLanguageMatch) ||
+		monomodel.NamespaceMatch(ns, monomodel.NamespacePackageMatch) ||
+		monomodel.NamespaceMatch(ns, monomodel.NamespaceToolMatch) ||
+		monomodel.NamespaceMatch(ns, monomodel.NamespaceSharedMatch)
 }

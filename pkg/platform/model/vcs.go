@@ -73,6 +73,9 @@ const (
 	// NamespacePackageMatch is the namespace used for language package requirements
 	NamespacePackageMatch = `^language\/(\w+)$`
 
+	// NamespaceToolMatch is the namespace used for tools package requirements
+	NamespaceToolMatch = `^tools\/(\w+)$`
+
 	// NamespacePackageMatch is the namespace used for language package requirements
 	NamespaceBuilderMatch = `^builder(-lib){0,1}$`
 
@@ -131,6 +134,7 @@ type NamespaceType struct {
 
 var (
 	NamespacePackage  = NamespaceType{"package", "language", NamespacePackageMatch} // these values should match the namespace prefix
+	NamespaceTool     = NamespaceType{"tools", "", NamespaceToolMatch}
 	NamespaceBundle   = NamespaceType{"bundle", "bundles", NamespaceBundlesMatch}
 	NamespaceLanguage = NamespaceType{"language", "", NamespaceLanguageMatch}
 	NamespacePlatform = NamespaceType{"platform", "", NamespacePlatformMatch}
@@ -153,6 +157,8 @@ func NewNamespaceType(ns string) (NamespaceType, error) {
 	switch ns {
 	case NamespacePackage.String():
 		return NamespacePackage, nil
+	case NamespaceTool.String():
+		return NamespaceTool, nil
 	case NamespaceBundle.String():
 		return NamespaceBundle, nil
 	case NamespaceLanguage.String():
@@ -192,6 +198,11 @@ func NewNamespacePkgOrBundle(language string, nstype NamespaceType) Namespace {
 // NewNamespacePackage creates a new package namespace
 func NewNamespacePackage(language string) Namespace {
 	return Namespace{NamespacePackage, fmt.Sprintf("language/%s", language)}
+}
+
+// NewNamespaceTool creates a new tools namespace
+func NewNamespaceTool() Namespace {
+	return Namespace{NamespaceTool, "tools"}
 }
 
 func NewBlankNamespace() Namespace {
