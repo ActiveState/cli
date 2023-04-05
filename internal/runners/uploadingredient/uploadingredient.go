@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"path/filepath"
 	"strconv"
+	"strings"
 
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/errs"
@@ -81,7 +82,7 @@ func (r *Runner) Run(params *Params) error {
 		if r.project == nil {
 			return locale.NewInputError("err_no_project")
 		}
-		namespace = r.project.Owner() + "/shared"
+		namespace = strings.ToLower(r.project.Owner()) + "/shared"
 	}
 
 	path := fmt.Sprintf("%s/%s", namespace, name)
