@@ -65,7 +65,7 @@ func newInstallCommand(prime *primer.Values) *captain.Command {
 			},
 			{
 				Name:        "namespace",
-				Description: locale.Tl("package_install_flag_namespace_description", "The namespace to install the package to"),
+				Description: locale.Tl("package_install_flag_namespace_description", "The namespace to install the package from"),
 				Value:       &params.Namespace,
 				Hidden:      true,
 			},
