@@ -92,7 +92,7 @@ func (r *Runner) Run(params *Params) error {
 		return locale.WrapError(err, "err_uploadingredient_checksum", "Could not calculate checksum for file")
 	}
 
-	p, err := request.Publish("", path, version, params.Filepath, checksum)
+	p, err := request.Publish("not provided", path, version, params.Filepath, checksum)
 	if err != nil {
 		return locale.WrapError(err, "err_uploadingredient_publish", "Could not create publish request")
 	}
