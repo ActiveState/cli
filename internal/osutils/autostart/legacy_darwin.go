@@ -1,7 +1,6 @@
 package autostart
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/ActiveState/cli/internal/errs"
@@ -20,7 +19,6 @@ func isLegacyPlist(path string) (bool, error) {
 
 	reader, err := os.Open(path)
 	if err != nil {
-		fmt.Println("error opening file: ", err)
 		return false, errs.Wrap(err, "Could not open plist file")
 	}
 
