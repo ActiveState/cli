@@ -2,8 +2,10 @@ package uploadingredient
 
 import (
 	"fmt"
+	"net/http"
 	"path/filepath"
 	"strconv"
+	"strings"
 
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/errs"
@@ -13,7 +15,6 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
-	"github.com/ActiveState/cli/internal/retryhttp"
 	p2 "github.com/ActiveState/cli/internal/rtutils/p"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/api/graphql/model"
@@ -50,9 +51,10 @@ type primeable interface {
 func New(prime primeable) *Runner {
 	client := gqlclient.NewWithOpts(
 		api.GetServiceURL(api.ServiceBuildPlan).String(), 0,
-		graphql.WithHTTPClient(retryhttp.DefaultClient.StandardClient()),
+		graphql.WithHTTPClient(http.DefaultClient),
 		graphql.UseMultipartForm(),
 	)
+	client.SetTokenProvider(prime.Auth())
 	client.EnableDebugLog()
 	return &Runner{auth: prime.Auth(), out: prime.Output(), prompt: prime.Prompt(), project: prime.Project(), client: client}
 }
@@ -80,7 +82,7 @@ func (r *Runner) Run(params *Params) error {
 		if r.project == nil {
 			return locale.NewInputError("err_no_project")
 		}
-		namespace = r.project.Owner() + "/shared"
+		namespace = strings.ToLower(r.project.Owner()) + "/shared"
 	}
 
 	path := fmt.Sprintf("%s/%s", namespace, name)
@@ -90,7 +92,7 @@ func (r *Runner) Run(params *Params) error {
 		return locale.WrapError(err, "err_uploadingredient_checksum", "Could not calculate checksum for file")
 	}
 
-	p, err := request.Publish(path, version, params.Filepath, checksum)
+	p, err := request.Publish("not provided", path, version, params.Filepath, checksum)
 	if err != nil {
 		return locale.WrapError(err, "err_uploadingredient_publish", "Could not create publish request")
 	}
@@ -122,6 +124,7 @@ Checksum: {{.V4}}
 	}
 
 	result := model.PublishResult{}
+
 	// Currently runs with: Content-Disposition: form-data; name="query"
 	// but it should be Content-Disposition: form-data; name="operations"
 	if err := r.client.Run(p, &result); err != nil {
@@ -132,7 +135,7 @@ Checksum: {{.V4}}
 Ingredient ID: {{.V0}}
 Ingredient Version ID: {{.V1}}
 Revision: {{.V2}}
-`, result.IngredientID, result.IngredientVersionID, strconv.Itoa(result.Revision)))
+`, result.Publish.IngredientID, result.Publish.IngredientVersionID, strconv.Itoa(result.Publish.Revision)))
 
 	return nil
 }

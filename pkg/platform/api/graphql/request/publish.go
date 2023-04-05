@@ -10,7 +10,7 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-func Publish(path string, version, filepath, checksum string) (*PublishRequest, error) {
+func Publish(description, path, version, filepath, checksum string) (*PublishRequest, error) {
 	f, err := os.Open(filepath)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
@@ -20,11 +20,11 @@ func Publish(path string, version, filepath, checksum string) (*PublishRequest, 
 	}
 	return &PublishRequest{
 		vars: map[string]interface{}{
-			"input": map[string]interface{}{
-				"path":     path,
-				"version":  version,
-				"checksum": checksum,
-			},
+			"path":          path, // namespace
+			"version":       version,
+			"file_checksum": checksum,
+			"file":          nil,
+			"description":   description,
 		},
 		file: f,
 	}, nil
@@ -51,13 +51,21 @@ func (p *PublishRequest) Files() []gqlclient.File {
 
 func (p *PublishRequest) Query() string {
 	return `
-       mutation ($input: PublishInput!) {
-            publish(input: $input) {
-                ingredientID
-				ingredientVersionID
-				revision
-            }
-        }
+		mutation ($description: String!, $path: String!, $file_checksum: String!, $version: String!, $file: FileUpload) {
+			publish(input: {
+				path: $path,
+				file: $file,
+				file_checksum: $file_checksum,
+				version: $version,
+				description: $description,
+			}) {
+				... on CreatedIngredientVersionRevision {
+					ingredientID
+					ingredientVersionID
+					revision
+				}
+			}
+		}
 `
 }
 

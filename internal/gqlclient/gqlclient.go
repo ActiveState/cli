@@ -1,20 +1,26 @@
 package gqlclient
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
+	"mime/multipart"
+	"net/http"
 	"os"
 	"time"
 
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/profile"
+	"github.com/ActiveState/cli/internal/singleton/uniqid"
 	"github.com/ActiveState/cli/internal/strutils"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/machinebox/graphql"
-
-	"github.com/ActiveState/cli/internal/singleton/uniqid"
+	"github.com/pkg/errors"
 )
 
 type File struct {
@@ -42,9 +48,20 @@ type Request interface {
 
 type Header map[string][]string
 
-type graphqlRequest = graphql.Request
-
 type graphqlClient = graphql.Client
+
+type graphResponse struct {
+	Data   interface{}
+	Errors []graphErr
+}
+
+type graphErr struct {
+	Message string
+}
+
+func (e graphErr) Error() string {
+	return "graphql: " + e.Message
+}
 
 type BearerTokenProvider interface {
 	BearerToken() string
@@ -52,6 +69,7 @@ type BearerTokenProvider interface {
 
 type Client struct {
 	*graphqlClient
+	url           string
 	tokenProvider BearerTokenProvider
 	timeout       time.Duration
 }
@@ -64,6 +82,7 @@ func NewWithOpts(url string, timeout time.Duration, opts ...graphql.ClientOption
 	client := &Client{
 		graphqlClient: graphql.NewClient(url, opts...),
 		timeout:       timeout,
+		url:           url,
 	}
 	if os.Getenv(constants.DebugServiceRequestsEnvVarName) == "true" {
 		client.EnableDebugLog()
@@ -107,6 +126,11 @@ func (c *Client) Run(request Request, response interface{}) error {
 func (c *Client) RunWithContext(ctx context.Context, request Request, response interface{}) error {
 	name := strutils.Summarize(request.Query(), 25)
 	defer profile.Measure(fmt.Sprintf("gqlclient:RunWithContext:(%s)", name), time.Now())
+
+	if len(request.Files()) > 0 {
+		return c.runWithFiles(ctx, request, response)
+	}
+
 	graphRequest := graphql.NewRequest(request.Query())
 	for key, value := range request.Vars() {
 		graphRequest.Var(key, value)
@@ -132,4 +156,113 @@ func (c *Client) RunWithContext(ctx context.Context, request Request, response i
 	}
 
 	return nil
+}
+
+func (c *Client) runRaw(ctx context.Context, request *http.Request, response interface{}) error {
+	var bearerToken string
+	if c.tokenProvider != nil {
+		bearerToken = c.tokenProvider.BearerToken()
+		if bearerToken != "" {
+			request.Header.Set("Authorization", "Bearer "+bearerToken)
+		}
+	}
+
+	gr := &graphResponse{
+		Data: response,
+	}
+	request = request.WithContext(ctx)
+	res, err := http.DefaultClient.Do(request)
+	if err != nil {
+		return err
+	}
+	defer res.Body.Close()
+	var buf bytes.Buffer
+	if _, err := io.Copy(&buf, res.Body); err != nil {
+		return errors.Wrap(err, "reading body")
+	}
+	if err := json.NewDecoder(&buf).Decode(&gr); err != nil {
+		return errors.Wrap(err, "decoding response")
+	}
+	if len(gr.Errors) > 0 {
+		return gr.Errors[0]
+	}
+	return nil
+}
+
+func (c *Client) runWithFiles(ctx context.Context, gqlReq Request, response interface{}) error {
+	req, err := c.createMultiPartUploadRequest(gqlReq)
+	if err != nil {
+		return errs.Wrap(err, "Could not create multipart upload request")
+	}
+
+	return c.runRaw(ctx, req, response)
+}
+
+type JsonRequest struct {
+	Query     string                 `json:"query"`
+	Variables map[string]interface{} `json:"variables"`
+}
+
+func (c *Client) createMultiPartUploadRequest(gqlReq Request) (*http.Request, error) {
+	req, err := http.NewRequest("POST", c.url, nil)
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not create http request")
+	}
+
+	body := bytes.NewBuffer([]byte{})
+	req.Body = ioutil.NopCloser(body)
+
+	mw := multipart.NewWriter(body)
+	req.Header.Set("Content-Type", "multipart/form-data; boundary="+mw.Boundary())
+
+	// Operations
+	operations, err := mw.CreateFormField("operations")
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not create form field operations")
+	}
+	jsonReq := JsonRequest{
+		Query:     gqlReq.Query(),
+		Variables: gqlReq.Vars(),
+	}
+	jsonReqV, err := json.Marshal(jsonReq)
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not marshal json request")
+	}
+	if _, err := operations.Write(jsonReqV); err != nil {
+		return nil, errs.Wrap(err, "Could not write json request")
+	}
+
+	// Map
+	mapField, err := mw.CreateFormField("map")
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not create form field map")
+	}
+	for n := range gqlReq.Files() {
+		if _, err := mapField.Write([]byte(fmt.Sprintf(`{"%d": ["variables.file"]}`, n))); err != nil {
+			return nil, errs.Wrap(err, "Could not write map field")
+		}
+	}
+
+	// File upload
+	for n, file := range gqlReq.Files() {
+		w, err := mw.CreateFormFile(fmt.Sprintf("%d", n), file.Name)
+		if err != nil {
+			return nil, errs.Wrap(err, "Could not create form file")
+		}
+
+		b, err := ioutil.ReadAll(file.R)
+		if err != nil {
+			return nil, errs.Wrap(err, "Could not read file")
+		}
+
+		if _, err := w.Write(b); err != nil {
+			return nil, errs.Wrap(err, "Could not write file")
+		}
+	}
+
+	if err := mw.Close(); err != nil {
+		return nil, errs.Wrap(err, "Could not close multipart writer")
+	}
+
+	return req, nil
 }
