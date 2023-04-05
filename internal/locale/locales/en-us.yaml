@@ -1116,6 +1116,8 @@ namespace_list_flag_project_description:
   other: The namespace packages should be listed from
 package_search_flag_language_description:
   other: The language used to constrain search results
+package_search_flag_namespace_description:
+  other: The namespace to search the package from
 package_search_flag_exact-term_description:
   other: Ensures that search results match search term exactly
 package_import_flag_filename_description:
@@ -1208,6 +1210,8 @@ err_bundle_removed:
   other: Failed to remove bundle
 err_packages_removed:
   other: Failed to remove packages
+err_namespace_type:
+  other: Could not determine namespace type
 package_removed:
   other: "Package uninstalled: [NOTICE]{{.V0}}[/RESET]"
 bundle_removed:

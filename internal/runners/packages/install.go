@@ -41,11 +41,12 @@ func NewInstall(prime primeable) *Install {
 // Run executes the install behavior.
 func (a *Install) Run(params InstallRunParams, nsType model.NamespaceType) error {
 	logging.Debug("ExecuteInstall")
+
 	if params.Namespace != "" {
 		var err error
 		nsType, err = model.NewNamespaceType(params.Namespace)
 		if err != nil {
-			return locale.WrapError(err, "err_namespace_type", "Could not determine namespace type")
+			return locale.WrapError(err, "err_namespace_type")
 		}
 	}
 

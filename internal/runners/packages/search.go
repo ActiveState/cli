@@ -16,6 +16,7 @@ import (
 // SearchRunParams tracks the info required for running search.
 type SearchRunParams struct {
 	Language  string
+	Namespace string
 	ExactTerm bool
 	Name      string
 }
@@ -35,15 +36,23 @@ func NewSearch(prime primeable) *Search {
 }
 
 // Run is executed when `state packages search` is ran
-func (s *Search) Run(params SearchRunParams, nstype model.NamespaceType) error {
+func (s *Search) Run(params SearchRunParams, nsType model.NamespaceType) error {
 	logging.Debug("ExecuteSearch")
+
+	if params.Namespace != "" {
+		var err error
+		nsType, err = model.NewNamespaceType(params.Namespace)
+		if err != nil {
+			return locale.WrapError(err, "err_namespace_type")
+		}
+	}
 
 	language, err := targetedLanguage(params.Language, s.proj)
 	if err != nil {
-		return locale.WrapError(err, fmt.Sprintf("%s_err_cannot_obtain_language", nstype))
+		return locale.WrapError(err, fmt.Sprintf("%s_err_cannot_obtain_language", nsType))
 	}
 
-	ns := model.NewNamespacePkgOrBundle(language, nstype)
+	ns := model.NewNamespacePkgOrBundle(language, nsType)
 
 	var packages []*model.IngredientAndVersion
 	if params.ExactTerm {
