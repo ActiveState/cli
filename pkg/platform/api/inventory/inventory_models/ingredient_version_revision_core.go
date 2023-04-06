@@ -72,7 +72,7 @@ type IngredientVersionRevisionCore struct {
 	// A checksum of the source distribution. The actual type of the checksum (MD5, S3 Etag, etc.) is not specified. It's assumed that the system that populates and uses this data will know how to work with these checksums.
 	SourceChecksum *string `json:"source_checksum,omitempty"`
 
-	// The status of the revision. This can be one of stable, unstable, deleted, or deprecated.
+	// The status of the revision. This can be one of stable, unstable, deleted, or deprecated. This field is required on writes and replaces the is_stable_revision_field
 	// Enum: [deleted deprecated stable unstable]
 	Status string `json:"status,omitempty"`
 }

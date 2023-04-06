@@ -48,6 +48,8 @@ type ClientService interface {
 
 	GetInvitationByCode(params *GetInvitationByCodeParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInvitationByCodeOK, error)
 
+	GetInvitationsByUser(params *GetInvitationsByUserParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInvitationsByUserOK, error)
+
 	GetUser(params *GetUserParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetUserOK, error)
 
 	GetUserByID(params *GetUserByIDParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetUserByIDOK, error)
@@ -440,6 +442,47 @@ func (a *Client) GetInvitationByCode(params *GetInvitationByCodeParams, authInfo
 }
 
 /*
+  GetInvitationsByUser lists of pending invitations for the logged in user
+
+  Has this user been invited to any organizations
+*/
+func (a *Client) GetInvitationsByUser(params *GetInvitationsByUserParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInvitationsByUserOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetInvitationsByUserParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "getInvitationsByUser",
+		Method:             "GET",
+		PathPattern:        "/invitations",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http", "https"},
+		Params:             params,
+		Reader:             &GetInvitationsByUserReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*GetInvitationsByUserOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for getInvitationsByUser: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
   GetUser retrieves a user record
 
   Return a specific user matching username
@@ -524,7 +567,7 @@ func (a *Client) GetUserByID(params *GetUserByIDParams, authInfo runtime.ClientA
 /*
   ListInvitations lists of pending invitations for an email address
 
-  Has this email address been invited to any orginzations
+  Has this email address been invited to any organizations
 */
 func (a *Client) ListInvitations(params *ListInvitationsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListInvitationsOK, error) {
 	// TODO: Validate the params before sending

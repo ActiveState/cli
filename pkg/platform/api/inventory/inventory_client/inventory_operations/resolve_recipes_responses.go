@@ -29,6 +29,12 @@ func (o *ResolveRecipesReader) ReadResponse(response runtime.ClientResponse, con
 			return nil, err
 		}
 		return result, nil
+	case 202:
+		result := NewResolveRecipesAccepted()
+		if err := result.readResponse(response, consumer, o.formats); err != nil {
+			return nil, err
+		}
+		return result, nil
 	case 400:
 		result := NewResolveRecipesBadRequest()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -70,6 +76,38 @@ func (o *ResolveRecipesOK) GetPayload() *inventory_models.RecipeResponse {
 func (o *ResolveRecipesOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(inventory_models.RecipeResponse)
+
+	// response payload
+	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
+		return err
+	}
+
+	return nil
+}
+
+// NewResolveRecipesAccepted creates a ResolveRecipesAccepted with default headers values
+func NewResolveRecipesAccepted() *ResolveRecipesAccepted {
+	return &ResolveRecipesAccepted{}
+}
+
+/* ResolveRecipesAccepted describes a response with status code 202, with default header values.
+
+If the recipe is not found in the cache when only_cached_responses is set, submits the order and returns
+*/
+type ResolveRecipesAccepted struct {
+	Payload *inventory_models.InventoryResponse
+}
+
+func (o *ResolveRecipesAccepted) Error() string {
+	return fmt.Sprintf("[POST /v1/recipes][%d] resolveRecipesAccepted  %+v", 202, o.Payload)
+}
+func (o *ResolveRecipesAccepted) GetPayload() *inventory_models.InventoryResponse {
+	return o.Payload
+}
+
+func (o *ResolveRecipesAccepted) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+
+	o.Payload = new(inventory_models.InventoryResponse)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {

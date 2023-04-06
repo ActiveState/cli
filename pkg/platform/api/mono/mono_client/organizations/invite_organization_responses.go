@@ -227,7 +227,7 @@ type InviteOrganizationBody struct {
 	// Set to true to only have the API return newly added invite, rather than all pending invites
 	AddedOnly bool `json:"addedOnly,omitempty"`
 
-	// as owner
+	// Deprecated. DO NOT USE
 	AsOwner *bool `json:"asOwner,omitempty"`
 
 	// role

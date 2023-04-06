@@ -220,7 +220,7 @@ type ClientService interface {
 
 	ReadinessCheck(params *ReadinessCheckParams, opts ...ClientOption) (*ReadinessCheckOK, error)
 
-	ResolveRecipes(params *ResolveRecipesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ResolveRecipesOK, error)
+	ResolveRecipes(params *ResolveRecipesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ResolveRecipesOK, *ResolveRecipesAccepted, error)
 
 	SearchIngredients(params *SearchIngredientsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*SearchIngredientsOK, error)
 
@@ -3856,7 +3856,7 @@ func (a *Client) ReadinessCheck(params *ReadinessCheckParams, opts ...ClientOpti
 
   Solve the order's requirements into concrete ingredient versions and return one or more recipes fulfilling the order
 */
-func (a *Client) ResolveRecipes(params *ResolveRecipesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ResolveRecipesOK, error) {
+func (a *Client) ResolveRecipes(params *ResolveRecipesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ResolveRecipesOK, *ResolveRecipesAccepted, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
 		params = NewResolveRecipesParams()
@@ -3880,15 +3880,17 @@ func (a *Client) ResolveRecipes(params *ResolveRecipesParams, authInfo runtime.C
 
 	result, err := a.transport.Submit(op)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	success, ok := result.(*ResolveRecipesOK)
-	if ok {
-		return success, nil
+	switch value := result.(type) {
+	case *ResolveRecipesOK:
+		return value, nil, nil
+	case *ResolveRecipesAccepted:
+		return nil, value, nil
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*ResolveRecipesDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+	return nil, nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*
