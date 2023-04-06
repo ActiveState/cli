@@ -19,13 +19,13 @@ import (
 )
 
 type signature struct {
-	Sig  string `json: "sig"`
-	Cert string `json: "cert"`
+	Sig  string `json:"sig"`
+	Cert string `json:"cert"`
 }
 
 type attestation struct {
-	Payload    string      `json: "payload"`
-	Signatures []signature `json: "signatures"`
+	Payload    string      `json:"payload"`
+	Signatures []signature `json:"signatures"`
 }
 
 func Attestation(attestationFile string) error {
