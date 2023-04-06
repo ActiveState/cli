@@ -62,6 +62,12 @@ func NewSolveOrderParamsWithHTTPClient(client *http.Client) *SolveOrderParams {
 */
 type SolveOrderParams struct {
 
+	/* OnlyCachedResponses.
+
+	   Whether to get the recipe only if it is already cached in the recipe store
+	*/
+	OnlyCachedResponses *bool
+
 	// Order.
 	Order *inventory_models.Order
 
@@ -91,11 +97,14 @@ func (o *SolveOrderParams) WithDefaults() *SolveOrderParams {
 // All values with no default are reset to their zero value.
 func (o *SolveOrderParams) SetDefaults() {
 	var (
+		onlyCachedResponsesDefault = bool(false)
+
 		useRecipeStoreDefault = bool(true)
 	)
 
 	val := SolveOrderParams{
-		UseRecipeStore: &useRecipeStoreDefault,
+		OnlyCachedResponses: &onlyCachedResponsesDefault,
+		UseRecipeStore:      &useRecipeStoreDefault,
 	}
 
 	val.timeout = o.timeout
@@ -137,6 +146,17 @@ func (o *SolveOrderParams) SetHTTPClient(client *http.Client) {
 	o.HTTPClient = client
 }
 
+// WithOnlyCachedResponses adds the onlyCachedResponses to the solve order params
+func (o *SolveOrderParams) WithOnlyCachedResponses(onlyCachedResponses *bool) *SolveOrderParams {
+	o.SetOnlyCachedResponses(onlyCachedResponses)
+	return o
+}
+
+// SetOnlyCachedResponses adds the onlyCachedResponses to the solve order params
+func (o *SolveOrderParams) SetOnlyCachedResponses(onlyCachedResponses *bool) {
+	o.OnlyCachedResponses = onlyCachedResponses
+}
+
 // WithOrder adds the order to the solve order params
 func (o *SolveOrderParams) WithOrder(order *inventory_models.Order) *SolveOrderParams {
 	o.SetOrder(order)
@@ -166,6 +186,23 @@ func (o *SolveOrderParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Re
 		return err
 	}
 	var res []error
+
+	if o.OnlyCachedResponses != nil {
+
+		// query param only_cached_responses
+		var qrOnlyCachedResponses bool
+
+		if o.OnlyCachedResponses != nil {
+			qrOnlyCachedResponses = *o.OnlyCachedResponses
+		}
+		qOnlyCachedResponses := swag.FormatBool(qrOnlyCachedResponses)
+		if qOnlyCachedResponses != "" {
+
+			if err := r.SetQueryParam("only_cached_responses", qOnlyCachedResponses); err != nil {
+				return err
+			}
+		}
+	}
 	if o.Order != nil {
 		if err := r.SetBodyParam(o.Order); err != nil {
 			return err

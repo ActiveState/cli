@@ -29,6 +29,12 @@ func (o *GetOrganizationReader) ReadResponse(response runtime.ClientResponse, co
 			return nil, err
 		}
 		return result, nil
+	case 400:
+		result := NewGetOrganizationBadRequest()
+		if err := result.readResponse(response, consumer, o.formats); err != nil {
+			return nil, err
+		}
+		return nil, result
 	case 404:
 		result := NewGetOrganizationNotFound()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -69,6 +75,38 @@ func (o *GetOrganizationOK) GetPayload() *mono_models.Organization {
 func (o *GetOrganizationOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(mono_models.Organization)
+
+	// response payload
+	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
+		return err
+	}
+
+	return nil
+}
+
+// NewGetOrganizationBadRequest creates a GetOrganizationBadRequest with default headers values
+func NewGetOrganizationBadRequest() *GetOrganizationBadRequest {
+	return &GetOrganizationBadRequest{}
+}
+
+/* GetOrganizationBadRequest describes a response with status code 400, with default header values.
+
+Bad Request
+*/
+type GetOrganizationBadRequest struct {
+	Payload *mono_models.Message
+}
+
+func (o *GetOrganizationBadRequest) Error() string {
+	return fmt.Sprintf("[GET /organizations/{organizationIdentifier}][%d] getOrganizationBadRequest  %+v", 400, o.Payload)
+}
+func (o *GetOrganizationBadRequest) GetPayload() *mono_models.Message {
+	return o.Payload
+}
+
+func (o *GetOrganizationBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+
+	o.Payload = new(mono_models.Message)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {

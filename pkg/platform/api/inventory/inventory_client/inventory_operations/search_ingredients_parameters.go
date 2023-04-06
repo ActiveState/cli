@@ -98,6 +98,14 @@ type SearchIngredientsParams struct {
 	*/
 	Q *string
 
+	/* StateAt.
+
+	   Show the state of a resource as it was at the specified timestamp. If omitted, shows the current state of the resource.
+
+	   Format: date-time
+	*/
+	StateAt *strfmt.DateTime
+
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
@@ -254,6 +262,17 @@ func (o *SearchIngredientsParams) SetQ(q *string) {
 	o.Q = q
 }
 
+// WithStateAt adds the stateAt to the search ingredients params
+func (o *SearchIngredientsParams) WithStateAt(stateAt *strfmt.DateTime) *SearchIngredientsParams {
+	o.SetStateAt(stateAt)
+	return o
+}
+
+// SetStateAt adds the stateAt to the search ingredients params
+func (o *SearchIngredientsParams) SetStateAt(stateAt *strfmt.DateTime) {
+	o.StateAt = stateAt
+}
+
 // WriteToRequest writes these params to a swagger request
 func (o *SearchIngredientsParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry) error {
 
@@ -376,6 +395,23 @@ func (o *SearchIngredientsParams) WriteToRequest(r runtime.ClientRequest, reg st
 		if qQ != "" {
 
 			if err := r.SetQueryParam("q", qQ); err != nil {
+				return err
+			}
+		}
+	}
+
+	if o.StateAt != nil {
+
+		// query param state_at
+		var qrStateAt strfmt.DateTime
+
+		if o.StateAt != nil {
+			qrStateAt = *o.StateAt
+		}
+		qStateAt := qrStateAt.String()
+		if qStateAt != "" {
+
+			if err := r.SetQueryParam("state_at", qStateAt); err != nil {
 				return err
 			}
 		}
