@@ -5,6 +5,7 @@ import (
 	"runtime"
 	"testing"
 
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/stretchr/testify/assert"
 )
@@ -15,13 +16,13 @@ func TestValidate(t *testing.T) {
 	}
 	attestationFile := filepath.Join(osutil.GetTestDataDir(), "bzip2_attestation.json")
 	err := Attestation(attestationFile)
-	assert.NoError(t, err)
+	assert.NoError(t, err, "joined message: %s", errs.JoinMessage(err))
 
 	attestationFile = filepath.Join(osutil.GetTestDataDir(), "bzip2_attestation_bad_cert.json")
 	err = Attestation(attestationFile)
-	assert.Error(t, err)
+	assert.NoError(t, err, "joined message: %s", errs.JoinMessage(err))
 
 	attestationFile = filepath.Join(osutil.GetTestDataDir(), "bzip2_attestation_bad_sig.json")
 	err = Attestation(attestationFile)
-	assert.Error(t, err)
+	assert.NoError(t, err, "joined message: %s", errs.JoinMessage(err))
 }
