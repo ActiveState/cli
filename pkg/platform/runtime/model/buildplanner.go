@@ -1,6 +1,7 @@
 package model
 
 import (
+	"encoding/json"
 	"net/http"
 	"os"
 	"strings"
@@ -83,6 +84,15 @@ func (bp *BuildPlanner) FetchBuildResult(commitID strfmt.UUID, owner, project st
 		return nil, errs.Wrap(err, "failed to fetch build plan")
 	}
 
+	data, err := json.MarshalIndent(resp, "", "  ")
+	if err != nil {
+		return nil, errs.Wrap(err, "failed to marshal build plan")
+	}
+
+	logging.Debug("resp: %s", string(data))
+
+	// TODO: Add polling for BuildPlanning status
+
 	// Check for errors in the response
 	if resp.Project.Type == model.NotFound {
 		return nil, locale.NewError("err_buildplanner_project_not_found", "Build plan does not contain project")
@@ -110,6 +120,7 @@ func (bp *BuildPlanner) FetchBuildResult(commitID strfmt.UUID, owner, project st
 
 	// Extract the available platforms from the build plan
 	var bpPlatforms []strfmt.UUID
+	logging.Debug("Terminals %s", resp.Project.Commit.Build.Terminals)
 	for _, t := range resp.Project.Commit.Build.Terminals {
 		if t.Tag == model.TagOrphan {
 			continue

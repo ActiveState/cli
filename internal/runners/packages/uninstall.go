@@ -10,8 +10,9 @@ import (
 
 // UninstallRunParams tracks the info required for running Uninstall.
 type UninstallRunParams struct {
-	Name     string
-	Language string
+	Name      string
+	Language  string
+	Namespace string
 }
 
 // Uninstall manages the uninstalling execution context.
@@ -29,6 +30,14 @@ func (u *Uninstall) Run(params UninstallRunParams, nsType model.NamespaceType) e
 	logging.Debug("ExecuteUninstall")
 	if u.prime.Project() == nil {
 		return locale.NewInputError("err_no_project")
+	}
+
+	if params.Namespace != "" {
+		var err error
+		nsType, err = model.NewNamespaceType(params.Namespace)
+		if err != nil {
+			return locale.WrapError(err, "err_namespace_type")
+		}
 	}
 
 	return requirements.NewRequirementOperation(u.prime).ExecuteRequirementOperation(

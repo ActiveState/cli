@@ -202,6 +202,7 @@ func FetchRecipe(commitID strfmt.UUID, owner, project string, hostPlatform *stri
 }
 
 func FilterCurrentPlatform(hostPlatform string, platforms []strfmt.UUID) (strfmt.UUID, error) {
+	logging.Debug("Filter current platforms: %s", platforms)
 	platformIDs, err := FilterPlatformIDs(hostPlatform, runtime.GOARCH, platforms)
 	if err != nil {
 		return "", errs.Wrap(err, "filterPlatformIDs failed")

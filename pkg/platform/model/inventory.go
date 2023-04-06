@@ -9,6 +9,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/retryhttp"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_client/inventory_operations"
@@ -212,18 +213,23 @@ func FilterPlatformIDs(hostPlatform, hostArch string, platformIDs []strfmt.UUID)
 	var fallback []strfmt.UUID
 	for _, platformID := range platformIDs {
 		for _, rtPf := range runtimePlatforms {
+			logging.Debug("Runtime platform: %s", rtPf)
 			if rtPf.PlatformID == nil || platformID != *rtPf.PlatformID {
+				logging.Debug("Platform ID mismatch: %s != %s", platformID, *rtPf.PlatformID)
 				continue
 			}
 
 			if rtPf.Kernel == nil || rtPf.Kernel.Name == nil {
+				logging.Debug("Kernel name is nil")
 				continue
 			}
 			if rtPf.CPUArchitecture == nil || rtPf.CPUArchitecture.Name == nil {
+				logging.Debug("CPU architecture name is nil")
 				continue
 			}
 
 			if *rtPf.Kernel.Name != HostPlatformToKernelName(hostPlatform) {
+				logging.Debug("Kernel name mismatch: %s != %s", *rtPf.Kernel.Name, HostPlatformToKernelName(hostPlatform))
 				continue
 			}
 
@@ -235,6 +241,7 @@ func FilterPlatformIDs(hostPlatform, hostArch string, platformIDs []strfmt.UUID)
 				fallback = append(fallback, platformID)
 			}
 			if hostArch != platformArch {
+				logging.Debug("CPU architecture mismatch: %s != %s", hostArch, platformArch)
 				continue
 			}
 

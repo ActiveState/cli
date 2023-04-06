@@ -100,6 +100,12 @@ func newUninstallCommand(prime *primer.Values) *captain.Command {
 				Description: locale.Tl("package_install_flag_language_description", "The language to install the package for"),
 				Value:       &params.Language,
 			},
+			{
+				Name:        "namespace",
+				Description: locale.Tl("package_install_flag_namespace_description", "The namespace to install the package from"),
+				Value:       &params.Namespace,
+				Hidden:      true,
+			},
 		},
 		[]*captain.Argument{
 			{

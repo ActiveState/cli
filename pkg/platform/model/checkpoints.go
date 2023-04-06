@@ -269,6 +269,8 @@ func platformArchToHostArch(arch, bits string) string {
 func fallbackArch(platform, arch string) string {
 	// On the M1 Mac platform we default to
 	// amd64 as the platform does not support arm.
+	logging.Debug("Current arch: %s", arch)
+	logging.Debug("Current platform: %s", platform)
 	if arch == "arm64" && platform == sysinfo.Mac.String() {
 		return "amd64"
 	}
