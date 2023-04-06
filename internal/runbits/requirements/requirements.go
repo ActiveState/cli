@@ -149,6 +149,8 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName strin
 		ns = model.NewNamespaceLanguage()
 	case model.NamespacePlatform:
 		ns = model.NewNamespacePlatform()
+	case model.NamespaceTool:
+		ns = model.NewNamespaceTool()
 	}
 
 	rtusage.PrintRuntimeUsage(r.SvcModel, out, pj.Owner())
@@ -291,6 +293,8 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName strin
 		trigger = target.TriggerPackage
 	case model.NamespacePlatform:
 		trigger = target.TriggerPlatform
+	case model.NamespaceTool:
+		trigger = target.TriggerTool
 	default:
 		return errs.Wrap(err, "Unsupported namespace type: %s", ns.Type().String())
 	}
