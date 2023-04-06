@@ -48,7 +48,7 @@ func disable(exec string, opts Options) error {
 
 	if fileutils.FileExists(profile) {
 		if err := sscommon.CleanRcFile(profile, sscommon.AutostartID); err != nil {
-			return errs.Wrap(err, "Could not clean up legacy autostart entry")
+			return errs.Wrap(err, "Could not clean autostart entry from %s", profile)
 		}
 	}
 
@@ -83,7 +83,7 @@ func autostartPath(name string, opts Options) (string, error) {
 
 func upgrade(exec string, opts Options) error {
 	if err := legacyDisableOnDesktop(opts.LaunchFileName); err != nil {
-		return errs.Wrap(err, "Could not disable legacy autostart (desktop): %v", err)
+		return errs.Wrap(err, "Could not disable legacy autostart (desktop)")
 	}
 
 	profile, err := profilePath()
@@ -122,9 +122,11 @@ func profilePath() (string, error) {
 
 // https://activestatef.atlassian.net/browse/DX-1677
 func legacyDisableOnDesktop(launchFileName string) error {
-	dir, err := prependHomeDir(".config/autostart")
+	autostartDir := ".config/autostart"
+
+	dir, err := prependHomeDir(autostartDir)
 	if err != nil {
-		return errs.Wrap(err, "Could not find autostart directory")
+		return errs.Wrap(err, "Could not find ~/%s", autostartDir)
 	}
 
 	path := filepath.Join(dir, launchFileName)
@@ -132,7 +134,7 @@ func legacyDisableOnDesktop(launchFileName string) error {
 	if fileutils.FileExists(path) {
 		err := os.Remove(path)
 		if err != nil {
-			return errs.Wrap(err, "Could not remove autostart shortcut")
+			return errs.Wrap(err, "Could not remove shortcut")
 		}
 	}
 
