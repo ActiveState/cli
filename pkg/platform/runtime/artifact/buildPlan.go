@@ -205,6 +205,8 @@ func NewNamedMapFromBuildPlan(build *model.Build) ArtifactNamedBuildPlanMap {
 }
 
 func FilterInstallable(artifacts ArtifactBuildPlanMap) ArtifactBuildPlanMap {
+	// TODO: We should be filtering by mime-type here, not namespace as that
+	// is the new buildplanner way of doing things.
 	res := make(ArtifactBuildPlanMap)
 	for _, a := range artifacts {
 		if isNamespaceInstallable(a.Namespace) {

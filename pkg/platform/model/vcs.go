@@ -74,7 +74,7 @@ const (
 	NamespacePackageMatch = `^language\/(\w+)$`
 
 	// NamespaceToolMatch is the namespace used for tools package requirements
-	NamespaceToolMatch = `^tools\/(\w+)$`
+	NamespaceToolMatch = `^tools$`
 
 	// NamespacePackageMatch is the namespace used for language package requirements
 	NamespaceBuilderMatch = `^builder(-lib){0,1}$`

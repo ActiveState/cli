@@ -253,6 +253,8 @@ const MediatorAPIPath = "/sv/mediator/api"
 // RequirementsImportAPIPath is the path used for the requirements import api
 const RequirementsImportAPIPath = "/sv/reqsvc/reqs"
 
+const BuildPlannerAPIPath = "/sv/buildplanner/graphql"
+
 // DeprecationInfoURL is the URL we check against to see what versions are deprecated
 const DeprecationInfoURL = "https://state-tool.s3.amazonaws.com/deprecation.json"
 

@@ -126,6 +126,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName strin
 	}
 	out.Notice(locale.Tl("operating_message", "", pj.NamespaceString(), pj.Dir()))
 
+	logging.Debug("Namespace type: %s", nsType)
 	switch nsType {
 	case model.NamespacePackage, model.NamespaceBundle:
 		languages, err := model.LanguagesByCommit(pj.CommitUUID())
