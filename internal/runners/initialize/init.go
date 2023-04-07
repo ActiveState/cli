@@ -1,6 +1,7 @@
 package initialize
 
 import (
+	"fmt"
 	"path/filepath"
 	"strings"
 
@@ -24,7 +25,6 @@ import (
 type RunParams struct {
 	Namespace *project.Namespaced
 	Path      string
-	Style     string
 	Language  string
 	Private   bool
 	language  language.Supported
@@ -33,26 +33,57 @@ type RunParams struct {
 
 // Initialize stores scope-related dependencies.
 type Initialize struct {
-	out output.Outputer
+	config projectfile.ConfigGetter
+	out    output.Outputer
 }
 
 type primeable interface {
+	primer.Configurer
 	primer.Outputer
+}
+
+var templateMap = map[language.Language]string{
+	language.Python3: "activestate.yaml.python.tpl",
+	language.Python2: "activestate.yaml.python.tpl",
+	language.Perl:    "activestate.yaml.perl.tpl",
+	language.Ruby:    "activestate.yaml.ruby.tpl",
 }
 
 // New returns a prepared ptr to Initialize instance.
 func New(prime primeable) *Initialize {
-	return &Initialize{prime.Output()}
+	return &Initialize{prime.Config(), prime.Output()}
 }
 
-func sanitize(params *RunParams) error {
+func sanitize(params *RunParams, config projectfile.ConfigGetter) error {
 	if params.Language == "" {
+		// Try to infer the language from the project currently in use (i.e. `state use show`).
+		// Error handling is not necessary because it's an input error to not include a language to
+		// `state init`. We're just trying to infer one as a convenience to the user.
+		if projectDir := config.GetString(constants.GlobalDefaultPrefname); projectDir != "" {
+			if proj, err := project.FromPath(projectDir); err != nil {
+				if commitID := proj.CommitUUID(); commitID != "" {
+					if lang, err := model.FetchLanguageForCommit(commitID); err != nil {
+						params.Language = fmt.Sprintf("%s@%s", lang.Name, lang.Version)
+					}
+				}
+			}
+		}
+
 		// Manually check for language requirement, because we need to fallback on the --language flag to support editor.V0
 		return locale.NewInputError("err_init_no_language", "You need to supply the [NOTICE]language[/RESET] argument, run [ACTIONABLE]`state init --help`[/RESET] for more information.")
 	}
 	langParts := strings.Split(params.Language, "@")
 	if len(langParts) > 1 {
 		params.version = langParts[1]
+	}
+
+	// Disambiguate "python", defaulting to "python3" if no version was given.
+	if langParts[0] == "python" {
+		if params.version == "" || strings.HasPrefix(params.version, "3") {
+			langParts[0] = "python3"
+		} else if strings.HasPrefix(params.version, "2") {
+			langParts[0] = "python2"
+		}
 	}
 
 	params.language = language.Supported{language.MakeByName(langParts[0])}
@@ -70,10 +101,6 @@ func sanitize(params *RunParams) error {
 			return errs.Wrap(err, "IO failure")
 		}
 		return locale.NewInputError("err_init_file_exists", "", absPath)
-	}
-
-	if !styleRecognized(params.Style) {
-		params.Style = SkeletonBase
 	}
 
 	return nil
@@ -95,11 +122,11 @@ func sanitizePath(params *RunParams) error {
 
 // Run kicks-off the runner.
 func (r *Initialize) Run(params *RunParams) error {
-	_, err := run(params, r.out)
+	_, err := run(params, r.config, r.out)
 	return err
 }
 
-func run(params *RunParams, out output.Outputer) (string, error) {
+func run(params *RunParams, config projectfile.ConfigGetter, out output.Outputer) (string, error) {
 	if err := params.Namespace.Validate(); err != nil {
 		return "", locale.WrapInputError(err, "init_invalid_namespace_err", "The provided namespace argument is invalid.")
 	}
@@ -131,7 +158,7 @@ func run(params *RunParams, out output.Outputer) (string, error) {
 		}
 	} else {
 		// Sanitize rest of params
-		if err := sanitize(params); err != nil {
+		if err := sanitize(params, config); err != nil {
 			return "", err
 		}
 
@@ -143,10 +170,10 @@ func run(params *RunParams, out output.Outputer) (string, error) {
 			Private:   params.Private,
 		}
 
-		if params.Style == SkeletonEditor {
-			content, err := assets.ReadFileBytes("activestate.yaml.editor.tpl")
+		if template, exists := templateMap[params.language.Language]; exists {
+			content, err := assets.ReadFileBytes(template)
 			if err != nil {
-				return "", err
+				return "", errs.Wrap(err, "Could not load project template '%s' for language '%s'", template, params.language.String())
 			}
 			createParams.Content = string(content)
 		}
@@ -174,6 +201,25 @@ func run(params *RunParams, out output.Outputer) (string, error) {
 	if err := proj.SetCommit(commitID.String()); err != nil {
 		return "", locale.WrapError(err, "err_init_setcommit", "Could not store commit to project file")
 	}
+
+	logging.Debug("Creating Platform project and pushing it")
+
+	platformProject, err := model.CreateEmptyProject(params.Namespace.Owner, params.Namespace.Project, params.Private)
+	if err != nil {
+		return "", locale.WrapInputError(err, "err_init_create_project", "Failed to create a Platform project at {{.V0}}.", params.Namespace.String())
+	}
+
+	branch, err := model.DefaultBranchForProject(platformProject) // only one branch for newly created project
+	if err != nil {
+		return "", locale.NewInputError("err_no_default_branch")
+	}
+
+	err = model.UpdateProjectBranchCommitWithModel(platformProject, branch.Label, commitID)
+	if err != nil {
+		return "", locale.WrapError(err, "err_init_push", "Failed to push to the newly created Platform project at {{.V0}}", params.Namespace.String())
+	}
+
+	projectfile.StoreProjectMapping(config, params.Namespace.String(), filepath.Dir(proj.Source().Path()))
 
 	out.Notice(locale.Tr(
 		"init_success",

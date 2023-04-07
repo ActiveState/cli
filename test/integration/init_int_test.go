@@ -4,13 +4,16 @@ import (
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
+	"runtime"
 	"testing"
 
-	"github.com/stretchr/testify/suite"
-
+	"github.com/ActiveState/cli/internal/assets"
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/language"
+	"github.com/ActiveState/cli/internal/strutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
+	"github.com/stretchr/testify/suite"
 )
 
 type InitIntegrationTestSuite struct {
@@ -19,43 +22,70 @@ type InitIntegrationTestSuite struct {
 
 func (suite *InitIntegrationTestSuite) TestInit() {
 	suite.OnlyRunForTags(tagsuite.Init, tagsuite.Critical)
-	suite.runInitTest(false, sampleYAMLPython3, "python3")
-}
-
-func (suite *InitIntegrationTestSuite) TestInit_SkeletonEditor() {
-	suite.OnlyRunForTags(tagsuite.Init)
-	suite.runInitTest(false, sampleYAMLEditor, "python3", "--skeleton", "editor")
+	suite.runInitTest(false, "python3", "python3")
 }
 
 func (suite *InitIntegrationTestSuite) TestInit_Path() {
 	suite.OnlyRunForTags(tagsuite.Init)
-	suite.runInitTest(true, sampleYAMLPython3, "python3")
+	suite.runInitTest(true, "python3", "python3")
 }
 
 func (suite *InitIntegrationTestSuite) TestInit_Version() {
 	suite.OnlyRunForTags(tagsuite.Init)
-	suite.runInitTest(false, sampleYAMLPython3, "python3@1.0")
+	suite.runInitTest(false, "python3@1.0", "python3")
 }
 
-func (suite *InitIntegrationTestSuite) runInitTest(addPath bool, config string, language string, args ...string) {
+func (suite *InitIntegrationTestSuite) TestInit_DisambiguatePython() {
+	suite.OnlyRunForTags(tagsuite.Init)
+	suite.runInitTest(true, "python", "python3")
+	suite.runInitTest(true, "python@3.10.0", "python3")
+	suite.runInitTest(true, "python@2.7.18", "python2")
+}
+
+func (suite *InitIntegrationTestSuite) runInitTest(addPath bool, lang string, expectedConfigLanguage string, args ...string) {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
+	ts.LoginAsPersistentUser()
 
-	computedArgs := append([]string{"init", namespace}, append([]string{language}, args...)...)
+	// Generate a new namespace for the project to be created.
+	pname := strutils.UUID()
+	namespace := fmt.Sprintf("%s/%s", e2e.PersistentUsername, pname)
+	computedArgs := append([]string{"init", namespace, lang}, args...)
 	if addPath {
 		computedArgs = append(computedArgs, "--path", ts.Dirs.Work)
 	}
 
+	// Run `state init`, creating the project.
 	cp := ts.Spawn(computedArgs...)
 	cp.ExpectLongString(fmt.Sprintf("Project '%s' has been successfully initialized", namespace))
 	cp.ExpectExitCode(0)
+	ts.NotifyProjectCreated(e2e.PersistentUsername, pname.String())
 
+	// Verify the config template contains the correct shell, language, and content.
 	configFilepath := filepath.Join(ts.Dirs.Work, constants.ConfigFileName)
 	suite.Require().FileExists(configFilepath)
 
+	templateFile, err := assets.ReadFileBytes("activestate.yaml.python.tpl")
+	if err != nil {
+		panic(err.Error())
+	}
+	shell := "bash"
+	if runtime.GOOS == "windows" {
+		shell = "batch"
+	}
+	yaml, err := strutils.ParseTemplate(
+		string(templateFile),
+		map[string]interface{}{
+			"Owner":    e2e.PersistentUsername,
+			"Project":  pname.String(),
+			"Shell":    shell,
+			"Language": expectedConfigLanguage,
+			"LangExe":  language.MakeByName(expectedConfigLanguage).Executable().Filename(),
+		})
+
 	content, err := ioutil.ReadFile(configFilepath)
 	suite.Require().NoError(err)
-	suite.Contains(string(content), config)
+	suite.Contains(string(content), yaml)
 }
 
 func (suite *InitIntegrationTestSuite) TestInit_NoLanguage() {
@@ -63,8 +93,22 @@ func (suite *InitIntegrationTestSuite) TestInit_NoLanguage() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	cp := ts.Spawn("init", namespace)
+	cp := ts.Spawn("init", "test-user/test-project")
 	cp.ExpectNotExitCode(0)
+}
+
+func (suite *InitIntegrationTestSuite) TestInit_InferLanguageFromUse() {
+	suite.OnlyRunForTags(tagsuite.Init)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.Spawn("checkout", "ActiveState-CLI/Python3")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("use Python3")
+	cp.ExpectExitCode(0)
+
+	suite.runInitTest(true, "", "python3")
 }
 
 func TestInitIntegrationTestSuite(t *testing.T) {

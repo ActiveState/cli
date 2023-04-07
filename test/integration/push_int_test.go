@@ -59,7 +59,6 @@ func (suite *PushIntegrationTestSuite) TestInitAndPush() {
 		namespace,
 		suite.languageFull,
 		"--path", wd,
-		"--skeleton", "editor",
 	)
 	cp.ExpectExitCode(0)
 
@@ -270,8 +269,8 @@ func (suite *PushIntegrationTestSuite) TestPush_Outdated() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	wd := filepath.Join(ts.Dirs.Work, namespace)
-	pjfilepath := filepath.Join(ts.Dirs.Work, namespace, constants.ConfigFileName)
+	wd := filepath.Join(ts.Dirs.Work, "cli")
+	pjfilepath := filepath.Join(ts.Dirs.Work, "cli", constants.ConfigFileName)
 	err := fileutils.WriteFile(pjfilepath, []byte(projectLine+unPushedCommit))
 	suite.Require().NoError(err)
 
