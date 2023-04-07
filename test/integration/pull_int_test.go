@@ -80,8 +80,8 @@ func (suite *PullIntegrationTestSuite) TestPull_Merge() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	wd := filepath.Join(ts.Dirs.Work, namespace)
-	pjfilepath := filepath.Join(ts.Dirs.Work, namespace, constants.ConfigFileName)
+	wd := filepath.Join(ts.Dirs.Work, "cli")
+	pjfilepath := filepath.Join(ts.Dirs.Work, "cli", constants.ConfigFileName)
 	err := fileutils.WriteFile(pjfilepath, []byte(projectLine+unPulledCommit))
 	suite.Require().NoError(err)
 
