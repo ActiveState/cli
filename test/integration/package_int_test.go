@@ -297,13 +297,8 @@ func (suite *PackageIntegrationTestSuite) TestPackage_import() {
 	username := ts.CreateNewUser()
 	namespace := fmt.Sprintf("%s/%s", username, "Python3")
 
-	cp := ts.Spawn("init", namespace, "python3", "--path="+ts.Dirs.Work, "--skeleton=editor")
-	cp.ExpectExitCode(0)
-
-	cp = ts.Spawn("push")
-	cp.ExpectLongString("You are about to create the project")
-	cp.Send("y")
-	cp.Expect("Project created")
+	cp := ts.Spawn("init", namespace, "python3", "--path="+ts.Dirs.Work)
+	cp.ExpectLongString("successfully initialized")
 	cp.ExpectExitCode(0)
 
 	reqsFilePath := filepath.Join(cp.WorkDirectory(), reqsFileName)
