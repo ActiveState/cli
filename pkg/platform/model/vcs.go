@@ -87,6 +87,8 @@ const (
 
 	// NamespaceSharedMatch is the namespace used for shared requirements (usually runtime libraries)
 	NamespaceSharedMatch = `^shared$`
+
+	NamespaceOrgSharedMatch = `^\w+\/shared(?$|\/\w+$)`
 )
 
 type TrackingType string
@@ -130,11 +132,12 @@ type NamespaceType struct {
 }
 
 var (
-	NamespacePackage  = NamespaceType{"package", "language", NamespacePackageMatch} // these values should match the namespace prefix
-	NamespaceBundle   = NamespaceType{"bundle", "bundles", NamespaceBundlesMatch}
-	NamespaceLanguage = NamespaceType{"language", "", NamespaceLanguageMatch}
-	NamespacePlatform = NamespaceType{"platform", "", NamespacePlatformMatch}
-	NamespaceBlank    = NamespaceType{"", "", ""}
+	NamespacePackage   = NamespaceType{"package", "language", NamespacePackageMatch} // these values should match the namespace prefix
+	NamespaceBundle    = NamespaceType{"bundle", "bundles", NamespaceBundlesMatch}
+	NamespaceLanguage  = NamespaceType{"language", "", NamespaceLanguageMatch}
+	NamespacePlatform  = NamespaceType{"platform", "", NamespacePlatformMatch}
+	NamespaceOrgShared = NamespaceType{"org-shared", "", NamespaceOrgSharedMatch}
+	NamespaceBlank     = NamespaceType{"", "", ""}
 )
 
 func (t NamespaceType) String() string {
@@ -196,6 +199,13 @@ func NewNamespaceLanguage() Namespace {
 // NewNamespacePlatform provides the base platform namespace.
 func NewNamespacePlatform() Namespace {
 	return Namespace{NamespacePlatform, "platform"}
+}
+
+func NewSharedNamespace(orgName string) Namespace {
+	return Namespace{
+		nsType: NamespaceOrgShared,
+		value:  fmt.Sprintf("%s/shared", strings.ToLower(orgName)),
+	}
 }
 
 func LanguageFromNamespace(ns string) string {

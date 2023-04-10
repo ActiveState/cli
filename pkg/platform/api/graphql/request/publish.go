@@ -19,20 +19,29 @@ func Publish(description, path, version, filepath, checksum string) (*PublishReq
 		return nil, errs.Wrap(err, "Could not open file %s", filepath)
 	}
 	return &PublishRequest{
-		vars: map[string]interface{}{
-			"path":          path, // namespace
-			"version":       version,
-			"file_checksum": checksum,
-			"file":          nil,
-			"description":   description,
+		Variables: publishVariables{
+			Version:      version,
+			Description:  description,
+			path:         path,
+			fileChecksum: checksum,
 		},
 		file: f,
 	}, nil
 }
 
+type publishVariables struct {
+	Version     string `json:"version"`
+	Description string `json:"description"`
+
+	path         string  `json:"path"`
+	fileChecksum string  `json:"file_checksum"`
+	file         *string `json:"file"`
+}
+
 type PublishRequest struct {
-	file *os.File
-	vars map[string]interface{}
+	file      *os.File
+	coreVars  map[string]interface{}
+	Variables publishVariables
 }
 
 func (p *PublishRequest) Close() error {
@@ -70,13 +79,20 @@ func (p *PublishRequest) Query() string {
 }
 
 func (p *PublishRequest) Vars() map[string]interface{} {
-	return p.vars
+	// Todo: remove redundancy
+	return map[string]interface{}{
+		"version":       p.Variables.Version,
+		"description":   p.Variables.Description,
+		"path":          p.Variables.path,
+		"file_checksum": p.Variables.fileChecksum,
+		"file":          p.Variables.file,
+	}
 }
 
 func (p *PublishRequest) MarshalYaml() ([]byte, error) {
-	return yaml.Marshal(p.vars)
+	return yaml.Marshal(p.Variables)
 }
 
 func (p *PublishRequest) UnmarshalYaml(b []byte) error {
-	return yaml.Unmarshal(b, &p.vars)
+	return yaml.Unmarshal(b, &p.Variables)
 }
