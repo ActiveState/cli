@@ -143,7 +143,7 @@ func (u *Checker) GetUpdateInfo(desiredChannel, desiredVersion string) (*Availab
 			err = errs.Wrap(err, "Could not fetch update info from %s", infoURL)
 		}
 
-		u.an.EventWithLabel(anaConst.CatConfig, anaConst.ActUpdateCheck, label, &dimensions.Values{
+		u.an.EventWithLabel(anaConst.CatUpdates, anaConst.ActUpdateCheck, label, &dimensions.Values{
 			Version: p.StrP(desiredVersion),
 			Error:   p.StrP(msg),
 		})
@@ -159,6 +159,6 @@ func (u *Checker) GetUpdateInfo(desiredChannel, desiredVersion string) (*Availab
 
 	info.url = u.fileURL + "/" + info.Path
 
-	u.an.EventWithLabel(anaConst.CatConfig, anaConst.ActUpdateCheck, anaConst.UpdateLabelAvailable, &dimensions.Values{Version: p.StrP(info.Version)})
+	u.an.EventWithLabel(anaConst.CatUpdates, anaConst.ActUpdateCheck, anaConst.UpdateLabelAvailable, &dimensions.Values{Version: p.StrP(info.Version)})
 	return info, nil
 }
