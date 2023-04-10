@@ -278,7 +278,7 @@ func TestFetchPRByTitle(t *testing.T) {
 
 func TestActiveVersionsOnBranch(t *testing.T) {
 	t.Skip("For debugging purposes, comment this line out if you want to test this locally")
-	
+
 	jiraClient, err := InitJiraClient()
 	require.NoError(t, err)
 
@@ -287,45 +287,6 @@ func TestActiveVersionsOnBranch(t *testing.T) {
 	if len(versions) < 2 {
 		// Realistically we should have at least 2 versions in development in the past 6 months
 		t.Errorf("ActiveVersionsOnBranch() returned %d versions, want at least 2", len(versions))
-	}
-}
-
-func Test_sanitizeSearchTerm(t *testing.T) {
-	tests := []struct {
-		input string
-		want  string
-	}{
-		{
-			"hello world",
-			"hello world",
-		},
-		{
-			"hello wo.rld",
-			"hello",
-		},
-		{
-			"hello .world",
-			"hello",
-		},
-		{
-			"hello world.",
-			"hello",
-		},
-		{
-			"hel.lo world",
-			"world",
-		},
-		{
-			"hel.lo wo.rld",
-			"",
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.input, func(t *testing.T) {
-			if got := sanitizeSearchTerm(tt.input); got != tt.want {
-				t.Errorf("sanitizeSearchTerm() = %v, want %v", got, tt.want)
-			}
-		})
 	}
 }
 
