@@ -5,13 +5,14 @@ import (
 	"net/http"
 	"path/filepath"
 	"strconv"
-	"strings"
+	"time"
 
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/gqlclient"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
@@ -20,15 +21,15 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/graphql/model"
 	"github.com/ActiveState/cli/pkg/platform/api/graphql/request"
 	auth "github.com/ActiveState/cli/pkg/platform/authentication"
+	model2 "github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
+	"github.com/blang/semver"
 	"github.com/machinebox/graphql"
 	"github.com/skratchdot/open-golang/open"
 )
 
 type Params struct {
 	NameVersion captain.NameVersion
-	Namespace   string
-	Platform    string
 	Filepath    string
 	Edit        bool
 }
@@ -68,31 +69,52 @@ func (r *Runner) Run(params *Params) error {
 		return locale.NewInputError("err_uploadingredient_file_not_found", "File not found: {{.V0}}", params.Filepath)
 	}
 
+	namespace := model2.NewSharedNamespace(r.project.Owner())
+
 	name := params.NameVersion.Name()
 	if name == "" {
 		name = filepath.Base(params.Filepath)
 	}
+
+	ts := time.Now()
+	var ingredient *model2.IngredientAndVersion
+	ingredients, err := model2.SearchIngredientsStrict(namespace, name, true, false, &ts)
+	if err != nil {
+		return locale.WrapError(err, "err_uploadingredient_search", "Could not search for ingredient")
+	}
+	if len(ingredients) > 0 {
+		ingredient = ingredients[0]
+	}
+
 	version := params.NameVersion.Version()
 	if version == "" {
-		version = "0.0.1"
-	}
-
-	namespace := params.Namespace
-	if namespace == "" {
-		if r.project == nil {
-			return locale.NewInputError("err_no_project")
+		if ingredient != nil && len(ingredient.Versions) > 0 {
+			v, err := semver.ParseTolerant(ingredient.Versions[0].Version)
+			if err != nil {
+				logging.Debug("Could not parse version: %v", err)
+			} else {
+				version = fmt.Sprintf("%d.%d.%d", v.Major, v.Minor, v.Patch+1)
+			}
 		}
-		namespace = strings.ToLower(r.project.Owner()) + "/shared"
+		// Still empty? Set default
+		if version == "" {
+			version = "0.0.1"
+		}
 	}
 
-	path := fmt.Sprintf("%s/%s", namespace, name)
+	path := fmt.Sprintf("%s/%s", namespace.String(), name)
 
 	checksum, err := fileutils.Sha256Hash(params.Filepath)
 	if err != nil {
 		return locale.WrapError(err, "err_uploadingredient_checksum", "Could not calculate checksum for file")
 	}
 
-	p, err := request.Publish("not provided", path, version, params.Filepath, checksum)
+	desc := "not provided"
+	if ingredient != nil && ingredient.Ingredient.Description != nil {
+		desc = *ingredient.Ingredient.Description
+	}
+
+	p, err := request.Publish(desc, path, version, params.Filepath, checksum)
 	if err != nil {
 		return locale.WrapError(err, "err_uploadingredient_publish", "Could not create publish request")
 	}
@@ -101,26 +123,26 @@ func (r *Runner) Run(params *Params) error {
 		if err := r.Edit(p); err != nil {
 			return err
 		}
-	} else {
-		cont, err := r.prompt.Confirm(
-			"",
-			locale.Tl("uploadingredient_confirm", `Upload following ingredient?
+	}
+
+	cont, err := r.prompt.Confirm(
+		"",
+		locale.Tl("uploadingredient_confirm", `Upload following ingredient?
 Name: {{.V0}}
 Version: {{.V1}}
 Namespace: {{.V2}}
 Path: {{.V3}}
 Checksum: {{.V4}}
 
-`, name, version, namespace, path, checksum),
-			p2.BoolP(true),
-		)
-		if err != nil {
-			return errs.Wrap(err, "Confirmation failed")
-		}
-		if !cont {
-			r.out.Print(locale.Tl("uploadingredient_cancel", "Upload cancelled"))
-			return nil
-		}
+`, name, version, namespace.String(), path, checksum),
+		p2.BoolP(true),
+	)
+	if err != nil {
+		return errs.Wrap(err, "Confirmation failed")
+	}
+	if !cont {
+		r.out.Print(locale.Tl("uploadingredient_cancel", "Upload cancelled"))
+		return nil
 	}
 
 	result := model.PublishResult{}
@@ -129,6 +151,10 @@ Checksum: {{.V4}}
 	// but it should be Content-Disposition: form-data; name="operations"
 	if err := r.client.Run(p, &result); err != nil {
 		return locale.WrapError(err, "err_uploadingredient_publish", "Could not publish ingredient")
+	}
+
+	if result.Error != "" {
+		return locale.NewError("err_uploadingredient_publish", "Could not publish ingredient: {{.V0}}", result.Message)
 	}
 
 	r.out.Print(locale.Tl("uploadingredient_success", `Successfully uploaded as:
@@ -162,8 +188,16 @@ func (r *Runner) Edit(p *request.PublishRequest) error {
 		return errs.Wrap(err, "Confirmation failed")
 	}
 
+	eb, err := fileutils.ReadFile(fn)
+	if err != nil {
+		return errs.Wrap(err, "Could not read file")
+	}
+
+	v := string(eb)
+	_ = v
+
 	// Write changes to request
-	if err := p.UnmarshalYaml(b); err != nil {
+	if err := p.UnmarshalYaml(eb); err != nil {
 		return locale.WrapError(err, "err_uploadingredient_publish", "Could not unmarshal publish request")
 	}
 

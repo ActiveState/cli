@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/go-openapi/strfmt"
 
@@ -34,14 +35,14 @@ var platformCache []*Platform
 
 // SearchIngredients will return all ingredients+ingredientVersions that fuzzily
 // match the ingredient name.
-func SearchIngredients(namespace Namespace, name string, includeVersions bool) ([]*IngredientAndVersion, error) {
-	return searchIngredientsNamespace(namespace, name, includeVersions, false)
+func SearchIngredients(namespace Namespace, name string, includeVersions bool, ts *time.Time) ([]*IngredientAndVersion, error) {
+	return searchIngredientsNamespace(namespace, name, includeVersions, false, ts)
 }
 
 // SearchIngredientsStrict will return all ingredients+ingredientVersions that
 // strictly match the ingredient name.
-func SearchIngredientsStrict(namespace Namespace, name string, caseSensitive bool, includeVersions bool) ([]*IngredientAndVersion, error) {
-	results, err := searchIngredientsNamespace(namespace, name, includeVersions, true)
+func SearchIngredientsStrict(namespace Namespace, name string, caseSensitive bool, includeVersions bool, ts *time.Time) ([]*IngredientAndVersion, error) {
+	results, err := searchIngredientsNamespace(namespace, name, includeVersions, true, ts)
 	if err != nil {
 		return nil, err
 	}
@@ -93,7 +94,7 @@ func FetchAuthors(ingredID, ingredVersionID *strfmt.UUID) (Authors, error) {
 	return results.Payload.Authors, nil
 }
 
-func searchIngredientsNamespace(ns Namespace, name string, includeVersions bool, exactOnly bool) ([]*IngredientAndVersion, error) {
+func searchIngredientsNamespace(ns Namespace, name string, includeVersions bool, exactOnly bool, ts *time.Time) ([]*IngredientAndVersion, error) {
 	limit := int64(100)
 	offset := int64(0)
 
@@ -110,6 +111,11 @@ func searchIngredientsNamespace(ns Namespace, name string, includeVersions bool,
 	}
 	params.SetLimit(&limit)
 	params.SetHTTPClient(api.NewHTTPClient())
+
+	if ts != nil {
+		dt := strfmt.DateTime(*ts)
+		params.SetStateAt(&dt)
+	}
 
 	var ingredients []*IngredientAndVersion
 	var entries []*inventory_models.SearchIngredientsResponseItem

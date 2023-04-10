@@ -46,7 +46,7 @@ func (i *Info) Run(params InfoRunParams, nstype model.NamespaceType) error {
 
 	ns := model.NewNamespacePkgOrBundle(language, nstype)
 
-	packages, err := model.SearchIngredientsStrict(ns, params.Package.Name(), true, true)
+	packages, err := model.SearchIngredientsStrict(ns, params.Package.Name(), true, true, nil)
 	if err != nil {
 		return locale.WrapError(err, "package_err_cannot_obtain_search_results")
 	}
@@ -103,8 +103,8 @@ func specificIngredientVersion(ingredientID *strfmt.UUID, version string) (*inve
 type PkgDetailsTable struct {
 	Authors   []string `locale:"package_authors,Authors" json:"authors"`
 	Website   string   `locale:"package_website,Website" json:"website"`
-	copyright string   //`locale:"package_copyright,Copyright" json:"copyright"`
-	license   string   //`locale:"package_license,License" json:"license"`
+	copyright string   // `locale:"package_copyright,Copyright" json:"copyright"`
+	license   string   // `locale:"package_license,License" json:"license"`
 }
 
 type infoResult struct {

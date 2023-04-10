@@ -173,7 +173,7 @@ func FetchRecipe(commitID strfmt.UUID, owner, project string, hostPlatform *stri
 
 	client, _ := inventory.Init(authentication.LegacyGet())
 
-	response, err := client.ResolveRecipes(params, authentication.ClientAuth())
+	response, _, err := client.ResolveRecipes(params, authentication.ClientAuth())
 	if err != nil {
 		if err == context.DeadlineExceeded {
 			return nil, locale.WrapError(err, "request_timed_out")

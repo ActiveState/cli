@@ -9,6 +9,11 @@ const (
 	DateFormat       = "2006-01-02"
 )
 
+type ErrorResponse struct {
+	Error   string `json:"error"`
+	Message string `json:"message"`
+}
+
 type Time struct {
 	time.Time
 }

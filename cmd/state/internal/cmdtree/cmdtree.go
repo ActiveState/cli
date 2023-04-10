@@ -149,12 +149,12 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 
 	shellCmd := newShellCommand(prime)
 
-	refreshCmd := newRefreshCommand(prime)
+	// authorCmd := newAuthorCommand(prime)
+	// authorCmd.AddChildren(
+	// 	newAuthorUpload(prime),
+	// )
 
-	authorCmd := newAuthorCommand(prime)
-	authorCmd.AddChildren(
-		newAuthorUpload(prime),
-	)
+	refreshCmd := newRefreshCommand(prime)
 
 	stateCmd := newStateCommand(globals, prime)
 	stateCmd.AddChildren(
@@ -203,7 +203,7 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 		refreshCmd,
 		newSwitchCommand(prime),
 		newTestCommand(prime),
-		authorCmd,
+		newAuthorUpload(prime),
 	)
 
 	return &CmdTree{
