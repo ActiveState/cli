@@ -46,20 +46,33 @@ func New(prime primeable) *Initialize {
 	return &Initialize{prime.Config(), prime.Output()}
 }
 
+// inferLanguage tries to infer a reasonable default language from the project currently in use
+// (i.e. `state use show`).
+// Error handling is not necessary because it's an input error to not include a language to
+// `state init`. We're just trying to infer one as a convenience to the user.
+func inferLanguage(config projectfile.ConfigGetter) string {
+	defaultProjectDir := config.GetString(constants.GlobalDefaultPrefname)
+	if defaultProjectDir == "" {
+		return ""
+	}
+	defaultProj, err := project.FromPath(defaultProjectDir)
+	if err != nil {
+		return ""
+	}
+	commitID := defaultProj.CommitUUID()
+	if commitID == "" {
+		return ""
+	}
+	lang, err := model.FetchLanguageForCommit(commitID)
+	if err != nil {
+		return ""
+	}
+	return fmt.Sprintf("%s@%s", lang.Name, lang.Version)
+}
+
 func sanitize(params *RunParams, config projectfile.ConfigGetter) error {
-	// Try to infer the language from the project currently in use (i.e. `state use show`).
-	// Error handling is not necessary because it's an input error to not include a language to
-	// `state init`. We're just trying to infer one as a convenience to the user.
 	if params.Language == "" {
-		if projectDir := config.GetString(constants.GlobalDefaultPrefname); projectDir != "" {
-			if proj, err := project.FromPath(projectDir); err == nil {
-				if commitID := proj.CommitUUID(); commitID != "" {
-					if lang, err := model.FetchLanguageForCommit(commitID); err == nil {
-						params.Language = fmt.Sprintf("%s@%s", lang.Name, lang.Version)
-					}
-				}
-			}
-		}
+		params.Language = inferLanguage(config)
 	}
 
 	if params.Language == "" {
