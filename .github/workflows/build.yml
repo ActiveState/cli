@@ -96,7 +96,7 @@ jobs:
       - # === Install Deps ===
         name: Install Deps
         shell: bash
-        timeout-minutes: 1
+        timeout-minutes: 10
         run: state run install-deps
 
       - # === Preprocess ===
