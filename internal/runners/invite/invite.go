@@ -11,6 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -28,12 +29,14 @@ type invite struct {
 	project *project.Project
 	out     output.Outputer
 	prompt  prompt.Prompter
+	auth    *authentication.Auth
 }
 
 type primeable interface {
 	primer.Projecter
 	primer.Outputer
 	primer.Prompter
+	primer.Auther
 }
 
 func New(prime primeable) *invite {
@@ -41,12 +44,16 @@ func New(prime primeable) *invite {
 		prime.Project(),
 		prime.Output(),
 		prime.Prompt(),
+		prime.Auth(),
 	}
 }
 
 func (i *invite) Run(params *Params, args []string) error {
 	if i.project == nil {
 		return locale.NewInputError("err_no_projectfile", "Must be in a project directory.")
+	}
+	if !i.auth.Authenticated() {
+		return locale.NewInputError("err_invite_not_logged_in", "You need to authenticate with [ACTIONABLE]`state auth`[/RESET] before you can invite new members.")
 	}
 
 	if len(args) > 1 {
