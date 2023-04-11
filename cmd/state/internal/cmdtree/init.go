@@ -4,6 +4,7 @@ import (
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/primer"
+	"github.com/ActiveState/cli/internal/rtutils/p"
 	"github.com/ActiveState/cli/internal/runners/initialize"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -14,7 +15,6 @@ func newInitCommand(prime *primer.Values) *captain.Command {
 	params := initialize.RunParams{
 		Namespace: &project.Namespaced{},
 	}
-	var unused string
 
 	return captain.NewCommand(
 		"init",
@@ -30,7 +30,7 @@ func newInitCommand(prime *primer.Values) *captain.Command {
 			{
 				// Hidden flag for legacy Komodo support
 				Name:   "skeleton",
-				Value:  &unused,
+				Value:  p.StrP(""),
 				Hidden: true,
 			},
 			{

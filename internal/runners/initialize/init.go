@@ -85,11 +85,11 @@ func sanitize(params *RunParams, config projectfile.ConfigGetter) error {
 	}
 
 	// Disambiguate "python", defaulting to "python3" if no version was given.
-	if langParts[0] == "python" {
+	if strings.ToLower(langParts[0]) == language.Python3.Requirement() {
 		if params.version == "" || strings.HasPrefix(params.version, "3") {
-			langParts[0] = "python3"
+			langParts[0] = language.Python3.String()
 		} else if strings.HasPrefix(params.version, "2") {
-			langParts[0] = "python2"
+			langParts[0] = language.Python2.String()
 		}
 	}
 
