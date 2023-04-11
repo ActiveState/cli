@@ -95,6 +95,10 @@ func autostartPath(exec string, _ Options) (string, error) {
 	return path, nil
 }
 
+func upgrade(opts Options) error {
+	return nil
+}
+
 func installPath(name string) (string, error) {
 	dir, err := installation.ApplicationInstallPath()
 	if err != nil {

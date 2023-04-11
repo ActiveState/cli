@@ -15,7 +15,7 @@ import (
 var startupPath = filepath.Join(os.Getenv("USERPROFILE"), "AppData", "Roaming", "Microsoft", "Windows", "Start Menu", "Programs", "Startup")
 
 func enable(exec string, opts Options) error {
-	enabled, err := IsEnabled(exec, opts)
+	enabled, err := isEnabled(exec, opts)
 	if err != nil {
 		return errs.Wrap(err, "Could not check if app is enabled")
 	}
@@ -65,6 +65,10 @@ func isEnabled(_ string, opts Options) (bool, error) {
 
 func autostartPath(name string, _ Options) (string, error) {
 	return shortcutFilename(name), nil
+}
+
+func upgrade(opts Options) error {
+	return nil
 }
 
 func shortcutFilename(name string) string {
