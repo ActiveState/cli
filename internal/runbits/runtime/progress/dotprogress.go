@@ -27,7 +27,7 @@ func NewDotProgressIndicator(out output.Outputer) *DotProgressDigester {
 
 func (d *DotProgressDigester) Handle(event events.Eventer) error {
 	switch event.(type) {
-	case events.Start, events.SolveStart:
+	case events.SolveStart:
 		d.spinner = output.StartSpinner(d.out, locale.T("setup_runtime"), time.Second)
 	case events.Success:
 		d.success = true
