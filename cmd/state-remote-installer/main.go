@@ -170,7 +170,7 @@ func execute(out output.Outputer, prompt prompt.Prompter, cfg *config.Instance, 
 	}
 
 	// Fetch payload
-	checker := updater.NewDefaultChecker(cfg)
+	checker := updater.NewDefaultChecker(cfg, an)
 	checker.InvocationSource = updater.InvocationSourceInstall // Installing from a remote source is only ever encountered via the install flow
 	checker.VerifyVersion = false
 	update, err := checker.CheckFor(branch, params.version)

@@ -40,6 +40,8 @@ type Values struct {
 	CommitID         *string
 	Command          *string
 	Sequence         *int
+	TargetVersion    *string
+	Error            *string
 
 	preProcessor func(*Values) error
 }
@@ -88,6 +90,8 @@ func NewDefaultDimensions(pjNamespace, sessionToken, updateTag string) *Values {
 		p.StrP(""),
 		p.StrP(osutils.ExecutableName()),
 		p.IntP(0),
+		p.StrP(""),
+		p.StrP(""),
 		nil,
 	}
 }

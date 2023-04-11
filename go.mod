@@ -1,6 +1,6 @@
 module github.com/ActiveState/cli
 
-go 1.17
+go 1.20
 
 require (
 	cloud.google.com/go v0.64.0
@@ -65,6 +65,7 @@ require (
 	golang.org/x/crypto v0.0.0-20210921155107-089bfa567519
 	golang.org/x/net v0.0.0-20211015210444-4f30a5c0130f
 	golang.org/x/sys v0.0.0-20220520151302-bc2c85ada10a
+	golang.org/x/term v0.1.0
 	golang.org/x/text v0.3.7
 	google.golang.org/genproto v0.0.0-20200815001618-f69a88009b70
 	gopkg.in/AlecAivazis/survey.v1 v1.8.8

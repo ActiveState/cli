@@ -1,4 +1,4 @@
-project: https://platform.activestate.com/ActiveState/cli?branch=main&commitID=7a2fb89c-4bf0-4bb8-b45e-88b0d8af10e4
+project: https://platform.activestate.com/ActiveState/cli?branch=main&commitID=9eee7512-b2ab-4600-b78b-ab0cf2e817d8
 constants:
   - name: CLI_BUILDFLAGS
     value: -ldflags="-s -w"
@@ -34,7 +34,6 @@ constants:
   - name: SET_ENV
     description: The environment settings used throughout our project
     value: |
-      GOFLAGS='-mod=vendor'
       GOPATH="${GOPATH:=`go env GOPATH`}"
       GOROOT="${GOROOT:=`go env GOROOT`}"
       export CGO_ENABLED=0
@@ -49,14 +48,33 @@ constants:
 scripts:
   - name: install-deps
     language: bash
+    if: ne .Shell "cmd"
     value: |
-      export GO111MODULE=on
-      goflags="${GOFLAGS}"; unset GOFLAGS
-      GOFLAGS="${goflags}"
-      pushd ~
-      go install github.com/ActiveState/gozip/cmd/gozip@e455986
-      popd
-      $scripts.install-deps-os
+      if ! type "gozip" &> /dev/null; then
+        echo "gozip was not found on your PATH, installing .."
+        go install github.com/ActiveState/gozip/cmd/gozip@e455986
+      fi
+  - name: install-deps-dev
+    language: bash
+    if: ne .Shell "cmd"
+    value: |
+      if ! type "go" &> /dev/null; then
+        echo "go is not installed. Please install Go version 1.20 or above."
+        exit 1
+      fi
+      if ! type "golangci-lint" &> /dev/null; then
+        echo "golangci-lint was not found on your PATH, installing .."
+        go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.51.2
+      fi
+      git config core.hooksPath .githooks
+      if ! type "swagger" &> /dev/null; then
+        echo "swagger was not found on your PATH, installing .."
+        go install github.com/go-swagger/go-swagger/cmd/swagger@v0.27.0
+      fi
+      if ! type "actionlint" &> /dev/null; then
+        echo "actionlint was not found on your PATH, installing .."
+        go install github.com/rhysd/actionlint/cmd/actionlint@v1.6.23
+      fi
   - name: install-deps-os
     language: bash
     if: ne .OS.Name "Linux"
@@ -68,7 +86,7 @@ scripts:
     value: |
       set -e
       $constants.SET_ENV
-      go run scripts/constants-generator/main.go -- internal/constants/generated.go
+      go run scripts/constants-generator/main.go ${@} -- internal/constants/generated.go
   - name: build
     language: bash
     description: Builds the project with the host OS as the target OS.
@@ -391,23 +409,8 @@ events:
   - name: activate
     if: ne .Shell "cmd"
     value: |
-      if ! type "go" &> /dev/null; then
-        echo "go is not installed. Please install Go version 1.11 or above."
-        exit 1
-      fi
-      if ! type "golangci-lint" &> /dev/null; then
-        echo "golangci-lint was not found on your PATH, installing .."
-        go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.43.0
-      fi
-      git config core.hooksPath .githooks
-      if ! type "swagger" &> /dev/null; then
-        echo "swagger was not found on your PATH, installing .."
-        go install github.com/go-swagger/go-swagger/cmd/swagger@v0.27.0
-      fi
-      if ! type "actionlint" &> /dev/null; then
-        echo "actionlint was not found on your PATH, installing .."
-        go install github.com/rhysd/actionlint/cmd/actionlint@v1.6.22
-      fi
+      $scripts.install-deps-dev
+      $scripts.install-deps
   - name: file-changed
     scope: ["internal/locale/locales"]
     value: build
