@@ -1240,8 +1240,8 @@ err_incompatible_move_file_dir:
   other: |
     Could not move [NOTICE]{{.V0}}[/RESET] to [NOTICE]{{.V1}}[/RESET].  One is a file, the other a directory.
     This indicates that the requested build may be corrupted.
-err_init_file_exists:
-  other: The target directory '[NOTICE]{{.V0}}[/RESET]' already contains an activestate.yaml. Please change the current working directory or use the --path flag.
+err_init_lang:
+  other: "Invalid language: {{.V0}}@{{.V1}}"
 init_success:
   other: |
     Project '[NOTICE]{{.V0}}/{{.V1}}[/RESET]' has been successfully initialized at '[NOTICE]{{.V2}}[/RESET]'.

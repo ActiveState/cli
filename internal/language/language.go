@@ -171,7 +171,7 @@ func (l *Language) Recognized() bool {
 // Validate ensures that the current language is recognized
 func (l *Language) Validate() error {
 	if !l.Recognized() {
-		return UnrecognizedLanguageError(l.String(), RecognizedNames())
+		return UnrecognizedLanguageError(l.String(), RecognizedSupportedsNames())
 	}
 	return nil
 }
