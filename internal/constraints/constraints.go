@@ -42,10 +42,6 @@ func NewConditional() *Conditional {
 	return c
 }
 
-const (
-	varTag = "vars"
-)
-
 func NewPrimeConditional(vs interface{}) *Conditional {
 	c := NewConditional()
 
