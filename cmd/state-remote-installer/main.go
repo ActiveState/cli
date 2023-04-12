@@ -94,7 +94,7 @@ func main() {
 		return
 	}
 
-	an = sync.New(cfg, nil)
+	an = sync.New(cfg, nil, nil)
 
 	// Set up prompter
 	prompter := prompt.New(true, an)

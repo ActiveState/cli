@@ -73,7 +73,7 @@ func New(cfg *config.Instance, an *sync.Client, auth *authentication.Auth) (*Res
 
 	usageChecker := rtusage.NewChecker(cfg, auth)
 
-	anForClient := sync.New(cfg, auth)
+	anForClient := sync.New(cfg, auth, nil)
 	return &Resolver{
 		cfg,
 		pollDep,

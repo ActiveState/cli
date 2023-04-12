@@ -66,7 +66,7 @@ func main() {
 	}
 
 	rollbar.SetConfig(cfg)
-	an = sync.New(cfg, nil)
+	an = sync.New(cfg, nil, nil)
 
 	out, err := output.New("", &output.Config{
 		OutWriter: os.Stdout,

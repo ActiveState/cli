@@ -28,7 +28,7 @@ import (
 type Client struct {
 	svcModel         *model.SvcModel
 	auth             *authentication.Auth
-	output           string
+	output           output.Outputer
 	projectNameSpace string
 	eventWaitGroup   *sync.WaitGroup
 	sessionToken     string
@@ -44,11 +44,7 @@ func New(svcModel *model.SvcModel, cfg *config.Instance, auth *authentication.Au
 		eventWaitGroup: &sync.WaitGroup{},
 	}
 
-	o := string(output.PlainFormatName)
-	if out.Type() != "" {
-		o = string(out.Type())
-	}
-	a.output = o
+	a.output = out
 	a.projectNameSpace = projectNameSpace
 	a.auth = auth
 
@@ -108,10 +104,16 @@ func (a *Client) sendEvent(category, action, label string, dims ...*dimensions.V
 	}
 
 	dim := dimensions.NewDefaultDimensions(a.projectNameSpace, a.sessionToken, a.updateTag)
-	dim.OutputType = &a.output
+	outputType := string(output.PlainFormatName)
+	if a.output.Type() != "" {
+		outputType = string(a.output.Type())
+	}
+	dim.OutputType = &outputType
 	dim.UserID = &userID
 	dim.Sequence = p.IntP(a.sequence)
 	a.sequence++
+	dim.CI = p.BoolP(condition.OnCI())
+	dim.Interactive = p.BoolP(a.output.Config().Interactive)
 	dim.Merge(dims...)
 
 	dimMarshalled, err := dim.Marshal()

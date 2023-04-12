@@ -20,6 +20,7 @@ import (
 	configMediator "github.com/ActiveState/cli/internal/mediators/config"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/osutils"
+	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/ActiveState/cli/internal/rtutils/p"
 	"github.com/ActiveState/cli/internal/singleton/uniqid"
@@ -44,16 +45,18 @@ type Client struct {
 	reporters        []Reporter
 	sequence         int
 	auth             *authentication.Auth
+	output           output.Outputer
 }
 
 var _ analytics.Dispatcher = &Client{}
 
 // New initializes the analytics instance with all custom dimensions known at this time
-func New(cfg *config.Instance, auth *authentication.Auth) *Client {
+func New(cfg *config.Instance, auth *authentication.Auth, out output.Outputer) *Client {
 	a := &Client{
 		eventWaitGroup: &sync.WaitGroup{},
 		sendReports:    true,
 		auth:           auth,
+		output:         out,
 	}
 
 	installSource, err := storage.InstallSource()
@@ -93,6 +96,11 @@ func New(cfg *config.Instance, auth *authentication.Auth) *Client {
 		userID = string(*auth.UserID())
 	}
 
+	interactive := false
+	if out != nil {
+		interactive = out.Config().Interactive
+	}
+
 	customDimensions := &dimensions.Values{
 		Version:       p.StrP(constants.Version),
 		BranchName:    p.StrP(constants.BranchName),
@@ -107,6 +115,8 @@ func New(cfg *config.Instance, auth *authentication.Auth) *Client {
 		InstanceID:    p.StrP(instanceid.ID()),
 		Command:       p.StrP(osutils.ExecutableName()),
 		Sequence:      p.IntP(0),
+		CI:            p.BoolP(condition.OnCI()),
+		Interactive:   p.BoolP(interactive),
 	}
 
 	a.customDimensions = customDimensions

@@ -90,7 +90,7 @@ func run(cfg *config.Instance) error {
 	args := os.Args
 
 	auth := authentication.New(cfg)
-	an := anaSync.New(cfg, auth)
+	an := anaSync.New(cfg, auth, nil)
 	defer an.Wait()
 
 	out, err := output.New("", &output.Config{
