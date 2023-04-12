@@ -45,7 +45,6 @@ type Client struct {
 	reporters        []Reporter
 	sequence         int
 	auth             *authentication.Auth
-	output           output.Outputer
 }
 
 var _ analytics.Dispatcher = &Client{}
@@ -56,7 +55,6 @@ func New(cfg *config.Instance, auth *authentication.Auth, out output.Outputer) *
 		eventWaitGroup: &sync.WaitGroup{},
 		sendReports:    true,
 		auth:           auth,
-		output:         out,
 	}
 
 	installSource, err := storage.InstallSource()

@@ -28,13 +28,15 @@ import (
 type Client struct {
 	svcModel         *model.SvcModel
 	auth             *authentication.Auth
-	output           output.Outputer
+	output           string
 	projectNameSpace string
 	eventWaitGroup   *sync.WaitGroup
 	sessionToken     string
 	updateTag        string
 	closed           bool
 	sequence         int
+	ci               bool
+	interactive      bool
 }
 
 var _ analytics.Dispatcher = &Client{}
@@ -44,9 +46,15 @@ func New(svcModel *model.SvcModel, cfg *config.Instance, auth *authentication.Au
 		eventWaitGroup: &sync.WaitGroup{},
 	}
 
-	a.output = out
+	o := string(output.PlainFormatName)
+	if out.Type() != "" {
+		o = string(out.Type())
+	}
+	a.output = o
 	a.projectNameSpace = projectNameSpace
 	a.auth = auth
+	a.ci = condition.OnCI()
+	a.interactive = out.Config().Interactive
 
 	if condition.InUnitTest() {
 		return a
@@ -104,16 +112,12 @@ func (a *Client) sendEvent(category, action, label string, dims ...*dimensions.V
 	}
 
 	dim := dimensions.NewDefaultDimensions(a.projectNameSpace, a.sessionToken, a.updateTag)
-	outputType := string(output.PlainFormatName)
-	if a.output.Type() != "" {
-		outputType = string(a.output.Type())
-	}
-	dim.OutputType = &outputType
+	dim.OutputType = &a.output
 	dim.UserID = &userID
 	dim.Sequence = p.IntP(a.sequence)
 	a.sequence++
-	dim.CI = p.BoolP(condition.OnCI())
-	dim.Interactive = p.BoolP(a.output.Config().Interactive)
+	dim.CI = &a.ci
+	dim.Interactive = &a.interactive
 	dim.Merge(dims...)
 
 	dimMarshalled, err := dim.Marshal()
