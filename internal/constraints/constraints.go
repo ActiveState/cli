@@ -3,6 +3,7 @@ package constraints
 import (
 	"bytes"
 	"fmt"
+	"reflect"
 	"regexp"
 	"sort"
 	"strings"
@@ -12,7 +13,6 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/pkg/projectfile"
-	"github.com/ActiveState/cli/pkg/projectfile/vars"
 	"github.com/thoas/go-funk"
 )
 
@@ -42,44 +42,36 @@ func NewConditional() *Conditional {
 	return c
 }
 
-func NewPrimeConditional(vs *vars.Vars) *Conditional {
+const (
+	varTag = "vars"
+)
+
+func NewPrimeConditional(vs interface{}) *Conditional {
 	c := NewConditional()
-	/*c.RegisterParam("Project", map[string]string{ // map[string]interface{} should also work here
-		"Owner":     pjOwner,
-		"Name":      pjName,
-		"Namespace": pjNamespace,
-		"Url":       pjURL,
-		"Commit":    pjCommit,
-		"Branch":    pjBranch,
-		"Path":      pjPath,
 
-		// Legacy
-		"NamespacePrefix": pjNamespace,
-	})
-	osVersion, err := sysinfo.OSVersion()
-	if err != nil {
-		multilog.Error("Could not detect OSVersion: %v", err)
+	v := reflect.ValueOf(vs)
+	if v.Kind() == reflect.Ptr {
+		v = v.Elem()
 	}
-	c.RegisterParam("OS", map[string]interface{}{
-		"Name":         sysinfo.OS().String(),
-		"Version":      osVersion,
-		"Architecture": sysinfo.Architecture().String(),
-	})
-	c.RegisterParam("Shell", subshellName)*/
+	to := v.Type()
+	fields := reflect.VisibleFields(to)
 
-	/*c.RegisterFunc("Mixin", func() map[string]interface{} { // looks like lazy loading
-		res := map[string]string{
-			"Name":  "",
-			"Email": "",
+	for _, f := range fields {
+		sv := v.FieldByIndex(f.Index)
+		if sv.Kind() == reflect.Ptr {
+			sv = sv.Elem()
 		}
-		if a.Authenticated() {
-			res["Name"] = a.WhoAmI()
-			res["Email"] = a.Email()
+		sto := sv.Type()
+
+		switch sto.Kind() {
+		case reflect.Func:
+			c.RegisterFunc(f.Name, sv.Interface())
+
+		default:
+			c.RegisterParam(f.Name, sv.Interface())
 		}
-		return map[string]interface{}{
-			"User": res,
-		}
-	})*/
+	}
+
 	return c
 }
 

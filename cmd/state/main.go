@@ -216,12 +216,11 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 	// Set up conditional, which accesses a lot of primer data
 	sshell := subshell.New(cfg)
 
-	projVars := vars.New(auth, pj, sshell.Shell())
+	projVars := vars.New(auth, vars.NewProject(pj), sshell.Shell())
 
 	conditional := constraints.NewPrimeConditional(projVars)
 	project.RegisterConditional(conditional)
-	project.RegisterComplexExpander(projVars)
-	//project.RegisterExpander("mixin", project.NewMixin(auth).Expander)
+	//project.RegisterComplexExpander(projVars)
 	project.RegisterExpander("secrets", project.NewSecretPromptingExpander(secretsapi.Get(), prompter, cfg, auth))
 
 	// Run the actual command
