@@ -428,7 +428,7 @@ func (suite *AnalyticsIntegrationTestSuite) TestInputError() {
 
 	for _, event := range events {
 		if event.Category == anaConst.CatDebug && event.Action == anaConst.ActCommandInputError {
-			suite.Equal("state clean uninstall --mono", *event.Dimensions.Trigger)
+			suite.Equal("state clean uninstall --mono", event.Label)
 		}
 	}
 }

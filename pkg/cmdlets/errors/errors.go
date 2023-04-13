@@ -128,9 +128,9 @@ func ReportError(err error, cmd *captain.Command, an analytics.Dispatcher) {
 	_, hasMarshaller := err.(output.Marshaller)
 
 	cmdName := cmd.Name()
-	childCmd, err := cmd.Find(os.Args[1:])
-	if err != nil {
-		logging.Error("Could not find child command: %v", err)
+	childCmd, findErr := cmd.Find(os.Args[1:])
+	if findErr != nil {
+		logging.Error("Could not find child command: %v", findErr)
 	}
 
 	var flagNames []string
