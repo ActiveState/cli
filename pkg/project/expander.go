@@ -1,23 +1,19 @@
 package project
 
 import (
-	"path/filepath"
 	"regexp"
 	"runtime"
 	"strings"
 
+	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/constraints"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/osutils"
-	"github.com/ActiveState/cli/internal/scriptfile"
-	"github.com/ActiveState/cli/pkg/platform/authentication"
-	"github.com/ActiveState/cli/pkg/projectfile"
-
 	"github.com/ActiveState/cli/internal/rxutils"
-
-	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/constraints"
+	"github.com/ActiveState/cli/internal/scriptfile"
+	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 type Expansion struct {
@@ -47,7 +43,7 @@ func (ctx *Expansion) ApplyWithMaxDepth(s string, depth int) (string, error) {
 		variable = groups[0]
 
 		if len(groups) == 2 {
-			category = "toplevel"
+			category = TopLevelExpanderName
 			name = groups[1]
 		}
 		if len(groups) > 2 {
@@ -181,38 +177,6 @@ func expandPath(name string, script *Script) (string, error) {
 	return sf.Filename(), nil
 }
 
-// userExpander
-func userExpander(auth *authentication.Auth, element string) string {
-	if element == "name" {
-		return auth.WhoAmI()
-	}
-	if element == "email" {
-		return auth.Email()
-	}
-	if element == "jwt" {
-		return auth.BearerToken()
-	}
-	return ""
-}
-
-// Mixin provides expansions that are not sourced from a project file
-type Mixin struct {
-	auth *authentication.Auth
-}
-
-// NewMixin creates a Mixin object providing extra expansions
-func NewMixin(auth *authentication.Auth) *Mixin {
-	return &Mixin{auth}
-}
-
-// Expander expands mixin variables
-func (m *Mixin) Expander(_ string, name string, meta string, _ bool, _ *Expansion) (string, error) {
-	if name == "user" {
-		return userExpander(m.auth, meta), nil
-	}
-	return "", nil
-}
-
 // ConstantExpander expands constants defined in the project-file.
 func ConstantExpander(_ string, name string, meta string, isFunction bool, ctx *Expansion) (string, error) {
 	projectFile := ctx.Project.Source()
@@ -228,41 +192,6 @@ func ConstantExpander(_ string, name string, meta string, isFunction bool, ctx *
 	return "", nil
 }
 
-// ProjectExpander expands constants defined in the project-file.
-func ProjectExpander(_ string, name string, _ string, isFunction bool, ctx *Expansion) (string, error) {
-	if !isFunction {
-		return "", nil
-	}
-
-	project := ctx.Project
-	switch name {
-	case "url":
-		return project.URL(), nil
-	case "commit":
-		return project.CommitID(), nil
-	case "branch":
-		return project.BranchName(), nil
-	case "owner":
-		return project.Namespace().Owner, nil
-	case "name":
-		return project.Namespace().Project, nil
-	case "namespace":
-		return project.Namespace().String(), nil
-	case "path":
-		path := project.Source().Path()
-		if path == "" {
-			return path, nil
-		}
-		dir := filepath.Dir(path)
-		if ctx.BashifyPaths {
-			return osutils.BashifyPath(dir)
-		}
-		return dir, nil
-	}
-
-	return "", nil
-}
-
 func TopLevelExpander(variable string, name string, _ string, _ bool, ctx *Expansion) (string, error) {
 	projectFile := ctx.Project.Source()
 	switch name {
@@ -270,6 +199,21 @@ func TopLevelExpander(variable string, name string, _ string, _ bool, ctx *Expan
 		return projectFile.Project, nil
 	case "lock":
 		return projectFile.Lock, nil
+	default:
+		if v, ok := topLevelLookup[name]; ok {
+			return v, nil
+		}
 	}
 	return variable, nil
+}
+
+func MakeExpanderFuncFromMap(m map[string]map[string]string) ExpanderFunc {
+	return func(v, name, meta string, isFunc bool, ctx *Expansion) (string, error) {
+		if sub, ok := m[name]; ok {
+			if v, ok := sub[meta]; ok {
+				return v, nil
+			}
+		}
+		return "", nil
+	}
 }

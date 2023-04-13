@@ -42,10 +42,10 @@ func NewConditional() *Conditional {
 	return c
 }
 
-func NewPrimeConditional(vs interface{}) *Conditional {
+func NewPrimeConditional(val interface{}) *Conditional {
 	c := NewConditional()
 
-	v := reflect.ValueOf(vs)
+	v := reflect.ValueOf(val)
 	if v.Kind() == reflect.Ptr {
 		v = v.Elem()
 	}

@@ -220,7 +220,7 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 
 	conditional := constraints.NewPrimeConditional(projVars)
 	project.RegisterConditional(conditional)
-	//project.RegisterComplexExpander(projVars)
+	project.RegisterStruct(projVars)
 	project.RegisterExpander("secrets", project.NewSecretPromptingExpander(secretsapi.Get(), prompter, cfg, auth))
 
 	// Run the actual command
