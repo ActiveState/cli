@@ -127,32 +127,36 @@ func ReportError(err error, cmd *captain.Command, an analytics.Dispatcher) {
 
 	_, hasMarshaller := err.(output.Marshaller)
 
+	cmdName := cmd.Name()
+	childCmd, err := cmd.Find(os.Args[1:])
+	if err != nil {
+		logging.Error("Could not find child command: %v", err)
+	}
+
+	var flagNames []string
+	for _, flag := range cmd.ActiveFlags() {
+		flagNames = append(flagNames, fmt.Sprintf("--%s", flag.Name))
+	}
+
+	label := []string{cmdName}
+	if childCmd != nil {
+		label = append(label, childCmd.UseFull())
+	}
+	label = append(label, flagNames...)
+
 	// Log error if this isn't a user input error
+	var action string
 	if !locale.IsInputError(err) {
 		multilog.Critical("Returning error:\n%s\nCreated at:\n%s", errs.Join(err, "\n").Error(), stack)
+		action = anaConst.ActCommandError
 	} else {
-		cmdName := cmd.Name()
-		childCmd, err := cmd.Find(os.Args[1:])
-		if err != nil {
-			logging.Error("Could not find child command: %v", err)
-		}
-
-		var flagNames []string
-		for _, flag := range cmd.ActiveFlags() {
-			flagNames = append(flagNames, fmt.Sprintf("--%s", flag.Name))
-		}
-
-		trigger := []string{cmdName}
-		if childCmd != nil {
-			trigger = append(trigger, childCmd.UseFull())
-		}
-		trigger = append(trigger, flagNames...)
-
-		logging.Debug("Reporting input error:\n%s\nCreated at:\n%s", errs.Join(err, "\n").Error(), stack)
-		an.Event(anaConst.CatDebug, anaConst.ActInputError, &dimensions.Values{
-			Trigger: p.StrP(strings.Join(trigger, " ")),
-		})
+		action = anaConst.ActCommandInputError
 	}
+
+	logging.Debug("Reporting error:\n%s\nCreated at:\n%s", errs.Join(err, "\n").Error(), stack)
+	an.EventWithLabel(anaConst.CatDebug, action, strings.Join(label, " "), &dimensions.Values{
+		Error: p.StrP(err.Error()),
+	})
 
 	if !locale.HasError(err) && isErrs && !hasMarshaller {
 		multilog.Error("MUST ADDRESS: Error does not have localization: %s", errs.Join(err, "\n").Error())

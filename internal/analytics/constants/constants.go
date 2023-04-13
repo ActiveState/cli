@@ -132,8 +132,11 @@ const ActOfflineInstallerAbort = "aborted"
 // CatDebug is the event category used for all debug events
 const CatDebug = "debug"
 
-// ActInputError is the event action used for input errors
-const ActInputError = "input-error"
+// ActCommandErorr is the event action used for command errors
+const ActCommandError = "command-error"
+
+// ActCommandInputError is the event action used for command input errors
+const ActCommandInputError = "command-input-error"
 
 // UpdateLabelSuccess is the sent if an auto-update was successful
 const UpdateLabelSuccess = "success"
