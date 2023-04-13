@@ -2,10 +2,16 @@ package logging
 
 import (
 	"io/fs"
+	"io/ioutil"
+	"os"
+	"path/filepath"
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
+
+	"github.com/ActiveState/cli/internal/constants"
 )
 
 var LogPrefixRx = regexp.MustCompile(`^[a-zA-Z\-]+`)
@@ -38,4 +44,47 @@ func rotateLogs(files []fs.FileInfo, timeCutoff time.Time, amountCutoff int) []f
 	}
 
 	return rotate
+}
+
+func rotateLogsOnDisk() {
+	// Clean up old log files
+	logDir := filepath.Dir(FilePath())
+	files, err := ioutil.ReadDir(logDir)
+	if err != nil && !os.IsNotExist(err) {
+		Error("Could not scan config dir to clean up stale logs: %v", err)
+		return
+	}
+
+	// Prevent running over this logic too often as it affects performance
+	// https://activestatef.atlassian.net/browse/DX-1516
+	if len(files) < 30 {
+		return
+	}
+
+	rotate := rotateLogs(files, time.Now().Add(-time.Hour), 10)
+	for _, file := range rotate {
+		if err := os.Remove(filepath.Join(logDir, file.Name())); err != nil {
+			Error("Could not clean up old log: %s, error: %v", file.Name(), err)
+		}
+	}
+}
+
+// RotateLogListener rotates logs on a timer.
+// Run this as a Go routine.
+func RotateLogTimer() {
+	timeout := 1 * time.Minute
+	if durationString := os.Getenv(constants.SvcLogRotateTimerDurationEnvVarName); durationString != "" {
+		if duration, err := strconv.Atoi(durationString); err == nil {
+			timeout = time.Duration(duration) * time.Second
+		}
+	}
+
+	rotateLogsOnDisk()
+	for {
+		tick := time.Tick(timeout)
+		select {
+		case <-tick:
+			rotateLogsOnDisk()
+		}
+	}
 }

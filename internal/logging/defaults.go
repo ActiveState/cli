@@ -5,7 +5,6 @@ package logging
 
 import (
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -100,26 +99,4 @@ func init() {
 	log.SetOutput(&writer{})
 
 	Debug("Args: %v", os.Args)
-
-	// Clean up old log files
-	logDir := filepath.Dir(FilePath())
-	files, err := ioutil.ReadDir(logDir)
-	if err != nil && !os.IsNotExist(err) {
-		Error("Could not scan config dir to clean up stale logs: %v", err)
-		return
-	}
-
-	// Prevent running over this logic too often as it affects performance
-	// https://activestatef.atlassian.net/browse/DX-1516
-	if len(files) < 30 {
-		return
-	}
-
-	rotate := rotateLogs(files, time.Now().Add(-time.Hour), 10)
-	for _, file := range rotate {
-		if err := os.Remove(filepath.Join(logDir, file.Name())); err != nil {
-			Error("Could not clean up old log: %s, error: %v", file.Name(), err)
-		}
-	}
-
 }
