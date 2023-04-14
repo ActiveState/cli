@@ -54,16 +54,30 @@ func NewProject(pj projectDataProvider) *ProjectData {
 	return project
 }
 
+type OSVersion struct {
+	Name    string
+	Version string
+	Major   int
+	Minor   int
+	Micro   int
+}
+
 type OS struct {
 	Name         string
-	Version      *sysinfo.OSVersionInfo
+	Version      OSVersion
 	Architecture string
 }
 
 func NewOS(osVersion *sysinfo.OSVersionInfo) *OS {
 	return &OS{
-		Name:         sysinfo.OS().String(),
-		Version:      osVersion,
+		Name: sysinfo.OS().String(),
+		Version: OSVersion{
+			Name:    osVersion.Name,
+			Version: osVersion.Version,
+			Major:   osVersion.Major,
+			Minor:   osVersion.Minor,
+			Micro:   osVersion.Micro,
+		},
 		Architecture: sysinfo.Architecture().String(),
 	}
 }
@@ -71,11 +85,23 @@ func NewOS(osVersion *sysinfo.OSVersionInfo) *OS {
 type User struct {
 	Name  string
 	Email string
+	JWT   string
 }
 
 type Mixin struct {
-	User    *User
-	Example string
+	auth *authentication.Auth
+	User *User
+}
+
+func NewMixin(auth *authentication.Auth) *Mixin {
+	return &Mixin{
+		auth: auth,
+		User: &User{
+			Name:  auth.WhoAmI(),
+			Email: auth.Email(),
+			JWT:   auth.BearerToken(),
+		},
+	}
 }
 
 type Vars struct {
@@ -91,19 +117,10 @@ func New(auth *authentication.Auth, project *ProjectData, subshellName string) *
 		multilog.Error("Could not detect OSVersion: %v", err)
 	}
 
-	mixin := func() *Mixin {
-		return &Mixin{
-			User: &User{
-				Name:  "NAME",
-				Email: "EMAIL",
-			},
-			Example: "EXAMPLE",
-		}
-	}
 	return &Vars{
 		Project: project,
 		OS:      NewOS(osVersion),
 		Shell:   subshellName,
-		Mixin:   mixin,
+		Mixin:   func() *Mixin { return NewMixin(auth) },
 	}
 }

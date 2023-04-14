@@ -1,6 +1,8 @@
 package project
 
 import (
+	"fmt"
+	"reflect"
 	"regexp"
 	"runtime"
 	"strings"
@@ -207,6 +209,52 @@ func TopLevelExpander(variable string, name string, _ string, _ bool, ctx *Expan
 	return variable, nil
 }
 
+func makeStringMap(structure reflect.Type, val reflect.Value) map[string]string {
+	m := make(map[string]string)
+	fields := reflect.VisibleFields(structure)
+
+	for _, f := range fields {
+		if !f.IsExported() {
+			continue
+		}
+
+		subValue := val.FieldByIndex(f.Index)
+		m[strings.ToLower(f.Name)] = fmt.Sprintf("%v", subValue.Interface())
+	}
+
+	return m
+}
+
+func makeStringMapMap(structure reflect.Type, value reflect.Value) map[string]map[string]string {
+	m := make(map[string]map[string]string)
+	fields := reflect.VisibleFields(structure)
+
+	for _, f := range fields {
+		if !f.IsExported() {
+			continue
+		}
+
+		subValue := value.FieldByIndex(f.Index)
+		if subValue.Kind() == reflect.Ptr {
+			subValue = subValue.Elem()
+		}
+		subType := subValue.Type()
+
+		switch subType.Kind() {
+		case reflect.Struct:
+			// Vars.OS.Version.(Name)
+			m[strings.ToLower(f.Name)] = makeStringMap(subType, subValue)
+
+		default:
+			m[strings.ToLower(f.Name)] = map[string]string{
+				"": fmt.Sprintf("%v", value.Interface()),
+			}
+		}
+	}
+
+	return m
+}
+
 func MakeExpanderFuncFromMap(m map[string]map[string]string) ExpanderFunc {
 	return func(v, name, meta string, isFunc bool, ctx *Expansion) (string, error) {
 		if sub, ok := m[name]; ok {
@@ -215,5 +263,29 @@ func MakeExpanderFuncFromMap(m map[string]map[string]string) ExpanderFunc {
 			}
 		}
 		return "", nil
+	}
+}
+
+func MakeExpanderFuncFromFunc(fn reflect.Type, val reflect.Value) ExpanderFunc {
+	return func(v, name, meta string, isFunc bool, ctx *Expansion) (string, error) {
+		vals := val.Call(nil)
+		if len(vals) > 1 {
+			return "", vals[1].Interface().(error)
+		}
+		val := vals[0]
+		if val.Kind() == reflect.Ptr {
+			val = val.Elem()
+		}
+
+		switch val.Kind() {
+		case reflect.Struct:
+			// Vars.OS.(Version).Name
+			m := makeStringMapMap(val.Type(), val)
+			expandFromMap := MakeExpanderFuncFromMap(m)
+			return expandFromMap(v, name, meta, isFunc, ctx)
+
+		default:
+			return fmt.Sprintf("%v", val.Interface()), nil
+		}
 	}
 }
