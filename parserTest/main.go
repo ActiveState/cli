@@ -63,10 +63,6 @@ func runParser() error {
 
 	fmt.Println(string(data))
 
-	myInstance := MyStruct{mySlice: []int{1, 2, 3}}
-	AppendToSlice(&myInstance, 4)
-	fmt.Println(myInstance.mySlice) // Output: [1 2 3 4]
-
 	return nil
 }
 

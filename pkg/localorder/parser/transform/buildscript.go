@@ -1,8 +1,6 @@
 package transform
 
 import (
-	"fmt"
-
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/pkg/localorder/parser"
 	model "github.com/ActiveState/cli/pkg/platform/api/graphql/model/buildplanner"
@@ -24,6 +22,7 @@ func NewBuildScriptTransformer(ast *parser.Tree) *BuildScriptTransformer {
 
 func (t *BuildScriptTransformer) Transform2() (*model.BuildScript, error) {
 	result := model.NewBuildScript()
+
 	err := t.walkTree(t.ast, result, t.ast.Root)
 	if err != nil {
 		return nil, errs.Wrap(err, "Failed to walk tree")
@@ -66,7 +65,6 @@ func (t *BuildScriptTransformer) walkTree(tree *parser.Tree, result *model.Build
 				return errs.Wrap(err, "Failed to transform argument")
 			}
 		case t.skippableNode(child):
-			fmt.Printf("Skipping node type: %s\n", nodeType.String())
 			continue
 		default:
 			return errs.New("Unexpected node type: %s", nodeType.String())
@@ -83,7 +81,9 @@ func (t *BuildScriptTransformer) walkTree(tree *parser.Tree, result *model.Build
 }
 
 func (t *BuildScriptTransformer) TransformExpression(result *model.BuildScript, node *parser.NodeElement) error {
-	result.Let = &model.LetStatement{}
+	if result.Let == nil {
+		return errs.New("Cannot set runtime on nil LetStatement")
+	}
 	return nil
 }
 
@@ -92,33 +92,7 @@ func (t *BuildScriptTransformer) TransformIdentifier(result *model.BuildScript, 
 		return errs.New("Cannot set runtime on nil LetStatement")
 	}
 
-	switch identifierNode.Literal() {
-	case "runtime":
-		result.Let.Runtime = &model.Runtime{}
-	case "platforms":
-		if result.Let.Runtime == nil {
-			return errs.New("Cannot set platforms on nil Runtime")
-		}
-		if result.Let.Runtime.SolveLegacy == nil {
-			return errs.New("Cannot set platforms on nil SolveLegacy")
-		}
-		if result.Let.Runtime.SolveLegacy.Platforms == nil {
-			fmt.Println("Making platforms")
-			result.Let.Runtime.SolveLegacy.Platforms = make([]string, 0)
-		}
-	case "packages", "languages":
-		if result.Let.Runtime == nil {
-			return errs.New("Cannot set packages on nil Runtime")
-		}
-		if result.Let.Runtime.SolveLegacy == nil {
-			return errs.New("Cannot set packages on nil SolveLegacy")
-		}
-		if result.Let.Runtime.SolveLegacy.Requirements == nil {
-			fmt.Println("Making requirements")
-			result.Let.Runtime.SolveLegacy.Requirements = make([]*model.Requirement, 0)
-		}
-	}
-	t.visited[identifierNode] = true
+	// TODO: Do we need to do anything here?
 
 	return nil
 }
@@ -188,7 +162,6 @@ func (t *BuildScriptTransformer) TransformBinding(result *model.BuildScript, nod
 	}
 
 	for _, c := range node.Children() {
-		fmt.Println("Binding child: ", c.Type().String(), c.Literal())
 		switch c.Type() {
 		case parser.NodeAssignment:
 			err := t.TransformAssignment(result, c)
@@ -284,7 +257,6 @@ func (t *BuildScriptTransformer) TransformList(result *model.BuildScript, node *
 	for _, c := range node.Children() {
 		switch c.Type() {
 		case parser.NodeListElement:
-			fmt.Println("Node list element: ", c.Literal(), " identifier: ", identifier)
 			err := t.TransformString(result, c, identifier)
 			if err != nil {
 				return errs.Wrap(err, "Failed to transform string")
@@ -312,14 +284,12 @@ func (t *BuildScriptTransformer) TransformString(result *model.BuildScript, node
 	}
 
 	for _, c := range node.Children() {
-		fmt.Println("String child: ", c.Type().String(), c.Literal())
 		switch c.Type() {
 		case parser.NodeString:
 			switch identifier {
 			case "platforms":
 				result.Let.Runtime.SolveLegacy.Platforms = append(result.Let.Runtime.SolveLegacy.Platforms, c.Literal())
 			case "requirements", "languages", "packages":
-				fmt.Println("Appending requirements")
 				result.Let.Runtime.SolveLegacy.Requirements = append(result.Let.Runtime.SolveLegacy.Requirements, &model.Requirement{
 					Name: c.Literal(),
 				})
