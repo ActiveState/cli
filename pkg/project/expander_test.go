@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/yaml.v2"
 
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/language"
 
@@ -108,7 +109,7 @@ func TestExpandProject(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		prj.Source().SetPath(fmt.Sprintf(`c:\another\spoofed path\activestate.yaml`))
 		expanded, err = project.ExpandFromProjectBashifyPaths("$project.path()", prj)
-		require.NoError(t, err)
+		require.NoError(t, err, errs.JoinMessage(err))
 		assert.Equal(t, `/c/another/spoofed\ path`, expanded)
 	}
 }
