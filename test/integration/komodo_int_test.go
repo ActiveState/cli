@@ -98,7 +98,7 @@ func (suite *InitIntegrationTestSuite) TestInit_EditorV0() {
 	suite.OnlyRunForTags(tagsuite.Init, tagsuite.Komodo)
 	suite.runInitTest(
 		true,
-		sampleYAMLEditor,
+		"python3",
 		"python3",
 		"--skeleton", "editor",
 	)

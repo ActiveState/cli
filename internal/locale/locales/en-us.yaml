@@ -1240,15 +1240,12 @@ err_incompatible_move_file_dir:
   other: |
     Could not move [NOTICE]{{.V0}}[/RESET] to [NOTICE]{{.V1}}[/RESET].  One is a file, the other a directory.
     This indicates that the requested build may be corrupted.
-err_init_file_exists:
-  other: The target directory '[NOTICE]{{.V0}}[/RESET]' already contains an activestate.yaml. Please change the current working directory or use the --path flag.
+err_init_lang:
+  other: "Invalid language: {{.V0}}@{{.V1}}"
 init_success:
   other: |
     Project '[NOTICE]{{.V0}}/{{.V1}}[/RESET]' has been successfully initialized at '[NOTICE]{{.V2}}[/RESET]'.
-    You should run [ACTIONABLE]`state push`[/RESET] before activating your project for the first time.
-    Once pushed you can activate your project with [ACTIONABLE]`state activate`[/RESET].
-flag_state_init_skeleton_description:
-  other: "The activestate.yaml template to use with project file creation. Accepts: {{.V0}}"
+    You can start using your project with [ACTIONABLE]`state shell`[/RESET] and [ACTIONABLE]`state use`[/RESET].
 arg_state_init_namespace:
   other: org/project
 arg_state_init_namespace_description:
@@ -1263,12 +1260,8 @@ err_wd:
   other: Could not retrieve the working directory
 err_invalid_output_format:
   other: "Invalid output format specified: '[NOTICE]{{.V0}}[/RESET]'; Supported formats: [ACTIONABLE]{{.V1}}[/RESET]"
-err_invalid_skeleton_style:
-  other: "Invalid skeleton style specified: '[NOTICE]{{.V0}}[/RESET]'; Supported styles: [ACTIONABLE]{{.V1}}[/RESET]"
 err_invalid_language:
   other: "Invalid language specified: '[NOTICE]{{.V0}}[/RESET]'; Supported languages: [ACTIONABLE]{{.V1}}[/RESET]"
-err_push_invalid_language:
-  other: "Invalid language specified: '[NOTICE]{{.V0}}[/RESET]', please re-initialize your project by deleting the activestate.yaml and running 'state init' again."
 push_creating_project:
   other: "Creating project [NOTICE]{{.V1}}[/RESET] under [NOTICE]{{.V0}}[/RESET] on the ActiveState Platform"
 push_project_updated:
@@ -1522,8 +1515,6 @@ err_arg_required:
   other: "The following argument is required:\n  Name: [NOTICE]{{.V0}}[/RESET]\n  Description: [NOTICE]{{.V1}}[/RESET]"
 err_init_no_language:
   other: "You need to supply the [NOTICE]language[/RESET] argument, run '[ACTIONABLE]state init --help[/RESET]' for more information."
-err_project_no_commit:
-  other: The activatestate.yaml for the project '[NOTICE]{{.V0}}[/RESET]' does not contain a commit ID. If this project was created with '[NOTICE]state init[/RESET]', please run [ACTIONABLE]`state push`[/RESET] and try again.
 err_bad_platform_version:
   other: You have to supply a platform version.
 platform_added:
@@ -2039,7 +2030,7 @@ runtime_usage_limit_reached:
   other: |
     [WARNING]Heads up! You've reached your runtime limit for [/RESET][ACTIONABLE]{{.V0}}[/RESET][WARNING].[/RESET]
     [WARNING]You can upgrade your plan or enroll in a free trial by visiting: [/RESET][ACTIONABLE]https://platform.activestate.com/upgrade/?org={{.V0}}[/RESET][WARNING].[/RESET]
-    
+
     [WARNING]You are using [/RESET][ACTIONABLE]{{.V1}}[/RESET][WARNING] out of [/RESET][ACTIONABLE]{{.V2}}[/RESET][WARNING] available runtimes.[/RESET]
 
 runtime_limit_reached_title:
