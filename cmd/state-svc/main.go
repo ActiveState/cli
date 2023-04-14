@@ -185,6 +185,8 @@ func runForeground(cfg *config.Instance, an *anaSync.Client, auth *authenticatio
 
 	logFile := logging.FilePath()
 	logging.Debug("Logging to %q", logFile)
+	stopTimer := logging.StartRotateLogTimer()
+	defer stopTimer()
 
 	p := NewService(ctx, cfg, an, auth, logFile)
 
