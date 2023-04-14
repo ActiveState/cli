@@ -1866,6 +1866,8 @@ progress_build_log:
   other: "Build Log [ACTIONABLE]{{.V0}}[/RESET]"
 progress_completed:
   other: "[SUCCESS]✔ All dependencies have been installed and verified[/RESET]"
+progress_failed:
+  other: "[ERROR]x Some dependencies failed to install[/RESET]"
 progress_nothing_to_do:
   other: "Runtime is already up to date"
 unstable_feature_banner:
