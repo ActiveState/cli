@@ -423,13 +423,13 @@ func (suite *AnalyticsIntegrationTestSuite) TestInputError() {
 	events := parseAnalyticsEvents(suite, ts)
 	suite.assertSequentialEvents(events)
 
-	suite.assertNEvents(events, 1, anaConst.CatDebug, anaConst.ActInputError,
+	suite.assertNEvents(events, 1, anaConst.CatDebug, anaConst.ActCommandInputError,
 		fmt.Sprintf("output:\n%s\n%s",
 			cp.Snapshot(), ts.DebugLogs()))
 
 	for _, event := range events {
-		if event.Category == anaConst.CatDebug && event.Action == anaConst.ActInputError {
-			suite.Equal("state clean uninstall --mono", *event.Dimensions.Trigger)
+		if event.Category == anaConst.CatDebug && event.Action == anaConst.ActCommandInputError {
+			suite.Equal("state clean uninstall --mono", event.Label)
 		}
 	}
 }
