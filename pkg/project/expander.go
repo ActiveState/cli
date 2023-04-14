@@ -21,6 +21,7 @@ import (
 const (
 	expandStructTag    = "expand"
 	expandTagOptIsFunc = "isFunc"
+	expandTagOptIsPath = "isPath"
 )
 
 type Expansion struct {
@@ -216,19 +217,26 @@ func TopLevelExpander(variable string, name string, _ string, _ bool, ctx *Expan
 
 type entry struct {
 	isFunc bool
+	isPath bool
 	value  string
 }
 
 func newEntry(tag string, val reflect.Value) entry {
-	var isFunc bool
+	var isFunc, isPath bool
 
 	tParts := strings.Split(tag, ",")
-	if len(tParts) > 1 && strings.Contains(tParts[1], expandTagOptIsFunc) {
-		isFunc = true
+	if len(tParts) > 1 {
+		if strings.Contains(tParts[1], expandTagOptIsFunc) {
+			isFunc = true
+		}
+		if strings.Contains(tParts[1], expandTagOptIsPath) {
+			isPath = true
+		}
 	}
 
 	return entry{
 		isFunc: isFunc,
+		isPath: isPath,
 		value:  fmt.Sprintf("%v", val.Interface()),
 	}
 }
@@ -287,9 +295,15 @@ func MakeExpanderFuncFromMap(m map[string]map[string]entry) ExpanderFunc {
 
 		if sub, ok := m[name]; ok {
 			if e, ok := sub[meta]; ok && isFunc == e.isFunc {
-				return e.value, nil
+				value := e.value
+				if ctx.BashifyPaths && e.isPath {
+					return osutils.BashifyPath(value)
+				}
+
+				return value, nil
 			}
 		}
+
 		return "", nil
 	}
 }
