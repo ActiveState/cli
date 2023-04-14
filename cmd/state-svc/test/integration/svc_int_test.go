@@ -271,17 +271,18 @@ func (suite *SvcIntegrationTestSuite) TestLogRotation() {
 		suite.Require().NoError(err, "must be able to change file modification times")
 	}
 
-	// Override state-svc log duration timer duration from 1 minute to 10 seconds for this test.
-	logRotateTimerDuration := 10
-	os.Setenv(constants.SvcLogRotateTimerDurationEnvVarName, strconv.Itoa(logRotateTimerDuration))
-	defer os.Unsetenv(constants.SvcLogRotateTimerDurationEnvVarName)
+	// Override state-svc log rotation interval from 1 minute to 4 seconds for this test.
+	logRotateInterval := 4 * time.Second
+	os.Setenv(constants.SvcLogRotateIntervalEnvVarName, fmt.Sprintf("%d", logRotateInterval.Milliseconds()))
+	defer os.Unsetenv(constants.SvcLogRotateIntervalEnvVarName)
 
 	// We want the side-effect of spawning state-svc.
 	cp := ts.Spawn("--version")
 	cp.Expect("ActiveState CLI")
 	cp.ExpectExitCode(0)
 
-	time.Sleep(2 * time.Second) // wait for state-svc to perform initial log rotation
+	initialWait := 2 * time.Second
+	time.Sleep(initialWait) // wait for state-svc to perform initial log rotation
 
 	// Verify the log rotation pruned the dummy log files.
 	files, err := ioutil.ReadDir(logDir)
@@ -305,7 +306,7 @@ func (suite *SvcIntegrationTestSuite) TestLogRotation() {
 		suite.Require().NoError(err, "must be able to change file modification times")
 	}
 
-	time.Sleep(time.Duration(logRotateTimerDuration) * time.Second) // wait for another log rotation
+	time.Sleep(logRotateInterval - initialWait) // wait for another log rotation
 
 	// Verify that another log rotation pruned the dummy log files.
 	files, err = ioutil.ReadDir(logDir)

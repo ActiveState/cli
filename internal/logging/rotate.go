@@ -69,12 +69,11 @@ func rotateLogsOnDisk() {
 	}
 }
 
-// RotateLogListener rotates logs on a timer.
 func StartRotateLogTimer() {
-	timeout := 1 * time.Minute
-	if durationString := os.Getenv(constants.SvcLogRotateTimerDurationEnvVarName); durationString != "" {
+	interval := 1 * time.Minute
+	if durationString := os.Getenv(constants.SvcLogRotateIntervalEnvVarName); durationString != "" {
 		if duration, err := strconv.Atoi(durationString); err == nil {
-			timeout = time.Duration(duration) * time.Second
+			interval = time.Duration(duration) * time.Millisecond
 		}
 	}
 
@@ -82,7 +81,7 @@ func StartRotateLogTimer() {
 		rotateLogsOnDisk()
 		for {
 			select {
-			case <-time.After(timeout):
+			case <-time.After(interval):
 				rotateLogsOnDisk()
 			}
 		}
