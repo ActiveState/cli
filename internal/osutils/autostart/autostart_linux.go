@@ -81,7 +81,7 @@ func autostartPath(name string, opts Options) (string, error) {
 	return "", nil
 }
 
-func upgrade(opts Options) error {
+func upgrade(_ string, opts Options) error {
 	if err := legacyDisableOnDesktop(opts.LaunchFileName); err != nil {
 		return errs.Wrap(err, "Could not disable legacy autostart (desktop)")
 	}

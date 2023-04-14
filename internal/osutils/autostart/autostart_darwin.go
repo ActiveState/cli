@@ -58,6 +58,7 @@ func enable(exec string, opts Options) error {
 	if err = fileutils.WriteFile(path, []byte(content)); err != nil {
 		return errs.Wrap(err, "Could not write launch file")
 	}
+
 	return nil
 }
 
@@ -71,10 +72,12 @@ func disable(exec string, opts Options) error {
 		logging.Debug("Autostart is already disabled for %s", opts.Name)
 		return nil
 	}
+
 	path, err := autostartPath(exec, opts)
 	if err != nil {
 		return errs.Wrap(err, "Could not get launch file")
 	}
+
 	return os.Remove(path)
 }
 
@@ -83,6 +86,7 @@ func isEnabled(exec string, opts Options) (bool, error) {
 	if err != nil {
 		return false, errs.Wrap(err, "Could not get launch file")
 	}
+
 	return fileutils.FileExists(path), nil
 }
 
@@ -95,8 +99,23 @@ func autostartPath(exec string, _ Options) (string, error) {
 	return path, nil
 }
 
-func upgrade(opts Options) error {
-	return nil
+func upgrade(exec string, opts Options) error {
+	path, err := autostartPath(exec, opts)
+	if err != nil {
+		return errs.Wrap(err, "Could not get launch file")
+	}
+
+	legacy, err := isLegacyPlist(path)
+	if err != nil {
+		return errs.Wrap(err, "Could not check if legacy plist")
+	}
+
+	if !legacy {
+		return nil
+	}
+
+	logging.Debug("Legacy autostart file found, removing: %s", path)
+	return os.Remove(path)
 }
 
 func installPath(name string) (string, error) {

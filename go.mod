@@ -156,10 +156,10 @@ require (
 	github.com/yusufpapurcu/wmi v1.2.2 // indirect
 	go.mongodb.org/mongo-driver v1.5.3 // indirect
 	go.opencensus.io v0.24.0 // indirect
-	golang.org/x/mod v0.9.0 // indirect
-	golang.org/x/oauth2 v0.6.0 // indirect
-	golang.org/x/time v0.3.0 // indirect
-	golang.org/x/tools v0.7.0 // indirect
+	golang.org/x/mod v0.8.0 // indirect
+	golang.org/x/oauth2 v0.5.0 // indirect
+	golang.org/x/time v0.1.0 // indirect
+	golang.org/x/tools v0.6.0 // indirect
 	google.golang.org/api v0.110.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/grpc v1.53.0 // indirect
@@ -169,6 +169,7 @@ require (
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
+	howett.net/plist v1.0.0
 	lukechampine.com/uint128 v1.1.1 // indirect
 	modernc.org/cc/v3 v3.33.6 // indirect
 	modernc.org/ccgo/v3 v3.9.5 // indirect
