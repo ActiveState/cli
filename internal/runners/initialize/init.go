@@ -68,10 +68,6 @@ func inferLanguage(config projectfile.ConfigGetter) (string, string, bool) {
 }
 
 func (r *Initialize) Run(params *RunParams) error {
-	if err := params.Namespace.Validate(); err != nil {
-		return locale.WrapInputError(err, "init_invalid_namespace_err", "The provided namespace argument is invalid.")
-	}
-
 	logging.Debug("Init: %s/%s %v", params.Namespace.Owner, params.Namespace.Project, params.Private)
 
 	path := params.Path
@@ -83,11 +79,11 @@ func (r *Initialize) Run(params *RunParams) error {
 		}
 	}
 
-	if fileutils.FileExists(filepath.Join(path, constants.ConfigFileName)) {
+	if fileutils.TargetExists(filepath.Join(path, constants.ConfigFileName)) {
 		return locale.NewInputError("err_projectfile_exists")
 	}
 
-	if _, err := fileutils.PrepareDir(path); err != nil {
+	if err := fileutils.MkdirUnlessExists(path); err != nil {
 		return locale.WrapError(err, "err_init_preparedir", "Could not create directory at [NOTICE]{{.V0}}[/RESET]. Error: {{.V1}}", params.Path, err.Error())
 	}
 
@@ -115,8 +111,8 @@ func (r *Initialize) Run(params *RunParams) error {
 			return locale.WrapInputError(err, "err_init_lang", "", languageName, languageVersion)
 		}
 	}
-	err = lang.Validate()
-	if err != nil {
+
+	if err := lang.Validate(); err != nil {
 		if inferred {
 			return locale.WrapError(err, "err_init_lang", "", languageName, languageVersion)
 		} else {
