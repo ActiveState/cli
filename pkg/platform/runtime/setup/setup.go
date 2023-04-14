@@ -569,7 +569,7 @@ func (s *Setup) setupArtifactSubmitFunction(a artifact.ArtifactDownload, ar *art
 		// If artifact has no valid download, just count it as completed and return
 		if strings.HasPrefix(a.UnsignedURI, "s3://as-builds/noop/") ||
 			// Internal namespace artifacts are not to be downloaded
-			ar.Namespace == inventory_models.NamespaceCoreTypeInternal {
+			(ar != nil && ar.Namespace == inventory_models.NamespaceCoreTypeInternal) {
 			logging.Debug("Skipping setup of noop artifact: %s", a.ArtifactID)
 			if _, expected := expectedArtifactInstalls[a.ArtifactID]; expected {
 				if err := s.eventHandler.Handle(events.ArtifactDownloadSkipped{a.ArtifactID}); err != nil {
