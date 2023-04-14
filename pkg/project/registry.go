@@ -54,7 +54,7 @@ func RegisterStruct(val interface{}) error {
 		switch sto.Kind() {
 		case reflect.Struct:
 			// Vars.OS.(Version).Name
-			m := makeStringMapMap(sto, sv)
+			m := makeEntryMapMap(sv)
 			name := strings.ToLower(f.Name)
 			err := RegisterExpander(name, MakeExpanderFuncFromMap(m))
 			if err != nil {
@@ -66,7 +66,7 @@ func RegisterStruct(val interface{}) error {
 
 		case reflect.Func:
 			name := strings.ToLower(f.Name)
-			err := RegisterExpander(name, MakeExpanderFuncFromFunc(sto, sv))
+			err := RegisterExpander(name, MakeExpanderFuncFromFunc(sv))
 			if err != nil {
 				return locale.WrapError(
 					err, "project_expand_register_expander_func",

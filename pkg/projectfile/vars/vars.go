@@ -20,13 +20,13 @@ type projectDataProvider interface {
 }
 
 type ProjectData struct {
-	Namespace string
-	Name      string
-	Owner     string
-	Url       string
-	Commit    string
-	Branch    string
-	Path      string
+	Namespace string `expand:",isFunc"`
+	Name      string `expand:",isFunc"`
+	Owner     string `expand:",isFunc"`
+	Url       string `expand:",isFunc"`
+	Commit    string `expand:",isFunc"`
+	Branch    string `expand:",isFunc"`
+	Path      string `expand:",isFunc"`
 
 	// legacy fields
 	NamespacePrefix string
