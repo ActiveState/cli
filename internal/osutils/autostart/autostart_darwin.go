@@ -20,11 +20,6 @@ const (
 )
 
 func enable(exec string, opts Options) error {
-	err := cleanLegacyFile(exec, opts)
-	if err != nil {
-		return errs.Wrap(err, "Could not clean legacy file")
-	}
-
 	enabled, err := isEnabled(exec, opts)
 	if err != nil {
 		return errs.Wrap(err, "Could not check if app autostart is enabled")
@@ -104,20 +99,7 @@ func autostartPath(exec string, _ Options) (string, error) {
 	return path, nil
 }
 
-func upgrade(opts Options) error {
-	return nil
-}
-
-func installPath(name string) (string, error) {
-	dir, err := installation.ApplicationInstallPath()
-	if err != nil {
-		return "", errs.Wrap(err, "Could not get home directory")
-	}
-	path := filepath.Join(dir, fmt.Sprintf("%s.app", name))
-	return path, nil
-}
-
-func cleanLegacyFile(exec string, opts Options) error {
+func upgrade(exec string, opts Options) error {
 	path, err := autostartPath(exec, opts)
 	if err != nil {
 		return errs.Wrap(err, "Could not get launch file")
@@ -134,4 +116,13 @@ func cleanLegacyFile(exec string, opts Options) error {
 
 	logging.Debug("Legacy autostart file found, removing: %s", path)
 	return os.Remove(path)
+}
+
+func installPath(name string) (string, error) {
+	dir, err := installation.ApplicationInstallPath()
+	if err != nil {
+		return "", errs.Wrap(err, "Could not get home directory")
+	}
+	path := filepath.Join(dir, fmt.Sprintf("%s.app", name))
+	return path, nil
 }
