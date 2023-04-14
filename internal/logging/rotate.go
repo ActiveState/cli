@@ -85,10 +85,10 @@ func StartRotateLogTimer() func() {
 		rotateLogsOnDisk()
 		for {
 			select {
-			case <-time.After(interval):
-				rotateLogsOnDisk()
 			case <-stopTimer:
 				return
+			case <-time.After(interval):
+				rotateLogsOnDisk()
 			}
 		}
 	}()
