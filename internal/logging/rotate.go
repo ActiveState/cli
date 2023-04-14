@@ -71,7 +71,8 @@ func rotateLogsOnDisk() {
 
 var stopTimer chan bool
 
-func StartRotateLogTimer() {
+// StartRotateLogTimer starts log rotation on a timer and returns a function that should be called to stop it.
+func StartRotateLogTimer() func() {
 	interval := 1 * time.Minute
 	if durationString := os.Getenv(constants.SvcLogRotateIntervalEnvVarName); durationString != "" {
 		if duration, err := strconv.Atoi(durationString); err == nil {
@@ -91,8 +92,8 @@ func StartRotateLogTimer() {
 			}
 		}
 	}()
-}
 
-func StopRotateLogTimer() {
-	stopTimer <- true
+	return func() {
+		stopTimer <- true
+	}
 }
