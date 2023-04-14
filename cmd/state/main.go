@@ -11,6 +11,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ActiveState/cli/internal/captain"
+
 	"github.com/ActiveState/cli/cmd/state/internal/cmdtree"
 	anAsync "github.com/ActiveState/cli/internal/analytics/client/async"
 	"github.com/ActiveState/cli/internal/captain"
@@ -233,7 +235,7 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 
 	if childCmd != nil && !childCmd.SkipChecks() {
 		// Auto update to latest state tool version
-		if updated, err := autoUpdate(args, cfg, out); err == nil && updated {
+		if updated, err := autoUpdate(args, cfg, an, out); err == nil && updated {
 			return nil // command will be run by updated exe
 		} else if err != nil {
 			multilog.Error("Failed to autoupdate: %v", err)

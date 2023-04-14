@@ -3,6 +3,7 @@ package update
 import (
 	"os"
 
+	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
@@ -26,6 +27,7 @@ type Update struct {
 	cfg     *config.Instance
 	out     output.Outputer
 	prompt  prompt.Prompter
+	an      analytics.Dispatcher
 }
 
 type primeable interface {
@@ -33,6 +35,7 @@ type primeable interface {
 	primer.Configurer
 	primer.Outputer
 	primer.Prompter
+	primer.Analyticer
 }
 
 func New(prime primeable) *Update {
@@ -41,12 +44,13 @@ func New(prime primeable) *Update {
 		prime.Config(),
 		prime.Output(),
 		prime.Prompt(),
+		prime.Analytics(),
 	}
 }
 
 func (u *Update) Run(params *Params) error {
 	// Check for available update
-	checker := updater.NewDefaultChecker(u.cfg)
+	checker := updater.NewDefaultChecker(u.cfg, u.an)
 	up, err := checker.CheckFor(params.Channel, "")
 	if err != nil {
 		return locale.WrapError(err, "err_update_check", "Could not check for updates.")

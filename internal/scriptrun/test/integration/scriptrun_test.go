@@ -29,15 +29,9 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/ActiveState/cli/internal/testhelpers/outputhelper"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
-	rtMock "github.com/ActiveState/cli/pkg/platform/runtime/mock"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
-
-func init() {
-	mock := rtMock.Init()
-	mock.MockFullRuntime()
-}
 
 type ScriptRunSuite struct {
 	tagsuite.Suite

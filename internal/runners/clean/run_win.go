@@ -12,7 +12,6 @@ import (
 
 	svcApp "github.com/ActiveState/cli/cmd/state-svc/app"
 	"github.com/ActiveState/cli/internal/assets"
-	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/exeutils"
@@ -81,7 +80,7 @@ func (u *Uninstall) runUninstall(params *UninstallParams) error {
 	}
 
 	u.out.Print(locale.Tr("clean_message_windows", logFile.Name()))
-	if params.ConfirmExit {
+	if params.Prompt {
 		u.out.Print(locale.Tl("clean_uninstall_confirm_exit", "Press enter to exit."))
 		fmt.Scanln(p.StrP("")) // Wait for input from user
 	}
@@ -123,12 +122,7 @@ func removeInstall(logFile string, params *UninstallParams, cfg *config.Instance
 	// This is because Windows often thinks the installation.InstallDirMarker and
 	// constants.StateInstallerCmd files are still in use.
 	branchDir := filepath.Dir(filepath.Dir(stateExec))
-	if condition.InTest() && !params.All {
-		// On CI, the installation root also contains cache and config directories, and they should
-		// not be removed. Instead, just remove the installation bin directory.
-		branchDir = filepath.Dir(stateExec)
-	}
-	paths := []string{branchDir}
+	paths := []string{stateExec, branchDir}
 	if params.All {
 		paths = append(paths, cfg.ConfigPath()) // also remove the config directory
 	}

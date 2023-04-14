@@ -1,11 +1,13 @@
 package integration
 
 import (
+	"os"
 	"path/filepath"
 	"runtime"
 	"testing"
 	"time"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/osutils"
@@ -29,6 +31,22 @@ func (suite *UninstallIntegrationTestSuite) testUninstall(all bool) {
 	ts := e2e.New(suite.T(), true)
 	defer ts.Close()
 
+	mockBranchDir := filepath.Join(ts.Dirs.Work, "StateTool", constants.BranchName)
+	mockBinDir := filepath.Join(mockBranchDir, "bin")
+	err := fileutils.Mkdir(mockBinDir)
+	suite.NoError(err)
+
+	ts.Exe = ts.CopyExeToDir(ts.Exe, mockBinDir)
+	ts.SvcExe = ts.CopyExeToDir(ts.SvcExe, mockBinDir)
+	ts.Dirs.Bin = mockBinDir
+
+	defaultMarker := filepath.Join(filepath.Dir(ts.Dirs.Work), installation.InstallDirMarker)
+	err = fileutils.CopyFile(defaultMarker, filepath.Join(mockBranchDir, installation.InstallDirMarker))
+	suite.NoError(err)
+
+	err = os.Remove(filepath.Join(defaultMarker))
+	suite.NoError(err)
+
 	isAdmin, err := osutils.IsAdmin()
 	suite.NoError(err)
 
@@ -39,9 +57,13 @@ func (suite *UninstallIntegrationTestSuite) testUninstall(all bool) {
 	cp.ExpectExitCode(0)
 
 	if all {
-		cp = ts.Spawn("clean", "uninstall", "--all")
+		cp = ts.SpawnWithOpts(
+			e2e.WithArgs("clean", "uninstall", "--all"),
+		)
 	} else {
-		cp = ts.Spawn("clean", "uninstall")
+		cp = ts.SpawnWithOpts(
+			e2e.WithArgs("clean", "uninstall"),
+		)
 	}
 	cp.Expect("You are about to remove")
 	if !all {
@@ -91,7 +113,7 @@ func (suite *UninstallIntegrationTestSuite) testUninstall(all bool) {
 	}
 
 	if fileutils.DirExists(ts.Dirs.Bin) {
-		suite.Fail("system directory should not exist after uninstall")
+		suite.Fail("bin directory should not exist after uninstall")
 	}
 }
 
