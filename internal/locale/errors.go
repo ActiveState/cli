@@ -175,22 +175,6 @@ func ErrorMessage(err error) string {
 	return err.Error()
 }
 
-func InputErrorMessage(err error) string {
-	if err == nil {
-		return ""
-	}
-
-	for err != nil {
-		errInput, ok := err.(ErrorInput)
-		if ok && errInput.InputError() {
-			return ErrorMessage(err)
-		}
-		err = errors.Unwrap(err)
-	}
-
-	return ""
-}
-
 func UnwrapError(err error) []error {
 	var errs []error
 	for err != nil {
