@@ -69,6 +69,8 @@ func rotateLogsOnDisk() {
 	}
 }
 
+var stopTimer chan bool
+
 func StartRotateLogTimer() {
 	interval := 1 * time.Minute
 	if durationString := os.Getenv(constants.SvcLogRotateIntervalEnvVarName); durationString != "" {
@@ -77,13 +79,20 @@ func StartRotateLogTimer() {
 		}
 	}
 
+	stopTimer = make(chan bool)
 	go func() {
 		rotateLogsOnDisk()
 		for {
 			select {
 			case <-time.After(interval):
 				rotateLogsOnDisk()
+			case <-stopTimer:
+				return
 			}
 		}
 	}()
+}
+
+func StopRotateLogTimer() {
+	stopTimer <- true
 }
