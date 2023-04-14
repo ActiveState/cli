@@ -125,7 +125,7 @@ func main() {
 	logging.Debug("Original Args: %v", os.Args)
 	logging.Debug("Processed Args: %v", processedArgs)
 
-	an = sync.New(cfg, nil, nil)
+	an = sync.New(cfg, nil, out)
 	an.Event(AnalyticsFunnelCat, "start")
 
 	params := newParams()
