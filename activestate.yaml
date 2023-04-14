@@ -46,10 +46,6 @@ constants:
     if: ne .OS.Name "Windows"
     value: .sh
 scripts:
-  - name: example
-    language: bash
-    if: eq .OS.Name "Linux"
-    value: echo .Project.Name && echo .OS.Name && echo $os.name && echo $project.path() && echo .Mixin.User.Name
   - name: install-deps
     language: bash
     if: ne .Shell "cmd"

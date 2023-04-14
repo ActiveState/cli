@@ -18,6 +18,11 @@ import (
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
+const (
+	expandStructTag    = "expand"
+	expandTagOptIsFunc = "isFunc"
+)
+
 type Expansion struct {
 	Project      *Project
 	Script       *Script
@@ -209,9 +214,28 @@ func TopLevelExpander(variable string, name string, _ string, _ bool, ctx *Expan
 	return variable, nil
 }
 
-func makeStringMap(structure reflect.Type, val reflect.Value) map[string]string {
-	m := make(map[string]string)
-	fields := reflect.VisibleFields(structure)
+type entry struct {
+	isFunc bool
+	value  string
+}
+
+func newEntry(tag string, val reflect.Value) entry {
+	var isFunc bool
+
+	tParts := strings.Split(tag, ",")
+	if len(tParts) > 1 && strings.Contains(tParts[1], expandTagOptIsFunc) {
+		isFunc = true
+	}
+
+	return entry{
+		isFunc: isFunc,
+		value:  fmt.Sprintf("%v", val.Interface()),
+	}
+}
+
+func makeEntryMap(val reflect.Value) map[string]entry {
+	m := make(map[string]entry)
+	fields := reflect.VisibleFields(val.Type())
 
 	for _, f := range fields {
 		if !f.IsExported() {
@@ -219,15 +243,15 @@ func makeStringMap(structure reflect.Type, val reflect.Value) map[string]string 
 		}
 
 		subValue := val.FieldByIndex(f.Index)
-		m[strings.ToLower(f.Name)] = fmt.Sprintf("%v", subValue.Interface())
+		m[strings.ToLower(f.Name)] = newEntry(f.Tag.Get(expandStructTag), subValue)
 	}
 
 	return m
 }
 
-func makeStringMapMap(structure reflect.Type, value reflect.Value) map[string]map[string]string {
-	m := make(map[string]map[string]string)
-	fields := reflect.VisibleFields(structure)
+func makeEntryMapMap(value reflect.Value) map[string]map[string]entry {
+	m := make(map[string]map[string]entry)
+	fields := reflect.VisibleFields(value.Type())
 
 	for _, f := range fields {
 		if !f.IsExported() {
@@ -243,11 +267,11 @@ func makeStringMapMap(structure reflect.Type, value reflect.Value) map[string]ma
 		switch subType.Kind() {
 		case reflect.Struct:
 			// Vars.OS.Version.(Name)
-			m[strings.ToLower(f.Name)] = makeStringMap(subType, subValue)
+			m[strings.ToLower(f.Name)] = makeEntryMap(subValue)
 
 		default:
-			m[strings.ToLower(f.Name)] = map[string]string{
-				"": fmt.Sprintf("%v", value.Interface()),
+			m[strings.ToLower(f.Name)] = map[string]entry{
+				"": newEntry(f.Tag.Get(expandStructTag), subValue),
 			}
 		}
 	}
@@ -255,18 +279,22 @@ func makeStringMapMap(structure reflect.Type, value reflect.Value) map[string]ma
 	return m
 }
 
-func MakeExpanderFuncFromMap(m map[string]map[string]string) ExpanderFunc {
+func MakeExpanderFuncFromMap(m map[string]map[string]entry) ExpanderFunc {
 	return func(v, name, meta string, isFunc bool, ctx *Expansion) (string, error) {
+		if isFunc && meta == "()" {
+			meta = ""
+		}
+
 		if sub, ok := m[name]; ok {
-			if v, ok := sub[meta]; ok {
-				return v, nil
+			if e, ok := sub[meta]; ok && isFunc == e.isFunc {
+				return e.value, nil
 			}
 		}
 		return "", nil
 	}
 }
 
-func MakeExpanderFuncFromFunc(fn reflect.Type, val reflect.Value) ExpanderFunc {
+func MakeExpanderFuncFromFunc(val reflect.Value) ExpanderFunc {
 	return func(v, name, meta string, isFunc bool, ctx *Expansion) (string, error) {
 		vals := val.Call(nil)
 		if len(vals) > 1 {
@@ -280,7 +308,7 @@ func MakeExpanderFuncFromFunc(fn reflect.Type, val reflect.Value) ExpanderFunc {
 		switch val.Kind() {
 		case reflect.Struct:
 			// Vars.OS.(Version).Name
-			m := makeStringMapMap(val.Type(), val)
+			m := makeEntryMapMap(val)
 			expandFromMap := MakeExpanderFuncFromMap(m)
 			return expandFromMap(v, name, meta, isFunc, ctx)
 
