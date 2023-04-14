@@ -11,10 +11,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ActiveState/cli/cmd/state/internal/cmdtree/intercepts/messenger"
-	"github.com/ActiveState/cli/internal/captain"
-
 	"github.com/ActiveState/cli/cmd/state/internal/cmdtree"
+	"github.com/ActiveState/cli/cmd/state/internal/cmdtree/intercepts/messenger"
 	anAsync "github.com/ActiveState/cli/internal/analytics/client/async"
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/config"
