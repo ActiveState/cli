@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/locale"
 )
 
 // expanderRegistry maps category names to their Expander Func implementations.
@@ -57,7 +58,7 @@ func RegisterStruct(val interface{}) error {
 			name := strings.ToLower(f.Name)
 			err := RegisterExpander(name, MakeExpanderFuncFromMap(m))
 			if err != nil {
-				return errs.Wrap(
+				return locale.WrapError(
 					err, "project_expand_register_expander_map",
 					"Cannot register expander (map)",
 				)
@@ -67,7 +68,7 @@ func RegisterStruct(val interface{}) error {
 			name := strings.ToLower(f.Name)
 			err := RegisterExpander(name, MakeExpanderFuncFromFunc(sto, sv))
 			if err != nil {
-				return errs.Wrap(
+				return locale.WrapError(
 					err, "project_expand_register_expander_func",
 					"Cannot register expander (func)",
 				)
@@ -87,9 +88,9 @@ func RegisterStruct(val interface{}) error {
 func RegisterExpander(handle string, expanderFn ExpanderFunc) error {
 	cleanHandle := strings.TrimSpace(handle)
 	if cleanHandle == "" {
-		return errs.Wrap(ErrExpandBadName, "secrets_expander_err_empty_name")
+		return locale.WrapError(ErrExpandBadName, "secrets_expander_err_empty_name")
 	} else if expanderFn == nil {
-		return errs.Wrap(ErrExpandNoFunc, "secrets_expander_err_undefined")
+		return locale.WrapError(ErrExpandNoFunc, "secrets_expander_err_undefined")
 	}
 	expanderRegistry[cleanHandle] = expanderFn
 	return nil
