@@ -185,7 +185,7 @@ func runForeground(cfg *config.Instance, an *anaSync.Client, auth *authenticatio
 
 	logFile := logging.FilePath()
 	logging.Debug("Logging to %q", logFile)
-	go logging.RotateLogTimer()
+	logging.StartRotateLogTimer()
 
 	p := NewService(ctx, cfg, an, auth, logFile)
 
@@ -236,7 +236,7 @@ func runForeground(cfg *config.Instance, an *anaSync.Client, auth *authenticatio
 }
 
 func runStart(out output.Outputer, argText string) error {
-	go logging.RotateLogTimer()
+	logging.StartRotateLogTimer()
 	if _, err := svcctl.EnsureStartedAndLocateHTTP(argText); err != nil {
 		if errors.Is(err, ipc.ErrInUse) {
 			out.Print("A State Service instance is already running in the background.")
