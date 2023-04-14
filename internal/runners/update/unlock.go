@@ -31,6 +31,10 @@ func NewUnlock(prime primeable) *Unlock {
 }
 
 func (u *Unlock) Run(params *UnlockParams) error {
+	if u.project == nil {
+		return locale.NewInputError("err_no_project")
+	}
+
 	if !u.project.IsLocked() {
 		u.out.Notice(locale.Tl("notice_not_locked", "The State Tool version is not locked for this project."))
 		return nil
