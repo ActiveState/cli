@@ -38,7 +38,12 @@ func RegisterStruct(val interface{}) error {
 	to := v.Type()
 	fields := reflect.VisibleFields(to) // we know this is a struct
 
-	for _, f := range fields { // Vars.(OS).Version.Name
+	// Vars.(OS).Version.Name
+	for _, f := range fields {
+		if !f.IsExported() {
+			continue
+		}
+
 		sv := v.FieldByIndex(f.Index)
 		if sv.Kind() == reflect.Ptr {
 			sv = sv.Elem()
@@ -47,11 +52,26 @@ func RegisterStruct(val interface{}) error {
 
 		switch sto.Kind() {
 		case reflect.Struct:
+			// Vars.OS.(Version).Name
 			m := makeStringMapMap(sto, sv)
-			RegisterExpander(strings.ToLower(f.Name), MakeExpanderFuncFromMap(m))
+			name := strings.ToLower(f.Name)
+			err := RegisterExpander(name, MakeExpanderFuncFromMap(m))
+			if err != nil {
+				return errs.Wrap(
+					err, "project_expand_register_expander_map",
+					"Cannot register expander (map)",
+				)
+			}
 
 		case reflect.Func:
-			//c.RegisterFunc(f.Name, sv.Interface())
+			name := strings.ToLower(f.Name)
+			err := RegisterExpander(name, MakeExpanderFuncFromFunc(sto, sv))
+			if err != nil {
+				return errs.Wrap(
+					err, "project_expand_register_expander_func",
+					"Cannot register expander (func)",
+				)
+			}
 
 		default:
 			topLevelLookup[strings.ToLower(f.Name)] = fmt.Sprintf("%v", sv.Interface())
@@ -87,34 +107,4 @@ func RegisteredExpander(handle string) ExpanderFunc {
 func IsRegistered(handle string) bool {
 	_, ok := expanderRegistry[handle]
 	return ok
-}
-
-func makeStringMapMap(structure reflect.Type, value reflect.Value) map[string]map[string]string {
-	m := make(map[string]map[string]string)
-	fields := reflect.VisibleFields(structure)
-
-	for _, f := range fields { // Vars.OS.(Version).Name
-		subValue := value.FieldByIndex(f.Index)
-		if subValue.Kind() == reflect.Ptr {
-			subValue = subValue.Elem()
-		}
-		subType := subValue.Type()
-
-		switch subType.Kind() {
-		case reflect.Struct:
-			innerMap := make(map[string]string)
-			subFields := reflect.VisibleFields(subType)
-
-			for _, sf := range subFields { // Vars.OS.Version.(Name)
-				subSubValue := subValue.FieldByIndex(sf.Index)
-				innerMap[strings.ToLower(sf.Name)] = fmt.Sprintf("%v", subSubValue.Interface())
-			}
-			m[strings.ToLower(f.Name)] = innerMap
-
-		default:
-			m[strings.ToLower(f.Name)] = map[string]string{"": fmt.Sprintf("%v", value.Interface())}
-		}
-	}
-
-	return m
 }
