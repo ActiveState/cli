@@ -17,9 +17,10 @@ import (
 
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
+	"github.com/ActiveState/cli/pkg/projectfile/vars"
 )
 
-func loadProject(t *testing.T) *project.Project {
+func loadProjectAndRegisterVals(t *testing.T) *project.Project {
 	projectfile.Reset()
 
 	pjFile := &projectfile.Project{}
@@ -60,12 +61,21 @@ scripts:
 
 	pjFile.Persist()
 
-	return project.Get()
+	pj := project.Get()
+
+	projVars := vars.New(nil, vars.NewProject(pj), "noshell")
+	_ = project.RegisterStruct(projVars)
+
+	return pj
 }
 
 func TestExpandProject(t *testing.T) {
-	prj := loadProject(t)
+	prj := loadProjectAndRegisterVals(t)
 	prj.Source().SetPath(fmt.Sprintf("spoofed path%sactivestate.yaml", string(os.PathSeparator)))
+
+	// needed after project update
+	projVars := vars.New(nil, vars.NewProject(prj), "noshell")
+	_ = project.RegisterStruct(projVars)
 
 	expanded, err := project.ExpandFromProject("$project.url()", prj)
 	require.NoError(t, err)
@@ -104,7 +114,7 @@ func TestExpandProject(t *testing.T) {
 }
 
 func TestExpandTopLevel(t *testing.T) {
-	prj := loadProject(t)
+	prj := loadProjectAndRegisterVals(t)
 
 	expanded, err := project.ExpandFromProject("$project", prj)
 	assert.NoError(t, err, "Ran without failure")
@@ -121,7 +131,7 @@ func TestExpandTopLevel(t *testing.T) {
 }
 
 func TestExpandProjectScript(t *testing.T) {
-	prj := loadProject(t)
+	prj := loadProjectAndRegisterVals(t)
 
 	expanded, err := project.ExpandFromProject("$ $scripts.test", prj)
 	assert.NoError(t, err, "Ran without failure")
@@ -129,7 +139,7 @@ func TestExpandProjectScript(t *testing.T) {
 }
 
 func TestExpandProjectConstant(t *testing.T) {
-	prj := loadProject(t)
+	prj := loadProjectAndRegisterVals(t)
 
 	expanded, err := project.ExpandFromProject("$ $constants.constant", prj)
 	assert.NoError(t, err, "Ran without failure")
@@ -141,7 +151,7 @@ func TestExpandProjectConstant(t *testing.T) {
 }
 
 func TestExpandProjectSecret(t *testing.T) {
-	pj := loadProject(t)
+	pj := loadProjectAndRegisterVals(t)
 
 	project.RegisterExpander("secrets", func(_ string, category string, meta string, isFunction bool, ctx *project.Expansion) (string, error) {
 		if category == project.ProjectCategory {
@@ -160,7 +170,7 @@ func TestExpandProjectSecret(t *testing.T) {
 }
 
 func TestExpandProjectAlternateSyntax(t *testing.T) {
-	prj := loadProject(t)
+	prj := loadProjectAndRegisterVals(t)
 
 	expanded, err := project.ExpandFromProject("${project.name()}", prj)
 	assert.NoError(t, err, "Ran without failure")
@@ -168,7 +178,7 @@ func TestExpandProjectAlternateSyntax(t *testing.T) {
 }
 
 func TestExpandProjectUnknownCategory(t *testing.T) {
-	prj := loadProject(t)
+	prj := loadProjectAndRegisterVals(t)
 
 	expanded, err := project.ExpandFromProject("$unknown.unknown", prj)
 	assert.NoError(t, err, "Ran without failure")
@@ -176,7 +186,7 @@ func TestExpandProjectUnknownCategory(t *testing.T) {
 }
 
 func TestExpandProjectInfiniteRecursion(t *testing.T) {
-	prj := loadProject(t)
+	prj := loadProjectAndRegisterVals(t)
 
 	_, err := project.ExpandFromProject("$scripts.recursive", prj)
 	require.Error(t, err, "Ran with failure")
@@ -204,7 +214,7 @@ scripts:
 }
 
 func TestExpandScriptPath(t *testing.T) {
-	prj := loadProject(t)
+	prj := loadProjectAndRegisterVals(t)
 
 	expanded, err := project.ExpandFromProject("$scripts.scriptPath", prj)
 	assert.NoError(t, err, "Ran without failure")
@@ -217,7 +227,7 @@ func TestExpandScriptPath(t *testing.T) {
 }
 
 func TestExpandScriptPathRecursive(t *testing.T) {
-	prj := loadProject(t)
+	prj := loadProjectAndRegisterVals(t)
 
 	expanded, err := project.ExpandFromProject("$scripts.scriptRecursive", prj)
 	assert.NoError(t, err, "Ran without failure")
@@ -228,7 +238,7 @@ func TestExpandScriptPathRecursive(t *testing.T) {
 }
 
 func TestExpandBashScriptPath(t *testing.T) {
-	prj := loadProject(t)
+	prj := loadProjectAndRegisterVals(t)
 	script := prj.ScriptByName("bashScriptPath")
 	require.NotNil(t, script, "bashScriptPath script does not exist")
 	value, err := script.Value()

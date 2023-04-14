@@ -19,22 +19,22 @@ type projectDataProvider interface {
 	URL() string
 }
 
-type ProjectData struct {
+type Project struct {
 	Namespace string `expand:",isFunc"`
 	Name      string `expand:",isFunc"`
 	Owner     string `expand:",isFunc"`
 	Url       string `expand:",isFunc"`
 	Commit    string `expand:",isFunc"`
 	Branch    string `expand:",isFunc"`
-	Path      string `expand:",isFunc"`
+	Path      string `expand:",isFunc;isPath"`
 
 	// legacy fields
 	NamespacePrefix string
 }
 
-func NewProject(pj projectDataProvider) *ProjectData {
+func NewProject(pj projectDataProvider) *Project {
 	var (
-		project = &ProjectData{}
+		project = &Project{}
 	)
 	if !p.IsNil(pj) {
 		project.Namespace = pj.NamespaceString()
@@ -105,13 +105,13 @@ func NewMixin(auth *authentication.Auth) *Mixin {
 }
 
 type Vars struct {
-	Project *ProjectData
+	Project *Project
 	OS      *OS
 	Shell   string
 	Mixin   func() *Mixin
 }
 
-func New(auth *authentication.Auth, project *ProjectData, subshellName string) *Vars {
+func New(auth *authentication.Auth, project *Project, subshellName string) *Vars {
 	osVersion, err := sysinfo.OSVersion()
 	if err != nil {
 		multilog.Error("Could not detect OSVersion: %v", err)

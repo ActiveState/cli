@@ -15,6 +15,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
+	"github.com/ActiveState/cli/pkg/projectfile/vars"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -45,7 +46,10 @@ func (suite *ProjectTestSuite) BeforeTest(suiteName, testName string) {
 
 	cfg, err := config.New()
 	suite.Require().NoError(err)
-	project.RegisterConditional(constraints.NewPrimeConditional(nil, suite.project, subshell.New(cfg).Shell()))
+
+	projVars := vars.New(nil, vars.NewProject(suite.project), subshell.New(cfg).Shell())
+	project.RegisterConditional(constraints.NewPrimeConditional(projVars))
+	_ = project.RegisterStruct(projVars)
 }
 
 func (suite *ProjectTestSuite) TestGet() {
