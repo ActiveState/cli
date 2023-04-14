@@ -504,7 +504,9 @@ func (suite *AnalyticsIntegrationTestSuite) TestHeapEvents() {
 
 	// Ensure analytics events have required/important fields
 	for _, e := range events {
-		if strings.Contains(e.Category, "state-svc") || strings.Contains(e.Action, "state-svc") || strings.Contains(e.Action, "auth") {
+		// Skip events that are not relevant to Heap
+		// State Service, Update, and Auth events can run before a user has logged in
+		if strings.Contains(e.Category, "state-svc") || strings.Contains(e.Action, "state-svc") || strings.Contains(e.Action, "auth") || strings.Contains(e.Category, "update") {
 			continue
 		}
 
