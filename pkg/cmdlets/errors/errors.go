@@ -146,16 +146,23 @@ func ReportError(err error, cmd *captain.Command, an analytics.Dispatcher) {
 
 	// Log error if this isn't a user input error
 	var action string
+	errorMsg := err.Error()
 	if !locale.IsInputError(err) {
 		multilog.Critical("Returning error:\n%s\nCreated at:\n%s", errs.Join(err, "\n").Error(), stack)
 		action = anaConst.ActCommandError
 	} else {
 		action = anaConst.ActCommandInputError
+		for err != nil {
+			if locale.IsInputErrorNonRecursive(err) {
+				errorMsg = locale.ErrorMessage(err)
+				break
+			}
+			err = errors.Unwrap(err)
+		}
 	}
 
-	logging.Debug("Reporting error:\n%s\nCreated at:\n%s", errs.Join(err, "\n").Error(), stack)
 	an.EventWithLabel(anaConst.CatDebug, action, strings.Join(label, " "), &dimensions.Values{
-		Error: p.StrP(err.Error()),
+		Error: p.StrP(errorMsg),
 	})
 
 	if !locale.HasError(err) && isErrs && !hasMarshaller {
