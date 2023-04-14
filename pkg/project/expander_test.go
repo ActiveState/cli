@@ -108,6 +108,11 @@ func TestExpandProject(t *testing.T) {
 
 	if runtime.GOOS == "windows" {
 		prj.Source().SetPath(fmt.Sprintf(`c:\another\spoofed path\activestate.yaml`))
+
+		// needed after project update
+		projVars := vars.New(nil, vars.NewProject(prj), "noshell")
+		_ = project.RegisterStruct(projVars)
+
 		expanded, err = project.ExpandFromProjectBashifyPaths("$project.path()", prj)
 		require.NoError(t, err, errs.JoinMessage(err))
 		assert.Equal(t, `/c/another/spoofed\ path`, expanded)
