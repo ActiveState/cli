@@ -44,6 +44,6 @@ func AutostartPath(exec string, opts Options) (string, error) {
 	return autostartPath(exec, opts)
 }
 
-func Upgrade(opts Options) error {
-	return upgrade(opts)
+func Upgrade(exec string, opts Options) error {
+	return upgrade(exec, opts)
 }

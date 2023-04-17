@@ -67,7 +67,7 @@ func autostartPath(name string, _ Options) (string, error) {
 	return shortcutFilename(name), nil
 }
 
-func upgrade(opts Options) error {
+func upgrade(exec string, opts Options) error {
 	return nil
 }
 
