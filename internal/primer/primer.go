@@ -3,7 +3,6 @@ package primer
 import (
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/config"
-	"github.com/ActiveState/cli/internal/constraints"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/subshell"
@@ -21,7 +20,6 @@ type Values struct {
 	auth        *authentication.Auth
 	prompt      prompt.Prompter
 	subshell    subshell.SubShell
-	conditional *constraints.Conditional
 	config      *config.Instance
 	ipComm      svcctl.IPCommunicator
 	svcModel    *model.SvcModel
@@ -30,19 +28,18 @@ type Values struct {
 
 func New(
 	project *project.Project, output output.Outputer, auth *authentication.Auth, prompt prompt.Prompter,
-	subshell subshell.SubShell, conditional *constraints.Conditional, config *config.Instance,
+	subshell subshell.SubShell, config *config.Instance,
 	ipComm svcctl.IPCommunicator, svcModel *model.SvcModel, an analytics.Dispatcher) *Values {
 
 	v := &Values{
-		output:      output,
-		auth:        auth,
-		prompt:      prompt,
-		subshell:    subshell,
-		conditional: conditional,
-		config:      config,
-		ipComm:      ipComm,
-		svcModel:    svcModel,
-		analytics:   an,
+		output:    output,
+		auth:      auth,
+		prompt:    prompt,
+		subshell:  subshell,
+		config:    config,
+		ipComm:    ipComm,
+		svcModel:  svcModel,
+		analytics: an,
 	}
 	if project != nil {
 		v.project = project
@@ -91,10 +88,6 @@ type Subsheller interface {
 	Subshell() subshell.SubShell
 }
 
-type Conditioner interface {
-	Conditional() *constraints.Conditional
-}
-
 func (v *Values) Project() *project.Project {
 	return v.project
 }
@@ -125,10 +118,6 @@ func (v *Values) IPComm() svcctl.IPCommunicator {
 
 func (v *Values) SvcModel() *model.SvcModel {
 	return v.svcModel
-}
-
-func (v *Values) Conditional() *constraints.Conditional {
-	return v.conditional
 }
 
 func (v *Values) Config() *config.Instance {

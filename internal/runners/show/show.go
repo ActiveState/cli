@@ -7,7 +7,6 @@ import (
 
 	"github.com/go-openapi/strfmt"
 
-	"github.com/ActiveState/cli/internal/constraints"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
@@ -22,7 +21,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 // Params describes the data required for the show run func.
@@ -32,10 +30,9 @@ type Params struct {
 
 // Show manages the show run execution context.
 type Show struct {
-	project     *project.Project
-	out         output.Outputer
-	conditional *constraints.Conditional
-	auth        *authentication.Auth
+	project *project.Project
+	out     output.Outputer
+	auth    *authentication.Auth
 }
 
 type auther interface {
@@ -45,7 +42,6 @@ type auther interface {
 type primeable interface {
 	primer.Projecter
 	primer.Outputer
-	primer.Conditioner
 	primer.Auther
 }
 
@@ -127,7 +123,6 @@ func New(prime primeable) *Show {
 	return &Show{
 		prime.Project(),
 		prime.Output(),
-		prime.Conditional(),
 		prime.Auth(),
 	}
 }
@@ -181,12 +176,12 @@ func (s *Show) Run(params Params) error {
 		projectURL = s.project.URL()
 		branchName = s.project.BranchName()
 
-		events, err = eventsData(s.project.Source(), s.conditional)
+		events, err = eventsData(s.project)
 		if err != nil {
 			return locale.WrapError(err, "err_show_events", "Could not parse events")
 		}
 
-		scripts, err = scriptsData(s.project.Source(), s.conditional)
+		scripts, err = scriptsData(s.project)
 		if err != nil {
 			return locale.WrapError(err, "err_show_scripts", "Could not parse scripts")
 		}
@@ -278,41 +273,23 @@ type languageRow struct {
 	Version string `json:"version" locale:"state_show_language_version,Version"`
 }
 
-func eventsData(project *projectfile.Project, conditional *constraints.Conditional) ([]string, error) {
-	if len(project.Events) == 0 {
-		return nil, nil
-	}
-
-	constrained, err := constraints.FilterUnconstrained(conditional, project.Events.AsConstrainedEntities())
-	if err != nil {
-		return nil, locale.WrapError(err, "err_event_condition", "Event has invalid conditional")
-	}
-
-	es := projectfile.MakeEventsFromConstrainedEntities(constrained)
+func eventsData(pj *project.Project) ([]string, error) {
+	es := pj.Events()
 
 	var data []string
 	for _, event := range es {
-		data = append(data, event.Name)
+		data = append(data, event.Name())
 	}
 
 	return data, nil
 }
 
-func scriptsData(project *projectfile.Project, conditional *constraints.Conditional) (map[string]string, error) {
-	if len(project.Scripts) == 0 {
-		return nil, nil
-	}
-
-	constrained, err := constraints.FilterUnconstrained(conditional, project.Scripts.AsConstrainedEntities())
-	if err != nil {
-		return nil, locale.WrapError(err, "err_script_condition", "Script has invalid conditional")
-	}
-
-	scripts := projectfile.MakeScriptsFromConstrainedEntities(constrained)
+func scriptsData(pj *project.Project) (map[string]string, error) {
+	scripts := pj.Scripts()
 
 	data := make(map[string]string)
 	for _, script := range scripts {
-		data[script.Name] = script.Description
+		data[script.Name()] = script.Description()
 	}
 
 	return data, nil
