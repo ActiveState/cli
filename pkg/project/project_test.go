@@ -47,9 +47,14 @@ func (suite *ProjectTestSuite) BeforeTest(suiteName, testName string) {
 	cfg, err := config.New()
 	suite.Require().NoError(err)
 
-	projVars := vars.New(nil, vars.NewProject(suite.project), subshell.New(cfg).Shell())
-	project.RegisterConditional(constraints.NewPrimeConditional(projVars))
-	_ = project.RegisterStruct(projVars)
+	registerProjectVars := func() {
+		projVars := vars.New(nil, vars.NewProject(suite.project), subshell.New(cfg).Shell())
+		project.RegisterConditional(constraints.NewPrimeConditional(projVars))
+		_ = project.RegisterStruct(projVars)
+	}
+
+	suite.project.SetUpdateCallback(registerProjectVars)
+	registerProjectVars()
 }
 
 func (suite *ProjectTestSuite) TestGet() {

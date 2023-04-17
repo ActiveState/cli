@@ -214,15 +214,20 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 	// Set up conditional, which accesses a lot of primer data
 	sshell := subshell.New(cfg)
 
-	projVars := vars.New(auth, vars.NewProject(pj), sshell.Shell())
+	registerProjectVars := func() {
+		projVars := vars.New(auth, vars.NewProject(pj), sshell.Shell())
+		conditional := constraints.NewPrimeConditional(projVars)
+		project.RegisterConditional(conditional)
+		_ = project.RegisterStruct(projVars)
+	}
 
-	conditional := constraints.NewPrimeConditional(projVars)
-	project.RegisterConditional(conditional)
-	_ = project.RegisterStruct(projVars)
+	pj.SetUpdateCallback(registerProjectVars)
+	registerProjectVars()
+
 	project.RegisterExpander("secrets", project.NewSecretPromptingExpander(secretsapi.Get(), prompter, cfg, auth))
 
 	// Run the actual command
-	cmds := cmdtree.New(primer.New(pj, out, auth, prompter, sshell, conditional, cfg, ipcClient, svcmodel, an), args...)
+	cmds := cmdtree.New(primer.New(pj, out, auth, prompter, sshell, cfg, ipcClient, svcmodel, an), args...)
 
 	childCmd, err := cmds.Command().Find(args[1:])
 	if err != nil {

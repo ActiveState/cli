@@ -104,6 +104,8 @@ type Project struct {
 	parsedURL     projectURL    // parsed url data
 	parsedBranch  string
 	parsedVersion string
+
+	updateCallback func()
 }
 
 // Build covers the build map, which can go under languages or packages
@@ -558,11 +560,6 @@ func (p *Project) Path() string {
 	return p.path
 }
 
-// SetPath sets the path of the project file and should generally only be used by tests
-func (p *Project) SetPath(path string) {
-	p.path = path
-}
-
 // VersionBranch returns the branch as it was interpreted from the lock
 func (p *Project) VersionBranch() string {
 	return p.parsedBranch
@@ -687,8 +684,21 @@ func (p *Project) save(cfg ConfigGetter, path string) error {
 	return nil
 }
 
+func (p *Project) runUpdateCallback() {
+	if p.updateCallback == nil {
+		return
+	}
+	p.updateCallback()
+}
+
+func (p *Project) SetUpdateCallback(fn func()) {
+	p.updateCallback = fn
+}
+
 // SetNamespace updates the namespace in the project file
 func (p *Project) SetNamespace(owner, project string) error {
+	defer p.runUpdateCallback()
+
 	pf := NewProjectField()
 	if err := pf.LoadProject(p.Project); err != nil {
 		return errs.Wrap(err, "Could not load activestate.yaml")
@@ -710,6 +720,8 @@ func (p *Project) SetNamespace(owner, project string) error {
 // in-place so that line order is preserved.
 // If headless is true, the project is defined by a commit-id only
 func (p *Project) SetCommit(commitID string, headless bool) error {
+	defer p.runUpdateCallback()
+
 	pf := NewProjectField()
 	if err := pf.LoadProject(p.Project); err != nil {
 		return errs.Wrap(err, "Could not load activestate.yaml")
@@ -727,6 +739,8 @@ func (p *Project) SetCommit(commitID string, headless bool) error {
 // SetBranch sets the branch within the current project file. This is done
 // in-place so that line order is preserved.
 func (p *Project) SetBranch(branch string) error {
+	defer p.runUpdateCallback()
+
 	pf := NewProjectField()
 
 	if err := pf.LoadProject(p.Project); err != nil {
@@ -744,6 +758,13 @@ func (p *Project) SetBranch(branch string) error {
 	p.parsedURL.BranchName = branch
 	p.Project = pf.String()
 	return nil
+}
+
+// SetPath sets the path of the project file and should generally only be used by tests
+func (p *Project) SetPath(path string) {
+	defer p.runUpdateCallback()
+
+	p.path = path
 }
 
 // GetProjectFilePath returns the path to the project activestate.yaml
