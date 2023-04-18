@@ -32,7 +32,7 @@ func NewProject(out output.Outputer, auth *authentication.Auth, shell string) (*
 
 func newProject(out output.Outputer, auth *authentication.Auth, shell string, pjf *projectfile.Project) (*project.Project, error) {
 	if pjf == nil {
-		return nil, errs.New("No projectfile provided")
+		return nil, nil
 	}
 
 	pj, err := project.New(pjf, out)
