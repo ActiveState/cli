@@ -61,7 +61,7 @@ func (a *App) install() error {
 		}
 	}
 
-	if err := fileutils.MoveAllFiles(tmpDir, installDir); err != nil {
+	if err := fileutils.CopyAndRenameFiles(tmpDir, installDir); err != nil {
 		return errs.Wrap(err, "Could not move .app to Applications directory")
 	}
 
