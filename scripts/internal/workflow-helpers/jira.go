@@ -223,6 +223,11 @@ func UpdateJiraStatus(client *jira.Client, issue *jira.Issue, statusName string)
 	}
 
 	response, err := client.Issue.DoTransition(issue.ID, transition.ID)
+	if err != nil && response == nil {
+		return errs.Wrap(err, "failed to perform Jira transition")
+	}
+
+	// Include response body in error
 	res, err2 := io.ReadAll(response.Body)
 	if err2 != nil {
 		res = []byte(err2.Error())
