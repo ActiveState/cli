@@ -103,16 +103,16 @@ func (i *Installer) Install() (rerr error) {
 		return errs.Wrap(err, "Failed to copy installation files to dir %s. Error received: %s", i.path, errs.JoinMessage(err))
 	}
 
-	// Install the state service as an app if necessary
-	if err := i.installSvcApp(); err != nil {
-		return errs.Wrap(err, "Installation of service app failed.")
-	}
-
 	// Set up the environment
 	binDir := filepath.Join(i.path, installation.BinDirName)
 	isAdmin, err := osutils.IsAdmin()
 	if err != nil {
 		return errs.Wrap(err, "Could not determine if running as Windows administrator")
+	}
+
+	// Install the state service as an app if necessary
+	if err := i.installSvcApp(binDir); err != nil {
+		return errs.Wrap(err, "Installation of service app failed.")
 	}
 
 	// Configure available shells
@@ -164,8 +164,8 @@ func (i *Installer) sanitizeInput() error {
 	return nil
 }
 
-func (i *Installer) installSvcApp() error {
-	app, err := svcApp.New()
+func (i *Installer) installSvcApp(binDir string) error {
+	app, err := svcApp.NewFromDir(binDir)
 	if err != nil {
 		return errs.Wrap(err, "Could not create app")
 	}
