@@ -1,3 +1,19 @@
+// Package vars provides a single type expressing the data accessible by the
+// activestate.yaml for conditionals and variable expansions.
+//
+// The structure should not grow beyond a depth of 3. That is, .OS.Version.Major
+// is fine, but .OS.Version.Major.Something is not. External (leaf) nodes must
+// be able to resolve to a string using `fmt.Sprintf("%v")`. Keep in mind that
+// the Vars type itself is depth 0, so it does not count for depth, and should
+// not be represented in the activestate.yaml content.
+//
+// Nodes may be a function, but the return value must also resolve to a string
+// using `fmt.Sprintf("%v")`. A second return value of `error` is allowed. For
+// variable expansion, a non-function node may be tagged as a function (asFunc)
+// so that it must be called using parenthesis (`$project.name()`).
+//
+// Path nodes should be tagged (isPath) so that bashification of the path is
+// applied when necessary.
 package vars
 
 import (
