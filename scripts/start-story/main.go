@@ -22,6 +22,7 @@ func main() {
 
 type Meta struct {
 	Version           semver.Version
+	JiraIssue         *jira.Issue
 	JiraVersion       string
 	VersionPRName     string
 	VersionBranchName string
@@ -119,6 +120,14 @@ func run() error {
 	}
 	finish()
 
+	if meta.JiraIssue.Fields.Status.Name == "To Do" || meta.JiraIssue.Fields.Status.Name == "Pending" {
+		finish = wc.PrintStart("Updating jira issue to In Progress")
+		if err := wh.UpdateJiraStatus(jiraClient, meta.JiraIssue, "In Progress"); err != nil {
+			return errs.Wrap(err, "failed to update Jira status")
+		}
+		finish()
+	}
+
 	wc.Print("All Done")
 
 	return nil
@@ -168,6 +177,7 @@ func fetchMeta(ghClient *github.Client, jiraClient *jira.Client, jiraIssueID str
 
 	return Meta{
 		Version:           version.Version,
+		JiraIssue:         jiraIssue,
 		JiraVersion:       jiraVersion.Name,
 		VersionPR:         versionPR,
 		VersionPRName:     versionPRName,
