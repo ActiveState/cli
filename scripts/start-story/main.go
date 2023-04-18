@@ -123,7 +123,7 @@ func run() error {
 
 	if meta.JiraIssue.Fields.Status.Name == wh.JiraStatusTodo || meta.JiraIssue.Fields.Status.Name == wh.JiraStatusPending {
 		finish = wc.PrintStart("Updating jira issue to In Progress")
-		if err := wh.UpdateJiraStatus(jiraClient, meta.JiraIssue, "In Progress"); err != nil {
+		if err := wh.UpdateJiraStatus(jiraClient, meta.JiraIssue, wh.JiraStatusInProgress); err != nil {
 			return errs.Wrap(err, "failed to update Jira status")
 		}
 		finish()
@@ -153,7 +153,8 @@ func fetchMeta(ghClient *github.Client, jiraClient *jira.Client, jiraIssueID str
 	}
 
 	if !funk.ContainsString([]string{wh.JiraStatusTodo, wh.JiraStatusInProgress, wh.JiraStatusPending}, jiraIssue.Fields.Status.Name) {
-		return Meta{}, errs.New("Story is in the %s state, but only 'To Do', 'In Progress' and 'Pending' are valid states to start a story from.", jiraIssue.Fields.Status.Name)
+		return Meta{}, errs.New("Story is in the %s state, but only '%s', '%s' and '%s' are valid states to start a story from.",
+			jiraIssue.Fields.Status.Name, wh.JiraStatusTodo, wh.JiraStatusInProgress, wh.JiraStatusPending)
 	}
 
 	finish = wc.PrintStart("Fetching Jira Versions")
