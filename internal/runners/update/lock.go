@@ -53,6 +53,10 @@ func NewLock(prime primeable) *Lock {
 }
 
 func (l *Lock) Run(params *LockParams) error {
+	if l.project == nil {
+		return locale.NewInputError("err_no_project")
+	}
+
 	l.out.Notice(locale.Tl("locking_version", "Locking State Tool version for current project."))
 
 	if l.project.IsLocked() && !params.Force {
