@@ -105,6 +105,10 @@ func run() error {
 	if err != nil {
 		return errs.Wrap(err, "failed to checkout base ref, stdout:\n%s\nstderr:\n%s", stdout, stderr)
 	}
+	stdout, stderr, err = exeutils.ExecSimpleFromDir(environment.GetRootPathUnsafe(), "git", []string{"pull", "--rebase"}, nil)
+	if err != nil {
+		return errs.Wrap(err, "failed to pull latest changes, stdout:\n%s\nstderr:\n%s", stdout, stderr)
+	}
 	stdout, stderr, err = exeutils.ExecSimpleFromDir(environment.GetRootPathUnsafe(), "git", []string{"branch", branchName}, nil)
 	if err != nil {
 		return errs.Wrap(err, "failed to create branch, stdout:\n%s\nstderr:\n%s", stdout, stderr)
