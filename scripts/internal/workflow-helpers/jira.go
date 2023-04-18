@@ -1,6 +1,7 @@
 package workflow_helpers
 
 import (
+	"io"
 	"io/ioutil"
 	"os"
 	"regexp"
@@ -16,6 +17,10 @@ import (
 )
 
 var jiraIssueRx = regexp.MustCompile(`(?i)(DX-\d+)`)
+
+const JiraStatusTodo = "To Do"
+const JiraStatusInProgress = "In Progress"
+const JiraStatusPending = "Pending"
 
 func InitJiraClient() (*jira.Client, error) {
 	username := secrethelper.GetSecretIfEmpty(os.Getenv("JIRA_USERNAME"), "user.JIRA_USERNAME")
@@ -195,6 +200,39 @@ func UpdateJiraFixVersion(client *jira.Client, issue *jira.Issue, versionID stri
 	issueUpdate.Fields.FixVersions = []*jira.FixVersion{{ID: versionID}}
 	_, response, err := client.Issue.Update(issueUpdate)
 	res, err2 := ioutil.ReadAll(response.Body)
+	if err2 != nil {
+		res = []byte(err2.Error())
+	}
+	if err != nil {
+		return errs.Wrap(err, string(res))
+	}
+	return nil
+}
+
+func UpdateJiraStatus(client *jira.Client, issue *jira.Issue, statusName string) error {
+	transitions, _, err := client.Issue.GetTransitions(issue.ID)
+	if err != nil {
+		return errs.Wrap(err, "failed to get Jira transitions")
+	}
+
+	var transition *jira.Transition
+	for _, t := range transitions {
+		if t.To.Name == statusName {
+			transition = &t
+			break
+		}
+	}
+	if transition == nil {
+		return errs.New("failed to find a Jira transition that changes the status to %s for issue %s", statusName, issue.Key)
+	}
+
+	response, err := client.Issue.DoTransition(issue.ID, transition.ID)
+	if err != nil && response == nil {
+		return errs.Wrap(err, "failed to perform Jira transition")
+	}
+
+	// Include response body in error
+	res, err2 := io.ReadAll(response.Body)
 	if err2 != nil {
 		res = []byte(err2.Error())
 	}
