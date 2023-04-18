@@ -7,15 +7,15 @@ import (
 	"testing"
 
 	"github.com/ActiveState/cli/internal/config"
-	"github.com/ActiveState/cli/internal/constraints"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/language"
+	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
-	"github.com/ActiveState/cli/pkg/projectfile/vars"
+	"github.com/ActiveState/cli/pkg/projget"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -41,20 +41,12 @@ func (suite *ProjectTestSuite) BeforeTest(suiteName, testName string) {
 	projectFile.Persist()
 	suite.projectFile = projectFile
 	suite.Require().Nil(err, "Should retrieve projectfile without issue.")
-	suite.project, err = project.GetSafe()
-	suite.Require().Nil(err, "Should retrieve project without issue.")
 
 	cfg, err := config.New()
 	suite.Require().NoError(err)
 
-	registerProjectVars := func() {
-		projVars := vars.New(nil, vars.NewProject(suite.project), subshell.New(cfg).Shell())
-		project.RegisterConditional(constraints.NewPrimeConditional(projVars))
-		_ = project.RegisterStruct(projVars)
-	}
-
-	suite.project.SetUpdateCallback(registerProjectVars)
-	registerProjectVars()
+	suite.project, err = projget.NewProject(output.Get(), nil, subshell.New(cfg).Shell())
+	suite.Require().Nil(err, "Should retrieve project without issue.")
 }
 
 func (suite *ProjectTestSuite) TestGet() {

@@ -17,7 +17,6 @@ import (
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/constraints"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/events"
 	"github.com/ActiveState/cli/internal/installation"
@@ -39,8 +38,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/ActiveState/cli/pkg/projectfile"
-	"github.com/ActiveState/cli/pkg/projectfile/vars"
+	"github.com/ActiveState/cli/pkg/projget"
 )
 
 func main() {
@@ -169,33 +167,20 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 		return logData
 	})
 
-	// Retrieve project file
-	pjPath, err := projectfile.GetProjectFilePath()
-	if err != nil && errs.Matches(err, &projectfile.ErrorNoProjectFromEnv{}) {
-		// Fail if we are meant to inherit the projectfile from the environment, but the file doesn't exist
-		return err
-	}
+	auth := authentication.New(cfg)
+	defer events.Close("auth", auth.Close)
 
-	// Set up project (if we have a valid path)
-	var pj *project.Project
-	if pjPath != "" {
-		pjf, err := projectfile.FromPath(pjPath)
-		if err != nil {
-			return err
-		}
-		pj, err = project.New(pjf, out)
-		if err != nil {
-			return err
-		}
+	sshell := subshell.New(cfg)
+
+	pj, err := projget.NewProject(out, auth, sshell.Shell())
+	if err != nil {
+		return err
 	}
 
 	pjNamespace := ""
 	if pj != nil {
 		pjNamespace = pj.Namespace().String()
 	}
-
-	auth := authentication.New(cfg)
-	defer events.Close("auth", auth.Close)
 
 	if err := auth.Sync(); err != nil {
 		logging.Warning("Could not sync authenticated state: %s", err.Error())
@@ -210,19 +195,6 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 
 	// Set up prompter
 	prompter := prompt.New(isInteractive, an)
-
-	// Set up conditional, which accesses a lot of primer data
-	sshell := subshell.New(cfg)
-
-	registerProjectVars := func() {
-		projVars := vars.New(auth, vars.NewProject(pj), sshell.Shell())
-		conditional := constraints.NewPrimeConditional(projVars)
-		project.RegisterConditional(conditional)
-		_ = project.RegisterStruct(projVars)
-	}
-
-	pj.SetUpdateCallback(registerProjectVars)
-	registerProjectVars()
 
 	project.RegisterExpander("secrets", project.NewSecretPromptingExpander(secretsapi.Get(), prompter, cfg, auth))
 
