@@ -11,6 +11,8 @@ import (
 )
 
 func NewProject(out output.Outputer, auth *authentication.Auth, shell string) (*project.Project, error) {
+	var pjf *projectfile.Project
+
 	// Retrieve project file
 	pjPath, err := projectfile.GetProjectFilePath()
 	if err != nil && errs.Matches(err, &projectfile.ErrorNoProjectFromEnv{}) {
@@ -18,34 +20,39 @@ func NewProject(out output.Outputer, auth *authentication.Auth, shell string) (*
 		return nil, err
 	}
 
-	// Set up project (if we have a valid path)
-	var pj *project.Project
 	if pjPath != "" {
-		pjf, err := projectfile.FromPath(pjPath)
-		if err != nil {
-			return nil, err
-		}
-		pj, err = project.New(pjf, out)
+		pjf, err = projectfile.FromPath(pjPath)
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	if pj != nil {
-		registerProjectVars := func() {
-			projVars := vars.New(auth, vars.NewProject(pj), shell)
-			conditional := constraints.NewPrimeConditional(projVars)
-			project.RegisterConditional(conditional)
-			_ = project.RegisterStruct(projVars)
-		}
+	return newProject(out, auth, shell, pjf)
+}
 
-		pj.SetUpdateCallback(registerProjectVars)
-		registerProjectVars()
+func newProject(out output.Outputer, auth *authentication.Auth, shell string, pjf *projectfile.Project) (*project.Project, error) {
+	if pjf == nil {
+		return nil, errs.New("No projectfile provided")
 	}
+
+	pj, err := project.New(pjf, out)
+	if err != nil {
+		return nil, err
+	}
+
+	registerProjectVars := func() {
+		projVars := vars.New(auth, vars.NewProject(pj), shell)
+		conditional := constraints.NewPrimeConditional(projVars)
+		project.RegisterConditional(conditional)
+		_ = project.RegisterStruct(projVars)
+	}
+
+	pj.SetUpdateCallback(registerProjectVars)
+	registerProjectVars()
 
 	return pj, nil
 }
 
-func NewProjectForTest() (*project.Project, error) {
-	return NewProject(output.Get(), nil, "noshell")
+func NewProjectForTest(pjf *projectfile.Project) (*project.Project, error) {
+	return newProject(output.Get(), nil, "noshell", pjf)
 }

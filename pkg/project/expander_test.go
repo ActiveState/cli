@@ -62,7 +62,7 @@ scripts:
 
 	pjFile.Persist()
 
-	pj, err := projget.NewProjectForTest()
+	pj, err := projget.NewProjectForTest(pjFile)
 	require.NoError(t, err)
 
 	return pj
