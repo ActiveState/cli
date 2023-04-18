@@ -142,6 +142,15 @@ func fetchMeta(ghClient *github.Client, jiraClient *jira.Client, jiraIssueID str
 	}
 	finish()
 
+	if len(jiraIssue.Fields.FixVersions) == 0 || jiraIssue.Fields.FixVersions[0] == nil {
+		return Meta{}, errs.New("Jira issue does not have a fix version")
+	}
+	fixVersion := jiraIssue.Fields.FixVersions[0]
+
+	if fixVersion.Archived != nil && *fixVersion.Archived || fixVersion.Released != nil && *fixVersion.Released {
+		return Meta{}, errs.New("Target issue has fixVersion '%s', which has either been archived or released\n", fixVersion.Name)
+	}
+
 	if jiraIssue.Fields.Status.Name != "To Do" && jiraIssue.Fields.Status.Name != "In Progress" && jiraIssue.Fields.Status.Name != "Pending" {
 		return Meta{}, errs.New("Story is in the %s state, but only 'To Do', 'In Progress' and 'Pending' are valid states to start a story from.", jiraIssue.Fields.Status.Name)
 	}
