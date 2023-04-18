@@ -133,6 +133,10 @@ func fetchMeta(ghClient *github.Client, jiraClient *jira.Client, jiraIssueID str
 	}
 	finish()
 
+	if jiraIssue.Fields.Status.Name != "To Do" && jiraIssue.Fields.Status.Name != "In Progress" && jiraIssue.Fields.Status.Name != "Pending" {
+		return Meta{}, errs.New("Story is in the %s state, but only 'To Do', 'In Progress' and 'Pending' are valid states to start a story from.", jiraIssue.Fields.Status.Name)
+	}
+
 	finish = wc.PrintStart("Fetching Jira Versions")
 	availableVersions, err := wh.FetchAvailableVersions(jiraClient)
 	if err != nil {
