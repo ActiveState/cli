@@ -18,7 +18,7 @@ import (
 
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
-	"github.com/ActiveState/cli/pkg/projectfile/vars"
+	"github.com/ActiveState/cli/pkg/projget"
 )
 
 func loadProject(t *testing.T) *project.Project {
@@ -62,15 +62,8 @@ scripts:
 
 	pjFile.Persist()
 
-	pj := project.Get()
-
-	registerProjectVars := func() {
-		projVars := vars.New(nil, vars.NewProject(pj), "noshell")
-		_ = project.RegisterStruct(projVars)
-	}
-
-	pj.SetUpdateCallback(registerProjectVars)
-	registerProjectVars()
+	pj, err := projget.NewProjectForTest()
+	require.NoError(t, err)
 
 	return pj
 }
