@@ -1,8 +1,15 @@
 package parser
 
 import (
+	"fmt"
+
 	"github.com/ActiveState/cli/internal/errs"
 )
+
+// TODO: Need to refactor this to follow the BNF grammar more closely
+// Each parsing function should be responsible for parsing a single production
+// Each parsing function should be responsible for iterating the parser so that
+// the next token does not belong to the current production
 
 type Parser struct {
 	lexer *Lexer
@@ -12,11 +19,24 @@ type Parser struct {
 	pos Position
 	tok Token
 	lit string
+
+	toks    []Token
+	current int
 }
 
 func New(data []byte) *Parser {
+	toks := make([]Token, 0)
+
+	l := NewLexer(data)
+	var tok Token
+	for tok != EOF {
+		_, tok, _, _ = l.Scan()
+		toks = append(toks, tok)
+	}
+
 	return &Parser{
 		lexer: NewLexer(data),
+		toks:  toks,
 	}
 }
 
@@ -53,10 +73,20 @@ func (p *Parser) next() error {
 	if err != nil {
 		return errs.Wrap(err, "Failed to scan")
 	}
+
 	p.pos = pos
 	p.tok = tok
 	p.lit = lit
+	p.current++
+	fmt.Println("Current token:", tok, "lit:", lit, "pos:", pos)
 	return nil
+}
+
+func (p *Parser) peek() Token {
+	if p.current >= len(p.toks) {
+		return EOF
+	}
+	return p.toks[p.current]
 }
 
 func (p *Parser) newNode(t NodeType) *NodeElement {
@@ -125,13 +155,8 @@ func (p *Parser) ParseExpression(root *NodeElement) error {
 		return errs.Wrap(err, "Failed to parse binding")
 	}
 
-	err = p.Next()
-	if err != nil {
-		return errs.Wrap(err, "Failed to scan")
-	}
-
 	if p.tok != IN {
-		return errs.New("Expected in, got: %s", p.lit)
+		return errs.New("Expected in, got: %s, %s", p.lit, p.tok)
 	}
 	expressionNode.AddChild(p.newNode(NodeIn))
 
@@ -165,15 +190,41 @@ func (p *Parser) ParseBinding(node *NodeElement) error {
 	bindingNode := p.newNode(NodeBinding)
 	node.AddChild(bindingNode)
 
-	err := p.ParseAssignment(bindingNode)
-	if err != nil {
-		return errs.Wrap(err, "Failed to parse assignment")
+	for {
+		if !p.IsAssignment() {
+			break
+		}
+
+		err := p.ParseAssignment(bindingNode)
+		if err != nil {
+			return errs.Wrap(err, "Failed to parse assignment")
+		}
+
+		if p.tok == COMMA {
+			commaNode := p.newNode(NodeComma)
+			bindingNode.AddChild(commaNode)
+			continue
+		}
+
+		err = p.Next()
+		if err != nil {
+			return errs.Wrap(err, "Failed to scan")
+		}
 	}
 
+	// TOOD: Iterate here?
 	return nil
 }
 
+func (p *Parser) IsAssignment() bool {
+	return p.peek() == EQUALS
+}
+
 func (p *Parser) ParseAssignment(node *NodeElement) error {
+	if !p.IsAssignment() {
+		return errs.New("Expected assignment")
+	}
+
 	assignmentNode := p.newNode(NodeAssignment)
 	node.AddChild(assignmentNode)
 
@@ -182,13 +233,9 @@ func (p *Parser) ParseAssignment(node *NodeElement) error {
 		return errs.Wrap(err, "Failed to parse identifier")
 	}
 
-	err = p.Next()
-	if err != nil {
-		return errs.Wrap(err, "Failed to scan")
-	}
-
 	if p.tok != EQUALS {
-		return errs.New("Expected equals")
+		// TODO: Need convenience error function
+		return errs.New("Expected equals, got: type: %s, lit: %s", p.tok, p.lit)
 	}
 	assignmentNode.AddChild(p.newNode(NodeEquals))
 
@@ -201,6 +248,9 @@ func (p *Parser) ParseAssignment(node *NodeElement) error {
 		return p.ParseApplication(assignmentNode)
 	}
 
+	if p.tok == STRING {
+		return p.ParseString(assignmentNode)
+	}
 	return p.ParseList(assignmentNode)
 }
 
@@ -212,7 +262,7 @@ func (p *Parser) ParseIdentifier(node *NodeElement) error {
 	identifierNode := p.newNode(NodeIdentifier)
 	node.AddChild(identifierNode)
 
-	return nil
+	return p.Next()
 }
 
 func (p *Parser) ParseApplication(node *NodeElement) error {
@@ -226,11 +276,6 @@ func (p *Parser) ParseApplication(node *NodeElement) error {
 	err := p.ParseFunctionIdentifier(applicationNode)
 	if err != nil {
 		return errs.Wrap(err, "Failed to parse function identifier")
-	}
-
-	err = p.Next()
-	if err != nil {
-		return errs.Wrap(err, "Failed to scan")
 	}
 
 	if p.tok != L_PAREN {
@@ -249,16 +294,15 @@ func (p *Parser) ParseApplication(node *NodeElement) error {
 	}
 
 	if p.tok != R_PAREN {
-		return errs.New("Expected right parenthesis, got %s", p.lit)
+		return errs.New("Expected right parenthesis, got %s:%s", p.tok, p.lit)
 	}
-
 	applicationNode.AddChild(p.newNode(NodeRightParen))
 
-	return nil
+	return p.Next()
 }
 
 func (p *Parser) ParseFunctionIdentifier(node *NodeElement) error {
-	if p.tok != F_SOLVE && p.tok != F_SOLVELEGACY {
+	if p.tok != F_SOLVE && p.tok != F_SOLVELEGACY && p.tok != F_REQUIREMENT && p.tok != F_APPEND {
 		return errs.New("Unknown function identifier")
 	}
 
@@ -269,23 +313,56 @@ func (p *Parser) ParseFunctionIdentifier(node *NodeElement) error {
 		functionIdentifierNode.AddChild(p.newNode(NodeSolveFn))
 	} else if p.tok == F_SOLVELEGACY {
 		functionIdentifierNode.AddChild(p.newNode(NodeSolveLegacyFn))
+	} else if p.tok == F_REQUIREMENT {
+		functionIdentifierNode.AddChild(p.newNode(NodeRequirementFn))
+	} else if p.tok == F_APPEND {
+		functionIdentifierNode.AddChild(p.newNode(NodeAppendFn))
 	}
 
-	return nil
+	return p.Next()
 }
 
 func (p *Parser) ParseArguments(node *NodeElement) error {
-	for p.IsBinding() {
-		err := p.ParseBinding(node)
-		if err != nil {
-			return errs.Wrap(err, "Failed to parse binding")
+	for {
+		if !p.IsBinding() && !p.IsIdentifier() && !p.IsFunctionIdentifier() {
+			break
+		}
+
+		if p.IsBinding() {
+			err := p.ParseBinding(node)
+			if err != nil {
+				return errs.Wrap(err, "Failed to parse binding")
+			}
+		}
+
+		if p.IsIdentifier() {
+			err := p.ParseIdentifier(node)
+			if err != nil {
+				return errs.Wrap(err, "Failed to parse identifier")
+			}
+		}
+
+		if p.IsFunctionIdentifier() {
+			err := p.ParseApplication(node)
+			if err != nil {
+				return errs.Wrap(err, "Failed to parse application")
+			}
+		}
+
+		if p.tok == COMMA {
+			node.AddChild(p.newNode(NodeComma))
+			err := p.Next()
+			if err != nil {
+				return errs.Wrap(err, "Failed to scan")
+			}
+			continue
 		}
 
 		if p.tok == R_PAREN {
 			break
 		}
 
-		err = p.Next()
+		err := p.Next()
 		if err != nil {
 			return errs.Wrap(err, "Failed to scan")
 		}
@@ -296,7 +373,7 @@ func (p *Parser) ParseArguments(node *NodeElement) error {
 
 func (p *Parser) ParseList(node *NodeElement) error {
 	if p.tok != L_BRACKET {
-		return errs.New("Expected left bracket")
+		return errs.New("Expected left bracket, got: %s", p.lit)
 	}
 
 	listNode := &NodeElement{
@@ -316,44 +393,42 @@ func (p *Parser) ParseList(node *NodeElement) error {
 		return errs.Wrap(err, "Failed to parse list element")
 	}
 
-	// err = p.Next()
-	// if err != nil {
-	// 	return errs.Wrap(err, "Failed to scan")
-	// }
-
 	if p.tok != R_BRACKET {
 		return errs.New("Expected right bracket, current lit: %s", p.lit)
 	}
 	listNode.AddChild(p.newNode(NodeRightBracket))
 
-	return nil
+	return p.Next()
 }
 
 func (p *Parser) ParseListElements(node *NodeElement) error {
-	// TODO: Can likely improve the conditions of this loop
-	for p.tok == STRING || p.tok == COMMA {
-		var err error
+	for {
+		if !p.IsIdentifier() && !p.IsFunctionIdentifier() && !p.IsString() && p.tok != COMMA {
+			break
+		}
+
 		if p.tok == COMMA {
 			node.AddChild(p.newNode(NodeComma))
 
-			err = p.Next()
+			err := p.Next()
 			if err != nil {
 				return errs.Wrap(err, "Failed to scan")
 			}
+			continue
 		}
 
-		err = p.ParseListElement(node)
+		err := p.ParseListElement(node)
 		if err != nil {
 			return errs.Wrap(err, "Failed to parse list element")
+		}
+
+		if p.tok == R_BRACKET {
+			break
 		}
 
 		err = p.Next()
 		if err != nil {
 			return errs.Wrap(err, "Failed to scan")
-		}
-
-		if p.tok == R_BRACKET {
-			break
 		}
 	}
 
@@ -363,7 +438,51 @@ func (p *Parser) ParseListElements(node *NodeElement) error {
 func (p *Parser) ParseListElement(node *NodeElement) error {
 	elementNode := p.newNode(NodeListElement)
 	node.AddChild(elementNode)
-	return p.ParseString(elementNode)
+
+	switch p.tok {
+	case STRING:
+		return p.ParseString(elementNode)
+	case F_REQUIREMENT:
+		return p.ParseListFunction(elementNode)
+	default:
+		return errs.New("Expected string or identifier, got: %s", p.lit)
+	}
+}
+
+func (p *Parser) ParseListFunction(node *NodeElement) error {
+	if !p.IsFunctionIdentifier() {
+		return errs.New("Expected function identifier")
+	}
+
+	identifierNode := p.newNode(NodeIdentifier)
+	node.AddChild(identifierNode)
+
+	err := p.Next()
+	if err != nil {
+		return errs.Wrap(err, "Failed to scan")
+	}
+
+	if p.tok != L_PAREN {
+		return errs.New("Expected left parenthesis")
+	}
+	identifierNode.AddChild(p.newNode(NodeLeftParen))
+
+	err = p.Next()
+	if err != nil {
+		return errs.Wrap(err, "Failed to scan")
+	}
+
+	err = p.ParseArguments(identifierNode)
+	if err != nil {
+		return errs.Wrap(err, "Failed to parse arguments")
+	}
+
+	if p.tok != R_PAREN {
+		return errs.New("Expected right parenthesis, got %s:%s", p.tok, p.lit)
+	}
+	identifierNode.AddChild(p.newNode(NodeRightParen))
+
+	return p.Next()
 }
 
 func (p *Parser) ParseString(node *NodeElement) error {
@@ -372,21 +491,17 @@ func (p *Parser) ParseString(node *NodeElement) error {
 	}
 	node.AddChild(p.newNode(NodeString))
 
-	// TODO: Should increment here?
-	err := p.Next()
-	if err != nil {
-		return errs.Wrap(err, "Failed to scan")
-	}
-
-	return nil
+	return p.Next()
 }
 
 func (p *Parser) IsExpression() bool {
+	// Currently only supporting Let, can be expanded to
+	// support application and identifier later
 	return p.tok == LET
 }
 
 func (p *Parser) IsBinding() bool {
-	return p.tok == IDENTIFIER
+	return p.tok == IDENTIFIER && p.peek() == EQUALS
 }
 
 func (p *Parser) IsIdentifier() bool {
@@ -394,5 +509,9 @@ func (p *Parser) IsIdentifier() bool {
 }
 
 func (p *Parser) IsFunctionIdentifier() bool {
-	return p.tok == F_SOLVE || p.tok == F_SOLVELEGACY
+	return p.tok == F_SOLVE || p.tok == F_SOLVELEGACY || p.tok == F_REQUIREMENT || p.tok == F_APPEND
+}
+
+func (p *Parser) IsString() bool {
+	return p.tok == STRING
 }

@@ -1,0 +1,9 @@
+let:
+    runtime = solve(
+        requirements=[req(name="language/python")]
+        platforms=["12345", "67890"]
+    )
+
+    testing = solve(requirements=append(requirements, req(name="testing")))
+in:
+    runtime

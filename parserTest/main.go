@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 
+	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/pkg/localorder/parser"
 	"github.com/ActiveState/cli/pkg/localorder/parser/transform"
@@ -17,11 +19,11 @@ import (
 
 var data = []byte(`
 let:
-  # This is a comment
+  # TODO: Add support for solve_legacy function identifier
   runtime = solve(
     platforms = ["linux", "windows"]
     languages = ["python"]
-    packages =  ["requests"]
+    requirements = ["requests"]
   )
 in: 
   runtime
@@ -35,23 +37,25 @@ func main() {
 	}
 }
 
-type MyStruct struct {
-	mySlice []int
-}
-
-func AppendToSlice(s *MyStruct, newValue int) {
-	s.mySlice = append(s.mySlice, newValue)
-}
-
 func runParser() error {
-	p := parser.New(data)
+	cwd, err := environment.GetRootPath()
+	if err != nil {
+		return errs.Wrap(err, "Failed to get root path")
+	}
+
+	testData, err := os.ReadFile(filepath.Join(cwd, "pkg", "localorder", "parser", "testdata", "moderate.lo"))
+	if err != nil {
+		return errs.Wrap(err, "Failed to read file")
+	}
+
+	p := parser.New(testData)
 	t, err := p.Parse()
 	if err != nil {
 		return errs.Wrap(err, "Failed to parse")
 	}
 
 	transformer := transform.NewBuildScriptTransformer(t)
-	bs, err := transformer.Transform2()
+	bs, err := transformer.Transform()
 	if err != nil {
 		return errs.Wrap(err, "Failed to transform")
 	}

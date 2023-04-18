@@ -26,6 +26,8 @@ const (
 	// Functions
 	F_SOLVE
 	F_SOLVELEGACY
+	F_REQUIREMENT
+	F_APPEND
 
 	IDENTIFIER
 )
@@ -35,6 +37,8 @@ var keywordTokens = map[string]Token{
 	"in":           IN,
 	"solve":        F_SOLVE,
 	"solve_legacy": F_SOLVELEGACY,
+	"req":          F_REQUIREMENT,
+	"append":       F_APPEND,
 }
 
 var tokenNames = map[Token]string{
@@ -53,6 +57,8 @@ var tokenNames = map[Token]string{
 	COMMA:         "COMMA",
 	F_SOLVE:       "F_SOLVE",
 	F_SOLVELEGACY: "F_SOLVELEGACY",
+	F_REQUIREMENT: "F_REQUIREMENT",
+	F_APPEND:      "F_APPEND",
 	IDENTIFIER:    "IDENTIFIER",
 }
 

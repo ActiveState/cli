@@ -30,6 +30,8 @@ const (
 	NodeComma
 	NodeSolveFn
 	NodeSolveLegacyFn
+	NodeRequirementFn
+	NodeAppendFn
 	NodeString
 	NodeComment
 )

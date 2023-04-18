@@ -68,7 +68,7 @@ func (l *Lexer) Scan() (Position, Token, string, error) {
 	case '}':
 		return l.pos, R_CURL, "}", nil
 	default:
-		return l.pos, ILLEGAL, "", errs.New("unexpected rune: %s", string(r))
+		return l.pos, ILLEGAL, "", errs.New("unexpected rune: %s at %d:%d", string(r), l.pos.line, l.pos.column)
 	}
 }
 

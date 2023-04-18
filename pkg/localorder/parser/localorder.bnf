@@ -1,10 +1,12 @@
 file :== <expression>
-<expression> :== <application> | [let][:] <binding> [in] <expression> | <identifier>
-<binding> :== <assignment>*
-<assignment> :== <identifier> = <application> | <identifier> = <list>
+<expression> :== <application> | [let][:] <binding> [in] ( <expression> | <identifier> )
+<binding> :== <assignment>+
+<assignment> :== <identifier> = <application> | <identifier> = <list> | <identifier> = <string>
 <application> ::== <function_identifier> [(] <argument>* [)]
-<argument> ::== <binding> | <list>
+<argument> ::== <binding> | <identifier>
 <list> ::== [[]<list_element>* []]
-<list_element> ::== <identifier>
+<list_element> ::== <identifier> | <application> | <string>
 <function_identifier> ::== [a-zA-Z] <identifier>*
 <identifier> ::== [a-zA-Z0-9]+
+<string> ::== " <string_element>* "
+<string_element> ::== *.

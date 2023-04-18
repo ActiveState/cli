@@ -1,6 +1,8 @@
 package transform
 
 import (
+	"time"
+
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/pkg/localorder/parser"
 	model "github.com/ActiveState/cli/pkg/platform/api/graphql/model/buildplanner"
@@ -11,8 +13,6 @@ type BuildScriptTransformer struct {
 	visited map[*parser.NodeElement]bool
 }
 
-type transformFunc func(*model.BuildScript, *parser.NodeElement) error
-
 func NewBuildScriptTransformer(ast *parser.Tree) *BuildScriptTransformer {
 	return &BuildScriptTransformer{
 		ast:     ast,
@@ -20,8 +20,10 @@ func NewBuildScriptTransformer(ast *parser.Tree) *BuildScriptTransformer {
 	}
 }
 
-func (t *BuildScriptTransformer) Transform2() (*model.BuildScript, error) {
+// TODO: Transform can likely be simplified significantly
+func (t *BuildScriptTransformer) Transform() (*model.BuildScript, error) {
 	result := model.NewBuildScript()
+	result.Let.Runtime.SolveLegacy.AtTime = time.Now().UTC().Format(time.RFC3339)
 
 	err := t.walkTree(t.ast, result, t.ast.Root)
 	if err != nil {
@@ -32,7 +34,7 @@ func (t *BuildScriptTransformer) Transform2() (*model.BuildScript, error) {
 }
 
 func (t *BuildScriptTransformer) walkTree(tree *parser.Tree, result *model.BuildScript, node *parser.NodeElement) error {
-	for _, child := range node.Children() {
+	for i, child := range node.Children() {
 		switch nodeType := child.Type(); {
 		case nodeType == parser.NodeLet:
 			err := t.TransformExpression(result, child)
@@ -55,7 +57,7 @@ func (t *BuildScriptTransformer) walkTree(tree *parser.Tree, result *model.Build
 				return errs.Wrap(err, "Failed to transform binding")
 			}
 		case nodeType == parser.NodeIn:
-			err := t.TransformIn(result, child)
+			err := t.TransformIn(result, child, node.Children()[i:])
 			if err != nil {
 				return errs.Wrap(err, "Failed to transform in")
 			}
@@ -137,8 +139,9 @@ func (t *BuildScriptTransformer) TransformFunction(result *model.BuildScript, no
 
 	for _, c := range node.Children() {
 		if c.Type() == parser.NodeSolveFn || c.Type() == parser.NodeSolveLegacyFn {
-			// Only supporting solve_legacy for now
-			result.Let.Runtime.SolveLegacy = &model.SolveLegacy{}
+			// TODO: Do nothing as the current result should already have a SolveLegacy
+			// Need to add support for solve and solve_legacy
+			// result.Let.Runtime.SolveLegacy = &model.SolveLegacy{}
 		} else {
 			return errs.New("Unexpected function child type: %s", c.Type().String())
 		}
@@ -148,11 +151,20 @@ func (t *BuildScriptTransformer) TransformFunction(result *model.BuildScript, no
 	return nil
 }
 
-func (t *BuildScriptTransformer) TransformIn(result *model.BuildScript, node *parser.NodeElement) error {
+func (t *BuildScriptTransformer) TransformIn(result *model.BuildScript, node *parser.NodeElement, siblings []*parser.NodeElement) error {
 	if result.Let == nil {
 		return errs.New("Cannot set in on nil LetStatement")
 	}
-	result.Let.In = "in"
+
+	// TODO: This is a bit messy, but it works for now
+	if len(siblings) < 3 {
+		return errs.New("Expected at least 3 siblings")
+	}
+	if siblings[2].Type() != parser.NodeIdentifier {
+		return errs.New("Expected identifier as third sibling")
+	}
+	result.Let.In = siblings[2].Literal()
+
 	return nil
 }
 
