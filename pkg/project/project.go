@@ -59,6 +59,9 @@ func (p *Project) SetCommit(commitID string) error {
 }
 
 func (p *Project) SetUpdateCallback(fn func()) {
+	if p.projectfile == nil {
+		return
+	}
 	p.projectfile.SetUpdateCallback(fn)
 }
 
