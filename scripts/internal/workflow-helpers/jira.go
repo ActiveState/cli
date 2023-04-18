@@ -18,6 +18,10 @@ import (
 
 var jiraIssueRx = regexp.MustCompile(`(?i)(DX-\d+)`)
 
+const JiraStatusTodo = "To Do"
+const JiraStatusInProgress = "In Progress"
+const JiraStatusPending = "Pending"
+
 func InitJiraClient() (*jira.Client, error) {
 	username := secrethelper.GetSecretIfEmpty(os.Getenv("JIRA_USERNAME"), "user.JIRA_USERNAME")
 	password := secrethelper.GetSecretIfEmpty(os.Getenv("JIRA_TOKEN"), "user.JIRA_TOKEN")

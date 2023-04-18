@@ -12,6 +12,7 @@ import (
 	"github.com/andygrunwald/go-jira"
 	"github.com/blang/semver"
 	"github.com/google/go-github/v45/github"
+	"github.com/thoas/go-funk"
 )
 
 func main() {
@@ -120,7 +121,7 @@ func run() error {
 	}
 	finish()
 
-	if meta.JiraIssue.Fields.Status.Name == "To Do" || meta.JiraIssue.Fields.Status.Name == "Pending" {
+	if meta.JiraIssue.Fields.Status.Name == wh.JiraStatusTodo || meta.JiraIssue.Fields.Status.Name == wh.JiraStatusPending {
 		finish = wc.PrintStart("Updating jira issue to In Progress")
 		if err := wh.UpdateJiraStatus(jiraClient, meta.JiraIssue, "In Progress"); err != nil {
 			return errs.Wrap(err, "failed to update Jira status")
@@ -151,7 +152,7 @@ func fetchMeta(ghClient *github.Client, jiraClient *jira.Client, jiraIssueID str
 		return Meta{}, errs.New("Target issue has fixVersion '%s', which has either been archived or released\n", fixVersion.Name)
 	}
 
-	if jiraIssue.Fields.Status.Name != "To Do" && jiraIssue.Fields.Status.Name != "In Progress" && jiraIssue.Fields.Status.Name != "Pending" {
+	if !funk.ContainsString([]string{wh.JiraStatusTodo, wh.JiraStatusInProgress, wh.JiraStatusPending}, jiraIssue.Fields.Status.Name) {
 		return Meta{}, errs.New("Story is in the %s state, but only 'To Do', 'In Progress' and 'Pending' are valid states to start a story from.", jiraIssue.Fields.Status.Name)
 	}
 
