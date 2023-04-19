@@ -54,6 +54,11 @@ func runParser() error {
 		return errs.Wrap(err, "Failed to parse")
 	}
 
+	// err = createGraphVis(t.Root)
+	// if err != nil {
+	// 	return errs.Wrap(err, "Failed to create graph")
+	// }
+
 	transformer := transform.NewBuildScriptTransformer(t)
 	bs, err := transformer.Transform()
 	if err != nil {

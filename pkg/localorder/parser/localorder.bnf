@@ -8,5 +8,5 @@ file :== <expression>
 <list_element> ::== <identifier> | <application> | <string>
 <function_identifier> ::== [a-zA-Z] <identifier>*
 <identifier> ::== [a-zA-Z0-9_]+
-<string> ::== " <string_element>* "
+<string> ::== ["]<string_element>*["]
 <string_element> ::== *.

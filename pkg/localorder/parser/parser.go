@@ -127,8 +127,10 @@ func (p *Parser) ParseExpression(root *NodeElement) error {
 	if !p.IsExpression() {
 		return errs.New("Expected expression")
 	}
-	expressionNode := p.newNode(NodeLet)
+	expressionNode := p.newNode(NodeExpression)
 	root.AddChild(expressionNode)
+
+	expressionNode.AddChild(p.newNode(NodeLet))
 
 	err := p.Next()
 	if err != nil {
