@@ -1,9 +1,8 @@
 let:
   # TODO: Add support for solve_legacy function identifier
   runtime = solve(
-    platforms = ["linux", "windows"]
-    languages = ["python"]
-    requirements = ["requests"]
+    platforms = ["linux", "windows"],
+    requirements = [req(name="requests"), req(name="language/python")]
   )
 in: 
   runtime

@@ -1,6 +1,6 @@
 let:
     runtime = solve(
-        requirements=[req(name="language/python")]
+        requirements=[req(name="language/python")],
         platforms=["12345", "67890"]
     )
 

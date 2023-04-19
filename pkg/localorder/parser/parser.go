@@ -6,11 +6,6 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 )
 
-// TODO: Need to refactor this to follow the BNF grammar more closely
-// Each parsing function should be responsible for parsing a single production
-// Each parsing function should be responsible for iterating the parser so that
-// the next token does not belong to the current production
-
 type Parser struct {
 	lexer *Lexer
 	tree  *Tree
@@ -179,6 +174,10 @@ func (p *Parser) ParseExpression(root *NodeElement) error {
 		return p.ParseIdentifier(expressionNode)
 	}
 
+	if p.IsFunctionIdentifier() {
+		return p.ParseApplication(expressionNode)
+	}
+
 	return p.ParseExpression(root)
 }
 
@@ -199,20 +198,8 @@ func (p *Parser) ParseBinding(node *NodeElement) error {
 		if err != nil {
 			return errs.Wrap(err, "Failed to parse assignment")
 		}
-
-		if p.tok == COMMA {
-			commaNode := p.newNode(NodeComma)
-			bindingNode.AddChild(commaNode)
-			continue
-		}
-
-		err = p.Next()
-		if err != nil {
-			return errs.Wrap(err, "Failed to scan")
-		}
 	}
 
-	// TOOD: Iterate here?
 	return nil
 }
 
@@ -302,21 +289,28 @@ func (p *Parser) ParseApplication(node *NodeElement) error {
 }
 
 func (p *Parser) ParseFunctionIdentifier(node *NodeElement) error {
-	if p.tok != F_SOLVE && p.tok != F_SOLVELEGACY && p.tok != F_REQUIREMENT && p.tok != F_APPEND {
+	if p.tok != F_SOLVE && p.tok != F_SOLVELEGACY && p.tok != F_REQUIREMENT && p.tok != F_APPEND && p.tok != F_MERGE && p.tok != F_WIN_INSTALLER && p.tok != F_TAR_INSTALLER {
 		return errs.New("Unknown function identifier")
 	}
 
 	functionIdentifierNode := p.newNode(NodeFunction)
 	node.AddChild(functionIdentifierNode)
 
-	if p.tok == F_SOLVE {
+	switch p.tok {
+	case F_SOLVE:
 		functionIdentifierNode.AddChild(p.newNode(NodeSolveFn))
-	} else if p.tok == F_SOLVELEGACY {
+	case F_SOLVELEGACY:
 		functionIdentifierNode.AddChild(p.newNode(NodeSolveLegacyFn))
-	} else if p.tok == F_REQUIREMENT {
+	case F_REQUIREMENT:
 		functionIdentifierNode.AddChild(p.newNode(NodeRequirementFn))
-	} else if p.tok == F_APPEND {
+	case F_APPEND:
 		functionIdentifierNode.AddChild(p.newNode(NodeAppendFn))
+	case F_MERGE:
+		functionIdentifierNode.AddChild(p.newNode(NodeMergeFn))
+	case F_WIN_INSTALLER:
+		functionIdentifierNode.AddChild(p.newNode(NodeWinInstallerFn))
+	case F_TAR_INSTALLER:
+		functionIdentifierNode.AddChild(p.newNode(NodeTarInstallerFn))
 	}
 
 	return p.Next()
@@ -360,11 +354,6 @@ func (p *Parser) ParseArguments(node *NodeElement) error {
 
 		if p.tok == R_PAREN {
 			break
-		}
-
-		err := p.Next()
-		if err != nil {
-			return errs.Wrap(err, "Failed to scan")
 		}
 	}
 
@@ -423,12 +412,8 @@ func (p *Parser) ParseListElements(node *NodeElement) error {
 		}
 
 		if p.tok == R_BRACKET {
+			node.AddChild(p.newNode(NodeRightBracket))
 			break
-		}
-
-		err = p.Next()
-		if err != nil {
-			return errs.Wrap(err, "Failed to scan")
 		}
 	}
 
@@ -509,7 +494,9 @@ func (p *Parser) IsIdentifier() bool {
 }
 
 func (p *Parser) IsFunctionIdentifier() bool {
-	return p.tok == F_SOLVE || p.tok == F_SOLVELEGACY || p.tok == F_REQUIREMENT || p.tok == F_APPEND
+	// TODO: This should be generalized to support all functions rather than just the ones we support
+	// Can likely be done by using peek() to check for the next token
+	return p.tok == F_SOLVE || p.tok == F_SOLVELEGACY || p.tok == F_REQUIREMENT || p.tok == F_APPEND || p.tok == F_MERGE || p.tok == F_TAR_INSTALLER || p.tok == F_WIN_INSTALLER
 }
 
 func (p *Parser) IsString() bool {

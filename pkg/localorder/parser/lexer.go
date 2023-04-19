@@ -124,7 +124,7 @@ func (l *Lexer) isInStart(r rune) bool {
 
 func (l *Lexer) lexKeyword(r rune) (Position, Token, string, error) {
 	if l.read >= len(l.input) {
-		return l.pos, ILLEGAL, "", errs.New("unexpected end of input")
+		return l.pos, ILLEGAL, "", errs.New("unexpected end of input lexing keyword")
 	}
 	start := l.read - 1
 	for l.isAlphanumeric(r) {
@@ -150,7 +150,7 @@ func (l *Lexer) lexKeyword(r rune) (Position, Token, string, error) {
 }
 
 func (l *Lexer) isAlphanumeric(r rune) bool {
-	return (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '0' && r <= '9')
+	return (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '0' && r <= '9') || r == '_'
 }
 
 func (l *Lexer) lexIdentifier(r rune) (Position, Token, string, error) {
@@ -177,15 +177,19 @@ func (l *Lexer) lexString(r rune) (Position, Token, string, error) {
 	start := l.read
 	r = l.next()
 	// Slash is a workaround
-	for l.isAlphanumeric(r) || r == '/' {
+	for r != '"' {
 		r = l.next()
 		if r == 0 {
-			return l.pos, ILLEGAL, "", errs.New("unexpected end of input")
+			return l.pos, ILLEGAL, "", errs.New("unexpected end of input lexing string")
 		}
 	}
 
 	l.backtrack()
-	return l.pos, STRING, string(l.input[start:l.read]), nil
+	result := string(l.input[start:l.read])
+
+	// Consume the last "
+	l.next()
+	return l.pos, STRING, result, nil
 }
 
 func (l *Lexer) lexComment(r rune) (Position, Token, string, error) {
@@ -198,7 +202,7 @@ func (l *Lexer) lexComment(r rune) (Position, Token, string, error) {
 	for r != '\n' {
 		r = l.next()
 		if r == 0 {
-			return l.pos, ILLEGAL, "", errs.New("unexpected end of input")
+			return l.pos, ILLEGAL, "", errs.New("unexpected end of input lexing comment")
 		}
 	}
 

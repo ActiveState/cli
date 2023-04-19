@@ -1,17 +1,18 @@
 let:
     linux_runtime = solve(
-        tag=”this is the one”,
-        requirements=[Req(name=language/python)],
-        platforms=[ “67890”]
+        tag="this is the one",
+        requirements=[req(name="language/python")],
+        platforms=["67890"]
     )
 
     win_runtime = solve(
-        tag=”this is the other”,
-        requirements=[Req(name=language/perl)],
-        platforms=[ ““12345”]
+        tag="this is the other",
+        requirements=[req(name="language/perl")],
+        platforms=["12345"]
     )
 
 in:
    merge(
-        win_installer(win_runtime) , 
-        tar_installer(linux_runtime) )
+        win_installer(win_runtime),
+        tar_installer(linux_runtime)
+    )

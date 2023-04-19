@@ -1,5 +1,5 @@
 file :== <expression>
-<expression> :== <application> | [let][:] <binding> [in] ( <expression> | <identifier> )
+<expression> :== <application> | [let][:] <binding> [in] ( <identifier> | <application> | <expression> )
 <binding> :== <assignment>+
 <assignment> :== <identifier> = <application> | <identifier> = <list> | <identifier> = <string>
 <application> ::== <function_identifier> [(] <argument>* [)]
@@ -7,6 +7,6 @@ file :== <expression>
 <list> ::== [[]<list_element>* []]
 <list_element> ::== <identifier> | <application> | <string>
 <function_identifier> ::== [a-zA-Z] <identifier>*
-<identifier> ::== [a-zA-Z0-9]+
+<identifier> ::== [a-zA-Z0-9_]+
 <string> ::== " <string_element>* "
 <string_element> ::== *.

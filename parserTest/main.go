@@ -43,7 +43,7 @@ func runParser() error {
 		return errs.Wrap(err, "Failed to get root path")
 	}
 
-	testData, err := os.ReadFile(filepath.Join(cwd, "pkg", "localorder", "parser", "testdata", "moderate.lo"))
+	testData, err := os.ReadFile(filepath.Join(cwd, "pkg", "localorder", "parser", "testdata", "complex.lo"))
 	if err != nil {
 		return errs.Wrap(err, "Failed to read file")
 	}

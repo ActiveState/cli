@@ -30,8 +30,11 @@ const (
 	NodeComma
 	NodeSolveFn
 	NodeSolveLegacyFn
+	NodeMergeFn
 	NodeRequirementFn
 	NodeAppendFn
+	NodeWinInstallerFn
+	NodeTarInstallerFn
 	NodeString
 	NodeComment
 )
@@ -75,6 +78,9 @@ var nodeNames = map[NodeType]string{
 	NodeComma:         "Comma",
 	NodeSolveFn:       "SolveFn",
 	NodeSolveLegacyFn: "SolveLegacyFn",
+	NodeMergeFn:       "MergeFn",
+	NodeRequirementFn: "RequirementFn",
+	NodeAppendFn:      "AppendFn",
 	NodeString:        "String",
 	NodeComment:       "Comment",
 }
