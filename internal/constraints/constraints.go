@@ -53,14 +53,14 @@ func NewPrimeConditional(structure interface{}) *Conditional {
 
 	fields := reflect.VisibleFields(v.Type())
 
-	// Work at depth 1: Vars.[OS].Version.Name
+	// Work at depth 1: Vars.[Struct].Struct.Simple
 	for _, f := range fields {
 		d1Val := v.FieldByIndex(f.Index)
 		if d1Val.Kind() == reflect.Ptr {
 			d1Val = d1Val.Elem()
 		}
 
-		// Only nodes at depth 1 need to be registered since the genertic type
+		// Only nodes at depth 1 need to be registered since the generic type
 		// handling within the templating package will do the rest. If function
 		// registration is needed at greater depths, this will need to be
 		// reworked (and may not be possible without expansive refactoring).

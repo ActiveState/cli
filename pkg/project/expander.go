@@ -242,9 +242,9 @@ func newEntry(tag string, val reflect.Value) entry {
 	}
 }
 
-func makeEntryMap(val reflect.Value) map[string]entry {
+func makeEntryMap(structure reflect.Value) map[string]entry {
 	m := make(map[string]entry)
-	fields := reflect.VisibleFields(val.Type())
+	fields := reflect.VisibleFields(structure.Type())
 
 	// Work at depth 3: Vars.Struct.Struct.[Simple]
 	for _, f := range fields {
@@ -252,8 +252,8 @@ func makeEntryMap(val reflect.Value) map[string]entry {
 			continue
 		}
 
-		subValue := val.FieldByIndex(f.Index)
-		m[strings.ToLower(f.Name)] = newEntry(f.Tag.Get(expandStructTag), subValue)
+		d3Val := structure.FieldByIndex(f.Index)
+		m[strings.ToLower(f.Name)] = newEntry(f.Tag.Get(expandStructTag), d3Val)
 	}
 
 	return m
@@ -312,33 +312,33 @@ func makeExpanderFuncFromMap(m map[string]map[string]entry) ExpanderFunc {
 	}
 }
 
-func makeExpanderFuncFromFunc(val reflect.Value) ExpanderFunc {
+func makeExpanderFuncFromFunc(fn reflect.Value) ExpanderFunc {
 	return func(v, name, meta string, isFunc bool, ctx *Expansion) (string, error) {
 		// Call function; It should not require any arguments.
 		// Work at depth 1: Vars.[FuncReturnsSomething]...
-		vals := val.Call(nil)
+		vals := fn.Call(nil)
 		if len(vals) > 1 {
 			if !vals[1].IsNil() {
 				return "", vals[1].Interface().(error)
 			}
 		}
 
-		val := vals[0]
+		d1Val := vals[0]
 		// deref if needed
-		if val.Kind() == reflect.Ptr {
-			val = val.Elem()
+		if d1Val.Kind() == reflect.Ptr {
+			d1Val = d1Val.Elem()
 		}
 
-		switch val.Kind() {
+		switch d1Val.Kind() {
 		// Convert type (to map-map) to express advanced control like tag handling.
 		case reflect.Struct:
-			m := makeEntryMapMap(val)
+			m := makeEntryMapMap(d1Val)
 			expandFromMap := makeExpanderFuncFromMap(m)
 			return expandFromMap(v, name, meta, isFunc, ctx)
 
 		// Format simple value. This is a leaf: Vars.[FuncReturnsSimple]
 		default:
-			return fmt.Sprintf("%v", val.Interface()), nil
+			return fmt.Sprintf("%v", d1Val.Interface()), nil
 		}
 	}
 }
