@@ -42,29 +42,34 @@ func NewConditional() *Conditional {
 	return c
 }
 
-func NewPrimeConditional(val interface{}) *Conditional {
+func NewPrimeConditional(structure interface{}) *Conditional {
 	c := NewConditional()
 
-	v := reflect.ValueOf(val)
+	v := reflect.ValueOf(structure)
+	// deref if needed
 	if v.Kind() == reflect.Ptr {
 		v = v.Elem()
 	}
-	to := v.Type()
-	fields := reflect.VisibleFields(to)
 
+	fields := reflect.VisibleFields(v.Type())
+
+	// Work at depth 1: Vars.[OS].Version.Name
 	for _, f := range fields {
-		sv := v.FieldByIndex(f.Index)
-		if sv.Kind() == reflect.Ptr {
-			sv = sv.Elem()
+		d1Val := v.FieldByIndex(f.Index)
+		if d1Val.Kind() == reflect.Ptr {
+			d1Val = d1Val.Elem()
 		}
-		sto := sv.Type()
 
-		switch sto.Kind() {
+		// Only nodes at depth 1 need to be registered since the genertic type
+		// handling within the templating package will do the rest. If function
+		// registration is needed at greater depths, this will need to be
+		// reworked (and may not be possible without expansive refactoring).
+		switch d1Val.Type().Kind() {
 		case reflect.Func:
-			c.RegisterFunc(f.Name, sv.Interface())
+			c.RegisterFunc(f.Name, d1Val.Interface())
 
 		default:
-			c.RegisterParam(f.Name, sv.Interface())
+			c.RegisterParam(f.Name, d1Val.Interface())
 		}
 	}
 

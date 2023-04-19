@@ -33,30 +33,33 @@ func init() {
 
 func RegisterStruct(val interface{}) error {
 	v := reflect.ValueOf(val)
+	// deref if needed
 	if v.Kind() == reflect.Ptr {
 		v = v.Elem()
 	}
-	to := v.Type()
-	fields := reflect.VisibleFields(to) // we know this is a struct
 
-	// Vars.(OS).Version.Name
+	fields := reflect.VisibleFields(v.Type())
+
+	// Work at depth 1: Vars.[Struct].Struct.Simple
 	for _, f := range fields {
 		if !f.IsExported() {
 			continue
 		}
 
-		sv := v.FieldByIndex(f.Index)
-		if sv.Kind() == reflect.Ptr {
-			sv = sv.Elem()
+		d1Val := v.FieldByIndex(f.Index)
+		if d1Val.Kind() == reflect.Ptr {
+			d1Val = d1Val.Elem()
 		}
-		sto := sv.Type()
 
-		switch sto.Kind() {
+		// If function registration is needed at greater depths, this
+		// will need to be reworked (and may not be possible without
+		// expansive refactoring).
+		switch d1Val.Type().Kind() {
+		// Convert type (to map-map) to express advanced control like tag handling.
 		case reflect.Struct:
-			// Vars.OS.(Version).Name
-			m := makeEntryMapMap(sv)
+			m := makeEntryMapMap(d1Val)
 			name := strings.ToLower(f.Name)
-			err := RegisterExpander(name, MakeExpanderFuncFromMap(m))
+			err := RegisterExpander(name, makeExpanderFuncFromMap(m))
 			if err != nil {
 				return locale.WrapError(
 					err, "project_expand_register_expander_map",
@@ -64,9 +67,10 @@ func RegisterStruct(val interface{}) error {
 				)
 			}
 
+		// Expand from function.
 		case reflect.Func:
 			name := strings.ToLower(f.Name)
-			err := RegisterExpander(name, MakeExpanderFuncFromFunc(sv))
+			err := RegisterExpander(name, makeExpanderFuncFromFunc(d1Val))
 			if err != nil {
 				return locale.WrapError(
 					err, "project_expand_register_expander_func",
@@ -74,8 +78,9 @@ func RegisterStruct(val interface{}) error {
 				)
 			}
 
+		// Format simple value. This is a leaf: Vars.[Simple]
 		default:
-			topLevelLookup[strings.ToLower(f.Name)] = fmt.Sprintf("%v", sv.Interface())
+			topLevelLookup[strings.ToLower(f.Name)] = fmt.Sprintf("%v", d1Val.Interface())
 		}
 	}
 
