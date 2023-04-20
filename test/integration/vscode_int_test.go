@@ -28,7 +28,7 @@ func (suite *PushIntegrationTestSuite) TestInitAndPush_VSCode() {
 		"--path", filepath.Join(ts.Dirs.Work, namespace),
 	)
 	cp.ExpectExitCode(0)
-	suite.Equal("", cp.TrimmedSnapshot())
+	suite.Equal("Skipping runtime setup because it was disabled by an environment variable", cp.TrimmedSnapshot())
 	wd := filepath.Join(cp.WorkDirectory(), namespace)
 	cp = ts.SpawnWithOpts(
 		e2e.WithArgs("push", "--output", "editor"),
