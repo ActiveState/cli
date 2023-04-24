@@ -84,7 +84,7 @@ func (m *Messenger) PrintByPlacement(messages []*graph.MessageInfo, placement gr
 	if len(exit) > 0 {
 		// It's the responsibility of the message to give the user context as to why this exit happened.
 		// We pass an input error here to ensure this doesn't get logged.
-		return errs.Silence(errs.WrapExitCode(errs.New("Following messages triggered exit:", strings.Join(exit, ", ")), 1))
+		return errs.Silence(errs.WrapExitCode(errs.New("Following messages triggered exit: %s", strings.Join(exit, ", ")), 1))
 	}
 
 	return nil
