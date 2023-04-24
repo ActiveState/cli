@@ -47,7 +47,8 @@ func (u *Uninstall) runUninstall(params *UninstallParams) error {
 
 	err = removeInstall(u.cfg)
 	if errors.Is(err, errDirNotEmpty) {
-		u.out.Notice(locale.T("uninstall_warn_not_empty"))
+		logging.Debug("Could not remove install as dir is not empty: %s", errs.JoinMessage(err))
+		aggErr = locale.WrapError(aggErr, "uninstall_warn_not_empty")
 	} else if err != nil {
 		logging.Debug("Could not remove install: %s", errs.JoinMessage(err))
 		aggErr = locale.WrapError(aggErr, "uninstall_remove_executables_err", "Failed to remove all State Tool files in installation directory")
