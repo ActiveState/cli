@@ -262,8 +262,12 @@ func (c *Command) Use() string {
 	return c.cobra.Use
 }
 
-func (c *Command) UseFull() string {
-	return strings.Join(c.subCommandNames(), " ")
+func (c *Command) JoinedSubCommandNames() string {
+	return strings.Join(c.commandNames(false), " ")
+}
+
+func (c *Command) JoinedCommandNames() string {
+	return strings.Join(c.commandNames(true), " ")
 }
 
 func (c *Command) UsageText() string {
@@ -357,6 +361,18 @@ func (c *Command) Flags() []*Flag {
 	return c.flags
 }
 
+func (c *Command) ActiveFlagNames() []string {
+	names := []string{}
+	for _, flag := range c.ActiveFlags() {
+		if flag.Name != "" {
+			names = append(names, flag.Shorthand)
+		} else if flag.Shorthand != "" {
+			names = append(names, flag.Shorthand)
+		}
+	}
+	return names
+}
+
 func (c *Command) ActiveFlags() []*Flag {
 	var flags []*Flag
 	flagMapping := map[string]*Flag{}
@@ -384,8 +400,8 @@ func (c *Command) Arguments() []*Argument {
 	return c.arguments
 }
 
-func (c *Command) SetInterceptChain(fns ...InterceptFunc) {
-	c.interceptChain = fns
+func (c *Command) AppendInterceptChain(fns ...InterceptFunc) {
+	c.interceptChain = append(c.interceptChain, fns...)
 }
 
 func DisableMousetrap() {
@@ -394,13 +410,14 @@ func DisableMousetrap() {
 
 func (c *Command) interceptFunc() InterceptFunc {
 	return func(fn ExecuteFunc) ExecuteFunc {
+		rootCmd := c.TopParent()
 		defer profile.Measure("captain:intercepter", time.Now())
-		for i := len(c.interceptChain) - 1; i >= 0; i-- {
-			if c.interceptChain[i] == nil {
+		for i := len(rootCmd.interceptChain) - 1; i >= 0; i-- {
+			if rootCmd.interceptChain[i] == nil {
 				continue
 			}
 			start := time.Now()
-			fn = c.interceptChain[i](fn)
+			fn = rootCmd.interceptChain[i](fn)
 			profile.Measure(fmt.Sprintf("captain:intercepter:%d", i), start)
 		}
 		return fn
@@ -462,9 +479,6 @@ func (c *Command) AddChildren(children ...*Command) {
 			panic(fmt.Sprintf("Command %s already has a parent: %s", child.Name(), child.parent.Name()))
 		}
 		child.parent = c
-
-		interceptChain := append(c.interceptChain, child.interceptChain...)
-		child.SetInterceptChain(interceptChain...)
 	}
 }
 
@@ -572,13 +586,13 @@ func (c *Command) persistRunner(cobraCmd *cobra.Command, args []string) {
 	c.runFlags(true)
 }
 
-// subCommandNames returns a slice of the names of the sub-commands called
-func (c *Command) subCommandNames() []string {
+// commandNames returns a slice of the names of the sub-commands called
+func (c *Command) commandNames(includeRoot bool) []string {
 	var commands []string
 	cmd := c.cobra
 	root := cmd.Root()
 	for {
-		if cmd == nil || cmd == root {
+		if cmd == nil || (cmd == root && !includeRoot) {
 			break
 		}
 		commands = append(commands, cmd.Name())
@@ -596,7 +610,7 @@ func (c *Command) subCommandNames() []string {
 func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
 	defer profile.Measure("captain:runner", time.Now())
 
-	subCommandString := c.UseFull()
+	subCommandString := c.JoinedSubCommandNames()
 	rollbar.CurrentCmd = appEventPrefix + subCommandString
 
 	// Send GA events unless they are handled in the runners...
@@ -813,7 +827,7 @@ func pflagFlagErrMsgFlag(errMsg string) string {
 	flagText := strings.TrimPrefix(errMsg, "no such flag ")
 	flagText = strings.TrimPrefix(flagText, "unknown flag: ")
 	flagText = strings.TrimPrefix(flagText, "bad flag syntax: ")
-	//unknown shorthand flag: 'x' in -x
+	// unknown shorthand flag: 'x' in -x
 	flagText = strings.TrimPrefix(flagText, "unknown shorthand flag: ")
 
 	if flagText == errMsg {

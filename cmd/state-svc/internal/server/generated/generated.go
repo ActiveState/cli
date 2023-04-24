@@ -63,11 +63,13 @@ type ComplexityRoot struct {
 		Received func(childComplexity int) int
 	}
 
-	DeprecationInfo struct {
-		Date        func(childComplexity int) int
-		DateReached func(childComplexity int) int
-		Reason      func(childComplexity int) int
-		Version     func(childComplexity int) int
+	MessageInfo struct {
+		Condition func(childComplexity int) int
+		ID        func(childComplexity int) int
+		Interrupt func(childComplexity int) int
+		Message   func(childComplexity int) int
+		Placement func(childComplexity int) int
+		Repeat    func(childComplexity int) int
 	}
 
 	Project struct {
@@ -78,7 +80,7 @@ type ComplexityRoot struct {
 	Query struct {
 		AnalyticsEvent     func(childComplexity int, category string, action string, label *string, dimensionsJSON string) int
 		AvailableUpdate    func(childComplexity int) int
-		CheckDeprecation   func(childComplexity int) int
+		CheckMessages      func(childComplexity int, command string, flags []string) int
 		CheckRuntimeUsage  func(childComplexity int, organizationName string) int
 		ConfigChanged      func(childComplexity int, key string) int
 		FetchLogTail       func(childComplexity int) int
@@ -111,7 +113,7 @@ type QueryResolver interface {
 	AnalyticsEvent(ctx context.Context, category string, action string, label *string, dimensionsJSON string) (*graph.AnalyticsEventResponse, error)
 	ReportRuntimeUsage(ctx context.Context, pid int, exec string, dimensionsJSON string) (*graph.ReportRuntimeUsageResponse, error)
 	CheckRuntimeUsage(ctx context.Context, organizationName string) (*graph.CheckRuntimeUsageResponse, error)
-	CheckDeprecation(ctx context.Context) (*graph.DeprecationInfo, error)
+	CheckMessages(ctx context.Context, command string, flags []string) ([]*graph.MessageInfo, error)
 	ConfigChanged(ctx context.Context, key string) (*graph.ConfigChangedResponse, error)
 	FetchLogTail(ctx context.Context) (string, error)
 }
@@ -194,33 +196,47 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.ConfigChangedResponse.Received(childComplexity), true
 
-	case "DeprecationInfo.date":
-		if e.complexity.DeprecationInfo.Date == nil {
+	case "MessageInfo.condition":
+		if e.complexity.MessageInfo.Condition == nil {
 			break
 		}
 
-		return e.complexity.DeprecationInfo.Date(childComplexity), true
+		return e.complexity.MessageInfo.Condition(childComplexity), true
 
-	case "DeprecationInfo.dateReached":
-		if e.complexity.DeprecationInfo.DateReached == nil {
+	case "MessageInfo.id":
+		if e.complexity.MessageInfo.ID == nil {
 			break
 		}
 
-		return e.complexity.DeprecationInfo.DateReached(childComplexity), true
+		return e.complexity.MessageInfo.ID(childComplexity), true
 
-	case "DeprecationInfo.reason":
-		if e.complexity.DeprecationInfo.Reason == nil {
+	case "MessageInfo.interrupt":
+		if e.complexity.MessageInfo.Interrupt == nil {
 			break
 		}
 
-		return e.complexity.DeprecationInfo.Reason(childComplexity), true
+		return e.complexity.MessageInfo.Interrupt(childComplexity), true
 
-	case "DeprecationInfo.version":
-		if e.complexity.DeprecationInfo.Version == nil {
+	case "MessageInfo.message":
+		if e.complexity.MessageInfo.Message == nil {
 			break
 		}
 
-		return e.complexity.DeprecationInfo.Version(childComplexity), true
+		return e.complexity.MessageInfo.Message(childComplexity), true
+
+	case "MessageInfo.placement":
+		if e.complexity.MessageInfo.Placement == nil {
+			break
+		}
+
+		return e.complexity.MessageInfo.Placement(childComplexity), true
+
+	case "MessageInfo.repeat":
+		if e.complexity.MessageInfo.Repeat == nil {
+			break
+		}
+
+		return e.complexity.MessageInfo.Repeat(childComplexity), true
 
 	case "Project.locations":
 		if e.complexity.Project.Locations == nil {
@@ -255,12 +271,17 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.AvailableUpdate(childComplexity), true
 
-	case "Query.checkDeprecation":
-		if e.complexity.Query.CheckDeprecation == nil {
+	case "Query.checkMessages":
+		if e.complexity.Query.CheckMessages == nil {
 			break
 		}
 
-		return e.complexity.Query.CheckDeprecation(childComplexity), true
+		args, err := ec.field_Query_checkMessages_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.CheckMessages(childComplexity, args["command"].(string), args["flags"].([]string)), true
 
 	case "Query.checkRuntimeUsage":
 		if e.complexity.Query.CheckRuntimeUsage == nil {
@@ -421,64 +442,86 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 
 var sources = []*ast.Source{
 	{Name: "../../../schema/schema.graphqls", Input: `type Version {
-  state: StateVersion!
+    state: StateVersion!
 }
 
 type StateVersion {
-  license: String!
-  version: String!
-  branch: String!
-  revision: String!
-  date: String!
+    license: String!
+    version: String!
+    branch: String!
+    revision: String!
+    date: String!
 }
 
 type AvailableUpdate {
-  version: String!
-  channel: String!
-  path: String!
-  platform: String!
-  sha256: String!
+    version: String!
+    channel: String!
+    path: String!
+    platform: String!
+    sha256: String!
 }
 
 type Project {
-  namespace: String!
-  locations: [String!]!
+    namespace: String!
+    locations: [String!]!
 }
 
 type AnalyticsEventResponse {
-  sent: Boolean!
+    sent: Boolean!
 }
 
 type ReportRuntimeUsageResponse {
-  received: Boolean!
+    received: Boolean!
 }
 
 type CheckRuntimeUsageResponse {
-  limit: Int!
-  usage: Int!
+    limit: Int!
+    usage: Int!
 }
 
-type DeprecationInfo {
-  version: String!
-  date: String!
-  dateReached: Boolean!
-  reason: String!
+enum MessageRepeatType {
+    Disabled
+    Constantly
+    Hourly
+    Daily
+    Weekly
+    Monthly
+}
+
+enum MessageInterruptType {
+    Disabled
+    Prompt
+    Exit
+}
+
+enum MessagePlacementType {
+    BeforeCmd
+    AfterCmd
+}
+
+type MessageInfo {
+    id: String!
+    message: String!
+    condition: String!
+    repeat: MessageRepeatType!
+    interrupt: MessageInterruptType!
+    placement: MessagePlacementType!
 }
 
 type Query {
-  version: Version
-  availableUpdate: AvailableUpdate
-  projects: [Project]!
-  analyticsEvent(category: String!, action: String!, label: String, dimensionsJson: String!): AnalyticsEventResponse
-  reportRuntimeUsage(pid: Int!, exec: String!, dimensionsJson: String!): ReportRuntimeUsageResponse
-  checkRuntimeUsage(organizationName: String!): CheckRuntimeUsageResponse
-  checkDeprecation: DeprecationInfo
-  configChanged(key: String!): ConfigChangedResponse
-  fetchLogTail: String!
+    version: Version
+    availableUpdate: AvailableUpdate
+    projects: [Project]!
+    analyticsEvent(category: String!, action: String!, label: String, dimensionsJson: String!): AnalyticsEventResponse
+    reportRuntimeUsage(pid: Int!, exec: String!, dimensionsJson: String!): ReportRuntimeUsageResponse
+    checkRuntimeUsage(organizationName: String!): CheckRuntimeUsageResponse
+    checkMessages(command: String!, flags: [String!]!): [MessageInfo!]!
+    configChanged(key: String!): ConfigChangedResponse
+    fetchLogTail: String!
 }
 
 type ConfigChangedResponse {
-  received: Boolean!
+    received: Boolean!
 }
 `, BuiltIn: false},
 }
@@ -542,6 +585,30 @@ func (ec *executionContext) field_Query_analyticsEvent_args(ctx context.Context,
 		}
 	}
 	args["dimensionsJson"] = arg3
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_checkMessages_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["command"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("command"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["command"] = arg0
+	var arg1 []string
+	if tmp, ok := rawArgs["flags"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("flags"))
+		arg1, err = ec.unmarshalNString2ᚕstringᚄ(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["flags"] = arg1
 	return args, nil
 }
 
@@ -1042,8 +1109,8 @@ func (ec *executionContext) fieldContext_ConfigChangedResponse_received(ctx cont
 	return fc, nil
 }
 
-func (ec *executionContext) _DeprecationInfo_version(ctx context.Context, field graphql.CollectedField, obj *graph.DeprecationInfo) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_DeprecationInfo_version(ctx, field)
+func (ec *executionContext) _MessageInfo_id(ctx context.Context, field graphql.CollectedField, obj *graph.MessageInfo) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MessageInfo_id(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -1056,7 +1123,7 @@ func (ec *executionContext) _DeprecationInfo_version(ctx context.Context, field 
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Version, nil
+		return obj.ID, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1073,9 +1140,9 @@ func (ec *executionContext) _DeprecationInfo_version(ctx context.Context, field 
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_DeprecationInfo_version(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_MessageInfo_id(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
-		Object:     "DeprecationInfo",
+		Object:     "MessageInfo",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -1086,8 +1153,8 @@ func (ec *executionContext) fieldContext_DeprecationInfo_version(ctx context.Con
 	return fc, nil
 }
 
-func (ec *executionContext) _DeprecationInfo_date(ctx context.Context, field graphql.CollectedField, obj *graph.DeprecationInfo) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_DeprecationInfo_date(ctx, field)
+func (ec *executionContext) _MessageInfo_message(ctx context.Context, field graphql.CollectedField, obj *graph.MessageInfo) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MessageInfo_message(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -1100,7 +1167,7 @@ func (ec *executionContext) _DeprecationInfo_date(ctx context.Context, field gra
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Date, nil
+		return obj.Message, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1117,9 +1184,9 @@ func (ec *executionContext) _DeprecationInfo_date(ctx context.Context, field gra
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_DeprecationInfo_date(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_MessageInfo_message(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
-		Object:     "DeprecationInfo",
+		Object:     "MessageInfo",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -1130,8 +1197,8 @@ func (ec *executionContext) fieldContext_DeprecationInfo_date(ctx context.Contex
 	return fc, nil
 }
 
-func (ec *executionContext) _DeprecationInfo_dateReached(ctx context.Context, field graphql.CollectedField, obj *graph.DeprecationInfo) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_DeprecationInfo_dateReached(ctx, field)
+func (ec *executionContext) _MessageInfo_condition(ctx context.Context, field graphql.CollectedField, obj *graph.MessageInfo) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MessageInfo_condition(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -1144,51 +1211,7 @@ func (ec *executionContext) _DeprecationInfo_dateReached(ctx context.Context, fi
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.DateReached, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(bool)
-	fc.Result = res
-	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_DeprecationInfo_dateReached(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "DeprecationInfo",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Boolean does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _DeprecationInfo_reason(ctx context.Context, field graphql.CollectedField, obj *graph.DeprecationInfo) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_DeprecationInfo_reason(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Reason, nil
+		return obj.Condition, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1205,14 +1228,146 @@ func (ec *executionContext) _DeprecationInfo_reason(ctx context.Context, field g
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_DeprecationInfo_reason(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_MessageInfo_condition(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
-		Object:     "DeprecationInfo",
+		Object:     "MessageInfo",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MessageInfo_repeat(ctx context.Context, field graphql.CollectedField, obj *graph.MessageInfo) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MessageInfo_repeat(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Repeat, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(graph.MessageRepeatType)
+	fc.Result = res
+	return ec.marshalNMessageRepeatType2githubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐMessageRepeatType(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MessageInfo_repeat(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MessageInfo",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type MessageRepeatType does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MessageInfo_interrupt(ctx context.Context, field graphql.CollectedField, obj *graph.MessageInfo) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MessageInfo_interrupt(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Interrupt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(graph.MessageInterruptType)
+	fc.Result = res
+	return ec.marshalNMessageInterruptType2githubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐMessageInterruptType(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MessageInfo_interrupt(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MessageInfo",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type MessageInterruptType does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MessageInfo_placement(ctx context.Context, field graphql.CollectedField, obj *graph.MessageInfo) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MessageInfo_placement(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Placement, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(graph.MessagePlacementType)
+	fc.Result = res
+	return ec.marshalNMessagePlacementType2githubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐMessagePlacementType(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MessageInfo_placement(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MessageInfo",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type MessagePlacementType does not have child fields")
 		},
 	}
 	return fc, nil
@@ -1618,8 +1773,8 @@ func (ec *executionContext) fieldContext_Query_checkRuntimeUsage(ctx context.Con
 	return fc, nil
 }
 
-func (ec *executionContext) _Query_checkDeprecation(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Query_checkDeprecation(ctx, field)
+func (ec *executionContext) _Query_checkMessages(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_checkMessages(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -1632,20 +1787,23 @@ func (ec *executionContext) _Query_checkDeprecation(ctx context.Context, field g
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().CheckDeprecation(rctx)
+		return ec.resolvers.Query().CheckMessages(rctx, fc.Args["command"].(string), fc.Args["flags"].([]string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.(*graph.DeprecationInfo)
+	res := resTmp.([]*graph.MessageInfo)
 	fc.Result = res
-	return ec.marshalODeprecationInfo2ᚖgithubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐDeprecationInfo(ctx, field.Selections, res)
+	return ec.marshalNMessageInfo2ᚕᚖgithubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐMessageInfoᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Query_checkDeprecation(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Query_checkMessages(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Query",
 		Field:      field,
@@ -1653,17 +1811,32 @@ func (ec *executionContext) fieldContext_Query_checkDeprecation(ctx context.Cont
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
-			case "version":
-				return ec.fieldContext_DeprecationInfo_version(ctx, field)
-			case "date":
-				return ec.fieldContext_DeprecationInfo_date(ctx, field)
-			case "dateReached":
-				return ec.fieldContext_DeprecationInfo_dateReached(ctx, field)
-			case "reason":
-				return ec.fieldContext_DeprecationInfo_reason(ctx, field)
+			case "id":
+				return ec.fieldContext_MessageInfo_id(ctx, field)
+			case "message":
+				return ec.fieldContext_MessageInfo_message(ctx, field)
+			case "condition":
+				return ec.fieldContext_MessageInfo_condition(ctx, field)
+			case "repeat":
+				return ec.fieldContext_MessageInfo_repeat(ctx, field)
+			case "interrupt":
+				return ec.fieldContext_MessageInfo_interrupt(ctx, field)
+			case "placement":
+				return ec.fieldContext_MessageInfo_placement(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type DeprecationInfo", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type MessageInfo", field.Name)
 		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_checkMessages_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
 	}
 	return fc, nil
 }
@@ -4141,40 +4314,54 @@ func (ec *executionContext) _ConfigChangedResponse(ctx context.Context, sel ast.
 	return out
 }
 
-var deprecationInfoImplementors = []string{"DeprecationInfo"}
+var messageInfoImplementors = []string{"MessageInfo"}
 
-func (ec *executionContext) _DeprecationInfo(ctx context.Context, sel ast.SelectionSet, obj *graph.DeprecationInfo) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, deprecationInfoImplementors)
+func (ec *executionContext) _MessageInfo(ctx context.Context, sel ast.SelectionSet, obj *graph.MessageInfo) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, messageInfoImplementors)
 	out := graphql.NewFieldSet(fields)
 	var invalids uint32
 	for i, field := range fields {
 		switch field.Name {
 		case "__typename":
-			out.Values[i] = graphql.MarshalString("DeprecationInfo")
-		case "version":
+			out.Values[i] = graphql.MarshalString("MessageInfo")
+		case "id":
 
-			out.Values[i] = ec._DeprecationInfo_version(ctx, field, obj)
-
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "date":
-
-			out.Values[i] = ec._DeprecationInfo_date(ctx, field, obj)
+			out.Values[i] = ec._MessageInfo_id(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "dateReached":
+		case "message":
 
-			out.Values[i] = ec._DeprecationInfo_dateReached(ctx, field, obj)
+			out.Values[i] = ec._MessageInfo_message(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "reason":
+		case "condition":
 
-			out.Values[i] = ec._DeprecationInfo_reason(ctx, field, obj)
+			out.Values[i] = ec._MessageInfo_condition(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "repeat":
+
+			out.Values[i] = ec._MessageInfo_repeat(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "interrupt":
+
+			out.Values[i] = ec._MessageInfo_interrupt(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "placement":
+
+			out.Values[i] = ec._MessageInfo_placement(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
 				invalids++
@@ -4363,7 +4550,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			out.Concurrently(i, func() graphql.Marshaler {
 				return rrm(innerCtx)
 			})
-		case "checkDeprecation":
+		case "checkMessages":
 			field := field
 
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
@@ -4372,7 +4559,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Query_checkDeprecation(ctx, field)
+				res = ec._Query_checkMessages(ctx, field)
 				return res
 			}
 
@@ -4903,6 +5090,90 @@ func (ec *executionContext) marshalNInt2int(ctx context.Context, sel ast.Selecti
 	return res
 }
 
+func (ec *executionContext) marshalNMessageInfo2ᚕᚖgithubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐMessageInfoᚄ(ctx context.Context, sel ast.SelectionSet, v []*graph.MessageInfo) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNMessageInfo2ᚖgithubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐMessageInfo(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNMessageInfo2ᚖgithubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐMessageInfo(ctx context.Context, sel ast.SelectionSet, v *graph.MessageInfo) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._MessageInfo(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNMessageInterruptType2githubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐMessageInterruptType(ctx context.Context, v interface{}) (graph.MessageInterruptType, error) {
+	var res graph.MessageInterruptType
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNMessageInterruptType2githubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐMessageInterruptType(ctx context.Context, sel ast.SelectionSet, v graph.MessageInterruptType) graphql.Marshaler {
+	return v
+}
+
+func (ec *executionContext) unmarshalNMessagePlacementType2githubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐMessagePlacementType(ctx context.Context, v interface{}) (graph.MessagePlacementType, error) {
+	var res graph.MessagePlacementType
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNMessagePlacementType2githubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐMessagePlacementType(ctx context.Context, sel ast.SelectionSet, v graph.MessagePlacementType) graphql.Marshaler {
+	return v
+}
+
+func (ec *executionContext) unmarshalNMessageRepeatType2githubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐMessageRepeatType(ctx context.Context, v interface{}) (graph.MessageRepeatType, error) {
+	var res graph.MessageRepeatType
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNMessageRepeatType2githubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐMessageRepeatType(ctx context.Context, sel ast.SelectionSet, v graph.MessageRepeatType) graphql.Marshaler {
+	return v
+}
+
 func (ec *executionContext) marshalNProject2ᚕᚖgithubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐProject(ctx context.Context, sel ast.SelectionSet, v []*graph.Project) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
@@ -5303,13 +5574,6 @@ func (ec *executionContext) marshalOConfigChangedResponse2ᚖgithubᚗcomᚋActi
 		return graphql.Null
 	}
 	return ec._ConfigChangedResponse(ctx, sel, v)
-}
-
-func (ec *executionContext) marshalODeprecationInfo2ᚖgithubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐDeprecationInfo(ctx context.Context, sel ast.SelectionSet, v *graph.DeprecationInfo) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return ec._DeprecationInfo(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOProject2ᚖgithubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐProject(ctx context.Context, sel ast.SelectionSet, v *graph.Project) graphql.Marshaler {

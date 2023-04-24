@@ -8,7 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ActiveState/cli/internal/download"
 	"github.com/ActiveState/cli/internal/errs"
 	wc "github.com/ActiveState/cli/scripts/internal/workflow-controllers"
 	wh "github.com/ActiveState/cli/scripts/internal/workflow-helpers"
@@ -183,7 +182,7 @@ func verifyPR(jiraClient *jira.Client, pr *github.PullRequest) error {
 
 	// Grab latest version on release channel to use as cutoff
 	finish = wc.PrintStart("Fetching latest version on release channel")
-	latestReleaseversionBytes, err := download.Get("https://raw.githubusercontent.com/ActiveState/cli/release/version.txt")
+	latestReleaseversionBytes, err := httputil.Get("https://raw.githubusercontent.com/ActiveState/cli/release/version.txt")
 	latestReleaseversion, err := semver.Parse(strings.TrimSpace(string(latestReleaseversionBytes)))
 	if err != nil {
 		return errs.Wrap(err, "failed to parse version blob")

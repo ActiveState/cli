@@ -10,9 +10,9 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/download"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/httputil"
 	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
@@ -60,7 +60,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 			scriptUrl := baseUrl + constants.BranchName + "/" + scriptBaseName
 
 			// Fetch it.
-			b, err := download.GetDirect(scriptUrl)
+			b, err := httputil.GetDirect(scriptUrl)
 			suite.Require().NoError(err)
 			script := filepath.Join(ts.Dirs.Work, scriptBaseName)
 			suite.Require().NoError(fileutils.WriteFile(script, b))

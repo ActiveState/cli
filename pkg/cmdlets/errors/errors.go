@@ -142,7 +142,7 @@ func ReportError(err error, cmd *captain.Command, an analytics.Dispatcher) {
 
 	label := []string{cmdName}
 	if childCmd != nil {
-		label = append(label, childCmd.UseFull())
+		label = append(label, childCmd.JoinedSubCommandNames())
 	}
 	label = append(label, flagNames...)
 

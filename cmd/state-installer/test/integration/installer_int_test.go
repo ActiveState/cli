@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/download"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/installation"
@@ -194,7 +193,7 @@ func (suite *InstallerIntegrationTestSuite) TestStateTrayRemoval() {
 			e2e.AppendEnv(fmt.Sprintf("%s=%s", constants.OverwriteDefaultSystemPathEnvVarName, dir)),
 		)
 	} else {
-		b, err := download.GetDirect("https://platform.activestate.com/dl/cli/pdli01/install.ps1")
+		b, err := httputil.GetDirect("https://platform.activestate.com/dl/cli/pdli01/install.ps1")
 		suite.Require().NoError(err)
 
 		ps1File := filepath.Join(ts.Dirs.Work, "install.ps1")
@@ -213,7 +212,7 @@ func (suite *InstallerIntegrationTestSuite) TestStateTrayRemoval() {
 	trayExec := strings.Replace(svcExec, constants.StateSvcCmd, "state-tray", 1)
 	suite.FileExists(trayExec)
 	updateDialogExec := strings.Replace(svcExec, constants.StateSvcCmd, "state-update-dialog", 1)
-	//suite.FileExists(updateDialogExec) // this is not actually installed...
+	// suite.FileExists(updateDialogExec) // this is not actually installed...
 
 	// Run the installer, which should remove state-tray and clean up after it.
 	cp = ts.SpawnCmdWithOpts(

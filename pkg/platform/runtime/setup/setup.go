@@ -16,9 +16,9 @@ import (
 	anaConsts "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/analytics/dimensions"
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/download"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/httputil"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
@@ -731,7 +731,7 @@ func (s *Setup) downloadArtifact(a artifact.ArtifactDownload, targetFile string)
 		return errs.Wrap(err, "Could not sign artifact URL %s.", a.UnsignedURI)
 	}
 
-	b, err := download.GetWithProgress(downloadURL.String(), &progress.Report{
+	b, err := httputil.GetWithProgress(downloadURL.String(), &progress.Report{
 		ReportSizeCb: func(size int) error {
 			if err := s.eventHandler.Handle(events.ArtifactDownloadStarted{a.ArtifactID, size}); err != nil {
 				return errs.Wrap(err, "Could not handle ArtifactDownloadStarted event")

@@ -95,7 +95,7 @@ func (a *App) createExecFile(base string) error {
 		map[string]interface{}{
 			"Exec": a.Exec,
 			"Args": strings.Join(a.Args, " "),
-		})
+		}, nil)
 	if err != nil {
 		return errs.Wrap(err, "Could not parse launch file source")
 	}
@@ -129,7 +129,7 @@ func (a *App) createInfoFile(base string) error {
 			"Icon":         a.options.IconFileName,
 			"HideDockIcon": a.options.MacHideDockIcon,
 			"IsGUIApp":     a.options.IsGUIApp,
-		})
+		}, nil)
 	if err != nil {
 		return errs.Wrap(err, "Could not parse launch file source")
 	}
