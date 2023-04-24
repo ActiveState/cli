@@ -43,7 +43,10 @@ func runParser() error {
 		return errs.Wrap(err, "Failed to get root path")
 	}
 
-	testData, err := os.ReadFile(filepath.Join(cwd, "pkg", "localorder", "parser", "testdata", "complex.lo"))
+	// testMapBuildScript()
+	// testMapBuildScriptUnmarshal()
+
+	testData, err := os.ReadFile(filepath.Join(cwd, "pkg", "localorder", "parser", "testdata", "moderate.lo"))
 	if err != nil {
 		return errs.Wrap(err, "Failed to read file")
 	}
@@ -131,6 +134,73 @@ func addNodes(graph *cgraph.Graph, t *parser.NodeElement, parent *cgraph.Node) e
 			return errs.Wrap(err, "Failed to add nodes")
 		}
 	}
+
+	return nil
+}
+
+func testMapBuildScript() error {
+	result := map[string]interface{}{
+		"let": map[string]interface{}{
+			"runtime": map[string]interface{}{
+				"solve": map[string]interface{}{
+					"platforms": []interface{}{"linux", "windows"},
+					"languages": []interface{}{"python"},
+					"requirements": []interface{}{
+						map[string]interface{}{
+							"requests": map[string]interface{}{
+								"version": "2.25.1",
+							},
+						},
+					},
+				},
+			},
+		},
+		"in": map[string]interface{}{
+			"runtime": map[string]interface{}{},
+		},
+	}
+
+	data, err := json.MarshalIndent(result, "", "  ")
+	if err != nil {
+		return err
+	}
+
+	fmt.Println("Map build script:", string(data))
+
+	return nil
+}
+
+func testMapBuildScriptUnmarshal() error {
+	data := []byte(`
+	{
+		"let": {
+			"runtime": {
+				"solve": {
+					"platforms": ["linux", "windows"],
+					"languages": ["python"],
+					"requirements": [
+						{
+							"requests": {
+								"version": "2.25.1"
+							}
+						}
+					]
+				}
+			}
+		},
+		"in": {
+			"runtime": {}
+		}
+	}
+	`)
+
+	var result transform.BuildScript
+	err := json.Unmarshal(data, &result)
+	if err != nil {
+		return err
+	}
+
+	fmt.Println("Map build script unmarshal:", result)
 
 	return nil
 }

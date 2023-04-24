@@ -1,8 +1,6 @@
 package parser
 
 import (
-	"fmt"
-
 	"github.com/ActiveState/cli/internal/errs"
 )
 
@@ -73,7 +71,6 @@ func (p *Parser) next() error {
 	p.tok = tok
 	p.lit = lit
 	p.current++
-	fmt.Println("Current token:", tok, "lit:", lit, "pos:", pos)
 	return nil
 }
 
@@ -180,7 +177,7 @@ func (p *Parser) ParseExpression(root *NodeElement) error {
 		return p.ParseApplication(expressionNode)
 	}
 
-	return p.ParseExpression(root)
+	return nil
 }
 
 func (p *Parser) ParseBinding(node *NodeElement) error {
@@ -240,6 +237,11 @@ func (p *Parser) ParseAssignment(node *NodeElement) error {
 	if p.tok == STRING {
 		return p.ParseString(assignmentNode)
 	}
+
+	if p.IsIdentifier() {
+		return p.ParseIdentifier(assignmentNode)
+	}
+
 	return p.ParseList(assignmentNode)
 }
 
