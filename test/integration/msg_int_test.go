@@ -18,7 +18,7 @@ type MsgIntegrationTestSuite struct {
 }
 
 func (suite *MsgIntegrationTestSuite) TestMessage_Basic_Defaults() {
-	suite.OnlyRunForTags(tagsuite.Info)
+	suite.OnlyRunForTags(tagsuite.Messaging)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -44,7 +44,7 @@ func (suite *MsgIntegrationTestSuite) TestMessage_Basic_Defaults() {
 }
 
 func (suite *MsgIntegrationTestSuite) TestMessage_Basic_PlacementAfter() {
-	suite.OnlyRunForTags(tagsuite.Info)
+	suite.OnlyRunForTags(tagsuite.Messaging)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -66,7 +66,7 @@ func (suite *MsgIntegrationTestSuite) TestMessage_Basic_PlacementAfter() {
 }
 
 func (suite *MsgIntegrationTestSuite) TestMessage_Basic_InterruptPrompt() {
-	suite.OnlyRunForTags(tagsuite.Info)
+	suite.OnlyRunForTags(tagsuite.Messaging)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -97,7 +97,7 @@ func (suite *MsgIntegrationTestSuite) TestMessage_Basic_InterruptPrompt() {
 }
 
 func (suite *MsgIntegrationTestSuite) TestMessage_Basic_InterruptExit() {
-	suite.OnlyRunForTags(tagsuite.Info)
+	suite.OnlyRunForTags(tagsuite.Messaging)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
