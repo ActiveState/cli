@@ -53,16 +53,17 @@ func (a *App) install() error {
 		return errs.Wrap(err, "Could not create info file")
 	}
 
-	installDir := os.Getenv(constants.AppInstallDirOverrideEnvVarName)
-	if installDir == "" {
-		installDir, err = installation.ApplicationInstallPath()
-		if err != nil {
-			return errs.Wrap(err, "Could not get installation path")
-		}
+	installDir := a.Dir
+	if override := os.Getenv(constants.AppInstallDirOverrideEnvVarName); override != "" {
+		installDir = override
+	}
+
+	if err := fileutils.MkdirUnlessExists(installDir); err != nil {
+		return errs.Wrap(err, "Could not create app parent directory: %s", installDir)
 	}
 
 	if err := fileutils.MoveAllFiles(tmpDir, installDir); err != nil {
-		return errs.Wrap(err, "Could not move .app to Applications directory")
+		return errs.Wrap(err, "Could not move .app to %s", installDir)
 	}
 
 	return nil

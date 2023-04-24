@@ -204,15 +204,13 @@ func (suite *SvcIntegrationTestSuite) GetNumStateSvcProcesses() int {
 }
 
 func (suite *SvcIntegrationTestSuite) TestAutostartConfigEnableDisable() {
-	// Disable test for v0.36: https://activestatef.atlassian.net/browse/DX-1501.
-	// This test should be re-enabled by https://activestatef.atlassian.net/browse/DX-1435.
-	suite.T().SkipNow()
-
 	suite.OnlyRunForTags(tagsuite.Service)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	app, err := app.New(constants.SvcAppName, ts.SvcExe, nil, svcApp.Options)
+	appDir := fileutils.TempDirFromBaseDirUnsafe(ts.Dirs.Work)
+
+	app, err := app.New(constants.SvcAppName, ts.SvcExe, nil, appDir, svcApp.Options)
 	suite.Require().NoError(err)
 	enabled, err := autostart.IsEnabled(app.Exec, svcAutostart.Options)
 	suite.Require().NoError(err)

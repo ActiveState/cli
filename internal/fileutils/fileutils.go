@@ -843,6 +843,14 @@ func TempDirUnsafe() string {
 	return f
 }
 
+func TempDirFromBaseDirUnsafe(baseDir string) string {
+	f, err := ioutil.TempDir(baseDir, "")
+	if err != nil {
+		panic(fmt.Sprintf("Could not create tempDir: %v", err))
+	}
+	return f
+}
+
 // MoveAllFilesCrossDisk will move all of the files/dirs within one directory
 // to another directory even across disks. Both directories must already exist.
 func MoveAllFilesCrossDisk(src, dst string) error {

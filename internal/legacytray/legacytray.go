@@ -33,8 +33,13 @@ func DetectAndRemove(path string, cfg *config.Instance) error {
 		return errs.Wrap(err, "Unable to stop try app")
 	}
 
+	appDir, err := installation.ApplicationInstallPath()
+	if err != nil {
+		return errs.Wrap(err, "Unable to get application install path")
+	}
+
 	// Disable autostart of state-tray.
-	if app, err := app.New(trayAppName, trayExec, nil, app.Options{}); err == nil {
+	if app, err := app.New(trayAppName, trayExec, nil, appDir, app.Options{}); err == nil {
 		disableErr := autostart.Disable(app.Exec, autostart.Options{
 			LaunchFileName: trayLaunchFileName, // only used for Linux; ignored on macOS, Windows
 		})
