@@ -176,10 +176,6 @@ type infoResultOutput struct {
 }
 
 func (ro *infoResultOutput) MarshalOutput(format output.Format) interface{} {
-	if format != output.PlainFormatName {
-		return ro.res
-	}
-
 	print, res := ro.out.Print, ro.res
 	{
 		print(output.Title(
@@ -215,6 +211,10 @@ func (ro *infoResultOutput) MarshalOutput(format output.Format) interface{} {
 	}
 
 	return output.Suppress
+}
+
+func (ro *infoResultOutput) MarshalStructured(format output.Format) interface{} {
+	return ro.res
 }
 
 func whatsNextMessages(name string, versions []string) []string {

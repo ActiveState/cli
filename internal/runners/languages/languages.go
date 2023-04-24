@@ -31,9 +31,10 @@ type Listing struct {
 
 // MarshalOutput implements the output.Marshaller interface.
 func (l Listing) MarshalOutput(f output.Format) interface{} {
-	if f == output.PlainFormatName {
-		return l.Languages
-	}
+	return l.Languages
+}
+
+func (l Listing) MarshalStructured(f output.Format) interface{} {
 	return l
 }
 

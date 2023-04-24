@@ -39,9 +39,6 @@ func NewBranchOutput(branches mono_models.Branches, localBranch string) *BranchO
 }
 
 func (bt *BranchOutput) MarshalOutput(format output.Format) interface{} {
-	if format != output.PlainFormatName && format != output.SimpleFormatName {
-		return bt.branches
-	}
 	return branchTree(bt.branches, bt.localBranch)
 }
 
@@ -166,4 +163,8 @@ func isCompleted(levelsCompleted []int, level int) bool {
 		}
 	}
 	return false
+}
+
+func (bt *BranchOutput) MarshalStructured(format output.Format) interface{} {
+	return bt.branches
 }

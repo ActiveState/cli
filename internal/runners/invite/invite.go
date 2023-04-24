@@ -162,15 +162,14 @@ type outputFormat struct {
 }
 
 func (f *outputFormat) MarshalOutput(format output.Format) interface{} {
-	switch format {
-	case output.PlainFormatName:
-		success := locale.Tl("ok", "Ok")
-		if f.Error != nil {
-			success = locale.Tl("err_invite", "Failed: {{.V0}}", f.Error.Error())
-		}
-		return locale.Tl("invite_success", "Sending to {{.V0}} ... {{.V1}}", f.Email, success)
+	success := locale.Tl("ok", "Ok")
+	if f.Error != nil {
+		success = locale.Tl("err_invite", "Failed: {{.V0}}", f.Error.Error())
 	}
+	return locale.Tl("invite_success", "Sending to {{.V0}} ... {{.V1}}", f.Email, success)
+}
 
+func (f *outputFormat) MarshalStructured(format output.Format) interface{} {
 	return f
 }
 

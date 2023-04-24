@@ -18,13 +18,13 @@ type packageRow struct {
 }
 
 func (t *packageTable) MarshalOutput(format output.Format) interface{} {
-	if format == output.PlainFormatName {
-		if len(t.rows) == 0 {
-			return t.emptyOutput
-		}
-		return t.rows
+	if len(t.rows) == 0 {
+		return t.emptyOutput
 	}
+	return t.rows
+}
 
+func (t *packageTable) MarshalStructured(format output.Format) interface{} {
 	return t.rows
 }
 

@@ -109,9 +109,6 @@ func (od *outputDataPrinter) printFooter() {
 }
 
 func (od *outputDataPrinter) MarshalOutput(format output.Format) interface{} {
-	if format != output.PlainFormatName {
-		return od.data
-	}
 	pi := &ProjectInfo{
 		od.data.Project,
 		od.data.CommitID,
@@ -153,4 +150,8 @@ func (od *outputDataPrinter) MarshalOutput(format output.Format) interface{} {
 
 	od.printFooter()
 	return output.Suppress
+}
+
+func (od *outputDataPrinter) MarshalStructured(format output.Format) interface{} {
+	return od.data
 }

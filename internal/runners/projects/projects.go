@@ -48,10 +48,6 @@ func (o projectWithOrgs) MarshalOutput(f output.Format) interface{} {
 		Executables    string `locale:"executables,Executables" opts:"emptyNil,separateLine"`
 	}
 
-	if f != output.PlainFormatName {
-		return o
-	}
-
 	r := []projectOutputPlain{}
 	for _, v := range o {
 		checkouts := []string{}
@@ -77,6 +73,10 @@ func (o projectWithOrgs) MarshalOutput(f output.Format) interface{} {
 		r = append(r, projectOutputPlain{v.Name, v.Organization, strings.Join(checkouts, "\n"), strings.Join(executables, "\n")})
 	}
 	return r
+}
+
+func (o projectWithOrgs) MarshalStructured(f output.Format) interface{} {
+	return o
 }
 
 type configGetter interface {

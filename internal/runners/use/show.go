@@ -31,9 +31,10 @@ type outputFormat struct {
 }
 
 func (f *outputFormat) MarshalOutput(format output.Format) interface{} {
-	if format == output.PlainFormatName {
-		return f.message
-	}
+	return f.message
+}
+
+func (f *outputFormat) MarshalStructured(format output.Format) interface{} {
 	return f
 }
 

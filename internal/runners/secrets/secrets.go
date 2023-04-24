@@ -90,32 +90,29 @@ func (l *List) Run(params ListRunParams) error {
 }
 
 func (l *listOutput) MarshalOutput(format output.Format) interface{} {
-	switch format {
-	case output.EditorV0FormatName:
-		var output []*SecretExport
-		for _, d := range l.data {
-			out := &SecretExport{
-				Name:        d.Name,
-				Scope:       d.Scope,
-				Description: d.Description,
-			}
-
-			if d.HasValue == locale.T("secrets_row_value_set") {
-				out.HasValue = true
-			}
-
-			output = append(output, out)
-		}
-		l.out.Print(output)
-	default:
-		l.out.Print(struct {
-			Data []*secretData `opts:"verticalTable" locale:","`
-		}{
-			l.data,
-		})
+	return struct {
+		Data []*secretData `opts:"verticalTable" locale:","`
+	}{
+		l.data,
 	}
+}
 
-	return output.Suppress
+func (l *listOutput) MarshalStructured(format output.Format) interface{} {
+	var output []*SecretExport
+	for _, d := range l.data {
+		out := &SecretExport{
+			Name:        d.Name,
+			Scope:       d.Scope,
+			Description: d.Description,
+		}
+
+		if d.HasValue == locale.T("secrets_row_value_set") {
+			out.HasValue = true
+		}
+
+		output = append(output, out)
+	}
+	return output
 }
 
 // checkSecretsAccess is reusable "runner-level" logic and provides a directly

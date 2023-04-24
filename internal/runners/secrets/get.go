@@ -103,20 +103,22 @@ func (d *getOutput) MarshalOutput(format output.Format) interface{} {
 	if d.valuePtr != nil {
 		value = *d.valuePtr
 	}
+	return value
+}
 
-	switch format {
-	case output.JSONFormatName, output.EditorV0FormatName, output.EditorFormatName:
-		return &SecretExport{
-			d.secret.Name(),
-			d.secret.Scope(),
-			d.secret.Description(),
-			d.valuePtr != nil,
-			value,
-		}
-
-	default:
-		return value
+func (d *getOutput) MarshalStructured(format output.Format) interface{} {
+	value := ""
+	if d.valuePtr != nil {
+		value = *d.valuePtr
 	}
+	return &SecretExport{
+		d.secret.Name(),
+		d.secret.Scope(),
+		d.secret.Description(),
+		d.valuePtr != nil,
+		value,
+	}
+
 }
 
 func newValuePtrIsNilError(reqSecret string, isUser bool) error {

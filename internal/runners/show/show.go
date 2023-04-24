@@ -95,10 +95,6 @@ func formatSlice(slice []string) string {
 }
 
 func (od *outputDataPrinter) MarshalOutput(format output.Format) interface{} {
-	if format != output.PlainFormatName {
-		return od.data
-	}
-
 	od.output.Print(locale.Tl("show_details_intro", "Here are the details of your runtime environment.\n"))
 	od.output.Print(
 		struct {
@@ -115,6 +111,10 @@ func (od *outputDataPrinter) MarshalOutput(format output.Format) interface{} {
 	od.output.Print(od.data.Languages)
 
 	return output.Suppress
+}
+
+func (od *outputDataPrinter) MarshalStructured(format output.Format) interface{} {
+	return od.data
 }
 
 type secretOutput struct {

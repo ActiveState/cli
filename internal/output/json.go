@@ -2,6 +2,7 @@ package output
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 
 	"github.com/ActiveState/cli/internal/colorize"
@@ -58,18 +59,20 @@ func (f *JSON) Fprint(writer io.Writer, value interface{}) {
 	f.cfg.OutWriter.Write([]byte(nul + "\n")) // Terminate with NUL character so consumers can differentiate between multiple output messages
 }
 
-// Error will marshal and print the given value to the error writer, it wraps the error message in a very basic structure
-// that identifies it as an error
+type jsonError struct {
+	Errors []string `json:"errors"`
+	Code   int      `json:"code"`
+}
+
+// Error will marshal and print the given value to the error writer
 // NOTE that JSON always prints to the output writer, the error writer is unused.
 func (f *JSON) Error(value interface{}) {
 	var b []byte
 	if v, isBlob := value.([]byte); isBlob {
 		b = v
 	} else {
-		value = prepareJSONValue(value)
-		errStruct := struct{ Error interface{} }{value}
 		var err error
-		b, err = json.Marshal(errStruct)
+		b, err = json.Marshal(toJsonError(value))
 		if err != nil {
 			multilog.Error("Could not marshal value, error: %v", err)
 			b = []byte(locale.T("err_could_not_marshal_print"))
@@ -102,4 +105,22 @@ func prepareJSONValue(v interface{}) interface{} {
 		return err.Error()
 	}
 	return v
+}
+
+// toJsonError attempts to convert the given interface into a jsonError struct.
+// It accepts an error object, a list of string error messages, or a single string error message.
+// If it cannot perform the conversion, it returns a jsonError indicating so.
+func toJsonError(v interface{}) jsonError {
+	if err, ok := v.(error); ok {
+		return jsonError{[]string{err.Error()}, 1}
+	}
+	if strings, ok := v.([]string); ok {
+		return jsonError{strings, 1}
+	}
+	if s, ok := v.(string); ok {
+		return jsonError{[]string{s}, 1}
+	}
+	message := fmt.Sprint("Not a recognized error format: %v", v)
+	multilog.Error(message)
+	return jsonError{[]string{message}, 1}
 }

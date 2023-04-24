@@ -46,12 +46,11 @@ type outputFormat struct {
 }
 
 func (f *outputFormat) MarshalOutput(format output.Format) interface{} {
-	switch format {
-	case output.EditorV0FormatName:
-		return f.editorV0Format()
-	}
-
 	return f.Message
+}
+
+func (f *outputFormat) MarshalStructured(format output.Format) interface{} {
+	return f.editorV0Format()
 }
 
 func (f *Fork) Run(params *Params) error {

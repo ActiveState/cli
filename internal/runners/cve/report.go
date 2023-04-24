@@ -193,3 +193,7 @@ func (rd *reportDataPrinter) MarshalOutput(format output.Format) interface{} {
 	})
 	return output.Suppress
 }
+
+func (rd *reportDataPrinter) MarshalStructured(format output.Format) interface{} {
+	return rd.data
+}

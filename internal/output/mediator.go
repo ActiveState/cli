@@ -11,11 +11,15 @@ type Marshaller interface {
 	MarshalOutput(Format) interface{}
 }
 
+type StructuredMarshaller interface {
+	MarshalStructured(Format) interface{}
+}
+
 func (m *Mediator) Fprint(writer io.Writer, v interface{}) {
 	if v = mediatorValue(v, m.format); v == Suppress {
 		return
 	}
-	
+
 	m.Outputer.Fprint(writer, v)
 }
 
@@ -43,12 +47,21 @@ func (m *Mediator) Notice(v interface{}) {
 	m.Outputer.Notice(v)
 }
 
+func isStructuredFormat(format Format) bool {
+	return format == JSONFormatName || format == EditorFormatName || format == EditorV0FormatName
+}
+
 func mediatorValue(v interface{}, format Format) interface{} {
-	vt, ok := v.(Marshaller)
-	if !ok {
-		return v
+	if isStructuredFormat(format) {
+		if vt, ok := v.(StructuredMarshaller); ok {
+			return vt.MarshalStructured(format)
+		}
+		return Suppress // do not contaminate structured output with unstructured data
 	}
-	return vt.MarshalOutput(format)
+	if vt, ok := v.(Marshaller); ok {
+		return vt.MarshalOutput(format)
+	}
+	return v
 }
 
 // MediatedFormatter provides a custom type that can be used to conveniently create different outputs for different formats
