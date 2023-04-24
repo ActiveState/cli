@@ -18,7 +18,7 @@ type MsgIntegrationTestSuite struct {
 }
 
 func (suite *MsgIntegrationTestSuite) TestMessage_Basic_Defaults() {
-	suite.OnlyRunForTags(tagsuite.Messaging)
+	suite.OnlyRunForTags(tagsuite.Messaging, tagsuite.Critical)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
