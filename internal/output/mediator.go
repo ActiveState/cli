@@ -1,6 +1,11 @@
 package output
 
-import "io"
+import (
+	"fmt"
+	"io"
+
+	"github.com/ActiveState/cli/internal/locale"
+)
 
 type Mediator struct {
 	Outputer
@@ -56,7 +61,8 @@ func mediatorValue(v interface{}, format Format) interface{} {
 		if vt, ok := v.(StructuredMarshaller); ok {
 			return vt.MarshalStructured(format)
 		}
-		return Suppress // do not contaminate structured output with unstructured data
+		strv := fmt.Sprintf("%v", v)
+		return jsonError{[]string{locale.Tl("err_no_structured_output", "{{.V0}} output not supported for message: {{.V1}}", string(format), strv)}, 1}
 	}
 	if vt, ok := v.(Marshaller); ok {
 		return vt.MarshalOutput(format)
