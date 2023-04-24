@@ -1929,7 +1929,7 @@ err_update_privilege_mismatch:
   other: "The State Tool was installed as administrator. To update please run [ACTIONABLE]state update[/RESET] as administrator."
 uninstall_warn_not_empty:
   other: |
-    [ERROR]Unable to remove all files in the directory the installation directory.[/RESET]
+    [ERROR]Unable to remove all files in the installation directory.[/RESET]
     There were unrecognized files in that directory.
 err_state_exec:
   other: Could not get state exec
