@@ -29,7 +29,7 @@ func New() (*app.App, error) {
 		return nil, errs.Wrap(err, "Could not determine service executable")
 	}
 
-	installRoot, err := installation.DefaultInstallPath()
+	installRoot, err := installation.InstallPathFromExecPath()
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not determine install root")
 	}
