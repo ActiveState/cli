@@ -1,8 +1,6 @@
 package transform
 
 import (
-	"fmt"
-
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/pkg/localorder/parser"
 	model "github.com/ActiveState/cli/pkg/platform/api/graphql/model/buildplanner"
@@ -151,12 +149,12 @@ func (t *BuildScriptTransformer) TransformBinding(node *parser.NodeElement) erro
 func (t *BuildScriptTransformer) TransformAssignment(node *parser.NodeElement) error {
 	var identifier string
 	for _, c := range node.Children() {
-		fmt.Println("identifier: ", identifier)
-		fmt.Println("Current Identifier: ", t.currentIdentifier)
-		fmt.Println("Child type: ", c.Type().String())
 		switch c.Type() {
 		case parser.NodeIdentifier:
 			identifier = c.Literal()
+			if t.currentIdentifier == "" {
+				t.currentIdentifier = identifier
+			}
 		case parser.NodeApplication:
 			err := t.TransformApplication(c, identifier)
 			if err != nil {
@@ -172,10 +170,16 @@ func (t *BuildScriptTransformer) TransformAssignment(node *parser.NodeElement) e
 			if err != nil {
 				return errs.Wrap(err, "Failed to transform string")
 			}
+		case parser.NodeEquals:
+			if identifier == "" {
+				return errs.New("Unexpected equals")
+			}
+			t.result.Let[identifier] = make(ListBinding, 0)
 		}
 		t.visited[c] = true
 	}
 
+	t.currentIdentifier = ""
 	return nil
 }
 
@@ -323,6 +327,11 @@ func (t *BuildScriptTransformer) TransformListElement(node *parser.NodeElement, 
 				if err != nil {
 					return errs.Wrap(err, "Failed to transform req function")
 				}
+			case ListBinding:
+				err := t.TransformReqFunc(c, identifier, t.result.Let[t.currentIdentifier].(ListBinding))
+				if err != nil {
+					return errs.Wrap(err, "Failed to transform req function")
+				}
 			default:
 				// TODO: Inspect current result here to debug
 				return errs.New("TransformListElement(NodeIdentifier): Unexpected identifier: %s", identifier)
@@ -336,7 +345,7 @@ func (t *BuildScriptTransformer) TransformListElement(node *parser.NodeElement, 
 	return nil
 }
 
-func (t BuildScriptTransformer) TransformReqFunc(node *parser.NodeElement, identifier string, binding SolveBinding) error {
+func (t BuildScriptTransformer) TransformReqFunc(node *parser.NodeElement, identifier string, binding Binding) error {
 	for _, c := range node.Children() {
 		if c.Type() != parser.NodeBinding {
 			continue
@@ -370,8 +379,15 @@ func (t BuildScriptTransformer) TransformReqFunc(node *parser.NodeElement, ident
 					default:
 						return errs.New("Unexpected identifier: %s", ccc.Literal())
 					}
-					binding.Requirements = append(binding.Requirements, req)
-					t.result.Let[t.currentIdentifier] = binding
+					switch b := binding.(type) {
+					case SolveBinding:
+						b.Requirements = append(b.Requirements, req)
+						t.result.Let[t.currentIdentifier] = b
+					case ListBinding:
+						b = append(b, req.Name)
+						t.result.Let[t.currentIdentifier] = b
+					}
+
 				}
 			}
 		}
