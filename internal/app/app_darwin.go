@@ -11,7 +11,6 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/strutils"
 )
@@ -53,16 +52,17 @@ func (a *App) install() error {
 		return errs.Wrap(err, "Could not create info file")
 	}
 
-	installDir := os.Getenv(constants.AppInstallDirOverrideEnvVarName)
-	if installDir == "" {
-		installDir, err = installation.ApplicationInstallPath()
-		if err != nil {
-			return errs.Wrap(err, "Could not get installation path")
-		}
+	installDir := a.Dir
+	if override := os.Getenv(constants.AppInstallDirOverrideEnvVarName); override != "" {
+		installDir = override
+	}
+
+	if err := fileutils.MkdirUnlessExists(installDir); err != nil {
+		return errs.Wrap(err, "Could not create app parent directory: %s", installDir)
 	}
 
 	if err := fileutils.MoveAllFiles(tmpDir, installDir); err != nil {
-		return errs.Wrap(err, "Could not move .app to Applications directory")
+		return errs.Wrap(err, "Could not move .app to %s", installDir)
 	}
 
 	return nil
@@ -143,12 +143,12 @@ func (a *App) createInfoFile(base string) error {
 }
 
 func (a *App) uninstall() error {
-	defaultPath, err := installation.ApplicationInstallPath()
-	if err != nil {
-		return errs.Wrap(err, "Could not get installation path")
+	baseDir := a.Dir
+	if override := os.Getenv(constants.AppInstallDirOverrideEnvVarName); override != "" {
+		baseDir = override
 	}
 
-	installDir := filepath.Join(defaultPath, fmt.Sprintf("%s.app", a.Name))
+	installDir := filepath.Join(baseDir, fmt.Sprintf("%s.app", a.Name))
 	if !fileutils.DirExists(installDir) {
 		logging.Debug("Directory does not exist, nothing to do")
 		return nil
