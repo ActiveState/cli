@@ -31,16 +31,16 @@ func NewHistory(prime primeable) *History {
 type HistoryParams struct {
 }
 
-type noCommitsOutput struct {
+type noHistoryOutput struct {
 	message string
 }
 
-func (f *noCommitsOutput) MarshalOutput(format output.Format) interface{} {
-	return f.message
+func (o *noHistoryOutput) MarshalOutput(format output.Format) interface{} {
+	return o.message
 }
 
-func (f *noCommitsOutput) MarshalStructured(format output.Format) interface{} {
-	return []byte{'[', ']'}
+func (o *noHistoryOutput) MarshalStructured(format output.Format) interface{} {
+	return []byte("[]")
 }
 
 func (h *History) Run(params *HistoryParams) error {
@@ -70,7 +70,7 @@ func (h *History) Run(params *HistoryParams) error {
 	}
 
 	if len(commits) == 0 {
-		h.out.Print(&noCommitsOutput{locale.Tr("no_commits", h.project.Namespace().String())})
+		h.out.Print(&noHistoryOutput{locale.Tr("no_commits", h.project.Namespace().String())})
 		return nil
 	}
 

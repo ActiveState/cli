@@ -90,7 +90,7 @@ func (suite *ForkIntegrationTestSuite) TestFork_EditorV0() {
 
 	// Check if we error out on conflicts properly
 	cp = ts.Spawn("fork", "ActiveState-CLI/Python3", "--name", "Test-Python3", "--org", username, "--output", "editor.v0")
-	cp.Expect(`{"error":{"code":-16,"message":"`)
+	cp.Expect(`"Could not create fork"`)
 	cp.ExpectExitCode(1)
 }
 

@@ -17,7 +17,7 @@ type branchNode struct {
 
 type tree map[branchNode]tree
 
-type BranchOutput struct {
+type branchOutput struct {
 	branches    mono_models.Branches
 	localBranch string
 }
@@ -31,15 +31,8 @@ const (
 	localBranchFormatting string = "[ACTIONABLE]%s[/RESET] [DISABLED](Current)[/RESET]"
 )
 
-func NewBranchOutput(branches mono_models.Branches, localBranch string) *BranchOutput {
-	return &BranchOutput{
-		branches:    branches,
-		localBranch: localBranch,
-	}
-}
-
-func (bt *BranchOutput) MarshalOutput(format output.Format) interface{} {
-	return branchTree(bt.branches, bt.localBranch)
+func (o *branchOutput) MarshalOutput(format output.Format) interface{} {
+	return branchTree(o.branches, o.localBranch)
 }
 
 func branchTree(branches mono_models.Branches, localBranch string) string {
@@ -165,6 +158,6 @@ func isCompleted(levelsCompleted []int, level int) bool {
 	return false
 }
 
-func (bt *BranchOutput) MarshalStructured(format output.Format) interface{} {
-	return bt.branches
+func (o *branchOutput) MarshalStructured(format output.Format) interface{} {
+	return o.branches
 }

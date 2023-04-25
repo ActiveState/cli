@@ -23,15 +23,15 @@ type jwtOutput struct {
 	Value string `json:"value"`
 }
 
-func (f *jwtOutput) MarshalOutput(format output.Format) interface{} {
-	return f.Value
+func (o *jwtOutput) MarshalOutput(format output.Format) interface{} {
+	return o.Value
 }
 
-func (f *jwtOutput) MarshalStructured(format output.Format) interface{} {
+func (o *jwtOutput) MarshalStructured(format output.Format) interface{} {
 	if format == output.EditorV0FormatName {
-		return []byte(f.Value)
+		return []byte(o.Value)
 	}
-	return f
+	return o
 }
 
 // Run processes the `export recipe` command.

@@ -66,19 +66,6 @@ func (b branchIdentifier) Locale() string {
 	return locale.Tl("branch_identifier_type", "branch")
 }
 
-type outputFormat struct {
-	message string
-	Branch  string `json:"branch"`
-}
-
-func (f *outputFormat) MarshalOutput(format output.Format) interface{} {
-	return f.message
-}
-
-func (f *outputFormat) MarshalStructured(format output.Format) interface{} {
-	return f
-}
-
 func New(prime primeable) *Switch {
 	return &Switch{
 		auth:      prime.Auth(),
@@ -87,6 +74,19 @@ func New(prime primeable) *Switch {
 		analytics: prime.Analytics(),
 		svcModel:  prime.SvcModel(),
 	}
+}
+
+type switchOutput struct {
+	message string
+	Branch  string `json:"branch"`
+}
+
+func (o *switchOutput) MarshalOutput(format output.Format) interface{} {
+	return o.message
+}
+
+func (o *switchOutput) MarshalStructured(format output.Format) interface{} {
+	return o
 }
 
 func (s *Switch) Run(params SwitchParams) error {
@@ -134,7 +134,7 @@ func (s *Switch) Run(params SwitchParams) error {
 		return locale.WrapError(err, "err_refresh_runtime")
 	}
 
-	s.out.Print(&outputFormat{
+	s.out.Print(&switchOutput{
 		locale.Tl("branch_switch_success", "Successfully switched to {{.V0}}: [NOTICE]{{.V1}}[/RESET]", identifier.Locale(), params.Identifier),
 		params.Identifier,
 	})

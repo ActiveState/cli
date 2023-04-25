@@ -81,10 +81,6 @@ func NewActivate(prime primeable) *Activate {
 }
 
 func (r *Activate) Run(params *ActivateParams) error {
-	return r.run(params)
-}
-
-func (r *Activate) run(params *ActivateParams) error {
 	logging.Debug("Activate %v, %v", params.Namespace, params.PreferredPath)
 
 	checker.RunUpdateNotifier(r.svcModel, r.out)

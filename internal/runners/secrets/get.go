@@ -61,11 +61,10 @@ func (g *Get) Run(params GetRunParams) error {
 		return locale.WrapError(err, "secrets_err_values")
 	}
 
-	data := newGetOutput(params.Name, secret, valuePtr)
+	data := &getOutput{params.Name, secret, valuePtr}
 	if err := data.Validate(g.out.Type()); err != nil {
 		return locale.WrapError(err, "secrets_err_getout_invalid", "'get secret' output data invalid")
 	}
-
 	g.out.Print(data)
 
 	return nil
@@ -77,45 +76,37 @@ type getOutput struct {
 	valuePtr  *string
 }
 
-func newGetOutput(reqSecret string, secret *project.Secret, valuePtr *string) *getOutput {
-	return &getOutput{
-		reqSecret: reqSecret,
-		secret:    secret,
-		valuePtr:  valuePtr,
-	}
-}
-
 // Validate returns a directly usable localized error.
-func (d *getOutput) Validate(format output.Format) error {
+func (o *getOutput) Validate(format output.Format) error {
 	switch format {
 	case output.JSONFormatName, output.EditorV0FormatName, output.EditorFormatName:
 		return nil
 	default:
-		if d.valuePtr == nil {
-			return newValuePtrIsNilError(d.reqSecret, d.secret.IsUser())
+		if o.valuePtr == nil {
+			return newValuePtrIsNilError(o.reqSecret, o.secret.IsUser())
 		}
 		return nil
 	}
 }
 
-func (d *getOutput) MarshalOutput(format output.Format) interface{} {
+func (o *getOutput) MarshalOutput(format output.Format) interface{} {
 	value := ""
-	if d.valuePtr != nil {
-		value = *d.valuePtr
+	if o.valuePtr != nil {
+		value = *o.valuePtr
 	}
 	return value
 }
 
-func (d *getOutput) MarshalStructured(format output.Format) interface{} {
+func (o *getOutput) MarshalStructured(format output.Format) interface{} {
 	value := ""
-	if d.valuePtr != nil {
-		value = *d.valuePtr
+	if o.valuePtr != nil {
+		value = *o.valuePtr
 	}
 	return &SecretExport{
-		d.secret.Name(),
-		d.secret.Scope(),
-		d.secret.Description(),
-		d.valuePtr != nil,
+		o.secret.Name(),
+		o.secret.Scope(),
+		o.secret.Description(),
+		o.valuePtr != nil,
 		value,
 	}
 

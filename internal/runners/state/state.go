@@ -47,30 +47,25 @@ func New(opts *Options, prime primeable) *State {
 	}
 }
 
-type outputFormat struct {
+type versionOutput struct {
 	message string
 	installation.VersionData
 }
 
-func (f *outputFormat) MarshalOutput(format output.Format) interface{} {
-	return f.message
+func (o *versionOutput) MarshalOutput(format output.Format) interface{} {
+	return o.message
 }
 
-func (f *outputFormat) MarshalStructured(format output.Format) interface{} {
-	return f.VersionData
+func (o *versionOutput) MarshalStructured(format output.Format) interface{} {
+	return o.VersionData
 }
 
-// Run state logic
 func (s *State) Run(usageFunc func() error) error {
-	return execute(s.opts, usageFunc, s.cfg, s.svcMdl, s.out)
-}
+	logging.Debug("Run")
+	defer profile.Measure("runners:state:run", time.Now())
 
-func execute(opts *Options, usageFunc func() error, cfg *config.Instance, svcModel *model.SvcModel, out output.Outputer) error {
-	logging.Debug("Execute")
-	defer profile.Measure("runners:state:execute", time.Now())
-
-	if opts.Version {
-		checker.RunUpdateNotifier(svcModel, out)
+	if s.opts.Version {
+		checker.RunUpdateNotifier(s.svcMdl, s.out)
 		vd := installation.VersionData{
 			constants.LibraryLicense,
 			constants.Version,
@@ -79,7 +74,7 @@ func execute(opts *Options, usageFunc func() error, cfg *config.Instance, svcMod
 			constants.Date,
 			constants.OnCI == "true",
 		}
-		out.Print(&outputFormat{
+		s.out.Print(&versionOutput{
 			locale.T("version_info", vd),
 			vd,
 		})

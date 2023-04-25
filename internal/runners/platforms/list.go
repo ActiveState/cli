@@ -1,6 +1,7 @@
 package platforms
 
 import (
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
@@ -31,36 +32,33 @@ func (l *List) Run() error {
 		return locale.NewInputError("err_no_project")
 	}
 
-	listing, err := newListing(l.proj.CommitID(), l.proj.Name(), l.proj.Owner(), l.proj.BranchName())
+	targetCommitID, err := targetedCommitID(l.proj.CommitID(), l.proj.Name(), l.proj.Owner(), l.proj.BranchName())
 	if err != nil {
-		return err
-	}
-
-	l.out.Print(listing)
-	return nil
-}
-
-// Listing represents the output data of a listing.
-type Listing struct {
-	Platforms []*Platform `json:"platforms"`
-}
-
-func newListing(commitID, projName, projOrg string, branchName string) (*Listing, error) {
-	targetCommitID, err := targetedCommitID(commitID, projName, projOrg, branchName)
-	if err != nil {
-		return nil, err
+		return errs.Wrap(err, "Unable to get commit ID")
 	}
 
 	platforms, err := model.FetchPlatformsForCommit(*targetCommitID)
 	if err != nil {
-		return nil, err
+		return errs.Wrap(err, "Unable to get platforms for commit")
 	}
 
-	listing := Listing{
-		Platforms: makePlatformsFromModelPlatforms(platforms),
-	}
+	l.out.Print(&platformsOutput{makePlatformsFromModelPlatforms(platforms)})
+	return nil
+}
 
-	return &listing, nil
+type platformsOutput struct {
+	Platforms []*Platform `json:"platforms"`
+}
+
+func (o *platformsOutput) MarshalOutput(format output.Format) interface{} {
+	if len(o.Platforms) == 0 {
+		return locale.Tl("platforms_list_no_platforms", "There are no platforms for this project.")
+	}
+	return o.Platforms
+}
+
+func (o *platformsOutput) MarshalStructured(format output.Format) interface{} {
+	return o.Platforms
 }
 
 func targetedCommitID(commitID, projName, projOrg, branchName string) (*strfmt.UUID, error) {

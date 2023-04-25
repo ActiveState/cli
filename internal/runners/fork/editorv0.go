@@ -20,13 +20,13 @@ type resultEditorV0Error struct {
 	Data    string `json:"data,omitempty"`
 }
 
-func (f *outputFormat) editorV0Format() interface{} {
+func (o *forkOutput) editorV0Format() interface{} {
 	return resultEditorV0{
 		map[string]string{
-			"OriginalOwner": f.source.Owner,
-			"OriginalName":  f.source.Project,
-			"NewOwner":      f.target.Owner,
-			"NewName":       f.target.Project,
+			"OriginalOwner": o.source.Owner,
+			"OriginalName":  o.source.Project,
+			"NewOwner":      o.target.Owner,
+			"NewName":       o.target.Project,
 		},
 		nil,
 	}
@@ -52,7 +52,7 @@ func (e *editorV0Error) ErrorTips() []string {
 	return []string{}
 }
 
-func (e *editorV0Error) MarshalOutput(output.Format) interface{} {
+func (e *editorV0Error) MarshalStructured(output.Format) interface{} {
 	logging.Debug("Marshalling editorv0 error")
 	var code int32 = 1
 	errInspect := e.parent

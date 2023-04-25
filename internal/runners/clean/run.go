@@ -13,17 +13,17 @@ import (
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
 )
 
-type outputFormat struct {
+type cleanOutput struct {
 	message string
 	Path    string `json:"path,omitempty"`
 }
 
-func (f *outputFormat) MarshalOutput(format output.Format) interface{} {
-	return f.message
+func (o *cleanOutput) MarshalOutput(format output.Format) interface{} {
+	return o.message
 }
 
-func (f *outputFormat) MarshalStructured(format output.Format) interface{} {
-	return f
+func (o *cleanOutput) MarshalStructured(format output.Format) interface{} {
+	return o
 }
 
 func removeCache(cachePath string) error {

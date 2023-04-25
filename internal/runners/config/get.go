@@ -17,21 +17,21 @@ type GetParams struct {
 	Key Key
 }
 
-type getOutputFormat struct {
+func NewGet(prime primeable) *Get {
+	return &Get{prime.Output(), prime.Config()}
+}
+
+type getOutput struct {
 	Name  string      `json:"name"`
 	Value interface{} `json:"value"`
 }
 
-func (f *getOutputFormat) MarshalOutput(format output.Format) interface{} {
-	return f.Value
+func (o *getOutput) MarshalOutput(format output.Format) interface{} {
+	return o.Value
 }
 
-func (f *getOutputFormat) MarshalStructured(format output.Format) interface{} {
-	return f
-}
-
-func NewGet(prime primeable) *Get {
-	return &Get{prime.Output(), prime.Config()}
+func (o *getOutput) MarshalStructured(format output.Format) interface{} {
+	return o
 }
 
 func (g *Get) Run(params GetParams) error {
@@ -46,6 +46,6 @@ func (g *Get) Run(params GetParams) error {
 		return locale.WrapError(err, "err_config_get_event", "Could not retrieve config value, if this continues to happen please contact support.")
 	}
 
-	g.out.Print(&getOutputFormat{key, value})
+	g.out.Print(&getOutput{key, value})
 	return nil
 }

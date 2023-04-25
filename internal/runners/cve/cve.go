@@ -26,7 +26,7 @@ type outputData struct {
 	Packages  []ByPackageOutput        `json:"packages"`
 }
 
-type outputDataPrinter struct {
+type cveOutput struct {
 	output output.Outputer
 	data   *outputData
 }
@@ -78,19 +78,15 @@ func (c *Cve) Run() error {
 		})
 	}
 
-	cveOutput := &outputData{
-		Project:   c.proj.Name(),
-		CommitID:  resp.CommitID,
-		Histogram: resp.VulnerabilityHistogram,
-		Packages:  packageVulnerabilities,
-	}
-
-	odp := &outputDataPrinter{
+	c.out.Print(&cveOutput{
 		c.out,
-		cveOutput,
-	}
-
-	c.out.Print(odp)
+		&outputData{
+			Project:   c.proj.Name(),
+			CommitID:  resp.CommitID,
+			Histogram: resp.VulnerabilityHistogram,
+			Packages:  packageVulnerabilities,
+		},
+	})
 
 	return nil
 }
@@ -100,7 +96,7 @@ type SeverityCountOutput struct {
 	Severity string `locale:"severity,Severity" json:"severity"`
 }
 
-func (od *outputDataPrinter) printFooter() {
+func (od *cveOutput) printFooter() {
 	od.output.Print("")
 	od.output.Print([]string{
 		locale.Tl("cve_hint_report", "To view a detailed report for this runtime, run [ACTIONABLE]state security report[/RESET]"),
@@ -108,7 +104,7 @@ func (od *outputDataPrinter) printFooter() {
 	})
 }
 
-func (od *outputDataPrinter) MarshalOutput(format output.Format) interface{} {
+func (od *cveOutput) MarshalOutput(format output.Format) interface{} {
 	pi := &ProjectInfo{
 		od.data.Project,
 		od.data.CommitID,
@@ -152,6 +148,6 @@ func (od *outputDataPrinter) MarshalOutput(format output.Format) interface{} {
 	return output.Suppress
 }
 
-func (od *outputDataPrinter) MarshalStructured(format output.Format) interface{} {
+func (od *cveOutput) MarshalStructured(format output.Format) interface{} {
 	return od.data
 }

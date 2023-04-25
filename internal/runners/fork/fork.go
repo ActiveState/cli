@@ -39,18 +39,18 @@ func New(prime primeable) *Fork {
 	}
 }
 
-type outputFormat struct {
+type forkOutput struct {
 	Message string
 	source  *project.Namespaced
 	target  *project.Namespaced
 }
 
-func (f *outputFormat) MarshalOutput(format output.Format) interface{} {
-	return f.Message
+func (o *forkOutput) MarshalOutput(format output.Format) interface{} {
+	return o.Message
 }
 
-func (f *outputFormat) MarshalStructured(format output.Format) interface{} {
-	return f.editorV0Format()
+func (o *forkOutput) MarshalStructured(format output.Format) interface{} {
+	return o.editorV0Format()
 }
 
 func (f *Fork) Run(params *Params) error {
@@ -93,7 +93,7 @@ func (f *Fork) run(params *Params) error {
 		return locale.WrapError(err, "err_fork_project", "Could not create fork")
 	}
 
-	f.out.Print(&outputFormat{
+	f.out.Print(&forkOutput{
 		locale.Tl("fork_success", "Your fork has been successfully created at https://{{.V0}}/{{.V1}}.", constants.PlatformURL, target.String()),
 		&params.Namespace,
 		target,

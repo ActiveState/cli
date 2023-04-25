@@ -59,19 +59,19 @@ func NewCheckout(prime primeable) *Checkout {
 	}
 }
 
-type outputFormat struct {
+type checkoutOutput struct {
 	message     string
 	Namespace   string `json:"namespace"`
 	Path        string `json:"path"`
 	Executables string `json:"executables"`
 }
 
-func (f *outputFormat) MarshalOutput(format output.Format) interface{} {
-	return f.message
+func (o *checkoutOutput) MarshalOutput(format output.Format) interface{} {
+	return o.message
 }
 
-func (f *outputFormat) MarshalStructured(format output.Format) interface{} {
-	return f
+func (o *checkoutOutput) MarshalStructured(format output.Format) interface{} {
+	return o
 }
 
 func (u *Checkout) Run(params *Params) error {
@@ -99,7 +99,7 @@ func (u *Checkout) Run(params *Params) error {
 	}
 
 	execDir := setup.ExecDir(rti.Target().Dir())
-	u.out.Print(&outputFormat{
+	u.out.Print(&checkoutOutput{
 		locale.Tl("checkout_project_statement", "", proj.NamespaceString(), proj.Dir(), execDir),
 		proj.NamespaceString(),
 		proj.Dir(),

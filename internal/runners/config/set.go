@@ -28,22 +28,22 @@ type SetParams struct {
 	Value string
 }
 
-type setOutputFormat struct {
+func NewSet(prime primeable) *Set {
+	return &Set{prime.Output(), prime.Config(), prime.SvcModel(), prime.Analytics()}
+}
+
+type setOutput struct {
 	message string
 	Name    string      `json:"name"`
 	Value   interface{} `json:"value"`
 }
 
-func (f *setOutputFormat) MarshalOutput(format output.Format) interface{} {
-	return f.message
+func (o *setOutput) MarshalOutput(format output.Format) interface{} {
+	return o.message
 }
 
-func (f *setOutputFormat) MarshalStructured(format output.Format) interface{} {
-	return f
-}
-
-func NewSet(prime primeable) *Set {
-	return &Set{prime.Output(), prime.Config(), prime.SvcModel(), prime.Analytics()}
+func (o *setOutput) MarshalStructured(format output.Format) interface{} {
+	return o
 }
 
 func (s *Set) Run(params SetParams) error {
@@ -93,7 +93,7 @@ func (s *Set) Run(params SetParams) error {
 	}
 	s.sendEvent(key, params.Value, option)
 
-	s.out.Print(&setOutputFormat{
+	s.out.Print(&setOutput{
 		locale.Tl("config_set_success", "Successfully set config key: {{.V0}} to {{.V1}}", key, params.Value),
 		key,
 		params.Value,

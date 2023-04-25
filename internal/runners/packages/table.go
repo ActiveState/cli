@@ -7,7 +7,7 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 )
 
-type packageTable struct {
+type tableOutput struct {
 	rows        []packageRow
 	emptyOutput string // string returned when table is empty
 }
@@ -17,28 +17,28 @@ type packageRow struct {
 	Version string `json:"version" locale:"package_version,Version"`
 }
 
-func (t *packageTable) MarshalOutput(format output.Format) interface{} {
-	if len(t.rows) == 0 {
-		return t.emptyOutput
+func (o *tableOutput) MarshalOutput(format output.Format) interface{} {
+	if len(o.rows) == 0 {
+		return o.emptyOutput
 	}
-	return t.rows
+	return o.rows
 }
 
-func (t *packageTable) MarshalStructured(format output.Format) interface{} {
-	return t.rows
+func (o *tableOutput) MarshalStructured(format output.Format) interface{} {
+	return o.rows
 }
 
-func newTable(rows []packageRow, emptyOutput string) *packageTable {
-	return &packageTable{
+func newTableOutput(rows []packageRow, emptyOutput string) *tableOutput {
+	return &tableOutput{
 		rows:        rows,
 		emptyOutput: emptyOutput,
 	}
 }
 
-func (t *packageTable) sortByPkg() {
+func (o *tableOutput) sortByPkg() {
 	less := func(i, j int) bool {
-		a := t.rows[i].Pkg
-		b := t.rows[j].Pkg
+		a := o.rows[i].Pkg
+		b := o.rows[j].Pkg
 
 		if strings.ToLower(a) < strings.ToLower(b) {
 			return true
@@ -47,5 +47,5 @@ func (t *packageTable) sortByPkg() {
 		return a < b
 	}
 
-	sort.Slice(t.rows, less)
+	sort.Slice(o.rows, less)
 }

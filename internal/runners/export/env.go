@@ -33,12 +33,12 @@ type envOutput struct {
 	env map[string]string
 }
 
-func (f *envOutput) MarshalOutput(format output.Format) interface{} {
-	return f.env
+func (o *envOutput) MarshalOutput(format output.Format) interface{} {
+	return o.env
 }
 
-func (f *envOutput) MarshalStructured(format output.Format) interface{} {
-	return f.env
+func (o *envOutput) MarshalStructured(format output.Format) interface{} {
+	return o.env
 }
 
 func (e *Env) Run() error {

@@ -42,8 +42,10 @@ func (l *List) Run() error {
 		return locale.WrapError(err, "err_fetch_project", "", l.project.Namespace().String())
 	}
 
-	tree := NewBranchOutput(project.Branches, l.project.BranchName())
-	l.out.Print(tree)
+	l.out.Print(&branchOutput{
+		project.Branches,
+		l.project.BranchName(),
+	})
 
 	return nil
 }

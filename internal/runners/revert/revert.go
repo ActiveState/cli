@@ -54,17 +54,17 @@ func New(prime primeable) *Revert {
 	}
 }
 
-type outputFormat struct {
+type revertOutput struct {
 	message         string
 	CurrentCommitID string `json:"current_commit_id"`
 }
 
-func (f *outputFormat) MarshalOutput(format output.Format) interface{} {
-	return f.message
+func (o *revertOutput) MarshalOutput(format output.Format) interface{} {
+	return o.message
 }
 
-func (f *outputFormat) MarshalStructured(format output.Format) interface{} {
-	return f
+func (o *revertOutput) MarshalStructured(format output.Format) interface{} {
+	return o
 }
 
 func (r *Revert) Run(params *Params) error {
@@ -151,7 +151,7 @@ func (r *Revert) Run(params *Params) error {
 		return locale.WrapError(err, "err_revert_set_commit", "Could not set revert commit ID in projectfile")
 	}
 
-	r.out.Print(&outputFormat{
+	r.out.Print(&revertOutput{
 		locale.Tl("revert_success", "Successfully reverted{{.V0}} commit: {{.V1}}", preposition, params.CommitID),
 		revertCommit.CommitID.String(),
 	})

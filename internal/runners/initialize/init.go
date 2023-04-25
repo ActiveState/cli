@@ -77,18 +77,18 @@ func inferLanguage(config projectfile.ConfigGetter) (string, string, bool) {
 	return lang.Name, lang.Version, true
 }
 
-type outputFormat struct {
+type initOutput struct {
 	message   string
 	Namespace string `json:"namespace"`
 	Path      string `json:"path" `
 }
 
-func (f *outputFormat) MarshalOutput(format output.Format) interface{} {
-	return f.message
+func (o *initOutput) MarshalOutput(format output.Format) interface{} {
+	return o.message
 }
 
-func (f *outputFormat) MarshalStructured(format output.Format) interface{} {
-	return f
+func (o *initOutput) MarshalStructured(format output.Format) interface{} {
+	return o
 }
 
 func (r *Initialize) Run(params *RunParams) error {
@@ -196,7 +196,7 @@ func (r *Initialize) Run(params *RunParams) error {
 
 	projectfile.StoreProjectMapping(r.config, params.Namespace.String(), filepath.Dir(proj.Source().Path()))
 
-	r.out.Print(&outputFormat{
+	r.out.Print(&initOutput{
 		locale.Tr("init_success", params.Namespace.String(), path),
 		params.Namespace.String(),
 		path,

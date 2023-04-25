@@ -35,12 +35,12 @@ type recipeOutput struct {
 	json []byte
 }
 
-func (f *recipeOutput) MarshalOutput(format output.Format) interface{} {
-	return f.json
+func (o *recipeOutput) MarshalOutput(format output.Format) interface{} {
+	return o.json
 }
 
-func (f *recipeOutput) MarshalStructured(format output.Format) interface{} {
-	return f.json
+func (o *recipeOutput) MarshalStructured(format output.Format) interface{} {
+	return o.json
 }
 
 // Run processes the `export recipe` command.

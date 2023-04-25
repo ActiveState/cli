@@ -32,17 +32,28 @@ type scriptLine struct {
 	Description string `json:"description,omitempty"`
 }
 
-type scriptLines []scriptLine
+type scriptsOutput []scriptLine
 
-func (s *scriptLines) MarshalOutput(format output.Format) interface{} {
-	if len(*s) == 0 {
-		return locale.T("scripts_no_scripts")
+func newScriptsOutput(scripts []*project.Script) *scriptsOutput {
+	var rows scriptsOutput
+	for _, s := range scripts {
+		row := scriptLine{
+			s.Name(), s.Description(),
+		}
+		rows = append(rows, row)
 	}
-	return s
+	return &rows
 }
 
-func (s *scriptLines) MarshalStructured(format output.Format) interface{} {
-	return s
+func (o *scriptsOutput) MarshalOutput(format output.Format) interface{} {
+	if len(*o) == 0 {
+		return locale.T("scripts_no_scripts")
+	}
+	return o
+}
+
+func (o *scriptsOutput) MarshalStructured(format output.Format) interface{} {
+	return o
 }
 
 func (s *Scripts) Run() error {
@@ -53,18 +64,9 @@ func (s *Scripts) Run() error {
 	}
 	s.output.Notice(locale.Tl("operating_message", "", s.project.NamespaceString(), s.project.Dir()))
 
-	scripts := s.project.Scripts()
-
 	name, owner := s.project.Name(), s.project.Owner()
 	logging.Debug("listing scripts for org=%s, project=%s", owner, name)
-	var rows scriptLines
-	for _, s := range scripts {
-		row := scriptLine{
-			s.Name(), s.Description(),
-		}
-		rows = append(rows, row)
-	}
-	s.output.Print(&rows)
+	s.output.Print(newScriptsOutput(s.project.Scripts()))
 
 	return nil
 }

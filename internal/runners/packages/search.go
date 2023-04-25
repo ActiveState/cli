@@ -135,10 +135,10 @@ type searchPackageRow struct {
 	Modules       modules `json:"matching_modules,omitempty" opts:"emptyNil,separateLine,shiftCols=1"`
 }
 
-type searchPackages []searchPackageRow
+type searchOutput []searchPackageRow
 
-func formatSearchResults(packages []*model.IngredientAndVersion) *searchPackages {
-	rows := make(searchPackages, 0)
+func formatSearchResults(packages []*model.IngredientAndVersion) *searchOutput {
+	rows := make(searchOutput, len(packages))
 
 	filterNilStr := func(s *string) string {
 		if s == nil {
@@ -147,21 +147,21 @@ func formatSearchResults(packages []*model.IngredientAndVersion) *searchPackages
 		return *s
 	}
 
-	for _, pack := range packages {
+	for i, pack := range packages {
 		row := searchPackageRow{
 			Pkg:      filterNilStr(pack.Ingredient.Name),
 			Version:  pack.Version,
 			versions: len(pack.Versions),
 			Modules:  makeModules(pack.Ingredient.NormalizedName, pack),
 		}
-		rows = append(rows, row)
+		rows[i] = row
 	}
 
 	return mergeSearchRows(rows)
 }
 
-func mergeSearchRows(rows searchPackages) *searchPackages {
-	mergedRows := make(searchPackages, 0)
+func mergeSearchRows(rows searchOutput) *searchOutput {
+	var mergedRows searchOutput
 	var name string
 	for _, row := range rows {
 		// The search API returns results sorted by name and then descending version
@@ -188,10 +188,10 @@ func mergeSearchRows(rows searchPackages) *searchPackages {
 	return &mergedRows
 }
 
-func (s *searchPackages) MarshalOutput(format output.Format) interface{} {
-	return s
+func (o *searchOutput) MarshalOutput(format output.Format) interface{} {
+	return o
 }
 
-func (s *searchPackages) MarshalStructured(format output.Format) interface{} {
-	return s
+func (o *searchOutput) MarshalStructured(format output.Format) interface{} {
+	return o
 }

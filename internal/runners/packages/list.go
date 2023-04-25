@@ -142,7 +142,7 @@ func fetchCheckpoint(commit *strfmt.UUID) ([]*gqlModel.Requirement, error) {
 	return checkpoint, err
 }
 
-func newFilteredRequirementsTable(requirements []*gqlModel.Requirement, filter string, nstype model.NamespaceType) *packageTable {
+func newFilteredRequirementsTable(requirements []*gqlModel.Requirement, filter string, nstype model.NamespaceType) *tableOutput {
 	if requirements == nil {
 		logging.Debug("requirements is nil")
 		return nil
@@ -170,5 +170,5 @@ func newFilteredRequirementsTable(requirements []*gqlModel.Requirement, filter s
 		rows = append(rows, row)
 	}
 
-	return newTable(rows, locale.T(fmt.Sprintf("%s_list_no_packages", nstype.String())))
+	return newTableOutput(rows, locale.T(fmt.Sprintf("%s_list_no_packages", nstype.String())))
 }

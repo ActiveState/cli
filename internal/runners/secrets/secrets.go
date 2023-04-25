@@ -46,11 +46,6 @@ type secretData struct {
 	Usage       string `locale:"usage,[HEADING]Usage[/RESET]"`
 }
 
-type listOutput struct {
-	out  output.Outputer
-	data []*secretData
-}
-
 // NewList prepares a list execution context for use.
 func NewList(client *secretsapi.Client, p listPrimeable) *List {
 	return &List{
@@ -60,6 +55,37 @@ func NewList(client *secretsapi.Client, p listPrimeable) *List {
 		cfg:           p.Config(),
 		auth:          p.Auth(),
 	}
+}
+
+type listOutput struct {
+	out  output.Outputer
+	data []*secretData
+}
+
+func (o *listOutput) MarshalOutput(format output.Format) interface{} {
+	return struct {
+		Data []*secretData `opts:"verticalTable" locale:","`
+	}{
+		o.data,
+	}
+}
+
+func (o *listOutput) MarshalStructured(format output.Format) interface{} {
+	var output []*SecretExport
+	for _, d := range o.data {
+		out := &SecretExport{
+			Name:        d.Name,
+			Scope:       d.Scope,
+			Description: d.Description,
+		}
+
+		if d.HasValue == locale.T("secrets_row_value_set") {
+			out.HasValue = true
+		}
+
+		output = append(output, out)
+	}
+	return output
 }
 
 // Run executes the list behavior.
@@ -83,36 +109,9 @@ func (l *List) Run(params ListRunParams) error {
 		return locale.WrapError(err, "secrets_err_values")
 	}
 
-	data := &listOutput{l.out, meta}
-	l.out.Print(data)
+	l.out.Print(&listOutput{l.out, meta})
 
 	return nil
-}
-
-func (l *listOutput) MarshalOutput(format output.Format) interface{} {
-	return struct {
-		Data []*secretData `opts:"verticalTable" locale:","`
-	}{
-		l.data,
-	}
-}
-
-func (l *listOutput) MarshalStructured(format output.Format) interface{} {
-	var output []*SecretExport
-	for _, d := range l.data {
-		out := &SecretExport{
-			Name:        d.Name,
-			Scope:       d.Scope,
-			Description: d.Description,
-		}
-
-		if d.HasValue == locale.T("secrets_row_value_set") {
-			out.HasValue = true
-		}
-
-		output = append(output, out)
-	}
-	return output
 }
 
 // checkSecretsAccess is reusable "runner-level" logic and provides a directly

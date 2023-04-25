@@ -54,8 +54,17 @@ func (p AuthParams) verify() error {
 	return nil
 }
 
-type SignupParams struct {
-	Prompt bool
+type authOutput struct {
+	message string
+	userData
+}
+
+func (o *authOutput) MarshalOutput(format output.Format) interface{} {
+	return o.message
+}
+
+func (o *authOutput) MarshalStructured(format output.Format) interface{} {
+	return o.userData
 }
 
 // Run runs our command
@@ -79,7 +88,12 @@ func (a *Auth) Run(params *AuthParams) error {
 		return locale.WrapError(err, "err_auth_userdata", "Could not collect information about your account.")
 	}
 
-	a.Outputer.Print(data)
+	a.Outputer.Print(&authOutput{
+		locale.T("logged_in_as", map[string]string{
+			"Name": data.Username,
+		}),
+		*data,
+	})
 
 	return nil
 }
@@ -143,14 +157,4 @@ func (a *Auth) userData() (*userData, error) {
 	}
 
 	return &userData{username, organization.URLname, tier, privateProjects}, nil
-}
-
-func (u *userData) MarshalOutput(format output.Format) interface{} {
-	return locale.T("logged_in_as", map[string]string{
-		"Name": u.Username,
-	})
-}
-
-func (u *userData) MarshalStructured(format output.Format) interface{} {
-	return u
 }

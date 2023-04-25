@@ -5,8 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/go-openapi/strfmt"
-
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
@@ -14,9 +13,10 @@ import (
 	gmodel "github.com/ActiveState/cli/pkg/platform/api/graphql/model"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/go-openapi/strfmt"
 )
 
-type commitData struct {
+type commitOutput struct {
 	Hash    string   `locale:"hash,[HEADING]Commit[/RESET]" json:"hash"`
 	Author  string   `locale:"author,[HEADING]Author[/RESET]" json:"author"`
 	Date    string   `locale:"date,[HEADING]Date[/RESET]" json:"date"`
@@ -24,64 +24,28 @@ type commitData struct {
 	Changes []string `locale:"changes,[HEADING]Changes[/RESET]" json:"changes"`
 }
 
-func (c *commitData) MarshalOutput(format output.Format) interface{} {
+func (o *commitOutput) MarshalOutput(format output.Format) interface{} {
 	return struct {
-		Data commitData `opts:"verticalTable" locale:","`
+		Data commitOutput `opts:"verticalTable" locale:","`
 	}{
-		Data: *c,
+		Data: *o,
 	}
 }
 
-func (c *commitData) MarshalStructured(format output.Format) interface{} {
-	return c
-}
-
-type commitDatas []commitData
-
-func (c *commitDatas) MarshalOutput(format output.Format) interface{} {
-	return struct {
-		Data commitDatas `opts:"verticalTable" locale:","`
-	}{
-		Data: *c,
-	}
-}
-
-func (c *commitDatas) MarshalStructured(format output.Format) interface{} {
-	return c
+func (o *commitOutput) MarshalStructured(format output.Format) interface{} {
+	return o
 }
 
 func PrintCommit(out output.Outputer, commit *mono_models.Commit, orgs []gmodel.Organization) error {
-	data, err := commitDataFromCommit(commit, orgs, false)
+	data, err := newCommitOutput(commit, orgs, false)
 	if err != nil {
 		return err
 	}
 	out.Print(data)
-
 	return nil
 }
 
-func PrintCommits(out output.Outputer, commits []*mono_models.Commit, orgs []gmodel.Organization, lastRemoteID *strfmt.UUID) error {
-	data := make(commitDatas, 0, len(commits))
-	isLocal := true // recent (and, therefore, local) commits are first
-
-	for _, c := range commits {
-		if isLocal && lastRemoteID != nil && c.CommitID == *lastRemoteID {
-			isLocal = false
-		}
-
-		d, err := commitDataFromCommit(c, orgs, isLocal)
-		if err != nil {
-			return err
-		}
-		data = append(data, *d)
-	}
-
-	out.Print(&data)
-
-	return nil
-}
-
-func commitDataFromCommit(commit *mono_models.Commit, orgs []gmodel.Organization, isLocal bool) (*commitData, error) {
+func newCommitOutput(commit *mono_models.Commit, orgs []gmodel.Organization, isLocal bool) (*commitOutput, error) {
 	var localTxt string
 	if isLocal {
 		localTxt = locale.Tl("commit_display_local", "[NOTICE] (local)[/RESET]")
@@ -93,25 +57,25 @@ func commitDataFromCommit(commit *mono_models.Commit, orgs []gmodel.Organization
 		username = usernameForID(*commit.Author, orgs)
 	}
 
-	commitData := &commitData{
+	commitOutput := &commitOutput{
 		Hash:    locale.Tl("print_commit_hash", "[ACTIONABLE]{{.V0}}[/RESET]{{.V1}}", commit.CommitID.String(), localTxt),
 		Author:  username,
 		Changes: FormatChanges(commit),
 	}
 
-	commitData.Date = commit.AtTime.String()
+	commitOutput.Date = commit.AtTime.String()
 	dt, err := time.Parse(time.RFC3339, commit.AtTime.String())
 	if err != nil {
 		multilog.Error("Could not parse commit time: %v", err)
 	}
-	commitData.Date = dt.Format(time.RFC822)
+	commitOutput.Date = dt.Format(time.RFC822)
 
-	commitData.Message = locale.Tl("print_commit_no_message", "[DISABLED]Not provided.[/RESET]")
+	commitOutput.Message = locale.Tl("print_commit_no_message", "[DISABLED]Not provided.[/RESET]")
 	if commit.Message != "" {
-		commitData.Message = commit.Message
+		commitOutput.Message = commit.Message
 	}
 
-	return commitData, nil
+	return commitOutput, nil
 }
 
 func FormatChanges(commit *mono_models.Commit) []string {
@@ -186,4 +150,46 @@ func usernameForID(id strfmt.UUID, orgs []gmodel.Organization) string {
 	placeholder := locale.Tl("deleted_username", "<deleted>")
 	logging.Debug("Could not determine username for commit author '%s'. Using placeholder value '%s'.", id, placeholder)
 	return placeholder
+}
+
+type commitsOutput []commitOutput
+
+func newCommitsOutput(commits []*mono_models.Commit, orgs []gmodel.Organization, lastRemoteID *strfmt.UUID) (*commitsOutput, error) {
+	data := make(commitsOutput, 0, len(commits))
+	isLocal := true // recent (and, therefore, local) commits are first
+
+	for _, c := range commits {
+		if isLocal && lastRemoteID != nil && c.CommitID == *lastRemoteID {
+			isLocal = false
+		}
+
+		d, err := newCommitOutput(c, orgs, isLocal)
+		if err != nil {
+			return nil, err
+		}
+		data = append(data, *d)
+	}
+
+	return &data, nil
+}
+
+func (o *commitsOutput) MarshalOutput(format output.Format) interface{} {
+	return struct {
+		Data commitsOutput `opts:"verticalTable" locale:","`
+	}{
+		Data: *o,
+	}
+}
+
+func (o *commitsOutput) MarshalStructured(format output.Format) interface{} {
+	return o
+}
+
+func PrintCommits(out output.Outputer, commits []*mono_models.Commit, orgs []gmodel.Organization, lastRemoteID *strfmt.UUID) error {
+	data, err := newCommitsOutput(commits, orgs, lastRemoteID)
+	if err != nil {
+		return errs.Wrap(err, "Unable to fetch commit data")
+	}
+	out.Print(data)
+	return nil
 }

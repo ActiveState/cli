@@ -59,7 +59,7 @@ type RuntimeDetails struct {
 	LastCommit   string `json:"last_commit" locale:"state_show_details_latest_commit,Latest Commit"`
 }
 
-type outputDataPrinter struct {
+type showOutput struct {
 	output output.Outputer
 	data   outputData
 }
@@ -94,27 +94,27 @@ func formatSlice(slice []string) string {
 	return strings.Join(res, "\n")
 }
 
-func (od *outputDataPrinter) MarshalOutput(format output.Format) interface{} {
-	od.output.Print(locale.Tl("show_details_intro", "Here are the details of your runtime environment.\n"))
-	od.output.Print(
+func (o *showOutput) MarshalOutput(format output.Format) interface{} {
+	o.output.Print(locale.Tl("show_details_intro", "Here are the details of your runtime environment.\n"))
+	o.output.Print(
 		struct {
 			*RuntimeDetails `opts:"verticalTable"`
-		}{&od.data.RuntimeDetails},
+		}{&o.data.RuntimeDetails},
 	)
-	od.output.Print(output.Title(locale.Tl("state_show_events_header", "Events")))
-	od.output.Print(formatSlice(od.data.Events))
-	od.output.Print(output.Title(locale.Tl("state_show_scripts_header", "Scripts")))
-	od.output.Print(formatScripts(od.data.Scripts))
-	od.output.Print(output.Title(locale.Tl("state_show_platforms_header", "Platforms")))
-	od.output.Print(od.data.Platforms)
-	od.output.Print(output.Title(locale.Tl("state_show_languages_header", "Languages")))
-	od.output.Print(od.data.Languages)
+	o.output.Print(output.Title(locale.Tl("state_show_events_header", "Events")))
+	o.output.Print(formatSlice(o.data.Events))
+	o.output.Print(output.Title(locale.Tl("state_show_scripts_header", "Scripts")))
+	o.output.Print(formatScripts(o.data.Scripts))
+	o.output.Print(output.Title(locale.Tl("state_show_platforms_header", "Platforms")))
+	o.output.Print(o.data.Platforms)
+	o.output.Print(output.Title(locale.Tl("state_show_languages_header", "Languages")))
+	o.output.Print(o.data.Languages)
 
 	return output.Suppress
 }
 
-func (od *outputDataPrinter) MarshalStructured(format output.Format) interface{} {
-	return od.data
+func (o *showOutput) MarshalStructured(format output.Format) interface{} {
+	return o.data
 }
 
 type secretOutput struct {
@@ -261,8 +261,7 @@ func (s *Show) Run(params Params) error {
 		Scripts:        scripts,
 	}
 
-	odp := &outputDataPrinter{s.out, outputData}
-	s.out.Print(odp)
+	s.out.Print(&showOutput{s.out, outputData})
 
 	return nil
 }

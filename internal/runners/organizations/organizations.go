@@ -39,7 +39,7 @@ func run(params *OrgParams, out output.Outputer) error {
 		return nil
 	}
 
-	data, err := newOrgData(orgs)
+	data, err := newOrgOutput(orgs)
 	if err != nil {
 		return locale.WrapError(err, "err_run_orgs_data", "Could not collect information about your organizations.")
 	}
@@ -55,17 +55,17 @@ type orgData struct {
 	PrivateProjects bool   `json:"privateProjects" locale:"privateprojects,Private Projects"`
 }
 
-type orgDatas []orgData
+type orgOutput []orgData
 
-func (o *orgDatas) MarshalOutput(format output.Format) interface{} {
+func (o *orgOutput) MarshalOutput(format output.Format) interface{} {
 	return o
 }
 
-func (o *orgDatas) MarshalStructured(format output.Format) interface{} {
+func (o *orgOutput) MarshalStructured(format output.Format) interface{} {
 	return o
 }
 
-func newOrgData(orgs []*mono_models.Organization) (*orgDatas, error) {
+func newOrgOutput(orgs []*mono_models.Organization) (*orgOutput, error) {
 
 	tiers, err := model.FetchTiers()
 	if err != nil {
@@ -84,7 +84,7 @@ func newOrgData(orgs []*mono_models.Organization) (*orgDatas, error) {
 		}
 	}
 
-	orgd := make(orgDatas, len(orgs))
+	orgd := make(orgOutput, len(orgs))
 	for i, org := range orgs {
 		var tierPrivate bool
 		tierTitle := "Unknown"

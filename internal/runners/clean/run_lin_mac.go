@@ -77,7 +77,7 @@ func (u *Uninstall) runUninstall(params *UninstallParams) error {
 		return aggErr
 	}
 
-	u.out.Print(&outputFormat{message: locale.T("clean_success_message")})
+	u.out.Print(&cleanOutput{message: locale.T("clean_success_message")})
 	return nil
 }
 
@@ -100,7 +100,7 @@ func removeConfig(configPath string, out output.Outputer) error {
 		return locale.WrapError(err, "err_clean_config_remove", "Could not remove config directory")
 	}
 
-	out.Print(&outputFormat{
+	out.Print(&cleanOutput{
 		locale.Tl("clean_config_succes", "Successfully removed State Tool config directory"),
 		configPath,
 	})

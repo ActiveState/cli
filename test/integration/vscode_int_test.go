@@ -28,7 +28,9 @@ func (suite *PushIntegrationTestSuite) TestInitAndPush_VSCode() {
 		"--path", filepath.Join(ts.Dirs.Work, namespace),
 	)
 	cp.ExpectExitCode(0)
-	suite.Equal("Skipping runtime setup because it was disabled by an environment variable", cp.TrimmedSnapshot())
+	suite.Contains(cp.TrimmedSnapshot(), "Skipping runtime setup because it was disabled by an environment variable")
+	suite.Contains(cp.TrimmedSnapshot(), "{")
+	suite.Contains(cp.TrimmedSnapshot(), "}")
 	wd := filepath.Join(cp.WorkDirectory(), namespace)
 	cp = ts.SpawnWithOpts(
 		e2e.WithArgs("push", "--output", "editor"),
@@ -175,7 +177,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_VSCode() {
 
 	cp := ts.Spawn("activate", "--output", "editor")
 	cp.ExpectNotExitCode(0)
-	suite.Contains(cp.TrimmedSnapshot(), "Error")
+	suite.Contains(cp.TrimmedSnapshot(), "error")
 
 	content := strings.TrimSpace(fmt.Sprintf(`
 project: "https://platform.activestate.com/ActiveState-CLI/Python3"

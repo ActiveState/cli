@@ -24,18 +24,18 @@ func NewShow(prime primeable) *Show {
 	}
 }
 
-type outputFormat struct {
+type showOutput struct {
 	message   string `locale:message,Message`
 	Namespace string `locale:"namespace,Namespace" json:"namespace"`
 	Path      string `locale:"path,Path" json:"path"`
 }
 
-func (f *outputFormat) MarshalOutput(format output.Format) interface{} {
-	return f.message
+func (o *showOutput) MarshalOutput(format output.Format) interface{} {
+	return o.message
 }
 
-func (f *outputFormat) MarshalStructured(format output.Format) interface{} {
-	return f
+func (o *showOutput) MarshalStructured(format output.Format) interface{} {
+	return o
 }
 
 func (s *Show) Run() error {
@@ -54,7 +54,7 @@ func (s *Show) Run() error {
 
 	projectTarget := target.NewProjectTarget(proj, nil, "")
 
-	s.out.Print(&outputFormat{
+	s.out.Print(&showOutput{
 		locale.Tl("use_show_project_statement", "",
 			proj.NamespaceString(),
 			projectDir,

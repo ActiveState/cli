@@ -1,6 +1,7 @@
 package events
 
 import (
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
@@ -30,17 +31,32 @@ type Event struct {
 	Value string `locale:"value,Value" json:"value"`
 }
 
-type events []Event
+type eventOutput []Event
 
-func (e *events) MarshalOutput(format output.Format) interface{} {
-	if len(*e) == 0 {
-		return locale.Tl("events_empty", "No events found for the current project")
+func newEventOutput(events []*project.Event) (*eventOutput, error) {
+	rows := make(eventOutput, len(events))
+	for i, event := range events {
+		v, err := event.Value()
+		if err != nil {
+			return nil, locale.NewError("err_events_val", "Could not get value for event: {{.V0}}.", event.Name())
+		}
+		rows[i] = Event{
+			event.Name(),
+			v,
+		}
 	}
-	return e
+	return &rows, nil
 }
 
-func (e *events) MarshalStructured(format output.Format) interface{} {
-	return e
+func (o *eventOutput) MarshalOutput(format output.Format) interface{} {
+	if len(*o) == 0 {
+		return locale.Tl("events_empty", "No eventOutput found for the current project")
+	}
+	return o
+}
+
+func (o *eventOutput) MarshalStructured(format output.Format) interface{} {
+	return o
 }
 
 func (e *Events) Run() error {
@@ -49,18 +65,10 @@ func (e *Events) Run() error {
 	}
 	e.out.Notice(locale.Tl("operating_message", "", e.project.NamespaceString(), e.project.Dir()))
 
-	rows := make(events, 0)
-	for _, event := range e.project.Events() {
-		v, err := event.Value()
-		if err != nil {
-			return locale.NewError("err_events_val", "Could not get value for event: {{.V0}}.", event.Name())
-		}
-		rows = append(rows, Event{
-			event.Name(),
-			v,
-		})
+	events, err := newEventOutput(e.project.Events())
+	if err != nil {
+		return errs.Wrap(err, "Unable to get all events")
 	}
-
-	e.out.Print(&rows)
+	e.out.Print(events)
 	return nil
 }

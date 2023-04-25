@@ -27,12 +27,12 @@ type privateKeyOutput struct {
 	Value string `json:"value"`
 }
 
-func (f *privateKeyOutput) MarshalOutput(format output.Format) interface{} {
-	return f.Value
+func (o *privateKeyOutput) MarshalOutput(format output.Format) interface{} {
+	return o.Value
 }
 
-func (f *privateKeyOutput) MarshalStructured(format output.Format) interface{} {
-	return f
+func (o *privateKeyOutput) MarshalStructured(format output.Format) interface{} {
+	return o
 }
 
 // Run processes the `export recipe` command.

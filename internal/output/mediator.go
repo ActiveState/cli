@@ -62,7 +62,10 @@ func mediatorValue(v interface{}, format Format) interface{} {
 			return vt.MarshalStructured(format)
 		}
 		strv := fmt.Sprintf("%v", v)
-		return jsonError{[]string{locale.Tl("err_no_structured_output", "{{.V0}} output not supported for message: {{.V1}}", string(format), strv)}, 1}
+		return jsonError{
+			[]string{locale.Tl("err_no_structured_output", "{{.V0}} output not supported for message: {{.V1}}", string(format), strv)},
+			1,
+		}
 	}
 	if vt, ok := v.(Marshaller); ok {
 		return vt.MarshalOutput(format)

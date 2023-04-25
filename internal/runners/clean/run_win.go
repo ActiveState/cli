@@ -79,7 +79,7 @@ func (u *Uninstall) runUninstall(params *UninstallParams) error {
 		return aggErr
 	}
 
-	u.out.Print(&outputFormat{message: locale.Tr("clean_message_windows", logFile.Name())})
+	u.out.Print(&cleanOutput{message: locale.Tr("clean_message_windows", logFile.Name())})
 	if params.Prompt {
 		u.out.Print(locale.Tl("clean_uninstall_confirm_exit", "Press enter to exit."))
 		fmt.Scanln(p.StrP("")) // Wait for input from user
@@ -93,7 +93,7 @@ func removeConfig(configPath string, out output.Outputer) error {
 		return locale.WrapError(err, "err_clean_logfile", "Could not create temporary log file")
 	}
 
-	out.Print(&outputFormat{message: locale.Tr("clean_config_message_windows", logFile.Name())})
+	out.Print(&cleanOutput{message: locale.Tr("clean_config_message_windows", logFile.Name())})
 	return removePaths(logFile.Name(), configPath)
 }
 
