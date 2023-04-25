@@ -60,8 +60,8 @@ func New(prime primeable) *Pull {
 }
 
 type outputFormat struct {
-	Message string `locale:"message,Message"`
-	Success bool   `locale:"success,Success"`
+	Message string `locale:"message,Message" json:"message"`
+	Success bool   `locale:"success,Success" json:"success"`
 }
 
 func (f *outputFormat) MarshalOutput(format output.Format) interface{} {

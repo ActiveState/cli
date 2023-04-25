@@ -26,8 +26,8 @@ func NewShow(prime primeable) *Show {
 
 type outputFormat struct {
 	message   string `locale:message,Message`
-	Namespace string `locale:"namespace,Namespace"`
-	Path      string `locale:"path,Path"`
+	Namespace string `locale:"namespace,Namespace" json:"namespace"`
+	Path      string `locale:"path,Path" json:"path"`
 }
 
 func (f *outputFormat) MarshalOutput(format output.Format) interface{} {

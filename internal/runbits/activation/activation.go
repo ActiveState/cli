@@ -21,6 +21,14 @@ import (
 	"github.com/ActiveState/cli/pkg/project"
 )
 
+type envOutput struct {
+	env map[string]string
+}
+
+func (e *envOutput) MarshalStructured(format output.Format) interface{} {
+	return e.env
+}
+
 func ActivateAndWait(
 	proj *project.Project,
 	venv *virtualenvironment.VirtualEnvironment,
@@ -56,7 +64,7 @@ func ActivateAndWait(
 		if out.Type() == output.EditorV0FormatName {
 			fmt.Println("[activated-JSON]")
 		}
-		out.Print(ve)
+		out.Print(&envOutput{ve})
 		return nil
 	}
 

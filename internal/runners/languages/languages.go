@@ -65,7 +65,7 @@ func (l *Languages) Run() error {
 
 	formatLangs(langs)
 
-	l.out.Print(Listing{langs})
+	l.out.Print(&Listing{langs})
 	return nil
 }
 

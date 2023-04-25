@@ -45,6 +45,20 @@ type Lock struct {
 	an      analytics.Dispatcher
 }
 
+type outputFormat struct {
+	message string
+	Channel string `json:"channel"`
+	Version string `json:"version"`
+}
+
+func (f *outputFormat) MarshalOutput(format output.Format) interface{} {
+	return f.message
+}
+
+func (f *outputFormat) MarshalStructured(format output.Format) interface{} {
+	return f
+}
+
 func NewLock(prime primeable) *Lock {
 	return &Lock{
 		prime.Project(),
@@ -100,7 +114,11 @@ func (l *Lock) Run(params *LockParams) error {
 		return locale.WrapError(err, "err_update_projectfile", "Could not update projectfile")
 	}
 
-	l.out.Print(locale.Tl("version_locked", "Version locked at {{.V0}}@{{.V1}}", channel, lockVersion))
+	l.out.Print(&outputFormat{
+		locale.Tl("version_locked", "Version locked at {{.V0}}@{{.V1}}", channel, lockVersion),
+		channel,
+		lockVersion,
+	})
 	return nil
 }
 

@@ -32,8 +32,17 @@ type scriptLine struct {
 	Description string `json:"description,omitempty"`
 }
 
-type scriptsTable struct {
-	rows []scriptLine
+type scriptLines []scriptLine
+
+func (s *scriptLines) MarshalOutput(format output.Format) interface{} {
+	if len(*s) == 0 {
+		return locale.T("scripts_no_scripts")
+	}
+	return s
+}
+
+func (s *scriptLines) MarshalStructured(format output.Format) interface{} {
+	return s
 }
 
 func (s *Scripts) Run() error {
@@ -46,21 +55,16 @@ func (s *Scripts) Run() error {
 
 	scripts := s.project.Scripts()
 
-	if len(scripts) == 0 {
-		s.output.Print(locale.T("scripts_no_scripts"))
-		return nil
-	}
-
 	name, owner := s.project.Name(), s.project.Owner()
 	logging.Debug("listing scripts for org=%s, project=%s", owner, name)
-	var rows []scriptLine
+	var rows scriptLines
 	for _, s := range scripts {
 		row := scriptLine{
 			s.Name(), s.Description(),
 		}
 		rows = append(rows, row)
 	}
-	s.output.Print(rows)
+	s.output.Print(&rows)
 
 	return nil
 }

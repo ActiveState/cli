@@ -23,11 +23,6 @@ func (r *Projects) RunRemote(params *Params) error {
 		return locale.WrapError(err, "project_err")
 	}
 
-	if len(projectsList) == 0 {
-		r.out.Print(locale.T("project_empty"))
-		return nil
-	}
-
 	r.out.Print(projectsList)
 	return nil
 }

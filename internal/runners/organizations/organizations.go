@@ -55,7 +55,17 @@ type orgData struct {
 	PrivateProjects bool   `json:"privateProjects" locale:"privateprojects,Private Projects"`
 }
 
-func newOrgData(orgs []*mono_models.Organization) ([]orgData, error) {
+type orgDatas []orgData
+
+func (o *orgDatas) MarshalOutput(format output.Format) interface{} {
+	return o
+}
+
+func (o *orgDatas) MarshalStructured(format output.Format) interface{} {
+	return o
+}
+
+func newOrgData(orgs []*mono_models.Organization) (*orgDatas, error) {
 
 	tiers, err := model.FetchTiers()
 	if err != nil {
@@ -74,7 +84,7 @@ func newOrgData(orgs []*mono_models.Organization) ([]orgData, error) {
 		}
 	}
 
-	orgDatas := make([]orgData, len(orgs))
+	orgd := make(orgDatas, len(orgs))
 	for i, org := range orgs {
 		var tierPrivate bool
 		tierTitle := "Unknown"
@@ -83,12 +93,12 @@ func newOrgData(orgs []*mono_models.Organization) ([]orgData, error) {
 			tierPrivate = t.private
 			tierTitle = t.title
 		}
-		orgDatas[i] = orgData{
+		orgd[i] = orgData{
 			Name:            org.DisplayName,
 			URLName:         org.URLname,
 			Tier:            tierTitle,
 			PrivateProjects: tierPrivate,
 		}
 	}
-	return orgDatas, nil
+	return &orgd, nil
 }

@@ -7,10 +7,24 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/osutils"
+	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/runners/prepare"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
 )
+
+type outputFormat struct {
+	message string
+	Path    string `json:"path,omitempty"`
+}
+
+func (f *outputFormat) MarshalOutput(format output.Format) interface{} {
+	return f.message
+}
+
+func (f *outputFormat) MarshalStructured(format output.Format) interface{} {
+	return f
+}
 
 func removeCache(cachePath string) error {
 	err := os.RemoveAll(cachePath)

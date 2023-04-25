@@ -135,8 +135,10 @@ type searchPackageRow struct {
 	Modules       modules `json:"matching_modules,omitempty" opts:"emptyNil,separateLine,shiftCols=1"`
 }
 
-func formatSearchResults(packages []*model.IngredientAndVersion) []searchPackageRow {
-	var rows []searchPackageRow
+type searchPackages []searchPackageRow
+
+func formatSearchResults(packages []*model.IngredientAndVersion) *searchPackages {
+	rows := make(searchPackages, 0)
 
 	filterNilStr := func(s *string) string {
 		if s == nil {
@@ -158,8 +160,8 @@ func formatSearchResults(packages []*model.IngredientAndVersion) []searchPackage
 	return mergeSearchRows(rows)
 }
 
-func mergeSearchRows(rows []searchPackageRow) []searchPackageRow {
-	var mergedRows []searchPackageRow
+func mergeSearchRows(rows searchPackages) *searchPackages {
+	mergedRows := make(searchPackages, 0)
 	var name string
 	for _, row := range rows {
 		// The search API returns results sorted by name and then descending version
@@ -183,5 +185,13 @@ func mergeSearchRows(rows []searchPackageRow) []searchPackageRow {
 		mergedRows = append(mergedRows, newRow)
 	}
 
-	return mergedRows
+	return &mergedRows
+}
+
+func (s *searchPackages) MarshalOutput(format output.Format) interface{} {
+	return s
+}
+
+func (s *searchPackages) MarshalStructured(format output.Format) interface{} {
+	return s
 }

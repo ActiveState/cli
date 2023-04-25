@@ -41,6 +41,10 @@ func newProjectWithOrg(name, org string, checkouts []string) projectWithOrg {
 }
 
 func (o projectWithOrgs) MarshalOutput(f output.Format) interface{} {
+	if len(o) == 0 {
+		return locale.T("project_checkout_empty")
+	}
+
 	type projectOutputPlain struct {
 		Name           string
 		Organization   string
@@ -126,9 +130,9 @@ func (r *Projects) Run(params *Params) error {
 			multilog.Error("Invalid project namespace stored to config mapping: %s", namespace)
 			continue
 		}
-
 		projects = append(projects, newProjectWithOrg(ns.Project, ns.Owner, checkouts))
 	}
+
 	sort.SliceStable(projects, func(i, j int) bool {
 		if projects[i].Organization == projects[j].Organization {
 			return projects[i].Name < projects[j].Name
@@ -136,11 +140,7 @@ func (r *Projects) Run(params *Params) error {
 		return projects[i].Organization < projects[j].Organization
 	})
 
-	if len(projects) == 0 {
-		r.out.Print(locale.T("project_checkout_empty"))
-	} else {
-		r.out.Print(projects)
-	}
+	r.out.Print(projects)
 
 	return nil
 }

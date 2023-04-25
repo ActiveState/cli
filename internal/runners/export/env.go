@@ -29,6 +29,18 @@ func NewEnv(prime primeable) *Env {
 	}
 }
 
+type envOutput struct {
+	env map[string]string
+}
+
+func (f *envOutput) MarshalOutput(format output.Format) interface{} {
+	return f.env
+}
+
+func (f *envOutput) MarshalStructured(format output.Format) interface{} {
+	return f.env
+}
+
 func (e *Env) Run() error {
 	if e.project == nil {
 		return locale.NewInputError("err_env_no_project", "No project found.")
@@ -49,7 +61,7 @@ func (e *Env) Run() error {
 		return locale.WrapError(err, "err_env_get_env", "Could not get runtime environment")
 	}
 
-	e.out.Print(env)
+	e.out.Print(&envOutput{env})
 
 	return nil
 }

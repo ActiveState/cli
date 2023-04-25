@@ -26,8 +26,21 @@ func New(prime primeable) *Events {
 }
 
 type Event struct {
-	Event string `locale:"event,Event"`
-	Value string `locale:"value,Value"`
+	Event string `locale:"event,Event" json:"event"`
+	Value string `locale:"value,Value" json:"value"`
+}
+
+type events []Event
+
+func (e *events) MarshalOutput(format output.Format) interface{} {
+	if len(*e) == 0 {
+		return locale.Tl("events_empty", "No events found for the current project")
+	}
+	return e
+}
+
+func (e *events) MarshalStructured(format output.Format) interface{} {
+	return e
 }
 
 func (e *Events) Run() error {
@@ -36,7 +49,7 @@ func (e *Events) Run() error {
 	}
 	e.out.Notice(locale.Tl("operating_message", "", e.project.NamespaceString(), e.project.Dir()))
 
-	rows := []Event{}
+	rows := make(events, 0)
 	for _, event := range e.project.Events() {
 		v, err := event.Value()
 		if err != nil {
@@ -48,11 +61,6 @@ func (e *Events) Run() error {
 		})
 	}
 
-	if len(rows) == 0 {
-		e.out.Print(locale.Tl("events_empty", "No events found for the current project"))
-		return nil
-	}
-
-	e.out.Print(rows)
+	e.out.Print(&rows)
 	return nil
 }

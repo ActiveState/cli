@@ -76,15 +76,23 @@ func NewRequirementOperation(prime primeable) *RequirementOperation {
 	}
 }
 
-const latestVersion = "latest"
-
-type RequirementOperationParams struct {
-	RequirementName     string
-	RequirementVersion  string
-	RequirementBitWidth int
-	Operation           model.Operation
-	NsType              model.NamespaceType
+type outputFormat struct {
+	message   string
+	Type      string `json:"type"`
+	Operation string `json:"operation"`
+	Name      string `json:"name"`
+	Version   string `json:"version,omitempty"`
 }
+
+func (f *outputFormat) MarshalOutput(format output.Format) interface{} {
+	return f.message
+}
+
+func (f *outputFormat) MarshalStructured(format output.Format) interface{} {
+	return f
+}
+
+const latestVersion = "latest"
 
 func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requirementVersion string, requirementBitWidth int, operation model.Operation, nsType model.NamespaceType) (rerr error) {
 	var ns model.Namespace
@@ -261,18 +269,24 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 		}
 	}
 
-	// Print the result
 	if !hasParentCommit {
-		out.Print(locale.Tr("install_initial_success", pj.Source().Path()))
+		out.Notice(locale.Tr("install_initial_success", pj.Source().Path()))
 	}
 
-	if requirementVersion != "" {
-		out.Print(locale.Tr(fmt.Sprintf("%s_version_%s", ns.Type(), operation), requirementName, requirementVersion))
-	} else {
-		out.Print(locale.Tr(fmt.Sprintf("%s_%s", ns.Type(), operation), requirementName))
+	// Print the result
+	message := locale.Tr(fmt.Sprintf("%s_version_%s", ns.Type(), operation), requirementName, requirementVersion)
+	if requirementVersion == "" {
+		message = locale.Tr(fmt.Sprintf("%s_%s", ns.Type(), operation), requirementName)
 	}
+	out.Print(&outputFormat{
+		message,
+		ns.Type().String(),
+		string(operation),
+		requirementName,
+		requirementVersion,
+	})
 
-	out.Print(locale.T("operation_success_local"))
+	out.Notice(locale.T("operation_success_local"))
 
 	return nil
 }

@@ -77,6 +77,20 @@ func inferLanguage(config projectfile.ConfigGetter) (string, string, bool) {
 	return lang.Name, lang.Version, true
 }
 
+type outputFormat struct {
+	message   string
+	Namespace string `json:"namespace"`
+	Path      string `json:"path" `
+}
+
+func (f *outputFormat) MarshalOutput(format output.Format) interface{} {
+	return f.message
+}
+
+func (f *outputFormat) MarshalStructured(format output.Format) interface{} {
+	return f
+}
+
 func (r *Initialize) Run(params *RunParams) error {
 	logging.Debug("Init: %s/%s %v", params.Namespace.Owner, params.Namespace.Project, params.Private)
 
@@ -182,12 +196,11 @@ func (r *Initialize) Run(params *RunParams) error {
 
 	projectfile.StoreProjectMapping(r.config, params.Namespace.String(), filepath.Dir(proj.Source().Path()))
 
-	r.out.Notice(locale.Tr(
-		"init_success",
-		params.Namespace.Owner,
-		params.Namespace.Project,
+	r.out.Print(&outputFormat{
+		locale.Tr("init_success", params.Namespace.String(), path),
+		params.Namespace.String(),
 		path,
-	))
+	})
 
 	return nil
 }

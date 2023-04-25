@@ -5,12 +5,12 @@ import (
 
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/profile"
-	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/pkg/cmdlets/checker"
 	"github.com/ActiveState/cli/pkg/platform/model"
 )
@@ -47,6 +47,19 @@ func New(opts *Options, prime primeable) *State {
 	}
 }
 
+type outputFormat struct {
+	message string
+	installation.VersionData
+}
+
+func (f *outputFormat) MarshalOutput(format output.Format) interface{} {
+	return f.message
+}
+
+func (f *outputFormat) MarshalStructured(format output.Format) interface{} {
+	return f.VersionData
+}
+
 // Run state logic
 func (s *State) Run(usageFunc func() error) error {
 	return execute(s.opts, usageFunc, s.cfg, s.svcMdl, s.out)
@@ -66,10 +79,10 @@ func execute(opts *Options, usageFunc func() error, cfg *config.Instance, svcMod
 			constants.Date,
 			constants.OnCI == "true",
 		}
-		out.Print(
-			output.NewFormatter(vd).
-				WithFormat(output.PlainFormatName, locale.T("version_info", vd)),
-		)
+		out.Print(&outputFormat{
+			locale.T("version_info", vd),
+			vd,
+		})
 		return nil
 	}
 	return usageFunc()

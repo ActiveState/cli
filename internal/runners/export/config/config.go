@@ -24,12 +24,34 @@ type primeable interface {
 	primer.Configurer
 }
 
+type configMap map[string]string
+
+func (f *configMap) MarshalOutput(format output.Format) interface{} {
+	return f
+}
+
+func (f *configMap) MarshalStructured(format output.Format) interface{} {
+	return f
+}
+
+type configValue struct {
+	Value string `json:"value"`
+}
+
+func (f *configValue) MarshalOutput(format output.Format) interface{} {
+	return f.Value
+}
+
+func (f *configValue) MarshalStructured(format output.Format) interface{} {
+	return f
+}
+
 func New(prime primeable) *Config {
 	return &Config{prime.Output(), prime.Config()}
 }
 
 func (c *Config) Run(cmd *captain.Command, params *ConfigParams) error {
-	output := map[string]string{
+	output := configMap{
 		Dir.String(): c.cfg.ConfigPath(),
 	}
 
@@ -40,13 +62,13 @@ func (c *Config) Run(cmd *captain.Command, params *ConfigParams) error {
 			if value, ok := output[term.String()]; ok {
 				filteredOutput[term.String()] = value
 				if len(params.Filter.terms) == 1 {
-					c.out.Print(value)
+					c.out.Print(&configValue{value})
 					return nil
 				}
 			}
 		}
 	}
 
-	c.out.Print(filteredOutput)
+	c.out.Print(&filteredOutput)
 	return nil
 }

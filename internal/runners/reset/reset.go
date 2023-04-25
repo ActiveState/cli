@@ -49,6 +49,19 @@ func New(prime primeable) *Reset {
 	}
 }
 
+type outputFormat struct {
+	message  string
+	CommitID string `json:"commitID"`
+}
+
+func (f *outputFormat) MarshalOutput(format output.Format) interface{} {
+	return f.message
+}
+
+func (f *outputFormat) MarshalStructured(format output.Format) interface{} {
+	return f
+}
+
 func (r *Reset) Run(params *Params) error {
 	if r.project == nil {
 		return locale.NewInputError("err_no_project")
@@ -79,7 +92,7 @@ func (r *Reset) Run(params *Params) error {
 		}
 	}
 
-	r.out.Print(locale.Tl("reset_commit", "Your project will be reset to [ACTIONABLE]{{.V0}}[/RESET]\n", commitID.String()))
+	r.out.Notice(locale.Tl("reset_commit", "Your project will be reset to [ACTIONABLE]{{.V0}}[/RESET]\n", commitID.String()))
 
 	defaultChoice := params.Force
 	confirm, err := r.prompt.Confirm("", locale.Tl("reset_confim", "Resetting is destructive, you will lose any changes that were not pushed. Are you sure you want to do this?"), &defaultChoice)
@@ -100,7 +113,10 @@ func (r *Reset) Run(params *Params) error {
 		return locale.WrapError(err, "err_refresh_runtime")
 	}
 
-	r.out.Print(locale.Tl("reset_success", "Successfully reset to commit: [NOTICE]{{.V0}}[/RESET]", commitID.String()))
+	r.out.Print(&outputFormat{
+		locale.Tl("reset_success", "Successfully reset to commit: [NOTICE]{{.V0}}[/RESET]", commitID.String()),
+		commitID.String(),
+	})
 
 	return nil
 }

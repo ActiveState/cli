@@ -120,7 +120,7 @@ func (r *Activate) run(params *ActivateParams) error {
 			}
 
 			if (params.Namespace != nil && activated == params.Namespace.String()) || (proj != nil && activated == proj.NamespaceString()) {
-				r.out.Print(locale.Tl("already_activate", "Your project is already active"))
+				r.out.Notice(locale.Tl("already_activate", "Your project is already active"))
 				return nil
 			}
 

@@ -166,7 +166,7 @@ func (sw *scriptWatcher) run(scriptName string, outputer output.Outputer, cfg pr
 					sw.errs <- errs.Wrap(err, "Failed to write project file.")
 					return
 				}
-				outputer.Print(locale.T("edit_scripts_project_file_saved"))
+				outputer.Notice(locale.T("edit_scripts_project_file_saved"))
 			}
 		case err, ok := <-sw.watcher.Errors:
 			if !ok {
@@ -273,7 +273,7 @@ func verifyPathEditor(editor string) (string, error) {
 }
 
 func start(prompt prompt.Prompter, sw *scriptWatcher, scriptName string, output output.Outputer, cfg projectfile.ConfigGetter, proj *project.Project) (err error) {
-	output.Print(locale.Tr("script_watcher_watch_file", sw.scriptFile.Filename()))
+	output.Notice(locale.Tr("script_watcher_watch_file", sw.scriptFile.Filename()))
 	if prompt.IsInteractive() {
 		return startInteractive(sw, scriptName, output, cfg, proj, prompt)
 	}

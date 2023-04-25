@@ -19,6 +19,21 @@ func NewJWT(prime primeable) *JWT {
 type JWTParams struct {
 }
 
+type jwtOutput struct {
+	Value string `json:"value"`
+}
+
+func (f *jwtOutput) MarshalOutput(format output.Format) interface{} {
+	return f.Value
+}
+
+func (f *jwtOutput) MarshalStructured(format output.Format) interface{} {
+	if format == output.EditorV0FormatName {
+		return []byte(f.Value)
+	}
+	return f
+}
+
 // Run processes the `export recipe` command.
 func (j *JWT) Run(params *JWTParams) error {
 	logging.Debug("Execute")
@@ -28,7 +43,6 @@ func (j *JWT) Run(params *JWTParams) error {
 	}
 
 	token := authentication.LegacyGet().BearerToken()
-	j.Outputer.Print(
-		output.NewFormatter(token).WithFormat(output.EditorV0FormatName, []byte(token)))
+	j.Outputer.Print(&jwtOutput{token})
 	return nil
 }

@@ -28,6 +28,20 @@ type SetParams struct {
 	Value string
 }
 
+type setOutputFormat struct {
+	message string
+	Name    string      `json:"name"`
+	Value   interface{} `json:"value"`
+}
+
+func (f *setOutputFormat) MarshalOutput(format output.Format) interface{} {
+	return f.message
+}
+
+func (f *setOutputFormat) MarshalStructured(format output.Format) interface{} {
+	return f
+}
+
 func NewSet(prime primeable) *Set {
 	return &Set{prime.Output(), prime.Config(), prime.SvcModel(), prime.Analytics()}
 }
@@ -65,7 +79,7 @@ func (s *Set) Run(params SetParams) error {
 
 	err = s.cfg.Set(key, value)
 	if err != nil {
-		return locale.WrapError(err, "err_config_set", fmt.Sprintf("Could not set value %s for key %s", params.Value, params.Key))
+		return locale.WrapError(err, "err_config_set", fmt.Sprintf("Could not set value %s for key %s", params.Value, key))
 	}
 
 	// Notify listeners that this key has changed.
@@ -79,7 +93,11 @@ func (s *Set) Run(params SetParams) error {
 	}
 	s.sendEvent(key, params.Value, option)
 
-	s.out.Print(locale.Tl("config_set_success", "Successfully set config key: {{.V0}} to {{.V1}}", params.Key.String(), params.Value))
+	s.out.Print(&setOutputFormat{
+		locale.Tl("config_set_success", "Successfully set config key: {{.V0}} to {{.V1}}", key, params.Value),
+		key,
+		params.Value,
+	})
 	return nil
 }
 

@@ -50,13 +50,13 @@ type primeable interface {
 }
 
 type RuntimeDetails struct {
-	Name         string `locale:"state_show_details_name,Name"`
-	Organization string `locale:"state_show_details_organization,Organization"`
-	NameSpace    string `locale:"state_show_details_namespace,Namespace"`
-	Location     string `locale:"state_show_details_location,Location"`
-	Executables  string `locale:"state_show_details_executables,Executables"`
-	Visibility   string `locale:"state_show_details_visibility,Visibility"`
-	LastCommit   string `locale:"state_show_details_latest_commit,Latest Commit"`
+	Name         string `json:"name" locale:"state_show_details_name,Name"`
+	Organization string `json:"organization" locale:"state_show_details_organization,Organization"`
+	NameSpace    string `json:"namespace" locale:"state_show_details_namespace,Namespace"`
+	Location     string `json:"location" locale:"state_show_details_location,Location"`
+	Executables  string `json:"executables" locale:"state_show_details_executables,Executables"`
+	Visibility   string `json:"visibility" locale:"state_show_details_visibility,Visibility"`
+	LastCommit   string `json:"last_commit" locale:"state_show_details_latest_commit,Latest Commit"`
 }
 
 type outputDataPrinter struct {
@@ -64,11 +64,11 @@ type outputDataPrinter struct {
 	data   outputData
 }
 type outputData struct {
-	ProjectURL string `locale:"project_url,Project URL"`
+	ProjectURL string `json:"project_url" locale:"project_url,Project URL"`
 	RuntimeDetails
 	Platforms []platformRow
 	Languages []languageRow
-	Secrets   *secretOutput     `locale:"secrets,Secrets"`
+	Secrets   *secretOutput     `json:"secrets" locale:"secrets,Secrets"`
 	Events    []string          `json:",omitempty"`
 	Scripts   map[string]string `json:",omitempty"`
 }

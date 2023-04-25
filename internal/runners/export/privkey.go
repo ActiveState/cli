@@ -23,6 +23,18 @@ func NewPrivateKey(prime primeable) *PrivateKey {
 type PrivateKeyParams struct {
 }
 
+type privateKeyOutput struct {
+	Value string `json:"value"`
+}
+
+func (f *privateKeyOutput) MarshalOutput(format output.Format) interface{} {
+	return f.Value
+}
+
+func (f *privateKeyOutput) MarshalStructured(format output.Format) interface{} {
+	return f
+}
+
 // Run processes the `export recipe` command.
 func (p *PrivateKey) Run(params *PrivateKeyParams) error {
 	logging.Debug("Execute")
@@ -42,6 +54,6 @@ func (p *PrivateKey) Run(params *PrivateKeyParams) error {
 		return err
 	}
 
-	p.Outputer.Print(string(contents))
+	p.Outputer.Print(&privateKeyOutput{string(contents)})
 	return nil
 }

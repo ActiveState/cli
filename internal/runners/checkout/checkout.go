@@ -59,6 +59,21 @@ func NewCheckout(prime primeable) *Checkout {
 	}
 }
 
+type outputFormat struct {
+	message     string
+	Namespace   string `json:"namespace"`
+	Path        string `json:"path"`
+	Executables string `json:"executables"`
+}
+
+func (f *outputFormat) MarshalOutput(format output.Format) interface{} {
+	return f.message
+}
+
+func (f *outputFormat) MarshalStructured(format output.Format) interface{} {
+	return f
+}
+
 func (u *Checkout) Run(params *Params) error {
 	logging.Debug("Checkout %v", params.Namespace)
 
@@ -83,11 +98,13 @@ func (u *Checkout) Run(params *Params) error {
 		return locale.WrapError(err, "err_checkout_runtime_new", "Could not checkout this project.")
 	}
 
-	u.out.Notice(locale.Tl("checkout_project_statement", "",
+	execDir := setup.ExecDir(rti.Target().Dir())
+	u.out.Print(&outputFormat{
+		locale.Tl("checkout_project_statement", "", proj.NamespaceString(), proj.Dir(), execDir),
 		proj.NamespaceString(),
 		proj.Dir(),
-		setup.ExecDir(rti.Target().Dir())),
-	)
+		execDir,
+	})
 
 	return nil
 }

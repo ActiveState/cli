@@ -79,12 +79,7 @@ func (a *Auth) Run(params *AuthParams) error {
 		return locale.WrapError(err, "err_auth_userdata", "Could not collect information about your account.")
 	}
 
-	a.Outputer.Print(
-		output.NewFormatter(data).
-			WithFormat(output.PlainFormatName, locale.T("logged_in_as", map[string]string{
-				"Name": a.Auth.WhoAmI(),
-			})),
-	)
+	a.Outputer.Print(data)
 
 	return nil
 }
@@ -148,4 +143,14 @@ func (a *Auth) userData() (*userData, error) {
 	}
 
 	return &userData{username, organization.URLname, tier, privateProjects}, nil
+}
+
+func (u *userData) MarshalOutput(format output.Format) interface{} {
+	return locale.T("logged_in_as", map[string]string{
+		"Name": u.Username,
+	})
+}
+
+func (u *userData) MarshalStructured(format output.Format) interface{} {
+	return u
 }

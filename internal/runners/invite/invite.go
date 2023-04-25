@@ -157,8 +157,8 @@ func (i *invite) send(orgName string, asOwner bool, emails []string) (int, error
 }
 
 type outputFormat struct {
-	Email string `locale:"email,Email"`
-	Error error  `locale:"error,Error"`
+	Email string `locale:"email,Email" json:"email"`
+	Error error  `locale:"error,Error" json:"error,omitempty"`
 }
 
 func (f *outputFormat) MarshalOutput(format output.Format) interface{} {
@@ -170,7 +170,7 @@ func (f *outputFormat) MarshalOutput(format output.Format) interface{} {
 }
 
 func (f *outputFormat) MarshalStructured(format output.Format) interface{} {
-	return f
+	return f.Error
 }
 
 func (i *invite) sendSingle(orgName string, asOwner bool, email string) error {

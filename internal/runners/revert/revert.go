@@ -54,16 +54,17 @@ func New(prime primeable) *Revert {
 	}
 }
 
-type commitDetails struct {
-	Date        string
-	Author      string
-	Description string
-	Changeset   []changeset `locale:"changeset,Changes"`
+type outputFormat struct {
+	message         string
+	CurrentCommitID string `json:"current_commit_id"`
 }
 
-type changeset struct {
-	Operation   string `locale:"operation,Operation"`
-	Requirement string `locale:"requirement,Requirement"`
+func (f *outputFormat) MarshalOutput(format output.Format) interface{} {
+	return f.message
+}
+
+func (f *outputFormat) MarshalStructured(format output.Format) interface{} {
+	return f
 }
 
 func (r *Revert) Run(params *Params) error {
@@ -115,8 +116,10 @@ func (r *Revert) Run(params *Params) error {
 	if params.To {
 		preposition = " to" // need leading whitespace
 	}
-	r.out.Print(locale.Tl("revert_info", "You are about to revert{{.V0}} the following commit:", preposition))
-	commit.PrintCommit(r.out, targetCommit, orgs)
+	if r.out.Type() == output.PlainFormatName || r.out.Type() == output.SimpleFormatName {
+		r.out.Print(locale.Tl("revert_info", "You are about to revert{{.V0}} the following commit:", preposition))
+		commit.PrintCommit(r.out, targetCommit, orgs)
+	}
 
 	defaultChoice := params.Force
 	revert, err := r.prompt.Confirm("", locale.Tl("revert_confirm", "Continue?"), &defaultChoice)
@@ -148,8 +151,11 @@ func (r *Revert) Run(params *Params) error {
 		return locale.WrapError(err, "err_revert_set_commit", "Could not set revert commit ID in projectfile")
 	}
 
-	r.out.Print(locale.Tl("revert_success", "Successfully reverted{{.V0}} commit: {{.V1}}", preposition, params.CommitID))
-	r.out.Print(locale.T("operation_success_local"))
+	r.out.Print(&outputFormat{
+		locale.Tl("revert_success", "Successfully reverted{{.V0}} commit: {{.V1}}", preposition, params.CommitID),
+		revertCommit.CommitID.String(),
+	})
+	r.out.Notice(locale.T("operation_success_local"))
 	return nil
 }
 

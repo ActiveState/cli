@@ -17,11 +17,37 @@ import (
 )
 
 type commitData struct {
-	Hash    string   `locale:"hash,[HEADING]Commit[/RESET]"`
-	Author  string   `locale:"author,[HEADING]Author[/RESET]"`
-	Date    string   `locale:"date,[HEADING]Date[/RESET]"`
-	Message string   `locale:"message,[HEADING]Message[/RESET]"`
-	Changes []string `locale:"changes,[HEADING]Changes[/RESET]"`
+	Hash    string   `locale:"hash,[HEADING]Commit[/RESET]" json:"hash"`
+	Author  string   `locale:"author,[HEADING]Author[/RESET]" json:"author"`
+	Date    string   `locale:"date,[HEADING]Date[/RESET]" json:"date"`
+	Message string   `locale:"message,[HEADING]Message[/RESET]" json:"message"`
+	Changes []string `locale:"changes,[HEADING]Changes[/RESET]" json:"changes"`
+}
+
+func (c *commitData) MarshalOutput(format output.Format) interface{} {
+	return struct {
+		Data commitData `opts:"verticalTable" locale:","`
+	}{
+		Data: *c,
+	}
+}
+
+func (c *commitData) MarshalStructured(format output.Format) interface{} {
+	return c
+}
+
+type commitDatas []commitData
+
+func (c *commitDatas) MarshalOutput(format output.Format) interface{} {
+	return struct {
+		Data commitDatas `opts:"verticalTable" locale:","`
+	}{
+		Data: *c,
+	}
+}
+
+func (c *commitDatas) MarshalStructured(format output.Format) interface{} {
+	return c
 }
 
 func PrintCommit(out output.Outputer, commit *mono_models.Commit, orgs []gmodel.Organization) error {
@@ -29,17 +55,13 @@ func PrintCommit(out output.Outputer, commit *mono_models.Commit, orgs []gmodel.
 	if err != nil {
 		return err
 	}
-	out.Print(struct {
-		Data commitData `opts:"verticalTable" locale:","`
-	}{
-		Data: data,
-	})
+	out.Print(data)
 
 	return nil
 }
 
 func PrintCommits(out output.Outputer, commits []*mono_models.Commit, orgs []gmodel.Organization, lastRemoteID *strfmt.UUID) error {
-	data := make([]commitData, 0, len(commits))
+	data := make(commitDatas, 0, len(commits))
 	isLocal := true // recent (and, therefore, local) commits are first
 
 	for _, c := range commits {
@@ -51,19 +73,15 @@ func PrintCommits(out output.Outputer, commits []*mono_models.Commit, orgs []gmo
 		if err != nil {
 			return err
 		}
-		data = append(data, d)
+		data = append(data, *d)
 	}
 
-	out.Print(struct {
-		Data []commitData `opts:"verticalTable" locale:","`
-	}{
-		Data: data,
-	})
+	out.Print(&data)
 
 	return nil
 }
 
-func commitDataFromCommit(commit *mono_models.Commit, orgs []gmodel.Organization, isLocal bool) (commitData, error) {
+func commitDataFromCommit(commit *mono_models.Commit, orgs []gmodel.Organization, isLocal bool) (*commitData, error) {
 	var localTxt string
 	if isLocal {
 		localTxt = locale.Tl("commit_display_local", "[NOTICE] (local)[/RESET]")
@@ -75,7 +93,7 @@ func commitDataFromCommit(commit *mono_models.Commit, orgs []gmodel.Organization
 		username = usernameForID(*commit.Author, orgs)
 	}
 
-	commitData := commitData{
+	commitData := &commitData{
 		Hash:    locale.Tl("print_commit_hash", "[ACTIONABLE]{{.V0}}[/RESET]{{.V1}}", commit.CommitID.String(), localTxt),
 		Author:  username,
 		Changes: FormatChanges(commit),

@@ -120,7 +120,7 @@ func toJsonError(v interface{}) jsonError {
 	if s, ok := v.(string); ok {
 		return jsonError{[]string{s}, 1}
 	}
-	message := fmt.Sprint("Not a recognized error format: %v", v)
+	message := fmt.Sprintf("Not a recognized error format: %v", v)
 	multilog.Error(message)
 	return jsonError{[]string{message}, 1}
 }

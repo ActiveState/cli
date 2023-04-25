@@ -96,8 +96,8 @@ func (c *Cve) Run() error {
 }
 
 type SeverityCountOutput struct {
-	Count    string `locale:"count,Count"`
-	Severity string `locale:"severity,Severity"`
+	Count    string `locale:"count,Count" json:"count"`
+	Severity string `locale:"severity,Severity" json:"severity"`
 }
 
 func (od *outputDataPrinter) printFooter() {
