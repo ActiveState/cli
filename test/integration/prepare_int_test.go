@@ -64,7 +64,7 @@ func (suite *PrepareIntegrationTestSuite) TestPrepare() {
 	// Verify autostart was enabled.
 	app, err := svcApp.New()
 	suite.Require().NoError(err)
-	enabled, err := autostart.IsEnabled(app.Exec, svcAutostart.Options)
+	enabled, err := autostart.IsEnabled(app.Path(), svcAutostart.Options)
 	suite.Require().NoError(err)
 	suite.Assert().True(enabled, "autostart is not enabled")
 
@@ -74,13 +74,13 @@ func (suite *PrepareIntegrationTestSuite) TestPrepare() {
 		suite.Require().NoError(err)
 		profile := filepath.Join(homeDir, ".profile")
 		profileContents := string(fileutils.ReadFileUnsafe(profile))
-		suite.Contains(profileContents, app.Exec, "autostart should be configured for Linux server environment")
+		suite.Contains(profileContents, app.Path(), "autostart should be configured for Linux server environment")
 	}
 
 	// Verify autostart can be disabled.
-	err = autostart.Disable(app.Exec, svcAutostart.Options)
+	err = autostart.Disable(app.Path(), svcAutostart.Options)
 	suite.Require().NoError(err)
-	enabled, err = autostart.IsEnabled(app.Exec, svcAutostart.Options)
+	enabled, err = autostart.IsEnabled(app.Path(), svcAutostart.Options)
 	suite.Require().NoError(err)
 	suite.Assert().False(enabled, "autostart is still enabled")
 

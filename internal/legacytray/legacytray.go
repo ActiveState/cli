@@ -18,7 +18,6 @@ import (
 const stateTrayCmd = "state-tray"
 const trayAppName = "ActiveState Desktop (Preview)"
 const stateUpdateDialogCmd = "state-update-dialog"
-const trayLaunchFileName = "state-tray.desktop"
 
 func DetectAndRemove(path string, cfg *config.Instance) error {
 	binDir := filepath.Join(path, installation.BinDirName)
@@ -40,7 +39,7 @@ func DetectAndRemove(path string, cfg *config.Instance) error {
 
 	// Disable autostart of state-tray.
 	if app, err := app.New(trayAppName, trayExec, nil, appDir, app.Options{}); err == nil {
-		disableErr := autostart.Disable(app.Exec, autostart.Options{
+		disableErr := autostart.Disable(app.Path(), autostart.Options{
 			LaunchFileName: trayLaunchFileName, // only used for Linux; ignored on macOS, Windows
 		})
 		if disableErr != nil {

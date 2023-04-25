@@ -31,7 +31,9 @@ func (a *App) install() error {
 	}
 	defer os.RemoveAll(tmpDir)
 
-	tmpAppPath := filepath.Join(tmpDir, fmt.Sprintf("%s.app", a.Name))
+	appPath := a.Path()
+
+	tmpAppPath := filepath.Join(tmpDir, filepath.Base(appPath))
 	if err := fileutils.Mkdir(tmpAppPath); err != nil {
 		return errs.Wrap(err, "Could not create .app directory")
 	}
@@ -52,10 +54,7 @@ func (a *App) install() error {
 		return errs.Wrap(err, "Could not create info file")
 	}
 
-	installDir := a.Dir
-	if override := os.Getenv(constants.AppInstallDirOverrideEnvVarName); override != "" {
-		installDir = override
-	}
+	installDir := filepath.Dir(appPath)
 
 	if err := fileutils.MkdirUnlessExists(installDir); err != nil {
 		return errs.Wrap(err, "Could not create app parent directory: %s", installDir)
@@ -66,6 +65,14 @@ func (a *App) install() error {
 	}
 
 	return nil
+}
+
+func (a *App) Path() string {
+	installDir := a.Dir
+	if override := os.Getenv(constants.AppInstallDirOverrideEnvVarName); override != "" {
+		installDir = override
+	}
+	return filepath.Join(installDir, fmt.Sprintf("%s.app", a.Name))
 }
 
 func (a *App) createIcon(path string) error {
