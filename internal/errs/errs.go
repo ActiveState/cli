@@ -8,7 +8,6 @@ import (
 
 	"github.com/ActiveState/cli/internal/osutils/stacktrace"
 	"github.com/ActiveState/cli/internal/rtutils"
-	"github.com/hashicorp/go-multierror"
 )
 
 const TipMessage = "wrapped tips"
@@ -27,6 +26,18 @@ type ErrorTips interface {
 	error
 	AddTips(...string)
 	ErrorTips() []string
+}
+
+type StackedErrors struct {
+	errors []error
+}
+
+func (e *StackedErrors) Error() string {
+	return fmt.Sprintf("wrapped multiple errors")
+}
+
+func (e *StackedErrors) Unwrap() []error {
+	return e.errors
 }
 
 // WrapperError is what we use for errors created from this package, this does not mean every error returned from this
@@ -82,7 +93,7 @@ func Wrap(wrapTarget error, message string, args ...interface{}) *WrapperError {
 }
 
 func Combine(err error, errs ...error) error {
-	return multierror.Append(err, errs...)
+	return &StackedErrors{append([]error{err}, errs...)}
 }
 
 // Join all error messages in the Unwrap stack
@@ -144,14 +155,14 @@ func Matches(err error, target interface{}) bool {
 	if targetType.Kind() != reflect.Interface && !targetType.Implements(errorType) {
 		panic("errors: *target must be interface or implement error")
 	}
-	for err != nil {
+	errs := Unpack(err)
+	for _, err := range errs {
 		if reflect.TypeOf(err).AssignableTo(targetType) {
 			return true
 		}
 		if x, ok := err.(interface{ As(interface{}) bool }); ok && x.As(&target) {
 			return true
 		}
-		err = errors.Unwrap(err)
 	}
 	return false
 }
@@ -163,4 +174,40 @@ func IsAny(err error, errs ...error) bool {
 		}
 	}
 	return false
+}
+
+type unwrapNext interface {
+	Unwrap() error
+}
+
+type unwrapStacked interface {
+	Unwrap() []error
+}
+
+func Unpack(err error) []error {
+	result := []error{}
+	add := func(errors ...error) {
+		for _, err := range errors {
+			if _, isStacked := err.(*StackedErrors); isStacked {
+				continue
+			}
+			result = append(result, err)
+		}
+	}
+	for err != nil {
+		add(err)
+		if u, ok := err.(unwrapNext); ok {
+			err = u.Unwrap()
+			continue
+		} else if u, ok := err.(unwrapStacked); ok {
+			errs := u.Unwrap()
+			for _, e := range errs {
+				add(Unpack(e)...)
+			}
+			break
+		} else {
+			break // nothing to unpack
+		}
+	}
+	return result
 }

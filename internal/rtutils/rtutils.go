@@ -4,9 +4,19 @@ import (
 	"fmt"
 	"runtime"
 	"time"
-
-	"github.com/hashicorp/go-multierror"
 )
+
+type StackedErrors struct {
+	errors []error
+}
+
+func (e *StackedErrors) Error() string {
+	return fmt.Sprintf("wrapped multiple errors from rtutils")
+}
+
+func (e *StackedErrors) Unwrap() []error {
+	return e.errors
+}
 
 // Returns path of currently running Go file
 func CurrentFile() string {
@@ -33,7 +43,7 @@ func Closer(closer func() error, rerr *error) {
 	err := closer()
 	if err != nil {
 		if *rerr != nil {
-			*rerr = multierror.Append(*rerr, err)
+			*rerr = &StackedErrors{append([]error{*rerr}, err)}
 		} else {
 			*rerr = err
 		}
