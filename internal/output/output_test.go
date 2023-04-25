@@ -8,39 +8,51 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+type outputFormat struct {
+	print interface{}
+}
+
+func (f *outputFormat) MarshalOutput(format Format) interface{} {
+	return f.print
+}
+
+func (f *outputFormat) MarshalStructured(format Format) interface{} {
+	return f.print
+}
+
 func TestNew(t *testing.T) {
 	tests := []struct {
 		name        string
 		formatName  string
-		print       interface{}
+		print       *outputFormat
 		expectedOut string
 		expectedErr string
 	}{
 		{
 			"plain",
 			"plain",
-			"hello",
+			&outputFormat{"hello"},
 			"hello\n",
 			"",
 		},
 		{
 			"json",
 			"json",
-			"hello",
+			&outputFormat{"hello"},
 			`"hello"` + "\x00\n",
 			"",
 		},
 		{
 			"editor",
 			"editor",
-			"hello",
+			&outputFormat{"hello"},
 			`"hello"` + "\x00\n",
 			"",
 		},
 		{
 			"editor.v0",
 			"editor.v0",
-			"hello",
+			&outputFormat{"hello"},
 			`"hello"` + "\n",
 			"",
 		},
