@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	svcApp "github.com/ActiveState/cli/cmd/state-svc/app"
+	svcAutostart "github.com/ActiveState/cli/cmd/state-svc/autostart"
 	anaConst "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
@@ -20,6 +22,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/osutils"
+	"github.com/ActiveState/cli/internal/osutils/autostart"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
@@ -107,6 +110,11 @@ func (i *Installer) Install() (rerr error) {
 		return errs.Wrap(err, "Could not determine if running as Windows administrator")
 	}
 
+	// Install the state service as an app if necessary
+	if err := i.installSvcApp(binDir); err != nil {
+		return errs.Wrap(err, "Installation of service app failed.")
+	}
+
 	// Configure available shells
 	shell := subshell.New(i.cfg)
 	err = subshell.ConfigureAvailableShells(shell, i.cfg, map[string]string{"PATH": binDir}, sscommon.InstallID, !isAdmin)
@@ -151,6 +159,28 @@ func (i *Installer) sanitizeInput() error {
 	var err error
 	if i.path, err = resolveInstallPath(i.path); err != nil {
 		return errs.Wrap(err, "Could not resolve installation path")
+	}
+
+	return nil
+}
+
+func (i *Installer) installSvcApp(binDir string) error {
+	app, err := svcApp.NewFromDir(binDir)
+	if err != nil {
+		return errs.Wrap(err, "Could not create app")
+	}
+
+	err = app.Install()
+	if err != nil {
+		return errs.Wrap(err, "Could not install app")
+	}
+
+	if err = autostart.Upgrade(app.Path(), svcAutostart.Options); err != nil {
+		return errs.Wrap(err, "Failed to upgrade autostart for service app.")
+	}
+
+	if err = autostart.Enable(app.Path(), svcAutostart.Options); err != nil {
+		return errs.Wrap(err, "Failed to enable autostart for service app.")
 	}
 
 	return nil

@@ -5,12 +5,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/ActiveState/cli/internal/captain"
 	"os"
 	"os/exec"
 	"runtime/debug"
 	"strings"
 	"time"
+
+	"github.com/ActiveState/cli/internal/captain"
 
 	"github.com/ActiveState/cli/cmd/state/internal/cmdtree"
 	anAsync "github.com/ActiveState/cli/internal/analytics/client/async"
@@ -39,7 +40,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
-	"golang.org/x/crypto/ssh/terminal"
 )
 
 func main() {
@@ -99,8 +99,7 @@ func main() {
 	setPrinterColors(outFlags)
 
 	isInteractive := strings.ToLower(os.Getenv(constants.NonInteractiveEnvVarName)) != "true" &&
-		!outFlags.NonInteractive &&
-		terminal.IsTerminal(int(os.Stdin.Fd())) &&
+		out.Config().Interactive &&
 		out.Type() != output.EditorV0FormatName &&
 		out.Type() != output.EditorFormatName
 	// Run our main command logic, which is logic that defers to the error handling logic below
@@ -232,8 +231,10 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 
 	if childCmd != nil && !childCmd.SkipChecks() {
 		// Auto update to latest state tool version
-		if updated, err := autoUpdate(args, cfg, out); err != nil || updated {
-			return err
+		if updated, err := autoUpdate(args, cfg, an, out); err == nil && updated {
+			return nil // command will be run by updated exe
+		} else if err != nil {
+			multilog.Error("Failed to autoupdate: %v", err)
 		}
 
 		// Check for deprecation
@@ -263,7 +264,7 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 	}
 
 	err = cmds.Execute(args[1:])
-	if err != nil {
+	if err != nil && !errs.IsSilent(err) {
 		cmdName := ""
 		if childCmd != nil {
 			cmdName = childCmd.UseFull() + " "

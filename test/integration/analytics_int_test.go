@@ -122,7 +122,11 @@ func (suite *AnalyticsIntegrationTestSuite) TestActivateEvents() {
 		})
 		suite.Require().Equal(1, countEvents(executorEvents, anaConst.CatRuntimeUsage, anaConst.ActRuntimeAttempt),
 			ts.DebugMessage("Should have a runtime attempt, events:\n"+debugEvents(suite.T(), executorEvents)))
-		suite.Require().Equal(1, countEvents(executorEvents, anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat), "Should have a heartbeat")
+		// It's possible due to the timing of the heartbeats and the fact that they are async that we have gotten either
+		// one or two by this point. Technically more is possible, just very unlikely.
+		numHeartbeats := countEvents(executorEvents, anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat)
+		suite.Require().Greater(numHeartbeats, 0, "Should have a heartbeat")
+		suite.Require().LessOrEqual(numHeartbeats, 2, "Should not have excessive heartbeats")
 		var heartbeatEvent *reporters.TestLogEntry
 		for _, e := range executorEvents {
 			if e.Action == anaConst.ActRuntimeHeartbeat {
@@ -500,7 +504,9 @@ func (suite *AnalyticsIntegrationTestSuite) TestHeapEvents() {
 
 	// Ensure analytics events have required/important fields
 	for _, e := range events {
-		if strings.Contains(e.Category, "state-svc") || strings.Contains(e.Action, "state-svc") || strings.Contains(e.Action, "auth") {
+		// Skip events that are not relevant to Heap
+		// State Service, Update, and Auth events can run before a user has logged in
+		if strings.Contains(e.Category, "state-svc") || strings.Contains(e.Action, "state-svc") || strings.Contains(e.Action, "auth") || strings.Contains(e.Category, "update") {
 			continue
 		}
 
@@ -512,6 +518,53 @@ func (suite *AnalyticsIntegrationTestSuite) TestHeapEvents() {
 		suite.NotEmpty(e.Action, "Event action should not be empty")
 	}
 
+	suite.assertSequentialEvents(events)
+}
+
+func (suite *AnalyticsIntegrationTestSuite) TestConfigEvents() {
+	suite.OnlyRunForTags(tagsuite.Analytics, tagsuite.Config)
+
+	ts := e2e.New(suite.T(), true)
+	defer ts.Close()
+
+	cp := ts.SpawnWithOpts(e2e.WithArgs("config", "set", "optin.unstable", "false"),
+		e2e.WithWorkDirectory(ts.Dirs.Work),
+	)
+	cp.Expect("Successfully set config key")
+
+	time.Sleep(time.Second) // Ensure state-svc has time to report events
+
+	cp = ts.SpawnWithOpts(e2e.WithArgs("config", "set", "optin.unstable", "true"),
+		e2e.WithWorkDirectory(ts.Dirs.Work),
+	)
+	cp.Expect("Successfully set config key")
+
+	time.Sleep(time.Second) // Ensure state-svc has time to report events
+
+	suite.eventsfile = filepath.Join(ts.Dirs.Config, reporters.TestReportFilename)
+
+	events := parseAnalyticsEvents(suite, ts)
+	suite.Require().NotEmpty(events)
+
+	// Ensure analytics events have required/important fields
+	var found int
+	for _, e := range events {
+		if !strings.Contains(e.Category, anaConst.CatConfig) {
+			continue
+		}
+
+		if e.Label != "optin.unstable" {
+			suite.Fail("Incorrect config event label")
+		}
+		found++
+	}
+
+	if found < 2 {
+		suite.Fail("Should find multiple config events")
+	}
+
+	suite.assertNEvents(events, 1, anaConst.CatConfig, anaConst.ActConfigSet, "Should be at one config set event")
+	suite.assertNEvents(events, 1, anaConst.CatConfig, anaConst.ActConfigUnset, "Should be at one config unset event")
 	suite.assertSequentialEvents(events)
 }
 

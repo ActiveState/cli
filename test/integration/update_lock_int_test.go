@@ -146,7 +146,7 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateLockedConfirmation() {
 
 			args := []string{"update", "lock"}
 			if tt.Forced {
-				args = append(args, "--force")
+				args = append(args, "--non-interactive")
 			}
 			cp := ts.SpawnWithOpts(
 				e2e.WithArgs(args...),
@@ -182,7 +182,7 @@ func (suite *UpdateIntegrationTestSuite) TestLockUnlock() {
 	pjfile.Save(cfg)
 
 	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("update", "lock", "--force"),
+		e2e.WithArgs("update", "lock", "--non-interactive"),
 		e2e.AppendEnv(suite.env(false, false)...),
 	)
 	cp.Expect("locked at")
@@ -194,7 +194,7 @@ func (suite *UpdateIntegrationTestSuite) TestLockUnlock() {
 	suite.Assert().True(lockRegex.Match(data), "lock info was not written to "+pjfile.Path())
 
 	cp = ts.SpawnWithOpts(
-		e2e.WithArgs("update", "unlock", "--force"),
+		e2e.WithArgs("update", "unlock", "-n"),
 		e2e.AppendEnv(suite.env(false, false)...),
 	)
 	cp.Expect("unlocked")

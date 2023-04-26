@@ -87,6 +87,63 @@ func (suite *RevertIntegrationTestSuite) TestRevert_failsOnCommitNotInHistory() 
 	cp.ExpectNotExitCode(0)
 }
 
+func (suite *RevertIntegrationTestSuite) TestRevertTo() {
+	suite.OnlyRunForTags(tagsuite.Revert)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+	ts.LoginAsPersistentUser()
+
+	namespace := "activestate-cli/Revert"
+	cp := ts.SpawnWithOpts(e2e.WithArgs("checkout", namespace))
+	cp.Expect("Skipping runtime setup")
+	cp.Expect("Checked out project")
+	cp.ExpectExitCode(0)
+	wd := filepath.Join(ts.Dirs.Work, "Revert")
+
+	// Revert the commit that added urllib3.
+	commitID := "1f4f4f7d-7883-400e-b2ad-a5803c018ecd"
+	cp = ts.SpawnWithOpts(e2e.WithArgs("revert", "--to", commitID), e2e.WithWorkDirectory(wd))
+	cp.ExpectLongString(fmt.Sprintf("Operating on project %s", namespace))
+	cp.SendLine("Y")
+	cp.Expect("You are about to revert to the following commit:")
+	cp.Expect(commitID)
+	cp.Expect("Successfully reverted to commit:")
+	cp.ExpectExitCode(0)
+
+	// Verify the commit history has both the new revert commit and all prior history.
+	cp = ts.SpawnWithOpts(
+		e2e.WithArgs("history"),
+		e2e.WithWorkDirectory(wd),
+	)
+	cp.Expect("Reverting to commit " + commitID)
+	cp.Expect("- argparse") // effectively reverting previous commit
+	cp.Expect("+ argparse") // commit being effectively reverted
+	cp.Expect("+ urllib3")  // commit reverted to
+	cp.Expect("+ python")   // initial commit
+}
+
+func (suite *RevertIntegrationTestSuite) TestRevertTo_failsOnCommitNotInHistory() {
+	suite.OnlyRunForTags(tagsuite.Revert)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	namespace := "activestate-cli/small-python"
+	cp := ts.SpawnWithOpts(e2e.WithArgs("checkout", namespace))
+	cp.Expect("Skipping runtime setup")
+	cp.Expect("Checked out project")
+	cp.ExpectExitCode(0)
+	wd := filepath.Join(ts.Dirs.Work, "small-python")
+
+	// valid commit id not from project
+	commitID := "cb9b1aab-8e40-4a1d-8ad6-5ea112da40f1" // from Perl-5.32
+	cp = ts.SpawnWithOpts(e2e.WithArgs("revert", "--to", commitID), e2e.WithWorkDirectory(wd))
+	cp.ExpectLongString(fmt.Sprintf("Operating on project %s", namespace))
+	cp.SendLine("Y")
+	cp.Expect(commitID)
+	cp.Expect("The target commit is not")
+	cp.ExpectNotExitCode(0)
+}
+
 func TestRevertIntegrationTestSuite(t *testing.T) {
 	suite.Run(t, new(RevertIntegrationTestSuite))
 }

@@ -31,5 +31,6 @@ func (suite *HelpIntegrationTestSuite) TestCommandListing() {
 	cp.Expect("Version Control:")
 	cp.Expect("Automation:")
 	cp.Expect("Utilities:")
+	cp.Expect("    remove") // wrapped on word, not character
 	cp.Expect("Flags:")
 }

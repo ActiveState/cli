@@ -165,7 +165,7 @@ func main() {
 			},
 			{
 				Name:   "source-installer",
-				Hidden: true, // This is internally routed in via the install frontend (eg. install.sh, MSI, etc)
+				Hidden: true, // This is internally routed in via the install frontend (eg. install.sh, etc)
 				Value:  &params.sourceInstaller,
 			},
 			{
@@ -382,7 +382,7 @@ func postInstallEvents(out output.Outputer, cfg *config.Instance, an analytics.D
 			an.EventWithLabel(AnalyticsFunnelCat, "forward-activate-default-err", err.Error())
 			return errs.Silence(errs.Wrap(err, "Could not activate %s, error returned: %s", params.activateDefault.String(), errs.JoinMessage(err)))
 		}
-	case !params.isUpdate && terminal.IsTerminal(int(os.Stdin.Fd())) && os.Getenv(constants.InstallerNoSubshell) != "true":
+	case !params.isUpdate && terminal.IsTerminal(int(os.Stdin.Fd())) && os.Getenv(constants.InstallerNoSubshell) != "true" && os.Getenv("TERM") != "dumb":
 		if err := ss.SetEnv(osutils.InheritEnv(envMap(binPath))); err != nil {
 			return locale.WrapError(err, "err_subshell_setenv")
 		}
@@ -441,7 +441,7 @@ func assertCompatibility() error {
 		if err != nil {
 			return locale.WrapError(err, "windows_compatibility_warning", "", err.Error())
 		} else if osv.Major < 10 || (osv.Major == 10 && osv.Micro < 17134) {
-			return locale.WrapError(err, "windows_compatibility_error")
+			return locale.WrapError(err, "windows_compatibility_error", "", osv.Name, osv.Version)
 		}
 	}
 

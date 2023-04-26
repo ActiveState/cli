@@ -110,11 +110,26 @@ type Project struct {
 // Build can hold variable keys, so we cannot predict what they are, hence why it is a map
 type Build map[string]string
 
+// ConstantFields are the common fields for the Constant type. This is required
+// for type composition related to its yaml.Unmarshaler implementation.
+type ConstantFields struct {
+	Conditional Conditional `yaml:"if"`
+}
+
 // Constant covers the constant structure, which goes under Project
 type Constant struct {
-	Name        string      `yaml:"name"`
-	Value       string      `yaml:"value"`
-	Conditional Conditional `yaml:"if"`
+	NameVal        `yaml:",inline"`
+	ConstantFields `yaml:",inline"`
+}
+
+func (c *Constant) UnmarshalYAML(unmarshal func(interface{}) error) error {
+	if err := unmarshal(&c.NameVal); err != nil {
+		return err
+	}
+	if err := unmarshal(&c.ConstantFields); err != nil {
+		return err
+	}
+	return nil
 }
 
 var _ ConstrainedEntity = &Constant{}
@@ -249,13 +264,28 @@ func MakePackagesFromConstrainedEntities(items []ConstrainedEntity) (packages []
 	return packages
 }
 
-// Event covers the event structure, which goes under Project
-type Event struct {
-	Name        string      `yaml:"name"`
-	Value       string      `yaml:"value"`
+// EventFields are the common fields for the Event type. This is required
+// for type composition related to its yaml.Unmarshaler implementation.
+type EventFields struct {
 	Scope       []string    `yaml:"scope"`
 	Conditional Conditional `yaml:"if"`
 	id          string
+}
+
+// Event covers the event structure, which goes under Project
+type Event struct {
+	NameVal     `yaml:",inline"`
+	EventFields `yaml:",inline"`
+}
+
+func (e *Event) UnmarshalYAML(unmarshal func(interface{}) error) error {
+	if err := unmarshal(&e.NameVal); err != nil {
+		return err
+	}
+	if err := unmarshal(&e.EventFields); err != nil {
+		return err
+	}
+	return nil
 }
 
 var _ ConstrainedEntity = Event{}
@@ -300,15 +330,30 @@ func MakeEventsFromConstrainedEntities(items []ConstrainedEntity) (events []*Eve
 	return events
 }
 
-// Script covers the script structure, which goes under Project
-type Script struct {
-	Name        string      `yaml:"name"`
+// ScriptFields are the common fields for the Script type. This is required
+// for type composition related to its yaml.Unmarshaler implementation.
+type ScriptFields struct {
 	Description string      `yaml:"description,omitempty"`
-	Value       string      `yaml:"value"`
 	Filename    string      `yaml:"filename,omitempty"`
 	Standalone  bool        `yaml:"standalone,omitempty"`
 	Language    string      `yaml:"language,omitempty"`
 	Conditional Conditional `yaml:"if"`
+}
+
+// Script covers the script structure, which goes under Project
+type Script struct {
+	NameVal      `yaml:",inline"`
+	ScriptFields `yaml:",inline"`
+}
+
+func (s *Script) UnmarshalYAML(unmarshal func(interface{}) error) error {
+	if err := unmarshal(&s.NameVal); err != nil {
+		return err
+	}
+	if err := unmarshal(&s.ScriptFields); err != nil {
+		return err
+	}
+	return nil
 }
 
 var _ ConstrainedEntity = Script{}
@@ -450,6 +495,10 @@ func parse(configFilepath string) (*Project, error) {
 		return nil, errs.Wrap(err, "ioutil.ReadFile %s failure", configFilepath)
 	}
 
+	return parseData(dat, configFilepath)
+}
+
+func parseData(dat []byte, configFilepath string) (*Project, error) {
 	if err := detectDeprecations(dat, configFilepath); err != nil {
 		return nil, errs.Wrap(err, "deprecations found")
 	}

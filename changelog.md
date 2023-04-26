@@ -6,12 +6,97 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+### 0.38.0
+
+### Added
+
+- There is a new `state refresh` command which simply refreshes your cached
+  runtime files. This is particularly useful when using git, eg. when
+  you `git pull` in changes to your activestate.yaml you can now simply
+  run `state refresh` to have State Tool source the related runtime changes.
+- The activestate.yaml now features a convenient shorthand syntax for defining
+  scripts, constants, etc. This does not replace the old syntax, the old syntax
+  is still appropriate when you want to define more than a simple "key" and "
+  value" field.
+
+  **Example:**
+
+  ```yaml
+  scripts:
+    # Full syntax notation:
+    - name: build
+      language: bash
+      value: go build .
+    # Short syntax notation:
+    - build: go build
+  ```
+- The `state revert` command has a new `--to` flag, which will make it create a
+  commit that effectively reverts you back to the state of the provided commit.
+- Progress indication when installing a runtime now supports non-interactive
+  mode. When run from non-interactive mode it will simply print dots to indicate
+  that progress is still happening.
+
+### Changed
+
+- We have revisited the behavior of `state init` to be less error prone and more
+  intuitive. Our goal is to stabilize this command by version 0.39.0.
+  These changes include:
+    - Immediately creating the project on the platform, rather than waiting for
+      the user to run `state push`.
+    - Assume Python 3 rather than Python 2 when initializing a Python project
+      without specifying a version.
+    - Assume the most recently used language when no language is specified.
+    - Drop the `--skeleton` flag.
+- Changed the sorting and grouping of `--help` output to be more intuitive.
+- Made the `--help` output wrap on words rather than characters.
+- Using secrets without having set up a keypair now gives a more informative
+  error message.
+- Running `state clean uninstall` will now only uninstall the application files.
+  In order to also uninstall the cache and config files you need to specify
+  the `--all` flag, eg. `state clean uninstall --all`. This brings the behavior
+  of the uninstaller in line with other uninstallers.
+- The `--help` output will now always show a warning about unstable commands if
+  you are opted in to using them.
+- Specifying the `--exact-term` flag when searching
+  with `state search --exact-term` will now also make the search term
+  case-sensitive. This is to bring the behavior in line with that
+  of `state info`.
+- The state service daemon now autostarts as an .app on macOS, rather than a
+  shell file. Making for a friendlier user experience as it is now easier for
+  users to understand what this newly added login item is.
+
+### Fixed
+
+- Fixed issue where user would be interrupted when auto update fails.
+- Fixed issue where the installer would never exit under CI environments as it
+  did not detect them as non-interactive.
+- Fixed confusing error message when trying to check out a project in a location
+  that already has a project.
+- Fixed the uninstall command window closing without showing what happened to
+  the user when running it from the start menu shortcut on Windows.
+- Fixed new checkouts of Python projects on Windows showing a
+  "UnicodeEncodeError" error message when activating them.
+- Fixed `state pull --set-project` updating the activestate.yaml even though the
+  command failed due to an incompatible project being provided.
+- Fixed `state exec <bogus-command>` resulting in a State Tool error rather than
+  just the expected shell error.
+- Fixed autostart behavior on Linux sometimes resulting in the user having two
+  separate autostart entries due to running the installer and the update in
+  different modes (interactive vs non-interactive).
+
+### Removed
+
+- Removed the `--force` flag from `state update lock` and `state update unlock`,
+  as it is redundant with the `--non-interactive` flag.
+
 ### 0.37.1
 
 ### Fixed
 
-- Fixed some runtimes not being installable due to a "Failed to download artifact" error.
-- Fixed `state update lock` throwing a panic when run outside of the context of a project.
+- Fixed some runtimes not being installable due to a "Failed to download
+  artifact" error.
+- Fixed `state update lock` throwing a panic when run outside of the context of
+  a project.
 
 ### 0.37.0
 

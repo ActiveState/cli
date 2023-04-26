@@ -116,11 +116,6 @@ func (p *Pull) Run(params *PullParams) error {
 		if !confirmed {
 			return locale.NewInputError("err_pull_aborted", "Pull aborted by user")
 		}
-
-		err = p.project.Source().SetNamespace(remoteProject.Owner, remoteProject.Project)
-		if err != nil {
-			return locale.WrapError(err, "err_pull_update_namespace", "Cannot update the namespace in your project file.")
-		}
 	}
 
 	remoteCommit := remoteProject.CommitID
@@ -137,11 +132,18 @@ func (p *Pull) Run(params *PullParams) error {
 			}
 		}
 		if err == nil && strategies != nil {
-			c, err := p.performMerge(strategies, *remoteCommit)
+			c, err := p.performMerge(strategies, *remoteCommit, *localCommit, remoteProject, p.project.BranchName())
 			if err != nil {
 				return errs.Wrap(err, "performing merge commit failed")
 			}
 			resultingCommit = &c
+		}
+	}
+
+	if params.SetProject != "" {
+		err = p.project.Source().SetNamespace(remoteProject.Owner, remoteProject.Project)
+		if err != nil {
+			return locale.WrapError(err, "err_pull_update_namespace", "Cannot update the namespace in your project file.")
 		}
 	}
 
@@ -171,11 +173,11 @@ func (p *Pull) Run(params *PullParams) error {
 	return nil
 }
 
-func (p *Pull) performMerge(strategies *mono_models.MergeStrategies, remoteCommit strfmt.UUID) (strfmt.UUID, error) {
+func (p *Pull) performMerge(strategies *mono_models.MergeStrategies, remoteCommit strfmt.UUID, localCommit strfmt.UUID, namespace *project.Namespaced, branchName string) (strfmt.UUID, error) {
 	p.out.Notice(output.Title(locale.Tl("pull_diverged", "Merging history")))
 	p.out.Notice(locale.Tr(
 		"pull_diverged_message",
-		p.project.Namespace().String(), p.project.BranchName(), p.project.CommitID(), remoteCommit.String()))
+		namespace.String(), branchName, localCommit.String(), remoteCommit.String()))
 
 	commitMessage := locale.Tr("pull_merge_commit", remoteCommit.String(), p.project.CommitID())
 	resultCommit, err := model.CommitChangeset(remoteCommit, commitMessage, strategies.OverwriteChanges)

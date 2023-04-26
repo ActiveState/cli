@@ -50,7 +50,7 @@ func New(cfg *config.Instance, an *sync.Client, auth *authentication.Auth) (*Res
 		return depchecker.Check()
 	})
 
-	upchecker := updater.NewDefaultChecker(cfg)
+	upchecker := updater.NewDefaultChecker(cfg, an)
 	pollUpdate := poller.New(1*time.Hour, func() (interface{}, error) {
 		return upchecker.Check()
 	})
@@ -219,7 +219,7 @@ func (r *Resolver) CheckRuntimeUsage(_ context.Context, organizationName string)
 
 	if usage == nil {
 		return &graph.CheckRuntimeUsageResponse{
-			Limit: 0,
+			Limit: 1,
 			Usage: 0,
 		}, nil
 	}
