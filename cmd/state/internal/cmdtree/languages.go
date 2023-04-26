@@ -47,3 +47,31 @@ func newLanguageInstallCommand(prime *primer.Values) *captain.Command {
 		},
 	)
 }
+
+func newLanguageUninstallCommand(prime *primer.Values) *captain.Command {
+	runner := languages.NewUninstall(prime)
+
+	params := languages.UninstallRunParams{}
+
+	cmd := captain.NewCommand(
+		"uninstall",
+		locale.Tl("languages_uninstall_title", "Uninstalling Language"),
+		locale.T("languages_uninstall_cmd_description"),
+		prime,
+		[]*captain.Flag{},
+		[]*captain.Argument{
+			{
+				Name:        locale.T("language_arg_name"),
+				Description: locale.T("language_arg_name_description"),
+				Value:       &params.Language,
+				Required:    true,
+			},
+		},
+		func(_ *captain.Command, _ []string) error {
+			return runner.Run(params)
+		},
+	)
+	cmd.SetGroup(PackagesGroup)
+	cmd.SetHidden(true)
+	return cmd
+}

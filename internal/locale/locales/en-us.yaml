@@ -62,7 +62,7 @@ info_deactivated_by_commit:
 venv_installer_is_nil:
   other: Provided installer should not be nil
 error_unsupported_language:
-  other: "Unsupported language: [NOTICE]{{.Language}}[/RESET]"
+  other: "Unsupported language: [NOTICE]{{.V0}}[/RESET]"
 err_language_not_yet_supported:
   other: "The Platform responded with an artifact that is not supported by this version of the State Tool, artifact name: {{.V0}}. Is your State Tool up to date?"
 error_missing_arg:
@@ -1398,6 +1398,8 @@ languages_install_cmd_description:
   other: Update the language of a project
 arg_languages_install_description:
   other: The language to update in the form of <language>@<version>
+languages_uninstall_cmd_description:
+  other: Remove a language from your project
 err_language_format:
   other: The language and version provided is not formatting correctly, must be in the form of <language>@<version>
 err_update_not_found:
