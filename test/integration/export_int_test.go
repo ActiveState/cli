@@ -97,6 +97,40 @@ func (suite *ExportIntegrationTestSuite) TestExport_Env() {
 	suite.Assert().NotContains(cp.TrimmedSnapshot(), "ACTIVESTATE_ACTIVATED")
 }
 
+func (suite *ExportIntegrationTestSuite) TestJSON() {
+	suite.OnlyRunForTags(tagsuite.Export, tagsuite.JSON)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.Spawn("export", "config", "-o", "json")
+	ExpectJSONKeys(suite.T(), cp, "dir")
+	cp.Close()
+
+	cp = ts.SpawnWithOpts(
+		e2e.WithArgs("checkout", "ActiveState-CLI/small-python", "."),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
+	cp.Expect("Checked out")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("export", "env", "-o", "json")
+	cp.Expect(`{`)
+	cp.Expect(`}`)
+	AssertNoPlainOutput(suite.T(), cp)
+	cp.ExpectExitCode(0)
+
+	ts.LoginAsPersistentUser()
+	cp = ts.Spawn("export", "jwt", "-o", "json")
+	ExpectJSONKeys(suite.T(), cp, "value")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("export", "recipe", "-o", "json")
+	cp.Expect(`{`)
+	cp.Expect(`}`)
+	AssertNoPlainOutput(suite.T(), cp)
+	cp.ExpectExitCode(0)
+}
+
 func TestExportIntegrationTestSuite(t *testing.T) {
 	suite.Run(t, new(ExportIntegrationTestSuite))
 }

@@ -66,11 +66,11 @@ type showOutput struct {
 type outputData struct {
 	ProjectURL string `json:"project_url" locale:"project_url,Project URL"`
 	RuntimeDetails
-	Platforms []platformRow
-	Languages []languageRow
+	Platforms []platformRow     `json:"platforms"`
+	Languages []languageRow     `json:"languages"`
 	Secrets   *secretOutput     `json:"secrets" locale:"secrets,Secrets"`
-	Events    []string          `json:",omitempty"`
-	Scripts   map[string]string `json:",omitempty"`
+	Events    []string          `json:"events,omitempty"`
+	Scripts   map[string]string `json:"scripts,omitempty"`
 }
 
 func formatScripts(scripts map[string]string) string {

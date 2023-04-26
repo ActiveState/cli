@@ -257,6 +257,33 @@ func (suite *UseIntegrationTestSuite) TestSetupNotice() {
 	cp.ExpectExitCode(0)
 }
 
+func (suite *UseIntegrationTestSuite) TestJSON() {
+	suite.OnlyRunForTags(tagsuite.Use, tagsuite.JSON)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.Spawn("checkout", "ActiveState-CLI/small-python", ".")
+	cp.Expect("Skipping runtime setup")
+	cp.Expect("Checked out")
+	cp.ExpectExitCode(0)
+
+	cp = ts.SpawnWithOpts(
+		e2e.WithArgs("use", "-o", "json"),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
+	ExpectJSONKeys(suite.T(), cp, "namespace", "path", "executables")
+	suite.NotContains(cp.TrimmedSnapshot(), "Setting Up Runtime")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("use", "show", "--output", "json")
+	ExpectJSONKeys(suite.T(), cp, "namespace", "path")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("use", "reset", "-o", "json", "--non-interactive")
+	cp.ExpectExitCode(0)
+	AssertNoPlainOutput(suite.T(), cp)
+}
+
 func TestUseIntegrationTestSuite(t *testing.T) {
 	suite.Run(t, new(UseIntegrationTestSuite))
 }

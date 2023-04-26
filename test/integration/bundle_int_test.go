@@ -209,6 +209,36 @@ func (suite *BundleIntegrationTestSuite) PrepareActiveStateYAML(ts *e2e.Session)
 	ts.PrepareActiveStateYAML(asyData)
 }
 
+func (suite *BundleIntegrationTestSuite) TestJSON() {
+	suite.OnlyRunForTags(tagsuite.Bundle, tagsuite.JSON)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.Spawn("bundles", "search", "Email", "--language", "Perl", "-o", "json")
+	cp.Expect(`[{"package":"Email"`)
+	cp.Expect(`}]`)
+	AssertNoPlainOutput(suite.T(), cp)
+	cp.ExpectExitCode(0)
+
+	cp = ts.SpawnWithOpts(
+		e2e.WithArgs("bundles", "install", "Testing", "--output", "json"),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
+	cp.Expect(`{"name":"Testing"`)
+	cp.Expect(`}`)
+	AssertNoPlainOutput(suite.T(), cp)
+	cp.ExpectExitCode(0)
+
+	cp = ts.SpawnWithOpts(
+		e2e.WithArgs("bundles", "uninstall", "Testing", "-o", "editor"),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
+	cp.Expect(`{"name":"Testing"`)
+	cp.Expect(`}`)
+	AssertNoPlainOutput(suite.T(), cp)
+	cp.ExpectExitCode(0)
+}
+
 func TestBundleIntegrationTestSuite(t *testing.T) {
 	suite.Run(t, new(BundleIntegrationTestSuite))
 }

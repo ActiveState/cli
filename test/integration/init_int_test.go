@@ -128,6 +128,21 @@ func (suite *InitIntegrationTestSuite) TestInit_InferLanguageFromUse() {
 	suite.Contains(string(fileutils.ReadFileUnsafe(filepath.Join(ts.Dirs.Work, constants.ConfigFileName))), "language: python3")
 }
 
+func (suite *InitIntegrationTestSuite) TestJSON() {
+	suite.OnlyRunForTags(tagsuite.Init, tagsuite.JSON)
+
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	// Rather than triggering another build/solve on the Platform, just verify the command is
+	// JSON-compatible.
+	cp := ts.Spawn("init", "-o", "json")
+	cp.ExpectLongString(`{"errors":["The following argument is required:`)
+	cp.Expect(`"code":`)
+	cp.Expect(`}`)
+	cp.ExpectNotExitCode(0)
+}
+
 func TestInitIntegrationTestSuite(t *testing.T) {
 	suite.Run(t, new(InitIntegrationTestSuite))
 }

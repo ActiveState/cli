@@ -21,6 +21,7 @@ func (suite *HistoryIntegrationTestSuite) TestHistory_History() {
 	ts.LoginAsPersistentUser()
 
 	cp := ts.Spawn("checkout", "ActiveState-CLI/History")
+	cp.Expect("Skipping runtime setup")
 	cp.Expect("Checked out")
 	cp.ExpectExitCode(0)
 
@@ -38,6 +39,24 @@ func (suite *HistoryIntegrationTestSuite) TestHistory_History() {
 	cp.Expect("+ autopip 1.6.0")
 	cp.Expect("- convertdate")
 	cp.Expect(`+ Platform`)
+	cp.ExpectExitCode(0)
+}
+
+func (suite *HistoryIntegrationTestSuite) TestJSON() {
+	suite.OnlyRunForTags(tagsuite.History)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.Spawn("checkout", "ActiveState-CLI/History", ".")
+	cp.Expect("Skipping runtime setup")
+	cp.Expect("Checked out")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("history", "-o", "json")
+	cp.Expect(`[{"hash":`)
+	cp.Expect(`},{`)
+	cp.Expect(`}]`)
+	AssertNoPlainOutput(suite.T(), cp)
 	cp.ExpectExitCode(0)
 }
 

@@ -66,7 +66,6 @@ func (o *orgOutput) MarshalStructured(format output.Format) interface{} {
 }
 
 func newOrgOutput(orgs []*mono_models.Organization) (*orgOutput, error) {
-
 	tiers, err := model.FetchTiers()
 	if err != nil {
 		return nil, err

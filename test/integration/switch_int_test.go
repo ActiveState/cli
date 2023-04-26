@@ -122,6 +122,21 @@ func (suite *SwitchIntegrationTestSuite) PrepareActiveStateYAML(ts *e2e.Session,
 	ts.PrepareActiveStateYAML(asyData)
 }
 
+func (suite *SwitchIntegrationTestSuite) TestJSON() {
+	suite.OnlyRunForTags(tagsuite.Switch, tagsuite.JSON)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.Spawn("checkout", "ActiveState-CLI/Branches", ".")
+	cp.Expect("Skipping runtime setup")
+	cp.Expect("Checked out")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("switch", "firstbranch", "--output", "json")
+	ExpectJSONKeys(suite.T(), cp, "branch")
+	cp.ExpectExitCode(0)
+}
+
 func TestSwitchIntegrationTestSuite(t *testing.T) {
 	suite.Run(t, new(SwitchIntegrationTestSuite))
 }

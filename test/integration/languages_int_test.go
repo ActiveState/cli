@@ -90,6 +90,23 @@ func (suite *LanguagesIntegrationTestSuite) PrepareActiveStateYAMLNoCommitID(ts 
 	ts.PrepareActiveStateYAML(asyData)
 }
 
+func (suite *LanguagesIntegrationTestSuite) TestJSON() {
+	suite.OnlyRunForTags(tagsuite.Languages, tagsuite.JSON)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.Spawn("checkout", "ActiveState-CLI/Python3", ".")
+	cp.Expect("Skipping runtime setup")
+	cp.Expect("Checked out")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("languages", "-o", "json")
+	cp.Expect(`[{"name":"Python","version":`)
+	cp.Expect(`}]`)
+	AssertNoPlainOutput(suite.T(), cp)
+	cp.ExpectExitCode(0)
+}
+
 func TestLanguagesIntegrationTestSuite(t *testing.T) {
 	suite.Run(t, new(LanguagesIntegrationTestSuite))
 }

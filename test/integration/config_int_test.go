@@ -40,6 +40,20 @@ func (suite *ConfigIntegrationTestSuite) TestConfig() {
 	cp.Expect("Invalid boolean value")
 }
 
+func (suite *ConfigIntegrationTestSuite) TestJSON() {
+	suite.OnlyRunForTags(tagsuite.Config, tagsuite.JSON)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.Spawn("config", "set", constants.UnstableConfig, "true", "-o", "json")
+	ExpectJSONKeys(suite.T(), cp, "name", "value")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("config", "get", constants.UnstableConfig, "-o", "json")
+	ExpectJSONKeys(suite.T(), cp, "name", "value")
+	cp.ExpectExitCode(0)
+}
+
 func TestConfigIntegrationTestSuite(t *testing.T) {
 	suite.Run(t, new(ConfigIntegrationTestSuite))
 }

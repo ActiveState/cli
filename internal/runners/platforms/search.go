@@ -23,7 +23,7 @@ func NewSearch(prime primer.Outputer) *Search {
 func (s *Search) Run() error {
 	logging.Debug("Execute platforms search")
 
-	res, err := newSearchResult()
+	res, err := newSearchOutput()
 	if err != nil {
 		return err
 	}
@@ -32,18 +32,21 @@ func (s *Search) Run() error {
 	return nil
 }
 
-// SearchResult represents the output data of a search.
-type SearchResult struct {
+type searchOutput struct {
 	Platforms []*Platform `json:"platforms"`
 }
 
-func newSearchResult() (*SearchResult, error) {
+func (o *searchOutput) MarshalStructured(format output.Format) interface{} {
+	return o
+}
+
+func newSearchOutput() (*searchOutput, error) {
 	platforms, err := model.FetchPlatforms()
 	if err != nil {
 		return nil, err
 	}
 
-	result := SearchResult{
+	result := searchOutput{
 		Platforms: makePlatformsFromModelPlatforms(platforms),
 	}
 

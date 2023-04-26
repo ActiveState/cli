@@ -80,10 +80,10 @@ const latestVersion = "latest"
 
 type requirementsOutput struct {
 	message   string
-	Type      string `json:"type"`
-	Operation string `json:"operation"`
 	Name      string `json:"name"`
 	Version   string `json:"version,omitempty"`
+	Type      string `json:"type"`
+	Operation string `json:"operation"`
 }
 
 func (o *requirementsOutput) MarshalOutput(format output.Format) interface{} {
@@ -280,10 +280,10 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 	}
 	out.Print(&requirementsOutput{
 		message,
-		ns.Type().String(),
-		string(operation),
 		requirementName,
 		requirementVersion,
+		ns.Type().String(),
+		string(operation),
 	})
 
 	out.Notice(locale.T("operation_success_local"))

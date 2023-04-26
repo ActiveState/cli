@@ -63,6 +63,21 @@ func NewUse(prime primeable) *Use {
 	}
 }
 
+type useOutput struct {
+	message     string
+	Namespace   string `json:"namespace"`
+	Path        string `json:"path"`
+	Executables string `json:"executables"`
+}
+
+func (o *useOutput) MarshalOutput(format output.Format) interface{} {
+	return o.message
+}
+
+func (o *useOutput) MarshalStructured(format output.Format) interface{} {
+	return o
+}
+
 func (u *Use) Run(params *Params) error {
 	logging.Debug("Use %v", params.Namespace)
 
@@ -91,11 +106,13 @@ func (u *Use) Run(params *Params) error {
 		return locale.WrapError(err, "err_use_default", "Could not setup your project for use.")
 	}
 
-	u.out.Notice(locale.Tl("use_project_statement", "",
+	execDir := setup.ExecDir(rti.Target().Dir())
+	u.out.Print(&useOutput{
+		locale.Tl("use_project_statement", "", proj.NamespaceString(), proj.Dir(), execDir),
 		proj.NamespaceString(),
 		proj.Dir(),
-		setup.ExecDir(rti.Target().Dir()),
-	))
+		execDir,
+	})
 
 	if rt.GOOS == "windows" {
 		u.out.Notice(locale.T("use_reset_notice_windows"))

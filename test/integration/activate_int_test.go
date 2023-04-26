@@ -525,7 +525,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_FromCache() {
 }
 
 func (suite *ActivateIntegrationTestSuite) TestActivate_JSON() {
-	suite.OnlyRunForTags(tagsuite.Activate, tagsuite.Output)
+	suite.OnlyRunForTags(tagsuite.Activate, tagsuite.JSON)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 	close := suite.addForegroundSvc(ts)

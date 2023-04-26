@@ -51,6 +51,32 @@ func (suite *ProjectsIntegrationTestSuite) TestProjects() {
 	cp.ExpectExitCode(0)
 }
 
+func (suite *ProjectsIntegrationTestSuite) TestJSON() {
+	suite.OnlyRunForTags(tagsuite.Projects, tagsuite.JSON)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.Spawn("checkout", "ActiveState-CLI/small-python")
+	cp.ExpectExitCode(0)
+	cp = ts.Spawn("checkout", "ActiveState-CLI/Python3")
+	cp.ExpectExitCode(0)
+	cp = ts.Spawn("projects", "-o", "json")
+	cp.Expect(`[{"name":`)
+	cp.Expect(`"local_checkouts":`)
+	cp.Expect(`"executables":`)
+	cp.Expect(`},{`)
+	cp.Expect(`}]`)
+	AssertNoPlainOutput(suite.T(), cp)
+	cp.ExpectExitCode(0)
+
+	ts.LoginAsPersistentUser()
+	cp = ts.Spawn("projects", "remote", "--output", "json")
+	cp.Expect(`[{`)
+	cp.Expect(`}]`)
+	AssertNoPlainOutput(suite.T(), cp)
+	cp.ExpectExitCode(0)
+}
+
 func TestProjectsIntegrationTestSuite(t *testing.T) {
 	suite.Run(t, new(ProjectsIntegrationTestSuite))
 }

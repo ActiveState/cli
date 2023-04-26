@@ -459,6 +459,41 @@ func (suite *PackageIntegrationTestSuite) TestPackage_UninstallDoesNotExist() {
 	cp.ExpectExitCode(1)
 }
 
+func (suite *PackageIntegrationTestSuite) TestJSON() {
+	suite.OnlyRunForTags(tagsuite.Package, tagsuite.JSON)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.Spawn("search", "Text-CSV", "--exact-term", "--language", "Perl", "-o", "json")
+	cp.Expect(`[{"package":"Text-CSV"`)
+	cp.Expect(`}]`)
+	AssertNoPlainOutput(suite.T(), cp)
+	cp.ExpectExitCode(0)
+
+	cp = ts.SpawnWithOpts(
+		e2e.WithArgs("install", "Text-CSV", "--output", "editor"),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
+	cp.Expect(`{"name":"Text-CSV"`)
+	cp.Expect(`}`)
+	AssertNoPlainOutput(suite.T(), cp)
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("packages", "-o", "json")
+	cp.Expect(`[{"package":"Text-CSV","version":"Auto"}]`)
+	AssertNoPlainOutput(suite.T(), cp)
+	cp.ExpectExitCode(0)
+
+	cp = ts.SpawnWithOpts(
+		e2e.WithArgs("uninstall", "Text-CSV", "-o", "json"),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
+	cp.Expect(`{"name":"Text-CSV"`)
+	cp.Expect(`}`)
+	AssertNoPlainOutput(suite.T(), cp)
+	cp.ExpectExitCode(0)
+}
+
 func TestPackageIntegrationTestSuite(t *testing.T) {
 	suite.Run(t, new(PackageIntegrationTestSuite))
 }

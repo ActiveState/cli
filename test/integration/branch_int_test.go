@@ -63,6 +63,24 @@ func (suite *BranchIntegrationTestSuite) PrepareActiveStateYAML(ts *e2e.Session,
 	ts.PrepareActiveStateYAML(asyData)
 }
 
+func (suite *BranchIntegrationTestSuite) TestJSON() {
+	suite.OnlyRunForTags(tagsuite.Branches, tagsuite.JSON)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.Spawn("checkout", "ActiveState-CLI/Branches", ".")
+	cp.Expect("Skipping runtime setup")
+	cp.Expect("Checked out")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("branch", "-o", "json")
+	cp.Expect(`[{"branchID":`)
+	cp.Expect(`},{`)
+	cp.Expect(`}]`)
+	AssertNoPlainOutput(suite.T(), cp)
+	cp.ExpectExitCode(0)
+}
+
 func TestBranchIntegrationTestSuite(t *testing.T) {
 	suite.Run(t, new(BranchIntegrationTestSuite))
 }
