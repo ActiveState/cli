@@ -60,7 +60,7 @@ func ActivateAndWait(
 	}
 
 	// If we're not using plain output then we should just dump the environment information
-	if out.Type() != output.PlainFormatName && out.Type() != output.SimpleFormatName {
+	if output.IsStructuredFormat(out.Type()) {
 		if out.Type() == output.EditorV0FormatName {
 			fmt.Println("[activated-JSON]")
 		}

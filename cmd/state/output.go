@@ -58,6 +58,10 @@ func initOutput(flags outputFlags, formatName string, shellName string) (output.
 		Interactive: !flags.NonInteractive && term.IsTerminal(int(os.Stdin.Fd())),
 		ShellName:   shellName,
 	})
+	if output.IsStructuredFormat(out.Type()) {
+		// Structured formats like JSON and editor are by definition non-interactive.
+		out.Config().Interactive = false
+	}
 	if err != nil {
 		if errors.Is(err, output.ErrNotRecognized) {
 			// The formatter might still be registered, so default to plain for now

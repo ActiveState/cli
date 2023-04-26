@@ -116,12 +116,12 @@ func (r *Revert) Run(params *Params) error {
 	if params.To {
 		preposition = " to" // need leading whitespace
 	}
-	if r.out.Type() == output.PlainFormatName || r.out.Type() == output.SimpleFormatName {
+	if !output.IsStructuredFormat(r.out.Type()) {
 		r.out.Print(locale.Tl("revert_info", "You are about to revert{{.V0}} the following commit:", preposition))
 		commit.PrintCommit(r.out, targetCommit, orgs)
 	}
 
-	defaultChoice := params.Force
+	defaultChoice := params.Force || !r.out.Config().Interactive
 	revert, err := r.prompt.Confirm("", locale.Tl("revert_confirm", "Continue?"), &defaultChoice)
 	if err != nil {
 		return locale.WrapError(err, "err_revert_confirm", "Could not confirm revert choice")

@@ -79,6 +79,10 @@ func new(formatName string, config *Config) (Outputer, error) {
 	return nil, locale.WrapInputError(ErrNotRecognized, "err_unknown_format", string(formatName))
 }
 
+func IsStructuredFormat(format Format) bool {
+	return format == JSONFormatName || format == EditorFormatName || format == EditorV0FormatName
+}
+
 // Get is here for legacy use-cases, DO NOT USE IT FOR NEW CODE
 func Get() Outputer {
 	return lastCreated

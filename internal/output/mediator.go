@@ -52,12 +52,8 @@ func (m *Mediator) Notice(v interface{}) {
 	m.Outputer.Notice(v)
 }
 
-func isStructuredFormat(format Format) bool {
-	return format == JSONFormatName || format == EditorFormatName || format == EditorV0FormatName
-}
-
 func mediatorValue(v interface{}, format Format) interface{} {
-	if isStructuredFormat(format) {
+	if IsStructuredFormat(format) {
 		if vt, ok := v.(StructuredMarshaller); ok {
 			return vt.MarshalStructured(format)
 		}

@@ -78,15 +78,10 @@ type getOutput struct {
 
 // Validate returns a directly usable localized error.
 func (o *getOutput) Validate(format output.Format) error {
-	switch format {
-	case output.JSONFormatName, output.EditorV0FormatName, output.EditorFormatName:
-		return nil
-	default:
-		if o.valuePtr == nil {
-			return newValuePtrIsNilError(o.reqSecret, o.secret.IsUser())
-		}
-		return nil
+	if !output.IsStructuredFormat(format) && o.valuePtr == nil {
+		return newValuePtrIsNilError(o.reqSecret, o.secret.IsUser())
 	}
+	return nil
 }
 
 func (o *getOutput) MarshalOutput(format output.Format) interface{} {

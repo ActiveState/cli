@@ -67,7 +67,8 @@ func (u *Unlock) Run(params *UnlockParams) error {
 func confirmUnlock(prom prompt.Prompter) error {
 	msg := locale.T("confirm_update_unlocked_version_prompt")
 
-	confirmed, err := prom.Confirm(locale.T("confirm"), msg, new(bool))
+	defaultChoice := !prom.IsInteractive()
+	confirmed, err := prom.Confirm(locale.T("confirm"), msg, &defaultChoice)
 	if err != nil {
 		return err
 	}
