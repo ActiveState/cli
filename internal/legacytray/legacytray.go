@@ -18,7 +18,6 @@ import (
 const stateTrayCmd = "state-tray"
 const trayAppName = "ActiveState Desktop (Preview)"
 const stateUpdateDialogCmd = "state-update-dialog"
-const trayLaunchFileName = "state-tray.desktop"
 
 func DetectAndRemove(path string, cfg *config.Instance) error {
 	binDir := filepath.Join(path, installation.BinDirName)
@@ -33,9 +32,14 @@ func DetectAndRemove(path string, cfg *config.Instance) error {
 		return errs.Wrap(err, "Unable to stop try app")
 	}
 
+	appDir, err := installation.ApplicationInstallPath()
+	if err != nil {
+		return errs.Wrap(err, "Unable to get application install path")
+	}
+
 	// Disable autostart of state-tray.
-	if app, err := app.New(trayAppName, trayExec, nil, app.Options{}); err == nil {
-		disableErr := autostart.Disable(app.Exec, autostart.Options{
+	if app, err := app.New(trayAppName, trayExec, nil, appDir, app.Options{}); err == nil {
+		disableErr := autostart.Disable(app.Path(), autostart.Options{
 			LaunchFileName: trayLaunchFileName, // only used for Linux; ignored on macOS, Windows
 		})
 		if disableErr != nil {

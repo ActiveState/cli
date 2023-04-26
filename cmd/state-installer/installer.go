@@ -175,11 +175,11 @@ func (i *Installer) installSvcApp(binDir string) error {
 		return errs.Wrap(err, "Could not install app")
 	}
 
-	if err = autostart.Upgrade(app.Exec, svcAutostart.Options); err != nil {
+	if err = autostart.Upgrade(app.Path(), svcAutostart.Options); err != nil {
 		return errs.Wrap(err, "Failed to upgrade autostart for service app.")
 	}
 
-	if err = autostart.Enable(app.Exec, svcAutostart.Options); err != nil {
+	if err = autostart.Enable(app.Path(), svcAutostart.Options); err != nil {
 		return errs.Wrap(err, "Failed to enable autostart for service app.")
 	}
 

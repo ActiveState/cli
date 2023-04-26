@@ -8,7 +8,6 @@ import (
 	"github.com/ActiveState/cli/internal/assets"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils/user"
 	"github.com/ActiveState/cli/internal/strutils"
@@ -34,11 +33,6 @@ func enable(exec string, opts Options) error {
 		return errs.Wrap(err, "Could not get launch file")
 	}
 
-	installPath, err := installPath(opts.Name)
-	if err != nil {
-		return errs.Wrap(err, "Could not get install path")
-	}
-
 	asset, err := assets.ReadFileBytes(autostartFileSource)
 	if err != nil {
 		return errs.Wrap(err, "Could not read asset")
@@ -48,7 +42,7 @@ func enable(exec string, opts Options) error {
 		string(asset),
 		map[string]interface{}{
 			"Label":       opts.MacLabel,
-			"Exec":        installPath,
+			"Exec":        exec,
 			"Interactive": opts.MacInteractive,
 		})
 	if err != nil {
@@ -90,12 +84,12 @@ func isEnabled(exec string, opts Options) (bool, error) {
 	return fileutils.FileExists(path), nil
 }
 
-func autostartPath(exec string, _ Options) (string, error) {
+func autostartPath(_ string, opts Options) (string, error) {
 	dir, err := user.HomeDir()
 	if err != nil {
 		return "", errs.Wrap(err, "Could not get home directory")
 	}
-	path := filepath.Join(dir, "Library/LaunchAgents", fmt.Sprintf(launchFileFormatName, filepath.Base(exec)))
+	path := filepath.Join(dir, "Library/LaunchAgents", fmt.Sprintf(launchFileFormatName, opts.LaunchFileName))
 	return path, nil
 }
 
@@ -116,13 +110,4 @@ func upgrade(exec string, opts Options) error {
 
 	logging.Debug("Legacy autostart file found, removing: %s", path)
 	return os.Remove(path)
-}
-
-func installPath(name string) (string, error) {
-	dir, err := installation.ApplicationInstallPath()
-	if err != nil {
-		return "", errs.Wrap(err, "Could not get home directory")
-	}
-	path := filepath.Join(dir, fmt.Sprintf("%s.app", name))
-	return path, nil
 }

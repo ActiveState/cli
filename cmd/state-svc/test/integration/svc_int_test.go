@@ -208,35 +208,33 @@ func (suite *SvcIntegrationTestSuite) GetNumStateSvcProcesses() int {
 }
 
 func (suite *SvcIntegrationTestSuite) TestAutostartConfigEnableDisable() {
-	// Disable test for v0.36: https://activestatef.atlassian.net/browse/DX-1501.
-	// This test should be re-enabled by https://activestatef.atlassian.net/browse/DX-1435.
-	suite.T().SkipNow()
-
 	suite.OnlyRunForTags(tagsuite.Service)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	app, err := app.New(constants.SvcAppName, ts.SvcExe, nil, svcApp.Options)
+	appDir := fileutils.TempDirFromBaseDirUnsafe(ts.Dirs.Work)
+
+	app, err := app.New(constants.SvcAppName, ts.SvcExe, nil, appDir, svcApp.Options)
 	suite.Require().NoError(err)
-	enabled, err := autostart.IsEnabled(app.Exec, svcAutostart.Options)
+	enabled, err := autostart.IsEnabled(app.Path(), svcAutostart.Options)
 	suite.Require().NoError(err)
 
 	// Toggle it via state tool config.
 	cp := ts.SpawnWithOpts(e2e.WithArgs("config", "set", constants.AutostartSvcConfigKey, strconv.FormatBool(!enabled)))
 	cp.ExpectExitCode(0)
-	suite.checkEnabled(app.Exec, svcAutostart.Options, !enabled)
+	suite.checkEnabled(app.Path(), svcAutostart.Options, !enabled)
 
 	// Toggle it again via state tool config.
 	cp = ts.SpawnWithOpts(e2e.WithArgs("config", "set", constants.AutostartSvcConfigKey, strconv.FormatBool(enabled)))
 	cp.ExpectExitCode(0)
-	suite.checkEnabled(app.Exec, svcAutostart.Options, enabled)
+	suite.checkEnabled(app.Path(), svcAutostart.Options, enabled)
 }
 
 type autostartApp interface {
 	IsAutostartEnabled() (bool, error)
 }
 
-func (suite *SvcIntegrationTestSuite) checkEnabled(exec string, opts autostart.Options, expect bool) {
+func (suite *SvcIntegrationTestSuite) checkEnabled(appPath string, opts autostart.Options, expect bool) {
 	timeout := time.After(1 * time.Minute)
 	tick := time.Tick(1 * time.Second)
 	for {
@@ -244,7 +242,7 @@ func (suite *SvcIntegrationTestSuite) checkEnabled(exec string, opts autostart.O
 		case <-timeout:
 			suite.Fail("autostart has not been changed")
 		case <-tick:
-			toggled, err := autostart.IsEnabled(exec, opts)
+			toggled, err := autostart.IsEnabled(appPath, opts)
 			suite.Require().NoError(err)
 			if suite.Equal(expect, toggled) {
 				return

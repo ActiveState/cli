@@ -10,6 +10,7 @@ import (
 )
 
 const macOSApplicationName = "ActiveState Desktop (Preview).app"
+const trayLaunchFileName = "state-tray"
 
 func osSpecificRemoveTray(installPath, trayExec string) error {
 	if launcherPath, err := installation.ApplicationInstallPath(); err == nil {
