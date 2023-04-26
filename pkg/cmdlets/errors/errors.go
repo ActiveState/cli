@@ -58,11 +58,10 @@ func (o *OutputError) MarshalOutput(f output.Format) interface{} {
 	// Concatenate error tips
 	errorTips := []string{}
 	err := o.error
-	for err != nil {
+	for _, err := range errs.Unpack(err) {
 		if v, ok := err.(ErrorTips); ok {
 			errorTips = append(errorTips, v.ErrorTips()...)
 		}
-		err = errors.Unwrap(err)
 	}
 	errorTips = append(errorTips, locale.Tl("err_help_forum", "[NOTICE]Ask For Help →[/RESET] [ACTIONABLE]{{.V0}}[/RESET]", constants.ForumsURL))
 
