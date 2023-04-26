@@ -171,10 +171,10 @@ func TestSave(t *testing.T) {
 
 	path := filepath.Join(rootpath, "pkg", "projectfile", "testdata", "activestate.yaml")
 	project, err := Parse(path)
-	require.NoError(t, err, errs.Join(err, "\n").Error())
+	require.NoError(t, err, errs.JoinMessage(err))
 
 	tmpfile, err := ioutil.TempFile("", "test")
-	require.NoError(t, err, errs.Join(err, "\n").Error())
+	require.NoError(t, err, errs.JoinMessage(err))
 
 	cfg, err := config.New()
 	require.NoError(t, err)
@@ -414,7 +414,7 @@ func TestProject_Init(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if err := tt.project.Init(); (err != nil) != tt.wantErr {
-				t.Errorf("Init() error = %v, wantErr %v", errs.Join(err, ": "), tt.wantErr)
+				t.Errorf("Init() error = %v, wantErr %v", errs.JoinMessage(err), tt.wantErr)
 			}
 		})
 	}

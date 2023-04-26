@@ -96,18 +96,13 @@ func Combine(err error, errs ...error) error {
 	return &StackedErrors{append([]error{err}, errs...)}
 }
 
-// Join all error messages in the Unwrap stack
-func Join(err error, sep string) *WrapperError {
+func JoinMessage(err error) string {
 	var message []string
 	for err != nil {
 		message = append(message, err.Error())
 		err = errors.Unwrap(err)
 	}
-	return Wrap(err, strings.Join(message, sep))
-}
-
-func JoinMessage(err error) string {
-	return Join(err, ": ").Error()
+	return strings.Join(message, ": ")
 }
 
 func AddTips(err error, tips ...string) error {

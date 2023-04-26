@@ -149,7 +149,7 @@ func ReportError(err error, cmd *captain.Command, an analytics.Dispatcher) {
 	var action string
 	errorMsg := err.Error()
 	if !locale.IsInputError(err) {
-		multilog.Critical("Returning error:\n%s\nCreated at:\n%s", errs.Join(err, "\n").Error(), stack)
+		multilog.Critical("Returning error:\n%s\nCreated at:\n%s", errs.JoinMessage(err), stack)
 		action = anaConst.ActCommandError
 	} else {
 		action = anaConst.ActCommandInputError
@@ -167,7 +167,7 @@ func ReportError(err error, cmd *captain.Command, an analytics.Dispatcher) {
 	})
 
 	if !locale.HasError(err) && isErrs && !hasMarshaller {
-		multilog.Error("MUST ADDRESS: Error does not have localization: %s", errs.Join(err, "\n").Error())
+		multilog.Error("MUST ADDRESS: Error does not have localization: %s", errs.JoinMessage(err))
 
 		// If this wasn't built via CI then this is a dev workstation, and we should be more aggressive
 		if !condition.BuiltViaCI() && PanicOnMissingLocale {

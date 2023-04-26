@@ -66,7 +66,7 @@ type ArtifactSetupErrors struct {
 func (a *ArtifactSetupErrors) Error() string {
 	var errors []string
 	for _, err := range a.errs {
-		errors = append(errors, errs.Join(err, " :: ").Error())
+		errors = append(errors, errs.JoinMessage(err))
 	}
 	return "Not all artifacts could be installed, errors:\n" + strings.Join(errors, "\n")
 }

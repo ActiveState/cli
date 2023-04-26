@@ -32,7 +32,7 @@ func TestErrs(t *testing.T) {
 			"Creates wrapped error",
 			errs.Wrap(errors.New("Wrapped"), "Wrapper %s", "error"),
 			"Wrapper error",
-			"Wrapper error,Wrapped",
+			"Wrapper error: Wrapped",
 		},
 	}
 	for _, tt := range tests {
@@ -54,8 +54,8 @@ func TestErrs(t *testing.T) {
 					t.Fatalf("Stack should not contain reference to errs package.\nFound: %s at frame %d. Full stack:\n%s", frame.Path, i, ee.Stack().String())
 				}
 			}
-			if joinmessage := errs.Join(tt.err, ","); joinmessage.Error() != tt.wantJoinMessage {
-				t.Errorf("JoinMessage did not match, want: %s, got: %s", tt.wantJoinMessage, joinmessage.Error())
+			if joinmessage := errs.JoinMessage(err); joinmessage != tt.wantJoinMessage {
+				t.Errorf("JoinMessage did not match, want: %s, got: %s", tt.wantJoinMessage, joinmessage)
 			}
 		})
 	}
