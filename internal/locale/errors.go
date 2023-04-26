@@ -4,6 +4,7 @@ import (
 	"errors"
 	"strings"
 
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/osutils/stacktrace"
 	"github.com/ActiveState/cli/internal/rtutils"
 )
@@ -132,12 +133,11 @@ func IsInputError(err error) bool {
 	if err == nil {
 		return false
 	}
-	for err != nil {
+	for _, err := range errs.Unpack(err) {
 		errInput, ok := err.(ErrorInput)
 		if ok && errInput.InputError() {
 			return true
 		}
-		err = errors.Unwrap(err)
 	}
 	return false
 }
@@ -157,13 +157,12 @@ func IsInputErrorNonRecursive(err error) bool {
 // JoinErrors joins all error messages in the Unwrap stack that are localized
 func JoinErrors(err error, sep string) *LocalizedError {
 	var message []string
-	for err != nil {
+	for _, err := range errs.Unpack(err) {
 		var localizedError ErrorLocalizer
 		if !errors.As(err, &localizedError) {
 			break
 		}
 		message = append(message, localizedError.UserError())
-		err = errors.Unwrap(localizedError)
 	}
 	return WrapError(err, "", strings.Join(message, sep))
 }
@@ -176,11 +175,11 @@ func ErrorMessage(err error) string {
 }
 
 func UnwrapError(err error) []error {
-	var errs []error
-	for err != nil {
+	var errors []error
+	for _, err := range errs.Unpack(err) {
 		_, isLocaleError := err.(ErrorLocalizer)
 		if isLocaleError {
-			errs = append(errs, err)
+			errors = append(errors, err)
 		}
 
 		// MultiError uses a custom type to wrap multiple errors, so the type casting above won't work.
@@ -188,11 +187,10 @@ func UnwrapError(err error) []error {
 		if asError, ok := err.(AsError); ok {
 			var target ErrorLocalizer
 			if asError.As(&target) {
-				errs = append(errs, target)
+				errors = append(errors, target)
 			}
 		}
-		err = errors.Unwrap(err)
 	}
 
-	return errs
+	return errors
 }
