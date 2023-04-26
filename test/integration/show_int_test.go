@@ -110,8 +110,15 @@ func (suite *ShowIntegrationTestSuite) TestJSON() {
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("show", "-o", "json")
-	ExpectJSONKeys(suite.T(), cp, "project_url", "name", "platforms", "languages", "secrets", "events", "scripts")
+	cp.Expect(`"project_url":`)
+	cp.Expect(`"name":`)
+	cp.Expect(`"platforms":`)
+	cp.Expect(`"languages":`)
+	cp.Expect(`"secrets":`)
+	cp.Expect(`"events":`)
+	cp.Expect(`"scripts":`)
 	cp.ExpectExitCode(0)
+	AssertValidJSON(suite.T(), cp)
 }
 
 func TestShowIntegrationTestSuite(t *testing.T) {

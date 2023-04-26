@@ -150,17 +150,13 @@ func (suite *PlatformsIntegrationTestSuite) TestJSON() {
 
 	cp = ts.Spawn("platforms", "-o", "json")
 	cp.Expect(`[{"name":`)
-	cp.Expect(`},{`)
-	cp.Expect(`}]`)
-	AssertNoPlainOutput(suite.T(), cp)
-	cp.Close()
+	cp.ExpectExitCode(0)
+	AssertValidJSON(suite.T(), cp)
 
 	cp = ts.Spawn("platforms", "search", "-o", "json")
 	cp.Expect(`[{"name":`)
-	cp.Expect(`},{`)
-	cp.Expect(`}]`)
-	AssertNoPlainOutput(suite.T(), cp)
-	cp.Close()
+	cp.ExpectExitCode(0)
+	AssertValidJSON(suite.T(), cp)
 }
 
 func TestPlatformsIntegrationTestSuite(t *testing.T) {

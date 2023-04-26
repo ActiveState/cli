@@ -38,9 +38,8 @@ func (suite *InviteIntegrationTestSuite) TestJSON() {
 
 	cp := ts.Spawn("invite", "test-user@test.com", "-o", "json")
 	cp.Expect(`{"errors":["You need to authenticate`)
-	cp.Expect(`}`)
-	AssertNoPlainOutput(suite.T(), cp)
 	cp.ExpectNotExitCode(0)
+	AssertValidJSON(suite.T(), cp)
 }
 
 func TestInviteIntegrationTestSuite(t *testing.T) {

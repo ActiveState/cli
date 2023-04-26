@@ -79,9 +79,8 @@ func (suite *EventsIntegrationTestSuite) TestJSON() {
 
 	cp = ts.Spawn("events", "-o", "json")
 	cp.Expect(`[{"event":`)
-	cp.Expect(`}]`)
-	AssertNoPlainOutput(suite.T(), cp)
 	cp.ExpectExitCode(0)
+	AssertValidJSON(suite.T(), cp)
 }
 
 func TestEventsIntegrationTestSuite(t *testing.T) {

@@ -64,17 +64,15 @@ func (suite *ProjectsIntegrationTestSuite) TestJSON() {
 	cp.Expect(`[{"name":`)
 	cp.Expect(`"local_checkouts":`)
 	cp.Expect(`"executables":`)
-	cp.Expect(`},{`)
-	cp.Expect(`}]`)
-	AssertNoPlainOutput(suite.T(), cp)
 	cp.ExpectExitCode(0)
+	AssertValidJSON(suite.T(), cp)
 
 	ts.LoginAsPersistentUser()
 	cp = ts.Spawn("projects", "remote", "--output", "json")
 	cp.Expect(`[{`)
 	cp.Expect(`}]`)
-	AssertNoPlainOutput(suite.T(), cp)
 	cp.ExpectExitCode(0)
+	//AssertValidJSON(suite.T(), cp) // list is too large to fit in terminal snapshot
 }
 
 func TestProjectsIntegrationTestSuite(t *testing.T) {

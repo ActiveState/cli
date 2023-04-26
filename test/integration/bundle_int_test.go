@@ -215,28 +215,25 @@ func (suite *BundleIntegrationTestSuite) TestJSON() {
 	defer ts.Close()
 
 	cp := ts.Spawn("bundles", "search", "Email", "--language", "Perl", "-o", "json")
-	cp.Expect(`[{"package":"Email"`)
-	cp.Expect(`}]`)
-	AssertNoPlainOutput(suite.T(), cp)
+	cp.Expect(`"package":"Email"`)
 	cp.ExpectExitCode(0)
+	AssertValidJSON(suite.T(), cp)
 
 	cp = ts.SpawnWithOpts(
 		e2e.WithArgs("bundles", "install", "Testing", "--output", "json"),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
-	cp.Expect(`{"name":"Testing"`)
-	cp.Expect(`}`)
-	AssertNoPlainOutput(suite.T(), cp)
+	cp.Expect(`"name":"Testing"`)
 	cp.ExpectExitCode(0)
+	AssertValidJSON(suite.T(), cp)
 
 	cp = ts.SpawnWithOpts(
 		e2e.WithArgs("bundles", "uninstall", "Testing", "-o", "editor"),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
-	cp.Expect(`{"name":"Testing"`)
-	cp.Expect(`}`)
-	AssertNoPlainOutput(suite.T(), cp)
+	cp.Expect(`"name":"Testing"`)
 	cp.ExpectExitCode(0)
+	AssertValidJSON(suite.T(), cp)
 }
 
 func TestBundleIntegrationTestSuite(t *testing.T) {

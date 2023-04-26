@@ -74,11 +74,9 @@ func (suite *BranchIntegrationTestSuite) TestJSON() {
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("branch", "-o", "json")
-	cp.Expect(`[{"branchID":`)
-	cp.Expect(`},{`)
-	cp.Expect(`}]`)
-	AssertNoPlainOutput(suite.T(), cp)
+	cp.Expect(`"branchID":`)
 	cp.ExpectExitCode(0)
+	AssertValidJSON(suite.T(), cp)
 }
 
 func TestBranchIntegrationTestSuite(t *testing.T) {

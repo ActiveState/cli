@@ -52,12 +52,17 @@ func (suite *InfoIntegrationTestSuite) TestJSON() {
 	defer ts.Close()
 
 	cp := ts.Spawn("info", "pylint", "--language", "python", "-o", "json")
-	ExpectJSONKeys(suite.T(), cp, "description", "authors", "versions")
+	cp.Expect(`"description":`)
+	cp.Expect(`"authors":`)
+	cp.Expect(`"versions":`)
 	cp.ExpectExitCode(0)
+	AssertValidJSON(suite.T(), cp)
 
 	cp = ts.Spawn("info", "pylint@9.9.9", "--language", "python", "--output", "editor")
-	ExpectJSONKeys(suite.T(), cp, "errors", "code")
+	cp.Expect(`"errors":`)
+	cp.Expect(`"code":`)
 	cp.ExpectExitCode(1)
+	AssertValidJSON(suite.T(), cp)
 }
 
 func TestInfoIntegrationTestSuite(t *testing.T) {

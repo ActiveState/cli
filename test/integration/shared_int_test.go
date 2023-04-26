@@ -1,11 +1,11 @@
 package integration
 
 import (
-	"fmt"
+	"encoding/json"
 	"os"
+	"runtime"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/termtest"
@@ -18,26 +18,22 @@ func init() {
 	}
 }
 
-// ExpectJSONKeys looks for JSON output, asserts that each key is present, and then asserts that no
-// non-JSON/structured output is present.
-// If you want to test for JSON output other than just keys, do not call this function, as it
-// consumes console output.
-func ExpectJSONKeys(t *testing.T, cp *termtest.ConsoleProcess, keys ...string) {
-	cp.Expect("{", 60*time.Second)
-	for _, key := range keys {
-		cp.Expect(fmt.Sprintf(`"%s":`, key))
-	}
-	cp.Expect("}")
-	AssertNoPlainOutput(t, cp)
-}
-
-// AssertNoPlainOutput asserts that the previous command did not attempt to emit any
-// non-JSON/structured output.
-// This is called automatically by ExpectJSONKeys, so you only need to call this if you have
-// manually expected JSON output.
-func AssertNoPlainOutput(t *testing.T, cp *termtest.ConsoleProcess) {
+// AssertValidJSON asserts that the previous command emitted valid JSON and did not attempt to emit
+// any non-JSON/structured output.
+// This should only be called after a command has executed and all output is available.
+func AssertValidJSON(t *testing.T, cp *termtest.ConsoleProcess) {
 	snapshot := cp.TrimmedSnapshot()
+	if runtime.GOOS != "windows" {
+		assert.True(t, json.Valid([]byte(snapshot)), "The command produced invalid JSON/structured output:\n"+snapshot)
+	} else {
+		// Windows can trim the last byte for some reason.
+		assert.True(
+			t,
+			json.Valid([]byte(snapshot)) || json.Valid([]byte(snapshot+"}")) || json.Valid([]byte(snapshot+"]")),
+			"The command produced invalid JSON/structured output:\n"+snapshot,
+		)
+	}
 	if strings.Contains(snapshot, `"errors":[`) {
-		assert.NotContains(t, snapshot, `output not supported`, "The command attempted to emit non-JSON/structured output")
+		assert.NotContains(t, snapshot, `output not supported`, "The command attempted to emit non-JSON/structured output:\n"+snapshot)
 	}
 }

@@ -244,7 +244,7 @@ func (suite *ShellIntegrationTestSuite) TestJSON() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	cp := ts.Spawn("checkout", "ActiveState-CLI/small-python", ".")
+	cp := ts.Spawn("checkout", "ActiveState-CLI/Perl-5.32", ".")
 	cp.Expect("Skipping runtime setup")
 	cp.Expect("Checked out")
 	cp.ExpectExitCode(0)
@@ -253,8 +253,9 @@ func (suite *ShellIntegrationTestSuite) TestJSON() {
 		e2e.WithArgs("shell", "-o", "json"),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
-	ExpectJSONKeys(suite.T(), cp, "ACTIVESTATE_ACTIVATED")
+	cp.Expect(`{"ACTIVESTATE_ACTIVATED":`)
 	cp.ExpectExitCode(0)
+	AssertValidJSON(suite.T(), cp)
 }
 
 func TestShellIntegrationTestSuite(t *testing.T) {

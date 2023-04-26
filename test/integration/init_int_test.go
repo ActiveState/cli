@@ -139,8 +139,8 @@ func (suite *InitIntegrationTestSuite) TestJSON() {
 	cp := ts.Spawn("init", "-o", "json")
 	cp.ExpectLongString(`{"errors":["The following argument is required:`)
 	cp.Expect(`"code":`)
-	cp.Expect(`}`)
 	cp.ExpectNotExitCode(0)
+	AssertValidJSON(suite.T(), cp)
 }
 
 func TestInitIntegrationTestSuite(t *testing.T) {

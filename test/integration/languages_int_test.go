@@ -102,9 +102,8 @@ func (suite *LanguagesIntegrationTestSuite) TestJSON() {
 
 	cp = ts.Spawn("languages", "-o", "json")
 	cp.Expect(`[{"name":"Python","version":`)
-	cp.Expect(`}]`)
-	AssertNoPlainOutput(suite.T(), cp)
 	cp.ExpectExitCode(0)
+	AssertValidJSON(suite.T(), cp)
 }
 
 func TestLanguagesIntegrationTestSuite(t *testing.T) {

@@ -111,12 +111,16 @@ func (suite *CveIntegrationTestSuite) TestJSON() {
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("cve", "-o", "json")
-	ExpectJSONKeys(suite.T(), cp, "project", "commitID")
+	cp.Expect(`"project":`)
+	cp.Expect(`"commitID":`)
 	cp.ExpectExitCode(0)
+	AssertValidJSON(suite.T(), cp)
 
 	cp = ts.Spawn("cve", "report", "-o", "editor")
-	ExpectJSONKeys(suite.T(), cp, "project", "commitID")
+	cp.Expect(`"project":`)
+	cp.Expect(`"commitID":`)
 	cp.ExpectExitCode(0)
+	AssertValidJSON(suite.T(), cp)
 }
 
 func TestCveIntegraionTestSuite(t *testing.T) {

@@ -262,7 +262,7 @@ func (suite *UseIntegrationTestSuite) TestJSON() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	cp := ts.Spawn("checkout", "ActiveState-CLI/small-python", ".")
+	cp := ts.Spawn("checkout", "ActiveState-CLI/Perl-5.32", ".")
 	cp.Expect("Skipping runtime setup")
 	cp.Expect("Checked out")
 	cp.ExpectExitCode(0)
@@ -271,17 +271,21 @@ func (suite *UseIntegrationTestSuite) TestJSON() {
 		e2e.WithArgs("use", "-o", "json"),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
-	ExpectJSONKeys(suite.T(), cp, "namespace", "path", "executables")
-	suite.NotContains(cp.TrimmedSnapshot(), "Setting Up Runtime")
+	cp.Expect(`"namespace":`)
+	cp.Expect(`"path":`)
+	cp.Expect(`"executables":`)
 	cp.ExpectExitCode(0)
+	AssertValidJSON(suite.T(), cp)
 
 	cp = ts.Spawn("use", "show", "--output", "json")
-	ExpectJSONKeys(suite.T(), cp, "namespace", "path")
+	cp.Expect(`"namespace":`)
+	cp.Expect(`"path":`)
 	cp.ExpectExitCode(0)
+	AssertValidJSON(suite.T(), cp)
 
-	cp = ts.Spawn("use", "reset", "-o", "json", "--non-interactive")
+	cp = ts.Spawn("use", "reset", "-o", "json")
 	cp.ExpectExitCode(0)
-	AssertNoPlainOutput(suite.T(), cp)
+	suite.Empty(cp.TrimmedSnapshot(), "unexpected output")
 }
 
 func TestUseIntegrationTestSuite(t *testing.T) {

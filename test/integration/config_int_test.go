@@ -46,12 +46,16 @@ func (suite *ConfigIntegrationTestSuite) TestJSON() {
 	defer ts.Close()
 
 	cp := ts.Spawn("config", "set", constants.UnstableConfig, "true", "-o", "json")
-	ExpectJSONKeys(suite.T(), cp, "name", "value")
+	cp.Expect(`"name":`)
+	cp.Expect(`"value":`)
 	cp.ExpectExitCode(0)
+	AssertValidJSON(suite.T(), cp)
 
 	cp = ts.Spawn("config", "get", constants.UnstableConfig, "-o", "json")
-	ExpectJSONKeys(suite.T(), cp, "name", "value")
+	cp.Expect(`"name":`)
+	cp.Expect(`"value":`)
 	cp.ExpectExitCode(0)
+	AssertValidJSON(suite.T(), cp)
 }
 
 func TestConfigIntegrationTestSuite(t *testing.T) {

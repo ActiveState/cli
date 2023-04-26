@@ -54,10 +54,8 @@ func (suite *HistoryIntegrationTestSuite) TestJSON() {
 
 	cp = ts.Spawn("history", "-o", "json")
 	cp.Expect(`[{"hash":`)
-	cp.Expect(`},{`)
-	cp.Expect(`}]`)
-	AssertNoPlainOutput(suite.T(), cp)
 	cp.ExpectExitCode(0)
+	AssertValidJSON(suite.T(), cp)
 }
 
 func TestHistoryIntegrationTestSuite(t *testing.T) {

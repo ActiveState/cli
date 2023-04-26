@@ -103,32 +103,33 @@ func (suite *ExportIntegrationTestSuite) TestJSON() {
 	defer ts.Close()
 
 	cp := ts.Spawn("export", "config", "-o", "json")
-	ExpectJSONKeys(suite.T(), cp, "dir")
-	cp.Close()
+	cp.Expect(`{"dir":`)
+	cp.ExpectExitCode(0)
+	AssertValidJSON(suite.T(), cp)
 
-	cp = ts.SpawnWithOpts(
-		e2e.WithArgs("checkout", "ActiveState-CLI/small-python", "."),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
-	)
+	cp = ts.Spawn("checkout", "ActiveState-CLI/small-python", ".")
+	cp.Expect("Skipping runtime setup")
 	cp.Expect("Checked out")
 	cp.ExpectExitCode(0)
 
-	cp = ts.Spawn("export", "env", "-o", "json")
-	cp.Expect(`{`)
-	cp.Expect(`}`)
-	AssertNoPlainOutput(suite.T(), cp)
+	cp = ts.SpawnWithOpts(
+		e2e.WithArgs("export", "env", "-o", "json"),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
 	cp.ExpectExitCode(0)
+	AssertValidJSON(suite.T(), cp)
 
 	ts.LoginAsPersistentUser()
 	cp = ts.Spawn("export", "jwt", "-o", "json")
-	ExpectJSONKeys(suite.T(), cp, "value")
+	cp.Expect(`{"value":`)
 	cp.ExpectExitCode(0)
+	AssertValidJSON(suite.T(), cp)
 
 	cp = ts.Spawn("export", "recipe", "-o", "json")
 	cp.Expect(`{`)
 	cp.Expect(`}`)
-	AssertNoPlainOutput(suite.T(), cp)
 	cp.ExpectExitCode(0)
+	//AssertValidJSON(suite.T(), cp) // recipe is too large to fit in terminal snapshot
 }
 
 func TestExportIntegrationTestSuite(t *testing.T) {

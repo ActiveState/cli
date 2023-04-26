@@ -20,9 +20,8 @@ func (suite *OrganizationsIntegrationTestSuite) TestJSON() {
 	ts.LoginAsPersistentUser()
 	cp := ts.Spawn("organizations", "-o", "json")
 	cp.Expect(`[{"name":`)
-	cp.Expect(`}]`)
-	AssertNoPlainOutput(suite.T(), cp)
 	cp.ExpectExitCode(0)
+	AssertValidJSON(suite.T(), cp)
 }
 
 func TestOrganizationsIntegrationTestSuite(t *testing.T) {

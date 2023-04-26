@@ -466,32 +466,29 @@ func (suite *PackageIntegrationTestSuite) TestJSON() {
 
 	cp := ts.Spawn("search", "Text-CSV", "--exact-term", "--language", "Perl", "-o", "json")
 	cp.Expect(`[{"package":"Text-CSV"`)
-	cp.Expect(`}]`)
-	AssertNoPlainOutput(suite.T(), cp)
 	cp.ExpectExitCode(0)
+	AssertValidJSON(suite.T(), cp)
 
 	cp = ts.SpawnWithOpts(
 		e2e.WithArgs("install", "Text-CSV", "--output", "editor"),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cp.Expect(`{"name":"Text-CSV"`)
-	cp.Expect(`}`)
-	AssertNoPlainOutput(suite.T(), cp)
 	cp.ExpectExitCode(0)
+	AssertValidJSON(suite.T(), cp)
 
 	cp = ts.Spawn("packages", "-o", "json")
 	cp.Expect(`[{"package":"Text-CSV","version":"Auto"}]`)
-	AssertNoPlainOutput(suite.T(), cp)
 	cp.ExpectExitCode(0)
+	AssertValidJSON(suite.T(), cp)
 
 	cp = ts.SpawnWithOpts(
 		e2e.WithArgs("uninstall", "Text-CSV", "-o", "json"),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cp.Expect(`{"name":"Text-CSV"`)
-	cp.Expect(`}`)
-	AssertNoPlainOutput(suite.T(), cp)
 	cp.ExpectExitCode(0)
+	AssertValidJSON(suite.T(), cp)
 }
 
 func TestPackageIntegrationTestSuite(t *testing.T) {
