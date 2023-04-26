@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ActiveState/cli/cmd/state/internal/messenger"
+	"github.com/ActiveState/cli/cmd/state/internal/cmdtree/intercepts/messenger"
 	"github.com/ActiveState/cli/internal/captain"
 
 	"github.com/ActiveState/cli/cmd/state/internal/cmdtree"
