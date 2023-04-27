@@ -1,16 +1,20 @@
 package retryhttp
 
 import (
+	"context"
+	"crypto/x509"
 	"errors"
 	"net"
 	"net/http"
 	"net/url"
+	"regexp"
 	"strings"
 	"time"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/hashicorp/go-cleanhttp"
 	"github.com/hashicorp/go-retryablehttp"
+	"github.com/thoas/go-funk"
 
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/locale"
@@ -37,6 +41,44 @@ var (
 	DefaultTimeout = time.Second * 30
 	DefaultRetries = 5
 	DefaultClient  = NewClient(DefaultTimeout, DefaultRetries)
+
+	// A regular expression to match the error returned by net/http when the
+	// configured number of redirects is exhausted. This error isn't typed
+	// specifically so we resort to matching on the error string.
+	redirectsErrorRe = regexp.MustCompile(`stopped after \d+ redirects\z`)
+
+	// A regular expression to match the error returned by net/http when the
+	// scheme specified in the URL is invalid. This error isn't typed
+	// specifically so we resort to matching on the error string.
+	schemeErrorRe = regexp.MustCompile(`unsupported protocol scheme`)
+
+	retryableStatusCodes = []int{
+		// 4XX Status codes
+		// The server timed out waiting for the request from client.
+		http.StatusRequestTimeout,
+		// Sometimes the server puts a Retry-After response header
+		// to indicate when the server is available to start processing
+		// request from client.
+		http.StatusTooManyRequests,
+		// The server is unwilling to risk
+		// processing a request that might be replayed.
+		http.StatusTooEarly,
+		// 5XX Status codes
+		// The server is currently unable to handle the request. Without
+		// any other information, the client may retry the request.
+		http.StatusInternalServerError,
+		// The server, while acting as a gateway or proxy, did not receive
+		// a valid response.
+		http.StatusBadGateway,
+		// The server is currently unable to handle the request due to a
+		// temporary overload or scheduled maintenance, which will likely
+		// be alleviated after some delay.
+		http.StatusServiceUnavailable,
+		// The server, while acting as a gateway or proxy, did not receive
+		// a timely response from an upstream server it needed to access
+		// in order to complete the request.
+		http.StatusGatewayTimeout,
+	}
 )
 
 type Client struct {
@@ -121,6 +163,7 @@ func NewClient(timeout time.Duration, retries int) *Client {
 	}
 	retryClient.RetryMax = retries
 	retryClient.ErrorHandler = normalizeRetryResponse
+	retryClient.CheckRetry = retryPolicy
 
 	return &Client{
 		Client: retryClient,
@@ -132,4 +175,41 @@ func transport() http.RoundTripper {
 		return http.DefaultClient.Transport
 	}
 	return cleanhttp.DefaultPooledTransport()
+}
+
+// retryPolicy is a modified version of retryablehttp.DefaultRetryPolicy to handle
+// status codes differently.
+func retryPolicy(ctx context.Context, resp *http.Response, err error) (bool, error) {
+	// do not retry on context.Canceled or context.DeadlineExceeded
+	if ctx.Err() != nil {
+		return false, ctx.Err()
+	}
+
+	if err != nil {
+		if v, ok := err.(*url.Error); ok {
+			// Don't retry if the error was due to too many redirects.
+			if redirectsErrorRe.MatchString(v.Error()) {
+				return false, nil
+			}
+
+			// Don't retry if the error was due to an invalid protocol scheme.
+			if schemeErrorRe.MatchString(v.Error()) {
+				return false, nil
+			}
+
+			// Don't retry if the error was due to TLS cert verification failure.
+			if _, ok := v.Err.(x509.UnknownAuthorityError); ok {
+				return false, nil
+			}
+		}
+
+		// The error is likely recoverable so retry.
+		return true, nil
+	}
+
+	return isRetryableStatus(resp.StatusCode), nil
+}
+
+func isRetryableStatus(status int) bool {
+	return funk.Contains(retryableStatusCodes, status)
 }
