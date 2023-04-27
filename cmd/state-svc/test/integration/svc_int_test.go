@@ -249,6 +249,7 @@ func (suite *SvcIntegrationTestSuite) checkEnabled(appPath string, opts autostar
 			} else {
 				suite.Fail("autostart has not been changed")
 			}
+			return
 		case <-tick:
 			toggled, err := autostart.IsEnabled(appPath, opts)
 			suite.NoError(err)
