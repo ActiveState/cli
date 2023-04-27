@@ -6,6 +6,12 @@ import (
 	model "github.com/ActiveState/cli/pkg/platform/api/graphql/model/buildplanner"
 )
 
+type context struct {
+	inLet             bool
+	currentIdentifier string
+	currentPath       []*parser.NodeElement
+}
+
 type BuildScriptTransformer struct {
 	root    *parser.NodeElement
 	result  *BuildScript
@@ -13,6 +19,7 @@ type BuildScriptTransformer struct {
 	// TODO: Both of these could be replaced with a call stack
 	inLet             bool
 	currentIdentifier string
+	currentPath       []*parser.NodeElement
 }
 
 func NewBuildScriptTransformer(ast *parser.Tree) *BuildScriptTransformer {
@@ -21,7 +28,8 @@ func NewBuildScriptTransformer(ast *parser.Tree) *BuildScriptTransformer {
 		result: &BuildScript{
 			Let: make(map[string]Binding),
 		},
-		visited: make(map[*parser.NodeElement]bool),
+		visited:     make(map[*parser.NodeElement]bool),
+		currentPath: make([]*parser.NodeElement, 0),
 	}
 }
 
@@ -71,32 +79,23 @@ func (t *BuildScriptTransformer) TransformExpression(node *parser.NodeElement) e
 		return errs.New("Unexpected node type in transformFile: %s", node.Type().String())
 	}
 
-	var identifier string
+	ctx := &context{}
 	for i, c := range node.Children() {
 		switch c.Type() {
 		case parser.NodeLet:
 			t.inLet = true
-			continue
-		case parser.NodeBinding:
-			err := t.TransformBinding(c)
+			ctx.inLet = true
+			err := t.TransformLet(ctx, c, node.Children()[i:])
 			if err != nil {
-				return errs.Wrap(err, "Failed to transform binding")
+				return errs.Wrap(err, "Failed to transform let")
 			}
-		case parser.NodeIdentifier:
-			// This is only valid if we are in the in clause of a let statement.
-			identifier = c.Literal()
 		case parser.NodeIn:
-			err := t.TransformIn(c, node.Children()[i:])
+			ctx.inLet = false
+			err := t.TransformIn(ctx, c, node.Children()[i:])
 			if err != nil {
 				return errs.Wrap(err, "Failed to transform in")
 			}
 			t.inLet = false
-		case parser.NodeApplication:
-			// This is only valid if we are not in the in clause of a let statement.
-			err := t.TransformApplication(c, identifier)
-			if err != nil {
-				return errs.Wrap(err, "Failed to transform application")
-			}
 		case parser.NodeColon:
 			continue
 		default:
@@ -104,10 +103,27 @@ func (t *BuildScriptTransformer) TransformExpression(node *parser.NodeElement) e
 		}
 	}
 
+	t.currentPath = t.currentPath[:len(t.currentPath)-1]
 	return nil
 }
 
-func (t *BuildScriptTransformer) TransformIn(node *parser.NodeElement, siblings []*parser.NodeElement) error {
+func (t *BuildScriptTransformer) TransformLet(ctx *context, node *parser.NodeElement, siblings []*parser.NodeElement) error {
+	for _, s := range siblings {
+		switch s.Type() {
+		case parser.NodeBinding:
+			err := t.TransformBinding(ctx, s)
+			if err != nil {
+				return errs.Wrap(err, "Failed to transform binding")
+			}
+		case parser.NodeIn:
+			return nil
+		}
+	}
+
+	return nil
+}
+
+func (t *BuildScriptTransformer) TransformIn(ctx *context, node *parser.NodeElement, siblings []*parser.NodeElement) error {
 	// TODO: This is a bit messy, but it works for now however with the current
 	// map structure it can only handle identifiers.
 	// This could be a potential for generics...
@@ -130,13 +146,13 @@ func (t *BuildScriptTransformer) TransformIn(node *parser.NodeElement, siblings 
 	return nil
 }
 
-func (t *BuildScriptTransformer) TransformBinding(node *parser.NodeElement) error {
+func (t *BuildScriptTransformer) TransformBinding(ctx *context, node *parser.NodeElement) error {
 	for _, c := range node.Children() {
 		if c.Type() != parser.NodeAssignment {
 			return errs.New("Unexpected binding child type: %s", c.Type().String())
 		}
 
-		err := t.TransformAssignment(c)
+		err := t.TransformAssignment(ctx, c)
 		if err != nil {
 			return errs.Wrap(err, "Failed to transform assignment")
 		}
@@ -146,7 +162,7 @@ func (t *BuildScriptTransformer) TransformBinding(node *parser.NodeElement) erro
 	return nil
 }
 
-func (t *BuildScriptTransformer) TransformAssignment(node *parser.NodeElement) error {
+func (t *BuildScriptTransformer) TransformAssignment(ctx *context, node *parser.NodeElement) error {
 	var identifier string
 	for _, c := range node.Children() {
 		switch c.Type() {
@@ -155,13 +171,14 @@ func (t *BuildScriptTransformer) TransformAssignment(node *parser.NodeElement) e
 			if t.currentIdentifier == "" {
 				t.currentIdentifier = identifier
 			}
+			ctx.currentIdentifier = identifier
 		case parser.NodeApplication:
 			err := t.TransformApplication(c, identifier)
 			if err != nil {
 				return errs.Wrap(err, "Failed to transform application")
 			}
 		case parser.NodeList:
-			err := t.TransformList(c, identifier)
+			err := t.TransformList(ctx, c)
 			if err != nil {
 				return errs.Wrap(err, "Failed to transform list")
 			}
@@ -171,10 +188,7 @@ func (t *BuildScriptTransformer) TransformAssignment(node *parser.NodeElement) e
 				return errs.Wrap(err, "Failed to transform string")
 			}
 		case parser.NodeEquals:
-			if identifier == "" {
-				return errs.New("Unexpected equals")
-			}
-			t.result.Let[identifier] = make(ListBinding, 0)
+			continue
 		}
 		t.visited[c] = true
 	}
@@ -192,7 +206,7 @@ func (t *BuildScriptTransformer) TransformApplication(applicationNode *parser.No
 				return errs.Wrap(err, "Failed to transform function")
 			}
 		case parser.NodeBinding:
-			err := t.TransformBinding(c)
+			err := t.TransformBinding(&context{}, c)
 			if err != nil {
 				return errs.Wrap(err, "Failed to transform argument")
 			}
@@ -209,6 +223,8 @@ func (t *BuildScriptTransformer) TransformApplication(applicationNode *parser.No
 }
 
 func (t *BuildScriptTransformer) TransformFunction(node *parser.NodeElement, identifier string) error {
+	// TODO: This function should use it's children to identify the function
+	// type and then use its siblings to transform the arguments.
 	for _, c := range node.Children() {
 		switch c.Type() {
 		case parser.NodeSolveFn, parser.NodeSolveLegacyFn:
@@ -270,11 +286,11 @@ func (t *BuildScriptTransformer) TransformArgument(result *model.BuildScript, no
 	return nil
 }
 
-func (t *BuildScriptTransformer) TransformList(node *parser.NodeElement, identifier string) error {
+func (t *BuildScriptTransformer) TransformList(ctx *context, node *parser.NodeElement) error {
 	for _, c := range node.Children() {
 		switch c.Type() {
 		case parser.NodeListElement:
-			err := t.TransformListElement(c, identifier)
+			err := t.TransformListElement(ctx, c)
 			if err != nil {
 				return errs.Wrap(err, "Failed to transform string")
 			}
@@ -289,7 +305,7 @@ func (t *BuildScriptTransformer) TransformList(node *parser.NodeElement, identif
 	return nil
 }
 
-func (t *BuildScriptTransformer) TransformListElement(node *parser.NodeElement, identifier string) error {
+func (t *BuildScriptTransformer) TransformListElement(ctx *context, node *parser.NodeElement) error {
 	// This function will likely also need a position slice
 	for _, c := range node.Children() {
 		switch c.Type() {
