@@ -1,10 +1,10 @@
 package output
 
 import (
-	"fmt"
 	"io"
 
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/multilog"
 )
 
 type Mediator struct {
@@ -53,13 +53,17 @@ func (m *Mediator) Notice(v interface{}) {
 }
 
 func mediatorValue(v interface{}, format Format) interface{} {
-	if IsStructuredFormat(format) {
+	if format.IsStructured() {
 		if vt, ok := v.(StructuredMarshaller); ok {
 			return vt.MarshalStructured(format)
 		}
-		strv := fmt.Sprintf("%v", v)
+		multilog.Error("%s output not supported for message: %v", string(format), v)
 		return jsonError{
-			[]string{locale.Tl("err_no_structured_output", "{{.V0}} output not supported for message: {{.V1}}", string(format), strv)},
+			[]string{locale.Tl(
+				"err_no_structured_output",
+				"This command does not support the {{.V0}} output format. Please try again without that output flag",
+				string(format),
+			)},
 			1,
 		}
 	}

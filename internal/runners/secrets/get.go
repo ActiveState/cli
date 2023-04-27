@@ -78,7 +78,7 @@ type getOutput struct {
 
 // Validate returns a directly usable localized error.
 func (o *getOutput) Validate(format output.Format) error {
-	if !output.IsStructuredFormat(format) && o.valuePtr == nil {
+	if !format.IsStructured() && o.valuePtr == nil {
 		return newValuePtrIsNilError(o.reqSecret, o.secret.IsUser())
 	}
 	return nil

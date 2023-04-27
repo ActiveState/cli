@@ -188,10 +188,6 @@ func mergeSearchRows(rows searchOutput) *searchOutput {
 	return &mergedRows
 }
 
-func (o *searchOutput) MarshalOutput(format output.Format) interface{} {
-	return o
-}
-
 func (o *searchOutput) MarshalStructured(format output.Format) interface{} {
 	return o
 }

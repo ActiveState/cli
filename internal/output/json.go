@@ -111,14 +111,13 @@ func prepareJSONValue(v interface{}) interface{} {
 // It accepts an error object, a list of string error messages, or a single string error message.
 // If it cannot perform the conversion, it returns a jsonError indicating so.
 func toJsonError(v interface{}) jsonError {
-	if err, ok := v.(error); ok {
-		return jsonError{[]string{err.Error()}, 1}
-	}
-	if strings, ok := v.([]string); ok {
-		return jsonError{strings, 1}
-	}
-	if s, ok := v.(string); ok {
-		return jsonError{[]string{s}, 1}
+	switch v.(type) {
+	case error:
+		return jsonError{[]string{v.(error).Error()}, 1}
+	case []string:
+		return jsonError{v.([]string), 1}
+	case string:
+		return jsonError{[]string{v.(string)}, 1}
 	}
 	message := fmt.Sprintf("Not a recognized error format: %v", v)
 	multilog.Error(message)

@@ -57,10 +57,6 @@ type orgData struct {
 
 type orgOutput []orgData
 
-func (o *orgOutput) MarshalOutput(format output.Format) interface{} {
-	return o
-}
-
 func (o *orgOutput) MarshalStructured(format output.Format) interface{} {
 	return o
 }

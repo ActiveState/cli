@@ -64,14 +64,17 @@ func new(formatName string, config *Config) (Outputer, error) {
 		return &Mediator{&simple, SimpleFormatName}, err
 	case JSONFormatName:
 		logging.Debug("Using JSON outputer")
+		config.Interactive = false
 		json, err := NewJSON(config)
 		return &Mediator{&json, JSONFormatName}, err
 	case EditorFormatName:
 		logging.Debug("Using Editor outputer")
+		config.Interactive = false
 		editor, err := NewEditor(config)
 		return &Mediator{&editor, EditorFormatName}, err
 	case EditorV0FormatName:
 		logging.Debug("Using EditorV0 outputer")
+		config.Interactive = false
 		editor0, err := NewEditorV0(config)
 		return &Mediator{&editor0, EditorV0FormatName}, err
 	}
@@ -79,7 +82,7 @@ func new(formatName string, config *Config) (Outputer, error) {
 	return nil, locale.WrapInputError(ErrNotRecognized, "err_unknown_format", string(formatName))
 }
 
-func IsStructuredFormat(format Format) bool {
+func (format Format) IsStructured() bool {
 	return format == JSONFormatName || format == EditorFormatName || format == EditorV0FormatName
 }
 

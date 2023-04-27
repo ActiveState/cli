@@ -714,7 +714,7 @@ func (c *Command) runFlags(persistOnly bool) {
 }
 
 func (c *Command) shouldWarnUnstable() bool {
-	return c.unstable && !output.IsStructuredFormat(c.out.Type())
+	return c.unstable && !c.out.Type().IsStructured()
 }
 
 func (c *Command) outputTitleIfAny() {

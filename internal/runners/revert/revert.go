@@ -116,7 +116,7 @@ func (r *Revert) Run(params *Params) error {
 	if params.To {
 		preposition = " to" // need leading whitespace
 	}
-	if !output.IsStructuredFormat(r.out.Type()) {
+	if !r.out.Type().IsStructured() {
 		r.out.Print(locale.Tl("revert_info", "You are about to revert{{.V0}} the following commit:", preposition))
 		commit.PrintCommit(r.out, targetCommit, orgs)
 	}

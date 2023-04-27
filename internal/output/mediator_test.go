@@ -65,7 +65,7 @@ func Test_mediatorValue(t *testing.T) {
 				"unstructured",
 				JSONFormatName,
 			},
-			jsonError{[]string{"json output not supported for message: unstructured"}, 1},
+			jsonError{[]string{"This command does not support the json output format. Please try again without that output flag"}, 1},
 		},
 	}
 	for _, tt := range tests {

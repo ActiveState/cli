@@ -50,7 +50,7 @@ func newEventOutput(events []*project.Event) (*eventOutput, error) {
 
 func (o *eventOutput) MarshalOutput(format output.Format) interface{} {
 	if len(*o) == 0 {
-		return locale.Tl("events_empty", "No eventOutput found for the current project")
+		return locale.Tl("events_empty", "No events found for the current project")
 	}
 	return o
 }

@@ -86,7 +86,7 @@ func trimError(msg string) string {
 }
 
 func (o *OutputError) MarshalStructured(f output.Format) interface{} {
-	var errors []string
+	var errors []interface{}
 	rerrs := locale.UnwrapError(o.error)
 	if len(rerrs) == 0 {
 		// It's possible the error came from cobra or something else low level that doesn't use localization

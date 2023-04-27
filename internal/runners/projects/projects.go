@@ -23,8 +23,6 @@ type projectWithOrg struct {
 	Executables    []string `json:"executables,omitempty"`
 }
 
-type projectsOutput []projectWithOrg
-
 func newProjectWithOrg(name, org string, checkouts []string) projectWithOrg {
 	p := projectWithOrg{Name: name, Organization: org, LocalCheckouts: checkouts}
 	for _, checkout := range checkouts {
@@ -40,31 +38,12 @@ func newProjectWithOrg(name, org string, checkouts []string) projectWithOrg {
 	return p
 }
 
-func newProjectsOutput(cfg configGetter)*projectsOutput{
-	localProjects := projectfile.GetProjectMapping(cfg)
-	var projects projectsOutput
-
-	for namespace, checkouts := range localProjects {
-		ns, err := project.ParseNamespace(namespace)
-		if err != nil {
-			multilog.Error("Invalid project namespace stored to config mapping: %s", namespace)
-			continue
-		}
-		projects = append(projects, newProjectWithOrg(ns.Project, ns.Owner, checkouts))
-	}
-
-	sort.SliceStable(projects, func(i, j int) bool {
-		if projects[i].Organization == projects[j].Organization {
-			return projects[i].Name < projects[j].Name
-		}
-		return projects[i].Organization < projects[j].Organization
-	})
-
-  return &projects
+type projectsOutput struct {
+	projects []projectWithOrg
 }
 
 func (o *projectsOutput) MarshalOutput(f output.Format) interface{} {
-	if len(*o) == 0 {
+	if len(o.projects) == 0 {
 		return locale.T("project_checkout_empty")
 	}
 
@@ -76,7 +55,7 @@ func (o *projectsOutput) MarshalOutput(f output.Format) interface{} {
 	}
 
 	r := []projectOutputPlain{}
-	for _, v := range *o {
+	for _, v := range o.projects {
 		checkouts := []string{}
 		executables := []string{}
 		for i, checkout := range v.LocalCheckouts {
@@ -103,7 +82,7 @@ func (o *projectsOutput) MarshalOutput(f output.Format) interface{} {
 }
 
 func (o *projectsOutput) MarshalStructured(f output.Format) interface{} {
-	return o
+	return o.projects
 }
 
 type configGetter interface {
@@ -144,6 +123,25 @@ func newProjects(auth *authentication.Auth, out output.Outputer, config configGe
 }
 
 func (r *Projects) Run(params *Params) error {
-	r.out.Print(newProjectsOutput(r.config))
+	localProjects := projectfile.GetProjectMapping(r.config)
+	var projects []projectWithOrg
+
+	for namespace, checkouts := range localProjects {
+		ns, err := project.ParseNamespace(namespace)
+		if err != nil {
+			multilog.Error("Invalid project namespace stored to config mapping: %s", namespace)
+			continue
+		}
+		projects = append(projects, newProjectWithOrg(ns.Project, ns.Owner, checkouts))
+	}
+
+	sort.SliceStable(projects, func(i, j int) bool {
+		if projects[i].Organization == projects[j].Organization {
+			return projects[i].Name < projects[j].Name
+		}
+		return projects[i].Organization < projects[j].Organization
+	})
+
+	r.out.Print(&projectsOutput{projects})
 	return nil
 }

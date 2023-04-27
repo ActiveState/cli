@@ -156,32 +156,14 @@ func (i *invite) send(orgName string, asOwner bool, emails []string) (int, error
 	return len(emails) - errLen, rerr
 }
 
-type inviteOutput struct {
-	Email string `locale:"email,Email" json:"email"`
-	Error error  `locale:"error,Error" json:"error,omitempty"`
-}
-
-func (o *inviteOutput) MarshalOutput(format output.Format) interface{} {
-	success := locale.Tl("ok", "Ok")
-	if o.Error != nil {
-		success = locale.Tl("err_invite", "Failed: {{.V0}}", o.Error.Error())
-	}
-	return locale.Tl("invite_success", "Sending to {{.V0}} ... {{.V1}}", o.Email, success)
-}
-
-func (o *inviteOutput) MarshalStructured(format output.Format) interface{} {
-	return o.Error
-}
-
 func (i *invite) sendSingle(orgName string, asOwner bool, email string) error {
 	// ignore the invitation for now
 	_, err := model.InviteUserToOrg(orgName, asOwner, email)
 	if err != nil {
-		i.out.Error(&inviteOutput{email, err})
-		return err
+		return locale.WrapError(err, "err_invite", "Failed to send invite to {{.V0}}", email)
 	}
 
-	i.out.Print(&inviteOutput{email, nil})
+	i.out.Notice(locale.Tl("invite_success", "Sent invite to {{.V0}}"))
 
 	return nil
 }

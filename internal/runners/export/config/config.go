@@ -25,15 +25,15 @@ type primeable interface {
 }
 
 type mapOutput struct {
-	map_ map[string]string
+	configMap map[string]string
 }
 
 func (o *mapOutput) MarshalOutput(format output.Format) interface{} {
-	return o.map_
+	return o.configMap
 }
 
 func (o *mapOutput) MarshalStructured(format output.Format) interface{} {
-	return o.map_
+	return o.configMap
 }
 
 type valueOutput struct {

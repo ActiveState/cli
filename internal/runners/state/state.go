@@ -7,7 +7,6 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/profile"
@@ -61,7 +60,6 @@ func (o *versionOutput) MarshalStructured(format output.Format) interface{} {
 }
 
 func (s *State) Run(usageFunc func() error) error {
-	logging.Debug("Run")
 	defer profile.Measure("runners:state:run", time.Now())
 
 	if s.opts.Version {
