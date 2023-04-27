@@ -223,7 +223,7 @@ func (suite *SvcIntegrationTestSuite) TestAutostartConfigEnableDisable() {
 		e2e.AppendEnv("HOME="+homeDir),
 	)
 	cp.ExpectExitCode(0)
-	suite.checkEnabled(app.Path(), svcAutostart.Options, !enabled)
+	suite.checkEnabled(app.Path(), svcAutostart.Options, homeDir, !enabled)
 
 	// Toggle it again via state tool config.
 	cp = ts.SpawnWithOpts(
