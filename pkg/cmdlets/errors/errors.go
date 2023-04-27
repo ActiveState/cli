@@ -32,15 +32,11 @@ type OutputError struct {
 }
 
 func (o *OutputError) MarshalOutput(f output.Format) interface{} {
-	if f != output.PlainFormatName {
-		return o.error
-	}
-
 	var outLines []string
 	isInputError := locale.IsInputError(o.error)
 
 	// Print what happened
-	if !isInputError {
+	if !isInputError && f == output.PlainFormatName {
 		outLines = append(outLines, output.Title(locale.Tl("err_what_happened", "[ERROR]Something Went Wrong[/RESET]")).String())
 	}
 
@@ -51,7 +47,12 @@ func (o *OutputError) MarshalOutput(f output.Format) interface{} {
 		rerrs = []error{o.error}
 	}
 	for _, errv := range rerrs {
-		outLines = append(outLines, fmt.Sprintf(" [NOTICE][ERROR]x[/RESET] %s", trimError(locale.ErrorMessage(errv))))
+		message := trimError(locale.ErrorMessage(errv))
+		if f == output.PlainFormatName {
+			outLines = append(outLines, fmt.Sprintf(" [NOTICE][ERROR]x[/RESET] %s", message))
+		} else {
+			outLines = append(outLines, message)
+		}
 	}
 
 	// Concatenate error tips
@@ -66,7 +67,8 @@ func (o *OutputError) MarshalOutput(f output.Format) interface{} {
 	errorTips = append(errorTips, locale.Tl("err_help_forum", "[NOTICE]Ask For Help →[/RESET] [ACTIONABLE]{{.V0}}[/RESET]", constants.ForumsURL))
 
 	// Print tips
-	if enableTips := os.Getenv(constants.DisableErrorTipsEnvVarName) != "true"; enableTips {
+	enableTips := os.Getenv(constants.DisableErrorTipsEnvVarName) != "true" && f == output.PlainFormatName
+	if enableTips {
 		outLines = append(outLines, "") // separate error from "Need More Help?" header
 		outLines = append(outLines, output.Title(locale.Tl("err_more_help", "Need More Help?")).String())
 		for _, tip := range errorTips {
@@ -127,32 +129,43 @@ func ReportError(err error, cmd *captain.Command, an analytics.Dispatcher) {
 
 	_, hasMarshaller := err.(output.Marshaller)
 
+	cmdName := cmd.Name()
+	childCmd, findErr := cmd.Find(os.Args[1:])
+	if findErr != nil {
+		logging.Error("Could not find child command: %v", findErr)
+	}
+
+	var flagNames []string
+	for _, flag := range cmd.ActiveFlags() {
+		flagNames = append(flagNames, fmt.Sprintf("--%s", flag.Name))
+	}
+
+	label := []string{cmdName}
+	if childCmd != nil {
+		label = append(label, childCmd.UseFull())
+	}
+	label = append(label, flagNames...)
+
 	// Log error if this isn't a user input error
+	var action string
+	errorMsg := err.Error()
 	if !locale.IsInputError(err) {
 		multilog.Critical("Returning error:\n%s\nCreated at:\n%s", errs.Join(err, "\n").Error(), stack)
+		action = anaConst.ActCommandError
 	} else {
-		cmdName := cmd.Name()
-		childCmd, err2 := cmd.Find(os.Args[1:])
-		if err2 != nil {
-			logging.Error("Could not find child command: %v", err2)
+		action = anaConst.ActCommandInputError
+		for err != nil {
+			if locale.IsInputErrorNonRecursive(err) {
+				errorMsg = locale.ErrorMessage(err)
+				break
+			}
+			err = errors.Unwrap(err)
 		}
-
-		var flagNames []string
-		for _, flag := range cmd.ActiveFlags() {
-			flagNames = append(flagNames, fmt.Sprintf("--%s", flag.Name))
-		}
-
-		trigger := []string{cmdName}
-		if childCmd != nil {
-			trigger = append(trigger, childCmd.UseFull())
-		}
-		trigger = append(trigger, flagNames...)
-
-		logging.Debug("Reporting input error:\n%s\nCreated at:\n%s", errs.Join(err, "\n").Error(), stack)
-		an.Event(anaConst.CatDebug, anaConst.ActInputError, &dimensions.Values{
-			Trigger: p.StrP(strings.Join(trigger, " ")),
-		})
 	}
+
+	an.EventWithLabel(anaConst.CatDebug, action, strings.Join(label, " "), &dimensions.Values{
+		Error: p.StrP(errorMsg),
+	})
 
 	if !locale.HasError(err) && isErrs && !hasMarshaller {
 		multilog.Error("MUST ADDRESS: Error does not have localization: %s", errs.Join(err, "\n").Error())

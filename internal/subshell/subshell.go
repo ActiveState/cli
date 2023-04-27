@@ -146,12 +146,10 @@ func resolveBinaryPath(name string) string {
 }
 
 func ConfigureAvailableShells(shell SubShell, cfg sscommon.Configurable, env map[string]string, identifier sscommon.RcIdentification, userScope bool) error {
-	// Ensure active shell has RC file
-	if shell.IsActive() {
-		err := shell.EnsureRcFileExists()
-		if err != nil {
-			return errs.Wrap(err, "Could not ensure RC file for active shell")
-		}
+	// Ensure the given, detected, and current shell has an RC file or else it will not be considered "available"
+	err := shell.EnsureRcFileExists()
+	if err != nil {
+		return errs.Wrap(err, "Could not ensure RC file for current shell")
 	}
 
 	for _, s := range supportedShells {

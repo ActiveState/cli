@@ -2,10 +2,14 @@ package integration
 
 import (
 	"fmt"
+	"io/ioutil"
 	"net"
+	"os"
 	"path/filepath"
 	"regexp"
 	"runtime"
+	"strconv"
+	"strings"
 	"syscall"
 	"testing"
 	"time"
@@ -14,6 +18,8 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/osutils/autostart"
 	"github.com/ActiveState/cli/internal/svcctl"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
@@ -224,6 +230,73 @@ func (suite *SvcIntegrationTestSuite) TestAutostartConfigEnableDisable() {
 	cp = ts.Spawn("config", "get", constants.AutostartSvcConfigKey)
 	cp.Expect("true")
 	cp.ExpectExitCode(0)
+}
+
+func (suite *SvcIntegrationTestSuite) TestLogRotation() {
+	suite.OnlyRunForTags(tagsuite.Service)
+	ts := e2e.New(suite.T(), true)
+	defer ts.Close()
+
+	logDir := filepath.Join(ts.Dirs.Config, "logs")
+
+	// Create a tranche of 30-day old dummy log files.
+	numFooFiles := 50
+	thirtyDaysOld := time.Now().Add(-24 * time.Hour * 30)
+	for i := 1; i <= numFooFiles; i++ {
+		logFile := filepath.Join(logDir, fmt.Sprintf("foo-%d%s", i, logging.FileNameSuffix))
+		err := fileutils.Touch(logFile)
+		suite.Require().NoError(err, "could not create dummy log file")
+		err = os.Chtimes(logFile, thirtyDaysOld, thirtyDaysOld)
+		suite.Require().NoError(err, "must be able to change file modification times")
+	}
+
+	// Override state-svc log rotation interval from 1 minute to 4 seconds for this test.
+	logRotateInterval := 4 * time.Second
+	os.Setenv(constants.SvcLogRotateIntervalEnvVarName, fmt.Sprintf("%d", logRotateInterval.Milliseconds()))
+	defer os.Unsetenv(constants.SvcLogRotateIntervalEnvVarName)
+
+	// We want the side-effect of spawning state-svc.
+	cp := ts.Spawn("--version")
+	cp.Expect("ActiveState CLI")
+	cp.ExpectExitCode(0)
+
+	initialWait := 2 * time.Second
+	time.Sleep(initialWait) // wait for state-svc to perform initial log rotation
+
+	// Verify the log rotation pruned the dummy log files.
+	files, err := ioutil.ReadDir(logDir)
+	suite.Require().NoError(err)
+	remainingFooFiles := 0
+	for _, file := range files {
+		if strings.HasPrefix(file.Name(), "foo-") {
+			remainingFooFiles++
+		}
+	}
+	suite.Less(remainingFooFiles, numFooFiles, "no foo.log files were cleaned up; expected at least one to be")
+
+	// state-svc is still running, along with its log rotation timer.
+	// Re-create another tranche of 30-day old dummy log files for when the timer fires again.
+	numFooFiles += remainingFooFiles
+	for i := remainingFooFiles + 1; i <= numFooFiles; i++ {
+		logFile := filepath.Join(logDir, fmt.Sprintf("foo-%d%s", i, logging.FileNameSuffix))
+		err := fileutils.Touch(logFile)
+		suite.Require().NoError(err, "could not create dummy log file")
+		err = os.Chtimes(logFile, thirtyDaysOld, thirtyDaysOld)
+		suite.Require().NoError(err, "must be able to change file modification times")
+	}
+
+	time.Sleep(logRotateInterval - initialWait) // wait for another log rotation
+
+	// Verify that another log rotation pruned the dummy log files.
+	files, err = ioutil.ReadDir(logDir)
+	suite.Require().NoError(err)
+	remainingFooFiles = 0
+	for _, file := range files {
+		if strings.HasPrefix(file.Name(), "foo-") {
+			remainingFooFiles++
+		}
+	}
+	suite.Less(remainingFooFiles, numFooFiles, "no more foo.log files were cleaned up (on timer); expected at least one to be")
 }
 
 func TestSvcIntegrationTestSuite(t *testing.T) {

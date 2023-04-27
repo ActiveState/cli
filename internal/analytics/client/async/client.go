@@ -35,6 +35,8 @@ type Client struct {
 	updateTag        string
 	closed           bool
 	sequence         int
+	ci               bool
+	interactive      bool
 }
 
 var _ analytics.Dispatcher = &Client{}
@@ -51,6 +53,8 @@ func New(svcModel *model.SvcModel, cfg *config.Instance, auth *authentication.Au
 	a.output = o
 	a.projectNameSpace = projectNameSpace
 	a.auth = auth
+	a.ci = condition.OnCI()
+	a.interactive = out.Config().Interactive
 
 	if condition.InUnitTest() {
 		return a
@@ -112,6 +116,8 @@ func (a *Client) sendEvent(category, action, label string, dims ...*dimensions.V
 	dim.UserID = &userID
 	dim.Sequence = p.IntP(a.sequence)
 	a.sequence++
+	dim.CI = &a.ci
+	dim.Interactive = &a.interactive
 	dim.Merge(dims...)
 
 	dimMarshalled, err := dim.Marshal()

@@ -166,6 +166,10 @@ const RuntimeUsageSilenceTimeOverrideEnvVarName = "ACTIVESTATE_OVERRIDE_RTUSAGE_
 // SvcAuthPollingRateEnvVarName is used to override the default polling rate for syncing the authenticated state with the svc
 const SvcAuthPollingRateEnvVarName = "ACTIVESTATE_SVC_AUTH_POLLING_RATE"
 
+// StateSvcLogRotateInvervalEnvVarName is the environment variable used to override the default
+// log rotation timer interval (1 minute).
+const SvcLogRotateIntervalEnvVarName = "ACTIVESTATE_CLI_LOG_ROTATE_INTERVAL_MS"
+
 // APIUpdateInfoURL is the URL for our update info server
 const APIUpdateInfoURL = "https://platform.activestate.com/sv/state-update/api/v1"
 

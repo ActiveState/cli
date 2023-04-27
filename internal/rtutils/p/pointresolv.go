@@ -49,6 +49,13 @@ func PBool(v *bool) bool {
 	return *v
 }
 
+func PboolP(v *bool) *bool {
+	if v == nil {
+		return nil
+	}
+	return BoolP(*v)
+}
+
 // IsNil asserts whether the underlying type is nil, which `interface{} == nil` does not
 func IsNil(i interface{}) bool {
 	return i == nil || reflect.ValueOf(i).IsNil()
