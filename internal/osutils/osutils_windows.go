@@ -86,3 +86,8 @@ func InheritEnv(env map[string]string) map[string]string {
 func IsAccessDeniedError(err error) bool {
 	return errors.Is(err, windows.ERROR_ACCESS_DENIED)
 }
+
+// IsSocketNotConnectedError is not applicable on Windows.
+func IsSocketNotConnectedError(err error) bool {
+	return false
+}

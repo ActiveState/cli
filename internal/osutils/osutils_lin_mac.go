@@ -35,3 +35,8 @@ func IsAccessDeniedError(err error) bool {
 	errno, ok := err.(syscall.Errno)
 	return ok && errno == syscall.EPERM
 }
+
+func IsSocketNotConnectedError(err error) bool {
+	errno, ok := err.(syscall.Errno)
+	return ok && errno == syscall.ENOTCONN
+}

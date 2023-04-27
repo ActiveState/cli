@@ -7,6 +7,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/ipc/internal/flisten"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/osutils"
 )
 
 type Client struct {
@@ -34,6 +35,9 @@ func (c *Client) Request(ctx context.Context, key string) (string, error) {
 
 	_, err = conn.Write([]byte(key))
 	if err != nil {
+		if osutils.IsSocketNotConnectedError(err) {
+			err = asServerDownError(err)
+		}
 		return "", errs.Wrap(err, "Failed to write to server connection")
 	}
 
