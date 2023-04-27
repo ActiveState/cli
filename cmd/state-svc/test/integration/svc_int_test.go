@@ -239,13 +239,13 @@ type autostartApp interface {
 }
 
 func (suite *SvcIntegrationTestSuite) checkEnabled(appPath string, opts autostart.Options, homeDir string, expect bool) {
-	timeout := time.After(1 * time.Minute)
+	timeout := time.After(10 * time.Second)
 	tick := time.Tick(1 * time.Second)
 	for {
 		select {
 		case <-timeout:
 			if runtime.GOOS == "linux" {
-				)suite.Fail(fmt.Sprintf("autostart has not been changed, profile file: %s", string(fileutils.ReadFileUnsafe(filepath.Join(homeDir, ".profile"))))
+				suite.Fail(fmt.Sprintf("autostart has not been changed, profile file: %s", string(fileutils.ReadFileUnsafe(filepath.Join(homeDir, ".profile")))))
 			} else {
 				suite.Fail("autostart has not been changed")
 			}
