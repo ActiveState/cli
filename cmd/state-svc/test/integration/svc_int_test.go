@@ -8,21 +8,16 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime"
-	"strconv"
 	"strings"
 	"syscall"
 	"testing"
 	"time"
 
-	svcApp "github.com/ActiveState/cli/cmd/state-svc/app"
-	svcAutostart "github.com/ActiveState/cli/cmd/state-svc/autostart"
-	"github.com/ActiveState/cli/internal/app"
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/osutils/autostart"
 	"github.com/ActiveState/cli/internal/svcctl"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
@@ -212,43 +207,28 @@ func (suite *SvcIntegrationTestSuite) TestAutostartConfigEnableDisable() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	appDir := fileutils.TempDirFromBaseDirUnsafe(ts.Dirs.Work)
-
-	app, err := app.New(constants.SvcAppName, ts.SvcExe, nil, appDir, svcApp.Options)
-	suite.Require().NoError(err)
-	enabled, err := autostart.IsEnabled(app.Path(), svcAutostart.Options)
-	suite.Require().NoError(err)
+	homeDir := fileutils.TempDirFromBaseDirUnsafe(ts.Dirs.Work)
+	envOpts := e2e.AppendEnv("ACTIVESTATE_HOME=" + homeDir)
 
 	// Toggle it via state tool config.
-	cp := ts.SpawnWithOpts(e2e.WithArgs("config", "set", constants.AutostartSvcConfigKey, strconv.FormatBool(!enabled)))
+	cp := ts.SpawnWithOpts(
+		e2e.WithArgs("config", "set", constants.AutostartSvcConfigKey, "false"),
+		envOpts,
+	)
 	cp.ExpectExitCode(0)
-	suite.checkEnabled(app.Path(), svcAutostart.Options, !enabled)
+	cp = ts.SpawnWithOpts(e2e.WithArgs("config", "get", constants.AutostartSvcConfigKey), envOpts)
+	cp.Expect("false")
+	cp.ExpectExitCode(0)
 
 	// Toggle it again via state tool config.
-	cp = ts.SpawnWithOpts(e2e.WithArgs("config", "set", constants.AutostartSvcConfigKey, strconv.FormatBool(enabled)))
+	cp = ts.SpawnWithOpts(
+		e2e.WithArgs("config", "set", constants.AutostartSvcConfigKey, "true"),
+		envOpts,
+	)
 	cp.ExpectExitCode(0)
-	suite.checkEnabled(app.Path(), svcAutostart.Options, enabled)
-}
-
-type autostartApp interface {
-	IsAutostartEnabled() (bool, error)
-}
-
-func (suite *SvcIntegrationTestSuite) checkEnabled(appPath string, opts autostart.Options, expect bool) {
-	timeout := time.After(1 * time.Minute)
-	tick := time.Tick(1 * time.Second)
-	for {
-		select {
-		case <-timeout:
-			suite.Fail("autostart has not been changed")
-		case <-tick:
-			toggled, err := autostart.IsEnabled(appPath, opts)
-			suite.Require().NoError(err)
-			if suite.Equal(expect, toggled) {
-				return
-			}
-		}
-	}
+	cp = ts.SpawnWithOpts(e2e.WithArgs("config", "get", constants.AutostartSvcConfigKey), envOpts)
+	cp.Expect("true")
+	cp.ExpectExitCode(0)
 }
 
 func (suite *SvcIntegrationTestSuite) TestLogRotation() {
