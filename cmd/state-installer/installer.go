@@ -227,9 +227,9 @@ func isStateExecutable(name string) bool {
 	return false
 }
 
-func installedOnPath(installRoot, branch string) (bool, string, string, error) {
+func installedOnPath(installRoot, branch string) (bool, string, error) {
 	if !fileutils.DirExists(installRoot) {
-		return false, "", "", nil
+		return false, "", nil
 	}
 
 	// This is not using appinfo on purpose because we want to deal with legacy installation formats, which appinfo does not
@@ -245,9 +245,9 @@ func installedOnPath(installRoot, branch string) (bool, string, string, error) {
 	}
 	for _, candidate := range candidates {
 		if fileutils.TargetExists(candidate) {
-			return true, installRoot, candidate, nil
+			return true, installRoot, nil
 		}
 	}
 
-	return false, installRoot, stateCmd, nil
+	return false, installRoot, nil
 }
