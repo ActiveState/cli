@@ -54,6 +54,7 @@ var (
 
 	retryableStatusCodes = []int{
 		// 4XX Status codes
+
 		// The server timed out waiting for the request from client.
 		http.StatusRequestTimeout,
 		// Sometimes the server puts a Retry-After response header
@@ -64,9 +65,7 @@ var (
 		// processing a request that might be replayed.
 		http.StatusTooEarly,
 		// 5XX Status codes
-		// The server is currently unable to handle the request. Without
-		// any other information, the client may retry the request.
-		http.StatusInternalServerError,
+
 		// The server, while acting as a gateway or proxy, did not receive
 		// a valid response.
 		http.StatusBadGateway,
@@ -181,32 +180,28 @@ func transport() http.RoundTripper {
 // status codes differently.
 func retryPolicy(ctx context.Context, resp *http.Response, err error) (bool, error) {
 	// do not retry on context.Canceled or context.DeadlineExceeded
-	if ctx.Err() != nil {
+	if ctx.Err() != nil || err == nil {
 		return false, ctx.Err()
 	}
 
-	if err != nil {
-		if v, ok := err.(*url.Error); ok {
-			// Don't retry if the error was due to too many redirects.
-			if redirectsErrorRe.MatchString(v.Error()) {
-				return false, nil
-			}
-
-			// Don't retry if the error was due to an invalid protocol scheme.
-			if schemeErrorRe.MatchString(v.Error()) {
-				return false, nil
-			}
-
-			// Don't retry if the error was due to TLS cert verification failure.
-			if _, ok := v.Err.(x509.UnknownAuthorityError); ok {
-				return false, nil
-			}
+	if v, ok := err.(*url.Error); ok {
+		// Don't retry if the error was due to too many redirects.
+		if redirectsErrorRe.MatchString(v.Error()) {
+			return false, nil
 		}
 
-		// The error is likely recoverable so retry.
-		return true, nil
+		// Don't retry if the error was due to an invalid protocol scheme.
+		if schemeErrorRe.MatchString(v.Error()) {
+			return false, nil
+		}
+
+		// Don't retry if the error was due to TLS cert verification failure.
+		if _, ok := v.Err.(x509.UnknownAuthorityError); ok {
+			return false, nil
+		}
 	}
 
+	// The error is likely recoverable so retry.
 	return isRetryableStatus(resp.StatusCode), nil
 }
 
