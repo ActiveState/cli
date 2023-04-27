@@ -215,31 +215,43 @@ func (suite *SvcIntegrationTestSuite) TestAutostartConfigEnableDisable() {
 	enabled, err := autostart.IsEnabled(app.Path(), svcAutostart.Options)
 	suite.Require().NoError(err)
 
+	homeDir := fileutils.TempDirFromBaseDirUnsafe(ts.Dirs.Work)
+
 	// Toggle it via state tool config.
-	cp := ts.SpawnWithOpts(e2e.WithArgs("config", "set", constants.AutostartSvcConfigKey, strconv.FormatBool(!enabled)))
+	cp := ts.SpawnWithOpts(
+		e2e.WithArgs("config", "set", constants.AutostartSvcConfigKey, strconv.FormatBool(!enabled)),
+		e2e.AppendEnv("HOME="+homeDir),
+	)
 	cp.ExpectExitCode(0)
 	suite.checkEnabled(app.Path(), svcAutostart.Options, !enabled)
 
 	// Toggle it again via state tool config.
-	cp = ts.SpawnWithOpts(e2e.WithArgs("config", "set", constants.AutostartSvcConfigKey, strconv.FormatBool(enabled)))
+	cp = ts.SpawnWithOpts(
+		e2e.WithArgs("config", "set", constants.AutostartSvcConfigKey, strconv.FormatBool(enabled)),
+		e2e.AppendEnv("HOME="+homeDir),
+	)
 	cp.ExpectExitCode(0)
-	suite.checkEnabled(app.Path(), svcAutostart.Options, enabled)
+	suite.checkEnabled(app.Path(), svcAutostart.Options, homeDir, enabled)
 }
 
 type autostartApp interface {
 	IsAutostartEnabled() (bool, error)
 }
 
-func (suite *SvcIntegrationTestSuite) checkEnabled(appPath string, opts autostart.Options, expect bool) {
+func (suite *SvcIntegrationTestSuite) checkEnabled(appPath string, opts autostart.Options, homeDir string, expect bool) {
 	timeout := time.After(1 * time.Minute)
 	tick := time.Tick(1 * time.Second)
 	for {
 		select {
 		case <-timeout:
-			suite.Fail("autostart has not been changed")
+			if runtime.GOOS == "linux" {
+				suite.Fail(fmt.Sprintf("autostart has not been changed, profile file: %s", filepath.Join(homeDir, ".profile")))
+			} else {
+				suite.Fail("autostart has not been changed")
+			}
 		case <-tick:
 			toggled, err := autostart.IsEnabled(appPath, opts)
-			suite.Require().NoError(err)
+			suite.NoError(err)
 			if suite.Equal(expect, toggled) {
 				return
 			}
