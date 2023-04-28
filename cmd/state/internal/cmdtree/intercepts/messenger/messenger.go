@@ -8,6 +8,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/graph"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/rtutils/p"
@@ -28,25 +29,30 @@ func (m *Messenger) Interceptor(next captain.ExecuteFunc) captain.ExecuteFunc {
 			return nil
 		}
 
-		cmds := cmd.JoinedSubCommandNames()
+		cmds := cmd.JoinedCommandNames()
 		flags := cmd.ActiveFlagNames()
 
 		messages, err := m.svcModel.CheckMessages(context.Background(), cmds, flags)
 		if err != nil {
 			multilog.Error("Could not report messages as CheckMessages return an error: %s", errs.JoinMessage(err))
-			return nil // Don't interrupt the user for messaging failures
 		}
 
-		if err := m.PrintByPlacement(messages, graph.MessagePlacementTypeBeforeCmd); err != nil {
-			return errs.Wrap(err, "message error occurred before cmd")
+		logging.Debug("Printing %d messages", len(messages))
+
+		if len(messages) > 0 {
+			if err := m.PrintByPlacement(messages, graph.MessagePlacementTypeBeforeCmd); err != nil {
+				return errs.Wrap(err, "message error occurred before cmd")
+			}
 		}
 
 		if err := next(cmd, args); err != nil {
 			return err
 		}
 
-		if err := m.PrintByPlacement(messages, graph.MessagePlacementTypeAfterCmd); err != nil {
-			return errs.Wrap(err, "message error occurred after cmd")
+		if len(messages) > 0 {
+			if err := m.PrintByPlacement(messages, graph.MessagePlacementTypeAfterCmd); err != nil {
+				return errs.Wrap(err, "message error occurred after cmd")
+			}
 		}
 
 		return nil
@@ -58,6 +64,7 @@ func (m *Messenger) PrintByPlacement(messages []*graph.MessageInfo, placement gr
 
 	for _, message := range messages {
 		if message.Placement != placement {
+			logging.Debug("Skipping message %s as it's placement (%s) does not match %s", message.ID, message.Placement, placement)
 			continue
 		}
 
@@ -65,15 +72,20 @@ func (m *Messenger) PrintByPlacement(messages []*graph.MessageInfo, placement gr
 			m.out.Notice("") // Line break after
 		}
 
+		logging.Debug("Printing message: %s", message.ID)
 		m.out.Notice(message.Message)
 
 		if placement == graph.MessagePlacementTypeBeforeCmd {
 			m.out.Notice("") // Line break before
 		}
 
-		if message.Interrupt == graph.MessageInterruptTypePrompt && m.out.Config().Interactive {
-			m.out.Print(locale.Tl("messenger_prompt_continue", "Press ENTER to continue."))
-			fmt.Scanln(p.StrP("")) // Wait for input from user
+		if message.Interrupt == graph.MessageInterruptTypePrompt {
+			if m.out.Config().Interactive {
+				m.out.Print(locale.Tl("messenger_prompt_continue", "Press ENTER to continue."))
+				fmt.Scanln(p.StrP("")) // Wait for input from user
+			} else {
+				logging.Debug("Skipping message prompt as we're not in interactive mode")
+			}
 		}
 
 		if message.Interrupt == graph.MessageInterruptTypeExit {

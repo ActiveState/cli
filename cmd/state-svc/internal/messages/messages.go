@@ -13,6 +13,7 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/graph"
 	"github.com/ActiveState/cli/internal/httputil"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/poller"
 	"github.com/ActiveState/cli/internal/strutils"
 	auth "github.com/ActiveState/cli/pkg/platform/authentication"
@@ -77,6 +78,8 @@ func (m *Messages) Check(command string, flags []string) ([]*graph.MessageInfo, 
 	conditionParams.Command = command
 	conditionParams.Flags = flags
 
+	logging.Debug("Checking %d messages with params: %#v", len(allMessages), *conditionParams)
+
 	lastReportMap := m.cfg.GetStringMap(ConfigKeyLastReport)
 	msgs, err := check(conditionParams, allMessages, lastReportMap, time.Now())
 	if err != nil {
@@ -94,20 +97,22 @@ func check(params *ConditionParams, messages []*graph.MessageInfo, lastReportMap
 	funcMap := conditionFuncMap()
 	filteredMessages := []*graph.MessageInfo{}
 	for _, message := range messages {
+		logging.Debug("Checking message %s", message.ID)
 		// Ensure we don't show the same message too often
 		if lastReport, ok := lastReportMap[message.ID]; ok {
 			lastReportTime, err := time.Parse(time.RFC3339, lastReport.(string))
 			if err != nil {
-				return nil, errs.New("Could not parse last reported time as it's not a valid RFC3339 value: %v", lastReport)
+				return nil, errs.New("Could not parse last reported time for message %s as it's not a valid RFC3339 value: %v", message.ID, lastReport)
 			}
 
 			lastReportTimeAgo := baseTime.Sub(lastReportTime)
 			showMessage, err := repeatValid(message.Repeat, lastReportTimeAgo)
 			if err != nil {
-				return nil, errs.Wrap(err, "Could not validate repeat")
+				return nil, errs.Wrap(err, "Could not validate repeat for message %s", message.ID)
 			}
 
 			if !showMessage {
+				logging.Debug("Skipping message %s as it was shown %s ago", message.ID, lastReportTimeAgo)
 				continue
 			}
 		}
@@ -119,9 +124,13 @@ func check(params *ConditionParams, messages []*graph.MessageInfo, lastReportMap
 				return nil, errs.Wrap(err, "Could not parse condition template for message %s", message.ID)
 			}
 			if result == "true" {
+				logging.Debug("Including message %s as condition %s evaluated to %s", message.ID, message.Condition, result)
 				filteredMessages = append(filteredMessages, message)
+			} else {
+				logging.Debug("Skipping message %s as condition %s evaluated to %s", message.ID, message.Condition, result)
 			}
 		} else {
+			logging.Debug("Including message %s as it has no condition", message.ID)
 			filteredMessages = append(filteredMessages, message)
 		}
 	}
