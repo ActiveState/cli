@@ -49,19 +49,6 @@ func New(prime primeable) *Reset {
 	}
 }
 
-type resetOutput struct {
-	message  string
-	CommitID string `json:"commitID"`
-}
-
-func (o *resetOutput) MarshalOutput(format output.Format) interface{} {
-	return o.message
-}
-
-func (o *resetOutput) MarshalStructured(format output.Format) interface{} {
-	return o
-}
-
 func (r *Reset) Run(params *Params) error {
 	if r.project == nil {
 		return locale.NewInputError("err_no_project")
@@ -113,10 +100,14 @@ func (r *Reset) Run(params *Params) error {
 		return locale.WrapError(err, "err_refresh_runtime")
 	}
 
-	r.out.Print(&resetOutput{
+	r.out.Print(output.Prepare(
 		locale.Tl("reset_success", "Successfully reset to commit: [NOTICE]{{.V0}}[/RESET]", commitID.String()),
-		commitID.String(),
-	})
+		&struct {
+			CommitID string `json:"commitID"`
+		}{
+			commitID.String(),
+		},
+	))
 
 	return nil
 }

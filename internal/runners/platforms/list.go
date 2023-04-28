@@ -37,28 +37,18 @@ func (l *List) Run() error {
 		return errs.Wrap(err, "Unable to get commit ID")
 	}
 
-	platforms, err := model.FetchPlatformsForCommit(*targetCommitID)
+	modelPlatforms, err := model.FetchPlatformsForCommit(*targetCommitID)
 	if err != nil {
 		return errs.Wrap(err, "Unable to get platforms for commit")
 	}
 
-	l.out.Print(&platformsOutput{makePlatformsFromModelPlatforms(platforms)})
-	return nil
-}
-
-type platformsOutput struct {
-	Platforms []*Platform `json:"platforms"`
-}
-
-func (o *platformsOutput) MarshalOutput(format output.Format) interface{} {
-	if len(o.Platforms) == 0 {
-		return locale.Tl("platforms_list_no_platforms", "There are no platforms for this project.")
+	platforms := makePlatformsFromModelPlatforms(modelPlatforms)
+	var plainOutput interface{} = platforms
+	if len(platforms) == 0 {
+		plainOutput = locale.Tl("platforms_list_no_platforms", "There are no platforms for this project.")
 	}
-	return o.Platforms
-}
-
-func (o *platformsOutput) MarshalStructured(format output.Format) interface{} {
-	return o.Platforms
+	l.out.Print(output.Prepare(plainOutput, platforms))
+	return nil
 }
 
 func targetedCommitID(commitID, projName, projOrg, branchName string) (*strfmt.UUID, error) {

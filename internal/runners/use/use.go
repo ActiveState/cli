@@ -63,21 +63,6 @@ func NewUse(prime primeable) *Use {
 	}
 }
 
-type useOutput struct {
-	message     string
-	Namespace   string `json:"namespace"`
-	Path        string `json:"path"`
-	Executables string `json:"executables"`
-}
-
-func (o *useOutput) MarshalOutput(format output.Format) interface{} {
-	return o.message
-}
-
-func (o *useOutput) MarshalStructured(format output.Format) interface{} {
-	return o
-}
-
 func (u *Use) Run(params *Params) error {
 	logging.Debug("Use %v", params.Namespace)
 
@@ -107,12 +92,18 @@ func (u *Use) Run(params *Params) error {
 	}
 
 	execDir := setup.ExecDir(rti.Target().Dir())
-	u.out.Print(&useOutput{
+	u.out.Print(output.Prepare(
 		locale.Tl("use_project_statement", "", proj.NamespaceString(), proj.Dir(), execDir),
-		proj.NamespaceString(),
-		proj.Dir(),
-		execDir,
-	})
+		&struct {
+			Namespace   string `json:"namespace"`
+			Path        string `json:"path"`
+			Executables string `json:"executables"`
+		}{
+			proj.NamespaceString(),
+			proj.Dir(),
+			execDir,
+		},
+	))
 
 	if rt.GOOS == "windows" {
 		u.out.Notice(locale.T("use_reset_notice_windows"))

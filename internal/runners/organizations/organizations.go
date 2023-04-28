@@ -4,12 +4,11 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
-	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/model"
 )
 
 type Organizations struct {
-	output.Outputer
+	out output.Outputer
 }
 
 type primeable interface {
@@ -23,48 +22,22 @@ func NewOrganizations(prime primeable) *Organizations {
 type OrgParams struct {
 }
 
-// Run the organizations command.
-func (o *Organizations) Run(params *OrgParams) error {
-	return run(params, o.Outputer)
-}
-
-func run(params *OrgParams, out output.Outputer) error {
-	orgs, err := model.FetchOrganizations()
-	if err != nil {
-		return locale.WrapError(err, "organizations_err")
-	}
-
-	if len(orgs) == 0 {
-		out.Notice(locale.T("organization_no_orgs"))
-		return nil
-	}
-
-	data, err := newOrgOutput(orgs)
-	if err != nil {
-		return locale.WrapError(err, "err_run_orgs_data", "Could not collect information about your organizations.")
-	}
-
-	out.Print(data)
-	return nil
-}
-
-type orgData struct {
+type orgOutput struct {
 	Name            string `json:"name,omitempty"`
 	URLName         string `json:"URLName,omitempty" opts:"hidePlain"`
 	Tier            string `json:"tier,omitempty" locale:"tier,Tier"`
 	PrivateProjects bool   `json:"privateProjects" locale:"privateprojects,Private Projects"`
 }
 
-type orgOutput []orgData
+func (o *Organizations) Run(params *OrgParams) error {
+	modelOrgs, err := model.FetchOrganizations()
+	if err != nil {
+		return locale.WrapError(err, "organizations_err")
+	}
 
-func (o *orgOutput) MarshalStructured(format output.Format) interface{} {
-	return o
-}
-
-func newOrgOutput(orgs []*mono_models.Organization) (*orgOutput, error) {
 	tiers, err := model.FetchTiers()
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	type tierInfo struct {
@@ -79,8 +52,8 @@ func newOrgOutput(orgs []*mono_models.Organization) (*orgOutput, error) {
 		}
 	}
 
-	orgd := make(orgOutput, len(orgs))
-	for i, org := range orgs {
+	orgs := make([]orgOutput, len(modelOrgs))
+	for i, org := range modelOrgs {
 		var tierPrivate bool
 		tierTitle := "Unknown"
 		t, ok := tiersLookup[org.Tier]
@@ -88,12 +61,18 @@ func newOrgOutput(orgs []*mono_models.Organization) (*orgOutput, error) {
 			tierPrivate = t.private
 			tierTitle = t.title
 		}
-		orgd[i] = orgData{
+		orgs[i] = orgOutput{
 			Name:            org.DisplayName,
 			URLName:         org.URLname,
 			Tier:            tierTitle,
 			PrivateProjects: tierPrivate,
 		}
 	}
-	return &orgd, nil
+
+	var plainOutput interface{} = orgs
+	if len(orgs) == 0 {
+		plainOutput = locale.T("organization_no_orgs")
+	}
+	o.out.Print(output.Prepare(plainOutput, orgs))
+	return nil
 }

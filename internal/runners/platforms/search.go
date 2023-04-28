@@ -1,6 +1,7 @@
 package platforms
 
 import (
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
@@ -23,32 +24,12 @@ func NewSearch(prime primer.Outputer) *Search {
 func (s *Search) Run() error {
 	logging.Debug("Execute platforms search")
 
-	res, err := newSearchOutput()
+	modelPlatforms, err := model.FetchPlatforms()
 	if err != nil {
-		return err
+		return errs.Wrap(err, "Unable to fetch platforms")
 	}
 
-	s.out.Print(res)
+	platforms := makePlatformsFromModelPlatforms(modelPlatforms)
+	s.out.Print(output.Prepare(platforms, platforms))
 	return nil
-}
-
-type searchOutput struct {
-	Platforms []*Platform `json:"platforms"`
-}
-
-func (o *searchOutput) MarshalStructured(format output.Format) interface{} {
-	return o
-}
-
-func newSearchOutput() (*searchOutput, error) {
-	platforms, err := model.FetchPlatforms()
-	if err != nil {
-		return nil, err
-	}
-
-	result := searchOutput{
-		Platforms: makePlatformsFromModelPlatforms(platforms),
-	}
-
-	return &result, nil
 }

@@ -75,13 +75,11 @@ func (i *Info) Run(params InfoRunParams, nstype model.NamespaceType) error {
 	}
 
 	res := newInfoResult(pkg.Ingredient, ingredientVersion, authors, pkg.Versions)
-	out := &infoOutput{
+	i.out.Print(&infoOutput{
 		i.out,
 		res,
 		whatsNextMessages(res.name, res.Versions),
-	}
-
-	i.out.Print(out)
+	})
 
 	return nil
 }

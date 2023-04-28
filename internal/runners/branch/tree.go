@@ -5,7 +5,6 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/model"
 )
@@ -17,11 +16,6 @@ type branchNode struct {
 
 type tree map[branchNode]tree
 
-type branchOutput struct {
-	branches    mono_models.Branches
-	localBranch string
-}
-
 const (
 	prefixLink string = "│"
 	prefixMid  string = "├─"
@@ -30,10 +24,6 @@ const (
 	branchFormatting      string = "[NOTICE]%s[/RESET]"
 	localBranchFormatting string = "[ACTIONABLE]%s[/RESET] [DISABLED](Current)[/RESET]"
 )
-
-func (o *branchOutput) MarshalOutput(format output.Format) interface{} {
-	return branchTree(o.branches, o.localBranch)
-}
 
 func branchTree(branches mono_models.Branches, localBranch string) string {
 	tree := make(tree)
@@ -156,8 +146,4 @@ func isCompleted(levelsCompleted []int, level int) bool {
 		}
 	}
 	return false
-}
-
-func (o *branchOutput) MarshalStructured(format output.Format) interface{} {
-	return o.branches
 }

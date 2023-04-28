@@ -61,8 +61,7 @@ func (s *Search) Run(params SearchRunParams, nstype model.NamespaceType) error {
 			locale.Tl("search_request_"+ns.Type().String(), ""),
 		)
 	}
-	results := formatSearchResults(packages)
-	s.out.Print(results)
+	s.out.Print(formatSearchResults(packages))
 
 	return nil
 }

@@ -24,18 +24,6 @@ func NewLanguages(prime primeable) *Languages {
 	}
 }
 
-type languagesOutput struct {
-	Languages []model.Language
-}
-
-func (o *languagesOutput) MarshalOutput(f output.Format) interface{} {
-	return o.Languages
-}
-
-func (o *languagesOutput) MarshalStructured(f output.Format) interface{} {
-	return o.Languages
-}
-
 // Run executes the list behavior.
 func (l *Languages) Run() error {
 	if l.project == nil {
@@ -61,14 +49,10 @@ func (l *Languages) Run() error {
 		return locale.WrapError(err, "err_fetching_languages", "Cannot obtain languages")
 	}
 
-	formatLangs(langs)
-
-	l.out.Print(&languagesOutput{langs})
-	return nil
-}
-
-func formatLangs(langs []model.Language) {
 	for i := range langs {
 		langs[i].Name = strings.Title(langs[i].Name)
 	}
+
+	l.out.Print(output.Prepare(langs, langs))
+	return nil
 }

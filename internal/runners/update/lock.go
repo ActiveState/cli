@@ -55,20 +55,6 @@ func NewLock(prime primeable) *Lock {
 	}
 }
 
-type lockOutput struct {
-	message string
-	Channel string `json:"channel"`
-	Version string `json:"version"`
-}
-
-func (o *lockOutput) MarshalOutput(format output.Format) interface{} {
-	return o.message
-}
-
-func (o *lockOutput) MarshalStructured(format output.Format) interface{} {
-	return o
-}
-
 func (l *Lock) Run(params *LockParams) error {
 	if l.project == nil {
 		return locale.NewInputError("err_no_project")
@@ -114,11 +100,16 @@ func (l *Lock) Run(params *LockParams) error {
 		return locale.WrapError(err, "err_update_projectfile", "Could not update projectfile")
 	}
 
-	l.out.Print(&lockOutput{
+	l.out.Print(output.Prepare(
 		locale.Tl("version_locked", "Version locked at {{.V0}}@{{.V1}}", channel, lockVersion),
-		channel,
-		lockVersion,
-	})
+		&struct {
+			Channel string `json:"channel"`
+			Version string `json:"version"`
+		}{
+			channel,
+			lockVersion,
+		},
+	))
 	return nil
 }
 

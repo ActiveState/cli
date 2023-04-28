@@ -76,19 +76,6 @@ func New(prime primeable) *Switch {
 	}
 }
 
-type switchOutput struct {
-	message string
-	Branch  string `json:"branch"`
-}
-
-func (o *switchOutput) MarshalOutput(format output.Format) interface{} {
-	return o.message
-}
-
-func (o *switchOutput) MarshalStructured(format output.Format) interface{} {
-	return o
-}
-
 func (s *Switch) Run(params SwitchParams) error {
 	logging.Debug("ExecuteSwitch")
 
@@ -134,10 +121,14 @@ func (s *Switch) Run(params SwitchParams) error {
 		return locale.WrapError(err, "err_refresh_runtime")
 	}
 
-	s.out.Print(&switchOutput{
+	s.out.Print(output.Prepare(
 		locale.Tl("branch_switch_success", "Successfully switched to {{.V0}}: [NOTICE]{{.V1}}[/RESET]", identifier.Locale(), params.Identifier),
-		params.Identifier,
-	})
+		&struct {
+			Branch string `json:"branch"`
+		}{
+			params.Identifier,
+		},
+	))
 
 	return nil
 }

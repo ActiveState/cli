@@ -63,6 +63,7 @@ type showOutput struct {
 	output output.Outputer
 	data   outputData
 }
+
 type outputData struct {
 	ProjectURL string `json:"project_url" locale:"project_url,Project URL"`
 	RuntimeDetails

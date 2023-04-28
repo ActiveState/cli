@@ -54,19 +54,6 @@ func New(prime primeable) *Revert {
 	}
 }
 
-type revertOutput struct {
-	message         string
-	CurrentCommitID string `json:"current_commit_id"`
-}
-
-func (o *revertOutput) MarshalOutput(format output.Format) interface{} {
-	return o.message
-}
-
-func (o *revertOutput) MarshalStructured(format output.Format) interface{} {
-	return o
-}
-
 func (r *Revert) Run(params *Params) error {
 	if r.project == nil {
 		return locale.NewInputError("err_no_project")
@@ -151,10 +138,14 @@ func (r *Revert) Run(params *Params) error {
 		return locale.WrapError(err, "err_revert_set_commit", "Could not set revert commit ID in projectfile")
 	}
 
-	r.out.Print(&revertOutput{
+	r.out.Print(output.Prepare(
 		locale.Tl("revert_success", "Successfully reverted{{.V0}} commit: {{.V1}}", preposition, params.CommitID),
-		revertCommit.CommitID.String(),
-	})
+		&struct {
+			CurrentCommitID string `json:"current_commit_id"`
+		}{
+			revertCommit.CommitID.String(),
+		},
+	))
 	r.out.Notice(locale.T("operation_success_local"))
 	return nil
 }

@@ -8,51 +8,39 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-type outputFormat struct {
-	print interface{}
-}
-
-func (f *outputFormat) MarshalOutput(format Format) interface{} {
-	return f.print
-}
-
-func (f *outputFormat) MarshalStructured(format Format) interface{} {
-	return f.print
-}
-
 func TestNew(t *testing.T) {
 	tests := []struct {
 		name        string
 		formatName  string
-		print       *outputFormat
+		print       interface{}
 		expectedOut string
 		expectedErr string
 	}{
 		{
 			"plain",
 			"plain",
-			&outputFormat{"hello"},
+			"hello",
 			"hello\n",
 			"",
 		},
 		{
 			"json",
 			"json",
-			&outputFormat{"hello"},
+			"hello",
 			`"hello"` + "\x00\n",
 			"",
 		},
 		{
 			"editor",
 			"editor",
-			&outputFormat{"hello"},
+			"hello",
 			`"hello"` + "\x00\n",
 			"",
 		},
 		{
 			"editor.v0",
 			"editor.v0",
-			&outputFormat{"hello"},
+			"hello",
 			`"hello"` + "\n",
 			"",
 		},
@@ -72,7 +60,7 @@ func TestNew(t *testing.T) {
 			outputer, err := New(tt.formatName, cfg)
 			require.NoError(t, err)
 
-			outputer.Print(tt.print)
+			outputer.Print(Prepare(tt.print, tt.print))
 
 			assert.Equal(t, tt.expectedOut, outWriter.String(), "Output did not match")
 			assert.Equal(t, tt.expectedErr, errWriter.String(), "Errors did not match")

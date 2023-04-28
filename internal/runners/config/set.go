@@ -32,20 +32,6 @@ func NewSet(prime primeable) *Set {
 	return &Set{prime.Output(), prime.Config(), prime.SvcModel(), prime.Analytics()}
 }
 
-type setOutput struct {
-	message string
-	Name    string      `json:"name"`
-	Value   interface{} `json:"value"`
-}
-
-func (o *setOutput) MarshalOutput(format output.Format) interface{} {
-	return o.message
-}
-
-func (o *setOutput) MarshalStructured(format output.Format) interface{} {
-	return o
-}
-
 func (s *Set) Run(params SetParams) error {
 	// Cast to option type if applicable
 	var value interface{}
@@ -93,11 +79,16 @@ func (s *Set) Run(params SetParams) error {
 	}
 	s.sendEvent(key, params.Value, option)
 
-	s.out.Print(&setOutput{
+	s.out.Print(output.Prepare(
 		locale.Tl("config_set_success", "Successfully set config key: {{.V0}} to {{.V1}}", key, params.Value),
-		key,
-		params.Value,
-	})
+		&struct {
+			Name  string      `json:"name"`
+			Value interface{} `json:"value"`
+		}{
+			key,
+			params.Value,
+		},
+	))
 	return nil
 }
 

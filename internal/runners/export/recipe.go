@@ -31,18 +31,6 @@ type RecipeParams struct {
 	Pretty   bool
 }
 
-type recipeOutput struct {
-	json []byte
-}
-
-func (o *recipeOutput) MarshalOutput(format output.Format) interface{} {
-	return o.json
-}
-
-func (o *recipeOutput) MarshalStructured(format output.Format) interface{} {
-	return o.json
-}
-
 // Run processes the `export recipe` command.
 func (r *Recipe) Run(params *RecipeParams) error {
 	logging.Debug("Execute")
@@ -60,7 +48,7 @@ func (r *Recipe) Run(params *RecipeParams) error {
 		}
 	}
 
-	r.Outputer.Print(&recipeOutput{data})
+	r.Outputer.Print(output.Prepare(data, data))
 	return nil
 }
 

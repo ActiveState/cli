@@ -24,19 +24,6 @@ func NewAdd(prime primeable) *Add {
 	}
 }
 
-type addOutput struct {
-	message string
-	Branch  string `json:"branch"`
-}
-
-func (o *addOutput) MarshalOutput(format output.Format) interface{} {
-	return o.message
-}
-
-func (o *addOutput) MarshalStructured(format output.Format) interface{} {
-	return o
-}
-
 func (a *Add) Run(params AddParams) error {
 	logging.Debug("ExecuteAdd")
 
@@ -65,10 +52,12 @@ func (a *Add) Run(params AddParams) error {
 		return locale.WrapError(err, "err_add_branch_update_tracking", "Could not update branch: {{.V0}} with tracking information", params.Label)
 	}
 
-	a.out.Print(&addOutput{
+	a.out.Print(output.Prepare(
 		locale.Tl("branch_add_success", "Successfully added branch: {{.V0}}", params.Label),
-		params.Label,
-	})
+		&struct {
+			Branch string `json:"branch"`
+		}{params.Label},
+	))
 
 	return nil
 }

@@ -32,30 +32,6 @@ type scriptLine struct {
 	Description string `json:"description,omitempty"`
 }
 
-type scriptsOutput []scriptLine
-
-func newScriptsOutput(scripts []*project.Script) *scriptsOutput {
-	var rows scriptsOutput
-	for _, s := range scripts {
-		row := scriptLine{
-			s.Name(), s.Description(),
-		}
-		rows = append(rows, row)
-	}
-	return &rows
-}
-
-func (o *scriptsOutput) MarshalOutput(format output.Format) interface{} {
-	if len(*o) == 0 {
-		return locale.T("scripts_no_scripts")
-	}
-	return o
-}
-
-func (o *scriptsOutput) MarshalStructured(format output.Format) interface{} {
-	return o
-}
-
 func (s *Scripts) Run() error {
 	logging.Debug("Execute scripts command")
 
@@ -66,7 +42,16 @@ func (s *Scripts) Run() error {
 
 	name, owner := s.project.Name(), s.project.Owner()
 	logging.Debug("listing scripts for org=%s, project=%s", owner, name)
-	s.output.Print(newScriptsOutput(s.project.Scripts()))
 
+	scripts := make([]scriptLine, len(s.project.Scripts()))
+	for i, s := range s.project.Scripts() {
+		scripts[i] = scriptLine{s.Name(), s.Description()}
+	}
+
+	var plainOutput interface{} = scripts
+	if len(scripts) == 0 {
+		plainOutput = locale.T("scripts_no_scripts")
+	}
+	s.output.Print(output.Prepare(plainOutput, scripts))
 	return nil
 }

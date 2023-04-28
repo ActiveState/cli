@@ -46,19 +46,6 @@ func New(opts *Options, prime primeable) *State {
 	}
 }
 
-type versionOutput struct {
-	message string
-	installation.VersionData
-}
-
-func (o *versionOutput) MarshalOutput(format output.Format) interface{} {
-	return o.message
-}
-
-func (o *versionOutput) MarshalStructured(format output.Format) interface{} {
-	return o.VersionData
-}
-
 func (s *State) Run(usageFunc func() error) error {
 	defer profile.Measure("runners:state:run", time.Now())
 
@@ -72,10 +59,7 @@ func (s *State) Run(usageFunc func() error) error {
 			constants.Date,
 			constants.OnCI == "true",
 		}
-		s.out.Print(&versionOutput{
-			locale.T("version_info", vd),
-			vd,
-		})
+		s.out.Print(output.Prepare(locale.T("version_info", vd), vd))
 		return nil
 	}
 	return usageFunc()

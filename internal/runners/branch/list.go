@@ -42,10 +42,10 @@ func (l *List) Run() error {
 		return locale.WrapError(err, "err_fetch_project", "", l.project.Namespace().String())
 	}
 
-	l.out.Print(&branchOutput{
+	l.out.Print(output.Prepare(
+		branchTree(project.Branches, l.project.BranchName()),
 		project.Branches,
-		l.project.BranchName(),
-	})
+	))
 
 	return nil
 }

@@ -78,22 +78,6 @@ func NewRequirementOperation(prime primeable) *RequirementOperation {
 
 const latestVersion = "latest"
 
-type requirementsOutput struct {
-	message   string
-	Name      string `json:"name"`
-	Version   string `json:"version,omitempty"`
-	Type      string `json:"type"`
-	Operation string `json:"operation"`
-}
-
-func (o *requirementsOutput) MarshalOutput(format output.Format) interface{} {
-	return o.message
-}
-
-func (o *requirementsOutput) MarshalStructured(format output.Format) interface{} {
-	return o
-}
-
 func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requirementVersion string, requirementBitWidth int, operation model.Operation, nsType model.NamespaceType) (rerr error) {
 	var ns model.Namespace
 	var langVersion string
@@ -278,13 +262,19 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 	if requirementVersion == "" {
 		message = locale.Tr(fmt.Sprintf("%s_%s", ns.Type(), operation), requirementName)
 	}
-	out.Print(&requirementsOutput{
+	out.Print(output.Prepare(
 		message,
-		requirementName,
-		requirementVersion,
-		ns.Type().String(),
-		string(operation),
-	})
+		&struct {
+			Name      string `json:"name"`
+			Version   string `json:"version,omitempty"`
+			Type      string `json:"type"`
+			Operation string `json:"operation"`
+		}{
+			requirementName,
+			requirementVersion,
+			ns.Type().String(),
+			string(operation),
+		}))
 
 	out.Notice(locale.T("operation_success_local"))
 

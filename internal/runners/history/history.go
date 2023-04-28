@@ -31,18 +31,6 @@ func NewHistory(prime primeable) *History {
 type HistoryParams struct {
 }
 
-type noHistoryOutput struct {
-	message string
-}
-
-func (o *noHistoryOutput) MarshalOutput(format output.Format) interface{} {
-	return o.message
-}
-
-func (o *noHistoryOutput) MarshalStructured(format output.Format) interface{} {
-	return []byte("[]")
-}
-
 func (h *History) Run(params *HistoryParams) error {
 	if h.project == nil {
 		return locale.NewInputError("err_history_no_project", "No project found. Please run this command in a project directory")
@@ -70,7 +58,7 @@ func (h *History) Run(params *HistoryParams) error {
 	}
 
 	if len(commits) == 0 {
-		h.out.Print(&noHistoryOutput{locale.Tr("no_commits", h.project.Namespace().String())})
+		h.out.Print(output.Prepare(locale.Tr("no_commits", h.project.Namespace().String()), []byte("[]")))
 		return nil
 	}
 

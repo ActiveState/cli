@@ -31,3 +31,20 @@ func (h Emphasize) MarshalOutput(f Format) interface{} {
 func (h Emphasize) MarshalStructured(f Format) interface{} {
 	return Suppress
 }
+
+type preparedOutput struct {
+	plain      interface{}
+	structured interface{}
+}
+
+func (o *preparedOutput) MarshalOutput(_ Format) interface{} {
+	return o.plain
+}
+
+func (o *preparedOutput) MarshalStructured(_ Format) interface{} {
+	return o.structured
+}
+
+func Prepare(plain interface{}, structured interface{}) *preparedOutput {
+	return &preparedOutput{plain, structured}
+}
