@@ -32,7 +32,8 @@ type ReqsImport struct {
 // New forms a pointer to a default ReqsImport instance.
 func New(opts Opts) (*ReqsImport, error) {
 	c := &http.Client{
-		Timeout: 60 * time.Second,
+		Timeout:   60 * time.Second,
+		Transport: api.NewRoundTripper(),
 	}
 
 	ri := ReqsImport{
