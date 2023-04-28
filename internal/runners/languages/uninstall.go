@@ -31,13 +31,17 @@ func (u *Uninstall) Run(params UninstallRunParams) error {
 		return locale.NewInputError("err_no_project")
 	}
 
-	lang := language.MakeByName(params.Language)
-	if !lang.Recognized() {
-		return locale.NewInputError("error_unsupported_language", "", params.Language)
+	langReq := params.Language
+	if langReq != "python" {
+		lang := language.MakeByName(params.Language)
+		if !lang.Recognized() {
+			return locale.NewInputError("error_unsupported_language", "", params.Language)
+		}
+		langReq = lang.Requirement()
 	}
 
 	return requirements.NewRequirementOperation(u.prime).ExecuteRequirementOperation(
-		lang.Requirement(),
+		langReq,
 		"",
 		0,
 		model.OperationRemoved,
