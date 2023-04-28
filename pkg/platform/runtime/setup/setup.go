@@ -278,6 +278,10 @@ func (s *Setup) updateExecutors(artifacts []artifact.ArtifactID) error {
 		return locale.WrapError(err, "err_deploy_execpath", "Could not create exec directory.")
 	}
 
+	if len(artifacts) == 0 {
+		return nil
+	}
+
 	edGlobal, err := s.store.UpdateEnviron(artifacts)
 	if err != nil {
 		return errs.Wrap(err, "Could not save combined environment file")
@@ -318,13 +322,18 @@ func (s *Setup) fetchAndInstallArtifactsFromRecipe(installFunc artifactInstaller
 
 	buildResult, err := s.model.FetchBuildResult(s.target.CommitUUID(), s.target.Owner(), s.target.Name())
 	if err != nil {
-		serr := &apimodel.SolverError{}
-		if errors.As(err, &serr) {
+		if serr := (&apimodel.SolverError{}); errors.As(err, &serr) {
+			if serr.IsNoRequirements() {
+				return nil, nil
+			}
+
 			if err := s.eventHandler.Handle(events.SolveError{serr}); err != nil {
 				return nil, errs.Wrap(err, "Could not handle SolveError event")
 			}
+
 			return nil, formatSolverError(serr)
 		}
+
 		return nil, errs.Wrap(err, "Failed to fetch build result")
 	}
 
@@ -358,7 +367,7 @@ func (s *Setup) fetchAndInstallArtifactsFromRecipe(installFunc artifactInstaller
 	// Notably we ignore bundle artifacts here, as they currently only produce no-op artifacts in terms of how recipes
 	// link the artifacts to the ingredient. This will be solved by buildplans.
 	installableArtifacts := artifact.FilterInstallable(artifacts)
-	for id, _ := range installableArtifacts {
+	for id := range installableArtifacts {
 		if _, noop := noopArtifacts[id]; noop {
 			delete(installableArtifacts, id)
 		}

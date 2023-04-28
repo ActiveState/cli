@@ -29,6 +29,7 @@ type SolverError struct {
 	wrapped          error
 	validationErrors []string
 	isTransient      bool
+	isNoRequirements bool
 }
 
 func (e *SolverError) Error() string {
@@ -45,6 +46,10 @@ func (e *SolverError) ValidationErrors() []string {
 
 func (e *SolverError) IsTransient() bool {
 	return e.isTransient
+}
+
+func (e *SolverError) IsNoRequirements() bool {
+	return e.isNoRequirements
 }
 
 // HostPlatform stores a reference to current platform
@@ -211,8 +216,9 @@ func resolveSolverError(err error) error {
 	switch serr := err.(type) {
 	case *iop.ResolveRecipesDefault:
 		return &SolverError{
-			wrapped:     locale.WrapError(errs.Wrap(err, "ResolveRecipesDefault"), "", p.PStr(serr.Payload.Message)),
-			isTransient: p.PBool(serr.GetPayload().IsTransient),
+			wrapped:          locale.WrapError(errs.Wrap(err, "ResolveRecipesDefault"), "", p.PStr(serr.Payload.Message)),
+			isTransient:      p.PBool(serr.GetPayload().IsTransient),
+			isNoRequirements: strings.Contains(p.PStr(serr.Payload.Message), "at least 1 item"),
 		}
 	case *iop.ResolveRecipesBadRequest:
 		var validationErrors []string
