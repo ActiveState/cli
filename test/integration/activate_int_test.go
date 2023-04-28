@@ -524,20 +524,6 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_FromCache() {
 	suite.NotContains(cp.TrimmedSnapshot(), "Downloading")
 }
 
-func (suite *ActivateIntegrationTestSuite) TestActivate_JSON() {
-	suite.OnlyRunForTags(tagsuite.Activate, tagsuite.JSON)
-	ts := e2e.New(suite.T(), false)
-	defer ts.Close()
-	close := suite.addForegroundSvc(ts)
-	defer close()
-
-	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("activate", "ActiveState-CLI/small-python", "--output", "json", "--path", ts.Dirs.Work),
-	)
-	cp.Expect(`"ACTIVESTATE_ACTIVATED":"`, 60*time.Second)
-	cp.ExpectExitCode(0)
-}
-
 func TestActivateIntegrationTestSuite(t *testing.T) {
 	suite.Run(t, new(ActivateIntegrationTestSuite))
 }

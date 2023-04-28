@@ -28,9 +28,6 @@ func (o *jwtOutput) MarshalOutput(format output.Format) interface{} {
 }
 
 func (o *jwtOutput) MarshalStructured(format output.Format) interface{} {
-	if format == output.EditorV0FormatName {
-		return []byte(o.Value)
-	}
 	return o
 }
 

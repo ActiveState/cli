@@ -239,25 +239,6 @@ func (suite *ShellIntegrationTestSuite) TestUseShellUpdates() {
 	}
 }
 
-func (suite *ShellIntegrationTestSuite) TestJSON() {
-	suite.OnlyRunForTags(tagsuite.Shell, tagsuite.JSON)
-	ts := e2e.New(suite.T(), false)
-	defer ts.Close()
-
-	cp := ts.Spawn("checkout", "ActiveState-CLI/Perl-5.32", ".")
-	cp.Expect("Skipping runtime setup")
-	cp.Expect("Checked out")
-	cp.ExpectExitCode(0)
-
-	cp = ts.SpawnWithOpts(
-		e2e.WithArgs("shell", "-o", "json"),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
-	)
-	cp.Expect(`{"ACTIVESTATE_ACTIVATED":`)
-	cp.ExpectExitCode(0)
-	AssertValidJSON(suite.T(), cp)
-}
-
 func TestShellIntegrationTestSuite(t *testing.T) {
 	suite.Run(t, new(ShellIntegrationTestSuite))
 }

@@ -69,9 +69,6 @@ func (o *pullOutput) MarshalOutput(format output.Format) interface{} {
 }
 
 func (o *pullOutput) MarshalStructured(format output.Format) interface{} {
-	if format == output.EditorV0FormatName {
-		return o.editorV0Format()
-	}
 	return o
 }
 

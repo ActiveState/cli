@@ -1,7 +1,6 @@
 package activation
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	rt "runtime"
@@ -20,14 +19,6 @@ import (
 	"github.com/ActiveState/cli/internal/virtualenvironment"
 	"github.com/ActiveState/cli/pkg/project"
 )
-
-type envOutput struct {
-	env map[string]string
-}
-
-func (e *envOutput) MarshalStructured(format output.Format) interface{} {
-	return e.env
-}
 
 func ActivateAndWait(
 	proj *project.Project,
@@ -57,15 +48,6 @@ func ActivateAndWait(
 		// If this exists, it came from the installer. It should not exist in an activated environment
 		// otherwise.
 		ve[constants.DisableErrorTipsEnvVarName] = "false"
-	}
-
-	// If we're not using plain output then we should just dump the environment information
-	if out.Type().IsStructured() {
-		if out.Type() == output.EditorV0FormatName {
-			fmt.Println("[activated-JSON]")
-		}
-		out.Print(&envOutput{ve})
-		return nil
 	}
 
 	// ignore interrupts in State Tool on Windows

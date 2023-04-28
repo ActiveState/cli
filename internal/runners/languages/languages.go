@@ -25,7 +25,7 @@ func NewLanguages(prime primeable) *Languages {
 }
 
 type languagesOutput struct {
-	Languages []model.Language `json:"languages"`
+	Languages []model.Language
 }
 
 func (o *languagesOutput) MarshalOutput(f output.Format) interface{} {
@@ -33,7 +33,7 @@ func (o *languagesOutput) MarshalOutput(f output.Format) interface{} {
 }
 
 func (o *languagesOutput) MarshalStructured(f output.Format) interface{} {
-	return o
+	return o.Languages
 }
 
 // Run executes the list behavior.
