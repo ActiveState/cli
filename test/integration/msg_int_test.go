@@ -110,6 +110,7 @@ func (suite *MsgIntegrationTestSuite) TestMessage_Basic_InterruptPrompt() {
 	{
 		"ID": "simple",
 		"Message": "This is a [NOTICE]simple[/RESET] message",
+		"Repeat": "Constantly",
 		"Interrupt": "%s"
 	}
 ]`, graph.MessageInterruptTypePrompt)), 0755)
