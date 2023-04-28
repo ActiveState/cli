@@ -180,7 +180,7 @@ func transport() http.RoundTripper {
 // status codes differently.
 func retryPolicy(ctx context.Context, resp *http.Response, err error) (bool, error) {
 	// do not retry on context.Canceled or context.DeadlineExceeded
-	if ctx.Err() != nil || err == nil {
+	if ctx.Err() != nil {
 		return false, ctx.Err()
 	}
 
