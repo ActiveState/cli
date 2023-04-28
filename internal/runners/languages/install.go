@@ -8,7 +8,6 @@ import (
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runbits/requirements"
 	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/ActiveState/cli/pkg/project"
 )
 
 type Update struct {
@@ -45,11 +44,6 @@ func (u *Update) Run(params *UpdateParams) error {
 		return locale.NewInputError("err_no_project")
 	}
 
-	err = ensureLanguageProject(lang, u.prime.Project())
-	if err != nil {
-		return err
-	}
-
 	err = ensureLanguagePlatform(lang)
 	if err != nil {
 		return err
@@ -73,11 +67,6 @@ func (u *Update) Run(params *UpdateParams) error {
 		return locale.WrapError(err, "err_language_update", "Could not update language: {{.V0}}", lang.Name)
 	}
 
-	langName := lang.Name
-	if lang.Version != "" {
-		langName = langName + "@" + lang.Version
-	}
-	u.prime.Output().Notice(locale.Tl("language_added", "Language added: {{.V0}}", langName))
 	return nil
 }
 
@@ -115,23 +104,6 @@ func ensureLanguagePlatform(language *model.Language) error {
 	}
 
 	return locale.NewError("err_update_not_found", language.Name)
-}
-
-func ensureLanguageProject(language *model.Language, project *project.Project) error {
-	targetCommitID, err := model.BranchCommitID(project.Owner(), project.Name(), project.BranchName())
-	if err != nil {
-		return err
-	}
-
-	platformLanguage, err := model.FetchLanguageForCommit(*targetCommitID)
-	if err != nil {
-		return err
-	}
-
-	if platformLanguage.Name != language.Name {
-		return locale.NewInputError("err_language_mismatch")
-	}
-	return nil
 }
 
 type fetchVersionsFunc func(name string) ([]string, error)
