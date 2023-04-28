@@ -17,30 +17,66 @@ type MsgIntegrationTestSuite struct {
 	tagsuite.Suite
 }
 
-func (suite *MsgIntegrationTestSuite) TestMessage_Basic_Defaults() {
+func (suite *MsgIntegrationTestSuite) TestMessage_Basic() {
 	suite.OnlyRunForTags(tagsuite.Messaging, tagsuite.Critical)
-	ts := e2e.New(suite.T(), false)
-	defer ts.Close()
-
-	msgFile, err := fileutils.WriteTempFileToDir(ts.Dirs.Work, "messages.json", []byte(`[
-	{
-		"ID": "simple",
-		"Message": "This is a [NOTICE]simple[/RESET] message"
+	tests := []struct {
+		Name         string
+		MessageJson  string
+		ExpectRepeat bool
+	}{
+		{
+			"Defaults",
+			`[{
+				"ID": "simple",
+				"Message": "This is a [NOTICE]simple[/RESET] message"
+			}]`,
+			false,
+		},
+		{
+			"Repeat Hourly",
+			`[{
+				"ID": "simple",
+				"Message": "This is a [NOTICE]simple[/RESET] message",
+				"Repeat": "Hourly"
+			}]`,
+			false,
+		},
+		{
+			"Repeat Constantly",
+			`[{
+				"ID": "simple",
+				"Message": "This is a [NOTICE]simple[/RESET] message",
+				"Repeat": "Constantly"
+			}]`,
+			true,
+		},
 	}
-]`), 0755)
-	suite.Require().NoError(err)
+	for _, tt := range tests {
+		suite.Run(tt.Name, func() {
+			ts := e2e.New(suite.T(), false)
+			defer ts.Close()
 
-	// We test on config as it just dumps help and has minimal output
-	// The base state command would also work, but it's output is more verbose and termtest likes to cut off content if it's too long
-	cp := ts.SpawnWithOpts(e2e.WithArgs("config"), e2e.AppendEnv(constants.MessagesOverrideEnvVarName+"="+msgFile))
-	cp.Expect(`This is a simple message`)
-	cp.Expect("Usage:")
-	cp.ExpectExitCode(0)
+			msgFile, err := fileutils.WriteTempFileToDir(ts.Dirs.Work, "messages.json", []byte(tt.MessageJson), 0755)
+			suite.Require().NoError(err)
 
-	// Ensure message doesn't stick around when we run another command
-	cp = ts.Spawn()
-	cp.ExpectExitCode(0)
-	suite.Require().NotContains(cp.Snapshot(), "This is a simple message", "Should not repeat as that's the default behavior")
+			// We test on config as it just dumps help and has minimal output
+			// The base state command would also work, but it's output is more verbose and termtest likes to cut off content if it's too long
+			cp := ts.SpawnWithOpts(e2e.WithArgs("config"), e2e.AppendEnv(constants.MessagesOverrideEnvVarName+"="+msgFile))
+			cp.Expect(`This is a simple message`)
+			cp.Expect("Usage:")
+			cp.ExpectExitCode(0)
+
+			// Ensure message doesn't stick around when we run another command
+			cp = ts.Spawn()
+			if tt.ExpectRepeat {
+				cp.Expect(`This is a simple message`)
+			}
+			cp.ExpectExitCode(0)
+			if !tt.ExpectRepeat {
+				suite.Require().NotContains(cp.Snapshot(), "This is a simple message", "Should not repeat as that's the default behavior")
+			}
+		})
+	}
 }
 
 func (suite *MsgIntegrationTestSuite) TestMessage_Basic_PlacementAfter() {

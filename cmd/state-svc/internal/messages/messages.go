@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/ActiveState/cli/internal/config"
@@ -26,6 +27,7 @@ type Messages struct {
 	auth       *auth.Auth
 	baseParams *ConditionParams
 	poll       *poller.Poller
+	checkMutex *sync.Mutex
 }
 
 func New(cfg *config.Instance, auth *auth.Auth) (*Messages, error) {
@@ -51,9 +53,10 @@ func New(cfg *config.Instance, auth *auth.Auth) (*Messages, error) {
 			StateChannel: constants.BranchName,
 			StateVersion: NewVersionFromSemver(stateVersion),
 		},
-		cfg:  cfg,
-		auth: auth,
-		poll: poll,
+		cfg:        cfg,
+		auth:       auth,
+		poll:       poll,
+		checkMutex: &sync.Mutex{},
 	}, nil
 }
 
@@ -63,6 +66,10 @@ func (m *Messages) Close() error {
 }
 
 func (m *Messages) Check(command string, flags []string) ([]*graph.MessageInfo, error) {
+	// Prevent multiple checks at the same time, which could lead to the same message showing multiple times
+	m.checkMutex.Lock()
+	defer m.checkMutex.Unlock()
+
 	allMessages := m.poll.ValueFromCache().([]*graph.MessageInfo)
 
 	conditionParams := &(*m.baseParams) // copy
@@ -71,8 +78,16 @@ func (m *Messages) Check(command string, flags []string) ([]*graph.MessageInfo, 
 	conditionParams.Flags = flags
 
 	lastReportMap := m.cfg.GetStringMap(ConfigKeyLastReport)
+	msgs, err := check(conditionParams, allMessages, lastReportMap, time.Now())
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not check messages")
+	}
+	for _, msg := range msgs {
+		lastReportMap[msg.ID] = time.Now().Format(time.RFC3339)
+	}
+	m.cfg.Set(ConfigKeyLastReport, lastReportMap)
 
-	return check(conditionParams, allMessages, lastReportMap, time.Now())
+	return msgs, nil
 }
 
 func check(params *ConditionParams, messages []*graph.MessageInfo, lastReportMap map[string]interface{}, baseTime time.Time) ([]*graph.MessageInfo, error) {
@@ -81,9 +96,9 @@ func check(params *ConditionParams, messages []*graph.MessageInfo, lastReportMap
 	for _, message := range messages {
 		// Ensure we don't show the same message too often
 		if lastReport, ok := lastReportMap[message.ID]; ok {
-			lastReportTime, isValidTime := lastReport.(time.Time)
-			if !isValidTime {
-				return nil, errs.New("Could not parse last reported time as it's not a valid time.Time value: %v", lastReport)
+			lastReportTime, err := time.Parse(time.RFC3339, lastReport.(string))
+			if err != nil {
+				return nil, errs.New("Could not parse last reported time as it's not a valid RFC3339 value: %v", lastReport)
 			}
 
 			lastReportTimeAgo := baseTime.Sub(lastReportTime)
