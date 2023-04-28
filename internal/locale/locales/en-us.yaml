@@ -1184,6 +1184,8 @@ bundle_added:
   other: "[SUCCESS]✔ {{.V0}} Bundle successfully installed![/RESET]"
 bundle_version_added:
   other: "[SUCCESS]✔ {{.V0}} Bundle @ version {{.V1}} successfully installed![/RESET]"
+language_version_added:
+  other: "Language added: [NOTICE]{{.V0}}[/RESET]"
 err_package_updated:
   other: Failed to update package
 err_bundle_updated:
@@ -1214,6 +1216,8 @@ package_removed:
   other: "Package uninstalled: [NOTICE]{{.V0}}[/RESET]"
 bundle_removed:
   other: "Bundle uninstalled: [NOTICE]{{.V0}}[/RESET]"
+language_removed:
+  other: "Language uninstalled: [NOTICE]{{.V0}}[/RESET]"
 update_config:
   other: To ensure your local project is synchronized with the ActiveState platform please use [ACTIONABLE]`state pull`[/RESET]
 package_update_config_file:
