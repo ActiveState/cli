@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
+	"github.com/ActiveState/cli/internal/analytics/client/blackhole"
 	"github.com/ActiveState/cli/internal/constants"
 	configMock "github.com/ActiveState/cli/internal/testhelpers/config_test"
 	"github.com/stretchr/testify/assert"
@@ -21,7 +22,16 @@ func (m *httpGetMock) Get(url string) ([]byte, int, error) {
 }
 
 func mockUpdate(channel, version, tag string) *AvailableUpdate {
-	return NewAvailableUpdate(version, channel, "platform", "path/to/zipfile.zip", "123456", tag)
+	return &AvailableUpdate{
+		Version:  version,
+		Channel:  channel,
+		Platform: "platform",
+		Path:     "path/to/zipfile.zip",
+		Sha256:   "123456",
+		Tag:      &tag,
+		an:       blackhole.New(),
+	}
+
 }
 
 func newMock(t *testing.T, channel, version, tag string) *httpGetMock {
@@ -77,7 +87,7 @@ func TestCheckerCheckFor(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.Name, func(t *testing.T) {
 			m := newMock(t, tt.MockChannel, tt.MockVersion, tt.MockTag)
-			check := NewChecker(&configMock.Mock{}, constants.APIUpdateInfoURL, constants.APIUpdateURL, "master", "1.2.3", m)
+			check := NewChecker(&configMock.Mock{}, blackhole.New(), constants.APIUpdateInfoURL, constants.APIUpdateURL, "master", "1.2.3", m)
 			res, err := check.CheckFor(tt.CheckChannel, tt.CheckVersion)
 			require.NoError(t, err)
 			if res != nil {

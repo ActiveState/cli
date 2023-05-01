@@ -1,6 +1,7 @@
 package update
 
 import (
+	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
@@ -32,8 +33,8 @@ func (stv *StateToolChannelVersion) Type() string {
 }
 
 type LockParams struct {
-	Channel StateToolChannelVersion
-	Force   bool
+	Channel        StateToolChannelVersion
+	NonInteractive bool
 }
 
 type Lock struct {
@@ -41,6 +42,7 @@ type Lock struct {
 	out     output.Outputer
 	prompt  prompt.Prompter
 	cfg     updater.Configurable
+	an      analytics.Dispatcher
 }
 
 func NewLock(prime primeable) *Lock {
@@ -49,6 +51,7 @@ func NewLock(prime primeable) *Lock {
 		prime.Output(),
 		prime.Prompt(),
 		prime.Config(),
+		prime.Analytics(),
 	}
 }
 
@@ -59,7 +62,7 @@ func (l *Lock) Run(params *LockParams) error {
 
 	l.out.Notice(locale.Tl("locking_version", "Locking State Tool version for current project."))
 
-	if l.project.IsLocked() && !params.Force {
+	if l.project.IsLocked() && !params.NonInteractive {
 		if err := confirmLock(l.prompt); err != nil {
 			return locale.WrapError(err, "err_update_lock_confirm", "Could not confirm whether to lock update.")
 		}
@@ -83,7 +86,7 @@ func (l *Lock) Run(params *LockParams) error {
 		version = l.project.Version()
 	}
 
-	exactVersion, err := fetchExactVersion(l.cfg, version, channel)
+	exactVersion, err := fetchExactVersion(l.cfg, l.an, version, channel)
 	if err != nil {
 		return errs.Wrap(err, "fetchUpdater failed, version: %s, channel: %s", version, channel)
 	}
@@ -116,11 +119,11 @@ func confirmLock(prom prompt.Prompter) error {
 	return nil
 }
 
-func fetchExactVersion(cfg updater.Configurable, version, channel string) (string, error) {
+func fetchExactVersion(cfg updater.Configurable, an analytics.Dispatcher, version, channel string) (string, error) {
 	if channel != constants.BranchName {
 		version = "" // force update
 	}
-	info, err := updater.NewDefaultChecker(cfg).CheckFor(channel, version)
+	info, err := updater.NewDefaultChecker(cfg, an).CheckFor(channel, version)
 	if err != nil {
 		return "", locale.WrapInputError(err, "err_update_fetch", "Could not retrieve update information, please verify that '{{.V0}}' is a valid channel.", channel)
 	}

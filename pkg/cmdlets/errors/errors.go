@@ -132,9 +132,9 @@ func ReportError(err error, cmd *captain.Command, an analytics.Dispatcher) {
 		multilog.Critical("Returning error:\n%s\nCreated at:\n%s", errs.Join(err, "\n").Error(), stack)
 	} else {
 		cmdName := cmd.Name()
-		childCmd, err := cmd.Find(os.Args[1:])
-		if err != nil {
-			logging.Error("Could not find child command: %v", err)
+		childCmd, err2 := cmd.Find(os.Args[1:])
+		if err2 != nil {
+			logging.Error("Could not find child command: %v", err2)
 		}
 
 		var flagNames []string

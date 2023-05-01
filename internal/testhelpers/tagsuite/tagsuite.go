@@ -50,11 +50,13 @@ const (
 	Perl            = "perl"
 	Platforms       = "platforms"
 	Prepare         = "prepare"
+	Progress        = "progress"
 	Projects        = "projects"
 	Projectfile     = "projectfile"
 	Pull            = "pull"
 	Push            = "push"
 	Python          = "python"
+	Refresh         = "refresh"
 	Revert          = "revert"
 	Run             = "run"
 	Scripts         = "scripts"
@@ -88,14 +90,14 @@ type Suite struct {
 func (suite *Suite) OnlyRunForTags(tags ...string) {
 	setTagsString, _ := os.LookupEnv("TEST_SUITE_TAGS")
 
-	setTags := strings.Split(setTagsString, ":")
+	setTags := strings.Split(strings.ToLower(setTagsString), ":")
 	// if no tags are defined and we're not on CI; run the test
 	if funk.Contains(setTags, "all") || (setTagsString == "" && !condition.OnCI()) {
 		return
 	}
 
 	for _, tag := range tags {
-		if funk.Contains(setTags, tag) {
+		if funk.Contains(setTags, strings.ToLower(tag)) {
 			return
 		}
 	}

@@ -123,8 +123,8 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 
 	updateCmd := newUpdateCommand(prime)
 	updateCmd.AddChildren(
-		newUpdateLockCommand(prime),
-		newUpdateUnlockCommand(prime))
+		newUpdateLockCommand(prime, globals),
+		newUpdateUnlockCommand(prime, globals))
 
 	branchCmd := newBranchCommand(prime)
 	branchCmd.AddChildren(
@@ -148,6 +148,8 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 	)
 
 	shellCmd := newShellCommand(prime)
+
+	refreshCmd := newRefreshCommand(prime)
 
 	stateCmd := newStateCommand(globals, prime)
 	stateCmd.AddChildren(
@@ -193,6 +195,7 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 		checkoutCmd,
 		useCmd,
 		shellCmd,
+		refreshCmd,
 		newSwitchCommand(prime),
 		newTestCommand(prime),
 	)
@@ -227,6 +230,7 @@ func newGlobalOptions() *globalOptions {
 
 func newStateCommand(globals *globalOptions, prime *primer.Values) *captain.Command {
 	opts := state.NewOptions()
+	var help bool
 
 	runner := state.New(opts, prime)
 	cmd := captain.NewCommand(
@@ -286,6 +290,13 @@ func newStateCommand(globals *globalOptions, prime *primer.Values) *captain.Comm
 				Name:        "version",
 				Description: locale.T("flag_state_version_description"),
 				Value:       &opts.Version,
+			},
+			{
+				Name:        "help",
+				Description: locale.Tl("flag_help", "Help for this command"),
+				Shorthand:   "h",
+				Persist:     true,
+				Value:       &help, // need to store the value somewhere, but Cobra handles this flag by itself
 			},
 		},
 		[]*captain.Argument{},

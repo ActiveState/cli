@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/ActiveState/cli/internal/app"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/exeutils"
@@ -17,7 +18,6 @@ import (
 const stateTrayCmd = "state-tray"
 const trayAppName = "ActiveState Desktop (Preview)"
 const stateUpdateDialogCmd = "state-update-dialog"
-const trayLaunchFileName = "state-tray.desktop"
 
 func DetectAndRemove(path string, cfg *config.Instance) error {
 	binDir := filepath.Join(path, installation.BinDirName)
@@ -32,13 +32,17 @@ func DetectAndRemove(path string, cfg *config.Instance) error {
 		return errs.Wrap(err, "Unable to stop try app")
 	}
 
-	// Disable autostart of state-tray.
-	options := autostart.Options{
-		LaunchFileName: trayLaunchFileName, // only used for Linux; ignored on macOS, Windows
+	appDir, err := installation.ApplicationInstallPath()
+	if err != nil {
+		return errs.Wrap(err, "Unable to get application install path")
 	}
-	if as, err := autostart.New(trayAppName, trayExec, nil, options, cfg); err == nil {
-		err = as.Disable()
-		if err != nil {
+
+	// Disable autostart of state-tray.
+	if app, err := app.New(trayAppName, trayExec, nil, appDir, app.Options{}); err == nil {
+		disableErr := autostart.Disable(app.Path(), autostart.Options{
+			LaunchFileName: trayLaunchFileName, // only used for Linux; ignored on macOS, Windows
+		})
+		if disableErr != nil {
 			return errs.Wrap(err, "Unable to disable tray autostart")
 		}
 	} else {

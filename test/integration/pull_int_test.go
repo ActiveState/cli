@@ -80,8 +80,8 @@ func (suite *PullIntegrationTestSuite) TestPull_Merge() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	wd := filepath.Join(ts.Dirs.Work, namespace)
-	pjfilepath := filepath.Join(ts.Dirs.Work, namespace, constants.ConfigFileName)
+	wd := filepath.Join(ts.Dirs.Work, "cli")
+	pjfilepath := filepath.Join(ts.Dirs.Work, "cli", constants.ConfigFileName)
 	err := fileutils.WriteFile(pjfilepath, []byte(projectLine+unPulledCommit))
 	suite.Require().NoError(err)
 
@@ -102,6 +102,24 @@ func (suite *PullIntegrationTestSuite) TestPull_Merge() {
 	}
 	cp = ts.SpawnCmd("bash", "-c", fmt.Sprintf("cd %s && %s history | head -n 10", wd, exe))
 	cp.ExpectLongString("Merged")
+	cp.ExpectExitCode(0)
+}
+
+func (suite *PullIntegrationTestSuite) TestPull_RestoreNamespace() {
+	suite.OnlyRunForTags(tagsuite.Pull)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	ts.PrepareActiveStateYAML(`project: https://platform.activestate.com/ActiveState-CLI/small-python?commitID=9733d11a-dfb3-41de-a37a-843b7c421db4`)
+
+	// Attempt to update to unrelated project.
+	cp := ts.Spawn("pull", "--non-interactive", "--set-project", "ActiveState-CLI/Python3")
+	cp.ExpectLongString("Could not detect common parent")
+	cp.ExpectNotExitCode(0)
+
+	// Verify namespace is unchanged.
+	cp = ts.Spawn("show")
+	cp.Expect("ActiveState-CLI/small-python")
 	cp.ExpectExitCode(0)
 }
 

@@ -12,7 +12,8 @@ import (
 	"path/filepath"
 	"runtime"
 
-	"github.com/ActiveState/archiver"
+	"github.com/mholt/archiver"
+
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"

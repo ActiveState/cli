@@ -101,7 +101,9 @@ func run(cfg *config.Instance) error {
 		return errs.Wrap(err, "Could not initialize outputer")
 	}
 
-	autostart.RegisterConfigListener(cfg)
+	if err := autostart.RegisterConfigListener(cfg); err != nil {
+		return errs.Wrap(err, "Could not register config listener")
+	}
 
 	if mousetrap.StartedByExplorer() {
 		// Allow starting the svc via a double click

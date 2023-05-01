@@ -11,7 +11,7 @@ import (
 )
 
 type UnlockParams struct {
-	Force bool
+	NonInteractive bool
 }
 
 type Unlock struct {
@@ -42,7 +42,7 @@ func (u *Unlock) Run(params *UnlockParams) error {
 
 	u.out.Notice(locale.Tl("unlocking_version", "Unlocking State Tool version for current project."))
 
-	if !params.Force {
+	if !params.NonInteractive {
 		err := confirmUnlock(u.prompt)
 		if err != nil {
 			return locale.WrapError(err, "err_update_unlock_confirm", "Unlock cancelled by user.")

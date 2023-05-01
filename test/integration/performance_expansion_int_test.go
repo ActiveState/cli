@@ -46,9 +46,13 @@ func (suite *PerformanceExpansionIntegrationTestSuite) TestExpansionPerformance(
 	suite.Run("CallScript", func() {
 		median := suite.testScriptPerformance(scriptPerformanceOptions{
 			script: projectfile.Script{
-				Name:     "call-script",
-				Value:    `echo "Hello World"`,
-				Language: "bash",
+				NameVal: projectfile.NameVal{
+					Name:  "call-script",
+					Value: `echo "Hello World"`,
+				},
+				ScriptFields: projectfile.ScriptFields{
+					Language: "bash",
+				},
 			},
 			expect:  "Hello World",
 			samples: DefaultSamples,
@@ -63,13 +67,19 @@ func (suite *PerformanceExpansionIntegrationTestSuite) TestExpansionPerformance(
 	suite.Run("CallScriptFromMerged", func() {
 		additionalYamls := make(map[string]projectfile.Project)
 		additionalYamls["activestate.test.yaml"] = projectfile.Project{
-			Scripts: []projectfile.Script{{Name: "call-script", Value: `echo "Hello World"`}},
+			Scripts: []projectfile.Script{
+				{NameVal: projectfile.NameVal{Name: "call-script", Value: `echo "Hello World"`}},
+			},
 		}
 		suite.testScriptPerformance(scriptPerformanceOptions{
 			script: projectfile.Script{
-				Name:     "merged-script",
-				Value:    `echo "Hello World"`,
-				Language: "bash",
+				NameVal: projectfile.NameVal{
+					Name:  "merged-script",
+					Value: `echo "Hello World"`,
+				},
+				ScriptFields: projectfile.ScriptFields{
+					Language: "bash",
+				},
 			},
 			expect:              "Hello World",
 			samples:             DefaultSamples,
@@ -81,9 +91,13 @@ func (suite *PerformanceExpansionIntegrationTestSuite) TestExpansionPerformance(
 	suite.Run("EvaluateProjectPath", func() {
 		suite.testScriptPerformance(scriptPerformanceOptions{
 			script: projectfile.Script{
-				Name:     "evaluate-project-path",
-				Value:    `echo $project.path()`,
-				Language: "bash",
+				NameVal: projectfile.NameVal{
+					Name:  "evaluate-project-path",
+					Value: `echo $project.path()`,
+				},
+				ScriptFields: projectfile.ScriptFields{
+					Language: "bash",
+				},
 			},
 			samples: DefaultSamples,
 			max:     baseline,
@@ -93,9 +107,13 @@ func (suite *PerformanceExpansionIntegrationTestSuite) TestExpansionPerformance(
 	suite.Run("ExpandProjectBranch", func() {
 		suite.testScriptPerformance(scriptPerformanceOptions{
 			script: projectfile.Script{
-				Name:     "expand-project-branch",
-				Value:    `echo $project.branch()`,
-				Language: "bash",
+				NameVal: projectfile.NameVal{
+					Name:  "expand-project-branch",
+					Value: `echo $project.branch()`,
+				},
+				ScriptFields: projectfile.ScriptFields{
+					Language: "bash",
+				},
 			},
 			expect:  "main",
 			samples: DefaultSamples,
@@ -106,9 +124,13 @@ func (suite *PerformanceExpansionIntegrationTestSuite) TestExpansionPerformance(
 	suite.Run("ExpandProjectCommit", func() {
 		suite.testScriptPerformance(scriptPerformanceOptions{
 			script: projectfile.Script{
-				Name:     "expand-project-commit",
-				Value:    `echo $project.commit()`,
-				Language: "bash",
+				NameVal: projectfile.NameVal{
+					Name:  "expand-project-commit",
+					Value: `echo $project.commit()`,
+				},
+				ScriptFields: projectfile.ScriptFields{
+					Language: "bash",
+				},
 			},
 			expect:  "0476ac66-007c-4da7-8922-d6ea9b284fae",
 			samples: DefaultSamples,
@@ -119,9 +141,13 @@ func (suite *PerformanceExpansionIntegrationTestSuite) TestExpansionPerformance(
 	suite.Run("ExpandProjectName", func() {
 		suite.testScriptPerformance(scriptPerformanceOptions{
 			script: projectfile.Script{
-				Name:     "expand-project-name",
-				Value:    `echo $project.name()`,
-				Language: "bash",
+				NameVal: projectfile.NameVal{
+					Name:  "expand-project-name",
+					Value: `echo $project.name()`,
+				},
+				ScriptFields: projectfile.ScriptFields{
+					Language: "bash",
+				},
 			},
 			//expect:  "Yaml-Test", // TODO: re-enable in https://activestatef.atlassian.net/browse/DX-1312
 			samples: DefaultSamples,
@@ -132,9 +158,13 @@ func (suite *PerformanceExpansionIntegrationTestSuite) TestExpansionPerformance(
 	suite.Run("ExpandProjectNamespace", func() {
 		suite.testScriptPerformance(scriptPerformanceOptions{
 			script: projectfile.Script{
-				Name:     "expand-project-namespace",
-				Value:    `echo $project.namespace()`,
-				Language: "bash",
+				NameVal: projectfile.NameVal{
+					Name:  "expand-project-namespace",
+					Value: `echo $project.namespace()`,
+				},
+				ScriptFields: projectfile.ScriptFields{
+					Language: "bash",
+				},
 			},
 			expect:  "ActiveState-CLI/Yaml-Test",
 			samples: DefaultSamples,
@@ -145,9 +175,13 @@ func (suite *PerformanceExpansionIntegrationTestSuite) TestExpansionPerformance(
 	suite.Run("ExpandProjectOwner", func() {
 		suite.testScriptPerformance(scriptPerformanceOptions{
 			script: projectfile.Script{
-				Name:     "expand-project-owner",
-				Value:    `echo $project.owner()`,
-				Language: "bash",
+				NameVal: projectfile.NameVal{
+					Name:  "expand-project-owner",
+					Value: `echo $project.owner()`,
+				},
+				ScriptFields: projectfile.ScriptFields{
+					Language: "bash",
+				},
 			},
 			expect:  "ActiveState-CLI",
 			samples: DefaultSamples,
@@ -158,9 +192,13 @@ func (suite *PerformanceExpansionIntegrationTestSuite) TestExpansionPerformance(
 	suite.Run("ExpandProjectURL", func() {
 		suite.testScriptPerformance(scriptPerformanceOptions{
 			script: projectfile.Script{
-				Name:     "expand-project-url",
-				Value:    `echo $project.url()`,
-				Language: "bash",
+				NameVal: projectfile.NameVal{
+					Name:  "expand-project-url",
+					Value: `echo $project.url()`,
+				},
+				ScriptFields: projectfile.ScriptFields{
+					Language: "bash",
+				},
 			},
 			// expect:  "https://platform.activestate.com/ActiveState-CLI/Yaml-Test", // TODO: re-enable in https://activestatef.atlassian.net/browse/DX-1312
 			samples: DefaultSamples,
@@ -171,9 +209,13 @@ func (suite *PerformanceExpansionIntegrationTestSuite) TestExpansionPerformance(
 	suite.Run("ExpandSecret", func() {
 		suite.testScriptPerformance(scriptPerformanceOptions{
 			script: projectfile.Script{
-				Name:     "expand-secret",
-				Value:    `echo $secrets.project.HELLO`,
-				Language: "bash",
+				NameVal: projectfile.NameVal{
+					Name:  "expand-secret",
+					Value: `echo $secrets.project.HELLO`,
+				},
+				ScriptFields: projectfile.ScriptFields{
+					Language: "bash",
+				},
 			},
 			expect:       "WORLD",
 			samples:      DefaultSamples,
@@ -187,9 +229,13 @@ func (suite *PerformanceExpansionIntegrationTestSuite) TestExpansionPerformance(
 		secretsMultipleBaseline := time.Duration(secretsMultipleVariance)
 		suite.testScriptPerformance(scriptPerformanceOptions{
 			script: projectfile.Script{
-				Name:     "expand-secret",
-				Value:    `echo $secrets.project.FOO $secrets.project.BAR $secrets.project.BAZ`,
-				Language: "bash",
+				NameVal: projectfile.NameVal{
+					Name:  "expand-secret",
+					Value: `echo $secrets.project.FOO $secrets.project.BAR $secrets.project.BAZ`,
+				},
+				ScriptFields: projectfile.ScriptFields{
+					Language: "bash",
+				},
 			},
 			expect:       "FOO BAR BAZ",
 			samples:      DefaultSamples,
@@ -205,55 +251,81 @@ func (suite *PerformanceExpansionIntegrationTestSuite) TestExpansionPerformance(
 		}
 		suite.testScriptPerformance(scriptPerformanceOptions{
 			script: projectfile.Script{
-				Name:     "script-path",
-				Value:    `echo $scripts.hello-world.path()`,
-				Language: "bash",
+				NameVal: projectfile.NameVal{
+					Name:  "script-path",
+					Value: `echo $scripts.hello-world.path()`,
+				},
+				ScriptFields: projectfile.ScriptFields{
+					Language: "bash",
+				},
 			},
-			expect:            expect,
-			samples:           DefaultSamples,
-			max:               baseline,
-			additionalScripts: projectfile.Scripts{{Name: "hello-world", Value: `echo "Hello World"`}},
+			expect:  expect,
+			samples: DefaultSamples,
+			max:     baseline,
+			additionalScripts: projectfile.Scripts{
+				{NameVal: projectfile.NameVal{Name: "hello-world", Value: `echo "Hello World"`}},
+			},
 		})
 	})
 
 	suite.Run("UseConstant", func() {
 		suite.testScriptPerformance(scriptPerformanceOptions{
 			script: projectfile.Script{
-				Name:     "use-constant",
-				Value:    `echo $constants.foo`,
-				Language: "bash",
+				NameVal: projectfile.NameVal{
+					Name:  "use-constant",
+					Value: `echo $constants.foo`,
+				},
+				ScriptFields: projectfile.ScriptFields{
+					Language: "bash",
+				},
 			},
-			expect:    "foo",
-			samples:   DefaultSamples,
-			max:       baseline,
-			constants: projectfile.Constants{{Name: "foo", Value: "foo"}},
+			expect:  "foo",
+			samples: DefaultSamples,
+			max:     baseline,
+			constants: projectfile.Constants{
+				{NameVal: projectfile.NameVal{Name: "foo", Value: "foo"}},
+			},
 		})
 	})
 
 	suite.Run("UseConstantMultiple", func() {
 		suite.testScriptPerformance(scriptPerformanceOptions{
 			script: projectfile.Script{
-				Name:     "use-constant-multiple",
-				Value:    `echo $constants.foo $constants.bar $constants.baz`,
-				Language: "bash",
+				NameVal: projectfile.NameVal{
+					Name:  "use-constant-multiple",
+					Value: `echo $constants.foo $constants.bar $constants.baz`,
+				},
+				ScriptFields: projectfile.ScriptFields{
+					Language: "bash",
+				},
 			},
-			expect:    "foo",
-			samples:   DefaultSamples,
-			max:       baseline,
-			constants: projectfile.Constants{{Name: "foo", Value: "foo"}, {Name: "bar", Value: "bar"}, {Name: "baz", Value: "baz"}},
+			expect:  "foo",
+			samples: DefaultSamples,
+			max:     baseline,
+			constants: projectfile.Constants{
+				{NameVal: projectfile.NameVal{Name: "foo", Value: "foo"}},
+				{NameVal: projectfile.NameVal{Name: "bar", Value: "bar"}},
+				{NameVal: projectfile.NameVal{Name: "baz", Value: "baz"}},
+			},
 		})
 	})
 
 	suite.Run("UseConstantFromMerged", func() {
 		additionalYaml := make(map[string]projectfile.Project)
 		additionalYaml["activestate.test.yaml"] = projectfile.Project{
-			Constants: projectfile.Constants{{Name: "merged", Value: "merged"}},
+			Constants: projectfile.Constants{
+				{NameVal: projectfile.NameVal{Name: "merged", Value: "merged"}},
+			},
 		}
 		suite.testScriptPerformance(scriptPerformanceOptions{
 			script: projectfile.Script{
-				Name:     "use-constant-merged",
-				Value:    `echo $constants.merged`,
-				Language: "bash",
+				NameVal: projectfile.NameVal{
+					Name:  "use-constant-merged",
+					Value: `echo $constants.merged`,
+				},
+				ScriptFields: projectfile.ScriptFields{
+					Language: "bash",
+				},
 			},
 			expect:              "merged",
 			samples:             DefaultSamples,

@@ -11,7 +11,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ActiveState/archiver"
+	"github.com/mholt/archiver"
+
 	"github.com/ActiveState/cli/internal/analytics/client/sync/reporters"
 	anaConst "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/constants"

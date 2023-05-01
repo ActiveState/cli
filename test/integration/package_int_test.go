@@ -180,7 +180,11 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchWithExactTermWrongTe
 	defer ts.Close()
 	suite.PrepareActiveStateYAML(ts)
 
-	cp := ts.Spawn("search", "xxxrequestsxxx", "--exact-term")
+	cp := ts.Spawn("search", "Requests", "--exact-term")
+	cp.ExpectLongString("No packages in our catalog match")
+	cp.ExpectExitCode(1)
+
+	cp = ts.Spawn("search", "xxxrequestsxxx", "--exact-term")
 	cp.ExpectLongString("No packages in our catalog match")
 	cp.ExpectExitCode(1)
 }
@@ -255,6 +259,17 @@ func (suite *PackageIntegrationTestSuite) TestPackage_info() {
 	cp.ExpectExitCode(0)
 }
 
+func (suite *PackageIntegrationTestSuite) TestPackage_infoWrongCase() {
+	suite.OnlyRunForTags(tagsuite.Package)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+	suite.PrepareActiveStateYAML(ts)
+
+	cp := ts.Spawn("info", "Pexpect")
+	cp.Expect("No packages in our catalog are an exact match")
+	cp.ExpectExitCode(1)
+}
+
 const (
 	reqsFileName = "requirements.txt"
 	reqsData     = `Click==7.0
@@ -282,13 +297,8 @@ func (suite *PackageIntegrationTestSuite) TestPackage_import() {
 	username := ts.CreateNewUser()
 	namespace := fmt.Sprintf("%s/%s", username, "Python3")
 
-	cp := ts.Spawn("init", namespace, "python3", "--path="+ts.Dirs.Work, "--skeleton=editor")
-	cp.ExpectExitCode(0)
-
-	cp = ts.Spawn("push")
-	cp.ExpectLongString("You are about to create the project")
-	cp.Send("y")
-	cp.Expect("Project created")
+	cp := ts.Spawn("init", namespace, "python3", "--path="+ts.Dirs.Work)
+	cp.ExpectLongString("successfully initialized")
 	cp.ExpectExitCode(0)
 
 	reqsFilePath := filepath.Join(cp.WorkDirectory(), reqsFileName)
