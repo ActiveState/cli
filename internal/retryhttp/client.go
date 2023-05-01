@@ -179,8 +179,7 @@ func transport() http.RoundTripper {
 // retryPolicy is a modified version of retryablehttp.DefaultRetryPolicy to handle
 // status codes differently.
 func retryPolicy(ctx context.Context, resp *http.Response, err error) (bool, error) {
-	// do not retry on context.Canceled or context.DeadlineExceeded
-	if ctx.Err() != nil {
+	if ctx.Err() != nil || err == nil {
 		return false, ctx.Err()
 	}
 
@@ -201,7 +200,12 @@ func retryPolicy(ctx context.Context, resp *http.Response, err error) (bool, err
 		}
 	}
 
-	// The error is likely recoverable so retry.
+	// Don't retry if the response is nil.
+	// This can happen when the request is cancelled via a client timeout.
+	if resp == nil {
+		return false, err
+	}
+
 	return isRetryableStatus(resp.StatusCode), nil
 }
 
