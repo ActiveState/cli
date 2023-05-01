@@ -59,7 +59,7 @@ func (f *JSON) Fprint(writer io.Writer, value interface{}) {
 	f.cfg.OutWriter.Write([]byte(nul + "\n")) // Terminate with NUL character so consumers can differentiate between multiple output messages
 }
 
-type jsonError struct {
+type JsonError struct {
 	Errors []string `json:"errors"`
 	Code   int      `json:"code"`
 }
@@ -68,17 +68,20 @@ type jsonError struct {
 // NOTE that JSON always prints to the output writer, the error writer is unused.
 func (f *JSON) Error(value interface{}) {
 	var b []byte
-	if v, isBlob := value.([]byte); isBlob {
-		b = v
-	} else {
-		var err error
+	var err error
+	switch value.(type) {
+	case []byte:
+		b = value.([]byte)
+	case JsonError:
+		b, err = json.Marshal(value)
+	default:
 		b, err = json.Marshal(toJsonError(value))
-		if err != nil {
-			multilog.Error("Could not marshal value, error: %v", err)
-			b = []byte(locale.T("err_could_not_marshal_print"))
-		}
-		b = []byte(colorize.StripColorCodes(string(b)))
 	}
+	if err != nil {
+		multilog.Error("Could not marshal value, error: %v", err)
+		b = []byte(locale.T("err_could_not_marshal_print"))
+	}
+	b = []byte(colorize.StripColorCodes(string(b)))
 
 	f.cfg.OutWriter.Write(b)
 
@@ -107,19 +110,19 @@ func prepareJSONValue(v interface{}) interface{} {
 	return v
 }
 
-// toJsonError attempts to convert the given interface into a jsonError struct.
+// toJsonError attempts to convert the given interface into a JsonError struct.
 // It accepts an error object, a list of string error messages, or a single string error message.
-// If it cannot perform the conversion, it returns a jsonError indicating so.
-func toJsonError(v interface{}) jsonError {
+// If it cannot perform the conversion, it returns a JsonError indicating so.
+func toJsonError(v interface{}) JsonError {
 	switch v.(type) {
 	case error:
-		return jsonError{[]string{v.(error).Error()}, 1}
+		return JsonError{[]string{v.(error).Error()}, 1}
 	case []string:
-		return jsonError{v.([]string), 1}
+		return JsonError{v.([]string), 1}
 	case string:
-		return jsonError{[]string{v.(string)}, 1}
+		return JsonError{[]string{v.(string)}, 1}
 	}
 	message := fmt.Sprintf("Not a recognized error format: %v", v)
 	multilog.Error(message)
-	return jsonError{[]string{message}, 1}
+	return JsonError{[]string{message}, 1}
 }

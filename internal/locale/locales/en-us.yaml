@@ -1297,6 +1297,8 @@ field_localized_field:
   other: "Localized Field"
 err_could_not_marshal_print:
   other: "Could not marshal the value being printed, please check the error log for more information."
+err_no_structured_output:
+  other: "This command does not support the {{.V0}} output format. Please try again without that output flag."
 err_main_outputer:
   other: "Could not create output writer, please contact developers if this problem persists. Error: {{.V0}}"
 field_name:

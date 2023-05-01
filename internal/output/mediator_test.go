@@ -3,6 +3,8 @@ package output
 import (
 	"reflect"
 	"testing"
+
+	"github.com/ActiveState/cli/internal/locale"
 )
 
 type testMediatorValue struct {
@@ -65,7 +67,7 @@ func Test_mediatorValue(t *testing.T) {
 				"unstructured",
 				JSONFormatName,
 			},
-			jsonError{[]string{"This command does not support the json output format. Please try again without that output flag"}, 1},
+			JsonError{[]string{locale.Tl("err_no_structured_output", "", string(JSONFormatName))}, 1},
 		},
 	}
 	for _, tt := range tests {

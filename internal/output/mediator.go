@@ -58,14 +58,7 @@ func mediatorValue(v interface{}, format Format) interface{} {
 			return vt.MarshalStructured(format)
 		}
 		multilog.Error("%s output not supported for message: %v", string(format), v)
-		return jsonError{
-			[]string{locale.Tl(
-				"err_no_structured_output",
-				"This command does not support the {{.V0}} output format. Please try again without that output flag",
-				string(format),
-			)},
-			1,
-		}
+		return JsonError{[]string{locale.Tl("err_no_structured_output", "", string(format))}, 1}
 	}
 	if vt, ok := v.(Marshaller); ok {
 		return vt.MarshalOutput(format)
