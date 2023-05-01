@@ -267,3 +267,53 @@ func TestUnpack(t *testing.T) {
 		})
 	}
 }
+
+func TestJoinMessage(t *testing.T) {
+	tests := []struct {
+		name string
+		err  error
+		want string
+	}{
+		{
+			"Single",
+			errs.New("error1"),
+			"error1\n",
+		},
+		{
+			"Wrapped",
+			errs.Wrap(errs.New("error1"), "error2"),
+			"error2: error1\n",
+		},
+		{
+			"Stacked",
+			errs.Combine(errs.New("error1"), errs.New("error2"), errs.New("error3")),
+			"- error1\n- error2\n- error3\n",
+		},
+		{
+			"Stacked and Wrapped",
+			errs.Combine(
+				errs.New("error1"),
+				errs.Wrap(errs.New("error2"), "error2-wrap"),
+				errs.New("error3"),
+			),
+			"- error1\n- error2-wrap: error2\n- error3\n",
+		},
+		{
+			"Stacked, Wrapped and Stacked",
+			errs.Combine(
+				errs.New("error1"),
+				errs.Wrap(
+					errs.Combine(errs.New("error2a"), errs.New("error2b")),
+					"error2-wrap",
+				),
+				errs.New("error3")),
+			"- error1\n- error2-wrap:\n    - error2a\n    - error2b\n- error3\n",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			msg := errs.JoinMessage(tt.err)
+			assert.Equalf(t, tt.want, msg, "JoinMessage(%v)", tt.err)
+		})
+	}
+}

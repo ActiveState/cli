@@ -4,10 +4,10 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
-	"strings"
 
 	"github.com/ActiveState/cli/internal/osutils/stacktrace"
 	"github.com/ActiveState/cli/internal/rtutils"
+	"gopkg.in/yaml.v3"
 )
 
 const TipMessage = "wrapped tips"
@@ -96,13 +96,44 @@ func Combine(err error, errs ...error) error {
 	return &StackedErrors{append([]error{err}, errs...)}
 }
 
-func JoinMessage(err error) string {
-	var message []string
-	for err != nil {
-		message = append(message, err.Error())
-		err = errors.Unwrap(err)
+func encodeErrorForJoin(err error) interface{} {
+	if err == nil {
+		return nil
 	}
-	return strings.Join(message, ": ")
+
+	if u, ok := err.(unwrapNext); ok {
+		subErr := u.Unwrap()
+		if subErr == nil {
+			return err.Error()
+		}
+		return map[string]interface{}{err.Error(): encodeErrorForJoin(subErr)}
+	}
+
+	if u, ok := err.(unwrapStacked); ok {
+		var result []interface{}
+		if _, isStackErr := err.(*StackedErrors); !isStackErr {
+			result = append(result, err.Error())
+		}
+		errs := u.Unwrap()
+		for _, nextErr := range errs {
+			result = append(result, encodeErrorForJoin(nextErr))
+		}
+		if len(result) == 1 {
+			return result[0]
+		}
+		return result
+	}
+
+	return err.Error()
+}
+
+func JoinMessage(err error) string {
+	v, err := yaml.Marshal(encodeErrorForJoin(err))
+	if err != nil {
+		// This shouldn't happen since we know exactly what we are marshalling
+		return fmt.Sprintf("failed to marshal error: %s", err)
+	}
+	return string(v)
 }
 
 func AddTips(err error, tips ...string) error {
