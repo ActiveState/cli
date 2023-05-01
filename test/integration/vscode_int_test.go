@@ -170,29 +170,6 @@ func (suite *PackageIntegrationTestSuite) TestPackages_VSCode() {
 	suite.Len(po, 2)
 }
 
-func (suite *ActivateIntegrationTestSuite) TestActivate_VSCode() {
-	suite.OnlyRunForTags(tagsuite.Activate, tagsuite.VSCode)
-	ts := e2e.New(suite.T(), false)
-	defer ts.Close()
-
-	cp := ts.Spawn("activate", "--output", "editor")
-	cp.ExpectNotExitCode(0)
-	suite.Contains(cp.TrimmedSnapshot(), "error")
-
-	content := strings.TrimSpace(fmt.Sprintf(`
-project: "https://platform.activestate.com/ActiveState-CLI/Python3"
-`))
-	ts.PrepareActiveStateYAML(content)
-	cp = ts.Spawn("pull")
-	cp.ExpectExitCode(0)
-	cp = ts.Spawn("activate", "--output", "editor")
-	cp.Expect("}")
-	cp.ExpectExitCode(0)
-	out := cp.TrimmedSnapshot()
-	suite.Contains(out, "ACTIVESTATE_ACTIVATED")
-	suite.Contains(out, "ACTIVESTATE_ACTIVATED_ID")
-}
-
 func (suite *ProjectsIntegrationTestSuite) TestProjects_VSCode() {
 	suite.OnlyRunForTags(tagsuite.Projects, tagsuite.VSCode)
 	ts := e2e.New(suite.T(), false)

@@ -335,7 +335,9 @@ func (suite *PackageIntegrationTestSuite) TestPackage_headless_operation() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	cp := ts.Spawn("activate", "ActiveState-CLI/small-python", "--path", ts.Dirs.Work, "--output=json")
+	cp := ts.Spawn("checkout", "ActiveState-CLI/small-python", ".")
+	cp.Expect("Skipping runtime setup")
+	cp.Expect("Checked out project")
 	cp.ExpectExitCode(0)
 
 	suite.Run("install non-existing", func() {
@@ -379,7 +381,9 @@ func (suite *PackageIntegrationTestSuite) TestPackage_operation() {
 	cp := ts.Spawn("fork", "ActiveState-CLI/Packages", "--org", username, "--name", "python3-pkgtest")
 	cp.ExpectExitCode(0)
 
-	cp = ts.Spawn("activate", namespace, "--path="+ts.Dirs.Work, "--output=json")
+	cp = ts.Spawn("checkout", namespace, ".")
+	cp.Expect("Skipping runtime setup")
+	cp.Expect("Checked out project")
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("history", "--output=json")
