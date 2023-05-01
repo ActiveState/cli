@@ -183,27 +183,26 @@ func retryPolicy(ctx context.Context, resp *http.Response, err error) (bool, err
 		return false, ctx.Err()
 	}
 
-	if v, ok := err.(*url.Error); ok {
-		// Don't retry if the error was due to too many redirects.
-		if redirectsErrorRe.MatchString(v.Error()) {
-			return false, nil
+	if err != nil {
+		if v, ok := err.(*url.Error); ok {
+			// Don't retry if the error was due to too many redirects.
+			if redirectsErrorRe.MatchString(v.Error()) {
+				return false, nil
+			}
+
+			// Don't retry if the error was due to an invalid protocol scheme.
+			if schemeErrorRe.MatchString(v.Error()) {
+				return false, nil
+			}
+
+			// Don't retry if the error was due to TLS cert verification failure.
+			if _, ok := v.Err.(x509.UnknownAuthorityError); ok {
+				return false, nil
+			}
 		}
 
-		// Don't retry if the error was due to an invalid protocol scheme.
-		if schemeErrorRe.MatchString(v.Error()) {
-			return false, nil
-		}
-
-		// Don't retry if the error was due to TLS cert verification failure.
-		if _, ok := v.Err.(x509.UnknownAuthorityError); ok {
-			return false, nil
-		}
-	}
-
-	// Don't retry if the response is nil.
-	// This can happen when the request is cancelled via a client timeout.
-	if resp == nil {
-		return false, err
+		// The error is likely recoverable so retry.
+		return true, err
 	}
 
 	return isRetryableStatus(resp.StatusCode), nil
