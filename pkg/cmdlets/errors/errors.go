@@ -97,7 +97,7 @@ func (o *OutputError) MarshalStructured(f output.Format) interface{} {
 		message := trimError(locale.ErrorMessage(errv))
 		errors = append(errors, message)
 	}
-	return output.JsonError{errors, 1}
+	return output.StructuredError{errors, 1}
 }
 
 func Unwrap(err error) (int, error) {

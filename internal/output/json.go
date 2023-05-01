@@ -59,7 +59,7 @@ func (f *JSON) Fprint(writer io.Writer, value interface{}) {
 	f.cfg.OutWriter.Write([]byte(nul + "\n")) // Terminate with NUL character so consumers can differentiate between multiple output messages
 }
 
-type JsonError struct {
+type StructuredError struct {
 	Errors []string `json:"errors"`
 	Code   int      `json:"code"`
 }
@@ -72,10 +72,10 @@ func (f *JSON) Error(value interface{}) {
 	switch value.(type) {
 	case []byte:
 		b = value.([]byte)
-	case JsonError:
+	case StructuredError:
 		b, err = json.Marshal(value)
 	default:
-		b, err = json.Marshal(toJsonError(value))
+		b, err = json.Marshal(toStructuredError(value))
 	}
 	if err != nil {
 		multilog.Error("Could not marshal value, error: %v", err)
@@ -110,19 +110,17 @@ func prepareJSONValue(v interface{}) interface{} {
 	return v
 }
 
-// toJsonError attempts to convert the given interface into a JsonError struct.
-// It accepts an error object, a list of string error messages, or a single string error message.
-// If it cannot perform the conversion, it returns a JsonError indicating so.
-func toJsonError(v interface{}) JsonError {
+// toStructuredError attempts to convert the given interface into a StructuredError struct.
+// It accepts an error object or a single string error message.
+// If it cannot perform the conversion, it returns a StructuredError indicating so.
+func toStructuredError(v interface{}) StructuredError {
 	switch v.(type) {
 	case error:
-		return JsonError{[]string{v.(error).Error()}, 1}
-	case []string:
-		return JsonError{v.([]string), 1}
+		return StructuredError{[]string{v.(error).Error()}, 1}
 	case string:
-		return JsonError{[]string{v.(string)}, 1}
+		return StructuredError{[]string{v.(string)}, 1}
 	}
 	message := fmt.Sprintf("Not a recognized error format: %v", v)
 	multilog.Error(message)
-	return JsonError{[]string{message}, 1}
+	return StructuredError{[]string{message}, 1}
 }

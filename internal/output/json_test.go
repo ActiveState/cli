@@ -176,12 +176,6 @@ func TestJSON_Error(t *testing.T) {
 			"",
 		},
 		{
-			"unwrapped errors",
-			args{[]string{"one", "two", "three"}},
-			`{"errors":["one","two","three"],"code":1}` + "\x00\n",
-			"",
-		},
-		{
 			"simple string",
 			args{"hello"},
 			`{"errors":["hello"],"code":1}` + "\x00\n",
