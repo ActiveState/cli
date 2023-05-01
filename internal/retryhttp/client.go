@@ -179,7 +179,7 @@ func transport() http.RoundTripper {
 // retryPolicy is a modified version of retryablehttp.DefaultRetryPolicy to handle
 // status codes differently.
 func retryPolicy(ctx context.Context, resp *http.Response, err error) (bool, error) {
-	if ctx.Err() != nil || err == nil {
+	if ctx.Err() != nil {
 		return false, ctx.Err()
 	}
 
