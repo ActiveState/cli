@@ -28,7 +28,7 @@ type Messages struct {
 	auth       *auth.Auth
 	baseParams *ConditionParams
 	poll       *poller.Poller
-	checkMutex *sync.Mutex
+	checkMutex sync.Mutex
 }
 
 func New(cfg *config.Instance, auth *auth.Auth) (*Messages, error) {
