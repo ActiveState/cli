@@ -57,7 +57,6 @@ func New(cfg *config.Instance, auth *auth.Auth) (*Messages, error) {
 		cfg:        cfg,
 		auth:       auth,
 		poll:       poll,
-		checkMutex: &sync.Mutex{},
 	}, nil
 }
 
