@@ -41,7 +41,7 @@ func (suite *PushIntegrationTestSuite) SetupSuite() {
 	if runtime.GOOS == "darwin" {
 		suite.language = "python3"
 		suite.languageFull = "python3"
-		suite.baseProject = "ActiveState-CLI/Python3"
+		suite.baseProject = "ActiveState-CLI/small-python"
 		suite.extraPackage = "trender"
 	}
 }
