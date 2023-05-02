@@ -10,6 +10,8 @@ type packedErrors struct {
 	errors []error
 }
 
+func (e *packedErrors) IsTransient() {}
+
 func (e *packedErrors) Error() string {
 	return fmt.Sprintf("packed multiple errors from rtutils")
 }

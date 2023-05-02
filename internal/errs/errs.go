@@ -28,11 +28,17 @@ type ErrorTips interface {
 	ErrorTips() []string
 }
 
+type TransientError interface {
+	IsTransient()
+}
+
 // PackedErrors represents a collection of errors that aren't necessarily related to each other
 // note that rtutils replicates this functionality to avoid import cycles
 type PackedErrors struct {
 	errors []error
 }
+
+func (e *PackedErrors) IsTransient() {}
 
 func (e *PackedErrors) Error() string {
 	return fmt.Sprintf("packed multiple errors")
@@ -98,11 +104,18 @@ func Pack(err error, errs ...error) error {
 	return &PackedErrors{append([]error{err}, errs...)}
 }
 
+// encodeErrorForJoin will recursively encode an error into a format that can be marshalled in a way that is easily
+// humanly readable.
+// In a nutshell the logic is:
+// - If the error is nil, return nil
+// - If the error is wrapped other errors, return it as a map with the key being the error and the value being the wrapped error(s)
+// - If the error is packing other errors, return them as a list of errors
 func encodeErrorForJoin(err error) interface{} {
 	if err == nil {
 		return nil
 	}
 
+	// If the error is a wrapper, unwrap it and encode the wrapped error
 	if u, ok := err.(unwrapNext); ok {
 		subErr := u.Unwrap()
 		if subErr == nil {
@@ -111,9 +124,11 @@ func encodeErrorForJoin(err error) interface{} {
 		return map[string]interface{}{err.Error(): encodeErrorForJoin(subErr)}
 	}
 
+	// If the error is a packer, encode the packed errors as a list
 	if u, ok := err.(unwrapPacked); ok {
 		var result []interface{}
-		if _, isPackErr := err.(*PackedErrors); !isPackErr {
+		// Don't encode errors that are transient as the real errors are kept underneath
+		if _, isTransient := err.(TransientError); !isTransient {
 			result = append(result, err.Error())
 		}
 		errs := u.Unwrap()
