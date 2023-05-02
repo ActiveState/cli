@@ -152,7 +152,7 @@ func TestUnwrapError(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := locale.UnwrapError(tt.inError)
+			got := locale.UnpackError(tt.inError)
 
 			if len(got) != len(tt.wantErrors) {
 				t.Errorf("UnwrapError() has %d results: %v, want %d results: %v", len(got), got, len(tt.wantErrors), tt.wantErrors)

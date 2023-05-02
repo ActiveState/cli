@@ -39,7 +39,7 @@ func (o *OutputError) MarshalOutput(f output.Format) interface{} {
 		outLines = append(outLines, output.Title(locale.Tl("err_what_happened", "[ERROR]Something Went Wrong[/RESET]")).String())
 	}
 
-	rerrs := locale.UnwrapError(o.error)
+	rerrs := locale.UnpackError(o.error)
 	if len(rerrs) == 0 {
 		// It's possible the error came from cobra or something else low level that doesn't use localization
 		logging.Warning("Error does not have localization: %s", errs.JoinMessage(o.error))
@@ -76,16 +76,9 @@ func (o *OutputError) MarshalOutput(f output.Format) interface{} {
 	return strings.Join(outLines, "\n")
 }
 
-func trimError(msg string) string {
-	if strings.Count(msg, ".") > 1 || strings.Count(msg, ",") > 0 {
-		return msg // Don't trim dots if we have multiple sentences.
-	}
-	return strings.TrimRight(msg, " .")
-}
-
 func (o *OutputError) MarshalStructured(f output.Format) interface{} {
 	var errors []string
-	rerrs := locale.UnwrapError(o.error)
+	rerrs := locale.UnpackError(o.error)
 	if len(rerrs) == 0 {
 		// It's possible the error came from cobra or something else low level that doesn't use localization
 		logging.Warning("Error does not have localization: %s", errs.JoinMessage(o.error))
@@ -96,6 +89,13 @@ func (o *OutputError) MarshalStructured(f output.Format) interface{} {
 		errors = append(errors, message)
 	}
 	return output.StructuredError{errors, 1}
+}
+
+func trimError(msg string) string {
+	if strings.Count(msg, ".") > 1 || strings.Count(msg, ",") > 0 {
+		return msg // Don't trim dots if we have multiple sentences.
+	}
+	return strings.TrimRight(msg, " .")
 }
 
 func ParseUserFacing(err error) (int, error) {

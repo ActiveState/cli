@@ -174,7 +174,7 @@ func ErrorMessage(err error) string {
 	return err.Error()
 }
 
-func UnwrapError(err error) []error {
+func UnpackError(err error) []error {
 	var errors []error
 	for _, err := range errs.Unpack(err) {
 		_, isLocaleError := err.(ErrorLocalizer)
