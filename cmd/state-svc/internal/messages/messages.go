@@ -54,9 +54,9 @@ func New(cfg *config.Instance, auth *auth.Auth) (*Messages, error) {
 			StateChannel: constants.BranchName,
 			StateVersion: NewVersionFromSemver(stateVersion),
 		},
-		cfg:        cfg,
-		auth:       auth,
-		poll:       poll,
+		cfg:  cfg,
+		auth: auth,
+		poll: poll,
 	}, nil
 }
 
