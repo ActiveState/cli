@@ -156,15 +156,6 @@ func AddTips(err error, tips ...string) error {
 	return err
 }
 
-// InnerError unwraps wrapped error messages
-func InnerError(err error) error {
-	unwrapped := errors.Unwrap(err)
-	if unwrapped != nil {
-		return InnerError(unwrapped)
-	}
-	return err
-}
-
 var errorType = reflect.TypeOf((*error)(nil)).Elem()
 
 // Matches is an analog for errors.As that just checks whether err matches the given type, so you can do:

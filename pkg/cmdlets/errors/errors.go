@@ -155,12 +155,11 @@ func ReportError(err error, cmd *captain.Command, an analytics.Dispatcher) {
 		action = anaConst.ActCommandError
 	} else {
 		action = anaConst.ActCommandInputError
-		for err != nil {
+		for _, err := range errs.Unpack(err) {
 			if locale.IsInputErrorNonRecursive(err) {
 				errorMsg = locale.ErrorMessage(err)
 				break
 			}
-			err = errors.Unwrap(err)
 		}
 	}
 
