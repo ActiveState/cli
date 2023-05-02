@@ -87,7 +87,9 @@ func (m *Messages) Check(command string, flags []string) ([]*graph.MessageInfo, 
 	for _, msg := range msgs {
 		lastReportMap[msg.ID] = time.Now().Format(time.RFC3339)
 	}
-	m.cfg.Set(ConfigKeyLastReport, lastReportMap)
+	if err := m.cfg.Set(ConfigKeyLastReport, lastReportMap); err != nil {
+		return nil, errs.Wrap(err, "Could not save last reported messages")
+	}
 
 	return msgs, nil
 }
