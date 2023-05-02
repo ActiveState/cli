@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"strings"
 
 	"github.com/ActiveState/cli/internal/osutils/stacktrace"
 	"github.com/ActiveState/cli/internal/rtutils"
@@ -154,7 +155,7 @@ func JoinMessage(err error) string {
 		// This shouldn't happen since we know exactly what we are marshalling
 		return fmt.Sprintf("failed to marshal error: %s", err)
 	}
-	return string(v)
+	return strings.TrimSpace(string(v))
 }
 
 func AddTips(err error, tips ...string) error {

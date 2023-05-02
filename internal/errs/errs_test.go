@@ -55,7 +55,7 @@ func TestErrs(t *testing.T) {
 				}
 			}
 			if joinmessage := errs.JoinMessage(err); joinmessage != tt.wantJoinMessage {
-				t.Errorf("JoinMessage did not match, want: %s, got: %s", tt.wantJoinMessage, joinmessage)
+				t.Errorf("JoinMessage did not match, want: '%s', got: '%s'", tt.wantJoinMessage, joinmessage)
 			}
 		})
 	}
