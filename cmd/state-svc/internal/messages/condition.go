@@ -12,6 +12,8 @@ import (
 )
 
 type ConditionParams struct {
+	UserID       string
+	UserName     string
 	UserEmail    string
 	OS           string
 	OSVersion    Version

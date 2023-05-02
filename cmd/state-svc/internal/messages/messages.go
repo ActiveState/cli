@@ -74,8 +74,13 @@ func (m *Messages) Check(command string, flags []string) ([]*graph.MessageInfo, 
 
 	conditionParams := &(*m.baseParams) // copy
 	conditionParams.UserEmail = m.auth.Email()
+	conditionParams.UserName = m.auth.WhoAmI()
 	conditionParams.Command = command
 	conditionParams.Flags = flags
+
+	if id := m.auth.UserID(); id != nil {
+		conditionParams.UserID = id.String()
+	}
 
 	logging.Debug("Checking %d messages with params: %#v", len(allMessages), *conditionParams)
 
