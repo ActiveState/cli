@@ -3,6 +3,8 @@ package output
 import (
 	"reflect"
 	"testing"
+
+	"github.com/ActiveState/cli/internal/locale"
 )
 
 type testMediatorValue struct {
@@ -10,6 +12,10 @@ type testMediatorValue struct {
 }
 
 func (t *testMediatorValue) MarshalOutput(f Format) interface{} {
+	return t.response[f]
+}
+
+func (t *testMediatorValue) MarshalStructured(f Format) interface{} {
 	return t.response[f]
 }
 
@@ -42,6 +48,26 @@ func Test_mediatorValue(t *testing.T) {
 				PlainFormatName,
 			},
 			"mediated value",
+		},
+		{
+			"Test JSON",
+			args{
+				&testMediatorValue{
+					map[Format]interface{}{
+						JSONFormatName: "[1,2,3]",
+					},
+				},
+				JSONFormatName,
+			},
+			"[1,2,3]",
+		},
+		{
+			"Test No Structured Output",
+			args{
+				"unstructured",
+				JSONFormatName,
+			},
+			StructuredError{[]string{locale.Tl("err_no_structured_output", "", string(JSONFormatName))}, 1},
 		},
 	}
 	for _, tt := range tests {

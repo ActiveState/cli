@@ -9,6 +9,8 @@ import (
 	"github.com/ActiveState/cli/internal/osutils/shortcut"
 )
 
+const trayLaunchFileName = ""
+
 func osSpecificRemoveTray(installPath, trayExec string) error {
 	shortcutDir := filepath.Join(os.Getenv("USERPROFILE"), "AppData", "Roaming", "Microsoft", "Windows", "Start Menu", "Programs", "ActiveState")
 	sc := shortcut.New(shortcutDir, trayAppName, trayExec)

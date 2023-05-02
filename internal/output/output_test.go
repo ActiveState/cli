@@ -60,7 +60,7 @@ func TestNew(t *testing.T) {
 			outputer, err := New(tt.formatName, cfg)
 			require.NoError(t, err)
 
-			outputer.Print(tt.print)
+			outputer.Print(Prepare(tt.print, tt.print))
 
 			assert.Equal(t, tt.expectedOut, outWriter.String(), "Output did not match")
 			assert.Equal(t, tt.expectedErr, errWriter.String(), "Errors did not match")

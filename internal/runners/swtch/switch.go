@@ -121,7 +121,14 @@ func (s *Switch) Run(params SwitchParams) error {
 		return locale.WrapError(err, "err_refresh_runtime")
 	}
 
-	s.out.Print(locale.Tl("branch_switch_success", "Successfully switched to {{.V0}}: [NOTICE]{{.V1}}[/RESET]", identifier.Locale(), params.Identifier))
+	s.out.Print(output.Prepare(
+		locale.Tl("branch_switch_success", "Successfully switched to {{.V0}}: [NOTICE]{{.V1}}[/RESET]", identifier.Locale(), params.Identifier),
+		&struct {
+			Branch string `json:"branch"`
+		}{
+			params.Identifier,
+		},
+	))
 
 	return nil
 }

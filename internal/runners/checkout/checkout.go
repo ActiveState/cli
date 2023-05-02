@@ -83,11 +83,18 @@ func (u *Checkout) Run(params *Params) error {
 		return locale.WrapError(err, "err_checkout_runtime_new", "Could not checkout this project.")
 	}
 
-	u.out.Notice(locale.Tl("checkout_project_statement", "",
-		proj.NamespaceString(),
-		proj.Dir(),
-		setup.ExecDir(rti.Target().Dir())),
-	)
+	execDir := setup.ExecDir(rti.Target().Dir())
+	u.out.Print(output.Prepare(
+		locale.Tl("checkout_project_statement", "", proj.NamespaceString(), proj.Dir(), execDir),
+		&struct {
+			Namespace   string `json:"namespace"`
+			Path        string `json:"path"`
+			Executables string `json:"executables"`
+		}{
+			proj.NamespaceString(),
+			proj.Dir(),
+			execDir,
+		}))
 
 	return nil
 }

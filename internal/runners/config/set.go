@@ -65,7 +65,7 @@ func (s *Set) Run(params SetParams) error {
 
 	err = s.cfg.Set(key, value)
 	if err != nil {
-		return locale.WrapError(err, "err_config_set", fmt.Sprintf("Could not set value %s for key %s", params.Value, params.Key))
+		return locale.WrapError(err, "err_config_set", fmt.Sprintf("Could not set value %s for key %s", params.Value, key))
 	}
 
 	// Notify listeners that this key has changed.
@@ -79,7 +79,16 @@ func (s *Set) Run(params SetParams) error {
 	}
 	s.sendEvent(key, params.Value, option)
 
-	s.out.Print(locale.Tl("config_set_success", "Successfully set config key: {{.V0}} to {{.V1}}", params.Key.String(), params.Value))
+	s.out.Print(output.Prepare(
+		locale.Tl("config_set_success", "Successfully set config key: {{.V0}} to {{.V1}}", key, params.Value),
+		&struct {
+			Name  string      `json:"name"`
+			Value interface{} `json:"value"`
+		}{
+			key,
+			params.Value,
+		},
+	))
 	return nil
 }
 

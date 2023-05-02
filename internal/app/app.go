@@ -4,6 +4,7 @@ type App struct {
 	Name    string
 	Exec    string
 	Args    []string
+	Dir     string
 	options Options
 }
 
@@ -14,11 +15,12 @@ type Options struct {
 	MacHideDockIcon bool // macOS plist HideDockIcon
 }
 
-func New(name string, exec string, args []string, opts Options) (*App, error) {
+func New(name string, exec string, args []string, dir string, opts Options) (*App, error) {
 	return &App{
 		Name:    name,
 		Exec:    exec,
 		Args:    args,
+		Dir:     dir,
 		options: opts,
 	}, nil
 }

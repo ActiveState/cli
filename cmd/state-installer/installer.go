@@ -103,16 +103,16 @@ func (i *Installer) Install() (rerr error) {
 		return errs.Wrap(err, "Failed to copy installation files to dir %s. Error received: %s", i.path, errs.JoinMessage(err))
 	}
 
-	// Install the state service as an app if necessary
-	if err := i.installSvcApp(); err != nil {
-		return errs.Wrap(err, "Installation of service app failed.")
-	}
-
 	// Set up the environment
 	binDir := filepath.Join(i.path, installation.BinDirName)
 	isAdmin, err := osutils.IsAdmin()
 	if err != nil {
 		return errs.Wrap(err, "Could not determine if running as Windows administrator")
+	}
+
+	// Install the state service as an app if necessary
+	if err := i.installSvcApp(binDir); err != nil {
+		return errs.Wrap(err, "Installation of service app failed.")
 	}
 
 	// Configure available shells
@@ -164,8 +164,8 @@ func (i *Installer) sanitizeInput() error {
 	return nil
 }
 
-func (i *Installer) installSvcApp() error {
-	app, err := svcApp.New()
+func (i *Installer) installSvcApp(binDir string) error {
+	app, err := svcApp.NewFromDir(binDir)
 	if err != nil {
 		return errs.Wrap(err, "Could not create app")
 	}
@@ -175,11 +175,11 @@ func (i *Installer) installSvcApp() error {
 		return errs.Wrap(err, "Could not install app")
 	}
 
-	if err = autostart.Upgrade(app.Exec, svcAutostart.Options); err != nil {
+	if err = autostart.Upgrade(app.Path(), svcAutostart.Options); err != nil {
 		return errs.Wrap(err, "Failed to upgrade autostart for service app.")
 	}
 
-	if err = autostart.Enable(app.Exec, svcAutostart.Options); err != nil {
+	if err = autostart.Enable(app.Path(), svcAutostart.Options); err != nil {
 		return errs.Wrap(err, "Failed to enable autostart for service app.")
 	}
 
@@ -227,9 +227,9 @@ func isStateExecutable(name string) bool {
 	return false
 }
 
-func installedOnPath(installRoot, branch string) (bool, string, string, error) {
+func installedOnPath(installRoot, branch string) (bool, string, error) {
 	if !fileutils.DirExists(installRoot) {
-		return false, "", "", nil
+		return false, "", nil
 	}
 
 	// This is not using appinfo on purpose because we want to deal with legacy installation formats, which appinfo does not
@@ -245,9 +245,9 @@ func installedOnPath(installRoot, branch string) (bool, string, string, error) {
 	}
 	for _, candidate := range candidates {
 		if fileutils.TargetExists(candidate) {
-			return true, installRoot, candidate, nil
+			return true, installRoot, nil
 		}
 	}
 
-	return false, installRoot, stateCmd, nil
+	return false, installRoot, nil
 }

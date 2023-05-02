@@ -58,6 +58,7 @@ func (suite *InitIntegrationTestSuite) runInitTest(addPath bool, lang string, ex
 
 	// Run `state init`, creating the project.
 	cp := ts.Spawn(computedArgs...)
+	cp.Expect("Skipping runtime setup")
 	cp.ExpectLongString(fmt.Sprintf("Project '%s' has been successfully initialized", namespace))
 	cp.ExpectExitCode(0)
 	ts.NotifyProjectCreated(e2e.PersistentUsername, pname.String())
@@ -119,6 +120,7 @@ func (suite *InitIntegrationTestSuite) TestInit_InferLanguageFromUse() {
 	pname := strutils.UUID()
 	namespace := fmt.Sprintf("%s/%s", e2e.PersistentUsername, pname)
 	cp = ts.Spawn("init", namespace)
+	cp.Expect("Skipping runtime setup")
 	cp.Expect("successfully initialized")
 	cp.ExpectExitCode(0)
 	ts.NotifyProjectCreated(e2e.PersistentUsername, pname.String())

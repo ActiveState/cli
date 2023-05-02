@@ -40,17 +40,18 @@ func (u *Uninstall) runUninstall(params *UninstallParams) error {
 		aggErr = locale.WrapError(aggErr, "uninstall_prepare_err", "Failed to undo some installation steps.")
 	}
 
-	err = removeInstall(u.cfg)
-	if errors.Is(err, errDirNotEmpty) {
-		u.out.Notice(locale.T("uninstall_warn_not_empty"))
-	} else if err != nil {
-		logging.Debug("Could not remove install: %s", errs.JoinMessage(err))
-		aggErr = locale.WrapError(aggErr, "uninstall_remove_executables_err", "Failed to remove all State Tool files in installation directory")
-	}
-
 	if err := removeApp(); err != nil {
 		logging.Debug("Could not remove app: %s", errs.JoinMessage(err))
 		aggErr = locale.WrapError(aggErr, "uninstall_remove_app_err", "Failed to remove service application")
+	}
+
+	err = removeInstall(u.cfg)
+	if errors.Is(err, errDirNotEmpty) {
+		logging.Debug("Could not remove install as dir is not empty: %s", errs.JoinMessage(err))
+		aggErr = locale.WrapError(aggErr, "uninstall_warn_not_empty")
+	} else if err != nil {
+		logging.Debug("Could not remove install: %s", errs.JoinMessage(err))
+		aggErr = locale.WrapError(aggErr, "uninstall_remove_executables_err", "Failed to remove all State Tool files in installation directory")
 	}
 
 	err = removeEnvPaths(u.cfg)
@@ -77,7 +78,7 @@ func (u *Uninstall) runUninstall(params *UninstallParams) error {
 		return aggErr
 	}
 
-	u.out.Print(locale.T("clean_success_message"))
+	u.out.Notice(locale.T("clean_success_message"))
 	return nil
 }
 
@@ -100,7 +101,7 @@ func removeConfig(configPath string, out output.Outputer) error {
 		return locale.WrapError(err, "err_clean_config_remove", "Could not remove config directory")
 	}
 
-	out.Print(locale.Tl("clean_config_succes", "Successfully removed State Tool config directory"))
+	out.Notice(locale.Tl("clean_config_succes", "Successfully removed State Tool config directory"))
 	return nil
 }
 

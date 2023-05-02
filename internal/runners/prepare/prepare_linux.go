@@ -17,7 +17,7 @@ func (r *Prepare) prepareOS() error {
 		r.reportError(locale.T("err_autostart_app"), err)
 	}
 
-	if err = autostart.Enable(svcApp.Exec, svcAutostart.Options); err != nil {
+	if err = autostart.Enable(svcApp.Path(), svcAutostart.Options); err != nil {
 		r.reportError(locale.Tl(
 			"err_prepare_autostart",
 			"Could not enable autostart: {{.V0}}.", err.Error(),
@@ -41,7 +41,7 @@ func cleanOS() error {
 		return locale.WrapError(err, "Could not get svc autostart shortcut")
 	}
 	// cleans ~/.profile if necessary
-	if err = autostart.Disable(svcApp.Exec, svcAutostart.Options); err != nil {
+	if err = autostart.Disable(svcApp.Path(), svcAutostart.Options); err != nil {
 		return errs.Wrap(err, "Failed to enable autostart for service app.")
 	}
 

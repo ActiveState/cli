@@ -203,3 +203,24 @@ func (suite *UpdateIntegrationTestSuite) TestLockUnlock() {
 	suite.Require().NoError(err)
 	suite.Assert().False(lockRegex.Match(data), "lock info was not removed from "+pjfile.Path())
 }
+
+func (suite *UpdateIntegrationTestSuite) TestJSON() {
+	suite.OnlyRunForTags(tagsuite.Update, tagsuite.JSON)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.Spawn("checkout", "ActiveState-CLI/Python3", ".")
+	cp.Expect("Skipping runtime setup")
+	cp.Expect("Checked out")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("update", "lock", "-o", "json")
+	cp.Expect(`"channel":`)
+	cp.Expect(`"version":`)
+	cp.ExpectExitCode(0)
+	AssertValidJSON(suite.T(), cp)
+
+	cp = ts.Spawn("update", "unlock", "-o", "json")
+	cp.ExpectExitCode(0)
+	suite.Empty(cp.TrimmedSnapshot(), "unexpected output")
+}
