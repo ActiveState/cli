@@ -56,7 +56,7 @@ func TestIsError(t *testing.T) {
 			"WrapError over NewInputError",
 			locale.WrapError(locale.NewInputError("", "Input error"), "", "Wrapper"),
 			"Wrapper",
-			"Wrapper,Input error",
+			"Wrapper: Input error",
 			true,
 			true,
 		},
@@ -74,8 +74,8 @@ func TestIsError(t *testing.T) {
 			}
 
 			if tt.isError {
-				if joinmessage := locale.JoinErrors(tt.err, ","); joinmessage.Error() != tt.wantJoinMessage {
-					t.Errorf("JoinMessage did not match, want: %s, got: %s", tt.wantJoinMessage, joinmessage.Error())
+				if joinmessage := locale.JoinedErrorMessage(tt.err); joinmessage != tt.wantJoinMessage {
+					t.Errorf("JoinMessage did not match, want: %s, got: %s", tt.wantJoinMessage, joinmessage)
 				}
 				ee, ok := tt.err.(errs.Errorable)
 				if !ok {

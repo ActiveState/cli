@@ -54,5 +54,5 @@ func TestExample(t *testing.T) {
 	err = errs.Wrap(err, "Three")
 	err = locale.WrapError(err, "", "Four")
 	assert.Equal(t, "Four Three Two One", errs.JoinMessage(err))
-	assert.Equal(t, "Four Two", locale.JoinErrors(err, " ").Error())
+	assert.Equal(t, "Four: Two", locale.JoinedErrorMessage(err))
 }

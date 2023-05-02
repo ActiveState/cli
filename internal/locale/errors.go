@@ -154,17 +154,15 @@ func IsInputErrorNonRecursive(err error) bool {
 	return false
 }
 
-// JoinErrors joins all error messages in the Unwrap stack that are localized
-func JoinErrors(err error, sep string) *LocalizedError {
+// JoinedErrorMessage joins all error messages in the Unwrap stack that are localized
+func JoinedErrorMessage(err error) string {
 	var message []string
-	for _, err := range errs.Unpack(err) {
-		var localizedError ErrorLocalizer
-		if !errors.As(err, &localizedError) {
-			break
+	for _, err := range UnpackError(err) {
+		if lerr, isLocaleError := err.(ErrorLocalizer); isLocaleError {
+			message = append(message, lerr.UserError())
 		}
-		message = append(message, localizedError.UserError())
 	}
-	return WrapError(err, "", strings.Join(message, sep))
+	return strings.Join(message, ": ")
 }
 
 func ErrorMessage(err error) string {
@@ -177,18 +175,9 @@ func ErrorMessage(err error) string {
 func UnpackError(err error) []error {
 	var errors []error
 	for _, err := range errs.Unpack(err) {
-		_, isLocaleError := err.(ErrorLocalizer)
+		lerr, isLocaleError := err.(ErrorLocalizer)
 		if isLocaleError {
-			errors = append(errors, err)
-		}
-
-		// MultiError uses a custom type to wrap multiple errors, so the type casting above won't work.
-		// Instead it satisfied `errors.As()`, but here we want to specifically check the current error and not any wrapped errors.
-		if asError, ok := err.(AsError); ok {
-			var target ErrorLocalizer
-			if asError.As(&target) {
-				errors = append(errors, target)
-			}
+			errors = append(errors, lerr)
 		}
 	}
 

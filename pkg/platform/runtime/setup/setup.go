@@ -80,7 +80,7 @@ func (a *ArtifactSetupErrors) Errors() []error {
 func (a *ArtifactSetupErrors) UserError() string {
 	var errStrings []string
 	for _, err := range a.errs {
-		errStrings = append(errStrings, locale.JoinErrors(err, " :: ").UserError())
+		errStrings = append(errStrings, locale.JoinedErrorMessage(err))
 	}
 	return locale.Tl("setup_artifacts_err", "Not all artifacts could be installed:\n{{.V0}}", strings.Join(errStrings, "\n"))
 }
