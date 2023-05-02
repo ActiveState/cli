@@ -77,18 +77,7 @@ func (o *OutputError) MarshalOutput(f output.Format) interface{} {
 }
 
 func (o *OutputError) MarshalStructured(f output.Format) interface{} {
-	var errors []string
-	rerrs := locale.UnpackError(o.error)
-	if len(rerrs) == 0 {
-		// It's possible the error came from cobra or something else low level that doesn't use localization
-		logging.Warning("Error does not have localization: %s", errs.JoinMessage(o.error))
-		rerrs = []error{o.error}
-	}
-	for _, errv := range rerrs {
-		message := trimError(locale.ErrorMessage(errv))
-		errors = append(errors, message)
-	}
-	return output.StructuredError{errors, 1}
+	return output.StructuredError{locale.JoinedErrorMessage(o.error)}
 }
 
 func trimError(msg string) string {
