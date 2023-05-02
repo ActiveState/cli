@@ -87,6 +87,7 @@ func trimError(msg string) string {
 	return strings.TrimRight(msg, " .")
 }
 
+// ParseUserFacing returns the exit code and a user facing error message.
 func ParseUserFacing(err error) (int, error) {
 	if err == nil {
 		return 0, nil

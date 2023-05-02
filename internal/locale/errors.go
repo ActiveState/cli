@@ -172,6 +172,7 @@ func ErrorMessage(err error) string {
 	return err.Error()
 }
 
+// UnpackError recursively unpacks the given error and returns all localized errors
 func UnpackError(err error) []error {
 	var errors []error
 	for _, err := range errs.Unpack(err) {

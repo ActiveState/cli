@@ -28,6 +28,9 @@ type ErrorTips interface {
 	ErrorTips() []string
 }
 
+// TransientError represents an error that is transient, meaning it does not itself represent a failure, but rather it
+// facilitates a mechanic meant to get to the actual error (eg. by wrapping or packing underlying errors).
+// Do NOT satisfy this interface for errors whose type you want to assert.
 type TransientError interface {
 	IsTransient()
 }
@@ -100,6 +103,7 @@ func Wrap(wrapTarget error, message string, args ...interface{}) *WrapperError {
 	return newError(msg, wrapTarget)
 }
 
+// Pack creates a new error that packs the given errors together, allowing for multiple errors to be returned
 func Pack(err error, errs ...error) error {
 	return &PackedErrors{append([]error{err}, errs...)}
 }
@@ -218,8 +222,12 @@ type unwrapPacked interface {
 	Unwrap() []error
 }
 
+// Unpack will recursively unpack an error into a list of errors, which is useful if you need to iterate over all errors.
+// This is similar to errors.Unwrap, but will also "unwrap" errors that are packed together, which errors.Unwrap does not.
 func Unpack(err error) []error {
 	result := []error{}
+
+	// add is a little helper function to add errors to the result, skipping any transient errors
 	add := func(errors ...error) {
 		for _, err := range errors {
 			if _, isTransient := err.(TransientError); isTransient {
@@ -228,12 +236,16 @@ func Unpack(err error) []error {
 			result = append(result, err)
 		}
 	}
+
+	// recursively unpack the error
 	for err != nil {
 		add(err)
 		if u, ok := err.(unwrapNext); ok {
-			err = u.Unwrap()
+			// The error implements `Unwrap() error`, so simply unwrap it and continue the loop
+			err = u.Unwrap() // The next iteration will add the error to the result
 			continue
 		} else if u, ok := err.(unwrapPacked); ok {
+			// The error implements `Unwrap() []error`, so just add the resulting errors to the result and break the loop
 			errs := u.Unwrap()
 			for _, e := range errs {
 				add(Unpack(e)...)
