@@ -222,7 +222,7 @@ func Unpack(err error) []error {
 	result := []error{}
 	add := func(errors ...error) {
 		for _, err := range errors {
-			if _, isPacked := err.(*PackedErrors); isPacked {
+			if _, isTransient := err.(TransientError); isTransient {
 				continue
 			}
 			result = append(result, err)
