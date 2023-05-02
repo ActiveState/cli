@@ -6,15 +6,15 @@ import (
 	"time"
 )
 
-type StackedErrors struct {
+type packedErrors struct {
 	errors []error
 }
 
-func (e *StackedErrors) Error() string {
-	return fmt.Sprintf("wrapped multiple errors from rtutils")
+func (e *packedErrors) Error() string {
+	return fmt.Sprintf("packed multiple errors from rtutils")
 }
 
-func (e *StackedErrors) Unwrap() []error {
+func (e *packedErrors) Unwrap() []error {
 	return e.errors
 }
 
@@ -43,7 +43,7 @@ func Closer(closer func() error, rerr *error) {
 	err := closer()
 	if err != nil {
 		if *rerr != nil {
-			*rerr = &StackedErrors{append([]error{*rerr}, err)}
+			*rerr = &packedErrors{append([]error{*rerr}, err)}
 		} else {
 			*rerr = err
 		}

@@ -28,15 +28,17 @@ type ErrorTips interface {
 	ErrorTips() []string
 }
 
-type StackedErrors struct {
+// PackedErrors represents a collection of errors that aren't necessarily related to each other
+// note that rtutils replicates this functionality to avoid import cycles
+type PackedErrors struct {
 	errors []error
 }
 
-func (e *StackedErrors) Error() string {
-	return fmt.Sprintf("wrapped multiple errors")
+func (e *PackedErrors) Error() string {
+	return fmt.Sprintf("packed multiple errors")
 }
 
-func (e *StackedErrors) Unwrap() []error {
+func (e *PackedErrors) Unwrap() []error {
 	return e.errors
 }
 
@@ -92,8 +94,8 @@ func Wrap(wrapTarget error, message string, args ...interface{}) *WrapperError {
 	return newError(msg, wrapTarget)
 }
 
-func Combine(err error, errs ...error) error {
-	return &StackedErrors{append([]error{err}, errs...)}
+func Pack(err error, errs ...error) error {
+	return &PackedErrors{append([]error{err}, errs...)}
 }
 
 func encodeErrorForJoin(err error) interface{} {
@@ -109,9 +111,9 @@ func encodeErrorForJoin(err error) interface{} {
 		return map[string]interface{}{err.Error(): encodeErrorForJoin(subErr)}
 	}
 
-	if u, ok := err.(unwrapStacked); ok {
+	if u, ok := err.(unwrapPacked); ok {
 		var result []interface{}
-		if _, isStackErr := err.(*StackedErrors); !isStackErr {
+		if _, isPackErr := err.(*PackedErrors); !isPackErr {
 			result = append(result, err.Error())
 		}
 		errs := u.Unwrap()
@@ -197,7 +199,7 @@ type unwrapNext interface {
 	Unwrap() error
 }
 
-type unwrapStacked interface {
+type unwrapPacked interface {
 	Unwrap() []error
 }
 
@@ -205,7 +207,7 @@ func Unpack(err error) []error {
 	result := []error{}
 	add := func(errors ...error) {
 		for _, err := range errors {
-			if _, isStacked := err.(*StackedErrors); isStacked {
+			if _, isPacked := err.(*PackedErrors); isPacked {
 				continue
 			}
 			result = append(result, err)
@@ -216,7 +218,7 @@ func Unpack(err error) []error {
 		if u, ok := err.(unwrapNext); ok {
 			err = u.Unwrap()
 			continue
-		} else if u, ok := err.(unwrapStacked); ok {
+		} else if u, ok := err.(unwrapPacked); ok {
 			errs := u.Unwrap()
 			for _, e := range errs {
 				add(Unpack(e)...)

@@ -116,7 +116,7 @@ func TestMatches(t *testing.T) {
 		{
 			"combined errors 1",
 			args{
-				errs.Combine(&exec.ExitError{&os.ProcessState{}, []byte("")}, errs.New("Random")),
+				errs.Pack(&exec.ExitError{&os.ProcessState{}, []byte("")}, errs.New("Random")),
 				&exec.ExitError{},
 			},
 			true,
@@ -124,7 +124,7 @@ func TestMatches(t *testing.T) {
 		{
 			"combined errors 2 - inverted",
 			args{
-				errs.Combine(errs.New("Random"), &exec.ExitError{&os.ProcessState{}, []byte("")}),
+				errs.Pack(errs.New("Random"), &exec.ExitError{&os.ProcessState{}, []byte("")}),
 				&exec.ExitError{},
 			},
 			true,
@@ -171,7 +171,7 @@ func TestAddTips(t *testing.T) {
 		{
 			"Multi error",
 			args{
-				errs.Combine(errs.New("error1"), errs.New("error2")),
+				errs.Pack(errs.New("error1"), errs.New("error2")),
 				[]string{"tip1", "tip2"},
 			},
 			[]string{"error1", "error2"},
@@ -180,7 +180,7 @@ func TestAddTips(t *testing.T) {
 		{
 			"Multi error with locale",
 			args{
-				errs.Combine(locale.NewError("error1"), locale.NewError("error2")),
+				errs.Pack(locale.NewError("error1"), locale.NewError("error2")),
 				[]string{"tip1", "tip2"},
 			},
 			[]string{"error1", "error2"},
@@ -194,7 +194,7 @@ func TestAddTips(t *testing.T) {
 			msgs := []string{}
 			errors := errs.Unpack(err)
 			for _, err := range errors {
-				_, isMultiError := err.(*errs.StackedErrors)
+				_, isMultiError := err.(*errs.PackedErrors)
 				if !isMultiError && err.Error() != errs.TipMessage {
 					msgs = append(msgs, err.Error())
 				}
@@ -236,20 +236,20 @@ func TestUnpack(t *testing.T) {
 		},
 		{
 			"Stacked",
-			errs.Combine(errs.New("error1"), errs.New("error2"), errs.New("error3")),
+			errs.Pack(errs.New("error1"), errs.New("error2"), errs.New("error3")),
 			[]string{"error1", "error2", "error3"},
 		},
 		{
 			"Stacked and Wrapped",
-			errs.Combine(errs.New("error1"), errs.Wrap(errs.New("error2"), "error2-wrap"), errs.New("error3")),
+			errs.Pack(errs.New("error1"), errs.Wrap(errs.New("error2"), "error2-wrap"), errs.New("error3")),
 			[]string{"error1", "error2-wrap", "error2", "error3"},
 		},
 		{
 			"Stacked, Wrapped and Stacked",
-			errs.Combine(
+			errs.Pack(
 				errs.New("error1"),
 				errs.Wrap(
-					errs.Combine(errs.New("error2a"), errs.New("error2b")),
+					errs.Pack(errs.New("error2a"), errs.New("error2b")),
 					"error2-wrap",
 				),
 				errs.New("error3")),
@@ -286,12 +286,12 @@ func TestJoinMessage(t *testing.T) {
 		},
 		{
 			"Stacked",
-			errs.Combine(errs.New("error1"), errs.New("error2"), errs.New("error3")),
+			errs.Pack(errs.New("error1"), errs.New("error2"), errs.New("error3")),
 			"- error1\n- error2\n- error3\n",
 		},
 		{
 			"Stacked and Wrapped",
-			errs.Combine(
+			errs.Pack(
 				errs.New("error1"),
 				errs.Wrap(errs.New("error2"), "error2-wrap"),
 				errs.New("error3"),
@@ -300,10 +300,10 @@ func TestJoinMessage(t *testing.T) {
 		},
 		{
 			"Stacked, Wrapped and Stacked",
-			errs.Combine(
+			errs.Pack(
 				errs.New("error1"),
 				errs.Wrap(
-					errs.Combine(errs.New("error2a"), errs.New("error2b")),
+					errs.Pack(errs.New("error2a"), errs.New("error2b")),
 					"error2-wrap",
 				),
 				errs.New("error3")),

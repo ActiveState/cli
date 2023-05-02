@@ -105,8 +105,8 @@ func TestUnwrapError(t *testing.T) {
 	errLocalizedForWrapWithLocale := locale.NewError("localized error for wrap with locale")
 	errLocaleWrapWithPlain := locale.WrapError(errPlain, "wrapped localized error")
 	errPlainWrapWithLocale := errs.Wrap(errLocalizedForWrapWithLocale, "wrapped plain error")
-	errMultiWithLocaleWrap := errs.Combine(errPlain, errPlainWrapWithLocale)
-	errMulti := errs.Combine(errLocalized, errLocalized2, errPlain, errPlainWrapWithLocale, errLocaleWrapWithPlain)
+	errMultiWithLocaleWrap := errs.Pack(errPlain, errPlainWrapWithLocale)
+	errMulti := errs.Pack(errLocalized, errLocalized2, errPlain, errPlainWrapWithLocale, errLocaleWrapWithPlain)
 	errPlainWrappedMulti := errs.Wrap(errMulti, "wrapped plain error")
 
 	tests := []struct {

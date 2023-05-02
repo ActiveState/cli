@@ -28,7 +28,7 @@ func newTestCommand(prime *primer.Values) *captain.Command {
 		nil,
 		nil,
 		func(ccmd *captain.Command, _ []string) error {
-			return errs.Combine(
+			return errs.Pack(
 				locale.NewInputError("error1"),
 				errs.Wrap(locale.NewInputError("error2"), "false error1"),
 				locale.WrapInputError(errs.New("false error2"), "error3"),

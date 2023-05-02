@@ -25,7 +25,7 @@ func TestEncodeError(t *testing.T) {
 		},
 		{
 			"Stacked",
-			Combine(New("error1"), New("error2"), New("error3")),
+			Pack(New("error1"), New("error2"), New("error3")),
 			[]interface{}{
 				"error1",
 				"error2",
@@ -34,7 +34,7 @@ func TestEncodeError(t *testing.T) {
 		},
 		{
 			"Stacked and Wrapped",
-			Combine(
+			Pack(
 				New("error1"),
 				Wrap(New("error2"), "error2-wrap"),
 				New("error3"),
@@ -49,10 +49,10 @@ func TestEncodeError(t *testing.T) {
 		},
 		{
 			"Stacked, Wrapped and Stacked",
-			Combine(
+			Pack(
 				New("error1"),
 				Wrap(
-					Combine(New("error2a"), New("error2b")),
+					Pack(New("error2a"), New("error2b")),
 					"error2-wrap",
 				),
 				New("error3")),
