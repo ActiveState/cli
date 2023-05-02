@@ -30,7 +30,7 @@ func (rt *RoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
 
 	resp, err := rt.client.Do(retryableReq)
 	if err != nil && resp.StatusCode == http.StatusForbidden && strings.EqualFold(resp.Header.Get("server"), "cloudfront") {
-		return nil, &api.ErrCountryBlocked{LocalizedError: locale.NewInputError("err_country_blocked")}
+		return nil, api.NewCountryBlockedError()
 	}
 
 	return resp, err
