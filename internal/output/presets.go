@@ -11,10 +11,11 @@ func (t Title) String() string {
 }
 
 func (t Title) MarshalOutput(f Format) interface{} {
-	if f != PlainFormatName {
-		return Suppress
-	}
 	return t.String()
+}
+
+func (t Title) MarshalStructured(f Format) interface{} {
+	return Suppress
 }
 
 type Emphasize string
@@ -24,8 +25,26 @@ func (h Emphasize) String() string {
 }
 
 func (h Emphasize) MarshalOutput(f Format) interface{} {
-	if f != PlainFormatName {
-		return Suppress
-	}
 	return h.String()
+}
+
+func (h Emphasize) MarshalStructured(f Format) interface{} {
+	return Suppress
+}
+
+type preparedOutput struct {
+	plain      interface{}
+	structured interface{}
+}
+
+func (o *preparedOutput) MarshalOutput(_ Format) interface{} {
+	return o.plain
+}
+
+func (o *preparedOutput) MarshalStructured(_ Format) interface{} {
+	return o.structured
+}
+
+func Prepare(plain interface{}, structured interface{}) *preparedOutput {
+	return &preparedOutput{plain, structured}
 }

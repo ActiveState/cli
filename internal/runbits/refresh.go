@@ -27,7 +27,7 @@ func RefreshRuntime(auth *authentication.Auth, out output.Outputer, an analytics
 	}
 
 	if !changed && isCached {
-		out.Print(locale.Tl("pkg_already_uptodate", "Requested dependencies are already configured and installed."))
+		out.Notice(locale.Tl("pkg_already_uptodate", "Requested dependencies are already configured and installed."))
 		return nil
 	}
 

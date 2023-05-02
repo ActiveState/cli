@@ -85,6 +85,21 @@ func trimError(msg string) string {
 	return strings.TrimRight(msg, " .")
 }
 
+func (o *OutputError) MarshalStructured(f output.Format) interface{} {
+	var errors []string
+	rerrs := locale.UnwrapError(o.error)
+	if len(rerrs) == 0 {
+		// It's possible the error came from cobra or something else low level that doesn't use localization
+		logging.Warning("Error does not have localization: %s", errs.JoinMessage(o.error))
+		rerrs = []error{o.error}
+	}
+	for _, errv := range rerrs {
+		message := trimError(locale.ErrorMessage(errv))
+		errors = append(errors, message)
+	}
+	return output.StructuredError{errors, 1}
+}
+
 func Unwrap(err error) (int, error) {
 	if err == nil {
 		return 0, nil

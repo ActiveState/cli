@@ -24,19 +24,6 @@ func NewLanguages(prime primeable) *Languages {
 	}
 }
 
-// Listing represents the output data of a list of languages.
-type Listing struct {
-	Languages []model.Language `json:"languages"`
-}
-
-// MarshalOutput implements the output.Marshaller interface.
-func (l Listing) MarshalOutput(f output.Format) interface{} {
-	if f == output.PlainFormatName {
-		return l.Languages
-	}
-	return l
-}
-
 // Run executes the list behavior.
 func (l *Languages) Run() error {
 	if l.project == nil {
@@ -62,14 +49,10 @@ func (l *Languages) Run() error {
 		return locale.WrapError(err, "err_fetching_languages", "Cannot obtain languages")
 	}
 
-	formatLangs(langs)
-
-	l.out.Print(Listing{langs})
-	return nil
-}
-
-func formatLangs(langs []model.Language) {
 	for i := range langs {
 		langs[i].Name = strings.Title(langs[i].Name)
 	}
+
+	l.out.Print(output.Prepare(langs, langs))
+	return nil
 }

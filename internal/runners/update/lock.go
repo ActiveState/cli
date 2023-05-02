@@ -100,7 +100,16 @@ func (l *Lock) Run(params *LockParams) error {
 		return locale.WrapError(err, "err_update_projectfile", "Could not update projectfile")
 	}
 
-	l.out.Print(locale.Tl("version_locked", "Version locked at {{.V0}}@{{.V1}}", channel, lockVersion))
+	l.out.Print(output.Prepare(
+		locale.Tl("version_locked", "Version locked at {{.V0}}@{{.V1}}", channel, lockVersion),
+		&struct {
+			Channel string `json:"channel"`
+			Version string `json:"version"`
+		}{
+			channel,
+			lockVersion,
+		},
+	))
 	return nil
 }
 

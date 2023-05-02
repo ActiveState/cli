@@ -1,15 +1,13 @@
 package platforms
 
 import (
-	"fmt"
-
-	"github.com/go-openapi/strfmt"
-
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
+	"github.com/go-openapi/strfmt"
 )
 
 // List manages the listing execution context.
@@ -34,37 +32,23 @@ func (l *List) Run() error {
 		return locale.NewInputError("err_no_project")
 	}
 
-	listing, err := newListing(l.proj.CommitID(), l.proj.Name(), l.proj.Owner(), l.proj.BranchName())
+	targetCommitID, err := targetedCommitID(l.proj.CommitID(), l.proj.Name(), l.proj.Owner(), l.proj.BranchName())
 	if err != nil {
-		return err
+		return errs.Wrap(err, "Unable to get commit ID")
 	}
 
-	l.out.Print(listing)
+	modelPlatforms, err := model.FetchPlatformsForCommit(*targetCommitID)
+	if err != nil {
+		return errs.Wrap(err, "Unable to get platforms for commit")
+	}
+
+	platforms := makePlatformsFromModelPlatforms(modelPlatforms)
+	var plainOutput interface{} = platforms
+	if len(platforms) == 0 {
+		plainOutput = locale.Tl("platforms_list_no_platforms", "There are no platforms for this project.")
+	}
+	l.out.Print(output.Prepare(plainOutput, platforms))
 	return nil
-}
-
-// Listing represents the output data of a listing.
-type Listing struct {
-	Platforms []*Platform `json:"platforms"`
-}
-
-func newListing(commitID, projName, projOrg string, branchName string) (*Listing, error) {
-	targetCommitID, err := targetedCommitID(commitID, projName, projOrg, branchName)
-	if err != nil {
-		return nil, err
-	}
-
-	fmt.Println("targetCommitID:", targetCommitID.String())
-	platforms, err := model.FetchPlatformsForCommit(*targetCommitID)
-	if err != nil {
-		return nil, err
-	}
-
-	listing := Listing{
-		Platforms: makePlatformsFromModelPlatforms(platforms),
-	}
-
-	return &listing, nil
 }
 
 func targetedCommitID(commitID, projName, projOrg, branchName string) (*strfmt.UUID, error) {

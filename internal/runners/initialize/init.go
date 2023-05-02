@@ -182,11 +182,15 @@ func (r *Initialize) Run(params *RunParams) error {
 
 	projectfile.StoreProjectMapping(r.config, params.Namespace.String(), filepath.Dir(proj.Source().Path()))
 
-	r.out.Notice(locale.Tr(
-		"init_success",
-		params.Namespace.Owner,
-		params.Namespace.Project,
-		path,
+	r.out.Print(output.Prepare(
+		locale.Tr("init_success", params.Namespace.String(), path),
+		&struct {
+			Namespace string `json:"namespace"`
+			Path      string `json:"path" `
+		}{
+			params.Namespace.String(),
+			path,
+		},
 	))
 
 	return nil
