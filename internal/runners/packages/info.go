@@ -75,13 +75,11 @@ func (i *Info) Run(params InfoRunParams, nstype model.NamespaceType) error {
 	}
 
 	res := newInfoResult(pkg.Ingredient, ingredientVersion, authors, pkg.Versions)
-	out := &infoResultOutput{
+	i.out.Print(&infoOutput{
 		i.out,
 		res,
 		whatsNextMessages(res.name, res.Versions),
-	}
-
-	i.out.Print(out)
+	})
 
 	return nil
 }
@@ -169,18 +167,14 @@ func newInfoResult(ingredient *inventory_models.Ingredient, ingredientVersion *i
 	return &res
 }
 
-type infoResultOutput struct {
+type infoOutput struct {
 	out  output.Outputer
 	res  *infoResult
 	next []string
 }
 
-func (ro *infoResultOutput) MarshalOutput(format output.Format) interface{} {
-	if format != output.PlainFormatName {
-		return ro.res
-	}
-
-	print, res := ro.out.Print, ro.res
+func (o *infoOutput) MarshalOutput(format output.Format) interface{} {
+	print, res := o.out.Print, o.res
 	{
 		print(output.Title(
 			locale.Tl(
@@ -211,10 +205,14 @@ func (ro *infoResultOutput) MarshalOutput(format output.Format) interface{} {
 
 	{
 		print(output.Title(locale.Tl("packages_info_next_header", "What's next?")))
-		print(ro.next)
+		print(o.next)
 	}
 
 	return output.Suppress
+}
+
+func (o *infoOutput) MarshalStructured(format output.Format) interface{} {
+	return o.res
 }
 
 func whatsNextMessages(name string, versions []string) []string {

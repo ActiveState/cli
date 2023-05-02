@@ -145,3 +145,39 @@ func TestJqlUnpaged(t *testing.T) {
 	require.NoError(t, err, errs.JoinMessage(err))
 	require.Greater(t, len(issues), 0)
 }
+
+func TestUpdateJiraStatus(t *testing.T) {
+	t.Skip("For debugging purposes, comment this line out if you want to test this locally -- THIS WILL MAKE CHANGES TO THE TARGET ISSUE")
+	c, err := InitJiraClient()
+	require.NoError(t, err)
+	type args struct {
+		client     *jira.Client
+		issue      *jira.Issue
+		statusName string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		{
+			"foo",
+			args{
+				c,
+				&jira.Issue{
+					ID:  "33792",
+					Key: "DX-1584",
+				},
+				"In Progress",
+			},
+			false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := UpdateJiraStatus(tt.args.client, tt.args.issue, tt.args.statusName); (err != nil) != tt.wantErr {
+				t.Errorf("UpdateJiraStatus() error = %s, wantErr %v", errs.JoinMessage(err), tt.wantErr)
+			}
+		})
+	}
+}

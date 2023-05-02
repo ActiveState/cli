@@ -257,6 +257,37 @@ func (suite *UseIntegrationTestSuite) TestSetupNotice() {
 	cp.ExpectExitCode(0)
 }
 
+func (suite *UseIntegrationTestSuite) TestJSON() {
+	suite.OnlyRunForTags(tagsuite.Use, tagsuite.JSON)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.Spawn("checkout", "ActiveState-CLI/Perl-5.32", ".")
+	cp.Expect("Skipping runtime setup")
+	cp.Expect("Checked out")
+	cp.ExpectExitCode(0)
+
+	cp = ts.SpawnWithOpts(
+		e2e.WithArgs("use", "-o", "json"),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
+	cp.Expect(`"namespace":`)
+	cp.Expect(`"path":`)
+	cp.Expect(`"executables":`)
+	cp.ExpectExitCode(0)
+	AssertValidJSON(suite.T(), cp)
+
+	cp = ts.Spawn("use", "show", "--output", "json")
+	cp.Expect(`"namespace":`)
+	cp.Expect(`"path":`)
+	cp.ExpectExitCode(0)
+	AssertValidJSON(suite.T(), cp)
+
+	cp = ts.Spawn("use", "reset", "-o", "json")
+	cp.ExpectExitCode(0)
+	suite.Empty(cp.TrimmedSnapshot(), "unexpected output")
+}
+
 func TestUseIntegrationTestSuite(t *testing.T) {
 	suite.Run(t, new(UseIntegrationTestSuite))
 }

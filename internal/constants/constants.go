@@ -421,6 +421,9 @@ const ReportAnalyticsConfig = "report.analytics"
 // SvcAppName is the name we give our state-svc application
 const SvcAppName = "State Service"
 
+// SvcLaunchFileName is the name we give files pertaining to our state-svc application
+const SvcLaunchFileName = "state-svc"
+
 // StateAppName is the name we give our state cli executable
 const StateAppName = "State Tool"
 

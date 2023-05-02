@@ -335,7 +335,9 @@ func (suite *PackageIntegrationTestSuite) TestPackage_headless_operation() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	cp := ts.Spawn("activate", "ActiveState-CLI/small-python", "--path", ts.Dirs.Work, "--output=json")
+	cp := ts.Spawn("checkout", "ActiveState-CLI/small-python", ".")
+	cp.Expect("Skipping runtime setup")
+	cp.Expect("Checked out project")
 	cp.ExpectExitCode(0)
 
 	suite.Run("install non-existing", func() {
@@ -379,7 +381,9 @@ func (suite *PackageIntegrationTestSuite) TestPackage_operation() {
 	cp := ts.Spawn("fork", "ActiveState-CLI/Packages", "--org", username, "--name", "python3-pkgtest")
 	cp.ExpectExitCode(0)
 
-	cp = ts.Spawn("activate", namespace, "--path="+ts.Dirs.Work, "--output=json")
+	cp = ts.Spawn("checkout", namespace, ".")
+	cp.Expect("Skipping runtime setup")
+	cp.Expect("Checked out project")
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("history", "--output=json")
@@ -457,6 +461,38 @@ func (suite *PackageIntegrationTestSuite) TestPackage_UninstallDoesNotExist() {
 	cp := ts.Spawn("uninstall", "doesNotExist")
 	cp.Expect("Error occurred while trying to create a commit")
 	cp.ExpectExitCode(1)
+}
+
+func (suite *PackageIntegrationTestSuite) TestJSON() {
+	suite.OnlyRunForTags(tagsuite.Package, tagsuite.JSON)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.Spawn("search", "Text-CSV", "--exact-term", "--language", "Perl", "-o", "json")
+	cp.Expect(`[{"package":"Text-CSV"`)
+	cp.ExpectExitCode(0)
+	AssertValidJSON(suite.T(), cp)
+
+	cp = ts.SpawnWithOpts(
+		e2e.WithArgs("install", "Text-CSV", "--output", "editor"),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
+	cp.Expect(`{"name":"Text-CSV"`)
+	cp.ExpectExitCode(0)
+	AssertValidJSON(suite.T(), cp)
+
+	cp = ts.Spawn("packages", "-o", "json")
+	cp.Expect(`[{"package":"Text-CSV","version":"Auto"}]`)
+	cp.ExpectExitCode(0)
+	AssertValidJSON(suite.T(), cp)
+
+	cp = ts.SpawnWithOpts(
+		e2e.WithArgs("uninstall", "Text-CSV", "-o", "json"),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
+	cp.Expect(`{"name":"Text-CSV"`)
+	cp.ExpectExitCode(0)
+	AssertValidJSON(suite.T(), cp)
 }
 
 func TestPackageIntegrationTestSuite(t *testing.T) {

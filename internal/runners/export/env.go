@@ -49,7 +49,7 @@ func (e *Env) Run() error {
 		return locale.WrapError(err, "err_env_get_env", "Could not get runtime environment")
 	}
 
-	e.out.Print(env)
+	e.out.Print(output.Prepare(env, env))
 
 	return nil
 }

@@ -237,6 +237,39 @@ func (suite *InstallerIntegrationTestSuite) TestStateTrayRemoval() {
 	cp.ExpectExitCode(0)
 }
 
+func (suite *InstallerIntegrationTestSuite) TestInstallerOverwriteServiceApp() {
+	suite.OnlyRunForTags(tagsuite.Installer)
+	if runtime.GOOS != "darwin" {
+		suite.T().Skip("Only macOS has the service app")
+	}
+
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	appInstallDir := filepath.Join(ts.Dirs.Work, "app")
+	err := fileutils.Mkdir(appInstallDir)
+	suite.Require().NoError(err)
+
+	cp := ts.SpawnCmdWithOpts(
+		suite.installerExe,
+		e2e.WithArgs(filepath.Join(ts.Dirs.Work, "installation")),
+		e2e.AppendEnv(fmt.Sprintf("%s=%s", constants.AppInstallDirOverrideEnvVarName, appInstallDir)),
+	)
+	cp.Expect("Done")
+	cp.SendLine("exit")
+	cp.ExpectExitCode(0)
+
+	// State Service.app should be overwritten cleanly without error.
+	cp = ts.SpawnCmdWithOpts(
+		suite.installerExe,
+		e2e.WithArgs(filepath.Join(ts.Dirs.Work, "installation2")),
+		e2e.AppendEnv(fmt.Sprintf("%s=%s", constants.AppInstallDirOverrideEnvVarName, appInstallDir)),
+	)
+	cp.Expect("Done")
+	cp.SendLine("exit")
+	cp.ExpectExitCode(0)
+}
+
 func (suite *InstallerIntegrationTestSuite) AssertConfig(ts *e2e.Session) {
 	if runtime.GOOS != "windows" {
 		// Test bashrc

@@ -99,6 +99,28 @@ scripts:
 	ts.PrepareActiveStateYAML(asyData)
 }
 
+func (suite *ShowIntegrationTestSuite) TestJSON() {
+	suite.OnlyRunForTags(tagsuite.Show, tagsuite.JSON)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.Spawn("checkout", "ActiveState-CLI/small-python", ".")
+	cp.Expect("Skipping runtime setup")
+	cp.Expect("Checked out")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("show", "-o", "json")
+	cp.Expect(`"project_url":`)
+	cp.Expect(`"name":`)
+	cp.Expect(`"platforms":`)
+	cp.Expect(`"languages":`)
+	cp.Expect(`"secrets":`)
+	cp.Expect(`"events":`)
+	cp.Expect(`"scripts":`)
+	cp.ExpectExitCode(0)
+	AssertValidJSON(suite.T(), cp)
+}
+
 func TestShowIntegrationTestSuite(t *testing.T) {
 	suite.Run(t, new(ShowIntegrationTestSuite))
 }

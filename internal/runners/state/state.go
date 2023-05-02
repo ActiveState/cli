@@ -5,12 +5,11 @@ import (
 
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/profile"
-	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/pkg/cmdlets/checker"
 	"github.com/ActiveState/cli/pkg/platform/model"
 )
@@ -47,17 +46,11 @@ func New(opts *Options, prime primeable) *State {
 	}
 }
 
-// Run state logic
 func (s *State) Run(usageFunc func() error) error {
-	return execute(s.opts, usageFunc, s.cfg, s.svcMdl, s.out)
-}
+	defer profile.Measure("runners:state:run", time.Now())
 
-func execute(opts *Options, usageFunc func() error, cfg *config.Instance, svcModel *model.SvcModel, out output.Outputer) error {
-	logging.Debug("Execute")
-	defer profile.Measure("runners:state:execute", time.Now())
-
-	if opts.Version {
-		checker.RunUpdateNotifier(svcModel, out)
+	if s.opts.Version {
+		checker.RunUpdateNotifier(s.svcMdl, s.out)
 		vd := installation.VersionData{
 			constants.LibraryLicense,
 			constants.Version,
@@ -66,10 +59,7 @@ func execute(opts *Options, usageFunc func() error, cfg *config.Instance, svcMod
 			constants.Date,
 			constants.OnCI == "true",
 		}
-		out.Print(
-			output.NewFormatter(vd).
-				WithFormat(output.PlainFormatName, locale.T("version_info", vd)),
-		)
+		s.out.Print(output.Prepare(locale.T("version_info", vd), vd))
 		return nil
 	}
 	return usageFunc()
