@@ -672,7 +672,7 @@ func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
 		return execute(c, args)
 	})
 
-	exitCode := errs.UnwrapExitCode(err)
+	exitCode := errs.ParseExitCode(err)
 
 	var serr interface{ Signal() os.Signal }
 	if errors.As(err, &serr) {
@@ -813,7 +813,7 @@ func pflagFlagErrMsgFlag(errMsg string) string {
 	flagText := strings.TrimPrefix(errMsg, "no such flag ")
 	flagText = strings.TrimPrefix(flagText, "unknown flag: ")
 	flagText = strings.TrimPrefix(flagText, "bad flag syntax: ")
-	//unknown shorthand flag: 'x' in -x
+	// unknown shorthand flag: 'x' in -x
 	flagText = strings.TrimPrefix(flagText, "unknown shorthand flag: ")
 
 	if flagText == errMsg {

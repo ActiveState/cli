@@ -144,7 +144,7 @@ func main() {
 			multilog.Critical("Installer error: " + errs.JoinMessage(err))
 		}
 
-		exitCode, err = errors.Unwrap(err)
+		exitCode, err = errors.ParseUserFacing(err)
 		if err != nil {
 			out.Error(err)
 		}

@@ -206,7 +206,7 @@ func main() {
 		}
 
 		an.EventWithLabel(AnalyticsFunnelCat, "fail", errs.JoinMessage(err))
-		exitCode, err = errors.Unwrap(err)
+		exitCode, err = errors.ParseUserFacing(err)
 		if err != nil {
 			out.Error(err)
 		}

@@ -102,7 +102,7 @@ func main() {
 	// Run our main command logic, which is logic that defers to the error handling logic below
 	err = run(os.Args, isInteractive, cfg, out)
 	if err != nil {
-		exitCode, err = cmdletErrors.Unwrap(err)
+		exitCode, err = cmdletErrors.ParseUserFacing(err)
 		if err != nil {
 			out.Error(err)
 		}

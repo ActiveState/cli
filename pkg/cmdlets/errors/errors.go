@@ -11,7 +11,6 @@ import (
 	"github.com/ActiveState/cli/internal/analytics/dimensions"
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/condition"
-	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
@@ -99,7 +98,7 @@ func (o *OutputError) MarshalStructured(f output.Format) interface{} {
 	return output.StructuredError{errors, 1}
 }
 
-func Unwrap(err error) (int, error) {
+func ParseUserFacing(err error) (int, error) {
 	if err == nil {
 		return 0, nil
 	}
@@ -107,23 +106,11 @@ func Unwrap(err error) (int, error) {
 	_, hasMarshaller := err.(output.Marshaller)
 
 	// unwrap exit code before we remove un-localized wrapped errors from err variable
-	code := errs.UnwrapExitCode(err)
+	code := errs.ParseExitCode(err)
 
 	if errs.IsSilent(err) {
 		logging.Debug("Suppressing silent failure: %v", err.Error())
 		return code, nil
-	}
-
-	var llerr *config.LocalizedError // workaround type used to avoid circular import in config pkg
-	if errors.As(err, &llerr) {
-		key, base := llerr.Localization()
-		if key != "" && base != "" {
-			err = locale.WrapError(err, key, base)
-		}
-		reportMsg := llerr.ReportMessage()
-		if reportMsg != "" {
-			multilog.Error(reportMsg)
-		}
 	}
 
 	if hasMarshaller {
