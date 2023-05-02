@@ -1042,10 +1042,6 @@ err_replaceall_check_log:
   other: "Error occurred while replacing file contents, please check the error log or contact support."
 err_bad_project_url:
   other: "Invalid value for 'project' field in your activestate.yaml, please ensure it is in the format of: 'https://platform.activestate.com/org/project'."
-err_deprection_404:
-  other: Could not check for deprecation as the service returned a 404 not found
-err_deprection_code:
-  other: Could not check for deprecation as the service returned a code [NOTICE]{{.V0}}[/RESET]
 err_set_commit_id:
   other: "Could not update your activestate.yaml with the latest commit ID. Please ensure you have your project defined in the format of [ACTIONABLE]`project: https://platform.activestate.com/org/project`[/RESET]"
 err_set_project:

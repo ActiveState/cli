@@ -24,7 +24,7 @@ func New(p *primer.Values) *CmdCall {
 // and then handles the after command logic.
 func (c *CmdCall) InterceptExec(next captain.ExecuteFunc) captain.ExecuteFunc {
 	return func(cmd *captain.Command, args []string) error {
-		cc := cmdcall.New(c.primer, cmd.UseFull())
+		cc := cmdcall.New(c.primer, cmd.JoinedSubCommandNames())
 
 		if err := cc.Run(project.BeforeCmd); err != nil {
 			return errs.Wrap(err, "before-command event run failure")

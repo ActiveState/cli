@@ -137,8 +137,8 @@ const OptinUnstableEnvVarName = "ACTIVESTATE_OPTIN_UNSTABLE"
 // ServiceSockDir overrides the default socket path root diriectory used by the state service
 const ServiceSockDir = "ACTIVESTATE_SVC_SOCK"
 
-// AnalyticsLogEnvVarName is used to instruct State Tool to report analytics events to the given file
-const DeprecationOverrideEnvVarName = "ACTIVESTATE_DEPRECATION_OVERRIDE"
+// MessagesOverrideEnvVarName is used to override the location of the messages file (for testing purposes - should hold local filepath)
+const MessagesOverrideEnvVarName = "ACTIVESTATE_MESSAGES_OVERRIDE"
 
 // DisableErrorTipsEnvVarName disables the display of tips in error messages.
 // This should only be used by the installer so-as not to pollute error message output.
@@ -254,8 +254,8 @@ const MediatorAPIPath = "/sv/mediator/api"
 // RequirementsImportAPIPath is the path used for the requirements import api
 const RequirementsImportAPIPath = "/sv/reqsvc/reqs"
 
-// DeprecationInfoURL is the URL we check against to see what versions are deprecated
-const DeprecationInfoURL = "https://state-tool.s3.amazonaws.com/deprecation.json"
+// MessagesInfoURL is the URL we check against to see what versions are deprecated
+const MessagesInfoURL = "https://state-tool.s3.amazonaws.com/messages.json"
 
 // DateFormatUser is the date format we use when communicating with the end-user
 const DateFormatUser = "January 02, 2006"

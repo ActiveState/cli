@@ -12,8 +12,8 @@ type AvailableUpdateResponse struct {
 	AvailableUpdate AvailableUpdate `json:"availableUpdate"`
 }
 
-type DeprecationResponse struct {
-	CheckDeprecation DeprecationInfo `json:"checkDeprecation"`
+type CheckMessagesResponse struct {
+	Messages []*MessageInfo `json:"checkMessages"`
 }
 
 type CheckRuntimeUsageResponseOuter struct {

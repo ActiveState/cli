@@ -36,7 +36,7 @@ func (d *Docs) Run(p *Params, cmd *captain.Command) error {
 	for _, cmds := range commands {
 		out, err := strutils.ParseTemplate(tpl, map[string]interface{}{
 			"Commands": cmds,
-		})
+		}, nil)
 		if err != nil {
 			return errs.Wrap(err, "Could not parse template")
 		}

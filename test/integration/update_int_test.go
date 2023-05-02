@@ -13,9 +13,9 @@ import (
 
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/download"
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/httputil"
 	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/rtutils/singlethread"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
@@ -283,7 +283,7 @@ func (suite *UpdateIntegrationTestSuite) installLatestReleaseVersion(ts *e2e.Ses
 			"bash", e2e.WithArgs("-c", oneLiner),
 		)
 	} else {
-		b, err := download.GetDirect("https://platform.activestate.com/dl/cli/pdli01/install.ps1")
+		b, err := httputil.GetDirect("https://platform.activestate.com/dl/cli/pdli01/install.ps1")
 		suite.Require().NoError(err)
 
 		ps1File := filepath.Join(ts.Dirs.Work, "install.ps1")
