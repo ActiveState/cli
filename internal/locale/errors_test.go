@@ -56,7 +56,7 @@ func TestIsError(t *testing.T) {
 			"WrapError over NewInputError",
 			locale.WrapError(locale.NewInputError("", "Input error"), "", "Wrapper"),
 			"Wrapper",
-			"Wrapper,Input error",
+			"Wrapper: Input error",
 			true,
 			true,
 		},
@@ -74,8 +74,8 @@ func TestIsError(t *testing.T) {
 			}
 
 			if tt.isError {
-				if joinmessage := locale.JoinErrors(tt.err, ","); joinmessage.Error() != tt.wantJoinMessage {
-					t.Errorf("JoinMessage did not match, want: %s, got: %s", tt.wantJoinMessage, joinmessage.Error())
+				if joinmessage := locale.JoinedErrorMessage(tt.err); joinmessage != tt.wantJoinMessage {
+					t.Errorf("JoinMessage did not match, want: %s, got: %s", tt.wantJoinMessage, joinmessage)
 				}
 				ee, ok := tt.err.(errs.Errorable)
 				if !ok {
@@ -105,8 +105,8 @@ func TestUnwrapError(t *testing.T) {
 	errLocalizedForWrapWithLocale := locale.NewError("localized error for wrap with locale")
 	errLocaleWrapWithPlain := locale.WrapError(errPlain, "wrapped localized error")
 	errPlainWrapWithLocale := errs.Wrap(errLocalizedForWrapWithLocale, "wrapped plain error")
-	errMultiWithLocaleWrap := errs.Combine(errPlain, errPlainWrapWithLocale)
-	errMulti := errs.Combine(errLocalized, errLocalized2, errPlain, errPlainWrapWithLocale, errLocaleWrapWithPlain)
+	errMultiWithLocaleWrap := errs.Pack(errPlain, errPlainWrapWithLocale)
+	errMulti := errs.Pack(errLocalized, errLocalized2, errPlain, errPlainWrapWithLocale, errLocaleWrapWithPlain)
 	errPlainWrappedMulti := errs.Wrap(errMulti, "wrapped plain error")
 
 	tests := []struct {
@@ -152,7 +152,7 @@ func TestUnwrapError(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := locale.UnwrapError(tt.inError)
+			got := locale.UnpackError(tt.inError)
 
 			if len(got) != len(tt.wantErrors) {
 				t.Errorf("UnwrapError() has %d results: %v, want %d results: %v", len(got), got, len(tt.wantErrors), tt.wantErrors)

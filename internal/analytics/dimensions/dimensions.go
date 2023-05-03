@@ -51,7 +51,7 @@ type Values struct {
 func NewDefaultDimensions(pjNamespace, sessionToken, updateTag string) *Values {
 	installSource, err := storage.InstallSource()
 	if err != nil {
-		multilog.Error("Could not detect installSource: %s", errs.Join(err, " :: ").Error())
+		multilog.Error("Could not detect installSource: %s", errs.JoinMessage(err))
 	}
 
 	deviceID := uniqid.Text()

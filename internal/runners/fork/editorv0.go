@@ -1,8 +1,6 @@
 package fork
 
 import (
-	"errors"
-
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
@@ -55,13 +53,11 @@ func (e *editorV0Error) ErrorTips() []string {
 func (e *editorV0Error) MarshalStructured(output.Format) interface{} {
 	logging.Debug("Marshalling editorv0 error")
 	var code int32 = 1
-	errInspect := e.parent
-	for errInspect != nil {
+	for _, errInspect := range errs.Unpack(e.parent) {
 		err, ok := errInspect.(error)
 		if ok && errs.Matches(err, &model.ErrProjectNameConflict{}) {
 			code = -16
 		}
-		errInspect = errors.Unwrap(errInspect)
 	}
 	result := resultEditorV0{
 		nil,
