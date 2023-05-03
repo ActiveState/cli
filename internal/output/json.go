@@ -14,13 +14,13 @@ import (
 // JSON is our JSON outputer, there's not much going on here, just forwards it to the JSON marshaller and provides
 // a basic structure for error
 type JSON struct {
-	cfg      *Config
-	printNUL bool
+	cfg         *Config
+	wroteOutput bool
 }
 
 // NewJSON constructs a new JSON struct
 func NewJSON(config *Config) (JSON, error) {
-	return JSON{config, true}, nil
+	return JSON{cfg: config}, nil
 }
 
 // Type tells callers what type of outputer we are
@@ -35,6 +35,12 @@ func (f *JSON) Print(v interface{}) {
 
 // Fprint allows printing to a specific writer, using all the conveniences of the output package
 func (f *JSON) Fprint(writer io.Writer, value interface{}) {
+	if f.wroteOutput {
+		multilog.Error("Already wrote json output; skipping.")
+		return
+	}
+	f.wroteOutput = true
+
 	var b []byte
 	if v, isBlob := value.([]byte); isBlob {
 		b = v
@@ -51,12 +57,6 @@ func (f *JSON) Fprint(writer io.Writer, value interface{}) {
 	}
 
 	writer.Write(b)
-
-	var nul string
-	if f.printNUL {
-		nul = "\x00"
-	}
-	f.cfg.OutWriter.Write([]byte(nul + "\n")) // Terminate with NUL character so consumers can differentiate between multiple output messages
 }
 
 type StructuredError struct {
@@ -66,6 +66,12 @@ type StructuredError struct {
 // Error will marshal and print the given value to the error writer
 // NOTE that JSON always prints to the output writer, the error writer is unused.
 func (f *JSON) Error(value interface{}) {
+	if f.wroteOutput {
+		multilog.Error("Already wrote json output; skipping.")
+		return
+	}
+	f.wroteOutput = true
+
 	var b []byte
 	var err error
 	switch value.(type) {
@@ -81,12 +87,6 @@ func (f *JSON) Error(value interface{}) {
 	b = []byte(colorize.StripColorCodes(string(b)))
 
 	f.cfg.OutWriter.Write(b)
-
-	var nul string
-	if f.printNUL {
-		nul = "\x00"
-	}
-	f.cfg.OutWriter.Write([]byte(nul + "\n")) // Terminate with NUL character so consumers can differentiate between multiple output messages
 }
 
 // Notice is ignored by JSON, as they are considered as non-critical output and there's currently no reliable way to
