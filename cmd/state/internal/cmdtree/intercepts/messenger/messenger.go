@@ -24,7 +24,7 @@ type Messenger struct {
 
 func (m *Messenger) Interceptor(next captain.ExecuteFunc) captain.ExecuteFunc {
 	return func(cmd *captain.Command, args []string) error {
-		if m.out.Type() != output.PlainFormatName && m.out.Type() != output.SimpleFormatName {
+		if m.out.Type().IsStructured() {
 			// No point showing messaging on non-plain output (eg. json)
 			return next(cmd, args)
 		}
