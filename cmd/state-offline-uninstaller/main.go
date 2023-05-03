@@ -93,7 +93,7 @@ func main() {
 			multilog.Critical("state-offline-uninstaller errored out: %s", errs.JoinMessage(err))
 		}
 
-		exitCode, _ = errors.Unwrap(err)
+		exitCode, _ = errors.ParseUserFacing(err)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, errs.JoinMessage(err))
 		}

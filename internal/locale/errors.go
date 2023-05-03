@@ -4,6 +4,7 @@ import (
 	"errors"
 	"strings"
 
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/osutils/stacktrace"
 	"github.com/ActiveState/cli/internal/rtutils"
 )
@@ -132,12 +133,11 @@ func IsInputError(err error) bool {
 	if err == nil {
 		return false
 	}
-	for err != nil {
+	for _, err := range errs.Unpack(err) {
 		errInput, ok := err.(ErrorInput)
 		if ok && errInput.InputError() {
 			return true
 		}
-		err = errors.Unwrap(err)
 	}
 	return false
 }
@@ -154,18 +154,15 @@ func IsInputErrorNonRecursive(err error) bool {
 	return false
 }
 
-// JoinErrors joins all error messages in the Unwrap stack that are localized
-func JoinErrors(err error, sep string) *LocalizedError {
+// JoinedErrorMessage joins all error messages in the Unwrap stack that are localized
+func JoinedErrorMessage(err error) string {
 	var message []string
-	for err != nil {
-		var localizedError ErrorLocalizer
-		if !errors.As(err, &localizedError) {
-			break
+	for _, err := range UnpackError(err) {
+		if lerr, isLocaleError := err.(ErrorLocalizer); isLocaleError {
+			message = append(message, lerr.UserError())
 		}
-		message = append(message, localizedError.UserError())
-		err = errors.Unwrap(localizedError)
 	}
-	return WrapError(err, "", strings.Join(message, sep))
+	return strings.Join(message, ": ")
 }
 
 func ErrorMessage(err error) string {
@@ -175,24 +172,15 @@ func ErrorMessage(err error) string {
 	return err.Error()
 }
 
-func UnwrapError(err error) []error {
-	var errs []error
-	for err != nil {
-		_, isLocaleError := err.(ErrorLocalizer)
+// UnpackError recursively unpacks the given error and returns all localized errors
+func UnpackError(err error) []error {
+	var errors []error
+	for _, err := range errs.Unpack(err) {
+		lerr, isLocaleError := err.(ErrorLocalizer)
 		if isLocaleError {
-			errs = append(errs, err)
+			errors = append(errors, lerr)
 		}
-
-		// MultiError uses a custom type to wrap multiple errors, so the type casting above won't work.
-		// Instead it satisfied `errors.As()`, but here we want to specifically check the current error and not any wrapped errors.
-		if asError, ok := err.(AsError); ok {
-			var target ErrorLocalizer
-			if asError.As(&target) {
-				errs = append(errs, target)
-			}
-		}
-		err = errors.Unwrap(err)
 	}
 
-	return errs
+	return errors
 }

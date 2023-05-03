@@ -56,7 +56,7 @@ func (cf *ConversionFlow) StartIfNecessary() (bool, error) {
 	cf.analytics.Event(anaConsts.CatPpmConversion, "run")
 	r, err := cf.runSurvey()
 	if err != nil {
-		cf.analytics.EventWithLabel(anaConsts.CatPpmConversion, "error", errs.Join(err, " :: ").Error())
+		cf.analytics.EventWithLabel(anaConsts.CatPpmConversion, "error", errs.JoinMessage(err))
 		return true, locale.WrapError(err, "ppm_conversion_survey_error", "Conversion flow failed.")
 	}
 
@@ -67,7 +67,7 @@ func (cf *ConversionFlow) StartIfNecessary() (bool, error) {
 
 	err = cf.createVirtualEnv()
 	if err != nil {
-		cf.analytics.EventWithLabel(anaConsts.CatPpmConversion, "error", errs.Join(err, " :: ").Error())
+		cf.analytics.EventWithLabel(anaConsts.CatPpmConversion, "error", errs.JoinMessage(err))
 		return true, locale.WrapError(err, "ppm_conversion_venv_error", "Failed to create a project.")
 	}
 	cf.analytics.EventWithLabel(anaConsts.CatPpmConversion, "completed", r.String())

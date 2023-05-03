@@ -686,7 +686,7 @@ func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
 		return execute(c, args)
 	})
 
-	exitCode := errs.UnwrapExitCode(err)
+	exitCode := errs.ParseExitCode(err)
 
 	var serr interface{ Signal() os.Signal }
 	if errors.As(err, &serr) {

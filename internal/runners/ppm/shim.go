@@ -81,7 +81,7 @@ func (s *Shim) RunList(converted bool, args ...string) error {
 func (s *Shim) shim(intercepted, replaced string, args ...string) error {
 	err := s.executeShim(intercepted, replaced, args...)
 	if err != nil {
-		s.analytics.EventWithLabel(constants.CatPPMShimCmd, intercepted, fmt.Sprintf("error: %v", errs.Join(err, " :: ").Error()))
+		s.analytics.EventWithLabel(constants.CatPPMShimCmd, intercepted, fmt.Sprintf("error: %v", errs.JoinMessage(err)))
 	} else {
 		s.analytics.EventWithLabel(constants.CatPPMShimCmd, intercepted, "success")
 	}
