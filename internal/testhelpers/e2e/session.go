@@ -422,7 +422,7 @@ func (s *Session) DebugMessage(prefix string) string {
 		"Logs":         s.DebugLogs(),
 		"A":            sectionStart,
 		"Z":            sectionEnd,
-	})
+	}, nil)
 	if err != nil {
 		s.t.Fatalf("Parsing template failed: %s", err)
 	}

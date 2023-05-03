@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/ActiveState/cli/cmd/state-svc/internal/deprecation"
+	"github.com/ActiveState/cli/cmd/state-svc/internal/messages"
 	"github.com/ActiveState/cli/cmd/state-svc/internal/rtusage"
 	"github.com/ActiveState/cli/cmd/state-svc/internal/rtwatcher"
 	genserver "github.com/ActiveState/cli/cmd/state-svc/internal/server/generated"
@@ -32,7 +32,7 @@ import (
 
 type Resolver struct {
 	cfg            *config.Instance
-	depPoller      *poller.Poller
+	messages       *messages.Messages
 	updatePoller   *poller.Poller
 	authPoller     *poller.Poller
 	usageChecker   *rtusage.Checker
@@ -45,10 +45,10 @@ type Resolver struct {
 // var _ genserver.ResolverRoot = &Resolver{} // Must implement ResolverRoot
 
 func New(cfg *config.Instance, an *sync.Client, auth *authentication.Auth) (*Resolver, error) {
-	depchecker := deprecation.NewChecker(cfg)
-	pollDep := poller.New(1*time.Hour, func() (interface{}, error) {
-		return depchecker.Check()
-	})
+	msg, err := messages.New(cfg, auth)
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not initialize messages")
+	}
 
 	upchecker := updater.NewDefaultChecker(cfg, an)
 	pollUpdate := poller.New(1*time.Hour, func() (interface{}, error) {
@@ -76,7 +76,7 @@ func New(cfg *config.Instance, an *sync.Client, auth *authentication.Auth) (*Res
 	anForClient := sync.New(cfg, auth, nil)
 	return &Resolver{
 		cfg,
-		pollDep,
+		msg,
 		pollUpdate,
 		pollAuth,
 		usageChecker,
@@ -88,7 +88,7 @@ func New(cfg *config.Instance, an *sync.Client, auth *authentication.Auth) (*Res
 }
 
 func (r *Resolver) Close() error {
-	r.depPoller.Close()
+	r.messages.Close()
 	r.updatePoller.Close()
 	r.authPoller.Close()
 	r.anForClient.Close()
@@ -230,17 +230,10 @@ func (r *Resolver) CheckRuntimeUsage(_ context.Context, organizationName string)
 	}, nil
 }
 
-func (r *Resolver) CheckDeprecation(ctx context.Context) (*graph.DeprecationInfo, error) {
+func (r *Resolver) CheckMessages(ctx context.Context, command string, flags []string) ([]*graph.MessageInfo, error) {
 	defer func() { handlePanics(recover(), debug.Stack()) }()
-
-	logging.Debug("Check deprecation resolver")
-
-	deprecated, ok := r.depPoller.ValueFromCache().(*graph.DeprecationInfo)
-	if !ok {
-		logging.Debug("No deprecation info in cache")
-	}
-
-	return deprecated, nil
+	logging.Debug("Check messages resolver")
+	return r.messages.Check(command, flags)
 }
 
 func (r *Resolver) ConfigChanged(ctx context.Context, key string) (*graph.ConfigChangedResponse, error) {

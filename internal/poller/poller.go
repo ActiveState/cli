@@ -5,6 +5,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
 )
 
@@ -47,8 +48,12 @@ func (p *Poller) start(interval time.Duration) {
 func (p *Poller) refresh() {
 	info, err := p.pollFunc()
 	if err != nil {
-		if !locale.IsInputError(err) && !p.errorReported {
-			multilog.Error("Could not poll %s", errs.JoinMessage(err))
+		if !locale.IsInputError(err) {
+			if !p.errorReported {
+				multilog.Error("Could not poll: %s", errs.JoinMessage(err))
+			} else {
+				logging.Debug("Could not poll: %s", errs.JoinMessage(err))
+			}
 			p.errorReported = true
 		}
 		return

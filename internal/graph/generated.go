@@ -2,6 +2,12 @@
 
 package graph
 
+import (
+	"fmt"
+	"io"
+	"strconv"
+)
+
 type AnalyticsEventResponse struct {
 	Sent bool `json:"sent"`
 }
@@ -23,12 +29,23 @@ type ConfigChangedResponse struct {
 	Received bool `json:"received"`
 }
 
-type DeprecationInfo struct {
-	Version     string `json:"version"`
-	Date        string `json:"date"`
-	DateReached bool   `json:"dateReached"`
-	Reason      string `json:"reason"`
+type MessageInfo struct {
+	ID        string               `json:"id"`
+	Message   string               `json:"message"`
+	Condition string               `json:"condition"`
+	Repeat    MessageRepeatType    `json:"repeat"`
+	Interrupt MessageInterruptType `json:"interrupt"`
+	Placement MessagePlacementType `json:"placement"`
 }
+
+/*
+[
+	{
+		"ID": "simple",
+		"Message": "This is a [NOTICE]simple[/RESET] message\nwith a line break",
+	}
+]
+*/
 
 type Project struct {
 	Namespace string   `json:"namespace"`
@@ -49,4 +66,137 @@ type StateVersion struct {
 
 type Version struct {
 	State *StateVersion `json:"state"`
+}
+
+type MessageInterruptType string
+
+const (
+	MessageInterruptTypeDisabled MessageInterruptType = "Disabled"
+	MessageInterruptTypePrompt   MessageInterruptType = "Prompt"
+	MessageInterruptTypeExit     MessageInterruptType = "Exit"
+)
+
+var AllMessageInterruptType = []MessageInterruptType{
+	MessageInterruptTypeDisabled,
+	MessageInterruptTypePrompt,
+	MessageInterruptTypeExit,
+}
+
+func (e MessageInterruptType) IsValid() bool {
+	switch e {
+	case MessageInterruptTypeDisabled, MessageInterruptTypePrompt, MessageInterruptTypeExit:
+		return true
+	}
+	return false
+}
+
+func (e MessageInterruptType) String() string {
+	return string(e)
+}
+
+func (e *MessageInterruptType) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = MessageInterruptType(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid MessageInterruptType", str)
+	}
+	return nil
+}
+
+func (e MessageInterruptType) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type MessagePlacementType string
+
+const (
+	MessagePlacementTypeBeforeCmd MessagePlacementType = "BeforeCmd"
+	MessagePlacementTypeAfterCmd  MessagePlacementType = "AfterCmd"
+)
+
+var AllMessagePlacementType = []MessagePlacementType{
+	MessagePlacementTypeBeforeCmd,
+	MessagePlacementTypeAfterCmd,
+}
+
+func (e MessagePlacementType) IsValid() bool {
+	switch e {
+	case MessagePlacementTypeBeforeCmd, MessagePlacementTypeAfterCmd:
+		return true
+	}
+	return false
+}
+
+func (e MessagePlacementType) String() string {
+	return string(e)
+}
+
+func (e *MessagePlacementType) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = MessagePlacementType(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid MessagePlacementType", str)
+	}
+	return nil
+}
+
+func (e MessagePlacementType) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type MessageRepeatType string
+
+const (
+	MessageRepeatTypeDisabled   MessageRepeatType = "Disabled"
+	MessageRepeatTypeConstantly MessageRepeatType = "Constantly"
+	MessageRepeatTypeHourly     MessageRepeatType = "Hourly"
+	MessageRepeatTypeDaily      MessageRepeatType = "Daily"
+	MessageRepeatTypeWeekly     MessageRepeatType = "Weekly"
+	MessageRepeatTypeMonthly    MessageRepeatType = "Monthly"
+)
+
+var AllMessageRepeatType = []MessageRepeatType{
+	MessageRepeatTypeDisabled,
+	MessageRepeatTypeConstantly,
+	MessageRepeatTypeHourly,
+	MessageRepeatTypeDaily,
+	MessageRepeatTypeWeekly,
+	MessageRepeatTypeMonthly,
+}
+
+func (e MessageRepeatType) IsValid() bool {
+	switch e {
+	case MessageRepeatTypeDisabled, MessageRepeatTypeConstantly, MessageRepeatTypeHourly, MessageRepeatTypeDaily, MessageRepeatTypeWeekly, MessageRepeatTypeMonthly:
+		return true
+	}
+	return false
+}
+
+func (e MessageRepeatType) String() string {
+	return string(e)
+}
+
+func (e *MessageRepeatType) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = MessageRepeatType(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid MessageRepeatType", str)
+	}
+	return nil
+}
+
+func (e MessageRepeatType) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
 }

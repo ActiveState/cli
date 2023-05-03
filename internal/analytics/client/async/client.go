@@ -81,7 +81,7 @@ func (a *Client) Event(category string, action string, dims ...*dimensions.Value
 func (a *Client) EventWithLabel(category string, action string, label string, dims ...*dimensions.Values) {
 	err := a.sendEvent(category, action, label, dims...)
 	if err != nil {
-		multilog.Error("Error during analytics.sendEvent: %v", errs.Join(err, ":"))
+		multilog.Error("Error during analytics.sendEvent: %v", errs.JoinMessage(err))
 	}
 }
 

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -125,21 +126,21 @@ func TestJSON_Error(t *testing.T) {
 		expectedErr string
 	}{
 		{
-			"error string",
-			args{errors.New("hello")},
-			`{"errors":["hello"],"code":1}`,
+			"localized error",
+			args{locale.NewError("", "hello")},
+			`{"error":"hello"}`,
 			"",
 		},
 		{
 			"simple string",
 			args{"hello"},
-			`{"errors":["hello"],"code":1}`,
+			`{"error":"hello"}`,
 			"",
 		},
 		{
 			"unrecognized",
 			args{1},
-			`{"errors":["Not a recognized error format: 1"],"code":1}`,
+			`{"error":"Not a recognized error format: 1"}`,
 			"",
 		},
 		{
