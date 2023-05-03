@@ -2,9 +2,12 @@ package locale
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 
+	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/osutils/stacktrace"
 	"github.com/ActiveState/cli/internal/rtutils"
 )
@@ -161,6 +164,13 @@ func JoinedErrorMessage(err error) string {
 		if lerr, isLocaleError := err.(ErrorLocalizer); isLocaleError {
 			message = append(message, lerr.UserError())
 		}
+	}
+	if len(message) == 0 {
+		multilog.Error("MUST ADDRESS: Error does not have localization: %s", errs.JoinMessage(err))
+		if !condition.BuiltViaCI() {
+			panic(fmt.Sprintf("Errors must be localized! Please localize: %s, called at: %s\n", errs.JoinMessage(err), stacktrace.Get()))
+		}
+		return err.Error()
 	}
 	return strings.Join(message, ": ")
 }
