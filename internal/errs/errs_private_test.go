@@ -71,7 +71,6 @@ func TestEncodeError(t *testing.T) {
 			if !reflect.DeepEqual(encoded, tt.want) {
 				t.Fatalf("got %v, want %v", encoded, tt.want)
 			}
-			// assert.Equalf(t, tt.want, encoded, "EncodeError(%v)", tt.err)
 		})
 	}
 }
