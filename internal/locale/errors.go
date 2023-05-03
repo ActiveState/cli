@@ -166,10 +166,10 @@ func JoinedErrorMessage(err error) string {
 		}
 	}
 	if len(message) == 0 {
-		multilog.Error("MUST ADDRESS: Error does not have localization: %s", errs.JoinMessage(err))
 		if !condition.BuiltViaCI() {
 			panic(fmt.Sprintf("Errors must be localized! Please localize: %s, called at: %s\n", errs.JoinMessage(err), stacktrace.Get()))
 		}
+		multilog.Error("MUST ADDRESS: Error does not have localization: %s", errs.JoinMessage(err))
 		return err.Error()
 	}
 	return strings.Join(message, ": ")
