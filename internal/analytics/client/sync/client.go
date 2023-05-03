@@ -59,7 +59,7 @@ func New(cfg *config.Instance, auth *authentication.Auth, out output.Outputer) *
 
 	installSource, err := storage.InstallSource()
 	if err != nil {
-		multilog.Error("Could not detect installSource: %s", errs.Join(err, " :: ").Error())
+		multilog.Error("Could not detect installSource: %s", errs.JoinMessage(err))
 	}
 
 	deviceID := uniqid.Text()

@@ -177,7 +177,7 @@ func DetectShell(cfg sscommon.Configurable) (string, string) {
 		// We save and use the detected shell to our config so that we can use it when running code through
 		// a non-interactive shell
 		if err := cfg.Set(ConfigKeyShell, binary); err != nil {
-			multilog.Error("Could not save shell binary: %v", errs.Join(err, ": "))
+			multilog.Error("Could not save shell binary: %v", errs.JoinMessage(err))
 		}
 	}()
 

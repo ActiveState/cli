@@ -11,7 +11,6 @@ import (
 	"github.com/ActiveState/cli/internal/analytics/dimensions"
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/condition"
-	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
@@ -40,7 +39,7 @@ func (o *OutputError) MarshalOutput(f output.Format) interface{} {
 		outLines = append(outLines, output.Title(locale.Tl("err_what_happened", "[ERROR]Something Went Wrong[/RESET]")).String())
 	}
 
-	rerrs := locale.UnwrapError(o.error)
+	rerrs := locale.UnpackError(o.error)
 	if len(rerrs) == 0 {
 		// It's possible the error came from cobra or something else low level that doesn't use localization
 		logging.Warning("Error does not have localization: %s", errs.JoinMessage(o.error))
@@ -58,11 +57,10 @@ func (o *OutputError) MarshalOutput(f output.Format) interface{} {
 	// Concatenate error tips
 	errorTips := []string{}
 	err := o.error
-	for err != nil {
+	for _, err := range errs.Unpack(err) {
 		if v, ok := err.(ErrorTips); ok {
 			errorTips = append(errorTips, v.ErrorTips()...)
 		}
-		err = errors.Unwrap(err)
 	}
 	errorTips = append(errorTips, locale.Tl("err_help_forum", "[NOTICE]Ask For Help →[/RESET] [ACTIONABLE]{{.V0}}[/RESET]", constants.ForumsURL))
 
@@ -78,6 +76,10 @@ func (o *OutputError) MarshalOutput(f output.Format) interface{} {
 	return strings.Join(outLines, "\n")
 }
 
+func (o *OutputError) MarshalStructured(f output.Format) interface{} {
+	return output.StructuredError{locale.JoinedErrorMessage(o.error)}
+}
+
 func trimError(msg string) string {
 	if strings.Count(msg, ".") > 1 || strings.Count(msg, ",") > 0 {
 		return msg // Don't trim dots if we have multiple sentences.
@@ -85,22 +87,8 @@ func trimError(msg string) string {
 	return strings.TrimRight(msg, " .")
 }
 
-func (o *OutputError) MarshalStructured(f output.Format) interface{} {
-	var errors []string
-	rerrs := locale.UnwrapError(o.error)
-	if len(rerrs) == 0 {
-		// It's possible the error came from cobra or something else low level that doesn't use localization
-		logging.Warning("Error does not have localization: %s", errs.JoinMessage(o.error))
-		rerrs = []error{o.error}
-	}
-	for _, errv := range rerrs {
-		message := trimError(locale.ErrorMessage(errv))
-		errors = append(errors, message)
-	}
-	return output.StructuredError{errors, 1}
-}
-
-func Unwrap(err error) (int, error) {
+// ParseUserFacing returns the exit code and a user facing error message.
+func ParseUserFacing(err error) (int, error) {
 	if err == nil {
 		return 0, nil
 	}
@@ -108,23 +96,11 @@ func Unwrap(err error) (int, error) {
 	_, hasMarshaller := err.(output.Marshaller)
 
 	// unwrap exit code before we remove un-localized wrapped errors from err variable
-	code := errs.UnwrapExitCode(err)
+	code := errs.ParseExitCode(err)
 
 	if errs.IsSilent(err) {
 		logging.Debug("Suppressing silent failure: %v", err.Error())
 		return code, nil
-	}
-
-	var llerr *config.LocalizedError // workaround type used to avoid circular import in config pkg
-	if errors.As(err, &llerr) {
-		key, base := llerr.Localization()
-		if key != "" && base != "" {
-			err = locale.WrapError(err, key, base)
-		}
-		reportMsg := llerr.ReportMessage()
-		if reportMsg != "" {
-			multilog.Error(reportMsg)
-		}
 	}
 
 	if hasMarshaller {
@@ -165,16 +141,15 @@ func ReportError(err error, cmd *captain.Command, an analytics.Dispatcher) {
 	var action string
 	errorMsg := err.Error()
 	if !locale.IsInputError(err) {
-		multilog.Critical("Returning error:\n%s\nCreated at:\n%s", errs.Join(err, "\n").Error(), stack)
+		multilog.Critical("Returning error:\n%s\nCreated at:\n%s", errs.JoinMessage(err), stack)
 		action = anaConst.ActCommandError
 	} else {
 		action = anaConst.ActCommandInputError
-		for err != nil {
+		for _, err := range errs.Unpack(err) {
 			if locale.IsInputErrorNonRecursive(err) {
 				errorMsg = locale.ErrorMessage(err)
 				break
 			}
-			err = errors.Unwrap(err)
 		}
 	}
 
@@ -183,7 +158,7 @@ func ReportError(err error, cmd *captain.Command, an analytics.Dispatcher) {
 	})
 
 	if !locale.HasError(err) && isErrs && !hasMarshaller {
-		multilog.Error("MUST ADDRESS: Error does not have localization: %s", errs.Join(err, "\n").Error())
+		multilog.Error("MUST ADDRESS: Error does not have localization: %s", errs.JoinMessage(err))
 
 		// If this wasn't built via CI then this is a dev workstation, and we should be more aggressive
 		if !condition.BuiltViaCI() && PanicOnMissingLocale {
