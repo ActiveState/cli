@@ -56,6 +56,21 @@ func (suite *RefreshIntegrationTestSuite) TestRefresh() {
 	cp.ExpectExitCode(0)
 }
 
+func (suite *RefreshIntegrationTestSuite) TestJSON() {
+	suite.OnlyRunForTags(tagsuite.Refresh, tagsuite.JSON)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	suite.PrepareActiveStateYAML(ts, "ActiveState-CLI", "Branches", "main", "35af7414-b44b-4fd7-aa93-2ecad337ed2b")
+
+	cp := ts.Spawn("refresh", "-o", "json")
+	cp.Expect(`"namespace":`)
+	cp.Expect(`"path":`)
+	cp.Expect(`"executables":`)
+	cp.ExpectExitCode(0)
+	//AssertValidJSON(suite.T(), cp) // cannot assert here due to "Skipping runtime setup" notice
+}
+
 func (suite *RefreshIntegrationTestSuite) PrepareActiveStateYAML(ts *e2e.Session, username, project, branch, commitID string) {
 	asyData := fmt.Sprintf(`project: "https://platform.activestate.com/%s/%s?branch=%s&commitID=%s"`, username, project, branch, commitID)
 	ts.PrepareActiveStateYAML(asyData)
