@@ -80,6 +80,10 @@ func inferLanguage(config projectfile.ConfigGetter) (string, string, bool) {
 func (r *Initialize) Run(params *RunParams) error {
 	logging.Debug("Init: %s/%s %v", params.Namespace.Owner, params.Namespace.Project, params.Private)
 
+	if !r.auth.Authenticated() {
+		return locale.NewInputError("err_init_authenticated")
+	}
+
 	path := params.Path
 	if path == "" {
 		var err error

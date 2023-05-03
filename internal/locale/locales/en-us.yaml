@@ -2041,3 +2041,5 @@ runtime_limit_reached_action:
   other: Upgrade
 pjfile_deprecation_entry:
   other: " - '[ACTIONABLE]{{.V0}}[/RESET]' located at byte [ACTIONABLE]{{.V1}}[/RESET]"
+err_init_authenticated:
+  other: You need to be authenticated to initialize a project. Authenticate by running [ACTIONABLE]`state auth`[/RESET].

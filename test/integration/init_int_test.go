@@ -128,6 +128,15 @@ func (suite *InitIntegrationTestSuite) TestInit_InferLanguageFromUse() {
 	suite.Contains(string(fileutils.ReadFileUnsafe(filepath.Join(ts.Dirs.Work, constants.ConfigFileName))), "language: python3")
 }
 
+func (suite *InitIntegrationTestSuite) TestInit_NotAuthenticated() {
+	suite.OnlyRunForTags(tagsuite.Init)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.Spawn("init", "test-user/test-project", "python3")
+	cp.ExpectLongString("You need to be authenticated to initialize a project.")
+}
+
 func TestInitIntegrationTestSuite(t *testing.T) {
 	suite.Run(t, new(InitIntegrationTestSuite))
 }
