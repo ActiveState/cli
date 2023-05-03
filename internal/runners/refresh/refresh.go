@@ -14,6 +14,7 @@ import (
 	"github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
@@ -65,12 +66,23 @@ func (r *Refresh) Run(params *Params) error {
 
 	rtusage.PrintRuntimeUsage(r.svcModel, r.out, proj.Owner())
 
-	_, err = runtime.NewFromProject(proj, target.TriggerRefresh, r.analytics, r.svcModel, r.out, r.auth)
+	rti, err := runtime.NewFromProject(proj, target.TriggerRefresh, r.analytics, r.svcModel, r.out, r.auth)
 	if err != nil {
 		return locale.WrapInputError(err, "err_refresh_runtime_new", "Could not update runtime for this project.")
 	}
 
-	r.out.Notice(locale.Tl("refreshed_runtime", "Runtime updated."))
+	execDir := setup.ExecDir(rti.Target().Dir())
+	r.out.Print(output.Prepare(
+		locale.Tl("refresh_project_statement", "", proj.NamespaceString(), proj.Dir(), execDir),
+		&struct {
+			Namespace   string `json:"namespace"`
+			Path        string `json:"path"`
+			Executables string `json:"executables"`
+		}{
+			proj.NamespaceString(),
+			proj.Dir(),
+			execDir,
+		}))
 
 	return nil
 }

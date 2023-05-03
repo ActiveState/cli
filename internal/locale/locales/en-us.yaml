@@ -2003,6 +2003,10 @@ checkout_project_statement:
   other: |
     Checked out project [ACTIONABLE]{{.V0}}[/RESET], located at [ACTIONABLE]{{.V1}}[/RESET].
     For editors and other tooling use the executables at: [ACTIONABLE]{{.V2}}[/RESET].
+refresh_project_statement:
+  other: |
+    Runtime updated for project [ACTIONABLE]{{.V0}}[/RESET], located at [ACTIONABLE]{{.V1}}[/RESET].
+    For editors and other tooling use the executables at: [ACTIONABLE]{{.V2}}[/RESET].
 export_project_statement:
   other: Exporting env for project [ACTIONABLE]{{.V0}}[/RESET] located at [ACTIONABLE]{{.V1}}[/RESET].
 err_rtprogress_outofsync:
