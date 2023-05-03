@@ -70,7 +70,11 @@ func (m *Messages) Check(command string, flags []string) ([]*graph.MessageInfo, 
 	m.checkMutex.Lock()
 	defer m.checkMutex.Unlock()
 
-	allMessages := m.poll.ValueFromCache().([]*graph.MessageInfo)
+	cacheValue := m.poll.ValueFromCache()
+	if cacheValue == nil {
+		return []*graph.MessageInfo{}, nil
+	}
+	allMessages := cacheValue.([]*graph.MessageInfo)
 
 	conditionParams := &(*m.baseParams) // copy
 	conditionParams.UserEmail = m.auth.Email()

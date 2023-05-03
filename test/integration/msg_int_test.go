@@ -17,6 +17,22 @@ type MsgIntegrationTestSuite struct {
 	tagsuite.Suite
 }
 
+func (suite *MsgIntegrationTestSuite) TestMessage_None() {
+	suite.OnlyRunForTags(tagsuite.Messaging, tagsuite.Critical)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	// We test on config as it just dumps help and has minimal output
+	// The base state command would also work, but it's output is more verbose and termtest likes to cut off content if it's too long
+	cp := ts.SpawnWithOpts(e2e.WithArgs("config"))
+	cp.Expect("Usage:")
+	cp.ExpectExitCode(0)
+
+	// Since message failures should fail silently without impacting the user we need to check the logs for any
+	// potential issues.
+	ts.DetectLogErrors()
+}
+
 func (suite *MsgIntegrationTestSuite) TestMessage_Basic() {
 	suite.OnlyRunForTags(tagsuite.Messaging, tagsuite.Critical)
 	tests := []struct {
