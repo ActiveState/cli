@@ -6,6 +6,7 @@ import (
 	"time"
 )
 
+// packedErrors effectively duplicates the functionality of errs.PackedErrors, but is here to avoid a circular dependency
 type packedErrors struct {
 	errors []error
 }
