@@ -277,17 +277,17 @@ func TestJoinMessage(t *testing.T) {
 		{
 			"Single",
 			errs.New("error1"),
-			"error1\n",
+			"error1",
 		},
 		{
 			"Wrapped",
 			errs.Wrap(errs.New("error1"), "error2"),
-			"error2: error1\n",
+			"error2: error1",
 		},
 		{
 			"Stacked",
 			errs.Pack(errs.New("error1"), errs.New("error2"), errs.New("error3")),
-			"- error1\n- error2\n- error3\n",
+			"- error1\n- error2\n- error3",
 		},
 		{
 			"Stacked and Wrapped",
@@ -296,7 +296,7 @@ func TestJoinMessage(t *testing.T) {
 				errs.Wrap(errs.New("error2"), "error2-wrap"),
 				errs.New("error3"),
 			),
-			"- error1\n- error2-wrap: error2\n- error3\n",
+			"- error1\n- error2-wrap: error2\n- error3",
 		},
 		{
 			"Stacked, Wrapped and Stacked",
@@ -307,7 +307,7 @@ func TestJoinMessage(t *testing.T) {
 					"error2-wrap",
 				),
 				errs.New("error3")),
-			"- error1\n- error2-wrap:\n    - error2a\n    - error2b\n- error3\n",
+			"- error1\n- error2-wrap:\n    - error2a\n    - error2b\n- error3",
 		},
 	}
 	for _, tt := range tests {
