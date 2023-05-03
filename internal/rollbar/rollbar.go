@@ -26,6 +26,10 @@ type config interface {
 type doNotReport []string
 
 func (d *doNotReport) Add(msg string) {
+	if msg == "" || strings.TrimSpace(msg) == "" {
+		return
+	}
+
 	for _, m := range *d {
 		if m == msg {
 			return
@@ -33,6 +37,16 @@ func (d *doNotReport) Add(msg string) {
 	}
 
 	*d = append(*d, msg)
+}
+
+func (d doNotReport) Contains(msg string) bool {
+	for _, m := range d {
+		if strings.EqualFold(m, msg) {
+			return true
+		}
+	}
+
+	return false
 }
 
 var (
@@ -158,10 +172,8 @@ func logToRollbar(critical bool, message string, args ...interface{}) {
 		rollbarMsg = rollbarMsg[0:1000] + " <truncated>"
 	}
 
-	for _, msg := range DoNotReportMessages {
-		if strings.Contains(rollbarMsg, msg) {
-			return
-		}
+	if DoNotReportMessages.Contains(rollbarMsg) {
+		return
 	}
 
 	if critical {
