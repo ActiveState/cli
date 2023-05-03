@@ -22,7 +22,6 @@ func NewEditorV0(config *Config) (EditorV0, error) {
 	if err != nil {
 		return EditorV0{}, errs.Wrap(err, "NewJSON failed")
 	}
-	json.printNUL = false
 
 	return EditorV0{json}, nil
 }
