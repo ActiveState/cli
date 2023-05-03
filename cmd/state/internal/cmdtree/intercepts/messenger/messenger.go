@@ -26,7 +26,7 @@ func (m *Messenger) Interceptor(next captain.ExecuteFunc) captain.ExecuteFunc {
 	return func(cmd *captain.Command, args []string) error {
 		if m.out.Type() != output.PlainFormatName && m.out.Type() != output.SimpleFormatName {
 			// No point showing messaging on non-plain output (eg. json)
-			return nil
+			return next(cmd, args)
 		}
 
 		cmds := cmd.JoinedCommandNames()
