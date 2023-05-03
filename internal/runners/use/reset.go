@@ -39,7 +39,7 @@ func (u *Reset) Run(params *ResetParams) error {
 		return locale.NewInputError(locale.T("use_reset_notice_not_reset"))
 	}
 
-	defaultChoice := params.Force
+	defaultChoice := params.Force || !u.out.Config().Interactive
 	ok, err := u.prompt.Confirm(locale.T("confirm"),
 		locale.Tl("use_reset_confirm", "You are about to stop using your project runtime. Continue?"), &defaultChoice)
 	if err != nil {

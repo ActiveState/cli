@@ -74,7 +74,7 @@ func main() {
 
 	runErr := run(cfg)
 	if runErr != nil {
-		errMsg := errs.Join(runErr, ": ").Error()
+		errMsg := errs.JoinMessage(runErr)
 		if locale.IsInputError(runErr) {
 			logging.Debug("state-svc errored out due to input: %s", errMsg)
 		} else {

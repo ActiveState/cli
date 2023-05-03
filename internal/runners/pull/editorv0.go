@@ -8,10 +8,10 @@ type resultEditorV0Data struct {
 	Changed bool `json:"changed"`
 }
 
-func (f *outputFormat) editorV0Format() interface{} {
+func (o *pullOutput) editorV0Format() interface{} {
 	return resultEditorV0{
 		&resultEditorV0Data{
-			f.Success,
+			o.Success,
 		},
 	}
 }

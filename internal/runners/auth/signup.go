@@ -16,6 +16,10 @@ type Signup struct {
 	*authentication.Auth
 }
 
+type SignupParams struct {
+	Prompt bool
+}
+
 func NewSignup(prime primeable) *Signup {
 	return &Signup{prime.Output(), prime.Prompt(), prime.Config(), prime.Auth()}
 }

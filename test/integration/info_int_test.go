@@ -46,6 +46,25 @@ func (suite *InfoIntegrationTestSuite) TestInfo_UnavailableVersion() {
 	cp.ExpectExitCode(1)
 }
 
+func (suite *InfoIntegrationTestSuite) TestJSON() {
+	suite.OnlyRunForTags(tagsuite.Info, tagsuite.JSON)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.Spawn("info", "pylint", "--language", "python", "-o", "json")
+	cp.Expect(`"description":`)
+	cp.Expect(`"authors":`)
+	cp.Expect(`"versions":`)
+	cp.ExpectExitCode(0)
+	AssertValidJSON(suite.T(), cp)
+
+	cp = ts.Spawn("info", "pylint@9.9.9", "--language", "python", "--output", "editor")
+	cp.Expect(`"errors":`)
+	cp.Expect(`"code":`)
+	cp.ExpectExitCode(1)
+	AssertValidJSON(suite.T(), cp)
+}
+
 func TestInfoIntegrationTestSuite(t *testing.T) {
 	suite.Run(t, new(InfoIntegrationTestSuite))
 }

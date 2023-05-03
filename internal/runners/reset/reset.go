@@ -79,7 +79,7 @@ func (r *Reset) Run(params *Params) error {
 		}
 	}
 
-	r.out.Print(locale.Tl("reset_commit", "Your project will be reset to [ACTIONABLE]{{.V0}}[/RESET]\n", commitID.String()))
+	r.out.Notice(locale.Tl("reset_commit", "Your project will be reset to [ACTIONABLE]{{.V0}}[/RESET]\n", commitID.String()))
 
 	defaultChoice := params.Force
 	confirm, err := r.prompt.Confirm("", locale.Tl("reset_confim", "Resetting is destructive, you will lose any changes that were not pushed. Are you sure you want to do this?"), &defaultChoice)
@@ -100,7 +100,14 @@ func (r *Reset) Run(params *Params) error {
 		return locale.WrapError(err, "err_refresh_runtime")
 	}
 
-	r.out.Print(locale.Tl("reset_success", "Successfully reset to commit: [NOTICE]{{.V0}}[/RESET]", commitID.String()))
+	r.out.Print(output.Prepare(
+		locale.Tl("reset_success", "Successfully reset to commit: [NOTICE]{{.V0}}[/RESET]", commitID.String()),
+		&struct {
+			CommitID string `json:"commitID"`
+		}{
+			commitID.String(),
+		},
+	))
 
 	return nil
 }

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -153,6 +154,60 @@ func TestJSON_Nullbyte(t *testing.T) {
 			}, tt.nulByte}
 
 			f.Print(tt.args.value)
+			assert.Equal(t, tt.expectedOut, outWriter.String(), "Output did not match")
+			assert.Equal(t, tt.expectedErr, errWriter.String(), "Errors did not match")
+		})
+	}
+}
+
+func TestJSON_Error(t *testing.T) {
+	type args struct {
+		value interface{}
+	}
+	tests := []struct {
+		name        string
+		args        args
+		expectedOut string
+		expectedErr string
+	}{
+		{
+			"localized error",
+			args{locale.NewError("", "hello")},
+			`{"error":"hello"}` + "\x00\n",
+			"",
+		},
+		{
+			"simple string",
+			args{"hello"},
+			`{"error":"hello"}` + "\x00\n",
+			"",
+		},
+		{
+			"unrecognized",
+			args{1},
+			`{"error":"Not a recognized error format: 1"}` + "\x00\n",
+			"",
+		},
+		{
+			"raw JSON",
+			args{[]byte(`"hello"`)},
+			`"hello"` + "\x00\n",
+			"",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			outWriter := &bytes.Buffer{}
+			errWriter := &bytes.Buffer{}
+
+			f := &JSON{&Config{
+				OutWriter:   outWriter,
+				ErrWriter:   errWriter,
+				Colored:     false,
+				Interactive: false,
+			}, true}
+
+			f.Error(tt.args.value)
 			assert.Equal(t, tt.expectedOut, outWriter.String(), "Output did not match")
 			assert.Equal(t, tt.expectedErr, errWriter.String(), "Errors did not match")
 		})

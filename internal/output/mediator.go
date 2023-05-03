@@ -1,6 +1,11 @@
 package output
 
-import "io"
+import (
+	"io"
+
+	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/multilog"
+)
 
 type Mediator struct {
 	Outputer
@@ -11,11 +16,15 @@ type Marshaller interface {
 	MarshalOutput(Format) interface{}
 }
 
+type StructuredMarshaller interface {
+	MarshalStructured(Format) interface{}
+}
+
 func (m *Mediator) Fprint(writer io.Writer, v interface{}) {
 	if v = mediatorValue(v, m.format); v == Suppress {
 		return
 	}
-	
+
 	m.Outputer.Fprint(writer, v)
 }
 
@@ -44,37 +53,15 @@ func (m *Mediator) Notice(v interface{}) {
 }
 
 func mediatorValue(v interface{}, format Format) interface{} {
-	vt, ok := v.(Marshaller)
-	if !ok {
-		return v
-	}
-	return vt.MarshalOutput(format)
-}
-
-// MediatedFormatter provides a custom type that can be used to conveniently create different outputs for different formats
-// eg. `NewFormatter("Hello John!").WithFormat(JSONFormatName, "John")`
-// This would print "Hello John!" with the plain formatter and just "John" with the JSON formatter
-type MediatedFormatter struct {
-	formatters map[Format]interface{}
-	output     interface{}
-}
-
-func NewFormatter(defaultOutput interface{}) MediatedFormatter {
-	return MediatedFormatter{map[Format]interface{}{}, defaultOutput}
-}
-
-func (m MediatedFormatter) WithFormat(format Format, output interface{}) MediatedFormatter {
-	m.formatters[format] = output
-	return m
-}
-
-func (m MediatedFormatter) MarshalOutput(format Format) interface{} {
-	if v, ok := m.formatters[format]; ok {
-		return v
-	} else {
-		if format == EditorFormatName || format == EditorV0FormatName {
-			return m.MarshalOutput(JSONFormatName) // fall back on JSON
+	if format.IsStructured() {
+		if vt, ok := v.(StructuredMarshaller); ok {
+			return vt.MarshalStructured(format)
 		}
+		multilog.Error("%s output not supported for message: %v", string(format), v)
+		return StructuredError{locale.Tl("err_no_structured_output", "", string(format))}
 	}
-	return m.output
+	if vt, ok := v.(Marshaller); ok {
+		return vt.MarshalOutput(format)
+	}
+	return v
 }

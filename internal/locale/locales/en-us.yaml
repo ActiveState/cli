@@ -1042,10 +1042,6 @@ err_replaceall_check_log:
   other: "Error occurred while replacing file contents, please check the error log or contact support."
 err_bad_project_url:
   other: "Invalid value for 'project' field in your activestate.yaml, please ensure it is in the format of: 'https://platform.activestate.com/org/project'."
-err_deprection_404:
-  other: Could not check for deprecation as the service returned a 404 not found
-err_deprection_code:
-  other: Could not check for deprecation as the service returned a code [NOTICE]{{.V0}}[/RESET]
 err_set_commit_id:
   other: "Could not update your activestate.yaml with the latest commit ID. Please ensure you have your project defined in the format of [ACTIONABLE]`project: https://platform.activestate.com/org/project`[/RESET]"
 err_set_project:
@@ -1244,7 +1240,7 @@ err_init_lang:
   other: "Invalid language: {{.V0}}@{{.V1}}"
 init_success:
   other: |
-    Project '[NOTICE]{{.V0}}/{{.V1}}[/RESET]' has been successfully initialized at '[NOTICE]{{.V2}}[/RESET]'.
+    Project '[NOTICE]{{.V0}}[/RESET]' has been successfully initialized at '[NOTICE]{{.V1}}[/RESET]'.
     You can start using your project with [ACTIONABLE]`state shell`[/RESET] and [ACTIONABLE]`state use`[/RESET].
 arg_state_init_namespace:
   other: org/project
@@ -1297,6 +1293,8 @@ field_localized_field:
   other: "Localized Field"
 err_could_not_marshal_print:
   other: "Could not marshal the value being printed, please check the error log for more information."
+err_no_structured_output:
+  other: "This command does not support the {{.V0}} output format. Please try again without that output flag."
 err_main_outputer:
   other: "Could not create output writer, please contact developers if this problem persists. Error: {{.V0}}"
 field_name:

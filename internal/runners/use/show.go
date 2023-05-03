@@ -24,19 +24,6 @@ func NewShow(prime primeable) *Show {
 	}
 }
 
-type outputFormat struct {
-	message   string `locale:message,Message`
-	Namespace string `locale:"namespace,Namespace"`
-	Path      string `locale:"path,Path"`
-}
-
-func (f *outputFormat) MarshalOutput(format output.Format) interface{} {
-	if format == output.PlainFormatName {
-		return f.message
-	}
-	return f
-}
-
 func (s *Show) Run() error {
 	projectDir := s.cfg.GetString(constants.GlobalDefaultPrefname)
 	if projectDir == "" {
@@ -53,15 +40,20 @@ func (s *Show) Run() error {
 
 	projectTarget := target.NewProjectTarget(proj, nil, "")
 
-	s.out.Print(&outputFormat{
+	s.out.Print(output.Prepare(
 		locale.Tl("use_show_project_statement", "",
 			proj.NamespaceString(),
 			projectDir,
 			setup.ExecDir(projectTarget.Dir()),
 		),
-		proj.NamespaceString(),
-		projectDir,
-	})
+		&struct {
+			Namespace string `json:"namespace"`
+			Path      string `json:"path"`
+		}{
+			proj.NamespaceString(),
+			projectDir,
+		},
+	))
 
 	return nil
 }

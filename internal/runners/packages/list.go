@@ -3,6 +3,7 @@ package packages
 import (
 	"errors"
 	"fmt"
+	"sort"
 	"strings"
 
 	gqlModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model"
@@ -70,10 +71,12 @@ func (l *List) Run(params ListRunParams, nstype model.NamespaceType) error {
 		return locale.WrapError(err, fmt.Sprintf("%s_err_cannot_fetch_checkpoint", nstype))
 	}
 
-	table := newFilteredRequirementsTable(model.FilterCheckpointNamespace(checkpoint, model.NamespacePackage, model.NamespaceBundle), params.Name, nstype)
-	table.sortByPkg()
-
-	l.out.Print(table)
+	rows := newFilteredRequirementsTable(model.FilterCheckpointNamespace(checkpoint, model.NamespacePackage, model.NamespaceBundle), params.Name, nstype)
+	var plainOutput interface{} = rows
+	if len(rows) == 0 {
+		plainOutput = locale.T(fmt.Sprintf("%s_list_no_packages", nstype.String()))
+	}
+	l.out.Print(output.Prepare(plainOutput, rows))
 	return nil
 }
 
@@ -142,7 +145,12 @@ func fetchCheckpoint(commit *strfmt.UUID) ([]*gqlModel.Requirement, error) {
 	return checkpoint, err
 }
 
-func newFilteredRequirementsTable(requirements []*gqlModel.Requirement, filter string, nstype model.NamespaceType) *packageTable {
+type packageRow struct {
+	Pkg     string `json:"package" locale:"package_name,Name"`
+	Version string `json:"version" locale:"package_version,Version"`
+}
+
+func newFilteredRequirementsTable(requirements []*gqlModel.Requirement, filter string, nstype model.NamespaceType) []packageRow {
 	if requirements == nil {
 		logging.Debug("requirements is nil")
 		return nil
@@ -170,5 +178,16 @@ func newFilteredRequirementsTable(requirements []*gqlModel.Requirement, filter s
 		rows = append(rows, row)
 	}
 
-	return newTable(rows, locale.T(fmt.Sprintf("%s_list_no_packages", nstype.String())))
+	// Sort the rows.
+	less := func(i, j int) bool {
+		a := rows[i].Pkg
+		b := rows[j].Pkg
+		if strings.ToLower(a) < strings.ToLower(b) {
+			return true
+		}
+		return a < b
+	}
+	sort.Slice(rows, less)
+
+	return rows
 }
