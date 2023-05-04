@@ -1240,7 +1240,7 @@ err_init_lang:
   other: "Invalid language: {{.V0}}@{{.V1}}"
 init_success:
   other: |
-    Project '[NOTICE]{{.V0}}[/RESET]' has been successfully initialized at '[NOTICE]{{.V1}}[/RESET]'.
+    Project '[NOTICE]{{.V0}}[/RESET]' has been successfully initialized at '[NOTICE]{{.V1}}[/RESET]' and pushed to the Platform.
     You can start using your project with [ACTIONABLE]`state shell`[/RESET] and [ACTIONABLE]`state use`[/RESET].
 arg_state_init_namespace:
   other: org/project
