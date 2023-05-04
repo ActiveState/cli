@@ -123,10 +123,11 @@ func (r *Runner) Run(params *Params) error {
 		if err := r.Edit(p); err != nil {
 			return err
 		}
-	} else {
-		cont, err := r.prompt.Confirm(
-			"",
-			locale.Tl("uploadingredient_confirm", `Upload following ingredient?
+	}
+
+	cont, err := r.prompt.Confirm(
+		"",
+		locale.Tl("uploadingredient_confirm", `Upload following ingredient?
 Name: {{.V0}}
 Version: {{.V1}}
 Namespace: {{.V2}}
@@ -134,15 +135,14 @@ Path: {{.V3}}
 Checksum: {{.V4}}
 
 `, name, version, namespace.String(), path, checksum),
-			p2.BoolP(true),
-		)
-		if err != nil {
-			return errs.Wrap(err, "Confirmation failed")
-		}
-		if !cont {
-			r.out.Print(locale.Tl("uploadingredient_cancel", "Upload cancelled"))
-			return nil
-		}
+		p2.BoolP(true),
+	)
+	if err != nil {
+		return errs.Wrap(err, "Confirmation failed")
+	}
+	if !cont {
+		r.out.Print(locale.Tl("uploadingredient_cancel", "Upload cancelled"))
+		return nil
 	}
 
 	result := model.PublishResult{}
