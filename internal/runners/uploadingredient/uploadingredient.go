@@ -114,7 +114,7 @@ func (r *Runner) Run(params *Params) error {
 		desc = *ingredient.Ingredient.Description
 	}
 
-	p, err := request.Publish(desc, path, version, params.Filepath, checksum)
+	p, err := request.Publish(name, desc, path, version, params.Filepath, checksum)
 	if err != nil {
 		return locale.WrapError(err, "err_uploadingredient_publish", "Could not create publish request")
 	}
