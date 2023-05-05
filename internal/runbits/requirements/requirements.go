@@ -36,11 +36,11 @@ import (
 )
 
 type PackageVersion struct {
-	captain.NameVersion
+	captain.NameVersionFlag
 }
 
 func (pv *PackageVersion) Set(arg string) error {
-	err := pv.NameVersion.Set(arg)
+	err := pv.NameVersionFlag.Set(arg)
 	if err != nil {
 		return locale.WrapInputError(err, "err_package_format", "The package and version provided is not formatting correctly, must be in the form of <package>@<version>")
 	}
@@ -163,7 +163,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 	if validatePkg {
 		pg = output.StartSpinner(out, locale.Tl("progress_search", "", requirementName), constants.TerminalAnimationInterval)
 
-		packages, err := model.SearchIngredientsStrict(ns, requirementName, false, false, nil)
+		packages, err := model.SearchIngredientsStrict(ns.String(), requirementName, false, false, nil)
 		if err != nil {
 			return locale.WrapError(err, "package_err_cannot_obtain_search_results")
 		}
@@ -304,7 +304,7 @@ func resolvePkgAndNamespace(prompt prompt.Prompter, packageName string, nsType m
 	ns := model.NewBlankNamespace()
 
 	// Find ingredients that match the input query
-	ingredients, err := model.SearchIngredientsStrict(model.NewBlankNamespace(), packageName, false, false, nil)
+	ingredients, err := model.SearchIngredientsStrict("", packageName, false, false, nil)
 	if err != nil {
 		return "", ns, nil, locale.WrapError(err, "err_pkgop_search_err", "Failed to check for ingredients.")
 	}
@@ -353,7 +353,7 @@ func resolvePkgAndNamespace(prompt prompt.Prompter, packageName string, nsType m
 }
 
 func getSuggestions(ns model.Namespace, name string) ([]string, error) {
-	results, err := model.SearchIngredients(ns, name, false, nil)
+	results, err := model.SearchIngredients(ns.String(), name, false, nil)
 	if err != nil {
 		return []string{}, locale.WrapError(err, "package_ingredient_err_search", "Failed to resolve ingredient named: {{.V0}}", name)
 	}

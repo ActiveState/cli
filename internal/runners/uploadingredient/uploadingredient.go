@@ -1,37 +1,40 @@
 package uploadingredient
 
 import (
-	"fmt"
 	"net/http"
 	"path/filepath"
 	"strconv"
-	"time"
+	"strings"
 
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/gqlclient"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
 	p2 "github.com/ActiveState/cli/internal/rtutils/p"
 	"github.com/ActiveState/cli/pkg/platform/api"
-	"github.com/ActiveState/cli/pkg/platform/api/graphql/model"
+	graphModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model"
 	"github.com/ActiveState/cli/pkg/platform/api/graphql/request"
 	auth "github.com/ActiveState/cli/pkg/platform/authentication"
-	model2 "github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/blang/semver"
 	"github.com/machinebox/graphql"
 	"github.com/skratchdot/open-golang/open"
+	"gopkg.in/yaml.v2"
 )
 
 type Params struct {
-	NameVersion captain.NameVersion
+	Name        string
+	Version     string
+	Namespace   string
+	Description string
+	Authors     captain.UsersFlag
+	Depends     captain.PackagesFlag
 	Filepath    string
-	Edit        bool
+	Editor      bool
 }
 
 type Runner struct {
@@ -69,72 +72,90 @@ func (r *Runner) Run(params *Params) error {
 		return locale.NewInputError("err_uploadingredient_file_not_found", "File not found: {{.V0}}", params.Filepath)
 	}
 
-	namespace := model2.NewSharedNamespace(r.project.Owner())
+	reqVars := request.PublishVariables{}
 
-	name := params.NameVersion.Name()
-	if name == "" {
-		name = filepath.Base(params.Filepath)
-	}
-
-	ts := time.Now()
-	var ingredient *model2.IngredientAndVersion
-	ingredients, err := model2.SearchIngredientsStrict(namespace, name, true, false, &ts)
-	if err != nil {
-		return locale.WrapError(err, "err_uploadingredient_search", "Could not search for ingredient")
-	}
-	if len(ingredients) > 0 {
-		ingredient = ingredients[0]
-	}
-
-	version := params.NameVersion.Version()
-	if version == "" {
-		if ingredient != nil && len(ingredient.Versions) > 0 {
-			v, err := semver.ParseTolerant(ingredient.Versions[0].Version)
-			if err != nil {
-				logging.Debug("Could not parse version: %v", err)
-			} else {
-				version = fmt.Sprintf("%d.%d.%d", v.Major, v.Minor, v.Patch+1)
-			}
+	{ // Validate & Set namespace
+		reqVars.Namespace = params.Namespace
+		if reqVars.Namespace == "" {
+			reqVars.Namespace = model.NewSharedNamespace(r.project.Owner()).String()
 		}
-		// Still empty? Set default
-		if version == "" {
-			version = "0.0.1"
+		prefix := r.project.Owner() + "/"
+		if !strings.HasPrefix(reqVars.Namespace, prefix) {
+			return locale.NewInputError("err_uploadingredient_namespace_invalid_org",
+				"Namespace should be prefixed '[ACTIONABLE]{{.V0}}[/RESET]', received: '[ACTIONABLE]{{.V1}}[/RESET]'.", prefix, reqVars.Namespace)
 		}
 	}
 
-	path := fmt.Sprintf("%s/%s", namespace.String(), name)
-
-	checksum, err := fileutils.Sha256Hash(params.Filepath)
-	if err != nil {
-		return locale.WrapError(err, "err_uploadingredient_checksum", "Could not calculate checksum for file")
+	{ // Validate & Set name
+		reqVars.Name = params.Name
+		if reqVars.Name == "" {
+			reqVars.Name = filepath.Base(params.Filepath)
+		}
 	}
 
-	desc := "not provided"
-	if ingredient != nil && ingredient.Ingredient.Description != nil {
-		desc = *ingredient.Ingredient.Description
+	/*
+		ts := time.Now()
+		var ingredient *model.IngredientAndVersion
+		ingredients, err := model.SearchIngredientsStrict(reqVars.Namespace, reqVars.Name, true, false, &ts)
+		if err != nil && !errs.Matches(err, &model.ErrSearch404{}) { // 404 means namespace not found, which is fine
+			return locale.WrapError(err, "err_uploadingredient_search", "Could not search for ingredient")
+		}
+		if len(ingredients) > 0 {
+			ingredient = ingredients[0]
+		}
+	*/
+
+	{ // Validate & Set version
+		reqVars.Version = params.Version
+		if reqVars.Version == "" {
+			reqVars.Version = "0.0.1"
+		}
 	}
 
-	p, err := request.Publish(desc, path, version, params.Filepath, checksum)
+	{ // Validate & Set description
+		reqVars.Description = params.Description
+		if params.Description == "" {
+			reqVars.Description = "not provided"
+		}
+	}
+
+	{ // Set authors
+		for _, author := range params.Authors {
+			reqVars.Authors = append(reqVars.Authors, request.PublishVariableAuthor{Name: author.Name, Email: author.Email})
+		}
+	}
+
+	{ // Set dependencies
+		for _, dep := range params.Depends {
+			reqVars.Dependencies = append(
+				reqVars.Dependencies,
+				request.PublishVariableDep{request.Dependency{Name: dep.Name, Namespace: dep.Namespace}, []request.Dependency{}},
+			)
+		}
+	}
+
+	p, err := request.Publish(reqVars, params.Filepath)
 	if err != nil {
 		return locale.WrapError(err, "err_uploadingredient_publish", "Could not create publish request")
 	}
 
-	if params.Edit {
-		if err := r.Edit(p); err != nil {
+	if params.Editor {
+		if err := r.OpenInEditor(p); err != nil {
 			return err
 		}
+	}
+
+	b, err := yaml.Marshal(p.Variables)
+	if err != nil {
+		return errs.Wrap(err, "Could not marshal publish variables")
 	}
 
 	cont, err := r.prompt.Confirm(
 		"",
 		locale.Tl("uploadingredient_confirm", `Upload following ingredient?
-Name: {{.V0}}
-Version: {{.V1}}
-Namespace: {{.V2}}
-Path: {{.V3}}
-Checksum: {{.V4}}
+{{.V0}}
 
-`, name, version, namespace.String(), path, checksum),
+`, string(b)),
 		p2.BoolP(true),
 	)
 	if err != nil {
@@ -145,7 +166,7 @@ Checksum: {{.V4}}
 		return nil
 	}
 
-	result := model.PublishResult{}
+	result := graphModel.PublishResult{}
 
 	// Currently runs with: Content-Disposition: form-data; name="query"
 	// but it should be Content-Disposition: form-data; name="operations"
@@ -166,7 +187,7 @@ Revision: {{.V2}}
 	return nil
 }
 
-func (r *Runner) Edit(p *request.PublishRequest) error {
+func (r *Runner) OpenInEditor(p *request.PublishRequest) error {
 	// Prepare file for editing
 	b, err := p.MarshalYaml()
 	if err != nil {

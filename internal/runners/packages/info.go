@@ -46,7 +46,7 @@ func (i *Info) Run(params InfoRunParams, nstype model.NamespaceType) error {
 
 	ns := model.NewNamespacePkgOrBundle(language, nstype)
 
-	packages, err := model.SearchIngredientsStrict(ns, params.Package.Name(), true, true, nil)
+	packages, err := model.SearchIngredientsStrict(ns.String(), params.Package.Name(), true, true, nil)
 	if err != nil {
 		return locale.WrapError(err, "package_err_cannot_obtain_search_results")
 	}

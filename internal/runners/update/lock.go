@@ -14,14 +14,14 @@ import (
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
-//var _ captain.FlagMarshaler = (*StateToolChannelVersion)(nil)
+// var _ captain.FlagMarshaler = (*StateToolChannelVersion)(nil)
 
 type StateToolChannelVersion struct {
-	captain.NameVersion
+	captain.NameVersionFlag
 }
 
 func (stv *StateToolChannelVersion) Set(arg string) error {
-	err := stv.NameVersion.Set(arg)
+	err := stv.NameVersionFlag.Set(arg)
 	if err != nil {
 		return locale.WrapInputError(err, "err_channel_format", "The State Tool channel and version provided is not formatting correctly, must be in the form of <channel>@<version>")
 	}

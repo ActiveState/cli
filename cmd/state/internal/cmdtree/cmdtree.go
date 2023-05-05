@@ -203,7 +203,7 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 		refreshCmd,
 		newSwitchCommand(prime),
 		newTestCommand(prime),
-		newAuthorUpload(prime),
+		newUpload(prime),
 	)
 
 	return &CmdTree{
