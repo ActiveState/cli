@@ -94,5 +94,7 @@ func legacyDimensionMap(d *dimensions.Values) map[string]string {
 		"19": p.PStr(d.CommitID),
 		"20": p.PStr(d.Command),
 		"21": strconv.Itoa(p.PInt(d.Sequence)),
+		"22": p.PStr(d.TargetVersion),
+		"23": p.PStr(d.Error),
 	}
 }
