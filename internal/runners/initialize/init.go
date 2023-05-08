@@ -114,7 +114,7 @@ func (r *Initialize) Run(params *RunParams) error {
 	}
 
 	if languageName == "" {
-		return locale.NewInputError("err_init_no_language", "You need to supply the [NOTICE]language[/RESET] argument, run [ACTIONABLE]`state init --help`[/RESET] for more information.")
+		return locale.NewInputError("err_init_no_language")
 	}
 
 	lang, err := language.MakeByNameAndVersion(languageName, languageVersion)
