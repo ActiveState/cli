@@ -102,7 +102,8 @@ type Command struct {
 
 	skipChecks bool
 
-	unstable bool
+	unstable           bool
+	noStructuredOutput bool
 
 	examples []string
 
@@ -176,10 +177,13 @@ func NewCommand(name, title, description string, prime primer, flags []*Flag, ar
 	cmd.cobra.SetFlagErrorFunc(func(c *cobra.Command, err error) error {
 		if cmd.shouldWarnUnstable() {
 			if !condition.OptInUnstable(cmd.cfg) {
-				cmd.out.Notice(locale.Tr("unstable_command_warning"))
+				cmd.out.Notice(locale.T("unstable_command_warning"))
 				return nil
 			}
 			cmd.outputTitleIfAny()
+		} else if cmd.out.Type().IsStructured() && cmd.noStructuredOutput {
+			cmd.out.Error(locale.NewInputError("err_no_structured_output", "", string(cmd.out.Type())))
+			return nil
 		}
 		return err
 	})
@@ -455,6 +459,11 @@ func (c *Command) SetHasVariableArguments() *Command {
 	return c
 }
 
+func (c *Command) SetDoesNotSupportStructuredOutput() *Command {
+	c.noStructuredOutput = true
+	return c
+}
+
 func (c *Command) SkipChecks() bool {
 	return c.skipChecks
 }
@@ -643,6 +652,9 @@ func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
 
 	if c.shouldWarnUnstable() && !condition.OptInUnstable(c.cfg) {
 		c.out.Notice(locale.Tr("unstable_command_warning"))
+		return nil
+	} else if c.out.Type().IsStructured() && c.noStructuredOutput {
+		c.out.Error(locale.NewInputError("err_no_structured_output", "", string(c.out.Type())))
 		return nil
 	}
 
