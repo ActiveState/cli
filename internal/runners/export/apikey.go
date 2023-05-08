@@ -59,6 +59,11 @@ func (k *APIKey) Run(params APIKeyRunParams) error {
 	}
 
 	k.out.Notice(locale.T("export_apikey_user_notice"))
-	k.out.Print(key)
+	k.out.Print(output.Prepare(
+		key,
+		&struct {
+			Value string `json:"value"`
+		}{key},
+	))
 	return nil
 }

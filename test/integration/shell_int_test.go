@@ -239,6 +239,17 @@ func (suite *ShellIntegrationTestSuite) TestUseShellUpdates() {
 	}
 }
 
+func (suite *ShellIntegrationTestSuite) TestJSON() {
+	suite.OnlyRunForTags(tagsuite.Shell, tagsuite.JSON)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.Spawn("shell", "--output", "json")
+	cp.ExpectLongString(`"error":"This command does not support the json output format`)
+	cp.ExpectExitCode(0)
+	AssertValidJSON(suite.T(), cp)
+}
+
 func TestShellIntegrationTestSuite(t *testing.T) {
 	suite.Run(t, new(ShellIntegrationTestSuite))
 }

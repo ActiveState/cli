@@ -158,7 +158,7 @@ func newExportGithubActionCommand(prime *primer.Values) *captain.Command {
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, _ []string) error {
 			return runner.Run(&params)
-		}).SetUnstable(true)
+		}).SetUnstable(true).SetDoesNotSupportStructuredOutput()
 }
 
 func newExportDocsCommand(prime *primer.Values) *captain.Command {
