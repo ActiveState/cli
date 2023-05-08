@@ -369,7 +369,7 @@ func (c *Command) ActiveFlagNames() []string {
 	names := []string{}
 	for _, flag := range c.ActiveFlags() {
 		if flag.Name != "" {
-			names = append(names, flag.Shorthand)
+			names = append(names, flag.Name)
 		} else if flag.Shorthand != "" {
 			names = append(names, flag.Shorthand)
 		}
