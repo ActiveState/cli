@@ -2,7 +2,6 @@ package api
 
 import (
 	"bytes"
-	"fmt"
 	"log"
 	"net/http"
 	"reflect"
@@ -33,13 +32,11 @@ type RoundTripper struct {
 
 // RoundTrip executes a single HTTP transaction, returning a Response for the provided Request.
 func (r *RoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
-	fmt.Println("Requesting: ", req.URL)
-	fmt.Println("Setting user agent: ", r.UserAgent())
 	req.Header.Add("User-Agent", r.UserAgent())
 	req.Header.Add("X-Requestor", uniqid.Text())
 
 	resp, err := r.transport.RoundTrip(req)
-	if err != nil && resp.StatusCode == http.StatusForbidden && strings.EqualFold(resp.Header.Get("server"), "cloudfront") {
+	if err != nil && resp != nil && resp.StatusCode == http.StatusForbidden && strings.EqualFold(resp.Header.Get("server"), "cloudfront") {
 		return nil, NewCountryBlockedError()
 	}
 
