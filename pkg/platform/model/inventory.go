@@ -83,7 +83,7 @@ func FetchAuthors(ingredID, ingredVersionID *strfmt.UUID) (Authors, error) {
 	params.SetIngredientID(*ingredID)
 	params.SetIngredientVersionID(*ingredVersionID)
 	params.SetLimit(&lim)
-	params.SetHTTPClient(retryhttp.DefaultClient.StandardClient())
+	params.SetHTTPClient(retryhttp.APIClient.StandardClient())
 
 	results, err := client.GetIngredientVersionAuthors(params, authentication.ClientAuth())
 	if err != nil {
@@ -109,7 +109,7 @@ func searchIngredientsNamespace(ns Namespace, name string, includeVersions bool,
 		params.SetNamespaces(&namespace)
 	}
 	params.SetLimit(&limit)
-	params.SetHTTPClient(retryhttp.DefaultClient.StandardClient())
+	params.SetHTTPClient(retryhttp.APIClient.StandardClient())
 
 	var ingredients []*IngredientAndVersion
 	var entries []*inventory_models.SearchIngredientsResponseItem
@@ -155,7 +155,7 @@ func FetchPlatforms() ([]*Platform, error) {
 		params := inventory_operations.NewGetPlatformsParams()
 		limit := int64(99999)
 		params.SetLimit(&limit)
-		params.SetHTTPClient(retryhttp.DefaultClient.StandardClient())
+		params.SetHTTPClient(retryhttp.APIClient.StandardClient())
 
 		response, err := client.GetPlatforms(params)
 		if err != nil {
@@ -202,7 +202,7 @@ func FetchPlatformsForCommit(commitID strfmt.UUID) ([]*Platform, error) {
 	return platforms, nil
 }
 
-func filterPlatformIDs(hostPlatform, hostArch string, platformIDs []strfmt.UUID) ([]strfmt.UUID, error) {
+func FilterPlatformIDs(hostPlatform, hostArch string, platformIDs []strfmt.UUID) ([]strfmt.UUID, error) {
 	runtimePlatforms, err := FetchPlatforms()
 	if err != nil {
 		return nil, err
@@ -357,7 +357,7 @@ func FetchLanguages() ([]Language, error) {
 	params.SetNamespace("language")
 	limit := int64(10000)
 	params.SetLimit(&limit)
-	params.SetHTTPClient(retryhttp.DefaultClient.StandardClient())
+	params.SetHTTPClient(retryhttp.APIClient.StandardClient())
 
 	res, err := client.GetNamespaceIngredients(params, authentication.ClientAuth())
 	if err != nil {
@@ -382,7 +382,7 @@ func FetchIngredientVersions(ingredientID *strfmt.UUID) ([]*inventory_models.Ing
 	params.SetIngredientID(*ingredientID)
 	limit := int64(10000)
 	params.SetLimit(&limit)
-	params.SetHTTPClient(retryhttp.DefaultClient.StandardClient())
+	params.SetHTTPClient(retryhttp.APIClient.StandardClient())
 
 	res, err := client.GetIngredientVersions(params, authentication.ClientAuth())
 	if err != nil {

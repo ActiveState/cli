@@ -2,6 +2,7 @@ package api
 
 import (
 	"bytes"
+	"fmt"
 	"log"
 	"net/http"
 	"reflect"
@@ -26,14 +27,18 @@ func NewCountryBlockedError() *ErrCountryBlocked {
 }
 
 // RoundTripper is an implementation of http.RoundTripper that adds additional request information
-type RoundTripper struct{}
+type RoundTripper struct {
+	transport http.RoundTripper
+}
 
 // RoundTrip executes a single HTTP transaction, returning a Response for the provided Request.
 func (r *RoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
-	req.Header.Set("User-Agent", r.UserAgent())
-	req.Header.Set("X-Requestor", uniqid.Text())
+	fmt.Println("Requesting: ", req.URL)
+	fmt.Println("Setting user agent: ", r.UserAgent())
+	req.Header.Add("User-Agent", r.UserAgent())
+	req.Header.Add("X-Requestor", uniqid.Text())
 
-	resp, err := http.DefaultTransport.RoundTrip(req)
+	resp, err := r.transport.RoundTrip(req)
 	if err != nil && resp.StatusCode == http.StatusForbidden && strings.EqualFold(resp.Header.Get("server"), "cloudfront") {
 		return nil, NewCountryBlockedError()
 	}
@@ -73,8 +78,8 @@ func (r *RoundTripper) UserAgent() string {
 }
 
 // NewRoundTripper creates a new instance of RoundTripper
-func NewRoundTripper() http.RoundTripper {
-	return &RoundTripper{}
+func NewRoundTripper(transport http.RoundTripper) http.RoundTripper {
+	return &RoundTripper{transport}
 }
 
 // ErrorCode tries to retrieve the code associated with an API error

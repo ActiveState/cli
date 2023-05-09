@@ -813,7 +813,7 @@ func ChangesetFromRequirements(op Operation, reqs []*gqlModel.Requirement) Chang
 func FetchOrderFromCommit(commitID strfmt.UUID) (*mono_models.Order, error) {
 	params := vcsClient.NewGetOrderParams()
 	params.CommitID = commitID
-	params.SetHTTPClient(retryhttp.DefaultClient.StandardClient())
+	params.SetHTTPClient(retryhttp.APIClient.StandardClient())
 
 	var res *vcsClient.GetOrderOK
 	var err error
@@ -964,7 +964,7 @@ func MergeCommit(commitReceiving, commitWithChanges strfmt.UUID) (*mono_models.M
 	params := vcsClient.NewMergeCommitsParams()
 	params.SetCommitReceivingChanges(commitReceiving)
 	params.SetCommitWithChanges(commitWithChanges)
-	params.SetHTTPClient(retryhttp.DefaultClient.StandardClient())
+	params.SetHTTPClient(retryhttp.APIClient.StandardClient())
 
 	res, noContent, err := mono.New().VersionControl.MergeCommits(params)
 	if err != nil {
@@ -995,7 +995,7 @@ func MergeRequired(commitReceiving, commitWithChanges strfmt.UUID) (bool, error)
 func GetCommit(commitID strfmt.UUID) (*mono_models.Commit, error) {
 	params := vcsClient.NewGetCommitParams()
 	params.SetCommitID(commitID)
-	params.SetHTTPClient(retryhttp.DefaultClient.StandardClient())
+	params.SetHTTPClient(retryhttp.APIClient.StandardClient())
 
 	client := mono.New()
 	if authentication.LegacyGet().Authenticated() {

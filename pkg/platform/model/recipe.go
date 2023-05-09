@@ -100,7 +100,7 @@ func fetchRawRecipe(commitID strfmt.UUID, owner, project string, hostPlatform *s
 
 	var err error
 	params := iop.NewResolveRecipesParams()
-	params.SetHTTPClient(retryhttp.DefaultClient.StandardClient())
+	params.SetHTTPClient(retryhttp.APIClient.StandardClient())
 	params.SetTimeout(time.Second * 60)
 	params.Order, err = commitToOrder(commitID, owner, project)
 	if err != nil {
@@ -108,7 +108,7 @@ func fetchRawRecipe(commitID strfmt.UUID, owner, project string, hostPlatform *s
 	}
 
 	if hostPlatform != nil {
-		params.Order.Platforms, err = filterPlatformIDs(*hostPlatform, runtime.GOARCH, params.Order.Platforms)
+		params.Order.Platforms, err = FilterPlatformIDs(*hostPlatform, runtime.GOARCH, params.Order.Platforms)
 		if err != nil {
 			return "", err
 		}
@@ -164,7 +164,7 @@ func commitToOrder(commitID strfmt.UUID, owner, project string) (*inventory_mode
 func FetchRecipe(commitID strfmt.UUID, owner, project string, hostPlatform *string) (*inventory_models.Recipe, error) {
 	var err error
 	params := iop.NewResolveRecipesParams()
-	params.SetHTTPClient(retryhttp.DefaultClient.StandardClient())
+	params.SetHTTPClient(retryhttp.APIClient.StandardClient())
 	params.SetTimeout(time.Second * 60)
 	params.Order, err = commitToOrder(commitID, owner, project)
 	if err != nil {
@@ -187,7 +187,7 @@ func FetchRecipe(commitID strfmt.UUID, owner, project string, hostPlatform *stri
 		return nil, serr
 	}
 
-	platformIDs, err := filterPlatformIDs(*hostPlatform, runtime.GOARCH, params.Order.Platforms)
+	platformIDs, err := FilterPlatformIDs(*hostPlatform, runtime.GOARCH, params.Order.Platforms)
 	if err != nil {
 		return nil, errs.Wrap(err, "filterPlatformIDs failed")
 	}

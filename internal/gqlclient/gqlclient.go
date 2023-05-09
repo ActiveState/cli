@@ -53,7 +53,7 @@ func NewWithOpts(url string, timeout time.Duration, opts ...graphql.ClientOption
 }
 
 func New(url string, timeout time.Duration) *Client {
-	return NewWithOpts(url, timeout, graphql.WithHTTPClient(retryhttp.DefaultClient.StandardClient()))
+	return NewWithOpts(url, timeout, graphql.WithHTTPClient(retryhttp.APIClient.StandardClient()))
 }
 
 // EnableDebugLog turns on debug logging

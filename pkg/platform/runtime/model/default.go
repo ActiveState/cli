@@ -8,6 +8,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
+	"github.com/ActiveState/cli/pkg/platform/api/inventory"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -18,12 +19,16 @@ import (
 
 // Model is the default client that actually talks to the backend
 type Model struct {
-	auth *authentication.Auth
+	auth   *authentication.Auth
+	client *inventory.Client
 }
 
 // NewDefault is the constructor for the Model client
 func NewDefault(auth *authentication.Auth) *Model {
-	return &Model{auth}
+	return &Model{
+		auth,
+		inventory.InitClient(auth),
+	}
 }
 
 func (m *Model) ResolveRecipe(commitID strfmt.UUID, owner, projectName string) (*inventory_models.Recipe, error) {

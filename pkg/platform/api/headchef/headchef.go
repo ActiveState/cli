@@ -3,6 +3,7 @@ package headchef
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"net/url"
 	"time"
 
@@ -67,7 +68,7 @@ func InitClient(auth *authentication.Auth) *Client {
 func NewClient(apiURL *url.URL, auth runtime.ClientAuthInfoWriter) *Client {
 	logging.Debug("apiURL: %s", apiURL.String())
 	transportRuntime := httptransport.New(apiURL.Host, apiURL.Path, []string{apiURL.Scheme})
-	transportRuntime.Transport = api.NewRoundTripper()
+	transportRuntime.Transport = api.NewRoundTripper(http.DefaultTransport)
 
 	// transportRuntime.SetDebug(true)
 
@@ -155,7 +156,7 @@ func (r *Client) reqBuildSync(buildReq *headchef_models.V1BuildRequest) (BuildSt
 	startParams := headchef_operations.StartBuildV1Params{
 		Context:      context.Background(),
 		BuildRequest: buildReq,
-		HTTPClient:   retryhttp.DefaultClient.StandardClient(),
+		HTTPClient:   retryhttp.APIClient.StandardClient(),
 	}
 
 	created, accepted, err := r.client.StartBuildV1(&startParams, authentication.ClientAuth())
@@ -208,7 +209,7 @@ func (r *Client) reqBuild(buildReq *headchef_models.V1BuildRequest, buildStatus 
 	startParams := headchef_operations.StartBuildV1Params{
 		Context:      context.Background(),
 		BuildRequest: buildReq,
-		HTTPClient:   retryhttp.DefaultClient.StandardClient(),
+		HTTPClient:   retryhttp.APIClient.StandardClient(),
 	}
 
 	created, accepted, err := r.client.StartBuildV1(&startParams, authentication.ClientAuth())
