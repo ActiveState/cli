@@ -4,7 +4,6 @@ import (
 	"io"
 
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/multilog"
 )
 
 type Mediator struct {
@@ -57,7 +56,6 @@ func mediatorValue(v interface{}, format Format) interface{} {
 		if vt, ok := v.(StructuredMarshaller); ok {
 			return vt.MarshalStructured(format)
 		}
-		multilog.Error("%s output not supported for message: %v", string(format), v)
 		return StructuredError{locale.Tr("err_no_structured_output", string(format))}
 	}
 	if vt, ok := v.(Marshaller); ok {
