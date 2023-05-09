@@ -30,6 +30,11 @@ func (f *JSON) Type() Format {
 
 // Print will marshal and print the given value to the output writer
 func (f *JSON) Print(v interface{}) {
+	if _, isStructuredError := v.(StructuredError); isStructuredError {
+		multilog.Error("Attempted to write unstructured output as json.")
+		return
+	}
+
 	f.Fprint(f.cfg.OutWriter, v)
 }
 
