@@ -174,6 +174,10 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 			}
 			return locale.WrapInputError(err, "package_ingredient_alternatives", "", requirementName, strings.Join(suggestions, "\n"))
 		}
+		if name := packages[0].Ingredient.Name; name != nil && requirementName != *name {
+			logging.Debug("Requirement to install's letter case differs from Platform's ('%s' != '%s')", requirementName, *name)
+			requirementName = *name // match case
+		}
 
 		pg.Stop(locale.T("progress_found"))
 		pg = nil
