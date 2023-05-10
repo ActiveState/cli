@@ -18,13 +18,11 @@ import (
 	"github.com/ActiveState/cli/pkg/platform"
 )
 
-type HTTPClient struct {
-	*http.Client
-}
-
+// NewHTTPClient creates a new HTTP client that will retry requests and
+// add additional request information to the request headers
 func NewHTTPClient() *http.Client {
 	return &http.Client{
-		Transport: NewRoundTripper(retryhttp.Transport()),
+		Transport: NewRoundTripper(retryhttp.DefaultClient.StandardClient().Transport),
 	}
 }
 
