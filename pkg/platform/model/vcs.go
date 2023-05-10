@@ -12,7 +12,6 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
-	"github.com/ActiveState/cli/internal/retryhttp"
 	"github.com/ActiveState/cli/internal/singleton/uniqid"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	gqlModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model"
@@ -813,7 +812,7 @@ func ChangesetFromRequirements(op Operation, reqs []*gqlModel.Requirement) Chang
 func FetchOrderFromCommit(commitID strfmt.UUID) (*mono_models.Order, error) {
 	params := vcsClient.NewGetOrderParams()
 	params.CommitID = commitID
-	params.SetHTTPClient(retryhttp.APIClient.StandardClient())
+	params.SetHTTPClient(api.NewHTTPClient())
 
 	var res *vcsClient.GetOrderOK
 	var err error
@@ -964,7 +963,7 @@ func MergeCommit(commitReceiving, commitWithChanges strfmt.UUID) (*mono_models.M
 	params := vcsClient.NewMergeCommitsParams()
 	params.SetCommitReceivingChanges(commitReceiving)
 	params.SetCommitWithChanges(commitWithChanges)
-	params.SetHTTPClient(retryhttp.APIClient.StandardClient())
+	params.SetHTTPClient(api.NewHTTPClient())
 
 	res, noContent, err := mono.New().VersionControl.MergeCommits(params)
 	if err != nil {
@@ -995,7 +994,7 @@ func MergeRequired(commitReceiving, commitWithChanges strfmt.UUID) (bool, error)
 func GetCommit(commitID strfmt.UUID) (*mono_models.Commit, error) {
 	params := vcsClient.NewGetCommitParams()
 	params.SetCommitID(commitID)
-	params.SetHTTPClient(retryhttp.APIClient.StandardClient())
+	params.SetHTTPClient(api.NewHTTPClient())
 
 	client := mono.New()
 	if authentication.LegacyGet().Authenticated() {

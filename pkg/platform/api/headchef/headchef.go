@@ -14,7 +14,6 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/retryhttp"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_client"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_client/headchef_operations"
@@ -156,7 +155,7 @@ func (r *Client) reqBuildSync(buildReq *headchef_models.V1BuildRequest) (BuildSt
 	startParams := headchef_operations.StartBuildV1Params{
 		Context:      context.Background(),
 		BuildRequest: buildReq,
-		HTTPClient:   retryhttp.APIClient.StandardClient(),
+		HTTPClient:   api.NewHTTPClient(),
 	}
 
 	created, accepted, err := r.client.StartBuildV1(&startParams, authentication.ClientAuth())
@@ -209,7 +208,7 @@ func (r *Client) reqBuild(buildReq *headchef_models.V1BuildRequest, buildStatus 
 	startParams := headchef_operations.StartBuildV1Params{
 		Context:      context.Background(),
 		BuildRequest: buildReq,
-		HTTPClient:   retryhttp.APIClient.StandardClient(),
+		HTTPClient:   api.NewHTTPClient(),
 	}
 
 	created, accepted, err := r.client.StartBuildV1(&startParams, authentication.ClientAuth())

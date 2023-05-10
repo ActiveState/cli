@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/hashicorp/go-cleanhttp"
 	"github.com/hashicorp/go-retryablehttp"
 	"github.com/thoas/go-funk"
@@ -42,7 +41,6 @@ var (
 	DefaultTimeout = time.Second * 30
 	DefaultRetries = 5
 	DefaultClient  = NewClient(DefaultTimeout, DefaultRetries)
-	APIClient      = apiClient()
 
 	// A regular expression to match the error returned by net/http when the
 	// configured number of redirects is exhausted. This error isn't typed
@@ -159,7 +157,7 @@ func NewClient(timeout time.Duration, retries int) *Client {
 	retryClient.Logger = nil
 	// retryClient.Logger = logging.CurrentHandler() // Enable this to get debug info in our logs
 	retryClient.HTTPClient = &http.Client{
-		Transport: transport(),
+		Transport: Transport(),
 		Timeout:   timeout,
 	}
 	retryClient.RetryMax = retries
@@ -171,13 +169,7 @@ func NewClient(timeout time.Duration, retries int) *Client {
 	}
 }
 
-func apiClient() *Client {
-	client := NewClient(DefaultTimeout, DefaultRetries)
-	client.HTTPClient.Transport = api.NewRoundTripper(transport())
-	return client
-}
-
-func transport() http.RoundTripper {
+func Transport() http.RoundTripper {
 	if condition.InUnitTest() {
 		return http.DefaultTransport
 	}

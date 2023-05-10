@@ -12,17 +12,20 @@ import (
 	"github.com/ActiveState/cli/pkg/sysinfo"
 
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/rollbar"
+	"github.com/ActiveState/cli/internal/retryhttp"
 	"github.com/ActiveState/cli/internal/singleton/uniqid"
+	"github.com/ActiveState/cli/pkg/platform"
 )
 
-type ErrCountryBlocked struct{ *locale.LocalizedError }
+type HTTPClient struct {
+	*http.Client
+}
 
-func NewCountryBlockedError() *ErrCountryBlocked {
-	rollbar.DoNotReportMessages.Add(locale.T("err_country_blocked"))
-	return &ErrCountryBlocked{LocalizedError: locale.NewInputError("err_country_blocked")}
+func NewHTTPClient() *http.Client {
+	return &http.Client{
+		Transport: NewRoundTripper(retryhttp.Transport()),
+	}
 }
 
 // RoundTripper is an implementation of http.RoundTripper that adds additional request information
@@ -37,7 +40,7 @@ func (r *RoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
 
 	resp, err := r.transport.RoundTrip(req)
 	if err != nil && resp != nil && resp.StatusCode == http.StatusForbidden && strings.EqualFold(resp.Header.Get("server"), "cloudfront") {
-		return nil, NewCountryBlockedError()
+		return nil, platform.NewCountryBlockedError()
 	}
 
 	return resp, err
