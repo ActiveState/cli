@@ -3,9 +3,11 @@ package gqlclient
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"os"
 	"time"
 
+	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/profile"
@@ -53,7 +55,11 @@ func NewWithOpts(url string, timeout time.Duration, opts ...graphql.ClientOption
 }
 
 func New(url string, timeout time.Duration) *Client {
-	return NewWithOpts(url, timeout, graphql.WithHTTPClient(api.NewHTTPClient()))
+	httpClient := api.NewHTTPClient()
+	if condition.InUnitTest() {
+		httpClient = http.DefaultClient
+	}
+	return NewWithOpts(url, timeout, graphql.WithHTTPClient(httpClient))
 }
 
 // EnableDebugLog turns on debug logging

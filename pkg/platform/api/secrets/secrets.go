@@ -2,7 +2,6 @@ package secrets
 
 import (
 	"fmt"
-	"net/http"
 
 	httptransport "github.com/go-openapi/runtime/client"
 	"github.com/go-openapi/strfmt"
@@ -10,6 +9,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/retryhttp"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/api/secrets/secrets_client"
@@ -61,7 +61,7 @@ func Reset() {
 func NewClient(schema, host, basePath string) *Client {
 	logging.Debug("secrets-api scheme=%s host=%s base_path=%s", schema, host, basePath)
 	transportRuntime := httptransport.New(host, basePath, []string{schema})
-	transportRuntime.Transport = api.NewRoundTripper(http.DefaultTransport)
+	transportRuntime.Transport = api.NewRoundTripper(retryhttp.DefaultClient.StandardClient().Transport)
 	//transportRuntime.SetDebug(true)
 	secretsClient := &Client{
 		Secrets: secrets_client.New(transportRuntime, strfmt.Default),
