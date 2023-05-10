@@ -157,7 +157,7 @@ func NewClient(timeout time.Duration, retries int) *Client {
 	retryClient.Logger = nil
 	// retryClient.Logger = logging.CurrentHandler() // Enable this to get debug info in our logs
 	retryClient.HTTPClient = &http.Client{
-		Transport: Transport(),
+		Transport: transport(),
 		Timeout:   timeout,
 	}
 	retryClient.RetryMax = retries
@@ -169,7 +169,7 @@ func NewClient(timeout time.Duration, retries int) *Client {
 	}
 }
 
-func Transport() http.RoundTripper {
+func transport() http.RoundTripper {
 	if condition.InUnitTest() {
 		return http.DefaultTransport
 	}
