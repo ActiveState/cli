@@ -284,7 +284,12 @@ func (suite *InstallerIntegrationTestSuite) AssertConfig(ts *e2e.Session) {
 			fname = ".zshrc"
 		}
 
-		bashContents := fileutils.ReadFileUnsafe(filepath.Join(homeDir, fname))
+		rcFile := filepath.Join(homeDir, fname)
+		if fileutils.FileExists(filepath.Join(ts.Dirs.HomeDir, filepath.Base(fname))) {
+			rcFile = filepath.Join(ts.Dirs.HomeDir, filepath.Base(fname))
+		}
+
+		bashContents := fileutils.ReadFileUnsafe(rcFile)
 		suite.Contains(string(bashContents), constants.RCAppendInstallStartLine, "rc file should contain our RC Append Start line")
 		suite.Contains(string(bashContents), constants.RCAppendInstallStopLine, "rc file should contain our RC Append Stop line")
 		suite.Contains(string(bashContents), filepath.Join(ts.Dirs.Work), "rc file should contain our target dir")

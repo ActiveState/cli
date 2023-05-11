@@ -151,11 +151,11 @@ func (suite *DeployIntegrationTestSuite) checkSymlink(name string, binDir, targe
 
 func (suite *DeployIntegrationTestSuite) TestDeployPython() {
 	suite.OnlyRunForTags(tagsuite.Deploy, tagsuite.Python, tagsuite.Critical)
-	if !e2e.RunningOnCI() {
-		suite.T().Skipf("Skipping DeployIntegrationTestSuite when not running on CI, as it modifies bashrc/registry")
-	}
+	// if !e2e.RunningOnCI() {
+	// 	suite.T().Skipf("Skipping DeployIntegrationTestSuite when not running on CI, as it modifies bashrc/registry")
+	// }
 
-	ts := e2e.New(suite.T(), false)
+	ts := e2e.New(suite.T(), true)
 	defer ts.Close()
 
 	targetID, err := uuid.NewUUID()
@@ -312,6 +312,10 @@ func (suite *DeployIntegrationTestSuite) AssertConfig(ts *e2e.Session, targetID 
 		subshell := subshell.New(cfg)
 		rcFile, err := subshell.RcFile()
 		suite.Require().NoError(err)
+
+		if fileutils.FileExists(filepath.Join(ts.Dirs.HomeDir, filepath.Base(rcFile))) {
+			rcFile = filepath.Join(ts.Dirs.HomeDir, filepath.Base(rcFile))
+		}
 
 		bashContents := fileutils.ReadFileUnsafe(rcFile)
 		suite.Contains(string(bashContents), constants.RCAppendDeployStartLine, "config file should contain our RC Append Start line")
