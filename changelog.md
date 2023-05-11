@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+### 0.38.1
+
+### Fixed
+
+- We've reverted a change that would cause runtime installation to fail when we
+  received out of order progress events. This was causing some runtimes to
+  report failure when in actuality they were installed successfully.
+- Fixed reinstalling/updating on macOS resulting in a "Installation of service
+  app failed" error.
+
 ### 0.38.0
 
 ### Added

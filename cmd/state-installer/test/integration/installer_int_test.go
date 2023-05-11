@@ -11,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/download"
 	"github.com/ActiveState/cli/internal/environment"
@@ -54,10 +55,24 @@ func (suite *InstallerIntegrationTestSuite) TestInstallFromLocalSource() {
 	cp.Expect("Installing State Tool")
 	cp.Expect("Done")
 	cp.Expect("successfully installed")
-	if runtime.GOOS == "darwin" {
+	if runtime.GOOS == "darwin" && condition.OnCI() {
 		cp.Expect("You are running bash on macOS")
 	}
 	suite.NotContains(cp.TrimmedSnapshot(), "Downloading State Tool")
+	cp.WaitForInput()
+	cp.SendLine("exit")
+	cp.ExpectExitCode(0)
+
+	// Ensure installing overtop doesn't result in errors
+	cp = ts.SpawnCmdWithOpts(
+		suite.installerExe,
+		e2e.WithArgs(target, "--force"),
+		e2e.AppendEnv(constants.DisableUpdates+"=false"),
+		e2e.AppendEnv(fmt.Sprintf("%s=%s", constants.OverwriteDefaultSystemPathEnvVarName, dir)),
+	)
+
+	// Assert output
+	cp.Expect("successfully installed")
 
 	stateExec, err := installation.StateExecFromDir(target)
 	suite.Contains(stateExec, target, "Ensure we're not grabbing state tool from integration test bin dir")
@@ -213,7 +228,7 @@ func (suite *InstallerIntegrationTestSuite) TestStateTrayRemoval() {
 	trayExec := strings.Replace(svcExec, constants.StateSvcCmd, "state-tray", 1)
 	suite.FileExists(trayExec)
 	updateDialogExec := strings.Replace(svcExec, constants.StateSvcCmd, "state-update-dialog", 1)
-	//suite.FileExists(updateDialogExec) // this is not actually installed...
+	// suite.FileExists(updateDialogExec) // this is not actually installed...
 
 	// Run the installer, which should remove state-tray and clean up after it.
 	cp = ts.SpawnCmdWithOpts(
