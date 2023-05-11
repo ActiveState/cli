@@ -11,6 +11,7 @@ import (
 
 	"github.com/ActiveState/cli/pkg/sysinfo"
 
+	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/retryhttp"
@@ -21,6 +22,10 @@ import (
 // NewHTTPClient creates a new HTTP client that will retry requests and
 // add additional request information to the request headers
 func NewHTTPClient() *http.Client {
+	if condition.InUnitTest() {
+		return http.DefaultClient
+	}
+
 	return &http.Client{
 		Transport: NewRoundTripper(retryhttp.DefaultClient.StandardClient().Transport),
 	}
