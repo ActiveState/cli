@@ -11,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -18,6 +19,7 @@ import (
 	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/osutils/user"
+	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/ActiveState/cli/pkg/sysinfo"
@@ -36,6 +38,7 @@ func (suite *InstallerIntegrationTestSuite) TestInstallFromLocalSource() {
 	defer ts.Close()
 
 	suite.setupTest(ts)
+	suite.SetupRCFile(ts)
 
 	target := filepath.Join(ts.Dirs.Work, "installation")
 
@@ -268,6 +271,18 @@ func (suite *InstallerIntegrationTestSuite) TestInstallerOverwriteServiceApp() {
 	cp.Expect("Done")
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
+}
+
+func (suite *InstallerIntegrationTestSuite) SetupRCFile(ts *e2e.Session) {
+	cfg, err := config.New()
+	suite.Require().NoError(err)
+
+	subshell := subshell.New(cfg)
+	rcFile, err := subshell.RcFile()
+	suite.Require().NoError(err)
+
+	err = fileutils.CopyFile(rcFile, filepath.Join(ts.Dirs.HomeDir, filepath.Base(rcFile)))
+	suite.Require().NoError(err)
 }
 
 func (suite *InstallerIntegrationTestSuite) AssertConfig(ts *e2e.Session) {
