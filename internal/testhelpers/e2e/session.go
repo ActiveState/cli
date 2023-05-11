@@ -182,6 +182,7 @@ func new(t *testing.T, retainDirs, updatePath bool, extraEnv ...string) *Session
 		constants.DisableUpdates + "=true",
 		constants.OptinUnstableEnvVarName + "=true",
 		constants.ServiceSockDir + "=" + dirs.SockRoot,
+		constants.HomeEnvVarName + "=" + dirs.HomeDir,
 	}...)
 
 	if updatePath {
