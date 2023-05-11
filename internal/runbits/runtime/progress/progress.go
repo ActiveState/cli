@@ -7,7 +7,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/go-openapi/strfmt"
 	"github.com/vbauerster/mpb/v7"
@@ -358,11 +357,13 @@ Still expecting:
 				p.buildsExpected, p.downloadsExpected, p.installsExpected,
 			)
 
+			/* https://activestatef.atlassian.net/browse/DX-1831
 			if pending > 0 {
 				// We only error out if we determine the issue is down to one of our bars not completing.
 				// Otherwise this is an issue with the mpb package which is currently a known limitation, end goal is to get rid of mpb.
 				return locale.NewError("err_rtprogress_outofsync", "", constants.BugTrackerURL, logging.FilePath())
 			}
+			*/
 		}
 	}
 
