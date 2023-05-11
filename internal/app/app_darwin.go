@@ -60,6 +60,13 @@ func (a *App) install() error {
 		return errs.Wrap(err, "Could not create app parent directory: %s", installDir)
 	}
 
+	// MoveAllFiles does not overwrite existing files
+	if fileutils.DirExists(appPath) {
+		if err := os.RemoveAll(appPath); err != nil {
+			return errs.Wrap(err, "Could not remove existing app directory: %s", appPath)
+		}
+	}
+
 	if err := fileutils.MoveAllFiles(tmpDir, installDir); err != nil {
 		return errs.Wrap(err, "Could not move .app to %s", installDir)
 	}
