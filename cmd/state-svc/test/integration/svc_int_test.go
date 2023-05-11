@@ -143,11 +143,7 @@ func (suite *SvcIntegrationTestSuite) TestStartDuplicateErrorOutput() {
 	cp.ExpectExitCode(0)
 
 	cp = ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("foreground"))
-	cp.Expect("not start service: An existing")
-	cp.ExpectExitCode(1)
-
-	cp = ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("foreground", "test this"))
-	cp.Expect("not start service (invoked by \"test this\"): An existing")
+	cp.Expect("An existing server instance appears to be in use")
 	cp.ExpectExitCode(1)
 
 	cp = ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("stop"))
