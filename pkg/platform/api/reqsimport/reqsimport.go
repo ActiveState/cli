@@ -33,7 +33,7 @@ type ReqsImport struct {
 func New(opts Opts) (*ReqsImport, error) {
 	c := &http.Client{
 		Timeout:   60 * time.Second,
-		Transport: api.NewRoundTripper(),
+		Transport: api.NewRoundTripper(http.DefaultTransport),
 	}
 
 	ri := ReqsImport{

@@ -3,6 +3,7 @@ package headchef
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"net/url"
 	"time"
 
@@ -13,7 +14,6 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/retryhttp"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_client"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_client/headchef_operations"
@@ -67,7 +67,7 @@ func InitClient(auth *authentication.Auth) *Client {
 func NewClient(apiURL *url.URL, auth runtime.ClientAuthInfoWriter) *Client {
 	logging.Debug("apiURL: %s", apiURL.String())
 	transportRuntime := httptransport.New(apiURL.Host, apiURL.Path, []string{apiURL.Scheme})
-	transportRuntime.Transport = api.NewRoundTripper()
+	transportRuntime.Transport = api.NewRoundTripper(http.DefaultTransport)
 
 	// transportRuntime.SetDebug(true)
 
@@ -155,7 +155,7 @@ func (r *Client) reqBuildSync(buildReq *headchef_models.V1BuildRequest) (BuildSt
 	startParams := headchef_operations.StartBuildV1Params{
 		Context:      context.Background(),
 		BuildRequest: buildReq,
-		HTTPClient:   retryhttp.DefaultClient.StandardClient(),
+		HTTPClient:   api.NewHTTPClient(),
 	}
 
 	created, accepted, err := r.client.StartBuildV1(&startParams, authentication.ClientAuth())
@@ -208,7 +208,7 @@ func (r *Client) reqBuild(buildReq *headchef_models.V1BuildRequest, buildStatus 
 	startParams := headchef_operations.StartBuildV1Params{
 		Context:      context.Background(),
 		BuildRequest: buildReq,
-		HTTPClient:   retryhttp.DefaultClient.StandardClient(),
+		HTTPClient:   api.NewHTTPClient(),
 	}
 
 	created, accepted, err := r.client.StartBuildV1(&startParams, authentication.ClientAuth())

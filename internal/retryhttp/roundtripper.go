@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/pkg/platform/api"
+	"github.com/ActiveState/cli/pkg/platform"
 	"github.com/hashicorp/go-retryablehttp"
 )
 
@@ -29,8 +29,8 @@ func (rt *RoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
 	}
 
 	resp, err := rt.client.Do(retryableReq)
-	if err != nil && resp.StatusCode == http.StatusForbidden && strings.EqualFold(resp.Header.Get("server"), "cloudfront") {
-		return nil, api.NewCountryBlockedError()
+	if err != nil && resp != nil && resp.StatusCode == http.StatusForbidden && strings.EqualFold(resp.Header.Get("server"), "cloudfront") {
+		return nil, platform.NewCountryBlockedError()
 	}
 
 	return resp, err

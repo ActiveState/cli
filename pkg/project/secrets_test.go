@@ -109,8 +109,8 @@ func (suite *SecretsExpanderTestSuite) assertExpansionSuccess(secretName string,
 		category = project.UserCategory
 	}
 	value, err := suite.prepareWorkingExpander()("", category, secretName, false, project.NewExpansion(suite.project))
-	suite.Equal(expectedExpansionValue, value)
 	suite.Nil(err)
+	suite.Equal(expectedExpansionValue, value)
 }
 
 func (suite *SecretsExpanderTestSuite) TestKeypairNotFound() {
