@@ -308,6 +308,10 @@ func (suite *DeployIntegrationTestSuite) TestDeployConfigure() {
 }
 
 func (suite *DeployIntegrationTestSuite) SetupRCFile(ts *e2e.Session) {
+	if runtime.GOOS == "windows" {
+		return
+	}
+
 	cfg, err := config.New()
 	suite.Require().NoError(err)
 
