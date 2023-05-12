@@ -155,7 +155,7 @@ func (suite *DeployIntegrationTestSuite) TestDeployPython() {
 		suite.T().Skipf("Skipping DeployIntegrationTestSuite when not running on CI, as it modifies bashrc/registry")
 	}
 
-	ts := e2e.New(suite.T(), true)
+	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
 	suite.SetupRCFile(ts)

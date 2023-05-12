@@ -3,7 +3,6 @@ package integration
 import (
 	"fmt"
 	"io/ioutil"
-	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
@@ -18,7 +17,6 @@ import (
 	"github.com/ActiveState/cli/internal/httputil"
 	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/osutils"
-	"github.com/ActiveState/cli/internal/osutils/user"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
@@ -292,22 +290,16 @@ func (suite *InstallerIntegrationTestSuite) SetupRCFile(ts *e2e.Session) {
 func (suite *InstallerIntegrationTestSuite) AssertConfig(ts *e2e.Session) {
 	if runtime.GOOS != "windows" {
 		// Test bashrc
-		homeDir, err := user.HomeDir()
+		cfg, err := config.New()
 		suite.Require().NoError(err)
 
-		fname := ".bashrc"
-		if runtime.GOOS == "darwin" {
-			fname = ".bash_profile"
-		}
-		if strings.Contains(os.Getenv("SHELL"), "zsh") {
-			fname = ".zshrc"
-		}
+		subshell := subshell.New(cfg)
+		rcFile, err := subshell.RcFile()
+		suite.Require().NoError(err)
 
-		rcFile := filepath.Join(homeDir, fname)
-		if fileutils.FileExists(filepath.Join(ts.Dirs.HomeDir, filepath.Base(fname))) {
-			rcFile = filepath.Join(ts.Dirs.HomeDir, filepath.Base(fname))
+		if fileutils.FileExists(filepath.Join(ts.Dirs.HomeDir, filepath.Base(rcFile))) {
+			rcFile = filepath.Join(ts.Dirs.HomeDir, filepath.Base(rcFile))
 		}
-
 		bashContents := fileutils.ReadFileUnsafe(rcFile)
 		suite.Contains(string(bashContents), constants.RCAppendInstallStartLine, "rc file should contain our RC Append Start line")
 		suite.Contains(string(bashContents), constants.RCAppendInstallStopLine, "rc file should contain our RC Append Stop line")
