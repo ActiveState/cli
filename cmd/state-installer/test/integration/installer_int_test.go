@@ -3,7 +3,6 @@ package integration
 import (
 	"fmt"
 	"io/ioutil"
-	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
@@ -11,13 +10,14 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/httputil"
 	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/osutils"
-	"github.com/ActiveState/cli/internal/osutils/user"
+	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/ActiveState/cli/pkg/sysinfo"
@@ -36,6 +36,7 @@ func (suite *InstallerIntegrationTestSuite) TestInstallFromLocalSource() {
 	defer ts.Close()
 
 	suite.setupTest(ts)
+	suite.SetupRCFile(ts)
 
 	target := filepath.Join(ts.Dirs.Work, "installation")
 
@@ -270,21 +271,36 @@ func (suite *InstallerIntegrationTestSuite) TestInstallerOverwriteServiceApp() {
 	cp.ExpectExitCode(0)
 }
 
+func (suite *InstallerIntegrationTestSuite) SetupRCFile(ts *e2e.Session) {
+	if runtime.GOOS == "windows" {
+		return
+	}
+
+	cfg, err := config.New()
+	suite.Require().NoError(err)
+
+	subshell := subshell.New(cfg)
+	rcFile, err := subshell.RcFile()
+	suite.Require().NoError(err)
+
+	err = fileutils.CopyFile(rcFile, filepath.Join(ts.Dirs.HomeDir, filepath.Base(rcFile)))
+	suite.Require().NoError(err)
+}
+
 func (suite *InstallerIntegrationTestSuite) AssertConfig(ts *e2e.Session) {
 	if runtime.GOOS != "windows" {
 		// Test bashrc
-		homeDir, err := user.HomeDir()
+		cfg, err := config.New()
 		suite.Require().NoError(err)
 
-		fname := ".bashrc"
-		if runtime.GOOS == "darwin" {
-			fname = ".bash_profile"
-		}
-		if strings.Contains(os.Getenv("SHELL"), "zsh") {
-			fname = ".zshrc"
-		}
+		subshell := subshell.New(cfg)
+		rcFile, err := subshell.RcFile()
+		suite.Require().NoError(err)
 
-		bashContents := fileutils.ReadFileUnsafe(filepath.Join(homeDir, fname))
+		if fileutils.FileExists(filepath.Join(ts.Dirs.HomeDir, filepath.Base(rcFile))) {
+			rcFile = filepath.Join(ts.Dirs.HomeDir, filepath.Base(rcFile))
+		}
+		bashContents := fileutils.ReadFileUnsafe(rcFile)
 		suite.Contains(string(bashContents), constants.RCAppendInstallStartLine, "rc file should contain our RC Append Start line")
 		suite.Contains(string(bashContents), constants.RCAppendInstallStopLine, "rc file should contain our RC Append Stop line")
 		suite.Contains(string(bashContents), filepath.Join(ts.Dirs.Work), "rc file should contain our target dir")

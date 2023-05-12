@@ -158,6 +158,8 @@ func (suite *DeployIntegrationTestSuite) TestDeployPython() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
+	suite.SetupRCFile(ts)
+
 	targetID, err := uuid.NewUUID()
 	suite.Require().NoError(err)
 	targetPath, err := fileutils.ResolveUniquePath(filepath.Join(ts.Dirs.Work, targetID.String()))
@@ -258,6 +260,8 @@ func (suite *DeployIntegrationTestSuite) TestDeployConfigure() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
+	suite.SetupRCFile(ts)
+
 	targetID, err := uuid.NewUUID()
 	suite.Require().NoError(err)
 	targetPath, err := fileutils.ResolveUniquePath(filepath.Join(ts.Dirs.Work, targetID.String()))
@@ -303,6 +307,22 @@ func (suite *DeployIntegrationTestSuite) TestDeployConfigure() {
 	}
 }
 
+func (suite *DeployIntegrationTestSuite) SetupRCFile(ts *e2e.Session) {
+	if runtime.GOOS == "windows" {
+		return
+	}
+
+	cfg, err := config.New()
+	suite.Require().NoError(err)
+
+	subshell := subshell.New(cfg)
+	rcFile, err := subshell.RcFile()
+	suite.Require().NoError(err)
+
+	err = fileutils.CopyFile(rcFile, filepath.Join(ts.Dirs.HomeDir, filepath.Base(rcFile)))
+	suite.Require().NoError(err)
+}
+
 func (suite *DeployIntegrationTestSuite) AssertConfig(ts *e2e.Session, targetID string) {
 	if runtime.GOOS != "windows" {
 		// Test config file
@@ -312,6 +332,10 @@ func (suite *DeployIntegrationTestSuite) AssertConfig(ts *e2e.Session, targetID 
 		subshell := subshell.New(cfg)
 		rcFile, err := subshell.RcFile()
 		suite.Require().NoError(err)
+
+		if fileutils.FileExists(filepath.Join(ts.Dirs.HomeDir, filepath.Base(rcFile))) {
+			rcFile = filepath.Join(ts.Dirs.HomeDir, filepath.Base(rcFile))
+		}
 
 		bashContents := fileutils.ReadFileUnsafe(rcFile)
 		suite.Contains(string(bashContents), constants.RCAppendDeployStartLine, "config file should contain our RC Append Start line")

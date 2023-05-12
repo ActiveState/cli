@@ -203,26 +203,21 @@ func (suite *SvcIntegrationTestSuite) TestAutostartConfigEnableDisable() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	homeDir := fileutils.TempDirFromBaseDirUnsafe(ts.Dirs.Work)
-	envOpts := e2e.AppendEnv("ACTIVESTATE_HOME=" + homeDir)
-
 	// Toggle it via state tool config.
 	cp := ts.SpawnWithOpts(
 		e2e.WithArgs("config", "set", constants.AutostartSvcConfigKey, "false"),
-		envOpts,
 	)
 	cp.ExpectExitCode(0)
-	cp = ts.SpawnWithOpts(e2e.WithArgs("config", "get", constants.AutostartSvcConfigKey), envOpts)
+	cp = ts.SpawnWithOpts(e2e.WithArgs("config", "get", constants.AutostartSvcConfigKey))
 	cp.Expect("false")
 	cp.ExpectExitCode(0)
 
 	// Toggle it again via state tool config.
 	cp = ts.SpawnWithOpts(
 		e2e.WithArgs("config", "set", constants.AutostartSvcConfigKey, "true"),
-		envOpts,
 	)
 	cp.ExpectExitCode(0)
-	cp = ts.SpawnWithOpts(e2e.WithArgs("config", "get", constants.AutostartSvcConfigKey), envOpts)
+	cp = ts.SpawnWithOpts(e2e.WithArgs("config", "get", constants.AutostartSvcConfigKey))
 	cp.Expect("true")
 	cp.ExpectExitCode(0)
 }
