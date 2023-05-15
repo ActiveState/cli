@@ -218,8 +218,6 @@ func (suite *ShellIntegrationTestSuite) TestUseShellUpdates() {
 		zsh := &zsh.SubShell{}
 		zshRcFile, err = zsh.RcFile()
 		suite.NoError(err)
-		err = fileutils.TouchFileUnlessExists(zshRcFile)
-		suite.NoError(err)
 	}
 
 	cp = ts.SpawnWithOpts(
@@ -267,6 +265,15 @@ func (suite *ShellIntegrationTestSuite) SetupRCFile(ts *e2e.Session) {
 	suite.Require().NoError(err)
 
 	err = fileutils.CopyFile(rcFile, filepath.Join(ts.Dirs.HomeDir, filepath.Base(rcFile)))
+	suite.Require().NoError(err)
+
+	zsh := &zsh.SubShell{}
+	zshRcFile, err := zsh.RcFile()
+	suite.NoError(err)
+	err = fileutils.TouchFileUnlessExists(zshRcFile)
+	suite.NoError(err)
+
+	err = fileutils.CopyFile(rcFile, filepath.Join(ts.Dirs.HomeDir, filepath.Base(zshRcFile)))
 	suite.Require().NoError(err)
 }
 
