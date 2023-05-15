@@ -144,7 +144,7 @@ func (suite *UseIntegrationTestSuite) TestReset() {
 	rcFilePath := filepath.Join(ts.Dirs.HomeDir, filepath.Base(rcfile))
 	if runtime.GOOS != "windows" && fileutils.FileExists(rcFilePath) {
 		suite.NoError(err)
-		suite.Contains(string(fileutils.ReadFileUnsafe(rcfile)), ts.Dirs.DefaultBin, "PATH does not have your project in it")
+		suite.Contains(string(fileutils.ReadFileUnsafe(rcFilePath)), ts.Dirs.DefaultBin, "PATH does not have your project in it")
 	}
 
 	cp = ts.SpawnWithOpts(e2e.WithArgs("use", "reset"))
