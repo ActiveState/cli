@@ -98,8 +98,8 @@ func (i *Installer) Install() (rerr error) {
 		return errs.Wrap(err, "Could not prepare for installation")
 	}
 
-	// Copy all the files
-	if err := fileutils.CopyAndRenameFiles(i.payloadPath, i.path); err != nil {
+	// Copy all the files except for the current executable
+	if err := fileutils.CopyAndRenameFiles(i.payloadPath, i.path, filepath.Base(osutils.Executable())); err != nil {
 		return errs.Wrap(err, "Failed to copy installation files to dir %s. Error received: %s", i.path, errs.JoinMessage(err))
 	}
 
