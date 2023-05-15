@@ -205,6 +205,8 @@ func (suite *ShellIntegrationTestSuite) TestUseShellUpdates() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
+	suite.SetupRCFile(ts)
+
 	cp := ts.Spawn("checkout", "ActiveState-CLI/Python3")
 	cp.Expect("Checked out project")
 	cp.ExpectExitCode(0)
@@ -232,10 +234,12 @@ func (suite *ShellIntegrationTestSuite) TestUseShellUpdates() {
 	cfg, err := config.New()
 	suite.NoError(err)
 	rcfile, err := subshell.New(cfg).RcFile()
-	if runtime.GOOS != "windows" {
+	rcFilePath := filepath.Join(ts.Dirs.HomeDir, filepath.Base(rcfile))
+	zshRcFilePath := filepath.Join(ts.Dirs.HomeDir, filepath.Base(zshRcFile))
+	if runtime.GOOS != "windows" && fileutils.FileExists(rcFilePath) {
 		suite.NoError(err)
-		suite.Contains(string(fileutils.ReadFileUnsafe(rcfile)), ts.Dirs.DefaultBin, "PATH does not have your project in it")
-		suite.Contains(string(fileutils.ReadFileUnsafe(zshRcFile)), ts.Dirs.DefaultBin, "PATH does not have your project in it")
+		suite.Contains(string(fileutils.ReadFileUnsafe(rcFilePath)), ts.Dirs.DefaultBin, "PATH does not have your project in it")
+		suite.Contains(string(fileutils.ReadFileUnsafe(zshRcFilePath)), ts.Dirs.DefaultBin, "PATH does not have your project in it")
 	}
 }
 
@@ -248,6 +252,22 @@ func (suite *ShellIntegrationTestSuite) TestJSON() {
 	cp.ExpectLongString(`"error":"This command does not support the json output format`)
 	cp.ExpectExitCode(0)
 	AssertValidJSON(suite.T(), cp)
+}
+
+func (suite *ShellIntegrationTestSuite) SetupRCFile(ts *e2e.Session) {
+	if runtime.GOOS == "windows" {
+		return
+	}
+
+	cfg, err := config.New()
+	suite.Require().NoError(err)
+
+	subshell := subshell.New(cfg)
+	rcFile, err := subshell.RcFile()
+	suite.Require().NoError(err)
+
+	err = fileutils.CopyFile(rcFile, filepath.Join(ts.Dirs.HomeDir, filepath.Base(rcFile)))
+	suite.Require().NoError(err)
 }
 
 func TestShellIntegrationTestSuite(t *testing.T) {

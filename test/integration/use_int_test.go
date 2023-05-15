@@ -121,6 +121,8 @@ func (suite *UseIntegrationTestSuite) TestReset() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
+	suite.SetupRCFile(ts)
+
 	cp := ts.SpawnWithOpts(e2e.WithArgs("checkout", "ActiveState-CLI/Python3"))
 	cp.Expect("Skipping runtime setup")
 	cp.Expect("Checked out project")
@@ -139,7 +141,8 @@ func (suite *UseIntegrationTestSuite) TestReset() {
 	cfg, err := config.New()
 	suite.NoError(err)
 	rcfile, err := subshell.New(cfg).RcFile()
-	if runtime.GOOS != "windows" && fileutils.FileExists(rcfile) {
+	rcFilePath := filepath.Join(ts.Dirs.HomeDir, filepath.Base(rcfile))
+	if runtime.GOOS != "windows" && fileutils.FileExists(rcFilePath) {
 		suite.NoError(err)
 		suite.Contains(string(fileutils.ReadFileUnsafe(rcfile)), ts.Dirs.DefaultBin, "PATH does not have your project in it")
 	}
@@ -286,6 +289,22 @@ func (suite *UseIntegrationTestSuite) TestJSON() {
 	cp = ts.Spawn("use", "reset", "-o", "json")
 	cp.ExpectExitCode(0)
 	suite.Empty(cp.TrimmedSnapshot(), "unexpected output")
+}
+
+func (suite *UseIntegrationTestSuite) SetupRCFile(ts *e2e.Session) {
+	if runtime.GOOS == "windows" {
+		return
+	}
+
+	cfg, err := config.New()
+	suite.Require().NoError(err)
+
+	subshell := subshell.New(cfg)
+	rcFile, err := subshell.RcFile()
+	suite.Require().NoError(err)
+
+	err = fileutils.CopyFile(rcFile, filepath.Join(ts.Dirs.HomeDir, filepath.Base(rcFile)))
+	suite.Require().NoError(err)
 }
 
 func TestUseIntegrationTestSuite(t *testing.T) {
