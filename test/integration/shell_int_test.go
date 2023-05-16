@@ -206,6 +206,7 @@ func (suite *ShellIntegrationTestSuite) TestUseShellUpdates() {
 	defer ts.Close()
 
 	suite.SetupRCFile(ts)
+	suite.T().Setenv("ACTIVESTATE_HOME", ts.Dirs.HomeDir)
 
 	cp := ts.Spawn("checkout", "ActiveState-CLI/Python3")
 	cp.Expect("Checked out project")
@@ -232,12 +233,10 @@ func (suite *ShellIntegrationTestSuite) TestUseShellUpdates() {
 	cfg, err := config.New()
 	suite.NoError(err)
 	rcfile, err := subshell.New(cfg).RcFile()
-	rcFilePath := filepath.Join(ts.Dirs.HomeDir, filepath.Base(rcfile))
-	zshRcFilePath := filepath.Join(ts.Dirs.HomeDir, filepath.Base(zshRcFile))
-	if runtime.GOOS != "windows" && fileutils.FileExists(rcFilePath) {
+	if runtime.GOOS != "windows" && fileutils.FileExists(rcfile) {
 		suite.NoError(err)
-		suite.Contains(string(fileutils.ReadFileUnsafe(rcFilePath)), ts.Dirs.DefaultBin, "PATH does not have your project in it")
-		suite.Contains(string(fileutils.ReadFileUnsafe(zshRcFilePath)), ts.Dirs.DefaultBin, "PATH does not have your project in it")
+		suite.Contains(string(fileutils.ReadFileUnsafe(rcfile)), ts.Dirs.DefaultBin, "PATH does not have your project in it")
+		suite.Contains(string(fileutils.ReadFileUnsafe(zshRcFile)), ts.Dirs.DefaultBin, "PATH does not have your project in it")
 	}
 }
 

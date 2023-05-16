@@ -122,6 +122,7 @@ func (suite *UseIntegrationTestSuite) TestReset() {
 	defer ts.Close()
 
 	suite.SetupRCFile(ts)
+	suite.T().Setenv("ACTIVESTATE_HOME", ts.Dirs.HomeDir)
 
 	cp := ts.SpawnWithOpts(e2e.WithArgs("checkout", "ActiveState-CLI/Python3"))
 	cp.Expect("Skipping runtime setup")
@@ -141,10 +142,9 @@ func (suite *UseIntegrationTestSuite) TestReset() {
 	cfg, err := config.New()
 	suite.NoError(err)
 	rcfile, err := subshell.New(cfg).RcFile()
-	rcFilePath := filepath.Join(ts.Dirs.HomeDir, filepath.Base(rcfile))
-	if runtime.GOOS != "windows" && fileutils.FileExists(rcFilePath) {
+	if runtime.GOOS != "windows" && fileutils.FileExists(rcfile) {
 		suite.NoError(err)
-		suite.Contains(string(fileutils.ReadFileUnsafe(rcFilePath)), ts.Dirs.DefaultBin, "PATH does not have your project in it")
+		suite.Contains(string(fileutils.ReadFileUnsafe(rcfile)), ts.Dirs.DefaultBin, "PATH does not have your project in it")
 	}
 
 	cp = ts.SpawnWithOpts(e2e.WithArgs("use", "reset"))
