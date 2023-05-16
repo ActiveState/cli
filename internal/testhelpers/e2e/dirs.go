@@ -21,6 +21,8 @@ type Dirs struct {
 	DefaultBin string
 	// SockRoot is the directory for the state service's socket file
 	SockRoot string
+	// HomeDir is used as the test user's home directory
+	HomeDir string
 }
 
 // NewDirs creates all temporary directories
@@ -39,6 +41,7 @@ func NewDirs(base string) (*Dirs, error) {
 	work := filepath.Join(base, "work")
 	defaultBin := filepath.Join(base, "cache", "bin")
 	sockRoot := filepath.Join(base, "sock")
+	homeDir := filepath.Join(base, "home")
 
 	subdirs := []string{config, cache, bin, work, defaultBin}
 	for _, subdir := range subdirs {
@@ -55,6 +58,7 @@ func NewDirs(base string) (*Dirs, error) {
 		Work:       work,
 		DefaultBin: defaultBin,
 		SockRoot:   sockRoot,
+		HomeDir:    homeDir,
 	}
 
 	return &dirs, nil

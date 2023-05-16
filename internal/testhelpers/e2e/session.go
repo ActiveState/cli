@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"strings"
 	"testing"
@@ -181,6 +182,7 @@ func new(t *testing.T, retainDirs, updatePath bool, extraEnv ...string) *Session
 		constants.DisableUpdates + "=true",
 		constants.OptinUnstableEnvVarName + "=true",
 		constants.ServiceSockDir + "=" + dirs.SockRoot,
+		constants.HomeEnvVarName + "=" + dirs.HomeDir,
 	}...)
 
 	if updatePath {
@@ -422,7 +424,7 @@ func (s *Session) DebugMessage(prefix string) string {
 		"Logs":         s.DebugLogs(),
 		"A":            sectionStart,
 		"Z":            sectionEnd,
-	})
+	}, nil)
 	if err != nil {
 		s.t.Fatalf("Parsing template failed: %s", err)
 	}
@@ -568,6 +570,28 @@ func (s *Session) SvcLog() string {
 	return fmt.Sprintf("Could not find state-svc log, checked under %s, found: \n%v\n, files: \n%v\n", logDir, lines, files)
 }
 
+func (s *Session) LogFiles() []string {
+	result := []string{}
+	logDir := filepath.Join(s.Dirs.Config, "logs")
+	if !fileutils.DirExists(logDir) {
+		return result
+	}
+
+	filepath.WalkDir(logDir, func(path string, f fs.DirEntry, err error) error {
+		if err != nil {
+			panic(err)
+		}
+		if f.IsDir() {
+			return nil
+		}
+
+		result = append(result, path)
+		return nil
+	})
+
+	return result
+}
+
 func (s *Session) DebugLogs() string {
 	logDir := filepath.Join(s.Dirs.Config, "logs")
 	if !fileutils.DirExists(logDir) {
@@ -582,22 +606,20 @@ func (s *Session) DebugLogs() string {
 	}
 
 	result := "Logs:\n"
-	err := filepath.WalkDir(logDir, func(path string, f fs.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
-		if f.IsDir() {
-			return nil
-		}
-
+	for _, path := range s.LogFiles() {
 		result += fmt.Sprintf("%s%s:\n%s%s\n", sectionStart, filepath.Base(path), fileutils.ReadFileUnsafe(path), sectionEnd)
-		return nil
-	})
-	if err != nil {
-		return errs.JoinMessage(err)
 	}
 
 	return result
+}
+
+func (s *Session) DetectLogErrors() {
+	rx := regexp.MustCompile(`(?:\[ERR:|Panic:)`)
+	for _, path := range s.LogFiles() {
+		if contents := string(fileutils.ReadFileUnsafe(path)); rx.MatchString(contents) {
+			s.t.Errorf("Found error and/or panic in log file %s, contents:\n%s", path, contents)
+		}
+	}
 }
 
 func RunningOnCI() bool {

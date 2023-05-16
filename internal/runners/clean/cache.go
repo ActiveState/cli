@@ -17,7 +17,7 @@ import (
 type Cache struct {
 	output  output.Outputer
 	config  configurable
-	confirm confirmAble
+	confirm promptable
 	path    string
 	ipComm  svcctl.IPCommunicator
 }
@@ -31,7 +31,7 @@ func NewCache(prime primeable) *Cache {
 	return newCache(prime.Output(), prime.Config(), prime.Prompt(), prime.IPComm())
 }
 
-func newCache(output output.Outputer, cfg configurable, confirm confirmAble, ipComm svcctl.IPCommunicator) *Cache {
+func newCache(output output.Outputer, cfg configurable, confirm promptable, ipComm svcctl.IPCommunicator) *Cache {
 	return &Cache{
 		output:  output,
 		config:  cfg,
@@ -82,7 +82,7 @@ func (c *Cache) removeCache(path string, force bool) error {
 		return errs.Wrap(err, "Failed to remove cache")
 	}
 
-	c.output.Print(locale.Tl("clean_cache_success_message", "Successfully cleaned cache."))
+	c.output.Notice(locale.Tl("clean_cache_success_message", "Successfully cleaned cache."))
 	return nil
 }
 

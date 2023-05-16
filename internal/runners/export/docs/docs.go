@@ -30,14 +30,13 @@ var tpl string
 func (d *Docs) Run(p *Params, cmd *captain.Command) error {
 	stateCmd := cmd.TopParent()
 	commands := make([][]*captain.Command, 0)
-	commands = append(commands, grabChildren(stateCmd, false))
-	commands = append(commands, grabChildren(stateCmd, true))
+	commands = append(commands, grabChildren(stateCmd))
 
 	var output string
 	for _, cmds := range commands {
 		out, err := strutils.ParseTemplate(tpl, map[string]interface{}{
 			"Commands": cmds,
-		})
+		}, nil)
 		if err != nil {
 			return errs.Wrap(err, "Could not parse template")
 		}
@@ -49,24 +48,15 @@ func (d *Docs) Run(p *Params, cmd *captain.Command) error {
 	return nil
 }
 
-func grabChildren(cmd *captain.Command, includeUnstable bool) []*captain.Command {
+func grabChildren(cmd *captain.Command) []*captain.Command {
 	children := []*captain.Command{}
 	for _, child := range cmd.Children() {
-		if skipCommand(child, includeUnstable) {
+		if child.Hidden() {
 			continue
 		}
 		children = append(children, child)
-		children = append(children, grabChildren(child, includeUnstable)...)
+		children = append(children, grabChildren(child)...)
 	}
 
 	return children
-}
-
-func skipCommand(cmd *captain.Command, includeUnstable bool) bool {
-	check := cmd.Hidden() || cmd.Unstable()
-	if includeUnstable {
-		check = !cmd.Unstable()
-	}
-
-	return check
 }

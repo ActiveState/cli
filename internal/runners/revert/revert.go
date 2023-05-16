@@ -30,6 +30,7 @@ type Revert struct {
 
 type Params struct {
 	CommitID string
+	To       bool
 	Force    bool
 }
 
@@ -53,18 +54,6 @@ func New(prime primeable) *Revert {
 	}
 }
 
-type commitDetails struct {
-	Date        string
-	Author      string
-	Description string
-	Changeset   []changeset `locale:"changeset,Changes"`
-}
-
-type changeset struct {
-	Operation   string `locale:"operation,Operation"`
-	Requirement string `locale:"requirement,Requirement"`
-}
-
 func (r *Revert) Run(params *Params) error {
 	if r.project == nil {
 		return locale.NewInputError("err_no_project")
@@ -72,30 +61,54 @@ func (r *Revert) Run(params *Params) error {
 	if !strfmt.IsUUID(params.CommitID) {
 		return locale.NewInputError("err_invalid_commit_id", "Invalid commit ID")
 	}
+	latestCommit := r.project.CommitUUID()
+	if params.CommitID == latestCommit.String() && params.To {
+		return locale.NewInputError("err_revert_to_current_commit", "The commit to revert to cannot be the latest commit")
+	}
 	r.out.Notice(locale.Tl("operating_message", "", r.project.NamespaceString(), r.project.Dir()))
 	commitID := strfmt.UUID(params.CommitID)
 
-	priorCommits, err := model.CommitHistoryPaged(commitID, 0, 2)
-	if err != nil {
-		return locale.WrapError(err, "err_revert_get_commit", "Could not fetch commit details for commit with ID: {{.V0}}", params.CommitID)
+	var targetCommit *mono_models.Commit // the commit to revert the contents of, or the commit to revert to
+	var fromCommit, toCommit strfmt.UUID
+	if !params.To {
+		priorCommits, err := model.CommitHistoryPaged(commitID, 0, 2)
+		if err != nil {
+			return locale.WrapError(err, "err_revert_get_commit", "Could not fetch commit details for commit with ID: {{.V0}}", params.CommitID)
+		}
+		if priorCommits.TotalCommits < 2 {
+			return locale.NewInputError("err_revert_no_history", "Cannot revert commit {{.V0}}: no prior history", params.CommitID)
+		}
+		targetCommit = priorCommits.Commits[0]
+		fromCommit = commitID
+		toCommit = priorCommits.Commits[1].CommitID // parent commit
+	} else {
+		var err error
+		targetCommit, err = model.GetCommitWithinCommitHistory(latestCommit, commitID)
+		if err != nil {
+			return locale.WrapError(err, "err_revert_to_get_commit", "Could not fetch commit details for commit with ID: {{.V0}}", params.CommitID)
+		}
+		fromCommit = latestCommit
+		toCommit = targetCommit.CommitID
 	}
-	if priorCommits.TotalCommits < 2 {
-		return locale.NewInputError("err_revert_no_history", "Cannot revert commit {{.V0}}: no prior history", params.CommitID)
-	}
-	commitToRevert := priorCommits.Commits[0]
-	parentCommit := priorCommits.Commits[1]
 
 	var orgs []gqlmodel.Organization
-	if commitToRevert.Author != nil {
-		orgs, err = model.FetchOrganizationsByIDs([]strfmt.UUID{*commitToRevert.Author})
+	if targetCommit.Author != nil {
+		var err error
+		orgs, err = model.FetchOrganizationsByIDs([]strfmt.UUID{*targetCommit.Author})
 		if err != nil {
 			return locale.WrapError(err, "err_revert_get_organizations", "Could not get organizations for current user")
 		}
 	}
-	r.out.Print(locale.Tl("revert_info", "You are about to revert the following commit:"))
-	commit.PrintCommit(r.out, commitToRevert, orgs)
+	preposition := ""
+	if params.To {
+		preposition = " to" // need leading whitespace
+	}
+	if !r.out.Type().IsStructured() {
+		r.out.Print(locale.Tl("revert_info", "You are about to revert{{.V0}} the following commit:", preposition))
+		commit.PrintCommit(r.out, targetCommit, orgs)
+	}
 
-	defaultChoice := params.Force
+	defaultChoice := params.Force || !r.out.Config().Interactive
 	revert, err := r.prompt.Confirm("", locale.Tl("revert_confirm", "Continue?"), &defaultChoice)
 	if err != nil {
 		return locale.WrapError(err, "err_revert_confirm", "Could not confirm revert choice")
@@ -104,12 +117,13 @@ func (r *Revert) Run(params *Params) error {
 		return locale.NewInputError("err_revert_aborted", "Revert aborted by user")
 	}
 
-	revertCommit, err := model.RevertCommitWithinHistory(commitID, parentCommit.CommitID, r.project.CommitUUID())
+	revertCommit, err := model.RevertCommitWithinHistory(fromCommit, toCommit, latestCommit)
 	if err != nil {
 		return locale.WrapError(
 			err,
 			"err_revert_commit",
-			"Could not revert commit: {{.V0}} please ensure that the local project is synchronized with the platform and that the given commit ID belongs to the current project",
+			"Could not revert{{.V0}} commit: {{.V1}} please ensure that the local project is synchronized with the platform and that the given commit ID belongs to the current project",
+			preposition,
 			params.CommitID,
 		)
 	}
@@ -124,8 +138,15 @@ func (r *Revert) Run(params *Params) error {
 		return locale.WrapError(err, "err_revert_set_commit", "Could not set revert commit ID in projectfile")
 	}
 
-	r.out.Print(locale.Tl("revert_success", "Successfully reverted commit: {{.V0}}", params.CommitID))
-	r.out.Print(locale.T("operation_success_local"))
+	r.out.Print(output.Prepare(
+		locale.Tl("revert_success", "Successfully reverted{{.V0}} commit: {{.V1}}", preposition, params.CommitID),
+		&struct {
+			CurrentCommitID string `json:"current_commit_id"`
+		}{
+			revertCommit.CommitID.String(),
+		},
+	))
+	r.out.Notice(locale.T("operation_success_local"))
 	return nil
 }
 

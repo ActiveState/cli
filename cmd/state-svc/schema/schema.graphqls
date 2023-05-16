@@ -1,60 +1,82 @@
 type Version {
-  state: StateVersion!
+    state: StateVersion!
 }
 
 type StateVersion {
-  license: String!
-  version: String!
-  branch: String!
-  revision: String!
-  date: String!
+    license: String!
+    version: String!
+    branch: String!
+    revision: String!
+    date: String!
 }
 
 type AvailableUpdate {
-  version: String!
-  channel: String!
-  path: String!
-  platform: String!
-  sha256: String!
+    version: String!
+    channel: String!
+    path: String!
+    platform: String!
+    sha256: String!
 }
 
 type Project {
-  namespace: String!
-  locations: [String!]!
+    namespace: String!
+    locations: [String!]!
 }
 
 type AnalyticsEventResponse {
-  sent: Boolean!
+    sent: Boolean!
 }
 
 type ReportRuntimeUsageResponse {
-  received: Boolean!
+    received: Boolean!
 }
 
 type CheckRuntimeUsageResponse {
-  limit: Int!
-  usage: Int!
+    limit: Int!
+    usage: Int!
 }
 
-type DeprecationInfo {
-  version: String!
-  date: String!
-  dateReached: Boolean!
-  reason: String!
+enum MessageRepeatType {
+    Disabled
+    Constantly
+    Hourly
+    Daily
+    Weekly
+    Monthly
+}
+
+enum MessageInterruptType {
+    Disabled
+    Prompt
+    Exit
+}
+
+enum MessagePlacementType {
+    BeforeCmd
+    AfterCmd
+}
+
+type MessageInfo {
+    id: String!
+    message: String!
+    condition: String!
+    repeat: MessageRepeatType!
+    interrupt: MessageInterruptType!
+    placement: MessagePlacementType!
 }
 
 type Query {
-  version: Version
-  availableUpdate: AvailableUpdate
-  projects: [Project]!
-  analyticsEvent(category: String!, action: String!, label: String, dimensionsJson: String!): AnalyticsEventResponse
-  reportRuntimeUsage(pid: Int!, exec: String!, dimensionsJson: String!): ReportRuntimeUsageResponse
-  checkRuntimeUsage(organizationName: String!): CheckRuntimeUsageResponse
-  checkDeprecation: DeprecationInfo
-  configChanged(key: String!): ConfigChangedResponse
-  fetchLogTail: String!
+    version: Version
+    availableUpdate: AvailableUpdate
+    projects: [Project]!
+    analyticsEvent(category: String!, action: String!, label: String, dimensionsJson: String!): AnalyticsEventResponse
+    reportRuntimeUsage(pid: Int!, exec: String!, dimensionsJson: String!): ReportRuntimeUsageResponse
+    checkRuntimeUsage(organizationName: String!): CheckRuntimeUsageResponse
+    checkMessages(command: String!, flags: [String!]!): [MessageInfo!]!
+    configChanged(key: String!): ConfigChangedResponse
+    fetchLogTail: String!
 }
 
 type ConfigChangedResponse {
-  received: Boolean!
+    received: Boolean!
 }

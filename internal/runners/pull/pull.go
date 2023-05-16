@@ -59,20 +59,17 @@ func New(prime primeable) *Pull {
 	}
 }
 
-type outputFormat struct {
-	Message string `locale:"message,Message"`
-	Success bool   `locale:"success,Success"`
+type pullOutput struct {
+	Message string `locale:"message,Message" json:"message"`
+	Success bool   `locale:"success,Success" json:"success"`
 }
 
-func (f *outputFormat) MarshalOutput(format output.Format) interface{} {
-	switch format {
-	case output.EditorV0FormatName:
-		return f.editorV0Format()
-	case output.PlainFormatName:
-		return f.Message
-	}
+func (o *pullOutput) MarshalOutput(format output.Format) interface{} {
+	return o.Message
+}
 
-	return f
+func (o *pullOutput) MarshalStructured(format output.Format) interface{} {
+	return o
 }
 
 func (p *Pull) Run(params *PullParams) error {
@@ -116,11 +113,6 @@ func (p *Pull) Run(params *PullParams) error {
 		if !confirmed {
 			return locale.NewInputError("err_pull_aborted", "Pull aborted by user")
 		}
-
-		err = p.project.Source().SetNamespace(remoteProject.Owner, remoteProject.Project)
-		if err != nil {
-			return locale.WrapError(err, "err_pull_update_namespace", "Cannot update the namespace in your project file.")
-		}
 	}
 
 	remoteCommit := remoteProject.CommitID
@@ -137,11 +129,18 @@ func (p *Pull) Run(params *PullParams) error {
 			}
 		}
 		if err == nil && strategies != nil {
-			c, err := p.performMerge(strategies, *remoteCommit)
+			c, err := p.performMerge(strategies, *remoteCommit, *localCommit, remoteProject, p.project.BranchName())
 			if err != nil {
 				return errs.Wrap(err, "performing merge commit failed")
 			}
 			resultingCommit = &c
+		}
+	}
+
+	if params.SetProject != "" {
+		err = p.project.Source().SetNamespace(remoteProject.Owner, remoteProject.Project)
+		if err != nil {
+			return locale.WrapError(err, "err_pull_update_namespace", "Cannot update the namespace in your project file.")
 		}
 	}
 
@@ -152,12 +151,12 @@ func (p *Pull) Run(params *PullParams) error {
 			return locale.WrapError(err, "err_pull_update", "Cannot update the commit in your project file.")
 		}
 
-		p.out.Print(&outputFormat{
+		p.out.Print(&pullOutput{
 			locale.Tr("pull_updated", remoteProject.String(), resultingCommit.String()),
 			true,
 		})
 	} else {
-		p.out.Print(&outputFormat{
+		p.out.Print(&pullOutput{
 			locale.Tl("pull_not_updated", "Your activestate.yaml is already up to date."),
 			false,
 		})
@@ -171,11 +170,11 @@ func (p *Pull) Run(params *PullParams) error {
 	return nil
 }
 
-func (p *Pull) performMerge(strategies *mono_models.MergeStrategies, remoteCommit strfmt.UUID) (strfmt.UUID, error) {
-	p.out.Notice(output.Heading(locale.Tl("pull_diverged", "Merging history")))
+func (p *Pull) performMerge(strategies *mono_models.MergeStrategies, remoteCommit strfmt.UUID, localCommit strfmt.UUID, namespace *project.Namespaced, branchName string) (strfmt.UUID, error) {
+	p.out.Notice(output.Title(locale.Tl("pull_diverged", "Merging history")))
 	p.out.Notice(locale.Tr(
 		"pull_diverged_message",
-		p.project.Namespace().String(), p.project.BranchName(), p.project.CommitID(), remoteCommit.String()))
+		namespace.String(), branchName, localCommit.String(), remoteCommit.String()))
 
 	commitMessage := locale.Tr("pull_merge_commit", remoteCommit.String(), p.project.CommitID())
 	resultCommit, err := model.CommitChangeset(remoteCommit, commitMessage, strategies.OverwriteChanges)

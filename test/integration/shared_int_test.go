@@ -1,70 +1,39 @@
 package integration
 
 import (
-	"fmt"
+	"encoding/json"
 	"os"
 	"runtime"
+	"strings"
+	"testing"
 
-	"github.com/ActiveState/cli/internal/assets"
-	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/strutils"
-)
-
-var (
-	testUser          = "test-user"
-	testProject       = "test-project"
-	namespace         = fmt.Sprintf("%s/%s", testUser, testProject)
-	url               = fmt.Sprintf("https://%s/%s", constants.PlatformURL, namespace)
-	sampleYAMLPython2 = ""
-	sampleYAMLPython3 = ""
-	sampleYAMLEditor  = ""
+	"github.com/ActiveState/termtest"
+	"github.com/stretchr/testify/assert"
 )
 
 func init() {
 	if os.Getenv("VERBOSE") == "true" || os.Getenv("VERBOSE_TESTS") == "true" {
 		logging.CurrentHandler().SetVerbose(true)
 	}
+}
 
-	shell := "bash"
-	if runtime.GOOS == "windows" {
-		shell = "batch"
+// AssertValidJSON asserts that the previous command emitted valid JSON and did not attempt to emit
+// any non-JSON/structured output.
+// This should only be called after a command has executed and all output is available.
+func AssertValidJSON(t *testing.T, cp *termtest.ConsoleProcess) {
+	snapshot := cp.TrimmedSnapshot()
+	if runtime.GOOS != "windows" {
+		assert.True(t, json.Valid([]byte(snapshot)), "The command produced invalid JSON/structured output:\n"+snapshot)
+	} else {
+		// Windows can trim the last byte for some reason.
+		assert.True(
+			t,
+			json.Valid([]byte(snapshot)) || json.Valid([]byte(snapshot+"}")) || json.Valid([]byte(snapshot+"]")),
+			"The command produced invalid JSON/structured output:\n"+snapshot,
+		)
 	}
-	pythonTemplate, err := assets.ReadFileBytes("activestate.yaml.python.tpl")
-	if err != nil {
-		panic(err.Error())
-	}
-	sampleYAMLPython2, err = strutils.ParseTemplate(
-		string(pythonTemplate),
-		map[string]interface{}{
-			"Owner":    testUser,
-			"Project":  testProject,
-			"Shell":    shell,
-			"Language": "python2",
-			"LangExe":  language.MakeByName("python2").Executable().Filename(),
-		})
-	if err != nil {
-		panic(err.Error())
-	}
-	sampleYAMLPython3, err = strutils.ParseTemplate(
-		string(pythonTemplate),
-		map[string]interface{}{
-			"Owner":    testUser,
-			"Project":  testProject,
-			"Shell":    shell,
-			"Language": "python3",
-			"LangExe":  language.MakeByName("python3").Executable().Filename(),
-		})
-	if err != nil {
-		panic(err.Error())
-	}
-	editorTemplate, err := assets.ReadFileBytes("activestate.yaml.editor.tpl")
-	if err != nil {
-		panic(err.Error())
-	}
-	sampleYAMLEditor, err = strutils.ParseTemplate(string(editorTemplate), nil)
-	if err != nil {
-		panic(err.Error())
+	if strings.Contains(snapshot, `"errors":[`) {
+		assert.NotContains(t, snapshot, `output not supported`, "The command attempted to emit non-JSON/structured output:\n"+snapshot)
 	}
 }

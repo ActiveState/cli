@@ -24,7 +24,7 @@ type Params struct {
 	Namespace     *project.Namespaced
 	PreferredPath string
 	Branch        string
-	Cache         string
+	RuntimePath   string
 }
 
 type primeable interface {
@@ -66,7 +66,7 @@ func (u *Checkout) Run(params *Params) error {
 
 	logging.Debug("Checking out %s to %s", params.Namespace.String(), params.PreferredPath)
 	var err error
-	projectDir, err := u.checkout.Run(params.Namespace, params.Branch, params.Cache, params.PreferredPath)
+	projectDir, err := u.checkout.Run(params.Namespace, params.Branch, params.RuntimePath, params.PreferredPath)
 	if err != nil {
 		return locale.WrapError(err, "err_checkout_project", "", params.Namespace.String())
 	}
@@ -83,11 +83,18 @@ func (u *Checkout) Run(params *Params) error {
 		return locale.WrapError(err, "err_checkout_runtime_new", "Could not checkout this project.")
 	}
 
-	u.out.Notice(locale.Tl("checkout_project_statement", "",
-		proj.NamespaceString(),
-		proj.Dir(),
-		setup.ExecDir(rti.Target().Dir())),
-	)
+	execDir := setup.ExecDir(rti.Target().Dir())
+	u.out.Print(output.Prepare(
+		locale.Tl("checkout_project_statement", "", proj.NamespaceString(), proj.Dir(), execDir),
+		&struct {
+			Namespace   string `json:"namespace"`
+			Path        string `json:"path"`
+			Executables string `json:"executables"`
+		}{
+			proj.NamespaceString(),
+			proj.Dir(),
+			execDir,
+		}))
 
 	return nil
 }

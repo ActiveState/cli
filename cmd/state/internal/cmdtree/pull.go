@@ -21,7 +21,7 @@ func newPullCommand(prime *primer.Values, globals *globalOptions) *captain.Comma
 			{
 				Name:        "set-project",
 				Shorthand:   "",
-				Description: locale.Tl("flag_state_pull_set_project_description", "Pull from the specified project instead of the checked out one"),
+				Description: locale.Tl("flag_state_pull_set_project_description", "Pull from the specified project instead of the checked out one. That project and the current one must share a common commit in their histories"),
 				Value:       &params.SetProject,
 			},
 		},

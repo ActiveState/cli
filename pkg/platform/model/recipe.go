@@ -15,8 +15,8 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
-	"github.com/ActiveState/cli/internal/retryhttp"
 	"github.com/ActiveState/cli/internal/rtutils/p"
+	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory"
 	iop "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_client/inventory_operations"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
@@ -100,7 +100,7 @@ func fetchRawRecipe(commitID strfmt.UUID, owner, project string, hostPlatform *s
 
 	var err error
 	params := iop.NewResolveRecipesParams()
-	params.SetHTTPClient(retryhttp.DefaultClient.StandardClient())
+	params.SetHTTPClient(api.NewHTTPClient())
 	params.SetTimeout(time.Second * 60)
 	params.Order, err = commitToOrder(commitID, owner, project)
 	if err != nil {
@@ -164,7 +164,7 @@ func commitToOrder(commitID strfmt.UUID, owner, project string) (*inventory_mode
 func FetchRecipe(commitID strfmt.UUID, owner, project string, hostPlatform *string) (*inventory_models.Recipe, error) {
 	var err error
 	params := iop.NewResolveRecipesParams()
-	params.SetHTTPClient(retryhttp.DefaultClient.StandardClient())
+	params.SetHTTPClient(api.NewHTTPClient())
 	params.SetTimeout(time.Second * 60)
 	params.Order, err = commitToOrder(commitID, owner, project)
 	if err != nil {

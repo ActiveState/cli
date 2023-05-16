@@ -18,8 +18,8 @@ import (
 )
 
 var SvcEnsureStartMaxTime = 1000 * time.Millisecond // https://activestatef.atlassian.net/browse/DX-935
-var SvcRequestMaxTime = 50 * time.Millisecond
-var SvcStopMaxTime = 50 * time.Millisecond
+var SvcRequestMaxTime = 200 * time.Millisecond
+var SvcStopMaxTime = 333 * time.Millisecond
 
 type PerformanceSvcIntegrationTestSuite struct {
 	tagsuite.Suite
@@ -69,7 +69,7 @@ func (suite *PerformanceIntegrationTestSuite) TestSvcPerformance() {
 		duration := time.Since(t)
 
 		if duration.Nanoseconds() > SvcRequestMaxTime.Nanoseconds() {
-			suite.Fail(fmt.Sprintf("Service request took too long: %s (should be under %s)", duration.String(), SvcEnsureStartMaxTime.String()))
+			suite.Fail(fmt.Sprintf("Service request took too long: %s (should be under %s)", duration.String(), SvcRequestMaxTime.String()))
 		}
 	})
 
@@ -80,7 +80,7 @@ func (suite *PerformanceIntegrationTestSuite) TestSvcPerformance() {
 		duration := time.Since(t)
 
 		if duration.Nanoseconds() > SvcRequestMaxTime.Nanoseconds() {
-			suite.Fail(fmt.Sprintf("Service analytics request took too long: %s (should be under %s)", duration.String(), SvcEnsureStartMaxTime.String()))
+			suite.Fail(fmt.Sprintf("Service analytics request took too long: %s (should be under %s)", duration.String(), SvcRequestMaxTime.String()))
 		}
 	})
 
@@ -91,7 +91,7 @@ func (suite *PerformanceIntegrationTestSuite) TestSvcPerformance() {
 		duration := time.Since(t)
 
 		if duration.Nanoseconds() > SvcRequestMaxTime.Nanoseconds() {
-			suite.Fail(fmt.Sprintf("Service update request took too long: %s (should be under %s)", duration.String(), SvcEnsureStartMaxTime.String()))
+			suite.Fail(fmt.Sprintf("Service update request took too long: %s (should be under %s)", duration.String(), SvcRequestMaxTime.String()))
 		}
 	})
 

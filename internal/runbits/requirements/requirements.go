@@ -81,15 +81,7 @@ func NewRequirementOperation(prime primeable) *RequirementOperation {
 
 const latestVersion = "latest"
 
-type RequirementOperationParams struct {
-	RequirementName     string
-	RequirementVersion  string
-	RequirementBitWidth int
-	Operation           model.Operation
-	NsType              model.NamespaceType
-}
-
-func (r *RequirementOperation) ExecuteRequirementOperation(requirementName string, requirementVersion string, requirementBitWidth int, operation bgModel.Operation, nsType model.NamespaceType) (rerr error) {
+func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requirementVersion string, requirementBitWidth int, operation model.Operation, nsType model.NamespaceType) (rerr error) {
 	var ns model.Namespace
 	var langVersion string
 	langName := "undetermined"
@@ -185,6 +177,10 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName strin
 			}
 			return locale.WrapInputError(err, "package_ingredient_alternatives", "", requirementName, strings.Join(suggestions, "\n"))
 		}
+		if name := packages[0].Ingredient.Name; name != nil && requirementName != *name {
+			logging.Debug("Requirement to install's letter case differs from Platform's ('%s' != '%s')", requirementName, *name)
+			requirementName = *name // match case
+		}
 
 		pg.Stop(locale.T("progress_found"))
 		pg = nil
@@ -263,7 +259,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName strin
 	// refresh or install runtime
 	err = runbits.RefreshRuntime(r.Auth, r.Output, r.Analytics, pj, strfmt.UUID(commitID), orderChanged, trigger, r.SvcModel)
 	if err != nil {
-		return err
+		return errs.Wrap(err, "Failed to refresh runtime")
 	}
 
 	if orderChanged {
@@ -272,18 +268,30 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName strin
 		}
 	}
 
-	// Print the result
 	if !hasParentCommit {
-		out.Print(locale.Tr("install_initial_success", pj.Source().Path()))
+		out.Notice(locale.Tr("install_initial_success", pj.Source().Path()))
 	}
 
-	if requirementVersion != "" {
-		out.Print(locale.Tr(fmt.Sprintf("%s_version_%s", ns.Type(), operation), requirementName, requirementVersion))
-	} else {
-		out.Print(locale.Tr(fmt.Sprintf("%s_%s", ns.Type(), operation), requirementName))
+	// Print the result
+	message := locale.Tr(fmt.Sprintf("%s_version_%s", ns.Type(), operation), requirementName, requirementVersion)
+	if requirementVersion == "" {
+		message = locale.Tr(fmt.Sprintf("%s_%s", ns.Type(), operation), requirementName)
 	}
+	out.Print(output.Prepare(
+		message,
+		&struct {
+			Name      string `json:"name"`
+			Version   string `json:"version,omitempty"`
+			Type      string `json:"type"`
+			Operation string `json:"operation"`
+		}{
+			requirementName,
+			requirementVersion,
+			ns.Type().String(),
+			string(operation),
+		}))
 
-	out.Print(locale.T("operation_success_local"))
+	out.Notice(locale.T("operation_success_local"))
 
 	return nil
 }

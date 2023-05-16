@@ -17,7 +17,6 @@ package logging
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -28,6 +27,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/osutils/stacktrace"
 )
 
@@ -255,16 +255,7 @@ func writeMessageDepth(depth int, level string, msg string, args ...interface{})
 }
 
 func printLogError(err error, ctx *MessageContext, msg string, args ...interface{}) {
-	errMsg := err.Error()
-	errw := err
-	for {
-		errw = errors.Unwrap(errw)
-		if errw == nil {
-			break
-		}
-		errMsg += ": " + errw.Error()
-	}
-	fmt.Fprintf(os.Stderr, "Error writing log message: %s\n", errMsg)
+	fmt.Fprintf(os.Stderr, "Error writing log message: %s\n", errs.JoinMessage(err))
 	fmt.Fprintln(os.Stderr, DefaultFormatter.Format(ctx, msg, args...))
 }
 

@@ -58,7 +58,7 @@ func (h *History) Run(params *HistoryParams) error {
 	}
 
 	if len(commits) == 0 {
-		h.out.Print(locale.Tr("no_commits", h.project.Namespace().String()))
+		h.out.Print(output.Prepare(locale.Tr("no_commits", h.project.Namespace().String()), []byte("[]")))
 		return nil
 	}
 

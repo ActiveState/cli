@@ -28,7 +28,7 @@ jobs:
     strategy:
       matrix:
         go-version:
-          - 1.16.x
+          - 1.20.x
         platform:
           - ubuntu-20.04
           - macos-11
@@ -37,7 +37,6 @@ jobs:
     runs-on: ${{ matrix.platform }}
     env:
       ACTIVESTATE_CLI_DISABLE_RUNTIME: true
-      GOFLAGS: -mod=vendor
       SHELL: bash
       GITHUB_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     concurrency:
@@ -47,15 +46,21 @@ jobs:
     # === OS Specific Steps ===
     steps:
 
-      - # Checkout Code
+      - # === Checkout Code ===
         name: Checkout code
         uses: actions/checkout@v2
 
       - # === Install Go ===
         name: Install Go
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v3
         with:
           go-version: ${{ matrix.go-version }}
+
+      # === Install gotestfmt ===
+      - name: Set up gotestfmt
+        uses: gotesttools/gotestfmt-action@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - # === Setup ===
         name: Setup
@@ -96,8 +101,8 @@ jobs:
       - # === Preprocess ===
         name: Preprocess
         shell: bash
-        timeout-minutes: 1
-        run: state run preprocess
+        timeout-minutes: 3
+        run: state run preprocess -v
 
       - # === Parallel Tasks ===
         name: Parallel Tasks
@@ -109,7 +114,7 @@ jobs:
           [
             {
                 "ID": "Unit-Tests",
-                "Args": ["state", "run", "test"]
+                "Args": ["state", "run", "test", "-json", "2>&1"]
             },
             {
                 "ID": "Build-CLI",
@@ -145,19 +150,11 @@ jobs:
           JIRA_USERNAME: ${{ secrets.JIRA_EMAIL }}
           JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}
 
-      - # === Unit Tests (Raw) ===
-        name: Unit Tests (Raw Results)
-        shell: bash
-        run: |
-          set +e
-          parallelize results Unit-Tests
-          exit 0
-
       - # === Unit Tests ===
         name: Unit Tests
         id: unit_tests
         shell: bash
-        run: parallelize results Unit-Tests | gotestfmt
+        run: parallelize results Unit-Tests | gotestfmt -hide empty-packages
         continue-on-error: ${{ github.event_name != 'schedule' }}
 
       - # === "Build: CLI" ===
@@ -304,11 +301,7 @@ jobs:
           if [[ "$TEST_SUITE_TAGS" == "all" ]]; then
             TIMEOUT=60m
           fi
-          set +e
-          SHELL='' go test -timeout $TIMEOUT -v `go list ./... | grep "integration"` &> build/integration-tests.out
-          CODE=$?
-          cat build/integration-tests.out | gotestfmt
-          exit $CODE
+          SHELL='' go test -timeout $TIMEOUT -v `go list ./... | grep "integration"` -json 2>&1 | gotestfmt -hide empty-packages
         continue-on-error: ${{ github.event_name == 'schedule' }}
         env:
           ACTIVESTATE_VERBOSE: true
@@ -382,7 +375,6 @@ jobs:
     runs-on: ubuntu-20.04
     env:
       ACTIVESTATE_CLI_DISABLE_RUNTIME: true
-      GOFLAGS: -mod=vendor
       SHELL: bash
       GITHUB_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     timeout-minutes: 10
@@ -397,7 +389,7 @@ jobs:
 
       - # === Install Go ===
         name: Install Go
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v3
         with:
           go-version: ${{ matrix.go-version }}
 
@@ -434,7 +426,7 @@ jobs:
       - # === Preprocess ===
         name: Preprocess
         shell: bash
-        run: state run preprocess
+        run: state run preprocess -v
 
       - # === Cleanup Build Dir ===
         name: Cleanup Build Dir

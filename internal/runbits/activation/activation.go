@@ -1,7 +1,6 @@
 package activation
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	rt "runtime"
@@ -49,15 +48,6 @@ func ActivateAndWait(
 		// If this exists, it came from the installer. It should not exist in an activated environment
 		// otherwise.
 		ve[constants.DisableErrorTipsEnvVarName] = "false"
-	}
-
-	// If we're not using plain output then we should just dump the environment information
-	if out.Type() != output.PlainFormatName && out.Type() != output.SimpleFormatName {
-		if out.Type() == output.EditorV0FormatName {
-			fmt.Println("[activated-JSON]")
-		}
-		out.Print(ve)
-		return nil
 	}
 
 	// ignore interrupts in State Tool on Windows

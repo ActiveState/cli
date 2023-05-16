@@ -49,6 +49,7 @@ func newRunCommand(prime *primer.Values) *captain.Command {
 	cmd.SetGroup(ProjectUsageGroup)
 	cmd.SetDisableFlagParsing(true)
 	cmd.SetHasVariableArguments()
+	cmd.SetDoesNotSupportStructuredOutput()
 
 	return cmd
 }

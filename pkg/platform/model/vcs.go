@@ -12,7 +12,6 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
-	"github.com/ActiveState/cli/internal/retryhttp"
 	"github.com/ActiveState/cli/internal/singleton/uniqid"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	gqlModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model"
@@ -435,9 +434,10 @@ func AddChangeset(parentCommitID strfmt.UUID, commitMessage string, changeset Ch
 		switch err.(type) {
 		case *version_control.AddCommitBadRequest,
 			*version_control.AddCommitConflict,
-			*version_control.AddCommitForbidden,
 			*version_control.AddCommitNotFound:
 			return nil, locale.WrapInputError(err, "err_add_commit", "", api.ErrorMessageFromPayload(err))
+		case *version_control.AddCommitForbidden:
+			return nil, locale.WrapInputError(err, "err_add_commit", "", locale.T("err_auth_required"))
 		default:
 			return nil, locale.WrapError(err, "err_add_commit", "", api.ErrorMessageFromPayload(err))
 		}
@@ -531,7 +531,7 @@ func CommitPackage(parentCommitID strfmt.UUID, operation Operation, packageName 
 	var message string
 	switch operation {
 	case OperationAdded:
-		message = "commit_message_add_package"
+		message = "commit_message_added_package"
 	case OperationUpdated:
 		message = "commit_message_updated_package"
 	case OperationRemoved:
@@ -716,11 +716,11 @@ func languageCommitMessage(op Operation, name, version string) string {
 	var msgL10nKey string
 	switch op {
 	case OperationAdded:
-		msgL10nKey = locale.T("commit_message_add_language")
+		msgL10nKey = "commit_message_added_language"
 	case OperationUpdated:
-		msgL10nKey = locale.T("commit_message_update_language")
+		msgL10nKey = "commit_message_updated_language"
 	case OperationRemoved:
-		msgL10nKey = locale.T("commit_message_remove_language")
+		msgL10nKey = "commit_message_removed_language"
 	}
 
 	return locale.Tr(msgL10nKey, name, version)
@@ -730,11 +730,11 @@ func platformCommitMessage(op Operation, name, version string, word int) string 
 	var msgL10nKey string
 	switch op {
 	case OperationAdded:
-		msgL10nKey = locale.T("commit_message_add_platform")
+		msgL10nKey = "commit_message_added_platform"
 	case OperationUpdated:
-		msgL10nKey = locale.T("commit_message_update_platform")
+		msgL10nKey = "commit_message_updated_platform"
 	case OperationRemoved:
-		msgL10nKey = locale.T("commit_message_remove_platform")
+		msgL10nKey = "commit_message_removed_platform"
 	}
 
 	return locale.Tr(msgL10nKey, name, strconv.Itoa(word), version)
@@ -744,13 +744,16 @@ func packageCommitMessage(op Operation, name, version string) string {
 	var msgL10nKey string
 	switch op {
 	case OperationAdded:
-		msgL10nKey = locale.T("commit_message_add_package")
+		msgL10nKey = "commit_message_added_package"
 	case OperationUpdated:
-		msgL10nKey = locale.T("commit_message_update_package")
+		msgL10nKey = "commit_message_updated_package"
 	case OperationRemoved:
-		msgL10nKey = locale.T("commit_message_remove_package")
+		msgL10nKey = "commit_message_removed_package"
 	}
 
+	if version == "" {
+		version = locale.Tl("package_version_auto", "auto")
+	}
 	return locale.Tr(msgL10nKey, name, version)
 }
 
@@ -809,7 +812,7 @@ func ChangesetFromRequirements(op Operation, reqs []*gqlModel.Requirement) Chang
 func FetchOrderFromCommit(commitID strfmt.UUID) (*mono_models.Order, error) {
 	params := vcsClient.NewGetOrderParams()
 	params.CommitID = commitID
-	params.SetHTTPClient(retryhttp.DefaultClient.StandardClient())
+	params.SetHTTPClient(api.NewHTTPClient())
 
 	var res *vcsClient.GetOrderOK
 	var err error
@@ -917,12 +920,18 @@ func GetRevertCommit(from, to strfmt.UUID) (*mono_models.Commit, error) {
 }
 
 func RevertCommitWithinHistory(from, to, latest strfmt.UUID) (*mono_models.Commit, error) {
-	ok, err := CommitWithinCommitHistory(latest, from)
+	targetCommit := from
+	preposition := ""
+	if from == latest { // reverting to
+		targetCommit = to
+		preposition = " to" // need leading whitespace
+	}
+	ok, err := CommitWithinCommitHistory(latest, targetCommit)
 	if err != nil {
 		return nil, errs.Wrap(err, "API communication failed.")
 	}
 	if !ok {
-		return nil, locale.WrapError(err, "err_revert_commit_within_history_not_in", "The commit being reverted is not within the current commit's history.")
+		return nil, locale.WrapError(err, "err_revert_commit_within_history_not_in", "The commit being reverted{{.V0}} is not within the current commit's history.", preposition)
 	}
 
 	return RevertCommit(from, to, latest)
@@ -933,13 +942,15 @@ func RevertCommit(from, to, latest strfmt.UUID) (*mono_models.Commit, error) {
 	if err != nil {
 		return nil, err
 	}
-	// The platform assumes revert commits are reverting to a particular commit, rather than reverting
-	// the changes in a commit. As a result, commit messages are of the form "Revert to commit X" and
-	// parent commit IDs are X. Change the message to reflect the fact we're reverting changes from
-	// X and change the parent to be the latest commit so that the revert commit applies to the latest
-	// project commit.
-	revertCommit.Message = locale.Tl("revert_commit", "Revert commit {{.V0}}", from.String())
-	revertCommit.ParentCommitID = latest
+	if from != latest {
+		// The platform assumes revert commits are reverting to a particular commit, rather than
+		// reverting the changes in a commit. As a result, commit messages are of the form "Revert to
+		// commit X" and parent commit IDs are X. Change the message to reflect the fact we're
+		// reverting changes from X and change the parent to be the latest commit so that the revert
+		// commit applies to the latest project commit.
+		revertCommit.Message = locale.Tl("revert_commit", "Revert commit {{.V0}}", from.String())
+		revertCommit.ParentCommitID = latest
+	}
 
 	addCommit, err := AddRevertCommit(revertCommit)
 	if err != nil {
@@ -952,7 +963,7 @@ func MergeCommit(commitReceiving, commitWithChanges strfmt.UUID) (*mono_models.M
 	params := vcsClient.NewMergeCommitsParams()
 	params.SetCommitReceivingChanges(commitReceiving)
 	params.SetCommitWithChanges(commitWithChanges)
-	params.SetHTTPClient(retryhttp.DefaultClient.StandardClient())
+	params.SetHTTPClient(api.NewHTTPClient())
 
 	res, noContent, err := mono.New().VersionControl.MergeCommits(params)
 	if err != nil {
@@ -983,9 +994,13 @@ func MergeRequired(commitReceiving, commitWithChanges strfmt.UUID) (bool, error)
 func GetCommit(commitID strfmt.UUID) (*mono_models.Commit, error) {
 	params := vcsClient.NewGetCommitParams()
 	params.SetCommitID(commitID)
-	params.SetHTTPClient(retryhttp.DefaultClient.StandardClient())
+	params.SetHTTPClient(api.NewHTTPClient())
 
-	res, err := authentication.Client().VersionControl.GetCommit(params, authentication.ClientAuth())
+	client := mono.New()
+	if authentication.LegacyGet().Authenticated() {
+		client = authentication.Client()
+	}
+	res, err := client.VersionControl.GetCommit(params, authentication.ClientAuth())
 	if err != nil {
 		return nil, locale.WrapError(err, "err_get_commit", "Could not get commit from ID: {{.V0}}", commitID.String())
 	}
@@ -1018,7 +1033,7 @@ func AddRevertCommit(commit *mono_models.Commit) (*mono_models.Commit, error) {
 	}
 	params.SetCommit(editableCommit)
 
-	res, err := authentication.Client().VersionControl.AddCommit(params, authentication.ClientAuth())
+	res, err := mono.New().VersionControl.AddCommit(params, authentication.ClientAuth())
 	if err != nil {
 		return nil, locale.WrapError(err, "err_add_revert_commit", "Could not add revert commit")
 	}

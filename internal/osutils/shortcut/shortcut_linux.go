@@ -47,7 +47,7 @@ func Save(target, path string, args []string, opts SaveOpts) (file string, err e
 		Keywords:    opts.Keywords,
 		IconName:    iconName,
 	}
-	desktopFile, err := strutils.ParseTemplate(desktopFileTmpl, data)
+	desktopFile, err := strutils.ParseTemplate(desktopFileTmpl, data, nil)
 	if err != nil {
 		return "", errs.Wrap(err, "Could not execute template")
 	}

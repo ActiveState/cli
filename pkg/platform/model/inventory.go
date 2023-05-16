@@ -9,7 +9,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/retryhttp"
+	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_client/inventory_operations"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
@@ -83,7 +83,7 @@ func FetchAuthors(ingredID, ingredVersionID *strfmt.UUID) (Authors, error) {
 	params.SetIngredientID(*ingredID)
 	params.SetIngredientVersionID(*ingredVersionID)
 	params.SetLimit(&lim)
-	params.SetHTTPClient(retryhttp.DefaultClient.StandardClient())
+	params.SetHTTPClient(api.NewHTTPClient())
 
 	results, err := client.GetIngredientVersionAuthors(params, authentication.ClientAuth())
 	if err != nil {
@@ -109,7 +109,7 @@ func searchIngredientsNamespace(ns Namespace, name string, includeVersions bool,
 		params.SetNamespaces(&namespace)
 	}
 	params.SetLimit(&limit)
-	params.SetHTTPClient(retryhttp.DefaultClient.StandardClient())
+	params.SetHTTPClient(api.NewHTTPClient())
 
 	var ingredients []*IngredientAndVersion
 	var entries []*inventory_models.SearchIngredientsResponseItem
@@ -155,7 +155,7 @@ func FetchPlatforms() ([]*Platform, error) {
 		params := inventory_operations.NewGetPlatformsParams()
 		limit := int64(99999)
 		params.SetLimit(&limit)
-		params.SetHTTPClient(retryhttp.DefaultClient.StandardClient())
+		params.SetHTTPClient(api.NewHTTPClient())
 
 		response, err := client.GetPlatforms(params)
 		if err != nil {
@@ -357,7 +357,7 @@ func FetchLanguages() ([]Language, error) {
 	params.SetNamespace("language")
 	limit := int64(10000)
 	params.SetLimit(&limit)
-	params.SetHTTPClient(retryhttp.DefaultClient.StandardClient())
+	params.SetHTTPClient(api.NewHTTPClient())
 
 	res, err := client.GetNamespaceIngredients(params, authentication.ClientAuth())
 	if err != nil {
@@ -382,7 +382,7 @@ func FetchIngredientVersions(ingredientID *strfmt.UUID) ([]*inventory_models.Ing
 	params.SetIngredientID(*ingredientID)
 	limit := int64(10000)
 	params.SetLimit(&limit)
-	params.SetHTTPClient(retryhttp.DefaultClient.StandardClient())
+	params.SetHTTPClient(api.NewHTTPClient())
 
 	res, err := client.GetIngredientVersions(params, authentication.ClientAuth())
 	if err != nil {

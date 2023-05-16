@@ -10,9 +10,9 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/profile"
 	"github.com/ActiveState/cli/internal/strutils"
+	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/machinebox/graphql"
 
-	"github.com/ActiveState/cli/internal/retryhttp"
 	"github.com/ActiveState/cli/internal/singleton/uniqid"
 )
 
@@ -53,7 +53,7 @@ func NewWithOpts(url string, timeout time.Duration, opts ...graphql.ClientOption
 }
 
 func New(url string, timeout time.Duration) *Client {
-	return NewWithOpts(url, timeout, graphql.WithHTTPClient(retryhttp.DefaultClient.StandardClient()))
+	return NewWithOpts(url, timeout, graphql.WithHTTPClient(api.NewHTTPClient()))
 }
 
 // EnableDebugLog turns on debug logging

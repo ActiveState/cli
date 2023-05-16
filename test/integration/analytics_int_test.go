@@ -12,6 +12,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/analytics/client/sync/reporters"
 	anaConst "github.com/ActiveState/cli/internal/analytics/constants"
+	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/rtutils"
@@ -118,11 +119,15 @@ func (suite *AnalyticsIntegrationTestSuite) TestActivateEvents() {
 			if e.Dimensions == nil || e.Dimensions.Trigger == nil {
 				return false
 			}
-			return (*e.Dimensions.Trigger) == target.TriggerExec.String()
+			return (*e.Dimensions.Trigger) == target.TriggerExecutor.String()
 		})
 		suite.Require().Equal(1, countEvents(executorEvents, anaConst.CatRuntimeUsage, anaConst.ActRuntimeAttempt),
 			ts.DebugMessage("Should have a runtime attempt, events:\n"+debugEvents(suite.T(), executorEvents)))
-		suite.Require().Equal(1, countEvents(executorEvents, anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat), "Should have a heartbeat")
+		// It's possible due to the timing of the heartbeats and the fact that they are async that we have gotten either
+		// one or two by this point. Technically more is possible, just very unlikely.
+		numHeartbeats := countEvents(executorEvents, anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat)
+		suite.Require().Greater(numHeartbeats, 0, "Should have a heartbeat")
+		suite.Require().LessOrEqual(numHeartbeats, 2, "Should not have excessive heartbeats")
 		var heartbeatEvent *reporters.TestLogEntry
 		for _, e := range executorEvents {
 			if e.Action == anaConst.ActRuntimeHeartbeat {
@@ -418,13 +423,13 @@ func (suite *AnalyticsIntegrationTestSuite) TestInputError() {
 	events := parseAnalyticsEvents(suite, ts)
 	suite.assertSequentialEvents(events)
 
-	suite.assertNEvents(events, 1, anaConst.CatDebug, anaConst.ActInputError,
+	suite.assertNEvents(events, 1, anaConst.CatDebug, anaConst.ActCommandInputError,
 		fmt.Sprintf("output:\n%s\n%s",
 			cp.Snapshot(), ts.DebugLogs()))
 
 	for _, event := range events {
-		if event.Category == anaConst.CatDebug && event.Action == anaConst.ActInputError {
-			suite.Equal("state clean uninstall --mono", *event.Dimensions.Trigger)
+		if event.Category == anaConst.CatDebug && event.Action == anaConst.ActCommandInputError {
+			suite.Equal("state clean uninstall --mono", event.Label)
 		}
 	}
 }
@@ -500,7 +505,9 @@ func (suite *AnalyticsIntegrationTestSuite) TestHeapEvents() {
 
 	// Ensure analytics events have required/important fields
 	for _, e := range events {
-		if strings.Contains(e.Category, "state-svc") || strings.Contains(e.Action, "state-svc") || strings.Contains(e.Action, "auth") {
+		// Skip events that are not relevant to Heap
+		// State Service, Update, and Auth events can run before a user has logged in
+		if strings.Contains(e.Category, "state-svc") || strings.Contains(e.Action, "state-svc") || strings.Contains(e.Action, "auth") || strings.Contains(e.Category, "update") {
 			continue
 		}
 
@@ -513,6 +520,93 @@ func (suite *AnalyticsIntegrationTestSuite) TestHeapEvents() {
 	}
 
 	suite.assertSequentialEvents(events)
+}
+
+func (suite *AnalyticsIntegrationTestSuite) TestConfigEvents() {
+	suite.OnlyRunForTags(tagsuite.Analytics, tagsuite.Config)
+
+	ts := e2e.New(suite.T(), true)
+	defer ts.Close()
+
+	cp := ts.SpawnWithOpts(e2e.WithArgs("config", "set", "optin.unstable", "false"),
+		e2e.WithWorkDirectory(ts.Dirs.Work),
+	)
+	cp.Expect("Successfully set config key")
+
+	time.Sleep(time.Second) // Ensure state-svc has time to report events
+
+	cp = ts.SpawnWithOpts(e2e.WithArgs("config", "set", "optin.unstable", "true"),
+		e2e.WithWorkDirectory(ts.Dirs.Work),
+	)
+	cp.Expect("Successfully set config key")
+
+	time.Sleep(time.Second) // Ensure state-svc has time to report events
+
+	suite.eventsfile = filepath.Join(ts.Dirs.Config, reporters.TestReportFilename)
+
+	events := parseAnalyticsEvents(suite, ts)
+	suite.Require().NotEmpty(events)
+
+	// Ensure analytics events have required/important fields
+	var found int
+	for _, e := range events {
+		if !strings.Contains(e.Category, anaConst.CatConfig) {
+			continue
+		}
+
+		if e.Label != "optin.unstable" {
+			suite.Fail("Incorrect config event label")
+		}
+		found++
+	}
+
+	if found < 2 {
+		suite.Fail("Should find multiple config events")
+	}
+
+	suite.assertNEvents(events, 1, anaConst.CatConfig, anaConst.ActConfigSet, "Should be at one config set event")
+	suite.assertNEvents(events, 1, anaConst.CatConfig, anaConst.ActConfigUnset, "Should be at one config unset event")
+	suite.assertSequentialEvents(events)
+}
+
+func (suite *AnalyticsIntegrationTestSuite) TestCIAndInteractiveDimensions() {
+	suite.OnlyRunForTags(tagsuite.Analytics)
+
+	ts := e2e.New(suite.T(), true)
+	defer ts.Close()
+
+	for _, interactive := range []bool{true, false} {
+		suite.T().Run(fmt.Sprintf("interactive: %v", interactive), func(t *testing.T) {
+			args := []string{"--version"}
+			if !interactive {
+				args = append(args, "--non-interactive")
+			}
+			cp := ts.SpawnWithOpts(e2e.WithArgs(args...))
+			cp.Expect("ActiveState CLI")
+			cp.ExpectExitCode(0)
+
+			time.Sleep(time.Second) // Ensure state-svc has time to report events
+
+			suite.eventsfile = filepath.Join(ts.Dirs.Config, reporters.TestReportFilename)
+			events := parseAnalyticsEvents(suite, ts)
+			suite.Require().NotEmpty(events)
+			processedAnEvent := false
+			for _, e := range events {
+				if !strings.Contains(e.Category, anaConst.CatRunCmd) || e.Label == "" {
+					continue // only look at spawned run-command events
+				}
+				interactiveEvent := !strings.Contains(e.Label, "--non-interactive")
+				if interactive != interactiveEvent {
+					continue // ignore the other spawned command
+				}
+				suite.Equal(condition.OnCI(), *e.Dimensions.CI, "analytics should report being on CI")
+				suite.Equal(interactive, *e.Dimensions.Interactive, "analytics did not report the correct interactive value for %v", e)
+				processedAnEvent = true
+			}
+			suite.True(processedAnEvent, "did not actually test CI and Interactive dimensions")
+			suite.assertSequentialEvents(events)
+		})
+	}
 }
 
 func TestAnalyticsIntegrationTestSuite(t *testing.T) {

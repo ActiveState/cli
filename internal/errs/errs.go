@@ -8,7 +8,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/osutils/stacktrace"
 	"github.com/ActiveState/cli/internal/rtutils"
-	"github.com/hashicorp/go-multierror"
+	"gopkg.in/yaml.v3"
 )
 
 const TipMessage = "wrapped tips"
@@ -27,6 +27,29 @@ type ErrorTips interface {
 	error
 	AddTips(...string)
 	ErrorTips() []string
+}
+
+// TransientError represents an error that is transient, meaning it does not itself represent a failure, but rather it
+// facilitates a mechanic meant to get to the actual error (eg. by wrapping or packing underlying errors).
+// Do NOT satisfy this interface for errors whose type you want to assert.
+type TransientError interface {
+	IsTransient()
+}
+
+// PackedErrors represents a collection of errors that aren't necessarily related to each other
+// note that rtutils replicates this functionality to avoid import cycles
+type PackedErrors struct {
+	errors []error
+}
+
+func (e *PackedErrors) IsTransient() {}
+
+func (e *PackedErrors) Error() string {
+	return fmt.Sprintf("packed multiple errors")
+}
+
+func (e *PackedErrors) Unwrap() []error {
+	return e.errors
 }
 
 // WrapperError is what we use for errors created from this package, this does not mean every error returned from this
@@ -81,22 +104,58 @@ func Wrap(wrapTarget error, message string, args ...interface{}) *WrapperError {
 	return newError(msg, wrapTarget)
 }
 
-func Combine(err error, errs ...error) error {
-	return multierror.Append(err, errs...)
+// Pack creates a new error that packs the given errors together, allowing for multiple errors to be returned
+func Pack(err error, errs ...error) error {
+	return &PackedErrors{append([]error{err}, errs...)}
 }
 
-// Join all error messages in the Unwrap stack
-func Join(err error, sep string) *WrapperError {
-	var message []string
-	for err != nil {
-		message = append(message, err.Error())
-		err = errors.Unwrap(err)
+// encodeErrorForJoin will recursively encode an error into a format that can be marshalled in a way that is easily
+// humanly readable.
+// In a nutshell the logic is:
+// - If the error is nil, return nil
+// - If the error is wrapped other errors, return it as a map with the key being the error and the value being the wrapped error(s)
+// - If the error is packing other errors, return them as a list of errors
+func encodeErrorForJoin(err error) interface{} {
+	if err == nil {
+		return nil
 	}
-	return Wrap(err, strings.Join(message, sep))
+
+	// If the error is a wrapper, unwrap it and encode the wrapped error
+	if u, ok := err.(unwrapNext); ok {
+		subErr := u.Unwrap()
+		if subErr == nil {
+			return err.Error()
+		}
+		return map[string]interface{}{err.Error(): encodeErrorForJoin(subErr)}
+	}
+
+	// If the error is a packer, encode the packed errors as a list
+	if u, ok := err.(unwrapPacked); ok {
+		var result []interface{}
+		// Don't encode errors that are transient as the real errors are kept underneath
+		if _, isTransient := err.(TransientError); !isTransient {
+			result = append(result, err.Error())
+		}
+		errs := u.Unwrap()
+		for _, nextErr := range errs {
+			result = append(result, encodeErrorForJoin(nextErr))
+		}
+		if len(result) == 1 {
+			return result[0]
+		}
+		return result
+	}
+
+	return err.Error()
 }
 
 func JoinMessage(err error) string {
-	return Join(err, ": ").Error()
+	v, err := yaml.Marshal(encodeErrorForJoin(err))
+	if err != nil {
+		// This shouldn't happen since we know exactly what we are marshalling
+		return fmt.Sprintf("failed to marshal error: %s", err)
+	}
+	return strings.TrimSpace(string(v))
 }
 
 func AddTips(err error, tips ...string) error {
@@ -119,15 +178,6 @@ func AddTips(err error, tips ...string) error {
 	return err
 }
 
-// InnerError unwraps wrapped error messages
-func InnerError(err error) error {
-	unwrapped := errors.Unwrap(err)
-	if unwrapped != nil {
-		return InnerError(unwrapped)
-	}
-	return err
-}
-
 var errorType = reflect.TypeOf((*error)(nil)).Elem()
 
 // Matches is an analog for errors.As that just checks whether err matches the given type, so you can do:
@@ -144,14 +194,14 @@ func Matches(err error, target interface{}) bool {
 	if targetType.Kind() != reflect.Interface && !targetType.Implements(errorType) {
 		panic("errors: *target must be interface or implement error")
 	}
-	for err != nil {
+	errs := Unpack(err)
+	for _, err := range errs {
 		if reflect.TypeOf(err).AssignableTo(targetType) {
 			return true
 		}
 		if x, ok := err.(interface{ As(interface{}) bool }); ok && x.As(&target) {
 			return true
 		}
-		err = errors.Unwrap(err)
 	}
 	return false
 }
@@ -163,4 +213,48 @@ func IsAny(err error, errs ...error) bool {
 		}
 	}
 	return false
+}
+
+type unwrapNext interface {
+	Unwrap() error
+}
+
+type unwrapPacked interface {
+	Unwrap() []error
+}
+
+// Unpack will recursively unpack an error into a list of errors, which is useful if you need to iterate over all errors.
+// This is similar to errors.Unwrap, but will also "unwrap" errors that are packed together, which errors.Unwrap does not.
+func Unpack(err error) []error {
+	result := []error{}
+
+	// add is a little helper function to add errors to the result, skipping any transient errors
+	add := func(errors ...error) {
+		for _, err := range errors {
+			if _, isTransient := err.(TransientError); isTransient {
+				continue
+			}
+			result = append(result, err)
+		}
+	}
+
+	// recursively unpack the error
+	for err != nil {
+		add(err)
+		if u, ok := err.(unwrapNext); ok {
+			// The error implements `Unwrap() error`, so simply unwrap it and continue the loop
+			err = u.Unwrap() // The next iteration will add the error to the result
+			continue
+		} else if u, ok := err.(unwrapPacked); ok {
+			// The error implements `Unwrap() []error`, so just add the resulting errors to the result and break the loop
+			errs := u.Unwrap()
+			for _, e := range errs {
+				add(Unpack(e)...)
+			}
+			break
+		} else {
+			break // nothing to unpack
+		}
+	}
+	return result
 }

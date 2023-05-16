@@ -29,15 +29,9 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/osutil"
 	"github.com/ActiveState/cli/internal/testhelpers/outputhelper"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
-	rtMock "github.com/ActiveState/cli/pkg/platform/runtime/mock"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
-
-func init() {
-	mock := rtMock.Init()
-	mock.MockFullRuntime()
-}
 
 type ScriptRunSuite struct {
 	tagsuite.Suite
@@ -121,7 +115,7 @@ func (suite *ScriptRunSuite) TestEnvIsSet() {
 	out := capturer.CaptureOutput(func() {
 		scriptRun := scriptrun.New(authentication.LegacyGet(), outputhelper.NewCatcher(), subshell.New(cfg), proj, cfg, blackhole.New(), nil)
 		err = scriptRun.Run(proj.ScriptByName("run"), nil)
-		assert.NoError(t, err, "Error: "+errs.Join(err, ": ").Error())
+		assert.NoError(t, err, "Error: "+errs.JoinMessage(err))
 	})
 
 	assert.Contains(t, out, constants.ActivatedStateEnvVarName)

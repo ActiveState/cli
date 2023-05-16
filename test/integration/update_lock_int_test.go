@@ -146,7 +146,7 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateLockedConfirmation() {
 
 			args := []string{"update", "lock"}
 			if tt.Forced {
-				args = append(args, "--force")
+				args = append(args, "--non-interactive")
 			}
 			cp := ts.SpawnWithOpts(
 				e2e.WithArgs(args...),
@@ -182,7 +182,7 @@ func (suite *UpdateIntegrationTestSuite) TestLockUnlock() {
 	pjfile.Save(cfg)
 
 	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("update", "lock", "--force"),
+		e2e.WithArgs("update", "lock", "--non-interactive"),
 		e2e.AppendEnv(suite.env(false, false)...),
 	)
 	cp.Expect("locked at")
@@ -194,7 +194,7 @@ func (suite *UpdateIntegrationTestSuite) TestLockUnlock() {
 	suite.Assert().True(lockRegex.Match(data), "lock info was not written to "+pjfile.Path())
 
 	cp = ts.SpawnWithOpts(
-		e2e.WithArgs("update", "unlock", "--force"),
+		e2e.WithArgs("update", "unlock", "-n"),
 		e2e.AppendEnv(suite.env(false, false)...),
 	)
 	cp.Expect("unlocked")
@@ -202,4 +202,25 @@ func (suite *UpdateIntegrationTestSuite) TestLockUnlock() {
 	data, err = ioutil.ReadFile(pjfile.Path())
 	suite.Require().NoError(err)
 	suite.Assert().False(lockRegex.Match(data), "lock info was not removed from "+pjfile.Path())
+}
+
+func (suite *UpdateIntegrationTestSuite) TestJSON() {
+	suite.OnlyRunForTags(tagsuite.Update, tagsuite.JSON)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.Spawn("checkout", "ActiveState-CLI/Python3", ".")
+	cp.Expect("Skipping runtime setup")
+	cp.Expect("Checked out")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("update", "lock", "-o", "json")
+	cp.Expect(`"channel":`)
+	cp.Expect(`"version":`)
+	cp.ExpectExitCode(0)
+	AssertValidJSON(suite.T(), cp)
+
+	cp = ts.Spawn("update", "unlock", "-o", "json")
+	cp.ExpectExitCode(0)
+	suite.Empty(cp.TrimmedSnapshot(), "unexpected output")
 }

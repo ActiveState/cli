@@ -715,7 +715,7 @@ keypairs_err_passphrase_incorrect:
 keypairs_err_invalid_rsa_publickey:
   other: provided key not an RSA public-key
 keypairs_err_load_not_found:
-  other: Authorized keypair not found
+  other: 'Authorized keypair not found. Please refer to the docs for more info: https://docs.activestate.com/platform/state/advanced-topics/secrets/#setting-up-a-key-pair'
 keypairs_err_load_requires_mode:
   other: 'Keypair [NOTICE]"{{.V0}}"[/RESET] file is too permissive, expects no more than [NOTICE]"{{.V1}}"[/RESET] permissions'
 keypairs_err_base64_decoding:
@@ -976,8 +976,6 @@ platforms_remove_cmd_description:
   other: Remove a platform from your project
 platforms_search_cmd_description:
   other: Search for available platforms that can be added to your project
-flag_platforms_shared_bitwidth:
-  other: bit-width
 flag_platforms_shared_bitwidth_description:
   other: Platform architecture word size/width in bits (32,64)
 arg_platforms_shared_name:
@@ -992,12 +990,16 @@ field_version:
   other: Version
 field_bitwidth:
   other: Bit Width
-commit_message_add_platform:
+commit_message_added_platform:
   other: "Added platform: {{.V0}} {{.V1}}bit {{.V2}}"
+commit_message_updated_platform:
+  other: "Updated platform: {{.V0}} to {{.V1}}"
 commit_message_removed_platform:
   other: "Removed platform: {{.V0}} {{.V1}}bit {{.V2}}"
-commit_message_add_language:
+commit_message_added_language:
   other: "Added language: {{.V0}} {{.V1}}"
+commit_message_updated_language:
+  other: "Updated language: {{.V0}} to {{.V1}}"
 commit_message_removed_language:
   other: "Removed language: {{.V0}} {{.V1}}"
 downloading_artifacts:
@@ -1040,10 +1042,6 @@ err_replaceall_check_log:
   other: "Error occurred while replacing file contents, please check the error log or contact support."
 err_bad_project_url:
   other: "Invalid value for 'project' field in your activestate.yaml, please ensure it is in the format of: 'https://platform.activestate.com/org/project'."
-err_deprection_404:
-  other: Could not check for deprecation as the service returned a 404 not found
-err_deprection_code:
-  other: Could not check for deprecation as the service returned a code [NOTICE]{{.V0}}[/RESET]
 err_set_commit_id:
   other: "Could not update your activestate.yaml with the latest commit ID. Please ensure you have your project defined in the format of [ACTIONABLE]`project: https://platform.activestate.com/org/project`[/RESET]"
 err_set_project:
@@ -1120,7 +1118,7 @@ package_search_flag_exact-term_description:
   other: Ensures that search results match search term exactly
 package_import_flag_filename_description:
   other: The file to import
-commit_message_add_package:
+commit_message_added_package:
   other: "Added package: {{.V0}}@{{.V1}}"
 commit_message_removed_package:
   other: "Removed package: {{.V0}}"
@@ -1226,8 +1224,6 @@ err_fetch_languages:
   other: "Could not retrieve languages for your project. Does your project exist on the Platform?"
 err_no_languages:
   other: "Your project does not have any language configured"
-err_target_path_namespace_match:
-  other: "The project at the target path does not match the namespace you provided. Expected: [NOTICE]{{.V0}}[/RESET], Actual: [NOTICE]{{.V1}}[/RESET]."
 err_project_notexist_push_first:
   other: The project does not exist on the ActiveState Platform. Please run 'state push' first.
 err_project_notexist_asyaml:
@@ -1240,15 +1236,12 @@ err_incompatible_move_file_dir:
   other: |
     Could not move [NOTICE]{{.V0}}[/RESET] to [NOTICE]{{.V1}}[/RESET].  One is a file, the other a directory.
     This indicates that the requested build may be corrupted.
-err_init_file_exists:
-  other: The target directory '[NOTICE]{{.V0}}[/RESET]' already contains an activestate.yaml. Please change the current working directory or use the --path flag.
+err_init_lang:
+  other: "Invalid language: {{.V0}}@{{.V1}}"
 init_success:
   other: |
-    Project '[NOTICE]{{.V0}}/{{.V1}}[/RESET]' has been successfully initialized at '[NOTICE]{{.V2}}[/RESET]'.
-    You should run [ACTIONABLE]`state push`[/RESET] before activating your project for the first time.
-    Once pushed you can activate your project with [ACTIONABLE]`state activate`[/RESET].
-flag_state_init_skeleton_description:
-  other: "The activestate.yaml template to use with project file creation. Accepts: {{.V0}}"
+    Project '[NOTICE]{{.V0}}[/RESET]' has been successfully initialized at '[NOTICE]{{.V1}}[/RESET]' and pushed to the Platform.
+    You can start using your project with [ACTIONABLE]`state shell`[/RESET] and [ACTIONABLE]`state use`[/RESET].
 arg_state_init_namespace:
   other: org/project
 arg_state_init_namespace_description:
@@ -1257,20 +1250,14 @@ arg_state_init_language:
   other: Language[@version]
 arg_state_init_language_description:
   other: The language that this project should use, and optionally the version of that language
-flag_state_init_path:
-  other: Path
 flag_state_init_path_description:
   other: Where to initialize the project
 err_wd:
   other: Could not retrieve the working directory
 err_invalid_output_format:
   other: "Invalid output format specified: '[NOTICE]{{.V0}}[/RESET]'; Supported formats: [ACTIONABLE]{{.V1}}[/RESET]"
-err_invalid_skeleton_style:
-  other: "Invalid skeleton style specified: '[NOTICE]{{.V0}}[/RESET]'; Supported styles: [ACTIONABLE]{{.V1}}[/RESET]"
 err_invalid_language:
   other: "Invalid language specified: '[NOTICE]{{.V0}}[/RESET]'; Supported languages: [ACTIONABLE]{{.V1}}[/RESET]"
-err_push_invalid_language:
-  other: "Invalid language specified: '[NOTICE]{{.V0}}[/RESET]', please re-initialize your project by deleting the activestate.yaml and running 'state init' again."
 push_creating_project:
   other: "Creating project [NOTICE]{{.V1}}[/RESET] under [NOTICE]{{.V0}}[/RESET] on the ActiveState Platform"
 push_project_updated:
@@ -1306,6 +1293,8 @@ field_localized_field:
   other: "Localized Field"
 err_could_not_marshal_print:
   other: "Could not marshal the value being printed, please check the error log for more information."
+err_no_structured_output:
+  other: "This command does not support the {{.V0}} output format. Please try again without that output flag."
 err_main_outputer:
   other: "Could not create output writer, please contact developers if this problem persists. Error: {{.V0}}"
 field_name:
@@ -1360,7 +1349,7 @@ uninstall_description:
   other: Remove the State Tool, installed languages, and any configuration files
 cache_description:
   other: Removes cached Runtime Environments
-config_description:
+clean_config_description:
   other: Removes global State Tool configuration. Project configuration will not be affected.
 flag_state_clean_uninstall_force_description:
   other: Run uninstall operation without prompts and ignoring any errors stopping running services
@@ -1377,6 +1366,12 @@ err_clean_cache_activated:
 err_clean_config_activated:
   other: Cannot remove the config directory while in an activated state. Please deactivate by entering [ACTIONABLE]exit[/RESET] or pressing [ACTIONABLE]Ctrl+D[/RESET] and then try again.
 uninstall_confirm:
+  other: |
+    You are about to remove the State Tool.
+    Your config and cache files will remain.
+    If you would also like to remove those files, add the [ACTIONABLE]--all[/RESET] flag.
+    Continue?
+uninstall_confirm_all:
   other: You are about to remove the State Tool, installed language runtimes, and all configuration information. Continue?
 clean_cache_confirm:
   other: You are about to reset the State Tool cache. Continue?
@@ -1519,9 +1514,7 @@ err_corrupted_build_request_response:
 err_arg_required:
   other: "The following argument is required:\n  Name: [NOTICE]{{.V0}}[/RESET]\n  Description: [NOTICE]{{.V1}}[/RESET]"
 err_init_no_language:
-  other: "You need to supply the [NOTICE]language[/RESET] argument, run '[ACTIONABLE]state init --help[/RESET]' for more information."
-err_project_no_commit:
-  other: The activatestate.yaml for the project '[NOTICE]{{.V0}}[/RESET]' does not contain a commit ID. If this project was created with '[NOTICE]state init[/RESET]', please run [ACTIONABLE]`state push`[/RESET] and try again.
+  other: "A project has not been set using 'state use'. You must include the [NOTICE]language[/RESET] argument. For more help, run '[ACTIONABLE]state init --help[/RESET]'."
 err_bad_platform_version:
   other: You have to supply a platform version.
 platform_added:
@@ -1666,6 +1659,7 @@ windows_compatibility_error:
     Unfortunately State Tool is not compatible with your version of Windows.
 
     The minimum version supported is Windows 10 build 17134.1.
+    The detected version is {{.V0}} {{.V1}}.
 exec_description:
   other: Intercept and run a script via a project runtime environment
 flag_state_exec_path_description:
@@ -1854,6 +1848,8 @@ progress_project:
   other: " • Initializing Project"
 progress_search:
   other: " • Searching for [ACTIONABLE]{{.V0}}[/RESET] in the ActiveState Catalog"
+setup_runtime:
+  other: "Setting Up Runtime"
 progress_solve:
   other: "Resolving Dependencies"
 progress_success:
@@ -1870,6 +1866,8 @@ progress_build_log:
   other: "Build Log [ACTIONABLE]{{.V0}}[/RESET]"
 progress_completed:
   other: "[SUCCESS]✔ All dependencies have been installed and verified[/RESET]"
+progress_failed:
+  other: "[ERROR]x Some dependencies failed to install[/RESET]"
 progress_nothing_to_do:
   other: "Runtime is already up to date"
 unstable_feature_banner:
@@ -1931,7 +1929,7 @@ err_update_privilege_mismatch:
   other: "The State Tool was installed as administrator. To update please run [ACTIONABLE]state update[/RESET] as administrator."
 uninstall_warn_not_empty:
   other: |
-    [ERROR]Unable to remove all files in the directory the installation directory.[/RESET]
+    [ERROR]Unable to remove all files in the installation directory.[/RESET]
     There were unrecognized files in that directory.
 err_state_exec:
   other: Could not get state exec
@@ -2007,11 +2005,15 @@ checkout_project_statement:
   other: |
     Checked out project [ACTIONABLE]{{.V0}}[/RESET], located at [ACTIONABLE]{{.V1}}[/RESET].
     For editors and other tooling use the executables at: [ACTIONABLE]{{.V2}}[/RESET].
+refresh_project_statement:
+  other: |
+    Runtime updated for project [ACTIONABLE]{{.V0}}[/RESET], located at [ACTIONABLE]{{.V1}}[/RESET].
+    For editors and other tooling use the executables at: [ACTIONABLE]{{.V2}}[/RESET].
 export_project_statement:
   other: Exporting env for project [ACTIONABLE]{{.V0}}[/RESET] located at [ACTIONABLE]{{.V1}}[/RESET].
 err_rtprogress_outofsync:
   other: |
-    Received events that appear to be out of order. 
+    Received events that appear to be out of order.
     Please report this issue on [ACTIONABLE]{{.V0}}[/RESET] and include your log file at [ACTIONABLE]{{.V1}}[/RESET].
 err_home_not_found:
   other: |
@@ -2034,7 +2036,7 @@ runtime_usage_limit_reached:
   other: |
     [WARNING]Heads up! You've reached your runtime limit for [/RESET][ACTIONABLE]{{.V0}}[/RESET][WARNING].[/RESET]
     [WARNING]You can upgrade your plan or enroll in a free trial by visiting: [/RESET][ACTIONABLE]https://platform.activestate.com/upgrade/?org={{.V0}}[/RESET][WARNING].[/RESET]
-    
+
     [WARNING]You are using [/RESET][ACTIONABLE]{{.V1}}[/RESET][WARNING] out of [/RESET][ACTIONABLE]{{.V2}}[/RESET][WARNING] available runtimes.[/RESET]
 
 runtime_limit_reached_title:
@@ -2045,3 +2047,7 @@ runtime_limit_reached_action:
   other: Upgrade
 pjfile_deprecation_entry:
   other: " - '[ACTIONABLE]{{.V0}}[/RESET]' located at byte [ACTIONABLE]{{.V1}}[/RESET]"
+err_init_authenticated:
+  other: You need to be authenticated to initialize a project. Authenticate by running [ACTIONABLE]`state auth`[/RESET].
+err_country_blocked:
+  other: This service is not available in your region.

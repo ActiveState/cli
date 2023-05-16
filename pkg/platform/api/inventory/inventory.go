@@ -20,8 +20,6 @@ import (
 // persist contains the active API Client connection
 var persist inventory_operations.ClientService
 
-var transport http.RoundTripper
-
 // Init will create a new API client using default settings
 func Init(auth *authentication.Auth) (inventory_operations.ClientService, runtime.ClientTransport) {
 	return New(api.GetServiceURL(api.ServiceInventory), auth.ClientAuth())
@@ -30,7 +28,7 @@ func Init(auth *authentication.Auth) (inventory_operations.ClientService, runtim
 // New initializes a new api client
 func New(serviceURL *url.URL, auth runtime.ClientAuthInfoWriter) (inventory_operations.ClientService, runtime.ClientTransport) {
 	transportRuntime := httptransport.New(serviceURL.Host, serviceURL.Path, []string{serviceURL.Scheme})
-	transportRuntime.Transport = api.NewRoundTripper()
+	transportRuntime.Transport = api.NewRoundTripper(http.DefaultTransport)
 
 	// transportRuntime.SetDebug(true)
 

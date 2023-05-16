@@ -25,14 +25,17 @@ const (
 	TriggerActivate           Trigger = "activate"
 	TriggerScript             Trigger = "script"
 	TriggerDeploy             Trigger = "deploy"
-	TriggerExec               Trigger = "exec"
+	TriggerExec               Trigger = "exec-cmd"
+	TriggerExecutor           Trigger = "exec"
 	TriggerResetExec          Trigger = "reset-exec"
 	TriggerSwitch             Trigger = "switch"
 	TriggerImport             Trigger = "import"
+	TriggerInit               Trigger = "init"
 	TriggerPackage            Trigger = "package"
 	TriggerLanguage           Trigger = "language"
 	TriggerPlatform           Trigger = "platform"
 	TriggerPull               Trigger = "pull"
+	TriggerRefresh            Trigger = "refresh"
 	TriggerReset              Trigger = "reset"
 	TriggerRevert             Trigger = "revert"
 	TriggerOffline            Trigger = "offline"
@@ -50,8 +53,10 @@ var usageTriggers = []Trigger{
 	TriggerScript,
 	TriggerDeploy,
 	TriggerExec,
+	TriggerExecutor,
 	TriggerSwitch,
 	TriggerImport,
+	TriggerInit,
 	TriggerPackage,
 	TriggerPull,
 	TriggerReset,

@@ -82,7 +82,7 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckoutNonEmptyDir() {
 		e2e.WithArgs("checkout", "ActiveState-CLI/Python3", tmpdir),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=true"),
 	)
-	cp.Expect("project at the target path does not match")
+	cp.Expect("already a project checked out at")
 	cp.ExpectExitCode(1)
 
 	// remove file
@@ -149,26 +149,26 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckoutWithFlags() {
 	cp.ExpectExitCode(1)
 }
 
-func (suite *CheckoutIntegrationTestSuite) TestCheckoutCustomCache() {
+func (suite *CheckoutIntegrationTestSuite) TestCheckoutCustomRTPath() {
 	suite.OnlyRunForTags(tagsuite.Checkout)
 
 	ts := e2e.New(suite.T(), true)
 	defer ts.Close()
 
-	customCache, err := fileutils.ResolveUniquePath(filepath.Join(ts.Dirs.Work, "custom-cache"))
+	customRTPath, err := fileutils.ResolveUniquePath(filepath.Join(ts.Dirs.Work, "custom-cache"))
 	suite.Require().NoError(err)
-	err = fileutils.Mkdir(customCache)
+	err = fileutils.Mkdir(customRTPath)
 	suite.Require().NoError(err)
 
 	// Checkout and verify.
 	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("checkout", "ActiveState-CLI/Python3", fmt.Sprintf("--set-cache=%s", customCache)),
+		e2e.WithArgs("checkout", "ActiveState-CLI/Python3", fmt.Sprintf("--runtime-path=%s", customRTPath)),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cp.Expect("Checked out project")
 
-	pythonExe := filepath.Join(setup.ExecDir(customCache), "python3"+exeutils.Extension)
-	suite.Require().True(fileutils.DirExists(customCache))
+	pythonExe := filepath.Join(setup.ExecDir(customRTPath), "python3"+exeutils.Extension)
+	suite.Require().True(fileutils.DirExists(customRTPath))
 	suite.Require().True(fileutils.FileExists(pythonExe))
 
 	// Verify runtime was installed correctly and works.
@@ -183,11 +183,39 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckoutCustomCache() {
 		e2e.WithWorkDirectory(filepath.Join(ts.Dirs.Work, "Python3")),
 	)
 	if runtime.GOOS == "windows" {
-		customCache, err = fileutils.GetLongPathName(customCache)
+		customRTPath, err = fileutils.GetLongPathName(customRTPath)
 		suite.Require().NoError(err)
-		customCache = strings.ToLower(customCache)
+		customRTPath = strings.ToLower(customRTPath)
 	}
-	cp.Expect(customCache)
+	cp.Expect(customRTPath)
+}
+
+func (suite *CheckoutIntegrationTestSuite) TestCheckoutAlreadyCheckedOut() {
+	suite.OnlyRunForTags(tagsuite.Checkout)
+
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.SpawnWithOpts(e2e.WithArgs("checkout", "ActiveState-CLI/small-python"))
+	cp.Expect("Checked out project")
+	cp.ExpectExitCode(0)
+
+	cp = ts.SpawnWithOpts(e2e.WithArgs("checkout", "ActiveState-CLI/small-python"))
+	cp.Expect("already a project checked out at")
+	cp.ExpectNotExitCode(0)
+}
+
+func (suite *CheckoutIntegrationTestSuite) TestJSON() {
+	suite.OnlyRunForTags(tagsuite.Checkout, tagsuite.JSON)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.SpawnWithOpts(e2e.WithArgs("checkout", "ActiveState-CLI/small-python", "-o", "json"))
+	cp.Expect(`"namespace":`)
+	cp.Expect(`"path":`)
+	cp.Expect(`"executables":`)
+	cp.ExpectExitCode(0)
+	//AssertValidJSON(suite.T(), cp) // cannot assert here due to "Skipping runtime setup" notice
 }
 
 func TestCheckoutIntegrationTestSuite(t *testing.T) {

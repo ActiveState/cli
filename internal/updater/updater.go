@@ -10,6 +10,9 @@ import (
 	"os/exec"
 	"path/filepath"
 
+	"github.com/ActiveState/cli/internal/analytics"
+	anaConst "github.com/ActiveState/cli/internal/analytics/constants"
+	"github.com/ActiveState/cli/internal/analytics/dimensions"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/exeutils"
@@ -19,6 +22,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
+	"github.com/ActiveState/cli/internal/rtutils/p"
 	"github.com/gofrs/flock"
 )
 
@@ -37,6 +41,7 @@ type AvailableUpdate struct {
 	Tag      *string `json:"tag,omitempty"`
 	url      string
 	tmpDir   string
+	an       analytics.Dispatcher
 }
 
 func NewAvailableUpdate(version, channel, platform, path, sha256, tag string) *AvailableUpdate {
@@ -64,10 +69,12 @@ func (u *AvailableUpdate) DownloadAndUnpack() (string, error) {
 
 	tmpDir, err := ioutil.TempDir("", "state-update")
 	if err != nil {
-		return "", errs.Wrap(err, "Could not create temp dir")
+		msg := anaConst.UpdateErrorTempDir
+		u.analyticsEvent(anaConst.ActUpdateDownload, anaConst.UpdateLabelFailed, u.Version, msg)
+		return "", errs.Wrap(err, msg)
 	}
 
-	if err := NewFetcher().Fetch(u, tmpDir); err != nil {
+	if err := NewFetcher(u.an).Fetch(u, tmpDir); err != nil {
 		return "", errs.Wrap(err, "Could not download and unpack update")
 	}
 
@@ -80,17 +87,22 @@ func (u *AvailableUpdate) prepareInstall(installTargetPath string, args []string
 	if err != nil {
 		return "", nil, err
 	}
+	u.analyticsEvent(anaConst.ActUpdateDownload, "success", u.Version, "")
 
 	installerPath := filepath.Join(sourcePath, InstallerName)
 	logging.Debug("Using installer: %s", installerPath)
 	if !fileutils.FileExists(installerPath) {
-		return "", nil, errs.Wrap(err, "Downloaded update does not have installer")
+		msg := anaConst.UpdateErrorNoInstaller
+		u.analyticsEvent(anaConst.ActUpdateInstall, anaConst.UpdateLabelFailed, u.Version, msg)
+		return "", nil, errs.Wrap(err, msg)
 	}
 
 	if installTargetPath == "" {
 		installTargetPath, err = installation.InstallPathFromExecPath()
 		if err != nil {
-			return "", nil, errs.Wrap(err, "Could not detect install path")
+			msg := anaConst.UpdateErrorInstallPath
+			u.analyticsEvent(anaConst.ActUpdateInstall, anaConst.UpdateLabelFailed, u.Version, msg)
+			return "", nil, errs.Wrap(err, msg)
 		}
 	}
 
@@ -183,4 +195,17 @@ func (u *AvailableUpdate) InstallWithProgress(installTargetPath string, progress
 	}
 
 	return proc, nil
+}
+
+func (u *AvailableUpdate) analyticsEvent(action, label, version, msg string) {
+
+	dims := &dimensions.Values{
+		TargetVersion: p.StrP(version),
+	}
+
+	if msg != "" {
+		dims.Error = p.StrP(msg)
+	}
+
+	u.an.EventWithLabel(anaConst.CatUpdates, anaConst.ActUpdateDownload, label, dims)
 }

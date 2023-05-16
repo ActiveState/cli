@@ -23,9 +23,37 @@ type config interface {
 	Closed() bool
 }
 
-var currentCfg config
+type doNotReport []string
 
-var reportingDisabled bool
+func (d *doNotReport) Add(msg string) {
+	if msg == "" || strings.TrimSpace(msg) == "" {
+		return
+	}
+
+	for _, m := range *d {
+		if m == msg {
+			return
+		}
+	}
+
+	*d = append(*d, msg)
+}
+
+func (d doNotReport) Contains(msg string) bool {
+	for _, m := range d {
+		if strings.EqualFold(m, msg) {
+			return true
+		}
+	}
+
+	return false
+}
+
+var (
+	currentCfg          config
+	reportingDisabled   bool
+	DoNotReportMessages doNotReport
+)
 
 func readConfig() {
 	reportingDisabled = currentCfg != nil && !currentCfg.Closed() && currentCfg.IsSet(constants.ReportErrorsConfig) && !currentCfg.GetBool(constants.ReportErrorsConfig)
@@ -142,6 +170,10 @@ func logToRollbar(critical bool, message string, args ...interface{}) {
 	rollbarMsg := fmt.Sprintf("%s %s: %s", exec, flags, fmt.Sprintf(message, args...))
 	if len(rollbarMsg) > 1000 {
 		rollbarMsg = rollbarMsg[0:1000] + " <truncated>"
+	}
+
+	if DoNotReportMessages.Contains(rollbarMsg) {
+		return
 	}
 
 	if critical {

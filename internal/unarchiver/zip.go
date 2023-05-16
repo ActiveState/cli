@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"github.com/ActiveState/archiver"
+	"github.com/mholt/archiver"
 )
 
 /*

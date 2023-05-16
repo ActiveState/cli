@@ -3,6 +3,7 @@ package config
 import (
 	"testing"
 
+	"github.com/ActiveState/cli/internal/analytics/client/blackhole"
 	"github.com/ActiveState/cli/internal/config"
 	configMediator "github.com/ActiveState/cli/internal/mediators/config"
 	"github.com/ActiveState/cli/internal/testhelpers/outputhelper"
@@ -15,7 +16,7 @@ func TestSetUnknownKey(t *testing.T) {
 	cfg.Set("unknown", nil)
 
 	outputer := outputhelper.NewCatcher()
-	set := Set{outputer, cfg, nil}
+	set := Set{outputer, cfg, nil, blackhole.New()}
 	params := SetParams{"unknown", "true"}
 
 	// Trying to set an unknown config key should error.

@@ -2,10 +2,10 @@ package reporters
 
 import (
 	"strconv"
-	"strings"
 
 	anaConsts "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/analytics/dimensions"
+	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/logging"
@@ -61,7 +61,7 @@ func (r *GaCLIReporter) Event(category, action, label string, d *dimensions.Valu
 	}
 	err := r.ga.Send(event)
 	if err != nil {
-		if strings.Contains(err.Error(), "no such host") || strings.Contains(err.Error(), "no route to host") {
+		if condition.IsNetworkingError(err) {
 			logging.Debug("Cannot send Google Analytics event as the hostname appears to be blocked. Error received: %s", err.Error())
 			return nil
 		}
@@ -94,5 +94,9 @@ func legacyDimensionMap(d *dimensions.Values) map[string]string {
 		"19": p.PStr(d.CommitID),
 		"20": p.PStr(d.Command),
 		"21": strconv.Itoa(p.PInt(d.Sequence)),
+		"22": strconv.FormatBool(p.PBool(d.CI)),
+		"23": strconv.FormatBool(p.PBool(d.Interactive)),
+		"24": p.PStr(d.TargetVersion),
+		"25": p.PStr(d.Error),
 	}
 }

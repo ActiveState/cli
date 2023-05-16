@@ -146,12 +146,10 @@ func resolveBinaryPath(name string) string {
 }
 
 func ConfigureAvailableShells(shell SubShell, cfg sscommon.Configurable, env map[string]string, identifier sscommon.RcIdentification, userScope bool) error {
-	// Ensure active shell has RC file
-	if shell.IsActive() {
-		err := shell.EnsureRcFileExists()
-		if err != nil {
-			return errs.Wrap(err, "Could not ensure RC file for active shell")
-		}
+	// Ensure the given, detected, and current shell has an RC file or else it will not be considered "available"
+	err := shell.EnsureRcFileExists()
+	if err != nil {
+		return errs.Wrap(err, "Could not ensure RC file for current shell")
 	}
 
 	for _, s := range supportedShells {
@@ -179,7 +177,7 @@ func DetectShell(cfg sscommon.Configurable) (string, string) {
 		// We save and use the detected shell to our config so that we can use it when running code through
 		// a non-interactive shell
 		if err := cfg.Set(ConfigKeyShell, binary); err != nil {
-			multilog.Error("Could not save shell binary: %v", errs.Join(err, ": "))
+			multilog.Error("Could not save shell binary: %v", errs.JoinMessage(err))
 		}
 	}()
 
@@ -218,6 +216,7 @@ func DetectShell(cfg sscommon.Configurable) (string, string) {
 			break
 		}
 	}
+
 	if !isKnownShell {
 		logging.Debug("Unsupported shell: %s, defaulting to OS default.", name)
 		rollbar.Error("Unsupported shell: %s", name) // we just want to know what this person is using

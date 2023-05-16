@@ -11,6 +11,7 @@ import (
 )
 
 const trayIconFileName = "state-tray.svg"
+const trayLaunchFileName = "state-tray.desktop"
 
 func osSpecificRemoveTray(installPath, trayExec string) error {
 	// Remove any .desktop files and icons installed.

@@ -27,21 +27,21 @@ func TestNew(t *testing.T) {
 			"json",
 			"json",
 			"hello",
-			`"hello"` + "\x00\n",
+			`"hello"`,
 			"",
 		},
 		{
 			"editor",
 			"editor",
 			"hello",
-			`"hello"` + "\x00\n",
+			`"hello"`,
 			"",
 		},
 		{
 			"editor.v0",
 			"editor.v0",
 			"hello",
-			`"hello"` + "\n",
+			`"hello"`,
 			"",
 		},
 	}
@@ -60,7 +60,7 @@ func TestNew(t *testing.T) {
 			outputer, err := New(tt.formatName, cfg)
 			require.NoError(t, err)
 
-			outputer.Print(tt.print)
+			outputer.Print(Prepare(tt.print, tt.print))
 
 			assert.Equal(t, tt.expectedOut, outWriter.String(), "Output did not match")
 			assert.Equal(t, tt.expectedErr, errWriter.String(), "Errors did not match")

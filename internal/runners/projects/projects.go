@@ -23,8 +23,6 @@ type projectWithOrg struct {
 	Executables    []string `json:"executables,omitempty"`
 }
 
-type projectWithOrgs []projectWithOrg
-
 func newProjectWithOrg(name, org string, checkouts []string) projectWithOrg {
 	p := projectWithOrg{Name: name, Organization: org, LocalCheckouts: checkouts}
 	for _, checkout := range checkouts {
@@ -40,7 +38,15 @@ func newProjectWithOrg(name, org string, checkouts []string) projectWithOrg {
 	return p
 }
 
-func (o projectWithOrgs) MarshalOutput(f output.Format) interface{} {
+type projectsOutput struct {
+	projects []projectWithOrg
+}
+
+func (o *projectsOutput) MarshalOutput(f output.Format) interface{} {
+	if len(o.projects) == 0 {
+		return locale.T("project_checkout_empty")
+	}
+
 	type projectOutputPlain struct {
 		Name           string
 		Organization   string
@@ -48,12 +54,8 @@ func (o projectWithOrgs) MarshalOutput(f output.Format) interface{} {
 		Executables    string `locale:"executables,Executables" opts:"emptyNil,separateLine"`
 	}
 
-	if f != output.PlainFormatName {
-		return o
-	}
-
 	r := []projectOutputPlain{}
-	for _, v := range o {
+	for _, v := range o.projects {
 		checkouts := []string{}
 		executables := []string{}
 		for i, checkout := range v.LocalCheckouts {
@@ -77,6 +79,10 @@ func (o projectWithOrgs) MarshalOutput(f output.Format) interface{} {
 		r = append(r, projectOutputPlain{v.Name, v.Organization, strings.Join(checkouts, "\n"), strings.Join(executables, "\n")})
 	}
 	return r
+}
+
+func (o *projectsOutput) MarshalStructured(f output.Format) interface{} {
+	return o.projects
 }
 
 type configGetter interface {
@@ -118,17 +124,17 @@ func newProjects(auth *authentication.Auth, out output.Outputer, config configGe
 
 func (r *Projects) Run(params *Params) error {
 	localProjects := projectfile.GetProjectMapping(r.config)
+	var projects []projectWithOrg
 
-	var projects projectWithOrgs = []projectWithOrg{}
 	for namespace, checkouts := range localProjects {
 		ns, err := project.ParseNamespace(namespace)
 		if err != nil {
 			multilog.Error("Invalid project namespace stored to config mapping: %s", namespace)
 			continue
 		}
-
 		projects = append(projects, newProjectWithOrg(ns.Project, ns.Owner, checkouts))
 	}
+
 	sort.SliceStable(projects, func(i, j int) bool {
 		if projects[i].Organization == projects[j].Organization {
 			return projects[i].Name < projects[j].Name
@@ -136,11 +142,6 @@ func (r *Projects) Run(params *Params) error {
 		return projects[i].Organization < projects[j].Organization
 	})
 
-	if len(projects) == 0 {
-		r.out.Print(locale.T("project_checkout_empty"))
-	} else {
-		r.out.Print(projects)
-	}
-
+	r.out.Print(&projectsOutput{projects})
 	return nil
 }

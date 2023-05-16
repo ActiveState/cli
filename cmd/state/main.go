@@ -5,12 +5,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/ActiveState/cli/internal/captain"
 	"os"
 	"os/exec"
 	"runtime/debug"
 	"strings"
 	"time"
+
+	"github.com/ActiveState/cli/cmd/state/internal/cmdtree/intercepts/messenger"
+	"github.com/ActiveState/cli/internal/captain"
 
 	"github.com/ActiveState/cli/cmd/state/internal/cmdtree"
 	anAsync "github.com/ActiveState/cli/internal/analytics/client/async"
@@ -39,7 +41,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
-	"golang.org/x/crypto/ssh/terminal"
 )
 
 func main() {
@@ -98,15 +99,11 @@ func main() {
 	// Set up our legacy outputer
 	setPrinterColors(outFlags)
 
-	isInteractive := strings.ToLower(os.Getenv(constants.NonInteractiveEnvVarName)) != "true" &&
-		!outFlags.NonInteractive &&
-		terminal.IsTerminal(int(os.Stdin.Fd())) &&
-		out.Type() != output.EditorV0FormatName &&
-		out.Type() != output.EditorFormatName
+	isInteractive := strings.ToLower(os.Getenv(constants.NonInteractiveEnvVarName)) != "true" && out.Config().Interactive
 	// Run our main command logic, which is logic that defers to the error handling logic below
 	err = run(os.Args, isInteractive, cfg, out)
 	if err != nil {
-		exitCode, err = cmdletErrors.Unwrap(err)
+		exitCode, err = cmdletErrors.ParseUserFacing(err)
 		if err != nil {
 			out.Error(err)
 		}
@@ -230,24 +227,15 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 		logging.Debug("Could not find child command, error: %v", err)
 	}
 
+	msger := messenger.New(childCmd, out, svcmodel)
+	cmds.AppendInterceptChain(msger.Interceptor)
+
 	if childCmd != nil && !childCmd.SkipChecks() {
 		// Auto update to latest state tool version
-		if updated, err := autoUpdate(args, cfg, out); err != nil || updated {
-			return err
-		}
-
-		// Check for deprecation
-		deprecationInfo, err := svcmodel.CheckDeprecation(context.Background())
-		if err != nil {
-			multilog.Error("Could not check for deprecation: %s", err.Error())
-		}
-		if deprecationInfo != nil {
-			if !deprecationInfo.DateReached {
-				out.Notice(output.Heading(locale.Tl("deprecation_title", "Deprecation Warning")))
-				out.Notice(locale.Tr("warn_deprecation", deprecationInfo.Date, deprecationInfo.Reason))
-			} else {
-				return locale.NewInputError("err_deprecation", "You are running a version of the State Tool that is no longer supported! Reason: {{.V1}}", deprecationInfo.Date, deprecationInfo.Reason)
-			}
+		if updated, err := autoUpdate(args, cfg, an, out); err == nil && updated {
+			return nil // command will be run by updated exe
+		} else if err != nil {
+			multilog.Error("Failed to autoupdate: %v", err)
 		}
 
 		if childCmd.Name() != "update" && pj != nil && pj.IsLocked() {
@@ -263,10 +251,10 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 	}
 
 	err = cmds.Execute(args[1:])
-	if err != nil {
+	if err != nil && !errs.IsSilent(err) {
 		cmdName := ""
 		if childCmd != nil {
-			cmdName = childCmd.UseFull() + " "
+			cmdName = childCmd.JoinedSubCommandNames() + " "
 		}
 		err = errs.AddTips(err, locale.Tl("err_tip_run_help", "Run → [ACTIONABLE]`state {{.V0}}--help`[/RESET] for general help", cmdName))
 		cmdletErrors.ReportError(err, cmds.Command(), an)

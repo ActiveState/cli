@@ -4,13 +4,16 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
 )
 
 type Poller struct {
-	pollFunc func() (interface{}, error)
-	cache    interface{}
-	done     chan struct{}
+	pollFunc      func() (interface{}, error)
+	cache         interface{}
+	done          chan struct{}
+	errorReported bool
 }
 
 func New(interval time.Duration, pollFunc func() (interface{}, error)) *Poller {
@@ -45,7 +48,14 @@ func (p *Poller) start(interval time.Duration) {
 func (p *Poller) refresh() {
 	info, err := p.pollFunc()
 	if err != nil {
-		multilog.Error("Could not poll %s", errs.JoinMessage(err))
+		if !locale.IsInputError(err) {
+			if !p.errorReported {
+				multilog.Error("Could not poll: %s", errs.JoinMessage(err))
+			} else {
+				logging.Debug("Could not poll: %s", errs.JoinMessage(err))
+			}
+			p.errorReported = true
+		}
 		return
 	}
 

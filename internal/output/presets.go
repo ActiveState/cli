@@ -2,9 +2,6 @@ package output
 
 import (
 	"fmt"
-	"strings"
-
-	"github.com/ActiveState/cli/internal/colorize"
 )
 
 type Title string
@@ -14,35 +11,40 @@ func (t Title) String() string {
 }
 
 func (t Title) MarshalOutput(f Format) interface{} {
-	if f != PlainFormatName {
-		return Suppress
-	}
 	return t.String()
 }
 
-type Heading string
-
-func (h Heading) String() string {
-	underline := strings.Repeat(dash, len(colorize.StripColorCodes(string(h))))
-	return fmt.Sprintf("\n[HEADING]%s[/RESET]\n[DISABLED]%s[/RESET]", string(h), underline)
+func (t Title) MarshalStructured(f Format) interface{} {
+	return Suppress
 }
 
-func (h Heading) MarshalOutput(f Format) interface{} {
-	if f != PlainFormatName {
-		return Suppress
-	}
-	return h.String()
-}
+type Emphasize string
 
-type SubHeading string
-
-func (h SubHeading) String() string {
+func (h Emphasize) String() string {
 	return fmt.Sprintf("\n[HEADING]%s[/RESET]", string(h))
 }
 
-func (h SubHeading) MarshalOutput(f Format) interface{} {
-	if f != PlainFormatName {
-		return Suppress
-	}
+func (h Emphasize) MarshalOutput(f Format) interface{} {
 	return h.String()
+}
+
+func (h Emphasize) MarshalStructured(f Format) interface{} {
+	return Suppress
+}
+
+type preparedOutput struct {
+	plain      interface{}
+	structured interface{}
+}
+
+func (o *preparedOutput) MarshalOutput(_ Format) interface{} {
+	return o.plain
+}
+
+func (o *preparedOutput) MarshalStructured(_ Format) interface{} {
+	return o.structured
+}
+
+func Prepare(plain interface{}, structured interface{}) *preparedOutput {
+	return &preparedOutput{plain, structured}
 }

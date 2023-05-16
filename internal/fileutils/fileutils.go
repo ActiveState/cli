@@ -17,12 +17,14 @@ import (
 	"time"
 	"unicode"
 
+	"github.com/ActiveState/cli/internal/assets"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/gofrs/flock"
+	"github.com/thoas/go-funk"
 )
 
 // nullByte represents the null-terminator byte
@@ -263,6 +265,20 @@ func CopyFile(src, target string) error {
 	if err != nil {
 		return errs.Wrap(err, "out.Close failed")
 	}
+	return nil
+}
+
+func CopyAsset(assetName, dest string) error {
+	asset, err := assets.ReadFileBytes(assetName)
+	if err != nil {
+		return errs.Wrap(err, "Asset %s failed", assetName)
+	}
+
+	err = ioutil.WriteFile(dest, asset, 0644)
+	if err != nil {
+		return errs.Wrap(err, "ioutil.WriteFile %s failed", dest)
+	}
+
 	return nil
 }
 
@@ -555,7 +571,7 @@ func MoveAllFilesRecursively(fromPath, toPath string, cb MoveAllFilesCallback) e
 // CopyAndRenameFiles copies files from fromDir to toDir.
 // If the target file exists already, the source file is first copied next to the target file, and then overwrites the target by renaming the source.
 // This method is more robust and than copying directly, in case the target file is opened or executed.
-func CopyAndRenameFiles(fromPath, toPath string) error {
+func CopyAndRenameFiles(fromPath, toPath string, exclude ...string) error {
 	logging.Debug("Copying files from %s to %s", fromPath, toPath)
 
 	if !DirExists(fromPath) {
@@ -572,6 +588,10 @@ func CopyAndRenameFiles(fromPath, toPath string) error {
 
 	// any found files and dirs
 	for _, file := range files {
+		if funk.Contains(exclude, file.Name()) {
+			continue
+		}
+
 		rpath := file.RelativePath()
 		fromPath := filepath.Join(fromPath, rpath)
 		toPath := filepath.Join(toPath, rpath)
@@ -681,6 +701,51 @@ func WriteTempFileToDir(dir, pattern string, data []byte, perm os.FileMode) (str
 	return f.Name(), nil
 }
 
+type DirReader interface {
+	ReadDir(string) ([]os.DirEntry, error)
+}
+
+func CopyFilesDirReader(reader DirReader, src, dst, placeholderFileName string) error {
+	entries, err := reader.ReadDir(src)
+	if err != nil {
+		return errs.Wrap(err, "reader.ReadDir %s failed", src)
+	}
+
+	for _, entry := range entries {
+		srcPath := filepath.Join(src, entry.Name())
+		destPath := filepath.Join(dst, entry.Name())
+
+		switch entry.Type() & os.ModeType {
+		case os.ModeDir:
+			err := MkdirUnlessExists(destPath)
+			if err != nil {
+				return errs.Wrap(err, "MkdirUnlessExists %s failed", destPath)
+			}
+
+			err = CopyFilesDirReader(reader, srcPath, destPath, placeholderFileName)
+			if err != nil {
+				return errs.Wrap(err, "CopyFiles %s:%s failed", srcPath, destPath)
+			}
+		case os.ModeSymlink:
+			err := CopySymlink(srcPath, destPath)
+			if err != nil {
+				return errs.Wrap(err, "CopySymlink %s:%s failed", srcPath, destPath)
+			}
+		default:
+			if entry.Name() == placeholderFileName {
+				continue
+			}
+
+			err := CopyAsset(srcPath, destPath)
+			if err != nil {
+				return errs.Wrap(err, "CopyFile %s:%s failed", srcPath, destPath)
+			}
+		}
+	}
+
+	return nil
+}
+
 // CopyFiles will copy all of the files/dirs within one directory to another.
 // Both directories must already exist
 func CopyFiles(src, dst string) error {
@@ -777,6 +842,14 @@ func TempFilePathUnsafe() string {
 // This is for use in tests, do not use it outside tests!
 func TempDirUnsafe() string {
 	f, err := ioutil.TempDir("", "")
+	if err != nil {
+		panic(fmt.Sprintf("Could not create tempDir: %v", err))
+	}
+	return f
+}
+
+func TempDirFromBaseDirUnsafe(baseDir string) string {
+	f, err := ioutil.TempDir(baseDir, "")
 	if err != nil {
 		panic(fmt.Sprintf("Could not create tempDir: %v", err))
 	}

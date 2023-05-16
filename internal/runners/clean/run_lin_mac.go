@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 
+	svcApp "github.com/ActiveState/cli/cmd/state-svc/app"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
@@ -21,25 +22,33 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 )
 
-func (u *Uninstall) runUninstall() error {
+func (u *Uninstall) runUninstall(params *UninstallParams) error {
 	// we aggregate installation errors, such that we can display all installation problems in the end
 	// TODO: This behavior should be replaced with a proper rollback mechanism https://www.pivotaltracker.com/story/show/178134918
-	var aggErr error
-	err := removeCache(storage.CachePath())
-	if err != nil {
-		logging.Debug("Could not remove cache at %s: %s", storage.CachePath(), errs.JoinMessage(err))
-		aggErr = locale.WrapError(aggErr, "uninstall_remove_cache_err", "Failed to remove cache directory {{.V0}}.", storage.CachePath())
+	var aggErr, err error
+	if params.All {
+		err := removeCache(storage.CachePath())
+		if err != nil {
+			logging.Debug("Could not remove cache at %s: %s", storage.CachePath(), errs.JoinMessage(err))
+			aggErr = locale.WrapError(aggErr, "uninstall_remove_cache_err", "Failed to remove cache directory {{.V0}}.", storage.CachePath())
+		}
 	}
 
-	err = undoPrepare(u.cfg)
+	err = undoPrepare()
 	if err != nil {
 		logging.Debug("Could not undo prepare: %s", errs.JoinMessage(err))
 		aggErr = locale.WrapError(aggErr, "uninstall_prepare_err", "Failed to undo some installation steps.")
 	}
 
+	if err := removeApp(); err != nil {
+		logging.Debug("Could not remove app: %s", errs.JoinMessage(err))
+		aggErr = locale.WrapError(aggErr, "uninstall_remove_app_err", "Failed to remove service application")
+	}
+
 	err = removeInstall(u.cfg)
 	if errors.Is(err, errDirNotEmpty) {
-		u.out.Notice(locale.T("uninstall_warn_not_empty"))
+		logging.Debug("Could not remove install as dir is not empty: %s", errs.JoinMessage(err))
+		aggErr = locale.WrapError(aggErr, "uninstall_warn_not_empty")
 	} else if err != nil {
 		logging.Debug("Could not remove install: %s", errs.JoinMessage(err))
 		aggErr = locale.WrapError(aggErr, "uninstall_remove_executables_err", "Failed to remove all State Tool files in installation directory")
@@ -51,24 +60,25 @@ func (u *Uninstall) runUninstall() error {
 		aggErr = locale.WrapError(aggErr, "uninstall_remove_paths_err", "Failed to remove PATH entries from environment")
 	}
 
-	path := u.cfg.ConfigPath()
-	if err := u.cfg.Close(); err != nil {
-		logging.Debug("Could not close config: %s", errs.JoinMessage(err))
-		aggErr = locale.WrapError(aggErr, "uninstall_close_config", "Could not stop config database connection.")
-	}
+	if params.All {
+		path := u.cfg.ConfigPath()
+		if err := u.cfg.Close(); err != nil {
+			logging.Debug("Could not close config: %s", errs.JoinMessage(err))
+			aggErr = locale.WrapError(aggErr, "uninstall_close_config", "Could not stop config database connection.")
+		}
 
-	err = removeConfig(path, u.out)
-	if err != nil {
-		logging.Debug("Could not remove config: %s", errs.JoinMessage(err))
-		aggErr = locale.WrapError(aggErr, "uninstall_remove_config_err", "Failed to remove configuration directory {{.V0}}", u.cfg.ConfigPath())
-
+		err = removeConfig(path, u.out)
+		if err != nil {
+			logging.Debug("Could not remove config: %s", errs.JoinMessage(err))
+			aggErr = locale.WrapError(aggErr, "uninstall_remove_config_err", "Failed to remove configuration directory {{.V0}}", u.cfg.ConfigPath())
+		}
 	}
 
 	if aggErr != nil {
 		return aggErr
 	}
 
-	u.out.Print(locale.T("clean_success_message"))
+	u.out.Notice(locale.T("clean_success_message"))
 	return nil
 }
 
@@ -91,7 +101,7 @@ func removeConfig(configPath string, out output.Outputer) error {
 		return locale.WrapError(err, "err_clean_config_remove", "Could not remove config directory")
 	}
 
-	out.Print(locale.Tl("clean_config_succes", "Successfully removed State Tool config directory"))
+	out.Notice(locale.Tl("clean_config_succes", "Successfully removed State Tool config directory"))
 	return nil
 }
 
@@ -122,6 +132,20 @@ func removeInstall(cfg *config.Instance) error {
 	}
 
 	return aggErr
+}
+
+func removeApp() error {
+	svcApp, err := svcApp.New()
+	if err != nil {
+		return locale.WrapError(err, "err_autostart_app")
+	}
+
+	err = svcApp.Uninstall()
+	if err != nil {
+		return locale.WrapError(err, "err_uninstall_app", "Could not uninstall the State Tool service app.")
+	}
+
+	return nil
 }
 
 func verifyInstallation() error {

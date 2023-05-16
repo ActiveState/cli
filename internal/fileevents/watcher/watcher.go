@@ -55,7 +55,7 @@ func New() (*Watcher, error) {
 				logInfo(event.String())
 
 				if err := (*w.onEvent)(event.Name, logInfo); err != nil {
-					logError(errs.Join(err, ", ").Error())
+					logError(errs.JoinMessage(err))
 					continue
 				}
 			case err, ok := <-w.fswatcher.Errors:

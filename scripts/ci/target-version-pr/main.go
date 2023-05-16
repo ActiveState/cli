@@ -168,13 +168,16 @@ func fetchMeta(ghClient *github.Client, jiraClient *jira.Client, prNumber int) (
 		versionPRName := wh.VersionedPRTitle(fixVersion.Version)
 
 		// Retrieve Relevant Fixversion Pr
-		finish = wc.PrintStart("Fetching Version PR")
+		finish = wc.PrintStart("Fetching Version PR by name: '%s'", versionPRName)
 		versionPR, err = wh.FetchPRByTitle(ghClient, versionPRName)
 		if err != nil {
 			return Meta{}, errs.Wrap(err, "failed to get target PR")
 		}
 		if versionPR != nil && versionPR.GetState() != "open" {
 			return Meta{}, errs.New("PR status for %s is not open, make sure your jira fixVersion is targeting an unreleased version", versionPR.GetTitle())
+		}
+		if versionPR == nil {
+			wc.Print("No version PR found")
 		}
 		finish()
 	}

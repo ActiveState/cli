@@ -20,14 +20,14 @@ func newCheckoutCommand(prime *primer.Values) *captain.Command {
 		prime,
 		[]*captain.Flag{
 			{
-				Name:        locale.Tl("flag_state_checkout_branch", "branch"),
+				Name:        "branch",
 				Description: locale.Tl("flag_state_checkout_branch_description", "Defines the branch to checkout"),
 				Value:       &params.Branch,
 			},
 			{
-				Name:        locale.Tl("flag_state_checkout_cache", "set-cache"),
-				Description: locale.Tl("flag_state_checkout_cache_description", "Path to store the runtime files"),
-				Value:       &params.Cache,
+				Name:        "runtime-path",
+				Description: locale.Tl("flag_state_checkout_runtime-path_description", "Path to store the runtime files"),
+				Value:       &params.RuntimePath,
 			},
 		},
 		[]*captain.Argument{
@@ -48,6 +48,5 @@ func newCheckoutCommand(prime *primer.Values) *captain.Command {
 		},
 	)
 	cmd.SetGroup(EnvironmentSetupGroup)
-	cmd.SetUnstable(true)
 	return cmd
 }

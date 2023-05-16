@@ -18,9 +18,9 @@ import (
 	anaConsts "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/analytics/dimensions"
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/download"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/httputil"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
@@ -51,6 +51,7 @@ import (
 	"github.com/faiface/mainthread"
 	"github.com/gammazero/workerpool"
 	"github.com/go-openapi/strfmt"
+	"github.com/thoas/go-funk"
 )
 
 // MaxConcurrency is maximum number of parallel artifact installations
@@ -67,7 +68,7 @@ type ArtifactSetupErrors struct {
 func (a *ArtifactSetupErrors) Error() string {
 	var errors []string
 	for _, err := range a.errs {
-		errors = append(errors, errs.Join(err, " :: ").Error())
+		errors = append(errors, errs.JoinMessage(err))
 	}
 	return "Not all artifacts could be installed, errors:\n" + strings.Join(errors, "\n")
 }
@@ -81,7 +82,7 @@ func (a *ArtifactSetupErrors) Errors() []error {
 func (a *ArtifactSetupErrors) UserError() string {
 	var errStrings []string
 	for _, err := range a.errs {
-		errStrings = append(errStrings, locale.JoinErrors(err, " :: ").UserError())
+		errStrings = append(errStrings, locale.JoinedErrorMessage(err))
 	}
 	return locale.Tl("setup_artifacts_err", "Not all artifacts could be installed:\n{{.V0}}", strings.Join(errStrings, "\n"))
 }
@@ -378,6 +379,15 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 		return nil, errs.Wrap(err, "could not extract artifacts that are ready to download.")
 	}
 
+	// buildResult doesn't have namespace info and will happily report internal only artifacts
+	downloadablePrebuiltResults = funk.Filter(downloadablePrebuiltResults, func(ad artifact.ArtifactDownload) bool {
+		ar, ok := artifacts[ad.ArtifactID]
+		if !ok {
+			return true
+		}
+		return ar.Namespace != inventory_models.NamespaceCoreTypeInternal
+	}).([]artifact.ArtifactDownload)
+
 	// Analytics data to send.
 	dimensions := &dimensions.Values{
 		CommitID: p.StrP(s.target.CommitUUID().String()),
@@ -547,7 +557,7 @@ func (s *Setup) installArtifactsFromBuild(buildResult *model.BuildResult, artifa
 		if err := s.eventHandler.Handle(events.BuildSkipped{}); err != nil {
 			return errs.Wrap(err, "Could not handle BuildSkipped event")
 		}
-		err = s.installFromBuildResult(buildResult, downloads, alreadyInstalled, setup, installFunc)
+		err = s.installFromBuildResult(buildResult, artifacts, downloads, alreadyInstalled, setup, installFunc)
 	} else {
 		err = s.installFromBuildLog(buildResult, artifacts, artifactsToInstall, alreadyInstalled, setup, installFunc, logFilePath)
 	}
@@ -556,10 +566,12 @@ func (s *Setup) installArtifactsFromBuild(buildResult *model.BuildResult, artifa
 }
 
 // setupArtifactSubmitFunction returns a function that sets up an artifact and can be submitted to a workerpool
-func (s *Setup) setupArtifactSubmitFunction(a artifact.ArtifactDownload, expectedArtifactInstalls map[artifact.ArtifactID]struct{}, buildResult *model.BuildResult, setup Setuper, installFunc artifactInstaller, errors chan<- error) func() {
+func (s *Setup) setupArtifactSubmitFunction(a artifact.ArtifactDownload, ar *artifact.ArtifactRecipe, expectedArtifactInstalls map[artifact.ArtifactID]struct{}, buildResult *model.BuildResult, setup Setuper, installFunc artifactInstaller, errors chan<- error) func() {
 	return func() {
 		// If artifact has no valid download, just count it as completed and return
-		if strings.HasPrefix(a.UnsignedURI, "s3://as-builds/noop/") {
+		if strings.HasPrefix(a.UnsignedURI, "s3://as-builds/noop/") ||
+			// Internal namespace artifacts are not to be downloaded
+			(ar != nil && ar.Namespace == inventory_models.NamespaceCoreTypeInternal) {
 			logging.Debug("Skipping setup of noop artifact: %s", a.ArtifactID)
 			if _, expected := expectedArtifactInstalls[a.ArtifactID]; expected {
 				if err := s.eventHandler.Handle(events.ArtifactDownloadSkipped{a.ArtifactID}); err != nil {
@@ -595,7 +607,8 @@ func (s *Setup) setupArtifactSubmitFunction(a artifact.ArtifactDownload, expecte
 	}
 }
 
-func (s *Setup) installFromBuildResult(buildResult *model.BuildResult, downloads []artifact.ArtifactDownload, alreadyInstalled store.StoredArtifactMap, setup Setuper, installFunc artifactInstaller) error {
+func (s *Setup) installFromBuildResult(buildResult *model.BuildResult, artifacts artifact.ArtifactRecipeMap, downloads []artifact.ArtifactDownload, alreadyInstalled store.StoredArtifactMap, setup Setuper, installFunc artifactInstaller) error {
+	logging.Debug("Installing artifacts from build result")
 	errs, aggregatedErr := aggregateErrors()
 	mainthread.Run(func() {
 		defer close(errs)
@@ -604,7 +617,11 @@ func (s *Setup) installFromBuildResult(buildResult *model.BuildResult, downloads
 			if _, ok := alreadyInstalled[a.ArtifactID]; ok {
 				continue
 			}
-			wp.Submit(s.setupArtifactSubmitFunction(a, map[artifact.ArtifactID]struct{}{}, buildResult, setup, installFunc, errs))
+			var ar *artifact.ArtifactRecipe
+			if arv, ok := artifacts[a.ArtifactID]; ok {
+				ar = &arv
+			}
+			wp.Submit(s.setupArtifactSubmitFunction(a, ar, map[artifact.ArtifactID]struct{}{}, buildResult, setup, installFunc, errs))
 		}
 
 		wp.StopWait()
@@ -645,7 +662,11 @@ func (s *Setup) installFromBuildLog(buildResult *model.BuildResult, artifacts ar
 				if _, ok := alreadyInstalled[a.ArtifactID]; ok {
 					continue
 				}
-				wp.Submit(s.setupArtifactSubmitFunction(a, artifactsToInstall, buildResult, setup, installFunc, errs))
+				var ar *artifact.ArtifactRecipe
+				if arv, ok := artifacts[a.ArtifactID]; ok {
+					ar = &arv
+				}
+				wp.Submit(s.setupArtifactSubmitFunction(a, ar, artifactsToInstall, buildResult, setup, installFunc, errs))
 			}
 		}()
 

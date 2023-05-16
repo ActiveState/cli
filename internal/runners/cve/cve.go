@@ -26,7 +26,7 @@ type outputData struct {
 	Packages  []ByPackageOutput        `json:"packages"`
 }
 
-type outputDataPrinter struct {
+type cveOutput struct {
 	output output.Outputer
 	data   *outputData
 }
@@ -78,29 +78,25 @@ func (c *Cve) Run() error {
 		})
 	}
 
-	cveOutput := &outputData{
-		Project:   c.proj.Name(),
-		CommitID:  resp.CommitID,
-		Histogram: resp.VulnerabilityHistogram,
-		Packages:  packageVulnerabilities,
-	}
-
-	odp := &outputDataPrinter{
+	c.out.Print(&cveOutput{
 		c.out,
-		cveOutput,
-	}
-
-	c.out.Print(odp)
+		&outputData{
+			Project:   c.proj.Name(),
+			CommitID:  resp.CommitID,
+			Histogram: resp.VulnerabilityHistogram,
+			Packages:  packageVulnerabilities,
+		},
+	})
 
 	return nil
 }
 
 type SeverityCountOutput struct {
-	Count    string `locale:"count,Count"`
-	Severity string `locale:"severity,Severity"`
+	Count    string `locale:"count,Count" json:"count"`
+	Severity string `locale:"severity,Severity" json:"severity"`
 }
 
-func (od *outputDataPrinter) printFooter() {
+func (od *cveOutput) printFooter() {
 	od.output.Print("")
 	od.output.Print([]string{
 		locale.Tl("cve_hint_report", "To view a detailed report for this runtime, run [ACTIONABLE]state security report[/RESET]"),
@@ -108,10 +104,7 @@ func (od *outputDataPrinter) printFooter() {
 	})
 }
 
-func (od *outputDataPrinter) MarshalOutput(format output.Format) interface{} {
-	if format != output.PlainFormatName {
-		return od.data
-	}
+func (od *cveOutput) MarshalOutput(format output.Format) interface{} {
 	pi := &ProjectInfo{
 		od.data.Project,
 		od.data.CommitID,
@@ -145,12 +138,16 @@ func (od *outputDataPrinter) MarshalOutput(format output.Format) interface{} {
 		}
 		hist = append(hist, ho)
 	}
-	od.output.Print(output.Heading(fmt.Sprintf("%d Vulnerabilities", totalCount)))
+	od.output.Print(output.Title(fmt.Sprintf("%d Vulnerabilities", totalCount)))
 	od.output.Print(hist)
 
-	od.output.Print(output.Heading(fmt.Sprintf("%d Affected Packages", len(od.data.Packages))))
+	od.output.Print(output.Title(fmt.Sprintf("%d Affected Packages", len(od.data.Packages))))
 	od.output.Print(od.data.Packages)
 
 	od.printFooter()
 	return output.Suppress
+}
+
+func (od *cveOutput) MarshalStructured(format output.Format) interface{} {
+	return od.data
 }

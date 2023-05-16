@@ -6,8 +6,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/ActiveState/cli/internal/ci/gcloud"
 	"github.com/ActiveState/cli/internal/colorize"
+	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
@@ -23,7 +23,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/authentication"
 	apiAuth "github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/authentication"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
-	"github.com/ActiveState/cli/pkg/platform/model/auth"
+	model "github.com/ActiveState/cli/pkg/platform/model/auth"
 	"github.com/go-openapi/runtime"
 	httptransport "github.com/go-openapi/runtime/client"
 	"github.com/go-openapi/strfmt"
@@ -123,8 +123,7 @@ func (s *Auth) Sync() error {
 		}
 	} else {
 		// Ensure properties aren't out of sync
-		s.bearerToken = ""
-		s.user = nil
+		s.resetSession()
 	}
 	return nil
 }
@@ -160,6 +159,22 @@ func (s *Auth) updateRollbarPerson() {
 		return
 	}
 	rollbar.UpdateRollbarPerson(uid.String(), s.WhoAmI(), s.Email())
+}
+
+func (s *Auth) resetSession() {
+	s.bearerToken = ""
+	s.user = nil
+}
+
+func (s *Auth) Refresh() error {
+	s.resetSession()
+
+	apiToken := s.AvailableAPIToken()
+	if apiToken == "" {
+		return nil
+	}
+
+	return s.AuthenticateWithToken(apiToken)
 }
 
 // Authenticate will try to authenticate using stored credentials
@@ -204,7 +219,9 @@ func (s *Auth) AuthenticateWithModel(credentials *mono_models.Credentials) error
 			if api.ErrorCode(err) == 403 {
 				return locale.NewInputError("err_auth_forbidden", "You are not allowed to login now. Please try again later.")
 			}
-			multilog.Error("Authentication API returned %v", err)
+			if !condition.IsNetworkingError(err) {
+				multilog.Error("Authentication API returned %v", err)
+			}
 			return errs.AddTips(locale.WrapError(err, "err_api_auth", "Authentication failed: {{.V0}}", err.Error()), tips...)
 		}
 	}
@@ -423,16 +440,7 @@ func (s *Auth) NewAPIKey(name string) (string, error) {
 }
 
 func (s *Auth) AvailableAPIToken() (v string) {
-	tkn, err := gcloud.GetSecret(constants.APIKeyEnvVarName)
-	if err != nil && !errors.Is(err, gcloud.ErrNotAvailable{}) {
-		multilog.Error("Could not retrieve gcloud secret: %v", err)
-	}
-	if err == nil && tkn != "" {
-		logging.Debug("Using api token sourced from gcloud")
-		return tkn
-	}
-
-	if tkn = os.Getenv(constants.APIKeyEnvVarName); tkn != "" {
+	if tkn := os.Getenv(constants.APIKeyEnvVarName); tkn != "" {
 		logging.Debug("Using API token passed via env var")
 		return tkn
 	}

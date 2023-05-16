@@ -80,7 +80,7 @@ var lookup = [...]languageData{
 		Executable{constants.ActivePython3Executable, false},
 	},
 	{
-		"python2", "Python 2", ".py", true, "python", "2.7.14",
+		"python2", "Python 2", ".py", true, "python", "2.7.18.5",
 		Executable{constants.ActivePython2Executable, false},
 	},
 	{
@@ -171,7 +171,7 @@ func (l *Language) Recognized() bool {
 // Validate ensures that the current language is recognized
 func (l *Language) Validate() error {
 	if !l.Recognized() {
-		return UnrecognizedLanguageError(l.String(), RecognizedNames())
+		return UnrecognizedLanguageError(l.String(), RecognizedSupportedsNames())
 	}
 	return nil
 }

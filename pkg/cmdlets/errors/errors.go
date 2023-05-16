@@ -11,7 +11,6 @@ import (
 	"github.com/ActiveState/cli/internal/analytics/dimensions"
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/condition"
-	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
@@ -32,47 +31,53 @@ type OutputError struct {
 }
 
 func (o *OutputError) MarshalOutput(f output.Format) interface{} {
-	if f != output.PlainFormatName {
-		return o.error
-	}
-
 	var outLines []string
 	isInputError := locale.IsInputError(o.error)
 
 	// Print what happened
-	if !isInputError {
-		outLines = append(outLines, output.Heading(locale.Tl("err_what_happened", "[ERROR]Something Went Wrong[/RESET]")).String())
+	if !isInputError && f == output.PlainFormatName {
+		outLines = append(outLines, output.Title(locale.Tl("err_what_happened", "[ERROR]Something Went Wrong[/RESET]")).String())
 	}
 
-	rerrs := locale.UnwrapError(o.error)
+	rerrs := locale.UnpackError(o.error)
 	if len(rerrs) == 0 {
 		// It's possible the error came from cobra or something else low level that doesn't use localization
 		logging.Warning("Error does not have localization: %s", errs.JoinMessage(o.error))
 		rerrs = []error{o.error}
 	}
 	for _, errv := range rerrs {
-		outLines = append(outLines, fmt.Sprintf(" [NOTICE][ERROR]x[/RESET] %s", trimError(locale.ErrorMessage(errv))))
+		message := trimError(locale.ErrorMessage(errv))
+		if f == output.PlainFormatName {
+			outLines = append(outLines, fmt.Sprintf(" [NOTICE][ERROR]x[/RESET] %s", message))
+		} else {
+			outLines = append(outLines, message)
+		}
 	}
 
 	// Concatenate error tips
 	errorTips := []string{}
 	err := o.error
-	for err != nil {
+	for _, err := range errs.Unpack(err) {
 		if v, ok := err.(ErrorTips); ok {
 			errorTips = append(errorTips, v.ErrorTips()...)
 		}
-		err = errors.Unwrap(err)
 	}
 	errorTips = append(errorTips, locale.Tl("err_help_forum", "[NOTICE]Ask For Help →[/RESET] [ACTIONABLE]{{.V0}}[/RESET]", constants.ForumsURL))
 
 	// Print tips
-	if enableTips := os.Getenv(constants.DisableErrorTipsEnvVarName) != "true"; enableTips {
-		outLines = append(outLines, output.Heading(locale.Tl("err_more_help", "Need More Help?")).String())
+	enableTips := os.Getenv(constants.DisableErrorTipsEnvVarName) != "true" && f == output.PlainFormatName
+	if enableTips {
+		outLines = append(outLines, "") // separate error from "Need More Help?" header
+		outLines = append(outLines, output.Title(locale.Tl("err_more_help", "Need More Help?")).String())
 		for _, tip := range errorTips {
 			outLines = append(outLines, fmt.Sprintf(" [DISABLED]•[/RESET] %s", trimError(tip)))
 		}
 	}
 	return strings.Join(outLines, "\n")
+}
+
+func (o *OutputError) MarshalStructured(f output.Format) interface{} {
+	return output.StructuredError{locale.JoinedErrorMessage(o.error)}
 }
 
 func trimError(msg string) string {
@@ -82,7 +87,8 @@ func trimError(msg string) string {
 	return strings.TrimRight(msg, " .")
 }
 
-func Unwrap(err error) (int, error) {
+// ParseUserFacing returns the exit code and a user facing error message.
+func ParseUserFacing(err error) (int, error) {
 	if err == nil {
 		return 0, nil
 	}
@@ -90,23 +96,11 @@ func Unwrap(err error) (int, error) {
 	_, hasMarshaller := err.(output.Marshaller)
 
 	// unwrap exit code before we remove un-localized wrapped errors from err variable
-	code := errs.UnwrapExitCode(err)
+	code := errs.ParseExitCode(err)
 
 	if errs.IsSilent(err) {
 		logging.Debug("Suppressing silent failure: %v", err.Error())
 		return code, nil
-	}
-
-	var llerr *config.LocalizedError // workaround type used to avoid circular import in config pkg
-	if errors.As(err, &llerr) {
-		key, base := llerr.Localization()
-		if key != "" && base != "" {
-			err = locale.WrapError(err, key, base)
-		}
-		reportMsg := llerr.ReportMessage()
-		if reportMsg != "" {
-			multilog.Error(reportMsg)
-		}
 	}
 
 	if hasMarshaller {
@@ -126,35 +120,45 @@ func ReportError(err error, cmd *captain.Command, an analytics.Dispatcher) {
 
 	_, hasMarshaller := err.(output.Marshaller)
 
-	// Log error if this isn't a user input error
-	if !locale.IsInputError(err) {
-		multilog.Critical("Returning error:\n%s\nCreated at:\n%s", errs.Join(err, "\n").Error(), stack)
-	} else {
-		cmdName := cmd.Name()
-		childCmd, err := cmd.Find(os.Args[1:])
-		if err != nil {
-			logging.Error("Could not find child command: %v", err)
-		}
-
-		var flagNames []string
-		for _, flag := range cmd.ActiveFlags() {
-			flagNames = append(flagNames, fmt.Sprintf("--%s", flag.Name))
-		}
-
-		trigger := []string{cmdName}
-		if childCmd != nil {
-			trigger = append(trigger, childCmd.UseFull())
-		}
-		trigger = append(trigger, flagNames...)
-
-		logging.Debug("Reporting input error:\n%s\nCreated at:\n%s", errs.Join(err, "\n").Error(), stack)
-		an.Event(anaConst.CatDebug, anaConst.ActInputError, &dimensions.Values{
-			Trigger: p.StrP(strings.Join(trigger, " ")),
-		})
+	cmdName := cmd.Name()
+	childCmd, findErr := cmd.Find(os.Args[1:])
+	if findErr != nil {
+		logging.Error("Could not find child command: %v", findErr)
 	}
 
+	var flagNames []string
+	for _, flag := range cmd.ActiveFlags() {
+		flagNames = append(flagNames, fmt.Sprintf("--%s", flag.Name))
+	}
+
+	label := []string{cmdName}
+	if childCmd != nil {
+		label = append(label, childCmd.JoinedSubCommandNames())
+	}
+	label = append(label, flagNames...)
+
+	// Log error if this isn't a user input error
+	var action string
+	errorMsg := err.Error()
+	if !locale.IsInputError(err) {
+		multilog.Critical("Returning error:\n%s\nCreated at:\n%s", errs.JoinMessage(err), stack)
+		action = anaConst.ActCommandError
+	} else {
+		action = anaConst.ActCommandInputError
+		for _, err := range errs.Unpack(err) {
+			if locale.IsInputErrorNonRecursive(err) {
+				errorMsg = locale.ErrorMessage(err)
+				break
+			}
+		}
+	}
+
+	an.EventWithLabel(anaConst.CatDebug, action, strings.Join(label, " "), &dimensions.Values{
+		Error: p.StrP(errorMsg),
+	})
+
 	if !locale.HasError(err) && isErrs && !hasMarshaller {
-		multilog.Error("MUST ADDRESS: Error does not have localization: %s", errs.Join(err, "\n").Error())
+		multilog.Error("MUST ADDRESS: Error does not have localization: %s", errs.JoinMessage(err))
 
 		// If this wasn't built via CI then this is a dev workstation, and we should be more aggressive
 		if !condition.BuiltViaCI() && PanicOnMissingLocale {

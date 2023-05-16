@@ -156,7 +156,7 @@ func (p *ProgressDigester) Handle(ev events.Eventer) error {
 		p.success = true
 
 	case events.SolveStart:
-		p.out.Notice(locale.Tl("setup_runtime", "Setting Up Runtime"))
+		p.out.Notice(locale.T("setup_runtime"))
 		p.solveSpinner = output.StartSpinner(p.out, locale.T("progress_solve"), refreshRate)
 
 	case events.SolveError:
@@ -357,7 +357,7 @@ Still expecting:
 				p.buildsExpected, p.downloadsExpected, p.installsExpected,
 			)
 
-			/* Disabled for v0.36 as we're still ironing out the kinks
+			/* https://activestatef.atlassian.net/browse/DX-1831
 			if pending > 0 {
 				// We only error out if we determine the issue is down to one of our bars not completing.
 				// Otherwise this is an issue with the mpb package which is currently a known limitation, end goal is to get rid of mpb.

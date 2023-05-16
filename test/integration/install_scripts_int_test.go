@@ -10,9 +10,9 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/download"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/httputil"
 	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
@@ -87,16 +87,21 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 				argsWithActive = append(argsWithActive, "-c", cmd)
 			}
 
+			appInstallDir := filepath.Join(ts.Dirs.Work, "app")
+			suite.NoError(fileutils.Mkdir(appInstallDir))
+
 			var cp *termtest.ConsoleProcess
 			if runtime.GOOS != "windows" {
 				cp = ts.SpawnCmdWithOpts(
 					"bash", e2e.WithArgs(argsWithActive...),
 					e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+					e2e.AppendEnv(fmt.Sprintf("%s=%s", constants.AppInstallDirOverrideEnvVarName, appInstallDir)),
 				)
 			} else {
 				cp = ts.SpawnCmdWithOpts("powershell.exe", e2e.WithArgs(argsWithActive...),
 					e2e.AppendEnv("SHELL="),
 					e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+					e2e.AppendEnv(fmt.Sprintf("%s=%s", constants.AppInstallDirOverrideEnvVarName, appInstallDir)),
 				)
 			}
 
@@ -150,12 +155,11 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall_NonEmptyTarget() {
 	script := scriptPath(suite.T(), ts.Dirs.Work)
 	argsPlain := []string{script, "-t", ts.Dirs.Work}
 	argsPlain = append(argsPlain, "-b", constants.BranchName)
-	argsWithActive := append(argsPlain, "-f")
 	var cp *termtest.ConsoleProcess
 	if runtime.GOOS != "windows" {
-		cp = ts.SpawnCmdWithOpts("bash", e2e.WithArgs(argsWithActive...))
+		cp = ts.SpawnCmdWithOpts("bash", e2e.WithArgs(argsPlain...))
 	} else {
-		cp = ts.SpawnCmdWithOpts("powershell.exe", e2e.WithArgs(argsWithActive...), e2e.AppendEnv("SHELL="))
+		cp = ts.SpawnCmdWithOpts("powershell.exe", e2e.WithArgs(argsPlain...), e2e.AppendEnv("SHELL="))
 	}
 	cp.ExpectLongString("Installation path must be an empty directory")
 	cp.ExpectExitCode(1)

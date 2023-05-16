@@ -137,8 +137,8 @@ const OptinUnstableEnvVarName = "ACTIVESTATE_OPTIN_UNSTABLE"
 // ServiceSockDir overrides the default socket path root diriectory used by the state service
 const ServiceSockDir = "ACTIVESTATE_SVC_SOCK"
 
-// AnalyticsLogEnvVarName is used to instruct State Tool to report analytics events to the given file
-const DeprecationOverrideEnvVarName = "ACTIVESTATE_DEPRECATION_OVERRIDE"
+// MessagesOverrideEnvVarName is used to override the location of the messages file (for testing purposes - should hold local filepath)
+const MessagesOverrideEnvVarName = "ACTIVESTATE_MESSAGES_OVERRIDE"
 
 // DisableErrorTipsEnvVarName disables the display of tips in error messages.
 // This should only be used by the installer so-as not to pollute error message output.
@@ -154,6 +154,9 @@ const InstallPathOverrideEnvVarName = "ACTIVESTATE_CLI_INSTALLPATH_OVERRIDE"
 // AutostartPathOverrideEnvVarName is used to override the default autostart path of the state service.
 const AutostartPathOverrideEnvVarName = "ACTIVESTATE_CLI_AUTOSTARTPATH_OVERRIDE"
 
+// AppInstallDirOverrideEnvVarName is used to override the default app installation path of the state tool.
+const AppInstallDirOverrideEnvVarName = "ACTIVESTATE_CLI_APPINSTALLDIR_OVERRIDE"
+
 // RuntimeUsageOverrideEnvVarName is used to override the default usage of the runtime intended for use in integration testing
 const RuntimeUsageOverrideEnvVarName = "ACTIVESTATE_OVERRIDE_RTUSAGE_USAGE"
 
@@ -162,6 +165,10 @@ const RuntimeUsageSilenceTimeOverrideEnvVarName = "ACTIVESTATE_OVERRIDE_RTUSAGE_
 
 // SvcAuthPollingRateEnvVarName is used to override the default polling rate for syncing the authenticated state with the svc
 const SvcAuthPollingRateEnvVarName = "ACTIVESTATE_SVC_AUTH_POLLING_RATE"
+
+// StateSvcLogRotateInvervalEnvVarName is the environment variable used to override the default
+// log rotation timer interval (1 minute).
+const SvcLogRotateIntervalEnvVarName = "ACTIVESTATE_CLI_LOG_ROTATE_INTERVAL_MS"
 
 // APIUpdateInfoURL is the URL for our update info server
 const APIUpdateInfoURL = "https://platform.activestate.com/sv/state-update/api/v1"
@@ -250,8 +257,8 @@ const MediatorAPIPath = "/sv/mediator/api"
 // RequirementsImportAPIPath is the path used for the requirements import api
 const RequirementsImportAPIPath = "/sv/reqsvc/reqs"
 
-// DeprecationInfoURL is the URL we check against to see what versions are deprecated
-const DeprecationInfoURL = "https://state-tool.s3.amazonaws.com/deprecation.json"
+// MessagesInfoURL is the URL we check against to see what versions are deprecated
+const MessagesInfoURL = "https://state-tool.s3.amazonaws.com/messages.json"
 
 // DateFormatUser is the date format we use when communicating with the end-user
 const DateFormatUser = "January 02, 2006"
@@ -305,14 +312,14 @@ const PlatformURL = "platform.activestate.com"
 const CheatSheetURL = "https://platform.activestate.com/state-tool-cheat-sheet"
 
 // StateToolRollbarToken is the token used by the State Tool to talk to rollbar
-const StateToolRollbarToken = "0f77e52e25324b5a870f1f2ea769024e"
+const StateToolRollbarToken = "8ddf0c31267b49ca9680083cf850f1e3"
 
 // StateServiceRollbarToken is the token used by the State Service to talk to rollbar
-const StateServiceRollbarToken = "8d72ba6541394d2c99c006324b3a46a7"
+const StateServiceRollbarToken = "c03b12fa567e4753bc9c1d97111b8767"
 
 // StateInstallerRollbarToken is the token used by the State Installer to talk to rollbar
 // Todo It is currently the same as the State Tool's
-const StateInstallerRollbarToken = "609d723b3d46474d88e31bd045d38c56"
+const StateInstallerRollbarToken = "0d6d1440fafe44058f3a0a9fc8d44e29"
 
 // OfflineInstallerRollbarToken is the token used by the Offline Installer to talk to rollbar
 const OfflineInstallerRollbarToken = "0ab5e19218bd494680bf8f5d08cf37ad"
@@ -419,6 +426,9 @@ const ReportAnalyticsConfig = "report.analytics"
 
 // SvcAppName is the name we give our state-svc application
 const SvcAppName = "State Service"
+
+// SvcLaunchFileName is the name we give files pertaining to our state-svc application
+const SvcLaunchFileName = "state-svc"
 
 // StateAppName is the name we give our state cli executable
 const StateAppName = "State Tool"

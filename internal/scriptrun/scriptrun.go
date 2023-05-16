@@ -192,7 +192,7 @@ func (s *ScriptRun) Run(script *project.Script, args []string) error {
 			)
 		}
 		return errs.AddTips(
-			locale.WrapError(err, "err_script_run", "Your script failed to execute: {{.V0}}.", err.Error()),
+			locale.WrapInputError(err, "err_script_run", "Your script failed to execute: {{.V0}}.", err.Error()),
 			locale.Tl("script_run_tip", "Edit the script '[ACTIONABLE]{{.V0}}[/RESET]' in your [ACTIONABLE]activestate.yaml[/RESET].", script.Name()))
 	}
 	return nil

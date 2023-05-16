@@ -31,10 +31,25 @@ func newCleanUninstallCommand(prime *primer.Values, globals *globalOptions) *cap
 		prime,
 		[]*captain.Flag{
 			{
+				Name:        "all",
+				Shorthand:   "a",
+				Description: locale.Tl("flag_state_clean_uninstall_all", "Also delete all associated config and cache files"),
+				Value:       &params.All,
+			},
+			{
 				Name:        "force",
 				Shorthand:   "f",
 				Description: locale.T("flag_state_clean_uninstall_force_description"),
 				Value:       &params.Force,
+			},
+			{
+				// This option is only used by the Windows uninstall shortcut to ask the user if they wish
+				// to delete everything or keep cache and config. The user is also asked to press Enter
+				// after the uninstall process is scheduled so they may note the printed log file path.
+				Name:        "prompt",
+				Description: "Asks the user if everything should be deleted or to keep cache and config",
+				Hidden:      true, // this is not a user-facing flag
+				Value:       &params.Prompt,
 			},
 		},
 		[]*captain.Argument{},
@@ -47,7 +62,7 @@ func newCleanUninstallCommand(prime *primer.Values, globals *globalOptions) *cap
 			params.NonInteractive = globals.NonInteractive // distinct from --force
 			return runner.Run(&params)
 		},
-	)
+	).SetDoesNotSupportStructuredOutput()
 }
 
 func newCleanCacheCommand(prime *primer.Values, globals *globalOptions) *captain.Command {
@@ -71,7 +86,7 @@ func newCleanCacheCommand(prime *primer.Values, globals *globalOptions) *captain
 			params.Force = globals.NonInteractive
 			return runner.Run(&params)
 		},
-	)
+	).SetDoesNotSupportStructuredOutput()
 }
 
 func newCleanConfigCommand(prime *primer.Values) *captain.Command {
@@ -80,7 +95,7 @@ func newCleanConfigCommand(prime *primer.Values) *captain.Command {
 	return captain.NewCommand(
 		"config",
 		locale.Tl("clean_config_title", "Cleaning Configuration"),
-		locale.T("config_description"),
+		locale.T("clean_config_description"),
 		prime,
 		[]*captain.Flag{
 			{
@@ -94,5 +109,5 @@ func newCleanConfigCommand(prime *primer.Values) *captain.Command {
 		func(ccmd *captain.Command, _ []string) error {
 			return runner.Run(&params)
 		},
-	)
+	).SetDoesNotSupportStructuredOutput()
 }

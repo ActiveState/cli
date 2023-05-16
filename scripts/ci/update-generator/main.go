@@ -12,7 +12,8 @@ import (
 	"path/filepath"
 	"runtime"
 
-	"github.com/ActiveState/archiver"
+	"github.com/mholt/archiver"
+
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
@@ -35,7 +36,7 @@ func main() {
 	if !condition.InUnitTest() {
 		err := run()
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "%s error: %v", os.Args[0], errs.Join(err, ":"))
+			fmt.Fprintf(os.Stderr, "%s error: %v", os.Args[0], errs.JoinMessage(err))
 		}
 	}
 }

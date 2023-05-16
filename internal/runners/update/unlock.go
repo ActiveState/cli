@@ -11,7 +11,7 @@ import (
 )
 
 type UnlockParams struct {
-	Force bool
+	NonInteractive bool
 }
 
 type Unlock struct {
@@ -31,6 +31,10 @@ func NewUnlock(prime primeable) *Unlock {
 }
 
 func (u *Unlock) Run(params *UnlockParams) error {
+	if u.project == nil {
+		return locale.NewInputError("err_no_project")
+	}
+
 	if !u.project.IsLocked() {
 		u.out.Notice(locale.Tl("notice_not_locked", "The State Tool version is not locked for this project."))
 		return nil
@@ -38,7 +42,7 @@ func (u *Unlock) Run(params *UnlockParams) error {
 
 	u.out.Notice(locale.Tl("unlocking_version", "Unlocking State Tool version for current project."))
 
-	if !params.Force {
+	if !params.NonInteractive {
 		err := confirmUnlock(u.prompt)
 		if err != nil {
 			return locale.WrapError(err, "err_update_unlock_confirm", "Unlock cancelled by user.")
@@ -56,14 +60,15 @@ func (u *Unlock) Run(params *UnlockParams) error {
 		return locale.WrapError(err, "err_update_projectfile", "Could not update projectfile")
 	}
 
-	u.out.Print(locale.Tl("version_unlocked", "State Tool version unlocked"))
+	u.out.Notice(locale.Tl("version_unlocked", "State Tool version unlocked"))
 	return nil
 }
 
 func confirmUnlock(prom prompt.Prompter) error {
 	msg := locale.T("confirm_update_unlocked_version_prompt")
 
-	confirmed, err := prom.Confirm(locale.T("confirm"), msg, new(bool))
+	defaultChoice := !prom.IsInteractive()
+	confirmed, err := prom.Confirm(locale.T("confirm"), msg, &defaultChoice)
 	if err != nil {
 		return err
 	}

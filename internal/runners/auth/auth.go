@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
@@ -54,10 +55,6 @@ func (p AuthParams) verify() error {
 	return nil
 }
 
-type SignupParams struct {
-	Prompt bool
-}
-
 // Run runs our command
 func (a *Auth) Run(params *AuthParams) error {
 	if !a.Authenticated() {
@@ -74,17 +71,40 @@ func (a *Auth) Run(params *AuthParams) error {
 		}
 	}
 
-	data, err := a.userData()
+	username := a.Auth.WhoAmI()
+	organization, err := model.FetchOrgByURLName(username, a.Auth)
 	if err != nil {
-		return locale.WrapError(err, "err_auth_userdata", "Could not collect information about your account.")
+		return errs.Wrap(err, "Could not fetch organizations")
 	}
 
-	a.Outputer.Print(
-		output.NewFormatter(data).
-			WithFormat(output.PlainFormatName, locale.T("logged_in_as", map[string]string{
-				"Name": a.Auth.WhoAmI(),
-			})),
-	)
+	tiers, err := model.FetchTiers()
+	if err != nil {
+		return errs.Wrap(err, "Could not fetch tiers")
+	}
+
+	tier := organization.Tier
+	privateProjects := false
+	for _, t := range tiers {
+		if tier == t.Name && t.RequiresPayment {
+			privateProjects = true
+			break
+		}
+	}
+
+	a.Outputer.Print(output.Prepare(
+		locale.T("logged_in_as", map[string]string{"Name": username}),
+		&struct {
+			Username        string `json:"username,omitempty"`
+			URLName         string `json:"urlname,omitempty"`
+			Tier            string `json:"tier,omitempty"`
+			PrivateProjects bool   `json:"privateProjects"`
+		}{
+			username,
+			organization.URLname,
+			tier,
+			privateProjects,
+		},
+	))
 
 	return nil
 }
@@ -110,42 +130,10 @@ func (a *Auth) verifyAuthentication() error {
 		return locale.NewInputError("login_err_auth")
 	}
 
-	a.Outputer.Notice(output.Heading(locale.Tl("authentication_title", "Authentication")))
+	a.Outputer.Notice(output.Title(locale.Tl("authentication_title", "Authentication")))
 	a.Outputer.Notice(locale.T("login_success_welcome_back", map[string]string{
 		"Name": a.Auth.WhoAmI(),
 	}))
 
 	return nil
-}
-
-type userData struct {
-	Username        string `json:"username,omitempty"`
-	URLName         string `json:"urlname,omitempty"`
-	Tier            string `json:"tier,omitempty"`
-	PrivateProjects bool   `json:"privateProjects"`
-}
-
-func (a *Auth) userData() (*userData, error) {
-	username := a.Auth.WhoAmI()
-	organization, err := model.FetchOrgByURLName(username, a.Auth)
-	if err != nil {
-		return nil, err
-	}
-
-	tiers, err := model.FetchTiers()
-	if err != nil {
-		return nil, err
-	}
-
-	tier := organization.Tier
-	privateProjects := false
-	for _, t := range tiers {
-		if tier == t.Name && t.RequiresPayment {
-			privateProjects = true
-			break
-		}
-
-	}
-
-	return &userData{username, organization.URLname, tier, privateProjects}, nil
 }

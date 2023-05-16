@@ -13,6 +13,10 @@ jobs:
   propagate:
     name: Propagate to affected version branches
     runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        go-version:
+          - 1.20.x
     env:
       ACTIVESTATE_CLI_DISABLE_RUNTIME: true
       SHELL: bash
@@ -33,7 +37,7 @@ jobs:
 
       - # === Install Go ===
         name: Install Go
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v3
         with:
           go-version: ${{ matrix.go-version }}
 
@@ -56,7 +60,7 @@ jobs:
       - # === Preprocess ===
         name: Preprocess
         shell: bash
-        run: state run preprocess
+        run: state run preprocess -v
 
       - # === Propagate PR ===
         name: Propagate PR

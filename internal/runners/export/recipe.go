@@ -48,7 +48,7 @@ func (r *Recipe) Run(params *RecipeParams) error {
 		}
 	}
 
-	r.Outputer.Print(data)
+	r.Outputer.Print(output.Prepare(data, data))
 	return nil
 }
 

@@ -47,7 +47,7 @@ func (s *Search) Run(params SearchRunParams, nstype model.NamespaceType) error {
 
 	var packages []*model.IngredientAndVersion
 	if params.ExactTerm {
-		packages, err = model.SearchIngredientsStrict(ns, params.Name, false, true)
+		packages, err = model.SearchIngredientsStrict(ns, params.Name, true, true)
 	} else {
 		packages, err = model.SearchIngredients(ns, params.Name, true)
 	}
@@ -61,8 +61,7 @@ func (s *Search) Run(params SearchRunParams, nstype model.NamespaceType) error {
 			locale.Tl("search_request_"+ns.Type().String(), ""),
 		)
 	}
-	results := formatSearchResults(packages)
-	s.out.Print(results)
+	s.out.Print(formatSearchResults(packages))
 
 	return nil
 }
@@ -135,8 +134,10 @@ type searchPackageRow struct {
 	Modules       modules `json:"matching_modules,omitempty" opts:"emptyNil,separateLine,shiftCols=1"`
 }
 
-func formatSearchResults(packages []*model.IngredientAndVersion) []searchPackageRow {
-	var rows []searchPackageRow
+type searchOutput []searchPackageRow
+
+func formatSearchResults(packages []*model.IngredientAndVersion) *searchOutput {
+	rows := make(searchOutput, len(packages))
 
 	filterNilStr := func(s *string) string {
 		if s == nil {
@@ -145,21 +146,21 @@ func formatSearchResults(packages []*model.IngredientAndVersion) []searchPackage
 		return *s
 	}
 
-	for _, pack := range packages {
+	for i, pack := range packages {
 		row := searchPackageRow{
 			Pkg:      filterNilStr(pack.Ingredient.Name),
 			Version:  pack.Version,
 			versions: len(pack.Versions),
 			Modules:  makeModules(pack.Ingredient.NormalizedName, pack),
 		}
-		rows = append(rows, row)
+		rows[i] = row
 	}
 
 	return mergeSearchRows(rows)
 }
 
-func mergeSearchRows(rows []searchPackageRow) []searchPackageRow {
-	var mergedRows []searchPackageRow
+func mergeSearchRows(rows searchOutput) *searchOutput {
+	var mergedRows searchOutput
 	var name string
 	for _, row := range rows {
 		// The search API returns results sorted by name and then descending version
@@ -183,5 +184,9 @@ func mergeSearchRows(rows []searchPackageRow) []searchPackageRow {
 		mergedRows = append(mergedRows, newRow)
 	}
 
-	return mergedRows
+	return &mergedRows
+}
+
+func (o *searchOutput) MarshalStructured(format output.Format) interface{} {
+	return o
 }

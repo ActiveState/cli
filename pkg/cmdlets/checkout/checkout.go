@@ -44,8 +44,6 @@ func New(repo git.Repository, prime primeable) *Checkout {
 	return &Checkout{repo, prime.Output(), prime.Config(), prime.Analytics(), "", prime.Auth()}
 }
 
-type ErrorAlreadyCheckedOut struct{ *locale.LocalizedError }
-
 func (r *Checkout) Run(ns *project.Namespaced, branchName, cachePath, targetPath string) (string, error) {
 	path, err := r.pathToUse(ns, targetPath)
 	if err != nil {
@@ -55,10 +53,6 @@ func (r *Checkout) Run(ns *project.Namespaced, branchName, cachePath, targetPath
 	path, err = filepath.Abs(path)
 	if err != nil {
 		return "", errs.Wrap(err, "Could not get absolute path")
-	}
-
-	if fileutils.FileExists(filepath.Join(path, constants.ConfigFileName)) {
-		return path, &ErrorAlreadyCheckedOut{locale.NewInputError("err_already_checked_out", "", path)}
 	}
 
 	// If project does not exist at path then we must checkout
@@ -100,6 +94,13 @@ func (r *Checkout) Run(ns *project.Namespaced, branchName, cachePath, targetPath
 	language, err := getLanguage(*commitID)
 	if err != nil {
 		return "", errs.Wrap(err, "Could not get language from commitID")
+	}
+
+	if cachePath != "" && !filepath.IsAbs(cachePath) {
+		cachePath, err = filepath.Abs(cachePath)
+		if err != nil {
+			return "", errs.Wrap(err, "Could not get absolute path for cache")
+		}
 	}
 
 	// Create the config file, if the repo clone didn't already create it

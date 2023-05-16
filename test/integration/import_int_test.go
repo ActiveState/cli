@@ -26,7 +26,9 @@ func (suite *ImportIntegrationTestSuite) TestImport_headless() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	cp := ts.Spawn("activate", "ActiveState-CLI/Python3-Import", "--path", ts.Dirs.Work, "--output=json")
+	cp := ts.Spawn("checkout", "ActiveState-CLI/Python3-Import", ".")
+	cp.Expect("Skipping runtime setup")
+	cp.Expect("Checked out project")
 	cp.ExpectExitCode(0)
 
 	contents := `requests

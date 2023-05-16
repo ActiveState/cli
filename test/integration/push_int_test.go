@@ -59,21 +59,13 @@ func (suite *PushIntegrationTestSuite) TestInitAndPush() {
 		namespace,
 		suite.languageFull,
 		"--path", wd,
-		"--skeleton", "editor",
 	)
+	cp.ExpectLongString("successfully initialized")
 	cp.ExpectExitCode(0)
+	ts.NotifyProjectCreated(suite.username, pname.String())
 
 	pjfilepath := filepath.Join(ts.Dirs.Work, namespace, constants.ConfigFileName)
 	suite.Require().FileExists(pjfilepath)
-
-	cp = ts.SpawnWithOpts(e2e.WithArgs("push"), e2e.WithWorkDirectory(wd))
-	cp.ExpectLongString(fmt.Sprintf("Operating on project %s", namespace))
-	cp.Expect("continue?")
-	cp.Send("y")
-	cp.ExpectLongString("Creating project")
-	cp.ExpectLongString("Project created")
-	cp.ExpectExitCode(0)
-	ts.NotifyProjectCreated(suite.username, pname.String())
 
 	// Check that languages were reset
 	pjfile, err := projectfile.Parse(pjfilepath)
@@ -270,8 +262,8 @@ func (suite *PushIntegrationTestSuite) TestPush_Outdated() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	wd := filepath.Join(ts.Dirs.Work, namespace)
-	pjfilepath := filepath.Join(ts.Dirs.Work, namespace, constants.ConfigFileName)
+	wd := filepath.Join(ts.Dirs.Work, "cli")
+	pjfilepath := filepath.Join(ts.Dirs.Work, "cli", constants.ConfigFileName)
 	err := fileutils.WriteFile(pjfilepath, []byte(projectLine+unPushedCommit))
 	suite.Require().NoError(err)
 

@@ -25,9 +25,9 @@ func New(prime primeable) *Events {
 	}
 }
 
-type Event struct {
-	Event string `locale:"event,Event"`
-	Value string `locale:"value,Value"`
+type eventOutput struct {
+	Event string `locale:"event,Event" json:"event"`
+	Value string `locale:"value,Value" json:"value"`
 }
 
 func (e *Events) Run() error {
@@ -36,23 +36,20 @@ func (e *Events) Run() error {
 	}
 	e.out.Notice(locale.Tl("operating_message", "", e.project.NamespaceString(), e.project.Dir()))
 
-	rows := []Event{}
-	for _, event := range e.project.Events() {
+	events := e.project.Events()
+	rows := make([]eventOutput, len(events))
+	for i, event := range events {
 		v, err := event.Value()
 		if err != nil {
 			return locale.NewError("err_events_val", "Could not get value for event: {{.V0}}.", event.Name())
 		}
-		rows = append(rows, Event{
-			event.Name(),
-			v,
-		})
+		rows[i] = eventOutput{event.Name(), v}
 	}
 
+	var plainOutput interface{} = rows
 	if len(rows) == 0 {
-		e.out.Print(locale.Tl("events_empty", "No events found for the current project"))
-		return nil
+		plainOutput = locale.Tl("events_empty", "No events found for the current project")
 	}
-
-	e.out.Print(rows)
+	e.out.Print(output.Prepare(plainOutput, rows))
 	return nil
 }
