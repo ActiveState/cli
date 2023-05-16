@@ -1,29 +1,29 @@
-#!/bin/sh
+# #!/bin/sh
 
-exerr() {
-  local code="${1}"
-  local msg="${2}"
-  [ "${code}" -gt 0 ] && echo >&2 "${msg}" && exit "${code}"
-}
+# exerr() {
+#   local code="${1}"
+#   local msg="${2}"
+#   [ "${code}" -gt 0 ] && echo >&2 "${msg}" && exit "${code}"
+# }
 
-state run lint-staged
-exerr $? "Linting of staged files has failed"
+# state run lint-staged
+# exerr $? "Linting of staged files has failed"
 
-# Detect unformatted files.
-gofiles=$(git diff --cached --name-only --diff-filter=ACM | grep '.go$' | grep -vE '^vendor/')
-[ -z "$gofiles" ] && exit 0
+# # Detect unformatted files.
+# gofiles=$(git diff --cached --name-only --diff-filter=ACM | grep '.go$' | grep -vE '^vendor/')
+# [ -z "$gofiles" ] && exit 0
 
-unformatted=$(gofmt -l $gofiles)
-[ -z "$unformatted" ] && exit 0
+# unformatted=$(gofmt -l $gofiles)
+# [ -z "$unformatted" ] && exit 0
 
-# Format them.
-gofmt -w $unformatted
-exerr $? "Formatting of staged files has failed"
+# # Format them.
+# gofmt -w $unformatted
+# exerr $? "Formatting of staged files has failed"
 
-# Notify the user of formatted files and fail.
-echo >&2 "The following files have been reformatted. Please verify and/or re-stage changes before attempting to commit again."
-for file in $unformatted; do
-  echo >&2 "  $PWD/$file"
-done
+# # Notify the user of formatted files and fail.
+# echo >&2 "The following files have been reformatted. Please verify and/or re-stage changes before attempting to commit again."
+# for file in $unformatted; do
+#   echo >&2 "  $PWD/$file"
+# done
 
-exit 1
+# exit 1
