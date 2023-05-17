@@ -81,7 +81,7 @@ func NewRequirementOperation(prime primeable) *RequirementOperation {
 
 const latestVersion = "latest"
 
-func (r *RequirementOperation) ExecuteRequirementOperation(requirementName requirementVersion string, requirementBitWidth int, operation bgModel.Operation, nsType model.NamespaceType) (rerr error) {
+func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requirementVersion string, requirementBitWidth int, operation bgModel.Operation, nsType model.NamespaceType) (rerr error) {
 	var ns model.Namespace
 	var langVersion string
 	langName := "undetermined"

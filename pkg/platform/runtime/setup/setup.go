@@ -566,7 +566,7 @@ func (s *Setup) installArtifactsFromBuild(buildResult *model.BuildResult, artifa
 }
 
 // setupArtifactSubmitFunction returns a function that sets up an artifact and can be submitted to a workerpool
-func (s *Setup) setupArtifactSubmitFunction(a artifact.ArtifactDownload, ar *artifact.ArtifactRecipe, expectedArtifactInstalls map[artifact.ArtifactID]struct{}, buildResult *model.BuildResult, setup Setuper, installFunc artifactInstaller, errors chan<- error) func() {
+func (s *Setup) setupArtifactSubmitFunction(a artifact.ArtifactDownload, ar *artifact.ArtifactBuildPlan, expectedArtifactInstalls map[artifact.ArtifactID]struct{}, buildResult *model.BuildResult, setup Setuper, installFunc artifactInstaller, errors chan<- error) func() {
 	return func() {
 		// If artifact has no valid download, just count it as completed and return
 		if strings.HasPrefix(a.UnsignedURI, "s3://as-builds/noop/") ||
@@ -607,7 +607,7 @@ func (s *Setup) setupArtifactSubmitFunction(a artifact.ArtifactDownload, ar *art
 	}
 }
 
-func (s *Setup) installFromBuildResult(buildResult *model.BuildResult, artifacts artifact.ArtifactRecipeMap, downloads []artifact.ArtifactDownload, alreadyInstalled store.StoredArtifactMap, setup Setuper, installFunc artifactInstaller) error {
+func (s *Setup) installFromBuildResult(buildResult *model.BuildResult, artifacts artifact.ArtifactBuildPlanMap, downloads []artifact.ArtifactDownload, alreadyInstalled store.StoredArtifactMap, setup Setuper, installFunc artifactInstaller) error {
 	logging.Debug("Installing artifacts from build result")
 	errs, aggregatedErr := aggregateErrors()
 	mainthread.Run(func() {
@@ -617,7 +617,7 @@ func (s *Setup) installFromBuildResult(buildResult *model.BuildResult, artifacts
 			if _, ok := alreadyInstalled[a.ArtifactID]; ok {
 				continue
 			}
-			var ar *artifact.ArtifactRecipe
+			var ar *artifact.ArtifactBuildPlan
 			if arv, ok := artifacts[a.ArtifactID]; ok {
 				ar = &arv
 			}
@@ -663,7 +663,7 @@ func (s *Setup) installFromBuildLog(buildResult *model.BuildResult, artifacts ar
 				if _, ok := alreadyInstalled[a.ArtifactID]; ok {
 					continue
 				}
-				var ar *artifact.ArtifactRecipe
+				var ar *artifact.ArtifactBuildPlan
 				if arv, ok := artifacts[a.ArtifactID]; ok {
 					ar = &arv
 				}
