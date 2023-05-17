@@ -22,7 +22,7 @@ func getRemoteBuildScript(proj *project.Project, customCommit strfmt.UUID, auth 
 }
 
 func NeedsUpdate(proj *project.Project, customCommit strfmt.UUID, auth *authentication.Auth) (bool, error) {
-	of, err := buildscript.FromPath(proj.Dir())
+	of, err := buildscript.Get(proj.Dir())
 	if err != nil {
 		if buildscript.IsDoesNotExistError(err) {
 			return false, nil
@@ -39,7 +39,7 @@ func NeedsUpdate(proj *project.Project, customCommit strfmt.UUID, auth *authenti
 }
 
 func Update(proj *project.Project, customCommit strfmt.UUID, out output.Outputer, auth *authentication.Auth) (strfmt.UUID, error) {
-	of, err := buildscript.FromPath(proj.Dir())
+	of, err := buildscript.Get(proj.Dir())
 	if err != nil {
 		return "", errs.Wrap(err, "Could not get local build script")
 	}
@@ -84,14 +84,14 @@ func Update(proj *project.Project, customCommit strfmt.UUID, out output.Outputer
 func UpdateIfNeeded(proj *project.Project, out output.Outputer, auth *authentication.Auth) error {
 	needsUpdate, err := NeedsUpdate(proj, "", auth)
 	if err != nil {
-		return errs.Wrap(err, "Unable to check if local build script needs updating")
+		return errs.Wrap(err, "Could not check if local build script needs updating")
 	}
 	if !needsUpdate {
 		return nil
 	}
 	_, err2 := Update(proj, "", out, auth)
 	if err2 != nil {
-		return errs.Wrap(err, "Unable to update build script")
+		return errs.Wrap(err, "Could not update build script")
 	}
 	return nil
 }

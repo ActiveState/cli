@@ -524,37 +524,13 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 		return nil, errs.Wrap(err, "Could not save recipe file.")
 	}
 
-	if err := s.saveBuildScript(buildResult.BuildScript); err != nil {
-		return nil, errs.Wrap(err, "Could not save build script.")
+	if s.target.ProjectDir() != "" {
+		if err := buildscript.UpdateOrCreate(s.target.ProjectDir(), buildResult.BuildScript); err != nil {
+			return nil, errs.Wrap(err, "Could not save build script.")
+		}
 	}
 
 	return buildResult.OrderedArtifacts(), nil
-}
-
-func (s *Setup) saveBuildScript(script *bpModel.BuildScript) error {
-	if s.target.ProjectDir() == "" {
-		return nil
-	}
-
-	of, err := buildscript.FromPath(s.target.ProjectDir())
-	if err != nil {
-		if !buildscript.IsDoesNotExistError(err) {
-			return errs.Wrap(err, "Could not load build script")
-		}
-
-		_, createErr := buildscript.Create(s.target.ProjectDir(), script)
-		if createErr != nil {
-			return errs.Wrap(createErr, "Could not create build script")
-		}
-
-		return nil
-	}
-
-	if of.Script.Equals(script) {
-		return nil
-	}
-
-	return of.Update(script)
 }
 
 func aggregateErrors() (chan<- error, <-chan error) {

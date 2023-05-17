@@ -217,13 +217,13 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 
 	bp := bpModel.NewBuildPlanner(r.Auth)
 
-	// If parent commit is provided then get the build graph
-	// If it is not then create a blank build graph
+	// If parent commit is provided then get the build script
+	// If it is not then create a blank build script
 	script := bgModel.NewBuildScript()
 	if parentCommitID != "" {
 		script, err = bp.GetBuildScript(pj.Owner(), pj.Name(), parentCommitID.String())
 		if err != nil {
-			return errs.Wrap(err, "Failed to get build graph")
+			return errs.Wrap(err, "Failed to get build script")
 		}
 	}
 
@@ -231,15 +231,14 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 		Namespace: ns.String(),
 		Name:      requirementName,
 	}
-
 	if requirementVersion != "" {
 		requirement.VersionRequirement = []*bgModel.VersionRequirement{{bgModel.ComparatorEQ: requirementVersion}}
 	}
 
-	// Call the build graph update function with the operation
+	// Call the build script update function with the operation
 	script, err = script.Update(operation, []*bgModel.Requirement{&requirement})
 	if err != nil {
-		return errs.Wrap(err, "Failed to update build graph")
+		return errs.Wrap(err, "Failed to update build script")
 	}
 	script.Let.Runtime.SolveLegacy.AtTime = time.Now().Format(time.RFC3339)
 
@@ -255,15 +254,15 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 		return locale.WrapError(err, "err_package_save_and_build", "Could not save and build project")
 	}
 
-	orderChanged := !hasParentCommit
+	scriptChanged := !hasParentCommit
 	if hasParentCommit {
 		revertCommit, err := model.GetRevertCommit(pj.CommitUUID(), strfmt.UUID(commit.CommitID))
 		if err != nil {
 			return locale.WrapError(err, "err_revert_refresh")
 		}
-		orderChanged = len(revertCommit.Changeset) > 0
+		scriptChanged = len(revertCommit.Changeset) > 0
 	}
-	logging.Debug("Order changed: %v", orderChanged)
+	logging.Debug("Order changed: %v", scriptChanged)
 
 	pg.Stop(locale.T("progress_success"))
 	pg = nil
@@ -280,20 +279,10 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 		return errs.Wrap(err, "Unsupported namespace type: %s", ns.Type().String())
 	}
 
-	if orderChanged {
-		of, err := buildscript.FromPath(pj.Dir())
+	if scriptChanged {
+		err := buildscript.UpdateOrCreate(pj.Dir(), commit.Script)
 		if err != nil {
-			if !buildscript.IsDoesNotExistError(err) {
-				return locale.WrapError(err, "err_requirement_open_build_script", "Could not open build script")
-			}
-			_, createErr := buildscript.Create(pj.Dir(), commit.Script)
-			if createErr != nil {
-				return locale.WrapError(createErr, "err_requirement_create_build_script", "Could not create build script")
-			}
-		}
-
-		if err := of.Update(commit.Script); err != nil {
-			return locale.WrapError(err, "err_package_update_build_script", "Could not update build script")
+			return locale.WrapError(err, "err_update_build_script")
 		}
 
 		if err := pj.SetCommit(commit.CommitID); err != nil {
@@ -302,12 +291,11 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 	}
 
 	// refresh or install runtime
-	err = runbits.RefreshRuntime(r.Auth, r.Output, r.Analytics, pj, strfmt.UUID(commit.CommitID), orderChanged, trigger, r.SvcModel)
+	err = runbits.RefreshRuntime(r.Auth, r.Output, r.Analytics, pj, strfmt.UUID(commit.CommitID), scriptChanged, trigger, r.SvcModel)
 	if err != nil {
 		return err
 	}
 
-	// Print the result
 	if !hasParentCommit {
 		out.Notice(locale.Tr("install_initial_success", pj.Source().Path()))
 	}
