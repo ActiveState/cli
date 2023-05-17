@@ -61,7 +61,7 @@ func (cm *connectionMock) SendBuildFailedMessage(t *testing.T, errMsg string) {
 	cm.messages = append(cm.messages, parseMessage(t, fmt.Sprintf(`{"type": "build_failed", "error_message": "%s"}`, errMsg)))
 }
 
-func (cm *connectionMock) SendArtifactStartedMessage(t *testing.T, a artifact.ArtifactRecipe) {
+func (cm *connectionMock) SendArtifactStartedMessage(t *testing.T, a artifact.ArtifactBuildPlan) {
 	cm.messages = append(
 		cm.messages, parseMessage(t, fmt.Sprintf(`{
 			"type": "artifact_started",
@@ -69,7 +69,7 @@ func (cm *connectionMock) SendArtifactStartedMessage(t *testing.T, a artifact.Ar
 		}`, a.ArtifactID)))
 }
 
-func (cm *connectionMock) SendArtifactSucceededMessage(t *testing.T, a artifact.ArtifactRecipe) {
+func (cm *connectionMock) SendArtifactSucceededMessage(t *testing.T, a artifact.ArtifactBuildPlan) {
 	chksum := "123"
 	uri := fmt.Sprintf("uri://%s", a.Name)
 	cm.messages = append(
@@ -81,7 +81,7 @@ func (cm *connectionMock) SendArtifactSucceededMessage(t *testing.T, a artifact.
 		}`, a.ArtifactID, chksum, uri)))
 }
 
-func (cm *connectionMock) SendArtifactFailedMessage(t *testing.T, a artifact.ArtifactRecipe, errMsg string) {
+func (cm *connectionMock) SendArtifactFailedMessage(t *testing.T, a artifact.ArtifactBuildPlan, errMsg string) {
 	cm.messages = append(
 		cm.messages, parseMessage(t, fmt.Sprintf(`{
 			"type":         "artifact_failed",
@@ -117,10 +117,10 @@ func (e *eventMock) Close() error {
 func TestBuildLog(t *testing.T) {
 	eventType := func(v events.Eventer) string { return fmt.Sprintf("%T", v) }
 
-	genericArtifact1 := artifact.ArtifactRecipe{ArtifactID: "00000000-0000-0000-0000-000000000001", Name: "artifact1"}
-	genericArtifact2 := artifact.ArtifactRecipe{ArtifactID: "00000000-0000-0000-0000-000000000002", Name: "artifact2"}
-	recipeArtifact := artifact.ArtifactRecipe{ArtifactID: "10000000-0000-0000-0000-000000000001", Name: "recipeArtifact"}
-	artifactMap := map[artifact.ArtifactID]artifact.ArtifactRecipe{
+	genericArtifact1 := artifact.ArtifactBuildPlan{ArtifactID: "00000000-0000-0000-0000-000000000001", Name: "artifact1"}
+	genericArtifact2 := artifact.ArtifactBuildPlan{ArtifactID: "00000000-0000-0000-0000-000000000002", Name: "artifact2"}
+	recipeArtifact := artifact.ArtifactBuildPlan{ArtifactID: "10000000-0000-0000-0000-000000000001", Name: "recipeArtifact"}
+	artifactMap := map[artifact.ArtifactID]artifact.ArtifactBuildPlan{
 		genericArtifact1.ArtifactID: genericArtifact1,
 		genericArtifact2.ArtifactID: genericArtifact2,
 	}

@@ -4,10 +4,13 @@ import (
 	"fmt"
 	"strings"
 
+	bpModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model/buildplanner"
+
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
+	"github.com/go-openapi/strfmt"
 )
 
 type ArtifactDownload struct {
@@ -39,6 +42,25 @@ func NewDownloadsFromBuild(buildStatus *headchef_models.V1BuildStatusResponse) (
 	return downloads, nil
 }
 
+func NewDownloadsFromBuildPlan(build bpModel.Build, artifacts map[strfmt.UUID]ArtifactBuildPlan) ([]ArtifactDownload, error) {
+	var downloads []ArtifactDownload
+	for id := range artifacts {
+		for _, a := range build.Artifacts {
+			if a.Status == string(bpModel.ArtifactSucceeded) && a.TargetID == id.String() && a.URL != "" {
+				if strings.Contains(a.URL, InstallerTestsSubstr) {
+					continue
+				}
+				if strings.HasPrefix(a.URL, "s3://as-builds/noop/") {
+					continue
+				}
+				downloads = append(downloads, ArtifactDownload{ArtifactID: strfmt.UUID(a.TargetID), UnsignedURI: a.URL, UnsignedLogURI: a.LogURL, Checksum: a.Checksum})
+			}
+		}
+	}
+
+	return downloads, nil
+}
+
 func NewDownloadsFromCamelBuild(buildStatus *headchef_models.V1BuildStatusResponse) ([]ArtifactDownload, error) {
 	for _, a := range buildStatus.Artifacts {
 		if a.BuildState != nil && *a.BuildState == headchef_models.V1ArtifactBuildStateSucceeded && a.URI != "" {
@@ -62,4 +84,24 @@ func NewDownloadsFromCamelBuild(buildStatus *headchef_models.V1BuildStatusRespon
 	}
 
 	return nil, errs.New("No download found in build response: %+v", buildStatus)
+}
+
+func NewDownloadsFromCamelBuildPlan(build bpModel.Build, artifacts map[strfmt.UUID]ArtifactBuildPlan) ([]ArtifactDownload, error) {
+	for id := range artifacts {
+		for _, a := range build.Artifacts {
+			if a.Status == string(bpModel.ArtifactSucceeded) && a.TargetID == id.String() && a.URL != "" {
+				if strings.Contains(a.URL, InstallerTestsSubstr) {
+					continue
+				}
+				if strings.HasPrefix(a.URL, "s3://as-builds/noop/") {
+					continue
+				}
+				if strings.HasSuffix(a.URL, ".tar.gz") || strings.HasSuffix(a.URL, ".zip") {
+					logging.Debug("Found download for artifact %s: %s", a.TargetID, a.URL)
+					return []ArtifactDownload{{ArtifactID: strfmt.UUID(a.TargetID), UnsignedURI: a.URL, UnsignedLogURI: a.LogURL, Checksum: a.Checksum}}, nil
+				}
+			}
+		}
+	}
+	return nil, errs.New("No download found in build response: %+v", build.Status)
 }

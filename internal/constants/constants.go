@@ -179,6 +179,9 @@ const APIUpdateURL = "https://state-tool.s3.amazonaws.com/update/state"
 // APIArtifactURL is the URL for downloading artifacts
 const APIArtifactURL = "https://s3.ca-central-1.amazonaws.com/cli-artifacts/"
 
+// APIBuildPlannerURL is the URL for the build planner service
+const APIBuildPlannerURL = "https://platform.activestate.com/sv/buildplanner/graphql"
+
 // ArtifactFile is the name of the artifact json file contained within artifacts
 const ArtifactFile = "artifact.json"
 
@@ -357,6 +360,9 @@ const RuntimeBuildEngineStore = "build_engine"
 
 // RuntimeRecipeStore contains a serialization of the recipe used to create this build
 const RuntimeRecipeStore = "recipe"
+
+// RuntimeBuildPlanStore containts a serialization of the build plan used to create this build
+const RuntimeBuildPlanStore = "build_plan"
 
 // StateToolMarketingPage links to the marketing page for the state tool
 const StateToolMarketingPage = "https://www.activestate.com/products/platform/state-tool/"
