@@ -33,8 +33,8 @@ func (o Operation) String() string {
 }
 
 // TODO: We will likely need some sort of parser or other solution for the build graph
-func NewBuildScript() *BuildScript {
-	return &BuildScript{
+func NewBuildExpression() *BuildExpression {
+	return &BuildExpression{
 		Let: LetStatement{
 			Runtime: Runtime{
 				SolveLegacy: SolveLegacy{
@@ -45,7 +45,7 @@ func NewBuildScript() *BuildScript {
 	}
 }
 
-type BuildScript struct {
+type BuildExpression struct {
 	Let LetStatement `json:"let"`
 }
 
@@ -85,7 +85,7 @@ type Requirement struct {
 
 type VersionRequirement map[Comparator]string
 
-func (bs *BuildScript) Update(operation Operation, requirements []Requirement) (*BuildScript, error) {
+func (bs *BuildExpression) Update(operation Operation, requirements []Requirement) (*BuildExpression, error) {
 	switch operation {
 	case OperationAdd:
 		return bs.add(requirements), nil
@@ -98,12 +98,12 @@ func (bs *BuildScript) Update(operation Operation, requirements []Requirement) (
 	}
 }
 
-func (bs *BuildScript) add(requirements []Requirement) *BuildScript {
+func (bs *BuildExpression) add(requirements []Requirement) *BuildExpression {
 	bs.Let.Runtime.SolveLegacy.Requirements = append(bs.Let.Runtime.SolveLegacy.Requirements, requirements...)
 	return bs
 }
 
-func (bs *BuildScript) remove(requirements []Requirement) *BuildScript {
+func (bs *BuildExpression) remove(requirements []Requirement) *BuildExpression {
 	for i, req := range bs.Let.Runtime.SolveLegacy.Requirements {
 		for _, removeReq := range requirements {
 			if req.Name == removeReq.Name && req.Namespace == removeReq.Namespace {
@@ -114,7 +114,7 @@ func (bs *BuildScript) remove(requirements []Requirement) *BuildScript {
 	return bs
 }
 
-func (bs *BuildScript) update(requirements []Requirement) *BuildScript {
+func (bs *BuildExpression) update(requirements []Requirement) *BuildExpression {
 	for _, req := range bs.Let.Runtime.SolveLegacy.Requirements {
 		for _, updateReq := range requirements {
 			if req.Name == updateReq.Name && req.Namespace == updateReq.Namespace {

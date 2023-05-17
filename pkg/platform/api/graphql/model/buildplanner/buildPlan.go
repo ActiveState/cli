@@ -56,10 +56,10 @@ type Project struct {
 }
 
 type Commit struct {
-	Type     string       `json:"__typename"`
-	Script   *BuildScript `json:"script"`
-	CommitID string       `json:"commitId"`
-	Build    *Build       `json:"build"`
+	Type     string           `json:"__typename"`
+	Script   *BuildExpression `json:"script"`
+	CommitID string           `json:"commitId"`
+	Build    *Build           `json:"build"`
 	*NotFoundError
 }
 

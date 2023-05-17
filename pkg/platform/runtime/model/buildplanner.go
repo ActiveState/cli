@@ -211,7 +211,7 @@ func (bp *BuildPlanner) PushCommit(params PushCommitParams) (string, error) {
 	// If parent commit is provided then get the build graph
 	// If it is not then create a blank build graph
 	var err error
-	script := model.NewBuildScript()
+	script := model.NewBuildExpression()
 	if params.ParentCommit != "" {
 		script, err = bp.GetBuildScript(params.Owner, params.Project, params.ParentCommit)
 		if err != nil {
@@ -250,9 +250,9 @@ func (bp *BuildPlanner) PushCommit(params PushCommitParams) (string, error) {
 	return resp.Commit.CommitID, nil
 }
 
-func (bp *BuildPlanner) GetBuildScript(owner, project, commitID string) (*model.BuildScript, error) {
+func (bp *BuildPlanner) GetBuildScript(owner, project, commitID string) (*model.BuildExpression, error) {
 	resp := &model.BuildPlan{}
-	err := bp.client.Run(request.BuildScript(owner, project, commitID), resp)
+	err := bp.client.Run(request.BuildExpression(owner, project, commitID), resp)
 	if err != nil {
 		return nil, errs.Wrap(err, "failed to fetch build graph")
 	}
