@@ -135,10 +135,6 @@ func (p *ProjectTarget) InstallFromDir() *string {
 	return nil
 }
 
-func (p *ProjectTarget) HasProject() bool {
-	return true
-}
-
 func (p *ProjectTarget) ProjectDir() string {
 	return p.Project.Dir()
 }
@@ -158,20 +154,19 @@ type CustomTarget struct {
 	owner      string
 	name       string
 	commitUUID strfmt.UUID
-	targetDir  string
-	projectDir string
+	dir        string
 	trigger    Trigger
 	headless   bool
 }
 
-func NewCustomTarget(owner string, name string, commitUUID strfmt.UUID, targetDir, projectDir string, trigger Trigger, headless bool) *CustomTarget {
-	cleanDir, err := fileutils.ResolveUniquePath(targetDir)
+func NewCustomTarget(owner string, name string, commitUUID strfmt.UUID, dir string, trigger Trigger, headless bool) *CustomTarget {
+	cleanDir, err := fileutils.ResolveUniquePath(dir)
 	if err != nil {
-		multilog.Error("Could not resolve unique path for dir: %s, error: %s", targetDir, err.Error())
+		multilog.Error("Could not resolve unique path for dir: %s, error: %s", dir, err.Error())
 	} else {
-		targetDir = cleanDir
+		dir = cleanDir
 	}
-	return &CustomTarget{owner, name, commitUUID, targetDir, projectDir, trigger, headless}
+	return &CustomTarget{owner, name, commitUUID, dir, trigger, headless}
 }
 
 func (c *CustomTarget) Owner() string {
@@ -187,7 +182,7 @@ func (c *CustomTarget) CommitUUID() strfmt.UUID {
 }
 
 func (c *CustomTarget) Dir() string {
-	return c.targetDir
+	return c.dir
 }
 
 func (c *CustomTarget) Trigger() Trigger {
@@ -209,12 +204,8 @@ func (c *CustomTarget) InstallFromDir() *string {
 	return nil
 }
 
-func (c *CustomTarget) HasProject() bool {
-	return c.name != "" && c.owner != "" && c.projectDir != ""
-}
-
 func (c *CustomTarget) ProjectDir() string {
-	return c.projectDir
+	return ""
 }
 
 type OfflineTarget struct {
@@ -277,10 +268,6 @@ func (i *OfflineTarget) ReadOnly() bool {
 
 func (i *OfflineTarget) InstallFromDir() *string {
 	return &i.artifactsDir
-}
-
-func (i *OfflineTarget) HasProject() bool {
-	return false
 }
 
 func (i *OfflineTarget) ProjectDir() string {

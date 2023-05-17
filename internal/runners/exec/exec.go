@@ -100,7 +100,7 @@ func (s *Exec) Run(params *Params, args ...string) (rerr error) {
 			logging.Warning("Could not get project dir from path: %s", errs.JoinMessage(err))
 			// We do not know if the project is headless at this point so we default to true
 			// as there is no head
-			rtTarget = target.NewCustomTarget("", "", "", "", params.Path, trigger, true)
+			rtTarget = target.NewCustomTarget("", "", "", params.Path, trigger, true)
 		} else {
 			rtTarget = target.NewProjectTarget(proj, nil, trigger)
 		}

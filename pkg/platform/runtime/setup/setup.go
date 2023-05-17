@@ -94,7 +94,6 @@ type Targeter interface {
 	Dir() string
 	Headless() bool
 	Trigger() target.Trigger
-	HasProject() bool
 	ProjectDir() string
 
 	// ReadOnly communicates that this target should only use cached runtime information (ie. don't check for updates)
@@ -533,7 +532,7 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 }
 
 func (s *Setup) saveBuildScript(script *bpModel.BuildScript) error {
-	if !s.target.HasProject() {
+	if s.target.ProjectDir() == "" {
 		return nil
 	}
 
