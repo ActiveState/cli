@@ -1,0 +1,12 @@
+buildExpression :== <expression>
+<expression> :== [let][:] <binding> [in] ( <string>+ | <application>+ )
+<binding> :== <assignment>+
+<assignment> :== <string> [:] <application> | <string> [:] <list> | <string> = <string>
+<application> ::== <string> [:] <argument>*
+<argument> ::== <binding>
+<list> ::== [[]<list_element>* []]
+<list_element> ::== <object> | <string>
+<object> ::== <object_element>*
+<object_element> ::== <string> [:] ( <string> | <list> | <object> )
+<string> ::== ["]<string_element>*["]
+<string_element> ::== *.
