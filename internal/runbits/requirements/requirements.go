@@ -288,7 +288,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 			requirementName,
 			requirementVersion,
 			ns.Type().String(),
-			string(operation),
+			operation.String(),
 		}))
 
 	out.Notice(locale.T("operation_success_local"))
