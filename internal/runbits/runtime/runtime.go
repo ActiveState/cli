@@ -9,6 +9,7 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/cli/internal/runbits"
+	"github.com/ActiveState/cli/internal/runbits/localorder"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	rt "github.com/ActiveState/cli/pkg/platform/runtime"
@@ -25,6 +26,16 @@ func NewFromProject(
 	svcModel *model.SvcModel,
 	out output.Outputer,
 	auth *authentication.Auth) (_ *rt.Runtime, rerr error) {
+	_, err := localorder.Check(&localorder.CheckParams{
+		Path:    proj.Dir(),
+		Project: proj,
+		Out:     out,
+		Auth:    auth,
+	})
+	if err != nil {
+		return nil, locale.WrapError(err, "err_packages_update_runtime_order", "Failed to verify local order file.")
+	}
+
 	projectTarget := target.NewProjectTarget(proj, nil, trigger)
 	rti, err := rt.New(projectTarget, an, svcModel)
 	if err != nil {

@@ -97,7 +97,7 @@ func (d *Deploy) Run(params *Params) error {
 	}
 
 	// Headless argument is simply false here as you cannot deploy a headless project
-	rtTarget := target.NewCustomTarget(params.Namespace.Owner, params.Namespace.Project, commitID, params.Path, target.TriggerDeploy, false) /* TODO: handle empty path */
+	rtTarget := target.NewCustomTarget(params.Namespace.Owner, params.Namespace.Project, commitID, "", params.Path, target.TriggerDeploy, false) /* TODO: handle empty path */
 
 	logging.Debug("runSteps: %s", d.step.String())
 
