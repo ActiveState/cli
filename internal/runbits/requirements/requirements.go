@@ -30,6 +30,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	bpModel "github.com/ActiveState/cli/pkg/platform/runtime/model"
+	"github.com/ActiveState/cli/pkg/platform/runtime/orderfile"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
@@ -215,17 +216,40 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 	}
 
 	bp := bpModel.NewBuildPlanner(r.Auth)
-	commitID, err := bp.PushCommit(bpModel.PushCommitParams{
-		Owner:            pj.Owner(),
-		Project:          pj.Name(),
-		ParentCommit:     string(parentCommitID),
-		BranchRef:        pj.BranchName(),
-		Description:      fmt.Sprintf("%s-%s", operation, requirementName),
-		PackageName:      requirementName,
-		PackageVersion:   requirementVersion,
-		PackageNamespace: ns,
-		Operation:        operation,
-		Time:             time.Now(),
+
+	// If parent commit is provided then get the build graph
+	// If it is not then create a blank build graph
+	script := bgModel.NewBuildScript()
+	if parentCommitID != "" {
+		script, err = bp.GetBuildScript(pj.Owner(), pj.Name(), parentCommitID.String())
+		if err != nil {
+			return errs.Wrap(err, "Failed to get build graph")
+		}
+	}
+
+	requirement := bgModel.Requirement{
+		Namespace: ns.String(),
+		Name:      requirementName,
+	}
+
+	if requirementVersion != "" {
+		requirement.VersionRequirement = []*bgModel.VersionRequirement{{bgModel.ComparatorEQ: requirementVersion}}
+	}
+
+	// Call the build graph update function with the operation
+	script, err = script.Update(operation, []*bgModel.Requirement{&requirement})
+	if err != nil {
+		return errs.Wrap(err, "Failed to update build graph")
+	}
+	script.Let.Runtime.SolveLegacy.AtTime = time.Now().Format(time.RFC3339)
+
+	commit, err := bp.PushCommit(bpModel.PushCommitParams{
+		Owner:        pj.Owner(),
+		Project:      pj.Name(),
+		ParentCommit: string(parentCommitID),
+		BranchRef:    pj.BranchName(),
+		Script:       script,
+		Description:  fmt.Sprintf("%s-%s", operation, requirementName),
 	})
 	if err != nil {
 		return locale.WrapError(err, "err_package_save_and_build", "Could not save and build project")
@@ -233,7 +257,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 
 	orderChanged := !hasParentCommit
 	if hasParentCommit {
-		revertCommit, err := model.GetRevertCommit(pj.CommitUUID(), strfmt.UUID(commitID))
+		revertCommit, err := model.GetRevertCommit(pj.CommitUUID(), strfmt.UUID(commit.CommitID))
 		if err != nil {
 			return locale.WrapError(err, "err_revert_refresh")
 		}
@@ -256,18 +280,34 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 		return errs.Wrap(err, "Unsupported namespace type: %s", ns.Type().String())
 	}
 
-	// refresh or install runtime
-	err = runbits.RefreshRuntime(r.Auth, r.Output, r.Analytics, pj, strfmt.UUID(commitID), orderChanged, trigger, r.SvcModel)
-	if err != nil {
-		return errs.Wrap(err, "Failed to refresh runtime")
-	}
-
 	if orderChanged {
-		if err := pj.SetCommit(commitID); err != nil {
+		of, err := orderfile.FromPath(pj.Dir())
+		if err != nil {
+			if !orderfile.IsErrOrderFileDoesNotExist(err) {
+				return locale.WrapError(err, "err_requirement_open_orderfile", "Could not open orderfile")
+			}
+			_, createErr := orderfile.Create(pj.Dir(), commit.Script)
+			if createErr != nil {
+				return locale.WrapError(createErr, "err_requirement_create_orderfile", "Could not create orderfile")
+			}
+		}
+
+		if err := of.Update(commit.Script); err != nil {
+			return locale.WrapError(err, "err_package_update_orderfile", "Could not update orderfile")
+		}
+
+		if err := pj.SetCommit(commit.CommitID); err != nil {
 			return locale.WrapError(err, "err_package_update_pjfile")
 		}
 	}
 
+	// refresh or install runtime
+	err = runbits.RefreshRuntime(r.Auth, r.Output, r.Analytics, pj, strfmt.UUID(commit.CommitID), orderChanged, trigger, r.SvcModel)
+	if err != nil {
+		return err
+	}
+
+	// Print the result
 	if !hasParentCommit {
 		out.Notice(locale.Tr("install_initial_success", pj.Source().Path()))
 	}

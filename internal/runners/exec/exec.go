@@ -23,6 +23,7 @@ import (
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/cli/internal/runbits"
+	"github.com/ActiveState/cli/internal/runbits/localorder"
 	"github.com/ActiveState/cli/internal/runbits/rtusage"
 	"github.com/ActiveState/cli/internal/scriptfile"
 	"github.com/ActiveState/cli/internal/subshell"
@@ -90,20 +91,22 @@ func (s *Exec) Run(params *Params, args ...string) (rerr error) {
 
 	// Detect target and project dir
 	// If the path passed resolves to a runtime dir (ie. has a runtime marker) then the project is not used
+	var proj *project.Project
+	var err error
 	if params.Path != "" && runtime.IsRuntimeDir(params.Path) {
 		projectDir = projectFromRuntimeDir(s.cfg, params.Path)
-		proj, err := project.FromPath(projectDir)
+		proj, err = project.FromPath(projectDir)
 		if err != nil {
 			logging.Warning("Could not get project dir from path: %s", errs.JoinMessage(err))
 			// We do not know if the project is headless at this point so we default to true
 			// as there is no head
-			rtTarget = target.NewCustomTarget("", "", "", params.Path, trigger, true)
+			rtTarget = target.NewCustomTarget("", "", "", "", params.Path, trigger, true)
 		} else {
 			rtTarget = target.NewProjectTarget(proj, nil, trigger)
 		}
 		projectNamespace = proj.NamespaceString()
 	} else {
-		proj := s.proj
+		proj = s.proj
 		if params.Path != "" {
 			var err error
 			proj, err = project.FromPath(params.Path)
@@ -117,6 +120,16 @@ func (s *Exec) Run(params *Params, args ...string) (rerr error) {
 		projectDir = filepath.Dir(proj.Source().Path())
 		projectNamespace = proj.NamespaceString()
 		rtTarget = target.NewProjectTarget(proj, nil, trigger)
+	}
+
+	_, checkErr := localorder.Check(&localorder.CheckParams{
+		Path:    proj.Dir(),
+		Project: proj,
+		Out:     s.out,
+		Auth:    s.auth,
+	})
+	if checkErr != nil {
+		return locale.WrapError(checkErr, "err_packages_update_runtime_order", "Failed to verify local order file.")
 	}
 
 	rtusage.PrintRuntimeUsage(s.svcModel, s.out, rtTarget.Owner())

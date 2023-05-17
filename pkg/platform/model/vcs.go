@@ -37,6 +37,8 @@ type ErrOrderAuth struct{ *locale.LocalizedError }
 
 type ErrUpdateBranchAuth struct{ *locale.LocalizedError }
 
+type ErrCommitNotFound struct{ *locale.LocalizedError }
+
 type ProjectInfo interface {
 	Owner() string
 	Name() string
@@ -1002,6 +1004,9 @@ func GetCommit(commitID strfmt.UUID) (*mono_models.Commit, error) {
 	}
 	res, err := client.VersionControl.GetCommit(params, authentication.ClientAuth())
 	if err != nil {
+		if _, ok := err.(*vcsClient.GetCommitNotFound); ok {
+			return nil, &ErrCommitNotFound{locale.WrapError(err, "err_get_commit_not_found", "Commit not found.")}
+		}
 		return nil, locale.WrapError(err, "err_get_commit", "Could not get commit from ID: {{.V0}}", commitID.String())
 	}
 	return res.Payload, nil
