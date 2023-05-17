@@ -60,7 +60,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 			scriptUrl := baseUrl + constants.BranchName + "/" + scriptBaseName
 
 			// Fetch it.
-			b, err := download.GetDirectURL(scriptUrl)
+			b, err := httputil.GetDirectURL(scriptUrl)
 			suite.Require().NoError(err)
 			script := filepath.Join(ts.Dirs.Work, scriptBaseName)
 			suite.Require().NoError(fileutils.WriteFile(script, b))
