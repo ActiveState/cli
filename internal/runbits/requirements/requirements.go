@@ -29,8 +29,8 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
+	"github.com/ActiveState/cli/pkg/platform/runtime/buildscript"
 	bpModel "github.com/ActiveState/cli/pkg/platform/runtime/model"
-	"github.com/ActiveState/cli/pkg/platform/runtime/orderfile"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
@@ -281,19 +281,19 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 	}
 
 	if orderChanged {
-		of, err := orderfile.FromPath(pj.Dir())
+		of, err := buildscript.FromPath(pj.Dir())
 		if err != nil {
-			if !orderfile.IsErrOrderFileDoesNotExist(err) {
-				return locale.WrapError(err, "err_requirement_open_orderfile", "Could not open orderfile")
+			if !buildscript.IsDoesNotExistError(err) {
+				return locale.WrapError(err, "err_requirement_open_build_script", "Could not open build script")
 			}
-			_, createErr := orderfile.Create(pj.Dir(), commit.Script)
+			_, createErr := buildscript.Create(pj.Dir(), commit.Script)
 			if createErr != nil {
-				return locale.WrapError(createErr, "err_requirement_create_orderfile", "Could not create orderfile")
+				return locale.WrapError(createErr, "err_requirement_create_build_script", "Could not create build script")
 			}
 		}
 
 		if err := of.Update(commit.Script); err != nil {
-			return locale.WrapError(err, "err_package_update_orderfile", "Could not update orderfile")
+			return locale.WrapError(err, "err_package_update_build_script", "Could not update build script")
 		}
 
 		if err := pj.SetCommit(commit.CommitID); err != nil {

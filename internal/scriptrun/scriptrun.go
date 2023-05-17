@@ -16,7 +16,7 @@ import (
 	"github.com/ActiveState/cli/internal/process"
 	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/cli/internal/runbits"
-	"github.com/ActiveState/cli/internal/runbits/localorder"
+	"github.com/ActiveState/cli/internal/runbits/buildscript"
 	"github.com/ActiveState/cli/internal/scriptfile"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
@@ -68,14 +68,9 @@ func (s *ScriptRun) NeedsActivation() bool {
 
 // PrepareVirtualEnv sets up the relevant runtime and prepares the environment.
 func (s *ScriptRun) PrepareVirtualEnv() (rerr error) {
-	_, err := localorder.Check(&localorder.CheckParams{
-		Path:    s.project.Dir(),
-		Project: s.project,
-		Out:     s.out,
-		Auth:    s.auth,
-	})
+	err := buildscript.UpdateIfNeeded(s.project, s.out, s.auth)
 	if err != nil {
-		return locale.WrapError(err, "err_packages_update_runtime_order", "Failed to verify local order file.")
+		return locale.WrapError(err, "err_update_build_script")
 	}
 
 	rt, err := runtime.New(target.NewProjectTarget(s.project, nil, target.TriggerScript), s.analytics, s.svcModel)

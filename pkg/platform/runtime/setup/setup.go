@@ -13,7 +13,7 @@ import (
 	"time"
 
 	bpModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model/buildplanner"
-	"github.com/ActiveState/cli/pkg/platform/runtime/orderfile"
+	"github.com/ActiveState/cli/pkg/platform/runtime/buildscript"
 
 	"github.com/ActiveState/cli/internal/analytics"
 	anaConsts "github.com/ActiveState/cli/internal/analytics/constants"
@@ -525,33 +525,33 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 		return nil, errs.Wrap(err, "Could not save recipe file.")
 	}
 
-	if err := s.saveOrderFile(buildResult.BuildScript); err != nil {
-		return nil, errs.Wrap(err, "Could not save orderfile.")
+	if err := s.saveBuildScript(buildResult.BuildScript); err != nil {
+		return nil, errs.Wrap(err, "Could not save build script.")
 	}
 
 	return buildResult.OrderedArtifacts(), nil
 }
 
-func (s *Setup) saveOrderFile(script *bpModel.BuildScript) error {
+func (s *Setup) saveBuildScript(script *bpModel.BuildScript) error {
 	if !s.target.HasProject() {
 		return nil
 	}
 
-	of, err := orderfile.FromPath(s.target.ProjectDir())
+	of, err := buildscript.FromPath(s.target.ProjectDir())
 	if err != nil {
-		if !orderfile.IsErrOrderFileDoesNotExist(err) {
-			return errs.Wrap(err, "Could not load orderfile")
+		if !buildscript.IsDoesNotExistError(err) {
+			return errs.Wrap(err, "Could not load build script")
 		}
 
-		_, createErr := orderfile.Create(s.target.ProjectDir(), script)
+		_, createErr := buildscript.Create(s.target.ProjectDir(), script)
 		if createErr != nil {
-			return errs.Wrap(createErr, "Could not create orderfile")
+			return errs.Wrap(createErr, "Could not create build script")
 		}
 
 		return nil
 	}
 
-	if of.Script().Equals(script) {
+	if of.Script.Equals(script) {
 		return nil
 	}
 

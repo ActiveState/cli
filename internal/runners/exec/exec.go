@@ -23,7 +23,7 @@ import (
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/cli/internal/runbits"
-	"github.com/ActiveState/cli/internal/runbits/localorder"
+	"github.com/ActiveState/cli/internal/runbits/buildscript"
 	"github.com/ActiveState/cli/internal/runbits/rtusage"
 	"github.com/ActiveState/cli/internal/scriptfile"
 	"github.com/ActiveState/cli/internal/subshell"
@@ -122,14 +122,9 @@ func (s *Exec) Run(params *Params, args ...string) (rerr error) {
 		rtTarget = target.NewProjectTarget(proj, nil, trigger)
 	}
 
-	_, checkErr := localorder.Check(&localorder.CheckParams{
-		Path:    proj.Dir(),
-		Project: proj,
-		Out:     s.out,
-		Auth:    s.auth,
-	})
-	if checkErr != nil {
-		return locale.WrapError(checkErr, "err_packages_update_runtime_order", "Failed to verify local order file.")
+	err = buildscript.UpdateIfNeeded(proj, s.out, s.auth)
+	if err != nil {
+		return locale.WrapError(err, "err_update_build_script")
 	}
 
 	rtusage.PrintRuntimeUsage(s.svcModel, s.out, rtTarget.Owner())

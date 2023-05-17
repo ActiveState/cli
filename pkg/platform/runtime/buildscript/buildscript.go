@@ -1,4 +1,4 @@
-package orderfile
+package buildscript
 
 import (
 	"errors"
@@ -13,22 +13,19 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-type ErrOrderFileNotExist struct{ *locale.LocalizedError }
+type DoesNotExistError struct{ *locale.LocalizedError }
 
-func IsErrOrderFileDoesNotExist(err error) bool {
-	return errs.Matches(err, &ErrOrderFileNotExist{})
+func IsDoesNotExistError(err error) bool {
+	return errs.Matches(err, &DoesNotExistError{})
 }
 
 type File struct {
-	path   string
-	script *model.BuildScript
+	Path   string
+	Script *model.BuildScript
 }
 
 func New(path string, script *model.BuildScript) *File {
-	return &File{
-		path:   path,
-		script: script,
-	}
+	return &File{path, script}
 }
 
 func Create(path string, script *model.BuildScript) (*File, error) {
@@ -41,21 +38,21 @@ func Create(path string, script *model.BuildScript) (*File, error) {
 		return nil, errs.Wrap(err, "Could not marshal build script")
 	}
 
-	orderFilePath := filepath.Join(path, constants.OrderFileName)
-	if err := fileutils.WriteFile(orderFilePath, data); err != nil {
+	buildScriptPath := filepath.Join(path, constants.BuildScriptFileName)
+	if err := fileutils.WriteFile(buildScriptPath, data); err != nil {
 		return nil, errs.Wrap(err, "Could not write build script to file")
 	}
 
-	return New(orderFilePath, script), nil
+	return New(buildScriptPath, script), nil
 }
 
 func (o *File) Write() error {
-	data, err := yaml.Marshal(o.script)
+	data, err := yaml.Marshal(o.Script)
 	if err != nil {
 		return errs.Wrap(err, "Could not marshal build script")
 	}
 
-	if err := fileutils.WriteFile(o.path, data); err != nil {
+	if err := fileutils.WriteFile(o.Path, data); err != nil {
 		return errs.Wrap(err, "Could not write build script to file")
 	}
 
@@ -63,11 +60,11 @@ func (o *File) Write() error {
 }
 
 func FromPath(path string) (*File, error) {
-	orderFilePath := filepath.Join(path, constants.OrderFileName)
-	data, err := fileutils.ReadFile(orderFilePath)
+	buildScriptPath := filepath.Join(path, constants.BuildScriptFileName)
+	data, err := fileutils.ReadFile(buildScriptPath)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
-			return nil, &ErrOrderFileNotExist{locale.NewError("err_orderfile_not_exist", "Order file does not exist at {{.V0}}", path)}
+			return nil, &DoesNotExistError{locale.NewError("err_build_script_not_exist", "Build script does not exist at {{.V0}}", path)}
 		}
 		return nil, errs.Wrap(err, "Could not read build script")
 	}
@@ -77,22 +74,14 @@ func FromPath(path string) (*File, error) {
 		return nil, errs.Wrap(err, "Could not unmarshal build script")
 	}
 
-	return New(orderFilePath, script), nil
+	return New(buildScriptPath, script), nil
 }
 
 func (o *File) Update(script *model.BuildScript) error {
-	if o.script.Equals(script) {
+	if o.Script.Equals(script) {
 		return nil
 	}
 
-	o.script = script
+	o.Script = script
 	return o.Write()
-}
-
-func (o *File) Path() string {
-	return o.path
-}
-
-func (o *File) Script() *model.BuildScript {
-	return o.script
 }

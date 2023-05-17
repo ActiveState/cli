@@ -23,8 +23,8 @@ const ServiceCommandName = "state-svc"
 // ConfigFileName holds the name of the file that the user uses to configure their project, not to be confused with InternalConfigFileNameLegacy
 const ConfigFileName = "activestate.yaml"
 
-// OrderFileName holds the name of the file that represents the order used to generate the runtime
-const OrderFileName = "buildscript.yaml"
+// BuildScriptFileName holds the name of the file that represents the build script used to generate the runtime
+const BuildScriptFileName = "buildscript.yaml"
 
 // InternalConfigNamespace holds the appdata folder name under which we store our config
 const InternalConfigNamespace = "activestate"
