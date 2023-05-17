@@ -205,6 +205,9 @@ func (suite *ShellIntegrationTestSuite) TestUseShellUpdates() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
+	suite.SetupRCFile(ts)
+	suite.T().Setenv("ACTIVESTATE_HOME", ts.Dirs.HomeDir)
+
 	cp := ts.Spawn("checkout", "ActiveState-CLI/Python3")
 	cp.Expect("Checked out project")
 	cp.ExpectExitCode(0)
@@ -215,8 +218,6 @@ func (suite *ShellIntegrationTestSuite) TestUseShellUpdates() {
 	if runtime.GOOS != "windows" {
 		zsh := &zsh.SubShell{}
 		zshRcFile, err = zsh.RcFile()
-		suite.NoError(err)
-		err = fileutils.TouchFileUnlessExists(zshRcFile)
 		suite.NoError(err)
 	}
 
@@ -232,7 +233,7 @@ func (suite *ShellIntegrationTestSuite) TestUseShellUpdates() {
 	cfg, err := config.New()
 	suite.NoError(err)
 	rcfile, err := subshell.New(cfg).RcFile()
-	if runtime.GOOS != "windows" {
+	if runtime.GOOS != "windows" && fileutils.FileExists(rcfile) {
 		suite.NoError(err)
 		suite.Contains(string(fileutils.ReadFileUnsafe(rcfile)), ts.Dirs.DefaultBin, "PATH does not have your project in it")
 		suite.Contains(string(fileutils.ReadFileUnsafe(zshRcFile)), ts.Dirs.DefaultBin, "PATH does not have your project in it")
@@ -248,6 +249,31 @@ func (suite *ShellIntegrationTestSuite) TestJSON() {
 	cp.ExpectLongString(`"error":"This command does not support the json output format`)
 	cp.ExpectExitCode(0)
 	AssertValidJSON(suite.T(), cp)
+}
+
+func (suite *ShellIntegrationTestSuite) SetupRCFile(ts *e2e.Session) {
+	if runtime.GOOS == "windows" {
+		return
+	}
+
+	cfg, err := config.New()
+	suite.Require().NoError(err)
+
+	subshell := subshell.New(cfg)
+	rcFile, err := subshell.RcFile()
+	suite.Require().NoError(err)
+
+	err = fileutils.CopyFile(rcFile, filepath.Join(ts.Dirs.HomeDir, filepath.Base(rcFile)))
+	suite.Require().NoError(err)
+
+	zsh := &zsh.SubShell{}
+	zshRcFile, err := zsh.RcFile()
+	suite.NoError(err)
+	err = fileutils.TouchFileUnlessExists(zshRcFile)
+	suite.NoError(err)
+
+	err = fileutils.CopyFile(rcFile, filepath.Join(ts.Dirs.HomeDir, filepath.Base(zshRcFile)))
+	suite.Require().NoError(err)
 }
 
 func TestShellIntegrationTestSuite(t *testing.T) {
