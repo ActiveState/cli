@@ -2,6 +2,7 @@ package parser
 
 type Token int
 
+// TODO: Should probaly start this with TOK so TOKLET, TOKIN, etc...
 const (
 	ILLEGAL Token = iota
 	EOF

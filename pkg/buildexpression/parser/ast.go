@@ -23,6 +23,8 @@ const (
 	NodeArgument
 	NodeLeftBracket
 	NodeRightBracket
+	NodeLeftCurlyBracket
+	NodeRightCurlyBracket
 	NodeListElement
 	NodeComma
 	NodeSolveFn
@@ -46,26 +48,28 @@ var literalNodes = map[NodeType]bool{
 }
 
 var nodeNames = map[NodeType]string{
-	NodeFile:          "File",
-	NodeExpression:    "Expression",
-	NodeApplication:   "Application",
-	NodeLet:           "Let",
-	NodeIn:            "In",
-	NodeColon:         "Colon",
-	NodeBinding:       "Binding",
-	NodeAssignment:    "Assignment",
-	NodeIdentifier:    "Identifier",
-	NodeList:          "List",
-	NodeFunction:      "Function",
-	NodeArgument:      "Argument",
-	NodeLeftBracket:   "LeftBracket",
-	NodeRightBracket:  "RightBracket",
-	NodeListElement:   "ListElement",
-	NodeComma:         "Comma",
-	NodeSolveFn:       "SolveFn",
-	NodeSolveLegacyFn: "SolveLegacyFn",
-	NodeMergeFn:       "MergeFn",
-	NodeString:        "String",
+	NodeFile:              "File",
+	NodeExpression:        "Expression",
+	NodeApplication:       "Application",
+	NodeLet:               "Let",
+	NodeIn:                "In",
+	NodeColon:             "Colon",
+	NodeBinding:           "Binding",
+	NodeAssignment:        "Assignment",
+	NodeIdentifier:        "Identifier",
+	NodeList:              "List",
+	NodeFunction:          "Function",
+	NodeArgument:          "Argument",
+	NodeLeftBracket:       "LeftBracket",
+	NodeRightBracket:      "RightBracket",
+	NodeLeftCurlyBracket:  "LeftCurlyBracket",
+	NodeRightCurlyBracket: "RightCurlyBracket",
+	NodeListElement:       "ListElement",
+	NodeComma:             "Comma",
+	NodeSolveFn:           "SolveFn",
+	NodeSolveLegacyFn:     "SolveLegacyFn",
+	NodeMergeFn:           "MergeFn",
+	NodeString:            "String",
 }
 
 func (t NodeType) String() string {

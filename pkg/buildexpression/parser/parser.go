@@ -75,6 +75,15 @@ func (p *Parser) newNode(t NodeType) *NodeElement {
 	return elem
 }
 
+func (p *Parser) expectToken(tok Token, parent *NodeElement, node NodeType) error {
+	if p.tok != tok {
+		return errs.New("Expected token: %s, got: %s@%d%d", tok.String(), p.tok.String(), p.pos.Line, p.pos.Column)
+	}
+	parent.AddChild(p.newNode(node))
+
+	return p.Next()
+}
+
 func (p *Parser) Parse() (*Tree, error) {
 	result := Tree{
 		Root: &NodeElement{
@@ -90,13 +99,9 @@ func (p *Parser) Parse() (*Tree, error) {
 	}
 
 	// Should be the start of the JSON expression
-	if p.tok != L_CURL {
-		return nil, errs.New("Expected left curly bracket, got :%s", p.tok.String())
-	}
-
-	err = p.Next()
+	err = p.expectToken(L_CURL, result.Root, NodeLeftCurlyBracket)
 	if err != nil {
-		return nil, errs.Wrap(err, "Failed to scan")
+		return nil, errs.Wrap(err, "Expect failed")
 	}
 
 	// TODO: Rather than making the parse functions responsible for calling Next
@@ -125,24 +130,14 @@ func (p *Parser) ParseExpression(root *NodeElement) error {
 		return errs.Wrap(err, "Failed to scan")
 	}
 
-	if p.tok != COLON {
-		return errs.New("Expected colon")
-	}
-	expressionNode.AddChild(p.newNode(NodeColon))
-
-	err = p.Next()
+	err = p.expectToken(COLON, expressionNode, NodeColon)
 	if err != nil {
-		return errs.Wrap(err, "Failed to scan")
+		return errs.Wrap(err, "Expect failed")
 	}
 
-	// TODO: Add these as nodes?
-	if p.tok != L_CURL {
-		return errs.New("Expected left curly bracket, got: %s", p.tok.String())
-	}
-
-	err = p.Next()
+	err = p.expectToken(L_CURL, expressionNode, NodeLeftCurlyBracket)
 	if err != nil {
-		return errs.Wrap(err, "Failed to scan")
+		return errs.Wrap(err, "Expect failed")
 	}
 
 	err = p.ParseBinding(expressionNode)
@@ -150,24 +145,14 @@ func (p *Parser) ParseExpression(root *NodeElement) error {
 		return errs.Wrap(err, "Failed to parse binding")
 	}
 
-	if p.tok != IN {
-		return errs.New("Expected left curly bracket, got: %s", p.tok.String())
-	}
-	expressionNode.AddChild(p.newNode(NodeIn))
-
-	err = p.Next()
+	err = p.expectToken(IN, expressionNode, NodeIn)
 	if err != nil {
-		return errs.Wrap(err, "Failed to scan")
+		return errs.Wrap(err, "Expect failed")
 	}
 
-	if p.tok != COLON {
-		return errs.New("Expected colon")
-	}
-	expressionNode.AddChild(p.newNode(NodeColon))
-
-	err = p.Next()
+	err = p.expectToken(COLON, expressionNode, NodeColon)
 	if err != nil {
-		return errs.Wrap(err, "Failed to scan")
+		return errs.Wrap(err, "Expect failed")
 	}
 
 	if p.IsFunctionIdentifier() {
@@ -213,20 +198,15 @@ func (p *Parser) ParseAssignment(node *NodeElement) error {
 		return errs.Wrap(err, "Failed to parse identifier")
 	}
 
-	if p.tok != COLON {
-		// TODO: Need convenience error function
-		return errs.New("Expected equals, got: type: %s, lit: %s", p.tok, p.lit)
-	}
-	assignmentNode.AddChild(p.newNode(NodeColon))
-
-	err = p.Next()
+	err = p.expectToken(COLON, assignmentNode, NodeColon)
 	if err != nil {
-		return errs.Wrap(err, "Failed to scan")
+		return errs.Wrap(err, "Expect failed")
 	}
 
 	// In this case the next token should be a function identifier
 	// TODO: clean up this conditional
 	if p.tok == L_CURL && p.peek() == F_SOLVELEGACY {
+		assignmentNode.AddChild(p.newNode(NodeLeftCurlyBracket))
 		err = p.Next()
 		if err != nil {
 			return errs.Wrap(err, "Failed to scan")
@@ -241,20 +221,17 @@ func (p *Parser) ParseAssignment(node *NodeElement) error {
 			return errs.Wrap(err, "Failed to parse application")
 		}
 
-		if p.tok != R_CURL {
-			return errs.New("Expected right curly bracket, got: %s", p.tok.String())
+		err = p.expectToken(R_CURL, assignmentNode, NodeRightCurlyBracket)
+		if err != nil {
+			return errs.Wrap(err, "Expect failed")
 		}
 
-		err = p.Next()
-		if err != nil {
-			return errs.Wrap(err, "Failed to scan")
-		}
-	}
-
-	if p.tok == COMMA {
-		err = p.Next()
-		if err != nil {
-			return errs.Wrap(err, "Failed to scan")
+		if p.tok == COMMA {
+			assignmentNode.AddChild(p.newNode(NodeComma))
+			err = p.Next()
+			if err != nil {
+				return errs.Wrap(err, "Failed to scan")
+			}
 		}
 	}
 
@@ -267,6 +244,7 @@ func (p *Parser) ParseAssignment(node *NodeElement) error {
 		err = p.ParseIdentifier(assignmentNode)
 		msg = "Failed to parse identifier"
 	case IN:
+		// If we encounter an IN token then we've reached the end of the binding
 		return nil
 	default:
 		err = p.ParseList(assignmentNode)
@@ -276,11 +254,7 @@ func (p *Parser) ParseAssignment(node *NodeElement) error {
 		return errs.Wrap(err, msg)
 	}
 
-	if p.tok != R_CURL {
-		return errs.New("Expected right curly bracket, got: %s@%d:%d", p.tok.String(), p.pos.Line, p.pos.Column)
-	}
-
-	return p.Next()
+	return p.expectToken(R_CURL, assignmentNode, NodeRightCurlyBracket)
 }
 
 func (p *Parser) ParseIdentifier(node *NodeElement) error {
@@ -307,22 +281,14 @@ func (p *Parser) ParseApplication(node *NodeElement) error {
 		return errs.Wrap(err, "Failed to parse function identifier")
 	}
 
-	if p.tok != COLON {
-		return errs.New("Expected colon, got: %s", p.tok.String())
-	}
-
-	err = p.Next()
+	err = p.expectToken(COLON, applicationNode, NodeColon)
 	if err != nil {
-		return errs.Wrap(err, "Failed to scan")
+		return errs.Wrap(err, "Expect failed")
 	}
 
-	if p.tok != L_CURL {
-		return errs.New("Expected left curly bracket, got: %s", p.tok.String())
-	}
-
-	err = p.Next()
+	err = p.expectToken(L_CURL, applicationNode, NodeLeftCurlyBracket)
 	if err != nil {
-		return errs.Wrap(err, "Failed to scan")
+		return errs.Wrap(err, "Expect failed")
 	}
 
 	err = p.ParseArguments(applicationNode)
@@ -330,11 +296,7 @@ func (p *Parser) ParseApplication(node *NodeElement) error {
 		return errs.Wrap(err, "Failed to parse arguments")
 	}
 
-	if p.tok != R_CURL {
-		return errs.New("Expected right curly bracket, got: %s", p.tok.String())
-	}
-
-	return p.Next()
+	return p.expectToken(R_CURL, applicationNode, NodeRightCurlyBracket)
 }
 
 func (p *Parser) ParseFunctionIdentifier(node *NodeElement) error {
@@ -368,13 +330,9 @@ func (p *Parser) ParseArguments(node *NodeElement) error {
 			return errs.Wrap(err, "Failed to parse identifier")
 		}
 
-		if p.tok != COLON {
-			return errs.New("Expected colon, got: %s", p.tok.String())
-		}
-
-		err = p.Next()
+		err = p.expectToken(COLON, node, NodeColon)
 		if err != nil {
-			return errs.Wrap(err, "Failed to scan")
+			return errs.Wrap(err, "Expect failed")
 		}
 
 		var msg string
@@ -428,12 +386,7 @@ func (p *Parser) ParseList(node *NodeElement) error {
 		return errs.Wrap(err, "Failed to parse list element")
 	}
 
-	if p.tok != R_BRACKET {
-		return errs.New("Expected right bracket, current lit: %s", p.lit)
-	}
-	listNode.AddChild(p.newNode(NodeRightBracket))
-
-	return p.Next()
+	return p.expectToken(R_BRACKET, listNode, NodeRightBracket)
 }
 
 func (p *Parser) ParseListElements(node *NodeElement) error {
@@ -486,11 +439,7 @@ func (p *Parser) ParseListObject(node *NodeElement) error {
 	elementNode := p.newNode(NodeListElement)
 	node.AddChild(elementNode)
 
-	if p.tok != L_CURL {
-		return errs.New("Expected left curly bracket")
-	}
-
-	err := p.Next()
+	err := p.expectToken(L_CURL, elementNode, NodeLeftCurlyBracket)
 	if err != nil {
 		return errs.Wrap(err, "Failed to scan")
 	}
@@ -506,6 +455,7 @@ func (p *Parser) ParseListObject(node *NodeElement) error {
 		}
 
 		if p.tok == COMMA {
+			elementNode.AddChild(p.newNode(NodeComma))
 			err := p.Next()
 			if err != nil {
 				return errs.Wrap(err, "Failed to scan")
@@ -513,11 +463,7 @@ func (p *Parser) ParseListObject(node *NodeElement) error {
 		}
 	}
 
-	if p.tok != R_CURL {
-		return errs.New("Expected right curly bracket, got: %s", p.tok.String())
-	}
-
-	return p.Next()
+	return p.expectToken(R_CURL, elementNode, NodeRightCurlyBracket)
 }
 
 func (p *Parser) ParseObjectAttribute(node *NodeElement) error {
@@ -530,13 +476,9 @@ func (p *Parser) ParseObjectAttribute(node *NodeElement) error {
 		return errs.Wrap(err, "Failed to parse identifier")
 	}
 
-	if p.tok != COLON {
-		return errs.New("Expected colon")
-	}
-
-	err = p.Next()
+	err = p.expectToken(COLON, node, NodeColon)
 	if err != nil {
-		return errs.Wrap(err, "Failed to scan")
+		return errs.Wrap(err, "Expect failed")
 	}
 
 	var msg string
@@ -590,13 +532,9 @@ func (p *Parser) ParseIn(node *NodeElement) error {
 		return errs.Wrap(err, "Failed to scan")
 	}
 
-	if p.tok != COLON {
-		return errs.New("Expected colon")
-	}
-
-	err = p.Next()
+	err = p.expectToken(COLON, node, NodeColon)
 	if err != nil {
-		return errs.Wrap(err, "Failed to scan")
+		return errs.Wrap(err, "Expect failed")
 	}
 
 	var msg string
