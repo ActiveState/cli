@@ -1,0 +1,11 @@
+let:
+    runtime = solve(
+        requirements=[
+            {
+                name="language/python"
+            }
+        ],
+        platforms=["12345", "67890"]
+    )
+in:
+    runtime

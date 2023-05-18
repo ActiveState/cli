@@ -1,102 +1,123 @@
 package buildscript
 
 import (
-	"errors"
-	"os"
-	"path/filepath"
+	"bytes"
+	"io"
 
-	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/platform/api/graphql/model/buildplanner"
-	"gopkg.in/yaml.v2"
 )
 
-type DoesNotExistError struct{ error }
-
-func IsDoesNotExistError(err error) bool {
-	return errs.Matches(err, &DoesNotExistError{})
+type Script struct {
+	Let *Let `parser:"'let' ':' @@"`
+	In  *In  `parser:"'in' ':' @@"`
 }
 
-type File struct {
-	Path   string
-	Script *model.BuildScript
+type Let struct {
+	Assignments []*Assignment `parser:"@@+"`
 }
 
-func Get(dir string) (*File, error) {
-	path := filepath.Join(dir, constants.BuildScriptFileName)
-	data, err := fileutils.ReadFile(path)
-	if err != nil {
-		if errors.Is(err, os.ErrNotExist) {
-			return nil, &DoesNotExistError{errs.New("Build script does not exist at %s", dir)}
+type Assignment struct {
+	Key   string `parser:"@Ident '='"`
+	Value *Value `parser:"@@"`
+}
+
+type Value struct {
+	FuncCall *FuncCall `parser:"@@"`
+	List     *[]*Value `parser:"| '[' @@ (',' @@)* ','? ']'"`
+	String   *string   `parser:"| @String"`
+
+	Assignment *Assignment    `parser:"| @@"`                        // only in FuncCall
+	Object     *[]*Assignment `parser:"| '{' @@ (',' @@)* ','? '}'"` // only in List
+	Ident      *string        `parser:"| @Ident"`                    // only in FuncCall
+}
+
+type FuncCall struct {
+	Name      string   `parser:"@Ident"`
+	Arguments []*Value `parser:"'(' @@ (',' @@)* ','? ')'"`
+}
+
+type In struct {
+	FuncCall *FuncCall `parser:"@@"`
+	Name     *string   `parser:"| @Ident"`
+}
+
+func (s *Script) Equals(other *model.BuildScript) bool { return false } // TODO
+
+func (s *Script) Write(w io.Writer) {
+	w.Write([]byte("let:\n"))
+	for _, assignment := range s.Let.Assignments {
+		assignment.Write(w, 1)
+	}
+	w.Write([]byte("\nin:\n\t"))
+	switch {
+	case s.In.FuncCall != nil:
+		s.In.FuncCall.Write(w, 1)
+	case s.In.Name != nil:
+		w.Write([]byte(*s.In.Name))
+	}
+}
+
+func (a *Assignment) Write(w io.Writer, indentLevel int) {
+	w.Write(bytes.Repeat([]byte("\t"), indentLevel))
+	w.Write([]byte(a.Key))
+	w.Write([]byte(" = "))
+	a.Value.Write(w, indentLevel)
+}
+
+func (v *Value) Write(w io.Writer, indentLevel int) {
+	switch {
+	case v.FuncCall != nil:
+		v.FuncCall.Write(w, indentLevel)
+
+	case v.List != nil:
+		w.Write([]byte("[\n"))
+		for i, item := range *v.List {
+			if item.String != nil {
+				w.Write(bytes.Repeat([]byte("\t"), indentLevel+1)) // string is on its own line, so indent
+			}
+			item.Write(w, indentLevel+1)
+			if i+1 < len(*v.List) {
+				w.Write([]byte(","))
+			}
+			w.Write([]byte("\n"))
 		}
-		return nil, errs.Wrap(err, "Could not read build script")
-	}
+		w.Write(bytes.Repeat([]byte("\t"), indentLevel))
+		w.Write([]byte("]"))
 
-	var script *model.BuildScript
-	if err := yaml.Unmarshal(data, &script); err != nil {
-		return nil, errs.Wrap(err, "Could not unmarshal build script")
-	}
+	case v.String != nil:
+		w.Write([]byte(*v.String))
 
-	return &File{path, script}, nil
-}
+	case v.Assignment != nil:
+		v.Assignment.Write(w, indentLevel)
 
-func UpdateOrCreate(dir string, script *model.BuildScript) error {
-	file, err := Get(dir)
-	if err != nil {
-		if !IsDoesNotExistError(err) {
-			return errs.Wrap(err, "Could not get build script")
+	case v.Object != nil:
+		w.Write(bytes.Repeat([]byte("\t"), indentLevel))
+		w.Write([]byte("{\n"))
+		for i, pair := range *v.Object {
+			pair.Write(w, indentLevel+1)
+			if i+1 < len(*v.Object) {
+				w.Write([]byte(","))
+			}
+			w.Write([]byte("\n"))
 		}
-		file, err = create(dir, nil)
-		if err != nil {
-			return errs.Wrap(err, "Could not create build script")
+		w.Write(bytes.Repeat([]byte("\t"), indentLevel))
+		w.Write([]byte("}"))
+
+	case v.Ident != nil:
+		w.Write([]byte(*v.Ident))
+	}
+}
+
+func (f *FuncCall) Write(w io.Writer, indentLevel int) {
+	w.Write([]byte(f.Name))
+	w.Write([]byte("(\n"))
+	for i, argument := range f.Arguments {
+		argument.Write(w, indentLevel+1)
+		if i+1 < len(f.Arguments) {
+			w.Write([]byte(","))
 		}
+		w.Write([]byte("\n"))
 	}
-	return file.Update(script)
-}
-
-func create(dir string, script *model.BuildScript) (*File, error) {
-	if script == nil {
-		script = model.NewBuildScript()
-	}
-
-	data, err := yaml.Marshal(script)
-	if err != nil {
-		return nil, errs.Wrap(err, "Could not marshal build script")
-	}
-
-	path := filepath.Join(dir, constants.BuildScriptFileName)
-	logging.Debug("Creating build script: %s", path)
-	if err := fileutils.WriteFile(path, data); err != nil {
-		return nil, errs.Wrap(err, "Could not write build script to file")
-	}
-
-	return &File{path, script}, nil
-}
-
-func (o *File) Write() error {
-	logging.Debug("Writing build script")
-	data, err := yaml.Marshal(o.Script)
-	if err != nil {
-		return errs.Wrap(err, "Could not marshal build script")
-	}
-
-	if err := fileutils.WriteFile(o.Path, data); err != nil {
-		return errs.Wrap(err, "Could not write build script to file")
-	}
-
-	return nil
-}
-
-func (o *File) Update(script *model.BuildScript) error {
-	if script == nil {
-		return errs.New("Build script to write is nil")
-	}
-	if o.Script != nil && o.Script.Equals(script) {
-		return nil
-	}
-
-	o.Script = script
-	return o.Write()
+	w.Write(bytes.Repeat([]byte("\t"), indentLevel))
+	w.Write([]byte(")\n"))
 }

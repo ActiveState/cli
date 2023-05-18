@@ -1,0 +1,23 @@
+let:
+    linux_runtime = solve(
+        requirements=[
+            {
+                name="language/python"
+            }
+        ],
+        platforms=["67890"]
+    )
+
+    win_runtime = solve(
+        requirements=[{
+                name="language/perl"
+            }
+        ],
+        platforms=["12345"]
+    )
+
+in:
+   merge(
+        win_installer(win_runtime),
+        tar_installer(linux_runtime)
+    )
