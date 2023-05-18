@@ -17,6 +17,7 @@ const (
 	NodeColon
 	NodeBinding
 	NodeAssignment
+	NodeIdentifier
 	NodeList
 	NodeFunction
 	NodeArgument
@@ -27,7 +28,6 @@ const (
 	NodeSolveFn
 	NodeSolveLegacyFn
 	NodeMergeFn
-	NodeRequirementFn
 	NodeString
 )
 
@@ -41,6 +41,8 @@ var literalNodes = map[NodeType]bool{
 	NodeComma:         true,
 	NodeSolveFn:       true,
 	NodeSolveLegacyFn: true,
+	NodeMergeFn:       true,
+	NodeIdentifier:    true,
 }
 
 var nodeNames = map[NodeType]string{
@@ -52,6 +54,7 @@ var nodeNames = map[NodeType]string{
 	NodeColon:         "Colon",
 	NodeBinding:       "Binding",
 	NodeAssignment:    "Assignment",
+	NodeIdentifier:    "Identifier",
 	NodeList:          "List",
 	NodeFunction:      "Function",
 	NodeArgument:      "Argument",
@@ -62,7 +65,6 @@ var nodeNames = map[NodeType]string{
 	NodeSolveFn:       "SolveFn",
 	NodeSolveLegacyFn: "SolveLegacyFn",
 	NodeMergeFn:       "MergeFn",
-	NodeRequirementFn: "RequirementFn",
 	NodeString:        "String",
 }
 
