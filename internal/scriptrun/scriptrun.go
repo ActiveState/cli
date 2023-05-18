@@ -68,7 +68,7 @@ func (s *ScriptRun) NeedsActivation() bool {
 
 // PrepareVirtualEnv sets up the relevant runtime and prepares the environment.
 func (s *ScriptRun) PrepareVirtualEnv() (rerr error) {
-	err := buildscript.UpdateIfNeeded(s.project, s.out, s.auth)
+	err := buildscript.Sync(s.project, nil, s.out, s.auth)
 	if err != nil {
 		return locale.WrapError(err, "err_update_build_script")
 	}

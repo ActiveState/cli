@@ -26,7 +26,7 @@ func NewFromProject(
 	svcModel *model.SvcModel,
 	out output.Outputer,
 	auth *authentication.Auth) (_ *rt.Runtime, rerr error) {
-	err := buildscript.UpdateIfNeeded(proj, out, auth)
+	err := buildscript.Sync(proj, nil, out, auth)
 	if err != nil {
 		return nil, locale.WrapError(err, "err_update_build_script")
 	}

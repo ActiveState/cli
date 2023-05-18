@@ -16,19 +16,11 @@ import (
 
 // RefreshRuntime should be called after runtime mutations.
 func RefreshRuntime(auth *authentication.Auth, out output.Outputer, an analytics.Dispatcher, proj *project.Project, commitID strfmt.UUID, changed bool, trigger target.Trigger, svcm *model.SvcModel) (rerr error) {
-	needsUpdate, err := buildscript.NeedsUpdate(proj, commitID, auth)
+	err := buildscript.Sync(proj, &commitID, out, auth)
 	if err != nil {
-		return locale.WrapError(err, "err_build_script_needs_update", "Unable to check if runtime build script needs updating")
+		return locale.WrapError(err, "err_update_build_script")
 	}
-	if needsUpdate {
-		var err error
-		commitID, err = buildscript.Update(proj, commitID, out, auth)
-		if err != nil {
-			return locale.WrapError(err, "err_update_build_script")
-		}
-	}
-
-	target := target.NewProjectTarget(proj, &commitID, trigger)
+	target := target.NewProjectTarget(proj, nil, trigger) // buildscript.Sync updates project's commit ID until DX-1852
 	isCached := true
 	rt, err := runtime.New(target, an, svcm)
 	if err != nil {

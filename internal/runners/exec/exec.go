@@ -122,7 +122,7 @@ func (s *Exec) Run(params *Params, args ...string) (rerr error) {
 		rtTarget = target.NewProjectTarget(proj, nil, trigger)
 	}
 
-	err = buildscript.UpdateIfNeeded(proj, s.out, s.auth)
+	err = buildscript.Sync(proj, nil, s.out, s.auth)
 	if err != nil {
 		return locale.WrapError(err, "err_update_build_script")
 	}
