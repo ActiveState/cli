@@ -220,7 +220,7 @@ func waitUp(ctx context.Context, ipComm IPCommunicator, wdd *waitDebugData) erro
 					"Ping encountered unexpected failure: {{.V0}}",
 					err.Error(),
 				)
-				errs.Pack(err, wdd)
+				return errs.Pack(err, wdd)
 			}
 
 			if try < pingRetryIterations {
@@ -306,7 +306,7 @@ func waitDown(ctx context.Context, ipComm IPCommunicator, wdd *waitDebugData) er
 					"Ping encountered unexpected failure: {{.V0}}",
 					err.Error(),
 				)
-				errs.Pack(err, wdd)
+				return errs.Pack(err, wdd)
 			}
 		}
 
