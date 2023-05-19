@@ -56,7 +56,11 @@ func runParser() error {
 		return errs.Wrap(err, "Could not read lexer test data")
 	}
 
-	p := parser.New(testData)
+	p, err := parser.New(testData)
+	if err != nil {
+		return errs.Wrap(err, "Could not create parser")
+	}
+
 	tree, err := p.Parse()
 	if err != nil {
 		return errs.Wrap(err, "Could not parse buildexpression.json")
