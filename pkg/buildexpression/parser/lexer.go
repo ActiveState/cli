@@ -37,8 +37,6 @@ func (l *Lexer) Scan() (Position, Token, string, error) {
 		r = l.next()
 	}
 
-	// TODO: There is likley a better way to do this
-	// The "peeking" should be part of the parser and not the lexer
 	if l.isLetStart(r) || l.isInStart(r) {
 		return l.lexKeyword(r)
 	}
@@ -202,7 +200,6 @@ func (l *Lexer) lexString(r rune) (Position, Token, string, error) {
 
 	start := l.read
 	r = l.next()
-	// Slash is a workaround
 	for r != '"' {
 		r = l.next()
 		if r == 0 {
