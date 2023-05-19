@@ -1,6 +1,9 @@
 package request
 
+import "github.com/ActiveState/cli/internal/gqlclient"
+
 type MessagingRequest struct {
+	gqlclient.RequestBase
 	command string
 	flags   []string
 }
