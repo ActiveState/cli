@@ -33,12 +33,12 @@ var (
 	ipCommTimeout     = time.Second * 4
 	upDownWaitTimeout = func() time.Duration {
 		var acc int
-		// alg to set max timeout matches ping backoff alg
+		// alg to set backstop timeout (matches ping backoff alg)
 		// last iter does not count towards total, so -1 the iters
 		for base := baseStart; base < pingRetryIterations+baseStart-1; base++ {
 			acc += ((base * base) * modifierNumerator) / modifierDenominator
 		}
-		return time.Millisecond * time.Duration(acc)
+		return time.Millisecond*time.Duration(acc) + time.Second // add buffer
 	}()
 )
 
@@ -153,16 +153,31 @@ func startAndWait(ipComm IPCommunicator, exec, argText string) error {
 		args = args[:len(args)-1]
 	}
 
+	wdd := newWaitDebugData(execSvc)
 	if _, err := exeutils.ExecuteAndForget(exec, args); err != nil {
-		return locale.WrapError(err, "svcctl_cannot_exec_and_forget", "Cannot execute service in background: {{.V0}}", err.Error())
+		return locale.WrapError(
+			err, "svcctl_cannot_exec_and_forget",
+			"Cannot execute service in background: {{.V0}}", err.Error(),
+		)
 	}
+	wdd.stampExec()
+
+	logging.Debug("ExecuteAndForget took %v", wdd.execDur)
 
 	ctx, cancel := context.WithTimeout(context.Background(), upDownWaitTimeout)
 	defer cancel()
 
 	logging.Debug("Waiting for service")
-	if err := waitUp(ctx, ipComm); err != nil {
-		return locale.WrapError(err, "svcctl_wait_startup_failed", "Waiting for service startup confirmation failed")
+	wdd.startWait()
+	err := waitUp(ctx, ipComm, wdd)
+	wdd.stampWait()
+	logging.Debug("Wait duration: %s", wdd.waitDur)
+	if err != nil {
+		return locale.WrapError(
+			err, "svcctl_wait_startup_failed",
+			"Waiting for service startup confirmation failed after {{.V0}}",
+			time.Since(wdd.waitStart).String(),
+		)
 	}
 
 	return nil
@@ -172,13 +187,13 @@ var (
 	waitTimeoutL10nKey = "svcctl_wait_timeout"
 )
 
-func waitUp(ctx context.Context, ipComm IPCommunicator) error {
-	start := time.Now()
+func waitUp(ctx context.Context, ipComm IPCommunicator, wdd *waitDebugData) error {
 	for try := 1; try <= pingRetryIterations; try++ {
 		base := try - 1 + baseStart
 		select {
 		case <-ctx.Done():
-			return locale.WrapError(ctx.Err(), waitTimeoutL10nKey, "", time.Since(start).String(), "1", constants.ForumsURL)
+			err := locale.WrapError(ctx.Err(), waitTimeoutL10nKey, "", "1", constants.ForumsURL)
+			return errs.Pack(err, wdd)
 		default:
 		}
 
@@ -187,7 +202,10 @@ func waitUp(ctx context.Context, ipComm IPCommunicator) error {
 			((base*base)*modifierNumerator)/modifierDenominator,
 		)
 
-		logging.Debug("Attempt %02d at %12s with timeout %v", try, time.Since(start), timeout)
+		wa := newWaitAttempt(wdd.waitStart, tryStart, try, timeout)
+		wdd.addAttempts(wa)
+
+		logging.Debug("%s", wa)
 
 		if err := ping(ctx, ipComm, timeout); err != nil {
 			// Timeout does not reveal enough info, try again.
@@ -197,7 +215,12 @@ func waitUp(ctx context.Context, ipComm IPCommunicator) error {
 				continue
 			}
 			if !errors.Is(err, ctlErrNotUp) {
-				return locale.WrapError(err, "svcctl_ping_failed", "Ping encountered unexpected failure: {{.V0}}", err.Error())
+				err := locale.WrapError(
+					err, "svcctl_ping_failed",
+					"Ping encountered unexpected failure: {{.V0}}",
+					err.Error(),
+				)
+				errs.Pack(err, wdd)
 			}
 
 			if try < pingRetryIterations {
@@ -207,38 +230,50 @@ func waitUp(ctx context.Context, ipComm IPCommunicator) error {
 
 			continue
 		}
+
 		return nil
 	}
 
-	return locale.NewError(waitTimeoutL10nKey, "", time.Since(start).Round(time.Millisecond).String(), "2", constants.ForumsURL)
+	err := locale.NewError(waitTimeoutL10nKey, "", "2", constants.ForumsURL)
+	return errs.Pack(err, wdd)
 }
 
 func stopAndWait(ipComm IPCommunicator) error {
 	stopCtx, stopCancel := context.WithTimeout(context.Background(), ipCommTimeout)
 	defer stopCancel()
 
+	wdd := newWaitDebugData(stopSvc)
 	if err := ipComm.StopServer(stopCtx); err != nil {
 		return locale.WrapError(err, "svcctl_stop_req_failed", "Service stop request failed")
 	}
+	wdd.stampExec()
 
 	waitCtx, waitCancel := context.WithTimeout(context.Background(), upDownWaitTimeout)
 	defer waitCancel()
 
 	logging.Debug("Waiting for service to die")
-	if err := waitDown(waitCtx, ipComm); err != nil {
-		return locale.WrapError(err, "svcctl_wait_shutdown_failed", "Waiting for service shutdown confirmation failed")
+	wdd.startWait()
+	err := waitDown(waitCtx, ipComm, wdd)
+	wdd.stampWait()
+	logging.Debug("Wait duration: %s", wdd.waitDur)
+	if err != nil {
+		return locale.WrapError(
+			err, "svcctl_wait_shutdown_failed",
+			"Waiting for service shutdown confirmation failed after {{.V0}}",
+			time.Since(wdd.waitStart).String(),
+		)
 	}
 
 	return nil
 }
 
-func waitDown(ctx context.Context, ipComm IPCommunicator) error {
-	start := time.Now()
+func waitDown(ctx context.Context, ipComm IPCommunicator, wdd *waitDebugData) error {
 	for try := 1; try <= pingRetryIterations; try++ {
 		base := try - 1 + baseStart
 		select {
 		case <-ctx.Done():
-			return locale.WrapError(ctx.Err(), waitTimeoutL10nKey, "", time.Since(start).String(), "3", constants.ForumsURL)
+			err := locale.WrapError(ctx.Err(), waitTimeoutL10nKey, "", "3", constants.ForumsURL)
+			return errs.Pack(err, wdd)
 		default:
 		}
 
@@ -247,7 +282,10 @@ func waitDown(ctx context.Context, ipComm IPCommunicator) error {
 			((base*base)*modifierNumerator)/modifierDenominator,
 		)
 
-		logging.Debug("Attempt %02d at %12s w/timeout %v", try, time.Since(start), timeout)
+		wa := newWaitAttempt(wdd.waitStart, tryStart, try, timeout)
+		wdd.addAttempts(wa)
+
+		logging.Debug("%s", wa)
 
 		if err := ping(ctx, ipComm, timeout); err != nil {
 			// Timeout does not reveal enough info, try again.
@@ -263,7 +301,12 @@ func waitDown(ctx context.Context, ipComm IPCommunicator) error {
 				return nil
 			}
 			if !errors.Is(err, ctlErrTempNotUp) {
-				return locale.WrapError(err, "svcctl_ping_failed", "Ping encountered unexpected failure: {{.V0}}", err.Error())
+				err := locale.WrapError(
+					err, "svcctl_ping_failed",
+					"Ping encountered unexpected failure: {{.V0}}",
+					err.Error(),
+				)
+				errs.Pack(err, wdd)
 			}
 		}
 
@@ -273,7 +316,8 @@ func waitDown(ctx context.Context, ipComm IPCommunicator) error {
 		}
 	}
 
-	return locale.NewError(waitTimeoutL10nKey, "", time.Since(start).Round(time.Millisecond).String(), "4", constants.ForumsURL)
+	err := locale.NewError(waitTimeoutL10nKey, "", "4", constants.ForumsURL)
+	return errs.Pack(err, wdd)
 }
 
 func ping(ctx context.Context, ipComm IPCommunicator, timeout time.Duration) error {
