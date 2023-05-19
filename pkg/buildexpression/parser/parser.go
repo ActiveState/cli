@@ -62,8 +62,8 @@ func (p *Parser) peek() Token {
 	return p.toks[p.current]
 }
 
-func (p *Parser) newNode(t NodeType) *NodeElement {
-	elem := &NodeElement{
+func (p *Parser) newNode(t NodeType) *Node {
+	elem := &Node{
 		t:   t,
 		pos: p.pos,
 	}
@@ -75,7 +75,7 @@ func (p *Parser) newNode(t NodeType) *NodeElement {
 	return elem
 }
 
-func (p *Parser) expectToken(tok Token, parent *NodeElement, node NodeType) error {
+func (p *Parser) expectToken(tok Token, parent *Node, node NodeType) error {
 	if p.tok != tok {
 		return errs.New("Expected token: %s, got: %s@%d%d", tok.String(), p.tok.String(), p.pos.Line, p.pos.Column)
 	}
@@ -86,7 +86,7 @@ func (p *Parser) expectToken(tok Token, parent *NodeElement, node NodeType) erro
 
 func (p *Parser) Parse() (*Tree, error) {
 	result := Tree{
-		Root: &NodeElement{
+		Root: &Node{
 			t: NodeFile,
 		},
 	}
@@ -115,7 +115,7 @@ func (p *Parser) Parse() (*Tree, error) {
 	return &result, nil
 }
 
-func (p *Parser) ParseExpression(root *NodeElement) error {
+func (p *Parser) ParseExpression(root *Node) error {
 	// Right now this is just parsing a let statement
 	if !p.IsExpression() {
 		return errs.New("Expected expression")
@@ -162,7 +162,7 @@ func (p *Parser) ParseExpression(root *NodeElement) error {
 	return p.ParseString(expressionNode)
 }
 
-func (p *Parser) ParseBinding(node *NodeElement) error {
+func (p *Parser) ParseBinding(node *Node) error {
 	bindingNode := p.newNode(NodeBinding)
 	node.AddChild(bindingNode)
 
@@ -185,7 +185,7 @@ func (p *Parser) IsAssignment() bool {
 	return p.peek() == COLON && p.tok != IN
 }
 
-func (p *Parser) ParseAssignment(node *NodeElement) error {
+func (p *Parser) ParseAssignment(node *Node) error {
 	if !p.IsAssignment() {
 		return errs.New("Expected assignment")
 	}
@@ -257,7 +257,7 @@ func (p *Parser) ParseAssignment(node *NodeElement) error {
 	return p.expectToken(R_CURL, assignmentNode, NodeRightCurlyBracket)
 }
 
-func (p *Parser) ParseIdentifier(node *NodeElement) error {
+func (p *Parser) ParseIdentifier(node *Node) error {
 	if !p.IsIdentifier() {
 		return errs.New("Expected identifier, got: %s", p.tok.String())
 	}
@@ -268,7 +268,7 @@ func (p *Parser) ParseIdentifier(node *NodeElement) error {
 	return p.Next()
 }
 
-func (p *Parser) ParseApplication(node *NodeElement) error {
+func (p *Parser) ParseApplication(node *Node) error {
 	if !p.IsFunctionIdentifier() {
 		return errs.New("Expected function identifier, got: %s, lit: %s", p.tok.String(), p.lit)
 	}
@@ -299,7 +299,7 @@ func (p *Parser) ParseApplication(node *NodeElement) error {
 	return p.expectToken(R_CURL, applicationNode, NodeRightCurlyBracket)
 }
 
-func (p *Parser) ParseFunctionIdentifier(node *NodeElement) error {
+func (p *Parser) ParseFunctionIdentifier(node *Node) error {
 	if p.tok != F_SOLVE && p.tok != F_SOLVELEGACY && p.tok != F_MERGE {
 		return errs.New("Unknown function identifier")
 	}
@@ -319,7 +319,7 @@ func (p *Parser) ParseFunctionIdentifier(node *NodeElement) error {
 	return p.Next()
 }
 
-func (p *Parser) ParseArguments(node *NodeElement) error {
+func (p *Parser) ParseArguments(node *Node) error {
 	for {
 		if !p.IsIdentifier() {
 			break
@@ -364,12 +364,12 @@ func (p *Parser) ParseArguments(node *NodeElement) error {
 	return nil
 }
 
-func (p *Parser) ParseList(node *NodeElement) error {
+func (p *Parser) ParseList(node *Node) error {
 	if p.tok != L_BRACKET {
 		return errs.New("Expected left bracket, got: %s@pos:%d:%d", p.lit, p.pos.Column, p.pos.Line)
 	}
 
-	listNode := &NodeElement{
+	listNode := &Node{
 		t:   NodeList,
 		pos: p.pos,
 	}
@@ -389,7 +389,7 @@ func (p *Parser) ParseList(node *NodeElement) error {
 	return p.expectToken(R_BRACKET, listNode, NodeRightBracket)
 }
 
-func (p *Parser) ParseListElements(node *NodeElement) error {
+func (p *Parser) ParseListElements(node *Node) error {
 	for {
 		if p.tok != L_CURL && !p.IsString() && p.tok != COMMA {
 			break
@@ -428,14 +428,14 @@ func (p *Parser) ParseListElements(node *NodeElement) error {
 	return nil
 }
 
-func (p *Parser) ParseListString(node *NodeElement) error {
+func (p *Parser) ParseListString(node *Node) error {
 	elementNode := p.newNode(NodeListElement)
 	node.AddChild(elementNode)
 
 	return p.ParseString(elementNode)
 }
 
-func (p *Parser) ParseListObject(node *NodeElement) error {
+func (p *Parser) ParseListObject(node *Node) error {
 	elementNode := p.newNode(NodeListElement)
 	node.AddChild(elementNode)
 
@@ -466,7 +466,7 @@ func (p *Parser) ParseListObject(node *NodeElement) error {
 	return p.expectToken(R_CURL, elementNode, NodeRightCurlyBracket)
 }
 
-func (p *Parser) ParseObjectAttribute(node *NodeElement) error {
+func (p *Parser) ParseObjectAttribute(node *Node) error {
 	if p.tok != IDENTIFIER {
 		return errs.New("Expected identifier")
 	}
@@ -500,7 +500,7 @@ func (p *Parser) ParseObjectAttribute(node *NodeElement) error {
 	return nil
 }
 
-func (p *Parser) ParseListElement(node *NodeElement) error {
+func (p *Parser) ParseListElement(node *Node) error {
 	elementNode := p.newNode(NodeListElement)
 	node.AddChild(elementNode)
 
@@ -512,7 +512,7 @@ func (p *Parser) ParseListElement(node *NodeElement) error {
 	}
 }
 
-func (p *Parser) ParseString(node *NodeElement) error {
+func (p *Parser) ParseString(node *Node) error {
 	if p.tok != STRING {
 		return errs.New("Expected string")
 	}
@@ -521,7 +521,7 @@ func (p *Parser) ParseString(node *NodeElement) error {
 	return p.Next()
 }
 
-func (p *Parser) ParseIn(node *NodeElement) error {
+func (p *Parser) ParseIn(node *Node) error {
 	if p.tok != IN {
 		return errs.New("Expected in")
 	}

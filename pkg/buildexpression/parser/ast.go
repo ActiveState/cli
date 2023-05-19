@@ -1,11 +1,5 @@
 package parser
 
-type Node interface {
-	Type() NodeType
-	Position() Position
-	Children() []Node
-}
-
 type NodeType int
 
 const (
@@ -34,17 +28,19 @@ const (
 )
 
 var literalNodes = map[NodeType]bool{
-	NodeString:        true,
-	NodeLet:           true,
-	NodeIn:            true,
-	NodeColon:         true,
-	NodeLeftBracket:   true,
-	NodeRightBracket:  true,
-	NodeComma:         true,
-	NodeSolveFn:       true,
-	NodeSolveLegacyFn: true,
-	NodeMergeFn:       true,
-	NodeIdentifier:    true,
+	NodeString:            true,
+	NodeLet:               true,
+	NodeIn:                true,
+	NodeColon:             true,
+	NodeLeftBracket:       true,
+	NodeRightBracket:      true,
+	NodeLeftCurlyBracket:  true,
+	NodeRightCurlyBracket: true,
+	NodeComma:             true,
+	NodeSolveFn:           true,
+	NodeSolveLegacyFn:     true,
+	NodeMergeFn:           true,
+	NodeIdentifier:        true,
 }
 
 var nodeNames = map[NodeType]string{
@@ -80,51 +76,51 @@ func (t NodeType) HasLiteral() bool {
 	return literalNodes[t]
 }
 
-type NodeElement struct {
+type Node struct {
 	t        NodeType
 	pos      Position
 	lit      string
-	children []*NodeElement
+	children []*Node
 }
 
-func (n *NodeElement) Type() NodeType {
+func (n *Node) Type() NodeType {
 	return n.t
 }
 
-func (n *NodeElement) Position() Position {
+func (n *Node) Position() Position {
 	return n.pos
 }
 
-func (n *NodeElement) Literal() string {
+func (n *Node) Literal() string {
 	return n.lit
 }
 
-func (n *NodeElement) Children() []*NodeElement {
+func (n *Node) Children() []*Node {
 	return n.children
 }
 
-func (n *NodeElement) AddChild(child *NodeElement) {
+func (n *Node) AddChild(child *Node) {
 	n.children = append(n.children, child)
 }
 
 type Tree struct {
-	Root *NodeElement
+	Root *Node
 }
 
-func (t *Tree) AddChild(child *NodeElement) {
+func (t *Tree) AddChild(child *Node) {
 	t.Root.children = append(t.Root.children, child)
 }
 
-func (t *Tree) Children() []*NodeElement {
-	var result []*NodeElement
+func (t *Tree) Children() []*Node {
+	var result []*Node
 	return getChildren(t.Root, result)
 }
 
-func (t *Tree) Find(pos Position) *NodeElement {
+func (t *Tree) Find(pos Position) *Node {
 	return find(t.Root, pos)
 }
 
-func find(node *NodeElement, pos Position) *NodeElement {
+func find(node *Node, pos Position) *Node {
 	if node.pos == pos {
 		return node
 	}
@@ -139,7 +135,7 @@ func find(node *NodeElement, pos Position) *NodeElement {
 	return nil
 }
 
-func getChildren(node *NodeElement, result []*NodeElement) []*NodeElement {
+func getChildren(node *Node, result []*Node) []*Node {
 	for _, c := range node.children {
 		result = append(result, c)
 		result = getChildren(c, result)
@@ -151,20 +147,20 @@ func (t *Tree) String() string {
 	return t.Root.String()
 }
 
-type walkFunc func(node *NodeElement) error
+type walkFunc func(node *Node) error
 
 func (t *Tree) Walk(fn walkFunc) {
 	walk(t.Root, fn)
 }
 
-func walk(node *NodeElement, fn walkFunc) {
+func walk(node *Node, fn walkFunc) {
 	fn(node)
 	for _, c := range node.children {
 		walk(c, fn)
 	}
 }
 
-func (n *NodeElement) String() string {
+func (n *Node) String() string {
 	var result string
 	result += n.t.String()
 	if n.lit != "" {

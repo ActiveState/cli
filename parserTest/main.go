@@ -57,10 +57,15 @@ func runParser() error {
 	}
 
 	p := parser.New(testData)
-	_, err = p.Parse()
+	tree, err := p.Parse()
 	if err != nil {
 		return errs.Wrap(err, "Could not parse buildexpression.json")
 	}
+
+	tree.Walk(func(node *parser.Node) error {
+		fmt.Printf("%s:%d:%d %s %s\n", "buildexpression.json", node.Position().Line, node.Position().Column, node.Type(), node.Literal())
+		return nil
+	})
 
 	return nil
 }
