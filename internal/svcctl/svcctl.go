@@ -46,6 +46,7 @@ type IPCommunicator interface {
 	Requester
 	PingServer(context.Context) (time.Duration, error)
 	StopServer(context.Context) error
+	SockPath() *ipc.SockPath
 }
 
 func NewIPCSockPathFromGlobals() *ipc.SockPath {
@@ -153,7 +154,7 @@ func startAndWait(ipComm IPCommunicator, exec, argText string) error {
 		args = args[:len(args)-1]
 	}
 
-	wdd := newWaitDebugData(execSvc)
+	wdd := newWaitDebugData(ipComm.SockPath(), execSvc)
 	if _, err := exeutils.ExecuteAndForget(exec, args); err != nil {
 		return locale.WrapError(
 			err, "svcctl_cannot_exec_and_forget",
@@ -242,7 +243,7 @@ func stopAndWait(ipComm IPCommunicator) error {
 	stopCtx, stopCancel := context.WithTimeout(context.Background(), ipCommTimeout)
 	defer stopCancel()
 
-	wdd := newWaitDebugData(stopSvc)
+	wdd := newWaitDebugData(ipComm.SockPath(), stopSvc)
 	if err := ipComm.StopServer(stopCtx); err != nil {
 		return locale.WrapError(err, "svcctl_stop_req_failed", "Service stop request failed")
 	}
