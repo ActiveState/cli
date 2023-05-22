@@ -3,8 +3,6 @@ package buildscript
 import (
 	"bytes"
 	"io"
-
-	"github.com/ActiveState/cli/pkg/platform/api/graphql/model/buildplanner"
 )
 
 type Script struct {
@@ -40,8 +38,6 @@ type In struct {
 	FuncCall *FuncCall `parser:"@@"`
 	Name     *string   `parser:"| @Ident"`
 }
-
-func (s *Script) Equals(other *model.BuildScript) bool { return false } // TODO
 
 func (s *Script) Write(w io.Writer) {
 	w.Write([]byte("let:\n"))

@@ -2,6 +2,7 @@ package buildscript
 
 import (
 	"bytes"
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"testing"
@@ -180,4 +181,37 @@ func TestRoundTrip(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.Equal(t, file.Script, script)
+}
+
+func TestJson(t *testing.T) {
+	file, err := get(filepath.Join("testdata", "moderate.lo"))
+	require.NoError(t, err)
+	expectedJson := &bytes.Buffer{}
+	json.Compact(expectedJson, []byte(`{
+    "let": {
+      "runtime": {
+        "solve": {
+          "requirements": [
+            {
+              "name": "language/python"
+            }
+          ],
+          "platforms": ["12345", "67890"]
+        }
+      },
+      "in": "$runtime"
+    }
+  }`))
+	assert.Equal(t, string(file.Script.ToJson()), string(expectedJson.Bytes()))
+}
+
+func TestBuildExpression(t *testing.T) {
+	file, err := get(filepath.Join("testdata", "example.lo"))
+	require.NoError(t, err)
+	expr, err := file.Script.ToBuildExpression()
+	require.NoError(t, err)
+	script := FromBuildExpression(expr)
+	assert.Equal(t, file.Script, script)
+	assert.Equal(t, string(file.Script.ToJson()), string(script.ToJson()))
+	assert.True(t, file.Script.EqualsBuildExpression(expr))
 }
