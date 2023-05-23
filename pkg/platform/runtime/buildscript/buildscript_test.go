@@ -192,8 +192,9 @@ func TestRoundTrip(t *testing.T) {
 func TestJson(t *testing.T) {
 	file, err := newFile(filepath.Join("testdata", "moderate.lo"))
 	require.NoError(t, err)
-	expectedJson := &bytes.Buffer{}
-	json.Compact(expectedJson, []byte(`{
+
+	inputJson := &bytes.Buffer{}
+	json.Compact(inputJson, []byte(`{
     "let": {
       "runtime": {
         "solve": {
@@ -208,7 +209,14 @@ func TestJson(t *testing.T) {
       "in": "$runtime"
     }
   }`))
-	assert.Equal(t, string(expectedJson.Bytes()), string(file.Script.ToJson()))
+	marshaledInput := make(map[string]interface{})
+	err = json.Unmarshal(inputJson.Bytes(), &marshaledInput)
+	require.NoError(t, err)
+	expectedJson, err := json.Marshal(marshaledInput)
+
+	actualJson, err := json.Marshal(file.Script)
+	require.NoError(t, err)
+	assert.Equal(t, string(expectedJson), string(actualJson))
 }
 
 func TestBuildExpression(t *testing.T) {
@@ -218,6 +226,8 @@ func TestBuildExpression(t *testing.T) {
 	require.NoError(t, err)
 	script := NewScriptFromBuildExpression(expr)
 	assert.Equal(t, script, file.Script)
-	assert.Equal(t, string(script.ToJson()), string(file.Script.ToJson()))
+	expectedJson, _ := json.Marshal(script)
+	actualJson, _ := json.Marshal(file.Script)
+	assert.Equal(t, string(expectedJson), string(actualJson))
 	assert.True(t, file.Script.EqualsBuildExpression(expr))
 }

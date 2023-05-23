@@ -1,91 +1,72 @@
 package buildscript
 
 import (
-	"bytes"
-	"io"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"strings"
 )
 
-func (s *Script) ToJson() []byte {
-	json := &bytes.Buffer{}
-	s.WriteJson(json)
-	return json.Bytes()
-}
-
-func writeString(w io.Writer, s string) {
-	w.Write([]byte(`"`))
-	w.Write([]byte(s))
-	w.Write([]byte(`"`))
-}
-
-func (s *Script) WriteJson(w io.Writer) {
-	w.Write([]byte(`{"let":{`))
-	for i, assignment := range s.Let.Assignments {
-		assignment.WriteJson(w)
-		if i+1 < (len(s.Let.Assignments)) {
-			w.Write([]byte(","))
-		}
+func (s *Script) MarshalJSON() ([]byte, error) {
+	m := make(map[string]interface{})
+	let := make(map[string]interface{})
+	for _, assignment := range s.Let.Assignments {
+		let[assignment.Key] = assignment.Value
 	}
-	w.Write([]byte(`,"in":`))
-	switch {
-	case s.In.FuncCall != nil:
-		s.In.FuncCall.WriteJson(w)
-	case s.In.Name != nil:
-		writeString(w, "$"+*s.In.Name)
-	}
-	w.Write([]byte(`}}`))
+	let["in"] = s.In
+	m["let"] = let
+	return json.Marshal(m)
 }
 
-func (a *Assignment) WriteJson(w io.Writer) {
-	writeString(w, a.Key)
-	w.Write([]byte(":"))
-	a.Value.WriteJson(w)
+func (a *Assignment) MarshalJSON() ([]byte, error) {
+	m := make(map[string]interface{})
+	m[a.Key] = a.Value
+	return json.Marshal(m)
 }
 
-func (v *Value) WriteJson(w io.Writer) {
+func (v *Value) MarshalJSON() ([]byte, error) {
 	switch {
 	case v.FuncCall != nil:
-		v.FuncCall.WriteJson(w)
-
+		return json.Marshal(v.FuncCall)
 	case v.List != nil:
-		w.Write([]byte("["))
-		for i, item := range *v.List {
-			item.WriteJson(w)
-			if i+1 < len(*v.List) {
-				w.Write([]byte(","))
-			}
-		}
-		w.Write([]byte("]"))
-
+		return json.Marshal(v.List)
 	case v.Str != nil:
-		w.Write([]byte(*v.Str))
-
+		return json.Marshal(strings.Trim(*v.Str, `"`))
 	case v.Assignment != nil:
-		v.Assignment.WriteJson(w)
-
+		return json.Marshal(v.Assignment)
 	case v.Object != nil:
-		w.Write([]byte("{"))
-		for i, pair := range *v.Object {
-			pair.WriteJson(w)
-			if i+1 < len(*v.Object) {
-				w.Write([]byte(","))
-			}
+		m := make(map[string]interface{})
+		for _, assignment := range *v.Object {
+			m[assignment.Key] = assignment.Value
 		}
-		w.Write([]byte("}"))
-
+		return json.Marshal(m)
 	case v.Ident != nil:
-		writeString(w, *v.Ident)
+		return json.Marshal(v.Ident)
 	}
+	return nil, errors.New(fmt.Sprintf("Cannot marshal %v", v))
 }
 
-func (f *FuncCall) WriteJson(w io.Writer) {
-	w.Write([]byte("{"))
-	writeString(w, f.Name)
-	w.Write([]byte(":{"))
-	for i, argument := range f.Arguments {
-		argument.WriteJson(w)
-		if i+1 < len(f.Arguments) {
-			w.Write([]byte(","))
+func (f *FuncCall) MarshalJSON() ([]byte, error) {
+	m := make(map[string]interface{})
+	args := make(map[string]interface{})
+	for _, argument := range f.Arguments {
+		switch {
+		case argument.Assignment != nil:
+			args[argument.Assignment.Key] = argument.Assignment.Value
+		default:
+			return nil, errors.New(fmt.Sprintf("Cannot marshal %v (arg %v)", f, argument))
 		}
 	}
-	w.Write([]byte("}}"))
+	m[f.Name] = args
+	return json.Marshal(m)
+}
+
+func (i *In) MarshalJSON() ([]byte, error) {
+	switch {
+	case i.FuncCall != nil:
+		return json.Marshal(i.FuncCall)
+	case i.Name != nil:
+		return json.Marshal("$" + *i.Name)
+	}
+	return nil, errors.New(fmt.Sprintf("Cannot marshal %v", i))
 }

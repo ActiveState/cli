@@ -1,6 +1,7 @@
 package buildscript
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -13,7 +14,7 @@ import (
 
 func NewScriptFromBuildExpression(tree *buildexpression.Tree) *Script {
 	script := &Script{&Let{}, &In{}}
-	// tree.Root.Children() contains the following 7 nodes: { let : <binding> , in <in expr>
+	// tree.Root.Children()[1] contains the following 7 nodes: { let : <binding> , in <in expr>
 
 	letBinding := tree.Root.Children()[1].Children()[3]
 	for _, node := range letBinding.Children() {
@@ -131,7 +132,12 @@ func fromString(node *buildexpression.Node) *string {
 }
 
 func (s *Script) ToBuildExpression() (*buildexpression.Tree, error) {
-	parser, err := buildexpression.New(s.ToJson())
+	data, err := json.Marshal(s)
+	if err != nil {
+		return nil, errs.Wrap(err, "Unable to marshal script to JSON")
+	}
+	logging.Debug(string(data))
+	parser, err := buildexpression.New(data)
 	if err != nil {
 		return nil, errs.Wrap(err, "Unable to create build expression parser")
 	}
@@ -143,9 +149,9 @@ func (s *Script) ToBuildExpression() (*buildexpression.Tree, error) {
 }
 
 func (s *Script) EqualsBuildExpression(other *buildexpression.Tree) bool {
-	myJson := string(s.ToJson())
-	otherJson := string(NewScriptFromBuildExpression(other).ToJson())
-	return myJson == otherJson
+	myJson, err := json.Marshal(s)
+	otherJson, err2 := json.Marshal(NewScriptFromBuildExpression(other))
+	return err == nil && err2 == nil && string(myJson) == string(otherJson)
 }
 
 func (s *Script) Equals(other *model.BuildScript) bool { return false } // TODO
