@@ -70,7 +70,7 @@ func fromApplication(node *buildexpression.Node) *FuncCall {
 			case buildexpression.NodeList:
 				assignment.Value = &Value{List: fromList(valueNode)}
 			case buildexpression.NodeString:
-				assignment.Value = &Value{String: fromString(valueNode)}
+				assignment.Value = &Value{Str: fromString(valueNode)}
 			case buildexpression.NodeIdentifier:
 				assignment.Value = &Value{Ident: p.StrP(valueNode.Literal())}
 			default:
@@ -105,7 +105,7 @@ func fromList(node *buildexpression.Node) *[]*Value {
 				assignment := &Assignment{Key: children[i].Literal()}
 				switch valueNode := children[i+2]; valueNode.Type() {
 				case buildexpression.NodeString:
-					assignment.Value = &Value{String: fromString(valueNode)}
+					assignment.Value = &Value{Str: fromString(valueNode)}
 				case buildexpression.NodeList:
 					assignment.Value = &Value{List: fromList(valueNode)}
 				default:
@@ -115,7 +115,7 @@ func fromList(node *buildexpression.Node) *[]*Value {
 			}
 			value.Object = &assignments
 		case buildexpression.NodeString:
-			value.String = fromString(children[0])
+			value.Str = fromString(children[0])
 		default:
 			value.Ident = p.StrP(children[0].Literal())
 		}

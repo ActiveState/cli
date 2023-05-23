@@ -1,7 +1,6 @@
 package buildscript
 
 import (
-	"bytes"
 	"errors"
 	"os"
 	"path/filepath"
@@ -92,9 +91,7 @@ func create(dir string, script *model.BuildScript) (*File, error) {
 
 func (o *File) write() error {
 	logging.Debug("Writing build script")
-	buf := &bytes.Buffer{}
-	o.Script.Write(buf)
-	if err := fileutils.WriteFile(o.Path, buf.Bytes()); err != nil {
+	if err := fileutils.WriteFile(o.Path, []byte(o.Script.String())); err != nil {
 		return errs.Wrap(err, "Could not write build script to file")
 	}
 	return nil

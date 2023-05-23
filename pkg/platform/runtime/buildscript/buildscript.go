@@ -2,7 +2,8 @@ package buildscript
 
 import (
 	"bytes"
-	"io"
+	"fmt"
+	"strings"
 )
 
 type Script struct {
@@ -22,7 +23,7 @@ type Assignment struct {
 type Value struct {
 	FuncCall *FuncCall `parser:"@@"`
 	List     *[]*Value `parser:"| '[' @@ (',' @@)* ','? ']'"`
-	String   *string   `parser:"| @String"`
+	Str      *string   `parser:"| @String"`
 
 	Assignment *Assignment    `parser:"| @@"`                        // only in FuncCall
 	Object     *[]*Assignment `parser:"| '{' @@ (',' @@)* ','? '}'"` // only in List
@@ -39,81 +40,85 @@ type In struct {
 	Name     *string   `parser:"| @Ident"`
 }
 
-func (s *Script) Write(w io.Writer) {
-	w.Write([]byte("let:\n"))
+func indent(s string) string {
+	return fmt.Sprintf("\t%s", strings.ReplaceAll(s, "\n", "\n\t"))
+}
+
+func (s *Script) String() string {
+	buf := bytes.Buffer{}
+	buf.WriteString("let:\n")
 	for _, assignment := range s.Let.Assignments {
-		assignment.Write(w, 1)
+		buf.WriteString(indent(assignment.String()))
 	}
-	w.Write([]byte("\nin:\n\t"))
+	buf.WriteString("\n\n")
+	buf.WriteString("in:\n")
 	switch {
 	case s.In.FuncCall != nil:
-		s.In.FuncCall.Write(w, 1)
+		buf.WriteString(indent(s.In.FuncCall.String()))
 	case s.In.Name != nil:
-		w.Write([]byte(*s.In.Name))
+		buf.WriteString(indent(*s.In.Name))
 	}
+	return buf.String()
 }
 
-func (a *Assignment) Write(w io.Writer, indentLevel int) {
-	w.Write(bytes.Repeat([]byte("\t"), indentLevel))
-	w.Write([]byte(a.Key))
-	w.Write([]byte(" = "))
-	a.Value.Write(w, indentLevel)
+func (a *Assignment) String() string {
+	return fmt.Sprintf("%s = %s", a.Key, a.Value.String())
 }
 
-func (v *Value) Write(w io.Writer, indentLevel int) {
+func (v *Value) String() string {
 	switch {
 	case v.FuncCall != nil:
-		v.FuncCall.Write(w, indentLevel)
+		return v.FuncCall.String()
 
 	case v.List != nil:
-		w.Write([]byte("[\n"))
+		buf := bytes.Buffer{}
+		buf.WriteString("[\n")
 		for i, item := range *v.List {
-			if item.String != nil {
-				w.Write(bytes.Repeat([]byte("\t"), indentLevel+1)) // string is on its own line, so indent
-			}
-			item.Write(w, indentLevel+1)
+			buf.WriteString(indent(item.String()))
 			if i+1 < len(*v.List) {
-				w.Write([]byte(","))
+				buf.WriteString(",")
 			}
-			w.Write([]byte("\n"))
+			buf.WriteString("\n")
 		}
-		w.Write(bytes.Repeat([]byte("\t"), indentLevel))
-		w.Write([]byte("]"))
+		buf.WriteString("]")
+		return buf.String()
 
-	case v.String != nil:
-		w.Write([]byte(*v.String))
+	case v.Str != nil:
+		return *v.Str
 
 	case v.Assignment != nil:
-		v.Assignment.Write(w, indentLevel)
+		return v.Assignment.String()
 
 	case v.Object != nil:
-		w.Write(bytes.Repeat([]byte("\t"), indentLevel))
-		w.Write([]byte("{\n"))
+		buf := bytes.Buffer{}
+		buf.WriteString("{\n")
 		for i, pair := range *v.Object {
-			pair.Write(w, indentLevel+1)
+			buf.WriteString(indent(pair.String()))
 			if i+1 < len(*v.Object) {
-				w.Write([]byte(","))
+				buf.WriteString(",")
 			}
-			w.Write([]byte("\n"))
+			buf.WriteString("\n")
 		}
-		w.Write(bytes.Repeat([]byte("\t"), indentLevel))
-		w.Write([]byte("}"))
+		buf.WriteString("}")
+		return buf.String()
 
 	case v.Ident != nil:
-		w.Write([]byte(*v.Ident))
+		return *v.Ident
 	}
+
+	return "" // should not get here
 }
 
-func (f *FuncCall) Write(w io.Writer, indentLevel int) {
-	w.Write([]byte(f.Name))
-	w.Write([]byte("(\n"))
+func (f *FuncCall) String() string {
+	buf := bytes.Buffer{}
+	buf.WriteString(fmt.Sprintf("%s(\n", f.Name))
 	for i, argument := range f.Arguments {
-		argument.Write(w, indentLevel+1)
+		buf.WriteString(indent(argument.String()))
 		if i+1 < len(f.Arguments) {
-			w.Write([]byte(","))
+			buf.WriteString(",")
 		}
-		w.Write([]byte("\n"))
+		buf.WriteString("\n")
 	}
-	w.Write(bytes.Repeat([]byte("\t"), indentLevel))
-	w.Write([]byte(")\n"))
+	buf.WriteString(")")
+	return buf.String()
 }

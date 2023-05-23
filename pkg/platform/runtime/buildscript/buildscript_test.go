@@ -15,30 +15,30 @@ import (
 func TestBasic(t *testing.T) {
 	file, err := get(filepath.Join("testdata", "basic.lo"))
 	require.NoError(t, err)
-	assert.Equal(t, file.Script, &Script{
+	assert.Equal(t, &Script{
 		&Let{
 			[]*Assignment{
 				&Assignment{"runtime", &Value{
 					FuncCall: &FuncCall{"solve", []*Value{
 						&Value{Assignment: &Assignment{
 							"platforms", &Value{List: &[]*Value{
-								&Value{String: p.StrP(`"linux"`)},
-								&Value{String: p.StrP(`"windows"`)},
+								&Value{Str: p.StrP(`"linux"`)},
+								&Value{Str: p.StrP(`"windows"`)},
 							}},
 						}},
 						&Value{Assignment: &Assignment{
 							"requirements", &Value{List: &[]*Value{
 								&Value{Object: &[]*Assignment{
-									&Assignment{"name", &Value{String: p.StrP(`"python"`)}},
-									&Assignment{"namespace", &Value{String: p.StrP(`"language"`)}},
+									&Assignment{"name", &Value{Str: p.StrP(`"python"`)}},
+									&Assignment{"namespace", &Value{Str: p.StrP(`"language"`)}},
 								}},
 								&Value{Object: &[]*Assignment{
-									&Assignment{"name", &Value{String: p.StrP(`"requests"`)}},
-									&Assignment{"namespace", &Value{String: p.StrP(`"language/python"`)}},
+									&Assignment{"name", &Value{Str: p.StrP(`"requests"`)}},
+									&Assignment{"namespace", &Value{Str: p.StrP(`"language/python"`)}},
 									&Assignment{"version_requirements", &Value{List: &[]*Value{
 										&Value{Object: &[]*Assignment{
-											&Assignment{"comparator", &Value{String: p.StrP(`"eq"`)}},
-											&Assignment{"version", &Value{String: p.StrP(`"3.10.10"`)}},
+											&Assignment{"comparator", &Value{Str: p.StrP(`"eq"`)}},
+											&Assignment{"version", &Value{Str: p.StrP(`"3.10.10"`)}},
 										}},
 									}}},
 								}},
@@ -49,13 +49,13 @@ func TestBasic(t *testing.T) {
 			},
 		},
 		&In{Name: p.StrP("runtime")},
-	})
+	}, file.Script)
 }
 
 func TestComplex(t *testing.T) {
 	file, err := get(filepath.Join("testdata", "complex.lo"))
 	require.NoError(t, err)
-	assert.Equal(t, file.Script, &Script{
+	assert.Equal(t, &Script{
 		&Let{
 			[]*Assignment{
 				&Assignment{"linux_runtime", &Value{
@@ -63,13 +63,13 @@ func TestComplex(t *testing.T) {
 						&Value{Assignment: &Assignment{
 							"requirements", &Value{List: &[]*Value{
 								&Value{Object: &[]*Assignment{
-									&Assignment{"name", &Value{String: p.StrP(`"language/python"`)}},
+									&Assignment{"name", &Value{Str: p.StrP(`"language/python"`)}},
 								}},
 							}},
 						}},
 						&Value{Assignment: &Assignment{
 							"platforms", &Value{List: &[]*Value{
-								&Value{String: p.StrP(`"67890"`)}},
+								&Value{Str: p.StrP(`"67890"`)}},
 							},
 						}},
 					}},
@@ -79,13 +79,13 @@ func TestComplex(t *testing.T) {
 						&Value{Assignment: &Assignment{
 							"requirements", &Value{List: &[]*Value{
 								&Value{Object: &[]*Assignment{
-									&Assignment{"name", &Value{String: p.StrP(`"language/perl"`)}},
+									&Assignment{"name", &Value{Str: p.StrP(`"language/perl"`)}},
 								}},
 							}},
 						}},
 						&Value{Assignment: &Assignment{
 							"platforms", &Value{List: &[]*Value{
-								&Value{String: p.StrP(`"12345"`)}},
+								&Value{Str: p.StrP(`"12345"`)}},
 							},
 						}},
 					}},
@@ -96,39 +96,39 @@ func TestComplex(t *testing.T) {
 			&Value{FuncCall: &FuncCall{"win_installer", []*Value{&Value{Ident: p.StrP("win_runtime")}}}},
 			&Value{FuncCall: &FuncCall{"tar_installer", []*Value{&Value{Ident: p.StrP("linux_runtime")}}}},
 		}}},
-	})
+	}, file.Script)
 }
 
 func TestExample(t *testing.T) {
 	file, err := get(filepath.Join("testdata", "example.lo"))
 	require.NoError(t, err)
-	assert.Equal(t, file.Script, &Script{
+	assert.Equal(t, &Script{
 		&Let{
 			[]*Assignment{
 				&Assignment{"runtime", &Value{
 					FuncCall: &FuncCall{"solve", []*Value{
 						&Value{Assignment: &Assignment{
-							"at_time", &Value{String: p.StrP(`"2023-04-27T17:30:05.999000Z"`)},
+							"at_time", &Value{Str: p.StrP(`"2023-04-27T17:30:05.999000Z"`)},
 						}},
 						&Value{Assignment: &Assignment{
 							"platforms", &Value{List: &[]*Value{
-								&Value{String: p.StrP(`"96b7e6f2-bebf-564c-bc1c-f04482398f38"`)},
-								&Value{String: p.StrP(`"96b7e6f2-bebf-564c-bc1c-f04482398f38"`)},
+								&Value{Str: p.StrP(`"96b7e6f2-bebf-564c-bc1c-f04482398f38"`)},
+								&Value{Str: p.StrP(`"96b7e6f2-bebf-564c-bc1c-f04482398f38"`)},
 							}},
 						}},
 						&Value{Assignment: &Assignment{
 							"requirements", &Value{List: &[]*Value{
 								&Value{Object: &[]*Assignment{
-									&Assignment{"name", &Value{String: p.StrP(`"python"`)}},
-									&Assignment{"namespace", &Value{String: p.StrP(`"language"`)}},
+									&Assignment{"name", &Value{Str: p.StrP(`"python"`)}},
+									&Assignment{"namespace", &Value{Str: p.StrP(`"language"`)}},
 								}},
 								&Value{Object: &[]*Assignment{
-									&Assignment{"name", &Value{String: p.StrP(`"requests"`)}},
-									&Assignment{"namespace", &Value{String: p.StrP(`"language/python"`)}},
+									&Assignment{"name", &Value{Str: p.StrP(`"requests"`)}},
+									&Assignment{"namespace", &Value{Str: p.StrP(`"language/python"`)}},
 									&Assignment{"version_requirements", &Value{List: &[]*Value{
 										&Value{Object: &[]*Assignment{
-											&Assignment{"comparator", &Value{String: p.StrP(`"eq"`)}},
-											&Assignment{"version", &Value{String: p.StrP(`"3.10.10"`)}},
+											&Assignment{"comparator", &Value{Str: p.StrP(`"eq"`)}},
+											&Assignment{"version", &Value{Str: p.StrP(`"3.10.10"`)}},
 										}},
 									}}},
 								}},
@@ -139,15 +139,13 @@ func TestExample(t *testing.T) {
 			},
 		},
 		&In{Name: p.StrP("runtime")},
-	})
+	}, file.Script)
 }
 
 func TestWrite(t *testing.T) {
 	file, err := get(filepath.Join("testdata", "moderate.lo"))
 	require.NoError(t, err)
-	buf := &bytes.Buffer{}
-	file.Script.Write(buf)
-	assert.Equal(t, buf.String(),
+	assert.Equal(t,
 		`let:
 	runtime = solve(
 		requirements = [
@@ -162,7 +160,7 @@ func TestWrite(t *testing.T) {
 	)
 
 in:
-	runtime`)
+	runtime`, file.Script.String())
 }
 
 func TestRoundTrip(t *testing.T) {
@@ -174,13 +172,13 @@ func TestRoundTrip(t *testing.T) {
 	require.NoError(t, err)
 	script := file.Script
 
-	file.Script.Write(tmpfile)
+	tmpfile.Write([]byte(file.Script.String()))
 	tmpfile.Close()
 
 	file, err = get(tmpfile.Name())
 	require.NoError(t, err)
 
-	assert.Equal(t, file.Script, script)
+	assert.Equal(t, script, file.Script)
 }
 
 func TestJson(t *testing.T) {
@@ -202,7 +200,7 @@ func TestJson(t *testing.T) {
       "in": "$runtime"
     }
   }`))
-	assert.Equal(t, string(file.Script.ToJson()), string(expectedJson.Bytes()))
+	assert.Equal(t, string(expectedJson.Bytes()), string(file.Script.ToJson()))
 }
 
 func TestBuildExpression(t *testing.T) {
@@ -211,7 +209,7 @@ func TestBuildExpression(t *testing.T) {
 	expr, err := file.Script.ToBuildExpression()
 	require.NoError(t, err)
 	script := FromBuildExpression(expr)
-	assert.Equal(t, file.Script, script)
-	assert.Equal(t, string(file.Script.ToJson()), string(script.ToJson()))
+	assert.Equal(t, script, file.Script)
+	assert.Equal(t, string(script.ToJson()), string(file.Script.ToJson()))
 	assert.True(t, file.Script.EqualsBuildExpression(expr))
 }

@@ -56,8 +56,8 @@ func (v *Value) WriteJson(w io.Writer) {
 		}
 		w.Write([]byte("]"))
 
-	case v.String != nil:
-		w.Write([]byte(*v.String))
+	case v.Str != nil:
+		w.Write([]byte(*v.Str))
 
 	case v.Assignment != nil:
 		v.Assignment.WriteJson(w)
