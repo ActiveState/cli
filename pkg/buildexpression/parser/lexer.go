@@ -33,7 +33,7 @@ func (l *Lexer) Scan() (Position, Token, string, error) {
 		return l.pos, EOF, "", nil
 	}
 
-	for r == ' ' || r == '\t' || r == '\n' {
+	for r == ' ' || r == '\t' || r == '\n' || r == '\r' {
 		r = l.next()
 	}
 
