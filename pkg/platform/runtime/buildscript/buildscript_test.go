@@ -205,9 +205,9 @@ func TestJson(t *testing.T) {
           ],
           "platforms": ["12345", "67890"]
         }
-      },
-      "in": "$runtime"
-    }
+      }
+    },
+    "in": "$runtime"
   }`))
 	marshaledInput := make(map[string]interface{})
 	err = json.Unmarshal(inputJson.Bytes(), &marshaledInput)
@@ -225,9 +225,9 @@ func TestBuildExpression(t *testing.T) {
 	expr, err := file.Script.ToBuildExpression()
 	require.NoError(t, err)
 	script := NewScriptFromBuildExpression(expr)
-	assert.Equal(t, script, file.Script)
-	expectedJson, _ := json.Marshal(script)
-	actualJson, _ := json.Marshal(file.Script)
+	assert.Equal(t, file.Script, script)
+	expectedJson, _ := json.Marshal(file.Script)
+	actualJson, _ := json.Marshal(script)
 	assert.Equal(t, string(expectedJson), string(actualJson))
 	assert.True(t, file.Script.EqualsBuildExpression(expr))
 }

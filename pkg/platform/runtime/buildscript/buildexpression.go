@@ -14,21 +14,26 @@ import (
 
 func NewScriptFromBuildExpression(tree *buildexpression.Tree) *Script {
 	script := &Script{&Let{}, &In{}}
-	// tree.Root.Children()[1] contains the following 7 nodes: { let : <binding> , in <in expr>
 
-	letBinding := tree.Root.Children()[1].Children()[3]
-	for _, node := range letBinding.Children() {
-		script.Let.Assignments = append(script.Let.Assignments, fromAssignment(node))
-	}
-
-	switch inExpr := tree.Root.Children()[1].Children()[6]; inExpr.Type() {
-	case buildexpression.NodeApplication:
-		script.In.FuncCall = fromApplication(inExpr)
-	case buildexpression.NodeString:
-		name := strings.TrimLeft(inExpr.Literal(), "$")
-		script.In.Name = &name
-	default:
-		logging.Error("Unknown inExpr type: %v", inExpr.Type())
+	children := tree.Root.Children()
+	for i, node := range children {
+		switch node.Type() {
+		case buildexpression.NodeExpression:
+			letBinding := node.Children()[3] // skip the following nodes: let : {
+			for _, node := range letBinding.Children() {
+				script.Let.Assignments = append(script.Let.Assignments, fromAssignment(node))
+			}
+		case buildexpression.NodeIn:
+			switch inExpr := children[i+2]; inExpr.Type() { // skip the : node
+			case buildexpression.NodeApplication:
+				script.In.FuncCall = fromApplication(inExpr)
+			case buildexpression.NodeString:
+				name := strings.TrimLeft(inExpr.Literal(), "$")
+				script.In.Name = &name
+			default:
+				logging.Error("Unknown inExpr type: %v", inExpr.Type())
+			}
+		}
 	}
 
 	return script
@@ -115,6 +120,8 @@ func fromList(node *buildexpression.Node) *[]*Value {
 				assignments = append(assignments, assignment)
 			}
 			value.Object = &assignments
+		case buildexpression.NodeObject:
+			value.Object = fromObject(children[0])
 		case buildexpression.NodeString:
 			value.Str = fromString(children[0])
 		default:
@@ -131,12 +138,34 @@ func fromString(node *buildexpression.Node) *string {
 	return &s
 }
 
+func fromObject(node *buildexpression.Node) *[]*Assignment {
+	logging.Debug("Evaluating NodeObject")
+	assignments := []*Assignment{}
+	children := node.Children()
+	// NodeObject's key-value pairs are all inlined, and comprise every 4 nodes: <key> : <value> ,
+	for i := 1; i+2 < len(children); i += 4 {
+		value := &Value{}
+		switch valueNode := children[i+2]; valueNode.Type() {
+		case buildexpression.NodeString:
+			value.Str = fromString(valueNode)
+		case buildexpression.NodeList:
+			value.List = fromList(valueNode)
+		default:
+			value.Ident = p.StrP(valueNode.Literal())
+		}
+		assignments = append(assignments, &Assignment{
+			Key:   children[i].Literal(),
+			Value: value,
+		})
+	}
+	return &assignments
+}
+
 func (s *Script) ToBuildExpression() (*buildexpression.Tree, error) {
 	data, err := json.Marshal(s)
 	if err != nil {
 		return nil, errs.Wrap(err, "Unable to marshal script to JSON")
 	}
-	logging.Debug(string(data))
 	parser, err := buildexpression.New(data)
 	if err != nil {
 		return nil, errs.Wrap(err, "Unable to create build expression parser")
