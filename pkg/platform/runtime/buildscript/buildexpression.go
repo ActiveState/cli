@@ -11,7 +11,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/graphql/model/buildplanner"
 )
 
-func FromBuildExpression(tree *buildexpression.Tree) *Script {
+func NewScriptFromBuildExpression(tree *buildexpression.Tree) *Script {
 	script := &Script{&Let{}, &In{}}
 	// tree.Root.Children() contains the following 7 nodes: { let : <binding> , in <in expr>
 
@@ -144,7 +144,7 @@ func (s *Script) ToBuildExpression() (*buildexpression.Tree, error) {
 
 func (s *Script) EqualsBuildExpression(other *buildexpression.Tree) bool {
 	myJson := string(s.ToJson())
-	otherJson := string(FromBuildExpression(other).ToJson())
+	otherJson := string(NewScriptFromBuildExpression(other).ToJson())
 	return myJson == otherJson
 }
 

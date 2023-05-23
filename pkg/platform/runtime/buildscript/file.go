@@ -11,7 +11,6 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/platform/api/graphql/model/buildplanner"
 
-	"github.com/alecthomas/participle/v2"
 	"gopkg.in/yaml.v2"
 )
 
@@ -26,7 +25,7 @@ type File struct {
 	Script *Script
 }
 
-func get(path string) (*File, error) {
+func newFile(path string) (*File, error) {
 	data, err := fileutils.ReadFile(path)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
@@ -35,26 +34,20 @@ func get(path string) (*File, error) {
 		return nil, errs.Wrap(err, "Could not read build script")
 	}
 
-	parser, err := participle.Build[Script]()
+	script, err := NewScript(data)
 	if err != nil {
-		return nil, errs.Wrap(err, "Could not create parser for build script")
-	}
-
-	script, err := parser.ParseBytes(constants.BuildScriptFileName, data)
-	if err != nil {
-		logging.Error("%v", err)
 		return nil, errs.Wrap(err, "Could not parse build script")
 	}
 
 	return &File{path, script}, nil
 }
 
-func Get(dir string) (*File, error) {
-	return get(filepath.Join(dir, constants.BuildScriptFileName))
+func NewFile(dir string) (*File, error) {
+	return newFile(filepath.Join(dir, constants.BuildScriptFileName))
 }
 
 func UpdateOrCreate(dir string, script *model.BuildScript) error {
-	file, err := Get(dir)
+	file, err := NewFile(dir)
 	if err != nil {
 		if !IsDoesNotExistError(err) {
 			return errs.Wrap(err, "Could not get build script")

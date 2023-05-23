@@ -4,6 +4,10 @@ import (
 	"bytes"
 	"fmt"
 	"strings"
+
+	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/errs"
+	"github.com/alecthomas/participle/v2"
 )
 
 type Script struct {
@@ -38,6 +42,20 @@ type FuncCall struct {
 type In struct {
 	FuncCall *FuncCall `parser:"@@"`
 	Name     *string   `parser:"| @Ident"`
+}
+
+func NewScript(data []byte) (*Script, error) {
+	parser, err := participle.Build[Script]()
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not create parser for build script")
+	}
+
+	script, err := parser.ParseBytes(constants.BuildScriptFileName, data)
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not parse build script")
+	}
+
+	return script, nil
 }
 
 func indent(s string) string {

@@ -13,7 +13,7 @@ import (
 )
 
 func TestBasic(t *testing.T) {
-	file, err := get(filepath.Join("testdata", "basic.lo"))
+	file, err := newFile(filepath.Join("testdata", "basic.lo"))
 	require.NoError(t, err)
 	assert.Equal(t, &Script{
 		&Let{
@@ -53,7 +53,7 @@ func TestBasic(t *testing.T) {
 }
 
 func TestComplex(t *testing.T) {
-	file, err := get(filepath.Join("testdata", "complex.lo"))
+	file, err := newFile(filepath.Join("testdata", "complex.lo"))
 	require.NoError(t, err)
 	assert.Equal(t, &Script{
 		&Let{
@@ -100,7 +100,7 @@ func TestComplex(t *testing.T) {
 }
 
 func TestExample(t *testing.T) {
-	file, err := get(filepath.Join("testdata", "example.lo"))
+	file, err := newFile(filepath.Join("testdata", "example.lo"))
 	require.NoError(t, err)
 	assert.Equal(t, &Script{
 		&Let{
@@ -142,8 +142,16 @@ func TestExample(t *testing.T) {
 	}, file.Script)
 }
 
-func TestWrite(t *testing.T) {
-	file, err := get(filepath.Join("testdata", "moderate.lo"))
+func TestString(t *testing.T) {
+	script, err := NewScript([]byte(
+		`let:
+    runtime = solve(
+        requirements=[{name="language/python"}],
+        platforms=["12345", "67890"]
+    )
+in:
+    runtime
+`))
 	require.NoError(t, err)
 	assert.Equal(t,
 		`let:
@@ -160,7 +168,7 @@ func TestWrite(t *testing.T) {
 	)
 
 in:
-	runtime`, file.Script.String())
+	runtime`, script.String())
 }
 
 func TestRoundTrip(t *testing.T) {
@@ -168,21 +176,21 @@ func TestRoundTrip(t *testing.T) {
 	require.NoError(t, err)
 	defer os.Remove(tmpfile.Name())
 
-	file, err := get(filepath.Join("testdata", "example.lo"))
+	file, err := newFile(filepath.Join("testdata", "example.lo"))
 	require.NoError(t, err)
 	script := file.Script
 
 	tmpfile.Write([]byte(file.Script.String()))
 	tmpfile.Close()
 
-	file, err = get(tmpfile.Name())
+	file, err = newFile(tmpfile.Name())
 	require.NoError(t, err)
 
 	assert.Equal(t, script, file.Script)
 }
 
 func TestJson(t *testing.T) {
-	file, err := get(filepath.Join("testdata", "moderate.lo"))
+	file, err := newFile(filepath.Join("testdata", "moderate.lo"))
 	require.NoError(t, err)
 	expectedJson := &bytes.Buffer{}
 	json.Compact(expectedJson, []byte(`{
@@ -204,11 +212,11 @@ func TestJson(t *testing.T) {
 }
 
 func TestBuildExpression(t *testing.T) {
-	file, err := get(filepath.Join("testdata", "example.lo"))
+	file, err := newFile(filepath.Join("testdata", "example.lo"))
 	require.NoError(t, err)
 	expr, err := file.Script.ToBuildExpression()
 	require.NoError(t, err)
-	script := FromBuildExpression(expr)
+	script := NewScriptFromBuildExpression(expr)
 	assert.Equal(t, script, file.Script)
 	assert.Equal(t, string(script.ToJson()), string(file.Script.ToJson()))
 	assert.True(t, file.Script.EqualsBuildExpression(expr))
