@@ -108,9 +108,27 @@ func (p *Parser) Parse() (*Tree, error) {
 		return nil, errs.Wrap(err, "Expect failed")
 	}
 
-	err = p.parseExpression(result.Root)
-	if err != nil {
-		return nil, errs.Wrap(err, "Failed to parse expression")
+	for p.tok != EOF {
+		switch p.tok {
+		case LET:
+			err = p.parseExpression(result.Root)
+			if err != nil {
+				return nil, errs.Wrap(err, "Failed to parse expression")
+			}
+			if p.tok == R_CURL {
+				result.Root.AddChild(p.newNode(NodeRightCurlyBracket))
+			}
+		case IN:
+			err = p.parseIn(result.Root)
+			if err != nil {
+				return nil, errs.Wrap(err, "Failed to parse in")
+			}
+			if p.tok == COMMA {
+				result.Root.AddChild(p.newNode(NodeComma))
+			}
+		}
+
+		p.next()
 	}
 
 	return &result, nil
@@ -142,7 +160,7 @@ func (p *Parser) parseExpression(root *Node) error {
 		return errs.Wrap(err, "Failed to parse binding")
 	}
 
-	return p.parseIn(expressionNode)
+	return nil
 }
 
 func (p *Parser) parseBinding(node *Node) error {
@@ -214,8 +232,8 @@ func (p *Parser) parseAssignment(node *Node) error {
 	case IDENTIFIER:
 		err = p.parseIdentifier(assignmentNode)
 		msg = "Failed to parse identifier"
-	case IN:
-		// If we encounter an IN token then we've reached the end of the binding
+	case IN, R_CURL:
+		// If we encounter an IN or R_CURL token then we've reached the end of the binding
 		return nil
 	default:
 		err = p.parseList(assignmentNode)
@@ -382,11 +400,6 @@ func (p *Parser) parseListElements(node *Node) error {
 		if err != nil {
 			return errs.Wrap(err, msg)
 		}
-
-		if p.tok == R_BRACKET {
-			node.AddChild(p.newNode(NodeRightBracket))
-			break
-		}
 	}
 
 	return nil
@@ -403,7 +416,10 @@ func (p *Parser) parseListObject(node *Node) error {
 	elementNode := p.newNode(NodeListElement)
 	node.AddChild(elementNode)
 
-	err := p.expectToken(L_CURL, elementNode, NodeLeftCurlyBracket)
+	objectNode := p.newNode(NodeObject)
+	elementNode.AddChild(objectNode)
+
+	err := p.expectToken(L_CURL, objectNode, NodeLeftCurlyBracket)
 	if err != nil {
 		return errs.Wrap(err, "Failed to scan")
 	}
@@ -413,18 +429,18 @@ func (p *Parser) parseListObject(node *Node) error {
 			break
 		}
 
-		err := p.parseObjectAttribute(elementNode)
+		err := p.parseObjectAttribute(objectNode)
 		if err != nil {
 			return errs.Wrap(err, "Failed to parse object attribute")
 		}
 
 		if p.tok == COMMA {
-			elementNode.AddChild(p.newNode(NodeComma))
+			objectNode.AddChild(p.newNode(NodeComma))
 			p.next()
 		}
 	}
 
-	return p.expectToken(R_CURL, elementNode, NodeRightCurlyBracket)
+	return p.expectToken(R_CURL, objectNode, NodeRightCurlyBracket)
 }
 
 func (p *Parser) parseObjectAttribute(node *Node) error {
@@ -499,7 +515,6 @@ func (p *Parser) parseIn(node *Node) error {
 		return errs.Wrap(err, msg)
 	}
 
-	p.next()
 	return nil
 }
 

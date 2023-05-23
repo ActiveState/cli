@@ -25,6 +25,7 @@ const (
 	NodeSolveLegacyFn
 	NodeMergeFn
 	NodeString
+	NodeObject
 )
 
 var literalNodes = map[NodeType]bool{
@@ -66,6 +67,7 @@ var nodeNames = map[NodeType]string{
 	NodeSolveLegacyFn:     "SolveLegacyFn",
 	NodeMergeFn:           "MergeFn",
 	NodeString:            "String",
+	NodeObject:            "Object",
 }
 
 func (t NodeType) String() string {

@@ -1,5 +1,5 @@
 buildExpression :== <expression>
-<expression> :== [let][:] <binding> [in] ( <string>+ | <application>+ )
+<expression> :== ( [let][:] <binding> ) | ( [in][:] ( <string>+ | <application>+ ) )
 <binding> :== <assignment>+
 <assignment> :== <string> [:] <application> | <string> [:] <list> | <string> = <string>
 <application> ::== <string> [:] <argument>*

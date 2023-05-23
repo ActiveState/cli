@@ -37,7 +37,7 @@ func (l *Lexer) Scan() (Position, Token, string, error) {
 		r = l.next()
 	}
 
-	if l.isLetStart(r) || l.isInStart(r) {
+	if l.isLetStatement(r) || l.isInStatement(r) {
 		return l.lexKeyword(r)
 	}
 
@@ -45,7 +45,7 @@ func (l *Lexer) Scan() (Position, Token, string, error) {
 		return l.lexIdentifier(r)
 	}
 
-	if l.isNullStart(r) {
+	if l.isNull(r) {
 		return l.lexNull(r)
 	}
 
@@ -111,15 +111,15 @@ func (l *Lexer) peekN(n int) rune {
 	return r
 }
 
-func (l *Lexer) isLetStart(r rune) bool {
+func (l *Lexer) isLetStatement(r rune) bool {
 	return r == 'l' && l.peek() == 'e' && l.peekN(1) == 't'
 }
 
-func (l *Lexer) isInStart(r rune) bool {
+func (l *Lexer) isInStatement(r rune) bool {
 	return r == 'i' && l.peek() == 'n'
 }
 
-func (l *Lexer) isNullStart(r rune) bool {
+func (l *Lexer) isNull(r rune) bool {
 	return r == 'n' && l.peek() == 'u' && l.peekN(1) == 'l' && l.peekN(2) == 'l'
 }
 
@@ -162,7 +162,6 @@ func (l *Lexer) lexKeyword(r rune) (Position, Token, string, error) {
 		return l.pos, ILLEGAL, "", errs.New("unexpected identifier: %s", string(l.input[start:l.read+1]))
 	}
 
-	// TODO: Should this be done in the parsing step?
 	switch keyword {
 	case LET, IN:
 		if r != ':' {

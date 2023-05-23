@@ -34,3 +34,16 @@ func TestPaser_Parse_Complex(t *testing.T) {
 	_, err = p.Parse()
 	assert.NoError(t, err)
 }
+
+func TestParser_Parse_Unordered(t *testing.T) {
+	root, err := environment.GetRootPath()
+	assert.NoError(t, err)
+
+	testData, err := fileutils.ReadFile(filepath.Join(root, "pkg", "buildexpression", "testdata", "buildexpression-unordered.json"))
+	assert.NoError(t, err)
+
+	p, err := New(testData)
+	assert.NoError(t, err)
+	_, err = p.Parse()
+	assert.NoError(t, err)
+}
