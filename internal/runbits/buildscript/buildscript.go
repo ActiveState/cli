@@ -13,7 +13,7 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-func getRemoteBuildScript(proj *project.Project, customCommit *strfmt.UUID, auth *authentication.Auth) (*bpModel.BuildScript, error) {
+func getBuildExpression(proj *project.Project, customCommit *strfmt.UUID, auth *authentication.Auth) (*bpModel.BuildScript, error) {
 	bp := model.NewBuildPlanner(auth)
 	commitID := proj.CommitUUID()
 	if customCommit != nil {
@@ -33,22 +33,22 @@ func Sync(proj *project.Project, commitID *strfmt.UUID, out output.Outputer, aut
 		return errs.Wrap(err, "Could not get local build script")
 	}
 
-	script, err := getRemoteBuildScript(proj, commitID, auth)
+	expr, err := getBuildExpression(proj, commitID, auth)
 	if err != nil {
-		return errs.Wrap(err, "Could not get remote build script")
+		return errs.Wrap(err, "Could not get remote build expr")
 	}
 
 	if file != nil {
 		logging.Debug("Checking for changes")
-		if file.Script.Equals(script) {
+		if file.Script.Equals(expr) {
 			return nil // nothing to do
 		}
 		logging.Debug("Merging changes")
 		// Note: merging and/or conflict resolution will happen in another ticket.
-		// For now, if commitID is given, a mutation happened, so prefer the remote build script.
+		// For now, if commitID is given, a mutation happened, so prefer the remote build expression.
 		// Otherwise, prefer local changes.
 		if commitID == nil {
-			script = file.Script
+			expr = file.Script // TODO: translate from script to expression in DX-1790 or DX-1858
 		}
 
 		out.Notice(locale.Tl("buildscript_update", "Updating project to reflect build script changes..."))
@@ -56,12 +56,12 @@ func Sync(proj *project.Project, commitID *strfmt.UUID, out output.Outputer, aut
 		bp := model.NewBuildPlanner(auth)
 		// Note: these commits will be staged commits in a later ticket.
 		commit, err := bp.PushCommit(model.PushCommitParams{
-			Owner:        proj.Owner(),
-			Project:      proj.Name(),
-			ParentCommit: proj.CommitID(),
-			BranchRef:    proj.BranchName(),
-			Description:  locale.Tl("buildscript_commit_description", "Update project due to build script change."),
-			Script:       script,
+			Owner:           proj.Owner(),
+			Project:         proj.Name(),
+			ParentCommit:    proj.CommitID(),
+			BranchRef:       proj.BranchName(),
+			Description:     locale.Tl("buildscript_commit_description", "Update project due to build script change."),
+			BuildExpression: expr,
 		})
 		if err != nil {
 			return errs.Wrap(err, "Could not update project to reflect build script changes.")
@@ -69,13 +69,13 @@ func Sync(proj *project.Project, commitID *strfmt.UUID, out output.Outputer, aut
 		newCommitID := strfmt.UUID(commit.CommitID)
 		commitID = &newCommitID
 
-		script, err = getRemoteBuildScript(proj, commitID, auth)
+		expr, err = getBuildExpression(proj, commitID, auth)
 		if err != nil {
-			return errs.Wrap(err, "Could not get remote build script")
+			return errs.Wrap(err, "Could not get remote build expr")
 		}
 	}
 
-	if err := buildscript.UpdateOrCreate(proj.Dir(), script); err != nil {
+	if err := buildscript.UpdateOrCreate(proj.Dir(), expr); err != nil {
 		return errs.Wrap(err, "Could not update local build script.")
 	}
 

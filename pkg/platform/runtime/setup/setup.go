@@ -525,7 +525,7 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 	}
 
 	if s.target.ProjectDir() != "" {
-		if err := buildscript.UpdateOrCreate(s.target.ProjectDir(), buildResult.BuildScript); err != nil {
+		if err := buildscript.UpdateOrCreate(s.target.ProjectDir(), buildResult.BuildExpression); err != nil {
 			return nil, errs.Wrap(err, "Could not save build script.")
 		}
 	}

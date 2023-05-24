@@ -142,10 +142,10 @@ func (bp *BuildPlanner) FetchBuildResult(commitID strfmt.UUID, owner, project st
 	}
 
 	res := BuildResult{
-		BuildEngine: buildEngine,
-		Build:       resp.Project.Commit.Build,
-		BuildReady:  resp.Project.Commit.Build.Status == model.Ready,
-		BuildScript: resp.Project.Commit.Script,
+		BuildEngine:     buildEngine,
+		Build:           resp.Project.Commit.Build,
+		BuildReady:      resp.Project.Commit.Build.Status == model.Ready,
+		BuildExpression: resp.Project.Commit.Script,
 	}
 
 	// If the build is alternative the buildLogID type will identify it as a recipe ID.
@@ -194,17 +194,17 @@ func removeEmptyTargets(bp *model.BuildPlan) {
 }
 
 type PushCommitParams struct {
-	Owner        string
-	Project      string
-	ParentCommit string
-	Description  string
-	BranchRef    string
-	Script       *model.BuildScript
+	Owner           string
+	Project         string
+	ParentCommit    string
+	Description     string
+	BranchRef       string
+	BuildExpression *model.BuildScript
 }
 
 func (bp *BuildPlanner) PushCommit(params PushCommitParams) (*model.Commit, error) {
 	// With the updated build graph call the push commit mutation
-	request := request.PushCommit(params.Owner, params.Project, params.ParentCommit, params.BranchRef, params.Description, params.Script)
+	request := request.PushCommit(params.Owner, params.Project, params.ParentCommit, params.BranchRef, params.Description, params.BuildExpression)
 	resp := &model.PushCommitResult{}
 	err := bp.client.Run(request, resp)
 	if err != nil {
