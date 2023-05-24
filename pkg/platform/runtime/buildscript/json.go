@@ -13,8 +13,8 @@ func (s *Script) MarshalJSON() ([]byte, error) {
 	for _, assignment := range s.Let.Assignments {
 		let[assignment.Key] = assignment.Value
 	}
+	let["in"] = s.In
 	m["let"] = let
-	m["in"] = s.In
 	return json.Marshal(m)
 }
 
@@ -43,7 +43,7 @@ func (v *Value) MarshalJSON() ([]byte, error) {
 	case v.Ident != nil:
 		return json.Marshal(v.Ident)
 	}
-	return nil, errors.New(fmt.Sprintf("Cannot marshal %v", v))
+	return json.Marshal(nil)
 }
 
 func (f *FuncCall) MarshalJSON() ([]byte, error) {

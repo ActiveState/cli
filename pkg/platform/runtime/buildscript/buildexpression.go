@@ -2,185 +2,194 @@ package buildscript
 
 import (
 	"encoding/json"
-	"fmt"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/rtutils/p"
-	buildexpression "github.com/ActiveState/cli/pkg/buildexpression/parser"
 	"github.com/ActiveState/cli/pkg/platform/api/graphql/model/buildplanner"
 )
 
-func NewScriptFromBuildExpression(tree *buildexpression.Tree) *Script {
-	script := &Script{&Let{}, &In{}}
+const SolveFunction = "solve"
+const SolveLegacyFunction = "solve_legacy"
+const MergeFunction = "merge"
 
-	children := tree.Root.Children()
-	for i, node := range children {
-		switch node.Type() {
-		case buildexpression.NodeExpression:
-			letBinding := node.Children()[3] // skip the following nodes: let : {
-			for _, node := range letBinding.Children() {
-				script.Let.Assignments = append(script.Let.Assignments, fromAssignment(node))
-			}
-		case buildexpression.NodeIn:
-			switch inExpr := children[i+2]; inExpr.Type() { // skip the : node
-			case buildexpression.NodeApplication:
-				script.In.FuncCall = fromApplication(inExpr)
-			case buildexpression.NodeString:
-				name := strings.TrimLeft(inExpr.Literal(), "$")
-				script.In.Name = &name
-			default:
-				logging.Error("Unknown inExpr type: %v", inExpr.Type())
-			}
-		}
+func NewScriptFromBuildExpression(expr []byte) (*Script, error) {
+	m := make(map[string]interface{})
+	err := json.Unmarshal(expr, &m)
+	if err != nil { // this really should not happen
+		return nil, errs.Wrap(err, "Could not unmarshal build expression")
 	}
 
-	return script
-}
-
-func fromAssignment(node *buildexpression.Node) *Assignment {
-	logging.Debug("Evaluating NodeAssignment")
-	children := node.Children()
-	assignment := &Assignment{Key: children[0].Literal()}
-	switch children[2].Type() {
-	case buildexpression.NodeLeftCurlyBracket:
-		assignment.Value = &Value{FuncCall: fromApplication(children[3])}
-	default:
-		logging.Error("Unhandled assignment node: %v", children[2])
+	letValue, ok := m["let"]
+	if !ok {
+		return nil, errs.New("Build expression has no 'let' key")
 	}
-	return assignment
-}
-
-func fromApplication(node *buildexpression.Node) *FuncCall {
-	logging.Debug("Evaluating NodeApplication")
-	children := node.Children()
-	funcCall := &FuncCall{Name: children[0].Children()[0].Literal()}
-	// NodeApplication's tree is weird. Its "function parameters" are inlined and consist of a
-	// variable number of nodes. Lookahead is needed to produce a correct Value{}.
-	i := 3 // skip the following nodes: <func> : {
-	for i < len(children) {
-		child := children[i]
-		i++
-		if child.Type() == buildexpression.NodeComma {
-			continue // skip to next node
-		} else if child.Type() == buildexpression.NodeRightCurlyBracket {
-			break // done
-		}
-		value := &Value{}
-		switch children[i].Type() { // i is always a valid index
-		case buildexpression.NodeColon:
-			i++
-			assignment := &Assignment{Key: child.Literal()}
-			switch valueNode := children[i]; valueNode.Type() {
-			case buildexpression.NodeList:
-				assignment.Value = &Value{List: fromList(valueNode)}
-			case buildexpression.NodeString:
-				assignment.Value = &Value{Str: fromString(valueNode)}
-			case buildexpression.NodeIdentifier:
-				assignment.Value = &Value{Ident: p.StrP(valueNode.Literal())}
-			default:
-				logging.Error("Unhandled assignment node: %v", valueNode)
-			}
-			i++
-			value.Assignment = assignment
-		default:
-			value.Ident = p.StrP(child.Literal())
-		}
-		funcCall.Arguments = append(funcCall.Arguments, value)
+	let, err := newLet(letValue)
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not parse 'let' key")
 	}
-	return funcCall
+
+	inValue, ok := letValue.(map[string]interface{})["in"] // will not fail if we've gotten this far
+	if !ok {
+		return nil, errs.New("Build expression's 'let' object has no 'in' key")
+	}
+	in, err := newIn(inValue)
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not parse 'in' key's value: %v", inValue)
+	}
+
+	return &Script{let, in}, nil
 }
 
-func fromList(node *buildexpression.Node) *[]*Value {
-	logging.Debug("Evaluating NodeList")
-	values := []*Value{}
-	// ListNode contains not only NodeListElement node, but also syntax nodes like [ and ,
-	// Fortunately, we can ignore everything but NodeListElement.
-	for _, child := range node.Children() {
-		if child.Type() != buildexpression.NodeListElement {
-			continue
-		}
-		children := child.Children()
-		value := &Value{}
-		switch children[0].Type() {
-		case buildexpression.NodeLeftCurlyBracket:
-			assignments := []*Assignment{}
-			// Each assignment consists of 4 inlined nodes: <key> : <value> ,
-			for i := 1; i < len(children); i += 4 {
-				assignment := &Assignment{Key: children[i].Literal()}
-				switch valueNode := children[i+2]; valueNode.Type() {
-				case buildexpression.NodeString:
-					assignment.Value = &Value{Str: fromString(valueNode)}
-				case buildexpression.NodeList:
-					assignment.Value = &Value{List: fromList(valueNode)}
-				default:
-					assignment.Value = &Value{Ident: p.StrP(valueNode.Literal())}
+func newLet(letValue interface{}) (*Let, error) {
+	m, ok := letValue.(map[string]interface{})
+	if !ok {
+		return nil, errs.New("'let' key is not a JSON object")
+	}
+
+	assignments, err := newAssignments(m)
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not parse 'let' key")
+	}
+	return &Let{Assignments: *assignments}, nil
+}
+
+func isFunction(name string) bool {
+	return name == SolveFunction || name == SolveLegacyFunction || name == MergeFunction
+}
+
+func newValue(valueInterface interface{}, preferIdent bool) (*Value, error) {
+	value := &Value{}
+
+	if m, ok := valueInterface.(map[string]interface{}); ok {
+		// Examine keys first to see if this is a function call.
+		for key := range m {
+			if isFunction(key) {
+				f, err := newFuncCall(m)
+				if err != nil {
+					return nil, errs.Wrap(err, "Could not parse '%s' function's value: %v", key, m)
 				}
-				assignments = append(assignments, assignment)
+				value.FuncCall = f
 			}
-			value.Object = &assignments
-		case buildexpression.NodeObject:
-			value.Object = fromObject(children[0])
-		case buildexpression.NodeString:
-			value.Str = fromString(children[0])
-		default:
-			value.Ident = p.StrP(children[0].Literal())
 		}
-		values = append(values, value)
+
+		if value.FuncCall == nil {
+			// It's not a function call, but an object.
+			object, err := newAssignments(m)
+			if err != nil {
+				return nil, errs.Wrap(err, "Could not parse object: %v", m)
+			}
+			value.Object = object
+		}
+
+	} else if list, ok := valueInterface.([]interface{}); ok {
+		values := []*Value{}
+		for _, item := range list {
+			value, err := newValue(item, false)
+			if err != nil {
+				return nil, errs.Wrap(err, "Could not parse list: %v", list)
+			}
+			values = append(values, value)
+		}
+		value.List = &values
+
+	} else if s, ok := valueInterface.(string); ok {
+		if preferIdent {
+			value.Ident = &s
+		} else {
+			b, err := json.Marshal(s)
+			if err != nil {
+				return nil, errs.Wrap(err, "Could not marshal string '%s'", s)
+			}
+			value.Str = p.StrP(string(b))
+		}
 	}
-	return &values
+
+	return value, nil
 }
 
-func fromString(node *buildexpression.Node) *string {
-	// This node does not retain the quotes, so add them back.
-	s := fmt.Sprintf(`"%s"`, node.Literal())
-	return &s
+func newFuncCall(m map[string]interface{}) (*FuncCall, error) {
+	// Look in the given object for the function's name and argument object or list.
+	var name string
+	var argsInterface interface{}
+	for key, value := range m {
+		if isFunction(key) {
+			name = key
+			argsInterface = value
+			break
+		}
+	}
+
+	args := []*Value{}
+
+	if m, ok := argsInterface.(map[string]interface{}); ok {
+		for key, valueInterface := range m {
+			value, err := newValue(valueInterface, name == MergeFunction)
+			if err != nil {
+				return nil, errs.Wrap(err, "Could not parse '%s' function's argument '%s': %v", name, key, valueInterface)
+			}
+			args = append(args, &Value{Assignment: &Assignment{Key: key, Value: value}})
+		}
+
+	} else if list, ok := argsInterface.([]interface{}); ok {
+		for _, item := range list {
+			value, err := newValue(item, false)
+			if err != nil {
+				return nil, errs.Wrap(err, "Could not parse '%s' function's argument list item: %v", name, item)
+			}
+			args = append(args, value)
+		}
+
+	} else {
+		return nil, errs.New("Function '%s' expected to be object or list", name)
+	}
+
+	return &FuncCall{Name: name, Arguments: args}, nil
 }
 
-func fromObject(node *buildexpression.Node) *[]*Assignment {
-	logging.Debug("Evaluating NodeObject")
+func newAssignments(m map[string]interface{}) (*[]*Assignment, error) {
 	assignments := []*Assignment{}
-	children := node.Children()
-	// NodeObject's key-value pairs are all inlined, and comprise every 4 nodes: <key> : <value> ,
-	for i := 1; i+2 < len(children); i += 4 {
-		value := &Value{}
-		switch valueNode := children[i+2]; valueNode.Type() {
-		case buildexpression.NodeString:
-			value.Str = fromString(valueNode)
-		case buildexpression.NodeList:
-			value.List = fromList(valueNode)
-		default:
-			value.Ident = p.StrP(valueNode.Literal())
+	for key, valueInterface := range m {
+		value, err := newValue(valueInterface, false)
+		if err != nil {
+			return nil, errs.Wrap(err, "Could not parse '%s' key's value: %v", key, valueInterface)
 		}
-		assignments = append(assignments, &Assignment{
-			Key:   children[i].Literal(),
-			Value: value,
-		})
+		assignments = append(assignments, &Assignment{Key: key, Value: value})
 	}
-	return &assignments
+	return &assignments, nil
 }
 
-func (s *Script) ToBuildExpression() (*buildexpression.Tree, error) {
-	data, err := json.Marshal(s)
-	if err != nil {
-		return nil, errs.Wrap(err, "Unable to marshal script to JSON")
+func newIn(inValue interface{}) (*In, error) {
+	in := &In{}
+
+	if m, ok := inValue.(map[string]interface{}); ok {
+		f, err := newFuncCall(m)
+		if err != nil {
+			return nil, errs.Wrap(err, "'in' object is not a function call")
+		}
+		in.FuncCall = f
+
+	} else if s, ok := inValue.(string); ok {
+		in.Name = p.StrP(strings.TrimPrefix(s, "$"))
 	}
-	parser, err := buildexpression.New(data)
-	if err != nil {
-		return nil, errs.Wrap(err, "Unable to create build expression parser")
-	}
-	tree, err := parser.Parse()
-	if err != nil {
-		return nil, errs.Wrap(err, "Unable to parse JSON")
-	}
-	return tree, nil
+
+	return in, nil
 }
 
-func (s *Script) EqualsBuildExpression(other *buildexpression.Tree) bool {
+func (s *Script) EqualsBuildExpression(otherJson []byte) bool {
 	myJson, err := json.Marshal(s)
-	otherJson, err2 := json.Marshal(NewScriptFromBuildExpression(other))
-	return err == nil && err2 == nil && string(myJson) == string(otherJson)
+	if err != nil {
+		return false
+	}
+	// Cannot compare myJson and otherJson directly due to key sort order, whitespace discrepancies,
+	// etc., so convert otherJson into a build script, and back into JSON before the comparison.
+	// json.Marshal() produces the same key sort order.
+	otherExpr, err := NewScriptFromBuildExpression(otherJson)
+	if err != nil {
+		return false
+	}
+	otherJson, err = json.Marshal(otherExpr)
+	return err == nil && string(myJson) == string(otherJson)
 }
 
 func (s *Script) Equals(other *model.BuildScript) bool { return false } // TODO

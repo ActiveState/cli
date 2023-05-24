@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/rtutils/p"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -205,10 +206,12 @@ func TestJson(t *testing.T) {
           ],
           "platforms": ["12345", "67890"]
         }
-      }
-    },
-    "in": "$runtime"
+      },
+      "in": "$runtime"
+    }
   }`))
+	// Cannot compare marshaled JSON directly with inputJson due to key sort order, so unmarshal and
+	// remarshal before making the comparison. json.Marshal() produces the same key sort order.
 	marshaledInput := make(map[string]interface{})
 	err = json.Unmarshal(inputJson.Bytes(), &marshaledInput)
 	require.NoError(t, err)
@@ -220,14 +223,36 @@ func TestJson(t *testing.T) {
 }
 
 func TestBuildExpression(t *testing.T) {
-	file, err := newFile(filepath.Join("testdata", "example.lo"))
+	expr := fileutils.ReadFileUnsafe(filepath.Join("testdata", "buildexpression.json"))
+	script, err := NewScriptFromBuildExpression(expr)
 	require.NoError(t, err)
-	expr, err := file.Script.ToBuildExpression()
+	require.NotNil(t, script)
+	newExpr, err := json.Marshal(script)
 	require.NoError(t, err)
-	script := NewScriptFromBuildExpression(expr)
-	assert.Equal(t, file.Script, script)
-	expectedJson, _ := json.Marshal(file.Script)
-	actualJson, _ := json.Marshal(script)
-	assert.Equal(t, string(expectedJson), string(actualJson))
-	assert.True(t, file.Script.EqualsBuildExpression(expr))
+
+	// Cannot compare expr and newExpr directly due to key sort order, whitespace discrepancies,
+	// etc., so unmarshal and remarshal before the comparison. json.Marshal() produces the same key
+	// sort order.
+	marshaledInput := make(map[string]interface{})
+	err = json.Unmarshal(expr, &marshaledInput)
+	require.NoError(t, err)
+	expectedExpr, err := json.Marshal(marshaledInput)
+	assert.Equal(t, string(expectedExpr), string(newExpr))
+	assert.True(t, script.EqualsBuildExpression(expr))
+
+	// Verify null JSON value is handled correctly.
+	nullHandled := false
+	for _, assignment := range script.Let.Assignments {
+		if assignment.Key == "runtime" {
+			args := assignment.Value.FuncCall.Arguments
+			require.NotNil(t, args)
+			for _, arg := range args {
+				if arg.Assignment != nil && arg.Assignment.Key == "solver_version" {
+					assert.Equal(t, p.PstrP(nil), arg.Assignment.Value.Str)
+					nullHandled = true
+				}
+			}
+		}
+	}
+	assert.True(t, nullHandled, "JSON null not encountered")
 }

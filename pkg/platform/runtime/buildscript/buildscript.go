@@ -124,7 +124,7 @@ func (v *Value) String() string {
 		return *v.Ident
 	}
 
-	return "" // should not get here
+	return "null"
 }
 
 func (f *FuncCall) String() string {
