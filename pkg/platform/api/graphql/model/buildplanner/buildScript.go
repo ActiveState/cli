@@ -64,19 +64,19 @@ type Runtime struct {
 }
 
 type Solve struct {
-	BuildFlags    []string       `json:"build_flags,omitempty" yaml:"build_flags,omitempty"`
-	CamelFlags    []string       `json:"camel_flags,omitempty" yaml:"camel_flags,omitempty"`
+	BuildFlags    []string       `json:"build_flags" yaml:"build_flags"`
+	CamelFlags    []string       `json:"camel_flags" yaml:"camel_flags"`
 	Platforms     []string       `json:"platforms" yaml:"platforms"`
-	SolverVersion string         `json:"solver_version,omitempty" yaml:"solver_version,omitempty"`
+	SolverVersion *string        `json:"solver_version" yaml:"solver_version"`
 	AtTime        string         `json:"at_time" yaml:"at_time"`
 	Requirements  []*Requirement `json:"requirements" yaml:"requirements"`
 }
 
 type SolveLegacy struct {
-	BuildFlags    []string       `json:"build_flags,omitempty" yaml:"build_flags,omitempty"`
-	CamelFlags    []string       `json:"camel_flags,omitempty" yaml:"camel_flags,omitempty"`
+	BuildFlags    []string       `json:"build_flags" yaml:"build_flags"`
+	CamelFlags    []string       `json:"camel_flags" yaml:"camel_flags"`
 	Platforms     []string       `json:"platforms" yaml:"platforms"`
-	SolverVersion string         `json:"solver_version,omitempty" yaml:"solver_version,omitempty"`
+	SolverVersion *string        `json:"solver_version" yaml:"solver_version"`
 	AtTime        string         `json:"at_time" yaml:"at_time"`
 	Requirements  []*Requirement `json:"requirements" yaml:"requirements"`
 }
