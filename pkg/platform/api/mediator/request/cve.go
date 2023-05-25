@@ -47,8 +47,8 @@ func (p *vulnerabilitiesByProject) Query() string {
 		}`
 }
 
-func (p *vulnerabilitiesByProject) Vars() map[string]interface{} {
-	return p.vars
+func (p *vulnerabilitiesByProject) Vars() (map[string]interface{}, error) {
+	return p.vars, nil
 }
 
 type vulnerabilitiesByCommit struct {
@@ -91,6 +91,6 @@ func (p *vulnerabilitiesByCommit) Query() string {
 		}`
 }
 
-func (p *vulnerabilitiesByCommit) Vars() map[string]interface{} {
-	return p.vars
+func (p *vulnerabilitiesByCommit) Vars() (map[string]interface{}, error) {
+	return p.vars, nil
 }

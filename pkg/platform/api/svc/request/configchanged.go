@@ -19,6 +19,6 @@ func (e *ConfigChanged) Query() string {
 	}`
 }
 
-func (e *ConfigChanged) Vars() map[string]interface{} {
-	return map[string]interface{}{"key": e.key}
+func (e *ConfigChanged) Vars() (map[string]interface{}, error) {
+	return map[string]interface{}{"key": e.key}, nil
 }

@@ -19,6 +19,6 @@ func (l *LocalProjectsRequest) Query() string {
 	}`
 }
 
-func (l *LocalProjectsRequest) Vars() map[string]interface{} {
-	return nil
+func (l *LocalProjectsRequest) Vars() (map[string]interface{}, error) {
+	return nil, nil
 }

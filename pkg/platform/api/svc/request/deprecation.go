@@ -21,6 +21,6 @@ func (d *DeprecationRequest) Query() string {
 	}`
 }
 
-func (d *DeprecationRequest) Vars() map[string]interface{} {
-	return nil
+func (d *DeprecationRequest) Vars() (map[string]interface{}, error) {
+	return nil, nil
 }

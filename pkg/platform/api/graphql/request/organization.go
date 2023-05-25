@@ -28,8 +28,8 @@ func (p *organizationByIDs) Query() string {
 	  `
 }
 
-func (p *organizationByIDs) Vars() map[string]interface{} {
-	return p.vars
+func (p *organizationByIDs) Vars() (map[string]interface{}, error) {
+	return p.vars, nil
 }
 
 // OrganizationsByName returns the query for retrieving org by name
@@ -54,6 +54,6 @@ func (p *organizationByName) Query() string {
 	}`
 }
 
-func (p *organizationByName) Vars() map[string]interface{} {
-	return p.vars
+func (p *organizationByName) Vars() (map[string]interface{}, error) {
+	return p.vars, nil
 }

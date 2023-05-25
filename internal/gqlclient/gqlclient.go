@@ -44,7 +44,7 @@ func (r *RequestBase) Files() []File {
 type Request interface {
 	Files() []File
 	Query() string
-	Vars() map[string]interface{}
+	Vars() (map[string]interface{}, error)
 }
 
 type Header map[string][]string
@@ -157,8 +157,13 @@ func (c *Client) RunWithContext(ctx context.Context, request Request, response i
 		return c.runWithFiles(ctx, request, response)
 	}
 
+	vars, err := request.Vars()
+	if err != nil {
+		return errs.Wrap(err, "Could not get variables")
+	}
+
 	graphRequest := graphql.NewRequest(request.Query())
-	for key, value := range request.Vars() {
+	for key, value := range vars {
 		graphRequest.Var(key, value)
 	}
 
@@ -257,9 +262,15 @@ func (c *Client) createMultiPartUploadRequest(gqlReq Request) (*http.Request, er
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not create form field operations")
 	}
+
+	vars, err := gqlReq.Vars()
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not get variables")
+	}
+
 	jsonReq := JsonRequest{
 		Query:     gqlReq.Query(),
-		Variables: gqlReq.Vars(),
+		Variables: vars,
 	}
 	jsonReqV, err := json.Marshal(jsonReq)
 	if err != nil {
@@ -304,8 +315,13 @@ func (c *Client) createMultiPartUploadRequest(gqlReq Request) (*http.Request, er
 		return nil, errs.Wrap(err, "Could not close multipart writer")
 	}
 
+	varJson, err := json.Marshal(vars)
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not marshal vars")
+	}
+
 	c.Log(fmt.Sprintf(">> query: %s", gqlReq.Query()))
-	c.Log(fmt.Sprintf(">> variables: %+v", gqlReq.Vars()))
+	c.Log(fmt.Sprintf(">> variables: %s", string(varJson)))
 	c.Log(fmt.Sprintf(">> files: %v", fnames))
 
 	return req, nil

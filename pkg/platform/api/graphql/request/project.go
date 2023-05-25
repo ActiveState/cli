@@ -48,6 +48,6 @@ func (p *projectByOrgAndName) Query() string {
 	`
 }
 
-func (p *projectByOrgAndName) Vars() map[string]interface{} {
-	return p.vars
+func (p *projectByOrgAndName) Vars() (map[string]interface{}, error) {
+	return p.vars, nil
 }

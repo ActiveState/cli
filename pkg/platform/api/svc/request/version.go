@@ -24,6 +24,6 @@ func (v *VersionRequest) Query() string {
     }`
 }
 
-func (v *VersionRequest) Vars() map[string]interface{} {
-	return nil
+func (v *VersionRequest) Vars() (map[string]interface{}, error) {
+	return nil, nil
 }

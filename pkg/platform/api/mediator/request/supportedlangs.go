@@ -22,6 +22,6 @@ func (p *supportedLanguages) Query() string {
 	}`
 }
 
-func (p *supportedLanguages) Vars() map[string]interface{} {
-	return p.vars
+func (p *supportedLanguages) Vars() (map[string]interface{}, error) {
+	return p.vars, nil
 }

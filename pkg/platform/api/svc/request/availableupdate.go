@@ -22,6 +22,6 @@ func (u *AvailableUpdate) Query() string {
 	}`
 }
 
-func (u *AvailableUpdate) Vars() map[string]interface{} {
-	return nil
+func (u *AvailableUpdate) Vars() (map[string]interface{}, error) {
+	return nil, nil
 }

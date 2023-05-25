@@ -32,6 +32,6 @@ func (p *checkpointByCommit) Query() string {
 	  `
 }
 
-func (p *checkpointByCommit) Vars() map[string]interface{} {
-	return p.vars
+func (p *checkpointByCommit) Vars() (map[string]interface{}, error) {
+	return p.vars, nil
 }

@@ -37,6 +37,6 @@ func (p *usage) Query() string {
 	  `
 }
 
-func (p *usage) Vars() map[string]interface{} {
-	return p.vars
+func (p *usage) Vars() (map[string]interface{}, error) {
+	return p.vars, nil
 }
