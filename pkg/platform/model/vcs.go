@@ -201,7 +201,7 @@ func NewNamespacePlatform() Namespace {
 func NewSharedNamespace(orgName string) Namespace {
 	return Namespace{
 		nsType: NamespaceOrgShared,
-		value:  fmt.Sprintf("%s/shared", strings.ToLower(orgName)),
+		value:  fmt.Sprintf("%s/shared", orgName),
 	}
 }
 

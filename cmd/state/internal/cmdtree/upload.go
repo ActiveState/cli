@@ -17,8 +17,13 @@ func newUpload(prime *primer.Values) *captain.Command {
 		prime,
 		[]*captain.Flag{
 			{
+				Name:        "edit",
+				Description: locale.Tl("author_upload_edit_description", "Create a revision for an existing ingredient, matched by their name and namespace."),
+				Value:       &params.Edit,
+			},
+			{
 				Name:        "editor",
-				Description: locale.Tl("author_upload_edit_description", "Edit the ingredient information in your editor before uploading."),
+				Description: locale.Tl("author_upload_editor_description", "Edit the ingredient information in your editor before uploading."),
 				Value:       &params.Editor,
 			},
 			{

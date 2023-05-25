@@ -9,7 +9,7 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/gqlclient"
 	"github.com/ActiveState/cli/internal/locale"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 )
 
 func Publish(vars PublishVariables, filepath string) (*PublishRequest, error) {
@@ -67,6 +67,41 @@ type PublishVariables struct {
 	// Optional
 	Authors      []PublishVariableAuthor `yaml:"authors,omitempty"`
 	Dependencies []PublishVariableDep    `yaml:"dependencies,omitempty"`
+}
+
+func (p PublishVariables) MarshalYaml(includeExample bool) ([]byte, error) {
+	v, err := yaml.Marshal(p)
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not marshal publish request")
+	}
+
+	if includeExample {
+		if len(p.Authors) == 0 {
+			exampleAuthorYaml, err := yaml.Marshal(exampleAuthor)
+			if err != nil {
+				return nil, errs.Wrap(err, "Could not marshal example author")
+			}
+			exampleAuthorYaml = append([]byte("# "), bytes.ReplaceAll(exampleAuthorYaml, []byte("\n"), []byte("\n# "))...)
+			exampleAuthorYaml = append([]byte("\n## Optional -- Example Author:\n"), exampleAuthorYaml...)
+			v = append(v, exampleAuthorYaml...)
+		}
+
+		if len(p.Dependencies) == 0 {
+			exampleDepYaml, err := yaml.Marshal(exampleDep)
+			if err != nil {
+				return nil, errs.Wrap(err, "Could not marshal example deps")
+			}
+			exampleDepYaml = append([]byte("# "), bytes.ReplaceAll(exampleDepYaml, []byte("\n"), []byte("\n# "))...)
+			exampleDepYaml = append([]byte("\n## Optional -- Example Dependencies:\n"), exampleDepYaml...)
+			v = append(v, exampleDepYaml...)
+		}
+	}
+
+	return v, nil
+}
+
+func (p PublishVariables) UnmarshalYaml(b []byte) error {
+	return yaml.Unmarshal(b, &p)
 }
 
 var exampleAuthor = AuthorVariables{[]PublishVariableAuthor{{
@@ -137,39 +172,6 @@ func (p *PublishRequest) Vars() map[string]interface{} {
 		"description":   p.Variables.Description,
 		"path":          p.Variables.Namespace + "/" + p.Variables.Name,
 		"file_checksum": p.fileChecksum,
-		"file":          p.Variables.Name,
+		"file":          nil, // This feels counter-intuitive, but it's what the API expects..
 	}
-}
-
-func (p *PublishRequest) MarshalYaml() ([]byte, error) {
-	v, err := yaml.Marshal(p.Variables)
-	if err != nil {
-		return nil, errs.Wrap(err, "Could not marshal publish request")
-	}
-
-	if len(p.Variables.Authors) == 0 {
-		exampleAuthorYaml, err := yaml.Marshal(exampleAuthor)
-		if err != nil {
-			return nil, errs.Wrap(err, "Could not marshal example author")
-		}
-		exampleAuthorYaml = append([]byte("# "), bytes.ReplaceAll(exampleAuthorYaml, []byte("\n"), []byte("\n# "))...)
-		exampleAuthorYaml = append([]byte("\n## Optional -- Example Author:\n"), exampleAuthorYaml...)
-		v = append(v, exampleAuthorYaml...)
-	}
-
-	if len(p.Variables.Dependencies) == 0 {
-		exampleDepYaml, err := yaml.Marshal(exampleDep)
-		if err != nil {
-			return nil, errs.Wrap(err, "Could not marshal example deps")
-		}
-		exampleDepYaml = append([]byte("# "), bytes.ReplaceAll(exampleDepYaml, []byte("\n"), []byte("\n# "))...)
-		exampleDepYaml = append([]byte("\n## Optional -- Example Dependencies:\n"), exampleDepYaml...)
-		v = append(v, exampleDepYaml...)
-	}
-
-	return v, nil
-}
-
-func (p *PublishRequest) UnmarshalYaml(b []byte) error {
-	return yaml.Unmarshal(b, &p.Variables)
 }

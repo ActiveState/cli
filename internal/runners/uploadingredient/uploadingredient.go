@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/errs"
@@ -14,7 +15,7 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
-	p2 "github.com/ActiveState/cli/internal/rtutils/p"
+	"github.com/ActiveState/cli/internal/rtutils/p"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	graphModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model"
 	"github.com/ActiveState/cli/pkg/platform/api/graphql/request"
@@ -23,7 +24,6 @@ import (
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/machinebox/graphql"
 	"github.com/skratchdot/open-golang/open"
-	"gopkg.in/yaml.v2"
 )
 
 type Params struct {
@@ -34,6 +34,7 @@ type Params struct {
 	Authors     captain.UsersFlag
 	Depends     captain.PackagesFlag
 	Filepath    string
+	Edit        bool
 	Editor      bool
 }
 
@@ -58,6 +59,7 @@ func New(prime primeable) *Runner {
 		graphql.WithHTTPClient(http.DefaultClient),
 		graphql.UseMultipartForm(),
 	)
+	client.EnableDebugLog()
 	client.SetTokenProvider(prime.Auth())
 	client.EnableDebugLog()
 	return &Runner{auth: prime.Auth(), out: prime.Output(), prompt: prime.Prompt(), project: prime.Project(), client: client}
@@ -93,59 +95,36 @@ func (r *Runner) Run(params *Params) error {
 		}
 	}
 
-	/*
-		ts := time.Now()
-		var ingredient *model.IngredientAndVersion
-		ingredients, err := model.SearchIngredientsStrict(reqVars.Namespace, reqVars.Name, true, false, &ts)
-		if err != nil && !errs.Matches(err, &model.ErrSearch404{}) { // 404 means namespace not found, which is fine
-			return locale.WrapError(err, "err_uploadingredient_search", "Could not search for ingredient")
+	ts := time.Now()
+	ingredients, err := model.SearchIngredientsStrict(reqVars.Namespace, reqVars.Name, true, false, &ts)
+	if err != nil && !errs.Matches(err, &model.ErrSearch404{}) { // 404 means namespace not found, which is fine
+		return locale.WrapError(err, "err_uploadingredient_search", "Could not search for ingredient")
+	}
+
+	if params.Edit {
+		if err := prepareEditRequest(ingredients, &reqVars); err != nil {
+			return errs.Wrap(err, "Could not prepare edit request")
 		}
+	} else {
 		if len(ingredients) > 0 {
-			ingredient = ingredients[0]
-		}
-	*/
-
-	{ // Validate & Set version
-		reqVars.Version = params.Version
-		if reqVars.Version == "" {
-			reqVars.Version = "0.0.1"
+			return locale.NewInputError("err_uploadingredient_exists",
+				"Ingredient with namespace '[ACTIONABLE]{{.V0}}[/RESET]' and name '[ACTIONABLE]{{.V1}}[/RESET]' already exists."+
+					"To edit an existing ingredient you need to pass the '[ACTIONABLE]--edit[/RESET]' flag.",
+				reqVars.Namespace, reqVars.Name)
 		}
 	}
 
-	{ // Validate & Set description
-		reqVars.Description = params.Description
-		if params.Description == "" {
-			reqVars.Description = "not provided"
-		}
-	}
-
-	{ // Set authors
-		for _, author := range params.Authors {
-			reqVars.Authors = append(reqVars.Authors, request.PublishVariableAuthor{Name: author.Name, Email: author.Email})
-		}
-	}
-
-	{ // Set dependencies
-		for _, dep := range params.Depends {
-			reqVars.Dependencies = append(
-				reqVars.Dependencies,
-				request.PublishVariableDep{request.Dependency{Name: dep.Name, Namespace: dep.Namespace}, []request.Dependency{}},
-			)
-		}
-	}
-
-	p, err := request.Publish(reqVars, params.Filepath)
-	if err != nil {
-		return locale.WrapError(err, "err_uploadingredient_publish", "Could not create publish request")
+	if err := prepareRequestFromParams(&reqVars, params); err != nil {
+		return errs.Wrap(err, "Could not prepare request from params")
 	}
 
 	if params.Editor {
-		if err := r.OpenInEditor(p); err != nil {
+		if err := r.OpenInEditor(&reqVars); err != nil {
 			return err
 		}
 	}
 
-	b, err := yaml.Marshal(p.Variables)
+	b, err := reqVars.MarshalYaml(false)
 	if err != nil {
 		return errs.Wrap(err, "Could not marshal publish variables")
 	}
@@ -156,7 +135,7 @@ func (r *Runner) Run(params *Params) error {
 {{.V0}}
 
 `, string(b)),
-		p2.BoolP(true),
+		p.BoolP(true),
 	)
 	if err != nil {
 		return errs.Wrap(err, "Confirmation failed")
@@ -166,16 +145,18 @@ func (r *Runner) Run(params *Params) error {
 		return nil
 	}
 
+	pr, err := request.Publish(reqVars, params.Filepath)
+	if err != nil {
+		return locale.WrapError(err, "err_uploadingredient_publish", "Could not create publish request")
+	}
 	result := graphModel.PublishResult{}
 
-	// Currently runs with: Content-Disposition: form-data; name="query"
-	// but it should be Content-Disposition: form-data; name="operations"
-	if err := r.client.Run(p, &result); err != nil {
+	if err := r.client.Run(pr, &result); err != nil {
 		return locale.WrapError(err, "err_uploadingredient_publish", "Could not publish ingredient")
 	}
 
 	if result.Error != "" {
-		return locale.NewError("err_uploadingredient_publish", "Could not publish ingredient: {{.V0}}", result.Message)
+		return locale.NewError("err_uploadingredient_publish_api", "API responded with error: {{.V0}}", result.Message)
 	}
 
 	r.out.Print(locale.Tl("uploadingredient_success", `Successfully uploaded as:
@@ -187,9 +168,78 @@ Revision: {{.V2}}
 	return nil
 }
 
-func (r *Runner) OpenInEditor(p *request.PublishRequest) error {
+func prepareRequestFromParams(r *request.PublishVariables, params *Params) error {
+	if r.Version == "" {
+		r.Version = params.Version
+	}
+	if r.Version == "" {
+		r.Version = "0.0.1"
+	}
+
+	if r.Description == "" {
+		r.Description = params.Description
+	}
+	if r.Description == "" {
+		r.Description = "not provided"
+	}
+
+	if len(r.Authors) != 0 {
+		r.Authors = []request.PublishVariableAuthor{}
+		for _, author := range params.Authors {
+			r.Authors = append(r.Authors, request.PublishVariableAuthor{
+				Name:  author.Name,
+				Email: author.Email,
+			})
+		}
+	}
+
+	if len(r.Dependencies) != 0 {
+		r.Dependencies = []request.PublishVariableDep{}
+		for _, dep := range params.Depends {
+			r.Dependencies = append(
+				r.Dependencies,
+				request.PublishVariableDep{request.Dependency{Name: dep.Name, Namespace: dep.Namespace}, []request.Dependency{}},
+			)
+		}
+	}
+
+	return nil
+}
+
+func prepareEditRequest(ingredients []*model.IngredientAndVersion, r *request.PublishVariables) error {
+	if len(ingredients) == 0 {
+		return locale.NewInputError("err_uploadingredient_edit_not_found",
+			"Could not find ingredient to edit with name: '[ACTIONABLE]{{.V0}}[/RESET]', namespace: '[ACTIONABLE]{{.V1}}[/RESET]'.",
+			r.Name, r.Namespace)
+	}
+	ingredient := ingredients[0]
+
+	authors, err := model.FetchAuthors(ingredient.Ingredient.IngredientID, ingredient.LatestVersion.IngredientVersionID)
+	if err != nil {
+		return locale.WrapError(err, "err_uploadingredient_fetch_authors", "Could not fetch authors for ingredient")
+	}
+
+	r.Version = p.PStr(ingredient.LatestVersion.Version)
+	r.Description = p.PStr(ingredient.Ingredient.Description)
+
+	for _, author := range authors {
+		var websites []string
+		for _, w := range author.Websites {
+			websites = append(websites, w.String())
+		}
+		r.Authors = append(r.Authors, request.PublishVariableAuthor{
+			Name:     p.PStr(author.Name),
+			Email:    author.Email.String(),
+			Websites: websites,
+		})
+	}
+
+	return nil
+}
+
+func (r *Runner) OpenInEditor(pr *request.PublishVariables) error {
 	// Prepare file for editing
-	b, err := p.MarshalYaml()
+	b, err := pr.MarshalYaml(true)
 	if err != nil {
 		return locale.WrapError(err, "err_uploadingredient_publish", "Could not marshal publish request")
 	}
@@ -205,7 +255,7 @@ func (r *Runner) OpenInEditor(p *request.PublishRequest) error {
 	}
 
 	// Wait for confirmation
-	if _, err := r.prompt.Input("", locale.Tl("uploadingredient_edit_confirm", "Press enter when done editing"), p2.StrP("")); err != nil {
+	if _, err := r.prompt.Input("", locale.Tl("uploadingredient_edit_confirm", "Press enter when done editing"), p.StrP("")); err != nil {
 		return errs.Wrap(err, "Confirmation failed")
 	}
 
@@ -218,7 +268,7 @@ func (r *Runner) OpenInEditor(p *request.PublishRequest) error {
 	_ = v
 
 	// Write changes to request
-	if err := p.UnmarshalYaml(eb); err != nil {
+	if err := pr.UnmarshalYaml(eb); err != nil {
 		return locale.WrapError(err, "err_uploadingredient_publish", "Could not unmarshal publish request")
 	}
 

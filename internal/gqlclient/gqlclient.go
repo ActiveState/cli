@@ -10,6 +10,7 @@ import (
 	"mime/multipart"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/ActiveState/cli/internal/constants"
@@ -50,9 +51,34 @@ type Header map[string][]string
 
 type graphqlClient = graphql.Client
 
+// Work around API's that don't follow the graphql standard
+// https://activestatef.atlassian.net/browse/PB-4291
+type StandardizedErrors struct {
+	Message string
+	Error   string
+	Errors  []graphErr
+}
+
+func (e StandardizedErrors) HasErrors() bool {
+	return len(e.Errors) > 0 || e.Error != ""
+}
+
+func (e StandardizedErrors) Values() []string {
+	var errs []string
+	for _, err := range e.Errors {
+		errs = append(errs, err.Message)
+	}
+	if e.Message != "" {
+		errs = append(errs, e.Message)
+	}
+	return errs
+}
+
 type graphResponse struct {
-	Data   interface{}
-	Errors []graphErr
+	Data    interface{}
+	Error   string
+	Message string
+	Errors  []graphErr
 }
 
 type graphErr struct {
@@ -171,6 +197,7 @@ func (c *Client) runRaw(ctx context.Context, request *http.Request, response int
 		Data: response,
 	}
 	request = request.WithContext(ctx)
+	c.Log(fmt.Sprintf(">> Raw Request: %s\n", request.URL.String()))
 	res, err := http.DefaultClient.Do(request)
 	if err != nil {
 		return err
@@ -180,11 +207,21 @@ func (c *Client) runRaw(ctx context.Context, request *http.Request, response int
 	if _, err := io.Copy(&buf, res.Body); err != nil {
 		return errors.Wrap(err, "reading body")
 	}
-	if err := json.NewDecoder(&buf).Decode(&gr); err != nil {
-		return errors.Wrap(err, "decoding response")
+	resp := buf.Bytes()
+	c.Log(fmt.Sprintf("<< %s\n", string(resp)))
+
+	// Work around API's that don't follow the graphql standard
+	// https://activestatef.atlassian.net/browse/PB-4291
+	standardizedErrors := StandardizedErrors{}
+	if err := json.Unmarshal(resp, &standardizedErrors); err != nil {
+		return errors.Wrap(err, "decoding error response")
 	}
-	if len(gr.Errors) > 0 {
-		return gr.Errors[0]
+	if standardizedErrors.HasErrors() {
+		return errs.New(strings.Join(standardizedErrors.Values(), "\n"))
+	}
+
+	if err := json.Unmarshal(resp, &gr); err != nil {
+		return errors.Wrap(err, "decoding response")
 	}
 	return nil
 }
@@ -244,7 +281,10 @@ func (c *Client) createMultiPartUploadRequest(gqlReq Request) (*http.Request, er
 	}
 
 	// File upload
+	fnames := []string{}
 	for n, file := range gqlReq.Files() {
+		fnames = append(fnames, fmt.Sprintf("%s", file.Name))
+
 		w, err := mw.CreateFormFile(fmt.Sprintf("%d", n), file.Name)
 		if err != nil {
 			return nil, errs.Wrap(err, "Could not create form file")
@@ -263,6 +303,10 @@ func (c *Client) createMultiPartUploadRequest(gqlReq Request) (*http.Request, er
 	if err := mw.Close(); err != nil {
 		return nil, errs.Wrap(err, "Could not close multipart writer")
 	}
+
+	c.Log(fmt.Sprintf(">> query: %s", gqlReq.Query()))
+	c.Log(fmt.Sprintf(">> variables: %+v", gqlReq.Vars()))
+	c.Log(fmt.Sprintf(">> files: %v", fnames))
 
 	return req, nil
 }
