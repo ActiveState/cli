@@ -253,7 +253,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 
 	if orderChanged {
 		if err := pj.SetCommit(commitID.String()); err != nil {
-			return locale.WrapError(err, "err_package_update_pjfile")
+			return locale.WrapError(err, "err_package_update_commit_id")
 		}
 	}
 

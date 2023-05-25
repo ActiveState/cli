@@ -1,16 +1,14 @@
 package projectfile
 
 import (
+	"fmt"
 	"path/filepath"
-	"reflect"
-	"strings"
 	"testing"
 
 	"github.com/ActiveState/cli/internal/constants"
-
 	"github.com/ActiveState/cli/internal/fileutils"
-
 	"github.com/go-openapi/strfmt"
+	"github.com/stretchr/testify/assert"
 )
 
 func Test_Create(t *testing.T) {
@@ -27,37 +25,38 @@ func Test_Create(t *testing.T) {
 		name         string
 		args         args
 		want         error
-		wantCreated  bool
 		wantContents string
 	}{
 		{
 			"orgName/projName",
 			args{"orgName", "projName", tempDir, "python3", &uuid},
 			nil,
-			true,
-			"orgName/projName?branch=main&commitID=" + uuid.String(),
+			"orgName/projName?branch=main",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if _, got := Create(&CreateParams{
+			_, err := Create(&CreateParams{
 				Owner:     tt.args.org,
 				Project:   tt.args.project,
 				CommitID:  tt.args.commitID,
 				Directory: tt.args.directory,
 				Language:  tt.args.language,
-			}); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("createProjectFile() = %v, want %v", got, tt.want)
-			}
+			})
+			assert.NoError(t, err)
 			configFile := filepath.Join(tempDir, constants.ConfigFileName)
-			if created := fileutils.FileExists(configFile); created != tt.wantCreated {
-				t.Errorf("%s created: %v, but wanted: %v", constants.ConfigFileName, created, tt.wantCreated)
-				t.FailNow()
-			}
-			fileContents := fileutils.ReadFileUnsafe(configFile)
-			if !strings.Contains(string(fileContents), tt.wantContents) {
-				t.Errorf("%s does not contain: '%s', actual contents: '%v'", constants.ConfigFileName, tt.wantContents, string(fileContents))
-			}
+			assert.FileExists(t, configFile)
+			assert.Contains(t, string(fileutils.ReadFileUnsafe(configFile)), tt.wantContents)
+
+			// Verify .activestate/commit file was created with commitID
+			commitIdFile := filepath.Join(tempDir, constants.ProjectConfigDirName, constants.CommitIdFileName)
+			assert.FileExists(t, commitIdFile)
+			assert.Equal(t, tt.args.commitID.String(), string(fileutils.ReadFileUnsafe(commitIdFile)))
+
+			// Verify .gitignore was created with .activestate/commit entry (simulating fresh checkout)
+			gitignoreFile := filepath.Join(tempDir, ".gitignore")
+			assert.FileExists(t, gitignoreFile)
+			assert.Contains(t, string(fileutils.ReadFileUnsafe(gitignoreFile)), fmt.Sprintf("%s/%s", constants.ProjectConfigDirName, constants.CommitIdFileName))
 		})
 	}
 }

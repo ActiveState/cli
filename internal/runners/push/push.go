@@ -225,11 +225,6 @@ func (r *Push) Run(params PushParams) error {
 		}
 	}
 
-	// Write the commit to the as.yaml
-	if err := r.project.Source().SetCommit(commitID.String(), false); err != nil {
-		return errs.Wrap(err, "Could not set commit")
-	}
-
 	// Write the branch to the as.yaml, if it changed
 	if branch.Label != r.project.BranchName() {
 		if err := r.project.Source().SetBranch(branch.Label); err != nil {

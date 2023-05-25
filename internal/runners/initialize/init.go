@@ -160,7 +160,7 @@ func (r *Initialize) Run(params *RunParams) error {
 	}
 
 	if err := proj.SetCommit(commitID.String()); err != nil {
-		return locale.WrapError(err, "err_init_setcommit", "Could not store commit to project file")
+		return locale.WrapError(err, "err_update_commit_id")
 	}
 
 	logging.Debug("Creating Platform project and pushing it")

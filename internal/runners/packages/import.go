@@ -184,7 +184,7 @@ func commitChangeset(project *project.Project, msg string, changeset model.Chang
 	}
 
 	if err := project.SetCommit(commitID.String()); err != nil {
-		return "", locale.WrapError(err, "err_package_update_pjfile")
+		return "", locale.WrapError(err, "err_package_update_commit_id")
 	}
 	return commitID, nil
 }

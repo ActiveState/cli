@@ -32,6 +32,7 @@ import (
 	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/cli/internal/sliceutils"
 	"github.com/ActiveState/cli/internal/strutils"
+	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/sysinfo"
 	"github.com/go-openapi/strfmt"
 	"github.com/google/uuid"
@@ -102,6 +103,7 @@ type Project struct {
 	Cache         string        `yaml:"cache,omitempty"`
 	path          string        // "private"
 	parsedURL     projectURL    // parsed url data
+	commitID      string
 	parsedBranch  string
 	parsedVersion string
 }
@@ -464,6 +466,18 @@ func (p *Project) Init() error {
 	}
 	p.parsedURL = parsedURL
 
+	if p.parsedURL.CommitID != "" {
+		// Note: do not migrate to localcommit here. Writing to disk during Parse() feels wrong.
+		// Migrate when SetCommit() is called instead.
+		p.commitID = p.parsedURL.CommitID
+	} else {
+		if commitID, err := localcommit.Get(filepath.Dir(p.Path())); err == nil {
+			p.commitID = commitID
+		} else if err != nil && !localcommit.IsFileDoesNotExistError(err) {
+			return errs.Wrap(err, "Unable to get local commit")
+		}
+	}
+
 	// Ensure branch name is set
 	if p.parsedURL.Owner != "" && p.parsedURL.BranchName == "" {
 		logging.Debug("Appending default branch as none is set")
@@ -545,7 +559,7 @@ func (p *Project) Name() string {
 
 // CommitID returns the commit ID specified in the project
 func (p *Project) CommitID() string {
-	return p.parsedURL.CommitID
+	return p.commitID
 }
 
 // BranchName returns the branch name specified in the project
@@ -706,21 +720,11 @@ func (p *Project) SetNamespace(owner, project string) error {
 	return nil
 }
 
-// SetCommit sets the commit id within the current project file. This is done
-// in-place so that line order is preserved.
-// If headless is true, the project is defined by a commit-id only
-func (p *Project) SetCommit(commitID string, headless bool) error {
-	pf := NewProjectField()
-	if err := pf.LoadProject(p.Project); err != nil {
-		return errs.Wrap(err, "Could not load activestate.yaml")
+func (p *Project) SetCommit(commitID string) error {
+	if err := localcommit.Set(filepath.Dir(p.Path()), commitID); err != nil {
+		return errs.Wrap(err, "Could not set local commit")
 	}
-	pf.SetCommit(commitID, headless)
-	if err := pf.Save(p.path); err != nil {
-		return errs.Wrap(err, "Could not save activestate.yaml")
-	}
-
-	p.parsedURL.CommitID = commitID
-	p.Project = pf.String()
+	p.commitID = commitID
 	return nil
 }
 
@@ -950,6 +954,10 @@ func createCustom(params *CreateParams, lang language.Language) (*Project, error
 	}
 
 	var commitID string
+	if params.CommitID != nil {
+		commitID = params.CommitID.String()
+	}
+
 	if params.ProjectURL == "" {
 		u, err := url.Parse(fmt.Sprintf("https://%s/%s/%s", constants.PlatformURL, params.Owner, params.Project))
 		if err != nil {
@@ -957,10 +965,6 @@ func createCustom(params *CreateParams, lang language.Language) (*Project, error
 		}
 		q := u.Query()
 
-		if params.CommitID != nil {
-			commitID = params.CommitID.String()
-			q.Set("commitID", commitID)
-		}
 		if params.BranchName != "" {
 			q.Set("branch", params.BranchName)
 		}
@@ -1020,6 +1024,13 @@ func createCustom(params *CreateParams, lang language.Language) (*Project, error
 	fileContents, err := strutils.ParseTemplate(string(tplContents), data, nil)
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not parse %s", tplName)
+	}
+
+	if commitID != "" {
+		err := localcommit.Set(params.Directory, commitID)
+		if err != nil {
+			return nil, errs.Wrap(err, "Could not set local commit")
+		}
 	}
 
 	err = fileutils.WriteFile(params.path, []byte(fileContents))

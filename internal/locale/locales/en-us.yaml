@@ -319,6 +319,8 @@ err_activate_output_build_failed:
   other: Platform project build is has failed. Please select "Manage Packages" option in State Tool menu to go to the platform and browse to "Download Builds" tab for more information
 err_activate_output_build_in_progress:
   other: Platform project build is in progress. Please wait for a few minutes and try "Reactivate Runtime" option in "State Tool" menu
+err_update_commit_id:
+  other: Failed to update your project runtime's commit ID
 err_unsupported_platform:
   other: "Unsupported platform: [NOTICE]{{.V0}}[/RESET]"
 err_language_not_found:
@@ -676,8 +678,6 @@ secrets_row_value_unset:
   other: "[ERROR]× Not defined[/RESET]"
 secrets_description_unset:
   other: "[DISABLED]Not provided.[/RESET]"
-pull_not_updated:
-  other: Your activestate.yaml is already up to date!
 pull_updated:
   other: Your project in the activestate.yaml has been updated to {{.V0}}@{{.V1}}.
 keypair_cmd_description:
@@ -1671,8 +1671,8 @@ artifact_succeeded:
   other: "Completed: [NOTICE]{{.V0}} ({{.V1}}/{{.V2}})[/RESET]"
 artifact_failed:
   other: "Failed: [NOTICE]{{.V0}}[/RESET]. Error returned: [ERROR]{{.V1}}[/RESET]"
-err_package_update_pjfile:
-  other: "Could not update your activestate.yaml with the new commit ID. Please run [ACTIONABLE]`state pull`[/RESET] manually."
+err_package_update_commit_id:
+  other: "Could not update your project runtime's commit ID. Please run [ACTIONABLE]`state pull`[/RESET] manually."
 prepare_protocol_warning:
   other: Could not add state protocol
 err_preparestart_shortcut:
@@ -2050,3 +2050,9 @@ err_init_authenticated:
   other: You need to be authenticated to initialize a project. Authenticate by running [ACTIONABLE]`state auth`[/RESET].
 err_country_blocked:
   other: This service is not available in your region.
+err_commit_id_invalid:
+  other: "Invalid project runtime commit ID: {{.V0}}"
+commit_id_gitignore:
+  other: |
+    # Ignore .activestate/commit file; tracking this via VCS will cause users to have to resolve redundant conflicts
+    .activestate/commit

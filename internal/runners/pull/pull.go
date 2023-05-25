@@ -144,11 +144,10 @@ func (p *Pull) Run(params *PullParams) error {
 		}
 	}
 
-	// Update the commit ID in the activestate.yaml
 	if p.project.CommitID() != resultingCommit.String() {
-		err := p.project.Source().SetCommit(resultingCommit.String(), false)
+		err := p.project.SetCommit(resultingCommit.String())
 		if err != nil {
-			return locale.WrapError(err, "err_pull_update", "Cannot update the commit in your project file.")
+			return locale.WrapError(err, "err_update_commit_id")
 		}
 
 		p.out.Print(&pullOutput{
@@ -157,7 +156,7 @@ func (p *Pull) Run(params *PullParams) error {
 		})
 	} else {
 		p.out.Print(&pullOutput{
-			locale.Tl("pull_not_updated", "Your activestate.yaml is already up to date."),
+			locale.Tl("pull_not_updated", "Your project is already up to date."),
 			false,
 		})
 	}

@@ -232,7 +232,7 @@ func updateProjectFile(prj *project.Project, names *project.Namespaced, provided
 		return locale.WrapError(err, "err_activate_replace_write_namespace", "Failed to update project namespace.")
 	}
 	if err := prj.SetCommit(commitID); err != nil {
-		return locale.WrapError(err, "err_activate_replace_write_commit", "Failed to update commitID.")
+		return locale.WrapError(err, "err_update_commit_id")
 	}
 	if err := prj.Source().SetBranch(branch); err != nil {
 		return locale.WrapError(err, "err_activate_replace_write_branch", "Failed to update Branch.")

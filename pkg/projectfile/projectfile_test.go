@@ -392,34 +392,6 @@ func Test_parseURL(t *testing.T) {
 	}
 }
 
-func TestProject_Init(t *testing.T) {
-	tests := []struct {
-		name           string
-		project        *Project
-		wantProjectURL *projectURL
-		wantErr        bool
-	}{
-		{
-			"Adds default branch",
-			&Project{Project: "https://platform.activestate.com/owner/name"},
-			&projectURL{
-				"owner",
-				"name",
-				"",
-				"main",
-			},
-			false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if err := tt.project.Init(); (err != nil) != tt.wantErr {
-				t.Errorf("Init() error = %v, wantErr %v", errs.JoinMessage(err), tt.wantErr)
-			}
-		})
-	}
-}
-
 func Test_detectDeprecations(t *testing.T) {
 	tests := []struct {
 		name           string

@@ -92,7 +92,7 @@ func (r *Reset) Run(params *Params) error {
 
 	err = r.project.SetCommit(commitID.String())
 	if err != nil {
-		return locale.WrapError(err, "err_reset_set_commit", "Could not update commit ID")
+		return locale.WrapError(err, "err_update_commit_id")
 	}
 
 	err = runbits.RefreshRuntime(r.auth, r.out, r.analytics, r.project, commitID, true, target.TriggerReset, r.svcModel)

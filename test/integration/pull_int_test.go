@@ -30,6 +30,10 @@ func (suite *PullIntegrationTestSuite) TestPull() {
 	cp.Expect("activestate.yaml has been updated")
 	cp.ExpectExitCode(0)
 
+	projectConfigDir := filepath.Join(ts.Dirs.Work, constants.ProjectConfigDirName)
+	suite.Require().True(fileutils.DirExists(projectConfigDir))
+	suite.Assert().True(fileutils.FileExists(filepath.Join(projectConfigDir, constants.CommitIdFileName)))
+
 	cp = ts.Spawn("pull")
 	cp.Expect("already up to date")
 	cp.ExpectExitCode(0)
@@ -74,7 +78,7 @@ func (suite *PullIntegrationTestSuite) TestPullSetProjectUnrelated() {
 
 func (suite *PullIntegrationTestSuite) TestPull_Merge() {
 	suite.OnlyRunForTags(tagsuite.Pull)
-	projectLine := "project: https://platform.activestate.com/ActiveState-CLI/cli?branch=main&commitID="
+	projectLine := "project: https://platform.activestate.com/ActiveState-CLI/cli"
 	unPulledCommit := "882ae76e-fbb7-4989-acc9-9a8b87d49388"
 
 	ts := e2e.New(suite.T(), false)
@@ -82,7 +86,10 @@ func (suite *PullIntegrationTestSuite) TestPull_Merge() {
 
 	wd := filepath.Join(ts.Dirs.Work, "cli")
 	pjfilepath := filepath.Join(ts.Dirs.Work, "cli", constants.ConfigFileName)
-	err := fileutils.WriteFile(pjfilepath, []byte(projectLine+unPulledCommit))
+	err := fileutils.WriteFile(pjfilepath, []byte(projectLine))
+	suite.Require().NoError(err)
+	commitIdFile := filepath.Join(ts.Dirs.Work, "cli", constants.ProjectConfigDirName, constants.CommitIdFileName)
+	err = fileutils.WriteFile(commitIdFile, []byte(unPulledCommit))
 	suite.Require().NoError(err)
 
 	ts.LoginAsPersistentUser()

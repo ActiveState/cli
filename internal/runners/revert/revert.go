@@ -135,7 +135,7 @@ func (r *Revert) Run(params *Params) error {
 
 	err = r.project.SetCommit(revertCommit.CommitID.String())
 	if err != nil {
-		return locale.WrapError(err, "err_revert_set_commit", "Could not set revert commit ID in projectfile")
+		return locale.WrapError(err, "err_update_commit_id")
 	}
 
 	r.out.Print(output.Prepare(

@@ -55,7 +55,7 @@ type Project struct {
 func (p *Project) Source() *projectfile.Project { return p.projectfile }
 
 func (p *Project) SetCommit(commitID string) error {
-	return p.Source().SetCommit(commitID, p.IsHeadless())
+	return p.Source().SetCommit(commitID)
 }
 
 // Constants returns a reference to projectfile.Constants

@@ -113,7 +113,7 @@ func (s *Switch) Run(params SwitchParams) error {
 
 	err = s.project.SetCommit(identifier.CommitID().String())
 	if err != nil {
-		return locale.WrapError(err, "err_switch_set_commitID", "Could not update commit ID")
+		return locale.WrapError(err, "err_update_commit_id")
 	}
 
 	err = runbits.RefreshRuntime(s.auth, s.out, s.analytics, s.project, identifier.CommitID(), false, target.TriggerSwitch, s.svcModel)

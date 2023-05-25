@@ -448,6 +448,9 @@ func (suite *PackageIntegrationTestSuite) TestInstall_Empty() {
 	if !suite.Contains(string(content), constants.DashboardCommitURL) {
 		suite.Fail("activestate.yaml does not contain dashboard commit URL")
 	}
+
+	commitIdFile := filepath.Join(ts.Dirs.Work, constants.ProjectConfigDirName, constants.CommitIdFileName)
+	suite.Assert().FileExists(commitIdFile)
 }
 
 func (suite *PackageIntegrationTestSuite) TestPackage_UninstallDoesNotExist() {
