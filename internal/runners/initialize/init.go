@@ -18,6 +18,7 @@ import (
 	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
@@ -186,14 +187,19 @@ func (r *Initialize) Run(params *RunParams) error {
 
 	projectfile.StoreProjectMapping(r.config, params.Namespace.String(), filepath.Dir(proj.Source().Path()))
 
+	projectTarget := target.NewProjectTarget(proj, nil, "").Dir()
+	executables := setup.ExecDir(projectTarget)
+
 	r.out.Print(output.Prepare(
-		locale.Tr("init_success", params.Namespace.String(), path),
+		locale.Tr("init_success", params.Namespace.String(), path, executables),
 		&struct {
-			Namespace string `json:"namespace"`
-			Path      string `json:"path" `
+			Namespace   string `json:"namespace"`
+			Path        string `json:"path" `
+			Executables string `json:"executables"`
 		}{
 			params.Namespace.String(),
 			path,
+			executables,
 		},
 	))
 
