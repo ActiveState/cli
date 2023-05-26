@@ -63,7 +63,7 @@ func indent(s string) string {
 }
 
 func (s *Script) String() string {
-	buf := bytes.Buffer{}
+	buf := strings.Builder{}
 	buf.WriteString("let:\n")
 	for _, assignment := range s.Let.Assignments {
 		buf.WriteString(indent(assignment.String()))

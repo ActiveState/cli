@@ -24,12 +24,17 @@ func NewScriptFromBuildExpression(expr []byte) (*Script, error) {
 	if !ok {
 		return nil, errs.New("Build expression has no 'let' key")
 	}
-	let, err := newLet(letValue)
+	letMap, ok := letValue.(map[string]interface{})
+	if !ok {
+		return nil, errs.New("'let' key is not a JSON object")
+	}
+
+	let, err := newLet(letMap)
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not parse 'let' key")
 	}
 
-	inValue, ok := letValue.(map[string]interface{})["in"] // will not fail if we've gotten this far
+	inValue, ok := letMap["in"]
 	if !ok {
 		return nil, errs.New("Build expression's 'let' object has no 'in' key")
 	}
@@ -41,12 +46,7 @@ func NewScriptFromBuildExpression(expr []byte) (*Script, error) {
 	return &Script{let, in}, nil
 }
 
-func newLet(letValue interface{}) (*Let, error) {
-	m, ok := letValue.(map[string]interface{})
-	if !ok {
-		return nil, errs.New("'let' key is not a JSON object")
-	}
-
+func newLet(m map[string]interface{}) (*Let, error) {
 	assignments, err := newAssignments(m)
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not parse 'let' key")
@@ -171,6 +171,9 @@ func newIn(inValue interface{}) (*In, error) {
 
 	} else if s, ok := inValue.(string); ok {
 		in.Name = p.StrP(strings.TrimPrefix(s, "$"))
+
+	} else {
+		return nil, errs.New("'in' value expected to be a function call or string")
 	}
 
 	return in, nil
