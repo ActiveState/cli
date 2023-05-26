@@ -4,18 +4,40 @@ import (
 	"bytes"
 	"encoding/json"
 	"os"
-	"path/filepath"
 	"testing"
 
-	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/rtutils/p"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestBasic(t *testing.T) {
-	file, err := newFile(filepath.Join("testdata", "basic.lo"))
+	script, err := NewScript([]byte(
+		`let:
+  runtime = solve(
+    platforms = ["linux", "windows"],
+    requirements = [
+      {
+        name = "python",
+        namespace = "language",
+      },
+      {
+        name = "requests",
+        namespace = "language/python",
+        version_requirements = [
+          {
+            comparator = "eq",
+            version = "3.10.10"
+          }
+        ]
+      }
+    ]
+  )
+in:
+  runtime
+`))
 	require.NoError(t, err)
+
 	assert.Equal(t, &Script{
 		&Let{
 			[]*Assignment{
@@ -50,12 +72,37 @@ func TestBasic(t *testing.T) {
 			},
 		},
 		&In{Name: p.StrP("runtime")},
-	}, file.Script)
+	}, script)
 }
 
 func TestComplex(t *testing.T) {
-	file, err := newFile(filepath.Join("testdata", "complex.lo"))
+	script, err := NewScript([]byte(
+		`let:
+    linux_runtime = solve(
+        requirements=[
+            {
+                name="language/python"
+            }
+        ],
+        platforms=["67890"]
+    )
+
+    win_runtime = solve(
+        requirements=[{
+                name="language/perl"
+            }
+        ],
+        platforms=["12345"]
+    )
+
+in:
+   merge(
+        win_installer(win_runtime),
+        tar_installer(linux_runtime)
+    )
+`))
 	require.NoError(t, err)
+
 	assert.Equal(t, &Script{
 		&Let{
 			[]*Assignment{
@@ -97,12 +144,37 @@ func TestComplex(t *testing.T) {
 			&Value{FuncCall: &FuncCall{"win_installer", []*Value{&Value{Ident: p.StrP("win_runtime")}}}},
 			&Value{FuncCall: &FuncCall{"tar_installer", []*Value{&Value{Ident: p.StrP("linux_runtime")}}}},
 		}}},
-	}, file.Script)
+	}, script)
 }
 
+const example = `let:
+  runtime = solve(
+    at_time = "2023-04-27T17:30:05.999000Z",
+    platforms = ["96b7e6f2-bebf-564c-bc1c-f04482398f38", "96b7e6f2-bebf-564c-bc1c-f04482398f38"],
+    requirements = [
+      {
+        name = "python",
+        namespace = "language",
+      },
+      {
+        name = "requests",
+        namespace = "language/python",
+        version_requirements = [
+          {
+            comparator = "eq",
+            version = "3.10.10"
+          }
+        ]
+      }
+    ]
+  )
+in:
+  runtime`
+
 func TestExample(t *testing.T) {
-	file, err := newFile(filepath.Join("testdata", "example.lo"))
+	script, err := NewScript([]byte(example))
 	require.NoError(t, err)
+
 	assert.Equal(t, &Script{
 		&Let{
 			[]*Assignment{
@@ -140,7 +212,7 @@ func TestExample(t *testing.T) {
 			},
 		},
 		&In{Name: p.StrP("runtime")},
-	}, file.Script)
+	}, script)
 }
 
 func TestString(t *testing.T) {
@@ -154,6 +226,7 @@ in:
     runtime
 `))
 	require.NoError(t, err)
+
 	assert.Equal(t,
 		`let:
 	runtime = solve(
@@ -177,21 +250,32 @@ func TestRoundTrip(t *testing.T) {
 	require.NoError(t, err)
 	defer os.Remove(tmpfile.Name())
 
-	file, err := newFile(filepath.Join("testdata", "example.lo"))
+	script, err := NewScript([]byte(example))
 	require.NoError(t, err)
-	script := file.Script
 
-	tmpfile.Write([]byte(file.Script.String()))
+	tmpfile.Write([]byte(script.String()))
 	tmpfile.Close()
 
-	file, err = newFile(tmpfile.Name())
+	file, err := newFile(tmpfile.Name())
 	require.NoError(t, err)
 
 	assert.Equal(t, script, file.Script)
 }
 
 func TestJson(t *testing.T) {
-	file, err := newFile(filepath.Join("testdata", "moderate.lo"))
+	script, err := NewScript([]byte(
+		`let:
+    runtime = solve(
+        requirements=[
+            {
+                name="language/python"
+            }
+        ],
+        platforms=["12345", "67890"]
+    )
+in:
+    runtime
+`))
 	require.NoError(t, err)
 
 	inputJson := &bytes.Buffer{}
@@ -217,13 +301,56 @@ func TestJson(t *testing.T) {
 	require.NoError(t, err)
 	expectedJson, err := json.Marshal(marshaledInput)
 
-	actualJson, err := json.Marshal(file.Script)
+	actualJson, err := json.Marshal(script)
 	require.NoError(t, err)
 	assert.Equal(t, string(expectedJson), string(actualJson))
 }
 
 func TestBuildExpression(t *testing.T) {
-	expr := fileutils.ReadFileUnsafe(filepath.Join("testdata", "buildexpression.json"))
+	expr := []byte(`{
+  "let": {
+    "runtime": {
+      "solve_legacy": {
+        "at_time": "2023-04-27T17:30:05.999000Z",
+        "build_flags": [],
+        "camel_flags": [],
+        "platforms": [
+          "96b7e6f2-bebf-564c-bc1c-f04482398f38"
+        ],
+        "requirements": [
+          {
+            "name": "jinja2-time",
+            "namespace": "language/python"
+          },
+          {
+            "name": "jupyter-contrib-nbextensions",
+            "namespace": "language/python"
+          },
+          {
+            "name": "python",
+            "namespace": "language",
+            "version_requirements": [
+              {
+                "comparator": "eq",
+                "version": "3.10.10"
+              }
+            ]
+          },
+          {
+            "name": "copier",
+            "namespace": "language/python"
+          },
+          {
+            "name": "jupyterlab",
+            "namespace": "language/python"
+          }
+        ],
+        "solver_version": null
+      }
+    },
+    "in": "$runtime"
+  }
+}`)
 	script, err := NewScriptFromBuildExpression(expr)
 	require.NoError(t, err)
 	require.NotNil(t, script)
