@@ -41,6 +41,11 @@ type PushCommitResult struct {
 	*NotFoundError
 }
 
+type StageCommitResult struct {
+	Commit *Commit `json:"stageCommit"`
+	*NotFoundError
+}
+
 type NotFoundError struct {
 	Message string `json:"message"`
 }
@@ -56,10 +61,10 @@ type Project struct {
 }
 
 type Commit struct {
-	Type     string           `json:"__typename"`
-	Script   *BuildExpression `json:"script"`
-	CommitID string           `json:"commitId"`
-	Build    *Build           `json:"build"`
+	Type     string          `json:"__typename"`
+	Script   BuildExpression `json:"script"`
+	CommitID string          `json:"commitId"`
+	Build    *Build          `json:"build"`
 	*NotFoundError
 }
 

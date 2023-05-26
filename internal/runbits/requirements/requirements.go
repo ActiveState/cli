@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"strings"
-	"time"
 
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/go-openapi/strfmt"
@@ -215,17 +214,14 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 	}
 
 	bp := bpModel.NewBuildPlanner(r.Auth)
-	commitID, err := bp.PushCommit(bpModel.PushCommitParams{
+	commitID, err := bp.StageCommit(bpModel.StateCommitParams{
 		Owner:            pj.Owner(),
 		Project:          pj.Name(),
 		ParentCommit:     string(parentCommitID),
-		BranchRef:        pj.BranchName(),
-		Description:      fmt.Sprintf("%s-%s", operation, requirementName),
 		PackageName:      requirementName,
 		PackageVersion:   requirementVersion,
 		PackageNamespace: ns,
 		Operation:        operation,
-		Time:             time.Now(),
 	})
 	if err != nil {
 		return locale.WrapError(err, "err_package_save_and_build", "Could not save and build project")
