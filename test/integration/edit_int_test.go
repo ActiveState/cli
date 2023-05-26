@@ -33,7 +33,7 @@ func (suite *EditIntegrationTestSuite) setup() (*e2e.Session, e2e.SpawnOptions) 
 	suite.Require().NoError(err)
 
 	configFileContent := strings.TrimSpace(`
-project: "https://platform.activestate.com/EditOrg/EditProject?commitID=00010001-0001-0001-0001-000100010001"
+project: "https://platform.activestate.com/EditOrg/EditProject"
 scripts:
   - name: test-script
     value: echo hello test

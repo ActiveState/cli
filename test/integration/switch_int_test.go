@@ -1,7 +1,6 @@
 package integration
 
 import (
-	"fmt"
 	"path/filepath"
 	"runtime"
 	"testing"
@@ -25,7 +24,7 @@ func (suite *SwitchIntegrationTestSuite) TestSwitch_Branch() {
 	err := ts.ClearCache()
 	suite.Require().NoError(err)
 
-	suite.PrepareActiveStateYAML(ts, "ActiveState-CLI", "Branches", "b5b327f8-468e-4999-a23e-8bee886e6b6d")
+	ts.PrepareProject("ActiveState-CLI/Branches", "b5b327f8-468e-4999-a23e-8bee886e6b6d")
 	pjfilepath := filepath.Join(ts.Dirs.Work, constants.ConfigFileName)
 
 	pjfile, err := projectfile.Parse(pjfilepath)
@@ -61,7 +60,7 @@ func (suite *SwitchIntegrationTestSuite) TestSwitch_CommitID() {
 	err := ts.ClearCache()
 	suite.Require().NoError(err)
 
-	suite.PrepareActiveStateYAML(ts, "ActiveState-CLI", "History", "b5b327f8-468e-4999-a23e-8bee886e6b6d")
+	ts.PrepareProject("ActiveState-CLI/History", "b5b327f8-468e-4999-a23e-8bee886e6b6d")
 	pjfilepath := filepath.Join(ts.Dirs.Work, constants.ConfigFileName)
 
 	pjfile, err := projectfile.Parse(pjfilepath)
@@ -93,7 +92,7 @@ func (suite *SwitchIntegrationTestSuite) TestSwitch_CommitID_NotInHistory() {
 	err := ts.ClearCache()
 	suite.Require().NoError(err)
 
-	suite.PrepareActiveStateYAML(ts, "ActiveState-CLI", "History", "b5b327f8-468e-4999-a23e-8bee886e6b6d")
+	ts.PrepareProject("ActiveState-CLI/History", "b5b327f8-468e-4999-a23e-8bee886e6b6d")
 	pjfilepath := filepath.Join(ts.Dirs.Work, constants.ConfigFileName)
 
 	pjfile, err := projectfile.Parse(pjfilepath)
@@ -115,11 +114,6 @@ func (suite *SwitchIntegrationTestSuite) TestSwitch_CommitID_NotInHistory() {
 	if pjfile.CommitID() != orignalCommitID {
 		suite.FailNow("commitID was updated after switching branches")
 	}
-}
-
-func (suite *SwitchIntegrationTestSuite) PrepareActiveStateYAML(ts *e2e.Session, username, project, commitID string) {
-	asyData := fmt.Sprintf(`project: "https://platform.activestate.com/%s/%s?branch=main&commitID=%s"`, username, project, commitID)
-	ts.PrepareActiveStateYAML(asyData)
 }
 
 func (suite *SwitchIntegrationTestSuite) TestJSON() {

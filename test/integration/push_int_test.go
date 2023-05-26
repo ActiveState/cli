@@ -257,7 +257,7 @@ func (suite *PushIntegrationTestSuite) TestCarlisle() {
 
 func (suite *PushIntegrationTestSuite) TestPush_Outdated() {
 	suite.OnlyRunForTags(tagsuite.Push)
-	projectLine := "project: https://platform.activestate.com/ActiveState-CLI/cli?branch=main&commitID="
+	projectLine := "project: https://platform.activestate.com/ActiveState-CLI/cli?branch=main"
 	unPushedCommit := "882ae76e-fbb7-4989-acc9-9a8b87d49388"
 
 	ts := e2e.New(suite.T(), false)
@@ -265,8 +265,9 @@ func (suite *PushIntegrationTestSuite) TestPush_Outdated() {
 
 	wd := filepath.Join(ts.Dirs.Work, "cli")
 	pjfilepath := filepath.Join(ts.Dirs.Work, "cli", constants.ConfigFileName)
-	err := fileutils.WriteFile(pjfilepath, []byte(projectLine+unPushedCommit))
-	suite.Require().NoError(err)
+	suite.Require().NoError(fileutils.WriteFile(pjfilepath, []byte(projectLine)))
+	commitIdFile := filepath.Join(ts.Dirs.Work, "cli", constants.ProjectConfigDirName, constants.CommitIdFileName)
+	suite.Require().NoError(fileutils.WriteFile(commitIdFile, []byte(unPushedCommit)))
 
 	ts.LoginAsPersistentUser()
 	cp := ts.SpawnWithOpts(e2e.WithArgs("push"), e2e.WithWorkDirectory(wd))

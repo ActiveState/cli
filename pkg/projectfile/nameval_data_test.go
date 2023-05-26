@@ -15,7 +15,7 @@ type pFileYAML struct {
 
 func (y pFileYAML) asLongYAML() []byte {
 	return applyToYAML(`
-project: https://platform.activestate.com/ActiveState/cli?branch=main&commitID=7a2fb89c-4bf0-4bb8-b45e-88b0d8af10e4
+project: https://platform.activestate.com/ActiveState/cli?branch=main
 constants:
   - name: %s
     value: %s
@@ -58,15 +58,15 @@ events:
 
 func (y pFileYAML) asShortYAML() []byte {
 	return applyToYAML(`
-project: https://platform.activestate.com/ActiveState/cli?branch=main&commitID=7a2fb89c-4bf0-4bb8-b45e-88b0d8af10e4
+project: https://platform.activestate.com/ActiveState/cli?branch=main
 constants:
   - %s: %s
   - CLI_PKGS: ./cmd/state
   - SET_ENV: |
       GOFLAGS='-mod=vendor'
       BUILD_TARGET_DIR=$constants.BUILD_TARGET_PREFIX_DIR/${GOARCH#amd64}
-  - name: SCRIPT_EXT 
-    if: ne .OS.Name "Windows" 
+  - name: SCRIPT_EXT
+    if: ne .OS.Name "Windows"
     value: .sh
 scripts:
   - preprocess: |

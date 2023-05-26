@@ -23,7 +23,7 @@ func (suite *PullIntegrationTestSuite) TestPull() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	ts.PrepareActiveStateYAML(`project: "https://platform.activestate.com/ActiveState-CLI/Python3"`)
+	ts.PrepareProject("ActiveState-CLI/Python3", "")
 
 	cp := ts.Spawn("pull")
 	cp.ExpectLongString("Operating on project ActiveState-CLI/Python3")
@@ -44,7 +44,7 @@ func (suite *PullIntegrationTestSuite) TestPullSetProject() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	ts.PrepareActiveStateYAML(`project: https://platform.activestate.com/ActiveState-CLI/small-python?commitID=9733d11a-dfb3-41de-a37a-843b7c421db4`)
+	ts.PrepareProject("ActiveState-CLI/small-python", "9733d11a-dfb3-41de-a37a-843b7c421db4")
 
 	// update to related project
 	cp := ts.Spawn("pull", "--set-project", "ActiveState-CLI/small-python-fork")
@@ -63,7 +63,7 @@ func (suite *PullIntegrationTestSuite) TestPullSetProjectUnrelated() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	ts.PrepareActiveStateYAML(`project: "https://platform.activestate.com/ActiveState-CLI/small-python?commitID=9733d11a-dfb3-41de-a37a-843b7c421db4"`)
+	ts.PrepareProject("ActiveState-CLI/small-python", "9733d11a-dfb3-41de-a37a-843b7c421db4")
 
 	cp := ts.Spawn("pull", "--set-project", "ActiveState-CLI/Python3")
 	cp.ExpectLongString("you may lose changes to your project")
@@ -117,7 +117,7 @@ func (suite *PullIntegrationTestSuite) TestPull_RestoreNamespace() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	ts.PrepareActiveStateYAML(`project: https://platform.activestate.com/ActiveState-CLI/small-python?commitID=9733d11a-dfb3-41de-a37a-843b7c421db4`)
+	ts.PrepareProject("ActiveState-CLI/small-python", "9733d11a-dfb3-41de-a37a-843b7c421db4")
 
 	// Attempt to update to unrelated project.
 	cp := ts.Spawn("pull", "--non-interactive", "--set-project", "ActiveState-CLI/Python3")

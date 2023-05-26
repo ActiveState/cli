@@ -21,15 +21,15 @@ func TestProjectField(t *testing.T) {
 		},
 		{
 			"Add Branch, already has commit",
-			`https://platform.activestate.com/org/project?commitID=25B3DEDF-98E5-400B-8B78-CE12F990B246`,
+			`https://platform.activestate.com/org/project`,
 			func(p *projectField) { p.SetBranch("main") },
-			"https://platform.activestate.com/org/project?branch=main&commitID=25B3DEDF-98E5-400B-8B78-CE12F990B246",
+			"https://platform.activestate.com/org/project?branch=main",
 		},
 		{
 			"Set Namespace",
-			`https://platform.activestate.com/org1/project1?commitID=25B3DEDF-98E5-400B-8B78-CE12F990B246`,
+			`https://platform.activestate.com/org1/project1`,
 			func(p *projectField) { p.SetNamespace("org2", "project2") },
-			"https://platform.activestate.com/org2/project2?commitID=25B3DEDF-98E5-400B-8B78-CE12F990B246",
+			"https://platform.activestate.com/org2/project2",
 		},
 	}
 	for _, tt := range tests {

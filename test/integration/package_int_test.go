@@ -412,7 +412,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_operation() {
 }
 
 func (suite *PackageIntegrationTestSuite) PrepareActiveStateYAML(ts *e2e.Session) {
-	asyData := `project: "https://platform.activestate.com/ActiveState-CLI/List?commitID=a9d0bc88-585a-49cf-89c1-6c07af781cff"
+	asyData := `project: "https://platform.activestate.com/ActiveState-CLI/List"
 scripts:
   - name: test-pyparsing
     language: python3
@@ -421,6 +421,7 @@ scripts:
       print(Word(alphas).parseString("TEST"))
 `
 	ts.PrepareActiveStateYAML(asyData)
+	ts.PrepareCommitIdFile("a9d0bc88-585a-49cf-89c1-6c07af781cff")
 }
 
 func (suite *PackageIntegrationTestSuite) TestInstall_Empty() {

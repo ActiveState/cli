@@ -288,11 +288,24 @@ func (s *Session) SpawnCmdWithOpts(exe string, opts ...SpawnOptions) *termtest.C
 	return console
 }
 
-// PrepareActiveStateYAML creates a projectfile.Project instance from the
-// provided contents and saves the output to an as.y file within the named
-// directory.
+// PrepareActiveStateYAML creates an activestate.yaml in the session's work directory from the
+// given YAML contents.
 func (s *Session) PrepareActiveStateYAML(contents string) {
-	require.NoError(s.t, fileutils.WriteFile(filepath.Join(s.Dirs.Work, "activestate.yaml"), []byte(contents)))
+	require.NoError(s.t, fileutils.WriteFile(filepath.Join(s.Dirs.Work, constants.ConfigFileName), []byte(contents)))
+}
+
+func (s *Session) PrepareCommitIdFile(commitID string) {
+	require.NoError(s.t, fileutils.WriteFile(filepath.Join(s.Dirs.Work, constants.ProjectConfigDirName, constants.CommitIdFileName), []byte(commitID)))
+}
+
+// PrepareProject creates a very simple activestate.yaml file for the given org/project and, if a
+// commit ID is given, an .activestate/commit file.
+func (s *Session) PrepareProject(namespace, commitID string) {
+	yaml := fmt.Sprintf("project: https://%s/%s", constants.DefaultAPIHost, namespace)
+	require.NoError(s.t, fileutils.WriteFile(filepath.Join(s.Dirs.Work, constants.ConfigFileName), []byte(yaml)))
+	if commitID != "" {
+		require.NoError(s.t, fileutils.WriteFile(filepath.Join(s.Dirs.Work, constants.ProjectConfigDirName, constants.CommitIdFileName), []byte(commitID)))
+	}
 }
 
 // PrepareFile writes a file to path with contents, expecting no error

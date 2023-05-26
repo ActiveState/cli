@@ -350,7 +350,7 @@ func Test_parseURL(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			"Valid full URL",
+			"Valid full legacy URL",
 			"https://platform.activestate.com/Owner/Name?commitID=7BA74758-8665-4D3F-921C-757CD271A0C1&branch=main",
 			projectURL{
 				Owner:      "Owner",
@@ -435,7 +435,7 @@ func Test_detectDeprecations(t *testing.T) {
 		},
 		{
 			"Real world",
-			`project: https://platform.activestate.com/ActiveState-CLI/test?commitID=9090c128-e948-4388-8f7f-96e2c1e00d98
+			`project: https://platform.activestate.com/ActiveState-CLI/test
 platforms:
   - name: Linux64Label
 languages:
@@ -443,9 +443,9 @@ languages:
     constraints:
         platform: Windows10Label,Linux64Label`,
 			[]string{
-				locale.Tr("pjfile_deprecation_entry", "platforms", "109"),
-				locale.Tr("pjfile_deprecation_entry", "languages", "143"),
-				locale.Tr("pjfile_deprecation_entry", "constraints", "167"),
+				locale.Tr("pjfile_deprecation_entry", "platforms", "63"),
+				locale.Tr("pjfile_deprecation_entry", "languages", "97"),
+				locale.Tr("pjfile_deprecation_entry", "constraints", "121"),
 			},
 		},
 		{
