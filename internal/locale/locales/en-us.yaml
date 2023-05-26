@@ -1251,7 +1251,7 @@ flag_state_init_language_description:
 arg_state_init_path:
   other: path
 arg_state_init_path_description:
-  other: "Where to initialize the project (Default: Current working directory)"
+  other: "Where to initialize the project"
 err_wd:
   other: Could not retrieve the working directory
 err_invalid_output_format:
