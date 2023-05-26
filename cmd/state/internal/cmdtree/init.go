@@ -29,7 +29,6 @@ func newInitCommand(prime *primer.Values) *captain.Command {
 				Hidden: true,
 			},
 			{
-				// Supports Komodo
 				Name:        "language",
 				Description: locale.T("flag_state_init_language_description"),
 				Value:       &params.Language,
