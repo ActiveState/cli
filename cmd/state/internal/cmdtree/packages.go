@@ -144,6 +144,16 @@ func newSearchCommand(prime *primer.Values) *captain.Command {
 				Description: locale.T("package_search_flag_exact-term_description"),
 				Value:       &params.ExactTerm,
 			},
+			{
+				Name:        "timestamp",
+				Description: locale.T("package_search_flag_ts_description"),
+				Value:       &params.Timestamp,
+			},
+			{
+				Name:        "namespace",
+				Description: locale.T("package_search_flag_ns_description"),
+				Value:       &params.Namespace,
+			},
 		},
 		[]*captain.Argument{
 			{

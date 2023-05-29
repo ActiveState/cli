@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
@@ -18,6 +19,8 @@ type SearchRunParams struct {
 	Language  string
 	ExactTerm bool
 	Name      string
+	Namespace project.Namespaced
+	Timestamp string
 }
 
 // Search manages the searching execution context.
@@ -44,12 +47,29 @@ func (s *Search) Run(params SearchRunParams, nstype model.NamespaceType) error {
 	}
 
 	ns := model.NewNamespacePkgOrBundle(language, nstype)
+	if params.Namespace.IsValid() {
+		ns = model.NewRawNamespace(params.Namespace.String())
+	}
+
+	var ts *time.Time
+	if params.Timestamp != "" {
+		if params.Timestamp == "now" {
+			tsv := time.Now()
+			ts = &tsv
+		} else {
+			tsv, err := time.Parse(time.RFC3339, params.Timestamp)
+			if err != nil {
+				return locale.WrapInputError(err, "err_invalid_timestamp", "Timestamp should be either 'now' or RFC3339 formatted timestamp.")
+			}
+			ts = &tsv
+		}
+	}
 
 	var packages []*model.IngredientAndVersion
 	if params.ExactTerm {
-		packages, err = model.SearchIngredientsStrict(ns.String(), params.Name, false, true, nil)
+		packages, err = model.SearchIngredientsStrict(ns.String(), params.Name, true, true, ts)
 	} else {
-		packages, err = model.SearchIngredients(ns.String(), params.Name, true, nil)
+		packages, err = model.SearchIngredients(ns.String(), params.Name, true, ts)
 	}
 	if err != nil {
 		return locale.WrapError(err, "package_err_cannot_obtain_search_results")
@@ -61,7 +81,8 @@ func (s *Search) Run(params SearchRunParams, nstype model.NamespaceType) error {
 			locale.Tl("search_request_"+ns.Type().String(), ""),
 		)
 	}
-	s.out.Print(formatSearchResults(packages))
+
+	s.out.Print(output.Prepare(formatSearchResults(packages), packages))
 
 	return nil
 }
