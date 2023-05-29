@@ -1247,12 +1247,12 @@ arg_state_init_namespace:
   other: org/project
 arg_state_init_namespace_description:
   other: The namespace for the project that you wish to initialize
-arg_state_init_language:
-  other: Language[@version]
-arg_state_init_language_description:
-  other: The language that this project should use, and optionally the version of that language
-flag_state_init_path_description:
-  other: Where to initialize the project
+flag_state_init_language_description:
+  other: "The Language[@version] that this project should use"
+arg_state_init_path:
+  other: path
+arg_state_init_path_description:
+  other: "Where to initialize the project"
 err_wd:
   other: Could not retrieve the working directory
 err_invalid_output_format:

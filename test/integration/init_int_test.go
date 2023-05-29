@@ -51,9 +51,9 @@ func (suite *InitIntegrationTestSuite) runInitTest(addPath bool, lang string, ex
 	// Generate a new namespace for the project to be created.
 	pname := strutils.UUID()
 	namespace := fmt.Sprintf("%s/%s", e2e.PersistentUsername, pname)
-	computedArgs := append([]string{"init", namespace, lang}, args...)
+	computedArgs := append([]string{"init", "--language", lang, namespace}, args...)
 	if addPath {
-		computedArgs = append(computedArgs, "--path", ts.Dirs.Work)
+		computedArgs = append(computedArgs, ts.Dirs.Work)
 	}
 
 	// Run `state init`, creating the project.
