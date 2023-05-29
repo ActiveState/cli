@@ -70,7 +70,7 @@ func newUpload(prime *primer.Values) *captain.Command {
 				Name: "depend",
 				Description: locale.Tl(
 					"author_upload_depend_description",
-					"Ingredient that this ingredient depends on, format as <namespace>/<name>@<version>. Can be set multiple times.",
+					"Ingredient that this ingredient depends on, format as <namespace>/<name>[@<version>]. Can be set multiple times.",
 				),
 				Value: &params.Depends,
 			},
