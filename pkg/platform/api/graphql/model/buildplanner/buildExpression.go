@@ -102,12 +102,12 @@ func (bx BuildExpression) Update(operation Operation, requirement Requirement) e
 		return errs.New("Unsupported operation")
 	}
 	if err != nil {
-		return errs.Wrap(err, "Could not update BuildExpression's requirement")
+		return errs.Wrap(err, "Could not update BuildExpression's requirements")
 	}
 
 	err = bx.UpdateTimestamp()
 	if err != nil {
-		return errs.Wrap(err, "Could not update BuildExpression timestamp")
+		return errs.Wrap(err, "Could not update BuildExpression's timestamp")
 	}
 
 	return nil
@@ -129,7 +129,7 @@ func (bx BuildExpression) AddRequirement(requirement Requirement) error {
 		return errs.Wrap(err, "Could not marshal JSON")
 	}
 
-	var newRequirement interface{}
+	var newRequirement Requirement
 	err = json.Unmarshal(newRequirementData, &newRequirement)
 	if err != nil {
 		return errs.Wrap(err, "Could not unmarshal JSON")
