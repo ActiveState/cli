@@ -12,8 +12,8 @@ func newUpload(prime *primer.Values) *captain.Command {
 	params := uploadingredient.Params{}
 	c := captain.NewCommand(
 		"upload",
-		locale.Tl("add_title", "Uploading Binary Ingredient"),
-		locale.Tl("add_description", "Upload a Binary Ingredient for private consumption"),
+		locale.Tl("add_title", "Uploading Ingredient"),
+		locale.Tl("add_description", "Upload an Ingredient for private consumption."),
 		prime,
 		[]*captain.Flag{
 			{
