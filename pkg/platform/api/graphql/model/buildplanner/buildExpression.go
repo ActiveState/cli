@@ -2,6 +2,7 @@ package model
 
 import (
 	"encoding/json"
+	"errors"
 	"time"
 
 	"github.com/ActiveState/cli/internal/errs"
@@ -24,10 +25,12 @@ const (
 	OperationRemove
 	OperationUpdate
 
-	SolveFuncName       = "solve"
-	SolveLegacyFuncName = "solve_legacy"
-	RequirementsKey     = "requirements"
-	AtTimeKey           = "at_time"
+	SolveFuncName           = "solve"
+	SolveLegacyFuncName     = "solve_legacy"
+	RequirementsKey         = "requirements"
+	AtTimeKey               = "at_time"
+	RequirementNameKey      = "name"
+	RequirementNamespaceKey = "namespace"
 )
 
 func (o Operation) String() string {
@@ -42,6 +45,8 @@ func (o Operation) String() string {
 		return "unknown"
 	}
 }
+
+var funcNodeNotFoundError = errors.New("Could not find function node")
 
 type Requirement struct {
 	Name               string               `json:"name"`
@@ -61,18 +66,11 @@ func NewBuildExpression(data []byte) (BuildExpression, error) {
 		return nil, errs.Wrap(err, "Could not unmarshal JSON")
 	}
 
-	logging.Debug("BuildExpresison Data: %s", data)
-
 	return bx, nil
 }
 
 func (bx BuildExpression) Requirements() ([]Requirement, error) {
-	solveLegacyNode, err := getFuncNode(bx, SolveLegacyFuncName)
-	if err != nil {
-		return nil, errs.Wrap(err, "Could not get solve legacy node")
-	}
-
-	requirementsNode, err := getRequirementsNode(solveLegacyNode)
+	requirementsNode, err := getRequirementsNode(bx)
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not get requirements node")
 	}
@@ -115,35 +113,13 @@ func (bx BuildExpression) Update(operation Operation, requirement Requirement) e
 	return nil
 }
 
-func (bx BuildExpression) UpdateRequirements(requirements []Requirement) error {
-	solveLegacyNode, err := getFuncNode(bx, SolveLegacyFuncName)
-	if err != nil {
-		return errs.Wrap(err, "Could not get solve legacy node")
-	}
-
-	requirementsData, err := json.Marshal(requirements)
-	if err != nil {
-		return errs.Wrap(err, "Could not marshal JSON")
-	}
-
-	var newRequirements []interface{}
-	err = json.Unmarshal(requirementsData, &newRequirements)
-	if err != nil {
-		return errs.Wrap(err, "Could not unmarshal JSON")
-	}
-
-	solveLegacyNode[RequirementsKey] = newRequirements
-
-	return nil
-}
-
 func (bx BuildExpression) AddRequirement(requirement Requirement) error {
-	solveLegacyNode, err := getFuncNode(bx, SolveLegacyFuncName)
+	solveNode, err := getSolveNode(bx)
 	if err != nil {
-		return errs.Wrap(err, "Could not get solve legacy node")
+		return errs.Wrap(err, "Could not get solve node")
 	}
 
-	requirementsNode, err := getRequirementsNode(solveLegacyNode)
+	requirementsNode, err := getRequirementsNode(bx)
 	if err != nil {
 		return errs.Wrap(err, "Could not get requirements node")
 	}
@@ -161,45 +137,18 @@ func (bx BuildExpression) AddRequirement(requirement Requirement) error {
 
 	requirementsNode = append(requirementsNode, newRequirement)
 
-	solveLegacyNode[RequirementsKey] = requirementsNode
+	solveNode[RequirementsKey] = requirementsNode
 
 	return nil
 }
 
 func (bx BuildExpression) RemoveRequirement(requirement Requirement) error {
-	solveLegacyNode, err := getFuncNode(bx, SolveLegacyFuncName)
+	solveNode, err := getSolveNode(bx)
 	if err != nil {
-		return errs.Wrap(err, "Could not get solve legacy node")
+		return errs.Wrap(err, "Could not get solve node")
 	}
 
-	requirementsNode, err := getRequirementsNode(solveLegacyNode)
-	if err != nil {
-		return errs.Wrap(err, "Could not get requirements node")
-	}
-
-	for i, req := range requirementsNode {
-		r, ok := req.(map[string]interface{})
-		if !ok {
-			return errs.New("Requirement in BuildExpression is malformed, type: %T", req)
-		}
-
-		if r["name"] == requirement.Name && r["namespace"] == requirement.Namespace {
-			requirementsNode = append(requirementsNode[:i], requirementsNode[i+1:]...)
-			solveLegacyNode[RequirementsKey] = requirementsNode
-			return nil
-		}
-	}
-
-	return errs.New("Could not find requirement")
-}
-
-func (bx BuildExpression) UpdateRequirement(requirement Requirement) error {
-	solveLegacyNode, err := getFuncNode(bx, SolveLegacyFuncName)
-	if err != nil {
-		return errs.Wrap(err, "Could not get solve legacy node")
-	}
-
-	requirementsNode, err := getRequirementsNode(solveLegacyNode)
+	requirementsNode, err := getRequirementsNode(bx)
 	if err != nil {
 		return errs.Wrap(err, "Could not get requirements node")
 	}
@@ -210,9 +159,36 @@ func (bx BuildExpression) UpdateRequirement(requirement Requirement) error {
 			return errs.New("Requirement in BuildExpression is malformed")
 		}
 
-		if r["name"] == requirement.Name && r["namespace"] == requirement.Namespace {
+		if r[RequirementNameKey] == requirement.Name && r[RequirementNamespaceKey] == requirement.Namespace {
+			requirementsNode = append(requirementsNode[:i], requirementsNode[i+1:]...)
+			solveNode[RequirementsKey] = requirementsNode
+			return nil
+		}
+	}
+
+	return errs.New("Could not find requirement")
+}
+
+func (bx BuildExpression) UpdateRequirement(requirement Requirement) error {
+	solveNode, err := getSolveNode(bx)
+	if err != nil {
+		return errs.Wrap(err, "Could not get solve legacy node")
+	}
+
+	requirementsNode, err := getRequirementsNode(bx)
+	if err != nil {
+		return errs.Wrap(err, "Could not get requirements node")
+	}
+
+	for i, req := range requirementsNode {
+		r, ok := req.(map[string]interface{})
+		if !ok {
+			return errs.New("Requirement in BuildExpression is malformed")
+		}
+
+		if r[RequirementNameKey] == requirement.Name && r[RequirementNamespaceKey] == requirement.Namespace {
 			requirementsNode[i] = requirement
-			solveLegacyNode[RequirementsKey] = requirementsNode
+			solveNode[RequirementsKey] = requirementsNode
 			return nil
 		}
 	}
@@ -231,6 +207,46 @@ func (bx BuildExpression) UpdateTimestamp() error {
 	return nil
 }
 
+func getRequirementsNode(bx map[string]interface{}) ([]interface{}, error) {
+	solveNode, err := getSolveNode(bx)
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not get solve node")
+	}
+
+	for k, v := range solveNode {
+		if k != RequirementsKey {
+			continue
+		}
+
+		node, ok := v.([]interface{})
+		if !ok {
+			return nil, errs.New("Requirements in BuildExpression are malformed")
+		}
+
+		return node, nil
+	}
+
+	return nil, errs.New("Could not find requirements node")
+}
+
+func getSolveNode(bx BuildExpression) (map[string]interface{}, error) {
+	solveNode, err := getFuncNode(bx, SolveFuncName)
+	if err == nil {
+		return solveNode, nil
+	}
+	if !errors.Is(err, funcNodeNotFoundError) {
+		return nil, errs.Wrap(err, "Could not get solve node")
+	}
+	logging.Debug("Could not get solve node, trying solve legacy node")
+
+	solveNode, err = getFuncNode(bx, SolveLegacyFuncName)
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not get solve legacy node")
+	}
+
+	return solveNode, nil
+}
+
 func getFuncNode(bx BuildExpression, funcName string) (map[string]interface{}, error) {
 	for k, v := range bx {
 		node, ok := v.(map[string]interface{})
@@ -242,25 +258,10 @@ func getFuncNode(bx BuildExpression, funcName string) (map[string]interface{}, e
 			return node, nil
 		}
 
-		return getFuncNode(node, funcName)
+		if childNode, err := getFuncNode(node, funcName); err == nil {
+			return childNode, nil
+		}
 	}
 
-	return nil, errs.New("Could not find solve node")
-}
-
-func getRequirementsNode(solveNode map[string]interface{}) ([]interface{}, error) {
-	for k, v := range solveNode {
-		if k != RequirementsKey {
-			continue
-		}
-
-		node, ok := v.([]interface{})
-		if !ok {
-			return nil, errs.New("Requirements key in JSON object is malformed")
-		}
-
-		return node, nil
-	}
-
-	return nil, errs.New("Could not find requirements node")
+	return nil, funcNodeNotFoundError
 }

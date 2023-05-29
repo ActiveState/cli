@@ -127,10 +127,10 @@ func TestBuildExpression_Requirements(t *testing.T) {
 	}
 }
 
-func TestBuildExpression_UpdateRequirements(t *testing.T) {
+func TestBuildExpression_Update(t *testing.T) {
 	type args struct {
-		filename     string
-		requirements []Requirement
+		requirement Requirement
+		operation   Operation
 	}
 	tests := []struct {
 		name    string
@@ -139,34 +139,13 @@ func TestBuildExpression_UpdateRequirements(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "basic",
+			name: "add",
 			args: args{
-				filename: "buildexpression.json",
-				requirements: []Requirement{
-					{
-						Name:      "jinja2-time",
-						Namespace: "language/python",
-					},
-					{
-						Name:      "jupyter-contrib-nbextensions",
-						Namespace: "language/python",
-					},
-					{
-						Name:      "python",
-						Namespace: "language",
-						VersionRequirement: []VersionRequirement{
-							map[Comparator]string{
-								"comparator": string(ComparatorEQ),
-								"version":    "3.10.10",
-							},
-						},
-					},
-					// Removed copier requirement
-					{
-						Name:      "jupyterlab",
-						Namespace: "language/python",
-					},
+				requirement: Requirement{
+					Name:      "requests",
+					Namespace: "language/python",
 				},
+				operation: OperationAdd,
 			},
 			want: []Requirement{
 				{
@@ -187,7 +166,94 @@ func TestBuildExpression_UpdateRequirements(t *testing.T) {
 						},
 					},
 				},
-				// Removed copier requirement
+				{
+					Name:      "copier",
+					Namespace: "language/python",
+				},
+				{
+					Name:      "jupyterlab",
+					Namespace: "language/python",
+				},
+				{
+					Name:      "requests",
+					Namespace: "language/python",
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "remove",
+			args: args{
+				requirement: Requirement{
+					Name:      "jupyterlab",
+					Namespace: "language/python",
+				},
+				operation: OperationRemove,
+			},
+			want: []Requirement{
+				{
+					Name:      "jinja2-time",
+					Namespace: "language/python",
+				},
+				{
+					Name:      "jupyter-contrib-nbextensions",
+					Namespace: "language/python",
+				},
+				{
+					Name:      "python",
+					Namespace: "language",
+					VersionRequirement: []VersionRequirement{
+						map[Comparator]string{
+							"comparator": string(ComparatorEQ),
+							"version":    "3.10.10",
+						},
+					},
+				},
+				{
+					Name:      "copier",
+					Namespace: "language/python",
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "update",
+			args: args{
+				requirement: Requirement{
+					Name:      "python",
+					Namespace: "language",
+					VersionRequirement: []VersionRequirement{
+						map[Comparator]string{
+							"comparator": string(ComparatorEQ),
+							"version":    "3.11.0",
+						},
+					},
+				},
+				operation: OperationUpdate,
+			},
+			want: []Requirement{
+				{
+					Name:      "jinja2-time",
+					Namespace: "language/python",
+				},
+				{
+					Name:      "jupyter-contrib-nbextensions",
+					Namespace: "language/python",
+				},
+				{
+					Name:      "python",
+					Namespace: "language",
+					VersionRequirement: []VersionRequirement{
+						map[Comparator]string{
+							"comparator": string(ComparatorEQ),
+							"version":    "3.11.0",
+						},
+					},
+				},
+				{
+					Name:      "copier",
+					Namespace: "language/python",
+				},
 				{
 					Name:      "jupyterlab",
 					Namespace: "language/python",
@@ -195,20 +261,65 @@ func TestBuildExpression_UpdateRequirements(t *testing.T) {
 			},
 			wantErr: false,
 		},
+		{
+			name: "remove not existing",
+			args: args{
+				requirement: Requirement{
+					Name:      "requests",
+					Namespace: "language/python",
+				},
+				operation: OperationRemove,
+			},
+			want: []Requirement{
+				{
+					Name:      "jinja2-time",
+					Namespace: "language/python",
+				},
+				{
+					Name:      "jupyter-contrib-nbextensions",
+					Namespace: "language/python",
+				},
+				{
+					Name:      "python",
+					Namespace: "language",
+					VersionRequirement: []VersionRequirement{
+						map[Comparator]string{
+							"comparator": string(ComparatorEQ),
+							"version":    "3.10.10",
+						},
+					},
+				},
+				{
+					Name:      "copier",
+					Namespace: "language/python",
+				},
+				{
+					Name:      "jupyterlab",
+					Namespace: "language/python",
+				},
+			},
+			wantErr: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			wd, err := environment.GetRootPath()
 			assert.NoError(t, err)
 
-			data, err := fileutils.ReadFile(filepath.Join(wd, "pkg", "platform", "api", "graphql", "model", "buildplanner", "testdata", tt.args.filename))
+			data, err := fileutils.ReadFile(filepath.Join(wd, "pkg", "platform", "api", "graphql", "model", "buildplanner", "testdata", "buildexpression.json"))
 			assert.NoError(t, err)
 
 			bx, err := NewBuildExpression(data)
 			assert.NoError(t, err)
 
-			if err := bx.UpdateRequirements(tt.args.requirements); (err != nil) != tt.wantErr {
-				t.Errorf("BuildExpression.UpdateRequirements() error = %v, wantErr %v", err, tt.wantErr)
+			err = bx.Update(tt.args.operation, tt.args.requirement)
+			if err != nil {
+				if tt.wantErr {
+					return
+				}
+
+				t.Errorf("BuildExpression.Update() error = %v, wantErr %v", err, tt.wantErr)
+				return
 			}
 
 			got, err := bx.Requirements()
@@ -216,7 +327,6 @@ func TestBuildExpression_UpdateRequirements(t *testing.T) {
 				t.Errorf("BuildExpression.Requirements() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("BuildExpression.Requirements() = %v, want %v", got, tt.want)
 			}

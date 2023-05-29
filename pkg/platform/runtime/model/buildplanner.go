@@ -21,6 +21,11 @@ import (
 	"github.com/machinebox/graphql"
 )
 
+const (
+	pollInterval = 1 * time.Second
+	pollTimeout  = 30 * time.Second
+)
+
 // HostPlatform stores a reference to current platform
 var HostPlatform string
 
@@ -174,7 +179,7 @@ func (bp *BuildPlanner) FetchBuildResult(commitID strfmt.UUID, owner, project st
 
 func (bp *BuildPlanner) pollBuildPlan(owner, project, commitID string) (*model.BuildPlan, error) {
 	var resp *model.BuildPlan
-	ticker := time.NewTicker(1 * time.Second)
+	ticker := time.NewTicker(pollInterval)
 	for {
 		select {
 		case <-ticker.C:
@@ -185,7 +190,7 @@ func (bp *BuildPlanner) pollBuildPlan(owner, project, commitID string) (*model.B
 			if resp.Project.Commit.Build.Status != model.Planning {
 				return resp, nil
 			}
-		case <-time.After(30 * time.Second):
+		case <-time.After(pollTimeout):
 			return nil, locale.NewError("err_buildplanner_timeout", "Timed out waiting for build plan")
 		}
 	}
