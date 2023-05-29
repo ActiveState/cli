@@ -2061,3 +2061,9 @@ err_uploadingredient_edit_version_different:
   other: You did not provide a unique version number. Make sure the version number you provided has not been used before.
 err_uploadingredient_edit_description_not_supported:
   other: Editing an ingredient description is not yet supported.
+uploadingredient_success:
+  other: |
+    Successfully uploaded as:
+    Ingredient ID: [[ACTIONABLE]{{.V0}}[/RESET]
+    Ingredient Version ID: [ACTIONABLE]{{.V1}}[/RESET]
+    Revision: [ACTIONABLE]{{.V2}}[/RESET]

@@ -210,11 +210,12 @@ func (r *Runner) Run(params *Params) error {
 	}
 
 	r.out.Print(output.Prepare(
-		locale.Tl("uploadingredient_success", `Successfully uploaded as:
-Ingredient ID: {{.V0}}
-Ingredient Version ID: {{.V1}}
-Revision: {{.V2}}
-`, result.Publish.IngredientID, result.Publish.IngredientVersionID, strconv.Itoa(result.Publish.Revision)),
+		locale.Tl(
+			"uploadingredient_success", "",
+			result.Publish.IngredientID,
+			result.Publish.IngredientVersionID,
+			strconv.Itoa(result.Publish.Revision),
+		),
 		result.Publish,
 	))
 
