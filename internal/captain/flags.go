@@ -48,7 +48,6 @@ func (nv *NameVersionFlag) Type() string {
 // UserFlag represents a flag that supports both a name and an email address, the following formats are supported:
 // - name <email>
 // - email
-// - name
 // Emails are detected simply by containing a @ symbol.
 type UserFlag struct {
 	Name  string
@@ -81,11 +80,11 @@ func (u *UserFlag) Set(s string) error {
 
 	if strings.Contains(s, "@") {
 		u.Email = strings.TrimSpace(s)
+		u.Name = strings.Split(u.Email, "@")[0]
 		return nil
 	}
 
-	u.Name = strings.TrimSpace(s)
-	return nil
+	return locale.NewInputError("userflag_format", "Invalid format: Should be 'name <email>' or '<email>'")
 }
 
 func (u *UserFlag) Type() string {

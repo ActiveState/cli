@@ -10,28 +10,32 @@ func TestUserFlag_Set(t *testing.T) {
 		name      string
 		flagValue string
 		want      *UserFlag
+		wantErr   bool
 	}{
 		{
 			"name and email",
 			"John Doe <john@doe.org>",
 			&UserFlag{Name: "John Doe", Email: "john@doe.org"},
+			false,
 		},
 		{
 			"email only",
 			"john@doe.org",
-			&UserFlag{Name: "", Email: "john@doe.org"},
+			&UserFlag{Name: "john", Email: "john@doe.org"},
+			false,
 		},
 		{
 			"name only",
 			"john",
-			&UserFlag{Name: "john", Email: ""},
+			&UserFlag{},
+			true,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			u := &UserFlag{}
-			if err := u.Set(tt.flagValue); err != nil {
-				t.Errorf("Set() error = %v", err)
+			if err := u.Set(tt.flagValue); (err != nil) != tt.wantErr {
+				t.Errorf("Set() error = %v, wantErr %v", err, tt.wantErr)
 			}
 			if !reflect.DeepEqual(u, tt.want) {
 				t.Fatalf("got %+v, want %+v", u, tt.want)

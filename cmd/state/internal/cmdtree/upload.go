@@ -62,7 +62,7 @@ func newUpload(prime *primer.Values) *captain.Command {
 				Name: "author",
 				Description: locale.Tl(
 					"author_upload_author_description",
-					"Ingredient author, in the format of \"<name> <email>\", or just <email>. Can be set multiple times.",
+					"Ingredient author, in the format of \"[<name>] <email>\". Can be set multiple times.",
 				),
 				Value: &params.Authors,
 			},
