@@ -146,6 +146,9 @@ func (r *Runner) Run(params *Params) error {
 	}
 
 	if params.Editor {
+		if !r.out.Config().Interactive {
+			return locale.NewInputError("err_uploadingredient_editor_not_supported", "Opening in editor is not supported in non-interactive mode")
+		}
 		if err := r.OpenInEditor(&reqVars); err != nil {
 			return err
 		}
