@@ -100,15 +100,22 @@ func (r *Runner) Run(params *Params) error {
 	if err != nil && !errs.Matches(err, &model.ErrSearch404{}) { // 404 means namespace not found, which is fine
 		return locale.WrapError(err, "err_uploadingredient_search", "Could not search for ingredient")
 	}
+	var ingredient *model.IngredientAndVersion
 
 	if params.Edit {
-		if err := prepareEditRequest(ingredients, &reqVars); err != nil {
+		if len(ingredients) == 0 {
+			return locale.NewInputError("err_uploadingredient_edit_not_found",
+				"Could not find ingredient to edit with name: '[ACTIONABLE]{{.V0}}[/RESET]', namespace: '[ACTIONABLE]{{.V1}}[/RESET]'.",
+				reqVars.Name, reqVars.Namespace)
+		}
+		ingredient = ingredients[0]
+		if err := prepareEditRequest(ingredient, &reqVars); err != nil {
 			return errs.Wrap(err, "Could not prepare edit request")
 		}
 	} else {
 		if len(ingredients) > 0 {
 			return locale.NewInputError("err_uploadingredient_exists",
-				"Ingredient with namespace '[ACTIONABLE]{{.V0}}[/RESET]' and name '[ACTIONABLE]{{.V1}}[/RESET]' already exists."+
+				"Ingredient with namespace '[ACTIONABLE]{{.V0}}[/RESET]' and name '[ACTIONABLE]{{.V1}}[/RESET]' already exists. "+
 					"To edit an existing ingredient you need to pass the '[ACTIONABLE]--edit[/RESET]' flag.",
 				reqVars.Namespace, reqVars.Name)
 		}
@@ -121,6 +128,27 @@ func (r *Runner) Run(params *Params) error {
 	if params.Editor {
 		if err := r.OpenInEditor(&reqVars); err != nil {
 			return err
+		}
+	}
+
+	// Validate user input
+	if params.Edit {
+		// Validate that the version input is valid
+		// https://activestatef.atlassian.net/browse/DX-1885
+		if reqVars.Version == "" {
+			return locale.NewInputError("err_uploadingredient_edit_version_required")
+		} else {
+			for _, v := range ingredient.Versions {
+				if reqVars.Version == v.Version {
+					return locale.NewInputError("err_uploadingredient_edit_version_different")
+				}
+			}
+		}
+
+		// Description is not currently supported for edit
+		// https://activestatef.atlassian.net/browse/DX-1886
+		if reqVars.Description != p.PStr(ingredient.Ingredient.Description) {
+			return locale.NewInputError("err_uploadingredient_edit_description_not_supported")
 		}
 	}
 
@@ -169,21 +197,21 @@ Revision: {{.V2}}
 }
 
 func prepareRequestFromParams(r *request.PublishVariables, params *Params) error {
-	if r.Version == "" {
+	if params.Version != "" {
 		r.Version = params.Version
 	}
 	if r.Version == "" {
 		r.Version = "0.0.1"
 	}
 
-	if r.Description == "" {
+	if params.Description != "" {
 		r.Description = params.Description
 	}
 	if r.Description == "" {
 		r.Description = "not provided"
 	}
 
-	if len(r.Authors) != 0 {
+	if len(params.Authors) != 0 {
 		r.Authors = []request.PublishVariableAuthor{}
 		for _, author := range params.Authors {
 			r.Authors = append(r.Authors, request.PublishVariableAuthor{
@@ -193,7 +221,7 @@ func prepareRequestFromParams(r *request.PublishVariables, params *Params) error
 		}
 	}
 
-	if len(r.Dependencies) != 0 {
+	if len(params.Depends) != 0 {
 		r.Dependencies = []request.PublishVariableDep{}
 		for _, dep := range params.Depends {
 			r.Dependencies = append(
@@ -206,14 +234,7 @@ func prepareRequestFromParams(r *request.PublishVariables, params *Params) error
 	return nil
 }
 
-func prepareEditRequest(ingredients []*model.IngredientAndVersion, r *request.PublishVariables) error {
-	if len(ingredients) == 0 {
-		return locale.NewInputError("err_uploadingredient_edit_not_found",
-			"Could not find ingredient to edit with name: '[ACTIONABLE]{{.V0}}[/RESET]', namespace: '[ACTIONABLE]{{.V1}}[/RESET]'.",
-			r.Name, r.Namespace)
-	}
-	ingredient := ingredients[0]
-
+func prepareEditRequest(ingredient *model.IngredientAndVersion, r *request.PublishVariables) error {
 	authors, err := model.FetchAuthors(ingredient.Ingredient.IngredientID, ingredient.LatestVersion.IngredientVersionID)
 	if err != nil {
 		return locale.WrapError(err, "err_uploadingredient_fetch_authors", "Could not fetch authors for ingredient")
@@ -232,6 +253,17 @@ func prepareEditRequest(ingredients []*model.IngredientAndVersion, r *request.Pu
 			Email:    author.Email.String(),
 			Websites: websites,
 		})
+	}
+
+	for _, dep := range ingredient.LatestVersion.Dependencies {
+		r.Dependencies = append(
+			r.Dependencies,
+			request.PublishVariableDep{request.Dependency{
+				Name:                p.PStr(dep.Feature),
+				Namespace:           p.PStr(dep.Namespace),
+				VersionRequirements: dep.OriginalRequirement,
+			}, []request.Dependency{}},
+		)
 	}
 
 	return nil

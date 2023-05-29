@@ -134,6 +134,7 @@ var (
 	NamespaceLanguage  = NamespaceType{"language", "", NamespaceLanguageMatch}
 	NamespacePlatform  = NamespaceType{"platform", "", NamespacePlatformMatch}
 	NamespaceOrgShared = NamespaceType{"org-shared", "", NamespaceOrgSharedMatch}
+	NamespaceRaw       = NamespaceType{"raw", "", ""}
 	NamespaceBlank     = NamespaceType{"", "", ""}
 )
 
@@ -177,6 +178,10 @@ func NewNamespacePkgOrBundle(language string, nstype NamespaceType) Namespace {
 // NewNamespacePackage creates a new package namespace
 func NewNamespacePackage(language string) Namespace {
 	return Namespace{NamespacePackage, fmt.Sprintf("language/%s", language)}
+}
+
+func NewRawNamespace(value string) Namespace {
+	return Namespace{NamespaceRaw, value}
 }
 
 func NewBlankNamespace() Namespace {

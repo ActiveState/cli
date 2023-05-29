@@ -181,8 +181,7 @@ func (c *Client) RunWithContext(ctx context.Context, request Request, response i
 
 	graphRequest.Header.Set("X-Requestor", uniqid.Text())
 
-	err := c.graphqlClient.Run(ctx, graphRequest, &response)
-	if err != nil {
+	if err := c.graphqlClient.Run(ctx, graphRequest, &response); err != nil {
 		return NewRequestError(err, request)
 	}
 
@@ -285,8 +284,8 @@ func (c *Client) createMultiPartUploadRequest(gqlReq Request) (*http.Request, er
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not create form field map")
 	}
-	for n := range gqlReq.Files() {
-		if _, err := mapField.Write([]byte(fmt.Sprintf(`{"%d": ["variables.file"]}`, n))); err != nil {
+	for n, f := range gqlReq.Files() {
+		if _, err := mapField.Write([]byte(fmt.Sprintf(`{"%d": ["%s"]}`, n, f.Field))); err != nil {
 			return nil, errs.Wrap(err, "Could not write map field")
 		}
 	}

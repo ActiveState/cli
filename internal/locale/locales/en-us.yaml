@@ -1112,6 +1112,10 @@ package_list_flag_name_description:
   other: The filter for package names to include in the listing
 namespace_list_flag_project_description:
   other: The namespace packages should be listed from
+package_search_flag_ns_description:
+  other: The namespace to search within. This trumps the language flag.
+package_search_flag_ts_description:
+  other: The timestamp at which you want to query. Can be either 'now' or RFC3339 formatted timestamp.
 package_search_flag_language_description:
   other: The language used to constrain search results
 package_search_flag_exact-term_description:
@@ -2051,3 +2055,9 @@ err_init_authenticated:
   other: You need to be authenticated to initialize a project. Authenticate by running [ACTIONABLE]`state auth`[/RESET].
 err_country_blocked:
   other: This service is not available in your region.
+err_uploadingredient_edit_version_required:
+  other: When editing you must always provide a new version number.
+err_uploadingredient_edit_version_different:
+  other: You did not provide a unique version number. Make sure the version number you provided has not been used before.
+err_uploadingredient_edit_description_not_supported:
+  other: Editing an ingredient description is not yet supported.

@@ -2,6 +2,7 @@ package request
 
 import (
 	"bytes"
+	"encoding/json"
 	"errors"
 	"os"
 
@@ -12,7 +13,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-func Publish(vars PublishVariables, filepath string) (*PublishRequest, error) {
+func Publish(vars PublishVariables, filepath string) (*PublishInput, error) {
 	f, err := os.Open(filepath)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
@@ -26,47 +27,59 @@ func Publish(vars PublishVariables, filepath string) (*PublishRequest, error) {
 		return nil, locale.WrapError(err, "err_upload_file_checksum", "Could not calculate checksum for file")
 	}
 
-	return &PublishRequest{
-		Variables:    vars,
-		fileChecksum: checksum,
-		file:         f,
+	vars.FileChecksum = checksum
+
+	return &PublishInput{
+		Variables: vars,
+		file:      f,
 	}, nil
 }
 
+// PublishVariables holds the input variables
+// It is ultimately used as the input for the graphql query, but before that we may want to present the data to the user
+// which is done with yaml. As such the yaml tags are used for representing data to the user, and the json is used for
+// inputs to graphql.
+type PublishVariables struct {
+	Name        string `yaml:"name" json:"-"`      // User representation only
+	Namespace   string `yaml:"namespace" json:"-"` // User representation only
+	Version     string `yaml:"version" json:"version"`
+	Description string `yaml:"description" json:"description"`
+
+	// Optional
+	Authors      []PublishVariableAuthor `yaml:"authors,omitempty" json:"authors,omitempty"`
+	Dependencies []PublishVariableDep    `yaml:"dependencies,omitempty" json:"dependencies,omitempty"`
+
+	// GraphQL input only
+	Path         string  `yaml:"-" json:"path"`
+	File         *string `yaml:"-" json:"file"` // Intentionally a pointer that never gets set as the server expects this to always be nil
+	FileChecksum string  `yaml:"-" json:"file_checksum"`
+}
+
 type PublishVariableAuthor struct {
-	Name     string   `yaml:"name,omitempty"`
-	Email    string   `yaml:"email,omitempty"`
-	Websites []string `yaml:"websites,omitempty"`
+	Name     string   `yaml:"name,omitempty" json:"name,omitempty"`
+	Email    string   `yaml:"email,omitempty" json:"email,omitempty"`
+	Websites []string `yaml:"websites,omitempty" json:"websites,omitempty"`
 }
 
 type PublishVariableDep struct {
 	Dependency
-	Conditions []Dependency `yaml:"conditions,omitempty"`
+	Conditions []Dependency `yaml:"conditions,omitempty" json:"conditions,omitempty"`
 }
 
 type Dependency struct {
-	Name                string `yaml:"name"`
-	Namespace           string `yaml:"namespace"`
-	VersionRequirements string `yaml:"versionRequirements,omitempty"`
+	Name                string `yaml:"name" json:"name"`
+	Namespace           string `yaml:"namespace" json:"namespace"`
+	VersionRequirements string `yaml:"versionRequirements,omitempty" json:"versionRequirements,omitempty"`
 }
 
-type AuthorVariables struct {
+// ExampleAuthorVariables is used for presenting sample data to the user, it's not used for graphql input
+type ExampleAuthorVariables struct {
 	Authors []PublishVariableAuthor `yaml:"authors,omitempty"`
 }
 
-type DepVariables struct {
+// ExampleDepVariables is used for presenting sample data to the user, it's not used for graphql input
+type ExampleDepVariables struct {
 	Dependencies []PublishVariableDep `yaml:"dependencies,omitempty"`
-}
-
-type PublishVariables struct {
-	Name        string `yaml:"name"`
-	Namespace   string `yaml:"namespace"`
-	Version     string `yaml:"version"`
-	Description string `yaml:"description"`
-
-	// Optional
-	Authors      []PublishVariableAuthor `yaml:"authors,omitempty"`
-	Dependencies []PublishVariableDep    `yaml:"dependencies,omitempty"`
 }
 
 func (p PublishVariables) MarshalYaml(includeExample bool) ([]byte, error) {
@@ -104,13 +117,13 @@ func (p PublishVariables) UnmarshalYaml(b []byte) error {
 	return yaml.Unmarshal(b, &p)
 }
 
-var exampleAuthor = AuthorVariables{[]PublishVariableAuthor{{
+var exampleAuthor = ExampleAuthorVariables{[]PublishVariableAuthor{{
 	Name:     "John Doe",
 	Email:    "johndoe@domain.tld",
 	Websites: []string{"https://example.com"},
 }}}
 
-var exampleDep = DepVariables{[]PublishVariableDep{{
+var exampleDep = ExampleDepVariables{[]PublishVariableDep{{
 	Dependency{
 		Name:                "example-linux-specific-ingredient",
 		Namespace:           "shared",
@@ -125,36 +138,29 @@ var exampleDep = DepVariables{[]PublishVariableDep{{
 	},
 }}}
 
-type PublishRequest struct {
-	fileChecksum string `yaml:"file_checksum"`
-	file         *os.File
-	Variables    PublishVariables
+type PublishInput struct {
+	file      *os.File
+	Variables PublishVariables
 }
 
-func (p *PublishRequest) Close() error {
+func (p *PublishInput) Close() error {
 	return p.file.Close()
 }
 
-func (p *PublishRequest) Files() []gqlclient.File {
+func (p *PublishInput) Files() []gqlclient.File {
 	return []gqlclient.File{
 		{
-			Field: "file",
+			Field: "variables.input.file", // this needs to map to the graphql input, eg. variables.input.file
 			Name:  p.Variables.Name,
 			R:     p.file,
 		},
 	}
 }
 
-func (p *PublishRequest) Query() string {
+func (p *PublishInput) Query() string {
 	return `
-		mutation ($description: String!, $path: String!, $file_checksum: String!, $version: String!, $file: FileUpload) {
-			publish(input: {
-				path: $path,
-				file: $file,
-				file_checksum: $file_checksum,
-				version: $version,
-				description: $description,
-			}) {
+		mutation ($input: PublishInput!) {
+			publish(input: $input) {
 				... on CreatedIngredientVersionRevision {
 					ingredientID
 					ingredientVersionID
@@ -165,13 +171,22 @@ func (p *PublishRequest) Query() string {
 `
 }
 
-func (p *PublishRequest) Vars() map[string]interface{} {
-	// Todo: remove redundancy
-	return map[string]interface{}{
-		"version":       p.Variables.Version,
-		"description":   p.Variables.Description,
-		"path":          p.Variables.Namespace + "/" + p.Variables.Name,
-		"file_checksum": p.fileChecksum,
-		"file":          nil, // This feels counter-intuitive, but it's what the API expects..
+func (p *PublishInput) Vars() (map[string]interface{}, error) {
+	// Path is only used when sending data to graphql, so rather than updating it multiple times as source vars
+	// are changed we just set it here once prior to its use.
+	p.Variables.Path = p.Variables.Namespace + "/" + p.Variables.Name
+
+	// Convert our json data to a map
+	vars, err := json.Marshal(p.Variables)
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not marshal publish input vars")
 	}
+	varMap := make(map[string]interface{})
+	if err := json.Unmarshal(vars, &varMap); err != nil {
+		return nil, errs.Wrap(err, "Could not unmarshal publish input vars")
+	}
+
+	return map[string]interface{}{
+		"input": varMap,
+	}, nil
 }
