@@ -82,6 +82,12 @@ func newUpload(prime *primer.Values) *captain.Command {
 				Value:       &params.Filepath,
 				Required:    true,
 			},
+			{
+				Name:        locale.Tl("meta_file", "meta file"),
+				Description: locale.Tl("author_upload_metafile_description", "A yaml file expressing the ingredient meta information. Use --editor to review the file format."),
+				Value:       &params.MetaFilepath,
+				Required:    false,
+			},
 		},
 		func(_ *captain.Command, _ []string) error {
 			return runner.Run(&params)

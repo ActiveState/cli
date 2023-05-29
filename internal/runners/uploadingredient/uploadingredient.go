@@ -24,18 +24,20 @@ import (
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/machinebox/graphql"
 	"github.com/skratchdot/open-golang/open"
+	"gopkg.in/yaml.v3"
 )
 
 type Params struct {
-	Name        string
-	Version     string
-	Namespace   string
-	Description string
-	Authors     captain.UsersFlag
-	Depends     captain.PackagesFlag
-	Filepath    string
-	Edit        bool
-	Editor      bool
+	Name         string
+	Version      string
+	Namespace    string
+	Description  string
+	Authors      captain.UsersFlag
+	Depends      captain.PackagesFlag
+	Filepath     string
+	MetaFilepath string
+	Edit         bool
+	Editor       bool
 }
 
 type Runner struct {
@@ -76,23 +78,41 @@ func (r *Runner) Run(params *Params) error {
 
 	reqVars := request.PublishVariables{}
 
-	{ // Validate & Set namespace
-		reqVars.Namespace = params.Namespace
-		if reqVars.Namespace == "" {
-			reqVars.Namespace = model.NewSharedNamespace(r.project.Owner()).String()
+	// Pass input from meta file
+	if params.MetaFilepath != "" {
+		if !fileutils.TargetExists(params.MetaFilepath) {
+			return locale.NewInputError("err_uploadingredient_file_not_found", "File not found: {{.V0}}", params.MetaFilepath)
 		}
-		prefix := r.project.Owner() + "/"
-		if !strings.HasPrefix(reqVars.Namespace, prefix) {
-			return locale.NewInputError("err_uploadingredient_namespace_invalid_org",
-				"Namespace should be prefixed '[ACTIONABLE]{{.V0}}[/RESET]', received: '[ACTIONABLE]{{.V1}}[/RESET]'.", prefix, reqVars.Namespace)
+
+		b, err := fileutils.ReadFile(params.MetaFilepath)
+		if err != nil {
+			return locale.WrapInputError(err, "err_uploadingredient_file_read", "Could not read file: {{.V0}}", params.MetaFilepath)
+		}
+
+		if err := yaml.Unmarshal(b, &reqVars); err != nil {
+			return locale.WrapInputError(err, "err_uploadingredient_file_read", "Failed to unmarshal meta file, error received: {{.V0}}", err.Error())
 		}
 	}
 
-	{ // Validate & Set name
+	// Namespace
+	if params.Namespace != "" {
+		reqVars.Namespace = params.Namespace
+	} else if reqVars.Namespace == "" {
+		reqVars.Namespace = model.NewSharedNamespace(r.project.Owner()).String()
+	}
+
+	// Validate namespace
+	prefix := r.project.Owner() + "/"
+	if !strings.HasPrefix(reqVars.Namespace, prefix) {
+		return locale.NewInputError("err_uploadingredient_namespace_invalid_org",
+			"Namespace should be prefixed '[ACTIONABLE]{{.V0}}[/RESET]', received: '[ACTIONABLE]{{.V1}}[/RESET]'.", prefix, reqVars.Namespace)
+	}
+
+	// Name
+	if params.Name != "" { // Validate & Set name
 		reqVars.Name = params.Name
-		if reqVars.Name == "" {
-			reqVars.Name = filepath.Base(params.Filepath)
-		}
+	} else if reqVars.Name == "" {
+		reqVars.Name = filepath.Base(params.Filepath)
 	}
 
 	ts := time.Now()
@@ -173,6 +193,8 @@ func (r *Runner) Run(params *Params) error {
 		return nil
 	}
 
+	r.out.Notice(locale.Tl("uploadingredient_uploading", "Uploading ingredient..."))
+
 	pr, err := request.Publish(reqVars, params.Filepath)
 	if err != nil {
 		return locale.WrapError(err, "err_uploadingredient_publish", "Could not create publish request")
@@ -187,11 +209,14 @@ func (r *Runner) Run(params *Params) error {
 		return locale.NewError("err_uploadingredient_publish_api", "API responded with error: {{.V0}}", result.Message)
 	}
 
-	r.out.Print(locale.Tl("uploadingredient_success", `Successfully uploaded as:
+	r.out.Print(output.Prepare(
+		locale.Tl("uploadingredient_success", `Successfully uploaded as:
 Ingredient ID: {{.V0}}
 Ingredient Version ID: {{.V1}}
 Revision: {{.V2}}
-`, result.Publish.IngredientID, result.Publish.IngredientVersionID, strconv.Itoa(result.Publish.Revision)))
+`, result.Publish.IngredientID, result.Publish.IngredientVersionID, strconv.Itoa(result.Publish.Revision)),
+		result.Publish,
+	))
 
 	return nil
 }
@@ -243,27 +268,33 @@ func prepareEditRequest(ingredient *model.IngredientAndVersion, r *request.Publi
 	r.Version = p.PStr(ingredient.LatestVersion.Version)
 	r.Description = p.PStr(ingredient.Ingredient.Description)
 
-	for _, author := range authors {
-		var websites []string
-		for _, w := range author.Websites {
-			websites = append(websites, w.String())
+	if len(authors) > 0 {
+		r.Authors = []request.PublishVariableAuthor{}
+		for _, author := range authors {
+			var websites []string
+			for _, w := range author.Websites {
+				websites = append(websites, w.String())
+			}
+			r.Authors = append(r.Authors, request.PublishVariableAuthor{
+				Name:     p.PStr(author.Name),
+				Email:    author.Email.String(),
+				Websites: websites,
+			})
 		}
-		r.Authors = append(r.Authors, request.PublishVariableAuthor{
-			Name:     p.PStr(author.Name),
-			Email:    author.Email.String(),
-			Websites: websites,
-		})
 	}
 
-	for _, dep := range ingredient.LatestVersion.Dependencies {
-		r.Dependencies = append(
-			r.Dependencies,
-			request.PublishVariableDep{request.Dependency{
-				Name:                p.PStr(dep.Feature),
-				Namespace:           p.PStr(dep.Namespace),
-				VersionRequirements: dep.OriginalRequirement,
-			}, []request.Dependency{}},
-		)
+	if len(ingredient.LatestVersion.Dependencies) > 0 {
+		r.Dependencies = []request.PublishVariableDep{}
+		for _, dep := range ingredient.LatestVersion.Dependencies {
+			r.Dependencies = append(
+				r.Dependencies,
+				request.PublishVariableDep{request.Dependency{
+					Name:                p.PStr(dep.Feature),
+					Namespace:           p.PStr(dep.Namespace),
+					VersionRequirements: dep.OriginalRequirement,
+				}, []request.Dependency{}},
+			)
+		}
 	}
 
 	return nil
