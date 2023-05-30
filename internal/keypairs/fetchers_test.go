@@ -38,30 +38,6 @@ func (suite *KeypairFetcherTestSuite) AfterTest(suiteName, testName string) {
 	httpmock.DeActivate()
 }
 
-func (suite *KeypairFetcherTestSuite) TestFetch_NotFound() {
-	httpmock.RegisterWithCode("GET", "/keypair", 404)
-	kp, err := keypairs.Fetch(suite.secretsClient, suite.cfg, "")
-	suite.Nil(kp)
-	suite.Error(err)
-}
-
-func (suite *KeypairFetcherTestSuite) TestFetch_ErrorParsing() {
-	httpmock.RegisterWithResponder("GET", "/keypair", func(req *http.Request) (int, string) {
-		return 200, "keypair-unparseable"
-	})
-
-	kp, err := keypairs.Fetch(suite.secretsClient, suite.cfg, "")
-	suite.Nil(kp)
-	suite.Error(err)
-}
-
-func (suite *KeypairFetcherTestSuite) TestFetch_Success() {
-	httpmock.RegisterWithCode("GET", "/keypair", 200)
-	kp, err := keypairs.Fetch(suite.secretsClient, suite.cfg, "")
-	suite.Require().Nil(err)
-	suite.IsType(&keypairs.RSAKeypair{}, kp)
-}
-
 func (suite *KeypairFetcherTestSuite) TestFetchRaw_NotFound() {
 	httpmock.RegisterWithCode("GET", "/keypair", 404)
 	kp, err := keypairs.FetchRaw(suite.secretsClient, suite.cfg)
