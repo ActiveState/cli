@@ -78,7 +78,6 @@ scripts:
     value: echo $secrets.project.project-secret
   - name: user-secret
     language: bash
-    if: ne .Shell "cmd"
     standalone: true
     value: echo $secrets.user.user-secret
 `)
