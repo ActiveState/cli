@@ -8,7 +8,6 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/go-openapi/strfmt"
 )
 
@@ -21,7 +20,7 @@ func IsFileDoesNotExistError(err error) bool {
 func Get(projectDir string) (string, error) {
 	configDir := filepath.Join(projectDir, constants.ProjectConfigDirName)
 	commitFile := filepath.Join(configDir, constants.CommitIdFileName)
-	if !fileutils.DirExists(configDir) || !fileutils.FileExists(commitFile) {
+	if !fileutils.DirExists(configDir) || !fileutils.TargetExists(commitFile) {
 		return "", &FileDoesNotExistError{locale.NewError("err_commit_file_does_not_exist",
 			"Your project runtime's commit ID file '{{.V0}}' does not exist", commitFile)}
 	}
@@ -39,44 +38,28 @@ func Get(projectDir string) (string, error) {
 	return commitID, nil
 }
 
+func GetUUID(projectDir string) (strfmt.UUID, error) {
+	commitID, err := Get(projectDir)
+	if err != nil {
+		return "", errs.Wrap(err, "Unable to get local commit")
+	}
+	return strfmt.UUID(commitID), nil
+}
+
 func Set(projectDir, commitID string) error {
 	if !strfmt.IsUUID(commitID) {
 		return locale.NewError("err_commit_id_invalid", commitID)
 	}
 
-	updateGitIgnore := shouldAddToGitIgnore(projectDir)
 	commitFile := filepath.Join(projectDir, constants.ProjectConfigDirName, constants.CommitIdFileName)
 	err := fileutils.WriteFile(commitFile, []byte(commitID))
 	if err != nil {
 		return locale.WrapError(err, "err_set_commit_id", "Unable to set your project runtime's commit ID")
 	}
-	if updateGitIgnore {
-		addToGitIgnore(projectDir)
-	}
 	return nil
 }
 
-func shouldAddToGitIgnore(projectDir string) bool {
-	files, err := fileutils.ListDir(projectDir, true)
-	if err != nil {
-		multilog.Error("Cannot determine whether to add runtime commit ID file to .gitignore: %v", err)
-		return false
-	}
-
-	if len(files) == 0 {
-		return true // fresh checkout
-	}
-
-	for _, file := range files {
-		if file.Name() == ".git" {
-			return true // project is under Git revision control
-		}
-	}
-
-	return false
-}
-
-func addToGitIgnore(projectDir string) error {
+func AddToGitIgnore(projectDir string) error {
 	gitIgnore := filepath.Join(projectDir, ".gitignore")
 	if !fileutils.TargetExists(gitIgnore) {
 		err := fileutils.WriteFile(gitIgnore, []byte(locale.T("commit_id_gitignore")))

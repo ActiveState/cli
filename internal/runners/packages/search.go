@@ -10,6 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
@@ -77,7 +78,11 @@ func targetedLanguage(languageOpt string, proj *project.Project) (string, error)
 		)
 	}
 
-	lang, err := model.LanguageByCommit(proj.CommitUUID())
+	commitUUID, err := localcommit.GetUUID(proj.Dir())
+	if err != nil {
+		return "", errs.Wrap(err, "Unable to get local commit")
+	}
+	lang, err := model.LanguageByCommit(commitUUID)
 	if err != nil {
 		return "", errs.Wrap(err, "LanguageByCommit failed")
 	}

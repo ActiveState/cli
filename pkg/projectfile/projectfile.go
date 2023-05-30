@@ -66,10 +66,10 @@ type ErrorNoDefaultProject struct{ *locale.LocalizedError }
 
 // projectURL comprises all fields of a parsed project URL
 type projectURL struct {
-	Owner      string
-	Name       string
-	CommitID   string
-	BranchName string
+	Owner          string
+	Name           string
+	LegacyCommitID string
+	BranchName     string
 }
 
 var projectMapMutex = &sync.Mutex{}
@@ -103,7 +103,6 @@ type Project struct {
 	Cache         string        `yaml:"cache,omitempty"`
 	path          string        // "private"
 	parsedURL     projectURL    // parsed url data
-	commitID      string
 	parsedBranch  string
 	parsedVersion string
 }
@@ -466,15 +465,18 @@ func (p *Project) Init() error {
 	}
 	p.parsedURL = parsedURL
 
-	if p.parsedURL.CommitID != "" {
-		// Note: do not migrate to localcommit here. Writing to disk during Parse() feels wrong.
-		// Migrate when SetCommit() is called instead.
-		p.commitID = p.parsedURL.CommitID
-	} else {
-		if commitID, err := localcommit.Get(filepath.Dir(p.Path())); err == nil {
-			p.commitID = commitID
-		} else if err != nil && !localcommit.IsFileDoesNotExistError(err) {
-			return errs.Wrap(err, "Unable to get local commit")
+	if p.parsedURL.LegacyCommitID != "" {
+		// Migrate from commitID in activestate.yaml to .activestate/commit file.
+		// Writing to disk during Parse() feels wrong though.
+		if err := localcommit.Set(filepath.Dir(p.Path()), p.parsedURL.LegacyCommitID); err != nil {
+			return errs.Wrap(err, "Could not create local commit file")
+		}
+		pf := NewProjectField()
+		if err := pf.LoadProject(p.Project); err != nil {
+			return errs.Wrap(err, "Could not load activestate.yaml")
+		}
+		if err := pf.Save(p.path); err != nil {
+			return errs.Wrap(err, "Could not save activestate.yaml")
 		}
 	}
 
@@ -555,11 +557,6 @@ func (p *Project) Owner() string {
 // Name returns the project namespace's name
 func (p *Project) Name() string {
 	return p.parsedURL.Name
-}
-
-// CommitID returns the commit ID specified in the project
-func (p *Project) CommitID() string {
-	return p.commitID
 }
 
 // BranchName returns the branch name specified in the project
@@ -646,7 +643,7 @@ func parseURL(rawURL string) (projectURL, error) {
 	path := strings.Split(u.Path, "/")
 	if len(path) > 2 {
 		if path[1] == "commit" {
-			p.CommitID = path[2]
+			p.LegacyCommitID = path[2]
 		} else {
 			p.Owner = path[1]
 			p.Name = path[2]
@@ -655,11 +652,11 @@ func parseURL(rawURL string) (projectURL, error) {
 
 	q := u.Query()
 	if c := q.Get("commitID"); c != "" {
-		p.CommitID = c
+		p.LegacyCommitID = c
 	}
 
-	if p.CommitID != "" {
-		if err := validateUUID(p.CommitID); err != nil {
+	if p.LegacyCommitID != "" {
+		if err := validateUUID(p.LegacyCommitID); err != nil {
 			return p, err
 		}
 	}
@@ -717,14 +714,6 @@ func (p *Project) SetNamespace(owner, project string) error {
 	p.parsedURL.Name = project
 	p.Project = pf.String()
 
-	return nil
-}
-
-func (p *Project) SetCommit(commitID string) error {
-	if err := localcommit.Set(filepath.Dir(p.Path()), commitID); err != nil {
-		return errs.Wrap(err, "Could not set local commit")
-	}
-	p.commitID = commitID
 	return nil
 }
 
@@ -917,7 +906,6 @@ func FromExactPath(path string) (*Project, error) {
 type CreateParams struct {
 	Owner      string
 	Project    string
-	CommitID   *strfmt.UUID
 	BranchName string
 	Directory  string
 	Content    string
@@ -951,11 +939,6 @@ func createCustom(params *CreateParams, lang language.Language) (*Project, error
 	err := fileutils.MkdirUnlessExists(params.Directory)
 	if err != nil {
 		return nil, err
-	}
-
-	var commitID string
-	if params.CommitID != nil {
-		commitID = params.CommitID.String()
 	}
 
 	if params.ProjectURL == "" {
@@ -1010,10 +993,9 @@ func createCustom(params *CreateParams, lang language.Language) (*Project, error
 	}
 
 	data := map[string]interface{}{
-		"Project":  params.ProjectURL,
-		"CommitID": commitID,
-		"Content":  content,
-		"Private":  params.Private,
+		"Project": params.ProjectURL,
+		"Content": content,
+		"Private": params.Private,
 	}
 
 	tplName := "activestate.yaml.tpl"
@@ -1024,13 +1006,6 @@ func createCustom(params *CreateParams, lang language.Language) (*Project, error
 	fileContents, err := strutils.ParseTemplate(string(tplContents), data, nil)
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not parse %s", tplName)
-	}
-
-	if commitID != "" {
-		err := localcommit.Set(params.Directory, commitID)
-		if err != nil {
-			return nil, errs.Wrap(err, "Could not set local commit")
-		}
 	}
 
 	err = fileutils.WriteFile(params.path, []byte(fileContents))

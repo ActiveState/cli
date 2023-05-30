@@ -8,6 +8,7 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
+	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/stretchr/testify/suite"
 )
@@ -29,10 +30,9 @@ func (suite *SwitchIntegrationTestSuite) TestSwitch_Branch() {
 
 	pjfile, err := projectfile.Parse(pjfilepath)
 	suite.Require().NoError(err)
-	if pjfile.BranchName() != "main" {
-		suite.FailNow("branch was not set to 'main' after pull")
-	}
-	mainBranchCommitID := pjfile.CommitID()
+	suite.Require().Equal("main", pjfile.BranchName(), "branch was not set to 'main' after pull")
+	mainBranchCommitID, err := localcommit.Get(ts.Dirs.Work)
+	suite.Require().NoError(err)
 
 	cp := ts.SpawnWithOpts(e2e.WithArgs("switch", "secondbranch"))
 	cp.ExpectLongString("Operating on project ActiveState-CLI/Branches")
@@ -44,12 +44,10 @@ func (suite *SwitchIntegrationTestSuite) TestSwitch_Branch() {
 	// Check that branch and commitID were updated
 	pjfile, err = projectfile.Parse(pjfilepath)
 	suite.Require().NoError(err)
-	if pjfile.CommitID() == mainBranchCommitID {
-		suite.FailNow("commitID was not updated after switching branches")
-	}
-	if pjfile.BranchName() != "secondbranch" {
-		suite.FailNow("branch was not updated after switching branches")
-	}
+	commitID, err := localcommit.Get(ts.Dirs.Work)
+	suite.Require().NoError(err)
+	suite.Require().NotEqual(mainBranchCommitID, commitID, "commitID was not updated after switching branches")
+	suite.Require().NotEqual("secondbranch", pjfile.BranchName(), "branch was not updated after switching branches")
 }
 
 func (suite *SwitchIntegrationTestSuite) TestSwitch_CommitID() {
@@ -65,10 +63,9 @@ func (suite *SwitchIntegrationTestSuite) TestSwitch_CommitID() {
 
 	pjfile, err := projectfile.Parse(pjfilepath)
 	suite.Require().NoError(err)
-	if pjfile.BranchName() != "main" {
-		suite.FailNow("branch was not set to 'main' after pull")
-	}
-	orignalCommitID := pjfile.CommitID()
+	suite.Require().Equal("main", pjfile.BranchName(), "branch was not set to 'main' after pull")
+	originalCommitID, err := localcommit.Get(ts.Dirs.Work)
+	suite.Require().NoError(err)
 
 	cp := ts.SpawnWithOpts(e2e.WithArgs("switch", "efce7c7a-c61a-4b04-bb00-f8e7edfd247f"))
 	cp.ExpectLongString("Successfully switched to commit:")
@@ -79,9 +76,8 @@ func (suite *SwitchIntegrationTestSuite) TestSwitch_CommitID() {
 	// Check that branch and commitID were updated
 	pjfile, err = projectfile.Parse(pjfilepath)
 	suite.Require().NoError(err)
-	if pjfile.CommitID() == orignalCommitID {
-		suite.FailNow("commitID was not updated after switching branches")
-	}
+	commitID, err := localcommit.Get(ts.Dirs.Work)
+	suite.Require().NotEqual(originalCommitID, commitID, "commitID was not updated after switching branches")
 }
 
 func (suite *SwitchIntegrationTestSuite) TestSwitch_CommitID_NotInHistory() {
@@ -97,10 +93,9 @@ func (suite *SwitchIntegrationTestSuite) TestSwitch_CommitID_NotInHistory() {
 
 	pjfile, err := projectfile.Parse(pjfilepath)
 	suite.Require().NoError(err)
-	if pjfile.BranchName() != "main" {
-		suite.FailNow("branch was not set to 'main' after pull")
-	}
-	orignalCommitID := pjfile.CommitID()
+	suite.Require().Equal("main", pjfile.BranchName(), "branch was not set to 'main' after pull")
+	originalCommitID, err := localcommit.Get(ts.Dirs.Work)
+	suite.Require().NoError(err)
 
 	cp := ts.SpawnWithOpts(e2e.WithArgs("switch", "76dff77a-66b9-43e3-90be-dc75917dd661"))
 	cp.ExpectLongString("Commit does not belong")
@@ -111,9 +106,9 @@ func (suite *SwitchIntegrationTestSuite) TestSwitch_CommitID_NotInHistory() {
 	// Check that branch and commitID were not updated
 	pjfile, err = projectfile.Parse(pjfilepath)
 	suite.Require().NoError(err)
-	if pjfile.CommitID() != orignalCommitID {
-		suite.FailNow("commitID was updated after switching branches")
-	}
+	commitID, err := localcommit.Get(ts.Dirs.Work)
+	suite.Require().NoError(err)
+	suite.Equal(originalCommitID, commitID, "commitID was updated after switching branches")
 }
 
 func (suite *SwitchIntegrationTestSuite) TestJSON() {

@@ -12,6 +12,7 @@ import (
 	medmodel "github.com/ActiveState/cli/pkg/platform/api/mediator/model"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
@@ -100,7 +101,11 @@ func (r *Report) fetchVulnerabilities(namespaceOverride project.Namespaced) (*me
 	if namespaceOverride.IsValid() {
 		commitID = namespaceOverride.CommitID.String()
 	} else {
-		commitID = r.proj.CommitID()
+		var err error
+		commitID, err = localcommit.Get(r.proj.Dir())
+		if err != nil {
+			return nil, errs.Wrap(err, "Unable to get local commit")
+		}
 	}
 	resp, err := model.FetchCommitVulnerabilities(r.auth, commitID)
 	if err != nil {

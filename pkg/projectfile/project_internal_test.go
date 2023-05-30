@@ -16,7 +16,7 @@ func (suite *ProjectInternalTestSuite) TestPassParseURL() {
 	suite.NoError(err, "Should load project without issue.")
 	suite.Equal("Org", meta.Owner, "They should match")
 	suite.Equal("TestParseURL", meta.Name, "They should match")
-	suite.Equal("", meta.CommitID, "They should match")
+	suite.Equal("", meta.LegacyCommitID, "They should match")
 }
 
 func (suite *ProjectInternalTestSuite) TestPassParseLegacyURL() {
@@ -25,7 +25,7 @@ func (suite *ProjectInternalTestSuite) TestPassParseLegacyURL() {
 	suite.NoError(err, "Should load project without issue.")
 	suite.Equal("Org", meta.Owner, "They should match")
 	suite.Equal("TestParseURL", meta.Name, "They should match")
-	suite.Equal("00010001-0001-0001-0001-000100010001", meta.CommitID, "They should match")
+	suite.Equal("00010001-0001-0001-0001-000100010001", meta.LegacyCommitID, "They should match")
 }
 
 func (suite *ProjectInternalTestSuite) TestPassParseURLWithDots() {
@@ -34,7 +34,7 @@ func (suite *ProjectInternalTestSuite) TestPassParseURLWithDots() {
 	suite.NoError(err, "Should load project without issue.")
 	suite.Equal("Org.Name", meta.Owner, "They should match")
 	suite.Equal("Project.Name", meta.Name, "They should match")
-	suite.Equal("", meta.CommitID, "They should match")
+	suite.Equal("", meta.LegacyCommitID, "They should match")
 }
 
 func (suite *ProjectInternalTestSuite) TestPassParseURLWithCommitPath() {
@@ -43,7 +43,7 @@ func (suite *ProjectInternalTestSuite) TestPassParseURLWithCommitPath() {
 	suite.NoError(err, "Should load project without issue.")
 	suite.Equal("", meta.Owner, "They should match")
 	suite.Equal("", meta.Name, "They should match")
-	suite.Equal("00010001-0001-0001-0001-000100010001", meta.CommitID, "They should match")
+	suite.Equal("00010001-0001-0001-0001-000100010001", meta.LegacyCommitID, "They should match")
 }
 
 func (suite *ProjectInternalTestSuite) TestFailParseURL() {

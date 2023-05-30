@@ -30,6 +30,7 @@ import (
 	"github.com/ActiveState/cli/pkg/cmdlets/checker"
 	"github.com/ActiveState/cli/pkg/cmdlets/checkout"
 	"github.com/ActiveState/cli/pkg/cmdlets/git"
+	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
@@ -193,7 +194,11 @@ func (r *Activate) Run(params *ActivateParams) error {
 		}
 	}
 
-	if proj.CommitID() == "" {
+	commitID, err := localcommit.Get(proj.Dir())
+	if err != nil {
+		return errs.Wrap(err, "Unable to get local commit")
+	}
+	if commitID == "" {
 		err := locale.NewInputError("err_project_no_commit", "Your project does not have a commit ID, please run `state push` first.", model.ProjectURL(proj.Owner(), proj.Name(), ""))
 		return errs.AddTips(err, "Run → [ACTIONABLE]state push[/RESET] to create your project")
 	}
@@ -231,8 +236,8 @@ func updateProjectFile(prj *project.Project, names *project.Namespaced, provided
 	if err := prj.Source().SetNamespace(names.Owner, names.Project); err != nil {
 		return locale.WrapError(err, "err_activate_replace_write_namespace", "Failed to update project namespace.")
 	}
-	if err := prj.SetCommit(commitID); err != nil {
-		return locale.WrapError(err, "err_update_commit_id")
+	if err := localcommit.Set(prj.Dir(), commitID); err != nil {
+		return errs.Wrap(err, "Unable to set local commit")
 	}
 	if err := prj.Source().SetBranch(branch); err != nil {
 		return locale.WrapError(err, "err_activate_replace_write_branch", "Failed to update Branch.")

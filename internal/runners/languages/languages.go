@@ -6,6 +6,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -30,7 +31,10 @@ func (l *Languages) Run() error {
 		return locale.NewInputError("err_no_project")
 	}
 
-	commitUUID := l.project.CommitUUID()
+	commitUUID, err := localcommit.GetUUID(l.project.Dir())
+	if err != nil {
+		return errs.Wrap(err, "Unable to get local commit")
+	}
 	if commitUUID == "" {
 		return errs.AddTips(
 			locale.NewError(

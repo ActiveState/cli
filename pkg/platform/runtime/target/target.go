@@ -10,6 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
+	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/go-openapi/strfmt"
 	"github.com/thoas/go-funk"
@@ -113,7 +114,12 @@ func (p *ProjectTarget) CommitUUID() strfmt.UUID {
 	if p.customCommit != nil {
 		return *p.customCommit
 	}
-	return p.Project.CommitUUID()
+	commitUUID, err := localcommit.GetUUID(p.Project.Dir())
+	if err != nil {
+		multilog.Error("Unable to get local commit: %v", err)
+		return ""
+	}
+	return commitUUID
 }
 
 func (p *ProjectTarget) Trigger() Trigger {

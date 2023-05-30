@@ -13,8 +13,10 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/language"
+	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/pkg/cmdlets/git"
+	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
@@ -53,6 +55,11 @@ func (r *Checkout) Run(ns *project.Namespaced, branchName, cachePath, targetPath
 	path, err = filepath.Abs(path)
 	if err != nil {
 		return "", errs.Wrap(err, "Could not get absolute path")
+	}
+
+	emptyDir, err := fileutils.IsEmptyDir(path)
+	if err != nil {
+		multilog.Error("Unable to check if directory is empty: %v", err)
 	}
 
 	// If project does not exist at path then we must checkout
@@ -109,7 +116,6 @@ func (r *Checkout) Run(ns *project.Namespaced, branchName, cachePath, targetPath
 		_, err = projectfile.Create(&projectfile.CreateParams{
 			Owner:      ns.Owner,
 			Project:    ns.Project,
-			CommitID:   commitID,
 			BranchName: branchName,
 			Directory:  path,
 			Language:   language.String(),
@@ -117,6 +123,17 @@ func (r *Checkout) Run(ns *project.Namespaced, branchName, cachePath, targetPath
 		})
 		if err != nil {
 			return "", errs.Wrap(err, "Could not create projectfile")
+		}
+	}
+
+	err = localcommit.Set(path, commitID.String())
+	if err != nil {
+		return "", errs.Wrap(err, "Could not create local commit file")
+	}
+	if emptyDir || fileutils.DirExists(filepath.Join(path, ".git")) {
+		err = localcommit.AddToGitIgnore(path)
+		if err != nil {
+			multilog.Error("Unable to add local commit file to .gitignore: %v", err)
 		}
 	}
 

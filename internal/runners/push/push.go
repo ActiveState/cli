@@ -5,19 +5,19 @@ import (
 	"path/filepath"
 
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/language"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
+	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/go-openapi/strfmt"
-
-	"github.com/ActiveState/cli/internal/language"
-	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/pkg/project"
 )
 
 type configGetter interface {
@@ -67,7 +67,10 @@ func (r *Push) Run(params PushParams) error {
 	}
 	r.out.Notice(locale.Tl("operating_message", "", r.project.NamespaceString(), r.project.Dir()))
 
-	commitID := r.project.CommitUUID() // The commit we want to push
+	commitID, err := localcommit.GetUUID(r.project.Dir()) // The commit we want to push
+	if err != nil {
+		return errs.Wrap(err, "Unable to get local commit")
+	}
 
 	// Detect target namespace if possible
 	targetNamespace := params.Namespace
@@ -120,7 +123,6 @@ func (r *Push) Run(params PushParams) error {
 
 	// Get the project remotely if it already exists
 	var targetPjm *mono_models.Project
-	var err error
 	targetPjm, err = model.FetchProjectByName(targetNamespace.Owner, targetNamespace.Project)
 	if err != nil {
 		if !errs.Matches(err, &model.ErrProjectNotFound{}) {
@@ -257,7 +259,11 @@ func (r *Push) verifyInput() error {
 		)
 	}
 
-	if r.project.CommitUUID() == "" {
+	commitUUID, err := localcommit.GetUUID(r.project.Dir())
+	if err != nil {
+		return errs.Wrap(err, "Unable to get local commit")
+	}
+	if commitUUID == "" {
 		return locale.NewInputError("err_push_nocommit", "You have nothing to push, make some changes first with [ACTIONABLE]state install[/RESET].")
 	}
 
@@ -291,7 +297,11 @@ func (r *Push) promptNamespace() (*project.Namespaced, error) {
 	}
 
 	var name string
-	lang, _, err := fetchLanguage(r.project.CommitUUID())
+	commitUUID, err := localcommit.GetUUID(r.project.Dir())
+	if err != nil {
+		return nil, errs.Wrap(err, "Unable to get local commit")
+	}
+	lang, _, err := fetchLanguage(commitUUID)
 	if err == nil {
 		name = lang.String()
 	}

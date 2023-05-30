@@ -319,8 +319,6 @@ err_activate_output_build_failed:
   other: Platform project build is has failed. Please select "Manage Packages" option in State Tool menu to go to the platform and browse to "Download Builds" tab for more information
 err_activate_output_build_in_progress:
   other: Platform project build is in progress. Please wait for a few minutes and try "Reactivate Runtime" option in "State Tool" menu
-err_update_commit_id:
-  other: Failed to update your project runtime's commit ID
 err_unsupported_platform:
   other: "Unsupported platform: [NOTICE]{{.V0}}[/RESET]"
 err_language_not_found:

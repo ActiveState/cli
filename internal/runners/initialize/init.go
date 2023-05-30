@@ -16,6 +16,7 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runbits"
+	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
@@ -67,7 +68,11 @@ func inferLanguage(config projectfile.ConfigGetter) (string, string, bool) {
 	if err != nil {
 		return "", "", false
 	}
-	commitID := defaultProj.CommitUUID()
+	commitID, err := localcommit.GetUUID(defaultProj.Dir())
+	if err != nil {
+		multilog.Error("Unable to get local commit: %v", err)
+		return "", "", false
+	}
 	if commitID == "" {
 		return "", "", false
 	}
@@ -135,6 +140,11 @@ func (r *Initialize) Run(params *RunParams) error {
 		}
 	}
 
+	emptyDir, err := fileutils.IsEmptyDir(path)
+	if err != nil {
+		multilog.Error("Unable to check if directory is empty: %v", err)
+	}
+
 	createParams := &projectfile.CreateParams{
 		Owner:     params.Namespace.Owner,
 		Project:   params.Namespace.Project,
@@ -159,8 +169,14 @@ func (r *Initialize) Run(params *RunParams) error {
 		return locale.WrapError(err, "err_init_commit", "Could not create initial commit")
 	}
 
-	if err := proj.SetCommit(commitID.String()); err != nil {
-		return locale.WrapError(err, "err_update_commit_id")
+	if err := localcommit.Set(proj.Dir(), commitID.String()); err != nil {
+		return errs.Wrap(err, "Unable to create local commit file")
+	}
+	if emptyDir || fileutils.DirExists(filepath.Join(path, ".git")) {
+		err := localcommit.AddToGitIgnore(path)
+		if err != nil {
+			multilog.Error("Unable to add local commit file to .gitignore: %v", err)
+		}
 	}
 
 	logging.Debug("Creating Platform project and pushing it")

@@ -1,5 +1,5 @@
 project: {{.Project}}
-{{if and (.Private) (eq .CommitID "") }}
+{{if .Private }}
 private: {{.Private}}
 {{end}}
 {{.Content}}

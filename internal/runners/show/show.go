@@ -21,6 +21,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
+	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
@@ -192,7 +193,10 @@ func (s *Show) Run(params Params) error {
 			return locale.WrapError(err, "err_show_scripts", "Could not parse scripts")
 		}
 
-		commitID = strfmt.UUID(s.project.CommitID())
+		commitID, err = localcommit.GetUUID(s.project.Dir())
+		if err != nil {
+			return errs.Wrap(err, "Unable to get local commit")
+		}
 
 		projectDir = filepath.Dir(s.project.Path())
 		if fileutils.IsSymlink(projectDir) {
@@ -381,12 +385,16 @@ func commitsData(owner, project, branchName string, commitID strfmt.UUID, localP
 		if err != nil {
 			return "", locale.WrapError(err, "err_show_commits_behind", "Could not determine number of commits behind latest")
 		}
-		if behind > 0 {
-			return fmt.Sprintf("%s (%d %s)", localProject.CommitID(), behind, locale.Tl("show_commits_behind_latest", "behind latest")), nil
-		} else if behind < 0 {
-			return fmt.Sprintf("%s (%d %s)", localProject.CommitID(), -behind, locale.Tl("show_commits_ahead_of_latest", "ahead of latest")), nil
+		localCommitID, err := localcommit.Get(localProject.Dir())
+		if err != nil {
+			return "", errs.Wrap(err, "Unable to get local commit")
 		}
-		return localProject.CommitID(), nil
+		if behind > 0 {
+			return fmt.Sprintf("%s (%d %s)", localCommitID, behind, locale.Tl("show_commits_behind_latest", "behind latest")), nil
+		} else if behind < 0 {
+			return fmt.Sprintf("%s (%d %s)", localCommitID, -behind, locale.Tl("show_commits_ahead_of_latest", "ahead of latest")), nil
+		}
+		return localCommitID, nil
 	}
 
 	return latestCommit.String(), nil
