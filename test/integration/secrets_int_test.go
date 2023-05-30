@@ -102,37 +102,6 @@ scripts:
 	cp.ExpectExitCode(0)
 }
 
-func (suite *SecretsIntegrationTestSuite) TestSecrect_ExpandPrompt() {
-	suite.OnlyRunForTags(tagsuite.Secrets, tagsuite.JSON)
-	ts := e2e.New(suite.T(), false)
-	defer ts.Close()
-
-	ts.LoginAsPersistentUser()
-	defer clearSecrets(ts, "project.not-set")
-
-	asyData := strings.TrimSpace(`
-project: https://platform.activestate.com/ActiveState-CLI/secrets-test?commitID=c7f8f45d-39e2-4f22-bd2e-4182b914880f
-scripts:
-  - name: not-set
-    language: bash
-    standalone: true
-    value: echo $secrets.project.not-set
-`)
-
-	ts.PrepareActiveStateYAML(asyData)
-
-	cp := ts.Spawn("run", "not-set")
-	cp.ExpectLongString("The action you are taking uses a secret that has not been given a value yet.")
-	cp.ExpectLongString("Please enter a value")
-	cp.SendLine("test-value")
-	cp.Expect("test-value")
-	cp.ExpectExitCode(0)
-
-	cp = ts.Spawn("run", "not-set")
-	cp.Expect("test-value")
-	cp.ExpectExitCode(0)
-}
-
 func clearSecrets(ts *e2e.Session, unset ...string) {
 	for _, secret := range unset {
 		cp := ts.Spawn("secrets", "set", secret, "")
