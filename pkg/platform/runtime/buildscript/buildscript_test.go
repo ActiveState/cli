@@ -256,10 +256,10 @@ func TestRoundTrip(t *testing.T) {
 	tmpfile.Write([]byte(script.String()))
 	tmpfile.Close()
 
-	file, err := newFile(tmpfile.Name())
+	roundTripScript, err := newScriptFromFile(tmpfile.Name())
 	require.NoError(t, err)
 
-	assert.Equal(t, script, file.Script)
+	assert.Equal(t, script, roundTripScript)
 }
 
 func TestJson(t *testing.T) {

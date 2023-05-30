@@ -10,8 +10,6 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/platform/api/graphql/model/buildplanner"
-
-	"gopkg.in/yaml.v2"
 )
 
 type DoesNotExistError struct{ error }
@@ -20,12 +18,11 @@ func IsDoesNotExistError(err error) bool {
 	return errs.Matches(err, &DoesNotExistError{})
 }
 
-type File struct {
-	Path   string
-	Script *Script
+func NewScriptFromProjectDir(dir string) (*Script, error) {
+	return newScriptFromFile(filepath.Join(dir, constants.BuildScriptFileName))
 }
 
-func newFile(path string) (*File, error) {
+func newScriptFromFile(path string) (*Script, error) {
 	data, err := fileutils.ReadFile(path)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
@@ -33,71 +30,24 @@ func newFile(path string) (*File, error) {
 		}
 		return nil, errs.Wrap(err, "Could not read build script")
 	}
-
-	script, err := NewScript(data)
-	if err != nil {
-		return nil, errs.Wrap(err, "Could not parse build script")
-	}
-
-	return &File{path, script}, nil
+	return NewScript(data)
 }
 
-func NewFile(dir string) (*File, error) {
-	return newFile(filepath.Join(dir, constants.BuildScriptFileName))
-}
-
-func UpdateOrCreate(dir string, script *model.BuildScript) error {
-	file, err := NewFile(dir)
-	if err != nil {
-		if !IsDoesNotExistError(err) {
-			return errs.Wrap(err, "Could not get build script")
-		}
-		file, err = create(dir, nil)
-		if err != nil {
-			return errs.Wrap(err, "Could not create build script")
-		}
+func UpdateOrCreate(dir string, newScript *model.BuildScript) error {
+	// If a build script exists, check to see if an update is needed.
+	script, err := NewScriptFromProjectDir(dir)
+	if err != nil && !IsDoesNotExistError(err) {
+		return errs.Wrap(err, "Could not read build script")
 	}
-	return file.update(script)
-}
-
-func create(dir string, script *model.BuildScript) (*File, error) {
-	return nil, errs.New("Writing not supported yet")
-
-	if script == nil {
-		script = model.NewBuildScript()
-	}
-
-	data, err := yaml.Marshal(script)
-	if err != nil {
-		return nil, errs.Wrap(err, "Could not marshal build script")
-	}
-
-	path := filepath.Join(dir, constants.BuildScriptFileName)
-	logging.Debug("Creating build script: %s", path)
-	if err := fileutils.WriteFile(path, data); err != nil {
-		return nil, errs.Wrap(err, "Could not write build script to file")
-	}
-
-	//return &File{path, script}, nil
-	return nil, errs.New("Writing not supported yet")
-}
-
-func (o *File) write() error {
-	logging.Debug("Writing build script")
-	if err := fileutils.WriteFile(o.Path, []byte(o.Script.String())); err != nil {
-		return errs.Wrap(err, "Could not write build script to file")
-	}
-	return nil
-}
-
-func (o *File) update(script *model.BuildScript) error {
-	if script == nil {
-		return errs.New("Build script to write is nil")
-	}
-	if o.Script != nil && o.Script.Equals(script) {
+	if script != nil && script.Equals(newScript) {
 		return nil
 	}
 
-	//o.Script = script
-	return o.write()
+	logging.Debug("Writing build script")
+	//TODO: enable in DX-1858
+	//err := fileutils.WriteFile(path, []byte(newScript.String()))
+	//if err != nil {
+	//return errs.Wrap(err, "Could not write build script to file")
+	//}
+	return nil
 }
