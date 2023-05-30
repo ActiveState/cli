@@ -260,7 +260,7 @@ func (r *Push) verifyInput() error {
 	}
 
 	commitUUID, err := localcommit.GetUUID(r.project.Dir())
-	if err != nil {
+	if err != nil && !localcommit.IsFileDoesNotExistError(err) {
 		return errs.Wrap(err, "Unable to get local commit")
 	}
 	if commitUUID == "" {

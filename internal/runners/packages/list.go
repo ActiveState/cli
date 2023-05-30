@@ -110,7 +110,7 @@ func targetFromProjectFile(proj *project.Project) (*strfmt.UUID, error) {
 		return nil, locale.NewInputError("err_no_project")
 	}
 	commit, err := localcommit.Get(proj.Dir())
-	if err != nil {
+	if err != nil && !localcommit.IsFileDoesNotExistError(err) {
 		return nil, errs.Wrap(err, "Unable to get local commit")
 	}
 	if commit == "" {

@@ -34,7 +34,7 @@ func (l *List) Run() error {
 	}
 
 	commitID, err := localcommit.Get(l.proj.Dir())
-	if err != nil {
+	if err != nil && !localcommit.IsFileDoesNotExistError(err) {
 		return errs.Wrap(err, "Unable to get local commit")
 	}
 

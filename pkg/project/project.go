@@ -238,7 +238,7 @@ func (p *Project) Cache() string { return p.projectfile.Cache }
 // Namespace returns project namespace
 func (p *Project) Namespace() *Namespaced {
 	commitUUID, err := localcommit.GetUUID(p.Dir())
-	if err != nil {
+	if err != nil && !localcommit.IsFileDoesNotExistError(err) {
 		multilog.Error("Unable to get local commit: %v", err)
 	}
 	return &Namespaced{p.projectfile.Owner(), p.projectfile.Name(), &commitUUID, false}

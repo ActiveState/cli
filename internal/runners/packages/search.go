@@ -9,8 +9,8 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/localcommit"
+	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
@@ -79,7 +79,7 @@ func targetedLanguage(languageOpt string, proj *project.Project) (string, error)
 	}
 
 	commitUUID, err := localcommit.GetUUID(proj.Dir())
-	if err != nil {
+	if err != nil && !localcommit.IsFileDoesNotExistError(err) {
 		return "", errs.Wrap(err, "Unable to get local commit")
 	}
 	lang, err := model.LanguageByCommit(commitUUID)
