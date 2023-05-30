@@ -61,13 +61,14 @@ func isFunction(name string) bool {
 func newValue(valueInterface interface{}, preferIdent bool) (*Value, error) {
 	value := &Value{}
 
-	if m, ok := valueInterface.(map[string]interface{}); ok {
+	switch v := valueInterface.(type) {
+	case map[string]interface{}:
 		// Examine keys first to see if this is a function call.
-		for key := range m {
+		for key := range v {
 			if isFunction(key) {
-				f, err := newFuncCall(m)
+				f, err := newFuncCall(v)
 				if err != nil {
-					return nil, errs.Wrap(err, "Could not parse '%s' function's value: %v", key, m)
+					return nil, errs.Wrap(err, "Could not parse '%s' function's value: %v", key, v)
 				}
 				value.FuncCall = f
 			}
@@ -75,34 +76,37 @@ func newValue(valueInterface interface{}, preferIdent bool) (*Value, error) {
 
 		if value.FuncCall == nil {
 			// It's not a function call, but an object.
-			object, err := newAssignments(m)
+			object, err := newAssignments(v)
 			if err != nil {
-				return nil, errs.Wrap(err, "Could not parse object: %v", m)
+				return nil, errs.Wrap(err, "Could not parse object: %v", v)
 			}
 			value.Object = object
 		}
 
-	} else if list, ok := valueInterface.([]interface{}); ok {
+	case []interface{}:
 		values := []*Value{}
-		for _, item := range list {
+		for _, item := range v {
 			value, err := newValue(item, false)
 			if err != nil {
-				return nil, errs.Wrap(err, "Could not parse list: %v", list)
+				return nil, errs.Wrap(err, "Could not parse list: %v", v)
 			}
 			values = append(values, value)
 		}
 		value.List = &values
 
-	} else if s, ok := valueInterface.(string); ok {
+	case string:
 		if preferIdent {
-			value.Ident = &s
+			value.Ident = &v
 		} else {
-			b, err := json.Marshal(s)
+			b, err := json.Marshal(v)
 			if err != nil {
-				return nil, errs.Wrap(err, "Could not marshal string '%s'", s)
+				return nil, errs.Wrap(err, "Could not marshal string '%s'", v)
 			}
 			value.Str = p.StrP(string(b))
 		}
+
+	default:
+		// An empty value is interpreted as JSON null.
 	}
 
 	return value, nil
@@ -122,8 +126,9 @@ func newFuncCall(m map[string]interface{}) (*FuncCall, error) {
 
 	args := []*Value{}
 
-	if m, ok := argsInterface.(map[string]interface{}); ok {
-		for key, valueInterface := range m {
+	switch v := argsInterface.(type) {
+	case map[string]interface{}:
+		for key, valueInterface := range v {
 			value, err := newValue(valueInterface, name == MergeFunction)
 			if err != nil {
 				return nil, errs.Wrap(err, "Could not parse '%s' function's argument '%s': %v", name, key, valueInterface)
@@ -131,8 +136,8 @@ func newFuncCall(m map[string]interface{}) (*FuncCall, error) {
 			args = append(args, &Value{Assignment: &Assignment{Key: key, Value: value}})
 		}
 
-	} else if list, ok := argsInterface.([]interface{}); ok {
-		for _, item := range list {
+	case []interface{}:
+		for _, item := range v {
 			value, err := newValue(item, false)
 			if err != nil {
 				return nil, errs.Wrap(err, "Could not parse '%s' function's argument list item: %v", name, item)
@@ -140,7 +145,7 @@ func newFuncCall(m map[string]interface{}) (*FuncCall, error) {
 			args = append(args, value)
 		}
 
-	} else {
+	default:
 		return nil, errs.New("Function '%s' expected to be object or list", name)
 	}
 
@@ -162,17 +167,18 @@ func newAssignments(m map[string]interface{}) (*[]*Assignment, error) {
 func newIn(inValue interface{}) (*In, error) {
 	in := &In{}
 
-	if m, ok := inValue.(map[string]interface{}); ok {
-		f, err := newFuncCall(m)
+	switch v := inValue.(type) {
+	case map[string]interface{}:
+		f, err := newFuncCall(v)
 		if err != nil {
 			return nil, errs.Wrap(err, "'in' object is not a function call")
 		}
 		in.FuncCall = f
 
-	} else if s, ok := inValue.(string); ok {
-		in.Name = p.StrP(strings.TrimPrefix(s, "$"))
+	case string:
+		in.Name = p.StrP(strings.TrimPrefix(v, "$"))
 
-	} else {
+	default:
 		return nil, errs.New("'in' value expected to be a function call or string")
 	}
 
