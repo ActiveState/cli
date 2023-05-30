@@ -71,6 +71,13 @@ func (p *projectField) Save(path string) error {
 		return errs.Wrap(err, "ioutil.ReadFile %s failed", path)
 	}
 
+	// Strip legacy commitID parameter.
+	q := p.url.Query()
+	if q.Has("commitID") {
+		q.Del("commitID")
+		p.url.RawQuery = q.Encode()
+	}
+
 	projectValue := p.url.String()
 	out := projectFieldRE.ReplaceAll(data, []byte("project: "+projectValue))
 	if !strings.Contains(string(out), projectValue) {
