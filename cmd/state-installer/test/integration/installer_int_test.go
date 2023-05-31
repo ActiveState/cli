@@ -210,7 +210,7 @@ func (suite *InstallerIntegrationTestSuite) TestStateTrayRemoval() {
 			e2e.AppendEnv(fmt.Sprintf("%s=%s", constants.OverwriteDefaultSystemPathEnvVarName, dir)),
 		)
 	} else {
-		b, err := httputil.GetDirectURL("https://platform.activestate.com/dl/cli/pdli01/install.ps1")
+		b, err := httputil.GetDirect("https://platform.activestate.com/dl/cli/pdli01/install.ps1")
 		suite.Require().NoError(err)
 
 		ps1File := filepath.Join(ts.Dirs.Work, "install.ps1")

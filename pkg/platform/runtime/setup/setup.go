@@ -727,12 +727,7 @@ func (s *Setup) downloadArtifact(a artifact.ArtifactDownload, targetFile string)
 		return errs.Wrap(err, "Could not parse artifact URL %s.", a.UnsignedURI)
 	}
 
-	req, err := httputil.NewRequest(artifactURL.String())
-	if err != nil {
-		return errs.Wrap(err, "Could not create artifact download request for %s.", artifactURL.String())
-	}
-
-	b, err := httputil.GetWithProgress(req, &progress.Report{
+	b, err := httputil.GetWithProgress(artifactURL.String(), &progress.Report{
 		ReportSizeCb: func(size int) error {
 			if err := s.eventHandler.Handle(events.ArtifactDownloadStarted{a.ArtifactID, size}); err != nil {
 				return errs.Wrap(err, "Could not handle ArtifactDownloadStarted event")
