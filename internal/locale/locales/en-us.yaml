@@ -2049,8 +2049,11 @@ err_init_authenticated:
 err_country_blocked:
   other: This service is not available in your region.
 err_commit_id_invalid:
-  other: "Invalid project runtime commit ID: {{.V0}}"
+  other: "Invalid project commit ID: {{.V0}}"
 commit_id_gitignore:
   other: |
-    # Ignore .activestate/commit file; tracking this via VCS will cause users to have to resolve redundant conflicts
-    .activestate/commit
+    # Ignore {{.V0}}/{{.V1}} file; tracking this via VCS will cause users to have to resolve redundant conflicts
+    {{.V0}}/{{.V1}}
+notice_commit_id_gitignore:
+  other: |
+    The State Tool created an [ACTIONABLE]{{.V0}}/{{.V1}}[/RESET] file with your project's commit ID, but it was unable to add it to your [ACTIONABLE].gitignore[/RESET] file. Please add it manually.

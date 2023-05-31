@@ -175,6 +175,7 @@ func (r *Initialize) Run(params *RunParams) error {
 	if emptyDir || fileutils.DirExists(filepath.Join(path, ".git")) {
 		err := localcommit.AddToGitIgnore(path)
 		if err != nil {
+			r.out.Notice(locale.Tr("notice_commit_id_gitignore", constants.ProjectConfigDirName, constants.CommitIdFileName))
 			multilog.Error("Unable to add local commit file to .gitignore: %v", err)
 		}
 	}

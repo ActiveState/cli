@@ -301,10 +301,9 @@ func (s *Session) PrepareCommitIdFile(commitID string) {
 // PrepareProject creates a very simple activestate.yaml file for the given org/project and, if a
 // commit ID is given, an .activestate/commit file.
 func (s *Session) PrepareProject(namespace, commitID string) {
-	yaml := fmt.Sprintf("project: https://%s/%s", constants.DefaultAPIHost, namespace)
-	require.NoError(s.t, fileutils.WriteFile(filepath.Join(s.Dirs.Work, constants.ConfigFileName), []byte(yaml)))
+	s.PrepareActiveStateYAML(fmt.Sprintf("project: https://%s/%s", constants.DefaultAPIHost, namespace))
 	if commitID != "" {
-		require.NoError(s.t, fileutils.WriteFile(filepath.Join(s.Dirs.Work, constants.ProjectConfigDirName, constants.CommitIdFileName), []byte(commitID)))
+		s.PrepareCommitIdFile(commitID)
 	}
 }
 

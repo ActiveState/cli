@@ -4,10 +4,12 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -48,4 +50,11 @@ func TestLocalCommit(t *testing.T) {
 	require.NoError(t, err)
 	assert.Contains(t, string(fileutils.ReadFileUnsafe(gitIgnoreFile)), "foo\nbar\nbaz")
 	assert.Contains(t, string(fileutils.ReadFileUnsafe(gitIgnoreFile)), fmt.Sprintf("\n%s/%s", constants.ProjectConfigDirName, constants.CommitIdFileName))
+
+	// Test multiple calls to append to .gitignore do not add multiple files.
+	err = AddToGitIgnore(tempDir)
+	require.NoError(t, err)
+	contents := string(fileutils.ReadFileUnsafe(gitIgnoreFile))
+	added := locale.Tr("commit_id_gitignore", constants.ProjectConfigDirName, constants.CommitIdFileName)
+	assert.Equal(t, 1, strings.Count(contents, added), "multiple commit ID files added to .gitignore")
 }

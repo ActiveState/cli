@@ -32,12 +32,10 @@ func (l *Languages) Run() error {
 	}
 
 	commitUUID, err := localcommit.GetUUID(l.project.Dir())
-	if err != nil && !localcommit.IsFileDoesNotExistError(err) {
-		return errs.Wrap(err, "Unable to get local commit")
-	}
-	if commitUUID == "" {
+	if err != nil {
 		return errs.AddTips(
-			locale.NewError(
+			locale.WrapError(
+				err,
 				"err_languages_no_commitid",
 				"Your project runtime does not have a commit defined, you may need to run [ACTIONABLE]`state pull`[/RESET] first.",
 			),

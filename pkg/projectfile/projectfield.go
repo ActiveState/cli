@@ -29,6 +29,9 @@ func (p *projectField) LoadProject(rawProjectValue string) error {
 	}
 	p.url = u
 
+	// Strip legacy commitID parameter.
+	p.unsetQuery("commitID")
+
 	return nil
 }
 
@@ -69,13 +72,6 @@ func (p *projectField) Save(path string) error {
 	data, err := ioutil.ReadFile(path)
 	if err != nil {
 		return errs.Wrap(err, "ioutil.ReadFile %s failed", path)
-	}
-
-	// Strip legacy commitID parameter.
-	q := p.url.Query()
-	if q.Has("commitID") {
-		q.Del("commitID")
-		p.url.RawQuery = q.Encode()
 	}
 
 	projectValue := p.url.String()
