@@ -283,6 +283,7 @@ func (suite *UseIntegrationTestSuite) TestJSON() {
 	cp = ts.Spawn("use", "show", "--output", "json")
 	cp.Expect(`"namespace":`)
 	cp.Expect(`"path":`)
+	cp.Expect(`"executables":`)
 	cp.ExpectExitCode(0)
 	AssertValidJSON(suite.T(), cp)
 
