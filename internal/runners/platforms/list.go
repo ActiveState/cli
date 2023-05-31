@@ -38,7 +38,7 @@ func (l *List) Run() error {
 		return errs.Wrap(err, "Unable to get local commit")
 	}
 
-	targetCommitID, err := targetedCommitID(commitID, l.proj.Name(), l.proj.Owner(), l.proj.BranchName())
+	targetCommitID, err := targetedCommitID(commitID.String(), l.proj.Name(), l.proj.Owner(), l.proj.BranchName())
 	if err != nil {
 		return errs.Wrap(err, "Unable to get commit ID")
 	}

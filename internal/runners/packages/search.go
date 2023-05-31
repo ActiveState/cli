@@ -78,11 +78,11 @@ func targetedLanguage(languageOpt string, proj *project.Project) (string, error)
 		)
 	}
 
-	commitUUID, err := localcommit.GetUUID(proj.Dir())
+	commitID, err := localcommit.Get(proj.Dir())
 	if err != nil && !localcommit.IsFileDoesNotExistError(err) {
 		return "", errs.Wrap(err, "Unable to get local commit")
 	}
-	lang, err := model.LanguageByCommit(commitUUID)
+	lang, err := model.LanguageByCommit(commitID)
 	if err != nil {
 		return "", errs.Wrap(err, "LanguageByCommit failed")
 	}

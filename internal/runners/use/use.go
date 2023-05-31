@@ -80,12 +80,12 @@ func (u *Use) Run(params *Params) error {
 
 	rtusage.PrintRuntimeUsage(u.svcModel, u.out, proj.Owner())
 
-	commitUUID, err := localcommit.GetUUID(proj.Dir())
+	commitID, err := localcommit.Get(proj.Dir())
 	if err != nil {
 		return errs.Wrap(err, "Unable to get local commit")
 	}
 
-	if cid := params.Namespace.CommitID; cid != nil && *cid != commitUUID {
+	if cid := params.Namespace.CommitID; cid != nil && *cid != commitID {
 		return locale.NewInputError("err_use_commit_id_mismatch")
 	}
 

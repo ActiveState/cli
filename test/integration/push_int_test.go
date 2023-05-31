@@ -73,7 +73,7 @@ func (suite *PushIntegrationTestSuite) TestInitAndPush() {
 	suite.Require().NoError(err)
 	commitID, err := localcommit.Get(filepath.Join(ts.Dirs.Work, namespace))
 	suite.Require().NoError(err)
-	suite.Require().NotEmpty(commitID, "commitID was not set after running push for project creation")
+	suite.Require().NotEmpty(commitID.String(), "commitID was not set after running push for project creation")
 	suite.Require().NotEmpty(pjfile.BranchName(), "branch was not set after running push for project creation")
 
 	// ensure that we are logged out

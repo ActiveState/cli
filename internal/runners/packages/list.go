@@ -118,7 +118,7 @@ func targetFromProjectFile(proj *project.Project) (*strfmt.UUID, error) {
 		return model.BranchCommitID(proj.Owner(), proj.Name(), proj.BranchName())
 	}
 
-	return prepareCommit(commit)
+	return prepareCommit(commit.String())
 }
 
 func prepareCommit(commit string) (*strfmt.UUID, error) {

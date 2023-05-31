@@ -97,11 +97,11 @@ func NewPrimeConditional(auth *authentication.Auth, pj projectable, subshellName
 		pjName = pj.Name()
 		pjNamespace = pj.NamespaceString()
 		pjURL = pj.URL()
-		var err error
-		pjCommit, err = localcommit.Get(pj.Dir())
+		commitID, err := localcommit.Get(pj.Dir())
 		if err != nil && !localcommit.IsFileDoesNotExistError(err) {
 			multilog.Error("Unable to get local commit: %v", err)
 		}
+		pjCommit = commitID.String()
 		pjBranch = pj.BranchName()
 		pjDir = pj.Dir()
 	}

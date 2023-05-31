@@ -65,7 +65,7 @@ func (suite *ProjectTestSuite) TestProject() {
 	suite.Equal("project", suite.project.Name(), "Values should match")
 	commitID, err := localcommit.Get(suite.project.Dir())
 	suite.NoError(err)
-	suite.Equal("00010001-0001-0001-0001-000100010001", commitID, "Values should match")
+	suite.Equal("00010001-0001-0001-0001-000100010001", commitID.String(), "Values should match")
 	suite.Equal("ActiveState", suite.project.Owner(), "Values should match")
 	suite.Equal("ActiveState/project", suite.project.Namespace().String(), "Values should match")
 	suite.Equal("something", suite.project.Environments(), "Values should match")

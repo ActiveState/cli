@@ -49,12 +49,12 @@ func (a *Add) Run(params AddParams) error {
 		return locale.WrapError(err, "err_fetch_branch", "", localBranch)
 	}
 
-	commitUUID, err := localcommit.GetUUID(a.project.Dir())
+	commitID, err := localcommit.Get(a.project.Dir())
 	if err != nil {
 		return errs.Wrap(err, "Unable to get local commit")
 	}
 
-	err = model.UpdateBranchTracking(branchID, commitUUID, branch.BranchID, model.TrackingIgnore)
+	err = model.UpdateBranchTracking(branchID, commitID, branch.BranchID, model.TrackingIgnore)
 	if err != nil {
 		return locale.WrapError(err, "err_add_branch_update_tracking", "Could not update branch: {{.V0}} with tracking information", params.Label)
 	}

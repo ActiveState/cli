@@ -96,12 +96,12 @@ func (p *Pull) Run(params *PullParams) error {
 	}
 
 	var localCommit *strfmt.UUID
-	commitUUID, err := localcommit.GetUUID(p.project.Dir())
+	localCommitID, err := localcommit.Get(p.project.Dir())
 	if err != nil && !localcommit.IsFileDoesNotExistError(err) {
 		return errs.Wrap(err, "Unable to get local commit")
 	}
-	if commitUUID != "" {
-		localCommit = &commitUUID
+	if localCommitID != "" {
+		localCommit = &localCommitID
 	}
 
 	if params.SetProject != "" {
@@ -153,7 +153,7 @@ func (p *Pull) Run(params *PullParams) error {
 		return errs.Wrap(err, "Unable to get local commit")
 	}
 
-	if commitID != resultingCommit.String() {
+	if commitID != *resultingCommit {
 		err := localcommit.Set(p.project.Dir(), resultingCommit.String())
 		if err != nil {
 			return errs.Wrap(err, "Unable to set local commit")
@@ -189,7 +189,7 @@ func (p *Pull) performMerge(strategies *mono_models.MergeStrategies, remoteCommi
 		return "", errs.Wrap(err, "Unable to get local commit")
 	}
 
-	commitMessage := locale.Tr("pull_merge_commit", remoteCommit.String(), commitID)
+	commitMessage := locale.Tr("pull_merge_commit", remoteCommit.String(), commitID.String())
 	resultCommit, err := model.CommitChangeset(remoteCommit, commitMessage, strategies.OverwriteChanges)
 	if err != nil {
 		return "", locale.WrapError(err, "err_pull_merge_commit", "Could not create merge commit.")

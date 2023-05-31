@@ -152,12 +152,12 @@ func NameSpaceForConfig(configFile string) *Namespaced {
 		Project: prj.Name(),
 	}
 
-	prjCommitID, err := localcommit.GetUUID(prj.Dir())
+	commitID, err := localcommit.Get(prj.Dir())
 	if err != nil && !localcommit.IsFileDoesNotExistError(err) {
 		multilog.Error("Unable to get local commit: %v", err)
 	}
-	if prjCommitID != "" {
-		names.CommitID = &prjCommitID
+	if commitID != "" {
+		names.CommitID = &commitID
 	}
 
 	return &names

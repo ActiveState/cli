@@ -114,12 +114,12 @@ func (p *ProjectTarget) CommitUUID() strfmt.UUID {
 	if p.customCommit != nil {
 		return *p.customCommit
 	}
-	commitUUID, err := localcommit.GetUUID(p.Project.Dir())
+	commitID, err := localcommit.Get(p.Project.Dir())
 	if err != nil && !localcommit.IsFileDoesNotExistError(err) {
 		multilog.Error("Unable to get local commit: %v", err)
 		return ""
 	}
-	return commitUUID
+	return commitID
 }
 
 func (p *ProjectTarget) Trigger() Trigger {

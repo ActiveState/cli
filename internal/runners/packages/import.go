@@ -177,11 +177,11 @@ func fetchImportChangeset(cp ChangesetProvider, file string, lang string) (model
 }
 
 func commitChangeset(project *project.Project, msg string, changeset model.Changeset) (strfmt.UUID, error) {
-	commitUUID, err := localcommit.GetUUID(project.Dir())
+	localCommitID, err := localcommit.Get(project.Dir())
 	if err != nil {
 		return "", errs.Wrap(err, "Unable to get local commit")
 	}
-	commitID, err := model.CommitChangeset(commitUUID, msg, changeset)
+	commitID, err := model.CommitChangeset(localCommitID, msg, changeset)
 	if err != nil {
 		return "", errs.AddTips(locale.WrapError(err, "err_packages_removed"),
 			locale.T("commit_failed_push_tip"),

@@ -9,10 +9,10 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/pkg/localcommit"
 	medmodel "github.com/ActiveState/cli/pkg/platform/api/mediator/model"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
@@ -102,10 +102,11 @@ func (r *Report) fetchVulnerabilities(namespaceOverride project.Namespaced) (*me
 		commitID = namespaceOverride.CommitID.String()
 	} else {
 		var err error
-		commitID, err = localcommit.Get(r.proj.Dir())
+		commitUUID, err := localcommit.Get(r.proj.Dir())
 		if err != nil {
 			return nil, errs.Wrap(err, "Unable to get local commit")
 		}
+		commitID = commitUUID.String()
 	}
 	resp, err := model.FetchCommitVulnerabilities(r.auth, commitID)
 	if err != nil {

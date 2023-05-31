@@ -71,7 +71,7 @@ func (c *Cve) Run() error {
 		return errs.Wrap(err, "Could not get local commit")
 	}
 
-	resp, err := model.FetchCommitVulnerabilities(c.auth, commitID)
+	resp, err := model.FetchCommitVulnerabilities(c.auth, commitID.String())
 	if err != nil {
 		return locale.WrapError(err, "cve_mediator_resp", "Failed to retrieve vulnerability information")
 	}

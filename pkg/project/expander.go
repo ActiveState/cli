@@ -238,7 +238,11 @@ func ProjectExpander(_ string, name string, _ string, isFunction bool, ctx *Expa
 	case "url":
 		return project.URL(), nil
 	case "commit":
-		return localcommit.Get(project.Dir())
+		commitID, err := localcommit.Get(project.Dir())
+		if err != nil {
+			return "", errs.Wrap(err, "Unable to get local commit")
+		}
+		return commitID.String(), nil
 	case "branch":
 		return project.BranchName(), nil
 	case "owner":

@@ -115,11 +115,11 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 
 	switch nsType {
 	case model.NamespacePackage, model.NamespaceBundle:
-		commitUUID, err := localcommit.GetUUID(pj.Dir())
+		commitID, err := localcommit.Get(pj.Dir())
 		if err != nil && !localcommit.IsFileDoesNotExistError(err) {
 			return errs.Wrap(err, "Unable to get local commit")
 		}
-		language, err := model.LanguageByCommit(commitUUID)
+		language, err := model.LanguageByCommit(commitID)
 		if err == nil {
 			langName = language.Name
 			ns = model.NewNamespacePkgOrBundle(langName, nsType)
@@ -187,7 +187,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 		pg = nil
 	}
 
-	parentCommitID, err := localcommit.GetUUID(pj.Dir())
+	parentCommitID, err := localcommit.Get(pj.Dir())
 	if err != nil && !localcommit.IsFileDoesNotExistError(err) {
 		return errs.Wrap(err, "Unable to get local commit")
 	}
@@ -229,11 +229,11 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 
 	orderChanged := !hasParentCommit
 	if hasParentCommit {
-		commitUUID, err := localcommit.GetUUID(pj.Dir())
+		localCommitID, err := localcommit.Get(pj.Dir())
 		if err != nil {
 			return errs.Wrap(err, "Unable to get local commit")
 		}
-		revertCommit, err := model.GetRevertCommit(commitUUID, commitID)
+		revertCommit, err := model.GetRevertCommit(localCommitID, commitID)
 		if err != nil {
 			return locale.WrapError(err, "err_revert_refresh")
 		}

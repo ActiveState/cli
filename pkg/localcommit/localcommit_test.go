@@ -29,9 +29,9 @@ func TestLocalCommit(t *testing.T) {
 	commitIdFile := filepath.Join(tempDir, constants.ProjectConfigDirName, constants.CommitIdFileName)
 	require.FileExists(t, commitIdFile)
 	assert.Equal(t, commitID, string(fileutils.ReadFileUnsafe(commitIdFile)))
-	commitUUID, err := GetUUID(tempDir)
+	localCommitID, err := Get(tempDir)
 	require.NoError(t, err)
-	assert.Equal(t, commitID, commitUUID.String())
+	assert.Equal(t, commitID, localCommitID.String())
 
 	// Test creating new .gitignore.
 	gitIgnoreFile := filepath.Join(tempDir, ".gitignore")

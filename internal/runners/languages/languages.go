@@ -31,7 +31,7 @@ func (l *Languages) Run() error {
 		return locale.NewInputError("err_no_project")
 	}
 
-	commitUUID, err := localcommit.GetUUID(l.project.Dir())
+	commitID, err := localcommit.Get(l.project.Dir())
 	if err != nil {
 		return errs.AddTips(
 			locale.WrapError(
@@ -46,7 +46,7 @@ func (l *Languages) Run() error {
 		)
 	}
 
-	langs, err := model.FetchLanguagesForCommit(commitUUID)
+	langs, err := model.FetchLanguagesForCommit(commitID)
 	if err != nil {
 		return locale.WrapError(err, "err_fetching_languages", "Cannot obtain languages")
 	}

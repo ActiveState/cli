@@ -22,7 +22,7 @@ func getCommitFile(projectDir string) string {
 	return filepath.Join(projectDir, constants.ProjectConfigDirName, constants.CommitIdFileName)
 }
 
-func Get(projectDir string) (string, error) {
+func Get(projectDir string) (strfmt.UUID, error) {
 	configDir := filepath.Join(projectDir, constants.ProjectConfigDirName)
 	commitFile := getCommitFile(projectDir)
 	if !fileutils.DirExists(configDir) || !fileutils.TargetExists(commitFile) {
@@ -40,14 +40,6 @@ func Get(projectDir string) (string, error) {
 		return "", locale.NewError("err_commit_id_invalid", commitID)
 	}
 
-	return commitID, nil
-}
-
-func GetUUID(projectDir string) (strfmt.UUID, error) {
-	commitID, err := Get(projectDir)
-	if err != nil {
-		return "", errs.Wrap(err, "Unable to get local commit")
-	}
 	return strfmt.UUID(commitID), nil
 }
 

@@ -67,7 +67,7 @@ func (r *Push) Run(params PushParams) error {
 	}
 	r.out.Notice(locale.Tl("operating_message", "", r.project.NamespaceString(), r.project.Dir()))
 
-	commitID, err := localcommit.GetUUID(r.project.Dir()) // The commit we want to push
+	commitID, err := localcommit.Get(r.project.Dir()) // The commit we want to push
 	if err != nil {
 		return errs.Wrap(err, "Unable to get local commit")
 	}
@@ -259,11 +259,11 @@ func (r *Push) verifyInput() error {
 		)
 	}
 
-	commitUUID, err := localcommit.GetUUID(r.project.Dir())
+	commitID, err := localcommit.Get(r.project.Dir())
 	if err != nil && !localcommit.IsFileDoesNotExistError(err) {
 		return errs.Wrap(err, "Unable to get local commit")
 	}
-	if commitUUID == "" {
+	if commitID == "" {
 		return locale.NewInputError("err_push_nocommit", "You have nothing to push, make some changes first with [ACTIONABLE]state install[/RESET].")
 	}
 
@@ -297,11 +297,11 @@ func (r *Push) promptNamespace() (*project.Namespaced, error) {
 	}
 
 	var name string
-	commitUUID, err := localcommit.GetUUID(r.project.Dir())
+	commitID, err := localcommit.Get(r.project.Dir())
 	if err != nil {
 		return nil, errs.Wrap(err, "Unable to get local commit")
 	}
-	lang, _, err := fetchLanguage(commitUUID)
+	lang, _, err := fetchLanguage(commitID)
 	if err == nil {
 		name = lang.String()
 	}

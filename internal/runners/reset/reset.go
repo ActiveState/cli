@@ -63,11 +63,11 @@ func (r *Reset) Run(params *Params) error {
 		if err != nil {
 			return locale.WrapError(err, "err_reset_latest_commit", "Could not get latest commit ID")
 		}
-		commitUUID, err := localcommit.GetUUID(r.project.Dir())
+		localCommitID, err := localcommit.Get(r.project.Dir())
 		if err != nil {
 			return errs.Wrap(err, "Unable to get local commit")
 		}
-		if *latestCommit == commitUUID {
+		if *latestCommit == localCommitID {
 			return locale.NewInputError("err_reset_latest", "You are already on the latest commit")
 		}
 		commitID = *latestCommit
@@ -76,11 +76,11 @@ func (r *Reset) Run(params *Params) error {
 			return locale.NewInputError("Invalid commit ID")
 		}
 		commitID = strfmt.UUID(params.CommitID)
-		commitUUID, err := localcommit.GetUUID(r.project.Dir())
+		localCommitID, err := localcommit.Get(r.project.Dir())
 		if err != nil {
 			return errs.Wrap(err, "Unable to get local commit")
 		}
-		if commitID == commitUUID {
+		if commitID == localCommitID {
 			return locale.NewInputError("err_reset_same_commitid", "Your project is already at the given commit ID")
 		}
 		history, err := model.CommitHistoryFromID(commitID)
