@@ -5,7 +5,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/runbits/requirements"
-	bgModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model/buildplanner"
+	bpModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model/buildplanner"
 	"github.com/ActiveState/cli/pkg/platform/model"
 )
 
@@ -43,7 +43,7 @@ func (a *Install) Run(params InstallRunParams, nsType model.NamespaceType) error
 		params.Package.Name(),
 		params.Package.Version(),
 		0,
-		bgModel.OperationAdd,
+		bpModel.OperationAdd,
 		nsType,
 	)
 }
