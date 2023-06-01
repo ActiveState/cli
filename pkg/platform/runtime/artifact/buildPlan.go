@@ -40,10 +40,11 @@ func (a ArtifactBuildPlan) NameWithVersion() string {
 }
 
 func NewMapFromBuildPlan(build *model.Build) ArtifactBuildPlanMap {
-	res := make(ArtifactBuildPlanMap)
 	if build == nil {
 		return nil
 	}
+
+	res := make(ArtifactBuildPlanMap)
 
 	lookup := make(map[strfmt.UUID]interface{})
 
