@@ -8,6 +8,7 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
@@ -99,7 +100,7 @@ func NewPrimeConditional(auth *authentication.Auth, pj projectable, subshellName
 		pjURL = pj.URL()
 		commitID, err := localcommit.Get(pj.Dir())
 		if err != nil && !localcommit.IsFileDoesNotExistError(err) {
-			multilog.Error("Unable to get local commit: %v", err)
+			multilog.Error("Unable to get local commit: %v", errs.JoinMessage(err))
 		}
 		pjCommit = commitID.String()
 		pjBranch = pj.BranchName()

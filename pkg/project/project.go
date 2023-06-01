@@ -239,7 +239,7 @@ func (p *Project) Cache() string { return p.projectfile.Cache }
 func (p *Project) Namespace() *Namespaced {
 	commitID, err := localcommit.Get(p.Dir())
 	if err != nil && !localcommit.IsFileDoesNotExistError(err) {
-		multilog.Error("Unable to get local commit: %v", err)
+		multilog.Error("Unable to get local commit: %v", errs.JoinMessage(err))
 	}
 	return &Namespaced{p.projectfile.Owner(), p.projectfile.Name(), &commitID, false}
 }

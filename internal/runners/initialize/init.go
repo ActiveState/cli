@@ -70,7 +70,7 @@ func inferLanguage(config projectfile.ConfigGetter) (string, string, bool) {
 	}
 	commitID, err := localcommit.Get(defaultProj.Dir())
 	if err != nil && !localcommit.IsFileDoesNotExistError(err) {
-		multilog.Error("Unable to get local commit: %v", err)
+		multilog.Error("Unable to get local commit: %v", errs.JoinMessage(err))
 		return "", "", false
 	}
 	if commitID == "" {

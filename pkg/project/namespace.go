@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"regexp"
 
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/multilog"
@@ -154,7 +155,7 @@ func NameSpaceForConfig(configFile string) *Namespaced {
 
 	commitID, err := localcommit.Get(prj.Dir())
 	if err != nil && !localcommit.IsFileDoesNotExistError(err) {
-		multilog.Error("Unable to get local commit: %v", err)
+		multilog.Error("Unable to get local commit: %v", errs.JoinMessage(err))
 	}
 	if commitID != "" {
 		names.CommitID = &commitID
