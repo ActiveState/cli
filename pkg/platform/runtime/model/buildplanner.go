@@ -281,7 +281,7 @@ func (bp *BuildPlanner) StageCommit(params StateCommitParams) (string, error) {
 	return resp.Commit.CommitID, nil
 }
 
-func (bp *BuildPlanner) GetBuildExpression(owner, project, commitID string) (model.BuildExpression, error) {
+func (bp *BuildPlanner) GetBuildExpression(owner, project, commitID string) (*model.BuildExpression, error) {
 	resp := &model.BuildPlan{}
 	err := bp.client.Run(request.BuildExpression(owner, project, commitID), resp)
 	if err != nil {
@@ -295,5 +295,10 @@ func (bp *BuildPlanner) GetBuildExpression(owner, project, commitID string) (mod
 		return nil, errs.New("Commit not found: %s", resp.Project.Commit.Message)
 	}
 
-	return resp.Project.Commit.Script, nil
+	expression, err := model.NewBuildExpression([]byte(resp.Project.Commit.Script))
+	if err != nil {
+		return nil, errs.Wrap(err, "failed to parse build expression")
+	}
+
+	return expression, nil
 }
