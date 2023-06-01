@@ -5,6 +5,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/multilog"
 	model "github.com/ActiveState/cli/pkg/platform/api/graphql/model/buildplanner"
 	monomodel "github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/go-openapi/strfmt"
@@ -74,7 +75,7 @@ func buildMap(baseID strfmt.UUID, lookup map[strfmt.UUID]interface{}, result Art
 	target := lookup[baseID]
 	artifact, ok := target.(*model.Artifact)
 	if !ok {
-		logging.Error("Incorrect target type for id %s", baseID)
+		multilog.Error("Incorrect target type for id %s", baseID)
 		return
 	}
 
@@ -99,7 +100,7 @@ func buildMap(baseID strfmt.UUID, lookup map[strfmt.UUID]interface{}, result Art
 
 	info, err := GetSourceInfo(artifact.GeneratedBy, lookup)
 	if err != nil {
-		logging.Error("Could not resolve source information: %v", err)
+		multilog.Error("Could not resolve source information: %v", err)
 		return
 	}
 
@@ -149,7 +150,7 @@ func GetSourceInfo(sourceID strfmt.UUID, lookup map[strfmt.UUID]interface{}) (So
 func BuildRuntimeDependencies(depdendencyID strfmt.UUID, lookup map[strfmt.UUID]interface{}, result []strfmt.UUID) []strfmt.UUID {
 	artifact, ok := lookup[depdendencyID].(*model.Artifact)
 	if !ok {
-		logging.Error("Incorrect target type for id %s", depdendencyID)
+		multilog.Error("Incorrect target type for id %s", depdendencyID)
 	}
 
 	for _, depID := range artifact.RuntimeDependencies {
@@ -192,17 +193,13 @@ func RecursiveDependenciesFor(a ArtifactID, artifacts ArtifactBuildPlanMap) []Ar
 	return res
 }
 
-// NewNamedMapFromIDMap converts an ArtifactRecipeMap to a ArtifactNamedRecipeMap
-func NewNamedMapFromIDMap(am ArtifactBuildPlanMap) ArtifactNamedBuildPlanMap {
+func NewNamedMapFromBuildPlan(build *model.Build) ArtifactNamedBuildPlanMap {
+	am := NewMapFromBuildPlan(build)
 	res := make(map[string]ArtifactBuildPlan)
 	for _, a := range am {
 		res[a.Name] = a
 	}
 	return res
-}
-
-func NewNamedMapFromBuildPlan(build *model.Build) ArtifactNamedBuildPlanMap {
-	return NewNamedMapFromIDMap(NewMapFromBuildPlan(build))
 }
 
 func FilterInstallable(artifacts ArtifactBuildPlanMap) ArtifactBuildPlanMap {

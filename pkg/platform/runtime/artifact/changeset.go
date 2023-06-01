@@ -66,11 +66,6 @@ func NewArtifactChangeset(old, new ArtifactNamedBuildPlanMap, requestedOnly bool
 	}
 }
 
-// DetectArtifactChanges computes the artifact changes between an old recipe (which can be empty) and a new recipe
-func NewArtifactChangesetByIDMap(old, new ArtifactBuildPlanMap, requestedOnly bool) ArtifactChangeset {
-	return NewArtifactChangeset(NewNamedMapFromIDMap(old), NewNamedMapFromIDMap(new), requestedOnly)
-}
-
 func NewArtifactChangesetByBuildPlan(oldBuildPlan *model.Build, build *model.Build, requestedOnly bool) ArtifactChangeset {
 	return NewArtifactChangeset(NewNamedMapFromBuildPlan(oldBuildPlan), NewNamedMapFromBuildPlan(build), requestedOnly)
 }
