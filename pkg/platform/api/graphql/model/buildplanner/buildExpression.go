@@ -220,12 +220,7 @@ func getSolveNode(expression map[string]interface{}) (map[string]interface{}, er
 	}
 	logging.Debug("Could not get solve node, trying solve legacy node")
 
-	solveNode, err = getFuncNode(expression, SolveLegacyFuncName)
-	if err != nil {
-		return nil, errs.Wrap(err, "Could not get solve legacy node")
-	}
-
-	return solveNode, nil
+	return getFuncNode(expression, SolveLegacyFuncName)
 }
 
 func getFuncNode(expression map[string]interface{}, funcName string) (map[string]interface{}, error) {
