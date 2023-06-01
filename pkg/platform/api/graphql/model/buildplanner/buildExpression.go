@@ -80,11 +80,26 @@ func NewBuildExpression(data []byte) (*BuildExpression, error) {
 		return nil, errs.Wrap(err, "Could not get requirements node")
 	}
 
+	err = validateRequirements(requirementsNode)
+	if err != nil {
+		return nil, errs.Wrap(err, "Requirements in BuildExpression are invalid")
+	}
+
 	return &BuildExpression{
 		expression:       expression,
 		solveNode:        &solveNode,
 		requirementsNode: requirementsNode,
 	}, nil
+}
+
+func validateRequirements(requirements []interface{}) error {
+	for _, requirement := range requirements {
+		_, ok := requirement.(map[string]interface{})
+		if !ok {
+			return errs.New("Requirement in BuildExpression is malformed")
+		}
+	}
+	return nil
 }
 
 func (bx BuildExpression) Requirements() ([]Requirement, error) {
@@ -136,11 +151,7 @@ func (bx *BuildExpression) AddRequirement(requirement Requirement) error {
 
 func (bx *BuildExpression) RemoveRequirement(requirement Requirement) error {
 	for i, req := range bx.requirementsNode {
-		r, ok := req.(map[string]interface{})
-		if !ok {
-			return errs.New("Requirement in BuildExpression is malformed")
-		}
-
+		r := req.(map[string]interface{})
 		if r[RequirementNameKey] == requirement.Name && r[RequirementNamespaceKey] == requirement.Namespace {
 			bx.requirementsNode = append(bx.requirementsNode[:i], bx.requirementsNode[i+1:]...)
 			(*bx.solveNode)[RequirementsKey] = bx.requirementsNode
@@ -153,11 +164,7 @@ func (bx *BuildExpression) RemoveRequirement(requirement Requirement) error {
 
 func (bx BuildExpression) UpdateRequirement(requirement Requirement) error {
 	for i, req := range bx.requirementsNode {
-		r, ok := req.(map[string]interface{})
-		if !ok {
-			return errs.New("Requirement in BuildExpression is malformed")
-		}
-
+		r := req.(map[string]interface{})
 		if r[RequirementNameKey] == requirement.Name && r[RequirementNamespaceKey] == requirement.Namespace {
 			bx.requirementsNode[i] = requirement
 			(*bx.solveNode)[RequirementsKey] = bx.requirementsNode
