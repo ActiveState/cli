@@ -94,9 +94,17 @@ func NewBuildExpression(data []byte) (*BuildExpression, error) {
 
 func validateRequirements(requirements []interface{}) error {
 	for _, requirement := range requirements {
-		_, ok := requirement.(map[string]interface{})
+		r, ok := requirement.(map[string]interface{})
 		if !ok {
 			return errs.New("Requirement in BuildExpression is malformed")
+		}
+		_, ok = r[RequirementNameKey]
+		if !ok {
+			return errs.New("Requirement in BuildExpression is missing name field")
+		}
+		_, ok = r[RequirementNamespaceKey]
+		if !ok {
+			return errs.New("Requirement in BuildExpression is missing namespace field")
 		}
 	}
 	return nil
