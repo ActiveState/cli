@@ -456,7 +456,7 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 	} else {
 		// If the build is not yet complete then we have to speculate as to the artifacts that will be installed.
 		// The actual number of installable artifacts may be lower than what we have here, we can only do a best effort.
-		for _, a := range artifacts {
+		for _, a := range installableArtifacts {
 			if _, alreadyInstalled := alreadyInstalled[a.ArtifactID]; !alreadyInstalled {
 				artifactsToInstall = append(artifactsToInstall, a.ArtifactID)
 			}
@@ -838,8 +838,8 @@ func reusableArtifacts(requestedArtifacts []*bpModel.Artifact, storedArtifacts s
 	keep := make(store.StoredArtifactMap)
 
 	for _, a := range requestedArtifacts {
-		if v, ok := storedArtifacts[strfmt.UUID(a.TargetID)]; ok {
-			keep[strfmt.UUID(a.TargetID)] = v
+		if v, ok := storedArtifacts[a.TargetID]; ok {
+			keep[a.TargetID] = v
 		}
 	}
 	return keep
