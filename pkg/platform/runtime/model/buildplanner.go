@@ -160,9 +160,11 @@ func (bp *BuildPlanner) FetchBuildResult(commitID strfmt.UUID, owner, project st
 		CommitID:    strfmt.UUID(resp.Project.Commit.CommitID),
 	}
 
-	// If the build is alternative the buildLogID type will identify it as a recipe ID.
-	// The other buildLogID type is for camel builds which we don't use for builds in progress.
-	// There should one be one build log ID for alternative builds.
+	// We want to extract the recipe ID from the BuildLogIDs.
+	// We do this because if the build is in progress we will need to reciepe ID to
+	// initialize the build log streamer.
+	// For camel builds the ID type will not be BuildLogRecipeID but this is okay
+	// because the state tool does not display in progress information for camel builds.
 	for _, id := range resp.Project.Commit.Build.BuildLogIDs {
 		if id.Type == model.BuildLogRecipeID {
 			if res.RecipeID != "" {
