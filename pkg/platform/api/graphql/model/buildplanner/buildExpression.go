@@ -63,7 +63,6 @@ type BuildExpression struct {
 }
 
 func NewBuildExpression(data []byte) (*BuildExpression, error) {
-
 	expression := make(map[string]interface{})
 	err := json.Unmarshal(data, &expression)
 	if err != nil {
@@ -111,6 +110,8 @@ func validateRequirements(requirements []interface{}) error {
 }
 
 func (bx BuildExpression) Requirements() ([]Requirement, error) {
+	// We marshal and unmarshal here as a cheap way to convert the
+	// interface slice to a slice of Requirements
 	requirementsData, err := json.Marshal(bx.requirementsNode)
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not marshal JSON")
