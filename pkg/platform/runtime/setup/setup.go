@@ -345,7 +345,7 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 
 	// If some artifacts were already build then we can detect whether they need to be installed ahead of time
 	// Note there may still be more noop artifacts, but we won't know until they have finished building.
-	noopArtifacts := map[string]struct{}{}
+	noopArtifacts := map[strfmt.UUID]struct{}{}
 	for _, prebuiltArtf := range buildResult.Build.Artifacts {
 		if prebuiltArtf.TargetID != "" && prebuiltArtf.Status != "" &&
 			prebuiltArtf.Status == bpModel.ArtifactSucceeded &&
@@ -360,7 +360,7 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 	// link the artifacts to the ingredient. This will be solved by buildplans.
 	installableArtifacts := artifact.FilterInstallable(artifacts)
 	for id := range installableArtifacts {
-		if _, noop := noopArtifacts[id.String()]; noop {
+		if _, noop := noopArtifacts[id]; noop {
 			delete(installableArtifacts, id)
 		}
 	}

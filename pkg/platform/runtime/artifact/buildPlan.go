@@ -19,7 +19,7 @@ type ArtifactBuildPlan struct {
 	Version          *string
 	RequestedByOrder bool
 
-	GeneratedBy string
+	GeneratedBy strfmt.UUID
 
 	Dependencies []ArtifactID
 }
@@ -45,7 +45,7 @@ func NewMapFromBuildPlan(build *model.Build) ArtifactBuildPlanMap {
 		return nil
 	}
 
-	lookup := make(map[string]interface{})
+	lookup := make(map[strfmt.UUID]interface{})
 
 	for _, artifact := range build.Artifacts {
 		lookup[artifact.TargetID] = artifact
@@ -57,7 +57,7 @@ func NewMapFromBuildPlan(build *model.Build) ArtifactBuildPlanMap {
 		lookup[source.TargetID] = source
 	}
 
-	var terminalTargetIDs []string
+	var terminalTargetIDs []strfmt.UUID
 	for _, terminal := range build.Terminals {
 		terminalTargetIDs = append(terminalTargetIDs, terminal.TargetIDs...)
 	}
@@ -69,7 +69,7 @@ func NewMapFromBuildPlan(build *model.Build) ArtifactBuildPlanMap {
 	return res
 }
 
-func buildMap(baseID string, lookup map[string]interface{}, result ArtifactBuildPlanMap) {
+func buildMap(baseID strfmt.UUID, lookup map[strfmt.UUID]interface{}, result ArtifactBuildPlanMap) {
 	target := lookup[baseID]
 	artifact, ok := target.(*model.Artifact)
 	if !ok {
@@ -119,7 +119,7 @@ type SourceInfo struct {
 	Version   string
 }
 
-func GetSourceInfo(sourceID string, lookup map[string]interface{}) (SourceInfo, error) {
+func GetSourceInfo(sourceID strfmt.UUID, lookup map[strfmt.UUID]interface{}) (SourceInfo, error) {
 	source, ok := lookup[sourceID].(*model.Source)
 	if ok {
 		return SourceInfo{source.Name, source.Namespace, source.Version}, nil
@@ -127,7 +127,7 @@ func GetSourceInfo(sourceID string, lookup map[string]interface{}) (SourceInfo, 
 
 	step, ok := lookup[sourceID].(*model.Step)
 	if !ok {
-		return SourceInfo{}, locale.NewError("err_source_name_step", "Could not find step with generatedBy id {{.V0}}", sourceID)
+		return SourceInfo{}, locale.NewError("err_source_name_step", "Could not find step with generatedBy id {{.V0}}", sourceID.String())
 	}
 
 	for _, input := range step.Inputs {
@@ -137,7 +137,7 @@ func GetSourceInfo(sourceID string, lookup map[string]interface{}) (SourceInfo, 
 		for _, id := range input.TargetIDs {
 			source, ok := lookup[id].(*model.Source)
 			if !ok {
-				return SourceInfo{}, locale.NewError("err_source_name_source", "Could not find source with target id {{.V0}}", id)
+				return SourceInfo{}, locale.NewError("err_source_name_source", "Could not find source with target id {{.V0}}", id.String())
 			}
 			return SourceInfo{source.Name, source.Namespace, source.Version}, nil
 		}
@@ -145,7 +145,7 @@ func GetSourceInfo(sourceID string, lookup map[string]interface{}) (SourceInfo, 
 	return SourceInfo{}, locale.NewError("err_resolve_artifact_name", "Could not resolve artifact name")
 }
 
-func BuildRuntimeDependencies(depdendencyID string, lookup map[string]interface{}, result []strfmt.UUID) []strfmt.UUID {
+func BuildRuntimeDependencies(depdendencyID strfmt.UUID, lookup map[strfmt.UUID]interface{}, result []strfmt.UUID) []strfmt.UUID {
 	artifact, ok := lookup[depdendencyID].(*model.Artifact)
 	if !ok {
 		logging.Error("Incorrect target type for id %s", depdendencyID)

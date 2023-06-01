@@ -1,6 +1,10 @@
 package model
 
-import "encoding/json"
+import (
+	"encoding/json"
+
+	"github.com/go-openapi/strfmt"
+)
 
 const (
 	// BuildPlan statuses
@@ -65,14 +69,14 @@ type Project struct {
 type Commit struct {
 	Type     string          `json:"__typename"`
 	Script   json.RawMessage `json:"script"`
-	CommitID string          `json:"commitId"`
+	CommitID strfmt.UUID     `json:"commitId"`
 	Build    *Build          `json:"build"`
 	*NotFoundError
 }
 
 type Build struct {
 	Type        string         `json:"__typename"`
-	BuildPlanID string         `json:"buildPlanID"`
+	BuildPlanID strfmt.UUID    `json:"buildPlanID"`
 	Status      string         `json:"status"`
 	Terminals   []*NamedTarget `json:"terminals"`
 	Artifacts   []*Artifact    `json:"artifacts"`
@@ -83,26 +87,26 @@ type Build struct {
 }
 
 type BuildLogID struct {
-	ID         string `json:"id"`
-	Type       string `json:"type"`
-	PlatformID string `json:"platformID"`
+	ID         string      `json:"id"`
+	Type       string      `json:"type"`
+	PlatformID strfmt.UUID `json:"platformID"`
 }
 
 type NamedTarget struct {
-	Tag       string   `json:"tag"`
-	TargetIDs []string `json:"targetIDs"`
+	Tag       string        `json:"tag"`
+	TargetIDs []strfmt.UUID `json:"targetIDs"`
 }
 
 type Artifact struct {
-	Type                string   `json:"__typename"`
-	TargetID            string   `json:"targetID"`
-	MimeType            string   `json:"mimeType"`
-	GeneratedBy         string   `json:"generatedBy"`
-	RuntimeDependencies []string `json:"runtimeDependencies"`
-	Status              string   `json:"status"`
-	URL                 string   `json:"url"`
-	LogURL              string   `json:"logURL"`
-	Checksum            string   `json:"checksum"`
+	Type                string        `json:"__typename"`
+	TargetID            strfmt.UUID   `json:"targetID"`
+	MimeType            string        `json:"mimeType"`
+	GeneratedBy         strfmt.UUID   `json:"generatedBy"`
+	RuntimeDependencies []strfmt.UUID `json:"runtimeDependencies"`
+	Status              string        `json:"status"`
+	URL                 string        `json:"url"`
+	LogURL              string        `json:"logURL"`
+	Checksum            string        `json:"checksum"`
 
 	// Error fields
 	Errors      []string `json:"errors"`
@@ -111,16 +115,16 @@ type Artifact struct {
 }
 
 type Step struct {
-	TargetID string         `json:"targetID"`
+	TargetID strfmt.UUID    `json:"targetID"`
 	Inputs   []*NamedTarget `json:"inputs"`
 	Outputs  []string       `json:"outputs"`
 }
 
 type Source struct {
-	TargetID  string `json:"targetID"`
-	Name      string `json:"name"`
-	Namespace string `json:"namespace"`
-	Version   string `json:"version"`
+	TargetID  strfmt.UUID `json:"targetID"`
+	Name      string      `json:"name"`
+	Namespace string      `json:"namespace"`
+	Version   string      `json:"version"`
 }
 
 type PlanningError struct {

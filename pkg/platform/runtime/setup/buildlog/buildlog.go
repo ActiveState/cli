@@ -304,7 +304,7 @@ func resolveArtifactName(artifactID artifact.ArtifactID, artifactMap artifact.Ar
 }
 
 func addBuildArtifacts(artifactMap artifact.ArtifactBuildPlanMap, build *bpModel.Build) {
-	lookup := make(map[string]interface{})
+	lookup := make(map[strfmt.UUID]interface{})
 
 	for _, artifact := range build.Artifacts {
 		lookup[artifact.TargetID] = artifact
