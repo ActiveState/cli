@@ -1,8 +1,6 @@
 package model
 
 import (
-	"encoding/json"
-	"fmt"
 	"path/filepath"
 	"reflect"
 	"testing"
@@ -330,9 +328,6 @@ func TestBuildExpression_Update(t *testing.T) {
 				return
 			}
 
-			data, err = json.MarshalIndent(bx.expression, "", "  ")
-			assert.NoError(t, err)
-			fmt.Println("got", string(data))
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("BuildExpression.Requirements() = %v, want %v", got, tt.want)
 			}

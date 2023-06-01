@@ -229,7 +229,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 
 	orderChanged := !hasParentCommit
 	if hasParentCommit {
-		revertCommit, err := model.GetRevertCommit(pj.CommitUUID(), strfmt.UUID(commitID))
+		revertCommit, err := model.GetRevertCommit(pj.CommitUUID(), commitID)
 		if err != nil {
 			return locale.WrapError(err, "err_revert_refresh")
 		}
@@ -259,7 +259,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 	}
 
 	if orderChanged {
-		if err := pj.SetCommit(commitID); err != nil {
+		if err := pj.SetCommit(commitID.String()); err != nil {
 			return locale.WrapError(err, "err_package_update_pjfile")
 		}
 	}

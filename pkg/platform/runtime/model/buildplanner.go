@@ -236,7 +236,7 @@ type StateCommitParams struct {
 	Operation        model.Operation
 }
 
-func (bp *BuildPlanner) StageCommit(params StateCommitParams) (string, error) {
+func (bp *BuildPlanner) StageCommit(params StateCommitParams) (strfmt.UUID, error) {
 	var err error
 	script, err := bp.GetBuildExpression(params.Owner, params.Project, params.ParentCommit)
 	if err != nil {
@@ -275,10 +275,10 @@ func (bp *BuildPlanner) StageCommit(params StateCommitParams) (string, error) {
 			return "", errs.Wrap(err, "failed to fetch build result")
 		}
 
-		return buildResult.CommitID.String(), nil
+		return buildResult.CommitID, nil
 	}
 
-	return resp.Commit.CommitID, nil
+	return strfmt.UUID(resp.Commit.CommitID), nil
 }
 
 func (bp *BuildPlanner) GetBuildExpression(owner, project, commitID string) (*model.BuildExpression, error) {
