@@ -51,7 +51,7 @@ func (suite *ShowIntegrationTestSuite) TestShow_VSCode() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	suite.PrepareActiveStateYAML(ts)
+	suite.PrepareProject(ts)
 
 	cp := ts.Spawn(
 		"--output", "editor",

@@ -22,7 +22,7 @@ func (suite *ShowIntegrationTestSuite) TestShow() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	suite.PrepareActiveStateYAML(ts)
+	suite.PrepareProject(ts)
 
 	cp := ts.SpawnWithOpts(
 		e2e.WithArgs("activate"),
@@ -74,7 +74,7 @@ func (suite *ShowIntegrationTestSuite) TestShowWithoutBranch() {
 	suite.Contains(string(contents), "branch="+constants.DefaultBranchName)
 }
 
-func (suite *ShowIntegrationTestSuite) PrepareActiveStateYAML(ts *e2e.Session) {
+func (suite *ShowIntegrationTestSuite) PrepareProject(ts *e2e.Session) {
 	asyData := strings.TrimSpace(`
 project: "https://platform.activestate.com/cli-integration-tests/Show?branch=main"
 constants:
@@ -97,6 +97,7 @@ scripts:
 `)
 
 	ts.PrepareActiveStateYAML(asyData)
+	ts.PrepareCommitIdFile("d5d84598-fc2e-4a45-b075-a845e587b5bf")
 }
 
 func (suite *ShowIntegrationTestSuite) TestJSON() {

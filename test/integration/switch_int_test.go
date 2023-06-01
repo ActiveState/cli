@@ -47,7 +47,7 @@ func (suite *SwitchIntegrationTestSuite) TestSwitch_Branch() {
 	commitID, err := localcommit.Get(ts.Dirs.Work)
 	suite.Require().NoError(err)
 	suite.Require().NotEqual(mainBranchCommitID, commitID, "commitID was not updated after switching branches")
-	suite.Require().NotEqual("secondbranch", pjfile.BranchName(), "branch was not updated after switching branches")
+	suite.Require().Equal("secondbranch", pjfile.BranchName(), "branch was not updated after switching branches")
 }
 
 func (suite *SwitchIntegrationTestSuite) TestSwitch_CommitID() {
