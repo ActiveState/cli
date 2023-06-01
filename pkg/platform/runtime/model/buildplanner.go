@@ -11,6 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/gqlclient"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/pkg/platform/api"
 	model "github.com/ActiveState/cli/pkg/platform/api/graphql/model/buildplanner"
 	"github.com/ActiveState/cli/pkg/platform/api/graphql/request"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -65,10 +66,7 @@ type BuildPlanner struct {
 }
 
 func NewBuildPlanner(auth *authentication.Auth) *BuildPlanner {
-	bpURL := constants.APIBuildPlannerURL
-	if url, ok := os.LookupEnv("_TEST_BUILDPLAN_URL"); ok {
-		bpURL = url
-	}
+	bpURL := api.GetServiceURL(api.ServiceBuildPlanner).String()
 	logging.Debug("Using build planner at: %s", bpURL)
 
 	client := gqlclient.NewWithOpts(bpURL, 0, graphql.WithHTTPClient(&http.Client{}))
