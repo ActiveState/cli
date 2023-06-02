@@ -139,12 +139,12 @@ func New(target Targeter, eventHandler events.Handler, auth *authentication.Auth
 }
 
 // NewWithModel returns a new Setup instance with a customized model eg., for testing purposes
-func NewWithModel(target Targeter, eventHandler events.Handler, model ModelProvider, a *authentication.Auth, an analytics.Dispatcher) *Setup {
+func NewWithModel(target Targeter, eventHandler events.Handler, model ModelProvider, auth *authentication.Auth, an analytics.Dispatcher) *Setup {
 	cache, err := artifactcache.New()
 	if err != nil {
 		multilog.Error("Could not create artifact cache: %v", err)
 	}
-	return &Setup{model, a, target, eventHandler, store.New(target.Dir()), an, cache}
+	return &Setup{model, auth, target, eventHandler, store.New(target.Dir()), an, cache}
 }
 
 // Update installs the runtime locally (or updates it if it's already partially installed)
@@ -344,7 +344,7 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 
 	// If some artifacts were already build then we can detect whether they need to be installed ahead of time
 	// Note there may still be more noop artifacts, but we won't know until they have finished building.
-	noopArtifacts := map[string]struct{}{}
+	noopArtifacts := map[strfmt.UUID]struct{}{}
 	for _, prebuiltArtf := range buildResult.Build.Artifacts {
 		if prebuiltArtf.TargetID != "" && prebuiltArtf.Status != "" &&
 			prebuiltArtf.Status == bpModel.ArtifactSucceeded &&
@@ -359,7 +359,7 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 	// link the artifacts to the ingredient. This will be solved by buildplans.
 	installableArtifacts := artifact.FilterInstallable(artifacts)
 	for id := range installableArtifacts {
-		if _, noop := noopArtifacts[id.String()]; noop {
+		if _, noop := noopArtifacts[id]; noop {
 			delete(installableArtifacts, id)
 		}
 	}
@@ -455,7 +455,7 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 	} else {
 		// If the build is not yet complete then we have to speculate as to the artifacts that will be installed.
 		// The actual number of installable artifacts may be lower than what we have here, we can only do a best effort.
-		for _, a := range artifacts {
+		for _, a := range installableArtifacts {
 			if _, alreadyInstalled := alreadyInstalled[a.ArtifactID]; !alreadyInstalled {
 				artifactsToInstall = append(artifactsToInstall, a.ArtifactID)
 			}
@@ -732,12 +732,7 @@ func (s *Setup) downloadArtifact(a artifact.ArtifactDownload, targetFile string)
 		return errs.Wrap(err, "Could not parse artifact URL %s.", a.UnsignedURI)
 	}
 
-	req, err := httputil.NewRequest(artifactURL.String())
-	if err != nil {
-		return errs.Wrap(err, "Could not create artifact download request for %s.", artifactURL.String())
-	}
-
-	b, err := httputil.GetWithProgress(req, &progress.Report{
+	b, err := httputil.GetWithProgress(artifactURL.String(), &progress.Report{
 		ReportSizeCb: func(size int) error {
 			if err := s.eventHandler.Handle(events.ArtifactDownloadStarted{a.ArtifactID, size}); err != nil {
 				return errs.Wrap(err, "Could not handle ArtifactDownloadStarted event")
@@ -848,8 +843,8 @@ func reusableArtifacts(requestedArtifacts []*bpModel.Artifact, storedArtifacts s
 	keep := make(store.StoredArtifactMap)
 
 	for _, a := range requestedArtifacts {
-		if v, ok := storedArtifacts[strfmt.UUID(a.TargetID)]; ok {
-			keep[strfmt.UUID(a.TargetID)] = v
+		if v, ok := storedArtifacts[a.TargetID]; ok {
+			keep[a.TargetID] = v
 		}
 	}
 	return keep

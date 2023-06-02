@@ -10,6 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/gqlclient"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/pkg/platform/api"
 	model "github.com/ActiveState/cli/pkg/platform/api/graphql/model/buildplanner"
 	"github.com/ActiveState/cli/pkg/platform/api/graphql/request"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -17,6 +18,11 @@ import (
 	"github.com/ActiveState/cli/pkg/sysinfo"
 	"github.com/go-openapi/strfmt"
 	"github.com/machinebox/graphql"
+)
+
+const (
+	pollInterval = 1 * time.Second
+	pollTimeout  = 30 * time.Second
 )
 
 // HostPlatform stores a reference to current platform
@@ -58,10 +64,7 @@ type BuildPlanner struct {
 }
 
 func NewBuildPlanner(auth *authentication.Auth) *BuildPlanner {
-	bpURL := constants.APIBuildPlannerURL
-	if url, ok := os.LookupEnv("_TEST_BUILDPLAN_URL"); ok {
-		bpURL = url
-	}
+	bpURL := api.GetServiceURL(api.ServiceBuildPlanner).String()
 	logging.Debug("Using build planner at: %s", bpURL)
 
 	client := gqlclient.NewWithOpts(bpURL, 0, graphql.WithHTTPClient(&http.Client{}))
@@ -105,6 +108,13 @@ func (bp *BuildPlanner) FetchBuildResult(commitID strfmt.UUID, owner, project st
 		}
 	}
 
+	if resp.Project.Commit.Build.Status == model.Planning {
+		resp, err = bp.pollBuildPlan(owner, project, commitID.String())
+		if err != nil {
+			return nil, errs.Wrap(err, "failed to poll build plan")
+		}
+	}
+
 	// The type aliasing in the query populates the
 	// response with emtpy targets that we should remove
 	removeEmptyTargets(resp)
@@ -142,15 +152,17 @@ func (bp *BuildPlanner) FetchBuildResult(commitID strfmt.UUID, owner, project st
 	}
 
 	res := BuildResult{
-		BuildEngine:     buildEngine,
-		Build:           resp.Project.Commit.Build,
-		BuildReady:      resp.Project.Commit.Build.Status == model.Ready,
-		BuildExpression: resp.Project.Commit.Script,
+		BuildEngine: buildEngine,
+		Build:       resp.Project.Commit.Build,
+		BuildReady:  resp.Project.Commit.Build.Status == model.Ready,
+		CommitID:    strfmt.UUID(resp.Project.Commit.CommitID),
 	}
 
-	// If the build is alternative the buildLogID type will identify it as a recipe ID.
-	// The other buildLogID type is for camel builds which we don't use for builds in progress.
-	// There should one be one build log ID for alternative builds.
+	// We want to extract the recipe ID from the BuildLogIDs.
+	// We do this because if the build is in progress we will need to reciepe ID to
+	// initialize the build log streamer.
+	// For camel builds the ID type will not be BuildLogRecipeID but this is okay
+	// because the state tool does not display in progress information for camel builds.
 	for _, id := range resp.Project.Commit.Build.BuildLogIDs {
 		if id.Type == model.BuildLogRecipeID {
 			if res.RecipeID != "" {
@@ -161,6 +173,25 @@ func (bp *BuildPlanner) FetchBuildResult(commitID strfmt.UUID, owner, project st
 	}
 
 	return &res, nil
+}
+
+func (bp *BuildPlanner) pollBuildPlan(owner, project, commitID string) (*model.BuildPlan, error) {
+	var resp *model.BuildPlan
+	ticker := time.NewTicker(pollInterval)
+	for {
+		select {
+		case <-ticker.C:
+			err := bp.client.Run(request.BuildPlan(owner, project, commitID), resp)
+			if err != nil {
+				return nil, errs.Wrap(err, "failed to fetch build plan")
+			}
+			if resp.Project.Commit.Build.Status != model.Planning {
+				return resp, nil
+			}
+		case <-time.After(pollTimeout):
+			return nil, locale.NewError("err_buildplanner_timeout", "Timed out waiting for build plan")
+		}
+	}
 }
 
 func removeEmptyTargets(bp *model.BuildPlan) {
@@ -193,34 +224,64 @@ func removeEmptyTargets(bp *model.BuildPlan) {
 	bp.Project.Commit.Build.Artifacts = artifacts
 }
 
-type PushCommitParams struct {
-	Owner           string
-	Project         string
-	ParentCommit    string
-	Description     string
-	BranchRef       string
-	BuildExpression *model.BuildScript
+type StateCommitParams struct {
+	Owner            string
+	Project          string
+	ParentCommit     string
+	PackageName      string
+	PackageVersion   string
+	PackageNamespace vcsModel.Namespace
+	Operation        model.Operation
 }
 
-func (bp *BuildPlanner) PushCommit(params PushCommitParams) (*model.Commit, error) {
-	// With the updated build graph call the push commit mutation
-	request := request.PushCommit(params.Owner, params.Project, params.ParentCommit, params.BranchRef, params.Description, params.BuildExpression)
-	resp := &model.PushCommitResult{}
-	err := bp.client.Run(request, resp)
+func (bp *BuildPlanner) StageCommit(params StateCommitParams) (strfmt.UUID, error) {
+	var err error
+	script, err := bp.GetBuildExpression(params.Owner, params.Project, params.ParentCommit)
+	if err != nil {
+		return "", errs.Wrap(err, "Failed to get build graph")
+	}
+
+	requirement := model.Requirement{
+		Namespace: params.PackageNamespace.String(),
+		Name:      params.PackageName,
+	}
+
+	if params.PackageVersion != "" {
+		requirement.VersionRequirement = []model.VersionRequirement{{model.ComparatorEQ: params.PackageVersion}}
+	}
+
+	err = script.Update(params.Operation, requirement)
+	if err != nil {
+		return "", errs.Wrap(err, "Failed to update build graph")
+	}
+
+	// With the updated build expression call the stage commit mutation
+	request := request.StageCommit(params.Owner, params.Project, params.ParentCommit, script)
+	resp := &model.StageCommitResult{}
+	err = bp.client.Run(request, resp)
 	if err != nil {
 		return nil, errs.Wrap(err, "failed to fetch build plan")
 	}
 
-	if resp.Commit.Type == model.NotFound {
-		return nil, errs.New("Commit not found: %s", resp.Commit.Message)
+	if resp.NotFoundError != nil {
+		return "", errs.New("Commit not found: %s", resp.NotFoundError.Message)
 	}
 
-	return resp.Commit, nil
+	if resp.Commit.Build.Status == model.Planning {
+		buildResult, err := bp.FetchBuildResult(strfmt.UUID(resp.Commit.CommitID), params.Owner, params.Project)
+		if err != nil {
+			return "", errs.Wrap(err, "failed to fetch build result")
+		}
+
+		return buildResult.CommitID, nil
+	}
+
+	return strfmt.UUID(resp.Commit.CommitID), nil
 }
 
-func (bp *BuildPlanner) GetBuildScript(owner, project, commitID string) (*model.BuildScript, error) {
+func (bp *BuildPlanner) GetBuildExpression(owner, project, commitID string) (*model.BuildExpression, error) {
 	resp := &model.BuildPlan{}
-	err := bp.client.Run(request.BuildScript(owner, project, commitID), resp)
+	err := bp.client.Run(request.BuildExpression(owner, project, commitID), resp)
 	if err != nil {
 		return nil, errs.Wrap(err, "failed to fetch build graph")
 	}
@@ -232,5 +293,10 @@ func (bp *BuildPlanner) GetBuildScript(owner, project, commitID string) (*model.
 		return nil, errs.New("Commit not found: %s", resp.Project.Commit.Message)
 	}
 
-	return resp.Project.Commit.Script, nil
+	expression, err := model.NewBuildExpression(resp.Project.Commit.Script)
+	if err != nil {
+		return nil, errs.Wrap(err, "failed to parse build expression")
+	}
+
+	return expression, nil
 }

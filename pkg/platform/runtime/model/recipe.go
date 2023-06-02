@@ -44,6 +44,7 @@ func (m *Recipe) SignS3URL(uri *url.URL) (*url.URL, error) {
 type BuildResult struct {
 	BuildEngine         BuildEngine
 	RecipeID            strfmt.UUID
+	CommitID            strfmt.UUID
 	Build               *bpModel.Build
 	BuildStatusResponse *headchef_models.V1BuildStatusResponse
 	BuildStatus         headchef.BuildStatusEnum
