@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
@@ -15,6 +16,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/graphql/request"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	platformModel "github.com/ActiveState/cli/pkg/platform/model"
+	vcsModel "github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/sysinfo"
 	"github.com/go-openapi/strfmt"
 	"github.com/machinebox/graphql"
@@ -225,42 +227,48 @@ func removeEmptyTargets(bp *model.BuildPlan) {
 }
 
 type StateCommitParams struct {
-	Owner            string
-	Project          string
-	ParentCommit     string
+	Owner        string
+	Project      string
+	ParentCommit string
+	// Commits can have either an operation (e.g. installing a package)...
 	PackageName      string
 	PackageVersion   string
 	PackageNamespace vcsModel.Namespace
 	Operation        model.Operation
+	// ... or a script (e.g. from pull).
+	Script *model.BuildExpression
 }
 
 func (bp *BuildPlanner) StageCommit(params StateCommitParams) (strfmt.UUID, error) {
-	var err error
-	script, err := bp.GetBuildExpression(params.Owner, params.Project, params.ParentCommit)
-	if err != nil {
-		return "", errs.Wrap(err, "Failed to get build graph")
-	}
+	script := params.Script
+	if script == nil {
+		var err error
+		script, err = bp.GetBuildExpression(params.Owner, params.Project, params.ParentCommit)
+		if err != nil {
+			return "", errs.Wrap(err, "Failed to get build graph")
+		}
 
-	requirement := model.Requirement{
-		Namespace: params.PackageNamespace.String(),
-		Name:      params.PackageName,
-	}
+		requirement := model.Requirement{
+			Namespace: params.PackageNamespace.String(),
+			Name:      params.PackageName,
+		}
 
-	if params.PackageVersion != "" {
-		requirement.VersionRequirement = []model.VersionRequirement{{model.ComparatorEQ: params.PackageVersion}}
-	}
+		if params.PackageVersion != "" {
+			requirement.VersionRequirement = []model.VersionRequirement{{model.ComparatorEQ: params.PackageVersion}}
+		}
 
-	err = script.Update(params.Operation, requirement)
-	if err != nil {
-		return "", errs.Wrap(err, "Failed to update build graph")
+		err = script.Update(params.Operation, requirement)
+		if err != nil {
+			return "", errs.Wrap(err, "Failed to update build graph")
+		}
 	}
 
 	// With the updated build expression call the stage commit mutation
 	request := request.StageCommit(params.Owner, params.Project, params.ParentCommit, script)
 	resp := &model.StageCommitResult{}
-	err = bp.client.Run(request, resp)
+	err := bp.client.Run(request, resp)
 	if err != nil {
-		return nil, errs.Wrap(err, "failed to fetch build plan")
+		return "", errs.Wrap(err, "failed to fetch build plan")
 	}
 
 	if resp.NotFoundError != nil {

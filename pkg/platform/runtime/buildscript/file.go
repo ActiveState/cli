@@ -33,7 +33,7 @@ func newScriptFromFile(path string) (*Script, error) {
 	return NewScript(data)
 }
 
-func UpdateOrCreate(dir string, newScript *model.BuildScript) error {
+func UpdateOrCreate(dir string, newScript *model.BuildExpression) error {
 	// If a build script exists, check to see if an update is needed.
 	script, err := NewScriptFromProjectDir(dir)
 	if err != nil && !IsDoesNotExistError(err) {

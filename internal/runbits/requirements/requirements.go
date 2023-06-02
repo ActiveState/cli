@@ -7,9 +7,6 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/analytics"
-	"github.com/go-openapi/strfmt"
-	"github.com/thoas/go-funk"
-
 	anaConsts "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/config"
@@ -33,6 +30,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
+	"github.com/thoas/go-funk"
 )
 
 type PackageVersion struct {
@@ -254,19 +252,23 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 	}
 
 	if exprChanged {
-		err := buildscript.UpdateOrCreate(pj.Dir(), commit.Script)
+		expr, err := bp.GetBuildExpression(pj.Owner(), pj.Name(), commitID.String())
+		if err != nil {
+			return errs.Wrap(err, "Could not get remote build expr")
+		}
+
+		err = buildscript.UpdateOrCreate(pj.Dir(), expr)
 		if err != nil {
 			return locale.WrapError(err, "err_update_build_script")
 		}
 
-	if orderChanged {
 		if err := pj.SetCommit(commitID.String()); err != nil {
 			return locale.WrapError(err, "err_package_update_pjfile")
 		}
 	}
 
 	// refresh or install runtime
-	err = runbits.RefreshRuntime(r.Auth, r.Output, r.Analytics, pj, strfmt.UUID(commit.CommitID), exprChanged, trigger, r.SvcModel)
+	err = runbits.RefreshRuntime(r.Auth, r.Output, r.Analytics, pj, commitID, exprChanged, trigger, r.SvcModel)
 	if err != nil {
 		return err
 	}
