@@ -20,6 +20,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/pkg/platform/api/buildlogstream"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 )
@@ -303,7 +304,7 @@ func resolveArtifactName(artifactID artifact.ArtifactID, artifactMap artifact.Ar
 }
 
 func addBuildArtifacts(artifactMap artifact.ArtifactBuildPlanMap, build *bpModel.Build) {
-	lookup := make(map[string]interface{})
+	lookup := make(map[strfmt.UUID]interface{})
 
 	for _, artifact := range build.Artifacts {
 		lookup[artifact.TargetID] = artifact
@@ -333,7 +334,7 @@ func addBuildArtifacts(artifactMap artifact.ArtifactBuildPlanMap, build *bpModel
 
 			info, err := artifact.GetSourceInfo(a.GeneratedBy, lookup)
 			if err != nil {
-				logging.Error("Could not resolve source information: %v", err)
+				multilog.Error("Could not resolve source information: %v", err)
 				return
 			}
 

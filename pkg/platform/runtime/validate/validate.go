@@ -100,7 +100,7 @@ func Attestation(attestationFile string) error {
 
 func addIntermediatesToPool(pool *x509.CertPool, cert *x509.Certificate) {
 	for _, url := range cert.IssuingCertificateURL {
-		bytes, err := httputil.GetDirectURL(url)
+		bytes, err := httputil.GetDirect(url)
 		if err != nil {
 			logging.Debug("Unable to download intermediate certificate %s: %v", url, err)
 			continue

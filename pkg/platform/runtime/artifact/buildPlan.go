@@ -5,6 +5,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/multilog"
 	model "github.com/ActiveState/cli/pkg/platform/api/graphql/model/buildplanner"
 	monomodel "github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/go-openapi/strfmt"
@@ -19,7 +20,7 @@ type ArtifactBuildPlan struct {
 	Version          *string
 	RequestedByOrder bool
 
-	GeneratedBy string
+	GeneratedBy strfmt.UUID
 
 	Dependencies []ArtifactID
 }
@@ -40,12 +41,13 @@ func (a ArtifactBuildPlan) NameWithVersion() string {
 }
 
 func NewMapFromBuildPlan(build *model.Build) ArtifactBuildPlanMap {
-	res := make(ArtifactBuildPlanMap)
 	if build == nil {
 		return nil
 	}
 
-	lookup := make(map[string]interface{})
+	res := make(ArtifactBuildPlanMap)
+
+	lookup := make(map[strfmt.UUID]interface{})
 
 	for _, artifact := range build.Artifacts {
 		lookup[artifact.TargetID] = artifact
@@ -57,7 +59,7 @@ func NewMapFromBuildPlan(build *model.Build) ArtifactBuildPlanMap {
 		lookup[source.TargetID] = source
 	}
 
-	var terminalTargetIDs []string
+	var terminalTargetIDs []strfmt.UUID
 	for _, terminal := range build.Terminals {
 		terminalTargetIDs = append(terminalTargetIDs, terminal.TargetIDs...)
 	}
@@ -69,11 +71,11 @@ func NewMapFromBuildPlan(build *model.Build) ArtifactBuildPlanMap {
 	return res
 }
 
-func buildMap(baseID string, lookup map[string]interface{}, result ArtifactBuildPlanMap) {
+func buildMap(baseID strfmt.UUID, lookup map[strfmt.UUID]interface{}, result ArtifactBuildPlanMap) {
 	target := lookup[baseID]
 	artifact, ok := target.(*model.Artifact)
 	if !ok {
-		logging.Error("Incorrect target type for id %s", baseID)
+		multilog.Error("Incorrect target type for id %s", baseID)
 		return
 	}
 
@@ -98,7 +100,7 @@ func buildMap(baseID string, lookup map[string]interface{}, result ArtifactBuild
 
 	info, err := GetSourceInfo(artifact.GeneratedBy, lookup)
 	if err != nil {
-		logging.Error("Could not resolve source information: %v", err)
+		multilog.Error("Could not resolve source information: %v", err)
 		return
 	}
 
@@ -119,7 +121,7 @@ type SourceInfo struct {
 	Version   string
 }
 
-func GetSourceInfo(sourceID string, lookup map[string]interface{}) (SourceInfo, error) {
+func GetSourceInfo(sourceID strfmt.UUID, lookup map[strfmt.UUID]interface{}) (SourceInfo, error) {
 	source, ok := lookup[sourceID].(*model.Source)
 	if ok {
 		return SourceInfo{source.Name, source.Namespace, source.Version}, nil
@@ -127,7 +129,7 @@ func GetSourceInfo(sourceID string, lookup map[string]interface{}) (SourceInfo, 
 
 	step, ok := lookup[sourceID].(*model.Step)
 	if !ok {
-		return SourceInfo{}, locale.NewError("err_source_name_step", "Could not find step with generatedBy id {{.V0}}", sourceID)
+		return SourceInfo{}, locale.NewError("err_source_name_step", "Could not find step with generatedBy id {{.V0}}", sourceID.String())
 	}
 
 	for _, input := range step.Inputs {
@@ -137,7 +139,7 @@ func GetSourceInfo(sourceID string, lookup map[string]interface{}) (SourceInfo, 
 		for _, id := range input.TargetIDs {
 			source, ok := lookup[id].(*model.Source)
 			if !ok {
-				return SourceInfo{}, locale.NewError("err_source_name_source", "Could not find source with target id {{.V0}}", id)
+				return SourceInfo{}, locale.NewError("err_source_name_source", "Could not find source with target id {{.V0}}", id.String())
 			}
 			return SourceInfo{source.Name, source.Namespace, source.Version}, nil
 		}
@@ -145,10 +147,10 @@ func GetSourceInfo(sourceID string, lookup map[string]interface{}) (SourceInfo, 
 	return SourceInfo{}, locale.NewError("err_resolve_artifact_name", "Could not resolve artifact name")
 }
 
-func BuildRuntimeDependencies(depdendencyID string, lookup map[string]interface{}, result []strfmt.UUID) []strfmt.UUID {
+func BuildRuntimeDependencies(depdendencyID strfmt.UUID, lookup map[strfmt.UUID]interface{}, result []strfmt.UUID) []strfmt.UUID {
 	artifact, ok := lookup[depdendencyID].(*model.Artifact)
 	if !ok {
-		logging.Error("Incorrect target type for id %s", depdendencyID)
+		multilog.Error("Incorrect target type for id %s", depdendencyID)
 	}
 
 	for _, depID := range artifact.RuntimeDependencies {
@@ -191,17 +193,13 @@ func RecursiveDependenciesFor(a ArtifactID, artifacts ArtifactBuildPlanMap) []Ar
 	return res
 }
 
-// NewNamedMapFromIDMap converts an ArtifactRecipeMap to a ArtifactNamedRecipeMap
-func NewNamedMapFromIDMap(am ArtifactBuildPlanMap) ArtifactNamedBuildPlanMap {
+func NewNamedMapFromBuildPlan(build *model.Build) ArtifactNamedBuildPlanMap {
+	am := NewMapFromBuildPlan(build)
 	res := make(map[string]ArtifactBuildPlan)
 	for _, a := range am {
 		res[a.Name] = a
 	}
 	return res
-}
-
-func NewNamedMapFromBuildPlan(build *model.Build) ArtifactNamedBuildPlanMap {
-	return NewNamedMapFromIDMap(NewMapFromBuildPlan(build))
 }
 
 func FilterInstallable(artifacts ArtifactBuildPlanMap) ArtifactBuildPlanMap {

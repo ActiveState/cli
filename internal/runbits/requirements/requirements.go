@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"strings"
-	"time"
 
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/go-openapi/strfmt"
@@ -24,13 +23,13 @@ import (
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/internal/runbits/rtusage"
-	bgModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model/buildplanner"
+	bpModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model/buildplanner"
 	medmodel "github.com/ActiveState/cli/pkg/platform/api/mediator/model"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/ActiveState/cli/pkg/platform/runtime/buildscript"
-	bpModel "github.com/ActiveState/cli/pkg/platform/runtime/model"
+	runtimeModel "github.com/ActiveState/cli/pkg/platform/runtime/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
@@ -82,7 +81,7 @@ func NewRequirementOperation(prime primeable) *RequirementOperation {
 
 const latestVersion = "latest"
 
-func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requirementVersion string, requirementBitWidth int, operation bgModel.Operation, nsType model.NamespaceType) (rerr error) {
+func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requirementVersion string, requirementBitWidth int, operation bpModel.Operation, nsType model.NamespaceType) (rerr error) {
 	var ns model.Namespace
 	var langVersion string
 	langName := "undetermined"
@@ -134,7 +133,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 
 	rtusage.PrintRuntimeUsage(r.SvcModel, out, pj.Owner())
 
-	var validatePkg = operation == bgModel.OperationAdd && (ns.Type() == model.NamespacePackage || ns.Type() == model.NamespaceBundle)
+	var validatePkg = operation == bpModel.OperationAdd && (ns.Type() == model.NamespacePackage || ns.Type() == model.NamespaceBundle)
 	if !ns.IsValid() && (nsType == model.NamespacePackage || nsType == model.NamespaceBundle) {
 		pg = output.StartSpinner(out, locale.Tl("progress_pkg_nolang", "", requirementName), constants.TerminalAnimationInterval)
 
@@ -193,13 +192,13 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 	pg = output.StartSpinner(out, locale.T("progress_commit"), constants.TerminalAnimationInterval)
 
 	// Check if this is an addition or an update
-	if operation == bgModel.OperationAdd && parentCommitID != "" {
+	if operation == bpModel.OperationAdd && parentCommitID != "" {
 		req, err := model.GetRequirement(parentCommitID, ns, requirementName)
 		if err != nil {
 			return errs.Wrap(err, "Could not get requirement")
 		}
 		if req != nil {
-			operation = bgModel.OperationUpdate
+			operation = bpModel.OperationUpdate
 		}
 	}
 
@@ -215,40 +214,15 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 		}
 	}
 
-	bp := bpModel.NewBuildPlanner(r.Auth)
-
-	// If parent commit is provided then get the build expression
-	// If it is not then create a blank build expression
-	expr := bgModel.NewBuildScript()
-	if parentCommitID != "" {
-		expr, err = bp.GetBuildScript(pj.Owner(), pj.Name(), parentCommitID.String())
-		if err != nil {
-			return errs.Wrap(err, "Failed to get build expression")
-		}
-	}
-
-	requirement := bgModel.Requirement{
-		Namespace: ns.String(),
-		Name:      requirementName,
-	}
-	if requirementVersion != "" {
-		requirement.VersionRequirement = []*bgModel.VersionRequirement{{bgModel.ComparatorEQ: requirementVersion}}
-	}
-
-	// Call the build expression update function with the operation
-	expr, err = expr.Update(operation, []*bgModel.Requirement{&requirement})
-	if err != nil {
-		return errs.Wrap(err, "Failed to update build expression")
-	}
-	expr.Let.Runtime.SolveLegacy.AtTime = time.Now().Format(time.RFC3339)
-
-	commit, err := bp.PushCommit(bpModel.PushCommitParams{
-		Owner:           pj.Owner(),
-		Project:         pj.Name(),
-		ParentCommit:    string(parentCommitID),
-		BranchRef:       pj.BranchName(),
-		BuildExpression: expr,
-		Description:     fmt.Sprintf("%s-%s", operation, requirementName),
+	bp := runtimeModel.NewBuildPlanner(r.Auth)
+	commitID, err := bp.StageCommit(runtimeModel.StateCommitParams{
+		Owner:            pj.Owner(),
+		Project:          pj.Name(),
+		ParentCommit:     string(parentCommitID),
+		PackageName:      requirementName,
+		PackageVersion:   requirementVersion,
+		PackageNamespace: ns,
+		Operation:        operation,
 	})
 	if err != nil {
 		return locale.WrapError(err, "err_package_save_and_build", "Could not save and build project")
@@ -256,7 +230,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 
 	exprChanged := !hasParentCommit
 	if hasParentCommit {
-		revertCommit, err := model.GetRevertCommit(pj.CommitUUID(), strfmt.UUID(commit.CommitID))
+		revertCommit, err := model.GetRevertCommit(pj.CommitUUID(), commitID)
 		if err != nil {
 			return locale.WrapError(err, "err_revert_refresh")
 		}
@@ -285,7 +259,8 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 			return locale.WrapError(err, "err_update_build_script")
 		}
 
-		if err := pj.SetCommit(commit.CommitID); err != nil {
+	if orderChanged {
+		if err := pj.SetCommit(commitID.String()); err != nil {
 			return locale.WrapError(err, "err_package_update_pjfile")
 		}
 	}

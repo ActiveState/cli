@@ -46,7 +46,7 @@ func NewDownloadsFromBuildPlan(build bpModel.Build, artifacts map[strfmt.UUID]Ar
 	var downloads []ArtifactDownload
 	for id := range artifacts {
 		for _, a := range build.Artifacts {
-			if a.Status == string(bpModel.ArtifactSucceeded) && a.TargetID == id.String() && a.URL != "" {
+			if a.Status == string(bpModel.ArtifactSucceeded) && a.TargetID == id && a.URL != "" {
 				if strings.Contains(a.URL, InstallerTestsSubstr) {
 					continue
 				}
@@ -89,7 +89,7 @@ func NewDownloadsFromCamelBuild(buildStatus *headchef_models.V1BuildStatusRespon
 func NewDownloadsFromCamelBuildPlan(build bpModel.Build, artifacts map[strfmt.UUID]ArtifactBuildPlan) ([]ArtifactDownload, error) {
 	for id := range artifacts {
 		for _, a := range build.Artifacts {
-			if a.Status == string(bpModel.ArtifactSucceeded) && a.TargetID == id.String() && a.URL != "" {
+			if a.Status == string(bpModel.ArtifactSucceeded) && a.TargetID == id && a.URL != "" {
 				if strings.Contains(a.URL, InstallerTestsSubstr) {
 					continue
 				}

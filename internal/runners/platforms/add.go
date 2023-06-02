@@ -5,7 +5,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runbits/requirements"
-	bgModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model/buildplanner"
+	bpModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model/buildplanner"
 	"github.com/ActiveState/cli/pkg/platform/model"
 )
 
@@ -53,7 +53,7 @@ func (a *Add) Run(ps AddRunParams) error {
 		params.name,
 		params.version,
 		params.BitWidth,
-		bgModel.OperationAdd,
+		bpModel.OperationAdd,
 		model.NamespacePlatform,
 	); err != nil {
 		return locale.WrapError(err, "err_add_platform", "Could not add platform.")
