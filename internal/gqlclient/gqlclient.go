@@ -49,7 +49,8 @@ type Header map[string][]string
 
 type graphqlClient = graphql.Client
 
-// Work around API's that don't follow the graphql standard
+// StandardizedErrors works around API's that don't follow the graphql standard
+// It looks redundant because it needs to address two different API responses.
 // https://activestatef.atlassian.net/browse/PB-4291
 type StandardizedErrors struct {
 	Message string
@@ -61,6 +62,8 @@ func (e StandardizedErrors) HasErrors() bool {
 	return len(e.Errors) > 0 || e.Error != ""
 }
 
+// Values tells us all the relevant error messages returned.
+// We don't include e.Error because it's an unhelpful generic error code redundant with the message.
 func (e StandardizedErrors) Values() []string {
 	var errs []string
 	for _, err := range e.Errors {
