@@ -3,10 +3,16 @@ package captain
 import (
 	"fmt"
 	"strings"
+	"time"
 
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/rtutils/p"
 )
 
+// NameVersionFlag represents a flag that supports both a name and a version, the following formats are supported:
+// - name
+// - name@version
 type NameVersionFlag struct {
 	name    string
 	version string
@@ -91,6 +97,7 @@ func (u *UserFlag) Type() string {
 	return "User"
 }
 
+// UsersFlag is used to represent multiple UserFlag, this is used when a flag can be passed multiple times.
 type UsersFlag []UserFlag
 
 var _ FlagMarshaler = &UsersFlag{}
@@ -116,8 +123,9 @@ func (u *UsersFlag) Type() string {
 	return "Users"
 }
 
-// PackageFlag represents a flag that supports specifying a package in the following format:
-// <namsepace>/<name>@<version>
+// PackageFlag represents a flag that supports specifying a package in the following formats:
+// - <namespace>/<name>
+// - <namespace>/<name>@<version>
 type PackageFlag struct {
 	Namespace string
 	Name      string
@@ -126,36 +134,80 @@ type PackageFlag struct {
 
 var _ FlagMarshaler = &PackageFlag{}
 
-func (u *PackageFlag) String() string {
-	if u.Namespace == "" && u.Name == "" {
+func (p *PackageFlag) String() string {
+	if p.Namespace == "" && p.Name == "" {
 		return ""
 	}
-	if u.Version == "" {
-		return fmt.Sprintf("%s/%s", u.Namespace, u.Name)
+	name := p.Name
+	if p.Namespace != "" {
+		name = fmt.Sprintf("%s/%s", p.Namespace, p.Name)
 	}
-	return fmt.Sprintf("%s/%s@%s", u.Namespace, u.Name, u.Version)
+	if p.Version == "" {
+		return name
+	}
+	return fmt.Sprintf("%s@%s", name, p.Version)
 }
 
-func (u *PackageFlag) Set(s string) error {
+func (p *PackageFlag) Set(s string) error {
 	if strings.Contains(s, "@") {
 		v := strings.Split(s, "@")
-		u.Version = strings.TrimSpace(v[1])
+		p.Version = strings.TrimSpace(v[1])
 		s = v[0]
 	}
 	if strings.Index(s, "/") == -1 {
-		return fmt.Errorf("invalid package name format: %s (expected '<namespace>/<name>[@version]')", s)
+		p.Name = strings.TrimSpace(s)
+		return nil
 	}
 	v := strings.Split(s, "/")
-	u.Namespace = strings.TrimSpace(strings.Join(v[0:len(v)-1], "/"))
-	u.Name = strings.TrimSpace(v[len(v)-1])
+	p.Namespace = strings.TrimSpace(strings.Join(v[0:len(v)-1], "/"))
+	p.Name = strings.TrimSpace(v[len(v)-1])
 	return nil
 }
 
-func (u *PackageFlag) Type() string {
+func (p *PackageFlag) Type() string {
 	return "Package"
 }
 
-type PackagesFlag []PackageFlag
+// PackageFlagNoVersion is identical to PackageFlag except that it does not support a version.
+type PackageFlagNoVersion struct {
+	PackageFlag
+}
+
+func (p *PackageFlagNoVersion) Set(s string) error {
+	if err := p.PackageFlag.Set(s); err != nil {
+		return errs.Wrap(err, "PackageFlag.Set failed")
+	}
+	if p.Version != "" {
+		return fmt.Errorf("Specifying a version is not supported, package format should be '[<namespace>/]<name>'", s)
+	}
+	return nil
+}
+
+func (p *PackageFlagNoVersion) Type() string {
+	return "PackageFlagNoVersion"
+}
+
+// PackageFlagNSRequired is identical to PackageFlag except that specifying a namespace is required.
+type PackageFlagNSRequired struct {
+	PackageFlag
+}
+
+func (p *PackageFlagNSRequired) Set(s string) error {
+	if err := p.PackageFlag.Set(s); err != nil {
+		return errs.Wrap(err, "PackageFlag.Set failed")
+	}
+	if p.Namespace == "" {
+		return fmt.Errorf("invalid package name format: %s (expected '<namespace>/<name>[@version]')", s)
+	}
+	return nil
+}
+
+func (p *PackageFlagNSRequired) Type() string {
+	return "PackageFlagNSRequired"
+}
+
+// PackagesFlag is used to represent multiple PackageFlag, this is used when a flag can be passed multiple times.
+type PackagesFlag []PackageFlagNSRequired
 
 var _ FlagMarshaler = &PackagesFlag{}
 
@@ -168,7 +220,7 @@ func (p *PackagesFlag) String() string {
 }
 
 func (p *PackagesFlag) Set(s string) error {
-	pf := &PackageFlag{}
+	pf := &PackageFlagNSRequired{}
 	if err := pf.Set(s); err != nil {
 		return err
 	}
@@ -178,4 +230,33 @@ func (p *PackagesFlag) Set(s string) error {
 
 func (p *PackagesFlag) Type() string {
 	return "Packages"
+}
+
+type TimeFlag struct {
+	raw  string
+	Time *time.Time
+}
+
+var _ FlagMarshaler = &TimeFlag{}
+
+func (u *TimeFlag) String() string {
+	return u.raw
+}
+
+func (u *TimeFlag) Set(v string) error {
+	if v == "now" {
+		u.Time = p.Pointer(time.Now())
+	} else {
+		u.raw = v
+		tsv, err := time.Parse(time.RFC3339, v)
+		if err != nil {
+			return locale.WrapInputError(err, "timeflag_format", "Invalid timestamp: Should be RFC3339 formatted.")
+		}
+		u.Time = &tsv
+	}
+	return nil
+}
+
+func (u *TimeFlag) Type() string {
+	return "TimeFlag"
 }

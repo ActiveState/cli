@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-	"time"
 
+	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -16,11 +16,10 @@ import (
 
 // SearchRunParams tracks the info required for running search.
 type SearchRunParams struct {
-	Language  string
-	ExactTerm bool
-	Name      string
-	Namespace project.Namespaced
-	Timestamp string
+	Language   string
+	ExactTerm  bool
+	Ingredient captain.PackageFlagNoVersion
+	Timestamp  captain.TimeFlag
 }
 
 // Search manages the searching execution context.
@@ -47,36 +46,22 @@ func (s *Search) Run(params SearchRunParams, nstype model.NamespaceType) error {
 	}
 
 	ns := model.NewNamespacePkgOrBundle(language, nstype)
-	if params.Namespace.IsValid() {
-		ns = model.NewRawNamespace(params.Namespace.String())
-	}
-
-	var ts *time.Time
-	if params.Timestamp != "" {
-		if params.Timestamp == "now" {
-			tsv := time.Now()
-			ts = &tsv
-		} else {
-			tsv, err := time.Parse(time.RFC3339, params.Timestamp)
-			if err != nil {
-				return locale.WrapInputError(err, "err_invalid_timestamp", "Timestamp should be either 'now' or RFC3339 formatted timestamp.")
-			}
-			ts = &tsv
-		}
+	if params.Ingredient.Namespace != "" {
+		ns = model.NewRawNamespace(params.Ingredient.Namespace)
 	}
 
 	var packages []*model.IngredientAndVersion
 	if params.ExactTerm {
-		packages, err = model.SearchIngredientsStrict(ns.String(), params.Name, true, true, ts)
+		packages, err = model.SearchIngredientsStrict(ns.String(), params.Ingredient.Name, true, true, params.Timestamp.Time)
 	} else {
-		packages, err = model.SearchIngredients(ns.String(), params.Name, true, ts)
+		packages, err = model.SearchIngredients(ns.String(), params.Ingredient.Name, true, params.Timestamp.Time)
 	}
 	if err != nil {
 		return locale.WrapError(err, "package_err_cannot_obtain_search_results")
 	}
 	if len(packages) == 0 {
 		return errs.AddTips(
-			locale.NewInputError("err_search_no_"+ns.Type().String(), "", params.Name),
+			locale.NewInputError("err_search_no_"+ns.Type().String(), "", params.Ingredient.Name),
 			locale.Tl("search_try_term", "Try a different search term"),
 			locale.Tl("search_request_"+ns.Type().String(), ""),
 		)

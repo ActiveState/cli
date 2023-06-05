@@ -57,7 +57,13 @@ func newInstallCommand(prime *primer.Values) *captain.Command {
 		locale.Tl("package_install_title", "Installing Package"),
 		locale.T("package_install_cmd_description"),
 		prime,
-		[]*captain.Flag{},
+		[]*captain.Flag{
+			{
+				Name:        "ts",
+				Description: locale.T("package_flag_ts_description"),
+				Value:       &params.Timestamp,
+			},
+		},
 		[]*captain.Argument{
 			{
 				Name:        locale.T("package_arg_nameversion"),
@@ -87,7 +93,7 @@ func newUninstallCommand(prime *primer.Values) *captain.Command {
 			{
 				Name:        locale.T("package_arg_name"),
 				Description: locale.T("package_arg_name_description"),
-				Value:       &params.Name,
+				Value:       &params.Package,
 				Required:    true,
 			},
 		},
@@ -145,21 +151,16 @@ func newSearchCommand(prime *primer.Values) *captain.Command {
 				Value:       &params.ExactTerm,
 			},
 			{
-				Name:        "timestamp",
+				Name:        "ts",
 				Description: locale.T("package_search_flag_ts_description"),
 				Value:       &params.Timestamp,
-			},
-			{
-				Name:        "namespace",
-				Description: locale.T("package_search_flag_ns_description"),
-				Value:       &params.Namespace,
 			},
 		},
 		[]*captain.Argument{
 			{
 				Name:        locale.T("package_arg_name"),
 				Description: locale.T("package_arg_name_description"),
-				Value:       &params.Name,
+				Value:       &params.Ingredient,
 				Required:    true,
 			},
 		},
@@ -184,6 +185,11 @@ func newInfoCommand(prime *primer.Values) *captain.Command {
 				Name:        "language",
 				Description: locale.T("package_info_flag_language_description"),
 				Value:       &params.Language,
+			},
+			{
+				Name:        "ts",
+				Description: locale.T("package_flag_ts_description"),
+				Value:       &params.Timestamp,
 			},
 		},
 		[]*captain.Argument{
