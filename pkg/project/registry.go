@@ -31,7 +31,55 @@ func init() {
 	}
 }
 
-func RegisterStruct(val interface{}) error {
+func RegisterTopLevelStruct(name string, val interface{}) error {
+	v := reflect.ValueOf(val)
+	if v.Kind() == reflect.Ptr {
+		v = v.Elem()
+	}
+
+	m := makeEntryMapMap(v)
+	name = strings.ToLower(name)
+	err := RegisterExpander(name, makeExpanderFuncFromMap(m))
+	if err != nil {
+		return locale.WrapError(
+			err, "project_expand_register_expander_map",
+			"Cannot register expander (map)",
+		)
+	}
+
+	return nil
+}
+
+func RegisterTopLevelFunc(name string, val interface{}) error {
+	v := reflect.ValueOf(val)
+	if v.Kind() == reflect.Ptr {
+		v = v.Elem()
+	}
+
+	name = strings.ToLower(name)
+	err := RegisterExpander(name, makeExpanderFuncFromFunc(v))
+	if err != nil {
+		return locale.WrapError(
+			err, "project_expand_register_expander_func",
+			"Cannot register expander (func)",
+		)
+	}
+
+	return nil
+}
+
+func RegisterTopLevelStringer(name string, val interface{}) error {
+	v := reflect.ValueOf(val)
+	if v.Kind() == reflect.Ptr {
+		v = v.Elem()
+	}
+
+	topLevelLookup[strings.ToLower(name)] = fmt.Sprintf("%v", v.Interface())
+
+	return nil
+}
+
+/*func RegisterStruct(val interface{}) error {
 	v := reflect.ValueOf(val)
 	// deref if needed
 	if v.Kind() == reflect.Ptr {
@@ -85,7 +133,7 @@ func RegisterStruct(val interface{}) error {
 	}
 
 	return nil
-}
+}*/
 
 // RegisterExpander registers an Expander Func for some given handler value. The handler value
 // must not effectively be a blank string and the Func must be defined. It is definitely possible
