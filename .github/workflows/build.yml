@@ -25,9 +25,8 @@ permissions:
 
 # === Workflow-level environment variables ===
 env:
-  AWS_REGION : "us-east-1"
-  AWS_ROLE_SESSION_NAME: "gha-activestate-cli"
-  AWS_ROLE_TO_ASSUME: "arn:aws:iam::062663976825:role/gha_oidc_activestate_cli"
+  AWS_REGION : us-east-1
+  AWS_ROLE_SESSION_NAME: gha-activestate-cli
 
 # === JOBS ===
 jobs:
@@ -248,9 +247,10 @@ jobs:
         name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
-          role-to-assume: ${{ env.AWS_ROLE_TO_ASSUME }}}
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
           role-session-name: ${{ env.AWS_ROLE_SESSION_NAME }}
           aws-region: ${{ env.AWS_REGION }}
+          mask-aws-account-id: true
 
       - # === Deploy for Integration Tests # NEVER run this against production branches. This is meant for PR deployments. ===
         name: Deploy for Integration Tests # NEVER run this against production branches. This is meant for PR deployments.
@@ -451,9 +451,10 @@ jobs:
         name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
-          role-to-assume: ${{ env.AWS_ROLE_TO_ASSUME }}
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
           role-session-name: ${{ env.AWS_ROLE_SESSION_NAME }}
           aws-region: ${{ env.AWS_REGION }}
+          mask-aws-account-id: true
 
       - # === Deploy ===
         name: Deploy
