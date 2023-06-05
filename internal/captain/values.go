@@ -58,16 +58,12 @@ var _ FlagMarshaler = &UserValue{}
 
 func (u *UserValue) String() string {
 	switch {
-	case u.Name == "" && u.Email == "":
-		return ""
 	case u.Name != "" && u.Email != "":
 		return fmt.Sprintf("%s <%s>", u.Name, u.Email)
-	case u.Name == "":
+	case u.Email != "":
 		return fmt.Sprintf("<%s>", u.Email)
-	case u.Email == "":
-		return u.Name
 	}
-	return ""
+	return u.Name
 }
 
 func (u *UserValue) Set(s string) error {
