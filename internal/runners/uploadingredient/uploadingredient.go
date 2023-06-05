@@ -117,7 +117,7 @@ func (r *Runner) Run(params *Params) error {
 
 	ts := time.Now()
 	ingredients, err := model.SearchIngredientsStrict(reqVars.Namespace, reqVars.Name, true, false, &ts)
-	if err != nil && !errs.Matches(err, &model.ErrSearch404{}) { // 404 means namespace not found, which is fine
+	if err != nil && !errs.Matches(err, &model.ErrSearch404{}) { // 404 means either the ingredient or the namespace was not found, which is fine
 		return locale.WrapError(err, "err_uploadingredient_search", "Could not search for ingredient")
 	}
 	var ingredient *model.IngredientAndVersion
