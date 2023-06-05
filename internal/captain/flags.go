@@ -48,7 +48,7 @@ func (nv *NameVersionFlag) Version() string {
 }
 
 func (nv *NameVersionFlag) Type() string {
-	return "NameVersion"
+	return "name and version"
 }
 
 // UserFlag represents a flag that supports both a name and an email address, the following formats are supported:
@@ -94,7 +94,7 @@ func (u *UserFlag) Set(s string) error {
 }
 
 func (u *UserFlag) Type() string {
-	return "User"
+	return "user"
 }
 
 // UsersFlag is used to represent multiple UserFlag, this is used when a flag can be passed multiple times.
@@ -120,7 +120,7 @@ func (u *UsersFlag) Set(s string) error {
 }
 
 func (u *UsersFlag) Type() string {
-	return "Users"
+	return "users"
 }
 
 // PackageFlag represents a flag that supports specifying a package in the following formats:
@@ -165,7 +165,7 @@ func (p *PackageFlag) Set(s string) error {
 }
 
 func (p *PackageFlag) Type() string {
-	return "Package"
+	return "package"
 }
 
 // PackageFlagNoVersion is identical to PackageFlag except that it does not support a version.
@@ -184,7 +184,7 @@ func (p *PackageFlagNoVersion) Set(s string) error {
 }
 
 func (p *PackageFlagNoVersion) Type() string {
-	return "PackageFlagNoVersion"
+	return "package"
 }
 
 // PackageFlagNSRequired is identical to PackageFlag except that specifying a namespace is required.
@@ -203,7 +203,7 @@ func (p *PackageFlagNSRequired) Set(s string) error {
 }
 
 func (p *PackageFlagNSRequired) Type() string {
-	return "PackageFlagNSRequired"
+	return "namespace/package"
 }
 
 // PackagesFlag is used to represent multiple PackageFlag, this is used when a flag can be passed multiple times.
@@ -258,5 +258,5 @@ func (u *TimeFlag) Set(v string) error {
 }
 
 func (u *TimeFlag) Type() string {
-	return "TimeFlag"
+	return "timestamp"
 }
