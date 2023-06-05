@@ -23,6 +23,12 @@ permissions:
   id-token: write # This is required for requesting the JWT
   contents: read  # This is required for actions/checkout
 
+# === Workflow-level environment variables ===
+env:
+  AWS_REGION : "us-east-1"
+  AWS_ROLE_SESSION_NAME: "gha-activestate-cli"
+  AWS_ROLE_TO_ASSUME: "arn:aws:iam::062663976825:role/gha_oidc_activestate_cli"
+
 # === JOBS ===
 jobs:
 
@@ -242,9 +248,9 @@ jobs:
         name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
-          role-to-assume: arn:aws:iam::062663976825:role/gha_oidc_activestate_cli
-          role-session-name: gha-activestate-cli
-          aws-region: us-east-1
+          role-to-assume: ${{ env.AWS_ROLE_TO_ASSUME }}}
+          role-session-name: ${{ env.AWS_ROLE_SESSION_NAME }}
+          aws-region: ${{ env.AWS_REGION }}
 
       - # === Deploy for Integration Tests # NEVER run this against production branches. This is meant for PR deployments. ===
         name: Deploy for Integration Tests # NEVER run this against production branches. This is meant for PR deployments.
@@ -445,9 +451,9 @@ jobs:
         name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
-          role-to-assume: arn:aws:iam::062663976825:role/gha_oidc_activestate_cli
-          role-session-name: gha-activestate-cli
-          aws-region: us-east-1
+          role-to-assume: ${{ env.AWS_ROLE_TO_ASSUME }}
+          role-session-name: ${{ env.AWS_ROLE_SESSION_NAME }}
+          aws-region: ${{ env.AWS_REGION }}
 
       - # === Deploy ===
         name: Deploy
