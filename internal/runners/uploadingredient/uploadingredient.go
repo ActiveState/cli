@@ -32,8 +32,8 @@ type Params struct {
 	Version      string
 	Namespace    string
 	Description  string
-	Authors      captain.UsersFlag
-	Depends      captain.PackagesFlag
+	Authors      captain.UsersValue
+	Depends      captain.PackagesValue
 	Filepath     string
 	MetaFilepath string
 	Edit         bool

@@ -13,11 +13,11 @@ import (
 )
 
 type PlatformVersion struct {
-	captain.NameVersionFlag
+	captain.NameVersionValue
 }
 
 func (pv *PlatformVersion) Set(arg string) error {
-	err := pv.NameVersionFlag.Set(arg)
+	err := pv.NameVersionValue.Set(arg)
 	if err != nil {
 		return locale.WrapInputError(err, "err_platform_format", "The platform and version provided is not formatting correctly, must be in the form of <platform>@<version>")
 	}

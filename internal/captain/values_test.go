@@ -5,35 +5,35 @@ import (
 	"testing"
 )
 
-func TestUserFlag_Set(t *testing.T) {
+func TestUserValue_Set(t *testing.T) {
 	tests := []struct {
 		name      string
 		flagValue string
-		want      *UserFlag
+		want      *UserValue
 		wantErr   bool
 	}{
 		{
 			"name and email",
 			"John Doe <john@doe.org>",
-			&UserFlag{Name: "John Doe", Email: "john@doe.org"},
+			&UserValue{Name: "John Doe", Email: "john@doe.org"},
 			false,
 		},
 		{
 			"email only",
 			"john@doe.org",
-			&UserFlag{Name: "john", Email: "john@doe.org"},
+			&UserValue{Name: "john", Email: "john@doe.org"},
 			false,
 		},
 		{
 			"name only",
 			"john",
-			&UserFlag{},
+			&UserValue{},
 			true,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			u := &UserFlag{}
+			u := &UserValue{}
 			if err := u.Set(tt.flagValue); (err != nil) != tt.wantErr {
 				t.Errorf("Set() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -44,35 +44,35 @@ func TestUserFlag_Set(t *testing.T) {
 	}
 }
 
-func TestPackageFlag_Set(t *testing.T) {
+func TestPackageValue_Set(t *testing.T) {
 	tests := []struct {
 		name      string
 		flagValue string
 		wantErr   bool
-		want      *PackageFlag
+		want      *PackageValue
 	}{
 		{
 			"namespace, name and version",
 			"namespace/path/name@1.0.0",
 			false,
-			&PackageFlag{Namespace: "namespace/path", Name: "name", Version: "1.0.0"},
+			&PackageValue{Namespace: "namespace/path", Name: "name", Version: "1.0.0"},
 		},
 		{
 			"namespace and name",
 			"namespace/path/name",
 			false,
-			&PackageFlag{Namespace: "namespace/path", Name: "name"},
+			&PackageValue{Namespace: "namespace/path", Name: "name"},
 		},
 		{
 			"name only",
 			"name",
 			true,
-			&PackageFlag{},
+			&PackageValue{},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			p := &PackageFlag{}
+			p := &PackageValue{}
 			if err := p.Set(tt.flagValue); (err != nil) != tt.wantErr {
 				t.Errorf("Set() error = %v, wantErr %v", err, tt.wantErr)
 				return

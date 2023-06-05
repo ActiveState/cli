@@ -7,14 +7,14 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 )
 
-type NameVersionFlag struct {
+type NameVersionValue struct {
 	name    string
 	version string
 }
 
-var _ FlagMarshaler = &NameVersionFlag{}
+var _ FlagMarshaler = &NameVersionValue{}
 
-func (nv *NameVersionFlag) Set(arg string) error {
+func (nv *NameVersionValue) Set(arg string) error {
 	nameArg := strings.Split(arg, "@")
 	nv.name = nameArg[0]
 	if len(nameArg) == 2 {
@@ -26,37 +26,37 @@ func (nv *NameVersionFlag) Set(arg string) error {
 	return nil
 }
 
-func (nv *NameVersionFlag) String() string {
+func (nv *NameVersionValue) String() string {
 	if nv.version == "" {
 		return nv.name
 	}
 	return fmt.Sprintf("%s@%s", nv.name, nv.version)
 }
 
-func (nv *NameVersionFlag) Name() string {
+func (nv *NameVersionValue) Name() string {
 	return nv.name
 }
 
-func (nv *NameVersionFlag) Version() string {
+func (nv *NameVersionValue) Version() string {
 	return nv.version
 }
 
-func (nv *NameVersionFlag) Type() string {
+func (nv *NameVersionValue) Type() string {
 	return "NameVersion"
 }
 
-// UserFlag represents a flag that supports both a name and an email address, the following formats are supported:
+// UserValue represents a flag that supports both a name and an email address, the following formats are supported:
 // - name <email>
 // - email
 // Emails are detected simply by containing a @ symbol.
-type UserFlag struct {
+type UserValue struct {
 	Name  string
 	Email string
 }
 
-var _ FlagMarshaler = &UserFlag{}
+var _ FlagMarshaler = &UserValue{}
 
-func (u *UserFlag) String() string {
+func (u *UserValue) String() string {
 	switch {
 	case u.Name == "" && u.Email == "":
 		return ""
@@ -70,7 +70,7 @@ func (u *UserFlag) String() string {
 	return ""
 }
 
-func (u *UserFlag) Set(s string) error {
+func (u *UserValue) Set(s string) error {
 	if strings.Contains(s, "<") {
 		v := strings.Split(s, "<")
 		u.Name = strings.TrimSpace(v[0])
@@ -84,18 +84,18 @@ func (u *UserFlag) Set(s string) error {
 		return nil
 	}
 
-	return locale.NewInputError("userflag_format", "Invalid format: Should be 'name <email>' or '<email>'")
+	return locale.NewInputError("uservalue_format", "Invalid format: Should be 'name <email>' or '<email>'")
 }
 
-func (u *UserFlag) Type() string {
+func (u *UserValue) Type() string {
 	return "User"
 }
 
-type UsersFlag []UserFlag
+type UsersValue []UserValue
 
-var _ FlagMarshaler = &UsersFlag{}
+var _ FlagMarshaler = &UsersValue{}
 
-func (u *UsersFlag) String() string {
+func (u *UsersValue) String() string {
 	var result []string
 	for _, user := range *u {
 		result = append(result, user.String())
@@ -103,8 +103,8 @@ func (u *UsersFlag) String() string {
 	return strings.Join(result, ", ")
 }
 
-func (u *UsersFlag) Set(s string) error {
-	uf := &UserFlag{}
+func (u *UsersValue) Set(s string) error {
+	uf := &UserValue{}
 	if err := uf.Set(s); err != nil {
 		return err
 	}
@@ -112,21 +112,21 @@ func (u *UsersFlag) Set(s string) error {
 	return nil
 }
 
-func (u *UsersFlag) Type() string {
+func (u *UsersValue) Type() string {
 	return "Users"
 }
 
-// PackageFlag represents a flag that supports specifying a package in the following format:
+// PackageValue represents a flag that supports specifying a package in the following format:
 // <namsepace>/<name>@<version>
-type PackageFlag struct {
+type PackageValue struct {
 	Namespace string
 	Name      string
 	Version   string
 }
 
-var _ FlagMarshaler = &PackageFlag{}
+var _ FlagMarshaler = &PackageValue{}
 
-func (u *PackageFlag) String() string {
+func (u *PackageValue) String() string {
 	if u.Namespace == "" && u.Name == "" {
 		return ""
 	}
@@ -136,7 +136,7 @@ func (u *PackageFlag) String() string {
 	return fmt.Sprintf("%s/%s@%s", u.Namespace, u.Name, u.Version)
 }
 
-func (u *PackageFlag) Set(s string) error {
+func (u *PackageValue) Set(s string) error {
 	if strings.Contains(s, "@") {
 		v := strings.Split(s, "@")
 		u.Version = strings.TrimSpace(v[1])
@@ -151,15 +151,15 @@ func (u *PackageFlag) Set(s string) error {
 	return nil
 }
 
-func (u *PackageFlag) Type() string {
+func (u *PackageValue) Type() string {
 	return "Package"
 }
 
-type PackagesFlag []PackageFlag
+type PackagesValue []PackageValue
 
-var _ FlagMarshaler = &PackagesFlag{}
+var _ FlagMarshaler = &PackagesValue{}
 
-func (p *PackagesFlag) String() string {
+func (p *PackagesValue) String() string {
 	var result []string
 	for _, pkg := range *p {
 		result = append(result, pkg.String())
@@ -167,8 +167,8 @@ func (p *PackagesFlag) String() string {
 	return strings.Join(result, ", ")
 }
 
-func (p *PackagesFlag) Set(s string) error {
-	pf := &PackageFlag{}
+func (p *PackagesValue) Set(s string) error {
+	pf := &PackageValue{}
 	if err := pf.Set(s); err != nil {
 		return err
 	}
@@ -176,6 +176,6 @@ func (p *PackagesFlag) Set(s string) error {
 	return nil
 }
 
-func (p *PackagesFlag) Type() string {
+func (p *PackagesValue) Type() string {
 	return "Packages"
 }

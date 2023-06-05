@@ -10,11 +10,11 @@ import (
 )
 
 type PackageVersion struct {
-	captain.NameVersionFlag
+	captain.NameVersionValue
 }
 
 func (pv *PackageVersion) Set(arg string) error {
-	err := pv.NameVersionFlag.Set(arg)
+	err := pv.NameVersionValue.Set(arg)
 	if err != nil {
 		return locale.WrapInputError(err, "err_package_format", "The package and version provided is not formatting correctly, must be in the form of <package>@<version>")
 	}
