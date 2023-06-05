@@ -18,6 +18,11 @@ name: Build-Test-Deploy
     -
       cron: 0 0 * * *
 
+# === Workflow Permissions ===
+permissions:
+  id-token: write # This is required for requesting the JWT
+  contents: read  # This is required for actions/checkout
+
 # === JOBS ===
 jobs:
 
@@ -232,6 +237,14 @@ jobs:
         name: Generate Remote Install Deployment
         shell: bash
         run: state run generate-remote-install-deployment
+      
+      - # === Configure AWS credentials ==
+        name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: arn:aws:iam::062663976825:role/gha_oidc_activestate_cli
+          role-session-name: gha-activestate-cli
+          aws-region: us-east-1
 
       - # === Deploy for Integration Tests # NEVER run this against production branches. This is meant for PR deployments. ===
         name: Deploy for Integration Tests # NEVER run this against production branches. This is meant for PR deployments.
@@ -256,9 +269,9 @@ jobs:
           state run deploy-updates
           state run deploy-installers
           state run deploy-remote-installer
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        # env:
+        #   AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        #   AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
       - # === Integration Tests ===
         name: Integration Tests
@@ -309,8 +322,8 @@ jobs:
           INTEGRATION_TEST_PASSWORD: ${{ secrets.INTEGRATION_TEST_PASSWORD }}
           INTEGRATION_TEST_TOKEN: ${{ secrets.INTEGRATION_TEST_TOKEN }}
           PLATFORM_API_TOKEN: ${{ secrets.PLATFORM_API_TOKEN }}
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          # AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          # AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
       - # === Fail If Unscheduled Unit Tests Failed (Expand 'Unit Tests' above for more information) ===
         name: Fail If Unscheduled Unit Tests Failed
@@ -433,6 +446,14 @@ jobs:
         shell: bash
         run: rm build/state* || true
 
+      - # === Configure AWS credentials ==
+        name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: arn:aws:iam::062663976825:role/gha_oidc_activestate_cli
+          role-session-name: gha-activestate-cli
+          aws-region: us-east-1
+
       - # === Deploy ===
         name: Deploy
         shell: bash
@@ -440,9 +461,6 @@ jobs:
           state run deploy-updates
           state run deploy-installers
           state run deploy-remote-installer
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
       - # === Cleanup Session Artifacts ===
         name: Cleanup Session Artifacts
