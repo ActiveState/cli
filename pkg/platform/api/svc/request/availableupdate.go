@@ -1,9 +1,6 @@
 package request
 
-import "github.com/ActiveState/cli/internal/gqlclient"
-
 type AvailableUpdate struct {
-	gqlclient.RequestBase
 }
 
 func NewAvailableUpdate() *AvailableUpdate {

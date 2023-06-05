@@ -1,7 +1,6 @@
 package request
 
 import (
-	"github.com/ActiveState/cli/internal/gqlclient"
 	"github.com/go-openapi/strfmt"
 )
 
@@ -13,7 +12,6 @@ func OrganizationsByIDs(orgIDs []strfmt.UUID) *organizationByIDs {
 }
 
 type organizationByIDs struct {
-	gqlclient.RequestBase
 	vars map[string]interface{}
 }
 
@@ -40,7 +38,6 @@ func OrganizationsByName(name string) *organizationByName {
 }
 
 type organizationByName struct {
-	gqlclient.RequestBase
 	vars map[string]interface{}
 }
 

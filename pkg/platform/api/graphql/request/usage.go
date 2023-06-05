@@ -3,7 +3,6 @@ package request
 import (
 	"time"
 
-	"github.com/ActiveState/cli/internal/gqlclient"
 	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/pkg/platform/api/graphql/model"
@@ -22,7 +21,6 @@ func RuntimeUsage(organizationID strfmt.UUID) *usage {
 }
 
 type usage struct {
-	gqlclient.RequestBase
 	vars map[string]interface{}
 }
 

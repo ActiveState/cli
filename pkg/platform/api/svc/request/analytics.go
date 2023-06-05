@@ -1,9 +1,6 @@
 package request
 
-import "github.com/ActiveState/cli/internal/gqlclient"
-
 type AnalyticsEvent struct {
-	gqlclient.RequestBase
 	category       string
 	action         string
 	label          string

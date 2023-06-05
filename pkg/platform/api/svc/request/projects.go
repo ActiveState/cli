@@ -1,9 +1,6 @@
 package request
 
-import "github.com/ActiveState/cli/internal/gqlclient"
-
 type LocalProjectsRequest struct {
-	gqlclient.RequestBase
 }
 
 func NewLocalProjectsRequest() *LocalProjectsRequest {

@@ -1,9 +1,6 @@
 package request
 
-import "github.com/ActiveState/cli/internal/gqlclient"
-
 type VersionRequest struct {
-	gqlclient.RequestBase
 }
 
 func NewVersionRequest() *VersionRequest {
