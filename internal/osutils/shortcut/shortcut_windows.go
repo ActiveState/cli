@@ -1,10 +1,12 @@
 package shortcut
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
 
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/go-ole/go-ole"
 	"github.com/go-ole/go-ole/oleutil"
 
@@ -52,10 +54,22 @@ func (s *Shortcut) Enable() error {
 	}
 	defer wshell.Release()
 
+	if err := fileutils.MkdirUnlessExists(s.dir); err != nil {
+		if os.IsPermission(err) {
+			return locale.NewInputError("err_shortcutdir_writable", "", s.dir)
+		} else {
+			return errs.Wrap(err, "Could not create Shortcut directory")
+		}
+	}
+
 	filename := filepath.Join(s.dir, s.name+".lnk")
 	logging.Debug("Creating Shortcut: %s", filename)
 	cs, err := oleutil.CallMethod(wshell, "CreateShortcut", filename)
 	if err != nil {
+		var oleErr *ole.OleError
+		if errors.As(err, &oleErr) {
+			return errs.Wrap(err, "oleutil CreateShortcut returned error: %s, parent error: %s", oleErr.Description, oleErr.SubError())
+		}
 		return errs.Wrap(err, "Could not call CreateShortcut on shell object")
 	}
 
