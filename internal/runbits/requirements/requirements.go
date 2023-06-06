@@ -7,6 +7,8 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/analytics"
+	"github.com/thoas/go-funk"
+
 	anaConsts "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/config"
@@ -213,7 +215,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 	}
 
 	bp := runtimeModel.NewBuildPlanner(r.Auth)
-	commitID, err := bp.StageCommit(runtimeModel.StateCommitParams{
+	commitID, err := bp.StageCommit(runtimeModel.StageCommitParams{
 		Owner:            pj.Owner(),
 		Project:          pj.Name(),
 		ParentCommit:     string(parentCommitID),
