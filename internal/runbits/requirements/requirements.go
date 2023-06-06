@@ -214,7 +214,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 	}
 
 	bp := runtimeModel.NewBuildPlanner(r.Auth)
-	commitID, err := bp.StageCommit(runtimeModel.StateCommitParams{
+	commitID, err := bp.StageCommit(runtimeModel.StageCommitParams{
 		Owner:            pj.Owner(),
 		Project:          pj.Name(),
 		ParentCommit:     string(parentCommitID),
