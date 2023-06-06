@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
@@ -15,6 +16,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/graphql/request"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	platformModel "github.com/ActiveState/cli/pkg/platform/model"
+	vcsModel "github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/sysinfo"
 	"github.com/go-openapi/strfmt"
 	"github.com/machinebox/graphql"
@@ -260,7 +262,7 @@ func (bp *BuildPlanner) StageCommit(params StageCommitParams) (strfmt.UUID, erro
 	resp := &model.StageCommitResult{}
 	err = bp.client.Run(request, resp)
 	if err != nil {
-		return nil, errs.Wrap(err, "failed to fetch build plan")
+		return "", errs.Wrap(err, "failed to fetch build plan")
 	}
 
 	if resp.NotFoundError != nil {
