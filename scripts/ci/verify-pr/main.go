@@ -183,7 +183,7 @@ func verifyPR(jiraClient *jira.Client, pr *github.PullRequest) error {
 
 	// Grab latest version on release channel to use as cutoff
 	finish = wc.PrintStart("Fetching latest version on release channel")
-	latestReleaseversionBytes, err := httputil.GetDirect("https://raw.githubusercontent.com/ActiveState/cli/release/version.txt")
+	latestReleaseversionBytes, err := httputil.Get("https://raw.githubusercontent.com/ActiveState/cli/release/version.txt")
 	latestReleaseversion, err := semver.Parse(strings.TrimSpace(string(latestReleaseversionBytes)))
 	if err != nil {
 		return errs.Wrap(err, "failed to parse version blob")
