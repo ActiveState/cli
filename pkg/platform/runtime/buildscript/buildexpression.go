@@ -109,6 +109,7 @@ func newValue(valueInterface interface{}, preferIdent bool) (*Value, error) {
 
 	default:
 		// An empty value is interpreted as JSON null.
+		value.Null = &Null{}
 	}
 
 	return value, nil

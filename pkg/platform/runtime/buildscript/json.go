@@ -32,6 +32,8 @@ func (v *Value) MarshalJSON() ([]byte, error) {
 		return json.Marshal(v.List)
 	case v.Str != nil:
 		return json.Marshal(strings.Trim(*v.Str, `"`))
+	case v.Null != nil:
+		return json.Marshal(nil)
 	case v.Assignment != nil:
 		return json.Marshal(v.Assignment)
 	case v.Object != nil:
@@ -43,7 +45,7 @@ func (v *Value) MarshalJSON() ([]byte, error) {
 	case v.Ident != nil:
 		return json.Marshal(v.Ident)
 	}
-	return json.Marshal(nil)
+	return json.Marshal([]*Value{}) // participle does not create v.List if it's empty
 }
 
 func (f *FuncCall) MarshalJSON() ([]byte, error) {
