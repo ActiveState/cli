@@ -3,6 +3,7 @@ package buildscript
 import (
 	"encoding/json"
 	"reflect"
+	"sort"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/errs"
@@ -30,16 +31,17 @@ func NewScriptFromBuildExpression(expr []byte) (*Script, error) {
 	if !ok {
 		return nil, errs.New("'let' key is not a JSON object")
 	}
+	inValue, ok := letMap["in"]
+	if !ok {
+		return nil, errs.New("Build expression's 'let' object has no 'in' key")
+	}
+	delete(letMap, "in")
 
 	let, err := newLet(letMap)
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not parse 'let' key")
 	}
 
-	inValue, ok := letMap["in"]
-	if !ok {
-		return nil, errs.New("Build expression's 'let' object has no 'in' key")
-	}
 	in, err := newIn(inValue)
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not parse 'in' key's value: %v", inValue)
@@ -138,6 +140,7 @@ func newFuncCall(m map[string]interface{}) (*FuncCall, error) {
 			}
 			args = append(args, &Value{Assignment: &Assignment{Key: key, Value: value}})
 		}
+		sort.SliceStable(args, func(i, j int) bool { return args[i].Assignment.Key < args[j].Assignment.Key })
 
 	case []interface{}:
 		for _, item := range v {
@@ -164,6 +167,7 @@ func newAssignments(m map[string]interface{}) (*[]*Assignment, error) {
 		}
 		assignments = append(assignments, &Assignment{Key: key, Value: value})
 	}
+	sort.SliceStable(assignments, func(i, j int) bool { return assignments[i].Key < assignments[j].Key })
 	return &assignments, nil
 }
 
