@@ -21,20 +21,10 @@ import (
 	"path/filepath"
 
 	"github.com/ActiveState/cli/internal/multilog"
-	"github.com/ActiveState/cli/internal/rtutils/p"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
+	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/sysinfo"
 )
-
-type projectDataProvider interface {
-	Owner() string
-	Name() string
-	NamespaceString() string
-	CommitID() string
-	BranchName() string
-	Path() string
-	URL() string
-}
 
 type Project struct {
 	Namespace string `expand:",asFunc"`
@@ -49,26 +39,24 @@ type Project struct {
 	NamespacePrefix string
 }
 
-func NewProject(pj projectDataProvider) *Project {
-	var (
-		project = &Project{}
-	)
-	if !p.IsNil(pj) {
-		project.Namespace = pj.NamespaceString()
-		project.Name = pj.Name()
-		project.Owner = pj.Owner()
-		project.Url = pj.URL()
-		project.Commit = pj.CommitID()
-		project.Branch = pj.BranchName()
-		project.Path = pj.Path()
-		if project.Path != "" {
-			project.Path = filepath.Dir(project.Path)
-		}
+func NewProject(pj *project.Project) *Project {
+	p := &Project{}
+	p.Update(pj)
+	return p
+}
 
-		project.NamespacePrefix = pj.NamespaceString()
+func (p *Project) Update(pj *project.Project) {
+	p.Namespace = pj.NamespaceString()
+	p.Name = pj.Name()
+	p.Owner = pj.Owner()
+	p.Url = pj.URL()
+	p.Commit = pj.CommitID()
+	p.Branch = pj.BranchName()
+	p.Path = pj.Path()
+	if p.Path != "" {
+		p.Path = filepath.Dir(p.Path)
 	}
-
-	return project
+	p.NamespacePrefix = pj.NamespaceString()
 }
 
 type OSVersion struct {
@@ -128,14 +116,14 @@ type Vars struct {
 	Mixin   func() *Mixin
 }
 
-func New(auth *authentication.Auth, project *Project, subshellName string) *Vars {
+func New(auth *authentication.Auth, pj *project.Project, subshellName string) *Vars {
 	osVersion, err := sysinfo.OSVersion()
 	if err != nil {
 		multilog.Error("Could not detect OSVersion: %v", err)
 	}
 
 	return &Vars{
-		Project: project,
+		Project: NewProject(pj),
 		OS:      NewOS(osVersion),
 		Shell:   subshellName,
 		Mixin:   func() *Mixin { return NewMixin(auth) },

@@ -58,13 +58,6 @@ func (p *Project) SetCommit(commitID string) error {
 	return p.Source().SetCommit(commitID, p.IsHeadless())
 }
 
-func (p *Project) SetUpdateCallback(fn func()) {
-	if p.projectfile == nil {
-		return
-	}
-	p.projectfile.SetUpdateCallback(fn)
-}
-
 // Constants returns a reference to projectfile.Constants
 func (p *Project) Constants() []*Constant {
 	constrained, err := constraints.FilterUnconstrained(pConditional, p.projectfile.Constants.AsConstrainedEntities())

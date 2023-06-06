@@ -291,6 +291,22 @@ func makeEntryMapMap(structure reflect.Value) map[string]map[string]entry {
 	return m
 }
 
+func makeLazyExpanderFuncFromPtrToStruct(val reflect.Value) ExpanderFunc {
+	return func(v, name, meta string, isFunc bool, ctx *Expansion) (string, error) {
+		iface := val.Interface()
+		if u, ok := iface.(interface{ Update(*Project) }); ok {
+			u.Update(ctx.Project)
+		}
+
+		if val.Kind() == reflect.Ptr {
+			val = val.Elem()
+		}
+		fn := makeExpanderFuncFromMap(makeEntryMapMap(val))
+
+		return fn(v, name, meta, isFunc, ctx)
+	}
+}
+
 func makeExpanderFuncFromMap(m map[string]map[string]entry) ExpanderFunc {
 	return func(v, name, meta string, isFunc bool, ctx *Expansion) (string, error) {
 		if isFunc && meta == "()" {

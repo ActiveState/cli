@@ -40,17 +40,10 @@ func newProject(out output.Outputer, auth *authentication.Auth, shell string, pj
 		return nil, err
 	}
 
-	registerProjectVars := func() {
-		projVars := vars.New(auth, vars.NewProject(pj), shell)
-		conditional := constraints.NewPrimeConditional(projVars)
-		project.RegisterConditional(conditional)
-		_ = project.RegisterTopLevelStruct("project", projVars.Project)
-		_ = project.RegisterTopLevelFunc("mixin", projVars.Mixin)
-		_ = project.RegisterTopLevelStringer("shell", projVars.Shell)
-	}
-
-	pj.SetUpdateCallback(registerProjectVars)
-	registerProjectVars()
+	projVars := vars.New(auth, pj, shell)
+	conditional := constraints.NewPrimeConditional(projVars)
+	project.RegisterConditional(conditional)
+	_ = project.RegisterStruct(projVars)
 
 	return pj, nil
 }
