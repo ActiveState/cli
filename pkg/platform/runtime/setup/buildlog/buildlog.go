@@ -335,7 +335,6 @@ func addBuildArtifacts(artifactMap artifact.ArtifactBuildPlanMap, build *bpModel
 			info, err := artifact.GetSourceInfo(a.GeneratedBy, lookup)
 			if err != nil {
 				multilog.Error("Could not resolve source information: %v", err)
-				return
 			}
 
 			artifactMap[strfmt.UUID(a.TargetID)] = artifact.ArtifactBuildPlan{
