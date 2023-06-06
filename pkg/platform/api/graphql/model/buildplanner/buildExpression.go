@@ -97,9 +97,10 @@ func validateRequirements(requirements []interface{}) error {
 		if !ok {
 			return errs.New("Requirement in BuildExpression is malformed")
 		}
+
 		_, ok = r[RequirementNameKey]
 		if !ok {
-			return errs.New("Requirement in BuildExpression is missing name field")
+			return errs.New("Requirement in BuildExpression is missing name field: %v", r)
 		}
 		_, ok = r[RequirementNamespaceKey]
 		if !ok {
