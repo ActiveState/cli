@@ -1,6 +1,8 @@
 package buildscript
 
 import (
+	"encoding/json"
+
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -48,7 +50,11 @@ func Sync(proj *project.Project, commitID *strfmt.UUID, out output.Outputer, aut
 		// For now, if commitID is given, a mutation happened, so prefer the remote build expression.
 		// Otherwise, prefer local changes.
 		if commitID == nil {
-			expr, err = bpModel.NewBuildExpression([]byte(script.String()))
+			bytes, err := json.Marshal(script)
+			if err != nil {
+				return errs.Wrap(err, "Unable to marshal local build script to JSON")
+			}
+			expr, err = bpModel.NewBuildExpression(bytes)
 			if err != nil {
 				return errs.Wrap(err, "Unable to translate local build script to build expression")
 			}

@@ -43,11 +43,15 @@ func UpdateOrCreate(dir string, newScript *model.BuildExpression) error {
 		return nil
 	}
 
+	script, err = NewScriptFromBuildExpression([]byte(newScript.String()))
+	if err != nil {
+		return errs.Wrap(err, "Could not parse build expression")
+	}
+
 	logging.Debug("Writing build script")
-	//TODO: enable in DX-1858
-	//err := fileutils.WriteFile(path, []byte(newScript.String()))
-	//if err != nil {
-	//return errs.Wrap(err, "Could not write build script to file")
-	//}
+	err = fileutils.WriteFile(filepath.Join(dir, constants.BuildScriptFileName), []byte(script.String()))
+	if err != nil {
+		return errs.Wrap(err, "Could not write build script to file")
+	}
 	return nil
 }

@@ -2,12 +2,10 @@ package buildscript
 
 import (
 	"encoding/json"
-	"reflect"
 	"sort"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/rtutils/p"
 	"github.com/ActiveState/cli/pkg/platform/api/graphql/model/buildplanner"
 )
@@ -209,10 +207,5 @@ func (s *Script) EqualsBuildExpression(otherJson []byte) bool {
 }
 
 func (s *Script) Equals(other *model.BuildExpression) bool {
-	expr, err := model.NewBuildExpression([]byte(s.String()))
-	if err != nil {
-		multilog.Error("Could not translate build script to build expression: %v", err)
-		return false
-	}
-	return reflect.DeepEqual(expr, other)
+	return s.EqualsBuildExpression([]byte(other.String()))
 }
