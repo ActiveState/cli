@@ -57,7 +57,7 @@ func Sync(proj *project.Project, commitID *strfmt.UUID, out output.Outputer, aut
 		out.Notice(locale.Tl("buildscript_update", "Updating project to reflect build script changes..."))
 
 		bp := model.NewBuildPlanner(auth)
-		stagedCommitID, err := bp.StageCommit(model.StateCommitParams{
+		stagedCommitID, err := bp.StageCommit(model.StageCommitParams{
 			Owner:        proj.Owner(),
 			Project:      proj.Name(),
 			ParentCommit: proj.CommitID(),
