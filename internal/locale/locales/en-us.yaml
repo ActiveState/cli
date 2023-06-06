@@ -2050,3 +2050,5 @@ err_init_authenticated:
   other: You need to be authenticated to initialize a project. Authenticate by running [ACTIONABLE]`state auth`[/RESET].
 err_country_blocked:
   other: This service is not available in your region.
+err_shortcutdir_writable:
+  other: Could not continue as we don't have permission to create [ACTIONABLE]{{.V0}}[/RESET].
