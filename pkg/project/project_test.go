@@ -15,7 +15,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
-	"github.com/ActiveState/cli/pkg/projget"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -45,7 +44,7 @@ func (suite *ProjectTestSuite) BeforeTest(suiteName, testName string) {
 	cfg, err := config.New()
 	suite.Require().NoError(err)
 
-	suite.project, err = projget.NewProject(output.Get(), nil, subshell.New(cfg).Shell())
+	suite.project, err = project.NewWithVars(output.Get(), nil, subshell.New(cfg).Shell())
 	suite.Require().Nil(err, "Should retrieve project without issue.")
 }
 

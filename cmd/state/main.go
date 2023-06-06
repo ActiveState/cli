@@ -38,7 +38,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/ActiveState/cli/pkg/projget"
 )
 
 func main() {
@@ -172,7 +171,7 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 
 	sshell := subshell.New(cfg)
 
-	pj, err := projget.NewProject(out, auth, sshell.Shell())
+	pj, err := project.NewWithVars(out, auth, sshell.Shell())
 	if err != nil {
 		return err
 	}

@@ -18,7 +18,6 @@ import (
 
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
-	"github.com/ActiveState/cli/pkg/projget"
 )
 
 func loadProject(t *testing.T) *project.Project {
@@ -62,7 +61,7 @@ scripts:
 
 	pjFile.Persist()
 
-	pj, err := projget.NewProjectForTest(pjFile)
+	pj, err := project.NewWithVarsForTest(pjFile)
 	require.NoError(t, err)
 
 	return pj

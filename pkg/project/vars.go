@@ -1,4 +1,14 @@
-// Package vars provides a single type expressing the data accessible by the
+package project
+
+import (
+	"path/filepath"
+
+	"github.com/ActiveState/cli/internal/multilog"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
+	"github.com/ActiveState/cli/pkg/sysinfo"
+)
+
+// vars provides a single type expressing the data accessible by the
 // activestate.yaml for conditionals and variable expansions.
 //
 // The structure should not grow beyond a depth of 3. That is, .OS.Version.Major
@@ -15,18 +25,8 @@
 //
 // Path nodes should be tagged (isPath) so that bashification of the path is
 // applied when necessary.
-package vars
 
-import (
-	"path/filepath"
-
-	"github.com/ActiveState/cli/internal/multilog"
-	"github.com/ActiveState/cli/pkg/platform/authentication"
-	"github.com/ActiveState/cli/pkg/project"
-	"github.com/ActiveState/cli/pkg/sysinfo"
-)
-
-type Project struct {
+type Projvars struct {
 	Namespace string `expand:",asFunc"`
 	Name      string `expand:",asFunc"`
 	Owner     string `expand:",asFunc"`
@@ -39,13 +39,13 @@ type Project struct {
 	NamespacePrefix string
 }
 
-func NewProject(pj *project.Project) *Project {
-	p := &Project{}
+func NewProjvars(pj *Project) *Projvars {
+	p := &Projvars{}
 	p.Update(pj)
 	return p
 }
 
-func (p *Project) Update(pj *project.Project) {
+func (p *Projvars) Update(pj *Project) {
 	p.Namespace = pj.NamespaceString()
 	p.Name = pj.Name()
 	p.Owner = pj.Owner()
@@ -110,20 +110,20 @@ func NewMixin(auth *authentication.Auth) *Mixin {
 }
 
 type Vars struct {
-	Project *Project
+	Project *Projvars
 	OS      *OS
 	Shell   string
 	Mixin   func() *Mixin
 }
 
-func New(auth *authentication.Auth, pj *project.Project, subshellName string) *Vars {
+func NewVars(auth *authentication.Auth, pj *Project, subshellName string) *Vars {
 	osVersion, err := sysinfo.OSVersion()
 	if err != nil {
 		multilog.Error("Could not detect OSVersion: %v", err)
 	}
 
 	return &Vars{
-		Project: NewProject(pj),
+		Project: NewProjvars(pj),
 		OS:      NewOS(osVersion),
 		Shell:   subshellName,
 		Mixin:   func() *Mixin { return NewMixin(auth) },

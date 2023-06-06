@@ -105,7 +105,7 @@ func runJob(job Job) {
 			return
 		}
 
-		projVars := vars.New(nil, vars.NewProject(pj), "noshell")
+		projVars := vars.NewVars(nil, vars.NewProject(pj), "noshell")
 		cond := constraints.NewPrimeConditional(projVars)
 		run, err := cond.Eval(job.If)
 		if err != nil {
