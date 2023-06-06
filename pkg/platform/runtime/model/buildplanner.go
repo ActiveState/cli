@@ -224,7 +224,7 @@ func removeEmptyTargets(bp *model.BuildPlan) {
 	bp.Project.Commit.Build.Artifacts = artifacts
 }
 
-type StateCommitParams struct {
+type StageCommitParams struct {
 	Owner            string
 	Project          string
 	ParentCommit     string
@@ -234,7 +234,7 @@ type StateCommitParams struct {
 	Operation        model.Operation
 }
 
-func (bp *BuildPlanner) StageCommit(params StateCommitParams) (strfmt.UUID, error) {
+func (bp *BuildPlanner) StageCommit(params StageCommitParams) (strfmt.UUID, error) {
 	var err error
 	script, err := bp.GetBuildExpression(params.Owner, params.Project, params.ParentCommit)
 	if err != nil {

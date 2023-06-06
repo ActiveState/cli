@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/analytics"
-	"github.com/go-openapi/strfmt"
 	"github.com/thoas/go-funk"
 
 	anaConsts "github.com/ActiveState/cli/internal/analytics/constants"
@@ -215,7 +214,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 	}
 
 	bp := runtimeModel.NewBuildPlanner(r.Auth)
-	commitID, err := bp.StageCommit(runtimeModel.StateCommitParams{
+	commitID, err := bp.StageCommit(runtimeModel.StageCommitParams{
 		Owner:            pj.Owner(),
 		Project:          pj.Name(),
 		ParentCommit:     string(parentCommitID),
@@ -259,7 +258,6 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 			return locale.WrapError(err, "err_update_build_script")
 		}
 
-	if orderChanged {
 		if err := pj.SetCommit(commitID.String()); err != nil {
 			return locale.WrapError(err, "err_package_update_pjfile")
 		}
