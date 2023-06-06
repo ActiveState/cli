@@ -18,8 +18,8 @@ import (
 
 // InfoRunParams tracks the info required for running Info.
 type InfoRunParams struct {
-	Package   captain.PackageFlag
-	Timestamp captain.TimeFlag
+	Package   captain.PackageValue
+	Timestamp captain.TimeValue
 	Language  string
 }
 

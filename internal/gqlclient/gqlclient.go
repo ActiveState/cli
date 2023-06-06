@@ -35,23 +35,22 @@ type Request0 interface {
 	Vars() map[string]interface{}
 }
 
-type RequestBase struct{}
-
-func (r *RequestBase) Files() []File {
-	return []File{}
-}
-
 type Request interface {
-	Files() []File
 	Query() string
 	Vars() (map[string]interface{}, error)
+}
+
+type RequestWithFiles interface {
+	Request
+	Files() []File
 }
 
 type Header map[string][]string
 
 type graphqlClient = graphql.Client
 
-// Work around API's that don't follow the graphql standard
+// StandardizedErrors works around API's that don't follow the graphql standard
+// It looks redundant because it needs to address two different API responses.
 // https://activestatef.atlassian.net/browse/PB-4291
 type StandardizedErrors struct {
 	Message string
@@ -63,6 +62,8 @@ func (e StandardizedErrors) HasErrors() bool {
 	return len(e.Errors) > 0 || e.Error != ""
 }
 
+// Values tells us all the relevant error messages returned.
+// We don't include e.Error because it's an unhelpful generic error code redundant with the message.
 func (e StandardizedErrors) Values() []string {
 	var errs []string
 	for _, err := range e.Errors {
@@ -153,8 +154,8 @@ func (c *Client) RunWithContext(ctx context.Context, request Request, response i
 	name := strutils.Summarize(request.Query(), 25)
 	defer profile.Measure(fmt.Sprintf("gqlclient:RunWithContext:(%s)", name), time.Now())
 
-	if len(request.Files()) > 0 {
-		return c.runWithFiles(ctx, request, response)
+	if fileRequest, ok := request.(RequestWithFiles); ok && len(fileRequest.Files()) > 0 {
+		return c.runWithFiles(ctx, fileRequest, response)
 	}
 
 	vars, err := request.Vars()
@@ -167,8 +168,10 @@ func (c *Client) RunWithContext(ctx context.Context, request Request, response i
 		graphRequest.Var(key, value)
 	}
 
-	for _, file := range request.Files() {
-		graphRequest.File(file.Field, file.Name, file.R)
+	if fileRequest, ok := request.(RequestWithFiles); ok {
+		for _, file := range fileRequest.Files() {
+			graphRequest.File(file.Field, file.Name, file.R)
+		}
 	}
 
 	var bearerToken string
@@ -230,7 +233,7 @@ func (c *Client) runRaw(ctx context.Context, request *http.Request, response int
 	return nil
 }
 
-func (c *Client) runWithFiles(ctx context.Context, gqlReq Request, response interface{}) error {
+func (c *Client) runWithFiles(ctx context.Context, gqlReq RequestWithFiles, response interface{}) error {
 	req, err := c.createMultiPartUploadRequest(gqlReq)
 	if err != nil {
 		return errs.Wrap(err, "Could not create multipart upload request")
@@ -244,7 +247,7 @@ type JsonRequest struct {
 	Variables map[string]interface{} `json:"variables"`
 }
 
-func (c *Client) createMultiPartUploadRequest(gqlReq Request) (*http.Request, error) {
+func (c *Client) createMultiPartUploadRequest(gqlReq RequestWithFiles) (*http.Request, error) {
 	req, err := http.NewRequest("POST", c.url, nil)
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not create http request")

@@ -12,7 +12,7 @@ import (
 
 // UninstallRunParams tracks the info required for running Uninstall.
 type UninstallRunParams struct {
-	Package captain.PackageFlagNoVersion
+	Package captain.PackageValueNoVersion
 }
 
 // Uninstall manages the uninstalling execution context.

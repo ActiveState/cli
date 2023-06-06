@@ -11,8 +11,8 @@ import (
 
 // InstallRunParams tracks the info required for running Install.
 type InstallRunParams struct {
-	Package   captain.PackageFlag
-	Timestamp captain.TimeFlag
+	Package   captain.PackageValue
+	Timestamp captain.TimeValue
 }
 
 // Install manages the installing execution context.

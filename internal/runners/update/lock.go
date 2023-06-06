@@ -17,11 +17,11 @@ import (
 // var _ captain.FlagMarshaler = (*StateToolChannelVersion)(nil)
 
 type StateToolChannelVersion struct {
-	captain.NameVersionFlag
+	captain.NameVersionValue
 }
 
 func (stv *StateToolChannelVersion) Set(arg string) error {
-	err := stv.NameVersionFlag.Set(arg)
+	err := stv.NameVersionValue.Set(arg)
 	if err != nil {
 		return locale.WrapInputError(err, "err_channel_format", "The State Tool channel and version provided is not formatting correctly, must be in the form of <channel>@<version>")
 	}

@@ -10,17 +10,17 @@ import (
 	"github.com/ActiveState/cli/internal/rtutils/p"
 )
 
-// NameVersionFlag represents a flag that supports both a name and a version, the following formats are supported:
+// NameVersionValue represents a flag that supports both a name and a version, the following formats are supported:
 // - name
 // - name@version
-type NameVersionFlag struct {
+type NameVersionValue struct {
 	name    string
 	version string
 }
 
-var _ FlagMarshaler = &NameVersionFlag{}
+var _ FlagMarshaler = &NameVersionValue{}
 
-func (nv *NameVersionFlag) Set(arg string) error {
+func (nv *NameVersionValue) Set(arg string) error {
 	nameArg := strings.Split(arg, "@")
 	nv.name = nameArg[0]
 	if len(nameArg) == 2 {
@@ -32,51 +32,47 @@ func (nv *NameVersionFlag) Set(arg string) error {
 	return nil
 }
 
-func (nv *NameVersionFlag) String() string {
+func (nv *NameVersionValue) String() string {
 	if nv.version == "" {
 		return nv.name
 	}
 	return fmt.Sprintf("%s@%s", nv.name, nv.version)
 }
 
-func (nv *NameVersionFlag) Name() string {
+func (nv *NameVersionValue) Name() string {
 	return nv.name
 }
 
-func (nv *NameVersionFlag) Version() string {
+func (nv *NameVersionValue) Version() string {
 	return nv.version
 }
 
-func (nv *NameVersionFlag) Type() string {
+func (nv *NameVersionValue) Type() string {
 	return "name and version"
 }
 
-// UserFlag represents a flag that supports both a name and an email address, the following formats are supported:
+// UserValue represents a flag that supports both a name and an email address, the following formats are supported:
 // - name <email>
 // - email
 // Emails are detected simply by containing a @ symbol.
-type UserFlag struct {
+type UserValue struct {
 	Name  string
 	Email string
 }
 
-var _ FlagMarshaler = &UserFlag{}
+var _ FlagMarshaler = &UserValue{}
 
-func (u *UserFlag) String() string {
+func (u *UserValue) String() string {
 	switch {
-	case u.Name == "" && u.Email == "":
-		return ""
 	case u.Name != "" && u.Email != "":
 		return fmt.Sprintf("%s <%s>", u.Name, u.Email)
-	case u.Name == "":
+	case u.Email != "":
 		return fmt.Sprintf("<%s>", u.Email)
-	case u.Email == "":
-		return u.Name
 	}
-	return ""
+	return u.Name
 }
 
-func (u *UserFlag) Set(s string) error {
+func (u *UserValue) Set(s string) error {
 	if strings.Contains(s, "<") {
 		v := strings.Split(s, "<")
 		u.Name = strings.TrimSpace(v[0])
@@ -90,19 +86,19 @@ func (u *UserFlag) Set(s string) error {
 		return nil
 	}
 
-	return locale.NewInputError("userflag_format", "Invalid format: Should be 'name <email>' or '<email>'")
+	return locale.NewInputError("uservalue_format", "Invalid format: Should be 'name <email>' or '<email>'")
 }
 
-func (u *UserFlag) Type() string {
+func (u *UserValue) Type() string {
 	return "user"
 }
 
-// UsersFlag is used to represent multiple UserFlag, this is used when a flag can be passed multiple times.
-type UsersFlag []UserFlag
+// UsersValue is used to represent multiple UserValue, this is used when a flag can be passed multiple times.
+type UsersValue []UserValue
 
-var _ FlagMarshaler = &UsersFlag{}
+var _ FlagMarshaler = &UsersValue{}
 
-func (u *UsersFlag) String() string {
+func (u *UsersValue) String() string {
 	var result []string
 	for _, user := range *u {
 		result = append(result, user.String())
@@ -110,8 +106,8 @@ func (u *UsersFlag) String() string {
 	return strings.Join(result, ", ")
 }
 
-func (u *UsersFlag) Set(s string) error {
-	uf := &UserFlag{}
+func (u *UsersValue) Set(s string) error {
+	uf := &UserValue{}
 	if err := uf.Set(s); err != nil {
 		return err
 	}
@@ -119,22 +115,23 @@ func (u *UsersFlag) Set(s string) error {
 	return nil
 }
 
-func (u *UsersFlag) Type() string {
+func (u *UsersValue) Type() string {
 	return "users"
 }
 
-// PackageFlag represents a flag that supports specifying a package in the following formats:
+// PackageValue represents a flag that supports specifying a package in the following formats:
+// - <name>
 // - <namespace>/<name>
 // - <namespace>/<name>@<version>
-type PackageFlag struct {
+type PackageValue struct {
 	Namespace string
 	Name      string
 	Version   string
 }
 
-var _ FlagMarshaler = &PackageFlag{}
+var _ FlagMarshaler = &PackageValue{}
 
-func (p *PackageFlag) String() string {
+func (p *PackageValue) String() string {
 	if p.Namespace == "" && p.Name == "" {
 		return ""
 	}
@@ -148,7 +145,7 @@ func (p *PackageFlag) String() string {
 	return fmt.Sprintf("%s@%s", name, p.Version)
 }
 
-func (p *PackageFlag) Set(s string) error {
+func (p *PackageValue) Set(s string) error {
 	if strings.Contains(s, "@") {
 		v := strings.Split(s, "@")
 		p.Version = strings.TrimSpace(v[1])
@@ -164,18 +161,18 @@ func (p *PackageFlag) Set(s string) error {
 	return nil
 }
 
-func (p *PackageFlag) Type() string {
+func (p *PackageValue) Type() string {
 	return "package"
 }
 
-// PackageFlagNoVersion is identical to PackageFlag except that it does not support a version.
-type PackageFlagNoVersion struct {
-	PackageFlag
+// PackageValueNoVersion is identical to PackageValue except that it does not support a version.
+type PackageValueNoVersion struct {
+	PackageValue
 }
 
-func (p *PackageFlagNoVersion) Set(s string) error {
-	if err := p.PackageFlag.Set(s); err != nil {
-		return errs.Wrap(err, "PackageFlag.Set failed")
+func (p *PackageValueNoVersion) Set(s string) error {
+	if err := p.PackageValue.Set(s); err != nil {
+		return errs.Wrap(err, "PackageValue.Set failed")
 	}
 	if p.Version != "" {
 		return fmt.Errorf("Specifying a version is not supported, package format should be '[<namespace>/]<name>'", s)
@@ -183,35 +180,34 @@ func (p *PackageFlagNoVersion) Set(s string) error {
 	return nil
 }
 
-func (p *PackageFlagNoVersion) Type() string {
+func (p *PackageValueNoVersion) Type() string {
 	return "package"
 }
 
-// PackageFlagNSRequired is identical to PackageFlag except that specifying a namespace is required.
-type PackageFlagNSRequired struct {
-	PackageFlag
+// PackageValueNSRequired is identical to PackageValue except that specifying a namespace is required.
+type PackageValueNSRequired struct {
+	PackageValue
 }
 
-func (p *PackageFlagNSRequired) Set(s string) error {
-	if err := p.PackageFlag.Set(s); err != nil {
-		return errs.Wrap(err, "PackageFlag.Set failed")
+func (p *PackageValueNSRequired) Set(s string) error {
+	if err := p.PackageValue.Set(s); err != nil {
+		return errs.Wrap(err, "PackageValueNSRequired.Set failed")
 	}
 	if p.Namespace == "" {
 		return fmt.Errorf("invalid package name format: %s (expected '<namespace>/<name>[@version]')", s)
 	}
 	return nil
 }
-
-func (p *PackageFlagNSRequired) Type() string {
+func (p *PackageValueNSRequired) Type() string {
 	return "namespace/package"
 }
 
-// PackagesFlag is used to represent multiple PackageFlag, this is used when a flag can be passed multiple times.
-type PackagesFlag []PackageFlagNSRequired
+// PackagesValue is used to represent multiple PackageValue, this is used when a flag can be passed multiple times.
+type PackagesValue []PackageValue
 
-var _ FlagMarshaler = &PackagesFlag{}
+var _ FlagMarshaler = &PackagesValue{}
 
-func (p *PackagesFlag) String() string {
+func (p *PackagesValue) String() string {
 	var result []string
 	for _, pkg := range *p {
 		result = append(result, pkg.String())
@@ -219,8 +215,8 @@ func (p *PackagesFlag) String() string {
 	return strings.Join(result, ", ")
 }
 
-func (p *PackagesFlag) Set(s string) error {
-	pf := &PackageFlagNSRequired{}
+func (p *PackagesValue) Set(s string) error {
+	pf := &PackageValue{}
 	if err := pf.Set(s); err != nil {
 		return err
 	}
@@ -228,22 +224,22 @@ func (p *PackagesFlag) Set(s string) error {
 	return nil
 }
 
-func (p *PackagesFlag) Type() string {
-	return "Packages"
+func (p *PackagesValue) Type() string {
+	return "packages"
 }
 
-type TimeFlag struct {
+type TimeValue struct {
 	raw  string
 	Time *time.Time
 }
 
-var _ FlagMarshaler = &TimeFlag{}
+var _ FlagMarshaler = &TimeValue{}
 
-func (u *TimeFlag) String() string {
+func (u *TimeValue) String() string {
 	return u.raw
 }
 
-func (u *TimeFlag) Set(v string) error {
+func (u *TimeValue) Set(v string) error {
 	if v == "now" {
 		u.Time = p.Pointer(time.Now())
 	} else {
@@ -257,6 +253,6 @@ func (u *TimeFlag) Set(v string) error {
 	return nil
 }
 
-func (u *TimeFlag) Type() string {
+func (u *TimeValue) Type() string {
 	return "timestamp"
 }

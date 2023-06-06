@@ -1,7 +1,5 @@
 package request
 
-import "github.com/ActiveState/cli/internal/gqlclient"
-
 func BuildScript(owner, project, commitID string) *buildScriptByCommitID {
 	return &buildScriptByCommitID{vars: map[string]interface{}{
 		"organization": owner,
@@ -11,7 +9,6 @@ func BuildScript(owner, project, commitID string) *buildScriptByCommitID {
 }
 
 type buildScriptByCommitID struct {
-	gqlclient.RequestBase
 	vars map[string]interface{}
 }
 

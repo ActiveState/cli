@@ -1,7 +1,5 @@
 package request
 
-import "github.com/ActiveState/cli/internal/gqlclient"
-
 // VulnerabilitiesByProject returns the query for retrieving vulnerabilities by projects
 func VulnerabilitiesByProject(org, name string) *vulnerabilitiesByProject {
 	return &vulnerabilitiesByProject{vars: map[string]interface{}{
@@ -11,7 +9,6 @@ func VulnerabilitiesByProject(org, name string) *vulnerabilitiesByProject {
 }
 
 type vulnerabilitiesByProject struct {
-	gqlclient.RequestBase
 	vars map[string]interface{}
 }
 
@@ -52,7 +49,6 @@ func (p *vulnerabilitiesByProject) Vars() (map[string]interface{}, error) {
 }
 
 type vulnerabilitiesByCommit struct {
-	gqlclient.RequestBase
 	vars map[string]interface{}
 }
 

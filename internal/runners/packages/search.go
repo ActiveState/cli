@@ -18,8 +18,8 @@ import (
 type SearchRunParams struct {
 	Language   string
 	ExactTerm  bool
-	Ingredient captain.PackageFlagNoVersion
-	Timestamp  captain.TimeFlag
+	Ingredient captain.PackageValueNoVersion
+	Timestamp  captain.TimeValue
 }
 
 // Search manages the searching execution context.
