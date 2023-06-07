@@ -17,7 +17,6 @@ import (
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/ActiveState/cli/pkg/projectfile/vars"
 	"github.com/gammazero/workerpool"
 )
 
@@ -105,7 +104,7 @@ func runJob(job Job) {
 			return
 		}
 
-		projVars := vars.NewVars(nil, vars.NewProject(pj), "noshell")
+		projVars := project.NewVars(nil, pj, "noshell")
 		cond := constraints.NewPrimeConditional(projVars)
 		run, err := cond.Eval(job.If)
 		if err != nil {
