@@ -5,24 +5,48 @@ import (
 	"log"
 	"net/http"
 	"reflect"
+	"strings"
 
 	"github.com/alecthomas/template"
 
 	"github.com/ActiveState/cli/pkg/sysinfo"
 
+	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/retryhttp"
 	"github.com/ActiveState/cli/internal/singleton/uniqid"
+	"github.com/ActiveState/cli/pkg/platform"
 )
 
+// NewHTTPClient creates a new HTTP client that will retry requests and
+// add additional request information to the request headers
+func NewHTTPClient() *http.Client {
+	if condition.InUnitTest() {
+		return http.DefaultClient
+	}
+
+	return &http.Client{
+		Transport: NewRoundTripper(retryhttp.DefaultClient.StandardClient().Transport),
+	}
+}
+
 // RoundTripper is an implementation of http.RoundTripper that adds additional request information
-type RoundTripper struct{}
+type RoundTripper struct {
+	transport http.RoundTripper
+}
 
 // RoundTrip executes a single HTTP transaction, returning a Response for the provided Request.
 func (r *RoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
-	req.Header.Set("User-Agent", r.UserAgent())
-	req.Header.Set("X-Requestor", uniqid.Text())
-	return http.DefaultTransport.RoundTrip(req)
+	req.Header.Add("User-Agent", r.UserAgent())
+	req.Header.Add("X-Requestor", uniqid.Text())
+
+	resp, err := r.transport.RoundTrip(req)
+	if err != nil && resp != nil && resp.StatusCode == http.StatusForbidden && strings.EqualFold(resp.Header.Get("server"), "cloudfront") {
+		return nil, platform.NewCountryBlockedError()
+	}
+
+	return resp, err
 }
 
 // UserAgent returns the user agent used by the State Tool
@@ -57,8 +81,8 @@ func (r *RoundTripper) UserAgent() string {
 }
 
 // NewRoundTripper creates a new instance of RoundTripper
-func NewRoundTripper() http.RoundTripper {
-	return &RoundTripper{}
+func NewRoundTripper(transport http.RoundTripper) http.RoundTripper {
+	return &RoundTripper{transport}
 }
 
 // ErrorCode tries to retrieve the code associated with an API error

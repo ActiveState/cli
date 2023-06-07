@@ -16,9 +16,9 @@ import (
 	anaConsts "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/analytics/dimensions"
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/download"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/httputil"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
@@ -66,7 +66,7 @@ type ArtifactSetupErrors struct {
 func (a *ArtifactSetupErrors) Error() string {
 	var errors []string
 	for _, err := range a.errs {
-		errors = append(errors, errs.Join(err, " :: ").Error())
+		errors = append(errors, errs.JoinMessage(err))
 	}
 	return "Not all artifacts could be installed, errors:\n" + strings.Join(errors, "\n")
 }
@@ -80,7 +80,7 @@ func (a *ArtifactSetupErrors) Errors() []error {
 func (a *ArtifactSetupErrors) UserError() string {
 	var errStrings []string
 	for _, err := range a.errs {
-		errStrings = append(errStrings, locale.JoinErrors(err, " :: ").UserError())
+		errStrings = append(errStrings, locale.JoinedErrorMessage(err))
 	}
 	return locale.Tl("setup_artifacts_err", "Not all artifacts could be installed:\n{{.V0}}", strings.Join(errStrings, "\n"))
 }
@@ -731,7 +731,7 @@ func (s *Setup) downloadArtifact(a artifact.ArtifactDownload, targetFile string)
 		return errs.Wrap(err, "Could not sign artifact URL %s.", a.UnsignedURI)
 	}
 
-	b, err := download.GetWithProgress(downloadURL.String(), &progress.Report{
+	b, err := httputil.GetWithProgress(downloadURL.String(), &progress.Report{
 		ReportSizeCb: func(size int) error {
 			if err := s.eventHandler.Handle(events.ArtifactDownloadStarted{a.ArtifactID, size}); err != nil {
 				return errs.Wrap(err, "Could not handle ArtifactDownloadStarted event")

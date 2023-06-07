@@ -12,6 +12,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/analytics/client/sync/reporters"
 	anaConst "github.com/ActiveState/cli/internal/analytics/constants"
+	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/rtutils"
@@ -422,13 +423,13 @@ func (suite *AnalyticsIntegrationTestSuite) TestInputError() {
 	events := parseAnalyticsEvents(suite, ts)
 	suite.assertSequentialEvents(events)
 
-	suite.assertNEvents(events, 1, anaConst.CatDebug, anaConst.ActInputError,
+	suite.assertNEvents(events, 1, anaConst.CatDebug, anaConst.ActCommandInputError,
 		fmt.Sprintf("output:\n%s\n%s",
 			cp.Snapshot(), ts.DebugLogs()))
 
 	for _, event := range events {
-		if event.Category == anaConst.CatDebug && event.Action == anaConst.ActInputError {
-			suite.Equal("state clean uninstall --mono", *event.Dimensions.Trigger)
+		if event.Category == anaConst.CatDebug && event.Action == anaConst.ActCommandInputError {
+			suite.Equal("state clean uninstall --mono", event.Label)
 		}
 	}
 }
@@ -566,6 +567,46 @@ func (suite *AnalyticsIntegrationTestSuite) TestConfigEvents() {
 	suite.assertNEvents(events, 1, anaConst.CatConfig, anaConst.ActConfigSet, "Should be at one config set event")
 	suite.assertNEvents(events, 1, anaConst.CatConfig, anaConst.ActConfigUnset, "Should be at one config unset event")
 	suite.assertSequentialEvents(events)
+}
+
+func (suite *AnalyticsIntegrationTestSuite) TestCIAndInteractiveDimensions() {
+	suite.OnlyRunForTags(tagsuite.Analytics)
+
+	ts := e2e.New(suite.T(), true)
+	defer ts.Close()
+
+	for _, interactive := range []bool{true, false} {
+		suite.T().Run(fmt.Sprintf("interactive: %v", interactive), func(t *testing.T) {
+			args := []string{"--version"}
+			if !interactive {
+				args = append(args, "--non-interactive")
+			}
+			cp := ts.SpawnWithOpts(e2e.WithArgs(args...))
+			cp.Expect("ActiveState CLI")
+			cp.ExpectExitCode(0)
+
+			time.Sleep(time.Second) // Ensure state-svc has time to report events
+
+			suite.eventsfile = filepath.Join(ts.Dirs.Config, reporters.TestReportFilename)
+			events := parseAnalyticsEvents(suite, ts)
+			suite.Require().NotEmpty(events)
+			processedAnEvent := false
+			for _, e := range events {
+				if !strings.Contains(e.Category, anaConst.CatRunCmd) || e.Label == "" {
+					continue // only look at spawned run-command events
+				}
+				interactiveEvent := !strings.Contains(e.Label, "--non-interactive")
+				if interactive != interactiveEvent {
+					continue // ignore the other spawned command
+				}
+				suite.Equal(condition.OnCI(), *e.Dimensions.CI, "analytics should report being on CI")
+				suite.Equal(interactive, *e.Dimensions.Interactive, "analytics did not report the correct interactive value for %v", e)
+				processedAnEvent = true
+			}
+			suite.True(processedAnEvent, "did not actually test CI and Interactive dimensions")
+			suite.assertSequentialEvents(events)
+		})
+	}
 }
 
 func TestAnalyticsIntegrationTestSuite(t *testing.T) {

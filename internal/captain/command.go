@@ -102,7 +102,8 @@ type Command struct {
 
 	skipChecks bool
 
-	unstable bool
+	unstable           bool
+	noStructuredOutput bool
 
 	examples []string
 
@@ -176,10 +177,13 @@ func NewCommand(name, title, description string, prime primer, flags []*Flag, ar
 	cmd.cobra.SetFlagErrorFunc(func(c *cobra.Command, err error) error {
 		if cmd.shouldWarnUnstable() {
 			if !condition.OptInUnstable(cmd.cfg) {
-				cmd.out.Notice(locale.Tr("unstable_command_warning"))
+				cmd.out.Notice(locale.T("unstable_command_warning"))
 				return nil
 			}
 			cmd.outputTitleIfAny()
+		} else if cmd.out.Type().IsStructured() && cmd.noStructuredOutput {
+			cmd.out.Error(locale.NewInputError("err_no_structured_output", "", string(cmd.out.Type())))
+			return nil
 		}
 		return err
 	})
@@ -262,8 +266,12 @@ func (c *Command) Use() string {
 	return c.cobra.Use
 }
 
-func (c *Command) UseFull() string {
-	return strings.Join(c.subCommandNames(), " ")
+func (c *Command) JoinedSubCommandNames() string {
+	return strings.Join(c.commandNames(false), " ")
+}
+
+func (c *Command) JoinedCommandNames() string {
+	return strings.Join(c.commandNames(true), " ")
 }
 
 func (c *Command) UsageText() string {
@@ -357,6 +365,18 @@ func (c *Command) Flags() []*Flag {
 	return c.flags
 }
 
+func (c *Command) ActiveFlagNames() []string {
+	names := []string{}
+	for _, flag := range c.ActiveFlags() {
+		if flag.Name != "" {
+			names = append(names, flag.Name)
+		} else if flag.Shorthand != "" {
+			names = append(names, flag.Shorthand)
+		}
+	}
+	return names
+}
+
 func (c *Command) ActiveFlags() []*Flag {
 	var flags []*Flag
 	flagMapping := map[string]*Flag{}
@@ -384,8 +404,8 @@ func (c *Command) Arguments() []*Argument {
 	return c.arguments
 }
 
-func (c *Command) SetInterceptChain(fns ...InterceptFunc) {
-	c.interceptChain = fns
+func (c *Command) AppendInterceptChain(fns ...InterceptFunc) {
+	c.interceptChain = append(c.interceptChain, fns...)
 }
 
 func DisableMousetrap() {
@@ -394,13 +414,14 @@ func DisableMousetrap() {
 
 func (c *Command) interceptFunc() InterceptFunc {
 	return func(fn ExecuteFunc) ExecuteFunc {
+		rootCmd := c.TopParent()
 		defer profile.Measure("captain:intercepter", time.Now())
-		for i := len(c.interceptChain) - 1; i >= 0; i-- {
-			if c.interceptChain[i] == nil {
+		for i := len(rootCmd.interceptChain) - 1; i >= 0; i-- {
+			if rootCmd.interceptChain[i] == nil {
 				continue
 			}
 			start := time.Now()
-			fn = c.interceptChain[i](fn)
+			fn = rootCmd.interceptChain[i](fn)
 			profile.Measure(fmt.Sprintf("captain:intercepter:%d", i), start)
 		}
 		return fn
@@ -438,6 +459,11 @@ func (c *Command) SetHasVariableArguments() *Command {
 	return c
 }
 
+func (c *Command) SetDoesNotSupportStructuredOutput() *Command {
+	c.noStructuredOutput = true
+	return c
+}
+
 func (c *Command) SkipChecks() bool {
 	return c.skipChecks
 }
@@ -462,9 +488,6 @@ func (c *Command) AddChildren(children ...*Command) {
 			panic(fmt.Sprintf("Command %s already has a parent: %s", child.Name(), child.parent.Name()))
 		}
 		child.parent = c
-
-		interceptChain := append(c.interceptChain, child.interceptChain...)
-		child.SetInterceptChain(interceptChain...)
 	}
 }
 
@@ -572,13 +595,13 @@ func (c *Command) persistRunner(cobraCmd *cobra.Command, args []string) {
 	c.runFlags(true)
 }
 
-// subCommandNames returns a slice of the names of the sub-commands called
-func (c *Command) subCommandNames() []string {
+// commandNames returns a slice of the names of the sub-commands called
+func (c *Command) commandNames(includeRoot bool) []string {
 	var commands []string
 	cmd := c.cobra
 	root := cmd.Root()
 	for {
-		if cmd == nil || cmd == root {
+		if cmd == nil || (cmd == root && !includeRoot) {
 			break
 		}
 		commands = append(commands, cmd.Name())
@@ -596,7 +619,7 @@ func (c *Command) subCommandNames() []string {
 func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
 	defer profile.Measure("captain:runner", time.Now())
 
-	subCommandString := c.UseFull()
+	subCommandString := c.JoinedSubCommandNames()
 	rollbar.CurrentCmd = appEventPrefix + subCommandString
 
 	// Send GA events unless they are handled in the runners...
@@ -629,6 +652,9 @@ func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
 
 	if c.shouldWarnUnstable() && !condition.OptInUnstable(c.cfg) {
 		c.out.Notice(locale.Tr("unstable_command_warning"))
+		return nil
+	} else if c.out.Type().IsStructured() && c.noStructuredOutput {
+		c.out.Error(locale.NewInputError("err_no_structured_output", "", string(c.out.Type())))
 		return nil
 	}
 
@@ -672,7 +698,7 @@ func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
 		return execute(c, args)
 	})
 
-	exitCode := errs.UnwrapExitCode(err)
+	exitCode := errs.ParseExitCode(err)
 
 	var serr interface{ Signal() os.Signal }
 	if errors.As(err, &serr) {
@@ -714,7 +740,7 @@ func (c *Command) runFlags(persistOnly bool) {
 }
 
 func (c *Command) shouldWarnUnstable() bool {
-	return c.unstable && (c.out.Type() != output.EditorV0FormatName && c.out.Type() != output.EditorFormatName)
+	return c.unstable && !c.out.Type().IsStructured()
 }
 
 func (c *Command) outputTitleIfAny() {
@@ -813,7 +839,7 @@ func pflagFlagErrMsgFlag(errMsg string) string {
 	flagText := strings.TrimPrefix(errMsg, "no such flag ")
 	flagText = strings.TrimPrefix(flagText, "unknown flag: ")
 	flagText = strings.TrimPrefix(flagText, "bad flag syntax: ")
-	//unknown shorthand flag: 'x' in -x
+	// unknown shorthand flag: 'x' in -x
 	flagText = strings.TrimPrefix(flagText, "unknown shorthand flag: ")
 
 	if flagText == errMsg {

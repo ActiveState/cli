@@ -60,15 +60,14 @@ func (a *App) install() error {
 		return errs.Wrap(err, "Could not create app parent directory: %s", installDir)
 	}
 
-	// MoveAllFiles does not overwrite existing files
 	if fileutils.DirExists(appPath) {
 		if err := os.RemoveAll(appPath); err != nil {
 			return errs.Wrap(err, "Could not remove existing app directory: %s", appPath)
 		}
 	}
 
-	if err := fileutils.MoveAllFiles(tmpDir, installDir); err != nil {
-		return errs.Wrap(err, "Could not move .app to %s", installDir)
+	if err := fileutils.CopyAndRenameFiles(tmpDir, installDir); err != nil {
+		return errs.Wrap(err, "Could not move .app to Applications directory")
 	}
 
 	return nil
@@ -109,7 +108,7 @@ func (a *App) createExecFile(base string) error {
 		map[string]interface{}{
 			"Exec": a.Exec,
 			"Args": strings.Join(a.Args, " "),
-		})
+		}, nil)
 	if err != nil {
 		return errs.Wrap(err, "Could not parse launch file source")
 	}
@@ -143,7 +142,7 @@ func (a *App) createInfoFile(base string) error {
 			"Icon":         a.options.IconFileName,
 			"HideDockIcon": a.options.MacHideDockIcon,
 			"IsGUIApp":     a.options.IsGUIApp,
-		})
+		}, nil)
 	if err != nil {
 		return errs.Wrap(err, "Could not parse launch file source")
 	}

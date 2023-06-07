@@ -50,6 +50,6 @@ func newScriptsEditCommand(prime *primer.Values) *captain.Command {
 		func(ccmd *captain.Command, args []string) error {
 			return editRunner.Run(&params)
 		},
-	).SetUnstable(true)
+	).SetUnstable(true).SetDoesNotSupportStructuredOutput()
 
 }

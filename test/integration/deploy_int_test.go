@@ -158,6 +158,9 @@ func (suite *DeployIntegrationTestSuite) TestDeployPython() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
+	suite.SetupRCFile(ts)
+	suite.T().Setenv("ACTIVESTATE_HOME", ts.Dirs.HomeDir)
+
 	targetID, err := uuid.NewUUID()
 	suite.Require().NoError(err)
 	targetPath, err := fileutils.ResolveUniquePath(filepath.Join(ts.Dirs.Work, targetID.String()))
@@ -258,6 +261,9 @@ func (suite *DeployIntegrationTestSuite) TestDeployConfigure() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
+	suite.SetupRCFile(ts)
+	suite.T().Setenv("ACTIVESTATE_HOME", ts.Dirs.HomeDir)
+
 	targetID, err := uuid.NewUUID()
 	suite.Require().NoError(err)
 	targetPath, err := fileutils.ResolveUniquePath(filepath.Join(ts.Dirs.Work, targetID.String()))
@@ -301,6 +307,22 @@ func (suite *DeployIntegrationTestSuite) TestDeployConfigure() {
 		suite.Require().NoError(err)
 		suite.Contains(string(out), targetID.String(), "Windows user PATH should contain our target dir")
 	}
+}
+
+func (suite *DeployIntegrationTestSuite) SetupRCFile(ts *e2e.Session) {
+	if runtime.GOOS == "windows" {
+		return
+	}
+
+	cfg, err := config.New()
+	suite.Require().NoError(err)
+
+	subshell := subshell.New(cfg)
+	rcFile, err := subshell.RcFile()
+	suite.Require().NoError(err)
+
+	err = fileutils.CopyFile(rcFile, filepath.Join(ts.Dirs.HomeDir, filepath.Base(rcFile)))
+	suite.Require().NoError(err)
 }
 
 func (suite *DeployIntegrationTestSuite) AssertConfig(ts *e2e.Session, targetID string) {

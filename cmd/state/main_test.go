@@ -16,7 +16,7 @@ type MainTestSuite struct {
 func (suite *MainTestSuite) TestOutputer() {
 	{
 		outputer, err := initOutput(outputFlags{"", false, false, false}, "", "")
-		suite.Require().NoError(err, errs.Join(err, "\n").Error())
+		suite.Require().NoError(err, errs.JoinMessage(err))
 		suite.Equal(output.PlainFormatName, outputer.Type(), "Returns Plain outputer")
 	}
 

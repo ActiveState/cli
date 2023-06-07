@@ -22,7 +22,7 @@ func New(prime primeable) *Learn {
 }
 
 func (l *Learn) Run() error {
-	l.out.Print(locale.Tl("learn_info", "Opening [ACTIONABLE]{{.V0}}[/RESET] in browser", constants.CheatSheetURL))
+	l.out.Notice(locale.Tl("learn_info", "Opening [ACTIONABLE]{{.V0}}[/RESET] in browser", constants.CheatSheetURL))
 
 	err := open.Run(constants.CheatSheetURL)
 	if err != nil {

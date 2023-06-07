@@ -137,8 +137,8 @@ const OptinUnstableEnvVarName = "ACTIVESTATE_OPTIN_UNSTABLE"
 // ServiceSockDir overrides the default socket path root diriectory used by the state service
 const ServiceSockDir = "ACTIVESTATE_SVC_SOCK"
 
-// AnalyticsLogEnvVarName is used to instruct State Tool to report analytics events to the given file
-const DeprecationOverrideEnvVarName = "ACTIVESTATE_DEPRECATION_OVERRIDE"
+// MessagesOverrideEnvVarName is used to override the location of the messages file (for testing purposes - should hold local filepath)
+const MessagesOverrideEnvVarName = "ACTIVESTATE_MESSAGES_OVERRIDE"
 
 // DisableErrorTipsEnvVarName disables the display of tips in error messages.
 // This should only be used by the installer so-as not to pollute error message output.
@@ -165,6 +165,10 @@ const RuntimeUsageSilenceTimeOverrideEnvVarName = "ACTIVESTATE_OVERRIDE_RTUSAGE_
 
 // SvcAuthPollingRateEnvVarName is used to override the default polling rate for syncing the authenticated state with the svc
 const SvcAuthPollingRateEnvVarName = "ACTIVESTATE_SVC_AUTH_POLLING_RATE"
+
+// StateSvcLogRotateInvervalEnvVarName is the environment variable used to override the default
+// log rotation timer interval (1 minute).
+const SvcLogRotateIntervalEnvVarName = "ACTIVESTATE_CLI_LOG_ROTATE_INTERVAL_MS"
 
 // APIUpdateInfoURL is the URL for our update info server
 const APIUpdateInfoURL = "https://platform.activestate.com/sv/state-update/api/v1"
@@ -250,8 +254,8 @@ const MediatorAPIPath = "/sv/mediator/api"
 // RequirementsImportAPIPath is the path used for the requirements import api
 const RequirementsImportAPIPath = "/sv/reqsvc/reqs"
 
-// DeprecationInfoURL is the URL we check against to see what versions are deprecated
-const DeprecationInfoURL = "https://state-tool.s3.amazonaws.com/deprecation.json"
+// MessagesInfoURL is the URL we check against to see what versions are deprecated
+const MessagesInfoURL = "https://state-tool.s3.amazonaws.com/messages.json"
 
 // DateFormatUser is the date format we use when communicating with the end-user
 const DateFormatUser = "January 02, 2006"

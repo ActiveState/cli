@@ -144,6 +144,22 @@ func (suite *RevertIntegrationTestSuite) TestRevertTo_failsOnCommitNotInHistory(
 	cp.ExpectNotExitCode(0)
 }
 
+func (suite *RevertIntegrationTestSuite) TestJSON() {
+	suite.OnlyRunForTags(tagsuite.Revert, tagsuite.JSON)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.Spawn("checkout", "ActiveState-CLI/Revert", ".")
+	cp.Expect("Skipping runtime setup")
+	cp.Expect("Checked out project")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("revert", "--to", "1f4f4f7d-7883-400e-b2ad-a5803c018ecd", "-o", "json")
+	cp.Expect(`{"current_commit_id":`)
+	cp.ExpectExitCode(0)
+	//AssertValidJSON(suite.T(), cp) // cannot assert here due to "Skipping runtime setup" notice
+}
+
 func TestRevertIntegrationTestSuite(t *testing.T) {
 	suite.Run(t, new(RevertIntegrationTestSuite))
 }

@@ -16,14 +16,14 @@ import (
 
 func TestExecutor(t *testing.T) {
 	tmpDir, err := ioutil.TempDir("", "as-executor-test")
-	require.NoError(t, err, errs.Join(err, ": "))
+	require.NoError(t, err, errs.JoinMessage(err))
 	defer func() { _ = os.RemoveAll(tmpDir) }()
 
 	dummyExecData := []byte("junk state-exec junk")
 	dummyExecSrc := filepath.Join(tmpDir, "_SRC")
 
 	err = fileutils.WriteFile(dummyExecSrc, dummyExecData)
-	require.NoError(t, err, errs.Join(err, ": "))
+	require.NoError(t, err, errs.JoinMessage(err))
 
 	target := target.NewCustomTarget("owner", "project", "1234abcd-1234-abcd-1234-abcd1234abcd", "dummy/path", target.NewExecTrigger("test"), false)
 	execDir := filepath.Join(tmpDir, "exec")
@@ -50,7 +50,7 @@ func TestExecutor(t *testing.T) {
 
 	t.Run("Create executors", func(t *testing.T) {
 		err = execInit.Apply("/sock-path", target, env, inputExes)
-		require.NoError(t, err, errs.Join(err, ": "))
+		require.NoError(t, err, errs.JoinMessage(err))
 	})
 
 	// Verify executors
@@ -65,7 +65,7 @@ func TestExecutor(t *testing.T) {
 
 		t.Run("Executor contains expected executable", func(t *testing.T) {
 			contains, err := fileutils.FileContains(executor, dummyExecData)
-			require.NoError(t, err, errs.Join(err, ": "))
+			require.NoError(t, err, errs.JoinMessage(err))
 			if !contains {
 				t.Errorf("File %s does not contain %q, contents: %q", executor, dummyExecData, fileutils.ReadFileUnsafe(executor))
 			}
@@ -78,7 +78,7 @@ func TestExecutor(t *testing.T) {
 
 	t.Run("Cleanup old executors", func(t *testing.T) {
 		err = execInit.Clean()
-		require.NoError(t, err, errs.Join(err, ": "))
+		require.NoError(t, err, errs.JoinMessage(err))
 
 		files := fileutils.ListDirSimple(exec("exec"), false)
 		require.Len(t, files, 0, "Cleanup should remove all exes")

@@ -82,7 +82,7 @@ func (c *Cache) removeCache(path string, force bool) error {
 		return errs.Wrap(err, "Failed to remove cache")
 	}
 
-	c.output.Print(locale.Tl("clean_cache_success_message", "Successfully cleaned cache."))
+	c.output.Notice(locale.Tl("clean_cache_success_message", "Successfully cleaned cache."))
 	return nil
 }
 

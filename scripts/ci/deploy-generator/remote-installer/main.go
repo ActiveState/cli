@@ -15,7 +15,7 @@ import (
 func main() {
 	err := run()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "%s error: %v", os.Args[0], errs.Join(err, ":"))
+		fmt.Fprintf(os.Stderr, "%s error: %v", os.Args[0], errs.JoinMessage(err))
 	}
 }
 

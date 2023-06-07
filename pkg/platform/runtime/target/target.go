@@ -30,6 +30,7 @@ const (
 	TriggerResetExec          Trigger = "reset-exec"
 	TriggerSwitch             Trigger = "switch"
 	TriggerImport             Trigger = "import"
+	TriggerInit               Trigger = "init"
 	TriggerPackage            Trigger = "package"
 	TriggerLanguage           Trigger = "language"
 	TriggerPlatform           Trigger = "platform"
@@ -55,6 +56,7 @@ var usageTriggers = []Trigger{
 	TriggerExecutor,
 	TriggerSwitch,
 	TriggerImport,
+	TriggerInit,
 	TriggerPackage,
 	TriggerPull,
 	TriggerReset,

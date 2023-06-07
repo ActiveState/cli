@@ -91,10 +91,18 @@ func (u *Use) Run(params *Params) error {
 		return locale.WrapError(err, "err_use_default", "Could not setup your project for use.")
 	}
 
-	u.out.Notice(locale.Tl("use_project_statement", "",
-		proj.NamespaceString(),
-		proj.Dir(),
-		setup.ExecDir(rti.Target().Dir()),
+	execDir := setup.ExecDir(rti.Target().Dir())
+	u.out.Print(output.Prepare(
+		locale.Tl("use_project_statement", "", proj.NamespaceString(), proj.Dir(), execDir),
+		&struct {
+			Namespace   string `json:"namespace"`
+			Path        string `json:"path"`
+			Executables string `json:"executables"`
+		}{
+			proj.NamespaceString(),
+			proj.Dir(),
+			execDir,
+		},
 	))
 
 	if rt.GOOS == "windows" {

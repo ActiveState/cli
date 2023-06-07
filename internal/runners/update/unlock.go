@@ -60,14 +60,15 @@ func (u *Unlock) Run(params *UnlockParams) error {
 		return locale.WrapError(err, "err_update_projectfile", "Could not update projectfile")
 	}
 
-	u.out.Print(locale.Tl("version_unlocked", "State Tool version unlocked"))
+	u.out.Notice(locale.Tl("version_unlocked", "State Tool version unlocked"))
 	return nil
 }
 
 func confirmUnlock(prom prompt.Prompter) error {
 	msg := locale.T("confirm_update_unlocked_version_prompt")
 
-	confirmed, err := prom.Confirm(locale.T("confirm"), msg, new(bool))
+	defaultChoice := !prom.IsInteractive()
+	confirmed, err := prom.Confirm(locale.T("confirm"), msg, &defaultChoice)
 	if err != nil {
 		return err
 	}

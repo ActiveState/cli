@@ -94,7 +94,7 @@ func main() {
 		return
 	}
 
-	an = sync.New(cfg, nil)
+	an = sync.New(cfg, nil, out)
 
 	// Set up prompter
 	prompter := prompt.New(true, an)
@@ -144,7 +144,7 @@ func main() {
 			multilog.Critical("Installer error: " + errs.JoinMessage(err))
 		}
 
-		exitCode, err = errors.Unwrap(err)
+		exitCode, err = errors.ParseUserFacing(err)
 		if err != nil {
 			out.Error(err)
 		}

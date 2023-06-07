@@ -42,6 +42,11 @@ func (p *PrivateKey) Run(params *PrivateKeyParams) error {
 		return err
 	}
 
-	p.Outputer.Print(string(contents))
+	p.Outputer.Print(output.Prepare(
+		string(contents),
+		&struct {
+			Value string `json:"value"`
+		}{string(contents)},
+	))
 	return nil
 }

@@ -66,7 +66,6 @@ func main() {
 	}
 
 	rollbar.SetConfig(cfg)
-	an = sync.New(cfg, nil)
 
 	out, err := output.New("", &output.Config{
 		OutWriter: os.Stdout,
@@ -78,6 +77,8 @@ func main() {
 		exitCode = 1
 		return
 	}
+
+	an = sync.New(cfg, nil, out)
 
 	prime := primer.New(
 		nil, out, nil,
@@ -92,7 +93,7 @@ func main() {
 			multilog.Critical("state-offline-uninstaller errored out: %s", errs.JoinMessage(err))
 		}
 
-		exitCode, _ = errors.Unwrap(err)
+		exitCode, _ = errors.ParseUserFacing(err)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, errs.JoinMessage(err))
 		}

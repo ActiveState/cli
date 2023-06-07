@@ -30,10 +30,10 @@ func StartSpinner(out Outputer, msg string, interval time.Duration) *Spinner {
 	}
 	d := &Spinner{0, frames, out, make(chan struct{}, 1), interval, false}
 
-	if msg != "" {
+	if msg != "" && d.out.Type() == PlainFormatName {
 		d.out.Fprint(d.out.Config().ErrWriter, strings.TrimSuffix(msg, " ")+" ")
 	}
-	if out.Type() == PlainFormatName { // Nothing will be printer otherwise
+	if d.out.Type() == PlainFormatName { // Nothing will be printer otherwise
 		go func() {
 			d.ticker()
 		}()
@@ -92,7 +92,7 @@ func (d *Spinner) Stop(msg string) {
 	d.stop <- struct{}{}
 	close(d.stop)
 
-    // We're done, so remove the last spinner frame
+	// We're done, so remove the last spinner frame
 	if d.out.Config().Interactive {
 		nMoved := d.moveCaretBack()
 		if nMoved > len(msg) {
@@ -100,14 +100,16 @@ func (d *Spinner) Stop(msg string) {
 		}
 	}
 
-	if msg != "" {
+	if msg != "" && d.out.Type() == PlainFormatName {
 		if !d.out.Config().Interactive {
 			d.out.Fprint(d.out.Config().ErrWriter, " ")
 		}
 		d.out.Fprint(d.out.Config().ErrWriter, strings.TrimPrefix(msg, " "))
 	}
 
-	d.out.Fprint(d.out.Config().ErrWriter, "\n")
+	if d.out.Type() == PlainFormatName {
+		d.out.Fprint(d.out.Config().ErrWriter, "\n")
+	}
 }
 
 func (d *Spinner) moveCaretBackInTerminal(n int) {

@@ -23,12 +23,15 @@ func (suite *PushIntegrationTestSuite) TestInitAndPush_VSCode() {
 	cp := ts.Spawn(
 		"--output", "editor",
 		"init",
-		namespace,
+		"--language",
 		"perl",
-		"--path", filepath.Join(ts.Dirs.Work, namespace),
+		namespace,
+		filepath.Join(ts.Dirs.Work, namespace),
 	)
 	cp.ExpectExitCode(0)
-	suite.Equal("", cp.TrimmedSnapshot())
+	suite.Contains(cp.TrimmedSnapshot(), "Skipping runtime setup because it was disabled by an environment variable")
+	suite.Contains(cp.TrimmedSnapshot(), "{")
+	suite.Contains(cp.TrimmedSnapshot(), "}")
 	wd := filepath.Join(cp.WorkDirectory(), namespace)
 	cp = ts.SpawnWithOpts(
 		e2e.WithArgs("push", "--output", "editor"),
@@ -166,29 +169,6 @@ func (suite *PackageIntegrationTestSuite) TestPackages_VSCode() {
 	suite.Require().NoError(err, "Could not parse JSON from: %s", cp.TrimmedSnapshot())
 
 	suite.Len(po, 2)
-}
-
-func (suite *ActivateIntegrationTestSuite) TestActivate_VSCode() {
-	suite.OnlyRunForTags(tagsuite.Activate, tagsuite.VSCode)
-	ts := e2e.New(suite.T(), false)
-	defer ts.Close()
-
-	cp := ts.Spawn("activate", "--output", "editor")
-	cp.ExpectNotExitCode(0)
-	suite.Contains(cp.TrimmedSnapshot(), "Error")
-
-	content := strings.TrimSpace(fmt.Sprintf(`
-project: "https://platform.activestate.com/ActiveState-CLI/Python3"
-`))
-	ts.PrepareActiveStateYAML(content)
-	cp = ts.Spawn("pull")
-	cp.ExpectExitCode(0)
-	cp = ts.Spawn("activate", "--output", "editor")
-	cp.Expect("}")
-	cp.ExpectExitCode(0)
-	out := cp.TrimmedSnapshot()
-	suite.Contains(out, "ACTIVESTATE_ACTIVATED")
-	suite.Contains(out, "ACTIVESTATE_ACTIVATED_ID")
 }
 
 func (suite *ProjectsIntegrationTestSuite) TestProjects_VSCode() {

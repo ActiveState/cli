@@ -44,7 +44,7 @@ func enable(exec string, opts Options) error {
 			"Label":       opts.MacLabel,
 			"Exec":        exec,
 			"Interactive": opts.MacInteractive,
-		})
+		}, nil)
 	if err != nil {
 		return errs.Wrap(err, "Could not parse %s", fmt.Sprintf(launchFileFormatName, filepath.Base(exec)))
 	}

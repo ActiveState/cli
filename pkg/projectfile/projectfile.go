@@ -998,7 +998,8 @@ func createCustom(params *CreateParams, lang language.Language) (*Project, error
 		}
 		content, err = strutils.ParseTemplate(
 			string(template),
-			map[string]interface{}{"Owner": owner, "Project": project, "Shell": shell, "Language": lang.String(), "LangExe": lang.Executable().Filename()})
+			map[string]interface{}{"Owner": owner, "Project": project, "Shell": shell, "Language": lang.String(), "LangExe": lang.Executable().Filename()},
+			nil)
 		if err != nil {
 			return nil, errs.Wrap(err, "Could not parse %s", tplName)
 		}
@@ -1016,7 +1017,7 @@ func createCustom(params *CreateParams, lang language.Language) (*Project, error
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not read asset")
 	}
-	fileContents, err := strutils.ParseTemplate(string(tplContents), data)
+	fileContents, err := strutils.ParseTemplate(string(tplContents), data, nil)
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not parse %s", tplName)
 	}
@@ -1052,7 +1053,7 @@ func createHostFile(filePath, cachePath string) error {
 		return errs.Wrap(err, "Could not read asset")
 	}
 
-	fileContents, err := strutils.ParseTemplate(string(tplContents), data)
+	fileContents, err := strutils.ParseTemplate(string(tplContents), data, nil)
 	if err != nil {
 		return errs.Wrap(err, "Could not parse %s", tplName)
 	}

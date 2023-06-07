@@ -2,8 +2,10 @@ package retryhttp
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/pkg/platform"
 	"github.com/hashicorp/go-retryablehttp"
 )
 
@@ -26,5 +28,10 @@ func (rt *RoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
 		return nil, locale.WrapError(err, "err_retry_convert_req", "Could not convert request to retryable format")
 	}
 
-	return rt.client.Do(retryableReq)
+	resp, err := rt.client.Do(retryableReq)
+	if err != nil && resp != nil && resp.StatusCode == http.StatusForbidden && strings.EqualFold(resp.Header.Get("server"), "cloudfront") {
+		return nil, platform.NewCountryBlockedError()
+	}
+
+	return resp, err
 }

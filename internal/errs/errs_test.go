@@ -12,7 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/rtutils"
-	"github.com/hashicorp/go-multierror"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestErrs(t *testing.T) {
@@ -32,7 +32,7 @@ func TestErrs(t *testing.T) {
 			"Creates wrapped error",
 			errs.Wrap(errors.New("Wrapped"), "Wrapper %s", "error"),
 			"Wrapper error",
-			"Wrapper error,Wrapped",
+			"Wrapper error: Wrapped",
 		},
 	}
 	for _, tt := range tests {
@@ -54,8 +54,8 @@ func TestErrs(t *testing.T) {
 					t.Fatalf("Stack should not contain reference to errs package.\nFound: %s at frame %d. Full stack:\n%s", frame.Path, i, ee.Stack().String())
 				}
 			}
-			if joinmessage := errs.Join(tt.err, ","); joinmessage.Error() != tt.wantJoinMessage {
-				t.Errorf("JoinMessage did not match, want: %s, got: %s", tt.wantJoinMessage, joinmessage.Error())
+			if joinmessage := errs.JoinMessage(err); joinmessage != tt.wantJoinMessage {
+				t.Errorf("JoinMessage did not match, want: '%s', got: '%s'", tt.wantJoinMessage, joinmessage)
 			}
 		})
 	}
@@ -116,7 +116,7 @@ func TestMatches(t *testing.T) {
 		{
 			"combined errors 1",
 			args{
-				errs.Combine(&exec.ExitError{&os.ProcessState{}, []byte("")}, errs.New("Random")),
+				errs.Pack(&exec.ExitError{&os.ProcessState{}, []byte("")}, errs.New("Random")),
 				&exec.ExitError{},
 			},
 			true,
@@ -124,7 +124,7 @@ func TestMatches(t *testing.T) {
 		{
 			"combined errors 2 - inverted",
 			args{
-				errs.Combine(errs.New("Random"), &exec.ExitError{&os.ProcessState{}, []byte("")}),
+				errs.Pack(errs.New("Random"), &exec.ExitError{&os.ProcessState{}, []byte("")}),
 				&exec.ExitError{},
 			},
 			true,
@@ -171,7 +171,7 @@ func TestAddTips(t *testing.T) {
 		{
 			"Multi error",
 			args{
-				errs.Combine(errs.New("error1"), errs.New("error2")),
+				errs.Pack(errs.New("error1"), errs.New("error2")),
 				[]string{"tip1", "tip2"},
 			},
 			[]string{"error1", "error2"},
@@ -180,7 +180,7 @@ func TestAddTips(t *testing.T) {
 		{
 			"Multi error with locale",
 			args{
-				errs.Combine(locale.NewError("error1"), locale.NewError("error2")),
+				errs.Pack(locale.NewError("error1"), locale.NewError("error2")),
 				[]string{"tip1", "tip2"},
 			},
 			[]string{"error1", "error2"},
@@ -192,8 +192,9 @@ func TestAddTips(t *testing.T) {
 			err := errs.AddTips(tt.args.err, tt.args.tips...)
 			gotTips := []string{}
 			msgs := []string{}
-			for err != nil {
-				_, isMultiError := err.(*multierror.Error)
+			errors := errs.Unpack(err)
+			for _, err := range errors {
+				_, isMultiError := err.(*errs.PackedErrors)
 				if !isMultiError && err.Error() != errs.TipMessage {
 					msgs = append(msgs, err.Error())
 				}
@@ -206,8 +207,6 @@ func TestAddTips(t *testing.T) {
 				} else if x, ok := err.(errs.ErrorTips); ok {
 					gotTips = append(gotTips, x.ErrorTips()...)
 				}
-
-				err = errors.Unwrap(err)
 			}
 			if !reflect.DeepEqual(gotTips, tt.wantTips) {
 				t.Errorf("AddTips() = %v, want %v", gotTips, tt.wantTips)
@@ -215,6 +214,106 @@ func TestAddTips(t *testing.T) {
 			if !reflect.DeepEqual(msgs, tt.wantErrorMsgs) {
 				t.Errorf("Error Msgs = %v, want %v", msgs, tt.wantErrorMsgs)
 			}
+		})
+	}
+}
+
+func TestUnpack(t *testing.T) {
+	tests := []struct {
+		name string
+		err  error
+		want []string
+	}{
+		{
+			"Single",
+			errs.New("error1"),
+			[]string{"error1"},
+		},
+		{
+			"Wrapped",
+			errs.Wrap(errs.New("error1"), "error2"),
+			[]string{"error2", "error1"},
+		},
+		{
+			"Stacked",
+			errs.Pack(errs.New("error1"), errs.New("error2"), errs.New("error3")),
+			[]string{"error1", "error2", "error3"},
+		},
+		{
+			"Stacked and Wrapped",
+			errs.Pack(errs.New("error1"), errs.Wrap(errs.New("error2"), "error2-wrap"), errs.New("error3")),
+			[]string{"error1", "error2-wrap", "error2", "error3"},
+		},
+		{
+			"Stacked, Wrapped and Stacked",
+			errs.Pack(
+				errs.New("error1"),
+				errs.Wrap(
+					errs.Pack(errs.New("error2a"), errs.New("error2b")),
+					"error2-wrap",
+				),
+				errs.New("error3")),
+			[]string{"error1", "error2-wrap", "error2a", "error2b", "error3"},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			errors := errs.Unpack(tt.err)
+			errorMsgs := []string{}
+			for _, err := range errors {
+				errorMsgs = append(errorMsgs, err.Error())
+			}
+			assert.Equalf(t, tt.want, errorMsgs, "Unpack(%v)", tt.err)
+		})
+	}
+}
+
+func TestJoinMessage(t *testing.T) {
+	tests := []struct {
+		name string
+		err  error
+		want string
+	}{
+		{
+			"Single",
+			errs.New("error1"),
+			"error1",
+		},
+		{
+			"Wrapped",
+			errs.Wrap(errs.New("error1"), "error2"),
+			"error2: error1",
+		},
+		{
+			"Stacked",
+			errs.Pack(errs.New("error1"), errs.New("error2"), errs.New("error3")),
+			"- error1\n- error2\n- error3",
+		},
+		{
+			"Stacked and Wrapped",
+			errs.Pack(
+				errs.New("error1"),
+				errs.Wrap(errs.New("error2"), "error2-wrap"),
+				errs.New("error3"),
+			),
+			"- error1\n- error2-wrap: error2\n- error3",
+		},
+		{
+			"Stacked, Wrapped and Stacked",
+			errs.Pack(
+				errs.New("error1"),
+				errs.Wrap(
+					errs.Pack(errs.New("error2a"), errs.New("error2b")),
+					"error2-wrap",
+				),
+				errs.New("error3")),
+			"- error1\n- error2-wrap:\n    - error2a\n    - error2b\n- error3",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			msg := errs.JoinMessage(tt.err)
+			assert.Equalf(t, tt.want, msg, "JoinMessage(%v)", tt.err)
 		})
 	}
 }

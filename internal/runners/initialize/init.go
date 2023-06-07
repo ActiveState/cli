@@ -4,6 +4,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -14,7 +15,11 @@ import (
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
+	"github.com/ActiveState/cli/internal/runbits"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
+	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
@@ -29,18 +34,24 @@ type RunParams struct {
 
 // Initialize stores scope-related dependencies.
 type Initialize struct {
-	config projectfile.ConfigGetter
-	out    output.Outputer
+	auth      *authentication.Auth
+	config    projectfile.ConfigGetter
+	out       output.Outputer
+	analytics analytics.Dispatcher
+	svcModel  *model.SvcModel
 }
 
 type primeable interface {
+	primer.Auther
 	primer.Configurer
 	primer.Outputer
+	primer.Analyticer
+	primer.SvcModeler
 }
 
 // New returns a prepared ptr to Initialize instance.
 func New(prime primeable) *Initialize {
-	return &Initialize{prime.Config(), prime.Output()}
+	return &Initialize{prime.Auth(), prime.Config(), prime.Output(), prime.Analytics(), prime.SvcModel()}
 }
 
 // inferLanguage tries to infer a reasonable default language from the project currently in use
@@ -69,6 +80,10 @@ func inferLanguage(config projectfile.ConfigGetter) (string, string, bool) {
 
 func (r *Initialize) Run(params *RunParams) error {
 	logging.Debug("Init: %s/%s %v", params.Namespace.Owner, params.Namespace.Project, params.Private)
+
+	if !r.auth.Authenticated() {
+		return locale.NewInputError("err_init_authenticated")
+	}
 
 	path := params.Path
 	if path == "" {
@@ -100,7 +115,7 @@ func (r *Initialize) Run(params *RunParams) error {
 	}
 
 	if languageName == "" {
-		return locale.NewInputError("err_init_no_language", "You need to supply the [NOTICE]language[/RESET] argument, run [ACTIONABLE]`state init --help`[/RESET] for more information.")
+		return locale.NewInputError("err_init_no_language")
 	}
 
 	lang, err := language.MakeByNameAndVersion(languageName, languageVersion)
@@ -165,13 +180,27 @@ func (r *Initialize) Run(params *RunParams) error {
 		return locale.WrapError(err, "err_init_push", "Failed to push to the newly created Platform project at {{.V0}}", params.Namespace.String())
 	}
 
+	err = runbits.RefreshRuntime(r.auth, r.out, r.analytics, proj, commitID, true, target.TriggerInit, r.svcModel)
+	if err != nil {
+		return locale.WrapError(err, "err_init_refresh", "Could not setup runtime after init")
+	}
+
 	projectfile.StoreProjectMapping(r.config, params.Namespace.String(), filepath.Dir(proj.Source().Path()))
 
-	r.out.Notice(locale.Tr(
-		"init_success",
-		params.Namespace.Owner,
-		params.Namespace.Project,
-		path,
+	projectTarget := target.NewProjectTarget(proj, nil, "").Dir()
+	executables := setup.ExecDir(projectTarget)
+
+	r.out.Print(output.Prepare(
+		locale.Tr("init_success", params.Namespace.String(), path, executables),
+		&struct {
+			Namespace   string `json:"namespace"`
+			Path        string `json:"path" `
+			Executables string `json:"executables"`
+		}{
+			params.Namespace.String(),
+			path,
+			executables,
+		},
 	))
 
 	return nil

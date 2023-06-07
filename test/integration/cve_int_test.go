@@ -98,6 +98,31 @@ func (suite *CveIntegrationTestSuite) TestCveInvalidProject() {
 	cp.ExpectNotExitCode(0)
 }
 
+func (suite *CveIntegrationTestSuite) TestJSON() {
+	suite.OnlyRunForTags(tagsuite.Cve, tagsuite.JSON)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	ts.LoginAsPersistentUser()
+
+	cp := ts.Spawn("checkout", "ActiveState-CLI/Perl", ".")
+	cp.Expect("Skipping runtime setup")
+	cp.Expect("Checked out")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("cve", "-o", "json")
+	cp.Expect(`"project":`)
+	cp.Expect(`"commitID":`)
+	cp.ExpectExitCode(0)
+	AssertValidJSON(suite.T(), cp)
+
+	cp = ts.Spawn("cve", "report", "-o", "editor")
+	cp.Expect(`"project":`)
+	cp.Expect(`"commitID":`)
+	cp.ExpectExitCode(0)
+	AssertValidJSON(suite.T(), cp)
+}
+
 func TestCveIntegraionTestSuite(t *testing.T) {
 	suite.Run(t, new(CveIntegrationTestSuite))
 }

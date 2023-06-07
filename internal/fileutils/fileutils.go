@@ -24,6 +24,7 @@ import (
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/gofrs/flock"
+	"github.com/thoas/go-funk"
 )
 
 // nullByte represents the null-terminator byte
@@ -570,7 +571,7 @@ func MoveAllFilesRecursively(fromPath, toPath string, cb MoveAllFilesCallback) e
 // CopyAndRenameFiles copies files from fromDir to toDir.
 // If the target file exists already, the source file is first copied next to the target file, and then overwrites the target by renaming the source.
 // This method is more robust and than copying directly, in case the target file is opened or executed.
-func CopyAndRenameFiles(fromPath, toPath string) error {
+func CopyAndRenameFiles(fromPath, toPath string, exclude ...string) error {
 	logging.Debug("Copying files from %s to %s", fromPath, toPath)
 
 	if !DirExists(fromPath) {
@@ -587,6 +588,10 @@ func CopyAndRenameFiles(fromPath, toPath string) error {
 
 	// any found files and dirs
 	for _, file := range files {
+		if funk.Contains(exclude, file.Name()) {
+			continue
+		}
+
 		rpath := file.RelativePath()
 		fromPath := filepath.Join(fromPath, rpath)
 		toPath := filepath.Join(toPath, rpath)

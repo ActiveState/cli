@@ -38,6 +38,7 @@ const (
 	Init            = "init"
 	InstallScripts  = "install-scripts"
 	Installer       = "installer"
+	Invite          = "invite"
 	RemoteInstaller = "remote-installer"
 	Interrupt       = "interrupt"
 	JSON            = "json"
@@ -79,6 +80,7 @@ const (
 	Checkout        = "checkout"
 	OffInstall      = "offline-install"
 	Help            = "help"
+	Messaging       = "messaging"
 )
 
 // Suite extends a testify suite Suite, such that tests allowing for dynamic skipping of tests

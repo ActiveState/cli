@@ -5,6 +5,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -21,13 +22,13 @@ func TestJSON_Print(t *testing.T) {
 		{
 			"simple string",
 			args{"hello"},
-			`"hello"` + "\x00\n",
+			`"hello"`,
 			"",
 		},
 		{
 			"error string",
 			args{errors.New("hello")},
-			`"hello"` + "\x00\n",
+			`"hello"`,
 			"",
 		},
 		{
@@ -41,7 +42,7 @@ func TestJSON_Print(t *testing.T) {
 					"value1", "value2", "value3",
 				},
 			},
-			`{"Field1":"value1","Field2":"value2"}` + "\x00\n",
+			`{"Field1":"value1","Field2":"value2"}`,
 			"",
 		},
 		{
@@ -55,7 +56,7 @@ func TestJSON_Print(t *testing.T) {
 					"value1", "value2", "value3",
 				},
 			},
-			`{"RealField1":"value1","RealField2":"value2"}` + "\x00\n",
+			`{"RealField1":"value1","RealField2":"value2"}`,
 			"",
 		},
 	}
@@ -64,12 +65,12 @@ func TestJSON_Print(t *testing.T) {
 			outWriter := &bytes.Buffer{}
 			errWriter := &bytes.Buffer{}
 
-			f := &JSON{&Config{
+			f := &JSON{cfg: &Config{
 				OutWriter:   outWriter,
 				ErrWriter:   errWriter,
 				Colored:     false,
 				Interactive: false,
-			}, true}
+			}}
 
 			f.Print(tt.args.value)
 			assert.Equal(t, tt.expectedOut, outWriter.String(), "Output did not match")
@@ -100,12 +101,12 @@ func TestJSON_Notice(t *testing.T) {
 			outWriter := &bytes.Buffer{}
 			errWriter := &bytes.Buffer{}
 
-			f := &JSON{&Config{
+			f := &JSON{cfg: &Config{
 				OutWriter:   outWriter,
 				ErrWriter:   errWriter,
 				Colored:     false,
 				Interactive: false,
-			}, true}
+			}}
 
 			f.Notice(tt.args.value)
 			assert.Equal(t, tt.expectedOut, outWriter.String(), "Output did not match")
@@ -114,29 +115,38 @@ func TestJSON_Notice(t *testing.T) {
 	}
 }
 
-func TestJSON_Nullbyte(t *testing.T) {
+func TestJSON_Error(t *testing.T) {
 	type args struct {
 		value interface{}
 	}
 	tests := []struct {
 		name        string
-		nulByte     bool
 		args        args
 		expectedOut string
 		expectedErr string
 	}{
 		{
-			"no nulbyte",
-			false,
-			args{"hello"},
-			`"hello"` + "\n",
+			"localized error",
+			args{locale.NewError("", "hello")},
+			`{"error":"hello"}`,
 			"",
 		},
 		{
-			"nulbyte",
-			true,
+			"simple string",
 			args{"hello"},
-			`"hello"` + "\x00\n",
+			`{"error":"hello"}`,
+			"",
+		},
+		{
+			"unrecognized",
+			args{1},
+			`{"error":"Not a recognized error format: 1"}`,
+			"",
+		},
+		{
+			"raw JSON",
+			args{[]byte(`"hello"`)},
+			`"hello"`,
 			"",
 		},
 	}
@@ -145,14 +155,14 @@ func TestJSON_Nullbyte(t *testing.T) {
 			outWriter := &bytes.Buffer{}
 			errWriter := &bytes.Buffer{}
 
-			f := &JSON{&Config{
+			f := &JSON{cfg: &Config{
 				OutWriter:   outWriter,
 				ErrWriter:   errWriter,
 				Colored:     false,
 				Interactive: false,
-			}, tt.nulByte}
+			}}
 
-			f.Print(tt.args.value)
+			f.Error(tt.args.value)
 			assert.Equal(t, tt.expectedOut, outWriter.String(), "Output did not match")
 			assert.Equal(t, tt.expectedErr, errWriter.String(), "Errors did not match")
 		})

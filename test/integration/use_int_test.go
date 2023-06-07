@@ -121,6 +121,9 @@ func (suite *UseIntegrationTestSuite) TestReset() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
+	suite.SetupRCFile(ts)
+	suite.T().Setenv("ACTIVESTATE_HOME", ts.Dirs.HomeDir)
+
 	cp := ts.SpawnWithOpts(e2e.WithArgs("checkout", "ActiveState-CLI/Python3"))
 	cp.Expect("Skipping runtime setup")
 	cp.Expect("Checked out project")
@@ -255,6 +258,53 @@ func (suite *UseIntegrationTestSuite) TestSetupNotice() {
 	cp.Expect("Setting Up Runtime")
 	cp.Expect("Switched to project")
 	cp.ExpectExitCode(0)
+}
+
+func (suite *UseIntegrationTestSuite) TestJSON() {
+	suite.OnlyRunForTags(tagsuite.Use, tagsuite.JSON)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.Spawn("checkout", "ActiveState-CLI/Perl-5.32", ".")
+	cp.Expect("Skipping runtime setup")
+	cp.Expect("Checked out")
+	cp.ExpectExitCode(0)
+
+	cp = ts.SpawnWithOpts(
+		e2e.WithArgs("use", "-o", "json"),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
+	cp.Expect(`"namespace":`)
+	cp.Expect(`"path":`)
+	cp.Expect(`"executables":`)
+	cp.ExpectExitCode(0)
+	AssertValidJSON(suite.T(), cp)
+
+	cp = ts.Spawn("use", "show", "--output", "json")
+	cp.Expect(`"namespace":`)
+	cp.Expect(`"path":`)
+	cp.ExpectExitCode(0)
+	AssertValidJSON(suite.T(), cp)
+
+	cp = ts.Spawn("use", "reset", "-o", "json")
+	cp.ExpectExitCode(0)
+	suite.Empty(cp.TrimmedSnapshot(), "unexpected output")
+}
+
+func (suite *UseIntegrationTestSuite) SetupRCFile(ts *e2e.Session) {
+	if runtime.GOOS == "windows" {
+		return
+	}
+
+	cfg, err := config.New()
+	suite.Require().NoError(err)
+
+	subshell := subshell.New(cfg)
+	rcFile, err := subshell.RcFile()
+	suite.Require().NoError(err)
+
+	err = fileutils.CopyFile(rcFile, filepath.Join(ts.Dirs.HomeDir, filepath.Base(rcFile)))
+	suite.Require().NoError(err)
 }
 
 func TestUseIntegrationTestSuite(t *testing.T) {

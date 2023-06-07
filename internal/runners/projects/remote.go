@@ -18,21 +18,16 @@ import (
 func (r *Projects) RunRemote(params *Params) error {
 	projectfile.CleanProjectMapping(r.config)
 
-	projectsList, err := r.fetchProjects(params.Local)
+	remoteProjects, err := r.newRemoteProjectsOutput(params.Local)
 	if err != nil {
 		return locale.WrapError(err, "project_err")
 	}
 
-	if len(projectsList) == 0 {
-		r.out.Print(locale.T("project_empty"))
-		return nil
-	}
-
-	r.out.Print(projectsList)
+	r.out.Print(&projectsOutput{remoteProjects})
 	return nil
 }
 
-func (r *Projects) fetchProjects(onlyLocal bool) (projectWithOrgs, error) {
+func (r *Projects) newRemoteProjectsOutput(onlyLocal bool) ([]projectWithOrg, error) {
 	orgParams := organizations.NewListOrganizationsParams()
 	memberOnly := true
 	orgParams.SetMemberOnly(&memberOnly)
@@ -43,7 +38,7 @@ func (r *Projects) fetchProjects(onlyLocal bool) (projectWithOrgs, error) {
 		}
 		return nil, errs.Wrap(err, "Unknown failure")
 	}
-	var projects projectWithOrgs = []projectWithOrg{}
+	var projects []projectWithOrg
 	localConfigProjects := projectfile.GetProjectMapping(r.config)
 	for _, org := range orgs.Payload {
 		platformOrgProjects, err := model.FetchOrganizationProjects(org.URLname)

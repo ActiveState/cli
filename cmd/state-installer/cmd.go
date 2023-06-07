@@ -125,7 +125,7 @@ func main() {
 	logging.Debug("Original Args: %v", os.Args)
 	logging.Debug("Processed Args: %v", processedArgs)
 
-	an = sync.New(cfg, nil)
+	an = sync.New(cfg, nil, out)
 	an.Event(AnalyticsFunnelCat, "start")
 
 	params := newParams()
@@ -206,7 +206,7 @@ func main() {
 		}
 
 		an.EventWithLabel(AnalyticsFunnelCat, "fail", errs.JoinMessage(err))
-		exitCode, err = errors.Unwrap(err)
+		exitCode, err = errors.ParseUserFacing(err)
 		if err != nil {
 			out.Error(err)
 		}
@@ -227,7 +227,7 @@ func execute(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher,
 	}
 
 	// Detect installed state tool
-	stateToolInstalled, installPath, stateExePath, err := installedOnPath(params.path, constants.BranchName)
+	stateToolInstalled, installPath, err := installedOnPath(params.path, constants.BranchName)
 	if err != nil {
 		return errs.Wrap(err, "Could not detect if State Tool is already installed.")
 	}
@@ -237,7 +237,7 @@ func execute(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher,
 	}
 
 	// If this is a fresh installation we ensure that the target directory is empty
-	if !stateToolInstalled && fileutils.DirExists(params.path) {
+	if !stateToolInstalled && fileutils.DirExists(params.path) && !params.force {
 		empty, err := fileutils.IsEmptyDir(params.path)
 		if err != nil {
 			return errs.Wrap(err, "Could not check if install path is empty")
@@ -249,14 +249,6 @@ func execute(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher,
 
 	// We expect the installer payload to be in the same directory as the installer itself
 	payloadPath := filepath.Dir(osutils.Executable())
-
-	// Older versions of the state tool will not include the --update flag, so we
-	// need to use the legacy way of checking for update
-	// This code whould be removed in the future. See story here: https://activestatef.atlassian.net/browse/DX-985
-	if !params.isUpdate {
-		packagedStateExe := filepath.Join(payloadPath, installation.BinDirName, constants.StateCmd+exeutils.Extension)
-		params.isUpdate = determineLegacyUpdate(stateExePath, stateToolInstalled, packagedStateExe, payloadPath, params)
-	}
 
 	route := "install"
 	if params.isUpdate {
@@ -446,33 +438,6 @@ func assertCompatibility() error {
 	}
 
 	return nil
-}
-
-func determineLegacyUpdate(exePath string, isToolInstalled bool, packagedStateExe, payloadPath string, params *Params) bool {
-	// Detect whether this is a fresh install or an update
-	var isUpdate bool
-	switch {
-	case (params.sourceInstaller == "install.sh" || params.sourceInstaller == "install.ps1" || noArgs()) && fileutils.FileExists(packagedStateExe):
-		if isToolInstalled && !params.force && shouldUpdateInstalledStateTool(exePath) {
-			logging.Debug("Installing via %s, found old install and updating.", params.sourceInstaller)
-			isUpdate = true
-		} else {
-			logging.Debug("Not using update flow as installing via " + params.sourceInstaller)
-		}
-	case params.force:
-		// When ran with `--force` we always use the install UX
-		logging.Debug("Not using update flow as --force was passed")
-	case payloadPath == "" && fileutils.FileExists(packagedStateExe):
-		// Facilitate older versions of state tool which do not invoke the installer with `--source-path`
-		logging.Debug("Using update flow as installer is alongside payload")
-		isUpdate = true
-	case isToolInstalled:
-		// This should trigger AFTER the check above where sourcePath is defined
-		logging.Debug("Using update flow as state tool is already installed")
-		isUpdate = true
-	}
-
-	return isUpdate
 }
 
 func noArgs() bool {

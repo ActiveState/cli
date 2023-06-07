@@ -76,8 +76,7 @@ func autoUpdate(args []string, cfg *config.Instance, an analytics.Dispatcher, ou
 
 	err = up.InstallBlocking("")
 	if err != nil {
-		innerErr := errs.InnerError(err)
-		if os.IsPermission(innerErr) {
+		if os.IsPermission(err) {
 			an.EventWithLabel(anaConst.CatUpdates, anaConst.ActUpdateInstall, anaConst.UpdateLabelFailed, &dimensions.Values{
 				Version: p.StrP(up.Version),
 				Error:   p.StrP("Could not update the state tool due to insufficient permissions."),

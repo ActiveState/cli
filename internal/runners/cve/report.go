@@ -43,7 +43,7 @@ type reportData struct {
 	Packages  []model.PackageVulnerability `json:"packages"`
 }
 
-type reportDataPrinter struct {
+type reportOutput struct {
 	output output.Outputer
 	data   *reportData
 }
@@ -71,21 +71,17 @@ func (r *Report) Run(params *ReportParams) error {
 	if !ns.IsValid() {
 		ns = r.proj.Namespace()
 	}
-	reportOutput := &reportData{
-		Project:  ns.String(),
-		CommitID: vulnerabilities.CommitID,
-		Date:     time.Now(),
 
-		Histogram: vulnerabilities.VulnerabilityHistogram,
-		Packages:  packageVulnerabilities,
-	}
-
-	rdp := &reportDataPrinter{
+	r.out.Print(&reportOutput{
 		r.out,
-		reportOutput,
-	}
-
-	r.out.Print(rdp)
+		&reportData{
+			Project:   ns.String(),
+			CommitID:  vulnerabilities.CommitID,
+			Date:      time.Now(),
+			Histogram: vulnerabilities.VulnerabilityHistogram,
+			Packages:  packageVulnerabilities,
+		},
+	})
 
 	return nil
 }
@@ -113,7 +109,7 @@ func (r *Report) fetchVulnerabilities(namespaceOverride project.Namespaced) (*me
 	return resp, nil
 }
 
-func (rd *reportDataPrinter) MarshalOutput(format output.Format) interface{} {
+func (rd *reportOutput) MarshalOutput(format output.Format) interface{} {
 	if format != output.PlainFormatName {
 		return rd.data
 	}
@@ -192,4 +188,8 @@ func (rd *reportDataPrinter) MarshalOutput(format output.Format) interface{} {
 		locale.Tl("cve_report_hint_cve", "To view a specific CVE, run [ACTIONABLE]state security open [cve-id][/RESET]."),
 	})
 	return output.Suppress
+}
+
+func (rd *reportOutput) MarshalStructured(format output.Format) interface{} {
+	return rd.data
 }
