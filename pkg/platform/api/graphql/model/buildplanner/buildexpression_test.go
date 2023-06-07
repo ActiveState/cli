@@ -115,11 +115,7 @@ func TestBuildExpression_Requirements(t *testing.T) {
 			bx, err := NewBuildExpression(data)
 			assert.NoError(t, err)
 
-			got, err := bx.Requirements()
-			if (err != nil) != tt.wantErr {
-				t.Errorf("BuildExpression.Requirements() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
+			got := bx.Requirements()
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("BuildExpression.Requirements() = %v, want %v", got, tt.want)
 			}
@@ -322,12 +318,7 @@ func TestBuildExpression_Update(t *testing.T) {
 				return
 			}
 
-			got, err := bx.Requirements()
-			if (err != nil) != tt.wantErr {
-				t.Errorf("BuildExpression.Requirements() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-
+			got := bx.Requirements()
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("BuildExpression.Requirements() = %v, want %v", got, tt.want)
 			}

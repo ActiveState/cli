@@ -55,9 +55,9 @@ type Requirement struct {
 type VersionRequirement map[string]string
 
 type BuildExpression struct {
-	expression       map[string]interface{}
-	solveNode        *map[string]interface{}
-	requirementsNode []interface{}
+	expression   map[string]interface{}
+	solveNode    *map[string]interface{}
+	requirements []Requirement
 }
 
 func NewBuildExpression(data []byte) (*BuildExpression, error) {
@@ -77,15 +77,26 @@ func NewBuildExpression(data []byte) (*BuildExpression, error) {
 		return nil, errs.Wrap(err, "Could not get requirements node")
 	}
 
+	requirementsData, err := json.Marshal(requirementsNode)
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not marshal JSON")
+	}
+
+	var requirements []Requirement
+	err = json.Unmarshal(requirementsData, &requirements)
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not unmarshal JSON")
+	}
+
 	err = validateRequirements(requirementsNode)
 	if err != nil {
 		return nil, errs.Wrap(err, "Requirements in BuildExpression are invalid")
 	}
 
 	return &BuildExpression{
-		expression:       expression,
-		solveNode:        &solveNode,
-		requirementsNode: requirementsNode,
+		expression:   expression,
+		solveNode:    &solveNode,
+		requirements: requirements,
 	}, nil
 }
 
@@ -98,31 +109,18 @@ func validateRequirements(requirements []interface{}) error {
 
 		_, ok = r[RequirementNameKey]
 		if !ok {
-			return errs.New("Requirement in BuildExpression is missing name field: %v", r)
+			return errs.New("Requirement in BuildExpression is missing name field: %#v", r)
 		}
 		_, ok = r[RequirementNamespaceKey]
 		if !ok {
-			return errs.New("Requirement in BuildExpression is missing namespace field")
+			return errs.New("Requirement in BuildExpression is missing namespace field: %#v", r)
 		}
 	}
 	return nil
 }
 
-func (bx BuildExpression) Requirements() ([]Requirement, error) {
-	// We marshal and unmarshal here as a cheap way to convert the
-	// interface slice to a slice of Requirements
-	requirementsData, err := json.Marshal(bx.requirementsNode)
-	if err != nil {
-		return nil, errs.Wrap(err, "Could not marshal JSON")
-	}
-
-	var requirements []Requirement
-	err = json.Unmarshal(requirementsData, &requirements)
-	if err != nil {
-		return nil, errs.Wrap(err, "Could not unmarshal JSON")
-	}
-
-	return requirements, nil
+func (bx BuildExpression) Requirements() []Requirement {
+	return bx.requirements
 }
 
 func (bx *BuildExpression) Update(operation Operation, requirement Requirement) error {
@@ -150,19 +148,18 @@ func (bx *BuildExpression) Update(operation Operation, requirement Requirement) 
 }
 
 func (bx *BuildExpression) AddRequirement(requirement Requirement) error {
-	bx.requirementsNode = append(bx.requirementsNode, requirement)
+	bx.requirements = append(bx.requirements, requirement)
 
-	(*bx.solveNode)[RequirementsKey] = bx.requirementsNode
+	(*bx.solveNode)[RequirementsKey] = bx.requirements
 
 	return nil
 }
 
 func (bx *BuildExpression) RemoveRequirement(requirement Requirement) error {
-	for i, req := range bx.requirementsNode {
-		r := req.(map[string]interface{})
-		if r[RequirementNameKey] == requirement.Name && r[RequirementNamespaceKey] == requirement.Namespace {
-			bx.requirementsNode = append(bx.requirementsNode[:i], bx.requirementsNode[i+1:]...)
-			(*bx.solveNode)[RequirementsKey] = bx.requirementsNode
+	for i, req := range bx.requirements {
+		if req.Name == requirement.Name && req.Namespace == requirement.Namespace {
+			bx.requirements = append(bx.requirements[:i], bx.requirements[i+1:]...)
+			(*bx.solveNode)[RequirementsKey] = bx.requirements
 			return nil
 		}
 	}
@@ -171,11 +168,10 @@ func (bx *BuildExpression) RemoveRequirement(requirement Requirement) error {
 }
 
 func (bx BuildExpression) UpdateRequirement(requirement Requirement) error {
-	for i, req := range bx.requirementsNode {
-		r := req.(map[string]interface{})
-		if r[RequirementNameKey] == requirement.Name && r[RequirementNamespaceKey] == requirement.Namespace {
-			bx.requirementsNode[i] = requirement
-			(*bx.solveNode)[RequirementsKey] = bx.requirementsNode
+	for i, req := range bx.requirements {
+		if req.Name == requirement.Name && req.Namespace == requirement.Namespace {
+			bx.requirements[i] = requirement
+			(*bx.solveNode)[RequirementsKey] = bx.requirements
 			return nil
 		}
 	}
