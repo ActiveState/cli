@@ -109,6 +109,9 @@ func (v *Value) String() string {
 	case v.Str != nil:
 		return *v.Str
 
+	case v.Null != nil:
+		return "null"
+
 	case v.Assignment != nil:
 		return v.Assignment.String()
 
@@ -129,7 +132,7 @@ func (v *Value) String() string {
 		return *v.Ident
 	}
 
-	return "null"
+	return fmt.Sprintf("[\n]") // participle does not create v.List if it's empty
 }
 
 func (f *FuncCall) String() string {

@@ -153,11 +153,17 @@ func (bp *BuildPlanner) FetchBuildResult(commitID strfmt.UUID, owner, project st
 		}
 	}
 
+	expr, err := model.NewBuildExpression(resp.Project.Commit.Script)
+	if err != nil {
+		return nil, errs.Wrap(err, "Cannot parse build expression")
+	}
+
 	res := BuildResult{
-		BuildEngine: buildEngine,
-		Build:       resp.Project.Commit.Build,
-		BuildReady:  resp.Project.Commit.Build.Status == model.Ready,
-		CommitID:    strfmt.UUID(resp.Project.Commit.CommitID),
+		BuildEngine:     buildEngine,
+		Build:           resp.Project.Commit.Build,
+		BuildReady:      resp.Project.Commit.Build.Status == model.Ready,
+		CommitID:        strfmt.UUID(resp.Project.Commit.CommitID),
+		BuildExpression: expr,
 	}
 
 	// We want to extract the recipe ID from the BuildLogIDs.
