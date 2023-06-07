@@ -34,7 +34,7 @@ func (u *Uninstall) Run(params UninstallRunParams, nsType model.NamespaceType) e
 		params.Name,
 		"",
 		0,
-		bpModel.OperationRemove,
+		bpModel.OperationRemoved,
 		nsType,
 	)
 }

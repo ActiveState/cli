@@ -145,7 +145,7 @@ func TestBuildExpression_Update(t *testing.T) {
 					Name:      "requests",
 					Namespace: "language/python",
 				},
-				operation: OperationAdd,
+				operation: OperationAdded,
 			},
 			want: []Requirement{
 				{
@@ -188,7 +188,7 @@ func TestBuildExpression_Update(t *testing.T) {
 					Name:      "jupyterlab",
 					Namespace: "language/python",
 				},
-				operation: OperationRemove,
+				operation: OperationRemoved,
 			},
 			want: []Requirement{
 				{
@@ -229,7 +229,7 @@ func TestBuildExpression_Update(t *testing.T) {
 						},
 					},
 				},
-				operation: OperationUpdate,
+				operation: OperationUpdated,
 			},
 			want: []Requirement{
 				{
@@ -268,7 +268,7 @@ func TestBuildExpression_Update(t *testing.T) {
 					Name:      "requests",
 					Namespace: "language/python",
 				},
-				operation: OperationRemove,
+				operation: OperationRemoved,
 			},
 			want: []Requirement{
 				{

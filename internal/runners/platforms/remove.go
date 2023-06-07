@@ -43,7 +43,7 @@ func (r *Remove) Run(ps RemoveRunParams) error {
 		params.name,
 		params.version,
 		params.BitWidth,
-		bpModel.OperationRemove,
+		bpModel.OperationRemoved,
 		model.NamespacePlatform,
 	); err != nil {
 		return locale.WrapError(err, "err_remove_platform", "Could not remove platform.")

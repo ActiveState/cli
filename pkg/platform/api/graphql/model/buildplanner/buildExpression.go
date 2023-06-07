@@ -21,9 +21,9 @@ const (
 	ComparatorLTE            = "lte"
 	ComparatorNE             = "ne"
 
-	OperationAdd Operation = iota
-	OperationRemove
-	OperationUpdate
+	OperationAdded Operation = iota
+	OperationRemoved
+	OperationUpdated
 
 	SolveFuncName           = "solve"
 	SolveLegacyFuncName     = "solve_legacy"
@@ -35,12 +35,12 @@ const (
 
 func (o Operation) String() string {
 	switch o {
-	case OperationAdd:
-		return "add"
-	case OperationRemove:
-		return "remove"
-	case OperationUpdate:
-		return "update"
+	case OperationAdded:
+		return "added"
+	case OperationRemoved:
+		return "removed"
+	case OperationUpdated:
+		return "updated"
 	default:
 		return "unknown"
 	}
@@ -130,11 +130,11 @@ func (bx BuildExpression) Requirements() ([]Requirement, error) {
 func (bx *BuildExpression) Update(operation Operation, requirement Requirement) error {
 	var err error
 	switch operation {
-	case OperationAdd:
+	case OperationAdded:
 		err = bx.AddRequirement(requirement)
-	case OperationRemove:
+	case OperationRemoved:
 		err = bx.RemoveRequirement(requirement)
-	case OperationUpdate:
+	case OperationUpdated:
 		err = bx.UpdateRequirement(requirement)
 	default:
 		return errs.New("Unsupported operation")
