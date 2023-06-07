@@ -558,6 +558,11 @@ func (p *Project) Path() string {
 	return p.path
 }
 
+// SetPath sets the path of the project file and should generally only be used by tests
+func (p *Project) SetPath(path string) {
+	p.path = path
+}
+
 // VersionBranch returns the branch as it was interpreted from the lock
 func (p *Project) VersionBranch() string {
 	return p.parsedBranch
@@ -739,11 +744,6 @@ func (p *Project) SetBranch(branch string) error {
 	p.parsedURL.BranchName = branch
 	p.Project = pf.String()
 	return nil
-}
-
-// SetPath sets the path of the project file and should generally only be used by tests
-func (p *Project) SetPath(path string) {
-	p.path = path
 }
 
 // GetProjectFilePath returns the path to the project activestate.yaml
