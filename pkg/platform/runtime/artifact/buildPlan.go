@@ -71,6 +71,15 @@ func NewMapFromBuildPlan(build *model.Build) ArtifactMap {
 	return res
 }
 
+// buildMap recursively builds the artifact map from the lookup table. It expects an ID that
+// represents an artifact. With that ID it retrieves the artifact from the lookup table and
+// recursively calls itself with each of the artifacts dependencies. Finally, once all of the
+// dependencies have been processed, it adds the artifact to the result map.
+//
+// Each artifact has a list of dependencies which also have a list of dependencies. When we
+// iterate through the artifact's dependencies, we also have to build up the dependencies of
+// each of those dependencies. Once we have a complete list of dependencies for the artifact,
+// we can continue to build up the results map.
 func buildMap(baseID strfmt.UUID, lookup map[strfmt.UUID]interface{}, result ArtifactMap) {
 	target := lookup[baseID]
 	artifact, ok := target.(*model.Artifact)
