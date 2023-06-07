@@ -4,16 +4,16 @@ import (
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/primer"
-	"github.com/ActiveState/cli/internal/runners/uploadingredient"
+	"github.com/ActiveState/cli/internal/runners/publish"
 )
 
-func newUpload(prime *primer.Values) *captain.Command {
-	runner := uploadingredient.New(prime)
-	params := uploadingredient.Params{}
+func newPublish(prime *primer.Values) *captain.Command {
+	runner := publish.New(prime)
+	params := publish.Params{}
 	c := captain.NewCommand(
-		"upload",
-		locale.Tl("add_title", "Uploading Ingredient"),
-		locale.Tl("add_description", "Upload an Ingredient for private consumption."),
+		"publish",
+		locale.Tl("add_title", "Publish Ingredient"),
+		locale.Tl("add_description", "Publish an Ingredient for private consumption."),
 		prime,
 		[]*captain.Flag{
 			{
@@ -77,15 +77,15 @@ func newUpload(prime *primer.Values) *captain.Command {
 		},
 		[]*captain.Argument{
 			{
-				Name:        locale.Tl("filepath", "filepath"),
-				Description: locale.Tl("author_upload_filepath_description", "The binary ingredient file to upload."),
-				Value:       &params.Filepath,
-				Required:    true,
-			},
-			{
 				Name:        locale.Tl("meta_file", "meta file"),
 				Description: locale.Tl("author_upload_metafile_description", "A yaml file expressing the ingredient meta information. Use --editor to review the file format."),
 				Value:       &params.MetaFilepath,
+				Required:    false,
+			},
+			{
+				Name:        locale.Tl("filepath", "filepath"),
+				Description: locale.Tl("author_upload_filepath_description", "The binary ingredient file to upload."),
+				Value:       &params.Filepath,
 				Required:    false,
 			},
 		},
