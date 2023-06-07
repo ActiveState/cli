@@ -6,6 +6,60 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+### 0.39.0
+
+### Added
+
+- Added new messaging functionality that allows us to send messages for things
+  like new releases, deprecations, etc.
+
+### Changed
+
+- We've graduated `state init` to now be *stable*. You no longer need to opt-in
+  to unstable commands to use it.
+- Running `state init` and `state refresh` successfully will now give the same
+  environment information as commands like `state checkout` and `state use`.
+- The `state init` command now takes a `path` argument, replacing the previous
+  `language` argument which is now a flag. This makes the command more
+  consistent with other state tool commands.
+- Running `state init` will now source the initialized runtime.
+- We've revisited JSON output to now be much more consistent. Previously certain
+  commands would oblige by the request to give JSON output, but would give JSON
+  output that isn't actually curated for machine consumption. As a result you
+  may now get an error saying a given command does not support JSON, but ones
+  that do now generally give far more useful JSON output.
+- As a result of the revised JSON output we will no longer print NIL characters
+  as delimiter between JSON objects. So you no longer need to account for these.
+- Requirement names (eg. when running `state install <pkg>` or
+  `state bundle install <bundle>` are now normalized to the casing of the
+  matching ingredient rather than that of the user input.
+- On macOS, the `State Service.app` now installs to the installation directory
+  of the State Tool rather than the users Applications directory, as this is a
+  daemon application and not a user facing application.
+- Log rotation has moved to the State Service, making the State Tool itself
+  perform faster.
+
+### Removed
+
+- Google cloud secret integration has been removed. In order to use secrets you
+  will need to configure them yourself as you would with any other CI.
+
+### Fixed
+
+- Fixed bug where events and executors would not set up the PATH correctly when
+  used from cmd.exe on Windows.
+- Fixed bug where `state auth` would panic if there was no internet connection.
+- Fixed installation placing a pointless copy of the installer inside the
+  install dir.
+- Fixed ZSH not being configured if no .zshrc file existed yet.
+- Fixed installer `--force` flag not being respected when the target dir is
+  non-empty.
+- Fixed issues where incomplete error information was sometimes reported.
+- Fixed various errors and success messages to more clearly indicate what
+  happened.
+- Fixed issue where State Tool would retry network requests that had no change
+  of succeeding, resulting in longer wait times for the user.
+
 ### 0.38.1
 
 ### Fixed
