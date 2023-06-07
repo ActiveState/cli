@@ -28,6 +28,18 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   output that isn't actually curated for machine consumption. As a result you
   may now get an error saying a given command does not support JSON, but ones
   that do now generally give far more useful JSON output.
+    - Commands that support JSON
+      output: `auth`, `branch`, `bundles install`, `bundles search`,
+      `bundles uninstall`, `checkout`, `config get`, `config set`, `cve`,
+      `cve report`, `events`, `export config`, `export env`, `export jwt`,
+      `export new-api-key`, `export private-key`, `export recipe`, `fork`,
+      `history`, `info`, `init`, `install`, `languages`, `organizations`,
+      `packages`, `platforms`, `platforms search`, `projects`,
+      `projects remote`, `pull`, `reset`, `revert`, `scripts`, `search`,
+      `secrets`, `secrets get`, `show`, `switch`, `uninstall`, `update lock`,
+      `use`, `use show`.
+    - Note that the format of the JSON output itself should be considered
+      *unstable* at this time (ie. subject to change).
 - As a result of the revised JSON output we will no longer print NIL characters
   as delimiter between JSON objects. So you no longer need to account for these.
 - Requirement names (eg. when running `state install <pkg>` or
