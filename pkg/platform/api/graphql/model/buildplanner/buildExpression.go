@@ -127,11 +127,11 @@ func (bx *BuildExpression) Update(operation Operation, requirement Requirement) 
 	var err error
 	switch operation {
 	case OperationAdded:
-		err = bx.AddRequirement(requirement)
+		err = bx.addRequirement(requirement)
 	case OperationRemoved:
-		err = bx.RemoveRequirement(requirement)
+		err = bx.removeRequirement(requirement)
 	case OperationUpdated:
-		err = bx.UpdateRequirement(requirement)
+		err = bx.updateRequirement(requirement)
 	default:
 		return errs.New("Unsupported operation")
 	}
@@ -147,7 +147,7 @@ func (bx *BuildExpression) Update(operation Operation, requirement Requirement) 
 	return nil
 }
 
-func (bx *BuildExpression) AddRequirement(requirement Requirement) error {
+func (bx *BuildExpression) addRequirement(requirement Requirement) error {
 	bx.requirements = append(bx.requirements, requirement)
 
 	(*bx.solveNode)[RequirementsKey] = bx.requirements
@@ -155,7 +155,7 @@ func (bx *BuildExpression) AddRequirement(requirement Requirement) error {
 	return nil
 }
 
-func (bx *BuildExpression) RemoveRequirement(requirement Requirement) error {
+func (bx *BuildExpression) removeRequirement(requirement Requirement) error {
 	for i, req := range bx.requirements {
 		if req.Name == requirement.Name && req.Namespace == requirement.Namespace {
 			bx.requirements = append(bx.requirements[:i], bx.requirements[i+1:]...)
@@ -167,7 +167,7 @@ func (bx *BuildExpression) RemoveRequirement(requirement Requirement) error {
 	return errs.New("Could not find requirement")
 }
 
-func (bx BuildExpression) UpdateRequirement(requirement Requirement) error {
+func (bx BuildExpression) updateRequirement(requirement Requirement) error {
 	for i, req := range bx.requirements {
 		if req.Name == requirement.Name && req.Namespace == requirement.Namespace {
 			bx.requirements[i] = requirement
