@@ -62,7 +62,7 @@ type BuildLog struct {
 
 // New creates a new BuildLog instance that allows us to wait for incoming build log information
 // artifactMap comprises all artifacts (from the runtime closure) that are in the recipe, alreadyBuilt is set of artifact IDs that have already been built in the past
-func New(ctx context.Context, artifactMap artifact.ArtifactBuildPlanMap, eventHandler events.Handler, recipeID strfmt.UUID, logFilePath string, buildResult *model.BuildResult) (*BuildLog, error) {
+func New(ctx context.Context, artifactMap artifact.ArtifactMap, eventHandler events.Handler, recipeID strfmt.UUID, logFilePath string, buildResult *model.BuildResult) (*BuildLog, error) {
 	// The runtime dependencies do not include all build dependencies. Since we are working
 	// with the build log, we need to add the missing dependencies to the list of artifacts
 	addBuildArtifacts(artifactMap, buildResult.Build)
@@ -82,7 +82,7 @@ func New(ctx context.Context, artifactMap artifact.ArtifactBuildPlanMap, eventHa
 }
 
 // NewWithCustomConnections creates a new BuildLog instance with all physical connections managed by the caller
-func NewWithCustomConnections(artifactMap artifact.ArtifactBuildPlanMap,
+func NewWithCustomConnections(artifactMap artifact.ArtifactMap,
 	conn BuildLogConnector, eventHandler events.Handler,
 	recipeID strfmt.UUID, logFilePath string) (*BuildLog, error) {
 
@@ -294,7 +294,7 @@ func (bl *BuildLog) BuiltArtifactsChannel() <-chan artifact.ArtifactDownload {
 	return bl.ch
 }
 
-func resolveArtifactName(artifactID artifact.ArtifactID, artifactMap artifact.ArtifactBuildPlanMap) (name string, ok bool) {
+func resolveArtifactName(artifactID artifact.ArtifactID, artifactMap artifact.ArtifactMap) (name string, ok bool) {
 	artf, ok := artifactMap[artifactID]
 	if !ok {
 		return locale.Tl("unknown_artifact_name", "unknown"), false
@@ -303,7 +303,7 @@ func resolveArtifactName(artifactID artifact.ArtifactID, artifactMap artifact.Ar
 	return artf.NameWithVersion(), true
 }
 
-func addBuildArtifacts(artifactMap artifact.ArtifactBuildPlanMap, build *bpModel.Build) {
+func addBuildArtifacts(artifactMap artifact.ArtifactMap, build *bpModel.Build) {
 	lookup := make(map[strfmt.UUID]interface{})
 
 	for _, artifact := range build.Artifacts {
@@ -337,7 +337,7 @@ func addBuildArtifacts(artifactMap artifact.ArtifactBuildPlanMap, build *bpModel
 				multilog.Error("Could not resolve source information: %v", err)
 			}
 
-			artifactMap[strfmt.UUID(a.TargetID)] = artifact.ArtifactBuildPlan{
+			artifactMap[strfmt.UUID(a.TargetID)] = artifact.Artifact{
 				ArtifactID:       strfmt.UUID(a.TargetID),
 				Name:             info.Name,
 				Namespace:        info.Namespace,

@@ -12,8 +12,8 @@ import (
 	"github.com/thoas/go-funk"
 )
 
-// ArtifactBuildPlan comprises useful information about an artifact that we extracted from a build plan
-type ArtifactBuildPlan struct {
+// Artifact comprises useful information about an artifact that we extracted from a build plan
+type Artifact struct {
 	ArtifactID       ArtifactID
 	Name             string
 	Namespace        string
@@ -25,14 +25,14 @@ type ArtifactBuildPlan struct {
 	Dependencies []ArtifactID
 }
 
-// ArtifactBuildPlanMap maps artifact ids to artifact information extracted from a build plan
-type ArtifactBuildPlanMap map[ArtifactID]ArtifactBuildPlan
+// ArtifactMap maps artifact ids to artifact information extracted from a build plan
+type ArtifactMap map[ArtifactID]Artifact
 
-// ArtifactNamedBuildPlanMap maps artifact names to artifact information extracted from a build plan
-type ArtifactNamedBuildPlanMap map[string]ArtifactBuildPlan
+// ArtifactNamedMap maps artifact names to artifact information extracted from a build plan
+type ArtifactNamedMap map[string]Artifact
 
 // NameWithVersion returns a string <name>@<version> if artifact has a version specified, otherwise it returns just the name
-func (a ArtifactBuildPlan) NameWithVersion() string {
+func (a Artifact) NameWithVersion() string {
 	version := ""
 	if a.Version != nil {
 		version = fmt.Sprintf("@%s", *a.Version)
@@ -40,12 +40,12 @@ func (a ArtifactBuildPlan) NameWithVersion() string {
 	return a.Name + version
 }
 
-func NewMapFromBuildPlan(build *model.Build) ArtifactBuildPlanMap {
+func NewMapFromBuildPlan(build *model.Build) ArtifactMap {
 	if build == nil {
 		return nil
 	}
 
-	res := make(ArtifactBuildPlanMap)
+	res := make(ArtifactMap)
 
 	lookup := make(map[strfmt.UUID]interface{})
 
@@ -71,7 +71,7 @@ func NewMapFromBuildPlan(build *model.Build) ArtifactBuildPlanMap {
 	return res
 }
 
-func buildMap(baseID strfmt.UUID, lookup map[strfmt.UUID]interface{}, result ArtifactBuildPlanMap) {
+func buildMap(baseID strfmt.UUID, lookup map[strfmt.UUID]interface{}, result ArtifactMap) {
 	target := lookup[baseID]
 	artifact, ok := target.(*model.Artifact)
 	if !ok {
@@ -104,7 +104,7 @@ func buildMap(baseID strfmt.UUID, lookup map[strfmt.UUID]interface{}, result Art
 		return
 	}
 
-	result[strfmt.UUID(artifact.TargetID)] = ArtifactBuildPlan{
+	result[strfmt.UUID(artifact.TargetID)] = Artifact{
 		ArtifactID:       strfmt.UUID(artifact.TargetID),
 		Name:             info.Name,
 		Namespace:        info.Namespace,
@@ -162,7 +162,7 @@ func BuildRuntimeDependencies(depdendencyID strfmt.UUID, lookup map[strfmt.UUID]
 }
 
 // RecursiveDependenciesFor computes the recursive dependencies for an ArtifactID a using artifacts as a lookup table
-func RecursiveDependenciesFor(a ArtifactID, artifacts ArtifactBuildPlanMap) []ArtifactID {
+func RecursiveDependenciesFor(a ArtifactID, artifacts ArtifactMap) []ArtifactID {
 	allDeps := make(map[ArtifactID]struct{})
 	artf, ok := artifacts[a]
 	if !ok {
@@ -193,17 +193,17 @@ func RecursiveDependenciesFor(a ArtifactID, artifacts ArtifactBuildPlanMap) []Ar
 	return res
 }
 
-func NewNamedMapFromBuildPlan(build *model.Build) ArtifactNamedBuildPlanMap {
+func NewNamedMapFromBuildPlan(build *model.Build) ArtifactNamedMap {
 	am := NewMapFromBuildPlan(build)
-	res := make(map[string]ArtifactBuildPlan)
+	res := make(map[string]Artifact)
 	for _, a := range am {
 		res[a.Name] = a
 	}
 	return res
 }
 
-func FilterInstallable(artifacts ArtifactBuildPlanMap) ArtifactBuildPlanMap {
-	res := make(ArtifactBuildPlanMap)
+func FilterInstallable(artifacts ArtifactMap) ArtifactMap {
+	res := make(ArtifactMap)
 	for _, a := range artifacts {
 		if monomodel.NamespaceMatch(a.Namespace, monomodel.NamespaceLanguageMatch) ||
 			monomodel.NamespaceMatch(a.Namespace, monomodel.NamespacePackageMatch) ||

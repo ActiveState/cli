@@ -25,7 +25,7 @@ func ArtifactIDsToMap(ids []ArtifactID) map[ArtifactID]struct{} {
 	return idmap
 }
 
-func ArtifactIDsFromBuildPlanMap(from ArtifactBuildPlanMap) []ArtifactID {
+func ArtifactIDsFromBuildPlanMap(from ArtifactMap) []ArtifactID {
 	ids := make([]ArtifactID, 0, len(from))
 	for id := range from {
 		ids = append(ids, id)
