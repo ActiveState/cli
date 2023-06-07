@@ -20,7 +20,6 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/pkg/platform/api/buildlogstream"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 )
@@ -65,7 +64,10 @@ type BuildLog struct {
 func New(ctx context.Context, artifactMap artifact.ArtifactMap, eventHandler events.Handler, recipeID strfmt.UUID, logFilePath string, buildResult *model.BuildResult) (*BuildLog, error) {
 	// The runtime dependencies do not include all build dependencies. Since we are working
 	// with the build log, we need to add the missing dependencies to the list of artifacts
-	addBuildArtifacts(artifactMap, buildResult.Build)
+	err := addBuildArtifacts(artifactMap, buildResult.Build)
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not add build artifacts to artifact map")
+	}
 
 	conn, err := buildlogstream.Connect(ctx)
 	if err != nil {
@@ -303,7 +305,7 @@ func resolveArtifactName(artifactID artifact.ArtifactID, artifactMap artifact.Ar
 	return artf.NameWithVersion(), true
 }
 
-func addBuildArtifacts(artifactMap artifact.ArtifactMap, build *bpModel.Build) {
+func addBuildArtifacts(artifactMap artifact.ArtifactMap, build *bpModel.Build) error {
 	lookup := make(map[strfmt.UUID]interface{})
 
 	for _, artifact := range build.Artifacts {
@@ -322,7 +324,11 @@ func addBuildArtifacts(artifactMap artifact.ArtifactMap, build *bpModel.Build) {
 			var deps []strfmt.UUID
 			for _, depID := range a.RuntimeDependencies {
 				deps = append(deps, strfmt.UUID(depID))
-				deps = append(deps, artifact.BuildRuntimeDependencies(depID, lookup, deps)...)
+				d, err := artifact.BuildRuntimeDependencies(depID, lookup, deps)
+				if err != nil {
+					return errs.Wrap(err, "Could not resolve runtime dependencies for artifact: %s", depID)
+				}
+				deps = append(deps, d...)
 			}
 
 			var uniqueDeps []strfmt.UUID
@@ -334,7 +340,7 @@ func addBuildArtifacts(artifactMap artifact.ArtifactMap, build *bpModel.Build) {
 
 			info, err := artifact.GetSourceInfo(a.GeneratedBy, lookup)
 			if err != nil {
-				multilog.Error("Could not resolve source information: %v", err)
+				return errs.Wrap(err, "Could not resolve source information")
 			}
 
 			artifactMap[strfmt.UUID(a.TargetID)] = artifact.Artifact{
@@ -348,4 +354,6 @@ func addBuildArtifacts(artifactMap artifact.ArtifactMap, build *bpModel.Build) {
 			}
 		}
 	}
+
+	return nil
 }

@@ -1,6 +1,7 @@
 package artifact
 
 import (
+	"github.com/ActiveState/cli/internal/errs"
 	model "github.com/ActiveState/cli/pkg/platform/api/graphql/model/buildplanner"
 )
 
@@ -66,6 +67,18 @@ func NewArtifactChangeset(old, new ArtifactNamedMap, requestedOnly bool) Artifac
 	}
 }
 
-func NewArtifactChangesetByBuildPlan(oldBuildPlan *model.Build, build *model.Build, requestedOnly bool) ArtifactChangeset {
-	return NewArtifactChangeset(NewNamedMapFromBuildPlan(oldBuildPlan), NewNamedMapFromBuildPlan(build), requestedOnly)
+func NewArtifactChangesetByBuildPlan(oldBuildPlan *model.Build, build *model.Build, requestedOnly bool) (ArtifactChangeset, error) {
+	old, err := NewNamedMapFromBuildPlan(oldBuildPlan)
+	if err != nil {
+		return ArtifactChangeset{}, errs.Wrap(err, "failed to build map from old build plan")
+	}
+
+	new, err := NewNamedMapFromBuildPlan(build)
+	if err != nil {
+		return ArtifactChangeset{}, errs.Wrap(err, "failed to build map from new build plan")
+	}
+
+	cs := NewArtifactChangeset(old, new, requestedOnly)
+
+	return cs, nil
 }
