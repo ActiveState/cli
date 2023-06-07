@@ -6,7 +6,6 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	model "github.com/ActiveState/cli/pkg/platform/api/graphql/model/buildplanner"
-	monomodel "github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/go-openapi/strfmt"
 	"github.com/thoas/go-funk"
 )
@@ -228,16 +227,4 @@ func NewNamedMapFromBuildPlan(build *model.Build) (ArtifactNamedMap, error) {
 	}
 
 	return res, nil
-}
-
-func FilterInstallable(artifacts ArtifactMap) ArtifactMap {
-	res := make(ArtifactMap)
-	for _, a := range artifacts {
-		if monomodel.NamespaceMatch(a.Namespace, monomodel.NamespaceLanguageMatch) ||
-			monomodel.NamespaceMatch(a.Namespace, monomodel.NamespacePackageMatch) ||
-			monomodel.NamespaceMatch(a.Namespace, monomodel.NamespaceSharedMatch) {
-			res[a.ArtifactID] = a
-		}
-	}
-	return res
 }

@@ -358,18 +358,13 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 		}
 	}
 
-	// installableArtifacts are the artifacts that this build produces that can be installed
-	// Not all artifacts produced by the build are meant to be installed.
-	// Notably we ignore bundle artifacts here, as they currently only produce no-op artifacts in terms of how recipes
-	// link the artifacts to the ingredient. This will be solved by buildplans.
-	installableArtifacts := artifact.FilterInstallable(artifacts)
-	for id := range installableArtifacts {
+	for id := range artifacts {
 		if _, noop := noopArtifacts[id]; noop {
-			delete(installableArtifacts, id)
+			delete(artifacts, id)
 		}
 	}
 
-	downloadablePrebuiltResults, err := setup.DownloadsFromBuild(*buildResult.Build, installableArtifacts)
+	downloadablePrebuiltResults, err := setup.DownloadsFromBuild(*buildResult.Build, artifacts)
 	if err != nil {
 		if errors.Is(err, artifact.CamelRuntimeBuilding) {
 			localeID := "build_status_in_progress"
@@ -415,6 +410,7 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 	if err != nil {
 		logging.Debug("Could not load existing build plan. Maybe it is a new installation: %v", err)
 	}
+
 	changedArtifacts, err := artifact.NewArtifactChangesetByBuildPlan(oldBuildPlan, buildResult.Build, false)
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not compute artifact changeset")
@@ -463,7 +459,7 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 	} else {
 		// If the build is not yet complete then we have to speculate as to the artifacts that will be installed.
 		// The actual number of installable artifacts may be lower than what we have here, we can only do a best effort.
-		for _, a := range installableArtifacts {
+		for _, a := range artifacts {
 			if _, alreadyInstalled := alreadyInstalled[a.ArtifactID]; !alreadyInstalled {
 				artifactsToInstall = append(artifactsToInstall, a.ArtifactID)
 			}
