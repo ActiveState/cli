@@ -9,17 +9,15 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 )
 
-type Comparator string
-
 type Operation int
 
 const (
-	ComparatorEQ  Comparator = "eq"
-	ComparatorGT             = "gt"
-	ComparatorGTE            = "gte"
-	ComparatorLT             = "lt"
-	ComparatorLTE            = "lte"
-	ComparatorNE             = "ne"
+	ComparatorEQ  string = "eq"
+	ComparatorGT         = "gt"
+	ComparatorGTE        = "gte"
+	ComparatorLT         = "lt"
+	ComparatorLTE        = "lte"
+	ComparatorNE         = "ne"
 
 	OperationAdded Operation = iota
 	OperationRemoved
@@ -54,7 +52,7 @@ type Requirement struct {
 	VersionRequirement []VersionRequirement `json:"version_requirements,omitempty"`
 }
 
-type VersionRequirement map[Comparator]string
+type VersionRequirement map[string]string
 
 type BuildExpression struct {
 	expression       map[string]interface{}

@@ -86,7 +86,7 @@ func TestBuildExpression_Requirements(t *testing.T) {
 					Name:      "python",
 					Namespace: "language",
 					VersionRequirement: []VersionRequirement{
-						map[Comparator]string{
+						map[string]string{
 							"comparator": string(ComparatorEQ),
 							"version":    "3.10.10",
 						},
@@ -160,7 +160,7 @@ func TestBuildExpression_Update(t *testing.T) {
 					Name:      "python",
 					Namespace: "language",
 					VersionRequirement: []VersionRequirement{
-						map[Comparator]string{
+						map[string]string{
 							"comparator": string(ComparatorEQ),
 							"version":    "3.10.10",
 						},
@@ -203,7 +203,7 @@ func TestBuildExpression_Update(t *testing.T) {
 					Name:      "python",
 					Namespace: "language",
 					VersionRequirement: []VersionRequirement{
-						map[Comparator]string{
+						map[string]string{
 							"comparator": string(ComparatorEQ),
 							"version":    "3.10.10",
 						},
@@ -223,7 +223,7 @@ func TestBuildExpression_Update(t *testing.T) {
 					Name:      "python",
 					Namespace: "language",
 					VersionRequirement: []VersionRequirement{
-						map[Comparator]string{
+						map[string]string{
 							"comparator": string(ComparatorEQ),
 							"version":    "3.11.0",
 						},
@@ -244,7 +244,7 @@ func TestBuildExpression_Update(t *testing.T) {
 					Name:      "python",
 					Namespace: "language",
 					VersionRequirement: []VersionRequirement{
-						map[Comparator]string{
+						map[string]string{
 							"comparator": string(ComparatorEQ),
 							"version":    "3.11.0",
 						},
@@ -283,7 +283,7 @@ func TestBuildExpression_Update(t *testing.T) {
 					Name:      "python",
 					Namespace: "language",
 					VersionRequirement: []VersionRequirement{
-						map[Comparator]string{
+						map[string]string{
 							"comparator": string(ComparatorEQ),
 							"version":    "3.10.10",
 						},
