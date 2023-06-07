@@ -184,6 +184,29 @@ func (bx BuildExpression) UpdateTimestamp() error {
 	return nil
 }
 
+// getRequirementsNode returns the requirements node from the solve node of the build expression.
+// It returns an error if the requirements node is not found or if it is malformed.
+// It expects the JSON representation of the solve node to be formatted as follows:
+//
+//	{
+//	 "solve": {
+//	   "requirements": [
+//	     {
+//	       "name": "requests",
+//	       "namespace": "language/python"
+//	     },
+//	     {
+//	       "name": "python",
+//	       "namespace": "language",
+//	       "version_requirements": [
+//	         {
+//	           "comparator": "eq",
+//	           "version": "3.10.10"
+//	          }
+//	       ]
+//	     }
+//	 ],
+//	}
 func getRequirementsNode(solveNode map[string]interface{}) ([]interface{}, error) {
 	for k, v := range solveNode {
 		if k != RequirementsKey {
@@ -201,6 +224,19 @@ func getRequirementsNode(solveNode map[string]interface{}) ([]interface{}, error
 	return nil, errs.New("Could not find requirements node")
 }
 
+// getSolveNode returns the solve node from the build expression.
+// It returns an error if the solve node is not found.
+// Currently, the solve node can have the name of "solve" or "solve_legacy".
+// It expects the JSON representation of the build expression to be formatted as follows:
+//
+//	{
+//	  "let": {
+//	    "runtime": {
+//	      "solve": {
+//	      }
+//	    }
+//	  }
+//	}
 func getSolveNode(expression map[string]interface{}) (map[string]interface{}, error) {
 	solveNode, err := getFuncNode(expression, SolveFuncName)
 	if err == nil {
@@ -214,6 +250,20 @@ func getSolveNode(expression map[string]interface{}) (map[string]interface{}, er
 	return getFuncNode(expression, SolveLegacyFuncName)
 }
 
+// getFuncNode returns the node of the given function name from the build expression.
+// It returns an error if the function node is not found.
+// Currently, this function just recurses the build expression until it finds the function node
+// of the correct map[string]interface{} type.
+// It expects the JSON representation of the build expression to be formatted as follows:
+//
+//	{
+//	  "let": {
+//	    "runtime": {
+//	      "func_name": {
+//	      }
+//	    }
+//	  }
+//	}
 func getFuncNode(expression map[string]interface{}, funcName string) (map[string]interface{}, error) {
 	for k, v := range expression {
 		node, ok := v.(map[string]interface{})
@@ -225,6 +275,7 @@ func getFuncNode(expression map[string]interface{}, funcName string) (map[string
 			return node, nil
 		}
 
+		// We recurse the build expression until we find the function node
 		if childNode, err := getFuncNode(node, funcName); err == nil {
 			return childNode, nil
 		}
