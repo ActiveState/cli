@@ -72,7 +72,7 @@ func NewBuildExpression(data []byte) (*BuildExpression, error) {
 		return nil, errs.Wrap(err, "Could not get solve node")
 	}
 
-	requirementsNode, err := getRequirementsNode(expression)
+	requirementsNode, err := getRequirementsNode(solveNode)
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not get requirements node")
 	}
@@ -184,12 +184,7 @@ func (bx BuildExpression) UpdateTimestamp() error {
 	return nil
 }
 
-func getRequirementsNode(bx map[string]interface{}) ([]interface{}, error) {
-	solveNode, err := getSolveNode(bx)
-	if err != nil {
-		return nil, errs.Wrap(err, "Could not get solve node")
-	}
-
+func getRequirementsNode(solveNode map[string]interface{}) ([]interface{}, error) {
 	for k, v := range solveNode {
 		if k != RequirementsKey {
 			continue
