@@ -198,6 +198,10 @@ func (bx BuildExpression) UpdateTimestamp() error {
 	return nil
 }
 
+func (bx BuildExpression) MarshalJSON() ([]byte, error) {
+	return json.Marshal(bx.expression)
+}
+
 // fetchLatestTimeStamp fetches the latest timestamp from the inventory service.
 // This function lives in this package to avoid an import cycle.
 func fetchLatestTimeStamp() (*strfmt.DateTime, error) {
