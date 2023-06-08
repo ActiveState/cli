@@ -56,6 +56,11 @@ func PboolP(v *bool) *bool {
 	return BoolP(*v)
 }
 
+// Pointer adds a pointer to a value
+func Pointer[V any](v V) *V {
+	return &v
+}
+
 // IsNil asserts whether the underlying type is nil, which `interface{} == nil` does not
 func IsNil(i interface{}) bool {
 	return i == nil || reflect.ValueOf(i).IsNil()

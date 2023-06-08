@@ -1,8 +1,10 @@
 package packages
 
 import (
+	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/rtutils/p"
 	"github.com/ActiveState/cli/internal/runbits/requirements"
 	bgModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model/buildplanner"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -10,7 +12,7 @@ import (
 
 // UninstallRunParams tracks the info required for running Uninstall.
 type UninstallRunParams struct {
-	Name string
+	Package captain.PackageValueNoVersion
 }
 
 // Uninstall manages the uninstalling execution context.
@@ -30,11 +32,21 @@ func (u *Uninstall) Run(params UninstallRunParams, nsType model.NamespaceType) e
 		return locale.NewInputError("err_no_project")
 	}
 
+	var nsTypeV *model.NamespaceType
+	var ns *model.Namespace
+
+	if params.Package.Namespace != "" {
+		ns = p.Pointer(model.NewRawNamespace(params.Package.Namespace))
+	} else {
+		nsTypeV = &nsType
+	}
+
 	return requirements.NewRequirementOperation(u.prime).ExecuteRequirementOperation(
-		params.Name,
+		params.Package.Name,
 		"",
-		0,
 		bgModel.OperationRemove,
-		nsType,
+		ns,
+		nsTypeV,
+		nil,
 	)
 }

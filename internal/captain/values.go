@@ -3,10 +3,16 @@ package captain
 import (
 	"fmt"
 	"strings"
+	"time"
 
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/rtutils/p"
 )
 
+// NameVersionValue represents a flag that supports both a name and a version, the following formats are supported:
+// - name
+// - name@version
 type NameVersionValue struct {
 	name    string
 	version string
@@ -42,7 +48,7 @@ func (nv *NameVersionValue) Version() string {
 }
 
 func (nv *NameVersionValue) Type() string {
-	return "NameVersion"
+	return "name and version"
 }
 
 // UserValue represents a flag that supports both a name and an email address, the following formats are supported:
@@ -84,9 +90,10 @@ func (u *UserValue) Set(s string) error {
 }
 
 func (u *UserValue) Type() string {
-	return "User"
+	return "user"
 }
 
+// UsersValue is used to represent multiple UserValue, this is used when a flag can be passed multiple times.
 type UsersValue []UserValue
 
 var _ FlagMarshaler = &UsersValue{}
@@ -109,11 +116,13 @@ func (u *UsersValue) Set(s string) error {
 }
 
 func (u *UsersValue) Type() string {
-	return "Users"
+	return "users"
 }
 
-// PackageValue represents a flag that supports specifying a package in the following format:
-// <namsepace>/<name>@<version>
+// PackageValue represents a flag that supports specifying a package in the following formats:
+// - <name>
+// - <namespace>/<name>
+// - <namespace>/<name>@<version>
 type PackageValue struct {
 	Namespace string
 	Name      string
@@ -122,35 +131,78 @@ type PackageValue struct {
 
 var _ FlagMarshaler = &PackageValue{}
 
-func (u *PackageValue) String() string {
-	if u.Namespace == "" && u.Name == "" {
+func (p *PackageValue) String() string {
+	if p.Namespace == "" && p.Name == "" {
 		return ""
 	}
-	if u.Version == "" {
-		return fmt.Sprintf("%s/%s", u.Namespace, u.Name)
+	name := p.Name
+	if p.Namespace != "" {
+		name = fmt.Sprintf("%s/%s", p.Namespace, p.Name)
 	}
-	return fmt.Sprintf("%s/%s@%s", u.Namespace, u.Name, u.Version)
+	if p.Version == "" {
+		return name
+	}
+	return fmt.Sprintf("%s@%s", name, p.Version)
 }
 
-func (u *PackageValue) Set(s string) error {
+func (p *PackageValue) Set(s string) error {
 	if strings.Contains(s, "@") {
 		v := strings.Split(s, "@")
-		u.Version = strings.TrimSpace(v[1])
+		p.Version = strings.TrimSpace(v[1])
 		s = v[0]
 	}
 	if strings.Index(s, "/") == -1 {
-		return fmt.Errorf("invalid package name format: %s (expected '<namespace>/<name>[@version]')", s)
+		p.Name = strings.TrimSpace(s)
+		return nil
 	}
 	v := strings.Split(s, "/")
-	u.Namespace = strings.TrimSpace(strings.Join(v[0:len(v)-1], "/"))
-	u.Name = strings.TrimSpace(v[len(v)-1])
+	p.Namespace = strings.TrimSpace(strings.Join(v[0:len(v)-1], "/"))
+	p.Name = strings.TrimSpace(v[len(v)-1])
 	return nil
 }
 
-func (u *PackageValue) Type() string {
-	return "Package"
+func (p *PackageValue) Type() string {
+	return "package"
 }
 
+// PackageValueNoVersion is identical to PackageValue except that it does not support a version.
+type PackageValueNoVersion struct {
+	PackageValue
+}
+
+func (p *PackageValueNoVersion) Set(s string) error {
+	if err := p.PackageValue.Set(s); err != nil {
+		return errs.Wrap(err, "PackageValue.Set failed")
+	}
+	if p.Version != "" {
+		return fmt.Errorf("Specifying a version is not supported, package format should be '[<namespace>/]<name>'")
+	}
+	return nil
+}
+
+func (p *PackageValueNoVersion) Type() string {
+	return "package"
+}
+
+// PackageValueNSRequired is identical to PackageValue except that specifying a namespace is required.
+type PackageValueNSRequired struct {
+	PackageValue
+}
+
+func (p *PackageValueNSRequired) Set(s string) error {
+	if err := p.PackageValue.Set(s); err != nil {
+		return errs.Wrap(err, "PackageValueNSRequired.Set failed")
+	}
+	if p.Namespace == "" {
+		return fmt.Errorf("invalid package name format: %s (expected '<namespace>/<name>[@version]')", s)
+	}
+	return nil
+}
+func (p *PackageValueNSRequired) Type() string {
+	return "namespace/package"
+}
+
+// PackagesValue is used to represent multiple PackageValue, this is used when a flag can be passed multiple times.
 type PackagesValue []PackageValue
 
 var _ FlagMarshaler = &PackagesValue{}
@@ -173,5 +225,34 @@ func (p *PackagesValue) Set(s string) error {
 }
 
 func (p *PackagesValue) Type() string {
-	return "Packages"
+	return "packages"
+}
+
+type TimeValue struct {
+	raw  string
+	Time *time.Time
+}
+
+var _ FlagMarshaler = &TimeValue{}
+
+func (u *TimeValue) String() string {
+	return u.raw
+}
+
+func (u *TimeValue) Set(v string) error {
+	if v == "now" {
+		u.Time = p.Pointer(time.Now())
+	} else {
+		u.raw = v
+		tsv, err := time.Parse(time.RFC3339, v)
+		if err != nil {
+			return locale.WrapInputError(err, "timeflag_format", "Invalid timestamp: Should be RFC3339 formatted.")
+		}
+		u.Time = &tsv
+	}
+	return nil
+}
+
+func (u *TimeValue) Type() string {
+	return "timestamp"
 }

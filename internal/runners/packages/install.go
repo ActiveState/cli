@@ -2,28 +2,17 @@ package packages
 
 import (
 	"github.com/ActiveState/cli/internal/captain"
-	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/rtutils/p"
 	"github.com/ActiveState/cli/internal/runbits/requirements"
 	bgModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model/buildplanner"
 	"github.com/ActiveState/cli/pkg/platform/model"
 )
 
-type PackageVersion struct {
-	captain.NameVersionValue
-}
-
-func (pv *PackageVersion) Set(arg string) error {
-	err := pv.NameVersionValue.Set(arg)
-	if err != nil {
-		return locale.WrapInputError(err, "err_package_format", "The package and version provided is not formatting correctly, must be in the form of <package>@<version>")
-	}
-	return nil
-}
-
 // InstallRunParams tracks the info required for running Install.
 type InstallRunParams struct {
-	Package PackageVersion
+	Package   captain.PackageValue
+	Timestamp captain.TimeValue
 }
 
 // Install manages the installing execution context.
@@ -38,12 +27,22 @@ func NewInstall(prime primeable) *Install {
 
 // Run executes the install behavior.
 func (a *Install) Run(params InstallRunParams, nsType model.NamespaceType) error {
+	var nsTypeV *model.NamespaceType
+	var ns *model.Namespace
+
 	logging.Debug("ExecuteInstall")
+	if params.Package.Namespace != "" {
+		ns = p.Pointer(model.NewRawNamespace(params.Package.Namespace))
+	} else {
+		nsTypeV = &nsType
+	}
+
 	return requirements.NewRequirementOperation(a.prime).ExecuteRequirementOperation(
-		params.Package.Name(),
-		params.Package.Version(),
-		0,
+		params.Package.Name,
+		params.Package.Version,
 		bgModel.OperationAdd,
-		nsType,
+		ns,
+		nsTypeV,
+		params.Timestamp.Time,
 	)
 }

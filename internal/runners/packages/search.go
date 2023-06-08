@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -15,9 +16,10 @@ import (
 
 // SearchRunParams tracks the info required for running search.
 type SearchRunParams struct {
-	Language  string
-	ExactTerm bool
-	Name      string
+	Language   string
+	ExactTerm  bool
+	Ingredient captain.PackageValueNoVersion
+	Timestamp  captain.TimeValue
 }
 
 // Search manages the searching execution context.
@@ -44,24 +46,28 @@ func (s *Search) Run(params SearchRunParams, nstype model.NamespaceType) error {
 	}
 
 	ns := model.NewNamespacePkgOrBundle(language, nstype)
+	if params.Ingredient.Namespace != "" {
+		ns = model.NewRawNamespace(params.Ingredient.Namespace)
+	}
 
 	var packages []*model.IngredientAndVersion
 	if params.ExactTerm {
-		packages, err = model.SearchIngredientsStrict(ns.String(), params.Name, false, true, nil)
+		packages, err = model.SearchIngredientsStrict(ns.String(), params.Ingredient.Name, true, true, params.Timestamp.Time)
 	} else {
-		packages, err = model.SearchIngredients(ns.String(), params.Name, true, nil)
+		packages, err = model.SearchIngredients(ns.String(), params.Ingredient.Name, true, params.Timestamp.Time)
 	}
 	if err != nil {
 		return locale.WrapError(err, "package_err_cannot_obtain_search_results")
 	}
 	if len(packages) == 0 {
 		return errs.AddTips(
-			locale.NewInputError("err_search_no_"+ns.Type().String(), "", params.Name),
+			locale.NewInputError("err_search_no_"+ns.Type().String(), "", params.Ingredient.Name),
 			locale.Tl("search_try_term", "Try a different search term"),
 			locale.Tl("search_request_"+ns.Type().String(), ""),
 		)
 	}
-	s.out.Print(formatSearchResults(packages))
+
+	s.out.Print(output.Prepare(formatSearchResults(packages), packages))
 
 	return nil
 }

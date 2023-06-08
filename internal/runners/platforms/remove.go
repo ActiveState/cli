@@ -42,9 +42,10 @@ func (r *Remove) Run(ps RemoveRunParams) error {
 	if err := requirements.NewRequirementOperation(r.prime).ExecuteRequirementOperation(
 		params.name,
 		params.version,
-		params.BitWidth,
 		bgModel.OperationRemove,
-		model.NamespacePlatform,
+		nil,
+		&model.NamespacePlatform,
+		nil,
 	); err != nil {
 		return locale.WrapError(err, "err_remove_platform", "Could not remove platform.")
 	}
