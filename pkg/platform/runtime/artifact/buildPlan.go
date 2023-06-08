@@ -89,8 +89,8 @@ func buildMap(baseID strfmt.UUID, lookup map[strfmt.UUID]interface{}, result Art
 		return errs.New("Incorrect target type for id %s", baseID)
 	}
 
-	if artifact.Status == model.ArtifactNotSubmitted {
-		return errs.New("Artifact %s has not been submitted", artifact.TargetID)
+	if artifact.Status != model.ArtifactSucceeded {
+		return errs.New("Artifact %s did not succeed with status: %s", artifact.TargetID, artifact.Status)
 	}
 
 	deps := make(map[strfmt.UUID]struct{})
