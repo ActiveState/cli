@@ -27,7 +27,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
-	runtimeModel "github.com/ActiveState/cli/pkg/platform/runtime/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
@@ -212,8 +211,8 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 		}
 	}
 
-	bp := runtimeModel.NewBuildPlanModel(r.Auth)
-	commitID, err := bp.StageCommit(runtimeModel.StageCommitParams{
+	bp := model.NewBuildPlanModel(r.Auth)
+	commitID, err := bp.StageCommit(model.StageCommitParams{
 		Owner:            pj.Owner(),
 		Project:          pj.Name(),
 		ParentCommit:     string(parentCommitID),

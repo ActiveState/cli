@@ -13,6 +13,7 @@ import (
 	"time"
 
 	bpModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model/buildplanner"
+	"github.com/ActiveState/cli/pkg/platform/model"
 
 	"github.com/ActiveState/cli/internal/analytics"
 	anaConsts "github.com/ActiveState/cli/internal/analytics/constants"
@@ -30,7 +31,6 @@ import (
 	"github.com/ActiveState/cli/internal/svcctl"
 	"github.com/ActiveState/cli/internal/unarchiver"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef"
-	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	apimodel "github.com/ActiveState/cli/pkg/platform/model"
@@ -38,7 +38,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifactcache"
 	"github.com/ActiveState/cli/pkg/platform/runtime/envdef"
 	"github.com/ActiveState/cli/pkg/platform/runtime/executors"
-	"github.com/ActiveState/cli/pkg/platform/runtime/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup/buildlog"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup/events"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup/events/progress"
@@ -102,21 +101,12 @@ type Targeter interface {
 }
 
 type Setup struct {
-	model         ModelProvider
 	auth          *authentication.Auth
 	target        Targeter
 	eventHandler  events.Handler
 	store         *store.Store
 	analytics     analytics.Dispatcher
 	artifactCache *artifactcache.ArtifactCache
-}
-
-// ModelProvider is the interface for all functions that involve backend communication
-type ModelProvider interface {
-	ResolveRecipe(commitID strfmt.UUID, owner, projectName string) (*inventory_models.Recipe, error)
-	RequestBuild(recipeID, commitID strfmt.UUID, owner, project string) (headchef.BuildStatusEnum, *headchef_models.V1BuildStatusResponse, error)
-	FetchBuildResult(commitID strfmt.UUID, owner, project string) (*model.BuildResult, error)
-	SignS3URL(uri *url.URL) (*url.URL, error)
 }
 
 type Setuper interface {
@@ -137,16 +127,16 @@ type artifactInstaller func(artifact.ArtifactID, string, ArtifactSetuper) error
 
 // New returns a new Setup instance that can install a Runtime locally on the machine.
 func New(target Targeter, eventHandler events.Handler, auth *authentication.Auth, an analytics.Dispatcher) *Setup {
-	return NewWithModel(target, eventHandler, model.NewRecipe(auth), auth, an)
+	return NewWithModel(target, eventHandler, auth, an)
 }
 
 // NewWithModel returns a new Setup instance with a customized model eg., for testing purposes
-func NewWithModel(target Targeter, eventHandler events.Handler, model ModelProvider, auth *authentication.Auth, an analytics.Dispatcher) *Setup {
+func NewWithModel(target Targeter, eventHandler events.Handler, auth *authentication.Auth, an analytics.Dispatcher) *Setup {
 	cache, err := artifactcache.New()
 	if err != nil {
 		multilog.Error("Could not create artifact cache: %v", err)
 	}
-	return &Setup{model, auth, target, eventHandler, store.New(target.Dir()), an, cache}
+	return &Setup{auth, target, eventHandler, store.New(target.Dir()), an, cache}
 }
 
 // Update installs the runtime locally (or updates it if it's already partially installed)

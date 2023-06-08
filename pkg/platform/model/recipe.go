@@ -47,9 +47,6 @@ func (e *SolverError) IsTransient() bool {
 	return e.isTransient
 }
 
-// HostPlatform stores a reference to current platform
-var HostPlatform string
-
 // Recipe aliases recipe model
 type Recipe = inventory_models.Recipe
 

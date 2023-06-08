@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ActiveState/cli/pkg/platform/runtime/model"
+	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup/events"
 	"github.com/go-openapi/strfmt"
 	"github.com/gorilla/websocket"
