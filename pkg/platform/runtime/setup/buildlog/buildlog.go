@@ -14,7 +14,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup/events"
 	"github.com/go-openapi/strfmt"
 	"github.com/gorilla/websocket"
-	"github.com/thoas/go-funk"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
@@ -321,21 +320,24 @@ func addBuildArtifacts(artifactMap artifact.ArtifactMap, build *bpModel.Build) e
 	for _, a := range build.Artifacts {
 		_, ok := artifactMap[strfmt.UUID(a.TargetID)]
 		if !ok && a.Status != bpModel.ArtifactNotSubmitted {
-			var deps []strfmt.UUID
+			deps := make(map[strfmt.UUID]struct{})
 			for _, depID := range a.RuntimeDependencies {
-				deps = append(deps, strfmt.UUID(depID))
-				d, err := artifact.BuildRuntimeDependencies(depID, lookup, deps)
+				deps[depID] = struct{}{}
+				recursiveDeps, err := artifact.BuildRuntimeDependencies(depID, lookup, deps)
 				if err != nil {
 					return errs.Wrap(err, "Could not resolve runtime dependencies for artifact: %s", depID)
 				}
-				deps = append(deps, d...)
+				for id := range recursiveDeps {
+					deps[id] = struct{}{}
+				}
 			}
 
 			var uniqueDeps []strfmt.UUID
-			for _, dep := range deps {
-				if !funk.Contains(uniqueDeps, dep) {
-					uniqueDeps = append(uniqueDeps, dep)
+			for id := range deps {
+				if _, ok := deps[id]; !ok {
+					continue
 				}
+				uniqueDeps = append(uniqueDeps, id)
 			}
 
 			info, err := artifact.GetSourceInfo(a.GeneratedBy, lookup)

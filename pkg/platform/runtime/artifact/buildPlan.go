@@ -7,7 +7,6 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	model "github.com/ActiveState/cli/pkg/platform/api/graphql/model/buildplanner"
 	"github.com/go-openapi/strfmt"
-	"github.com/thoas/go-funk"
 )
 
 // Artifact comprises useful information about an artifact that we extracted from a build plan
@@ -94,14 +93,16 @@ func buildMap(baseID strfmt.UUID, lookup map[strfmt.UUID]interface{}, result Art
 		return errs.New("Artifact %s has not been submitted", artifact.TargetID)
 	}
 
-	var deps []strfmt.UUID
+	deps := make(map[strfmt.UUID]struct{})
 	for _, depID := range artifact.RuntimeDependencies {
-		deps = append(deps, strfmt.UUID(depID))
-		d, err := BuildRuntimeDependencies(depID, lookup, deps)
+		deps[depID] = struct{}{}
+		recursiveDeps, err := BuildRuntimeDependencies(depID, lookup, deps)
 		if err != nil {
 			return errs.Wrap(err, "Could not build runtime dependencies for artifact %s", artifact.TargetID)
 		}
-		deps = append(deps, d...)
+		for id := range recursiveDeps {
+			deps[id] = struct{}{}
+		}
 
 		err = buildMap(depID, lookup, result)
 		if err != nil {
@@ -110,10 +111,11 @@ func buildMap(baseID strfmt.UUID, lookup map[strfmt.UUID]interface{}, result Art
 	}
 
 	var uniqueDeps []strfmt.UUID
-	for _, dep := range deps {
-		if !funk.Contains(uniqueDeps, dep) {
-			uniqueDeps = append(uniqueDeps, dep)
+	for id := range deps {
+		if _, ok := deps[id]; !ok {
+			continue
 		}
+		uniqueDeps = append(uniqueDeps, id)
 	}
 
 	info, err := GetSourceInfo(artifact.GeneratedBy, lookup)
@@ -166,14 +168,14 @@ func GetSourceInfo(sourceID strfmt.UUID, lookup map[strfmt.UUID]interface{}) (So
 	return SourceInfo{}, locale.NewError("err_resolve_artifact_name", "Could not resolve artifact name")
 }
 
-func BuildRuntimeDependencies(depdendencyID strfmt.UUID, lookup map[strfmt.UUID]interface{}, result []strfmt.UUID) ([]strfmt.UUID, error) {
+func BuildRuntimeDependencies(depdendencyID strfmt.UUID, lookup map[strfmt.UUID]interface{}, result map[strfmt.UUID]struct{}) (map[strfmt.UUID]struct{}, error) {
 	artifact, ok := lookup[depdendencyID].(*model.Artifact)
 	if !ok {
 		return nil, errs.New("Incorrect target type for id %s", depdendencyID)
 	}
 
 	for _, depID := range artifact.RuntimeDependencies {
-		result = append(result, strfmt.UUID(depID))
+		result[depID] = struct{}{}
 		_, err := BuildRuntimeDependencies(depID, lookup, result)
 		if err != nil {
 			return nil, errs.New("Could not build map for artifact %s", artifact.TargetID)

@@ -47,12 +47,6 @@ func NewDownloadsFromBuildPlan(build bpModel.Build, artifacts map[strfmt.UUID]Ar
 	for id := range artifacts {
 		for _, a := range build.Artifacts {
 			if a.Status == string(bpModel.ArtifactSucceeded) && a.TargetID == id && a.URL != "" {
-				if strings.Contains(a.URL, InstallerTestsSubstr) {
-					continue
-				}
-				if strings.HasPrefix(a.URL, "s3://as-builds/noop/") {
-					continue
-				}
 				downloads = append(downloads, ArtifactDownload{ArtifactID: strfmt.UUID(a.TargetID), UnsignedURI: a.URL, UnsignedLogURI: a.LogURL, Checksum: a.Checksum})
 			}
 		}
