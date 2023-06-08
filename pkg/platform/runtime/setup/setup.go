@@ -319,7 +319,7 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 		return nil, errs.Wrap(err, "Could not handle SolveStart event")
 	}
 
-	bp := model.NewBuildPlanner(s.auth)
+	bp := model.NewBuildPlanModel(s.auth)
 	buildResult, err := bp.FetchBuildResult(s.target.CommitUUID(), s.target.Owner(), s.target.Name())
 	if err != nil {
 		serr := &model.BuildPlannerError{}

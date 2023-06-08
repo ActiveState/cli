@@ -65,7 +65,7 @@ type BuildPlanner struct {
 	def    *Recipe
 }
 
-func NewBuildPlanner(auth *authentication.Auth) *BuildPlanner {
+func NewBuildPlanModel(auth *authentication.Auth) *BuildPlanner {
 	bpURL := api.GetServiceURL(api.ServiceBuildPlanner).String()
 	logging.Debug("Using build planner at: %s", bpURL)
 
