@@ -5,8 +5,12 @@ import (
 	"errors"
 	"time"
 
+	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/pkg/platform/api/inventory"
+	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_client/inventory_operations"
+	"github.com/go-openapi/strfmt"
 )
 
 type Operation int
@@ -180,8 +184,34 @@ func (bx BuildExpression) updateRequirement(requirement Requirement) error {
 }
 
 func (bx BuildExpression) UpdateTimestamp() error {
-	(*bx.solveNode)[AtTimeKey] = time.Now().UTC().Format(time.RFC3339)
+	latest, err := fetchLatestTimeStamp()
+	if err != nil {
+		return errs.Wrap(err, "Could not fetch latest timestamp")
+	}
+
+	formatted, err := time.Parse(time.RFC3339, latest.String())
+	if err != nil {
+		return errs.Wrap(err, "Could not parse latest timestamp")
+	}
+
+	(*bx.solveNode)[AtTimeKey] = formatted
 	return nil
+}
+
+// fetchLatestTimeStamp fetches the latest timestamp from the inventory service.
+// This function lives in this package to avoid an import cycle.
+func fetchLatestTimeStamp() (*strfmt.DateTime, error) {
+	if condition.InTest() {
+		return &strfmt.DateTime{}, nil
+	}
+
+	client := inventory.Get()
+	result, err := client.GetLatestTimestamp(inventory_operations.NewGetLatestTimestampParams())
+	if err != nil {
+		return nil, errs.Wrap(err, "GetLatestTimestamp failed")
+	}
+
+	return result.Payload.Timestamp, nil
 }
 
 // getRequirementsNode returns the requirements node from the solve node of the build expression.
