@@ -46,24 +46,22 @@ func Sync(proj *project.Project, commitID *strfmt.UUID, out output.Outputer, aut
 		return errs.Wrap(err, "Could not get remote build expr")
 	}
 
-	if script != nil {
+	// Note: merging and/or conflict resolution will happen in another ticket (DX-1912).
+	// For now, if commitID is given, a mutation happened, so prefer the remote build expression.
+	// Otherwise, prefer local changes.
+	if script != nil && commitID == nil {
 		logging.Debug("Checking for changes")
 		if script.Equals(expr) {
 			return nil // nothing to do
 		}
 		logging.Debug("Merging changes")
-		// Note: merging and/or conflict resolution will happen in another ticket.
-		// For now, if commitID is given, a mutation happened, so prefer the remote build expression.
-		// Otherwise, prefer local changes.
-		if commitID == nil {
-			bytes, err := json.Marshal(script)
-			if err != nil {
-				return errs.Wrap(err, "Unable to marshal local build script to JSON")
-			}
-			expr, err = bpModel.NewBuildExpression(bytes)
-			if err != nil {
-				return errs.Wrap(err, "Unable to translate local build script to build expression")
-			}
+		bytes, err := json.Marshal(script)
+		if err != nil {
+			return errs.Wrap(err, "Unable to marshal local build script to JSON")
+		}
+		expr, err = bpModel.NewBuildExpression(bytes)
+		if err != nil {
+			return errs.Wrap(err, "Unable to translate local build script to build expression")
 		}
 
 		out.Notice(locale.Tl("buildscript_update", "Updating project to reflect build script changes..."))
