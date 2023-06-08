@@ -8,8 +8,6 @@ import (
 	"sync"
 	"time"
 
-	bpModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model/buildplanner"
-
 	"github.com/ActiveState/cli/pkg/platform/runtime/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup/events"
 	"github.com/go-openapi/strfmt"
@@ -61,13 +59,6 @@ type BuildLog struct {
 // New creates a new BuildLog instance that allows us to wait for incoming build log information
 // artifactMap comprises all artifacts (from the runtime closure) that are in the recipe, alreadyBuilt is set of artifact IDs that have already been built in the past
 func New(ctx context.Context, artifactMap artifact.ArtifactMap, eventHandler events.Handler, recipeID strfmt.UUID, logFilePath string, buildResult *model.BuildResult) (*BuildLog, error) {
-	// The runtime dependencies do not include all build dependencies. Since we are working
-	// with the build log, we need to add the missing dependencies to the list of artifacts
-	err := addBuildArtifacts(artifactMap, buildResult.Build)
-	if err != nil {
-		return nil, errs.Wrap(err, "Could not add build artifacts to artifact map")
-	}
-
 	conn, err := buildlogstream.Connect(ctx)
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not connect to build-log streamer build updates")
@@ -302,60 +293,4 @@ func resolveArtifactName(artifactID artifact.ArtifactID, artifactMap artifact.Ar
 	}
 
 	return artf.NameWithVersion(), true
-}
-
-func addBuildArtifacts(artifactMap artifact.ArtifactMap, build *bpModel.Build) error {
-	lookup := make(map[strfmt.UUID]interface{})
-
-	for _, artifact := range build.Artifacts {
-		lookup[artifact.TargetID] = artifact
-	}
-	for _, step := range build.Steps {
-		lookup[step.TargetID] = step
-	}
-	for _, source := range build.Sources {
-		lookup[source.TargetID] = source
-	}
-
-	for _, a := range build.Artifacts {
-		_, ok := artifactMap[strfmt.UUID(a.TargetID)]
-		if !ok && a.Status != bpModel.ArtifactNotSubmitted {
-			deps := make(map[strfmt.UUID]struct{})
-			for _, depID := range a.RuntimeDependencies {
-				deps[depID] = struct{}{}
-				recursiveDeps, err := artifact.BuildRuntimeDependencies(depID, lookup, deps)
-				if err != nil {
-					return errs.Wrap(err, "Could not resolve runtime dependencies for artifact: %s", depID)
-				}
-				for id := range recursiveDeps {
-					deps[id] = struct{}{}
-				}
-			}
-
-			var uniqueDeps []strfmt.UUID
-			for id := range deps {
-				if _, ok := deps[id]; !ok {
-					continue
-				}
-				uniqueDeps = append(uniqueDeps, id)
-			}
-
-			info, err := artifact.GetSourceInfo(a.GeneratedBy, lookup)
-			if err != nil {
-				return errs.Wrap(err, "Could not resolve source information")
-			}
-
-			artifactMap[strfmt.UUID(a.TargetID)] = artifact.Artifact{
-				ArtifactID:       strfmt.UUID(a.TargetID),
-				Name:             info.Name,
-				Namespace:        info.Namespace,
-				Version:          &info.Version,
-				RequestedByOrder: true,
-				GeneratedBy:      a.GeneratedBy,
-				Dependencies:     uniqueDeps,
-			}
-		}
-	}
-
-	return nil
 }

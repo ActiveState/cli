@@ -637,6 +637,13 @@ func (s *Setup) installFromBuildLog(buildResult *model.BuildResult, artifacts ar
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
+	// The runtime dependencies do not include all build dependencies. Since we are working
+	// with the build log, we need to add the missing dependencies to the list of artifacts
+	err := artifact.AddBuildArtifacts(artifacts, buildResult.Build)
+	if err != nil {
+		return errs.Wrap(err, "Could not add build artifacts to artifact map")
+	}
+
 	buildLog, err := buildlog.New(ctx, artifacts, s.eventHandler, buildResult.RecipeID, logFilePath, buildResult)
 	if err != nil {
 		return errs.Wrap(err, "Cannot establish connection with BuildLog")

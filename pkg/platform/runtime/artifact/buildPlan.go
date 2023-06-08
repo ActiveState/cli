@@ -230,3 +230,59 @@ func NewNamedMapFromBuildPlan(build *model.Build) (ArtifactNamedMap, error) {
 
 	return res, nil
 }
+
+func AddBuildArtifacts(artifactMap ArtifactMap, build *model.Build) error {
+	lookup := make(map[strfmt.UUID]interface{})
+
+	for _, artifact := range build.Artifacts {
+		lookup[artifact.TargetID] = artifact
+	}
+	for _, step := range build.Steps {
+		lookup[step.TargetID] = step
+	}
+	for _, source := range build.Sources {
+		lookup[source.TargetID] = source
+	}
+
+	for _, a := range build.Artifacts {
+		_, ok := artifactMap[strfmt.UUID(a.TargetID)]
+		if !ok && a.Status != model.ArtifactNotSubmitted {
+			deps := make(map[strfmt.UUID]struct{})
+			for _, depID := range a.RuntimeDependencies {
+				deps[depID] = struct{}{}
+				recursiveDeps, err := BuildRuntimeDependencies(depID, lookup, deps)
+				if err != nil {
+					return errs.Wrap(err, "Could not resolve runtime dependencies for artifact: %s", depID)
+				}
+				for id := range recursiveDeps {
+					deps[id] = struct{}{}
+				}
+			}
+
+			var uniqueDeps []strfmt.UUID
+			for id := range deps {
+				if _, ok := deps[id]; !ok {
+					continue
+				}
+				uniqueDeps = append(uniqueDeps, id)
+			}
+
+			info, err := GetSourceInfo(a.GeneratedBy, lookup)
+			if err != nil {
+				return errs.Wrap(err, "Could not resolve source information")
+			}
+
+			artifactMap[strfmt.UUID(a.TargetID)] = Artifact{
+				ArtifactID:       strfmt.UUID(a.TargetID),
+				Name:             info.Name,
+				Namespace:        info.Namespace,
+				Version:          &info.Version,
+				RequestedByOrder: true,
+				GeneratedBy:      a.GeneratedBy,
+				Dependencies:     uniqueDeps,
+			}
+		}
+	}
+
+	return nil
+}
