@@ -16,8 +16,10 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runbits"
+	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
@@ -66,7 +68,11 @@ func inferLanguage(config projectfile.ConfigGetter) (string, string, bool) {
 	if err != nil {
 		return "", "", false
 	}
-	commitID := defaultProj.CommitUUID()
+	commitID, err := localcommit.Get(defaultProj.Dir())
+	if err != nil && !localcommit.IsFileDoesNotExistError(err) {
+		multilog.Error("Unable to get local commit: %v", errs.JoinMessage(err))
+		return "", "", false
+	}
 	if commitID == "" {
 		return "", "", false
 	}
@@ -134,6 +140,11 @@ func (r *Initialize) Run(params *RunParams) error {
 		}
 	}
 
+	emptyDir, err := fileutils.IsEmptyDir(path)
+	if err != nil {
+		multilog.Error("Unable to check if directory is empty: %v", err)
+	}
+
 	createParams := &projectfile.CreateParams{
 		Owner:     params.Namespace.Owner,
 		Project:   params.Namespace.Project,
@@ -158,8 +169,15 @@ func (r *Initialize) Run(params *RunParams) error {
 		return locale.WrapError(err, "err_init_commit", "Could not create initial commit")
 	}
 
-	if err := proj.SetCommit(commitID.String()); err != nil {
-		return locale.WrapError(err, "err_init_setcommit", "Could not store commit to project file")
+	if err := localcommit.Set(proj.Dir(), commitID.String()); err != nil {
+		return errs.Wrap(err, "Unable to create local commit file")
+	}
+	if emptyDir || fileutils.DirExists(filepath.Join(path, ".git")) {
+		err := localcommit.AddToGitIgnore(path)
+		if err != nil {
+			r.out.Notice(locale.Tr("notice_commit_id_gitignore", constants.ProjectConfigDirName, constants.CommitIdFileName))
+			multilog.Error("Unable to add local commit file to .gitignore: %v", err)
+		}
 	}
 
 	logging.Debug("Creating Platform project and pushing it")
@@ -186,14 +204,19 @@ func (r *Initialize) Run(params *RunParams) error {
 
 	projectfile.StoreProjectMapping(r.config, params.Namespace.String(), filepath.Dir(proj.Source().Path()))
 
+	projectTarget := target.NewProjectTarget(proj, nil, "").Dir()
+	executables := setup.ExecDir(projectTarget)
+
 	r.out.Print(output.Prepare(
-		locale.Tr("init_success", params.Namespace.String(), path),
+		locale.Tr("init_success", params.Namespace.String(), path, executables),
 		&struct {
-			Namespace string `json:"namespace"`
-			Path      string `json:"path" `
+			Namespace   string `json:"namespace"`
+			Path        string `json:"path" `
+			Executables string `json:"executables"`
 		}{
 			params.Namespace.String(),
 			path,
+			executables,
 		},
 	))
 

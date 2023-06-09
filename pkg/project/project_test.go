@@ -12,6 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/subshell"
+	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
@@ -60,9 +61,11 @@ func (suite *ProjectTestSuite) TestGetSafe() {
 }
 
 func (suite *ProjectTestSuite) TestProject() {
-	suite.Equal("https://platform.activestate.com/ActiveState/project?branch=main&commitID=00010001-0001-0001-0001-000100010001", suite.project.URL(), "Values should match")
+	suite.Equal("https://platform.activestate.com/ActiveState/project?branch=main", suite.project.URL(), "Values should match")
 	suite.Equal("project", suite.project.Name(), "Values should match")
-	suite.Equal("00010001-0001-0001-0001-000100010001", suite.project.CommitID(), "Values should match")
+	commitID, err := localcommit.Get(suite.project.Dir())
+	suite.NoError(err)
+	suite.Equal("00010001-0001-0001-0001-000100010001", commitID.String(), "Values should match")
 	suite.Equal("ActiveState", suite.project.Owner(), "Values should match")
 	suite.Equal("ActiveState/project", suite.project.Namespace().String(), "Values should match")
 	suite.Equal("something", suite.project.Environments(), "Values should match")

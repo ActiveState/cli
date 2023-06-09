@@ -6,7 +6,6 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
@@ -21,9 +20,7 @@ type ExecIntegrationTestSuite struct {
 }
 
 func (suite *ExecIntegrationTestSuite) createProjectFile(ts *e2e.Session) {
-	ts.PrepareActiveStateYAML(strings.TrimSpace(`
-		project: https://platform.activestate.com/ActiveState-CLI/Python3?commitID=fbc613d6-b0b1-4f84-b26e-4aa5869c4e54
-	`))
+	ts.PrepareProject("ActiveState-CLI/Python3", "fbc613d6-b0b1-4f84-b26e-4aa5869c4e54")
 }
 
 func (suite *ExecIntegrationTestSuite) TestExec_Environment() {

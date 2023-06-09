@@ -7,8 +7,6 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/analytics"
-	"github.com/thoas/go-funk"
-
 	anaConsts "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/config"
@@ -22,6 +20,7 @@ import (
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/internal/runbits/rtusage"
+	"github.com/ActiveState/cli/pkg/localcommit"
 	bpModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model/buildplanner"
 	medmodel "github.com/ActiveState/cli/pkg/platform/api/mediator/model"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -32,6 +31,8 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
+	"github.com/go-openapi/strfmt"
+	"github.com/thoas/go-funk"
 )
 
 type PackageVersion struct {
@@ -117,7 +118,11 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 
 	switch nsType {
 	case model.NamespacePackage, model.NamespaceBundle:
-		language, err := model.LanguageByCommit(pj.CommitUUID())
+		commitID, err := localcommit.Get(pj.Dir())
+		if err != nil && !localcommit.IsFileDoesNotExistError(err) {
+			return errs.Wrap(err, "Unable to get local commit")
+		}
+		language, err := model.LanguageByCommit(commitID)
 		if err == nil {
 			langName = language.Name
 			ns = model.NewNamespacePkgOrBundle(langName, nsType)
@@ -185,7 +190,10 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 		pg = nil
 	}
 
-	parentCommitID := pj.CommitUUID()
+	parentCommitID, err := localcommit.Get(pj.Dir())
+	if err != nil && !localcommit.IsFileDoesNotExistError(err) {
+		return errs.Wrap(err, "Unable to get local commit")
+	}
 	hasParentCommit := parentCommitID != ""
 
 	pg = output.StartSpinner(out, locale.T("progress_commit"), constants.TerminalAnimationInterval)
@@ -229,7 +237,11 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 
 	exprChanged := !hasParentCommit
 	if hasParentCommit {
-		revertCommit, err := model.GetRevertCommit(pj.CommitUUID(), commitID)
+		localCommitID, err := localcommit.Get(pj.Dir())
+		if err != nil {
+			return errs.Wrap(err, "Unable to get local commit")
+		}
+		revertCommit, err := model.GetRevertCommit(localCommitID, commitID)
 		if err != nil {
 			return locale.WrapError(err, "err_revert_refresh")
 		}
@@ -258,8 +270,8 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 			return locale.WrapError(err, "err_update_build_script")
 		}
 
-		if err := pj.SetCommit(commitID.String()); err != nil {
-			return locale.WrapError(err, "err_package_update_pjfile")
+		if err := localcommit.Set(pj.Dir(), commitID.String()); err != nil {
+			return locale.WrapError(err, "err_package_update_commit_id")
 		}
 	}
 

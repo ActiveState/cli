@@ -5,11 +5,13 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/hash"
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
+	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/go-openapi/strfmt"
 	"github.com/thoas/go-funk"
@@ -113,7 +115,12 @@ func (p *ProjectTarget) CommitUUID() strfmt.UUID {
 	if p.customCommit != nil {
 		return *p.customCommit
 	}
-	return p.Project.CommitUUID()
+	commitID, err := localcommit.Get(p.Project.Dir())
+	if err != nil && !localcommit.IsFileDoesNotExistError(err) {
+		multilog.Error("Unable to get local commit: %v", errs.JoinMessage(err))
+		return ""
+	}
+	return commitID
 }
 
 func (p *ProjectTarget) Trigger() Trigger {

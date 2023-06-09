@@ -47,7 +47,7 @@ func (d *Spinner) moveCaretBackInCommandPrompt(n int) {
 		cursor.x = csbi.cursorPosition.x + short(-n)
 		cursor.y = csbi.cursorPosition.y
 
-		r2, _, err2 := procSetConsoleCursorPosition.Call(uintptr(handle), uintptr(*(*int32)(unsafe.Pointer(&cursor))))
+		r2, _, err2 := procSetConsoleCursorPosition.Call(uintptr(handle), uintptr(*((*uint32)(unsafe.Pointer(&cursor)))))
 		if r2 == 0 && !d.reportedError {
 			multilog.Error("Error calling SetConsoleCursorPosition: %v", err2)
 			d.reportedError = true
