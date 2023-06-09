@@ -235,7 +235,8 @@ type StageCommitParams struct {
 	PackageVersion   string
 	PackageNamespace vcsModel.Namespace
 	Operation        model.Operation
-	// ... or a script (e.g. from pull).
+	// ... or commits can have a script (e.g. from pull). When pulling a script, we do not compute
+	// its changes into a series of above operations. Instead, we just pass the new script directly.
 	Script *model.BuildExpression
 }
 

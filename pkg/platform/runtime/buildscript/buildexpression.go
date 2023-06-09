@@ -33,7 +33,7 @@ func NewScriptFromBuildExpression(expr []byte) (*Script, error) {
 	if !ok {
 		return nil, errs.New("Build expression's 'let' object has no 'in' key")
 	}
-	delete(letMap, "in")
+	delete(letMap, "in") // prevent duplication of "in" field when writing the build script
 
 	let, err := newLet(letMap)
 	if err != nil {
