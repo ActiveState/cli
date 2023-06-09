@@ -8,6 +8,10 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
+// NewMapFromBuildPlan creates an artifact map from a build plan. It creates a
+// lookup table and calls the recursive function buildMap to build up the
+// artifact map by traversing the build plan from the terminal targets through
+// all of the runtime dependencies for each of the artifacts in the DAG.
 func NewMapFromBuildPlan(build *model.Build) (artifact.Map, error) {
 	if build == nil {
 		// The build plan can be nil when calculating the changeset for a build
@@ -107,12 +111,23 @@ func buildMap(baseID strfmt.UUID, lookup map[strfmt.UUID]interface{}, result art
 	return nil
 }
 
+// SourceInfo contains useful information about the source that generated an artifact.
 type SourceInfo struct {
 	Name      string
 	Namespace string
 	Version   string
 }
 
+// GetSourceInfo retrieves the source information for an artifact. It expects the ID of the
+// source that generated the artifact and a lookup table that contains all of the sources
+// and steps in the build plan. We are able to retrieve the source information by looking
+// at the generatedBy field of the artifact and then looking at the inputs of the step that
+// generated the artifact. The inputs of the step will contain a reference to the source
+// that generated the artifact.
+//
+// The relationship is as follows:
+//
+//	Artifact (GeneratedBy) -> Step (Input) -> Source
 func GetSourceInfo(sourceID strfmt.UUID, lookup map[strfmt.UUID]interface{}) (SourceInfo, error) {
 	source, ok := lookup[sourceID].(*model.Source)
 	if ok {
@@ -139,6 +154,10 @@ func GetSourceInfo(sourceID strfmt.UUID, lookup map[strfmt.UUID]interface{}) (So
 	return SourceInfo{}, locale.NewError("err_resolve_artifact_name", "Could not resolve artifact name")
 }
 
+// BuildRuntimeDependencies is a recursive function that builds up a map of runtime dependencies
+// for an artifact. It expects the ID of an artifact and a lookup table that contains all of the
+// artifacts in the build plan. It will recursively call itself with each of the artifact's
+// dependencies and add them to the result map.
 func BuildRuntimeDependencies(depdendencyID strfmt.UUID, lookup map[strfmt.UUID]interface{}, result map[strfmt.UUID]struct{}) (map[strfmt.UUID]struct{}, error) {
 	artifact, ok := lookup[depdendencyID].(*model.Artifact)
 	if !ok {
@@ -188,6 +207,8 @@ func RecursiveDependenciesFor(a artifact.ArtifactID, artifacts artifact.Map) []a
 	return res
 }
 
+// NewMapFromBuildPlan creates an artifact map from a build plan
+// where the key is the artifact name rather than the artifact ID.
 func NewNamedMapFromBuildPlan(build *model.Build) (artifact.NamedMap, error) {
 	am, err := NewMapFromBuildPlan(build)
 	if err != nil {
@@ -202,6 +223,10 @@ func NewNamedMapFromBuildPlan(build *model.Build) (artifact.NamedMap, error) {
 	return res, nil
 }
 
+// AddBuildArtifacts iterates through all artifacts in a given artifact map and
+// adds the artifact's dependencies to the map. This is useful for when we are
+// using the BuildLogStreamer as it operates on the older recipeID and will include
+// more artifacts than what we originally calculated in the runtime closure.
 func AddBuildArtifacts(artifactMap artifact.Map, build *model.Build) error {
 	lookup := make(map[strfmt.UUID]interface{})
 
@@ -217,6 +242,8 @@ func AddBuildArtifacts(artifactMap artifact.Map, build *model.Build) error {
 
 	for _, a := range build.Artifacts {
 		_, ok := artifactMap[strfmt.UUID(a.TargetID)]
+		// Since we are using the BuildLogStreamer, we need to add all of the
+		// artifacts that have been submitted to be built.
 		if !ok && a.Status != model.ArtifactNotSubmitted {
 			deps := make(map[strfmt.UUID]struct{})
 			for _, depID := range a.RuntimeDependencies {

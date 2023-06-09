@@ -128,6 +128,9 @@ func (bp *BuildPlanner) FetchBuildResult(commitID strfmt.UUID, owner, project st
 		}
 	}
 
+	// The BuildPlanner will return a build plan with a status of
+	// "planning" if the build plan is not ready yet. We need to
+	// poll the BuildPlanner until the build is ready.
 	if resp.Project.Commit.Build.Status == bpModel.Planning {
 		resp, err = bp.pollBuildPlan(owner, project, commitID.String())
 		if err != nil {

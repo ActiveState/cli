@@ -9,6 +9,7 @@ import (
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
+	"github.com/ActiveState/cli/pkg/platform/runtime/buildplan"
 	"github.com/thoas/go-funk"
 )
 
@@ -53,7 +54,7 @@ func (cs *ChangeSummary) ChangeSummary(artifacts artifact.Map, requested artifac
 			continue
 		}
 		var depCount string
-		recDeps := artifact.RecursiveDependenciesFor(dep, artifacts)
+		recDeps := buildplan.RecursiveDependenciesFor(dep, artifacts)
 		filteredRecDeps := funk.Join(recDeps, changed.Added, funk.InnerJoin).([]artifact.ArtifactID)
 		if len(filteredRecDeps) > 0 {
 			depCount = locale.Tl("ingredient_dependency_count", " ({{.V0}} dependencies)", strconv.Itoa(len(filteredRecDeps)))

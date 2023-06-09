@@ -47,10 +47,9 @@ func NewDownloadsFromBuildPlan(build bpModel.Build, artifacts map[strfmt.UUID]Ar
 	for id := range artifacts {
 		for _, a := range build.Artifacts {
 			if a.Status == string(bpModel.ArtifactSucceeded) && a.TargetID == id && a.URL != "" {
-				if !strings.Contains(a.MimeType, "application/x.artifact") {
-					continue
+				if strings.Contains(a.MimeType, "application/x.artifact") || strings.Contains(a.MimeType, "application/x-activestate-artifacts") {
+					downloads = append(downloads, ArtifactDownload{ArtifactID: strfmt.UUID(a.TargetID), UnsignedURI: a.URL, UnsignedLogURI: a.LogURL, Checksum: a.Checksum})
 				}
-				downloads = append(downloads, ArtifactDownload{ArtifactID: strfmt.UUID(a.TargetID), UnsignedURI: a.URL, UnsignedLogURI: a.LogURL, Checksum: a.Checksum})
 			}
 		}
 	}
