@@ -9,7 +9,6 @@ import (
 
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/rtutils/p"
-	"github.com/go-openapi/strfmt"
 	"github.com/thoas/go-funk"
 
 	anaConsts "github.com/ActiveState/cli/internal/analytics/constants"
@@ -25,12 +24,11 @@ import (
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/internal/runbits/rtusage"
-	bgModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model/buildplanner"
+	bpModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model/buildplanner"
 	medmodel "github.com/ActiveState/cli/pkg/platform/api/mediator/model"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
-	bpModel "github.com/ActiveState/cli/pkg/platform/runtime/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
@@ -88,7 +86,7 @@ const latestVersion = "latest"
 // The refactor should clean this up.
 func (r *RequirementOperation) ExecuteRequirementOperation(
 	requirementName, requirementVersion string,
-	operation bgModel.Operation, ns *model.Namespace, nsType *model.NamespaceType, ts *time.Time) (rerr error) {
+	operation bpModel.Operation, ns *model.Namespace, nsType *model.NamespaceType, ts *time.Time) (rerr error) {
 
 	var langVersion string
 	langName := "undetermined"
@@ -142,7 +140,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(
 
 	rtusage.PrintRuntimeUsage(r.SvcModel, out, pj.Owner())
 
-	var validatePkg = operation == bgModel.OperationAdd && (ns.Type() == model.NamespacePackage || ns.Type() == model.NamespaceBundle)
+	var validatePkg = operation == bpModel.OperationAdded && (ns.Type() == model.NamespacePackage || ns.Type() == model.NamespaceBundle)
 	if (ns == nil || !ns.IsValid()) && nsType != nil && (*nsType == model.NamespacePackage || *nsType == model.NamespaceBundle) {
 		pg = output.StartSpinner(out, locale.Tl("progress_pkg_nolang", "", requirementName), constants.TerminalAnimationInterval)
 
@@ -207,13 +205,13 @@ func (r *RequirementOperation) ExecuteRequirementOperation(
 	pg = output.StartSpinner(out, locale.T("progress_commit"), constants.TerminalAnimationInterval)
 
 	// Check if this is an addition or an update
-	if operation == bgModel.OperationAdd && parentCommitID != "" {
+	if operation == bpModel.OperationAdded && parentCommitID != "" {
 		req, err := model.GetRequirement(parentCommitID, *ns, requirementName)
 		if err != nil {
 			return errs.Wrap(err, "Could not get requirement")
 		}
 		if req != nil {
-			operation = bgModel.OperationUpdate
+			operation = bpModel.OperationUpdated
 		}
 	}
 
@@ -236,13 +234,11 @@ func (r *RequirementOperation) ExecuteRequirementOperation(
 		tsv = *ts
 	}
 
-	bp := bpModel.NewBuildPlanner(r.Auth)
-	commitID, err := bp.PushCommit(bpModel.PushCommitParams{
+	bp := model.NewBuildPlanModel(r.Auth)
+	commitID, err := bp.StageCommit(model.StageCommitParams{
 		Owner:            pj.Owner(),
 		Project:          pj.Name(),
 		ParentCommit:     string(parentCommitID),
-		BranchRef:        pj.BranchName(),
-		Description:      fmt.Sprintf("%s-%s", operation, requirementName),
 		PackageName:      requirementName,
 		PackageVersion:   requirementVersion,
 		PackageNamespace: *ns,
@@ -255,7 +251,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(
 
 	orderChanged := !hasParentCommit
 	if hasParentCommit {
-		revertCommit, err := model.GetRevertCommit(pj.CommitUUID(), strfmt.UUID(commitID))
+		revertCommit, err := model.GetRevertCommit(pj.CommitUUID(), commitID)
 		if err != nil {
 			return locale.WrapError(err, "err_revert_refresh")
 		}
@@ -279,13 +275,13 @@ func (r *RequirementOperation) ExecuteRequirementOperation(
 	}
 
 	// refresh or install runtime
-	err = runbits.RefreshRuntime(r.Auth, r.Output, r.Analytics, pj, strfmt.UUID(commitID), orderChanged, trigger, r.SvcModel)
+	err = runbits.RefreshRuntime(r.Auth, r.Output, r.Analytics, pj, commitID, orderChanged, trigger, r.SvcModel)
 	if err != nil {
 		return errs.Wrap(err, "Failed to refresh runtime")
 	}
 
 	if orderChanged {
-		if err := pj.SetCommit(commitID); err != nil {
+		if err := pj.SetCommit(commitID.String()); err != nil {
 			return locale.WrapError(err, "err_package_update_pjfile")
 		}
 	}

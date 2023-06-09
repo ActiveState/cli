@@ -5,7 +5,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runbits/requirements"
-	bgModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model/buildplanner"
+	bpModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model/buildplanner"
 	"github.com/ActiveState/cli/pkg/platform/model"
 )
 
@@ -52,7 +52,7 @@ func (a *Add) Run(ps AddRunParams) error {
 	if err := requirements.NewRequirementOperation(a.prime).ExecuteRequirementOperation(
 		params.name,
 		params.version,
-		bgModel.OperationAdd,
+		bpModel.OperationAdded,
 		nil,
 		&model.NamespacePlatform,
 		nil,

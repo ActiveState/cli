@@ -1,7 +1,7 @@
 package request
 
-func BuildScript(owner, project, commitID string) *buildScriptByCommitID {
-	return &buildScriptByCommitID{vars: map[string]interface{}{
+func BuildExpression(owner, project, commitID string) *buildScriptByCommitID {
+	return &buildScriptByCommitID{map[string]interface{}{
 		"organization": owner,
 		"project":      project,
 		"commitID":     commitID,

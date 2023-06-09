@@ -5,7 +5,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/rtutils/p"
 	"github.com/ActiveState/cli/internal/runbits/requirements"
-	bgModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model/buildplanner"
+	bpModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model/buildplanner"
 	"github.com/ActiveState/cli/pkg/platform/model"
 )
 
@@ -40,7 +40,7 @@ func (a *Install) Run(params InstallRunParams, nsType model.NamespaceType) error
 	return requirements.NewRequirementOperation(a.prime).ExecuteRequirementOperation(
 		params.Package.Name,
 		params.Package.Version,
-		bgModel.OperationAdd,
+		bpModel.OperationAdded,
 		ns,
 		nsTypeV,
 		params.Timestamp.Time,

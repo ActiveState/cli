@@ -6,7 +6,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/rtutils/p"
 	"github.com/ActiveState/cli/internal/runbits/requirements"
-	bgModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model/buildplanner"
+	bpModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model/buildplanner"
 	"github.com/ActiveState/cli/pkg/platform/model"
 )
 
@@ -44,7 +44,7 @@ func (u *Uninstall) Run(params UninstallRunParams, nsType model.NamespaceType) e
 	return requirements.NewRequirementOperation(u.prime).ExecuteRequirementOperation(
 		params.Package.Name,
 		"",
-		bgModel.OperationRemove,
+		bpModel.OperationRemoved,
 		ns,
 		nsTypeV,
 		nil,
