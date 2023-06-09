@@ -64,6 +64,41 @@ type BuildExpression struct {
 	requirements []Requirement
 }
 
+// NewBuildExpression creates a BuildExpression from a JSON byte array.
+// The JSON must be a valid BuildExpression in the following format:
+//
+//	{
+//	  "let": {
+//	    "runtime": {
+//	      "solve_legacy": {
+//	        "at_time": "2023-04-27T17:30:05.999000Z",
+//	        "build_flags": [],
+//	        "camel_flags": [],
+//	        "platforms": [
+//	          "96b7e6f2-bebf-564c-bc1c-f04482398f38"
+//	        ],
+//	        "requirements": [
+//	          {
+//	            "name": "requests",
+//	            "namespace": "language/python"
+//	          },
+//	          {
+//	            "name": "python",
+//	            "namespace": "language",
+//	            "version_requirements": [
+//	              {
+//	                "comparator": "eq",
+//	                "version": "3.10.10"
+//	              }
+//	            ]
+//	          },
+//	        ],
+//	        "solver_version": null
+//	      }
+//	    },
+//	  "in": "$runtime"
+//	  }
+//	}
 func NewBuildExpression(data []byte) (*BuildExpression, error) {
 	expression := make(map[string]interface{})
 	err := json.Unmarshal(data, &expression)
@@ -104,6 +139,8 @@ func NewBuildExpression(data []byte) (*BuildExpression, error) {
 	}, nil
 }
 
+// validateRequirements ensures that the requirements in the BuildExpression contain
+// both the name and namespace fields. These fileds are used for requirement operations.
 func validateRequirements(requirements []interface{}) error {
 	for _, requirement := range requirements {
 		r, ok := requirement.(map[string]interface{})
@@ -123,10 +160,12 @@ func validateRequirements(requirements []interface{}) error {
 	return nil
 }
 
+// Requirements returns the requirements in the BuildExpression.
 func (bx BuildExpression) Requirements() []Requirement {
 	return bx.requirements
 }
 
+// Update updates the BuildExpression's requirements based on the operation and requirement.
 func (bx *BuildExpression) Update(operation Operation, requirement Requirement) error {
 	var err error
 	switch operation {
@@ -151,6 +190,7 @@ func (bx *BuildExpression) Update(operation Operation, requirement Requirement) 
 	return nil
 }
 
+// addRequirement adds a requirement to the BuildExpression.
 func (bx *BuildExpression) addRequirement(requirement Requirement) error {
 	bx.requirements = append(bx.requirements, requirement)
 
@@ -159,6 +199,7 @@ func (bx *BuildExpression) addRequirement(requirement Requirement) error {
 	return nil
 }
 
+// removeRequirement removes a requirement from the BuildExpression.
 func (bx *BuildExpression) removeRequirement(requirement Requirement) error {
 	for i, req := range bx.requirements {
 		if req.Name == requirement.Name && req.Namespace == requirement.Namespace {
@@ -171,6 +212,7 @@ func (bx *BuildExpression) removeRequirement(requirement Requirement) error {
 	return errs.New("Could not find requirement")
 }
 
+// updateRequirement updates an existing requirement in the BuildExpression.
 func (bx BuildExpression) updateRequirement(requirement Requirement) error {
 	for i, req := range bx.requirements {
 		if req.Name == requirement.Name && req.Namespace == requirement.Namespace {
@@ -183,6 +225,7 @@ func (bx BuildExpression) updateRequirement(requirement Requirement) error {
 	return errs.New("Could not find requirement")
 }
 
+// UpdateTimestamp fetches the latest platform timestamp and updates it in the BuildExpression.
 func (bx BuildExpression) UpdateTimestamp() error {
 	latest, err := fetchLatestTimeStamp()
 	if err != nil {
