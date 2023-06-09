@@ -1,6 +1,7 @@
 package initialize
 
 import (
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -78,7 +79,7 @@ func inferLanguage(config projectfile.ConfigGetter) (string, string, bool) {
 	return lang.Name, lang.Version, true
 }
 
-func (r *Initialize) Run(params *RunParams) error {
+func (r *Initialize) Run(params *RunParams) (rerr error) {
 	logging.Debug("Init: %s/%s %v", params.Namespace.Owner, params.Namespace.Project, params.Private)
 
 	if !r.auth.Authenticated() {
@@ -147,6 +148,26 @@ func (r *Initialize) Run(params *RunParams) error {
 	if err != nil {
 		return locale.WrapError(err, "err_init_pjfile", "Could not create project file")
 	}
+
+	// If an error occurs, remove the created activestate.yaml file so the user can try again.
+	defer func() {
+		if rerr == nil {
+			return
+		}
+		err := os.Remove(pjfile.Path())
+		if err != nil {
+			multilog.Error("Failed to remove activestate.yaml after `state init` error: %v", err)
+			return
+		}
+		if cwd, err := osutils.Getwd(); err == nil {
+			if createdDir := filepath.Dir(pjfile.Path()); createdDir != cwd {
+				err2 := os.RemoveAll(createdDir)
+				if err2 != nil {
+					multilog.Error("Failed to remove created directory after `state init` error: %v", err2)
+				}
+			}
+		}
+	}()
 
 	proj, err := project.New(pjfile, r.out)
 	if err != nil {
