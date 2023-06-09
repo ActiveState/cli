@@ -18,11 +18,11 @@ import (
 )
 
 type Setup struct {
-	artifacts artifact.ArtifactMap
+	artifacts artifact.Map
 	store     *store.Store
 }
 
-func NewSetup(store *store.Store, artifacts artifact.ArtifactMap) *Setup {
+func NewSetup(store *store.Store, artifacts artifact.Map) *Setup {
 	return &Setup{store: store, artifacts: artifacts}
 }
 

@@ -36,6 +36,7 @@ import (
 	apimodel "github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifactcache"
+	"github.com/ActiveState/cli/pkg/platform/runtime/buildplan"
 	"github.com/ActiveState/cli/pkg/platform/runtime/envdef"
 	"github.com/ActiveState/cli/pkg/platform/runtime/executors"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup/buildlog"
@@ -327,7 +328,7 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 	}
 
 	// Compute and handle the change summary
-	artifacts, err := artifact.NewMapFromBuildPlan(buildResult.Build)
+	artifacts, err := buildplan.NewMapFromBuildPlan(buildResult.Build)
 	if err != nil {
 		return nil, errs.Wrap(err, "Failed to create artifact map from build plan")
 	}
@@ -401,7 +402,7 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 		logging.Debug("Could not load existing build plan. Maybe it is a new installation: %v", err)
 	}
 
-	changedArtifacts, err := artifact.NewArtifactChangesetByBuildPlan(oldBuildPlan, buildResult.Build, false)
+	changedArtifacts, err := buildplan.NewArtifactChangesetByBuildPlan(oldBuildPlan, buildResult.Build, false)
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not compute artifact changeset")
 	}
@@ -540,7 +541,7 @@ func aggregateErrors() (chan<- error, <-chan error) {
 	return bgErrs, aggErr
 }
 
-func (s *Setup) installArtifactsFromBuild(buildResult *model.BuildResult, artifacts artifact.ArtifactMap, artifactsToInstall map[artifact.ArtifactID]struct{}, downloads []artifact.ArtifactDownload, alreadyInstalled store.StoredArtifactMap, setup Setuper, installFunc artifactInstaller, logFilePath string) error {
+func (s *Setup) installArtifactsFromBuild(buildResult *model.BuildResult, artifacts artifact.Map, artifactsToInstall map[artifact.ArtifactID]struct{}, downloads []artifact.ArtifactDownload, alreadyInstalled store.StoredArtifactMap, setup Setuper, installFunc artifactInstaller, logFilePath string) error {
 	// Artifacts are installed in two stages
 	// - The first stage runs concurrently in MaxConcurrency worker threads (download, unpacking, relocation)
 	// - The second stage moves all files into its final destination is running in a single thread (using the mainthread library) to avoid file conflicts
@@ -600,7 +601,7 @@ func (s *Setup) setupArtifactSubmitFunction(a artifact.ArtifactDownload, ar *art
 	}
 }
 
-func (s *Setup) installFromBuildResult(buildResult *model.BuildResult, artifacts artifact.ArtifactMap, downloads []artifact.ArtifactDownload, alreadyInstalled store.StoredArtifactMap, setup Setuper, installFunc artifactInstaller) error {
+func (s *Setup) installFromBuildResult(buildResult *model.BuildResult, artifacts artifact.Map, downloads []artifact.ArtifactDownload, alreadyInstalled store.StoredArtifactMap, setup Setuper, installFunc artifactInstaller) error {
 	logging.Debug("Installing artifacts from build result")
 	errs, aggregatedErr := aggregateErrors()
 	mainthread.Run(func() {
@@ -623,13 +624,13 @@ func (s *Setup) installFromBuildResult(buildResult *model.BuildResult, artifacts
 	return <-aggregatedErr
 }
 
-func (s *Setup) installFromBuildLog(buildResult *model.BuildResult, artifacts artifact.ArtifactMap, artifactsToInstall map[artifact.ArtifactID]struct{}, alreadyInstalled store.StoredArtifactMap, setup Setuper, installFunc artifactInstaller, logFilePath string) error {
+func (s *Setup) installFromBuildLog(buildResult *model.BuildResult, artifacts artifact.Map, artifactsToInstall map[artifact.ArtifactID]struct{}, alreadyInstalled store.StoredArtifactMap, setup Setuper, installFunc artifactInstaller, logFilePath string) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	// The runtime dependencies do not include all build dependencies. Since we are working
 	// with the build log, we need to add the missing dependencies to the list of artifacts
-	err := artifact.AddBuildArtifacts(artifacts, buildResult.Build)
+	err := buildplan.AddBuildArtifacts(artifacts, buildResult.Build)
 	if err != nil {
 		return errs.Wrap(err, "Could not add build artifacts to artifact map")
 	}
@@ -808,7 +809,7 @@ func (s *Setup) unpackArtifact(ua unarchiver.Unarchiver, tarballPath string, tar
 	return numUnpackedFiles, ua.Unarchive(proxy, i, targetDir)
 }
 
-func (s *Setup) selectSetupImplementation(buildEngine model.BuildEngine, artifacts artifact.ArtifactMap) (Setuper, error) {
+func (s *Setup) selectSetupImplementation(buildEngine model.BuildEngine, artifacts artifact.Map) (Setuper, error) {
 	switch buildEngine {
 	case model.Alternative:
 		return alternative.NewSetup(s.store, artifacts), nil

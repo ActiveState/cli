@@ -1,50 +1,21 @@
-package artifact
+package buildplan
 
 import (
-	"fmt"
-
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	model "github.com/ActiveState/cli/pkg/platform/api/graphql/model/buildplanner"
+	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/go-openapi/strfmt"
 )
 
-// Artifact comprises useful information about an artifact that we extracted from a build plan
-type Artifact struct {
-	ArtifactID       ArtifactID
-	Name             string
-	Namespace        string
-	Version          *string
-	RequestedByOrder bool
-
-	GeneratedBy strfmt.UUID
-
-	Dependencies []ArtifactID
-}
-
-// ArtifactMap maps artifact ids to artifact information extracted from a build plan
-type ArtifactMap map[ArtifactID]Artifact
-
-// ArtifactNamedMap maps artifact names to artifact information extracted from a build plan
-type ArtifactNamedMap map[string]Artifact
-
-// NameWithVersion returns a string <name>@<version> if artifact has a version specified, otherwise it returns just the name
-func (a Artifact) NameWithVersion() string {
-	version := ""
-	if a.Version != nil {
-		version = fmt.Sprintf("@%s", *a.Version)
-	}
-	return a.Name + version
-}
-
-func NewMapFromBuildPlan(build *model.Build) (ArtifactMap, error) {
+func NewMapFromBuildPlan(build *model.Build) (artifact.Map, error) {
 	if build == nil {
 		// The build plan can be nil when calculating the changeset for a build
 		// that has not been activated yet.
 		return nil, nil
 	}
 
-	res := make(ArtifactMap)
+	res := make(artifact.Map)
 
 	lookup := make(map[strfmt.UUID]interface{})
 
@@ -82,23 +53,23 @@ func NewMapFromBuildPlan(build *model.Build) (ArtifactMap, error) {
 // iterate through the artifact's dependencies, we also have to build up the dependencies of
 // each of those dependencies. Once we have a complete list of dependencies for the artifact,
 // we can continue to build up the results map.
-func buildMap(baseID strfmt.UUID, lookup map[strfmt.UUID]interface{}, result ArtifactMap) error {
+func buildMap(baseID strfmt.UUID, lookup map[strfmt.UUID]interface{}, result artifact.Map) error {
 	target := lookup[baseID]
-	artifact, ok := target.(*model.Artifact)
+	currentArtifact, ok := target.(*model.Artifact)
 	if !ok {
 		return errs.New("Incorrect target type for id %s", baseID)
 	}
 
-	if artifact.Status != model.ArtifactSucceeded {
-		return errs.New("Artifact %s did not succeed with status: %s", artifact.TargetID, artifact.Status)
+	if currentArtifact.Status != model.ArtifactSucceeded {
+		return errs.New("Artifact %s did not succeed with status: %s", currentArtifact.TargetID, currentArtifact.Status)
 	}
 
 	deps := make(map[strfmt.UUID]struct{})
-	for _, depID := range artifact.RuntimeDependencies {
+	for _, depID := range currentArtifact.RuntimeDependencies {
 		deps[depID] = struct{}{}
 		recursiveDeps, err := BuildRuntimeDependencies(depID, lookup, deps)
 		if err != nil {
-			return errs.Wrap(err, "Could not build runtime dependencies for artifact %s", artifact.TargetID)
+			return errs.Wrap(err, "Could not build runtime dependencies for artifact %s", currentArtifact.TargetID)
 		}
 		for id := range recursiveDeps {
 			deps[id] = struct{}{}
@@ -106,7 +77,7 @@ func buildMap(baseID strfmt.UUID, lookup map[strfmt.UUID]interface{}, result Art
 
 		err = buildMap(depID, lookup, result)
 		if err != nil {
-			return errs.New("Could not build map for artifact %s", artifact.TargetID)
+			return errs.New("Could not build map for artifact %s", currentArtifact.TargetID)
 		}
 	}
 
@@ -118,18 +89,18 @@ func buildMap(baseID strfmt.UUID, lookup map[strfmt.UUID]interface{}, result Art
 		uniqueDeps = append(uniqueDeps, id)
 	}
 
-	info, err := GetSourceInfo(artifact.GeneratedBy, lookup)
+	info, err := GetSourceInfo(currentArtifact.GeneratedBy, lookup)
 	if err != nil {
 		return errs.Wrap(err, "Could not resolve source information")
 	}
 
-	result[strfmt.UUID(artifact.TargetID)] = Artifact{
-		ArtifactID:       strfmt.UUID(artifact.TargetID),
+	result[strfmt.UUID(currentArtifact.TargetID)] = artifact.Artifact{
+		ArtifactID:       strfmt.UUID(currentArtifact.TargetID),
 		Name:             info.Name,
 		Namespace:        info.Namespace,
 		Version:          &info.Version,
 		RequestedByOrder: true,
-		GeneratedBy:      artifact.GeneratedBy,
+		GeneratedBy:      currentArtifact.GeneratedBy,
 		Dependencies:     uniqueDeps,
 	}
 
@@ -186,8 +157,8 @@ func BuildRuntimeDependencies(depdendencyID strfmt.UUID, lookup map[strfmt.UUID]
 }
 
 // RecursiveDependenciesFor computes the recursive dependencies for an ArtifactID a using artifacts as a lookup table
-func RecursiveDependenciesFor(a ArtifactID, artifacts ArtifactMap) []ArtifactID {
-	allDeps := make(map[ArtifactID]struct{})
+func RecursiveDependenciesFor(a artifact.ArtifactID, artifacts artifact.Map) []artifact.ArtifactID {
+	allDeps := make(map[artifact.ArtifactID]struct{})
 	artf, ok := artifacts[a]
 	if !ok {
 		return nil
@@ -195,7 +166,7 @@ func RecursiveDependenciesFor(a ArtifactID, artifacts ArtifactMap) []ArtifactID 
 	toCheck := artf.Dependencies
 
 	for len(toCheck) > 0 {
-		var newToCheck []ArtifactID
+		var newToCheck []artifact.ArtifactID
 		for _, a := range toCheck {
 			if _, ok := allDeps[a]; ok {
 				continue
@@ -210,20 +181,20 @@ func RecursiveDependenciesFor(a ArtifactID, artifacts ArtifactMap) []ArtifactID 
 		toCheck = newToCheck
 	}
 
-	res := make([]ArtifactID, 0, len(allDeps))
+	res := make([]artifact.ArtifactID, 0, len(allDeps))
 	for a := range allDeps {
 		res = append(res, a)
 	}
 	return res
 }
 
-func NewNamedMapFromBuildPlan(build *model.Build) (ArtifactNamedMap, error) {
+func NewNamedMapFromBuildPlan(build *model.Build) (artifact.NamedMap, error) {
 	am, err := NewMapFromBuildPlan(build)
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not create artifact map")
 	}
 
-	res := make(map[string]Artifact)
+	res := make(map[string]artifact.Artifact)
 	for _, a := range am {
 		res[a.Name] = a
 	}
@@ -231,7 +202,7 @@ func NewNamedMapFromBuildPlan(build *model.Build) (ArtifactNamedMap, error) {
 	return res, nil
 }
 
-func AddBuildArtifacts(artifactMap ArtifactMap, build *model.Build) error {
+func AddBuildArtifacts(artifactMap artifact.Map, build *model.Build) error {
 	lookup := make(map[strfmt.UUID]interface{})
 
 	for _, artifact := range build.Artifacts {
@@ -272,7 +243,7 @@ func AddBuildArtifacts(artifactMap ArtifactMap, build *model.Build) error {
 				return errs.Wrap(err, "Could not resolve source information")
 			}
 
-			artifactMap[strfmt.UUID(a.TargetID)] = Artifact{
+			artifactMap[strfmt.UUID(a.TargetID)] = artifact.Artifact{
 				ArtifactID:       strfmt.UUID(a.TargetID),
 				Name:             info.Name,
 				Namespace:        info.Namespace,

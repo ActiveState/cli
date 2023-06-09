@@ -11,7 +11,7 @@ import (
 )
 
 func TestChangeSummary(t *testing.T) {
-	artifacts := artifact.ArtifactMap{
+	artifacts := artifact.Map{
 		artifact.ArtifactID("1"): artifact.Artifact{
 			Name: "Package 1", ArtifactID: "1",
 			Dependencies: []artifact.ArtifactID{"2", "3"}},
