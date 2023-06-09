@@ -8,10 +8,10 @@ import (
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/stretchr/testify/suite"
-
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
+	"github.com/ActiveState/cli/pkg/platform/runtime/buildscript"
+	"github.com/stretchr/testify/suite"
 )
 
 type PullIntegrationTestSuite struct {
@@ -121,6 +121,40 @@ func (suite *PullIntegrationTestSuite) TestPull_RestoreNamespace() {
 	cp = ts.Spawn("show")
 	cp.Expect("ActiveState-CLI/small-python")
 	cp.ExpectExitCode(0)
+}
+
+func (suite *PullIntegrationTestSuite) TestMergeBuildScript() {
+	suite.OnlyRunForTags(tagsuite.Pull)
+	suite.T().Skip("Buildplanner's StageCommit does not currently work") // DX-1859
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.Spawn("checkout", "ActiveState-CLI/Merge#447b8363-024c-4143-bf4e-c96989314fdf", ".")
+	cp.Expect("Skipping runtime setup")
+	cp.Expect("Checked out")
+	cp.ExpectExitCode(0)
+
+	ts.LoginAsPersistentUser()
+
+	cp = ts.SpawnWithOpts(
+		e2e.WithArgs("install", "requests"),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
+	cp.ExpectExitCode(0)
+
+	_, err := buildscript.NewScriptFromProjectDir(ts.Dirs.Work)
+	suite.Require().NoError(err) // just verify it's a valid build script
+
+	cp = ts.Spawn("pull")
+	cp.Expect("Your local build script is different")
+	cp.ExpectNotExitCode(0)
+
+	_, err = buildscript.NewScriptFromProjectDir(ts.Dirs.Work)
+	suite.Assert().Error(err)
+	bytes := fileutils.ReadFileUnsafe(filepath.Join(ts.Dirs.Work, constants.BuildScriptFileName))
+	suite.Assert().Contains(string(bytes), "<<<<<<<", "No merge conflict markers are in build script")
+	suite.Assert().Contains(string(bytes), "=======", "No merge conflict markers are in build script")
+	suite.Assert().Contains(string(bytes), ">>>>>>>", "No merge conflict markers are in build script")
 }
 
 func TestPullIntegrationTestSuite(t *testing.T) {
