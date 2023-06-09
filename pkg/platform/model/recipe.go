@@ -108,7 +108,7 @@ func fetchRawRecipe(commitID strfmt.UUID, owner, project string, hostPlatform *s
 	}
 
 	if hostPlatform != nil {
-		params.Order.Platforms, err = filterPlatformIDs(*hostPlatform, runtime.GOARCH, params.Order.Platforms)
+		params.Order.Platforms, err = FilterPlatformIDs(*hostPlatform, runtime.GOARCH, params.Order.Platforms)
 		if err != nil {
 			return "", err
 		}
@@ -187,16 +187,10 @@ func FetchRecipe(commitID strfmt.UUID, owner, project string, hostPlatform *stri
 		return nil, serr
 	}
 
-	platformIDs, err := filterPlatformIDs(*hostPlatform, runtime.GOARCH, params.Order.Platforms)
+	platformID, err := FilterCurrentPlatform(*hostPlatform, params.Order.Platforms)
 	if err != nil {
-		return nil, errs.Wrap(err, "filterPlatformIDs failed")
+		return nil, locale.WrapError(err, "err_filter_current_platform")
 	}
-	if len(platformIDs) == 0 {
-		return nil, locale.NewInputError("err_recipe_no_platform")
-	} else if len(platformIDs) > 1 {
-		logging.Debug("Received multiple platform IDs.  Picking the first one.")
-	}
-	platformID := platformIDs[0]
 
 	for _, recipe := range response.Payload.Recipes {
 		if recipe.Platform != nil && recipe.Platform.PlatformID != nil && *recipe.Platform.PlatformID == platformID {
@@ -205,6 +199,19 @@ func FetchRecipe(commitID strfmt.UUID, owner, project string, hostPlatform *stri
 	}
 
 	return nil, locale.NewInputError("err_recipe_not_found")
+}
+
+func FilterCurrentPlatform(hostPlatform string, platforms []strfmt.UUID) (strfmt.UUID, error) {
+	platformIDs, err := FilterPlatformIDs(hostPlatform, runtime.GOARCH, platforms)
+	if err != nil {
+		return "", errs.Wrap(err, "filterPlatformIDs failed")
+	}
+	if len(platformIDs) == 0 {
+		return "", locale.NewInputError("err_recipe_no_platform")
+	} else if len(platformIDs) > 1 {
+		logging.Debug("Received multiple platform IDs.  Picking the first one.")
+	}
+	return platformIDs[0], nil
 }
 
 func resolveSolverError(err error) error {

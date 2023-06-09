@@ -216,36 +216,6 @@ func (r *Activate) Run(params *ActivateParams) error {
 	return nil
 }
 
-func updateProjectFile(prj *project.Project, names *project.Namespaced, providedBranch string) error {
-	branch := providedBranch
-	if branch == "" {
-		branch = constants.DefaultBranchName
-	}
-
-	var commitID string
-	if names.CommitID == nil || *names.CommitID == "" {
-		latestID, err := model.BranchCommitID(names.Owner, names.Project, branch)
-		if err != nil {
-			return locale.WrapInputError(err, "err_set_namespace_retrieve_commit", "Could not retrieve the latest commit for the specified project {{.V0}}.", names.String())
-		}
-		commitID = latestID.String()
-	} else {
-		commitID = names.CommitID.String()
-	}
-
-	if err := prj.Source().SetNamespace(names.Owner, names.Project); err != nil {
-		return locale.WrapError(err, "err_activate_replace_write_namespace", "Failed to update project namespace.")
-	}
-	if err := localcommit.Set(prj.Dir(), commitID); err != nil {
-		return errs.Wrap(err, "Unable to set local commit")
-	}
-	if err := prj.Source().SetBranch(branch); err != nil {
-		return locale.WrapError(err, "err_activate_replace_write_branch", "Failed to update Branch.")
-	}
-
-	return nil
-}
-
 // warningForAdministrator prints a warning message if default activation is invoked by a Windows Administrator
 // The default activation will only be accessible by the underlying unprivileged user.
 func warningForAdministrator(out output.Outputer) {

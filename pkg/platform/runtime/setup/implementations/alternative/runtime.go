@@ -10,18 +10,19 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/multilog"
-	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
+	model "github.com/ActiveState/cli/pkg/platform/api/graphql/model/buildplanner"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/ActiveState/cli/pkg/platform/runtime/store"
+	"github.com/go-openapi/strfmt"
 	"github.com/thoas/go-funk"
 )
 
 type Setup struct {
-	artifacts artifact.ArtifactRecipeMap
+	artifacts artifact.ArtifactBuildPlanMap
 	store     *store.Store
 }
 
-func NewSetup(store *store.Store, artifacts artifact.ArtifactRecipeMap) *Setup {
+func NewSetup(store *store.Store, artifacts artifact.ArtifactBuildPlanMap) *Setup {
 	return &Setup{store: store, artifacts: artifacts}
 }
 
@@ -145,6 +146,6 @@ func (s *Setup) ResolveArtifactName(a artifact.ArtifactID) string {
 	return locale.Tl("alternative_unknown_pkg_name", "unknown")
 }
 
-func (s *Setup) DownloadsFromBuild(buildStatus *headchef_models.V1BuildStatusResponse) (download []artifact.ArtifactDownload, err error) {
-	return artifact.NewDownloadsFromBuild(buildStatus)
+func (s *Setup) DownloadsFromBuild(build model.Build, artifacts map[strfmt.UUID]artifact.ArtifactBuildPlan) (download []artifact.ArtifactDownload, err error) {
+	return artifact.NewDownloadsFromBuildPlan(build, artifacts)
 }

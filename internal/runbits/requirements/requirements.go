@@ -21,10 +21,13 @@ import (
 	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/internal/runbits/rtusage"
 	"github.com/ActiveState/cli/pkg/localcommit"
+	bpModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model/buildplanner"
 	medmodel "github.com/ActiveState/cli/pkg/platform/api/mediator/model"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
+	"github.com/ActiveState/cli/pkg/platform/runtime/buildscript"
+	runtimeModel "github.com/ActiveState/cli/pkg/platform/runtime/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
@@ -78,7 +81,7 @@ func NewRequirementOperation(prime primeable) *RequirementOperation {
 
 const latestVersion = "latest"
 
-func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requirementVersion string, requirementBitWidth int, operation model.Operation, nsType model.NamespaceType) (rerr error) {
+func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requirementVersion string, requirementBitWidth int, operation bpModel.Operation, nsType model.NamespaceType) (rerr error) {
 	var ns model.Namespace
 	var langVersion string
 	langName := "undetermined"
@@ -134,7 +137,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 
 	rtusage.PrintRuntimeUsage(r.SvcModel, out, pj.Owner())
 
-	var validatePkg = operation == model.OperationAdded && (ns.Type() == model.NamespacePackage || ns.Type() == model.NamespaceBundle)
+	var validatePkg = operation == bpModel.OperationAdd && (ns.Type() == model.NamespacePackage || ns.Type() == model.NamespaceBundle)
 	if !ns.IsValid() && (nsType == model.NamespacePackage || nsType == model.NamespaceBundle) {
 		pg = output.StartSpinner(out, locale.Tl("progress_pkg_nolang", "", requirementName), constants.TerminalAnimationInterval)
 
@@ -196,13 +199,13 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 	pg = output.StartSpinner(out, locale.T("progress_commit"), constants.TerminalAnimationInterval)
 
 	// Check if this is an addition or an update
-	if operation == model.OperationAdded && parentCommitID != "" {
+	if operation == bpModel.OperationAdd && parentCommitID != "" {
 		req, err := model.GetRequirement(parentCommitID, ns, requirementName)
 		if err != nil {
 			return errs.Wrap(err, "Could not get requirement")
 		}
 		if req != nil {
-			operation = model.OperationUpdated
+			operation = bpModel.OperationUpdate
 		}
 	}
 
@@ -218,16 +221,21 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 		}
 	}
 
-	var commitID strfmt.UUID
-	commitID, err = model.CommitRequirement(parentCommitID, operation, requirementName, requirementVersion, requirementBitWidth, ns)
+	bp := runtimeModel.NewBuildPlanner(r.Auth)
+	commitID, err := bp.StageCommit(runtimeModel.StageCommitParams{
+		Owner:            pj.Owner(),
+		Project:          pj.Name(),
+		ParentCommit:     string(parentCommitID),
+		PackageName:      requirementName,
+		PackageVersion:   requirementVersion,
+		PackageNamespace: ns,
+		Operation:        operation,
+	})
 	if err != nil {
-		if operation == model.OperationRemoved && strings.Contains(err.Error(), "does not exist") {
-			return locale.WrapInputError(err, "err_package_remove_does_not_exist", "Requirement is not installed: {{.V0}}", requirementName)
-		}
-		return locale.WrapError(err, fmt.Sprintf("err_%s_%s", ns.Type(), operation))
+		return locale.WrapError(err, "err_package_save_and_build", "Could not save and build project")
 	}
 
-	orderChanged := !hasParentCommit
+	exprChanged := !hasParentCommit
 	if hasParentCommit {
 		localCommitID, err := localcommit.Get(pj.Dir())
 		if err != nil {
@@ -237,9 +245,9 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 		if err != nil {
 			return locale.WrapError(err, "err_revert_refresh")
 		}
-		orderChanged = len(revertCommit.Changeset) > 0
+		exprChanged = len(revertCommit.Changeset) > 0
 	}
-	logging.Debug("Order changed: %v", orderChanged)
+	logging.Debug("Order changed: %v", exprChanged)
 
 	pg.Stop(locale.T("progress_success"))
 	pg = nil
@@ -256,16 +264,21 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 		return errs.Wrap(err, "Unsupported namespace type: %s", ns.Type().String())
 	}
 
-	// refresh or install runtime
-	err = runbits.RefreshRuntime(r.Auth, r.Output, r.Analytics, pj, commitID, orderChanged, trigger, r.SvcModel)
-	if err != nil {
-		return errs.Wrap(err, "Failed to refresh runtime")
-	}
+	if exprChanged {
+		err := buildscript.UpdateOrCreate(pj.Dir(), commit.Script)
+		if err != nil {
+			return locale.WrapError(err, "err_update_build_script")
+		}
 
-	if orderChanged {
 		if err := localcommit.Set(pj.Dir(), commitID.String()); err != nil {
 			return locale.WrapError(err, "err_package_update_commit_id")
 		}
+	}
+
+	// refresh or install runtime
+	err = runbits.RefreshRuntime(r.Auth, r.Output, r.Analytics, pj, strfmt.UUID(commit.CommitID), exprChanged, trigger, r.SvcModel)
+	if err != nil {
+		return err
 	}
 
 	if !hasParentCommit {
@@ -288,7 +301,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 			requirementName,
 			requirementVersion,
 			ns.Type().String(),
-			string(operation),
+			operation.String(),
 		}))
 
 	out.Notice(locale.T("operation_success_local"))

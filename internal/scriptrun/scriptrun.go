@@ -16,6 +16,7 @@ import (
 	"github.com/ActiveState/cli/internal/process"
 	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/cli/internal/runbits"
+	"github.com/ActiveState/cli/internal/runbits/buildscript"
 	"github.com/ActiveState/cli/internal/scriptfile"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
@@ -67,6 +68,11 @@ func (s *ScriptRun) NeedsActivation() bool {
 
 // PrepareVirtualEnv sets up the relevant runtime and prepares the environment.
 func (s *ScriptRun) PrepareVirtualEnv() (rerr error) {
+	err := buildscript.Sync(s.project, nil, s.out, s.auth)
+	if err != nil {
+		return locale.WrapError(err, "err_update_build_script")
+	}
+
 	rt, err := runtime.New(target.NewProjectTarget(s.project, nil, target.TriggerScript), s.analytics, s.svcModel)
 	if err != nil {
 		if !runtime.IsNeedsUpdateError(err) {

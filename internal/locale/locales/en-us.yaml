@@ -1214,6 +1214,8 @@ package_update_config_file:
   other: To ensure your local project is synchronized with the ActiveState platform please use [ACTIONABLE]`state pull`[/RESET]
 inventory_ingredient_not_available:
   other: The package '[NOTICE]{{.V0}}[/RESET]' is not available on the ActiveState Platform, or does not have a matching version
+err_update_build_script:
+  other: Could not update runtime build script
 command_flag_invalid_value:
   other: "Invalid value for {{.V0}} flag: [NOTICE]{{.V1}}[/RESET]"
 err_cmdtree:
@@ -1306,6 +1308,8 @@ request_timed_out:
   other: A request for data took too long - Trying again may help
 err_recipe_no_platform:
   other: Filter returned no valid platform IDs.
+err_filter_current_platform:
+  other: Filter returned no valid platform IDs for the current platform.
 no_commits:
   other: No commits exist yet for [NOTICE]{{.V0}}[/RESET]
 err_orgs_length:

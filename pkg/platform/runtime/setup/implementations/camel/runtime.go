@@ -5,9 +5,10 @@ import (
 
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/multilog"
-	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
+	model "github.com/ActiveState/cli/pkg/platform/api/graphql/model/buildplanner"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/ActiveState/cli/pkg/platform/runtime/store"
+	"github.com/go-openapi/strfmt"
 )
 
 type Setup struct {
@@ -33,6 +34,6 @@ func (s *Setup) ResolveArtifactName(_ artifact.ArtifactID) string {
 	return locale.Tl("camel_bundle_name", "bundle")
 }
 
-func (s *Setup) DownloadsFromBuild(buildStatus *headchef_models.V1BuildStatusResponse) ([]artifact.ArtifactDownload, error) {
-	return artifact.NewDownloadsFromCamelBuild(buildStatus)
+func (s *Setup) DownloadsFromBuild(build model.Build, artifacts map[strfmt.UUID]artifact.ArtifactBuildPlan) ([]artifact.ArtifactDownload, error) {
+	return artifact.NewDownloadsFromCamelBuildPlan(build, artifacts)
 }

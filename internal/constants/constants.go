@@ -27,6 +27,9 @@ const ConfigFileName = "activestate.yaml"
 // This folder does not hold ConfigFileName. It is a sibling to that file in a given directory.
 const ProjectConfigDirName = ".activestate"
 
+// BuildScriptFileName holds the name of the file that represents the build script used to generate the runtime
+const BuildScriptFileName = "buildscript.yaml"
+
 // CommitIdFileName is the name of the file in ProjectConfigDirName that contains a project's commit ID.
 const CommitIdFileName = "commit"
 
@@ -261,6 +264,9 @@ const MediatorAPIPath = "/sv/mediator/api"
 // RequirementsImportAPIPath is the path used for the requirements import api
 const RequirementsImportAPIPath = "/sv/reqsvc/reqs"
 
+// BuildPlannerAPIPath is the path used for the build planner api
+const BuildPlannerAPIPath = "/sv/buildplanner/graphql"
+
 // MessagesInfoURL is the URL we check against to see what versions are deprecated
 const MessagesInfoURL = "https://state-tool.s3.amazonaws.com/messages.json"
 
@@ -364,6 +370,9 @@ const RuntimeBuildEngineStore = "build_engine"
 
 // RuntimeRecipeStore contains a serialization of the recipe used to create this build
 const RuntimeRecipeStore = "recipe"
+
+// RuntimeBuildPlanStore containts a serialization of the build plan used to create this build
+const RuntimeBuildPlanStore = "build_plan"
 
 // StateToolMarketingPage links to the marketing page for the state tool
 const StateToolMarketingPage = "https://www.activestate.com/products/platform/state-tool/"

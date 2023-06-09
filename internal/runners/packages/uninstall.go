@@ -4,6 +4,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/runbits/requirements"
+	bpModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model/buildplanner"
 	"github.com/ActiveState/cli/pkg/platform/model"
 )
 
@@ -33,7 +34,7 @@ func (u *Uninstall) Run(params UninstallRunParams, nsType model.NamespaceType) e
 		params.Name,
 		"",
 		0,
-		model.OperationRemoved,
+		bpModel.OperationRemove,
 		nsType,
 	)
 }

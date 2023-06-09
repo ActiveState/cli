@@ -9,6 +9,7 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/cli/internal/runbits"
+	"github.com/ActiveState/cli/internal/runbits/buildscript"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	rt "github.com/ActiveState/cli/pkg/platform/runtime"
@@ -25,6 +26,11 @@ func NewFromProject(
 	svcModel *model.SvcModel,
 	out output.Outputer,
 	auth *authentication.Auth) (_ *rt.Runtime, rerr error) {
+	err := buildscript.Sync(proj, nil, out, auth)
+	if err != nil {
+		return nil, locale.WrapError(err, "err_update_build_script")
+	}
+
 	projectTarget := target.NewProjectTarget(proj, nil, trigger)
 	rti, err := rt.New(projectTarget, an, svcModel)
 	if err != nil {
