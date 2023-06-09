@@ -5,6 +5,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/rtutils"
+	"github.com/ActiveState/cli/internal/runbits/buildscript"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
@@ -15,7 +16,11 @@ import (
 
 // RefreshRuntime should be called after runtime mutations.
 func RefreshRuntime(auth *authentication.Auth, out output.Outputer, an analytics.Dispatcher, proj *project.Project, commitID strfmt.UUID, changed bool, trigger target.Trigger, svcm *model.SvcModel) (rerr error) {
-	target := target.NewProjectTarget(proj, &commitID, trigger)
+	err := buildscript.Sync(proj, &commitID, out, auth)
+	if err != nil {
+		return locale.WrapError(err, "err_update_build_script")
+	}
+	target := target.NewProjectTarget(proj, nil, trigger) // buildscript.Sync updates project's commit ID until DX-1852
 	isCached := true
 	rt, err := runtime.New(target, an, svcm)
 	if err != nil {

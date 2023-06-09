@@ -27,6 +27,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
+	"github.com/ActiveState/cli/pkg/platform/runtime/buildscript"
 	runtimeModel "github.com/ActiveState/cli/pkg/platform/runtime/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
@@ -226,15 +227,15 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 		return locale.WrapError(err, "err_package_save_and_build", "Could not save and build project")
 	}
 
-	orderChanged := !hasParentCommit
+	exprChanged := !hasParentCommit
 	if hasParentCommit {
 		revertCommit, err := model.GetRevertCommit(pj.CommitUUID(), commitID)
 		if err != nil {
 			return locale.WrapError(err, "err_revert_refresh")
 		}
-		orderChanged = len(revertCommit.Changeset) > 0
+		exprChanged = len(revertCommit.Changeset) > 0
 	}
-	logging.Debug("Order changed: %v", orderChanged)
+	logging.Debug("Order changed: %v", exprChanged)
 
 	pg.Stop(locale.T("progress_success"))
 	pg = nil
@@ -251,16 +252,21 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 		return errs.Wrap(err, "Unsupported namespace type: %s", ns.Type().String())
 	}
 
-	// refresh or install runtime
-	err = runbits.RefreshRuntime(r.Auth, r.Output, r.Analytics, pj, commitID, orderChanged, trigger, r.SvcModel)
-	if err != nil {
-		return errs.Wrap(err, "Failed to refresh runtime")
-	}
+	if exprChanged {
+		err := buildscript.UpdateOrCreate(pj.Dir(), commit.Script)
+		if err != nil {
+			return locale.WrapError(err, "err_update_build_script")
+		}
 
-	if orderChanged {
 		if err := pj.SetCommit(commitID.String()); err != nil {
 			return locale.WrapError(err, "err_package_update_pjfile")
 		}
+	}
+
+	// refresh or install runtime
+	err = runbits.RefreshRuntime(r.Auth, r.Output, r.Analytics, pj, strfmt.UUID(commit.CommitID), exprChanged, trigger, r.SvcModel)
+	if err != nil {
+		return err
 	}
 
 	if !hasParentCommit {

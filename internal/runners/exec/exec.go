@@ -23,6 +23,7 @@ import (
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/cli/internal/runbits"
+	"github.com/ActiveState/cli/internal/runbits/buildscript"
 	"github.com/ActiveState/cli/internal/runbits/rtusage"
 	"github.com/ActiveState/cli/internal/scriptfile"
 	"github.com/ActiveState/cli/internal/subshell"
@@ -90,9 +91,11 @@ func (s *Exec) Run(params *Params, args ...string) (rerr error) {
 
 	// Detect target and project dir
 	// If the path passed resolves to a runtime dir (ie. has a runtime marker) then the project is not used
+	var proj *project.Project
+	var err error
 	if params.Path != "" && runtime.IsRuntimeDir(params.Path) {
 		projectDir = projectFromRuntimeDir(s.cfg, params.Path)
-		proj, err := project.FromPath(projectDir)
+		proj, err = project.FromPath(projectDir)
 		if err != nil {
 			logging.Warning("Could not get project dir from path: %s", errs.JoinMessage(err))
 			// We do not know if the project is headless at this point so we default to true
@@ -103,7 +106,7 @@ func (s *Exec) Run(params *Params, args ...string) (rerr error) {
 		}
 		projectNamespace = proj.NamespaceString()
 	} else {
-		proj := s.proj
+		proj = s.proj
 		if params.Path != "" {
 			var err error
 			proj, err = project.FromPath(params.Path)
@@ -117,6 +120,11 @@ func (s *Exec) Run(params *Params, args ...string) (rerr error) {
 		projectDir = filepath.Dir(proj.Source().Path())
 		projectNamespace = proj.NamespaceString()
 		rtTarget = target.NewProjectTarget(proj, nil, trigger)
+	}
+
+	err = buildscript.Sync(proj, nil, s.out, s.auth)
+	if err != nil {
+		return locale.WrapError(err, "err_update_build_script")
 	}
 
 	rtusage.PrintRuntimeUsage(s.svcModel, s.out, rtTarget.Owner())

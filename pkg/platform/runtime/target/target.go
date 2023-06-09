@@ -135,6 +135,10 @@ func (p *ProjectTarget) InstallFromDir() *string {
 	return nil
 }
 
+func (p *ProjectTarget) ProjectDir() string {
+	return p.Project.Dir()
+}
+
 func ProjectDirToTargetDir(projectDir, cacheDir string) string {
 	resolvedDir, err := fileutils.ResolveUniquePath(projectDir)
 	if err != nil {
@@ -200,6 +204,10 @@ func (c *CustomTarget) InstallFromDir() *string {
 	return nil
 }
 
+func (c *CustomTarget) ProjectDir() string {
+	return ""
+}
+
 type OfflineTarget struct {
 	ns           *project.Namespaced
 	dir          string
@@ -260,4 +268,8 @@ func (i *OfflineTarget) ReadOnly() bool {
 
 func (i *OfflineTarget) InstallFromDir() *string {
 	return &i.artifactsDir
+}
+
+func (i *OfflineTarget) ProjectDir() string {
+	return ""
 }
