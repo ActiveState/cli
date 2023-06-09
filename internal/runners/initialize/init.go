@@ -135,6 +135,17 @@ func (r *Initialize) Run(params *RunParams) error {
 		}
 	}
 
+	version := deriveVersion(lang, languageVersion)
+
+	isFound, err := isFoundLangWithVersion(lang.Requirement(), version)
+	if err != nil {
+		return locale.WrapError(err, "err_init_verify_version", "Could not verify language")
+	}
+
+	if !isFound {
+		return locale.NewInputError("err_init_language_not_found", "Language (or version) cannot be found")
+	}
+
 	createParams := &projectfile.CreateParams{
 		Owner:     params.Namespace.Owner,
 		Project:   params.Namespace.Project,
@@ -153,7 +164,6 @@ func (r *Initialize) Run(params *RunParams) error {
 		return err
 	}
 
-	version := deriveVersion(lang, languageVersion)
 	commitID, err := model.CommitInitial(model.HostPlatform, lang.Requirement(), version)
 	if err != nil {
 		return locale.WrapError(err, "err_init_commit", "Could not create initial commit")
@@ -204,6 +214,21 @@ func (r *Initialize) Run(params *RunParams) error {
 	))
 
 	return nil
+}
+
+func isFoundLangWithVersion(lang, version string) (bool, error) {
+	pkgs, err := model.SearchIngredientsStrict(model.NewNamespaceLanguage(), lang, false, true)
+	if err != nil {
+		return false, err
+	}
+
+	for _, pkg := range pkgs {
+		if pkg.Version == version {
+			return true, nil
+		}
+	}
+
+	return false, nil
 }
 
 func deriveVersion(lang language.Language, version string) string {
