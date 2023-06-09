@@ -28,7 +28,7 @@ func getBuildExpression(proj *project.Project, customCommit *strfmt.UUID, auth *
 // commit with them in order to update the remote one.
 func Sync(proj *project.Project, commitID *strfmt.UUID, out output.Outputer, auth *authentication.Auth) error {
 	logging.Debug("Synchronizing local build script")
-	file, err := buildscript.Get(proj.Dir())
+	script, err := buildscript.NewScriptFromProjectDir(proj.Dir())
 	if err != nil && !buildscript.IsDoesNotExistError(err) {
 		return errs.Wrap(err, "Could not get local build script")
 	}
@@ -38,9 +38,9 @@ func Sync(proj *project.Project, commitID *strfmt.UUID, out output.Outputer, aut
 		return errs.Wrap(err, "Could not get remote build expr")
 	}
 
-	if file != nil {
+	if script != nil {
 		logging.Debug("Checking for changes")
-		if file.Script.Equals(expr) {
+		if script.Equals(expr) {
 			return nil // nothing to do
 		}
 		logging.Debug("Merging changes")
@@ -48,7 +48,8 @@ func Sync(proj *project.Project, commitID *strfmt.UUID, out output.Outputer, aut
 		// For now, if commitID is given, a mutation happened, so prefer the remote build expression.
 		// Otherwise, prefer local changes.
 		if commitID == nil {
-			expr = file.Script // TODO: translate from script to expression in DX-1790 or DX-1858
+			// TODO: translate from script to expression in DX-1858.
+			//expr = script
 		}
 
 		out.Notice(locale.Tl("buildscript_update", "Updating project to reflect build script changes..."))
