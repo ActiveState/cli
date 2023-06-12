@@ -13,12 +13,6 @@ import (
 // artifact map by traversing the build plan from the terminal targets through
 // all of the runtime dependencies for each of the artifacts in the DAG.
 func NewMapFromBuildPlan(build *model.Build) (artifact.Map, error) {
-	if build == nil {
-		// The build plan can be nil when calculating the changeset for a build
-		// that has not been activated yet.
-		return nil, nil
-	}
-
 	res := make(artifact.Map)
 
 	lookup := make(map[strfmt.UUID]interface{})
