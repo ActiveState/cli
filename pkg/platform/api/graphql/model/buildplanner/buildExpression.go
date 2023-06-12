@@ -127,7 +127,7 @@ func (bx BuildExpression) Requirements() []Requirement {
 	return bx.requirements
 }
 
-func (bx *BuildExpression) Update(operation Operation, requirement Requirement) error {
+func (bx *BuildExpression) Update(operation Operation, requirement Requirement, timestamp *time.Time) error {
 	var err error
 	switch operation {
 	case OperationAdded:
@@ -143,7 +143,7 @@ func (bx *BuildExpression) Update(operation Operation, requirement Requirement) 
 		return errs.Wrap(err, "Could not update BuildExpression's requirements")
 	}
 
-	err = bx.UpdateTimestamp()
+	err = bx.UpdateTimestamp(timestamp)
 	if err != nil {
 		return errs.Wrap(err, "Could not update BuildExpression's timestamp")
 	}
@@ -183,18 +183,17 @@ func (bx BuildExpression) updateRequirement(requirement Requirement) error {
 	return errs.New("Could not find requirement")
 }
 
-func (bx BuildExpression) UpdateTimestamp() error {
-	latest, err := fetchLatestTimeStamp()
-	if err != nil {
-		return errs.Wrap(err, "Could not fetch latest timestamp")
+func (bx BuildExpression) UpdateTimestamp(timestamp *time.Time) error {
+	if timestamp == nil {
+		latest, err := fetchLatestTimeStamp()
+		if err != nil {
+			return errs.Wrap(err, "Could not fetch latest timestamp")
+		}
+		t := time.Time(*latest)
+		timestamp = &t
 	}
 
-	formatted, err := time.Parse(time.RFC3339, latest.String())
-	if err != nil {
-		return errs.Wrap(err, "Could not parse latest timestamp")
-	}
-
-	(*bx.solveNode)[AtTimeKey] = formatted
+	(*bx.solveNode)[AtTimeKey] = timestamp.Format(time.RFC3339)
 	return nil
 }
 

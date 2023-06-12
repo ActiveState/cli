@@ -227,13 +227,6 @@ func (r *RequirementOperation) ExecuteRequirementOperation(
 		}
 	}
 
-	var tsv time.Time
-	if ts == nil {
-		tsv = time.Now()
-	} else {
-		tsv = *ts
-	}
-
 	bp := model.NewBuildPlanModel(r.Auth)
 	commitID, err := bp.StageCommit(model.StageCommitParams{
 		Owner:            pj.Owner(),
@@ -243,7 +236,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(
 		PackageVersion:   requirementVersion,
 		PackageNamespace: *ns,
 		Operation:        operation,
-		Time:             tsv,
+		Time:             ts,
 	})
 	if err != nil {
 		return locale.WrapError(err, "err_package_save_and_build", "Could not save and build project")
