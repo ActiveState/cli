@@ -87,7 +87,7 @@ func buildMap(baseID strfmt.UUID, lookup map[strfmt.UUID]interface{}, result art
 		uniqueDeps = append(uniqueDeps, id)
 	}
 
-	info, err := GetSourceInfo(currentArtifact.GeneratedBy, lookup)
+	info, err := getSourceInfo(currentArtifact.GeneratedBy, lookup)
 	if err != nil {
 		return errs.Wrap(err, "Could not resolve source information")
 	}
@@ -112,7 +112,7 @@ type SourceInfo struct {
 	Version   string
 }
 
-// GetSourceInfo retrieves the source information for an artifact. It expects the ID of the
+// getSourceInfo retrieves the source information for an artifact. It expects the ID of the
 // source that generated the artifact and a lookup table that contains all of the sources
 // and steps in the build plan. We are able to retrieve the source information by looking
 // at the generatedBy field of the artifact and then looking at the inputs of the step that
@@ -122,7 +122,7 @@ type SourceInfo struct {
 // The relationship is as follows:
 //
 //	Artifact (GeneratedBy) -> Step (Input) -> Source
-func GetSourceInfo(sourceID strfmt.UUID, lookup map[strfmt.UUID]interface{}) (SourceInfo, error) {
+func getSourceInfo(sourceID strfmt.UUID, lookup map[strfmt.UUID]interface{}) (SourceInfo, error) {
 	source, ok := lookup[sourceID].(*model.Source)
 	if ok {
 		return SourceInfo{source.Name, source.Namespace, source.Version}, nil
@@ -259,7 +259,7 @@ func AddBuildArtifacts(artifactMap artifact.Map, build *model.Build) error {
 				uniqueDeps = append(uniqueDeps, id)
 			}
 
-			info, err := GetSourceInfo(a.GeneratedBy, lookup)
+			info, err := getSourceInfo(a.GeneratedBy, lookup)
 			if err != nil {
 				return errs.Wrap(err, "Could not resolve source information")
 			}
