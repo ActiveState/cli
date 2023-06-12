@@ -136,6 +136,12 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 		}
 	}
 
+	version := deriveVersion(lang, languageVersion)
+
+	if err := verifyLangAndVersion(lang.Requirement(), version); err != nil {
+		return locale.WrapError(err, "err_init_verify_version", "Could not verify language")
+	}
+
 	createParams := &projectfile.CreateParams{
 		Owner:     params.Namespace.Owner,
 		Project:   params.Namespace.Project,
@@ -174,7 +180,6 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 		return err
 	}
 
-	version := deriveVersion(lang, languageVersion)
 	commitID, err := model.CommitInitial(model.HostPlatform, lang.Requirement(), version)
 	if err != nil {
 		return locale.WrapError(err, "err_init_commit", "Could not create initial commit")
@@ -225,6 +230,38 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 	))
 
 	return nil
+}
+
+func verifyLangAndVersion(lang, version string) error {
+	pkgs, err := model.SearchIngredientsStrict(model.NewNamespaceLanguage(), lang, false, true)
+	if err != nil {
+		return locale.WrapError(err, "err_init_verify_language", "Inventory search failed unexpectedly")
+	}
+
+	if len(pkgs) == 0 {
+		return locale.NewInputError("err_init_language_not_found", "The selected language cannot be found")
+	}
+
+	for _, pkg := range pkgs {
+		if pkg.Version == version {
+			return nil
+		}
+	}
+
+	return errs.AddTips(
+		locale.NewInputError(
+			"err_init_language_version_not_found",
+			"The selected version of the language cannot be found",
+		),
+		locale.Tl(
+			"version_not_found_check_format",
+			"Please ensure that the version format is valid.",
+		),
+		locale.Tl(
+			"version_not_found_suggest_micro",
+			"Additional detail may help. For example, '3.10.0' rather than '3.10'",
+		),
+	)
 }
 
 func deriveVersion(lang language.Language, version string) string {
