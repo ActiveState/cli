@@ -15,15 +15,15 @@ import (
 	"github.com/ActiveState/cli/pkg/localcommit"
 	bpModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model/buildplanner"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
+	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/buildscript"
-	"github.com/ActiveState/cli/pkg/platform/runtime/model"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/go-openapi/strfmt"
 	"github.com/sergi/go-diff/diffmatchpatch"
 )
 
 func getBuildExpression(proj *project.Project, customCommit *strfmt.UUID, auth *authentication.Auth) (*bpModel.BuildExpression, error) {
-	bp := model.NewBuildPlanner(auth)
+	bp := model.NewBuildPlanModel(auth)
 	commitID, err := localcommit.Get(proj.Dir())
 	if err != nil {
 		return nil, errs.Wrap(err, "Unable to get local commit ID")
@@ -75,7 +75,7 @@ func Sync(proj *project.Project, commitID *strfmt.UUID, out output.Outputer, aut
 			return errs.Wrap(err, "Unable to get local commit ID")
 		}
 
-		bp := model.NewBuildPlanner(auth)
+		bp := model.NewBuildPlanModel(auth)
 		stagedCommitID, err := bp.StageCommit(model.StageCommitParams{
 			Owner:        proj.Owner(),
 			Project:      proj.Name(),
