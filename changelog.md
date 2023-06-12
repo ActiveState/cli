@@ -15,8 +15,6 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
-- We've graduated `state init` to now be *stable*. You no longer need to opt-in
-  to unstable commands to use it.
 - Running `state init` and `state refresh` successfully will now give the same
   environment information as commands like `state checkout` and `state use`.
 - The `state init` command now takes a `path` argument, replacing the previous
