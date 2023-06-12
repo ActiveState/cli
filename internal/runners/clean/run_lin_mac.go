@@ -7,6 +7,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"strings"
 
 	svcApp "github.com/ActiveState/cli/cmd/state-svc/app"
 	"github.com/ActiveState/cli/internal/config"
@@ -46,9 +47,9 @@ func (u *Uninstall) runUninstall(params *UninstallParams) error {
 	}
 
 	err = removeInstall(u.cfg)
-	if errors.Is(err, errDirNotEmpty) {
+	if dirNotEmpty := (&dirNotEmptyError{}); errors.As(err, &dirNotEmpty) {
 		logging.Debug("Could not remove install as dir is not empty: %s", errs.JoinMessage(err))
-		aggErr = locale.WrapError(aggErr, "uninstall_warn_not_empty")
+		aggErr = errs.Wrap(aggErr, "installation dir not empty")
 	} else if err != nil {
 		logging.Debug("Could not remove install: %s", errs.JoinMessage(err))
 		aggErr = locale.WrapError(aggErr, "uninstall_remove_executables_err", "Failed to remove all State Tool files in installation directory")
@@ -152,7 +153,9 @@ func verifyInstallation() error {
 	return nil
 }
 
-var errDirNotEmpty = errs.New("Not empty")
+type dirNotEmptyError struct {
+	*locale.LocalizedError
+}
 
 func removeEmptyDir(dir string) error {
 	empty, err := fileutils.IsEmptyDir(dir)
@@ -166,7 +169,8 @@ func removeEmptyDir(dir string) error {
 	}
 
 	if !empty {
-		return errDirNotEmpty
+		fileList := strings.Join(fileutils.ListDirSimple(dir, true), "\n - ")
+		return &dirNotEmptyError{locale.NewInputError("uninstall_warn_not_empty", "", fileList)}
 	}
 
 	return nil
