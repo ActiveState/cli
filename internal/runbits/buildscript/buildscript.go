@@ -12,6 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/pkg/localcommit"
 	bpModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model/buildplanner"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/runtime/buildscript"
@@ -23,7 +24,10 @@ import (
 
 func getBuildExpression(proj *project.Project, customCommit *strfmt.UUID, auth *authentication.Auth) (*bpModel.BuildExpression, error) {
 	bp := model.NewBuildPlanner(auth)
-	commitID := proj.CommitUUID()
+	commitID, err := localcommit.Get(proj.Dir())
+	if err != nil {
+		return nil, errs.Wrap(err, "Unable to get local commit ID")
+	}
 	if customCommit != nil {
 		commitID = *customCommit
 	}
@@ -66,11 +70,16 @@ func Sync(proj *project.Project, commitID *strfmt.UUID, out output.Outputer, aut
 
 		out.Notice(locale.Tl("buildscript_update", "Updating project to reflect build script changes..."))
 
+		localCommitID, err := localcommit.Get(proj.Dir())
+		if err != nil {
+			return errs.Wrap(err, "Unable to get local commit ID")
+		}
+
 		bp := model.NewBuildPlanner(auth)
 		stagedCommitID, err := bp.StageCommit(model.StageCommitParams{
 			Owner:        proj.Owner(),
 			Project:      proj.Name(),
-			ParentCommit: proj.CommitID(),
+			ParentCommit: localCommitID.String(),
 			Script:       expr,
 		})
 		if err != nil {
@@ -86,15 +95,6 @@ func Sync(proj *project.Project, commitID *strfmt.UUID, out output.Outputer, aut
 
 	if err := buildscript.UpdateOrCreate(proj.Dir(), expr); err != nil {
 		return errs.Wrap(err, "Could not update local build script.")
-	}
-
-	// For target.ProjectTargets that have already been set up without a custom commit ID, update the
-	// project's commit ID so that runtime setup uses the correct commit ID.
-	// Note: this should no longer be required once DX-1852 lands (commit ID will be in its own file).
-	if commitID != nil {
-		if err := proj.SetCommit(commitID.String()); err != nil {
-			return errs.Wrap(err, "Could not update project file commit ID.")
-		}
 	}
 
 	return nil

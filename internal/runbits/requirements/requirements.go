@@ -31,7 +31,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
-	"github.com/go-openapi/strfmt"
 	"github.com/thoas/go-funk"
 )
 

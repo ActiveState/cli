@@ -20,7 +20,7 @@ func RefreshRuntime(auth *authentication.Auth, out output.Outputer, an analytics
 	if err != nil {
 		return locale.WrapError(err, "err_update_build_script")
 	}
-	target := target.NewProjectTarget(proj, nil, trigger) // buildscript.Sync updates project's commit ID until DX-1852
+	target := target.NewProjectTarget(proj, nil, trigger)
 	isCached := true
 	rt, err := runtime.New(target, an, svcm)
 	if err != nil {
