@@ -65,7 +65,7 @@ func buildMap(baseID strfmt.UUID, lookup map[strfmt.UUID]interface{}, result art
 	deps := make(map[strfmt.UUID]struct{})
 	for _, depID := range currentArtifact.RuntimeDependencies {
 		deps[depID] = struct{}{}
-		recursiveDeps, err := BuildRuntimeDependencies(depID, lookup, deps)
+		recursiveDeps, err := buildRuntimeDependencies(depID, lookup, deps)
 		if err != nil {
 			return errs.Wrap(err, "Could not build runtime dependencies for artifact %s", currentArtifact.TargetID)
 		}
@@ -148,11 +148,11 @@ func getSourceInfo(sourceID strfmt.UUID, lookup map[strfmt.UUID]interface{}) (So
 	return SourceInfo{}, locale.NewError("err_resolve_artifact_name", "Could not resolve artifact name")
 }
 
-// BuildRuntimeDependencies is a recursive function that builds up a map of runtime dependencies
+// buildRuntimeDependencies is a recursive function that builds up a map of runtime dependencies
 // for an artifact. It expects the ID of an artifact and a lookup table that contains all of the
 // artifacts in the build plan. It will recursively call itself with each of the artifact's
 // dependencies and add them to the result map.
-func BuildRuntimeDependencies(depdendencyID strfmt.UUID, lookup map[strfmt.UUID]interface{}, result map[strfmt.UUID]struct{}) (map[strfmt.UUID]struct{}, error) {
+func buildRuntimeDependencies(depdendencyID strfmt.UUID, lookup map[strfmt.UUID]interface{}, result map[strfmt.UUID]struct{}) (map[strfmt.UUID]struct{}, error) {
 	artifact, ok := lookup[depdendencyID].(*model.Artifact)
 	if !ok {
 		return nil, errs.New("Incorrect target type for id %s", depdendencyID)
@@ -160,7 +160,7 @@ func BuildRuntimeDependencies(depdendencyID strfmt.UUID, lookup map[strfmt.UUID]
 
 	for _, depID := range artifact.RuntimeDependencies {
 		result[depID] = struct{}{}
-		_, err := BuildRuntimeDependencies(depID, lookup, result)
+		_, err := buildRuntimeDependencies(depID, lookup, result)
 		if err != nil {
 			return nil, errs.New("Could not build map for artifact %s", artifact.TargetID)
 		}
@@ -242,7 +242,7 @@ func AddBuildArtifacts(artifactMap artifact.Map, build *model.Build) error {
 			deps := make(map[strfmt.UUID]struct{})
 			for _, depID := range a.RuntimeDependencies {
 				deps[depID] = struct{}{}
-				recursiveDeps, err := BuildRuntimeDependencies(depID, lookup, deps)
+				recursiveDeps, err := buildRuntimeDependencies(depID, lookup, deps)
 				if err != nil {
 					return errs.Wrap(err, "Could not resolve runtime dependencies for artifact: %s", depID)
 				}
