@@ -99,8 +99,14 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 		return locale.NewInputError("err_projectfile_exists")
 	}
 
-	if err := fileutils.MkdirUnlessExists(path); err != nil {
+	err := fileutils.MkdirUnlessExists(path)
+	if err != nil {
 		return locale.WrapError(err, "err_init_preparedir", "Could not create directory at [NOTICE]{{.V0}}[/RESET]. Error: {{.V1}}", params.Path, err.Error())
+	}
+
+	path, err = filepath.Abs(params.Path)
+	if err != nil {
+		return locale.WrapInputError(err, "err_init_abs_path", "Could not determine absolute path to [NOTICE]{{.V0}}[/RESET]. Error: {{.V1}}", path, err.Error())
 	}
 
 	var languageName, languageVersion string
