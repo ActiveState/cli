@@ -1930,7 +1930,7 @@ uninstall_warn_not_empty:
   other: |
     [ERROR]Unable to remove all files in the installation directory, as third party files were found inside that directory:[/RESET]
 
-     - {{.V0}}
+    {{.V0}}
 
     This is the result of third parties writing files to the State Tool owned directories, and it's an issue that should be resolved by the user.
 err_state_exec:

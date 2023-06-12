@@ -7,7 +7,6 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
-	"strings"
 
 	svcApp "github.com/ActiveState/cli/cmd/state-svc/app"
 	"github.com/ActiveState/cli/internal/config"
@@ -21,6 +20,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/strutils"
 )
 
 func (u *Uninstall) runUninstall(params *UninstallParams) error {
@@ -47,7 +47,7 @@ func (u *Uninstall) runUninstall(params *UninstallParams) error {
 	}
 
 	err = removeInstall(u.cfg)
-	if dirNotEmpty := (&dirNotEmptyError{}); errors.As(err, &dirNotEmpty) {
+	if errs.Matches(err, &dirNotEmptyError{}) {
 		logging.Debug("Could not remove install as dir is not empty: %s", errs.JoinMessage(err))
 		aggErr = errs.Wrap(aggErr, "installation dir not empty")
 	} else if err != nil {
@@ -169,8 +169,14 @@ func removeEmptyDir(dir string) error {
 	}
 
 	if !empty {
-		fileList := strings.Join(fileutils.ListDirSimple(dir, true), "\n - ")
-		return &dirNotEmptyError{locale.NewInputError("uninstall_warn_not_empty", "", fileList)}
+		content, err := strutils.ParseTemplate(
+			"{{- range $file := .Files}}\n - {{$file}}\n{{- end}}",
+			map[string]interface{}{"Files": fileutils.ListDirSimple(dir, true)},
+			nil)
+		if err != nil {
+			return errs.Wrap(err, "Could not parse file list template")
+		}
+		return &dirNotEmptyError{locale.NewInputError("uninstall_warn_not_empty", "", content)}
 	}
 
 	return nil
