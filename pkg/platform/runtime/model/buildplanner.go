@@ -227,40 +227,47 @@ func removeEmptyTargets(bp *model.BuildPlan) {
 }
 
 type StageCommitParams struct {
-	Owner            string
-	Project          string
-	ParentCommit     string
+	Owner        string
+	Project      string
+	ParentCommit string
+	// Commits can have either an operation (e.g. installing a package)...
 	PackageName      string
 	PackageVersion   string
 	PackageNamespace vcsModel.Namespace
 	Operation        model.Operation
+	// ... or commits can have a script (e.g. from pull). When pulling a script, we do not compute
+	// its changes into a series of above operations. Instead, we just pass the new script directly.
+	Script *model.BuildExpression
 }
 
 func (bp *BuildPlanner) StageCommit(params StageCommitParams) (strfmt.UUID, error) {
-	var err error
-	script, err := bp.GetBuildExpression(params.Owner, params.Project, params.ParentCommit)
-	if err != nil {
-		return "", errs.Wrap(err, "Failed to get build graph")
-	}
+	script := params.Script
+	if script == nil {
+		var err error
+		script, err = bp.GetBuildExpression(params.Owner, params.Project, params.ParentCommit)
+		if err != nil {
+			return "", errs.Wrap(err, "Failed to get build graph")
+		}
 
-	requirement := model.Requirement{
-		Namespace: params.PackageNamespace.String(),
-		Name:      params.PackageName,
-	}
+		requirement := model.Requirement{
+			Namespace: params.PackageNamespace.String(),
+			Name:      params.PackageName,
+		}
 
-	if params.PackageVersion != "" {
-		requirement.VersionRequirement = []model.VersionRequirement{{model.ComparatorEQ: params.PackageVersion}}
-	}
+		if params.PackageVersion != "" {
+			requirement.VersionRequirement = []model.VersionRequirement{{model.ComparatorEQ: params.PackageVersion}}
+		}
 
-	err = script.Update(params.Operation, requirement)
-	if err != nil {
-		return "", errs.Wrap(err, "Failed to update build graph")
+		err = script.Update(params.Operation, requirement)
+		if err != nil {
+			return "", errs.Wrap(err, "Failed to update build graph")
+		}
 	}
 
 	// With the updated build expression call the stage commit mutation
 	request := request.StageCommit(params.Owner, params.Project, params.ParentCommit, script)
 	resp := &model.StageCommitResult{}
-	err = bp.client.Run(request, resp)
+	err := bp.client.Run(request, resp)
 	if err != nil {
 		return "", errs.Wrap(err, "failed to fetch build plan")
 	}

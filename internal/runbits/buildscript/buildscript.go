@@ -1,6 +1,8 @@
 package buildscript
 
 import (
+	"encoding/json"
+
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -13,13 +15,13 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-func getBuildExpression(proj *project.Project, customCommit *strfmt.UUID, auth *authentication.Auth) (*bpModel.BuildScript, error) {
+func getBuildExpression(proj *project.Project, customCommit *strfmt.UUID, auth *authentication.Auth) (*bpModel.BuildExpression, error) {
 	bp := model.NewBuildPlanner(auth)
 	commitID := proj.CommitUUID()
 	if customCommit != nil {
 		commitID = *customCommit
 	}
-	return bp.GetBuildScript(proj.Owner(), proj.Name(), commitID.String())
+	return bp.GetBuildExpression(proj.Owner(), proj.Name(), commitID.String())
 }
 
 // Sync synchronizes the local build script with the remote one.
@@ -48,29 +50,31 @@ func Sync(proj *project.Project, commitID *strfmt.UUID, out output.Outputer, aut
 		// For now, if commitID is given, a mutation happened, so prefer the remote build expression.
 		// Otherwise, prefer local changes.
 		if commitID == nil {
-			// TODO: translate from script to expression in DX-1858.
-			//expr = script
+			bytes, err := json.Marshal(script)
+			if err != nil {
+				return errs.Wrap(err, "Unable to marshal local build script to JSON")
+			}
+			expr, err = bpModel.NewBuildExpression(bytes)
+			if err != nil {
+				return errs.Wrap(err, "Unable to translate local build script to build expression")
+			}
 		}
 
 		out.Notice(locale.Tl("buildscript_update", "Updating project to reflect build script changes..."))
 
 		bp := model.NewBuildPlanner(auth)
-		// Note: these commits will be staged commits in a later ticket.
-		commit, err := bp.PushCommit(model.PushCommitParams{
-			Owner:           proj.Owner(),
-			Project:         proj.Name(),
-			ParentCommit:    proj.CommitID(),
-			BranchRef:       proj.BranchName(),
-			Description:     locale.Tl("buildscript_commit_description", "Update project due to build script change."),
-			BuildExpression: expr,
+		stagedCommitID, err := bp.StageCommit(model.StageCommitParams{
+			Owner:        proj.Owner(),
+			Project:      proj.Name(),
+			ParentCommit: proj.CommitID(),
+			Script:       expr,
 		})
 		if err != nil {
 			return errs.Wrap(err, "Could not update project to reflect build script changes.")
 		}
-		newCommitID := strfmt.UUID(commit.CommitID)
-		commitID = &newCommitID
+		commitID = &stagedCommitID
 
-		expr, err = getBuildExpression(proj, commitID, auth)
+		expr, err = getBuildExpression(proj, commitID, auth) // timestamps might be different
 		if err != nil {
 			return errs.Wrap(err, "Could not get remote build expr")
 		}

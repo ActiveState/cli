@@ -26,12 +26,17 @@ type Assignment struct {
 
 type Value struct {
 	FuncCall *FuncCall `parser:"@@"`
-	List     *[]*Value `parser:"| '[' @@ (',' @@)* ','? ']'"`
+	List     *[]*Value `parser:"| '[' (@@ (',' @@)* ','?)? ']'"`
 	Str      *string   `parser:"| @String"`
+	Null     *Null     `parser:"| @@"`
 
 	Assignment *Assignment    `parser:"| @@"`                        // only in FuncCall
 	Object     *[]*Assignment `parser:"| '{' @@ (',' @@)* ','? '}'"` // only in List
 	Ident      *string        `parser:"| @Ident"`                    // only in FuncCall
+}
+
+type Null struct {
+	Null string `parser:"'null'"`
 }
 
 type FuncCall struct {

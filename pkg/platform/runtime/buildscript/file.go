@@ -33,7 +33,7 @@ func newScriptFromFile(path string) (*Script, error) {
 	return NewScript(data)
 }
 
-func UpdateOrCreate(dir string, newScript *model.BuildScript) error {
+func UpdateOrCreate(dir string, newScript *model.BuildExpression) error {
 	// If a build script exists, check to see if an update is needed.
 	script, err := NewScriptFromProjectDir(dir)
 	if err != nil && !IsDoesNotExistError(err) {
@@ -43,11 +43,15 @@ func UpdateOrCreate(dir string, newScript *model.BuildScript) error {
 		return nil
 	}
 
+	script, err = NewScriptFromBuildExpression([]byte(newScript.String()))
+	if err != nil {
+		return errs.Wrap(err, "Could not parse build expression")
+	}
+
 	logging.Debug("Writing build script")
-	//TODO: enable in DX-1858
-	//err := fileutils.WriteFile(path, []byte(newScript.String()))
-	//if err != nil {
-	//return errs.Wrap(err, "Could not write build script to file")
-	//}
+	err = fileutils.WriteFile(filepath.Join(dir, constants.BuildScriptFileName), []byte(script.String()))
+	if err != nil {
+		return errs.Wrap(err, "Could not write build script to file")
+	}
 	return nil
 }

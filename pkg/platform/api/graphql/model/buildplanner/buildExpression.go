@@ -60,6 +60,7 @@ type BuildExpression struct {
 	expression       map[string]interface{}
 	solveNode        *map[string]interface{}
 	requirementsNode []interface{}
+	raw              json.RawMessage
 }
 
 func NewBuildExpression(data []byte) (*BuildExpression, error) {
@@ -88,6 +89,7 @@ func NewBuildExpression(data []byte) (*BuildExpression, error) {
 		expression:       expression,
 		solveNode:        &solveNode,
 		requirementsNode: requirementsNode,
+		raw:              data,
 	}, nil
 }
 
@@ -242,4 +244,8 @@ func getFuncNode(expression map[string]interface{}, funcName string) (map[string
 	}
 
 	return nil, funcNodeNotFoundError
+}
+
+func (bx *BuildExpression) String() string {
+	return string(bx.raw)
 }
