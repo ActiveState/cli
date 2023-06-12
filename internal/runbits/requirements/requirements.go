@@ -27,7 +27,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/ActiveState/cli/pkg/platform/runtime/buildscript"
-	runtimeModel "github.com/ActiveState/cli/pkg/platform/runtime/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
@@ -136,7 +135,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 
 	rtusage.PrintRuntimeUsage(r.SvcModel, out, pj.Owner())
 
-	var validatePkg = operation == bpModel.OperationAdd && (ns.Type() == model.NamespacePackage || ns.Type() == model.NamespaceBundle)
+	var validatePkg = operation == bpModel.OperationAdded && (ns.Type() == model.NamespacePackage || ns.Type() == model.NamespaceBundle)
 	if !ns.IsValid() && (nsType == model.NamespacePackage || nsType == model.NamespaceBundle) {
 		pg = output.StartSpinner(out, locale.Tl("progress_pkg_nolang", "", requirementName), constants.TerminalAnimationInterval)
 
@@ -198,13 +197,13 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 	pg = output.StartSpinner(out, locale.T("progress_commit"), constants.TerminalAnimationInterval)
 
 	// Check if this is an addition or an update
-	if operation == bpModel.OperationAdd && parentCommitID != "" {
+	if operation == bpModel.OperationAdded && parentCommitID != "" {
 		req, err := model.GetRequirement(parentCommitID, ns, requirementName)
 		if err != nil {
 			return errs.Wrap(err, "Could not get requirement")
 		}
 		if req != nil {
-			operation = bpModel.OperationUpdate
+			operation = bpModel.OperationUpdated
 		}
 	}
 
@@ -220,8 +219,8 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 		}
 	}
 
-	bp := runtimeModel.NewBuildPlanner(r.Auth)
-	commitID, err := bp.StageCommit(runtimeModel.StageCommitParams{
+	bp := model.NewBuildPlanModel(r.Auth)
+	commitID, err := bp.StageCommit(model.StageCommitParams{
 		Owner:            pj.Owner(),
 		Project:          pj.Name(),
 		ParentCommit:     string(parentCommitID),

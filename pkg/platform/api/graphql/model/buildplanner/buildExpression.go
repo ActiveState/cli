@@ -5,25 +5,27 @@ import (
 	"errors"
 	"time"
 
+	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/pkg/platform/api/inventory"
+	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_client/inventory_operations"
+	"github.com/go-openapi/strfmt"
 )
-
-type Comparator string
 
 type Operation int
 
 const (
-	ComparatorEQ  Comparator = "eq"
-	ComparatorGT             = "gt"
-	ComparatorGTE            = "gte"
-	ComparatorLT             = "lt"
-	ComparatorLTE            = "lte"
-	ComparatorNE             = "ne"
+	ComparatorEQ  string = "eq"
+	ComparatorGT         = "gt"
+	ComparatorGTE        = "gte"
+	ComparatorLT         = "lt"
+	ComparatorLTE        = "lte"
+	ComparatorNE         = "ne"
 
-	OperationAdd Operation = iota
-	OperationRemove
-	OperationUpdate
+	OperationAdded Operation = iota
+	OperationRemoved
+	OperationUpdated
 
 	SolveFuncName           = "solve"
 	SolveLegacyFuncName     = "solve_legacy"
@@ -35,12 +37,12 @@ const (
 
 func (o Operation) String() string {
 	switch o {
-	case OperationAdd:
-		return "add"
-	case OperationRemove:
-		return "remove"
-	case OperationUpdate:
-		return "update"
+	case OperationAdded:
+		return "added"
+	case OperationRemoved:
+		return "removed"
+	case OperationUpdated:
+		return "updated"
 	default:
 		return "unknown"
 	}
@@ -54,15 +56,50 @@ type Requirement struct {
 	VersionRequirement []VersionRequirement `json:"version_requirements,omitempty"`
 }
 
-type VersionRequirement map[Comparator]string
+type VersionRequirement map[string]string
 
 type BuildExpression struct {
-	expression       map[string]interface{}
-	solveNode        *map[string]interface{}
-	requirementsNode []interface{}
-	raw              json.RawMessage
+	expression   map[string]interface{}
+	solveNode    *map[string]interface{}
+	requirements []Requirement
+	raw          json.RawMessage
 }
 
+// NewBuildExpression creates a BuildExpression from a JSON byte array.
+// The JSON must be a valid BuildExpression in the following format:
+//
+//	{
+//	  "let": {
+//	    "runtime": {
+//	      "solve_legacy": {
+//	        "at_time": "2023-04-27T17:30:05.999000Z",
+//	        "build_flags": [],
+//	        "camel_flags": [],
+//	        "platforms": [
+//	          "96b7e6f2-bebf-564c-bc1c-f04482398f38"
+//	        ],
+//	        "requirements": [
+//	          {
+//	            "name": "requests",
+//	            "namespace": "language/python"
+//	          },
+//	          {
+//	            "name": "python",
+//	            "namespace": "language",
+//	            "version_requirements": [
+//	              {
+//	                "comparator": "eq",
+//	                "version": "3.10.10"
+//	              }
+//	            ]
+//	          },
+//	        ],
+//	        "solver_version": null
+//	      }
+//	    },
+//	  "in": "$runtime"
+//	  }
+//	}
 func NewBuildExpression(data []byte) (*BuildExpression, error) {
 	expression := make(map[string]interface{})
 	err := json.Unmarshal(data, &expression)
@@ -75,47 +112,12 @@ func NewBuildExpression(data []byte) (*BuildExpression, error) {
 		return nil, errs.Wrap(err, "Could not get solve node")
 	}
 
-	requirementsNode, err := getRequirementsNode(expression)
+	requirementsNode, err := getRequirementsNode(solveNode)
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not get requirements node")
 	}
 
-	err = validateRequirements(requirementsNode)
-	if err != nil {
-		return nil, errs.Wrap(err, "Requirements in BuildExpression are invalid")
-	}
-
-	return &BuildExpression{
-		expression:       expression,
-		solveNode:        &solveNode,
-		requirementsNode: requirementsNode,
-		raw:              data,
-	}, nil
-}
-
-func validateRequirements(requirements []interface{}) error {
-	for _, requirement := range requirements {
-		r, ok := requirement.(map[string]interface{})
-		if !ok {
-			return errs.New("Requirement in BuildExpression is malformed")
-		}
-
-		_, ok = r[RequirementNameKey]
-		if !ok {
-			return errs.New("Requirement in BuildExpression is missing name field: %v", r)
-		}
-		_, ok = r[RequirementNamespaceKey]
-		if !ok {
-			return errs.New("Requirement in BuildExpression is missing namespace field")
-		}
-	}
-	return nil
-}
-
-func (bx BuildExpression) Requirements() ([]Requirement, error) {
-	// We marshal and unmarshal here as a cheap way to convert the
-	// interface slice to a slice of Requirements
-	requirementsData, err := json.Marshal(bx.requirementsNode)
+	requirementsData, err := json.Marshal(requirementsNode)
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not marshal JSON")
 	}
@@ -126,18 +128,55 @@ func (bx BuildExpression) Requirements() ([]Requirement, error) {
 		return nil, errs.Wrap(err, "Could not unmarshal JSON")
 	}
 
-	return requirements, nil
+	err = validateRequirements(requirementsNode)
+	if err != nil {
+		return nil, errs.Wrap(err, "Requirements in BuildExpression are invalid")
+	}
+
+	return &BuildExpression{
+		expression:   expression,
+		solveNode:    &solveNode,
+		requirements: requirements,
+		raw:          data,
+	}, nil
 }
 
+// validateRequirements ensures that the requirements in the BuildExpression contain
+// both the name and namespace fields. These fileds are used for requirement operations.
+func validateRequirements(requirements []interface{}) error {
+	for _, requirement := range requirements {
+		r, ok := requirement.(map[string]interface{})
+		if !ok {
+			return errs.New("Requirement in BuildExpression is malformed")
+		}
+
+		_, ok = r[RequirementNameKey]
+		if !ok {
+			return errs.New("Requirement in BuildExpression is missing name field: %#v", r)
+		}
+		_, ok = r[RequirementNamespaceKey]
+		if !ok {
+			return errs.New("Requirement in BuildExpression is missing namespace field: %#v", r)
+		}
+	}
+	return nil
+}
+
+// Requirements returns the requirements in the BuildExpression.
+func (bx BuildExpression) Requirements() []Requirement {
+	return bx.requirements
+}
+
+// Update updates the BuildExpression's requirements based on the operation and requirement.
 func (bx *BuildExpression) Update(operation Operation, requirement Requirement) error {
 	var err error
 	switch operation {
-	case OperationAdd:
-		err = bx.AddRequirement(requirement)
-	case OperationRemove:
-		err = bx.RemoveRequirement(requirement)
-	case OperationUpdate:
-		err = bx.UpdateRequirement(requirement)
+	case OperationAdded:
+		err = bx.addRequirement(requirement)
+	case OperationRemoved:
+		err = bx.removeRequirement(requirement)
+	case OperationUpdated:
+		err = bx.updateRequirement(requirement)
 	default:
 		return errs.New("Unsupported operation")
 	}
@@ -153,20 +192,21 @@ func (bx *BuildExpression) Update(operation Operation, requirement Requirement) 
 	return nil
 }
 
-func (bx *BuildExpression) AddRequirement(requirement Requirement) error {
-	bx.requirementsNode = append(bx.requirementsNode, requirement)
+// addRequirement adds a requirement to the BuildExpression.
+func (bx *BuildExpression) addRequirement(requirement Requirement) error {
+	bx.requirements = append(bx.requirements, requirement)
 
-	(*bx.solveNode)[RequirementsKey] = bx.requirementsNode
+	(*bx.solveNode)[RequirementsKey] = bx.requirements
 
 	return nil
 }
 
-func (bx *BuildExpression) RemoveRequirement(requirement Requirement) error {
-	for i, req := range bx.requirementsNode {
-		r := req.(map[string]interface{})
-		if r[RequirementNameKey] == requirement.Name && r[RequirementNamespaceKey] == requirement.Namespace {
-			bx.requirementsNode = append(bx.requirementsNode[:i], bx.requirementsNode[i+1:]...)
-			(*bx.solveNode)[RequirementsKey] = bx.requirementsNode
+// removeRequirement removes a requirement from the BuildExpression.
+func (bx *BuildExpression) removeRequirement(requirement Requirement) error {
+	for i, req := range bx.requirements {
+		if req.Name == requirement.Name && req.Namespace == requirement.Namespace {
+			bx.requirements = append(bx.requirements[:i], bx.requirements[i+1:]...)
+			(*bx.solveNode)[RequirementsKey] = bx.requirements
 			return nil
 		}
 	}
@@ -174,12 +214,12 @@ func (bx *BuildExpression) RemoveRequirement(requirement Requirement) error {
 	return errs.New("Could not find requirement")
 }
 
-func (bx BuildExpression) UpdateRequirement(requirement Requirement) error {
-	for i, req := range bx.requirementsNode {
-		r := req.(map[string]interface{})
-		if r[RequirementNameKey] == requirement.Name && r[RequirementNamespaceKey] == requirement.Namespace {
-			bx.requirementsNode[i] = requirement
-			(*bx.solveNode)[RequirementsKey] = bx.requirementsNode
+// updateRequirement updates an existing requirement in the BuildExpression.
+func (bx BuildExpression) updateRequirement(requirement Requirement) error {
+	for i, req := range bx.requirements {
+		if req.Name == requirement.Name && req.Namespace == requirement.Namespace {
+			bx.requirements[i] = requirement
+			(*bx.solveNode)[RequirementsKey] = bx.requirements
 			return nil
 		}
 	}
@@ -187,17 +227,66 @@ func (bx BuildExpression) UpdateRequirement(requirement Requirement) error {
 	return errs.New("Could not find requirement")
 }
 
+// UpdateTimestamp fetches the latest platform timestamp and updates it in the BuildExpression.
 func (bx BuildExpression) UpdateTimestamp() error {
-	(*bx.solveNode)[AtTimeKey] = time.Now().UTC().Format(time.RFC3339)
+	latest, err := fetchLatestTimeStamp()
+	if err != nil {
+		return errs.Wrap(err, "Could not fetch latest timestamp")
+	}
+
+	formatted, err := time.Parse(time.RFC3339, latest.String())
+	if err != nil {
+		return errs.Wrap(err, "Could not parse latest timestamp")
+	}
+
+	(*bx.solveNode)[AtTimeKey] = formatted
 	return nil
 }
 
-func getRequirementsNode(bx map[string]interface{}) ([]interface{}, error) {
-	solveNode, err := getSolveNode(bx)
-	if err != nil {
-		return nil, errs.Wrap(err, "Could not get solve node")
+func (bx BuildExpression) MarshalJSON() ([]byte, error) {
+	return json.Marshal(bx.expression)
+}
+
+// fetchLatestTimeStamp fetches the latest timestamp from the inventory service.
+// This function lives in this package to avoid an import cycle.
+func fetchLatestTimeStamp() (*strfmt.DateTime, error) {
+	if condition.InTest() {
+		return &strfmt.DateTime{}, nil
 	}
 
+	client := inventory.Get()
+	result, err := client.GetLatestTimestamp(inventory_operations.NewGetLatestTimestampParams())
+	if err != nil {
+		return nil, errs.Wrap(err, "GetLatestTimestamp failed")
+	}
+
+	return result.Payload.Timestamp, nil
+}
+
+// getRequirementsNode returns the requirements node from the solve node of the build expression.
+// It returns an error if the requirements node is not found or if it is malformed.
+// It expects the JSON representation of the solve node to be formatted as follows:
+//
+//	{
+//	 "solve": {
+//	   "requirements": [
+//	     {
+//	       "name": "requests",
+//	       "namespace": "language/python"
+//	     },
+//	     {
+//	       "name": "python",
+//	       "namespace": "language",
+//	       "version_requirements": [
+//	         {
+//	           "comparator": "eq",
+//	           "version": "3.10.10"
+//	          }
+//	       ]
+//	     }
+//	 ],
+//	}
+func getRequirementsNode(solveNode map[string]interface{}) ([]interface{}, error) {
 	for k, v := range solveNode {
 		if k != RequirementsKey {
 			continue
@@ -214,6 +303,19 @@ func getRequirementsNode(bx map[string]interface{}) ([]interface{}, error) {
 	return nil, errs.New("Could not find requirements node")
 }
 
+// getSolveNode returns the solve node from the build expression.
+// It returns an error if the solve node is not found.
+// Currently, the solve node can have the name of "solve" or "solve_legacy".
+// It expects the JSON representation of the build expression to be formatted as follows:
+//
+//	{
+//	  "let": {
+//	    "runtime": {
+//	      "solve": {
+//	      }
+//	    }
+//	  }
+//	}
 func getSolveNode(expression map[string]interface{}) (map[string]interface{}, error) {
 	solveNode, err := getFuncNode(expression, SolveFuncName)
 	if err == nil {
@@ -227,6 +329,20 @@ func getSolveNode(expression map[string]interface{}) (map[string]interface{}, er
 	return getFuncNode(expression, SolveLegacyFuncName)
 }
 
+// getFuncNode returns the node of the given function name from the build expression.
+// It returns an error if the function node is not found.
+// Currently, this function just recurses the build expression until it finds the function node
+// of the correct map[string]interface{} type.
+// It expects the JSON representation of the build expression to be formatted as follows:
+//
+//	{
+//	  "let": {
+//	    "runtime": {
+//	      "func_name": {
+//	      }
+//	    }
+//	  }
+//	}
 func getFuncNode(expression map[string]interface{}, funcName string) (map[string]interface{}, error) {
 	for k, v := range expression {
 		node, ok := v.(map[string]interface{})
@@ -238,6 +354,7 @@ func getFuncNode(expression map[string]interface{}, funcName string) (map[string
 			return node, nil
 		}
 
+		// We recurse the build expression until we find the function node
 		if childNode, err := getFuncNode(node, funcName); err == nil {
 			return childNode, nil
 		}

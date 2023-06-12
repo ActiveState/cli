@@ -202,7 +202,7 @@ func FetchPlatformsForCommit(commitID strfmt.UUID) ([]*Platform, error) {
 	return platforms, nil
 }
 
-func FilterPlatformIDs(hostPlatform, hostArch string, platformIDs []strfmt.UUID) ([]strfmt.UUID, error) {
+func filterPlatformIDs(hostPlatform, hostArch string, platformIDs []strfmt.UUID) ([]strfmt.UUID, error) {
 	runtimePlatforms, err := FetchPlatforms()
 	if err != nil {
 		return nil, err

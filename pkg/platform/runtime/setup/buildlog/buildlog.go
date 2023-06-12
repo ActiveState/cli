@@ -8,19 +8,15 @@ import (
 	"sync"
 	"time"
 
-	bpModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model/buildplanner"
-
-	"github.com/ActiveState/cli/pkg/platform/runtime/model"
+	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup/events"
 	"github.com/go-openapi/strfmt"
 	"github.com/gorilla/websocket"
-	"github.com/thoas/go-funk"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/pkg/platform/api/buildlogstream"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 )
@@ -62,11 +58,7 @@ type BuildLog struct {
 
 // New creates a new BuildLog instance that allows us to wait for incoming build log information
 // artifactMap comprises all artifacts (from the runtime closure) that are in the recipe, alreadyBuilt is set of artifact IDs that have already been built in the past
-func New(ctx context.Context, artifactMap artifact.ArtifactBuildPlanMap, eventHandler events.Handler, recipeID strfmt.UUID, logFilePath string, buildResult *model.BuildResult) (*BuildLog, error) {
-	// The runtime dependencies do not include all build dependencies. Since we are working
-	// with the build log, we need to add the missing dependencies to the list of artifacts
-	addBuildArtifacts(artifactMap, buildResult.Build)
-
+func New(ctx context.Context, artifactMap artifact.Map, eventHandler events.Handler, recipeID strfmt.UUID, logFilePath string, buildResult *model.BuildResult) (*BuildLog, error) {
 	conn, err := buildlogstream.Connect(ctx)
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not connect to build-log streamer build updates")
@@ -82,7 +74,7 @@ func New(ctx context.Context, artifactMap artifact.ArtifactBuildPlanMap, eventHa
 }
 
 // NewWithCustomConnections creates a new BuildLog instance with all physical connections managed by the caller
-func NewWithCustomConnections(artifactMap artifact.ArtifactBuildPlanMap,
+func NewWithCustomConnections(artifactMap artifact.Map,
 	conn BuildLogConnector, eventHandler events.Handler,
 	recipeID strfmt.UUID, logFilePath string) (*BuildLog, error) {
 
@@ -294,58 +286,11 @@ func (bl *BuildLog) BuiltArtifactsChannel() <-chan artifact.ArtifactDownload {
 	return bl.ch
 }
 
-func resolveArtifactName(artifactID artifact.ArtifactID, artifactMap artifact.ArtifactBuildPlanMap) (name string, ok bool) {
+func resolveArtifactName(artifactID artifact.ArtifactID, artifactMap artifact.Map) (name string, ok bool) {
 	artf, ok := artifactMap[artifactID]
 	if !ok {
 		return locale.Tl("unknown_artifact_name", "unknown"), false
 	}
 
 	return artf.NameWithVersion(), true
-}
-
-func addBuildArtifacts(artifactMap artifact.ArtifactBuildPlanMap, build *bpModel.Build) {
-	lookup := make(map[strfmt.UUID]interface{})
-
-	for _, artifact := range build.Artifacts {
-		lookup[artifact.TargetID] = artifact
-	}
-	for _, step := range build.Steps {
-		lookup[step.TargetID] = step
-	}
-	for _, source := range build.Sources {
-		lookup[source.TargetID] = source
-	}
-
-	for _, a := range build.Artifacts {
-		_, ok := artifactMap[strfmt.UUID(a.TargetID)]
-		if !ok && a.Status != bpModel.ArtifactNotSubmitted {
-			var deps []strfmt.UUID
-			for _, depID := range a.RuntimeDependencies {
-				deps = append(deps, strfmt.UUID(depID))
-				deps = append(deps, artifact.BuildRuntimeDependencies(depID, lookup, deps)...)
-			}
-
-			var uniqueDeps []strfmt.UUID
-			for _, dep := range deps {
-				if !funk.Contains(uniqueDeps, dep) {
-					uniqueDeps = append(uniqueDeps, dep)
-				}
-			}
-
-			info, err := artifact.GetSourceInfo(a.GeneratedBy, lookup)
-			if err != nil {
-				multilog.Error("Could not resolve source information: %v", err)
-			}
-
-			artifactMap[strfmt.UUID(a.TargetID)] = artifact.ArtifactBuildPlan{
-				ArtifactID:       strfmt.UUID(a.TargetID),
-				Name:             info.Name,
-				Namespace:        info.Namespace,
-				Version:          &info.Version,
-				RequestedByOrder: true,
-				GeneratedBy:      a.GeneratedBy,
-				Dependencies:     uniqueDeps,
-			}
-		}
-	}
 }

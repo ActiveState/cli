@@ -86,7 +86,7 @@ func TestBuildExpression_Requirements(t *testing.T) {
 					Name:      "python",
 					Namespace: "language",
 					VersionRequirement: []VersionRequirement{
-						map[Comparator]string{
+						map[string]string{
 							"comparator": string(ComparatorEQ),
 							"version":    "3.10.10",
 						},
@@ -115,11 +115,7 @@ func TestBuildExpression_Requirements(t *testing.T) {
 			bx, err := NewBuildExpression(data)
 			assert.NoError(t, err)
 
-			got, err := bx.Requirements()
-			if (err != nil) != tt.wantErr {
-				t.Errorf("BuildExpression.Requirements() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
+			got := bx.Requirements()
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("BuildExpression.Requirements() = %v, want %v", got, tt.want)
 			}
@@ -145,7 +141,7 @@ func TestBuildExpression_Update(t *testing.T) {
 					Name:      "requests",
 					Namespace: "language/python",
 				},
-				operation: OperationAdd,
+				operation: OperationAdded,
 			},
 			want: []Requirement{
 				{
@@ -160,7 +156,7 @@ func TestBuildExpression_Update(t *testing.T) {
 					Name:      "python",
 					Namespace: "language",
 					VersionRequirement: []VersionRequirement{
-						map[Comparator]string{
+						map[string]string{
 							"comparator": string(ComparatorEQ),
 							"version":    "3.10.10",
 						},
@@ -188,7 +184,7 @@ func TestBuildExpression_Update(t *testing.T) {
 					Name:      "jupyterlab",
 					Namespace: "language/python",
 				},
-				operation: OperationRemove,
+				operation: OperationRemoved,
 			},
 			want: []Requirement{
 				{
@@ -203,7 +199,7 @@ func TestBuildExpression_Update(t *testing.T) {
 					Name:      "python",
 					Namespace: "language",
 					VersionRequirement: []VersionRequirement{
-						map[Comparator]string{
+						map[string]string{
 							"comparator": string(ComparatorEQ),
 							"version":    "3.10.10",
 						},
@@ -223,13 +219,13 @@ func TestBuildExpression_Update(t *testing.T) {
 					Name:      "python",
 					Namespace: "language",
 					VersionRequirement: []VersionRequirement{
-						map[Comparator]string{
+						map[string]string{
 							"comparator": string(ComparatorEQ),
 							"version":    "3.11.0",
 						},
 					},
 				},
-				operation: OperationUpdate,
+				operation: OperationUpdated,
 			},
 			want: []Requirement{
 				{
@@ -244,7 +240,7 @@ func TestBuildExpression_Update(t *testing.T) {
 					Name:      "python",
 					Namespace: "language",
 					VersionRequirement: []VersionRequirement{
-						map[Comparator]string{
+						map[string]string{
 							"comparator": string(ComparatorEQ),
 							"version":    "3.11.0",
 						},
@@ -268,7 +264,7 @@ func TestBuildExpression_Update(t *testing.T) {
 					Name:      "requests",
 					Namespace: "language/python",
 				},
-				operation: OperationRemove,
+				operation: OperationRemoved,
 			},
 			want: []Requirement{
 				{
@@ -283,7 +279,7 @@ func TestBuildExpression_Update(t *testing.T) {
 					Name:      "python",
 					Namespace: "language",
 					VersionRequirement: []VersionRequirement{
-						map[Comparator]string{
+						map[string]string{
 							"comparator": string(ComparatorEQ),
 							"version":    "3.10.10",
 						},
@@ -322,12 +318,7 @@ func TestBuildExpression_Update(t *testing.T) {
 				return
 			}
 
-			got, err := bx.Requirements()
-			if (err != nil) != tt.wantErr {
-				t.Errorf("BuildExpression.Requirements() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-
+			got := bx.Requirements()
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("BuildExpression.Requirements() = %v, want %v", got, tt.want)
 			}
