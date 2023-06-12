@@ -250,23 +250,20 @@ func fetchLatestTimeStamp() (*strfmt.DateTime, error) {
 // It expects the JSON representation of the solve node to be formatted as follows:
 //
 //	{
-//	 "solve": {
-//	   "requirements": [
-//	     {
-//	       "name": "requests",
-//	       "namespace": "language/python"
-//	     },
-//	     {
-//	       "name": "python",
-//	       "namespace": "language",
-//	       "version_requirements": [
-//	         {
-//	           "comparator": "eq",
-//	           "version": "3.10.10"
-//	          }
-//	       ]
-//	     }
-//	 ],
+//	  "requirements": [
+//	    {
+//	      "name": "requests",
+//	      "namespace": "language/python"
+//	    },
+//	    {
+//	      "name": "python",
+//	      "namespace": "language",
+//	      "version_requirements": [{
+//	          "comparator": "eq",
+//	          "version": "3.10.10"
+//	      }]
+//	    }
+//	  ]
 //	}
 func getRequirements(solveNode map[string]interface{}) ([]Requirement, error) {
 	for k, v := range solveNode {
