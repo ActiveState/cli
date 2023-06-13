@@ -7,6 +7,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/go-openapi/strfmt"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -308,7 +309,7 @@ func TestBuildExpression_Update(t *testing.T) {
 			bx, err := NewBuildExpression(data)
 			assert.NoError(t, err)
 
-			err = bx.Update(tt.args.operation, tt.args.requirement)
+			err = bx.Update(tt.args.operation, tt.args.requirement, strfmt.DateTime{})
 			if err != nil {
 				if tt.wantErr {
 					return
