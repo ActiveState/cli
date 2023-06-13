@@ -33,6 +33,9 @@ const (
 	AtTimeKey               = "at_time"
 	RequirementNameKey      = "name"
 	RequirementNamespaceKey = "namespace"
+
+	VersionRequirementComparatorKey = "comparator"
+	VersionRequirementVersionKey    = "version"
 )
 
 func (o Operation) String() string {
