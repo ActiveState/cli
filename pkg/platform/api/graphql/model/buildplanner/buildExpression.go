@@ -112,25 +112,9 @@ func NewBuildExpression(data []byte) (*BuildExpression, error) {
 		return nil, errs.Wrap(err, "Could not get solve node")
 	}
 
-	requirementsNode, err := getRequirementsNode(solveNode)
+	requirements, err := getRequirements(solveNode)
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not get requirements node")
-	}
-
-	requirementsData, err := json.Marshal(requirementsNode)
-	if err != nil {
-		return nil, errs.Wrap(err, "Could not marshal JSON")
-	}
-
-	var requirements []Requirement
-	err = json.Unmarshal(requirementsData, &requirements)
-	if err != nil {
-		return nil, errs.Wrap(err, "Could not unmarshal JSON")
-	}
-
-	err = validateRequirements(requirementsNode)
-	if err != nil {
-		return nil, errs.Wrap(err, "Requirements in BuildExpression are invalid")
 	}
 
 	return &BuildExpression{
@@ -263,30 +247,27 @@ func fetchLatestTimeStamp() (*strfmt.DateTime, error) {
 	return result.Payload.Timestamp, nil
 }
 
-// getRequirementsNode returns the requirements node from the solve node of the build expression.
-// It returns an error if the requirements node is not found or if it is malformed.
+// getRequirements returns the list of requirements from the solve node of the build expression.
+// It returns an error if the requirements are not found or if they are malformed.
 // It expects the JSON representation of the solve node to be formatted as follows:
 //
 //	{
-//	 "solve": {
-//	   "requirements": [
-//	     {
-//	       "name": "requests",
-//	       "namespace": "language/python"
-//	     },
-//	     {
-//	       "name": "python",
-//	       "namespace": "language",
-//	       "version_requirements": [
-//	         {
-//	           "comparator": "eq",
-//	           "version": "3.10.10"
-//	          }
-//	       ]
-//	     }
-//	 ],
+//	  "requirements": [
+//	    {
+//	      "name": "requests",
+//	      "namespace": "language/python"
+//	    },
+//	    {
+//	      "name": "python",
+//	      "namespace": "language",
+//	      "version_requirements": [{
+//	          "comparator": "eq",
+//	          "version": "3.10.10"
+//	      }]
+//	    }
+//	  ]
 //	}
-func getRequirementsNode(solveNode map[string]interface{}) ([]interface{}, error) {
+func getRequirements(solveNode map[string]interface{}) ([]Requirement, error) {
 	for k, v := range solveNode {
 		if k != RequirementsKey {
 			continue
@@ -297,7 +278,23 @@ func getRequirementsNode(solveNode map[string]interface{}) ([]interface{}, error
 			return nil, errs.New("Requirements in BuildExpression are malformed")
 		}
 
-		return node, nil
+		requirementsData, err := json.Marshal(node)
+		if err != nil {
+			return nil, errs.Wrap(err, "Could not marshal JSON")
+		}
+
+		var requirements []Requirement
+		err = json.Unmarshal(requirementsData, &requirements)
+		if err != nil {
+			return nil, errs.Wrap(err, "Could not unmarshal JSON")
+		}
+
+		err = validateRequirements(node)
+		if err != nil {
+			return nil, errs.Wrap(err, "Requirements in BuildExpression are invalid")
+		}
+
+		return requirements, nil
 	}
 
 	return nil, errs.New("Could not find requirements node")

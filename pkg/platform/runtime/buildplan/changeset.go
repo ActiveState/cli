@@ -21,3 +21,12 @@ func NewArtifactChangesetByBuildPlan(oldBuildPlan *model.Build, build *model.Bui
 
 	return cs, nil
 }
+
+func NewBaseArtifactChangesetByBuildPlan(build *model.Build, requestedOnly bool) (artifact.ArtifactChangeset, error) {
+	new, err := NewNamedMapFromBuildPlan(build)
+	if err != nil {
+		return artifact.ArtifactChangeset{}, errs.Wrap(err, "failed to build map from new build plan")
+	}
+
+	return artifact.NewArtifactChangeset(nil, new, requestedOnly), nil
+}

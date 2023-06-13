@@ -325,9 +325,12 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 	}
 
 	// Compute and handle the change summary
-	artifacts, err := buildplan.NewMapFromBuildPlan(buildResult.Build)
-	if err != nil {
-		return nil, errs.Wrap(err, "Failed to create artifact map from build plan")
+	var artifacts artifact.Map
+	if buildResult.Build != nil {
+		artifacts, err = buildplan.NewMapFromBuildPlan(buildResult.Build)
+		if err != nil {
+			return nil, errs.Wrap(err, "Failed to create artifact map from build plan")
+		}
 	}
 
 	setup, err := s.selectSetupImplementation(buildResult.BuildEngine, artifacts)
@@ -394,14 +397,21 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 		return nil, locale.NewError("headchef_build_failure", "Build Failed: {{.V0}}", buildResult.BuildStatusResponse.Message)
 	}
 
+	changedArtifacts, err := buildplan.NewBaseArtifactChangesetByBuildPlan(buildResult.Build, false)
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not compute base artifact changeset")
+	}
+
 	oldBuildPlan, err := s.store.BuildPlan()
 	if err != nil {
 		logging.Debug("Could not load existing build plan. Maybe it is a new installation: %v", err)
 	}
 
-	changedArtifacts, err := buildplan.NewArtifactChangesetByBuildPlan(oldBuildPlan, buildResult.Build, false)
-	if err != nil {
-		return nil, errs.Wrap(err, "Could not compute artifact changeset")
+	if oldBuildPlan != nil {
+		changedArtifacts, err = buildplan.NewArtifactChangesetByBuildPlan(oldBuildPlan, buildResult.Build, false)
+		if err != nil {
+			return nil, errs.Wrap(err, "Could not compute artifact changeset")
+		}
 	}
 
 	storedArtifacts, err := s.store.Artifacts()
