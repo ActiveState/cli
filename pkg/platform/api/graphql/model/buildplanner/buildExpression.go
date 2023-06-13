@@ -3,7 +3,6 @@ package model
 import (
 	"encoding/json"
 	"errors"
-	"time"
 
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/errs"
@@ -216,12 +215,12 @@ func (bx BuildExpression) UpdateTimestamp() error {
 		return errs.Wrap(err, "Could not fetch latest timestamp")
 	}
 
-	formatted, err := time.Parse(time.RFC3339, latest.String())
-	if err != nil {
-		return errs.Wrap(err, "Could not parse latest timestamp")
-	}
+	// formatted, err := time.Parse(time.RFC3339, latest.String())
+	// if err != nil {
+	// 	return errs.Wrap(err, "Could not parse latest timestamp")
+	// }
 
-	(*bx.solveNode)[AtTimeKey] = formatted
+	(*bx.solveNode)[AtTimeKey] = latest.String()
 	return nil
 }
 

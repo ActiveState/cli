@@ -276,6 +276,7 @@ func (bp *BuildPlanner) StageCommit(params StageCommitParams) (strfmt.UUID, erro
 		return "", errs.Wrap(err, "Failed to update build graph")
 	}
 
+	// TODO: Remove, this is for debugging
 	scriptJSON, err := json.MarshalIndent(script, "", "  ")
 	if err != nil {
 		return "", errs.Wrap(err, "Failed to marshal build graph")
@@ -313,9 +314,6 @@ func (bp *BuildPlanner) GetBuildExpression(commitID string) (*bpModel.BuildExpre
 		return nil, errs.Wrap(err, "failed to fetch build graph")
 	}
 
-	if resp.Commit.Type == bpModel.NotFound {
-		return nil, errs.New("Project not found: %s", resp.Commit.Message)
-	}
 	if resp.Commit.Type == bpModel.NotFound {
 		return nil, errs.New("Commit not found: %s", resp.Commit.Message)
 	}
