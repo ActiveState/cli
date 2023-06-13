@@ -222,7 +222,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 		Operation:        operation,
 	})
 	if err != nil {
-		return locale.WrapError(err, "err_package_save_and_build", "Could not save and build project")
+		return locale.WrapError(err, "err_package_save_and_build", "Error occured while trying to create a commit")
 	}
 
 	orderChanged := !hasParentCommit
