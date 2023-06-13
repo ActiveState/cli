@@ -308,11 +308,11 @@ func (bp *BuildPlanner) StageCommit(params StageCommitParams) (strfmt.UUID, erro
 	}
 	logging.Debug("Poll build plan response: %s", responseData)
 
-	if resp.NotFoundError != nil {
-		return "", errs.New("Commit not found: %s", resp.NotFoundError.Message)
-	}
-	if resp.Commit.Type == bpModel.NotFound {
-		return "", locale.NewError("err_buildplanner_commit_not_found", "Build plan does not contain commit")
+	if resp.Commit.Build == nil {
+		if resp.Commit.Message != "" {
+			return "", errs.New("Failed to stage commit with message: %s", resp.Commit.Message)
+		}
+		return "", errs.New("Commit does not contain build")
 	}
 
 	if resp.Commit.Build.Status == bpModel.Planning {

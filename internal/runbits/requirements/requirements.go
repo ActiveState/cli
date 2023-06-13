@@ -211,18 +211,23 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 		}
 	}
 
-	bp := model.NewBuildPlanModel(r.Auth)
-	commitID, err := bp.StageCommit(model.StageCommitParams{
-		Owner:            pj.Owner(),
-		Project:          pj.Name(),
+	params := model.StageCommitParams{
 		ParentCommit:     string(parentCommitID),
 		PackageName:      requirementName,
 		PackageVersion:   requirementVersion,
 		PackageNamespace: ns,
 		Operation:        operation,
-	})
+	}
+
+	if pj.Private() {
+		params.Owner = pj.Owner()
+		params.Project = pj.Name()
+	}
+
+	bp := model.NewBuildPlanModel(r.Auth)
+	commitID, err := bp.StageCommit(params)
 	if err != nil {
-		return locale.WrapError(err, "err_package_save_and_build", "Error occured while trying to create a commit")
+		return locale.WrapError(err, "err_package_save_and_build", "Error occurred while trying to create a commit")
 	}
 
 	orderChanged := !hasParentCommit
