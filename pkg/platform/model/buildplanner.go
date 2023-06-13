@@ -1,6 +1,7 @@
 package model
 
 import (
+	"encoding/json"
 	"net/http"
 	"os"
 	"strings"
@@ -275,12 +276,18 @@ func (bp *BuildPlanner) StageCommit(params StageCommitParams) (strfmt.UUID, erro
 		return "", errs.Wrap(err, "Failed to update build graph")
 	}
 
+	scriptJSON, err := json.MarshalIndent(script, "", "  ")
+	if err != nil {
+		return "", errs.Wrap(err, "Failed to marshal build graph")
+	}
+	logging.Debug("Build expression:\n%s", string(scriptJSON))
+
 	// With the updated build expression call the stage commit mutation
 	request := request.StageCommit(params.Owner, params.Project, params.ParentCommit, script)
 	resp := &bpModel.StageCommitResult{}
 	err = bp.client.Run(request, resp)
 	if err != nil {
-		return "", errs.Wrap(err, "failed to fetch build plan")
+		return "", errs.Wrap(err, "failed to stage commit")
 	}
 
 	if resp.NotFoundError != nil {
