@@ -3,6 +3,7 @@ package model
 import (
 	"encoding/json"
 	"errors"
+	"time"
 
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/errs"
@@ -215,12 +216,12 @@ func (bx BuildExpression) UpdateTimestamp() error {
 		return errs.Wrap(err, "Could not fetch latest timestamp")
 	}
 
-	// formatted, err := time.Parse(time.RFC3339, latest.String())
-	// if err != nil {
-	// 	return errs.Wrap(err, "Could not parse latest timestamp")
-	// }
+	formatted, err := time.Parse(time.RFC3339, latest.String())
+	if err != nil {
+		return errs.Wrap(err, "Could not parse latest timestamp")
+	}
 
-	(*bx.solveNode)[AtTimeKey] = latest.String()
+	(*bx.solveNode)[AtTimeKey] = formatted
 	return nil
 }
 
@@ -231,7 +232,7 @@ func (bx BuildExpression) MarshalJSON() ([]byte, error) {
 // fetchLatestTimeStamp fetches the latest timestamp from the inventory service.
 // This function lives in this package to avoid an import cycle.
 func fetchLatestTimeStamp() (*strfmt.DateTime, error) {
-	if condition.InTest() {
+	if condition.InUnitTest() {
 		return &strfmt.DateTime{}, nil
 	}
 
