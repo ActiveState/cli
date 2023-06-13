@@ -48,7 +48,7 @@ func InstallPathFromExecPath() (string, error) {
 	}
 
 	// Facilitate use-case of running executables from the build dir while developing
-	if !condition.BuiltViaCI() && strings.Contains(exePath, "/build/") {
+	if !condition.BuiltViaCI() && strings.Contains(exePath, string(os.PathSeparator)+"build"+string(os.PathSeparator)) {
 		return filepath.Dir(exePath), nil
 	}
 	if path, ok := os.LookupEnv(constants.OverwriteDefaultInstallationPathEnvVarName); ok {
