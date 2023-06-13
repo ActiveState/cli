@@ -206,6 +206,17 @@ func (bp *BuildPlanner) pollBuildPlan(commitID string) (*bpModel.BuildPlan, erro
 			if err != nil {
 				return nil, errs.Wrap(err, "failed to fetch build plan")
 			}
+
+			responseData, err := json.MarshalIndent(resp, "", "  ")
+			if err != nil {
+				return nil, errs.Wrap(err, "failed to marshal build plan response")
+			}
+			logging.Debug("Poll build plan response: %s", responseData)
+
+			if resp.Commit.Type == bpModel.NotFound {
+				return nil, locale.NewError("err_buildplanner_commit_not_found", "Build plan does not contain commit")
+			}
+
 			if resp.Commit.Build.Status != bpModel.Planning {
 				return resp, nil
 			}
