@@ -1,4 +1,4 @@
-package uploadingredient
+package publish
 
 import (
 	"net/http"
