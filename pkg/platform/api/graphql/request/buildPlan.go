@@ -1,10 +1,8 @@
 package request
 
-func BuildPlan(owner, project, commitID string) *buildPlanByCommitID {
+func BuildPlan(commitID string) *buildPlanByCommitID {
 	return &buildPlanByCommitID{map[string]interface{}{
-		"organization": owner,
-		"project":      project,
-		"commitID":     commitID,
+		"commitID": commitID,
 	}}
 }
 
@@ -14,138 +12,129 @@ type buildPlanByCommitID struct {
 
 func (b *buildPlanByCommitID) Query() string {
 	return `
-query ($organization: String!, $project: String!, $commitID: String!) {
-  project(organization: $organization, project: $project) {
-    ... on Project {
+query ($commitID: String!) {
+  commit(commitId: $commitID) {
+    ... on Commit {
       __typename
-      commit(vcsRef: $commitID) {
-        ... on Commit {
-          __typename
-          script
-          build {
-            __typename
-            ... on BuildReady {
-              buildLogIds {
-                id
-                type
-                platformId
-              }
+      script
+      build {
+        __typename
+        ... on BuildReady {
+          buildLogIds {
+            id
+            type
+            platformId
+          }
+        }
+        ... on BuildStarted {
+          buildLogIds {
+            id
+            type
+            platformId
+          }
+        }
+        ... on Build {
+          status
+          terminals {
+            tag
+            targetIDs
+          }
+          sources: targets {
+            ... on Source {
+              targetID
+              name
+              namespace
+              version
             }
-            ... on BuildStarted {
-              buildLogIds {
-                id
-                type
-                platformId
-              }
-            }
-            ... on Build {
-              status
-              terminals {
+          }
+          steps: targets {
+            ... on Step {
+              targetID
+              inputs {
                 tag
                 targetIDs
               }
-              sources: targets {
-                ... on Source {
-                  targetID
-                  name
-                  namespace
-                  version
-                }
-              }
-              steps: targets {
-                ... on Step {
-                  targetID
-                  inputs {
-                    tag
-                    targetIDs
-                  }
-                  outputs
-                }
-              }
-              artifacts: targets {
-                ... on ArtifactSucceeded {
-                  __typename
-                  targetID
-                  mimeType
-                  generatedBy
-                  runtimeDependencies
-                  status
-                  logURL
-                  url
-                  checksum
-                }
-                ... on ArtifactUnbuilt {
-                  __typename
-                  targetID
-                  mimeType
-                  generatedBy
-                  runtimeDependencies
-                  status
-                }
-                ... on ArtifactBuilding {
-                  __typename
-                  targetID
-                  mimeType
-                  generatedBy
-                  runtimeDependencies
-                  status
-                }
-                ... on ArtifactTransientlyFailed {
-                  __typename
-                  targetID
-                  mimeType
-                  generatedBy
-                  runtimeDependencies
-                  status
-                  logURL
-                  errors
-                  attempts
-                  nextAttemptAt
-                }
-                ... on ArtifactPermanentlyFailed {
-                  __typename
-                  targetID
-                  mimeType
-                  generatedBy
-                  runtimeDependencies
-                  status
-                  logURL
-                  errors
-                }
-              }
+              outputs
             }
-            ... on PlanningError {
-              subErrors {
-                __typename
-                ... on GenericSolveError {
-                  path
-                  message
-                  isTransient
-                  validationErrors {
-                    jsonPath
-                  }
-                }
-                ... on RemediableSolveError {
-                  path
-                  message
-                  isTransient
-                  errorType
-                  validationErrors {
-                    jsonPath
-                  }
-                  suggestedRemediations {
-                    remediationType
-                    command
-                    parameters
-                  }
-                }
-              }
+          }
+          artifacts: targets {
+            ... on ArtifactSucceeded {
+              __typename
+              targetID
+              mimeType
+              generatedBy
+              runtimeDependencies
+              status
+              logURL
+              url
+              checksum
+            }
+            ... on ArtifactUnbuilt {
+              __typename
+              targetID
+              mimeType
+              generatedBy
+              runtimeDependencies
+              status
+            }
+            ... on ArtifactBuilding {
+              __typename
+              targetID
+              mimeType
+              generatedBy
+              runtimeDependencies
+              status
+            }
+            ... on ArtifactTransientlyFailed {
+              __typename
+              targetID
+              mimeType
+              generatedBy
+              runtimeDependencies
+              status
+              logURL
+              errors
+              attempts
+              nextAttemptAt
+            }
+            ... on ArtifactPermanentlyFailed {
+              __typename
+              targetID
+              mimeType
+              generatedBy
+              runtimeDependencies
+              status
+              logURL
+              errors
             }
           }
         }
-        ... on NotFound {
-          __typename
-          message
+        ... on PlanningError {
+          subErrors {
+            __typename
+            ... on GenericSolveError {
+              path
+              message
+              isTransient
+              validationErrors {
+                jsonPath
+              }
+            }
+            ... on RemediableSolveError {
+              path
+              message
+              isTransient
+              errorType
+              validationErrors {
+                jsonPath
+              }
+              suggestedRemediations {
+                remediationType
+                command
+                parameters
+              }
+            }
+          }
         }
       }
     }
