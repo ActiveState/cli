@@ -34,6 +34,6 @@ func (s *Setup) ResolveArtifactName(_ artifact.ArtifactID) string {
 	return locale.Tl("camel_bundle_name", "bundle")
 }
 
-func (s *Setup) DownloadsFromBuild(build model.Build, artifacts map[strfmt.UUID]artifact.ArtifactBuildPlan) ([]artifact.ArtifactDownload, error) {
+func (s *Setup) DownloadsFromBuild(build model.Build, artifacts map[strfmt.UUID]artifact.Artifact) ([]artifact.ArtifactDownload, error) {
 	return artifact.NewDownloadsFromCamelBuildPlan(build, artifacts)
 }

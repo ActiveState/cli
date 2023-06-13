@@ -9,6 +9,7 @@ import (
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
+	"github.com/ActiveState/cli/pkg/platform/runtime/buildplan"
 	"github.com/thoas/go-funk"
 )
 
@@ -26,7 +27,7 @@ func New(out output.Outputer) *ChangeSummary {
 // - the number of direct dependencies this package brings in,
 // - the total number of new dependencies
 // - the names of the direct dependencies (and the count of their sub-dependencies)
-func (cs *ChangeSummary) ChangeSummary(artifacts artifact.ArtifactBuildPlanMap, requested artifact.ArtifactChangeset, changed artifact.ArtifactChangeset) error {
+func (cs *ChangeSummary) ChangeSummary(artifacts artifact.Map, requested artifact.ArtifactChangeset, changed artifact.ArtifactChangeset) error {
 	// currently we only print a change summary if we are adding exactly ONE package
 	if len(requested.Added) != 1 {
 		return nil
@@ -53,7 +54,7 @@ func (cs *ChangeSummary) ChangeSummary(artifacts artifact.ArtifactBuildPlanMap, 
 			continue
 		}
 		var depCount string
-		recDeps := artifact.RecursiveDependenciesFor(dep, artifacts)
+		recDeps := buildplan.RecursiveDependenciesFor(dep, artifacts)
 		filteredRecDeps := funk.Join(recDeps, changed.Added, funk.InnerJoin).([]artifact.ArtifactID)
 		if len(filteredRecDeps) > 0 {
 			depCount = locale.Tl("ingredient_dependency_count", " ({{.V0}} dependencies)", strconv.Itoa(len(filteredRecDeps)))

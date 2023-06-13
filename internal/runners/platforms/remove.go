@@ -5,7 +5,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/runbits/requirements"
-	bgModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model/buildplanner"
+	bpModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model/buildplanner"
 	"github.com/ActiveState/cli/pkg/platform/model"
 )
 
@@ -42,9 +42,10 @@ func (r *Remove) Run(ps RemoveRunParams) error {
 	if err := requirements.NewRequirementOperation(r.prime).ExecuteRequirementOperation(
 		params.name,
 		params.version,
-		params.BitWidth,
-		bgModel.OperationRemove,
-		model.NamespacePlatform,
+		bpModel.OperationRemoved,
+		nil,
+		&model.NamespacePlatform,
+		nil,
 	); err != nil {
 		return locale.WrapError(err, "err_remove_platform", "Could not remove platform.")
 	}

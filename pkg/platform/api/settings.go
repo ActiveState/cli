@@ -40,8 +40,8 @@ const (
 	// ServiceRequirementsImport is our service that processes requirements.txt files.
 	ServiceRequirementsImport = "requirements-import"
 
-	// ServiceBuildPlan is our service that processes build plans.
-	ServiceBuildPlan = "build-plan"
+	// ServiceBuildPlanner is our service that processes build plans.
+	ServiceBuildPlanner = "build-planner"
 )
 
 var urlsByService = map[Service]*url.URL{
@@ -85,10 +85,10 @@ var urlsByService = map[Service]*url.URL{
 		Host:   constants.DefaultAPIHost,
 		Path:   constants.RequirementsImportAPIPath,
 	},
-	ServiceBuildPlan: {
+	ServiceBuildPlanner: {
 		Scheme: "https",
 		Host:   constants.DefaultAPIHost,
-		Path:   constants.BuildplanAPIPath,
+		Path:   constants.BuildPlannerAPIPath,
 	},
 }
 

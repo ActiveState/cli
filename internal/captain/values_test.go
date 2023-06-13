@@ -66,8 +66,14 @@ func TestPackageValue_Set(t *testing.T) {
 		{
 			"name only",
 			"name",
-			true,
-			&PackageValue{},
+			false,
+			&PackageValue{Name: "name"},
+		},
+		{
+			"name and version only",
+			"name@1.0.0",
+			false,
+			&PackageValue{Name: "name", Version: "1.0.0"},
 		},
 	}
 	for _, tt := range tests {
@@ -79,6 +85,52 @@ func TestPackageValue_Set(t *testing.T) {
 			}
 			if !reflect.DeepEqual(p, tt.want) {
 				t.Fatalf("got %+v, want %+v", p, tt.want)
+			}
+		})
+	}
+}
+
+func TestPackageFlagNSRequired_Set(t *testing.T) {
+	tests := []struct {
+		name      string
+		flagValue string
+		wantErr   bool
+		want      *PackageValueNSRequired
+	}{
+		{
+			"namespace, name and version",
+			"namespace/path/name@1.0.0",
+			false,
+			&PackageValueNSRequired{PackageValue{Namespace: "namespace/path", Name: "name", Version: "1.0.0"}},
+		},
+		{
+			"namespace and name",
+			"namespace/path/name",
+			false,
+			&PackageValueNSRequired{PackageValue{Namespace: "namespace/path", Name: "name"}},
+		},
+		{
+			"name only",
+			"name",
+			true,
+			&PackageValueNSRequired{PackageValue{}},
+		},
+		{
+			"name and version only",
+			"name@1.0.0",
+			true,
+			&PackageValueNSRequired{PackageValue{}},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			p := &PackageValueNSRequired{}
+			if err := p.Set(tt.flagValue); (err != nil) != tt.wantErr {
+				t.Errorf("Set() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !tt.wantErr && !reflect.DeepEqual(p, tt.want) {
+				t.Fatalf("got %#v, want %#v", p, tt.want)
 			}
 		})
 	}

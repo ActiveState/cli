@@ -57,7 +57,7 @@ type primeable interface {
 
 func New(prime primeable) *Runner {
 	client := gqlclient.NewWithOpts(
-		api.GetServiceURL(api.ServiceBuildPlan).String(), 0,
+		api.GetServiceURL(api.ServiceBuildPlanner).String(), 0,
 		graphql.WithHTTPClient(http.DefaultClient),
 		graphql.UseMultipartForm(),
 	)

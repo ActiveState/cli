@@ -47,9 +47,6 @@ func (e *SolverError) IsTransient() bool {
 	return e.isTransient
 }
 
-// HostPlatform stores a reference to current platform
-var HostPlatform string
-
 // Recipe aliases recipe model
 type Recipe = inventory_models.Recipe
 
@@ -108,7 +105,7 @@ func fetchRawRecipe(commitID strfmt.UUID, owner, project string, hostPlatform *s
 	}
 
 	if hostPlatform != nil {
-		params.Order.Platforms, err = FilterPlatformIDs(*hostPlatform, runtime.GOARCH, params.Order.Platforms)
+		params.Order.Platforms, err = filterPlatformIDs(*hostPlatform, runtime.GOARCH, params.Order.Platforms)
 		if err != nil {
 			return "", err
 		}
@@ -202,7 +199,7 @@ func FetchRecipe(commitID strfmt.UUID, owner, project string, hostPlatform *stri
 }
 
 func FilterCurrentPlatform(hostPlatform string, platforms []strfmt.UUID) (strfmt.UUID, error) {
-	platformIDs, err := FilterPlatformIDs(hostPlatform, runtime.GOARCH, platforms)
+	platformIDs, err := filterPlatformIDs(hostPlatform, runtime.GOARCH, platforms)
 	if err != nil {
 		return "", errs.Wrap(err, "filterPlatformIDs failed")
 	}

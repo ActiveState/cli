@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/internal/analytics"
-	"github.com/go-openapi/strfmt"
+	"github.com/ActiveState/cli/internal/rtutils/p"
 	"github.com/thoas/go-funk"
 
 	anaConsts "github.com/ActiveState/cli/internal/analytics/constants"
@@ -24,12 +24,11 @@ import (
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/internal/runbits/rtusage"
-	bgModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model/buildplanner"
+	bpModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model/buildplanner"
 	medmodel "github.com/ActiveState/cli/pkg/platform/api/mediator/model"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
-	bpModel "github.com/ActiveState/cli/pkg/platform/runtime/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
@@ -81,8 +80,14 @@ func NewRequirementOperation(prime primeable) *RequirementOperation {
 
 const latestVersion = "latest"
 
-func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requirementVersion string, requirementBitWidth int, operation bgModel.Operation, nsType model.NamespaceType) (rerr error) {
-	var ns model.Namespace
+// ExecuteRequirementOperation executes the operation on the requirement
+// This has become quite unwieldy, and is ripe for a refactor - https://activestatef.atlassian.net/browse/DX-1897
+// For now, be aware that you should never provide BOTH ns AND nsType, one or the other should always be nil, but never both.
+// The refactor should clean this up.
+func (r *RequirementOperation) ExecuteRequirementOperation(
+	requirementName, requirementVersion string,
+	operation bpModel.Operation, ns *model.Namespace, nsType *model.NamespaceType, ts *time.Time) (rerr error) {
+
 	var langVersion string
 	langName := "undetermined"
 
@@ -116,25 +121,27 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 	}
 	out.Notice(locale.Tl("operating_message", "", pj.NamespaceString(), pj.Dir()))
 
-	switch nsType {
-	case model.NamespacePackage, model.NamespaceBundle:
-		language, err := model.LanguageByCommit(pj.CommitUUID())
-		if err == nil {
-			langName = language.Name
-			ns = model.NewNamespacePkgOrBundle(langName, nsType)
-		} else {
-			logging.Debug("Could not get language from project: %v", err)
+	if nsType != nil {
+		switch *nsType {
+		case model.NamespacePackage, model.NamespaceBundle:
+			language, err := model.LanguageByCommit(pj.CommitUUID())
+			if err == nil {
+				langName = language.Name
+				ns = p.Pointer(model.NewNamespacePkgOrBundle(langName, *nsType))
+			} else {
+				logging.Debug("Could not get language from project: %v", err)
+			}
+		case model.NamespaceLanguage:
+			ns = p.Pointer(model.NewNamespaceLanguage())
+		case model.NamespacePlatform:
+			ns = p.Pointer(model.NewNamespacePlatform())
 		}
-	case model.NamespaceLanguage:
-		ns = model.NewNamespaceLanguage()
-	case model.NamespacePlatform:
-		ns = model.NewNamespacePlatform()
 	}
 
 	rtusage.PrintRuntimeUsage(r.SvcModel, out, pj.Owner())
 
-	var validatePkg = operation == bgModel.OperationAdd && (ns.Type() == model.NamespacePackage || ns.Type() == model.NamespaceBundle)
-	if !ns.IsValid() && (nsType == model.NamespacePackage || nsType == model.NamespaceBundle) {
+	var validatePkg = operation == bpModel.OperationAdded && (ns.Type() == model.NamespacePackage || ns.Type() == model.NamespaceBundle)
+	if (ns == nil || !ns.IsValid()) && nsType != nil && (*nsType == model.NamespacePackage || *nsType == model.NamespaceBundle) {
 		pg = output.StartSpinner(out, locale.Tl("progress_pkg_nolang", "", requirementName), constants.TerminalAnimationInterval)
 
 		supported, err := model.FetchSupportedLanguages(model.HostPlatform)
@@ -142,11 +149,13 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 			return errs.Wrap(err, "Failed to retrieve the list of supported languages")
 		}
 
+		var nsv model.Namespace
 		var supportedLang *medmodel.SupportedLanguage
-		requirementName, ns, supportedLang, err = resolvePkgAndNamespace(r.Prompt, requirementName, nsType, supported)
+		requirementName, nsv, supportedLang, err = resolvePkgAndNamespace(r.Prompt, requirementName, *nsType, supported, ts)
 		if err != nil {
 			return errs.Wrap(err, "Could not resolve pkg and namespace")
 		}
+		ns = &nsv
 		langVersion = supportedLang.DefaultVersion
 		langName = supportedLang.Name
 
@@ -154,6 +163,10 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 
 		pg.Stop(locale.T("progress_found"))
 		pg = nil
+	}
+
+	if ns == nil {
+		return locale.NewError("err_package_invalid_namespace_detected", "No valid namespace could be detected")
 	}
 
 	if strings.ToLower(requirementVersion) == latestVersion {
@@ -168,7 +181,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 			return locale.WrapError(err, "package_err_cannot_obtain_search_results")
 		}
 		if len(packages) == 0 {
-			suggestions, err := getSuggestions(ns, requirementName)
+			suggestions, err := getSuggestions(*ns, requirementName)
 			if err != nil {
 				multilog.Error("Failed to retrieve suggestions: %v", err)
 			}
@@ -192,13 +205,13 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 	pg = output.StartSpinner(out, locale.T("progress_commit"), constants.TerminalAnimationInterval)
 
 	// Check if this is an addition or an update
-	if operation == bgModel.OperationAdd && parentCommitID != "" {
-		req, err := model.GetRequirement(parentCommitID, ns, requirementName)
+	if operation == bpModel.OperationAdded && parentCommitID != "" {
+		req, err := model.GetRequirement(parentCommitID, *ns, requirementName)
 		if err != nil {
 			return errs.Wrap(err, "Could not get requirement")
 		}
 		if req != nil {
-			operation = bgModel.OperationUpdate
+			operation = bpModel.OperationUpdated
 		}
 	}
 
@@ -214,18 +227,16 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 		}
 	}
 
-	bp := bpModel.NewBuildPlanner(r.Auth)
-	commitID, err := bp.PushCommit(bpModel.PushCommitParams{
+	bp := model.NewBuildPlanModel(r.Auth)
+	commitID, err := bp.StageCommit(model.StageCommitParams{
 		Owner:            pj.Owner(),
 		Project:          pj.Name(),
 		ParentCommit:     string(parentCommitID),
-		BranchRef:        pj.BranchName(),
-		Description:      fmt.Sprintf("%s-%s", operation, requirementName),
 		PackageName:      requirementName,
 		PackageVersion:   requirementVersion,
-		PackageNamespace: ns,
+		PackageNamespace: *ns,
 		Operation:        operation,
-		Time:             time.Now(),
+		Time:             ts,
 	})
 	if err != nil {
 		return locale.WrapError(err, "err_package_save_and_build", "Could not save and build project")
@@ -233,7 +244,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 
 	orderChanged := !hasParentCommit
 	if hasParentCommit {
-		revertCommit, err := model.GetRevertCommit(pj.CommitUUID(), strfmt.UUID(commitID))
+		revertCommit, err := model.GetRevertCommit(pj.CommitUUID(), commitID)
 		if err != nil {
 			return locale.WrapError(err, "err_revert_refresh")
 		}
@@ -257,13 +268,13 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 	}
 
 	// refresh or install runtime
-	err = runbits.RefreshRuntime(r.Auth, r.Output, r.Analytics, pj, strfmt.UUID(commitID), orderChanged, trigger, r.SvcModel)
+	err = runbits.RefreshRuntime(r.Auth, r.Output, r.Analytics, pj, commitID, orderChanged, trigger, r.SvcModel)
 	if err != nil {
 		return errs.Wrap(err, "Failed to refresh runtime")
 	}
 
 	if orderChanged {
-		if err := pj.SetCommit(commitID); err != nil {
+		if err := pj.SetCommit(commitID.String()); err != nil {
 			return locale.WrapError(err, "err_package_update_pjfile")
 		}
 	}
@@ -300,11 +311,11 @@ func supportedLanguageByName(supported []medmodel.SupportedLanguage, langName st
 	return funk.Find(supported, func(l medmodel.SupportedLanguage) bool { return l.Name == langName }).(medmodel.SupportedLanguage)
 }
 
-func resolvePkgAndNamespace(prompt prompt.Prompter, packageName string, nsType model.NamespaceType, supported []medmodel.SupportedLanguage) (string, model.Namespace, *medmodel.SupportedLanguage, error) {
+func resolvePkgAndNamespace(prompt prompt.Prompter, packageName string, nsType model.NamespaceType, supported []medmodel.SupportedLanguage, ts *time.Time) (string, model.Namespace, *medmodel.SupportedLanguage, error) {
 	ns := model.NewBlankNamespace()
 
 	// Find ingredients that match the input query
-	ingredients, err := model.SearchIngredientsStrict("", packageName, false, false, nil)
+	ingredients, err := model.SearchIngredientsStrict("", packageName, false, false, ts)
 	if err != nil {
 		return "", ns, nil, locale.WrapError(err, "err_pkgop_search_err", "Failed to check for ingredients.")
 	}

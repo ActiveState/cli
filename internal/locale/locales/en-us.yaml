@@ -1091,7 +1091,7 @@ package_info_cmd_description:
 package_arg_name:
   other: name
 package_arg_name_description:
-  other: Package name
+  other: Package name, optionally with namespace, eg. '[<namespace>/]<name>'.
 package_info_flag_language_description:
   other: The language used to constrain package information selection
 bundle_arg_name:
@@ -1101,7 +1101,7 @@ bundle_arg_name_description:
 package_arg_nameversion:
   other: name[@version]
 package_arg_nameversion_description:
-  other: Package name and optionally the desired version
+  other: Package name and optionally the desired version, optionally with namespace, eg. '[<namespace>/]<name>'.
 bundle_arg_nameversion:
   other: name[@version]
 bundle_arg_nameversion_description:
@@ -1114,7 +1114,7 @@ namespace_list_flag_project_description:
   other: The namespace packages should be listed from
 package_search_flag_ns_description:
   other: The namespace to search within. This trumps the language flag.
-package_search_flag_ts_description:
+package_flag_ts_description:
   other: The timestamp at which you want to query. Can be either 'now' or RFC3339 formatted timestamp.
 package_search_flag_language_description:
   other: The language used to constrain search results
