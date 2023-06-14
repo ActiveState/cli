@@ -12,7 +12,7 @@ import (
 	"sync"
 	"time"
 
-	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner"
+	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	"github.com/ActiveState/cli/pkg/platform/model"
 
 	"github.com/ActiveState/cli/internal/analytics"
@@ -310,7 +310,7 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 		return nil, errs.Wrap(err, "Could not handle SolveStart event")
 	}
 
-	bp := model.NewBuildPlanModel(s.auth)
+	bp := model.NewBuildPlannerModel(s.auth)
 	buildResult, err := bp.FetchBuildResult(s.target.CommitUUID())
 	if err != nil {
 		serr := &model.BuildPlannerError{}

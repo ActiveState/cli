@@ -1,6 +1,6 @@
 package request
 
-import model "github.com/ActiveState/cli/pkg/platform/api/buildplanner"
+import model "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 
 func StageCommit(owner, project, parentCommit string, script *model.BuildExpression) *buildPlanByStageCommit {
 	return &buildPlanByStageCommit{map[string]interface{}{
