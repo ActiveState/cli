@@ -2,7 +2,7 @@ package buildplan
 
 import (
 	"github.com/ActiveState/cli/internal/errs"
-	model "github.com/ActiveState/cli/pkg/platform/api/graphql/model/buildplanner"
+	model "github.com/ActiveState/cli/pkg/platform/api/buildplanner"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 )
 

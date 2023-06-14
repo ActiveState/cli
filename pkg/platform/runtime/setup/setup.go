@@ -12,7 +12,7 @@ import (
 	"sync"
 	"time"
 
-	bpModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model/buildplanner"
+	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner"
 	"github.com/ActiveState/cli/pkg/platform/model"
 
 	"github.com/ActiveState/cli/internal/analytics"
