@@ -5,11 +5,8 @@ import (
 	"errors"
 	"time"
 
-	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/pkg/platform/api/inventory"
-	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_client/inventory_operations"
 	"github.com/go-openapi/strfmt"
 )
 
@@ -152,7 +149,7 @@ func (bx BuildExpression) Requirements() []Requirement {
 }
 
 // Update updates the BuildExpression's requirements based on the operation and requirement.
-func (bx *BuildExpression) Update(operation Operation, requirement Requirement) error {
+func (bx *BuildExpression) Update(operation Operation, requirement Requirement, timestamp strfmt.DateTime) error {
 	var err error
 	switch operation {
 	case OperationAdded:
@@ -168,10 +165,12 @@ func (bx *BuildExpression) Update(operation Operation, requirement Requirement) 
 		return errs.Wrap(err, "Could not update BuildExpression's requirements")
 	}
 
-	err = bx.UpdateTimestamp()
+	formatted, err := time.Parse(time.RFC3339, timestamp.String())
 	if err != nil {
-		return errs.Wrap(err, "Could not update BuildExpression's timestamp")
+		return errs.Wrap(err, "Could not parse latest timestamp")
 	}
+
+	(*bx.solveNode)[AtTimeKey] = formatted
 
 	return nil
 }
@@ -211,40 +210,8 @@ func (bx BuildExpression) updateRequirement(requirement Requirement) error {
 	return errs.New("Could not find requirement")
 }
 
-// UpdateTimestamp fetches the latest platform timestamp and updates it in the BuildExpression.
-func (bx BuildExpression) UpdateTimestamp() error {
-	latest, err := fetchLatestTimeStamp()
-	if err != nil {
-		return errs.Wrap(err, "Could not fetch latest timestamp")
-	}
-
-	formatted, err := time.Parse(time.RFC3339, latest.String())
-	if err != nil {
-		return errs.Wrap(err, "Could not parse latest timestamp")
-	}
-
-	(*bx.solveNode)[AtTimeKey] = formatted
-	return nil
-}
-
 func (bx BuildExpression) MarshalJSON() ([]byte, error) {
 	return json.Marshal(bx.expression)
-}
-
-// fetchLatestTimeStamp fetches the latest timestamp from the inventory service.
-// This function lives in this package to avoid an import cycle.
-func fetchLatestTimeStamp() (*strfmt.DateTime, error) {
-	if condition.InTest() {
-		return &strfmt.DateTime{}, nil
-	}
-
-	client := inventory.Get()
-	result, err := client.GetLatestTimestamp(inventory_operations.NewGetLatestTimestampParams())
-	if err != nil {
-		return nil, errs.Wrap(err, "GetLatestTimestamp failed")
-	}
-
-	return result.Payload.Timestamp, nil
 }
 
 // getRequirements returns the list of requirements from the solve node of the build expression.

@@ -3,7 +3,7 @@ package artifact
 import (
 	"strings"
 
-	model "github.com/ActiveState/cli/pkg/platform/api/graphql/model/buildplanner"
+	model "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
 	"github.com/go-openapi/strfmt"
 )

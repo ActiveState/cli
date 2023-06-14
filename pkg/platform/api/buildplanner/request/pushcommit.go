@@ -1,24 +1,28 @@
 package request
 
-import model "github.com/ActiveState/cli/pkg/platform/api/graphql/model/buildplanner"
+import (
+	model "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
+)
 
-func StageCommit(owner, project, parentCommit string, script *model.BuildExpression) *buildPlanByStageCommit {
-	return &buildPlanByStageCommit{map[string]interface{}{
+func PushCommit(owner, project, parentCommit, branchRef, description string, script model.BuildExpression) *buildPlanByPushCommit {
+	return &buildPlanByPushCommit{map[string]interface{}{
 		"organization": owner,
 		"project":      project,
 		"parentCommit": parentCommit,
+		"branchRef":    branchRef,
+		"description":  description,
 		"script":       script,
 	}}
 }
 
-type buildPlanByStageCommit struct {
+type buildPlanByPushCommit struct {
 	vars map[string]interface{}
 }
 
-func (b *buildPlanByStageCommit) Query() string {
+func (b *buildPlanByPushCommit) Query() string {
 	return `
-mutation ($organization: String!, $project: String!, $parentCommit: String!, $script:BuildScript!) {
-  stageCommit(input:{org:$organization, project:$project, parentCommit:$parentCommit, script:$script}) {
+mutation ($organization: String!, $project: String!, $parentCommit: String!, $branchRef: String!, $script:BuildScript! $description: String!) {
+  pushCommit(input:{org:$organization, project:$project, parentCommit:$parentCommit, script:$script, branchRef:$branchRef, description:$description}) {
     ... on Commit {
       __typename
 			script
@@ -153,6 +157,6 @@ mutation ($organization: String!, $project: String!, $parentCommit: String!, $sc
 `
 }
 
-func (b *buildPlanByStageCommit) Vars() map[string]interface{} {
+func (b *buildPlanByPushCommit) Vars() map[string]interface{} {
 	return b.vars
 }
