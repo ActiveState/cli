@@ -7,6 +7,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/go-openapi/strfmt"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -46,7 +47,7 @@ func TestNew(t *testing.T) {
 			wd, err := environment.GetRootPath()
 			assert.NoError(t, err)
 
-			data, err := fileutils.ReadFile(filepath.Join(wd, "pkg", "platform", "api", "graphql", "model", "buildplanner", "testdata", tt.args.filename))
+			data, err := fileutils.ReadFile(filepath.Join(wd, "pkg", "platform", "api", "buildplanner", "model", "testdata", tt.args.filename))
 			assert.NoError(t, err)
 
 			_, err = NewBuildExpression(data)
@@ -109,7 +110,7 @@ func TestBuildExpression_Requirements(t *testing.T) {
 			wd, err := environment.GetRootPath()
 			assert.NoError(t, err)
 
-			data, err := fileutils.ReadFile(filepath.Join(wd, "pkg", "platform", "api", "graphql", "model", "buildplanner", "testdata", tt.args.filename))
+			data, err := fileutils.ReadFile(filepath.Join(wd, "pkg", "platform", "api", "buildplanner", "model", "testdata", tt.args.filename))
 			assert.NoError(t, err)
 
 			bx, err := NewBuildExpression(data)
@@ -302,13 +303,13 @@ func TestBuildExpression_Update(t *testing.T) {
 			wd, err := environment.GetRootPath()
 			assert.NoError(t, err)
 
-			data, err := fileutils.ReadFile(filepath.Join(wd, "pkg", "platform", "api", "graphql", "model", "buildplanner", "testdata", "buildexpression.json"))
+			data, err := fileutils.ReadFile(filepath.Join(wd, "pkg", "platform", "api", "buildplanner", "model", "testdata", "buildexpression.json"))
 			assert.NoError(t, err)
 
 			bx, err := NewBuildExpression(data)
 			assert.NoError(t, err)
 
-			err = bx.Update(tt.args.operation, tt.args.requirement)
+			err = bx.Update(tt.args.operation, tt.args.requirement, strfmt.DateTime{})
 			if err != nil {
 				if tt.wantErr {
 					return
