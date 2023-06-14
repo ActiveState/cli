@@ -7,6 +7,7 @@ import (
 
 	"github.com/go-openapi/strfmt"
 
+	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/pkg/platform/api"
@@ -202,7 +203,7 @@ func FetchPlatformsForCommit(commitID strfmt.UUID) ([]*Platform, error) {
 	return platforms, nil
 }
 
-func FilterPlatformIDs(hostPlatform, hostArch string, platformIDs []strfmt.UUID) ([]strfmt.UUID, error) {
+func filterPlatformIDs(hostPlatform, hostArch string, platformIDs []strfmt.UUID) ([]strfmt.UUID, error) {
 	runtimePlatforms, err := FetchPlatforms()
 	if err != nil {
 		return nil, err
@@ -390,4 +391,19 @@ func FetchIngredientVersions(ingredientID *strfmt.UUID) ([]*inventory_models.Ing
 	}
 
 	return res.Payload.IngredientVersions, nil
+}
+
+// FetchLatestTimeStamp fetches the latest timestamp from the inventory service.
+func FetchLatestTimeStamp() (*strfmt.DateTime, error) {
+	if condition.InTest() {
+		return &strfmt.DateTime{}, nil
+	}
+
+	client := inventory.Get()
+	result, err := client.GetLatestTimestamp(inventory_operations.NewGetLatestTimestampParams())
+	if err != nil {
+		return nil, errs.Wrap(err, "GetLatestTimestamp failed")
+	}
+
+	return result.Payload.Timestamp, nil
 }

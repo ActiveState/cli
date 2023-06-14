@@ -3,7 +3,7 @@ package languages
 import (
 	"strings"
 
-	bgModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model/buildplanner"
+	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
@@ -70,7 +70,7 @@ func (u *Update) Run(params *UpdateParams) error {
 		return errs.Wrap(err, "Could not create requirement operation.")
 	}
 
-	err = op.ExecuteRequirementOperation(lang.Name, lang.Version, 0, bgModel.OperationAdd, model.NamespaceLanguage)
+	err = op.ExecuteRequirementOperation(lang.Name, lang.Version, 0, bpModel.OperationAdded, model.NamespaceLanguage)
 	if err != nil {
 		return locale.WrapError(err, "err_language_update", "Could not update language: {{.V0}}", lang.Name)
 	}

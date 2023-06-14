@@ -283,7 +283,7 @@ func (suite *UpdateIntegrationTestSuite) installLatestReleaseVersion(ts *e2e.Ses
 			"bash", e2e.WithArgs("-c", oneLiner),
 		)
 	} else {
-		b, err := download.GetDirectURL("https://platform.activestate.com/dl/cli/pdli01/install.ps1")
+		b, err := httputil.GetDirect("https://platform.activestate.com/dl/cli/pdli01/install.ps1")
 		suite.Require().NoError(err)
 
 		ps1File := filepath.Join(ts.Dirs.Work, "install.ps1")

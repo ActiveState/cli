@@ -1,10 +1,10 @@
 package request
 
 import (
-	model "github.com/ActiveState/cli/pkg/platform/api/graphql/model/buildplanner"
+	model "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 )
 
-func PushCommit(owner, project, parentCommit, branchRef, description string, script *model.BuildScript) *buildPlanByPushCommit {
+func PushCommit(owner, project, parentCommit, branchRef, description string, script model.BuildExpression) *buildPlanByPushCommit {
 	return &buildPlanByPushCommit{map[string]interface{}{
 		"organization": owner,
 		"project":      project,

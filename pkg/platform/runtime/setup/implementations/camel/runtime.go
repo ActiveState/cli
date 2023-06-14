@@ -5,7 +5,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/multilog"
-	model "github.com/ActiveState/cli/pkg/platform/api/graphql/model/buildplanner"
+	model "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/ActiveState/cli/pkg/platform/runtime/store"
 	"github.com/go-openapi/strfmt"
@@ -34,6 +34,6 @@ func (s *Setup) ResolveArtifactName(_ artifact.ArtifactID) string {
 	return locale.Tl("camel_bundle_name", "bundle")
 }
 
-func (s *Setup) DownloadsFromBuild(build model.Build, artifacts map[strfmt.UUID]artifact.ArtifactBuildPlan) ([]artifact.ArtifactDownload, error) {
+func (s *Setup) DownloadsFromBuild(build model.Build, artifacts map[strfmt.UUID]artifact.Artifact) ([]artifact.ArtifactDownload, error) {
 	return artifact.NewDownloadsFromCamelBuildPlan(build, artifacts)
 }
