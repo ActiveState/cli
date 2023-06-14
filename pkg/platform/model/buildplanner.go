@@ -208,9 +208,6 @@ func (bp *BuildPlanner) pollBuildPlan(owner, project, commitID string) (*bpModel
 			if err != nil {
 				return nil, errs.Wrap(err, "failed to fetch build plan")
 			}
-			if resp == nil {
-				continue
-			}
 			if resp.Project.Commit.Build.Status != bpModel.Planning {
 				return resp, nil
 			}
