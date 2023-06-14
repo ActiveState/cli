@@ -12,8 +12,8 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/platform/api"
-	bpModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model/buildplanner"
-	"github.com/ActiveState/cli/pkg/platform/api/graphql/request"
+	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
+	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/request"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -84,7 +84,7 @@ type BuildPlanner struct {
 	client *gqlclient.Client
 }
 
-func NewBuildPlanModel(auth *authentication.Auth) *BuildPlanner {
+func NewBuildPlannerModel(auth *authentication.Auth) *BuildPlanner {
 	bpURL := api.GetServiceURL(api.ServiceBuildPlanner).String()
 	logging.Debug("Using build planner at: %s", bpURL)
 
