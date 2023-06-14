@@ -206,10 +206,6 @@ func (bp *BuildPlanner) pollBuildPlan(commitID string) (*bpModel.BuildPlan, erro
 				return nil, errs.Wrap(err, "failed to fetch build plan")
 			}
 
-			if resp == nil {
-				continue
-			}
-
 			if resp.Commit.Type == bpModel.NotFound {
 				return nil, locale.NewError("err_buildplanner_commit_not_found", "Build plan does not contain commit")
 			}
