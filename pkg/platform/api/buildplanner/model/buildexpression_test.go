@@ -47,7 +47,7 @@ func TestNew(t *testing.T) {
 			wd, err := environment.GetRootPath()
 			assert.NoError(t, err)
 
-			data, err := fileutils.ReadFile(filepath.Join(wd, "pkg", "platform", "api", "buildplanner", "testdata", tt.args.filename))
+			data, err := fileutils.ReadFile(filepath.Join(wd, "pkg", "platform", "api", "buildplanner", "model", "testdata", tt.args.filename))
 			assert.NoError(t, err)
 
 			_, err = NewBuildExpression(data)
@@ -110,7 +110,7 @@ func TestBuildExpression_Requirements(t *testing.T) {
 			wd, err := environment.GetRootPath()
 			assert.NoError(t, err)
 
-			data, err := fileutils.ReadFile(filepath.Join(wd, "pkg", "platform", "api", "buildplanner", "testdata", tt.args.filename))
+			data, err := fileutils.ReadFile(filepath.Join(wd, "pkg", "platform", "api", "buildplanner", "model", "testdata", tt.args.filename))
 			assert.NoError(t, err)
 
 			bx, err := NewBuildExpression(data)
@@ -303,7 +303,7 @@ func TestBuildExpression_Update(t *testing.T) {
 			wd, err := environment.GetRootPath()
 			assert.NoError(t, err)
 
-			data, err := fileutils.ReadFile(filepath.Join(wd, "pkg", "platform", "api", "buildplanner", "testdata", "buildexpression.json"))
+			data, err := fileutils.ReadFile(filepath.Join(wd, "pkg", "platform", "api", "buildplanner", "model", "testdata", "buildexpression.json"))
 			assert.NoError(t, err)
 
 			bx, err := NewBuildExpression(data)
