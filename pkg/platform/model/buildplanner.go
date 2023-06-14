@@ -206,15 +206,10 @@ func (bp *BuildPlanner) pollBuildPlan(commitID string) (*bpModel.BuildPlan, erro
 			if err != nil {
 				return nil, errs.Wrap(err, "failed to fetch build plan")
 			}
+
 			if resp == nil {
 				continue
 			}
-
-			responseData, err := json.MarshalIndent(resp, "", "  ")
-			if err != nil {
-				return nil, errs.Wrap(err, "failed to marshal build plan response")
-			}
-			logging.Debug("Poll build plan response: %s", responseData)
 
 			if resp.Commit.Type == bpModel.NotFound {
 				return nil, locale.NewError("err_buildplanner_commit_not_found", "Build plan does not contain commit")
@@ -290,13 +285,6 @@ func (bp *BuildPlanner) StageCommit(params StageCommitParams) (strfmt.UUID, erro
 	if err != nil {
 		return "", errs.Wrap(err, "Failed to update build graph")
 	}
-
-	// TODO: Remove, this is for debugging
-	scriptJSON, err := json.MarshalIndent(script, "", "  ")
-	if err != nil {
-		return "", errs.Wrap(err, "Failed to marshal build graph")
-	}
-	logging.Debug("Build expression:\n%s", string(scriptJSON))
 
 	// With the updated build expression call the stage commit mutation
 	request := request.StageCommit(params.Owner, params.Project, params.ParentCommit, script)
