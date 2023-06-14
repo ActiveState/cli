@@ -79,10 +79,10 @@ type Project struct {
 
 // Commit contains the build and any errors.
 type Commit struct {
-	Type     string          `json:"__typename"`
-	Script   json.RawMessage `json:"script"`
-	CommitID strfmt.UUID     `json:"commitId"`
-	Build    *Build          `json:"build"`
+	Type       string          `json:"__typename"`
+	Expression json.RawMessage `json:"script"`
+	CommitID   strfmt.UUID     `json:"commitId"`
+	Build      *Build          `json:"build"`
 	*NotFoundError
 }
 

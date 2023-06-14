@@ -266,7 +266,7 @@ func (bp *BuildPlanner) StageCommit(params StageCommitParams) (strfmt.UUID, erro
 	var err error
 	script, err := bp.GetBuildExpression(params.ParentCommit)
 	if err != nil {
-		return "", errs.Wrap(err, "Failed to get build graph")
+		return "", errs.Wrap(err, "Failed to get build expression")
 	}
 
 	requirement := bpModel.Requirement{
@@ -317,14 +317,11 @@ func (bp *BuildPlanner) GetBuildExpression(commitID string) (*bpModel.BuildExpre
 		return nil, errs.Wrap(err, "failed to fetch build graph")
 	}
 
-	if resp.Commit.Build == nil {
-		if resp.Commit.NotFoundError != nil {
-			return nil, errs.New("Failed to stage commit: %s", resp.Commit.NotFoundError.Message)
-		}
-		return nil, errs.New("Commit does not contain build")
+	if resp.Commit.Expression == nil {
+		return nil, errs.New("Commit does not contain expression")
 	}
 
-	expression, err := bpModel.NewBuildExpression(resp.Commit.Script)
+	expression, err := bpModel.NewBuildExpression(resp.Commit.Expression)
 	if err != nil {
 		return nil, errs.Wrap(err, "failed to parse build expression")
 	}
