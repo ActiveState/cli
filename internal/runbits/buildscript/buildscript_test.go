@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/ActiveState/cli/internal/rtutils/p"
-	"github.com/ActiveState/cli/pkg/platform/api/graphql/model/buildplanner"
+	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/buildscript"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

@@ -81,7 +81,7 @@ func newRuntime(target setup.Targeter, an analytics.Dispatcher, svcModel *model.
 
 	// Check if local build script has changes that should be staged.
 	if script, err := buildscript.NewScriptFromProjectDir(target.ProjectDir()); err == nil {
-		bp := model.NewBuildPlanModel(auth)
+		bp := model.NewBuildPlannerModel(auth)
 		if commitID, err := localcommit.Get(target.ProjectDir()); err == nil {
 			if expr, err := bp.GetBuildExpression(target.Owner(), target.Name(), commitID.String()); err == nil {
 				if !script.Equals(expr) {
