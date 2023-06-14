@@ -206,6 +206,8 @@ func (bp *BuildPlanner) pollBuildPlan(commitID string) (*bpModel.BuildPlan, erro
 				return nil, errs.Wrap(err, "failed to fetch build plan")
 			}
 
+			// This should not happen, but if it does we want to know and prevent
+			// a potentail panic below.
 			if resp.Commit.Type == bpModel.NotFound {
 				return nil, locale.NewError("err_buildplanner_commit_not_found", "Build plan does not contain commit")
 			}
@@ -290,8 +292,8 @@ func (bp *BuildPlanner) StageCommit(params StageCommitParams) (strfmt.UUID, erro
 	}
 
 	if resp.Commit.Build == nil {
-		if resp.Commit.Message != "" {
-			return "", errs.New("Failed to stage commit with message: %s", resp.Commit.Message)
+		if resp.NotFoundError != nil {
+			return "", errs.New("Failed to stage commit: %s", resp.NotFoundError.Message)
 		}
 		return "", errs.New("Commit does not contain build")
 	}
@@ -315,8 +317,11 @@ func (bp *BuildPlanner) GetBuildExpression(commitID string) (*bpModel.BuildExpre
 		return nil, errs.Wrap(err, "failed to fetch build graph")
 	}
 
-	if resp.Commit.Type == bpModel.NotFound {
-		return nil, errs.New("Commit not found: %s", resp.Commit.Message)
+	if resp.Commit.Build == nil {
+		if resp.Commit.NotFoundError != nil {
+			return nil, errs.New("Failed to stage commit: %s", resp.Commit.NotFoundError.Message)
+		}
+		return nil, errs.New("Commit does not contain build")
 	}
 
 	expression, err := bpModel.NewBuildExpression(resp.Commit.Script)

@@ -39,7 +39,7 @@ const (
 )
 
 // BuildPlan is the top level object returned by the build planner. It contains
-// the project, commit, and build.
+// the commit and build.
 type BuildPlan struct {
 	Commit *Commit `json:"commit"`
 }
