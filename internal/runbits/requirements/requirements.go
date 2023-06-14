@@ -216,7 +216,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 		return errs.Wrap(err, "Could not fetch latest timestamp")
 	}
 
-	bp := model.NewBuildPlanModel(r.Auth)
+	bp := model.NewBuildPlannerModel(r.Auth)
 	commitID, err := bp.StageCommit(model.StageCommitParams{
 		Owner:            pj.Owner(),
 		Project:          pj.Name(),

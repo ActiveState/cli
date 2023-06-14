@@ -84,7 +84,7 @@ type BuildPlanner struct {
 	client *gqlclient.Client
 }
 
-func NewBuildPlanModel(auth *authentication.Auth) *BuildPlanner {
+func NewBuildPlannerModel(auth *authentication.Auth) *BuildPlanner {
 	bpURL := api.GetServiceURL(api.ServiceBuildPlanner).String()
 	logging.Debug("Using build planner at: %s", bpURL)
 
