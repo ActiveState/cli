@@ -211,14 +211,19 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 		}
 	}
 
+	latest, err := model.FetchLatestTimeStamp()
+	if err != nil {
+		return errs.Wrap(err, "Could not fetch latest timestamp")
+	}
+
 	params := model.StageCommitParams{
 		ParentCommit:     string(parentCommitID),
 		PackageName:      requirementName,
 		PackageVersion:   requirementVersion,
 		PackageNamespace: ns,
 		Operation:        operation,
+		TimeStamp:        latest,
 	}
-
 	if pj.Private() {
 		params.Owner = pj.Owner()
 		params.Project = pj.Name()
