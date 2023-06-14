@@ -217,16 +217,14 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 	}
 
 	params := model.StageCommitParams{
+		Owner:            pj.Owner(),
+		Project:          pj.Name(),
 		ParentCommit:     string(parentCommitID),
 		PackageName:      requirementName,
 		PackageVersion:   requirementVersion,
 		PackageNamespace: ns,
 		Operation:        operation,
 		TimeStamp:        latest,
-	}
-	if pj.Private() {
-		params.Owner = pj.Owner()
-		params.Project = pj.Name()
 	}
 
 	bp := model.NewBuildPlannerModel(r.Auth)
