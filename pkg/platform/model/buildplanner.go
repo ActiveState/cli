@@ -206,6 +206,9 @@ func (bp *BuildPlanner) pollBuildPlan(commitID string) (*bpModel.BuildPlan, erro
 			if err != nil {
 				return nil, errs.Wrap(err, "failed to fetch build plan")
 			}
+			if resp == nil {
+				continue
+			}
 
 			responseData, err := json.MarshalIndent(resp, "", "  ")
 			if err != nil {
