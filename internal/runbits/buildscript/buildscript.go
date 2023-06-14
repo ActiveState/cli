@@ -13,7 +13,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/pkg/localcommit"
-	bpModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model/buildplanner"
+	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/buildscript"
@@ -23,7 +23,7 @@ import (
 )
 
 func getBuildExpression(proj *project.Project, customCommit *strfmt.UUID, auth *authentication.Auth) (*bpModel.BuildExpression, error) {
-	bp := model.NewBuildPlanModel(auth)
+	bp := model.NewBuildPlannerModel(auth)
 	commitID, err := localcommit.Get(proj.Dir())
 	if err != nil {
 		return nil, errs.Wrap(err, "Unable to get local commit ID")
@@ -75,7 +75,7 @@ func Sync(proj *project.Project, commitID *strfmt.UUID, out output.Outputer, aut
 			return errs.Wrap(err, "Unable to get local commit ID")
 		}
 
-		bp := model.NewBuildPlanModel(auth)
+		bp := model.NewBuildPlannerModel(auth)
 		stagedCommitID, err := bp.StageCommit(model.StageCommitParams{
 			Owner:        proj.Owner(),
 			Project:      proj.Name(),

@@ -187,7 +187,7 @@ func (p *Pull) performMerge(strategies *mono_models.MergeStrategies, remoteCommi
 		return "", errs.Wrap(err, "Could not get local build script")
 	}
 	if script != nil {
-		bp := rtModel.NewBuildPlanModel(p.auth)
+		bp := rtModel.NewBuildPlannerModel(p.auth)
 		expr, err := bp.GetBuildExpression(p.project.Owner(), p.project.Name(), remoteCommit.String())
 		if err != nil {
 			return "", errs.Wrap(err, "Could not get remote build expression")
