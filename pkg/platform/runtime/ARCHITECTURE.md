@@ -8,7 +8,7 @@ the ActiveState Platform.
 The general usage pattern is as follows:
 
 	rt, err := runtime.New(target)
-	if err != nil {
+	if err != nil && !runtime.IsNeedsStageError(err) {
 		if !runtime.IsNeedsUpdateError(err) {
 			return err
 		}

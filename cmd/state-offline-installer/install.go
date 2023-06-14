@@ -297,12 +297,12 @@ func (r *runner) setupRuntime(artifactsPath string, targetPath string) (*runtime
 	offlineProgress := newOfflineProgressOutput(r.out)
 	eventHandler := events.NewRuntimeEventHandler(offlineProgress, nil, logfile)
 
-	rti, err := runtime.New(offlineTarget, r.analytics, nil)
+	rti, err := runtime.New(offlineTarget, r.analytics, nil, nil)
 	if err != nil {
 		if !runtime.IsNeedsUpdateError(err) {
 			return nil, errs.Wrap(err, "Could not create runtime")
 		}
-		if err = rti.Update(nil, eventHandler); err != nil {
+		if err = rti.Update(eventHandler); err != nil {
 			return nil, errs.Wrap(err, "Had an installation error")
 		}
 	}

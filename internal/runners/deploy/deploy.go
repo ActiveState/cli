@@ -158,7 +158,7 @@ func (d *Deploy) install(rtTarget setup.Targeter) (rerr error) {
 
 	rtusage.PrintRuntimeUsage(d.svcModel, d.output, rtTarget.Owner())
 
-	rti, err := runtime.New(rtTarget, d.analytics, d.svcModel)
+	rti, err := runtime.New(rtTarget, d.analytics, d.svcModel, d.auth)
 	if err == nil {
 		d.output.Notice(locale.Tl("deploy_already_installed", "Already installed"))
 		return nil
@@ -169,7 +169,7 @@ func (d *Deploy) install(rtTarget setup.Targeter) (rerr error) {
 
 	pg := runbits.NewRuntimeProgressIndicator(d.output)
 	defer rtutils.Closer(pg.Close, &rerr)
-	if err := rti.Update(d.auth, pg); err != nil {
+	if err := rti.Update(pg); err != nil {
 		return locale.WrapError(err, "deploy_install_failed", "Installation failed.")
 	}
 
@@ -194,7 +194,7 @@ func (d *Deploy) install(rtTarget setup.Targeter) (rerr error) {
 }
 
 func (d *Deploy) configure(namespace project.Namespaced, rtTarget setup.Targeter, userScope bool) error {
-	rti, err := runtime.New(rtTarget, d.analytics, d.svcModel)
+	rti, err := runtime.New(rtTarget, d.analytics, d.svcModel, d.auth)
 	if err != nil {
 		if runtime.IsNeedsUpdateError(err) {
 			return locale.NewInputError("err_deploy_run_install")
@@ -231,7 +231,7 @@ func (d *Deploy) configure(namespace project.Namespaced, rtTarget setup.Targeter
 }
 
 func (d *Deploy) symlink(rtTarget setup.Targeter, overwrite bool) error {
-	rti, err := runtime.New(rtTarget, d.analytics, d.svcModel)
+	rti, err := runtime.New(rtTarget, d.analytics, d.svcModel, d.auth)
 	if err != nil {
 		if runtime.IsNeedsUpdateError(err) {
 			return locale.NewInputError("err_deploy_run_install")
@@ -349,7 +349,7 @@ type Report struct {
 }
 
 func (d *Deploy) report(rtTarget setup.Targeter) error {
-	rti, err := runtime.New(rtTarget, d.analytics, d.svcModel)
+	rti, err := runtime.New(rtTarget, d.analytics, d.svcModel, d.auth)
 	if err != nil {
 		if runtime.IsNeedsUpdateError(err) {
 			return locale.NewInputError("err_deploy_run_install")
