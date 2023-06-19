@@ -40,3 +40,41 @@ func newRemoteProjectsCommand(prime *primer.Values) *captain.Command {
 		},
 	).SetGroup(ProjectUsageGroup)
 }
+
+func newProjectsEditCommand(prime *primer.Values) *captain.Command {
+	runner := projects.NewEdit(prime)
+	params := projects.EditParams{}
+
+	return captain.NewCommand(
+		"edit",
+		locale.Tl("projects_edit_title", "Edit Project"),
+		locale.T("projects_edit_description"),
+		prime,
+		[]*captain.Flag{
+			{
+				Name:        "name",
+				Description: locale.T("projects_edit_name_description"),
+				Value:       &params.ProjectName,
+			},
+			{
+				Name:        "owner",
+				Description: locale.T("projects_edit_owner_description"),
+				Value:       &params.OwnerName,
+			},
+			{
+				Name:        "visibility",
+				Description: locale.T("projects_edit_visibility_description"),
+				Value:       &params.Visibility,
+			},
+			{
+				Name:        "repository",
+				Description: locale.T("projects_edit_reposityr_description"),
+				Value:       &params.Repository,
+			},
+		},
+		[]*captain.Argument{},
+		func(ccmd *captain.Command, args []string) error {
+			return runner.Run(params)
+		},
+	).SetGroup(ProjectUsageGroup)
+}
