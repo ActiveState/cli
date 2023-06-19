@@ -100,6 +100,7 @@ type BuildExpression struct {
 //	  }
 //	}
 func NewBuildExpression(data []byte) (*BuildExpression, error) {
+	logging.Debug("Creating BuildExpression from JSON: %s", string(data))
 	expression := make(map[string]interface{})
 	err := json.Unmarshal(data, &expression)
 	if err != nil {
