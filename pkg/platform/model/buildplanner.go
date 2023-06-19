@@ -119,7 +119,7 @@ func (bp *BuildPlanner) FetchBuildResult(commitID strfmt.UUID) (*BuildResult, er
 			isTransient = se.IsTransient
 		}
 		return nil, &BuildPlannerError{
-			wrapped:          locale.NewError("err_buildplanner", resp.Commit.Build.Error),
+			wrapped:          locale.NewInputError("err_buildplanner", resp.Commit.Build.Error),
 			validationErrors: errs,
 			isTransient:      isTransient,
 		}
