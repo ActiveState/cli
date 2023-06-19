@@ -1,6 +1,7 @@
 package model
 
 import (
+	"encoding/json"
 	"net/http"
 	"os"
 	"strings"
@@ -205,6 +206,12 @@ func (bp *BuildPlanner) pollBuildPlan(commitID string) (*bpModel.BuildPlan, erro
 			if err != nil {
 				return nil, errs.Wrap(err, "failed to fetch build plan")
 			}
+
+			data, err := json.MarshalIndent(resp, "", "  ")
+			if err != nil {
+				return nil, errs.Wrap(err, "failed to marshal build plan")
+			}
+			logging.Debug("Build plan: %s", string(data))
 
 			// This should not happen, but if it does we want to know and prevent
 			// a potentail panic below.
