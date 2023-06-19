@@ -8,17 +8,17 @@ the ActiveState Platform.
 The general usage pattern is as follows:
 
 	rt, err := runtime.New(target)
-	if err != nil {
-		switch {
-			case runtime.IsNeedsUpdateError(err):
-				if err = rt.Update(messageHandler); err != nil {
-					return err
-				}
-			case runtime.IsNeedsStageError(err):
-				...
-			default:
+	switch {
+		case err == nil:
+			break
+		case runtime.IsNeedsUpdateError(err):
+			if err = rt.Update(messageHandler); err != nil {
 				return err
-		}
+			}
+		case runtime.IsNeedsStageError(err):
+			...
+		default:
+			return err
 	}
 
 	env, err = r.Environ(true, projectDir)
