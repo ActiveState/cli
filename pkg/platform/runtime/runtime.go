@@ -120,19 +120,19 @@ func (r *Runtime) validateCache() error {
 		return nil // build script does not exist, so there are no changes
 	}
 
-	expr, err := r.store.BuildExpression()
+	commitID := r.target.CommitUUID().String()
+	expr, err := r.store.GetAndValidateBuildExpression(commitID)
 	if err != nil {
-		logging.Debug("No local buildexpression for the current commit exists; fetching one")
 		bp := model.NewBuildPlannerModel(r.auth)
-		bpExpr, err := bp.GetBuildExpression(r.target.Owner(), r.target.Name(), r.target.CommitUUID().String())
+		bpExpr, err := bp.GetBuildExpression(r.target.Owner(), r.target.Name(), commitID)
 		if err != nil {
 			return errs.Wrap(err, "Unable to get remote build expression")
 		}
-		r.store.StoreBuildExpression(bpExpr)
-		expr = []byte(bpExpr.String())
+		r.store.StoreBuildExpression(bpExpr, commitID)
+		expr = bpExpr.String()
 	}
 
-	if !script.EqualsBuildExpression(expr) {
+	if !script.EqualsBuildExpression([]byte(expr)) {
 		return &NeedsStageError{errs.New("Runtime changes should be staged")}
 	}
 

@@ -272,10 +272,35 @@ func (s *Store) StoreBuildPlan(build *bpModel.Build) error {
 	return nil
 }
 
-func (s *Store) BuildExpression() ([]byte, error) {
-	return fileutils.ReadFile(s.buildExpressionFile())
+type buildExpressionData struct {
+	CommitID string `json:"commitId"`
+	Expr     string `json:"buildExpression"`
 }
 
-func (s *Store) StoreBuildExpression(expr *bpModel.BuildExpression) error {
-	return fileutils.WriteFile(s.buildExpressionFile(), []byte(expr.String()))
+func (s *Store) GetAndValidateBuildExpression(commitID string) (string, error) {
+	contents, err := fileutils.ReadFile(s.buildExpressionFile())
+	if err != nil {
+		return "", errs.Wrap(err, "Could not read buildexpression file")
+	}
+
+	data := &buildExpressionData{}
+	err = json.Unmarshal(contents, data)
+	if err != nil {
+		return "", errs.Wrap(err, "Could not unmarshal buildexpression file")
+	}
+
+	if data.CommitID != commitID {
+		logging.Debug("buildexpression commitID mismatch")
+		return "", errs.New("The given buildexpression commitID does not match the stored one's commitID")
+	}
+
+	return data.Expr, nil
+}
+
+func (s *Store) StoreBuildExpression(expr *bpModel.BuildExpression, commitID string) error {
+	data, err := json.Marshal(buildExpressionData{commitID, expr.String()})
+	if err != nil {
+		return errs.Wrap(err, "Could not marshal buildexpression")
+	}
+	return fileutils.WriteFile(s.buildExpressionFile(), data)
 }
