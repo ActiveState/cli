@@ -63,6 +63,10 @@ func (s *Store) buildPlanFile() string {
 	return filepath.Join(s.storagePath, constants.RuntimeBuildPlanStore)
 }
 
+func (s *Store) buildExpressionFile() string {
+	return filepath.Join(s.storagePath, constants.BuildExpressionStore)
+}
+
 // BuildEngine returns the runtime build engine value stored in the runtime directory
 func (s *Store) BuildEngine() (model.BuildEngine, error) {
 	storeFile := s.buildEngineFile()
@@ -266,4 +270,12 @@ func (s *Store) StoreBuildPlan(build *bpModel.Build) error {
 		return errs.Wrap(err, "Could not write recipe file.")
 	}
 	return nil
+}
+
+func (s *Store) BuildExpression() ([]byte, error) {
+	return fileutils.ReadFile(s.buildExpressionFile())
+}
+
+func (s *Store) StoreBuildExpression(expr *bpModel.BuildExpression) error {
+	return fileutils.WriteFile(s.buildExpressionFile(), []byte(expr.String()))
 }

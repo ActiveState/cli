@@ -20,7 +20,6 @@ import (
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/rtutils/p"
-	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/buildscript"
@@ -67,34 +66,9 @@ func newRuntime(target setup.Targeter, an analytics.Dispatcher, svcModel *model.
 		auth:      auth,
 	}
 
-	if !rt.store.MarkerIsValid(target.CommitUUID()) {
-		if target.ReadOnly() {
-			logging.Debug("Using forced cache")
-		} else {
-			return rt, &NeedsUpdateError{errs.New("Runtime requires setup.")}
-		}
-	}
-
-	if target.ProjectDir() == "" || auth == nil {
-		return rt, nil
-	}
-
-	// Check if local build script has changes that should be staged.
-	if script, err := buildscript.NewScriptFromProjectDir(target.ProjectDir()); err == nil {
-		bp := model.NewBuildPlannerModel(auth)
-		if commitID, err := localcommit.Get(target.ProjectDir()); err == nil {
-			if expr, err := bp.GetBuildExpression(target.Owner(), target.Name(), commitID.String()); err == nil {
-				if !script.Equals(expr) {
-					return rt, &NeedsStageError{errs.New("Runtime changes should be staged")}
-				}
-			} else {
-				multilog.Error("Unable to get remote build expression: %v", errs.JoinMessage(err))
-			}
-		} else if !localcommit.IsFileDoesNotExistError(err) {
-			multilog.Error("Unable to get local commit: %v", errs.JoinMessage(err))
-		}
-	} else if !buildscript.IsDoesNotExistError(err) {
-		multilog.Error("Unable to get local build script: %v", errs.JoinMessage(err))
+	err := rt.validateCache()
+	if err != nil {
+		return nil, err // do not wrap; could be NeedsUpdateError, NeedsStageError, etc.
 	}
 
 	return rt, nil
@@ -122,6 +96,47 @@ func New(target setup.Targeter, an analytics.Dispatcher, svcm *model.SvcModel, a
 		})
 	}
 	return r, err
+}
+
+func (r *Runtime) validateCache() error {
+	if !r.store.MarkerIsValid(r.target.CommitUUID()) {
+		if r.target.ReadOnly() {
+			logging.Debug("Using forced cache")
+		} else {
+			return &NeedsUpdateError{errs.New("Runtime requires setup.")}
+		}
+	}
+
+	if r.target.ProjectDir() == "" {
+		return nil
+	}
+
+	// Check if local build script has changes that should be staged.
+	script, err := buildscript.NewScriptFromProjectDir(r.target.ProjectDir())
+	if err != nil {
+		if !buildscript.IsDoesNotExistError(err) {
+			return errs.Wrap(err, "Unable to get local build script")
+		}
+		return nil // build script does not exist, so there are no changes
+	}
+
+	expr, err := r.store.BuildExpression()
+	if err != nil {
+		logging.Debug("No local buildexpression for the current commit exists; fetching one")
+		bp := model.NewBuildPlannerModel(r.auth)
+		bpExpr, err := bp.GetBuildExpression(r.target.Owner(), r.target.Name(), r.target.CommitUUID().String())
+		if err != nil {
+			return errs.Wrap(err, "Unable to get remote build expression")
+		}
+		r.store.StoreBuildExpression(bpExpr)
+		expr = []byte(bpExpr.String())
+	}
+
+	if !script.EqualsBuildExpression(expr) {
+		return &NeedsStageError{errs.New("Runtime changes should be staged")}
+	}
+
+	return nil
 }
 
 func (r *Runtime) Disabled() bool {

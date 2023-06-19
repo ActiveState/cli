@@ -526,6 +526,10 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 		return nil, errs.Wrap(err, "Could not save recipe file.")
 	}
 
+	if err := s.store.StoreBuildExpression(buildResult.BuildExpression); err != nil {
+		return nil, errs.Wrap(err, "Could not save buildexpression file.")
+	}
+
 	if s.target.ProjectDir() != "" {
 		if err := buildscript.UpdateOrCreate(s.target.ProjectDir(), buildResult.BuildExpression); err != nil {
 			return nil, errs.Wrap(err, "Could not save build script.")

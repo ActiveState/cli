@@ -126,17 +126,19 @@ func (s *Exec) Run(params *Params, args ...string) (rerr error) {
 	s.out.Notice(locale.Tl("operating_message", "", projectNamespace, projectDir))
 
 	rt, err := runtime.New(rtTarget, s.analytics, s.svcModel, s.auth)
-	if err != nil && !runtime.IsNeedsStageError(err) {
-		if !runtime.IsNeedsUpdateError(err) {
+	if err != nil {
+		switch {
+		case runtime.IsNeedsUpdateError(err):
+			pg := runbits.NewRuntimeProgressIndicator(s.out)
+			defer rtutils.Closer(pg.Close, &rerr)
+			if err := rt.Update(pg); err != nil {
+				return locale.WrapError(err, "err_update_runtime", "Could not update runtime installation.")
+			}
+		case runtime.IsNeedsStageError(err):
+			s.out.Notice(locale.T("notice_stage"))
+		default:
 			return locale.WrapError(err, "err_activate_runtime", "Could not initialize a runtime for this project.")
 		}
-		pg := runbits.NewRuntimeProgressIndicator(s.out)
-		defer rtutils.Closer(pg.Close, &rerr)
-		if err := rt.Update(pg); err != nil {
-			return locale.WrapError(err, "err_update_runtime", "Could not update runtime installation.")
-		}
-	} else if runtime.IsNeedsStageError(err) {
-		s.out.Notice(locale.T("notice_stage"))
 	}
 	venv := virtualenvironment.New(rt)
 

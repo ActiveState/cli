@@ -25,33 +25,37 @@ func NewFromProject(
 	svcModel *model.SvcModel,
 	out output.Outputer,
 	auth *authentication.Auth) (_ *rt.Runtime, rerr error) {
-	projectTarget := target.NewProjectTarget(proj, nil, trigger)
-	rti, err := rt.New(projectTarget, an, svcModel, auth)
-	if err != nil && !rt.IsNeedsStageError(err) {
-		if !rt.IsNeedsUpdateError(err) {
+
+	rti, err := rt.New(target.NewProjectTarget(proj, nil, trigger), an, svcModel, auth)
+	if err != nil {
+		switch {
+		case rt.IsNeedsUpdateError(err):
+			pg := runbits.NewRuntimeProgressIndicator(out)
+			defer rtutils.Closer(pg.Close, &rerr)
+
+			if err = rti.Update(pg); err != nil {
+				if errs.Matches(err, &model.ErrOrderAuth{}) {
+					return nil, locale.WrapInputError(err, "err_update_auth", "Could not update runtime, if this is a private project you may need to authenticate with `[ACTIONABLE]state auth[/RESET]`")
+				}
+				if errs.Matches(err, &model.ErrNoMatchingPlatform{}) {
+					branches, err := model.BranchNamesForProjectFiltered(proj.Owner(), proj.Name(), proj.BranchName())
+					if err == nil && len(branches) > 1 {
+						return nil, locale.NewInputError("err_alternate_branches", "", proj.BranchName(), strings.Join(branches, "\n - "))
+					}
+				}
+				if !auth.Authenticated() {
+					return nil, locale.WrapError(err, "err_new_runtime_auth", "Could not update runtime installation. If this is a private project ensure that you are authenticated.")
+				}
+				return nil, locale.WrapError(err, "err_update_runtime", "Could not update runtime installation.")
+			}
+
+		case rt.IsNeedsStageError(err):
+			out.Notice(locale.T("notice_stage"))
+
+		default:
 			return nil, locale.WrapError(err, "err_activate_runtime", "Could not initialize a runtime for this project.")
 		}
-
-		pg := runbits.NewRuntimeProgressIndicator(out)
-		defer rtutils.Closer(pg.Close, &rerr)
-
-		if err = rti.Update(pg); err != nil {
-			if errs.Matches(err, &model.ErrOrderAuth{}) {
-				return nil, locale.WrapInputError(err, "err_update_auth", "Could not update runtime, if this is a private project you may need to authenticate with `[ACTIONABLE]state auth[/RESET]`")
-			}
-			if errs.Matches(err, &model.ErrNoMatchingPlatform{}) {
-				branches, err := model.BranchNamesForProjectFiltered(proj.Owner(), proj.Name(), proj.BranchName())
-				if err == nil && len(branches) > 1 {
-					return nil, locale.NewInputError("err_alternate_branches", "", proj.BranchName(), strings.Join(branches, "\n - "))
-				}
-			}
-			if !auth.Authenticated() {
-				return nil, locale.WrapError(err, "err_new_runtime_auth", "Could not update runtime installation. If this is a private project ensure that you are authenticated.")
-			}
-			return nil, locale.WrapError(err, "err_update_runtime", "Could not update runtime installation.")
-		}
-	} else if rt.IsNeedsStageError(err) {
-		out.Notice(locale.T("notice_stage"))
 	}
+
 	return rti, nil
 }

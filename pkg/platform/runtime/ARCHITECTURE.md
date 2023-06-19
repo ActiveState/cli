@@ -8,12 +8,16 @@ the ActiveState Platform.
 The general usage pattern is as follows:
 
 	rt, err := runtime.New(target)
-	if err != nil && !runtime.IsNeedsStageError(err) {
-		if !runtime.IsNeedsUpdateError(err) {
-			return err
-		}
-		if err = rt.Update(messageHandler); err != nil {
-			return err
+	if err != nil {
+		switch {
+			case runtime.IsNeedsUpdateError(err):
+				if err = rt.Update(messageHandler); err != nil {
+					return err
+				}
+			case runtime.IsNeedsStageError(err):
+				...
+			default:
+				return err
 		}
 	}
 
