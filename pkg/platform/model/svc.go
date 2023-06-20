@@ -133,23 +133,17 @@ func (m *SvcModel) CheckRuntimeUsage(ctx context.Context, organizationName strin
 	return &u.Usage, nil
 }
 
-func (m *SvcModel) CheckDeprecation(ctx context.Context) (*graph.DeprecationInfo, error) {
-	logging.Debug("Checking for deprecation")
-	defer profile.Measure("svc:CheckDeprecation", time.Now())
+func (m *SvcModel) CheckMessages(ctx context.Context, command string, flags []string) ([]*graph.MessageInfo, error) {
+	logging.Debug("Checking for messages")
+	defer profile.Measure("svc:CheckMessages", time.Now())
 
-	r := request.NewDeprecationRequest()
-	uu := graph.DeprecationResponse{}
-	if err := m.request(ctx, r, &uu); err != nil {
-		return nil, errs.Wrap(err, "Error sending deprecation request")
+	r := request.NewMessagingRequest(command, flags)
+	resp := graph.CheckMessagesResponse{}
+	if err := m.request(ctx, r, &resp); err != nil {
+		return nil, errs.Wrap(err, "Error sending messages request")
 	}
 
-	u := uu.CheckDeprecation
-	// TODO: https://activestatef.atlassian.net/browse/DX-866
-	if u.Date == "" {
-		return nil, nil
-	}
-
-	return &u, nil
+	return resp.Messages, nil
 }
 
 func (m *SvcModel) ConfigChanged(ctx context.Context, key string) error {

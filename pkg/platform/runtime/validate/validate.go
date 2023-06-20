@@ -10,9 +10,9 @@ import (
 	"encoding/pem"
 	"strings"
 
-	"github.com/ActiveState/cli/internal/download"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/httputil"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"go.mozilla.org/pkcs7"
@@ -100,7 +100,7 @@ func Attestation(attestationFile string) error {
 
 func addIntermediatesToPool(pool *x509.CertPool, cert *x509.Certificate) {
 	for _, url := range cert.IssuingCertificateURL {
-		bytes, err := download.GetDirect(url)
+		bytes, err := httputil.GetDirect(url)
 		if err != nil {
 			logging.Debug("Unable to download intermediate certificate %s: %v", url, err)
 			continue

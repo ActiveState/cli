@@ -9,7 +9,7 @@ type EditorV0 struct {
 // Error will marshal and print the given value to the error writer
 // NOTE that EditorV0 always prints to the output writer, the error writer is unused.
 func (f *EditorV0) Error(value interface{}) {
-	f.JSON.Print(value)
+	f.JSON.Print(toStructuredError(value))
 }
 
 // Type tells callers what type of outputer we are
@@ -22,7 +22,6 @@ func NewEditorV0(config *Config) (EditorV0, error) {
 	if err != nil {
 		return EditorV0{}, errs.Wrap(err, "NewJSON failed")
 	}
-	json.printNUL = false
 
 	return EditorV0{json}, nil
 }

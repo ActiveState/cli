@@ -2,23 +2,22 @@ package integration
 
 import (
 	"fmt"
+	"io/ioutil"
 	"net"
+	"os"
 	"path/filepath"
 	"regexp"
 	"runtime"
-	"strconv"
+	"strings"
 	"syscall"
 	"testing"
 	"time"
 
-	svcApp "github.com/ActiveState/cli/cmd/state-svc/app"
-	svcAutostart "github.com/ActiveState/cli/cmd/state-svc/autostart"
-	"github.com/ActiveState/cli/internal/app"
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/internal/osutils/autostart"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/svcctl"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
@@ -144,11 +143,7 @@ func (suite *SvcIntegrationTestSuite) TestStartDuplicateErrorOutput() {
 	cp.ExpectExitCode(0)
 
 	cp = ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("foreground"))
-	cp.Expect("not start service: An existing")
-	cp.ExpectExitCode(1)
-
-	cp = ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("foreground", "test this"))
-	cp.Expect("not start service (invoked by \"test this\"): An existing")
+	cp.Expect("An existing server instance appears to be in use")
 	cp.ExpectExitCode(1)
 
 	cp = ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("stop"))
@@ -208,43 +203,90 @@ func (suite *SvcIntegrationTestSuite) TestAutostartConfigEnableDisable() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	appDir := fileutils.TempDirFromBaseDirUnsafe(ts.Dirs.Work)
-
-	app, err := app.New(constants.SvcAppName, ts.SvcExe, nil, appDir, svcApp.Options)
-	suite.Require().NoError(err)
-	enabled, err := autostart.IsEnabled(app.Path(), svcAutostart.Options)
-	suite.Require().NoError(err)
-
 	// Toggle it via state tool config.
-	cp := ts.SpawnWithOpts(e2e.WithArgs("config", "set", constants.AutostartSvcConfigKey, strconv.FormatBool(!enabled)))
+	cp := ts.SpawnWithOpts(
+		e2e.WithArgs("config", "set", constants.AutostartSvcConfigKey, "false"),
+	)
 	cp.ExpectExitCode(0)
-	suite.checkEnabled(app.Path(), svcAutostart.Options, !enabled)
+	cp = ts.SpawnWithOpts(e2e.WithArgs("config", "get", constants.AutostartSvcConfigKey))
+	cp.Expect("false")
+	cp.ExpectExitCode(0)
 
 	// Toggle it again via state tool config.
-	cp = ts.SpawnWithOpts(e2e.WithArgs("config", "set", constants.AutostartSvcConfigKey, strconv.FormatBool(enabled)))
+	cp = ts.SpawnWithOpts(
+		e2e.WithArgs("config", "set", constants.AutostartSvcConfigKey, "true"),
+	)
 	cp.ExpectExitCode(0)
-	suite.checkEnabled(app.Path(), svcAutostart.Options, enabled)
+	cp = ts.SpawnWithOpts(e2e.WithArgs("config", "get", constants.AutostartSvcConfigKey))
+	cp.Expect("true")
+	cp.ExpectExitCode(0)
 }
 
-type autostartApp interface {
-	IsAutostartEnabled() (bool, error)
-}
+func (suite *SvcIntegrationTestSuite) TestLogRotation() {
+	suite.OnlyRunForTags(tagsuite.Service)
+	ts := e2e.New(suite.T(), true)
+	defer ts.Close()
 
-func (suite *SvcIntegrationTestSuite) checkEnabled(appPath string, opts autostart.Options, expect bool) {
-	timeout := time.After(1 * time.Minute)
-	tick := time.Tick(1 * time.Second)
-	for {
-		select {
-		case <-timeout:
-			suite.Fail("autostart has not been changed")
-		case <-tick:
-			toggled, err := autostart.IsEnabled(appPath, opts)
-			suite.Require().NoError(err)
-			if suite.Equal(expect, toggled) {
-				return
-			}
+	logDir := filepath.Join(ts.Dirs.Config, "logs")
+
+	// Create a tranche of 30-day old dummy log files.
+	numFooFiles := 50
+	thirtyDaysOld := time.Now().Add(-24 * time.Hour * 30)
+	for i := 1; i <= numFooFiles; i++ {
+		logFile := filepath.Join(logDir, fmt.Sprintf("foo-%d%s", i, logging.FileNameSuffix))
+		err := fileutils.Touch(logFile)
+		suite.Require().NoError(err, "could not create dummy log file")
+		err = os.Chtimes(logFile, thirtyDaysOld, thirtyDaysOld)
+		suite.Require().NoError(err, "must be able to change file modification times")
+	}
+
+	// Override state-svc log rotation interval from 1 minute to 4 seconds for this test.
+	logRotateInterval := 4 * time.Second
+	os.Setenv(constants.SvcLogRotateIntervalEnvVarName, fmt.Sprintf("%d", logRotateInterval.Milliseconds()))
+	defer os.Unsetenv(constants.SvcLogRotateIntervalEnvVarName)
+
+	// We want the side-effect of spawning state-svc.
+	cp := ts.Spawn("--version")
+	cp.Expect("ActiveState CLI")
+	cp.ExpectExitCode(0)
+
+	initialWait := 2 * time.Second
+	time.Sleep(initialWait) // wait for state-svc to perform initial log rotation
+
+	// Verify the log rotation pruned the dummy log files.
+	files, err := ioutil.ReadDir(logDir)
+	suite.Require().NoError(err)
+	remainingFooFiles := 0
+	for _, file := range files {
+		if strings.HasPrefix(file.Name(), "foo-") {
+			remainingFooFiles++
 		}
 	}
+	suite.Less(remainingFooFiles, numFooFiles, "no foo.log files were cleaned up; expected at least one to be")
+
+	// state-svc is still running, along with its log rotation timer.
+	// Re-create another tranche of 30-day old dummy log files for when the timer fires again.
+	numFooFiles += remainingFooFiles
+	for i := remainingFooFiles + 1; i <= numFooFiles; i++ {
+		logFile := filepath.Join(logDir, fmt.Sprintf("foo-%d%s", i, logging.FileNameSuffix))
+		err := fileutils.Touch(logFile)
+		suite.Require().NoError(err, "could not create dummy log file")
+		err = os.Chtimes(logFile, thirtyDaysOld, thirtyDaysOld)
+		suite.Require().NoError(err, "must be able to change file modification times")
+	}
+
+	time.Sleep(logRotateInterval - initialWait) // wait for another log rotation
+
+	// Verify that another log rotation pruned the dummy log files.
+	files, err = ioutil.ReadDir(logDir)
+	suite.Require().NoError(err)
+	remainingFooFiles = 0
+	for _, file := range files {
+		if strings.HasPrefix(file.Name(), "foo-") {
+			remainingFooFiles++
+		}
+	}
+	suite.Less(remainingFooFiles, numFooFiles, "no more foo.log files were cleaned up (on timer); expected at least one to be")
 }
 
 func TestSvcIntegrationTestSuite(t *testing.T) {

@@ -1042,10 +1042,6 @@ err_replaceall_check_log:
   other: "Error occurred while replacing file contents, please check the error log or contact support."
 err_bad_project_url:
   other: "Invalid value for 'project' field in your activestate.yaml, please ensure it is in the format of: 'https://platform.activestate.com/org/project'."
-err_deprection_404:
-  other: Could not check for deprecation as the service returned a 404 not found
-err_deprection_code:
-  other: Could not check for deprecation as the service returned a code [NOTICE]{{.V0}}[/RESET]
 err_set_commit_id:
   other: "Could not update your activestate.yaml with the latest commit ID. Please ensure you have your project defined in the format of [ACTIONABLE]`project: https://platform.activestate.com/org/project`[/RESET]"
 err_set_project:
@@ -1244,18 +1240,19 @@ err_init_lang:
   other: "Invalid language: {{.V0}}@{{.V1}}"
 init_success:
   other: |
-    Project '[NOTICE]{{.V0}}/{{.V1}}[/RESET]' has been successfully initialized at '[NOTICE]{{.V2}}[/RESET]'.
+    Project '[NOTICE]{{.V0}}[/RESET]' has been successfully initialized at '[NOTICE]{{.V1}}[/RESET]' and pushed to the Platform.
     You can start using your project with [ACTIONABLE]`state shell`[/RESET] and [ACTIONABLE]`state use`[/RESET].
+    For editors and other tooling use the executables at: [ACTIONABLE]{{.V2}}[/RESET].
 arg_state_init_namespace:
   other: org/project
 arg_state_init_namespace_description:
   other: The namespace for the project that you wish to initialize
-arg_state_init_language:
-  other: Language[@version]
-arg_state_init_language_description:
-  other: The language that this project should use, and optionally the version of that language
-flag_state_init_path_description:
-  other: Where to initialize the project
+flag_state_init_language_description:
+  other: "The Language[@version] that this project should use"
+arg_state_init_path:
+  other: path
+arg_state_init_path_description:
+  other: "Where to initialize the project"
 err_wd:
   other: Could not retrieve the working directory
 err_invalid_output_format:
@@ -1297,6 +1294,8 @@ field_localized_field:
   other: "Localized Field"
 err_could_not_marshal_print:
   other: "Could not marshal the value being printed, please check the error log for more information."
+err_no_structured_output:
+  other: "This command does not support the {{.V0}} output format. Please try again without that output flag."
 err_main_outputer:
   other: "Could not create output writer, please contact developers if this problem persists. Error: {{.V0}}"
 field_name:
@@ -1514,7 +1513,7 @@ err_corrupted_build_request_response:
 err_arg_required:
   other: "The following argument is required:\n  Name: [NOTICE]{{.V0}}[/RESET]\n  Description: [NOTICE]{{.V1}}[/RESET]"
 err_init_no_language:
-  other: "You need to supply the [NOTICE]language[/RESET] argument, run '[ACTIONABLE]state init --help[/RESET]' for more information."
+  other: "A project has not been set using 'state use'. You must include the [NOTICE]language[/RESET] argument. For more help, run '[ACTIONABLE]state init --help[/RESET]'."
 err_bad_platform_version:
   other: You have to supply a platform version.
 platform_added:
@@ -2005,6 +2004,10 @@ checkout_project_statement:
   other: |
     Checked out project [ACTIONABLE]{{.V0}}[/RESET], located at [ACTIONABLE]{{.V1}}[/RESET].
     For editors and other tooling use the executables at: [ACTIONABLE]{{.V2}}[/RESET].
+refresh_project_statement:
+  other: |
+    Runtime updated for project [ACTIONABLE]{{.V0}}[/RESET], located at [ACTIONABLE]{{.V1}}[/RESET].
+    For editors and other tooling use the executables at: [ACTIONABLE]{{.V2}}[/RESET].
 export_project_statement:
   other: Exporting env for project [ACTIONABLE]{{.V0}}[/RESET] located at [ACTIONABLE]{{.V1}}[/RESET].
 err_rtprogress_outofsync:
@@ -2043,3 +2046,9 @@ runtime_limit_reached_action:
   other: Upgrade
 pjfile_deprecation_entry:
   other: " - '[ACTIONABLE]{{.V0}}[/RESET]' located at byte [ACTIONABLE]{{.V1}}[/RESET]"
+err_init_authenticated:
+  other: You need to be authenticated to initialize a project. Authenticate by running [ACTIONABLE]`state auth`[/RESET].
+err_country_blocked:
+  other: This service is not available in your region.
+err_shortcutdir_writable:
+  other: Could not continue as we don't have permission to create [ACTIONABLE]{{.V0}}[/RESET].

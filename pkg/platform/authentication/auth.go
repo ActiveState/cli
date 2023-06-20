@@ -6,7 +6,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/ActiveState/cli/internal/ci/gcloud"
 	"github.com/ActiveState/cli/internal/colorize"
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/config"
@@ -24,7 +23,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/authentication"
 	apiAuth "github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/authentication"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
-	"github.com/ActiveState/cli/pkg/platform/model/auth"
+	model "github.com/ActiveState/cli/pkg/platform/model/auth"
 	"github.com/go-openapi/runtime"
 	httptransport "github.com/go-openapi/runtime/client"
 	"github.com/go-openapi/strfmt"
@@ -441,16 +440,7 @@ func (s *Auth) NewAPIKey(name string) (string, error) {
 }
 
 func (s *Auth) AvailableAPIToken() (v string) {
-	tkn, err := gcloud.GetSecret(constants.APIKeyEnvVarName)
-	if err != nil && !errors.Is(err, gcloud.ErrNotAvailable{}) {
-		multilog.Error("Could not retrieve gcloud secret: %v", err)
-	}
-	if err == nil && tkn != "" {
-		logging.Debug("Using api token sourced from gcloud")
-		return tkn
-	}
-
-	if tkn = os.Getenv(constants.APIKeyEnvVarName); tkn != "" {
+	if tkn := os.Getenv(constants.APIKeyEnvVarName); tkn != "" {
 		logging.Debug("Using API token passed via env var")
 		return tkn
 	}

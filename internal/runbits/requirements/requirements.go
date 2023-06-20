@@ -78,14 +78,6 @@ func NewRequirementOperation(prime primeable) *RequirementOperation {
 
 const latestVersion = "latest"
 
-type RequirementOperationParams struct {
-	RequirementName     string
-	RequirementVersion  string
-	RequirementBitWidth int
-	Operation           model.Operation
-	NsType              model.NamespaceType
-}
-
 func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requirementVersion string, requirementBitWidth int, operation model.Operation, nsType model.NamespaceType) (rerr error) {
 	var ns model.Namespace
 	var langVersion string
@@ -182,6 +174,10 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 			}
 			return locale.WrapInputError(err, "package_ingredient_alternatives", "", requirementName, strings.Join(suggestions, "\n"))
 		}
+		if name := packages[0].Ingredient.Name; name != nil && requirementName != *name {
+			logging.Debug("Requirement to install's letter case differs from Platform's ('%s' != '%s')", requirementName, *name)
+			requirementName = *name // match case
+		}
 
 		pg.Stop(locale.T("progress_found"))
 		pg = nil
@@ -261,18 +257,30 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 		}
 	}
 
-	// Print the result
 	if !hasParentCommit {
-		out.Print(locale.Tr("install_initial_success", pj.Source().Path()))
+		out.Notice(locale.Tr("install_initial_success", pj.Source().Path()))
 	}
 
-	if requirementVersion != "" {
-		out.Print(locale.Tr(fmt.Sprintf("%s_version_%s", ns.Type(), operation), requirementName, requirementVersion))
-	} else {
-		out.Print(locale.Tr(fmt.Sprintf("%s_%s", ns.Type(), operation), requirementName))
+	// Print the result
+	message := locale.Tr(fmt.Sprintf("%s_version_%s", ns.Type(), operation), requirementName, requirementVersion)
+	if requirementVersion == "" {
+		message = locale.Tr(fmt.Sprintf("%s_%s", ns.Type(), operation), requirementName)
 	}
+	out.Print(output.Prepare(
+		message,
+		&struct {
+			Name      string `json:"name"`
+			Version   string `json:"version,omitempty"`
+			Type      string `json:"type"`
+			Operation string `json:"operation"`
+		}{
+			requirementName,
+			requirementVersion,
+			ns.Type().String(),
+			string(operation),
+		}))
 
-	out.Print(locale.T("operation_success_local"))
+	out.Notice(locale.T("operation_success_local"))
 
 	return nil
 }

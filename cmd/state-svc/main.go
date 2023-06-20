@@ -74,7 +74,7 @@ func main() {
 
 	runErr := run(cfg)
 	if runErr != nil {
-		errMsg := errs.Join(runErr, ": ").Error()
+		errMsg := errs.JoinMessage(runErr)
 		if locale.IsInputError(runErr) {
 			logging.Debug("state-svc errored out due to input: %s", errMsg)
 		} else {
@@ -89,10 +89,6 @@ func main() {
 func run(cfg *config.Instance) error {
 	args := os.Args
 
-	auth := authentication.New(cfg)
-	an := anaSync.New(cfg, auth)
-	defer an.Wait()
-
 	out, err := output.New("", &output.Config{
 		OutWriter: os.Stdout,
 		ErrWriter: os.Stderr,
@@ -100,6 +96,10 @@ func run(cfg *config.Instance) error {
 	if err != nil {
 		return errs.Wrap(err, "Could not initialize outputer")
 	}
+
+	auth := authentication.New(cfg)
+	an := anaSync.New(cfg, auth, out)
+	defer an.Wait()
 
 	if err := autostart.RegisterConfigListener(cfg); err != nil {
 		return errs.Wrap(err, "Could not register config listener")
@@ -187,6 +187,8 @@ func runForeground(cfg *config.Instance, an *anaSync.Client, auth *authenticatio
 
 	logFile := logging.FilePath()
 	logging.Debug("Logging to %q", logFile)
+	stopTimer := logging.StartRotateLogTimer()
+	defer stopTimer()
 
 	p := NewService(ctx, cfg, an, auth, logFile)
 

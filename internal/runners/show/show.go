@@ -50,27 +50,28 @@ type primeable interface {
 }
 
 type RuntimeDetails struct {
-	Name         string `locale:"state_show_details_name,Name"`
-	Organization string `locale:"state_show_details_organization,Organization"`
-	NameSpace    string `locale:"state_show_details_namespace,Namespace"`
-	Location     string `locale:"state_show_details_location,Location"`
-	Executables  string `locale:"state_show_details_executables,Executables"`
-	Visibility   string `locale:"state_show_details_visibility,Visibility"`
-	LastCommit   string `locale:"state_show_details_latest_commit,Latest Commit"`
+	Name         string `json:"name" locale:"state_show_details_name,Name"`
+	Organization string `json:"organization" locale:"state_show_details_organization,Organization"`
+	NameSpace    string `json:"namespace" locale:"state_show_details_namespace,Namespace"`
+	Location     string `json:"location" locale:"state_show_details_location,Location"`
+	Executables  string `json:"executables" locale:"state_show_details_executables,Executables"`
+	Visibility   string `json:"visibility" locale:"state_show_details_visibility,Visibility"`
+	LastCommit   string `json:"last_commit" locale:"state_show_details_latest_commit,Latest Commit"`
 }
 
-type outputDataPrinter struct {
+type showOutput struct {
 	output output.Outputer
 	data   outputData
 }
+
 type outputData struct {
-	ProjectURL string `locale:"project_url,Project URL"`
+	ProjectURL string `json:"project_url" locale:"project_url,Project URL"`
 	RuntimeDetails
-	Platforms []platformRow
-	Languages []languageRow
-	Secrets   *secretOutput     `locale:"secrets,Secrets"`
-	Events    []string          `json:",omitempty"`
-	Scripts   map[string]string `json:",omitempty"`
+	Platforms []platformRow     `json:"platforms"`
+	Languages []languageRow     `json:"languages"`
+	Secrets   *secretOutput     `json:"secrets" locale:"secrets,Secrets"`
+	Events    []string          `json:"events,omitempty"`
+	Scripts   map[string]string `json:"scripts,omitempty"`
 }
 
 func formatScripts(scripts map[string]string) string {
@@ -94,27 +95,27 @@ func formatSlice(slice []string) string {
 	return strings.Join(res, "\n")
 }
 
-func (od *outputDataPrinter) MarshalOutput(format output.Format) interface{} {
-	if format != output.PlainFormatName {
-		return od.data
-	}
-
-	od.output.Print(locale.Tl("show_details_intro", "Here are the details of your runtime environment.\n"))
-	od.output.Print(
+func (o *showOutput) MarshalOutput(format output.Format) interface{} {
+	o.output.Print(locale.Tl("show_details_intro", "Here are the details of your runtime environment.\n"))
+	o.output.Print(
 		struct {
 			*RuntimeDetails `opts:"verticalTable"`
-		}{&od.data.RuntimeDetails},
+		}{&o.data.RuntimeDetails},
 	)
-	od.output.Print(output.Title(locale.Tl("state_show_events_header", "Events")))
-	od.output.Print(formatSlice(od.data.Events))
-	od.output.Print(output.Title(locale.Tl("state_show_scripts_header", "Scripts")))
-	od.output.Print(formatScripts(od.data.Scripts))
-	od.output.Print(output.Title(locale.Tl("state_show_platforms_header", "Platforms")))
-	od.output.Print(od.data.Platforms)
-	od.output.Print(output.Title(locale.Tl("state_show_languages_header", "Languages")))
-	od.output.Print(od.data.Languages)
+	o.output.Print(output.Title(locale.Tl("state_show_events_header", "Events")))
+	o.output.Print(formatSlice(o.data.Events))
+	o.output.Print(output.Title(locale.Tl("state_show_scripts_header", "Scripts")))
+	o.output.Print(formatScripts(o.data.Scripts))
+	o.output.Print(output.Title(locale.Tl("state_show_platforms_header", "Platforms")))
+	o.output.Print(o.data.Platforms)
+	o.output.Print(output.Title(locale.Tl("state_show_languages_header", "Languages")))
+	o.output.Print(o.data.Languages)
 
 	return output.Suppress
+}
+
+func (o *showOutput) MarshalStructured(format output.Format) interface{} {
+	return o.data
 }
 
 type secretOutput struct {
@@ -261,8 +262,7 @@ func (s *Show) Run(params Params) error {
 		Scripts:        scripts,
 	}
 
-	odp := &outputDataPrinter{s.out, outputData}
-	s.out.Print(odp)
+	s.out.Print(&showOutput{s.out, outputData})
 
 	return nil
 }

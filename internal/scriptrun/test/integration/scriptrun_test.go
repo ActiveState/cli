@@ -115,7 +115,7 @@ func (suite *ScriptRunSuite) TestEnvIsSet() {
 	out := capturer.CaptureOutput(func() {
 		scriptRun := scriptrun.New(authentication.LegacyGet(), outputhelper.NewCatcher(), subshell.New(cfg), proj, cfg, blackhole.New(), nil)
 		err = scriptRun.Run(proj.ScriptByName("run"), nil)
-		assert.NoError(t, err, "Error: "+errs.Join(err, ": ").Error())
+		assert.NoError(t, err, "Error: "+errs.JoinMessage(err))
 	})
 
 	assert.Contains(t, out, constants.ActivatedStateEnvVarName)

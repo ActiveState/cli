@@ -59,20 +59,17 @@ func New(prime primeable) *Pull {
 	}
 }
 
-type outputFormat struct {
-	Message string `locale:"message,Message"`
-	Success bool   `locale:"success,Success"`
+type pullOutput struct {
+	Message string `locale:"message,Message" json:"message"`
+	Success bool   `locale:"success,Success" json:"success"`
 }
 
-func (f *outputFormat) MarshalOutput(format output.Format) interface{} {
-	switch format {
-	case output.EditorV0FormatName:
-		return f.editorV0Format()
-	case output.PlainFormatName:
-		return f.Message
-	}
+func (o *pullOutput) MarshalOutput(format output.Format) interface{} {
+	return o.Message
+}
 
-	return f
+func (o *pullOutput) MarshalStructured(format output.Format) interface{} {
+	return o
 }
 
 func (p *Pull) Run(params *PullParams) error {
@@ -154,12 +151,12 @@ func (p *Pull) Run(params *PullParams) error {
 			return locale.WrapError(err, "err_pull_update", "Cannot update the commit in your project file.")
 		}
 
-		p.out.Print(&outputFormat{
+		p.out.Print(&pullOutput{
 			locale.Tr("pull_updated", remoteProject.String(), resultingCommit.String()),
 			true,
 		})
 	} else {
-		p.out.Print(&outputFormat{
+		p.out.Print(&pullOutput{
 			locale.Tl("pull_not_updated", "Your activestate.yaml is already up to date."),
 			false,
 		})

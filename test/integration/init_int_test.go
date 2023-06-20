@@ -31,9 +31,16 @@ func (suite *InitIntegrationTestSuite) TestInit_Path() {
 	suite.runInitTest(true, "python3", "python3")
 }
 
-func (suite *InitIntegrationTestSuite) TestInit_Version() {
+func (suite *InitIntegrationTestSuite) TestInit_BadVersion() {
 	suite.OnlyRunForTags(tagsuite.Init)
-	suite.runInitTest(false, "python3@1.0", "python3")
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+	ts.LoginAsPersistentUser()
+
+	cp := ts.Spawn("init", "--language", "python3@1.0", "test-user/test-project")
+	cp.Expect("version")
+	cp.Expect("cannot be found")
+	cp.ExpectNotExitCode(0)
 }
 
 func (suite *InitIntegrationTestSuite) TestInit_DisambiguatePython() {
@@ -51,13 +58,14 @@ func (suite *InitIntegrationTestSuite) runInitTest(addPath bool, lang string, ex
 	// Generate a new namespace for the project to be created.
 	pname := strutils.UUID()
 	namespace := fmt.Sprintf("%s/%s", e2e.PersistentUsername, pname)
-	computedArgs := append([]string{"init", namespace, lang}, args...)
+	computedArgs := append([]string{"init", "--language", lang, namespace}, args...)
 	if addPath {
-		computedArgs = append(computedArgs, "--path", ts.Dirs.Work)
+		computedArgs = append(computedArgs, ts.Dirs.Work)
 	}
 
 	// Run `state init`, creating the project.
 	cp := ts.Spawn(computedArgs...)
+	cp.Expect("Skipping runtime setup")
 	cp.ExpectLongString(fmt.Sprintf("Project '%s' has been successfully initialized", namespace))
 	cp.ExpectExitCode(0)
 	ts.NotifyProjectCreated(e2e.PersistentUsername, pname.String())
@@ -82,7 +90,7 @@ func (suite *InitIntegrationTestSuite) runInitTest(addPath bool, lang string, ex
 			"Shell":    shell,
 			"Language": expectedConfigLanguage,
 			"LangExe":  language.MakeByName(expectedConfigLanguage).Executable().Filename(),
-		})
+		}, nil)
 
 	content, err := ioutil.ReadFile(configFilepath)
 	suite.Require().NoError(err)
@@ -119,11 +127,21 @@ func (suite *InitIntegrationTestSuite) TestInit_InferLanguageFromUse() {
 	pname := strutils.UUID()
 	namespace := fmt.Sprintf("%s/%s", e2e.PersistentUsername, pname)
 	cp = ts.Spawn("init", namespace)
+	cp.Expect("Skipping runtime setup")
 	cp.Expect("successfully initialized")
 	cp.ExpectExitCode(0)
 	ts.NotifyProjectCreated(e2e.PersistentUsername, pname.String())
 
 	suite.Contains(string(fileutils.ReadFileUnsafe(filepath.Join(ts.Dirs.Work, constants.ConfigFileName))), "language: python3")
+}
+
+func (suite *InitIntegrationTestSuite) TestInit_NotAuthenticated() {
+	suite.OnlyRunForTags(tagsuite.Init)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.Spawn("init", "test-user/test-project", "python3")
+	cp.ExpectLongString("You need to be authenticated to initialize a project.")
 }
 
 func TestInitIntegrationTestSuite(t *testing.T) {

@@ -28,7 +28,11 @@ func (j *JWT) Run(params *JWTParams) error {
 	}
 
 	token := authentication.LegacyGet().BearerToken()
-	j.Outputer.Print(
-		output.NewFormatter(token).WithFormat(output.EditorV0FormatName, []byte(token)))
+	j.Outputer.Print(output.Prepare(
+		token,
+		&struct {
+			Value string `json:"value"`
+		}{token},
+	))
 	return nil
 }

@@ -67,6 +67,22 @@ events:
 	}
 }
 
+func (suite *EventsIntegrationTestSuite) TestJSON() {
+	suite.OnlyRunForTags(tagsuite.Events, tagsuite.JSON)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.Spawn("checkout", "ActiveState-CLI/Python3", ".")
+	cp.Expect("Skipping runtime setup")
+	cp.Expect("Checked out")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("events", "-o", "json")
+	cp.Expect(`[{"event":`)
+	cp.ExpectExitCode(0)
+	AssertValidJSON(suite.T(), cp)
+}
+
 func TestEventsIntegrationTestSuite(t *testing.T) {
 	suite.Run(t, new(EventsIntegrationTestSuite))
 }

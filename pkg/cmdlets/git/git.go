@@ -55,8 +55,8 @@ func (r *Repo) CloneProject(owner, name, path string, out output.Outputer, an an
 		return locale.NewError("err_nil_repo_url", "Project returned empty repository URL")
 	}
 
-	out.Print(output.Title(locale.Tr("git_cloning_project_heading")))
-	out.Print(locale.Tr("git_cloning_project", *project.RepoURL))
+	out.Notice(output.Title(locale.Tr("git_cloning_project_heading")))
+	out.Notice(locale.Tr("git_cloning_project", *project.RepoURL))
 	_, err = plainClone(tempDir, false, &git.CloneOptions{
 		URL:      *project.RepoURL,
 		Progress: os.Stdout,

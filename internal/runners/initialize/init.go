@@ -1,9 +1,11 @@
 package initialize
 
 import (
+	"os"
 	"path/filepath"
 	"strings"
 
+	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -14,7 +16,11 @@ import (
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
+	"github.com/ActiveState/cli/internal/runbits"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
+	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
@@ -29,18 +35,24 @@ type RunParams struct {
 
 // Initialize stores scope-related dependencies.
 type Initialize struct {
-	config projectfile.ConfigGetter
-	out    output.Outputer
+	auth      *authentication.Auth
+	config    projectfile.ConfigGetter
+	out       output.Outputer
+	analytics analytics.Dispatcher
+	svcModel  *model.SvcModel
 }
 
 type primeable interface {
+	primer.Auther
 	primer.Configurer
 	primer.Outputer
+	primer.Analyticer
+	primer.SvcModeler
 }
 
 // New returns a prepared ptr to Initialize instance.
 func New(prime primeable) *Initialize {
-	return &Initialize{prime.Config(), prime.Output()}
+	return &Initialize{prime.Auth(), prime.Config(), prime.Output(), prime.Analytics(), prime.SvcModel()}
 }
 
 // inferLanguage tries to infer a reasonable default language from the project currently in use
@@ -67,8 +79,12 @@ func inferLanguage(config projectfile.ConfigGetter) (string, string, bool) {
 	return lang.Name, lang.Version, true
 }
 
-func (r *Initialize) Run(params *RunParams) error {
+func (r *Initialize) Run(params *RunParams) (rerr error) {
 	logging.Debug("Init: %s/%s %v", params.Namespace.Owner, params.Namespace.Project, params.Private)
+
+	if !r.auth.Authenticated() {
+		return locale.NewInputError("err_init_authenticated")
+	}
 
 	path := params.Path
 	if path == "" {
@@ -100,7 +116,7 @@ func (r *Initialize) Run(params *RunParams) error {
 	}
 
 	if languageName == "" {
-		return locale.NewInputError("err_init_no_language", "You need to supply the [NOTICE]language[/RESET] argument, run [ACTIONABLE]`state init --help`[/RESET] for more information.")
+		return locale.NewInputError("err_init_no_language")
 	}
 
 	lang, err := language.MakeByNameAndVersion(languageName, languageVersion)
@@ -120,6 +136,12 @@ func (r *Initialize) Run(params *RunParams) error {
 		}
 	}
 
+	version := deriveVersion(lang, languageVersion)
+
+	if err := verifyLangAndVersion(lang.Requirement(), version); err != nil {
+		return locale.WrapError(err, "err_init_verify_version", "Could not verify language")
+	}
+
 	createParams := &projectfile.CreateParams{
 		Owner:     params.Namespace.Owner,
 		Project:   params.Namespace.Project,
@@ -133,12 +155,31 @@ func (r *Initialize) Run(params *RunParams) error {
 		return locale.WrapError(err, "err_init_pjfile", "Could not create project file")
 	}
 
+	// If an error occurs, remove the created activestate.yaml file so the user can try again.
+	defer func() {
+		if rerr == nil {
+			return
+		}
+		err := os.Remove(pjfile.Path())
+		if err != nil {
+			multilog.Error("Failed to remove activestate.yaml after `state init` error: %v", err)
+			return
+		}
+		if cwd, err := osutils.Getwd(); err == nil {
+			if createdDir := filepath.Dir(pjfile.Path()); createdDir != cwd {
+				err2 := os.RemoveAll(createdDir)
+				if err2 != nil {
+					multilog.Error("Failed to remove created directory after `state init` error: %v", err2)
+				}
+			}
+		}
+	}()
+
 	proj, err := project.New(pjfile, r.out)
 	if err != nil {
 		return err
 	}
 
-	version := deriveVersion(lang, languageVersion)
 	commitID, err := model.CommitInitial(model.HostPlatform, lang.Requirement(), version)
 	if err != nil {
 		return locale.WrapError(err, "err_init_commit", "Could not create initial commit")
@@ -165,16 +206,62 @@ func (r *Initialize) Run(params *RunParams) error {
 		return locale.WrapError(err, "err_init_push", "Failed to push to the newly created Platform project at {{.V0}}", params.Namespace.String())
 	}
 
+	err = runbits.RefreshRuntime(r.auth, r.out, r.analytics, proj, commitID, true, target.TriggerInit, r.svcModel)
+	if err != nil {
+		return locale.WrapError(err, "err_init_refresh", "Could not setup runtime after init")
+	}
+
 	projectfile.StoreProjectMapping(r.config, params.Namespace.String(), filepath.Dir(proj.Source().Path()))
 
-	r.out.Notice(locale.Tr(
-		"init_success",
-		params.Namespace.Owner,
-		params.Namespace.Project,
-		path,
+	projectTarget := target.NewProjectTarget(proj, nil, "").Dir()
+	executables := setup.ExecDir(projectTarget)
+
+	r.out.Print(output.Prepare(
+		locale.Tr("init_success", params.Namespace.String(), path, executables),
+		&struct {
+			Namespace   string `json:"namespace"`
+			Path        string `json:"path" `
+			Executables string `json:"executables"`
+		}{
+			params.Namespace.String(),
+			path,
+			executables,
+		},
 	))
 
 	return nil
+}
+
+func verifyLangAndVersion(lang, version string) error {
+	pkgs, err := model.SearchIngredientsStrict(model.NewNamespaceLanguage(), lang, false, true)
+	if err != nil {
+		return locale.WrapError(err, "err_init_verify_language", "Inventory search failed unexpectedly")
+	}
+
+	if len(pkgs) == 0 {
+		return locale.NewInputError("err_init_language_not_found", "The selected language cannot be found")
+	}
+
+	for _, pkg := range pkgs {
+		if pkg.Version == version {
+			return nil
+		}
+	}
+
+	return errs.AddTips(
+		locale.NewInputError(
+			"err_init_language_version_not_found",
+			"The selected version of the language cannot be found",
+		),
+		locale.Tl(
+			"version_not_found_check_format",
+			"Please ensure that the version format is valid.",
+		),
+		locale.Tl(
+			"version_not_found_suggest_micro",
+			"Additional detail may help. For example, '3.10.0' rather than '3.10'",
+		),
+	)
 }
 
 func deriveVersion(lang language.Language, version string) string {

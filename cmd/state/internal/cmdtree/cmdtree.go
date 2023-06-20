@@ -312,7 +312,7 @@ func newStateCommand(globals *globalOptions, prime *primer.Values) *captain.Comm
 	cmdCall := cmdcall.New(prime)
 
 	cmd.SetHasVariableArguments()
-	cmd.SetInterceptChain(cmdCall.InterceptExec)
+	cmd.AppendInterceptChain(cmdCall.InterceptExec)
 
 	return cmd
 }
@@ -326,6 +326,10 @@ func (ct *CmdTree) Execute(args []string) error {
 // Command returns the root command of the CmdTree
 func (ct *CmdTree) Command() *captain.Command {
 	return ct.cmd
+}
+
+func (ct *CmdTree) AppendInterceptChain(fns ...captain.InterceptFunc) {
+	ct.cmd.AppendInterceptChain(fns...)
 }
 
 type addCmdAs struct {

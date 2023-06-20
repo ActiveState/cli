@@ -173,7 +173,9 @@ func (suite *BundleIntegrationTestSuite) TestBundle_headless_operation() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	cp := ts.Spawn("activate", "ActiveState/Perl-5.32", "--path", ts.Dirs.Work, "--output=json")
+	cp := ts.Spawn("checkout", "ActiveState/Perl-5.32", ".")
+	cp.Expect("Skipping runtime setup")
+	cp.Expect("Checked out project")
 	cp.ExpectExitCode(0)
 
 	suite.Run("install non-existing", func() {
@@ -207,6 +209,33 @@ func (suite *BundleIntegrationTestSuite) TestBundle_headless_operation() {
 func (suite *BundleIntegrationTestSuite) PrepareActiveStateYAML(ts *e2e.Session) {
 	asyData := `project: "https://platform.activestate.com/ActiveState/Perl-5.32?commitID=c9b1b41a-a153-46fb-b18d-3caa38e19377"`
 	ts.PrepareActiveStateYAML(asyData)
+}
+
+func (suite *BundleIntegrationTestSuite) TestJSON() {
+	suite.OnlyRunForTags(tagsuite.Bundle, tagsuite.JSON)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.Spawn("bundles", "search", "Email", "--language", "Perl", "-o", "json")
+	cp.Expect(`"package":"Email"`)
+	cp.ExpectExitCode(0)
+	AssertValidJSON(suite.T(), cp)
+
+	cp = ts.SpawnWithOpts(
+		e2e.WithArgs("bundles", "install", "Testing", "--output", "json"),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
+	cp.Expect(`"name":"Testing"`)
+	cp.ExpectExitCode(0)
+	AssertValidJSON(suite.T(), cp)
+
+	cp = ts.SpawnWithOpts(
+		e2e.WithArgs("bundles", "uninstall", "Testing", "-o", "editor"),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
+	cp.Expect(`"name":"Testing"`)
+	cp.ExpectExitCode(0)
+	AssertValidJSON(suite.T(), cp)
 }
 
 func TestBundleIntegrationTestSuite(t *testing.T) {

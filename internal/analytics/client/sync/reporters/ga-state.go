@@ -94,8 +94,8 @@ func legacyDimensionMap(d *dimensions.Values) map[string]string {
 		"19": p.PStr(d.CommitID),
 		"20": p.PStr(d.Command),
 		"21": strconv.Itoa(p.PInt(d.Sequence)),
-		// "22": strconv.FormatBool(p.PBool(d.CI)), // TODO: uncomment in DX-1820
-		// "23": strconv.FormatBool(p.PBool(d.Interactive)), // TODO: uncomment in DX-1820
+		"22": strconv.FormatBool(p.PBool(d.CI)),
+		"23": strconv.FormatBool(p.PBool(d.Interactive)),
 		"24": p.PStr(d.TargetVersion),
 		"25": p.PStr(d.Error),
 	}

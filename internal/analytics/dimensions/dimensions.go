@@ -42,6 +42,8 @@ type Values struct {
 	Sequence         *int
 	TargetVersion    *string
 	Error            *string
+	CI               *bool
+	Interactive      *bool
 
 	preProcessor func(*Values) error
 }
@@ -49,7 +51,7 @@ type Values struct {
 func NewDefaultDimensions(pjNamespace, sessionToken, updateTag string) *Values {
 	installSource, err := storage.InstallSource()
 	if err != nil {
-		multilog.Error("Could not detect installSource: %s", errs.Join(err, " :: ").Error())
+		multilog.Error("Could not detect installSource: %s", errs.JoinMessage(err))
 	}
 
 	deviceID := uniqid.Text()
@@ -92,6 +94,8 @@ func NewDefaultDimensions(pjNamespace, sessionToken, updateTag string) *Values {
 		p.IntP(0),
 		p.StrP(""),
 		p.StrP(""),
+		p.BoolP(false),
+		p.BoolP(false),
 		nil,
 	}
 }
@@ -117,6 +121,10 @@ func (v *Values) Clone() *Values {
 		CommitID:         p.PstrP(v.CommitID),
 		Command:          p.PstrP(v.Command),
 		Sequence:         p.PintP(v.Sequence),
+		TargetVersion:    p.PstrP(v.TargetVersion),
+		Error:            p.PstrP(v.Error),
+		CI:               p.PboolP(v.CI),
+		Interactive:      p.PboolP(v.Interactive),
 		preProcessor:     v.preProcessor,
 	}
 }
@@ -181,6 +189,18 @@ func (m *Values) Merge(mergeWith ...*Values) {
 		}
 		if dim.Sequence != nil {
 			m.Sequence = dim.Sequence
+		}
+		if dim.TargetVersion != nil {
+			m.TargetVersion = dim.TargetVersion
+		}
+		if dim.Error != nil {
+			m.Error = dim.Error
+		}
+		if dim.CI != nil {
+			m.CI = dim.CI
+		}
+		if dim.Interactive != nil {
+			m.Interactive = dim.Interactive
 		}
 		if dim.preProcessor != nil {
 			m.preProcessor = dim.preProcessor

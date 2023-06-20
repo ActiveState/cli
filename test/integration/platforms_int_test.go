@@ -138,6 +138,27 @@ func (suite *PlatformsIntegrationTestSuite) PrepareActiveStateYAML(ts *e2e.Sessi
 	ts.PrepareActiveStateYAML(asyData)
 }
 
+func (suite *PlatformsIntegrationTestSuite) TestJSON() {
+	suite.OnlyRunForTags(tagsuite.Platforms, tagsuite.JSON)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.Spawn("checkout", "ActiveState-CLI/Python3", ".")
+	cp.Expect("Skipping runtime setup")
+	cp.Expect("Checked out")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("platforms", "-o", "json")
+	cp.Expect(`[{"name":`)
+	cp.ExpectExitCode(0)
+	AssertValidJSON(suite.T(), cp)
+
+	cp = ts.Spawn("platforms", "search", "-o", "json")
+	cp.Expect(`[{"name":`)
+	cp.ExpectExitCode(0)
+	AssertValidJSON(suite.T(), cp)
+}
+
 func TestPlatformsIntegrationTestSuite(t *testing.T) {
 	suite.Run(t, new(PlatformsIntegrationTestSuite))
 }

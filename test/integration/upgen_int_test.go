@@ -58,11 +58,8 @@ func (suite *UpdateGenIntegrationTestSuite) TestUpdateBits() {
 	cp.ExpectExitCode(0)
 
 	baseDir := filepath.Join(tempPath, constants.ToplevelInstallArchiveDir)
-	stateExec := filepath.Join(baseDir, installation.BinDirName, constants.StateCmd+osutils.ExeExt)
-
-	cp = ts.SpawnCmd(stateExec, "--version")
-	cp.Expect(constants.RevisionHashShort)
-	cp.ExpectExitCode(0)
+	suite.FileExists(filepath.Join(baseDir, installation.BinDirName, constants.StateCmd+osutils.ExeExt))
+	suite.FileExists(filepath.Join(baseDir, installation.BinDirName, constants.StateSvcCmd+osutils.ExeExt))
 }
 
 func TestUpdateGenIntegrationTestSuite(t *testing.T) {

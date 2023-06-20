@@ -42,6 +42,7 @@ func newShellCommand(prime *primer.Values) *captain.Command {
 		},
 	)
 	cmd.SetGroup(EnvironmentUsageGroup)
+	cmd.SetDoesNotSupportStructuredOutput()
 	cmd.SetAliases("prompt")
 	return cmd
 }

@@ -205,6 +205,19 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckoutAlreadyCheckedOut() {
 	cp.ExpectNotExitCode(0)
 }
 
+func (suite *CheckoutIntegrationTestSuite) TestJSON() {
+	suite.OnlyRunForTags(tagsuite.Checkout, tagsuite.JSON)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.SpawnWithOpts(e2e.WithArgs("checkout", "ActiveState-CLI/small-python", "-o", "json"))
+	cp.Expect(`"namespace":`)
+	cp.Expect(`"path":`)
+	cp.Expect(`"executables":`)
+	cp.ExpectExitCode(0)
+	//AssertValidJSON(suite.T(), cp) // cannot assert here due to "Skipping runtime setup" notice
+}
+
 func TestCheckoutIntegrationTestSuite(t *testing.T) {
 	suite.Run(t, new(CheckoutIntegrationTestSuite))
 }

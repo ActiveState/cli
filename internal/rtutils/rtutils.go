@@ -4,9 +4,22 @@ import (
 	"fmt"
 	"runtime"
 	"time"
-
-	"github.com/hashicorp/go-multierror"
 )
+
+// packedErrors effectively duplicates the functionality of errs.PackedErrors, but is here to avoid a circular dependency
+type packedErrors struct {
+	errors []error
+}
+
+func (e *packedErrors) IsTransient() {}
+
+func (e *packedErrors) Error() string {
+	return fmt.Sprintf("packed multiple errors from rtutils")
+}
+
+func (e *packedErrors) Unwrap() []error {
+	return e.errors
+}
 
 // Returns path of currently running Go file
 func CurrentFile() string {
@@ -33,7 +46,7 @@ func Closer(closer func() error, rerr *error) {
 	err := closer()
 	if err != nil {
 		if *rerr != nil {
-			*rerr = multierror.Append(*rerr, err)
+			*rerr = &packedErrors{append([]error{*rerr}, err)}
 		} else {
 			*rerr = err
 		}

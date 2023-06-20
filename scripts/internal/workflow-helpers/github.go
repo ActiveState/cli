@@ -147,21 +147,14 @@ func SearchGithubIssues(client *github.Client, term string) ([]*github.Issue, er
 }
 
 func FetchPRByTitle(ghClient *github.Client, title string) (*github.PullRequest, error) {
-	// Strip out words containing illegal characters. This'll mean we get more results than we want, but it's still
-	// faster than iterating over ALL prs
-	searchTerm := sanitizeSearchTerm(title)
-	if searchTerm == "" {
-		return nil, errs.New("All title words contain illegal characters, so no search could be performed")
-	}
-
 	var targetIssue *github.Issue
-	issues, _, err := ghClient.Search.Issues(context.Background(), fmt.Sprintf("repo:ActiveState/cli in:title is:pr %s", searchTerm), nil)
+	issues, _, err := ghClient.Search.Issues(context.Background(), fmt.Sprintf("repo:ActiveState/cli in:title is:pr %s", title), nil)
 	if err != nil {
 		return nil, errs.Wrap(err, "failed to search for issues")
 	}
 
 	for _, issue := range issues.Issues {
-		if issue.GetTitle() == title {
+		if strings.TrimSpace(issue.GetTitle()) == strings.TrimSpace(title) {
 			targetIssue = issue
 			break
 		}
@@ -374,28 +367,4 @@ func CreateFileUpdateCommit(ghClient *github.Client, branchName string, path str
 	}
 
 	return resp.GetSHA(), nil
-}
-
-// sannitizeSearchTerm strips words containing illegal characters from the search term
-// https://docs.github.com/en/search-github/searching-on-github/searching-code#considerations-for-code-search
-func sanitizeSearchTerm(term string) string {
-	illegal := strings.Split(". , : ; / \\ ` ' \" = * ! ? # $ & + ^ | ~ < > ( ) { } [ ] @", " ")
-	var result string
-	skip := false
-	lastSpace := 0
-	for x := 0; x < len(term); x++ {
-		char := string(term[x])
-		if char == " " {
-			lastSpace = len(result)
-			skip = false
-		} else if funk.Contains(illegal, char) {
-			skip = true
-			result = result[0:lastSpace]
-		}
-		if skip {
-			continue
-		}
-		result += char
-	}
-	return strings.TrimSpace(result)
 }
