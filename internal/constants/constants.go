@@ -374,6 +374,9 @@ const RuntimeRecipeStore = "recipe"
 // RuntimeBuildPlanStore containts a serialization of the build plan used to create this build
 const RuntimeBuildPlanStore = "build_plan"
 
+// BuildExpressionStore holds the cached build expression for the current commit ID.
+const BuildExpressionStore = "build_expression"
+
 // StateToolMarketingPage links to the marketing page for the state tool
 const StateToolMarketingPage = "https://www.activestate.com/products/platform/state-tool/"
 

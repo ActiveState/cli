@@ -91,7 +91,7 @@ func NewBuildPlannerModel(auth *authentication.Auth) *BuildPlanner {
 
 	client := gqlclient.NewWithOpts(bpURL, 0, graphql.WithHTTPClient(&http.Client{}))
 
-	if auth.Authenticated() {
+	if auth != nil && auth.Authenticated() {
 		client.SetTokenProvider(auth)
 	}
 

@@ -39,10 +39,10 @@ package integration
 		defer os.Setenv(constants.DisableRuntime, value)
 	}
 
-	rt, err := runtime.New(offlineTarget, analytics, nil)
+	rt, err := runtime.New(offlineTarget, analytics, nil, nil)
 	suite.Require().Error(err)
 	suite.Assert().True(runtime.IsNeedsUpdateError(err), "runtime should require an update")
-	err = rt.Update(nil, eventHandler)
+	err = rt.Update(eventHandler)
 	suite.Require().NoError(err)
 
 	suite.Assert().False(mockProgress.BuildStartedCalled)

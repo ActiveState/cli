@@ -22,6 +22,7 @@ import (
 	"github.com/ActiveState/cli/internal/rtutils/p"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/platform/runtime/buildscript"
 	"github.com/ActiveState/cli/pkg/platform/runtime/envdef"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup/events"
@@ -36,6 +37,7 @@ type Runtime struct {
 	store     *store.Store
 	analytics analytics.Dispatcher
 	svcm      *model.SvcModel
+	auth      *authentication.Auth
 	completed bool
 }
 
@@ -47,27 +49,33 @@ func IsNeedsUpdateError(err error) bool {
 	return errs.Matches(err, &NeedsUpdateError{})
 }
 
-func newRuntime(target setup.Targeter, an analytics.Dispatcher, svcModel *model.SvcModel) (*Runtime, error) {
+// NeedsStageError is an error returned when the local runtime's build script has changes that need
+// staging. This is not a fatal error. A runtime can still be used, but a warning should be emitted.
+type NeedsStageError struct{ error }
+
+func IsNeedsStageError(err error) bool {
+	return errs.Matches(err, &NeedsStageError{})
+}
+
+func newRuntime(target setup.Targeter, an analytics.Dispatcher, svcModel *model.SvcModel, auth *authentication.Auth) (*Runtime, error) {
 	rt := &Runtime{
 		target:    target,
 		store:     store.New(target.Dir()),
 		analytics: an,
 		svcm:      svcModel,
+		auth:      auth,
 	}
 
-	if !rt.store.MarkerIsValid(target.CommitUUID()) {
-		if target.ReadOnly() {
-			logging.Debug("Using forced cache")
-		} else {
-			return rt, &NeedsUpdateError{errs.New("Runtime requires setup.")}
-		}
+	err := rt.validateCache()
+	if err != nil {
+		return nil, err // do not wrap; could be NeedsUpdateError, NeedsStageError, etc.
 	}
 
 	return rt, nil
 }
 
 // New attempts to create a new runtime from local storage.  If it fails with a NeedsUpdateError, Update() needs to be called to update the locally stored runtime.
-func New(target setup.Targeter, an analytics.Dispatcher, svcm *model.SvcModel) (*Runtime, error) {
+func New(target setup.Targeter, an analytics.Dispatcher, svcm *model.SvcModel, auth *authentication.Auth) (*Runtime, error) {
 	if strings.ToLower(os.Getenv(constants.DisableRuntime)) == "true" {
 		fmt.Fprintln(os.Stderr, locale.Tl("notice_runtime_disabled", "Skipping runtime setup because it was disabled by an environment variable"))
 		return &Runtime{disabled: true, target: target}, nil
@@ -81,13 +89,54 @@ func New(target setup.Targeter, an analytics.Dispatcher, svcm *model.SvcModel) (
 		InstanceID:       p.StrP(instanceid.ID()),
 	})
 
-	r, err := newRuntime(target, an, svcm)
+	r, err := newRuntime(target, an, svcm, auth)
 	if err == nil {
 		an.Event(anaConsts.CatRuntime, anaConsts.ActRuntimeCache, &dimensions.Values{
 			CommitID: p.StrP(target.CommitUUID().String()),
 		})
 	}
 	return r, err
+}
+
+func (r *Runtime) validateCache() error {
+	if !r.store.MarkerIsValid(r.target.CommitUUID()) {
+		if r.target.ReadOnly() {
+			logging.Debug("Using forced cache")
+		} else {
+			return &NeedsUpdateError{errs.New("Runtime requires setup.")}
+		}
+	}
+
+	if r.target.ProjectDir() == "" {
+		return nil
+	}
+
+	// Check if local build script has changes that should be staged.
+	script, err := buildscript.NewScriptFromProjectDir(r.target.ProjectDir())
+	if err != nil {
+		if !buildscript.IsDoesNotExistError(err) {
+			return errs.Wrap(err, "Unable to get local build script")
+		}
+		return nil // build script does not exist, so there are no changes
+	}
+
+	commitID := r.target.CommitUUID().String()
+	expr, err := r.store.GetAndValidateBuildExpression(commitID)
+	if err != nil {
+		bp := model.NewBuildPlannerModel(r.auth)
+		bpExpr, err := bp.GetBuildExpression(r.target.Owner(), r.target.Name(), commitID)
+		if err != nil {
+			return errs.Wrap(err, "Unable to get remote build expression")
+		}
+		r.store.StoreBuildExpression(bpExpr, commitID)
+		expr = bpExpr.String()
+	}
+
+	if !script.EqualsBuildExpression([]byte(expr)) {
+		return &NeedsStageError{errs.New("Runtime changes should be staged")}
+	}
+
+	return nil
 }
 
 func (r *Runtime) Disabled() bool {
@@ -100,7 +149,7 @@ func (r *Runtime) Target() setup.Targeter {
 
 // Update updates the runtime by downloading all necessary artifacts from the Platform and installing them locally.
 // This function is usually called, after New() returned with a NeedsUpdateError
-func (r *Runtime) Update(auth *authentication.Auth, eventHandler events.Handler) (rerr error) {
+func (r *Runtime) Update(eventHandler events.Handler) (rerr error) {
 	if r.disabled {
 		return nil // nothing to do
 	}
@@ -111,12 +160,12 @@ func (r *Runtime) Update(auth *authentication.Auth, eventHandler events.Handler)
 		r.recordCompletion(rerr)
 	}()
 
-	if err := setup.New(r.target, eventHandler, auth, r.analytics).Update(); err != nil {
+	if err := setup.New(r.target, eventHandler, r.auth, r.analytics).Update(); err != nil {
 		return errs.Wrap(err, "Update failed")
 	}
 
 	// Reinitialize
-	rt, err := newRuntime(r.target, r.analytics, r.svcm)
+	rt, err := newRuntime(r.target, r.analytics, r.svcm, r.auth)
 	if err != nil {
 		return errs.Wrap(err, "Could not reinitialize runtime after update")
 	}

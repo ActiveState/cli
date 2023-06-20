@@ -22,7 +22,7 @@ func RefreshRuntime(auth *authentication.Auth, out output.Outputer, an analytics
 	}
 	target := target.NewProjectTarget(proj, nil, trigger)
 	isCached := true
-	rt, err := runtime.New(target, an, svcm)
+	rt, err := runtime.New(target, an, svcm, auth)
 	if err != nil {
 		if runtime.IsNeedsUpdateError(err) {
 			isCached = false
@@ -47,7 +47,7 @@ func RefreshRuntime(auth *authentication.Auth, out output.Outputer, an analytics
 		pg := NewRuntimeProgressIndicator(out)
 		defer rtutils.Closer(pg.Close, &rerr)
 
-		err := rt.Update(auth, pg)
+		err := rt.Update(pg)
 		if err != nil {
 			return locale.WrapError(err, "err_packages_update_runtime_install", "Could not install dependencies.")
 		}

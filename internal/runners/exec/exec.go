@@ -23,7 +23,6 @@ import (
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/cli/internal/runbits"
-	"github.com/ActiveState/cli/internal/runbits/buildscript"
 	"github.com/ActiveState/cli/internal/runbits/rtusage"
 	"github.com/ActiveState/cli/internal/scriptfile"
 	"github.com/ActiveState/cli/internal/subshell"
@@ -122,25 +121,24 @@ func (s *Exec) Run(params *Params, args ...string) (rerr error) {
 		rtTarget = target.NewProjectTarget(proj, nil, trigger)
 	}
 
-	err = buildscript.Sync(proj, nil, s.out, s.auth)
-	if err != nil {
-		return locale.WrapError(err, "err_update_build_script")
-	}
-
 	rtusage.PrintRuntimeUsage(s.svcModel, s.out, rtTarget.Owner())
 
 	s.out.Notice(locale.Tl("operating_message", "", projectNamespace, projectDir))
 
-	rt, err := runtime.New(rtTarget, s.analytics, s.svcModel)
-	if err != nil {
-		if !runtime.IsNeedsUpdateError(err) {
-			return locale.WrapError(err, "err_activate_runtime", "Could not initialize a runtime for this project.")
-		}
+	rt, err := runtime.New(rtTarget, s.analytics, s.svcModel, s.auth)
+	switch {
+	case err == nil:
+		break
+	case runtime.IsNeedsUpdateError(err):
 		pg := runbits.NewRuntimeProgressIndicator(s.out)
 		defer rtutils.Closer(pg.Close, &rerr)
-		if err := rt.Update(s.auth, pg); err != nil {
+		if err := rt.Update(pg); err != nil {
 			return locale.WrapError(err, "err_update_runtime", "Could not update runtime installation.")
 		}
+	case runtime.IsNeedsStageError(err):
+		s.out.Notice(locale.T("notice_stage"))
+	default:
+		return locale.WrapError(err, "err_activate_runtime", "Could not initialize a runtime for this project.")
 	}
 	venv := virtualenvironment.New(rt)
 
