@@ -5,6 +5,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runners/projects"
+	"github.com/ActiveState/cli/pkg/project"
 )
 
 func newProjectsCommand(prime *primer.Values) *captain.Command {
@@ -43,7 +44,9 @@ func newRemoteProjectsCommand(prime *primer.Values) *captain.Command {
 
 func newProjectsEditCommand(prime *primer.Values) *captain.Command {
 	runner := projects.NewEdit(prime)
-	params := projects.EditParams{}
+	params := projects.EditParams{
+		Namespace: &project.Namespaced{},
+	}
 
 	return captain.NewCommand(
 		"edit",
@@ -53,26 +56,28 @@ func newProjectsEditCommand(prime *primer.Values) *captain.Command {
 		[]*captain.Flag{
 			{
 				Name:        "name",
-				Description: locale.T("projects_edit_name_description"),
+				Description: locale.Tl("projects_edit_name_description", "Edit the name of the project."),
 				Value:       &params.ProjectName,
 			},
 			{
-				Name:        "owner",
-				Description: locale.T("projects_edit_owner_description"),
-				Value:       &params.OwnerName,
-			},
-			{
 				Name:        "visibility",
-				Description: locale.T("projects_edit_visibility_description"),
+				Description: locale.Tl("projects_edit_visibility_description", "Edit the visibility to non-members, either public or private."),
 				Value:       &params.Visibility,
 			},
 			{
 				Name:        "repository",
-				Description: locale.T("projects_edit_reposityr_description"),
+				Description: locale.Tl("projects_edit_repository_description", "Edit the linked VCS repo. To unset use --repo=\"\"."),
 				Value:       &params.Repository,
 			},
 		},
-		[]*captain.Argument{},
+		[]*captain.Argument{
+			{
+				Name:        "namespace",
+				Description: locale.Tl("projects_edit_namespace_description", "The namespace of the project to edit"),
+				Required:    true,
+				Value:       params.Namespace,
+			},
+		},
 		func(ccmd *captain.Command, args []string) error {
 			return runner.Run(params)
 		},

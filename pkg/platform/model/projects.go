@@ -269,3 +269,18 @@ func AddBranch(projectID strfmt.UUID, label string) (strfmt.UUID, error) {
 
 	return res.Payload.BranchID, nil
 }
+
+func EditProject(owner, name string, project *mono_models.ProjectEditable) error {
+	editParams := projects.NewEditProjectParams()
+	editParams.SetOrganizationName(owner)
+	editParams.SetProjectName(name)
+	editParams.SetProject(project)
+
+	_, err := authentication.Client().Projects.EditProject(editParams, authentication.ClientAuth())
+	if err != nil {
+		msg := api.ErrorMessageFromPayload(err)
+		return locale.WrapError(err, msg)
+	}
+
+	return nil
+}
