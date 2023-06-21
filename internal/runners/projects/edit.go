@@ -113,7 +113,7 @@ func (e *Edit) Run(params EditParams) error {
 		return locale.WrapError(err, "err_edit_project_mapping", "Could not update project mapping")
 	}
 
-	e.out.Print(locale.Tl("edit_success", "Project edited successfully"))
+	e.out.Notice(locale.Tl("edit_success", "Project edited successfully"))
 
 	return nil
 }
