@@ -148,7 +148,7 @@ func (suite *ProjectsIntegrationTestSuite) TestEdit_Visibility() {
 	ts.LogoutUser()
 
 	cp = ts.Spawn("checkout", namespace)
-	cp.Expect("Could not be checkout")
+	cp.Expect("Could not checkout")
 	cp.ExpectExitCode(1)
 
 	ts.LoginAsPersistentUser()
