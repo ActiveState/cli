@@ -91,7 +91,7 @@ func (e *Edit) Run(params EditParams) error {
 	}
 	editMsg += locale.Tl("edit_prompt_confirm", "Continue?")
 
-	edit, err := e.prompt.Confirm("", editMsg, p.BoolP(false))
+	edit, err := e.prompt.Confirm("", editMsg, &e.out.Config().Interactive)
 	if err != nil {
 		return locale.WrapError(err, "err_edit_prompt", "Could not prompt for edit confirmation")
 	}
