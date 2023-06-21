@@ -87,8 +87,8 @@ func (suite *ProjectsIntegrationTestSuite) TestEdit_Name() {
 	// What we expect the project name to be and what we want to change it to.
 	// This can change if the test failed previously.
 	var (
-		originalName = "Edit-Test"
-		newName      = "Edit-Rename"
+		originalName = fmt.Sprintf("Edit-Test-%s", runtime.GOOS)
+		newName      = fmt.Sprintf("Edit-Rename-%s", runtime.GOOS)
 	)
 
 	cp := ts.Spawn("checkout", fmt.Sprintf("ActiveState-CLI/%s", originalName))
@@ -137,7 +137,9 @@ func (suite *ProjectsIntegrationTestSuite) TestEdit_Visibility() {
 
 	ts.LoginAsPersistentUser()
 
-	cp := ts.Spawn("projects", "edit", "ActiveState-CLI/Visibility-Test", "--visibility", "private")
+	namespace := fmt.Sprintf("ActiveState-CLI/Visibility-Test-%s", runtime.GOOS)
+
+	cp := ts.Spawn("projects", "edit", namespace, "--visibility", "private")
 	cp.Expect("You are about to edit")
 	cp.Send("y")
 	cp.Expect("Project edited successfully")
@@ -145,13 +147,13 @@ func (suite *ProjectsIntegrationTestSuite) TestEdit_Visibility() {
 
 	ts.LogoutUser()
 
-	cp = ts.Spawn("checkout", "ActiveState-CLI/Visibility-Test")
+	cp = ts.Spawn("checkout", namespace)
 	cp.Expect("could not be found")
 	cp.ExpectExitCode(1)
 
 	ts.LoginAsPersistentUser()
 
-	cp = ts.Spawn("projects", "edit", "ActiveState-CLI/Visibility-Test", "--visibility", "public")
+	cp = ts.Spawn("projects", "edit", namespace, "--visibility", "public")
 	cp.Expect("You are about to edit")
 	cp.Send("y")
 	cp.Expect("Project edited successfully")
