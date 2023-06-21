@@ -65,7 +65,7 @@ func (e *Edit) Run(params EditParams) error {
 	editParams.SetOrganizationName(params.Namespace.Owner)
 	editParams.SetProjectName(params.Namespace.Project)
 
-	editMsg := locale.Tl("edit_prompt", "You are about the edit the following fields for the project [NOTICE]{{.V0}}[/RESET]:\n", params.Namespace.String())
+	editMsg := locale.Tl("edit_prompt", "You are about to edit the following fields for the project [NOTICE]{{.V0}}[/RESET]:\n", params.Namespace.String())
 	editable := &mono_models.ProjectEditable{}
 	if params.ProjectName != "" {
 		editMsg += locale.Tl("edit_prompt_name", "  - Name: {{.V0}}\n", params.ProjectName)
@@ -157,7 +157,7 @@ func (e *Edit) updateProjectMapping(params EditParams) error {
 		return nil
 	}
 
-	localProjects := projectfile.GetProjectMapping(e.config)
+	localProjects := projectfile.GetStaleProjectMapping(e.config)
 
 	var localCheckouts []string
 	for namespace, checkouts := range localProjects {

@@ -1,7 +1,9 @@
 package integration
 
 import (
+	"fmt"
 	"runtime"
+	"strings"
 	"testing"
 
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -73,6 +75,87 @@ func (suite *ProjectsIntegrationTestSuite) TestJSON() {
 	cp.Expect(`}]`)
 	cp.ExpectExitCode(0)
 	//AssertValidJSON(suite.T(), cp) // list is too large to fit in terminal snapshot
+}
+
+func (suite *ProjectsIntegrationTestSuite) TestEdit_Name() {
+	suite.OnlyRunForTags(tagsuite.Projects)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	ts.LoginAsPersistentUser()
+
+	// What we expect the project name to be and what we want to change it to.
+	// This can change if the test failed previously.
+	var (
+		originalName = "Edit-Test"
+		newName      = "Edit-Rename"
+	)
+
+	cp := ts.Spawn("checkout", fmt.Sprintf("ActiveState-CLI/%s", originalName))
+
+	// If the checkout failed, it's probably because the project name was changed
+	// in a previous run of this test. Try again with the new name.
+	if strings.Contains(cp.TrimmedSnapshot(), "Could not checkout project") {
+		cp = ts.Spawn("checkout", fmt.Sprintf("ActiveState-CLI/%s", newName))
+		originalName = newName
+		newName = originalName
+	}
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("projects")
+	cp.Expect(originalName)
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("projects", "edit", fmt.Sprintf("ActiveState-CLI/%s", originalName), "--name", newName)
+	cp.Expect("You are about to edit")
+	cp.Send("y")
+	cp.Expect("Project edited successfully")
+	cp.ExpectExitCode(0)
+
+	// Verify the local checkouts have been updated
+	cp = ts.Spawn("projects")
+	cp.Expect(newName)
+	cp.ExpectExitCode(0)
+
+	// Change name back to original
+	cp = ts.Spawn("projects", "edit", fmt.Sprintf("ActiveState-CLI/%s", newName), "--name", originalName)
+	cp.Expect("You are about to edit")
+	cp.Send("y")
+	cp.Expect("Project edited successfully")
+	cp.ExpectExitCode(0)
+
+	// Verify the local checkouts have been updated
+	cp = ts.Spawn("projects")
+	cp.Expect(originalName)
+	cp.ExpectExitCode(0)
+}
+
+func (suite *ProjectsIntegrationTestSuite) TestEdit_Visibility() {
+	suite.OnlyRunForTags(tagsuite.Projects)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	ts.LoginAsPersistentUser()
+
+	cp := ts.Spawn("projects", "edit", "ActiveState-CLI/Visibility-Test", "--visibility", "private")
+	cp.Expect("You are about to edit")
+	cp.Send("y")
+	cp.Expect("Project edited successfully")
+	cp.ExpectExitCode(0)
+
+	ts.LogoutUser()
+
+	cp = ts.Spawn("checkout", "ActiveState-CLI/Visibility-Test")
+	cp.Expect("could not be found")
+	cp.ExpectExitCode(1)
+
+	ts.LoginAsPersistentUser()
+
+	cp = ts.Spawn("projects", "edit", "ActiveState-CLI/Visibility-Test", "--visibility", "public")
+	cp.Expect("You are about to edit")
+	cp.Send("y")
+	cp.Expect("Project edited successfully")
+	cp.ExpectExitCode(0)
 }
 
 func TestProjectsIntegrationTestSuite(t *testing.T) {
