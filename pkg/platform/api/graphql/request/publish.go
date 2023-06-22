@@ -113,8 +113,9 @@ func (p PublishVariables) MarshalYaml(includeExample bool) ([]byte, error) {
 	return v, nil
 }
 
-func (p PublishVariables) UnmarshalYaml(b []byte) error {
-	return yaml.Unmarshal(b, &p)
+func (p *PublishVariables) UnmarshalYaml(b []byte) error {
+	err := yaml.Unmarshal(b, p)
+	return err
 }
 
 var exampleAuthor = ExampleAuthorVariables{[]PublishVariableAuthor{{
