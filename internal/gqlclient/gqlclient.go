@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"mime/multipart"
 	"net/http"
 	"os"
@@ -191,23 +190,119 @@ func (c *Client) RunWithContext(ctx context.Context, request Request, response i
 	return nil
 }
 
-func (c *Client) runRaw(ctx context.Context, request *http.Request, response interface{}) error {
+type JsonRequest struct {
+	Query     string                 `json:"query"`
+	Variables map[string]interface{} `json:"variables"`
+}
+
+func (c *Client) runWithFiles(ctx context.Context, gqlReq RequestWithFiles, response interface{}) error {
+	// Construct the multi-part request.
+	bodyReader, bodyWriter := io.Pipe()
+
+	req, err := http.NewRequest("POST", c.url, bodyReader)
+	if err != nil {
+		return errs.Wrap(err, "Could not create http request")
+	}
+
+	req.Body = bodyReader
+
+	mw := multipart.NewWriter(bodyWriter)
+	req.Header.Set("Content-Type", "multipart/form-data; boundary="+mw.Boundary())
+
+	vars, err := gqlReq.Vars()
+	if err != nil {
+		return errs.Wrap(err, "Could not get variables")
+	}
+
+	varJson, err := json.Marshal(vars)
+	if err != nil {
+		return errs.Wrap(err, "Could not marshal vars")
+	}
+
+	reqErrChan := make(chan error)
+	go func() {
+		defer bodyWriter.Close()
+		defer mw.Close()
+		defer close(reqErrChan)
+
+		// Operations
+		operations, err := mw.CreateFormField("operations")
+		if err != nil {
+			reqErrChan <- errs.Wrap(err, "Could not create form field operations")
+			return
+		}
+
+		jsonReq := JsonRequest{
+			Query:     gqlReq.Query(),
+			Variables: vars,
+		}
+		jsonReqV, err := json.Marshal(jsonReq)
+		if err != nil {
+			reqErrChan <- errs.Wrap(err, "Could not marshal json request")
+			return
+		}
+		if _, err := operations.Write(jsonReqV); err != nil {
+			reqErrChan <- errs.Wrap(err, "Could not write json request")
+			return
+		}
+
+		// Map
+		mapField, err := mw.CreateFormField("map")
+		if err != nil {
+			reqErrChan <- errs.Wrap(err, "Could not create form field map")
+			return
+		}
+		for n, f := range gqlReq.Files() {
+			if _, err := mapField.Write([]byte(fmt.Sprintf(`{"%d": ["%s"]}`, n, f.Field))); err != nil {
+				reqErrChan <- errs.Wrap(err, "Could not write map field")
+				return
+			}
+		}
+
+		// File upload
+		for n, file := range gqlReq.Files() {
+			part, err := mw.CreateFormFile(fmt.Sprintf("%d", n), file.Name)
+			if err != nil {
+				reqErrChan <- errs.Wrap(err, "Could not create form file")
+				return
+			}
+
+			_, err = io.Copy(part, file.R)
+			if err != nil {
+				reqErrChan <- errs.Wrap(err, "Could not read file")
+				return
+			}
+		}
+	}()
+
+	c.Log(fmt.Sprintf(">> query: %s", gqlReq.Query()))
+	c.Log(fmt.Sprintf(">> variables: %s", string(varJson)))
+	fnames := []string{}
+	for _, file := range gqlReq.Files() {
+		fnames = append(fnames, fmt.Sprintf("%s", file.Name))
+	}
+	c.Log(fmt.Sprintf(">> files: %v", fnames))
+
+	// Run the request.
 	var bearerToken string
 	if c.tokenProvider != nil {
 		bearerToken = c.tokenProvider.BearerToken()
 		if bearerToken != "" {
-			request.Header.Set("Authorization", "Bearer "+bearerToken)
+			req.Header.Set("Authorization", "Bearer "+bearerToken)
 		}
 	}
 
 	gr := &graphResponse{
 		Data: response,
 	}
-	request = request.WithContext(ctx)
-	c.Log(fmt.Sprintf(">> Raw Request: %s\n", request.URL.String()))
-	res, err := http.DefaultClient.Do(request)
-	if err != nil {
-		return err
+	req = req.WithContext(ctx)
+	c.Log(fmt.Sprintf(">> Raw Request: %s\n", req.URL.String()))
+	res, resErr := http.DefaultClient.Do(req)
+	if reqErr := <-reqErrChan; reqErr != nil {
+		return reqErr
+	}
+	if resErr != nil {
+		return resErr
 	}
 	defer res.Body.Close()
 	var buf bytes.Buffer
@@ -231,100 +326,4 @@ func (c *Client) runRaw(ctx context.Context, request *http.Request, response int
 		return errors.Wrap(err, "decoding response")
 	}
 	return nil
-}
-
-func (c *Client) runWithFiles(ctx context.Context, gqlReq RequestWithFiles, response interface{}) error {
-	req, err := c.createMultiPartUploadRequest(gqlReq)
-	if err != nil {
-		return errs.Wrap(err, "Could not create multipart upload request")
-	}
-
-	return c.runRaw(ctx, req, response)
-}
-
-type JsonRequest struct {
-	Query     string                 `json:"query"`
-	Variables map[string]interface{} `json:"variables"`
-}
-
-func (c *Client) createMultiPartUploadRequest(gqlReq RequestWithFiles) (*http.Request, error) {
-	req, err := http.NewRequest("POST", c.url, nil)
-	if err != nil {
-		return nil, errs.Wrap(err, "Could not create http request")
-	}
-
-	body := bytes.NewBuffer([]byte{})
-	req.Body = ioutil.NopCloser(body)
-
-	mw := multipart.NewWriter(body)
-	req.Header.Set("Content-Type", "multipart/form-data; boundary="+mw.Boundary())
-
-	// Operations
-	operations, err := mw.CreateFormField("operations")
-	if err != nil {
-		return nil, errs.Wrap(err, "Could not create form field operations")
-	}
-
-	vars, err := gqlReq.Vars()
-	if err != nil {
-		return nil, errs.Wrap(err, "Could not get variables")
-	}
-
-	jsonReq := JsonRequest{
-		Query:     gqlReq.Query(),
-		Variables: vars,
-	}
-	jsonReqV, err := json.Marshal(jsonReq)
-	if err != nil {
-		return nil, errs.Wrap(err, "Could not marshal json request")
-	}
-	if _, err := operations.Write(jsonReqV); err != nil {
-		return nil, errs.Wrap(err, "Could not write json request")
-	}
-
-	// Map
-	mapField, err := mw.CreateFormField("map")
-	if err != nil {
-		return nil, errs.Wrap(err, "Could not create form field map")
-	}
-	for n, f := range gqlReq.Files() {
-		if _, err := mapField.Write([]byte(fmt.Sprintf(`{"%d": ["%s"]}`, n, f.Field))); err != nil {
-			return nil, errs.Wrap(err, "Could not write map field")
-		}
-	}
-
-	// File upload
-	fnames := []string{}
-	for n, file := range gqlReq.Files() {
-		fnames = append(fnames, fmt.Sprintf("%s", file.Name))
-
-		w, err := mw.CreateFormFile(fmt.Sprintf("%d", n), file.Name)
-		if err != nil {
-			return nil, errs.Wrap(err, "Could not create form file")
-		}
-
-		b, err := ioutil.ReadAll(file.R)
-		if err != nil {
-			return nil, errs.Wrap(err, "Could not read file")
-		}
-
-		if _, err := w.Write(b); err != nil {
-			return nil, errs.Wrap(err, "Could not write file")
-		}
-	}
-
-	if err := mw.Close(); err != nil {
-		return nil, errs.Wrap(err, "Could not close multipart writer")
-	}
-
-	varJson, err := json.Marshal(vars)
-	if err != nil {
-		return nil, errs.Wrap(err, "Could not marshal vars")
-	}
-
-	c.Log(fmt.Sprintf(">> query: %s", gqlReq.Query()))
-	c.Log(fmt.Sprintf(">> variables: %s", string(varJson)))
-	c.Log(fmt.Sprintf(">> files: %v", fnames))
-
-	return req, nil
 }
