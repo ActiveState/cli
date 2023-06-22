@@ -288,8 +288,9 @@ func (suite *UseIntegrationTestSuite) TestJSON() {
 	AssertValidJSON(suite.T(), cp)
 
 	cp = ts.Spawn("use", "reset", "-o", "json")
+	cp.Expect(`{}`)
 	cp.ExpectExitCode(0)
-	suite.Empty(cp.TrimmedSnapshot(), "unexpected output")
+	AssertValidJSON(suite.T(), cp)
 }
 
 func (suite *UseIntegrationTestSuite) SetupRCFile(ts *e2e.Session) {

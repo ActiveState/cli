@@ -221,6 +221,7 @@ func (suite *UpdateIntegrationTestSuite) TestJSON() {
 	AssertValidJSON(suite.T(), cp)
 
 	cp = ts.Spawn("update", "unlock", "-o", "json")
+	cp.Expect(`{}`)
 	cp.ExpectExitCode(0)
-	suite.Empty(cp.TrimmedSnapshot(), "unexpected output")
+	AssertValidJSON(suite.T(), cp)
 }
