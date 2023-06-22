@@ -4,8 +4,8 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/prompt"
-	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/projects"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
+	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
@@ -45,11 +45,7 @@ func (d *Delete) Run(params *DeleteParams) error {
 		return locale.NewInputError("err_project_delete_aborted", "Delete aborted by user")
 	}
 
-	monoParams := projects.NewDeleteProjectParams()
-	monoParams.SetOrganizationName(params.Project.Owner)
-	monoParams.SetProjectName(params.Project.Project)
-
-	_, err = d.auth.Client().Projects.DeleteProject(monoParams, d.auth.ClientAuth())
+	err = model.DeleteProject(params.Project.Owner, params.Project.Project, d.auth)
 	if err != nil {
 		return locale.WrapError(err, "err_projects_delete", "Unable to delete project")
 	}
