@@ -68,7 +68,7 @@ func newRuntime(target setup.Targeter, an analytics.Dispatcher, svcModel *model.
 
 	err := rt.validateCache()
 	if err != nil {
-		return nil, err // do not wrap; could be NeedsUpdateError, NeedsStageError, etc.
+		return rt, err
 	}
 
 	return rt, nil
@@ -128,7 +128,9 @@ func (r *Runtime) validateCache() error {
 		if err != nil {
 			return errs.Wrap(err, "Unable to get remote build expression")
 		}
-		r.store.StoreBuildExpression(bpExpr, commitID)
+		if err := r.store.StoreBuildExpression(bpExpr, commitID); err != nil {
+			return errs.Wrap(err, "Unable to store build expression")
+		}
 		expr = bpExpr.String()
 	}
 
