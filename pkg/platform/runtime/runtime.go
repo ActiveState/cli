@@ -128,7 +128,9 @@ func (r *Runtime) validateCache() error {
 		if err != nil {
 			return errs.Wrap(err, "Unable to get remote build expression")
 		}
-		r.store.StoreBuildExpression(bpExpr, commitID)
+		if err := r.store.StoreBuildExpression(bpExpr, commitID); err != nil {
+			return errs.Wrap(err, "Unable to store build expression")
+		}
 		expr = bpExpr.String()
 	}
 
