@@ -77,7 +77,7 @@ func newSignupCommand(prime *primer.Values) *captain.Command {
 		func(ccmd *captain.Command, args []string) error {
 			return signupRunner.Run(&params)
 		},
-	)
+	).SetDoesNotSupportStructuredOutput()
 }
 
 func newLogoutCommand(prime *primer.Values) *captain.Command {

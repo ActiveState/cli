@@ -40,5 +40,5 @@ func newInviteCommand(prime *primer.Values) *captain.Command {
 		func(ccmd *captain.Command, args []string) error {
 			return inviteRunner.Run(&params, args)
 		},
-	).SetGroup(PlatformGroup).SetUnstable(true).SetHasVariableArguments()
+	).SetGroup(PlatformGroup).SetUnstable(true).SetHasVariableArguments().SetDoesNotSupportStructuredOutput()
 }
