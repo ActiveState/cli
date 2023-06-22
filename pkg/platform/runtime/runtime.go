@@ -68,7 +68,7 @@ func newRuntime(target setup.Targeter, an analytics.Dispatcher, svcModel *model.
 
 	err := rt.validateCache()
 	if err != nil {
-		return nil, err // do not wrap; could be NeedsUpdateError, NeedsStageError, etc.
+		return rt, err
 	}
 
 	return rt, nil
