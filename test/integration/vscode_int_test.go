@@ -17,9 +17,9 @@ func (suite *PushIntegrationTestSuite) TestInitAndPush_VSCode() {
 
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
-	username := ts.CreateNewUser()
+	user := ts.CreateNewUser()
 
-	namespace := fmt.Sprintf("%s/%s", username, "Perl")
+	namespace := fmt.Sprintf("%s/%s", user.Username, "Perl")
 	cp := ts.Spawn(
 		"--output", "editor",
 		"init",
@@ -170,7 +170,7 @@ func (suite *PackageIntegrationTestSuite) TestPackages_VSCode() {
 	suite.Len(po, 2)
 }
 
-func (suite *ProjectsIntegrationTestSuite) TestProjects_VSCode() {
+func (suite *PublishIntegrationTestSuite) TestProjects_VSCode() {
 	suite.OnlyRunForTags(tagsuite.Projects, tagsuite.VSCode)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()

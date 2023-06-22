@@ -294,8 +294,8 @@ func (suite *PackageIntegrationTestSuite) TestPackage_import() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	username := ts.CreateNewUser()
-	namespace := fmt.Sprintf("%s/%s", username, "Python3")
+	user := ts.CreateNewUser()
+	namespace := fmt.Sprintf("%s/%s", user.Username, "Python3")
 
 	cp := ts.Spawn("init", namespace, "python3", "--path="+ts.Dirs.Work)
 	cp.ExpectLongString("successfully initialized")
@@ -375,10 +375,10 @@ func (suite *PackageIntegrationTestSuite) TestPackage_operation() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	username := ts.CreateNewUser()
-	namespace := fmt.Sprintf("%s/%s", username, "python3-pkgtest")
+	user := ts.CreateNewUser()
+	namespace := fmt.Sprintf("%s/%s", user.Username, "python3-pkgtest")
 
-	cp := ts.Spawn("fork", "ActiveState-CLI/Packages", "--org", username, "--name", "python3-pkgtest")
+	cp := ts.Spawn("fork", "ActiveState-CLI/Packages", "--org", user.Username, "--name", "python3-pkgtest")
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("checkout", namespace, ".")
@@ -391,21 +391,21 @@ func (suite *PackageIntegrationTestSuite) TestPackage_operation() {
 
 	suite.Run("install", func() {
 		cp := ts.Spawn("install", "urllib3@1.25.6")
-		cp.ExpectLongString(fmt.Sprintf("Operating on project %s/python3-pkgtest", username))
+		cp.ExpectLongString(fmt.Sprintf("Operating on project %s/python3-pkgtest", user.Username))
 		cp.ExpectRe("(?:Package added|being built)", 30*time.Second)
 		cp.Wait()
 	})
 
 	suite.Run("install (update)", func() {
 		cp := ts.Spawn("install", "urllib3@1.25.8")
-		cp.ExpectLongString(fmt.Sprintf("Operating on project %s/python3-pkgtest", username))
+		cp.ExpectLongString(fmt.Sprintf("Operating on project %s/python3-pkgtest", user.Username))
 		cp.ExpectRe("(?:Package updated|being built)", 30*time.Second)
 		cp.Wait()
 	})
 
 	suite.Run("uninstall", func() {
 		cp := ts.Spawn("uninstall", "urllib3")
-		cp.ExpectLongString(fmt.Sprintf("Operating on project %s/python3-pkgtest", username))
+		cp.ExpectLongString(fmt.Sprintf("Operating on project %s/python3-pkgtest", user.Username))
 		cp.ExpectRe("(?:Package uninstalled|being built)", 30*time.Second)
 		cp.Wait()
 	})
