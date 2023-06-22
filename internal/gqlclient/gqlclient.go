@@ -214,6 +214,11 @@ func (c *Client) runWithFiles(ctx context.Context, gqlReq RequestWithFiles, resp
 		return errs.Wrap(err, "Could not get variables")
 	}
 
+	varJson, err := json.Marshal(vars)
+	if err != nil {
+		return errs.Wrap(err, "Could not marshal vars")
+	}
+
 	reqErrChan := make(chan error)
 	go func() {
 		defer bodyWriter.Close()
@@ -269,11 +274,6 @@ func (c *Client) runWithFiles(ctx context.Context, gqlReq RequestWithFiles, resp
 			}
 		}
 	}()
-
-	varJson, err := json.Marshal(vars)
-	if err != nil {
-		return errs.Wrap(err, "Could not marshal vars")
-	}
 
 	c.Log(fmt.Sprintf(">> query: %s", gqlReq.Query()))
 	c.Log(fmt.Sprintf(">> variables: %s", string(varJson)))
