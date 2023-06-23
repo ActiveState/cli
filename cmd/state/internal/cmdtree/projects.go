@@ -40,3 +40,27 @@ func newRemoteProjectsCommand(prime *primer.Values) *captain.Command {
 		},
 	).SetGroup(ProjectUsageGroup)
 }
+
+func newDeleteProjectsCommand(prime *primer.Values) *captain.Command {
+	runner := projects.NewDelete(prime)
+	params := projects.NewDeleteParams()
+
+	return captain.NewCommand(
+		"delete",
+		locale.Tl("projects_delete_title", "Delete a project"),
+		locale.Tl("projects_delete_description", "Delete the specified project from the Platform"),
+		prime,
+		[]*captain.Flag{},
+		[]*captain.Argument{
+			{
+				Name:        "namespace",
+				Description: locale.Tl("projects_delete_namespace_description", "org/project"),
+				Value:       params.Project,
+				Required:    true,
+			},
+		},
+		func(_ *captain.Command, _ []string) error {
+			return runner.Run(params)
+		},
+	).SetGroup(ProjectUsageGroup)
+}

@@ -11,7 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/rtutils/p"
+	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"golang.org/x/net/context"
 )
@@ -92,7 +92,7 @@ func (m *Messenger) PrintByPlacement(placement graph.MessagePlacementType) error
 		if message.Interrupt == graph.MessageInterruptTypePrompt {
 			if m.out.Config().Interactive {
 				m.out.Print(locale.Tl("messenger_prompt_continue", "Press ENTER to continue."))
-				fmt.Scanln(p.StrP("")) // Wait for input from user
+				fmt.Scanln(ptr.To("")) // Wait for input from user
 			} else {
 				logging.Debug("Skipping message prompt as we're not in interactive mode")
 			}
