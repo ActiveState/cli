@@ -4,7 +4,6 @@ import (
 	"net/http"
 	"path/filepath"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/ActiveState/cli/internal/captain"
@@ -31,6 +30,7 @@ type Params struct {
 	Name         string
 	Version      string
 	Namespace    string
+	Owner        string
 	Description  string
 	Authors      captain.UsersValue
 	Depends      captain.PackagesValue
@@ -72,8 +72,12 @@ func (r *Runner) Run(params *Params) error {
 		return locale.NewInputError("err_auth_required")
 	}
 
-	if !fileutils.FileExists(params.Filepath) {
-		return locale.NewInputError("err_uploadingredient_file_not_found", "File not found: {{.V0}}", params.Filepath)
+	if params.Filepath != "" {
+		if !fileutils.FileExists(params.Filepath) {
+			return locale.NewInputError("err_uploadingredient_file_not_found", "File not found: {{.V0}}", params.Filepath)
+		}
+	} else if !params.Editor {
+		return locale.NewInputError("err_uploadingredient_file_required", "You have to supply the source archive unless editing.")
 	}
 
 	reqVars := request.PublishVariables{}
@@ -81,7 +85,7 @@ func (r *Runner) Run(params *Params) error {
 	// Pass input from meta file
 	if params.MetaFilepath != "" {
 		if !fileutils.TargetExists(params.MetaFilepath) {
-			return locale.NewInputError("err_uploadingredient_file_not_found", "File not found: {{.V0}}", params.MetaFilepath)
+			return locale.NewInputError("err_uploadingredient_metafile_not_found", "Meta file not found: {{.V0}}", params.MetaFilepath)
 		}
 
 		b, err := fileutils.ReadFile(params.MetaFilepath)
@@ -97,15 +101,8 @@ func (r *Runner) Run(params *Params) error {
 	// Namespace
 	if params.Namespace != "" {
 		reqVars.Namespace = params.Namespace
-	} else if reqVars.Namespace == "" {
+	} else if reqVars.Namespace == "" && r.project != nil && r.project.Owner() != "" {
 		reqVars.Namespace = model.NewSharedNamespace(r.project.Owner()).String()
-	}
-
-	// Validate namespace
-	prefix := r.project.Owner() + "/"
-	if !strings.HasPrefix(reqVars.Namespace, prefix) {
-		return locale.NewInputError("err_uploadingredient_namespace_invalid_org",
-			"Namespace should be prefixed '[ACTIONABLE]{{.V0}}[/RESET]', received: '[ACTIONABLE]{{.V1}}[/RESET]'.", prefix, reqVars.Namespace)
 	}
 
 	// Name
@@ -172,6 +169,10 @@ func (r *Runner) Run(params *Params) error {
 		// https://activestatef.atlassian.net/browse/DX-1886
 		if reqVars.Description != p.PStr(ingredient.Ingredient.Description) {
 			return locale.NewInputError("err_uploadingredient_edit_description_not_supported")
+		}
+
+		if reqVars.Namespace == "" {
+			return locale.NewInputError("err_uploadingredient_namespace_required", "You have to supply the namespace when working outside of a project context")
 		}
 	}
 
@@ -316,6 +317,8 @@ func (r *Runner) OpenInEditor(pr *request.PublishVariables) error {
 		return locale.WrapError(err, "err_uploadingredient_publish", "Could not write publish request to file")
 	}
 
+	r.out.Notice(locale.Tr("uploadingredient_editor_opening", fn))
+
 	// Open file
 	if err := open.Start(fn); err != nil {
 		return locale.WrapError(err, "err_uploadingredient_publish", "Could not open publish request file")
@@ -330,9 +333,6 @@ func (r *Runner) OpenInEditor(pr *request.PublishVariables) error {
 	if err != nil {
 		return errs.Wrap(err, "Could not read file")
 	}
-
-	v := string(eb)
-	_ = v
 
 	// Write changes to request
 	if err := pr.UnmarshalYaml(eb); err != nil {

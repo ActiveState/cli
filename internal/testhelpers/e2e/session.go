@@ -26,6 +26,8 @@ import (
 	"github.com/ActiveState/cli/internal/rtutils/singlethread"
 	"github.com/ActiveState/cli/internal/strutils"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
+	"github.com/ActiveState/cli/pkg/platform/api/mono"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/users"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/project"
@@ -336,33 +338,32 @@ func (s *Session) LogoutUser() {
 	p.ExpectExitCode(0)
 }
 
-func (s *Session) CreateNewUser() string {
+func (s *Session) AddUserToCleanup(username string) {
+	s.users = append(s.users, username)
+}
+
+func (s *Session) CreateNewUser() *mono_models.UserEditable {
 	uid, err := uuid.NewRandom()
 	require.NoError(s.t, err)
 
 	username := fmt.Sprintf("user-%s", uid.String()[0:8])
-	password := username
-	email := fmt.Sprintf("%s@test.tld", username)
+	userMeta := &mono_models.UserEditable{
+		Email:    fmt.Sprintf("%s@test.tld", username),
+		Username: username,
+		Password: username,
+		Name:     username,
+	}
 
-	p := s.Spawn(tagsuite.Auth, "signup", "--prompt")
+	params := users.NewAddUserParams()
+	params.SetUser(userMeta)
+	_, err = mono.New().Users.AddUser(params)
 
-	p.Expect("I accept")
-	time.Sleep(time.Millisecond * 100)
-	p.Send("y")
-	p.Expect("username:")
-	p.Send(username)
-	p.Expect("password:")
-	p.Send(password)
-	p.Expect("again:")
-	p.Send(password)
-	p.Expect("email:")
-	p.Send(email)
-	p.Expect("account has been registered", authnTimeout)
+	require.NoError(s.t, err)
+
+	p := s.Spawn("auth", "--username", username, "--password", userMeta.Password)
 	p.ExpectExitCode(0)
 
-	s.users = append(s.users, username)
-
-	return username
+	return userMeta
 }
 
 // NotifyProjectCreated indicates that the given project was created on the Platform and needs to

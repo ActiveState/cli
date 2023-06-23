@@ -29,15 +29,46 @@ type AuthIntegrationTestSuite struct {
 	tagsuite.Suite
 }
 
+func (suite *AuthIntegrationTestSuite) TestSignup() {
+	suite.OnlyRunForTags(tagsuite.Auth)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	uid, err := uuid.NewRandom()
+	suite.Require().NoError(err)
+
+	username := fmt.Sprintf("user-%s", uid.String()[0:8])
+	password := username
+	email := fmt.Sprintf("%s@test.tld", username)
+
+	p := ts.Spawn(tagsuite.Auth, "signup", "--prompt")
+
+	p.Expect("I accept")
+	time.Sleep(time.Millisecond * 100)
+	p.Send("y")
+	p.Expect("username:")
+	p.Send(username)
+	p.Expect("password:")
+	p.Send(password)
+	p.Expect("again:")
+	p.Send(password)
+	p.Expect("email:")
+	p.Send(email)
+	p.Expect("account has been registered")
+	p.ExpectExitCode(0)
+
+	ts.AddUserToCleanup(username)
+}
+
 func (suite *AuthIntegrationTestSuite) TestAuth() {
 	suite.OnlyRunForTags(tagsuite.Auth, tagsuite.Critical)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
-	username := ts.CreateNewUser()
+	user := ts.CreateNewUser()
 	ts.LogoutUser()
-	suite.interactiveLogin(ts, username)
+	suite.interactiveLogin(ts, user.Username)
 	ts.LogoutUser()
-	suite.loginFlags(ts, username)
+	suite.loginFlags(ts, user.Username)
 	suite.ensureLogout(ts)
 }
 
