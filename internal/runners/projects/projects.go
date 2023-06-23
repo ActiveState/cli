@@ -104,6 +104,7 @@ type primeable interface {
 	primer.Auther
 	primer.Outputer
 	primer.Configurer
+	primer.Prompter
 }
 
 func NewParams() *Params {
