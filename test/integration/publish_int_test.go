@@ -46,6 +46,16 @@ func (suite *PublishIntegrationTestSuite) TestPublish() {
 	tempFile := fileutils.TempFilePathUnsafe()
 	defer os.Remove(tempFile)
 
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	ts.Env = append(ts.Env,
+		// Publish tests shouldn't run against staging as they pollute the inventory db and artifact cache
+		constants.APIHostEnvVarName+"="+os.Getenv(constants.APIHostEnvVarName),
+	)
+
+	user := ts.CreateNewUser()
+
 	tests := []struct {
 		name   string
 		input  input
@@ -178,16 +188,6 @@ authors:
 	}
 	for _, tt := range tests {
 		suite.Run(tt.name, func() {
-			ts := e2e.New(suite.T(), false)
-			defer ts.Close()
-
-			ts.Env = append(ts.Env,
-				// Publish tests shouldn't run against staging as they pollute the inventory db and artifact cache
-				constants.APIHostEnvVarName+"="+os.Getenv(constants.APIHostEnvVarName),
-			)
-
-			user := ts.CreateNewUser()
-
 			templateVars := map[string]interface{}{
 				"Username": user.Username,
 				"Email":    user.Email,
