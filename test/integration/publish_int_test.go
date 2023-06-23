@@ -14,6 +14,8 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
+var editorFileRx = regexp.MustCompile(`file:\s*?(.*?)\.\s`)
+
 type PublishIntegrationTestSuite struct {
 	tagsuite.Suite
 }
@@ -215,11 +217,10 @@ authors:
 			// Send custom input via --editor
 			if tt.input.editorValue != nil {
 				cp.Expect("Press enter when done editing")
-				rx := regexp.MustCompile(`file:\s*?(.*?)\.\s`)
 				snapshot := cp.Snapshot()
-				match := rx.FindSubmatch([]byte(snapshot))
+				match := editorFileRx.FindSubmatch([]byte(snapshot))
 				if len(match) != 2 {
-					suite.Fail("Could not match rx in snapshot: %s", rx.String())
+					suite.Fail("Could not match rx in snapshot: %s", editorFileRx.String())
 				}
 				fpath := match[1]
 				inputEditorValue, err := strutils.ParseTemplate(*tt.input.editorValue, templateVars, nil)
