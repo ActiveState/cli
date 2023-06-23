@@ -75,8 +75,6 @@ func (s *Set) Run(params SetRunParams) error {
 		return err
 	}
 
-	s.out.Print(output.Prepare("", &struct{}{})) // {} for JSON
-
 	if secret.IsProject() {
 		return secrets.ShareWithOrgUsers(secretsapi.GetClient(), org, remoteProject, secret.Name(), params.Value, s.auth)
 	}

@@ -92,5 +92,5 @@ func newLogoutCommand(prime *primer.Values) *captain.Command {
 		func(ccmd *captain.Command, args []string) error {
 			return logoutRunner.Run()
 		},
-	)
+	).SetDoesNotSupportStructuredOutput()
 }

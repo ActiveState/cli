@@ -56,10 +56,7 @@ func (u *Reset) Run(params *ResetParams) error {
 		return locale.NewInputError(locale.T("use_reset_notice_not_reset"))
 	}
 
-	u.out.Print(output.Prepare(
-		locale.Tl("use_reset_notice_reset", "Stopped using your project runtime"),
-		&struct{}{},
-	))
+	u.out.Notice(locale.Tl("use_reset_notice_reset", "Stopped using your project runtime"))
 
 	if runtime.GOOS == "windows" {
 		u.out.Notice(locale.T("use_reset_notice_windows"))

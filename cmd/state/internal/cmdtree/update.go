@@ -77,5 +77,6 @@ func newUpdateUnlockCommand(prime *primer.Values, globals *globalOptions) *capta
 		},
 	)
 	cmd.SetSkipChecks(true)
+	cmd.SetDoesNotSupportStructuredOutput()
 	return cmd
 }

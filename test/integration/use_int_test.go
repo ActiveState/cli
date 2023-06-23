@@ -286,11 +286,6 @@ func (suite *UseIntegrationTestSuite) TestJSON() {
 	cp.Expect(`"executables":`)
 	cp.ExpectExitCode(0)
 	AssertValidJSON(suite.T(), cp)
-
-	cp = ts.Spawn("use", "reset", "-o", "json")
-	cp.Expect(`{}`)
-	cp.ExpectExitCode(0)
-	AssertValidJSON(suite.T(), cp)
 }
 
 func (suite *UseIntegrationTestSuite) SetupRCFile(ts *e2e.Session) {

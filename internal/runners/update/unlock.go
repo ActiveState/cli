@@ -60,11 +60,7 @@ func (u *Unlock) Run(params *UnlockParams) error {
 		return locale.WrapError(err, "err_update_projectfile", "Could not update projectfile")
 	}
 
-	u.out.Print(output.Prepare(
-		locale.Tl("version_unlocked", "State Tool version unlocked"),
-		&struct{}{},
-	))
-
+	u.out.Notice(locale.Tl("version_unlocked", "State Tool version unlocked"))
 	return nil
 }
 
