@@ -10,7 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/prompt"
-	"github.com/ActiveState/cli/internal/rtutils/p"
+	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/pkg/platform/api/mono"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/users"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
@@ -251,7 +251,7 @@ func AuthenticateWithBrowser(out output.Outputer, auth *authentication.Auth, pro
 		var cont bool
 		var err error
 		for !cont {
-			cont, err = prompt.Confirm(locale.Tl("continue", "Continue?"), locale.T("auth_press_enter"), p.BoolP(false))
+			cont, err = prompt.Confirm(locale.Tl("continue", "Continue?"), locale.T("auth_press_enter"), ptr.To(false))
 			if err != nil {
 				return errs.Wrap(err, "Prompt failed")
 			}

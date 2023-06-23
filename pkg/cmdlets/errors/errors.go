@@ -17,7 +17,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/rtutils/p"
+	"github.com/ActiveState/cli/internal/rtutils/ptr"
 )
 
 var PanicOnMissingLocale = true
@@ -154,7 +154,7 @@ func ReportError(err error, cmd *captain.Command, an analytics.Dispatcher) {
 	}
 
 	an.EventWithLabel(anaConst.CatDebug, action, strings.Join(label, " "), &dimensions.Values{
-		Error: p.StrP(errorMsg),
+		Error: ptr.To(errorMsg),
 	})
 
 	if !locale.HasError(err) && isErrs && !hasMarshaller {
