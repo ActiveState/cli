@@ -177,6 +177,7 @@ func newExportDocsCommand(prime *primer.Values) *captain.Command {
 		})
 
 	cmd.SetHidden(true)
+	cmd.SetDoesNotSupportStructuredOutput()
 
 	return cmd
 }
