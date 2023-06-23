@@ -192,7 +192,7 @@ func (a *Client) EventWithLabel(category string, action, label string, dims ...*
 	}
 
 	if a.auth != nil && a.auth.UserID() != nil {
-		a.customDimensions.UserID = ptr.Clone(a.auth.UserID())
+		a.customDimensions.UserID = ptr.To(string(*a.auth.UserID()))
 	}
 
 	a.customDimensions.Sequence = ptr.To(a.sequence)
