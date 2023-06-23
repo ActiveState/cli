@@ -39,7 +39,7 @@ func getBuildExpression(proj *project.Project, customCommit *strfmt.UUID, auth *
 // pull in the new build script. Otherwise, if there are local build script changes, create a new
 // commit with them in order to update the remote one.
 func Sync(proj *project.Project, commitID *strfmt.UUID, out output.Outputer, auth *authentication.Auth) error {
-	logging.Debug("Synchronizing local build script")
+	logging.Debug("Synchronizing local build script using commit %s", commitID)
 	script, err := buildscript.NewScriptFromProjectDir(proj.Dir())
 	if err != nil && !buildscript.IsDoesNotExistError(err) {
 		return errs.Wrap(err, "Could not get local build script")
@@ -47,7 +47,7 @@ func Sync(proj *project.Project, commitID *strfmt.UUID, out output.Outputer, aut
 
 	expr, err := getBuildExpression(proj, commitID, auth)
 	if err != nil {
-		return errs.Wrap(err, "Could not get remote build expr")
+		return errs.Wrap(err, "Could not get remote build expr for provided commit")
 	}
 
 	// Note: merging and/or conflict resolution will happen in another ticket (DX-1912).
@@ -89,7 +89,7 @@ func Sync(proj *project.Project, commitID *strfmt.UUID, out output.Outputer, aut
 
 		expr, err = getBuildExpression(proj, commitID, auth) // timestamps might be different
 		if err != nil {
-			return errs.Wrap(err, "Could not get remote build expr")
+			return errs.Wrap(err, "Could not get remote build expr for staged commit")
 		}
 	}
 
