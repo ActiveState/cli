@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/ActiveState/cli/internal/analytics/dimensions"
-	"github.com/ActiveState/cli/internal/rtutils/p"
+	"github.com/ActiveState/cli/internal/rtutils/ptr"
 )
 
 func Test_mergeDimensions(t *testing.T) {
@@ -22,29 +22,29 @@ func Test_mergeDimensions(t *testing.T) {
 			"Sequence favours source",
 			args{
 				&dimensions.Values{
-					Sequence: p.IntP(10),
+					Sequence: ptr.To(10),
 				},
 				[]*dimensions.Values{
 					{
-						Sequence: p.IntP(100),
+						Sequence: ptr.To(100),
 					},
 				},
 			},
-			&dimensions.Values{Sequence: p.IntP(100)},
+			&dimensions.Values{Sequence: ptr.To(100)},
 		},
 		{
 			"Sequence favours source and accepts 0 value",
 			args{
 				&dimensions.Values{
-					Sequence: p.IntP(10),
+					Sequence: ptr.To(10),
 				},
 				[]*dimensions.Values{
 					{
-						Sequence: p.IntP(0),
+						Sequence: ptr.To(0),
 					},
 				},
 			},
-			&dimensions.Values{Sequence: p.IntP(0)},
+			&dimensions.Values{Sequence: ptr.To(0)},
 		},
 	}
 	for _, tt := range tests {

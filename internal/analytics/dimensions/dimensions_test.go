@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ActiveState/cli/internal/rtutils/p"
+	"github.com/ActiveState/cli/internal/rtutils/ptr"
 )
 
 func TestMap_Merge(t *testing.T) {
@@ -18,21 +18,21 @@ func TestMap_Merge(t *testing.T) {
 	}{
 		{
 			"Simple",
-			&Values{Version: p.StrP("inputVersion")},
-			&Values{BranchName: p.StrP("mergeBranchName")},
-			&Values{Version: p.StrP("inputVersion"), BranchName: p.StrP("mergeBranchName")},
+			&Values{Version: ptr.To("inputVersion")},
+			&Values{BranchName: ptr.To("mergeBranchName")},
+			&Values{Version: ptr.To("inputVersion"), BranchName: ptr.To("mergeBranchName")},
 		},
 		{
 			"Override",
-			&Values{Version: p.StrP("inputVersion")},
-			&Values{Version: p.StrP("mergeVersion")},
-			&Values{Version: p.StrP("mergeVersion")},
+			&Values{Version: ptr.To("inputVersion")},
+			&Values{Version: ptr.To("mergeVersion")},
+			&Values{Version: ptr.To("mergeVersion")},
 		},
 		{
 			"Nils don't count",
-			&Values{Version: p.StrP("inputVersion")},
+			&Values{Version: ptr.To("inputVersion")},
 			&Values{Version: nil},
-			&Values{Version: p.StrP("inputVersion")},
+			&Values{Version: ptr.To("inputVersion")},
 		},
 	}
 	for _, tt := range tests {
