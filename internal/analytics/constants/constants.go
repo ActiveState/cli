@@ -12,8 +12,9 @@ const CatShim = "shim"
 // CatBuild is the event category used for headchef builds
 const CatBuild = "build"
 
-// CatRuntime is the event category used for all runtime setup and usage
-const CatRuntime = "runtime"
+// CatRuntime is the event category used for debugging runtime setup and usage.
+// It should only be used to help diagnose where errors and dropoffs may be happening.
+const CatRuntime = "runtime-debug"
 
 // CatRuntimeUsage is the event category used for all runtime usage
 const CatRuntimeUsage = "runtime-use"
@@ -51,9 +52,6 @@ const ActRuntimeSuccess = "success"
 // ActRuntimeFailure is the event action sent when a failure occurred anytime during a runtime operation
 const ActRuntimeFailure = "failure"
 
-// ActRuntimeUserFailure is the event action sent when a user failure occurred anytime during a runtime operation
-const ActRuntimeUserFailure = "user_failure"
-
 // ActConfigSet is the event action sent when a configuration value is set
 const ActConfigSet = "set"
 
@@ -83,9 +81,6 @@ const LblRtFailEnv = "env"
 
 // CatPpmConversion is the event category used for ppm-conversion events
 const CatPpmConversion = "ppm-conversion"
-
-// ActBuildProject is the event action for requesting a build for a specific project
-const ActBuildProject = "project"
 
 // CatPPMShimCmd is the event category used for PPM shim events
 const CatPPMShimCmd = "ppm-shim"

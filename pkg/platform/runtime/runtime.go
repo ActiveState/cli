@@ -1,6 +1,7 @@
 package runtime
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -171,16 +172,50 @@ func (r *Runtime) recordCompletion(err error) {
 	var action string
 	if err != nil {
 		action = anaConsts.ActRuntimeFailure
-		if locale.IsInputError(err) {
-			action = anaConsts.ActRuntimeUserFailure
-		}
 	} else {
 		action = anaConsts.ActRuntimeSuccess
 		r.recordUsage()
 	}
 
+	var projectID string
+	if pj, err := model.FetchProjectByName(r.target.Owner(), r.target.Name()); err == nil {
+		projectID = pj.ProjectID.String()
+	} else {
+		multilog.Error("Unable to fetch project by name: %v", errs.JoinMessage(err))
+	}
+
+	ns := project.Namespaced{
+		Owner:   r.target.Owner(),
+		Project: r.target.Name(),
+	}
+
+	var errorType string
+	switch {
+	case locale.IsInputError(err):
+		errorType = "input"
+	case errs.Matches(err, &setup.ProgressReportError{}): // should come before non-input errors
+		errorType = "progress"
+	case errs.Matches(err, &model.SolverError{}):
+		errorType = "solve"
+	case errs.Matches(err, &setup.BuildError{}):
+		errorType = "build"
+	case errs.Matches(err, &setup.ArtifactSetupErrors{}):
+		errorType = "install" // initial guess
+		if setupErrors := (&setup.ArtifactSetupErrors{}); errors.As(err, &setupErrors) {
+			for _, err := range setupErrors.Errors() {
+				if errs.Matches(err, &setup.ArtifactDownloadError{}) {
+					errorType = "download"
+					break // it only takes one download failure to report the runtime failure as due to download error
+				}
+			}
+		}
+	}
+
 	r.analytics.EventWithLabel(anaConsts.CatRuntime, action, anaConsts.LblRtFailEnv, &dimensions.Values{
-		CommitID: ptr.To(r.target.CommitUUID().String()),
+		CommitID:         ptr.To(r.target.CommitUUID().String()),
+		ProjectID:        ptr.To(projectID),
+		ProjectNameSpace: ptr.To(ns.String()),
+		Error:            ptr.To(errorType),
 	})
 }
 
