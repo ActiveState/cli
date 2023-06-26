@@ -81,7 +81,7 @@ func newProjectsEditCommand(prime *primer.Values) *captain.Command {
 		func(ccmd *captain.Command, args []string) error {
 			return runner.Run(params)
 		},
-	).SetGroup(ProjectUsageGroup)
+	).SetGroup(ProjectUsageGroup).SetUnstable(true)
 }
 
 func newDeleteProjectsCommand(prime *primer.Values) *captain.Command {
