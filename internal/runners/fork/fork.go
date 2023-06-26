@@ -39,20 +39,6 @@ func New(prime primeable) *Fork {
 	}
 }
 
-type forkOutput struct {
-	source *project.Namespaced
-	target *project.Namespaced
-}
-
-func (o *forkOutput) MarshalStructured(format output.Format) interface{} {
-	return map[string]string{
-		"OriginalOwner": o.source.Owner,
-		"OriginalName":  o.source.Project,
-		"NewOwner":      o.target.Owner,
-		"NewName":       o.target.Project,
-	}
-}
-
 func (f *Fork) Run(params *Params) error {
 	if !f.auth.Authenticated() {
 		return locale.NewInputError("err_auth_required", "Authentication is required, please authenticate by running 'state auth'")
@@ -84,9 +70,16 @@ func (f *Fork) Run(params *Params) error {
 
 	f.out.Print(output.Prepare(
 		locale.Tl("fork_success", "Your fork has been successfully created at https://{{.V0}}/{{.V1}}.", constants.PlatformURL, target.String()),
-		&forkOutput{
-			&params.Namespace,
-			target,
+		&struct {
+			OriginalOwner string `json:"OriginalOwner"`
+			OriginalName  string `json:"OriginalName"`
+			NewOwner      string `json:"NewOwner"`
+			NewName       string `json:"NewName"`
+		}{
+			params.Namespace.Owner,
+			params.Namespace.Project,
+			target.Owner,
+			target.Project,
 		}))
 
 	return nil

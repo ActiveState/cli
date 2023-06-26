@@ -8,7 +8,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/prompt"
-	"github.com/ActiveState/cli/internal/rtutils/p"
+	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/projects"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -79,9 +79,9 @@ func (e *Edit) Run(params EditParams) error {
 	if params.Visibility != "" {
 		editMsg += locale.Tl("edit_prompt_visibility", "  - Visibility: {{.V0}}\n", params.Visibility)
 		if strings.EqualFold(params.Visibility, visibilityPublic) {
-			editable.Private = p.BoolP(false)
+			editable.Private = ptr.To(false)
 		} else {
-			editable.Private = p.BoolP(true)
+			editable.Private = ptr.To(true)
 		}
 	}
 

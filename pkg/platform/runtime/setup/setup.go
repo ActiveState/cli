@@ -24,7 +24,7 @@ import (
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/proxyreader"
 	"github.com/ActiveState/cli/internal/rollbar"
-	"github.com/ActiveState/cli/internal/rtutils/p"
+	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/svcctl"
 	"github.com/ActiveState/cli/internal/unarchiver"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef"
@@ -266,7 +266,7 @@ func (s *Setup) updateArtifacts() ([]artifact.ArtifactID, error) {
 		return err
 	})
 	if err != nil {
-		return artifacts, errs.Wrap(err, "Error setting up runtime")
+		return artifacts, locale.WrapError(err, "err_runtime_setup", "Error setting up runtime")
 	}
 
 	return artifacts, nil
@@ -389,7 +389,7 @@ func (s *Setup) fetchAndInstallArtifactsFromRecipe(installFunc artifactInstaller
 
 	// Analytics data to send.
 	dimensions := &dimensions.Values{
-		CommitID: p.StrP(s.target.CommitUUID().String()),
+		CommitID: ptr.To(s.target.CommitUUID().String()),
 	}
 
 	// send analytics build event, if a new runtime has to be built in the cloud

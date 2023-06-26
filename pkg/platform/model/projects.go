@@ -284,3 +284,17 @@ func EditProject(owner, name string, project *mono_models.ProjectEditable) error
 
 	return nil
 }
+
+func DeleteProject(owner, project string, auth *authentication.Auth) error {
+	params := projects.NewDeleteProjectParams()
+	params.SetOrganizationName(owner)
+	params.SetProjectName(project)
+
+	_, err := auth.Client().Projects.DeleteProject(params, auth.ClientAuth())
+	if err != nil {
+		msg := api.ErrorMessageFromPayload(err)
+		return locale.WrapError(err, msg)
+	}
+
+	return nil
+}
