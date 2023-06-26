@@ -5,6 +5,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runners/projects"
+	"github.com/ActiveState/cli/pkg/project"
 )
 
 func newProjectsCommand(prime *primer.Values) *captain.Command {
@@ -39,6 +40,48 @@ func newRemoteProjectsCommand(prime *primer.Values) *captain.Command {
 			return runner.RunRemote(params)
 		},
 	).SetGroup(ProjectUsageGroup)
+}
+
+func newProjectsEditCommand(prime *primer.Values) *captain.Command {
+	runner := projects.NewEdit(prime)
+	params := projects.EditParams{
+		Namespace: &project.Namespaced{},
+	}
+
+	return captain.NewCommand(
+		"edit",
+		locale.Tl("projects_edit_title", "Edit Project"),
+		locale.T("projects_edit_description"),
+		prime,
+		[]*captain.Flag{
+			{
+				Name:        "name",
+				Description: locale.Tl("projects_edit_name_description", "Edit the name of the project."),
+				Value:       &params.ProjectName,
+			},
+			{
+				Name:        "visibility",
+				Description: locale.Tl("projects_edit_visibility_description", "Edit the visibility to non-members, either public or private."),
+				Value:       &params.Visibility,
+			},
+			{
+				Name:        "repository",
+				Description: locale.Tl("projects_edit_repository_description", "Edit the linked VCS repo. To unset use --repo=\"\"."),
+				Value:       &params.Repository,
+			},
+		},
+		[]*captain.Argument{
+			{
+				Name:        "namespace",
+				Description: locale.Tl("projects_edit_namespace_description", "The namespace of the project to edit"),
+				Required:    true,
+				Value:       params.Namespace,
+			},
+		},
+		func(ccmd *captain.Command, args []string) error {
+			return runner.Run(params)
+		},
+	).SetGroup(ProjectUsageGroup).SetUnstable(true)
 }
 
 func newDeleteProjectsCommand(prime *primer.Values) *captain.Command {
