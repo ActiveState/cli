@@ -17,54 +17,64 @@ import (
 )
 
 type Messenger struct {
-	cmd      *captain.Command
 	out      output.Outputer
 	svcModel *model.SvcModel
+	messages []*graph.MessageInfo
 }
 
-func (m *Messenger) Interceptor(next captain.ExecuteFunc) captain.ExecuteFunc {
-	return func(cmd *captain.Command, args []string) error {
-		if m.out.Type().IsStructured() {
-			// No point showing messaging on non-plain output (eg. json)
-			return next(cmd, args)
-		}
-
-		cmds := cmd.JoinedCommandNames()
-		flags := cmd.ActiveFlagNames()
-
-		messages, err := m.svcModel.CheckMessages(context.Background(), cmds, flags)
-		if err != nil {
-			multilog.Error("Could not report messages as CheckMessages return an error: %s", errs.JoinMessage(err))
-		}
-
-		logging.Debug("Printing %d messages", len(messages))
-
-		if len(messages) > 0 {
-			if err := m.PrintByPlacement(messages, graph.MessagePlacementTypeBeforeCmd); err != nil {
-				return errs.Wrap(err, "message error occurred before cmd")
-			}
-		}
-
-		if err := next(cmd, args); err != nil {
-			return err
-		}
-
-		if len(messages) > 0 {
-			if err := m.PrintByPlacement(messages, graph.MessagePlacementTypeAfterCmd); err != nil {
-				return errs.Wrap(err, "message error occurred after cmd")
-			}
-		}
-
-		return nil
+func New(out output.Outputer, svcModel *model.SvcModel) *Messenger {
+	return &Messenger{
+		out:      out,
+		svcModel: svcModel,
 	}
 }
 
-func (m *Messenger) PrintByPlacement(messages []*graph.MessageInfo, placement graph.MessagePlacementType) error {
+func (m *Messenger) OnExecStart(cmd *captain.Command, _ []string) error {
+	if m.out.Type().IsStructured() {
+		// No point showing messaging on non-plain output (eg. json)
+		return nil
+	}
+
+	cmds := cmd.JoinedCommandNames()
+	flags := cmd.ActiveFlagNames()
+
+	messages, err := m.svcModel.CheckMessages(context.Background(), cmds, flags)
+	if err != nil {
+		multilog.Error("Could not report messages as CheckMessages return an error: %s", errs.JoinMessage(err))
+	}
+
+	m.messages = messages
+
+	logging.Debug("Received %d messages to print", len(messages))
+
+	if err := m.PrintByPlacement(graph.MessagePlacementTypeBeforeCmd); err != nil {
+		return errs.Wrap(err, "message error occurred before cmd")
+	}
+
+	return nil
+}
+
+func (m *Messenger) OnExecStop(cmd *captain.Command, _ []string) error {
+	if m.out.Type().IsStructured() {
+		// No point showing messaging on non-plain output (eg. json)
+		return nil
+	}
+
+	if err := m.PrintByPlacement(graph.MessagePlacementTypeAfterCmd); err != nil {
+		return errs.Wrap(err, "message error occurred before cmd")
+	}
+
+	return nil
+}
+
+func (m *Messenger) PrintByPlacement(placement graph.MessagePlacementType) error {
 	exit := []string{}
 
-	for _, message := range messages {
+	messages := []*graph.MessageInfo{}
+	for _, message := range m.messages {
 		if message.Placement != placement {
 			logging.Debug("Skipping message %s as it's placement (%s) does not match %s", message.ID, message.Placement, placement)
+			messages = append(messages, message)
 			continue
 		}
 
@@ -93,6 +103,8 @@ func (m *Messenger) PrintByPlacement(messages []*graph.MessageInfo, placement gr
 		}
 	}
 
+	m.messages = messages
+
 	if len(exit) > 0 {
 		// It's the responsibility of the message to give the user context as to why this exit happened.
 		// We pass an input error here to ensure this doesn't get logged.
@@ -100,12 +112,4 @@ func (m *Messenger) PrintByPlacement(messages []*graph.MessageInfo, placement gr
 	}
 
 	return nil
-}
-
-func New(cmd *captain.Command, out output.Outputer, svcModel *model.SvcModel) *Messenger {
-	return &Messenger{
-		cmd:      cmd,
-		out:      out,
-		svcModel: svcModel,
-	}
 }
