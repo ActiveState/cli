@@ -266,7 +266,7 @@ func (s *Setup) updateArtifacts() ([]artifact.ArtifactID, error) {
 		return err
 	})
 	if err != nil {
-		return artifacts, errs.Wrap(err, "Error setting up runtime")
+		return artifacts, locale.WrapError(err, "err_runtime_setup", "Error setting up runtime")
 	}
 
 	return artifacts, nil
