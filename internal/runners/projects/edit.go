@@ -57,7 +57,7 @@ func NewEdit(prime primeable) *Edit {
 
 func (e *Edit) Run(params EditParams) error {
 	if !e.auth.Authenticated() {
-		return locale.NewInputError("err_project_edit_not_authenticated", "In order to edit your project you need to be authenticated, please run '[ACTIONABLE]state auth[/RESET]' to authenticate.")
+		return locale.NewInputError("err_project_edit_not_authenticated", "In order to edit your project you need to be authenticated. Please run '[ACTIONABLE]state auth[/RESET]' to authenticate.")
 	}
 
 	err := params.validate()
@@ -91,7 +91,8 @@ func (e *Edit) Run(params EditParams) error {
 	}
 	editMsg += locale.Tl("edit_prompt_confirm", "Continue?")
 
-	edit, err := e.prompt.Confirm("", editMsg, &e.out.Config().Interactive)
+	defaultChoice := !e.out.Config().Interactive
+	edit, err := e.prompt.Confirm("", editMsg, &defaultChoice)
 	if err != nil {
 		return locale.WrapError(err, "err_edit_prompt", "Could not prompt for edit confirmation")
 	}
