@@ -105,5 +105,5 @@ func newDeleteProjectsCommand(prime *primer.Values) *captain.Command {
 		func(_ *captain.Command, _ []string) error {
 			return runner.Run(params)
 		},
-	).SetGroup(ProjectUsageGroup)
+	).SetGroup(ProjectUsageGroup).SetUnstable(true)
 }
