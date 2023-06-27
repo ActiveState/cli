@@ -189,23 +189,27 @@ func (r *Runtime) recordCompletion(err error) {
 	// download error to be cause by an input error.
 	case locale.IsInputError(err):
 		errorType = "input"
-	// Progress errors should come before any other non-input error.
-	case errs.Matches(err, &setup.ProgressReportError{}) || errs.Matches(err, &buildlog.ProgressReportError{}):
-		errorType = "progress"
 	case errs.Matches(err, &model.SolverError{}):
 		errorType = "solve"
 	case errs.Matches(err, &setup.BuildError{}) || errs.Matches(err, &buildlog.BuildError{}):
 		errorType = "build"
 	case errs.Matches(err, &setup.ArtifactSetupErrors{}):
-		errorType = "install" // initial guess
 		if setupErrors := (&setup.ArtifactSetupErrors{}); errors.As(err, &setupErrors) {
 			for _, err := range setupErrors.Errors() {
-				if errs.Matches(err, &setup.ArtifactDownloadError{}) {
+				switch {
+				case errs.Matches(err, &setup.ArtifactDownloadError{}):
 					errorType = "download"
 					break // it only takes one download failure to report the runtime failure as due to download error
+				case errs.Matches(err, &setup.ArtifactInstallError{}):
+					errorType = "install"
+					// Note: do not break because there could be download errors, and those take precedence
 				}
 			}
 		}
+	// Progress/event handler errors should come last because they can wrap one of the above errors,
+	// and those errors actually caused the failure, not these.
+	case errs.Matches(err, &setup.ProgressReportError{}) || errs.Matches(err, &buildlog.EventHandlerError{}):
+		errorType = "progress"
 	}
 
 	r.analytics.Event(anaConsts.CatRuntime, action, &dimensions.Values{

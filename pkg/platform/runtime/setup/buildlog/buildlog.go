@@ -53,8 +53,8 @@ type BuildError struct {
 	*locale.LocalizedError
 }
 
-// ProgressReportError designates an error in the event handler for reporting progress.
-type ProgressReportError struct {
+// EventHandlerError designates an error in the event handler for reporting progress.
+type EventHandlerError struct {
 	*errs.WrapperError
 }
 
@@ -307,7 +307,7 @@ func resolveArtifactName(artifactID artifact.ArtifactID, artifactMap artifact.Ar
 func handleEvent(handler events.Handler, ev events.Eventer) error {
 	err := handler.Handle(ev)
 	if err != nil {
-		return &ProgressReportError{errs.Wrap(err, "Error handling event: %v", errs.JoinMessage(err))}
+		return &EventHandlerError{errs.Wrap(err, "Error handling event: %v", errs.JoinMessage(err))}
 	}
 	return nil
 }
