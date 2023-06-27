@@ -64,7 +64,7 @@ func (suite *PublishIntegrationTestSuite) TestPublish() {
 		{
 			"New ingredient with file arg and flags",
 			input{
-				[]string{"", tempFile,
+				[]string{tempFile,
 					"--name", "im-a-name",
 					"--namespace", "{{.Username}}/shared",
 					"--version", "2.3.4",
@@ -90,7 +90,7 @@ func (suite *PublishIntegrationTestSuite) TestPublish() {
 		{
 			"New ingredient with meta file",
 			input{
-				[]string{"{{.MetaFile}}", tempFile},
+				[]string{"--meta", "{{.MetaFile}}", tempFile},
 				p.StrP(`
 name: im-a-name
 namespace: {{.Username}}/shared
@@ -118,7 +118,7 @@ authors:
 		{
 			"New ingredient with meta file and flags",
 			input{
-				[]string{"{{.MetaFile}}", tempFile, "--name", "im-a-name-from-flag", "--author", "author-name-from-flag <author-email-from-flag@domain.tld>"},
+				[]string{"--meta", "{{.MetaFile}}", tempFile, "--name", "im-a-name-from-flag", "--author", "author-name-from-flag <author-email-from-flag@domain.tld>"},
 				p.StrP(`
 name: im-a-name
 namespace: {{.Username}}/shared
@@ -146,7 +146,7 @@ authors:
 		{
 			"New ingredient with editor flag",
 			input{
-				[]string{"", tempFile, "--editor"},
+				[]string{tempFile, "--editor"},
 				nil,
 				p.StrP(`
 name: im-a-name
@@ -174,7 +174,7 @@ authors:
 		{
 			"Cancel upload",
 			input{
-				[]string{"", tempFile, "--name", "bogus", "--namespace", "{{.Username}}/shared"},
+				[]string{tempFile, "--name", "bogus", "--namespace", "{{.Username}}/shared"},
 				nil,
 				nil,
 				false,
