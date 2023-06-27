@@ -74,14 +74,13 @@ func newPublish(prime *primer.Values) *captain.Command {
 				),
 				Value: &params.Depends,
 			},
-		},
-		[]*captain.Argument{
 			{
-				Name:        locale.Tl("meta_file", "meta file"),
+				Name:        "meta",
 				Description: locale.Tl("author_upload_metafile_description", "A yaml file expressing the ingredient meta information. Use --editor to review the file format."),
 				Value:       &params.MetaFilepath,
-				Required:    false,
 			},
+		},
+		[]*captain.Argument{
 			{
 				Name:        locale.Tl("filepath", "filepath"),
 				Description: locale.Tl("author_upload_filepath_description", "The binary ingredient file to upload."),
