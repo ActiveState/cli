@@ -76,9 +76,6 @@ const ActUpdateRelaunch = "relaunch"
 // LblRtFailUpdate is the label sent with an ActRuntimeFailure event if an error occurred during a runtime update
 const LblRtFailUpdate = "update"
 
-// LblRtFailEnv is the label sent with  an ActRuntimeFailure event if an error occurred during the resolution of the runtime environment
-const LblRtFailEnv = "env"
-
 // CatPpmConversion is the event category used for ppm-conversion events
 const CatPpmConversion = "ppm-conversion"
 

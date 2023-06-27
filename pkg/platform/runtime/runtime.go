@@ -25,6 +25,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/envdef"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
+	"github.com/ActiveState/cli/pkg/platform/runtime/setup/buildlog"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup/events"
 	"github.com/ActiveState/cli/pkg/platform/runtime/store"
 	"github.com/ActiveState/cli/pkg/project"
@@ -177,27 +178,23 @@ func (r *Runtime) recordCompletion(err error) {
 		r.recordUsage()
 	}
 
-	var projectID string
-	if pj, err := model.FetchProjectByName(r.target.Owner(), r.target.Name()); err == nil {
-		projectID = pj.ProjectID.String()
-	} else {
-		multilog.Error("Unable to fetch project by name: %v", errs.JoinMessage(err))
-	}
-
 	ns := project.Namespaced{
 		Owner:   r.target.Owner(),
 		Project: r.target.Name(),
 	}
 
-	var errorType string
+	errorType := "unknown"
 	switch {
+	// IsInputError should always be first because it is technically possible for something like a
+	// download error to be cause by an input error.
 	case locale.IsInputError(err):
 		errorType = "input"
-	case errs.Matches(err, &setup.ProgressReportError{}): // should come before non-input errors
+	// Progress errors should come before any other non-input error.
+	case errs.Matches(err, &setup.ProgressReportError{}) || errs.Matches(err, &buildlog.ProgressReportError{}):
 		errorType = "progress"
 	case errs.Matches(err, &model.SolverError{}):
 		errorType = "solve"
-	case errs.Matches(err, &setup.BuildError{}):
+	case errs.Matches(err, &setup.BuildError{}) || errs.Matches(err, &buildlog.BuildError{}):
 		errorType = "build"
 	case errs.Matches(err, &setup.ArtifactSetupErrors{}):
 		errorType = "install" // initial guess
@@ -211,9 +208,9 @@ func (r *Runtime) recordCompletion(err error) {
 		}
 	}
 
-	r.analytics.EventWithLabel(anaConsts.CatRuntime, action, anaConsts.LblRtFailEnv, &dimensions.Values{
-		CommitID:         ptr.To(r.target.CommitUUID().String()),
-		ProjectID:        ptr.To(projectID),
+	r.analytics.Event(anaConsts.CatRuntime, action, &dimensions.Values{
+		CommitID: ptr.To(r.target.CommitUUID().String()),
+		// Note: ProjectID is set by state-svc since ProjectNameSpace is specified.
 		ProjectNameSpace: ptr.To(ns.String()),
 		Error:            ptr.To(errorType),
 	})

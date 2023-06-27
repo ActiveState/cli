@@ -48,6 +48,16 @@ type Events interface {
 	Heartbeat(time.Time)
 }
 
+// BuildError designates a build log build error.
+type BuildError struct {
+	*locale.LocalizedError
+}
+
+// ProgressReportError designates an error in the event handler for reporting progress.
+type ProgressReportError struct {
+	*errs.WrapperError
+}
+
 // BuildLog is an implementation of a build log
 type BuildLog struct {
 	ch    chan artifact.ArtifactDownload
@@ -80,7 +90,7 @@ func NewWithCustomConnections(artifactMap map[artifact.ArtifactID]artifact.Artif
 	ch := make(chan artifact.ArtifactDownload)
 	errCh := make(chan error)
 
-	if err := eventHandler.Handle(events.BuildStarted{logFilePath}); err != nil {
+	if err := handleEvent(eventHandler, events.BuildStarted{logFilePath}); err != nil {
 		return nil, errs.Wrap(err, "Could not handle BuildStarted event")
 	}
 
@@ -139,16 +149,16 @@ func NewWithCustomConnections(artifactMap map[artifact.ArtifactID]artifact.Artif
 				if err := writeLogFile("", m.ErrorMessage); err != nil {
 					errCh <- errs.Wrap(err, "Could not write to build log file")
 				}
-				if err := eventHandler.Handle(events.BuildFailure{}); err != nil {
+				if err := handleEvent(eventHandler, events.BuildFailure{}); err != nil {
 					errCh <- errs.Wrap(err, "Could not handle BuildFailure event")
 				}
-				errCh <- locale.WrapError(artifactErr, "err_logstream_build_failed", "Build failed with error message: {{.V0}}.", m.ErrorMessage)
+				errCh <- &BuildError{locale.WrapError(artifactErr, "err_logstream_build_failed", "Build failed with error message: {{.V0}}.", m.ErrorMessage)}
 				return
 			case BuildSucceeded:
 				if err := writeLogFile("", "Build Succeeded"); err != nil {
 					errCh <- errs.Wrap(err, "Could not write to build log file")
 				}
-				if err := eventHandler.Handle(events.BuildSuccess{}); err != nil {
+				if err := handleEvent(eventHandler, events.BuildSuccess{}); err != nil {
 					errCh <- errs.Wrap(err, "Could not handle BuildSuccess event")
 				}
 				return
@@ -163,7 +173,7 @@ func NewWithCustomConnections(artifactMap map[artifact.ArtifactID]artifact.Artif
 					errCh <- errs.Wrap(err, "Could not write to build log file")
 				}
 
-				if err := eventHandler.Handle(events.ArtifactBuildStarted{m.ArtifactID, m.CacheHit}); err != nil {
+				if err := handleEvent(eventHandler, events.ArtifactBuildStarted{m.ArtifactID, m.CacheHit}); err != nil {
 					errCh <- errs.Wrap(err, "Could not handle ArtifactBuildStarted event")
 				}
 
@@ -196,7 +206,7 @@ Artifact Build Succeeded.
 
 				ch <- artifact.ArtifactDownload{ArtifactID: m.ArtifactID, UnsignedURI: m.ArtifactURI, Checksum: m.ArtifactChecksum}
 
-				if err := eventHandler.Handle(events.ArtifactBuildSuccess{m.ArtifactID, m.LogURI}); err != nil {
+				if err := handleEvent(eventHandler, events.ArtifactBuildSuccess{m.ArtifactID, m.LogURI}); err != nil {
 					errCh <- errs.Wrap(err, "Could not handle ArtifactBuildSuccess event")
 					return
 				}
@@ -214,8 +224,8 @@ Artifact Build Failed.
 
 				artifactErr = locale.WrapError(artifactErr, "err_artifact_failed", "Failed to build \"{{.V0}}\", error reported: {{.V1}}.", artifactName, m.ErrorMessage)
 
-				if err := eventHandler.Handle(events.ArtifactBuildFailure{m.ArtifactID, m.LogURI, m.ErrorMessage}); err != nil {
-					errCh <- errs.Wrap(err, "Could not handle ArifactBuildFailure event")
+				if err := handleEvent(eventHandler, events.ArtifactBuildFailure{m.ArtifactID, m.LogURI, m.ErrorMessage}); err != nil {
+					errCh <- errs.Wrap(err, "Could not handle ArtifactBuildFailure event")
 					return
 				}
 			case ArtifactProgress:
@@ -226,7 +236,7 @@ Artifact Build Failed.
 					return
 				}
 
-				if err := eventHandler.Handle(events.ArtifactBuildProgress{
+				if err := handleEvent(eventHandler, events.ArtifactBuildProgress{
 					m.ArtifactID,
 					m.Timestamp,
 					m.Body.Facility,
@@ -234,7 +244,7 @@ Artifact Build Failed.
 					m.Body.Message,
 					m.Source,
 				}); err != nil {
-					errCh <- errs.Wrap(err, "Could not handle ArifactBuildFailure event")
+					errCh <- errs.Wrap(err, "Could not handle ArtifactBuildFailure event")
 					return
 				}
 			case Heartbeat:
@@ -292,4 +302,12 @@ func resolveArtifactName(artifactID artifact.ArtifactID, artifactMap artifact.Ar
 	}
 
 	return artf.NameWithVersion(), true
+}
+
+func handleEvent(handler events.Handler, ev events.Eventer) error {
+	err := handler.Handle(ev)
+	if err != nil {
+		return &ProgressReportError{errs.Wrap(err, "Error handling event: %v", errs.JoinMessage(err))}
+	}
+	return nil
 }
