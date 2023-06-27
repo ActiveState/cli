@@ -12,7 +12,7 @@ func newStageCommand(prime *primer.Values) *captain.Command {
 
 	cmd := captain.NewCommand(
 		"stage",
-		locale.Tl("stage_title", "Staging"),
+		locale.Tl("stage_title", "Staging Changes"),
 		locale.Tl("stage_description", "Stage changes to the Build Script"),
 		prime,
 		[]*captain.Flag{},
