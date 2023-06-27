@@ -51,7 +51,7 @@ func newProjectsEditCommand(prime *primer.Values) *captain.Command {
 	return captain.NewCommand(
 		"edit",
 		locale.Tl("projects_edit_title", "Edit Project"),
-		locale.T("projects_edit_description"),
+		locale.T("projects_edit_description", "Edit the project details for the specified project"),
 		prime,
 		[]*captain.Flag{
 			{
