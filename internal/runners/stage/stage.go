@@ -41,6 +41,10 @@ func New(p primeable) *Stage {
 }
 
 func (s *Stage) Run() error {
+	if s.proj == nil {
+		return locale.NewInputError("err_no_project")
+	}
+
 	if err := buildscript.Sync(s.proj, nil, s.out, s.auth); err != nil {
 		return locale.WrapError(
 			err, "err_stage_sync_buildscript",
