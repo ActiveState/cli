@@ -31,6 +31,7 @@ func newUpdateCommand(prime *primer.Values) *captain.Command {
 	)
 	cmd.SetGroup(UtilsGroup)
 	cmd.SetSkipChecks(true)
+	cmd.SetDoesNotSupportStructuredOutput()
 	return cmd
 }
 
