@@ -19,7 +19,6 @@ type StageIntegrationTestSuite struct {
 
 func (suite *StageIntegrationTestSuite) TestMergeBuildScript() {
 	suite.OnlyRunForTags(tagsuite.Stage)
-	suite.T().Skip("Buildplanner's StageCommit does not currently work")
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
