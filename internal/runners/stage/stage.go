@@ -45,7 +45,7 @@ func (s *Stage) Run() error {
 		return locale.NewInputError("err_no_project")
 	}
 
-	changed, err := buildscript.Sync(s.proj, nil, s.out, s.auth)
+	changesStaged, err := buildscript.Sync(s.proj, nil, s.out, s.auth)
 	if err != nil {
 		return locale.WrapError(
 			err, "err_stage_sync_buildscript",
@@ -68,7 +68,7 @@ func (s *Stage) Run() error {
 		"stage_notice_no_change",
 		"No change to the buildscript was found.",
 	)
-	if changed {
+	if changesStaged {
 		message = locale.Tl(
 			"refresh_project_statement",
 			"", s.proj.NamespaceString(), s.proj.Dir(), execDir,
@@ -80,10 +80,12 @@ func (s *Stage) Run() error {
 			Namespace   string `json:"namespace"`
 			Path        string `json:"path"`
 			Executables string `json:"executables"`
+			Staged      bool   `json:"staged"`
 		}{
 			s.proj.NamespaceString(),
 			s.proj.Dir(),
 			execDir,
+			changesStaged,
 		},
 	))
 
