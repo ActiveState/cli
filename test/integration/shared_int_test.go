@@ -8,7 +8,6 @@ import (
 	"testing"
 
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/termtest"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -21,8 +20,8 @@ func init() {
 // AssertValidJSON asserts that the previous command emitted valid JSON and did not attempt to emit
 // any non-JSON/structured output.
 // This should only be called after a command has executed and all output is available.
-func AssertValidJSON(t *testing.T, cp *termtest.ConsoleProcess) {
-	snapshot := cp.TrimmedSnapshot()
+func AssertValidJSON(t *testing.T, cp *e2e.SpawnedCmd) {
+	snapshot := cp.Snapshot()
 	if runtime.GOOS != "windows" {
 		assert.True(t, json.Valid([]byte(snapshot)), "The command produced invalid JSON/structured output:\n"+snapshot)
 	} else {

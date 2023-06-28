@@ -26,7 +26,7 @@ func (suite *PullIntegrationTestSuite) TestPull() {
 	ts.PrepareActiveStateYAML(`project: "https://platform.activestate.com/ActiveState-CLI/Python3"`)
 
 	cp := ts.Spawn("pull")
-	cp.ExpectLongString("Operating on project ActiveState-CLI/Python3")
+	cp.Expect("Operating on project ActiveState-CLI/Python3")
 	cp.Expect("activestate.yaml has been updated")
 	cp.ExpectExitCode(0)
 
@@ -44,7 +44,7 @@ func (suite *PullIntegrationTestSuite) TestPullSetProject() {
 
 	// update to related project
 	cp := ts.Spawn("pull", "--set-project", "ActiveState-CLI/small-python-fork")
-	cp.ExpectLongString("you may lose changes to your project")
+	cp.Expect("you may lose changes to your project")
 	cp.SendLine("n")
 	cp.Expect("Pull aborted by user")
 	cp.ExpectNotExitCode(0)
@@ -62,7 +62,7 @@ func (suite *PullIntegrationTestSuite) TestPullSetProjectUnrelated() {
 	ts.PrepareActiveStateYAML(`project: "https://platform.activestate.com/ActiveState-CLI/small-python?commitID=9733d11a-dfb3-41de-a37a-843b7c421db4"`)
 
 	cp := ts.Spawn("pull", "--set-project", "ActiveState-CLI/Python3")
-	cp.ExpectLongString("you may lose changes to your project")
+	cp.Expect("you may lose changes to your project")
 	cp.SendLine("n")
 	cp.Expect("Pull aborted by user")
 	cp.ExpectNotExitCode(0)
@@ -87,12 +87,12 @@ func (suite *PullIntegrationTestSuite) TestPull_Merge() {
 
 	ts.LoginAsPersistentUser()
 
-	cp := ts.SpawnWithOpts(e2e.WithArgs("push"), e2e.WithWorkDirectory(wd))
-	cp.ExpectLongString("Your project has new changes available")
+	cp := ts.SpawnWithOpts(e2e.OptArgs("push"), e2e.OptWD(wd))
+	cp.Expect("Your project has new changes available")
 	cp.ExpectExitCode(1)
 
-	cp = ts.SpawnWithOpts(e2e.WithArgs("pull"), e2e.WithWorkDirectory(wd))
-	cp.ExpectLongString("Merging history")
+	cp = ts.SpawnWithOpts(e2e.OptArgs("pull"), e2e.OptWD(wd))
+	cp.Expect("Merging history")
 	cp.ExpectExitCode(0)
 
 	exe := ts.ExecutablePath()
@@ -101,7 +101,7 @@ func (suite *PullIntegrationTestSuite) TestPull_Merge() {
 		exe = filepath.ToSlash(exe)
 	}
 	cp = ts.SpawnCmd("bash", "-c", fmt.Sprintf("cd %s && %s history | head -n 10", wd, exe))
-	cp.ExpectLongString("Merged")
+	cp.Expect("Merged")
 	cp.ExpectExitCode(0)
 }
 
@@ -114,7 +114,7 @@ func (suite *PullIntegrationTestSuite) TestPull_RestoreNamespace() {
 
 	// Attempt to update to unrelated project.
 	cp := ts.Spawn("pull", "--non-interactive", "--set-project", "ActiveState-CLI/Python3")
-	cp.ExpectLongString("Could not detect common parent")
+	cp.Expect("Could not detect common parent")
 	cp.ExpectNotExitCode(0)
 
 	// Verify namespace is unchanged.

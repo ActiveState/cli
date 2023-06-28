@@ -48,17 +48,17 @@ events:
 	cp.Expect("before-script")
 	cp.Expect("First activate event")
 	cp.Expect("Activate event")
-	cp.WaitForInput()
+	cp.ExpectInput()
 	cp.SendLine("exit")
 	cp.Expect("after-script")
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("activate")
 	cp.Expect("Activate event")
-	cp.WaitForInput()
+	cp.ExpectInput()
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
-	output := cp.TrimmedSnapshot()
+	output := cp.Snapshot()
 	if strings.Contains(output, "First activate event") {
 		suite.T().Fatal("Output from second activate event should not contain first-activate output")
 	}

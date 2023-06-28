@@ -1,12 +1,13 @@
 package automation
 
 import (
+	"path/filepath"
+	"testing"
+
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/stretchr/testify/suite"
-	"path/filepath"
-	"testing"
 )
 
 type SearchAutomationTestSuite struct {
@@ -20,11 +21,11 @@ func (suite *SearchAutomationTestSuite) TestSearch_NoArg() {
 	defer ts.Close()
 
 	cp := ts.Spawn("search")
-	cp.ExpectLongString("The following argument is required:")
+	cp.Expect("The following argument is required:")
 	cp.ExpectExitCode(1)
 
 	cp = ts.Spawn("search", "--language", "python")
-	cp.ExpectLongString("The following argument is required:")
+	cp.Expect("The following argument is required:")
 	cp.ExpectExitCode(1)
 }
 
@@ -35,7 +36,7 @@ func (suite *SearchAutomationTestSuite) TestSearch_NoLanguageArg() {
 	defer ts.Close()
 
 	cp := ts.Spawn("search", "--language")
-	cp.ExpectLongString("Flag needs an argument: --language")
+	cp.Expect("Flag needs an argument: --language")
 	cp.ExpectExitCode(1)
 }
 
@@ -46,7 +47,7 @@ func (suite *SearchAutomationTestSuite) TestSearch_OutProject() {
 	defer ts.Close()
 
 	cp := ts.Spawn("search", "flask")
-	cp.ExpectLongString("Language must be provided by flag")
+	cp.Expect("Language must be provided by flag")
 	cp.ExpectExitCode(1)
 }
 

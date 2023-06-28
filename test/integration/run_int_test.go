@@ -82,13 +82,13 @@ func (suite *RunIntegrationTestSuite) TearDownTest() {
 	projectfile.Reset()
 }
 
-func (suite *RunIntegrationTestSuite) expectTerminateBatchJob(cp *termtest.ConsoleProcess) {
+func (suite *RunIntegrationTestSuite) expectTerminateBatchJob(cp *e2e.SpawnedCmd) {
 	if runtime.GOOS == "windows" {
 		// send N to "Terminate batch job (Y/N)" question
 		cp.Expect("Terminate batch job")
 		time.Sleep(200 * time.Millisecond)
 		cp.Send("N")
-		cp.Expect("N", 500*time.Millisecond)
+		cp.Expect("N", termtest.OptExpectTimeout(500*time.Millisecond))
 	}
 }
 
@@ -110,21 +110,21 @@ func (suite *RunIntegrationTestSuite) TestInActivatedEnv() {
 	cp.WaitForInput(10 * time.Second)
 
 	cp.SendLine(fmt.Sprintf("%s run testMultipleLanguages", cp.Executable()))
-	cp.ExpectLongString("Operating on project ActiveState-CLI/Python3")
+	cp.Expect("Operating on project ActiveState-CLI/Python3")
 	cp.Expect("3")
 
 	cp.SendLine(fmt.Sprintf("%s run test-interrupt", cp.Executable()))
-	cp.Expect("Start of script", 5*time.Second)
+	cp.Expect("Start of script", termtest.OptExpectTimeout(5*time.Second))
 	cp.SendCtrlC()
-	cp.Expect("received interrupt", 3*time.Second)
-	cp.Expect("After first sleep or interrupt", 2*time.Second)
+	cp.Expect("received interrupt", termtest.OptExpectTimeout(3*time.Second))
+	cp.Expect("After first sleep or interrupt", termtest.OptExpectTimeout(2*time.Second))
 	cp.SendCtrlC()
 	suite.expectTerminateBatchJob(cp)
 
 	cp.SendLine("exit 0")
 	cp.ExpectExitCode(0)
 	suite.Require().NotContains(
-		cp.TrimmedSnapshot(), "not printed after second interrupt",
+		cp.Snapshot(), "not printed after second interrupt",
 	)
 }
 
@@ -141,7 +141,7 @@ func (suite *RunIntegrationTestSuite) TestScriptBashSubshell() {
 
 	suite.createProjectFile(ts, 3)
 
-	cp := ts.SpawnWithOpts(e2e.WithArgs("activate"), e2e.AppendEnv("SHELL=bash"))
+	cp := ts.SpawnWithOpts(e2e.OptArgs("activate"), e2e.OptAppendEnv("SHELL=bash"))
 	cp.Expect("Activated")
 	cp.WaitForInput(10 * time.Second)
 
@@ -167,8 +167,8 @@ func (suite *RunIntegrationTestSuite) TestOneInterrupt() {
 	// interrupt the first (very long) sleep
 	cp.SendCtrlC()
 
-	cp.Expect("received interrupt", 3*time.Second)
-	cp.Expect("After first sleep or interrupt", 2*time.Second)
+	cp.Expect("received interrupt", termtest.OptExpectTimeout(3*time.Second))
+	cp.Expect("After first sleep or interrupt", termtest.OptExpectTimeout(2*time.Second))
 	cp.Expect("After second sleep")
 	suite.expectTerminateBatchJob(cp)
 	cp.ExpectExitCode(0)
@@ -189,13 +189,13 @@ func (suite *RunIntegrationTestSuite) TestTwoInterrupts() {
 	cp := ts.Spawn("run", "test-interrupt")
 	cp.Expect("Start of script")
 	cp.SendCtrlC()
-	cp.Expect("received interrupt", 3*time.Second)
-	cp.Expect("After first sleep or interrupt", 2*time.Second)
+	cp.Expect("received interrupt", termtest.OptExpectTimeout(3*time.Second))
+	cp.Expect("After first sleep or interrupt", termtest.OptExpectTimeout(2*time.Second))
 	cp.SendCtrlC()
 	suite.expectTerminateBatchJob(cp)
 	cp.ExpectExitCode(123)
 	suite.Require().NotContains(
-		cp.TrimmedSnapshot(), "not printed after second interrupt",
+		cp.Snapshot(), "not printed after second interrupt",
 	)
 }
 
@@ -228,7 +228,7 @@ func (suite *RunIntegrationTestSuite) TestRun_Unauthenticated() {
 
 	suite.createProjectFile(ts, 2)
 
-	cp := ts.SpawnWithOpts(e2e.WithArgs("activate"))
+	cp := ts.SpawnWithOpts(e2e.OptArgs("activate"))
 	cp.Expect("Skipping runtime setup")
 	cp.Expect("Activated")
 	cp.WaitForInput(10 * time.Second)
@@ -249,8 +249,8 @@ func (suite *RunIntegrationTestSuite) TestRun_DeprecatedLackingLanguage() {
 	suite.createProjectFile(ts, 3)
 
 	cp := ts.Spawn("run", "helloWorld")
-	cp.Expect("Deprecation Warning", 5*time.Second)
-	cp.Expect("Hello", 5*time.Second)
+	cp.Expect("Deprecation Warning", termtest.OptExpectTimeout(5*time.Second))
+	cp.Expect("Hello", termtest.OptExpectTimeout(5*time.Second))
 }
 
 func (suite *RunIntegrationTestSuite) TestRun_BadLanguage() {
@@ -273,7 +273,7 @@ func (suite *RunIntegrationTestSuite) TestRun_BadLanguage() {
 	suite.Require().NoError(err, "extra config is appended")
 
 	cp := ts.Spawn("run", "badLanguage")
-	cp.Expect("The language for this script is not supported", 5*time.Second)
+	cp.Expect("The language for this script is not supported", termtest.OptExpectTimeout(5*time.Second))
 }
 
 func (suite *RunIntegrationTestSuite) TestRun_Perl_Variable() {
@@ -290,8 +290,8 @@ func (suite *RunIntegrationTestSuite) TestRun_Perl_Variable() {
 	`))
 
 	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("activate"),
-		e2e.AppendEnv(
+		e2e.OptArgs("activate"),
+		e2e.OptAppendEnv(
 			"ACTIVESTATE_CLI_DISABLE_RUNTIME=false",
 			"PERL_VERSION=does_not_exist",
 		),

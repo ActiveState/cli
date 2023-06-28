@@ -22,7 +22,7 @@ func (suite *ProjectsAutomationTestSuite) TestProjects_NoActProjects() {
 	defer ts.Close()
 
 	cp := ts.Spawn("projects")
-	cp.ExpectLongString("You have not activated any projects yet")
+	cp.Expect("You have not activated any projects yet")
 }
 
 func (suite *ProjectsAutomationTestSuite) TestProjects_LocalChkout() {
@@ -72,7 +72,7 @@ func (suite *ProjectsAutomationTestSuite) TestProjects_Remote() {
 	ts.LoginAsPersistentUser()
 
 	cp := ts.Spawn("projects", "remote")
-	cp.Expect("Name", time.Minute)
+	cp.Expect("Name", termtest.OptExpectTimeout(time.Minute))
 	cp.Expect("Organization")
 	cp.Expect(e2e.PersistentUsername)
 	cp.ExpectExitCode(0)

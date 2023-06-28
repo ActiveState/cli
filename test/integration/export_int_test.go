@@ -75,7 +75,7 @@ func (suite *ExportIntegrationTestSuite) TestExport_Config() {
 	suite.PrepareActiveStateYAML(ts)
 	cp := ts.Spawn("export", "config")
 	cp.Expect(`dir: `)
-	cp.ExpectLongString(ts.Dirs.Config, time.Second)
+	cp.Expect(ts.Dirs.Config, time.Second)
 	cp.ExpectExitCode(0)
 }
 
@@ -88,13 +88,13 @@ func (suite *ExportIntegrationTestSuite) TestExport_Env() {
 	asyData := fmt.Sprintf(`project: "https://platform.activestate.com/ActiveState-CLI/Export?branch=main&commitID=5397f645-da8a-4591-b106-9d7fa99545fe"`)
 	ts.PrepareActiveStateYAML(asyData)
 	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("export", "env"),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.OptArgs("export", "env"),
+		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cp.Expect(`PATH: `)
 	cp.ExpectExitCode(0)
 
-	suite.Assert().NotContains(cp.TrimmedSnapshot(), "ACTIVESTATE_ACTIVATED")
+	suite.Assert().NotContains(cp.Snapshot(), "ACTIVESTATE_ACTIVATED")
 }
 
 func (suite *ExportIntegrationTestSuite) TestJSON() {
@@ -113,8 +113,8 @@ func (suite *ExportIntegrationTestSuite) TestJSON() {
 	cp.ExpectExitCode(0)
 
 	cp = ts.SpawnWithOpts(
-		e2e.WithArgs("export", "env", "-o", "json"),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.OptArgs("export", "env", "-o", "json"),
+		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cp.ExpectExitCode(0)
 	AssertValidJSON(suite.T(), cp)
@@ -129,7 +129,7 @@ func (suite *ExportIntegrationTestSuite) TestJSON() {
 	cp.Expect(`{`)
 	cp.Expect(`}`)
 	cp.ExpectExitCode(0)
-	//AssertValidJSON(suite.T(), cp) // recipe is too large to fit in terminal snapshot
+	// AssertValidJSON(suite.T(), cp) // recipe is too large to fit in terminal snapshot
 }
 
 func TestExportIntegrationTestSuite(t *testing.T) {

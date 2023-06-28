@@ -29,7 +29,7 @@ func (suite *BranchIntegrationTestSuite) TestBranch_List() {
  ├─ secondbranch
  └─ thirdbranch
 `
-	cp.ExpectLongString(expected)
+	cp.Expect(expected)
 	cp.ExpectExitCode(0)
 }
 
@@ -44,7 +44,7 @@ func (suite *BranchIntegrationTestSuite) TestBranch_Add() {
 	ts.LoginAsPersistentUser()
 
 	cp := ts.Spawn("pull")
-	cp.ExpectLongString("Your project in the activestate.yaml has been updated")
+	cp.Expect("Your project in the activestate.yaml has been updated")
 	cp.ExpectExitCode(0)
 
 	branchName, err := uuid.NewRandom()

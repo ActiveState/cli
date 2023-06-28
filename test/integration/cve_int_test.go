@@ -23,7 +23,7 @@ func (suite *CveIntegrationTestSuite) TestCveSummary() {
 	ts.PrepareActiveStateYAML(`project: https://platform.activestate.com/ActiveState-CLI/VulnerablePython-3.7?commitID=0b87e7a4-dc62-46fd-825b-9c35a53fe0a2`)
 
 	cp := ts.Spawn("cve")
-	cp.ExpectLongString("Operating on project ActiveState-CLI/VulnerablePython-3.7")
+	cp.Expect("Operating on project ActiveState-CLI/VulnerablePython-3.7")
 	cp.Expect("VulnerablePython-3.7")
 	cp.Expect("0b87e7a4-dc62-46fd-825b-9c35a53fe0a2")
 
@@ -93,7 +93,7 @@ func (suite *CveIntegrationTestSuite) TestCveInvalidProject() {
 	ts.LoginAsPersistentUser()
 
 	cp := ts.Spawn("cve", "report", "invalid/invalid")
-	cp.ExpectLongString("Found no project with specified organization and name")
+	cp.Expect("Found no project with specified organization and name")
 
 	cp.ExpectNotExitCode(0)
 }

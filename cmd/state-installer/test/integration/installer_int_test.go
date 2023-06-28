@@ -48,9 +48,9 @@ func (suite *InstallerIntegrationTestSuite) TestInstallFromLocalSource() {
 	// Run installer with source-path flag (ie. install from this local path)
 	cp := ts.SpawnCmdWithOpts(
 		suite.installerExe,
-		e2e.WithArgs(target),
-		e2e.AppendEnv(constants.DisableUpdates+"=false"),
-		e2e.AppendEnv(fmt.Sprintf("%s=%s", constants.OverwriteDefaultSystemPathEnvVarName, dir)),
+		e2e.OptArgs(target),
+		e2e.OptAppendEnv(constants.DisableUpdates+"=false"),
+		e2e.OptAppendEnv(fmt.Sprintf("%s=%s", constants.OverwriteDefaultSystemPathEnvVarName, dir)),
 	)
 
 	// Assert output
@@ -60,17 +60,17 @@ func (suite *InstallerIntegrationTestSuite) TestInstallFromLocalSource() {
 	if runtime.GOOS == "darwin" && condition.OnCI() {
 		cp.Expect("You are running bash on macOS")
 	}
-	suite.NotContains(cp.TrimmedSnapshot(), "Downloading State Tool")
-	cp.WaitForInput()
+	suite.NotContains(cp.Snapshot(), "Downloading State Tool")
+	cp.ExpectInput()
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
 
 	// Ensure installing overtop doesn't result in errors
 	cp = ts.SpawnCmdWithOpts(
 		suite.installerExe,
-		e2e.WithArgs(target, "--force"),
-		e2e.AppendEnv(constants.DisableUpdates+"=false"),
-		e2e.AppendEnv(fmt.Sprintf("%s=%s", constants.OverwriteDefaultSystemPathEnvVarName, dir)),
+		e2e.OptArgs(target, "--force"),
+		e2e.OptAppendEnv(constants.DisableUpdates+"=false"),
+		e2e.OptAppendEnv(fmt.Sprintf("%s=%s", constants.OverwriteDefaultSystemPathEnvVarName, dir)),
 	)
 
 	// Assert output
@@ -87,21 +87,21 @@ func (suite *InstallerIntegrationTestSuite) TestInstallFromLocalSource() {
 	suite.NoError(err)
 
 	// Verify that launched subshell has State tool on PATH
-	cp.WaitForInput()
+	cp.ExpectInput()
 	cp.SendLine("state --version")
 	cp.Expect("Version")
-	cp.WaitForInput()
+	cp.ExpectInput()
 
 	if runtime.GOOS == "windows" {
 		cp.SendLine("where state")
 	} else {
 		cp.SendLine("which state")
 	}
-	cp.WaitForInput()
+	cp.ExpectInput()
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
 
-	snapshot := strings.Replace(cp.TrimmedSnapshot(), "\n", "", -1)
+	snapshot := strings.Replace(cp.Snapshot(), "\n", "", -1)
 	if !strings.Contains(snapshot, stateExec) && !strings.Contains(snapshot, stateExecResolved) {
 		suite.Fail(fmt.Sprintf("Snapshot does not include '%s' or '%s', snapshot:\n %s", stateExec, stateExecResolved, snapshot))
 	}
@@ -133,8 +133,8 @@ func (suite *InstallerIntegrationTestSuite) TestInstallIncompatible() {
 	// Run installer with source-path flag (ie. install from this local path)
 	cp := ts.SpawnCmdWithOpts(
 		suite.installerExe,
-		e2e.WithArgs(target),
-		e2e.AppendEnv(constants.DisableUpdates+"=false", sysinfo.VersionOverrideEnvVar+"=10.0.0"),
+		e2e.OptArgs(target),
+		e2e.OptAppendEnv(constants.DisableUpdates+"=false", sysinfo.VersionOverrideEnvVar+"=10.0.0"),
 	)
 
 	// Assert output
@@ -156,13 +156,13 @@ func (suite *InstallerIntegrationTestSuite) TestInstallNoErrorTips() {
 
 	cp := ts.SpawnCmdWithOpts(
 		suite.installerExe,
-		e2e.WithArgs(target, "--activate", "ActiveState/DoesNotExist"),
-		e2e.AppendEnv(constants.DisableUpdates+"=true"),
-		e2e.AppendEnv(fmt.Sprintf("%s=%s", constants.OverwriteDefaultSystemPathEnvVarName, dir)),
+		e2e.OptArgs(target, "--activate", "ActiveState/DoesNotExist"),
+		e2e.OptAppendEnv(constants.DisableUpdates+"=true"),
+		e2e.OptAppendEnv(fmt.Sprintf("%s=%s", constants.OverwriteDefaultSystemPathEnvVarName, dir)),
 	)
 
 	cp.ExpectExitCode(1)
-	suite.Assert().NotContains(cp.TrimmedSnapshot(), "Need More Help?", "error tips should not be displayed when invoking installer")
+	suite.Assert().NotContains(cp.Snapshot(), "Need More Help?", "error tips should not be displayed when invoking installer")
 }
 
 func (suite *InstallerIntegrationTestSuite) TestInstallErrorTips() {
@@ -179,17 +179,17 @@ func (suite *InstallerIntegrationTestSuite) TestInstallErrorTips() {
 
 	cp := ts.SpawnCmdWithOpts(
 		suite.installerExe,
-		e2e.WithArgs(target, "--activate", "ActiveState-CLI/Python3"),
-		e2e.AppendEnv(constants.DisableUpdates+"=true"),
-		e2e.AppendEnv(fmt.Sprintf("%s=%s", constants.OverwriteDefaultSystemPathEnvVarName, dir)),
+		e2e.OptArgs(target, "--activate", "ActiveState-CLI/Python3"),
+		e2e.OptAppendEnv(constants.DisableUpdates+"=true"),
+		e2e.OptAppendEnv(fmt.Sprintf("%s=%s", constants.OverwriteDefaultSystemPathEnvVarName, dir)),
 	)
 
-	cp.WaitForInput()
+	cp.ExpectInput()
 	cp.SendLine("state command-does-not-exist")
-	cp.WaitForInput()
+	cp.ExpectInput()
 	cp.SendLine("exit")
 	cp.Wait()
-	suite.Assert().Contains(cp.TrimmedSnapshot(), "Need More Help?", "error tips should be displayed in shell created by installer")
+	suite.Assert().Contains(cp.Snapshot(), "Need More Help?", "error tips should be displayed in shell created by installer")
 }
 
 func (suite *InstallerIntegrationTestSuite) TestStateTrayRemoval() {
@@ -203,12 +203,12 @@ func (suite *InstallerIntegrationTestSuite) TestStateTrayRemoval() {
 
 	// Install a release version that still has state-tray.
 	version := "0.35.0-SHAb78e2a4"
-	var cp *termtest.ConsoleProcess
+	var cp *e2e.SpawnedCmd
 	if runtime.GOOS != "windows" {
 		oneLiner := fmt.Sprintf("sh <(curl -q https://platform.activestate.com/dl/cli/pdli01/install.sh) -f -n -t %s -v %s", dir, version)
 		cp = ts.SpawnCmdWithOpts(
-			"bash", e2e.WithArgs("-c", oneLiner),
-			e2e.AppendEnv(fmt.Sprintf("%s=%s", constants.OverwriteDefaultSystemPathEnvVarName, dir)),
+			"bash", e2e.OptArgs("-c", oneLiner),
+			e2e.OptAppendEnv(fmt.Sprintf("%s=%s", constants.OverwriteDefaultSystemPathEnvVarName, dir)),
 		)
 	} else {
 		b, err := httputil.GetDirect("https://platform.activestate.com/dl/cli/pdli01/install.ps1")
@@ -217,12 +217,12 @@ func (suite *InstallerIntegrationTestSuite) TestStateTrayRemoval() {
 		ps1File := filepath.Join(ts.Dirs.Work, "install.ps1")
 		suite.Require().NoError(fileutils.WriteFile(ps1File, b))
 
-		cp = ts.SpawnCmdWithOpts("powershell.exe", e2e.WithArgs(ps1File, "-f", "-n", "-t", dir, "-v", version),
-			e2e.AppendEnv("SHELL="),
-			e2e.AppendEnv(fmt.Sprintf("%s=%s", constants.OverwriteDefaultSystemPathEnvVarName, dir)),
+		cp = ts.SpawnCmdWithOpts("powershell.exe", e2e.OptArgs(ps1File, "-f", "-n", "-t", dir, "-v", version),
+			e2e.OptAppendEnv("SHELL="),
+			e2e.OptAppendEnv(fmt.Sprintf("%s=%s", constants.OverwriteDefaultSystemPathEnvVarName, dir)),
 		)
 	}
-	cp.Expect("Installation Complete", 5*time.Minute)
+	cp.Expect("Installation Complete", termtest.OptExpectTimeout(5*time.Minute))
 
 	// Verify state-tray is there.
 	svcExec, err := installation.ServiceExecFromDir(dir)
@@ -235,12 +235,12 @@ func (suite *InstallerIntegrationTestSuite) TestStateTrayRemoval() {
 	// Run the installer, which should remove state-tray and clean up after it.
 	cp = ts.SpawnCmdWithOpts(
 		suite.installerExe,
-		e2e.WithArgs("-f", "-n", "-t", dir),
-		e2e.AppendEnv(constants.UpdateBranchEnvVarName+"=release"),
-		e2e.AppendEnv(fmt.Sprintf("%s=%s", constants.OverwriteDefaultSystemPathEnvVarName, dir)),
+		e2e.OptArgs("-f", "-n", "-t", dir),
+		e2e.OptAppendEnv(constants.UpdateBranchEnvVarName+"=release"),
+		e2e.OptAppendEnv(fmt.Sprintf("%s=%s", constants.OverwriteDefaultSystemPathEnvVarName, dir)),
 	)
-	cp.Expect("Installing", 10*time.Second)
-	cp.Expect("Done", 30*time.Second)
+	cp.Expect("Installing", termtest.OptExpectTimeout(10*time.Second))
+	cp.Expect("Done", termtest.OptExpectTimeout(30*time.Second))
 
 	// Verify state-tray is no longer there.
 	suite.NoFileExists(trayExec)
@@ -249,8 +249,8 @@ func (suite *InstallerIntegrationTestSuite) TestStateTrayRemoval() {
 	// Verify state can still be run and has a newly updated version.
 	stateExec, err := installation.StateExecFromDir(dir)
 	suite.Require().NoError(err)
-	cp = ts.SpawnCmdWithOpts(stateExec, e2e.WithArgs("--version"))
-	suite.Assert().NotContains(cp.TrimmedSnapshot(), version)
+	cp = ts.SpawnCmdWithOpts(stateExec, e2e.OptArgs("--version"))
+	suite.Assert().NotContains(cp.Snapshot(), version)
 	cp.ExpectExitCode(0)
 }
 
@@ -269,8 +269,8 @@ func (suite *InstallerIntegrationTestSuite) TestInstallerOverwriteServiceApp() {
 
 	cp := ts.SpawnCmdWithOpts(
 		suite.installerExe,
-		e2e.WithArgs(filepath.Join(ts.Dirs.Work, "installation")),
-		e2e.AppendEnv(fmt.Sprintf("%s=%s", constants.AppInstallDirOverrideEnvVarName, appInstallDir)),
+		e2e.OptArgs(filepath.Join(ts.Dirs.Work, "installation")),
+		e2e.OptAppendEnv(fmt.Sprintf("%s=%s", constants.AppInstallDirOverrideEnvVarName, appInstallDir)),
 	)
 	cp.Expect("Done")
 	cp.SendLine("exit")
@@ -279,8 +279,8 @@ func (suite *InstallerIntegrationTestSuite) TestInstallerOverwriteServiceApp() {
 	// State Service.app should be overwritten cleanly without error.
 	cp = ts.SpawnCmdWithOpts(
 		suite.installerExe,
-		e2e.WithArgs(filepath.Join(ts.Dirs.Work, "installation2")),
-		e2e.AppendEnv(fmt.Sprintf("%s=%s", constants.AppInstallDirOverrideEnvVarName, appInstallDir)),
+		e2e.OptArgs(filepath.Join(ts.Dirs.Work, "installation2")),
+		e2e.OptAppendEnv(fmt.Sprintf("%s=%s", constants.AppInstallDirOverrideEnvVarName, appInstallDir)),
 	)
 	cp.Expect("Done")
 	cp.SendLine("exit")

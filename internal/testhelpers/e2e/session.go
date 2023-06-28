@@ -5,6 +5,7 @@ import (
 	"io/fs"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"regexp"
 	"runtime"
@@ -44,7 +45,6 @@ import (
 // The session is approximately the equivalent of a terminal session, with the
 // main difference processes in this session are not spawned by a shell.
 type Session struct {
-	cp              *termtest.ConsoleProcess
 	Dirs            *Dirs
 	Env             []string
 	retainDirs      bool
@@ -55,15 +55,7 @@ type Session struct {
 	Exe         string
 	SvcExe      string
 	ExecutorExe string
-}
-
-// Options for spawning a testable terminal process
-type Options struct {
-	termtest.Options
-	// removes write-permissions in the bin directory from which executables are spawned.
-	NonWriteableBinDir bool
-	// expect the process to run in background (will not be stopped by subsequent processes)
-	BackgroundProcess bool
+	spawned     []*SpawnedCmd
 }
 
 var (
@@ -71,8 +63,7 @@ var (
 	PersistentPassword string
 	PersistentToken    string
 
-	defaultTimeout = 40 * time.Second
-	authnTimeout   = 40 * time.Second
+	authnTimeout = 40 * time.Second
 )
 
 func init() {
@@ -221,72 +212,75 @@ func (s *Session) ClearCache() error {
 	return os.RemoveAll(s.Dirs.Cache)
 }
 
-// Spawn spawns the state tool executable to be tested with arguments
-func (s *Session) Spawn(args ...string) *termtest.ConsoleProcess {
-	return s.SpawnCmdWithOpts(s.Exe, WithArgs(args...))
+type SpawnedCmd struct {
+	*termtest.TermTest
+	opts SpawnOpts
+}
+
+func (s *SpawnedCmd) WorkDirectory() string {
+	return s.TermTest.Cmd().Dir
+}
+
+func (s *SpawnedCmd) Wait() error {
+	return s.TermTest.Wait(30 * time.Second)
+}
+
+// SpawnedCmd spawns the state tool executable to be tested with arguments
+func (s *Session) Spawn(args ...string) *SpawnedCmd {
+	return s.SpawnCmdWithOpts(s.Exe, OptArgs(args...))
 }
 
 // SpawnWithOpts spawns the state tool executable to be tested with arguments
-func (s *Session) SpawnWithOpts(opts ...SpawnOptions) *termtest.ConsoleProcess {
+func (s *Session) SpawnWithOpts(opts ...SpawnOptSetter) *SpawnedCmd {
 	return s.SpawnCmdWithOpts(s.Exe, opts...)
 }
 
 // SpawnCmd executes an executable in a pseudo-terminal for integration tests
-func (s *Session) SpawnCmd(cmdName string, args ...string) *termtest.ConsoleProcess {
-	return s.SpawnCmdWithOpts(cmdName, WithArgs(args...))
+func (s *Session) SpawnCmd(cmdName string, args ...string) *SpawnedCmd {
+	return s.SpawnCmdWithOpts(cmdName, OptArgs(args...))
 }
 
 // SpawnShellWithOpts spawns the given shell and options in interactive mode.
-func (s *Session) SpawnShellWithOpts(shell Shell, opts ...SpawnOptions) *termtest.ConsoleProcess {
+func (s *Session) SpawnShellWithOpts(shell Shell, opts ...SpawnOptSetter) *SpawnedCmd {
 	if shell != Cmd {
-		opts = append(opts, AppendEnv("SHELL="+string(shell)))
+		opts = append(opts, OptAppendEnv("SHELL="+string(shell)))
 	}
 	return s.SpawnCmdWithOpts(string(shell), opts...)
 }
 
 // SpawnCmdWithOpts executes an executable in a pseudo-terminal for integration tests
-// Arguments and other parameters can be specified by specifying SpawnOptions
-func (s *Session) SpawnCmdWithOpts(exe string, opts ...SpawnOptions) *termtest.ConsoleProcess {
-	if s.cp != nil {
-		s.cp.Close()
+// Arguments and other parameters can be specified by specifying SpawnOptSetter
+func (s *Session) SpawnCmdWithOpts(exe string, optSetters ...SpawnOptSetter) *SpawnedCmd {
+	spawnOpts := SpawnOpts{}
+	for _, optSet := range optSetters {
+		optSet(&spawnOpts)
 	}
 
-	env := s.Env
+	cmd := exec.Command(exe, spawnOpts.Args...)
+	cmd.Env = append(cmd.Env, s.Env...)
 
-	pOpts := Options{
-		Options: termtest.Options{
-			DefaultTimeout: defaultTimeout,
-			Environment:    env,
-			WorkDirectory:  s.Dirs.Work,
-			RetainWorkDir:  true,
-			ObserveExpect:  observeExpectFn(s),
-			ObserveSend:    observeSendFn(s),
-		},
-		NonWriteableBinDir: false,
+	if len(spawnOpts.Env) != 0 {
+		cmd.Env = spawnOpts.Env
 	}
 
-	for _, opt := range opts {
-		opt(&pOpts)
+	if spawnOpts.Dir != "" {
+		cmd.Dir = spawnOpts.Dir
 	}
 
-	pOpts.Options.CmdName = exe
-
-	if pOpts.NonWriteableBinDir {
-		// make bin dir read-only
-		os.Chmod(s.Dirs.Bin, 0555)
-	} else {
-		os.Chmod(s.Dirs.Bin, 0777)
-	}
-
-	console, err := termtest.New(pOpts.Options)
+	tt, err := termtest.New(cmd, spawnOpts.TermtestOpts...)
 	require.NoError(s.t, err)
-	if !pOpts.BackgroundProcess {
-		s.cp = console
+
+	spawn := &SpawnedCmd{tt, spawnOpts}
+
+	s.spawned = append(s.spawned, spawn)
+
+	args := spawnOpts.Args
+	if spawnOpts.HideCmdArgs {
+		args = []string{"<hidden>"}
 	}
+	logging.Debug("Spawning CMD: %s, args: %v", exe, args)
 
-	logging.Debug("Spawning CMD: %s, args: %v", pOpts.Options.CmdName, pOpts.Options.Args)
-
-	return console
+	return spawn
 }
 
 // PrepareActiveStateYAML creates a projectfile.Project instance from the
@@ -314,19 +308,19 @@ func (s *Session) PrepareFile(path, contents string) {
 func (s *Session) LoginUser(userName string) {
 	p := s.Spawn(tagsuite.Auth, "--username", userName, "--password", userName)
 
-	p.Expect("logged in", authnTimeout)
+	p.Expect("logged in", termtest.OptExpectTimeout(authnTimeout))
 	p.ExpectExitCode(0)
 }
 
 // LoginAsPersistentUser is a common test case after which an integration test user should be logged in to the platform
 func (s *Session) LoginAsPersistentUser() {
 	p := s.SpawnWithOpts(
-		WithArgs(tagsuite.Auth, "--username", PersistentUsername, "--password", PersistentPassword),
+		OptArgs(tagsuite.Auth, "--username", PersistentUsername, "--password", PersistentPassword),
 		// as the command line includes a password, we do not print the executed command, so the password does not get logged
-		HideCmdLine(),
+		OptHideArgs(),
 	)
 
-	p.Expect("logged in", authnTimeout)
+	p.Expect("logged in", termtest.OptExpectTimeout(authnTimeout))
 	p.ExpectExitCode(0)
 }
 
@@ -358,7 +352,7 @@ func (s *Session) CreateNewUser() string {
 	p.Send(password)
 	p.Expect("email:")
 	p.Send(email)
-	p.Expect("account has been registered", authnTimeout)
+	p.Expect("account has been registered", termtest.OptExpectTimeout(authnTimeout))
 	p.ExpectExitCode(0)
 
 	s.users = append(s.users, username)
@@ -407,9 +401,13 @@ func (s *Session) DebugMessage(prefix string) string {
 		prefix = prefix + "\n"
 	}
 
-	snapshot := ""
-	if s.cp != nil {
-		snapshot = s.cp.Snapshot()
+	snapshot := []string{}
+	for _, spawn := range s.spawned {
+		name := spawn.Cmd().String()
+		if spawn.opts.HideCmdArgs {
+			name = spawn.Cmd().Path
+		}
+		snapshot = append(snapshot, fmt.Sprintf("cmd: %s\n%s", name, spawn.Snapshot()))
 	}
 
 	v, err := strutils.ParseTemplate(`
@@ -467,9 +465,7 @@ func (s *Session) Close() error {
 		defer s.Dirs.Close()
 	}
 
-	if s.cp != nil {
-		s.cp.Close()
-	}
+	s.spawned = []*SpawnedCmd{}
 
 	if os.Getenv("PLATFORM_API_TOKEN") == "" {
 		s.t.Log("PLATFORM_API_TOKEN env var not set, not running suite tear down")

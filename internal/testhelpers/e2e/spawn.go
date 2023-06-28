@@ -1,47 +1,43 @@
 package e2e
 
-type SpawnOptions func(*Options) error
+import "github.com/ActiveState/termtest"
 
-func WithArgs(args ...string) SpawnOptions {
-	return func(opts *Options) error {
-		opts.Options.Args = args
-		return nil
+type SpawnOpts struct {
+	Args         []string
+	Env          []string
+	Dir          string
+	TermtestOpts []termtest.SetOpt
+	HideCmdArgs  bool
+}
+
+type SpawnOptSetter func(opts *SpawnOpts)
+
+func OptArgs(args ...string) SpawnOptSetter {
+	return func(opts *SpawnOpts) {
+		opts.Args = args
 	}
 }
 
-func WithWorkDirectory(wd string) SpawnOptions {
-	return func(opts *Options) error {
-		opts.Options.WorkDirectory = wd
-		return nil
+func OptWD(wd string) SpawnOptSetter {
+	return func(opts *SpawnOpts) {
+		opts.Dir = wd
 	}
 }
 
-func AppendEnv(env ...string) SpawnOptions {
-	return func(opts *Options) error {
-		opts.Options.Environment = append(opts.Options.Environment, env...)
-		return nil
+func OptAppendEnv(env ...string) SpawnOptSetter {
+	return func(opts *SpawnOpts) {
+		opts.Env = append(opts.Env, env...)
 	}
 }
 
-func HideCmdLine() SpawnOptions {
-	return func(opts *Options) error {
-		opts.Options.HideCmdLine = true
-		return nil
+func OptTermTest(opt ...termtest.SetOpt) SpawnOptSetter {
+	return func(opts *SpawnOpts) {
+		opts.TermtestOpts = append(opts.TermtestOpts, opt...)
 	}
 }
 
-// NonWriteableBinDir removes the write permission from the directory where the executables are run from.
-// This can be used to simulate an installation in a global installation directory that requires super-user rights.
-func NonWriteableBinDir() SpawnOptions {
-	return func(opts *Options) error {
-		opts.NonWriteableBinDir = true
-		return nil
-	}
-}
-
-func BackgroundProcess() SpawnOptions {
-	return func(opts *Options) error {
-		opts.BackgroundProcess = true
-		return nil
+func OptHideArgs() SpawnOptSetter {
+	return func(opts *SpawnOpts) {
+		opts.HideCmdArgs = true
 	}
 }

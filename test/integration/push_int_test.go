@@ -61,7 +61,7 @@ func (suite *PushIntegrationTestSuite) TestInitAndPush() {
 		namespace,
 		wd,
 	)
-	cp.ExpectLongString("successfully initialized")
+	cp.Expect("successfully initialized")
 	cp.ExpectExitCode(0)
 	ts.NotifyProjectCreated(suite.username, pname.String())
 
@@ -82,13 +82,13 @@ func (suite *PushIntegrationTestSuite) TestInitAndPush() {
 	cp = ts.Spawn(tagsuite.Auth, "logout")
 	cp.ExpectExitCode(0)
 
-	cp = ts.SpawnWithOpts(e2e.WithArgs("install", suite.extraPackage), e2e.WithWorkDirectory(wd))
+	cp = ts.SpawnWithOpts(e2e.OptArgs("install", suite.extraPackage), e2e.OptWD(wd))
 	switch runtime.GOOS {
 	case "darwin":
 		cp.ExpectRe("added|being built", 60*time.Second) // while cold storage is off
 		cp.Wait()
 	default:
-		cp.Expect("added", 60*time.Second)
+		cp.Expect("added", termtest.OptExpectTimeout(60*time.Second))
 		cp.ExpectExitCode(0)
 	}
 
@@ -100,7 +100,7 @@ func (suite *PushIntegrationTestSuite) TestInitAndPush() {
 
 	ts.LoginAsPersistentUser()
 
-	cp = ts.SpawnWithOpts(e2e.WithArgs("push", namespace), e2e.WithWorkDirectory(wd))
+	cp = ts.SpawnWithOpts(e2e.OptArgs("push", namespace), e2e.OptWD(wd))
 	cp.Expect("Pushing to project")
 	cp.ExpectExitCode(0)
 }
@@ -114,15 +114,15 @@ func (suite *PushIntegrationTestSuite) TestPush_HeadlessConvert_NewProject() {
 	pname := strutils.UUID()
 	namespace := fmt.Sprintf("%s/%s", suite.username, pname)
 
-	cp := ts.SpawnWithOpts(e2e.WithArgs("install", suite.extraPackage))
+	cp := ts.SpawnWithOpts(e2e.OptArgs("install", suite.extraPackage))
 
-	cp.ExpectLongString("An activestate.yaml has been created", time.Second*40)
+	cp.Expect("An activestate.yaml has been created", time.Second*40)
 	switch runtime.GOOS {
 	case "darwin":
 		cp.ExpectRe("added|being built", 60*time.Second) // while cold storage is off
 		cp.Wait()
 	default:
-		cp.Expect("added", 60*time.Second)
+		cp.Expect("added", termtest.OptExpectTimeout(60*time.Second))
 		cp.ExpectExitCode(0)
 	}
 
@@ -133,10 +133,10 @@ func (suite *PushIntegrationTestSuite) TestPush_HeadlessConvert_NewProject() {
 		suite.FailNow("project field should be headless but isn't: " + pjfile.Project)
 	}
 
-	cp = ts.SpawnWithOpts(e2e.WithArgs("push"))
-	cp.ExpectLongString("Who would you like the owner of this project to be?")
+	cp = ts.SpawnWithOpts(e2e.OptArgs("push"))
+	cp.Expect("Who would you like the owner of this project to be?")
 	cp.Send("")
-	cp.ExpectLongString("What would you like the name of this project to be?")
+	cp.Expect("What would you like the name of this project to be?")
 	cp.SendUnterminated(string([]byte{0033, '[', 'B'})) // move cursor down, and then press enter
 	cp.Expect("> Other")
 	cp.Send("")
@@ -161,19 +161,19 @@ func (suite *PushIntegrationTestSuite) TestPush_NoPermission_NewProject() {
 	username := ts.CreateNewUser()
 	pname := strutils.UUID()
 
-	cp := ts.SpawnWithOpts(e2e.WithArgs("activate", suite.baseProject, "--path", ts.Dirs.Work))
-	cp.Expect("Activated", 40*time.Second)
+	cp := ts.SpawnWithOpts(e2e.OptArgs("activate", suite.baseProject, "--path", ts.Dirs.Work))
+	cp.Expect("Activated", termtest.OptExpectTimeout(40*time.Second))
 	cp.WaitForInput(10 * time.Second)
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
 
-	cp = ts.SpawnWithOpts(e2e.WithArgs("install", suite.extraPackage))
+	cp = ts.SpawnWithOpts(e2e.OptArgs("install", suite.extraPackage))
 	switch runtime.GOOS {
 	case "darwin":
 		cp.ExpectRe("added|being built", 60*time.Second) // while cold storage is off
 		cp.Wait()
 	default:
-		cp.Expect("added", 60*time.Second)
+		cp.Expect("added", termtest.OptExpectTimeout(60*time.Second))
 		cp.ExpectExitCode(0)
 	}
 
@@ -182,12 +182,12 @@ func (suite *PushIntegrationTestSuite) TestPush_NoPermission_NewProject() {
 	suite.Require().NoError(err)
 	suite.Require().Contains(pjfile.Project, suite.baseProject)
 
-	cp = ts.SpawnWithOpts(e2e.WithArgs("push"))
+	cp = ts.SpawnWithOpts(e2e.OptArgs("push"))
 	cp.Expect("not authorized")
 	cp.Send("y")
-	cp.ExpectLongString("Who would you like the owner of this project to be?")
+	cp.Expect("Who would you like the owner of this project to be?")
 	cp.Send("")
-	cp.ExpectLongString("What would you like the name of this project to be?")
+	cp.Expect("What would you like the name of this project to be?")
 	cp.SendUnterminated(string([]byte{0033, '[', 'B'})) // move cursor down, and then press enter
 	cp.Expect("> Other")
 	cp.Send("")
@@ -213,10 +213,10 @@ func (suite *PushIntegrationTestSuite) TestCarlisle() {
 
 	wd := filepath.Join(ts.Dirs.Work, namespace)
 	cp := ts.SpawnWithOpts(
-		e2e.WithArgs(
+		e2e.OptArgs(
 			"activate", suite.baseProject,
 			"--path", wd),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	// The activestate.yaml on Windows runs custom activation to set shortcuts and file associations.
 	cp.Expect("Activated")
@@ -228,16 +228,16 @@ func (suite *PushIntegrationTestSuite) TestCarlisle() {
 	cp.ExpectExitCode(0)
 
 	// anonymous commit
-	cp = ts.SpawnWithOpts(e2e.WithArgs(
+	cp = ts.SpawnWithOpts(e2e.OptArgs(
 		"install", suite.extraPackage),
-		e2e.WithWorkDirectory(wd),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"))
+		e2e.OptWD(wd),
+		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"))
 	switch runtime.GOOS {
 	case "darwin":
 		cp.ExpectRe("added|being built", 60*time.Second) // while cold storage is off
 		cp.Wait()
 	default:
-		cp.Expect("added", 60*time.Second)
+		cp.Expect("added", termtest.OptExpectTimeout(60*time.Second))
 		cp.ExpectExitCode(0)
 	}
 
@@ -247,8 +247,8 @@ func (suite *PushIntegrationTestSuite) TestCarlisle() {
 
 	ts.LoginAsPersistentUser()
 
-	cp = ts.SpawnWithOpts(e2e.WithArgs("push", namespace), e2e.WithWorkDirectory(wd))
-	cp.ExpectLongString("You are about to create the project")
+	cp = ts.SpawnWithOpts(e2e.OptArgs("push", namespace), e2e.OptWD(wd))
+	cp.Expect("You are about to create the project")
 	cp.Send("y")
 	cp.Expect("Project created")
 	cp.ExpectExitCode(0)
@@ -269,8 +269,8 @@ func (suite *PushIntegrationTestSuite) TestPush_Outdated() {
 	suite.Require().NoError(err)
 
 	ts.LoginAsPersistentUser()
-	cp := ts.SpawnWithOpts(e2e.WithArgs("push"), e2e.WithWorkDirectory(wd))
-	cp.ExpectLongString("Your project has new changes available")
+	cp := ts.SpawnWithOpts(e2e.OptArgs("push"), e2e.OptWD(wd))
+	cp.Expect("Your project has new changes available")
 	cp.ExpectExitCode(1)
 }
 

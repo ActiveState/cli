@@ -38,11 +38,11 @@ echo "Prompt 2: %prompt1%"
 	}
 
 	tp := ts.SpawnCmd(promptFile)
-	tp.Expect("Prompt 1: ", 5*time.Second)
+	tp.Expect("Prompt 1: ", termtest.OptExpectTimeout(5*time.Second))
 	tp.Send("Answer 1")
-	tp.Expect("Prompt 1: Answer 1", 5*time.Second)
-	tp.Expect("Prompt 2: ", 5*time.Second)
+	tp.Expect("Prompt 1: Answer 1", termtest.OptExpectTimeout(5*time.Second))
+	tp.Expect("Prompt 2: ", termtest.OptExpectTimeout(5*time.Second))
 	tp.Send("Answer 2")
-	tp.Expect("Prompt 2: Answer 2", 5*time.Second)
+	tp.Expect("Prompt 2: Answer 2", termtest.OptExpectTimeout(5*time.Second))
 	tp.ExpectExitCode(0, 5*time.Second)
 }

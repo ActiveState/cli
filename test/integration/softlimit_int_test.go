@@ -28,35 +28,35 @@ func (suite *SoftLimitIntegrationTestSuite) TestCheckout() {
 	ts.LoginAsPersistentUser()
 
 	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("checkout", "ActiveState-CLI/small-python", "."),
-		e2e.AppendEnv(constants.RuntimeUsageOverrideEnvVarName+"=999"),
-		e2e.AppendEnv(constants.DisableRuntime+"=true"), // We're testing the usage, not the runtime
+		e2e.OptArgs("checkout", "ActiveState-CLI/small-python", "."),
+		e2e.OptAppendEnv(constants.RuntimeUsageOverrideEnvVarName+"=999"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=true"), // We're testing the usage, not the runtime
 	)
 	cp.Expect("You've reached your runtime limit")
 	cp.ExpectExitCode(0)
 
 	suite.Run("activate", func() {
 		cp := ts.SpawnWithOpts(
-			e2e.WithArgs("activate"),
-			e2e.AppendEnv(constants.RuntimeUsageOverrideEnvVarName+"=999"),
-			e2e.AppendEnv(constants.DisableRuntime+"=true"),
+			e2e.OptArgs("activate"),
+			e2e.OptAppendEnv(constants.RuntimeUsageOverrideEnvVarName+"=999"),
+			e2e.OptAppendEnv(constants.DisableRuntime+"=true"),
 		)
 		cp.Expect("You've reached your runtime limit")
 		cp.Expect("Activated")
-		cp.WaitForInput()
+		cp.ExpectInput()
 		cp.SendLine("exit 0")
 		cp.ExpectExitCode(0)
 	})
 
 	suite.Run("shell", func() {
 		cp := ts.SpawnWithOpts(
-			e2e.WithArgs("shell"),
-			e2e.AppendEnv(constants.RuntimeUsageOverrideEnvVarName+"=999"),
-			e2e.AppendEnv(constants.DisableRuntime+"=true"),
+			e2e.OptArgs("shell"),
+			e2e.OptAppendEnv(constants.RuntimeUsageOverrideEnvVarName+"=999"),
+			e2e.OptAppendEnv(constants.DisableRuntime+"=true"),
 		)
 		cp.Expect("You've reached your runtime limit")
 		cp.Expect("Activated")
-		cp.WaitForInput()
+		cp.ExpectInput()
 		cp.SendLine("exit 0")
 		cp.ExpectExitCode(0)
 	})

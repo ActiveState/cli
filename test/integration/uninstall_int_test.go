@@ -53,16 +53,16 @@ func (suite *UninstallIntegrationTestSuite) testUninstall(all bool) {
 	err = installation.SaveContext(&installation.Context{InstalledAsAdmin: isAdmin})
 	suite.NoError(err)
 
-	cp := ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("start"))
+	cp := ts.SpawnCmdWithOpts(ts.SvcExe, e2e.OptArgs("start"))
 	cp.ExpectExitCode(0)
 
 	if all {
 		cp = ts.SpawnWithOpts(
-			e2e.WithArgs("clean", "uninstall", "--all"),
+			e2e.OptArgs("clean", "uninstall", "--all"),
 		)
 	} else {
 		cp = ts.SpawnWithOpts(
-			e2e.WithArgs("clean", "uninstall"),
+			e2e.OptArgs("clean", "uninstall"),
 		)
 	}
 	cp.Expect("You are about to remove")
@@ -71,9 +71,9 @@ func (suite *UninstallIntegrationTestSuite) testUninstall(all bool) {
 	}
 	cp.SendLine("y")
 	if runtime.GOOS == "windows" {
-		cp.ExpectLongString("Deletion of State Tool has been scheduled.")
+		cp.Expect("Deletion of State Tool has been scheduled.")
 	} else {
-		cp.ExpectLongString("Successfully removed State Tool and related files")
+		cp.Expect("Successfully removed State Tool and related files")
 	}
 	cp.ExpectExitCode(0)
 

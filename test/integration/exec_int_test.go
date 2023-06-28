@@ -48,7 +48,7 @@ func (suite *ExecIntegrationTestSuite) TestExec_Environment() {
 	suite.Require().NoError(err)
 
 	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("exec", testScript),
+		e2e.OptArgs("exec", testScript),
 	)
 	cp.ExpectExitCode(0)
 	output := cp.Snapshot()
@@ -77,7 +77,7 @@ func (suite *ExecIntegrationTestSuite) TestExec_ExitCode() {
 	suite.Require().NoError(err)
 
 	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("exec", "--", testScript),
+		e2e.OptArgs("exec", "--", testScript),
 	)
 	cp.ExpectExitCode(42)
 }
@@ -122,7 +122,7 @@ echo "Number of arguments: $#"
 	}
 
 	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("exec", "--", fmt.Sprintf("%s", testScript), args[0], args[1], args[2]),
+		e2e.OptArgs("exec", "--", fmt.Sprintf("%s", testScript), args[0], args[1], args[2]),
 	)
 	cp.Expect(args[0])
 	cp.Expect(args[1])
@@ -159,7 +159,7 @@ echo "Hello $name!"
 	suite.Require().NoError(err)
 
 	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("exec", "--", fmt.Sprintf("%s", testScript)),
+		e2e.OptArgs("exec", "--", fmt.Sprintf("%s", testScript)),
 	)
 	cp.SendLine("ActiveState")
 	cp.Expect("Hello ActiveState!")
@@ -177,22 +177,22 @@ func (suite *ExecIntegrationTestSuite) TestExecWithPath() {
 
 	pythonDir := filepath.Join(ts.Dirs.Work, "MyPython3")
 
-	cp := ts.SpawnWithOpts(e2e.WithArgs("checkout", "ActiveState-CLI/Python-3.9", pythonDir))
+	cp := ts.SpawnWithOpts(e2e.OptArgs("checkout", "ActiveState-CLI/Python-3.9", pythonDir))
 	cp.Expect("Skipping runtime setup")
 	cp.Expect("Checked out project")
 	cp.ExpectExitCode(0)
 
 	cp = ts.SpawnWithOpts(
-		e2e.WithArgs("exec", "--path", pythonDir, "which", "python3"),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.OptArgs("exec", "--path", pythonDir, "which", "python3"),
+		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
-	cp.ExpectLongString("Operating on project ActiveState-CLI/Python-3.9")
+	cp.Expect("Operating on project ActiveState-CLI/Python-3.9")
 	cp.ExpectRe(regexp.MustCompile("cache/[0-9A-Fa-f]+/usr/bin/python3").String())
 	cp.ExpectExitCode(0)
 
 	cp = ts.SpawnWithOpts(
-		e2e.WithArgs("exec", "echo", "python3", "--path", pythonDir, "--", "--path", "doesNotExist", "--", "extra"),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.OptArgs("exec", "echo", "python3", "--path", pythonDir, "--", "--path", "doesNotExist", "--", "extra"),
+		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cp.Expect("python3 --path doesNotExist -- extra")
 	cp.ExpectExitCode(0)

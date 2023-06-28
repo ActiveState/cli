@@ -26,16 +26,16 @@ func (suite *HistoryIntegrationTestSuite) TestHistory_History() {
 	cp.ExpectExitCode(0)
 
 	cp = ts.SpawnWithOpts(
-		e2e.WithArgs("history"),
-		e2e.WithWorkDirectory(filepath.Join(ts.Dirs.Work, "History")),
+		e2e.OptArgs("history"),
+		e2e.OptWD(filepath.Join(ts.Dirs.Work, "History")),
 	)
-	cp.ExpectLongString("Operating on project ActiveState-CLI/History")
+	cp.Expect("Operating on project ActiveState-CLI/History")
 	cp.Expect("Commit")
 	cp.Expect("Author")
 	cp.Expect("Date")
 	cp.Expect("Message")
-	cp.ExpectLongString("• requests (2.26.0 → 2.7.0)")
-	cp.ExpectLongString("• autopip (1.6.0 → Auto)")
+	cp.Expect("• requests (2.26.0 → 2.7.0)")
+	cp.Expect("• autopip (1.6.0 → Auto)")
 	cp.Expect("+ autopip 1.6.0")
 	cp.Expect("- convertdate")
 	cp.Expect(`+ Platform`)

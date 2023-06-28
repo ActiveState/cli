@@ -30,8 +30,8 @@ languages:
 `))
 
 	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("scripts"),
-		e2e.AppendEnv("VERBOSE=true"),
+		e2e.OptArgs("scripts"),
+		e2e.OptAppendEnv("VERBOSE=true"),
 	)
 	cp.ExpectExitCode(1)
 }

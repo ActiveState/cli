@@ -49,8 +49,8 @@ func performanceTest(commands []string, expect string, samples int, maxTime time
 	var total time.Duration
 	for x := 0; x < samples+1; x++ {
 		cp := ts.SpawnWithOpts(
-			e2e.WithArgs(commands...),
-			e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_UPDATES=true", "ACTIVESTATE_PROFILE=true"))
+			e2e.OptArgs(commands...),
+			e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_UPDATES=true", "ACTIVESTATE_PROFILE=true"))
 		if expect != "" {
 			cp.Expect(expect)
 		}

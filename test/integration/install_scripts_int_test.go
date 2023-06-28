@@ -90,18 +90,18 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 			appInstallDir := filepath.Join(ts.Dirs.Work, "app")
 			suite.NoError(fileutils.Mkdir(appInstallDir))
 
-			var cp *termtest.ConsoleProcess
+			var cp *e2e.SpawnedCmd
 			if runtime.GOOS != "windows" {
 				cp = ts.SpawnCmdWithOpts(
-					"bash", e2e.WithArgs(argsWithActive...),
-					e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
-					e2e.AppendEnv(fmt.Sprintf("%s=%s", constants.AppInstallDirOverrideEnvVarName, appInstallDir)),
+					"bash", e2e.OptArgs(argsWithActive...),
+					e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+					e2e.OptAppendEnv(fmt.Sprintf("%s=%s", constants.AppInstallDirOverrideEnvVarName, appInstallDir)),
 				)
 			} else {
-				cp = ts.SpawnCmdWithOpts("powershell.exe", e2e.WithArgs(argsWithActive...),
-					e2e.AppendEnv("SHELL="),
-					e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
-					e2e.AppendEnv(fmt.Sprintf("%s=%s", constants.AppInstallDirOverrideEnvVarName, appInstallDir)),
+				cp = ts.SpawnCmdWithOpts("powershell.exe", e2e.OptArgs(argsWithActive...),
+					e2e.OptAppendEnv("SHELL="),
+					e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+					e2e.OptAppendEnv(fmt.Sprintf("%s=%s", constants.AppInstallDirOverrideEnvVarName, appInstallDir)),
 				)
 			}
 
@@ -109,9 +109,9 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 
 			if tt.Activate != "" || tt.ActivateByCommand != "" {
 				cp.Expect("Creating a Virtual Environment")
-				cp.Expect("Quick Start", time.Second*60)
+				cp.Expect("Quick Start", termtest.OptExpectTimeout(time.Second*60))
 				// ensure that shell is functional
-				cp.WaitForInput()
+				cp.ExpectInput()
 
 				cp.SendLine("python3 -c \"import sys; print(sys.copyright)\"")
 				cp.Expect("ActiveState")
@@ -135,10 +135,10 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 
 			// Verify that we don't try to install it again
 			if runtime.GOOS != "windows" {
-				cp = ts.SpawnCmdWithOpts("bash", e2e.WithArgs(argsPlain...))
+				cp = ts.SpawnCmdWithOpts("bash", e2e.OptArgs(argsPlain...))
 			} else {
-				cp = ts.SpawnCmdWithOpts("powershell.exe", e2e.WithArgs(argsPlain...),
-					e2e.AppendEnv("SHELL="),
+				cp = ts.SpawnCmdWithOpts("powershell.exe", e2e.OptArgs(argsPlain...),
+					e2e.OptAppendEnv("SHELL="),
 				)
 			}
 			cp.Expect("already installed")
@@ -155,13 +155,13 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall_NonEmptyTarget() {
 	script := scriptPath(suite.T(), ts.Dirs.Work)
 	argsPlain := []string{script, "-t", ts.Dirs.Work}
 	argsPlain = append(argsPlain, "-b", constants.BranchName)
-	var cp *termtest.ConsoleProcess
+	var cp *e2e.SpawnedCmd
 	if runtime.GOOS != "windows" {
-		cp = ts.SpawnCmdWithOpts("bash", e2e.WithArgs(argsPlain...))
+		cp = ts.SpawnCmdWithOpts("bash", e2e.OptArgs(argsPlain...))
 	} else {
-		cp = ts.SpawnCmdWithOpts("powershell.exe", e2e.WithArgs(argsPlain...), e2e.AppendEnv("SHELL="))
+		cp = ts.SpawnCmdWithOpts("powershell.exe", e2e.OptArgs(argsPlain...), e2e.OptAppendEnv("SHELL="))
 	}
-	cp.ExpectLongString("Installation path must be an empty directory")
+	cp.Expect("Installation path must be an empty directory")
 	cp.ExpectExitCode(1)
 }
 
@@ -173,14 +173,14 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall_VersionDoesNotExist
 	script := scriptPath(suite.T(), ts.Dirs.Work)
 	args := []string{script, "-t", ts.Dirs.Work}
 	args = append(args, "-v", "does-not-exist")
-	var cp *termtest.ConsoleProcess
+	var cp *e2e.SpawnedCmd
 	if runtime.GOOS != "windows" {
-		cp = ts.SpawnCmdWithOpts("bash", e2e.WithArgs(args...))
+		cp = ts.SpawnCmdWithOpts("bash", e2e.OptArgs(args...))
 	} else {
-		cp = ts.SpawnCmdWithOpts("powershell.exe", e2e.WithArgs(args...), e2e.AppendEnv("SHELL="))
+		cp = ts.SpawnCmdWithOpts("powershell.exe", e2e.OptArgs(args...), e2e.OptAppendEnv("SHELL="))
 	}
 	cp.Expect("Could not download")
-	cp.ExpectLongString("does-not-exist")
+	cp.Expect("does-not-exist")
 	cp.ExpectExitCode(1)
 }
 
@@ -206,9 +206,9 @@ func scriptPath(t *testing.T, targetDir string) string {
 	return target
 }
 
-func expectStateToolInstallation(cp *termtest.ConsoleProcess) {
+func expectStateToolInstallation(cp *e2e.SpawnedCmd) {
 	cp.Expect("Preparing Installer for State Tool Package Manager")
-	cp.Expect("Installation Complete", time.Minute)
+	cp.Expect("Installation Complete", termtest.OptExpectTimeout(time.Minute))
 }
 
 // assertBinDirContents checks if given files are or are not in the bin directory
@@ -240,7 +240,7 @@ func (suite *InstallScriptsIntegrationTestSuite) assertCorrectVersion(ts *e2e.Se
 	cp := ts.SpawnCmd(stateExec, "--version", "--output=json")
 	cp.ExpectExitCode(0)
 	actual := versionData{}
-	out := strings.Trim(cp.TrimmedSnapshot(), "\x00")
+	out := strings.Trim(cp.Snapshot(), "\x00")
 	json.Unmarshal([]byte(out), &actual)
 
 	if expectedVersion != "" {

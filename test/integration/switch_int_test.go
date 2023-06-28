@@ -35,9 +35,9 @@ func (suite *SwitchIntegrationTestSuite) TestSwitch_Branch() {
 	}
 	mainBranchCommitID := pjfile.CommitID()
 
-	cp := ts.SpawnWithOpts(e2e.WithArgs("switch", "secondbranch"))
-	cp.ExpectLongString("Operating on project ActiveState-CLI/Branches")
-	cp.ExpectLongString("Successfully switched to branch:")
+	cp := ts.SpawnWithOpts(e2e.OptArgs("switch", "secondbranch"))
+	cp.Expect("Operating on project ActiveState-CLI/Branches")
+	cp.Expect("Successfully switched to branch:")
 	if runtime.GOOS != "windows" {
 		cp.ExpectExitCode(0)
 	}
@@ -71,8 +71,8 @@ func (suite *SwitchIntegrationTestSuite) TestSwitch_CommitID() {
 	}
 	orignalCommitID := pjfile.CommitID()
 
-	cp := ts.SpawnWithOpts(e2e.WithArgs("switch", "efce7c7a-c61a-4b04-bb00-f8e7edfd247f"))
-	cp.ExpectLongString("Successfully switched to commit:")
+	cp := ts.SpawnWithOpts(e2e.OptArgs("switch", "efce7c7a-c61a-4b04-bb00-f8e7edfd247f"))
+	cp.Expect("Successfully switched to commit:")
 	if runtime.GOOS != "windows" {
 		cp.ExpectExitCode(0)
 	}
@@ -103,8 +103,8 @@ func (suite *SwitchIntegrationTestSuite) TestSwitch_CommitID_NotInHistory() {
 	}
 	orignalCommitID := pjfile.CommitID()
 
-	cp := ts.SpawnWithOpts(e2e.WithArgs("switch", "76dff77a-66b9-43e3-90be-dc75917dd661"))
-	cp.ExpectLongString("Commit does not belong")
+	cp := ts.SpawnWithOpts(e2e.OptArgs("switch", "76dff77a-66b9-43e3-90be-dc75917dd661"))
+	cp.Expect("Commit does not belong")
 	if runtime.GOOS != "windows" {
 		cp.ExpectExitCode(1)
 	}
@@ -135,7 +135,7 @@ func (suite *SwitchIntegrationTestSuite) TestJSON() {
 	cp = ts.Spawn("switch", "firstbranch", "--output", "json")
 	cp.Expect(`"branch":`)
 	cp.ExpectExitCode(0)
-	//AssertValidJSON(suite.T(), cp) // cannot assert here due to "Skipping runtime setup" notice
+	// AssertValidJSON(suite.T(), cp) // cannot assert here due to "Skipping runtime setup" notice
 }
 
 func TestSwitchIntegrationTestSuite(t *testing.T) {

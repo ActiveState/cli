@@ -24,7 +24,7 @@ func (suite *MsgIntegrationTestSuite) TestMessage_None() {
 
 	// We test on config as it just dumps help and has minimal output
 	// The base state command would also work, but it's output is more verbose and termtest likes to cut off content if it's too long
-	cp := ts.SpawnWithOpts(e2e.WithArgs("config"))
+	cp := ts.SpawnWithOpts(e2e.OptArgs("config"))
 	cp.Expect("Usage:")
 	cp.ExpectExitCode(0)
 
@@ -77,7 +77,7 @@ func (suite *MsgIntegrationTestSuite) TestMessage_Basic() {
 
 			// We test on config as it just dumps help and has minimal output
 			// The base state command would also work, but it's output is more verbose and termtest likes to cut off content if it's too long
-			cp := ts.SpawnWithOpts(e2e.WithArgs("config"), e2e.AppendEnv(constants.MessagesOverrideEnvVarName+"="+msgFile))
+			cp := ts.SpawnWithOpts(e2e.OptArgs("config"), e2e.OptAppendEnv(constants.MessagesOverrideEnvVarName+"="+msgFile))
 			cp.Expect(`This is a simple message`)
 			cp.Expect("Usage:")
 			cp.ExpectExitCode(0)
@@ -111,7 +111,7 @@ func (suite *MsgIntegrationTestSuite) TestMessage_Basic_PlacementAfter() {
 
 	// We test on config as it just dumps help and has minimal output
 	// The base state command would also work, but it's output is more verbose and termtest likes to cut off content if it's too long
-	cp := ts.SpawnWithOpts(e2e.WithArgs("config"), e2e.AppendEnv(constants.MessagesOverrideEnvVarName+"="+msgFile))
+	cp := ts.SpawnWithOpts(e2e.OptArgs("config"), e2e.OptAppendEnv(constants.MessagesOverrideEnvVarName+"="+msgFile))
 	cp.Expect("Usage:")
 	cp.Expect(`This is a simple message`)
 	cp.ExpectExitCode(0)
@@ -132,7 +132,7 @@ func (suite *MsgIntegrationTestSuite) TestMessage_Basic_InterruptPrompt() {
 ]`, graph.MessageInterruptTypePrompt)), 0755)
 	suite.Require().NoError(err)
 
-	cp := ts.SpawnWithOpts(e2e.WithArgs("config"), e2e.AppendEnv(constants.MessagesOverrideEnvVarName+"="+msgFile))
+	cp := ts.SpawnWithOpts(e2e.OptArgs("config"), e2e.OptAppendEnv(constants.MessagesOverrideEnvVarName+"="+msgFile))
 	cp.Expect(`This is a simple message`)
 	cp.Expect("Press ENTER to continue")
 	time.Sleep(time.Millisecond * 100)
@@ -142,7 +142,7 @@ func (suite *MsgIntegrationTestSuite) TestMessage_Basic_InterruptPrompt() {
 	cp.ExpectExitCode(0)
 
 	// Test that non-interactive does not prompt
-	cp = ts.SpawnWithOpts(e2e.WithArgs("config", "-n"), e2e.AppendEnv(constants.MessagesOverrideEnvVarName+"="+msgFile))
+	cp = ts.SpawnWithOpts(e2e.OptArgs("config", "-n"), e2e.OptAppendEnv(constants.MessagesOverrideEnvVarName+"="+msgFile))
 	cp.Expect(`This is a simple message`)
 	cp.Expect("Usage:")
 	cp.ExpectExitCode(0)
@@ -163,7 +163,7 @@ func (suite *MsgIntegrationTestSuite) TestMessage_Basic_InterruptExit() {
 ]`, graph.MessageInterruptTypeExit)), 0755)
 	suite.Require().NoError(err)
 
-	cp := ts.SpawnWithOpts(e2e.WithArgs("config"), e2e.AppendEnv(constants.MessagesOverrideEnvVarName+"="+msgFile))
+	cp := ts.SpawnWithOpts(e2e.OptArgs("config"), e2e.OptAppendEnv(constants.MessagesOverrideEnvVarName+"="+msgFile))
 	cp.Expect(`This is a simple message`)
 	cp.ExpectExitCode(1)
 	suite.Require().NotContains(cp.Snapshot(), "Usage:")

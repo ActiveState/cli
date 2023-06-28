@@ -27,7 +27,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_listingSimple() {
 	suite.PrepareActiveStateYAML(ts)
 
 	cp := ts.Spawn("packages")
-	cp.ExpectLongString("Operating on project ActiveState-CLI/List")
+	cp.Expect("Operating on project ActiveState-CLI/List")
 	cp.Expect("Name")
 	cp.Expect("pytest")
 	cp.ExpectExitCode(0)
@@ -85,7 +85,7 @@ func (suite *PackageIntegrationTestSuite) TestPackages_project_invalid() {
 	defer ts.Close()
 
 	cp := ts.Spawn("packages", "--namespace", "junk/junk")
-	cp.ExpectLongString("The requested project junk/junk could not be found.")
+	cp.Expect("The requested project junk/junk could not be found.")
 	cp.ExpectExitCode(1)
 }
 
@@ -169,7 +169,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchWithExactTerm() {
 		"older versions",
 	}
 	for _, expectation := range expectations {
-		cp.ExpectLongString(expectation)
+		cp.Expect(expectation)
 	}
 	cp.ExpectExitCode(0)
 }
@@ -181,11 +181,11 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchWithExactTermWrongTe
 	suite.PrepareActiveStateYAML(ts)
 
 	cp := ts.Spawn("search", "Requests", "--exact-term")
-	cp.ExpectLongString("No packages in our catalog match")
+	cp.Expect("No packages in our catalog match")
 	cp.ExpectExitCode(1)
 
 	cp = ts.Spawn("search", "xxxrequestsxxx", "--exact-term")
-	cp.ExpectLongString("No packages in our catalog match")
+	cp.Expect("No packages in our catalog match")
 	cp.ExpectExitCode(1)
 }
 
@@ -228,7 +228,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchWithWrongLang() {
 	suite.PrepareActiveStateYAML(ts)
 
 	cp := ts.Spawn("search", "xxxjunkxxx", "--language=perl")
-	cp.ExpectLongString("No packages in our catalog match")
+	cp.Expect("No packages in our catalog match")
 	cp.ExpectExitCode(1)
 }
 
@@ -298,7 +298,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_import() {
 	namespace := fmt.Sprintf("%s/%s", username, "Python3")
 
 	cp := ts.Spawn("init", "--language", "python3", namespace, ts.Dirs.Work)
-	cp.ExpectLongString("successfully initialized")
+	cp.Expect("successfully initialized")
 	cp.ExpectExitCode(0)
 
 	reqsFilePath := filepath.Join(cp.WorkDirectory(), reqsFileName)
@@ -391,21 +391,21 @@ func (suite *PackageIntegrationTestSuite) TestPackage_operation() {
 
 	suite.Run("install", func() {
 		cp := ts.Spawn("install", "urllib3@1.25.6")
-		cp.ExpectLongString(fmt.Sprintf("Operating on project %s/python3-pkgtest", username))
+		cp.Expect(fmt.Sprintf("Operating on project %s/python3-pkgtest", username))
 		cp.ExpectRe("(?:Package added|being built)", 30*time.Second)
 		cp.Wait()
 	})
 
 	suite.Run("install (update)", func() {
 		cp := ts.Spawn("install", "urllib3@1.25.8")
-		cp.ExpectLongString(fmt.Sprintf("Operating on project %s/python3-pkgtest", username))
+		cp.Expect(fmt.Sprintf("Operating on project %s/python3-pkgtest", username))
 		cp.ExpectRe("(?:Package updated|being built)", 30*time.Second)
 		cp.Wait()
 	})
 
 	suite.Run("uninstall", func() {
 		cp := ts.Spawn("uninstall", "urllib3")
-		cp.ExpectLongString(fmt.Sprintf("Operating on project %s/python3-pkgtest", username))
+		cp.Expect(fmt.Sprintf("Operating on project %s/python3-pkgtest", username))
 		cp.ExpectRe("(?:Package uninstalled|being built)", 30*time.Second)
 		cp.Wait()
 	})
@@ -434,8 +434,8 @@ func (suite *PackageIntegrationTestSuite) TestInstall_Empty() {
 	defer ts.Close()
 
 	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("install", "JSON"),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.OptArgs("install", "JSON"),
+		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cp.Expect("Installing Package")
 	cp.ExpectExitCode(0)
@@ -474,8 +474,8 @@ func (suite *PackageIntegrationTestSuite) TestJSON() {
 	AssertValidJSON(suite.T(), cp)
 
 	cp = ts.SpawnWithOpts(
-		e2e.WithArgs("install", "Text-CSV", "--output", "editor"),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.OptArgs("install", "Text-CSV", "--output", "editor"),
+		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cp.Expect(`{"name":"Text-CSV"`)
 	cp.ExpectExitCode(0)
@@ -487,8 +487,8 @@ func (suite *PackageIntegrationTestSuite) TestJSON() {
 	AssertValidJSON(suite.T(), cp)
 
 	cp = ts.SpawnWithOpts(
-		e2e.WithArgs("uninstall", "Text-CSV", "-o", "json"),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.OptArgs("uninstall", "Text-CSV", "-o", "json"),
+		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cp.Expect(`{"name":"Text-CSV"`)
 	cp.ExpectExitCode(0)

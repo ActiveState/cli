@@ -19,7 +19,6 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
-	"github.com/ActiveState/termtest"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"github.com/thoas/go-funk"
@@ -56,17 +55,17 @@ func (suite *AnalyticsIntegrationTestSuite) TestActivateEvents() {
 		fmt.Sprintf("%s=%d", constants.HeartbeatIntervalEnvVarName, heartbeatInterval),
 	}
 
-	var cp *termtest.ConsoleProcess
+	var cp *e2e.SpawnedCmd
 	if runtime.GOOS == "windows" {
 		cp = ts.SpawnCmdWithOpts("cmd.exe",
-			e2e.WithArgs("/k", "state", "activate"),
-			e2e.WithWorkDirectory(ts.Dirs.Work),
-			e2e.AppendEnv(env...),
+			e2e.OptArgs("/k", "state", "activate"),
+			e2e.OptWD(ts.Dirs.Work),
+			e2e.OptAppendEnv(env...),
 		)
 	} else {
-		cp = ts.SpawnWithOpts(e2e.WithArgs("activate"),
-			e2e.WithWorkDirectory(ts.Dirs.Work),
-			e2e.AppendEnv(env...),
+		cp = ts.SpawnWithOpts(e2e.OptArgs("activate"),
+			e2e.OptWD(ts.Dirs.Work),
+			e2e.OptAppendEnv(env...),
 		)
 	}
 
@@ -322,8 +321,8 @@ scripts:
 	ts.PrepareActiveStateYAML(asyData)
 
 	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("activate", "ActiveState-CLI/Alternate-Python"),
-		e2e.WithWorkDirectory(ts.Dirs.Work),
+		e2e.OptArgs("activate", "ActiveState-CLI/Alternate-Python"),
+		e2e.OptWD(ts.Dirs.Work),
 	)
 
 	cp.Expect("Creating a Virtual Environment")
@@ -444,9 +443,9 @@ func (suite *AnalyticsIntegrationTestSuite) TestAttempts() {
 	ts.PrepareActiveStateYAML(asyData)
 
 	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("activate", "ActiveState-CLI/Alternate-Python"),
-		e2e.AppendEnv(constants.DisableRuntime+"=false"),
-		e2e.WithWorkDirectory(ts.Dirs.Work),
+		e2e.OptArgs("activate", "ActiveState-CLI/Alternate-Python"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
+		e2e.OptWD(ts.Dirs.Work),
 	)
 
 	cp.Expect("Creating a Virtual Environment")
@@ -488,8 +487,8 @@ func (suite *AnalyticsIntegrationTestSuite) TestHeapEvents() {
 
 	ts.LoginAsPersistentUser()
 
-	cp := ts.SpawnWithOpts(e2e.WithArgs("activate", "ActiveState-CLI/Alternate-Python"),
-		e2e.WithWorkDirectory(ts.Dirs.Work),
+	cp := ts.SpawnWithOpts(e2e.OptArgs("activate", "ActiveState-CLI/Alternate-Python"),
+		e2e.OptWD(ts.Dirs.Work),
 	)
 
 	cp.Expect("Creating a Virtual Environment")
@@ -528,15 +527,15 @@ func (suite *AnalyticsIntegrationTestSuite) TestConfigEvents() {
 	ts := e2e.New(suite.T(), true)
 	defer ts.Close()
 
-	cp := ts.SpawnWithOpts(e2e.WithArgs("config", "set", "optin.unstable", "false"),
-		e2e.WithWorkDirectory(ts.Dirs.Work),
+	cp := ts.SpawnWithOpts(e2e.OptArgs("config", "set", "optin.unstable", "false"),
+		e2e.OptWD(ts.Dirs.Work),
 	)
 	cp.Expect("Successfully set config key")
 
 	time.Sleep(time.Second) // Ensure state-svc has time to report events
 
-	cp = ts.SpawnWithOpts(e2e.WithArgs("config", "set", "optin.unstable", "true"),
-		e2e.WithWorkDirectory(ts.Dirs.Work),
+	cp = ts.SpawnWithOpts(e2e.OptArgs("config", "set", "optin.unstable", "true"),
+		e2e.OptWD(ts.Dirs.Work),
 	)
 	cp.Expect("Successfully set config key")
 
@@ -581,7 +580,7 @@ func (suite *AnalyticsIntegrationTestSuite) TestCIAndInteractiveDimensions() {
 			if !interactive {
 				args = append(args, "--non-interactive")
 			}
-			cp := ts.SpawnWithOpts(e2e.WithArgs(args...))
+			cp := ts.SpawnWithOpts(e2e.OptArgs(args...))
 			cp.Expect("ActiveState CLI")
 			cp.ExpectExitCode(0)
 

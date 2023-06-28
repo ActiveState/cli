@@ -21,35 +21,35 @@ func (suite *ProjectsIntegrationTestSuite) TestProjects() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	cp := ts.SpawnWithOpts(e2e.WithArgs("checkout", "ActiveState-CLI/small-python"))
+	cp := ts.SpawnWithOpts(e2e.OptArgs("checkout", "ActiveState-CLI/small-python"))
 	cp.ExpectExitCode(0)
-	cp = ts.SpawnWithOpts(e2e.WithArgs("checkout", "ActiveState-CLI/Python3"))
+	cp = ts.SpawnWithOpts(e2e.OptArgs("checkout", "ActiveState-CLI/Python3"))
 	cp.ExpectExitCode(0)
 
 	// Verify local checkouts and executables are grouped together under projects.
-	cp = ts.SpawnWithOpts(e2e.WithArgs("projects"))
+	cp = ts.SpawnWithOpts(e2e.OptArgs("projects"))
 	cp.Expect("Python3")
 	cp.Expect("Local Checkout")
 	if runtime.GOOS != "windows" {
-		cp.ExpectLongString(ts.Dirs.Work)
+		cp.Expect(ts.Dirs.Work)
 	} else {
 		// Windows uses the long path here.
 		longPath, _ := fileutils.GetLongPathName(ts.Dirs.Work)
-		cp.ExpectLongString(longPath)
+		cp.Expect(longPath)
 	}
 	cp.Expect("Executables")
-	cp.ExpectLongString(ts.Dirs.Cache)
+	cp.Expect(ts.Dirs.Cache)
 	cp.Expect("small-python")
 	cp.Expect("Local Checkout")
 	if runtime.GOOS != "windows" {
-		cp.ExpectLongString(ts.Dirs.Work)
+		cp.Expect(ts.Dirs.Work)
 	} else {
 		// Windows uses the long path here.
 		longPath, _ := fileutils.GetLongPathName(ts.Dirs.Work)
-		cp.ExpectLongString(longPath)
+		cp.Expect(longPath)
 	}
 	cp.Expect("Executables")
-	cp.ExpectLongString(ts.Dirs.Cache)
+	cp.Expect(ts.Dirs.Cache)
 	cp.ExpectExitCode(0)
 }
 
@@ -74,7 +74,7 @@ func (suite *ProjectsIntegrationTestSuite) TestJSON() {
 	cp.Expect(`[{`)
 	cp.Expect(`}]`)
 	cp.ExpectExitCode(0)
-	//AssertValidJSON(suite.T(), cp) // list is too large to fit in terminal snapshot
+	// AssertValidJSON(suite.T(), cp) // list is too large to fit in terminal snapshot
 }
 
 func (suite *ProjectsIntegrationTestSuite) TestEdit_Name() {
@@ -95,7 +95,7 @@ func (suite *ProjectsIntegrationTestSuite) TestEdit_Name() {
 
 	// If the checkout failed, it's probably because the project name was changed
 	// in a previous run of this test. Try again with the new name.
-	if strings.Contains(cp.TrimmedSnapshot(), "Could not checkout project") {
+	if strings.Contains(cp.Snapshot(), "Could not checkout project") {
 		cp = ts.Spawn("checkout", fmt.Sprintf("ActiveState-CLI/%s", newName))
 		originalName = newName
 		newName = originalName

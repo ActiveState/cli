@@ -22,7 +22,7 @@ type EditIntegrationTestSuite struct {
 	tagsuite.Suite
 }
 
-func (suite *EditIntegrationTestSuite) setup() (*e2e.Session, e2e.SpawnOptions) {
+func (suite *EditIntegrationTestSuite) setup() (*e2e.Session, e2e.SpawnOptSetter) {
 	ts := e2e.New(suite.T(), false)
 
 	root := environment.GetRootPathUnsafe()
@@ -48,13 +48,13 @@ scripts:
 	}
 	cp := ts.SpawnCmdWithOpts(
 		"go",
-		e2e.WithArgs("build", "-o", "editor"+extension, target),
-		e2e.WithWorkDirectory(editorScriptDir),
+		e2e.OptArgs("build", "-o", "editor"+extension, target),
+		e2e.OptWD(editorScriptDir),
 	)
 	cp.ExpectExitCode(0)
 
 	suite.Require().FileExists(filepath.Join(editorScriptDir, "editor"+extension))
-	return ts, e2e.AppendEnv(fmt.Sprintf("EDITOR=%s", filepath.Join(editorScriptDir, "editor"+extension)))
+	return ts, e2e.OptAppendEnv(fmt.Sprintf("EDITOR=%s", filepath.Join(editorScriptDir, "editor"+extension)))
 }
 
 func (suite *EditIntegrationTestSuite) TearDownTest() {
@@ -65,7 +65,7 @@ func (suite *EditIntegrationTestSuite) TestEdit() {
 	suite.OnlyRunForTags(tagsuite.Edit)
 	ts, env := suite.setup()
 	defer ts.Close()
-	cp := ts.SpawnWithOpts(e2e.WithArgs("scripts", "edit", "test-script"), env)
+	cp := ts.SpawnWithOpts(e2e.OptArgs("scripts", "edit", "test-script"), env)
 	cp.Expect("Watching file changes")
 	cp.Expect("Script changes detected")
 	cp.Send("Y")
@@ -79,9 +79,9 @@ func (suite *EditIntegrationTestSuite) TestEdit_NonInteractive() {
 	}
 	ts, env := suite.setup()
 	defer ts.Close()
-	extraEnv := e2e.AppendEnv("ACTIVESTATE_NONINTERACTIVE=true")
+	extraEnv := e2e.OptAppendEnv("ACTIVESTATE_NONINTERACTIVE=true")
 
-	cp := ts.SpawnWithOpts(e2e.WithArgs("scripts", "edit", "test-script"), env, extraEnv)
+	cp := ts.SpawnWithOpts(e2e.OptArgs("scripts", "edit", "test-script"), env, extraEnv)
 	cp.Expect("Watching file changes")
 	// Can't consistently get this line detected on CI
 	cp.Expect("Script changes detected")
@@ -99,8 +99,8 @@ func (suite *EditIntegrationTestSuite) TestEdit_UpdateCorrectPlatform() {
 	ts, env := suite.setup()
 	defer ts.Close()
 	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("scripts", "edit", "test-script"),
-		e2e.WithWorkDirectory(ts.Dirs.Work),
+		e2e.OptArgs("scripts", "edit", "test-script"),
+		e2e.OptWD(ts.Dirs.Work),
 		env,
 	)
 	cp.Send("Y")
