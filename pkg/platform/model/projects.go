@@ -298,3 +298,18 @@ func DeleteProject(owner, project string, auth *authentication.Auth) error {
 
 	return nil
 }
+
+func MoveProject(owner, project, newOwner string, auth *authentication.Auth) error {
+	params := projects.NewMoveProjectParams()
+	params.SetOrganizationIdentifier(owner)
+	params.SetProjectName(project)
+	params.SetDestination(projects.MoveProjectBody{newOwner})
+
+	_, err := auth.Client().Projects.MoveProject(params, auth.ClientAuth())
+	if err != nil {
+		msg := api.ErrorMessageFromPayload(err)
+		return locale.WrapError(err, msg)
+	}
+
+	return nil
+}

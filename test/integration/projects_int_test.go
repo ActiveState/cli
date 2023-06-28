@@ -160,6 +160,24 @@ func (suite *ProjectsIntegrationTestSuite) TestEdit_Visibility() {
 	cp.ExpectExitCode(0)
 }
 
+func (suite *ProjectsIntegrationTestSuite) TestMove() {
+	suite.OnlyRunForTags(tagsuite.Projects)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	ts.LoginAsPersistentUser()
+
+	// Just test interactivity, since we only have one integration test org.
+	cp := ts.Spawn("projects", "move", "ActiveState-CLI/small-python", "ActiveState-CLI")
+	cp.Expect("You are about to move")
+	cp.Expect("ActiveState-CLI/small-python")
+	cp.Expect("ActiveState-CLI")
+	cp.Expect("Continue?")
+	cp.SendLine("n")
+	cp.Expect("aborted")
+	cp.ExpectExitCode(0)
+}
+
 func TestProjectsIntegrationTestSuite(t *testing.T) {
 	suite.Run(t, new(ProjectsIntegrationTestSuite))
 }
