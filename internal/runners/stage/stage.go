@@ -64,28 +64,31 @@ func (s *Stage) Run() error {
 
 	execDir := setup.ExecDir(rti.Target().Dir())
 
-	message := locale.Tl(
-		"stage_notice_no_change",
-		"No change to the buildscript was found.",
-	)
-	if changesStaged {
-		message = locale.Tl(
+	if !changesStaged {
+		s.out.Print(output.Prepare(
+			locale.Tl(
+				"stage_notice_no_change",
+				"No change to the buildscript was found.",
+			),
+			struct{}{},
+		))
+
+		return nil
+	}
+
+	s.out.Print(output.Prepare(
+		locale.Tl(
 			"refresh_project_statement",
 			"", s.proj.NamespaceString(), s.proj.Dir(), execDir,
-		)
-	}
-	s.out.Print(output.Prepare(
-		message,
+		),
 		&struct {
 			Namespace   string `json:"namespace"`
 			Path        string `json:"path"`
 			Executables string `json:"executables"`
-			Staged      bool   `json:"staged"`
 		}{
 			s.proj.NamespaceString(),
 			s.proj.Dir(),
 			execDir,
-			changesStaged,
 		},
 	))
 
