@@ -47,6 +47,192 @@ func (o Operation) String() string {
 
 var funcNodeNotFoundError = errors.New("Could not find function node")
 
+type BuildExpression2 struct {
+	Lets []Let
+	Aps  []Ap
+	Vars []Var
+	AST  map[string]interface{}
+}
+
+type Ap struct {
+	Name      string
+	Arguments map[string]interface{}
+}
+
+type Let struct {
+	Arguments map[string]interface{}
+	InExpr    interface{}
+}
+
+type Var struct {
+	Name  string
+	Value interface{}
+}
+
+func NewBuildExpression2(data []byte) (*BuildExpression2, error) {
+	expressionMap := make(map[string]interface{})
+	err := json.Unmarshal(data, &expressionMap)
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not unmarshal JSON")
+	}
+
+	// TODO: See if we can use a modified version of Mitchell's code to build the AST
+	// If we can then discuss with the team how to integrate these changes together or
+	// file a follow up story
+	resultExpression := BuildExpression2{}
+	err = traverse(expressionMap, &resultExpression)
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not build expression")
+	}
+
+	return &resultExpression, nil
+}
+
+// func traverseForAst(expressionMap, ast map[string]interface{}) error {
+// 	for key, value := range expressionMap {
+// 		switch {
+// 		case isLet(key, value):
+// 			rawArguments, ok := value.(map[string]interface{})
+// 			if !ok {
+// 				return errs.New("Let value is not a map")
+// 			}
+
+// 			// Build up the AST from the let value
+// 			arguments := make(map[string]interface{})
+// 			err := traverseForAst(rawArguments, arguments)
+// 			if err != nil {
+// 				return errs.Wrap(err, "Could not build expression")
+// 			}
+
+// 			var inExpr interface{}
+// 			rawInExpr, ok := rawArguments["in"].(map[string]interface{})
+// 			if ok {
+// 				inExpr = make(map[string]interface{})
+// 				err = traverseForAst(rawInExpr, inExpr)
+// 				if err != nil {
+// 					return errs.Wrap(err, "Could not build expression")
+// 				}
+// 			}
+
+// 			let := Let{
+// 				Arguments: value.(map[string]interface{}),
+// 				InExpr:    rawArguments["in"],
+// 			}
+// 		}
+// 	}
+
+// 	return nil
+// }
+
+func traverse(expressionMap map[string]interface{}, result *BuildExpression2) error {
+	for key, value := range expressionMap {
+		_, valueIsMap := value.(map[string]interface{})
+		switch {
+		case isLet(key, value):
+			letVal, ok := value.(map[string]interface{})
+			if !ok {
+				return errs.New("Let value is not a map")
+			}
+
+			let := Let{
+				Arguments: value.(map[string]interface{}),
+				InExpr:    letVal["in"],
+			}
+
+			result.Lets = append(result.Lets, let)
+			result.AST[key] = let
+
+			err := traverse(value.(map[string]interface{}), result)
+			if err != nil {
+				return errs.Wrap(err, "Could not build expression")
+			}
+		case isAp(value):
+			var apName string
+			for k := range value.(map[string]interface{}) {
+				apName = k
+			}
+
+			args, ok := value.(map[string]interface{})[apName].(map[string]interface{})
+			if !ok {
+				return errs.New("Ap arguments are not a map")
+			}
+
+			ap := Ap{
+				Name:      apName,
+				Arguments: args,
+			}
+
+			result.Aps = append(result.Aps, ap)
+		case isVar(value):
+			// May need some sort of context so we can identify the runtime variable with it's value
+			// being the solve_legacy ap
+			variable := Var{
+				Name:  key,
+				Value: value,
+			}
+
+			result.Vars = append(result.Vars, variable)
+		case valueIsMap:
+			err := traverse(value.(map[string]interface{}), result)
+			if err != nil {
+				return errs.Wrap(err, "Could not build expression")
+			}
+		}
+	}
+
+	return nil
+}
+
+func isLet(key string, value interface{}) bool {
+	if key == "let" {
+		letMap, ok := value.(map[string]interface{})
+		if !ok {
+			return false
+		}
+		if _, ok := letMap["in"]; !ok {
+			return false
+		}
+
+		return true
+	}
+	return false
+}
+
+func isAp(value interface{}) bool {
+	apMap, ok := value.(map[string]interface{})
+	if !ok {
+		return false
+	}
+
+	if len(apMap) != 1 {
+		return false
+	}
+
+	var apName string
+	for k := range apMap {
+		apName = k
+	}
+
+	argMap, ok := apMap[apName].(map[string]interface{})
+	if !ok {
+		return false
+	}
+
+	if _, ok := argMap["in"]; ok {
+		return false
+	}
+
+	return true
+}
+
+func isVar(value interface{}) bool {
+	if _, ok := value.(string); ok {
+		return true
+	}
+
+	return false
+}
+
 type Requirement struct {
 	Name               string               `json:"name"`
 	Namespace          string               `json:"namespace"`
