@@ -45,7 +45,8 @@ func (s *Stage) Run() error {
 		return locale.NewInputError("err_no_project")
 	}
 
-	if err := buildscript.Sync(s.proj, nil, s.out, s.auth); err != nil {
+	changed, err := buildscript.Sync(s.proj, nil, s.out, s.auth)
+	if err != nil {
 		return locale.WrapError(
 			err, "err_stage_sync_buildscript",
 			"Could not synchronize the buildscript.",
@@ -62,11 +63,19 @@ func (s *Stage) Run() error {
 	}
 
 	execDir := setup.ExecDir(rti.Target().Dir())
-	s.out.Print(output.Prepare(
-		locale.Tl(
+
+	message := locale.Tl(
+		"stage_notice_no_change",
+		"No change to the buildscript was found.",
+	)
+	if changed {
+		message = locale.Tl(
 			"refresh_project_statement",
 			"", s.proj.NamespaceString(), s.proj.Dir(), execDir,
-		),
+		)
+	}
+	s.out.Print(output.Prepare(
+		message,
 		&struct {
 			Namespace   string `json:"namespace"`
 			Path        string `json:"path"`
