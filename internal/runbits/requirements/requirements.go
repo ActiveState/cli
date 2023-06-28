@@ -181,7 +181,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 			return locale.WrapInputError(err, "package_ingredient_alternatives", "", requirementName, strings.Join(suggestions, "\n"))
 		}
 
-		origRequirementName, requirementName = requirementName, normalized
+		requirementName = normalized
 
 		pg.Stop(locale.T("progress_found"))
 		pg = nil
