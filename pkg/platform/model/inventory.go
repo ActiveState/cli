@@ -391,3 +391,19 @@ func FetchIngredientVersions(ingredientID *strfmt.UUID) ([]*inventory_models.Ing
 
 	return res.Payload.IngredientVersions, nil
 }
+
+func FetchNormalizedName(namespace Namespace, name string) (string, error) {
+	client := inventory.Get()
+	params := inventory_operations.NewNormalizeNamesParams()
+	params.SetNamespace(namespace.String())
+	params.SetNames(&inventory_models.UnnormalizedNames{Names: []string{name}})
+	params.SetHTTPClient(api.NewHTTPClient())
+	res, err := client.NormalizeNames(params, authentication.ClientAuth())
+	if err != nil {
+		return "", errs.Wrap(err, "NormalizeName failed")
+	}
+	if len(res.Payload.NormalizedNames) == 0 {
+		return "", errs.New("Normalized name for %s not found", name)
+	}
+	return *res.Payload.NormalizedNames[0].Normalized, nil
+}
