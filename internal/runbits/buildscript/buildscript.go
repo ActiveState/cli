@@ -42,12 +42,12 @@ func Sync(proj *project.Project, commitID *strfmt.UUID, out output.Outputer, aut
 	logging.Debug("Synchronizing local build script using commit %s", commitID)
 	script, err := buildscript.NewScriptFromProjectDir(proj.Dir())
 	if err != nil && !buildscript.IsDoesNotExistError(err) {
-		return false, errs.Wrap(err, "Could not get local build script")
+		return staged, errs.Wrap(err, "Could not get local build script")
 	}
 
 	expr, err := getBuildExpression(proj, commitID, auth)
 	if err != nil {
-		return false, errs.Wrap(err, "Could not get remote build expr for provided commit")
+		return staged, errs.Wrap(err, "Could not get remote build expr for provided commit")
 	}
 
 	// Note: merging and/or conflict resolution will happen in another ticket (DX-1912).
@@ -56,23 +56,23 @@ func Sync(proj *project.Project, commitID *strfmt.UUID, out output.Outputer, aut
 	if script != nil && commitID == nil {
 		logging.Debug("Checking for changes")
 		if script.Equals(expr) {
-			return false, nil // nothing to do
+			return staged, nil // nothing to do
 		}
 		logging.Debug("Merging changes")
 		bytes, err := json.Marshal(script)
 		if err != nil {
-			return false, errs.Wrap(err, "Unable to marshal local build script to JSON")
+			return staged, errs.Wrap(err, "Unable to marshal local build script to JSON")
 		}
 		expr, err = bpModel.NewBuildExpression(bytes)
 		if err != nil {
-			return false, errs.Wrap(err, "Unable to translate local build script to build expression")
+			return staged, errs.Wrap(err, "Unable to translate local build script to build expression")
 		}
 
 		out.Notice(locale.Tl("buildscript_update", "Updating project to reflect build script changes..."))
 
 		localCommitID, err := localcommit.Get(proj.Dir())
 		if err != nil {
-			return false, errs.Wrap(err, "Unable to get local commit ID")
+			return staged, errs.Wrap(err, "Unable to get local commit ID")
 		}
 
 		bp := model.NewBuildPlannerModel(auth)
@@ -83,7 +83,7 @@ func Sync(proj *project.Project, commitID *strfmt.UUID, out output.Outputer, aut
 			Script:       expr,
 		})
 		if err != nil {
-			return false, errs.Wrap(err, "Could not update project to reflect build script changes.")
+			return staged, errs.Wrap(err, "Could not update project to reflect build script changes.")
 		}
 		staged = true
 		commitID = &stagedCommitID
