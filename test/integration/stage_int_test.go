@@ -17,14 +17,21 @@ type StageIntegrationTestSuite struct {
 	tagsuite.Suite
 }
 
-func (suite *StageIntegrationTestSuite) TestMergeBuildScript() {
+func (suite *StageIntegrationTestSuite) TestCommitManualBuildScriptMod() {
 	suite.OnlyRunForTags(tagsuite.Stage)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
 	ts.LoginAsPersistentUser()
 
-	cp := ts.Spawn("checkout", "ActiveState-CLI/Stage-Test-A#7a1b416e-c17f-4d4a-9e27-cbad9e8f5655", ".")
+	cp := ts.SpawnWithOpts(
+		e2e.WithArgs(
+			"checkout",
+			"ActiveState-CLI/Stage-Test-A#7a1b416e-c17f-4d4a-9e27-cbad9e8f5655",
+			".",
+		),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
 	cp.Expect("Skipping runtime setup")
 	cp.Expect("Checked out")
 	cp.ExpectExitCode(0)
