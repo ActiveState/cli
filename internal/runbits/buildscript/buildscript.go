@@ -90,12 +90,12 @@ func Sync(proj *project.Project, commitID *strfmt.UUID, out output.Outputer, aut
 
 		expr, err = getBuildExpression(proj, commitID, auth) // timestamps might be different
 		if err != nil {
-			return false, errs.Wrap(err, "Could not get remote build expr for staged commit")
+			return staged, errs.Wrap(err, "Could not get remote build expr for staged commit")
 		}
 	}
 
 	if err := buildscript.UpdateOrCreate(proj.Dir(), expr); err != nil {
-		return false, errs.Wrap(err, "Could not update local build script.")
+		return staged, errs.Wrap(err, "Could not update local build script.")
 	}
 
 	return staged, nil
