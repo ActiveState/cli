@@ -23,7 +23,7 @@ type CommitEditable struct {
 	// An anonymous id used to help track the creator of headless commits.
 	AnonID string `json:"anonID,omitempty"`
 
-	// When resolving depdencies, updates made after this time will be ignored.
+	// When resolving dependencies, updates made after this time will be ignored.
 	// Format: date-time
 	AtTime *strfmt.DateTime `json:"atTime,omitempty"`
 

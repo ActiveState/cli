@@ -17,7 +17,7 @@ import (
 
 // LibcVersionPagedList Libc Version Paged List
 //
-// A paginated list of libc versions
+// # A paginated list of libc versions
 //
 // swagger:model libcVersionPagedList
 type LibcVersionPagedList struct {

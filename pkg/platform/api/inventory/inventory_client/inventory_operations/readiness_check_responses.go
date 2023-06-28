@@ -46,7 +46,8 @@ func NewReadinessCheckOK() *ReadinessCheckOK {
 	return &ReadinessCheckOK{}
 }
 
-/* ReadinessCheckOK describes a response with status code 200, with default header values.
+/*
+ReadinessCheckOK describes a response with status code 200, with default header values.
 
 Indicates whether the server is ready
 */
@@ -78,7 +79,8 @@ func NewReadinessCheckDefault(code int) *ReadinessCheckDefault {
 	}
 }
 
-/* ReadinessCheckDefault describes a response with status code -1, with default header values.
+/*
+ReadinessCheckDefault describes a response with status code -1, with default header values.
 
 generic error response
 */

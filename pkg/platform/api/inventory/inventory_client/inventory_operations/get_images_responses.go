@@ -46,7 +46,8 @@ func NewGetImagesOK() *GetImagesOK {
 	return &GetImagesOK{}
 }
 
-/* GetImagesOK describes a response with status code 200, with default header values.
+/*
+GetImagesOK describes a response with status code 200, with default header values.
 
 A paginated list of images
 */
@@ -80,7 +81,8 @@ func NewGetImagesDefault(code int) *GetImagesDefault {
 	}
 }
 
-/* GetImagesDefault describes a response with status code -1, with default header values.
+/*
+GetImagesDefault describes a response with status code -1, with default header values.
 
 generic error response
 */

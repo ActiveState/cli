@@ -15,7 +15,7 @@ import (
 
 // BuildFlagRevisionCore Build Flag Revision Core
 //
-// The properties of an build flag revision needed to create a new one
+// # The properties of an build flag revision needed to create a new one
 //
 // swagger:model buildFlagRevisionCore
 type BuildFlagRevisionCore struct {

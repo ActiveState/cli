@@ -51,7 +51,8 @@ func NewUsageOK() *UsageOK {
 	return &UsageOK{}
 }
 
-/* UsageOK describes a response with status code 200, with default header values.
+/*
+UsageOK describes a response with status code 200, with default header values.
 
 Success
 */
@@ -83,7 +84,8 @@ func NewUsageBadRequest() *UsageBadRequest {
 	return &UsageBadRequest{}
 }
 
-/* UsageBadRequest describes a response with status code 400, with default header values.
+/*
+UsageBadRequest describes a response with status code 400, with default header values.
 
 Bad Request
 */
@@ -115,7 +117,8 @@ func NewUsageForbidden() *UsageForbidden {
 	return &UsageForbidden{}
 }
 
-/* UsageForbidden describes a response with status code 403, with default header values.
+/*
+UsageForbidden describes a response with status code 403, with default header values.
 
 Unauthorized
 */

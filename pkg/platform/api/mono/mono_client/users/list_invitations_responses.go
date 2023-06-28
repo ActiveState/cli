@@ -57,7 +57,8 @@ func NewListInvitationsOK() *ListInvitationsOK {
 	return &ListInvitationsOK{}
 }
 
-/* ListInvitationsOK describes a response with status code 200, with default header values.
+/*
+ListInvitationsOK describes a response with status code 200, with default header values.
 
 Pending Invitations
 */
@@ -87,7 +88,8 @@ func NewListInvitationsBadRequest() *ListInvitationsBadRequest {
 	return &ListInvitationsBadRequest{}
 }
 
-/* ListInvitationsBadRequest describes a response with status code 400, with default header values.
+/*
+ListInvitationsBadRequest describes a response with status code 400, with default header values.
 
 Bad Request
 */
@@ -119,7 +121,8 @@ func NewListInvitationsForbidden() *ListInvitationsForbidden {
 	return &ListInvitationsForbidden{}
 }
 
-/* ListInvitationsForbidden describes a response with status code 403, with default header values.
+/*
+ListInvitationsForbidden describes a response with status code 403, with default header values.
 
 Forbidden
 */
@@ -151,7 +154,8 @@ func NewListInvitationsInternalServerError() *ListInvitationsInternalServerError
 	return &ListInvitationsInternalServerError{}
 }
 
-/* ListInvitationsInternalServerError describes a response with status code 500, with default header values.
+/*
+ListInvitationsInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */

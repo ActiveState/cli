@@ -57,7 +57,8 @@ func NewGetOrganizationMutationsOK() *GetOrganizationMutationsOK {
 	return &GetOrganizationMutationsOK{}
 }
 
-/* GetOrganizationMutationsOK describes a response with status code 200, with default header values.
+/*
+GetOrganizationMutationsOK describes a response with status code 200, with default header values.
 
 Success
 */
@@ -87,7 +88,8 @@ func NewGetOrganizationMutationsForbidden() *GetOrganizationMutationsForbidden {
 	return &GetOrganizationMutationsForbidden{}
 }
 
-/* GetOrganizationMutationsForbidden describes a response with status code 403, with default header values.
+/*
+GetOrganizationMutationsForbidden describes a response with status code 403, with default header values.
 
 Forbidden
 */
@@ -119,7 +121,8 @@ func NewGetOrganizationMutationsNotFound() *GetOrganizationMutationsNotFound {
 	return &GetOrganizationMutationsNotFound{}
 }
 
-/* GetOrganizationMutationsNotFound describes a response with status code 404, with default header values.
+/*
+GetOrganizationMutationsNotFound describes a response with status code 404, with default header values.
 
 Not Found
 */
@@ -151,7 +154,8 @@ func NewGetOrganizationMutationsInternalServerError() *GetOrganizationMutationsI
 	return &GetOrganizationMutationsInternalServerError{}
 }
 
-/* GetOrganizationMutationsInternalServerError describes a response with status code 500, with default header values.
+/*
+GetOrganizationMutationsInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */

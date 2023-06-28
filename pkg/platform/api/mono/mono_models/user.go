@@ -37,9 +37,6 @@ type User struct {
 	// can unlink account
 	CanUnlinkAccount bool `json:"canUnlinkAccount,omitempty"`
 
-	// Certain sets of users, defined by their common domain, are thought to be abusing the free tier. If this field is present then this user is associated with the out of compliance organization. The value will be the company name.
-	CompanyOutOfCompliance *string `json:"companyOutOfCompliance,omitempty"`
-
 	// datetime format
 	DatetimeFormat string `json:"datetimeFormat,omitempty"`
 
@@ -62,6 +59,9 @@ type User struct {
 
 	// name
 	Name string `json:"name,omitempty"`
+
+	// noncompliance status
+	NoncomplianceStatus *UserNoncomplianceStatus `json:"noncomplianceStatus,omitempty"`
 
 	// organizations
 	Organizations []*UserOrganizationsItems0 `json:"organizations"`
@@ -100,6 +100,10 @@ func (m *User) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateLastLogin(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateNoncomplianceStatus(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -165,6 +169,23 @@ func (m *User) validateLastLogin(formats strfmt.Registry) error {
 	return nil
 }
 
+func (m *User) validateNoncomplianceStatus(formats strfmt.Registry) error {
+	if swag.IsZero(m.NoncomplianceStatus) { // not required
+		return nil
+	}
+
+	if m.NoncomplianceStatus != nil {
+		if err := m.NoncomplianceStatus.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("noncomplianceStatus")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (m *User) validateOrganizations(formats strfmt.Registry) error {
 	if swag.IsZero(m.Organizations) { // not required
 		return nil
@@ -205,6 +226,10 @@ func (m *User) validateUserID(formats strfmt.Registry) error {
 func (m *User) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.contextValidateNoncomplianceStatus(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateOrganizations(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -212,6 +237,20 @@ func (m *User) ContextValidate(ctx context.Context, formats strfmt.Registry) err
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *User) contextValidateNoncomplianceStatus(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.NoncomplianceStatus != nil {
+		if err := m.NoncomplianceStatus.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("noncomplianceStatus")
+			}
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -251,6 +290,46 @@ func (m *User) UnmarshalBinary(b []byte) error {
 	return nil
 }
 
+// UserNoncomplianceStatus user noncompliance status
+//
+// swagger:model UserNoncomplianceStatus
+type UserNoncomplianceStatus struct {
+
+	// company name
+	CompanyName string `json:"companyName,omitempty"`
+
+	// type
+	Type int32 `json:"type"`
+}
+
+// Validate validates this user noncompliance status
+func (m *UserNoncomplianceStatus) Validate(formats strfmt.Registry) error {
+	return nil
+}
+
+// ContextValidate validates this user noncompliance status based on context it is used
+func (m *UserNoncomplianceStatus) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	return nil
+}
+
+// MarshalBinary interface implementation
+func (m *UserNoncomplianceStatus) MarshalBinary() ([]byte, error) {
+	if m == nil {
+		return nil, nil
+	}
+	return swag.WriteJSON(m)
+}
+
+// UnmarshalBinary interface implementation
+func (m *UserNoncomplianceStatus) UnmarshalBinary(b []byte) error {
+	var res UserNoncomplianceStatus
+	if err := swag.ReadJSON(b, &res); err != nil {
+		return err
+	}
+	*m = res
+	return nil
+}
+
 // UserOrganizationsItems0 user organizations items0
 //
 // swagger:model UserOrganizationsItems0
@@ -262,6 +341,9 @@ type UserOrganizationsItems0 struct {
 	// organization ID
 	// Format: uuid
 	OrganizationID strfmt.UUID `json:"organizationID,omitempty"`
+
+	// personal
+	Personal bool `json:"personal,omitempty"`
 
 	// role
 	Role string `json:"role,omitempty"`

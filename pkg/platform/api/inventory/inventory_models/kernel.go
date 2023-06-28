@@ -15,7 +15,7 @@ import (
 
 // Kernel Kernel
 //
-// The full kernel data model
+// # The full kernel data model
 //
 // swagger:model kernel
 type Kernel struct {

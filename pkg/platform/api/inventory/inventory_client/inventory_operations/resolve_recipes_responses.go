@@ -29,6 +29,12 @@ func (o *ResolveRecipesReader) ReadResponse(response runtime.ClientResponse, con
 			return nil, err
 		}
 		return result, nil
+	case 202:
+		result := NewResolveRecipesAccepted()
+		if err := result.readResponse(response, consumer, o.formats); err != nil {
+			return nil, err
+		}
+		return result, nil
 	case 400:
 		result := NewResolveRecipesBadRequest()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -52,7 +58,8 @@ func NewResolveRecipesOK() *ResolveRecipesOK {
 	return &ResolveRecipesOK{}
 }
 
-/* ResolveRecipesOK describes a response with status code 200, with default header values.
+/*
+ResolveRecipesOK describes a response with status code 200, with default header values.
 
 Returns one or more recipes that fulfill the requirements of the order
 */
@@ -79,12 +86,46 @@ func (o *ResolveRecipesOK) readResponse(response runtime.ClientResponse, consume
 	return nil
 }
 
+// NewResolveRecipesAccepted creates a ResolveRecipesAccepted with default headers values
+func NewResolveRecipesAccepted() *ResolveRecipesAccepted {
+	return &ResolveRecipesAccepted{}
+}
+
+/*
+ResolveRecipesAccepted describes a response with status code 202, with default header values.
+
+If the recipe is not found in the cache when only_cached_responses is set, submits the order and returns
+*/
+type ResolveRecipesAccepted struct {
+	Payload *inventory_models.InventoryResponse
+}
+
+func (o *ResolveRecipesAccepted) Error() string {
+	return fmt.Sprintf("[POST /v1/recipes][%d] resolveRecipesAccepted  %+v", 202, o.Payload)
+}
+func (o *ResolveRecipesAccepted) GetPayload() *inventory_models.InventoryResponse {
+	return o.Payload
+}
+
+func (o *ResolveRecipesAccepted) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+
+	o.Payload = new(inventory_models.InventoryResponse)
+
+	// response payload
+	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
+		return err
+	}
+
+	return nil
+}
+
 // NewResolveRecipesBadRequest creates a ResolveRecipesBadRequest with default headers values
 func NewResolveRecipesBadRequest() *ResolveRecipesBadRequest {
 	return &ResolveRecipesBadRequest{}
 }
 
-/* ResolveRecipesBadRequest describes a response with status code 400, with default header values.
+/*
+ResolveRecipesBadRequest describes a response with status code 400, with default header values.
 
 If the order is invalid
 */
@@ -118,7 +159,8 @@ func NewResolveRecipesDefault(code int) *ResolveRecipesDefault {
 	}
 }
 
-/* ResolveRecipesDefault describes a response with status code -1, with default header values.
+/*
+ResolveRecipesDefault describes a response with status code -1, with default header values.
 
 If there is an error processing the order
 */
