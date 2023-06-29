@@ -32,7 +32,6 @@ func (suite *StageIntegrationTestSuite) TestCommitManualBuildScriptMod() {
 		),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
-	cp.Expect("Skipping runtime setup")
 	cp.Expect("Checked out")
 	cp.ExpectExitCode(0)
 
