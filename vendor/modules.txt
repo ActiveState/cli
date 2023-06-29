@@ -55,10 +55,6 @@ github.com/acarl005/stripansi
 # github.com/agnivade/levenshtein v1.1.1
 ## explicit; go 1.13
 github.com/agnivade/levenshtein
-# github.com/alecthomas/participle/v2 v2.0.0
-## explicit; go 1.18
-github.com/alecthomas/participle/v2
-github.com/alecthomas/participle/v2/lexer
 # github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751
 ## explicit
 github.com/alecthomas/template

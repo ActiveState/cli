@@ -74,8 +74,6 @@ require (
 	modernc.org/sqlite v1.11.2
 )
 
-require github.com/alecthomas/participle/v2 v2.0.0
-
 require (
 	github.com/ActiveState/termtest/conpty v0.5.0 // indirect
 	github.com/ActiveState/termtest/xpty v0.6.0 // indirect
