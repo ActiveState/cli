@@ -7,6 +7,7 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/thoas/go-funk"
 )
 
 // Language tracks the languages potentially used.
@@ -342,8 +343,8 @@ func RecognizedSupportedsNames() []string {
 	var supporteds []string
 	for i, data := range lookup {
 		l := Supported{Language(i)}
-		if l.Recognized() {
-			supporteds = append(supporteds, data.name)
+		if l.Recognized() && !funk.Contains(supporteds, data.require) {
+			supporteds = append(supporteds, data.require)
 		}
 	}
 	return supporteds

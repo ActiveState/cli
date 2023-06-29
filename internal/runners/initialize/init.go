@@ -125,6 +125,11 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 		return locale.NewInputError("err_init_no_language")
 	}
 
+	// Require 'python', 'python@3', or 'python@2' instead of 'python3' or 'python2'.
+	if languageName == language.Python3.String() || languageName == language.Python2.String() {
+		return language.UnrecognizedLanguageError(languageName, language.RecognizedSupportedsNames())
+	}
+
 	lang, err := language.MakeByNameAndVersion(languageName, languageVersion)
 	if err != nil {
 		if inferred {
