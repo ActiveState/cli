@@ -615,6 +615,10 @@ func (e *BuildExpression) removeRequirement(requirement Requirement) error {
 }
 
 func (e *BuildExpression) updateRequirement(requirement Requirement) error {
+	if requirement.VersionRequirement == nil {
+		return nil
+	}
+
 	requirementsNode := e.getRequirementsNode()
 
 	for _, r := range requirementsNode {
@@ -623,27 +627,25 @@ func (e *BuildExpression) updateRequirement(requirement Requirement) error {
 		}
 
 		for _, o := range *r.Object {
-			if o.Name == RequirementNameKey && *o.Value.Str == requirement.Name {
-				if requirement.VersionRequirement == nil {
+			if o.Name != RequirementNameKey || *o.Value.Str != requirement.Name {
+				continue
+			}
+
+			var versionRequirements []*Value
+			for _, v := range *r.Object {
+				if v.Name != RequirementVersionRequirementsKey {
 					continue
 				}
 
-				var versionRequirements []*Value
-				for _, v := range *r.Object {
-					if v.Name != RequirementVersionRequirementsKey {
-						continue
-					}
-
-					for _, versionReq := range requirement.VersionRequirement {
-						versionRequirements = append(versionRequirements, &Value{Object: &[]*Var{
-							{Name: RequirementComparatorKey, Value: &Value{Str: p.StrP(versionReq[RequirementComparatorKey])}},
-							{Name: RequirementVersionKey, Value: &Value{Str: p.StrP(versionReq[RequirementVersionKey])}},
-						}})
-					}
-					v.Value.List = &versionRequirements
+				for _, versionReq := range requirement.VersionRequirement {
+					versionRequirements = append(versionRequirements, &Value{Object: &[]*Var{
+						{Name: RequirementComparatorKey, Value: &Value{Str: p.StrP(versionReq[RequirementComparatorKey])}},
+						{Name: RequirementVersionKey, Value: &Value{Str: p.StrP(versionReq[RequirementVersionKey])}},
+					}})
 				}
-
+				v.Value.List = &versionRequirements
 			}
+
 		}
 	}
 
