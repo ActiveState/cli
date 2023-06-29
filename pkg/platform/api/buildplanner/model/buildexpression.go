@@ -398,8 +398,16 @@ func (e *BuildExpression) validateRequirements() error {
 				return errs.New("Requirement object missing value field")
 			}
 
-			if o.Value.Str == nil && o.Value.List == nil {
-				return errs.New("Requirement object value field is not a string")
+			if o.Name == RequirementNameKey || o.Name == RequirementNamespaceKey {
+				if o.Value.Str == nil {
+					return errs.New("Requirement object value is not set to a string")
+				}
+			}
+
+			if o.Name == RequirementVersionRequirementsKey {
+				if o.Value.List == nil {
+					return errs.New("Requirement object value is not set to a list")
+				}
 			}
 		}
 	}
@@ -616,18 +624,25 @@ func (e *BuildExpression) updateRequirement(requirement Requirement) error {
 
 		for _, o := range *r.Object {
 			if o.Name == RequirementNameKey && *o.Value.Str == requirement.Name {
-				if requirement.VersionRequirement != nil {
-					for _, v := range *r.Object {
-						if v.Name == "version_requirements" {
-							v.Value.List = &[]*Value{
-								{Object: &[]*Var{
-									{Name: "comparator", Value: &Value{Str: p.StrP(requirement.VersionRequirement[0]["comparator"])}},
-									{Name: "version", Value: &Value{Str: p.StrP(requirement.VersionRequirement[0]["version"])}},
-								}},
-							}
-						}
-					}
+				if requirement.VersionRequirement == nil {
+					continue
 				}
+
+				var versionRequirements []*Value
+				for _, v := range *r.Object {
+					if v.Name != RequirementVersionRequirementsKey {
+						continue
+					}
+
+					for _, versionReq := range requirement.VersionRequirement {
+						versionRequirements = append(versionRequirements, &Value{Object: &[]*Var{
+							{Name: RequirementComparatorKey, Value: &Value{Str: p.StrP(versionReq[RequirementComparatorKey])}},
+							{Name: RequirementVersionKey, Value: &Value{Str: p.StrP(versionReq[RequirementVersionKey])}},
+						}})
+					}
+					v.Value.List = &versionRequirements
+				}
+
 			}
 		}
 	}
