@@ -38,16 +38,16 @@ func getBuildExpression(proj *project.Project, customCommit *strfmt.UUID, auth *
 // If a commit ID is given, a local mutation has occurred (e.g. added a package, pulled, etc.), so
 // pull in the new build script. Otherwise, if there are local build script changes, create a new
 // commit with them in order to update the remote one.
-func Sync(proj *project.Project, commitID *strfmt.UUID, out output.Outputer, auth *authentication.Auth) error {
-	logging.Debug("Synchronizing local build script")
+func Sync(proj *project.Project, commitID *strfmt.UUID, out output.Outputer, auth *authentication.Auth) (synced bool, err error) {
+	logging.Debug("Synchronizing local build script using commit %s", commitID)
 	script, err := buildscript.NewScriptFromProjectDir(proj.Dir())
 	if err != nil && !buildscript.IsDoesNotExistError(err) {
-		return errs.Wrap(err, "Could not get local build script")
+		return false, errs.Wrap(err, "Could not get local build script")
 	}
 
 	expr, err := getBuildExpression(proj, commitID, auth)
 	if err != nil {
-		return errs.Wrap(err, "Could not get remote build expr")
+		return false, errs.Wrap(err, "Could not get remote build expr for provided commit")
 	}
 
 	// Note: merging and/or conflict resolution will happen in another ticket (DX-1912).
@@ -56,23 +56,23 @@ func Sync(proj *project.Project, commitID *strfmt.UUID, out output.Outputer, aut
 	if script != nil && commitID == nil {
 		logging.Debug("Checking for changes")
 		if script.Equals(expr) {
-			return nil // nothing to do
+			return false, nil // nothing to do
 		}
 		logging.Debug("Merging changes")
 		bytes, err := json.Marshal(script)
 		if err != nil {
-			return errs.Wrap(err, "Unable to marshal local build script to JSON")
+			return false, errs.Wrap(err, "Unable to marshal local build script to JSON")
 		}
 		expr, err = bpModel.NewBuildExpression(bytes)
 		if err != nil {
-			return errs.Wrap(err, "Unable to translate local build script to build expression")
+			return false, errs.Wrap(err, "Unable to translate local build script to build expression")
 		}
 
 		out.Notice(locale.Tl("buildscript_update", "Updating project to reflect build script changes..."))
 
 		localCommitID, err := localcommit.Get(proj.Dir())
 		if err != nil {
-			return errs.Wrap(err, "Unable to get local commit ID")
+			return false, errs.Wrap(err, "Unable to get local commit ID")
 		}
 
 		bp := model.NewBuildPlannerModel(auth)
@@ -83,21 +83,23 @@ func Sync(proj *project.Project, commitID *strfmt.UUID, out output.Outputer, aut
 			Script:       expr,
 		})
 		if err != nil {
-			return errs.Wrap(err, "Could not update project to reflect build script changes.")
+			return false, errs.Wrap(err, "Could not update project to reflect build script changes.")
 		}
 		commitID = &stagedCommitID
 
 		expr, err = getBuildExpression(proj, commitID, auth) // timestamps might be different
 		if err != nil {
-			return errs.Wrap(err, "Could not get remote build expr")
+			return false, errs.Wrap(err, "Could not get remote build expr for staged commit")
 		}
+
+		synced = true
 	}
 
 	if err := buildscript.UpdateOrCreate(proj.Dir(), expr); err != nil {
-		return errs.Wrap(err, "Could not update local build script.")
+		return false, errs.Wrap(err, "Could not update local build script.")
 	}
 
-	return nil
+	return synced, nil
 }
 
 func generateDiff(script *buildscript.Script, expr *bpModel.BuildExpression) (string, error) {
