@@ -54,10 +54,12 @@ func NewAddCommitParamsWithHTTPClient(client *http.Client) *AddCommitParams {
 	}
 }
 
-/* AddCommitParams contains all the parameters to send to the API endpoint
-   for the add commit operation.
+/*
+AddCommitParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the add commit operation.
+
+	Typically these are written to a http.Request.
 */
 type AddCommitParams struct {
 

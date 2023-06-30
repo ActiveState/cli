@@ -69,7 +69,8 @@ func NewUpdateBranchOK() *UpdateBranchOK {
 	return &UpdateBranchOK{}
 }
 
-/* UpdateBranchOK describes a response with status code 200, with default header values.
+/*
+UpdateBranchOK describes a response with status code 200, with default header values.
 
 Branch was updated, returns resulting branch
 */
@@ -101,7 +102,8 @@ func NewUpdateBranchBadRequest() *UpdateBranchBadRequest {
 	return &UpdateBranchBadRequest{}
 }
 
-/* UpdateBranchBadRequest describes a response with status code 400, with default header values.
+/*
+UpdateBranchBadRequest describes a response with status code 400, with default header values.
 
 Bad Request
 */
@@ -133,7 +135,8 @@ func NewUpdateBranchForbidden() *UpdateBranchForbidden {
 	return &UpdateBranchForbidden{}
 }
 
-/* UpdateBranchForbidden describes a response with status code 403, with default header values.
+/*
+UpdateBranchForbidden describes a response with status code 403, with default header values.
 
 Forbidden
 */
@@ -165,7 +168,8 @@ func NewUpdateBranchNotFound() *UpdateBranchNotFound {
 	return &UpdateBranchNotFound{}
 }
 
-/* UpdateBranchNotFound describes a response with status code 404, with default header values.
+/*
+UpdateBranchNotFound describes a response with status code 404, with default header values.
 
 Branch Not Found
 */
@@ -197,7 +201,8 @@ func NewUpdateBranchConflict() *UpdateBranchConflict {
 	return &UpdateBranchConflict{}
 }
 
-/* UpdateBranchConflict describes a response with status code 409, with default header values.
+/*
+UpdateBranchConflict describes a response with status code 409, with default header values.
 
 Conflict
 */
@@ -229,7 +234,8 @@ func NewUpdateBranchInternalServerError() *UpdateBranchInternalServerError {
 	return &UpdateBranchInternalServerError{}
 }
 
-/* UpdateBranchInternalServerError describes a response with status code 500, with default header values.
+/*
+UpdateBranchInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */

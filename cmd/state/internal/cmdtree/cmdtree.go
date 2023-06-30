@@ -123,6 +123,7 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 		newRemoteProjectsCommand(prime),
 		newProjectsEditCommand(prime),
 		newDeleteProjectsCommand(prime),
+		newMoveProjectsCommand(prime),
 	)
 
 	updateCmd := newUpdateCommand(prime)

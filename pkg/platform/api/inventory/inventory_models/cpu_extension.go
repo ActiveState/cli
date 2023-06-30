@@ -15,7 +15,7 @@ import (
 
 // CPUExtension CPU Extension
 //
-// The full CPU extension data model
+// # The full CPU extension data model
 //
 // swagger:model cpuExtension
 type CPUExtension struct {

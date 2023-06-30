@@ -17,7 +17,7 @@ import (
 
 // IngredientPagedList Ingredient Paged List
 //
-// A paginated list of ingredients
+// # A paginated list of ingredients
 //
 // swagger:model ingredientPagedList
 type IngredientPagedList struct {

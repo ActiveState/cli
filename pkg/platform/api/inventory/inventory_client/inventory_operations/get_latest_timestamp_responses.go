@@ -46,7 +46,8 @@ func NewGetLatestTimestampOK() *GetLatestTimestampOK {
 	return &GetLatestTimestampOK{}
 }
 
-/* GetLatestTimestampOK describes a response with status code 200, with default header values.
+/*
+GetLatestTimestampOK describes a response with status code 200, with default header values.
 
 The latest timestamp
 */
@@ -80,7 +81,8 @@ func NewGetLatestTimestampDefault(code int) *GetLatestTimestampDefault {
 	}
 }
 
-/* GetLatestTimestampDefault describes a response with status code -1, with default header values.
+/*
+GetLatestTimestampDefault describes a response with status code -1, with default header values.
 
 generic error response
 */

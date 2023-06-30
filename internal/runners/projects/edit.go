@@ -1,7 +1,6 @@
 package projects
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/errs"
@@ -9,7 +8,6 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
-	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/projects"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -29,7 +27,7 @@ type EditParams struct {
 	Repository  string
 }
 
-func (e EditParams) validate() error {
+func (e *EditParams) validate() error {
 	if e.Visibility != "" &&
 		!strings.EqualFold(e.Visibility, visibilityPublic) &&
 		!strings.EqualFold(e.Visibility, visibilityPrivate) {
@@ -55,7 +53,7 @@ func NewEdit(prime primeable) *Edit {
 	}
 }
 
-func (e *Edit) Run(params EditParams) error {
+func (e *Edit) Run(params *EditParams) error {
 	if !e.auth.Authenticated() {
 		return locale.NewInputError("err_project_edit_not_authenticated", "In order to edit your project you need to be authenticated. Please run '[ACTIONABLE]state auth[/RESET]' to authenticate.")
 	}
@@ -64,10 +62,6 @@ func (e *Edit) Run(params EditParams) error {
 	if err != nil {
 		return locale.WrapError(err, "err_edit_invalid_params", "Invalid edit parameters")
 	}
-
-	editParams := projects.NewEditProjectParams()
-	editParams.SetOrganizationName(params.Namespace.Owner)
-	editParams.SetProjectName(params.Namespace.Project)
 
 	editMsg := locale.Tl("edit_prompt", "You are about to edit the following fields for the project [NOTICE]{{.V0}}[/RESET]:\n", params.Namespace.String())
 	editable := &mono_models.ProjectEditable{}
@@ -107,11 +101,11 @@ func (e *Edit) Run(params EditParams) error {
 	}
 
 	if err = e.editLocalCheckouts(params); err != nil {
-		return locale.WrapError(err, "err_edit_local_checkouts", "Could not edit local checkouts")
+		return locale.WrapError(err, "err_edit_local_checkouts")
 	}
 
 	if err = e.updateProjectMapping(params); err != nil {
-		return locale.WrapError(err, "err_edit_project_mapping", "Could not update project mapping")
+		return locale.WrapError(err, "err_edit_project_mapping")
 	}
 
 	e.out.Notice(locale.Tl("edit_success", "Project edited successfully"))
@@ -119,7 +113,7 @@ func (e *Edit) Run(params EditParams) error {
 	return nil
 }
 
-func (e *Edit) editLocalCheckouts(params EditParams) error {
+func (e *Edit) editLocalCheckouts(params *EditParams) error {
 	localProjects := projectfile.GetProjectMapping(e.config)
 
 	var localCheckouts []string
@@ -139,7 +133,7 @@ func (e *Edit) editLocalCheckouts(params EditParams) error {
 	return nil
 }
 
-func (e *Edit) editLocalCheckout(owner, checkout string, params EditParams) error {
+func (e *Edit) editLocalCheckout(owner, checkout string, params *EditParams) error {
 	if params.ProjectName == "" {
 		return nil
 	}
@@ -157,7 +151,7 @@ func (e *Edit) editLocalCheckout(owner, checkout string, params EditParams) erro
 	return nil
 }
 
-func (e *Edit) updateProjectMapping(params EditParams) error {
+func (e *Edit) updateProjectMapping(params *EditParams) error {
 	if params.ProjectName == "" {
 		return nil
 	}
@@ -171,11 +165,7 @@ func (e *Edit) updateProjectMapping(params EditParams) error {
 		}
 	}
 
-	ns, err := project.ParseNamespace(fmt.Sprintf("%s/%s", params.Namespace.Owner, params.ProjectName))
-	if err != nil {
-		return errs.Wrap(err, "Could not parse namespace")
-	}
-
+	ns := project.Namespaced{Owner: params.Namespace.Owner, Project: params.ProjectName}
 	for _, checkout := range localCheckouts {
 		projectfile.StoreProjectMapping(e.config, ns.String(), checkout)
 	}

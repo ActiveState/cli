@@ -2055,3 +2055,7 @@ err_country_blocked:
   other: This service is not available in your region.
 err_shortcutdir_writable:
   other: Could not continue as we don't have permission to create [ACTIONABLE]{{.V0}}[/RESET].
+err_edit_local_checkouts:
+  other: Could not update local checkouts
+err_edit_project_mapping:
+  other: Could not update project mapping
