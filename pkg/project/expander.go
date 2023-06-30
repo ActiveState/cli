@@ -292,16 +292,18 @@ func makeEntryMapMap(structure reflect.Value) map[string]map[string]entry {
 }
 
 func makeLazyExpanderFuncFromPtrToStruct(val reflect.Value) ExpanderFunc {
+	// This function's args maintain scope across multiple calls; Do not overwrite the args.
 	return func(v, name, meta string, isFunc bool, ctx *Expansion) (string, error) {
 		iface := val.Interface()
 		if u, ok := iface.(interface{ Update(*Project) }); ok {
 			u.Update(ctx.Project)
 		}
 
-		if val.Kind() == reflect.Ptr {
-			val = val.Elem()
+		valDeref := val
+		if valDeref.Kind() == reflect.Ptr {
+			valDeref = valDeref.Elem()
 		}
-		fn := makeExpanderFuncFromMap(makeEntryMapMap(val))
+		fn := makeExpanderFuncFromMap(makeEntryMapMap(valDeref))
 
 		return fn(v, name, meta, isFunc, ctx)
 	}
