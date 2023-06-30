@@ -15,6 +15,7 @@ import (
 	"github.com/ActiveState/cli/internal/analytics"
 	anaConsts "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/analytics/dimensions"
+	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -298,6 +299,11 @@ func (s *Setup) updateArtifacts() ([]artifact.ArtifactID, error) {
 	})
 	if err != nil {
 		return artifacts, locale.WrapError(err, "err_runtime_setup")
+	}
+
+	if os.Getenv(constants.RuntimeSetupWaitEnvVarName) != "" && condition.OnCI() {
+		ch := make([]byte, 1)
+		os.Stdin.Read(ch) // block until Ctrl-C is sent
 	}
 
 	// Move files to final installation path after successful download and unpack.
