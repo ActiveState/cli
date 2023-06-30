@@ -28,8 +28,10 @@ import (
 // Build covers the build structure
 type Build map[string]string
 
-var pConditional *constraints.Conditional
-var normalizeRx *regexp.Regexp
+var (
+	pConditional *constraints.Conditional
+	normalizeRx  *regexp.Regexp
+)
 
 func init() {
 	var err error
@@ -307,7 +309,9 @@ func newWithVars(out output.Outputer, auth *authentication.Auth, shell string, p
 	projVars := NewVars(auth, pj, shell)
 	conditional := constraints.NewPrimeConditional(projVars)
 	RegisterConditional(conditional)
-	_ = RegisterStruct(projVars)
+	if err := RegisterStruct(projVars); err != nil {
+		return nil, err
+	}
 
 	return pj, nil
 }
