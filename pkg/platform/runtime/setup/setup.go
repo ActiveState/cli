@@ -205,10 +205,22 @@ func (s *Setup) Update() (rerr error) {
 	return nil
 }
 
+// artifactToInstall is a reference to a fetched and unpacked artifact that is ready to be installed
+// to its final location.
+type artifactToInstall struct {
+	a           artifact.ArtifactID
+	unpackedDir string
+	envDef      *envdef.EnvironmentDefinition
+	numFiles    int
+}
+
 func (s *Setup) updateArtifacts() ([]artifact.ArtifactID, error) {
 	mutex := &sync.Mutex{}
+	var artifactsToInstall []artifactToInstall
 
 	// Fetch and install each runtime artifact.
+	// Note: despite the name, we are "pre-installing" the artifacts to a temporary location.
+	// Once all artifacts are fetched, unpacked, and prepared, final installation occurs.
 	artifacts, err := s.fetchAndInstallArtifacts(func(a artifact.ArtifactID, archivePath string, as ArtifactSetuper) (rerr error) {
 		defer func() {
 			if rerr != nil {
@@ -278,15 +290,29 @@ func (s *Setup) updateArtifacts() ([]artifact.ArtifactID, error) {
 			return locale.WrapError(err, "runtime_alternative_file_transforms_err", "", "Could not apply necessary file transformations after unpacking")
 		}
 
-		// Move files to installation path, ensuring file operations are synchronized
 		mutex.Lock()
-		err = s.moveToInstallPath(a, unpackedDir, envDef, numFiles)
+		artifactsToInstall = append(artifactsToInstall, artifactToInstall{a, unpackedDir, envDef, numFiles})
 		mutex.Unlock()
 
-		return err
+		return nil
 	})
 	if err != nil {
-		return artifacts, locale.WrapError(err, "err_runtime_setup", "Error setting up runtime")
+		return artifacts, locale.WrapError(err, "err_runtime_setup")
+	}
+
+	// Move files to final installation path after successful download and unpack.
+	for _, artifactInfo := range artifactsToInstall {
+		err = s.moveToInstallPath(artifactInfo.a, artifactInfo.unpackedDir, artifactInfo.envDef, artifactInfo.numFiles)
+		if err != nil {
+			return artifacts, locale.WrapError(err, "err_runtime_setup")
+		}
+	}
+
+	// Clean up temp directory.
+	tempDir := filepath.Join(s.store.InstallPath(), constants.LocalRuntimeTempDirectory)
+	err = os.RemoveAll(tempDir)
+	if err != nil {
+		multilog.Log(logging.ErrorNoStacktrace, rollbar.Error)("Failed to remove temporary installation directory %s: %v", tempDir, err)
 	}
 
 	return artifacts, nil
@@ -525,13 +551,6 @@ func (s *Setup) fetchAndInstallArtifactsFromRecipe(installFunc artifactInstaller
 	err = s.artifactCache.Save()
 	if err != nil {
 		multilog.Error("Could not save artifact cache updates: %v", err)
-	}
-
-	// clean up temp directory
-	tempDir := filepath.Join(s.store.InstallPath(), constants.LocalRuntimeTempDirectory)
-	err = os.RemoveAll(tempDir)
-	if err != nil {
-		multilog.Log(logging.ErrorNoStacktrace, rollbar.Error)("Failed to remove temporary installation directory %s: %v", tempDir, err)
 	}
 
 	if err := s.store.StoreRecipe(buildResult.Recipe); err != nil {
