@@ -24,7 +24,7 @@ import (
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/proxyreader"
 	"github.com/ActiveState/cli/internal/rollbar"
-	"github.com/ActiveState/cli/internal/rtutils/p"
+	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/svcctl"
 	"github.com/ActiveState/cli/internal/unarchiver"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef"
@@ -45,7 +45,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/runtime/store"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/platform/runtime/validate"
-	"github.com/ActiveState/cli/pkg/project"
 	"github.com/faiface/mainthread"
 	"github.com/gammazero/workerpool"
 	"github.com/go-openapi/strfmt"
@@ -57,6 +56,21 @@ const MaxConcurrency = 5
 
 // NotInstalledError is an error returned when the runtime is not completely installed yet.
 var NotInstalledError = errs.New("Runtime is not completely installed.")
+
+// BuildError designates a recipe build error.
+type BuildError struct {
+	*locale.LocalizedError
+}
+
+// ArtifactDownloadError designates an error downloading an artifact.
+type ArtifactDownloadError struct {
+	*errs.WrapperError
+}
+
+// ArtifactInstallError designates an error installing a downloaded artifact.
+type ArtifactInstallError struct {
+	*errs.WrapperError
+}
 
 // ArtifactSetupErrors combines all errors that can happen while installing artifacts in parallel
 type ArtifactSetupErrors struct {
@@ -83,6 +97,11 @@ func (a *ArtifactSetupErrors) UserError() string {
 		errStrings = append(errStrings, locale.JoinedErrorMessage(err))
 	}
 	return locale.Tl("setup_artifacts_err", "Not all artifacts could be installed:\n{{.V0}}", strings.Join(errStrings, "\n"))
+}
+
+// ProgressReportError designates an error in the event handler for reporting progress.
+type ProgressReportError struct {
+	*errs.WrapperError
 }
 
 type Targeter interface {
@@ -149,14 +168,14 @@ func NewWithModel(target Targeter, eventHandler events.Handler, model ModelProvi
 // Update installs the runtime locally (or updates it if it's already partially installed)
 func (s *Setup) Update() (rerr error) {
 	defer func() {
-		var err error
-		if rerr == nil {
-			err = s.eventHandler.Handle(events.Success{})
-		} else {
-			err = s.eventHandler.Handle(events.Failure{})
+		var ev events.Eventer = events.Success{}
+		if rerr != nil {
+			ev = events.Failure{}
 		}
+
+		err := s.handleEvent(ev)
 		if err != nil {
-			logging.Error("Could not handle Success/Failure event: %s", errs.JoinMessage(err))
+			multilog.Error("Could not handle Success/Failure event: %s", errs.JoinMessage(err))
 		}
 	}()
 
@@ -193,13 +212,14 @@ func (s *Setup) updateArtifacts() ([]artifact.ArtifactID, error) {
 	artifacts, err := s.fetchAndInstallArtifacts(func(a artifact.ArtifactID, archivePath string, as ArtifactSetuper) (rerr error) {
 		defer func() {
 			if rerr != nil {
-				if err := s.eventHandler.Handle(events.ArtifactInstallFailure{a, rerr}); err != nil {
-					rerr = errs.Wrap(rerr, "Could not handle ArtifactInstallFailure event: %v", errs.JoinMessage(err))
+				rerr = &ArtifactInstallError{errs.Wrap(rerr, "Unable to install artifact")}
+				if err := s.handleEvent(events.ArtifactInstallFailure{a, rerr}); err != nil {
+					rerr = errs.Wrap(rerr, "Could not handle ArtifactInstallFailure event")
 					return
 				}
 			}
-			if err := s.eventHandler.Handle(events.ArtifactInstallSuccess{a}); err != nil {
-				rerr = errs.Wrap(rerr, "Could not handle ArtifactInstallSuccess event: %v", errs.JoinMessage(err))
+			if err := s.handleEvent(events.ArtifactInstallSuccess{a}); err != nil {
+				rerr = errs.Wrap(rerr, "Could not handle ArtifactInstallSuccess event")
 				return
 			}
 		}()
@@ -222,13 +242,13 @@ func (s *Setup) updateArtifacts() ([]artifact.ArtifactID, error) {
 		// Unpack artifact archive
 		numFiles, err := s.unpackArtifact(as.Unarchiver(), archivePath, unpackedDir, &progress.Report{
 			ReportSizeCb: func(size int) error {
-				if err := s.eventHandler.Handle(events.ArtifactInstallStarted{a, size}); err != nil {
+				if err := s.handleEvent(events.ArtifactInstallStarted{a, size}); err != nil {
 					return errs.Wrap(err, "Could not handle ArtifactInstallStarted event")
 				}
 				return nil
 			},
 			ReportIncrementCb: func(inc int) error {
-				if err := s.eventHandler.Handle(events.ArtifactInstallProgress{a, inc}); err != nil {
+				if err := s.handleEvent(events.ArtifactInstallProgress{a, inc}); err != nil {
 					return errs.Wrap(err, "Could not handle ArtifactInstallProgress event")
 				}
 				return nil
@@ -266,7 +286,7 @@ func (s *Setup) updateArtifacts() ([]artifact.ArtifactID, error) {
 		return err
 	})
 	if err != nil {
-		return artifacts, errs.Wrap(err, "Error setting up runtime")
+		return artifacts, locale.WrapError(err, "err_runtime_setup", "Error setting up runtime")
 	}
 
 	return artifacts, nil
@@ -312,7 +332,7 @@ func (s *Setup) fetchAndInstallArtifacts(installFunc artifactInstaller) ([]artif
 
 func (s *Setup) fetchAndInstallArtifactsFromRecipe(installFunc artifactInstaller) ([]artifact.ArtifactID, error) {
 	// Request build
-	if err := s.eventHandler.Handle(events.SolveStart{}); err != nil {
+	if err := s.handleEvent(events.SolveStart{}); err != nil {
 		return nil, errs.Wrap(err, "Could not handle SolveStart event")
 	}
 
@@ -320,7 +340,7 @@ func (s *Setup) fetchAndInstallArtifactsFromRecipe(installFunc artifactInstaller
 	if err != nil {
 		serr := &apimodel.SolverError{}
 		if errors.As(err, &serr) {
-			if err := s.eventHandler.Handle(events.SolveError{serr}); err != nil {
+			if err := s.handleEvent(events.SolveError{serr}); err != nil {
 				return nil, errs.Wrap(err, "Could not handle SolveError event")
 			}
 			return nil, formatSolverError(serr)
@@ -331,7 +351,7 @@ func (s *Setup) fetchAndInstallArtifactsFromRecipe(installFunc artifactInstaller
 	logging.Debug("Interacting with build for recipe ID: %s: %s",
 		buildResult.Recipe.RecipeID.String(), buildResult.BuildStatusResponse.Message)
 
-	if err := s.eventHandler.Handle(events.SolveSuccess{}); err != nil {
+	if err := s.handleEvent(events.SolveSuccess{}); err != nil {
 		return nil, errs.Wrap(err, "Could not handle SolveSuccess event")
 	}
 
@@ -389,21 +409,16 @@ func (s *Setup) fetchAndInstallArtifactsFromRecipe(installFunc artifactInstaller
 
 	// Analytics data to send.
 	dimensions := &dimensions.Values{
-		CommitID: p.StrP(s.target.CommitUUID().String()),
+		CommitID: ptr.To(s.target.CommitUUID().String()),
 	}
 
 	// send analytics build event, if a new runtime has to be built in the cloud
 	if buildResult.BuildStatus == headchef.Started {
 		s.analytics.Event(anaConsts.CatRuntime, anaConsts.ActRuntimeBuild, dimensions)
-		ns := project.Namespaced{
-			Owner:   s.target.Owner(),
-			Project: s.target.Name(),
-		}
-		s.analytics.EventWithLabel(anaConsts.CatRuntime, anaConsts.ActBuildProject, ns.String(), dimensions)
 	}
 
 	if buildResult.BuildStatus == headchef.Failed {
-		return nil, locale.NewError("headchef_build_failure", "Build Failed: {{.V0}}", buildResult.BuildStatusResponse.Message)
+		return nil, &BuildError{locale.NewError("headchef_build_failure", "Build Failed: {{.V0}}", buildResult.BuildStatusResponse.Message)}
 	}
 
 	oldRecipe, err := s.store.Recipe()
@@ -469,7 +484,7 @@ func (s *Setup) fetchAndInstallArtifactsFromRecipe(installFunc artifactInstaller
 	if buildResult.Recipe.RecipeID != nil {
 		recipeID = *buildResult.Recipe.RecipeID
 	}
-	if err := s.eventHandler.Handle(events.Start{
+	if err := s.handleEvent(events.Start{
 		RecipeID:      recipeID,
 		RequiresBuild: !buildResult.BuildReady,
 		ArtifactNames: artifactNames,
@@ -552,7 +567,7 @@ func (s *Setup) installArtifactsFromBuild(buildResult *model.BuildResult, artifa
 
 	var err error
 	if buildResult.BuildReady {
-		if err := s.eventHandler.Handle(events.BuildSkipped{}); err != nil {
+		if err := s.handleEvent(events.BuildSkipped{}); err != nil {
 			return errs.Wrap(err, "Could not handle BuildSkipped event")
 		}
 		err = s.installFromBuildResult(buildResult, artifacts, downloads, alreadyInstalled, setup, installFunc)
@@ -572,10 +587,10 @@ func (s *Setup) setupArtifactSubmitFunction(a artifact.ArtifactDownload, ar *art
 			(ar != nil && ar.Namespace == inventory_models.NamespaceCoreTypeInternal) {
 			logging.Debug("Skipping setup of noop artifact: %s", a.ArtifactID)
 			if _, expected := expectedArtifactInstalls[a.ArtifactID]; expected {
-				if err := s.eventHandler.Handle(events.ArtifactDownloadSkipped{a.ArtifactID}); err != nil {
+				if err := s.handleEvent(events.ArtifactDownloadSkipped{a.ArtifactID}); err != nil {
 					errors <- errs.Wrap(err, "Could not handle ArtifactDownloadSkipped event: %v", errs.JoinMessage(err))
 				}
-				if err := s.eventHandler.Handle(events.ArtifactInstallSkipped{a.ArtifactID}); err != nil {
+				if err := s.handleEvent(events.ArtifactInstallSkipped{a.ArtifactID}); err != nil {
 					errors <- errs.Wrap(err, "Could not handle ArtifactInstallSkipped event: %v", errs.JoinMessage(err))
 				}
 			}
@@ -710,13 +725,14 @@ func (s *Setup) moveToInstallPath(a artifact.ArtifactID, unpackedDir string, env
 func (s *Setup) downloadArtifact(a artifact.ArtifactDownload, targetFile string) (rerr error) {
 	defer func() {
 		if rerr != nil {
-			if err := s.eventHandler.Handle(events.ArtifactDownloadFailure{a.ArtifactID, rerr}); err != nil {
-				rerr = errs.Wrap(rerr, "Could not handle ArtifactDownloadFailure event: %v", errs.JoinMessage(err))
+			rerr = &ArtifactDownloadError{errs.Wrap(rerr, "Unable to download artifact")}
+			if err := s.handleEvent(events.ArtifactDownloadFailure{a.ArtifactID, rerr}); err != nil {
+				rerr = errs.Wrap(rerr, "Could not handle ArtifactDownloadFailure event")
 				return
 			}
 		}
-		if err := s.eventHandler.Handle(events.ArtifactDownloadSuccess{a.ArtifactID}); err != nil {
-			rerr = errs.Wrap(rerr, "Could not handle ArtifactDownloadSuccess event: %v", errs.JoinMessage(err))
+		if err := s.handleEvent(events.ArtifactDownloadSuccess{a.ArtifactID}); err != nil {
+			rerr = errs.Wrap(rerr, "Could not handle ArtifactDownloadSuccess event")
 			return
 		}
 	}()
@@ -733,13 +749,13 @@ func (s *Setup) downloadArtifact(a artifact.ArtifactDownload, targetFile string)
 
 	b, err := httputil.GetWithProgress(downloadURL.String(), &progress.Report{
 		ReportSizeCb: func(size int) error {
-			if err := s.eventHandler.Handle(events.ArtifactDownloadStarted{a.ArtifactID, size}); err != nil {
+			if err := s.handleEvent(events.ArtifactDownloadStarted{a.ArtifactID, size}); err != nil {
 				return errs.Wrap(err, "Could not handle ArtifactDownloadStarted event")
 			}
 			return nil
 		},
 		ReportIncrementCb: func(inc int) error {
-			if err := s.eventHandler.Handle(events.ArtifactDownloadProgress{a.ArtifactID, inc}); err != nil {
+			if err := s.handleEvent(events.ArtifactDownloadProgress{a.ArtifactID, inc}); err != nil {
 				return errs.Wrap(err, "Could not handle ArtifactDownloadProgress event")
 			}
 			return nil
@@ -764,7 +780,7 @@ func (s *Setup) verifyArtifact(archivePath string, a artifact.ArtifactDownload) 
 func (s *Setup) obtainArtifact(a artifact.ArtifactDownload, extension string) (string, error) {
 	if cachedPath, found := s.artifactCache.Get(a.ArtifactID); found {
 		if err := s.verifyArtifact(cachedPath, a); err == nil {
-			if err := s.eventHandler.Handle(events.ArtifactDownloadSkipped{a.ArtifactID}); err != nil {
+			if err := s.handleEvent(events.ArtifactDownloadSkipped{a.ArtifactID}); err != nil {
 				return "", errs.Wrap(err, "Could not handle ArtifactDownloadSkipped event")
 			}
 			return cachedPath, nil
@@ -922,4 +938,12 @@ func (s *Setup) fetchAndInstallArtifactsFromDir(installFunc artifactInstaller) (
 	})
 
 	return installedArtifacts, <-aggregatedErr
+}
+
+func (s *Setup) handleEvent(ev events.Eventer) error {
+	err := s.eventHandler.Handle(ev)
+	if err != nil {
+		return &ProgressReportError{errs.Wrap(err, "Error handling event: %v", errs.JoinMessage(err))}
+	}
+	return nil
 }

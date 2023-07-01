@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/cmd/state/internal/cmdtree"
-	"github.com/ActiveState/cli/cmd/state/internal/cmdtree/intercepts/messenger"
+	"github.com/ActiveState/cli/cmd/state/internal/cmdtree/exechandlers/messenger"
 	anAsync "github.com/ActiveState/cli/internal/analytics/client/async"
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/config"
@@ -205,8 +205,9 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 		logging.Debug("Could not find child command, error: %v", err)
 	}
 
-	msger := messenger.New(childCmd, out, svcmodel)
-	cmds.AppendInterceptChain(msger.Interceptor)
+	msger := messenger.New(out, svcmodel)
+	cmds.OnExecStart(msger.OnExecStart)
+	cmds.OnExecStop(msger.OnExecStop)
 
 	if childCmd != nil && !childCmd.SkipChecks() {
 		// Auto update to latest state tool version

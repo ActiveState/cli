@@ -52,10 +52,12 @@ func NewListInvitationsParamsWithHTTPClient(client *http.Client) *ListInvitation
 	}
 }
 
-/* ListInvitationsParams contains all the parameters to send to the API endpoint
-   for the list invitations operation.
+/*
+ListInvitationsParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list invitations operation.
+
+	Typically these are written to a http.Request.
 */
 type ListInvitationsParams struct {
 

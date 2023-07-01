@@ -54,10 +54,12 @@ func NewAddGPUArchitectureRevisionParamsWithHTTPClient(client *http.Client) *Add
 	}
 }
 
-/* AddGPUArchitectureRevisionParams contains all the parameters to send to the API endpoint
-   for the add g p u architecture revision operation.
+/*
+AddGPUArchitectureRevisionParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the add g p u architecture revision operation.
+
+	Typically these are written to a http.Request.
 */
 type AddGPUArchitectureRevisionParams struct {
 

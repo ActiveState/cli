@@ -1928,8 +1928,11 @@ err_update_privilege_mismatch:
   other: "The State Tool was installed as administrator. To update please run [ACTIONABLE]state update[/RESET] as administrator."
 uninstall_warn_not_empty:
   other: |
-    [ERROR]Unable to remove all files in the installation directory.[/RESET]
-    There were unrecognized files in that directory.
+    [ERROR]Unable to remove all files in the installation directory, as third party files were found inside that directory:[/RESET]
+
+    {{.V0}}
+
+    This is the result of third parties writing files to the State Tool owned directories, and it's an issue that should be resolved by the user.
 err_state_exec:
   other: Could not get state exec
 err_service_exec:
@@ -2050,3 +2053,9 @@ err_init_authenticated:
   other: You need to be authenticated to initialize a project. Authenticate by running [ACTIONABLE]`state auth`[/RESET].
 err_country_blocked:
   other: This service is not available in your region.
+err_shortcutdir_writable:
+  other: Could not continue as we don't have permission to create [ACTIONABLE]{{.V0}}[/RESET].
+err_edit_local_checkouts:
+  other: Could not update local checkouts
+err_edit_project_mapping:
+  other: Could not update project mapping

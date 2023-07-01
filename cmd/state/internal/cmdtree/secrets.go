@@ -97,7 +97,7 @@ func newSecretsSetCommand(prime *primer.Values) *captain.Command {
 		func(_ *captain.Command, _ []string) error {
 			return runner.Run(params)
 		},
-	)
+	).SetDoesNotSupportStructuredOutput()
 }
 
 func newSecretsSyncCommand(secretsClient *secretsapi.Client, prime *primer.Values) *captain.Command {
@@ -113,5 +113,5 @@ func newSecretsSyncCommand(secretsClient *secretsapi.Client, prime *primer.Value
 		func(_ *captain.Command, _ []string) error {
 			return runner.Run()
 		},
-	)
+	).SetDoesNotSupportStructuredOutput()
 }

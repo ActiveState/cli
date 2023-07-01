@@ -40,26 +40,6 @@ func New(prime primeable) *Fork {
 }
 
 func (f *Fork) Run(params *Params) error {
-	err := f.run(params)
-
-	// Rather than having special error handling for each error we return, just wrap them here
-	if err != nil && f.out.Type() == output.EditorV0FormatName {
-		return &editorV0Error{err}
-	}
-
-	return err
-}
-
-type forkOutput struct {
-	source *project.Namespaced
-	target *project.Namespaced
-}
-
-func (o *forkOutput) MarshalStructured(format output.Format) interface{} {
-	return o.editorV0Format() // will be refactored in DX-1781
-}
-
-func (f *Fork) run(params *Params) error {
 	if !f.auth.Authenticated() {
 		return locale.NewInputError("err_auth_required", "Authentication is required, please authenticate by running 'state auth'")
 	}
@@ -90,9 +70,16 @@ func (f *Fork) run(params *Params) error {
 
 	f.out.Print(output.Prepare(
 		locale.Tl("fork_success", "Your fork has been successfully created at https://{{.V0}}/{{.V1}}.", constants.PlatformURL, target.String()),
-		&forkOutput{
-			&params.Namespace,
-			target,
+		&struct {
+			OriginalOwner string `json:"OriginalOwner"`
+			OriginalName  string `json:"OriginalName"`
+			NewOwner      string `json:"NewOwner"`
+			NewName       string `json:"NewName"`
+		}{
+			params.Namespace.Owner,
+			params.Namespace.Project,
+			target.Owner,
+			target.Project,
 		}))
 
 	return nil

@@ -23,24 +23,37 @@ type InitIntegrationTestSuite struct {
 
 func (suite *InitIntegrationTestSuite) TestInit() {
 	suite.OnlyRunForTags(tagsuite.Init, tagsuite.Critical)
-	suite.runInitTest(false, "python3", "python3")
+	suite.runInitTest(false, "python", "python3")
 }
 
 func (suite *InitIntegrationTestSuite) TestInit_Path() {
 	suite.OnlyRunForTags(tagsuite.Init)
-	suite.runInitTest(true, "python3", "python3")
+	suite.runInitTest(true, "python", "python3")
 }
 
-func (suite *InitIntegrationTestSuite) TestInit_Version() {
+func (suite *InitIntegrationTestSuite) TestInit_BadVersion() {
 	suite.OnlyRunForTags(tagsuite.Init)
-	suite.runInitTest(false, "python3@1.0", "python3")
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+	ts.LoginAsPersistentUser()
+
+	cp := ts.Spawn("init", "--language", "python@1.0", "test-user/test-project")
+	cp.Expect("version")
+	cp.Expect("cannot be found")
+	cp.ExpectNotExitCode(0)
 }
 
 func (suite *InitIntegrationTestSuite) TestInit_DisambiguatePython() {
 	suite.OnlyRunForTags(tagsuite.Init)
-	suite.runInitTest(true, "python", "python3")
-	suite.runInitTest(true, "python@3.10.0", "python3")
-	suite.runInitTest(true, "python@2.7.18", "python2")
+	suite.runInitTest(false, "python", "python3")
+	suite.runInitTest(false, "python@3.10.0", "python3")
+	suite.runInitTest(false, "python@2.7.18", "python2")
+}
+
+func (suite *InitIntegrationTestSuite) TestInit_PartialVersions() {
+	suite.OnlyRunForTags(tagsuite.Init)
+	suite.runInitTest(false, "python@3.10", "python3")
+	suite.runInitTest(false, "python@2", "python2")
 }
 
 func (suite *InitIntegrationTestSuite) runInitTest(addPath bool, lang string, expectedConfigLanguage string, args ...string) {

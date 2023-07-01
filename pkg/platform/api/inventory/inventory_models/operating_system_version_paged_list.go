@@ -17,7 +17,7 @@ import (
 
 // OperatingSystemVersionPagedList Operating System Version Paged List
 //
-// A paginated list of operating system versions
+// # A paginated list of operating system versions
 //
 // swagger:model operatingSystemVersionPagedList
 type OperatingSystemVersionPagedList struct {

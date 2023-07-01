@@ -156,10 +156,10 @@ func (ed *EnvironmentDefinition) ReplaceString(from string, replacement string) 
 
 // Merge merges two environment definitions according to the join strategy of
 // the second one.
-// - Environment variables that are defined in both definitions, are merged with
-//   EnvironmentVariable.Merge() and added to the result
-// - Environment variables that are defined in only one of the two definitions,
-//   are added to the result directly
+//   - Environment variables that are defined in both definitions, are merged with
+//     EnvironmentVariable.Merge() and added to the result
+//   - Environment variables that are defined in only one of the two definitions,
+//     are added to the result directly
 func (ed EnvironmentDefinition) Merge(other *EnvironmentDefinition) (*EnvironmentDefinition, error) {
 	res := ed
 	if other == nil {
@@ -333,6 +333,8 @@ func (ed *EnvironmentDefinition) GetEnvBasedOn(envLookup func(string) (string, b
 
 				}
 			}
+		} else if _, hasOsValue := os.LookupEnv(pev.Name); hasOsValue {
+			res[pev.Name] = "" // unset
 		}
 		// only add environment variable if at least one value is set (This allows us to remove variables from the environment.)
 		if len(ev.Values) > 0 {

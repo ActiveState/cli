@@ -14,7 +14,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/httpreq"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/rtutils/p"
+	"github.com/ActiveState/cli/internal/rtutils/ptr"
 )
 
 type httpGetter interface {
@@ -144,8 +144,8 @@ func (u *Checker) GetUpdateInfo(desiredChannel, desiredVersion string) (*Availab
 		}
 
 		u.an.EventWithLabel(anaConst.CatUpdates, anaConst.ActUpdateCheck, label, &dimensions.Values{
-			Version: p.StrP(desiredVersion),
-			Error:   p.StrP(msg),
+			Version: ptr.To(desiredVersion),
+			Error:   ptr.To(msg),
 		})
 		return nil, err
 	}
@@ -159,6 +159,6 @@ func (u *Checker) GetUpdateInfo(desiredChannel, desiredVersion string) (*Availab
 
 	info.url = u.fileURL + "/" + info.Path
 
-	u.an.EventWithLabel(anaConst.CatUpdates, anaConst.ActUpdateCheck, anaConst.UpdateLabelAvailable, &dimensions.Values{Version: p.StrP(info.Version)})
+	u.an.EventWithLabel(anaConst.CatUpdates, anaConst.ActUpdateCheck, anaConst.UpdateLabelAvailable, &dimensions.Values{Version: ptr.To(info.Version)})
 	return info, nil
 }

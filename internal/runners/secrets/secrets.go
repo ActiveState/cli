@@ -71,8 +71,8 @@ func (o *listOutput) MarshalOutput(format output.Format) interface{} {
 }
 
 func (o *listOutput) MarshalStructured(format output.Format) interface{} {
-	var output []*SecretExport
-	for _, d := range o.data {
+	output := make([]*SecretExport, len(o.data))
+	for i, d := range o.data {
 		out := &SecretExport{
 			Name:        d.Name,
 			Scope:       d.Scope,
@@ -83,7 +83,7 @@ func (o *listOutput) MarshalStructured(format output.Format) interface{} {
 			out.HasValue = true
 		}
 
-		output = append(output, out)
+		output[i] = out
 	}
 	return output
 }

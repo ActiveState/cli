@@ -54,6 +54,7 @@ func newDeployCommand(prime *primer.Values) *captain.Command {
 		})
 	cmd.SetGroup(EnvironmentSetupGroup)
 	cmd.SetHidden(true)
+	cmd.SetDoesNotSupportStructuredOutput()
 	return cmd
 }
 
@@ -84,7 +85,7 @@ func newDeployInstallCommand(prime *primer.Values) *captain.Command {
 		},
 		func(cmd *captain.Command, args []string) error {
 			return runner.Run(params)
-		})
+		}).SetDoesNotSupportStructuredOutput()
 }
 
 func newDeployConfigureCommand(prime *primer.Values) *captain.Command {
@@ -123,7 +124,7 @@ func newDeployConfigureCommand(prime *primer.Values) *captain.Command {
 		},
 		func(cmd *captain.Command, args []string) error {
 			return runner.Run(params)
-		})
+		}).SetDoesNotSupportStructuredOutput()
 }
 
 func newDeploySymlinkCommand(prime *primer.Values) *captain.Command {
@@ -158,7 +159,7 @@ func newDeploySymlinkCommand(prime *primer.Values) *captain.Command {
 		},
 		func(cmd *captain.Command, args []string) error {
 			return runner.Run(params)
-		})
+		}).SetDoesNotSupportStructuredOutput()
 }
 
 func newDeployReportCommand(prime *primer.Values) *captain.Command {
@@ -188,7 +189,7 @@ func newDeployReportCommand(prime *primer.Values) *captain.Command {
 		},
 		func(cmd *captain.Command, args []string) error {
 			return runner.Run(params)
-		})
+		}).SetDoesNotSupportStructuredOutput()
 }
 
 func newDeployUninstallCommand(prime *primer.Values) *captain.Command {
@@ -220,5 +221,5 @@ func newDeployUninstallCommand(prime *primer.Values) *captain.Command {
 		[]*captain.Argument{},
 		func(cmd *captain.Command, args []string) error {
 			return runner.Run(params)
-		})
+		}).SetDoesNotSupportStructuredOutput()
 }

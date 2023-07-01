@@ -46,7 +46,8 @@ func NewGetPlatformOK() *GetPlatformOK {
 	return &GetPlatformOK{}
 }
 
-/* GetPlatformOK describes a response with status code 200, with default header values.
+/*
+GetPlatformOK describes a response with status code 200, with default header values.
 
 The retrieved platform
 */
@@ -80,7 +81,8 @@ func NewGetPlatformDefault(code int) *GetPlatformDefault {
 	}
 }
 
-/* GetPlatformDefault describes a response with status code -1, with default header values.
+/*
+GetPlatformDefault describes a response with status code -1, with default header values.
 
 generic error response
 */

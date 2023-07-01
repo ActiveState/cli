@@ -602,11 +602,20 @@ func CommitInitial(hostPlatform string, langName, langVersion string) (strfmt.UU
 	var changes []*mono_models.CommitChangeEditable
 
 	if langName != "" {
+		// Construct version constraints to be >= given version, and < given version's last part + 1.
+		// For example, given a version number of 3.10, constraints should be >= 3.10, < 3.11.
+		// Given 2, constraints should be >= 2, < 3.
+		versionConstraints := []*mono_models.Constraint{&mono_models.Constraint{Comparator: "gte", Version: langVersion}}
+		versionParts := strings.Split(langVersion, ".")
+		if lastPart, err := strconv.Atoi(versionParts[len(versionParts)-1]); err == nil {
+			versionParts[len(versionParts)-1] = strconv.Itoa(lastPart + 1)
+			versionConstraints = append(versionConstraints, &mono_models.Constraint{Comparator: "lt", Version: strings.Join(versionParts, ".")})
+		}
 		c := &mono_models.CommitChangeEditable{
-			Operation:         string(OperationAdded),
-			Namespace:         NewNamespaceLanguage().String(),
-			Requirement:       langName,
-			VersionConstraint: langVersion,
+			Operation:          string(OperationAdded),
+			Namespace:          NewNamespaceLanguage().String(),
+			Requirement:        langName,
+			VersionConstraints: versionConstraints,
 		}
 		changes = append(changes, c)
 	}
