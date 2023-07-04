@@ -25,50 +25,52 @@ mutation ($organization: String!, $project: String!, $parentCommit: String!, $br
   pushCommit(input:{org:$organization, project:$project, parentCommit:$parentCommit, script:$script, branchRef:$branchRef, description:$description}) {
     ... on Commit {
       __typename
-			script
+			expr
       commitId
       build {
         __typename
-        ... on BuildReady {
+        ... on BuildCompleted {
           buildLogIds {
-            id
-            type
+						... on AltBuildId {
+              id
+            }
           }
         }
         ... on BuildStarted {
           buildLogIds {
-            id
-            type
+            ... on AltBuildId {
+              id
+            }
           }
         }
         ... on Build {
           status
           terminals {
             tag
-            targetIDs
+            nodeIds
           }
-          sources: targets {
+          sources: nodes {
             ... on Source {
-              targetID
+              nodeId
               name
               namespace
               version
             }
           }
-          steps: targets {
+          steps: steps {
             ... on Step {
-              targetID
+              stepId
               inputs {
                 tag
-                targetIDs
+                nodeIds
               }
               outputs
             }
           }
-          artifacts: targets {
+          artifacts: nodes {
             ... on ArtifactSucceeded {
               __typename
-              targetID
+              nodeId
               mimeType
               generatedBy
               runtimeDependencies
@@ -79,15 +81,15 @@ mutation ($organization: String!, $project: String!, $parentCommit: String!, $br
             }
             ... on ArtifactUnbuilt {
               __typename
-              targetID
+              nodeId
               mimeType
               generatedBy
               runtimeDependencies
               status
             }
-            ... on ArtifactBuilding {
+            ... on ArtifactStarted {
               __typename
-              targetID
+              nodeId
               mimeType
               generatedBy
               runtimeDependencies
@@ -95,7 +97,7 @@ mutation ($organization: String!, $project: String!, $parentCommit: String!, $br
             }
             ... on ArtifactTransientlyFailed {
               __typename
-              targetID
+              nodeId
               mimeType
               generatedBy
               runtimeDependencies
@@ -107,7 +109,7 @@ mutation ($organization: String!, $project: String!, $parentCommit: String!, $br
             }
             ... on ArtifactPermanentlyFailed {
               __typename
-              targetID
+              nodeId
               mimeType
               generatedBy
               runtimeDependencies

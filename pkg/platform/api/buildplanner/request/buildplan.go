@@ -22,55 +22,55 @@ type buildPlanByCommitID struct {
 
 func (b *buildPlanByCommitID) Query() string {
 	return `
-query ($commitID: String!) {
+query ($commitID: ID!) {
   commit(commitId: $commitID) {
     ... on Commit {
       __typename
       expr
       build {
         __typename
-        ... on BuildReady {
+        ... on BuildCompleted {
           buildLogIds {
-            id
-            type
-            platformId
+            ... on AltBuildId {
+              id
+            }
           }
         }
         ... on BuildStarted {
           buildLogIds {
-            id
-            type
-            platformId
+            ... on AltBuildId {
+              id
+            }
           }
         }
         ... on Build {
           status
           terminals {
             tag
-            targetIDs
+            nodeIds
           }
-          sources: targets {
+          sources: nodes {
             ... on Source {
-              targetID
+              nodeId
               name
               namespace
               version
             }
           }
-          steps: targets {
+          steps: steps {
             ... on Step {
-              targetID
+              stepId
               inputs {
                 tag
-                targetIDs
+                nodeIds
               }
               outputs
             }
           }
-          artifacts: targets {
+          artifacts: nodes {
             ... on ArtifactSucceeded {
               __typename
-              targetID
+              nodeId
               mimeType
               generatedBy
               runtimeDependencies
@@ -81,15 +81,15 @@ query ($commitID: String!) {
             }
             ... on ArtifactUnbuilt {
               __typename
-              targetID
+              nodeId
               mimeType
               generatedBy
               runtimeDependencies
               status
             }
-            ... on ArtifactBuilding {
+            ... on ArtifactStarted {
               __typename
-              targetID
+              nodeId
               mimeType
               generatedBy
               runtimeDependencies
@@ -97,7 +97,7 @@ query ($commitID: String!) {
             }
             ... on ArtifactTransientlyFailed {
               __typename
-              targetID
+              nodeId
               mimeType
               generatedBy
               runtimeDependencies
@@ -109,7 +109,7 @@ query ($commitID: String!) {
             }
             ... on ArtifactPermanentlyFailed {
               __typename
-              targetID
+              nodeId
               mimeType
               generatedBy
               runtimeDependencies

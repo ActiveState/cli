@@ -182,7 +182,6 @@ type Build struct {
 // BuildLogID is the ID used to initiate a connection with the BuildLogStreamer.
 type BuildLogID struct {
 	ID         string      `json:"id"`
-	Type       string      `json:"type"`
 	PlatformID strfmt.UUID `json:"platformID"`
 }
 
