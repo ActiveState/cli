@@ -733,7 +733,7 @@ func (v *Value) MarshalJSON() ([]byte, error) {
 	case v.Ident != nil:
 		return json.Marshal(v.Ident)
 	}
-	return json.Marshal([]*Value{}) // participle does not create v.List if it's empty
+	return json.Marshal([]*Value{})
 }
 
 func (f *Ap) MarshalJSON() ([]byte, error) {
