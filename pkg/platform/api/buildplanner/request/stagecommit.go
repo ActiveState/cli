@@ -2,12 +2,12 @@ package request
 
 import model "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 
-func StageCommit(owner, project, parentCommit string, script *model.BuildExpression) *buildPlanByStageCommit {
+func StageCommit(owner, project, parentCommit string, expression *model.BuildExpression) *buildPlanByStageCommit {
 	return &buildPlanByStageCommit{map[string]interface{}{
 		"organization": owner,
 		"project":      project,
 		"parentCommit": parentCommit,
-		"script":       script,
+		"expr":         expression,
 	}}
 }
 
