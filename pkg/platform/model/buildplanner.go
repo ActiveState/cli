@@ -266,7 +266,7 @@ type StageCommitParams struct {
 
 func (bp *BuildPlanner) StageCommit(params StageCommitParams) (strfmt.UUID, error) {
 	var err error
-	script, err := bp.GetBuildExpression(params.ParentCommit)
+	expression, err := bp.GetBuildExpression(params.ParentCommit)
 	if err != nil {
 		return "", errs.Wrap(err, "Failed to get build expression")
 	}
@@ -280,13 +280,13 @@ func (bp *BuildPlanner) StageCommit(params StageCommitParams) (strfmt.UUID, erro
 		requirement.VersionRequirement = []bpModel.VersionRequirement{{bpModel.VersionRequirementComparatorKey: bpModel.ComparatorEQ, bpModel.VersionRequirementVersionKey: params.PackageVersion}}
 	}
 
-	err = script.Update(params.Operation, requirement, *params.TimeStamp)
+	err = expression.Update(params.Operation, requirement, *params.TimeStamp)
 	if err != nil {
 		return "", errs.Wrap(err, "Failed to update build graph")
 	}
 
 	// With the updated build expression call the stage commit mutation
-	request := request.StageCommit(params.Owner, params.Project, params.ParentCommit, script)
+	request := request.StageCommit(params.Owner, params.Project, params.ParentCommit, expression)
 	resp := &bpModel.StageCommitResult{}
 	err = bp.client.Run(request, resp)
 	if err != nil {
