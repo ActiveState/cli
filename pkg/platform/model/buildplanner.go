@@ -100,9 +100,9 @@ func NewBuildPlannerModel(auth *authentication.Auth) *BuildPlanner {
 	}
 }
 
-func (bp *BuildPlanner) FetchBuildResult(commitID strfmt.UUID) (*BuildResult, error) {
+func (bp *BuildPlanner) FetchBuildResult(commitID strfmt.UUID, owner, project string) (*BuildResult, error) {
 	resp := &bpModel.BuildPlan{}
-	err := bp.client.Run(request.BuildPlan(commitID.String()), resp)
+	err := bp.client.Run(request.BuildPlan(commitID.String(), owner, project), resp)
 	if err != nil {
 		return nil, errs.Wrap(err, "failed to fetch build plan")
 	}
@@ -129,7 +129,7 @@ func (bp *BuildPlanner) FetchBuildResult(commitID strfmt.UUID) (*BuildResult, er
 	// "planning" if the build plan is not ready yet. We need to
 	// poll the BuildPlanner until the build is ready.
 	if resp.Commit.Build.Status == bpModel.Planning {
-		resp, err = bp.pollBuildPlan(commitID.String())
+		resp, err = bp.pollBuildPlan(commitID.String(), owner, project)
 		if err != nil {
 			return nil, errs.Wrap(err, "failed to poll build plan")
 		}
@@ -195,13 +195,13 @@ func (bp *BuildPlanner) FetchBuildResult(commitID strfmt.UUID) (*BuildResult, er
 	return &res, nil
 }
 
-func (bp *BuildPlanner) pollBuildPlan(commitID string) (*bpModel.BuildPlan, error) {
+func (bp *BuildPlanner) pollBuildPlan(commitID, owner, project string) (*bpModel.BuildPlan, error) {
 	var resp *bpModel.BuildPlan
 	ticker := time.NewTicker(pollInterval)
 	for {
 		select {
 		case <-ticker.C:
-			err := bp.client.Run(request.BuildPlan(commitID), resp)
+			err := bp.client.Run(request.BuildPlan(commitID, owner, project), resp)
 			if err != nil {
 				return nil, errs.Wrap(err, "failed to fetch build plan")
 			}
@@ -303,7 +303,7 @@ func (bp *BuildPlanner) StageCommit(params StageCommitParams) (strfmt.UUID, erro
 	}
 
 	if resp.Commit.Build.Status == bpModel.Planning {
-		buildResult, err := bp.FetchBuildResult(strfmt.UUID(resp.Commit.CommitID))
+		buildResult, err := bp.FetchBuildResult(strfmt.UUID(resp.Commit.CommitID), params.Owner, params.Project)
 		if err != nil {
 			return "", errs.Wrap(err, "failed to fetch build result")
 		}

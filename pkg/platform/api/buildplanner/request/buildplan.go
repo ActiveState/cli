@@ -1,9 +1,19 @@
 package request
 
-func BuildPlan(commitID string) *buildPlanByCommitID {
-	return &buildPlanByCommitID{map[string]interface{}{
+func BuildPlan(commitID, owner, project string) *buildPlanByCommitID {
+	bp := &buildPlanByCommitID{map[string]interface{}{
 		"commitID": commitID,
 	}}
+
+	if owner != "" {
+		bp.vars["organization"] = owner
+	}
+
+	if project != "" {
+		bp.vars["project"] = project
+	}
+
+	return bp
 }
 
 type buildPlanByCommitID struct {

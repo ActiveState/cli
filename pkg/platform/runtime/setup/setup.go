@@ -311,7 +311,7 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 	}
 
 	bp := model.NewBuildPlannerModel(s.auth)
-	buildResult, err := bp.FetchBuildResult(s.target.CommitUUID())
+	buildResult, err := bp.FetchBuildResult(s.target.CommitUUID(), s.target.Owner(), s.target.Name())
 	if err != nil {
 		serr := &model.BuildPlannerError{}
 		if errors.As(err, &serr) {
