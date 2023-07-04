@@ -107,19 +107,20 @@ type In struct {
 	Name     *string
 }
 
+// The context type is a simple stack that keeps track of the current
+// path in the AST. This is used to assist with identifiying special cases.
 type context []string
 
 func (s *context) push(str string) {
 	*s = append(*s, str)
 }
 
-func (s *context) pop() (string, error) {
+func (s *context) pop() {
 	if len(*s) == 0 {
-		return "", errs.New("stack is empty")
+		return
 	}
-	str := (*s)[len(*s)-1]
+
 	*s = (*s)[:len(*s)-1]
-	return str, nil
 }
 
 func (s *context) contains(str string) bool {
