@@ -483,6 +483,11 @@ func (e *BuildExpression) getRequirementsNode() []*Value {
 
 func getVersionRequirements(v *[]*Value) []VersionRequirement {
 	var reqs []VersionRequirement
+
+	if v == nil {
+		return reqs
+	}
+
 	for _, r := range *v {
 		if r.Object == nil {
 			continue
