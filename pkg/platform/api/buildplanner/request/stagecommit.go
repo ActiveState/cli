@@ -21,7 +21,7 @@ mutation ($organization: String!, $project: String!, $parentCommit: String!, $sc
   stageCommit(input:{org:$organization, project:$project, parentCommit:$parentCommit, script:$script}) {
     ... on Commit {
       __typename
-			script
+			expr
       commitId
       build {
         __typename
