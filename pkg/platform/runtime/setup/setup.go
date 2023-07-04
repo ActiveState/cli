@@ -345,10 +345,10 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 	// Note there may still be more noop artifacts, but we won't know until they have finished building.
 	noopArtifacts := map[strfmt.UUID]struct{}{}
 	for _, prebuiltArtf := range buildResult.Build.Artifacts {
-		if prebuiltArtf.TargetID != "" && prebuiltArtf.Status != "" &&
+		if prebuiltArtf.NodeID != "" && prebuiltArtf.Status != "" &&
 			prebuiltArtf.Status == bpModel.ArtifactSucceeded &&
 			strings.HasPrefix(prebuiltArtf.URL, "s3://as-builds/noop/") {
-			noopArtifacts[prebuiltArtf.TargetID] = struct{}{}
+			noopArtifacts[prebuiltArtf.NodeID] = struct{}{}
 		}
 	}
 
@@ -849,8 +849,8 @@ func reusableArtifacts(requestedArtifacts []*bpModel.Artifact, storedArtifacts s
 	keep := make(store.StoredArtifactMap)
 
 	for _, a := range requestedArtifacts {
-		if v, ok := storedArtifacts[a.TargetID]; ok {
-			keep[a.TargetID] = v
+		if v, ok := storedArtifacts[a.NodeID]; ok {
+			keep[a.NodeID] = v
 		}
 	}
 	return keep

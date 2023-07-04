@@ -26,7 +26,7 @@ query ($commitID: String!) {
   commit(commitId: $commitID) {
     ... on Commit {
       __typename
-      script
+      expr
       build {
         __typename
         ... on BuildReady {

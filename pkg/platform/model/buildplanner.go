@@ -52,7 +52,7 @@ type BuildResult struct {
 func (b *BuildResult) OrderedArtifacts() []artifact.ArtifactID {
 	res := make([]artifact.ArtifactID, 0, len(b.Build.Artifacts))
 	for _, a := range b.Build.Artifacts {
-		res = append(res, a.TargetID)
+		res = append(res, a.NodeID)
 	}
 	return res
 }
@@ -228,7 +228,7 @@ func (bp *BuildPlanner) pollBuildPlan(commitID, owner, project string) (*bpModel
 func removeEmptyTargets(bp *bpModel.BuildPlan) {
 	var steps []*bpModel.Step
 	for _, step := range bp.Commit.Build.Steps {
-		if step.TargetID == "" {
+		if step.StepID == "" {
 			continue
 		}
 		steps = append(steps, step)
@@ -236,7 +236,7 @@ func removeEmptyTargets(bp *bpModel.BuildPlan) {
 
 	var sources []*bpModel.Source
 	for _, source := range bp.Commit.Build.Sources {
-		if source.TargetID == "" {
+		if source.NodeID == "" {
 			continue
 		}
 		sources = append(sources, source)
@@ -244,7 +244,7 @@ func removeEmptyTargets(bp *bpModel.BuildPlan) {
 
 	var artifacts []*bpModel.Artifact
 	for _, artifact := range bp.Commit.Build.Artifacts {
-		if artifact.TargetID == "" {
+		if artifact.NodeID == "" {
 			continue
 		}
 		artifacts = append(artifacts, artifact)

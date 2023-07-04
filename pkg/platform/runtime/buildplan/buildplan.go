@@ -18,18 +18,18 @@ func NewMapFromBuildPlan(build *model.Build) (artifact.Map, error) {
 	lookup := make(map[strfmt.UUID]interface{})
 
 	for _, artifact := range build.Artifacts {
-		lookup[artifact.TargetID] = artifact
+		lookup[artifact.NodeID] = artifact
 	}
 	for _, step := range build.Steps {
-		lookup[step.TargetID] = step
+		lookup[step.StepID] = step
 	}
 	for _, source := range build.Sources {
-		lookup[source.TargetID] = source
+		lookup[source.NodeID] = source
 	}
 
 	var terminalTargetIDs []strfmt.UUID
 	for _, terminal := range build.Terminals {
-		terminalTargetIDs = append(terminalTargetIDs, terminal.TargetIDs...)
+		terminalTargetIDs = append(terminalTargetIDs, terminal.NodeIDs...)
 	}
 
 	for _, id := range terminalTargetIDs {
@@ -59,7 +59,7 @@ func buildMap(baseID strfmt.UUID, lookup map[strfmt.UUID]interface{}, result art
 	}
 
 	if currentArtifact.Status != model.ArtifactSucceeded {
-		return errs.New("Artifact %s did not succeed with status: %s", currentArtifact.TargetID, currentArtifact.Status)
+		return errs.New("Artifact %s did not succeed with status: %s", currentArtifact.NodeID, currentArtifact.Status)
 	}
 
 	deps := make(map[strfmt.UUID]struct{})
@@ -67,7 +67,7 @@ func buildMap(baseID strfmt.UUID, lookup map[strfmt.UUID]interface{}, result art
 		deps[depID] = struct{}{}
 		recursiveDeps, err := buildRuntimeDependencies(depID, lookup, deps)
 		if err != nil {
-			return errs.Wrap(err, "Could not build runtime dependencies for artifact %s", currentArtifact.TargetID)
+			return errs.Wrap(err, "Could not build runtime dependencies for artifact %s", currentArtifact.NodeID)
 		}
 		for id := range recursiveDeps {
 			deps[id] = struct{}{}
@@ -75,7 +75,7 @@ func buildMap(baseID strfmt.UUID, lookup map[strfmt.UUID]interface{}, result art
 
 		err = buildMap(depID, lookup, result)
 		if err != nil {
-			return errs.New("Could not build map for artifact %s", currentArtifact.TargetID)
+			return errs.New("Could not build map for artifact %s", currentArtifact.NodeID)
 		}
 	}
 
@@ -92,8 +92,8 @@ func buildMap(baseID strfmt.UUID, lookup map[strfmt.UUID]interface{}, result art
 		return errs.Wrap(err, "Could not resolve source information")
 	}
 
-	result[strfmt.UUID(currentArtifact.TargetID)] = artifact.Artifact{
-		ArtifactID:       strfmt.UUID(currentArtifact.TargetID),
+	result[strfmt.UUID(currentArtifact.NodeID)] = artifact.Artifact{
+		ArtifactID:       strfmt.UUID(currentArtifact.NodeID),
 		Name:             info.Name,
 		Namespace:        info.Namespace,
 		Version:          &info.Version,
@@ -137,7 +137,7 @@ func getSourceInfo(sourceID strfmt.UUID, lookup map[strfmt.UUID]interface{}) (So
 		if input.Tag != model.TagSource {
 			continue
 		}
-		for _, id := range input.TargetIDs {
+		for _, id := range input.NodeIDs {
 			source, ok := lookup[id].(*model.Source)
 			if !ok {
 				return SourceInfo{}, locale.NewError("err_source_name_source", "Could not find source with target id {{.V0}}", id.String())
@@ -162,7 +162,7 @@ func buildRuntimeDependencies(depdendencyID strfmt.UUID, lookup map[strfmt.UUID]
 		result[depID] = struct{}{}
 		_, err := buildRuntimeDependencies(depID, lookup, result)
 		if err != nil {
-			return nil, errs.New("Could not build map for artifact %s", artifact.TargetID)
+			return nil, errs.New("Could not build map for artifact %s", artifact.NodeID)
 		}
 	}
 
@@ -225,17 +225,17 @@ func AddBuildArtifacts(artifactMap artifact.Map, build *model.Build) error {
 	lookup := make(map[strfmt.UUID]interface{})
 
 	for _, artifact := range build.Artifacts {
-		lookup[artifact.TargetID] = artifact
+		lookup[artifact.NodeID] = artifact
 	}
 	for _, step := range build.Steps {
-		lookup[step.TargetID] = step
+		lookup[step.StepID] = step
 	}
 	for _, source := range build.Sources {
-		lookup[source.TargetID] = source
+		lookup[source.NodeID] = source
 	}
 
 	for _, a := range build.Artifacts {
-		_, ok := artifactMap[strfmt.UUID(a.TargetID)]
+		_, ok := artifactMap[strfmt.UUID(a.NodeID)]
 		// Since we are using the BuildLogStreamer, we need to add all of the
 		// artifacts that have been submitted to be built.
 		if !ok && a.Status != model.ArtifactNotSubmitted {
@@ -264,8 +264,8 @@ func AddBuildArtifacts(artifactMap artifact.Map, build *model.Build) error {
 				return errs.Wrap(err, "Could not resolve source information")
 			}
 
-			artifactMap[strfmt.UUID(a.TargetID)] = artifact.Artifact{
-				ArtifactID:       strfmt.UUID(a.TargetID),
+			artifactMap[strfmt.UUID(a.NodeID)] = artifact.Artifact{
+				ArtifactID:       strfmt.UUID(a.NodeID),
 				Name:             info.Name,
 				Namespace:        info.Namespace,
 				Version:          &info.Version,

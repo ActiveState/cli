@@ -80,7 +80,7 @@ type Project struct {
 // Commit contains the build and any errors.
 type Commit struct {
 	Type       string          `json:"__typename"`
-	Expression json.RawMessage `json:"script"`
+	Expression json.RawMessage `json:"expr"`
 	CommitID   strfmt.UUID     `json:"commitId"`
 	Build      *Build          `json:"build"`
 	*NotFoundError
@@ -188,15 +188,15 @@ type BuildLogID struct {
 
 // NamedTarget is a special target used for terminals.
 type NamedTarget struct {
-	Tag       string        `json:"tag"`
-	TargetIDs []strfmt.UUID `json:"targetIDs"`
+	Tag     string        `json:"tag"`
+	NodeIDs []strfmt.UUID `json:"nodeIds"`
 }
 
 // Artifact represents a downloadable artifact.
 // This artifact may or may not be installable by the State Tool.
 type Artifact struct {
 	Type                string        `json:"__typename"`
-	TargetID            strfmt.UUID   `json:"targetID"`
+	NodeID              strfmt.UUID   `json:"nodeId"`
 	MimeType            string        `json:"mimeType"`
 	GeneratedBy         strfmt.UUID   `json:"generatedBy"`
 	RuntimeDependencies []strfmt.UUID `json:"runtimeDependencies"`
@@ -216,14 +216,14 @@ type Artifact struct {
 // This is usually a build step. The input represents a set of target
 // IDs and the output are a set of artifact IDs.
 type Step struct {
-	TargetID strfmt.UUID    `json:"targetID"`
-	Inputs   []*NamedTarget `json:"inputs"`
-	Outputs  []string       `json:"outputs"`
+	StepID  strfmt.UUID    `json:"stepId"`
+	Inputs  []*NamedTarget `json:"inputs"`
+	Outputs []string       `json:"outputs"`
 }
 
 // Source represents the source of an artifact.
 type Source struct {
-	TargetID  strfmt.UUID `json:"targetID"`
+	NodeID    strfmt.UUID `json:"nodeId"`
 	Name      string      `json:"name"`
 	Namespace string      `json:"namespace"`
 	Version   string      `json:"version"`
