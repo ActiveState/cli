@@ -8,10 +8,10 @@ import (
 
 const (
 	// BuildPlan statuses
-	Planning = "PLANNING"
-	Planned  = "PLANNED"
-	Building = "BUILDING"
-	Ready    = "READY"
+	Planning  = "PLANNING"
+	Planned   = "PLANNED"
+	Building  = "BUILDING"
+	Completed = "COMPLETED"
 
 	// Artifact statuses
 	ArtifactNotSubmitted      = "NOT_SUBMITTED"
