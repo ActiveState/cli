@@ -16,7 +16,7 @@ query ($commitID: String!) {
   commit(commitId: $commitID) {
     ... on Commit {
       __typename
-      script
+      expr
     }
     ... on NotFound {
       __typename
