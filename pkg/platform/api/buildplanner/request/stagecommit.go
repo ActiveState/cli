@@ -17,8 +17,8 @@ type buildPlanByStageCommit struct {
 
 func (b *buildPlanByStageCommit) Query() string {
 	return `
-mutation ($organization: String!, $project: String!, $parentCommit: String!, $script:BuildScript!) {
-  stageCommit(input:{org:$organization, project:$project, parentCommit:$parentCommit, script:$script}) {
+mutation ($organization: String!, $project: String!, $parentCommit: String!, $expr:BuildExpr!) {
+  stageCommit(input:{org:$organization, project:$project, parentCommit:$parentCommit, expr:$expr}) {
     ... on Commit {
       __typename
 			expr

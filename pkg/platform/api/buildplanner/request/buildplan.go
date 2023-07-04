@@ -22,8 +22,8 @@ type buildPlanByCommitID struct {
 
 func (b *buildPlanByCommitID) Query() string {
 	return `
-query ($commitID: ID!) {
-  commit(commitId: $commitID) {
+query ($commitID: ID!, $organization: String, $project: String) {
+  commit(commitId: $commitID, organization: $organization, project: $project) {
     ... on Commit {
       __typename
       expr

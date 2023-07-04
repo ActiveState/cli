@@ -12,7 +12,7 @@ type buildScriptByCommitID struct {
 
 func (b *buildScriptByCommitID) Query() string {
 	return `
-query ($commitID: String!) {
+query ($commitID: ID!) {
   commit(commitId: $commitID) {
     ... on Commit {
       __typename

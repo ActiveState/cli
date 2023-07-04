@@ -21,8 +21,8 @@ type buildPlanByPushCommit struct {
 
 func (b *buildPlanByPushCommit) Query() string {
 	return `
-mutation ($organization: String!, $project: String!, $parentCommit: String!, $branchRef: String!, $script:BuildScript! $description: String!) {
-  pushCommit(input:{org:$organization, project:$project, parentCommit:$parentCommit, script:$script, branchRef:$branchRef, description:$description}) {
+mutation ($organization: String!, $project: String!, $parentCommit: String!, $branchRef: String!, $expr:BuildExpr! $description: String!) {
+  pushCommit(input:{org:$organization, project:$project, parentCommit:$parentCommit, expr:$expr, branchRef:$branchRef, description:$description}) {
     ... on Commit {
       __typename
 			expr
