@@ -117,6 +117,7 @@ func NewBuildExpression(data []byte) (*BuildExpression, error) {
 		return nil, errs.Wrap(err, "Could not get requirements node")
 	}
 
+	logging.Debug("Returning build expression")
 	return &BuildExpression{
 		expression:   expression,
 		solveNode:    &solveNode,

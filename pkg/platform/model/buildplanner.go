@@ -284,6 +284,7 @@ func (bp *BuildPlanner) StageCommit(params StageCommitParams) (strfmt.UUID, erro
 	if err != nil {
 		return "", errs.Wrap(err, "Failed to update build graph")
 	}
+	logging.Debug("Updated requirements:", expression.Requirements())
 
 	// With the updated build expression call the stage commit mutation
 	request := request.StageCommit(params.Owner, params.Project, params.ParentCommit, expression)
