@@ -535,6 +535,15 @@ func (e *BuildExpression) getSolveNode() *Ap {
 	return nil
 }
 
+func (e *BuildExpression) getSolveNodeArguments() []*Value {
+	solveAp := e.getSolveNode()
+	if solveAp == nil {
+		return []*Value{}
+	}
+
+	return solveAp.Arguments
+}
+
 // Update updates the BuildExpression's requirements based on the operation and requirement.
 func (e *BuildExpression) Update(operation Operation, requirement Requirement, timestamp strfmt.DateTime) error {
 	var err error
@@ -579,7 +588,7 @@ func (e *BuildExpression) addRequirement(requirement Requirement) error {
 
 	requirementsNode := append(e.getRequirementsNode(), &Value{Object: &obj})
 
-	for _, arg := range e.getSolveNode().Arguments {
+	for _, arg := range e.getSolveNodeArguments() {
 		if arg.Assignment == nil {
 			continue
 		}
