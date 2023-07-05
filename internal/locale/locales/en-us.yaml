@@ -321,6 +321,8 @@ err_activate_output_build_in_progress:
   other: Platform project build is in progress. Please wait for a few minutes and try "Reactivate Runtime" option in "State Tool" menu
 err_unsupported_platform:
   other: "Unsupported platform: [NOTICE]{{.V0}}[/RESET]"
+err_detect_language:
+  other: Could not detect which language to use
 err_language_not_found:
   other: "Could not find language: [NOTICE]{{.V0}}@{{.V1}}[/RESET]"
 error_state_activate_copy_save:
