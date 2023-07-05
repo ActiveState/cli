@@ -318,7 +318,7 @@ func (bp *BuildPlanner) GetBuildExpression(owner, project, commitID string) (*bu
 		return nil, errs.New("Commit not found: %s", resp.Project.Commit.Message)
 	}
 
-	expression, err := buildexpression.NewBuildExpression(resp.Project.Commit.Script)
+	expression, err := buildexpression.New(resp.Project.Commit.Script)
 	if err != nil {
 		return nil, errs.Wrap(err, "failed to parse build expression")
 	}

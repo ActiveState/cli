@@ -51,7 +51,7 @@ func TestNew(t *testing.T) {
 			data, err := fileutils.ReadFile(filepath.Join(wd, "pkg", "platform", "runtime", "buildexpression", "testdata", tt.args.filename))
 			assert.NoError(t, err)
 
-			_, err = NewBuildExpression(data)
+			_, err = New(data)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("New() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -114,7 +114,7 @@ func TestBuildExpression_Requirements(t *testing.T) {
 			data, err := fileutils.ReadFile(filepath.Join(wd, "pkg", "platform", "runtime", "buildexpression", "testdata", tt.args.filename))
 			assert.NoError(t, err)
 
-			bx, err := NewBuildExpression(data)
+			bx, err := New(data)
 			assert.NoError(t, err)
 
 			got := bx.Requirements()
@@ -307,7 +307,7 @@ func TestBuildExpression_Update(t *testing.T) {
 			data, err := fileutils.ReadFile(filepath.Join(wd, "pkg", "platform", "runtime", "buildexpression", "testdata", "buildexpression.json"))
 			assert.NoError(t, err)
 
-			bx, err := NewBuildExpression(data)
+			bx, err := New(data)
 			assert.NoError(t, err)
 
 			err = bx.Update(tt.args.operation, tt.args.requirement, strfmt.DateTime{})

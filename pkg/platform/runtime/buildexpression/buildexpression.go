@@ -136,14 +136,14 @@ func (s *context) contains(str string) bool {
 //	  "in": "$runtime"
 //	  }
 //	}
-func NewBuildExpression(data []byte) (*BuildExpression, error) {
-	m := make(map[string]interface{})
-	err := json.Unmarshal(data, &m)
+func New(data []byte) (*BuildExpression, error) {
+	rawBuildExpression := make(map[string]interface{})
+	err := json.Unmarshal(data, &rawBuildExpression)
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not unmarshal build expression")
 	}
 
-	letValue, ok := m["let"]
+	letValue, ok := rawBuildExpression["let"]
 	if !ok {
 		return nil, errs.New("Build expression has no 'let' key")
 	}
