@@ -874,6 +874,8 @@ err_no_valid_artifact:
   other: Your project is not producing any usable artifacts, is your State Tool up to date?
 err_runtime_download_no_response:
   other: Could not find bits associated with your runtime environment, please contact support
+err_runtime_setup:
+  other: Error setting up runtime
 err_signs3_invalid_url:
   other: API Responded with an invalid S3 URL, please contact support
 err_artifact_invalid_url:

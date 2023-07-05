@@ -15,6 +15,7 @@ import (
 	"github.com/ActiveState/cli/internal/analytics"
 	anaConsts "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/analytics/dimensions"
+	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -207,8 +208,11 @@ func (s *Setup) Update() (rerr error) {
 
 func (s *Setup) updateArtifacts() ([]artifact.ArtifactID, error) {
 	mutex := &sync.Mutex{}
+	var installArtifactFuncs []func() error
 
 	// Fetch and install each runtime artifact.
+	// Note: despite the name, we are "pre-installing" the artifacts to a temporary location.
+	// Once all artifacts are fetched, unpacked, and prepared, final installation occurs.
 	artifacts, err := s.fetchAndInstallArtifacts(func(a artifact.ArtifactID, archivePath string, as ArtifactSetuper) (rerr error) {
 		defer func() {
 			if rerr != nil {
@@ -278,15 +282,39 @@ func (s *Setup) updateArtifacts() ([]artifact.ArtifactID, error) {
 			return locale.WrapError(err, "runtime_alternative_file_transforms_err", "", "Could not apply necessary file transformations after unpacking")
 		}
 
-		// Move files to installation path, ensuring file operations are synchronized
 		mutex.Lock()
-		err = s.moveToInstallPath(a, unpackedDir, envDef, numFiles)
+		installArtifactFuncs = append(installArtifactFuncs, func() error {
+			return s.moveToInstallPath(a, unpackedDir, envDef, numFiles)
+		})
 		mutex.Unlock()
 
-		return err
+		return nil
 	})
 	if err != nil {
-		return artifacts, locale.WrapError(err, "err_runtime_setup", "Error setting up runtime")
+		return artifacts, locale.WrapError(err, "err_runtime_setup")
+	}
+
+	if os.Getenv(constants.RuntimeSetupWaitEnvVarName) != "" && (condition.OnCI() || condition.BuiltOnDevMachine()) {
+		// This code block is for integration testing purposes only.
+		// Under normal conditions, we should never access fmt or os.Stdin from this context.
+		fmt.Printf("Waiting for input because %s was set\n", constants.RuntimeSetupWaitEnvVarName)
+		ch := make([]byte, 1)
+		os.Stdin.Read(ch) // block until input is sent
+	}
+
+	// Move files to final installation path after successful download and unpack.
+	for _, f := range installArtifactFuncs {
+		err := f()
+		if err != nil {
+			return artifacts, locale.WrapError(err, "err_runtime_setup")
+		}
+	}
+
+	// Clean up temp directory.
+	tempDir := filepath.Join(s.store.InstallPath(), constants.LocalRuntimeTempDirectory)
+	err = os.RemoveAll(tempDir)
+	if err != nil {
+		multilog.Log(logging.ErrorNoStacktrace, rollbar.Error)("Failed to remove temporary installation directory %s: %v", tempDir, err)
 	}
 
 	return artifacts, nil
@@ -525,13 +553,6 @@ func (s *Setup) fetchAndInstallArtifactsFromRecipe(installFunc artifactInstaller
 	err = s.artifactCache.Save()
 	if err != nil {
 		multilog.Error("Could not save artifact cache updates: %v", err)
-	}
-
-	// clean up temp directory
-	tempDir := filepath.Join(s.store.InstallPath(), constants.LocalRuntimeTempDirectory)
-	err = os.RemoveAll(tempDir)
-	if err != nil {
-		multilog.Log(logging.ErrorNoStacktrace, rollbar.Error)("Failed to remove temporary installation directory %s: %v", tempDir, err)
 	}
 
 	if err := s.store.StoreRecipe(buildResult.Recipe); err != nil {
