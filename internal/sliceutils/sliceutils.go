@@ -1,6 +1,9 @@
 package sliceutils
 
-import "golang.org/x/text/unicode/norm"
+import (
+	"github.com/ActiveState/cli/internal/errs"
+	"golang.org/x/text/unicode/norm"
+)
 
 func RemoveFromStrings(slice []string, indexes ...int) []string {
 	var out []string
@@ -46,4 +49,26 @@ func intsContain(ns []int, v int) bool {
 // InsertAt inserts v into data at position i
 func InsertStringAt(data []string, i int, v string) []string {
 	return append(data[:i], append([]string{v}, data[i:]...)...)
+}
+
+func Push[T any](data []T, v T) []T {
+	return append(data, v)
+}
+
+func Pop[T any](data []T) (T, []T, error) {
+	var t T
+	if len(data) == 0 {
+		return t, nil, errs.New("Cannot pop from empty slice")
+	}
+
+	return data[len(data)-1], data[:len(data)-1], nil
+}
+
+func Contains[T comparable](data []T, v T) bool {
+	for _, d := range data {
+		if d == v {
+			return true
+		}
+	}
+	return false
 }

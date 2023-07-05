@@ -11,6 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/rtutils/p"
+	"github.com/ActiveState/cli/internal/sliceutils"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	"github.com/go-openapi/strfmt"
 )
@@ -75,32 +76,6 @@ type In struct {
 	Name     *string
 }
 
-// The context type is a simple stack that keeps track of the current
-// path in the AST. This is used to assist with identifiying special cases.
-type context []string
-
-func (s *context) push(str string) {
-	*s = append(*s, str)
-}
-
-func (s *context) pop() {
-	if len(*s) == 0 {
-		multilog.Error("context.pop() called on empty context stack")
-		return
-	}
-
-	*s = (*s)[:len(*s)-1]
-}
-
-func (s *context) contains(str string) bool {
-	for _, v := range *s {
-		if v == str {
-			return true
-		}
-	}
-	return false
-}
-
 // NewBuildExpression creates a BuildExpression from a JSON byte array.
 // The JSON must be a valid BuildExpression in the following format:
 //
@@ -147,13 +122,14 @@ func New(data []byte) (*BuildExpression, error) {
 	if !ok {
 		return nil, errs.New("Build expression has no 'let' key")
 	}
+
 	letMap, ok := letValue.(map[string]interface{})
 	if !ok {
 		return nil, errs.New("'let' key is not a JSON object")
 	}
 
-	ctx := context{}
-	let, err := newLet(ctx, letMap)
+	var path []string
+	let, err := newLet(path, letMap)
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not parse 'let' key")
 	}
@@ -168,16 +144,21 @@ func New(data []byte) (*BuildExpression, error) {
 	return expr, nil
 }
 
-func newLet(ctx context, m map[string]interface{}) (*Let, error) {
-	ctx.push(ctxLet)
-	defer ctx.pop()
+func newLet(path []string, m map[string]interface{}) (*Let, error) {
+	sliceutils.Push(path, ctxLet)
+	defer func() {
+		_, _, err := sliceutils.Pop(path)
+		if err != nil {
+			multilog.Error("Could not pop context: %v", err)
+		}
+	}()
 
 	inValue, ok := m["in"]
 	if !ok {
 		return nil, errs.New("Build expression's 'let' object has no 'in' key")
 	}
 
-	in, err := newIn(ctx, inValue)
+	in, err := newIn(path, inValue)
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not parse 'in' key's value: %v", inValue)
 	}
@@ -185,7 +166,7 @@ func newLet(ctx context, m map[string]interface{}) (*Let, error) {
 	// Delete in so it doesn't get parsed as an assignment.
 	delete(m, "in")
 
-	assignments, err := newAssignments(ctx, m)
+	assignments, err := newAssignments(path, m)
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not parse 'let' key")
 	}
@@ -193,21 +174,31 @@ func newLet(ctx context, m map[string]interface{}) (*Let, error) {
 	return &Let{Assignments: *assignments, In: in}, nil
 }
 
-func isAp(ctx context, value map[string]interface{}) bool {
-	ctx.push(ctxIsAp)
-	defer ctx.pop()
+func isAp(path []string, value map[string]interface{}) bool {
+	sliceutils.Push(path, ctxIsAp)
+	defer func() {
+		_, _, err := sliceutils.Pop(path)
+		if err != nil {
+			multilog.Error("Could not pop context: %v", err)
+		}
+	}()
 
 	_, hasIn := value["in"]
-	if hasIn && !ctx.contains(ctxAssignments) {
+	if hasIn && !sliceutils.Contains(path, ctxAssignments) {
 		return false
 	}
 
 	return true
 }
 
-func newValue(ctx context, valueInterface interface{}) (*Value, error) {
-	ctx.push(ctxValue)
-	defer ctx.pop()
+func newValue(path []string, valueInterface interface{}) (*Value, error) {
+	sliceutils.Push(path, ctxValue)
+	defer func() {
+		_, _, err := sliceutils.Pop(path)
+		if err != nil {
+			multilog.Error("Could not pop context: %v", err)
+		}
+	}()
 
 	value := &Value{}
 
@@ -219,8 +210,8 @@ func newValue(ctx context, valueInterface interface{}) (*Value, error) {
 				continue
 			}
 
-			if isAp(ctx, val.(map[string]interface{})) {
-				f, err := newAp(ctx, v)
+			if isAp(path, val.(map[string]interface{})) {
+				f, err := newAp(path, v)
 				if err != nil {
 					return nil, errs.Wrap(err, "Could not parse '%s' function's value: %v", key, v)
 				}
@@ -230,7 +221,7 @@ func newValue(ctx context, valueInterface interface{}) (*Value, error) {
 
 		if value.Ap == nil {
 			// It's not a function call, but an object.
-			object, err := newAssignments(ctx, v)
+			object, err := newAssignments(path, v)
 			if err != nil {
 				return nil, errs.Wrap(err, "Could not parse object: %v", v)
 			}
@@ -240,7 +231,7 @@ func newValue(ctx context, valueInterface interface{}) (*Value, error) {
 	case []interface{}:
 		values := []*Value{}
 		for _, item := range v {
-			value, err := newValue(ctx, item)
+			value, err := newValue(path, item)
 			if err != nil {
 				return nil, errs.Wrap(err, "Could not parse list: %v", v)
 			}
@@ -249,7 +240,7 @@ func newValue(ctx context, valueInterface interface{}) (*Value, error) {
 		value.List = &values
 
 	case string:
-		if ctx.contains(ctxIn) {
+		if sliceutils.Contains(path, ctxIn) {
 			value.Ident = &v
 		} else {
 			value.Str = p.StrP(v)
@@ -263,15 +254,20 @@ func newValue(ctx context, valueInterface interface{}) (*Value, error) {
 	return value, nil
 }
 
-func newAp(ctx context, m map[string]interface{}) (*Ap, error) {
-	ctx.push(ctxAp)
-	defer ctx.pop()
+func newAp(path []string, m map[string]interface{}) (*Ap, error) {
+	sliceutils.Push(path, ctxAp)
+	defer func() {
+		_, _, err := sliceutils.Pop(path)
+		if err != nil {
+			multilog.Error("Could not pop context: %v", err)
+		}
+	}()
 
 	// Look in the given object for the function's name and argument object or list.
 	var name string
 	var argsInterface interface{}
 	for key, value := range m {
-		if isAp(ctx, value.(map[string]interface{})) {
+		if isAp(path, value.(map[string]interface{})) {
 			name = key
 			argsInterface = value
 			break
@@ -283,7 +279,7 @@ func newAp(ctx context, m map[string]interface{}) (*Ap, error) {
 	switch v := argsInterface.(type) {
 	case map[string]interface{}:
 		for key, valueInterface := range v {
-			value, err := newValue(ctx, valueInterface)
+			value, err := newValue(path, valueInterface)
 			if err != nil {
 				return nil, errs.Wrap(err, "Could not parse '%s' function's argument '%s': %v", name, key, valueInterface)
 			}
@@ -293,7 +289,7 @@ func newAp(ctx context, m map[string]interface{}) (*Ap, error) {
 
 	case []interface{}:
 		for _, item := range v {
-			value, err := newValue(ctx, item)
+			value, err := newValue(path, item)
 			if err != nil {
 				return nil, errs.Wrap(err, "Could not parse '%s' function's argument list item: %v", name, item)
 			}
@@ -307,13 +303,18 @@ func newAp(ctx context, m map[string]interface{}) (*Ap, error) {
 	return &Ap{Name: name, Arguments: args}, nil
 }
 
-func newAssignments(ctx context, m map[string]interface{}) (*[]*Var, error) {
-	ctx.push(ctxAssignments)
-	defer ctx.pop()
+func newAssignments(path []string, m map[string]interface{}) (*[]*Var, error) {
+	sliceutils.Push(path, ctxAssignments)
+	defer func() {
+		_, _, err := sliceutils.Pop(path)
+		if err != nil {
+			multilog.Error("Could not pop context: %v", err)
+		}
+	}()
 
 	assignments := []*Var{}
 	for key, valueInterface := range m {
-		value, err := newValue(ctx, valueInterface)
+		value, err := newValue(path, valueInterface)
 		if err != nil {
 			return nil, errs.Wrap(err, "Could not parse '%s' key's value: %v", key, valueInterface)
 		}
@@ -323,15 +324,20 @@ func newAssignments(ctx context, m map[string]interface{}) (*[]*Var, error) {
 	return &assignments, nil
 }
 
-func newIn(ctx context, inValue interface{}) (*In, error) {
-	ctx.push(ctxIn)
-	defer ctx.pop()
+func newIn(path []string, inValue interface{}) (*In, error) {
+	sliceutils.Push(path, ctxIn)
+	defer func() {
+		_, _, err := sliceutils.Pop(path)
+		if err != nil {
+			multilog.Error("Could not pop context: %v", err)
+		}
+	}()
 
 	in := &In{}
 
 	switch v := inValue.(type) {
 	case map[string]interface{}:
-		f, err := newAp(ctx, v)
+		f, err := newAp(path, v)
 		if err != nil {
 			return nil, errs.Wrap(err, "'in' object is not a function call")
 		}
