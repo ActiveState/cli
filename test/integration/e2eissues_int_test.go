@@ -8,6 +8,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
+	"github.com/ActiveState/termtest"
 )
 
 /*
@@ -16,8 +17,6 @@ The intend is to collect e2e bugs here so that we can test that they are fixed o
 */
 
 func TestMultipleSends(t *testing.T) {
-	t.Skip("")
-
 	if runtime.GOOS != "windows" {
 		t.Skip("This test is only relevant on Windows")
 	}
@@ -44,5 +43,5 @@ echo "Prompt 2: %prompt1%"
 	tp.Expect("Prompt 2: ", termtest.OptExpectTimeout(5*time.Second))
 	tp.Send("Answer 2")
 	tp.Expect("Prompt 2: Answer 2", termtest.OptExpectTimeout(5*time.Second))
-	tp.ExpectExitCode(0, 5*time.Second)
+	tp.ExpectExitCode(0, termtest.OptExpectTimeout(5*time.Second))
 }

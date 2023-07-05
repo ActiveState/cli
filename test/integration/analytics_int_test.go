@@ -19,6 +19,7 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
+	"github.com/ActiveState/termtest"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"github.com/thoas/go-funk"
@@ -71,7 +72,7 @@ func (suite *AnalyticsIntegrationTestSuite) TestActivateEvents() {
 
 	cp.Expect("Creating a Virtual Environment")
 	cp.Expect("Activated")
-	cp.WaitForInput(120 * time.Second)
+	cp.ExpectInput(termtest.OptExpectTimeout(120 * time.Second))
 
 	time.Sleep(time.Second) // Ensure state-svc has time to report events
 
@@ -83,12 +84,12 @@ func (suite *AnalyticsIntegrationTestSuite) TestActivateEvents() {
 	// Runtime:start events
 	suite.assertNEvents(events, 1, anaConst.CatRuntime, anaConst.ActRuntimeStart,
 		fmt.Sprintf("output:\n%s\n%s",
-			cp.Snapshot(), ts.DebugLogs()))
+			cp.Output(), ts.DebugLogs()))
 
 	// Runtime:success events
 	suite.assertNEvents(events, 1, anaConst.CatRuntime, anaConst.ActRuntimeSuccess,
 		fmt.Sprintf("output:\n%s\n%s",
-			cp.Snapshot(), ts.DebugLogs()))
+			cp.Output(), ts.DebugLogs()))
 
 	heartbeatInitialCount := countEvents(events, anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat)
 	if heartbeatInitialCount < 2 {
@@ -105,7 +106,7 @@ func (suite *AnalyticsIntegrationTestSuite) TestActivateEvents() {
 	// Runtime-use:heartbeat events - should now be at least +1 because we waited <heartbeatInterval>
 	suite.assertGtEvents(events, heartbeatInitialCount, anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat,
 		fmt.Sprintf("output:\n%s\n%s",
-			cp.Snapshot(), ts.DebugLogs()))
+			cp.Output(), ts.DebugLogs()))
 
 	// Test that executor is sending heartbeats
 	{
@@ -144,8 +145,7 @@ func (suite *AnalyticsIntegrationTestSuite) TestActivateEvents() {
 		cp.SendLine("exit")
 	}
 	suite.Require().NoError(rtutils.Timeout(func() error {
-		_, err := cp.ExpectExitCode(0)
-		return err
+		return cp.ExpectExitCode(0)
 	}, 5*time.Second), ts.DebugMessage("Timed out waiting for exit code"))
 
 	time.Sleep(sleepTime) // give time to let rtwatcher detect process has exited
@@ -328,7 +328,7 @@ scripts:
 	cp.Expect("Creating a Virtual Environment")
 	cp.Expect("Skipping runtime setup")
 	cp.Expect("Activated")
-	cp.WaitForInput(10 * time.Second)
+	cp.ExpectInput(termtest.OptExpectTimeout(10 * time.Second))
 
 	cp = ts.Spawn("run", "pip")
 	cp.Wait()
@@ -424,7 +424,7 @@ func (suite *AnalyticsIntegrationTestSuite) TestInputError() {
 
 	suite.assertNEvents(events, 1, anaConst.CatDebug, anaConst.ActCommandInputError,
 		fmt.Sprintf("output:\n%s\n%s",
-			cp.Snapshot(), ts.DebugLogs()))
+			cp.Output(), ts.DebugLogs()))
 
 	for _, event := range events {
 		if event.Category == anaConst.CatDebug && event.Action == anaConst.ActCommandInputError {
@@ -450,7 +450,7 @@ func (suite *AnalyticsIntegrationTestSuite) TestAttempts() {
 
 	cp.Expect("Creating a Virtual Environment")
 	cp.Expect("Activated")
-	cp.WaitForInput(120 * time.Second)
+	cp.ExpectInput(termtest.OptExpectTimeout(120 * time.Second))
 
 	cp.SendLine("python3 --version")
 	cp.Expect("Python 3.")
@@ -493,7 +493,7 @@ func (suite *AnalyticsIntegrationTestSuite) TestHeapEvents() {
 
 	cp.Expect("Creating a Virtual Environment")
 	cp.Expect("Activated")
-	cp.WaitForInput(120 * time.Second)
+	cp.ExpectInput(termtest.OptExpectTimeout(120 * time.Second))
 
 	time.Sleep(time.Second) // Ensure state-svc has time to report events
 

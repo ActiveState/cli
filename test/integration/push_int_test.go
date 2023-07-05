@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/termtest"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/ActiveState/cli/internal/constants"
@@ -85,7 +86,7 @@ func (suite *PushIntegrationTestSuite) TestInitAndPush() {
 	cp = ts.SpawnWithOpts(e2e.OptArgs("install", suite.extraPackage), e2e.OptWD(wd))
 	switch runtime.GOOS {
 	case "darwin":
-		cp.ExpectRe("added|being built", 60*time.Second) // while cold storage is off
+		cp.ExpectRe("added|being built", termtest.OptExpectTimeout(60*time.Second)) // while cold storage is off
 		cp.Wait()
 	default:
 		cp.Expect("added", termtest.OptExpectTimeout(60*time.Second))
@@ -116,10 +117,10 @@ func (suite *PushIntegrationTestSuite) TestPush_HeadlessConvert_NewProject() {
 
 	cp := ts.SpawnWithOpts(e2e.OptArgs("install", suite.extraPackage))
 
-	cp.Expect("An activestate.yaml has been created", time.Second*40)
+	cp.Expect("An activestate.yaml has been created", termtest.OptExpectTimeout(time.Second*40))
 	switch runtime.GOOS {
 	case "darwin":
-		cp.ExpectRe("added|being built", 60*time.Second) // while cold storage is off
+		cp.ExpectRe("added|being built", termtest.OptExpectTimeout(60*time.Second)) // while cold storage is off
 		cp.Wait()
 	default:
 		cp.Expect("added", termtest.OptExpectTimeout(60*time.Second))
@@ -137,7 +138,7 @@ func (suite *PushIntegrationTestSuite) TestPush_HeadlessConvert_NewProject() {
 	cp.Expect("Who would you like the owner of this project to be?")
 	cp.Send("")
 	cp.Expect("What would you like the name of this project to be?")
-	cp.SendUnterminated(string([]byte{0033, '[', 'B'})) // move cursor down, and then press enter
+	cp.Send(string([]byte{0033, '[', 'B'})) // move cursor down, and then press enter
 	cp.Expect("> Other")
 	cp.Send("")
 	cp.Expect(">")
@@ -163,14 +164,14 @@ func (suite *PushIntegrationTestSuite) TestPush_NoPermission_NewProject() {
 
 	cp := ts.SpawnWithOpts(e2e.OptArgs("activate", suite.baseProject, "--path", ts.Dirs.Work))
 	cp.Expect("Activated", termtest.OptExpectTimeout(40*time.Second))
-	cp.WaitForInput(10 * time.Second)
+	cp.ExpectInput(termtest.OptExpectTimeout(10 * time.Second))
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
 
 	cp = ts.SpawnWithOpts(e2e.OptArgs("install", suite.extraPackage))
 	switch runtime.GOOS {
 	case "darwin":
-		cp.ExpectRe("added|being built", 60*time.Second) // while cold storage is off
+		cp.ExpectRe("added|being built", termtest.OptExpectTimeout(60*time.Second)) // while cold storage is off
 		cp.Wait()
 	default:
 		cp.Expect("added", termtest.OptExpectTimeout(60*time.Second))
@@ -188,7 +189,7 @@ func (suite *PushIntegrationTestSuite) TestPush_NoPermission_NewProject() {
 	cp.Expect("Who would you like the owner of this project to be?")
 	cp.Send("")
 	cp.Expect("What would you like the name of this project to be?")
-	cp.SendUnterminated(string([]byte{0033, '[', 'B'})) // move cursor down, and then press enter
+	cp.Send(string([]byte{0033, '[', 'B'})) // move cursor down, and then press enter
 	cp.Expect("> Other")
 	cp.Send("")
 	cp.Expect(">")
@@ -234,7 +235,7 @@ func (suite *PushIntegrationTestSuite) TestCarlisle() {
 		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"))
 	switch runtime.GOOS {
 	case "darwin":
-		cp.ExpectRe("added|being built", 60*time.Second) // while cold storage is off
+		cp.ExpectRe("added|being built", termtest.OptExpectTimeout(60*time.Second)) // while cold storage is off
 		cp.Wait()
 	default:
 		cp.Expect("added", termtest.OptExpectTimeout(60*time.Second))

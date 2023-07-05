@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ActiveState/termtest"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/ActiveState/cli/internal/constants"
@@ -307,22 +308,22 @@ func (suite *PackageIntegrationTestSuite) TestPackage_import() {
 		ts.PrepareFile(reqsFilePath, badReqsData)
 
 		cp := ts.Spawn("import", "requirements.txt")
-		cp.ExpectNotExitCode(0, time.Second*60)
+		cp.ExpectNotExitCode(0, termtest.OptExpectTimeout(time.Second*60))
 	})
 
 	suite.Run("valid requirements.txt", func() {
 		ts.PrepareFile(reqsFilePath, reqsData)
 
 		cp := ts.Spawn("import", "requirements.txt")
-		cp.ExpectExitCode(0, time.Second*60)
+		cp.ExpectExitCode(0, termtest.OptExpectTimeout(time.Second*60))
 
 		cp = ts.Spawn("push")
-		cp.ExpectExitCode(0, time.Second*60)
+		cp.ExpectExitCode(0, termtest.OptExpectTimeout(time.Second*60))
 
 		cp = ts.Spawn("import", "requirements.txt")
 		cp.Expect("Are you sure you want to do this")
 		cp.Send("n")
-		cp.ExpectNotExitCode(0, time.Second*60)
+		cp.ExpectNotExitCode(0, termtest.OptExpectTimeout(time.Second*60))
 	})
 }
 
@@ -349,19 +350,19 @@ func (suite *PackageIntegrationTestSuite) TestPackage_headless_operation() {
 
 	suite.Run("install", func() {
 		cp := ts.Spawn("install", "dateparser@0.7.2")
-		cp.ExpectRe("(?:Package added|being built)", 30*time.Second)
+		cp.ExpectRe("(?:Package added|being built)", termtest.OptExpectTimeout(30*time.Second))
 		cp.Wait()
 	})
 
 	suite.Run("install (update)", func() {
 		cp := ts.Spawn("install", "dateparser@0.7.6")
-		cp.ExpectRe("(?:Package updated|being built)", 50*time.Second)
+		cp.ExpectRe("(?:Package updated|being built)", termtest.OptExpectTimeout(50*time.Second))
 		cp.Wait()
 	})
 
 	suite.Run("uninstall", func() {
 		cp := ts.Spawn("uninstall", "dateparser")
-		cp.ExpectRe("(?:Package uninstalled|being built)", 30*time.Second)
+		cp.ExpectRe("(?:Package uninstalled|being built)", termtest.OptExpectTimeout(30*time.Second))
 		cp.Wait()
 	})
 }
@@ -392,21 +393,21 @@ func (suite *PackageIntegrationTestSuite) TestPackage_operation() {
 	suite.Run("install", func() {
 		cp := ts.Spawn("install", "urllib3@1.25.6")
 		cp.Expect(fmt.Sprintf("Operating on project %s/python3-pkgtest", username))
-		cp.ExpectRe("(?:Package added|being built)", 30*time.Second)
+		cp.ExpectRe("(?:Package added|being built)", termtest.OptExpectTimeout(30*time.Second))
 		cp.Wait()
 	})
 
 	suite.Run("install (update)", func() {
 		cp := ts.Spawn("install", "urllib3@1.25.8")
 		cp.Expect(fmt.Sprintf("Operating on project %s/python3-pkgtest", username))
-		cp.ExpectRe("(?:Package updated|being built)", 30*time.Second)
+		cp.ExpectRe("(?:Package updated|being built)", termtest.OptExpectTimeout(30*time.Second))
 		cp.Wait()
 	})
 
 	suite.Run("uninstall", func() {
 		cp := ts.Spawn("uninstall", "urllib3")
 		cp.Expect(fmt.Sprintf("Operating on project %s/python3-pkgtest", username))
-		cp.ExpectRe("(?:Package uninstalled|being built)", 30*time.Second)
+		cp.ExpectRe("(?:Package uninstalled|being built)", termtest.OptExpectTimeout(30*time.Second))
 		cp.Wait()
 	})
 }

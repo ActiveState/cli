@@ -1,6 +1,37 @@
 package e2e
 
-import "github.com/ActiveState/termtest"
+import (
+	"regexp"
+	"time"
+
+	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/termtest"
+)
+
+type SpawnedCmd struct {
+	*termtest.TermTest
+	opts SpawnOpts
+}
+
+func (s *SpawnedCmd) WorkDirectory() string {
+	return s.TermTest.Cmd().Dir
+}
+
+func (s *SpawnedCmd) Wait() error {
+	return s.TermTest.Wait(30 * time.Second)
+}
+
+func (s *SpawnedCmd) Executable() string {
+	return s.TermTest.Cmd().Path
+}
+
+func (s *SpawnedCmd) ExpectRe(v string, opts ...termtest.SetExpectOpt) error {
+	rx, err := regexp.Compile(v)
+	if err != nil {
+		return errs.Wrap(err, "ExpectRe received invalid regex string")
+	}
+	return s.TermTest.ExpectRe(rx, opts...)
+}
 
 type SpawnOpts struct {
 	Args         []string

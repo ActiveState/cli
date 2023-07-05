@@ -11,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ActiveState/termtest"
 	"github.com/mholt/archiver"
 
 	"github.com/ActiveState/cli/internal/analytics/client/sync/reporters"

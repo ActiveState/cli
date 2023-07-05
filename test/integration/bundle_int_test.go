@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ActiveState/termtest"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
@@ -187,7 +188,7 @@ func (suite *BundleIntegrationTestSuite) TestBundle_headless_operation() {
 
 	suite.Run("install", func() {
 		cp := ts.Spawn("bundles", "install", "Utilities")
-		cp.ExpectRe("successfully installed", 45*time.Second)
+		cp.ExpectRe("successfully installed", termtest.OptExpectTimeout(45*time.Second))
 		cp.Wait()
 	})
 
@@ -201,7 +202,7 @@ func (suite *BundleIntegrationTestSuite) TestBundle_headless_operation() {
 
 	suite.Run("uninstall", func() {
 		cp := ts.Spawn("bundles", "uninstall", "Utilities")
-		cp.ExpectRe("Bundle uninstalled", 30*time.Second)
+		cp.ExpectRe("Bundle uninstalled", termtest.OptExpectTimeout(30*time.Second))
 		cp.Wait()
 	})
 }

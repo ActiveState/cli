@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/internal/rtutils"
+	"github.com/ActiveState/termtest"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/ActiveState/cli/internal/constants"
@@ -135,7 +136,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivateUsingCommitID() {
 	)
 	cp.Expect("Skipping runtime setup")
 	cp.Expect("Activated")
-	cp.WaitForInput(10 * time.Second)
+	cp.ExpectInput(termtest.OptExpectTimeout(10 * time.Second))
 
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
@@ -151,7 +152,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivateNotOnPath() {
 	cp := ts.SpawnWithOpts(e2e.OptArgs("activate", "activestate-cli/small-python", "--path", ts.Dirs.Work))
 	cp.Expect("Skipping runtime setup")
 	cp.Expect("Activated")
-	cp.WaitForInput(10 * time.Second)
+	cp.ExpectInput(termtest.OptExpectTimeout(10 * time.Second))
 
 	if runtime.GOOS == "windows" {
 		cp.SendLine("doskey /macros | findstr state=")
@@ -185,7 +186,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivatePythonByHostOnly() {
 	if runtime.GOOS == "linux" {
 		cp.Expect("Creating a Virtual Environment")
 		cp.Expect("Activated")
-		cp.WaitForInput(40 * time.Second)
+		cp.ExpectInput(termtest.OptExpectTimeout(40 * time.Second))
 		cp.SendLine("exit")
 		cp.ExpectExitCode(0)
 	} else if runtime.GOOS == "windows" {
@@ -252,7 +253,7 @@ func (suite *ActivateIntegrationTestSuite) activatePython(version string, extraE
 
 	cp.SendLine("state activate --default")
 	cp.Expect("Creating a Virtual Environment")
-	cp.WaitForInput(40 * time.Second)
+	cp.ExpectInput(termtest.OptExpectTimeout(40 * time.Second))
 	pythonShim := pythonExe + exeutils.Extension
 
 	// test that other executables that use python work as well
@@ -428,7 +429,7 @@ version: %s
 	)
 	c2.Expect("Activated")
 
-	c2.WaitForInput(40 * time.Second)
+	c2.ExpectInput(termtest.OptExpectTimeout(40 * time.Second))
 	c2.SendLine("exit")
 	c2.ExpectExitCode(0)
 }
@@ -464,7 +465,7 @@ project: "https://platform.activestate.com/ActiveState-CLI/Python3"
 	c2.Expect("ActiveState-CLI/Python2")
 	c2.Expect("Activated")
 
-	c2.WaitForInput(40 * time.Second)
+	c2.ExpectInput(termtest.OptExpectTimeout(40 * time.Second))
 	if runtime.GOOS == "windows" {
 		c2.SendLine("@echo %cd%")
 	} else {

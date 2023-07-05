@@ -85,7 +85,7 @@ func (suite *UpdateIntegrationTestSuite) branchCompare(ts *e2e.Session, expected
 	}
 
 	cp := ts.SpawnWithOpts(e2e.OptArgs("--version", "--output=json"), e2e.OptAppendEnv(suite.env(true, false)...))
-	cp.ExpectExitCode(0, 30*time.Second)
+	cp.ExpectExitCode(0, termtest.OptExpectTimeout(30*time.Second))
 
 	branch := branchData{}
 	out := strings.Trim(cp.Snapshot(), "\x00")
@@ -203,7 +203,7 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateChannel() {
 				e2e.OptAppendEnv(env...),
 			)
 			cp.Expect("Updating")
-			cp.ExpectExitCode(0, 1*time.Minute)
+			cp.ExpectExitCode(0, termtest.OptExpectTimeout(1*time.Minute))
 
 			suite.branchCompare(ts, tt.Channel, suite.Equal)
 		})

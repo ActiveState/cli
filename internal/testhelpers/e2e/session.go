@@ -32,7 +32,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/termtest"
-	"github.com/ActiveState/termtest/expect"
 	"github.com/go-openapi/strfmt"
 	"github.com/google/uuid"
 	"github.com/phayes/permbits"
@@ -63,7 +62,7 @@ var (
 	PersistentPassword string
 	PersistentToken    string
 
-	authnTimeout = 40 * time.Second
+	defaultnTimeout = 5 * time.Second
 )
 
 func init() {
@@ -175,6 +174,7 @@ func new(t *testing.T, retainDirs, updatePath bool, extraEnv ...string) *Session
 		constants.OptinUnstableEnvVarName + "=true",
 		constants.ServiceSockDir + "=" + dirs.SockRoot,
 		constants.HomeEnvVarName + "=" + dirs.HomeDir,
+		"NO_COLOR=true",
 	}...)
 
 	if updatePath {
@@ -212,19 +212,6 @@ func (s *Session) ClearCache() error {
 	return os.RemoveAll(s.Dirs.Cache)
 }
 
-type SpawnedCmd struct {
-	*termtest.TermTest
-	opts SpawnOpts
-}
-
-func (s *SpawnedCmd) WorkDirectory() string {
-	return s.TermTest.Cmd().Dir
-}
-
-func (s *SpawnedCmd) Wait() error {
-	return s.TermTest.Wait(30 * time.Second)
-}
-
 // SpawnedCmd spawns the state tool executable to be tested with arguments
 func (s *Session) Spawn(args ...string) *SpawnedCmd {
 	return s.SpawnCmdWithOpts(s.Exe, OptArgs(args...))
@@ -251,21 +238,45 @@ func (s *Session) SpawnShellWithOpts(shell Shell, opts ...SpawnOptSetter) *Spawn
 // SpawnCmdWithOpts executes an executable in a pseudo-terminal for integration tests
 // Arguments and other parameters can be specified by specifying SpawnOptSetter
 func (s *Session) SpawnCmdWithOpts(exe string, optSetters ...SpawnOptSetter) *SpawnedCmd {
-	spawnOpts := SpawnOpts{}
+	spawnOpts := SpawnOpts{
+		Env: s.Env,
+		Dir: s.Dirs.Work,
+	}
 	for _, optSet := range optSetters {
 		optSet(&spawnOpts)
 	}
 
-	cmd := exec.Command(exe, spawnOpts.Args...)
-	cmd.Env = append(cmd.Env, s.Env...)
-
-	if len(spawnOpts.Env) != 0 {
-		cmd.Env = spawnOpts.Env
+	var shell string
+	var args []string
+	switch runtime.GOOS {
+	case "windows":
+		shell = "cmd.exe"
+		args = []string{"/C"}
+	case "darwin":
+		shell = "zsh"
+		args = []string{"-i", "-c"}
+	default:
+		shell = "bash"
+		args = []string{"-i", "-c"}
 	}
+
+	args = append(args, fmt.Sprintf(`"%s" "%s"`, exe, strings.Join(spawnOpts.Args, `" "`)))
+
+	cmd := exec.Command(shell, args...)
+
+	cmd.Env = spawnOpts.Env
 
 	if spawnOpts.Dir != "" {
 		cmd.Dir = spawnOpts.Dir
 	}
+
+	spawnOpts.TermtestOpts = append(spawnOpts.TermtestOpts,
+		termtest.OptErrorHandler(func(tt *termtest.TermTest, err error) error {
+			s.t.Fatal(s.DebugMessage(errs.JoinMessage(err)))
+			return err
+		}),
+		termtest.OptDefaultTimeout(defaultnTimeout),
+	)
 
 	tt, err := termtest.New(cmd, spawnOpts.TermtestOpts...)
 	require.NoError(s.t, err)
@@ -274,11 +285,11 @@ func (s *Session) SpawnCmdWithOpts(exe string, optSetters ...SpawnOptSetter) *Sp
 
 	s.spawned = append(s.spawned, spawn)
 
-	args := spawnOpts.Args
+	cmdArgs := spawnOpts.Args
 	if spawnOpts.HideCmdArgs {
-		args = []string{"<hidden>"}
+		cmdArgs = []string{"<hidden>"}
 	}
-	logging.Debug("Spawning CMD: %s, args: %v", exe, args)
+	logging.Debug("Spawning CMD: %s, args: %v", exe, cmdArgs)
 
 	return spawn
 }
@@ -308,7 +319,7 @@ func (s *Session) PrepareFile(path, contents string) {
 func (s *Session) LoginUser(userName string) {
 	p := s.Spawn(tagsuite.Auth, "--username", userName, "--password", userName)
 
-	p.Expect("logged in", termtest.OptExpectTimeout(authnTimeout))
+	p.Expect("logged in", termtest.OptExpectTimeout(defaultnTimeout))
 	p.ExpectExitCode(0)
 }
 
@@ -320,7 +331,7 @@ func (s *Session) LoginAsPersistentUser() {
 		OptHideArgs(),
 	)
 
-	p.Expect("logged in", termtest.OptExpectTimeout(authnTimeout))
+	p.Expect("logged in", termtest.OptExpectTimeout(defaultnTimeout))
 	p.ExpectExitCode(0)
 }
 
@@ -352,7 +363,7 @@ func (s *Session) CreateNewUser() string {
 	p.Send(password)
 	p.Expect("email:")
 	p.Send(email)
-	p.Expect("account has been registered", termtest.OptExpectTimeout(authnTimeout))
+	p.Expect("account has been registered", termtest.OptExpectTimeout(defaultnTimeout))
 	p.ExpectExitCode(0)
 
 	s.users = append(s.users, username)
@@ -401,25 +412,25 @@ func (s *Session) DebugMessage(prefix string) string {
 		prefix = prefix + "\n"
 	}
 
-	snapshot := []string{}
+	output := []string{}
 	for _, spawn := range s.spawned {
 		name := spawn.Cmd().String()
 		if spawn.opts.HideCmdArgs {
 			name = spawn.Cmd().Path
 		}
-		snapshot = append(snapshot, fmt.Sprintf("cmd: %s\n%s", name, spawn.Snapshot()))
+		output = append(output, fmt.Sprintf("\noutput for cmd: %s\n\n%s", name, spawn.Output()))
 	}
 
 	v, err := strutils.ParseTemplate(`
 {{.Prefix}}{{.A}}Stack:
 {{.Stacktrace}}{{.Z}}
-{{.A}}Terminal snapshot:
+{{.A}}Terminal output:
 {{.FullSnapshot}}{{.Z}}
 {{.Logs}}
 `, map[string]interface{}{
 		"Prefix":       prefix,
 		"Stacktrace":   stacktrace.Get().String(),
-		"FullSnapshot": snapshot,
+		"FullSnapshot": output,
 		"Logs":         s.DebugLogs(),
 		"A":            sectionStart,
 		"Z":            sectionEnd,
@@ -429,25 +440,6 @@ func (s *Session) DebugMessage(prefix string) string {
 	}
 
 	return v
-}
-
-func observeExpectFn(s *Session) expect.ExpectObserver {
-	return func(matchers []expect.Matcher, ms *expect.MatchState, err error) {
-		if err == nil {
-			return
-		}
-
-		var value string
-		var sep string
-		for _, matcher := range matchers {
-			value += fmt.Sprintf("%s%v", sep, matcher.Criteria())
-			sep = ", "
-		}
-
-		s.t.Fatal(s.DebugMessage(fmt.Sprintf(`
-Could not meet expectation: '%s'
-Error: %s`, value, err)))
-	}
 }
 
 // Close removes the temporary directory unless RetainDirs is specified

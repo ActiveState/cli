@@ -31,9 +31,9 @@ func (suite *RevertIntegrationTestSuite) TestRevert() {
 	commitID := "1f4f4f7d-7883-400e-b2ad-a5803c018ecd"
 	cp = ts.SpawnWithOpts(e2e.OptArgs("revert", commitID), e2e.OptWD(wd))
 	cp.Expect(fmt.Sprintf("Operating on project %s", namespace))
-	cp.SendLine("Y")
 	cp.Expect("You are about to revert the following commit:")
 	cp.Expect(commitID)
+	cp.SendLine("Y")
 	cp.Expect("Successfully reverted commit:")
 	cp.ExpectExitCode(0)
 

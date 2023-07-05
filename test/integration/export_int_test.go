@@ -7,6 +7,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
+	"github.com/ActiveState/termtest"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -75,7 +76,7 @@ func (suite *ExportIntegrationTestSuite) TestExport_Config() {
 	suite.PrepareActiveStateYAML(ts)
 	cp := ts.Spawn("export", "config")
 	cp.Expect(`dir: `)
-	cp.Expect(ts.Dirs.Config, time.Second)
+	cp.Expect(ts.Dirs.Config, termtest.OptExpectTimeout(time.Second))
 	cp.ExpectExitCode(0)
 }
 

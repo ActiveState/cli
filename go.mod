@@ -7,14 +7,13 @@ replace cloud.google.com/go => cloud.google.com/go v0.110.0
 require (
 	github.com/99designs/gqlgen v0.17.19
 	github.com/ActiveState/go-ogle-analytics v0.0.0-20170510030904-9b3f14901527
-	github.com/ActiveState/termtest v0.7.3-0.20230413212817-67a4b7abaf3d
-	github.com/ActiveState/termtest/expect v0.7.0
+	github.com/ActiveState/termtest v0.7.3-0.20230629182806-1a45115bdd2f
 	github.com/Azure/go-ansiterm v0.0.0-20170929234023-d6e3b3328b78
 	github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751
 	github.com/andygrunwald/go-jira v1.15.1
 	github.com/aws/aws-sdk-go v1.34.28
 	github.com/blang/semver v3.5.1+incompatible
-	github.com/creack/pty v1.1.18
+	github.com/creack/pty v1.1.11
 	github.com/dave/jennifer v0.18.0
 	github.com/faiface/mainthread v0.0.0-20171120011319-8b78f0a41ae3
 	github.com/fatih/color v1.10.0
@@ -75,9 +74,11 @@ require (
 )
 
 require (
-	github.com/ActiveState/termtest/conpty v0.5.0 // indirect
-	github.com/ActiveState/termtest/xpty v0.6.0 // indirect
-	github.com/ActiveState/vt10x v1.3.1 // indirect
+	github.com/ActiveState/pty v0.0.0-20230628221854-6fb90eb08a14 // indirect
+	github.com/hinshun/vt10x v0.0.0-20180809195222-d55458df857c // indirect
+)
+
+require (
 	github.com/BurntSushi/toml v1.2.1 // indirect
 	github.com/Netflix/go-expect v0.0.0-20201125194554-85d881c3777e // indirect
 	github.com/PuerkitoBio/purell v1.1.1 // indirect
@@ -109,7 +110,6 @@ require (
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51 // indirect
 	github.com/kevinburke/ssh_config v0.0.0-20190725054713-01f96b0aa0cd // indirect
-	github.com/kr/pty v1.1.8 // indirect
 	github.com/labstack/gommon v0.3.1 // indirect
 	github.com/lufia/plan9stats v0.0.0-20211012122336-39d0f177ccd0 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect

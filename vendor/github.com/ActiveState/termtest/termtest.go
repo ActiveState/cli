@@ -12,7 +12,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/creack/pty"
+	"github.com/ActiveState/pty"
 )
 
 // TermTest bonds a command with a pseudo-terminal for automation
@@ -32,6 +32,7 @@ type Opts struct {
 	Cols               uint16
 	Rows               uint16
 	Posix              bool
+	DefaultTimeout     time.Duration
 }
 
 var TimeoutError = errors.New("timeout")
@@ -47,9 +48,10 @@ func NewOpts() *Opts {
 		ExpectErrorHandler: func(_ *TermTest, err error) error {
 			panic(err)
 		},
-		Cols:  DefaultCols,
-		Rows:  DefaultRows,
-		Posix: runtime.GOOS != "windows",
+		Cols:           DefaultCols,
+		Rows:           DefaultRows,
+		Posix:          runtime.GOOS != "windows",
+		DefaultTimeout: 5 * time.Second,
 	}
 }
 
@@ -131,6 +133,14 @@ func OptSilenceErrorHandler() SetOpt {
 func OptPosix(v bool) SetOpt {
 	return func(o *Opts) error {
 		o.Posix = v
+		return nil
+	}
+}
+
+// OptDefaultTimeout sets the default timeout
+func OptDefaultTimeout(duration time.Duration) SetOpt {
+	return func(o *Opts) error {
+		o.DefaultTimeout = duration
 		return nil
 	}
 }
@@ -225,6 +235,11 @@ func (tt *TermTest) Cmd() *exec.Cmd {
 // Snapshot returns a string containing a terminal snapshot as a user would see it in a "real" terminal
 func (tt *TermTest) Snapshot() string {
 	return string(tt.outputProducer.Snapshot())
+}
+
+// Output is similar to snapshot, except that it returns all output produced, rather than the current snapshot of output
+func (tt *TermTest) Output() string {
+	return string(tt.outputProducer.Output())
 }
 
 // Send sends a new line to the terminal, as if a user typed it

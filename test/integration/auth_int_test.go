@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ActiveState/termtest"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/suite"
 

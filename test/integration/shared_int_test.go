@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -21,18 +22,18 @@ func init() {
 // any non-JSON/structured output.
 // This should only be called after a command has executed and all output is available.
 func AssertValidJSON(t *testing.T, cp *e2e.SpawnedCmd) {
-	snapshot := cp.Snapshot()
+	output := cp.Output()
 	if runtime.GOOS != "windows" {
-		assert.True(t, json.Valid([]byte(snapshot)), "The command produced invalid JSON/structured output:\n"+snapshot)
+		assert.True(t, json.Valid([]byte(output)), "The command produced invalid JSON/structured output:\n"+output)
 	} else {
 		// Windows can trim the last byte for some reason.
 		assert.True(
 			t,
-			json.Valid([]byte(snapshot)) || json.Valid([]byte(snapshot+"}")) || json.Valid([]byte(snapshot+"]")),
-			"The command produced invalid JSON/structured output:\n"+snapshot,
+			json.Valid([]byte(output)) || json.Valid([]byte(output+"}")) || json.Valid([]byte(output+"]")),
+			"The command produced invalid JSON/structured output:\n"+output,
 		)
 	}
-	if strings.Contains(snapshot, `"errors":[`) {
-		assert.NotContains(t, snapshot, `output not supported`, "The command attempted to emit non-JSON/structured output:\n"+snapshot)
+	if strings.Contains(output, `"errors":[`) {
+		assert.NotContains(t, output, `output not supported`, "The command attempted to emit non-JSON/structured output:\n"+output)
 	}
 }
