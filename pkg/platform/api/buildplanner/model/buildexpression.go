@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/rtutils/p"
 	"github.com/go-openapi/strfmt"
 )
@@ -117,6 +118,7 @@ func (s *context) push(str string) {
 
 func (s *context) pop() {
 	if len(*s) == 0 {
+		multilog.Error("context.pop() called on empty context stack")
 		return
 	}
 
@@ -229,6 +231,7 @@ func isAp(ctx context, value map[string]interface{}) bool {
 	defer ctx.pop()
 
 	_, hasIn := value["in"]
+	fmt.Println("Current context: ", ctx)
 	if hasIn && !ctx.contains(ctxAssignments) {
 		return false
 	}
