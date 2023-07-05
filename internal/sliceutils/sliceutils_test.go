@@ -260,22 +260,22 @@ func TestPop(t *testing.T) {
 				data: []any{},
 			},
 			wantValue:  nil,
-			wantResult: []any{},
+			wantResult: nil,
 			wantErr:    true,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, got1, err := Pop(tt.args.data)
+			gotValue, gotSlice, err := Pop(tt.args.data)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Pop() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(got, tt.wantValue) {
-				t.Errorf("Pop() got = %v, want %v", got, tt.wantValue)
+			if !reflect.DeepEqual(gotValue, tt.wantValue) {
+				t.Errorf("Pop() got value = %v, want %v", gotValue, tt.wantValue)
 			}
-			if !reflect.DeepEqual(got1, tt.wantResult) {
-				t.Errorf("Pop() got1 = %v, want %v", got1, tt.wantResult)
+			if !reflect.DeepEqual(gotSlice, tt.wantResult) {
+				t.Errorf("Pop() got slice = %v, want %v", gotSlice, tt.wantResult)
 			}
 		})
 	}
