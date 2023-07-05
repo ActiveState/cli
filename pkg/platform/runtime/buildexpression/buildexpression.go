@@ -1,4 +1,4 @@
-package model
+package buildexpression
 
 import (
 	"encoding/json"
@@ -11,23 +11,11 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/rtutils/p"
+	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	"github.com/go-openapi/strfmt"
 )
 
-type Operation int
-
 const (
-	ComparatorEQ  string = "eq"
-	ComparatorGT         = "gt"
-	ComparatorGTE        = "gte"
-	ComparatorLT         = "lt"
-	ComparatorLTE        = "lte"
-	ComparatorNE         = "ne"
-
-	OperationAdded Operation = iota
-	OperationRemoved
-	OperationUpdated
-
 	SolveFuncName                     = "solve"
 	SolveLegacyFuncName               = "solve_legacy"
 	RequirementsKey                   = "requirements"
@@ -46,28 +34,7 @@ const (
 	ctxIsAp        = "isAp"
 )
 
-func (o Operation) String() string {
-	switch o {
-	case OperationAdded:
-		return "added"
-	case OperationRemoved:
-		return "removed"
-	case OperationUpdated:
-		return "updated"
-	default:
-		return "unknown"
-	}
-}
-
 var funcNodeNotFoundError = errors.New("Could not find function node")
-
-type Requirement struct {
-	Name               string               `json:"name"`
-	Namespace          string               `json:"namespace"`
-	VersionRequirement []VersionRequirement `json:"version_requirements,omitempty"`
-}
-
-type VersionRequirement map[string]string
 
 type BuildExpression struct {
 	Let *Let
@@ -231,7 +198,6 @@ func isAp(ctx context, value map[string]interface{}) bool {
 	defer ctx.pop()
 
 	_, hasIn := value["in"]
-	fmt.Println("Current context: ", ctx)
 	if hasIn && !ctx.contains(ctxAssignments) {
 		return false
 	}
@@ -438,16 +404,16 @@ func (e *BuildExpression) validateRequirements() error {
 //	    }
 //	  ]
 //	}
-func (e *BuildExpression) Requirements() []Requirement {
+func (e *BuildExpression) Requirements() []model.Requirement {
 	requirementsNode := e.getRequirementsNode()
 
-	var requirements []Requirement
+	var requirements []model.Requirement
 	for _, r := range requirementsNode {
 		if r.Object == nil {
 			continue
 		}
 
-		var req Requirement
+		var req model.Requirement
 		for _, o := range *r.Object {
 			if o.Name == RequirementNameKey {
 				req.Name = *o.Value.Str
@@ -484,8 +450,8 @@ func (e *BuildExpression) getRequirementsNode() []*Value {
 	return reqs
 }
 
-func getVersionRequirements(v *[]*Value) []VersionRequirement {
-	var reqs []VersionRequirement
+func getVersionRequirements(v *[]*Value) []model.VersionRequirement {
+	var reqs []model.VersionRequirement
 
 	if v == nil {
 		return reqs
@@ -496,7 +462,7 @@ func getVersionRequirements(v *[]*Value) []VersionRequirement {
 			continue
 		}
 
-		versionReq := make(VersionRequirement)
+		versionReq := make(model.VersionRequirement)
 		for _, o := range *r.Object {
 			if o.Name == RequirementComparatorKey {
 				versionReq[RequirementComparatorKey] = *o.Value.Str
@@ -548,14 +514,14 @@ func (e *BuildExpression) getSolveNodeArguments() []*Value {
 }
 
 // Update updates the BuildExpression's requirements based on the operation and requirement.
-func (e *BuildExpression) Update(operation Operation, requirement Requirement, timestamp strfmt.DateTime) error {
+func (e *BuildExpression) Update(operation model.Operation, requirement model.Requirement, timestamp strfmt.DateTime) error {
 	var err error
 	switch operation {
-	case OperationAdded:
+	case model.OperationAdded:
 		err = e.addRequirement(requirement)
-	case OperationRemoved:
+	case model.OperationRemoved:
 		err = e.removeRequirement(requirement)
-	case OperationUpdated:
+	case model.OperationUpdated:
 		err = e.updateRequirement(requirement)
 	default:
 		return errs.New("Unsupported operation")
@@ -572,7 +538,7 @@ func (e *BuildExpression) Update(operation Operation, requirement Requirement, t
 	return nil
 }
 
-func (e *BuildExpression) addRequirement(requirement Requirement) error {
+func (e *BuildExpression) addRequirement(requirement model.Requirement) error {
 	obj := []*Var{
 		{Name: RequirementNameKey, Value: &Value{Str: p.StrP(requirement.Name)}},
 		{Name: RequirementNamespaceKey, Value: &Value{Str: p.StrP(requirement.Namespace)}},
@@ -604,7 +570,7 @@ func (e *BuildExpression) addRequirement(requirement Requirement) error {
 	return nil
 }
 
-func (e *BuildExpression) removeRequirement(requirement Requirement) error {
+func (e *BuildExpression) removeRequirement(requirement model.Requirement) error {
 	requirementsNode := e.getRequirementsNode()
 
 	for i, r := range requirementsNode {
@@ -632,7 +598,7 @@ func (e *BuildExpression) removeRequirement(requirement Requirement) error {
 	return nil
 }
 
-func (e *BuildExpression) updateRequirement(requirement Requirement) error {
+func (e *BuildExpression) updateRequirement(requirement model.Requirement) error {
 	if requirement.VersionRequirement == nil {
 		return nil
 	}

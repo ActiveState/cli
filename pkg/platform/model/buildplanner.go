@@ -18,6 +18,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
+	"github.com/ActiveState/cli/pkg/platform/runtime/buildexpression"
 	"github.com/ActiveState/cli/pkg/sysinfo"
 	"github.com/go-openapi/strfmt"
 	"github.com/machinebox/graphql"
@@ -303,7 +304,7 @@ func (bp *BuildPlanner) StageCommit(params StageCommitParams) (strfmt.UUID, erro
 	return strfmt.UUID(resp.Commit.CommitID), nil
 }
 
-func (bp *BuildPlanner) GetBuildExpression(owner, project, commitID string) (*bpModel.BuildExpression, error) {
+func (bp *BuildPlanner) GetBuildExpression(owner, project, commitID string) (*buildexpression.BuildExpression, error) {
 	resp := &bpModel.BuildPlan{}
 	err := bp.client.Run(request.BuildExpression(owner, project, commitID), resp)
 	if err != nil {
@@ -317,7 +318,7 @@ func (bp *BuildPlanner) GetBuildExpression(owner, project, commitID string) (*bp
 		return nil, errs.New("Commit not found: %s", resp.Project.Commit.Message)
 	}
 
-	expression, err := bpModel.NewBuildExpression(resp.Project.Commit.Script)
+	expression, err := buildexpression.NewBuildExpression(resp.Project.Commit.Script)
 	if err != nil {
 		return nil, errs.Wrap(err, "failed to parse build expression")
 	}
