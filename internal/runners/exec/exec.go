@@ -135,8 +135,8 @@ func (s *Exec) Run(params *Params, args ...string) (rerr error) {
 		if err := rt.Update(pg); err != nil {
 			return locale.WrapError(err, "err_update_runtime", "Could not update runtime installation.")
 		}
-	case runtime.IsNeedsStageError(err):
-		s.out.Notice(locale.T("notice_stage"))
+	case runtime.IsNeedsCommitError(err):
+		s.out.Notice(locale.T("notice_commit_build_script"))
 	default:
 		return locale.WrapError(err, "err_activate_runtime", "Could not initialize a runtime for this project.")
 	}

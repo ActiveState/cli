@@ -49,12 +49,12 @@ func IsNeedsUpdateError(err error) bool {
 	return errs.Matches(err, &NeedsUpdateError{})
 }
 
-// NeedsStageError is an error returned when the local runtime's build script has changes that need
+// NeedsCommitError is an error returned when the local runtime's build script has changes that need
 // staging. This is not a fatal error. A runtime can still be used, but a warning should be emitted.
-type NeedsStageError struct{ error }
+type NeedsCommitError struct{ error }
 
-func IsNeedsStageError(err error) bool {
-	return errs.Matches(err, &NeedsStageError{})
+func IsNeedsCommitError(err error) bool {
+	return errs.Matches(err, &NeedsCommitError{})
 }
 
 func newRuntime(target setup.Targeter, an analytics.Dispatcher, svcModel *model.SvcModel, auth *authentication.Auth) (*Runtime, error) {
@@ -111,7 +111,7 @@ func (r *Runtime) validateCache() error {
 		return nil
 	}
 
-	// Check if local build script has changes that should be staged.
+	// Check if local build script has changes that should be committed.
 	script, err := buildscript.NewScriptFromProjectDir(r.target.ProjectDir())
 	if err != nil {
 		if !buildscript.IsDoesNotExistError(err) {
@@ -135,7 +135,7 @@ func (r *Runtime) validateCache() error {
 	}
 
 	if !script.EqualsBuildExpression([]byte(expr)) {
-		return &NeedsStageError{errs.New("Runtime changes should be staged")}
+		return &NeedsCommitError{errs.New("Runtime changes should be committed")}
 	}
 
 	return nil

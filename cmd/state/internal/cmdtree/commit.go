@@ -4,16 +4,16 @@ import (
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/primer"
-	"github.com/ActiveState/cli/internal/runners/stage"
+	"github.com/ActiveState/cli/internal/runners/commit"
 )
 
-func newStageCommand(prime *primer.Values) *captain.Command {
-	runner := stage.New(prime)
+func newCommitCommand(prime *primer.Values) *captain.Command {
+	runner := commit.New(prime)
 
 	cmd := captain.NewCommand(
-		"stage",
-		locale.Tl("stage_title", "Staging Changes"),
-		locale.Tl("stage_description", "Stage changes to the Build Script"),
+		"commit",
+		locale.Tl("commit_title", "Commit Changes"),
+		locale.Tl("commit_description", "Commit changes to the Build Script"),
 		prime,
 		[]*captain.Flag{},
 		[]*captain.Argument{},

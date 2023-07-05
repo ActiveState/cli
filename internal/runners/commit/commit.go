@@ -1,4 +1,4 @@
-package stage
+package commit
 
 import (
 	"github.com/ActiveState/cli/internal/analytics"
@@ -22,7 +22,7 @@ type primeable interface {
 	primer.SvcModeler
 }
 
-type Stage struct {
+type Commit struct {
 	out       output.Outputer
 	proj      *project.Project
 	auth      *authentication.Auth
@@ -30,8 +30,8 @@ type Stage struct {
 	svcModel  *model.SvcModel
 }
 
-func New(p primeable) *Stage {
-	return &Stage{
+func New(p primeable) *Commit {
+	return &Commit{
 		out:       p.Output(),
 		proj:      p.Project(),
 		auth:      p.Auth(),
@@ -40,34 +40,34 @@ func New(p primeable) *Stage {
 	}
 }
 
-func (s *Stage) Run() error {
+func (s *Commit) Run() error {
 	if s.proj == nil {
 		return locale.NewInputError("err_no_project")
 	}
 
-	changesStaged, err := buildscript.Sync(s.proj, nil, s.out, s.auth)
+	changesCommitted, err := buildscript.Sync(s.proj, nil, s.out, s.auth)
 	if err != nil {
 		return locale.WrapError(
-			err, "err_stage_sync_buildscript",
+			err, "err_commit_sync_buildscript",
 			"Could not synchronize the buildscript.",
 		)
 	}
 
-	trigger := target.TriggerStage
+	trigger := target.TriggerCommit
 	rti, err := runtime.NewFromProject(s.proj, trigger, s.analytics, s.svcModel, s.out, s.auth)
 	if err != nil {
 		return locale.WrapInputError(
-			err, "err_stage_runtime_new",
+			err, "err_commit_runtime_new",
 			"Could not update runtime for this project.",
 		)
 	}
 
 	execDir := setup.ExecDir(rti.Target().Dir())
 
-	if !changesStaged {
+	if !changesCommitted {
 		s.out.Print(output.Prepare(
 			locale.Tl(
-				"stage_notice_no_change",
+				"commit_notice_no_change",
 				"No change to the buildscript was found.",
 			),
 			struct{}{},
