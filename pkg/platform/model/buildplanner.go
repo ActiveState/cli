@@ -209,7 +209,7 @@ func (bp *BuildPlanner) pollBuildPlan(commitID, owner, project string) (*bpModel
 			}
 
 			// This should not happen, but if it does we want to know and prevent
-			// a potentail panic below.
+			// a potential panic below.
 			if resp.Commit.Type == bpModel.NotFound {
 				return nil, locale.NewError("err_buildplanner_commit_not_found", "Build plan does not contain commit")
 			}
