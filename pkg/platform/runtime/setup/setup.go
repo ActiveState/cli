@@ -206,18 +206,9 @@ func (s *Setup) Update() (rerr error) {
 	return nil
 }
 
-// artifactToInstall is a reference to a fetched and unpacked artifact that is ready to be installed
-// to its final location.
-type artifactToInstall struct {
-	a           artifact.ArtifactID
-	unpackedDir string
-	envDef      *envdef.EnvironmentDefinition
-	numFiles    int
-}
-
 func (s *Setup) updateArtifacts() ([]artifact.ArtifactID, error) {
 	mutex := &sync.Mutex{}
-	var artifactsToInstall []artifactToInstall
+	var installArtifactFuncs []func() error
 
 	// Fetch and install each runtime artifact.
 	// Note: despite the name, we are "pre-installing" the artifacts to a temporary location.
@@ -292,7 +283,9 @@ func (s *Setup) updateArtifacts() ([]artifact.ArtifactID, error) {
 		}
 
 		mutex.Lock()
-		artifactsToInstall = append(artifactsToInstall, artifactToInstall{a, unpackedDir, envDef, numFiles})
+		installArtifactFuncs = append(installArtifactFuncs, func() error {
+			return s.moveToInstallPath(a, unpackedDir, envDef, numFiles)
+		})
 		mutex.Unlock()
 
 		return nil
@@ -301,14 +294,17 @@ func (s *Setup) updateArtifacts() ([]artifact.ArtifactID, error) {
 		return artifacts, locale.WrapError(err, "err_runtime_setup")
 	}
 
-	if os.Getenv(constants.RuntimeSetupWaitEnvVarName) != "" && condition.OnCI() {
+	if os.Getenv(constants.RuntimeSetupWaitEnvVarName) != "" && (condition.OnCI() || condition.BuiltOnDevMachine()) {
+		// This code block is for integration testing purposes only.
+		// Under normal conditions, we should never access fmt or os.Stdin from this context.
+		fmt.Printf("Waiting for input because %s was set\n", constants.RuntimeSetupWaitEnvVarName)
 		ch := make([]byte, 1)
-		os.Stdin.Read(ch) // block until Ctrl-C is sent
+		os.Stdin.Read(ch) // block until input is sent
 	}
 
 	// Move files to final installation path after successful download and unpack.
-	for _, artifactInfo := range artifactsToInstall {
-		err = s.moveToInstallPath(artifactInfo.a, artifactInfo.unpackedDir, artifactInfo.envDef, artifactInfo.numFiles)
+	for _, f := range installArtifactFuncs {
+		err := f()
 		if err != nil {
 			return artifacts, locale.WrapError(err, "err_runtime_setup")
 		}

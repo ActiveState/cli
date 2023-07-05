@@ -86,7 +86,7 @@ func (suite *RuntimeIntegrationTestSuite) TestInterruptSetup() {
 	defer ts.Close()
 
 	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("checkout", "ActiveState-CLI/small-python#863c45e2-3626-49b6-893c-c15e85a17241", "."),
+		e2e.WithArgs("checkout", "ActiveState-CLI/test-interrupt-small-python#863c45e2-3626-49b6-893c-c15e85a17241", "."),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cp.Expect("Checked out project")
