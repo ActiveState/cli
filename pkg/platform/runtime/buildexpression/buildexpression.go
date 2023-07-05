@@ -145,7 +145,7 @@ func New(data []byte) (*BuildExpression, error) {
 }
 
 func newLet(path []string, m map[string]interface{}) (*Let, error) {
-	sliceutils.Push(path, ctxLet)
+	path = append(path, ctxLet)
 	defer func() {
 		_, _, err := sliceutils.Pop(path)
 		if err != nil {
@@ -175,7 +175,7 @@ func newLet(path []string, m map[string]interface{}) (*Let, error) {
 }
 
 func isAp(path []string, value map[string]interface{}) bool {
-	sliceutils.Push(path, ctxIsAp)
+	path = append(path, ctxIsAp)
 	defer func() {
 		_, _, err := sliceutils.Pop(path)
 		if err != nil {
@@ -192,7 +192,7 @@ func isAp(path []string, value map[string]interface{}) bool {
 }
 
 func newValue(path []string, valueInterface interface{}) (*Value, error) {
-	sliceutils.Push(path, ctxValue)
+	path = append(path, ctxValue)
 	defer func() {
 		_, _, err := sliceutils.Pop(path)
 		if err != nil {
@@ -255,7 +255,7 @@ func newValue(path []string, valueInterface interface{}) (*Value, error) {
 }
 
 func newAp(path []string, m map[string]interface{}) (*Ap, error) {
-	sliceutils.Push(path, ctxAp)
+	path = append(path, ctxAp)
 	defer func() {
 		_, _, err := sliceutils.Pop(path)
 		if err != nil {
@@ -304,7 +304,7 @@ func newAp(path []string, m map[string]interface{}) (*Ap, error) {
 }
 
 func newAssignments(path []string, m map[string]interface{}) (*[]*Var, error) {
-	sliceutils.Push(path, ctxAssignments)
+	path = append(path, ctxAssignments)
 	defer func() {
 		_, _, err := sliceutils.Pop(path)
 		if err != nil {
@@ -325,7 +325,7 @@ func newAssignments(path []string, m map[string]interface{}) (*[]*Var, error) {
 }
 
 func newIn(path []string, inValue interface{}) (*In, error) {
-	sliceutils.Push(path, ctxIn)
+	path = append(path, ctxIn)
 	defer func() {
 		_, _, err := sliceutils.Pop(path)
 		if err != nil {

@@ -51,10 +51,6 @@ func InsertStringAt(data []string, i int, v string) []string {
 	return append(data[:i], append([]string{v}, data[i:]...)...)
 }
 
-func Push[T any](data []T, v T) []T {
-	return append(data, v)
-}
-
 func Pop[T any](data []T) (T, []T, error) {
 	var t T
 	if len(data) == 0 {

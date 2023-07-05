@@ -189,42 +189,6 @@ func TestInsertStringAt(t *testing.T) {
 	assert.Equal(t, []string{"a", "b", "c", "d", "e", "f"}, InsertStringAt([]string{"a", "b", "c", "e", "f"}, 3, "d"))
 }
 
-func TestPush(t *testing.T) {
-	type args struct {
-		data []any
-		v    any
-	}
-	tests := []struct {
-		name string
-		args args
-		want []any
-	}{
-		{
-			name: "string",
-			args: args{
-				data: []any{"a", "b", "c"},
-				v:    "d",
-			},
-			want: []any{"a", "b", "c", "d"},
-		},
-		{
-			name: "int",
-			args: args{
-				data: []any{1, 2, 3},
-				v:    4,
-			},
-			want: []any{1, 2, 3, 4},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := Push(tt.args.data, tt.args.v); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("Push() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
 func TestPop(t *testing.T) {
 	type args struct {
 		data []any
