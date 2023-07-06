@@ -230,12 +230,12 @@ type Source struct {
 
 // PlanningError represents an error that occurred during planning.
 type PlanningError struct {
-	Error     string                 `json:"error"`
-	SubErrors []*BuildScriptLocation `json:"subErrors"`
+	Message   string               `json:"message"`
+	SubErrors []*BuildExprLocation `json:"subErrors"`
 }
 
-// BuildScriptLocation represents a location in the build script where an error occurred.
-type BuildScriptLocation struct {
+// BuildExprLocation represents a location in the build script where an error occurred.
+type BuildExprLocation struct {
 	Type             string                        `json:"__typename"`
 	Path             string                        `json:"path"`
 	Message          string                        `json:"message"`

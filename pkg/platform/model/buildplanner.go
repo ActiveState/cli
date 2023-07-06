@@ -3,11 +3,14 @@ package model
 import (
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/gqlclient"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -107,11 +110,23 @@ func (bp *BuildPlanner) FetchBuildResult(commitID strfmt.UUID, owner, project st
 		return nil, errs.Wrap(err, "failed to fetch build plan")
 	}
 
+	if resp.Commit == nil {
+		return nil, errs.New("Staged commit is nil")
+	}
+
 	// Check for errors in the response
 	if resp.Commit.Type == bpModel.NotFound {
 		return nil, locale.NewError("err_buildplanner_commit_not_found", "Build plan does not contain commit")
 	}
-	if resp.Commit.Build.Type == bpModel.BuildResultPlanningError {
+
+	if resp.Commit.Build == nil {
+		if resp.Commit.NotFoundError != nil {
+			return nil, errs.New("Commit not found: %s", resp.Commit.NotFoundError.Message)
+		}
+		return nil, errs.New("Commit does not contain build")
+	}
+
+	if resp.Commit.Build.PlanningError != nil {
 		var errs []string
 		var isTransient bool
 		for _, se := range resp.Commit.Build.SubErrors {
@@ -119,7 +134,7 @@ func (bp *BuildPlanner) FetchBuildResult(commitID strfmt.UUID, owner, project st
 			isTransient = se.IsTransient
 		}
 		return nil, &BuildPlannerError{
-			wrapped:          locale.NewInputError("err_buildplanner", resp.Commit.Build.Error),
+			wrapped:          locale.NewInputError("err_buildplanner", resp.Commit.Build.Message),
 			validationErrors: errs,
 			isTransient:      isTransient,
 		}
@@ -285,19 +300,54 @@ func (bp *BuildPlanner) StageCommit(params StageCommitParams) (strfmt.UUID, erro
 		return "", errs.Wrap(err, "Failed to update build graph")
 	}
 
+	// TODO: Remove this once testing is done
+	// Insert dummy expression here
+	wd, err := environment.GetRootPath()
+	if err != nil {
+		return "", errs.Wrap(err, "failed to get root path")
+	}
+
+	data, err := fileutils.ReadFile(filepath.Join(wd, "pkg", "platform", "api", "buildplanner", "model", "testdata", "malformed.json"))
+	if err != nil {
+		return "", errs.Wrap(err, "failed to read test data")
+	}
+
+	expression, err = bpModel.NewBuildExpression(data)
+	if err != nil {
+		return "", errs.Wrap(err, "failed to create build expression")
+	}
+
 	// With the updated build expression call the stage commit mutation
 	request := request.StageCommit(params.Owner, params.Project, params.ParentCommit, expression)
 	resp := &bpModel.StageCommitResult{}
 	err = bp.client.Run(request, resp)
 	if err != nil {
-		return "", errs.Wrap(err, "failed to stage commit")
+		return "", locale.WrapError(err, "err_buildplanner_stage_commit", "Failed to stage commit, error: {{.V0}}", err.Error())
+	}
+
+	if resp.Commit == nil {
+		return "", errs.New("Staged commit is nil")
 	}
 
 	if resp.Commit.Build == nil {
 		if resp.NotFoundError != nil {
-			return "", errs.New("Failed to stage commit: %s", resp.NotFoundError.Message)
+			return "", errs.New("Commit not found: %s", resp.NotFoundError.Message)
 		}
 		return "", errs.New("Commit does not contain build")
+	}
+
+	if resp.Commit.Build.PlanningError != nil {
+		var errs []string
+		var isTransient bool
+		for _, se := range resp.Commit.Build.SubErrors {
+			errs = append(errs, se.Message)
+			isTransient = se.IsTransient
+		}
+		return "", &BuildPlannerError{
+			wrapped:          locale.NewInputError("err_buildplanner", resp.Commit.Build.Message),
+			validationErrors: errs,
+			isTransient:      isTransient,
+		}
 	}
 
 	if resp.Commit.Build.Status == bpModel.Planning {
@@ -316,7 +366,11 @@ func (bp *BuildPlanner) GetBuildExpression(commitID string) (*bpModel.BuildExpre
 	resp := &bpModel.BuildPlan{}
 	err := bp.client.Run(request.BuildExpression(commitID), resp)
 	if err != nil {
-		return nil, errs.Wrap(err, "failed to fetch build graph")
+		return nil, errs.Wrap(err, "failed to fetch build expression")
+	}
+
+	if resp.Commit == nil {
+		return nil, errs.New("Staged commit is nil")
 	}
 
 	if resp.Commit.Expression == nil {
