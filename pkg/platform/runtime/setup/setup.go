@@ -151,6 +151,7 @@ type ArtifactSetuper interface {
 }
 
 type artifactInstaller func(artifact.ArtifactID, string, ArtifactSetuper) error
+type artifactUninstaller func() error
 
 // New returns a new Setup instance that can install a Runtime locally on the machine.
 func New(target Targeter, eventHandler events.Handler, auth *authentication.Auth, an analytics.Dispatcher) *Setup {
@@ -213,7 +214,7 @@ func (s *Setup) updateArtifacts() ([]artifact.ArtifactID, error) {
 	// Fetch and install each runtime artifact.
 	// Note: despite the name, we are "pre-installing" the artifacts to a temporary location.
 	// Once all artifacts are fetched, unpacked, and prepared, final installation occurs.
-	artifacts, err := s.fetchAndInstallArtifacts(func(a artifact.ArtifactID, archivePath string, as ArtifactSetuper) (rerr error) {
+	artifacts, uninstallFunc, err := s.fetchAndInstallArtifacts(func(a artifact.ArtifactID, archivePath string, as ArtifactSetuper) (rerr error) {
 		defer func() {
 			if rerr != nil {
 				rerr = &ArtifactInstallError{errs.Wrap(rerr, "Unable to install artifact")}
@@ -302,6 +303,15 @@ func (s *Setup) updateArtifacts() ([]artifact.ArtifactID, error) {
 		os.Stdin.Read(ch) // block until input is sent
 	}
 
+	// Uninstall outdated artifacts.
+	// This must come before calling any installArtifactFuncs or else the runtime may become corrupt.
+	if uninstallFunc != nil {
+		err := uninstallFunc()
+		if err != nil {
+			return artifacts, locale.WrapError(err, "err_runtime_setup")
+		}
+	}
+
 	// Move files to final installation path after successful download and unpack.
 	for _, f := range installArtifactFuncs {
 		err := f()
@@ -351,17 +361,20 @@ func (s *Setup) updateExecutors(artifacts []artifact.ArtifactID) error {
 
 // fetchAndInstallArtifacts returns all artifacts needed by the runtime, even if some or
 // all of them were already installed.
-func (s *Setup) fetchAndInstallArtifacts(installFunc artifactInstaller) ([]artifact.ArtifactID, error) {
+// It may also return an artifact uninstaller function that should be run prior to final
+// installation.
+func (s *Setup) fetchAndInstallArtifacts(installFunc artifactInstaller) ([]artifact.ArtifactID, artifactUninstaller, error) {
 	if s.target.InstallFromDir() != nil {
-		return s.fetchAndInstallArtifactsFromDir(installFunc)
+		artifacts, err := s.fetchAndInstallArtifactsFromDir(installFunc)
+		return artifacts, nil, err
 	}
 	return s.fetchAndInstallArtifactsFromRecipe(installFunc)
 }
 
-func (s *Setup) fetchAndInstallArtifactsFromRecipe(installFunc artifactInstaller) ([]artifact.ArtifactID, error) {
+func (s *Setup) fetchAndInstallArtifactsFromRecipe(installFunc artifactInstaller) ([]artifact.ArtifactID, artifactUninstaller, error) {
 	// Request build
 	if err := s.handleEvent(events.SolveStart{}); err != nil {
-		return nil, errs.Wrap(err, "Could not handle SolveStart event")
+		return nil, nil, errs.Wrap(err, "Could not handle SolveStart event")
 	}
 
 	buildResult, err := s.model.FetchBuildResult(s.target.CommitUUID(), s.target.Owner(), s.target.Name())
@@ -369,25 +382,25 @@ func (s *Setup) fetchAndInstallArtifactsFromRecipe(installFunc artifactInstaller
 		serr := &apimodel.SolverError{}
 		if errors.As(err, &serr) {
 			if err := s.handleEvent(events.SolveError{serr}); err != nil {
-				return nil, errs.Wrap(err, "Could not handle SolveError event")
+				return nil, nil, errs.Wrap(err, "Could not handle SolveError event")
 			}
-			return nil, formatSolverError(serr)
+			return nil, nil, formatSolverError(serr)
 		}
-		return nil, errs.Wrap(err, "Failed to fetch build result")
+		return nil, nil, errs.Wrap(err, "Failed to fetch build result")
 	}
 
 	logging.Debug("Interacting with build for recipe ID: %s: %s",
 		buildResult.Recipe.RecipeID.String(), buildResult.BuildStatusResponse.Message)
 
 	if err := s.handleEvent(events.SolveSuccess{}); err != nil {
-		return nil, errs.Wrap(err, "Could not handle SolveSuccess event")
+		return nil, nil, errs.Wrap(err, "Could not handle SolveSuccess event")
 	}
 
 	// Compute and handle the change summary
 	artifacts := artifact.NewMapFromRecipe(buildResult.Recipe)
 	setup, err := s.selectSetupImplementation(buildResult.BuildEngine, artifacts)
 	if err != nil {
-		return nil, errs.Wrap(err, "Failed to select setup implementation")
+		return nil, nil, errs.Wrap(err, "Failed to select setup implementation")
 	}
 
 	// If some artifacts were already build then we can detect whether they need to be installed ahead of time
@@ -421,9 +434,9 @@ func (s *Setup) fetchAndInstallArtifactsFromRecipe(installFunc artifactInstaller
 				localeID = "build_status_in_progress_headless"
 				messageURL = apimodel.CommitURL(s.target.CommitUUID().String())
 			}
-			return nil, locale.WrapInputError(err, localeID, "", messageURL)
+			return nil, nil, locale.WrapInputError(err, localeID, "", messageURL)
 		}
-		return nil, errs.Wrap(err, "could not extract artifacts that are ready to download.")
+		return nil, nil, errs.Wrap(err, "could not extract artifacts that are ready to download.")
 	}
 
 	// buildResult doesn't have namespace info and will happily report internal only artifacts
@@ -446,7 +459,7 @@ func (s *Setup) fetchAndInstallArtifactsFromRecipe(installFunc artifactInstaller
 	}
 
 	if buildResult.BuildStatus == headchef.Failed {
-		return nil, &BuildError{locale.NewError("headchef_build_failure", "Build Failed: {{.V0}}", buildResult.BuildStatusResponse.Message)}
+		return nil, nil, &BuildError{locale.NewError("headchef_build_failure", "Build Failed: {{.V0}}", buildResult.BuildStatusResponse.Message)}
 	}
 
 	oldRecipe, err := s.store.Recipe()
@@ -457,7 +470,7 @@ func (s *Setup) fetchAndInstallArtifactsFromRecipe(installFunc artifactInstaller
 
 	storedArtifacts, err := s.store.Artifacts()
 	if err != nil {
-		return nil, locale.WrapError(err, "err_stored_artifacts", "Could not unmarshal stored artifacts, your install may be corrupted.")
+		return nil, nil, locale.WrapError(err, "err_stored_artifacts")
 	}
 
 	alreadyInstalled := reusableArtifacts(buildResult.BuildStatusResponse.Artifacts, storedArtifacts)
@@ -528,16 +541,11 @@ func (s *Setup) fetchAndInstallArtifactsFromRecipe(installFunc artifactInstaller
 		ArtifactsToDownload: artifactsToInstall,
 		ArtifactsToInstall:  artifactsToInstall,
 	}); err != nil {
-		return nil, errs.Wrap(err, "Could not handle Start event")
+		return nil, nil, errs.Wrap(err, "Could not handle Start event")
 	}
 
-	err = setup.DeleteOutdatedArtifacts(changedArtifacts, storedArtifacts, alreadyInstalled)
-	if err != nil {
-		multilog.Error("Could not delete outdated artifacts: %v, falling back to removing everything", err)
-		err = os.RemoveAll(s.store.InstallPath())
-		if err != nil {
-			return nil, locale.WrapError(err, "Failed to clean installation path")
-		}
+	var uninstallArtifacts artifactUninstaller = func() error {
+		return s.deleteOutdatedArtifacts(setup, changedArtifacts, alreadyInstalled)
 	}
 
 	// only send the download analytics event, if we have to install artifacts that are not yet installed
@@ -548,7 +556,7 @@ func (s *Setup) fetchAndInstallArtifactsFromRecipe(installFunc artifactInstaller
 
 	err = s.installArtifactsFromBuild(buildResult, artifacts, artifact.ArtifactIDsToMap(artifactsToInstall), downloadablePrebuiltResults, alreadyInstalled, setup, installFunc, logFilePath)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	err = s.artifactCache.Save()
 	if err != nil {
@@ -556,10 +564,10 @@ func (s *Setup) fetchAndInstallArtifactsFromRecipe(installFunc artifactInstaller
 	}
 
 	if err := s.store.StoreRecipe(buildResult.Recipe); err != nil {
-		return nil, errs.Wrap(err, "Could not save recipe file.")
+		return nil, nil, errs.Wrap(err, "Could not save recipe file.")
 	}
 
-	return buildResult.OrderedArtifacts(), nil
+	return buildResult.OrderedArtifacts(), uninstallArtifacts, nil
 }
 
 func aggregateErrors() (chan<- error, <-chan error) {
@@ -965,6 +973,23 @@ func (s *Setup) handleEvent(ev events.Eventer) error {
 	err := s.eventHandler.Handle(ev)
 	if err != nil {
 		return &ProgressReportError{errs.Wrap(err, "Error handling event: %v", errs.JoinMessage(err))}
+	}
+	return nil
+}
+
+func (s *Setup) deleteOutdatedArtifacts(setup Setuper, changedArtifacts artifact.ArtifactChangeset, alreadyInstalled store.StoredArtifactMap) error {
+	storedArtifacts, err := s.store.Artifacts()
+	if err != nil {
+		return locale.WrapError(err, "err_stored_artifacts")
+	}
+
+	err = setup.DeleteOutdatedArtifacts(changedArtifacts, storedArtifacts, alreadyInstalled)
+	if err != nil {
+		multilog.Error("Could not delete outdated artifacts: %v, falling back to removing everything", err)
+		err = os.RemoveAll(s.store.InstallPath())
+		if err != nil {
+			return errs.Wrap(err, "Failed to clean installation path")
+		}
 	}
 	return nil
 }
