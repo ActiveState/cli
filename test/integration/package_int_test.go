@@ -297,7 +297,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_import() {
 	username := ts.CreateNewUser()
 	namespace := fmt.Sprintf("%s/%s", username, "Python3")
 
-	cp := ts.Spawn("init", "--language", "python3", namespace, ts.Dirs.Work)
+	cp := ts.Spawn("init", "--language", "python", namespace, ts.Dirs.Work)
 	cp.ExpectLongString("successfully initialized")
 	cp.ExpectExitCode(0)
 

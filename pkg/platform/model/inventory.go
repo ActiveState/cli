@@ -311,10 +311,10 @@ func FetchPlatformByDetails(name, version string, word int) (*Platform, error) {
 func FetchLanguageForCommit(commitID strfmt.UUID) (*Language, error) {
 	langs, err := FetchLanguagesForCommit(commitID)
 	if err != nil {
-		return nil, err
+		return nil, locale.WrapError(err, "err_detect_language")
 	}
 	if len(langs) == 0 {
-		return nil, locale.WrapError(err, "err_langfromcommit_zero", "Could not detect which language to use.")
+		return nil, locale.NewError("err_detect_language")
 	}
 	return &langs[0], nil
 }
