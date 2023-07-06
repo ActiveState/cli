@@ -81,6 +81,7 @@ func (suite *PublishIntegrationTestSuite) TestPublish() {
 			},
 			expect{
 				[]string{
+					`Upload following ingredient?`,
 					`name: im-a-name`,
 					`namespace: {{.Username}}/shared`,
 					`version: 2.3.4`,
@@ -124,6 +125,7 @@ authors:
 			},
 			expect{
 				[]string{
+					`Upload following ingredient?`,
 					`name: im-a-name`,
 					`namespace: {{.Username}}/shared`,
 					`version: 2.3.4`,
@@ -153,6 +155,7 @@ authors:
 			},
 			expect{
 				[]string{
+					`Upload following ingredient?`,
 					`name: im-a-name-from-flag`,
 					`namespace: {{.Username}}/shared`,
 					`version: 2.3.4`,
@@ -182,6 +185,7 @@ authors:
 			},
 			expect{
 				[]string{
+					`Upload following ingredient?`,
 					`name: im-a-name`,
 					`namespace: {{.Username}}/shared`,
 					`version: 2.3.4`,
@@ -256,7 +260,6 @@ authors:
 				cp.SendLine("")
 			}
 
-			cp.Expect("Upload following ingredient?")
 			for _, value := range tt.expect.confirmPrompt {
 				v, err := strutils.ParseTemplate(value, templateVars, nil)
 				suite.Require().NoError(err)
