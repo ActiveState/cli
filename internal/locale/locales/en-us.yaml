@@ -1216,9 +1216,9 @@ inventory_ingredient_not_available:
   other: The package '[NOTICE]{{.V0}}[/RESET]' is not available on the ActiveState Platform, or does not have a matching version
 err_update_build_script:
   other: Could not update runtime build script
-notice_stage:
+notice_commit_build_script:
   other: |
-    Your local build script has changes that should be staged. Please run [ACTIONABLE]`state stage`[/RESET] to do so.
+    Your local build script has changes that should be committed. Please run [ACTIONABLE]`state commit`[/RESET] to do so.
 
 command_flag_invalid_value:
   other: "Invalid value for {{.V0}} flag: [NOTICE]{{.V1}}[/RESET]"

@@ -69,7 +69,7 @@ const (
 	Uninstall       = "uninstall"
 	Update          = "update"
 	Use             = "use"
-	Stage           = "stage"
+	Commit          = "commit"
 	VSCode          = "vscode"
 	Performance     = "performance"
 	Service         = "service"

@@ -198,7 +198,7 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 		refreshCmd,
 		newSwitchCommand(prime),
 		newTestCommand(prime),
-		newStageCommand(prime),
+		newCommitCommand(prime),
 	)
 
 	return &CmdTree{

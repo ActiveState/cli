@@ -15,7 +15,7 @@ The general usage pattern is as follows:
 			if err = rt.Update(messageHandler); err != nil {
 				return err
 			}
-		case runtime.IsNeedsStageError(err):
+		case runtime.IsNeedsCommitError(err):
 			...
 		default:
 			return err

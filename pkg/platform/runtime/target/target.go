@@ -43,7 +43,7 @@ const (
 	TriggerOffline            Trigger = "offline"
 	TriggerShell              Trigger = "shell"
 	TriggerCheckout           Trigger = "checkout"
-	TriggerStage              Trigger = "stage"
+	TriggerCommit             Trigger = "commit"
 	TriggerUse                Trigger = "use"
 	TriggerOfflineInstaller   Trigger = "offline-installer"
 	TriggerOfflineUninstaller Trigger = "offline-uninstaller"

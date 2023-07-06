@@ -13,12 +13,12 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-type StageIntegrationTestSuite struct {
+type CommitIntegrationTestSuite struct {
 	tagsuite.Suite
 }
 
-func (suite *StageIntegrationTestSuite) TestCommitManualBuildScriptMod() {
-	suite.OnlyRunForTags(tagsuite.Stage)
+func (suite *CommitIntegrationTestSuite) TestCommitManualBuildScriptMod() {
+	suite.OnlyRunForTags(tagsuite.Commit)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -27,7 +27,7 @@ func (suite *StageIntegrationTestSuite) TestCommitManualBuildScriptMod() {
 	cp := ts.SpawnWithOpts(
 		e2e.WithArgs(
 			"checkout",
-			"ActiveState-CLI/Stage-Test-A#7a1b416e-c17f-4d4a-9e27-cbad9e8f5655",
+			"ActiveState-CLI/Commit-Test-A#7a1b416e-c17f-4d4a-9e27-cbad9e8f5655",
 			".",
 		),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
@@ -38,7 +38,7 @@ func (suite *StageIntegrationTestSuite) TestCommitManualBuildScriptMod() {
 	_, err := buildscript.NewScriptFromProjectDir(ts.Dirs.Work)
 	suite.Require().NoError(err) // verify validity
 
-	cp = ts.Spawn("stage")
+	cp = ts.Spawn("commit")
 	cp.Expect("No change")
 	cp.ExpectExitCode(0)
 
@@ -50,11 +50,11 @@ func (suite *StageIntegrationTestSuite) TestCommitManualBuildScriptMod() {
 	bytes.ReplaceAll(data, []byte("casestyle"), []byte("case"))
 	suite.Require().NoError(fileutils.WriteFile(scriptPath, data), "Update buildscript")
 
-	cp = ts.Spawn("stage")
+	cp = ts.Spawn("commit")
 	cp.Expect("Runtime updated")
 	cp.ExpectNotExitCode(0)
 }
 
-func TestStageIntegrationTestSuite(t *testing.T) {
-	suite.Run(t, new(StageIntegrationTestSuite))
+func TestCommitIntegrationTestSuite(t *testing.T) {
+	suite.Run(t, new(CommitIntegrationTestSuite))
 }

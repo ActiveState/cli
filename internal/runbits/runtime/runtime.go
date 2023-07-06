@@ -51,8 +51,8 @@ func NewFromProject(
 			return nil, locale.WrapError(err, "err_update_runtime", "Could not update runtime installation.")
 		}
 
-	case rt.IsNeedsStageError(err):
-		out.Notice(locale.T("notice_stage"))
+	case rt.IsNeedsCommitError(err):
+		out.Notice(locale.T("notice_commit_build_script"))
 
 	default:
 		return nil, locale.WrapError(err, "err_activate_runtime", "Could not initialize a runtime for this project.")
