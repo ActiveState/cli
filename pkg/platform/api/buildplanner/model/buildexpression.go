@@ -258,11 +258,10 @@ func getRequirements(solveNode map[string]interface{}) ([]Requirement, error) {
 			return nil, errs.Wrap(err, "Could not unmarshal JSON")
 		}
 
-		// TODO: Reenable this as it's only for testing.
-		// err = validateRequirements(node)
-		// if err != nil {
-		// 	return nil, errs.Wrap(err, "Requirements in BuildExpression are invalid")
-		// }
+		err = validateRequirements(node)
+		if err != nil {
+			return nil, errs.Wrap(err, "Requirements in BuildExpression are invalid")
+		}
 
 		return requirements, nil
 	}

@@ -3,14 +3,11 @@ package model
 import (
 	"net/http"
 	"os"
-	"path/filepath"
 	"strings"
 	"time"
 
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/gqlclient"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -298,23 +295,6 @@ func (bp *BuildPlanner) StageCommit(params StageCommitParams) (strfmt.UUID, erro
 	err = expression.Update(params.Operation, requirement, *params.TimeStamp)
 	if err != nil {
 		return "", errs.Wrap(err, "Failed to update build graph")
-	}
-
-	// TODO: Remove this once testing is done
-	// Insert dummy expression here
-	wd, err := environment.GetRootPath()
-	if err != nil {
-		return "", errs.Wrap(err, "failed to get root path")
-	}
-
-	data, err := fileutils.ReadFile(filepath.Join(wd, "pkg", "platform", "api", "buildplanner", "model", "testdata", "malformed.json"))
-	if err != nil {
-		return "", errs.Wrap(err, "failed to read test data")
-	}
-
-	expression, err = bpModel.NewBuildExpression(data)
-	if err != nil {
-		return "", errs.Wrap(err, "failed to create build expression")
 	}
 
 	// With the updated build expression call the stage commit mutation
