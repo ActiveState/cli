@@ -107,11 +107,23 @@ func (bp *BuildPlanner) FetchBuildResult(commitID strfmt.UUID, owner, project st
 		return nil, errs.Wrap(err, "failed to fetch build plan")
 	}
 
+	if resp.Commit == nil {
+		return nil, errs.New("Staged commit is nil")
+	}
+
 	// Check for errors in the response
 	if resp.Commit.Type == bpModel.NotFound {
 		return nil, locale.NewError("err_buildplanner_commit_not_found", "Build plan does not contain commit")
 	}
-	if resp.Commit.Build.Type == bpModel.BuildResultPlanningError {
+
+	if resp.Commit.Build == nil {
+		if resp.Commit.NotFoundError != nil {
+			return nil, errs.New("Commit not found: %s", resp.Commit.NotFoundError.Message)
+		}
+		return nil, errs.New("Commit does not contain build")
+	}
+
+	if resp.Commit.Build.PlanningError != nil {
 		var errs []string
 		var isTransient bool
 		for _, se := range resp.Commit.Build.SubErrors {
@@ -119,7 +131,7 @@ func (bp *BuildPlanner) FetchBuildResult(commitID strfmt.UUID, owner, project st
 			isTransient = se.IsTransient
 		}
 		return nil, &BuildPlannerError{
-			wrapped:          locale.NewInputError("err_buildplanner", resp.Commit.Build.Error),
+			wrapped:          locale.NewInputError("err_buildplanner", resp.Commit.Build.Message),
 			validationErrors: errs,
 			isTransient:      isTransient,
 		}
@@ -290,14 +302,32 @@ func (bp *BuildPlanner) StageCommit(params StageCommitParams) (strfmt.UUID, erro
 	resp := &bpModel.StageCommitResult{}
 	err = bp.client.Run(request, resp)
 	if err != nil {
-		return "", errs.Wrap(err, "failed to stage commit")
+		return "", locale.WrapError(err, "err_buildplanner_stage_commit", "Failed to stage commit, error: {{.V0}}", err.Error())
+	}
+
+	if resp.Commit == nil {
+		return "", errs.New("Staged commit is nil")
 	}
 
 	if resp.Commit.Build == nil {
 		if resp.NotFoundError != nil {
-			return "", errs.New("Failed to stage commit: %s", resp.NotFoundError.Message)
+			return "", errs.New("Commit not found: %s", resp.NotFoundError.Message)
 		}
 		return "", errs.New("Commit does not contain build")
+	}
+
+	if resp.Commit.Build.PlanningError != nil {
+		var errs []string
+		var isTransient bool
+		for _, se := range resp.Commit.Build.SubErrors {
+			errs = append(errs, se.Message)
+			isTransient = se.IsTransient
+		}
+		return "", &BuildPlannerError{
+			wrapped:          locale.NewInputError("err_buildplanner", resp.Commit.Build.Message),
+			validationErrors: errs,
+			isTransient:      isTransient,
+		}
 	}
 
 	if resp.Commit.Build.Status == bpModel.Planning {
@@ -316,7 +346,11 @@ func (bp *BuildPlanner) GetBuildExpression(commitID string) (*bpModel.BuildExpre
 	resp := &bpModel.BuildPlan{}
 	err := bp.client.Run(request.BuildExpression(commitID), resp)
 	if err != nil {
-		return nil, errs.Wrap(err, "failed to fetch build graph")
+		return nil, errs.Wrap(err, "failed to fetch build expression")
+	}
+
+	if resp.Commit == nil {
+		return nil, errs.New("Staged commit is nil")
 	}
 
 	if resp.Commit.Expression == nil {
