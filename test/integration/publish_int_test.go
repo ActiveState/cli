@@ -39,12 +39,16 @@ func (suite *PublishIntegrationTestSuite) TestPublish() {
 	}
 
 	type expect struct {
-		confirmPrompt []string
-		exitCode      int
+		confirmPrompt   []string
+		immediateOutput string
+		exitCode        int
 	}
 
-	tempFile := fileutils.TempFilePathUnsafe()
+	tempFile := fileutils.TempFilePathUnsafe("", "*.zip")
 	defer os.Remove(tempFile)
+
+	tempFileInvalid := fileutils.TempFilePathUnsafe("", "*.notzip")
+	defer os.Remove(tempFileInvalid)
 
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
@@ -84,7 +88,22 @@ func (suite *PublishIntegrationTestSuite) TestPublish() {
 					`name: author-name`,
 					`email: author-email@domain.tld`,
 				},
+				"",
 				0,
+			},
+		},
+		{
+			"New ingredient with invalid filename",
+			input{
+				[]string{tempFileInvalid},
+				nil,
+				nil,
+				true,
+			},
+			expect{
+				[]string{},
+				"Expected file extension to be either",
+				1,
 			},
 		},
 		{
@@ -112,6 +131,7 @@ authors:
 					`name: author-name`,
 					`email: author-email@domain.tld`,
 				},
+				"",
 				0,
 			},
 		},
@@ -140,6 +160,7 @@ authors:
 					`name: author-name-from-flag`,
 					`email: author-email-from-flag@domain.tld`,
 				},
+				"",
 				0,
 			},
 		},
@@ -168,6 +189,7 @@ authors:
 					`name: author-name`,
 					`email: author-email@domain.tld`,
 				},
+				"",
 				0,
 			},
 		},
@@ -181,6 +203,7 @@ authors:
 			},
 			expect{
 				[]string{`name: bogus`},
+				"",
 				0,
 			},
 		},
@@ -213,6 +236,10 @@ authors:
 			cp := ts.SpawnWithOpts(
 				e2e.WithArgs(append([]string{"publish"}, args...)...),
 			)
+
+			if tt.expect.immediateOutput != "" {
+				cp.Expect(tt.expect.immediateOutput)
+			}
 
 			// Send custom input via --editor
 			if tt.input.editorValue != nil {

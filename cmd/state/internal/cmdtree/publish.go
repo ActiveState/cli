@@ -83,7 +83,7 @@ func newPublish(prime *primer.Values) *captain.Command {
 		[]*captain.Argument{
 			{
 				Name:        locale.Tl("filepath", "filepath"),
-				Description: locale.Tl("author_upload_filepath_description", "The binary ingredient file to upload."),
+				Description: locale.Tl("author_upload_filepath_description", "A tar.gz or zip archive containing the source files of the ingredient."),
 				Value:       &params.Filepath,
 				Required:    false,
 			},
