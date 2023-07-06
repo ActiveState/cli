@@ -40,12 +40,12 @@ func New(p primeable) *Commit {
 	}
 }
 
-func (s *Commit) Run() error {
-	if s.proj == nil {
+func (c *Commit) Run() error {
+	if c.proj == nil {
 		return locale.NewInputError("err_no_project")
 	}
 
-	changesCommitted, err := buildscript.Sync(s.proj, nil, s.out, s.auth)
+	changesCommitted, err := buildscript.Sync(c.proj, nil, c.out, c.auth)
 	if err != nil {
 		return locale.WrapError(
 			err, "err_commit_sync_buildscript",
@@ -54,7 +54,7 @@ func (s *Commit) Run() error {
 	}
 
 	trigger := target.TriggerCommit
-	rti, err := runtime.NewFromProject(s.proj, trigger, s.analytics, s.svcModel, s.out, s.auth)
+	rti, err := runtime.NewFromProject(c.proj, trigger, c.analytics, c.svcModel, c.out, c.auth)
 	if err != nil {
 		return locale.WrapInputError(
 			err, "err_commit_runtime_new",
@@ -65,7 +65,7 @@ func (s *Commit) Run() error {
 	execDir := setup.ExecDir(rti.Target().Dir())
 
 	if !changesCommitted {
-		s.out.Print(output.Prepare(
+		c.out.Print(output.Prepare(
 			locale.Tl(
 				"commit_notice_no_change",
 				"No change to the buildscript was found.",
@@ -76,18 +76,18 @@ func (s *Commit) Run() error {
 		return nil
 	}
 
-	s.out.Print(output.Prepare(
+	c.out.Print(output.Prepare(
 		locale.Tl(
 			"refresh_project_statement",
-			"", s.proj.NamespaceString(), s.proj.Dir(), execDir,
+			"", c.proj.NamespaceString(), c.proj.Dir(), execDir,
 		),
 		&struct {
 			Namespace   string `json:"namespace"`
 			Path        string `json:"path"`
 			Executables string `json:"executables"`
 		}{
-			s.proj.NamespaceString(),
-			s.proj.Dir(),
+			c.proj.NamespaceString(),
+			c.proj.Dir(),
 			execDir,
 		},
 	))
