@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/ActiveState/cli/internal/captain"
@@ -75,6 +76,10 @@ func (r *Runner) Run(params *Params) error {
 	if params.Filepath != "" {
 		if !fileutils.FileExists(params.Filepath) {
 			return locale.NewInputError("err_uploadingredient_file_not_found", "File not found: {{.V0}}", params.Filepath)
+		}
+		if !strings.HasSuffix(strings.ToLower(params.Filepath), ".zip") &&
+			!strings.HasSuffix(strings.ToLower(params.Filepath), ".tar.gz") {
+			return locale.NewInputError("err_uploadingredient_file_not_supported", "Expected file extension to be either .zip or .tar.gz: '{{.V0}}'", params.Filepath)
 		}
 	} else if !params.Editor {
 		return locale.NewInputError("err_uploadingredient_file_required", "You have to supply the source archive unless editing.")
