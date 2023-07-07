@@ -3,6 +3,8 @@ package installation
 import (
 	"os"
 	"path/filepath"
+
+	"github.com/ActiveState/cli/internal/errs"
 )
 
 func installPathForBranch(branch string) (string, error) {
