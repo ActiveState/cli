@@ -60,7 +60,6 @@ func newActivateCommand(prime *primer.Values) *captain.Command {
 			err := as.WaitForFunc(func() error {
 				return runner.Run(&params)
 			})
-
 			// Try to report why the activation failed
 			if err != nil {
 				an := prime.Analytics()
@@ -72,7 +71,7 @@ func newActivateCommand(prime *primer.Values) *captain.Command {
 					// Failed due to user input
 					an.Event(constants.CatActivationFlow, "user-input-error")
 				} else {
-					var exitErr = &exec.ExitError{}
+					exitErr := &exec.ExitError{}
 					if !errors.As(err, &exitErr) {
 						// Failed due to an error we might need to address
 						an.Event(constants.CatActivationFlow, "error")
