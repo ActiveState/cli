@@ -985,11 +985,8 @@ func (s *Setup) deleteOutdatedArtifacts(setup Setuper, changedArtifacts artifact
 
 	err = setup.DeleteOutdatedArtifacts(changedArtifacts, storedArtifacts, alreadyInstalled)
 	if err != nil {
-		multilog.Error("Could not delete outdated artifacts: %v, falling back to removing everything", err)
-		err = os.RemoveAll(s.store.InstallPath())
-		if err != nil {
-			return errs.Wrap(err, "Failed to clean installation path")
-		}
+		multilog.Error("Could not delete outdated artifacts: %s", errs.JoinMessage(err))
+		return errs.Wrap(err, "Could not delete outdated artifacts")
 	}
 	return nil
 }
