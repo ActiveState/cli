@@ -677,7 +677,10 @@ func (e *BuildExpression) MarshalJSON() ([]byte, error) {
 	for _, assignment := range e.Let.Assignments {
 		let[assignment.Name] = assignment.Value
 	}
+
+	let["in"] = e.Let.In
 	m["let"] = let
+
 	return json.Marshal(m)
 }
 
