@@ -8,7 +8,11 @@ import (
 )
 
 func installPathForBranch(branch string) (string, error) {
-	installPath := filepath.Join(os.Getenv("USERPROFILE"), "AppData", "Local", "ActiveState", "StateTool", branch)
+	home := os.Getenv("USERPROFILE")
+	if dir := os.Getenv(constants.HomeEnvVarName); dir != "" {
+		home = dir
+	}
+	installPath := filepath.Join(home, "AppData", "Local", "ActiveState", "StateTool", branch)
 
 	if !isValidInstallPath(installPath) {
 		return "", errs.New("Invalid install path: %s", installPath)
