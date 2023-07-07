@@ -985,6 +985,8 @@ func (s *Setup) deleteOutdatedArtifacts(setup Setuper, changedArtifacts artifact
 
 	err = setup.DeleteOutdatedArtifacts(changedArtifacts, storedArtifacts, alreadyInstalled)
 	if err != nil {
+		// This multilog is technically redundant and may be dropped after we can collect data on this error for a while as rollbar is not surfacing the returned error
+		// https://github.com/ActiveState/cli/pull/2620#discussion_r1256103647
 		multilog.Error("Could not delete outdated artifacts: %s", errs.JoinMessage(err))
 		return errs.Wrap(err, "Could not delete outdated artifacts")
 	}
