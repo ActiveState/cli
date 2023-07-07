@@ -102,6 +102,7 @@ func NewBuildPlannerModel(auth *authentication.Auth) *BuildPlanner {
 }
 
 func (bp *BuildPlanner) FetchBuildResult(commitID strfmt.UUID, owner, project string) (*BuildResult, error) {
+	logging.Debug("FetchBuildResult")
 	resp := &bpModel.BuildPlan{}
 	err := bp.client.Run(request.BuildPlan(commitID.String(), owner, project), resp)
 	if err != nil {
@@ -278,6 +279,7 @@ type StageCommitParams struct {
 }
 
 func (bp *BuildPlanner) StageCommit(params StageCommitParams) (strfmt.UUID, error) {
+	logging.Debug("StageCommit")
 	var err error
 	expression, err := bp.GetBuildExpression(params.Owner, params.Project, params.ParentCommit)
 	if err != nil {
@@ -344,6 +346,7 @@ func (bp *BuildPlanner) StageCommit(params StageCommitParams) (strfmt.UUID, erro
 }
 
 func (bp *BuildPlanner) GetBuildExpression(owner, project, commitID string) (*buildexpression.BuildExpression, error) {
+	logging.Debug("GetBuildExpression")
 	resp := &bpModel.BuildPlan{}
 	err := bp.client.Run(request.BuildExpression(commitID), resp)
 	if err != nil {
