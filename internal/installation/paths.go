@@ -1,6 +1,7 @@
 package installation
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -33,9 +34,14 @@ func InstallPathForBranch(branch string) (string, error) {
 }
 
 func InstallRoot(path string) (string, error) {
+	fmt.Println("Searching path:", path)
 	installFile, err := fileutils.FindFileInPath(path, InstallDirMarker)
 	if err != nil {
 		return "", errs.Wrap(err, "Could not find install marker file in path")
+	}
+
+	if !isValidInstallPath(filepath.Dir(installFile)) {
+		return "", errs.New("Invalid install path: %s", path)
 	}
 
 	return filepath.Dir(installFile), nil
@@ -93,4 +99,8 @@ func ApplicationInstallPath() (string, error) {
 		return path, nil
 	}
 	return defaultSystemInstallPath()
+}
+
+func isValidInstallPath(path string) bool {
+	return fileutils.FileExists(filepath.Join(path, InstallDirMarker))
 }

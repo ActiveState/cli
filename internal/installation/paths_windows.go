@@ -6,7 +6,13 @@ import (
 )
 
 func installPathForBranch(branch string) (string, error) {
-	return filepath.Join(os.Getenv("USERPROFILE"), "AppData", "Local", "ActiveState", "StateTool", branch), nil
+	installPath := filepath.Join(os.Getenv("USERPROFILE"), "AppData", "Local", "ActiveState", "StateTool", branch)
+
+	if !isValidInstallPath(installPath) {
+		return "", errs.New("Invalid install path: %s", installPath)
+	}
+
+	return installPath, nil
 }
 
 func defaultSystemInstallPath() (string, error) {
