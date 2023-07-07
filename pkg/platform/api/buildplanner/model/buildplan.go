@@ -6,7 +6,13 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
+type Operation int
+
 const (
+	OperationAdded Operation = iota
+	OperationRemoved
+	OperationUpdated
+
 	// BuildPlan statuses
 	Planning  = "PLANNING"
 	Planned   = "PLANNED"
@@ -36,7 +42,30 @@ const (
 	// BuildLogID types
 	BuildLogRecipeID = "RECIPE_ID"
 	BuildRequestID   = "BUILD_REQUEST_ID"
+
+	ComparatorEQ  string = "eq"
+	ComparatorGT         = "gt"
+	ComparatorGTE        = "gte"
+	ComparatorLT         = "lt"
+	ComparatorLTE        = "lte"
+	ComparatorNE         = "ne"
+
+	VersionRequirementComparatorKey = "comparator"
+	VersionRequirementVersionKey    = "version"
 )
+
+func (o Operation) String() string {
+	switch o {
+	case OperationAdded:
+		return "added"
+	case OperationRemoved:
+		return "removed"
+	case OperationUpdated:
+		return "updated"
+	default:
+		return "unknown"
+	}
+}
 
 // BuildPlan is the top level object returned by the build planner. It contains
 // the commit and build.
@@ -257,6 +286,14 @@ type RemediableSolveError struct {
 	Requirements      []*Requirement               `json:"requirements"`
 	Incompatibilities []*SolveErrorIncompatibility `json:"incompatibilities"`
 }
+
+type Requirement struct {
+	Name               string               `json:"name"`
+	Namespace          string               `json:"namespace"`
+	VersionRequirement []VersionRequirement `json:"version_requirements,omitempty"`
+}
+
+type VersionRequirement map[string]string
 
 // SolverErrorRemediation contains the recommeneded remediation for remediable error.
 type SolverErrorRemediation struct {

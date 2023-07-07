@@ -18,6 +18,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
+	"github.com/ActiveState/cli/pkg/platform/runtime/buildexpression"
 	"github.com/ActiveState/cli/pkg/sysinfo"
 	"github.com/go-openapi/strfmt"
 	"github.com/machinebox/graphql"
@@ -278,7 +279,7 @@ type StageCommitParams struct {
 
 func (bp *BuildPlanner) StageCommit(params StageCommitParams) (strfmt.UUID, error) {
 	var err error
-	expression, err := bp.GetBuildExpression(params.ParentCommit)
+	expression, err := bp.GetBuildExpression(params.Owner, params.Project, params.ParentCommit)
 	if err != nil {
 		return "", errs.Wrap(err, "Failed to get build expression")
 	}
@@ -342,7 +343,7 @@ func (bp *BuildPlanner) StageCommit(params StageCommitParams) (strfmt.UUID, erro
 	return strfmt.UUID(resp.Commit.CommitID), nil
 }
 
-func (bp *BuildPlanner) GetBuildExpression(commitID string) (*bpModel.BuildExpression, error) {
+func (bp *BuildPlanner) GetBuildExpression(owner, project, commitID string) (*buildexpression.BuildExpression, error) {
 	resp := &bpModel.BuildPlan{}
 	err := bp.client.Run(request.BuildExpression(commitID), resp)
 	if err != nil {
@@ -357,7 +358,7 @@ func (bp *BuildPlanner) GetBuildExpression(commitID string) (*bpModel.BuildExpre
 		return nil, errs.New("Commit does not contain expression")
 	}
 
-	expression, err := bpModel.NewBuildExpression(resp.Commit.Expression)
+	expression, err := buildexpression.New(resp.Commit.Expression)
 	if err != nil {
 		return nil, errs.Wrap(err, "failed to parse build expression")
 	}

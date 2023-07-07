@@ -1,4 +1,4 @@
-package model
+package buildexpression
 
 import (
 	"path/filepath"
@@ -7,6 +7,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	"github.com/go-openapi/strfmt"
 	"github.com/stretchr/testify/assert"
 )
@@ -47,10 +48,10 @@ func TestNew(t *testing.T) {
 			wd, err := environment.GetRootPath()
 			assert.NoError(t, err)
 
-			data, err := fileutils.ReadFile(filepath.Join(wd, "pkg", "platform", "api", "buildplanner", "model", "testdata", tt.args.filename))
+			data, err := fileutils.ReadFile(filepath.Join(wd, "pkg", "platform", "runtime", "buildexpression", "testdata", tt.args.filename))
 			assert.NoError(t, err)
 
-			_, err = NewBuildExpression(data)
+			_, err = New(data)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("New() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -66,7 +67,7 @@ func TestBuildExpression_Requirements(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    args
-		want    []Requirement
+		want    []model.Requirement
 		wantErr bool
 	}{
 		{
@@ -74,7 +75,7 @@ func TestBuildExpression_Requirements(t *testing.T) {
 			args: args{
 				filename: "buildexpression.json",
 			},
-			want: []Requirement{
+			want: []model.Requirement{
 				{
 					Name:      "jinja2-time",
 					Namespace: "language/python",
@@ -86,9 +87,9 @@ func TestBuildExpression_Requirements(t *testing.T) {
 				{
 					Name:      "python",
 					Namespace: "language",
-					VersionRequirement: []VersionRequirement{
+					VersionRequirement: []model.VersionRequirement{
 						map[string]string{
-							"comparator": string(ComparatorEQ),
+							"comparator": string(model.ComparatorEQ),
 							"version":    "3.10.10",
 						},
 					},
@@ -110,10 +111,10 @@ func TestBuildExpression_Requirements(t *testing.T) {
 			wd, err := environment.GetRootPath()
 			assert.NoError(t, err)
 
-			data, err := fileutils.ReadFile(filepath.Join(wd, "pkg", "platform", "api", "buildplanner", "model", "testdata", tt.args.filename))
+			data, err := fileutils.ReadFile(filepath.Join(wd, "pkg", "platform", "runtime", "buildexpression", "testdata", tt.args.filename))
 			assert.NoError(t, err)
 
-			bx, err := NewBuildExpression(data)
+			bx, err := New(data)
 			assert.NoError(t, err)
 
 			got := bx.Requirements()
@@ -126,25 +127,25 @@ func TestBuildExpression_Requirements(t *testing.T) {
 
 func TestBuildExpression_Update(t *testing.T) {
 	type args struct {
-		requirement Requirement
-		operation   Operation
+		requirement model.Requirement
+		operation   model.Operation
 	}
 	tests := []struct {
 		name    string
 		args    args
-		want    []Requirement
+		want    []model.Requirement
 		wantErr bool
 	}{
 		{
 			name: "add",
 			args: args{
-				requirement: Requirement{
+				requirement: model.Requirement{
 					Name:      "requests",
 					Namespace: "language/python",
 				},
-				operation: OperationAdded,
+				operation: model.OperationAdded,
 			},
-			want: []Requirement{
+			want: []model.Requirement{
 				{
 					Name:      "jinja2-time",
 					Namespace: "language/python",
@@ -156,9 +157,9 @@ func TestBuildExpression_Update(t *testing.T) {
 				{
 					Name:      "python",
 					Namespace: "language",
-					VersionRequirement: []VersionRequirement{
+					VersionRequirement: []model.VersionRequirement{
 						map[string]string{
-							"comparator": string(ComparatorEQ),
+							"comparator": string(model.ComparatorEQ),
 							"version":    "3.10.10",
 						},
 					},
@@ -181,13 +182,13 @@ func TestBuildExpression_Update(t *testing.T) {
 		{
 			name: "remove",
 			args: args{
-				requirement: Requirement{
+				requirement: model.Requirement{
 					Name:      "jupyterlab",
 					Namespace: "language/python",
 				},
-				operation: OperationRemoved,
+				operation: model.OperationRemoved,
 			},
-			want: []Requirement{
+			want: []model.Requirement{
 				{
 					Name:      "jinja2-time",
 					Namespace: "language/python",
@@ -199,9 +200,9 @@ func TestBuildExpression_Update(t *testing.T) {
 				{
 					Name:      "python",
 					Namespace: "language",
-					VersionRequirement: []VersionRequirement{
+					VersionRequirement: []model.VersionRequirement{
 						map[string]string{
-							"comparator": string(ComparatorEQ),
+							"comparator": string(model.ComparatorEQ),
 							"version":    "3.10.10",
 						},
 					},
@@ -216,19 +217,19 @@ func TestBuildExpression_Update(t *testing.T) {
 		{
 			name: "update",
 			args: args{
-				requirement: Requirement{
+				requirement: model.Requirement{
 					Name:      "python",
 					Namespace: "language",
-					VersionRequirement: []VersionRequirement{
+					VersionRequirement: []model.VersionRequirement{
 						map[string]string{
-							"comparator": string(ComparatorEQ),
+							"comparator": string(model.ComparatorEQ),
 							"version":    "3.11.0",
 						},
 					},
 				},
-				operation: OperationUpdated,
+				operation: model.OperationUpdated,
 			},
-			want: []Requirement{
+			want: []model.Requirement{
 				{
 					Name:      "jinja2-time",
 					Namespace: "language/python",
@@ -240,9 +241,9 @@ func TestBuildExpression_Update(t *testing.T) {
 				{
 					Name:      "python",
 					Namespace: "language",
-					VersionRequirement: []VersionRequirement{
+					VersionRequirement: []model.VersionRequirement{
 						map[string]string{
-							"comparator": string(ComparatorEQ),
+							"comparator": string(model.ComparatorEQ),
 							"version":    "3.11.0",
 						},
 					},
@@ -261,13 +262,13 @@ func TestBuildExpression_Update(t *testing.T) {
 		{
 			name: "remove not existing",
 			args: args{
-				requirement: Requirement{
+				requirement: model.Requirement{
 					Name:      "requests",
 					Namespace: "language/python",
 				},
-				operation: OperationRemoved,
+				operation: model.OperationRemoved,
 			},
-			want: []Requirement{
+			want: []model.Requirement{
 				{
 					Name:      "jinja2-time",
 					Namespace: "language/python",
@@ -279,9 +280,9 @@ func TestBuildExpression_Update(t *testing.T) {
 				{
 					Name:      "python",
 					Namespace: "language",
-					VersionRequirement: []VersionRequirement{
+					VersionRequirement: []model.VersionRequirement{
 						map[string]string{
-							"comparator": string(ComparatorEQ),
+							"comparator": string(model.ComparatorEQ),
 							"version":    "3.10.10",
 						},
 					},
@@ -303,10 +304,10 @@ func TestBuildExpression_Update(t *testing.T) {
 			wd, err := environment.GetRootPath()
 			assert.NoError(t, err)
 
-			data, err := fileutils.ReadFile(filepath.Join(wd, "pkg", "platform", "api", "buildplanner", "model", "testdata", "buildexpression.json"))
+			data, err := fileutils.ReadFile(filepath.Join(wd, "pkg", "platform", "runtime", "buildexpression", "testdata", "buildexpression.json"))
 			assert.NoError(t, err)
 
-			bx, err := NewBuildExpression(data)
+			bx, err := New(data)
 			assert.NoError(t, err)
 
 			err = bx.Update(tt.args.operation, tt.args.requirement, strfmt.DateTime{})

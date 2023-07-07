@@ -1,10 +1,8 @@
 package request
 
-import (
-	model "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
-)
+import "github.com/ActiveState/cli/pkg/platform/runtime/buildexpression"
 
-func PushCommit(owner, project, parentCommit, branchRef, description string, expression model.BuildExpression) *buildPlanByPushCommit {
+func PushCommit(owner, project, parentCommit, branchRef, description string, expression buildexpression.BuildExpression) *buildPlanByPushCommit {
 	return &buildPlanByPushCommit{map[string]interface{}{
 		"organization": owner,
 		"project":      project,
