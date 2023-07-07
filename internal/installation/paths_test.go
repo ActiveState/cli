@@ -2,6 +2,7 @@ package installation
 
 import (
 	"path/filepath"
+	"runtime"
 	"testing"
 
 	"github.com/ActiveState/cli/internal/constants"
@@ -92,9 +93,14 @@ func TestBinPathFromInstallPath(t *testing.T) {
 }
 
 func TestInstallPathForBranch(t *testing.T) {
+	installPathSuffix := filepath.Join(".ActiveState", "StateTool", "release")
+	if runtime.GOOS == "windows" {
+		installPathSuffix = filepath.Join("AppData", "Local", "ActiveState", "StateTool", "release")
+	}
+
 	home := fileutils.TempDirUnsafe()
-	installDir := filepath.Join(home, ".ActiveState", "StateTool", "release")
-	err := fileutils.Mkdir(home, ".ActiveState", "StateTool", "release")
+	installDir := filepath.Join(home, installPathSuffix)
+	err := fileutils.Mkdir(home, installPathSuffix)
 	require.NoError(t, err)
 
 	err = fileutils.Touch(filepath.Join(installDir, InstallDirMarker))
@@ -106,9 +112,14 @@ func TestInstallPathForBranch(t *testing.T) {
 }
 
 func TestInstallPathFromReference(t *testing.T) {
+	installPathSuffix := filepath.Join(".ActiveState", "StateTool", "release")
+	if runtime.GOOS == "windows" {
+		installPathSuffix = filepath.Join("AppData", "Local", "ActiveState", "StateTool", "release")
+	}
+
 	home := fileutils.TempDirUnsafe()
-	installDir := filepath.Join(home, ".ActiveState", "StateTool", "release")
-	err := fileutils.Mkdir(home, ".ActiveState", "StateTool", "release")
+	installDir := filepath.Join(home, installPathSuffix)
+	err := fileutils.Mkdir(home, installPathSuffix)
 	require.NoError(t, err)
 
 	err = fileutils.Touch(filepath.Join(installDir, InstallDirMarker))
