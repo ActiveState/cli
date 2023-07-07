@@ -102,7 +102,7 @@ func (suite *RuntimeIntegrationTestSuite) TestInterruptSetup() {
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false",
 			"ACTIVESTATE_CLI_RUNTIME_SETUP_WAIT=true"),
 	)
-	time.Sleep(10 * time.Second)
+	time.Sleep(30 * time.Second)
 	cp.SendCtrlC() // cancel pull/update
 
 	cp = ts.SpawnCmd(pythonExe, "-c", `print(__import__('sys').version)`)
