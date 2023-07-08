@@ -41,7 +41,7 @@ func (i *Info) Run(params *InfoRunParams) error {
 			err, "hello_info_err_say", "Cannot say hello without a name",
 		)
 		if !i.auth.Authenticated() {
-			errs.AddTips(err, locale.Tl("hello_info_suggest_login", "Try logging in"))
+			err = errs.AddTips(err, locale.Tl("hello_info_suggest_login", "Try logging in"))
 		}
 		return err
 	}
@@ -64,10 +64,9 @@ func (i *Info) Run(params *InfoRunParams) error {
 			err = locale.WrapError(
 				err, "hello_info_err_get_commit_msg", " Cannot get commit message",
 			)
-			errs.AddTips(err, locale.Tl(
+			return errs.AddTips(err, locale.Tl(
 				"hello_info_suggest_ensure_commit", "Ensure project has commits",
 			))
-			return err
 		}
 
 		i.out.Print(locale.Tl(
