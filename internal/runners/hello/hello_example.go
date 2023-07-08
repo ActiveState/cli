@@ -1,13 +1,14 @@
 package hello
 
 import (
-	"fmt"
-
+	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
+	"github.com/ActiveState/cli/internal/runbits"
 )
 
 type primeable interface {
-	primer.Projecter
+	primer.Outputer
 }
 
 type RunParams struct {
@@ -20,13 +21,22 @@ func NewRunParams() *RunParams {
 	}
 }
 
-type Hello struct{}
+type Hello struct {
+	out output.Outputer
+}
 
 func New(p primeable) *Hello {
-	return &Hello{}
+	return &Hello{
+		out: p.Output(),
+	}
 }
 
 func (h *Hello) Run(params *RunParams) error {
-	fmt.Printf("hello, %s!\n", params.Named)
+	if err := runbits.SayHello(h.out, params.Named); err != nil {
+		return locale.WrapError(
+			err, "hello_cannot_say", "Cannot say hello without a name",
+		)
+	}
+
 	return nil
 }
