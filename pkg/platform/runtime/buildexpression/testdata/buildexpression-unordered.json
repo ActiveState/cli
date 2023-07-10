@@ -1,6 +1,6 @@
 {
-  "in": "$runtime",
   "let": {
+    "in": "$runtime",
     "runtime": {
       "solve_legacy": {
         "at_time": "2023-04-27T17:30:05.999000Z",

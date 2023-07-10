@@ -188,3 +188,111 @@ func TestRange(t *testing.T) {
 func TestInsertStringAt(t *testing.T) {
 	assert.Equal(t, []string{"a", "b", "c", "d", "e", "f"}, InsertStringAt([]string{"a", "b", "c", "e", "f"}, 3, "d"))
 }
+
+func TestPop(t *testing.T) {
+	type args struct {
+		data []any
+	}
+	tests := []struct {
+		name       string
+		args       args
+		wantValue  any
+		wantResult []any
+		wantErr    bool
+	}{
+		{
+			name: "string",
+			args: args{
+				data: []any{"a", "b", "c"},
+			},
+			wantValue:  "c",
+			wantResult: []any{"a", "b"},
+			wantErr:    false,
+		},
+		{
+			name: "int",
+			args: args{
+				data: []any{1, 2, 3},
+			},
+			wantValue:  3,
+			wantResult: []any{1, 2},
+			wantErr:    false,
+		},
+		{
+			name: "empty",
+			args: args{
+				data: []any{},
+			},
+			wantValue:  nil,
+			wantResult: nil,
+			wantErr:    true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotValue, gotSlice, err := Pop(tt.args.data)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Pop() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(gotValue, tt.wantValue) {
+				t.Errorf("Pop() got value = %v, want %v", gotValue, tt.wantValue)
+			}
+			if !reflect.DeepEqual(gotSlice, tt.wantResult) {
+				t.Errorf("Pop() got slice = %v, want %v", gotSlice, tt.wantResult)
+			}
+		})
+	}
+}
+
+func TestContains(t *testing.T) {
+	type args struct {
+		data []any
+		v    any
+	}
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		{
+			name: "string contains",
+			args: args{
+				data: []any{"a", "b", "c"},
+				v:    "b",
+			},
+			want: true,
+		},
+		{
+			name: "string doesn't contain",
+			args: args{
+				data: []any{"a", "b", "c"},
+				v:    "d",
+			},
+			want: false,
+		},
+		{
+			name: "int contains",
+			args: args{
+				data: []any{1, 2, 3},
+				v:    2,
+			},
+			want: true,
+		},
+		{
+			name: "int doesn't contain",
+			args: args{
+				data: []any{1, 2, 3},
+				v:    4,
+			},
+			want: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := Contains(tt.args.data, tt.args.v); got != tt.want {
+				t.Errorf("Contains() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
