@@ -13,16 +13,16 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/pkg/localcommit"
-	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/platform/runtime/buildexpression"
 	"github.com/ActiveState/cli/pkg/platform/runtime/buildscript"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/go-openapi/strfmt"
 	"github.com/sergi/go-diff/diffmatchpatch"
 )
 
-func getBuildExpression(proj *project.Project, customCommit *strfmt.UUID, auth *authentication.Auth) (*bpModel.BuildExpression, error) {
+func getBuildExpression(proj *project.Project, customCommit *strfmt.UUID, auth *authentication.Auth) (*buildexpression.BuildExpression, error) {
 	bp := model.NewBuildPlannerModel(auth)
 	commitID, err := localcommit.Get(proj.Dir())
 	if err != nil {
@@ -63,7 +63,7 @@ func Sync(proj *project.Project, commitID *strfmt.UUID, out output.Outputer, aut
 		if err != nil {
 			return false, errs.Wrap(err, "Unable to marshal local build script to JSON")
 		}
-		expr, err = bpModel.NewBuildExpression(bytes)
+		expr, err = buildexpression.New(bytes)
 		if err != nil {
 			return false, errs.Wrap(err, "Unable to translate local build script to build expression")
 		}
@@ -102,8 +102,12 @@ func Sync(proj *project.Project, commitID *strfmt.UUID, out output.Outputer, aut
 	return synced, nil
 }
 
-func generateDiff(script *buildscript.Script, expr *bpModel.BuildExpression) (string, error) {
-	newScript, err := buildscript.NewScriptFromBuildExpression([]byte(expr.String()))
+func generateDiff(script *buildscript.Script, expr *buildexpression.BuildExpression) (string, error) {
+	data, err := json.Marshal(expr)
+	if err != nil {
+		return "", errs.Wrap(err, "Unable to marshal buildexpression to JSON: %v", err)
+	}
+	newScript, err := buildscript.NewScriptFromBuildExpression(data)
 	if err != nil {
 		return "", errs.Wrap(err, "Unable to transform build expression to build script")
 	}
@@ -142,7 +146,7 @@ func generateDiff(script *buildscript.Script, expr *bpModel.BuildExpression) (st
 	return result.String(), nil
 }
 
-func GenerateAndWriteDiff(proj *project.Project, script *buildscript.Script, expr *bpModel.BuildExpression) error {
+func GenerateAndWriteDiff(proj *project.Project, script *buildscript.Script, expr *buildexpression.BuildExpression) error {
 	result, err := generateDiff(script, expr)
 	if err != nil {
 		return errs.Wrap(err, "Could not generate diff between local and remote build scripts")

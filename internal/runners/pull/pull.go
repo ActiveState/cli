@@ -19,7 +19,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
-	rtModel "github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/buildscript"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
@@ -187,7 +186,7 @@ func (p *Pull) performMerge(strategies *mono_models.MergeStrategies, remoteCommi
 		return "", errs.Wrap(err, "Could not get local build script")
 	}
 	if script != nil {
-		bp := rtModel.NewBuildPlannerModel(p.auth)
+		bp := model.NewBuildPlannerModel(p.auth)
 		expr, err := bp.GetBuildExpression(p.project.Owner(), p.project.Name(), remoteCommit.String())
 		if err != nil {
 			return "", errs.Wrap(err, "Could not get remote build expression")

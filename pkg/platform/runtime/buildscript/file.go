@@ -1,6 +1,7 @@
 package buildscript
 
 import (
+	"encoding/json"
 	"errors"
 	"os"
 	"path/filepath"
@@ -9,7 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
+	"github.com/ActiveState/cli/pkg/platform/runtime/buildexpression"
 )
 
 type DoesNotExistError struct{ error }
@@ -33,7 +34,7 @@ func newScriptFromFile(path string) (*Script, error) {
 	return NewScript(data)
 }
 
-func UpdateOrCreate(dir string, newScript *model.BuildExpression) error {
+func UpdateOrCreate(dir string, newScript *buildexpression.BuildExpression) error {
 	// If a build script exists, check to see if an update is needed.
 	script, err := NewScriptFromProjectDir(dir)
 	if err != nil && !IsDoesNotExistError(err) {
@@ -43,7 +44,11 @@ func UpdateOrCreate(dir string, newScript *model.BuildExpression) error {
 		return nil
 	}
 
-	script, err = NewScriptFromBuildExpression([]byte(newScript.String()))
+	data, err := json.Marshal(newScript)
+	if err != nil {
+		return errs.Wrap(err, "Could not marshal buildexpression to JSON")
+	}
+	script, err = NewScriptFromBuildExpression(data)
 	if err != nil {
 		return errs.Wrap(err, "Could not parse build expression")
 	}

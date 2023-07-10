@@ -48,7 +48,7 @@ type BuildResult struct {
 	BuildStatusResponse *headchef_models.V1BuildStatusResponse
 	BuildStatus         headchef.BuildStatusEnum
 	BuildReady          bool
-	BuildExpression     *bpModel.BuildExpression
+	BuildExpression     *buildexpression.BuildExpression
 }
 
 func (b *BuildResult) OrderedArtifacts() []artifact.ArtifactID {
@@ -176,7 +176,7 @@ func (bp *BuildPlanner) FetchBuildResult(commitID strfmt.UUID, owner, project st
 		}
 	}
 
-	expr, err := bpModel.NewBuildExpression(resp.Project.Commit.Script)
+	expr, err := buildexpression.New(resp.Project.Commit.Script)
 	if err != nil {
 		return nil, errs.Wrap(err, "Cannot parse build expression")
 	}
@@ -267,7 +267,7 @@ type StageCommitParams struct {
 	TimeStamp        *strfmt.DateTime
 	// ... or commits can have a script (e.g. from pull). When pulling a script, we do not compute
 	// its changes into a series of above operations. Instead, we just pass the new script directly.
-	Script *bpModel.BuildExpression
+	Script *buildexpression.BuildExpression
 }
 
 func (bp *BuildPlanner) StageCommit(params StageCommitParams) (strfmt.UUID, error) {

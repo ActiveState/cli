@@ -6,8 +6,9 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/rtutils/p"
-	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
+	"github.com/ActiveState/cli/pkg/platform/runtime/buildexpression"
 )
 
 const SolveFunction = "solve"
@@ -206,6 +207,11 @@ func (s *Script) EqualsBuildExpression(otherJson []byte) bool {
 	return err == nil && string(myJson) == string(otherJson)
 }
 
-func (s *Script) Equals(other *model.BuildExpression) bool {
-	return s.EqualsBuildExpression([]byte(other.String()))
+func (s *Script) Equals(other *buildexpression.BuildExpression) bool {
+	data, err := json.Marshal(other)
+	if err != nil {
+		multilog.Error("Unable to marshal buildexpression to JSON: %v", err)
+		return false
+	}
+	return s.EqualsBuildExpression(data)
 }
