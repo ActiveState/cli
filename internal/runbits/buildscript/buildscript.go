@@ -50,8 +50,7 @@ func Sync(proj *project.Project, commitID *strfmt.UUID, out output.Outputer, aut
 		return false, errs.Wrap(err, "Could not get remote build expr for provided commit")
 	}
 
-	// Note: merging and/or conflict resolution will happen in another ticket (DX-1912).
-	// For now, if commitID is given, a mutation happened, so prefer the remote build expression.
+	// If commitID is given, a mutation happened, so prefer the remote build expression.
 	// Otherwise, prefer local changes.
 	if script != nil && commitID == nil {
 		logging.Debug("Checking for changes")

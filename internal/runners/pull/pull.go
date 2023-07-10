@@ -19,7 +19,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/ActiveState/cli/pkg/platform/runtime/buildscript"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/go-openapi/strfmt"
@@ -181,24 +180,9 @@ func (p *Pull) Run(params *PullParams) error {
 }
 
 func (p *Pull) performMerge(strategies *mono_models.MergeStrategies, remoteCommit strfmt.UUID, localCommit strfmt.UUID, namespace *project.Namespaced, branchName string) (strfmt.UUID, error) {
-	script, err := buildscript.NewScriptFromProjectDir(p.project.Dir())
-	if err != nil && !buildscript.IsDoesNotExistError(err) {
-		return "", errs.Wrap(err, "Could not get local build script")
-	}
-	if script != nil {
-		bp := model.NewBuildPlannerModel(p.auth)
-		expr, err := bp.GetBuildExpression(p.project.Owner(), p.project.Name(), remoteCommit.String())
-		if err != nil {
-			return "", errs.Wrap(err, "Could not get remote build expression")
-		}
-		if !script.Equals(expr) {
-			err := buildscriptRunbits.GenerateAndWriteDiff(p.project, script, expr)
-			if err != nil {
-				return "", locale.WrapError(err, "err_diff_build_script", "Unable to generate differences between local and remote build script")
-			}
-			// We currently do not attempt any sort of auto-merging, and expect the user to do so until DX-1912.
-			return "", locale.WrapInputError(err, "err_merge_build_script", "Your local build script is different from the incoming one. Please resolve conflicts.")
-		}
+	err := buildscriptRunbits.Merge(p.project, remoteCommit, strategies, p.auth)
+	if err != nil {
+		return "", errs.Wrap(err, "Could not merge local build script with remote changes")
 	}
 
 	p.out.Notice(output.Title(locale.Tl("pull_diverged", "Merging history")))
