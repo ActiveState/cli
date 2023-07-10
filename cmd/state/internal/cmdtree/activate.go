@@ -71,7 +71,7 @@ func newActivateCommand(prime *primer.Values) *captain.Command {
 					// Failed due to user input
 					an.Event(constants.CatActivationFlow, "user-input-error")
 				} else {
-					exitErr := &exec.ExitError{}
+					var exitErr = &exec.ExitError{}
 					if !errors.As(err, &exitErr) {
 						// Failed due to an error we might need to address
 						an.Event(constants.CatActivationFlow, "error")
