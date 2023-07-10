@@ -1,11 +1,5 @@
 package user
 
-import (
-	"os"
-
-	"github.com/ActiveState/cli/internal/constants"
-)
-
 // HomeDirNotFoundError is an error that implements the ErrorLocalier and ErrorInput interfaces
 // from locale/errors.go because importing locale for NewInputError creates an import cycle.
 // Instead, return this error that looks like a LocalizedError.
@@ -33,16 +27,4 @@ func (e *HomeDirNotFoundError) InputError() bool {
 
 func (e *HomeDirNotFoundError) Unwrap() error {
 	return e.wrapped
-}
-
-// HomeDir returns the user's homedir
-func HomeDir() (string, error) {
-	if dir := os.Getenv(constants.HomeEnvVarName); dir != "" {
-		return dir, nil
-	}
-	dir, err := os.UserHomeDir()
-	if err != nil {
-		return "", &HomeDirNotFoundError{err}
-	}
-	return dir, nil
 }
