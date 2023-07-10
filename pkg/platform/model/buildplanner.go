@@ -288,7 +288,7 @@ func (bp *BuildPlanner) StageCommit(params StageCommitParams) (strfmt.UUID, erro
 			requirement.VersionRequirement = []bpModel.VersionRequirement{{bpModel.ComparatorEQ: params.PackageVersion}}
 		}
 
-		err = script.Update(params.Operation, requirement, *params.TimeStamp)
+		err = script.Update(params.Operation, requirement, params.TimeStamp)
 		if err != nil {
 			return "", errs.Wrap(err, "Failed to update build graph")
 		}
