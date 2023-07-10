@@ -34,7 +34,7 @@ func (s *Setup) DeleteOutdatedArtifacts(_ artifact.ArtifactChangeset, _, already
 		if file.Name() == constants.LocalRuntimeTempDirectory || file.Name() == constants.LocalRuntimeEnvironmentDirectory {
 			continue // do not delete files that do not belong to previous installation
 		}
-		err = os.Remove(filepath.Join(s.store.InstallPath(), file.Name()))
+		err = os.RemoveAll(filepath.Join(s.store.InstallPath(), file.Name()))
 		if err != nil {
 			return errs.Wrap(err, "Error removing previous camel installation")
 		}
