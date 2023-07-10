@@ -38,6 +38,10 @@ func InstallRoot(path string) (string, error) {
 		return "", errs.Wrap(err, "Could not find install marker file in path")
 	}
 
+	if !isValidInstallPath(filepath.Dir(installFile)) {
+		return "", errs.New("Invalid install path: %s", path)
+	}
+
 	return filepath.Dir(installFile), nil
 }
 
@@ -93,4 +97,8 @@ func ApplicationInstallPath() (string, error) {
 		return path, nil
 	}
 	return defaultSystemInstallPath()
+}
+
+func isValidInstallPath(path string) bool {
+	return fileutils.FileExists(filepath.Join(path, InstallDirMarker))
 }
