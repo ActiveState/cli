@@ -1,17 +1,16 @@
 package installation
 
 import (
-	"os"
 	"path/filepath"
 
-	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/osutils/user"
 )
 
 func installPathForBranch(branch string) (string, error) {
-	home := os.Getenv("USERPROFILE")
-	if dir := os.Getenv(constants.HomeEnvVarName); dir != "" {
-		home = dir
+	home, err := user.HomeDir()
+	if err != nil {
+		return "", errs.Wrap(err, "Could not determine home directory")
 	}
 	installPath := filepath.Join(home, "AppData", "Local", "ActiveState", "StateTool", branch)
 
