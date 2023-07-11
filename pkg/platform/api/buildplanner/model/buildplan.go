@@ -111,16 +111,22 @@ func (b *BuildPlanByProject) Build() (*Build, error) {
 		return nil, errs.New("Project is nil")
 	}
 
-	if b.Project.Error != nil && b.Project.Error.Message != "" {
-		return nil, errs.New(b.Project.Message)
+	if b.Project.Error != nil {
+		if b.Project.Error.Message != "" {
+			return nil, errs.New(b.Project.Message)
+		}
+		return nil, errs.New("Could not retrieve project")
 	}
 
 	if b.Project.Commit == nil {
 		return nil, errs.New("Commit is nil")
 	}
 
-	if b.Project.Commit.Error != nil && b.Project.Commit.Error.Message != "" {
-		return nil, errs.New(b.Project.Commit.Message)
+	if b.Project.Commit.Error != nil {
+		if b.Project.Commit.Error.Message != "" {
+			return nil, errs.New(b.Project.Commit.Message)
+		}
+		return nil, errs.New("Could not retrieve commit")
 	}
 
 	if b.Project.Commit.Type == NotFound {
@@ -153,16 +159,22 @@ func (b *BuildPlanByProject) CommitID() (strfmt.UUID, error) {
 		return "", errs.New("Project is nil")
 	}
 
-	if b.Project.Error != nil && b.Project.Error.Message != "" {
-		return "", errs.New(b.Project.Message)
+	if b.Project.Error != nil {
+		if b.Project.Error.Message != "" {
+			return "", errs.New(b.Project.Message)
+		}
+		return "", errs.New("Could not retrieve project")
 	}
 
 	if b.Project.Commit == nil {
 		return "", errs.New("Commit is nil")
 	}
 
-	if b.Project.Commit.Error != nil && b.Project.Commit.Error.Message != "" {
-		return "", errs.New(b.Project.Commit.Message)
+	if b.Project.Commit.Error != nil {
+		if b.Project.Commit.Error.Message != "" {
+			return "", errs.New(b.Project.Commit.Message)
+		}
+		return "", errs.New("Could not retrieve commit")
 	}
 
 	return b.Project.Commit.CommitID, nil
@@ -178,8 +190,11 @@ func (b *BuildPlanByCommit) Build() (*Build, error) {
 		return nil, errs.New("Commit is nil")
 	}
 
-	if b.Commit.Error != nil && b.Commit.Error.Message != "" {
-		return nil, errs.New(b.Commit.Message)
+	if b.Commit.Error != nil {
+		if b.Commit.Error.Message != "" {
+			return nil, errs.New(b.Commit.Message)
+		}
+		return nil, errs.New("Could not retrieve commit")
 	}
 
 	if b.Commit.Type == NotFound {
@@ -215,8 +230,11 @@ func (b *BuildPlanByCommit) CommitID() (strfmt.UUID, error) {
 		return "", errs.New("Commit is nil")
 	}
 
-	if b.Commit.Error != nil && b.Commit.Error.Message != "" {
-		return "", errs.New(b.Commit.Message)
+	if b.Commit.Error != nil {
+		if b.Commit.Error.Message != "" {
+			return "", errs.New(b.Commit.Message)
+		}
+		return "", errs.New("Could not retrieve commit")
 	}
 
 	return b.Commit.CommitID, nil
