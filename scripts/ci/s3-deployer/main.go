@@ -15,6 +15,8 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3"
 
 	"github.com/ActiveState/cli/internal/condition"
+	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/installation"
 )
 
 var sourcePath, awsRegionName, awsBucketName, awsBucketPrefix string
@@ -42,17 +44,25 @@ func main() {
 	awsBucketPrefix = os.Args[4]
 
 	if err := run(); err != nil {
-		fmt.Fprintf(os.Stderr, "%s: %s", app, err.Error())
+		fmt.Fprintf(os.Stderr, "%s: %s\n", app, err.Error())
 		os.Exit(1)
 	}
 }
 
-func run() error {
+func run() (err error) {
 	fmt.Printf("Uploading files from %s\n", sourcePath)
 
 	if err := createSession(); err != nil {
 		return err
 	}
+
+	cleanUpInstallMarker, err := setupInstallMarker()
+	if err != nil {
+		return err
+	}
+	defer func() {
+		err = cleanUpInstallMarker()
+	}()
 
 	fmt.Printf("Getting list of files\n")
 	fileList, err := getFileList()
@@ -83,6 +93,23 @@ type logger struct{}
 
 func (l *logger) Log(v ...interface{}) {
 	fmt.Printf("AWS Log: %v", v)
+}
+
+func setupInstallMarker() (func() error, error) {
+	installMarker := filepath.Join(sourcePath, installation.InstallDirMarker)
+
+	if err := fileutils.Touch(installMarker); err != nil {
+		return nil, fmt.Errorf("Failed to setup install marker: %w", err)
+	}
+
+	cleanUp := func() error {
+		if err := os.Remove(installMarker); err != nil {
+			return fmt.Errorf("Cannot clean up install marker: %w", err)
+		}
+		return nil
+	}
+
+	return cleanUp, nil
 }
 
 func createSession() error {
