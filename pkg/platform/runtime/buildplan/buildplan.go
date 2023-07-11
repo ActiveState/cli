@@ -1,6 +1,8 @@
 package buildplan
 
 import (
+	"strings"
+
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	model "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
@@ -38,7 +40,9 @@ func NewMapFromBuildPlan(build *model.Build) (artifact.Map, error) {
 				continue
 			}
 
-			if artifact.MimeType == "application/x-gozip-installer" {
+			if !strings.EqualFold(artifact.MimeType, model.XArtifactMimeType) ||
+				!strings.EqualFold(artifact.MimeType, model.XActiveStateArtifactMimeType) ||
+				!strings.EqualFold(artifact.MimeType, model.XCamelInstallerMimeType) {
 				step, ok := lookup[artifact.GeneratedBy].(*model.Step)
 				if !ok {
 					return nil, errs.New("Could not find step for artifact %s", nodeID)

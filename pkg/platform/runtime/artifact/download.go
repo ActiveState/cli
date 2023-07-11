@@ -47,7 +47,9 @@ func NewDownloadsFromBuildPlan(build bpModel.Build, artifacts map[strfmt.UUID]Ar
 	for id := range artifacts {
 		for _, a := range build.Artifacts {
 			if a.Status == string(bpModel.ArtifactSucceeded) && a.NodeID == id && a.URL != "" {
-				if strings.EqualFold(a.MimeType, "application/x.artifact") || strings.EqualFold(a.MimeType, "application/x-activestate-artifacts") {
+				if strings.EqualFold(a.MimeType, bpModel.XArtifactMimeType) ||
+					strings.EqualFold(a.MimeType, bpModel.XActiveStateArtifactMimeType) ||
+					strings.EqualFold(a.MimeType, bpModel.XCamelInstallerMimeType) {
 					downloads = append(downloads, ArtifactDownload{ArtifactID: strfmt.UUID(a.NodeID), UnsignedURI: a.URL, UnsignedLogURI: a.LogURL, Checksum: a.Checksum})
 				}
 			}

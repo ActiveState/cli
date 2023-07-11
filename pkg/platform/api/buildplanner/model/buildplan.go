@@ -54,6 +54,10 @@ const (
 
 	VersionRequirementComparatorKey = "comparator"
 	VersionRequirementVersionKey    = "version"
+
+	XArtifactMimeType            = "application/x.artifact"
+	XActiveStateArtifactMimeType = "application/x-activestate-artifacts"
+	XCamelInstallerMimeType      = "application/x-camel-installer"
 )
 
 func (o Operation) String() string {
