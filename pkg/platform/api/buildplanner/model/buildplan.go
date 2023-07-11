@@ -69,6 +69,20 @@ func (o Operation) String() string {
 	}
 }
 
+type BuildPlannerError struct {
+	Wrapped          error
+	ValidationErrors []string
+	IsTransient      bool
+}
+
+func (e *BuildPlannerError) Error() string {
+	return "resolve_err"
+}
+
+func (e *BuildPlannerError) Unwrap() error {
+	return e.Wrapped
+}
+
 // BuildPlan is the top level object returned by the build planner. It contains
 // the commit and build.
 type BuildPlan interface {
@@ -93,7 +107,7 @@ func (b *BuildPlanByProject) Build() (*Build, error) {
 		return nil, errs.New("Project is nil")
 	}
 
-	if b.Project.Error != nil && b.Project.Message != "" {
+	if b.Project.Error != nil && b.Project.Error.Message != "" {
 		return nil, errs.New(b.Project.Message)
 	}
 
@@ -101,7 +115,7 @@ func (b *BuildPlanByProject) Build() (*Build, error) {
 		return nil, errs.New("Commit is nil")
 	}
 
-	if b.Project.Commit.Error != nil && b.Project.Commit.Message != "" {
+	if b.Project.Commit.Error != nil && b.Project.Commit.Error.Message != "" {
 		return nil, errs.New(b.Project.Commit.Message)
 	}
 
@@ -110,10 +124,21 @@ func (b *BuildPlanByProject) Build() (*Build, error) {
 	}
 
 	if b.Project.Commit.Build == nil {
-		if b.Project.Commit.Error != nil {
-			return nil, errs.New("Commit not found: %s", b.Project.Commit.Error.Message)
-		}
 		return nil, errs.New("Commit does not contain build")
+	}
+
+	if b.Project.Commit.Build.PlanningError != nil {
+		var errs []string
+		var isTransient bool
+		for _, se := range b.Project.Commit.Build.SubErrors {
+			errs = append(errs, se.Message)
+			isTransient = se.IsTransient
+		}
+		return nil, &BuildPlannerError{
+			Wrapped:          locale.NewInputError("err_buildplanner", b.Project.Commit.Build.Message),
+			ValidationErrors: errs,
+			IsTransient:      isTransient,
+		}
 	}
 
 	return b.Project.Commit.Build, nil
@@ -124,7 +149,7 @@ func (b *BuildPlanByProject) CommitID() (strfmt.UUID, error) {
 		return "", errs.New("Project is nil")
 	}
 
-	if b.Project.Error != nil && b.Project.Message != "" {
+	if b.Project.Error != nil && b.Project.Error.Message != "" {
 		return "", errs.New(b.Project.Message)
 	}
 
@@ -132,7 +157,7 @@ func (b *BuildPlanByProject) CommitID() (strfmt.UUID, error) {
 		return "", errs.New("Commit is nil")
 	}
 
-	if b.Project.Commit.Error != nil && b.Project.Commit.Message != "" {
+	if b.Project.Commit.Error != nil && b.Project.Commit.Error.Message != "" {
 		return "", errs.New(b.Project.Commit.Message)
 	}
 
@@ -149,7 +174,7 @@ func (b *BuildPlanByCommit) Build() (*Build, error) {
 		return nil, errs.New("Commit is nil")
 	}
 
-	if b.Commit.Error != nil && b.Commit.Message != "" {
+	if b.Commit.Error != nil && b.Commit.Error.Message != "" {
 		return nil, errs.New(b.Commit.Message)
 	}
 
@@ -164,6 +189,20 @@ func (b *BuildPlanByCommit) Build() (*Build, error) {
 		return nil, errs.New("Commit does not contain build")
 	}
 
+	if b.Commit.Build.PlanningError != nil {
+		var errs []string
+		var isTransient bool
+		for _, se := range b.Commit.Build.SubErrors {
+			errs = append(errs, se.Message)
+			isTransient = se.IsTransient
+		}
+		return nil, &BuildPlannerError{
+			Wrapped:          locale.NewInputError("err_buildplanner", b.Commit.Build.Message),
+			ValidationErrors: errs,
+			IsTransient:      isTransient,
+		}
+	}
+
 	return b.Commit.Build, nil
 }
 
@@ -172,7 +211,7 @@ func (b *BuildPlanByCommit) CommitID() (strfmt.UUID, error) {
 		return "", errs.New("Commit is nil")
 	}
 
-	if b.Commit.Error != nil && b.Commit.Message != "" {
+	if b.Commit.Error != nil && b.Commit.Error.Message != "" {
 		return "", errs.New(b.Commit.Message)
 	}
 

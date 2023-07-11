@@ -1,7 +1,6 @@
 package model
 
 import (
-	"encoding/json"
 	"net/http"
 	"os"
 	"strings"
@@ -12,6 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/gqlclient"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/request"
@@ -59,28 +59,6 @@ func (b *BuildResult) OrderedArtifacts() []artifact.ArtifactID {
 	return res
 }
 
-type BuildPlannerError struct {
-	wrapped          error
-	validationErrors []string
-	isTransient      bool
-}
-
-func (e *BuildPlannerError) Error() string {
-	return "resolve_err"
-}
-
-func (e *BuildPlannerError) Unwrap() error {
-	return e.wrapped
-}
-
-func (e *BuildPlannerError) ValidationErrors() []string {
-	return e.validationErrors
-}
-
-func (e *BuildPlannerError) IsTransient() bool {
-	return e.isTransient
-}
-
 type BuildPlanner struct {
 	auth   *authentication.Auth
 	client *gqlclient.Client
@@ -104,38 +82,15 @@ func NewBuildPlannerModel(auth *authentication.Auth) *BuildPlanner {
 
 func (bp *BuildPlanner) FetchBuildResult(commitID strfmt.UUID, owner, project string) (*BuildResult, error) {
 	logging.Debug("FetchBuildResult")
-	logging.Debug("CommitID: %s", commitID.String())
-	logging.Debug("Owner: %s", owner)
-	logging.Debug("Project: %s", project)
 	resp := bpModel.NewBuildPlanResponse(owner, project)
 	err := bp.client.Run(request.BuildPlan(commitID.String(), owner, project), resp)
 	if err != nil {
 		return nil, errs.Wrap(err, "failed to fetch build plan")
 	}
 
-	data, err := json.MarshalIndent(resp, "", "  ")
-	if err != nil {
-		return nil, errs.Wrap(err, "Could not unmarshal JSON")
-	}
-	logging.Debug("Response:", string(data))
-
 	build, err := resp.Build()
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not get build from response")
-	}
-
-	if build.PlanningError != nil {
-		var errs []string
-		var isTransient bool
-		for _, se := range build.SubErrors {
-			errs = append(errs, se.Message)
-			isTransient = se.IsTransient
-		}
-		return nil, &BuildPlannerError{
-			wrapped:          locale.NewInputError("err_buildplanner", build.Message),
-			validationErrors: errs,
-			isTransient:      isTransient,
-		}
 	}
 
 	// The BuildPlanner will return a build plan with a status of
@@ -206,6 +161,7 @@ func (bp *BuildPlanner) FetchBuildResult(commitID strfmt.UUID, owner, project st
 			return nil, errs.Wrap(err, "Build plan contains multiple recipe IDs")
 		}
 		res.RecipeID = strfmt.UUID(id.ID)
+		break
 	}
 
 	return &res, nil
@@ -223,6 +179,7 @@ func (bp *BuildPlanner) pollBuildPlan(commitID, owner, project string) (bpModel.
 			}
 
 			if resp == nil {
+				multilog.Error("Build plan response is nil in pollBuildPlan")
 				continue
 			}
 
@@ -317,7 +274,7 @@ func (bp *BuildPlanner) StageCommit(params StageCommitParams) (strfmt.UUID, erro
 
 	if resp.Commit.Build == nil {
 		if resp.Error != nil {
-			return "", errs.New("Commit not found: %s", resp.Error.Message)
+			return "", errs.New(resp.Error.Message)
 		}
 		return "", errs.New("Commit does not contain build")
 	}
@@ -329,10 +286,10 @@ func (bp *BuildPlanner) StageCommit(params StageCommitParams) (strfmt.UUID, erro
 			errs = append(errs, se.Message)
 			isTransient = se.IsTransient
 		}
-		return "", &BuildPlannerError{
-			wrapped:          locale.NewInputError("err_buildplanner", resp.Commit.Build.Message),
-			validationErrors: errs,
-			isTransient:      isTransient,
+		return "", &bpModel.BuildPlannerError{
+			Wrapped:          locale.NewInputError("err_buildplanner", resp.Commit.Build.Message),
+			ValidationErrors: errs,
+			IsTransient:      isTransient,
 		}
 	}
 
