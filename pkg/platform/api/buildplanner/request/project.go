@@ -118,6 +118,9 @@ query ($commitID: String!, $organization: String!, $project: String!) {
                 }
               }
             }
+            ... on Error {
+              message
+            }
             ... on PlanningError {
               subErrors {
                 __typename
@@ -147,14 +150,18 @@ query ($commitID: String!, $organization: String!, $project: String!) {
             }
           }
         }
+        ... on Error {
+          message
+        }
         ... on NotFound {
-          __typename
           message
         }
       }
     }
+    ... on Error{
+      message
+    }
     ... on NotFound {
-      __typename
       message
     }
   }
