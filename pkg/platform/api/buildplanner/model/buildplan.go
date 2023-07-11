@@ -149,7 +149,7 @@ func (b *BuildPlanByCommit) Build() (*Build, error) {
 		return nil, errs.New("Commit is nil")
 	}
 
-	if b.Commit.Message != "" {
+	if b.Commit.Error != nil && b.Commit.Message != "" {
 		return nil, errs.New(b.Commit.Message)
 	}
 
@@ -172,7 +172,7 @@ func (b *BuildPlanByCommit) CommitID() (strfmt.UUID, error) {
 		return "", errs.New("Commit is nil")
 	}
 
-	if b.Commit.Message != "" {
+	if b.Commit.Error != nil && b.Commit.Message != "" {
 		return "", errs.New(b.Commit.Message)
 	}
 
