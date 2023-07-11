@@ -220,7 +220,7 @@ func execute(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher,
 
 	if params.path == "" {
 		var err error
-		params.path, err = installation.InstallPathForBranch(constants.BranchName)
+		params.path, err = installation.InstallPathForBranch(constants.BranchName, false)
 		if err != nil {
 			return errs.Wrap(err, "Could not detect installation path.")
 		}

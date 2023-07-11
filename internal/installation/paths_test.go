@@ -99,15 +99,21 @@ func TestInstallPathForBranch(t *testing.T) {
 	}
 
 	home := fileutils.TempDirUnsafe()
+	t.Setenv(constants.HomeEnvVarName, home)
 	installDir := filepath.Join(home, installPathSuffix)
 	err := fileutils.Mkdir(home, installPathSuffix)
 	require.NoError(t, err)
 
+	_, err = InstallPathForBranch("release", false) // mimic call from installer
+	require.NoError(t, err)
+
+	_, err = InstallPathForBranch("release", true) // simulate a bad call
+	assert.Error(t, err)
+
 	err = fileutils.Touch(filepath.Join(installDir, InstallDirMarker))
 	require.NoError(t, err)
 
-	t.Setenv(constants.HomeEnvVarName, home)
-	_, err = InstallPathForBranch("release")
+	_, err = InstallPathForBranch("release", true) // mimic call from updater
 	require.NoError(t, err)
 }
 
