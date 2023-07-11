@@ -71,6 +71,7 @@ func (o Operation) String() string {
 // the commit and build.
 type BuildPlan struct {
 	Commit *Commit `json:"commit"`
+	*NotFoundError
 }
 
 // PushCommitResult is the result of a push commit mutation.

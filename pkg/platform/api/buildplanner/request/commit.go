@@ -1,17 +1,9 @@
 package request
 
-func BuildPlan(commitID, owner, project string) *buildPlanByCommitID {
+func BuildPlanByCommitID(commitID string) *buildPlanByCommitID {
 	bp := &buildPlanByCommitID{map[string]interface{}{
 		"commitID": commitID,
 	}}
-
-	if owner != "" {
-		bp.vars["organization"] = owner
-	}
-
-	if project != "" {
-		bp.vars["project"] = project
-	}
 
 	return bp
 }
@@ -22,8 +14,8 @@ type buildPlanByCommitID struct {
 
 func (b *buildPlanByCommitID) Query() string {
 	return `
-query ($commitID: ID!, $organization: String, $project: String) {
-  commit(commitId: $commitID, organization: $organization, project: $project) {
+query ($commitID: ID!) {
+  commit(commitId: $commitID) {
     ... on Commit {
       __typename
       expr
@@ -146,10 +138,15 @@ query ($commitID: ID!, $organization: String, $project: String) {
             }
           }
         }
+        ... on Error {
+          message
+        }
       }
     }
+    ... on Error {
+      message
+    }
     ... on NotFound {
-      __typename
       message
     }
   }
