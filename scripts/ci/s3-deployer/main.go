@@ -112,10 +112,18 @@ func createSession() error {
 
 func getFileList() ([]string, error) {
 	// Get list of files to upload
-	fileList := []string{}
+	emsg := "Cannot get file list: %w"
 
-	os.MkdirAll(sourcePath, os.ModePerm)
+	if err := os.MkdirAll(sourcePath, os.ModePerm); err != nil {
+		return nil, fmt.Errorf(emsg, err)
+	}
+
+	fileList := []string{}
 	err := filepath.Walk(sourcePath, func(p string, f os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
 		isDir, err := isDirectory(p)
 		if err != nil {
 			return fmt.Errorf("Cannot walk %q: %w", sourcePath, err)
@@ -127,7 +135,7 @@ func getFileList() ([]string, error) {
 		return nil
 	})
 	if err != nil {
-		return nil, fmt.Errorf("Cannot get file list: %w", err)
+		return nil, fmt.Errorf(emsg, err)
 	}
 
 	return fileList, nil
