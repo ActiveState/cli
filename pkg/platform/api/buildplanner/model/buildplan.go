@@ -60,6 +60,12 @@ const (
 	XCamelInstallerMimeType      = "application/x-camel-installer"
 )
 
+func IsStateToolArtifact(mimeType string) bool {
+	return mimeType == XArtifactMimeType ||
+		mimeType == XActiveStateArtifactMimeType ||
+		mimeType == XCamelInstallerMimeType
+}
+
 func (o Operation) String() string {
 	switch o {
 	case OperationAdded:

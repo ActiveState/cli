@@ -1,8 +1,6 @@
 package buildplan
 
 import (
-	"strings"
-
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	model "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
@@ -31,7 +29,7 @@ func NewMapFromBuildPlan(build *model.Build) (artifact.Map, error) {
 
 	var terminalTargetIDs []strfmt.UUID
 	for _, terminal := range build.Terminals {
-		// If there is an artifact for this terminal and its mime type is application/x-gozip-installer
+		// If there is an artifact for this terminal and its mime type is not a state tool artifact
 		// then the list of terminal target IDs should be the sources for the step that generated the
 		// installer. That is what we want to use to build the artifact map.
 		for _, nodeID := range terminal.NodeIDs {
@@ -40,9 +38,7 @@ func NewMapFromBuildPlan(build *model.Build) (artifact.Map, error) {
 				continue
 			}
 
-			if !strings.EqualFold(artifact.MimeType, model.XArtifactMimeType) ||
-				!strings.EqualFold(artifact.MimeType, model.XActiveStateArtifactMimeType) ||
-				!strings.EqualFold(artifact.MimeType, model.XCamelInstallerMimeType) {
+			if !model.IsStateToolArtifact(artifact.MimeType) {
 				step, ok := lookup[artifact.GeneratedBy].(*model.Step)
 				if !ok {
 					return nil, errs.New("Could not find step for artifact %s", nodeID)
@@ -82,7 +78,7 @@ func buildMap(baseID strfmt.UUID, lookup map[strfmt.UUID]interface{}, result art
 	target := lookup[baseID]
 	currentArtifact, ok := target.(*model.Artifact)
 	if !ok {
-		return errs.New("Incorrect target type for id %s", baseID)
+		return errs.New("Incorrect target type for id %s, expected Artifact", baseID)
 	}
 
 	if currentArtifact.Status != model.ArtifactSucceeded {
@@ -196,7 +192,7 @@ func getSourceInfo(sourceID strfmt.UUID, lookup map[strfmt.UUID]interface{}) (So
 func buildRuntimeDependencies(depdendencyID strfmt.UUID, lookup map[strfmt.UUID]interface{}, result map[strfmt.UUID]struct{}) (map[strfmt.UUID]struct{}, error) {
 	artifact, ok := lookup[depdendencyID].(*model.Artifact)
 	if !ok {
-		return nil, errs.New("Incorrect target type for id %s", depdendencyID)
+		return nil, errs.New("Incorrect target type for id %s, expected Artifact", depdendencyID)
 	}
 
 	for _, depID := range artifact.RuntimeDependencies {
@@ -209,7 +205,7 @@ func buildRuntimeDependencies(depdendencyID strfmt.UUID, lookup map[strfmt.UUID]
 
 	step, ok := lookup[artifact.GeneratedBy].(*model.Step)
 	if !ok {
-		return nil, errs.New("Incorrect target type for id %s", artifact.GeneratedBy)
+		return nil, errs.New("Incorrect target type for id %s, expected Step", artifact.GeneratedBy)
 	}
 
 	for _, input := range step.Inputs {
