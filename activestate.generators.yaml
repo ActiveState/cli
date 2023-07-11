@@ -65,10 +65,11 @@ scripts:
       TEMPDIR=$BUILD_TARGET_DIR/state-install
       mkdir -p $TEMPDIR
       cp -a $BUILD_TARGET_DIR/$constants.BUILD_INSTALLER_TARGET $TEMPDIR
+      touch $TEMPDIR/.state_install_root
 
       echo "# Copy targets to temp dir"
       BINDIR=$TEMPDIR/bin
-      mkdir -p $TEMPDIR/bin
+      mkdir -p $BINDIR
       cp -a $BUILD_TARGET_DIR/$constants.BUILD_DAEMON_TARGET $BINDIR
       cp -a $BUILD_TARGET_DIR/$constants.BUILD_EXEC_TARGET $BINDIR
       cp -a $BUILD_TARGET_DIR/$constants.BUILD_TARGET $BINDIR
