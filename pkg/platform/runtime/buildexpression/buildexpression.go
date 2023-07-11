@@ -10,7 +10,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/multilog"
-	"github.com/ActiveState/cli/internal/rtutils/p"
+	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/sliceutils"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	"github.com/go-openapi/strfmt"
@@ -243,7 +243,7 @@ func newValue(path []string, valueInterface interface{}) (*Value, error) {
 		if sliceutils.Contains(path, ctxIn) {
 			value.Ident = &v
 		} else {
-			value.Str = p.StrP(v)
+			value.Str = ptr.To(v)
 		}
 
 	default:
@@ -344,7 +344,7 @@ func newIn(path []string, inValue interface{}) (*In, error) {
 		in.FuncCall = f
 
 	case string:
-		in.Name = p.StrP(strings.TrimPrefix(v, "$"))
+		in.Name = ptr.To(strings.TrimPrefix(v, "$"))
 
 	default:
 		return nil, errs.New("'in' value expected to be a function call or string")
@@ -546,16 +546,16 @@ func (e *BuildExpression) Update(operation model.Operation, requirement model.Re
 
 func (e *BuildExpression) addRequirement(requirement model.Requirement) error {
 	obj := []*Var{
-		{Name: RequirementNameKey, Value: &Value{Str: p.StrP(requirement.Name)}},
-		{Name: RequirementNamespaceKey, Value: &Value{Str: p.StrP(requirement.Namespace)}},
+		{Name: RequirementNameKey, Value: &Value{Str: ptr.To(requirement.Name)}},
+		{Name: RequirementNamespaceKey, Value: &Value{Str: ptr.To(requirement.Namespace)}},
 	}
 
 	if requirement.VersionRequirement != nil {
 		for _, r := range requirement.VersionRequirement {
 			obj = append(obj, &Var{Name: RequirementVersionRequirementsKey, Value: &Value{List: &[]*Value{
 				{Object: &[]*Var{
-					{Name: RequirementComparatorKey, Value: &Value{Str: p.StrP(r[RequirementComparatorKey])}},
-					{Name: RequirementVersionKey, Value: &Value{Str: p.StrP(r[RequirementVersionKey])}},
+					{Name: RequirementComparatorKey, Value: &Value{Str: ptr.To(r[RequirementComparatorKey])}},
+					{Name: RequirementVersionKey, Value: &Value{Str: ptr.To(r[RequirementVersionKey])}},
 				}}},
 			}})
 		}
@@ -636,8 +636,8 @@ func (e *BuildExpression) updateRequirement(requirement model.Requirement) error
 
 				for _, versionReq := range requirement.VersionRequirement {
 					versionRequirements = append(versionRequirements, &Value{Object: &[]*Var{
-						{Name: RequirementComparatorKey, Value: &Value{Str: p.StrP(versionReq[RequirementComparatorKey])}},
-						{Name: RequirementVersionKey, Value: &Value{Str: p.StrP(versionReq[RequirementVersionKey])}},
+						{Name: RequirementComparatorKey, Value: &Value{Str: ptr.To(versionReq[RequirementComparatorKey])}},
+						{Name: RequirementVersionKey, Value: &Value{Str: ptr.To(versionReq[RequirementVersionKey])}},
 					}})
 				}
 				v.Value.List = &versionRequirements
@@ -671,7 +671,7 @@ func (e *BuildExpression) updateTimestamp(timestamp strfmt.DateTime) error {
 		}
 
 		if arg.Assignment.Name == "at_time" {
-			arg.Assignment.Value.Str = p.StrP(formatted.Format(time.RFC3339))
+			arg.Assignment.Value.Str = ptr.To(formatted.Format(time.RFC3339))
 		}
 	}
 

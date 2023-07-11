@@ -57,7 +57,8 @@ func NewLoginAsOK() *LoginAsOK {
 	return &LoginAsOK{}
 }
 
-/* LoginAsOK describes a response with status code 200, with default header values.
+/*
+LoginAsOK describes a response with status code 200, with default header values.
 
 Success
 */
@@ -89,7 +90,8 @@ func NewLoginAsBadRequest() *LoginAsBadRequest {
 	return &LoginAsBadRequest{}
 }
 
-/* LoginAsBadRequest describes a response with status code 400, with default header values.
+/*
+LoginAsBadRequest describes a response with status code 400, with default header values.
 
 Bad Request
 */
@@ -121,7 +123,8 @@ func NewLoginAsUnauthorized() *LoginAsUnauthorized {
 	return &LoginAsUnauthorized{}
 }
 
-/* LoginAsUnauthorized describes a response with status code 401, with default header values.
+/*
+LoginAsUnauthorized describes a response with status code 401, with default header values.
 
 Invalid credentials
 */
@@ -153,7 +156,8 @@ func NewLoginAsInternalServerError() *LoginAsInternalServerError {
 	return &LoginAsInternalServerError{}
 }
 
-/* LoginAsInternalServerError describes a response with status code 500, with default header values.
+/*
+LoginAsInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */

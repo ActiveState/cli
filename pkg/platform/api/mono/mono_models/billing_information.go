@@ -44,6 +44,9 @@ type BillingInformation struct {
 	// external URL
 	ExternalURL string `json:"externalURL,omitempty"`
 
+	// has ever had trial
+	HasEverHadTrial bool `json:"hasEverHadTrial,omitempty"`
+
 	// is stripe customer
 	IsStripeCustomer bool `json:"isStripeCustomer,omitempty"`
 

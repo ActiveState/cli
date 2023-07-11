@@ -53,10 +53,12 @@ func NewGetOperatingSystemKernelsParamsWithHTTPClient(client *http.Client) *GetO
 	}
 }
 
-/* GetOperatingSystemKernelsParams contains all the parameters to send to the API endpoint
-   for the get operating system kernels operation.
+/*
+GetOperatingSystemKernelsParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the get operating system kernels operation.
+
+	Typically these are written to a http.Request.
 */
 type GetOperatingSystemKernelsParams struct {
 

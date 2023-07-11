@@ -52,7 +52,8 @@ func NewAddBuildFlagRevisionOK() *AddBuildFlagRevisionOK {
 	return &AddBuildFlagRevisionOK{}
 }
 
-/* AddBuildFlagRevisionOK describes a response with status code 200, with default header values.
+/*
+AddBuildFlagRevisionOK describes a response with status code 200, with default header values.
 
 The updated state of the build flag
 */
@@ -84,7 +85,8 @@ func NewAddBuildFlagRevisionBadRequest() *AddBuildFlagRevisionBadRequest {
 	return &AddBuildFlagRevisionBadRequest{}
 }
 
-/* AddBuildFlagRevisionBadRequest describes a response with status code 400, with default header values.
+/*
+AddBuildFlagRevisionBadRequest describes a response with status code 400, with default header values.
 
 If the build flag revision is invalid
 */
@@ -118,7 +120,8 @@ func NewAddBuildFlagRevisionDefault(code int) *AddBuildFlagRevisionDefault {
 	}
 }
 
-/* AddBuildFlagRevisionDefault describes a response with status code -1, with default header values.
+/*
+AddBuildFlagRevisionDefault describes a response with status code -1, with default header values.
 
 If there is an error processing the request
 */

@@ -1,5 +1,18 @@
 package integration
 
+import (
+	"path/filepath"
+	"testing"
+	"time"
+
+	"github.com/ActiveState/cli/internal/exeutils"
+	"github.com/ActiveState/cli/internal/testhelpers/e2e"
+	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
+	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
+	"github.com/ActiveState/cli/pkg/platform/runtime/target"
+	"github.com/stretchr/testify/suite"
+)
+
 // Disabled due to DX-1514
 /*func TestOfflineInstaller(t *testing.T) {
 	// Each artifact of the form UUID.tar.gz has the following structure:
@@ -61,8 +74,42 @@ package integration
 		filename := filepath.Join(dir, "tmp", filename) // each file is in a "tmp" dir in the archive
 		suite.Assert().True(fileutils.FileExists(filename), "file '%s' was not extracted from its artifact", filename)
 	}
+}*/
+
+type RuntimeIntegrationTestSuite struct {
+	tagsuite.Suite
+}
+
+func (suite *RuntimeIntegrationTestSuite) TestInterruptSetup() {
+	suite.OnlyRunForTags(tagsuite.Interrupt)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.SpawnWithOpts(
+		e2e.WithArgs("checkout", "ActiveState-CLI/test-interrupt-small-python#863c45e2-3626-49b6-893c-c15e85a17241", "."),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
+	cp.Expect("Checked out project")
+
+	targetDir := target.ProjectDirToTargetDir(ts.Dirs.Work, ts.Dirs.Cache)
+	pythonExe := filepath.Join(setup.ExecDir(targetDir), "python3"+exeutils.Extension)
+	cp = ts.SpawnCmd(pythonExe, "-c", `print(__import__('sys').version)`)
+	cp.Expect("3.8.8")
+	cp.ExpectExitCode(0)
+
+	cp = ts.SpawnWithOpts(
+		e2e.WithArgs("pull"),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false",
+			"ACTIVESTATE_CLI_RUNTIME_SETUP_WAIT=true"),
+	)
+	time.Sleep(30 * time.Second)
+	cp.SendCtrlC() // cancel pull/update
+
+	cp = ts.SpawnCmd(pythonExe, "-c", `print(__import__('sys').version)`)
+	cp.Expect("3.8.8") // current runtime still works
+	cp.ExpectExitCode(0)
 }
 
 func TestRuntimeIntegrationTestSuite(t *testing.T) {
 	suite.Run(t, new(RuntimeIntegrationTestSuite))
-}*/
+}

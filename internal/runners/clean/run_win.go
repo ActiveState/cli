@@ -23,7 +23,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/rtutils/p"
+	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/scriptfile"
 )
 
@@ -82,7 +82,7 @@ func (u *Uninstall) runUninstall(params *UninstallParams) error {
 	u.out.Notice(locale.Tr("clean_message_windows", logFile.Name()))
 	if params.Prompt {
 		u.out.Print(locale.Tl("clean_uninstall_confirm_exit", "Press enter to exit."))
-		fmt.Scanln(p.StrP("")) // Wait for input from user
+		fmt.Scanln(ptr.To("")) // Wait for input from user
 	}
 	return nil
 }

@@ -63,7 +63,8 @@ func NewEditMemberOK() *EditMemberOK {
 	return &EditMemberOK{}
 }
 
-/* EditMemberOK describes a response with status code 200, with default header values.
+/*
+EditMemberOK describes a response with status code 200, with default header values.
 
 Membership Roster
 */
@@ -93,7 +94,8 @@ func NewEditMemberBadRequest() *EditMemberBadRequest {
 	return &EditMemberBadRequest{}
 }
 
-/* EditMemberBadRequest describes a response with status code 400, with default header values.
+/*
+EditMemberBadRequest describes a response with status code 400, with default header values.
 
 Bad Request
 */
@@ -125,7 +127,8 @@ func NewEditMemberForbidden() *EditMemberForbidden {
 	return &EditMemberForbidden{}
 }
 
-/* EditMemberForbidden describes a response with status code 403, with default header values.
+/*
+EditMemberForbidden describes a response with status code 403, with default header values.
 
 Forbidden
 */
@@ -157,7 +160,8 @@ func NewEditMemberNotFound() *EditMemberNotFound {
 	return &EditMemberNotFound{}
 }
 
-/* EditMemberNotFound describes a response with status code 404, with default header values.
+/*
+EditMemberNotFound describes a response with status code 404, with default header values.
 
 Not Found
 */
@@ -189,7 +193,8 @@ func NewEditMemberInternalServerError() *EditMemberInternalServerError {
 	return &EditMemberInternalServerError{}
 }
 
-/* EditMemberInternalServerError describes a response with status code 500, with default header values.
+/*
+EditMemberInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */

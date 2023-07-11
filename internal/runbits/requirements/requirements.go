@@ -157,10 +157,16 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 		requirementVersion = ""
 	}
 
+	origRequirementName := requirementName
 	if validatePkg {
 		pg = output.StartSpinner(out, locale.Tl("progress_search", "", requirementName), constants.TerminalAnimationInterval)
 
-		packages, err := model.SearchIngredientsStrict(ns, requirementName, false, false)
+		normalized, err := model.FetchNormalizedName(ns, requirementName)
+		if err != nil {
+			multilog.Error("Failed to normalize '%s': %v", requirementName, err)
+		}
+
+		packages, err := model.SearchIngredientsStrict(ns, normalized, false, false) // ideally case-sensitive would be true (PB-4371)
 		if err != nil {
 			return locale.WrapError(err, "package_err_cannot_obtain_search_results")
 		}
@@ -174,10 +180,8 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 			}
 			return locale.WrapInputError(err, "package_ingredient_alternatives", "", requirementName, strings.Join(suggestions, "\n"))
 		}
-		if name := packages[0].Ingredient.Name; name != nil && requirementName != *name {
-			logging.Debug("Requirement to install's letter case differs from Platform's ('%s' != '%s')", requirementName, *name)
-			requirementName = *name // match case
-		}
+
+		requirementName = normalized
 
 		pg.Stop(locale.T("progress_found"))
 		pg = nil
@@ -292,6 +296,12 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 			ns.Type().String(),
 			operation.String(),
 		}))
+
+	if origRequirementName != requirementName {
+		out.Notice(locale.Tl("package_version_differs",
+			"Note: the actual package name ({{.V0}}) is different from the requested package name ({{.V1}})",
+			requirementName, origRequirementName))
+	}
 
 	out.Notice(locale.T("operation_success_local"))
 

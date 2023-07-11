@@ -2,6 +2,7 @@ package integration
 
 import (
 	"encoding/json"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
@@ -58,6 +59,53 @@ func (suite *SecretsIntegrationTestSuite) TestSecrets_JSON() {
 	cp.Expect("Defined")
 	cp.Expect("test-secret")
 	cp.ExpectExitCode(0)
+}
+
+func (suite *SecretsIntegrationTestSuite) TestSecrect_Expand() {
+	suite.OnlyRunForTags(tagsuite.Secrets, tagsuite.JSON)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	ts.LoginAsPersistentUser()
+	defer clearSecrets(ts, "project.test-secret", "user.test-secret")
+
+	asyData := strings.TrimSpace(`
+project: https://platform.activestate.com/ActiveState-CLI/secrets-test?commitID=c7f8f45d-39e2-4f22-bd2e-4182b914880f
+scripts:
+  - name: project-secret
+    language: bash
+    standalone: true
+    value: echo $secrets.project.project-secret
+  - name: user-secret
+    language: bash
+    standalone: true
+    value: echo $secrets.user.user-secret
+`)
+
+	ts.PrepareActiveStateYAML(asyData)
+
+	cp := ts.Spawn("secrets", "set", "project.project-secret", "project-value")
+	cp.ExpectLongString("Operating on project ActiveState-CLI/secrets-test")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("secrets", "set", "user.user-secret", "user-value")
+	cp.ExpectLongString("Operating on project ActiveState-CLI/secrets-test")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("run", "project-secret")
+	cp.Expect("project-value")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("run", "user-secret")
+	cp.Expect("user-value")
+	cp.ExpectExitCode(0)
+}
+
+func clearSecrets(ts *e2e.Session, unset ...string) {
+	for _, secret := range unset {
+		cp := ts.Spawn("secrets", "set", secret, "")
+		cp.ExpectExitCode(0)
+	}
 }
 
 func TestSecretsIntegrationTestSuite(t *testing.T) {

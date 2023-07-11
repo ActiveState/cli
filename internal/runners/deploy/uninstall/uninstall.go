@@ -16,7 +16,7 @@ import (
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
-	"github.com/ActiveState/cli/internal/rtutils/p"
+	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
 	"github.com/ActiveState/cli/pkg/platform/runtime/store"
@@ -100,10 +100,10 @@ func (u *Uninstall) Run(params *Params) error {
 	}
 
 	u.analytics.Event(constants.CatRuntimeUsage, constants.ActRuntimeDelete, &dimensions.Values{
-		Trigger:          p.StrP(target.TriggerDeploy.String()),
-		CommitID:         p.StrP(commitID),
-		ProjectNameSpace: p.StrP(namespace),
-		InstanceID:       p.StrP(instanceid.ID()),
+		Trigger:          ptr.To(target.TriggerDeploy.String()),
+		CommitID:         ptr.To(commitID),
+		ProjectNameSpace: ptr.To(namespace),
+		InstanceID:       ptr.To(instanceid.ID()),
 	})
 
 	u.output.Notice(locale.T("deploy_uninstall_success"))

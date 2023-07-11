@@ -45,7 +45,8 @@ func NewGetLogoutNoContent() *GetLogoutNoContent {
 	return &GetLogoutNoContent{}
 }
 
-/* GetLogoutNoContent describes a response with status code 204, with default header values.
+/*
+GetLogoutNoContent describes a response with status code 204, with default header values.
 
 Success
 */
@@ -66,7 +67,8 @@ func NewGetLogoutInternalServerError() *GetLogoutInternalServerError {
 	return &GetLogoutInternalServerError{}
 }
 
-/* GetLogoutInternalServerError describes a response with status code 500, with default header values.
+/*
+GetLogoutInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */

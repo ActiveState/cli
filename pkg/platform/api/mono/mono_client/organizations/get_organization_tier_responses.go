@@ -57,7 +57,8 @@ func NewGetOrganizationTierOK() *GetOrganizationTierOK {
 	return &GetOrganizationTierOK{}
 }
 
-/* GetOrganizationTierOK describes a response with status code 200, with default header values.
+/*
+GetOrganizationTierOK describes a response with status code 200, with default header values.
 
 Success
 */
@@ -89,7 +90,8 @@ func NewGetOrganizationTierForbidden() *GetOrganizationTierForbidden {
 	return &GetOrganizationTierForbidden{}
 }
 
-/* GetOrganizationTierForbidden describes a response with status code 403, with default header values.
+/*
+GetOrganizationTierForbidden describes a response with status code 403, with default header values.
 
 Forbidden
 */
@@ -121,7 +123,8 @@ func NewGetOrganizationTierNotFound() *GetOrganizationTierNotFound {
 	return &GetOrganizationTierNotFound{}
 }
 
-/* GetOrganizationTierNotFound describes a response with status code 404, with default header values.
+/*
+GetOrganizationTierNotFound describes a response with status code 404, with default header values.
 
 Forbidden
 */
@@ -153,7 +156,8 @@ func NewGetOrganizationTierInternalServerError() *GetOrganizationTierInternalSer
 	return &GetOrganizationTierInternalServerError{}
 }
 
-/* GetOrganizationTierInternalServerError describes a response with status code 500, with default header values.
+/*
+GetOrganizationTierInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */

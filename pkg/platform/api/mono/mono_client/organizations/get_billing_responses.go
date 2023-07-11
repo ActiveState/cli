@@ -63,7 +63,8 @@ func NewGetBillingOK() *GetBillingOK {
 	return &GetBillingOK{}
 }
 
-/* GetBillingOK describes a response with status code 200, with default header values.
+/*
+GetBillingOK describes a response with status code 200, with default header values.
 
 Success
 */
@@ -95,7 +96,8 @@ func NewGetBillingBadRequest() *GetBillingBadRequest {
 	return &GetBillingBadRequest{}
 }
 
-/* GetBillingBadRequest describes a response with status code 400, with default header values.
+/*
+GetBillingBadRequest describes a response with status code 400, with default header values.
 
 Bad Request
 */
@@ -127,7 +129,8 @@ func NewGetBillingForbidden() *GetBillingForbidden {
 	return &GetBillingForbidden{}
 }
 
-/* GetBillingForbidden describes a response with status code 403, with default header values.
+/*
+GetBillingForbidden describes a response with status code 403, with default header values.
 
 Forbidden
 */
@@ -159,7 +162,8 @@ func NewGetBillingNotFound() *GetBillingNotFound {
 	return &GetBillingNotFound{}
 }
 
-/* GetBillingNotFound describes a response with status code 404, with default header values.
+/*
+GetBillingNotFound describes a response with status code 404, with default header values.
 
 Not Found
 */
@@ -191,7 +195,8 @@ func NewGetBillingInternalServerError() *GetBillingInternalServerError {
 	return &GetBillingInternalServerError{}
 }
 
-/* GetBillingInternalServerError describes a response with status code 500, with default header values.
+/*
+GetBillingInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */

@@ -52,10 +52,12 @@ func NewSearchEmailsParamsWithHTTPClient(client *http.Client) *SearchEmailsParam
 	}
 }
 
-/* SearchEmailsParams contains all the parameters to send to the API endpoint
-   for the search emails operation.
+/*
+SearchEmailsParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the search emails operation.
+
+	Typically these are written to a http.Request.
 */
 type SearchEmailsParams struct {
 

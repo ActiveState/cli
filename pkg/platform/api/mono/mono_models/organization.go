@@ -7,7 +7,6 @@ package mono_models
 
 import (
 	"context"
-	"encoding/json"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
@@ -36,6 +35,9 @@ type Organization struct {
 	// display name
 	DisplayName string `json:"displayName,omitempty"`
 
+	// has ever had trial
+	HasEverHadTrial bool `json:"hasEverHadTrial,omitempty"`
+
 	// member count
 	MemberCount int64 `json:"memberCount,omitempty"`
 
@@ -56,7 +58,6 @@ type Organization struct {
 	Role *Role `json:"role,omitempty"`
 
 	// subscription status
-	// Enum: [active cancelled expired]
 	SubscriptionStatus *string `json:"subscriptionStatus,omitempty"`
 
 	// tier
@@ -80,10 +81,6 @@ func (m *Organization) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateRole(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.validateSubscriptionStatus(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -150,51 +147,6 @@ func (m *Organization) validateRole(formats strfmt.Registry) error {
 			}
 			return err
 		}
-	}
-
-	return nil
-}
-
-var organizationTypeSubscriptionStatusPropEnum []interface{}
-
-func init() {
-	var res []string
-	if err := json.Unmarshal([]byte(`["active","cancelled","expired"]`), &res); err != nil {
-		panic(err)
-	}
-	for _, v := range res {
-		organizationTypeSubscriptionStatusPropEnum = append(organizationTypeSubscriptionStatusPropEnum, v)
-	}
-}
-
-const (
-
-	// OrganizationSubscriptionStatusActive captures enum value "active"
-	OrganizationSubscriptionStatusActive string = "active"
-
-	// OrganizationSubscriptionStatusCancelled captures enum value "cancelled"
-	OrganizationSubscriptionStatusCancelled string = "cancelled"
-
-	// OrganizationSubscriptionStatusExpired captures enum value "expired"
-	OrganizationSubscriptionStatusExpired string = "expired"
-)
-
-// prop value enum
-func (m *Organization) validateSubscriptionStatusEnum(path, location string, value string) error {
-	if err := validate.EnumCase(path, location, value, organizationTypeSubscriptionStatusPropEnum, true); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (m *Organization) validateSubscriptionStatus(formats strfmt.Registry) error {
-	if swag.IsZero(m.SubscriptionStatus) { // not required
-		return nil
-	}
-
-	// value enum
-	if err := m.validateSubscriptionStatusEnum("subscriptionStatus", "body", *m.SubscriptionStatus); err != nil {
-		return err
 	}
 
 	return nil

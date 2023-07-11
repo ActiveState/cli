@@ -57,7 +57,8 @@ func NewGetOrganizationMembersOK() *GetOrganizationMembersOK {
 	return &GetOrganizationMembersOK{}
 }
 
-/* GetOrganizationMembersOK describes a response with status code 200, with default header values.
+/*
+GetOrganizationMembersOK describes a response with status code 200, with default header values.
 
 Success
 */
@@ -87,7 +88,8 @@ func NewGetOrganizationMembersForbidden() *GetOrganizationMembersForbidden {
 	return &GetOrganizationMembersForbidden{}
 }
 
-/* GetOrganizationMembersForbidden describes a response with status code 403, with default header values.
+/*
+GetOrganizationMembersForbidden describes a response with status code 403, with default header values.
 
 Forbidden
 */
@@ -119,7 +121,8 @@ func NewGetOrganizationMembersNotFound() *GetOrganizationMembersNotFound {
 	return &GetOrganizationMembersNotFound{}
 }
 
-/* GetOrganizationMembersNotFound describes a response with status code 404, with default header values.
+/*
+GetOrganizationMembersNotFound describes a response with status code 404, with default header values.
 
 Not Found
 */
@@ -151,7 +154,8 @@ func NewGetOrganizationMembersInternalServerError() *GetOrganizationMembersInter
 	return &GetOrganizationMembersInternalServerError{}
 }
 
-/* GetOrganizationMembersInternalServerError describes a response with status code 500, with default header values.
+/*
+GetOrganizationMembersInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */

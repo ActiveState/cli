@@ -52,7 +52,8 @@ func NewAddPatchCreated() *AddPatchCreated {
 	return &AddPatchCreated{}
 }
 
-/* AddPatchCreated describes a response with status code 201, with default header values.
+/*
+AddPatchCreated describes a response with status code 201, with default header values.
 
 The added patch
 */
@@ -84,7 +85,8 @@ func NewAddPatchBadRequest() *AddPatchBadRequest {
 	return &AddPatchBadRequest{}
 }
 
-/* AddPatchBadRequest describes a response with status code 400, with default header values.
+/*
+AddPatchBadRequest describes a response with status code 400, with default header values.
 
 If the patch is invalid
 */
@@ -118,7 +120,8 @@ func NewAddPatchDefault(code int) *AddPatchDefault {
 	}
 }
 
-/* AddPatchDefault describes a response with status code -1, with default header values.
+/*
+AddPatchDefault describes a response with status code -1, with default header values.
 
 If there is an error processing the request
 */

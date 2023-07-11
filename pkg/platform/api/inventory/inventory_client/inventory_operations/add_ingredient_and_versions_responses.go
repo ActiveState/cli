@@ -52,7 +52,8 @@ func NewAddIngredientAndVersionsCreated() *AddIngredientAndVersionsCreated {
 	return &AddIngredientAndVersionsCreated{}
 }
 
-/* AddIngredientAndVersionsCreated describes a response with status code 201, with default header values.
+/*
+AddIngredientAndVersionsCreated describes a response with status code 201, with default header values.
 
 The added ingredient versions. If any versions already existed, they will be returned as well.
 */
@@ -84,7 +85,8 @@ func NewAddIngredientAndVersionsBadRequest() *AddIngredientAndVersionsBadRequest
 	return &AddIngredientAndVersionsBadRequest{}
 }
 
-/* AddIngredientAndVersionsBadRequest describes a response with status code 400, with default header values.
+/*
+AddIngredientAndVersionsBadRequest describes a response with status code 400, with default header values.
 
 If the ingredient/version data is invalid
 */
@@ -118,7 +120,8 @@ func NewAddIngredientAndVersionsDefault(code int) *AddIngredientAndVersionsDefau
 	}
 }
 
-/* AddIngredientAndVersionsDefault describes a response with status code -1, with default header values.
+/*
+AddIngredientAndVersionsDefault describes a response with status code -1, with default header values.
 
 If there is an error processing the request
 */

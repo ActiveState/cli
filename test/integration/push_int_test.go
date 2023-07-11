@@ -39,8 +39,8 @@ func (suite *PushIntegrationTestSuite) SetupSuite() {
 	suite.extraPackage = "JSON"
 	suite.extraPackage2 = "DateTime"
 	if runtime.GOOS == "darwin" {
-		suite.language = "python3"
-		suite.languageFull = "python3"
+		suite.language = "python"
+		suite.languageFull = "python"
 		suite.baseProject = "ActiveState-CLI/small-python"
 		suite.extraPackage = "trender"
 	}
@@ -56,9 +56,10 @@ func (suite *PushIntegrationTestSuite) TestInitAndPush() {
 	wd := filepath.Join(ts.Dirs.Work, namespace)
 	cp := ts.Spawn(
 		"init",
-		namespace,
+		"--language",
 		suite.languageFull,
-		"--path", wd,
+		namespace,
+		wd,
 	)
 	cp.ExpectLongString("successfully initialized")
 	cp.ExpectExitCode(0)

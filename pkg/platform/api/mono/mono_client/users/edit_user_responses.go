@@ -63,7 +63,8 @@ func NewEditUserOK() *EditUserOK {
 	return &EditUserOK{}
 }
 
-/* EditUserOK describes a response with status code 200, with default header values.
+/*
+EditUserOK describes a response with status code 200, with default header values.
 
 User updated
 */
@@ -95,7 +96,8 @@ func NewEditUserBadRequest() *EditUserBadRequest {
 	return &EditUserBadRequest{}
 }
 
-/* EditUserBadRequest describes a response with status code 400, with default header values.
+/*
+EditUserBadRequest describes a response with status code 400, with default header values.
 
 Bad Request
 */
@@ -127,7 +129,8 @@ func NewEditUserForbidden() *EditUserForbidden {
 	return &EditUserForbidden{}
 }
 
-/* EditUserForbidden describes a response with status code 403, with default header values.
+/*
+EditUserForbidden describes a response with status code 403, with default header values.
 
 Forbidden
 */
@@ -159,7 +162,8 @@ func NewEditUserNotFound() *EditUserNotFound {
 	return &EditUserNotFound{}
 }
 
-/* EditUserNotFound describes a response with status code 404, with default header values.
+/*
+EditUserNotFound describes a response with status code 404, with default header values.
 
 Not Found
 */
@@ -191,7 +195,8 @@ func NewEditUserInternalServerError() *EditUserInternalServerError {
 	return &EditUserInternalServerError{}
 }
 
-/* EditUserInternalServerError describes a response with status code 500, with default header values.
+/*
+EditUserInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */

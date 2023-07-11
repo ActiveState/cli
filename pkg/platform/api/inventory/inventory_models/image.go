@@ -15,7 +15,7 @@ import (
 
 // Image Image
 //
-// The full image data model
+// # The full image data model
 //
 // swagger:model image
 type Image struct {

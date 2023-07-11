@@ -4,7 +4,6 @@ import (
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/primer"
-	"github.com/ActiveState/cli/internal/rtutils/p"
 	"github.com/ActiveState/cli/internal/runners/initialize"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -23,21 +22,9 @@ func newInitCommand(prime *primer.Values) *captain.Command {
 		prime,
 		[]*captain.Flag{
 			{
-				Name:        "path",
-				Description: locale.T("flag_state_init_path_description"),
-				Value:       &params.Path,
-			},
-			{
-				// Hidden flag for legacy Komodo support
-				Name:   "skeleton",
-				Value:  p.StrP(""),
-				Hidden: true,
-			},
-			{
-				// Hidden flag for legacy Komodo support
-				Name:   "language",
-				Value:  &params.Language,
-				Hidden: true,
+				Name:        "language",
+				Description: locale.T("flag_state_init_language_description"),
+				Value:       &params.Language,
 			},
 			{
 				Name:        "private",
@@ -53,9 +40,9 @@ func newInitCommand(prime *primer.Values) *captain.Command {
 				Required:    true,
 			},
 			{
-				Name:        locale.T("arg_state_init_language"),
-				Description: locale.T("arg_state_init_language_description"),
-				Value:       &params.Language,
+				Name:        locale.T("arg_state_init_path"),
+				Description: locale.T("arg_state_init_path_description"),
+				Value:       &params.Path,
 			},
 		},
 		func(ccmd *captain.Command, _ []string) error {

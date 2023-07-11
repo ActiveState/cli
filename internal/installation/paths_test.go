@@ -2,8 +2,11 @@ package installation
 
 import (
 	"path/filepath"
+	"runtime"
 	"testing"
 
+	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -87,4 +90,49 @@ func TestBinPathFromInstallPath(t *testing.T) {
 			assert.Equalf(t, tt.want, got, "BinPathFromInstallPath(%v)", tt.installPath)
 		})
 	}
+}
+
+func TestInstallPathForBranch(t *testing.T) {
+	installPathSuffix := filepath.Join(".ActiveState", "StateTool", "release")
+	if runtime.GOOS == "windows" {
+		installPathSuffix = filepath.Join("AppData", "Local", "ActiveState", "StateTool", "release")
+	}
+
+	home := fileutils.TempDirUnsafe()
+	installDir := filepath.Join(home, installPathSuffix)
+	err := fileutils.Mkdir(home, installPathSuffix)
+	require.NoError(t, err)
+
+	err = fileutils.Touch(filepath.Join(installDir, InstallDirMarker))
+	require.NoError(t, err)
+
+	t.Setenv(constants.HomeEnvVarName, home)
+	_, err = InstallPathForBranch("release")
+	require.NoError(t, err)
+}
+
+func TestInstallPathFromReference(t *testing.T) {
+	installPathSuffix := filepath.Join(".ActiveState", "StateTool", "release")
+	if runtime.GOOS == "windows" {
+		installPathSuffix = filepath.Join("AppData", "Local", "ActiveState", "StateTool", "release")
+	}
+
+	home := fileutils.TempDirUnsafe()
+	installDir := filepath.Join(home, installPathSuffix)
+	err := fileutils.Mkdir(home, installPathSuffix)
+	require.NoError(t, err)
+
+	err = fileutils.Touch(filepath.Join(installDir, InstallDirMarker))
+	require.NoError(t, err)
+
+	binDir := filepath.Join(installDir, "bin")
+	err = fileutils.Mkdir(binDir)
+	require.NoError(t, err)
+
+	err = fileutils.Touch(filepath.Join(binDir, constants.StateCmd+exeutils.Extension))
+	require.NoError(t, err)
+
+	t.Setenv(constants.HomeEnvVarName, home)
+	_, err = InstallPathFromReference(filepath.Join(installDir, "bin"))
+	require.NoError(t, err)
 }

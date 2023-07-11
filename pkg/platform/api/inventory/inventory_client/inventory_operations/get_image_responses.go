@@ -46,7 +46,8 @@ func NewGetImageOK() *GetImageOK {
 	return &GetImageOK{}
 }
 
-/* GetImageOK describes a response with status code 200, with default header values.
+/*
+GetImageOK describes a response with status code 200, with default header values.
 
 Retrieve the image
 */
@@ -80,7 +81,8 @@ func NewGetImageDefault(code int) *GetImageDefault {
 	}
 }
 
-/* GetImageDefault describes a response with status code -1, with default header values.
+/*
+GetImageDefault describes a response with status code -1, with default header values.
 
 generic error response
 */

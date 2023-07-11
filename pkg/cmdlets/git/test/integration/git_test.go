@@ -16,23 +16,19 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/testhelpers/httpmock"
 	"github.com/ActiveState/cli/internal/testhelpers/outputhelper"
 	gitlet "github.com/ActiveState/cli/pkg/cmdlets/git"
-	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 type GitTestSuite struct {
 	suite.Suite
-	graphMock  *httpmock.HTTPMock
 	dir        string
 	anotherDir string
 }
 
 func (suite *GitTestSuite) BeforeTest(suiteName, testName string) {
-	suite.graphMock = httpmock.Activate(api.GetServiceURL(api.ServiceGraphQL).String())
 
 	var err error
 	suite.dir, err = ioutil.TempDir("", testName)
@@ -73,8 +69,6 @@ func (suite *GitTestSuite) BeforeTest(suiteName, testName string) {
 }
 
 func (suite *GitTestSuite) AfterTest(suiteName, testName string) {
-	httpmock.DeActivate()
-
 	err := os.RemoveAll(suite.dir)
 	if err != nil {
 		fmt.Printf("WARNING: Could not remove temp dir: %s, error: %v", suite.dir, err)

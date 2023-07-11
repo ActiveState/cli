@@ -28,21 +28,6 @@ func FetchRaw(secretsClient *secretsapi.Client, cfg authentication.Configurable)
 	return kpOk.Payload, nil
 }
 
-// Fetch fetchs and parses the current user's keypair using the provided passphrase or returns a failure.
-func Fetch(secretsClient *secretsapi.Client, cfg authentication.Configurable, passphrase string) (Keypair, error) {
-	rawKP, err := FetchRaw(secretsClient, cfg)
-	if err != nil {
-		return nil, err
-	}
-
-	kp, err := ParseEncryptedRSA(*rawKP.EncryptedPrivateKey, passphrase)
-	if err != nil {
-		return nil, err
-	}
-
-	return kp, nil
-}
-
 // FetchPublicKey fetchs the PublicKey for a sepcific user.
 func FetchPublicKey(secretsClient *secretsapi.Client, user *mono_models.User) (Encrypter, error) {
 	params := keys.NewGetPublicKeyParams()
