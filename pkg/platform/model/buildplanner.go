@@ -11,6 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/gqlclient"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/request"
@@ -53,31 +54,9 @@ type BuildResult struct {
 func (b *BuildResult) OrderedArtifacts() []artifact.ArtifactID {
 	res := make([]artifact.ArtifactID, 0, len(b.Build.Artifacts))
 	for _, a := range b.Build.Artifacts {
-		res = append(res, a.TargetID)
+		res = append(res, a.NodeID)
 	}
 	return res
-}
-
-type BuildPlannerError struct {
-	wrapped          error
-	validationErrors []string
-	isTransient      bool
-}
-
-func (e *BuildPlannerError) Error() string {
-	return "resolve_err"
-}
-
-func (e *BuildPlannerError) Unwrap() error {
-	return e.wrapped
-}
-
-func (e *BuildPlannerError) ValidationErrors() []string {
-	return e.validationErrors
-}
-
-func (e *BuildPlannerError) IsTransient() bool {
-	return e.isTransient
 }
 
 type BuildPlanner struct {
@@ -102,38 +81,23 @@ func NewBuildPlannerModel(auth *authentication.Auth) *BuildPlanner {
 }
 
 func (bp *BuildPlanner) FetchBuildResult(commitID strfmt.UUID, owner, project string) (*BuildResult, error) {
-	resp := &bpModel.BuildPlan{}
-	err := bp.client.Run(request.BuildPlan(owner, project, commitID.String()), resp)
+	logging.Debug("FetchBuildResult, commitID: %s, owner: %s, project: %s", commitID, owner, project)
+	resp := bpModel.NewBuildPlanResponse(owner, project)
+	err := bp.client.Run(request.BuildPlan(commitID.String(), owner, project), resp)
 	if err != nil {
 		return nil, errs.Wrap(err, "failed to fetch build plan")
 	}
 
-	// Check for errors in the response
-	if resp.Project.Type == bpModel.NotFound {
-		return nil, locale.NewError("err_buildplanner_project_not_found", "Build plan does not contain project")
-	}
-	if resp.Project.Commit.Type == bpModel.NotFound {
-		return nil, locale.NewError("err_buildplanner_commit_not_found", "Build plan does not contain commit")
-	}
-	if resp.Project.Commit.Build.Type == bpModel.BuildResultPlanningError {
-		var errs []string
-		var isTransient bool
-		for _, se := range resp.Project.Commit.Build.SubErrors {
-			errs = append(errs, se.Message)
-			isTransient = se.IsTransient
-		}
-		return nil, &BuildPlannerError{
-			wrapped:          locale.NewError("err_buildplanner", resp.Project.Commit.Build.Error),
-			validationErrors: errs,
-			isTransient:      isTransient,
-		}
+	build, err := resp.Build()
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not get build from response")
 	}
 
 	// The BuildPlanner will return a build plan with a status of
 	// "planning" if the build plan is not ready yet. We need to
 	// poll the BuildPlanner until the build is ready.
-	if resp.Project.Commit.Build.Status == bpModel.Planning {
-		resp, err = bp.pollBuildPlan(owner, project, commitID.String())
+	if build.Status == bpModel.Planning {
+		resp, err = bp.pollBuildPlan(commitID.String(), owner, project)
 		if err != nil {
 			return nil, errs.Wrap(err, "failed to poll build plan")
 		}
@@ -141,11 +105,11 @@ func (bp *BuildPlanner) FetchBuildResult(commitID strfmt.UUID, owner, project st
 
 	// The type aliasing in the query populates the
 	// response with emtpy targets that we should remove
-	removeEmptyTargets(resp)
+	removeEmptyTargets(build)
 
 	// Extract the available platforms from the build plan
 	var bpPlatforms []strfmt.UUID
-	for _, t := range resp.Project.Commit.Build.Terminals {
+	for _, t := range build.Terminals {
 		if t.Tag == bpModel.TagOrphan {
 			continue
 		}
@@ -160,56 +124,71 @@ func (bp *BuildPlanner) FetchBuildResult(commitID strfmt.UUID, owner, project st
 
 	// Filter the build terminals to only include the current platform
 	var filteredTerminals []*bpModel.NamedTarget
-	for _, t := range resp.Project.Commit.Build.Terminals {
+	for _, t := range build.Terminals {
 		if platformID.String() == strings.TrimPrefix(t.Tag, "platform:") {
 			filteredTerminals = append(filteredTerminals, t)
 		}
 	}
-	resp.Project.Commit.Build.Terminals = filteredTerminals
+	build.Terminals = filteredTerminals
 
 	buildEngine := Alternative
-	for _, s := range resp.Project.Commit.Build.Sources {
+	for _, s := range build.Sources {
 		if s.Namespace == "builder" && s.Name == "camel" {
 			buildEngine = Camel
 			break
 		}
 	}
 
+	id, err := resp.CommitID()
+	if err != nil {
+		return nil, errs.Wrap(err, "Response does not contain commitID")
+	}
+
 	res := BuildResult{
 		BuildEngine: buildEngine,
-		Build:       resp.Project.Commit.Build,
-		BuildReady:  resp.Project.Commit.Build.Status == bpModel.Ready,
-		CommitID:    strfmt.UUID(resp.Project.Commit.CommitID),
+		Build:       build,
+		BuildReady:  build.Status == bpModel.Completed,
+		CommitID:    id,
 	}
 
 	// We want to extract the recipe ID from the BuildLogIDs.
 	// We do this because if the build is in progress we will need to reciepe ID to
 	// initialize the build log streamer.
-	// For camel builds the ID type will not be BuildLogRecipeID but this is okay
-	// because the state tool does not display in progress information for camel builds.
-	for _, id := range resp.Project.Commit.Build.BuildLogIDs {
-		if id.Type == bpModel.BuildLogRecipeID {
-			if res.RecipeID != "" {
-				return nil, errs.Wrap(err, "Build plan contains multiple recipe IDs")
-			}
-			res.RecipeID = strfmt.UUID(id.ID)
+	// This information will only be populated if the build is an alternate build.
+	// This is specified in the build planner queries.
+	for _, id := range build.BuildLogIDs {
+		if res.RecipeID != "" {
+			return nil, errs.Wrap(err, "Build plan contains multiple recipe IDs")
 		}
+		res.RecipeID = strfmt.UUID(id.ID)
+		break
 	}
 
 	return &res, nil
 }
 
-func (bp *BuildPlanner) pollBuildPlan(owner, project, commitID string) (*bpModel.BuildPlan, error) {
-	var resp *bpModel.BuildPlan
+func (bp *BuildPlanner) pollBuildPlan(commitID, owner, project string) (bpModel.BuildPlan, error) {
+	var resp bpModel.BuildPlan
 	ticker := time.NewTicker(pollInterval)
 	for {
 		select {
 		case <-ticker.C:
-			err := bp.client.Run(request.BuildPlan(owner, project, commitID), resp)
+			err := bp.client.Run(request.BuildPlan(commitID, owner, project), resp)
 			if err != nil {
 				return nil, errs.Wrap(err, "failed to fetch build plan")
 			}
-			if resp.Project.Commit.Build.Status != bpModel.Planning {
+
+			if resp == nil {
+				multilog.Error("Build plan response is nil in pollBuildPlan")
+				continue
+			}
+
+			build, err := resp.Build()
+			if err != nil {
+				return nil, errs.Wrap(err, "Could not get build from response")
+			}
+
+			if build.Status != bpModel.Planning {
 				return resp, nil
 			}
 		case <-time.After(pollTimeout):
@@ -218,34 +197,34 @@ func (bp *BuildPlanner) pollBuildPlan(owner, project, commitID string) (*bpModel
 	}
 }
 
-func removeEmptyTargets(bp *bpModel.BuildPlan) {
+func removeEmptyTargets(bp *bpModel.Build) {
 	var steps []*bpModel.Step
-	for _, step := range bp.Project.Commit.Build.Steps {
-		if step.TargetID == "" {
+	for _, step := range bp.Steps {
+		if step.StepID == "" {
 			continue
 		}
 		steps = append(steps, step)
 	}
 
 	var sources []*bpModel.Source
-	for _, source := range bp.Project.Commit.Build.Sources {
-		if source.TargetID == "" {
+	for _, source := range bp.Sources {
+		if source.NodeID == "" {
 			continue
 		}
 		sources = append(sources, source)
 	}
 
 	var artifacts []*bpModel.Artifact
-	for _, artifact := range bp.Project.Commit.Build.Artifacts {
-		if artifact.TargetID == "" {
+	for _, artifact := range bp.Artifacts {
+		if artifact.NodeID == "" {
 			continue
 		}
 		artifacts = append(artifacts, artifact)
 	}
 
-	bp.Project.Commit.Build.Steps = steps
-	bp.Project.Commit.Build.Sources = sources
-	bp.Project.Commit.Build.Artifacts = artifacts
+	bp.Steps = steps
+	bp.Sources = sources
+	bp.Artifacts = artifacts
 }
 
 type StageCommitParams struct {
@@ -260,10 +239,11 @@ type StageCommitParams struct {
 }
 
 func (bp *BuildPlanner) StageCommit(params StageCommitParams) (strfmt.UUID, error) {
+	logging.Debug("StageCommit, params: %+v", params)
 	var err error
-	script, err := bp.GetBuildExpression(params.Owner, params.Project, params.ParentCommit)
+	expression, err := bp.GetBuildExpression(params.Owner, params.Project, params.ParentCommit)
 	if err != nil {
-		return "", errs.Wrap(err, "Failed to get build graph")
+		return "", errs.Wrap(err, "Failed to get build expression")
 	}
 
 	requirement := bpModel.Requirement{
@@ -272,24 +252,45 @@ func (bp *BuildPlanner) StageCommit(params StageCommitParams) (strfmt.UUID, erro
 	}
 
 	if params.PackageVersion != "" {
-		requirement.VersionRequirement = []bpModel.VersionRequirement{{bpModel.ComparatorEQ: params.PackageVersion}}
+		requirement.VersionRequirement = []bpModel.VersionRequirement{{bpModel.VersionRequirementComparatorKey: bpModel.ComparatorEQ, bpModel.VersionRequirementVersionKey: params.PackageVersion}}
 	}
 
-	err = script.Update(params.Operation, requirement, *params.TimeStamp)
+	err = expression.Update(params.Operation, requirement, *params.TimeStamp)
 	if err != nil {
 		return "", errs.Wrap(err, "Failed to update build graph")
 	}
 
 	// With the updated build expression call the stage commit mutation
-	request := request.StageCommit(params.Owner, params.Project, params.ParentCommit, script)
+	request := request.StageCommit(params.Owner, params.Project, params.ParentCommit, expression)
 	resp := &bpModel.StageCommitResult{}
 	err = bp.client.Run(request, resp)
 	if err != nil {
-		return "", errs.Wrap(err, "failed to fetch build plan")
+		return "", locale.WrapError(err, "err_buildplanner_stage_commit", "Failed to stage commit, error: {{.V0}}", err.Error())
 	}
 
-	if resp.NotFoundError != nil {
-		return "", errs.New("Commit not found: %s", resp.NotFoundError.Message)
+	if resp.Commit == nil {
+		return "", errs.New("Staged commit is nil")
+	}
+
+	if resp.Commit.Build == nil {
+		if resp.Error != nil {
+			return "", errs.New(resp.Error.Message)
+		}
+		return "", errs.New("Commit does not contain build")
+	}
+
+	if resp.Commit.Build.PlanningError != nil {
+		var errs []string
+		var isTransient bool
+		for _, se := range resp.Commit.Build.SubErrors {
+			errs = append(errs, se.Message)
+			isTransient = se.IsTransient
+		}
+		return "", &bpModel.BuildPlannerError{
+			Wrapped:          locale.NewInputError("err_buildplanner", resp.Commit.Build.Message),
+			ValidationErrors: errs,
+			IsTransient:      isTransient,
+		}
 	}
 
 	if resp.Commit.Build.Status == bpModel.Planning {
@@ -305,20 +306,22 @@ func (bp *BuildPlanner) StageCommit(params StageCommitParams) (strfmt.UUID, erro
 }
 
 func (bp *BuildPlanner) GetBuildExpression(owner, project, commitID string) (*buildexpression.BuildExpression, error) {
-	resp := &bpModel.BuildPlan{}
-	err := bp.client.Run(request.BuildExpression(owner, project, commitID), resp)
+	logging.Debug("GetBuildExpression, owner: %s, project: %s, commitID: %s", owner, project, commitID)
+	resp := &bpModel.BuildExpression{}
+	err := bp.client.Run(request.BuildExpression(commitID), resp)
 	if err != nil {
-		return nil, errs.Wrap(err, "failed to fetch build graph")
+		return nil, errs.Wrap(err, "failed to fetch build expression")
 	}
 
-	if resp.Project.Type == bpModel.NotFound {
-		return nil, errs.New("Project not found: %s", resp.Project.Message)
-	}
-	if resp.Project.Commit.Type == bpModel.NotFound {
-		return nil, errs.New("Commit not found: %s", resp.Project.Commit.Message)
+	if resp.Commit == nil {
+		return nil, errs.New("Commit is nil")
 	}
 
-	expression, err := buildexpression.New(resp.Project.Commit.Script)
+	if resp.Commit.Expression == nil {
+		return nil, errs.New("Commit does not contain expression")
+	}
+
+	expression, err := buildexpression.New(resp.Commit.Expression)
 	if err != nil {
 		return nil, errs.Wrap(err, "failed to parse build expression")
 	}

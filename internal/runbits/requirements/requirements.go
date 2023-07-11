@@ -216,8 +216,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 		return errs.Wrap(err, "Could not fetch latest timestamp")
 	}
 
-	bp := model.NewBuildPlannerModel(r.Auth)
-	commitID, err := bp.StageCommit(model.StageCommitParams{
+	params := model.StageCommitParams{
 		Owner:            pj.Owner(),
 		Project:          pj.Name(),
 		ParentCommit:     string(parentCommitID),
@@ -226,9 +225,12 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 		PackageNamespace: ns,
 		Operation:        operation,
 		TimeStamp:        latest,
-	})
+	}
+
+	bp := model.NewBuildPlannerModel(r.Auth)
+	commitID, err := bp.StageCommit(params)
 	if err != nil {
-		return locale.WrapError(err, "err_package_save_and_build", "Could not save and build project")
+		return locale.WrapError(err, "err_package_save_and_build", "Error occurred while trying to create a commit")
 	}
 
 	orderChanged := !hasParentCommit

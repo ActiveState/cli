@@ -33,7 +33,7 @@ func NewFailedArtifactsFromBuildPlan(build model.Build) []FailedArtifact {
 		// Currently, transient failures are handled as permanent failures.
 		// The build planner does not return transient failures but it may in the future.
 		if a.Status == model.ArtifactFailedPermanently || a.Status == model.ArtifactFailedTransiently || a.Status == model.ArtifactSkipped || len(a.Errors) > 0 {
-			failed = append(failed, FailedArtifact{ArtifactID: strfmt.UUID(a.TargetID), UnsignedLogURI: a.LogURL, ErrorMsg: strings.Join(a.Errors, "\n")})
+			failed = append(failed, FailedArtifact{ArtifactID: strfmt.UUID(a.NodeID), UnsignedLogURI: a.LogURL, ErrorMsg: strings.Join(a.Errors, "\n")})
 		}
 	}
 

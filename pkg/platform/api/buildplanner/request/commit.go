@@ -1,35 +1,32 @@
 package request
 
-import "github.com/ActiveState/cli/pkg/platform/runtime/buildexpression"
+import "github.com/ActiveState/cli/internal/logging"
 
-func PushCommit(owner, project, parentCommit, branchRef, description string, expression buildexpression.BuildExpression) *buildPlanByPushCommit {
-	return &buildPlanByPushCommit{map[string]interface{}{
-		"organization": owner,
-		"project":      project,
-		"parentCommit": parentCommit,
-		"branchRef":    branchRef,
-		"description":  description,
-		"expr":         expression,
+func BuildPlanByCommitID(commitID string) *buildPlanByCommitID {
+	logging.Debug("BuildPlanByCommitID")
+	bp := &buildPlanByCommitID{map[string]interface{}{
+		"commitID": commitID,
 	}}
+
+	return bp
 }
 
-type buildPlanByPushCommit struct {
+type buildPlanByCommitID struct {
 	vars map[string]interface{}
 }
 
-func (b *buildPlanByPushCommit) Query() string {
+func (b *buildPlanByCommitID) Query() string {
 	return `
-mutation ($organization: String!, $project: String!, $parentCommit: String!, $branchRef: String!, $expr:BuildExpr! $description: String!) {
-  pushCommit(input:{org:$organization, project:$project, parentCommit:$parentCommit, expr:$expr, branchRef:$branchRef, description:$description}) {
+query ($commitID: ID!) {
+  commit(commitId: $commitID) {
     ... on Commit {
       __typename
-			expr
-      commitId
+      expr
       build {
         __typename
         ... on BuildCompleted {
           buildLogIds {
-						... on AltBuildId {
+            ... on AltBuildId {
               id
             }
           }
@@ -144,12 +141,15 @@ mutation ($organization: String!, $project: String!, $parentCommit: String!, $br
             }
           }
         }
+        ... on Error {
+          message
+        }
       }
     }
-    ... on NotFound {
+    ... on Error {
       message
     }
-    ... on Error{
+    ... on NotFound {
       message
     }
   }
@@ -157,6 +157,6 @@ mutation ($organization: String!, $project: String!, $parentCommit: String!, $br
 `
 }
 
-func (b *buildPlanByPushCommit) Vars() map[string]interface{} {
+func (b *buildPlanByCommitID) Vars() map[string]interface{} {
 	return b.vars
 }

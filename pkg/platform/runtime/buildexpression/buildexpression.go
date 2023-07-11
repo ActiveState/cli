@@ -579,6 +579,7 @@ func (e *BuildExpression) addRequirement(requirement model.Requirement) error {
 func (e *BuildExpression) removeRequirement(requirement model.Requirement) error {
 	requirementsNode := e.getRequirementsNode()
 
+	var found bool
 	for i, r := range requirementsNode {
 		if r.Object == nil {
 			continue
@@ -587,8 +588,14 @@ func (e *BuildExpression) removeRequirement(requirement model.Requirement) error
 		for _, o := range *r.Object {
 			if o.Name == RequirementNameKey && *o.Value.Str == requirement.Name {
 				requirementsNode = append(requirementsNode[:i], requirementsNode[i+1:]...)
+				found = true
+				break
 			}
 		}
+	}
+
+	if !found {
+		return errs.New("Could not find requirement")
 	}
 
 	for _, arg := range e.getSolveNode().Arguments {
@@ -677,7 +684,10 @@ func (e *BuildExpression) MarshalJSON() ([]byte, error) {
 	for _, assignment := range e.Let.Assignments {
 		let[assignment.Name] = assignment.Value
 	}
+
+	let["in"] = e.Let.In
 	m["let"] = let
+
 	return json.Marshal(m)
 }
 
