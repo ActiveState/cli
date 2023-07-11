@@ -114,25 +114,25 @@ type BuildPlanByProject struct {
 
 func (b *BuildPlanByProject) Build() (*Build, error) {
 	if b.Project == nil {
-		return nil, errs.New("Project is nil")
+		return nil, errs.New("BuildPlanByProject.Build: Project is nil")
 	}
 
 	if b.Project.Error != nil {
 		if b.Project.Error.Message != "" {
-			return nil, errs.New("Could not get build, API returned project error message: %s", b.Project.Message)
+			return nil, errs.New("BuildPlanByProject.Build: Could not get build, API returned project error message: %s", b.Project.Message)
 		}
-		return nil, errs.New("Could not retrieve project")
+		return nil, errs.New("BuildPlanByProject.Build: Could not retrieve project")
 	}
 
 	if b.Project.Commit == nil {
-		return nil, errs.New("Commit is nil")
+		return nil, errs.New("BuildPlanByProject.Build: Commit is nil")
 	}
 
 	if b.Project.Commit.Error != nil {
 		if b.Project.Commit.Error.Message != "" {
 			return nil, errs.New("Could not get build, API returned commit error message: %s", b.Project.Commit.Message)
 		}
-		return nil, errs.New("Could not retrieve commit")
+		return nil, errs.New("BuildPlanByProject.Build: Could not retrieve commit")
 	}
 
 	if b.Project.Commit.Type == NotFound {
@@ -140,7 +140,7 @@ func (b *BuildPlanByProject) Build() (*Build, error) {
 	}
 
 	if b.Project.Commit.Build == nil {
-		return nil, errs.New("Commit does not contain build")
+		return nil, errs.New("BuildPlanByProject.Build: Commit does not contain build")
 	}
 
 	if b.Project.Commit.Build.PlanningError != nil {
@@ -162,25 +162,25 @@ func (b *BuildPlanByProject) Build() (*Build, error) {
 
 func (b *BuildPlanByProject) CommitID() (strfmt.UUID, error) {
 	if b.Project == nil {
-		return "", errs.New("Project is nil")
+		return "", errs.New("BuildPlanByProject.CommitID: Project is nil")
 	}
 
 	if b.Project.Error != nil {
 		if b.Project.Error.Message != "" {
-			return "", errs.New("Could not get commit ID, API returned project error message: %s", b.Project.Message)
+			return "", errs.New("BuildPlanByProject.CommitID: Could not get commit ID, API returned project error message: %s", b.Project.Message)
 		}
-		return "", errs.New("Could not retrieve project")
+		return "", errs.New("BuildPlanByProject.CommitID: Could not retrieve project")
 	}
 
 	if b.Project.Commit == nil {
-		return "", errs.New("Commit is nil")
+		return "", errs.New("BuildPlanByProject.CommitID: Commit is nil")
 	}
 
 	if b.Project.Commit.Error != nil {
 		if b.Project.Commit.Error.Message != "" {
-			return "", errs.New("Could not get commit ID, API returned commit error message: %s", b.Project.Commit.Message)
+			return "", errs.New("BuildPlanByProject.CommitID: Could not get commit ID. API returned commit error message: %s", b.Project.Commit.Message)
 		}
-		return "", errs.New("Could not retrieve commit")
+		return "", errs.New("BuildPlanByProject.CommitID: Could not retrieve commit")
 	}
 
 	return b.Project.Commit.CommitID, nil
@@ -193,14 +193,14 @@ type BuildPlanByCommit struct {
 
 func (b *BuildPlanByCommit) Build() (*Build, error) {
 	if b.Commit == nil {
-		return nil, errs.New("Commit is nil")
+		return nil, errs.New("BuildPlanByCommit.Build: Commit is nil")
 	}
 
 	if b.Commit.Error != nil {
 		if b.Commit.Error.Message != "" {
-			return nil, errs.New("Could not get build, API returned commit error message: %s", b.Commit.Message)
+			return nil, errs.New("BuildPlanByCommit.Build: Could not get build via commit ID, API returned commit error message: %s", b.Commit.Message)
 		}
-		return nil, errs.New("Could not retrieve commit")
+		return nil, errs.New("BuildPlanByCommit.Build: Could not retrieve commit")
 	}
 
 	if b.Commit.Type == NotFound {
@@ -209,9 +209,9 @@ func (b *BuildPlanByCommit) Build() (*Build, error) {
 
 	if b.Commit.Build == nil {
 		if b.Commit.Error != nil {
-			return nil, errs.New("Commit not found: %s", b.Commit.Error.Message)
+			return nil, errs.New("BuildPlanByCommit.Build: Commit not found: %s", b.Commit.Error.Message)
 		}
-		return nil, errs.New("Commit does not contain build")
+		return nil, errs.New("BuildPlanByCommit.Build: Commit does not contain build")
 	}
 
 	if b.Commit.Build.PlanningError != nil {
@@ -233,14 +233,14 @@ func (b *BuildPlanByCommit) Build() (*Build, error) {
 
 func (b *BuildPlanByCommit) CommitID() (strfmt.UUID, error) {
 	if b.Commit == nil {
-		return "", errs.New("Commit is nil")
+		return "", errs.New("BuildPlanByCommit.CommitID: Commit is nil")
 	}
 
 	if b.Commit.Error != nil {
 		if b.Commit.Error.Message != "" {
-			return "", errs.New("Could not get commit ID, API returned commit error message: %s", b.Commit.Message)
+			return "", errs.New("BuildPlanByCommit.CommitID: Could not get commit ID, API returned commit error message: %s", b.Commit.Message)
 		}
-		return "", errs.New("Could not retrieve commit")
+		return "", errs.New("BuildPlanByCommit.CommitID: Could not retrieve commit")
 	}
 
 	return b.Commit.CommitID, nil
