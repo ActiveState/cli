@@ -81,7 +81,7 @@ func NewBuildPlannerModel(auth *authentication.Auth) *BuildPlanner {
 }
 
 func (bp *BuildPlanner) FetchBuildResult(commitID strfmt.UUID, owner, project string) (*BuildResult, error) {
-	logging.Debug("FetchBuildResult")
+	logging.Debug("FetchBuildResult, commitID: %s, owner: %s, project: %s", commitID, owner, project)
 	resp := bpModel.NewBuildPlanResponse(owner, project)
 	err := bp.client.Run(request.BuildPlan(commitID.String(), owner, project), resp)
 	if err != nil {
@@ -239,7 +239,7 @@ type StageCommitParams struct {
 }
 
 func (bp *BuildPlanner) StageCommit(params StageCommitParams) (strfmt.UUID, error) {
-	logging.Debug("StageCommit")
+	logging.Debug("StageCommit, params: %+v", params)
 	var err error
 	expression, err := bp.GetBuildExpression(params.Owner, params.Project, params.ParentCommit)
 	if err != nil {
@@ -306,7 +306,7 @@ func (bp *BuildPlanner) StageCommit(params StageCommitParams) (strfmt.UUID, erro
 }
 
 func (bp *BuildPlanner) GetBuildExpression(owner, project, commitID string) (*buildexpression.BuildExpression, error) {
-	logging.Debug("GetBuildExpression")
+	logging.Debug("GetBuildExpression, owner: %s, project: %s, commitID: %s", owner, project, commitID)
 	resp := &bpModel.BuildExpression{}
 	err := bp.client.Run(request.BuildExpression(commitID), resp)
 	if err != nil {
