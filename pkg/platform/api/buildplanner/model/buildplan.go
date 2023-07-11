@@ -3,6 +3,8 @@ package model
 import (
 	"encoding/json"
 
+	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/go-openapi/strfmt"
 )
 
@@ -69,9 +71,117 @@ func (o Operation) String() string {
 
 // BuildPlan is the top level object returned by the build planner. It contains
 // the commit and build.
-type BuildPlan struct {
+type BuildPlan interface {
+	Build() (*Build, error)
+	CommitID() (strfmt.UUID, error)
+}
+
+func NewBuildPlanResponse(owner, project string) BuildPlan {
+	if owner != "" && project != "" {
+		return &BuildPlanByProject{}
+	}
+	return &BuildPlanByCommit{}
+}
+
+type BuildPlanByProject struct {
+	Project *Project `json:"project"`
+	*Error
+}
+
+func (b *BuildPlanByProject) Build() (*Build, error) {
+	if b.Project == nil {
+		return nil, errs.New("Project is nil")
+	}
+
+	if b.Project.Error != nil && b.Project.Message != "" {
+		return nil, errs.New(b.Project.Message)
+	}
+
+	if b.Project.Commit == nil {
+		return nil, errs.New("Commit is nil")
+	}
+
+	if b.Project.Commit.Error != nil && b.Project.Commit.Message != "" {
+		return nil, errs.New(b.Project.Commit.Message)
+	}
+
+	if b.Project.Commit.Type == NotFound {
+		return nil, locale.NewError("err_buildplanner_commit_not_found", "Build plan does not contain commit")
+	}
+
+	if b.Project.Commit.Build == nil {
+		if b.Project.Commit.Error != nil {
+			return nil, errs.New("Commit not found: %s", b.Project.Commit.Error.Message)
+		}
+		return nil, errs.New("Commit does not contain build")
+	}
+
+	return b.Project.Commit.Build, nil
+}
+
+func (b *BuildPlanByProject) CommitID() (strfmt.UUID, error) {
+	if b.Project == nil {
+		return "", errs.New("Project is nil")
+	}
+
+	if b.Project.Error != nil && b.Project.Message != "" {
+		return "", errs.New(b.Project.Message)
+	}
+
+	if b.Project.Commit == nil {
+		return "", errs.New("Commit is nil")
+	}
+
+	if b.Project.Commit.Error != nil && b.Project.Commit.Message != "" {
+		return "", errs.New(b.Project.Commit.Message)
+	}
+
+	return b.Project.Commit.CommitID, nil
+}
+
+type BuildPlanByCommit struct {
 	Commit *Commit `json:"commit"`
-	*NotFoundError
+	*Error
+}
+
+func (b *BuildPlanByCommit) Build() (*Build, error) {
+	if b.Commit == nil {
+		return nil, errs.New("Commit is nil")
+	}
+
+	if b.Commit.Message != "" {
+		return nil, errs.New(b.Commit.Message)
+	}
+
+	if b.Commit.Type == NotFound {
+		return nil, locale.NewError("err_buildplanner_commit_not_found", "Build plan does not contain commit")
+	}
+
+	if b.Commit.Build == nil {
+		if b.Commit.Error != nil {
+			return nil, errs.New("Commit not found: %s", b.Commit.Error.Message)
+		}
+		return nil, errs.New("Commit does not contain build")
+	}
+
+	return b.Commit.Build, nil
+}
+
+func (b *BuildPlanByCommit) CommitID() (strfmt.UUID, error) {
+	if b.Commit == nil {
+		return "", errs.New("Commit is nil")
+	}
+
+	if b.Commit.Message != "" {
+		return "", errs.New(b.Commit.Message)
+	}
+
+	return b.Commit.CommitID, nil
+}
+
+type BuildExpression struct {
+	Commit *Commit `json:"commit"`
+	*Error
 }
 
 // PushCommitResult is the result of a push commit mutation.
@@ -79,7 +189,7 @@ type BuildPlan struct {
 // The resulting commit is pushed to the platform automatically.
 type PushCommitResult struct {
 	Commit *Commit `json:"pushCommit"`
-	*NotFoundError
+	*Error
 }
 
 // StageCommitResult is the result of a stage commit mutation.
@@ -87,12 +197,7 @@ type PushCommitResult struct {
 // The resulting commit is NOT pushed to the platform automatically.
 type StageCommitResult struct {
 	Commit *Commit `json:"stageCommit"`
-	*NotFoundError
-}
-
-// NotFoundError occurs when a project or commit is not found.
-type NotFoundError struct {
-	Message string `json:"message"`
+	*Error
 }
 
 // Error contains an error message.
@@ -104,7 +209,7 @@ type Error struct {
 type Project struct {
 	Type   string  `json:"__typename"`
 	Commit *Commit `json:"commit"`
-	*NotFoundError
+	*Error
 }
 
 // Commit contains the build and any errors.
@@ -113,7 +218,7 @@ type Commit struct {
 	Expression json.RawMessage `json:"expr"`
 	CommitID   strfmt.UUID     `json:"commitId"`
 	Build      *Build          `json:"build"`
-	*NotFoundError
+	*Error
 }
 
 // Build is a directed acyclic graph. It begins with a set of terminal nodes

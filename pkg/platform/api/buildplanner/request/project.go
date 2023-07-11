@@ -1,6 +1,9 @@
 package request
 
+import "github.com/ActiveState/cli/internal/logging"
+
 func BuildPlanByProject(organization, project, commitID string) *buildPlanByProject {
+	logging.Debug("BuildPlanByProject")
 	bp := &buildPlanByProject{map[string]interface{}{
 		"organization": organization,
 		"project":      project,

@@ -29,7 +29,30 @@ func NewMapFromBuildPlan(build *model.Build) (artifact.Map, error) {
 
 	var terminalTargetIDs []strfmt.UUID
 	for _, terminal := range build.Terminals {
-		terminalTargetIDs = append(terminalTargetIDs, terminal.NodeIDs...)
+		// If there is an artifact for this terminal and its mime type is application/x-gozip-installer
+		// then the list of terminal target IDs should be the sources for the step that generated the
+		// installer. That is what we want to use to build the artifact map.
+		for _, nodeID := range terminal.NodeIDs {
+			artifact, ok := lookup[nodeID].(*model.Artifact)
+			if !ok {
+				continue
+			}
+
+			if artifact.MimeType == "application/x-gozip-installer" {
+				step, ok := lookup[artifact.GeneratedBy].(*model.Step)
+				if !ok {
+					return nil, errs.New("Could not find step for artifact %s", nodeID)
+				}
+				for _, input := range step.Inputs {
+					if input.Tag != model.TagSource {
+						continue
+					}
+					terminalTargetIDs = append(terminalTargetIDs, input.NodeIDs...)
+				}
+			} else {
+				terminalTargetIDs = append(terminalTargetIDs, terminal.NodeIDs...)
+			}
+		}
 	}
 
 	for _, id := range terminalTargetIDs {
@@ -69,6 +92,7 @@ func buildMap(baseID strfmt.UUID, lookup map[strfmt.UUID]interface{}, result art
 		if err != nil {
 			return errs.Wrap(err, "Could not build runtime dependencies for artifact %s", currentArtifact.NodeID)
 		}
+
 		for id := range recursiveDeps {
 			deps[id] = struct{}{}
 		}
@@ -137,14 +161,27 @@ func getSourceInfo(sourceID strfmt.UUID, lookup map[strfmt.UUID]interface{}) (So
 		if input.Tag != model.TagSource {
 			continue
 		}
+
 		for _, id := range input.NodeIDs {
 			source, ok := lookup[id].(*model.Source)
-			if !ok {
-				return SourceInfo{}, locale.NewError("err_source_name_source", "Could not find source with target id {{.V0}}", id.String())
+			if ok {
+				return SourceInfo{source.Name, source.Namespace, source.Version}, nil
 			}
-			return SourceInfo{source.Name, source.Namespace, source.Version}, nil
+
+			artf, ok := lookup[id].(*model.Artifact)
+			if !ok {
+				return SourceInfo{}, errs.New("Step input does not resolve to source or artifact")
+			}
+
+			info, err := getSourceInfo(artf.GeneratedBy, lookup)
+			if err != nil {
+				return SourceInfo{}, errs.Wrap(err, "could not get source info")
+			}
+
+			return info, nil
 		}
 	}
+
 	return SourceInfo{}, locale.NewError("err_resolve_artifact_name", "Could not resolve artifact name")
 }
 
@@ -163,6 +200,24 @@ func buildRuntimeDependencies(depdendencyID strfmt.UUID, lookup map[strfmt.UUID]
 		_, err := buildRuntimeDependencies(depID, lookup, result)
 		if err != nil {
 			return nil, errs.New("Could not build map for artifact %s", artifact.NodeID)
+		}
+	}
+
+	step, ok := lookup[artifact.GeneratedBy].(*model.Step)
+	if !ok {
+		return nil, errs.New("Incorrect target type for id %s", artifact.GeneratedBy)
+	}
+
+	for _, input := range step.Inputs {
+		if input.Tag != model.TagDependency {
+			continue
+		}
+
+		for _, id := range input.NodeIDs {
+			_, err := buildRuntimeDependencies(id, lookup, result)
+			if err != nil {
+				return nil, errs.New("Could not build map for artifact %s", artifact.NodeID)
+			}
 		}
 	}
 

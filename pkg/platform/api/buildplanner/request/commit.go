@@ -1,6 +1,9 @@
 package request
 
+import "github.com/ActiveState/cli/internal/logging"
+
 func BuildPlanByCommitID(commitID string) *buildPlanByCommitID {
+	logging.Debug("BuildPlanByCommitID")
 	bp := &buildPlanByCommitID{map[string]interface{}{
 		"commitID": commitID,
 	}}
