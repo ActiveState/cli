@@ -4,7 +4,6 @@ import (
 	"os"
 	"testing"
 
-	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -16,17 +15,16 @@ func init() {
 }
 
 func TestCreateSession(t *testing.T) {
-	createSession()
-	// succeeds if no panic/exit
+	assert.NoError(t, createSession(), "Creates session")
 }
 
 func TestGetFileList(t *testing.T) {
-	getFileList()
-	// succeeds if no panic/exit
+	_, err := getFileList()
+	assert.NoError(t, err, "Gets file list")
 }
 
 func TestPrepareFile(t *testing.T) {
-	var params *s3.PutObjectInput
-	params = prepareFile(os.Args[0])
+	params, err := prepareFile(os.Args[0])
+	assert.NoError(t, err, "Prepares file")
 	assert.NotNil(t, params, "Sets params")
 }

@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"path"
@@ -18,39 +17,66 @@ import (
 	"github.com/ActiveState/cli/internal/condition"
 )
 
-const awsProfileName = "default"
-
 var sourcePath, awsRegionName, awsBucketName, awsBucketPrefix string
 
 var sess *session.Session
 
 func main() {
-	if !condition.InUnitTest() {
-		if len(os.Args) != 5 {
-			log.Fatalf("Usage: %s <source> <region-name> <bucket-name> <bucket-prefix>", os.Args[0])
-		}
+	if condition.InUnitTest() {
+		return
+	}
 
-		sourcePath = os.Args[1]
-		awsRegionName = os.Args[2]
-		awsBucketName = os.Args[3]
-		awsBucketPrefix = os.Args[4]
+	app := filepath.Base(os.Args[0])
 
-		run()
+	if len(os.Args) != 5 {
+		fmt.Fprintf(
+			os.Stderr,
+			"Usage: %s <source> <region-name> <bucket-name> <bucket-prefix>", app,
+		)
+		os.Exit(1)
+	}
+
+	sourcePath = os.Args[1]
+	awsRegionName = os.Args[2]
+	awsBucketName = os.Args[3]
+	awsBucketPrefix = os.Args[4]
+
+	if err := run(); err != nil {
+		fmt.Fprintf(os.Stderr, "%s: %s", app, err.Error())
+		os.Exit(1)
 	}
 }
 
-func run() {
+func run() error {
 	fmt.Printf("Uploading files from %s\n", sourcePath)
 
-	createSession()
-	fileList := getFileList()
+	if err := createSession(); err != nil {
+		return err
+	}
+
+	fmt.Printf("Getting list of files\n")
+	fileList, err := getFileList()
+	if err != nil {
+		return err
+	}
 
 	// Upload the files
 	fmt.Printf("Uploading %d files\n", len(fileList))
 	for _, path := range fileList {
-		params := prepareFile(path)
+		fmt.Printf("Preparing %s\n", path)
+		params, err := prepareFile(path)
+		if err != nil {
+			return err
+		}
+		if params.Key != nil {
+			fmt.Printf(" \\- Destination: %s\n", *params.Key)
+		}
+
+		fmt.Printf("Uploading %s\n", path)
 		uploadFile(params)
 	}
+
+	return nil
 }
 
 type logger struct{}
@@ -59,11 +85,11 @@ func (l *logger) Log(v ...interface{}) {
 	fmt.Printf("AWS Log: %v", v)
 }
 
-func createSession() {
+func createSession() error {
 	// Specify profile to load for the session's config
 	var err error
-	var verboseErr = true
-	var logLevel = aws.LogDebug
+	verboseErr := true
+	logLevel := aws.LogDebug
 	_ = logLevel
 	opts := session.Options{
 		Config: aws.Config{
@@ -78,33 +104,39 @@ func createSession() {
 	}
 	sess, err = session.NewSessionWithOptions(opts)
 	if err != nil {
-		log.Fatalf("failed to create session, %s", err.Error())
-		os.Exit(1)
+		return fmt.Errorf("Failed to create session, %w", err)
 	}
+
+	return nil
 }
 
-func getFileList() []string {
+func getFileList() ([]string, error) {
 	// Get list of files to upload
-	fmt.Printf("Getting list of files\n")
 	fileList := []string{}
+
 	os.MkdirAll(sourcePath, os.ModePerm)
-	filepath.Walk(sourcePath, func(p string, f os.FileInfo, err error) error {
-		if isDirectory(p) {
+	err := filepath.Walk(sourcePath, func(p string, f os.FileInfo, err error) error {
+		isDir, err := isDirectory(p)
+		if err != nil {
+			return fmt.Errorf("Cannot walk %q: %w", sourcePath, err)
+		}
+		if isDir {
 			return nil
 		}
 		fileList = append(fileList, p)
 		return nil
 	})
-	return fileList
+	if err != nil {
+		return nil, fmt.Errorf("Cannot get file list: %w", err)
+	}
+
+	return fileList, nil
 }
 
-func prepareFile(p string) *s3.PutObjectInput {
-	fmt.Printf("Uploading %s\n", p)
-
+func prepareFile(p string) (*s3.PutObjectInput, error) {
 	file, err := os.Open(p)
 	if err != nil {
-		fmt.Println("Failed to open file", file, err)
-		os.Exit(1)
+		return nil, fmt.Errorf("Failed to prepare file %q: %w", file.Name(), err)
 	}
 
 	// We just created our file, so no need to err check .Stat()
@@ -118,7 +150,6 @@ func prepareFile(p string) *s3.PutObjectInput {
 	key = normalizePath(awsBucketPrefix + p)
 	key = strings.Replace(key, normalizePath(sourcePath), "", 1)
 	key = strings.Replace(key, normalizePath(path.Join(getRootPath(), "public")), "", 1)
-	fmt.Printf(" \\- Destination: %s\n", key)
 
 	params := &s3.PutObjectInput{
 		Bucket:             aws.String(awsBucketName),
@@ -130,17 +161,19 @@ func prepareFile(p string) *s3.PutObjectInput {
 		ACL:                aws.String("public-read"),
 	}
 
-	return params
+	return params, nil
 }
 
-func uploadFile(params *s3.PutObjectInput) {
+func uploadFile(params *s3.PutObjectInput) error {
 	s3Svc := s3.New(sess)
 	_, err := s3Svc.PutObject(params)
 	if err != nil {
-		fmt.Printf("Failed to upload data to %s/%s, %s\n",
-			awsBucketName, *params.Key, err.Error())
-		os.Exit(1)
+		return fmt.Errorf(
+			"Failed to upload data to %s/%s: %w", awsBucketName, *params.Key, err,
+		)
 	}
+
+	return nil
 }
 
 func normalizePath(p string) string {
@@ -157,8 +190,8 @@ func getRootPath() string {
 
 	abs := path.Dir(file)
 
-	// When tests are ran with coverage the location of this file is changed to a temp file, and we have to
-	// adjust accordingly
+	// When tests are ran with coverage the location of this file is
+	// changed to a temp file, and we have to adjust accordingly
 	if strings.HasSuffix(abs, "_obj_test") {
 		abs = ""
 	}
@@ -173,17 +206,16 @@ func getRootPath() string {
 	return abs + pathsep
 }
 
-func isDirectory(p string) bool {
+func isDirectory(p string) (bool, error) {
 	fd, err := os.Stat(p)
 	if err != nil {
-		fmt.Println(err)
-		os.Exit(2)
+		return false, fmt.Errorf("Cannot determine if %q is a directory: %w", p, err)
 	}
 	switch mode := fd.Mode(); {
 	case mode.IsDir():
-		return true
+		return true, nil
 	case mode.IsRegular():
-		return false
+		return false, nil
 	}
-	return false
+	return false, nil
 }
