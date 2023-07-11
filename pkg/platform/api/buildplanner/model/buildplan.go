@@ -119,7 +119,7 @@ func (b *BuildPlanByProject) Build() (*Build, error) {
 
 	if b.Project.Error != nil {
 		if b.Project.Error.Message != "" {
-			return nil, errs.New(b.Project.Message)
+			return nil, errs.New("Could not get build, API returned project error message: %s", b.Project.Message)
 		}
 		return nil, errs.New("Could not retrieve project")
 	}
@@ -130,7 +130,7 @@ func (b *BuildPlanByProject) Build() (*Build, error) {
 
 	if b.Project.Commit.Error != nil {
 		if b.Project.Commit.Error.Message != "" {
-			return nil, errs.New(b.Project.Commit.Message)
+			return nil, errs.New("Could not get build, API returned commit error message: %s", b.Project.Commit.Message)
 		}
 		return nil, errs.New("Could not retrieve commit")
 	}
@@ -167,7 +167,7 @@ func (b *BuildPlanByProject) CommitID() (strfmt.UUID, error) {
 
 	if b.Project.Error != nil {
 		if b.Project.Error.Message != "" {
-			return "", errs.New(b.Project.Message)
+			return "", errs.New("Could not get commit ID, API returned project error message: %s", b.Project.Message)
 		}
 		return "", errs.New("Could not retrieve project")
 	}
@@ -178,7 +178,7 @@ func (b *BuildPlanByProject) CommitID() (strfmt.UUID, error) {
 
 	if b.Project.Commit.Error != nil {
 		if b.Project.Commit.Error.Message != "" {
-			return "", errs.New(b.Project.Commit.Message)
+			return "", errs.New("Could not get commit ID, API returned commit error message: %s", b.Project.Commit.Message)
 		}
 		return "", errs.New("Could not retrieve commit")
 	}
@@ -198,7 +198,7 @@ func (b *BuildPlanByCommit) Build() (*Build, error) {
 
 	if b.Commit.Error != nil {
 		if b.Commit.Error.Message != "" {
-			return nil, errs.New(b.Commit.Message)
+			return nil, errs.New("Could not get build, API returned commit error message: %s", b.Commit.Message)
 		}
 		return nil, errs.New("Could not retrieve commit")
 	}
@@ -238,7 +238,7 @@ func (b *BuildPlanByCommit) CommitID() (strfmt.UUID, error) {
 
 	if b.Commit.Error != nil {
 		if b.Commit.Error.Message != "" {
-			return "", errs.New(b.Commit.Message)
+			return "", errs.New("Could not get commit ID, API returned commit error message: %s", b.Commit.Message)
 		}
 		return "", errs.New("Could not retrieve commit")
 	}
