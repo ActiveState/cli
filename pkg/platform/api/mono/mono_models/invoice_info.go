@@ -31,6 +31,10 @@ type InvoiceInfo struct {
 	// Required: true
 	Email *string `json:"email"`
 
+	// is trial
+	// Required: true
+	IsTrial *bool `json:"isTrial"`
+
 	// shipping address
 	// Required: true
 	ShippingAddress *AddressInfo `json:"shippingAddress"`
@@ -57,6 +61,10 @@ func (m *InvoiceInfo) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateEmail(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateIsTrial(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -108,6 +116,15 @@ func (m *InvoiceInfo) validateBillingAddress(formats strfmt.Registry) error {
 func (m *InvoiceInfo) validateEmail(formats strfmt.Registry) error {
 
 	if err := validate.Required("email", "body", m.Email); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m *InvoiceInfo) validateIsTrial(formats strfmt.Registry) error {
+
+	if err := validate.Required("isTrial", "body", m.IsTrial); err != nil {
 		return err
 	}
 

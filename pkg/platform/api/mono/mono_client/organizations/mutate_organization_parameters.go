@@ -54,10 +54,12 @@ func NewMutateOrganizationParamsWithHTTPClient(client *http.Client) *MutateOrgan
 	}
 }
 
-/* MutateOrganizationParams contains all the parameters to send to the API endpoint
-   for the mutate organization operation.
+/*
+MutateOrganizationParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the mutate organization operation.
+
+	Typically these are written to a http.Request.
 */
 type MutateOrganizationParams struct {
 

@@ -29,6 +29,12 @@ func (o *GetOrganizationReader) ReadResponse(response runtime.ClientResponse, co
 			return nil, err
 		}
 		return result, nil
+	case 400:
+		result := NewGetOrganizationBadRequest()
+		if err := result.readResponse(response, consumer, o.formats); err != nil {
+			return nil, err
+		}
+		return nil, result
 	case 404:
 		result := NewGetOrganizationNotFound()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -51,7 +57,8 @@ func NewGetOrganizationOK() *GetOrganizationOK {
 	return &GetOrganizationOK{}
 }
 
-/* GetOrganizationOK describes a response with status code 200, with default header values.
+/*
+GetOrganizationOK describes a response with status code 200, with default header values.
 
 Organization Record
 */
@@ -78,12 +85,46 @@ func (o *GetOrganizationOK) readResponse(response runtime.ClientResponse, consum
 	return nil
 }
 
+// NewGetOrganizationBadRequest creates a GetOrganizationBadRequest with default headers values
+func NewGetOrganizationBadRequest() *GetOrganizationBadRequest {
+	return &GetOrganizationBadRequest{}
+}
+
+/*
+GetOrganizationBadRequest describes a response with status code 400, with default header values.
+
+Bad Request
+*/
+type GetOrganizationBadRequest struct {
+	Payload *mono_models.Message
+}
+
+func (o *GetOrganizationBadRequest) Error() string {
+	return fmt.Sprintf("[GET /organizations/{organizationIdentifier}][%d] getOrganizationBadRequest  %+v", 400, o.Payload)
+}
+func (o *GetOrganizationBadRequest) GetPayload() *mono_models.Message {
+	return o.Payload
+}
+
+func (o *GetOrganizationBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+
+	o.Payload = new(mono_models.Message)
+
+	// response payload
+	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
+		return err
+	}
+
+	return nil
+}
+
 // NewGetOrganizationNotFound creates a GetOrganizationNotFound with default headers values
 func NewGetOrganizationNotFound() *GetOrganizationNotFound {
 	return &GetOrganizationNotFound{}
 }
 
-/* GetOrganizationNotFound describes a response with status code 404, with default header values.
+/*
+GetOrganizationNotFound describes a response with status code 404, with default header values.
 
 Not Found
 */
@@ -115,7 +156,8 @@ func NewGetOrganizationInternalServerError() *GetOrganizationInternalServerError
 	return &GetOrganizationInternalServerError{}
 }
 
-/* GetOrganizationInternalServerError describes a response with status code 500, with default header values.
+/*
+GetOrganizationInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */

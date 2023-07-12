@@ -15,7 +15,7 @@ import (
 
 // IngredientOptionSetWithUsageType Ingredient Option Set with Usage Type
 //
-// An ingredient option set paired with how it is used by the ingredient version
+// # An ingredient option set paired with how it is used by the ingredient version
 //
 // swagger:model ingredientOptionSetWithUsageType
 type IngredientOptionSetWithUsageType struct {

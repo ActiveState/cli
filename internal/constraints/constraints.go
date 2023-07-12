@@ -12,7 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
-	"github.com/ActiveState/cli/internal/rtutils/p"
+	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/projectfile"
@@ -93,7 +93,7 @@ func NewPrimeConditional(auth *authentication.Auth, pj projectable, subshellName
 		pjBranch    string
 		pjDir       string
 	)
-	if !p.IsNil(pj) {
+	if !ptr.IsNil(pj) {
 		pjOwner = pj.Owner()
 		pjName = pj.Name()
 		pjNamespace = pj.NamespaceString()

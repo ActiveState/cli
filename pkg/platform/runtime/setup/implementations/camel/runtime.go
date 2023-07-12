@@ -1,10 +1,13 @@
 package camel
 
 import (
+	"io/ioutil"
 	"os"
+	"path/filepath"
 
+	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/multilog"
 	model "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/ActiveState/cli/pkg/platform/runtime/store"
@@ -24,8 +27,18 @@ func (s *Setup) DeleteOutdatedArtifacts(_ artifact.ArtifactChangeset, _, already
 	if len(alreadyInstalled) != 0 {
 		return nil
 	}
-	if err := os.RemoveAll(s.store.InstallPath()); err != nil {
-		multilog.Error("Error removing previous camel installation: %v", err)
+	files, err := ioutil.ReadDir(s.store.InstallPath())
+	if err != nil {
+		return errs.Wrap(err, "Error reading previous camel installation")
+	}
+	for _, file := range files {
+		if file.Name() == constants.LocalRuntimeTempDirectory || file.Name() == constants.LocalRuntimeEnvironmentDirectory {
+			continue // do not delete files that do not belong to previous installation
+		}
+		err = os.RemoveAll(filepath.Join(s.store.InstallPath(), file.Name()))
+		if err != nil {
+			return errs.Wrap(err, "Error removing previous camel installation")
+		}
 	}
 	return nil
 }

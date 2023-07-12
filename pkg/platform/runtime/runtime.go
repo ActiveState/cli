@@ -2,6 +2,7 @@ package runtime
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -20,12 +21,13 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/osutils"
-	"github.com/ActiveState/cli/internal/rtutils/p"
+	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/buildscript"
 	"github.com/ActiveState/cli/pkg/platform/runtime/envdef"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
+	"github.com/ActiveState/cli/pkg/platform/runtime/setup/buildlog"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup/events"
 	"github.com/ActiveState/cli/pkg/platform/runtime/store"
 	"github.com/ActiveState/cli/pkg/project"
@@ -83,17 +85,17 @@ func New(target setup.Targeter, an analytics.Dispatcher, svcm *model.SvcModel, a
 	}
 	recordAttempt(an, target)
 	an.Event(anaConsts.CatRuntime, anaConsts.ActRuntimeStart, &dimensions.Values{
-		Trigger:          p.StrP(target.Trigger().String()),
-		Headless:         p.StrP(strconv.FormatBool(target.Headless())),
-		CommitID:         p.StrP(target.CommitUUID().String()),
-		ProjectNameSpace: p.StrP(project.NewNamespace(target.Owner(), target.Name(), target.CommitUUID().String()).String()),
-		InstanceID:       p.StrP(instanceid.ID()),
+		Trigger:          ptr.To(target.Trigger().String()),
+		Headless:         ptr.To(strconv.FormatBool(target.Headless())),
+		CommitID:         ptr.To(target.CommitUUID().String()),
+		ProjectNameSpace: ptr.To(project.NewNamespace(target.Owner(), target.Name(), target.CommitUUID().String()).String()),
+		InstanceID:       ptr.To(instanceid.ID()),
 	})
 
 	r, err := newRuntime(target, an, svcm, auth)
 	if err == nil {
 		an.Event(anaConsts.CatRuntime, anaConsts.ActRuntimeCache, &dimensions.Values{
-			CommitID: p.StrP(target.CommitUUID().String()),
+			CommitID: ptr.To(target.CommitUUID().String()),
 		})
 	}
 	return r, err
@@ -227,16 +229,50 @@ func (r *Runtime) recordCompletion(err error) {
 	var action string
 	if err != nil {
 		action = anaConsts.ActRuntimeFailure
-		if locale.IsInputError(err) {
-			action = anaConsts.ActRuntimeUserFailure
-		}
 	} else {
 		action = anaConsts.ActRuntimeSuccess
 		r.recordUsage()
 	}
 
-	r.analytics.EventWithLabel(anaConsts.CatRuntime, action, anaConsts.LblRtFailEnv, &dimensions.Values{
-		CommitID: p.StrP(r.target.CommitUUID().String()),
+	ns := project.Namespaced{
+		Owner:   r.target.Owner(),
+		Project: r.target.Name(),
+	}
+
+	errorType := "unknown"
+	switch {
+	// IsInputError should always be first because it is technically possible for something like a
+	// download error to be cause by an input error.
+	case locale.IsInputError(err):
+		errorType = "input"
+	case errs.Matches(err, &model.SolverError{}):
+		errorType = "solve"
+	case errs.Matches(err, &setup.BuildError{}) || errs.Matches(err, &buildlog.BuildError{}):
+		errorType = "build"
+	case errs.Matches(err, &setup.ArtifactSetupErrors{}):
+		if setupErrors := (&setup.ArtifactSetupErrors{}); errors.As(err, &setupErrors) {
+			for _, err := range setupErrors.Errors() {
+				switch {
+				case errs.Matches(err, &setup.ArtifactDownloadError{}):
+					errorType = "download"
+					break // it only takes one download failure to report the runtime failure as due to download error
+				case errs.Matches(err, &setup.ArtifactInstallError{}):
+					errorType = "install"
+					// Note: do not break because there could be download errors, and those take precedence
+				}
+			}
+		}
+	// Progress/event handler errors should come last because they can wrap one of the above errors,
+	// and those errors actually caused the failure, not these.
+	case errs.Matches(err, &setup.ProgressReportError{}) || errs.Matches(err, &buildlog.EventHandlerError{}):
+		errorType = "progress"
+	}
+
+	r.analytics.Event(anaConsts.CatRuntime, action, &dimensions.Values{
+		CommitID: ptr.To(r.target.CommitUUID().String()),
+		// Note: ProjectID is set by state-svc since ProjectNameSpace is specified.
+		ProjectNameSpace: ptr.To(ns.String()),
+		Error:            ptr.To(errorType),
 	})
 }
 
@@ -268,11 +304,11 @@ func recordAttempt(an analytics.Dispatcher, target setup.Targeter) {
 
 func usageDims(target setup.Targeter) *dimensions.Values {
 	return &dimensions.Values{
-		Trigger:          p.StrP(target.Trigger().String()),
-		CommitID:         p.StrP(target.CommitUUID().String()),
-		Headless:         p.StrP(strconv.FormatBool(target.Headless())),
-		ProjectNameSpace: p.StrP(project.NewNamespace(target.Owner(), target.Name(), target.CommitUUID().String()).String()),
-		InstanceID:       p.StrP(instanceid.ID()),
+		Trigger:          ptr.To(target.Trigger().String()),
+		CommitID:         ptr.To(target.CommitUUID().String()),
+		Headless:         ptr.To(strconv.FormatBool(target.Headless())),
+		ProjectNameSpace: ptr.To(project.NewNamespace(target.Owner(), target.Name(), target.CommitUUID().String()).String()),
+		InstanceID:       ptr.To(instanceid.ID()),
 	}
 }
 

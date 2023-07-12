@@ -52,7 +52,8 @@ func NewAddBuildFlagCreated() *AddBuildFlagCreated {
 	return &AddBuildFlagCreated{}
 }
 
-/* AddBuildFlagCreated describes a response with status code 201, with default header values.
+/*
+AddBuildFlagCreated describes a response with status code 201, with default header values.
 
 The added build flag
 */
@@ -84,7 +85,8 @@ func NewAddBuildFlagBadRequest() *AddBuildFlagBadRequest {
 	return &AddBuildFlagBadRequest{}
 }
 
-/* AddBuildFlagBadRequest describes a response with status code 400, with default header values.
+/*
+AddBuildFlagBadRequest describes a response with status code 400, with default header values.
 
 If the build flag is invalid
 */
@@ -118,7 +120,8 @@ func NewAddBuildFlagDefault(code int) *AddBuildFlagDefault {
 	}
 }
 
-/* AddBuildFlagDefault describes a response with status code -1, with default header values.
+/*
+AddBuildFlagDefault describes a response with status code -1, with default header values.
 
 If there is an error processing the build flag
 */

@@ -28,6 +28,7 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
+	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/termtest"
 	"github.com/ActiveState/termtest/expect"
@@ -524,7 +525,7 @@ func (s *Session) Close() error {
 	}
 
 	for _, proj := range s.createdProjects {
-		err := deleteProject(proj.Owner, proj.Project, auth)
+		err := model.DeleteProject(proj.Owner, proj.Project, auth)
 		if err != nil {
 			s.t.Errorf("Could not delete project %s: %v", proj.Project, errs.JoinMessage(err))
 		}

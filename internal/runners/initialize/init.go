@@ -1,6 +1,7 @@
 package initialize
 
 import (
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -83,7 +84,7 @@ func inferLanguage(config projectfile.ConfigGetter) (string, string, bool) {
 	return lang.Name, lang.Version, true
 }
 
-func (r *Initialize) Run(params *RunParams) error {
+func (r *Initialize) Run(params *RunParams) (rerr error) {
 	logging.Debug("Init: %s/%s %v", params.Namespace.Owner, params.Namespace.Project, params.Private)
 
 	if !r.auth.Authenticated() {
@@ -103,8 +104,14 @@ func (r *Initialize) Run(params *RunParams) error {
 		return locale.NewInputError("err_projectfile_exists")
 	}
 
-	if err := fileutils.MkdirUnlessExists(path); err != nil {
+	err := fileutils.MkdirUnlessExists(path)
+	if err != nil {
 		return locale.WrapError(err, "err_init_preparedir", "Could not create directory at [NOTICE]{{.V0}}[/RESET]. Error: {{.V1}}", params.Path, err.Error())
+	}
+
+	path, err = filepath.Abs(params.Path)
+	if err != nil {
+		return locale.WrapInputError(err, "err_init_abs_path", "Could not determine absolute path to [NOTICE]{{.V0}}[/RESET]. Error: {{.V1}}", path, err.Error())
 	}
 
 	var languageName, languageVersion string
@@ -123,6 +130,11 @@ func (r *Initialize) Run(params *RunParams) error {
 		return locale.NewInputError("err_init_no_language")
 	}
 
+	// Require 'python', 'python@3', or 'python@2' instead of 'python3' or 'python2'.
+	if languageName == language.Python3.String() || languageName == language.Python2.String() {
+		return language.UnrecognizedLanguageError(languageName, language.RecognizedSupportedsNames())
+	}
+
 	lang, err := language.MakeByNameAndVersion(languageName, languageVersion)
 	if err != nil {
 		if inferred {
@@ -132,7 +144,8 @@ func (r *Initialize) Run(params *RunParams) error {
 		}
 	}
 
-	if err := lang.Validate(); err != nil {
+	err = verifyLangAndVersion(lang, languageVersion)
+	if err != nil {
 		if inferred {
 			return locale.WrapError(err, "err_init_lang", "", languageName, languageVersion)
 		} else {
@@ -157,6 +170,26 @@ func (r *Initialize) Run(params *RunParams) error {
 	if err != nil {
 		return locale.WrapError(err, "err_init_pjfile", "Could not create project file")
 	}
+
+	// If an error occurs, remove the created activestate.yaml file so the user can try again.
+	defer func() {
+		if rerr == nil {
+			return
+		}
+		err := os.Remove(pjfile.Path())
+		if err != nil {
+			multilog.Error("Failed to remove activestate.yaml after `state init` error: %v", err)
+			return
+		}
+		if cwd, err := osutils.Getwd(); err == nil {
+			if createdDir := filepath.Dir(pjfile.Path()); createdDir != cwd {
+				err2 := os.RemoveAll(createdDir)
+				if err2 != nil {
+					multilog.Error("Failed to remove created directory after `state init` error: %v", err2)
+				}
+			}
+		}
+	}()
 
 	proj, err := project.New(pjfile, r.out)
 	if err != nil {
@@ -223,6 +256,43 @@ func (r *Initialize) Run(params *RunParams) error {
 	return nil
 }
 
+func verifyLangAndVersion(lang language.Language, version string) error {
+	err := lang.Validate()
+	if err != nil {
+		return errs.Wrap(err, "Failed to validate language")
+	}
+
+	if version == "" {
+		return nil // nothing to verify
+	}
+
+	pkgs, err := model.SearchIngredientsStrict(model.NewNamespaceLanguage(), lang.Requirement(), false, true)
+	if err != nil {
+		return locale.WrapError(err, "err_init_verify_language", "Inventory search failed unexpectedly")
+	}
+
+	if len(pkgs) == 0 {
+		return locale.NewInputError("err_init_language_not_found", "The selected language cannot be found")
+	}
+
+	for _, pkg := range pkgs {
+		if strings.HasPrefix(pkg.Version, version) {
+			return nil
+		}
+	}
+
+	return errs.AddTips(
+		locale.NewInputError(
+			"err_init_language_version_not_found",
+			"The selected version of the language cannot be found",
+		),
+		locale.Tl(
+			"version_not_found_check_format",
+			"Please ensure that the version format is valid.",
+		),
+	)
+}
+
 func deriveVersion(lang language.Language, version string) string {
 	if version != "" {
 		return version
@@ -235,7 +305,7 @@ func deriveVersion(lang language.Language, version string) string {
 	}
 
 	for _, l := range langs {
-		if lang.String() == l.Name || (lang == language.Python3 && l.Name == "python") {
+		if lang.String() == l.Name || (lang == language.Python3 && l.Name == language.Python3.Requirement()) {
 			return l.DefaultVersion
 		}
 	}

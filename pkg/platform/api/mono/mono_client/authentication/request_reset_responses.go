@@ -51,7 +51,8 @@ func NewRequestResetOK() *RequestResetOK {
 	return &RequestResetOK{}
 }
 
-/* RequestResetOK describes a response with status code 200, with default header values.
+/*
+RequestResetOK describes a response with status code 200, with default header values.
 
 Success
 */
@@ -83,7 +84,8 @@ func NewRequestResetBadRequest() *RequestResetBadRequest {
 	return &RequestResetBadRequest{}
 }
 
-/* RequestResetBadRequest describes a response with status code 400, with default header values.
+/*
+RequestResetBadRequest describes a response with status code 400, with default header values.
 
 Bad Request
 */
@@ -115,7 +117,8 @@ func NewRequestResetInternalServerError() *RequestResetInternalServerError {
 	return &RequestResetInternalServerError{}
 }
 
-/* RequestResetInternalServerError describes a response with status code 500, with default header values.
+/*
+RequestResetInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */

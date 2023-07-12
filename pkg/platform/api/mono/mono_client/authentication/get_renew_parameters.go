@@ -52,10 +52,12 @@ func NewGetRenewParamsWithHTTPClient(client *http.Client) *GetRenewParams {
 	}
 }
 
-/* GetRenewParams contains all the parameters to send to the API endpoint
-   for the get renew operation.
+/*
+GetRenewParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the get renew operation.
+
+	Typically these are written to a http.Request.
 */
 type GetRenewParams struct {
 

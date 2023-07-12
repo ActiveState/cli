@@ -52,10 +52,12 @@ func NewGetOrganizationAutoInviteParamsWithHTTPClient(client *http.Client) *GetO
 	}
 }
 
-/* GetOrganizationAutoInviteParams contains all the parameters to send to the API endpoint
-   for the get organization auto invite operation.
+/*
+GetOrganizationAutoInviteParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the get organization auto invite operation.
+
+	Typically these are written to a http.Request.
 */
 type GetOrganizationAutoInviteParams struct {
 

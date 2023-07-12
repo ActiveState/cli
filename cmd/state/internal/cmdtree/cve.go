@@ -73,5 +73,5 @@ func newOpenCommand(prime *primer.Values) *captain.Command {
 		func(_ *captain.Command, _ []string) error {
 			return open.Run(params)
 		},
-	)
+	).SetDoesNotSupportStructuredOutput()
 }

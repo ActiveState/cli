@@ -52,10 +52,12 @@ func NewKomodoAuthorizedParamsWithHTTPClient(client *http.Client) *KomodoAuthori
 	}
 }
 
-/* KomodoAuthorizedParams contains all the parameters to send to the API endpoint
-   for the komodo authorized operation.
+/*
+KomodoAuthorizedParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the komodo authorized operation.
+
+	Typically these are written to a http.Request.
 */
 type KomodoAuthorizedParams struct {
 	timeout    time.Duration

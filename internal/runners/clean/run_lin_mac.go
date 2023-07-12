@@ -20,6 +20,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/strutils"
 )
 
 func (u *Uninstall) runUninstall(params *UninstallParams) error {
@@ -46,12 +47,14 @@ func (u *Uninstall) runUninstall(params *UninstallParams) error {
 	}
 
 	err = removeInstall(u.cfg)
-	if errors.Is(err, errDirNotEmpty) {
-		logging.Debug("Could not remove install as dir is not empty: %s", errs.JoinMessage(err))
-		aggErr = locale.WrapError(aggErr, "uninstall_warn_not_empty")
-	} else if err != nil {
-		logging.Debug("Could not remove install: %s", errs.JoinMessage(err))
-		aggErr = locale.WrapError(aggErr, "uninstall_remove_executables_err", "Failed to remove all State Tool files in installation directory")
+	if err != nil {
+		if dirNotEmpty := (&dirNotEmptyError{}); errors.As(err, &dirNotEmpty) {
+			logging.Debug("Could not remove install as dir is not empty: %s", errs.JoinMessage(err))
+			aggErr = locale.WrapError(aggErr, "uninstall_warn_not_empty_already_localized", dirNotEmpty.Error())
+		} else {
+			logging.Debug("Could not remove install: %s", errs.JoinMessage(err))
+			aggErr = locale.WrapError(aggErr, "uninstall_remove_executables_err", "Failed to remove all State Tool files in installation directory")
+		}
 	}
 
 	err = removeEnvPaths(u.cfg)
@@ -152,7 +155,9 @@ func verifyInstallation() error {
 	return nil
 }
 
-var errDirNotEmpty = errs.New("Not empty")
+type dirNotEmptyError struct {
+	*locale.LocalizedError
+}
 
 func removeEmptyDir(dir string) error {
 	empty, err := fileutils.IsEmptyDir(dir)
@@ -166,7 +171,14 @@ func removeEmptyDir(dir string) error {
 	}
 
 	if !empty {
-		return errDirNotEmpty
+		content, err := strutils.ParseTemplate(
+			"{{- range $file := .Files}}\n - {{$file}}\n{{- end}}",
+			map[string]interface{}{"Files": fileutils.ListDirSimple(dir, true)},
+			nil)
+		if err != nil {
+			return errs.Wrap(err, "Could not parse file list template")
+		}
+		return &dirNotEmptyError{locale.NewInputError("uninstall_warn_not_empty", "", content)}
 	}
 
 	return nil

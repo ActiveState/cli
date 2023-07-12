@@ -69,7 +69,8 @@ func NewAddTagOK() *AddTagOK {
 	return &AddTagOK{}
 }
 
-/* AddTagOK describes a response with status code 200, with default header values.
+/*
+AddTagOK describes a response with status code 200, with default header values.
 
 Success
 */
@@ -101,7 +102,8 @@ func NewAddTagBadRequest() *AddTagBadRequest {
 	return &AddTagBadRequest{}
 }
 
-/* AddTagBadRequest describes a response with status code 400, with default header values.
+/*
+AddTagBadRequest describes a response with status code 400, with default header values.
 
 Bad Request
 */
@@ -133,7 +135,8 @@ func NewAddTagForbidden() *AddTagForbidden {
 	return &AddTagForbidden{}
 }
 
-/* AddTagForbidden describes a response with status code 403, with default header values.
+/*
+AddTagForbidden describes a response with status code 403, with default header values.
 
 Forbidden
 */
@@ -165,7 +168,8 @@ func NewAddTagNotFound() *AddTagNotFound {
 	return &AddTagNotFound{}
 }
 
-/* AddTagNotFound describes a response with status code 404, with default header values.
+/*
+AddTagNotFound describes a response with status code 404, with default header values.
 
 Not Found
 */
@@ -197,7 +201,8 @@ func NewAddTagConflict() *AddTagConflict {
 	return &AddTagConflict{}
 }
 
-/* AddTagConflict describes a response with status code 409, with default header values.
+/*
+AddTagConflict describes a response with status code 409, with default header values.
 
 Conflict
 */
@@ -229,7 +234,8 @@ func NewAddTagInternalServerError() *AddTagInternalServerError {
 	return &AddTagInternalServerError{}
 }
 
-/* AddTagInternalServerError describes a response with status code 500, with default header values.
+/*
+AddTagInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */

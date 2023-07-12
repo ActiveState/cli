@@ -46,9 +46,11 @@ func NewDownloadsFromBuildPlan(build bpModel.Build, artifacts map[strfmt.UUID]Ar
 	var downloads []ArtifactDownload
 	for id := range artifacts {
 		for _, a := range build.Artifacts {
-			if a.Status == string(bpModel.ArtifactSucceeded) && a.TargetID == id && a.URL != "" {
-				if strings.EqualFold(a.MimeType, "application/x.artifact") || strings.EqualFold(a.MimeType, "application/x-activestate-artifacts") {
-					downloads = append(downloads, ArtifactDownload{ArtifactID: strfmt.UUID(a.TargetID), UnsignedURI: a.URL, UnsignedLogURI: a.LogURL, Checksum: a.Checksum})
+			if a.Status == string(bpModel.ArtifactSucceeded) && a.NodeID == id && a.URL != "" {
+				if strings.EqualFold(a.MimeType, bpModel.XArtifactMimeType) ||
+					strings.EqualFold(a.MimeType, bpModel.XActiveStateArtifactMimeType) ||
+					strings.EqualFold(a.MimeType, bpModel.XCamelInstallerMimeType) {
+					downloads = append(downloads, ArtifactDownload{ArtifactID: strfmt.UUID(a.NodeID), UnsignedURI: a.URL, UnsignedLogURI: a.LogURL, Checksum: a.Checksum})
 				}
 			}
 		}
@@ -86,12 +88,12 @@ func NewDownloadsFromCamelBuildPlan(build bpModel.Build, artifacts map[strfmt.UU
 	var downloads []ArtifactDownload
 	for id := range artifacts {
 		for _, a := range build.Artifacts {
-			if a.Status == string(bpModel.ArtifactSucceeded) && a.TargetID == id && a.URL != "" {
+			if a.Status == string(bpModel.ArtifactSucceeded) && a.NodeID == id && a.URL != "" {
 				if !strings.EqualFold(a.MimeType, "application/x-camel-installer") {
 					continue
 				}
-				logging.Debug("Found download for artifact %s: %s", a.TargetID, a.URL)
-				downloads = append(downloads, ArtifactDownload{ArtifactID: strfmt.UUID(a.TargetID), UnsignedURI: a.URL, UnsignedLogURI: a.LogURL, Checksum: a.Checksum})
+				logging.Debug("Found download for artifact %s: %s", a.NodeID, a.URL)
+				downloads = append(downloads, ArtifactDownload{ArtifactID: strfmt.UUID(a.NodeID), UnsignedURI: a.URL, UnsignedLogURI: a.LogURL, Checksum: a.Checksum})
 			}
 		}
 	}
