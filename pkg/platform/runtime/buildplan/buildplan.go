@@ -48,6 +48,11 @@ func NewMapFromBuildPlan(build *model.Build) (artifact.Map, error) {
 	return res, nil
 }
 
+// buildTerminals recursively builds up a list of terminal targets. It expects an ID that
+// resolves to an artifact. If the artifact's mime type is that of a state tool artifact it
+// adds it to the terminal listing. Otherwise it looks up the step that generated the artifact
+// and recursively calls itself with each of the step's inputs that are tagged as sources until
+// it finds a state tool artifact. That artifact is then added to the terminal listing.
 func buildTerminals(nodeID strfmt.UUID, lookup map[strfmt.UUID]interface{}, result *[]strfmt.UUID) {
 	targetArtifact, ok := lookup[nodeID].(*model.Artifact)
 	if !ok {
