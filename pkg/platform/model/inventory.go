@@ -392,6 +392,17 @@ func FetchIngredientVersions(ingredientID *strfmt.UUID) ([]*inventory_models.Ing
 	return res.Payload.IngredientVersions, nil
 }
 
+// FetchLatestTimeStamp fetches the latest timestamp from the inventory service.
+func FetchLatestTimeStamp() (*strfmt.DateTime, error) {
+	client := inventory.Get()
+	result, err := client.GetLatestTimestamp(inventory_operations.NewGetLatestTimestampParams())
+	if err != nil {
+		return nil, errs.Wrap(err, "GetLatestTimestamp failed")
+	}
+
+	return result.Payload.Timestamp, nil
+}
+
 func FetchNormalizedName(namespace Namespace, name string) (string, error) {
 	client := inventory.Get()
 	params := inventory_operations.NewNormalizeNamesParams()

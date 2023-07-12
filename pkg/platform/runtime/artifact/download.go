@@ -4,10 +4,13 @@ import (
 	"fmt"
 	"strings"
 
+	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
+
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
+	"github.com/go-openapi/strfmt"
 )
 
 type ArtifactDownload struct {
@@ -39,6 +42,23 @@ func NewDownloadsFromBuild(buildStatus *headchef_models.V1BuildStatusResponse) (
 	return downloads, nil
 }
 
+func NewDownloadsFromBuildPlan(build bpModel.Build, artifacts map[strfmt.UUID]Artifact) ([]ArtifactDownload, error) {
+	var downloads []ArtifactDownload
+	for id := range artifacts {
+		for _, a := range build.Artifacts {
+			if a.Status == string(bpModel.ArtifactSucceeded) && a.NodeID == id && a.URL != "" {
+				if strings.EqualFold(a.MimeType, bpModel.XArtifactMimeType) ||
+					strings.EqualFold(a.MimeType, bpModel.XActiveStateArtifactMimeType) ||
+					strings.EqualFold(a.MimeType, bpModel.XCamelInstallerMimeType) {
+					downloads = append(downloads, ArtifactDownload{ArtifactID: strfmt.UUID(a.NodeID), UnsignedURI: a.URL, UnsignedLogURI: a.LogURL, Checksum: a.Checksum})
+				}
+			}
+		}
+	}
+
+	return downloads, nil
+}
+
 func NewDownloadsFromCamelBuild(buildStatus *headchef_models.V1BuildStatusResponse) ([]ArtifactDownload, error) {
 	for _, a := range buildStatus.Artifacts {
 		if a.BuildState != nil && *a.BuildState == headchef_models.V1ArtifactBuildStateSucceeded && a.URI != "" {
@@ -62,4 +82,25 @@ func NewDownloadsFromCamelBuild(buildStatus *headchef_models.V1BuildStatusRespon
 	}
 
 	return nil, errs.New("No download found in build response: %+v", buildStatus)
+}
+
+func NewDownloadsFromCamelBuildPlan(build bpModel.Build, artifacts map[strfmt.UUID]Artifact) ([]ArtifactDownload, error) {
+	var downloads []ArtifactDownload
+	for id := range artifacts {
+		for _, a := range build.Artifacts {
+			if a.Status == string(bpModel.ArtifactSucceeded) && a.NodeID == id && a.URL != "" {
+				if !strings.EqualFold(a.MimeType, "application/x-camel-installer") {
+					continue
+				}
+				logging.Debug("Found download for artifact %s: %s", a.NodeID, a.URL)
+				downloads = append(downloads, ArtifactDownload{ArtifactID: strfmt.UUID(a.NodeID), UnsignedURI: a.URL, UnsignedLogURI: a.LogURL, Checksum: a.Checksum})
+			}
+		}
+	}
+
+	if len(downloads) == 0 {
+		return nil, errs.New("No download found in build response: %+v", build)
+	}
+
+	return downloads, nil
 }
