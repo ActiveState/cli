@@ -66,7 +66,7 @@ in:
 	exprB, err := buildexpression.New(bytes)
 	require.NoError(t, err)
 
-	require.True(t, isMergePossible(exprA, exprB))
+	require.True(t, isAutoMergePossible(exprA, exprB))
 
 	strategies := &mono_models.MergeStrategies{
 		OverwriteChanges: []*mono_models.CommitChangeEditable{
@@ -168,7 +168,7 @@ in:
 	exprB, err := buildexpression.New(bytes)
 	require.NoError(t, err)
 
-	require.True(t, isMergePossible(exprA, exprB))
+	require.True(t, isAutoMergePossible(exprA, exprB))
 
 	strategies := &mono_models.MergeStrategies{
 		OverwriteChanges: []*mono_models.CommitChangeEditable{
@@ -261,5 +261,5 @@ in:
 	exprB, err := buildexpression.New(bytes)
 	require.NoError(t, err)
 
-	assert.False(t, isMergePossible(exprA, exprB)) // platforms do not match
+	assert.False(t, isAutoMergePossible(exprA, exprB)) // platforms do not match
 }

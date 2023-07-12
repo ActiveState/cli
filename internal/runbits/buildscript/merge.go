@@ -44,7 +44,7 @@ func Merge(proj *project.Project, remoteCommit strfmt.UUID, strategies *mono_mod
 	}
 
 	// Check if the build expressions can be auto-merged.
-	if !isMergePossible(exprA, exprB) || len(strategies.Conflicts) > 0 {
+	if !isAutoMergePossible(exprA, exprB) || len(strategies.Conflicts) > 0 {
 		err := GenerateAndWriteDiff(proj, script, exprB)
 		if err != nil {
 			return locale.WrapError(err, "err_diff_build_script", "Unable to generate differences between local and remote build script")
@@ -101,9 +101,10 @@ func apply(expr *buildexpression.BuildExpression, strategies *mono_models.MergeS
 	return expr, nil
 }
 
-// isMergePossible determines whether or not it is possible to merge the given build expressions.
+// isAutoMergePossible determines whether or not it is possible to auto-merge the given build
+// expressions.
 // This is only possible if the two build expressions differ ONLY in requirements.
-func isMergePossible(exprA *buildexpression.BuildExpression, exprB *buildexpression.BuildExpression) bool {
+func isAutoMergePossible(exprA *buildexpression.BuildExpression, exprB *buildexpression.BuildExpression) bool {
 	jsonA, err := getJsonMinusRequirements(exprA)
 	if err != nil {
 		multilog.Error("Unable to get buildexpression minus requirements: %v", errs.JoinMessage(err))
