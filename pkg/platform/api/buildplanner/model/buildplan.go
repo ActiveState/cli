@@ -67,10 +67,6 @@ func IsStateToolArtifact(mimeType string) bool {
 		mimeType == XCamelInstallerMimeType
 }
 
-func IsInstallerArtifact(mimeType string) bool {
-	return mimeType == XGozipInstallerMimeType
-}
-
 func (o Operation) String() string {
 	switch o {
 	case OperationAdded:
