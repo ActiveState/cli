@@ -24,7 +24,7 @@ func Merge(proj *project.Project, remoteCommit strfmt.UUID, strategies *mono_mod
 	if err != nil && !buildscript.IsDoesNotExistError(err) {
 		return errs.Wrap(err, "Could not get local build script")
 	}
-	if script != nil {
+	if script == nil {
 		return nil // no build script to merge
 	}
 
@@ -52,7 +52,17 @@ func Merge(proj *project.Project, remoteCommit strfmt.UUID, strategies *mono_mod
 		return locale.NewInputError("err_build_script_merge", "Unable to automatically merge build scripts")
 	}
 
-	// Update local build expression requirements with merge results.
+	mergedExpr, err := apply(exprB, strategies)
+	if err != nil {
+		return errs.Wrap(err, "Unable to merge buildexpressions")
+	}
+
+	// Write the merged build expression as a local build script.
+	return buildscript.UpdateOrCreate(proj.Dir(), mergedExpr)
+}
+
+func apply(expr *buildexpression.BuildExpression, strategies *mono_models.MergeStrategies) (*buildexpression.BuildExpression, error) {
+	// Update build expression requirements with merge results.
 	for _, req := range strategies.OverwriteChanges {
 		var op bpModel.Operation
 		switch req.Operation {
@@ -63,19 +73,19 @@ func Merge(proj *project.Project, remoteCommit strfmt.UUID, strategies *mono_mod
 		case mono_models.CommitChangeEditableOperationUpdated:
 			op = bpModel.OperationUpdated
 		default:
-			return errs.New("Unknown requirement operation: %s", op)
+			return nil, errs.New("Unknown requirement operation: %s", op)
 		}
 
 		var versionRequirements []bpModel.VersionRequirement
 		for _, constraint := range req.VersionConstraints {
 			data, err := constraint.MarshalBinary()
 			if err != nil {
-				return errs.Wrap(err, "Could not marshal requirement version constraints")
+				return nil, errs.Wrap(err, "Could not marshal requirement version constraints")
 			}
 			m := make(map[string]string)
 			err = json.Unmarshal(data, &m)
 			if err != nil {
-				return errs.Wrap(err, "Could not unmarshal requirement version constraints")
+				return nil, errs.Wrap(err, "Could not unmarshal requirement version constraints")
 			}
 			versionRequirements = append(versionRequirements, m)
 		}
@@ -85,11 +95,10 @@ func Merge(proj *project.Project, remoteCommit strfmt.UUID, strategies *mono_mod
 			Namespace:          req.Namespace,
 			VersionRequirement: versionRequirements,
 		}
-		exprA.Update(op, bpReq, nil)
+		expr.Update(op, bpReq, nil)
 	}
 
-	// Write the merged build expression as a local build script.
-	return buildscript.UpdateOrCreate(proj.Dir(), exprA)
+	return expr, nil
 }
 
 // isMergePossible determines whether or not it is possible to merge the given build expressions.
