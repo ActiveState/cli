@@ -7,7 +7,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/multilog"
-	"github.com/ActiveState/cli/internal/rtutils/p"
+	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/pkg/platform/runtime/buildexpression"
 )
 
@@ -105,7 +105,7 @@ func newValue(valueInterface interface{}, preferIdent bool) (*Value, error) {
 			if err != nil {
 				return nil, errs.Wrap(err, "Could not marshal string '%s'", v)
 			}
-			value.Str = p.StrP(string(b))
+			value.Str = ptr.To(string(b))
 		}
 
 	default:
@@ -182,7 +182,7 @@ func newIn(inValue interface{}) (*In, error) {
 		in.FuncCall = f
 
 	case string:
-		in.Name = p.StrP(strings.TrimPrefix(v, "$"))
+		in.Name = ptr.To(strings.TrimPrefix(v, "$"))
 
 	default:
 		return nil, errs.New("'in' value expected to be a function call or string")

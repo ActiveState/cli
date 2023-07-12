@@ -79,7 +79,7 @@ func Sync(proj *project.Project, commitID *strfmt.UUID, out output.Outputer, aut
 			Owner:        proj.Owner(),
 			Project:      proj.Name(),
 			ParentCommit: localCommitID.String(),
-			Script:       expr,
+			Expression:   expr,
 		})
 		if err != nil {
 			return false, errs.Wrap(err, "Could not update project to reflect build script changes.")
