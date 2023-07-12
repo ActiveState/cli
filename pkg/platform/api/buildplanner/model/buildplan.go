@@ -58,12 +58,17 @@ const (
 	XArtifactMimeType            = "application/x.artifact"
 	XActiveStateArtifactMimeType = "application/x-activestate-artifacts"
 	XCamelInstallerMimeType      = "application/x-camel-installer"
+	XGozipInstallerMimeType      = "application/x-gozip-installer"
 )
 
 func IsStateToolArtifact(mimeType string) bool {
 	return mimeType == XArtifactMimeType ||
 		mimeType == XActiveStateArtifactMimeType ||
 		mimeType == XCamelInstallerMimeType
+}
+
+func IsInstallerArtifact(mimeType string) bool {
+	return mimeType == XCamelInstallerMimeType
 }
 
 func (o Operation) String() string {

@@ -40,12 +40,13 @@ func NewMapFromBuildPlan(build *model.Build) (artifact.Map, error) {
 				continue
 			}
 
-			if !model.IsStateToolArtifact(artifact.MimeType) {
+			if model.IsInstallerArtifact(artifact.MimeType) {
 				step, ok := lookup[artifact.GeneratedBy].(*model.Step)
 				if !ok {
 					multilog.Error("Artifact %s does not have an associated step", nodeID)
 					continue
 				}
+
 				for _, input := range step.Inputs {
 					if input.Tag != model.TagSource {
 						continue
@@ -61,7 +62,7 @@ func NewMapFromBuildPlan(build *model.Build) (artifact.Map, error) {
 	for _, id := range terminalTargetIDs {
 		err := buildMap(id, lookup, res)
 		if err != nil {
-			return nil, errs.Wrap(err, "Could not build map for artifact %s", id)
+			return nil, errs.Wrap(err, "Could not build map for terminal %s", id)
 		}
 	}
 
@@ -102,7 +103,7 @@ func buildMap(baseID strfmt.UUID, lookup map[strfmt.UUID]interface{}, result art
 
 		err = buildMap(depID, lookup, result)
 		if err != nil {
-			return errs.Wrap(err, "Could not build map for artifact %s", currentArtifact.NodeID)
+			return errs.Wrap(err, "Could not build map for runtime dependency %s", currentArtifact.NodeID)
 		}
 	}
 
@@ -202,7 +203,7 @@ func buildRuntimeDependencies(depdendencyID strfmt.UUID, lookup map[strfmt.UUID]
 		result[depID] = struct{}{}
 		_, err := buildRuntimeDependencies(depID, lookup, result)
 		if err != nil {
-			return nil, errs.Wrap(err, "Could not build map for artifact %s", artifact.NodeID)
+			return nil, errs.Wrap(err, "Could not build map for runtime dependencies of artifact %s", artifact.NodeID)
 		}
 	}
 
@@ -225,7 +226,7 @@ func buildRuntimeDependencies(depdendencyID strfmt.UUID, lookup map[strfmt.UUID]
 		for _, id := range input.NodeIDs {
 			_, err := buildRuntimeDependencies(id, lookup, result)
 			if err != nil {
-				return nil, errs.Wrap(err, "Could not build map for artifact %s", artifact.NodeID)
+				return nil, errs.Wrap(err, "Could not build map for step dependencies of artifact %s", artifact.NodeID)
 			}
 		}
 	}
