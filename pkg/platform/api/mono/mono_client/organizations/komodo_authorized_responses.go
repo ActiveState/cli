@@ -57,7 +57,8 @@ func NewKomodoAuthorizedOK() *KomodoAuthorizedOK {
 	return &KomodoAuthorizedOK{}
 }
 
-/* KomodoAuthorizedOK describes a response with status code 200, with default header values.
+/*
+KomodoAuthorizedOK describes a response with status code 200, with default header values.
 
 Success
 */
@@ -78,7 +79,8 @@ func NewKomodoAuthorizedBadRequest() *KomodoAuthorizedBadRequest {
 	return &KomodoAuthorizedBadRequest{}
 }
 
-/* KomodoAuthorizedBadRequest describes a response with status code 400, with default header values.
+/*
+KomodoAuthorizedBadRequest describes a response with status code 400, with default header values.
 
 Bad Request
 */
@@ -110,7 +112,8 @@ func NewKomodoAuthorizedForbidden() *KomodoAuthorizedForbidden {
 	return &KomodoAuthorizedForbidden{}
 }
 
-/* KomodoAuthorizedForbidden describes a response with status code 403, with default header values.
+/*
+KomodoAuthorizedForbidden describes a response with status code 403, with default header values.
 
 Forbidden
 */
@@ -142,7 +145,8 @@ func NewKomodoAuthorizedInternalServerError() *KomodoAuthorizedInternalServerErr
 	return &KomodoAuthorizedInternalServerError{}
 }
 
-/* KomodoAuthorizedInternalServerError describes a response with status code 500, with default header values.
+/*
+KomodoAuthorizedInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */

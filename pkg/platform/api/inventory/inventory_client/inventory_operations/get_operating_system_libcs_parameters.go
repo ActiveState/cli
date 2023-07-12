@@ -53,10 +53,12 @@ func NewGetOperatingSystemLibcsParamsWithHTTPClient(client *http.Client) *GetOpe
 	}
 }
 
-/* GetOperatingSystemLibcsParams contains all the parameters to send to the API endpoint
-   for the get operating system libcs operation.
+/*
+GetOperatingSystemLibcsParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the get operating system libcs operation.
+
+	Typically these are written to a http.Request.
 */
 type GetOperatingSystemLibcsParams struct {
 

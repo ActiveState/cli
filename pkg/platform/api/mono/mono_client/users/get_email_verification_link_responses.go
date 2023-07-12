@@ -63,7 +63,8 @@ func NewGetEmailVerificationLinkOK() *GetEmailVerificationLinkOK {
 	return &GetEmailVerificationLinkOK{}
 }
 
-/* GetEmailVerificationLinkOK describes a response with status code 200, with default header values.
+/*
+GetEmailVerificationLinkOK describes a response with status code 200, with default header values.
 
 Success
 */
@@ -93,7 +94,8 @@ func NewGetEmailVerificationLinkBadRequest() *GetEmailVerificationLinkBadRequest
 	return &GetEmailVerificationLinkBadRequest{}
 }
 
-/* GetEmailVerificationLinkBadRequest describes a response with status code 400, with default header values.
+/*
+GetEmailVerificationLinkBadRequest describes a response with status code 400, with default header values.
 
 Email is already verified
 */
@@ -125,7 +127,8 @@ func NewGetEmailVerificationLinkForbidden() *GetEmailVerificationLinkForbidden {
 	return &GetEmailVerificationLinkForbidden{}
 }
 
-/* GetEmailVerificationLinkForbidden describes a response with status code 403, with default header values.
+/*
+GetEmailVerificationLinkForbidden describes a response with status code 403, with default header values.
 
 Forbidden
 */
@@ -157,7 +160,8 @@ func NewGetEmailVerificationLinkNotFound() *GetEmailVerificationLinkNotFound {
 	return &GetEmailVerificationLinkNotFound{}
 }
 
-/* GetEmailVerificationLinkNotFound describes a response with status code 404, with default header values.
+/*
+GetEmailVerificationLinkNotFound describes a response with status code 404, with default header values.
 
 Email not found
 */
@@ -189,7 +193,8 @@ func NewGetEmailVerificationLinkInternalServerError() *GetEmailVerificationLinkI
 	return &GetEmailVerificationLinkInternalServerError{}
 }
 
-/* GetEmailVerificationLinkInternalServerError describes a response with status code 500, with default header values.
+/*
+GetEmailVerificationLinkInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */

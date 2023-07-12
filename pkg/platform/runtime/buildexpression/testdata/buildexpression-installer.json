@@ -1,0 +1,146 @@
+{
+    "let": {
+        "gozipPackager0fa42e8cac7b5dd794078aa15f9b993a": {
+            "compose": {
+                "left": {
+                    "select": {
+                        "tag": "platform:0fa42e8c-ac7b-5dd7-9407-8aa15f9b993a",
+                        "closure": "runtime",
+                        "mime_types": [
+                            "application/x.artifact"
+                        ]
+                    }
+                },
+                "right": {
+                    "rule": {
+                        "rule_name": "gozipPackager0fa42e8cac7b5dd794078aa15f9b993a",
+                        "artifact_name": "tylers-Python-3.9.4-Linux-CentOS-installer.application/x-gozip-installer Installer",
+                        "builder": {
+                            "solve": {
+                                "at_time": "2023-07-05T16:44:55.000000Z",
+                                "platforms": [
+                                    "0fa42e8c-ac7b-5dd7-9407-8aa15f9b993a"
+                                ],
+                                "requirements": [
+                                    {
+                                        "name": "gozip-packager",
+                                        "namespace": "builder"
+                                    }
+                                ]
+                            }
+                        },
+                        "image": {
+                            "image": {
+                                "name": "docker-registry.activestate.build/activestate/centos-8-builder",
+                                "url": "https://docker-registry.activestate.build/activestate/centos-8-builder:2.0.14",
+                                "version": "2.0.14",
+                                "revision": 18,
+                                "mimeType": "Docker"
+                            }
+                        },
+                        "runtime_deps": {
+                            "empty": {}
+                        },
+                        "build_deps": {
+                            "empty": {}
+                        },
+                        "args": [
+                            "--organization-name",
+                            "tylers",
+                            "--organization-id",
+                            "4c9e9103-04b3-4dec-8852-5a460671aa0b",
+                            "--project-name",
+                            "Python-3.9.4-Linux-CentOS",
+                            "--project-id",
+                            "1db07fd8-5d23-4849-9c5b-f8e6f9757745",
+                            "--commit-id",
+                            "73925f60-1fc2-4276-993c-1e7835f044a9",
+                            "--platform-id",
+                            "0fa42e8c-ac7b-5dd7-9407-8aa15f9b993a"
+                        ],
+                        "resources": {
+                            "memory": 4000
+                        },
+                        "image_platform_id": "0fa42e8c-ac7b-5dd7-9407-8aa15f9b993a",
+                        "image_kernel": "Linux",
+                        "mime_types": [
+                            "application/x-gozip-installer"
+                        ]
+                    }
+                }
+            }
+        },
+        "runtime": {
+            "solve_legacy": {
+                "at_time": "2023-07-05T16:44:54.853000Z",
+                "build_flags": [],
+                "camel_flags": [],
+                "platforms": [
+                    "0fa42e8c-ac7b-5dd7-9407-8aa15f9b993a"
+                ],
+                "requirements": [
+                    {
+                        "name": "numpy",
+                        "namespace": "language/python",
+                        "version_requirements": [
+                            {
+                                "comparator": "eq",
+                                "version": "1.24.3"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "python",
+                        "namespace": "language",
+                        "version_requirements": [
+                            {
+                                "comparator": "eq",
+                                "version": "3.10.12"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "requests",
+                        "namespace": "language/python",
+                        "version_requirements": [
+                            {
+                                "comparator": "eq",
+                                "version": "2.27.1"
+                            }
+                        ]
+                    }
+                ],
+                "solver_version": null
+            }
+        },
+        "in": {
+            "merge": {
+                "left": {
+                    "tag": {
+                        "tag": "orphans",
+                        "plan": {
+                            "select": {
+                                "tag": "orphans",
+                                "closure": "runtime",
+                                "mime_types": [
+                                    "application/x.artifact"
+                                ],
+                                "plan": "$runtime"
+                            }
+                        }
+                    }
+                },
+                "right": {
+                    "tag": {
+                        "tag": "platform:0fa42e8c-ac7b-5dd7-9407-8aa15f9b993a",
+                        "plan": {
+                            "gozipPackager0fa42e8cac7b5dd794078aa15f9b993a": {
+                                "plan": "$runtime"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

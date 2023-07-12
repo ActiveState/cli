@@ -83,7 +83,7 @@ func (suite *MsgIntegrationTestSuite) TestMessage_Basic() {
 			cp.ExpectExitCode(0)
 
 			// Ensure message doesn't stick around when we run another command
-			cp = ts.Spawn()
+			cp = ts.Spawn("--version")
 			if tt.ExpectRepeat {
 				cp.Expect(`This is a simple message`)
 			}

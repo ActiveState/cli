@@ -12,7 +12,7 @@ func newInviteCommand(prime *primer.Values) *captain.Command {
 
 	params := invite.Params{}
 
-	return captain.NewCommand(
+	cmd := captain.NewCommand(
 		"invite",
 		locale.Tl("invite_title", "Inviting New Members"),
 		locale.Tl("invite_description", "Invite new members to an organization"),
@@ -40,5 +40,11 @@ func newInviteCommand(prime *primer.Values) *captain.Command {
 		func(ccmd *captain.Command, args []string) error {
 			return inviteRunner.Run(&params, args)
 		},
-	).SetGroup(PlatformGroup).SetUnstable(true).SetHasVariableArguments()
+	)
+	cmd.SetGroup(PlatformGroup)
+	cmd.SetUnstable(true)
+	cmd.SetHasVariableArguments()
+	cmd.SetDoesNotSupportStructuredOutput()
+
+	return cmd
 }

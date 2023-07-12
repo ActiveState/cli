@@ -42,7 +42,6 @@ const (
 	RemoteInstaller = "remote-installer"
 	Interrupt       = "interrupt"
 	JSON            = "json"
-	Komodo          = "komodo"
 	Languages       = "languages"
 	MSI             = "msi"
 	Organizations   = "organizations"

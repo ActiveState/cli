@@ -52,7 +52,8 @@ func NewAddKernelVersionCreated() *AddKernelVersionCreated {
 	return &AddKernelVersionCreated{}
 }
 
-/* AddKernelVersionCreated describes a response with status code 201, with default header values.
+/*
+AddKernelVersionCreated describes a response with status code 201, with default header values.
 
 The added kernel version
 */
@@ -84,7 +85,8 @@ func NewAddKernelVersionBadRequest() *AddKernelVersionBadRequest {
 	return &AddKernelVersionBadRequest{}
 }
 
-/* AddKernelVersionBadRequest describes a response with status code 400, with default header values.
+/*
+AddKernelVersionBadRequest describes a response with status code 400, with default header values.
 
 If the kernel version is invalid
 */
@@ -118,7 +120,8 @@ func NewAddKernelVersionDefault(code int) *AddKernelVersionDefault {
 	}
 }
 
-/* AddKernelVersionDefault describes a response with status code -1, with default header values.
+/*
+AddKernelVersionDefault describes a response with status code -1, with default header values.
 
 If there is an error processing the request
 */

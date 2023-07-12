@@ -15,7 +15,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
-	"github.com/ActiveState/cli/internal/rtutils/p"
+	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory"
 	iop "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_client/inventory_operations"
@@ -170,7 +170,7 @@ func FetchRecipe(commitID strfmt.UUID, owner, project string, hostPlatform *stri
 
 	client, _ := inventory.Init(authentication.LegacyGet())
 
-	response, err := client.ResolveRecipes(params, authentication.ClientAuth())
+	response, _, err := client.ResolveRecipes(params, authentication.ClientAuth())
 	if err != nil {
 		if err == context.DeadlineExceeded {
 			return nil, locale.WrapError(err, "request_timed_out")
@@ -215,8 +215,8 @@ func resolveSolverError(err error) error {
 	switch serr := err.(type) {
 	case *iop.ResolveRecipesDefault:
 		return &SolverError{
-			wrapped:     locale.WrapError(errs.Wrap(err, "ResolveRecipesDefault"), "", p.PStr(serr.Payload.Message)),
-			isTransient: p.PBool(serr.GetPayload().IsTransient),
+			wrapped:     locale.WrapError(errs.Wrap(err, "ResolveRecipesDefault"), "", ptr.From(serr.Payload.Message, "")),
+			isTransient: ptr.From(serr.GetPayload().IsTransient, false),
 		}
 	case *iop.ResolveRecipesBadRequest:
 		var validationErrors []string
@@ -228,9 +228,9 @@ func resolveSolverError(err error) error {
 			validationErrors = append(validationErrors, lines...)
 		}
 		return &SolverError{
-			wrapped:          locale.WrapInputError(errs.Wrap(err, "ResolveRecipesBadRequest"), "", p.PStr(serr.Payload.SolverError.Message)),
+			wrapped:          locale.WrapInputError(errs.Wrap(err, "ResolveRecipesBadRequest"), "", ptr.From(serr.Payload.SolverError.Message, "")),
 			validationErrors: validationErrors,
-			isTransient:      p.PBool(serr.GetPayload().IsTransient),
+			isTransient:      ptr.From(serr.GetPayload().IsTransient, false),
 		}
 	default:
 		return locale.WrapError(errs.Wrap(err, "unknown error"), "err_order_unknown")

@@ -12,7 +12,13 @@ func installPathForBranch(branch string) (string, error) {
 	if err != nil {
 		return "", errs.Wrap(err, "Could not get home directory")
 	}
-	return filepath.Join(home, ".local", "ActiveState", "StateTool", branch), nil
+	installPath := filepath.Join(home, ".ActiveState", "StateTool", branch)
+
+	if !isValidInstallPath(installPath) {
+		return "", errs.New("Invalid install path: %s", installPath)
+	}
+
+	return installPath, nil
 }
 
 func defaultSystemInstallPath() (string, error) {

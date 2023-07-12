@@ -8,11 +8,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/suite"
-
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
+	"github.com/stretchr/testify/suite"
 )
 
 type PackageIntegrationTestSuite struct {
@@ -297,7 +297,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_import() {
 	username := ts.CreateNewUser()
 	namespace := fmt.Sprintf("%s/%s", username, "Python3")
 
-	cp := ts.Spawn("init", "--language", "python3", namespace, ts.Dirs.Work)
+	cp := ts.Spawn("init", "--language", "python", namespace, ts.Dirs.Work)
 	cp.ExpectLongString("successfully initialized")
 	cp.ExpectExitCode(0)
 
@@ -497,6 +497,41 @@ func (suite *PackageIntegrationTestSuite) TestJSON() {
 	cp.Expect(`{"name":"Text-CSV"`)
 	cp.ExpectExitCode(0)
 	AssertValidJSON(suite.T(), cp)
+}
+
+func (suite *PackageIntegrationTestSuite) TestNormalize() {
+	suite.OnlyRunForTags(tagsuite.Package)
+	if runtime.GOOS == "darwin" {
+		suite.T().Skip("Skipping mac for now as the builds are still too unreliable")
+		return
+	}
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.Spawn("checkout", "ActiveState-CLI/small-python", ".")
+	cp.Expect("Skipping runtime setup")
+	cp.Expect("Checked out project")
+	cp.ExpectExitCode(0)
+
+	cp = ts.SpawnWithOpts(
+		e2e.WithArgs("install", "Charset_normalizer"),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
+	cp.Expect("charset-normalizer")
+	cp.Expect("is different")
+	cp.Expect("Charset_normalizer")
+	cp.ExpectExitCode(0)
+
+	anotherDir := filepath.Join(ts.Dirs.Work, "not-normalized")
+	suite.Require().NoError(fileutils.Mkdir(anotherDir))
+	cp = ts.SpawnWithOpts(
+		e2e.WithArgs("install", "charset-normalizer"),
+		e2e.WithWorkDirectory(anotherDir),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
+	cp.Expect("charset-normalizer")
+	cp.ExpectExitCode(0)
+	suite.NotContains(cp.TrimmedSnapshot(), "is different")
 }
 
 func TestPackageIntegrationTestSuite(t *testing.T) {

@@ -3,7 +3,7 @@ package cmdtree
 import (
 	"time"
 
-	"github.com/ActiveState/cli/cmd/state/internal/cmdtree/intercepts/cmdcall"
+	"github.com/ActiveState/cli/cmd/state/internal/cmdtree/exechandlers/cmdcall"
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/locale"
@@ -119,7 +119,12 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 	)
 
 	projectsCmd := newProjectsCommand(prime)
-	projectsCmd.AddChildren(newRemoteProjectsCommand(prime))
+	projectsCmd.AddChildren(
+		newRemoteProjectsCommand(prime),
+		newProjectsEditCommand(prime),
+		newDeleteProjectsCommand(prime),
+		newMoveProjectsCommand(prime),
+	)
 
 	updateCmd := newUpdateCommand(prime)
 	updateCmd.AddChildren(
@@ -313,7 +318,8 @@ func newStateCommand(globals *globalOptions, prime *primer.Values) *captain.Comm
 	cmdCall := cmdcall.New(prime)
 
 	cmd.SetHasVariableArguments()
-	cmd.AppendInterceptChain(cmdCall.InterceptExec)
+	cmd.OnExecStart(cmdCall.OnExecStart)
+	cmd.OnExecStop(cmdCall.OnExecStop)
 
 	return cmd
 }
@@ -324,13 +330,17 @@ func (ct *CmdTree) Execute(args []string) error {
 	return ct.cmd.Execute(args)
 }
 
+func (ct *CmdTree) OnExecStart(handler captain.ExecEventHandler) {
+	ct.cmd.OnExecStart(handler)
+}
+
+func (ct *CmdTree) OnExecStop(handler captain.ExecEventHandler) {
+	ct.cmd.OnExecStop(handler)
+}
+
 // Command returns the root command of the CmdTree
 func (ct *CmdTree) Command() *captain.Command {
 	return ct.cmd
-}
-
-func (ct *CmdTree) AppendInterceptChain(fns ...captain.InterceptFunc) {
-	ct.cmd.AppendInterceptChain(fns...)
 }
 
 type addCmdAs struct {

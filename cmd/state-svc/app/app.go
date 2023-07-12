@@ -31,7 +31,7 @@ func New() (*app.App, error) {
 
 	installRoot, err := installation.InstallPathFromExecPath()
 	if err != nil {
-		return nil, errs.Wrap(err, "Could not determine install root")
+		return nil, errs.Wrap(err, "Could not determine install root from exec")
 	}
 
 	return app.New(constants.SvcAppName, svcExec, []string{"start"}, installRoot, Options)

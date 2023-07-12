@@ -17,7 +17,7 @@ import (
 
 // LibcPagedList Libc Paged List
 //
-// A paginated list of libcs
+// # A paginated list of libcs
 //
 // swagger:model libcPagedList
 type LibcPagedList struct {

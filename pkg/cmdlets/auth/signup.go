@@ -113,13 +113,11 @@ func promptForSignup(input *signupInput, matchTries int, out output.Outputer, pr
 
 func doSignup(input *signupInput, out output.Outputer, auth *authentication.Auth) error {
 	params := users.NewAddUserParams()
-	eulaHelper := true
 	params.SetUser(&mono_models.UserEditable{
-		Email:        input.Email,
-		Username:     input.Username,
-		Password:     input.Password,
-		Name:         input.Username,
-		EULAAccepted: &eulaHelper,
+		Email:    input.Email,
+		Username: input.Username,
+		Password: input.Password,
+		Name:     input.Username,
 	})
 	addUserOK, err := mono.Get().Users.AddUser(params)
 

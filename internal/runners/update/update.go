@@ -57,7 +57,10 @@ func (u *Update) Run(params *Params) error {
 	}
 	if up == nil {
 		logging.Debug("No update found")
-		u.out.Notice(locale.T("update_none_found"))
+		u.out.Print(output.Prepare(
+			locale.T("update_none_found"),
+			&struct{}{},
+		))
 		return nil
 	}
 
@@ -85,9 +88,14 @@ func (u *Update) Run(params *Params) error {
 		multilog.Error("Failed to invalidate installer version lock on `state update` invocation: %v", err)
 	}
 
+	message := ""
 	if params.Channel != constants.BranchName {
-		u.out.Notice(locale.Tl("update_switch_channel", "[NOTICE]Please start a new shell for the update to take effect.[/RESET]"))
+		message = locale.Tl("update_switch_channel", "[NOTICE]Please start a new shell for the update to take effect.[/RESET]")
 	}
+	u.out.Print(output.Prepare(
+		message,
+		&struct{}{},
+	))
 
 	return nil
 }

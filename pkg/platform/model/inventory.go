@@ -7,7 +7,6 @@ import (
 
 	"github.com/go-openapi/strfmt"
 
-	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/pkg/platform/api"
@@ -312,10 +311,10 @@ func FetchPlatformByDetails(name, version string, word int) (*Platform, error) {
 func FetchLanguageForCommit(commitID strfmt.UUID) (*Language, error) {
 	langs, err := FetchLanguagesForCommit(commitID)
 	if err != nil {
-		return nil, err
+		return nil, locale.WrapError(err, "err_detect_language")
 	}
 	if len(langs) == 0 {
-		return nil, locale.WrapError(err, "err_langfromcommit_zero", "Could not detect which language to use.")
+		return nil, locale.NewError("err_detect_language")
 	}
 	return &langs[0], nil
 }
@@ -395,10 +394,6 @@ func FetchIngredientVersions(ingredientID *strfmt.UUID) ([]*inventory_models.Ing
 
 // FetchLatestTimeStamp fetches the latest timestamp from the inventory service.
 func FetchLatestTimeStamp() (*strfmt.DateTime, error) {
-	if condition.InTest() {
-		return &strfmt.DateTime{}, nil
-	}
-
 	client := inventory.Get()
 	result, err := client.GetLatestTimestamp(inventory_operations.NewGetLatestTimestampParams())
 	if err != nil {
@@ -406,4 +401,20 @@ func FetchLatestTimeStamp() (*strfmt.DateTime, error) {
 	}
 
 	return result.Payload.Timestamp, nil
+}
+
+func FetchNormalizedName(namespace Namespace, name string) (string, error) {
+	client := inventory.Get()
+	params := inventory_operations.NewNormalizeNamesParams()
+	params.SetNamespace(namespace.String())
+	params.SetNames(&inventory_models.UnnormalizedNames{Names: []string{name}})
+	params.SetHTTPClient(api.NewHTTPClient())
+	res, err := client.NormalizeNames(params, authentication.ClientAuth())
+	if err != nil {
+		return "", errs.Wrap(err, "NormalizeName failed")
+	}
+	if len(res.Payload.NormalizedNames) == 0 {
+		return "", errs.New("Normalized name for %s not found", name)
+	}
+	return *res.Payload.NormalizedNames[0].Normalized, nil
 }

@@ -63,7 +63,8 @@ func NewEditOrganizationOK() *EditOrganizationOK {
 	return &EditOrganizationOK{}
 }
 
-/* EditOrganizationOK describes a response with status code 200, with default header values.
+/*
+EditOrganizationOK describes a response with status code 200, with default header values.
 
 Organization updated
 */
@@ -95,7 +96,8 @@ func NewEditOrganizationBadRequest() *EditOrganizationBadRequest {
 	return &EditOrganizationBadRequest{}
 }
 
-/* EditOrganizationBadRequest describes a response with status code 400, with default header values.
+/*
+EditOrganizationBadRequest describes a response with status code 400, with default header values.
 
 Bad Request
 */
@@ -127,7 +129,8 @@ func NewEditOrganizationForbidden() *EditOrganizationForbidden {
 	return &EditOrganizationForbidden{}
 }
 
-/* EditOrganizationForbidden describes a response with status code 403, with default header values.
+/*
+EditOrganizationForbidden describes a response with status code 403, with default header values.
 
 Unauthorized
 */
@@ -159,7 +162,8 @@ func NewEditOrganizationNotFound() *EditOrganizationNotFound {
 	return &EditOrganizationNotFound{}
 }
 
-/* EditOrganizationNotFound describes a response with status code 404, with default header values.
+/*
+EditOrganizationNotFound describes a response with status code 404, with default header values.
 
 Not Found
 */
@@ -191,7 +195,8 @@ func NewEditOrganizationInternalServerError() *EditOrganizationInternalServerErr
 	return &EditOrganizationInternalServerError{}
 }
 
-/* EditOrganizationInternalServerError describes a response with status code 500, with default header values.
+/*
+EditOrganizationInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */
