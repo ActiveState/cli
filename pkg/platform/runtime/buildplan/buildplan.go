@@ -4,7 +4,6 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/multilog"
 	model "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/go-openapi/strfmt"
@@ -32,30 +31,10 @@ func NewMapFromBuildPlan(build *model.Build) (artifact.Map, error) {
 	var terminalTargetIDs []strfmt.UUID
 	for _, terminal := range build.Terminals {
 		// If there is an artifact for this terminal and its mime type is not a state tool artifact
-		// then the list of terminal target IDs should be the sources for the step that generated the
-		// installer. That is what we want to use to build the artifact map.
+		// then we need to recurse back through the DAG until we find nodeIDs that are state tool
+		// artifacts. These are the terminal targets.
 		for _, nodeID := range terminal.NodeIDs {
-			artifact, ok := lookup[nodeID].(*model.Artifact)
-			if !ok {
-				continue
-			}
-
-			if model.IsInstallerArtifact(artifact.MimeType) {
-				step, ok := lookup[artifact.GeneratedBy].(*model.Step)
-				if !ok {
-					multilog.Error("Artifact %s does not have an associated step", nodeID)
-					continue
-				}
-
-				for _, input := range step.Inputs {
-					if input.Tag != model.TagSource {
-						continue
-					}
-					terminalTargetIDs = append(terminalTargetIDs, input.NodeIDs...)
-				}
-			} else {
-				terminalTargetIDs = append(terminalTargetIDs, terminal.NodeIDs...)
-			}
+			buildTerminals(nodeID, lookup, &terminalTargetIDs)
 		}
 	}
 
@@ -67,6 +46,35 @@ func NewMapFromBuildPlan(build *model.Build) (artifact.Map, error) {
 	}
 
 	return res, nil
+}
+
+func buildTerminals(nodeID strfmt.UUID, lookup map[strfmt.UUID]interface{}, result *[]strfmt.UUID) {
+	targetArtifact, ok := lookup[nodeID].(*model.Artifact)
+	if !ok {
+		logging.Debug("NodeID %s does not resolve to an artifact", nodeID)
+		return
+	}
+
+	if model.IsStateToolArtifact(targetArtifact.MimeType) {
+		*result = append(*result, targetArtifact.NodeID)
+		return
+	}
+
+	step, ok := lookup[targetArtifact.GeneratedBy].(*model.Step)
+	if !ok {
+		// Dead branch
+		logging.Debug("Artifact %s does not have an associated step, considering this a dead branch", nodeID)
+		return
+	}
+
+	for _, input := range step.Inputs {
+		if input.Tag != model.TagSource {
+			continue
+		}
+		for _, id := range input.NodeIDs {
+			buildTerminals(id, lookup, result)
+		}
+	}
 }
 
 // buildMap recursively builds the artifact map from the lookup table. It expects an ID that
