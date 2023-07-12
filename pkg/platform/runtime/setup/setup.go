@@ -569,13 +569,6 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 		multilog.Error("Could not save artifact cache updates: %v", err)
 	}
 
-	// clean up temp directory
-	tempDir := filepath.Join(s.store.InstallPath(), constants.LocalRuntimeTempDirectory)
-	err = os.RemoveAll(tempDir)
-	if err != nil {
-		multilog.Log(logging.ErrorNoStacktrace, rollbar.Error)("Failed to remove temporary installation directory %s: %v", tempDir, err)
-	}
-
 	if err := s.store.StoreBuildPlan(buildResult.Build); err != nil {
 		return nil, nil, errs.Wrap(err, "Could not save recipe file.")
 	}
