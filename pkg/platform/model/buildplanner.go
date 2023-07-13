@@ -117,6 +117,7 @@ func (bp *BuildPlanner) FetchBuildResult(commitID strfmt.UUID, owner, project st
 	}
 
 	// Get the platform ID for the current platform
+	logging.Debug("Build Plan platforms: %v", bpPlatforms)
 	platformID, err := FilterCurrentPlatform(HostPlatform, bpPlatforms)
 	if err != nil {
 		return nil, locale.WrapError(err, "err_filter_current_platform")
@@ -286,7 +287,7 @@ func (bp *BuildPlanner) StageCommit(params StageCommitParams) (strfmt.UUID, erro
 			isTransient = se.IsTransient
 		}
 		return "", &bpModel.BuildPlannerError{
-			Wrapped:          locale.NewInputError("err_buildplanner", resp.Commit.Build.Message),
+			Wrapped:          locale.NewInputError("err_buildplanner", resp.Commit.Build.PlanningError.Message),
 			ValidationErrors: errs,
 			IsTransient:      isTransient,
 		}
