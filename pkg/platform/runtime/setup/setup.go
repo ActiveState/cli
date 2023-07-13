@@ -380,7 +380,7 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 			if err := s.handleEvent(events.SolveError{serr}); err != nil {
 				return nil, nil, errs.Wrap(err, "Could not handle SolveError event")
 			}
-			return nil, nil, formatBuildPlanError(serr)
+			return nil, nil, model.FormatBuildPlanError(serr)
 		}
 		return nil, nil, errs.Wrap(err, "Failed to fetch build result")
 	}
@@ -900,34 +900,6 @@ func reusableArtifacts(requestedArtifacts []*bpModel.Artifact, storedArtifacts s
 		}
 	}
 	return keep
-}
-
-func formatBuildPlanError(bperr *bpModel.BuildPlannerError) error {
-	var err error = bperr
-	// Append last five lines to error message
-	offset := 0
-	numLines := len(bperr.ValidationErrors)
-	if numLines > 5 {
-		offset = numLines - 5
-	}
-
-	errorLines := strings.Join(bperr.ValidationErrors[offset:], "\n")
-	// Crop at 500 characters to reduce noisy output further
-	if len(errorLines) > 500 {
-		offset = len(errorLines) - 499
-		errorLines = fmt.Sprintf("…%s", errorLines[offset:])
-	}
-	isCropped := offset > 0
-	croppedMessage := ""
-	if isCropped {
-		croppedMessage = locale.Tl("buildplan_err_cropped_intro", "These are the last lines of the error message:")
-	}
-
-	err = locale.WrapError(err, "solver_err", "", croppedMessage, errorLines)
-	if bperr.IsTransient {
-		err = errs.AddTips(bperr, locale.Tr("transient_solver_tip"))
-	}
-	return err
 }
 
 func (s *Setup) fetchAndInstallArtifactsFromDir(installFunc artifactInstaller) ([]artifact.ArtifactID, error) {
