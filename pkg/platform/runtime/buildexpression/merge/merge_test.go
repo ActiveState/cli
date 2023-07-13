@@ -1,9 +1,10 @@
-package buildscript
+package merge
 
 import (
 	"encoding/json"
 	"testing"
 
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/runtime/buildexpression"
 	"github.com/ActiveState/cli/pkg/platform/runtime/buildscript"
@@ -66,15 +67,15 @@ in:
 	exprB, err := buildexpression.New(bytes)
 	require.NoError(t, err)
 
-	require.True(t, isAutoMergePossible(exprA, exprB))
-
 	strategies := &mono_models.MergeStrategies{
 		OverwriteChanges: []*mono_models.CommitChangeEditable{
 			{Namespace: "language/perl", Requirement: "DateTime", Operation: mono_models.CommitChangeEditableOperationAdded},
 		},
 	}
 
-	mergedExpr, err := apply(exprB, strategies)
+	require.True(t, isAutoMergePossible(exprA, exprB))
+
+	mergedExpr, err := Merge(exprA, exprB, strategies)
 	require.NoError(t, err)
 
 	bytes, err = json.Marshal(mergedExpr)
@@ -168,15 +169,15 @@ in:
 	exprB, err := buildexpression.New(bytes)
 	require.NoError(t, err)
 
-	require.True(t, isAutoMergePossible(exprA, exprB))
-
 	strategies := &mono_models.MergeStrategies{
 		OverwriteChanges: []*mono_models.CommitChangeEditable{
 			{Namespace: "language/perl", Requirement: "JSON", Operation: mono_models.CommitChangeEditableOperationRemoved},
 		},
 	}
 
-	mergedExpr, err := apply(exprB, strategies)
+	require.True(t, isAutoMergePossible(exprA, exprB))
+
+	mergedExpr, err := Merge(exprA, exprB, strategies)
 	require.NoError(t, err)
 
 	bytes, err = json.Marshal(mergedExpr)
@@ -219,10 +220,6 @@ func TestMergeConflict(t *testing.T) {
 			{
 				name = "perl",
 				namespace = "language"
-			},
-			{
-				name = "DateTime",
-				namespace = "language/perl"
 			}
 		]
 	)
@@ -262,4 +259,8 @@ in:
 	require.NoError(t, err)
 
 	assert.False(t, isAutoMergePossible(exprA, exprB)) // platforms do not match
+
+	_, err = Merge(exprA, exprB, nil)
+	require.Error(t, err)
+	assert.True(t, errs.Matches(err, &AutoMergeNotPossibleError{}), "unexpected error type")
 }
