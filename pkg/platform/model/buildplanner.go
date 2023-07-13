@@ -11,7 +11,6 @@ import (
 	"github.com/ActiveState/cli/internal/gqlclient"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
@@ -180,8 +179,7 @@ func (bp *BuildPlanner) pollBuildPlan(commitID, owner, project string) (bpModel.
 			}
 
 			if resp == nil {
-				multilog.Error("Build plan response is nil in pollBuildPlan")
-				continue
+				return nil, errs.New("Build plan response is nil")
 			}
 
 			build, err := resp.Build()
