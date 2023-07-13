@@ -19,6 +19,8 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/platform/runtime/buildexpression/merge"
+	"github.com/ActiveState/cli/pkg/platform/runtime/buildscript"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/go-openapi/strfmt"
@@ -180,7 +182,7 @@ func (p *Pull) Run(params *PullParams) error {
 }
 
 func (p *Pull) performMerge(strategies *mono_models.MergeStrategies, remoteCommit strfmt.UUID, localCommit strfmt.UUID, namespace *project.Namespaced, branchName string) (strfmt.UUID, error) {
-	err := buildscriptRunbits.Merge(p.project, remoteCommit, strategies, p.auth)
+	err := p.mergeBuildScript(strategies, remoteCommit, localCommit)
 	if err != nil {
 		return "", errs.Wrap(err, "Could not merge local build script with remote changes")
 	}
@@ -210,6 +212,45 @@ func (p *Pull) performMerge(strategies *mono_models.MergeStrategies, remoteCommi
 		"The following changes will be merged:\n{{.V0}}\n", strings.Join(commit.FormatChanges(cmit), "\n")))
 
 	return resultCommit, nil
+}
+
+// mergeBuildScript merges the local build script with the remote buildexpression (not script) for a
+// given UUID, performing the given merge strategy (e.g. from model.MergeCommit).
+func (p *Pull) mergeBuildScript(strategies *mono_models.MergeStrategies, remoteCommit strfmt.UUID, localCommit strfmt.UUID) error {
+	// Verify we have a build script to merge.
+	script, err := buildscript.NewScriptFromProjectDir(p.project.Dir())
+	if err != nil && !buildscript.IsDoesNotExistError(err) {
+		return errs.Wrap(err, "Could not get local build script")
+	}
+	if script == nil {
+		return nil // no build script to merge
+	}
+
+	// Get the local and remote build expressions to merge.
+	bp := model.NewBuildPlannerModel(p.auth)
+	exprA, err := bp.GetBuildExpression(p.project.Owner(), p.project.Name(), localCommit.String())
+	if err != nil {
+		return errs.Wrap(err, "Unable to get buildexpression for local commit")
+	}
+	exprB, err := bp.GetBuildExpression(p.project.Owner(), p.project.Name(), remoteCommit.String())
+	if err != nil {
+		return errs.Wrap(err, "Unable to get buildexpression for remote commit")
+	}
+
+	// Attempt the merge.
+	mergedExpr, err := merge.Merge(exprA, exprB, strategies)
+	if err != nil {
+		err := buildscriptRunbits.GenerateAndWriteDiff(p.project, script, exprB)
+		if err != nil {
+			return locale.WrapError(err, "err_diff_build_script", "Unable to generate differences between local and remote build script")
+		}
+		return locale.NewInputError(
+			"err_build_script_merge",
+			"Unable to automatically merge build scripts. Please resolve conflicts manually and then run [ACTIONABLE]`state commit`[/RESET]")
+	}
+
+	// Write the merged build expression as a local build script.
+	return buildscript.UpdateOrCreate(p.project.Dir(), mergedExpr)
 }
 
 func resolveRemoteProject(prj *project.Project, overwrite string) (*project.Namespaced, error) {
