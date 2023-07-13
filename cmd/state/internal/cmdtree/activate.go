@@ -60,6 +60,7 @@ func newActivateCommand(prime *primer.Values) *captain.Command {
 			err := as.WaitForFunc(func() error {
 				return runner.Run(&params)
 			})
+
 			// Try to report why the activation failed
 			if err != nil {
 				an := prime.Analytics()
