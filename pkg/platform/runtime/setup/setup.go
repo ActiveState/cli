@@ -531,16 +531,20 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 		recipeID = buildResult.RecipeID
 	}
 
+	if !buildResult.BuildReady {
+		err = buildplan.AddBuildArtifacts(artifacts, buildResult.Build)
+		if err != nil {
+			return nil, nil, errs.Wrap(err, "Could not add build artifacts to build plan")
+		}
+	}
+
 	if err := s.eventHandler.Handle(events.Start{
 		RecipeID:      recipeID,
 		RequiresBuild: !buildResult.BuildReady,
 		ArtifactNames: artifactNames,
 		LogFilePath:   logFilePath,
 		ArtifactsToBuild: func() []artifact.ArtifactID {
-			if !buildResult.BuildReady {
-				return artifact.ArtifactIDsFromBuildPlanMap(artifacts) // This does not account for cached builds
-			}
-			return []artifact.ArtifactID{}
+			return artifact.ArtifactIDsFromBuildPlanMap(artifacts) // This does not account for cached builds
 		}(),
 		// Yes these have the same value; this is intentional.
 		// Separating these out just allows us to be more explicit and intentional in our event handling logic.
@@ -781,6 +785,13 @@ func (s *Setup) downloadArtifact(a artifact.ArtifactDownload, targetFile string)
 	artifactURL, err := url.Parse(a.UnsignedURI)
 	if err != nil {
 		return errs.Wrap(err, "Could not parse artifact URL %s.", a.UnsignedURI)
+	}
+
+	if artifactURL.Scheme == "s3" {
+		artifactURL, err = model.SignS3URL(artifactURL)
+		if err != nil {
+			return errs.Wrap(err, "Could not sign artifact URL %s.", a.UnsignedURI)
+		}
 	}
 
 	b, err := httputil.GetWithProgress(artifactURL.String(), &progress.Report{

@@ -98,10 +98,6 @@ func buildMap(baseID strfmt.UUID, lookup map[strfmt.UUID]interface{}, result art
 		return errs.New("Incorrect target type for id %s, expected Artifact", baseID)
 	}
 
-	if currentArtifact.Status != model.ArtifactSucceeded {
-		return errs.New("Artifact %s did not succeed with status: %s", currentArtifact.NodeID, currentArtifact.Status)
-	}
-
 	deps := make(map[strfmt.UUID]struct{})
 	for _, depID := range currentArtifact.RuntimeDependencies {
 		deps[depID] = struct{}{}
