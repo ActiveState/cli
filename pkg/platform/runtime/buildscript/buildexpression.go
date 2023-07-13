@@ -191,7 +191,7 @@ func newIn(inValue interface{}) (*In, error) {
 	return in, nil
 }
 
-func (s *Script) EqualsBuildExpression(otherJson []byte) bool {
+func (s *Script) EqualsBuildExpressionBytes(otherJson []byte) bool {
 	myJson, err := json.Marshal(s)
 	if err != nil {
 		return false
@@ -207,11 +207,11 @@ func (s *Script) EqualsBuildExpression(otherJson []byte) bool {
 	return err == nil && string(myJson) == string(otherJson)
 }
 
-func (s *Script) Equals(other *buildexpression.BuildExpression) bool {
+func (s *Script) EqualsBuildExpression(other *buildexpression.BuildExpression) bool {
 	data, err := json.Marshal(other)
 	if err != nil {
 		multilog.Error("Unable to marshal buildexpression to JSON: %v", err)
 		return false
 	}
-	return s.EqualsBuildExpression(data)
+	return s.EqualsBuildExpressionBytes(data)
 }

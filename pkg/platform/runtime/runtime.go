@@ -141,7 +141,7 @@ func (r *Runtime) validateCache() error {
 		expr = string(data)
 	}
 
-	if !script.EqualsBuildExpression([]byte(expr)) {
+	if !script.EqualsBuildExpressionBytes([]byte(expr)) {
 		return &NeedsCommitError{errs.New("Runtime changes should be committed")}
 	}
 

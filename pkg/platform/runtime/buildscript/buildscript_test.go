@@ -365,7 +365,7 @@ func TestBuildExpression(t *testing.T) {
 	require.NoError(t, err)
 	expectedExpr, err := json.Marshal(marshaledInput)
 	assert.Equal(t, string(expectedExpr), string(newExpr))
-	assert.True(t, script.EqualsBuildExpression(expr))
+	assert.True(t, script.EqualsBuildExpressionBytes(expr))
 
 	// Verify null JSON value is handled correctly.
 	var null *string

@@ -54,7 +54,7 @@ func Sync(proj *project.Project, commitID *strfmt.UUID, out output.Outputer, aut
 	// Otherwise, prefer local changes.
 	if script != nil && commitID == nil {
 		logging.Debug("Checking for changes")
-		if script.Equals(expr) {
+		if script.EqualsBuildExpression(expr) {
 			return false, nil // nothing to do
 		}
 		logging.Debug("Merging changes")

@@ -34,17 +34,17 @@ func newScriptFromFile(path string) (*Script, error) {
 	return NewScript(data)
 }
 
-func UpdateOrCreate(dir string, newScript *buildexpression.BuildExpression) error {
+func UpdateOrCreate(dir string, newExpr *buildexpression.BuildExpression) error {
 	// If a build script exists, check to see if an update is needed.
 	script, err := NewScriptFromProjectDir(dir)
 	if err != nil && !IsDoesNotExistError(err) {
 		return errs.Wrap(err, "Could not read build script")
 	}
-	if script != nil && script.Equals(newScript) {
+	if script != nil && script.EqualsBuildExpression(newExpr) {
 		return nil
 	}
 
-	data, err := json.Marshal(newScript)
+	data, err := json.Marshal(newExpr)
 	if err != nil {
 		return errs.Wrap(err, "Could not marshal buildexpression to JSON")
 	}
