@@ -397,6 +397,13 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 		}
 	}
 
+	if !buildResult.BuildReady {
+		err = buildplan.AddBuildArtifacts(artifacts, buildResult.Build)
+		if err != nil {
+			return nil, nil, errs.Wrap(err, "Could not add build artifacts to build plan")
+		}
+	}
+
 	setup, err := s.selectSetupImplementation(buildResult.BuildEngine, artifacts)
 	if err != nil {
 		return nil, nil, errs.Wrap(err, "Failed to select setup implementation")
@@ -529,13 +536,6 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 	var recipeID strfmt.UUID
 	if buildResult.RecipeID != "" {
 		recipeID = buildResult.RecipeID
-	}
-
-	if !buildResult.BuildReady {
-		err = buildplan.AddBuildArtifacts(artifacts, buildResult.Build)
-		if err != nil {
-			return nil, nil, errs.Wrap(err, "Could not add build artifacts to build plan")
-		}
 	}
 
 	if err := s.eventHandler.Handle(events.Start{
