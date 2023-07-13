@@ -1,7 +1,6 @@
 package model
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
@@ -124,7 +123,6 @@ func (bp *BuildPlanner) FetchBuildResult(commitID strfmt.UUID, owner, project st
 	}
 
 	// Get the platform ID for the current platform
-	logging.Debug("Build Plan platforms: %v", bpPlatforms)
 	platformID, err := FilterCurrentPlatform(HostPlatform, bpPlatforms)
 	if err != nil {
 		return nil, locale.WrapError(err, "err_filter_current_platform")
@@ -267,12 +265,6 @@ func (bp *BuildPlanner) StageCommit(params StageCommitParams) (strfmt.UUID, erro
 		return "", errs.Wrap(err, "Failed to update build graph")
 	}
 
-	expressionData, err := json.MarshalIndent(expression, "", "  ")
-	if err != nil {
-		return "", errs.Wrap(err, "Failed to marshal request")
-	}
-	logging.Debug("Expression data: %s", string(expressionData))
-
 	// With the updated build expression call the stage commit mutation
 	request := request.StageCommit(params.Owner, params.Project, params.ParentCommit, expression)
 	resp := &bpModel.StageCommitResult{}
@@ -291,12 +283,6 @@ func (bp *BuildPlanner) StageCommit(params StageCommitParams) (strfmt.UUID, erro
 		}
 		return "", errs.New("Commit does not contain build")
 	}
-
-	respData, err := json.MarshalIndent(resp, "", "  ")
-	if err != nil {
-		return "", errs.Wrap(err, "Failed to marshal response")
-	}
-	logging.Debug("StageCommit response: %s", string(respData))
 
 	if resp.Commit.Build.PlanningError != nil {
 		var errs []string

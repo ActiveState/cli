@@ -9,7 +9,6 @@ import (
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_client/inventory_operations"
@@ -212,23 +211,16 @@ func filterPlatformIDs(hostPlatform, hostArch string, platformIDs []strfmt.UUID)
 	var pids []strfmt.UUID
 	var fallback []strfmt.UUID
 	for _, platformID := range platformIDs {
-		logging.Debug("Platform ID: %s", platformID)
 		for _, rtPf := range runtimePlatforms {
-			logging.Debug("Runtie platform ID: %s", *rtPf.PlatformID)
 			if rtPf.PlatformID == nil || platformID != *rtPf.PlatformID {
 				continue
 			}
-
-			logging.Debug("Kernel: %s", rtPf.Kernel)
 			if rtPf.Kernel == nil || rtPf.Kernel.Name == nil {
 				continue
 			}
-			logging.Debug("CPUArchitecture: %s", rtPf.CPUArchitecture)
 			if rtPf.CPUArchitecture == nil || rtPf.CPUArchitecture.Name == nil {
 				continue
 			}
-
-			logging.Debug("Kernel: %s", *rtPf.Kernel.Name)
 			if *rtPf.Kernel.Name != HostPlatformToKernelName(hostPlatform) {
 				continue
 			}
@@ -237,11 +229,9 @@ func filterPlatformIDs(hostPlatform, hostArch string, platformIDs []strfmt.UUID)
 				*rtPf.CPUArchitecture.Name,
 				*rtPf.CPUArchitecture.BitWidth,
 			)
-			logging.Debug("Platform Arch: %s", platformArch)
 			if fallbackArch(hostPlatform, hostArch) == platformArch {
 				fallback = append(fallback, platformID)
 			}
-			logging.Debug("Host Arch: %s", hostArch)
 			if hostArch != platformArch {
 				continue
 			}

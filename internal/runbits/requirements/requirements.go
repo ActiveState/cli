@@ -236,7 +236,6 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 	if err != nil {
 		serr := &bpModel.BuildPlannerError{}
 		if errors.As(err, &serr) {
-			logging.Debug("Encountered BuildPlanner error")
 			return model.FormatBuildPlanError(serr)
 		}
 		return locale.WrapError(err, "err_package_save_and_build", "Error occurred while trying to create a commit")

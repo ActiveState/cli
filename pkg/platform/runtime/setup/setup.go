@@ -376,7 +376,6 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 	if err != nil {
 		serr := &bpModel.BuildPlannerError{}
 		if errors.As(err, &serr) {
-			logging.Debug("Encountered BuildPlanner error")
 			if err := s.handleEvent(events.SolveError{serr}); err != nil {
 				return nil, nil, errs.Wrap(err, "Could not handle SolveError event")
 			}
