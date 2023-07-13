@@ -1,6 +1,7 @@
 package model
 
 import (
+	"encoding/json"
 	"net/http"
 	"os"
 	"strings"
@@ -278,6 +279,12 @@ func (bp *BuildPlanner) StageCommit(params StageCommitParams) (strfmt.UUID, erro
 		}
 		return "", errs.New("Commit does not contain build")
 	}
+
+	respData, err := json.MarshalIndent(resp, "", "  ")
+	if err != nil {
+		return "", errs.Wrap(err, "Failed to marshal response")
+	}
+	logging.Debug("StageCommit response: %s", string(respData))
 
 	if resp.Commit.Build.PlanningError != nil {
 		var errs []string
