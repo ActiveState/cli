@@ -103,6 +103,11 @@ func (bp *BuildPlanner) FetchBuildResult(commitID strfmt.UUID, owner, project st
 		if err != nil {
 			return nil, errs.Wrap(err, "failed to poll build plan")
 		}
+
+		build, err = resp.Build()
+		if err != nil {
+			return nil, errs.Wrap(err, "Could not get build from response")
+		}
 	}
 
 	// The type aliasing in the query populates the
