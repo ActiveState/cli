@@ -80,6 +80,7 @@ const (
 	OffInstall      = "offline-install"
 	Help            = "help"
 	Messaging       = "messaging"
+	HelloExample    = "hello_example"
 )
 
 // Suite extends a testify suite Suite, such that tests allowing for dynamic skipping of tests
