@@ -11,24 +11,12 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/runtime/buildexpression"
 )
 
-type AutoMergeNotPossibleError struct{ error }
-
-func IsAutoMergeNotPossibleError(err error) bool {
-	return errs.Matches(err, &AutoMergeNotPossibleError{})
-}
-
-type MergeConflictsError struct{ error }
-
-func IsMergeConflictsError(err error) bool {
-	return errs.Matches(err, &MergeConflictsError{})
-}
-
 func Merge(exprA *buildexpression.BuildExpression, exprB *buildexpression.BuildExpression, strategies *mono_models.MergeStrategies) (*buildexpression.BuildExpression, error) {
 	if !isAutoMergePossible(exprA, exprB) {
-		return nil, &AutoMergeNotPossibleError{errs.New("Unable to merge buildexpressions")}
+		return nil, errs.New("Unable to merge buildexpressions")
 	}
 	if len(strategies.Conflicts) > 0 {
-		return nil, &MergeConflictsError{errs.New("Unable to merge buildexpressions due to conflicting requirements")}
+		return nil, errs.New("Unable to merge buildexpressions due to conflicting requirements")
 	}
 
 	// Update build expression requirements with merge results.

@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/runtime/buildexpression"
 	"github.com/ActiveState/cli/pkg/platform/runtime/buildscript"
@@ -262,5 +261,4 @@ in:
 
 	_, err = Merge(exprA, exprB, nil)
 	require.Error(t, err)
-	assert.True(t, errs.Matches(err, &AutoMergeNotPossibleError{}), "unexpected error type")
 }
