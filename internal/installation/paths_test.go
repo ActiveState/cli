@@ -92,31 +92,6 @@ func TestBinPathFromInstallPath(t *testing.T) {
 	}
 }
 
-func TestInstallPathForBranch(t *testing.T) {
-	installPathSuffix := filepath.Join(".ActiveState", "StateTool", "release")
-	if runtime.GOOS == "windows" {
-		installPathSuffix = filepath.Join("AppData", "Local", "ActiveState", "StateTool", "release")
-	}
-
-	home := fileutils.TempDirUnsafe()
-	t.Setenv(constants.HomeEnvVarName, home)
-	installDir := filepath.Join(home, installPathSuffix)
-	err := fileutils.Mkdir(home, installPathSuffix)
-	require.NoError(t, err)
-
-	_, err = InstallPathForBranch("release", false) // mimic call from installer
-	require.NoError(t, err)
-
-	_, err = InstallPathForBranch("release", true) // simulate a bad call
-	assert.Error(t, err)
-
-	err = fileutils.Touch(filepath.Join(installDir, InstallDirMarker))
-	require.NoError(t, err)
-
-	_, err = InstallPathForBranch("release", true) // mimic call from updater
-	require.NoError(t, err)
-}
-
 func TestInstallPathFromReference(t *testing.T) {
 	installPathSuffix := filepath.Join(".ActiveState", "StateTool", "release")
 	if runtime.GOOS == "windows" {

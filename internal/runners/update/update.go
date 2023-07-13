@@ -69,7 +69,7 @@ func (u *Update) Run(params *Params) error {
 	// Handle switching channels
 	var installPath string
 	if params.Channel != "" && params.Channel != constants.BranchName {
-		installPath, err = installation.InstallPathForBranch(params.Channel, true)
+		installPath, err = installation.InstallPathForBranch(params.Channel)
 		if err != nil {
 			return locale.WrapError(err, "err_update_install_path", "Could not get installation path for branch {{.V0}}", params.Channel)
 		}

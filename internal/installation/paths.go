@@ -22,12 +22,11 @@ const (
 )
 
 func DefaultInstallPath() (string, error) {
-	return InstallPathForBranch(constants.BranchName, true)
+	return InstallPathForBranch(constants.BranchName)
 }
 
 // InstallPathForBranch gets the installation path for the given branch.
-// validate should always be `true` unless the installer wants a path to install to.
-func InstallPathForBranch(branch string, validate bool) (string, error) {
+func InstallPathForBranch(branch string) (string, error) {
 	if v := os.Getenv(constants.InstallPathOverrideEnvVarName); v != "" {
 		return filepath.Clean(v), nil
 	}
@@ -35,9 +34,6 @@ func InstallPathForBranch(branch string, validate bool) (string, error) {
 	installPath, err := installPathForBranch(branch)
 	if err != nil {
 		return "", errs.Wrap(err, "Unable to determine install path for branch")
-	}
-	if validate && !isValidInstallPath(installPath) {
-		return "", errs.New("Invalid install path: %s", installPath)
 	}
 
 	return installPath, nil
