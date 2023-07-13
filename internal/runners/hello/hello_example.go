@@ -52,6 +52,7 @@ func New(p primeable) *Hello {
 // Run contains the scope in which the hello runner logic is executed.
 func (h *Hello) Run(params *RunParams) error {
 	// Reusable runner logic is contained within the runbits package.
+	// You should only use this if you intend to share logic between runners. Runners should NEVER invoke other runners.
 	if err := runbits.SayHello(h.out, params.Named); err != nil {
 		// Errors should nearly always be localized.
 		return locale.WrapError(

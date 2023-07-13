@@ -13,8 +13,11 @@ func newHelloCommand(prime *primer.Values) *captain.Command {
 	params := hello.NewRunParams()
 
 	cmd := captain.NewCommand(
+		// The command's name should not be localized as we want commands to behave consistently regardless of localization.
 		"hello",
+		// The title is printed with title formatting when running the command. Leave empty to disable.
 		locale.Tl("hello_cmd_title", "Saying hello"),
+		// The description is shown on --help output
 		locale.Tl("hello_cmd_description", "An example command"),
 		prime,
 		[]*captain.Flag{},
@@ -33,8 +36,11 @@ func newHelloCommand(prime *primer.Values) *captain.Command {
 		},
 	)
 
+	// The group is used to group together commands in the --help output
 	cmd.SetGroup(UtilsGroup)
+	// Any new command should be marked unstable for the first release it goes out in.
 	// cmd.SetUnstable(true)
+	// Certain commands like `state deploy` are there for backwards compatibility, but we don't want to show them in the --help output as they are not part of the happy path or our long term goals.
 	// cmd.SetHidden(true)
 
 	return cmd
