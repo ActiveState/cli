@@ -2068,4 +2068,4 @@ err_edit_local_checkouts:
 err_edit_project_mapping:
   other: Could not update project mapping
 err_buildplanner:
-  other: "Build Planner returned error: {{.V0}}"
+  other: "Build Planner encountered planning error"

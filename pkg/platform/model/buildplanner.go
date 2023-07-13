@@ -296,11 +296,18 @@ func (bp *BuildPlanner) StageCommit(params StageCommitParams) (strfmt.UUID, erro
 		var errs []string
 		var isTransient bool
 		for _, se := range resp.Commit.Build.SubErrors {
-			errs = append(errs, se.Message)
-			isTransient = se.IsTransient
+			if se.Message != "" {
+				errs = append(errs, se.Message)
+				isTransient = se.IsTransient
+			}
+			for _, ve := range se.ValidationErrors {
+				if ve.Error != "" {
+					errs = append(errs, ve.Error)
+				}
+			}
 		}
 		return "", &bpModel.BuildPlannerError{
-			Wrapped:          locale.NewInputError("err_buildplanner", resp.Commit.Build.PlanningError.Message),
+			Wrapped:          locale.NewInputError("err_buildplanner"),
 			ValidationErrors: errs,
 			IsTransient:      isTransient,
 		}

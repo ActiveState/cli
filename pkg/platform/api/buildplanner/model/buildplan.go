@@ -148,11 +148,18 @@ func (b *BuildPlanByProject) Build() (*Build, error) {
 		var errs []string
 		var isTransient bool
 		for _, se := range b.Project.Commit.Build.SubErrors {
-			errs = append(errs, se.Message)
-			isTransient = se.IsTransient
+			if se.Message != "" {
+				errs = append(errs, se.Message)
+				isTransient = se.IsTransient
+			}
+			for _, ve := range se.ValidationErrors {
+				if ve.Error != "" {
+					errs = append(errs, ve.Error)
+				}
+			}
 		}
 		return nil, &BuildPlannerError{
-			Wrapped:          locale.NewInputError("err_buildplanner", b.Project.Commit.Build.Message),
+			Wrapped:          locale.NewInputError("err_buildplanner"),
 			ValidationErrors: errs,
 			IsTransient:      isTransient,
 		}
@@ -219,11 +226,18 @@ func (b *BuildPlanByCommit) Build() (*Build, error) {
 		var errs []string
 		var isTransient bool
 		for _, se := range b.Commit.Build.SubErrors {
-			errs = append(errs, se.Message)
-			isTransient = se.IsTransient
+			if se.Message != "" {
+				errs = append(errs, se.Message)
+				isTransient = se.IsTransient
+			}
+			for _, ve := range se.ValidationErrors {
+				if ve.Error != "" {
+					errs = append(errs, ve.Error)
+				}
+			}
 		}
 		return nil, &BuildPlannerError{
-			Wrapped:          locale.NewInputError("err_buildplanner", b.Commit.Build.Message),
+			Wrapped:          locale.NewInputError("err_buildplanner"),
 			ValidationErrors: errs,
 			IsTransient:      isTransient,
 		}
