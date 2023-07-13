@@ -13,6 +13,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/pkg/platform/api"
+	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/request"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef"
@@ -168,7 +169,7 @@ func (bp *BuildPlanner) FetchBuildResult(commitID strfmt.UUID, owner, project st
 }
 
 func (bp *BuildPlanner) pollBuildPlan(commitID, owner, project string) (bpModel.BuildPlan, error) {
-	var resp bpModel.BuildPlan
+	resp := model.NewBuildPlanResponse(owner, project)
 	ticker := time.NewTicker(pollInterval)
 	for {
 		select {
