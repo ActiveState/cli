@@ -261,15 +261,15 @@ func (bp *BuildPlanner) StageCommit(params StageCommitParams) (strfmt.UUID, erro
 		return "", errs.Wrap(err, "Failed to update build graph")
 	}
 
-	// With the updated build expression call the stage commit mutation
-	request := request.StageCommit(params.Owner, params.Project, params.ParentCommit, expression)
-	resp := &bpModel.StageCommitResult{}
-	requestData, err := json.MarshalIndent(request, "", "  ")
+	expressionData, err := json.MarshalIndent(expression, "", "  ")
 	if err != nil {
 		return "", errs.Wrap(err, "Failed to marshal request")
 	}
-	logging.Debug("StageCommit request: %s", string(requestData))
+	logging.Debug("Expression data: %s", string(expressionData))
 
+	// With the updated build expression call the stage commit mutation
+	request := request.StageCommit(params.Owner, params.Project, params.ParentCommit, expression)
+	resp := &bpModel.StageCommitResult{}
 	err = bp.client.Run(request, resp)
 	if err != nil {
 		return "", locale.WrapError(err, "err_buildplanner_stage_commit", "Failed to stage commit, error: {{.V0}}", err.Error())
