@@ -1,18 +1,16 @@
 package runbits
 
 import (
-	"errors"
-
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 )
 
-func SayHello(out output.Outputer, to string) error {
-	if to == "" {
-		return errors.New("test")
+func SayHello(out output.Outputer, name string) error {
+	if name == "" {
+		return locale.NewInputError("hello_err_no_name", "No name provided.")
 	}
 
-	out.Print(locale.Tl("hello_message", "Hello, {{.V0}}!", to))
+	out.Print(locale.Tl("hello_message", "Hello, {{.V0}}!", name))
 
 	return nil
 }

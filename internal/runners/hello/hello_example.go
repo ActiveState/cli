@@ -55,7 +55,7 @@ func (h *Hello) Run(params *RunParams) error {
 	if err := runbits.SayHello(h.out, params.Named); err != nil {
 		// Errors should nearly always be localized.
 		return locale.WrapError(
-			err, "hello_cannot_say", "Cannot say hello without a name",
+			err, "hello_cannot_say", "Cannot say hello.",
 		)
 	}
 
