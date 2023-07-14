@@ -28,8 +28,9 @@ type primeable interface {
 // values are typically collected from flags and arguments entered into the
 // cli, but there is no reason that they couldn't be set in another manner.
 type RunParams struct {
-	Name  string
-	Extra bool
+	Name      string
+	Namespace SimpleNamespace
+	Extra     bool
 }
 
 // NewRunParams contains a scope in which default or construction-time values
@@ -67,6 +68,10 @@ func (h *Hello) Run(params *RunParams) error {
 		return locale.WrapError(
 			err, "hello_cannot_say", "Cannot say hello.",
 		)
+	}
+
+	if params.Namespace.IsSet() {
+		h.out.Print(params.Namespace.String())
 	}
 
 	if !params.Extra {

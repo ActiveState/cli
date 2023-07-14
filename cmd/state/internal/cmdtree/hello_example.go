@@ -30,6 +30,14 @@ func newHelloCommand(prime *primer.Values) *captain.Command {
 				),
 				Value: &params.Extra,
 			},
+			{
+				Name: "namespace",
+				Description: locale.Tl(
+					"flag_state_hello_namespace_description",
+					"Namespace to echo",
+				),
+				Value: &params.Namespace,
+			},
 		},
 		[]*captain.Argument{
 			{
