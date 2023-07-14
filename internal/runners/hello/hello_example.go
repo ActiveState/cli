@@ -28,9 +28,9 @@ type primeable interface {
 // values are typically collected from flags and arguments entered into the
 // cli, but there is no reason that they couldn't be set in another manner.
 type RunParams struct {
-	Name      string
-	Namespace SimpleNamespace
-	Extra     bool
+	Name  string
+	Echo  Text
+	Extra bool
 }
 
 // NewRunParams contains a scope in which default or construction-time values
@@ -60,24 +60,6 @@ func New(p primeable) *Hello {
 
 // Run contains the scope in which the hello runner logic is executed.
 func (h *Hello) Run(params *RunParams) error {
-	// Reusable runner logic is contained within the runbits package.
-	// You should only use this if you intend to share logic between
-	// runners. Runners should NEVER invoke other runners.
-	if err := runbits.SayHello(h.out, params.Name); err != nil {
-		// Errors should nearly always be localized.
-		return locale.WrapError(
-			err, "hello_cannot_say", "Cannot say hello.",
-		)
-	}
-
-	if params.Namespace.IsSet() {
-		h.out.Print(params.Namespace.String())
-	}
-
-	if !params.Extra {
-		return nil
-	}
-
 	if h.pj == nil {
 		err := locale.NewInputError(
 			"hello_info_err_no_project", "Not in a project directory.",
@@ -88,6 +70,27 @@ func (h *Hello) Run(params *RunParams) error {
 			"hello_suggest_checkout",
 			"Try using [ACTIONABLE]`state checkout`[/RESET] first.",
 		))
+	}
+
+	// Reusable runner logic is contained within the runbits package.
+	// You should only use this if you intend to share logic between
+	// runners. Runners should NEVER invoke other runners.
+	if err := runbits.SayHello(h.out, params.Name); err != nil {
+		// Errors should nearly always be localized.
+		return locale.WrapError(
+			err, "hello_cannot_say", "Cannot say hello.",
+		)
+	}
+
+	if params.Echo.IsSet() {
+		h.out.Print(locale.Tl(
+			"hello_echo_msg", "Echoing: {{.V0}}",
+			params.Echo.String(),
+		))
+	}
+
+	if !params.Extra {
+		return nil
 	}
 
 	// Grab data from the platform.
