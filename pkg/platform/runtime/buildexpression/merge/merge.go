@@ -22,15 +22,9 @@ func Merge(exprA *buildexpression.BuildExpression, exprB *buildexpression.BuildE
 	// Update build expression requirements with merge results.
 	for _, req := range strategies.OverwriteChanges {
 		var op bpModel.Operation
-		switch req.Operation {
-		case mono_models.CommitChangeEditableOperationAdded:
-			op = bpModel.OperationAdded
-		case mono_models.CommitChangeEditableOperationRemoved:
-			op = bpModel.OperationRemoved
-		case mono_models.CommitChangeEditableOperationUpdated:
-			op = bpModel.OperationUpdated
-		default:
-			return nil, errs.New("Unknown requirement operation: %s", op)
+		err := op.Unmarshal(req.Operation)
+		if err != nil {
+			return nil, errs.Wrap(err, "Unable to convert requirement operation to buildplan operation")
 		}
 
 		var versionRequirements []bpModel.VersionRequirement
