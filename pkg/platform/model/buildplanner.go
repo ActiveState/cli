@@ -234,7 +234,7 @@ type StageCommitParams struct {
 	RequirementVersion   string
 	RequirementNamespace Namespace
 	Operation            bpModel.Operation
-	TimeStamp            *strfmt.DateTime
+	TimeStamp            strfmt.DateTime
 }
 
 func (bp *BuildPlanner) StageCommit(params StageCommitParams) (strfmt.UUID, error) {
@@ -266,7 +266,7 @@ func (bp *BuildPlanner) StageCommit(params StageCommitParams) (strfmt.UUID, erro
 		}
 	}
 
-	err = expression.UpdateTimestamp(*params.TimeStamp)
+	err = expression.UpdateTimestamp(params.TimeStamp)
 	if err != nil {
 		return "", errs.Wrap(err, "Failed to update build expression with timestamp")
 	}
