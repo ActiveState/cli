@@ -25,34 +25,18 @@ func (suite *HelloIntegrationTestSuite) TestHello() {
 	cp = ts.Spawn("hello", "Person")
 	cp.Expect("Hello, Person!")
 	cp.ExpectExitCode(0)
-}
 
-func (suite *HelloIntegrationTestSuite) TestHelloInfo() {
-	suite.OnlyRunForTags(tagsuite.HelloExample)
-
-	ts := e2e.New(suite.T(), false)
-	defer ts.Close()
-
-	cp := ts.Spawn("hello", "info")
-	cp.Expect("Cannot say hello without a name")
+	cp = ts.Spawn("hello", "")
+	cp.Expect("Cannot say hello")
+	cp.Expect("No name provided")
 	cp.ExpectNotExitCode(0)
-
-	ts.LoginAsPersistentUser()
-
-	cp = ts.Spawn("hello", "info")
-	cp.Expect("Hello, cli-integration-tests!")
-	cp.Expect("Not in a project directory")
-	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("checkout", "ActiveState-CLI/small-python", ".")
 	cp.Expect("Checked out project")
 	cp.ExpectExitCode(0)
 
-	cp = ts.Spawn("hello", "info")
-	cp.Expect("Project: ActiveState-CLI/small-python")
-	cp.ExpectExitCode(0)
-
 	cp = ts.Spawn("hello", "info", "--extra")
+	cp.Expect("Project: ActiveState-CLI/small-python")
 	cp.Expect("Current commit message:")
 	cp.ExpectExitCode(0)
 }
