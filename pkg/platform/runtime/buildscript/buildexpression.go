@@ -15,11 +15,16 @@ const SolveFunction = "solve"
 const SolveLegacyFunction = "solve_legacy"
 const MergeFunction = "merge"
 
-func NewScriptFromBuildExpression(expr []byte) (*Script, error) {
+func NewScriptFromBuildExpression(expr *buildexpression.BuildExpression) (*Script, error) {
+	data, err := json.Marshal(expr)
+	if err != nil {
+		return nil, errs.Wrap(err, "Unable to marshal buildexpression to JSON")
+	}
+
 	m := make(map[string]interface{})
-	err := json.Unmarshal(expr, &m)
+	err = json.Unmarshal(data, &m)
 	if err != nil { // this really should not happen
-		return nil, errs.Wrap(err, "Could not unmarshal build expression")
+		return nil, errs.Wrap(err, "Could not unmarshal buildexpression")
 	}
 
 	letValue, ok := m["let"]
@@ -191,27 +196,30 @@ func newIn(inValue interface{}) (*In, error) {
 	return in, nil
 }
 
-func (s *Script) EqualsBuildExpressionBytes(otherJson []byte) bool {
-	myJson, err := json.Marshal(s)
+func (s *Script) EqualsBuildExpressionBytes(exprBytes []byte) bool {
+	expr, err := buildexpression.New(exprBytes)
 	if err != nil {
+		multilog.Error("Unable to create buildexpression from incoming JSON: %v", err)
 		return false
 	}
-	// Cannot compare myJson and otherJson directly due to key sort order, whitespace discrepancies,
-	// etc., so convert otherJson into a build script, and back into JSON before the comparison.
-	// json.Marshal() produces the same key sort order.
-	otherExpr, err := NewScriptFromBuildExpression(otherJson)
-	if err != nil {
-		return false
-	}
-	otherJson, err = json.Marshal(otherExpr)
-	return err == nil && string(myJson) == string(otherJson)
+	return s.EqualsBuildExpression(expr)
 }
 
-func (s *Script) EqualsBuildExpression(other *buildexpression.BuildExpression) bool {
-	data, err := json.Marshal(other)
+func (s *Script) EqualsBuildExpression(expr *buildexpression.BuildExpression) bool {
+	myJson, err := json.Marshal(s)
 	if err != nil {
-		multilog.Error("Unable to marshal buildexpression to JSON: %v", err)
+		multilog.Error("Unable to marshal this buildscript to JSON: %v", err)
 		return false
 	}
-	return s.EqualsBuildExpressionBytes(data)
+	otherScript, err := NewScriptFromBuildExpression(expr)
+	if err != nil {
+		multilog.Error("Unable to transform buildexpression to buildscript: %v", err)
+		return false
+	}
+	otherJson, err := json.Marshal(otherScript)
+	if err != nil {
+		multilog.Error("Unable to marshal other buildscript to JSON: %v", err)
+		return false
+	}
+	return string(myJson) == string(otherJson)
 }

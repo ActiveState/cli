@@ -2,7 +2,6 @@ package buildscript
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"path/filepath"
 
@@ -58,11 +57,7 @@ func Sync(proj *project.Project, commitID *strfmt.UUID, out output.Outputer, aut
 			return false, nil // nothing to do
 		}
 		logging.Debug("Merging changes")
-		bytes, err := json.Marshal(script)
-		if err != nil {
-			return false, errs.Wrap(err, "Unable to marshal local build script to JSON")
-		}
-		expr, err = buildexpression.New(bytes)
+		expr, err = script.ToBuildExpression()
 		if err != nil {
 			return false, errs.Wrap(err, "Unable to translate local build script to build expression")
 		}
@@ -102,11 +97,7 @@ func Sync(proj *project.Project, commitID *strfmt.UUID, out output.Outputer, aut
 }
 
 func generateDiff(script *buildscript.Script, expr *buildexpression.BuildExpression) (string, error) {
-	data, err := json.Marshal(expr)
-	if err != nil {
-		return "", errs.Wrap(err, "Unable to marshal buildexpression to JSON: %v", err)
-	}
-	newScript, err := buildscript.NewScriptFromBuildExpression(data)
+	newScript, err := buildscript.NewScriptFromBuildExpression(expr)
 	if err != nil {
 		return "", errs.Wrap(err, "Unable to transform build expression to build script")
 	}

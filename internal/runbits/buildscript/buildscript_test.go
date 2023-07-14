@@ -1,11 +1,9 @@
 package buildscript
 
 import (
-	"encoding/json"
 	"testing"
 
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
-	"github.com/ActiveState/cli/pkg/platform/runtime/buildexpression"
 	"github.com/ActiveState/cli/pkg/platform/runtime/buildscript"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -31,9 +29,7 @@ in:
 	runtime`))
 	require.NoError(t, err)
 
-	bytes, err := json.Marshal(script)
-	require.NoError(t, err)
-	expr, err := buildexpression.New(bytes)
+	expr, err := script.ToBuildExpression()
 	require.NoError(t, err)
 
 	(*script.Let.Assignments[0].Value.FuncCall.Arguments[0].Assignment.Value.List)[0].Str = ptr.To(`"77777"`)

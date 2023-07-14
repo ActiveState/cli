@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
+	"github.com/ActiveState/cli/pkg/platform/runtime/buildexpression"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -307,7 +308,7 @@ in:
 }
 
 func TestBuildExpression(t *testing.T) {
-	expr := []byte(`{
+	expr, err := buildexpression.New([]byte(`{
   "let": {
     "runtime": {
       "solve_legacy": {
@@ -350,22 +351,24 @@ func TestBuildExpression(t *testing.T) {
     },
     "in": "$runtime"
   }
-}`)
+}`))
+	require.NoError(t, err)
+
+	// Verify conversions between buildscripts and buildexpressions is accurate.
 	script, err := NewScriptFromBuildExpression(expr)
 	require.NoError(t, err)
 	require.NotNil(t, script)
-	newExpr, err := json.Marshal(script)
+	newExpr, err := script.ToBuildExpression()
 	require.NoError(t, err)
+	exprBytes, err := json.Marshal(expr)
+	require.NoError(t, err)
+	newExprBytes, err := json.Marshal(newExpr)
+	require.NoError(t, err)
+	assert.Equal(t, string(exprBytes), string(newExprBytes))
 
-	// Cannot compare expr and newExpr directly due to key sort order, whitespace discrepancies,
-	// etc., so unmarshal and remarshal before the comparison. json.Marshal() produces the same key
-	// sort order.
-	marshaledInput := make(map[string]interface{})
-	err = json.Unmarshal(expr, &marshaledInput)
-	require.NoError(t, err)
-	expectedExpr, err := json.Marshal(marshaledInput)
-	assert.Equal(t, string(expectedExpr), string(newExpr))
-	assert.True(t, script.EqualsBuildExpressionBytes(expr))
+	// Verify comparisons between buildscripts and buildexpressions is accurate.
+	assert.True(t, script.EqualsBuildExpression(expr))
+	assert.True(t, script.EqualsBuildExpressionBytes(exprBytes))
 
 	// Verify null JSON value is handled correctly.
 	var null *string

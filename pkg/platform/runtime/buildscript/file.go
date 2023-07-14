@@ -1,7 +1,6 @@
 package buildscript
 
 import (
-	"encoding/json"
 	"errors"
 	"os"
 	"path/filepath"
@@ -44,11 +43,7 @@ func UpdateOrCreate(dir string, newExpr *buildexpression.BuildExpression) error 
 		return nil
 	}
 
-	data, err := json.Marshal(newExpr)
-	if err != nil {
-		return errs.Wrap(err, "Could not marshal buildexpression to JSON")
-	}
-	script, err = NewScriptFromBuildExpression(data)
+	script, err = NewScriptFromBuildExpression(newExpr)
 	if err != nil {
 		return errs.Wrap(err, "Could not parse build expression")
 	}

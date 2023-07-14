@@ -227,11 +227,11 @@ func (p *Pull) mergeBuildScript(strategies *mono_models.MergeStrategies, remoteC
 	}
 
 	// Get the local and remote build expressions to merge.
-	bp := model.NewBuildPlannerModel(p.auth)
-	exprA, err := bp.GetBuildExpression(p.project.Owner(), p.project.Name(), localCommit.String())
+	exprA, err := script.ToBuildExpression()
 	if err != nil {
-		return errs.Wrap(err, "Unable to get buildexpression for local commit")
+		return errs.Wrap(err, "Unable to transform local buildscript into buildexpression")
 	}
+	bp := model.NewBuildPlannerModel(p.auth)
 	exprB, err := bp.GetBuildExpression(p.project.Owner(), p.project.Name(), remoteCommit.String())
 	if err != nil {
 		return errs.Wrap(err, "Unable to get buildexpression for remote commit")

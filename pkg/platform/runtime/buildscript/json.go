@@ -5,7 +5,18 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+
+	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/pkg/platform/runtime/buildexpression"
 )
+
+func (s *Script) ToBuildExpression() (*buildexpression.BuildExpression, error) {
+	data, err := json.Marshal(s)
+	if err != nil {
+		return nil, errs.Wrap(err, "Unable to marshal buildscript into JSON")
+	}
+	return buildexpression.New(data)
+}
 
 func (s *Script) MarshalJSON() ([]byte, error) {
 	m := make(map[string]interface{})

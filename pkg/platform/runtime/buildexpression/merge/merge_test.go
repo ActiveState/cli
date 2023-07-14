@@ -77,9 +77,7 @@ in:
 	mergedExpr, err := Merge(exprA, exprB, strategies)
 	require.NoError(t, err)
 
-	bytes, err = json.Marshal(mergedExpr)
-	require.NoError(t, err)
-	mergedScript, err := buildscript.NewScriptFromBuildExpression(bytes)
+	mergedScript, err := buildscript.NewScriptFromBuildExpression(mergedExpr)
 	require.NoError(t, err)
 
 	assert.Equal(t,
@@ -179,9 +177,7 @@ in:
 	mergedExpr, err := Merge(exprA, exprB, strategies)
 	require.NoError(t, err)
 
-	bytes, err = json.Marshal(mergedExpr)
-	require.NoError(t, err)
-	mergedScript, err := buildscript.NewScriptFromBuildExpression(bytes)
+	mergedScript, err := buildscript.NewScriptFromBuildExpression(mergedExpr)
 	require.NoError(t, err)
 
 	assert.Equal(t,
