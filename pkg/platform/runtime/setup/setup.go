@@ -398,6 +398,8 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 	}
 
 	if !buildResult.BuildReady {
+		// The runtime dependencies do not include all build dependencies. Since the build is in progress
+		// we will be working with the build log, we need to add the missing dependencies to the list of artifacts.
 		err = buildplan.AddBuildArtifacts(artifacts, buildResult.Build)
 		if err != nil {
 			return nil, nil, errs.Wrap(err, "Could not add build artifacts to build plan")
@@ -685,13 +687,6 @@ func (s *Setup) installFromBuildResult(buildResult *model.BuildResult, artifacts
 func (s *Setup) installFromBuildLog(buildResult *model.BuildResult, artifacts artifact.Map, artifactsToInstall map[artifact.ArtifactID]struct{}, alreadyInstalled store.StoredArtifactMap, setup Setuper, installFunc artifactInstaller, logFilePath string) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-
-	// The runtime dependencies do not include all build dependencies. Since we are working
-	// with the build log, we need to add the missing dependencies to the list of artifacts
-	err := buildplan.AddBuildArtifacts(artifacts, buildResult.Build)
-	if err != nil {
-		return errs.Wrap(err, "Could not add build artifacts to artifact map")
-	}
 
 	buildLog, err := buildlog.New(ctx, artifacts, s.eventHandler, buildResult.RecipeID, logFilePath, buildResult)
 	if err != nil {
