@@ -397,6 +397,15 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 		}
 	}
 
+	if !buildResult.BuildReady {
+		// The runtime dependencies do not include all build dependencies. Since the build is in progress
+		// we will be working with the build log, we need to add the missing dependencies to the list of artifacts.
+		err = buildplan.AddBuildArtifacts(artifacts, buildResult.Build)
+		if err != nil {
+			return nil, nil, errs.Wrap(err, "Could not add build artifacts to build plan")
+		}
+	}
+
 	setup, err := s.selectSetupImplementation(buildResult.BuildEngine, artifacts)
 	if err != nil {
 		return nil, nil, errs.Wrap(err, "Failed to select setup implementation")
@@ -537,10 +546,7 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 		ArtifactNames: artifactNames,
 		LogFilePath:   logFilePath,
 		ArtifactsToBuild: func() []artifact.ArtifactID {
-			if !buildResult.BuildReady {
-				return artifact.ArtifactIDsFromBuildPlanMap(artifacts) // This does not account for cached builds
-			}
-			return []artifact.ArtifactID{}
+			return artifact.ArtifactIDsFromBuildPlanMap(artifacts) // This does not account for cached builds
 		}(),
 		// Yes these have the same value; this is intentional.
 		// Separating these out just allows us to be more explicit and intentional in our event handling logic.
@@ -617,7 +623,7 @@ func (s *Setup) installArtifactsFromBuild(buildResult *model.BuildResult, artifa
 func (s *Setup) setupArtifactSubmitFunction(a artifact.ArtifactDownload, ar *artifact.Artifact, expectedArtifactInstalls map[artifact.ArtifactID]struct{}, buildResult *model.BuildResult, setup Setuper, installFunc artifactInstaller, errors chan<- error) func() {
 	return func() {
 		// If artifact has no valid download, just count it as completed and return
-		if strings.HasPrefix(a.UnsignedURI, "s3://as-builds/noop/") ||
+		if strings.Contains(ar.URL, "as-builds/noop") ||
 			// Internal namespace artifacts are not to be downloaded
 			(ar != nil && ar.Namespace == inventory_models.NamespaceCoreTypeInternal) {
 			logging.Debug("Skipping setup of noop artifact: %s", a.ArtifactID)
@@ -681,13 +687,6 @@ func (s *Setup) installFromBuildResult(buildResult *model.BuildResult, artifacts
 func (s *Setup) installFromBuildLog(buildResult *model.BuildResult, artifacts artifact.Map, artifactsToInstall map[artifact.ArtifactID]struct{}, alreadyInstalled store.StoredArtifactMap, setup Setuper, installFunc artifactInstaller, logFilePath string) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-
-	// The runtime dependencies do not include all build dependencies. Since we are working
-	// with the build log, we need to add the missing dependencies to the list of artifacts
-	err := buildplan.AddBuildArtifacts(artifacts, buildResult.Build)
-	if err != nil {
-		return errs.Wrap(err, "Could not add build artifacts to artifact map")
-	}
 
 	buildLog, err := buildlog.New(ctx, artifacts, s.eventHandler, buildResult.RecipeID, logFilePath, buildResult)
 	if err != nil {
@@ -781,6 +780,13 @@ func (s *Setup) downloadArtifact(a artifact.ArtifactDownload, targetFile string)
 	artifactURL, err := url.Parse(a.UnsignedURI)
 	if err != nil {
 		return errs.Wrap(err, "Could not parse artifact URL %s.", a.UnsignedURI)
+	}
+
+	if artifactURL.Scheme == "s3" {
+		artifactURL, err = model.SignS3URL(artifactURL)
+		if err != nil {
+			return errs.Wrap(err, "Could not sign artifact URL %s.", a.UnsignedURI)
+		}
 	}
 
 	b, err := httputil.GetWithProgress(artifactURL.String(), &progress.Report{
