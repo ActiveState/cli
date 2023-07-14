@@ -97,14 +97,9 @@ func (bp *BuildPlanner) FetchBuildResult(commitID strfmt.UUID, owner, project st
 	// "planning" if the build plan is not ready yet. We need to
 	// poll the BuildPlanner until the build is ready.
 	if build.Status == bpModel.Planning {
-		resp, err = bp.pollBuildPlan(commitID.String(), owner, project)
+		build, err = bp.pollBuildPlan(commitID.String(), owner, project)
 		if err != nil {
 			return nil, errs.Wrap(err, "failed to poll build plan")
-		}
-
-		build, err = resp.Build()
-		if err != nil {
-			return nil, errs.Wrap(err, "Could not get build from response")
 		}
 	}
 
@@ -172,7 +167,7 @@ func (bp *BuildPlanner) FetchBuildResult(commitID strfmt.UUID, owner, project st
 	return &res, nil
 }
 
-func (bp *BuildPlanner) pollBuildPlan(commitID, owner, project string) (bpModel.BuildPlan, error) {
+func (bp *BuildPlanner) pollBuildPlan(commitID, owner, project string) (*bpModel.Build, error) {
 	resp := model.NewBuildPlanResponse(owner, project)
 	ticker := time.NewTicker(pollInterval)
 	for {
@@ -193,7 +188,7 @@ func (bp *BuildPlanner) pollBuildPlan(commitID, owner, project string) (bpModel.
 			}
 
 			if build.Status != bpModel.Planning {
-				return resp, nil
+				return build, nil
 			}
 		case <-time.After(pollTimeout):
 			return nil, locale.NewError("err_buildplanner_timeout", "Timed out waiting for build plan")
