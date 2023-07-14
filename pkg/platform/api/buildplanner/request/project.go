@@ -129,6 +129,7 @@ query ($commitID: String!, $organization: String!, $project: String!) {
                   message
                   isTransient
                   validationErrors {
+                    error
                     jsonPath
                   }
                 }
@@ -138,6 +139,7 @@ query ($commitID: String!, $organization: String!, $project: String!) {
                   isTransient
                   errorType
                   validationErrors {
+                    error
                     jsonPath
                   }
                   suggestedRemediations {

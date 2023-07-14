@@ -125,6 +125,7 @@ mutation ($organization: String!, $project: String!, $parentCommit: String!, $br
               message
               isTransient
               validationErrors {
+                error
                 jsonPath
               }
             }
@@ -134,6 +135,7 @@ mutation ($organization: String!, $project: String!, $parentCommit: String!, $br
               isTransient
               errorType
               validationErrors {
+                error
                 jsonPath
               }
               suggestedRemediations {

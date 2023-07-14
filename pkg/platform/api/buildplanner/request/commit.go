@@ -122,6 +122,7 @@ query ($commitID: ID!) {
               message
               isTransient
               validationErrors {
+                error
                 jsonPath
               }
             }
@@ -131,6 +132,7 @@ query ($commitID: ID!) {
               isTransient
               errorType
               validationErrors {
+                error
                 jsonPath
               }
               suggestedRemediations {

@@ -124,6 +124,7 @@ mutation ($organization: String!, $project: String!, $parentCommit: ID, $expr:Bu
               isTransient
               validationErrors {
                 jsonPath
+                error
               }
             }
             ... on RemediableSolveError {
