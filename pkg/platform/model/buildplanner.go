@@ -49,7 +49,7 @@ type BuildResult struct {
 	BuildStatusResponse *headchef_models.V1BuildStatusResponse
 	BuildStatus         headchef.BuildStatusEnum
 	BuildReady          bool
-	BuildExpression     *bpModel.BuildExpression
+	BuildExpression     *buildexpression.BuildExpression
 }
 
 func (b *BuildResult) OrderedArtifacts() []artifact.ArtifactID {
@@ -143,6 +143,11 @@ func (bp *BuildPlanner) FetchBuildResult(commitID strfmt.UUID, owner, project st
 	id, err := resp.CommitID()
 	if err != nil {
 		return nil, errs.Wrap(err, "Response does not contain commitID")
+	}
+
+	expr, err := bp.GetBuildExpression(owner, project, commitID.String())
+	if err != nil {
+		return nil, errs.Wrap(err, "Failed to get build expression")
 	}
 
 	res := BuildResult{
@@ -239,9 +244,10 @@ type StageCommitParams struct {
 	PackageNamespace Namespace
 	Operation        bpModel.Operation
 	TimeStamp        *strfmt.DateTime
-	// ... or commits can have a script (e.g. from pull). When pulling a script, we do not compute
-	// its changes into a series of above operations. Instead, we just pass the new script directly.
-	Script *bpModel.BuildExpression
+	// ... or commits can have an expression (e.g. from pull). When pulling an expression, we do not
+	// compute its changes into a series of above operations. Instead, we just pass the new
+	// expression directly.
+	Expression *buildexpression.BuildExpression
 }
 
 func (bp *BuildPlanner) StageCommit(params StageCommitParams) (strfmt.UUID, error) {
@@ -263,7 +269,7 @@ func (bp *BuildPlanner) StageCommit(params StageCommitParams) (strfmt.UUID, erro
 			requirement.VersionRequirement = []bpModel.VersionRequirement{{bpModel.VersionRequirementComparatorKey: bpModel.ComparatorEQ, bpModel.VersionRequirementVersionKey: params.PackageVersion}}
 		}
 
-		err = expression.Update(params.Operation, requirement, *params.TimeStamp)
+		err = expression.Update(params.Operation, requirement, params.TimeStamp)
 		if err != nil {
 			return "", errs.Wrap(err, "Failed to update build graph")
 		}

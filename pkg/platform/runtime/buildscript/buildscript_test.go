@@ -6,7 +6,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/ActiveState/cli/internal/rtutils/p"
+	"github.com/ActiveState/cli/internal/rtutils/ptr"
+	"github.com/ActiveState/cli/pkg/platform/runtime/buildexpression"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -45,23 +46,23 @@ in:
 					FuncCall: &FuncCall{"solve", []*Value{
 						&Value{Assignment: &Assignment{
 							"platforms", &Value{List: &[]*Value{
-								&Value{Str: p.StrP(`"linux"`)},
-								&Value{Str: p.StrP(`"windows"`)},
+								&Value{Str: ptr.To(`"linux"`)},
+								&Value{Str: ptr.To(`"windows"`)},
 							}},
 						}},
 						&Value{Assignment: &Assignment{
 							"requirements", &Value{List: &[]*Value{
 								&Value{Object: &[]*Assignment{
-									&Assignment{"name", &Value{Str: p.StrP(`"python"`)}},
-									&Assignment{"namespace", &Value{Str: p.StrP(`"language"`)}},
+									&Assignment{"name", &Value{Str: ptr.To(`"python"`)}},
+									&Assignment{"namespace", &Value{Str: ptr.To(`"language"`)}},
 								}},
 								&Value{Object: &[]*Assignment{
-									&Assignment{"name", &Value{Str: p.StrP(`"requests"`)}},
-									&Assignment{"namespace", &Value{Str: p.StrP(`"language/python"`)}},
+									&Assignment{"name", &Value{Str: ptr.To(`"requests"`)}},
+									&Assignment{"namespace", &Value{Str: ptr.To(`"language/python"`)}},
 									&Assignment{"version_requirements", &Value{List: &[]*Value{
 										&Value{Object: &[]*Assignment{
-											&Assignment{"comparator", &Value{Str: p.StrP(`"eq"`)}},
-											&Assignment{"version", &Value{Str: p.StrP(`"3.10.10"`)}},
+											&Assignment{"comparator", &Value{Str: ptr.To(`"eq"`)}},
+											&Assignment{"version", &Value{Str: ptr.To(`"3.10.10"`)}},
 										}},
 									}}},
 								}},
@@ -71,7 +72,7 @@ in:
 				}},
 			},
 		},
-		&In{Name: p.StrP("runtime")},
+		&In{Name: ptr.To("runtime")},
 	}, script)
 }
 
@@ -111,13 +112,13 @@ in:
 						&Value{Assignment: &Assignment{
 							"requirements", &Value{List: &[]*Value{
 								&Value{Object: &[]*Assignment{
-									&Assignment{"name", &Value{Str: p.StrP(`"language/python"`)}},
+									&Assignment{"name", &Value{Str: ptr.To(`"language/python"`)}},
 								}},
 							}},
 						}},
 						&Value{Assignment: &Assignment{
 							"platforms", &Value{List: &[]*Value{
-								&Value{Str: p.StrP(`"67890"`)}},
+								&Value{Str: ptr.To(`"67890"`)}},
 							},
 						}},
 					}},
@@ -127,13 +128,13 @@ in:
 						&Value{Assignment: &Assignment{
 							"requirements", &Value{List: &[]*Value{
 								&Value{Object: &[]*Assignment{
-									&Assignment{"name", &Value{Str: p.StrP(`"language/perl"`)}},
+									&Assignment{"name", &Value{Str: ptr.To(`"language/perl"`)}},
 								}},
 							}},
 						}},
 						&Value{Assignment: &Assignment{
 							"platforms", &Value{List: &[]*Value{
-								&Value{Str: p.StrP(`"12345"`)}},
+								&Value{Str: ptr.To(`"12345"`)}},
 							},
 						}},
 					}},
@@ -141,8 +142,8 @@ in:
 			},
 		},
 		&In{FuncCall: &FuncCall{"merge", []*Value{
-			&Value{FuncCall: &FuncCall{"win_installer", []*Value{&Value{Ident: p.StrP("win_runtime")}}}},
-			&Value{FuncCall: &FuncCall{"tar_installer", []*Value{&Value{Ident: p.StrP("linux_runtime")}}}},
+			&Value{FuncCall: &FuncCall{"win_installer", []*Value{&Value{Ident: ptr.To("win_runtime")}}}},
+			&Value{FuncCall: &FuncCall{"tar_installer", []*Value{&Value{Ident: ptr.To("linux_runtime")}}}},
 		}}},
 	}, script)
 }
@@ -181,27 +182,27 @@ func TestExample(t *testing.T) {
 				&Assignment{"runtime", &Value{
 					FuncCall: &FuncCall{"solve", []*Value{
 						&Value{Assignment: &Assignment{
-							"at_time", &Value{Str: p.StrP(`"2023-04-27T17:30:05.999000Z"`)},
+							"at_time", &Value{Str: ptr.To(`"2023-04-27T17:30:05.999000Z"`)},
 						}},
 						&Value{Assignment: &Assignment{
 							"platforms", &Value{List: &[]*Value{
-								&Value{Str: p.StrP(`"96b7e6f2-bebf-564c-bc1c-f04482398f38"`)},
-								&Value{Str: p.StrP(`"96b7e6f2-bebf-564c-bc1c-f04482398f38"`)},
+								&Value{Str: ptr.To(`"96b7e6f2-bebf-564c-bc1c-f04482398f38"`)},
+								&Value{Str: ptr.To(`"96b7e6f2-bebf-564c-bc1c-f04482398f38"`)},
 							}},
 						}},
 						&Value{Assignment: &Assignment{
 							"requirements", &Value{List: &[]*Value{
 								&Value{Object: &[]*Assignment{
-									&Assignment{"name", &Value{Str: p.StrP(`"python"`)}},
-									&Assignment{"namespace", &Value{Str: p.StrP(`"language"`)}},
+									&Assignment{"name", &Value{Str: ptr.To(`"python"`)}},
+									&Assignment{"namespace", &Value{Str: ptr.To(`"language"`)}},
 								}},
 								&Value{Object: &[]*Assignment{
-									&Assignment{"name", &Value{Str: p.StrP(`"requests"`)}},
-									&Assignment{"namespace", &Value{Str: p.StrP(`"language/python"`)}},
+									&Assignment{"name", &Value{Str: ptr.To(`"requests"`)}},
+									&Assignment{"namespace", &Value{Str: ptr.To(`"language/python"`)}},
 									&Assignment{"version_requirements", &Value{List: &[]*Value{
 										&Value{Object: &[]*Assignment{
-											&Assignment{"comparator", &Value{Str: p.StrP(`"eq"`)}},
-											&Assignment{"version", &Value{Str: p.StrP(`"3.10.10"`)}},
+											&Assignment{"comparator", &Value{Str: ptr.To(`"eq"`)}},
+											&Assignment{"version", &Value{Str: ptr.To(`"3.10.10"`)}},
 										}},
 									}}},
 								}},
@@ -211,7 +212,7 @@ func TestExample(t *testing.T) {
 				}},
 			},
 		},
-		&In{Name: p.StrP("runtime")},
+		&In{Name: ptr.To("runtime")},
 	}, script)
 }
 
@@ -307,7 +308,7 @@ in:
 }
 
 func TestBuildExpression(t *testing.T) {
-	expr := []byte(`{
+	expr, err := buildexpression.New([]byte(`{
   "let": {
     "runtime": {
       "solve_legacy": {
@@ -350,24 +351,27 @@ func TestBuildExpression(t *testing.T) {
     },
     "in": "$runtime"
   }
-}`)
+}`))
+	require.NoError(t, err)
+
+	// Verify conversions between buildscripts and buildexpressions is accurate.
 	script, err := NewScriptFromBuildExpression(expr)
 	require.NoError(t, err)
 	require.NotNil(t, script)
-	newExpr, err := json.Marshal(script)
+	newExpr, err := script.ToBuildExpression()
 	require.NoError(t, err)
+	exprBytes, err := json.Marshal(expr)
+	require.NoError(t, err)
+	newExprBytes, err := json.Marshal(newExpr)
+	require.NoError(t, err)
+	assert.Equal(t, string(exprBytes), string(newExprBytes))
 
-	// Cannot compare expr and newExpr directly due to key sort order, whitespace discrepancies,
-	// etc., so unmarshal and remarshal before the comparison. json.Marshal() produces the same key
-	// sort order.
-	marshaledInput := make(map[string]interface{})
-	err = json.Unmarshal(expr, &marshaledInput)
-	require.NoError(t, err)
-	expectedExpr, err := json.Marshal(marshaledInput)
-	assert.Equal(t, string(expectedExpr), string(newExpr))
+	// Verify comparisons between buildscripts and buildexpressions is accurate.
 	assert.True(t, script.EqualsBuildExpression(expr))
+	assert.True(t, script.EqualsBuildExpressionBytes(exprBytes))
 
 	// Verify null JSON value is handled correctly.
+	var null *string
 	nullHandled := false
 	for _, assignment := range script.Let.Assignments {
 		if assignment.Key == "runtime" {
@@ -375,7 +379,7 @@ func TestBuildExpression(t *testing.T) {
 			require.NotNil(t, args)
 			for _, arg := range args {
 				if arg.Assignment != nil && arg.Assignment.Key == "solver_version" {
-					assert.Equal(t, p.PstrP(nil), arg.Assignment.Value.Str)
+					assert.Equal(t, null, arg.Assignment.Value.Str)
 					nullHandled = true
 				}
 			}

@@ -520,7 +520,7 @@ func (e *BuildExpression) getSolveNodeArguments() []*Value {
 }
 
 // Update updates the BuildExpression's requirements based on the operation and requirement.
-func (e *BuildExpression) Update(operation model.Operation, requirement model.Requirement, timestamp strfmt.DateTime) error {
+func (e *BuildExpression) Update(operation model.Operation, requirement model.Requirement, timestamp *strfmt.DateTime) error {
 	var err error
 	switch operation {
 	case model.OperationAdded:
@@ -536,9 +536,11 @@ func (e *BuildExpression) Update(operation model.Operation, requirement model.Re
 		return errs.Wrap(err, "Could not update BuildExpression's requirements")
 	}
 
-	err = e.updateTimestamp(timestamp)
-	if err != nil {
-		return errs.Wrap(err, "Could not update BuildExpression's timestamp")
+	if timestamp != nil {
+		err = e.updateTimestamp(*timestamp)
+		if err != nil {
+			return errs.Wrap(err, "Could not update BuildExpression's timestamp")
+		}
 	}
 
 	return nil

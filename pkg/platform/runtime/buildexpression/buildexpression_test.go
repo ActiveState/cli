@@ -317,7 +317,7 @@ func TestBuildExpression_Update(t *testing.T) {
 			bx, err := New(data)
 			assert.NoError(t, err)
 
-			err = bx.Update(tt.args.operation, tt.args.requirement, strfmt.DateTime{})
+			err = bx.Update(tt.args.operation, tt.args.requirement, &strfmt.DateTime{})
 			if err != nil {
 				if tt.wantErr {
 					return

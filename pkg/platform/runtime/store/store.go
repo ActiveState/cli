@@ -17,6 +17,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
+	"github.com/ActiveState/cli/pkg/platform/runtime/buildexpression"
 	"github.com/ActiveState/cli/pkg/platform/runtime/envdef"
 )
 
@@ -297,8 +298,12 @@ func (s *Store) GetAndValidateBuildExpression(commitID string) (string, error) {
 	return data.Expr, nil
 }
 
-func (s *Store) StoreBuildExpression(expr *bpModel.BuildExpression, commitID string) error {
-	data, err := json.Marshal(buildExpressionData{commitID, expr.String()})
+func (s *Store) StoreBuildExpression(expr *buildexpression.BuildExpression, commitID string) error {
+	data, err := json.Marshal(expr)
+	if err != nil {
+		return errs.Wrap(err, "Could not marshal buildexpression")
+	}
+	data, err = json.Marshal(buildExpressionData{commitID, string(data)})
 	if err != nil {
 		return errs.Wrap(err, "Could not marshal buildexpression")
 	}

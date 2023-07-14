@@ -1,6 +1,7 @@
 package runtime
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -133,10 +134,14 @@ func (r *Runtime) validateCache() error {
 		if err := r.store.StoreBuildExpression(bpExpr, commitID); err != nil {
 			return errs.Wrap(err, "Unable to store build expression")
 		}
-		expr = bpExpr.String()
+		data, err := json.Marshal(bpExpr)
+		if err != nil {
+			return errs.Wrap(err, "Unable to marshal buildexpression to JSON: %v", err)
+		}
+		expr = string(data)
 	}
 
-	if !script.EqualsBuildExpression([]byte(expr)) {
+	if !script.EqualsBuildExpressionBytes([]byte(expr)) {
 		return &NeedsCommitError{errs.New("Runtime changes should be committed")}
 	}
 

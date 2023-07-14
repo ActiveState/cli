@@ -9,7 +9,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
+	"github.com/ActiveState/cli/pkg/platform/runtime/buildexpression"
 )
 
 type DoesNotExistError struct{ error }
@@ -33,17 +33,17 @@ func newScriptFromFile(path string) (*Script, error) {
 	return NewScript(data)
 }
 
-func UpdateOrCreate(dir string, newScript *model.BuildExpression) error {
+func UpdateOrCreate(dir string, newExpr *buildexpression.BuildExpression) error {
 	// If a build script exists, check to see if an update is needed.
 	script, err := NewScriptFromProjectDir(dir)
 	if err != nil && !IsDoesNotExistError(err) {
 		return errs.Wrap(err, "Could not read build script")
 	}
-	if script != nil && script.Equals(newScript) {
+	if script != nil && script.EqualsBuildExpression(newExpr) {
 		return nil
 	}
 
-	script, err = NewScriptFromBuildExpression([]byte(newScript.String()))
+	script, err = NewScriptFromBuildExpression(newExpr)
 	if err != nil {
 		return errs.Wrap(err, "Could not parse build expression")
 	}

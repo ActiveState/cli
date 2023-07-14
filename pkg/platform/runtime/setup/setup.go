@@ -578,12 +578,12 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 	}
 
 	if err := s.store.StoreBuildExpression(buildResult.BuildExpression, s.target.CommitUUID().String()); err != nil {
-		return nil, errs.Wrap(err, "Could not save buildexpression file.")
+		return nil, nil, errs.Wrap(err, "Could not save buildexpression file.")
 	}
 
 	if s.target.ProjectDir() != "" {
 		if err := buildscript.UpdateOrCreate(s.target.ProjectDir(), buildResult.BuildExpression); err != nil {
-			return nil, errs.Wrap(err, "Could not save build script.")
+			return nil, nil, errs.Wrap(err, "Could not save build script.")
 		}
 	}
 
