@@ -272,7 +272,7 @@ func (p *ProgressDigester) Handle(ev events.Eventer) error {
 
 	case events.ArtifactInstallSkipped:
 		if p.installBar == nil {
-			return errs.New("ArtifactInstallSkipped called before installBar was initialized")
+			return errs.New("ArtifactInstallSkipped called before installBar was initialized, artifact ID: %s", v.ArtifactID.String())
 		}
 		delete(p.installsExpected, v.ArtifactID)
 		p.installBar.Increment()

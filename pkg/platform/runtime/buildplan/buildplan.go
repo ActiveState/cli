@@ -137,6 +137,7 @@ func buildMap(baseID strfmt.UUID, lookup map[strfmt.UUID]interface{}, result art
 		RequestedByOrder: true,
 		GeneratedBy:      currentArtifact.GeneratedBy,
 		Dependencies:     uniqueDeps,
+		URL:              currentArtifact.URL,
 	}
 
 	return nil

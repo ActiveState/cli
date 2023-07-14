@@ -18,6 +18,7 @@ type Artifact struct {
 	Namespace        string
 	Version          *string
 	RequestedByOrder bool
+	URL              string
 
 	GeneratedBy strfmt.UUID
 

@@ -621,7 +621,7 @@ func (s *Setup) installArtifactsFromBuild(buildResult *model.BuildResult, artifa
 func (s *Setup) setupArtifactSubmitFunction(a artifact.ArtifactDownload, ar *artifact.Artifact, expectedArtifactInstalls map[artifact.ArtifactID]struct{}, buildResult *model.BuildResult, setup Setuper, installFunc artifactInstaller, errors chan<- error) func() {
 	return func() {
 		// If artifact has no valid download, just count it as completed and return
-		if strings.HasPrefix(a.UnsignedURI, "s3://as-builds/noop/") ||
+		if strings.Contains(ar.URL, "as-builds/noop") ||
 			// Internal namespace artifacts are not to be downloaded
 			(ar != nil && ar.Namespace == inventory_models.NamespaceCoreTypeInternal) {
 			logging.Debug("Skipping setup of noop artifact: %s", a.ArtifactID)
