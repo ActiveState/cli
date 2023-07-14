@@ -7,6 +7,7 @@ import (
 
 func SayHello(out output.Outputer, name string) error {
 	if name == "" {
+		// Errors that are due to USER input should use `NewInputError` or `WrapInputError`
 		return locale.NewInputError("hello_err_no_name", "No name provided.")
 	}
 
