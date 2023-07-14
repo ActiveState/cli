@@ -374,13 +374,6 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 	bp := model.NewBuildPlannerModel(s.auth)
 	buildResult, err := bp.FetchBuildResult(s.target.CommitUUID(), s.target.Owner(), s.target.Name())
 	if err != nil {
-		serr := &bpModel.BuildPlannerError{}
-		if errors.As(err, &serr) {
-			if err := s.handleEvent(events.SolveError{serr}); err != nil {
-				return nil, nil, errs.Wrap(err, "Could not handle SolveError event")
-			}
-			return nil, nil, model.FormatBuildPlanError(serr)
-		}
 		return nil, nil, errs.Wrap(err, "Failed to fetch build result")
 	}
 

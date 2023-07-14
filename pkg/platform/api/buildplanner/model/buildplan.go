@@ -2,6 +2,8 @@ package model
 
 import (
 	"encoding/json"
+	"fmt"
+	"strings"
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
@@ -81,17 +83,36 @@ func (o Operation) String() string {
 }
 
 type BuildPlannerError struct {
-	Wrapped          error
 	ValidationErrors []string
 	IsTransient      bool
 }
 
 func (e *BuildPlannerError) Error() string {
-	return "resolve_err"
-}
+	// Append last five lines to error message
+	offset := 0
+	numLines := len(e.ValidationErrors)
+	if numLines > 5 {
+		offset = numLines - 5
+	}
 
-func (e *BuildPlannerError) Unwrap() error {
-	return e.Wrapped
+	errorLines := strings.Join(e.ValidationErrors[offset:], "\n")
+	// Crop at 500 characters to reduce noisy output further
+	if len(errorLines) > 500 {
+		offset = len(errorLines) - 499
+		errorLines = fmt.Sprintf("…%s", errorLines[offset:])
+	}
+	isCropped := offset > 0
+	croppedMessage := ""
+	if isCropped {
+		croppedMessage = locale.Tl("buildplan_err_cropped_intro", "These are the last lines of the error message:")
+	}
+
+	var err error
+	err = locale.NewError("solver_err", "", croppedMessage, errorLines)
+	if e.IsTransient {
+		err = errs.AddTips(err, locale.Tr("transient_solver_tip"))
+	}
+	return err.Error()
 }
 
 // BuildPlan is the top level object returned by the build planner. It contains
@@ -159,7 +180,6 @@ func (b *BuildPlanByProject) Build() (*Build, error) {
 			}
 		}
 		return nil, &BuildPlannerError{
-			Wrapped:          locale.NewInputError("err_buildplanner"),
 			ValidationErrors: errs,
 			IsTransient:      isTransient,
 		}
@@ -237,7 +257,6 @@ func (b *BuildPlanByCommit) Build() (*Build, error) {
 			}
 		}
 		return nil, &BuildPlannerError{
-			Wrapped:          locale.NewInputError("err_buildplanner"),
 			ValidationErrors: errs,
 			IsTransient:      isTransient,
 		}

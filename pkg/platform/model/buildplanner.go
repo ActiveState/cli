@@ -1,7 +1,6 @@
 package model
 
 import (
-	"fmt"
 	"net/http"
 	"os"
 	"strings"
@@ -299,7 +298,6 @@ func (bp *BuildPlanner) StageCommit(params StageCommitParams) (strfmt.UUID, erro
 			}
 		}
 		return "", &bpModel.BuildPlannerError{
-			Wrapped:          locale.NewInputError("err_buildplanner"),
 			ValidationErrors: errs,
 			IsTransient:      isTransient,
 		}
@@ -339,32 +337,4 @@ func (bp *BuildPlanner) GetBuildExpression(owner, project, commitID string) (*bu
 	}
 
 	return expression, nil
-}
-
-func FormatBuildPlanError(bperr *bpModel.BuildPlannerError) error {
-	var err error = bperr
-	// Append last five lines to error message
-	offset := 0
-	numLines := len(bperr.ValidationErrors)
-	if numLines > 5 {
-		offset = numLines - 5
-	}
-
-	errorLines := strings.Join(bperr.ValidationErrors[offset:], "\n")
-	// Crop at 500 characters to reduce noisy output further
-	if len(errorLines) > 500 {
-		offset = len(errorLines) - 499
-		errorLines = fmt.Sprintf("…%s", errorLines[offset:])
-	}
-	isCropped := offset > 0
-	croppedMessage := ""
-	if isCropped {
-		croppedMessage = locale.Tl("buildplan_err_cropped_intro", "These are the last lines of the error message:")
-	}
-
-	err = locale.WrapError(err, "solver_err", "", croppedMessage, errorLines)
-	if bperr.IsTransient {
-		err = errs.AddTips(bperr, locale.Tr("transient_solver_tip"))
-	}
-	return err
 }
