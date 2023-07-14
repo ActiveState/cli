@@ -20,6 +20,7 @@ const (
 	SolveFuncName                     = "solve"
 	SolveLegacyFuncName               = "solve_legacy"
 	RequirementsKey                   = "requirements"
+	PlatformsKey                      = "platforms"
 	AtTimeKey                         = "at_time"
 	RequirementNameKey                = "name"
 	RequirementNamespaceKey           = "namespace"
@@ -519,8 +520,27 @@ func (e *BuildExpression) getSolveNodeArguments() []*Value {
 	return solveAp.Arguments
 }
 
+func (e *BuildExpression) getPlatformsNode() *[]*Value {
+	solveAp := e.getSolveNode()
+	if solveAp == nil {
+		return nil
+	}
+
+	for _, arg := range solveAp.Arguments {
+		if arg.Assignment == nil {
+			continue
+		}
+
+		if arg.Assignment.Name == PlatformsKey && arg.Assignment.Value != nil {
+			return arg.Assignment.Value.List
+		}
+	}
+
+	return nil
+}
+
 // Update updates the BuildExpression's requirements based on the operation and requirement.
-func (e *BuildExpression) Update(operation model.Operation, requirement model.Requirement, timestamp strfmt.DateTime) error {
+func (e *BuildExpression) UpdateRequirement(operation model.Operation, requirement model.Requirement) error {
 	var err error
 	switch operation {
 	case model.OperationAdded:
@@ -534,11 +554,6 @@ func (e *BuildExpression) Update(operation model.Operation, requirement model.Re
 	}
 	if err != nil {
 		return errs.Wrap(err, "Could not update BuildExpression's requirements")
-	}
-
-	err = e.updateTimestamp(timestamp)
-	if err != nil {
-		return errs.Wrap(err, "Could not update BuildExpression's timestamp")
 	}
 
 	return nil
@@ -659,7 +674,55 @@ func (e *BuildExpression) updateRequirement(requirement model.Requirement) error
 	return nil
 }
 
-func (e *BuildExpression) updateTimestamp(timestamp strfmt.DateTime) error {
+func (e *BuildExpression) UpdatePlatform(operation model.Operation, platformID strfmt.UUID) error {
+	var err error
+	switch operation {
+	case model.OperationAdded:
+		err = e.addPlatform(platformID)
+	case model.OperationRemoved:
+		err = e.removePlatform(platformID)
+	default:
+		return errs.New("Unsupported operation")
+	}
+	if err != nil {
+		return errs.Wrap(err, "Could not update BuildExpression's platform")
+	}
+
+	return nil
+}
+
+func (e *BuildExpression) addPlatform(platformID strfmt.UUID) error {
+	platformsNode := e.getPlatformsNode()
+
+	*platformsNode = append(*platformsNode, &Value{Str: ptr.To(platformID.String())})
+
+	return nil
+}
+
+func (e *BuildExpression) removePlatform(platformID strfmt.UUID) error {
+	platformsNode := e.getPlatformsNode()
+
+	var found bool
+	for i, p := range *platformsNode {
+		if p.Str == nil {
+			continue
+		}
+
+		if *p.Str == platformID.String() {
+			*platformsNode = append((*platformsNode)[:i], (*platformsNode)[i+1:]...)
+			found = true
+			break
+		}
+	}
+
+	if !found {
+		return errs.New("Could not find platform")
+	}
+
+	return nil
+}
+
+func (e *BuildExpression) UpdateTimestamp(timestamp strfmt.DateTime) error {
 	formatted, err := time.Parse(time.RFC3339, timestamp.String())
 	if err != nil {
 		return errs.Wrap(err, "Could not parse latest timestamp")
