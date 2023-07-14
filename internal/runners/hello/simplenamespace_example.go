@@ -33,7 +33,7 @@ func (ns *SimpleNamespace) Set(v string) error {
 	partCount := 2
 	parts := strings.SplitN(v, "/", partCount)
 	if len(parts) < partCount {
-		return errs.New("value missing separator '/'")
+		return errs.New("value missing separator '/' (e.g. 'org/project')")
 	}
 
 	ns.Owner, ns.Project = parts[0], parts[1]
