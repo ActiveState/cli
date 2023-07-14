@@ -228,14 +228,14 @@ func removeEmptyTargets(bp *bpModel.Build) {
 }
 
 type StageCommitParams struct {
-	Owner            string
-	Project          string
-	ParentCommit     string
-	PackageName      string
-	PackageVersion   string
-	PackageNamespace Namespace
-	Operation        bpModel.Operation
-	TimeStamp        *strfmt.DateTime
+	Owner                string
+	Project              string
+	ParentCommit         string
+	RequirementName      string
+	RequirementVersion   string
+	RequirementNamespace Namespace
+	Operation            bpModel.Operation
+	TimeStamp            *strfmt.DateTime
 }
 
 func (bp *BuildPlanner) StageCommit(params StageCommitParams) (strfmt.UUID, error) {
@@ -246,18 +246,25 @@ func (bp *BuildPlanner) StageCommit(params StageCommitParams) (strfmt.UUID, erro
 		return "", errs.Wrap(err, "Failed to get build expression")
 	}
 
-	requirement := bpModel.Requirement{
-		Namespace: params.PackageNamespace.String(),
-		Name:      params.PackageName,
-	}
+	if params.RequirementNamespace.Type() == NamespacePlatform {
+		err = expression.UpdatePlatform(params.Operation, strfmt.UUID(params.RequirementName), *params.TimeStamp)
+		if err != nil {
+			return "", errs.Wrap(err, "Failed to update build expression with platform")
+		}
+	} else {
+		requirement := bpModel.Requirement{
+			Namespace: params.RequirementNamespace.String(),
+			Name:      params.RequirementName,
+		}
 
-	if params.PackageVersion != "" {
-		requirement.VersionRequirement = []bpModel.VersionRequirement{{bpModel.VersionRequirementComparatorKey: bpModel.ComparatorEQ, bpModel.VersionRequirementVersionKey: params.PackageVersion}}
-	}
+		if params.RequirementVersion != "" {
+			requirement.VersionRequirement = []bpModel.VersionRequirement{{bpModel.VersionRequirementComparatorKey: bpModel.ComparatorEQ, bpModel.VersionRequirementVersionKey: params.RequirementVersion}}
+		}
 
-	err = expression.Update(params.Operation, requirement, *params.TimeStamp)
-	if err != nil {
-		return "", errs.Wrap(err, "Failed to update build graph")
+		err = expression.UpdateRequirement(params.Operation, requirement, *params.TimeStamp)
+		if err != nil {
+			return "", errs.Wrap(err, "Failed to update build expression with requirement")
+		}
 	}
 
 	// With the updated build expression call the stage commit mutation
