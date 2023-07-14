@@ -215,14 +215,12 @@ func filterPlatformIDs(hostPlatform, hostArch string, platformIDs []strfmt.UUID)
 			if rtPf.PlatformID == nil || platformID != *rtPf.PlatformID {
 				continue
 			}
-
 			if rtPf.Kernel == nil || rtPf.Kernel.Name == nil {
 				continue
 			}
 			if rtPf.CPUArchitecture == nil || rtPf.CPUArchitecture.Name == nil {
 				continue
 			}
-
 			if *rtPf.Kernel.Name != HostPlatformToKernelName(hostPlatform) {
 				continue
 			}

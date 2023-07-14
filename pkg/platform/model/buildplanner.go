@@ -11,8 +11,8 @@ import (
 	"github.com/ActiveState/cli/internal/gqlclient"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/pkg/platform/api"
+	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/request"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef"
@@ -97,7 +97,7 @@ func (bp *BuildPlanner) FetchBuildResult(commitID strfmt.UUID, owner, project st
 	// "planning" if the build plan is not ready yet. We need to
 	// poll the BuildPlanner until the build is ready.
 	if build.Status == bpModel.Planning {
-		resp, err = bp.pollBuildPlan(commitID.String(), owner, project)
+		build, err = bp.pollBuildPlan(commitID.String(), owner, project)
 		if err != nil {
 			return nil, errs.Wrap(err, "failed to poll build plan")
 		}
@@ -167,8 +167,8 @@ func (bp *BuildPlanner) FetchBuildResult(commitID strfmt.UUID, owner, project st
 	return &res, nil
 }
 
-func (bp *BuildPlanner) pollBuildPlan(commitID, owner, project string) (bpModel.BuildPlan, error) {
-	var resp bpModel.BuildPlan
+func (bp *BuildPlanner) pollBuildPlan(commitID, owner, project string) (*bpModel.Build, error) {
+	resp := model.NewBuildPlanResponse(owner, project)
 	ticker := time.NewTicker(pollInterval)
 	for {
 		select {
@@ -179,8 +179,7 @@ func (bp *BuildPlanner) pollBuildPlan(commitID, owner, project string) (bpModel.
 			}
 
 			if resp == nil {
-				multilog.Error("Build plan response is nil in pollBuildPlan")
-				continue
+				return nil, errs.New("Build plan response is nil")
 			}
 
 			build, err := resp.Build()
@@ -189,7 +188,7 @@ func (bp *BuildPlanner) pollBuildPlan(commitID, owner, project string) (bpModel.
 			}
 
 			if build.Status != bpModel.Planning {
-				return resp, nil
+				return build, nil
 			}
 		case <-time.After(pollTimeout):
 			return nil, locale.NewError("err_buildplanner_timeout", "Timed out waiting for build plan")
@@ -283,11 +282,17 @@ func (bp *BuildPlanner) StageCommit(params StageCommitParams) (strfmt.UUID, erro
 		var errs []string
 		var isTransient bool
 		for _, se := range resp.Commit.Build.SubErrors {
-			errs = append(errs, se.Message)
-			isTransient = se.IsTransient
+			if se.Message != "" {
+				errs = append(errs, se.Message)
+				isTransient = se.IsTransient
+			}
+			for _, ve := range se.ValidationErrors {
+				if ve.Error != "" {
+					errs = append(errs, ve.Error)
+				}
+			}
 		}
 		return "", &bpModel.BuildPlannerError{
-			Wrapped:          locale.NewInputError("err_buildplanner", resp.Commit.Build.Message),
 			ValidationErrors: errs,
 			IsTransient:      isTransient,
 		}
