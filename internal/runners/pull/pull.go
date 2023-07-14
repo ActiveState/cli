@@ -2,10 +2,12 @@ package pull
 
 import (
 	"errors"
+	"path/filepath"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/config"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
@@ -246,7 +248,8 @@ func (p *Pull) mergeBuildScript(strategies *mono_models.MergeStrategies, remoteC
 		}
 		return locale.NewInputError(
 			"err_build_script_merge",
-			"Unable to automatically merge build scripts. Please resolve conflicts manually and then run [ACTIONABLE]`state commit`[/RESET]")
+			"Unable to automatically merge build scripts. Please resolve conflicts manually in '{{.V0}}' and then run [ACTIONABLE]`state commit`[/RESET]",
+			filepath.Join(p.project.Dir(), constants.BuildScriptFileName))
 	}
 
 	// Write the merged build expression as a local build script.
