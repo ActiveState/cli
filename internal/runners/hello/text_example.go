@@ -4,7 +4,9 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 )
 
-// Text represents an implementation of captain.FlagMarshaler.
+// Text represents an implementation of captain.FlagMarshaler. It is a trivial
+// example, and does not do very much interesting except provide a way to check
+// if it has been set by the user.
 type Text struct {
 	Value string
 	isSet bool
