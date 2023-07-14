@@ -540,7 +540,7 @@ func (e *BuildExpression) getPlatformsNode() *[]*Value {
 }
 
 // Update updates the BuildExpression's requirements based on the operation and requirement.
-func (e *BuildExpression) UpdateRequirement(operation model.Operation, requirement model.Requirement, timestamp strfmt.DateTime) error {
+func (e *BuildExpression) UpdateRequirement(operation model.Operation, requirement model.Requirement) error {
 	var err error
 	switch operation {
 	case model.OperationAdded:
@@ -554,11 +554,6 @@ func (e *BuildExpression) UpdateRequirement(operation model.Operation, requireme
 	}
 	if err != nil {
 		return errs.Wrap(err, "Could not update BuildExpression's requirements")
-	}
-
-	err = e.updateTimestamp(timestamp)
-	if err != nil {
-		return errs.Wrap(err, "Could not update BuildExpression's timestamp")
 	}
 
 	return nil
@@ -679,7 +674,7 @@ func (e *BuildExpression) updateRequirement(requirement model.Requirement) error
 	return nil
 }
 
-func (e *BuildExpression) UpdatePlatform(operation model.Operation, platformID strfmt.UUID, timestamp strfmt.DateTime) error {
+func (e *BuildExpression) UpdatePlatform(operation model.Operation, platformID strfmt.UUID) error {
 	var err error
 	switch operation {
 	case model.OperationAdded:
@@ -691,11 +686,6 @@ func (e *BuildExpression) UpdatePlatform(operation model.Operation, platformID s
 	}
 	if err != nil {
 		return errs.Wrap(err, "Could not update BuildExpression's platform")
-	}
-
-	err = e.updateTimestamp(timestamp)
-	if err != nil {
-		return errs.Wrap(err, "Could not update BuildExpression's timestamp")
 	}
 
 	return nil
@@ -732,7 +722,7 @@ func (e *BuildExpression) removePlatform(platformID strfmt.UUID) error {
 	return nil
 }
 
-func (e *BuildExpression) updateTimestamp(timestamp strfmt.DateTime) error {
+func (e *BuildExpression) UpdateTimestamp(timestamp strfmt.DateTime) error {
 	formatted, err := time.Parse(time.RFC3339, timestamp.String())
 	if err != nil {
 		return errs.Wrap(err, "Could not parse latest timestamp")

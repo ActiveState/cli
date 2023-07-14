@@ -246,7 +246,7 @@ func (bp *BuildPlanner) StageCommit(params StageCommitParams) (strfmt.UUID, erro
 	}
 
 	if params.RequirementNamespace.Type() == NamespacePlatform {
-		err = expression.UpdatePlatform(params.Operation, strfmt.UUID(params.RequirementName), *params.TimeStamp)
+		err = expression.UpdatePlatform(params.Operation, strfmt.UUID(params.RequirementName))
 		if err != nil {
 			return "", errs.Wrap(err, "Failed to update build expression with platform")
 		}
@@ -260,10 +260,15 @@ func (bp *BuildPlanner) StageCommit(params StageCommitParams) (strfmt.UUID, erro
 			requirement.VersionRequirement = []bpModel.VersionRequirement{{bpModel.VersionRequirementComparatorKey: bpModel.ComparatorEQ, bpModel.VersionRequirementVersionKey: params.RequirementVersion}}
 		}
 
-		err = expression.UpdateRequirement(params.Operation, requirement, *params.TimeStamp)
+		err = expression.UpdateRequirement(params.Operation, requirement)
 		if err != nil {
 			return "", errs.Wrap(err, "Failed to update build expression with requirement")
 		}
+	}
+
+	err = expression.UpdateTimestamp(*params.TimeStamp)
+	if err != nil {
+		return "", errs.Wrap(err, "Failed to update build expression with timestamp")
 	}
 
 	// With the updated build expression call the stage commit mutation
