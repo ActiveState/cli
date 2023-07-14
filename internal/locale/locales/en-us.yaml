@@ -1748,6 +1748,11 @@ err_user_network_solution:
     If your issue persists consider reporting it on our forums at {{.V0}}.
 err_revert_refresh:
   other: Could not get revert commit to check if changes were indeed made
+err_revert_commit:
+  other: |
+    Could not revert{{.V0}} commit: {{.V1}}
+    Please ensure that the local project is synchronized with the platform and that the given commit ID belongs to the current project.
+    If this is a private project, you may need to authenticate with [ACTIONABLE]`state auth`[/RESET]
 install_initial_success:
   other: "An activestate.yaml has been created at: {{.V0}}."
 err_package_info_no_packages:
