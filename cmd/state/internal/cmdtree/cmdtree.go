@@ -207,7 +207,6 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 
 	if !condition.OnCI() {
 		helloCmd := newHelloCommand(prime)
-		helloCmd.AddChildren(newHelloInfoCommand(prime))
 		stateCmd.AddChildren(helloCmd)
 	}
 

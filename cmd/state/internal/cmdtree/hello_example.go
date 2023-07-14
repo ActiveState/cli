@@ -20,15 +20,25 @@ func newHelloCommand(prime *primer.Values) *captain.Command {
 		// The description is shown on --help output
 		locale.Tl("hello_cmd_description", "An example command"),
 		prime,
-		[]*captain.Flag{},
+		[]*captain.Flag{
+			{
+				Name:      "extra",
+				Shorthand: "e",
+				Description: locale.Tl(
+					"flag_state_hello_extra_description",
+					"Toggle extra info",
+				),
+				Value: &params.Extra,
+			},
+		},
 		[]*captain.Argument{
 			{
-				Name: "named",
+				Name: "names",
 				Description: locale.Tl(
 					"arg_state_hello_named_description",
-					"The named person to say hello to",
+					"The name to say hello with",
 				),
-				Value: &params.Named,
+				Value: &params.Name,
 			},
 		},
 		func(_ *captain.Command, _ []string) error {
@@ -41,40 +51,6 @@ func newHelloCommand(prime *primer.Values) *captain.Command {
 	// Any new command should be marked unstable for the first release it goes out in.
 	// cmd.SetUnstable(true)
 	// Certain commands like `state deploy` are there for backwards compatibility, but we don't want to show them in the --help output as they are not part of the happy path or our long term goals.
-	// cmd.SetHidden(true)
-
-	return cmd
-}
-
-func newHelloInfoCommand(prime *primer.Values) *captain.Command {
-	runner := hello.NewInfo(prime)
-
-	params := &hello.InfoRunParams{}
-
-	cmd := captain.NewCommand(
-		"info",
-		locale.Tl("hello_info_cmd_title", "Displaying additional information"),
-		locale.Tl("hello_info_cmd_description", "An example command (extended)"),
-		prime,
-		[]*captain.Flag{
-			{
-				Name:      "extra",
-				Shorthand: "e",
-				Description: locale.Tl(
-					"flag_state_hello_info_extra_description",
-					"Toggle extra info",
-				),
-				Value: &params.Extra,
-			},
-		},
-		[]*captain.Argument{},
-		func(_ *captain.Command, _ []string) error {
-			return runner.Run(params)
-		},
-	)
-
-	cmd.SetGroup(UtilsGroup)
-	// cmd.SetUnstable(true)
 	// cmd.SetHidden(true)
 
 	return cmd
