@@ -224,7 +224,7 @@ err_auth_username_check:
 err_auth_failed_unknown_cause:
   other: "Authentication failed due to an unknown cause, error received: {{.V0}}"
 err_auth_token:
-  other: "Failed to create authentication token, please try again or run [ACTIONABLE]`state clean config`[/RESET] if the issue persists."
+  other: "Failed to create authentication token, please try again or run '[ACTIONABLE]state clean config[/RESET]' if the issue persists."
 auth_err_password_prompt:
   other: The provided password is invalid
 confirm_password_account_creation:
@@ -921,7 +921,7 @@ err_deprecation:
 err_auth_required:
   other: Authentication is required. Please authenticate by running [ACTIONABLE]`state auth`[/RESET].
 err_auth_needinput:
-  other: You are logged out. In order to log in, either run this command in interactive mode, or provide your credentials via flags (see [ACTIONABLE]`state auth --help`[/RESET]).
+  other: You are logged out. In order to log in, either run this command in interactive mode, or provide your credentials via flags (see '[ACTIONABLE]state auth --help[/RESET]').
 auth_required_activate:
   other: You need to be authenticated to activate an ActiveState Platform project
 prompt_login_or_signup:
@@ -1519,7 +1519,7 @@ err_corrupted_build_request_response:
 err_arg_required:
   other: "The following argument is required:\n  Name: [NOTICE]{{.V0}}[/RESET]\n  Description: [NOTICE]{{.V1}}[/RESET]"
 err_init_no_language:
-  other: "A project has not been set using 'state use'. You must include the [NOTICE]language[/RESET] argument. For more help, run [ACTIONABLE]`state init --help`[/RESET]."
+  other: "A project has not been set using 'state use'. You must include the [NOTICE]language[/RESET] argument. For more help, run '[ACTIONABLE]state init --help[/RESET]'."
 err_bad_platform_version:
   other: You have to supply a platform version.
 platform_added:
@@ -1842,17 +1842,17 @@ package_ingredient_alternatives:
 
     {{.V1}}
 
-    Run [ACTIONABLE]`state search {{.V0}}`[/RESET] to see more suggestions.
+    Run "[ACTIONABLE]state search {{.V0}}[/RESET]" to see more suggestions.
 package_ingredient_alternatives_nosuggest:
   other: |
     No results found for search term "[NOTICE]{{.V0}}[/RESET]".
 
-    Run [ACTIONABLE]`state search {{.V0}}`[/RESET] to find alternatives.
+    Run "[ACTIONABLE]state search {{.V0}}[/RESET]" to find alternatives.
 package_ingredient_alternatives_nolang:
   other: |
     No results found for search term "[NOTICE]{{.V0}}[/RESET]".
 
-    This may be because you have not installed a language for your project. Install a language by running [ACTIONABLE]`state languages install <language-name>`[/RESET].
+    This may be because you have not installed a language for your project. Install a language by running "[ACTIONABLE]state languages install <language-name>[/RESET]".
 progress_project:
   other: " • Initializing Project"
 progress_search:
@@ -1977,7 +1977,7 @@ use_reset_notice_not_reset:
 use_reset_notice_windows:
   other: Note you may need to start a new command prompt to fully update your environment.
 use_reset_notice:
-  other: Note you may need to run [ACTIONABLE]`hash -r`[/RESET] or start a new shell to fully update your environment.
+  other: Note you may need to run '[ACTIONABLE]hash -r[/RESET]' or start a new shell to fully update your environment.
 svcctl_wait_timeout:
   other: |
     Timed out waiting for service to respond ({{.V0}} - code {{.V1}}).
@@ -1999,7 +1999,7 @@ err_autostart_app:
 install_remote_title:
   other: This will install the State Tool
 err_already_checked_out:
-  other: There is already a project checked out at [ACTIONABLE]`{{.V0}}`[/RESET].
+  other: There is already a project checked out at '[ACTIONABLE]{{.V0}}[/RESET]'.
 use_project_statement:
   other: |
     Switched to project [ACTIONABLE]{{.V0}}[/RESET], located at [ACTIONABLE]{{.V1}}[/RESET].
