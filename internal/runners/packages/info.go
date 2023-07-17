@@ -9,7 +9,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/rtutils/p"
+	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
@@ -45,7 +45,7 @@ func (i *Info) Run(params InfoRunParams, nstype model.NamespaceType) error {
 	var ns *model.Namespace
 
 	if params.Package.Namespace != "" {
-		ns = p.Pointer(model.NewRawNamespace(params.Package.Namespace))
+		ns = ptr.To(model.NewRawNamespace(params.Package.Namespace))
 	} else {
 		nsTypeV = &nstype
 	}
@@ -55,7 +55,7 @@ func (i *Info) Run(params InfoRunParams, nstype model.NamespaceType) error {
 		if err != nil {
 			return locale.WrapError(err, fmt.Sprintf("%s_err_cannot_obtain_language", *nsTypeV))
 		}
-		ns = p.Pointer(model.NewNamespacePkgOrBundle(language, nstype))
+		ns = ptr.To(model.NewNamespacePkgOrBundle(language, nstype))
 	}
 
 	packages, err := model.SearchIngredientsStrict(ns.String(), params.Package.Name, true, true, params.Timestamp.Time)

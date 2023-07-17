@@ -59,7 +59,7 @@ func matchingBinByPath(bins map[string]string, path string) (string, error) {
 // the update value prepended to the existing PATH.
 func transformedEnv(current []string, updates []string) []string {
 	for _, update := range updates {
-		if strings.HasPrefix(update, pathEnvVarPrefix) {
+		if strings.HasPrefix(strings.ToLower(update), strings.ToLower(pathEnvVarPrefix)) {
 			pathCurrentV, pathCurrentK, ok := getEnvVar(current, pathEnvVarPrefix)
 			if ok {
 				current[pathCurrentK] = update + pathListSeparator + pathCurrentV
@@ -76,7 +76,7 @@ func transformedEnv(current []string, updates []string) []string {
 // variable separator.
 func getEnvVar(env []string, prefix string) (string, int, bool) {
 	for k, v := range env {
-		if strings.HasPrefix(v, prefix) {
+		if strings.HasPrefix(strings.ToLower(v), strings.ToLower(prefix)) {
 			return v[len(prefix):], k, true
 		}
 	}

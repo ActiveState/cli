@@ -42,7 +42,7 @@ func NewList(prime primeable) *List {
 func (l *List) Run(params ListRunParams, nstype model.NamespaceType) error {
 	logging.Debug("ExecuteList")
 
-	if l.project != nil {
+	if l.project != nil && params.Project == "" {
 		l.out.Notice(locale.Tl("operating_message", "", l.project.NamespaceString(), l.project.Dir()))
 	}
 

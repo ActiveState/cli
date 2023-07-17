@@ -48,6 +48,8 @@ type ClientService interface {
 
 	EditOrganization(params *EditOrganizationParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*EditOrganizationOK, error)
 
+	GetAdminMetadata(params *GetAdminMetadataParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAdminMetadataOK, error)
+
 	GetBilling(params *GetBillingParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetBillingOK, error)
 
 	GetNextMutationID(params *GetNextMutationIDParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetNextMutationIDOK, error)
@@ -75,6 +77,8 @@ type ClientService interface {
 	MutateOrganization(params *MutateOrganizationParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*MutateOrganizationOK, error)
 
 	QuitOrganization(params *QuitOrganizationParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*QuitOrganizationOK, error)
+
+	SetAdminMetadata(params *SetAdminMetadataParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*SetAdminMetadataOK, error)
 
 	UpdateBillingDate(params *UpdateBillingDateParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateBillingDateOK, error)
 
@@ -459,6 +463,47 @@ func (a *Client) EditOrganization(params *EditOrganizationParams, authInfo runti
 	// unexpected success response
 	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for editOrganization: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+  GetAdminMetadata gets admin metadata for organization
+
+  Get admin metadata
+*/
+func (a *Client) GetAdminMetadata(params *GetAdminMetadataParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAdminMetadataOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetAdminMetadataParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "getAdminMetadata",
+		Method:             "GET",
+		PathPattern:        "/admin/metadata/{organizationIdentifier}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http", "https"},
+		Params:             params,
+		Reader:             &GetAdminMetadataReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*GetAdminMetadataOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for getAdminMetadata: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
@@ -1033,6 +1078,47 @@ func (a *Client) QuitOrganization(params *QuitOrganizationParams, authInfo runti
 	// unexpected success response
 	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for quitOrganization: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+  SetAdminMetadata changes admin metadata for organization
+
+  Set admin metadata
+*/
+func (a *Client) SetAdminMetadata(params *SetAdminMetadataParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*SetAdminMetadataOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewSetAdminMetadataParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "setAdminMetadata",
+		Method:             "PUT",
+		PathPattern:        "/admin/metadata/{organizationIdentifier}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http", "https"},
+		Params:             params,
+		Reader:             &SetAdminMetadataReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*SetAdminMetadataOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for setAdminMetadata: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 

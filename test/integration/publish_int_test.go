@@ -7,7 +7,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/internal/rtutils/p"
+	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/strutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
@@ -111,7 +111,7 @@ func (suite *PublishIntegrationTestSuite) TestPublish() {
 			"New ingredient with meta file",
 			input{
 				[]string{"--meta", "{{.MetaFile}}", tempFile},
-				p.StrP(`
+				ptr.To(`
 name: im-a-name
 namespace: {{.Username}}/shared
 version: 2.3.4
@@ -141,7 +141,7 @@ authors:
 			"New ingredient with meta file and flags",
 			input{
 				[]string{"--meta", "{{.MetaFile}}", tempFile, "--name", "im-a-name-from-flag", "--author", "author-name-from-flag <author-email-from-flag@domain.tld>"},
-				p.StrP(`
+				ptr.To(`
 name: im-a-name
 namespace: {{.Username}}/shared
 version: 2.3.4
@@ -172,7 +172,7 @@ authors:
 			input{
 				[]string{tempFile, "--editor"},
 				nil,
-				p.StrP(`
+				ptr.To(`
 name: im-a-name
 namespace: {{.Username}}/shared
 version: 2.3.4

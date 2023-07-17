@@ -3,7 +3,7 @@ package packages
 import (
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/rtutils/p"
+	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/runbits/requirements"
 	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -32,7 +32,7 @@ func (a *Install) Run(params InstallRunParams, nsType model.NamespaceType) error
 
 	logging.Debug("ExecuteInstall")
 	if params.Package.Namespace != "" {
-		ns = p.Pointer(model.NewRawNamespace(params.Package.Namespace))
+		ns = ptr.To(model.NewRawNamespace(params.Package.Namespace))
 	} else {
 		nsTypeV = &nsType
 	}

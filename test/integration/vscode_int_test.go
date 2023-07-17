@@ -23,9 +23,10 @@ func (suite *PushIntegrationTestSuite) TestInitAndPush_VSCode() {
 	cp := ts.Spawn(
 		"--output", "editor",
 		"init",
-		namespace,
+		"--language",
 		"perl",
-		"--path", filepath.Join(ts.Dirs.Work, namespace),
+		namespace,
+		filepath.Join(ts.Dirs.Work, namespace),
 	)
 	cp.ExpectExitCode(0)
 	suite.Contains(cp.TrimmedSnapshot(), "Skipping runtime setup because it was disabled by an environment variable")
@@ -114,7 +115,7 @@ func (suite *PushIntegrationTestSuite) TestOrganizations_VSCode() {
 }
 
 func (suite *AuthIntegrationTestSuite) TestAuth_VSCode() {
-	suite.OnlyRunForTags(tagsuite.Auth, tagsuite.VSCode, tagsuite.Komodo)
+	suite.OnlyRunForTags(tagsuite.Auth, tagsuite.VSCode)
 	// TODO: Response change from "free" to "Community Tier (Free)".  Check that vs code extension is okay with that.
 	// https://www.pivotaltracker.com/story/show/178544144
 	user := userJSON{

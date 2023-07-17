@@ -4,7 +4,7 @@ import (
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/rtutils/p"
+	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/runbits/requirements"
 	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -36,7 +36,7 @@ func (u *Uninstall) Run(params UninstallRunParams, nsType model.NamespaceType) e
 	var ns *model.Namespace
 
 	if params.Package.Namespace != "" {
-		ns = p.Pointer(model.NewRawNamespace(params.Package.Namespace))
+		ns = ptr.To(model.NewRawNamespace(params.Package.Namespace))
 	} else {
 		nsTypeV = &nsType
 	}

@@ -105,7 +105,7 @@ func (a *Client) GetLoginJwtToken(params *GetLoginJwtTokenParams, opts ...Client
 }
 
 /*
-  GetLogout renews a valid j w t
+  GetLogout logs out of the current session
 
   Log out of the current session
 */

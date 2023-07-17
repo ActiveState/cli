@@ -1,10 +1,8 @@
 package request
 
-func BuildExpression(owner, project, commitID string) *buildScriptByCommitID {
+func BuildExpression(commitID string) *buildScriptByCommitID {
 	return &buildScriptByCommitID{map[string]interface{}{
-		"organization": owner,
-		"project":      project,
-		"commitID":     commitID,
+		"commitID": commitID,
 	}}
 }
 
@@ -14,20 +12,11 @@ type buildScriptByCommitID struct {
 
 func (b *buildScriptByCommitID) Query() string {
 	return `
-query ($organization: String!, $project: String!, $commitID: String!) {
-  project(organization: $organization, project: $project) {
-    ... on Project {
+query ($commitID: ID!) {
+  commit(commitId: $commitID) {
+    ... on Commit {
       __typename
-      commit(vcsRef: $commitID) {
-        ... on Commit {
-          __typename
-          script
-        }
-        ... on NotFound {
-          __typename
-          message
-        }
-      }
+      expr
     }
     ... on NotFound {
       __typename

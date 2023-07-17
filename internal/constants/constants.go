@@ -315,24 +315,24 @@ const PlatformURL = "platform.activestate.com"
 const CheatSheetURL = "https://platform.activestate.com/state-tool-cheat-sheet"
 
 // StateToolRollbarToken is the token used by the State Tool to talk to rollbar
-const StateToolRollbarToken = "8ddf0c31267b49ca9680083cf850f1e3"
+const StateToolRollbarToken = "4062b6b437ed40e9aa710ce8931d7897"
 
 // StateServiceRollbarToken is the token used by the State Service to talk to rollbar
-const StateServiceRollbarToken = "c03b12fa567e4753bc9c1d97111b8767"
+const StateServiceRollbarToken = "9dce777154b84824b1a16eb4654886a9"
 
 // StateInstallerRollbarToken is the token used by the State Installer to talk to rollbar
 // Todo It is currently the same as the State Tool's
-const StateInstallerRollbarToken = "0d6d1440fafe44058f3a0a9fc8d44e29"
+const StateInstallerRollbarToken = "f4105fee70c5478eab063abb1acdffa9"
 
 // OfflineInstallerRollbarToken is the token used by the Offline Installer to talk to rollbar
 const OfflineInstallerRollbarToken = "0ab5e19218bd494680bf8f5d08cf37ad"
 
 // {OS}Bit{Depth}UUID constants are the UUIDs associated with the relevant OSes
-// in the platform DB.
+// in the platform DB and leveraged by the Dashboard (PlatformMapping).
 const (
 	Win10Bit64UUID = "78977bc8-0f32-519d-80f3-9043f059398c"
-	LinuxBit64UUID = "0fa42e8c-ac7b-5dd7-9407-8aa15f9b993a"
-	MacBit64UUID   = "96b7e6f2-bebf-564c-bc1c-f04482398f38"
+	LinuxBit64UUID = "7c998ec2-7491-4e75-be4d-8885800ef5f2"
+	MacBit64UUID   = "46a5b48f-226a-4696-9746-ba4d50d661c2"
 	ValidZeroUUID  = "00000000-0000-0000-0000-000000000000"
 )
 
@@ -499,3 +499,7 @@ const AnalyticsPixelOverrideEnv = "ACTIVESTATE_CLI_ANALYTICS_PIXEL"
 
 // TerminalAnimationInterval is the interval we use for terminal animations
 const TerminalAnimationInterval = 150 * time.Millisecond
+
+// RuntimeSetupWaitEnvVarName is only used for an integration test to pause installation and wait
+// for Ctrl+C.
+const RuntimeSetupWaitEnvVarName = "ACTIVESTATE_CLI_RUNTIME_SETUP_WAIT"

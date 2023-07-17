@@ -2,16 +2,26 @@ package model
 
 import (
 	"encoding/json"
+	"fmt"
+	"strings"
 
+	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/go-openapi/strfmt"
 )
 
+type Operation int
+
 const (
+	OperationAdded Operation = iota
+	OperationRemoved
+	OperationUpdated
+
 	// BuildPlan statuses
-	Planning = "PLANNING"
-	Planned  = "PLANNED"
-	Building = "BUILDING"
-	Ready    = "READY"
+	Planning  = "PLANNING"
+	Planned   = "PLANNED"
+	Building  = "BUILDING"
+	Completed = "COMPLETED"
 
 	// Artifact statuses
 	ArtifactNotSubmitted      = "NOT_SUBMITTED"
@@ -36,12 +46,243 @@ const (
 	// BuildLogID types
 	BuildLogRecipeID = "RECIPE_ID"
 	BuildRequestID   = "BUILD_REQUEST_ID"
+
+	ComparatorEQ  string = "eq"
+	ComparatorGT         = "gt"
+	ComparatorGTE        = "gte"
+	ComparatorLT         = "lt"
+	ComparatorLTE        = "lte"
+	ComparatorNE         = "ne"
+
+	VersionRequirementComparatorKey = "comparator"
+	VersionRequirementVersionKey    = "version"
+
+	XArtifactMimeType            = "application/x.artifact"
+	XActiveStateArtifactMimeType = "application/x-activestate-artifacts"
+	XCamelInstallerMimeType      = "application/x-camel-installer"
+	XGozipInstallerMimeType      = "application/x-gozip-installer"
 )
 
+func IsStateToolArtifact(mimeType string) bool {
+	return mimeType == XArtifactMimeType ||
+		mimeType == XActiveStateArtifactMimeType ||
+		mimeType == XCamelInstallerMimeType
+}
+
+func (o Operation) String() string {
+	switch o {
+	case OperationAdded:
+		return "added"
+	case OperationRemoved:
+		return "removed"
+	case OperationUpdated:
+		return "updated"
+	default:
+		return "unknown"
+	}
+}
+
+type BuildPlannerError struct {
+	ValidationErrors []string
+	IsTransient      bool
+}
+
+func (e *BuildPlannerError) Error() string {
+	// Append last five lines to error message
+	offset := 0
+	numLines := len(e.ValidationErrors)
+	if numLines > 5 {
+		offset = numLines - 5
+	}
+
+	errorLines := strings.Join(e.ValidationErrors[offset:], "\n")
+	// Crop at 500 characters to reduce noisy output further
+	if len(errorLines) > 500 {
+		offset = len(errorLines) - 499
+		errorLines = fmt.Sprintf("…%s", errorLines[offset:])
+	}
+	isCropped := offset > 0
+	croppedMessage := ""
+	if isCropped {
+		croppedMessage = locale.Tl("buildplan_err_cropped_intro", "These are the last lines of the error message:")
+	}
+
+	var err error
+	err = locale.NewError("solver_err", "", croppedMessage, errorLines)
+	if e.IsTransient {
+		err = errs.AddTips(err, locale.Tr("transient_solver_tip"))
+	}
+	return err.Error()
+}
+
 // BuildPlan is the top level object returned by the build planner. It contains
-// the project, commit, and build.
-type BuildPlan struct {
+// the commit and build.
+type BuildPlan interface {
+	Build() (*Build, error)
+	CommitID() (strfmt.UUID, error)
+}
+
+func NewBuildPlanResponse(owner, project string) BuildPlan {
+	if owner != "" && project != "" {
+		return &BuildPlanByProject{}
+	}
+	return &BuildPlanByCommit{}
+}
+
+type BuildPlanByProject struct {
 	Project *Project `json:"project"`
+	*Error
+}
+
+func (b *BuildPlanByProject) Build() (*Build, error) {
+	if b.Project == nil {
+		return nil, errs.New("BuildPlanByProject.Build: Project is nil")
+	}
+
+	if b.Project.Error != nil {
+		if b.Project.Error.Message != "" {
+			return nil, errs.New("BuildPlanByProject.Build: Could not get build, API returned project error message: %s", b.Project.Message)
+		}
+		return nil, errs.New("BuildPlanByProject.Build: Could not retrieve project")
+	}
+
+	if b.Project.Commit == nil {
+		return nil, errs.New("BuildPlanByProject.Build: Commit is nil")
+	}
+
+	if b.Project.Commit.Error != nil {
+		if b.Project.Commit.Error.Message != "" {
+			return nil, errs.New("Could not get build, API returned commit error message: %s", b.Project.Commit.Message)
+		}
+		return nil, errs.New("BuildPlanByProject.Build: Could not retrieve commit")
+	}
+
+	if b.Project.Commit.Type == NotFound {
+		return nil, locale.NewError("err_buildplanner_commit_not_found", "Build plan does not contain commit")
+	}
+
+	if b.Project.Commit.Build == nil {
+		return nil, errs.New("BuildPlanByProject.Build: Commit does not contain build")
+	}
+
+	if b.Project.Commit.Build.PlanningError != nil {
+		var errs []string
+		var isTransient bool
+		for _, se := range b.Project.Commit.Build.SubErrors {
+			if se.Message != "" {
+				errs = append(errs, se.Message)
+				isTransient = se.IsTransient
+			}
+			for _, ve := range se.ValidationErrors {
+				if ve.Error != "" {
+					errs = append(errs, ve.Error)
+				}
+			}
+		}
+		return nil, &BuildPlannerError{
+			ValidationErrors: errs,
+			IsTransient:      isTransient,
+		}
+	}
+
+	return b.Project.Commit.Build, nil
+}
+
+func (b *BuildPlanByProject) CommitID() (strfmt.UUID, error) {
+	if b.Project == nil {
+		return "", errs.New("BuildPlanByProject.CommitID: Project is nil")
+	}
+
+	if b.Project.Error != nil {
+		if b.Project.Error.Message != "" {
+			return "", errs.New("BuildPlanByProject.CommitID: Could not get commit ID, API returned project error message: %s", b.Project.Message)
+		}
+		return "", errs.New("BuildPlanByProject.CommitID: Could not retrieve project")
+	}
+
+	if b.Project.Commit == nil {
+		return "", errs.New("BuildPlanByProject.CommitID: Commit is nil")
+	}
+
+	if b.Project.Commit.Error != nil {
+		if b.Project.Commit.Error.Message != "" {
+			return "", errs.New("BuildPlanByProject.CommitID: Could not get commit ID. API returned commit error message: %s", b.Project.Commit.Message)
+		}
+		return "", errs.New("BuildPlanByProject.CommitID: Could not retrieve commit")
+	}
+
+	return b.Project.Commit.CommitID, nil
+}
+
+type BuildPlanByCommit struct {
+	Commit *Commit `json:"commit"`
+	*Error
+}
+
+func (b *BuildPlanByCommit) Build() (*Build, error) {
+	if b.Commit == nil {
+		return nil, errs.New("BuildPlanByCommit.Build: Commit is nil")
+	}
+
+	if b.Commit.Error != nil {
+		if b.Commit.Error.Message != "" {
+			return nil, errs.New("BuildPlanByCommit.Build: Could not get build via commit ID, API returned commit error message: %s", b.Commit.Message)
+		}
+		return nil, errs.New("BuildPlanByCommit.Build: Could not retrieve commit")
+	}
+
+	if b.Commit.Type == NotFound {
+		return nil, locale.NewError("err_buildplanner_commit_not_found", "Build plan does not contain commit")
+	}
+
+	if b.Commit.Build == nil {
+		if b.Commit.Error != nil {
+			return nil, errs.New("BuildPlanByCommit.Build: Commit not found: %s", b.Commit.Error.Message)
+		}
+		return nil, errs.New("BuildPlanByCommit.Build: Commit does not contain build")
+	}
+
+	if b.Commit.Build.PlanningError != nil {
+		var errs []string
+		var isTransient bool
+		for _, se := range b.Commit.Build.SubErrors {
+			if se.Message != "" {
+				errs = append(errs, se.Message)
+				isTransient = se.IsTransient
+			}
+			for _, ve := range se.ValidationErrors {
+				if ve.Error != "" {
+					errs = append(errs, ve.Error)
+				}
+			}
+		}
+		return nil, &BuildPlannerError{
+			ValidationErrors: errs,
+			IsTransient:      isTransient,
+		}
+	}
+
+	return b.Commit.Build, nil
+}
+
+func (b *BuildPlanByCommit) CommitID() (strfmt.UUID, error) {
+	if b.Commit == nil {
+		return "", errs.New("BuildPlanByCommit.CommitID: Commit is nil")
+	}
+
+	if b.Commit.Error != nil {
+		if b.Commit.Error.Message != "" {
+			return "", errs.New("BuildPlanByCommit.CommitID: Could not get commit ID, API returned commit error message: %s", b.Commit.Message)
+		}
+		return "", errs.New("BuildPlanByCommit.CommitID: Could not retrieve commit")
+	}
+
+	return b.Commit.CommitID, nil
+}
+
+type BuildExpression struct {
+	Commit *Commit `json:"commit"`
+	*Error
 }
 
 // PushCommitResult is the result of a push commit mutation.
@@ -49,7 +290,7 @@ type BuildPlan struct {
 // The resulting commit is pushed to the platform automatically.
 type PushCommitResult struct {
 	Commit *Commit `json:"pushCommit"`
-	*NotFoundError
+	*Error
 }
 
 // StageCommitResult is the result of a stage commit mutation.
@@ -57,12 +298,7 @@ type PushCommitResult struct {
 // The resulting commit is NOT pushed to the platform automatically.
 type StageCommitResult struct {
 	Commit *Commit `json:"stageCommit"`
-	*NotFoundError
-}
-
-// NotFoundError occurs when a project or commit is not found.
-type NotFoundError struct {
-	Message string `json:"message"`
+	*Error
 }
 
 // Error contains an error message.
@@ -74,16 +310,16 @@ type Error struct {
 type Project struct {
 	Type   string  `json:"__typename"`
 	Commit *Commit `json:"commit"`
-	*NotFoundError
+	*Error
 }
 
 // Commit contains the build and any errors.
 type Commit struct {
-	Type     string          `json:"__typename"`
-	Script   json.RawMessage `json:"script"`
-	CommitID strfmt.UUID     `json:"commitId"`
-	Build    *Build          `json:"build"`
-	*NotFoundError
+	Type       string          `json:"__typename"`
+	Expression json.RawMessage `json:"expr"`
+	CommitID   strfmt.UUID     `json:"commitId"`
+	Build      *Build          `json:"build"`
+	*Error
 }
 
 // Build is a directed acyclic graph. It begins with a set of terminal nodes
@@ -182,21 +418,20 @@ type Build struct {
 // BuildLogID is the ID used to initiate a connection with the BuildLogStreamer.
 type BuildLogID struct {
 	ID         string      `json:"id"`
-	Type       string      `json:"type"`
 	PlatformID strfmt.UUID `json:"platformID"`
 }
 
 // NamedTarget is a special target used for terminals.
 type NamedTarget struct {
-	Tag       string        `json:"tag"`
-	TargetIDs []strfmt.UUID `json:"targetIDs"`
+	Tag     string        `json:"tag"`
+	NodeIDs []strfmt.UUID `json:"nodeIds"`
 }
 
 // Artifact represents a downloadable artifact.
 // This artifact may or may not be installable by the State Tool.
 type Artifact struct {
 	Type                string        `json:"__typename"`
-	TargetID            strfmt.UUID   `json:"targetID"`
+	NodeID              strfmt.UUID   `json:"nodeId"`
 	MimeType            string        `json:"mimeType"`
 	GeneratedBy         strfmt.UUID   `json:"generatedBy"`
 	RuntimeDependencies []strfmt.UUID `json:"runtimeDependencies"`
@@ -216,14 +451,14 @@ type Artifact struct {
 // This is usually a build step. The input represents a set of target
 // IDs and the output are a set of artifact IDs.
 type Step struct {
-	TargetID strfmt.UUID    `json:"targetID"`
-	Inputs   []*NamedTarget `json:"inputs"`
-	Outputs  []string       `json:"outputs"`
+	StepID  strfmt.UUID    `json:"stepId"`
+	Inputs  []*NamedTarget `json:"inputs"`
+	Outputs []string       `json:"outputs"`
 }
 
 // Source represents the source of an artifact.
 type Source struct {
-	TargetID  strfmt.UUID `json:"targetID"`
+	NodeID    strfmt.UUID `json:"nodeId"`
 	Name      string      `json:"name"`
 	Namespace string      `json:"namespace"`
 	Version   string      `json:"version"`
@@ -231,12 +466,12 @@ type Source struct {
 
 // PlanningError represents an error that occurred during planning.
 type PlanningError struct {
-	Error     string                 `json:"error"`
-	SubErrors []*BuildScriptLocation `json:"subErrors"`
+	Message   string               `json:"message"`
+	SubErrors []*BuildExprLocation `json:"subErrors"`
 }
 
-// BuildScriptLocation represents a location in the build script where an error occurred.
-type BuildScriptLocation struct {
+// BuildExprLocation represents a location in the build script where an error occurred.
+type BuildExprLocation struct {
 	Type             string                        `json:"__typename"`
 	Path             string                        `json:"path"`
 	Message          string                        `json:"message"`
@@ -258,6 +493,14 @@ type RemediableSolveError struct {
 	Requirements      []*Requirement               `json:"requirements"`
 	Incompatibilities []*SolveErrorIncompatibility `json:"incompatibilities"`
 }
+
+type Requirement struct {
+	Name               string               `json:"name"`
+	Namespace          string               `json:"namespace"`
+	VersionRequirement []VersionRequirement `json:"version_requirements,omitempty"`
+}
+
+type VersionRequirement map[string]string
 
 // SolverErrorRemediation contains the recommeneded remediation for remediable error.
 type SolverErrorRemediation struct {

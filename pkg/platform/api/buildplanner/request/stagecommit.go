@@ -1,13 +1,13 @@
 package request
 
-import model "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
+import "github.com/ActiveState/cli/pkg/platform/runtime/buildexpression"
 
-func StageCommit(owner, project, parentCommit string, script *model.BuildExpression) *buildPlanByStageCommit {
+func StageCommit(owner, project, parentCommit string, expression *buildexpression.BuildExpression) *buildPlanByStageCommit {
 	return &buildPlanByStageCommit{map[string]interface{}{
 		"organization": owner,
 		"project":      project,
 		"parentCommit": parentCommit,
-		"script":       script,
+		"expr":         expression,
 	}}
 }
 
@@ -17,54 +17,56 @@ type buildPlanByStageCommit struct {
 
 func (b *buildPlanByStageCommit) Query() string {
 	return `
-mutation ($organization: String!, $project: String!, $parentCommit: String!, $script:BuildScript!) {
-  stageCommit(input:{org:$organization, project:$project, parentCommit:$parentCommit, script:$script}) {
+mutation ($organization: String!, $project: String!, $parentCommit: ID, $expr:BuildExpr!) {
+  stageCommit(input:{organization:$organization, project:$project, parentCommitId:$parentCommit, expr:$expr}) {
     ... on Commit {
       __typename
-			script
+			expr
       commitId
       build {
         __typename
-        ... on BuildReady {
+        ... on BuildStarted {
           buildLogIds {
-            id
-            type
+            ... on AltBuildId {
+              id
+            }
           }
         }
         ... on BuildStarted {
           buildLogIds {
-            id
-            type
+            ... on AltBuildId {
+              id
+            }
           }
         }
         ... on Build {
           status
           terminals {
             tag
-            targetIDs
+            nodeIds
           }
-          sources: targets {
+          sources: nodes {
             ... on Source {
-              targetID
+              nodeId
               name
               namespace
               version
             }
           }
-          steps: targets {
+          steps: steps {
             ... on Step {
-              targetID
+              stepId
               inputs {
                 tag
-                targetIDs
+                nodeIds
               }
               outputs
             }
           }
-          artifacts: targets {
+          artifacts: nodes {
             ... on ArtifactSucceeded {
               __typename
-              targetID
+              nodeId
               mimeType
               generatedBy
               runtimeDependencies
@@ -75,15 +77,15 @@ mutation ($organization: String!, $project: String!, $parentCommit: String!, $sc
             }
             ... on ArtifactUnbuilt {
               __typename
-              targetID
+              nodeId
               mimeType
               generatedBy
               runtimeDependencies
               status
             }
-            ... on ArtifactBuilding {
+            ... on ArtifactStarted {
               __typename
-              targetID
+              nodeId
               mimeType
               generatedBy
               runtimeDependencies
@@ -91,7 +93,7 @@ mutation ($organization: String!, $project: String!, $parentCommit: String!, $sc
             }
             ... on ArtifactTransientlyFailed {
               __typename
-              targetID
+              nodeId
               mimeType
               generatedBy
               runtimeDependencies
@@ -103,7 +105,7 @@ mutation ($organization: String!, $project: String!, $parentCommit: String!, $sc
             }
             ... on ArtifactPermanentlyFailed {
               __typename
-              targetID
+              nodeId
               mimeType
               generatedBy
               runtimeDependencies
@@ -122,6 +124,7 @@ mutation ($organization: String!, $project: String!, $parentCommit: String!, $sc
               isTransient
               validationErrors {
                 jsonPath
+                error
               }
             }
             ... on RemediableSolveError {

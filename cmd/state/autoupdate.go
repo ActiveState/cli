@@ -22,7 +22,7 @@ import (
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/profile"
-	"github.com/ActiveState/cli/internal/rtutils/p"
+	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/updater"
 	"github.com/thoas/go-funk"
 )
@@ -78,21 +78,21 @@ func autoUpdate(args []string, cfg *config.Instance, an analytics.Dispatcher, ou
 	if err != nil {
 		if os.IsPermission(err) {
 			an.EventWithLabel(anaConst.CatUpdates, anaConst.ActUpdateInstall, anaConst.UpdateLabelFailed, &dimensions.Values{
-				Version: p.StrP(up.Version),
-				Error:   p.StrP("Could not update the state tool due to insufficient permissions."),
+				Version: ptr.To(up.Version),
+				Error:   ptr.To("Could not update the state tool due to insufficient permissions."),
 			})
 			return false, locale.WrapInputError(err, locale.Tl("auto_update_permission_err", "", constants.DocumentationURL, errs.JoinMessage(err)))
 		}
 		if errs.Matches(err, &updater.ErrorInProgress{}) {
 			an.EventWithLabel(anaConst.CatUpdates, anaConst.ActUpdateInstall, anaConst.UpdateLabelFailed, &dimensions.Values{
-				Version: p.StrP(up.Version),
-				Error:   p.StrP(anaConst.UpdateErrorInProgress),
+				Version: ptr.To(up.Version),
+				Error:   ptr.To(anaConst.UpdateErrorInProgress),
 			})
 			return false, nil
 		}
 		an.EventWithLabel(anaConst.CatUpdates, anaConst.ActUpdateInstall, anaConst.UpdateLabelFailed, &dimensions.Values{
-			Version: p.StrP(up.Version),
-			Error:   p.StrP(anaConst.UpdateErrorInstallFailed),
+			Version: ptr.To(up.Version),
+			Error:   ptr.To(anaConst.UpdateErrorInstallFailed),
 		})
 		return false, locale.WrapError(err, locale.T("auto_update_failed"))
 	}
@@ -109,14 +109,14 @@ func autoUpdate(args []string, cfg *config.Instance, an analytics.Dispatcher, ou
 			msg = anaConst.UpdateErrorRelaunch
 		}
 		an.EventWithLabel(anaConst.CatUpdates, anaConst.ActUpdateRelaunch, anaConst.UpdateLabelFailed, &dimensions.Values{
-			Version: p.StrP(up.Version),
-			Error:   p.StrP(msg),
+			Version: ptr.To(up.Version),
+			Error:   ptr.To(msg),
 		})
 		return true, errs.Silence(errs.WrapExitCode(err, code))
 	}
 
 	an.EventWithLabel(anaConst.CatUpdates, anaConst.ActUpdateRelaunch, anaConst.UpdateLabelSuccess, &dimensions.Values{
-		Version: p.StrP(up.Version),
+		Version: ptr.To(up.Version),
 	})
 	return true, nil
 }

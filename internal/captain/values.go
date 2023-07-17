@@ -7,7 +7,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/rtutils/p"
+	"github.com/ActiveState/cli/internal/rtutils/ptr"
 )
 
 // NameVersionValue represents a flag that supports both a name and a version, the following formats are supported:
@@ -241,7 +241,7 @@ func (u *TimeValue) String() string {
 
 func (u *TimeValue) Set(v string) error {
 	if v == "now" {
-		u.Time = p.Pointer(time.Now())
+		u.Time = ptr.To(time.Now())
 	} else {
 		u.raw = v
 		tsv, err := time.Parse(time.RFC3339, v)

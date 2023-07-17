@@ -338,9 +338,16 @@ type UserOrganizationsItems0 struct {
 	// u r lname
 	URLname string `json:"URLname,omitempty"`
 
+	// created
+	// Format: date-time
+	Created strfmt.DateTime `json:"created,omitempty"`
+
 	// organization ID
 	// Format: uuid
 	OrganizationID strfmt.UUID `json:"organizationID,omitempty"`
+
+	// personal
+	Personal bool `json:"personal,omitempty"`
 
 	// role
 	Role string `json:"role,omitempty"`
@@ -353,6 +360,10 @@ type UserOrganizationsItems0 struct {
 func (m *UserOrganizationsItems0) Validate(formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.validateCreated(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.validateOrganizationID(formats); err != nil {
 		res = append(res, err)
 	}
@@ -360,6 +371,18 @@ func (m *UserOrganizationsItems0) Validate(formats strfmt.Registry) error {
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *UserOrganizationsItems0) validateCreated(formats strfmt.Registry) error {
+	if swag.IsZero(m.Created) { // not required
+		return nil
+	}
+
+	if err := validate.FormatOf("created", "body", "date-time", m.Created.String(), formats); err != nil {
+		return err
+	}
+
 	return nil
 }
 

@@ -321,6 +321,8 @@ err_activate_output_build_in_progress:
   other: Platform project build is in progress. Please wait for a few minutes and try "Reactivate Runtime" option in "State Tool" menu
 err_unsupported_platform:
   other: "Unsupported platform: [NOTICE]{{.V0}}[/RESET]"
+err_detect_language:
+  other: Could not detect which language to use
 err_language_not_found:
   other: "Could not find language: [NOTICE]{{.V0}}@{{.V1}}[/RESET]"
 error_state_activate_copy_save:
@@ -874,6 +876,8 @@ err_no_valid_artifact:
   other: Your project is not producing any usable artifacts, is your State Tool up to date?
 err_runtime_download_no_response:
   other: Could not find bits associated with your runtime environment, please contact support
+err_runtime_setup:
+  other: Error setting up runtime
 err_signs3_invalid_url:
   other: API Responded with an invalid S3 URL, please contact support
 err_artifact_invalid_url:
@@ -1246,16 +1250,17 @@ init_success:
   other: |
     Project '[NOTICE]{{.V0}}[/RESET]' has been successfully initialized at '[NOTICE]{{.V1}}[/RESET]' and pushed to the Platform.
     You can start using your project with [ACTIONABLE]`state shell`[/RESET] and [ACTIONABLE]`state use`[/RESET].
+    For editors and other tooling use the executables at: [ACTIONABLE]{{.V2}}[/RESET].
 arg_state_init_namespace:
   other: org/project
 arg_state_init_namespace_description:
   other: The namespace for the project that you wish to initialize
-arg_state_init_language:
-  other: Language[@version]
-arg_state_init_language_description:
-  other: The language that this project should use, and optionally the version of that language
-flag_state_init_path_description:
-  other: Where to initialize the project
+flag_state_init_language_description:
+  other: "The Language[@version] that this project should use"
+arg_state_init_path:
+  other: path
+arg_state_init_path_description:
+  other: "Where to initialize the project"
 err_wd:
   other: Could not retrieve the working directory
 err_invalid_output_format:
@@ -1735,6 +1740,8 @@ artifact_download_failed:
   other: Failed to download artifact {{.V0}} ({{.V1}})
 artifact_setup_failed:
   other: Failed to install artifact {{.V0}} ({{.V1}})
+err_stored_artifacts:
+  other: Could not unmarshal stored artifacts, your install may be corrupted.
 err_fetch_branch:
   other: "Could not get branch [NOTICE]{{.V0}}[/RESET] for project"
 err_refresh_runtime:
@@ -1933,8 +1940,11 @@ err_update_privilege_mismatch:
   other: "The State Tool was installed as administrator. To update please run [ACTIONABLE]state update[/RESET] as administrator."
 uninstall_warn_not_empty:
   other: |
-    [ERROR]Unable to remove all files in the installation directory.[/RESET]
-    There were unrecognized files in that directory.
+    [ERROR]Unable to remove all files in the installation directory, as third party files were found inside that directory:[/RESET]
+
+    {{.V0}}
+
+    This is the result of third parties writing files to the State Tool owned directories, and it's an issue that should be resolved by the user.
 err_state_exec:
   other: Could not get state exec
 err_service_exec:
@@ -2055,6 +2065,12 @@ err_init_authenticated:
   other: You need to be authenticated to initialize a project. Authenticate by running [ACTIONABLE]`state auth`[/RESET].
 err_country_blocked:
   other: This service is not available in your region.
+err_shortcutdir_writable:
+  other: Could not continue as we don't have permission to create [ACTIONABLE]{{.V0}}[/RESET].
+err_edit_local_checkouts:
+  other: Could not update local checkouts
+err_edit_project_mapping:
+  other: Could not update project mapping
 err_uploadingredient_edit_version_required:
   other: When editing you must always provide a new version number.
 err_uploadingredient_edit_version_different:

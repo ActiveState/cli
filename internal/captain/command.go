@@ -59,8 +59,6 @@ type primer interface {
 
 type ExecuteFunc func(cmd *Command, args []string) error
 
-type InterceptFunc func(ExecuteFunc) ExecuteFunc
-
 type CommandGroup struct {
 	name     string
 	priority int
@@ -94,8 +92,9 @@ type Command struct {
 	flags     []*Flag
 	arguments []*Argument
 
-	execute        ExecuteFunc
-	interceptChain []InterceptFunc
+	execute     ExecuteFunc
+	onExecStart []ExecEventHandler
+	onExecStop  []ExecEventHandler
 
 	// deferAnalytics should be set if the command handles the GA reporting in its execute function
 	deferAnalytics bool
@@ -146,7 +145,7 @@ func NewCommand(name, title, description string, prime primer, flags []*Flag, ar
 		Short:            short,
 		Long:             description,
 		PersistentPreRun: cmd.persistRunner,
-		RunE:             cmd.runner,
+		RunE:             cmd.cobraExecHandler,
 
 		// Restrict command line arguments by default.
 		// cmd.SetHasVariableArguments() overrides this.
@@ -219,7 +218,7 @@ func NewHiddenShimCommand(name string, prime primer, flags []*Flag, args []*Argu
 	cmd.cobra = &cobra.Command{
 		Use:              name,
 		PersistentPreRun: cmd.persistRunner,
-		RunE:             cmd.runner,
+		RunE:             cmd.cobraExecHandler,
 		Hidden:           true,
 
 		// Silence errors and usage, we handle that ourselves
@@ -256,7 +255,7 @@ func NewShimCommand(name, description string, execute ExecuteFunc) *Command {
 		Short:              short,
 		Long:               description,
 		DisableFlagParsing: true,
-		RunE:               cmd.runner,
+		RunE:               cmd.cobraExecHandler,
 	}
 
 	return cmd
@@ -404,28 +403,18 @@ func (c *Command) Arguments() []*Argument {
 	return c.arguments
 }
 
-func (c *Command) AppendInterceptChain(fns ...InterceptFunc) {
-	c.interceptChain = append(c.interceptChain, fns...)
+type ExecEventHandler func(cmd *Command, args []string) error
+
+func (c *Command) OnExecStart(handler ExecEventHandler) {
+	c.TopParent().onExecStart = append(c.TopParent().onExecStart, handler)
+}
+
+func (c *Command) OnExecStop(handler ExecEventHandler) {
+	c.TopParent().onExecStop = append(c.TopParent().onExecStop, handler)
 }
 
 func DisableMousetrap() {
 	cobra.MousetrapHelpText = ""
-}
-
-func (c *Command) interceptFunc() InterceptFunc {
-	return func(fn ExecuteFunc) ExecuteFunc {
-		rootCmd := c.TopParent()
-		defer profile.Measure("captain:intercepter", time.Now())
-		for i := len(rootCmd.interceptChain) - 1; i >= 0; i-- {
-			if rootCmd.interceptChain[i] == nil {
-				continue
-			}
-			start := time.Now()
-			fn = rootCmd.interceptChain[i](fn)
-			profile.Measure(fmt.Sprintf("captain:intercepter:%d", i), start)
-		}
-		return fn
-	}
 }
 
 // SetUnstable denotes if the command as a beta feature. This will remove the command
@@ -616,7 +605,9 @@ func (c *Command) commandNames(includeRoot bool) []string {
 	return commands
 }
 
-func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
+// cobraExecHandler is the function that we've routed cobra to run when a command gets executed.
+// It allows us to wrap some over-arching logic around command executions, and should never be called directly.
+func (c *Command) cobraExecHandler(cobraCmd *cobra.Command, args []string) error {
 	defer profile.Measure("captain:runner", time.Now())
 
 	subCommandString := c.JoinedSubCommandNames()
@@ -685,9 +676,6 @@ func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
 
 	c.outputTitleIfAny()
 
-	intercept := c.interceptFunc()
-	execute := intercept(c.execute)
-
 	// initialize signal handler for analytics events
 	as := sighandler.NewAwaitingSigHandler(os.Interrupt)
 	sighandler.Push(as)
@@ -695,7 +683,24 @@ func (c *Command) runner(cobraCmd *cobra.Command, args []string) error {
 
 	err := as.WaitForFunc(func() error {
 		defer profile.Measure("captain:cmd:execute", time.Now())
-		return execute(c, args)
+
+		for _, handler := range c.TopParent().onExecStart {
+			if err := handler(c, args); err != nil {
+				return errs.Wrap(err, "onExecStart handler failed")
+			}
+		}
+
+		if err := c.execute(c, args); err != nil {
+			return errs.Wrap(err, "execute failed")
+		}
+
+		for _, handler := range c.TopParent().onExecStop {
+			if err := handler(c, args); err != nil {
+				return errs.Wrap(err, "onExecStop handler failed")
+			}
+		}
+
+		return nil
 	})
 
 	exitCode := errs.ParseExitCode(err)

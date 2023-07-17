@@ -12,11 +12,10 @@ type Format string
 
 // FormatName constants are tokens representing supported output formats.
 const (
-	PlainFormatName    Format = "plain"     // human readable
-	SimpleFormatName   Format = "simple"    // human readable without notice level
-	JSONFormatName     Format = "json"      // plain json
-	EditorFormatName   Format = "editor"    // alias of "json"
-	EditorV0FormatName Format = "editor.v0" // for Komodo: alias of "json"
+	PlainFormatName  Format = "plain"  // human readable
+	SimpleFormatName Format = "simple" // human readable without notice level
+	JSONFormatName   Format = "json"   // plain json
+	EditorFormatName Format = "editor" // alias of "json"
 )
 
 // Behavior defines control tokens that affect printing behavior.
@@ -72,18 +71,13 @@ func new(formatName string, config *Config) (Outputer, error) {
 		config.Interactive = false
 		editor, err := NewEditor(config)
 		return &Mediator{&editor, EditorFormatName}, err
-	case EditorV0FormatName:
-		logging.Debug("Using EditorV0 outputer")
-		config.Interactive = false
-		editor0, err := NewEditorV0(config)
-		return &Mediator{&editor0, EditorV0FormatName}, err
 	}
 
 	return nil, locale.WrapInputError(ErrNotRecognized, "err_unknown_format", string(formatName))
 }
 
 func (format Format) IsStructured() bool {
-	return format == JSONFormatName || format == EditorFormatName || format == EditorV0FormatName
+	return format == JSONFormatName || format == EditorFormatName
 }
 
 // Get is here for legacy use-cases, DO NOT USE IT FOR NEW CODE

@@ -15,7 +15,7 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
-	"github.com/ActiveState/cli/internal/rtutils/p"
+	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	graphModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model"
 	"github.com/ActiveState/cli/pkg/platform/api/graphql/request"
@@ -172,7 +172,7 @@ func (r *Runner) Run(params *Params) error {
 
 		// Description is not currently supported for edit
 		// https://activestatef.atlassian.net/browse/DX-1886
-		if reqVars.Description != p.PStr(ingredient.Ingredient.Description) {
+		if reqVars.Description != ptr.From(ingredient.Ingredient.Description, "") {
 			return locale.NewInputError("err_uploadingredient_edit_description_not_supported")
 		}
 
@@ -192,7 +192,7 @@ func (r *Runner) Run(params *Params) error {
 {{.V0}}
 
 `, string(b)),
-		p.BoolP(true),
+		ptr.To(true),
 	)
 	if err != nil {
 		return errs.Wrap(err, "Confirmation failed")
@@ -275,8 +275,8 @@ func prepareEditRequest(ingredient *model.IngredientAndVersion, r *request.Publi
 		return locale.WrapError(err, "err_uploadingredient_fetch_authors", "Could not fetch authors for ingredient")
 	}
 
-	r.Version = p.PStr(ingredient.LatestVersion.Version)
-	r.Description = p.PStr(ingredient.Ingredient.Description)
+	r.Version = ptr.From(ingredient.LatestVersion.Version, "")
+	r.Description = ptr.From(ingredient.Ingredient.Description, "")
 
 	if len(authors) > 0 {
 		r.Authors = []request.PublishVariableAuthor{}
@@ -286,7 +286,7 @@ func prepareEditRequest(ingredient *model.IngredientAndVersion, r *request.Publi
 				websites = append(websites, w.String())
 			}
 			r.Authors = append(r.Authors, request.PublishVariableAuthor{
-				Name:     p.PStr(author.Name),
+				Name:     ptr.From(author.Name, ""),
 				Email:    author.Email.String(),
 				Websites: websites,
 			})
@@ -299,8 +299,8 @@ func prepareEditRequest(ingredient *model.IngredientAndVersion, r *request.Publi
 			r.Dependencies = append(
 				r.Dependencies,
 				request.PublishVariableDep{request.Dependency{
-					Name:                p.PStr(dep.Feature),
-					Namespace:           p.PStr(dep.Namespace),
+					Name:                ptr.From(dep.Feature, ""),
+					Namespace:           ptr.From(dep.Namespace, ""),
 					VersionRequirements: dep.OriginalRequirement,
 				}, []request.Dependency{}},
 			)
@@ -330,7 +330,7 @@ func (r *Runner) OpenInEditor(pr *request.PublishVariables) error {
 	}
 
 	// Wait for confirmation
-	if _, err := r.prompt.Input("", locale.Tl("uploadingredient_edit_confirm", "Press enter when done editing"), p.StrP("")); err != nil {
+	if _, err := r.prompt.Input("", locale.Tl("uploadingredient_edit_confirm", "Press enter when done editing"), ptr.To("")); err != nil {
 		return errs.Wrap(err, "Confirmation failed")
 	}
 

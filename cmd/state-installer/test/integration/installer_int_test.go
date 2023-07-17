@@ -38,6 +38,7 @@ func (suite *InstallerIntegrationTestSuite) TestInstallFromLocalSource() {
 
 	suite.setupTest(ts)
 	suite.SetupRCFile(ts)
+	suite.T().Setenv("ACTIVESTATE_HOME", ts.Dirs.HomeDir)
 
 	target := filepath.Join(ts.Dirs.Work, "installation")
 
@@ -312,9 +313,6 @@ func (suite *InstallerIntegrationTestSuite) AssertConfig(ts *e2e.Session) {
 		rcFile, err := subshell.RcFile()
 		suite.Require().NoError(err)
 
-		if fileutils.FileExists(filepath.Join(ts.Dirs.HomeDir, filepath.Base(rcFile))) {
-			rcFile = filepath.Join(ts.Dirs.HomeDir, filepath.Base(rcFile))
-		}
 		bashContents := fileutils.ReadFileUnsafe(rcFile)
 		suite.Contains(string(bashContents), constants.RCAppendInstallStartLine, "rc file should contain our RC Append Start line")
 		suite.Contains(string(bashContents), constants.RCAppendInstallStopLine, "rc file should contain our RC Append Stop line")

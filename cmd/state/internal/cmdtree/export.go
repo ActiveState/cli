@@ -177,6 +177,7 @@ func newExportDocsCommand(prime *primer.Values) *captain.Command {
 		})
 
 	cmd.SetHidden(true)
+	cmd.SetDoesNotSupportStructuredOutput()
 
 	return cmd
 }
@@ -187,7 +188,7 @@ func newExportEnvCommand(prime *primer.Values) *captain.Command {
 	cmd := captain.NewCommand(
 		"env",
 		locale.Tl("env_docs_title", "Exporting environment"),
-		locale.Tl("env_docs_description", "Export the environment variables assocated with your runtime."),
+		locale.Tl("env_docs_description", "Export the environment variables associated with your runtime."),
 		prime,
 		[]*captain.Flag{},
 		[]*captain.Argument{},

@@ -159,6 +159,7 @@ func (suite *DeployIntegrationTestSuite) TestDeployPython() {
 	defer ts.Close()
 
 	suite.SetupRCFile(ts)
+	suite.T().Setenv("ACTIVESTATE_HOME", ts.Dirs.HomeDir)
 
 	targetID, err := uuid.NewUUID()
 	suite.Require().NoError(err)
@@ -261,6 +262,7 @@ func (suite *DeployIntegrationTestSuite) TestDeployConfigure() {
 	defer ts.Close()
 
 	suite.SetupRCFile(ts)
+	suite.T().Setenv("ACTIVESTATE_HOME", ts.Dirs.HomeDir)
 
 	targetID, err := uuid.NewUUID()
 	suite.Require().NoError(err)
@@ -332,10 +334,6 @@ func (suite *DeployIntegrationTestSuite) AssertConfig(ts *e2e.Session, targetID 
 		subshell := subshell.New(cfg)
 		rcFile, err := subshell.RcFile()
 		suite.Require().NoError(err)
-
-		if fileutils.FileExists(filepath.Join(ts.Dirs.HomeDir, filepath.Base(rcFile))) {
-			rcFile = filepath.Join(ts.Dirs.HomeDir, filepath.Base(rcFile))
-		}
 
 		bashContents := fileutils.ReadFileUnsafe(rcFile)
 		suite.Contains(string(bashContents), constants.RCAppendDeployStartLine, "config file should contain our RC Append Start line")
