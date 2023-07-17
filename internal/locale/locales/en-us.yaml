@@ -298,7 +298,7 @@ project_description:
 project_err:
   other: Unable to list projects
 error_state_activate_new_no_auth:
-  other: Please authenticate by running [ACTIONABLE]`state auth`[/RESET] before creating a new project.
+  other: Please authenticate by running "state auth" before creating a new project.
 state_activate_prompt_create_project:
   other: The project [NOTICE]{{.V0}}[/RESET] does not exist under [NOTICE]{{.V1}}[/RESET]. Would you like to create it now?
 state_activate_new_prompt_name:
@@ -368,7 +368,7 @@ projects_description:
 projects_list_description:
   other: List your platform projects
 err_api_not_authenticated:
-  other: You are not authenticated. Please authenticate by running [ACTIONABLE]`state auth`[/RESET].
+  other: You are not authenticated, authenticate with [ACTIONABLE]`state auth`[/RESET].
 err_api_forbidden:
   other: You are not allowed to access or modify the requested resource
 err_api_org_not_found:
@@ -378,7 +378,7 @@ err_api_project_not_found:
 err_api_project_not_found_unauthenticated:
   other: The requested project [NOTICE]{{.V0}}/{{.V1}}[/RESET] could not be found
 tip_private_project_auth:
-  other: If this is a private project you may need to authenticate with [ACTIONABLE]`state auth`[/RESET]
+  other: If this is a private project you may need to authenticate with 'state auth'.
 err_api_member_not_found:
   other: Unable to find requested Member
 err_api_org_invite_expected_one_invite:
@@ -663,7 +663,7 @@ secrets_err_user_not_defined:
 secrets_err_project_not_defined:
   other: "Secret has not been defined: [NOTICE]{{.V0}}[/RESET]. Either define it by running 'state secrets set [NOTICE]{{.V0}}[/RESET]' or have someone in your organization sync with you by having them run 'state secrets sync'."
 secrets_err_not_authenticated:
-  other: You are running a command that requires access to secrets. Please authenticate by running [ACTIONABLE]`state auth`[/RESET].
+  other: You are running a command that requires access to secrets, please authenticate by running 'state auth'.
 secrets_header_name:
   other: Name
 secrets_header_scope:
@@ -709,7 +709,7 @@ keypair_err_publickey_not_found:
 keypair_err_passphrase_prompt:
   other: The provided passphrase is invalid
 keypair_err_require_auth:
-  other: You need to be authenticated to run this command. Please run [ACTIONABLE]`state auth`[/RESET] first.
+  other: You need to be authenticated to run this command, please run [ACTIONABLE]`state auth`[/RESET] first
 keypairs_err_bitlength_too_short:
   other: bit-length too short
 keypairs_err_pem_encoding:
@@ -919,9 +919,9 @@ err_deprecation:
 
     Please update by running [ACTIONABLE]`state update`[/RESET].
 err_auth_required:
-  other: Authentication is required. Please authenticate by running [ACTIONABLE]`state auth`[/RESET].
+  other: Authentication is required, please authenticate by running 'state auth'
 err_auth_needinput:
-  other: You are logged out. In order to log in, either run this command in interactive mode, or provide your credentials via flags (see '[ACTIONABLE]state auth --help[/RESET]').
+  other: You are logged out, in order to log in either run this command in interactive mode or provide your credentials via flags (see '[ACTIONABLE]state auth --help[/RESET]').
 auth_required_activate:
   other: You need to be authenticated to activate an ActiveState Platform project
 prompt_login_or_signup:
@@ -1712,7 +1712,7 @@ config_get_error:
 cve_needs_authentication:
   other: You need to be authenticated in order to access vulnerability information about your project.
 auth_tip:
-  other: Run [ACTIONABLE]`state auth`[/RESET] to authenticate.
+  other: Run `state auth` to authenticate.
 err_non_interactive_mode:
   other: You are running the State Tool in non-interactive mode, but interactive input was needed. Please re-run the State Tool in interactive mode. If you are using a non-interactive terminal like Git Bash on Windows, prefix your command with [ACTIONABLE]`winpty`[/RESET]. (See https://github.com/git-for-windows/git/wiki/FAQ#some-native-console-programs-dont-work-when-run-from-git-bash-how-to-fix-it for more information.)
 err_alternate_branches:
@@ -1823,7 +1823,7 @@ err_get_wd:
   other: Unable to get appropriate parent directory for project, please ensure you have write permissions in your current directory.
 err_jwt_not_authenticated:
   other: |
-    You are not authenticated. In order to export a JWT please first authenticate by running [ACTIONABLE]`state auth`[/RESET].
+    You are not authenticated. In order to export a JWT please first authenticate with [ACTIONABLE]state auth[/RESET]
 err_recursion_limit:
   other: |
     Recursion detected in command:
