@@ -38,7 +38,7 @@ func NewMoveParams() *MoveParams {
 
 func (m *Move) Run(params *MoveParams) error {
 	if !m.auth.Authenticated() {
-		return locale.NewInputError("err_project_move_auth", "In order to move your project you need to be authenticated. Please run '[ACTIONABLE]state auth[/RESET]' to authenticate.")
+		return locale.NewInputError("err_project_move_auth", "In order to move your project you need to be authenticated. Please run [ACTIONABLE]`state auth`[/RESET] to authenticate.")
 	}
 
 	defaultChoice := !m.out.Config().Interactive
