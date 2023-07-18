@@ -2067,3 +2067,5 @@ err_edit_local_checkouts:
   other: Could not update local checkouts
 err_edit_project_mapping:
   other: Could not update project mapping
+err_buildplanner:
+  other: The Platform failed to plan the build for this project.
