@@ -83,13 +83,15 @@ func (o Operation) String() string {
 }
 
 type BuildPlannerError struct {
-	Wrapped          error
 	ValidationErrors []string
 	IsTransient      bool
 }
 
-func (e *BuildPlannerError) Unwrap() error {
-	return e.Wrapped
+// InputError returns true as we want to treat all build planner errors as input errors
+// and not report them to Rollbar. We defer the responsibility of logging these errors
+// to the maintainers of the build planner.
+func (e *BuildPlannerError) InputError() bool {
+	return true
 }
 
 func (e *BuildPlannerError) Error() string {
@@ -185,7 +187,6 @@ func (b *BuildPlanByProject) Build() (*Build, error) {
 			}
 		}
 		return nil, &BuildPlannerError{
-			Wrapped:          locale.NewInputError("err_buildplanner"),
 			ValidationErrors: errs,
 			IsTransient:      isTransient,
 		}
@@ -263,7 +264,6 @@ func (b *BuildPlanByCommit) Build() (*Build, error) {
 			}
 		}
 		return nil, &BuildPlannerError{
-			Wrapped:          locale.NewInputError("err_buildplanner"),
 			ValidationErrors: errs,
 			IsTransient:      isTransient,
 		}
