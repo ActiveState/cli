@@ -305,7 +305,6 @@ func (bp *BuildPlanner) StageCommit(params StageCommitParams) (strfmt.UUID, erro
 			}
 		}
 		return "", &bpModel.BuildPlannerError{
-			Wrapped:          locale.NewInputError("err_buildplanner"),
 			ValidationErrors: errs,
 			IsTransient:      isTransient,
 		}
