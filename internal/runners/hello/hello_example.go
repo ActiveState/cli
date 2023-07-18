@@ -45,22 +45,22 @@ func NewRunParams() *RunParams {
 // Hello defines the app-level dependencies that are accessible within the Run
 // function.
 type Hello struct {
-	out output.Outputer
-	pj  *project.Project
+	out     output.Outputer
+	project *project.Project
 }
 
 // New contains the scope in which an instance of Hello is constructed from an
 // implementation of primeable.
 func New(p primeable) *Hello {
 	return &Hello{
-		out: p.Output(),
-		pj:  p.Project(),
+		out:     p.Output(),
+		project: p.Project(),
 	}
 }
 
 // Run contains the scope in which the hello runner logic is executed.
 func (h *Hello) Run(params *RunParams) error {
-	if h.pj == nil {
+	if h.project == nil {
 		err := locale.NewInputError(
 			"hello_info_err_no_project", "Not in a project directory.",
 		)
@@ -94,7 +94,7 @@ func (h *Hello) Run(params *RunParams) error {
 	}
 
 	// Grab data from the platform.
-	commitMsg, err := currentCommitMessage(h.pj)
+	commitMsg, err := currentCommitMessage(h.project)
 	if err != nil {
 		err = locale.WrapError(
 			err, "hello_info_err_get_commit_msg", " Cannot get commit message",
@@ -108,7 +108,7 @@ func (h *Hello) Run(params *RunParams) error {
 	h.out.Print(locale.Tl(
 		"hello_extra_info",
 		"Project: {{.V0}}\nCurrent commit message: {{.V1}}",
-		h.pj.Namespace().String(), commitMsg,
+		h.project.Namespace().String(), commitMsg,
 	))
 
 	return nil
@@ -118,12 +118,12 @@ func (h *Hello) Run(params *RunParams) error {
 // is obtained. Since it is a sort of construction function that has some
 // complexity, it is helpful to provide localized error context. Secluding this
 // sort of logic is helpful to keep the subhandlers clean.
-func currentCommitMessage(pj *project.Project) (string, error) {
-	if pj == nil || pj.CommitUUID() == "" {
+func currentCommitMessage(proj *project.Project) (string, error) {
+	if proj == nil || proj.CommitUUID() == "" {
 		return "", errs.New("Cannot determine which commit UUID to use")
 	}
 
-	commit, err := model.GetCommit(pj.CommitUUID())
+	commit, err := model.GetCommit(proj.CommitUUID())
 	if err != nil {
 		return "", locale.NewError(
 			"hello_info_err_get_commitr", "Cannot get commit from server",
