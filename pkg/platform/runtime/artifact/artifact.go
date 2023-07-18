@@ -19,6 +19,8 @@ type Artifact struct {
 	Version          *string
 	RequestedByOrder bool
 	URL              string
+	LogURL           string
+	Checksum         string
 
 	GeneratedBy strfmt.UUID
 
