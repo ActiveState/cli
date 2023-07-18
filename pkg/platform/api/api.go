@@ -2,8 +2,10 @@ package api
 
 import (
 	"bytes"
+	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"reflect"
 	"strings"
 
@@ -44,6 +46,14 @@ func (r *RoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
 	resp, err := r.transport.RoundTrip(req)
 	if err != nil && resp != nil && resp.StatusCode == http.StatusForbidden && strings.EqualFold(resp.Header.Get("server"), "cloudfront") {
 		return nil, platform.NewCountryBlockedError()
+	}
+
+	// This code block is for integration testing purposes only.
+	// Under normal conditions, we should never access fmt from this context.
+	if os.Getenv(constants.PlatformApiRequestPrintHeadersEnvVarName) != "" &&
+		(condition.OnCI() || condition.BuiltOnDevMachine()) {
+		fmt.Printf("User-Agent: %s\n", resp.Request.Header.Get("User-Agent"))
+		fmt.Printf("X-Requestor: %s\n", resp.Request.Header.Get("X-Requestor"))
 	}
 
 	return resp, err
