@@ -41,7 +41,6 @@ require (
 	github.com/jessevdk/go-flags v1.4.0
 	github.com/kami-zh/go-capturer v0.0.0-20171211120116-e492ea43421d
 	github.com/labstack/echo/v4 v4.9.0
-	github.com/machinebox/graphql v0.2.2
 	github.com/mash/go-tempfile-suffix v0.0.0-20150731093933-48f0f8a3a5ab
 	github.com/mattn/go-runewidth v0.0.13
 	github.com/mholt/archiver v3.1.1+incompatible
@@ -73,6 +72,8 @@ require (
 	gopkg.in/yaml.v2 v2.4.0
 	modernc.org/sqlite v1.11.2
 )
+
+require github.com/ActiveState/graphql v0.0.0-20230718220857-da7d147af6b4
 
 require (
 	github.com/ActiveState/termtest/conpty v0.5.0 // indirect
