@@ -109,11 +109,13 @@ func (c *Client) RunWithContext(ctx context.Context, request Request, response i
 	if err != nil {
 		return NewRequestError(err, request)
 	}
-	responseData, err := json.MarshalIndent(response, "", "  ")
-	if err != nil {
-		return errs.Wrap(err, "failed to marshal response")
+	if os.Getenv(constants.DebugServiceRequestsEnvVarName) == "true" {
+		responseData, err := json.MarshalIndent(response, "", "  ")
+		if err != nil {
+			return errs.Wrap(err, "failed to marshal response")
+		}
+		logging.Debug("gqlclient: response: %s", responseData)
 	}
-	logging.Debug("gqlclient: response: %s", responseData)
 
 	return nil
 }
