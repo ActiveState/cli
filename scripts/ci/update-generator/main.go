@@ -92,8 +92,6 @@ func createUpdate(outputPath, channel, version, platform, target string) error {
 		return errs.Wrap(err, "Could not place install dir marker")
 	}
 
-	// Store sessionToken to config
-
 	// Remove archive path if it already exists
 	_ = os.Remove(archivePath)
 	// Create main archive

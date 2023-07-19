@@ -49,6 +49,7 @@ func NewInstaller(cfg *config.Instance, out output.Outputer, payloadPath string,
 }
 
 func (i *Installer) Install() (rerr error) {
+	// Store sessionToken to config
 	if i.sessionToken != "" && i.cfg.GetString(anaConst.CfgSessionToken) == "" {
 		if err := i.cfg.Set(anaConst.CfgSessionToken, i.sessionToken); err != nil {
 			return errs.Wrap(err, "Failed to set session token")
