@@ -1,6 +1,7 @@
 package model
 
 import (
+	"encoding/json"
 	"net/http"
 	"os"
 	"strings"
@@ -281,6 +282,28 @@ func (bp *BuildPlanner) StageCommit(params StageCommitParams) (strfmt.UUID, erro
 
 	if resp.Commit == nil {
 		return "", errs.New("Staged commit is nil")
+	}
+
+	if resp.Commit.CommitID == "" {
+		requestData, err := json.MarshalIndent(request, "", "  ")
+		if err != nil {
+			return "", errs.Wrap(err, "Failed to marshal request")
+		}
+		logging.Debug("StageCommit request: %s", string(requestData))
+
+		varsData, err := json.MarshalIndent(request.Vars(), "", "  ")
+		if err != nil {
+			return "", errs.Wrap(err, "Failed to marshal request variables")
+		}
+		logging.Debug("StageCommit request variables: %+v", varsData)
+
+		respData, err := json.MarshalIndent(resp, "", "  ")
+		if err != nil {
+			return "", errs.Wrap(err, "Failed to marshal response")
+		}
+		logging.Debug("StageCommit response: %s", string(respData))
+
+		return "", errs.New("Staged commit does not contain commitID")
 	}
 
 	if resp.Commit.Build == nil {
