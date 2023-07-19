@@ -1,7 +1,7 @@
 name: Build-Test-Deploy
 
 # === Triggers ===
-"on":
+'on':
   push:
     branches:
       - master
@@ -15,22 +15,20 @@ name: Build-Test-Deploy
       - synchronize
       - reopened
   schedule:
-    -
-      cron: 0 0 * * *
+    - cron: 0 0 * * *
 
 # === Workflow Permissions ===
 permissions:
   id-token: write # This is required for requesting the JWT
-  contents: read  # This is required for actions/checkout
+  contents: read # This is required for actions/checkout
 
 # === Workflow-level environment variables ===
 env:
-  AWS_REGION : us-east-1
+  AWS_REGION: us-east-1
   AWS_ROLE_SESSION_NAME: gha-activestate-cli
 
 # === JOBS ===
 jobs:
-
   # === OS Specific Job (runs on each OS) ===
   os_specific:
     name: ${{ matrix.platform }}
@@ -55,7 +53,6 @@ jobs:
 
     # === OS Specific Steps ===
     steps:
-
       - # === Checkout Code ===
         name: Checkout code
         uses: actions/checkout@v2
@@ -168,32 +165,32 @@ jobs:
         continue-on-error: ${{ github.event_name != 'schedule' }}
 
       - # === "Build: CLI" ===
-        name: "Build: CLI"
+        name: 'Build: CLI'
         shell: bash
         run: parallelize results Build-CLI
 
       - # === "Build: Service" ===
-        name: "Build: Service"
+        name: 'Build: Service'
         shell: bash
         run: parallelize results Build-Service
 
       - # === "Build: Installer" ===
-        name: "Build: Installer"
+        name: 'Build: Installer'
         shell: bash
         run: parallelize results Build-Installer
 
       - # === "Build: Remote Installer" ===
-        name: "Build: Remote Installer"
+        name: 'Build: Remote Installer'
         shell: bash
         run: parallelize results Build-Remote-Installer
 
       - # === "Build: Install Scripts" ===
-        name: "Build: Install Scripts"
+        name: 'Build: Install Scripts'
         shell: bash
         run: parallelize results Build-Install-Scripts
 
       - # === "Build: Executor" ===
-        name: "Build: Executor"
+        name: 'Build: Executor'
         shell: bash
         run: parallelize results Build-Executor
 
@@ -242,7 +239,7 @@ jobs:
         name: Generate Remote Install Deployment
         shell: bash
         run: state run generate-remote-install-deployment
-      
+
       - # === Configure AWS credentials ==
         name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v2
@@ -254,7 +251,7 @@ jobs:
 
       - # === Deploy for Integration Tests # NEVER run this against production branches. This is meant for PR deployments. ===
         name: Deploy for Integration Tests # NEVER run this against production branches. This is meant for PR deployments.
-        if: "!contains(fromJSON('[\"refs/heads/beta\", \"refs/heads/release\", \"refs/heads/LTS\"]'), github.ref)"
+        if: '!contains(fromJSON(''["refs/heads/beta", "refs/heads/release", "refs/heads/LTS"]''), github.ref)'
         shell: bash
         run: |
           if [ "$GITHUB_EVENT_NAME" != "schedule" ]; then
@@ -279,7 +276,7 @@ jobs:
       - # === Integration Tests ===
         name: Integration Tests
         id: integration_tests
-        if: "!contains(fromJSON('[\"refs/heads/beta\", \"refs/heads/release\", \"refs/heads/LTS\"]'), github.ref)"
+        if: '!contains(fromJSON(''["refs/heads/beta", "refs/heads/release", "refs/heads/LTS"]''), github.ref)'
         shell: bash
         run: |
           if [ "$GITHUB_EVENT_NAME" != "schedule" ]; then
@@ -321,6 +318,7 @@ jobs:
         continue-on-error: ${{ github.event_name == 'schedule' }}
         env:
           ACTIVESTATE_VERBOSE: true
+          ACTIVESTATE_DEBUG_SERVICE_REQUESTS: true
           INTEGRATION_TEST_USERNAME: ${{ secrets.INTEGRATION_TEST_USERNAME }}
           INTEGRATION_TEST_PASSWORD: ${{ secrets.INTEGRATION_TEST_PASSWORD }}
           INTEGRATION_TEST_TOKEN: ${{ secrets.INTEGRATION_TEST_TOKEN }}
@@ -396,7 +394,6 @@ jobs:
 
     # === Deploy Steps ===
     steps:
-
       - # === Checkout code ===
         name: Checkout code
         uses: actions/checkout@v2
