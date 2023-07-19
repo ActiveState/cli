@@ -25,11 +25,18 @@ func DefaultInstallPath() (string, error) {
 	return InstallPathForBranch(constants.BranchName)
 }
 
+// InstallPathForBranch gets the installation path for the given branch.
 func InstallPathForBranch(branch string) (string, error) {
 	if v := os.Getenv(constants.InstallPathOverrideEnvVarName); v != "" {
 		return filepath.Clean(v), nil
 	}
-	return installPathForBranch(branch)
+
+	installPath, err := installPathForBranch(branch)
+	if err != nil {
+		return "", errs.Wrap(err, "Unable to determine install path for branch")
+	}
+
+	return installPath, nil
 }
 
 func InstallRoot(path string) (string, error) {

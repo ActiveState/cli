@@ -7,15 +7,17 @@ import (
 	"path/filepath"
 	"strings"
 
+	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
+
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
+	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/ActiveState/cli/pkg/platform/runtime/envdef"
-	"github.com/ActiveState/cli/pkg/platform/runtime/model"
 )
 
 // Store manages the storing and loading of persistable information about the runtime
@@ -55,6 +57,10 @@ func (s *Store) buildEngineFile() string {
 
 func (s *Store) recipeFile() string {
 	return filepath.Join(s.storagePath, constants.RuntimeRecipeStore)
+}
+
+func (s *Store) buildPlanFile() string {
+	return filepath.Join(s.storagePath, constants.RuntimeBuildPlanStore)
 }
 
 // BuildEngine returns the runtime build engine value stored in the runtime directory
@@ -234,4 +240,30 @@ func (s *Store) updateEnviron(orderedArtifacts []artifact.ArtifactID, artifacts 
 // InstallPath returns the installation path of the runtime
 func (s *Store) InstallPath() string {
 	return s.installPath
+}
+
+func (s *Store) BuildPlan() (*bpModel.Build, error) {
+	data, err := fileutils.ReadFile(s.buildPlanFile())
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not read build plan file.")
+	}
+
+	var buildPlan bpModel.Build
+	err = json.Unmarshal(data, &buildPlan)
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not parse build plan file.")
+	}
+	return &buildPlan, err
+}
+
+func (s *Store) StoreBuildPlan(build *bpModel.Build) error {
+	data, err := json.Marshal(build)
+	if err != nil {
+		return errs.Wrap(err, "Could not marshal buildPlan.")
+	}
+	err = fileutils.WriteFile(s.buildPlanFile(), data)
+	if err != nil {
+		return errs.Wrap(err, "Could not write recipe file.")
+	}
+	return nil
 }

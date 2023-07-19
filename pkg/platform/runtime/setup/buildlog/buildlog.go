@@ -8,6 +8,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup/events"
 	"github.com/go-openapi/strfmt"
 	"github.com/gorilla/websocket"
@@ -67,7 +68,7 @@ type BuildLog struct {
 
 // New creates a new BuildLog instance that allows us to wait for incoming build log information
 // artifactMap comprises all artifacts (from the runtime closure) that are in the recipe, alreadyBuilt is set of artifact IDs that have already been built in the past
-func New(ctx context.Context, artifactMap map[artifact.ArtifactID]artifact.ArtifactRecipe, eventHandler events.Handler, recipeID strfmt.UUID, logFilePath string) (*BuildLog, error) {
+func New(ctx context.Context, artifactMap artifact.Map, eventHandler events.Handler, recipeID strfmt.UUID, logFilePath string, buildResult *model.BuildResult) (*BuildLog, error) {
 	conn, err := buildlogstream.Connect(ctx)
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not connect to build-log streamer build updates")
@@ -83,7 +84,7 @@ func New(ctx context.Context, artifactMap map[artifact.ArtifactID]artifact.Artif
 }
 
 // NewWithCustomConnections creates a new BuildLog instance with all physical connections managed by the caller
-func NewWithCustomConnections(artifactMap map[artifact.ArtifactID]artifact.ArtifactRecipe,
+func NewWithCustomConnections(artifactMap artifact.Map,
 	conn BuildLogConnector, eventHandler events.Handler,
 	recipeID strfmt.UUID, logFilePath string) (*BuildLog, error) {
 
@@ -295,7 +296,7 @@ func (bl *BuildLog) BuiltArtifactsChannel() <-chan artifact.ArtifactDownload {
 	return bl.ch
 }
 
-func resolveArtifactName(artifactID artifact.ArtifactID, artifactMap artifact.ArtifactRecipeMap) (name string, ok bool) {
+func resolveArtifactName(artifactID artifact.ArtifactID, artifactMap artifact.Map) (name string, ok bool) {
 	artf, ok := artifactMap[artifactID]
 	if !ok {
 		return locale.Tl("unknown_artifact_name", "unknown"), false

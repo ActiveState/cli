@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/analytics"
-	"github.com/go-openapi/strfmt"
 	"github.com/thoas/go-funk"
 
 	anaConsts "github.com/ActiveState/cli/internal/analytics/constants"
@@ -23,6 +22,7 @@ import (
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/internal/runbits/rtusage"
+	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	medmodel "github.com/ActiveState/cli/pkg/platform/api/mediator/model"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -78,7 +78,7 @@ func NewRequirementOperation(prime primeable) *RequirementOperation {
 
 const latestVersion = "latest"
 
-func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requirementVersion string, requirementBitWidth int, operation model.Operation, nsType model.NamespaceType) (rerr error) {
+func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requirementVersion string, requirementBitWidth int, operation bpModel.Operation, nsType model.NamespaceType) (rerr error) {
 	var ns model.Namespace
 	var langVersion string
 	langName := "undetermined"
@@ -130,7 +130,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 
 	rtusage.PrintRuntimeUsage(r.SvcModel, out, pj.Owner())
 
-	var validatePkg = operation == model.OperationAdded && (ns.Type() == model.NamespacePackage || ns.Type() == model.NamespaceBundle)
+	var validatePkg = operation == bpModel.OperationAdded && (ns.Type() == model.NamespacePackage || ns.Type() == model.NamespaceBundle)
 	if !ns.IsValid() && (nsType == model.NamespacePackage || nsType == model.NamespaceBundle) {
 		pg = output.StartSpinner(out, locale.Tl("progress_pkg_nolang", "", requirementName), constants.TerminalAnimationInterval)
 
@@ -193,13 +193,13 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 	pg = output.StartSpinner(out, locale.T("progress_commit"), constants.TerminalAnimationInterval)
 
 	// Check if this is an addition or an update
-	if operation == model.OperationAdded && parentCommitID != "" {
+	if operation == bpModel.OperationAdded && parentCommitID != "" {
 		req, err := model.GetRequirement(parentCommitID, ns, requirementName)
 		if err != nil {
 			return errs.Wrap(err, "Could not get requirement")
 		}
 		if req != nil {
-			operation = model.OperationUpdated
+			operation = bpModel.OperationUpdated
 		}
 	}
 
@@ -215,13 +215,31 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 		}
 	}
 
-	var commitID strfmt.UUID
-	commitID, err = model.CommitRequirement(parentCommitID, operation, requirementName, requirementVersion, requirementBitWidth, ns)
+	latest, err := model.FetchLatestTimeStamp()
 	if err != nil {
-		if operation == model.OperationRemoved && strings.Contains(err.Error(), "does not exist") {
-			return locale.WrapInputError(err, "err_package_remove_does_not_exist", "Requirement is not installed: {{.V0}}", origRequirementName)
-		}
-		return locale.WrapError(err, fmt.Sprintf("err_%s_%s", ns.Type(), operation))
+		return errs.Wrap(err, "Could not fetch latest timestamp")
+	}
+
+	name, version, err := model.ResolveRequirementNameAndVersion(requirementName, requirementVersion, requirementBitWidth, ns)
+	if err != nil {
+		return errs.Wrap(err, "Could not resolve requirement name and version")
+	}
+
+	params := model.StageCommitParams{
+		Owner:                pj.Owner(),
+		Project:              pj.Name(),
+		ParentCommit:         string(parentCommitID),
+		RequirementName:      name,
+		RequirementVersion:   version,
+		RequirementNamespace: ns,
+		Operation:            operation,
+		TimeStamp:            *latest,
+	}
+
+	bp := model.NewBuildPlannerModel(r.Auth)
+	commitID, err := bp.StageCommit(params)
+	if err != nil {
+		return locale.WrapError(err, "err_package_save_and_build", "Error occurred while trying to create a commit")
 	}
 
 	orderChanged := !hasParentCommit
@@ -281,7 +299,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 			requirementName,
 			requirementVersion,
 			ns.Type().String(),
-			string(operation),
+			operation.String(),
 		}))
 
 	if origRequirementName != requirementName {
