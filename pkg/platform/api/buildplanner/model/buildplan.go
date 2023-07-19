@@ -87,6 +87,13 @@ type BuildPlannerError struct {
 	IsTransient      bool
 }
 
+// InputError returns true as we want to treat all build planner errors as input errors
+// and not report them to Rollbar. We defer the responsibility of logging these errors
+// to the maintainers of the build planner.
+func (e *BuildPlannerError) InputError() bool {
+	return true
+}
+
 func (e *BuildPlannerError) Error() string {
 	// Append last five lines to error message
 	offset := 0
