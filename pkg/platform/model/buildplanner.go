@@ -358,7 +358,7 @@ func processBuildPlannerError(bpErr error, fallbackMessage string) error {
 	if errors.As(bpErr, graphqlErr) {
 		code, ok := graphqlErr.Extensions[codeExtensionKey].(string)
 		if ok && code == clientDeprecationErrorKey {
-			return locale.NewError("err_buildplanner_deprecated", "Encountered deprecation error: {{.V0}}, please update the State Tool and try again. If the problem persists, please contact support.", graphqlErr.Message)
+			return locale.NewError("err_buildplanner_deprecated", "Encountered deprecation error: {{.V0}}", graphqlErr.Message)
 		}
 	}
 	return errs.Wrap(bpErr, fallbackMessage)
