@@ -49,9 +49,6 @@ type Client struct {
 	httpClient       *http.Client
 	useMultipartForm bool
 
-	// closeReq will close the request body immediately allowing for reuse of client
-	closeReq bool
-
 	// Log is called with various debug information.
 	// To log to standard out, use:
 	//  client.Log = func(s string) { log.Println(s) }
@@ -118,7 +115,6 @@ func (c *Client) runWithJSON(ctx context.Context, req *Request, resp interface{}
 	if err != nil {
 		return err
 	}
-	r.Close = c.closeReq
 	r.Header.Set("Content-Type", "application/json; charset=utf-8")
 	r.Header.Set("Accept", "application/json; charset=utf-8")
 	for key, values := range req.Header {
@@ -139,9 +135,6 @@ func (c *Client) runWithJSON(ctx context.Context, req *Request, resp interface{}
 	}
 	c.logf("<< %s", buf.String())
 	if err := json.NewDecoder(&buf).Decode(&gr); err != nil {
-		if res.StatusCode != http.StatusOK {
-			return fmt.Errorf("graphql: server returned a non-200 status code: %v", res.StatusCode)
-		}
 		return errors.Wrap(err, "decoding response")
 	}
 	if len(gr.Errors) > 0 {
@@ -189,7 +182,6 @@ func (c *Client) runWithPostFields(ctx context.Context, req *Request, resp inter
 	if err != nil {
 		return err
 	}
-	r.Close = c.closeReq
 	r.Header.Set("Content-Type", writer.FormDataContentType())
 	r.Header.Set("Accept", "application/json; charset=utf-8")
 	for key, values := range req.Header {
@@ -210,9 +202,6 @@ func (c *Client) runWithPostFields(ctx context.Context, req *Request, resp inter
 	}
 	c.logf("<< %s", buf.String())
 	if err := json.NewDecoder(&buf).Decode(&gr); err != nil {
-		if res.StatusCode != http.StatusOK {
-			return fmt.Errorf("graphql: server returned a non-200 status code: %v", res.StatusCode)
-		}
 		return errors.Wrap(err, "decoding response")
 	}
 	if len(gr.Errors) > 0 {
@@ -240,20 +229,13 @@ func UseMultipartForm() ClientOption {
 	}
 }
 
-// ImmediatelyCloseReqBody will close the req body immediately after each request body is ready
-func ImmediatelyCloseReqBody() ClientOption {
-	return func(client *Client) {
-		client.closeReq = true
-	}
-}
-
 // ClientOption are functions that are passed into NewClient to
 // modify the behaviour of the Client.
 type ClientOption func(*Client)
 
 type GraphErr struct {
 	Message    string                 `json:"message"`
-	Extensions map[string]interface{} `json:"extensions,omitempty"`
+	Extensions map[string]interface{} `json:"extensions"`
 }
 
 func (e GraphErr) Error() string {
@@ -269,7 +251,7 @@ type graphResponse struct {
 type Request struct {
 	q     string
 	vars  map[string]interface{}
-	files []File
+	files []file
 
 	// Header represent any request headers that will be set
 	// when the request is made.
@@ -293,34 +275,19 @@ func (req *Request) Var(key string, value interface{}) {
 	req.vars[key] = value
 }
 
-// Vars gets the variables for this Request.
-func (req *Request) Vars() map[string]interface{} {
-	return req.vars
-}
-
-// Files gets the files in this request.
-func (req *Request) Files() []File {
-	return req.files
-}
-
-// Query gets the query string of this request.
-func (req *Request) Query() string {
-	return req.q
-}
-
 // File sets a file to upload.
 // Files are only supported with a Client that was created with
 // the UseMultipartForm option.
 func (req *Request) File(fieldname, filename string, r io.Reader) {
-	req.files = append(req.files, File{
+	req.files = append(req.files, file{
 		Field: fieldname,
 		Name:  filename,
 		R:     r,
 	})
 }
 
-// File represents a file to upload.
-type File struct {
+// file represents a file to upload.
+type file struct {
 	Field string
 	Name  string
 	R     io.Reader

@@ -73,7 +73,7 @@ require (
 	modernc.org/sqlite v1.11.2
 )
 
-require github.com/ActiveState/graphql v0.0.0-20230718220857-da7d147af6b4
+require github.com/ActiveState/graphql v0.0.0-20230719154233-6949037a6e48
 
 require (
 	github.com/ActiveState/termtest/conpty v0.5.0 // indirect
