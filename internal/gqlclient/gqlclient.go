@@ -2,11 +2,13 @@ package gqlclient
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 	"time"
 
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/profile"
 	"github.com/ActiveState/cli/internal/strutils"
@@ -107,6 +109,11 @@ func (c *Client) RunWithContext(ctx context.Context, request Request, response i
 	if err != nil {
 		return NewRequestError(err, request)
 	}
+	responseData, err := json.MarshalIndent(response, "", "  ")
+	if err != nil {
+		return errs.Wrap(err, "failed to marshal response")
+	}
+	logging.Debug("gqlclient: response: %s", responseData)
 
 	return nil
 }
