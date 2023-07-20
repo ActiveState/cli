@@ -530,6 +530,47 @@ func (suite *PackageIntegrationTestSuite) TestNormalize() {
 	suite.NotContains(cp.TrimmedSnapshot(), "is different")
 }
 
+func (suite *PackageIntegrationTestSuite) TestInstall_InvalidVersion() {
+	suite.OnlyRunForTags(tagsuite.Bundle)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.Spawn("checkout", "ActiveState-CLI/small-python", ".")
+	cp.Expect("Skipping runtime setup")
+	cp.Expect("Checked out project")
+	cp.ExpectExitCode(0)
+
+	cp = ts.SpawnWithOpts(
+		e2e.WithArgs("install", "pytest@999.9999.9999"),
+		e2e.AppendEnv(constants.DisableRuntime+"=false"),
+	)
+	cp.Expect("Error occurred while trying to create a commit")
+	cp.ExpectExitCode(1)
+	cp.Wait()
+}
+
+func (suite *PackageIntegrationTestSuite) TestUpdate_InvalidVersion() {
+	suite.OnlyRunForTags(tagsuite.Bundle)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.Spawn("checkout", "ActiveState-CLI/small-python", ".")
+	cp.Expect("Skipping runtime setup")
+	cp.Expect("Checked out project")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("install", "pytest") // install
+	cp.ExpectExitCode(0)
+
+	cp = ts.SpawnWithOpts(
+		e2e.WithArgs("install", "pytest@999.9999.9999"), // update
+		e2e.AppendEnv(constants.DisableRuntime+"=false"),
+	)
+	cp.Expect("Error occurred while trying to create a commit")
+	cp.ExpectExitCode(1)
+	cp.Wait()
+}
+
 func TestPackageIntegrationTestSuite(t *testing.T) {
 	suite.Run(t, new(PackageIntegrationTestSuite))
 }
