@@ -99,6 +99,8 @@ func NewWithCustomConnections(artifactMap artifact.Map,
 		defer close(ch)
 		defer close(errCh)
 
+		artifactsDone := make(map[artifact.ArtifactID]struct{})
+
 		// Set up log file
 		logMutex := &sync.Mutex{}
 		logfile, err := os.OpenFile(logFilePath, os.O_CREATE|os.O_WRONLY, 0644)
@@ -112,7 +114,7 @@ func NewWithCustomConnections(artifactMap artifact.Map,
 			defer logMutex.Unlock()
 			name := artifactID.String()
 			if a, ok := artifactMap[artifactID]; ok {
-				name = a.Name
+				name = a.Name + " (" + artifactID.String() + ")"
 			}
 			if name != "" {
 				name = name + ": "
@@ -124,6 +126,29 @@ func NewWithCustomConnections(artifactMap artifact.Map,
 				return errs.Wrap(err, "Could not sync build log file")
 			}
 			return nil
+		}
+
+		stillWaiting := func() []string {
+			result := []string{}
+			for id := range artifactMap {
+				if _, done := artifactsDone[id]; !done {
+					name := id.String()
+					if a, ok := artifactMap[id]; ok {
+						name = a.Name + " (" + id.String() + ")"
+					}
+					result = append(result, name)
+				}
+			}
+			return result
+		}
+
+		buildSuccess := func() {
+			if err := writeLogFile("", "Build Succeeded"); err != nil {
+				errCh <- errs.Wrap(err, "Could not write to build log file")
+			}
+			if err := handleEvent(eventHandler, events.BuildSuccess{}); err != nil {
+				errCh <- errs.Wrap(err, "Could not handle BuildSuccess event")
+			}
 		}
 
 		var artifactErr error
@@ -156,12 +181,7 @@ func NewWithCustomConnections(artifactMap artifact.Map,
 				errCh <- &BuildError{locale.WrapError(artifactErr, "err_logstream_build_failed", "Build failed with error message: {{.V0}}.", m.ErrorMessage)}
 				return
 			case BuildSucceeded:
-				if err := writeLogFile("", "Build Succeeded"); err != nil {
-					errCh <- errs.Wrap(err, "Could not write to build log file")
-				}
-				if err := handleEvent(eventHandler, events.BuildSuccess{}); err != nil {
-					errCh <- errs.Wrap(err, "Could not handle BuildSuccess event")
-				}
+				buildSuccess()
 				return
 			case ArtifactStarted:
 				m := msg.messager.(ArtifactMessage)
@@ -196,6 +216,8 @@ func NewWithCustomConnections(artifactMap artifact.Map,
 					break
 				}
 
+				artifactsDone[m.ArtifactID] = struct{}{}
+
 				if err := writeLogFile(m.ArtifactID, fmt.Sprintf(strings.TrimSpace(`
 Artifact Build Succeeded. 
 	Payload URI: %s
@@ -205,15 +227,27 @@ Artifact Build Succeeded.
 					errCh <- errs.Wrap(err, "Could not write to build log file")
 				}
 
-				ch <- artifact.ArtifactDownload{ArtifactID: m.ArtifactID, UnsignedURI: m.ArtifactURI, Checksum: m.ArtifactChecksum}
+				ch <- artifact.ArtifactDownload{ArtifactID: m.ArtifactID, DownloadURI: m.ArtifactURI, Checksum: m.ArtifactChecksum}
 
 				if err := handleEvent(eventHandler, events.ArtifactBuildSuccess{m.ArtifactID, m.LogURI}); err != nil {
 					errCh <- errs.Wrap(err, "Could not handle ArtifactBuildSuccess event")
 					return
 				}
+
+				// Because we still use the recipe ID for buildlogstreamer we will end up waiting for artifacts that
+				// aren't actually required for our runtime. To address this we effectively send the success event
+				// and stop monitoring the buildlogstreamer when we've received events for all our artifacts.
+				// This can be dropped once buildlostreamer speaks buildplans.
+				if len(stillWaiting()) == 0 {
+					buildSuccess()
+					return
+				}
 			case ArtifactFailed:
+
 				m := msg.messager.(ArtifactFailedMessage)
 				artifactName, _ := resolveArtifactName(m.ArtifactID, artifactMap)
+
+				artifactsDone[m.ArtifactID] = struct{}{}
 
 				if err := writeLogFile(m.ArtifactID, fmt.Sprintf(strings.TrimSpace(`
 Artifact Build Failed. 
@@ -249,7 +283,9 @@ Artifact Build Failed.
 					return
 				}
 			case Heartbeat:
-				if err := writeLogFile("", "Heartbeat (still building ..)"); err != nil {
+				waiting := stillWaiting()
+				msg := fmt.Sprintf("Heartbeat (still waiting for %d: %s)", len(waiting), strings.Join(waiting, ", "))
+				if err := writeLogFile("", msg); err != nil {
 					errCh <- errs.Wrap(err, "Could not write to log file")
 					return
 				}

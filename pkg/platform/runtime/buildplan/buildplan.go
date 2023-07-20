@@ -4,7 +4,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	model "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
+	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/go-openapi/strfmt"
 )
@@ -138,8 +138,6 @@ func buildMap(baseID strfmt.UUID, lookup map[strfmt.UUID]interface{}, result art
 		GeneratedBy:      currentArtifact.GeneratedBy,
 		Dependencies:     uniqueDeps,
 		URL:              currentArtifact.URL,
-		LogURL:           currentArtifact.LogURL,
-		Checksum:         currentArtifact.Checksum,
 	}
 
 	return nil
@@ -292,66 +290,4 @@ func NewNamedMapFromBuildPlan(build *model.Build) (artifact.NamedMap, error) {
 	}
 
 	return res, nil
-}
-
-// AddBuildArtifacts iterates through all artifacts in a given artifact map and
-// adds the artifact's dependencies to the map. This is useful for when we are
-// using the BuildLogStreamer as it operates on the older recipeID and will include
-// more artifacts than what we originally calculated in the runtime closure.
-func AddBuildArtifacts(artifactMap artifact.Map, build *model.Build) error {
-	lookup := make(map[strfmt.UUID]interface{})
-
-	for _, artifact := range build.Artifacts {
-		lookup[artifact.NodeID] = artifact
-	}
-	for _, step := range build.Steps {
-		lookup[step.StepID] = step
-	}
-	for _, source := range build.Sources {
-		lookup[source.NodeID] = source
-	}
-
-	for _, a := range build.Artifacts {
-		_, ok := artifactMap[strfmt.UUID(a.NodeID)]
-		// Since we are using the BuildLogStreamer, we need to add all of the
-		// artifacts that have been submitted to be built.
-		if !ok && a.Status != model.ArtifactNotSubmitted {
-			deps := make(map[strfmt.UUID]struct{})
-			for _, depID := range a.RuntimeDependencies {
-				deps[depID] = struct{}{}
-				recursiveDeps, err := buildRuntimeDependencies(depID, lookup, deps)
-				if err != nil {
-					return errs.Wrap(err, "Could not resolve runtime dependencies for artifact: %s", depID)
-				}
-				for id := range recursiveDeps {
-					deps[id] = struct{}{}
-				}
-			}
-
-			var uniqueDeps []strfmt.UUID
-			for id := range deps {
-				if _, ok := deps[id]; !ok {
-					continue
-				}
-				uniqueDeps = append(uniqueDeps, id)
-			}
-
-			info, err := getSourceInfo(a.GeneratedBy, lookup)
-			if err != nil {
-				return errs.Wrap(err, "Could not resolve source information")
-			}
-
-			artifactMap[strfmt.UUID(a.NodeID)] = artifact.Artifact{
-				ArtifactID:       strfmt.UUID(a.NodeID),
-				Name:             info.Name,
-				Namespace:        info.Namespace,
-				Version:          &info.Version,
-				RequestedByOrder: true,
-				GeneratedBy:      a.GeneratedBy,
-				Dependencies:     uniqueDeps,
-			}
-		}
-	}
-
-	return nil
 }
