@@ -79,7 +79,7 @@ func (suite *BundleIntegrationTestSuite) TestBundle_project_invalid() {
 	defer ts.Close()
 
 	cp := ts.Spawn("bundles", "--namespace", "junk/junk")
-	cp.ExpectLongString("The requested project junk/junk could not be found.")
+	cp.ExpectLongString("The requested project junk/junk could not be found")
 	cp.ExpectExitCode(1)
 }
 
