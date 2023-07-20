@@ -2,6 +2,7 @@ package model
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"os"
 	"strings"
@@ -22,13 +23,16 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/ActiveState/cli/pkg/platform/runtime/buildexpression"
 	"github.com/ActiveState/cli/pkg/sysinfo"
+	"github.com/ActiveState/graphql"
 	"github.com/go-openapi/strfmt"
-	"github.com/machinebox/graphql"
 )
 
 const (
 	pollInterval = 1 * time.Second
 	pollTimeout  = 30 * time.Second
+
+	codeExtensionKey          = "code"
+	clientDeprecationErrorKey = "CLIENT_DEPRECATION_ERROR"
 )
 
 // HostPlatform stores a reference to current platform
@@ -86,7 +90,7 @@ func (bp *BuildPlanner) FetchBuildResult(commitID strfmt.UUID, owner, project st
 	resp := bpModel.NewBuildPlanResponse(owner, project)
 	err := bp.client.Run(request.BuildPlan(commitID.String(), owner, project), resp)
 	if err != nil {
-		return nil, errs.Wrap(err, "failed to fetch build plan")
+		return nil, processBuildPlannerError(err, "failed to fetch build plan")
 	}
 
 	build, err := resp.Build()
@@ -176,7 +180,7 @@ func (bp *BuildPlanner) pollBuildPlan(commitID, owner, project string) (*bpModel
 		case <-ticker.C:
 			err := bp.client.Run(request.BuildPlan(commitID, owner, project), resp)
 			if err != nil {
-				return nil, errs.Wrap(err, "failed to fetch build plan")
+				return nil, processBuildPlannerError(err, "failed to fetch build plan")
 			}
 
 			if resp == nil {
@@ -280,7 +284,7 @@ func (bp *BuildPlanner) StageCommit(params StageCommitParams) (strfmt.UUID, erro
 	resp := &bpModel.StageCommitResult{}
 	err = bp.client.Run(request, resp)
 	if err != nil {
-		return "", locale.WrapError(err, "err_buildplanner_stage_commit", "Failed to stage commit, error: {{.V0}}", err.Error())
+		return "", processBuildPlannerError(err, "failed to stage commit")
 	}
 
 	if resp.Commit == nil {
@@ -337,15 +341,6 @@ func (bp *BuildPlanner) StageCommit(params StageCommitParams) (strfmt.UUID, erro
 		}
 	}
 
-	if resp.Commit.Build.Status == bpModel.Planning {
-		buildResult, err := bp.FetchBuildResult(strfmt.UUID(resp.Commit.CommitID), params.Owner, params.Project)
-		if err != nil {
-			return "", errs.Wrap(err, "failed to fetch build result")
-		}
-
-		return buildResult.CommitID, nil
-	}
-
 	return resp.Commit.CommitID, nil
 }
 
@@ -354,7 +349,7 @@ func (bp *BuildPlanner) GetBuildExpression(owner, project, commitID string) (*bu
 	resp := &bpModel.BuildExpression{}
 	err := bp.client.Run(request.BuildExpression(commitID), resp)
 	if err != nil {
-		return nil, errs.Wrap(err, "failed to fetch build expression")
+		return nil, processBuildPlannerError(err, "failed to fetch build expression")
 	}
 
 	if resp.Commit == nil {
@@ -371,4 +366,18 @@ func (bp *BuildPlanner) GetBuildExpression(owner, project, commitID string) (*bu
 	}
 
 	return expression, nil
+}
+
+// processBuildPlannerError will check for special error types that should be
+// handled differently. If no special error type is found, the fallback message
+// will be used.
+func processBuildPlannerError(bpErr error, fallbackMessage string) error {
+	graphqlErr := &graphql.GraphErr{}
+	if errors.As(bpErr, graphqlErr) {
+		code, ok := graphqlErr.Extensions[codeExtensionKey].(string)
+		if ok && code == clientDeprecationErrorKey {
+			return locale.NewInputError("err_buildplanner_deprecated", "Encountered deprecation error: {{.V0}}", graphqlErr.Message)
+		}
+	}
+	return errs.Wrap(bpErr, fallbackMessage)
 }
