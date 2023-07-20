@@ -548,7 +548,11 @@ func (e *BuildExpression) UpdateRequirement(operation model.Operation, requireme
 	case model.OperationRemoved:
 		err = e.removeRequirement(requirement)
 	case model.OperationUpdated:
-		err = e.updateRequirement(requirement)
+		err = e.removeRequirement(requirement)
+		if err != nil {
+			break
+		}
+		err = e.addRequirement(requirement)
 	default:
 		return errs.New("Unsupported operation")
 	}
@@ -611,54 +615,6 @@ func (e *BuildExpression) removeRequirement(requirement model.Requirement) error
 
 	if !found {
 		return errs.New("Could not find requirement")
-	}
-
-	for _, arg := range e.getSolveNode().Arguments {
-		if arg.Assignment == nil {
-			continue
-		}
-
-		if arg.Assignment.Name == RequirementsKey {
-			arg.Assignment.Value.List = &requirementsNode
-		}
-	}
-
-	return nil
-}
-
-func (e *BuildExpression) updateRequirement(requirement model.Requirement) error {
-	if requirement.VersionRequirement == nil {
-		return nil
-	}
-
-	requirementsNode := e.getRequirementsNode()
-
-	for _, r := range requirementsNode {
-		if r.Object == nil {
-			continue
-		}
-
-		for _, o := range *r.Object {
-			if o.Name != RequirementNameKey || *o.Value.Str != requirement.Name {
-				continue
-			}
-
-			var versionRequirements []*Value
-			for _, v := range *r.Object {
-				if v.Name != RequirementVersionRequirementsKey {
-					continue
-				}
-
-				for _, versionReq := range requirement.VersionRequirement {
-					versionRequirements = append(versionRequirements, &Value{Object: &[]*Var{
-						{Name: RequirementComparatorKey, Value: &Value{Str: ptr.To(versionReq[RequirementComparatorKey])}},
-						{Name: RequirementVersionKey, Value: &Value{Str: ptr.To(versionReq[RequirementVersionKey])}},
-					}})
-				}
-				v.Value.List = &versionRequirements
-			}
-
-		}
 	}
 
 	for _, arg := range e.getSolveNode().Arguments {
