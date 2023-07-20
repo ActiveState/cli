@@ -207,7 +207,9 @@ func (p *ProgressDigester) Handle(ev events.Eventer) error {
 			return errs.New("ArtifactBuildStarted called before buildbar was initialized")
 		}
 		if _, ok := p.buildsExpected[v.ArtifactID]; !ok {
-			return errs.New("ArtifactBuildStarted called for an artifact that was not expected: %s", v.ArtifactID.String())
+			// This should ideally be a returned error, but because buildlogstreamer still speaks recipes there is a missmatch
+			// and we can receive events for artifacts we're not interested in as a result.
+			logging.Debug("ArtifactBuildStarted called for an artifact that was not expected: %s", v.ArtifactID.String())
 		}
 
 	case events.ArtifactBuildSuccess:
@@ -215,7 +217,10 @@ func (p *ProgressDigester) Handle(ev events.Eventer) error {
 			return errs.New("ArtifactBuildSuccess called before buildbar was initialized")
 		}
 		if _, ok := p.buildsExpected[v.ArtifactID]; !ok {
-			return errs.New("ArtifactBuildSuccess called for an artifact that was not expected: %s", v.ArtifactID.String())
+			// This should ideally be a returned error, but because buildlogstreamer still speaks recipes there is a missmatch
+			// and we can receive events for artifacts we're not interested in as a result.
+			logging.Debug("ArtifactBuildSuccess called for an artifact that was not expected: %s", v.ArtifactID.String())
+			return nil
 		}
 		if p.buildBar.Current() == p.buildBar.total {
 			return errs.New("Build bar is already complete, this should not happen")
