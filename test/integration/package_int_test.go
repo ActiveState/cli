@@ -531,7 +531,7 @@ func (suite *PackageIntegrationTestSuite) TestNormalize() {
 }
 
 func (suite *PackageIntegrationTestSuite) TestInstall_InvalidVersion() {
-	suite.OnlyRunForTags(tagsuite.Bundle)
+	suite.OnlyRunForTags(tagsuite.Package)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -550,7 +550,7 @@ func (suite *PackageIntegrationTestSuite) TestInstall_InvalidVersion() {
 }
 
 func (suite *PackageIntegrationTestSuite) TestUpdate_InvalidVersion() {
-	suite.OnlyRunForTags(tagsuite.Bundle)
+	suite.OnlyRunForTags(tagsuite.Package)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -563,12 +563,51 @@ func (suite *PackageIntegrationTestSuite) TestUpdate_InvalidVersion() {
 	cp.ExpectExitCode(0)
 
 	cp = ts.SpawnWithOpts(
-		e2e.WithArgs("install", "pytest@999.9999.9999"), // update
-		e2e.AppendEnv(constants.DisableRuntime+"=false"),
+		e2e.WithArgs("install", "pytest@999.9999.9999"),  // update
+		e2e.AppendEnv(constants.DisableRuntime+"=false"), // We DO want to test the runtime part, just not for every step
 	)
 	cp.Expect("Error occurred while trying to create a commit")
 	cp.ExpectExitCode(1)
-	cp.Wait()
+}
+
+func (suite *PackageIntegrationTestSuite) TestUpdate() {
+	suite.OnlyRunForTags(tagsuite.Package)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.Spawn("checkout", "ActiveState-CLI/small-python", ".")
+	cp.Expect("Skipping runtime setup")
+	cp.Expect("Checked out project")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("install", "pytest@7.3.2") // install
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("history")
+	cp.Expect("pytest")
+	cp.Expect("7.3.2")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("packages")
+	cp.Expect("pytest")
+	cp.Expect("7.3.2")
+	cp.ExpectExitCode(0)
+
+	cp = ts.SpawnWithOpts(
+		e2e.WithArgs("install", "pytest@7.4.0"),          // update
+		e2e.AppendEnv(constants.DisableRuntime+"=false"), // We DO want to test the runtime part, just not for every step
+	)
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("history")
+	cp.Expect("pytest")
+	cp.Expect("7.4.0")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("packages")
+	cp.Expect("pytest")
+	cp.Expect("7.4.0")
+	cp.ExpectExitCode(0)
 }
 
 func TestPackageIntegrationTestSuite(t *testing.T) {
