@@ -531,7 +531,7 @@ func (suite *PackageIntegrationTestSuite) TestNormalize() {
 }
 
 func (suite *PackageIntegrationTestSuite) TestInstall_InvalidVersion() {
-	suite.OnlyRunForTags(tagsuite.Bundle)
+	suite.OnlyRunForTags(tagsuite.Package)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -550,7 +550,7 @@ func (suite *PackageIntegrationTestSuite) TestInstall_InvalidVersion() {
 }
 
 func (suite *PackageIntegrationTestSuite) TestUpdate_InvalidVersion() {
-	suite.OnlyRunForTags(tagsuite.Bundle)
+	suite.OnlyRunForTags(tagsuite.Package)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -571,7 +571,7 @@ func (suite *PackageIntegrationTestSuite) TestUpdate_InvalidVersion() {
 }
 
 func (suite *PackageIntegrationTestSuite) TestUpdate() {
-	suite.OnlyRunForTags(tagsuite.Bundle)
+	suite.OnlyRunForTags(tagsuite.Package)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
