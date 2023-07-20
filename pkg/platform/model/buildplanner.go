@@ -290,6 +290,10 @@ func (bp *BuildPlanner) StageCommit(params StageCommitParams) (strfmt.UUID, erro
 		return "", errs.New("Staged commit is nil")
 	}
 
+	if resp.Commit.CommitID == "" {
+		return "", errs.New("Staged commit does not contain commitID")
+	}
+
 	if resp.Commit.Build == nil {
 		if resp.Error != nil {
 			return "", errs.New(resp.Error.Message)
