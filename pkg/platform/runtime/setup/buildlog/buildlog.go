@@ -240,6 +240,7 @@ Artifact Build Succeeded.
 				// This can be dropped once buildlostreamer speaks buildplans.
 				if len(stillWaiting()) == 0 {
 					buildSuccess()
+					return
 				}
 			case ArtifactFailed:
 
