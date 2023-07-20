@@ -26,6 +26,7 @@ query ($commitID: String!, $organization: String!, $project: String!) {
         ... on Commit {
           __typename
           expr
+          commitId
           build {
             __typename
             ... on BuildCompleted {
