@@ -592,42 +592,42 @@ func (s *Setup) installArtifactsFromBuild(buildResult *model.BuildResult, artifa
 }
 
 // setupArtifactSubmitFunction returns a function that sets up an artifact and can be submitted to a workerpool
-func (s *Setup) setupArtifactSubmitFunction(ar *artifact.Artifact, expectedArtifactInstalls map[artifact.ArtifactID]struct{}, buildResult *model.BuildResult, setup Setuper, installFunc artifactInstaller, errors chan<- error) func() {
+func (s *Setup) setupArtifactSubmitFunction(a artifact.ArtifactDownload, ar *artifact.Artifact, expectedArtifactInstalls map[artifact.ArtifactID]struct{}, buildResult *model.BuildResult, setup Setuper, installFunc artifactInstaller, errors chan<- error) func() {
 	return func() {
 		// If artifact has no valid download, just count it as completed and return
 		if strings.Contains(ar.URL, "as-builds/noop") ||
 			// Internal namespace artifacts are not to be downloaded
 			(ar != nil && ar.Namespace == inventory_models.NamespaceCoreTypeInternal) {
-			logging.Debug("Skipping setup of noop artifact: %s", ar.ArtifactID)
-			if _, expected := expectedArtifactInstalls[ar.ArtifactID]; expected {
-				if err := s.handleEvent(events.ArtifactDownloadSkipped{ar.ArtifactID}); err != nil {
+			logging.Debug("Skipping setup of noop artifact: %s", a.ArtifactID)
+			if _, expected := expectedArtifactInstalls[a.ArtifactID]; expected {
+				if err := s.handleEvent(events.ArtifactDownloadSkipped{a.ArtifactID}); err != nil {
 					errors <- errs.Wrap(err, "Could not handle ArtifactDownloadSkipped event: %v", errs.JoinMessage(err))
 				}
-				if err := s.handleEvent(events.ArtifactInstallSkipped{ar.ArtifactID}); err != nil {
+				if err := s.handleEvent(events.ArtifactInstallSkipped{a.ArtifactID}); err != nil {
 					errors <- errs.Wrap(err, "Could not handle ArtifactInstallSkipped event: %v", errs.JoinMessage(err))
 				}
 			}
 			return
 		}
 
-		as, err := s.selectArtifactSetupImplementation(buildResult.BuildEngine, ar.ArtifactID)
+		as, err := s.selectArtifactSetupImplementation(buildResult.BuildEngine, a.ArtifactID)
 		if err != nil {
 			errors <- errs.Wrap(err, "Failed to select artifact setup implementation")
 			return
 		}
 
 		unarchiver := as.Unarchiver()
-		archivePath, err := s.obtainArtifact(ar, unarchiver.Ext())
+		archivePath, err := s.obtainArtifact(a, unarchiver.Ext())
 		if err != nil {
-			name := setup.ResolveArtifactName(ar.ArtifactID)
-			errors <- locale.WrapError(err, "artifact_download_failed", "", name, ar.ArtifactID.String())
+			name := setup.ResolveArtifactName(a.ArtifactID)
+			errors <- locale.WrapError(err, "artifact_download_failed", "", name, a.ArtifactID.String())
 			return
 		}
 
-		err = installFunc(ar.ArtifactID, archivePath, as)
+		err = installFunc(a.ArtifactID, archivePath, as)
 		if err != nil {
-			name := setup.ResolveArtifactName(ar.ArtifactID)
-			errors <- locale.WrapError(err, "artifact_setup_failed", "", name, ar.ArtifactID.String())
+			name := setup.ResolveArtifactName(a.ArtifactID)
+			errors <- locale.WrapError(err, "artifact_setup_failed", "", name, a.ArtifactID.String())
 			return
 		}
 	}
@@ -647,7 +647,7 @@ func (s *Setup) installFromBuildResult(buildResult *model.BuildResult, artifacts
 			if arv, ok := artifacts[a.ArtifactID]; ok {
 				ar = &arv
 			}
-			wp.Submit(s.setupArtifactSubmitFunction(ar, map[artifact.ArtifactID]struct{}{}, buildResult, setup, installFunc, errs))
+			wp.Submit(s.setupArtifactSubmitFunction(a, ar, map[artifact.ArtifactID]struct{}{}, buildResult, setup, installFunc, errs))
 		}
 
 		wp.StopWait()
@@ -697,7 +697,7 @@ func (s *Setup) installFromBuildLog(buildResult *model.BuildResult, artifacts ar
 					logging.Debug("Unmonitored artifact buildlog event discarded: %s", a.ArtifactID)
 					continue
 				}
-				wp.Submit(s.setupArtifactSubmitFunction(ar, artifactsToInstall, buildResult, setup, installFunc, errs))
+				wp.Submit(s.setupArtifactSubmitFunction(a, ar, artifactsToInstall, buildResult, setup, installFunc, errs))
 			}
 		}()
 
@@ -739,7 +739,7 @@ func (s *Setup) moveToInstallPath(a artifact.ArtifactID, unpackedDir string, env
 }
 
 // downloadArtifact downloads the given artifact
-func (s *Setup) downloadArtifact(a *artifact.Artifact, targetFile string) (rerr error) {
+func (s *Setup) downloadArtifact(a artifact.ArtifactDownload, targetFile string) (rerr error) {
 	defer func() {
 		if rerr != nil {
 			rerr = &ArtifactDownloadError{errs.Wrap(rerr, "Unable to download artifact")}
@@ -754,9 +754,16 @@ func (s *Setup) downloadArtifact(a *artifact.Artifact, targetFile string) (rerr 
 		}
 	}()
 
-	artifactURL, err := url.Parse(a.URL)
+	artifactURL, err := url.Parse(a.UnsignedURI)
 	if err != nil {
-		return errs.Wrap(err, "Could not parse artifact URL %s.", a.URL)
+		return errs.Wrap(err, "Could not parse artifact URL %s.", a.UnsignedURI)
+	}
+
+	if artifactURL.Scheme == "s3" {
+		artifactURL, err = model.SignS3URL(artifactURL)
+		if err != nil {
+			return errs.Wrap(err, "Could not sign artifact URL %s.", a.UnsignedURI)
+		}
 	}
 
 	b, err := httputil.GetWithProgress(artifactURL.String(), &progress.Report{
@@ -784,12 +791,12 @@ func (s *Setup) downloadArtifact(a *artifact.Artifact, targetFile string) (rerr 
 
 // verifyArtifact verifies the checksum of the downloaded artifact matches the checksum given by the
 // platform, and returns an error if the verification fails.
-func (s *Setup) verifyArtifact(archivePath string, a *artifact.Artifact) error {
+func (s *Setup) verifyArtifact(archivePath string, a artifact.ArtifactDownload) error {
 	return validate.Checksum(archivePath, a.Checksum)
 }
 
 // obtainArtifact obtains an artifact and returns the local path to that artifact's archive.
-func (s *Setup) obtainArtifact(a *artifact.Artifact, extension string) (string, error) {
+func (s *Setup) obtainArtifact(a artifact.ArtifactDownload, extension string) (string, error) {
 	if cachedPath, found := s.artifactCache.Get(a.ArtifactID); found {
 		if err := s.verifyArtifact(cachedPath, a); err == nil {
 			if err := s.handleEvent(events.ArtifactDownloadSkipped{a.ArtifactID}); err != nil {
@@ -807,7 +814,7 @@ func (s *Setup) obtainArtifact(a *artifact.Artifact, extension string) (string, 
 
 	archivePath := filepath.Join(targetDir, a.ArtifactID.String()+extension)
 	if err := s.downloadArtifact(a, archivePath); err != nil {
-		return "", errs.Wrap(err, "Could not download artifact %s", a.URL)
+		return "", errs.Wrap(err, "Could not download artifact %s", a.UnsignedURI)
 	}
 
 	err := s.verifyArtifact(archivePath, a)
