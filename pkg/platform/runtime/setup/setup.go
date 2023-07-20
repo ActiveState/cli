@@ -382,46 +382,39 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 	}
 
 	// Compute and handle the change summary
-	var artifacts artifact.Map
+	// runtimeAndBuildtimeArtifacts records all artifacts that will need to be build in order to obtain the runtime.
+	// Disabled due to PB-4432.
+	// Please use this var when we come back to this in the future as we need to make a clear distinction between this
+	// and runtime-only artifacts.
+	// var runtimeAndBuildtimeArtifacts artifact.Map
+	var runtimeArtifacts artifact.Map // Artifacts required for the runtime to function
 	if buildResult.Build != nil {
-		artifacts, err = buildplan.NewMapFromBuildPlan(buildResult.Build)
+		runtimeArtifacts, err = buildplan.NewMapFromBuildPlan(buildResult.Build)
 		if err != nil {
 			return nil, nil, errs.Wrap(err, "Failed to create artifact map from build plan")
 		}
-	}
 
-	if !buildResult.BuildReady {
-		// The runtime dependencies do not include all build dependencies. Since the build is in progress
-		// we will be working with the build log, we need to add the missing dependencies to the list of artifacts.
-		err = buildplan.AddBuildArtifacts(artifacts, buildResult.Build)
-		if err != nil {
-			return nil, nil, errs.Wrap(err, "Could not add build artifacts to build plan")
+		// For build monitoring we should also report build specific artifacts, even though we won't be installing them
+		// they still give a useful indication of progress.
+		if !buildResult.BuildReady {
+			// The runtime dependencies do not include all build dependencies. Since the build is in progress
+			// we will be working with the build log, we need to add the missing dependencies to the list of artifacts.
+			runtimeAndBuildtimeArtifacts, err = buildplan.AddBuildArtifacts(runtimeArtifacts, buildResult.Build)
+			if err != nil {
+				return nil, nil, errs.Wrap(err, "Could not add build artifacts to build plan")
+			}
+		} else {
+			// Nothing needs to be build, so these things are equal
+			runtimeAndBuildtimeArtifacts = runtimeArtifacts
 		}
 	}
 
-	setup, err := s.selectSetupImplementation(buildResult.BuildEngine, artifacts)
+	setup, err := s.selectSetupImplementation(buildResult.BuildEngine, runtimeAndBuildtimeArtifacts)
 	if err != nil {
 		return nil, nil, errs.Wrap(err, "Failed to select setup implementation")
 	}
 
-	// If some artifacts were already build then we can detect whether they need to be installed ahead of time
-	// Note there may still be more noop artifacts, but we won't know until they have finished building.
-	noopArtifacts := map[strfmt.UUID]struct{}{}
-	for _, prebuiltArtf := range buildResult.Build.Artifacts {
-		if prebuiltArtf.NodeID != "" && prebuiltArtf.Status != "" &&
-			prebuiltArtf.Status == bpModel.ArtifactSucceeded &&
-			strings.HasPrefix(prebuiltArtf.URL, "s3://as-builds/noop/") {
-			noopArtifacts[prebuiltArtf.NodeID] = struct{}{}
-		}
-	}
-
-	for id := range artifacts {
-		if _, noop := noopArtifacts[id]; noop {
-			delete(artifacts, id)
-		}
-	}
-
-	downloadablePrebuiltResults, err := setup.DownloadsFromBuild(*buildResult.Build, artifacts)
+	downloadablePrebuiltResults, err := setup.DownloadsFromBuild(*buildResult.Build, runtimeArtifacts)
 	if err != nil {
 		if errors.Is(err, artifact.CamelRuntimeBuilding) {
 			localeID := "build_status_in_progress"
@@ -437,7 +430,7 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 
 	// buildResult doesn't have namespace info and will happily report internal only artifacts
 	downloadablePrebuiltResults = funk.Filter(downloadablePrebuiltResults, func(ad artifact.ArtifactDownload) bool {
-		ar, ok := artifacts[ad.ArtifactID]
+		ar, ok := runtimeArtifacts[ad.ArtifactID]
 		if !ok {
 			return true
 		}
@@ -484,7 +477,7 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 
 	// Report resolved artifacts
 	artifactIDs := []artifact.ArtifactID{}
-	for _, a := range artifacts {
+	for _, a := range runtimeAndBuildtimeArtifacts {
 		artifactIDs = append(artifactIDs, a.ArtifactID)
 	}
 
@@ -518,7 +511,7 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 	} else {
 		// If the build is not yet complete then we have to speculate as to the artifacts that will be installed.
 		// The actual number of installable artifacts may be lower than what we have here, we can only do a best effort.
-		for _, a := range artifacts {
+		for _, a := range runtimeArtifacts {
 			if _, alreadyInstalled := alreadyInstalled[a.ArtifactID]; !alreadyInstalled {
 				artifactsToInstall = append(artifactsToInstall, a.ArtifactID)
 			}
@@ -539,7 +532,7 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 		ArtifactNames: artifactNames,
 		LogFilePath:   logFilePath,
 		ArtifactsToBuild: func() []artifact.ArtifactID {
-			return artifact.ArtifactIDsFromBuildPlanMap(artifacts) // This does not account for cached builds
+			return artifact.ArtifactIDsFromBuildPlanMap(runtimeAndBuildtimeArtifacts) // This does not account for cached builds
 		}(),
 		// Yes these have the same value; this is intentional.
 		// Separating these out just allows us to be more explicit and intentional in our event handling logic.
@@ -554,12 +547,12 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 	}
 
 	// only send the download analytics event, if we have to install artifacts that are not yet installed
-	if len(artifacts) != len(alreadyInstalled) {
+	if len(artifactsToInstall) > 0 {
 		// if we get here, we dowload artifacts
 		s.analytics.Event(anaConsts.CatRuntime, anaConsts.ActRuntimeDownload, dimensions)
 	}
 
-	err = s.installArtifactsFromBuild(buildResult, artifacts, artifact.ArtifactIDsToMap(artifactsToInstall), downloadablePrebuiltResults, alreadyInstalled, setup, installFunc, logFilePath)
+	err = s.installArtifactsFromBuild(buildResult, runtimeAndBuildtimeArtifacts, artifact.ArtifactIDsToMap(artifactsToInstall), downloadablePrebuiltResults, alreadyInstalled, setup, installFunc, logFilePath)
 	if err != nil {
 		return nil, nil, err
 	}

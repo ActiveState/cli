@@ -1,10 +1,12 @@
 package buildplan
 
 import (
+	"strings"
+
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	model "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
+	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/go-openapi/strfmt"
 )
@@ -42,6 +44,17 @@ func NewMapFromBuildPlan(build *model.Build) (artifact.Map, error) {
 		err := buildMap(id, lookup, res)
 		if err != nil {
 			return nil, errs.Wrap(err, "Could not build map for terminal %s", id)
+		}
+	}
+
+	// Eliminate noop artifacts
+	for _, prebuiltArtf := range build.Artifacts {
+		if prebuiltArtf.NodeID != "" && prebuiltArtf.Status != "" &&
+			prebuiltArtf.Status == model.ArtifactSucceeded &&
+			strings.HasPrefix(prebuiltArtf.URL, "s3://as-builds/noop/") {
+			if _, exists := res[prebuiltArtf.NodeID]; exists {
+				delete(res, prebuiltArtf.NodeID)
+			}
 		}
 	}
 
@@ -298,7 +311,12 @@ func NewNamedMapFromBuildPlan(build *model.Build) (artifact.NamedMap, error) {
 // adds the artifact's dependencies to the map. This is useful for when we are
 // using the BuildLogStreamer as it operates on the older recipeID and will include
 // more artifacts than what we originally calculated in the runtime closure.
-func AddBuildArtifacts(artifactMap artifact.Map, build *model.Build) error {
+func AddBuildArtifacts(artifactMap artifact.Map, build *model.Build) (artifact.Map, error) {
+	result := artifact.Map{}
+	for k, v := range artifactMap {
+		result[k] = v
+	}
+
 	lookup := make(map[strfmt.UUID]interface{})
 
 	for _, artifact := range build.Artifacts {
@@ -312,7 +330,7 @@ func AddBuildArtifacts(artifactMap artifact.Map, build *model.Build) error {
 	}
 
 	for _, a := range build.Artifacts {
-		_, ok := artifactMap[strfmt.UUID(a.NodeID)]
+		_, ok := result[strfmt.UUID(a.NodeID)]
 		// Since we are using the BuildLogStreamer, we need to add all of the
 		// artifacts that have been submitted to be built.
 		if !ok && a.Status != model.ArtifactNotSubmitted {
@@ -321,7 +339,7 @@ func AddBuildArtifacts(artifactMap artifact.Map, build *model.Build) error {
 				deps[depID] = struct{}{}
 				recursiveDeps, err := buildRuntimeDependencies(depID, lookup, deps)
 				if err != nil {
-					return errs.Wrap(err, "Could not resolve runtime dependencies for artifact: %s", depID)
+					return result, errs.Wrap(err, "Could not resolve runtime dependencies for artifact: %s", depID)
 				}
 				for id := range recursiveDeps {
 					deps[id] = struct{}{}
@@ -338,20 +356,20 @@ func AddBuildArtifacts(artifactMap artifact.Map, build *model.Build) error {
 
 			info, err := getSourceInfo(a.GeneratedBy, lookup)
 			if err != nil {
-				return errs.Wrap(err, "Could not resolve source information")
+				return result, errs.Wrap(err, "Could not resolve source information")
 			}
 
-			artifactMap[strfmt.UUID(a.NodeID)] = artifact.Artifact{
+			result[strfmt.UUID(a.NodeID)] = artifact.Artifact{
 				ArtifactID:       strfmt.UUID(a.NodeID),
 				Name:             info.Name,
 				Namespace:        info.Namespace,
 				Version:          &info.Version,
-				RequestedByOrder: true,
+				RequestedByOrder: false,
 				GeneratedBy:      a.GeneratedBy,
 				Dependencies:     uniqueDeps,
 			}
 		}
 	}
 
-	return nil
+	return result, nil
 }

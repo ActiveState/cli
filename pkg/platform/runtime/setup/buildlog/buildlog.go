@@ -99,6 +99,8 @@ func NewWithCustomConnections(artifactMap artifact.Map,
 		defer close(ch)
 		defer close(errCh)
 
+		artifactsDone := make(map[artifact.ArtifactID]struct{})
+
 		// Set up log file
 		logMutex := &sync.Mutex{}
 		logfile, err := os.OpenFile(logFilePath, os.O_CREATE|os.O_WRONLY, 0644)
@@ -112,7 +114,7 @@ func NewWithCustomConnections(artifactMap artifact.Map,
 			defer logMutex.Unlock()
 			name := artifactID.String()
 			if a, ok := artifactMap[artifactID]; ok {
-				name = a.Name
+				name = a.Name + " (" + artifactID.String() + ")"
 			}
 			if name != "" {
 				name = name + ": "
@@ -196,6 +198,8 @@ func NewWithCustomConnections(artifactMap artifact.Map,
 					break
 				}
 
+				artifactsDone[m.ArtifactID] = struct{}{}
+
 				if err := writeLogFile(m.ArtifactID, fmt.Sprintf(strings.TrimSpace(`
 Artifact Build Succeeded. 
 	Payload URI: %s
@@ -212,8 +216,11 @@ Artifact Build Succeeded.
 					return
 				}
 			case ArtifactFailed:
+
 				m := msg.messager.(ArtifactFailedMessage)
 				artifactName, _ := resolveArtifactName(m.ArtifactID, artifactMap)
+
+				artifactsDone[m.ArtifactID] = struct{}{}
 
 				if err := writeLogFile(m.ArtifactID, fmt.Sprintf(strings.TrimSpace(`
 Artifact Build Failed. 
@@ -249,7 +256,18 @@ Artifact Build Failed.
 					return
 				}
 			case Heartbeat:
-				if err := writeLogFile("", "Heartbeat (still building ..)"); err != nil {
+				stillWaiting := []string{}
+				for id := range artifactMap {
+					if _, done := artifactsDone[id]; !done {
+						name := id.String()
+						if a, ok := artifactMap[id]; ok {
+							name = a.Name + " (" + id.String() + ")"
+						}
+						stillWaiting = append(stillWaiting, name)
+					}
+				}
+				msg := fmt.Sprintf("Heartbeat (still waiting for %d: %s)", len(stillWaiting), strings.Join(stillWaiting, ", "))
+				if err := writeLogFile("", msg); err != nil {
 					errCh <- errs.Wrap(err, "Could not write to log file")
 					return
 				}
