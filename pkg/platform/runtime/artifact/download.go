@@ -15,7 +15,7 @@ import (
 
 type ArtifactDownload struct {
 	ArtifactID     ArtifactID
-	UnsignedURI    string
+	DownloadURI    string
 	UnsignedLogURI string
 	Checksum       string
 }
@@ -35,7 +35,7 @@ func NewDownloadsFromBuild(buildStatus *headchef_models.V1BuildStatusResponse) (
 				continue
 			}
 
-			downloads = append(downloads, ArtifactDownload{ArtifactID: *a.ArtifactID, UnsignedURI: a.URI.String(), UnsignedLogURI: a.LogURI.String(), Checksum: a.Checksum})
+			downloads = append(downloads, ArtifactDownload{ArtifactID: *a.ArtifactID, DownloadURI: a.URI.String(), UnsignedLogURI: a.LogURI.String(), Checksum: a.Checksum})
 		}
 	}
 
@@ -50,7 +50,7 @@ func NewDownloadsFromBuildPlan(build bpModel.Build, artifacts map[strfmt.UUID]Ar
 				if strings.EqualFold(a.MimeType, bpModel.XArtifactMimeType) ||
 					strings.EqualFold(a.MimeType, bpModel.XActiveStateArtifactMimeType) ||
 					strings.EqualFold(a.MimeType, bpModel.XCamelInstallerMimeType) {
-					downloads = append(downloads, ArtifactDownload{ArtifactID: strfmt.UUID(a.NodeID), UnsignedURI: a.URL, UnsignedLogURI: a.LogURL, Checksum: a.Checksum})
+					downloads = append(downloads, ArtifactDownload{ArtifactID: strfmt.UUID(a.NodeID), DownloadURI: a.URL, UnsignedLogURI: a.LogURL, Checksum: a.Checksum})
 				}
 			}
 		}
@@ -66,7 +66,7 @@ func NewDownloadsFromCamelBuild(buildStatus *headchef_models.V1BuildStatusRespon
 				continue
 			}
 			if strings.HasSuffix(a.URI.String(), ".tar.gz") || strings.HasSuffix(a.URI.String(), ".zip") {
-				return []ArtifactDownload{{ArtifactID: *a.ArtifactID, UnsignedURI: a.URI.String(), UnsignedLogURI: a.LogURI.String(), Checksum: a.Checksum}}, nil
+				return []ArtifactDownload{{ArtifactID: *a.ArtifactID, DownloadURI: a.URI.String(), UnsignedLogURI: a.LogURI.String(), Checksum: a.Checksum}}, nil
 			}
 		}
 	}
@@ -93,7 +93,7 @@ func NewDownloadsFromCamelBuildPlan(build bpModel.Build, artifacts map[strfmt.UU
 					continue
 				}
 				logging.Debug("Found download for artifact %s: %s", a.NodeID, a.URL)
-				downloads = append(downloads, ArtifactDownload{ArtifactID: strfmt.UUID(a.NodeID), UnsignedURI: a.URL, UnsignedLogURI: a.LogURL, Checksum: a.Checksum})
+				downloads = append(downloads, ArtifactDownload{ArtifactID: strfmt.UUID(a.NodeID), DownloadURI: a.URL, UnsignedLogURI: a.LogURL, Checksum: a.Checksum})
 			}
 		}
 	}
