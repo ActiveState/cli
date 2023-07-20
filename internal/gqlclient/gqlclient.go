@@ -13,7 +13,7 @@ import (
 	"github.com/ActiveState/cli/internal/profile"
 	"github.com/ActiveState/cli/internal/strutils"
 	"github.com/ActiveState/cli/pkg/platform/api"
-	"github.com/machinebox/graphql"
+	"github.com/ActiveState/graphql"
 
 	"github.com/ActiveState/cli/internal/singleton/uniqid"
 )
