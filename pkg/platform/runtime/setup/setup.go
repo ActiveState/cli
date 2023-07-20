@@ -382,8 +382,8 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 	}
 
 	// Compute and handle the change summary
-	// runtimeAndBuildtimeArtifacts records all artifacts that will need to be build in order to obtain the runtime.
-	// Disabled due to PB-4432.
+	// runtimeAndBuildtimeArtifacts records all artifacts that will need to be built in order to obtain the runtime.
+	// Disabled due to DX-2033.
 	// Please use this var when we come back to this in the future as we need to make a clear distinction between this
 	// and runtime-only artifacts.
 	// var runtimeAndBuildtimeArtifacts artifact.Map
