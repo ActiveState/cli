@@ -1,8 +1,6 @@
 package buildplan
 
 import (
-	"strings"
-
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -44,17 +42,6 @@ func NewMapFromBuildPlan(build *model.Build) (artifact.Map, error) {
 		err := buildMap(id, lookup, res)
 		if err != nil {
 			return nil, errs.Wrap(err, "Could not build map for terminal %s", id)
-		}
-	}
-
-	// Eliminate noop artifacts
-	for _, prebuiltArtf := range build.Artifacts {
-		if prebuiltArtf.NodeID != "" && prebuiltArtf.Status != "" &&
-			prebuiltArtf.Status == model.ArtifactSucceeded &&
-			strings.HasPrefix(prebuiltArtf.URL, "s3://as-builds/noop/") {
-			if _, exists := res[prebuiltArtf.NodeID]; exists {
-				delete(res, prebuiltArtf.NodeID)
-			}
 		}
 	}
 
