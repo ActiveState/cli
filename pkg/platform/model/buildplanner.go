@@ -313,15 +313,6 @@ func (bp *BuildPlanner) StageCommit(params StageCommitParams) (strfmt.UUID, erro
 		}
 	}
 
-	if resp.Commit.Build.Status == bpModel.Planning {
-		buildResult, err := bp.FetchBuildResult(strfmt.UUID(resp.Commit.CommitID), params.Owner, params.Project)
-		if err != nil {
-			return "", errs.Wrap(err, "failed to fetch build result")
-		}
-
-		return buildResult.CommitID, nil
-	}
-
 	return resp.Commit.CommitID, nil
 }
 
