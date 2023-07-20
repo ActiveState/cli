@@ -257,7 +257,10 @@ func (bp *BuildPlanner) StageCommit(params StageCommitParams) (strfmt.UUID, erro
 		}
 
 		if params.RequirementVersion != "" {
-			requirement.VersionRequirement = []bpModel.VersionRequirement{{bpModel.VersionRequirementComparatorKey: bpModel.ComparatorEQ, bpModel.VersionRequirementVersionKey: params.RequirementVersion}}
+			requirement.VersionRequirement = []bpModel.VersionRequirement{{
+				bpModel.VersionRequirementComparatorKey: bpModel.ComparatorEQ,
+				bpModel.VersionRequirementVersionKey:    params.RequirementVersion,
+			}}
 		}
 
 		err = expression.UpdateRequirement(params.Operation, requirement)
