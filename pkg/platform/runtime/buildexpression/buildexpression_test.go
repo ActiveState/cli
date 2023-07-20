@@ -3,6 +3,7 @@ package buildexpression
 import (
 	"path/filepath"
 	"reflect"
+	"sort"
 	"testing"
 
 	"github.com/ActiveState/cli/internal/environment"
@@ -327,6 +328,15 @@ func TestBuildExpression_Update(t *testing.T) {
 			}
 
 			got := bx.Requirements()
+
+			sort.Slice(got, func(i, j int) bool {
+				return got[i].Name < got[j].Name
+			})
+
+			sort.Slice(tt.want, func(i, j int) bool {
+				return tt.want[i].Name < tt.want[j].Name
+			})
+
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("BuildExpression.Requirements() = %v, want %v", got, tt.want)
 			}

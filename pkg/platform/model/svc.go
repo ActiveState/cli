@@ -15,7 +15,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/profile"
 	"github.com/ActiveState/cli/pkg/platform/api/svc/request"
-	"github.com/machinebox/graphql"
+	"github.com/ActiveState/graphql"
 )
 
 var (
