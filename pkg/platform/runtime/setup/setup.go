@@ -754,16 +754,9 @@ func (s *Setup) downloadArtifact(a artifact.ArtifactDownload, targetFile string)
 		}
 	}()
 
-	artifactURL, err := url.Parse(a.UnsignedURI)
+	artifactURL, err := url.Parse(a.DownloadURI)
 	if err != nil {
-		return errs.Wrap(err, "Could not parse artifact URL %s.", a.UnsignedURI)
-	}
-
-	if artifactURL.Scheme == "s3" {
-		artifactURL, err = model.SignS3URL(artifactURL)
-		if err != nil {
-			return errs.Wrap(err, "Could not sign artifact URL %s.", a.UnsignedURI)
-		}
+		return errs.Wrap(err, "Could not parse artifact URL %s.", a.DownloadURI)
 	}
 
 	b, err := httputil.GetWithProgress(artifactURL.String(), &progress.Report{
@@ -814,7 +807,7 @@ func (s *Setup) obtainArtifact(a artifact.ArtifactDownload, extension string) (s
 
 	archivePath := filepath.Join(targetDir, a.ArtifactID.String()+extension)
 	if err := s.downloadArtifact(a, archivePath); err != nil {
-		return "", errs.Wrap(err, "Could not download artifact %s", a.UnsignedURI)
+		return "", errs.Wrap(err, "Could not download artifact %s", a.DownloadURI)
 	}
 
 	err := s.verifyArtifact(archivePath, a)
