@@ -312,7 +312,7 @@ func ActiveVersionsOnBranch(ghClient *github.Client, jiraClient *jira.Client, br
 func UpdatePRTargetBranch(client *github.Client, prnumber int, targetBranch string) error {
 	_, _, err := client.PullRequests.Edit(context.Background(), "ActiveState", "cli", prnumber, &github.PullRequest{
 		Base: &github.PullRequestBranch{
-			Ref: github.String(fmt.Sprintf("refs/heads/%s", targetBranch)),
+			Ref: github.String(targetBranch),
 		},
 	})
 	if err != nil {
