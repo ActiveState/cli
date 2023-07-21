@@ -112,8 +112,34 @@ func verifyVersionRC(ghClient *github.Client, jiraClient *jira.Client, pr *githu
 	}
 	finish()
 
+	finish = wc.PrintStart("Fetching previous version PR")
+	prevVersionPR, err := wh.FetchVersionPR(ghClient, wh.AssertLT, version)
+	if err != nil {
+		return errs.Wrap(err,
+			"Failed to find previous version PR for %s.", version.String())
+	}
+	wc.Print("Got: %s\n", prevVersionPR.GetTitle())
+	finish()
+
+	finish = wc.PrintStart("Verifying we have all the commits from the previous version PR, comparing %s to %s", pr.Head.GetRef(), prevVersionPR.Head.GetRef())
+	behind, err := wh.GetCommitsBehind(ghClient, prevVersionPR.Head.GetRef(), pr.Head.GetRef())
+	if err != nil {
+		return errs.Wrap(err, "Failed to compare to previous version PR")
+	}
+	if len(behind) > 0 {
+		commits := []string{}
+		for _, c := range behind {
+			commits = append(commits, c.GetSHA()+": "+c.GetCommit().GetMessage())
+		}
+		return errs.New("PR is behind the previous version PR (%s) by %d commits, missing commits:\n%s",
+			prevVersionPR.GetTitle(), len(behind), strings.Join(commits, "\n"))
+	}
+	finish()
+
 	finish = wc.PrintStart("Fetching commits for PR %d", pr.GetNumber())
-	commits, err := wh.FetchCommitsByRef(ghClient, pr.GetHead().GetSHA(), nil)
+	commits, err := wh.FetchCommitsByRef(ghClient, pr.GetHead().GetSHA(), func(commit *github.RepositoryCommit) bool {
+		return commit.GetSHA() == prevVersionPR.GetHead().GetSHA()
+	})
 	if err != nil {
 		return errs.Wrap(err, "Failed to fetch commits")
 	}
@@ -138,9 +164,9 @@ func verifyVersionRC(ghClient *github.Client, jiraClient *jira.Client, pr *githu
 		if !isFound {
 			issue := jiraIDs[jiraID]
 			if wh.IsMergedStatus(issue.Fields.Status.Name) {
-				notFoundCritical = append(notFoundCritical, issue.Key)
+				notFoundCritical = append(notFoundCritical, issue.Key+": "+jiraIDs[jiraID].Fields.Summary)
 			} else {
-				notFound = append(notFound, issue.Key)
+				notFound = append(notFound, issue.Key+": "+jiraIDs[jiraID].Fields.Summary)
 			}
 		}
 	}
@@ -150,8 +176,8 @@ func verifyVersionRC(ghClient *github.Client, jiraClient *jira.Client, pr *githu
 
 	if len(notFound) > 0 {
 		return errs.New("PR not ready as it's still missing commits for the following JIRA issues:\n"+
-			"Pending story completion: %s\n"+
-			"Missing stories: %s", strings.Join(notFound, ", "), strings.Join(notFoundCritical, ", "))
+			"Pending story completion:\n%s\n\n"+
+			"Missing stories:\n%s", strings.Join(notFound, "\n"), strings.Join(notFoundCritical, "\n"))
 	}
 	finish()
 

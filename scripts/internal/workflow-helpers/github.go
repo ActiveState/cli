@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
@@ -321,6 +322,34 @@ func UpdatePRTargetBranch(client *github.Client, prnumber int, targetBranch stri
 	return nil
 }
 
+func GetCommitsBehind(client *github.Client, base, head string) ([]*github.RepositoryCommit, error) {
+	// Note we're swapping base and head when doing this because github responds with the commits that are ahead, rather than behind.
+	commits, _, err := client.Repositories.CompareCommits(context.Background(), "ActiveState", "cli", head, base, nil)
+	if err != nil {
+		return nil, errs.Wrap(err, "failed to compare commits")
+	}
+	result := []*github.RepositoryCommit{}
+	for _, commit := range commits.Commits {
+		msg := strings.Split(commit.GetCommit().GetMessage(), "\n")[0] // first line only
+		msgWords := strings.Split(msg, " ")
+		if msg == UpdateVersionCommitMessage {
+			// Updates to version.txt are not meant to be inherited
+			continue
+		}
+		suffix := strings.TrimPrefix(msgWords[len(msgWords)-1], "ActiveState/")
+		if (strings.HasPrefix(msg, "Merge pull request") && IsVersionBranch(suffix)) ||
+			(strings.HasPrefix(msg, "Merge branch '"+constants.BetaBranch+"'") && IsVersionBranch(suffix)) {
+			// Git's compare commits is not smart enough to consider merge commits from other version branches equal
+			// This matches the following types of messages:
+			// Merge pull request #2531 from ActiveState/version/0-38-1-RC1
+			// Merge branch 'beta' into version/0-40-0-RC1
+			continue
+		}
+		result = append(result, commit)
+	}
+	return result, nil
+}
+
 func SetPRBody(client *github.Client, prnumber int, body string) error {
 	_, _, err := client.PullRequests.Edit(context.Background(), "ActiveState", "cli", prnumber, &github.PullRequest{
 		Body: &body,
@@ -344,7 +373,7 @@ func CreateBranch(ghClient *github.Client, branchName string, SHA string) error 
 	return nil
 }
 
-func CreateFileUpdateCommit(ghClient *github.Client, branchName string, path string, contents string) (string, error) {
+func CreateFileUpdateCommit(ghClient *github.Client, branchName string, path string, contents string, message string) (string, error) {
 	fileContents, _, _, err := ghClient.Repositories.GetContents(context.Background(), "ActiveState", "cli", path, &github.RepositoryContentGetOptions{
 		Ref: branchName,
 	})
@@ -358,7 +387,7 @@ func CreateFileUpdateCommit(ghClient *github.Client, branchName string, path str
 			Email: ptr.To("support@activestate.com"),
 		},
 		Branch:  &branchName,
-		Message: ptr.To(fmt.Sprintf("Update %s", path)),
+		Message: ptr.To(message),
 		Content: []byte(contents),
 		SHA:     fileContents.SHA,
 	})
