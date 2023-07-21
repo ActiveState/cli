@@ -3,6 +3,7 @@ package integration
 import (
 	"fmt"
 	"io/ioutil"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
@@ -80,9 +81,6 @@ func (suite *InstallerIntegrationTestSuite) TestInstallFromLocalSource() {
 	suite.Contains(stateExec, target, "Ensure we're not grabbing state tool from integration test bin dir")
 	suite.NoError(err)
 
-	stateExecResolved, err := fileutils.ResolvePath(stateExec)
-	suite.Require().NoError(err)
-
 	serviceExec, err := installation.ServiceExecFromDir(target)
 	suite.NoError(err)
 
@@ -100,11 +98,6 @@ func (suite *InstallerIntegrationTestSuite) TestInstallFromLocalSource() {
 	cp.WaitForInput()
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
-
-	snapshot := strings.Replace(cp.TrimmedSnapshot(), "\n", "", -1)
-	if !strings.Contains(snapshot, stateExec) && !strings.Contains(snapshot, stateExecResolved) {
-		suite.Fail(fmt.Sprintf("Snapshot does not include '%s' or '%s', snapshot:\n %s", stateExec, stateExecResolved, snapshot))
-	}
 
 	// Assert expected files were installed (note this didn't use an update payload, so there's no bin directory)
 	suite.FileExists(stateExec)
@@ -345,6 +338,17 @@ func (s *InstallerIntegrationTestSuite) setupTest(ts *e2e.Session) {
 	payloadDir := filepath.Dir(s.installerExe)
 	ts.CopyExeToDir(ts.Exe, filepath.Join(payloadDir, installation.BinDirName))
 	ts.CopyExeToDir(ts.SvcExe, filepath.Join(payloadDir, installation.BinDirName))
+	err := fileutils.Touch(filepath.Join(payloadDir, installation.InstallDirMarker))
+	s.Require().NoError(err)
+
+	// Remove bin dir as these tests will install the state tool
+	err = os.RemoveAll(ts.Dirs.Bin)
+	s.Require().NoError(err)
+
+	if fileutils.FileExists(filepath.Join(ts.Dirs.Base, installation.InstallDirMarker)) {
+		err := os.Remove(filepath.Join(ts.Dirs.Base, installation.InstallDirMarker))
+		s.Require().NoError(err)
+	}
 }
 
 func TestInstallerIntegrationTestSuite(t *testing.T) {

@@ -67,9 +67,11 @@ func (i *Installer) Install() (rerr error) {
 		}
 	}
 
-	// Stop any running processes that might interfere
-	if err := installmgr.StopRunning(i.path); err != nil {
-		return errs.Wrap(err, "Failed to stop running services")
+	if i.isUpdate {
+		// Stop any running processes that might interfere
+		if err := installmgr.StopRunning(i.path); err != nil {
+			return errs.Wrap(err, "Failed to stop running services")
+		}
 	}
 
 	// Detect if existing installation needs to be cleaned
