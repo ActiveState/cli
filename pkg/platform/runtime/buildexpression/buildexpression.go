@@ -615,7 +615,7 @@ func (e *BuildExpression) removeRequirement(requirement model.Requirement) error
 	}
 
 	if !found {
-		return locale.NewInputError("err_remove_requirement_not_found", "Could not remove requirement with namespace: {{.V0}}, name: {{.V1}}", requirement.Namespace, requirement.Name)
+		return locale.NewInputError("err_remove_requirement_not_found", "Could not remove requirement '[ACTIONABLE]{{.V0}}[/RESET]', because it does not exist.", requirement.Name)
 	}
 
 	for _, arg := range e.getSolveNode().Arguments {
