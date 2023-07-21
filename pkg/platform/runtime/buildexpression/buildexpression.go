@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/sliceutils"
@@ -614,7 +615,7 @@ func (e *BuildExpression) removeRequirement(requirement model.Requirement) error
 	}
 
 	if !found {
-		return errs.New("Could not find requirement")
+		return locale.NewInputError("err_remove_requirement_not_found", "Could not remove requirement '[ACTIONABLE]{{.V0}}[/RESET]', because it does not exist.", requirement.Name)
 	}
 
 	for _, arg := range e.getSolveNode().Arguments {
