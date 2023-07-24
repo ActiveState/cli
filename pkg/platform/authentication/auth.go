@@ -233,10 +233,10 @@ func (s *Auth) AuthenticateWithModel(credentials *mono_models.Credentials) error
 	return nil
 }
 
-func (s *Auth) AuthenticateWithDevice(deviceCode strfmt.UUID) (refreshToken string, err error) {
+func (s *Auth) AuthenticateWithDevice(deviceCode strfmt.UUID) (apiKey string, err error) {
 	logging.Debug("AuthenticateWithDevice")
 
-	jwtToken, refToken, err := model.CheckDeviceAuthorization(deviceCode)
+	jwtToken, apiKeyToken, err := model.CheckDeviceAuthorization(deviceCode)
 	if err != nil {
 		return "", errs.Wrap(err, "Authorization failed")
 	}
@@ -249,7 +249,7 @@ func (s *Auth) AuthenticateWithDevice(deviceCode strfmt.UUID) (refreshToken stri
 		return "", errs.Wrap(err, "Storing JWT failed")
 	}
 
-	return refToken.Token, nil
+	return apiKeyToken.Token, nil
 }
 
 func (s *Auth) AuthenticateWithDevicePolling(deviceCode strfmt.UUID, interval time.Duration) (string, error) {

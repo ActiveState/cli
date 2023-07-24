@@ -247,10 +247,10 @@ func AuthenticateWithBrowser(out output.Outputer, auth *authentication.Auth, pro
 		out.Notice(locale.Tr("err_browser_open", *response.VerificationURIComplete))
 	}
 
-	var refreshToken string
+	var apiKey string
 	if !response.Nopoll {
 		// Wait for user to complete authentication
-		refreshToken, err = auth.AuthenticateWithDevicePolling(strfmt.UUID(*response.DeviceCode), time.Duration(response.Interval)*time.Second)
+		apiKey, err = auth.AuthenticateWithDevicePolling(strfmt.UUID(*response.DeviceCode), time.Duration(response.Interval)*time.Second)
 		if err != nil {
 			return locale.WrapError(err, "err_auth_device")
 		}
@@ -265,13 +265,13 @@ func AuthenticateWithBrowser(out output.Outputer, auth *authentication.Auth, pro
 				return errs.Wrap(err, "Prompt failed")
 			}
 		}
-		refreshToken, err = auth.AuthenticateWithDevice(strfmt.UUID(*response.DeviceCode))
+		apiKey, err = auth.AuthenticateWithDevice(strfmt.UUID(*response.DeviceCode))
 		if err != nil {
 			return locale.WrapError(err, "err_auth_device")
 		}
 	}
 
-	if err := auth.SaveToken(refreshToken); err != nil {
+	if err := auth.SaveToken(apiKey); err != nil {
 		return locale.WrapError(err, "err_auth_token", "Failed to create token after authenticating with browser.")
 	}
 

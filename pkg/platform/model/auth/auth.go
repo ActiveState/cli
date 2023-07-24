@@ -25,7 +25,7 @@ func RequestDeviceAuthorization() (*mms.DeviceCode, error) {
 	return response.Payload, nil
 }
 
-func CheckDeviceAuthorization(deviceCode strfmt.UUID) (jwt *mms.JWT, refreshToken *mms.NewToken, err error) {
+func CheckDeviceAuthorization(deviceCode strfmt.UUID) (jwt *mms.JWT, apiKey *mms.NewToken, err error) {
 	getParams := oauth.NewAuthDeviceGetParams()
 	getParams.SetDeviceCode(deviceCode)
 
