@@ -15,7 +15,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
-	"github.com/ActiveState/cli/internal/rtutils/p"
+	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory"
 	iop "github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_client/inventory_operations"
@@ -46,9 +46,6 @@ func (e *SolverError) ValidationErrors() []string {
 func (e *SolverError) IsTransient() bool {
 	return e.isTransient
 }
-
-// HostPlatform stores a reference to current platform
-var HostPlatform string
 
 // Recipe aliases recipe model
 type Recipe = inventory_models.Recipe
@@ -173,7 +170,7 @@ func FetchRecipe(commitID strfmt.UUID, owner, project string, hostPlatform *stri
 
 	client, _ := inventory.Init(authentication.LegacyGet())
 
-	response, err := client.ResolveRecipes(params, authentication.ClientAuth())
+	response, _, err := client.ResolveRecipes(params, authentication.ClientAuth())
 	if err != nil {
 		if err == context.DeadlineExceeded {
 			return nil, locale.WrapError(err, "request_timed_out")
@@ -187,16 +184,10 @@ func FetchRecipe(commitID strfmt.UUID, owner, project string, hostPlatform *stri
 		return nil, serr
 	}
 
-	platformIDs, err := filterPlatformIDs(*hostPlatform, runtime.GOARCH, params.Order.Platforms)
+	platformID, err := FilterCurrentPlatform(*hostPlatform, params.Order.Platforms)
 	if err != nil {
-		return nil, errs.Wrap(err, "filterPlatformIDs failed")
+		return nil, locale.WrapError(err, "err_filter_current_platform")
 	}
-	if len(platformIDs) == 0 {
-		return nil, locale.NewInputError("err_recipe_no_platform")
-	} else if len(platformIDs) > 1 {
-		logging.Debug("Received multiple platform IDs.  Picking the first one.")
-	}
-	platformID := platformIDs[0]
 
 	for _, recipe := range response.Payload.Recipes {
 		if recipe.Platform != nil && recipe.Platform.PlatformID != nil && *recipe.Platform.PlatformID == platformID {
@@ -207,12 +198,25 @@ func FetchRecipe(commitID strfmt.UUID, owner, project string, hostPlatform *stri
 	return nil, locale.NewInputError("err_recipe_not_found")
 }
 
+func FilterCurrentPlatform(hostPlatform string, platforms []strfmt.UUID) (strfmt.UUID, error) {
+	platformIDs, err := filterPlatformIDs(hostPlatform, runtime.GOARCH, platforms)
+	if err != nil {
+		return "", errs.Wrap(err, "filterPlatformIDs failed")
+	}
+	if len(platformIDs) == 0 {
+		return "", locale.NewInputError("err_recipe_no_platform")
+	} else if len(platformIDs) > 1 {
+		logging.Debug("Received multiple platform IDs.  Picking the first one.")
+	}
+	return platformIDs[0], nil
+}
+
 func resolveSolverError(err error) error {
 	switch serr := err.(type) {
 	case *iop.ResolveRecipesDefault:
 		return &SolverError{
-			wrapped:     locale.WrapError(errs.Wrap(err, "ResolveRecipesDefault"), "", p.PStr(serr.Payload.Message)),
-			isTransient: p.PBool(serr.GetPayload().IsTransient),
+			wrapped:     locale.WrapError(errs.Wrap(err, "ResolveRecipesDefault"), "", ptr.From(serr.Payload.Message, "")),
+			isTransient: ptr.From(serr.GetPayload().IsTransient, false),
 		}
 	case *iop.ResolveRecipesBadRequest:
 		var validationErrors []string
@@ -224,9 +228,9 @@ func resolveSolverError(err error) error {
 			validationErrors = append(validationErrors, lines...)
 		}
 		return &SolverError{
-			wrapped:          locale.WrapInputError(errs.Wrap(err, "ResolveRecipesBadRequest"), "", p.PStr(serr.Payload.SolverError.Message)),
+			wrapped:          locale.WrapInputError(errs.Wrap(err, "ResolveRecipesBadRequest"), "", ptr.From(serr.Payload.SolverError.Message, "")),
 			validationErrors: validationErrors,
-			isTransient:      p.PBool(serr.GetPayload().IsTransient),
+			isTransient:      ptr.From(serr.GetPayload().IsTransient, false),
 		}
 	default:
 		return locale.WrapError(errs.Wrap(err, "unknown error"), "err_order_unknown")

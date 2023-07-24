@@ -45,7 +45,8 @@ func NewListTokensOK() *ListTokensOK {
 	return &ListTokensOK{}
 }
 
-/* ListTokensOK describes a response with status code 200, with default header values.
+/*
+ListTokensOK describes a response with status code 200, with default header values.
 
 Success
 */
@@ -75,7 +76,8 @@ func NewListTokensInternalServerError() *ListTokensInternalServerError {
 	return &ListTokensInternalServerError{}
 }
 
-/* ListTokensInternalServerError describes a response with status code 500, with default header values.
+/*
+ListTokensInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */

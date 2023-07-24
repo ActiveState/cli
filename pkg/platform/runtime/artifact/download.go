@@ -4,15 +4,18 @@ import (
 	"fmt"
 	"strings"
 
+	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
+
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
+	"github.com/go-openapi/strfmt"
 )
 
 type ArtifactDownload struct {
 	ArtifactID     ArtifactID
-	UnsignedURI    string
+	DownloadURI    string
 	UnsignedLogURI string
 	Checksum       string
 }
@@ -32,7 +35,24 @@ func NewDownloadsFromBuild(buildStatus *headchef_models.V1BuildStatusResponse) (
 				continue
 			}
 
-			downloads = append(downloads, ArtifactDownload{ArtifactID: *a.ArtifactID, UnsignedURI: a.URI.String(), UnsignedLogURI: a.LogURI.String(), Checksum: a.Checksum})
+			downloads = append(downloads, ArtifactDownload{ArtifactID: *a.ArtifactID, DownloadURI: a.URI.String(), UnsignedLogURI: a.LogURI.String(), Checksum: a.Checksum})
+		}
+	}
+
+	return downloads, nil
+}
+
+func NewDownloadsFromBuildPlan(build bpModel.Build, artifacts map[strfmt.UUID]Artifact) ([]ArtifactDownload, error) {
+	var downloads []ArtifactDownload
+	for id := range artifacts {
+		for _, a := range build.Artifacts {
+			if a.Status == string(bpModel.ArtifactSucceeded) && a.NodeID == id && a.URL != "" {
+				if strings.EqualFold(a.MimeType, bpModel.XArtifactMimeType) ||
+					strings.EqualFold(a.MimeType, bpModel.XActiveStateArtifactMimeType) ||
+					strings.EqualFold(a.MimeType, bpModel.XCamelInstallerMimeType) {
+					downloads = append(downloads, ArtifactDownload{ArtifactID: strfmt.UUID(a.NodeID), DownloadURI: a.URL, UnsignedLogURI: a.LogURL, Checksum: a.Checksum})
+				}
+			}
 		}
 	}
 
@@ -46,7 +66,7 @@ func NewDownloadsFromCamelBuild(buildStatus *headchef_models.V1BuildStatusRespon
 				continue
 			}
 			if strings.HasSuffix(a.URI.String(), ".tar.gz") || strings.HasSuffix(a.URI.String(), ".zip") {
-				return []ArtifactDownload{{ArtifactID: *a.ArtifactID, UnsignedURI: a.URI.String(), UnsignedLogURI: a.LogURI.String(), Checksum: a.Checksum}}, nil
+				return []ArtifactDownload{{ArtifactID: *a.ArtifactID, DownloadURI: a.URI.String(), UnsignedLogURI: a.LogURI.String(), Checksum: a.Checksum}}, nil
 			}
 		}
 	}
@@ -62,4 +82,25 @@ func NewDownloadsFromCamelBuild(buildStatus *headchef_models.V1BuildStatusRespon
 	}
 
 	return nil, errs.New("No download found in build response: %+v", buildStatus)
+}
+
+func NewDownloadsFromCamelBuildPlan(build bpModel.Build, artifacts map[strfmt.UUID]Artifact) ([]ArtifactDownload, error) {
+	var downloads []ArtifactDownload
+	for id := range artifacts {
+		for _, a := range build.Artifacts {
+			if a.Status == string(bpModel.ArtifactSucceeded) && a.NodeID == id && a.URL != "" {
+				if !strings.EqualFold(a.MimeType, "application/x-camel-installer") {
+					continue
+				}
+				logging.Debug("Found download for artifact %s: %s", a.NodeID, a.URL)
+				downloads = append(downloads, ArtifactDownload{ArtifactID: strfmt.UUID(a.NodeID), DownloadURI: a.URL, UnsignedLogURI: a.LogURL, Checksum: a.Checksum})
+			}
+		}
+	}
+
+	if len(downloads) == 0 {
+		return nil, errs.New("No download found in build response: %+v", build)
+	}
+
+	return downloads, nil
 }

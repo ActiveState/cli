@@ -47,7 +47,7 @@ func newUseResetCommand(prime *primer.Values, globals *globalOptions) *captain.C
 			params.Force = globals.NonInteractive
 			return use.NewReset(prime).Run(params)
 		},
-	)
+	).SetDoesNotSupportStructuredOutput()
 }
 
 func newUseShowCommand(prime *primer.Values) *captain.Command {

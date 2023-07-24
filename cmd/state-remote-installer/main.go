@@ -23,7 +23,7 @@ import (
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/rollbar"
-	"github.com/ActiveState/cli/internal/rtutils/p"
+	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/runbits/panics"
 	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/pkg/cmdlets/errors"
@@ -155,7 +155,7 @@ func main() {
 func execute(out output.Outputer, prompt prompt.Prompter, cfg *config.Instance, an analytics.Dispatcher, args []string, params *Params) error {
 	msg := locale.Tr("tos_disclaimer", constants.TermsOfServiceURLLatest)
 	msg += locale.Tr("tos_disclaimer_prompt", constants.TermsOfServiceURLLatest)
-	cont, err := prompt.Confirm(locale.Tr("install_remote_title"), msg, p.BoolP(true))
+	cont, err := prompt.Confirm(locale.Tr("install_remote_title"), msg, ptr.To(true))
 	if err != nil {
 		return errs.Wrap(err, "Could not prompt for confirmation")
 	}
@@ -208,7 +208,7 @@ func execute(out output.Outputer, prompt prompt.Prompter, cfg *config.Instance, 
 	}
 
 	out.Print(locale.Tl("remote_install_exit_prompt", "Press ENTER to exit."))
-	fmt.Scanln(p.StrP("")) // Wait for input from user
+	fmt.Scanln(ptr.To("")) // Wait for input from user
 
 	return nil
 }

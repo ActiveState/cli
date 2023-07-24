@@ -57,7 +57,8 @@ func NewGetLoginsAndReposOK() *GetLoginsAndReposOK {
 	return &GetLoginsAndReposOK{}
 }
 
-/* GetLoginsAndReposOK describes a response with status code 200, with default header values.
+/*
+GetLoginsAndReposOK describes a response with status code 200, with default header values.
 
 Success
 */
@@ -87,7 +88,8 @@ func NewGetLoginsAndReposBadRequest() *GetLoginsAndReposBadRequest {
 	return &GetLoginsAndReposBadRequest{}
 }
 
-/* GetLoginsAndReposBadRequest describes a response with status code 400, with default header values.
+/*
+GetLoginsAndReposBadRequest describes a response with status code 400, with default header values.
 
 Bad Request
 */
@@ -119,7 +121,8 @@ func NewGetLoginsAndReposForbidden() *GetLoginsAndReposForbidden {
 	return &GetLoginsAndReposForbidden{}
 }
 
-/* GetLoginsAndReposForbidden describes a response with status code 403, with default header values.
+/*
+GetLoginsAndReposForbidden describes a response with status code 403, with default header values.
 
 Forbidden
 */
@@ -151,7 +154,8 @@ func NewGetLoginsAndReposInternalServerError() *GetLoginsAndReposInternalServerE
 	return &GetLoginsAndReposInternalServerError{}
 }
 
-/* GetLoginsAndReposInternalServerError describes a response with status code 500, with default header values.
+/*
+GetLoginsAndReposInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */

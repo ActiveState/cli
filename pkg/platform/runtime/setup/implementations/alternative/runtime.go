@@ -10,19 +10,20 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/multilog"
-	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
+	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/ActiveState/cli/pkg/platform/runtime/store"
+	"github.com/go-openapi/strfmt"
 	"github.com/thoas/go-funk"
 )
 
 type Setup struct {
-	artifacts artifact.ArtifactRecipeMap
-	store     *store.Store
+	artifactsForNameResolving artifact.Map
+	store                     *store.Store
 }
 
-func NewSetup(store *store.Store, artifacts artifact.ArtifactRecipeMap) *Setup {
-	return &Setup{store: store, artifacts: artifacts}
+func NewSetup(store *store.Store, artifactsForNameResolving artifact.Map) *Setup {
+	return &Setup{store: store, artifactsForNameResolving: artifactsForNameResolving}
 }
 
 func (s *Setup) DeleteOutdatedArtifacts(changeset artifact.ArtifactChangeset, storedArtifacted, alreadyInstalled store.StoredArtifactMap) error {
@@ -139,12 +140,12 @@ func artifactsContainFile(file string, artifactCache map[artifact.ArtifactID]sto
 }
 
 func (s *Setup) ResolveArtifactName(a artifact.ArtifactID) string {
-	if artf, ok := s.artifacts[a]; ok {
+	if artf, ok := s.artifactsForNameResolving[a]; ok {
 		return artf.Name
 	}
 	return locale.Tl("alternative_unknown_pkg_name", "unknown")
 }
 
-func (s *Setup) DownloadsFromBuild(buildStatus *headchef_models.V1BuildStatusResponse) (download []artifact.ArtifactDownload, err error) {
-	return artifact.NewDownloadsFromBuild(buildStatus)
+func (s *Setup) DownloadsFromBuild(build model.Build, artifacts map[strfmt.UUID]artifact.Artifact) (download []artifact.ArtifactDownload, err error) {
+	return artifact.NewDownloadsFromBuildPlan(build, artifacts)
 }

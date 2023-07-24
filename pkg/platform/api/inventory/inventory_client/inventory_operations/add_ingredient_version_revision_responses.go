@@ -52,7 +52,8 @@ func NewAddIngredientVersionRevisionOK() *AddIngredientVersionRevisionOK {
 	return &AddIngredientVersionRevisionOK{}
 }
 
-/* AddIngredientVersionRevisionOK describes a response with status code 200, with default header values.
+/*
+AddIngredientVersionRevisionOK describes a response with status code 200, with default header values.
 
 The updated state of the ingredient version
 */
@@ -84,7 +85,8 @@ func NewAddIngredientVersionRevisionBadRequest() *AddIngredientVersionRevisionBa
 	return &AddIngredientVersionRevisionBadRequest{}
 }
 
-/* AddIngredientVersionRevisionBadRequest describes a response with status code 400, with default header values.
+/*
+AddIngredientVersionRevisionBadRequest describes a response with status code 400, with default header values.
 
 If the ingredient version revision is invalid
 */
@@ -118,7 +120,8 @@ func NewAddIngredientVersionRevisionDefault(code int) *AddIngredientVersionRevis
 	}
 }
 
-/* AddIngredientVersionRevisionDefault describes a response with status code -1, with default header values.
+/*
+AddIngredientVersionRevisionDefault describes a response with status code -1, with default header values.
 
 If there is an error processing the request
 */

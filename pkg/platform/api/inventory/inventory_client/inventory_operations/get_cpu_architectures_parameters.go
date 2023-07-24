@@ -53,10 +53,12 @@ func NewGetCPUArchitecturesParamsWithHTTPClient(client *http.Client) *GetCPUArch
 	}
 }
 
-/* GetCPUArchitecturesParams contains all the parameters to send to the API endpoint
-   for the get Cpu architectures operation.
+/*
+GetCPUArchitecturesParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the get Cpu architectures operation.
+
+	Typically these are written to a http.Request.
 */
 type GetCPUArchitecturesParams struct {
 

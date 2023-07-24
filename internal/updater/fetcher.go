@@ -11,7 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/httpreq"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/rtutils/p"
+	"github.com/ActiveState/cli/internal/rtutils/ptr"
 )
 
 const CfgUpdateTag = "update_tag"
@@ -71,8 +71,8 @@ func (f *Fetcher) Fetch(update *AvailableUpdate, targetDir string) error {
 
 func (f *Fetcher) analyticsEvent(version, msg string) {
 	f.an.EventWithLabel(anaConst.CatUpdates, anaConst.ActUpdateDownload, anaConst.UpdateLabelFailed, &dimensions.Values{
-		TargetVersion: p.StrP(version),
-		Error:         p.StrP(msg),
+		TargetVersion: ptr.To(version),
+		Error:         ptr.To(msg),
 	})
 }
 

@@ -7,6 +7,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/users"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
+	"github.com/ActiveState/cli/pkg/platform/model"
 )
 
 func cleanUser(t *testing.T, username string, auth *authentication.Auth) error {
@@ -15,7 +16,7 @@ func cleanUser(t *testing.T, username string, auth *authentication.Auth) error {
 		return err
 	}
 	for _, proj := range projects {
-		err = deleteProject(username, proj.Name, auth)
+		err = model.DeleteProject(username, proj.Name, auth)
 		if err != nil {
 			return err
 		}
@@ -33,19 +34,6 @@ func getProjects(org string, auth *authentication.Auth) ([]*mono_models.Project,
 	}
 
 	return listProjectsOK.Payload, nil
-}
-
-func deleteProject(org, name string, auth *authentication.Auth) error {
-	params := projects.NewDeleteProjectParams()
-	params.SetOrganizationName(org)
-	params.SetProjectName(name)
-
-	_, err := auth.Client().Projects.DeleteProject(params, auth.ClientAuth())
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
 
 func deleteUser(name string, auth *authentication.Auth) error {

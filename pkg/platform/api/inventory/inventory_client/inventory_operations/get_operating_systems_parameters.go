@@ -53,10 +53,12 @@ func NewGetOperatingSystemsParamsWithHTTPClient(client *http.Client) *GetOperati
 	}
 }
 
-/* GetOperatingSystemsParams contains all the parameters to send to the API endpoint
-   for the get operating systems operation.
+/*
+GetOperatingSystemsParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the get operating systems operation.
+
+	Typically these are written to a http.Request.
 */
 type GetOperatingSystemsParams struct {
 

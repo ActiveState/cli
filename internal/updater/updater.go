@@ -22,7 +22,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
-	"github.com/ActiveState/cli/internal/rtutils/p"
+	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/gofrs/flock"
 )
 
@@ -200,11 +200,11 @@ func (u *AvailableUpdate) InstallWithProgress(installTargetPath string, progress
 func (u *AvailableUpdate) analyticsEvent(action, label, version, msg string) {
 
 	dims := &dimensions.Values{
-		TargetVersion: p.StrP(version),
+		TargetVersion: ptr.To(version),
 	}
 
 	if msg != "" {
-		dims.Error = p.StrP(msg)
+		dims.Error = ptr.To(msg)
 	}
 
 	u.an.EventWithLabel(anaConst.CatUpdates, anaConst.ActUpdateDownload, label, dims)

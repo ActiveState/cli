@@ -46,7 +46,8 @@ func NewGetIngredientVersionRevisionOK() *GetIngredientVersionRevisionOK {
 	return &GetIngredientVersionRevisionOK{}
 }
 
-/* GetIngredientVersionRevisionOK describes a response with status code 200, with default header values.
+/*
+GetIngredientVersionRevisionOK describes a response with status code 200, with default header values.
 
 The retrieved ingredient version revision
 */
@@ -80,7 +81,8 @@ func NewGetIngredientVersionRevisionDefault(code int) *GetIngredientVersionRevis
 	}
 }
 
-/* GetIngredientVersionRevisionDefault describes a response with status code -1, with default header values.
+/*
+GetIngredientVersionRevisionDefault describes a response with status code -1, with default header values.
 
 generic error response
 */

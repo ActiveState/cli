@@ -10,6 +10,6 @@ func NewEmpty() *EmptyChangeSummary {
 	return &EmptyChangeSummary{}
 }
 
-func (c *EmptyChangeSummary) ChangeSummary(artifacts artifact.ArtifactRecipeMap, requested artifact.ArtifactChangeset, changed artifact.ArtifactChangeset) error {
+func (c *EmptyChangeSummary) ChangeSummary(artifacts artifact.Map, requested artifact.ArtifactChangeset, changed artifact.ArtifactChangeset) error {
 	return nil
 }

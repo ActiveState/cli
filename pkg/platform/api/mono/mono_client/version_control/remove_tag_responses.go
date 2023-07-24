@@ -69,7 +69,8 @@ func NewRemoveTagOK() *RemoveTagOK {
 	return &RemoveTagOK{}
 }
 
-/* RemoveTagOK describes a response with status code 200, with default header values.
+/*
+RemoveTagOK describes a response with status code 200, with default header values.
 
 Success
 */
@@ -101,7 +102,8 @@ func NewRemoveTagBadRequest() *RemoveTagBadRequest {
 	return &RemoveTagBadRequest{}
 }
 
-/* RemoveTagBadRequest describes a response with status code 400, with default header values.
+/*
+RemoveTagBadRequest describes a response with status code 400, with default header values.
 
 Bad Request
 */
@@ -133,7 +135,8 @@ func NewRemoveTagForbidden() *RemoveTagForbidden {
 	return &RemoveTagForbidden{}
 }
 
-/* RemoveTagForbidden describes a response with status code 403, with default header values.
+/*
+RemoveTagForbidden describes a response with status code 403, with default header values.
 
 Forbidden
 */
@@ -165,7 +168,8 @@ func NewRemoveTagNotFound() *RemoveTagNotFound {
 	return &RemoveTagNotFound{}
 }
 
-/* RemoveTagNotFound describes a response with status code 404, with default header values.
+/*
+RemoveTagNotFound describes a response with status code 404, with default header values.
 
 Not Found
 */
@@ -197,7 +201,8 @@ func NewRemoveTagConflict() *RemoveTagConflict {
 	return &RemoveTagConflict{}
 }
 
-/* RemoveTagConflict describes a response with status code 409, with default header values.
+/*
+RemoveTagConflict describes a response with status code 409, with default header values.
 
 Conflict
 */
@@ -229,7 +234,8 @@ func NewRemoveTagInternalServerError() *RemoveTagInternalServerError {
 	return &RemoveTagInternalServerError{}
 }
 
-/* RemoveTagInternalServerError describes a response with status code 500, with default header values.
+/*
+RemoveTagInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */

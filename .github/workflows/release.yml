@@ -13,6 +13,8 @@ jobs:
     timeout-minutes: 30
     runs-on: windows-2019
     if: github.event.ref_type == 'tag' && contains(github.event.ref, 'release/remote-installer')
+    permissions:
+      id-token: write # This is required for requesting the JWT
     strategy:
       matrix:
         go-version:
@@ -21,6 +23,8 @@ jobs:
       ACTIVESTATE_CLI_DISABLE_RUNTIME: true
       SHELL: bash
       GITHUB_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      AWS_REGION : "us-east-1"
+      AWS_ROLE_SESSION_NAME: "gha-activestate-cli"
 
     # === OS Specific Steps ===
     steps:
@@ -79,11 +83,17 @@ jobs:
         env:
           CODE_SIGNING_PASSWD: ${{ secrets.CODE_SIGNING_PASSWD }}
           MSI_CERT_BASE64: ${{ secrets.MSI_CERT_BASE64 }}
+      
+      - # === Configure AWS credentials ==
+        name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          role-session-name: ${{ env.AWS_ROLE_SESSION_NAME }}
+          aws-region: ${{ env.AWS_REGION }}
+          mask-aws-account-id: true
 
       - # === Deploy ===
         name: Deploy
         shell: bash
         run: state run deploy-remote-installer
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}

@@ -52,10 +52,12 @@ func NewJoinOrganizationParamsWithHTTPClient(client *http.Client) *JoinOrganizat
 	}
 }
 
-/* JoinOrganizationParams contains all the parameters to send to the API endpoint
-   for the join organization operation.
+/*
+JoinOrganizationParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the join organization operation.
+
+	Typically these are written to a http.Request.
 */
 type JoinOrganizationParams struct {
 

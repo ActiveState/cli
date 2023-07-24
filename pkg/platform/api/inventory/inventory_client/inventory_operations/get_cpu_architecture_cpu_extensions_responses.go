@@ -46,7 +46,8 @@ func NewGetCPUArchitectureCPUExtensionsOK() *GetCPUArchitectureCPUExtensionsOK {
 	return &GetCPUArchitectureCPUExtensionsOK{}
 }
 
-/* GetCPUArchitectureCPUExtensionsOK describes a response with status code 200, with default header values.
+/*
+GetCPUArchitectureCPUExtensionsOK describes a response with status code 200, with default header values.
 
 A paginated list of CPU extensions
 */
@@ -80,7 +81,8 @@ func NewGetCPUArchitectureCPUExtensionsDefault(code int) *GetCPUArchitectureCPUE
 	}
 }
 
-/* GetCPUArchitectureCPUExtensionsDefault describes a response with status code -1, with default header values.
+/*
+GetCPUArchitectureCPUExtensionsDefault describes a response with status code -1, with default header values.
 
 generic error response
 */
