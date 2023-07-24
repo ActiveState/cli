@@ -17,7 +17,6 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/httputil"
 	"github.com/ActiveState/cli/internal/installation"
-	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
@@ -33,7 +32,7 @@ type InstallerIntegrationTestSuite struct {
 
 func (suite *InstallerIntegrationTestSuite) TestInstallFromLocalSource() {
 	suite.OnlyRunForTags(tagsuite.Installer, tagsuite.Critical)
-	ts := e2e.New(suite.T(), false)
+	ts := e2e.New(suite.T(), true)
 	defer ts.Close()
 
 	suite.setupTest(ts)
@@ -335,16 +334,8 @@ func (suite *InstallerIntegrationTestSuite) AssertConfig(ts *e2e.Session) {
 
 func (s *InstallerIntegrationTestSuite) setupTest(ts *e2e.Session) {
 	root := environment.GetRootPathUnsafe()
-	buildDir := fileutils.Join(root, "build")
-	installerExe := filepath.Join(buildDir, constants.StateInstallerCmd+osutils.ExeExt)
-	if !fileutils.FileExists(installerExe) {
-		s.T().Fatal("E2E tests require a state-installer binary. Run `state run build-installer`.")
-	}
-	s.installerExe = ts.CopyExeToDir(installerExe, filepath.Join(ts.Dirs.Base, "installer"))
-
-	payloadDir := filepath.Dir(s.installerExe)
-	ts.CopyExeToDir(ts.Exe, filepath.Join(payloadDir, installation.BinDirName))
-	ts.CopyExeToDir(ts.SvcExe, filepath.Join(payloadDir, installation.BinDirName))
+	payloadDir := fileutils.Join(root, "build", "payload")
+	// Todo: Copy payload files to test dirs (see ts.Dirs)
 }
 
 func TestInstallerIntegrationTestSuite(t *testing.T) {

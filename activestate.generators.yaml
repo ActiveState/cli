@@ -53,6 +53,26 @@ scripts:
     language: bash
     description: Detects new localisation calls and generates placeholder entries in en-us.yaml
     value: python3 scripts/locale-generator.py
+  - name: generate-payload
+    language: bash
+    description: Generate payload for installer / update archives
+    value: |
+      set -e
+      $constants.SET_ENV
+      
+      # TODO: Move all this logic to the payload-generator Go runner so we can employ our type system
+
+      echo "# Create payload dir"
+      PAYLOADDIR=$BUILD_TARGET_DIR/payload
+      mkdir -p $PAYLOADDIR
+
+      echo "# Copy targets $PAYLOADDIR"
+      cp -av $BUILD_TARGET_DIR/$constants.BUILD_INSTALLER_TARGET $PAYLOADDIR
+      BINDIR=$PAYLOADDIR/bin
+      mkdir -p $BINDIR
+      cp -av $BUILD_TARGET_DIR/$constants.BUILD_DAEMON_TARGET $BINDIR
+      cp -av $BUILD_TARGET_DIR/$constants.BUILD_EXEC_TARGET $BINDIR
+      cp -av $BUILD_TARGET_DIR/$constants.BUILD_TARGET $BINDIR
   - name: generate-update
     language: bash
     description: Generate update files
@@ -61,26 +81,13 @@ scripts:
       export GOARCH=${1:-amd64}
       $constants.SET_ENV
 
-      echo "# Create temp dir to generate bits"
-      TEMPDIR=$BUILD_TARGET_DIR/state-install
-      mkdir -p $TEMPDIR
-      cp -a $BUILD_TARGET_DIR/$constants.BUILD_INSTALLER_TARGET $TEMPDIR
-
-      echo "# Copy targets to temp dir"
-      BINDIR=$TEMPDIR/bin
-      mkdir -p $BINDIR
-      cp -a $BUILD_TARGET_DIR/$constants.BUILD_DAEMON_TARGET $BINDIR
-      cp -a $BUILD_TARGET_DIR/$constants.BUILD_EXEC_TARGET $BINDIR
-      cp -a $BUILD_TARGET_DIR/$constants.BUILD_TARGET $BINDIR
+      $scripts.generate-payload
 
       echo "# Create update dir"
       mkdir -p ./build/update
 
       echo "# Generate update from temp dir"
-      go run scripts/ci/update-generator/main.go -o ./build/update $TEMPDIR
-
-      echo "# Remove temp dir"
-      rm -rf $TEMPDIR
+      go run scripts/ci/update-generator/main.go -o ./build/update $PAYLOADDIR
   - name: generate-remote-install-deployment
     language: bash
     value: go run scripts/ci/deploy-generator/remote-installer/main.go "$@"
