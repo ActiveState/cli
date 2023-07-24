@@ -6,6 +6,47 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+### 0.40.0
+
+### Added
+
+- New command `state projects edit` which allows you to edit a projects name,
+  visibility, and linked git repository. You will need to opt-in to unstable
+  commands to use it.
+- New command `state projects delete` which allows you to delete a project.
+  You will need to opt-in to unstable commands to use it.
+- New command `state projects move` which allows you to move a project to a
+  different organization. You will need to opt-in to unstable commands to use
+  it.
+
+### Changed
+
+- Runtime installations have been updated to use our new buildplanner API. This
+  will enable us to develop new features in future versions. There should be no
+  impact to the user experience in this version.
+- Runtime installation is now atomic, meaning that an interruption to the
+  installation progress will not leave you in a corrupt state.
+- Requirement names are now normalized, avoiding requirement name collisions as
+  well as making it easier to install packages by their non-standard naming.
+- Commands which do not produce JSON output will now error out and say they do
+  not support JSON, rather than produce empty output.
+- When `state clean uninstall` cannot uninstall the State Tool because of third
+  party files in its installation dir it will now report what those files are.
+
+### Removed
+
+- The output format `--output=editor.v0` has been removed. Instead
+  use `--output=editor` or `--output=json`.
+
+### Fixed
+
+- Fixed issue where the `--namespace` flag on `state packages` was not
+  respected.
+- Fixed issue where `PYTHONTPATH` would not be set to empty when sourcing a
+  runtime, making it so that a system runtime can contaminate the sourced
+  runtime.
+- Several localization improvements.
+
 ### 0.39.0
 
 ### Added
