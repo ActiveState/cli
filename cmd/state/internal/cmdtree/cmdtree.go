@@ -1,13 +1,11 @@
 package cmdtree
 
 import (
-	"os"
 	"time"
 
 	"github.com/ActiveState/cli/cmd/state/internal/cmdtree/exechandlers/cmdcall"
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/condition"
-	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/primer"
@@ -160,6 +158,7 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 
 	stateCmd := newStateCommand(globals, prime)
 	stateCmd.AddChildren(
+		newHelloCommand(prime),
 		newActivateCommand(prime),
 		newInitCommand(prime),
 		newPushCommand(prime),
@@ -206,12 +205,6 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 		newSwitchCommand(prime),
 		newTestCommand(prime),
 	)
-
-	exampleEnabled := os.Getenv(constants.EnableExampleEnvVarName) == "true"
-	if exampleEnabled || (condition.OnCI() && condition.InTest()) {
-		helloCmd := newHelloCommand(prime)
-		stateCmd.AddChildren(helloCmd)
-	}
 
 	return &CmdTree{
 		cmd: stateCmd,
