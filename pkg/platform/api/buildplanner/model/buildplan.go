@@ -64,7 +64,6 @@ const (
 
 	// Error types
 	RemediableSolveErrorType = "RemediableSolveError"
-	GenericSolveErrorType    = "GenericSolveError"
 )
 
 func IsStateToolArtifact(mimeType string) bool {
