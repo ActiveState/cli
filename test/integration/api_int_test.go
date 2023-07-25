@@ -21,7 +21,7 @@ func (suite *ApiIntegrationTestSuite) TestRequestHeaders() {
 
 	cp := ts.SpawnWithOpts(
 		e2e.WithArgs("checkout", "ActiveState-CLI/Python3", "."),
-		e2e.AppendEnv(constants.PlatformApiRequestPrintHeadersEnvVarName+"=true"),
+		e2e.AppendEnv(constants.PlatformApiRequestPrintHeadersEnvVarName+"=true", "VERBOSE=true"),
 	)
 	// e.g. User-Agent: state/0.38.0-SHA0deadbeef0; release (Windows; 10.0.22621; x86_64)
 	cp.ExpectRe(`User-Agent: state/(\d+\.?)+-SHA[[:xdigit:]]+; \S+ \([^;]+; [^;]+; [^)]+\)`)
