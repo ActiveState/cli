@@ -60,6 +60,8 @@ func New(p primeable) *Hello {
 
 // Run contains the scope in which the hello runner logic is executed.
 func (h *Hello) Run(params *RunParams) error {
+	h.out.Print(locale.Tl("hello_notice", "This command is for example use only"))
+
 	if h.project == nil {
 		err := locale.NewInputError(
 			"hello_info_err_no_project", "Not in a project directory.",
