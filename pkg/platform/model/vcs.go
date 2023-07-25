@@ -83,7 +83,7 @@ const (
 	NamespaceCamelFlagsMatch = `^camel-flags$`
 
 	// NamespaceOrgMatch is the namespace used for org specific requirements
-	NamespaceOrgMatch = `^org\/(\w+)$`
+	NamespaceOrgMatch = `^org\/`
 )
 
 type TrackingType string
