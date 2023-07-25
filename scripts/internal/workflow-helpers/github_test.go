@@ -1,12 +1,16 @@
 package workflow_helpers
 
 import (
+	"fmt"
+	"reflect"
 	"testing"
 	"time"
 
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/blang/semver"
 	"github.com/google/go-github/v45/github"
 	"github.com/stretchr/testify/require"
+	"github.com/thoas/go-funk"
 )
 
 func TestParseJiraKey(t *testing.T) {
@@ -255,6 +259,30 @@ func TestFetchPRByTitle(t *testing.T) {
 			},
 			want: "Version 0.34.0-RC1",
 		},
+		{
+			name: "Version 0.40.0-RC1",
+			args: args{
+				ghClient: InitGHClient(),
+				prName:   "Version 0.40.0-RC1",
+			},
+			want: "Version 0.40.0-RC1",
+		},
+		{
+			name: "Version 0.40.0-RC2",
+			args: args{
+				ghClient: InitGHClient(),
+				prName:   "Version 0.40.0-RC2",
+			},
+			want: "Version 0.40.0-RC2",
+		},
+		{
+			name: "Version 0.40.0-RC3",
+			args: args{
+				ghClient: InitGHClient(),
+				prName:   "Version 0.40.0-RC3",
+			},
+			want: "Version 0.40.0-RC3",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -337,6 +365,23 @@ func TestFetchCommitsByShaRange(t *testing.T) {
 	}
 }
 
+func TestUpdatePRTargetBranch(t *testing.T) {
+	t.Skip("For debugging purposes, comment this line out if you want to test this locally")
+
+	err := UpdatePRTargetBranch(InitGHClient(), 1985, "version/0-40-0-RC2")
+	require.NoError(t, err, errs.JoinMessage(err))
+}
+
+func TestCreateBranch(t *testing.T) {
+	t.Skip("For debugging purposes, comment this line out if you want to test this locally")
+
+	prefix := funk.RandomString(10, []rune("abcdefghijklmnopqrstuvwxyz0123456789"))
+	name := prefix + "/" + funk.RandomString(10, []rune("abcdefghijklmnopqrstuvwxyz0123456789"))
+	fmt.Printf("Creating branch %s\n", name)
+	err := CreateBranch(InitGHClient(), name, "f8a9465c572ed7a26145c7ebf961554da9367ec7")
+	require.NoError(t, err, errs.JoinMessage(err))
+}
+
 func validateCommits(t *testing.T, commits []*github.RepositoryCommit, wantSHAs []string, wantN int) {
 	if wantN != -1 && len(commits) != wantN {
 		t.Errorf("FetchCommitsByRef() has %d results, want %d", len(commits), wantN)
@@ -352,5 +397,103 @@ func validateCommits(t *testing.T, commits []*github.RepositoryCommit, wantSHAs 
 		if !found {
 			t.Errorf("FetchCommitsByRef() did not return sha %s (got %d commits)", sha, len(commits))
 		}
+	}
+}
+
+func TestBehindBy(t *testing.T) {
+	t.Skip("For debugging purposes, comment this line out if you want to test this locally")
+
+	type args struct {
+		client *github.Client
+		base   string
+		head   string
+	}
+	tests := []struct {
+		name       string
+		args       args
+		wantBehind bool
+		wantErr    bool
+	}{
+		{
+			"Should be behind",
+			args{
+				InitGHClient(),
+				"version/0-39-0-RC2",
+				"version/0-39-0-RC1",
+			},
+			true,
+			false,
+		},
+		{
+			"Should not be behind",
+			args{
+				InitGHClient(),
+				"version/0-39-0-RC1",
+				"version/0-39-0-RC2",
+			},
+			false,
+			false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := GetCommitsBehind(tt.args.client, tt.args.base, tt.args.head)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("BehindBy() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if (len(got) > 0) != tt.wantBehind {
+				t.Errorf("BehindBy() got = %v, want %v", len(got), tt.wantBehind)
+			}
+		})
+	}
+}
+
+func TestFetchVersionPR(t *testing.T) {
+	t.Skip("For debugging purposes, comment this line out if you want to test this locally")
+
+	type args struct {
+		ghClient         *github.Client
+		assert           Assertion
+		versionToCompare semver.Version
+	}
+	tests := []struct {
+		name      string
+		args      args
+		wantTitle string
+		wantErr   bool
+	}{
+		{
+			"Previous Version",
+			args{
+				InitGHClient(),
+				AssertLT,
+				semver.MustParse("0.39.0-RC2"),
+			},
+			"Version 0.39.0-RC1",
+			false,
+		},
+		{
+			"Next Version",
+			args{
+				InitGHClient(),
+				AssertGT,
+				semver.MustParse("0.39.0-RC1"),
+			},
+			"Version 0.39.0-RC2",
+			false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := FetchVersionPR(tt.args.ghClient, tt.args.assert, tt.args.versionToCompare)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("FetchVersionPR() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got.GetTitle(), tt.wantTitle) {
+				t.Errorf("FetchVersionPR() got = %v, want %v", got.GetTitle(), tt.wantTitle)
+			}
+		})
 	}
 }
