@@ -60,19 +60,8 @@ scripts:
       set -e
       $constants.SET_ENV
       
-      # TODO: Move all this logic to the payload-generator Go runner so we can employ our type system
-
-      echo "# Create payload dir"
-      PAYLOADDIR=$BUILD_TARGET_DIR/payload
-      mkdir -p $PAYLOADDIR
-
-      echo "# Copy targets $PAYLOADDIR"
-      cp -av $BUILD_TARGET_DIR/$constants.BUILD_INSTALLER_TARGET $PAYLOADDIR
-      BINDIR=$PAYLOADDIR/bin
-      mkdir -p $BINDIR
-      cp -av $BUILD_TARGET_DIR/$constants.BUILD_DAEMON_TARGET $BINDIR
-      cp -av $BUILD_TARGET_DIR/$constants.BUILD_EXEC_TARGET $BINDIR
-      cp -av $BUILD_TARGET_DIR/$constants.BUILD_TARGET $BINDIR
+      echo "# Generate payload"
+      go run ./scripts/ci/payload-generator/main.go
   - name: generate-update
     language: bash
     description: Generate update files
