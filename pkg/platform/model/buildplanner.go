@@ -305,6 +305,10 @@ func (bp *BuildPlanner) StageCommit(params StageCommitParams) (strfmt.UUID, erro
 		var errs []string
 		var isTransient bool
 		for _, se := range resp.Commit.Build.SubErrors {
+			if se.Type != bpModel.RemediableSolveErrorType {
+				continue
+			}
+
 			if se.Message != "" {
 				errs = append(errs, se.Message)
 				isTransient = se.IsTransient
