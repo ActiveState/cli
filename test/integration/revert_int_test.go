@@ -20,7 +20,7 @@ func (suite *RevertIntegrationTestSuite) TestRevert() {
 	defer ts.Close()
 	ts.LoginAsPersistentUser()
 
-	namespace := "activestate-cli/Revert"
+	namespace := "ActiveState-CLI/Revert"
 	cp := ts.SpawnWithOpts(e2e.WithArgs("checkout", namespace))
 	cp.Expect("Skipping runtime setup")
 	cp.Expect("Checked out project")

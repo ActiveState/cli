@@ -112,9 +112,20 @@ query ($commitID: ID!) {
               logURL
               errors
             }
+            ... on ArtifactFailed {
+              __typename
+              nodeId
+              mimeType
+              generatedBy
+              runtimeDependencies
+              status
+              logURL
+              errors
+            }
           }
         }
         ... on PlanningError {
+          message
           subErrors {
             __typename
             ... on GenericSolveError {

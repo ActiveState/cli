@@ -19,6 +19,7 @@ import (
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/updater"
 )
@@ -85,6 +86,11 @@ func createUpdate(outputPath, channel, version, platform, target string) error {
 	archive, archiveExt := archiveMeta()
 	relArchivePath := filepath.Join(relVersionedPath, fmt.Sprintf("state-%s-%s%s", platform, version, archiveExt))
 	archivePath := filepath.Join(outputPath, relArchivePath)
+
+	installDirMarker := installation.InstallDirMarker
+	if err := fileutils.Touch(filepath.Join(target, installDirMarker)); err != nil {
+		return errs.Wrap(err, "Could not place install dir marker")
+	}
 
 	// Remove archive path if it already exists
 	_ = os.Remove(archivePath)

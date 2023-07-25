@@ -206,6 +206,11 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 		newPublish(prime),
 	)
 
+	if !condition.OnCI() {
+		helloCmd := newHelloCommand(prime)
+		stateCmd.AddChildren(helloCmd)
+	}
+
 	return &CmdTree{
 		cmd: stateCmd,
 	}

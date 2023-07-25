@@ -19,7 +19,7 @@ import (
 	"github.com/ActiveState/cli/internal/singleton/uniqid"
 	"github.com/ActiveState/cli/internal/strutils"
 	"github.com/ActiveState/cli/pkg/platform/api"
-	"github.com/machinebox/graphql"
+	"github.com/ActiveState/graphql"
 	"github.com/pkg/errors"
 )
 
@@ -290,6 +290,13 @@ func (c *Client) runWithFiles(ctx context.Context, gqlReq RequestWithFiles, resp
 		if bearerToken != "" {
 			req.Header.Set("Authorization", "Bearer "+bearerToken)
 		}
+	}
+	if os.Getenv(constants.DebugServiceRequestsEnvVarName) == "true" {
+		responseData, err := json.MarshalIndent(response, "", "  ")
+		if err != nil {
+			return errs.Wrap(err, "failed to marshal response")
+		}
+		logging.Debug("gqlclient: response: %s", responseData)
 	}
 
 	gr := &graphResponse{
