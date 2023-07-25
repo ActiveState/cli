@@ -495,6 +495,6 @@ const TerminalAnimationInterval = 150 * time.Millisecond
 // for Ctrl+C.
 const RuntimeSetupWaitEnvVarName = "ACTIVESTATE_CLI_RUNTIME_SETUP_WAIT"
 
-// PlatformApiRequestPrintHeadersSetEnvVarName is only used for an integration test to print some
-// expected headers from a Platform API request.
-const PlatformApiRequestPrintHeadersEnvVarName = "ACTIVESTATE_CLI_PLATFORM_API_REQUEST_PRINT_HEADERS"
+// PlatformApiRequestRequestsEnvVarName is only used for an integration test to print some Platform
+// API request info.
+const PlatformApiPrintRequestsEnvVarName = "ACTIVESTATE_CLI_PLATFORM_API_PRINT_REQUESTS"
