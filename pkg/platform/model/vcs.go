@@ -82,10 +82,8 @@ const (
 	// NamespaceCamelFlagsMatch is the namespace used for passing camel flags
 	NamespaceCamelFlagsMatch = `^camel-flags$`
 
-	// NamespaceSharedMatch is the namespace used for shared requirements (usually runtime libraries)
-	NamespaceSharedMatch = `^shared$`
-
-	NamespaceOrgSharedMatch = `^\w+\/shared(?$|\/\w+$)`
+	// NamespaceOrgMatch is the namespace used for org specific requirements
+	NamespaceOrgMatch = `^org\/(\w+)$`
 )
 
 type TrackingType string
@@ -129,13 +127,13 @@ type NamespaceType struct {
 }
 
 var (
-	NamespacePackage   = NamespaceType{"package", "language", NamespacePackageMatch} // these values should match the namespace prefix
-	NamespaceBundle    = NamespaceType{"bundle", "bundles", NamespaceBundlesMatch}
-	NamespaceLanguage  = NamespaceType{"language", "", NamespaceLanguageMatch}
-	NamespacePlatform  = NamespaceType{"platform", "", NamespacePlatformMatch}
-	NamespaceOrgShared = NamespaceType{"org-shared", "", NamespaceOrgSharedMatch}
-	NamespaceRaw       = NamespaceType{"raw", "", ""}
-	NamespaceBlank     = NamespaceType{"", "", ""}
+	NamespacePackage  = NamespaceType{"package", "language", NamespacePackageMatch} // these values should match the namespace prefix
+	NamespaceBundle   = NamespaceType{"bundle", "bundles", NamespaceBundlesMatch}
+	NamespaceLanguage = NamespaceType{"language", "", NamespaceLanguageMatch}
+	NamespacePlatform = NamespaceType{"platform", "", NamespacePlatformMatch}
+	NamespaceOrg      = NamespaceType{"org", "org", NamespaceOrgMatch}
+	NamespaceRaw      = NamespaceType{"raw", "", ""}
+	NamespaceBlank    = NamespaceType{"", "", ""}
 )
 
 func (t NamespaceType) String() string {
@@ -203,10 +201,10 @@ func NewNamespacePlatform() Namespace {
 	return Namespace{NamespacePlatform, "platform"}
 }
 
-func NewSharedNamespace(orgName string) Namespace {
+func NewOrgNamespace(orgName string) Namespace {
 	return Namespace{
-		nsType: NamespaceOrgShared,
-		value:  fmt.Sprintf("%s/shared", orgName),
+		nsType: NamespaceOrg,
+		value:  fmt.Sprintf("org/%s", orgName),
 	}
 }
 
