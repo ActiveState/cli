@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
 	"io/ioutil"
 	"os"
@@ -49,7 +50,17 @@ func NewInstaller(cfg *config.Instance, out output.Outputer, payloadPath string,
 }
 
 func (i *Installer) Install() (rerr error) {
-	if err := fileutils.Touch(filepath.Join(i.path, installation.InstallDirMarker)); err != nil {
+	// Create install marker
+	installMarkerContents := installation.InstallMarkerMeta{
+		Branch:  constants.BranchName,
+		Version: constants.Version,
+	}
+	b, err := json.Marshal(installMarkerContents)
+	if err != nil {
+		return errs.Wrap(err, "Could not marshal install marker contents")
+	}
+
+	if err := fileutils.WriteFile(filepath.Join(i.path, installation.InstallDirMarker), b); err != nil {
 		return errs.Wrap(err, "Could not place install dir marker")
 	}
 
@@ -73,7 +84,7 @@ func (i *Installer) Install() (rerr error) {
 	}
 
 	// Detect if existing installation needs to be cleaned
-	err := detectCorruptedInstallDir(i.path)
+	err = detectCorruptedInstallDir(i.path)
 	if errors.Is(err, errCorruptedInstall) {
 		err = i.sanitizeInstallPath()
 		if err != nil {

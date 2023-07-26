@@ -95,7 +95,7 @@ func CreateVersionPR(ghClient *github.Client, jiraClient *jira.Client, meta Meta
 
 	// Create commit with version.txt change
 	finish = PrintStart("Creating commit with version.txt change")
-	parentSha, err := wh.CreateFileUpdateCommit(ghClient, meta.GetVersionBranchName(), "version.txt", meta.GetVersion().String())
+	parentSha, err := wh.CreateFileUpdateCommit(ghClient, meta.GetVersionBranchName(), "version.txt", meta.GetVersion().String(), wh.UpdateVersionCommitMessage)
 	if err != nil {
 		return errs.Wrap(err, "failed to create commit")
 	}
