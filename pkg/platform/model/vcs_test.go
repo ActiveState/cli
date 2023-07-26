@@ -152,7 +152,7 @@ func (suite *VCSTestSuite) TestVersionStringToConstraints() {
 	}
 
 	for _, tt := range tests {
-		got, err := versionStringToConstraints(tt.version)
+		got, err := VersionStringToConstraints(tt.version)
 		suite.NoError(err)
 		suite.Equal(tt.want, got)
 	}

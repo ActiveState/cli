@@ -235,7 +235,7 @@ type StageCommitParams struct {
 	Project              string
 	ParentCommit         string
 	RequirementName      string
-	RequirementVersion   string
+	RequirementVersion   []bpModel.VersionRequirement
 	RequirementNamespace Namespace
 	Operation            bpModel.Operation
 	TimeStamp            strfmt.DateTime
@@ -256,15 +256,9 @@ func (bp *BuildPlanner) StageCommit(params StageCommitParams) (strfmt.UUID, erro
 		}
 	} else {
 		requirement := bpModel.Requirement{
-			Namespace: params.RequirementNamespace.String(),
-			Name:      params.RequirementName,
-		}
-
-		if params.RequirementVersion != "" {
-			requirement.VersionRequirement = []bpModel.VersionRequirement{{
-				bpModel.VersionRequirementComparatorKey: bpModel.ComparatorEQ,
-				bpModel.VersionRequirementVersionKey:    params.RequirementVersion,
-			}}
+			Namespace:          params.RequirementNamespace.String(),
+			Name:               params.RequirementName,
+			VersionRequirement: params.RequirementVersion,
 		}
 
 		err = expression.UpdateRequirement(params.Operation, requirement)

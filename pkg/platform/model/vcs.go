@@ -565,7 +565,7 @@ func CommitInitial(hostPlatform string, langName, langVersion string) (strfmt.UU
 	var changes []*mono_models.CommitChangeEditable
 
 	if langName != "" {
-		versionConstraints, err := versionStringToConstraints(langVersion)
+		versionConstraints, err := VersionStringToConstraints(langVersion)
 		if err != nil {
 			return "", errs.Wrap(err, "Could not process version string into constraints")
 		}
@@ -604,7 +604,7 @@ func isWildcardVersion(version string) bool {
 	return strings.Index(version, "x") >= 0 || strings.Index(version, "X") >= 0
 }
 
-func versionStringToConstraints(version string) ([]*mono_models.Constraint, error) {
+func VersionStringToConstraints(version string) ([]*mono_models.Constraint, error) {
 	if !isWildcardVersion(version) {
 		return []*mono_models.Constraint{{Comparator: "eq", Version: version}}, nil // exact version
 	}
