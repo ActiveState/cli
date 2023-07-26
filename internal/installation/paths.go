@@ -21,6 +21,11 @@ const (
 	InstallDirMarker = ".state_install_root"
 )
 
+type InstallMarkerMeta struct {
+	Branch  string `json:"branch"`
+	Version string `json:"version"`
+}
+
 func DefaultInstallPath() (string, error) {
 	return InstallPathForBranch(constants.BranchName)
 }

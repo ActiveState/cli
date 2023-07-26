@@ -87,8 +87,17 @@ func createUpdate(outputPath, channel, version, platform, target string) error {
 	relArchivePath := filepath.Join(relVersionedPath, fmt.Sprintf("state-%s-%s%s", platform, version, archiveExt))
 	archivePath := filepath.Join(outputPath, relArchivePath)
 
-	installDirMarker := installation.InstallDirMarker
-	if err := fileutils.Touch(filepath.Join(target, installDirMarker)); err != nil {
+	// Create install marker
+	installMarkerContents := installation.InstallMarkerMeta{
+		Branch:  channel,
+		Version: version,
+	}
+	b, err := json.Marshal(installMarkerContents)
+	if err != nil {
+		return errs.Wrap(err, "Could not marshal install marker contents")
+	}
+
+	if err := fileutils.WriteFile(filepath.Join(target, installation.InstallDirMarker), b); err != nil {
 		return errs.Wrap(err, "Could not place install dir marker")
 	}
 
@@ -96,7 +105,7 @@ func createUpdate(outputPath, channel, version, platform, target string) error {
 	_ = os.Remove(archivePath)
 	// Create main archive
 	fmt.Printf("Creating %s\n", archivePath)
-	err := archive.Archive([]string{target}, archivePath)
+	err = archive.Archive([]string{target}, archivePath)
 	if err != nil {
 		return errs.Wrap(err, "Archiving failed")
 	}

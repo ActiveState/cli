@@ -66,12 +66,24 @@ func (suite *InstallerIntegrationTestSuite) TestInstallFromLocalSource() {
 	// Ensure installing overtop doesn't result in errors
 	cp = ts.SpawnCmdWithOpts(
 		payload.installer,
-		e2e.WithArgs(payload.dir, "--force"),
+		e2e.WithArgs(payload.dir),
 		e2e.AppendEnv(constants.DisableUpdates+"=false"),
 		e2e.AppendEnv(fmt.Sprintf("%s=%s", constants.OverwriteDefaultSystemPathEnvVarName, dir)),
 	)
+	cp.Expect("successfully installed")
+	cp.WaitForInput()
+	cp.SendLine("exit")
+	cp.ExpectExitCode(0)
 
-	// Assert output
+	// Again ensure installing overtop doesn't result in errors, but mock an older state tool format where
+	// the marker has no contents
+	suite.Require().NoError(fileutils.WriteFile(filepath.Join(target, installation.InstallDirMarker), []byte{}))
+	cp = ts.SpawnCmdWithOpts(
+		suite.installerExe,
+		e2e.WithArgs(target),
+		e2e.AppendEnv(constants.DisableUpdates+"=false"),
+		e2e.AppendEnv(fmt.Sprintf("%s=%s", constants.OverwriteDefaultSystemPathEnvVarName, dir)),
+	)
 	cp.Expect("successfully installed")
 
 	installDir := payload.dir
