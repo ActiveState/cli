@@ -17,6 +17,7 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/httputil"
 	"github.com/ActiveState/cli/internal/installation"
+	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
@@ -346,7 +347,7 @@ func (suite *InstallerIntegrationTestSuite) newPayload(ts *e2e.Session) *payload
 	suite.Assert().NoError(err, "generate payload")
 
 	return &payload{
-		installer: filepath.Join(payDir, constants.StateInstallerCmd),
+		installer: filepath.Join(payDir, constants.StateInstallerCmd) + osutils.ExeExt,
 	}
 }
 
