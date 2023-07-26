@@ -142,6 +142,8 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 				)
 			}
 			cp.Expect("successfully installed")
+			cp.WaitForInput()
+			cp.SendLine("exit")
 			cp.ExpectExitCode(0)
 		})
 	}
