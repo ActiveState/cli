@@ -53,6 +53,7 @@ func (suite *InitIntegrationTestSuite) TestInit_DisambiguatePython() {
 func (suite *InitIntegrationTestSuite) TestInit_PartialVersions() {
 	suite.OnlyRunForTags(tagsuite.Init)
 	suite.runInitTest(false, "python@3.10", "python3")
+	suite.runInitTest(false, "python@3.10.x", "python3")
 	suite.runInitTest(false, "python@2", "python2")
 }
 
