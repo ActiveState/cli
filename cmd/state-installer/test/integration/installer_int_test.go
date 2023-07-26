@@ -28,7 +28,6 @@ import (
 
 type InstallerIntegrationTestSuite struct {
 	tagsuite.Suite
-	installerExe string
 }
 
 func (suite *InstallerIntegrationTestSuite) TestInstallFromLocalSource() {
@@ -191,8 +190,7 @@ func (suite *InstallerIntegrationTestSuite) TestStateTrayRemoval() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	_ = suite.newPayload(ts)
-
+	payload := suite.newPayload(ts)
 	dir := installationDir(ts)
 
 	// Install a release version that still has state-tray.
@@ -228,7 +226,7 @@ func (suite *InstallerIntegrationTestSuite) TestStateTrayRemoval() {
 
 	// Run the installer, which should remove state-tray and clean up after it.
 	cp = ts.SpawnCmdWithOpts(
-		suite.installerExe,
+		payload.installer,
 		e2e.WithArgs("-f", "-n", "-t", dir),
 		e2e.AppendEnv(constants.UpdateBranchEnvVarName+"=release"),
 		e2e.AppendEnv(fmt.Sprintf("%s=%s", constants.OverwriteDefaultSystemPathEnvVarName, dir)),
@@ -257,13 +255,15 @@ func (suite *InstallerIntegrationTestSuite) TestInstallerOverwriteServiceApp() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
+	payload := suite.newPayload(ts)
+
 	appInstallDir := filepath.Join(ts.Dirs.Work, "app")
 	err := fileutils.Mkdir(appInstallDir)
 	suite.Require().NoError(err)
 
 	cp := ts.SpawnCmdWithOpts(
-		suite.installerExe,
-		e2e.WithArgs(filepath.Join(ts.Dirs.Work, "installation")),
+		payload.installer,
+		e2e.WithArgs(installationDir(ts)),
 		e2e.AppendEnv(fmt.Sprintf("%s=%s", constants.AppInstallDirOverrideEnvVarName, appInstallDir)),
 	)
 	cp.Expect("Done")
@@ -272,8 +272,8 @@ func (suite *InstallerIntegrationTestSuite) TestInstallerOverwriteServiceApp() {
 
 	// State Service.app should be overwritten cleanly without error.
 	cp = ts.SpawnCmdWithOpts(
-		suite.installerExe,
-		e2e.WithArgs(filepath.Join(ts.Dirs.Work, "installation2")),
+		payload.installer,
+		e2e.WithArgs(installationDir(ts)+"2"),
 		e2e.AppendEnv(fmt.Sprintf("%s=%s", constants.AppInstallDirOverrideEnvVarName, appInstallDir)),
 	)
 	cp.Expect("Done")
