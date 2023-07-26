@@ -53,7 +53,7 @@ type Session struct {
 	createdProjects []*project.Namespaced
 	// users created during session
 	users       []string
-	t           *testing.T
+	T           *testing.T
 	Exe         string
 	SvcExe      string
 	ExecutorExe string
@@ -120,24 +120,24 @@ func (s *Session) CopyExeToDir(from, to string) string {
 	var err error
 	to, err = filepath.Abs(filepath.Join(to, filepath.Base(from)))
 	if err != nil {
-		s.t.Fatal(err)
+		s.T.Fatal(err)
 	}
 	if fileutils.TargetExists(to) {
 		return to
 	}
 
 	err = fileutils.CopyFile(from, to)
-	require.NoError(s.t, err, "Could not copy %s to %s", from, to)
+	require.NoError(s.T, err, "Could not copy %s to %s", from, to)
 
 	// Ensure modTime is the same as source exe
 	stat, err := os.Stat(from)
-	require.NoError(s.t, err)
+	require.NoError(s.T, err)
 	t := stat.ModTime()
-	require.NoError(s.t, os.Chtimes(to, t, t))
+	require.NoError(s.T, os.Chtimes(to, t, t))
 
 	permissions, _ := permbits.Stat(to)
 	permissions.SetUserExecute(true)
-	require.NoError(s.t, permbits.Chmod(to, permissions))
+	require.NoError(s.T, permbits.Chmod(to, permissions))
 	return to
 }
 
@@ -201,7 +201,7 @@ func new(t *testing.T, retainDirs, updatePath bool, extraEnv ...string) *Session
 	// add session environment variables
 	env = append(env, extraEnv...)
 
-	session := &Session{Dirs: dirs, Env: env, retainDirs: retainDirs, t: t}
+	session := &Session{Dirs: dirs, Env: env, retainDirs: retainDirs, T: t}
 
 	// Mock installation directory
 	exe, svcExe, execExe := executablePaths(t)
@@ -210,7 +210,7 @@ func new(t *testing.T, retainDirs, updatePath bool, extraEnv ...string) *Session
 	session.ExecutorExe = session.copyExeToBinDir(execExe)
 
 	err = fileutils.Touch(filepath.Join(dirs.Base, installation.InstallDirMarker))
-	require.NoError(session.t, err)
+	require.NoError(session.T, err)
 
 	return session
 }
@@ -281,7 +281,7 @@ func (s *Session) SpawnCmdWithOpts(exe string, opts ...SpawnOptions) *termtest.C
 	}
 
 	console, err := termtest.New(pOpts.Options)
-	require.NoError(s.t, err)
+	require.NoError(s.T, err)
 	if !pOpts.BackgroundProcess {
 		s.cp = console
 	}
@@ -295,7 +295,7 @@ func (s *Session) SpawnCmdWithOpts(exe string, opts ...SpawnOptions) *termtest.C
 // provided contents and saves the output to an as.y file within the named
 // directory.
 func (s *Session) PrepareActiveStateYAML(contents string) {
-	require.NoError(s.t, fileutils.WriteFile(filepath.Join(s.Dirs.Work, "activestate.yaml"), []byte(contents)))
+	require.NoError(s.T, fileutils.WriteFile(filepath.Join(s.Dirs.Work, "activestate.yaml"), []byte(contents)))
 }
 
 // PrepareFile writes a file to path with contents, expecting no error
@@ -305,12 +305,12 @@ func (s *Session) PrepareFile(path, contents string) {
 	contents = strings.TrimSpace(contents)
 
 	err := os.MkdirAll(filepath.Dir(path), 0770)
-	require.NoError(s.t, err, errMsg)
+	require.NoError(s.T, err, errMsg)
 
 	bs := append([]byte(contents), '\n')
 
 	err = ioutil.WriteFile(path, bs, 0660)
-	require.NoError(s.t, err, errMsg)
+	require.NoError(s.T, err, errMsg)
 }
 
 func (s *Session) LoginUser(userName string) {
@@ -345,7 +345,7 @@ func (s *Session) AddUserToCleanup(username string) {
 
 func (s *Session) CreateNewUser() *mono_models.UserEditable {
 	uid, err := uuid.NewRandom()
-	require.NoError(s.t, err)
+	require.NoError(s.T, err)
 
 	username := fmt.Sprintf("user-%s", uid.String()[0:8])
 	userMeta := &mono_models.UserEditable{
@@ -359,7 +359,7 @@ func (s *Session) CreateNewUser() *mono_models.UserEditable {
 	params.SetUser(userMeta)
 	_, err = mono.New().Users.AddUser(params)
 
-	require.NoError(s.t, err)
+	require.NoError(s.T, err)
 
 	p := s.Spawn("auth", "--username", username, "--password", userMeta.Password)
 	p.ExpectExitCode(0)
@@ -392,7 +392,7 @@ func observeSendFn(s *Session) func(string, int, error) {
 			return
 		}
 
-		s.t.Fatalf("Could not send data to terminal\nerror: %v", err)
+		s.T.Fatalf("Could not send data to terminal\nerror: %v", err)
 	}
 }
 
@@ -428,7 +428,7 @@ func (s *Session) DebugMessage(prefix string) string {
 		"Z":            sectionEnd,
 	}, nil)
 	if err != nil {
-		s.t.Fatalf("Parsing template failed: %s", err)
+		s.T.Fatalf("Parsing template failed: %s", err)
 	}
 
 	return v
@@ -447,7 +447,7 @@ func observeExpectFn(s *Session) expect.ExpectObserver {
 			sep = ", "
 		}
 
-		s.t.Fatal(s.DebugMessage(fmt.Sprintf(`
+		s.T.Fatal(s.DebugMessage(fmt.Sprintf(`
 Could not meet expectation: '%s'
 Error: %s`, value, err)))
 	}
@@ -462,7 +462,7 @@ func (s *Session) Close() error {
 	}
 
 	cfg, err := config.NewCustom(s.Dirs.Config, singlethread.New(), true)
-	require.NoError(s.t, err, "Could not read e2e session configuration: %s", errs.JoinMessage(err))
+	require.NoError(s.T, err, "Could not read e2e session configuration: %s", errs.JoinMessage(err))
 
 	if !s.retainDirs {
 		defer s.Dirs.Close()
@@ -473,7 +473,7 @@ func (s *Session) Close() error {
 	}
 
 	if os.Getenv("PLATFORM_API_TOKEN") == "" {
-		s.t.Log("PLATFORM_API_TOKEN env var not set, not running suite tear down")
+		s.T.Log("PLATFORM_API_TOKEN env var not set, not running suite tear down")
 		return nil
 	}
 
@@ -503,7 +503,7 @@ func (s *Session) Close() error {
 		if runtime.GOOS == "linux" {
 			projects, err := getProjects(org, auth)
 			if err != nil {
-				s.t.Errorf("Could not fetch projects: %v", errs.JoinMessage(err))
+				s.T.Errorf("Could not fetch projects: %v", errs.JoinMessage(err))
 			}
 			for _, proj := range projects {
 				if strfmt.IsUUID(proj.Name) {
@@ -516,14 +516,14 @@ func (s *Session) Close() error {
 	for _, proj := range s.createdProjects {
 		err := model.DeleteProject(proj.Owner, proj.Project, auth)
 		if err != nil {
-			s.t.Errorf("Could not delete project %s: %v", proj.Project, errs.JoinMessage(err))
+			s.T.Errorf("Could not delete project %s: %v", proj.Project, errs.JoinMessage(err))
 		}
 	}
 
 	for _, user := range s.users {
-		err := cleanUser(s.t, user, auth)
+		err := cleanUser(s.T, user, auth)
 		if err != nil {
-			s.t.Errorf("Could not delete user %s: %v", user, errs.JoinMessage(err))
+			s.T.Errorf("Could not delete user %s: %v", user, errs.JoinMessage(err))
 		}
 	}
 
@@ -619,7 +619,7 @@ func (s *Session) DetectLogErrors() {
 	rx := regexp.MustCompile(`(?:\[ERR:|Panic:)`)
 	for _, path := range s.LogFiles() {
 		if contents := string(fileutils.ReadFileUnsafe(path)); rx.MatchString(contents) {
-			s.t.Errorf("Found error and/or panic in log file %s, contents:\n%s", path, contents)
+			s.T.Errorf("Found error and/or panic in log file %s, contents:\n%s", path, contents)
 		}
 	}
 }

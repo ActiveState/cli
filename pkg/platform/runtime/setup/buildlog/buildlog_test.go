@@ -197,7 +197,7 @@ func TestBuildLog(t *testing.T) {
 			cm := &connectionMock{}
 			tt.ConnectionMock(t, cm)
 
-			bl, err := NewWithCustomConnections(artifactMap, cm, em, recipeArtifact.ArtifactID, fileutils.TempFilePathUnsafe())
+			bl, err := NewWithCustomConnections(artifactMap, cm, em, recipeArtifact.ArtifactID, fileutils.TempFilePathUnsafe("", ""))
 			require.NoError(t, err)
 
 			var downloads []artifact.ArtifactID

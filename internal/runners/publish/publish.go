@@ -22,7 +22,7 @@ import (
 	auth "github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/machinebox/graphql"
+	"github.com/ActiveState/graphql"
 	"github.com/skratchdot/open-golang/open"
 	"gopkg.in/yaml.v3"
 )
@@ -107,7 +107,7 @@ func (r *Runner) Run(params *Params) error {
 	if params.Namespace != "" {
 		reqVars.Namespace = params.Namespace
 	} else if reqVars.Namespace == "" && r.project != nil && r.project.Owner() != "" {
-		reqVars.Namespace = model.NewSharedNamespace(r.project.Owner()).String()
+		reqVars.Namespace = model.NewOrgNamespace(r.project.Owner()).String()
 	}
 
 	// Name

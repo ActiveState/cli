@@ -69,8 +69,8 @@ func (suite *PublishIntegrationTestSuite) TestPublish() {
 			"New ingredient with file arg and flags",
 			input{
 				[]string{tempFile,
-					"--name", "im-a-name",
-					"--namespace", "{{.Username}}/shared",
+					"--name", "im-a-name-test1",
+					"--namespace", "org/{{.Username}}",
 					"--version", "2.3.4",
 					"--description", "im-a-description",
 					"--author", "author-name <author-email@domain.tld>",
@@ -82,8 +82,8 @@ func (suite *PublishIntegrationTestSuite) TestPublish() {
 			expect{
 				[]string{
 					`Upload following ingredient?`,
-					`name: im-a-name`,
-					`namespace: {{.Username}}/shared`,
+					`name: im-a-name-test1`,
+					`namespace: org/{{.Username}}`,
 					`version: 2.3.4`,
 					`description: im-a-description`,
 					`name: author-name`,
@@ -112,8 +112,8 @@ func (suite *PublishIntegrationTestSuite) TestPublish() {
 			input{
 				[]string{"--meta", "{{.MetaFile}}", tempFile},
 				ptr.To(`
-name: im-a-name
-namespace: {{.Username}}/shared
+name: im-a-name-test2
+namespace: org/{{.Username}}
 version: 2.3.4
 description: im-a-description
 authors:
@@ -126,8 +126,8 @@ authors:
 			expect{
 				[]string{
 					`Upload following ingredient?`,
-					`name: im-a-name`,
-					`namespace: {{.Username}}/shared`,
+					`name: im-a-name-test2`,
+					`namespace: org/{{.Username}}`,
 					`version: 2.3.4`,
 					`description: im-a-description`,
 					`name: author-name`,
@@ -143,7 +143,7 @@ authors:
 				[]string{"--meta", "{{.MetaFile}}", tempFile, "--name", "im-a-name-from-flag", "--author", "author-name-from-flag <author-email-from-flag@domain.tld>"},
 				ptr.To(`
 name: im-a-name
-namespace: {{.Username}}/shared
+namespace: org/{{.Username}}
 version: 2.3.4
 description: im-a-description
 authors:
@@ -157,7 +157,7 @@ authors:
 				[]string{
 					`Upload following ingredient?`,
 					`name: im-a-name-from-flag`,
-					`namespace: {{.Username}}/shared`,
+					`namespace: org/{{.Username}}`,
 					`version: 2.3.4`,
 					`description: im-a-description`,
 					`name: author-name-from-flag`,
@@ -173,8 +173,8 @@ authors:
 				[]string{tempFile, "--editor"},
 				nil,
 				ptr.To(`
-name: im-a-name
-namespace: {{.Username}}/shared
+name: im-a-name-test3
+namespace: org/{{.Username}}
 version: 2.3.4
 description: im-a-description
 authors:
@@ -186,8 +186,8 @@ authors:
 			expect{
 				[]string{
 					`Upload following ingredient?`,
-					`name: im-a-name`,
-					`namespace: {{.Username}}/shared`,
+					`name: im-a-name-test3`,
+					`namespace: org/{{.Username}}`,
 					`version: 2.3.4`,
 					`description: im-a-description`,
 					`name: author-name`,
@@ -200,7 +200,7 @@ authors:
 		{
 			"Cancel upload",
 			input{
-				[]string{tempFile, "--name", "bogus", "--namespace", "{{.Username}}/shared"},
+				[]string{tempFile, "--name", "bogus", "--namespace", "org/{{.Username}}"},
 				nil,
 				nil,
 				false,
@@ -215,6 +215,8 @@ authors:
 	}
 	for _, tt := range tests {
 		suite.Run(tt.name, func() {
+			ts.T = suite.T() // This differs per subtest
+
 			templateVars := map[string]interface{}{
 				"Username": user.Username,
 				"Email":    user.Email,
