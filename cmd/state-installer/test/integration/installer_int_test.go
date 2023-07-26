@@ -33,7 +33,7 @@ type InstallerIntegrationTestSuite struct {
 
 func (suite *InstallerIntegrationTestSuite) TestInstallFromLocalSource() {
 	suite.OnlyRunForTags(tagsuite.Installer, tagsuite.Critical)
-	ts := e2e.New(suite.T(), false)
+	ts := e2e.New(suite.T(), true)
 	defer ts.Close()
 
 	suite.setupTest(ts)
@@ -68,12 +68,24 @@ func (suite *InstallerIntegrationTestSuite) TestInstallFromLocalSource() {
 	// Ensure installing overtop doesn't result in errors
 	cp = ts.SpawnCmdWithOpts(
 		suite.installerExe,
-		e2e.WithArgs(target, "--force"),
+		e2e.WithArgs(target),
 		e2e.AppendEnv(constants.DisableUpdates+"=false"),
 		e2e.AppendEnv(fmt.Sprintf("%s=%s", constants.OverwriteDefaultSystemPathEnvVarName, dir)),
 	)
+	cp.Expect("successfully installed")
+	cp.WaitForInput()
+	cp.SendLine("exit")
+	cp.ExpectExitCode(0)
 
-	// Assert output
+	// Again ensure installing overtop doesn't result in errors, but mock an older state tool format where
+	// the marker has no contents
+	suite.Require().NoError(fileutils.WriteFile(filepath.Join(target, installation.InstallDirMarker), []byte{}))
+	cp = ts.SpawnCmdWithOpts(
+		suite.installerExe,
+		e2e.WithArgs(target),
+		e2e.AppendEnv(constants.DisableUpdates+"=false"),
+		e2e.AppendEnv(fmt.Sprintf("%s=%s", constants.OverwriteDefaultSystemPathEnvVarName, dir)),
+	)
 	cp.Expect("successfully installed")
 
 	stateExec, err := installation.StateExecFromDir(target)
