@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
 	"io/ioutil"
 	"os"
@@ -69,7 +70,7 @@ func (i *Installer) Install() (rerr error) {
 	}
 
 	// Detect if existing installation needs to be cleaned
-	err := detectCorruptedInstallDir(i.path)
+	err = detectCorruptedInstallDir(i.path)
 	if errors.Is(err, errCorruptedInstall) {
 		err = i.sanitizeInstallPath()
 		if err != nil {
