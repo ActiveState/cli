@@ -133,7 +133,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 			suite.assertCorrectVersion(ts, installDir, tt.Version, tt.Channel)
 			suite.DirExists(ts.Dirs.Config)
 
-			// Verify that we don't try to install it again
+			// Verify that can install overtop
 			if runtime.GOOS != "windows" {
 				cp = ts.SpawnCmdWithOpts("bash", e2e.WithArgs(argsPlain...))
 			} else {
@@ -141,7 +141,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 					e2e.AppendEnv("SHELL="),
 				)
 			}
-			cp.Expect("already installed")
+			cp.Expect("successfully installed")
 			cp.ExpectExitCode(0)
 		})
 	}
