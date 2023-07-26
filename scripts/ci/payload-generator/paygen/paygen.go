@@ -44,13 +44,26 @@ func GeneratePayload(buildDir, payloadDir string) error {
 	return nil
 }
 
+// copyFiles will copy the given files while preserving permissions.
 func copyFiles(files map[string]string) error {
+	emsg := "copy files (%s to %s): %w"
+
 	for src, target := range files {
 		log("Copying %s to %s", src, target)
-		err := fileutils.CopyFile(src, fp.Join(target, fp.Base(src)))
+		dest := fp.Join(target, fp.Base(src))
+		err := fileutils.CopyFile(src, dest)
 		if err != nil {
-			return fmt.Errorf("copy files (item %s to %s): %w", src, target, err)
+			return fmt.Errorf(emsg, src, target, err)
+		}
+		srcStat, err := os.Stat(src)
+		if err != nil {
+			return fmt.Errorf(emsg, src, target, err)
+		}
+
+		if err := os.Chmod(dest, srcStat.Mode().Perm()); err != nil {
+			return fmt.Errorf(emsg, src, target, err)
 		}
 	}
+
 	return nil
 }
