@@ -116,8 +116,8 @@ func (s *Auth) SyncRequired() bool {
 func (s *Auth) Sync() error {
 	defer profile.Measure("auth:Sync", time.Now())
 
-	if s.AvailableAPIToken() != "" {
-		logging.Debug("Authenticating with stored API token")
+	if token := s.AvailableAPIToken(); token != "" {
+		logging.Debug("Authenticating with stored API token: %s..", token[0:2])
 		if err := s.Authenticate(); err != nil {
 			return errs.Wrap(err, "Failed to authenticate with API token")
 		}
@@ -387,6 +387,7 @@ func (s *Auth) CreateToken() error {
 
 	for _, token := range tokensOK.Payload {
 		if token.Name == constants.APITokenName {
+			logging.Debug("Deleting stale token")
 			params := authentication.NewDeleteTokenParams()
 			params.SetTokenID(token.TokenID)
 			_, err := client.Authentication.DeleteToken(params, s.ClientAuth())
@@ -413,6 +414,7 @@ func (s *Auth) CreateToken() error {
 
 // SaveToken will save an API token
 func (s *Auth) SaveToken(token string) error {
+	logging.Debug("Saving token: %s..", token[0:2])
 	err := s.cfg.Set(ApiTokenConfigKey, token)
 	if err != nil {
 		return locale.WrapError(err, "err_set_token", "Could not set token in config")
@@ -435,6 +437,8 @@ func (s *Auth) NewAPIKey(name string) (string, error) {
 	if err != nil {
 		return "", locale.WrapError(err, "err_token_create", "", err.Error())
 	}
+
+	logging.Debug("Created token: %s..", tokenOK.Payload.Token[0:2])
 
 	return tokenOK.Payload.Token, nil
 }
