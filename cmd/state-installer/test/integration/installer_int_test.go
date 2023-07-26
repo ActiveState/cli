@@ -22,7 +22,6 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/ActiveState/cli/pkg/sysinfo"
-	"github.com/ActiveState/cli/scripts/ci/payload-generator/paygen"
 	"github.com/ActiveState/termtest"
 	"github.com/stretchr/testify/suite"
 )
@@ -36,7 +35,8 @@ func (suite *InstallerIntegrationTestSuite) TestInstallFromLocalSource() {
 	ts := e2e.New(suite.T(), true)
 	defer ts.Close()
 
-	payload := suite.newPayload(ts)
+	payload := newPayloadAssets(suite)
+
 	suite.SetupRCFile(ts)
 	suite.T().Setenv(constants.HomeEnvVarName, ts.Dirs.HomeDir)
 
@@ -46,7 +46,7 @@ func (suite *InstallerIntegrationTestSuite) TestInstallFromLocalSource() {
 	// Run installer with source-path flag (ie. install from this local path)
 	cp := ts.SpawnCmdWithOpts(
 		payload.installer,
-		e2e.WithArgs(installationDir(ts)),
+		e2e.WithArgs(payload.dir),
 		e2e.AppendEnv(constants.DisableUpdates+"=false"),
 		e2e.AppendEnv(fmt.Sprintf("%s=%s", constants.OverwriteDefaultSystemPathEnvVarName, dir)),
 	)
@@ -66,7 +66,7 @@ func (suite *InstallerIntegrationTestSuite) TestInstallFromLocalSource() {
 	// Ensure installing overtop doesn't result in errors
 	cp = ts.SpawnCmdWithOpts(
 		payload.installer,
-		e2e.WithArgs(installationDir(ts), "--force"),
+		e2e.WithArgs(payload.dir, "--force"),
 		e2e.AppendEnv(constants.DisableUpdates+"=false"),
 		e2e.AppendEnv(fmt.Sprintf("%s=%s", constants.OverwriteDefaultSystemPathEnvVarName, dir)),
 	)
@@ -74,7 +74,7 @@ func (suite *InstallerIntegrationTestSuite) TestInstallFromLocalSource() {
 	// Assert output
 	cp.Expect("successfully installed")
 
-	installDir := installationDir(ts)
+	installDir := payload.dir
 
 	stateExec, err := installation.StateExecFromDir(installDir)
 	suite.Contains(stateExec, installDir, "Ensure we're not grabbing state tool from integration test bin dir")
@@ -126,12 +126,12 @@ func (suite *InstallerIntegrationTestSuite) TestInstallIncompatible() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	payload := suite.newPayload(ts)
+	payload := newPayloadAssets(suite)
 
 	// Run installer with source-path flag (ie. install from this local path)
 	cp := ts.SpawnCmdWithOpts(
 		payload.installer,
-		e2e.WithArgs(installationDir(ts)),
+		e2e.WithArgs(payload.dir),
 		e2e.AppendEnv(constants.DisableUpdates+"=false", sysinfo.VersionOverrideEnvVar+"=10.0.0"),
 	)
 
@@ -145,14 +145,14 @@ func (suite *InstallerIntegrationTestSuite) TestInstallNoErrorTips() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	payload := suite.newPayload(ts)
+	payload := newPayloadAssets(suite)
 
 	dir, err := ioutil.TempDir("", "system*")
 	suite.NoError(err)
 
 	cp := ts.SpawnCmdWithOpts(
 		payload.installer,
-		e2e.WithArgs(installationDir(ts), "--activate", "ActiveState/DoesNotExist"),
+		e2e.WithArgs(payload.dir, "--activate", "ActiveState/DoesNotExist"),
 		e2e.AppendEnv(constants.DisableUpdates+"=true"),
 		e2e.AppendEnv(fmt.Sprintf("%s=%s", constants.OverwriteDefaultSystemPathEnvVarName, dir)),
 	)
@@ -166,14 +166,14 @@ func (suite *InstallerIntegrationTestSuite) TestInstallErrorTips() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	payload := suite.newPayload(ts)
+	payload := newPayloadAssets(suite)
 
 	dir, err := ioutil.TempDir("", "system*")
 	suite.NoError(err)
 
 	cp := ts.SpawnCmdWithOpts(
 		payload.installer,
-		e2e.WithArgs(installationDir(ts), "--activate", "ActiveState-CLI/Python3"),
+		e2e.WithArgs(payload.dir, "--activate", "ActiveState-CLI/Python3"),
 		e2e.AppendEnv(constants.DisableUpdates+"=true"),
 		e2e.AppendEnv(fmt.Sprintf("%s=%s", constants.OverwriteDefaultSystemPathEnvVarName, dir)),
 	)
@@ -191,8 +191,8 @@ func (suite *InstallerIntegrationTestSuite) TestStateTrayRemoval() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	payload := suite.newPayload(ts)
-	dir := installationDir(ts)
+	payload := newPayloadAssets(suite)
+	dir := payload.dir
 
 	// Install a release version that still has state-tray.
 	version := "0.35.0-SHAb78e2a4"
@@ -256,7 +256,7 @@ func (suite *InstallerIntegrationTestSuite) TestInstallerOverwriteServiceApp() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	payload := suite.newPayload(ts)
+	payload := newPayloadAssets(suite)
 
 	appInstallDir := filepath.Join(ts.Dirs.Work, "app")
 	err := fileutils.Mkdir(appInstallDir)
@@ -264,7 +264,7 @@ func (suite *InstallerIntegrationTestSuite) TestInstallerOverwriteServiceApp() {
 
 	cp := ts.SpawnCmdWithOpts(
 		payload.installer,
-		e2e.WithArgs(installationDir(ts)),
+		e2e.WithArgs(payload.dir),
 		e2e.AppendEnv(fmt.Sprintf("%s=%s", constants.AppInstallDirOverrideEnvVarName, appInstallDir)),
 	)
 	cp.Expect("Done")
@@ -274,7 +274,7 @@ func (suite *InstallerIntegrationTestSuite) TestInstallerOverwriteServiceApp() {
 	// State Service.app should be overwritten cleanly without error.
 	cp = ts.SpawnCmdWithOpts(
 		payload.installer,
-		e2e.WithArgs(installationDir(ts)+"2"),
+		e2e.WithArgs(payload.dir+"2"),
 		e2e.AppendEnv(fmt.Sprintf("%s=%s", constants.AppInstallDirOverrideEnvVarName, appInstallDir)),
 	)
 	cp.Expect("Done")
@@ -328,26 +328,21 @@ func (suite *InstallerIntegrationTestSuite) AssertConfig(ts *e2e.Session) {
 	}
 }
 
-func installationDir(ts *e2e.Session) string {
-	return filepath.Join(ts.Dirs.Work, "installation")
-}
-
-type payload struct {
+type payloadAssets struct {
+	dir       string
 	installer string
 }
 
-func (suite *InstallerIntegrationTestSuite) newPayload(ts *e2e.Session) *payload {
-	root := environment.GetRootPathUnsafe()
-	buildDir := filepath.Join(root, "build")
-	payDir := filepath.Join(ts.Dirs.Work, "payload")
+func newPayloadAssets(suite *InstallerIntegrationTestSuite) *payloadAssets {
+	dir := filepath.Join(environment.GetRootPathUnsafe(), "build", "payload")
+	suite.Assert().DirExists(dir, "locally generated payload exists")
 
-	suite.Assert().NoError(fileutils.MkdirUnlessExists(payDir))
+	installer := filepath.Join(dir, constants.StateInstallerCmd+osutils.ExeExt)
+	suite.Assert().FileExists(installer, "locally generated installer exists")
 
-	err := paygen.GeneratePayload(buildDir, payDir)
-	suite.Assert().NoError(err, "generate payload")
-
-	return &payload{
-		installer: filepath.Join(payDir, constants.StateInstallerCmd) + osutils.ExeExt,
+	return &payloadAssets{
+		dir:       dir,
+		installer: installer,
 	}
 }
 

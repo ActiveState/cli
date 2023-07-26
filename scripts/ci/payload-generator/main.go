@@ -3,16 +3,25 @@ package main
 import (
 	"fmt"
 	"os"
-	"path/filepath"
+	fp "path/filepath"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
-	"github.com/ActiveState/cli/scripts/ci/payload-generator/paygen"
+	"github.com/ActiveState/cli/internal/exeutils"
+	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/installation"
 )
 
-var logErr = func(msg string, vals ...any) {
-	fmt.Fprintf(os.Stderr, msg, vals...)
-	fmt.Fprintf(os.Stderr, "\n")
-}
+var (
+	log = func(msg string, vals ...any) {
+		fmt.Fprintf(os.Stdout, msg, vals...)
+		fmt.Fprintf(os.Stdout, "\n")
+	}
+	logErr = func(msg string, vals ...any) {
+		fmt.Fprintf(os.Stderr, msg, vals...)
+		fmt.Fprintf(os.Stderr, "\n")
+	}
+)
 
 // The payload-generator is an intentionally very dumb runner that just copies some files around.
 // This could just be a bash script if not for the fact that bash can't be linked with our type system.
@@ -25,8 +34,60 @@ func main() {
 
 func run() error {
 	root := environment.GetRootPathUnsafe()
-	buildDir := filepath.Join(root, "build")
-	payloadDir := filepath.Join(buildDir, "payload")
+	buildDir := fp.Join(root, "build")
+	payloadDir := fp.Join(buildDir, "payload")
 
-	return paygen.GeneratePayload(buildDir, payloadDir)
+	return generatePayload(buildDir, payloadDir)
+}
+
+func generatePayload(buildDir, payloadDir string) error {
+	emsg := "generate payload: %w"
+
+	payloadBinDir := fp.Join(payloadDir, "bin")
+
+	if err := fileutils.MkdirUnlessExists(payloadBinDir); err != nil {
+		return fmt.Errorf(emsg, err)
+	}
+
+	installDirMarker := installation.InstallDirMarker
+	log("Creating install dir marker in %s", payloadDir)
+	if err := fileutils.Touch(fp.Join(payloadDir, installDirMarker)); err != nil {
+		return fmt.Errorf(emsg, err)
+	}
+
+	files := map[string]string{
+		fp.Join(buildDir, constants.StateInstallerCmd+exeutils.Extension): payloadDir,
+		fp.Join(buildDir, constants.StateCmd+exeutils.Extension):          payloadBinDir,
+		fp.Join(buildDir, constants.StateSvcCmd+exeutils.Extension):       payloadBinDir,
+		fp.Join(buildDir, constants.StateExecutorCmd+exeutils.Extension):  payloadBinDir,
+	}
+	if err := copyFiles(files); err != nil {
+		return fmt.Errorf(emsg, err)
+	}
+
+	return nil
+}
+
+// copyFiles will copy the given files while preserving permissions.
+func copyFiles(files map[string]string) error {
+	emsg := "copy files (%s to %s): %w"
+
+	for src, target := range files {
+		log("Copying %s to %s", src, target)
+		dest := fp.Join(target, fp.Base(src))
+		err := fileutils.CopyFile(src, dest)
+		if err != nil {
+			return fmt.Errorf(emsg, src, target, err)
+		}
+		srcStat, err := os.Stat(src)
+		if err != nil {
+			return fmt.Errorf(emsg, src, target, err)
+		}
+
+		if err := os.Chmod(dest, srcStat.Mode().Perm()); err != nil {
+			return fmt.Errorf(emsg, src, target, err)
+		}
+	}
+
+	return nil
 }
