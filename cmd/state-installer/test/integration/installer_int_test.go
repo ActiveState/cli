@@ -28,6 +28,7 @@ import (
 
 type InstallerIntegrationTestSuite struct {
 	tagsuite.Suite
+	localPayload string
 	installerExe string
 }
 
@@ -334,16 +335,18 @@ func installationDir(ts *e2e.Session) string {
 	return filepath.Join(ts.Dirs.Work, "installation")
 }
 
+func (suite *InstallerIntegrationTestSuite) SetupSuite() {
+	suite.Assert().DirExists(suite.localPayload, "locally generated payload exists")
+	suite.Assert().FileExists(suite.installerExe, "locally generated installer exists")
+}
+
 func TestInstallerIntegrationTestSuite(t *testing.T) {
-	s := new(InstallerIntegrationTestSuite)
-
 	dir := filepath.Join(environment.GetRootPathUnsafe(), "build", "payload")
-	s.Assert().DirExists(dir, "locally generated payload exists")
 
-	installer := filepath.Join(dir, constants.StateInstallerCmd+osutils.ExeExt)
-	s.Assert().FileExists(installer, "locally generated installer exists")
-
-	s.installerExe = installer
+	s := &InstallerIntegrationTestSuite{
+		localPayload: dir,
+		installerExe: filepath.Join(dir, constants.StateInstallerCmd+osutils.ExeExt),
+	}
 
 	suite.Run(t, s)
 }
