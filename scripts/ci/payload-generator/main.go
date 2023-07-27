@@ -5,7 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	fp "path/filepath"
+	"path/filepath"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
@@ -45,8 +45,8 @@ func run() error {
 	flag.Parse()
 
 	root := environment.GetRootPathUnsafe()
-	buildDir := fp.Join(root, "build")
-	payloadDir := fp.Join(buildDir, "payload")
+	buildDir := filepath.Join(root, "build")
+	payloadDir := filepath.Join(buildDir, "payload")
 
 	return generatePayload(buildDir, payloadDir, branch, version)
 }
@@ -54,7 +54,7 @@ func run() error {
 func generatePayload(buildDir, payloadDir, branch, version string) error {
 	emsg := "generate payload: %w"
 
-	payloadBinDir := fp.Join(payloadDir, "bin")
+	payloadBinDir := filepath.Join(payloadDir, "bin")
 
 	if err := fileutils.MkdirUnlessExists(payloadBinDir); err != nil {
 		return fmt.Errorf(emsg, err)
@@ -66,10 +66,10 @@ func generatePayload(buildDir, payloadDir, branch, version string) error {
 	}
 
 	files := map[string]string{
-		fp.Join(buildDir, constants.StateInstallerCmd+exeutils.Extension): payloadDir,
-		fp.Join(buildDir, constants.StateCmd+exeutils.Extension):          payloadBinDir,
-		fp.Join(buildDir, constants.StateSvcCmd+exeutils.Extension):       payloadBinDir,
-		fp.Join(buildDir, constants.StateExecutorCmd+exeutils.Extension):  payloadBinDir,
+		filepath.Join(buildDir, constants.StateInstallerCmd+exeutils.Extension): payloadDir,
+		filepath.Join(buildDir, constants.StateCmd+exeutils.Extension):          payloadBinDir,
+		filepath.Join(buildDir, constants.StateSvcCmd+exeutils.Extension):       payloadBinDir,
+		filepath.Join(buildDir, constants.StateExecutorCmd+exeutils.Extension):  payloadBinDir,
 	}
 	if err := copyFiles(files); err != nil {
 		return fmt.Errorf(emsg, err)
@@ -81,19 +81,17 @@ func generatePayload(buildDir, payloadDir, branch, version string) error {
 func createInstallMarker(payloadDir, branch, version string) error {
 	emsg := "create install marker: %w"
 
-	markerPath := fp.Join(payloadDir, installation.InstallDirMarker)
-	f, err := os.Create(markerPath)
-	if err != nil {
-		return fmt.Errorf(emsg, err)
-	}
-	defer f.Close()
-
 	markerContents := installation.InstallMarkerMeta{
 		Branch:  branch,
 		Version: version,
 	}
+	b, err := json.Marshal(markerContents)
+	if err != nil {
+		return fmt.Errorf(emsg, err)
+	}
 
-	if err := json.NewEncoder(f).Encode(markerContents); err != nil {
+	markerPath := filepath.Join(payloadDir, installation.InstallDirMarker)
+	if err := fileutils.WriteFile(markerPath, b); err != nil {
 		return fmt.Errorf(emsg, err)
 	}
 
@@ -106,7 +104,7 @@ func copyFiles(files map[string]string) error {
 
 	for src, target := range files {
 		log("Copying %s to %s", src, target)
-		dest := fp.Join(target, fp.Base(src))
+		dest := filepath.Join(target, filepath.Base(src))
 		err := fileutils.CopyFile(src, dest)
 		if err != nil {
 			return fmt.Errorf(emsg, src, target, err)
