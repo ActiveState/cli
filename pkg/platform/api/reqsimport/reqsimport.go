@@ -11,7 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/platform/api"
-	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 const (
@@ -63,7 +63,7 @@ func Init() *ReqsImport {
 
 // Changeset posts requirements data to a backend service and returns a
 // Changeset that can be committed to a project.
-func (ri *ReqsImport) Changeset(data []byte, lang string) (model.Changeset, error) {
+func (ri *ReqsImport) Changeset(data []byte, lang string) ([]*mono_models.CommitChangeEditable, error) {
 	reqPayload := &TranslationReqMsg{
 		Data:     string(data),
 		Language: lang,
@@ -92,8 +92,8 @@ type TranslationReqMsg struct {
 // TranslationRespMsg represents the message returned by the requirements
 // translation service.
 type TranslationRespMsg struct {
-	Changeset model.Changeset        `json:"changeset,omitempty"`
-	LineErrs  []TranslationLineError `json:"errors,omitempty"`
+	Changeset []*mono_models.CommitChangeEditable `json:"changeset,omitempty"`
+	LineErrs  []TranslationLineError              `json:"errors,omitempty"`
 }
 
 // TranslationLineError represents an error reported by the requirements

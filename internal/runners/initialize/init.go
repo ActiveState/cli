@@ -288,7 +288,10 @@ func deriveVersion(lang language.Language, version string) (string, error) {
 		return "", errs.Wrap(err, "Unable to get known versions for language %s", lang.Requirement())
 	}
 
-	prefix := strings.Replace(strings.Replace(version, ".x", "", 1), ".X", "", 1) // strip any wildcard
+	prefix, _, _ := strings.Cut(version, ",") // only keep first part of e.g. ">=3.10,<3.11"
+	prefix = strings.TrimLeft(prefix, ">=<")  // strip leading constraint characters
+	prefix = strings.TrimSuffix(prefix, ".x") // strip trailing wildcard
+	prefix = strings.TrimSuffix(prefix, ".X") // string trailing wildcard
 	validVersionPrefix := false
 	for _, knownVersion := range knownVersions {
 		if knownVersion == version {

@@ -9,6 +9,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
@@ -20,6 +21,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/version_control"
 	vcsClient "github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/version_control"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/pkg/platform/api/reqsimport"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	auth "github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/go-openapi/strfmt"
@@ -600,13 +602,37 @@ func CommitInitial(hostPlatform string, langName, langVersion string) (strfmt.UU
 	return res.Payload.CommitID, nil
 }
 
+var versionRe = regexp.MustCompile(`^\d+(\.\d+)+$`)
+
+func isExactVersion(version string) bool {
+	return versionRe.MatchString(version)
+}
+
 func isWildcardVersion(version string) bool {
 	return strings.Index(version, "x") >= 0 || strings.Index(version, "X") >= 0
 }
 
 func VersionStringToConstraints(version string) ([]*mono_models.Constraint, error) {
+	if isExactVersion(version) {
+		return []*mono_models.Constraint{{Comparator: "eq", Version: version}}, nil
+	}
+
 	if !isWildcardVersion(version) {
-		return []*mono_models.Constraint{{Comparator: "eq", Version: version}}, nil // exact version
+		// Ask the Platform to translate a string like ">=1.2,<1.3" into a list of constraints.
+		// Note that:
+		// - The given requirement name does not matter; it is not looked up.
+		// - The given language only needs to exist. It has no bearing on the translation and is not
+		//   present in the requirements read and returned.
+		dummyLanguage := language.Python3.Requirement()
+		changeset, err := reqsimport.Init().Changeset([]byte("name "+version), dummyLanguage)
+		if err != nil {
+			return nil, errs.Wrap(err, "Unable to translate version string into requirement list")
+		}
+		constraints := []*mono_models.Constraint{}
+		for _, change := range changeset {
+			constraints = append(constraints, change.VersionConstraints...)
+		}
+		return constraints, nil
 	}
 
 	// Construct version constraints to be >= given version, and < given version's last part + 1.
