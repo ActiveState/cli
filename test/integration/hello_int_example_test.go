@@ -31,7 +31,7 @@ func (suite *HelloIntegrationTestSuite) TestHello() {
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("_hello", "")
-	cp.Expect("Cannot say Hello")
+	cp.Expect("Cannot say hello")
 	cp.Expect("No name provided")
 	cp.ExpectNotExitCode(0)
 
