@@ -111,7 +111,7 @@ func createUpdate(outputPath, channel, version, platform, target string) error {
 	}
 
 	up := updater.NewAvailableUpdate(version, channel, platform, filepath.ToSlash(relArchivePath), generateSha256(archivePath), "")
-	b, err := json.MarshalIndent(up, "", "    ")
+	b, err = json.MarshalIndent(up, "", "    ")
 	if err != nil {
 		return errs.Wrap(err, "Failed to marshal AvailableUpdate information.")
 	}
