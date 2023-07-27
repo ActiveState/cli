@@ -31,11 +31,6 @@ func (o *Org) Set(v string) error {
 }
 
 func (o *Org) CanInvite(numInvites int) error {
-	// don't allow personal organizations
-	if o.Personal {
-		return locale.NewInputError("err_invite_personal", "This project does not belong to any organization and so cannot have any users invited to it. To invite users create an organization.")
-	}
-
 	limits, err := model.FetchOrganizationLimits(o.URLname)
 	if err != nil {
 		return locale.WrapError(err, "err_invite_fetchlimits", "Could not detect member limits for organization.")
