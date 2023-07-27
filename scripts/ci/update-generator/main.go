@@ -19,7 +19,6 @@ import (
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/updater"
 )
@@ -80,38 +79,24 @@ func archiveMeta() (archiveMethod archiver.Archiver, ext string) {
 func createUpdate(outputPath, channel, version, platform, target string) error {
 	relChannelPath := filepath.Join(channel, platform)
 	relVersionedPath := filepath.Join(channel, version, platform)
-	os.MkdirAll(filepath.Join(outputPath, relChannelPath), 0755)
-	os.MkdirAll(filepath.Join(outputPath, relVersionedPath), 0755)
+	_ = os.MkdirAll(filepath.Join(outputPath, relChannelPath), 0755)
+	_ = os.MkdirAll(filepath.Join(outputPath, relVersionedPath), 0755)
 
 	archive, archiveExt := archiveMeta()
 	relArchivePath := filepath.Join(relVersionedPath, fmt.Sprintf("state-%s-%s%s", platform, version, archiveExt))
 	archivePath := filepath.Join(outputPath, relArchivePath)
 
-	// Create install marker
-	installMarkerContents := installation.InstallMarkerMeta{
-		Branch:  channel,
-		Version: version,
-	}
-	b, err := json.Marshal(installMarkerContents)
-	if err != nil {
-		return errs.Wrap(err, "Could not marshal install marker contents")
-	}
-
-	if err := fileutils.WriteFile(filepath.Join(target, installation.InstallDirMarker), b); err != nil {
-		return errs.Wrap(err, "Could not place install dir marker")
-	}
-
 	// Remove archive path if it already exists
 	_ = os.Remove(archivePath)
 	// Create main archive
 	fmt.Printf("Creating %s\n", archivePath)
-	err = archive.Archive([]string{target}, archivePath)
+	err := archive.Archive([]string{target}, archivePath)
 	if err != nil {
 		return errs.Wrap(err, "Archiving failed")
 	}
 
 	up := updater.NewAvailableUpdate(version, channel, platform, filepath.ToSlash(relArchivePath), generateSha256(archivePath), "")
-	b, err = json.MarshalIndent(up, "", "    ")
+	b, err := json.MarshalIndent(up, "", "    ")
 	if err != nil {
 		return errs.Wrap(err, "Failed to marshal AvailableUpdate information.")
 	}
