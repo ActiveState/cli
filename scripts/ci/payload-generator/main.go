@@ -1,6 +1,8 @@
 package main
 
 import (
+	"encoding/json"
+	"flag"
 	"fmt"
 	"os"
 	fp "path/filepath"
@@ -33,14 +35,23 @@ func main() {
 }
 
 func run() error {
+	var (
+		branch  = constants.BranchName
+		version = constants.Version
+	)
+
+	flag.StringVar(&branch, "b", branch, "Override target branch. (Branch to receive update.)")
+	flag.StringVar(&version, "v", version, "Override version number for this update.")
+	flag.Parse()
+
 	root := environment.GetRootPathUnsafe()
 	buildDir := fp.Join(root, "build")
 	payloadDir := fp.Join(buildDir, "payload")
 
-	return generatePayload(buildDir, payloadDir)
+	return generatePayload(buildDir, payloadDir, branch, version)
 }
 
-func generatePayload(buildDir, payloadDir string) error {
+func generatePayload(buildDir, payloadDir, branch, version string) error {
 	emsg := "generate payload: %w"
 
 	payloadBinDir := fp.Join(payloadDir, "bin")
@@ -49,9 +60,8 @@ func generatePayload(buildDir, payloadDir string) error {
 		return fmt.Errorf(emsg, err)
 	}
 
-	installDirMarker := installation.InstallDirMarker
 	log("Creating install dir marker in %s", payloadDir)
-	if err := fileutils.Touch(fp.Join(payloadDir, installDirMarker)); err != nil {
+	if err := createInstallMarker(payloadDir, branch, version); err != nil {
 		return fmt.Errorf(emsg, err)
 	}
 
@@ -62,6 +72,28 @@ func generatePayload(buildDir, payloadDir string) error {
 		fp.Join(buildDir, constants.StateExecutorCmd+exeutils.Extension):  payloadBinDir,
 	}
 	if err := copyFiles(files); err != nil {
+		return fmt.Errorf(emsg, err)
+	}
+
+	return nil
+}
+
+func createInstallMarker(payloadDir, branch, version string) error {
+	emsg := "create install marker: %w"
+
+	markerPath := fp.Join(payloadDir, installation.InstallDirMarker)
+	f, err := os.Create(markerPath)
+	if err != nil {
+		return fmt.Errorf(emsg, err)
+	}
+	defer f.Close()
+
+	markerContents := installation.InstallMarkerMeta{
+		Branch:  branch,
+		Version: version,
+	}
+
+	if err := json.NewEncoder(f).Encode(markerContents); err != nil {
 		return fmt.Errorf(emsg, err)
 	}
 
