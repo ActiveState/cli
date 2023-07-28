@@ -28,8 +28,10 @@ import (
 // Build covers the build structure
 type Build map[string]string
 
-var pConditional *constraints.Conditional
-var normalizeRx *regexp.Regexp
+var (
+	pConditional *constraints.Conditional
+	normalizeRx  *regexp.Regexp
+)
 
 func init() {
 	var err error
@@ -272,6 +274,50 @@ func New(p *projectfile.Project, out output.Outputer) (*Project, error) {
 // NewLegacy is for legacy use-cases only, DO NOT USE
 func NewLegacy(p *projectfile.Project) (*Project, error) {
 	return New(p, output.Get())
+}
+
+func NewWithVars(out output.Outputer, auth *authentication.Auth, shell string) (*Project, error) {
+	var pjf *projectfile.Project
+
+	// Retrieve project file
+	pjPath, err := projectfile.GetProjectFilePath()
+	if err != nil && errs.Matches(err, &projectfile.ErrorNoProjectFromEnv{}) {
+		// Fail if we are meant to inherit the projectfile from the environment, but the file doesn't exist
+		return nil, err
+	}
+
+	if pjPath != "" {
+		pjf, err = projectfile.FromPath(pjPath)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return newWithVars(out, auth, shell, pjf)
+}
+
+func newWithVars(out output.Outputer, auth *authentication.Auth, shell string, pjf *projectfile.Project) (*Project, error) {
+	if pjf == nil {
+		return nil, nil
+	}
+
+	pj, err := New(pjf, out)
+	if err != nil {
+		return nil, err
+	}
+
+	projVars := NewVars(auth, pj, shell)
+	conditional := constraints.NewPrimeConditional(projVars)
+	RegisterConditional(conditional)
+	if err := RegisterStruct(projVars); err != nil {
+		return nil, err
+	}
+
+	return pj, nil
+}
+
+func NewWithVarsForTest(pjf *projectfile.Project) (*Project, error) {
+	return newWithVars(output.Get(), nil, "not set", pjf)
 }
 
 // Parse will parse the given projectfile and instantiate a Project struct with it

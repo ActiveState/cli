@@ -11,14 +11,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ActiveState/cli/cmd/state/internal/cmdtree/exechandlers/messenger"
-	"github.com/ActiveState/cli/internal/captain"
-
 	"github.com/ActiveState/cli/cmd/state/internal/cmdtree"
+	"github.com/ActiveState/cli/cmd/state/internal/cmdtree/exechandlers/messenger"
 	anAsync "github.com/ActiveState/cli/internal/analytics/client/async"
+	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/constraints"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/events"
 	"github.com/ActiveState/cli/internal/installation"
@@ -40,7 +38,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 func main() {
@@ -169,33 +166,20 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 		return logData
 	})
 
-	// Retrieve project file
-	pjPath, err := projectfile.GetProjectFilePath()
-	if err != nil && errs.Matches(err, &projectfile.ErrorNoProjectFromEnv{}) {
-		// Fail if we are meant to inherit the projectfile from the environment, but the file doesn't exist
-		return err
-	}
+	auth := authentication.New(cfg)
+	defer events.Close("auth", auth.Close)
 
-	// Set up project (if we have a valid path)
-	var pj *project.Project
-	if pjPath != "" {
-		pjf, err := projectfile.FromPath(pjPath)
-		if err != nil {
-			return err
-		}
-		pj, err = project.New(pjf, out)
-		if err != nil {
-			return err
-		}
+	sshell := subshell.New(cfg)
+
+	pj, err := project.NewWithVars(out, auth, sshell.Shell())
+	if err != nil {
+		return err
 	}
 
 	pjNamespace := ""
 	if pj != nil {
 		pjNamespace = pj.Namespace().String()
 	}
-
-	auth := authentication.New(cfg)
-	defer events.Close("auth", auth.Close)
 
 	if err := auth.Sync(); err != nil {
 		logging.Warning("Could not sync authenticated state: %s", err.Error())
@@ -211,16 +195,10 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 	// Set up prompter
 	prompter := prompt.New(isInteractive, an)
 
-	// Set up conditional, which accesses a lot of primer data
-	sshell := subshell.New(cfg)
-
-	conditional := constraints.NewPrimeConditional(auth, pj, sshell.Shell())
-	project.RegisterConditional(conditional)
-	project.RegisterExpander("mixin", project.NewMixin(auth).Expander)
 	project.RegisterExpander("secrets", project.NewSecretPromptingExpander(secretsapi.Get(), prompter, cfg, auth))
 
 	// Run the actual command
-	cmds := cmdtree.New(primer.New(pj, out, auth, prompter, sshell, conditional, cfg, ipcClient, svcmodel, an), args...)
+	cmds := cmdtree.New(primer.New(pj, out, auth, prompter, sshell, cfg, ipcClient, svcmodel, an), args...)
 
 	childCmd, err := cmds.Command().Find(args[1:])
 	if err != nil {

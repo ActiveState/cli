@@ -111,7 +111,7 @@ func run(cfg *config.Instance) error {
 		return runStart(out, "svc-start:mouse")
 	}
 
-	p := primer.New(nil, out, nil, nil, nil, nil, cfg, nil, nil, an)
+	p := primer.New(nil, out, nil, nil, nil, cfg, nil, nil, an)
 
 	cmd := captain.NewCommand(
 		path.Base(os.Args[0]), "", "", p, nil, nil,

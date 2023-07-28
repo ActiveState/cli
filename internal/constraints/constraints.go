@@ -3,7 +3,7 @@ package constraints
 import (
 	"bytes"
 	"fmt"
-	"path/filepath"
+	"reflect"
 	"regexp"
 	"sort"
 	"strings"
@@ -12,26 +12,9 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
-	"github.com/ActiveState/cli/internal/rtutils/ptr"
-	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/projectfile"
-	"github.com/ActiveState/cli/pkg/sysinfo"
 	"github.com/thoas/go-funk"
 )
-
-var cache = make(map[string]interface{})
-
-func getCache(key string, getter func() (interface{}, error)) (interface{}, error) {
-	if v, ok := cache[key]; ok {
-		return v, nil
-	}
-	v, err := getter()
-	if err != nil {
-		return nil, err
-	}
-	cache[key] = v
-	return v, err
-}
 
 // For testing.
 var osOverride, osVersionOverride, archOverride, libcOverride, compilerOverride string
@@ -41,22 +24,9 @@ type Conditional struct {
 	funcs  template.FuncMap
 }
 
-func NewConditional(a *authentication.Auth) *Conditional {
+func NewConditional() *Conditional {
 	c := &Conditional{map[string]interface{}{}, map[string]interface{}{}}
 
-	c.RegisterFunc("Mixin", func() map[string]interface{} {
-		res := map[string]string{
-			"Name":  "",
-			"Email": "",
-		}
-		if a.Authenticated() {
-			res["Name"] = a.WhoAmI()
-			res["Email"] = a.Email()
-		}
-		return map[string]interface{}{
-			"User": res,
-		}
-	})
 	c.RegisterFunc("Contains", funk.Contains)
 	c.RegisterFunc("HasPrefix", strings.HasPrefix)
 	c.RegisterFunc("HasSuffix", strings.HasSuffix)
@@ -72,62 +42,36 @@ func NewConditional(a *authentication.Auth) *Conditional {
 	return c
 }
 
-type projectable interface {
-	Owner() string
-	Name() string
-	NamespaceString() string
-	CommitID() string
-	BranchName() string
-	Path() string
-	URL() string
-}
+func NewPrimeConditional(structure interface{}) *Conditional {
+	c := NewConditional()
 
-func NewPrimeConditional(auth *authentication.Auth, pj projectable, subshellName string) *Conditional {
-	var (
-		pjOwner     string
-		pjName      string
-		pjNamespace string
-		pjURL       string
-		pjCommit    string
-		pjBranch    string
-		pjPath      string
-	)
-	if !ptr.IsNil(pj) {
-		pjOwner = pj.Owner()
-		pjName = pj.Name()
-		pjNamespace = pj.NamespaceString()
-		pjURL = pj.URL()
-		pjCommit = pj.CommitID()
-		pjBranch = pj.BranchName()
-		pjPath = pj.Path()
-		if pjPath != "" {
-			pjPath = filepath.Dir(pjPath)
+	v := reflect.ValueOf(structure)
+	// deref if needed
+	if v.Kind() == reflect.Ptr {
+		v = v.Elem()
+	}
+
+	fields := reflect.VisibleFields(v.Type())
+
+	// Work at depth 1: Vars.[Struct].Struct.Simple
+	for _, f := range fields {
+		d1Val := v.FieldByIndex(f.Index)
+		if d1Val.Kind() == reflect.Ptr {
+			d1Val = d1Val.Elem()
+		}
+
+		// Only nodes at depth 1 need to be registered since the generic type
+		// handling within the templating package will do the rest. If function
+		// registration is needed at greater depths, this will need to be
+		// reworked (and may not be possible without expansive refactoring).
+		switch d1Val.Type().Kind() {
+		case reflect.Func:
+			c.RegisterFunc(f.Name, d1Val.Interface())
+
+		default:
+			c.RegisterParam(f.Name, d1Val.Interface())
 		}
 	}
-
-	c := NewConditional(auth)
-	c.RegisterParam("Project", map[string]string{
-		"Owner":     pjOwner,
-		"Name":      pjName,
-		"Namespace": pjNamespace,
-		"Url":       pjURL,
-		"Commit":    pjCommit,
-		"Branch":    pjBranch,
-		"Path":      pjPath,
-
-		// Legacy
-		"NamespacePrefix": pjNamespace,
-	})
-	osVersion, err := sysinfo.OSVersion()
-	if err != nil {
-		multilog.Error("Could not detect OSVersion: %v", err)
-	}
-	c.RegisterParam("OS", map[string]interface{}{
-		"Name":         sysinfo.OS().String(),
-		"Version":      osVersion,
-		"Architecture": sysinfo.Architecture().String(),
-	})
-	c.RegisterParam("Shell", subshellName)
 
 	return c
 }

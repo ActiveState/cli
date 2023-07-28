@@ -1,23 +1,27 @@
 package project
 
 import (
-	"path/filepath"
+	"fmt"
+	"reflect"
 	"regexp"
 	"runtime"
 	"strings"
 
+	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/constraints"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/osutils"
-	"github.com/ActiveState/cli/internal/scriptfile"
-	"github.com/ActiveState/cli/pkg/platform/authentication"
-	"github.com/ActiveState/cli/pkg/projectfile"
-
 	"github.com/ActiveState/cli/internal/rxutils"
+	"github.com/ActiveState/cli/internal/scriptfile"
+	"github.com/ActiveState/cli/pkg/projectfile"
+)
 
-	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/constraints"
+const (
+	expandStructTag    = "expand"
+	expandTagOptAsFunc = "asFunc"
+	expandTagOptIsPath = "isPath"
 )
 
 type Expansion struct {
@@ -47,7 +51,7 @@ func (ctx *Expansion) ApplyWithMaxDepth(s string, depth int) (string, error) {
 		variable = groups[0]
 
 		if len(groups) == 2 {
-			category = "toplevel"
+			category = TopLevelExpanderName
 			name = groups[1]
 		}
 		if len(groups) > 2 {
@@ -181,38 +185,6 @@ func expandPath(name string, script *Script) (string, error) {
 	return sf.Filename(), nil
 }
 
-// userExpander
-func userExpander(auth *authentication.Auth, element string) string {
-	if element == "name" {
-		return auth.WhoAmI()
-	}
-	if element == "email" {
-		return auth.Email()
-	}
-	if element == "jwt" {
-		return auth.BearerToken()
-	}
-	return ""
-}
-
-// Mixin provides expansions that are not sourced from a project file
-type Mixin struct {
-	auth *authentication.Auth
-}
-
-// NewMixin creates a Mixin object providing extra expansions
-func NewMixin(auth *authentication.Auth) *Mixin {
-	return &Mixin{auth}
-}
-
-// Expander expands mixin variables
-func (m *Mixin) Expander(_ string, name string, meta string, _ bool, _ *Expansion) (string, error) {
-	if name == "user" {
-		return userExpander(m.auth, meta), nil
-	}
-	return "", nil
-}
-
 // ConstantExpander expands constants defined in the project-file.
 func ConstantExpander(_ string, name string, meta string, isFunction bool, ctx *Expansion) (string, error) {
 	projectFile := ctx.Project.Source()
@@ -228,41 +200,6 @@ func ConstantExpander(_ string, name string, meta string, isFunction bool, ctx *
 	return "", nil
 }
 
-// ProjectExpander expands constants defined in the project-file.
-func ProjectExpander(_ string, name string, _ string, isFunction bool, ctx *Expansion) (string, error) {
-	if !isFunction {
-		return "", nil
-	}
-
-	project := ctx.Project
-	switch name {
-	case "url":
-		return project.URL(), nil
-	case "commit":
-		return project.CommitID(), nil
-	case "branch":
-		return project.BranchName(), nil
-	case "owner":
-		return project.Namespace().Owner, nil
-	case "name":
-		return project.Namespace().Project, nil
-	case "namespace":
-		return project.Namespace().String(), nil
-	case "path":
-		path := project.Source().Path()
-		if path == "" {
-			return path, nil
-		}
-		dir := filepath.Dir(path)
-		if ctx.BashifyPaths {
-			return osutils.BashifyPath(dir)
-		}
-		return dir, nil
-	}
-
-	return "", nil
-}
-
 func TopLevelExpander(variable string, name string, _ string, _ bool, ctx *Expansion) (string, error) {
 	projectFile := ctx.Project.Source()
 	switch name {
@@ -270,6 +207,156 @@ func TopLevelExpander(variable string, name string, _ string, _ bool, ctx *Expan
 		return projectFile.Project, nil
 	case "lock":
 		return projectFile.Lock, nil
+	default:
+		if v, ok := topLevelLookup[name]; ok {
+			return v, nil
+		}
 	}
 	return variable, nil
+}
+
+// entry manages a simple value held by a field as well as the field's metadata.
+type entry struct {
+	asFunc bool
+	isPath bool
+	value  string
+}
+
+func newEntry(tag string, val reflect.Value) entry {
+	var asFunc, isPath bool
+
+	tParts := strings.Split(tag, ",")
+	if len(tParts) > 1 {
+		if strings.Contains(tParts[1], expandTagOptAsFunc) {
+			asFunc = true
+		}
+		if strings.Contains(tParts[1], expandTagOptIsPath) {
+			isPath = true
+		}
+	}
+
+	return entry{
+		asFunc: asFunc,
+		isPath: isPath,
+		value:  fmt.Sprintf("%v", val.Interface()),
+	}
+}
+
+func makeEntryMap(structure reflect.Value) map[string]entry {
+	m := make(map[string]entry)
+	fields := reflect.VisibleFields(structure.Type())
+
+	// Work at depth 3: Vars.Struct.Struct.[Simple]
+	for _, f := range fields {
+		if !f.IsExported() {
+			continue
+		}
+
+		d3Val := structure.FieldByIndex(f.Index)
+		m[strings.ToLower(f.Name)] = newEntry(f.Tag.Get(expandStructTag), d3Val)
+	}
+
+	return m
+}
+
+func makeEntryMapMap(structure reflect.Value) map[string]map[string]entry {
+	m := make(map[string]map[string]entry)
+	fields := reflect.VisibleFields(structure.Type())
+
+	// Work at depth 2: Vars.Struct.[Struct].Simple
+	for _, f := range fields {
+		if !f.IsExported() {
+			continue
+		}
+
+		d2Val := structure.FieldByIndex(f.Index)
+		if d2Val.Kind() == reflect.Ptr {
+			d2Val = d2Val.Elem()
+		}
+
+		switch d2Val.Type().Kind() {
+		// Convert type (to map) to express advanced control like tag handling.
+		case reflect.Struct:
+			m[strings.ToLower(f.Name)] = makeEntryMap(d2Val)
+
+		// Format simple value. This is a leaf: Vars.Struct.[Simple]
+		// Conform to map-map, store at zero-valued key of inner map.
+		default:
+			m[strings.ToLower(f.Name)] = map[string]entry{
+				"": newEntry(f.Tag.Get(expandStructTag), d2Val),
+			}
+		}
+	}
+
+	return m
+}
+
+func makeLazyExpanderFuncFromPtrToStruct(val reflect.Value) ExpanderFunc {
+	// This function's args maintain scope across multiple calls; Do not overwrite the args.
+	return func(v, name, meta string, isFunc bool, ctx *Expansion) (string, error) {
+		iface := val.Interface()
+		if u, ok := iface.(interface{ Update(*Project) }); ok {
+			u.Update(ctx.Project)
+		}
+
+		valDeref := val
+		if valDeref.Kind() == reflect.Ptr {
+			valDeref = valDeref.Elem()
+		}
+		fn := makeExpanderFuncFromMap(makeEntryMapMap(valDeref))
+
+		return fn(v, name, meta, isFunc, ctx)
+	}
+}
+
+func makeExpanderFuncFromMap(m map[string]map[string]entry) ExpanderFunc {
+	return func(v, name, meta string, isFunc bool, ctx *Expansion) (string, error) {
+		if isFunc && meta == "()" {
+			meta = ""
+		}
+
+		if sub, ok := m[name]; ok {
+			if e, ok := sub[meta]; ok && isFunc == e.asFunc {
+				value := e.value
+				if ctx.BashifyPaths && e.isPath {
+					return osutils.BashifyPath(value)
+				}
+
+				return value, nil
+			}
+		}
+
+		return "", nil
+	}
+}
+
+func makeExpanderFuncFromFunc(fn reflect.Value) ExpanderFunc {
+	return func(v, name, meta string, isFunc bool, ctx *Expansion) (string, error) {
+		// Call function; It should not require any arguments.
+		// Work at depth 1: Vars.[FuncReturnsSomething]...
+		vals := fn.Call(nil)
+		if len(vals) > 1 {
+			if !vals[1].IsNil() {
+				return "", vals[1].Interface().(error)
+			}
+		}
+
+		d1Val := vals[0]
+		// deref if needed
+		if d1Val.Kind() == reflect.Ptr {
+			d1Val = d1Val.Elem()
+		}
+
+		switch d1Val.Kind() {
+		// Convert type (to map-map) to express advanced control like tag handling.
+		case reflect.Struct:
+			m := makeEntryMapMap(d1Val)
+			expandFromMap := makeExpanderFuncFromMap(m)
+			return expandFromMap(v, name, meta, isFunc, ctx)
+
+		// Format simple value. This is a leaf: Vars.[FuncReturnsSimple]
+		default:
+			return fmt.Sprintf("%v", d1Val.Interface()), nil
+		}
+	}
 }

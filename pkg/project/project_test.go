@@ -7,10 +7,10 @@ import (
 	"testing"
 
 	"github.com/ActiveState/cli/internal/config"
-	"github.com/ActiveState/cli/internal/constraints"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/language"
+	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/project"
@@ -40,12 +40,12 @@ func (suite *ProjectTestSuite) BeforeTest(suiteName, testName string) {
 	projectFile.Persist()
 	suite.projectFile = projectFile
 	suite.Require().Nil(err, "Should retrieve projectfile without issue.")
-	suite.project, err = project.GetSafe()
-	suite.Require().Nil(err, "Should retrieve project without issue.")
 
 	cfg, err := config.New()
 	suite.Require().NoError(err)
-	project.RegisterConditional(constraints.NewPrimeConditional(nil, suite.project, subshell.New(cfg).Shell()))
+
+	suite.project, err = project.NewWithVars(output.Get(), nil, subshell.New(cfg).Shell())
+	suite.Require().Nil(err, "Should retrieve project without issue.")
 }
 
 func (suite *ProjectTestSuite) TestGet() {
