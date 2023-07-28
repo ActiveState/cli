@@ -42,6 +42,7 @@ type Values struct {
 	Sequence         *int
 	TargetVersion    *string
 	Error            *string
+	Message          *string
 	CI               *bool
 	Interactive      *bool
 
@@ -94,6 +95,7 @@ func NewDefaultDimensions(pjNamespace, sessionToken, updateTag string) *Values {
 		ptr.To(0),
 		ptr.To(""),
 		ptr.To(""),
+		ptr.To(""),
 		ptr.To(false),
 		ptr.To(false),
 		nil,
@@ -123,6 +125,7 @@ func (v *Values) Clone() *Values {
 		Sequence:         ptr.Clone(v.Sequence),
 		TargetVersion:    ptr.Clone(v.TargetVersion),
 		Error:            ptr.Clone(v.Error),
+		Message:          ptr.Clone(v.Message),
 		CI:               ptr.Clone(v.CI),
 		Interactive:      ptr.Clone(v.Interactive),
 		preProcessor:     v.preProcessor,
@@ -195,6 +198,9 @@ func (m *Values) Merge(mergeWith ...*Values) {
 		}
 		if dim.Error != nil {
 			m.Error = dim.Error
+		}
+		if dim.Message != nil {
+			m.Message = dim.Message
 		}
 		if dim.CI != nil {
 			m.CI = dim.CI
