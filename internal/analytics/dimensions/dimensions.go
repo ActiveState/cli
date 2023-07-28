@@ -95,6 +95,7 @@ func NewDefaultDimensions(pjNamespace, sessionToken, updateTag string) *Values {
 		ptr.To(0),
 		ptr.To(""),
 		ptr.To(""),
+		ptr.To(""),
 		ptr.To(false),
 		ptr.To(false),
 		nil,
