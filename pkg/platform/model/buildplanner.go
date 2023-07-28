@@ -21,8 +21,8 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/ActiveState/cli/pkg/platform/runtime/buildexpression"
 	"github.com/ActiveState/cli/pkg/sysinfo"
+	"github.com/ActiveState/graphql"
 	"github.com/go-openapi/strfmt"
-	"github.com/machinebox/graphql"
 )
 
 const (
@@ -280,7 +280,7 @@ func (bp *BuildPlanner) StageCommit(params StageCommitParams) (strfmt.UUID, erro
 			}
 		}
 
-		err = expression.UpdateTimestamp(params.TimeStamp)
+		err = expression.UpdateTimestamp(*params.TimeStamp)
 		if err != nil {
 			return "", errs.Wrap(err, "Failed to update build expression with timestamp")
 		}

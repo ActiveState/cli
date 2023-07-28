@@ -46,7 +46,7 @@ func Merge(exprA *buildexpression.BuildExpression, exprB *buildexpression.BuildE
 			Namespace:          req.Namespace,
 			VersionRequirement: versionRequirements,
 		}
-		exprB.Update(op, bpReq, nil)
+		exprB.UpdateRequirement(op, bpReq)
 	}
 
 	return exprB, nil
