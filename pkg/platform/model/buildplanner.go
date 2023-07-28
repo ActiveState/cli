@@ -286,6 +286,19 @@ func (bp *BuildPlanner) StageCommit(params StageCommitParams) (strfmt.UUID, erro
 		return "", processBuildPlannerError(err, "failed to stage commit")
 	}
 
+	if resp.Error != nil {
+		return "", locale.NewError("Failed to stage commit, API returned message: {{.V0}}", resp.Error.Message)
+	}
+
+	if resp.ParseError != nil {
+		return "", locale.NewInputError(
+			"err_stage_commit_parse",
+			"The platform failed to parse the build expression, received the following message: {{.V0}}. Path: {{.V1}}",
+			resp.ParseError.Message,
+			resp.ParseError.Path,
+		)
+	}
+
 	if resp.Commit == nil {
 		return "", errs.New("Staged commit is nil")
 	}
