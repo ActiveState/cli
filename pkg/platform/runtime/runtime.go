@@ -194,7 +194,7 @@ func (r *Runtime) recordCompletion(err error) {
 		errorType = "solve"
 	case errs.Matches(err, &setup.BuildError{}) || errs.Matches(err, &buildlog.BuildError{}):
 		errorType = "build"
-	case errs.Matches(err, bpModel.BuildPlannerError{}):
+	case errs.Matches(err, &bpModel.BuildPlannerError{}):
 		errorType = "buildplan"
 	case errs.Matches(err, &setup.ArtifactSetupErrors{}):
 		if setupErrors := (&setup.ArtifactSetupErrors{}); errors.As(err, &setupErrors) {
