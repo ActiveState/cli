@@ -287,7 +287,7 @@ func (bp *BuildPlanner) StageCommit(params StageCommitParams) (strfmt.UUID, erro
 	}
 
 	if resp.Error != nil {
-		return "", locale.NewInputError("Failed to stage commit, API returned message: {{.V0}}", resp.Error.Message)
+		return "", locale.NewError("Failed to stage commit, API returned message: {{.V0}}", resp.Error.Message)
 	}
 
 	if resp.ParseError != nil {
