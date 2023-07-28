@@ -139,7 +139,7 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 		}
 	}
 
-	version, err := deriveVersion(lang, languageVersion)
+	version, err := deriveVersion(getKnownVersionsFromPlatform, lang, languageVersion)
 	if err != nil {
 		if inferred || !locale.IsInputError(err) {
 			return locale.WrapError(err, "err_init_lang", "", languageName, languageVersion)
@@ -238,6 +238,8 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 	return nil
 }
 
+type knownVersionsFunc func(language.Language) ([]string, error)
+
 func getKnownVersionsFromPlatform(lang language.Language) ([]string, error) {
 	pkgs, err := model.SearchIngredientsStrict(model.NewNamespaceLanguage(), lang.Requirement(), false, true)
 	if err != nil {
@@ -255,10 +257,7 @@ func getKnownVersionsFromPlatform(lang language.Language) ([]string, error) {
 	return knownVersions, nil
 }
 
-// Can be overridden in tests.
-var getKnownVersions func(language.Language) ([]string, error) = getKnownVersionsFromPlatform
-
-func deriveVersion(lang language.Language, version string) (string, error) {
+func deriveVersion(getKnownVersions knownVersionsFunc, lang language.Language, version string) (string, error) {
 	err := lang.Validate()
 	if err != nil {
 		return "", errs.Wrap(err, "Failed to validate language")
