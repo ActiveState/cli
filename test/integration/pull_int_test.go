@@ -149,14 +149,14 @@ func (suite *PullIntegrationTestSuite) TestMergeBuildScript() {
 	)
 	cp.ExpectExitCode(0)
 
-	_, err := buildscript.NewScriptFromProjectDir(ts.Dirs.Work)
+	_, err := buildscript.NewScriptFromProjectDir(ts.Dirs.Work, nil)
 	suite.Require().NoError(err) // just verify it's a valid build script
 
 	cp = ts.Spawn("pull")
 	cp.Expect("Your local build script is different")
 	cp.ExpectNotExitCode(0)
 
-	_, err = buildscript.NewScriptFromProjectDir(ts.Dirs.Work)
+	_, err = buildscript.NewScriptFromProjectDir(ts.Dirs.Work, nil)
 	suite.Assert().Error(err)
 	bytes := fileutils.ReadFileUnsafe(filepath.Join(ts.Dirs.Work, constants.BuildScriptFileName))
 	suite.Assert().Contains(string(bytes), "<<<<<<<", "No merge conflict markers are in build script")

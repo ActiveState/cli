@@ -35,14 +35,14 @@ func (suite *CommitIntegrationTestSuite) TestCommitManualBuildScriptMod() {
 	cp.Expect("Checked out")
 	cp.ExpectExitCode(0)
 
-	_, err := buildscript.NewScriptFromProjectDir(ts.Dirs.Work)
+	_, err := buildscript.NewScriptFromProjectDir(ts.Dirs.Work, nil)
 	suite.Require().NoError(err) // verify validity
 
 	cp = ts.Spawn("commit")
 	cp.Expect("No change")
 	cp.ExpectExitCode(0)
 
-	_, err = buildscript.NewScriptFromProjectDir(ts.Dirs.Work)
+	_, err = buildscript.NewScriptFromProjectDir(ts.Dirs.Work, nil)
 	suite.Require().NoError(err) // verify validity
 
 	scriptPath := filepath.Join(ts.Dirs.Work, constants.BuildScriptFileName)

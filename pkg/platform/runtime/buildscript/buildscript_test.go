@@ -257,7 +257,7 @@ func TestRoundTrip(t *testing.T) {
 	tmpfile.Write([]byte(script.String()))
 	tmpfile.Close()
 
-	roundTripScript, err := newScriptFromFile(tmpfile.Name())
+	roundTripScript, err := newScriptFromFile(tmpfile.Name(), nil)
 	require.NoError(t, err)
 
 	assert.Equal(t, script, roundTripScript)
