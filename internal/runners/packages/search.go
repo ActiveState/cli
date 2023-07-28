@@ -40,16 +40,19 @@ func NewSearch(prime primeable) *Search {
 func (s *Search) Run(params SearchRunParams, nstype model.NamespaceType) error {
 	logging.Debug("ExecuteSearch")
 
-	language, err := targetedLanguage(params.Language, s.proj)
-	if err != nil {
-		return locale.WrapError(err, fmt.Sprintf("%s_err_cannot_obtain_language", nstype))
-	}
+	var ns model.Namespace
+	if params.Ingredient.Namespace == "" {
+		language, err := targetedLanguage(params.Language, s.proj)
+		if err != nil {
+			return locale.WrapError(err, fmt.Sprintf("%s_err_cannot_obtain_language", nstype))
+		}
 
-	ns := model.NewNamespacePkgOrBundle(language, nstype)
-	if params.Ingredient.Namespace != "" {
+		ns = model.NewNamespacePkgOrBundle(language, nstype)
+	} else {
 		ns = model.NewRawNamespace(params.Ingredient.Namespace)
 	}
 
+	var err error
 	var packages []*model.IngredientAndVersion
 	if params.ExactTerm {
 		packages, err = model.SearchIngredientsStrict(ns.String(), params.Ingredient.Name, true, true, params.Timestamp.Time)
