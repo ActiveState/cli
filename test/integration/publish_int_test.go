@@ -1,6 +1,7 @@
 package integration
 
 import (
+	"fmt"
 	"os"
 	"regexp"
 	"testing"
@@ -11,7 +12,10 @@ import (
 	"github.com/ActiveState/cli/internal/strutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
+	"github.com/ActiveState/cli/pkg/platform/api/graphql/request"
+	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/stretchr/testify/suite"
+	"gopkg.in/yaml.v3"
 )
 
 var editorFileRx = regexp.MustCompile(`file:\s*?(.*?)\.\s`)
@@ -24,7 +28,7 @@ func (suite *PublishIntegrationTestSuite) TestPublish() {
 	suite.OnlyRunForTags(tagsuite.Publish)
 
 	// For development convenience, should not be committed without commenting out..
-	// os.Setenv(constants.APIHostEnvVarName, "staging.activestate.build")
+	os.Setenv(constants.APIHostEnvVarName, "pr11496.activestate.build")
 
 	if v := os.Getenv(constants.APIHostEnvVarName); v == "" || v == constants.DefaultAPIHost {
 		suite.T().Skipf("Skipping test as %s is not set, this test can only be run against non-production envs.", constants.APIHostEnvVarName)
@@ -211,6 +215,34 @@ authors:
 				0,
 			},
 		},
+		{
+			"Edit ingredient without file arg and with flags",
+			input{
+				[]string{tempFile,
+					"--name", "im-a-name-test1",
+					"--namespace", "org/{{.Username}}",
+					"--version", "2.3.5",
+					"--description", "im-a-description-edited",
+					"--author", "author-name-edited <author-email-edited@domain.tld>",
+				},
+				nil,
+				nil,
+				true,
+			},
+			expect{
+				[]string{
+					`Upload following ingredient?`,
+					`name: im-a-name-test1`,
+					`namespace: org/{{.Username}}`,
+					`version: 2.3.5`,
+					`description: im-a-description-edited`,
+					`name: author-name-edited`,
+					`email: author-email-edited@domain.tld`,
+				},
+				"",
+				0,
+			},
+		},
 		// --edit tests are currently not addressed, tracked here: https://activestatef.atlassian.net/browse/DX-1944
 	}
 	for _, tt := range tests {
@@ -268,6 +300,16 @@ authors:
 				cp.Expect(v)
 			}
 
+			cp.Expect("Y/n")
+
+			snapshot := cp.MatchState().TermState.String()
+			rx := regexp.MustCompile(`(?s)Upload following ingredient\?(.*)\(Y/n`)
+			match := rx.FindSubmatch([]byte(snapshot))
+			suite.Require().NotNil(match, fmt.Sprintf("Could not match '%s' against: %s", rx.String(), snapshot))
+
+			meta := request.PublishVariables{}
+			suite.Require().NoError(yaml.Unmarshal(match[1], &meta))
+
 			if tt.input.confirmUpload {
 				cp.SendLine("Y")
 			} else {
@@ -275,7 +317,12 @@ authors:
 				cp.Expect("Upload cancelled")
 			}
 
+			cp.Expect("Successfully uploaded")
 			cp.ExpectExitCode(tt.expect.exitCode)
+
+			cp = ts.Spawn("search", meta.Namespace+"/"+meta.Name, "--ts=now")
+			cp.Expect(meta.Version)
+			cp.ExpectExitCode(0)
 		})
 	}
 }
