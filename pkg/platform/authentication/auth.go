@@ -233,39 +233,38 @@ func (s *Auth) AuthenticateWithModel(credentials *mono_models.Credentials) error
 	return nil
 }
 
-func (s *Auth) AuthenticateWithDevice(deviceCode strfmt.UUID) error {
+func (s *Auth) AuthenticateWithDevice(deviceCode strfmt.UUID) (apiKey string, err error) {
 	logging.Debug("AuthenticateWithDevice")
 
-	token, err := model.CheckDeviceAuthorization(deviceCode)
+	jwtToken, apiKeyToken, err := model.CheckDeviceAuthorization(deviceCode)
 	if err != nil {
-		return errs.Wrap(err, "Authorization failed")
+		return "", errs.Wrap(err, "Authorization failed")
 	}
 
-	if token == nil {
-		return errNotYetGranted
+	if jwtToken == nil {
+		return "", errNotYetGranted
 	}
 
-	if err := s.updateSession(token); err != nil {
-		return errs.Wrap(err, "Storing JWT failed")
+	if err := s.updateSession(jwtToken); err != nil {
+		return "", errs.Wrap(err, "Storing JWT failed")
 	}
 
-	return nil
-
+	return apiKeyToken.Token, nil
 }
 
-func (s *Auth) AuthenticateWithDevicePolling(deviceCode strfmt.UUID, interval time.Duration) error {
+func (s *Auth) AuthenticateWithDevicePolling(deviceCode strfmt.UUID, interval time.Duration) (string, error) {
 	logging.Debug("AuthenticateWithDevicePolling, polling: %v", interval.String())
 	for start := time.Now(); time.Since(start) < 5*time.Minute; {
-		err := s.AuthenticateWithDevice(deviceCode)
+		token, err := s.AuthenticateWithDevice(deviceCode)
 		if err == nil {
-			return nil
+			return token, nil
 		} else if !errors.Is(err, errNotYetGranted) {
-			return errs.Wrap(err, "Device authentication failed")
+			return "", errs.Wrap(err, "Device authentication failed")
 		}
 		time.Sleep(interval) // then try again
 	}
 
-	return locale.NewInputError("err_auth_device_timeout")
+	return "", locale.NewInputError("err_auth_device_timeout")
 }
 
 // AuthenticateWithToken will try to authenticate using the given token

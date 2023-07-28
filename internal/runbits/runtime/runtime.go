@@ -37,7 +37,9 @@ func NewFromProject(
 
 		if err = rti.Update(pg); err != nil {
 			if errs.Matches(err, &model.ErrOrderAuth{}) {
-				return nil, locale.WrapInputError(err, "err_update_auth", "Could not update runtime, if this is a private project you may need to authenticate with `[ACTIONABLE]state auth[/RESET]`")
+				return nil, errs.AddTips(
+					locale.WrapInputError(err, "err_update_auth", "Could not update runtime"),
+					locale.T("tip_private_project_auth"))
 			}
 			if errs.Matches(err, &model.ErrNoMatchingPlatform{}) {
 				branches, err := model.BranchNamesForProjectFiltered(proj.Owner(), proj.Name(), proj.BranchName())
@@ -46,7 +48,9 @@ func NewFromProject(
 				}
 			}
 			if !auth.Authenticated() {
-				return nil, locale.WrapError(err, "err_new_runtime_auth", "Could not update runtime installation. If this is a private project ensure that you are authenticated.")
+				return nil, errs.AddTips(
+					locale.WrapError(err, "err_new_runtime_auth", "Could not update runtime installation."),
+					locale.T("tip_private_project_auth"))
 			}
 			return nil, locale.WrapError(err, "err_update_runtime", "Could not update runtime installation.")
 		}

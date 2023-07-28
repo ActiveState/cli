@@ -79,8 +79,8 @@ func archiveMeta() (archiveMethod archiver.Archiver, ext string) {
 func createUpdate(outputPath, channel, version, platform, target string) error {
 	relChannelPath := filepath.Join(channel, platform)
 	relVersionedPath := filepath.Join(channel, version, platform)
-	os.MkdirAll(filepath.Join(outputPath, relChannelPath), 0755)
-	os.MkdirAll(filepath.Join(outputPath, relVersionedPath), 0755)
+	_ = os.MkdirAll(filepath.Join(outputPath, relChannelPath), 0755)
+	_ = os.MkdirAll(filepath.Join(outputPath, relVersionedPath), 0755)
 
 	archive, archiveExt := archiveMeta()
 	relArchivePath := filepath.Join(relVersionedPath, fmt.Sprintf("state-%s-%s%s", platform, version, archiveExt))

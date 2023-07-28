@@ -122,13 +122,10 @@ func (r *Revert) Run(params *Params) error {
 
 	revertCommit, err := model.RevertCommitWithinHistory(fromCommit, toCommit, latestCommit)
 	if err != nil {
-		return locale.WrapError(
-			err,
-			"err_revert_commit",
-			"Could not revert{{.V0}} commit: {{.V1}} please ensure that the local project is synchronized with the platform and that the given commit ID belongs to the current project",
-			preposition,
-			params.CommitID,
-		)
+		return errs.AddTips(
+			locale.WrapError(err, "err_revert_commit", "", preposition, params.CommitID),
+			locale.Tl("tip_revert_sync", "Please ensure that the local project is synchronized with the platform and that the given commit ID belongs to the current project"),
+			locale.T("tip_private_project_auth"))
 	}
 
 	err = runbits.RefreshRuntime(r.auth, r.out, r.analytics, r.project, revertCommit.CommitID, true, target.TriggerRevert, r.svcModel)
