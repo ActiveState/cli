@@ -8,13 +8,11 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func getKnownVersionsTest(lang language.Language) ([]string, error) {
+func getKnownVersionsFromTest(lang language.Language) ([]string, error) {
 	return []string{"2.7.18.1", "3.10.12", "3.11.4"}, nil
 }
 
 func TestDeriveVersion(t *testing.T) {
-	getKnownVersions = getKnownVersionsTest
-
 	tests := []struct {
 		version string
 		want    string
@@ -35,7 +33,7 @@ func TestDeriveVersion(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		got, err := deriveVersion(language.Python3, tt.version)
+		got, err := deriveVersion(getKnownVersionsFromTest, language.Python3, tt.version)
 		if !tt.wantErr {
 			require.NoError(t, err)
 		} else {
