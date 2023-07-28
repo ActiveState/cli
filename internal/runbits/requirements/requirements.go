@@ -225,7 +225,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 		return errs.Wrap(err, "Could not resolve requirement name and version")
 	}
 
-	requirements, err := versionStringToRequirements(version)
+	requirements, err := model.VersionStringToRequirements(version)
 	if err != nil {
 		return errs.Wrap(err, "Could not process version string into requirements")
 	}
@@ -410,20 +410,4 @@ func initializeProject() (*project.Project, error) {
 	}
 
 	return project.FromPath(target)
-}
-
-func versionStringToRequirements(version string) ([]bpModel.VersionRequirement, error) {
-	constraints, err := model.VersionStringToConstraints(version)
-	if err != nil {
-		return nil, errs.Wrap(err, "Unable to process version string into constraints")
-	}
-
-	requirements := make([]bpModel.VersionRequirement, len(constraints))
-	for i, constraint := range constraints {
-		requirements[i] = bpModel.VersionRequirement{
-			bpModel.VersionRequirementComparatorKey: constraint.Comparator,
-			bpModel.VersionRequirementVersionKey:    constraint.Version,
-		}
-	}
-	return requirements, nil
 }

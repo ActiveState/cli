@@ -14,6 +14,7 @@ import (
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/singleton/uniqid"
 	"github.com/ActiveState/cli/pkg/platform/api"
+	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	gqlModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model"
 	"github.com/ActiveState/cli/pkg/platform/api/mediator/model"
 	"github.com/ActiveState/cli/pkg/platform/api/mono"
@@ -565,7 +566,7 @@ func CommitInitial(hostPlatform string, langName, langVersion string) (strfmt.UU
 	var changes []*mono_models.CommitChangeEditable
 
 	if langName != "" {
-		versionConstraints, err := VersionStringToConstraints(langVersion)
+		versionConstraints, err := versionStringToConstraints(langVersion)
 		if err != nil {
 			return "", errs.Wrap(err, "Could not process version string into constraints")
 		}
@@ -600,34 +601,18 @@ func CommitInitial(hostPlatform string, langName, langVersion string) (strfmt.UU
 	return res.Payload.CommitID, nil
 }
 
-func isWildcardVersion(version string) bool {
-	return strings.Index(version, "x") >= 0 || strings.Index(version, "X") >= 0
-}
-
-func VersionStringToConstraints(version string) ([]*mono_models.Constraint, error) {
-	if !isWildcardVersion(version) {
-		return []*mono_models.Constraint{{Comparator: "eq", Version: version}}, nil // exact version
+func versionStringToConstraints(version string) ([]*mono_models.Constraint, error) {
+	requirements, err := VersionStringToRequirements(version)
+	if err != nil {
+		return nil, errs.Wrap(err, "Unable to process version string into requirements")
 	}
 
-	// Construct version constraints to be >= given version, and < given version's last part + 1.
-	// For example, given a version number of 3.10.x, constraints should be >= 3.10, < 3.11.
-	// Given 2.x, constraints should be >= 2, < 3.
-	constraints := []*mono_models.Constraint{}
-	parts := strings.Split(version, ".")
-	for i, part := range parts {
-		if part != "x" && part != "X" {
-			continue
+	constraints := make([]*mono_models.Constraint, len(requirements))
+	for i, constraint := range requirements {
+		constraints[i] = &mono_models.Constraint{
+			Comparator: constraint[bpModel.VersionRequirementComparatorKey],
+			Version:    constraint[bpModel.VersionRequirementVersionKey],
 		}
-		if i == 0 {
-			return nil, locale.NewInputError("err_version_wildcard_start", "A version number cannot start with a wildcard")
-		}
-		constraints = append(constraints, &mono_models.Constraint{Comparator: "gte", Version: strings.Join(parts[:i], ".")})
-		previousPart, err := strconv.Atoi(parts[i-1])
-		if err != nil {
-			return nil, locale.WrapInputError(err, "err_version_number_expected", "Version parts are expected to be numeric")
-		}
-		parts[i-1] = strconv.Itoa(previousPart + 1)
-		constraints = append(constraints, &mono_models.Constraint{Comparator: "lt", Version: strings.Join(parts[:i], ".")})
 	}
 	return constraints, nil
 }
