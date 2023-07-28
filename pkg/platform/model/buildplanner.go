@@ -293,7 +293,7 @@ func (bp *BuildPlanner) StageCommit(params StageCommitParams) (strfmt.UUID, erro
 	if resp.ParseError != nil {
 		return "", locale.NewInputError(
 			"err_stage_commit_parse",
-			"The platform failed to parse the build expression, recieved the following message: {{.V0}}\n Path: {{.V1}}",
+			"The platform failed to parse the build expression, received the following message: {{.V0}}. Path: {{.V1}}",
 			resp.ParseError.Message,
 			resp.ParseError.Path,
 		)
