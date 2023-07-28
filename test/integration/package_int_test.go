@@ -85,7 +85,7 @@ func (suite *PackageIntegrationTestSuite) TestPackages_project_invalid() {
 	defer ts.Close()
 
 	cp := ts.Spawn("packages", "--namespace", "junk/junk")
-	cp.ExpectLongString("The requested project junk/junk could not be found.")
+	cp.ExpectLongString("The requested project junk/junk could not be found")
 	cp.ExpectExitCode(1)
 }
 
@@ -532,6 +532,86 @@ func (suite *PackageIntegrationTestSuite) TestNormalize() {
 	cp.Expect("charset-normalizer")
 	cp.ExpectExitCode(0)
 	suite.NotContains(cp.TrimmedSnapshot(), "is different")
+}
+
+func (suite *PackageIntegrationTestSuite) TestInstall_InvalidVersion() {
+	suite.OnlyRunForTags(tagsuite.Package)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.Spawn("checkout", "ActiveState-CLI/small-python", ".")
+	cp.Expect("Skipping runtime setup")
+	cp.Expect("Checked out project")
+	cp.ExpectExitCode(0)
+
+	cp = ts.SpawnWithOpts(
+		e2e.WithArgs("install", "pytest@999.9999.9999"),
+		e2e.AppendEnv(constants.DisableRuntime+"=false"),
+	)
+	cp.Expect("Error occurred while trying to create a commit")
+	cp.ExpectExitCode(1)
+	cp.Wait()
+}
+
+func (suite *PackageIntegrationTestSuite) TestUpdate_InvalidVersion() {
+	suite.OnlyRunForTags(tagsuite.Package)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.Spawn("checkout", "ActiveState-CLI/small-python", ".")
+	cp.Expect("Skipping runtime setup")
+	cp.Expect("Checked out project")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("install", "pytest") // install
+	cp.ExpectExitCode(0)
+
+	cp = ts.SpawnWithOpts(
+		e2e.WithArgs("install", "pytest@999.9999.9999"),  // update
+		e2e.AppendEnv(constants.DisableRuntime+"=false"), // We DO want to test the runtime part, just not for every step
+	)
+	cp.Expect("Error occurred while trying to create a commit")
+	cp.ExpectExitCode(1)
+}
+
+func (suite *PackageIntegrationTestSuite) TestUpdate() {
+	suite.OnlyRunForTags(tagsuite.Package)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.Spawn("checkout", "ActiveState-CLI/small-python", ".")
+	cp.Expect("Skipping runtime setup")
+	cp.Expect("Checked out project")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("install", "pytest@7.3.2") // install
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("history")
+	cp.Expect("pytest")
+	cp.Expect("7.3.2")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("packages")
+	cp.Expect("pytest")
+	cp.Expect("7.3.2")
+	cp.ExpectExitCode(0)
+
+	cp = ts.SpawnWithOpts(
+		e2e.WithArgs("install", "pytest@7.4.0"),          // update
+		e2e.AppendEnv(constants.DisableRuntime+"=false"), // We DO want to test the runtime part, just not for every step
+	)
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("history")
+	cp.Expect("pytest")
+	cp.Expect("7.4.0")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("packages")
+	cp.Expect("pytest")
+	cp.Expect("7.4.0")
+	cp.ExpectExitCode(0)
 }
 
 func TestPackageIntegrationTestSuite(t *testing.T) {

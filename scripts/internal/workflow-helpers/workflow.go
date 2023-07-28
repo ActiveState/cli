@@ -16,6 +16,8 @@ const (
 	ReleaseBranch = "release"
 )
 
+const UpdateVersionCommitMessage = "Update version.txt"
+
 const VersionNextFeasible = "Next Feasible"
 const VersionNextUnscheduled = "Next Unscheduled"
 

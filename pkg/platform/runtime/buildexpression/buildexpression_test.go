@@ -3,12 +3,12 @@ package buildexpression
 import (
 	"path/filepath"
 	"reflect"
+	"sort"
 	"testing"
 
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
-	"github.com/go-openapi/strfmt"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -317,7 +317,7 @@ func TestBuildExpression_Update(t *testing.T) {
 			bx, err := New(data)
 			assert.NoError(t, err)
 
-			err = bx.Update(tt.args.operation, tt.args.requirement, &strfmt.DateTime{})
+			err = bx.UpdateRequirement(tt.args.operation, tt.args.requirement)
 			if err != nil {
 				if tt.wantErr {
 					return
@@ -328,6 +328,15 @@ func TestBuildExpression_Update(t *testing.T) {
 			}
 
 			got := bx.Requirements()
+
+			sort.Slice(got, func(i, j int) bool {
+				return got[i].Name < got[j].Name
+			})
+
+			sort.Slice(tt.want, func(i, j int) bool {
+				return tt.want[i].Name < tt.want[j].Name
+			})
+
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("BuildExpression.Requirements() = %v, want %v", got, tt.want)
 			}

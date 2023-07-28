@@ -26,6 +26,7 @@ query ($commitID: String!, $organization: String!, $project: String!) {
         ... on Commit {
           __typename
           expr
+          commitId
           build {
             __typename
             ... on BuildCompleted {
@@ -116,12 +117,23 @@ query ($commitID: String!, $organization: String!, $project: String!) {
                   logURL
                   errors
                 }
+                ... on ArtifactFailed {
+                  __typename
+                  nodeId
+                  mimeType
+                  generatedBy
+                  runtimeDependencies
+                  status
+                  logURL
+                  errors
+                }
               }
             }
             ... on Error {
               message
             }
             ... on PlanningError {
+              message
               subErrors {
                 __typename
                 ... on GenericSolveError {
@@ -129,6 +141,7 @@ query ($commitID: String!, $organization: String!, $project: String!) {
                   message
                   isTransient
                   validationErrors {
+                    error
                     jsonPath
                   }
                 }
@@ -138,6 +151,7 @@ query ($commitID: String!, $organization: String!, $project: String!) {
                   isTransient
                   errorType
                   validationErrors {
+                    error
                     jsonPath
                   }
                   suggestedRemediations {

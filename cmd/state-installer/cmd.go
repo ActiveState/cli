@@ -236,6 +236,26 @@ func execute(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher,
 		params.path = installPath
 	}
 
+	// Detect if target dir is existing install of same target branch
+	var installedBranch string
+	marker := filepath.Join(installPath, installation.InstallDirMarker)
+	if stateToolInstalled && fileutils.TargetExists(marker) {
+		markerContents, err := fileutils.ReadFile(marker)
+		if err != nil {
+			return errs.Wrap(err, "Could not read marker file")
+		}
+		// The marker file is empty for versions prior to v0.40.0-RC3
+		if len(markerContents) > 0 {
+			var markerMeta installation.InstallMarkerMeta
+			if err := json.Unmarshal(markerContents, &markerMeta); err != nil {
+				return errs.Wrap(err, "Could not parse install marker file")
+			}
+			installedBranch = markerMeta.Branch
+		}
+	}
+	// Older state tools did not bake in meta information, in this case we allow overwriting regardless of branch
+	targetingSameBranch := installedBranch == "" || installedBranch == constants.BranchName
+
 	// If this is a fresh installation we ensure that the target directory is empty
 	if !stateToolInstalled && fileutils.DirExists(params.path) && !params.force {
 		empty, err := fileutils.IsEmptyDir(params.path)
@@ -257,7 +277,7 @@ func execute(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher,
 	an.Event(AnalyticsFunnelCat, route)
 
 	// Check if state tool already installed
-	if !params.isUpdate && !params.force && stateToolInstalled {
+	if !params.isUpdate && !params.force && stateToolInstalled && !targetingSameBranch {
 		logging.Debug("Cancelling out because State Tool is already installed")
 		out.Print(fmt.Sprintf("State Tool Package Manager is already installed at [NOTICE]%s[/RESET]. To reinstall use the [ACTIONABLE]--force[/RESET] flag.", installPath))
 		an.Event(AnalyticsFunnelCat, "already-installed")

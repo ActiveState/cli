@@ -3,7 +3,8 @@ package buildplan
 import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
-	model "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
+	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/go-openapi/strfmt"
 )
@@ -30,39 +31,55 @@ func NewMapFromBuildPlan(build *model.Build) (artifact.Map, error) {
 	var terminalTargetIDs []strfmt.UUID
 	for _, terminal := range build.Terminals {
 		// If there is an artifact for this terminal and its mime type is not a state tool artifact
-		// then the list of terminal target IDs should be the sources for the step that generated the
-		// installer. That is what we want to use to build the artifact map.
+		// then we need to recurse back through the DAG until we find nodeIDs that are state tool
+		// artifacts. These are the terminal targets.
 		for _, nodeID := range terminal.NodeIDs {
-			artifact, ok := lookup[nodeID].(*model.Artifact)
-			if !ok {
-				continue
-			}
-
-			if !model.IsStateToolArtifact(artifact.MimeType) {
-				step, ok := lookup[artifact.GeneratedBy].(*model.Step)
-				if !ok {
-					return nil, errs.New("Could not find step for artifact %s", nodeID)
-				}
-				for _, input := range step.Inputs {
-					if input.Tag != model.TagSource {
-						continue
-					}
-					terminalTargetIDs = append(terminalTargetIDs, input.NodeIDs...)
-				}
-			} else {
-				terminalTargetIDs = append(terminalTargetIDs, terminal.NodeIDs...)
-			}
+			buildTerminals(nodeID, lookup, &terminalTargetIDs)
 		}
 	}
 
 	for _, id := range terminalTargetIDs {
 		err := buildMap(id, lookup, res)
 		if err != nil {
-			return nil, errs.Wrap(err, "Could not build map for artifact %s", id)
+			return nil, errs.Wrap(err, "Could not build map for terminal %s", id)
 		}
 	}
 
 	return res, nil
+}
+
+// buildTerminals recursively builds up a list of terminal targets. It expects an ID that
+// resolves to an artifact. If the artifact's mime type is that of a state tool artifact it
+// adds it to the terminal listing. Otherwise it looks up the step that generated the artifact
+// and recursively calls itself with each of the step's inputs that are tagged as sources until
+// it finds a state tool artifact. That artifact is then added to the terminal listing.
+func buildTerminals(nodeID strfmt.UUID, lookup map[strfmt.UUID]interface{}, result *[]strfmt.UUID) {
+	targetArtifact, ok := lookup[nodeID].(*model.Artifact)
+	if !ok {
+		logging.Debug("NodeID %s does not resolve to an artifact", nodeID)
+		return
+	}
+
+	if model.IsStateToolArtifact(targetArtifact.MimeType) {
+		*result = append(*result, targetArtifact.NodeID)
+		return
+	}
+
+	step, ok := lookup[targetArtifact.GeneratedBy].(*model.Step)
+	if !ok {
+		// Dead branch
+		logging.Debug("Artifact %s does not have an associated step, considering this a dead branch", nodeID)
+		return
+	}
+
+	for _, input := range step.Inputs {
+		if input.Tag != model.TagSource {
+			continue
+		}
+		for _, id := range input.NodeIDs {
+			buildTerminals(id, lookup, result)
+		}
+	}
 }
 
 // buildMap recursively builds the artifact map from the lookup table. It expects an ID that
@@ -81,10 +98,6 @@ func buildMap(baseID strfmt.UUID, lookup map[strfmt.UUID]interface{}, result art
 		return errs.New("Incorrect target type for id %s, expected Artifact", baseID)
 	}
 
-	if currentArtifact.Status != model.ArtifactSucceeded {
-		return errs.New("Artifact %s did not succeed with status: %s", currentArtifact.NodeID, currentArtifact.Status)
-	}
-
 	deps := make(map[strfmt.UUID]struct{})
 	for _, depID := range currentArtifact.RuntimeDependencies {
 		deps[depID] = struct{}{}
@@ -99,7 +112,7 @@ func buildMap(baseID strfmt.UUID, lookup map[strfmt.UUID]interface{}, result art
 
 		err = buildMap(depID, lookup, result)
 		if err != nil {
-			return errs.New("Could not build map for artifact %s", currentArtifact.NodeID)
+			return errs.Wrap(err, "Could not build map for runtime dependency %s", currentArtifact.NodeID)
 		}
 	}
 
@@ -124,6 +137,7 @@ func buildMap(baseID strfmt.UUID, lookup map[strfmt.UUID]interface{}, result art
 		RequestedByOrder: true,
 		GeneratedBy:      currentArtifact.GeneratedBy,
 		Dependencies:     uniqueDeps,
+		URL:              currentArtifact.URL,
 	}
 
 	return nil
@@ -199,13 +213,19 @@ func buildRuntimeDependencies(depdendencyID strfmt.UUID, lookup map[strfmt.UUID]
 		result[depID] = struct{}{}
 		_, err := buildRuntimeDependencies(depID, lookup, result)
 		if err != nil {
-			return nil, errs.New("Could not build map for artifact %s", artifact.NodeID)
+			return nil, errs.Wrap(err, "Could not build map for runtime dependencies of artifact %s", artifact.NodeID)
 		}
 	}
 
 	step, ok := lookup[artifact.GeneratedBy].(*model.Step)
 	if !ok {
-		return nil, errs.New("Incorrect target type for id %s, expected Step", artifact.GeneratedBy)
+		_, ok := lookup[artifact.GeneratedBy].(*model.Source)
+		if !ok {
+			return nil, errs.New("Incorrect target type for id %s, expected Step or Source", artifact.GeneratedBy)
+		}
+
+		logging.Debug("Artifact was not generated by a step, skipping")
+		return nil, nil
 	}
 
 	for _, input := range step.Inputs {
@@ -216,7 +236,7 @@ func buildRuntimeDependencies(depdendencyID strfmt.UUID, lookup map[strfmt.UUID]
 		for _, id := range input.NodeIDs {
 			_, err := buildRuntimeDependencies(id, lookup, result)
 			if err != nil {
-				return nil, errs.New("Could not build map for artifact %s", artifact.NodeID)
+				return nil, errs.Wrap(err, "Could not build map for step dependencies of artifact %s", artifact.NodeID)
 			}
 		}
 	}
@@ -270,66 +290,4 @@ func NewNamedMapFromBuildPlan(build *model.Build) (artifact.NamedMap, error) {
 	}
 
 	return res, nil
-}
-
-// AddBuildArtifacts iterates through all artifacts in a given artifact map and
-// adds the artifact's dependencies to the map. This is useful for when we are
-// using the BuildLogStreamer as it operates on the older recipeID and will include
-// more artifacts than what we originally calculated in the runtime closure.
-func AddBuildArtifacts(artifactMap artifact.Map, build *model.Build) error {
-	lookup := make(map[strfmt.UUID]interface{})
-
-	for _, artifact := range build.Artifacts {
-		lookup[artifact.NodeID] = artifact
-	}
-	for _, step := range build.Steps {
-		lookup[step.StepID] = step
-	}
-	for _, source := range build.Sources {
-		lookup[source.NodeID] = source
-	}
-
-	for _, a := range build.Artifacts {
-		_, ok := artifactMap[strfmt.UUID(a.NodeID)]
-		// Since we are using the BuildLogStreamer, we need to add all of the
-		// artifacts that have been submitted to be built.
-		if !ok && a.Status != model.ArtifactNotSubmitted {
-			deps := make(map[strfmt.UUID]struct{})
-			for _, depID := range a.RuntimeDependencies {
-				deps[depID] = struct{}{}
-				recursiveDeps, err := buildRuntimeDependencies(depID, lookup, deps)
-				if err != nil {
-					return errs.Wrap(err, "Could not resolve runtime dependencies for artifact: %s", depID)
-				}
-				for id := range recursiveDeps {
-					deps[id] = struct{}{}
-				}
-			}
-
-			var uniqueDeps []strfmt.UUID
-			for id := range deps {
-				if _, ok := deps[id]; !ok {
-					continue
-				}
-				uniqueDeps = append(uniqueDeps, id)
-			}
-
-			info, err := getSourceInfo(a.GeneratedBy, lookup)
-			if err != nil {
-				return errs.Wrap(err, "Could not resolve source information")
-			}
-
-			artifactMap[strfmt.UUID(a.NodeID)] = artifact.Artifact{
-				ArtifactID:       strfmt.UUID(a.NodeID),
-				Name:             info.Name,
-				Namespace:        info.Namespace,
-				Version:          &info.Version,
-				RequestedByOrder: true,
-				GeneratedBy:      a.GeneratedBy,
-				Dependencies:     uniqueDeps,
-			}
-		}
-	}
-
-	return nil
 }

@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/sliceutils"
@@ -20,6 +21,7 @@ const (
 	SolveFuncName                     = "solve"
 	SolveLegacyFuncName               = "solve_legacy"
 	RequirementsKey                   = "requirements"
+	PlatformsKey                      = "platforms"
 	AtTimeKey                         = "at_time"
 	RequirementNameKey                = "name"
 	RequirementNamespaceKey           = "namespace"
@@ -519,8 +521,27 @@ func (e *BuildExpression) getSolveNodeArguments() []*Value {
 	return solveAp.Arguments
 }
 
+func (e *BuildExpression) getPlatformsNode() *[]*Value {
+	solveAp := e.getSolveNode()
+	if solveAp == nil {
+		return nil
+	}
+
+	for _, arg := range solveAp.Arguments {
+		if arg.Assignment == nil {
+			continue
+		}
+
+		if arg.Assignment.Name == PlatformsKey && arg.Assignment.Value != nil {
+			return arg.Assignment.Value.List
+		}
+	}
+
+	return nil
+}
+
 // Update updates the BuildExpression's requirements based on the operation and requirement.
-func (e *BuildExpression) Update(operation model.Operation, requirement model.Requirement, timestamp *strfmt.DateTime) error {
+func (e *BuildExpression) UpdateRequirement(operation model.Operation, requirement model.Requirement) error {
 	var err error
 	switch operation {
 	case model.OperationAdded:
@@ -528,19 +549,16 @@ func (e *BuildExpression) Update(operation model.Operation, requirement model.Re
 	case model.OperationRemoved:
 		err = e.removeRequirement(requirement)
 	case model.OperationUpdated:
-		err = e.updateRequirement(requirement)
+		err = e.removeRequirement(requirement)
+		if err != nil {
+			break
+		}
+		err = e.addRequirement(requirement)
 	default:
 		return errs.New("Unsupported operation")
 	}
 	if err != nil {
 		return errs.Wrap(err, "Could not update BuildExpression's requirements")
-	}
-
-	if timestamp != nil {
-		err = e.updateTimestamp(*timestamp)
-		if err != nil {
-			return errs.Wrap(err, "Could not update BuildExpression's timestamp")
-		}
 	}
 
 	return nil
@@ -597,7 +615,7 @@ func (e *BuildExpression) removeRequirement(requirement model.Requirement) error
 	}
 
 	if !found {
-		return errs.New("Could not find requirement")
+		return locale.NewInputError("err_remove_requirement_not_found", "Could not remove requirement '[ACTIONABLE]{{.V0}}[/RESET]', because it does not exist.", requirement.Name)
 	}
 
 	for _, arg := range e.getSolveNode().Arguments {
@@ -613,55 +631,55 @@ func (e *BuildExpression) removeRequirement(requirement model.Requirement) error
 	return nil
 }
 
-func (e *BuildExpression) updateRequirement(requirement model.Requirement) error {
-	if requirement.VersionRequirement == nil {
-		return nil
+func (e *BuildExpression) UpdatePlatform(operation model.Operation, platformID strfmt.UUID) error {
+	var err error
+	switch operation {
+	case model.OperationAdded:
+		err = e.addPlatform(platformID)
+	case model.OperationRemoved:
+		err = e.removePlatform(platformID)
+	default:
+		return errs.New("Unsupported operation")
 	}
-
-	requirementsNode := e.getRequirementsNode()
-
-	for _, r := range requirementsNode {
-		if r.Object == nil {
-			continue
-		}
-
-		for _, o := range *r.Object {
-			if o.Name != RequirementNameKey || *o.Value.Str != requirement.Name {
-				continue
-			}
-
-			var versionRequirements []*Value
-			for _, v := range *r.Object {
-				if v.Name != RequirementVersionRequirementsKey {
-					continue
-				}
-
-				for _, versionReq := range requirement.VersionRequirement {
-					versionRequirements = append(versionRequirements, &Value{Object: &[]*Var{
-						{Name: RequirementComparatorKey, Value: &Value{Str: ptr.To(versionReq[RequirementComparatorKey])}},
-						{Name: RequirementVersionKey, Value: &Value{Str: ptr.To(versionReq[RequirementVersionKey])}},
-					}})
-				}
-				v.Value.List = &versionRequirements
-			}
-
-		}
-	}
-
-	for _, arg := range e.getSolveNode().Arguments {
-		if arg.Assignment == nil {
-			continue
-		}
-
-		if arg.Assignment.Name == RequirementsKey {
-			arg.Assignment.Value.List = &requirementsNode
-		}
+	if err != nil {
+		return errs.Wrap(err, "Could not update BuildExpression's platform")
 	}
 
 	return nil
 }
 
-func (e *BuildExpression) updateTimestamp(timestamp strfmt.DateTime) error {
+func (e *BuildExpression) addPlatform(platformID strfmt.UUID) error {
+	platformsNode := e.getPlatformsNode()
+
+	*platformsNode = append(*platformsNode, &Value{Str: ptr.To(platformID.String())})
+
+	return nil
+}
+
+func (e *BuildExpression) removePlatform(platformID strfmt.UUID) error {
+	platformsNode := e.getPlatformsNode()
+
+	var found bool
+	for i, p := range *platformsNode {
+		if p.Str == nil {
+			continue
+		}
+
+		if *p.Str == platformID.String() {
+			*platformsNode = append((*platformsNode)[:i], (*platformsNode)[i+1:]...)
+			found = true
+			break
+		}
+	}
+
+	if !found {
+		return errs.New("Could not find platform")
+	}
+
+	return nil
+}
+
+func (e *BuildExpression) UpdateTimestamp(timestamp strfmt.DateTime) error {
 	formatted, err := time.Parse(time.RFC3339, timestamp.String())
 	if err != nil {
 		return errs.Wrap(err, "Could not parse latest timestamp")

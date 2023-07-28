@@ -113,9 +113,20 @@ mutation ($organization: String!, $project: String!, $parentCommit: ID, $expr:Bu
               logURL
               errors
             }
+            ... on ArtifactFailed {
+              __typename
+              nodeId
+              mimeType
+              generatedBy
+              runtimeDependencies
+              status
+              logURL
+              errors
+            }
           }
         }
         ... on PlanningError {
+          message
           subErrors {
             __typename
             ... on GenericSolveError {
@@ -124,6 +135,7 @@ mutation ($organization: String!, $project: String!, $parentCommit: ID, $expr:Bu
               isTransient
               validationErrors {
                 jsonPath
+                error
               }
             }
             ... on RemediableSolveError {

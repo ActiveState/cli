@@ -2,6 +2,8 @@ package model
 
 import (
 	"encoding/json"
+	"fmt"
+	"strings"
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
@@ -59,6 +61,10 @@ const (
 	XArtifactMimeType            = "application/x.artifact"
 	XActiveStateArtifactMimeType = "application/x-activestate-artifacts"
 	XCamelInstallerMimeType      = "application/x-camel-installer"
+	XGozipInstallerMimeType      = "application/x-gozip-installer"
+
+	// Error types
+	RemediableSolveErrorType = "RemediableSolveError"
 )
 
 func IsStateToolArtifact(mimeType string) bool {
@@ -95,17 +101,50 @@ func (o *Operation) Unmarshal(v string) error {
 }
 
 type BuildPlannerError struct {
-	Wrapped          error
 	ValidationErrors []string
 	IsTransient      bool
 }
 
-func (e *BuildPlannerError) Error() string {
-	return "resolve_err"
+// InputError returns true as we want to treat all build planner errors as input errors
+// and not report them to Rollbar. We defer the responsibility of logging these errors
+// to the maintainers of the build planner.
+func (e *BuildPlannerError) InputError() bool {
+	return true
 }
 
-func (e *BuildPlannerError) Unwrap() error {
-	return e.Wrapped
+// UserError returns the error message to be displayed to the user.
+// This function is added so that BuildPlannerErrors will be displayed
+// to the user
+func (e *BuildPlannerError) UserError() string {
+	return e.Error()
+}
+
+func (e *BuildPlannerError) Error() string {
+	// Append last five lines to error message
+	offset := 0
+	numLines := len(e.ValidationErrors)
+	if numLines > 5 {
+		offset = numLines - 5
+	}
+
+	errorLines := strings.Join(e.ValidationErrors[offset:], "\n")
+	// Crop at 500 characters to reduce noisy output further
+	if len(errorLines) > 500 {
+		offset = len(errorLines) - 499
+		errorLines = fmt.Sprintf("…%s", errorLines[offset:])
+	}
+	isCropped := offset > 0
+	croppedMessage := ""
+	if isCropped {
+		croppedMessage = locale.Tl("buildplan_err_cropped_intro", "These are the last lines of the error message:")
+	}
+
+	var err error
+	err = locale.NewError("solver_err", "", croppedMessage, errorLines)
+	if e.IsTransient {
+		err = errs.AddTips(err, locale.Tr("transient_solver_tip"))
+	}
+	return err.Error()
 }
 
 // BuildPlan is the top level object returned by the build planner. It contains
@@ -162,11 +201,21 @@ func (b *BuildPlanByProject) Build() (*Build, error) {
 		var errs []string
 		var isTransient bool
 		for _, se := range b.Project.Commit.Build.SubErrors {
-			errs = append(errs, se.Message)
-			isTransient = se.IsTransient
+			if se.Type != RemediableSolveErrorType {
+				continue
+			}
+
+			if se.Message != "" {
+				errs = append(errs, se.Message)
+				isTransient = se.IsTransient
+			}
+			for _, ve := range se.ValidationErrors {
+				if ve.Error != "" {
+					errs = append(errs, ve.Error)
+				}
+			}
 		}
 		return nil, &BuildPlannerError{
-			Wrapped:          locale.NewInputError("err_buildplanner", b.Project.Commit.Build.Message),
 			ValidationErrors: errs,
 			IsTransient:      isTransient,
 		}
@@ -233,11 +282,21 @@ func (b *BuildPlanByCommit) Build() (*Build, error) {
 		var errs []string
 		var isTransient bool
 		for _, se := range b.Commit.Build.SubErrors {
-			errs = append(errs, se.Message)
-			isTransient = se.IsTransient
+			if se.Type != RemediableSolveErrorType {
+				continue
+			}
+
+			if se.Message != "" {
+				errs = append(errs, se.Message)
+				isTransient = se.IsTransient
+			}
+			for _, ve := range se.ValidationErrors {
+				if ve.Error != "" {
+					errs = append(errs, ve.Error)
+				}
+			}
 		}
 		return nil, &BuildPlannerError{
-			Wrapped:          locale.NewInputError("err_buildplanner", b.Commit.Build.Message),
 			ValidationErrors: errs,
 			IsTransient:      isTransient,
 		}

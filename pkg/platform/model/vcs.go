@@ -696,7 +696,7 @@ func CommitRequirement(commitID strfmt.UUID, op Operation, name, version string,
 	msgL10nKey := commitMessage(op, name, version, namespace, word)
 	msg := locale.Tr(msgL10nKey, name, version)
 
-	name, version, err := resolveRequirementNameAndVersion(name, version, word, namespace)
+	name, version, err := ResolveRequirementNameAndVersion(name, version, word, namespace)
 	if err != nil {
 		return "", errs.Wrap(err, "Could not resolve requirement name and version")
 	}
@@ -766,7 +766,7 @@ func packageCommitMessage(op Operation, name, version string) string {
 	return locale.Tr(msgL10nKey, name, version)
 }
 
-func resolveRequirementNameAndVersion(name, version string, word int, namespace Namespace) (string, string, error) {
+func ResolveRequirementNameAndVersion(name, version string, word int, namespace Namespace) (string, string, error) {
 	if namespace.Type() == NamespacePlatform {
 		platform, err := FetchPlatformByDetails(name, version, word)
 		if err != nil {
