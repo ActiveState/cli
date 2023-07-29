@@ -36,40 +36,40 @@ func main() {
 
 func run() error {
 	var (
+		inDir   = filepath.Join(environment.GetRootPathUnsafe(), "build")
+		outDir  = filepath.Join(inDir, "payload")
 		branch  = constants.BranchName
 		version = constants.Version
 	)
 
+	flag.StringVar(&inDir, "i", inDir, "Override directory to gather payload components from.")
+	flag.StringVar(&outDir, "o", outDir, "Override directory to output payload to.")
 	flag.StringVar(&branch, "b", branch, "Override target branch. (Branch to receive update.)")
 	flag.StringVar(&version, "v", version, "Override version number for this update.")
 	flag.Parse()
 
-	root := environment.GetRootPathUnsafe()
-	buildDir := filepath.Join(root, "build")
-	payloadDir := filepath.Join(buildDir, "payload")
-
-	return generatePayload(buildDir, payloadDir, branch, version)
+	return generatePayload(inDir, outDir, branch, version)
 }
 
-func generatePayload(buildDir, payloadDir, branch, version string) error {
+func generatePayload(inDir, outDir, branch, version string) error {
 	emsg := "generate payload: %w"
 
-	payloadBinDir := filepath.Join(payloadDir, "bin")
+	binDir := filepath.Join(outDir, "bin")
 
-	if err := fileutils.MkdirUnlessExists(payloadBinDir); err != nil {
+	if err := fileutils.MkdirUnlessExists(binDir); err != nil {
 		return fmt.Errorf(emsg, err)
 	}
 
-	log("Creating install dir marker in %s", payloadDir)
-	if err := createInstallMarker(payloadDir, branch, version); err != nil {
+	log("Creating install dir marker in %s", outDir)
+	if err := createInstallMarker(outDir, branch, version); err != nil {
 		return fmt.Errorf(emsg, err)
 	}
 
 	files := map[string]string{
-		filepath.Join(buildDir, constants.StateInstallerCmd+exeutils.Extension): payloadDir,
-		filepath.Join(buildDir, constants.StateCmd+exeutils.Extension):          payloadBinDir,
-		filepath.Join(buildDir, constants.StateSvcCmd+exeutils.Extension):       payloadBinDir,
-		filepath.Join(buildDir, constants.StateExecutorCmd+exeutils.Extension):  payloadBinDir,
+		filepath.Join(inDir, constants.StateInstallerCmd+exeutils.Extension): outDir,
+		filepath.Join(inDir, constants.StateCmd+exeutils.Extension):          binDir,
+		filepath.Join(inDir, constants.StateSvcCmd+exeutils.Extension):       binDir,
+		filepath.Join(inDir, constants.StateExecutorCmd+exeutils.Extension):  binDir,
 	}
 	if err := copyFiles(files); err != nil {
 		return fmt.Errorf(emsg, err)

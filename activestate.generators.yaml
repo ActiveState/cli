@@ -61,7 +61,7 @@ scripts:
       $constants.SET_ENV
       
       echo "# Generate payload"
-      go run ./scripts/ci/payload-generator/main.go
+      go run ./scripts/ci/payload-generator/main.go "$@"
   - name: generate-update
     language: bash
     description: Generate update files
@@ -76,7 +76,7 @@ scripts:
       mkdir -p ./build/update
 
       echo "# Generate update from temp dir"
-      go run scripts/ci/update-generator/main.go -o ./build/update $PAYLOADDIR
+      go run scripts/ci/update-generator/main.go -o ./build/update
   - name: generate-remote-install-deployment
     language: bash
     value: go run scripts/ci/deploy-generator/remote-installer/main.go "$@"
@@ -94,25 +94,33 @@ scripts:
     value: |
       set -e
       $constants.SET_ENV
-      mkdir -p ./build/test/state-install/bin
-      mkdir -p ./build/test-update
+      TEST_COMPONENTS_DIR=./build/test/state-install
+      TEST_COMPONENTS_BIN_DIR=${TEST_COMPONENTS_DIR}/bin
+      TEST_PAYLOAD_DIR=${TEST_COMPONENTS_DIR}/payload
+      TEST_ARCHIVE_DIR=./build/test-update
+      mkdir -p ${TEST_PAYLOAD_DIR}
+      mkdir -p ${TEST_ARCHIVE_DIR}
       TEST_VERSION="99.99.9999"
       TEST_CHANNEL=${1:-test-channel}
 
-      TEST_STATE_TOOL=./build/test/state-install/bin/$constants.BUILD_TARGET
-      TEST_STATE_SVC=./build/test/state-install/bin/$constants.BUILD_DAEMON_TARGET
-      TEST_STATE_EXEC=./build/test/state-install/bin/$constants.BUILD_EXEC_TARGET
-      TEST_INSTALLER=./build/test/state-install/$constants.BUILD_INSTALLER_TARGET
+      TEST_STATE_TOOL=${TEST_COMPONENTS_BIN_DIR}/$constants.BUILD_TARGET
+      TEST_STATE_SVC=${TEST_COMPONENTS_BIN_DIR}/$constants.BUILD_DAEMON_TARGET
+      TEST_STATE_EXEC=${TEST_COMPONENTS_BIN_DIR}$constants.BUILD_EXEC_TARGET
+      TEST_INSTALLER=${TEST_COMPONENTS_DIR}/$constants.BUILD_INSTALLER_TARGET
       go build -o $TEST_STATE_TOOL ./internal/testhelpers/installation/fakeversioncmd
       cp -a $TEST_STATE_TOOL $TEST_STATE_SVC
       cp -a $TEST_STATE_TOOL $TEST_STATE_EXEC
       cp -a $BUILD_TARGET_DIR/$constants.BUILD_INSTALLER_TARGET $TEST_INSTALLER
 
-      go run scripts/ci/update-generator/main.go -v ${TEST_VERSION} -o ./build/test-update ./build/test/state-install
+      $scripts.generate-payload -v ${TEST_VERSION} -o ${TEST_PAYLOAD_DIR} -i ${TEST_COMPONENTS_DIR}
+
+      go run scripts/ci/update-generator/main.go -v ${TEST_VERSION} -o ${TEST_ARCHIVE_DIR} -i ${TEST_PAYLOAD_DIR}
 
       echo "compile ${TEST_CHANNEL} update"
       go build -o $TEST_STATE_TOOL -ldflags "-X main.channel=${TEST_CHANNEL}" ./internal/testhelpers/installation/fakeversioncmd
       cp -a $TEST_STATE_TOOL $TEST_STATE_SVC
       cp -a $TEST_STATE_TOOL $TEST_STATE_EXEC
 
-      go run scripts/ci/update-generator/main.go -b ${TEST_CHANNEL} -v ${TEST_VERSION} -o ./build/test-update ./build/test/state-install
+      $scripts.generate-payload -b ${TEST_CHANNEL} -v ${TEST_VERSION} -o ${TEST_PAYLOAD_DIR} -i ${TEST_COMPONENTS_DIR}
+
+      go run scripts/ci/update-generator/main.go -b ${TEST_CHANNEL} -v ${TEST_VERSION} -o ./build/test-update -i ./build/test/state-install

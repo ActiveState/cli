@@ -23,31 +23,14 @@ import (
 	"github.com/ActiveState/cli/internal/updater"
 )
 
-var exit = os.Exit
-
-var outputDirFlag, platformFlag, branchFlag, versionFlag *string
-
-func printUsage() {
-	fmt.Println("")
-	fmt.Println("[-o outputDir] [-b branchOverride] [-v versionOverride] [--platform platformOverride] <directory>")
-}
-
 func main() {
 	if !condition.InUnitTest() {
 		err := run()
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "%s error: %v", os.Args[0], errs.JoinMessage(err))
+			os.Exit(1)
 		}
 	}
-}
-
-func init() {
-	defaultPlatform := fetchPlatform()
-	outputDirFlag = flag.String("o", "public", "Output directory for writing updates")
-	platformFlag = flag.String("platform", defaultPlatform,
-		"Target platform in the form OS-ARCH. Defaults to running os/arch or the combination of the environment variables GOOS and GOARCH if both are set.")
-	branchFlag = flag.String("b", "", "Override target branch. This is the branch that will receive this update.")
-	versionFlag = flag.String("v", constants.Version, "Override version number for this update.")
 }
 
 func fetchPlatform() string {
@@ -140,32 +123,33 @@ func createInstaller(outputPath, channel, platform string) error {
 }
 
 func run() error {
+	var (
+		platform = fetchPlatform()
+		inDir    = filepath.Join(environment.GetRootPathUnsafe(), "build", "payload")
+		outDir   = "public"
+		branch   = constants.BranchName
+		version  = constants.Version
+	)
+
+	flag.StringVar(
+		&platform, "platform", platform,
+		"Target platform in the form OS-ARCH. Defaults to running os/arch or the combination of the environment variables GOOS and GOARCH if both are set.",
+	)
+	flag.StringVar(&inDir, "i", inDir, "Override directory to gather payload from.")
+	flag.StringVar(&outDir, "o", outDir, "Override directory to output archive to.")
+	flag.StringVar(&branch, "b", branch, "Override target branch. (Branch to receive update.)")
+	flag.StringVar(&version, "v", version, "Override version number for this update.")
 	flag.Parse()
-	if flag.NArg() < 1 && !condition.InUnitTest() {
-		flag.Usage()
-		printUsage()
-		exit(0)
-	}
 
-	target := flag.Args()[0]
-
-	branch := constants.BranchName
-	if branchFlag != nil && *branchFlag != "" {
-		branch = *branchFlag
-	}
-
-	platform := *platformFlag
-
-	version := *versionFlag
-
-	outputDir := *outputDirFlag
-	os.MkdirAll(outputDir, 0755)
-
-	if err := createUpdate(outputDir, branch, version, platform, target); err != nil {
+	if err := fileutils.MkdirUnlessExists(outDir); err != nil {
 		return err
 	}
 
-	if err := createInstaller(outputDir, branch, platform); err != nil {
+	if err := createUpdate(outDir, branch, version, platform, inDir); err != nil {
+		return err
+	}
+
+	if err := createInstaller(outDir, branch, platform); err != nil {
 		return err
 	}
 
