@@ -160,7 +160,7 @@ if [ $OS = "windows" ]; then
 else
   tar -xzf $TMPDIR/$ARCHIVE -C $TMPDIR || exit 1
 fi
-chmod +x $TMPDIR/$INSTALLERNAME$BINARYEXT || ls ${TMPDIR} -R | grep ":$" | sed -e 's/:$//' -e 's/[^-][^\/]*\//--/g' -e 's/^/   /' -e 's/-/|/'
+chmod +x $TMPDIR/$INSTALLERNAME$BINARYEXT || tar -ztvf ${TMPDIR}/${ARCHIVE}
 progress_done
 echo ""
 
