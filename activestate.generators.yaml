@@ -123,4 +123,4 @@ scripts:
 
       $scripts.generate-payload -b ${TEST_CHANNEL} -v ${TEST_VERSION} -o ${TEST_PAYLOAD_DIR} -i ${TEST_COMPONENTS_DIR}
 
-      go run scripts/ci/update-generator/main.go -b ${TEST_CHANNEL} -v ${TEST_VERSION} -o ./build/test-update -i ./build/test/state-install
+      go run scripts/ci/update-generator/main.go -b ${TEST_CHANNEL} -v ${TEST_VERSION} -o ${TEST_ARCHIVE_DIR} -i ${TEST_PAYLOAD_DIR}
