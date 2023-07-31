@@ -23,6 +23,11 @@ import (
 	"github.com/ActiveState/cli/internal/updater"
 )
 
+var (
+	installDirName = "state-install"
+	tempDirPrefix  = "state-tool_generated-update"
+)
+
 func main() {
 	if !condition.InUnitTest() {
 		err := run()
@@ -59,6 +64,31 @@ func archiveMeta() (archiveMethod archiver.Archiver, ext string) {
 	return archiver.NewTarGz(), ".tar.gz"
 }
 
+func ensureInstallDirName(targetDir string) (string, error) {
+	if filepath.Base(targetDir) == installDirName {
+		return targetDir, nil
+	}
+
+	tmpDir, err := ioutil.TempDir("", filepath.Join(tempDirPrefix, installDirName))
+	if err != nil {
+		return "", errs.Wrap(err, "Cannot create renamed dir %q", tmpDir)
+	}
+
+	if err := os.RemoveAll(tmpDir); err != nil {
+		return "", errs.Wrap(err, "Cannot ensure tmp dir %q is empty", tmpDir)
+	}
+
+	if err := fileutils.MkdirUnlessExists(tmpDir); err != nil {
+		return "", errs.Wrap(err, "Cannot remake tmp dir %q", tmpDir)
+	}
+
+	if err := fileutils.CopyFiles(targetDir, tmpDir); err != nil {
+		return "", errs.Wrap(err, "Cannot copy files from %q to %q", targetDir, tmpDir)
+	}
+
+	return tmpDir, nil
+}
+
 func createUpdate(outputPath, channel, version, platform, target string) error {
 	relChannelPath := filepath.Join(channel, platform)
 	relVersionedPath := filepath.Join(channel, version, platform)
@@ -69,12 +99,16 @@ func createUpdate(outputPath, channel, version, platform, target string) error {
 	relArchivePath := filepath.Join(relVersionedPath, fmt.Sprintf("state-%s-%s%s", platform, version, archiveExt))
 	archivePath := filepath.Join(outputPath, relArchivePath)
 
+	renamedTarget, err := ensureInstallDirName(target)
+	if err != nil {
+		return errs.Wrap(err, "Cannot ensure target dir is named correctly")
+	}
+
 	// Remove archive path if it already exists
 	_ = os.Remove(archivePath)
 	// Create main archive
 	fmt.Printf("Creating %s\n", archivePath)
-	err := archive.Archive([]string{target}, archivePath)
-	if err != nil {
+	if err := archive.Archive([]string{renamedTarget}, archivePath); err != nil {
 		return errs.Wrap(err, "Archiving failed")
 	}
 
