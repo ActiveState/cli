@@ -133,7 +133,6 @@ func (suite *PullIntegrationTestSuite) TestPull_RestoreNamespace() {
 
 func (suite *PullIntegrationTestSuite) TestMergeBuildScript() {
 	suite.OnlyRunForTags(tagsuite.Pull)
-	suite.T().Skip("Buildplanner's StageCommit does not currently work") // DX-1859
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
