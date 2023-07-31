@@ -69,24 +69,26 @@ func ensureInstallDirName(targetDir string) (string, error) {
 		return targetDir, nil
 	}
 
-	tmpDir, err := ioutil.TempDir("", filepath.Join(tempDirPrefix, installDirName))
+	tmpDir, err := ioutil.TempDir("", tempDirPrefix)
 	if err != nil {
 		return "", errs.Wrap(err, "Cannot create renamed dir %q", tmpDir)
 	}
 
-	if err := os.RemoveAll(tmpDir); err != nil {
-		return "", errs.Wrap(err, "Cannot ensure tmp dir %q is empty", tmpDir)
+	installDir := filepath.Join(tmpDir, installDirName)
+
+	if err := os.RemoveAll(installDir); err != nil {
+		return "", errs.Wrap(err, "Cannot ensure tmp install dir %q is empty", installDir)
 	}
 
-	if err := fileutils.MkdirUnlessExists(tmpDir); err != nil {
-		return "", errs.Wrap(err, "Cannot remake tmp dir %q", tmpDir)
+	if err := fileutils.MkdirUnlessExists(installDir); err != nil {
+		return "", errs.Wrap(err, "Cannot remake tmp dir %q", installDir)
 	}
 
-	if err := fileutils.CopyFiles(targetDir, tmpDir); err != nil {
-		return "", errs.Wrap(err, "Cannot copy files from %q to %q", targetDir, tmpDir)
+	if err := fileutils.CopyFiles(targetDir, installDir); err != nil {
+		return "", errs.Wrap(err, "Cannot copy files from %q to %q", targetDir, installDir)
 	}
 
-	return tmpDir, nil
+	return installDir, nil
 }
 
 func createUpdate(outputPath, channel, version, platform, target string) error {
