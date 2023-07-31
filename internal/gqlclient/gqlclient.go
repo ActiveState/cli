@@ -304,16 +304,42 @@ func (c *Client) runWithFiles(ctx context.Context, gqlReq RequestWithFiles, resp
 	}
 	req = req.WithContext(ctx)
 	c.Log(fmt.Sprintf(">> Raw Request: %s\n", req.URL.String()))
-	res, resErr := http.DefaultClient.Do(req)
-	if reqErr := <-reqErrChan; reqErr != nil {
-		return reqErr
+
+	var res *http.Response
+	resErrChan := make(chan error)
+	go func() {
+		var err error
+		res, err = http.DefaultClient.Do(req)
+		resErrChan <- err
+	}()
+
+	// Due to the streaming uploads the request error can happen both before and after the http request itself, hence
+	// the creative select case you see before you.
+	wait := true
+	for wait {
+		select {
+		case err := <-reqErrChan:
+			if err != nil {
+				c.Log(fmt.Sprintf("Request Error: %s", err))
+				return err
+			}
+		case err := <-resErrChan:
+			wait = false
+			if err != nil {
+				c.Log(fmt.Sprintf("Response Error: %s", err))
+				return err
+			}
+		}
 	}
-	if resErr != nil {
-		return resErr
+
+	if res == nil {
+		return errs.New("Received empty response")
 	}
+
 	defer res.Body.Close()
 	var buf bytes.Buffer
 	if _, err := io.Copy(&buf, res.Body); err != nil {
+		c.Log(fmt.Sprintf("Read Error: %s", err))
 		return errors.Wrap(err, "reading body")
 	}
 	resp := buf.Bytes()
