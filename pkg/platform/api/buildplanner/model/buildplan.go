@@ -339,10 +339,12 @@ type PushCommitResult struct {
 type StageCommitResult struct {
 	Commit *Commit `json:"stageCommit"`
 	*Error
+	*ParseError
 }
 
 // Error contains an error message.
 type Error struct {
+	Type    string `json:"__typename"`
 	Message string `json:"message"`
 }
 
@@ -508,6 +510,13 @@ type Source struct {
 type PlanningError struct {
 	Message   string               `json:"message"`
 	SubErrors []*BuildExprLocation `json:"subErrors"`
+}
+
+// ParseError is an error that occurred while parsing the build expression.
+type ParseError struct {
+	Type    string `json:"__typename"`
+	Message string `json:"message"`
+	Path    string `json:"path"`
 }
 
 // BuildExprLocation represents a location in the build script where an error occurred.

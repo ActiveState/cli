@@ -22,6 +22,7 @@ import (
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
+	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/buildscript"
@@ -246,6 +247,8 @@ func (r *Runtime) recordCompletion(err error) {
 		errorType = "solve"
 	case errs.Matches(err, &setup.BuildError{}) || errs.Matches(err, &buildlog.BuildError{}):
 		errorType = "build"
+	case errs.Matches(err, &bpModel.BuildPlannerError{}):
+		errorType = "buildplan"
 	case errs.Matches(err, &setup.ArtifactSetupErrors{}):
 		if setupErrors := (&setup.ArtifactSetupErrors{}); errors.As(err, &setupErrors) {
 			for _, err := range setupErrors.Errors() {
@@ -265,11 +268,17 @@ func (r *Runtime) recordCompletion(err error) {
 		errorType = "progress"
 	}
 
+	var message string
+	if err != nil {
+		message = errs.JoinMessage(err)
+	}
+
 	r.analytics.Event(anaConsts.CatRuntime, action, &dimensions.Values{
 		CommitID: ptr.To(r.target.CommitUUID().String()),
 		// Note: ProjectID is set by state-svc since ProjectNameSpace is specified.
 		ProjectNameSpace: ptr.To(ns.String()),
 		Error:            ptr.To(errorType),
+		Message:          &message,
 	})
 }
 
