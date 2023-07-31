@@ -13,21 +13,17 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/buildexpression"
-	"github.com/ActiveState/cli/pkg/project"
 )
 
-type targeter interface { // note: cannot import runtime/setup.Targeter due to import cycle
+// projecter is a union between project.Project and setup.Targeter
+type projecter interface {
 	ProjectDir() string
 	Owner() string
 	Name() string
 }
 
-func NewScriptFromProject(proj *project.Project, auth *authentication.Auth) (*Script, error) {
-	return newScriptFromFile(filepath.Join(proj.Dir(), constants.BuildScriptFileName), proj.Owner(), proj.Name(), auth)
-}
-
-func NewScriptFromTarget(target targeter, auth *authentication.Auth) (*Script, error) {
-	return newScriptFromFile(filepath.Join(target.ProjectDir(), constants.BuildScriptFileName), target.Owner(), target.Name(), auth)
+func NewScriptFromProject(proj projecter, auth *authentication.Auth) (*Script, error) {
+	return newScriptFromFile(filepath.Join(proj.ProjectDir(), constants.BuildScriptFileName), proj.Owner(), proj.Name(), auth)
 }
 
 func newScriptFromFile(path, org, project string, auth *authentication.Auth) (*Script, error) {
@@ -58,17 +54,13 @@ func newScriptFromFile(path, org, project string, auth *authentication.Auth) (*S
 	return script, nil
 }
 
-func Update(proj *project.Project, newExpr *buildexpression.BuildExpression, auth *authentication.Auth) error {
+func Update(proj projecter, newExpr *buildexpression.BuildExpression, auth *authentication.Auth) error {
 	if script, err := NewScriptFromProject(proj, auth); err == nil && !script.EqualsBuildExpression(newExpr) {
-		update(proj.Dir(), newExpr, auth)
+		update(proj.ProjectDir(), newExpr, auth)
 	} else if err != nil {
 		return errs.Wrap(err, "Could not read build script")
 	}
 	return nil
-}
-
-func UpdateFromTarget(target targeter, newExpr *buildexpression.BuildExpression, auth *authentication.Auth) error {
-	return update(target.ProjectDir(), newExpr, auth)
 }
 
 func update(projectDir string, newExpr *buildexpression.BuildExpression, auth *authentication.Auth) error {
