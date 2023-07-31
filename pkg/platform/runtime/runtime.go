@@ -115,7 +115,7 @@ func (r *Runtime) validateCache() error {
 	}
 
 	// Check if local build script has changes that should be committed.
-	script, err := buildscript.NewScriptFromProjectDir(r.target.ProjectDir(), r.auth)
+	script, err := buildscript.NewScriptFromTarget(r.target, r.auth)
 	if err != nil {
 		return errs.Wrap(err, "Unable to get local build script")
 	}

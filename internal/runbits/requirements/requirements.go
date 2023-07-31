@@ -285,7 +285,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 			return errs.Wrap(err, "Could not get remote build expr")
 		}
 
-		err = buildscript.UpdateOrCreate(pj.Dir(), expr, r.Auth)
+		err = buildscript.Update(pj, expr, r.Auth)
 		if err != nil {
 			return locale.WrapError(err, "err_update_build_script")
 		}

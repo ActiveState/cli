@@ -219,8 +219,8 @@ func (p *Pull) performMerge(strategies *mono_models.MergeStrategies, remoteCommi
 // mergeBuildScript merges the local build script with the remote buildexpression (not script) for a
 // given UUID, performing the given merge strategy (e.g. from model.MergeCommit).
 func (p *Pull) mergeBuildScript(strategies *mono_models.MergeStrategies, remoteCommit strfmt.UUID) error {
-	// Verify we have a build script to merge.
-	script, err := buildscript.NewScriptFromProjectDir(p.project.Dir(), p.auth)
+	// Get the build script to merge.
+	script, err := buildscript.NewScriptFromProject(p.project, p.auth)
 	if err != nil {
 		return errs.Wrap(err, "Could not get local build script")
 	}
@@ -250,7 +250,7 @@ func (p *Pull) mergeBuildScript(strategies *mono_models.MergeStrategies, remoteC
 	}
 
 	// Write the merged build expression as a local build script.
-	return buildscript.UpdateOrCreate(p.project.Dir(), mergedExpr, p.auth)
+	return buildscript.Update(p.project, mergedExpr, p.auth)
 }
 
 func resolveRemoteProject(prj *project.Project, overwrite string) (*project.Namespaced, error) {

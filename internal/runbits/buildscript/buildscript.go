@@ -39,7 +39,7 @@ func getBuildExpression(proj *project.Project, customCommit *strfmt.UUID, auth *
 // commit with them in order to update the remote one.
 func Sync(proj *project.Project, commitID *strfmt.UUID, out output.Outputer, auth *authentication.Auth) (synced bool, err error) {
 	logging.Debug("Synchronizing local build script using commit %s", commitID)
-	script, err := buildscript.NewScriptFromProjectDir(proj.Dir(), auth)
+	script, err := buildscript.NewScriptFromProject(proj, auth)
 	if err != nil {
 		return false, errs.Wrap(err, "Could not get local build script")
 	}
@@ -89,7 +89,7 @@ func Sync(proj *project.Project, commitID *strfmt.UUID, out output.Outputer, aut
 		synced = true
 	}
 
-	if err := buildscript.UpdateOrCreate(proj.Dir(), expr, auth); err != nil {
+	if err := buildscript.Update(proj, expr, auth); err != nil {
 		return false, errs.Wrap(err, "Could not update local build script.")
 	}
 
