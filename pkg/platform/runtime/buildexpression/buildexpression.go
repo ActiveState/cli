@@ -572,6 +572,10 @@ func (e *BuildExpression) addRequirement(requirement model.Requirement) error {
 
 	if requirement.VersionRequirement != nil {
 		for _, r := range requirement.VersionRequirement {
+			if r[RequirementComparatorKey] == "" || r[RequirementVersionKey] == "" {
+				continue
+			}
+
 			obj = append(obj, &Var{Name: RequirementVersionRequirementsKey, Value: &Value{List: &[]*Value{
 				{Object: &[]*Var{
 					{Name: RequirementComparatorKey, Value: &Value{Str: ptr.To(r[RequirementComparatorKey])}},
