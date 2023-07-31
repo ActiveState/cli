@@ -188,7 +188,7 @@ func (r *Runner) Run(params *Params) error {
 
 	cont, err := r.prompt.Confirm(
 		"",
-		locale.Tl("uploadingredient_confirm", `Upload following ingredient?
+		locale.Tl("uploadingredient_confirm", `Publish following ingredient?
 {{.V0}}
 
 `, string(b)),
@@ -198,11 +198,11 @@ func (r *Runner) Run(params *Params) error {
 		return errs.Wrap(err, "Confirmation failed")
 	}
 	if !cont {
-		r.out.Print(locale.Tl("uploadingredient_cancel", "Upload cancelled"))
+		r.out.Print(locale.Tl("uploadingredient_cancel", "Publish cancelled"))
 		return nil
 	}
 
-	r.out.Notice(locale.Tl("uploadingredient_uploading", "Uploading ingredient..."))
+	r.out.Notice(locale.Tl("uploadingredient_uploading", "Publishing ingredient..."))
 
 	pr, err := request.Publish(reqVars, params.Filepath)
 	if err != nil {
