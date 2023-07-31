@@ -11,6 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/ActiveState/cli/pkg/platform/runtime/buildscript"
+	"github.com/ActiveState/cli/pkg/project"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -149,14 +150,17 @@ func (suite *PullIntegrationTestSuite) TestMergeBuildScript() {
 	)
 	cp.ExpectExitCode(0)
 
-	_, err := buildscript.NewScriptFromProjectDir(ts.Dirs.Work)
+	proj, err := project.FromPath(ts.Dirs.Work)
+	suite.NoError(err, "Error loading project")
+
+	_, err = buildscript.NewScriptFromProject(proj, nil)
 	suite.Require().NoError(err) // just verify it's a valid build script
 
 	cp = ts.Spawn("pull")
 	cp.Expect("Your local build script is different")
 	cp.ExpectNotExitCode(0)
 
-	_, err = buildscript.NewScriptFromProjectDir(ts.Dirs.Work)
+	_, err = buildscript.NewScriptFromProject(proj, nil)
 	suite.Assert().Error(err)
 	bytes := fileutils.ReadFileUnsafe(filepath.Join(ts.Dirs.Work, constants.BuildScriptFileName))
 	suite.Assert().Contains(string(bytes), "<<<<<<<", "No merge conflict markers are in build script")

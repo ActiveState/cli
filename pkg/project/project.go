@@ -210,6 +210,11 @@ func (p *Project) Dir() string {
 	return filepath.Dir(p.projectfile.Path())
 }
 
+// ProjectDir is an alias for Dir() to satisfy interfaces that may also target the setup.Targeter interface.
+func (p *Project) ProjectDir() string {
+	return p.Dir()
+}
+
 func (p *Project) IsHeadless() bool {
 	match := projectfile.CommitURLRe.FindStringSubmatch(p.URL())
 	return len(match) > 1

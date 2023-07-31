@@ -115,12 +115,9 @@ func (r *Runtime) validateCache() error {
 	}
 
 	// Check if local build script has changes that should be committed.
-	script, err := buildscript.NewScriptFromProjectDir(r.target.ProjectDir())
+	script, err := buildscript.NewScriptFromProject(r.target, r.auth)
 	if err != nil {
-		if !buildscript.IsDoesNotExistError(err) {
-			return errs.Wrap(err, "Unable to get local build script")
-		}
-		return nil // build script does not exist, so there are no changes
+		return errs.Wrap(err, "Unable to get local build script")
 	}
 
 	commitID := r.target.CommitUUID().String()
