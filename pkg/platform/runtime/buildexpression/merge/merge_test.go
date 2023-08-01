@@ -80,6 +80,35 @@ in:
 	mergedScript, err := buildscript.NewScriptFromBuildExpression(mergedExpr)
 	require.NoError(t, err)
 
+	// TODO: delete this block after DX-1939. Sorting requirements is needed until we have
+	// buildexpression hashes for comparing equality.
+	assert.Equal(t,
+		`let:
+	runtime = solve(
+		platforms = [
+			"12345",
+			"67890"
+		],
+		requirements = [
+			{
+				name = "JSON",
+				namespace = "language/perl"
+			},
+			{
+				name = "perl",
+				namespace = "language"
+			},
+			{
+				name = "DateTime",
+				namespace = "language/perl"
+			}
+		]
+	)
+
+in:
+	runtime`, mergedScript.String())
+	return
+
 	assert.Equal(t,
 		`let:
 	runtime = solve(
@@ -139,12 +168,14 @@ in:
 	exprA, err := buildexpression.New(bytes)
 	require.NoError(t, err)
 
+	// Note the intentional swap of platform order. Buildexpression list order does not matter.
+	// isAutoMergePossible() should still return true, and the original platforms will be used.
 	scriptB, err := buildscript.NewScript([]byte(
 		`let:
 	runtime = solve(
 		platforms = [
-			"12345",
-			"67890"
+			"67890",
+			"12345"
 		],
 		requirements = [
 			{
@@ -179,6 +210,31 @@ in:
 
 	mergedScript, err := buildscript.NewScriptFromBuildExpression(mergedExpr)
 	require.NoError(t, err)
+
+	// TODO: delete this block after DX-1939. Sorting requirements is needed until we have
+	// buildexpression hashes for comparing equality.
+	assert.Equal(t,
+		`let:
+	runtime = solve(
+		platforms = [
+			"12345",
+			"67890"
+		],
+		requirements = [
+			{
+				name = "DateTime",
+				namespace = "language/perl"
+			},
+			{
+				name = "perl",
+				namespace = "language"
+			}
+		]
+	)
+
+in:
+	runtime`, mergedScript.String())
+	return
 
 	assert.Equal(t,
 		`let:

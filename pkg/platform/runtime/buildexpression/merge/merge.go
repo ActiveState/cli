@@ -3,8 +3,10 @@ package merge
 import (
 	"encoding/json"
 	"reflect"
+	"sort"
 
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
 	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
@@ -56,22 +58,26 @@ func Merge(exprA *buildexpression.BuildExpression, exprB *buildexpression.BuildE
 // expressions.
 // This is only possible if the two build expressions differ ONLY in requirements.
 func isAutoMergePossible(exprA *buildexpression.BuildExpression, exprB *buildexpression.BuildExpression) bool {
-	jsonA, err := getJsonMinusRequirements(exprA)
+	jsonA, err := getComparableJson(exprA)
 	if err != nil {
 		multilog.Error("Unable to get buildexpression minus requirements: %v", errs.JoinMessage(err))
 		return false
 	}
-	jsonB, err := getJsonMinusRequirements(exprB)
+	jsonB, err := getComparableJson(exprB)
 	if err != nil {
 		multilog.Error("Unable to get buildxpression minus requirements: %v", errs.JoinMessage(err))
 		return false
 	}
-	return reflect.DeepEqual(jsonA, jsonB)
+	logging.Debug("Checking for possibility of auto-merging build expressions")
+	logging.Debug("JsonA: %v", jsonA)
+	logging.Debug("JsonB: %v", jsonB)
+	return reflect.DeepEqual(jsonA, jsonB) // TODO: replace with DX-1939 solution
 }
 
-// getJsonMinusRequirements returns a JSON map[string]interface{} structure for the given build
-// expression without a "requirements" key nested inside the build expression.
-func getJsonMinusRequirements(expr *buildexpression.BuildExpression) (map[string]interface{}, error) {
+// getComparableJson returns a comparable JSON map[string]interface{} structure for the given build
+// expression. The map will not have a "requirements" field, nor will it have an "at_time" field.
+// String lists will also be sorted.
+func getComparableJson(expr *buildexpression.BuildExpression) (map[string]interface{}, error) {
 	data, err := json.Marshal(expr)
 	if err != nil {
 		return nil, errs.New("Unable to unmarshal marshaled buildxpression")
@@ -91,24 +97,45 @@ func getJsonMinusRequirements(expr *buildexpression.BuildExpression) (map[string
 	if !ok {
 		return nil, errs.New("'let' key is not a JSON object")
 	}
-	deleteRequirements(&letMap)
+	deleteKey(&letMap, "requirements")
+	// TODO: the following shouldn't be needed after DX-1939.
+	sortLists(&letMap)
+	deleteKey(&letMap, "at_time")
 
 	return m, nil
 }
 
-// deleteRequirements recursively iterates over the given JSON map until it finds a "requirements"
-// key and deletes it and its value.
-func deleteRequirements(m *map[string]interface{}) bool {
+// deleteKey recursively iterates over the given JSON map until it finds the given key and deletes
+// it and its value.
+func deleteKey(m *map[string]interface{}, key string) bool {
 	for k, v := range *m {
-		if k == "requirements" {
+		if k == key {
 			delete(*m, k)
 			return true
 		}
 		if m2, ok := v.(map[string]interface{}); ok {
-			if deleteRequirements(&m2) {
+			if deleteKey(&m2, key) {
 				return true
 			}
 		}
 	}
 	return false
+}
+
+// sortLists recursively iterates over the given JSON map looking for string lists, and sorts them.
+// This is needed because isAutoMergePossible() does a reflect.DeepEqual(), but build expression
+// list order does not matter.
+// This will not be necessary after DX-1939 is implemented.
+func sortLists(m *map[string]interface{}) {
+	for _, v := range *m {
+		if list, ok := v.([]interface{}); ok {
+			sort.SliceStable(list, func(i, j int) bool {
+				s1, ok1 := list[i].(string)
+				s2, ok2 := list[j].(string)
+				return ok1 && ok2 && s1 < s2
+			})
+		} else if m2, ok := v.(map[string]interface{}); ok {
+			sortLists(&m2)
+		}
+	}
 }
