@@ -242,7 +242,7 @@ func CopyFile(src, target string) error {
 
 	inInfo, err := in.Stat()
 	if err != nil {
-		errs.Wrap(err, "get file info failed")
+		return errs.Wrap(err, "get file info failed")
 	}
 
 	// Create target directory if it doesn't exist
