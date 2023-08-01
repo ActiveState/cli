@@ -98,24 +98,14 @@ func createInstallMarker(payloadDir, branch, version string) error {
 	return nil
 }
 
-// copyFiles will copy the given files while preserving permissions.
+// copyFiles will copy the given files with logging.
 func copyFiles(files map[string]string) error {
-	emsg := "copy files (%s to %s): %w"
-
 	for src, target := range files {
 		log("Copying %s to %s", src, target)
 		dest := filepath.Join(target, filepath.Base(src))
-		err := fileutils.CopyFile(src, dest)
-		if err != nil {
-			return fmt.Errorf(emsg, src, target, err)
-		}
-		srcStat, err := os.Stat(src)
-		if err != nil {
-			return fmt.Errorf(emsg, src, target, err)
-		}
 
-		if err := os.Chmod(dest, srcStat.Mode().Perm()); err != nil {
-			return fmt.Errorf(emsg, src, target, err)
+		if err := fileutils.CopyFile(src, dest); err != nil {
+			return fmt.Errorf("copy files (%s to %s): %w", src, target, err)
 		}
 	}
 
