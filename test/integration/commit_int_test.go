@@ -51,12 +51,12 @@ func (suite *CommitIntegrationTestSuite) TestCommitManualBuildScriptMod() {
 
 	scriptPath := filepath.Join(ts.Dirs.Work, constants.BuildScriptFileName)
 	data := fileutils.ReadFileUnsafe(scriptPath)
-	bytes.ReplaceAll(data, []byte("casestyle"), []byte("case"))
+	data = bytes.ReplaceAll(data, []byte("casestyle"), []byte("case"))
 	suite.Require().NoError(fileutils.WriteFile(scriptPath, data), "Update buildscript")
 
 	cp = ts.Spawn("commit")
 	cp.Expect("Runtime updated")
-	cp.ExpectNotExitCode(0)
+	cp.ExpectExitCode(0)
 }
 
 func TestCommitIntegrationTestSuite(t *testing.T) {

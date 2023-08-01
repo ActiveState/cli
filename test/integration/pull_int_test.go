@@ -147,6 +147,7 @@ func (suite *PullIntegrationTestSuite) TestMergeBuildScript() {
 		e2e.WithArgs("install", "requests"),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
+	cp.Expect("Package added")
 	cp.ExpectExitCode(0)
 
 	proj, err := project.FromPath(ts.Dirs.Work)
@@ -156,7 +157,7 @@ func (suite *PullIntegrationTestSuite) TestMergeBuildScript() {
 	suite.Require().NoError(err) // just verify it's a valid build script
 
 	cp = ts.Spawn("pull")
-	cp.Expect("Your local build script is different")
+	cp.Expect("Unable to automatically merge build scripts")
 	cp.ExpectNotExitCode(0)
 
 	_, err = buildscript.NewScriptFromProject(proj, nil)
