@@ -70,7 +70,7 @@ scripts:
       export GOARCH=${1:-amd64}
       $constants.SET_ENV
 
-      $scripts.generate-payload
+      $scripts.generate-payload.path()
 
       echo "# Create update dir"
       mkdir -p ./build/update
@@ -113,7 +113,7 @@ scripts:
       cp -a $TEST_STATE_TOOL $TEST_STATE_EXEC
       cp -a $BUILD_TARGET_DIR/$constants.BUILD_INSTALLER_TARGET $TEST_INSTALLER
 
-      $scripts.generate-payload -v ${TEST_VERSION} -o ${TEST_PREPARED_DIR} -i ${TEST_STAGED_DIR}
+      $scripts.generate-payload.path() -v ${TEST_VERSION} -o ${TEST_PREPARED_DIR} -i ${TEST_STAGED_DIR}
 
       go run scripts/ci/update-generator/main.go -v ${TEST_VERSION} -o ${TEST_ARCHIVE_DIR} -i ${TEST_PREPARED_DIR}
 
@@ -122,6 +122,6 @@ scripts:
       cp -a $TEST_STATE_TOOL $TEST_STATE_SVC
       cp -a $TEST_STATE_TOOL $TEST_STATE_EXEC
 
-      $scripts.generate-payload -b ${TEST_CHANNEL} -v ${TEST_VERSION} -o ${TEST_PREPARED_DIR} -i ${TEST_STAGED_DIR}
+      $scripts.generate-payload.path() -b ${TEST_CHANNEL} -v ${TEST_VERSION} -o ${TEST_PREPARED_DIR} -i ${TEST_STAGED_DIR}
 
       go run scripts/ci/update-generator/main.go -b ${TEST_CHANNEL} -v ${TEST_VERSION} -o ${TEST_ARCHIVE_DIR} -i ${TEST_PREPARED_DIR}
