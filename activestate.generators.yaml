@@ -94,33 +94,34 @@ scripts:
     value: |
       set -e
       $constants.SET_ENV
-      TEST_COMPONENTS_DIR=./build/test/state-install_components
-      TEST_COMPONENTS_BIN_DIR=${TEST_COMPONENTS_DIR}/bin
-      TEST_PAYLOAD_DIR=./build/test/state-install
+      TEST_BASE_DIR=./build/test-payload
+      TEST_STAGED_DIR=${TEST_BASE_DIR}/staged-components
+      TEST_STAGED_BIN_DIR=${TEST_STAGED_DIR}/bin
+      TEST_PREPARED_DIR=${TEST_BASE_DIR}/state-install
       TEST_ARCHIVE_DIR=./build/test-update
-      mkdir -p ${TEST_PAYLOAD_DIR}
+      mkdir -p ${TEST_STAGED_BIN_DIR}
       mkdir -p ${TEST_ARCHIVE_DIR}
       TEST_VERSION="99.99.9999"
       TEST_CHANNEL=${1:-test-channel}
 
-      TEST_STATE_TOOL=${TEST_COMPONENTS_BIN_DIR}/$constants.BUILD_TARGET
-      TEST_STATE_SVC=${TEST_COMPONENTS_BIN_DIR}/$constants.BUILD_DAEMON_TARGET
-      TEST_STATE_EXEC=${TEST_COMPONENTS_BIN_DIR}$constants.BUILD_EXEC_TARGET
-      TEST_INSTALLER=${TEST_COMPONENTS_DIR}/$constants.BUILD_INSTALLER_TARGET
+      TEST_STATE_TOOL=${TEST_STAGED_BIN_DIR}/$constants.BUILD_TARGET
+      TEST_STATE_SVC=${TEST_STAGED_BIN_DIR}/$constants.BUILD_DAEMON_TARGET
+      TEST_STATE_EXEC=${TEST_STAGED_BIN_DIR}$constants.BUILD_EXEC_TARGET
+      TEST_INSTALLER=${TEST_STAGED_DIR}/$constants.BUILD_INSTALLER_TARGET
       go build -o $TEST_STATE_TOOL ./internal/testhelpers/installation/fakeversioncmd
       cp -a $TEST_STATE_TOOL $TEST_STATE_SVC
       cp -a $TEST_STATE_TOOL $TEST_STATE_EXEC
       cp -a $BUILD_TARGET_DIR/$constants.BUILD_INSTALLER_TARGET $TEST_INSTALLER
 
-      $scripts.generate-payload -v ${TEST_VERSION} -o ${TEST_PAYLOAD_DIR} -i ${TEST_COMPONENTS_DIR}
+      $scripts.generate-payload -v ${TEST_VERSION} -o ${TEST_PREPARED_DIR} -i ${TEST_STAGED_DIR}
 
-      go run scripts/ci/update-generator/main.go -v ${TEST_VERSION} -o ${TEST_ARCHIVE_DIR} -i ${TEST_PAYLOAD_DIR}
+      go run scripts/ci/update-generator/main.go -v ${TEST_VERSION} -o ${TEST_ARCHIVE_DIR} -i ${TEST_PREPARED_DIR}
 
       echo "compile ${TEST_CHANNEL} update"
       go build -o $TEST_STATE_TOOL -ldflags "-X main.channel=${TEST_CHANNEL}" ./internal/testhelpers/installation/fakeversioncmd
       cp -a $TEST_STATE_TOOL $TEST_STATE_SVC
       cp -a $TEST_STATE_TOOL $TEST_STATE_EXEC
 
-      $scripts.generate-payload -b ${TEST_CHANNEL} -v ${TEST_VERSION} -o ${TEST_PAYLOAD_DIR} -i ${TEST_COMPONENTS_DIR}
+      $scripts.generate-payload -b ${TEST_CHANNEL} -v ${TEST_VERSION} -o ${TEST_PREPARED_DIR} -i ${TEST_STAGED_DIR}
 
-      go run scripts/ci/update-generator/main.go -b ${TEST_CHANNEL} -v ${TEST_VERSION} -o ${TEST_ARCHIVE_DIR} -i ${TEST_PAYLOAD_DIR}
+      go run scripts/ci/update-generator/main.go -b ${TEST_CHANNEL} -v ${TEST_VERSION} -o ${TEST_ARCHIVE_DIR} -i ${TEST_PREPARED_DIR}

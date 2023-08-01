@@ -24,8 +24,9 @@ import (
 )
 
 var (
-	installDirName = "state-install"
-	tempDirPrefix  = "state-tool_generated-update"
+	rootPath         = environment.GetRootPathUnsafe()
+	defaultInputDir  = filepath.Join(rootPath, "build", "payload", "state-install")
+	defaultOutputDir = filepath.Join(rootPath, "public")
 )
 
 func main() {
@@ -129,8 +130,8 @@ func createInstaller(outputPath, channel, platform string) error {
 func run() error {
 	var (
 		platform = fetchPlatform()
-		inDir    = filepath.Join(environment.GetRootPathUnsafe(), "build", "payload")
-		outDir   = "public"
+		inDir    = defaultInputDir
+		outDir   = defaultOutputDir
 		branch   = constants.BranchName
 		version  = constants.Version
 	)

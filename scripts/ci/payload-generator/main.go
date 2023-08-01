@@ -37,7 +37,7 @@ func main() {
 func run() error {
 	var (
 		inDir   = filepath.Join(environment.GetRootPathUnsafe(), "build")
-		outDir  = filepath.Join(inDir, "payload")
+		outDir  = filepath.Join(inDir, "payload", "state-install")
 		branch  = constants.BranchName
 		version = constants.Version
 	)
