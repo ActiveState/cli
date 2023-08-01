@@ -64,53 +64,21 @@ func archiveMeta() (archiveMethod archiver.Archiver, ext string) {
 	return archiver.NewTarGz(), ".tar.gz"
 }
 
-func ensureInstallDirName(targetDir string) (string, error) {
-	if filepath.Base(targetDir) == installDirName {
-		return targetDir, nil
-	}
-
-	tmpDir, err := ioutil.TempDir("", tempDirPrefix)
-	if err != nil {
-		return "", errs.Wrap(err, "Cannot create renamed dir %q", tmpDir)
-	}
-
-	installDir := filepath.Join(tmpDir, installDirName)
-
-	if err := os.RemoveAll(installDir); err != nil {
-		return "", errs.Wrap(err, "Cannot ensure tmp install dir %q is empty", installDir)
-	}
-
-	if err := fileutils.MkdirUnlessExists(installDir); err != nil {
-		return "", errs.Wrap(err, "Cannot remake tmp dir %q", installDir)
-	}
-
-	if err := fileutils.CopyFiles(targetDir, installDir); err != nil {
-		return "", errs.Wrap(err, "Cannot copy files from %q to %q", targetDir, installDir)
-	}
-
-	return installDir, nil
-}
-
 func createUpdate(outputPath, channel, version, platform, target string) error {
 	relChannelPath := filepath.Join(channel, platform)
 	relVersionedPath := filepath.Join(channel, version, platform)
-	_ = os.MkdirAll(filepath.Join(outputPath, relChannelPath), 0755)
-	_ = os.MkdirAll(filepath.Join(outputPath, relVersionedPath), 0755)
+	_ = os.MkdirAll(filepath.Join(outputPath, relChannelPath), 0o755)
+	_ = os.MkdirAll(filepath.Join(outputPath, relVersionedPath), 0o755)
 
 	archive, archiveExt := archiveMeta()
 	relArchivePath := filepath.Join(relVersionedPath, fmt.Sprintf("state-%s-%s%s", platform, version, archiveExt))
 	archivePath := filepath.Join(outputPath, relArchivePath)
 
-	renamedTarget, err := ensureInstallDirName(target)
-	if err != nil {
-		return errs.Wrap(err, "Cannot ensure target dir is named correctly")
-	}
-
 	// Remove archive path if it already exists
 	_ = os.Remove(archivePath)
 	// Create main archive
 	fmt.Printf("Creating %s\n", archivePath)
-	if err := archive.Archive([]string{renamedTarget}, archivePath); err != nil {
+	if err := archive.Archive([]string{target}, archivePath); err != nil {
 		return errs.Wrap(err, "Archiving failed")
 	}
 
@@ -122,7 +90,7 @@ func createUpdate(outputPath, channel, version, platform, target string) error {
 
 	infoPath := filepath.Join(outputPath, relChannelPath, "info.json")
 	fmt.Printf("Creating %s\n", infoPath)
-	err = ioutil.WriteFile(infoPath, b, 0755)
+	err = ioutil.WriteFile(infoPath, b, 0o755)
 	if err != nil {
 		return errs.Wrap(err, "Failed to write info.json.")
 	}

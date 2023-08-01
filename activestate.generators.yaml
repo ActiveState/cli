@@ -94,9 +94,9 @@ scripts:
     value: |
       set -e
       $constants.SET_ENV
-      TEST_COMPONENTS_DIR=./build/test/state-install
+      TEST_COMPONENTS_DIR=./build/test/state-install_components
       TEST_COMPONENTS_BIN_DIR=${TEST_COMPONENTS_DIR}/bin
-      TEST_PAYLOAD_DIR=${TEST_COMPONENTS_DIR}/payload
+      TEST_PAYLOAD_DIR=./build/test/state-install
       TEST_ARCHIVE_DIR=./build/test-update
       mkdir -p ${TEST_PAYLOAD_DIR}
       mkdir -p ${TEST_ARCHIVE_DIR}
