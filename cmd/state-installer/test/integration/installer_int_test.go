@@ -10,6 +10,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ActiveState/termtest"
+	"github.com/stretchr/testify/suite"
+
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
@@ -22,8 +25,6 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/ActiveState/cli/pkg/sysinfo"
-	"github.com/ActiveState/termtest"
-	"github.com/stretchr/testify/suite"
 )
 
 type InstallerIntegrationTestSuite struct {
@@ -335,7 +336,8 @@ func installationDir(ts *e2e.Session) string {
 }
 
 func (suite *InstallerIntegrationTestSuite) SetupSuite() {
-	localPayload := filepath.Join(environment.GetRootPathUnsafe(), "build", "payload")
+	rootPath := environment.GetRootPathUnsafe()
+	localPayload := filepath.Join(rootPath, "build", "payload", "state-install")
 	suite.Assert().DirExists(localPayload, "locally generated payload exists")
 
 	installerExe := filepath.Join(localPayload, constants.StateInstallerCmd+osutils.ExeExt)
