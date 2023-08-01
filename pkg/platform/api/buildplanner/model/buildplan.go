@@ -61,6 +61,9 @@ const (
 	XActiveStateArtifactMimeType = "application/x-activestate-artifacts"
 	XCamelInstallerMimeType      = "application/x-camel-installer"
 	XGozipInstallerMimeType      = "application/x-gozip-installer"
+
+	// Error types
+	RemediableSolveErrorType = "RemediableSolveError"
 )
 
 func IsStateToolArtifact(mimeType string) bool {
@@ -92,6 +95,13 @@ type BuildPlannerError struct {
 // to the maintainers of the build planner.
 func (e *BuildPlannerError) InputError() bool {
 	return true
+}
+
+// UserError returns the error message to be displayed to the user.
+// This function is added so that BuildPlannerErrors will be displayed
+// to the user
+func (e *BuildPlannerError) UserError() string {
+	return e.Error()
 }
 
 func (e *BuildPlannerError) Error() string {
@@ -176,6 +186,10 @@ func (b *BuildPlanByProject) Build() (*Build, error) {
 		var errs []string
 		var isTransient bool
 		for _, se := range b.Project.Commit.Build.SubErrors {
+			if se.Type != RemediableSolveErrorType {
+				continue
+			}
+
 			if se.Message != "" {
 				errs = append(errs, se.Message)
 				isTransient = se.IsTransient
@@ -253,6 +267,10 @@ func (b *BuildPlanByCommit) Build() (*Build, error) {
 		var errs []string
 		var isTransient bool
 		for _, se := range b.Commit.Build.SubErrors {
+			if se.Type != RemediableSolveErrorType {
+				continue
+			}
+
 			if se.Message != "" {
 				errs = append(errs, se.Message)
 				isTransient = se.IsTransient
@@ -306,10 +324,12 @@ type PushCommitResult struct {
 type StageCommitResult struct {
 	Commit *Commit `json:"stageCommit"`
 	*Error
+	*ParseError
 }
 
 // Error contains an error message.
 type Error struct {
+	Type    string `json:"__typename"`
 	Message string `json:"message"`
 }
 
@@ -475,6 +495,13 @@ type Source struct {
 type PlanningError struct {
 	Message   string               `json:"message"`
 	SubErrors []*BuildExprLocation `json:"subErrors"`
+}
+
+// ParseError is an error that occurred while parsing the build expression.
+type ParseError struct {
+	Type    string `json:"__typename"`
+	Message string `json:"message"`
+	Path    string `json:"path"`
 }
 
 // BuildExprLocation represents a location in the build script where an error occurred.

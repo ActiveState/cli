@@ -198,7 +198,7 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 	defer events.Close("auth", auth.Close)
 
 	if err := auth.Sync(); err != nil {
-		logging.Warning("Could not sync authenticated state: %s", err.Error())
+		logging.Warning("Could not sync authenticated state: %s", errs.JoinMessage(err))
 	}
 
 	an := anAsync.New(svcmodel, cfg, auth, out, pjNamespace)

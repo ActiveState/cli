@@ -156,10 +156,17 @@ mutation ($organization: String!, $project: String!, $parentCommit: ID, $expr:Bu
         }
       }
     }
+    ... on ParseError {
+      __typename
+      message
+      path
+    }
     ... on NotFound {
+      __typename
       message
     }
-    ... on Error{
+    ... on Error {
+      __typename
       message
     }
   }
