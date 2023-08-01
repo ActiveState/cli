@@ -486,6 +486,7 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 	)
 
 	artifactsToInstall := []artifact.ArtifactID{}
+	buildtimeArtifacts := runtimeArtifacts
 	if buildResult.BuildReady {
 		// If the build is already done we can just look at the downloadable artifacts as they will be a fully accurate
 		// prediction of what we will be installing.
@@ -501,6 +502,13 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 			if _, alreadyInstalled := alreadyInstalled[a.ArtifactID]; !alreadyInstalled {
 				artifactsToInstall = append(artifactsToInstall, a.ArtifactID)
 			}
+		}
+
+		// We also caclulate the artifacts to be built which includes more than the runtime artifacts.
+		// This is used to determine if we need to show the "build in progress" screen.
+		buildtimeArtifacts, err = buildplan.BuildtimeArtifacts(buildResult.Build)
+		if err != nil {
+			return nil, nil, errs.Wrap(err, "Could not get buildtime artifacts")
 		}
 	}
 
@@ -518,7 +526,7 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 		ArtifactNames: artifactNames,
 		LogFilePath:   logFilePath,
 		ArtifactsToBuild: func() []artifact.ArtifactID {
-			return artifact.ArtifactIDsFromBuildPlanMap(runtimeArtifacts) // This does not account for cached builds
+			return artifact.ArtifactIDsFromBuildPlanMap(buildtimeArtifacts) // This does not account for cached builds
 		}(),
 		// Yes these have the same value; this is intentional.
 		// Separating these out just allows us to be more explicit and intentional in our event handling logic.
