@@ -214,8 +214,8 @@ func (r *Runner) Run(params *Params) error {
 		return locale.WrapError(err, "err_uploadingredient_publish", "Could not publish ingredient")
 	}
 
-	if result.Error != "" {
-		return locale.NewError("err_uploadingredient_publish_api", "API responded with error: {{.V0}}", result.Message)
+	if result.Publish.Error != "" {
+		return locale.NewError("err_uploadingredient_publish_api", "API responded with error: {{.V0}}", result.Publish.Error)
 	}
 
 	r.out.Print(output.Prepare(

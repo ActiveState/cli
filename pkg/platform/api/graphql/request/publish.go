@@ -173,6 +173,10 @@ func (p *PublishInput) Query() string {
 					ingredientVersionID
 					revision
 				}
+				... on Error{
+					__typename
+					error: message
+				}
 			}
 		}
 `
