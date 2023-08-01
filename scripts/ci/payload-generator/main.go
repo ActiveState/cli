@@ -15,6 +15,9 @@ import (
 )
 
 var (
+	defaultInputDir  = filepath.Join(environment.GetRootPathUnsafe(), "build")
+	defaultOutputDir = filepath.Join(defaultInputDir, "payload", "state-install")
+
 	log = func(msg string, vals ...any) {
 		fmt.Fprintf(os.Stdout, msg, vals...)
 		fmt.Fprintf(os.Stdout, "\n")
@@ -36,8 +39,8 @@ func main() {
 
 func run() error {
 	var (
-		inDir   = filepath.Join(environment.GetRootPathUnsafe(), "build")
-		outDir  = filepath.Join(inDir, "payload", "state-install")
+		inDir   = defaultInputDir
+		outDir  = defaultOutputDir
 		branch  = constants.BranchName
 		version = constants.Version
 	)
