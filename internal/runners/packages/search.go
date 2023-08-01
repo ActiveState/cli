@@ -40,16 +40,19 @@ func NewSearch(prime primeable) *Search {
 func (s *Search) Run(params SearchRunParams, nstype model.NamespaceType) error {
 	logging.Debug("ExecuteSearch")
 
-	language, err := targetedLanguage(params.Language, s.proj)
-	if err != nil {
-		return locale.WrapError(err, fmt.Sprintf("%s_err_cannot_obtain_language", nstype))
-	}
+	var ns model.Namespace
+	if params.Ingredient.Namespace == "" {
+		language, err := targetedLanguage(params.Language, s.proj)
+		if err != nil {
+			return locale.WrapError(err, fmt.Sprintf("%s_err_cannot_obtain_language", nstype))
+		}
 
-	ns := model.NewNamespacePkgOrBundle(language, nstype)
-	if params.Ingredient.Namespace != "" {
+		ns = model.NewNamespacePkgOrBundle(language, nstype)
+	} else {
 		ns = model.NewRawNamespace(params.Ingredient.Namespace)
 	}
 
+	var err error
 	var packages []*model.IngredientAndVersion
 	if params.ExactTerm {
 		packages, err = model.SearchIngredientsStrict(ns.String(), params.Ingredient.Name, true, true, params.Timestamp.Time)
@@ -67,7 +70,7 @@ func (s *Search) Run(params SearchRunParams, nstype model.NamespaceType) error {
 		)
 	}
 
-	s.out.Print(output.Prepare(formatSearchResults(packages), packages))
+	s.out.Print(output.Prepare(formatSearchResults(packages, params.Ingredient.Namespace != ""), packages))
 
 	return nil
 }
@@ -142,7 +145,7 @@ type searchPackageRow struct {
 
 type searchOutput []searchPackageRow
 
-func formatSearchResults(packages []*model.IngredientAndVersion) *searchOutput {
+func formatSearchResults(packages []*model.IngredientAndVersion, showNamespace bool) *searchOutput {
 	rows := make(searchOutput, len(packages))
 
 	filterNilStr := func(s *string) string {
@@ -153,8 +156,12 @@ func formatSearchResults(packages []*model.IngredientAndVersion) *searchOutput {
 	}
 
 	for i, pack := range packages {
+		name := filterNilStr(pack.Ingredient.Name)
+		if showNamespace {
+			name = fmt.Sprintf("%s/%s", *pack.Ingredient.PrimaryNamespace, name)
+		}
 		row := searchPackageRow{
-			Pkg:      filterNilStr(pack.Ingredient.Name),
+			Pkg:      name,
 			Version:  pack.Version,
 			versions: len(pack.Versions),
 			Modules:  makeModules(pack.Ingredient.NormalizedName, pack),

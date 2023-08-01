@@ -153,7 +153,7 @@ func (c *Client) RunWithContext(ctx context.Context, request Request, response i
 	name := strutils.Summarize(request.Query(), 25)
 	defer profile.Measure(fmt.Sprintf("gqlclient:RunWithContext:(%s)", name), time.Now())
 
-	if fileRequest, ok := request.(RequestWithFiles); ok && len(fileRequest.Files()) > 0 {
+	if fileRequest, ok := request.(RequestWithFiles); ok {
 		return c.runWithFiles(ctx, fileRequest, response)
 	}
 
@@ -247,30 +247,31 @@ func (c *Client) runWithFiles(ctx context.Context, gqlReq RequestWithFiles, resp
 		}
 
 		// Map
-		mapField, err := mw.CreateFormField("map")
-		if err != nil {
-			reqErrChan <- errs.Wrap(err, "Could not create form field map")
-			return
-		}
-		for n, f := range gqlReq.Files() {
-			if _, err := mapField.Write([]byte(fmt.Sprintf(`{"%d": ["%s"]}`, n, f.Field))); err != nil {
-				reqErrChan <- errs.Wrap(err, "Could not write map field")
+		if len(gqlReq.Files()) > 0 {
+			mapField, err := mw.CreateFormField("map")
+			if err != nil {
+				reqErrChan <- errs.Wrap(err, "Could not create form field map")
 				return
 			}
-		}
-
-		// File upload
-		for n, file := range gqlReq.Files() {
-			part, err := mw.CreateFormFile(fmt.Sprintf("%d", n), file.Name)
-			if err != nil {
-				reqErrChan <- errs.Wrap(err, "Could not create form file")
-				return
+			for n, f := range gqlReq.Files() {
+				if _, err := mapField.Write([]byte(fmt.Sprintf(`{"%d": ["%s"]}`, n, f.Field))); err != nil {
+					reqErrChan <- errs.Wrap(err, "Could not write map field")
+					return
+				}
 			}
+			// File upload
+			for n, file := range gqlReq.Files() {
+				part, err := mw.CreateFormFile(fmt.Sprintf("%d", n), file.Name)
+				if err != nil {
+					reqErrChan <- errs.Wrap(err, "Could not create form file")
+					return
+				}
 
-			_, err = io.Copy(part, file.R)
-			if err != nil {
-				reqErrChan <- errs.Wrap(err, "Could not read file")
-				return
+				_, err = io.Copy(part, file.R)
+				if err != nil {
+					reqErrChan <- errs.Wrap(err, "Could not read file")
+					return
+				}
 			}
 		}
 	}()
@@ -304,20 +305,46 @@ func (c *Client) runWithFiles(ctx context.Context, gqlReq RequestWithFiles, resp
 	}
 	req = req.WithContext(ctx)
 	c.Log(fmt.Sprintf(">> Raw Request: %s\n", req.URL.String()))
-	res, resErr := http.DefaultClient.Do(req)
-	if reqErr := <-reqErrChan; reqErr != nil {
-		return reqErr
+
+	var res *http.Response
+	resErrChan := make(chan error)
+	go func() {
+		var err error
+		res, err = http.DefaultClient.Do(req)
+		resErrChan <- err
+	}()
+
+	// Due to the streaming uploads the request error can happen both before and after the http request itself, hence
+	// the creative select case you see before you.
+	wait := true
+	for wait {
+		select {
+		case err := <-reqErrChan:
+			if err != nil {
+				c.Log(fmt.Sprintf("Request Error: %s", err))
+				return err
+			}
+		case err := <-resErrChan:
+			wait = false
+			if err != nil {
+				c.Log(fmt.Sprintf("Response Error: %s", err))
+				return err
+			}
+		}
 	}
-	if resErr != nil {
-		return resErr
+
+	if res == nil {
+		return errs.New("Received empty response")
 	}
+
 	defer res.Body.Close()
 	var buf bytes.Buffer
 	if _, err := io.Copy(&buf, res.Body); err != nil {
+		c.Log(fmt.Sprintf("Read Error: %s", err))
 		return errors.Wrap(err, "reading body")
 	}
 	resp := buf.Bytes()
-	c.Log(fmt.Sprintf("<< %s\n", string(resp)))
+	c.Log(fmt.Sprintf("<< Response code: %d, body: %s\n", res.StatusCode, string(resp)))
 
 	// Work around API's that don't follow the graphql standard
 	// https://activestatef.atlassian.net/browse/PB-4291

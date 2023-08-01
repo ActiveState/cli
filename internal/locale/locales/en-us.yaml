@@ -2086,7 +2086,7 @@ uploadingredient_editor_opening:
     Opening editor to edit ingredient meta information. Alternatively you may manually edit the following file: [ACTIONABLE]{{.V0}}[/RESET].
 uploadingredient_success:
   other: |
-    Successfully uploaded as:
+    Successfully published as:
     Ingredient ID: [[ACTIONABLE]{{.V0}}[/RESET]
     Ingredient Version ID: [ACTIONABLE]{{.V1}}[/RESET]
     Revision: [ACTIONABLE]{{.V2}}[/RESET]

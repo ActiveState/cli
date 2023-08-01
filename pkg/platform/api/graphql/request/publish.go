@@ -14,20 +14,24 @@ import (
 )
 
 func Publish(vars PublishVariables, filepath string) (*PublishInput, error) {
-	f, err := os.Open(filepath)
-	if err != nil {
-		if errors.Is(err, os.ErrNotExist) {
-			return nil, locale.WrapInputError(err, "err_upload_file_not_found", "Could not find file at {{.V0}}", filepath)
+	var f *os.File
+	if filepath != "" {
+		var err error
+		f, err = os.Open(filepath)
+		if err != nil {
+			if errors.Is(err, os.ErrNotExist) {
+				return nil, locale.WrapInputError(err, "err_upload_file_not_found", "Could not find file at {{.V0}}", filepath)
+			}
+			return nil, errs.Wrap(err, "Could not open file %s", filepath)
 		}
-		return nil, errs.Wrap(err, "Could not open file %s", filepath)
-	}
 
-	checksum, err := fileutils.Sha256Hash(filepath)
-	if err != nil {
-		return nil, locale.WrapError(err, "err_upload_file_checksum", "Could not calculate checksum for file")
-	}
+		checksum, err := fileutils.Sha256Hash(filepath)
+		if err != nil {
+			return nil, locale.WrapError(err, "err_upload_file_checksum", "Could not calculate checksum for file")
+		}
 
-	vars.FileChecksum = checksum
+		vars.FileChecksum = checksum
+	}
 
 	return &PublishInput{
 		Variables: vars,
@@ -148,6 +152,9 @@ func (p *PublishInput) Close() error {
 }
 
 func (p *PublishInput) Files() []gqlclient.File {
+	if p.file == nil {
+		return []gqlclient.File{}
+	}
 	return []gqlclient.File{
 		{
 			Field: "variables.input.file", // this needs to map to the graphql input, eg. variables.input.file
@@ -165,6 +172,10 @@ func (p *PublishInput) Query() string {
 					ingredientID
 					ingredientVersionID
 					revision
+				}
+				... on Error{
+					__typename
+					error: message
 				}
 			}
 		}

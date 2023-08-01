@@ -81,7 +81,7 @@ func (r *Runner) Run(params *Params) error {
 			!strings.HasSuffix(strings.ToLower(params.Filepath), ".tar.gz") {
 			return locale.NewInputError("err_uploadingredient_file_not_supported", "Expected file extension to be either .zip or .tar.gz: '{{.V0}}'", params.Filepath)
 		}
-	} else if !params.Editor {
+	} else if !params.Edit {
 		return locale.NewInputError("err_uploadingredient_file_required", "You have to supply the source archive unless editing.")
 	}
 
@@ -188,7 +188,7 @@ func (r *Runner) Run(params *Params) error {
 
 	cont, err := r.prompt.Confirm(
 		"",
-		locale.Tl("uploadingredient_confirm", `Upload following ingredient?
+		locale.Tl("uploadingredient_confirm", `Publish following ingredient?
 {{.V0}}
 
 `, string(b)),
@@ -198,11 +198,11 @@ func (r *Runner) Run(params *Params) error {
 		return errs.Wrap(err, "Confirmation failed")
 	}
 	if !cont {
-		r.out.Print(locale.Tl("uploadingredient_cancel", "Upload cancelled"))
+		r.out.Print(locale.Tl("uploadingredient_cancel", "Publish cancelled"))
 		return nil
 	}
 
-	r.out.Notice(locale.Tl("uploadingredient_uploading", "Uploading ingredient..."))
+	r.out.Notice(locale.Tl("uploadingredient_uploading", "Publishing ingredient..."))
 
 	pr, err := request.Publish(reqVars, params.Filepath)
 	if err != nil {
@@ -214,8 +214,8 @@ func (r *Runner) Run(params *Params) error {
 		return locale.WrapError(err, "err_uploadingredient_publish", "Could not publish ingredient")
 	}
 
-	if result.Error != "" {
-		return locale.NewError("err_uploadingredient_publish_api", "API responded with error: {{.V0}}", result.Message)
+	if result.Publish.Error != "" {
+		return locale.NewError("err_uploadingredient_publish_api", "API responded with error: {{.V0}}", result.Publish.Error)
 	}
 
 	r.out.Print(output.Prepare(
