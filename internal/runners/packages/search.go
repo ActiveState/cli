@@ -70,7 +70,7 @@ func (s *Search) Run(params SearchRunParams, nstype model.NamespaceType) error {
 		)
 	}
 
-	s.out.Print(output.Prepare(formatSearchResults(packages), packages))
+	s.out.Print(output.Prepare(formatSearchResults(packages, params.Ingredient.Namespace != ""), packages))
 
 	return nil
 }
@@ -145,7 +145,7 @@ type searchPackageRow struct {
 
 type searchOutput []searchPackageRow
 
-func formatSearchResults(packages []*model.IngredientAndVersion) *searchOutput {
+func formatSearchResults(packages []*model.IngredientAndVersion, showNamespace bool) *searchOutput {
 	rows := make(searchOutput, len(packages))
 
 	filterNilStr := func(s *string) string {
@@ -156,8 +156,12 @@ func formatSearchResults(packages []*model.IngredientAndVersion) *searchOutput {
 	}
 
 	for i, pack := range packages {
+		name := filterNilStr(pack.Ingredient.Name)
+		if showNamespace {
+			name = fmt.Sprintf("%s/%s", *pack.Ingredient.PrimaryNamespace, name)
+		}
 		row := searchPackageRow{
-			Pkg:      filterNilStr(pack.Ingredient.Name),
+			Pkg:      name,
 			Version:  pack.Version,
 			versions: len(pack.Versions),
 			Modules:  makeModules(pack.Ingredient.NormalizedName, pack),
