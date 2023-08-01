@@ -62,9 +62,8 @@ func New(prime primeable) *Runner {
 		graphql.WithHTTPClient(http.DefaultClient),
 		graphql.UseMultipartForm(),
 	)
-	client.EnableDebugLog()
+	// client.EnableDebugLog()
 	client.SetTokenProvider(prime.Auth())
-	client.EnableDebugLog()
 	return &Runner{auth: prime.Auth(), out: prime.Output(), prompt: prime.Prompt(), project: prime.Project(), client: client}
 }
 
