@@ -36,6 +36,9 @@ func newScriptFromFile(path, org, project string, auth *authentication.Auth) (*S
 	logging.Debug("Build script does not exist. Creating one.")
 	commitId, err := localcommit.Get(filepath.Dir(path))
 	if err != nil {
+		if localcommit.IsFileDoesNotExistError(err) {
+			return nil, nil // headless project
+		}
 		return nil, errs.Wrap(err, "Unable to get the local commit ID")
 	}
 	buildplanner := model.NewBuildPlannerModel(auth)
@@ -55,7 +58,7 @@ func newScriptFromFile(path, org, project string, auth *authentication.Auth) (*S
 }
 
 func Update(proj projecter, newExpr *buildexpression.BuildExpression, auth *authentication.Auth) error {
-	if script, err := NewScriptFromProject(proj, auth); err == nil && !script.EqualsBuildExpression(newExpr) {
+	if script, err := NewScriptFromProject(proj, auth); err == nil && (script == nil || !script.EqualsBuildExpression(newExpr)) {
 		update(proj.ProjectDir(), newExpr, auth)
 	} else if err != nil {
 		return errs.Wrap(err, "Could not read build script")
