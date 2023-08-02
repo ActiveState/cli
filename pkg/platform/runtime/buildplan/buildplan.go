@@ -332,6 +332,7 @@ func BuildtimeArtifacts(build *model.Build, includeBuilders bool) (artifact.Map,
 				if err != nil {
 					return nil, errs.Wrap(err, "Could not resolve runtime dependencies for artifact: %s", depID)
 				}
+
 				for id := range recursiveDeps {
 					deps[id] = struct{}{}
 				}
@@ -379,7 +380,6 @@ func generateBuildtimeDependencies(depdendencyID strfmt.UUID, includeBuilders bo
 	}
 
 	if !includeBuilders && artifact.MimeType == model.XActiveStateBuilderMimeType {
-		logging.Debug("Skipping builder artifact %s", artifact.NodeID)
 		return nil, nil
 	}
 
