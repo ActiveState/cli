@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/stretchr/testify/suite"
@@ -518,11 +517,10 @@ func (suite *PackageIntegrationTestSuite) TestNormalize() {
 	cp.Expect("Charset_normalizer")
 	cp.ExpectExitCode(0)
 
-	anotherDir := filepath.Join(ts.Dirs.Work, "not-normalized")
-	suite.Require().NoError(fileutils.Mkdir(anotherDir))
 	cp = ts.SpawnWithOpts(
-		e2e.WithArgs("install", "charset-normalizer"),
-		e2e.WithWorkDirectory(anotherDir),
+		// Install request must be different from the one above, otherwise we will
+		// get an error that no changes were made from the parent commit.
+		e2e.WithArgs("install", "charset-normalizer@3.0.0"),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cp.Expect("charset-normalizer")
