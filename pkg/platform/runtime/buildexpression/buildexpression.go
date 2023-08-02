@@ -41,8 +41,6 @@ var funcNodeNotFoundError = errors.New("Could not find function node")
 
 type BuildExpression struct {
 	Let *Let
-	// The change necessary here may be just this:
-	// Value *Value
 }
 
 type Let struct {
@@ -122,8 +120,6 @@ func New(data []byte) (*BuildExpression, error) {
 		return nil, errs.Wrap(err, "Could not unmarshal build expression")
 	}
 
-	// We might not get a let at all
-	// We should look for a let or an assignment
 	letValue, ok := rawBuildExpression["let"]
 	if !ok {
 		return nil, errs.New("Build expression has no 'let' key")
