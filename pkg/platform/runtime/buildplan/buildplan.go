@@ -313,14 +313,15 @@ func BuildtimeArtifacts(build *model.Build) (artifact.Map, error) {
 	}
 
 	for _, a := range build.Artifacts {
+		// Since we are using the BuildLogStreamer, we need to add all of the
+		// artifacts that have been submitted to be built except for the artifacts
+		// of the builder mime type as the BuildLogStreamer does not send events
+		// for builder artifacts.
 		if a.MimeType == model.XActiveStateBuilderMimeType {
-			// The build log streamer does not send events for builder artifacts
 			continue
 		}
 
 		_, ok := result[strfmt.UUID(a.NodeID)]
-		// Since we are using the BuildLogStreamer, we need to add all of the
-		// artifacts that have been submitted to be built.
 		if !ok && a.Status != model.ArtifactNotSubmitted {
 			deps := make(map[strfmt.UUID]struct{})
 			for _, depID := range a.RuntimeDependencies {
