@@ -295,10 +295,9 @@ func NewNamedMapFromBuildPlan(build *model.Build) (artifact.NamedMap, error) {
 // BuildtimeArtifacts iterates through all artifacts in a given build and
 // adds the artifact's dependencies to a map. This is different from the
 // runtime dependency calculation as it includes ALL of the input artifacts of the
-// step that generated each artifact. This is useful for when we are using the
-// BuildLogStreamer as it operates on the older recipeID and will include
-// more artifacts than what we originally calculated in the runtime closure.
-func BuildtimeArtifacts(build *model.Build) (artifact.Map, error) {
+// step that generated each artifact. The includeBuilders argument determines whether
+// or not to include builder artifacts in the final result.
+func BuildtimeArtifacts(build *model.Build, includeBuilders bool) (artifact.Map, error) {
 	result := make(artifact.Map)
 	lookup := make(map[strfmt.UUID]interface{})
 
@@ -313,11 +312,7 @@ func BuildtimeArtifacts(build *model.Build) (artifact.Map, error) {
 	}
 
 	for _, a := range build.Artifacts {
-		// Since we are using the BuildLogStreamer, we need to add all of the
-		// artifacts that have been submitted to be built except for the artifacts
-		// of the builder mime type as the BuildLogStreamer does not send events
-		// for builder artifacts.
-		if a.MimeType == model.XActiveStateBuilderMimeType {
+		if !includeBuilders && a.MimeType == model.XActiveStateBuilderMimeType {
 			continue
 		}
 
@@ -327,14 +322,13 @@ func BuildtimeArtifacts(build *model.Build) (artifact.Map, error) {
 			for _, depID := range a.RuntimeDependencies {
 				artifact, ok := lookup[depID].(*model.Artifact)
 				if ok {
-					if artifact.MimeType == model.XActiveStateBuilderMimeType {
-						logging.Debug("Skipping active state builder artifact: %s", depID)
+					if !includeBuilders && artifact.MimeType == model.XActiveStateBuilderMimeType {
 						continue
 					}
 				}
 
 				deps[depID] = struct{}{}
-				recursiveDeps, err := generateBuildtimeDependencies(depID, lookup, deps)
+				recursiveDeps, err := generateBuildtimeDependencies(depID, includeBuilders, lookup, deps)
 				if err != nil {
 					return nil, errs.Wrap(err, "Could not resolve runtime dependencies for artifact: %s", depID)
 				}
@@ -344,11 +338,8 @@ func BuildtimeArtifacts(build *model.Build) (artifact.Map, error) {
 			}
 
 			var uniqueDeps []strfmt.UUID
-			for id := range deps {
-				if _, ok := deps[id]; !ok {
-					continue
-				}
-				uniqueDeps = append(uniqueDeps, id)
+			for depID := range deps {
+				uniqueDeps = append(uniqueDeps, depID)
 			}
 
 			info, err := getSourceInfo(a.GeneratedBy, lookup)
@@ -361,7 +352,7 @@ func BuildtimeArtifacts(build *model.Build) (artifact.Map, error) {
 				Name:             info.Name,
 				Namespace:        info.Namespace,
 				Version:          &info.Version,
-				RequestedByOrder: true,
+				RequestedByOrder: false,
 				GeneratedBy:      a.GeneratedBy,
 				Dependencies:     uniqueDeps,
 			}
@@ -371,7 +362,12 @@ func BuildtimeArtifacts(build *model.Build) (artifact.Map, error) {
 	return result, nil
 }
 
-func generateBuildtimeDependencies(depdendencyID strfmt.UUID, lookup map[strfmt.UUID]interface{}, result map[strfmt.UUID]struct{}) (map[strfmt.UUID]struct{}, error) {
+// generateBuildtimeDependencies recursively iterates through an artifacts dependencies
+// looking to the step that generated the artifact and then to ALL of the artifacts that
+// are inputs to that step. This will lead to the result containing more than what is in
+// the runtime closure. The includeBuilders argument is used to determine if we should
+// include artifacts that are builders.
+func generateBuildtimeDependencies(depdendencyID strfmt.UUID, includeBuilders bool, lookup map[strfmt.UUID]interface{}, result map[strfmt.UUID]struct{}) (map[strfmt.UUID]struct{}, error) {
 	artifact, ok := lookup[depdendencyID].(*model.Artifact)
 	if !ok {
 		_, sourceOK := lookup[depdendencyID].(*model.Source)
@@ -382,14 +378,14 @@ func generateBuildtimeDependencies(depdendencyID strfmt.UUID, lookup map[strfmt.
 		return nil, errs.New("Incorrect target type for id %s, expected Artifact or Source", depdendencyID)
 	}
 
-	if artifact.MimeType == model.XActiveStateBuilderMimeType {
+	if !includeBuilders && artifact.MimeType == model.XActiveStateBuilderMimeType {
 		logging.Debug("Skipping builder artifact %s", artifact.NodeID)
 		return nil, nil
 	}
 
 	for _, depID := range artifact.RuntimeDependencies {
 		result[depID] = struct{}{}
-		_, err := generateBuildtimeDependencies(depID, lookup, result)
+		_, err := generateBuildtimeDependencies(depID, includeBuilders, lookup, result)
 		if err != nil {
 			return nil, errs.Wrap(err, "Could not build map for runtime dependencies of artifact %s", artifact.NodeID)
 		}
@@ -411,7 +407,7 @@ func generateBuildtimeDependencies(depdendencyID strfmt.UUID, lookup map[strfmt.
 			continue
 		}
 		for _, id := range input.NodeIDs {
-			_, err := generateBuildtimeDependencies(id, lookup, result)
+			_, err := generateBuildtimeDependencies(id, includeBuilders, lookup, result)
 			if err != nil {
 				return nil, errs.Wrap(err, "Could not build map for step dependencies of artifact %s", artifact.NodeID)
 			}

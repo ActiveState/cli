@@ -506,7 +506,7 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 
 		// We also caclulate the artifacts to be built which includes more than the runtime artifacts.
 		// This is used to determine if we need to show the "build in progress" screen.
-		buildtimeArtifacts, err = buildplan.BuildtimeArtifacts(buildResult.Build)
+		buildtimeArtifacts, err = buildplan.BuildtimeArtifacts(buildResult.Build, false)
 		if err != nil {
 			return nil, nil, errs.Wrap(err, "Could not get buildtime artifacts")
 		}
