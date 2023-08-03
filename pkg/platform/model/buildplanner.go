@@ -12,7 +12,6 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/gqlclient"
-	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/platform/api"
@@ -386,10 +385,7 @@ func VersionStringToRequirements(version string) ([]bpModel.VersionRequirement, 
 		// Ask the Platform to translate a string like ">=1.2,<1.3" into a list of requirements.
 		// Note that:
 		// - The given requirement name does not matter; it is not looked up.
-		// - The given language only needs to exist. It has no bearing on the translation and is not
-		//   present in the requirements read and returned.
-		dummyLanguage := language.Python3.Requirement()
-		changeset, err := reqsimport.Init().Changeset([]byte("name "+version), dummyLanguage)
+		changeset, err := reqsimport.Init().Changeset([]byte("name "+version), "")
 		if err != nil {
 			return nil, locale.WrapInputError(err, "err_invalid_version_string", "Invalid version string")
 		}
