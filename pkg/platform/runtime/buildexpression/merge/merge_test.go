@@ -314,3 +314,22 @@ in:
 	_, err = Merge(exprA, exprB, nil)
 	require.Error(t, err)
 }
+
+func TestDeleteKey(t *testing.T) {
+	m := map[string]interface{}{"foo": map[string]interface{}{"bar": "baz", "quux": "foobar"}}
+	assert.True(t, deleteKey(&m, "quux"), "did not find quux")
+	_, exists := m["foo"].(map[string]interface{})["quux"]
+	assert.False(t, exists, "did not delete quux")
+}
+
+func TestSortLists(t *testing.T) {
+	m := map[string]interface{}{
+		"one": []interface{}{"foo", "bar", "baz"},
+		"two": map[string]interface{}{
+			"three": []interface{}{"foobar", "barfoo", "barbaz"},
+		},
+	}
+	sortLists(&m)
+	assert.Equal(t, []interface{}{"bar", "baz", "foo"}, m["one"])
+	assert.Equal(t, []interface{}{"barbaz", "barfoo", "foobar"}, m["two"].(map[string]interface{})["three"])
+}
