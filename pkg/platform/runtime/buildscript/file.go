@@ -36,9 +36,6 @@ func newScriptFromFile(path, org, project string, auth *authentication.Auth) (*S
 	logging.Debug("Build script does not exist. Creating one.")
 	commitId, err := localcommit.Get(filepath.Dir(path))
 	if err != nil {
-		if localcommit.IsFileDoesNotExistError(err) {
-			return nil, nil // headless project
-		}
 		return nil, errs.Wrap(err, "Unable to get the local commit ID")
 	}
 	buildplanner := model.NewBuildPlannerModel(auth)

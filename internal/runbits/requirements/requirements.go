@@ -285,13 +285,14 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 			return errs.Wrap(err, "Could not get remote build expr")
 		}
 
+		if err := localcommit.Set(pj.Dir(), commitID.String()); err != nil {
+			return locale.WrapError(err, "err_package_update_commit_id")
+		}
+
+		// Note: a commit ID file needs to exist at this point.
 		err = buildscript.Update(pj, expr, r.Auth)
 		if err != nil {
 			return locale.WrapError(err, "err_update_build_script")
-		}
-
-		if err := localcommit.Set(pj.Dir(), commitID.String()); err != nil {
-			return locale.WrapError(err, "err_package_update_commit_id")
 		}
 	}
 
