@@ -101,10 +101,10 @@ scripts:
       mkdir -p $TEST_ARCHIVE_DIR
 
       go build -o $TEST_FAKE_EXEC ./internal/testhelpers/installation/fakeversioncmd
-      $scripts.generate-payload -v $TEST_VERSION --fake $TEST_FAKE_EXEC
+      go run scripts/ci/payload-generator/main.go -v $TEST_VERSION --fake $TEST_FAKE_EXEC
       go run scripts/ci/update-generator/main.go -v $TEST_VERSION -o $TEST_ARCHIVE_DIR
 
       echo "compile ${TEST_CHANNEL} update"
       go build -o $TEST_FAKE_EXEC -ldflags "-X main.channel=${TEST_CHANNEL}" ./internal/testhelpers/installation/fakeversioncmd
-      $scripts.generate-payload -b $TEST_CHANNEL -v $TEST_VERSION --fake $TEST_FAKE_EXEC
+      go run scripts/ci/payload-generator/main.go -b $TEST_CHANNEL -v $TEST_VERSION --fake $TEST_FAKE_EXEC
       go run scripts/ci/update-generator/main.go -b $TEST_CHANNEL -v $TEST_VERSION -o $TEST_ARCHIVE_DIR
