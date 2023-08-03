@@ -2,12 +2,14 @@ package swtch
 
 import (
 	"github.com/ActiveState/cli/internal/analytics"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/internal/runbits/rtusage"
+	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -111,9 +113,9 @@ func (s *Switch) Run(params SwitchParams) error {
 		return locale.NewInputError("err_identifier_branch_not_on_branch", "Commit does not belong to history for branch [ACTIONABLE]{{.V0}}[/RESET]", s.project.BranchName())
 	}
 
-	err = s.project.SetCommit(identifier.CommitID().String())
+	err = localcommit.Set(s.project.Dir(), identifier.CommitID().String())
 	if err != nil {
-		return locale.WrapError(err, "err_switch_set_commitID", "Could not update commit ID")
+		return errs.Wrap(err, "Unable to set local commit")
 	}
 
 	err = runbits.RefreshRuntime(s.auth, s.out, s.analytics, s.project, identifier.CommitID(), false, target.TriggerSwitch, s.svcModel)

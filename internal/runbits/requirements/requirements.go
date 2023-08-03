@@ -7,8 +7,6 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/analytics"
-	"github.com/thoas/go-funk"
-
 	anaConsts "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/config"
@@ -22,14 +20,17 @@ import (
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/internal/runbits/rtusage"
+	"github.com/ActiveState/cli/pkg/localcommit"
 	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	medmodel "github.com/ActiveState/cli/pkg/platform/api/mediator/model"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
+	"github.com/ActiveState/cli/pkg/platform/runtime/buildscript"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
+	"github.com/thoas/go-funk"
 )
 
 type PackageVersion struct {
@@ -115,7 +116,11 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 
 	switch nsType {
 	case model.NamespacePackage, model.NamespaceBundle:
-		language, err := model.LanguageByCommit(pj.CommitUUID())
+		commitID, err := localcommit.Get(pj.Dir())
+		if err != nil && !localcommit.IsFileDoesNotExistError(err) {
+			return errs.Wrap(err, "Unable to get local commit")
+		}
+		language, err := model.LanguageByCommit(commitID)
 		if err == nil {
 			langName = language.Name
 			ns = model.NewNamespacePkgOrBundle(langName, nsType)
@@ -187,7 +192,10 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 		pg = nil
 	}
 
-	parentCommitID := pj.CommitUUID()
+	parentCommitID, err := localcommit.Get(pj.Dir())
+	if err != nil && !localcommit.IsFileDoesNotExistError(err) {
+		return errs.Wrap(err, "Unable to get local commit")
+	}
 	hasParentCommit := parentCommitID != ""
 
 	pg = output.StartSpinner(out, locale.T("progress_commit"), constants.TerminalAnimationInterval)
@@ -233,7 +241,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 		RequirementVersion:   version,
 		RequirementNamespace: ns,
 		Operation:            operation,
-		TimeStamp:            *latest,
+		TimeStamp:            latest,
 	}
 
 	bp := model.NewBuildPlannerModel(r.Auth)
@@ -242,15 +250,19 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 		return locale.WrapError(err, "err_package_save_and_build", "Error occurred while trying to create a commit")
 	}
 
-	orderChanged := !hasParentCommit
+	exprChanged := !hasParentCommit
 	if hasParentCommit {
-		revertCommit, err := model.GetRevertCommit(pj.CommitUUID(), commitID)
+		localCommitID, err := localcommit.Get(pj.Dir())
+		if err != nil {
+			return errs.Wrap(err, "Unable to get local commit")
+		}
+		revertCommit, err := model.GetRevertCommit(localCommitID, commitID)
 		if err != nil {
 			return locale.WrapError(err, "err_revert_refresh")
 		}
-		orderChanged = len(revertCommit.Changeset) > 0
+		exprChanged = len(revertCommit.Changeset) > 0
 	}
-	logging.Debug("Order changed: %v", orderChanged)
+	logging.Debug("Order changed: %v", exprChanged)
 
 	pg.Stop(locale.T("progress_success"))
 	pg = nil
@@ -267,16 +279,27 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 		return errs.Wrap(err, "Unsupported namespace type: %s", ns.Type().String())
 	}
 
-	// refresh or install runtime
-	err = runbits.RefreshRuntime(r.Auth, r.Output, r.Analytics, pj, commitID, orderChanged, trigger, r.SvcModel)
-	if err != nil {
-		return errs.Wrap(err, "Failed to refresh runtime")
+	if exprChanged {
+		expr, err := bp.GetBuildExpression(pj.Owner(), pj.Name(), commitID.String())
+		if err != nil {
+			return errs.Wrap(err, "Could not get remote build expr")
+		}
+
+		if err := localcommit.Set(pj.Dir(), commitID.String()); err != nil {
+			return locale.WrapError(err, "err_package_update_commit_id")
+		}
+
+		// Note: a commit ID file needs to exist at this point.
+		err = buildscript.Update(pj, expr, r.Auth)
+		if err != nil {
+			return locale.WrapError(err, "err_update_build_script")
+		}
 	}
 
-	if orderChanged {
-		if err := pj.SetCommit(commitID.String()); err != nil {
-			return locale.WrapError(err, "err_package_update_pjfile")
-		}
+	// refresh or install runtime
+	err = runbits.RefreshRuntime(r.Auth, r.Output, r.Analytics, pj, commitID, exprChanged, trigger, r.SvcModel)
+	if err != nil {
+		return err
 	}
 
 	if !hasParentCommit {

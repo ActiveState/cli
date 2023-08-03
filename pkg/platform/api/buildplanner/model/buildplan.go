@@ -7,6 +7,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/go-openapi/strfmt"
 )
 
@@ -83,6 +84,20 @@ func (o Operation) String() string {
 	default:
 		return "unknown"
 	}
+}
+
+func (o *Operation) Unmarshal(v string) error {
+	switch v {
+	case mono_models.CommitChangeEditableOperationAdded:
+		*o = OperationAdded
+	case mono_models.CommitChangeEditableOperationRemoved:
+		*o = OperationRemoved
+	case mono_models.CommitChangeEditableOperationUpdated:
+		*o = OperationUpdated
+	default:
+		return errs.New("Unknown requirement operation: %s", v)
+	}
+	return nil
 }
 
 type BuildPlannerError struct {

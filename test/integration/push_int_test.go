@@ -8,15 +8,15 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ActiveState/cli/internal/fileutils"
-	"github.com/stretchr/testify/suite"
-
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/strutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
+	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
+	"github.com/stretchr/testify/suite"
 )
 
 type PushIntegrationTestSuite struct {
@@ -71,12 +71,10 @@ func (suite *PushIntegrationTestSuite) TestInitAndPush() {
 	// Check that languages were reset
 	pjfile, err := projectfile.Parse(pjfilepath)
 	suite.Require().NoError(err)
-	if pjfile.CommitID() == "" {
-		suite.FailNow("commitID was not set after running push for project creation")
-	}
-	if pjfile.BranchName() == "" {
-		suite.FailNow("branch was not set after running push for project creation")
-	}
+	commitID, err := localcommit.Get(filepath.Join(ts.Dirs.Work, namespace))
+	suite.Require().NoError(err)
+	suite.Require().NotEmpty(commitID.String(), "commitID was not set after running push for project creation")
+	suite.Require().NotEmpty(pjfile.BranchName(), "branch was not set after running push for project creation")
 
 	// ensure that we are logged out
 	cp = ts.Spawn(tagsuite.Auth, "logout")
@@ -257,7 +255,7 @@ func (suite *PushIntegrationTestSuite) TestCarlisle() {
 
 func (suite *PushIntegrationTestSuite) TestPush_Outdated() {
 	suite.OnlyRunForTags(tagsuite.Push)
-	projectLine := "project: https://platform.activestate.com/ActiveState-CLI/cli?branch=main&commitID="
+	projectLine := "project: https://platform.activestate.com/ActiveState-CLI/cli?branch=main"
 	unPushedCommit := "882ae76e-fbb7-4989-acc9-9a8b87d49388"
 
 	ts := e2e.New(suite.T(), false)
@@ -265,8 +263,9 @@ func (suite *PushIntegrationTestSuite) TestPush_Outdated() {
 
 	wd := filepath.Join(ts.Dirs.Work, "cli")
 	pjfilepath := filepath.Join(ts.Dirs.Work, "cli", constants.ConfigFileName)
-	err := fileutils.WriteFile(pjfilepath, []byte(projectLine+unPushedCommit))
-	suite.Require().NoError(err)
+	suite.Require().NoError(fileutils.WriteFile(pjfilepath, []byte(projectLine)))
+	commitIdFile := filepath.Join(ts.Dirs.Work, "cli", constants.ProjectConfigDirName, constants.CommitIdFileName)
+	suite.Require().NoError(fileutils.WriteFile(commitIdFile, []byte(unPushedCommit)))
 
 	ts.LoginAsPersistentUser()
 	cp := ts.SpawnWithOpts(e2e.WithArgs("push"), e2e.WithWorkDirectory(wd))

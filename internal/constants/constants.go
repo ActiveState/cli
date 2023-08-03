@@ -23,6 +23,16 @@ const ServiceCommandName = "state-svc"
 // ConfigFileName holds the name of the file that the user uses to configure their project, not to be confused with InternalConfigFileNameLegacy
 const ConfigFileName = "activestate.yaml"
 
+// ProjectConfigDirName is the name of the directory that holds project-specific data like commit ID.
+// This folder does not hold ConfigFileName. It is a sibling to that file in a given directory.
+const ProjectConfigDirName = ".activestate"
+
+// BuildScriptFileName holds the name of the file that represents the build script used to generate the runtime
+const BuildScriptFileName = "buildscript.yaml"
+
+// CommitIdFileName is the name of the file in ProjectConfigDirName that contains a project's commit ID.
+const CommitIdFileName = "commit"
+
 // InternalConfigNamespace holds the appdata folder name under which we store our config
 const InternalConfigNamespace = "activestate"
 
@@ -363,6 +373,9 @@ const RuntimeRecipeStore = "recipe"
 
 // RuntimeBuildPlanStore containts a serialization of the build plan used to create this build
 const RuntimeBuildPlanStore = "build_plan"
+
+// BuildExpressionStore holds the cached build expression for the current commit ID.
+const BuildExpressionStore = "build_expression"
 
 // StateToolMarketingPage links to the marketing page for the state tool
 const StateToolMarketingPage = "https://www.activestate.com/products/platform/state-tool/"
