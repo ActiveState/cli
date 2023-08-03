@@ -364,7 +364,7 @@ func processBuildPlannerError(bpErr error, fallbackMessage string) error {
 	return errs.Wrap(bpErr, fallbackMessage)
 }
 
-var versionRe = regexp.MustCompile(`^\d+(\.\d+)+$`)
+var versionRe = regexp.MustCompile(`^\d+(\.\d+)*$`)
 
 func isExactVersion(version string) bool {
 	return versionRe.MatchString(version)
@@ -391,7 +391,7 @@ func VersionStringToRequirements(version string) ([]bpModel.VersionRequirement, 
 		dummyLanguage := language.Python3.Requirement()
 		changeset, err := reqsimport.Init().Changeset([]byte("name "+version), dummyLanguage)
 		if err != nil {
-			return nil, errs.Wrap(err, "Unable to translate version string into requirement list")
+			return nil, locale.WrapInputError(err, "err_invalid_version_string", "Invalid version string")
 		}
 		requirements := []bpModel.VersionRequirement{}
 		for _, change := range changeset {
