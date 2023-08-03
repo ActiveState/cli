@@ -281,42 +281,5 @@ func deriveVersion(getKnownVersions knownVersionsFunc, lang language.Language, v
 		return lang.RecommendedVersion(), nil
 	}
 
-	// Fetch known list of languages and verify the given version matches it, either exactly or partially.
-	knownVersions, err := getKnownVersions(lang)
-	if err != nil {
-		return "", errs.Wrap(err, "Unable to get known versions for language %s", lang.Requirement())
-	}
-
-	prefix, _, _ := strings.Cut(version, ",") // only keep first part of e.g. ">=3.10,<3.11"
-	prefix = strings.TrimLeft(prefix, ">=<")  // strip leading constraint characters
-	prefix = strings.TrimSuffix(prefix, ".x") // strip trailing wildcard
-	prefix = strings.TrimSuffix(prefix, ".X") // string trailing wildcard
-	validVersionPrefix := false
-	for _, knownVersion := range knownVersions {
-		if knownVersion == version {
-			return knownVersion, nil // e.g. python@3.10.10
-		} else if strings.HasPrefix(knownVersion, prefix) {
-			validVersionPrefix = true // e.g. python@3.10
-			break
-		}
-	}
-
-	if !validVersionPrefix {
-		return "", errs.AddTips(
-			locale.NewInputError(
-				"err_init_language_version_not_found",
-				"The selected version of the language cannot be found",
-			),
-			locale.Tl(
-				"version_not_found_check_format",
-				"Please ensure that the version format is valid.",
-			),
-		)
-	}
-
-	if prefix == version {
-		return version + ".x", nil // not an exact match, e.g. python@3.10
-	}
-
 	return version, nil
 }
