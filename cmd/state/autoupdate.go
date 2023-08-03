@@ -1,10 +1,13 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"strings"
 	"time"
+
+	"github.com/thoas/go-funk"
 
 	"github.com/ActiveState/cli/internal/analytics"
 	anaConst "github.com/ActiveState/cli/internal/analytics/constants"
@@ -24,42 +27,36 @@ import (
 	"github.com/ActiveState/cli/internal/profile"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/updater"
-	"github.com/thoas/go-funk"
+	"github.com/ActiveState/cli/pkg/platform/model"
 )
 
 type ErrStateExe struct{ *locale.LocalizedError }
 
 type ErrExecuteRelaunch struct{ *errs.WrapperError }
 
-const CfgKeyLastCheck = "auto_update_lastcheck"
-
 func init() {
 	configMediator.RegisterOption(constants.AutoUpdateConfigKey, configMediator.Bool, configMediator.EmptyEvent, configMediator.EmptyEvent)
 }
 
-func autoUpdate(args []string, cfg *config.Instance, an analytics.Dispatcher, out output.Outputer) (bool, error) {
+func autoUpdate(svc *model.SvcModel, args []string, cfg *config.Instance, an analytics.Dispatcher, out output.Outputer) (bool, error) {
 	profile.Measure("autoUpdate", time.Now())
-
-	defer func() {
-		if err := cfg.Set(CfgKeyLastCheck, time.Now()); err != nil {
-			multilog.Error("Failed to store last update check: %s", errs.JoinMessage(err))
-		}
-	}()
 
 	if !shouldRunAutoUpdate(args, cfg, an) {
 		return false, nil
 	}
 
 	// Check for available update
-	checker := updater.NewDefaultChecker(cfg, an)
-	up, err := checker.Check()
+	upd, err := svc.CheckUpdate(context.Background())
 	if err != nil {
 		return false, errs.Wrap(err, "Failed to check for update")
 	}
-	if up == nil {
+	if upd == nil {
 		logging.Debug("No update found")
 		return false, nil
 	}
+	up := updater.NewAvailableUpdate(
+		upd.Version, upd.Channel, upd.Platform, upd.Path, upd.Sha256, "",
+	)
 
 	if !isEnabled(cfg) {
 		logging.Debug("Not performing autoupdates because user turned off autoupdates.")
@@ -176,12 +173,6 @@ func shouldRunAutoUpdate(args []string, cfg *config.Instance, an analytics.Dispa
 		logging.Debug("Not running auto updates because we just freshly installed")
 		shouldUpdate = false
 		label = anaConst.UpdateLabelFreshInstall
-
-	// Already checked less than 60 minutes ago
-	case time.Now().Sub(cfg.GetTime(CfgKeyLastCheck)).Minutes() < float64(60):
-		logging.Debug("Not running auto update because we already checked it less than 60 minutes ago")
-		shouldUpdate = false
-		label = anaConst.UpdateLabelTooFreq
 
 	case cfg.GetString(updater.CfgKeyInstallVersion) != "":
 		logging.Debug("Not running auto update because a specific version had been installed on purpose")
