@@ -46,8 +46,7 @@ func NewGetIngredientOK() *GetIngredientOK {
 	return &GetIngredientOK{}
 }
 
-/*
-GetIngredientOK describes a response with status code 200, with default header values.
+/* GetIngredientOK describes a response with status code 200, with default header values.
 
 The retrieved ingredient
 */
@@ -81,8 +80,7 @@ func NewGetIngredientDefault(code int) *GetIngredientDefault {
 	}
 }
 
-/*
-GetIngredientDefault describes a response with status code -1, with default header values.
+/* GetIngredientDefault describes a response with status code -1, with default header values.
 
 generic error response
 */

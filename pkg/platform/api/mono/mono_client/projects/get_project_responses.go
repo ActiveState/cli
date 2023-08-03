@@ -51,8 +51,7 @@ func NewGetProjectOK() *GetProjectOK {
 	return &GetProjectOK{}
 }
 
-/*
-GetProjectOK describes a response with status code 200, with default header values.
+/* GetProjectOK describes a response with status code 200, with default header values.
 
 Success
 */
@@ -84,8 +83,7 @@ func NewGetProjectNotFound() *GetProjectNotFound {
 	return &GetProjectNotFound{}
 }
 
-/*
-GetProjectNotFound describes a response with status code 404, with default header values.
+/* GetProjectNotFound describes a response with status code 404, with default header values.
 
 Not Found
 */
@@ -117,8 +115,7 @@ func NewGetProjectInternalServerError() *GetProjectInternalServerError {
 	return &GetProjectInternalServerError{}
 }
 
-/*
-GetProjectInternalServerError describes a response with status code 500, with default header values.
+/* GetProjectInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */

@@ -52,8 +52,7 @@ func NewAddImageCreated() *AddImageCreated {
 	return &AddImageCreated{}
 }
 
-/*
-AddImageCreated describes a response with status code 201, with default header values.
+/* AddImageCreated describes a response with status code 201, with default header values.
 
 The added image
 */
@@ -85,8 +84,7 @@ func NewAddImageBadRequest() *AddImageBadRequest {
 	return &AddImageBadRequest{}
 }
 
-/*
-AddImageBadRequest describes a response with status code 400, with default header values.
+/* AddImageBadRequest describes a response with status code 400, with default header values.
 
 If the image is invalid
 */
@@ -120,8 +118,7 @@ func NewAddImageDefault(code int) *AddImageDefault {
 	}
 }
 
-/*
-AddImageDefault describes a response with status code -1, with default header values.
+/* AddImageDefault describes a response with status code -1, with default header values.
 
 If there is an error processing the image
 */

@@ -53,12 +53,10 @@ func NewGetNamespaceIngredientsParamsWithHTTPClient(client *http.Client) *GetNam
 	}
 }
 
-/*
-GetNamespaceIngredientsParams contains all the parameters to send to the API endpoint
+/* GetNamespaceIngredientsParams contains all the parameters to send to the API endpoint
+   for the get namespace ingredients operation.
 
-	for the get namespace ingredients operation.
-
-	Typically these are written to a http.Request.
+   Typically these are written to a http.Request.
 */
 type GetNamespaceIngredientsParams struct {
 

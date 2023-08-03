@@ -54,12 +54,10 @@ func NewAddNamespaceParamsWithHTTPClient(client *http.Client) *AddNamespaceParam
 	}
 }
 
-/*
-AddNamespaceParams contains all the parameters to send to the API endpoint
+/* AddNamespaceParams contains all the parameters to send to the API endpoint
+   for the add namespace operation.
 
-	for the add namespace operation.
-
-	Typically these are written to a http.Request.
+   Typically these are written to a http.Request.
 */
 type AddNamespaceParams struct {
 

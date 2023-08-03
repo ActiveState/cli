@@ -16,7 +16,7 @@ import (
 
 // Paging Paging
 //
-// # Paging data
+// Paging data
 //
 // swagger:model paging
 type Paging struct {

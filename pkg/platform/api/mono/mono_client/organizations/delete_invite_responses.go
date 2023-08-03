@@ -57,8 +57,7 @@ func NewDeleteInviteOK() *DeleteInviteOK {
 	return &DeleteInviteOK{}
 }
 
-/*
-DeleteInviteOK describes a response with status code 200, with default header values.
+/* DeleteInviteOK describes a response with status code 200, with default header values.
 
 Invitation Delete
 */
@@ -90,8 +89,7 @@ func NewDeleteInviteForbidden() *DeleteInviteForbidden {
 	return &DeleteInviteForbidden{}
 }
 
-/*
-DeleteInviteForbidden describes a response with status code 403, with default header values.
+/* DeleteInviteForbidden describes a response with status code 403, with default header values.
 
 Forbidden
 */
@@ -123,8 +121,7 @@ func NewDeleteInviteNotFound() *DeleteInviteNotFound {
 	return &DeleteInviteNotFound{}
 }
 
-/*
-DeleteInviteNotFound describes a response with status code 404, with default header values.
+/* DeleteInviteNotFound describes a response with status code 404, with default header values.
 
 Not Found
 */
@@ -156,8 +153,7 @@ func NewDeleteInviteInternalServerError() *DeleteInviteInternalServerError {
 	return &DeleteInviteInternalServerError{}
 }
 
-/*
-DeleteInviteInternalServerError describes a response with status code 500, with default header values.
+/* DeleteInviteInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */

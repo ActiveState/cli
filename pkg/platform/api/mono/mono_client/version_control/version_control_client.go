@@ -66,7 +66,7 @@ type ClientService interface {
 }
 
 /*
-AddCommit add commit API
+  AddCommit add commit API
 */
 func (a *Client) AddCommit(params *AddCommitParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddCommitOK, error) {
 	// TODO: Validate the params before sending
@@ -105,9 +105,9 @@ func (a *Client) AddCommit(params *AddCommitParams, authInfo runtime.ClientAuthI
 }
 
 /*
-AddTag adds tag
+  AddTag adds tag
 
-Add a tag by org and project names
+  Add a tag by org and project names
 */
 func (a *Client) AddTag(params *AddTagParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddTagOK, error) {
 	// TODO: Validate the params before sending
@@ -146,7 +146,7 @@ func (a *Client) AddTag(params *AddTagParams, authInfo runtime.ClientAuthInfoWri
 }
 
 /*
-DeleteBranch Delete the branch and all descendent forks that are of the same project.  Removes 'tracks' and 'tracking_type' data from all descendent forks in different projects.
+  DeleteBranch Delete the branch and all descendent forks that are of the same project.  Removes 'tracks' and 'tracking_type' data from all descendent forks in different projects.
 */
 func (a *Client) DeleteBranch(params *DeleteBranchParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteBranchOK, error) {
 	// TODO: Validate the params before sending
@@ -185,9 +185,9 @@ func (a *Client) DeleteBranch(params *DeleteBranchParams, authInfo runtime.Clien
 }
 
 /*
-EditTag edits tag
+  EditTag edits tag
 
-Edit a tag by org and project names, and tag label
+  Edit a tag by org and project names, and tag label
 */
 func (a *Client) EditTag(params *EditTagParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*EditTagOK, error) {
 	// TODO: Validate the params before sending
@@ -226,7 +226,7 @@ func (a *Client) EditTag(params *EditTagParams, authInfo runtime.ClientAuthInfoW
 }
 
 /*
-GetBranch get branch API
+  GetBranch get branch API
 */
 func (a *Client) GetBranch(params *GetBranchParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetBranchOK, error) {
 	// TODO: Validate the params before sending
@@ -265,7 +265,7 @@ func (a *Client) GetBranch(params *GetBranchParams, authInfo runtime.ClientAuthI
 }
 
 /*
-GetCheckpoint get checkpoint API
+  GetCheckpoint get checkpoint API
 */
 func (a *Client) GetCheckpoint(params *GetCheckpointParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetCheckpointOK, error) {
 	// TODO: Validate the params before sending
@@ -304,7 +304,7 @@ func (a *Client) GetCheckpoint(params *GetCheckpointParams, authInfo runtime.Cli
 }
 
 /*
-GetCommit get commit API
+  GetCommit get commit API
 */
 func (a *Client) GetCommit(params *GetCommitParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetCommitOK, error) {
 	// TODO: Validate the params before sending
@@ -343,7 +343,7 @@ func (a *Client) GetCommit(params *GetCommitParams, authInfo runtime.ClientAuthI
 }
 
 /*
-GetCommitHistory get commit history API
+  GetCommitHistory get commit history API
 */
 func (a *Client) GetCommitHistory(params *GetCommitHistoryParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetCommitHistoryOK, error) {
 	// TODO: Validate the params before sending
@@ -382,9 +382,9 @@ func (a *Client) GetCommitHistory(params *GetCommitHistoryParams, authInfo runti
 }
 
 /*
-GetHARepo gets h a repo info
+  GetHARepo gets h a repo info
 
-Get HARepo by org and project names and HARepo label
+  Get HARepo by org and project names and HARepo label
 */
 func (a *Client) GetHARepo(params *GetHARepoParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetHARepoOK, error) {
 	// TODO: Validate the params before sending
@@ -423,7 +423,7 @@ func (a *Client) GetHARepo(params *GetHARepoParams, authInfo runtime.ClientAuthI
 }
 
 /*
-GetOrder get order API
+  GetOrder get order API
 */
 func (a *Client) GetOrder(params *GetOrderParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetOrderOK, error) {
 	// TODO: Validate the params before sending
@@ -462,7 +462,7 @@ func (a *Client) GetOrder(params *GetOrderParams, authInfo runtime.ClientAuthInf
 }
 
 /*
-GetOrderFromCheckpoint get order from checkpoint API
+  GetOrderFromCheckpoint get order from checkpoint API
 */
 func (a *Client) GetOrderFromCheckpoint(params *GetOrderFromCheckpointParams, opts ...ClientOption) (*GetOrderFromCheckpointOK, error) {
 	// TODO: Validate the params before sending
@@ -500,7 +500,7 @@ func (a *Client) GetOrderFromCheckpoint(params *GetOrderFromCheckpointParams, op
 }
 
 /*
-GetRevertCommit get revert commit API
+  GetRevertCommit get revert commit API
 */
 func (a *Client) GetRevertCommit(params *GetRevertCommitParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetRevertCommitOK, error) {
 	// TODO: Validate the params before sending
@@ -539,7 +539,7 @@ func (a *Client) GetRevertCommit(params *GetRevertCommitParams, authInfo runtime
 }
 
 /*
-MergeBranch merge branch API
+  MergeBranch merge branch API
 */
 func (a *Client) MergeBranch(params *MergeBranchParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*MergeBranchOK, error) {
 	// TODO: Validate the params before sending
@@ -578,7 +578,7 @@ func (a *Client) MergeBranch(params *MergeBranchParams, authInfo runtime.ClientA
 }
 
 /*
-MergeCommits merge commits API
+  MergeCommits merge commits API
 */
 func (a *Client) MergeCommits(params *MergeCommitsParams, opts ...ClientOption) (*MergeCommitsOK, *MergeCommitsNoContent, error) {
 	// TODO: Validate the params before sending
@@ -617,9 +617,9 @@ func (a *Client) MergeCommits(params *MergeCommitsParams, opts ...ClientOption) 
 }
 
 /*
-RemoveTag removes tag
+  RemoveTag removes tag
 
-Remove a tag by org and project names, and tag label
+  Remove a tag by org and project names, and tag label
 */
 func (a *Client) RemoveTag(params *RemoveTagParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RemoveTagOK, error) {
 	// TODO: Validate the params before sending
@@ -658,7 +658,7 @@ func (a *Client) RemoveTag(params *RemoveTagParams, authInfo runtime.ClientAuthI
 }
 
 /*
-UpdateBranch update branch API
+  UpdateBranch update branch API
 */
 func (a *Client) UpdateBranch(params *UpdateBranchParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateBranchOK, error) {
 	// TODO: Validate the params before sending

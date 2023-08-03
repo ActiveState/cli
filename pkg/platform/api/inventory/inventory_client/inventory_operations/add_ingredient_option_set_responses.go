@@ -52,8 +52,7 @@ func NewAddIngredientOptionSetCreated() *AddIngredientOptionSetCreated {
 	return &AddIngredientOptionSetCreated{}
 }
 
-/*
-AddIngredientOptionSetCreated describes a response with status code 201, with default header values.
+/* AddIngredientOptionSetCreated describes a response with status code 201, with default header values.
 
 The added ingredient option set
 */
@@ -85,8 +84,7 @@ func NewAddIngredientOptionSetBadRequest() *AddIngredientOptionSetBadRequest {
 	return &AddIngredientOptionSetBadRequest{}
 }
 
-/*
-AddIngredientOptionSetBadRequest describes a response with status code 400, with default header values.
+/* AddIngredientOptionSetBadRequest describes a response with status code 400, with default header values.
 
 If the ingredient option set is invalid
 */
@@ -120,8 +118,7 @@ func NewAddIngredientOptionSetDefault(code int) *AddIngredientOptionSetDefault {
 	}
 }
 
-/*
-AddIngredientOptionSetDefault describes a response with status code -1, with default header values.
+/* AddIngredientOptionSetDefault describes a response with status code -1, with default header values.
 
 If there is an error processing the ingredient option set
 */

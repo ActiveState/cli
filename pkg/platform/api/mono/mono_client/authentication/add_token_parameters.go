@@ -54,12 +54,10 @@ func NewAddTokenParamsWithHTTPClient(client *http.Client) *AddTokenParams {
 	}
 }
 
-/*
-AddTokenParams contains all the parameters to send to the API endpoint
+/* AddTokenParams contains all the parameters to send to the API endpoint
+   for the add token operation.
 
-	for the add token operation.
-
-	Typically these are written to a http.Request.
+   Typically these are written to a http.Request.
 */
 type AddTokenParams struct {
 

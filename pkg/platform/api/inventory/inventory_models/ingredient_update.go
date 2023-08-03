@@ -16,7 +16,7 @@ import (
 
 // IngredientUpdate Ingredient Update
 //
-// # The fields of an ingredient that can be updated
+// The fields of an ingredient that can be updated
 //
 // swagger:model ingredientUpdate
 type IngredientUpdate struct {

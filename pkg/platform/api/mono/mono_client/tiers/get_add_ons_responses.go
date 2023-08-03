@@ -51,8 +51,7 @@ func NewGetAddOnsOK() *GetAddOnsOK {
 	return &GetAddOnsOK{}
 }
 
-/*
-GetAddOnsOK describes a response with status code 200, with default header values.
+/* GetAddOnsOK describes a response with status code 200, with default header values.
 
 Success
 */
@@ -82,8 +81,7 @@ func NewGetAddOnsForbidden() *GetAddOnsForbidden {
 	return &GetAddOnsForbidden{}
 }
 
-/*
-GetAddOnsForbidden describes a response with status code 403, with default header values.
+/* GetAddOnsForbidden describes a response with status code 403, with default header values.
 
 Forbidden
 */
@@ -115,8 +113,7 @@ func NewGetAddOnsInternalServerError() *GetAddOnsInternalServerError {
 	return &GetAddOnsInternalServerError{}
 }
 
-/*
-GetAddOnsInternalServerError describes a response with status code 500, with default header values.
+/* GetAddOnsInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */

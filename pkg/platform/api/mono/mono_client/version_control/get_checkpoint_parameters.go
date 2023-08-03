@@ -52,12 +52,10 @@ func NewGetCheckpointParamsWithHTTPClient(client *http.Client) *GetCheckpointPar
 	}
 }
 
-/*
-GetCheckpointParams contains all the parameters to send to the API endpoint
+/* GetCheckpointParams contains all the parameters to send to the API endpoint
+   for the get checkpoint operation.
 
-	for the get checkpoint operation.
-
-	Typically these are written to a http.Request.
+   Typically these are written to a http.Request.
 */
 type GetCheckpointParams struct {
 

@@ -17,7 +17,7 @@ import (
 
 // PlatformPagedList Platform Paged List
 //
-// # A paginated list of platforms
+// A paginated list of platforms
 //
 // swagger:model platformPagedList
 type PlatformPagedList struct {

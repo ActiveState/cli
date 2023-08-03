@@ -52,12 +52,10 @@ func NewGetTiersParamsWithHTTPClient(client *http.Client) *GetTiersParams {
 	}
 }
 
-/*
-GetTiersParams contains all the parameters to send to the API endpoint
+/* GetTiersParams contains all the parameters to send to the API endpoint
+   for the get tiers operation.
 
-	for the get tiers operation.
-
-	Typically these are written to a http.Request.
+   Typically these are written to a http.Request.
 */
 type GetTiersParams struct {
 	timeout    time.Duration

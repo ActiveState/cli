@@ -46,8 +46,7 @@ func NewUpdateIngredientOK() *UpdateIngredientOK {
 	return &UpdateIngredientOK{}
 }
 
-/*
-UpdateIngredientOK describes a response with status code 200, with default header values.
+/* UpdateIngredientOK describes a response with status code 200, with default header values.
 
 The updated ingredient
 */
@@ -81,8 +80,7 @@ func NewUpdateIngredientDefault(code int) *UpdateIngredientDefault {
 	}
 }
 
-/*
-UpdateIngredientDefault describes a response with status code -1, with default header values.
+/* UpdateIngredientDefault describes a response with status code -1, with default header values.
 
 If there is an error processing the request
 */

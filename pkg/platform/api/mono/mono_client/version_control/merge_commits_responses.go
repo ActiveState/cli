@@ -75,8 +75,7 @@ func NewMergeCommitsOK() *MergeCommitsOK {
 	return &MergeCommitsOK{}
 }
 
-/*
-MergeCommitsOK describes a response with status code 200, with default header values.
+/* MergeCommitsOK describes a response with status code 200, with default header values.
 
 Merge the commit with the given commit
 */
@@ -108,8 +107,7 @@ func NewMergeCommitsNoContent() *MergeCommitsNoContent {
 	return &MergeCommitsNoContent{}
 }
 
-/*
-MergeCommitsNoContent describes a response with status code 204, with default header values.
+/* MergeCommitsNoContent describes a response with status code 204, with default header values.
 
 No merge required
 */
@@ -141,8 +139,7 @@ func NewMergeCommitsBadRequest() *MergeCommitsBadRequest {
 	return &MergeCommitsBadRequest{}
 }
 
-/*
-MergeCommitsBadRequest describes a response with status code 400, with default header values.
+/* MergeCommitsBadRequest describes a response with status code 400, with default header values.
 
 Bad Request
 */
@@ -174,8 +171,7 @@ func NewMergeCommitsForbidden() *MergeCommitsForbidden {
 	return &MergeCommitsForbidden{}
 }
 
-/*
-MergeCommitsForbidden describes a response with status code 403, with default header values.
+/* MergeCommitsForbidden describes a response with status code 403, with default header values.
 
 Forbidden
 */
@@ -207,8 +203,7 @@ func NewMergeCommitsNotFound() *MergeCommitsNotFound {
 	return &MergeCommitsNotFound{}
 }
 
-/*
-MergeCommitsNotFound describes a response with status code 404, with default header values.
+/* MergeCommitsNotFound describes a response with status code 404, with default header values.
 
 One of the commits was not found
 */
@@ -240,8 +235,7 @@ func NewMergeCommitsConflict() *MergeCommitsConflict {
 	return &MergeCommitsConflict{}
 }
 
-/*
-MergeCommitsConflict describes a response with status code 409, with default header values.
+/* MergeCommitsConflict describes a response with status code 409, with default header values.
 
 Conflict. Specifically due to commitWithChanges being in the history of commitReceivingChanges.
 */
@@ -273,8 +267,7 @@ func NewMergeCommitsInternalServerError() *MergeCommitsInternalServerError {
 	return &MergeCommitsInternalServerError{}
 }
 
-/*
-MergeCommitsInternalServerError describes a response with status code 500, with default header values.
+/* MergeCommitsInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */

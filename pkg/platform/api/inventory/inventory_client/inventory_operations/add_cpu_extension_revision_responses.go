@@ -52,8 +52,7 @@ func NewAddCPUExtensionRevisionOK() *AddCPUExtensionRevisionOK {
 	return &AddCPUExtensionRevisionOK{}
 }
 
-/*
-AddCPUExtensionRevisionOK describes a response with status code 200, with default header values.
+/* AddCPUExtensionRevisionOK describes a response with status code 200, with default header values.
 
 The updated state of the CPU extension
 */
@@ -85,8 +84,7 @@ func NewAddCPUExtensionRevisionBadRequest() *AddCPUExtensionRevisionBadRequest {
 	return &AddCPUExtensionRevisionBadRequest{}
 }
 
-/*
-AddCPUExtensionRevisionBadRequest describes a response with status code 400, with default header values.
+/* AddCPUExtensionRevisionBadRequest describes a response with status code 400, with default header values.
 
 If the CPU extension revision is invalid
 */
@@ -120,8 +118,7 @@ func NewAddCPUExtensionRevisionDefault(code int) *AddCPUExtensionRevisionDefault
 	}
 }
 
-/*
-AddCPUExtensionRevisionDefault describes a response with status code -1, with default header values.
+/* AddCPUExtensionRevisionDefault describes a response with status code -1, with default header values.
 
 If there is an error processing the request
 */

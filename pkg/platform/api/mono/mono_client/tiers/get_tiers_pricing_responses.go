@@ -57,8 +57,7 @@ func NewGetTiersPricingOK() *GetTiersPricingOK {
 	return &GetTiersPricingOK{}
 }
 
-/*
-GetTiersPricingOK describes a response with status code 200, with default header values.
+/* GetTiersPricingOK describes a response with status code 200, with default header values.
 
 Success
 */
@@ -88,8 +87,7 @@ func NewGetTiersPricingForbidden() *GetTiersPricingForbidden {
 	return &GetTiersPricingForbidden{}
 }
 
-/*
-GetTiersPricingForbidden describes a response with status code 403, with default header values.
+/* GetTiersPricingForbidden describes a response with status code 403, with default header values.
 
 Forbidden
 */
@@ -121,8 +119,7 @@ func NewGetTiersPricingNotFound() *GetTiersPricingNotFound {
 	return &GetTiersPricingNotFound{}
 }
 
-/*
-GetTiersPricingNotFound describes a response with status code 404, with default header values.
+/* GetTiersPricingNotFound describes a response with status code 404, with default header values.
 
 No tiers available
 */
@@ -154,8 +151,7 @@ func NewGetTiersPricingInternalServerError() *GetTiersPricingInternalServerError
 	return &GetTiersPricingInternalServerError{}
 }
 
-/*
-GetTiersPricingInternalServerError describes a response with status code 500, with default header values.
+/* GetTiersPricingInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */

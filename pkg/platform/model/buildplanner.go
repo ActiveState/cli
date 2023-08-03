@@ -238,7 +238,7 @@ type StageCommitParams struct {
 	RequirementVersion   string
 	RequirementNamespace Namespace
 	Operation            bpModel.Operation
-	TimeStamp            strfmt.DateTime
+	TimeStamp            time.Time
 }
 
 func (bp *BuildPlanner) StageCommit(params StageCommitParams) (strfmt.UUID, error) {

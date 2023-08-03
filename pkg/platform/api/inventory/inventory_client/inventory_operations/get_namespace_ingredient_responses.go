@@ -52,8 +52,7 @@ func NewGetNamespaceIngredientOK() *GetNamespaceIngredientOK {
 	return &GetNamespaceIngredientOK{}
 }
 
-/*
-GetNamespaceIngredientOK describes a response with status code 200, with default header values.
+/* GetNamespaceIngredientOK describes a response with status code 200, with default header values.
 
 The retrieved ingredient
 */
@@ -85,8 +84,7 @@ func NewGetNamespaceIngredientNotFound() *GetNamespaceIngredientNotFound {
 	return &GetNamespaceIngredientNotFound{}
 }
 
-/*
-GetNamespaceIngredientNotFound describes a response with status code 404, with default header values.
+/* GetNamespaceIngredientNotFound describes a response with status code 404, with default header values.
 
 There is no ingredient with the given namespace and name
 */
@@ -120,8 +118,7 @@ func NewGetNamespaceIngredientDefault(code int) *GetNamespaceIngredientDefault {
 	}
 }
 
-/*
-GetNamespaceIngredientDefault describes a response with status code -1, with default header values.
+/* GetNamespaceIngredientDefault describes a response with status code -1, with default header values.
 
 generic error response
 */

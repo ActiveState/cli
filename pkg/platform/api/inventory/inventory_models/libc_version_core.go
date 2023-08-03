@@ -15,7 +15,7 @@ import (
 
 // LibcVersionCore Libc Version Core
 //
-// # The properties of a libc version needed to create a new one
+// The properties of a libc version needed to create a new one
 //
 // swagger:model libcVersionCore
 type LibcVersionCore struct {

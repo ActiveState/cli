@@ -53,12 +53,10 @@ func NewGetKernelCPUArchitecturesParamsWithHTTPClient(client *http.Client) *GetK
 	}
 }
 
-/*
-GetKernelCPUArchitecturesParams contains all the parameters to send to the API endpoint
+/* GetKernelCPUArchitecturesParams contains all the parameters to send to the API endpoint
+   for the get kernel Cpu architectures operation.
 
-	for the get kernel Cpu architectures operation.
-
-	Typically these are written to a http.Request.
+   Typically these are written to a http.Request.
 */
 type GetKernelCPUArchitecturesParams struct {
 

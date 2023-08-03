@@ -17,7 +17,7 @@ import (
 
 // PatchPagedList Patch Paged List
 //
-// # A paginated list of patches
+// A paginated list of patches
 //
 // swagger:model patchPagedList
 type PatchPagedList struct {

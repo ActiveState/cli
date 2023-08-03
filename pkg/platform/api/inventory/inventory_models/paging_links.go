@@ -16,7 +16,7 @@ import (
 
 // PagingLinks Paging Links
 //
-// # Links for a model that include links for paging data
+// Links for a model that include links for paging data
 //
 // swagger:model pagingLinks
 type PagingLinks struct {

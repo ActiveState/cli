@@ -19,8 +19,8 @@ func (e *CheckRuntimeUsage) Query() string {
 	}`
 }
 
-func (e *CheckRuntimeUsage) Vars() map[string]interface{} {
+func (e *CheckRuntimeUsage) Vars() (map[string]interface{}, error) {
 	return map[string]interface{}{
 		"organizationName": e.organizationName,
-	}
+	}, nil
 }

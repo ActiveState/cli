@@ -65,8 +65,7 @@ func NewJoinOrganizationOK() *JoinOrganizationOK {
 	return &JoinOrganizationOK{}
 }
 
-/*
-JoinOrganizationOK describes a response with status code 200, with default header values.
+/* JoinOrganizationOK describes a response with status code 200, with default header values.
 
 Membership Roster
 */
@@ -96,8 +95,7 @@ func NewJoinOrganizationBadRequest() *JoinOrganizationBadRequest {
 	return &JoinOrganizationBadRequest{}
 }
 
-/*
-JoinOrganizationBadRequest describes a response with status code 400, with default header values.
+/* JoinOrganizationBadRequest describes a response with status code 400, with default header values.
 
 Bad Request
 */
@@ -129,8 +127,7 @@ func NewJoinOrganizationForbidden() *JoinOrganizationForbidden {
 	return &JoinOrganizationForbidden{}
 }
 
-/*
-JoinOrganizationForbidden describes a response with status code 403, with default header values.
+/* JoinOrganizationForbidden describes a response with status code 403, with default header values.
 
 Forbidden
 */
@@ -162,8 +159,7 @@ func NewJoinOrganizationNotFound() *JoinOrganizationNotFound {
 	return &JoinOrganizationNotFound{}
 }
 
-/*
-JoinOrganizationNotFound describes a response with status code 404, with default header values.
+/* JoinOrganizationNotFound describes a response with status code 404, with default header values.
 
 Not Found
 */
@@ -195,8 +191,7 @@ func NewJoinOrganizationInternalServerError() *JoinOrganizationInternalServerErr
 	return &JoinOrganizationInternalServerError{}
 }
 
-/*
-JoinOrganizationInternalServerError describes a response with status code 500, with default header values.
+/* JoinOrganizationInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */
@@ -223,8 +218,7 @@ func (o *JoinOrganizationInternalServerError) readResponse(response runtime.Clie
 	return nil
 }
 
-/*
-JoinOrganizationBody join organization body
+/*JoinOrganizationBody join organization body
 swagger:model JoinOrganizationBody
 */
 type JoinOrganizationBody struct {

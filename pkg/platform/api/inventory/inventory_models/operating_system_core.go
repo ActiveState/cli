@@ -16,7 +16,7 @@ import (
 
 // OperatingSystemCore Operating System Core
 //
-// # The properties of an operating system needed to create a new one
+// The properties of an operating system needed to create a new one
 //
 // swagger:model operatingSystemCore
 type OperatingSystemCore struct {

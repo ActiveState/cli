@@ -45,8 +45,7 @@ func NewGetBranchOK() *GetBranchOK {
 	return &GetBranchOK{}
 }
 
-/*
-GetBranchOK describes a response with status code 200, with default header values.
+/* GetBranchOK describes a response with status code 200, with default header values.
 
 Get details about the branch
 */
@@ -78,8 +77,7 @@ func NewGetBranchNotFound() *GetBranchNotFound {
 	return &GetBranchNotFound{}
 }
 
-/*
-GetBranchNotFound describes a response with status code 404, with default header values.
+/* GetBranchNotFound describes a response with status code 404, with default header values.
 
 branch was not found
 */

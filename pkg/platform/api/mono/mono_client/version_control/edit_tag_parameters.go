@@ -54,12 +54,10 @@ func NewEditTagParamsWithHTTPClient(client *http.Client) *EditTagParams {
 	}
 }
 
-/*
-EditTagParams contains all the parameters to send to the API endpoint
+/* EditTagParams contains all the parameters to send to the API endpoint
+   for the edit tag operation.
 
-	for the edit tag operation.
-
-	Typically these are written to a http.Request.
+   Typically these are written to a http.Request.
 */
 type EditTagParams struct {
 

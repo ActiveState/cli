@@ -63,8 +63,7 @@ func NewDeleteProjectOK() *DeleteProjectOK {
 	return &DeleteProjectOK{}
 }
 
-/*
-DeleteProjectOK describes a response with status code 200, with default header values.
+/* DeleteProjectOK describes a response with status code 200, with default header values.
 
 Project deleted
 */
@@ -96,8 +95,7 @@ func NewDeleteProjectBadRequest() *DeleteProjectBadRequest {
 	return &DeleteProjectBadRequest{}
 }
 
-/*
-DeleteProjectBadRequest describes a response with status code 400, with default header values.
+/* DeleteProjectBadRequest describes a response with status code 400, with default header values.
 
 Bad Request
 */
@@ -129,8 +127,7 @@ func NewDeleteProjectForbidden() *DeleteProjectForbidden {
 	return &DeleteProjectForbidden{}
 }
 
-/*
-DeleteProjectForbidden describes a response with status code 403, with default header values.
+/* DeleteProjectForbidden describes a response with status code 403, with default header values.
 
 Forbidden
 */
@@ -162,8 +159,7 @@ func NewDeleteProjectNotFound() *DeleteProjectNotFound {
 	return &DeleteProjectNotFound{}
 }
 
-/*
-DeleteProjectNotFound describes a response with status code 404, with default header values.
+/* DeleteProjectNotFound describes a response with status code 404, with default header values.
 
 Not Found
 */
@@ -195,8 +191,7 @@ func NewDeleteProjectInternalServerError() *DeleteProjectInternalServerError {
 	return &DeleteProjectInternalServerError{}
 }
 
-/*
-DeleteProjectInternalServerError describes a response with status code 500, with default header values.
+/* DeleteProjectInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */

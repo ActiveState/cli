@@ -52,8 +52,7 @@ func NewAddOperatingSystemVersionCreated() *AddOperatingSystemVersionCreated {
 	return &AddOperatingSystemVersionCreated{}
 }
 
-/*
-AddOperatingSystemVersionCreated describes a response with status code 201, with default header values.
+/* AddOperatingSystemVersionCreated describes a response with status code 201, with default header values.
 
 The added operating system version
 */
@@ -85,8 +84,7 @@ func NewAddOperatingSystemVersionBadRequest() *AddOperatingSystemVersionBadReque
 	return &AddOperatingSystemVersionBadRequest{}
 }
 
-/*
-AddOperatingSystemVersionBadRequest describes a response with status code 400, with default header values.
+/* AddOperatingSystemVersionBadRequest describes a response with status code 400, with default header values.
 
 If the operating system version is invalid
 */
@@ -120,8 +118,7 @@ func NewAddOperatingSystemVersionDefault(code int) *AddOperatingSystemVersionDef
 	}
 }
 
-/*
-AddOperatingSystemVersionDefault describes a response with status code -1, with default header values.
+/* AddOperatingSystemVersionDefault describes a response with status code -1, with default header values.
 
 If there is an error processing the request
 */

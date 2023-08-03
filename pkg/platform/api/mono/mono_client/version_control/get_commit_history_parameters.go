@@ -53,12 +53,10 @@ func NewGetCommitHistoryParamsWithHTTPClient(client *http.Client) *GetCommitHist
 	}
 }
 
-/*
-GetCommitHistoryParams contains all the parameters to send to the API endpoint
+/* GetCommitHistoryParams contains all the parameters to send to the API endpoint
+   for the get commit history operation.
 
-	for the get commit history operation.
-
-	Typically these are written to a http.Request.
+   Typically these are written to a http.Request.
 */
 type GetCommitHistoryParams struct {
 

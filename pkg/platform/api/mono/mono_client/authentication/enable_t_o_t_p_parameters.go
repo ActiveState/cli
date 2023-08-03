@@ -52,12 +52,10 @@ func NewEnableTOTPParamsWithHTTPClient(client *http.Client) *EnableTOTPParams {
 	}
 }
 
-/*
-EnableTOTPParams contains all the parameters to send to the API endpoint
+/* EnableTOTPParams contains all the parameters to send to the API endpoint
+   for the enable t o t p operation.
 
-	for the enable t o t p operation.
-
-	Typically these are written to a http.Request.
+   Typically these are written to a http.Request.
 */
 type EnableTOTPParams struct {
 

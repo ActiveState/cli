@@ -69,8 +69,7 @@ func NewMergeBranchOK() *MergeBranchOK {
 	return &MergeBranchOK{}
 }
 
-/*
-MergeBranchOK describes a response with status code 200, with default header values.
+/* MergeBranchOK describes a response with status code 200, with default header values.
 
 Merge the branch with the branch it was forked from using the given strategy or preview options
 */
@@ -102,8 +101,7 @@ func NewMergeBranchBadRequest() *MergeBranchBadRequest {
 	return &MergeBranchBadRequest{}
 }
 
-/*
-MergeBranchBadRequest describes a response with status code 400, with default header values.
+/* MergeBranchBadRequest describes a response with status code 400, with default header values.
 
 Bad Request
 */
@@ -135,8 +133,7 @@ func NewMergeBranchForbidden() *MergeBranchForbidden {
 	return &MergeBranchForbidden{}
 }
 
-/*
-MergeBranchForbidden describes a response with status code 403, with default header values.
+/* MergeBranchForbidden describes a response with status code 403, with default header values.
 
 Forbidden
 */
@@ -168,8 +165,7 @@ func NewMergeBranchNotFound() *MergeBranchNotFound {
 	return &MergeBranchNotFound{}
 }
 
-/*
-MergeBranchNotFound describes a response with status code 404, with default header values.
+/* MergeBranchNotFound describes a response with status code 404, with default header values.
 
 branch was not found
 */
@@ -201,8 +197,7 @@ func NewMergeBranchConflict() *MergeBranchConflict {
 	return &MergeBranchConflict{}
 }
 
-/*
-MergeBranchConflict describes a response with status code 409, with default header values.
+/* MergeBranchConflict describes a response with status code 409, with default header values.
 
 Conflict
 */
@@ -234,8 +229,7 @@ func NewMergeBranchInternalServerError() *MergeBranchInternalServerError {
 	return &MergeBranchInternalServerError{}
 }
 
-/*
-MergeBranchInternalServerError describes a response with status code 500, with default header values.
+/* MergeBranchInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */

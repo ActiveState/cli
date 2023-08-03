@@ -52,8 +52,7 @@ func NewSolveOrderCreated() *SolveOrderCreated {
 	return &SolveOrderCreated{}
 }
 
-/*
-SolveOrderCreated describes a response with status code 201, with default header values.
+/* SolveOrderCreated describes a response with status code 201, with default header values.
 
 Returns the ids of and links to the created recipes
 */
@@ -83,8 +82,7 @@ func NewSolveOrderBadRequest() *SolveOrderBadRequest {
 	return &SolveOrderBadRequest{}
 }
 
-/*
-SolveOrderBadRequest describes a response with status code 400, with default header values.
+/* SolveOrderBadRequest describes a response with status code 400, with default header values.
 
 If the order is invalid
 */
@@ -118,8 +116,7 @@ func NewSolveOrderDefault(code int) *SolveOrderDefault {
 	}
 }
 
-/*
-SolveOrderDefault describes a response with status code -1, with default header values.
+/* SolveOrderDefault describes a response with status code -1, with default header values.
 
 If there is an error processing the order
 */

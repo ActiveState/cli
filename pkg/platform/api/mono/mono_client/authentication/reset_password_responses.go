@@ -57,8 +57,7 @@ func NewResetPasswordOK() *ResetPasswordOK {
 	return &ResetPasswordOK{}
 }
 
-/*
-ResetPasswordOK describes a response with status code 200, with default header values.
+/* ResetPasswordOK describes a response with status code 200, with default header values.
 
 Success
 */
@@ -90,8 +89,7 @@ func NewResetPasswordBadRequest() *ResetPasswordBadRequest {
 	return &ResetPasswordBadRequest{}
 }
 
-/*
-ResetPasswordBadRequest describes a response with status code 400, with default header values.
+/* ResetPasswordBadRequest describes a response with status code 400, with default header values.
 
 Bad Request
 */
@@ -123,8 +121,7 @@ func NewResetPasswordForbidden() *ResetPasswordForbidden {
 	return &ResetPasswordForbidden{}
 }
 
-/*
-ResetPasswordForbidden describes a response with status code 403, with default header values.
+/* ResetPasswordForbidden describes a response with status code 403, with default header values.
 
 Forbidden
 */
@@ -156,8 +153,7 @@ func NewResetPasswordInternalServerError() *ResetPasswordInternalServerError {
 	return &ResetPasswordInternalServerError{}
 }
 
-/*
-ResetPasswordInternalServerError describes a response with status code 500, with default header values.
+/* ResetPasswordInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */

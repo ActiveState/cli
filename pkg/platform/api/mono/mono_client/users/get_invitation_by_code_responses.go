@@ -63,8 +63,7 @@ func NewGetInvitationByCodeOK() *GetInvitationByCodeOK {
 	return &GetInvitationByCodeOK{}
 }
 
-/*
-GetInvitationByCodeOK describes a response with status code 200, with default header values.
+/* GetInvitationByCodeOK describes a response with status code 200, with default header values.
 
 Invitation
 */
@@ -96,8 +95,7 @@ func NewGetInvitationByCodeBadRequest() *GetInvitationByCodeBadRequest {
 	return &GetInvitationByCodeBadRequest{}
 }
 
-/*
-GetInvitationByCodeBadRequest describes a response with status code 400, with default header values.
+/* GetInvitationByCodeBadRequest describes a response with status code 400, with default header values.
 
 Bad Request
 */
@@ -129,8 +127,7 @@ func NewGetInvitationByCodeForbidden() *GetInvitationByCodeForbidden {
 	return &GetInvitationByCodeForbidden{}
 }
 
-/*
-GetInvitationByCodeForbidden describes a response with status code 403, with default header values.
+/* GetInvitationByCodeForbidden describes a response with status code 403, with default header values.
 
 Forbidden
 */
@@ -162,8 +159,7 @@ func NewGetInvitationByCodeNotFound() *GetInvitationByCodeNotFound {
 	return &GetInvitationByCodeNotFound{}
 }
 
-/*
-GetInvitationByCodeNotFound describes a response with status code 404, with default header values.
+/* GetInvitationByCodeNotFound describes a response with status code 404, with default header values.
 
 Not Found
 */
@@ -195,8 +191,7 @@ func NewGetInvitationByCodeInternalServerError() *GetInvitationByCodeInternalSer
 	return &GetInvitationByCodeInternalServerError{}
 }
 
-/*
-GetInvitationByCodeInternalServerError describes a response with status code 500, with default header values.
+/* GetInvitationByCodeInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */

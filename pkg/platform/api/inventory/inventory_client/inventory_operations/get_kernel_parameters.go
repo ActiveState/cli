@@ -52,12 +52,10 @@ func NewGetKernelParamsWithHTTPClient(client *http.Client) *GetKernelParams {
 	}
 }
 
-/*
-GetKernelParams contains all the parameters to send to the API endpoint
+/* GetKernelParams contains all the parameters to send to the API endpoint
+   for the get kernel operation.
 
-	for the get kernel operation.
-
-	Typically these are written to a http.Request.
+   Typically these are written to a http.Request.
 */
 type GetKernelParams struct {
 

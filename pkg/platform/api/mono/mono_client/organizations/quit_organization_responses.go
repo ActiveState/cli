@@ -63,8 +63,7 @@ func NewQuitOrganizationOK() *QuitOrganizationOK {
 	return &QuitOrganizationOK{}
 }
 
-/*
-QuitOrganizationOK describes a response with status code 200, with default header values.
+/* QuitOrganizationOK describes a response with status code 200, with default header values.
 
 Membership updated
 */
@@ -94,8 +93,7 @@ func NewQuitOrganizationBadRequest() *QuitOrganizationBadRequest {
 	return &QuitOrganizationBadRequest{}
 }
 
-/*
-QuitOrganizationBadRequest describes a response with status code 400, with default header values.
+/* QuitOrganizationBadRequest describes a response with status code 400, with default header values.
 
 Bad Request
 */
@@ -127,8 +125,7 @@ func NewQuitOrganizationForbidden() *QuitOrganizationForbidden {
 	return &QuitOrganizationForbidden{}
 }
 
-/*
-QuitOrganizationForbidden describes a response with status code 403, with default header values.
+/* QuitOrganizationForbidden describes a response with status code 403, with default header values.
 
 Unauthorized
 */
@@ -160,8 +157,7 @@ func NewQuitOrganizationNotFound() *QuitOrganizationNotFound {
 	return &QuitOrganizationNotFound{}
 }
 
-/*
-QuitOrganizationNotFound describes a response with status code 404, with default header values.
+/* QuitOrganizationNotFound describes a response with status code 404, with default header values.
 
 User or Org Not Found
 */
@@ -193,8 +189,7 @@ func NewQuitOrganizationInternalServerError() *QuitOrganizationInternalServerErr
 	return &QuitOrganizationInternalServerError{}
 }
 
-/*
-QuitOrganizationInternalServerError describes a response with status code 500, with default header values.
+/* QuitOrganizationInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */

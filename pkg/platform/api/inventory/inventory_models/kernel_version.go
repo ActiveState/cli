@@ -15,7 +15,7 @@ import (
 
 // KernelVersion Kernel Version
 //
-// # The full kernel version data model
+// The full kernel version data model
 //
 // swagger:model kernelVersion
 type KernelVersion struct {

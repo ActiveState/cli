@@ -53,12 +53,10 @@ func NewGetBuildFlagsParamsWithHTTPClient(client *http.Client) *GetBuildFlagsPar
 	}
 }
 
-/*
-GetBuildFlagsParams contains all the parameters to send to the API endpoint
+/* GetBuildFlagsParams contains all the parameters to send to the API endpoint
+   for the get build flags operation.
 
-	for the get build flags operation.
-
-	Typically these are written to a http.Request.
+   Typically these are written to a http.Request.
 */
 type GetBuildFlagsParams struct {
 

@@ -15,7 +15,7 @@ import (
 
 // GpuArchitecture GPU Architecture
 //
-// # The full GPU architecture data model
+// The full GPU architecture data model
 //
 // swagger:model gpuArchitecture
 type GpuArchitecture struct {

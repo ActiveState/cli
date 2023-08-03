@@ -57,8 +57,7 @@ func NewAddUserOK() *AddUserOK {
 	return &AddUserOK{}
 }
 
-/*
-AddUserOK describes a response with status code 200, with default header values.
+/* AddUserOK describes a response with status code 200, with default header values.
 
 Successfully Created
 */
@@ -90,8 +89,7 @@ func NewAddUserBadRequest() *AddUserBadRequest {
 	return &AddUserBadRequest{}
 }
 
-/*
-AddUserBadRequest describes a response with status code 400, with default header values.
+/* AddUserBadRequest describes a response with status code 400, with default header values.
 
 Bad Request
 */
@@ -123,8 +121,7 @@ func NewAddUserConflict() *AddUserConflict {
 	return &AddUserConflict{}
 }
 
-/*
-AddUserConflict describes a response with status code 409, with default header values.
+/* AddUserConflict describes a response with status code 409, with default header values.
 
 Conflict
 */
@@ -156,8 +153,7 @@ func NewAddUserInternalServerError() *AddUserInternalServerError {
 	return &AddUserInternalServerError{}
 }
 
-/*
-AddUserInternalServerError describes a response with status code 500, with default header values.
+/* AddUserInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */

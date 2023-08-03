@@ -1,6 +1,7 @@
 package request
 
-type FetchLogTail struct{}
+type FetchLogTail struct {
+}
 
 func NewFetchLogTail() *FetchLogTail {
 	return &FetchLogTail{}
@@ -12,6 +13,6 @@ func (r *FetchLogTail) Query() string {
 	}`
 }
 
-func (r *FetchLogTail) Vars() map[string]interface{} {
-	return nil
+func (r *FetchLogTail) Vars() (map[string]interface{}, error) {
+	return nil, nil
 }

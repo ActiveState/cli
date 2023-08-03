@@ -46,8 +46,7 @@ func NewGetKernelVersionsOK() *GetKernelVersionsOK {
 	return &GetKernelVersionsOK{}
 }
 
-/*
-GetKernelVersionsOK describes a response with status code 200, with default header values.
+/* GetKernelVersionsOK describes a response with status code 200, with default header values.
 
 A paginated list of kernel versions
 */
@@ -81,8 +80,7 @@ func NewGetKernelVersionsDefault(code int) *GetKernelVersionsDefault {
 	}
 }
 
-/*
-GetKernelVersionsDefault describes a response with status code -1, with default header values.
+/* GetKernelVersionsDefault describes a response with status code -1, with default header values.
 
 generic error response
 */

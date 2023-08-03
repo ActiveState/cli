@@ -54,12 +54,10 @@ func NewNormalizeNamesParamsWithHTTPClient(client *http.Client) *NormalizeNamesP
 	}
 }
 
-/*
-NormalizeNamesParams contains all the parameters to send to the API endpoint
+/* NormalizeNamesParams contains all the parameters to send to the API endpoint
+   for the normalize names operation.
 
-	for the normalize names operation.
-
-	Typically these are written to a http.Request.
+   Typically these are written to a http.Request.
 */
 type NormalizeNamesParams struct {
 

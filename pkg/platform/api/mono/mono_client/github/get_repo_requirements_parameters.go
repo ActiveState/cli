@@ -52,12 +52,10 @@ func NewGetRepoRequirementsParamsWithHTTPClient(client *http.Client) *GetRepoReq
 	}
 }
 
-/*
-GetRepoRequirementsParams contains all the parameters to send to the API endpoint
+/* GetRepoRequirementsParams contains all the parameters to send to the API endpoint
+   for the get repo requirements operation.
 
-	for the get repo requirements operation.
-
-	Typically these are written to a http.Request.
+   Typically these are written to a http.Request.
 */
 type GetRepoRequirementsParams struct {
 

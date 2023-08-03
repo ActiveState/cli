@@ -46,8 +46,7 @@ func NewGetBuildScriptsOK() *GetBuildScriptsOK {
 	return &GetBuildScriptsOK{}
 }
 
-/*
-GetBuildScriptsOK describes a response with status code 200, with default header values.
+/* GetBuildScriptsOK describes a response with status code 200, with default header values.
 
 A paginated list of build scripts
 */
@@ -81,8 +80,7 @@ func NewGetBuildScriptsDefault(code int) *GetBuildScriptsDefault {
 	}
 }
 
-/*
-GetBuildScriptsDefault describes a response with status code -1, with default header values.
+/* GetBuildScriptsDefault describes a response with status code -1, with default header values.
 
 generic error response
 */

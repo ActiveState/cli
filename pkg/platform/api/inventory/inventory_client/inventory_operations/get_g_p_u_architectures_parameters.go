@@ -53,12 +53,10 @@ func NewGetGPUArchitecturesParamsWithHTTPClient(client *http.Client) *GetGPUArch
 	}
 }
 
-/*
-GetGPUArchitecturesParams contains all the parameters to send to the API endpoint
+/* GetGPUArchitecturesParams contains all the parameters to send to the API endpoint
+   for the get g p u architectures operation.
 
-	for the get g p u architectures operation.
-
-	Typically these are written to a http.Request.
+   Typically these are written to a http.Request.
 */
 type GetGPUArchitecturesParams struct {
 

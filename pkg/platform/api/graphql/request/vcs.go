@@ -5,7 +5,7 @@ import (
 )
 
 func CheckpointByCommit(commitID strfmt.UUID) *checkpointByCommit {
-	return &checkpointByCommit{map[string]interface{}{
+	return &checkpointByCommit{vars: map[string]interface{}{
 		"commit_id": commitID,
 	}}
 }
@@ -30,6 +30,6 @@ func (p *checkpointByCommit) Query() string {
 	  `
 }
 
-func (p *checkpointByCommit) Vars() map[string]interface{} {
-	return p.vars
+func (p *checkpointByCommit) Vars() (map[string]interface{}, error) {
+	return p.vars, nil
 }

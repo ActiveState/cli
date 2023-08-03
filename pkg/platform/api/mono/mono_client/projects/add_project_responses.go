@@ -69,8 +69,7 @@ func NewAddProjectOK() *AddProjectOK {
 	return &AddProjectOK{}
 }
 
-/*
-AddProjectOK describes a response with status code 200, with default header values.
+/* AddProjectOK describes a response with status code 200, with default header values.
 
 Project Added
 */
@@ -102,8 +101,7 @@ func NewAddProjectBadRequest() *AddProjectBadRequest {
 	return &AddProjectBadRequest{}
 }
 
-/*
-AddProjectBadRequest describes a response with status code 400, with default header values.
+/* AddProjectBadRequest describes a response with status code 400, with default header values.
 
 Bad Request
 */
@@ -135,8 +133,7 @@ func NewAddProjectForbidden() *AddProjectForbidden {
 	return &AddProjectForbidden{}
 }
 
-/*
-AddProjectForbidden describes a response with status code 403, with default header values.
+/* AddProjectForbidden describes a response with status code 403, with default header values.
 
 Forbidden
 */
@@ -168,8 +165,7 @@ func NewAddProjectNotFound() *AddProjectNotFound {
 	return &AddProjectNotFound{}
 }
 
-/*
-AddProjectNotFound describes a response with status code 404, with default header values.
+/* AddProjectNotFound describes a response with status code 404, with default header values.
 
 Not Found
 */
@@ -201,8 +197,7 @@ func NewAddProjectConflict() *AddProjectConflict {
 	return &AddProjectConflict{}
 }
 
-/*
-AddProjectConflict describes a response with status code 409, with default header values.
+/* AddProjectConflict describes a response with status code 409, with default header values.
 
 Conflict
 */
@@ -234,8 +229,7 @@ func NewAddProjectInternalServerError() *AddProjectInternalServerError {
 	return &AddProjectInternalServerError{}
 }
 
-/*
-AddProjectInternalServerError describes a response with status code 500, with default header values.
+/* AddProjectInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */

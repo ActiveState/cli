@@ -15,7 +15,7 @@ import (
 
 // IngredientVersionRevisionPatch Ingredient Version Revision Patch
 //
-// # A single patch along with its sequence number for a particular ingredient version revision
+// A single patch along with its sequence number for a particular ingredient version revision
 //
 // swagger:model ingredientVersionRevisionPatch
 type IngredientVersionRevisionPatch struct {

@@ -16,7 +16,7 @@ import (
 
 // IngredientAndVersion Ingredient And Version
 //
-// # An ingredient paired with one of its versions
+// An ingredient paired with one of its versions
 //
 // swagger:model ingredientAndVersion
 type IngredientAndVersion struct {

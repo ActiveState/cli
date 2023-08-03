@@ -45,8 +45,7 @@ func NewNewTOTPOK() *NewTOTPOK {
 	return &NewTOTPOK{}
 }
 
-/*
-NewTOTPOK describes a response with status code 200, with default header values.
+/* NewTOTPOK describes a response with status code 200, with default header values.
 
 New TOTP Key
 */
@@ -78,8 +77,7 @@ func NewNewTOTPBadRequest() *NewTOTPBadRequest {
 	return &NewTOTPBadRequest{}
 }
 
-/*
-NewTOTPBadRequest describes a response with status code 400, with default header values.
+/* NewTOTPBadRequest describes a response with status code 400, with default header values.
 
 Bad Request
 */

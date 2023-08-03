@@ -38,7 +38,7 @@ type ClientService interface {
 }
 
 /*
-GetLoginsAndRepos retrieves available repos from github for authenticated user m u s t have git authentication enabled in the platform
+  GetLoginsAndRepos retrieves available repos from github for authenticated user m u s t have git authentication enabled in the platform
 */
 func (a *Client) GetLoginsAndRepos(params *GetLoginsAndReposParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetLoginsAndReposOK, error) {
 	// TODO: Validate the params before sending
@@ -77,7 +77,7 @@ func (a *Client) GetLoginsAndRepos(params *GetLoginsAndReposParams, authInfo run
 }
 
 /*
-GetRepoRequirements gets list of supported languages and their required packages parsed from the repo
+  GetRepoRequirements gets list of supported languages and their required packages parsed from the repo
 */
 func (a *Client) GetRepoRequirements(params *GetRepoRequirementsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetRepoRequirementsOK, error) {
 	// TODO: Validate the params before sending

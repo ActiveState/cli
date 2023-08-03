@@ -63,8 +63,7 @@ func NewEditBillingOK() *EditBillingOK {
 	return &EditBillingOK{}
 }
 
-/*
-EditBillingOK describes a response with status code 200, with default header values.
+/* EditBillingOK describes a response with status code 200, with default header values.
 
 Success
 */
@@ -96,8 +95,7 @@ func NewEditBillingBadRequest() *EditBillingBadRequest {
 	return &EditBillingBadRequest{}
 }
 
-/*
-EditBillingBadRequest describes a response with status code 400, with default header values.
+/* EditBillingBadRequest describes a response with status code 400, with default header values.
 
 Bad Request
 */
@@ -129,8 +127,7 @@ func NewEditBillingForbidden() *EditBillingForbidden {
 	return &EditBillingForbidden{}
 }
 
-/*
-EditBillingForbidden describes a response with status code 403, with default header values.
+/* EditBillingForbidden describes a response with status code 403, with default header values.
 
 Forbidden
 */
@@ -162,8 +159,7 @@ func NewEditBillingNotFound() *EditBillingNotFound {
 	return &EditBillingNotFound{}
 }
 
-/*
-EditBillingNotFound describes a response with status code 404, with default header values.
+/* EditBillingNotFound describes a response with status code 404, with default header values.
 
 Not Found
 */
@@ -195,8 +191,7 @@ func NewEditBillingInternalServerError() *EditBillingInternalServerError {
 	return &EditBillingInternalServerError{}
 }
 
-/*
-EditBillingInternalServerError describes a response with status code 500, with default header values.
+/* EditBillingInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */

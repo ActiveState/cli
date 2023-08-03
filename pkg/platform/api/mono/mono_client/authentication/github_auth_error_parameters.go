@@ -52,12 +52,10 @@ func NewGithubAuthErrorParamsWithHTTPClient(client *http.Client) *GithubAuthErro
 	}
 }
 
-/*
-GithubAuthErrorParams contains all the parameters to send to the API endpoint
+/* GithubAuthErrorParams contains all the parameters to send to the API endpoint
+   for the github auth error operation.
 
-	for the github auth error operation.
-
-	Typically these are written to a http.Request.
+   Typically these are written to a http.Request.
 */
 type GithubAuthErrorParams struct {
 

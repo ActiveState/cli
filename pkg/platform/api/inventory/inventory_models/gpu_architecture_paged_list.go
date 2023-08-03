@@ -17,7 +17,7 @@ import (
 
 // GpuArchitecturePagedList GPU Architecture Paged List
 //
-// # A paginated list of GPU architectures
+// A paginated list of GPU architectures
 //
 // swagger:model gpuArchitecturePagedList
 type GpuArchitecturePagedList struct {

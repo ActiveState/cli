@@ -52,12 +52,10 @@ func NewGetAddOnsParamsWithHTTPClient(client *http.Client) *GetAddOnsParams {
 	}
 }
 
-/*
-GetAddOnsParams contains all the parameters to send to the API endpoint
+/* GetAddOnsParams contains all the parameters to send to the API endpoint
+   for the get add ons operation.
 
-	for the get add ons operation.
-
-	Typically these are written to a http.Request.
+   Typically these are written to a http.Request.
 */
 type GetAddOnsParams struct {
 	timeout    time.Duration

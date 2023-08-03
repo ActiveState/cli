@@ -46,8 +46,7 @@ func NewGetOperatingSystemVersionsOK() *GetOperatingSystemVersionsOK {
 	return &GetOperatingSystemVersionsOK{}
 }
 
-/*
-GetOperatingSystemVersionsOK describes a response with status code 200, with default header values.
+/* GetOperatingSystemVersionsOK describes a response with status code 200, with default header values.
 
 A paginated list of operating system versions
 */
@@ -81,8 +80,7 @@ func NewGetOperatingSystemVersionsDefault(code int) *GetOperatingSystemVersionsD
 	}
 }
 
-/*
-GetOperatingSystemVersionsDefault describes a response with status code -1, with default header values.
+/* GetOperatingSystemVersionsDefault describes a response with status code -1, with default header values.
 
 generic error response
 */

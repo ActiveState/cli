@@ -52,8 +52,7 @@ func NewUpdatePlatformOK() *UpdatePlatformOK {
 	return &UpdatePlatformOK{}
 }
 
-/*
-UpdatePlatformOK describes a response with status code 200, with default header values.
+/* UpdatePlatformOK describes a response with status code 200, with default header values.
 
 The updated state of the platform
 */
@@ -85,8 +84,7 @@ func NewUpdatePlatformBadRequest() *UpdatePlatformBadRequest {
 	return &UpdatePlatformBadRequest{}
 }
 
-/*
-UpdatePlatformBadRequest describes a response with status code 400, with default header values.
+/* UpdatePlatformBadRequest describes a response with status code 400, with default header values.
 
 If the platform update in invalid
 */
@@ -120,8 +118,7 @@ func NewUpdatePlatformDefault(code int) *UpdatePlatformDefault {
 	}
 }
 
-/*
-UpdatePlatformDefault describes a response with status code -1, with default header values.
+/* UpdatePlatformDefault describes a response with status code -1, with default header values.
 
 If there is an error processing the request
 */

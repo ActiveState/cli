@@ -46,8 +46,7 @@ func NewGetNamespacesOK() *GetNamespacesOK {
 	return &GetNamespacesOK{}
 }
 
-/*
-GetNamespacesOK describes a response with status code 200, with default header values.
+/* GetNamespacesOK describes a response with status code 200, with default header values.
 
 A paginated list of namespaces
 */
@@ -81,8 +80,7 @@ func NewGetNamespacesDefault(code int) *GetNamespacesDefault {
 	}
 }
 
-/*
-GetNamespacesDefault describes a response with status code -1, with default header values.
+/* GetNamespacesDefault describes a response with status code -1, with default header values.
 
 generic error response
 */

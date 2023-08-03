@@ -46,8 +46,7 @@ func NewGetLibcsOK() *GetLibcsOK {
 	return &GetLibcsOK{}
 }
 
-/*
-GetLibcsOK describes a response with status code 200, with default header values.
+/* GetLibcsOK describes a response with status code 200, with default header values.
 
 A paginated list of libcs
 */
@@ -81,8 +80,7 @@ func NewGetLibcsDefault(code int) *GetLibcsDefault {
 	}
 }
 
-/*
-GetLibcsDefault describes a response with status code -1, with default header values.
+/* GetLibcsDefault describes a response with status code -1, with default header values.
 
 generic error response
 */

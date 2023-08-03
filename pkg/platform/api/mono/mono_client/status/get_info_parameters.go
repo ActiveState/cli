@@ -52,12 +52,10 @@ func NewGetInfoParamsWithHTTPClient(client *http.Client) *GetInfoParams {
 	}
 }
 
-/*
-GetInfoParams contains all the parameters to send to the API endpoint
+/* GetInfoParams contains all the parameters to send to the API endpoint
+   for the get info operation.
 
-	for the get info operation.
-
-	Typically these are written to a http.Request.
+   Typically these are written to a http.Request.
 */
 type GetInfoParams struct {
 

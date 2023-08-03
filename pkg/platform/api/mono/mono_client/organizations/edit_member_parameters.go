@@ -54,12 +54,10 @@ func NewEditMemberParamsWithHTTPClient(client *http.Client) *EditMemberParams {
 	}
 }
 
-/*
-EditMemberParams contains all the parameters to send to the API endpoint
+/* EditMemberParams contains all the parameters to send to the API endpoint
+   for the edit member operation.
 
-	for the edit member operation.
-
-	Typically these are written to a http.Request.
+   Typically these are written to a http.Request.
 */
 type EditMemberParams struct {
 

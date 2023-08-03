@@ -52,12 +52,10 @@ func NewGetLibcParamsWithHTTPClient(client *http.Client) *GetLibcParams {
 	}
 }
 
-/*
-GetLibcParams contains all the parameters to send to the API endpoint
+/* GetLibcParams contains all the parameters to send to the API endpoint
+   for the get libc operation.
 
-	for the get libc operation.
-
-	Typically these are written to a http.Request.
+   Typically these are written to a http.Request.
 */
 type GetLibcParams struct {
 

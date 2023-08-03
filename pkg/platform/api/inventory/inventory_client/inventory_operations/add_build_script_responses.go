@@ -52,8 +52,7 @@ func NewAddBuildScriptCreated() *AddBuildScriptCreated {
 	return &AddBuildScriptCreated{}
 }
 
-/*
-AddBuildScriptCreated describes a response with status code 201, with default header values.
+/* AddBuildScriptCreated describes a response with status code 201, with default header values.
 
 The added build script
 */
@@ -85,8 +84,7 @@ func NewAddBuildScriptBadRequest() *AddBuildScriptBadRequest {
 	return &AddBuildScriptBadRequest{}
 }
 
-/*
-AddBuildScriptBadRequest describes a response with status code 400, with default header values.
+/* AddBuildScriptBadRequest describes a response with status code 400, with default header values.
 
 If the build script is invalid
 */
@@ -120,8 +118,7 @@ func NewAddBuildScriptDefault(code int) *AddBuildScriptDefault {
 	}
 }
 
-/*
-AddBuildScriptDefault describes a response with status code -1, with default header values.
+/* AddBuildScriptDefault describes a response with status code -1, with default header values.
 
 If there is an error processing the request
 */

@@ -57,8 +57,7 @@ func NewDeleteOrganizationAutoInviteOK() *DeleteOrganizationAutoInviteOK {
 	return &DeleteOrganizationAutoInviteOK{}
 }
 
-/*
-DeleteOrganizationAutoInviteOK describes a response with status code 200, with default header values.
+/* DeleteOrganizationAutoInviteOK describes a response with status code 200, with default header values.
 
 Success
 */
@@ -88,8 +87,7 @@ func NewDeleteOrganizationAutoInviteForbidden() *DeleteOrganizationAutoInviteFor
 	return &DeleteOrganizationAutoInviteForbidden{}
 }
 
-/*
-DeleteOrganizationAutoInviteForbidden describes a response with status code 403, with default header values.
+/* DeleteOrganizationAutoInviteForbidden describes a response with status code 403, with default header values.
 
 Forbidden
 */
@@ -121,8 +119,7 @@ func NewDeleteOrganizationAutoInviteNotFound() *DeleteOrganizationAutoInviteNotF
 	return &DeleteOrganizationAutoInviteNotFound{}
 }
 
-/*
-DeleteOrganizationAutoInviteNotFound describes a response with status code 404, with default header values.
+/* DeleteOrganizationAutoInviteNotFound describes a response with status code 404, with default header values.
 
 Not Found
 */
@@ -154,8 +151,7 @@ func NewDeleteOrganizationAutoInviteInternalServerError() *DeleteOrganizationAut
 	return &DeleteOrganizationAutoInviteInternalServerError{}
 }
 
-/*
-DeleteOrganizationAutoInviteInternalServerError describes a response with status code 500, with default header values.
+/* DeleteOrganizationAutoInviteInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */

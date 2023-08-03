@@ -55,12 +55,10 @@ func NewAddIngredientAndVersionsParamsWithHTTPClient(client *http.Client) *AddIn
 	}
 }
 
-/*
-AddIngredientAndVersionsParams contains all the parameters to send to the API endpoint
+/* AddIngredientAndVersionsParams contains all the parameters to send to the API endpoint
+   for the add ingredient and versions operation.
 
-	for the add ingredient and versions operation.
-
-	Typically these are written to a http.Request.
+   Typically these are written to a http.Request.
 */
 type AddIngredientAndVersionsParams struct {
 

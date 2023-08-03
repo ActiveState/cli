@@ -57,8 +57,7 @@ func NewGetOrganizationLimitsOK() *GetOrganizationLimitsOK {
 	return &GetOrganizationLimitsOK{}
 }
 
-/*
-GetOrganizationLimitsOK describes a response with status code 200, with default header values.
+/* GetOrganizationLimitsOK describes a response with status code 200, with default header values.
 
 Success
 */
@@ -90,8 +89,7 @@ func NewGetOrganizationLimitsForbidden() *GetOrganizationLimitsForbidden {
 	return &GetOrganizationLimitsForbidden{}
 }
 
-/*
-GetOrganizationLimitsForbidden describes a response with status code 403, with default header values.
+/* GetOrganizationLimitsForbidden describes a response with status code 403, with default header values.
 
 Forbidden
 */
@@ -123,8 +121,7 @@ func NewGetOrganizationLimitsNotFound() *GetOrganizationLimitsNotFound {
 	return &GetOrganizationLimitsNotFound{}
 }
 
-/*
-GetOrganizationLimitsNotFound describes a response with status code 404, with default header values.
+/* GetOrganizationLimitsNotFound describes a response with status code 404, with default header values.
 
 Not Found
 */
@@ -156,8 +153,7 @@ func NewGetOrganizationLimitsInternalServerError() *GetOrganizationLimitsInterna
 	return &GetOrganizationLimitsInternalServerError{}
 }
 
-/*
-GetOrganizationLimitsInternalServerError describes a response with status code 500, with default header values.
+/* GetOrganizationLimitsInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */

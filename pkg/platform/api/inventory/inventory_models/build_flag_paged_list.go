@@ -17,7 +17,7 @@ import (
 
 // BuildFlagPagedList Build Flag Paged List
 //
-// # A paginated list of build flag
+// A paginated list of build flag
 //
 // swagger:model buildFlagPagedList
 type BuildFlagPagedList struct {

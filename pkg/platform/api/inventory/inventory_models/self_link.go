@@ -16,7 +16,7 @@ import (
 
 // SelfLink Self Link
 //
-// # A self link
+// A self link
 //
 // swagger:model selfLink
 type SelfLink struct {

@@ -52,8 +52,7 @@ func NewSearchIngredientsOK() *SearchIngredientsOK {
 	return &SearchIngredientsOK{}
 }
 
-/*
-SearchIngredientsOK describes a response with status code 200, with default header values.
+/* SearchIngredientsOK describes a response with status code 200, with default header values.
 
 A paginated list of search results
 */
@@ -85,8 +84,7 @@ func NewSearchIngredientsBadRequest() *SearchIngredientsBadRequest {
 	return &SearchIngredientsBadRequest{}
 }
 
-/*
-SearchIngredientsBadRequest describes a response with status code 400, with default header values.
+/* SearchIngredientsBadRequest describes a response with status code 400, with default header values.
 
 The search parameters are invalid
 */
@@ -120,8 +118,7 @@ func NewSearchIngredientsDefault(code int) *SearchIngredientsDefault {
 	}
 }
 
-/*
-SearchIngredientsDefault describes a response with status code -1, with default header values.
+/* SearchIngredientsDefault describes a response with status code -1, with default header values.
 
 generic error response
 */

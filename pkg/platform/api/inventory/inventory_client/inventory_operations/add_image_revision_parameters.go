@@ -54,12 +54,10 @@ func NewAddImageRevisionParamsWithHTTPClient(client *http.Client) *AddImageRevis
 	}
 }
 
-/*
-AddImageRevisionParams contains all the parameters to send to the API endpoint
+/* AddImageRevisionParams contains all the parameters to send to the API endpoint
+   for the add image revision operation.
 
-	for the add image revision operation.
-
-	Typically these are written to a http.Request.
+   Typically these are written to a http.Request.
 */
 type AddImageRevisionParams struct {
 

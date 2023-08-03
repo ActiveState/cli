@@ -52,8 +52,7 @@ func NewAddOperatingSystemLibcOK() *AddOperatingSystemLibcOK {
 	return &AddOperatingSystemLibcOK{}
 }
 
-/*
-AddOperatingSystemLibcOK describes a response with status code 200, with default header values.
+/* AddOperatingSystemLibcOK describes a response with status code 200, with default header values.
 
 The libc added to the operating system
 */
@@ -85,8 +84,7 @@ func NewAddOperatingSystemLibcBadRequest() *AddOperatingSystemLibcBadRequest {
 	return &AddOperatingSystemLibcBadRequest{}
 }
 
-/*
-AddOperatingSystemLibcBadRequest describes a response with status code 400, with default header values.
+/* AddOperatingSystemLibcBadRequest describes a response with status code 400, with default header values.
 
 If the libc ID doesn't exist
 */
@@ -120,8 +118,7 @@ func NewAddOperatingSystemLibcDefault(code int) *AddOperatingSystemLibcDefault {
 	}
 }
 
-/*
-AddOperatingSystemLibcDefault describes a response with status code -1, with default header values.
+/* AddOperatingSystemLibcDefault describes a response with status code -1, with default header values.
 
 generic error response
 */

@@ -159,6 +159,6 @@ mutation ($organization: String!, $project: String!, $parentCommit: String!, $br
 `
 }
 
-func (b *buildPlanByPushCommit) Vars() map[string]interface{} {
-	return b.vars
+func (b *buildPlanByPushCommit) Vars() (map[string]interface{}, error) {
+	return b.vars, nil
 }

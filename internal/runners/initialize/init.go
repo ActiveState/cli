@@ -249,7 +249,7 @@ func verifyLangAndVersion(lang language.Language, version string) error {
 		return nil // nothing to verify
 	}
 
-	pkgs, err := model.SearchIngredientsStrict(model.NewNamespaceLanguage(), lang.Requirement(), false, true)
+	pkgs, err := model.SearchIngredientsStrict(model.NewNamespaceLanguage().String(), lang.Requirement(), false, true, nil)
 	if err != nil {
 		return locale.WrapError(err, "err_init_verify_language", "Inventory search failed unexpectedly")
 	}

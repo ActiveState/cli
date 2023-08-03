@@ -52,8 +52,7 @@ func NewUpdateAuthorOK() *UpdateAuthorOK {
 	return &UpdateAuthorOK{}
 }
 
-/*
-UpdateAuthorOK describes a response with status code 200, with default header values.
+/* UpdateAuthorOK describes a response with status code 200, with default header values.
 
 Author updated
 */
@@ -85,8 +84,7 @@ func NewUpdateAuthorBadRequest() *UpdateAuthorBadRequest {
 	return &UpdateAuthorBadRequest{}
 }
 
-/*
-UpdateAuthorBadRequest describes a response with status code 400, with default header values.
+/* UpdateAuthorBadRequest describes a response with status code 400, with default header values.
 
 If the author is invalid
 */
@@ -120,8 +118,7 @@ func NewUpdateAuthorDefault(code int) *UpdateAuthorDefault {
 	}
 }
 
-/*
-UpdateAuthorDefault describes a response with status code -1, with default header values.
+/* UpdateAuthorDefault describes a response with status code -1, with default header values.
 
 If there is an error processing the author
 */

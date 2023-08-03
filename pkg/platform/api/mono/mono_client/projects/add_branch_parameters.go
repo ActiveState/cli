@@ -52,12 +52,10 @@ func NewAddBranchParamsWithHTTPClient(client *http.Client) *AddBranchParams {
 	}
 }
 
-/*
-AddBranchParams contains all the parameters to send to the API endpoint
+/* AddBranchParams contains all the parameters to send to the API endpoint
+   for the add branch operation.
 
-	for the add branch operation.
-
-	Typically these are written to a http.Request.
+   Typically these are written to a http.Request.
 */
 type AddBranchParams struct {
 

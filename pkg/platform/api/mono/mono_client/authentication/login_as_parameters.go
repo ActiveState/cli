@@ -52,12 +52,10 @@ func NewLoginAsParamsWithHTTPClient(client *http.Client) *LoginAsParams {
 	}
 }
 
-/*
-LoginAsParams contains all the parameters to send to the API endpoint
+/* LoginAsParams contains all the parameters to send to the API endpoint
+   for the login as operation.
 
-	for the login as operation.
-
-	Typically these are written to a http.Request.
+   Typically these are written to a http.Request.
 */
 type LoginAsParams struct {
 

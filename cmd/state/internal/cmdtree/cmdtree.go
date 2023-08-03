@@ -204,6 +204,7 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 		refreshCmd,
 		newSwitchCommand(prime),
 		newTestCommand(prime),
+		newPublish(prime),
 	)
 
 	return &CmdTree{
@@ -228,6 +229,7 @@ var (
 	VCSGroup              = captain.NewCommandGroup(locale.Tl("group_vcs", "Version Control"), 5)
 	AutomationGroup       = captain.NewCommandGroup(locale.Tl("group_automation", "Automation"), 4)
 	UtilsGroup            = captain.NewCommandGroup(locale.Tl("group_utils", "Utilities"), 3)
+	AuthorGroup           = captain.NewCommandGroup(locale.Tl("group_author", "Author"), 6)
 )
 
 func newGlobalOptions() *globalOptions {

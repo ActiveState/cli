@@ -53,12 +53,10 @@ func NewListOrganizationsParamsWithHTTPClient(client *http.Client) *ListOrganiza
 	}
 }
 
-/*
-ListOrganizationsParams contains all the parameters to send to the API endpoint
+/* ListOrganizationsParams contains all the parameters to send to the API endpoint
+   for the list organizations operation.
 
-	for the list organizations operation.
-
-	Typically these are written to a http.Request.
+   Typically these are written to a http.Request.
 */
 type ListOrganizationsParams struct {
 

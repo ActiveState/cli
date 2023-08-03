@@ -22,9 +22,9 @@ func (u *UpdateRequest) Query() string {
 	}`
 }
 
-func (u *UpdateRequest) Vars() map[string]interface{} {
+func (u *UpdateRequest) Vars() (map[string]interface{}, error) {
 	return map[string]interface{}{
 		"c": u.channel,
 		"v": u.version,
-	}
+	}, nil
 }

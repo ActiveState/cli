@@ -31,7 +31,7 @@ func fakeContents(before, contents, after string) string {
 }
 
 func fakeFileWithContents(before, contents, after string) string {
-	f := fileutils.TempFileUnsafe()
+	f := fileutils.TempFileUnsafe("", "")
 	defer f.Close()
 	f.WriteString(fakeContents(before, contents, after))
 	return f.Name()
@@ -46,7 +46,7 @@ func TestWriteRcFile(t *testing.T) {
 	tests := []struct {
 		name         string
 		args         args
-		want error
+		want         error
 		wantContents string
 	}{
 		{

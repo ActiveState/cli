@@ -158,7 +158,7 @@ func (suite *PushIntegrationTestSuite) TestPush_NoPermission_NewProject() {
 	suite.OnlyRunForTags(tagsuite.Push)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
-	username := ts.CreateNewUser()
+	user := ts.CreateNewUser()
 	pname := strutils.UUID()
 
 	cp := ts.SpawnWithOpts(e2e.WithArgs("activate", suite.baseProject, "--path", ts.Dirs.Work))
@@ -200,7 +200,7 @@ func (suite *PushIntegrationTestSuite) TestPush_NoPermission_NewProject() {
 
 	pjfile, err = projectfile.Parse(pjfilepath)
 	suite.Require().NoError(err)
-	suite.Require().Contains(pjfile.Project, username)
+	suite.Require().Contains(pjfile.Project, user.Username)
 	suite.Require().Contains(pjfile.Project, pname.String())
 }
 

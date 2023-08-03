@@ -46,8 +46,7 @@ func NewGetBuildScriptOK() *GetBuildScriptOK {
 	return &GetBuildScriptOK{}
 }
 
-/*
-GetBuildScriptOK describes a response with status code 200, with default header values.
+/* GetBuildScriptOK describes a response with status code 200, with default header values.
 
 The retrieved build script
 */
@@ -81,8 +80,7 @@ func NewGetBuildScriptDefault(code int) *GetBuildScriptDefault {
 	}
 }
 
-/*
-GetBuildScriptDefault describes a response with status code -1, with default header values.
+/* GetBuildScriptDefault describes a response with status code -1, with default header values.
 
 generic error response
 */

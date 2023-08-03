@@ -15,7 +15,7 @@ import (
 
 // ImageCore Image Core
 //
-// # The properties of an image needed to create a new one
+// The properties of an image needed to create a new one
 //
 // swagger:model imageCore
 type ImageCore struct {

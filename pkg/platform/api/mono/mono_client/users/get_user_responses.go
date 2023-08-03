@@ -51,8 +51,7 @@ func NewGetUserOK() *GetUserOK {
 	return &GetUserOK{}
 }
 
-/*
-GetUserOK describes a response with status code 200, with default header values.
+/* GetUserOK describes a response with status code 200, with default header values.
 
 User Record
 */
@@ -84,8 +83,7 @@ func NewGetUserNotFound() *GetUserNotFound {
 	return &GetUserNotFound{}
 }
 
-/*
-GetUserNotFound describes a response with status code 404, with default header values.
+/* GetUserNotFound describes a response with status code 404, with default header values.
 
 Not Found
 */
@@ -117,8 +115,7 @@ func NewGetUserInternalServerError() *GetUserInternalServerError {
 	return &GetUserInternalServerError{}
 }
 
-/*
-GetUserInternalServerError describes a response with status code 500, with default header values.
+/* GetUserInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */

@@ -57,8 +57,7 @@ func NewGetCommitHistoryOK() *GetCommitHistoryOK {
 	return &GetCommitHistoryOK{}
 }
 
-/*
-GetCommitHistoryOK describes a response with status code 200, with default header values.
+/* GetCommitHistoryOK describes a response with status code 200, with default header values.
 
 Get commit history starting from the given commit
 */
@@ -90,8 +89,7 @@ func NewGetCommitHistoryForbidden() *GetCommitHistoryForbidden {
 	return &GetCommitHistoryForbidden{}
 }
 
-/*
-GetCommitHistoryForbidden describes a response with status code 403, with default header values.
+/* GetCommitHistoryForbidden describes a response with status code 403, with default header values.
 
 Forbidden
 */
@@ -123,8 +121,7 @@ func NewGetCommitHistoryNotFound() *GetCommitHistoryNotFound {
 	return &GetCommitHistoryNotFound{}
 }
 
-/*
-GetCommitHistoryNotFound describes a response with status code 404, with default header values.
+/* GetCommitHistoryNotFound describes a response with status code 404, with default header values.
 
 commit was not found
 */
@@ -156,8 +153,7 @@ func NewGetCommitHistoryInternalServerError() *GetCommitHistoryInternalServerErr
 	return &GetCommitHistoryInternalServerError{}
 }
 
-/*
-GetCommitHistoryInternalServerError describes a response with status code 500, with default header values.
+/* GetCommitHistoryInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */

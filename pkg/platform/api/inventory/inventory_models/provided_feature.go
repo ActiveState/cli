@@ -15,7 +15,7 @@ import (
 
 // ProvidedFeature Provided Feature
 //
-// # A feature that is provided by a revisioned resource
+// A feature that is provided by a revisioned resource
 //
 // swagger:model providedFeature
 type ProvidedFeature struct {

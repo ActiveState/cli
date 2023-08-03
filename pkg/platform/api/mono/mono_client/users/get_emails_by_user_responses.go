@@ -51,8 +51,7 @@ func NewGetEmailsByUserOK() *GetEmailsByUserOK {
 	return &GetEmailsByUserOK{}
 }
 
-/*
-GetEmailsByUserOK describes a response with status code 200, with default header values.
+/* GetEmailsByUserOK describes a response with status code 200, with default header values.
 
 Email records
 */
@@ -82,8 +81,7 @@ func NewGetEmailsByUserForbidden() *GetEmailsByUserForbidden {
 	return &GetEmailsByUserForbidden{}
 }
 
-/*
-GetEmailsByUserForbidden describes a response with status code 403, with default header values.
+/* GetEmailsByUserForbidden describes a response with status code 403, with default header values.
 
 Forbidden
 */
@@ -115,8 +113,7 @@ func NewGetEmailsByUserInternalServerError() *GetEmailsByUserInternalServerError
 	return &GetEmailsByUserInternalServerError{}
 }
 
-/*
-GetEmailsByUserInternalServerError describes a response with status code 500, with default header values.
+/* GetEmailsByUserInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */

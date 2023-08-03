@@ -54,12 +54,10 @@ func NewEditOrganizationParamsWithHTTPClient(client *http.Client) *EditOrganizat
 	}
 }
 
-/*
-EditOrganizationParams contains all the parameters to send to the API endpoint
+/* EditOrganizationParams contains all the parameters to send to the API endpoint
+   for the edit organization operation.
 
-	for the edit organization operation.
-
-	Typically these are written to a http.Request.
+   Typically these are written to a http.Request.
 */
 type EditOrganizationParams struct {
 

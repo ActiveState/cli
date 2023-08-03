@@ -52,12 +52,10 @@ func NewGetOrganizationLimitsParamsWithHTTPClient(client *http.Client) *GetOrgan
 	}
 }
 
-/*
-GetOrganizationLimitsParams contains all the parameters to send to the API endpoint
+/* GetOrganizationLimitsParams contains all the parameters to send to the API endpoint
+   for the get organization limits operation.
 
-	for the get organization limits operation.
-
-	Typically these are written to a http.Request.
+   Typically these are written to a http.Request.
 */
 type GetOrganizationLimitsParams struct {
 
