@@ -92,6 +92,7 @@ func createInstallMarker(payloadDir, branch, version string) error {
 	if err != nil {
 		return fmt.Errorf(emsg, err)
 	}
+	b = append(b, '\n')
 
 	markerPath := filepath.Join(payloadDir, installation.InstallDirMarker)
 	if err := fileutils.WriteFile(markerPath, b); err != nil {
