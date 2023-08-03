@@ -97,24 +97,26 @@ scripts:
 
       TEST_VERSION="99.99.9999"
       TEST_CHANNEL=${1:-test-channel}
-      TEST_PREPARED_BIN_DIR=./build/payload/state-install/bin
+      TEST_PREPARED_DIR=./build/payload/state-install
+      TEST_PREPARED_BIN_DIR=${TEST_PREPARED_DIR}/bin
       TEST_FAKE_EXEC=./build/fakeversioncmd
       TEST_ARCHIVE_DIR=./build/test-update
       mkdir -p ${TEST_ARCHIVE_DIR}
 
-      copy_fakes () {
+      copy_test_payload () {
         cp -a ${TEST_FAKE_EXEC} ${TEST_PREPARED_BIN_DIR}/$constants.BUILD_TARGET
         cp -a ${TEST_FAKE_EXEC} ${TEST_PREPARED_BIN_DIR}/$constants.BUILD_DAEMON_TARGET
         cp -a ${TEST_FAKE_EXEC} ${TEST_PREPARED_BIN_DIR}/$constants.BUILD_EXEC_TARGET
+        cp -a ${BUILD_TARGET_DIR}/$constants.BUILD_INSTALLER_TARGET ${TEST_PREPARED_DIR}
       }
 
       go build -o ${TEST_FAKE_EXEC} ./internal/testhelpers/installation/fakeversioncmd
       go run scripts/ci/payload-generator/main.go -v ${TEST_VERSION}
-      copy_fakes
+      copy_test_payload
       go run scripts/ci/update-generator/main.go -v ${TEST_VERSION} -o ${TEST_ARCHIVE_DIR}
 
       echo "compile ${TEST_CHANNEL} update"
       go build -o ${TEST_FAKE_EXEC} -ldflags "-X main.channel=${TEST_CHANNEL}" ./internal/testhelpers/installation/fakeversioncmd
       go run scripts/ci/payload-generator/main.go -b ${TEST_CHANNEL} -v ${TEST_VERSION}
-      copy_fakes
+      copy_test_payload
       go run scripts/ci/update-generator/main.go -b ${TEST_CHANNEL} -v ${TEST_VERSION} -o ${TEST_ARCHIVE_DIR}
