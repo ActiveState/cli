@@ -39,22 +39,28 @@ func main() {
 
 func run() error {
 	var (
-		inDir   = defaultInputDir
-		outDir  = defaultOutputDir
-		branch  = constants.BranchName
-		version = constants.Version
+		inDir    = defaultInputDir
+		outDir   = defaultOutputDir
+		branch   = constants.BranchName
+		version  = constants.Version
+		fakeExec string
 	)
 
 	flag.StringVar(&inDir, "i", inDir, "Override directory to gather payload components from.")
 	flag.StringVar(&outDir, "o", outDir, "Override directory to output payload to.")
 	flag.StringVar(&branch, "b", branch, "Override target branch. (Branch to receive update.)")
 	flag.StringVar(&version, "v", version, "Override version number for this update.")
+	flag.StringVar(&fakeExec, "fake", fakeExec, "Set file to use as fake executables")
 	flag.Parse()
 
-	return generatePayload(inDir, outDir, branch, version)
+	return generatePayload(inDir, outDir, branch, version, fakeExec)
 }
 
-func generatePayload(inDir, outDir, branch, version string) error {
+func execPathInDir(exec, dir string) string {
+	return filepath.Join(dir, exec+exeutils.Extension)
+}
+
+func generatePayload(inDir, outDir, branch, version, fakeExec string) error {
 	emsg := "generate payload: %w"
 
 	binDir := filepath.Join(outDir, "bin")
@@ -68,12 +74,13 @@ func generatePayload(inDir, outDir, branch, version string) error {
 		return fmt.Errorf(emsg, err)
 	}
 
-	files := map[string]string{
-		filepath.Join(inDir, constants.StateInstallerCmd+exeutils.Extension): outDir,
-		filepath.Join(inDir, constants.StateCmd+exeutils.Extension):          binDir,
-		filepath.Join(inDir, constants.StateSvcCmd+exeutils.Extension):       binDir,
-		filepath.Join(inDir, constants.StateExecutorCmd+exeutils.Extension):  binDir,
+	files := map[exec]string{
+		{execPathInDir(constants.StateInstallerCmd, inDir), ""}:      outDir,
+		{execPathInDir(constants.StateCmd, inDir), fakeExec}:         binDir,
+		{execPathInDir(constants.StateSvcCmd, inDir), fakeExec}:      binDir,
+		{execPathInDir(constants.StateExecutorCmd, inDir), fakeExec}: binDir,
 	}
+
 	if err := copyFiles(files); err != nil {
 		return fmt.Errorf(emsg, err)
 	}
@@ -92,6 +99,7 @@ func createInstallMarker(payloadDir, branch, version string) error {
 	if err != nil {
 		return fmt.Errorf(emsg, err)
 	}
+	b = append(b, '\n')
 
 	markerPath := filepath.Join(payloadDir, installation.InstallDirMarker)
 	if err := fileutils.WriteFile(markerPath, b); err != nil {
@@ -102,15 +110,39 @@ func createInstallMarker(payloadDir, branch, version string) error {
 }
 
 // copyFiles will copy the given files with logging.
-func copyFiles(files map[string]string) error {
-	for src, target := range files {
-		log("Copying %s to %s", src, target)
-		dest := filepath.Join(target, filepath.Base(src))
+func copyFiles(files map[exec]string) error {
+	for exe, target := range files {
+		dest := exe.destination(target)
+		src := exe.source()
 
+		log("Creating %s %s", dest, exe.logMsg())
 		if err := fileutils.CopyFile(src, dest); err != nil {
-			return fmt.Errorf("copy files (%s to %s): %w", src, target, err)
+			return fmt.Errorf("copy files (%s to %s): %w", src, dest, err)
 		}
 	}
 
 	return nil
+}
+
+type exec struct {
+	origSrc string
+	fakeSrc string
+}
+
+func (e exec) source() string {
+	if e.fakeSrc != "" {
+		return e.fakeSrc
+	}
+	return e.origSrc
+}
+
+func (e exec) destination(dir string) string {
+	return filepath.Join(dir, filepath.Base(e.origSrc))
+}
+
+func (e exec) logMsg() string {
+	if e.fakeSrc != "" {
+		return fmt.Sprintf("using (fake): %s", e.fakeSrc)
+	}
+	return fmt.Sprintf("using: %s", e.origSrc)
 }
