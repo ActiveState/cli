@@ -25,6 +25,7 @@ type Params struct {
 	PreferredPath string
 	Branch        string
 	RuntimePath   string
+	NoClone       bool
 }
 
 type primeable interface {
@@ -66,7 +67,7 @@ func (u *Checkout) Run(params *Params) error {
 
 	logging.Debug("Checking out %s to %s", params.Namespace.String(), params.PreferredPath)
 	var err error
-	projectDir, err := u.checkout.Run(params.Namespace, params.Branch, params.RuntimePath, params.PreferredPath)
+	projectDir, err := u.checkout.Run(params.Namespace, params.Branch, params.RuntimePath, params.PreferredPath, params.NoClone)
 	if err != nil {
 		return locale.WrapError(err, "err_checkout_project", "", params.Namespace.String())
 	}

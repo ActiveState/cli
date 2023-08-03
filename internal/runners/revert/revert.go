@@ -76,7 +76,10 @@ func (r *Revert) Run(params *Params) error {
 	if !params.To {
 		priorCommits, err := model.CommitHistoryPaged(commitID, 0, 2)
 		if err != nil {
-			return locale.WrapError(err, "err_revert_get_commit", "Could not fetch commit details for commit with ID: {{.V0}}", params.CommitID)
+			return errs.AddTips(
+				locale.WrapError(err, "err_revert_get_commit", "Could not fetch commit details for commit with ID: {{.V0}}", params.CommitID),
+				locale.T("tip_private_project_auth"),
+			)
 		}
 		if priorCommits.TotalCommits < 2 {
 			return locale.NewInputError("err_revert_no_history", "Cannot revert commit {{.V0}}: no prior history", params.CommitID)

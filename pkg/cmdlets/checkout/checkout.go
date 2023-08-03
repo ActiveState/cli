@@ -46,7 +46,7 @@ func New(repo git.Repository, prime primeable) *Checkout {
 	return &Checkout{repo, prime.Output(), prime.Config(), prime.Analytics(), "", prime.Auth()}
 }
 
-func (r *Checkout) Run(ns *project.Namespaced, branchName, cachePath, targetPath string) (string, error) {
+func (r *Checkout) Run(ns *project.Namespaced, branchName, cachePath, targetPath string, noClone bool) (string, error) {
 	path, err := r.pathToUse(ns, targetPath)
 	if err != nil {
 		return "", errs.Wrap(err, "Could not get path to use")
@@ -91,7 +91,7 @@ func (r *Checkout) Run(ns *project.Namespaced, branchName, cachePath, targetPath
 	}
 
 	// Clone the related repo, if it is defined
-	if pj.RepoURL != nil && *pj.RepoURL != "" {
+	if !noClone && pj.RepoURL != nil && *pj.RepoURL != "" {
 		err := r.repo.CloneProject(ns.Owner, ns.Project, path, r.Outputer, r.analytics)
 		if err != nil {
 			return "", locale.WrapError(err, "err_clone_project", "Could not clone associated git repository")
