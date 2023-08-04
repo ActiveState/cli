@@ -13,7 +13,7 @@ $script:BASEFILEURL = "https://state-tool.s3.amazonaws.com/update/state"
 # The name of the remove archive to download
 $script:ARCHIVENAME = "state-installer.zip"
 # Name of the installer executable to ultimately use
-$script:INSTALLERNAME = "state-install\\state-installer.exe"
+$script:INSTALLERNAME = "payload\\state-installer.exe"
 # Channel the installer will target
 $script:CHANNEL = "release"
 # The version to install (autodetermined to be the latest if left unspecified)

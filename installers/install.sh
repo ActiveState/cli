@@ -6,7 +6,7 @@ BASE_INFO_URL="https://platform.activestate.com/sv/state-update/api/v1/info"
 # URL to fetch installer archive from
 BASE_FILE_URL="https://state-tool.s3.amazonaws.com/update/state"
 # Path to the installer executable in the archive.
-INSTALLERNAME="state-install/state-installer"
+INSTALLERNAME="payload/state-installer"
 # Channel the installer will target
 CHANNEL="release"
 # The version to install (autodetermined to be the latest if left unspecified)
