@@ -9,7 +9,7 @@ import (
 )
 
 func Send(title, message, actionName, actionLink string) error {
-	iconBytes, err := assets.ReadFileBytes("icon.png")
+	iconBytes, err := assets.ReadFile("icon.png")
 	if err != nil {
 		return errs.Wrap(err, "Could not read asset")
 	}

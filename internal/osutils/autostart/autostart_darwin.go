@@ -33,7 +33,7 @@ func enable(exec string, opts Options) error {
 		return errs.Wrap(err, "Could not get launch file")
 	}
 
-	asset, err := assets.ReadFileBytes(autostartFileSource)
+	asset, err := assets.ReadFile(autostartFileSource)
 	if err != nil {
 		return errs.Wrap(err, "Could not read asset")
 	}

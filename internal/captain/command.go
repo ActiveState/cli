@@ -888,7 +888,7 @@ func (cmd *Command) Usage() error {
 		"childCommands": childCommands,
 	})
 
-	contents, err := assets.ReadFileBytes("usage.tpl")
+	contents, err := assets.ReadFile("usage.tpl")
 	if err != nil {
 		return errs.Wrap(err, "Could not read asset")
 	}

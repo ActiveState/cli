@@ -179,7 +179,7 @@ func (d *Deploy) install(rtTarget setup.Targeter) (rerr error) {
 	_, _ = rti.Env(false, false)
 
 	if rt.GOOS == "windows" {
-		contents, err := assets.ReadFileBytes("scripts/setenv.bat")
+		contents, err := assets.ReadFile("scripts/setenv.bat")
 		if err != nil {
 			return err
 		}

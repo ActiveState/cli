@@ -856,6 +856,8 @@ err_project_no_languages:
   other: Your project does not have any languages configured
 err_add_commit:
   other: "Error occurred while trying to create a commit: {{.V0}}"
+err_add_commit_initial:
+  other: "Error occurred while trying to create initial commit: {{.V0}}"
 err_update_branch:
   other: "Error occurred while trying to update a branch: {{.V0}}"
 err_get_commit_history:
@@ -1186,6 +1188,10 @@ package_added:
   other: "Package added: [NOTICE]{{.V0}}[/RESET]"
 package_version_added:
   other: "Package added: [NOTICE]{{.V0}}@{{.V1}}[/RESET]"
+raw_added:
+  other: "Dependency added: [NOTICE]{{.V0}}[/RESET]"
+raw_version_added:
+  other: "Dependency added: [NOTICE]{{.V0}}@{{.V1}}[/RESET]"
 bundle_added:
   other: "[SUCCESS]✔ {{.V0}} Bundle successfully installed![/RESET]"
 bundle_version_added:
