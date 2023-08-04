@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -235,7 +236,7 @@ type StageCommitParams struct {
 	Project              string
 	ParentCommit         string
 	RequirementName      string
-	RequirementVersion   string
+	RequirementVersion   []bpModel.VersionRequirement
 	RequirementNamespace Namespace
 	Operation            bpModel.Operation
 	TimeStamp            strfmt.DateTime
@@ -256,15 +257,9 @@ func (bp *BuildPlanner) StageCommit(params StageCommitParams) (strfmt.UUID, erro
 		}
 	} else {
 		requirement := bpModel.Requirement{
-			Namespace: params.RequirementNamespace.String(),
-			Name:      params.RequirementName,
-		}
-
-		if params.RequirementVersion != "" {
-			requirement.VersionRequirement = []bpModel.VersionRequirement{{
-				bpModel.VersionRequirementComparatorKey: bpModel.ComparatorEQ,
-				bpModel.VersionRequirementVersionKey:    params.RequirementVersion,
-			}}
+			Namespace:          params.RequirementNamespace.String(),
+			Name:               params.RequirementName,
+			VersionRequirement: params.RequirementVersion,
 		}
 
 		err = expression.UpdateRequirement(params.Operation, requirement)
@@ -377,4 +372,45 @@ func processBuildPlannerError(bpErr error, fallbackMessage string) error {
 		}
 	}
 	return errs.Wrap(bpErr, fallbackMessage)
+}
+
+func isWildcardVersion(version string) bool {
+	return strings.Index(version, ".x") >= 0 || strings.Index(version, ".X") >= 0
+}
+
+func VersionStringToRequirements(version string) ([]bpModel.VersionRequirement, error) {
+	if !isWildcardVersion(version) {
+		return []bpModel.VersionRequirement{{
+			bpModel.VersionRequirementComparatorKey: "eq",
+			bpModel.VersionRequirementVersionKey:    version,
+		}}, nil // exact version
+	}
+
+	// Construct version constraints to be >= given version, and < given version's last part + 1.
+	// For example, given a version number of 3.10.x, constraints should be >= 3.10, < 3.11.
+	// Given 2.x, constraints should be >= 2, < 3.
+	requirements := []bpModel.VersionRequirement{}
+	parts := strings.Split(version, ".")
+	for i, part := range parts {
+		if part != "x" && part != "X" {
+			continue
+		}
+		if i == 0 {
+			return nil, locale.NewInputError("err_version_wildcard_start", "A version number cannot start with a wildcard")
+		}
+		requirements = append(requirements, bpModel.VersionRequirement{
+			bpModel.VersionRequirementComparatorKey: "gte",
+			bpModel.VersionRequirementVersionKey:    strings.Join(parts[:i], "."),
+		})
+		previousPart, err := strconv.Atoi(parts[i-1])
+		if err != nil {
+			return nil, locale.WrapInputError(err, "err_version_number_expected", "Version parts are expected to be numeric")
+		}
+		parts[i-1] = strconv.Itoa(previousPart + 1)
+		requirements = append(requirements, bpModel.VersionRequirement{
+			bpModel.VersionRequirementComparatorKey: "lt",
+			bpModel.VersionRequirementVersionKey:    strings.Join(parts[:i], "."),
+		})
+	}
+	return requirements, nil
 }

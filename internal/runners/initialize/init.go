@@ -139,9 +139,9 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 		}
 	}
 
-	err = verifyLangAndVersion(lang, languageVersion)
+	version, err := deriveVersion(getKnownVersionsFromPlatform, lang, languageVersion)
 	if err != nil {
-		if inferred {
+		if inferred || !locale.IsInputError(err) {
 			return locale.WrapError(err, "err_init_lang", "", languageName, languageVersion)
 		} else {
 			return locale.WrapInputError(err, "err_init_lang", "", languageName, languageVersion)
@@ -186,7 +186,6 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 		return err
 	}
 
-	version := deriveVersion(lang, languageVersion)
 	commitID, err := model.CommitInitial(model.HostPlatform, lang.Requirement(), version)
 	if err != nil {
 		return locale.WrapError(err, "err_init_commit", "Could not create initial commit")
@@ -239,60 +238,82 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 	return nil
 }
 
-func verifyLangAndVersion(lang language.Language, version string) error {
-	err := lang.Validate()
-	if err != nil {
-		return errs.Wrap(err, "Failed to validate language")
-	}
+type knownVersionsFunc func(language.Language) ([]string, error)
 
-	if version == "" {
-		return nil // nothing to verify
-	}
-
+func getKnownVersionsFromPlatform(lang language.Language) ([]string, error) {
 	pkgs, err := model.SearchIngredientsStrict(model.NewNamespaceLanguage(), lang.Requirement(), false, true)
 	if err != nil {
-		return locale.WrapError(err, "err_init_verify_language", "Inventory search failed unexpectedly")
+		return nil, locale.WrapError(err, "err_init_verify_language", "Inventory search failed unexpectedly")
 	}
 
 	if len(pkgs) == 0 {
-		return locale.NewInputError("err_init_language_not_found", "The selected language cannot be found")
+		return nil, locale.NewInputError("err_init_language_not_found", "The selected language cannot be found")
 	}
 
-	for _, pkg := range pkgs {
-		if strings.HasPrefix(pkg.Version, version) {
-			return nil
-		}
+	knownVersions := make([]string, len(pkgs))
+	for i, pkg := range pkgs {
+		knownVersions[i] = pkg.Version
 	}
-
-	return errs.AddTips(
-		locale.NewInputError(
-			"err_init_language_version_not_found",
-			"The selected version of the language cannot be found",
-		),
-		locale.Tl(
-			"version_not_found_check_format",
-			"Please ensure that the version format is valid.",
-		),
-	)
+	return knownVersions, nil
 }
 
-func deriveVersion(lang language.Language, version string) string {
-	if version != "" {
-		return version
-	}
-
-	langs, err := model.FetchSupportedLanguages(model.HostPlatform)
+func deriveVersion(getKnownVersions knownVersionsFunc, lang language.Language, version string) (string, error) {
+	err := lang.Validate()
 	if err != nil {
-		multilog.Error("Failed to fetch supported languages (using hardcoded default version): %s", errs.JoinMessage(err))
-		return lang.RecommendedVersion()
+		return "", errs.Wrap(err, "Failed to validate language")
 	}
 
-	for _, l := range langs {
-		if lang.String() == l.Name || (lang == language.Python3 && l.Name == language.Python3.Requirement()) {
-			return l.DefaultVersion
+	if version == "" {
+		// Return default language.
+		langs, err := model.FetchSupportedLanguages(model.HostPlatform)
+		if err != nil {
+			multilog.Error("Failed to fetch supported languages (using hardcoded default version): %s", errs.JoinMessage(err))
+			return lang.RecommendedVersion(), nil
+		}
+
+		for _, l := range langs {
+			if lang.String() == l.Name || (lang == language.Python3 && l.Name == language.Python3.Requirement()) {
+				return l.DefaultVersion, nil
+			}
+		}
+
+		multilog.Error("Could not find requested language in fetched languages (using hardcoded default version): %s", lang)
+		return lang.RecommendedVersion(), nil
+	}
+
+	// Fetch known list of languages and verify the given version matches it, either exactly or partially.
+	knownVersions, err := getKnownVersions(lang)
+	if err != nil {
+		return "", errs.Wrap(err, "Unable to get known versions for language %s", lang.Requirement())
+	}
+
+	prefix := strings.Replace(strings.Replace(version, ".x", "", 1), ".X", "", 1) // strip any wildcard
+	validVersionPrefix := false
+	for _, knownVersion := range knownVersions {
+		if knownVersion == version {
+			return knownVersion, nil // e.g. python@3.10.10
+		} else if strings.HasPrefix(knownVersion, prefix) {
+			validVersionPrefix = true // e.g. python@3.10
+			break
 		}
 	}
 
-	multilog.Error("Could not find requested language in fetched languages (using hardcoded default version): %s", lang)
-	return lang.RecommendedVersion()
+	if !validVersionPrefix {
+		return "", errs.AddTips(
+			locale.NewInputError(
+				"err_init_language_version_not_found",
+				"The selected version of the language cannot be found",
+			),
+			locale.Tl(
+				"version_not_found_check_format",
+				"Please ensure that the version format is valid.",
+			),
+		)
+	}
+
+	if prefix == version {
+		return version + ".x", nil // not an exact match, e.g. python@3.10
+	}
+
+	return version, nil
 }

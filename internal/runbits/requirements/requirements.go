@@ -225,12 +225,17 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 		return errs.Wrap(err, "Could not resolve requirement name and version")
 	}
 
+	requirements, err := model.VersionStringToRequirements(version)
+	if err != nil {
+		return errs.Wrap(err, "Could not process version string into requirements")
+	}
+
 	params := model.StageCommitParams{
 		Owner:                pj.Owner(),
 		Project:              pj.Name(),
 		ParentCommit:         string(parentCommitID),
 		RequirementName:      name,
-		RequirementVersion:   version,
+		RequirementVersion:   requirements,
 		RequirementNamespace: ns,
 		Operation:            operation,
 		TimeStamp:            *latest,
