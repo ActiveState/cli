@@ -44,6 +44,7 @@ func autoUpdate(svc *model.SvcModel, args []string, cfg *config.Instance, an ana
 	if !shouldRunAutoUpdate(args, cfg, an) {
 		return false, nil
 	}
+	time.Sleep(time.Second * 6)
 
 	// Check for available update
 	upd, err := svc.CheckUpdate(context.Background())
@@ -54,6 +55,7 @@ func autoUpdate(svc *model.SvcModel, args []string, cfg *config.Instance, an ana
 		logging.Debug("No update found")
 		return false, nil
 	}
+
 	up := updater.NewAvailableUpdate(
 		upd.Version, upd.Channel, upd.Platform, upd.Path, upd.Sha256, "",
 	)
