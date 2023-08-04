@@ -139,7 +139,7 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 		}
 	}
 
-	version, err := deriveVersion(getKnownVersionsFromPlatform, lang, languageVersion)
+	version, err := deriveVersion(lang, languageVersion)
 	if err != nil {
 		if inferred || !locale.IsInputError(err) {
 			return locale.WrapError(err, "err_init_lang", "", languageName, languageVersion)
@@ -238,26 +238,7 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 	return nil
 }
 
-type knownVersionsFunc func(language.Language) ([]string, error)
-
-func getKnownVersionsFromPlatform(lang language.Language) ([]string, error) {
-	pkgs, err := model.SearchIngredientsStrict(model.NewNamespaceLanguage(), lang.Requirement(), false, true)
-	if err != nil {
-		return nil, locale.WrapError(err, "err_init_verify_language", "Inventory search failed unexpectedly")
-	}
-
-	if len(pkgs) == 0 {
-		return nil, locale.NewInputError("err_init_language_not_found", "The selected language cannot be found")
-	}
-
-	knownVersions := make([]string, len(pkgs))
-	for i, pkg := range pkgs {
-		knownVersions[i] = pkg.Version
-	}
-	return knownVersions, nil
-}
-
-func deriveVersion(getKnownVersions knownVersionsFunc, lang language.Language, version string) (string, error) {
+func deriveVersion(lang language.Language, version string) (string, error) {
 	err := lang.Validate()
 	if err != nil {
 		return "", errs.Wrap(err, "Failed to validate language")
