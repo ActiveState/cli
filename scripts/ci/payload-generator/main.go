@@ -15,8 +15,9 @@ import (
 )
 
 var (
-	defaultInputDir  = filepath.Join(environment.GetRootPathUnsafe(), "build")
-	defaultOutputDir = filepath.Join(defaultInputDir, "payload", "state-install")
+	defaultInputDir     = filepath.Join(environment.GetRootPathUnsafe(), "build")
+	defaultOutputDir    = filepath.Join(defaultInputDir, "payload")
+	defaultOutputBinDir = filepath.Join(defaultOutputDir, "bin")
 
 	log = func(msg string, vals ...any) {
 		fmt.Fprintf(os.Stdout, msg, vals...)
@@ -41,6 +42,7 @@ func run() error {
 	var (
 		inDir   = defaultInputDir
 		outDir  = defaultOutputDir
+		binDir  = defaultOutputBinDir
 		branch  = constants.BranchName
 		version = constants.Version
 	)
@@ -49,13 +51,11 @@ func run() error {
 	flag.StringVar(&version, "v", version, "Override version number for this update.")
 	flag.Parse()
 
-	return generatePayload(inDir, outDir, branch, version)
+	return generatePayload(inDir, outDir, binDir, branch, version)
 }
 
-func generatePayload(inDir, outDir, branch, version string) error {
+func generatePayload(inDir, outDir, binDir, branch, version string) error {
 	emsg := "generate payload: %w"
-
-	binDir := filepath.Join(outDir, "bin")
 
 	if err := fileutils.MkdirUnlessExists(binDir); err != nil {
 		return fmt.Errorf(emsg, err)
@@ -79,7 +79,7 @@ func generatePayload(inDir, outDir, branch, version string) error {
 	return nil
 }
 
-func createInstallMarker(payloadDir, branch, version string) error {
+func createInstallMarker(dir, branch, version string) error {
 	emsg := "create install marker: %w"
 
 	markerContents := installation.InstallMarkerMeta{
@@ -92,7 +92,7 @@ func createInstallMarker(payloadDir, branch, version string) error {
 	}
 	b = append(b, '\n')
 
-	markerPath := filepath.Join(payloadDir, installation.InstallDirMarker)
+	markerPath := filepath.Join(dir, installation.InstallDirMarker)
 	if err := fileutils.WriteFile(markerPath, b); err != nil {
 		return fmt.Errorf(emsg, err)
 	}

@@ -25,7 +25,8 @@ import (
 
 var (
 	rootPath         = environment.GetRootPathUnsafe()
-	defaultInputDir  = filepath.Join(rootPath, "build", "payload", "state-install")
+	defaultBuildDir  = filepath.Join(rootPath, "build")
+	defaultInputDir  = filepath.Join(defaultBuildDir, "payload")
 	defaultOutputDir = filepath.Join(rootPath, "public")
 )
 
@@ -104,9 +105,8 @@ func createUpdate(outputPath, channel, version, platform, target string) error {
 	return nil
 }
 
-func createInstaller(outputPath, channel, platform string) error {
-	root := environment.GetRootPathUnsafe()
-	installer := filepath.Join(root, "build", "state-installer"+osutils.ExeExt)
+func createInstaller(buildPath, outputPath, channel, platform string) error {
+	installer := filepath.Join(buildPath, "state-installer"+osutils.ExeExt)
 	if !fileutils.FileExists(installer) {
 		return errs.New("state-installer does not exist in build dir")
 	}
@@ -129,9 +129,10 @@ func createInstaller(outputPath, channel, platform string) error {
 
 func run() error {
 	var (
-		platform = fetchPlatform()
+		binDir   = defaultBuildDir
 		inDir    = defaultInputDir
 		outDir   = defaultOutputDir
+		platform = fetchPlatform()
 		branch   = constants.BranchName
 		version  = constants.Version
 	)
@@ -153,7 +154,7 @@ func run() error {
 		return err
 	}
 
-	if err := createInstaller(outDir, branch, platform); err != nil {
+	if err := createInstaller(binDir, outDir, branch, platform); err != nil {
 		return err
 	}
 
