@@ -26,7 +26,7 @@ import (
 var (
 	rootPath         = environment.GetRootPathUnsafe()
 	defaultBuildDir  = filepath.Join(rootPath, "build")
-	defaultInputDir  = filepath.Join(defaultBuildDir, "payload")
+	defaultInputDir  = filepath.Join(defaultBuildDir, constants.ToplevelInstallArchiveDir)
 	defaultOutputDir = filepath.Join(rootPath, "public")
 )
 
