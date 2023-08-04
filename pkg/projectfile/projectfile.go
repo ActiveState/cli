@@ -992,7 +992,7 @@ func createCustom(params *CreateParams, lang language.Language) (*Project, error
 	content := params.Content
 	if content == "" && lang != language.Unset && lang != language.Unknown {
 		tplName := "activestate.yaml." + strings.TrimRight(lang.String(), "23") + ".tpl"
-		template, err := assets.ReadFileBytes(tplName)
+		template, err := assets.ReadFile(tplName)
 		if err != nil {
 			return nil, errs.Wrap(err, "Could not read asset")
 		}
@@ -1013,7 +1013,7 @@ func createCustom(params *CreateParams, lang language.Language) (*Project, error
 	}
 
 	tplName := "activestate.yaml.tpl"
-	tplContents, err := assets.ReadFileBytes(tplName)
+	tplContents, err := assets.ReadFile(tplName)
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not read asset")
 	}
@@ -1048,7 +1048,7 @@ func createHostFile(filePath, cachePath string) error {
 	}
 
 	tplName := "activestate.yaml.cache.tpl"
-	tplContents, err := assets.ReadFileBytes(tplName)
+	tplContents, err := assets.ReadFile(tplName)
 	if err != nil {
 		return errs.Wrap(err, "Could not read asset")
 	}

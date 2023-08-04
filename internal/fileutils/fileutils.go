@@ -3,6 +3,7 @@ package fileutils
 import (
 	"bytes"
 	"crypto/sha256"
+	"embed"
 	"encoding/hex"
 	"errors"
 	"fmt"
@@ -17,7 +18,6 @@ import (
 	"time"
 	"unicode"
 
-	"github.com/ActiveState/cli/internal/assets"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -265,20 +265,6 @@ func CopyFile(src, target string) error {
 	if err != nil {
 		return errs.Wrap(err, "out.Close failed")
 	}
-	return nil
-}
-
-func CopyAsset(assetName, dest string) error {
-	asset, err := assets.ReadFileBytes(assetName)
-	if err != nil {
-		return errs.Wrap(err, "Asset %s failed", assetName)
-	}
-
-	err = ioutil.WriteFile(dest, asset, 0644)
-	if err != nil {
-		return errs.Wrap(err, "ioutil.WriteFile %s failed", dest)
-	}
-
 	return nil
 }
 
@@ -703,6 +689,7 @@ func WriteTempFileToDir(dir, pattern string, data []byte, perm os.FileMode) (str
 
 type DirReader interface {
 	ReadDir(string) ([]os.DirEntry, error)
+	ReadFile(string) ([]byte, error)
 }
 
 func CopyFilesDirReader(reader DirReader, src, dst, placeholderFileName string) error {
@@ -736,9 +723,14 @@ func CopyFilesDirReader(reader DirReader, src, dst, placeholderFileName string) 
 				continue
 			}
 
-			err := CopyAsset(srcPath, destPath)
+			f, err := reader.ReadFile(srcPath)
 			if err != nil {
-				return errs.Wrap(err, "CopyFile %s:%s failed", srcPath, destPath)
+				return errs.Wrap(err, "Read file %s failed", srcPath)
+			}
+
+			err = os.WriteFile(destPath, f, 0644)
+			if err != nil {
+				return errs.Wrap(err, "Write file %s failed", destPath)
 			}
 		}
 	}
@@ -1183,4 +1175,16 @@ func globPath(path string) string {
 		}
 	}
 	return result
+}
+
+type EmbedFS struct {
+	fs embed.FS
+}
+
+func NewEmbedFS(fs embed.FS) *EmbedFS {
+	return &EmbedFS{fs: fs}
+}
+
+func (a *EmbedFS) ReadDir(name string) ([]fs.DirEntry, error) {
+	return a.fs.ReadDir(name)
 }

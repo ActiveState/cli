@@ -137,7 +137,7 @@ func removeInstall(logFile string, params *UninstallParams, cfg *config.Instance
 func removePaths(logFile string, paths ...string) error {
 	logging.Debug("Removing paths: %v", paths)
 	scriptName := "removePaths"
-	scriptBlock, err := assets.ReadFileBytes(fmt.Sprintf("scripts/%s.bat", scriptName))
+	scriptBlock, err := assets.ReadFile(fmt.Sprintf("scripts/%s.bat", scriptName))
 	if err != nil {
 		return err
 	}

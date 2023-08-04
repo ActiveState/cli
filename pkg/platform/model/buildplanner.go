@@ -73,6 +73,7 @@ func NewBuildPlannerModel(auth *authentication.Auth) *BuildPlanner {
 	logging.Debug("Using build planner at: %s", bpURL)
 
 	client := gqlclient.NewWithOpts(bpURL, 0, graphql.WithHTTPClient(&http.Client{}))
+	client.EnableDebugLog()
 
 	if auth.Authenticated() {
 		client.SetTokenProvider(auth)
@@ -273,10 +274,7 @@ func (bp *BuildPlanner) StageCommit(params StageCommitParams) (strfmt.UUID, erro
 		}
 	}
 
-	err = expression.UpdateTimestamp(params.TimeStamp)
-	if err != nil {
-		return "", errs.Wrap(err, "Failed to update build expression with timestamp")
-	}
+	expression.UpdateTimestamp(params.TimeStamp)
 
 	// With the updated build expression call the stage commit mutation
 	request := request.StageCommit(params.Owner, params.Project, params.ParentCommit, expression)

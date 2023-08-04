@@ -224,7 +224,10 @@ func (r *RequirementOperation) ExecuteRequirementOperation(
 	)
 
 	if !hasParentCommit {
-		languageFromNs := model.LanguageFromNamespace(ns.String())
+		var languageFromNs string
+		if ns.Type() != model.NamespaceRaw {
+			languageFromNs = model.LanguageFromNamespace(ns.String())
+		}
 		parentCommitID, err = model.CommitInitial(model.HostPlatform, languageFromNs, langVersion)
 		if err != nil {
 			return locale.WrapError(err, "err_install_no_project_commit", "Could not create initial commit for new project")
@@ -259,7 +262,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(
 	bp := model.NewBuildPlannerModel(r.Auth)
 	commitID, err := bp.StageCommit(params)
 	if err != nil {
-		return locale.WrapError(err, "err_package_save_and_build", "Error occurred while trying to create a commit")
+		return locale.WrapError(err, "err_package_save_and_build", "Error occurred while trying to stage a commit")
 	}
 
 	orderChanged := !hasParentCommit
@@ -283,6 +286,8 @@ func (r *RequirementOperation) ExecuteRequirementOperation(
 		trigger = target.TriggerPackage
 	case model.NamespacePlatform:
 		trigger = target.TriggerPlatform
+	case model.NamespaceRaw:
+		trigger = target.TriggerCustom
 	default:
 		return errs.Wrap(err, "Unsupported namespace type: %s", ns.Type().String())
 	}

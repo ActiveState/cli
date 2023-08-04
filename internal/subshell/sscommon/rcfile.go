@@ -82,7 +82,7 @@ func WriteRcFile(rcTemplateName string, path string, data RcIdentification, env 
 		return err
 	}
 
-	tpl, err := assets.ReadFileBytes(fmt.Sprintf("shells/%s", rcTemplateName))
+	tpl, err := assets.ReadFile(fmt.Sprintf("shells/%s", rcTemplateName))
 	if err != nil {
 		return errs.Wrap(err, "Failed to read asset")
 	}
@@ -192,7 +192,7 @@ func CleanRcFile(path string, data RcIdentification) error {
 
 // SetupShellRcFile create a rc file to activate a runtime (without a project being present)
 func SetupShellRcFile(rcFileName, templateName string, env map[string]string, namespace *project.Namespaced) error {
-	tpl, err := assets.ReadFileBytes(fmt.Sprintf("shells/%s", templateName))
+	tpl, err := assets.ReadFile(fmt.Sprintf("shells/%s", templateName))
 	if err != nil {
 		return errs.Wrap(err, "Failed to read asset")
 	}
@@ -234,7 +234,7 @@ func SetupShellRcFile(rcFileName, templateName string, env map[string]string, na
 // SetupProjectRcFile creates a temporary RC file that our shell is initiated from, this allows us to template the logic
 // used for initialising the subshell
 func SetupProjectRcFile(prj *project.Project, templateName, ext string, env map[string]string, out output.Outputer, cfg Configurable, bashifyPaths bool) (*os.File, error) {
-	tpl, err := assets.ReadFileBytes(fmt.Sprintf("shells/%s", templateName))
+	tpl, err := assets.ReadFile(fmt.Sprintf("shells/%s", templateName))
 	if err != nil {
 		return nil, errs.Wrap(err, "Failed to read asset")
 	}

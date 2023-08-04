@@ -29,7 +29,7 @@ func enable(exec string, opts Options) error {
 		return errs.Wrap(err, "Could not create shortcut")
 	}
 
-	icon, err := assets.ReadFileBytes(opts.IconFileSource)
+	icon, err := assets.ReadFile(opts.IconFileSource)
 	if err != nil {
 		return errs.Wrap(err, "Could not read asset")
 	}

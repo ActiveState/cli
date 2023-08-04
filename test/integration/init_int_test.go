@@ -80,7 +80,7 @@ func (suite *InitIntegrationTestSuite) runInitTest(addPath bool, lang string, ex
 	configFilepath := filepath.Join(ts.Dirs.Work, constants.ConfigFileName)
 	suite.Require().FileExists(configFilepath)
 
-	templateFile, err := assets.ReadFileBytes("activestate.yaml.python.tpl")
+	templateFile, err := assets.ReadFile("activestate.yaml.python.tpl")
 	if err != nil {
 		panic(err.Error())
 	}

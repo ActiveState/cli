@@ -445,10 +445,6 @@ func AddChangeset(parentCommitID strfmt.UUID, commitMessage string, changeset Ch
 	res, err := mono.New().VersionControl.AddCommit(params, authentication.ClientAuth())
 	if err != nil {
 		switch err.(type) {
-		case *version_control.AddCommitBadRequest,
-			*version_control.AddCommitConflict,
-			*version_control.AddCommitNotFound:
-			return nil, locale.WrapInputError(err, "err_add_commit", "", api.ErrorMessageFromPayload(err))
 		case *version_control.AddCommitForbidden:
 			return nil, locale.WrapInputError(err, "err_add_commit", "", locale.T("err_auth_required"))
 		default:
@@ -607,6 +603,7 @@ func CommitChangeset(parentCommitID strfmt.UUID, commitMsg string, changeset Cha
 
 // CommitInitial creates a root commit for a new branch
 func CommitInitial(hostPlatform string, langName, langVersion string) (strfmt.UUID, error) {
+	logging.Debug("Creating initial commit, platform: %s, language: %s@%s", hostPlatform, langName, langVersion)
 	platformID, err := hostPlatformToPlatformID(hostPlatform)
 	if err != nil {
 		return "", err
@@ -650,7 +647,7 @@ func CommitInitial(hostPlatform string, langName, langVersion string) (strfmt.UU
 
 	res, err := mono.New().VersionControl.AddCommit(params, authentication.ClientAuth())
 	if err != nil {
-		return "", locale.WrapError(err, "err_add_commit", "", api.ErrorMessageFromPayload(err))
+		return "", locale.WrapError(err, "err_add_commit_initial", "", api.ErrorMessageFromPayload(err))
 	}
 
 	return res.Payload.CommitID, nil

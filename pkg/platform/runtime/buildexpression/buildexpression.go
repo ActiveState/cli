@@ -679,23 +679,16 @@ func (e *BuildExpression) removePlatform(platformID strfmt.UUID) error {
 	return nil
 }
 
-func (e *BuildExpression) UpdateTimestamp(timestamp time.Time) error {
-	formatted, err := time.Parse(time.RFC3339, timestamp.String())
-	if err != nil {
-		return errs.Wrap(err, "Could not parse latest timestamp")
-	}
-
+func (e *BuildExpression) UpdateTimestamp(timestamp time.Time) {
 	for _, arg := range e.getSolveNode().Arguments {
 		if arg.Assignment == nil {
 			continue
 		}
 
 		if arg.Assignment.Name == "at_time" {
-			arg.Assignment.Value.Str = ptr.To(formatted.Format(time.RFC3339))
+			arg.Assignment.Value.Str = ptr.To(timestamp.Format(time.RFC3339))
 		}
 	}
-
-	return nil
 }
 
 func (e *BuildExpression) MarshalJSON() ([]byte, error) {

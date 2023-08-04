@@ -82,7 +82,7 @@ func (a *App) Path() string {
 }
 
 func (a *App) createIcon(path string) error {
-	icon, err := assets.ReadFileBytes(a.options.IconFileSource)
+	icon, err := assets.ReadFile(a.options.IconFileSource)
 	if err != nil {
 		return errs.Wrap(err, "Could not read asset")
 	}
@@ -96,7 +96,7 @@ func (a *App) createIcon(path string) error {
 
 func (a *App) createExecFile(base string) error {
 	path := filepath.Join(base, "Contents", "MacOS")
-	asset, err := assets.ReadFileBytes(execFileSource)
+	asset, err := assets.ReadFile(execFileSource)
 	if err != nil {
 		return errs.Wrap(err, "Could not read asset")
 	}
@@ -128,7 +128,7 @@ func (a *App) createExecFile(base string) error {
 
 func (a *App) createInfoFile(base string) error {
 	path := filepath.Join(base, "Contents")
-	asset, err := assets.ReadFileBytes(launchFileSource)
+	asset, err := assets.ReadFile(launchFileSource)
 	if err != nil {
 		return errs.Wrap(err, "Could not read asset")
 	}

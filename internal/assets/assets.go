@@ -25,9 +25,13 @@ func (a *AssetsFS) ReadDir(name string) ([]iofs.DirEntry, error) {
 	return a.fs.ReadDir("contents/" + name)
 }
 
-// ReadFileBytes reads and returns bytes from the given file in this package's embedded assets.
+func (a *AssetsFS) ReadFile(filename string) ([]byte, error) {
+	return a.fs.ReadFile("contents/" + filename)
+}
+
+// ReadFile reads and returns bytes from the given file in this package's embedded assets.
 // Filenames should use forward slashes, not `filepath.Join()`, because go:embed requires '/'.
-func ReadFileBytes(filename string) ([]byte, error) {
+func ReadFile(filename string) ([]byte, error) {
 	return fs.ReadFile("contents/" + filename)
 }
 

@@ -374,7 +374,7 @@ func (r *runner) configureEnvironment(path string, namespace *project.Namespaced
 	}
 
 	if rt.GOOS == "windows" {
-		contents, err := assets.ReadFileBytes("scripts/setenv.bat")
+		contents, err := assets.ReadFile("scripts/setenv.bat")
 		if err != nil {
 			return errs.Wrap(err, "Error reading file bytes")
 		}

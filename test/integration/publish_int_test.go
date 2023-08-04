@@ -1,18 +1,24 @@
 package integration
 
 import (
+	"embed"
 	"fmt"
 	"os"
+	"path/filepath"
 	"regexp"
 	"testing"
+	"time"
 
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/strutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/ActiveState/cli/pkg/platform/api/graphql/request"
+	"github.com/labstack/gommon/random"
+	"github.com/mholt/archiver"
 	"github.com/stretchr/testify/suite"
 	"gopkg.in/yaml.v3"
 )
@@ -22,6 +28,9 @@ var editorFileRx = regexp.MustCompile(`file:\s*?(.*?)\.\s`)
 type PublishIntegrationTestSuite struct {
 	tagsuite.Suite
 }
+
+//go:embed assets/python-ingredient/*
+var pythonIngredient embed.FS
 
 func (suite *PublishIntegrationTestSuite) TestPublish() {
 	suite.OnlyRunForTags(tagsuite.Publish)
@@ -46,6 +55,7 @@ func (suite *PublishIntegrationTestSuite) TestPublish() {
 		immediateOutput  string
 		exitBeforePrompt bool
 		exitCode         int
+		installSuccess   bool
 	}
 
 	type invocation struct {
@@ -53,14 +63,18 @@ func (suite *PublishIntegrationTestSuite) TestPublish() {
 		expect expect
 	}
 
-	tempFile := fileutils.TempFilePathUnsafe("", "*.zip")
-	defer os.Remove(tempFile)
-
-	tempFileInvalid := fileutils.TempFilePathUnsafe("", "*.notzip")
-	defer os.Remove(tempFileInvalid)
-
-	ts := e2e.New(suite.T(), false)
+	ts := e2e.New(suite.T(), true)
 	defer ts.Close()
+
+	tempFileInvalid := fileutils.TempFilePathUnsafe(ts.Dirs.Work, "*.notzip")
+
+	payload := fileutils.TempDirFromBaseDirUnsafe(ts.Dirs.Work)
+	tempFile := filepath.Join(ts.Dirs.Work, "payload.zip")
+
+	err := fileutils.CopyFilesDirReader(pythonIngredient, "assets/python-ingredient", payload, "")
+	suite.Require().NoError(err, errs.JoinMessage(err))
+
+	suite.Require().NoError(archiver.Archive(fileutils.ListDirSimple(payload, false), tempFile))
 
 	ts.Env = append(ts.Env,
 		// Publish tests shouldn't run against staging as they pollute the inventory db and artifact cache
@@ -103,6 +117,7 @@ func (suite *PublishIntegrationTestSuite) TestPublish() {
 						"",
 						false,
 						0,
+						true,
 					},
 				},
 			},
@@ -120,6 +135,7 @@ func (suite *PublishIntegrationTestSuite) TestPublish() {
 					"Expected file extension to be either",
 					false,
 					1,
+					false,
 				},
 			},
 			},
@@ -154,6 +170,7 @@ authors:
 					"",
 					false,
 					0,
+					false,
 				},
 			}},
 		},
@@ -187,6 +204,7 @@ authors:
 					"",
 					false,
 					0,
+					false,
 				},
 			}},
 		},
@@ -220,6 +238,7 @@ authors:
 					"",
 					false,
 					0,
+					false,
 				},
 			}},
 		},
@@ -237,6 +256,7 @@ authors:
 					"",
 					false,
 					0,
+					false,
 				},
 			}},
 		},
@@ -262,6 +282,7 @@ authors:
 						"",
 						false,
 						0,
+						false,
 					},
 				},
 				{ // Edit ingredient
@@ -290,6 +311,7 @@ authors:
 						"",
 						false,
 						0,
+						false,
 					},
 				},
 				{ // Must supply version
@@ -310,6 +332,7 @@ authors:
 						"",
 						true,
 						1,
+						false,
 					},
 				},
 				{ // description editing not supported
@@ -330,6 +353,7 @@ authors:
 						"",
 						true,
 						1,
+						false,
 					},
 				},
 			},
@@ -419,6 +443,22 @@ authors:
 					cp = ts.Spawn("search", meta.Namespace+"/"+meta.Name, "--ts=now")
 					cp.Expect(meta.Version)
 					cp.ExpectExitCode(0)
+
+					if inv.expect.installSuccess {
+						// We shouldn't need to include Python, but this is working around a bug:
+						// https://activestatef.atlassian.net/browse/PB-4483
+						cp := ts.Spawn("init", "--language=python", user.Username+"/"+random.String(8, random.Alphanumeric), ".")
+						cp.ExpectExitCode(0)
+
+						cp = ts.SpawnWithOpts(
+							e2e.WithArgs("install", meta.Namespace+"/"+meta.Name, "--ts=now"),
+							e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"))
+						cp.ExpectRe("(?:Dependency added|being built)", 30*time.Second)
+						cp.Expect("no match")
+						cp.ExpectExitCode(0)
+
+						fmt.Printf("Dirs: %s\n", ts.Dirs.Base)
+					}
 				})
 			}
 		})
