@@ -1,7 +1,6 @@
 package constants
 
 import (
-	"os"
 	"time"
 )
 
@@ -458,7 +457,7 @@ const InstallerName = "State Installer"
 const StateExecutorCmd = "state-exec"
 
 // ToplevelInstallArchiveDir is the top-level directory for files in an installation archive
-const ToplevelInstallArchiveDir = "payload" + string(os.PathSeparator) + "state-install"
+const ToplevelInstallArchiveDir = "state-install"
 
 // FirstMultiFileStateToolVersion is the State Tool version that introduced multi-file updates
 const FirstMultiFileStateToolVersion = "0.29.0"

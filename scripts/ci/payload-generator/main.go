@@ -16,7 +16,7 @@ import (
 
 var (
 	defaultInputDir     = filepath.Join(environment.GetRootPathUnsafe(), "build")
-	defaultOutputDir    = filepath.Join(defaultInputDir, constants.ToplevelInstallArchiveDir)
+	defaultOutputDir    = filepath.Join(defaultInputDir, "payload", constants.ToplevelInstallArchiveDir)
 	defaultOutputBinDir = filepath.Join(defaultOutputDir, "bin")
 
 	log = func(msg string, vals ...any) {
