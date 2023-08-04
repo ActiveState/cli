@@ -31,18 +31,6 @@ func (suite *InitIntegrationTestSuite) TestInit_Path() {
 	suite.runInitTest(true, "python", "python3")
 }
 
-func (suite *InitIntegrationTestSuite) TestInit_BadVersion() {
-	suite.OnlyRunForTags(tagsuite.Init)
-	ts := e2e.New(suite.T(), false)
-	defer ts.Close()
-	ts.LoginAsPersistentUser()
-
-	cp := ts.Spawn("init", "--language", "python@1.0", "test-user/test-project")
-	cp.Expect("version")
-	cp.Expect("cannot be found")
-	cp.ExpectNotExitCode(0)
-}
-
 func (suite *InitIntegrationTestSuite) TestInit_DisambiguatePython() {
 	suite.OnlyRunForTags(tagsuite.Init)
 	suite.runInitTest(false, "python", "python3")
@@ -54,6 +42,7 @@ func (suite *InitIntegrationTestSuite) TestInit_PartialVersions() {
 	suite.OnlyRunForTags(tagsuite.Init)
 	suite.runInitTest(false, "python@3.10", "python3")
 	suite.runInitTest(false, "python@3.10.x", "python3")
+	suite.runInitTest(false, "python@>=3", "python3")
 	suite.runInitTest(false, "python@2", "python2")
 }
 

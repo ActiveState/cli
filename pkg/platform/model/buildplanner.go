@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -19,6 +20,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/request"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
+	"github.com/ActiveState/cli/pkg/platform/api/reqsimport"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/ActiveState/cli/pkg/platform/runtime/buildexpression"
@@ -374,16 +376,42 @@ func processBuildPlannerError(bpErr error, fallbackMessage string) error {
 	return errs.Wrap(bpErr, fallbackMessage)
 }
 
+var versionRe = regexp.MustCompile(`^\d+(\.\d+)*$`)
+
+func isExactVersion(version string) bool {
+	return versionRe.MatchString(version)
+}
+
 func isWildcardVersion(version string) bool {
 	return strings.Index(version, ".x") >= 0 || strings.Index(version, ".X") >= 0
 }
 
 func VersionStringToRequirements(version string) ([]bpModel.VersionRequirement, error) {
-	if !isWildcardVersion(version) {
+	if isExactVersion(version) {
 		return []bpModel.VersionRequirement{{
 			bpModel.VersionRequirementComparatorKey: "eq",
 			bpModel.VersionRequirementVersionKey:    version,
-		}}, nil // exact version
+		}}, nil
+	}
+
+	if !isWildcardVersion(version) {
+		// Ask the Platform to translate a string like ">=1.2,<1.3" into a list of requirements.
+		// Note that:
+		// - The given requirement name does not matter; it is not looked up.
+		changeset, err := reqsimport.Init().Changeset([]byte("name "+version), "")
+		if err != nil {
+			return nil, locale.WrapInputError(err, "err_invalid_version_string", "Invalid version string")
+		}
+		requirements := []bpModel.VersionRequirement{}
+		for _, change := range changeset {
+			for _, constraint := range change.VersionConstraints {
+				requirements = append(requirements, bpModel.VersionRequirement{
+					bpModel.VersionRequirementComparatorKey: constraint.Comparator,
+					bpModel.VersionRequirementVersionKey:    constraint.Version,
+				})
+			}
+		}
+		return requirements, nil
 	}
 
 	// Construct version constraints to be >= given version, and < given version's last part + 1.
