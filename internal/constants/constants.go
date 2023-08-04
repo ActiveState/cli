@@ -1,6 +1,9 @@
 package constants
 
-import "time"
+import (
+	"os"
+	"time"
+)
 
 // LibraryName contains the main name of this library
 const LibraryName = "cli"
@@ -455,7 +458,7 @@ const InstallerName = "State Installer"
 const StateExecutorCmd = "state-exec"
 
 // ToplevelInstallArchiveDir is the top-level directory for files in an installation archive
-const ToplevelInstallArchiveDir = "payload"
+const ToplevelInstallArchiveDir = "payload" + string(os.PathSeparator) + "state-install"
 
 // FirstMultiFileStateToolVersion is the State Tool version that introduced multi-file updates
 const FirstMultiFileStateToolVersion = "0.29.0"
