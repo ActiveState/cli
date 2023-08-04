@@ -144,9 +144,9 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 		}
 	}
 
-	err = verifyLangAndVersion(lang, languageVersion)
+	version, err := deriveVersion(lang, languageVersion)
 	if err != nil {
-		if inferred {
+		if inferred || !locale.IsInputError(err) {
 			return locale.WrapError(err, "err_init_lang", "", languageName, languageVersion)
 		} else {
 			return locale.WrapInputError(err, "err_init_lang", "", languageName, languageVersion)
@@ -196,7 +196,6 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 		return err
 	}
 
-	version := deriveVersion(lang, languageVersion)
 	commitID, err := model.CommitInitial(model.HostPlatform, lang.Requirement(), version)
 	if err != nil {
 		return locale.WrapError(err, "err_init_commit", "Could not create initial commit")
@@ -256,60 +255,29 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 	return nil
 }
 
-func verifyLangAndVersion(lang language.Language, version string) error {
+func deriveVersion(lang language.Language, version string) (string, error) {
 	err := lang.Validate()
 	if err != nil {
-		return errs.Wrap(err, "Failed to validate language")
+		return "", errs.Wrap(err, "Failed to validate language")
 	}
 
 	if version == "" {
-		return nil // nothing to verify
-	}
-
-	pkgs, err := model.SearchIngredientsStrict(model.NewNamespaceLanguage(), lang.Requirement(), false, true)
-	if err != nil {
-		return locale.WrapError(err, "err_init_verify_language", "Inventory search failed unexpectedly")
-	}
-
-	if len(pkgs) == 0 {
-		return locale.NewInputError("err_init_language_not_found", "The selected language cannot be found")
-	}
-
-	for _, pkg := range pkgs {
-		if strings.HasPrefix(pkg.Version, version) {
-			return nil
+		// Return default language.
+		langs, err := model.FetchSupportedLanguages(model.HostPlatform)
+		if err != nil {
+			multilog.Error("Failed to fetch supported languages (using hardcoded default version): %s", errs.JoinMessage(err))
+			return lang.RecommendedVersion(), nil
 		}
-	}
 
-	return errs.AddTips(
-		locale.NewInputError(
-			"err_init_language_version_not_found",
-			"The selected version of the language cannot be found",
-		),
-		locale.Tl(
-			"version_not_found_check_format",
-			"Please ensure that the version format is valid.",
-		),
-	)
-}
-
-func deriveVersion(lang language.Language, version string) string {
-	if version != "" {
-		return version
-	}
-
-	langs, err := model.FetchSupportedLanguages(model.HostPlatform)
-	if err != nil {
-		multilog.Error("Failed to fetch supported languages (using hardcoded default version): %s", errs.JoinMessage(err))
-		return lang.RecommendedVersion()
-	}
-
-	for _, l := range langs {
-		if lang.String() == l.Name || (lang == language.Python3 && l.Name == language.Python3.Requirement()) {
-			return l.DefaultVersion
+		for _, l := range langs {
+			if lang.String() == l.Name || (lang == language.Python3 && l.Name == language.Python3.Requirement()) {
+				return l.DefaultVersion, nil
+			}
 		}
+
+		multilog.Error("Could not find requested language in fetched languages (using hardcoded default version): %s", lang)
+		return lang.RecommendedVersion(), nil
 	}
 
-	multilog.Error("Could not find requested language in fetched languages (using hardcoded default version): %s", lang)
-	return lang.RecommendedVersion()
+	return version, nil
 }
