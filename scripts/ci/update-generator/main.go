@@ -136,12 +136,11 @@ func run() error {
 		version  = constants.Version
 	)
 
+	flag.StringVar(&outDir, "o", outDir, "Override directory to output archive to.")
 	flag.StringVar(
 		&platform, "platform", platform,
 		"Target platform in the form OS-ARCH. Defaults to running os/arch or the combination of the environment variables GOOS and GOARCH if both are set.",
 	)
-	flag.StringVar(&inDir, "i", inDir, "Override directory to gather payload from.")
-	flag.StringVar(&outDir, "o", outDir, "Override directory to output archive to.")
 	flag.StringVar(&branch, "b", branch, "Override target branch. (Branch to receive update.)")
 	flag.StringVar(&version, "v", version, "Override version number for this update.")
 	flag.Parse()

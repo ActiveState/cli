@@ -45,7 +45,6 @@ func run() error {
 		version = constants.Version
 	)
 
-	flag.StringVar(&outDir, "o", outDir, "Override directory to output payload to.")
 	flag.StringVar(&branch, "b", branch, "Override target branch. (Branch to receive update.)")
 	flag.StringVar(&version, "v", version, "Override version number for this update.")
 	flag.Parse()
