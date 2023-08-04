@@ -29,14 +29,14 @@ type PublishIntegrationTestSuite struct {
 	tagsuite.Suite
 }
 
-//go:embed assets/python-ingredient/*
+//go:embed all:assets/python-ingredient
 var pythonIngredient embed.FS
 
 func (suite *PublishIntegrationTestSuite) TestPublish() {
 	suite.OnlyRunForTags(tagsuite.Publish)
 
 	// For development convenience, should not be committed without commenting out..
-	// os.Setenv(constants.APIHostEnvVarName, "pr11496.activestate.build")
+	os.Setenv(constants.APIHostEnvVarName, "pr11496.activestate.build")
 
 	if v := os.Getenv(constants.APIHostEnvVarName); v == "" || v == constants.DefaultAPIHost {
 		suite.T().Skipf("Skipping test as %s is not set, this test can only be run against non-production envs.", constants.APIHostEnvVarName)
@@ -74,7 +74,7 @@ func (suite *PublishIntegrationTestSuite) TestPublish() {
 	err := fileutils.CopyFilesDirReader(pythonIngredient, "assets/python-ingredient", payload, "")
 	suite.Require().NoError(err, errs.JoinMessage(err))
 
-	suite.Require().NoError(archiver.Archive(fileutils.ListDirSimple(payload, false), tempFile))
+	suite.Require().NoError(archiver.Archive(fileutils.ListFilesUnsafe(payload), tempFile))
 
 	ts.Env = append(ts.Env,
 		// Publish tests shouldn't run against staging as they pollute the inventory db and artifact cache
@@ -99,6 +99,7 @@ func (suite *PublishIntegrationTestSuite) TestPublish() {
 							"--version", "2.3.4",
 							"--description", "im-a-description",
 							"--author", "author-name <author-email@domain.tld>",
+							"--depend", "builder/python-module-builder",
 						},
 						nil,
 						nil,
