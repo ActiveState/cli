@@ -294,7 +294,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_import() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	username := ts.CreateNewUser()
+	username, _ := ts.CreateNewUser()
 	namespace := fmt.Sprintf("%s/%s", username, "Python3")
 
 	cp := ts.Spawn("init", "--language", "python", namespace, ts.Dirs.Work)
@@ -375,7 +375,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_operation() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	username := ts.CreateNewUser()
+	username, _ := ts.CreateNewUser()
 	namespace := fmt.Sprintf("%s/%s", username, "python3-pkgtest")
 
 	cp := ts.Spawn("fork", "ActiveState-CLI/Packages", "--org", username, "--name", "python3-pkgtest")
