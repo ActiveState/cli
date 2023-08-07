@@ -12,7 +12,7 @@ const (
 	// NAME is the name of this notifier sent with the payload to Rollbar.
 	NAME = "rollbar/rollbar-go"
 	// VERSION is the version of this notifier sent with the payload to Rollbar.
-	VERSION = "1.1.0"
+	VERSION = "1.2.0"
 
 	// CRIT is the critial severity level.
 	CRIT = "critical"
@@ -35,6 +35,83 @@ var (
 	std         = NewAsync("", "development", "", hostname, "")
 	nilErrTitle = "<nil>"
 )
+
+// An UnwrapperFunc is used to extract wrapped errors when building an error chain. It should return
+// the wrapped error if available, or nil otherwise.
+//
+// The Client will use DefaultUnwrapper by default, and a user can override the default behavior
+// by calling SetUnwrapper. See SetUnwrapper for more details.
+type UnwrapperFunc func(error) error
+
+// A StackTracerFunc is used to extract stack traces when building an error chain. The first return
+// value should be the extracted stack trace, if available. The second return value should be
+// whether the function was able to extract a stack trace (even if the extracted stack trace was
+// empty or nil).
+//
+// The Client will use DefaultStackTracer by default, and a user can override the default
+// behavior by calling SetStackTracer. See SetStackTracer for more details.
+type StackTracerFunc func(error) ([]runtime.Frame, bool)
+
+// DefaultUnwrapper is the default UnwrapperFunc used by rollbar-go clients. It can unwrap any
+// error types with the Unwrap method specified in Go 1.13, or any error type implementing the
+// legacy CauseStacker interface.
+//
+// It also implicitly supports errors from github.com/pkg/errors. However, users of pkg/errors may
+// wish to also use the stack trace extraction features provided in the
+// github.com/rollbar/rollbar-go/errors package.
+var DefaultUnwrapper UnwrapperFunc = func(err error) error {
+	type causer interface {
+		Cause() error
+	}
+	type wrapper interface { // matches the new Go 1.13 Unwrap() method, copied from xerrors
+		Unwrap() error
+	}
+
+	if e, ok := err.(causer); ok {
+		return e.Cause()
+	}
+	if e, ok := err.(wrapper); ok {
+		return e.Unwrap()
+	}
+
+	return nil
+}
+
+// DefaultStackTracer is the default StackTracerFunc used by rollbar-go clients. It can extract
+// stack traces from error types implementing the Stacker interface (and by extension, the legacy
+// CauseStacker interface).
+//
+// To support stack trace extraction for other types of errors, see SetStackTracer.
+var DefaultStackTracer StackTracerFunc = func(err error) ([]runtime.Frame, bool) {
+	if s, ok := err.(Stacker); ok {
+		return s.Stack(), true
+	}
+
+	return nil, false
+}
+
+func SetContext(ctx context.Context) {
+	std.SetContext(ctx)
+}
+
+// SetTelemetry sets the telemetry
+func SetTelemetry(options ...OptionFunc) {
+	std.SetTelemetry(options...)
+}
+
+func DisableDefaultClient(destroy bool) {
+	if destroy {
+		std = nil
+		return
+	}
+	std.SetEnabled(false)
+	std.Close()
+}
+
+// CaptureTelemetryEvent sets the user-specified telemetry event
+func CaptureTelemetryEvent(eventType, eventlevel string, eventData map[string]interface{}) {
+	std.CaptureTelemetryEvent(eventType, eventlevel, eventData)
+}
 
 // SetEnabled sets whether or not the managed Client instance is enabled.
 // If this is true then this library works as normal.
@@ -64,10 +141,15 @@ func SetEndpoint(endpoint string) {
 	std.SetEndpoint(endpoint)
 }
 
+// SetItemsPerMinute sets the max number of items to send in a given minute
+func SetItemsPerMinute(itemsPerMinute int) {
+	std.SetItemsPerMinute(itemsPerMinute)
+}
+
 // SetPlatform sets the platform on the managed Client instance.
 // The platform is reported for all Rollbar items. The default is
 // the running operating system (darwin, freebsd, linux, etc.) but it can
-// also be application specific (client, heroku, etc.).
+// also be application specific (Client, heroku, etc.).
 func SetPlatform(platform string) {
 	std.SetPlatform(platform)
 }
@@ -126,6 +208,28 @@ func SetTransform(transform func(map[string]interface{})) {
 	std.SetTransform(transform)
 }
 
+// SetUnwrapper sets the UnwrapperFunc used by the managed Client instance. The unwrapper function
+// is used to extract wrapped errors from enhanced error types. This feature can be used to add
+// support for custom error types that do not yet implement the Unwrap method specified in Go 1.13.
+// See the documentation of UnwrapperFunc for more details.
+//
+// In order to preserve the default unwrapping behavior, callers of SetUnwrapper may wish to include
+// a call to DefaultUnwrapper in their custom unwrapper function. See the provided example.
+func SetUnwrapper(unwrapper UnwrapperFunc) {
+	std.SetUnwrapper(unwrapper)
+}
+
+// SetStackTracer sets the StackTracerFunc used by the managed Client instance. The stack tracer
+// function is used to extract the stack trace from enhanced error types. This feature can be used
+// to add support for custom error types that do not implement the Stacker interface.
+// See the documentation of StackTracerFunc for more details.
+//
+// In order to preserve the default stack tracing behavior, callers of SetStackTracer may wish
+// to include a call to DefaultStackTracer in their custom tracing function. See the provided example.
+func SetStackTracer(stackTracer StackTracerFunc) {
+	std.SetStackTracer(stackTracer)
+}
+
 // SetCheckIgnore sets the checkIgnore function on the managed Client instance.
 // CheckIgnore is called during the recovery process of a panic that
 // occurred inside a function wrapped by Wrap or WrapAndWait.
@@ -140,8 +244,8 @@ func SetCheckIgnore(checkIgnore func(string) bool) {
 // SetPerson information for identifying a user associated with
 // any subsequent errors or messages. Only id is required to be
 // non-empty.
-func SetPerson(id, username, email string) {
-	std.SetPerson(id, username, email)
+func SetPerson(id, username, email string, opts ...personOption) {
+	std.SetPerson(id, username, email, opts...)
 }
 
 // ClearPerson clears any previously set person information. See `SetPerson` for more information.
@@ -186,6 +290,11 @@ func SetPrintPayloadOnError(printPayloadOnError bool) {
 	std.SetPrintPayloadOnError(printPayloadOnError)
 }
 
+// SetHTTPClient sets custom http Client. http.DefaultClient is used by default
+func SetHTTPClient(httpClient *http.Client) {
+	std.SetHTTPClient(httpClient)
+}
+
 // -- Getters
 
 // Token returns the currently set Rollbar access token on the managed Client instance.
@@ -205,7 +314,7 @@ func Endpoint() string {
 
 // Platform is the platform reported for all Rollbar items. The default is
 // the running operating system (darwin, freebsd, linux, etc.) but it can
-// also be application specific (client, heroku, etc.).
+// also be application specific (Client, heroku, etc.).
 func Platform() string {
 	return std.Platform()
 }
@@ -328,11 +437,13 @@ func Debug(interfaces ...interface{}) {
 //    string
 //    map[string]interface{}
 //    int
+//    context.Context
 // The string and error types are mutually exclusive.
 // If an error is present then a stack trace is captured. If an int is also present then we skip
 // that number of stack frames. If the map is present it is used as extra custom data in the
 // item. If a string is present without an error, then we log a message without a stack
-// trace. If a request is present we extract as much relevant information from it as we can.
+// trace. If a request is present we extract as much relevant information from it as we can. If
+// a context is present, it is applied to downstream operations.
 func Log(level string, interfaces ...interface{}) {
 	var r *http.Request
 	var err error
@@ -440,7 +551,6 @@ func ErrorWithStackSkipWithExtrasAndContext(ctx context.Context, level string, e
 }
 
 // RequestErrorWithStackSkip asynchronously sends an error to Rollbar with the
-// RequestErrorWithStackSkip asynchronously sends an error to Rollbar with the
 // given severity level and a given number of stack trace frames skipped, in
 // addition to extra request-specific information.
 func RequestErrorWithStackSkip(level string, r *http.Request, err error, skip int) {
@@ -512,17 +622,31 @@ func Close() {
 	std.Close()
 }
 
+// LogPanic accepts an error value returned by recover() and
+// handles logging to Rollbar with stack info.
+func LogPanic(err interface{}, wait bool) {
+	std.LogPanic(err, wait)
+}
+
+// WrapWithArgs calls f with the supplied args and reports a panic to Rollbar if it occurs.
+// If wait is true, this also waits before returning to ensure the message was reported.
+// If an error is captured it is subsequently returned.
+// WrapWithArgs is compatible with any return type for f, but does not return its return value(s).
+func WrapWithArgs(f interface{}, wait bool, args ...interface{}) interface{} {
+	return std.WrapWithArgs(f, wait, args...)
+}
+
 // Wrap calls f and then recovers and reports a panic to Rollbar if it occurs.
 // If an error is captured it is subsequently returned.
-func Wrap(f func()) interface{} {
-	return std.Wrap(f)
+func Wrap(f interface{}, args ...interface{}) interface{} {
+	return std.WrapWithArgs(f, false, args...)
 }
 
 // WrapAndWait calls f, and recovers and reports a panic to Rollbar if it occurs.
 // This also waits before returning to ensure the message was reported.
 // If an error is captured it is subsequently returned.
-func WrapAndWait(f func()) interface{} {
-	return std.WrapAndWait(f)
+func WrapAndWait(f interface{}, args ...interface{}) interface{} {
+	return std.WrapWithArgs(f, true, args...)
 }
 
 // LambdaWrapper calls handlerFunc with arguments, and recovers and reports a
@@ -532,11 +656,19 @@ func LambdaWrapper(handlerFunc interface{}) interface{} {
 	return std.LambdaWrapper(handlerFunc)
 }
 
+// Stacker is an interface that errors can implement to allow the extraction of stack traces.
+// To generate a stack trace, users are required to call runtime.Callers and build the runtime.Frame slice
+// at the time the error is created.
+type Stacker interface {
+	Stack() []runtime.Frame
+}
+
 // CauseStacker is an interface that errors can implement to create a trace_chain.
-// Callers are required to call runtime.Callers and build the runtime.Frame slice
-// on their own at the time the cause is wrapped.
+//
+// Deprecated: For unwrapping, use the `Unwrap() error` method specified in Go 1.13. (See https://golang.org/pkg/errors/ for more information).
+// For stack traces, use the `Stacker` interface directly.
 type CauseStacker interface {
 	error
 	Cause() error
-	Stack() []runtime.Frame
+	Stacker
 }

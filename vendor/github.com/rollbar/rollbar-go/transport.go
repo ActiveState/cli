@@ -1,9 +1,11 @@
 package rollbar
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"log"
+	"net/http"
 	"os"
 )
 
@@ -16,6 +18,14 @@ const (
 	// encountering temporary network errors
 	DefaultRetryAttempts = 3
 )
+
+type transportOption func(Transport)
+
+func WithTransportContext(ctx context.Context) transportOption {
+	return func(t Transport) {
+		t.setContext(ctx)
+	}
+}
 
 // Transport represents an object used for communicating with the Rollbar API.
 type Transport interface {
@@ -37,6 +47,12 @@ type Transport interface {
 	SetRetryAttempts(retryAttempts int)
 	// Set whether to print the payload to the set logger or to stderr upon failing to send.
 	SetPrintPayloadOnError(printPayloadOnError bool)
+	// Sets custom http client. http.DefaultClient is used by default
+	SetHTTPClient(httpClient *http.Client)
+	// SetItemsPerMinute sets the max number of items to send in a given minute
+	SetItemsPerMinute(itemsPerMinute int)
+
+	setContext(ctx context.Context)
 }
 
 // ClientLogger is the interface used by the rollbar Client/Transport to report problems.
@@ -51,8 +67,8 @@ type SilentClientLogger struct{}
 func (s *SilentClientLogger) Printf(format string, args ...interface{}) {}
 
 // NewTransport creates a transport that sends items to the Rollbar API asynchronously.
-func NewTransport(token, endpoint string) Transport {
-	return NewAsyncTransport(token, endpoint, DefaultBuffer)
+func NewTransport(token, endpoint string, opts ...transportOption) Transport {
+	return NewAsyncTransport(token, endpoint, DefaultBuffer, opts...)
 }
 
 // -- rollbarError

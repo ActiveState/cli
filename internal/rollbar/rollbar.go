@@ -82,7 +82,6 @@ func SetupRollbar(token string) {
 	rollbar.SetCodeVersion(constants.Version)
 	rollbar.SetServerRoot("github.com/ActiveState/cli")
 	rollbar.SetLogger(&rollbar.SilentClientLogger{})
-	rollbar.SetCaptureIp(rollbar.CaptureIpFull)
 
 	// We can't use runtime.GOOS for the official platform field because rollbar sees that as a server-only platform
 	// (which we don't have credentials for). So we're faking it with a custom field untill rollbar gets their act together.

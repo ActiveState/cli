@@ -341,10 +341,6 @@ github.com/99designs/gqlgen v0.17.19 h1:lO3PBSOv5Mw8RPt0Nwg7ovJ9tNfjGDEnU48AYqLz
 github.com/99designs/gqlgen v0.17.19/go.mod h1:tXjo2/o1L/9A8S/4nLK7Arx/677H8hxlD/iSTRx0BtE=
 github.com/ActiveState/go-ogle-analytics v0.0.0-20170510030904-9b3f14901527 h1:lW+qgVXf/iAnSs8SgagWxh8d6nsbpmwyhmeg9/fp0Os=
 github.com/ActiveState/go-ogle-analytics v0.0.0-20170510030904-9b3f14901527/go.mod h1:/9SyzKLlJSuIa7WAsLUUhHqTK9+PtZD8cKF8G4SLpa0=
-github.com/ActiveState/graphql v0.0.0-20180524141115-05b17f315749 h1:6Uj/oFUEJ7UcQ721u2Smti9IIy9lPHEho50buO4ZYXE=
-github.com/ActiveState/graphql v0.0.0-20180524141115-05b17f315749/go.mod h1:NhUbNQ8UpfnC6nZvZ8oThqYSCE/G8FQp9JUrK9jXJs0=
-github.com/ActiveState/graphql v0.0.0-20230718220857-da7d147af6b4 h1:f2n4heMWzHlHUqQZuV2hTPO5bU95WEQrT76qyfS6qtE=
-github.com/ActiveState/graphql v0.0.0-20230718220857-da7d147af6b4/go.mod h1:NhUbNQ8UpfnC6nZvZ8oThqYSCE/G8FQp9JUrK9jXJs0=
 github.com/ActiveState/graphql v0.0.0-20230719154233-6949037a6e48 h1:UCx/ObpVRgC4fp2OlJM2iNdMMu+K87/aPxKrQ1WRLj4=
 github.com/ActiveState/graphql v0.0.0-20230719154233-6949037a6e48/go.mod h1:NhUbNQ8UpfnC6nZvZ8oThqYSCE/G8FQp9JUrK9jXJs0=
 github.com/ActiveState/termtest v0.7.2 h1:vNPMpI2AyZnLZzZn/CRpMZzIuVL0XhaTLA4qyghIGF8=
@@ -942,8 +938,8 @@ github.com/rogpeppe/go-internal v1.2.2/go.mod h1:M8bDsm7K2OlrFYOpmOWEs/qY81heoFR
 github.com/rogpeppe/go-internal v1.3.0/go.mod h1:M8bDsm7K2OlrFYOpmOWEs/qY81heoFRclV5y23lUDJ4=
 github.com/rogpeppe/go-internal v1.9.0 h1:73kH8U+JUqXU8lRuOHeVHaa/SZPifC7BkcraZVejAe8=
 github.com/rogpeppe/go-internal v1.9.0/go.mod h1:WtVeX8xhTBvf0smdhujwtBcq4Qrzq/fJaraNFVN+nFs=
-github.com/rollbar/rollbar-go v1.1.0 h1:3ysiHp3ep8W50ykgBMCKXJGaK2Jdivru7SW9EYfAo+M=
-github.com/rollbar/rollbar-go v1.1.0/go.mod h1:AcFs5f0I+c71bpHlXNNDbOWJiKwjFDtISeXco0L5PKQ=
+github.com/rollbar/rollbar-go v1.4.5 h1:Z+5yGaZdB7MFv7t759KUR3VEkGdwHjo7Avvf3ApHTVI=
+github.com/rollbar/rollbar-go v1.4.5/go.mod h1:kLQ9gP3WCRGrvJmF0ueO3wK9xWocej8GRX98D8sa39w=
 github.com/russross/blackfriday/v2 v2.0.1/go.mod h1:+Rmxgy9KzJVeS9/2gXHxylqXiyQDYRxCVz55jmeOWTM=
 github.com/russross/blackfriday/v2 v2.1.0/go.mod h1:+Rmxgy9KzJVeS9/2gXHxylqXiyQDYRxCVz55jmeOWTM=
 github.com/ryanuber/columnize v0.0.0-20160712163229-9b3edd62028f/go.mod h1:sm1tb6uqfes/u+d4ooFouqFdy9/2g9QGwK3SQygK0Ts=

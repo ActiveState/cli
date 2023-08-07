@@ -49,7 +49,7 @@ require (
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/phayes/permbits v0.0.0-20190108233746-1efae4548023
 	github.com/posener/wstest v0.0.0-20180216222922-04b166ca0bf1
-	github.com/rollbar/rollbar-go v1.1.0
+	github.com/rollbar/rollbar-go v1.4.5
 	github.com/shibukawa/configdir v0.0.0-20170330084843-e180dbdc8da0
 	github.com/shirou/gopsutil/v3 v3.22.7
 	github.com/skratchdot/open-golang v0.0.0-20190104022628-a2dfa6d0dab6
