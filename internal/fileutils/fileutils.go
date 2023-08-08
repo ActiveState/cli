@@ -17,21 +17,22 @@ import (
 	"time"
 	"unicode"
 
+	"github.com/gofrs/flock"
+	"github.com/thoas/go-funk"
+
 	"github.com/ActiveState/cli/internal/assets"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/rollbar"
-	"github.com/gofrs/flock"
-	"github.com/thoas/go-funk"
 )
 
 // nullByte represents the null-terminator byte
 const nullByte byte = 0
 
 // FileMode is the mode used for created files
-const FileMode = 0644
+const FileMode = 0o644
 
 // DirMode is the mode used for created dirs
 const DirMode = os.ModePerm
@@ -48,9 +49,7 @@ const (
 	AmendByPrepend
 )
 
-var (
-	ErrorFileNotFound = errs.New("File could not be found")
-)
+var ErrorFileNotFound = errs.New("File could not be found")
 
 type includeFunc func(path string, contents []byte) (include bool)
 
@@ -203,7 +202,6 @@ func HashDirectory(path string) (string, error) {
 
 		return nil
 	})
-
 	if err != nil {
 		return "", errs.Wrap(err, fmt.Sprintf("Cannot hash directory: %s", path))
 	}
@@ -242,6 +240,11 @@ func CopyFile(src, target string) error {
 	}
 	defer in.Close()
 
+	inInfo, err := in.Stat()
+	if err != nil {
+		return errs.Wrap(err, "get file info failed")
+	}
+
 	// Create target directory if it doesn't exist
 	dir := filepath.Dir(target)
 	err = MkdirUnlessExists(dir)
@@ -265,6 +268,11 @@ func CopyFile(src, target string) error {
 	if err != nil {
 		return errs.Wrap(err, "out.Close failed")
 	}
+
+	if err := os.Chmod(out.Name(), inInfo.Mode().Perm()); err != nil {
+		return errs.Wrap(err, "chmod failed")
+	}
+
 	return nil
 }
 
@@ -274,7 +282,7 @@ func CopyAsset(assetName, dest string) error {
 		return errs.Wrap(err, "Asset %s failed", assetName)
 	}
 
-	err = ioutil.WriteFile(dest, asset, 0644)
+	err = ioutil.WriteFile(dest, asset, 0o644)
 	if err != nil {
 		return errs.Wrap(err, "ioutil.WriteFile %s failed", dest)
 	}
@@ -373,8 +381,7 @@ func PrependToFile(filepath string, data []byte) error {
 // AmendFile amends data to a file, supports append, or prepend
 func AmendFile(filePath string, data []byte, flag AmendOptions) error {
 	switch flag {
-	case
-		AmendByAppend, AmendByPrepend:
+	case AmendByAppend, AmendByPrepend:
 
 	default:
 		return locale.NewInputError("fileutils_err_amend_file", "", filePath)
