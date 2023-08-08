@@ -1,6 +1,8 @@
 package constants
 
-import "time"
+import (
+	"time"
+)
 
 // LibraryName contains the main name of this library
 const LibraryName = "cli"
@@ -468,7 +470,6 @@ const InstallerName = "State Installer"
 const StateExecutorCmd = "state-exec"
 
 // ToplevelInstallArchiveDir is the top-level directory for files in an installation archive
-// Cf., https://www.pivotaltracker.com/story/show/177781411
 const ToplevelInstallArchiveDir = "state-install"
 
 // FirstMultiFileStateToolVersion is the State Tool version that introduced multi-file updates
