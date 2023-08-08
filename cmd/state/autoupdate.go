@@ -44,10 +44,13 @@ func autoUpdate(svc *model.SvcModel, args []string, cfg *config.Instance, an ana
 	if !shouldRunAutoUpdate(args, cfg, an) {
 		return false, nil
 	}
-	time.Sleep(time.Second * 6)
+	time.Sleep(time.Second * 3)
 
 	// Check for available update
-	upd, err := svc.CheckUpdate(context.Background())
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*2)
+	defer cancel()
+
+	upd, err := svc.CheckUpdate(ctx)
 	if err != nil {
 		return false, errs.Wrap(err, "Failed to check for update")
 	}
