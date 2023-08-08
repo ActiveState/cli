@@ -81,7 +81,7 @@ func (r *Reset) Run(params *Params) error {
 
 	r.out.Notice(locale.Tl("reset_commit", "Your project will be reset to [ACTIONABLE]{{.V0}}[/RESET]\n", commitID.String()))
 
-	defaultChoice := params.Force
+	defaultChoice := params.Force || !r.out.Config().Interactive
 	confirm, err := r.prompt.Confirm("", locale.Tl("reset_confim", "Resetting is destructive, you will lose any changes that were not pushed. Are you sure you want to do this?"), &defaultChoice)
 	if err != nil {
 		return locale.WrapError(err, "err_reset_confirm", "Could not confirm reset choice")

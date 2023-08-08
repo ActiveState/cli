@@ -30,7 +30,7 @@ type Invitation struct {
 	// email
 	Email string `json:"email,omitempty"`
 
-	// Only populated if you're a superuser and if the invite was created in this request
+	// Only populated if you're a superuser and if the invite was created in this request, or if you are a user getting their own invitations
 	InviteCode string `json:"inviteCode,omitempty"`
 
 	// Only populated if you're a superuser and if the invite was created in this request

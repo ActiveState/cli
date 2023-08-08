@@ -39,19 +39,22 @@ func (s *Show) Run() error {
 	}
 
 	projectTarget := target.NewProjectTarget(proj, nil, "")
+	executables := setup.ExecDir(projectTarget.Dir())
 
 	s.out.Print(output.Prepare(
 		locale.Tl("use_show_project_statement", "",
 			proj.NamespaceString(),
 			projectDir,
-			setup.ExecDir(projectTarget.Dir()),
+			executables,
 		),
 		&struct {
-			Namespace string `json:"namespace"`
-			Path      string `json:"path"`
+			Namespace   string `json:"namespace"`
+			Path        string `json:"path"`
+			Executables string `json:"executables"`
 		}{
 			proj.NamespaceString(),
 			projectDir,
+			executables,
 		},
 	))
 

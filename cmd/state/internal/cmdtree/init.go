@@ -4,7 +4,6 @@ import (
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/primer"
-	"github.com/ActiveState/cli/internal/rtutils/p"
 	"github.com/ActiveState/cli/internal/runners/initialize"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -22,12 +21,6 @@ func newInitCommand(prime *primer.Values) *captain.Command {
 		locale.T("init_description"),
 		prime,
 		[]*captain.Flag{
-			{
-				// Hidden flag for legacy Komodo support
-				Name:   "skeleton",
-				Value:  p.StrP(""),
-				Hidden: true,
-			},
 			{
 				Name:        "language",
 				Description: locale.T("flag_state_init_language_description"),

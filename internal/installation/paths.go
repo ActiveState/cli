@@ -21,21 +21,37 @@ const (
 	InstallDirMarker = ".state_install_root"
 )
 
+type InstallMarkerMeta struct {
+	Branch  string `json:"branch"`
+	Version string `json:"version"`
+}
+
 func DefaultInstallPath() (string, error) {
 	return InstallPathForBranch(constants.BranchName)
 }
 
+// InstallPathForBranch gets the installation path for the given branch.
 func InstallPathForBranch(branch string) (string, error) {
 	if v := os.Getenv(constants.InstallPathOverrideEnvVarName); v != "" {
 		return filepath.Clean(v), nil
 	}
-	return installPathForBranch(branch)
+
+	installPath, err := installPathForBranch(branch)
+	if err != nil {
+		return "", errs.Wrap(err, "Unable to determine install path for branch")
+	}
+
+	return installPath, nil
 }
 
 func InstallRoot(path string) (string, error) {
 	installFile, err := fileutils.FindFileInPath(path, InstallDirMarker)
 	if err != nil {
 		return "", errs.Wrap(err, "Could not find install marker file in path")
+	}
+
+	if !isValidInstallPath(filepath.Dir(installFile)) {
+		return "", errs.New("Invalid install path: %s", path)
 	}
 
 	return filepath.Dir(installFile), nil
@@ -48,7 +64,7 @@ func InstallPathFromExecPath() (string, error) {
 	}
 
 	// Facilitate use-case of running executables from the build dir while developing
-	if !condition.BuiltViaCI() && strings.Contains(exePath, "/build/") {
+	if !condition.BuiltViaCI() && strings.Contains(exePath, string(os.PathSeparator)+"build"+string(os.PathSeparator)) {
 		return filepath.Dir(exePath), nil
 	}
 	if path, ok := os.LookupEnv(constants.OverwriteDefaultInstallationPathEnvVarName); ok {
@@ -93,4 +109,8 @@ func ApplicationInstallPath() (string, error) {
 		return path, nil
 	}
 	return defaultSystemInstallPath()
+}
+
+func isValidInstallPath(path string) bool {
+	return fileutils.FileExists(filepath.Join(path, InstallDirMarker))
 }

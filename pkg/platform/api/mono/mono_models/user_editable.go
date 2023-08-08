@@ -17,9 +17,6 @@ import (
 // swagger:model UserEditable
 type UserEditable struct {
 
-	// e u l a accepted
-	EULAAccepted *bool `json:"EULAAccepted,omitempty"`
-
 	// datetime format
 	DatetimeFormat string `json:"datetimeFormat,omitempty"`
 

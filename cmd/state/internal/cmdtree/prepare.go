@@ -23,6 +23,7 @@ func newPrepareCommand(prime *primer.Values) *captain.Command {
 	)
 
 	cmd.SetHidden(true)
+	cmd.SetDoesNotSupportStructuredOutput()
 
 	return cmd
 }
@@ -43,6 +44,7 @@ func newPrepareCompletionsCommand(prime *primer.Values) *captain.Command {
 	)
 
 	cmd.SetHidden(true)
+	cmd.SetDoesNotSupportStructuredOutput()
 
 	return cmd
 }

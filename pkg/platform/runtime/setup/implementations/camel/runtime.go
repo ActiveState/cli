@@ -1,13 +1,17 @@
 package camel
 
 import (
+	"io/ioutil"
 	"os"
+	"path/filepath"
 
+	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/multilog"
-	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
+	model "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/ActiveState/cli/pkg/platform/runtime/store"
+	"github.com/go-openapi/strfmt"
 )
 
 type Setup struct {
@@ -23,8 +27,18 @@ func (s *Setup) DeleteOutdatedArtifacts(_ artifact.ArtifactChangeset, _, already
 	if len(alreadyInstalled) != 0 {
 		return nil
 	}
-	if err := os.RemoveAll(s.store.InstallPath()); err != nil {
-		multilog.Error("Error removing previous camel installation: %v", err)
+	files, err := ioutil.ReadDir(s.store.InstallPath())
+	if err != nil {
+		return errs.Wrap(err, "Error reading previous camel installation")
+	}
+	for _, file := range files {
+		if file.Name() == constants.LocalRuntimeTempDirectory || file.Name() == constants.LocalRuntimeEnvironmentDirectory {
+			continue // do not delete files that do not belong to previous installation
+		}
+		err = os.RemoveAll(filepath.Join(s.store.InstallPath(), file.Name()))
+		if err != nil {
+			return errs.Wrap(err, "Error removing previous camel installation")
+		}
 	}
 	return nil
 }
@@ -33,6 +47,6 @@ func (s *Setup) ResolveArtifactName(_ artifact.ArtifactID) string {
 	return locale.Tl("camel_bundle_name", "bundle")
 }
 
-func (s *Setup) DownloadsFromBuild(buildStatus *headchef_models.V1BuildStatusResponse) ([]artifact.ArtifactDownload, error) {
-	return artifact.NewDownloadsFromCamelBuild(buildStatus)
+func (s *Setup) DownloadsFromBuild(build model.Build, artifacts map[strfmt.UUID]artifact.Artifact) ([]artifact.ArtifactDownload, error) {
+	return artifact.NewDownloadsFromCamelBuildPlan(build, artifacts)
 }

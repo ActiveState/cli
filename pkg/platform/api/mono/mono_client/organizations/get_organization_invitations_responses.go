@@ -51,7 +51,8 @@ func NewGetOrganizationInvitationsOK() *GetOrganizationInvitationsOK {
 	return &GetOrganizationInvitationsOK{}
 }
 
-/* GetOrganizationInvitationsOK describes a response with status code 200, with default header values.
+/*
+GetOrganizationInvitationsOK describes a response with status code 200, with default header values.
 
 Success
 */
@@ -81,7 +82,8 @@ func NewGetOrganizationInvitationsForbidden() *GetOrganizationInvitationsForbidd
 	return &GetOrganizationInvitationsForbidden{}
 }
 
-/* GetOrganizationInvitationsForbidden describes a response with status code 403, with default header values.
+/*
+GetOrganizationInvitationsForbidden describes a response with status code 403, with default header values.
 
 Forbidden
 */
@@ -113,7 +115,8 @@ func NewGetOrganizationInvitationsInternalServerError() *GetOrganizationInvitati
 	return &GetOrganizationInvitationsInternalServerError{}
 }
 
-/* GetOrganizationInvitationsInternalServerError describes a response with status code 500, with default header values.
+/*
+GetOrganizationInvitationsInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */

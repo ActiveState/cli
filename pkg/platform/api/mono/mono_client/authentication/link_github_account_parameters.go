@@ -52,10 +52,12 @@ func NewLinkGithubAccountParamsWithHTTPClient(client *http.Client) *LinkGithubAc
 	}
 }
 
-/* LinkGithubAccountParams contains all the parameters to send to the API endpoint
-   for the link github account operation.
+/*
+LinkGithubAccountParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the link github account operation.
+
+	Typically these are written to a http.Request.
 */
 type LinkGithubAccountParams struct {
 

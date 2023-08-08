@@ -42,7 +42,7 @@ type ClientService interface {
 }
 
 /*
-  GetAddOns gets information about all available add ons
+GetAddOns gets information about all available add ons
 */
 func (a *Client) GetAddOns(params *GetAddOnsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAddOnsOK, error) {
 	// TODO: Validate the params before sending
@@ -81,7 +81,7 @@ func (a *Client) GetAddOns(params *GetAddOnsParams, authInfo runtime.ClientAuthI
 }
 
 /*
-  GetTiers gets information about all available tiers
+GetTiers gets information about all available tiers
 */
 func (a *Client) GetTiers(params *GetTiersParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetTiersOK, error) {
 	// TODO: Validate the params before sending
@@ -120,7 +120,7 @@ func (a *Client) GetTiers(params *GetTiersParams, authInfo runtime.ClientAuthInf
 }
 
 /*
-  GetTiersPricing gets information about all available tiers including their price in dollars per active runtime per year
+GetTiersPricing gets information about all available tiers including their price in dollars per active runtime per year
 */
 func (a *Client) GetTiersPricing(params *GetTiersPricingParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetTiersPricingOK, error) {
 	// TODO: Validate the params before sending
@@ -159,7 +159,7 @@ func (a *Client) GetTiersPricing(params *GetTiersPricingParams, authInfo runtime
 }
 
 /*
-  SetAddOnDefault sets default state of add on for a tier
+SetAddOnDefault sets default state of add on for a tier
 */
 func (a *Client) SetAddOnDefault(params *SetAddOnDefaultParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*SetAddOnDefaultOK, error) {
 	// TODO: Validate the params before sending

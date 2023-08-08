@@ -54,10 +54,12 @@ func NewAddPlatformParamsWithHTTPClient(client *http.Client) *AddPlatformParams 
 	}
 }
 
-/* AddPlatformParams contains all the parameters to send to the API endpoint
-   for the add platform operation.
+/*
+AddPlatformParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the add platform operation.
+
+	Typically these are written to a http.Request.
 */
 type AddPlatformParams struct {
 

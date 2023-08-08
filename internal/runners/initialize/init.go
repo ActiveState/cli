@@ -99,8 +99,14 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 		return locale.NewInputError("err_projectfile_exists")
 	}
 
-	if err := fileutils.MkdirUnlessExists(path); err != nil {
+	err := fileutils.MkdirUnlessExists(path)
+	if err != nil {
 		return locale.WrapError(err, "err_init_preparedir", "Could not create directory at [NOTICE]{{.V0}}[/RESET]. Error: {{.V1}}", params.Path, err.Error())
+	}
+
+	path, err = filepath.Abs(params.Path)
+	if err != nil {
+		return locale.WrapInputError(err, "err_init_abs_path", "Could not determine absolute path to [NOTICE]{{.V0}}[/RESET]. Error: {{.V1}}", path, err.Error())
 	}
 
 	var languageName, languageVersion string
@@ -119,6 +125,11 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 		return locale.NewInputError("err_init_no_language")
 	}
 
+	// Require 'python', 'python@3', or 'python@2' instead of 'python3' or 'python2'.
+	if languageName == language.Python3.String() || languageName == language.Python2.String() {
+		return language.UnrecognizedLanguageError(languageName, language.RecognizedSupportedsNames())
+	}
+
 	lang, err := language.MakeByNameAndVersion(languageName, languageVersion)
 	if err != nil {
 		if inferred {
@@ -128,18 +139,13 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 		}
 	}
 
-	if err := lang.Validate(); err != nil {
+	err = verifyLangAndVersion(lang, languageVersion)
+	if err != nil {
 		if inferred {
 			return locale.WrapError(err, "err_init_lang", "", languageName, languageVersion)
 		} else {
 			return locale.WrapInputError(err, "err_init_lang", "", languageName, languageVersion)
 		}
-	}
-
-	version := deriveVersion(lang, languageVersion)
-
-	if err := verifyLangAndVersion(lang.Requirement(), version); err != nil {
-		return locale.WrapError(err, "err_init_verify_version", "Could not verify language")
 	}
 
 	createParams := &projectfile.CreateParams{
@@ -180,6 +186,7 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 		return err
 	}
 
+	version := deriveVersion(lang, languageVersion)
 	commitID, err := model.CommitInitial(model.HostPlatform, lang.Requirement(), version)
 	if err != nil {
 		return locale.WrapError(err, "err_init_commit", "Could not create initial commit")
@@ -232,8 +239,17 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 	return nil
 }
 
-func verifyLangAndVersion(lang, version string) error {
-	pkgs, err := model.SearchIngredientsStrict(model.NewNamespaceLanguage(), lang, false, true)
+func verifyLangAndVersion(lang language.Language, version string) error {
+	err := lang.Validate()
+	if err != nil {
+		return errs.Wrap(err, "Failed to validate language")
+	}
+
+	if version == "" {
+		return nil // nothing to verify
+	}
+
+	pkgs, err := model.SearchIngredientsStrict(model.NewNamespaceLanguage(), lang.Requirement(), false, true)
 	if err != nil {
 		return locale.WrapError(err, "err_init_verify_language", "Inventory search failed unexpectedly")
 	}
@@ -243,7 +259,7 @@ func verifyLangAndVersion(lang, version string) error {
 	}
 
 	for _, pkg := range pkgs {
-		if pkg.Version == version {
+		if strings.HasPrefix(pkg.Version, version) {
 			return nil
 		}
 	}
@@ -256,10 +272,6 @@ func verifyLangAndVersion(lang, version string) error {
 		locale.Tl(
 			"version_not_found_check_format",
 			"Please ensure that the version format is valid.",
-		),
-		locale.Tl(
-			"version_not_found_suggest_micro",
-			"Additional detail may help. For example, '3.10.0' rather than '3.10'",
 		),
 	)
 }
@@ -276,7 +288,7 @@ func deriveVersion(lang language.Language, version string) string {
 	}
 
 	for _, l := range langs {
-		if lang.String() == l.Name || (lang == language.Python3 && l.Name == "python") {
+		if lang.String() == l.Name || (lang == language.Python3 && l.Name == language.Python3.Requirement()) {
 			return l.DefaultVersion
 		}
 	}

@@ -52,10 +52,12 @@ func NewGetRevertCommitParamsWithHTTPClient(client *http.Client) *GetRevertCommi
 	}
 }
 
-/* GetRevertCommitParams contains all the parameters to send to the API endpoint
-   for the get revert commit operation.
+/*
+GetRevertCommitParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the get revert commit operation.
+
+	Typically these are written to a http.Request.
 */
 type GetRevertCommitParams struct {
 
