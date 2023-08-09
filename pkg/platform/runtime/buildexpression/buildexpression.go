@@ -269,7 +269,11 @@ func newAp(path []string, m map[string]interface{}) (*Ap, error) {
 	var name string
 	var argsInterface interface{}
 	for key, value := range m {
-		if isAp(path, value.(map[string]interface{})) {
+		valueMap, ok := value.(map[string]interface{})
+		if !ok {
+			continue
+		}
+		if isAp(path, valueMap) {
 			name = key
 			argsInterface = value
 			break
