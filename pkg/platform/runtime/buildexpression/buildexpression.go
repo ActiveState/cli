@@ -10,6 +10,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/sliceutils"
@@ -54,10 +55,11 @@ type Var struct {
 }
 
 type Value struct {
-	Ap   *Ap
-	List *[]*Value
-	Str  *string
-	Null *Null
+	Ap    *Ap
+	List  *[]*Value
+	Str   *string
+	Null  *Null
+	Float *float64
 
 	Assignment *Var
 	Object     *[]*Var
@@ -248,7 +250,11 @@ func newValue(path []string, valueInterface interface{}) (*Value, error) {
 			value.Str = ptr.To(v)
 		}
 
+	case float64:
+		value.Float = ptr.To(v)
+
 	default:
+		logging.Debug("Unknown type: %T at path %s", v, strings.Join(path, "."))
 		// An empty value is interpreted as JSON null.
 		value.Null = &Null{}
 	}
@@ -733,6 +739,8 @@ func (v *Value) MarshalJSON() ([]byte, error) {
 		return json.Marshal(nil)
 	case v.Assignment != nil:
 		return json.Marshal(v.Assignment)
+	case v.Float != nil:
+		return json.Marshal(*v.Float)
 	case v.Object != nil:
 		m := make(map[string]interface{})
 		for _, assignment := range *v.Object {
