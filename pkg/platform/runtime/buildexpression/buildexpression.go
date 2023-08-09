@@ -275,6 +275,9 @@ func newAp(path []string, m map[string]interface{}) (*Ap, error) {
 	var name string
 	var argsInterface interface{}
 	for key, value := range m {
+		// The value of an application will always be a map[string]interface{}
+		// that represents the application's arguments. In a BuildExpression,
+		// an applications arguments are always key-value pairs.
 		valueMap, ok := value.(map[string]interface{})
 		if !ok {
 			continue
