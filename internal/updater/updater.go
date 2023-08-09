@@ -5,10 +5,11 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
+
+	"github.com/gofrs/flock"
 
 	"github.com/ActiveState/cli/internal/analytics"
 	anaConst "github.com/ActiveState/cli/internal/analytics/constants"
@@ -23,7 +24,6 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
-	"github.com/gofrs/flock"
 )
 
 type ErrorInProgress struct{ *locale.LocalizedError }
@@ -44,7 +44,7 @@ type AvailableUpdate struct {
 	an       analytics.Dispatcher
 }
 
-func NewAvailableUpdate(version, channel, platform, path, sha256, tag string) *AvailableUpdate {
+func NewAvailableUpdate(an analytics.Dispatcher, version, channel, platform, path, sha256, tag string) *AvailableUpdate {
 	var t *string
 	if tag != "" {
 		t = &tag
@@ -56,6 +56,7 @@ func NewAvailableUpdate(version, channel, platform, path, sha256, tag string) *A
 		Path:     path,
 		Sha256:   sha256,
 		Tag:      t,
+		an:       an,
 	}
 }
 
@@ -67,7 +68,7 @@ func (u *AvailableUpdate) DownloadAndUnpack() (string, error) {
 		return u.tmpDir, nil
 	}
 
-	tmpDir, err := ioutil.TempDir("", "state-update")
+	tmpDir, err := os.MkdirTemp("", "state-update")
 	if err != nil {
 		msg := anaConst.UpdateErrorTempDir
 		u.analyticsEvent(anaConst.ActUpdateDownload, anaConst.UpdateLabelFailed, u.Version, msg)
@@ -198,7 +199,6 @@ func (u *AvailableUpdate) InstallWithProgress(installTargetPath string, progress
 }
 
 func (u *AvailableUpdate) analyticsEvent(action, label, version, msg string) {
-
 	dims := &dimensions.Values{
 		TargetVersion: ptr.To(version),
 	}
