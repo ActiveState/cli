@@ -289,11 +289,23 @@ func (s *Session) SpawnCmdWithOpts(exe string, opts ...SpawnOptions) *termtest.C
 	return console
 }
 
-// PrepareActiveStateYAML creates a projectfile.Project instance from the
-// provided contents and saves the output to an as.y file within the named
-// directory.
+// PrepareActiveStateYAML creates an activestate.yaml in the session's work directory from the
+// given YAML contents.
 func (s *Session) PrepareActiveStateYAML(contents string) {
-	require.NoError(s.t, fileutils.WriteFile(filepath.Join(s.Dirs.Work, "activestate.yaml"), []byte(contents)))
+	require.NoError(s.t, fileutils.WriteFile(filepath.Join(s.Dirs.Work, constants.ConfigFileName), []byte(contents)))
+}
+
+func (s *Session) PrepareCommitIdFile(commitID string) {
+	require.NoError(s.t, fileutils.WriteFile(filepath.Join(s.Dirs.Work, constants.ProjectConfigDirName, constants.CommitIdFileName), []byte(commitID)))
+}
+
+// PrepareProject creates a very simple activestate.yaml file for the given org/project and, if a
+// commit ID is given, an .activestate/commit file.
+func (s *Session) PrepareProject(namespace, commitID string) {
+	s.PrepareActiveStateYAML(fmt.Sprintf("project: https://%s/%s", constants.DefaultAPIHost, namespace))
+	if commitID != "" {
+		s.PrepareCommitIdFile(commitID)
+	}
 }
 
 // PrepareFile writes a file to path with contents, expecting no error
@@ -337,12 +349,12 @@ func (s *Session) LogoutUser() {
 	p.ExpectExitCode(0)
 }
 
-func (s *Session) CreateNewUser() string {
+func (s *Session) CreateNewUser() (string, string) {
 	uid, err := uuid.NewRandom()
 	require.NoError(s.t, err)
 
 	username := fmt.Sprintf("user-%s", uid.String()[0:8])
-	password := username
+	password := uid.String()[8:]
 	email := fmt.Sprintf("%s@test.tld", username)
 
 	p := s.Spawn(tagsuite.Auth, "signup", "--prompt")
@@ -363,7 +375,7 @@ func (s *Session) CreateNewUser() string {
 
 	s.users = append(s.users, username)
 
-	return username
+	return username, password
 }
 
 // NotifyProjectCreated indicates that the given project was created on the Platform and needs to

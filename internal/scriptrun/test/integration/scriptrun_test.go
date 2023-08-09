@@ -49,7 +49,7 @@ func (suite *ScriptRunSuite) TestRunStandaloneCommand() {
 	var contents string
 	if runtime.GOOS != "windows" {
 		contents = strings.TrimSpace(`
-project: "https://platform.activestate.com/ActiveState/pjfile?commitID=00010001-0001-0001-0001-000100010001"
+project: "https://platform.activestate.com/ActiveState/pjfile"
 scripts:
   - name: run
     value: echo foo
@@ -57,7 +57,7 @@ scripts:
   `)
 	} else {
 		contents = strings.TrimSpace(`
-project: "https://platform.activestate.com/ActiveState/pjfile?commitID=00010001-0001-0001-0001-000100010001"
+project: "https://platform.activestate.com/ActiveState/pjfile"
 scripts:
   - name: run
     value: cmd.exe /C echo foo
@@ -130,7 +130,7 @@ func (suite *ScriptRunSuite) TestRunNoProjectInheritance() {
 	var contents string
 	if runtime.GOOS != "windows" {
 		contents = strings.TrimSpace(`
-project: "https://platform.activestate.com/ActiveState/pjfile?commitID=00010001-0001-0001-0001-000100010001"
+project: "https://platform.activestate.com/ActiveState/pjfile"
 scripts:
   - name: run
     value: echo $ACTIVESTATE_PROJECT
@@ -138,7 +138,7 @@ scripts:
 `)
 	} else {
 		contents = strings.TrimSpace(`
-project: "https://platform.activestate.com/ActiveState/pjfile?commitID=00010001-0001-0001-0001-000100010001"
+project: "https://platform.activestate.com/ActiveState/pjfile"
 scripts:
   - name: run
     value: echo %ACTIVESTATE_PROJECT%
@@ -169,7 +169,7 @@ func (suite *ScriptRunSuite) TestRunMissingScript() {
 
 	pjfile := &projectfile.Project{}
 	contents := strings.TrimSpace(`
-project: "https://platform.activestate.com/ActiveState/pjfile?commitID=00010001-0001-0001-0001-000100010001"
+project: "https://platform.activestate.com/ActiveState/pjfile"
 scripts:
   - name: run
     value: whatever
@@ -196,7 +196,7 @@ func (suite *ScriptRunSuite) TestRunUnknownCommand() {
 
 	pjfile := &projectfile.Project{}
 	contents := strings.TrimSpace(`
-project: "https://platform.activestate.com/ActiveState/pjfile?commitID=00010001-0001-0001-0001-000100010001"
+project: "https://platform.activestate.com/ActiveState/pjfile"
 scripts:
   - name: run
     value: whatever
@@ -242,14 +242,14 @@ func (suite *ScriptRunSuite) TestRunActivatedCommand() {
 	var contents string
 	if runtime.GOOS != "windows" {
 		contents = strings.TrimSpace(`
-project: "https://platform.activestate.com/ActiveState/pjfile?commitID=00010001-0001-0001-0001-000100010001"
+project: "https://platform.activestate.com/ActiveState/pjfile"
 scripts:
   - name: run
     standalone: true
     value: echo foo`)
 	} else {
 		contents = strings.TrimSpace(`
-project: "https://platform.activestate.com/ActiveState/pjfile?commitID=00010001-0001-0001-0001-000100010001"
+project: "https://platform.activestate.com/ActiveState/pjfile"
 scripts:
   - name: run
     standalone: true
@@ -321,7 +321,7 @@ func setupProjectWithScriptsExpectingArgs(t *testing.T, cmdName string) *project
 	var contents string
 	if runtime.GOOS != "windows" {
 		contents = fmt.Sprintf(`
-project: "https://platform.activestate.com/ActiveState/project?commitID=00010001-0001-0001-0001-000100010001"
+project: "https://platform.activestate.com/ActiveState/project"
 scripts:
   - name: %s
     standalone: true
@@ -329,7 +329,7 @@ scripts:
       echo "ARGS|${1}|${2}|${3}|${4}|"`, cmdName)
 	} else {
 		contents = fmt.Sprintf(`
-project: "https://platform.activestate.com/ActiveState/project?commitID=00010001-0001-0001-0001-000100010001"
+project: "https://platform.activestate.com/ActiveState/project"
 scripts:
   - name: %s
     standalone: true

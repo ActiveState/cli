@@ -17,6 +17,7 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runbits"
+	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
@@ -68,7 +69,11 @@ func inferLanguage(config projectfile.ConfigGetter) (string, string, bool) {
 	if err != nil {
 		return "", "", false
 	}
-	commitID := defaultProj.CommitUUID()
+	commitID, err := localcommit.Get(defaultProj.Dir())
+	if err != nil && !localcommit.IsFileDoesNotExistError(err) {
+		multilog.Error("Unable to get local commit: %v", errs.JoinMessage(err))
+		return "", "", false
+	}
 	if commitID == "" {
 		return "", "", false
 	}
@@ -139,13 +144,18 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 		}
 	}
 
-	err = verifyLangAndVersion(lang, languageVersion)
+	version, err := deriveVersion(lang, languageVersion)
 	if err != nil {
-		if inferred {
+		if inferred || !locale.IsInputError(err) {
 			return locale.WrapError(err, "err_init_lang", "", languageName, languageVersion)
 		} else {
 			return locale.WrapInputError(err, "err_init_lang", "", languageName, languageVersion)
 		}
+	}
+
+	emptyDir, err := fileutils.IsEmptyDir(path)
+	if err != nil {
+		multilog.Error("Unable to check if directory is empty: %v", err)
 	}
 
 	createParams := &projectfile.CreateParams{
@@ -186,14 +196,20 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 		return err
 	}
 
-	version := deriveVersion(lang, languageVersion)
 	commitID, err := model.CommitInitial(model.HostPlatform, lang.Requirement(), version)
 	if err != nil {
 		return locale.WrapError(err, "err_init_commit", "Could not create initial commit")
 	}
 
-	if err := proj.SetCommit(commitID.String()); err != nil {
-		return locale.WrapError(err, "err_init_setcommit", "Could not store commit to project file")
+	if err := localcommit.Set(proj.Dir(), commitID.String()); err != nil {
+		return errs.Wrap(err, "Unable to create local commit file")
+	}
+	if emptyDir || fileutils.DirExists(filepath.Join(path, ".git")) {
+		err := localcommit.AddToGitIgnore(path)
+		if err != nil {
+			r.out.Notice(locale.Tr("notice_commit_id_gitignore", constants.ProjectConfigDirName, constants.CommitIdFileName))
+			multilog.Error("Unable to add local commit file to .gitignore: %v", err)
+		}
 	}
 
 	logging.Debug("Creating Platform project and pushing it")
@@ -239,60 +255,29 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 	return nil
 }
 
-func verifyLangAndVersion(lang language.Language, version string) error {
+func deriveVersion(lang language.Language, version string) (string, error) {
 	err := lang.Validate()
 	if err != nil {
-		return errs.Wrap(err, "Failed to validate language")
+		return "", errs.Wrap(err, "Failed to validate language")
 	}
 
 	if version == "" {
-		return nil // nothing to verify
-	}
-
-	pkgs, err := model.SearchIngredientsStrict(model.NewNamespaceLanguage(), lang.Requirement(), false, true)
-	if err != nil {
-		return locale.WrapError(err, "err_init_verify_language", "Inventory search failed unexpectedly")
-	}
-
-	if len(pkgs) == 0 {
-		return locale.NewInputError("err_init_language_not_found", "The selected language cannot be found")
-	}
-
-	for _, pkg := range pkgs {
-		if strings.HasPrefix(pkg.Version, version) {
-			return nil
+		// Return default language.
+		langs, err := model.FetchSupportedLanguages(model.HostPlatform)
+		if err != nil {
+			multilog.Error("Failed to fetch supported languages (using hardcoded default version): %s", errs.JoinMessage(err))
+			return lang.RecommendedVersion(), nil
 		}
-	}
 
-	return errs.AddTips(
-		locale.NewInputError(
-			"err_init_language_version_not_found",
-			"The selected version of the language cannot be found",
-		),
-		locale.Tl(
-			"version_not_found_check_format",
-			"Please ensure that the version format is valid.",
-		),
-	)
-}
-
-func deriveVersion(lang language.Language, version string) string {
-	if version != "" {
-		return version
-	}
-
-	langs, err := model.FetchSupportedLanguages(model.HostPlatform)
-	if err != nil {
-		multilog.Error("Failed to fetch supported languages (using hardcoded default version): %s", errs.JoinMessage(err))
-		return lang.RecommendedVersion()
-	}
-
-	for _, l := range langs {
-		if lang.String() == l.Name || (lang == language.Python3 && l.Name == language.Python3.Requirement()) {
-			return l.DefaultVersion
+		for _, l := range langs {
+			if lang.String() == l.Name || (lang == language.Python3 && l.Name == language.Python3.Requirement()) {
+				return l.DefaultVersion, nil
+			}
 		}
+
+		multilog.Error("Could not find requested language in fetched languages (using hardcoded default version): %s", lang)
+		return lang.RecommendedVersion(), nil
 	}
 
-	multilog.Error("Could not find requested language in fetched languages (using hardcoded default version): %s", lang)
-	return lang.RecommendedVersion()
+	return version, nil
 }

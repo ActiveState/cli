@@ -90,9 +90,11 @@ func (s *Exec) Run(params *Params, args ...string) (rerr error) {
 
 	// Detect target and project dir
 	// If the path passed resolves to a runtime dir (ie. has a runtime marker) then the project is not used
+	var proj *project.Project
+	var err error
 	if params.Path != "" && runtime.IsRuntimeDir(params.Path) {
 		projectDir = projectFromRuntimeDir(s.cfg, params.Path)
-		proj, err := project.FromPath(projectDir)
+		proj, err = project.FromPath(projectDir)
 		if err != nil {
 			logging.Warning("Could not get project dir from path: %s", errs.JoinMessage(err))
 			// We do not know if the project is headless at this point so we default to true
@@ -103,7 +105,7 @@ func (s *Exec) Run(params *Params, args ...string) (rerr error) {
 		}
 		projectNamespace = proj.NamespaceString()
 	} else {
-		proj := s.proj
+		proj = s.proj
 		if params.Path != "" {
 			var err error
 			proj, err = project.FromPath(params.Path)
@@ -123,16 +125,20 @@ func (s *Exec) Run(params *Params, args ...string) (rerr error) {
 
 	s.out.Notice(locale.Tl("operating_message", "", projectNamespace, projectDir))
 
-	rt, err := runtime.New(rtTarget, s.analytics, s.svcModel)
-	if err != nil {
-		if !runtime.IsNeedsUpdateError(err) {
-			return locale.WrapError(err, "err_activate_runtime", "Could not initialize a runtime for this project.")
-		}
+	rt, err := runtime.New(rtTarget, s.analytics, s.svcModel, s.auth)
+	switch {
+	case err == nil:
+		break
+	case runtime.IsNeedsUpdateError(err):
 		pg := runbits.NewRuntimeProgressIndicator(s.out)
 		defer rtutils.Closer(pg.Close, &rerr)
-		if err := rt.Update(s.auth, pg); err != nil {
+		if err := rt.Update(pg); err != nil {
 			return locale.WrapError(err, "err_update_runtime", "Could not update runtime installation.")
 		}
+	case runtime.IsNeedsCommitError(err):
+		s.out.Notice(locale.T("notice_commit_build_script"))
+	default:
+		return locale.WrapError(err, "err_activate_runtime", "Could not initialize a runtime for this project.")
 	}
 	venv := virtualenvironment.New(rt)
 

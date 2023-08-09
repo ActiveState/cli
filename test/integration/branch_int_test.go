@@ -1,7 +1,6 @@
 package integration
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
@@ -19,7 +18,7 @@ func (suite *BranchIntegrationTestSuite) TestBranch_List() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	suite.PrepareActiveStateYAML(ts, "ActiveState-CLI", "Branches")
+	ts.PrepareProject("ActiveState-CLI/Branches", "")
 
 	cp := ts.Spawn("branch")
 	expected := `main (Current)
@@ -39,7 +38,7 @@ func (suite *BranchIntegrationTestSuite) TestBranch_Add() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	suite.PrepareActiveStateYAML(ts, e2e.PersistentUsername, "Branch")
+	ts.PrepareProject("ActiveState-CLI/Branch", "")
 
 	ts.LoginAsPersistentUser()
 
@@ -56,11 +55,6 @@ func (suite *BranchIntegrationTestSuite) TestBranch_Add() {
 	cp = ts.Spawn("branch")
 	cp.Expect(branchName.String())
 	cp.ExpectExitCode(0)
-}
-
-func (suite *BranchIntegrationTestSuite) PrepareActiveStateYAML(ts *e2e.Session, username, project string) {
-	asyData := fmt.Sprintf(`project: "https://platform.activestate.com/%s/%s"`, username, project)
-	ts.PrepareActiveStateYAML(asyData)
 }
 
 func (suite *BranchIntegrationTestSuite) TestJSON() {

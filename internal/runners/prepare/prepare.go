@@ -20,6 +20,7 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/subshell"
+	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	rt "github.com/ActiveState/cli/pkg/platform/runtime"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
@@ -72,7 +73,12 @@ func (r *Prepare) resetExecutors() error {
 		return errs.Wrap(err, "Could not get project from its directory")
 	}
 
-	run, err := rt.New(target.NewCustomTarget(proj.Owner(), proj.Name(), proj.CommitUUID(), defaultTargetDir, target.TriggerResetExec, proj.IsHeadless()), r.analytics, r.svcModel)
+	commitID, err := localcommit.Get(proj.Dir())
+	if err != nil {
+		return errs.Wrap(err, "Unable to get local commit")
+	}
+
+	run, err := rt.New(target.NewCustomTarget(proj.Owner(), proj.Name(), commitID, defaultTargetDir, target.TriggerResetExec, proj.IsHeadless()), r.analytics, r.svcModel, nil)
 	if err != nil {
 		if rt.IsNeedsUpdateError(err) {
 			return nil // project was never set up, so no executors to reset
