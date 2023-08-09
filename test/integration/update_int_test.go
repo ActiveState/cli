@@ -11,6 +11,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ActiveState/termtest"
+	"github.com/stretchr/testify/suite"
+
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/exeutils"
@@ -20,8 +23,6 @@ import (
 	"github.com/ActiveState/cli/internal/rtutils/singlethread"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
-	"github.com/ActiveState/termtest"
-	"github.com/stretchr/testify/suite"
 )
 
 type UpdateIntegrationTestSuite struct {
@@ -32,8 +33,10 @@ type matcherFunc func(expected interface{}, actual interface{}, msgAndArgs ...in
 
 // Todo https://www.pivotaltracker.com/story/show/177863116
 // Update to release branch when possible
-var targetBranch = "beta"
-var oldUpdateVersion = "beta@0.32.2-SHA3e1d435"
+var (
+	targetBranch     = "beta"
+	oldUpdateVersion = "beta@0.32.2-SHA3e1d435"
+)
 
 func init() {
 	if constants.BranchName == targetBranch {
@@ -110,7 +113,8 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateAvailable() {
 
 	cp = ts.SpawnWithOpts(e2e.WithArgs("--version"))
 	cp.Expect("Update Available")
-	cp.ExpectExitCode(0)
+	// use bad code to dump logs
+	cp.ExpectExitCode(86)
 }
 
 func (suite *UpdateIntegrationTestSuite) TestUpdate() {
@@ -231,6 +235,7 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateTags() {
 		})
 	}
 }
+
 func TestUpdateIntegrationTestSuite(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping integration test in short mode.")
