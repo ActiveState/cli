@@ -41,7 +41,7 @@ func StopRunning(installPath string) (rerr error) {
 
 func stopSvc(installPath string) error {
 	svcExec, err := installation.ServiceExecFromDir(installPath)
-	if err != nil && !errors.Is(err, fileutils.ErrorFileNotFound) {
+	if err != nil {
 		return locale.WrapError(err, "err_service_exec_dir", "", installPath)
 	}
 

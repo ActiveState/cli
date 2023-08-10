@@ -116,7 +116,7 @@ func (suite *ConditionIntegrationTestSuite) TestConditionSyntaxError() {
 
 func (suite *ConditionIntegrationTestSuite) PrepareActiveStateYAML(ts *e2e.Session) {
 	asyData := strings.TrimSpace(`
-project: https://platform.activestate.com/ActiveState-CLI/test
+project: https://platform.activestate.com/ActiveState-CLI/test?commitID=9090c128-e948-4388-8f7f-96e2c1e00d98
 constants:
   - name: projectName
     value: invalidProjectName
@@ -215,11 +215,10 @@ events:
 `)
 
 	ts.PrepareActiveStateYAML(asyData)
-	ts.PrepareCommitIdFile("9090c128-e948-4388-8f7f-96e2c1e00d98")
 }
 func (suite *ConditionIntegrationTestSuite) PrepareActiveStateYAMLWithSyntaxError(ts *e2e.Session) {
 	asyData := strings.TrimSpace(`
-project: https://platform.activestate.com/ActiveState-CLI/test
+project: https://platform.activestate.com/ActiveState-CLI/test?commitID=9090c128-e948-4388-8f7f-96e2c1e00d98
 scripts:
   - name: test
     language: bash
@@ -234,7 +233,6 @@ scripts:
 `)
 
 	ts.PrepareActiveStateYAML(asyData)
-	ts.PrepareCommitIdFile("9090c128-e948-4388-8f7f-96e2c1e00d98")
 }
 
 func TestConditionIntegrationTestSuite(t *testing.T) {

@@ -5,7 +5,6 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/go-openapi/strfmt"
@@ -33,12 +32,7 @@ func (l *List) Run() error {
 		return locale.NewInputError("err_no_project")
 	}
 
-	commitID, err := localcommit.Get(l.proj.Dir())
-	if err != nil && !localcommit.IsFileDoesNotExistError(err) {
-		return errs.Wrap(err, "Unable to get local commit")
-	}
-
-	targetCommitID, err := targetedCommitID(commitID.String(), l.proj.Name(), l.proj.Owner(), l.proj.BranchName())
+	targetCommitID, err := targetedCommitID(l.proj.CommitID(), l.proj.Name(), l.proj.Owner(), l.proj.BranchName())
 	if err != nil {
 		return errs.Wrap(err, "Unable to get commit ID")
 	}

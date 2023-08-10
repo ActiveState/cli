@@ -2,6 +2,9 @@ package revert
 
 import (
 	"github.com/ActiveState/cli/internal/analytics"
+	"github.com/ActiveState/cli/pkg/platform/runtime/target"
+	"github.com/go-openapi/strfmt"
+
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
@@ -9,14 +12,12 @@ import (
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/pkg/cmdlets/commit"
-	"github.com/ActiveState/cli/pkg/localcommit"
-	gqlmodel "github.com/ActiveState/cli/pkg/platform/api/graphql/model"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/go-openapi/strfmt"
+
+	gqlmodel "github.com/ActiveState/cli/pkg/platform/api/graphql/model"
 )
 
 type Revert struct {
@@ -61,10 +62,7 @@ func (r *Revert) Run(params *Params) error {
 	if !strfmt.IsUUID(params.CommitID) {
 		return locale.NewInputError("err_invalid_commit_id", "Invalid commit ID")
 	}
-	latestCommit, err := localcommit.Get(r.project.Dir())
-	if err != nil {
-		return errs.Wrap(err, "Unable to get local commit")
-	}
+	latestCommit := r.project.CommitUUID()
 	if params.CommitID == latestCommit.String() && params.To {
 		return locale.NewInputError("err_revert_to_current_commit", "The commit to revert to cannot be the latest commit")
 	}
@@ -76,10 +74,7 @@ func (r *Revert) Run(params *Params) error {
 	if !params.To {
 		priorCommits, err := model.CommitHistoryPaged(commitID, 0, 2)
 		if err != nil {
-			return errs.AddTips(
-				locale.WrapError(err, "err_revert_get_commit", "Could not fetch commit details for commit with ID: {{.V0}}", params.CommitID),
-				locale.T("tip_private_project_auth"),
-			)
+			return locale.WrapError(err, "err_revert_get_commit", "Could not fetch commit details for commit with ID: {{.V0}}", params.CommitID)
 		}
 		if priorCommits.TotalCommits < 2 {
 			return locale.NewInputError("err_revert_no_history", "Cannot revert commit {{.V0}}: no prior history", params.CommitID)
@@ -136,9 +131,9 @@ func (r *Revert) Run(params *Params) error {
 		return locale.WrapError(err, "err_refresh_runtime")
 	}
 
-	err = localcommit.Set(r.project.Dir(), revertCommit.CommitID.String())
+	err = r.project.SetCommit(revertCommit.CommitID.String())
 	if err != nil {
-		return errs.Wrap(err, "Unable to set local commit")
+		return locale.WrapError(err, "err_revert_set_commit", "Could not set revert commit ID in projectfile")
 	}
 
 	r.out.Print(output.Prepare(

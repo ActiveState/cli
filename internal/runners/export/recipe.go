@@ -4,15 +4,16 @@ import (
 	"bytes"
 	"encoding/json"
 
+	"github.com/go-openapi/strfmt"
+
+	"github.com/ActiveState/cli/pkg/sysinfo"
+
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/ActiveState/cli/pkg/sysinfo"
-	"github.com/go-openapi/strfmt"
 )
 
 type Recipe struct {
@@ -82,11 +83,7 @@ func fetchRecipe(proj *project.Project, commitID strfmt.UUID, platform string) (
 	}
 
 	if commitID == "" {
-		var err error
-		commitID, err = localcommit.Get(proj.Dir())
-		if err != nil && !localcommit.IsFileDoesNotExistError(err) {
-			return "", errs.Wrap(err, "Unable to get local commit")
-		}
+		commitID = proj.CommitUUID()
 	}
 	if commitID == "" {
 		dcommitID, err := model.BranchCommitID(proj.Owner(), proj.Name(), proj.BranchName())

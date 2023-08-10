@@ -124,9 +124,7 @@ func MakeByNameAndVersion(name, version string) (Language, error) {
 	if strings.ToLower(name) == Python3.Requirement() {
 		name = Python3.String()
 		// Disambiguate python, preferring Python3.
-		major, _, _ := strings.Cut(version, ".")
-		major = strings.TrimLeft(major, ">=<") // constraint characters (e.g. ">3.9")
-		if major == "2" {
+		if parts := strings.Split(version, "."); len(parts) > 0 && parts[0] == "2" {
 			name = Python2.String()
 		}
 	}

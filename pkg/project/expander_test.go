@@ -24,7 +24,7 @@ func loadProject(t *testing.T) *project.Project {
 
 	pjFile := &projectfile.Project{}
 	contents := strings.TrimSpace(`
-project: "https://platform.activestate.com/Expander/general?branch=main"
+project: "https://platform.activestate.com/Expander/general?branch=main&commitID=00010001-0001-0001-0001-000100010001"
 lock: branchname@0.0.0-SHA123abcd
 constants:
   - name: constant
@@ -71,6 +71,10 @@ func TestExpandProject(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, prj.URL(), expanded)
 
+	expanded, err = project.ExpandFromProject("$project.commit()", prj)
+	require.NoError(t, err)
+	assert.Equal(t, "00010001-0001-0001-0001-000100010001", expanded)
+
 	expanded, err = project.ExpandFromProject("$project.branch()", prj)
 	require.NoError(t, err)
 	assert.Equal(t, "main", expanded)
@@ -105,7 +109,7 @@ func TestExpandTopLevel(t *testing.T) {
 	expanded, err := project.ExpandFromProject("$project", prj)
 	assert.NoError(t, err, "Ran without failure")
 
-	assert.Equal(t, "https://platform.activestate.com/Expander/general?branch=main", expanded)
+	assert.Equal(t, "https://platform.activestate.com/Expander/general?branch=main&commitID=00010001-0001-0001-0001-000100010001", expanded)
 
 	expanded, err = project.ExpandFromProject("$lock", prj)
 	assert.NoError(t, err, "Ran without failure")
@@ -182,7 +186,7 @@ func TestExpandProjectInfiniteRecursion(t *testing.T) {
 func TestExpandDashed(t *testing.T) {
 	projectFile := &projectfile.Project{}
 	contents := strings.TrimSpace(`
-project: "https://platform.activestate.com/Expander/Dashed"
+project: "https://platform.activestate.com/Expander/Dashed?commitID=00010001-0001-0001-0001-000100010001"
 scripts:
   - name: foo-bar
     value: bar

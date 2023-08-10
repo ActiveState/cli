@@ -14,7 +14,6 @@ import (
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/profile"
-	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -54,12 +53,7 @@ func CommitsBehind(p *project.Project) (int, error) {
 		return 0, locale.NewError("err_latest_commit", "Latest commit ID is nil")
 	}
 
-	commitID, err := localcommit.Get(p.Dir())
-	if err != nil {
-		return 0, errs.Wrap(err, "Unable to get local commit")
-	}
-
-	return model.CommitsBehind(*latestCommitID, commitID)
+	return model.CommitsBehind(*latestCommitID, p.CommitUUID())
 }
 
 func RunUpdateNotifier(svc *model.SvcModel, out output.Outputer) {

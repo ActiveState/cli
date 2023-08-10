@@ -12,7 +12,6 @@ import (
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runbits"
-	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	gqlModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model"
 	"github.com/ActiveState/cli/pkg/platform/api/reqsimport"
@@ -177,19 +176,15 @@ func fetchImportChangeset(cp ChangesetProvider, file string, lang string) (model
 }
 
 func commitChangeset(project *project.Project, msg string, changeset model.Changeset) (strfmt.UUID, error) {
-	localCommitID, err := localcommit.Get(project.Dir())
-	if err != nil {
-		return "", errs.Wrap(err, "Unable to get local commit")
-	}
-	commitID, err := model.CommitChangeset(localCommitID, msg, changeset)
+	commitID, err := model.CommitChangeset(project.CommitUUID(), msg, changeset)
 	if err != nil {
 		return "", errs.AddTips(locale.WrapError(err, "err_packages_removed"),
 			locale.T("commit_failed_push_tip"),
 			locale.T("commit_failed_pull_tip"))
 	}
 
-	if err := localcommit.Set(project.Dir(), commitID.String()); err != nil {
-		return "", locale.WrapError(err, "err_package_update_commit_id")
+	if err := project.SetCommit(commitID.String()); err != nil {
+		return "", locale.WrapError(err, "err_package_update_pjfile")
 	}
 	return commitID, nil
 }

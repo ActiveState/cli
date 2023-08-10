@@ -52,10 +52,10 @@ import (
 		defer os.Setenv(constants.DisableRuntime, value)
 	}
 
-	rt, err := runtime.New(offlineTarget, analytics, nil, nil)
+	rt, err := runtime.New(offlineTarget, analytics, nil)
 	suite.Require().Error(err)
 	suite.Assert().True(runtime.IsNeedsUpdateError(err), "runtime should require an update")
-	err = rt.Update(eventHandler)
+	err = rt.Update(nil, eventHandler)
 	suite.Require().NoError(err)
 
 	suite.Assert().False(mockProgress.BuildStartedCalled)

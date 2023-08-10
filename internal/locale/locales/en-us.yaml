@@ -680,6 +680,8 @@ secrets_row_value_unset:
   other: "[ERROR]× Not defined[/RESET]"
 secrets_description_unset:
   other: "[DISABLED]Not provided.[/RESET]"
+pull_not_updated:
+  other: Your activestate.yaml is already up to date!
 pull_updated:
   other: Your project in the activestate.yaml has been updated to {{.V0}}@{{.V1}}.
 keypair_cmd_description:
@@ -1220,12 +1222,6 @@ package_update_config_file:
   other: To ensure your local project is synchronized with the ActiveState platform please use [ACTIONABLE]`state pull`[/RESET]
 inventory_ingredient_not_available:
   other: The package '[NOTICE]{{.V0}}[/RESET]' is not available on the ActiveState Platform, or does not have a matching version
-err_update_build_script:
-  other: Could not update runtime build script
-notice_commit_build_script:
-  other: |
-    Your local build script has changes that should be committed. Please run [ACTIONABLE]`state commit`[/RESET] to do so.
-
 command_flag_invalid_value:
   other: "Invalid value for {{.V0}} flag: [NOTICE]{{.V1}}[/RESET]"
 err_cmdtree:
@@ -1683,8 +1679,8 @@ artifact_succeeded:
   other: "Completed: [NOTICE]{{.V0}} ({{.V1}}/{{.V2}})[/RESET]"
 artifact_failed:
   other: "Failed: [NOTICE]{{.V0}}[/RESET]. Error returned: [ERROR]{{.V1}}[/RESET]"
-err_package_update_commit_id:
-  other: "Could not update your project runtime's commit ID. Please run [ACTIONABLE]`state pull`[/RESET] manually."
+err_package_update_pjfile:
+  other: "Could not update your activestate.yaml with the new commit ID. Please run [ACTIONABLE]`state pull`[/RESET] manually."
 prepare_protocol_warning:
   other: Could not add state protocol
 err_preparestart_shortcut:
@@ -2069,15 +2065,6 @@ err_init_authenticated:
   other: You need to be authenticated to initialize a project. Authenticate by running [ACTIONABLE]`state auth`[/RESET].
 err_country_blocked:
   other: This service is not available in your region.
-err_commit_id_invalid:
-  other: "Invalid project commit ID: {{.V0}}"
-commit_id_gitignore:
-  other: |
-    # Ignore {{.V0}}/{{.V1}} file; tracking this via VCS will cause users to have to resolve redundant conflicts
-    {{.V0}}/{{.V1}}
-notice_commit_id_gitignore:
-  other: |
-    The State Tool created an [ACTIONABLE]{{.V0}}/{{.V1}}[/RESET] file with your project's commit ID, but it was unable to add it to your [ACTIONABLE].gitignore[/RESET] file. Please add it manually.
 err_shortcutdir_writable:
   other: Could not continue as we don't have permission to create [ACTIONABLE]{{.V0}}[/RESET].
 err_edit_local_checkouts:

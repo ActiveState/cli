@@ -20,7 +20,7 @@ func (suite *PjFileIntegrationTestSuite) TestDeprecation() {
 	defer ts.Close()
 
 	ts.PrepareActiveStateYAML(strings.TrimSpace(`
-project: https://platform.activestate.com/ActiveState-CLI/test
+project: https://platform.activestate.com/ActiveState-CLI/test?commitID=1090c128-e948-4388-8f7f-96e2c1e00d98
 platforms:
   - name: Linux64Label
 languages:

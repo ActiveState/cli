@@ -20,7 +20,7 @@ func (suite *EventsIntegrationTestSuite) TestEvents() {
 	defer ts.Close()
 
 	ts.PrepareActiveStateYAML(strings.TrimSpace(`
-project: https://platform.activestate.com/ActiveState-CLI/Python3
+project: https://platform.activestate.com/ActiveState-CLI/Python3?commitID=fbc613d6-b0b1-4f84-b26e-4aa5869c4e54
 scripts:
   - name: before
     language: bash
@@ -42,7 +42,6 @@ events:
     scope: ["activate"]
     value: after
 `))
-	ts.PrepareCommitIdFile("fbc613d6-b0b1-4f84-b26e-4aa5869c4e54")
 
 	cp := ts.Spawn("activate")
 	cp.Send("")

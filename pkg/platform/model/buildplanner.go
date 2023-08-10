@@ -4,8 +4,6 @@ import (
 	"errors"
 	"net/http"
 	"os"
-	"regexp"
-	"strconv"
 	"strings"
 	"time"
 
@@ -20,7 +18,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/request"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
-	"github.com/ActiveState/cli/pkg/platform/api/reqsimport"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/ActiveState/cli/pkg/platform/runtime/buildexpression"
@@ -56,7 +53,6 @@ type BuildResult struct {
 	BuildStatusResponse *headchef_models.V1BuildStatusResponse
 	BuildStatus         headchef.BuildStatusEnum
 	BuildReady          bool
-	BuildExpression     *buildexpression.BuildExpression
 }
 
 func (b *BuildResult) OrderedArtifacts() []artifact.ArtifactID {
@@ -78,7 +74,7 @@ func NewBuildPlannerModel(auth *authentication.Auth) *BuildPlanner {
 
 	client := gqlclient.NewWithOpts(bpURL, 0, graphql.WithHTTPClient(&http.Client{}))
 
-	if auth != nil && auth.Authenticated() {
+	if auth.Authenticated() {
 		client.SetTokenProvider(auth)
 	}
 
@@ -152,17 +148,11 @@ func (bp *BuildPlanner) FetchBuildResult(commitID strfmt.UUID, owner, project st
 		return nil, errs.Wrap(err, "Response does not contain commitID")
 	}
 
-	expr, err := bp.GetBuildExpression(owner, project, commitID.String())
-	if err != nil {
-		return nil, errs.Wrap(err, "Failed to get build expression")
-	}
-
 	res := BuildResult{
-		BuildEngine:     buildEngine,
-		Build:           build,
-		BuildReady:      build.Status == bpModel.Completed,
-		CommitID:        id,
-		BuildExpression: expr,
+		BuildEngine: buildEngine,
+		Build:       build,
+		BuildReady:  build.Status == bpModel.Completed,
+		CommitID:    id,
 	}
 
 	// We want to extract the recipe ID from the BuildLogIDs.
@@ -241,59 +231,57 @@ func removeEmptyTargets(bp *bpModel.Build) {
 }
 
 type StageCommitParams struct {
-	Owner        string
-	Project      string
-	ParentCommit string
-	// Commits can have either an operation (e.g. installing a package)...
+	Owner                string
+	Project              string
+	ParentCommit         string
 	RequirementName      string
-	RequirementVersion   []bpModel.VersionRequirement
+	RequirementVersion   string
 	RequirementNamespace Namespace
 	Operation            bpModel.Operation
-	TimeStamp            *strfmt.DateTime
-	// ... or commits can have an expression (e.g. from pull). When pulling an expression, we do not
-	// compute its changes into a series of above operations. Instead, we just pass the new
-	// expression directly.
-	Expression *buildexpression.BuildExpression
+	TimeStamp            strfmt.DateTime
 }
 
 func (bp *BuildPlanner) StageCommit(params StageCommitParams) (strfmt.UUID, error) {
 	logging.Debug("StageCommit, params: %+v", params)
-	expression := params.Expression
-	if expression == nil {
-		var err error
-		expression, err = bp.GetBuildExpression(params.Owner, params.Project, params.ParentCommit)
+	var err error
+	expression, err := bp.GetBuildExpression(params.Owner, params.Project, params.ParentCommit)
+	if err != nil {
+		return "", errs.Wrap(err, "Failed to get build expression")
+	}
+
+	if params.RequirementNamespace.Type() == NamespacePlatform {
+		err = expression.UpdatePlatform(params.Operation, strfmt.UUID(params.RequirementName))
 		if err != nil {
-			return "", errs.Wrap(err, "Failed to get build expression")
+			return "", errs.Wrap(err, "Failed to update build expression with platform")
+		}
+	} else {
+		requirement := bpModel.Requirement{
+			Namespace: params.RequirementNamespace.String(),
+			Name:      params.RequirementName,
 		}
 
-		if params.RequirementNamespace.Type() == NamespacePlatform {
-			err = expression.UpdatePlatform(params.Operation, strfmt.UUID(params.RequirementName))
-			if err != nil {
-				return "", errs.Wrap(err, "Failed to update build expression with platform")
-			}
-		} else {
-			requirement := bpModel.Requirement{
-				Namespace:          params.RequirementNamespace.String(),
-				Name:               params.RequirementName,
-				VersionRequirement: params.RequirementVersion,
-			}
-
-			err = expression.UpdateRequirement(params.Operation, requirement)
-			if err != nil {
-				return "", errs.Wrap(err, "Failed to update build expression with requirement")
-			}
+		if params.RequirementVersion != "" {
+			requirement.VersionRequirement = []bpModel.VersionRequirement{{
+				bpModel.VersionRequirementComparatorKey: bpModel.ComparatorEQ,
+				bpModel.VersionRequirementVersionKey:    params.RequirementVersion,
+			}}
 		}
 
-		err = expression.UpdateTimestamp(*params.TimeStamp)
+		err = expression.UpdateRequirement(params.Operation, requirement)
 		if err != nil {
-			return "", errs.Wrap(err, "Failed to update build expression with timestamp")
+			return "", errs.Wrap(err, "Failed to update build expression with requirement")
 		}
+	}
+
+	err = expression.UpdateTimestamp(params.TimeStamp)
+	if err != nil {
+		return "", errs.Wrap(err, "Failed to update build expression with timestamp")
 	}
 
 	// With the updated build expression call the stage commit mutation
 	request := request.StageCommit(params.Owner, params.Project, params.ParentCommit, expression)
 	resp := &bpModel.StageCommitResult{}
-	err := bp.client.Run(request, resp)
+	err = bp.client.Run(request, resp)
 	if err != nil {
 		return "", processBuildPlannerError(err, "failed to stage commit")
 	}
@@ -389,71 +377,4 @@ func processBuildPlannerError(bpErr error, fallbackMessage string) error {
 		}
 	}
 	return errs.Wrap(bpErr, fallbackMessage)
-}
-
-var versionRe = regexp.MustCompile(`^\d+(\.\d+)*$`)
-
-func isExactVersion(version string) bool {
-	return versionRe.MatchString(version)
-}
-
-func isWildcardVersion(version string) bool {
-	return strings.Index(version, ".x") >= 0 || strings.Index(version, ".X") >= 0
-}
-
-func VersionStringToRequirements(version string) ([]bpModel.VersionRequirement, error) {
-	if isExactVersion(version) {
-		return []bpModel.VersionRequirement{{
-			bpModel.VersionRequirementComparatorKey: "eq",
-			bpModel.VersionRequirementVersionKey:    version,
-		}}, nil
-	}
-
-	if !isWildcardVersion(version) {
-		// Ask the Platform to translate a string like ">=1.2,<1.3" into a list of requirements.
-		// Note that:
-		// - The given requirement name does not matter; it is not looked up.
-		changeset, err := reqsimport.Init().Changeset([]byte("name "+version), "")
-		if err != nil {
-			return nil, locale.WrapInputError(err, "err_invalid_version_string", "Invalid version string")
-		}
-		requirements := []bpModel.VersionRequirement{}
-		for _, change := range changeset {
-			for _, constraint := range change.VersionConstraints {
-				requirements = append(requirements, bpModel.VersionRequirement{
-					bpModel.VersionRequirementComparatorKey: constraint.Comparator,
-					bpModel.VersionRequirementVersionKey:    constraint.Version,
-				})
-			}
-		}
-		return requirements, nil
-	}
-
-	// Construct version constraints to be >= given version, and < given version's last part + 1.
-	// For example, given a version number of 3.10.x, constraints should be >= 3.10, < 3.11.
-	// Given 2.x, constraints should be >= 2, < 3.
-	requirements := []bpModel.VersionRequirement{}
-	parts := strings.Split(version, ".")
-	for i, part := range parts {
-		if part != "x" && part != "X" {
-			continue
-		}
-		if i == 0 {
-			return nil, locale.NewInputError("err_version_wildcard_start", "A version number cannot start with a wildcard")
-		}
-		requirements = append(requirements, bpModel.VersionRequirement{
-			bpModel.VersionRequirementComparatorKey: "gte",
-			bpModel.VersionRequirementVersionKey:    strings.Join(parts[:i], "."),
-		})
-		previousPart, err := strconv.Atoi(parts[i-1])
-		if err != nil {
-			return nil, locale.WrapInputError(err, "err_version_number_expected", "Version parts are expected to be numeric")
-		}
-		parts[i-1] = strconv.Itoa(previousPart + 1)
-		requirements = append(requirements, bpModel.VersionRequirement{
-			bpModel.VersionRequirementComparatorKey: "lt",
-			bpModel.VersionRequirementVersionKey:    strings.Join(parts[:i], "."),
-		})
-	}
-	return requirements, nil
 }

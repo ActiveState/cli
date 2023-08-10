@@ -8,11 +8,10 @@ import (
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/stretchr/testify/suite"
+
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
-	"github.com/ActiveState/cli/pkg/platform/runtime/buildscript"
-	"github.com/ActiveState/cli/pkg/project"
-	"github.com/stretchr/testify/suite"
 )
 
 type PullIntegrationTestSuite struct {
@@ -24,16 +23,12 @@ func (suite *PullIntegrationTestSuite) TestPull() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	ts.PrepareProject("ActiveState-CLI/Python3", "")
+	ts.PrepareActiveStateYAML(`project: "https://platform.activestate.com/ActiveState-CLI/Python3"`)
 
 	cp := ts.Spawn("pull")
 	cp.ExpectLongString("Operating on project ActiveState-CLI/Python3")
 	cp.Expect("activestate.yaml has been updated")
 	cp.ExpectExitCode(0)
-
-	projectConfigDir := filepath.Join(ts.Dirs.Work, constants.ProjectConfigDirName)
-	suite.Require().True(fileutils.DirExists(projectConfigDir))
-	suite.Assert().True(fileutils.FileExists(filepath.Join(projectConfigDir, constants.CommitIdFileName)))
 
 	cp = ts.Spawn("pull")
 	cp.Expect("already up to date")
@@ -45,7 +40,7 @@ func (suite *PullIntegrationTestSuite) TestPullSetProject() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	ts.PrepareProject("ActiveState-CLI/small-python", "9733d11a-dfb3-41de-a37a-843b7c421db4")
+	ts.PrepareActiveStateYAML(`project: https://platform.activestate.com/ActiveState-CLI/small-python?commitID=9733d11a-dfb3-41de-a37a-843b7c421db4`)
 
 	// update to related project
 	cp := ts.Spawn("pull", "--set-project", "ActiveState-CLI/small-python-fork")
@@ -64,7 +59,7 @@ func (suite *PullIntegrationTestSuite) TestPullSetProjectUnrelated() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	ts.PrepareProject("ActiveState-CLI/small-python", "9733d11a-dfb3-41de-a37a-843b7c421db4")
+	ts.PrepareActiveStateYAML(`project: "https://platform.activestate.com/ActiveState-CLI/small-python?commitID=9733d11a-dfb3-41de-a37a-843b7c421db4"`)
 
 	cp := ts.Spawn("pull", "--set-project", "ActiveState-CLI/Python3")
 	cp.ExpectLongString("you may lose changes to your project")
@@ -79,7 +74,7 @@ func (suite *PullIntegrationTestSuite) TestPullSetProjectUnrelated() {
 
 func (suite *PullIntegrationTestSuite) TestPull_Merge() {
 	suite.OnlyRunForTags(tagsuite.Pull)
-	projectLine := "project: https://platform.activestate.com/ActiveState-CLI/cli"
+	projectLine := "project: https://platform.activestate.com/ActiveState-CLI/cli?branch=main&commitID="
 	unPulledCommit := "882ae76e-fbb7-4989-acc9-9a8b87d49388"
 
 	ts := e2e.New(suite.T(), false)
@@ -87,10 +82,7 @@ func (suite *PullIntegrationTestSuite) TestPull_Merge() {
 
 	wd := filepath.Join(ts.Dirs.Work, "cli")
 	pjfilepath := filepath.Join(ts.Dirs.Work, "cli", constants.ConfigFileName)
-	err := fileutils.WriteFile(pjfilepath, []byte(projectLine))
-	suite.Require().NoError(err)
-	commitIdFile := filepath.Join(ts.Dirs.Work, "cli", constants.ProjectConfigDirName, constants.CommitIdFileName)
-	err = fileutils.WriteFile(commitIdFile, []byte(unPulledCommit))
+	err := fileutils.WriteFile(pjfilepath, []byte(projectLine+unPulledCommit))
 	suite.Require().NoError(err)
 
 	ts.LoginAsPersistentUser()
@@ -118,7 +110,7 @@ func (suite *PullIntegrationTestSuite) TestPull_RestoreNamespace() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	ts.PrepareProject("ActiveState-CLI/small-python", "9733d11a-dfb3-41de-a37a-843b7c421db4")
+	ts.PrepareActiveStateYAML(`project: https://platform.activestate.com/ActiveState-CLI/small-python?commitID=9733d11a-dfb3-41de-a37a-843b7c421db4`)
 
 	// Attempt to update to unrelated project.
 	cp := ts.Spawn("pull", "--non-interactive", "--set-project", "ActiveState-CLI/Python3")
@@ -129,43 +121,6 @@ func (suite *PullIntegrationTestSuite) TestPull_RestoreNamespace() {
 	cp = ts.Spawn("show")
 	cp.Expect("ActiveState-CLI/small-python")
 	cp.ExpectExitCode(0)
-}
-
-func (suite *PullIntegrationTestSuite) TestMergeBuildScript() {
-	suite.OnlyRunForTags(tagsuite.Pull)
-	ts := e2e.New(suite.T(), false)
-	defer ts.Close()
-
-	cp := ts.Spawn("checkout", "ActiveState-CLI/Merge#447b8363-024c-4143-bf4e-c96989314fdf", ".")
-	cp.Expect("Skipping runtime setup")
-	cp.Expect("Checked out")
-	cp.ExpectExitCode(0)
-
-	ts.LoginAsPersistentUser()
-
-	cp = ts.SpawnWithOpts(
-		e2e.WithArgs("install", "requests"),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
-	)
-	cp.Expect("Package added")
-	cp.ExpectExitCode(0)
-
-	proj, err := project.FromPath(ts.Dirs.Work)
-	suite.NoError(err, "Error loading project")
-
-	_, err = buildscript.NewScriptFromProject(proj, nil)
-	suite.Require().NoError(err) // just verify it's a valid build script
-
-	cp = ts.Spawn("pull")
-	cp.Expect("Unable to automatically merge build scripts")
-	cp.ExpectNotExitCode(0)
-
-	_, err = buildscript.NewScriptFromProject(proj, nil)
-	suite.Assert().Error(err)
-	bytes := fileutils.ReadFileUnsafe(filepath.Join(ts.Dirs.Work, constants.BuildScriptFileName))
-	suite.Assert().Contains(string(bytes), "<<<<<<<", "No merge conflict markers are in build script")
-	suite.Assert().Contains(string(bytes), "=======", "No merge conflict markers are in build script")
-	suite.Assert().Contains(string(bytes), ">>>>>>>", "No merge conflict markers are in build script")
 }
 
 func TestPullIntegrationTestSuite(t *testing.T) {

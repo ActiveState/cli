@@ -22,7 +22,9 @@ func (suite *SecretsIntegrationTestSuite) TestSecrets_JSON() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	ts.PrepareProject("cli-integration-tests/Python3", "")
+	ts.PrepareActiveStateYAML(
+		`project: "https://platform.activestate.com/cli-integration-tests/Python3"`,
+	)
 
 	secret := secrets.SecretExport{
 		Name:        "test-secret",

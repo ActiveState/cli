@@ -19,10 +19,10 @@ import (
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/pkg/localcommit"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/projectfile"
+	"github.com/go-openapi/strfmt"
 )
 
 // Build covers the build structure
@@ -53,6 +53,10 @@ type Project struct {
 
 // Source returns the source projectfile
 func (p *Project) Source() *projectfile.Project { return p.projectfile }
+
+func (p *Project) SetCommit(commitID string) error {
+	return p.Source().SetCommit(commitID, p.IsHeadless())
+}
 
 // Constants returns a reference to projectfile.Constants
 func (p *Project) Constants() []*Constant {
@@ -195,6 +199,16 @@ func (p *Project) Private() bool {
 	return p.Source().Private
 }
 
+// CommitID returns project commitID
+func (p *Project) CommitID() string {
+	return p.projectfile.CommitID()
+}
+
+// CommitUUID returns project commitID in UUID format
+func (p *Project) CommitUUID() strfmt.UUID {
+	return strfmt.UUID(p.CommitID())
+}
+
 // BranchName returns the project branch name
 func (p *Project) BranchName() string {
 	return p.projectfile.BranchName()
@@ -208,11 +222,6 @@ func (p *Project) Path() string {
 // Dir returns the project dir
 func (p *Project) Dir() string {
 	return filepath.Dir(p.projectfile.Path())
-}
-
-// ProjectDir is an alias for Dir() to satisfy interfaces that may also target the setup.Targeter interface.
-func (p *Project) ProjectDir() string {
-	return p.Dir()
 }
 
 func (p *Project) IsHeadless() bool {
@@ -242,10 +251,7 @@ func (p *Project) Cache() string { return p.projectfile.Cache }
 
 // Namespace returns project namespace
 func (p *Project) Namespace() *Namespaced {
-	commitID, err := localcommit.Get(p.Dir())
-	if err != nil && !localcommit.IsFileDoesNotExistError(err) {
-		multilog.Error("Unable to get local commit: %v", errs.JoinMessage(err))
-	}
+	commitID := strfmt.UUID(p.projectfile.CommitID())
 	return &Namespaced{p.projectfile.Owner(), p.projectfile.Name(), &commitID, false}
 }
 

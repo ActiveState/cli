@@ -3,17 +3,16 @@ package constraints
 import (
 	"bytes"
 	"fmt"
+	"path/filepath"
 	"regexp"
 	"sort"
 	"strings"
 	"text/template"
 
-	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
-	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/ActiveState/cli/pkg/sysinfo"
@@ -77,9 +76,9 @@ type projectable interface {
 	Owner() string
 	Name() string
 	NamespaceString() string
+	CommitID() string
 	BranchName() string
 	Path() string
-	Dir() string
 	URL() string
 }
 
@@ -91,20 +90,19 @@ func NewPrimeConditional(auth *authentication.Auth, pj projectable, subshellName
 		pjURL       string
 		pjCommit    string
 		pjBranch    string
-		pjDir       string
+		pjPath      string
 	)
 	if !ptr.IsNil(pj) {
 		pjOwner = pj.Owner()
 		pjName = pj.Name()
 		pjNamespace = pj.NamespaceString()
 		pjURL = pj.URL()
-		commitID, err := localcommit.Get(pj.Dir())
-		if err != nil && !localcommit.IsFileDoesNotExistError(err) {
-			multilog.Error("Unable to get local commit: %v", errs.JoinMessage(err))
-		}
-		pjCommit = commitID.String()
+		pjCommit = pj.CommitID()
 		pjBranch = pj.BranchName()
-		pjDir = pj.Dir()
+		pjPath = pj.Path()
+		if pjPath != "" {
+			pjPath = filepath.Dir(pjPath)
+		}
 	}
 
 	c := NewConditional(auth)
@@ -115,7 +113,7 @@ func NewPrimeConditional(auth *authentication.Auth, pj projectable, subshellName
 		"Url":       pjURL,
 		"Commit":    pjCommit,
 		"Branch":    pjBranch,
-		"Path":      pjDir,
+		"Path":      pjPath,
 
 		// Legacy
 		"NamespacePrefix": pjNamespace,

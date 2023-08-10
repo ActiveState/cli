@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/stretchr/testify/suite"
@@ -294,7 +293,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_import() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	username, _ := ts.CreateNewUser()
+	username := ts.CreateNewUser()
 	namespace := fmt.Sprintf("%s/%s", username, "Python3")
 
 	cp := ts.Spawn("init", "--language", "python", namespace, ts.Dirs.Work)
@@ -375,7 +374,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_operation() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	username, _ := ts.CreateNewUser()
+	username := ts.CreateNewUser()
 	namespace := fmt.Sprintf("%s/%s", username, "python3-pkgtest")
 
 	cp := ts.Spawn("fork", "ActiveState-CLI/Packages", "--org", username, "--name", "python3-pkgtest")
@@ -412,7 +411,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_operation() {
 }
 
 func (suite *PackageIntegrationTestSuite) PrepareActiveStateYAML(ts *e2e.Session) {
-	asyData := `project: "https://platform.activestate.com/ActiveState-CLI/List"
+	asyData := `project: "https://platform.activestate.com/ActiveState-CLI/List?commitID=a9d0bc88-585a-49cf-89c1-6c07af781cff"
 scripts:
   - name: test-pyparsing
     language: python3
@@ -421,7 +420,6 @@ scripts:
       print(Word(alphas).parseString("TEST"))
 `
 	ts.PrepareActiveStateYAML(asyData)
-	ts.PrepareCommitIdFile("a9d0bc88-585a-49cf-89c1-6c07af781cff")
 }
 
 func (suite *PackageIntegrationTestSuite) TestInstall_Empty() {
@@ -449,9 +447,6 @@ func (suite *PackageIntegrationTestSuite) TestInstall_Empty() {
 	if !suite.Contains(string(content), constants.DashboardCommitURL) {
 		suite.Fail("activestate.yaml does not contain dashboard commit URL")
 	}
-
-	commitIdFile := filepath.Join(ts.Dirs.Work, constants.ProjectConfigDirName, constants.CommitIdFileName)
-	suite.Assert().FileExists(commitIdFile)
 }
 
 func (suite *PackageIntegrationTestSuite) TestPackage_UninstallDoesNotExist() {
@@ -508,19 +503,13 @@ func (suite *PackageIntegrationTestSuite) TestNormalize() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	dir := filepath.Join(ts.Dirs.Work, "normalized")
-	suite.Require().NoError(fileutils.Mkdir(dir))
-	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("checkout", "ActiveState-CLI/small-python", "."),
-		e2e.WithWorkDirectory(dir),
-	)
+	cp := ts.Spawn("checkout", "ActiveState-CLI/small-python", ".")
 	cp.Expect("Skipping runtime setup")
 	cp.Expect("Checked out project")
 	cp.ExpectExitCode(0)
 
 	cp = ts.SpawnWithOpts(
 		e2e.WithArgs("install", "Charset_normalizer"),
-		e2e.WithWorkDirectory(dir),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cp.Expect("charset-normalizer")
@@ -528,18 +517,10 @@ func (suite *PackageIntegrationTestSuite) TestNormalize() {
 	cp.Expect("Charset_normalizer")
 	cp.ExpectExitCode(0)
 
-	anotherDir := filepath.Join(ts.Dirs.Work, "not-normalized")
 	cp = ts.SpawnWithOpts(
-		e2e.WithArgs("checkout", "ActiveState-CLI/small-python", "."),
-		e2e.WithWorkDirectory(anotherDir),
-	)
-	cp.Expect("Skipping runtime setup")
-	cp.Expect("Checked out project")
-	cp.ExpectExitCode(0)
-
-	cp = ts.SpawnWithOpts(
-		e2e.WithArgs("install", "charset-normalizer"),
-		e2e.WithWorkDirectory(anotherDir),
+		// Install request must be different from the one above, otherwise we will
+		// get an error that no changes were made from the parent commit.
+		e2e.WithArgs("install", "charset-normalizer@3.0.0"),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cp.Expect("charset-normalizer")

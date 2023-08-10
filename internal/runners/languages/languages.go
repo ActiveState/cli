@@ -6,7 +6,6 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -31,13 +30,12 @@ func (l *Languages) Run() error {
 		return locale.NewInputError("err_no_project")
 	}
 
-	commitID, err := localcommit.Get(l.project.Dir())
-	if err != nil {
+	commitUUID := l.project.CommitUUID()
+	if commitUUID == "" {
 		return errs.AddTips(
-			locale.WrapError(
-				err,
+			locale.NewError(
 				"err_languages_no_commitid",
-				"Your project runtime does not have a commit defined, you may need to run [ACTIONABLE]`state pull`[/RESET] first.",
+				"Your activestate.yaml does not have a commit defined, you may need to run [ACTIONABLE]`state pull`[/RESET] first.",
 			),
 			locale.Tl(
 				"languages_no_commitid_help",
@@ -46,7 +44,7 @@ func (l *Languages) Run() error {
 		)
 	}
 
-	langs, err := model.FetchLanguagesForCommit(commitID)
+	langs, err := model.FetchLanguagesForCommit(commitUUID)
 	if err != nil {
 		return locale.WrapError(err, "err_fetching_languages", "Cannot obtain languages")
 	}

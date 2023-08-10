@@ -1,2 +1,2 @@
-project: https://platform.activestate.com/project/someone
+project: https://platform.activestate.com/project/someone?commitID=00000000-0000-0000-0000-000000000000
 lock: some-branch@1.2.3b-123a@foo

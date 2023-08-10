@@ -68,7 +68,6 @@ const (
 	Uninstall       = "uninstall"
 	Update          = "update"
 	Use             = "use"
-	Commit          = "commit"
 	VSCode          = "vscode"
 	Performance     = "performance"
 	Service         = "service"

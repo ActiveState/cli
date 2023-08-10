@@ -18,7 +18,7 @@ func (suite *RefreshIntegrationTestSuite) TestRefresh() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	suite.PrepareActiveStateYAML(ts, "ActiveState-CLI/Branches", "main", "35af7414-b44b-4fd7-aa93-2ecad337ed2b")
+	suite.PrepareActiveStateYAML(ts, "ActiveState-CLI", "Branches", "main", "35af7414-b44b-4fd7-aa93-2ecad337ed2b")
 
 	cp := ts.SpawnWithOpts(
 		e2e.WithArgs("refresh"),
@@ -35,7 +35,7 @@ func (suite *RefreshIntegrationTestSuite) TestRefresh() {
 	cp.Expect("ModuleNotFoundError")
 	cp.ExpectExitCode(1)
 
-	suite.PrepareActiveStateYAML(ts, "ActiveState-CLI/Branches", "secondbranch", "46c83477-d580-43e2-a0c6-f5d3677517f1")
+	suite.PrepareActiveStateYAML(ts, "ActiveState-CLI", "Branches", "secondbranch", "46c83477-d580-43e2-a0c6-f5d3677517f1")
 	cp = ts.SpawnWithOpts(
 		e2e.WithArgs("refresh"),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
@@ -61,7 +61,7 @@ func (suite *RefreshIntegrationTestSuite) TestJSON() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	suite.PrepareActiveStateYAML(ts, "ActiveState-CLI/Branches", "main", "35af7414-b44b-4fd7-aa93-2ecad337ed2b")
+	suite.PrepareActiveStateYAML(ts, "ActiveState-CLI", "Branches", "main", "35af7414-b44b-4fd7-aa93-2ecad337ed2b")
 
 	cp := ts.Spawn("refresh", "-o", "json")
 	cp.Expect(`"namespace":`)
@@ -71,10 +71,9 @@ func (suite *RefreshIntegrationTestSuite) TestJSON() {
 	//AssertValidJSON(suite.T(), cp) // cannot assert here due to "Skipping runtime setup" notice
 }
 
-func (suite *RefreshIntegrationTestSuite) PrepareActiveStateYAML(ts *e2e.Session, namespace, branch, commitID string) {
-	asyData := fmt.Sprintf(`project: "https://platform.activestate.com/%s?branch=%s"`, namespace, branch)
+func (suite *RefreshIntegrationTestSuite) PrepareActiveStateYAML(ts *e2e.Session, username, project, branch, commitID string) {
+	asyData := fmt.Sprintf(`project: "https://platform.activestate.com/%s/%s?branch=%s&commitID=%s"`, username, project, branch, commitID)
 	ts.PrepareActiveStateYAML(asyData)
-	ts.PrepareCommitIdFile(commitID)
 }
 
 func TestRefreshIntegrationTestSuite(t *testing.T) {

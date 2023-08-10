@@ -5,13 +5,11 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/hash"
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
-	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/go-openapi/strfmt"
 	"github.com/thoas/go-funk"
@@ -43,7 +41,6 @@ const (
 	TriggerOffline            Trigger = "offline"
 	TriggerShell              Trigger = "shell"
 	TriggerCheckout           Trigger = "checkout"
-	TriggerCommit             Trigger = "commit"
 	TriggerUse                Trigger = "use"
 	TriggerOfflineInstaller   Trigger = "offline-installer"
 	TriggerOfflineUninstaller Trigger = "offline-uninstaller"
@@ -116,12 +113,7 @@ func (p *ProjectTarget) CommitUUID() strfmt.UUID {
 	if p.customCommit != nil {
 		return *p.customCommit
 	}
-	commitID, err := localcommit.Get(p.Project.Dir())
-	if err != nil && !localcommit.IsFileDoesNotExistError(err) {
-		multilog.Error("Unable to get local commit: %v", errs.JoinMessage(err))
-		return ""
-	}
-	return commitID
+	return p.Project.CommitUUID()
 }
 
 func (p *ProjectTarget) Trigger() Trigger {
@@ -141,10 +133,6 @@ func (p *ProjectTarget) ReadOnly() bool {
 
 func (p *ProjectTarget) InstallFromDir() *string {
 	return nil
-}
-
-func (p *ProjectTarget) ProjectDir() string {
-	return p.Project.Dir()
 }
 
 func ProjectDirToTargetDir(projectDir, cacheDir string) string {
@@ -212,10 +200,6 @@ func (c *CustomTarget) InstallFromDir() *string {
 	return nil
 }
 
-func (c *CustomTarget) ProjectDir() string {
-	return ""
-}
-
 type OfflineTarget struct {
 	ns           *project.Namespaced
 	dir          string
@@ -276,8 +260,4 @@ func (i *OfflineTarget) ReadOnly() bool {
 
 func (i *OfflineTarget) InstallFromDir() *string {
 	return &i.artifactsDir
-}
-
-func (i *OfflineTarget) ProjectDir() string {
-	return ""
 }

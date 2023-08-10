@@ -17,7 +17,7 @@ func (suite *PushIntegrationTestSuite) TestInitAndPush_VSCode() {
 
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
-	username, _ := ts.CreateNewUser()
+	username := ts.CreateNewUser()
 
 	namespace := fmt.Sprintf("%s/%s", username, "Perl")
 	cp := ts.Spawn(
@@ -51,7 +51,7 @@ func (suite *ShowIntegrationTestSuite) TestShow_VSCode() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	suite.PrepareProject(ts)
+	suite.PrepareActiveStateYAML(ts)
 
 	cp := ts.Spawn(
 		"--output", "editor",

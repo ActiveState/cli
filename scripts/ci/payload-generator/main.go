@@ -15,10 +15,6 @@ import (
 )
 
 var (
-	defaultInputDir     = filepath.Join(environment.GetRootPathUnsafe(), "build")
-	defaultOutputDir    = filepath.Join(defaultInputDir, "payload", constants.ToplevelInstallArchiveDir)
-	defaultOutputBinDir = filepath.Join(defaultOutputDir, "bin")
-
 	log = func(msg string, vals ...any) {
 		fmt.Fprintf(os.Stdout, msg, vals...)
 		fmt.Fprintf(os.Stdout, "\n")
@@ -40,9 +36,6 @@ func main() {
 
 func run() error {
 	var (
-		inDir   = defaultInputDir
-		outDir  = defaultOutputDir
-		binDir  = defaultOutputBinDir
 		branch  = constants.BranchName
 		version = constants.Version
 	)
@@ -51,26 +44,32 @@ func run() error {
 	flag.StringVar(&version, "v", version, "Override version number for this update.")
 	flag.Parse()
 
-	return generatePayload(inDir, outDir, binDir, branch, version)
+	root := environment.GetRootPathUnsafe()
+	buildDir := filepath.Join(root, "build")
+	payloadDir := filepath.Join(buildDir, "payload")
+
+	return generatePayload(buildDir, payloadDir, branch, version)
 }
 
-func generatePayload(inDir, outDir, binDir, branch, version string) error {
+func generatePayload(buildDir, payloadDir, branch, version string) error {
 	emsg := "generate payload: %w"
 
-	if err := fileutils.MkdirUnlessExists(binDir); err != nil {
+	payloadBinDir := filepath.Join(payloadDir, "bin")
+
+	if err := fileutils.MkdirUnlessExists(payloadBinDir); err != nil {
 		return fmt.Errorf(emsg, err)
 	}
 
-	log("Creating install dir marker in %s", outDir)
-	if err := createInstallMarker(outDir, branch, version); err != nil {
+	log("Creating install dir marker in %s", payloadDir)
+	if err := createInstallMarker(payloadDir, branch, version); err != nil {
 		return fmt.Errorf(emsg, err)
 	}
 
 	files := map[string]string{
-		filepath.Join(inDir, constants.StateInstallerCmd+exeutils.Extension): outDir,
-		filepath.Join(inDir, constants.StateCmd+exeutils.Extension):          binDir,
-		filepath.Join(inDir, constants.StateSvcCmd+exeutils.Extension):       binDir,
-		filepath.Join(inDir, constants.StateExecutorCmd+exeutils.Extension):  binDir,
+		filepath.Join(buildDir, constants.StateInstallerCmd+exeutils.Extension): payloadDir,
+		filepath.Join(buildDir, constants.StateCmd+exeutils.Extension):          payloadBinDir,
+		filepath.Join(buildDir, constants.StateSvcCmd+exeutils.Extension):       payloadBinDir,
+		filepath.Join(buildDir, constants.StateExecutorCmd+exeutils.Extension):  payloadBinDir,
 	}
 	if err := copyFiles(files); err != nil {
 		return fmt.Errorf(emsg, err)
@@ -79,7 +78,7 @@ func generatePayload(inDir, outDir, binDir, branch, version string) error {
 	return nil
 }
 
-func createInstallMarker(dir, branch, version string) error {
+func createInstallMarker(payloadDir, branch, version string) error {
 	emsg := "create install marker: %w"
 
 	markerContents := installation.InstallMarkerMeta{
@@ -90,9 +89,8 @@ func createInstallMarker(dir, branch, version string) error {
 	if err != nil {
 		return fmt.Errorf(emsg, err)
 	}
-	b = append(b, '\n')
 
-	markerPath := filepath.Join(dir, installation.InstallDirMarker)
+	markerPath := filepath.Join(payloadDir, installation.InstallDirMarker)
 	if err := fileutils.WriteFile(markerPath, b); err != nil {
 		return fmt.Errorf(emsg, err)
 	}
@@ -100,14 +98,24 @@ func createInstallMarker(dir, branch, version string) error {
 	return nil
 }
 
-// copyFiles will copy the given files with logging.
+// copyFiles will copy the given files while preserving permissions.
 func copyFiles(files map[string]string) error {
+	emsg := "copy files (%s to %s): %w"
+
 	for src, target := range files {
 		log("Copying %s to %s", src, target)
 		dest := filepath.Join(target, filepath.Base(src))
+		err := fileutils.CopyFile(src, dest)
+		if err != nil {
+			return fmt.Errorf(emsg, src, target, err)
+		}
+		srcStat, err := os.Stat(src)
+		if err != nil {
+			return fmt.Errorf(emsg, src, target, err)
+		}
 
-		if err := fileutils.CopyFile(src, dest); err != nil {
-			return fmt.Errorf("copy files (%s to %s): %w", src, target, err)
+		if err := os.Chmod(dest, srcStat.Mode().Perm()); err != nil {
+			return fmt.Errorf(emsg, src, target, err)
 		}
 	}
 

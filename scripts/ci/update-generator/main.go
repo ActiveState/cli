@@ -23,21 +23,31 @@ import (
 	"github.com/ActiveState/cli/internal/updater"
 )
 
-var (
-	rootPath         = environment.GetRootPathUnsafe()
-	defaultBuildDir  = filepath.Join(rootPath, "build")
-	defaultInputDir  = filepath.Join(defaultBuildDir, "payload", constants.ToplevelInstallArchiveDir)
-	defaultOutputDir = filepath.Join(rootPath, "public")
-)
+var exit = os.Exit
+
+var outputDirFlag, platformFlag, branchFlag, versionFlag *string
+
+func printUsage() {
+	fmt.Println("")
+	fmt.Println("[-o outputDir] [-b branchOverride] [-v versionOverride] [--platform platformOverride] <directory>")
+}
 
 func main() {
 	if !condition.InUnitTest() {
 		err := run()
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "%s error: %v", os.Args[0], errs.JoinMessage(err))
-			os.Exit(1)
 		}
 	}
+}
+
+func init() {
+	defaultPlatform := fetchPlatform()
+	outputDirFlag = flag.String("o", "public", "Output directory for writing updates")
+	platformFlag = flag.String("platform", defaultPlatform,
+		"Target platform in the form OS-ARCH. Defaults to running os/arch or the combination of the environment variables GOOS and GOARCH if both are set.")
+	branchFlag = flag.String("b", "", "Override target branch. This is the branch that will receive this update.")
+	versionFlag = flag.String("v", constants.Version, "Override version number for this update.")
 }
 
 func fetchPlatform() string {
@@ -69,8 +79,8 @@ func archiveMeta() (archiveMethod archiver.Archiver, ext string) {
 func createUpdate(outputPath, channel, version, platform, target string) error {
 	relChannelPath := filepath.Join(channel, platform)
 	relVersionedPath := filepath.Join(channel, version, platform)
-	_ = os.MkdirAll(filepath.Join(outputPath, relChannelPath), 0o755)
-	_ = os.MkdirAll(filepath.Join(outputPath, relVersionedPath), 0o755)
+	_ = os.MkdirAll(filepath.Join(outputPath, relChannelPath), 0755)
+	_ = os.MkdirAll(filepath.Join(outputPath, relVersionedPath), 0755)
 
 	archive, archiveExt := archiveMeta()
 	relArchivePath := filepath.Join(relVersionedPath, fmt.Sprintf("state-%s-%s%s", platform, version, archiveExt))
@@ -80,7 +90,8 @@ func createUpdate(outputPath, channel, version, platform, target string) error {
 	_ = os.Remove(archivePath)
 	// Create main archive
 	fmt.Printf("Creating %s\n", archivePath)
-	if err := archive.Archive([]string{target}, archivePath); err != nil {
+	err := archive.Archive([]string{target}, archivePath)
+	if err != nil {
 		return errs.Wrap(err, "Archiving failed")
 	}
 
@@ -92,7 +103,7 @@ func createUpdate(outputPath, channel, version, platform, target string) error {
 
 	infoPath := filepath.Join(outputPath, relChannelPath, "info.json")
 	fmt.Printf("Creating %s\n", infoPath)
-	err = ioutil.WriteFile(infoPath, b, 0o755)
+	err = ioutil.WriteFile(infoPath, b, 0755)
 	if err != nil {
 		return errs.Wrap(err, "Failed to write info.json.")
 	}
@@ -105,8 +116,9 @@ func createUpdate(outputPath, channel, version, platform, target string) error {
 	return nil
 }
 
-func createInstaller(buildPath, outputPath, channel, platform string) error {
-	installer := filepath.Join(buildPath, "state-installer"+osutils.ExeExt)
+func createInstaller(outputPath, channel, platform string) error {
+	root := environment.GetRootPathUnsafe()
+	installer := filepath.Join(root, "build", "state-installer"+osutils.ExeExt)
 	if !fileutils.FileExists(installer) {
 		return errs.New("state-installer does not exist in build dir")
 	}
@@ -128,33 +140,32 @@ func createInstaller(buildPath, outputPath, channel, platform string) error {
 }
 
 func run() error {
-	var (
-		binDir   = defaultBuildDir
-		inDir    = defaultInputDir
-		outDir   = defaultOutputDir
-		platform = fetchPlatform()
-		branch   = constants.BranchName
-		version  = constants.Version
-	)
-
-	flag.StringVar(&outDir, "o", outDir, "Override directory to output archive to.")
-	flag.StringVar(
-		&platform, "platform", platform,
-		"Target platform in the form OS-ARCH. Defaults to running os/arch or the combination of the environment variables GOOS and GOARCH if both are set.",
-	)
-	flag.StringVar(&branch, "b", branch, "Override target branch. (Branch to receive update.)")
-	flag.StringVar(&version, "v", version, "Override version number for this update.")
 	flag.Parse()
+	if flag.NArg() < 1 && !condition.InUnitTest() {
+		flag.Usage()
+		printUsage()
+		exit(0)
+	}
 
-	if err := fileutils.MkdirUnlessExists(outDir); err != nil {
+	target := flag.Args()[0]
+
+	branch := constants.BranchName
+	if branchFlag != nil && *branchFlag != "" {
+		branch = *branchFlag
+	}
+
+	platform := *platformFlag
+
+	version := *versionFlag
+
+	outputDir := *outputDirFlag
+	os.MkdirAll(outputDir, 0755)
+
+	if err := createUpdate(outputDir, branch, version, platform, target); err != nil {
 		return err
 	}
 
-	if err := createUpdate(outDir, branch, version, platform, inDir); err != nil {
-		return err
-	}
-
-	if err := createInstaller(binDir, outDir, branch, platform); err != nil {
+	if err := createInstaller(outputDir, branch, platform); err != nil {
 		return err
 	}
 

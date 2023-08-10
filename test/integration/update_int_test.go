@@ -239,7 +239,7 @@ func TestUpdateIntegrationTestSuite(t *testing.T) {
 }
 
 func lockedProjectURL() string {
-	return fmt.Sprintf("https://%s/string/string", constants.PlatformURL)
+	return fmt.Sprintf("https://%s/string/string?commitID=00010001-0001-0001-0001-000100010001", constants.PlatformURL)
 }
 
 func (suite *UpdateIntegrationTestSuite) TestAutoUpdate() {

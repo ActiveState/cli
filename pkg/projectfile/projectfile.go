@@ -32,7 +32,6 @@ import (
 	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/cli/internal/sliceutils"
 	"github.com/ActiveState/cli/internal/strutils"
-	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/sysinfo"
 	"github.com/go-openapi/strfmt"
 	"github.com/google/uuid"
@@ -66,10 +65,10 @@ type ErrorNoDefaultProject struct{ *locale.LocalizedError }
 
 // projectURL comprises all fields of a parsed project URL
 type projectURL struct {
-	Owner          string
-	Name           string
-	LegacyCommitID string
-	BranchName     string
+	Owner      string
+	Name       string
+	CommitID   string
+	BranchName string
 }
 
 var projectMapMutex = &sync.Mutex{}
@@ -465,21 +464,6 @@ func (p *Project) Init() error {
 	}
 	p.parsedURL = parsedURL
 
-	if p.parsedURL.LegacyCommitID != "" {
-		// Migrate from commitID in activestate.yaml to .activestate/commit file.
-		// Writing to disk during Parse() feels wrong though.
-		if err := localcommit.Set(filepath.Dir(p.Path()), p.parsedURL.LegacyCommitID); err != nil {
-			return errs.Wrap(err, "Could not create local commit file")
-		}
-		pf := NewProjectField()
-		if err := pf.LoadProject(p.Project); err != nil {
-			return errs.Wrap(err, "Could not load activestate.yaml")
-		}
-		if err := pf.Save(p.path); err != nil {
-			return errs.Wrap(err, "Could not save activestate.yaml")
-		}
-	}
-
 	// Ensure branch name is set
 	if p.parsedURL.Owner != "" && p.parsedURL.BranchName == "" {
 		logging.Debug("Appending default branch as none is set")
@@ -557,6 +541,11 @@ func (p *Project) Owner() string {
 // Name returns the project namespace's name
 func (p *Project) Name() string {
 	return p.parsedURL.Name
+}
+
+// CommitID returns the commit ID specified in the project
+func (p *Project) CommitID() string {
+	return p.parsedURL.CommitID
 }
 
 // BranchName returns the branch name specified in the project
@@ -643,7 +632,7 @@ func parseURL(rawURL string) (projectURL, error) {
 	path := strings.Split(u.Path, "/")
 	if len(path) > 2 {
 		if path[1] == "commit" {
-			p.LegacyCommitID = path[2]
+			p.CommitID = path[2]
 		} else {
 			p.Owner = path[1]
 			p.Name = path[2]
@@ -652,11 +641,11 @@ func parseURL(rawURL string) (projectURL, error) {
 
 	q := u.Query()
 	if c := q.Get("commitID"); c != "" {
-		p.LegacyCommitID = c
+		p.CommitID = c
 	}
 
-	if p.LegacyCommitID != "" {
-		if err := validateUUID(p.LegacyCommitID); err != nil {
+	if p.CommitID != "" {
+		if err := validateUUID(p.CommitID); err != nil {
 			return p, err
 		}
 	}
@@ -714,6 +703,24 @@ func (p *Project) SetNamespace(owner, project string) error {
 	p.parsedURL.Name = project
 	p.Project = pf.String()
 
+	return nil
+}
+
+// SetCommit sets the commit id within the current project file. This is done
+// in-place so that line order is preserved.
+// If headless is true, the project is defined by a commit-id only
+func (p *Project) SetCommit(commitID string, headless bool) error {
+	pf := NewProjectField()
+	if err := pf.LoadProject(p.Project); err != nil {
+		return errs.Wrap(err, "Could not load activestate.yaml")
+	}
+	pf.SetCommit(commitID, headless)
+	if err := pf.Save(p.path); err != nil {
+		return errs.Wrap(err, "Could not save activestate.yaml")
+	}
+
+	p.parsedURL.CommitID = commitID
+	p.Project = pf.String()
 	return nil
 }
 
@@ -906,6 +913,7 @@ func FromExactPath(path string) (*Project, error) {
 type CreateParams struct {
 	Owner      string
 	Project    string
+	CommitID   *strfmt.UUID
 	BranchName string
 	Directory  string
 	Content    string
@@ -941,6 +949,7 @@ func createCustom(params *CreateParams, lang language.Language) (*Project, error
 		return nil, err
 	}
 
+	var commitID string
 	if params.ProjectURL == "" {
 		u, err := url.Parse(fmt.Sprintf("https://%s/%s/%s", constants.PlatformURL, params.Owner, params.Project))
 		if err != nil {
@@ -948,6 +957,10 @@ func createCustom(params *CreateParams, lang language.Language) (*Project, error
 		}
 		q := u.Query()
 
+		if params.CommitID != nil {
+			commitID = params.CommitID.String()
+			q.Set("commitID", commitID)
+		}
 		if params.BranchName != "" {
 			q.Set("branch", params.BranchName)
 		}
@@ -993,9 +1006,10 @@ func createCustom(params *CreateParams, lang language.Language) (*Project, error
 	}
 
 	data := map[string]interface{}{
-		"Project": params.ProjectURL,
-		"Content": content,
-		"Private": params.Private,
+		"Project":  params.ProjectURL,
+		"CommitID": commitID,
+		"Content":  content,
+		"Private":  params.Private,
 	}
 
 	tplName := "activestate.yaml.tpl"

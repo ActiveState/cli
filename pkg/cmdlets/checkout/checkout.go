@@ -13,10 +13,8 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/language"
-	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/pkg/cmdlets/git"
-	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
@@ -46,7 +44,7 @@ func New(repo git.Repository, prime primeable) *Checkout {
 	return &Checkout{repo, prime.Output(), prime.Config(), prime.Analytics(), "", prime.Auth()}
 }
 
-func (r *Checkout) Run(ns *project.Namespaced, branchName, cachePath, targetPath string, noClone bool) (string, error) {
+func (r *Checkout) Run(ns *project.Namespaced, branchName, cachePath, targetPath string) (string, error) {
 	path, err := r.pathToUse(ns, targetPath)
 	if err != nil {
 		return "", errs.Wrap(err, "Could not get path to use")
@@ -55,11 +53,6 @@ func (r *Checkout) Run(ns *project.Namespaced, branchName, cachePath, targetPath
 	path, err = filepath.Abs(path)
 	if err != nil {
 		return "", errs.Wrap(err, "Could not get absolute path")
-	}
-
-	emptyDir, err := fileutils.IsEmptyDir(path)
-	if err != nil {
-		multilog.Error("Unable to check if directory is empty: %v", err)
 	}
 
 	// If project does not exist at path then we must checkout
@@ -91,7 +84,7 @@ func (r *Checkout) Run(ns *project.Namespaced, branchName, cachePath, targetPath
 	}
 
 	// Clone the related repo, if it is defined
-	if !noClone && pj.RepoURL != nil && *pj.RepoURL != "" {
+	if pj.RepoURL != nil && *pj.RepoURL != "" {
 		err := r.repo.CloneProject(ns.Owner, ns.Project, path, r.Outputer, r.analytics)
 		if err != nil {
 			return "", locale.WrapError(err, "err_clone_project", "Could not clone associated git repository")
@@ -116,6 +109,7 @@ func (r *Checkout) Run(ns *project.Namespaced, branchName, cachePath, targetPath
 		_, err = projectfile.Create(&projectfile.CreateParams{
 			Owner:      ns.Owner,
 			Project:    ns.Project,
+			CommitID:   commitID,
 			BranchName: branchName,
 			Directory:  path,
 			Language:   language.String(),
@@ -123,18 +117,6 @@ func (r *Checkout) Run(ns *project.Namespaced, branchName, cachePath, targetPath
 		})
 		if err != nil {
 			return "", errs.Wrap(err, "Could not create projectfile")
-		}
-	}
-
-	err = localcommit.Set(path, commitID.String())
-	if err != nil {
-		return "", errs.Wrap(err, "Could not create local commit file")
-	}
-	if emptyDir || fileutils.DirExists(filepath.Join(path, ".git")) {
-		err = localcommit.AddToGitIgnore(path)
-		if err != nil {
-			r.Outputer.Notice(locale.Tr("notice_commit_id_gitignore", constants.ProjectConfigDirName, constants.CommitIdFileName))
-			multilog.Error("Unable to add local commit file to .gitignore: %v", err)
 		}
 	}
 
