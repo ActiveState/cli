@@ -84,7 +84,7 @@ func (u *Shell) Run(params *Params) error {
 	}
 
 	if process.IsActivated(u.config) {
-		return locale.NewInputError("shell_already_active", "You are already in a runtime shell")
+		return locale.NewInputError("err_shell_already_active", "", proj.NamespaceString(), proj.Dir())
 	}
 
 	u.out.Notice(locale.Tl("shell_project_statement", "",
