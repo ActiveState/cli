@@ -400,7 +400,7 @@ func generateBuildtimeDependencies(artifactID strfmt.UUID, includeBuilders bool,
 	}
 
 	// We iterate through the direct dependencies of the artifact
-	// and recursively add all of the dependencies of those artifacts.
+	// and recursively add all of the dependencies of those artifacts map.
 	for _, depID := range artifact.RuntimeDependencies {
 		result[depID] = struct{}{}
 		_, err := generateBuildtimeDependencies(depID, includeBuilders, lookup, result)
