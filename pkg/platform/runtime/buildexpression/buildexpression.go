@@ -271,22 +271,24 @@ func newAp(path []string, m map[string]interface{}) (*Ap, error) {
 		}
 	}()
 
-	// Look in the given object for the function's name and argument object or list.
+	// m is a mapping of function name to arguments. There should only be one
+	// set of arugments. Since the arguments are key-value pairs, it should be
+	// a map[string]interface{}.
+	if len(m) > 1 {
+		return nil, errs.New("Function call has more than one argument mapping")
+	}
+
+	// Look in the given object for the function's name and argument mapping.
 	var name string
 	var argsInterface interface{}
 	for key, value := range m {
-		// The value of an application will always be a map[string]interface{}
-		// that represents the application's arguments. In a BuildExpression,
-		// an applications arguments are always key-value pairs.
-		valueMap, ok := value.(map[string]interface{})
+		_, ok := value.(map[string]interface{})
 		if !ok {
-			continue
+			return nil, errs.New("Function call's argument is not a map[string]interface{}")
 		}
-		if isAp(path, valueMap) {
-			name = key
-			argsInterface = value
-			break
-		}
+
+		name = key
+		argsInterface = value
 	}
 
 	args := []*Value{}
