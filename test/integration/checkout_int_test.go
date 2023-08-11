@@ -225,6 +225,22 @@ func (suite *CheckoutIntegrationTestSuite) TestJSON() {
 	//AssertValidJSON(suite.T(), cp) // cannot assert here due to "Skipping runtime setup" notice
 }
 
+func (suite *CheckoutIntegrationTestSuite) TestCheckoutCaseInsensitive() {
+	suite.OnlyRunForTags(tagsuite.Checkout)
+
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.SpawnWithOpts(e2e.WithArgs("checkout", "ACTIVESTATE-CLI/SMALL-PYTHON"))
+	cp.Expect("Skipping runtime setup")
+	cp.Expect("Checked out project")
+	cp.ExpectExitCode(0)
+
+	bytes := fileutils.ReadFileUnsafe(filepath.Join(ts.Dirs.Work, "SMALL-PYTHON", constants.ConfigFileName))
+	suite.Assert().Contains(string(bytes), "ActiveState-CLI/small-python", "did not match namespace case")
+	suite.Assert().NotContains(string(bytes), "ACTIVESTATE-CLI/SMALL-PYTHON", "kept incorrect namespace case")
+}
+
 func TestCheckoutIntegrationTestSuite(t *testing.T) {
 	suite.Run(t, new(CheckoutIntegrationTestSuite))
 }
