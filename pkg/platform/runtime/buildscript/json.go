@@ -54,6 +54,8 @@ func (v *Value) MarshalJSON() ([]byte, error) {
 		return json.Marshal(list)
 	case v.Str != nil:
 		return json.Marshal(strings.Trim(*v.Str, `"`))
+	case v.Number != nil:
+		return json.Marshal(*v.Number)
 	case v.Null != nil:
 		return json.Marshal(nil)
 	case v.Assignment != nil:

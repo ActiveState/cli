@@ -113,6 +113,9 @@ func newValue(valueInterface interface{}, preferIdent bool) (*Value, error) {
 			value.Str = ptr.To(string(b))
 		}
 
+	case float64:
+		value.Number = ptr.To(v)
+
 	default:
 		// An empty value is interpreted as JSON null.
 		value.Null = &Null{}
