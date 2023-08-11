@@ -1,6 +1,7 @@
 package resolver
 
 import (
+	"context"
 	"encoding/json"
 	"os"
 	"runtime/debug"
@@ -27,7 +28,6 @@ import (
 	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/projectfile"
-	"golang.org/x/net/context"
 )
 
 type Resolver struct {
@@ -122,18 +122,18 @@ func (r *Resolver) AvailableUpdate(ctx context.Context) (*graph.AvailableUpdate,
 	logging.Debug("AvailableUpdate resolver")
 	defer logging.Debug("AvailableUpdate done")
 
-	update, ok := r.updatePoller.ValueFromCache().(*updater.AvailableUpdate)
-	if !ok || update == nil {
+	avUpdate, ok := r.updatePoller.ValueFromCache().(*updater.AvailableUpdate)
+	if !ok || avUpdate == nil {
 		logging.Debug("No update info in cache")
 		return nil, nil
 	}
 
 	availableUpdate := &graph.AvailableUpdate{
-		Version:  update.Version,
-		Channel:  update.Channel,
-		Path:     update.Path,
-		Platform: update.Platform,
-		Sha256:   update.Sha256,
+		Version:  avUpdate.Version,
+		Channel:  avUpdate.Channel,
+		Path:     avUpdate.Path,
+		Platform: avUpdate.Platform,
+		Sha256:   avUpdate.Sha256,
 	}
 
 	return availableUpdate, nil

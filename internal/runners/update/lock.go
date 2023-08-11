@@ -14,8 +14,7 @@ import (
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
-//var _ captain.FlagMarshaler = (*StateToolChannelVersion)(nil)
-
+// var _ captain.FlagMarshaler = (*StateToolChannelVersion)(nil)
 type StateToolChannelVersion struct {
 	captain.NameVersion
 }
@@ -23,7 +22,11 @@ type StateToolChannelVersion struct {
 func (stv *StateToolChannelVersion) Set(arg string) error {
 	err := stv.NameVersion.Set(arg)
 	if err != nil {
-		return locale.WrapInputError(err, "err_channel_format", "The State Tool channel and version provided is not formatting correctly, must be in the form of <channel>@<version>")
+		return locale.WrapInputError(
+			err,
+			"err_channel_format",
+			"The State Tool channel and version provided is not formatting correctly, must be in the form of <channel>@<version>",
+		)
 	}
 	return nil
 }
@@ -132,14 +135,14 @@ func fetchExactVersion(cfg updater.Configurable, an analytics.Dispatcher, versio
 	if channel != constants.BranchName {
 		version = "" // force update
 	}
-	info, err := updater.NewDefaultChecker(cfg, an).CheckFor(channel, version)
+	update, err := updater.NewDefaultChecker(cfg, an).CheckFor(channel, version)
 	if err != nil {
 		return "", locale.WrapInputError(err, "err_update_fetch", "Could not retrieve update information, please verify that '{{.V0}}' is a valid channel.", channel)
 	}
 
-	if info == nil { // if info is empty, we are at the current version
+	if update == nil { // if update is empty, we are at the current version
 		return constants.Version, nil
 	}
 
-	return info.Version, nil
+	return update.AvUpdate.Version, nil
 }

@@ -55,41 +55,40 @@ func autoUpdate(svc *model.SvcModel, args []string, cfg *config.Instance, an ana
 		return false, nil
 	}
 
-	up := updater.NewAvailableUpdate(
-		an, upd.Version, upd.Channel, upd.Platform, upd.Path, upd.Sha256, "",
-	)
+	avUpdate := updater.NewAvailableUpdate(upd.Version, upd.Channel, upd.Platform, upd.Path, upd.Sha256, "")
+	up := updater.NewUpdate(an, avUpdate)
 
 	if !isEnabled(cfg) {
 		logging.Debug("Not performing autoupdates because user turned off autoupdates.")
 		an.EventWithLabel(anaConst.CatUpdates, anaConst.ActShouldUpdate, anaConst.UpdateLabelDisabledConfig)
 		out.Notice(output.Title(locale.Tl("update_available_header", "Auto Update")))
-		out.Notice(locale.Tr("update_available", constants.Version, up.Version))
+		out.Notice(locale.Tr("update_available", constants.Version, avUpdate.Version))
 		return false, nil
 	}
 
 	out.Notice(output.Title(locale.Tl("auto_update_title", "Auto Update")))
-	out.Notice(locale.Tr("auto_update_to_version", constants.Version, up.Version))
+	out.Notice(locale.Tr("auto_update_to_version", constants.Version, avUpdate.Version))
 
-	logging.Debug("Auto updating to %s", up.Version)
+	logging.Debug("Auto updating to %s", avUpdate.Version)
 
 	err = up.InstallBlocking("")
 	if err != nil {
 		if os.IsPermission(err) {
 			an.EventWithLabel(anaConst.CatUpdates, anaConst.ActUpdateInstall, anaConst.UpdateLabelFailed, &dimensions.Values{
-				Version: ptr.To(up.Version),
+				Version: ptr.To(avUpdate.Version),
 				Error:   ptr.To("Could not update the state tool due to insufficient permissions."),
 			})
 			return false, locale.WrapInputError(err, locale.Tl("auto_update_permission_err", "", constants.DocumentationURL, errs.JoinMessage(err)))
 		}
 		if errs.Matches(err, &updater.ErrorInProgress{}) {
 			an.EventWithLabel(anaConst.CatUpdates, anaConst.ActUpdateInstall, anaConst.UpdateLabelFailed, &dimensions.Values{
-				Version: ptr.To(up.Version),
+				Version: ptr.To(avUpdate.Version),
 				Error:   ptr.To(anaConst.UpdateErrorInProgress),
 			})
 			return false, nil
 		}
 		an.EventWithLabel(anaConst.CatUpdates, anaConst.ActUpdateInstall, anaConst.UpdateLabelFailed, &dimensions.Values{
-			Version: ptr.To(up.Version),
+			Version: ptr.To(avUpdate.Version),
 			Error:   ptr.To(anaConst.UpdateErrorInstallFailed),
 		})
 		return false, locale.WrapError(err, locale.T("auto_update_failed"))
@@ -107,14 +106,14 @@ func autoUpdate(svc *model.SvcModel, args []string, cfg *config.Instance, an ana
 			msg = anaConst.UpdateErrorRelaunch
 		}
 		an.EventWithLabel(anaConst.CatUpdates, anaConst.ActUpdateRelaunch, anaConst.UpdateLabelFailed, &dimensions.Values{
-			Version: ptr.To(up.Version),
+			Version: ptr.To(avUpdate.Version),
 			Error:   ptr.To(msg),
 		})
 		return true, errs.Silence(errs.WrapExitCode(err, code))
 	}
 
 	an.EventWithLabel(anaConst.CatUpdates, anaConst.ActUpdateRelaunch, anaConst.UpdateLabelSuccess, &dimensions.Values{
-		Version: ptr.To(up.Version),
+		Version: ptr.To(avUpdate.Version),
 	})
 	return true, nil
 }

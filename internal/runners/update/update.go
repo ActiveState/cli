@@ -64,7 +64,7 @@ func (u *Update) Run(params *Params) error {
 		return nil
 	}
 
-	u.out.Notice(locale.Tr("updating_version", up.Version))
+	u.out.Notice(locale.Tr("updating_version", up.AvUpdate.Version))
 
 	// Handle switching channels
 	var installPath string
