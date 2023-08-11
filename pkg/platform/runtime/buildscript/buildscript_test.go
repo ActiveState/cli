@@ -167,7 +167,8 @@ const example = `let:
           }
         ]
       }
-    ]
+    ],
+    solver_version = 0
   )
 in:
   runtime`
@@ -207,6 +208,9 @@ func TestExample(t *testing.T) {
 									}}},
 								}},
 							}},
+						}},
+						{Assignment: &Assignment{
+							"solver_version", &Value{Number: ptr.To(float64(0))},
 						}},
 					}},
 				}},

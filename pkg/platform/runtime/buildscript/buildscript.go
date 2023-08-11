@@ -3,6 +3,7 @@ package buildscript
 import (
 	"bytes"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/constants"
@@ -28,6 +29,7 @@ type Value struct {
 	FuncCall *FuncCall `parser:"@@"`
 	List     *[]*Value `parser:"| '[' (@@ (',' @@)* ','?)? ']'"`
 	Str      *string   `parser:"| @String"`
+	Number   *float64  `parser:"| (@Float | @Int)"`
 	Null     *Null     `parser:"| @@"`
 
 	Assignment *Assignment    `parser:"| @@"`                        // only in FuncCall
@@ -108,6 +110,9 @@ func (v *Value) String() string {
 
 	case v.Str != nil:
 		return *v.Str
+
+	case v.Number != nil:
+		return strconv.FormatFloat(*v.Number, 'G', -1, 64)
 
 	case v.Null != nil:
 		return "null"
