@@ -917,13 +917,15 @@ func (s *Setup) fetchAndInstallArtifactsFromDir(installFunc artifactInstaller) (
 			installedArtifacts[i] = artifactID
 
 			// Submit the artifact for setup and install.
-			wp.Submit(func() {
-				as := alternative.NewArtifactSetup(artifactID, s.store) // offline installer artifacts are in this format
-				err = installFunc(artifactID, filename, as)
-				if err != nil {
-					errors <- locale.WrapError(err, "artifact_setup_failed", "", artifactID.String(), "")
-				}
-			})
+			func(filename string, artifactID strfmt.UUID) {
+				wp.Submit(func() {
+					as := alternative.NewArtifactSetup(artifactID, s.store) // offline installer artifacts are in this format
+					err = installFunc(artifactID, filename, as)
+					if err != nil {
+						errors <- locale.WrapError(err, "artifact_setup_failed", "", artifactID.String(), "")
+					}
+				})
+			}(filename, artifactID) // avoid referencing loop variables inside goroutine closures
 		}
 
 		wp.StopWait()
