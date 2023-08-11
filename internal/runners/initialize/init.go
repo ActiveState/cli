@@ -163,7 +163,7 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 	}
 	if owner == "" {
 		return locale.NewInputError("err_invalid_org",
-			"The organization '{{.V0}}' either does not exist, or you do not have permissions to create a project in it",
+			"The organization '[ACTIONABLE]{{.V0}}[/RESET]' either does not exist, or you do not have permissions to create a project in it.",
 			params.Namespace.Owner)
 	}
 	namespace := project.Namespaced{Owner: owner, Project: params.Namespace.Project}
