@@ -103,12 +103,23 @@ func (r *Checkout) Run(ns *project.Namespaced, branchName, cachePath, targetPath
 		}
 	}
 
+	// Match the case of the organization.
+	// Otherwise the incorrect case will be written to the project file.
+	owners, err := model.FetchOrganizationsByIDs([]strfmt.UUID{pj.OrganizationID})
+	if err != nil {
+		return "", errs.Wrap(err, "Unable to get the project's org")
+	}
+	if len(owners) == 0 {
+		return "", errs.New("Unable to get the project's org")
+	}
+	owner := owners[0].DisplayName
+
 	// Create the config file, if the repo clone didn't already create it
 	configFile := filepath.Join(path, constants.ConfigFileName)
 	if !fileutils.FileExists(configFile) {
 		_, err = projectfile.Create(&projectfile.CreateParams{
-			Owner:      ns.Owner,
-			Project:    ns.Project,
+			Owner:      owner,
+			Project:    pj.Name, // match case on the Platform
 			CommitID:   commitID,
 			BranchName: branchName,
 			Directory:  path,
