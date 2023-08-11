@@ -112,7 +112,7 @@ func (v *Value) String() string {
 		return *v.Str
 
 	case v.Number != nil:
-		return strconv.FormatFloat(*v.Number, 'G', -1, 64)
+		return strconv.FormatFloat(*v.Number, 'G', -1, 64) // 64-bit float with minimum digits on display
 
 	case v.Null != nil:
 		return "null"
