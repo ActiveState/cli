@@ -181,7 +181,7 @@ func execute(out output.Outputer, prompt prompt.Prompter, cfg *config.Instance, 
 		return errs.New("No update information could be found.")
 	}
 
-	version := update.Version
+	version := update.AvUpdate.Version
 	if params.branch != "" {
 		version = fmt.Sprintf("%s (%s)", version, branch)
 	}
