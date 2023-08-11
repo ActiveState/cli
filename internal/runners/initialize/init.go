@@ -150,16 +150,21 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 
 	// Match the case of the organization.
 	// Otherwise the incorrect case will be written to the project file.
-	owner := params.Namespace.Owner
+	var owner string
 	orgs, err := model.FetchOrganizations()
 	if err != nil {
 		return errs.Wrap(err, "Unable to get the user's writable orgs")
 	}
 	for _, org := range orgs {
-		if strings.EqualFold(org.DisplayName, owner) {
+		if strings.EqualFold(org.DisplayName, params.Namespace.Owner) {
 			owner = org.DisplayName
 			break
 		}
+	}
+	if owner == "" {
+		return locale.NewInputError("err_invalid_org",
+			"The organization '{{.V0}}' either does not exist, or you do not have permissions to create a project in it",
+			params.Namespace.Owner)
 	}
 	namespace := project.Namespaced{Owner: owner, Project: params.Namespace.Project}
 

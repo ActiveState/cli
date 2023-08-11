@@ -110,7 +110,7 @@ func (r *Checkout) Run(ns *project.Namespaced, branchName, cachePath, targetPath
 		return "", errs.Wrap(err, "Unable to get the project's org")
 	}
 	if len(owners) == 0 {
-		return "", errs.New("Unable to get the project's org")
+		return "", locale.NewInputError("err_no_org_name", "Your project's organization name could not be found")
 	}
 	owner := owners[0].DisplayName
 
