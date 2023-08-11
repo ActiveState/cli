@@ -41,12 +41,18 @@ const (
 var funcNodeNotFoundError = errors.New("Could not find function node")
 
 type BuildExpression struct {
-	Let *Let
+	Let   *Let
+	Value *Value
 }
 
 type Let struct {
-	Assignments []*Var
+	Assignments []*Assignment
 	In          *In
+}
+
+type Assignment struct {
+	Var *Var
+	Let *Let
 }
 
 type Var struct {
@@ -122,23 +128,40 @@ func New(data []byte) (*BuildExpression, error) {
 		return nil, errs.Wrap(err, "Could not unmarshal build expression")
 	}
 
-	letValue, ok := rawBuildExpression["let"]
-	if !ok {
-		return nil, errs.New("Build expression has no 'let' key")
+	if len(rawBuildExpression) != 1 {
+		return nil, errs.New("Build expression must have exactly one key")
 	}
 
-	letMap, ok := letValue.(map[string]interface{})
-	if !ok {
-		return nil, errs.New("'let' key is not a JSON object")
-	}
-
+	var expr *BuildExpression
 	var path []string
-	let, err := newLet(path, letMap)
-	if err != nil {
-		return nil, errs.Wrap(err, "Could not parse 'let' key")
-	}
+	for key, value := range rawBuildExpression {
+		switch v := value.(type) {
+		case map[string]interface{}:
+			// If key is let, parse let
+			// The only other key is an Ap.
+			// If it's not let, it must be an Ap.
+			// If it's not an Ap, it's an error.
+			if key == "let" {
+				let, err := newLet(path, v)
+				if err != nil {
+					return nil, errs.Wrap(err, "Could not parse 'let' key")
+				}
 
-	expr := &BuildExpression{let}
+				expr = &BuildExpression{Let: let}
+			} else if isAp(path, v) {
+				ap, err := newAp(path, v)
+				if err != nil {
+					return nil, errs.Wrap(err, "Could not parse '%s' key", key)
+				}
+
+				expr = &BuildExpression{Value: &Value{Ap: ap}}
+			} else {
+				return nil, errs.New("Could not parse '%s' key", key)
+			}
+		case string:
+			// TODO: Decode variable
+		}
+	}
 
 	err = expr.validateRequirements()
 	if err != nil {
@@ -225,7 +248,7 @@ func newValue(path []string, valueInterface interface{}) (*Value, error) {
 
 		if value.Ap == nil {
 			// It's not a function call, but an object.
-			object, err := newAssignments(path, v)
+			object, err := newObject(path, v)
 			if err != nil {
 				return nil, errs.Wrap(err, "Could not parse object: %v", v)
 			}
@@ -320,7 +343,7 @@ func newAp(path []string, m map[string]interface{}) (*Ap, error) {
 	return &Ap{Name: name, Arguments: args}, nil
 }
 
-func newAssignments(path []string, m map[string]interface{}) (*[]*Var, error) {
+func newAssignments(path []string, m map[string]interface{}) (*[]*Assignment, error) {
 	path = append(path, ctxAssignments)
 	defer func() {
 		_, _, err := sliceutils.Pop(path)
@@ -329,16 +352,55 @@ func newAssignments(path []string, m map[string]interface{}) (*[]*Var, error) {
 		}
 	}()
 
-	assignments := []*Var{}
+	assignments := []*Assignment{}
+	for key, valueInterface := range m {
+		if key == "let" {
+			letMap, ok := valueInterface.(map[string]interface{})
+			if !ok {
+				return nil, errs.New("'let' key's value is not a map[string]interface{}")
+			}
+
+			let, err := newLet(path, letMap)
+			if err != nil {
+				return nil, errs.Wrap(err, "Could not parse 'let' key")
+			}
+			assignments = append(assignments, &Assignment{Let: let})
+		} else {
+			value, err := newValue(path, valueInterface)
+			if err != nil {
+				return nil, errs.Wrap(err, "Could not parse '%s' key's value: %v", key, valueInterface)
+			}
+			assignments = append(assignments, &Assignment{Var: &Var{Name: key, Value: value}})
+		}
+	}
+	sort.SliceStable(assignments, func(i, j int) bool {
+		if assignments[i].Var == nil || assignments[j].Var == nil {
+			return assignments[i].Var.Name < assignments[j].Var.Name
+		}
+		return false
+	})
+	return &assignments, nil
+}
+
+func newObject(path []string, m map[string]interface{}) (*[]*Var, error) {
+	path = append(path, ctxAssignments)
+	defer func() {
+		_, _, err := sliceutils.Pop(path)
+		if err != nil {
+			multilog.Error("Could not pop context: %v", err)
+		}
+	}()
+
+	object := []*Var{}
 	for key, valueInterface := range m {
 		value, err := newValue(path, valueInterface)
 		if err != nil {
 			return nil, errs.Wrap(err, "Could not parse '%s' key's value: %v", key, valueInterface)
 		}
-		assignments = append(assignments, &Var{Name: key, Value: value})
+		object = append(object, &Var{Name: key, Value: value})
 	}
-	sort.SliceStable(assignments, func(i, j int) bool { return assignments[i].Name < assignments[j].Name })
-	return &assignments, nil
+	sort.SliceStable(object, func(i, j int) bool { return object[i].Name < object[j].Name })
+	return &object, nil
 }
 
 func newIn(path []string, inValue interface{}) (*In, error) {
@@ -373,7 +435,11 @@ func newIn(path []string, inValue interface{}) (*In, error) {
 // validateRequirements ensures that the requirements in the BuildExpression contain
 // both the name and namespace fields. These fileds are used for requirement operations.
 func (e *BuildExpression) validateRequirements() error {
-	requirements := e.getRequirementsNode()
+	requirements, err := e.getRequirementsNode()
+	if err != nil {
+		return errs.Wrap(err, "Could not get requirements node")
+	}
+
 	for _, r := range requirements {
 		if r.Object == nil {
 			continue
@@ -427,8 +493,11 @@ func (e *BuildExpression) validateRequirements() error {
 //	    }
 //	  ]
 //	}
-func (e *BuildExpression) Requirements() []model.Requirement {
-	requirementsNode := e.getRequirementsNode()
+func (e *BuildExpression) Requirements() ([]model.Requirement, error) {
+	requirementsNode, err := e.getRequirementsNode()
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not get requirements node")
+	}
 
 	var requirements []model.Requirement
 	for _, r := range requirementsNode {
@@ -453,11 +522,14 @@ func (e *BuildExpression) Requirements() []model.Requirement {
 		requirements = append(requirements, req)
 	}
 
-	return requirements
+	return requirements, nil
 }
 
-func (e *BuildExpression) getRequirementsNode() []*Value {
-	solveAp := e.getSolveNode()
+func (e *BuildExpression) getRequirementsNode() ([]*Value, error) {
+	solveAp, err := e.getSolveNode()
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not get solve node")
+	}
 
 	var reqs []*Value
 	for _, arg := range solveAp.Arguments {
@@ -470,7 +542,7 @@ func (e *BuildExpression) getRequirementsNode() []*Value {
 		}
 	}
 
-	return reqs
+	return reqs, nil
 }
 
 func getVersionRequirements(v *[]*Value) []model.VersionRequirement {
@@ -513,33 +585,58 @@ func getVersionRequirements(v *[]*Value) []model.VersionRequirement {
 //	    }
 //	  }
 //	}
-func (e *BuildExpression) getSolveNode() *Ap {
-	for _, a := range e.Let.Assignments {
-		if a.Value.Ap == nil {
-			continue
-		}
+func (e *BuildExpression) getSolveNode() (*Ap, error) {
+	if e.Let != nil {
+		return recurseAssignments(e.Let.Assignments)
+	}
 
-		if a.Value.Ap.Name == SolveFuncName || a.Value.Ap.Name == SolveLegacyFuncName {
-			return a.Value.Ap
+	if e.Value != nil {
+		if e.Value.Ap == nil {
+			return nil, funcNodeNotFoundError
 		}
 	}
 
-	return nil
+	return nil, funcNodeNotFoundError
 }
 
-func (e *BuildExpression) getSolveNodeArguments() []*Value {
-	solveAp := e.getSolveNode()
-	if solveAp == nil {
-		return []*Value{}
+func recurseAssignments(assignments []*Assignment) (*Ap, error) {
+	for _, a := range assignments {
+		if a.Let != nil {
+			return recurseAssignments(a.Let.Assignments)
+		}
+
+		if a.Var != nil {
+			if a.Var.Value == nil {
+				continue
+			}
+
+			if a.Var.Value.Ap == nil {
+				continue
+			}
+
+			if a.Var.Value.Ap.Name == SolveFuncName || a.Var.Value.Ap.Name == SolveLegacyFuncName {
+				return a.Var.Value.Ap, nil
+			}
+
+		}
 	}
 
-	return solveAp.Arguments
+	return nil, funcNodeNotFoundError
 }
 
-func (e *BuildExpression) getPlatformsNode() *[]*Value {
-	solveAp := e.getSolveNode()
-	if solveAp == nil {
-		return nil
+func (e *BuildExpression) getSolveNodeArguments() ([]*Value, error) {
+	solveAp, err := e.getSolveNode()
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not get solve node")
+	}
+
+	return solveAp.Arguments, nil
+}
+
+func (e *BuildExpression) getPlatformsNode() (*[]*Value, error) {
+	solveAp, err := e.getSolveNode()
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not get solve node")
 	}
 
 	for _, arg := range solveAp.Arguments {
@@ -548,11 +645,11 @@ func (e *BuildExpression) getPlatformsNode() *[]*Value {
 		}
 
 		if arg.Assignment.Name == PlatformsKey && arg.Assignment.Value != nil {
-			return arg.Assignment.Value.List
+			return arg.Assignment.Value.List, nil
 		}
 	}
 
-	return nil
+	return nil, errs.New("Could not find platforms node")
 }
 
 // Update updates the BuildExpression's requirements based on the operation and requirement.
@@ -596,9 +693,19 @@ func (e *BuildExpression) addRequirement(requirement model.Requirement) error {
 		}
 	}
 
-	requirementsNode := append(e.getRequirementsNode(), &Value{Object: &obj})
+	requirementsNode, err := e.getRequirementsNode()
+	if err != nil {
+		return errs.Wrap(err, "Could not get requirements node")
+	}
 
-	for _, arg := range e.getSolveNodeArguments() {
+	requirementsNode = append(requirementsNode, &Value{Object: &obj})
+
+	arguments, err := e.getSolveNodeArguments()
+	if err != nil {
+		return errs.Wrap(err, "Could not get solve node arguments")
+	}
+
+	for _, arg := range arguments {
 		if arg.Assignment == nil {
 			continue
 		}
@@ -612,7 +719,10 @@ func (e *BuildExpression) addRequirement(requirement model.Requirement) error {
 }
 
 func (e *BuildExpression) removeRequirement(requirement model.Requirement) error {
-	requirementsNode := e.getRequirementsNode()
+	requirementsNode, err := e.getRequirementsNode()
+	if err != nil {
+		return errs.Wrap(err, "Could not get requirements node")
+	}
 
 	var found bool
 	for i, r := range requirementsNode {
@@ -633,7 +743,12 @@ func (e *BuildExpression) removeRequirement(requirement model.Requirement) error
 		return locale.NewInputError("err_remove_requirement_not_found", "Could not remove requirement '[ACTIONABLE]{{.V0}}[/RESET]', because it does not exist.", requirement.Name)
 	}
 
-	for _, arg := range e.getSolveNode().Arguments {
+	solveNode, err := e.getSolveNode()
+	if err != nil {
+		return errs.Wrap(err, "Could not get solve node")
+	}
+
+	for _, arg := range solveNode.Arguments {
 		if arg.Assignment == nil {
 			continue
 		}
@@ -664,7 +779,10 @@ func (e *BuildExpression) UpdatePlatform(operation model.Operation, platformID s
 }
 
 func (e *BuildExpression) addPlatform(platformID strfmt.UUID) error {
-	platformsNode := e.getPlatformsNode()
+	platformsNode, err := e.getPlatformsNode()
+	if err != nil {
+		return errs.Wrap(err, "Could not get platforms node")
+	}
 
 	*platformsNode = append(*platformsNode, &Value{Str: ptr.To(platformID.String())})
 
@@ -672,7 +790,10 @@ func (e *BuildExpression) addPlatform(platformID strfmt.UUID) error {
 }
 
 func (e *BuildExpression) removePlatform(platformID strfmt.UUID) error {
-	platformsNode := e.getPlatformsNode()
+	platformsNode, err := e.getPlatformsNode()
+	if err != nil {
+		return errs.Wrap(err, "Could not get platforms node")
+	}
 
 	var found bool
 	for i, p := range *platformsNode {
@@ -700,7 +821,12 @@ func (e *BuildExpression) UpdateTimestamp(timestamp strfmt.DateTime) error {
 		return errs.Wrap(err, "Could not parse latest timestamp")
 	}
 
-	for _, arg := range e.getSolveNode().Arguments {
+	solveNode, err := e.getSolveNode()
+	if err != nil {
+		return errs.Wrap(err, "Could not get solve node")
+	}
+
+	for _, arg := range solveNode.Arguments {
 		if arg.Assignment == nil {
 			continue
 		}
@@ -714,16 +840,40 @@ func (e *BuildExpression) UpdateTimestamp(timestamp strfmt.DateTime) error {
 }
 
 func (e *BuildExpression) MarshalJSON() ([]byte, error) {
-	m := make(map[string]interface{})
-	let := make(map[string]interface{})
-	for _, assignment := range e.Let.Assignments {
-		let[assignment.Name] = assignment.Value
+	if e.Let != nil {
+		return e.Let.MarshalJSON()
 	}
 
-	let["in"] = e.Let.In
-	m["let"] = let
+	return e.Value.MarshalJSON()
+}
+
+func (l *Let) MarshalJSON() ([]byte, error) {
+	m := make(map[string]interface{})
+	err := buildLetMap(l, m)
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not marshal let")
+	}
 
 	return json.Marshal(m)
+}
+
+func buildLetMap(l *Let, result map[string]interface{}) error {
+	let := make(map[string]interface{})
+	for _, assignment := range l.Assignments {
+		if assignment.Var != nil {
+			let[assignment.Var.Name] = assignment.Var.Value
+			continue
+		}
+		if assignment.Let != nil {
+			buildLetMap(assignment.Let, let)
+			continue
+		}
+	}
+
+	result["let"] = let
+	result["in"] = l.In
+
+	return nil
 }
 
 func (a *Var) MarshalJSON() ([]byte, error) {

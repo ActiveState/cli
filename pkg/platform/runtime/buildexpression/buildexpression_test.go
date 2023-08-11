@@ -124,7 +124,8 @@ func TestBuildExpression_Requirements(t *testing.T) {
 			bx, err := New(data)
 			assert.NoError(t, err)
 
-			got := bx.Requirements()
+			got, err := bx.Requirements()
+			assert.NoError(t, err)
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("BuildExpression.Requirements() = %v, want %v", got, tt.want)
 			}
@@ -327,7 +328,8 @@ func TestBuildExpression_Update(t *testing.T) {
 				return
 			}
 
-			got := bx.Requirements()
+			got, err := bx.Requirements()
+			assert.NoError(t, err)
 
 			sort.Slice(got, func(i, j int) bool {
 				return got[i].Name < got[j].Name
