@@ -153,6 +153,11 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 		}
 	}
 
+	emptyDir, err := fileutils.IsEmptyDir(path)
+	if err != nil {
+		multilog.Error("Unable to check if directory is empty: %v", err)
+	}
+
 	// Match the case of the organization.
 	// Otherwise the incorrect case will be written to the project file.
 	var owner string

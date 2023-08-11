@@ -127,7 +127,6 @@ func (r *Checkout) Run(ns *project.Namespaced, branchName, cachePath, targetPath
 		_, err = projectfile.Create(&projectfile.CreateParams{
 			Owner:      owner,
 			Project:    pj.Name, // match case on the Platform
-			CommitID:   commitID,
 			BranchName: branchName,
 			Directory:  path,
 			Language:   language.String(),
