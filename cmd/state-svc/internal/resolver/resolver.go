@@ -122,18 +122,18 @@ func (r *Resolver) AvailableUpdate(ctx context.Context) (*graph.AvailableUpdate,
 	logging.Debug("AvailableUpdate resolver")
 	defer logging.Debug("AvailableUpdate done")
 
-	avUpdate, ok := r.updatePoller.ValueFromCache().(*updater.AvailableUpdate)
-	if !ok || avUpdate == nil {
+	update, ok := r.updatePoller.ValueFromCache().(*updater.Update)
+	if !ok || update == nil {
 		logging.Debug("No update info in cache")
 		return nil, nil
 	}
 
 	availableUpdate := &graph.AvailableUpdate{
-		Version:  avUpdate.Version,
-		Channel:  avUpdate.Channel,
-		Path:     avUpdate.Path,
-		Platform: avUpdate.Platform,
-		Sha256:   avUpdate.Sha256,
+		Version:  update.AvUpdate.Version,
+		Channel:  update.AvUpdate.Channel,
+		Path:     update.AvUpdate.Path,
+		Platform: update.AvUpdate.Platform,
+		Sha256:   update.AvUpdate.Sha256,
 	}
 
 	return availableUpdate, nil
