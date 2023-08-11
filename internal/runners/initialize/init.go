@@ -158,9 +158,29 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 		multilog.Error("Unable to check if directory is empty: %v", err)
 	}
 
+	// Match the case of the organization.
+	// Otherwise the incorrect case will be written to the project file.
+	var owner string
+	orgs, err := model.FetchOrganizations()
+	if err != nil {
+		return errs.Wrap(err, "Unable to get the user's writable orgs")
+	}
+	for _, org := range orgs {
+		if strings.EqualFold(org.DisplayName, params.Namespace.Owner) {
+			owner = org.DisplayName
+			break
+		}
+	}
+	if owner == "" {
+		return locale.NewInputError("err_invalid_org",
+			"The organization '[ACTIONABLE]{{.V0}}[/RESET]' either does not exist, or you do not have permissions to create a project in it.",
+			params.Namespace.Owner)
+	}
+	namespace := project.Namespaced{Owner: owner, Project: params.Namespace.Project}
+
 	createParams := &projectfile.CreateParams{
-		Owner:     params.Namespace.Owner,
-		Project:   params.Namespace.Project,
+		Owner:     namespace.Owner,
+		Project:   namespace.Project,
 		Language:  lang.String(),
 		Directory: path,
 		Private:   params.Private,
@@ -214,9 +234,9 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 
 	logging.Debug("Creating Platform project and pushing it")
 
-	platformProject, err := model.CreateEmptyProject(params.Namespace.Owner, params.Namespace.Project, params.Private)
+	platformProject, err := model.CreateEmptyProject(namespace.Owner, namespace.Project, params.Private)
 	if err != nil {
-		return locale.WrapInputError(err, "err_init_create_project", "Failed to create a Platform project at {{.V0}}.", params.Namespace.String())
+		return locale.WrapInputError(err, "err_init_create_project", "Failed to create a Platform project at {{.V0}}.", namespace.String())
 	}
 
 	branch, err := model.DefaultBranchForProject(platformProject) // only one branch for newly created project
@@ -226,7 +246,7 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 
 	err = model.UpdateProjectBranchCommitWithModel(platformProject, branch.Label, commitID)
 	if err != nil {
-		return locale.WrapError(err, "err_init_push", "Failed to push to the newly created Platform project at {{.V0}}", params.Namespace.String())
+		return locale.WrapError(err, "err_init_push", "Failed to push to the newly created Platform project at {{.V0}}", namespace.String())
 	}
 
 	err = runbits.RefreshRuntime(r.auth, r.out, r.analytics, proj, commitID, true, target.TriggerInit, r.svcModel)
@@ -234,19 +254,19 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 		return locale.WrapError(err, "err_init_refresh", "Could not setup runtime after init")
 	}
 
-	projectfile.StoreProjectMapping(r.config, params.Namespace.String(), filepath.Dir(proj.Source().Path()))
+	projectfile.StoreProjectMapping(r.config, namespace.String(), filepath.Dir(proj.Source().Path()))
 
 	projectTarget := target.NewProjectTarget(proj, nil, "").Dir()
 	executables := setup.ExecDir(projectTarget)
 
 	r.out.Print(output.Prepare(
-		locale.Tr("init_success", params.Namespace.String(), path, executables),
+		locale.Tr("init_success", namespace.String(), path, executables),
 		&struct {
 			Namespace   string `json:"namespace"`
 			Path        string `json:"path" `
 			Executables string `json:"executables"`
 		}{
-			params.Namespace.String(),
+			namespace.String(),
 			path,
 			executables,
 		},
