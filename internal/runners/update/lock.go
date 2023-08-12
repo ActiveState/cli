@@ -140,7 +140,7 @@ func fetchExactVersion(cfg updater.Configurable, an analytics.Dispatcher, versio
 		return "", locale.WrapInputError(err, "err_update_fetch", "Could not retrieve update information, please verify that '{{.V0}}' is a valid channel.", channel)
 	}
 
-	if update == nil { // if update is empty, we are at the current version
+	if update.AvUpdate.SkipCurrent {
 		return constants.Version, nil
 	}
 

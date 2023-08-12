@@ -172,13 +172,9 @@ func execute(out output.Outputer, prompt prompt.Prompter, cfg *config.Instance, 
 	// Fetch payload
 	checker := updater.NewDefaultChecker(cfg, an)
 	checker.InvocationSource = updater.InvocationSourceInstall // Installing from a remote source is only ever encountered via the install flow
-	checker.VerifyVersion = false
 	update, err := checker.CheckFor(branch, params.version)
 	if err != nil {
 		return errs.Wrap(err, "Could not retrieve install package information")
-	}
-	if update == nil {
-		return errs.New("No update information could be found.")
 	}
 
 	version := update.AvUpdate.Version

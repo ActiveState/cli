@@ -22,19 +22,20 @@ func (m *httpGetMock) Get(url string) ([]byte, int, error) {
 	return m.MockedResponse, 0, nil
 }
 
-func mockAvailableUpdate(channel, version, tag string) *AvailableUpdate {
+func mockAvailableUpdate(channel, version, tag string, skip bool) *AvailableUpdate {
 	return &AvailableUpdate{
-		Version:  version,
-		Channel:  channel,
-		Platform: "platform",
-		Path:     "path/to/zipfile.zip",
-		Sha256:   "123456",
-		Tag:      &tag,
+		Version:     version,
+		Channel:     channel,
+		Platform:    "platform",
+		Path:        "path/to/zipfile.zip",
+		Sha256:      "123456",
+		Tag:         &tag,
+		SkipCurrent: skip,
 	}
 }
 
 func newMock(t *testing.T, channel, version, tag string) *httpGetMock {
-	up := mockAvailableUpdate(channel, version, tag)
+	up := mockAvailableUpdate(channel, version, tag, false)
 
 	b, err := json.Marshal(up)
 	require.NoError(t, err)
@@ -55,31 +56,31 @@ func TestCheckerCheckFor(t *testing.T) {
 			Name:        "same-version",
 			MockChannel: "master", MockVersion: "1.2.3",
 			CheckChannel: "", CheckVersion: "",
-			ExpectedResult: nil,
+			ExpectedResult: mockAvailableUpdate("master", "1.2.3", "", true),
 		},
 		{
 			Name:        "updated-version",
 			MockChannel: "master", MockVersion: "2.3.4",
 			CheckChannel: "", CheckVersion: "",
-			ExpectedResult: mockAvailableUpdate("master", "2.3.4", ""),
+			ExpectedResult: mockAvailableUpdate("master", "2.3.4", "", false),
 		},
 		{
 			Name:        "check-different-channel",
 			MockChannel: "release", MockVersion: "1.2.3", MockTag: "experiment",
 			CheckChannel: "release", CheckVersion: "",
-			ExpectedResult: mockAvailableUpdate("release", "1.2.3", "experiment"),
+			ExpectedResult: mockAvailableUpdate("release", "1.2.3", "experiment", false),
 		},
 		{
 			Name:        "specific-version",
 			MockChannel: "master", MockVersion: "0.1.2",
 			CheckChannel: "master", CheckVersion: "0.1.2",
-			ExpectedResult: mockAvailableUpdate("master", "0.1.2", ""),
+			ExpectedResult: mockAvailableUpdate("master", "0.1.2", "", false),
 		},
 		{
 			Name:        "check-same-version",
 			MockChannel: "master", MockVersion: "1.2.3",
 			CheckChannel: "master", CheckVersion: "1.2.3",
-			ExpectedResult: nil,
+			ExpectedResult: mockAvailableUpdate("master", "1.2.3", "", true),
 		},
 	}
 
@@ -89,10 +90,6 @@ func TestCheckerCheckFor(t *testing.T) {
 			check := NewChecker(&configMock.Mock{}, blackhole.New(), constants.APIUpdateInfoURL, "master", "1.2.3", m)
 			res, err := check.CheckFor(tt.CheckChannel, tt.CheckVersion)
 			require.NoError(t, err)
-			if tt.ExpectedResult == nil {
-				assert.Nil(t, res)
-				return
-			}
 			assert.Equal(t, tt.ExpectedResult, res.AvUpdate)
 		})
 	}

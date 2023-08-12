@@ -13,11 +13,12 @@ type AnalyticsEventResponse struct {
 }
 
 type AvailableUpdate struct {
-	Version  string `json:"version"`
-	Channel  string `json:"channel"`
-	Path     string `json:"path"`
-	Platform string `json:"platform"`
-	Sha256   string `json:"sha256"`
+	Version     string `json:"version"`
+	Channel     string `json:"channel"`
+	Path        string `json:"path"`
+	Platform    string `json:"platform"`
+	Sha256      string `json:"sha256"`
+	SkipCurrent bool   `json:"skipCurrent"`
 }
 
 type CheckRuntimeUsageResponse struct {
@@ -37,15 +38,6 @@ type MessageInfo struct {
 	Interrupt MessageInterruptType `json:"interrupt"`
 	Placement MessagePlacementType `json:"placement"`
 }
-
-/*
-[
-	{
-		"ID": "simple",
-		"Message": "This is a [NOTICE]simple[/RESET] message\nwith a line break",
-	}
-]
-*/
 
 type Project struct {
 	Namespace string   `json:"namespace"`

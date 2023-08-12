@@ -87,9 +87,9 @@ func (u *Checker) CheckFor(desiredChannel, desiredVersion string) (*Update, erro
 		return nil, errs.Wrap(err, "Failed to get update info")
 	}
 
-	if info == nil || (u.VerifyVersion && info.AvUpdate.Channel == u.currentChannel && info.AvUpdate.Version == u.currentVersion) {
-		return nil, nil
-	}
+	info.AvUpdate.SkipCurrent = u.VerifyVersion &&
+		info.AvUpdate.Channel == u.currentChannel &&
+		info.AvUpdate.Version == u.currentVersion
 
 	return info, nil
 }

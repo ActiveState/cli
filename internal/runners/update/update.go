@@ -55,7 +55,7 @@ func (u *Update) Run(params *Params) error {
 	if err != nil {
 		return locale.WrapError(err, "err_update_check", "Could not check for updates.")
 	}
-	if up == nil {
+	if up.AvUpdate.SkipCurrent {
 		logging.Debug("No update found")
 		u.out.Print(output.Prepare(
 			locale.T("update_none_found"),

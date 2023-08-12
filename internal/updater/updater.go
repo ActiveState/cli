@@ -42,6 +42,9 @@ type AvailableUpdate struct {
 	Path     string  `json:"path"`
 	Sha256   string  `json:"sha256"`
 	Tag      *string `json:"tag,omitempty"`
+
+	// SkipCurrent signals that the version is current and should be skipped
+	SkipCurrent bool
 }
 
 func NewAvailableUpdate(version, channel, platform, path, sha256, tag string) *AvailableUpdate {
