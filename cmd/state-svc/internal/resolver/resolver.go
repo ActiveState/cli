@@ -52,6 +52,7 @@ func New(cfg *config.Instance, an *sync.Client, auth *authentication.Auth) (*Res
 
 	upchecker := updater.NewDefaultChecker(cfg, an)
 	pollUpdate := poller.New(1*time.Hour, func() (interface{}, error) {
+		logging.Debug("Poller checking for update info")
 		return upchecker.Check()
 	})
 
@@ -124,7 +125,7 @@ func (r *Resolver) AvailableUpdate(ctx context.Context) (*graph.AvailableUpdate,
 
 	update, ok := r.updatePoller.ValueFromCache().(*updater.Update)
 	if !ok || update == nil {
-		logging.Debug("No update info in cache")
+		logging.Debug("No update info in poller cache")
 		return nil, nil
 	}
 
