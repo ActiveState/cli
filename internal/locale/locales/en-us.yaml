@@ -1996,7 +1996,7 @@ err_autostart_app:
   other: Could not create new autostart app
 err_install_state_exe_does_not_exist:
   other: |
-    Could not install State Tool. One or more of the installed executables appears to have been deleted during installation. Please check with your antivirus to see if it might’ve triggered a false-positive.
+    Could not install State Tool. One or more of the installed executables appears to have been deleted during installation. Please check with your antivirus to see if it might have triggered a false-positive.
 
     Please consider letting us know what antivirus you are running so that we can address this false-positive: [ACTIONABLE]{{.V0}}[/RESET].
 
