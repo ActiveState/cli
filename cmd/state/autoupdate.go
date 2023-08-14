@@ -129,10 +129,8 @@ func isEnabled(cfg *config.Instance) bool {
 }
 
 func shouldRunAutoUpdate(args []string, cfg *config.Instance, an analytics.Dispatcher) bool {
-	var (
-		shouldUpdate bool
-		label        string
-	)
+	shouldUpdate := true
+	label := anaConst.UpdateLabelTrue
 
 	switch {
 	// In a forward
