@@ -12,6 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/globaldefault"
+	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -119,6 +120,9 @@ func (r *Prepare) Run(cmd *captain.Command) error {
 	// OS specific preparations
 	err := r.prepareOS()
 	if err != nil {
+		if installation.IsStateExeDoesNotExistError(err) && runtime.GOOS == "windows" {
+			return locale.WrapInputError(err, "err_install_state_exe_does_not_exist", "", constants.ForumsURL)
+		}
 		return errs.Wrap(err, "Could not prepare OS")
 	}
 

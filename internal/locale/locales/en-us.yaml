@@ -2006,6 +2006,13 @@ svcctl_file_not_found:
     If this problem persists please report it on our forums: [ACTIONABLE]{{.V0}}[/RESET]
 err_autostart_app:
   other: Could not create new autostart app
+err_install_state_exe_does_not_exist:
+  other: |
+    Could not install State Tool. One or more of the installed executables appears to have been deleted during installation. Please check with your antivirus to see if it might have triggered a false-positive.
+
+    Please consider letting us know what antivirus you are running so that we can address this false-positive: [ACTIONABLE]{{.V0}}[/RESET].
+
+    Note the source code of the State Tool is open source, and you can review it yourself should you have concerns: [ACTIONABLE]https://github.com/ActiveState/cli[/RESET]
 install_remote_title:
   other: This will install the State Tool
 err_already_checked_out:
