@@ -137,10 +137,7 @@ func New(data []byte) (*BuildExpression, error) {
 	for key, value := range rawBuildExpression {
 		switch v := value.(type) {
 		case map[string]interface{}:
-			// If key is let, parse let
-			// The only other key is an Ap.
-			// If it's not let, it must be an Ap.
-			// If it's not an Ap, it's an error.
+			// The key must either be a let or an ap.
 			if key == "let" {
 				let, err := newLet(path, v)
 				if err != nil {
@@ -195,7 +192,7 @@ func newLet(path []string, m map[string]interface{}) (*Let, error) {
 
 	assignments, err := newAssignments(path, m)
 	if err != nil {
-		return nil, errs.Wrap(err, "Could not parse 'let' key")
+		return nil, errs.Wrap(err, "Could not parse assignments")
 	}
 
 	return &Let{Assignments: *assignments, In: in}, nil
@@ -234,6 +231,10 @@ func newValue(path []string, valueInterface interface{}) (*Value, error) {
 		// Examine keys first to see if this is a function call.
 		for key, val := range v {
 			if _, ok := val.(map[string]interface{}); !ok {
+				continue
+			}
+
+			if len(v) > 1 {
 				continue
 			}
 
@@ -307,7 +308,7 @@ func newAp(path []string, m map[string]interface{}) (*Ap, error) {
 	for key, value := range m {
 		_, ok := value.(map[string]interface{})
 		if !ok {
-			return nil, errs.New("Function call's argument is not a map[string]interface{}")
+			return nil, errs.New("Incorrect argument format")
 		}
 
 		name = key
@@ -606,6 +607,10 @@ func recurseAssignments(assignments []*Assignment) (*Ap, error) {
 		}
 
 		if a.Var != nil {
+			if a.Var.Name == "" && a.Var.Name != "runtime" {
+				continue
+			}
+
 			if a.Var.Value == nil {
 				continue
 			}
