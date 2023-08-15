@@ -47,12 +47,11 @@ type ComplexityRoot struct {
 	}
 
 	AvailableUpdate struct {
-		Channel     func(childComplexity int) int
-		Path        func(childComplexity int) int
-		Platform    func(childComplexity int) int
-		Sha256      func(childComplexity int) int
-		SkipCurrent func(childComplexity int) int
-		Version     func(childComplexity int) int
+		Channel  func(childComplexity int) int
+		Path     func(childComplexity int) int
+		Platform func(childComplexity int) int
+		Sha256   func(childComplexity int) int
+		Version  func(childComplexity int) int
 	}
 
 	CheckRuntimeUsageResponse struct {
@@ -168,13 +167,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.AvailableUpdate.Sha256(childComplexity), true
-
-	case "AvailableUpdate.skipCurrent":
-		if e.complexity.AvailableUpdate.SkipCurrent == nil {
-			break
-		}
-
-		return e.complexity.AvailableUpdate.SkipCurrent(childComplexity), true
 
 	case "AvailableUpdate.version":
 		if e.complexity.AvailableUpdate.Version == nil {
@@ -472,7 +464,6 @@ type AvailableUpdate {
     path: String!
     platform: String!
     sha256: String!
-    skipCurrent: Boolean!
 }
 
 type Project {
@@ -1010,50 +1001,6 @@ func (ec *executionContext) fieldContext_AvailableUpdate_sha256(ctx context.Cont
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _AvailableUpdate_skipCurrent(ctx context.Context, field graphql.CollectedField, obj *graph.AvailableUpdate) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_AvailableUpdate_skipCurrent(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.SkipCurrent, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(bool)
-	fc.Result = res
-	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_AvailableUpdate_skipCurrent(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "AvailableUpdate",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Boolean does not have child fields")
 		},
 	}
 	return fc, nil
@@ -1632,8 +1579,6 @@ func (ec *executionContext) fieldContext_Query_availableUpdate(ctx context.Conte
 				return ec.fieldContext_AvailableUpdate_platform(ctx, field)
 			case "sha256":
 				return ec.fieldContext_AvailableUpdate_sha256(ctx, field)
-			case "skipCurrent":
-				return ec.fieldContext_AvailableUpdate_skipCurrent(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type AvailableUpdate", field.Name)
 		},
@@ -4331,13 +4276,6 @@ func (ec *executionContext) _AvailableUpdate(ctx context.Context, sel ast.Select
 		case "sha256":
 
 			out.Values[i] = ec._AvailableUpdate_sha256(ctx, field, obj)
-
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "skipCurrent":
-
-			out.Values[i] = ec._AvailableUpdate_skipCurrent(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
 				invalids++

@@ -16,7 +16,6 @@ type AvailableUpdate {
     path: String!
     platform: String!
     sha256: String!
-    skipCurrent: Boolean!
 }
 
 type Project {

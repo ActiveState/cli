@@ -13,12 +13,11 @@ type AnalyticsEventResponse struct {
 }
 
 type AvailableUpdate struct {
-	Version     string `json:"version"`
-	Channel     string `json:"channel"`
-	Path        string `json:"path"`
-	Platform    string `json:"platform"`
-	Sha256      string `json:"sha256"`
-	SkipCurrent bool   `json:"skipCurrent"`
+	Version  string `json:"version"`
+	Channel  string `json:"channel"`
+	Path     string `json:"path"`
+	Platform string `json:"platform"`
+	Sha256   string `json:"sha256"`
 }
 
 type CheckRuntimeUsageResponse struct {
