@@ -207,38 +207,50 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 		anaConsts.CatPackageOp, fmt.Sprintf("%s-%s", operation, langName), requirementName,
 	)
 
+	requirements := []*model.StageCommitRequirement{}
+
 	if !hasParentCommit {
+		// Add initial language requirement to the requirements list for StageCommit.
 		languageFromNs := model.LanguageFromNamespace(ns.String())
-		parentCommitID, err = model.CommitInitial(model.HostPlatform, languageFromNs, langVersion)
+		versionRequirements, err := model.VersionStringToRequirements(langVersion)
 		if err != nil {
-			return locale.WrapError(err, "err_install_no_project_commit", "Could not create initial commit for new project")
+			return errs.Wrap(err, "Could not transform language version into requirements")
 		}
+		requirements = append(requirements, &model.StageCommitRequirement{
+			Operation: bpModel.OperationAdded,
+			Namespace: model.NewNamespaceLanguage(),
+			Name:      languageFromNs,
+			Version:   versionRequirements,
+		})
 	}
+
+	// Add this requirement to the requirements list for StageCommit.
+	name, version, err := model.ResolveRequirementNameAndVersion(requirementName, requirementVersion, requirementBitWidth, ns)
+	if err != nil {
+		return errs.Wrap(err, "Could not resolve requirement name and version")
+	}
+	versionRequirements, err := model.VersionStringToRequirements(version)
+	if err != nil {
+		return errs.Wrap(err, "Could not process version string into requirements")
+	}
+	requirements = append(requirements, &model.StageCommitRequirement{
+		Operation: operation,
+		Namespace: ns,
+		Name:      name,
+		Version:   versionRequirements,
+	})
 
 	latest, err := model.FetchLatestTimeStamp()
 	if err != nil {
 		return errs.Wrap(err, "Could not fetch latest timestamp")
 	}
 
-	name, version, err := model.ResolveRequirementNameAndVersion(requirementName, requirementVersion, requirementBitWidth, ns)
-	if err != nil {
-		return errs.Wrap(err, "Could not resolve requirement name and version")
-	}
-
-	requirements, err := model.VersionStringToRequirements(version)
-	if err != nil {
-		return errs.Wrap(err, "Could not process version string into requirements")
-	}
-
 	params := model.StageCommitParams{
-		Owner:                pj.Owner(),
-		Project:              pj.Name(),
-		ParentCommit:         string(parentCommitID),
-		RequirementName:      name,
-		RequirementVersion:   requirements,
-		RequirementNamespace: ns,
-		Operation:            operation,
-		TimeStamp:            *latest,
+		Owner:        pj.Owner(),
+		Project:      pj.Name(),
+		ParentCommit: parentCommitID.String(),
+		Requirements: requirements,
+		TimeStamp:    *latest,
 	}
 
 	bp := model.NewBuildPlannerModel(r.Auth)
