@@ -294,7 +294,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_import() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	username := ts.CreateNewUser()
+	username, _ := ts.CreateNewUser()
 	namespace := fmt.Sprintf("%s/%s", username, "Python3")
 
 	cp := ts.Spawn("init", "--language", "python", namespace, ts.Dirs.Work)
@@ -375,7 +375,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_operation() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	username := ts.CreateNewUser()
+	username, _ := ts.CreateNewUser()
 	namespace := fmt.Sprintf("%s/%s", username, "python3-pkgtest")
 
 	cp := ts.Spawn("fork", "ActiveState-CLI/Packages", "--org", username, "--name", "python3-pkgtest")
@@ -504,13 +504,19 @@ func (suite *PackageIntegrationTestSuite) TestNormalize() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	cp := ts.Spawn("checkout", "ActiveState-CLI/small-python", ".")
+	dir := filepath.Join(ts.Dirs.Work, "normalized")
+	suite.Require().NoError(fileutils.Mkdir(dir))
+	cp := ts.SpawnWithOpts(
+		e2e.WithArgs("checkout", "ActiveState-CLI/small-python", "."),
+		e2e.WithWorkDirectory(dir),
+	)
 	cp.Expect("Skipping runtime setup")
 	cp.Expect("Checked out project")
 	cp.ExpectExitCode(0)
 
 	cp = ts.SpawnWithOpts(
 		e2e.WithArgs("install", "Charset_normalizer"),
+		e2e.WithWorkDirectory(dir),
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cp.Expect("charset-normalizer")
@@ -520,6 +526,14 @@ func (suite *PackageIntegrationTestSuite) TestNormalize() {
 
 	anotherDir := filepath.Join(ts.Dirs.Work, "not-normalized")
 	suite.Require().NoError(fileutils.Mkdir(anotherDir))
+	cp = ts.SpawnWithOpts(
+		e2e.WithArgs("checkout", "ActiveState-CLI/small-python", "."),
+		e2e.WithWorkDirectory(anotherDir),
+	)
+	cp.Expect("Skipping runtime setup")
+	cp.Expect("Checked out project")
+	cp.ExpectExitCode(0)
+
 	cp = ts.SpawnWithOpts(
 		e2e.WithArgs("install", "charset-normalizer"),
 		e2e.WithWorkDirectory(anotherDir),
