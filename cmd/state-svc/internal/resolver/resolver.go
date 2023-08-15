@@ -136,12 +136,18 @@ func (r *Resolver) AvailableUpdate(ctx context.Context, channel, version string)
 			logging.Debug("No update info in poller cache")
 
 			update, err = updateFromChecker(r.cfg, r.an, channel, version)
+			if err != nil {
+				return nil, err
+			}
 		} else {
 			logging.Debug("Update info pulled from poller cache")
 		}
 
 	default:
 		update, err = updateFromChecker(r.cfg, r.an, channel, version)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	availableUpdate := &graph.AvailableUpdate{
