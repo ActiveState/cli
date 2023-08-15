@@ -41,18 +41,14 @@ const (
 var funcNodeNotFoundError = errors.New("Could not find function node")
 
 type BuildExpression struct {
-	Let   *Let
-	Value *Value
+	Let    *Let
+	Values []*Value
 }
 
 type Let struct {
-	Assignments []*Assignment
+	Let         *Let
+	Assignments []*Var
 	In          *In
-}
-
-type Assignment struct {
-	Var *Var
-	Let *Let
 }
 
 type Var struct {
@@ -132,31 +128,36 @@ func New(data []byte) (*BuildExpression, error) {
 		return nil, errs.New("Build expression must have exactly one key")
 	}
 
-	var expr *BuildExpression
+	expr := &BuildExpression{}
 	var path []string
 	for key, value := range rawBuildExpression {
 		switch v := value.(type) {
 		case map[string]interface{}:
-			// The key must either be a let or an ap.
+			// At this level the key must either be a let, an ap, or an assignment.
 			if key == "let" {
 				let, err := newLet(path, v)
 				if err != nil {
 					return nil, errs.Wrap(err, "Could not parse 'let' key")
 				}
 
-				expr = &BuildExpression{Let: let}
+				expr.Let = let
 			} else if isAp(path, v) {
 				ap, err := newAp(path, v)
 				if err != nil {
 					return nil, errs.Wrap(err, "Could not parse '%s' key", key)
 				}
 
-				expr = &BuildExpression{Value: &Value{Ap: ap}}
+				expr.Values = append(expr.Values, &Value{Ap: ap})
 			} else {
-				return nil, errs.New("Could not parse '%s' key", key)
+				assignments, err := newAssignments(path, v)
+				if err != nil {
+					return nil, errs.Wrap(err, "Could not parse assignments")
+				}
+
+				expr.Values = append(expr.Values, &Value{Assignment: &Var{Name: key, Value: &Value{Object: &assignments}}})
 			}
-		case string:
-			// TODO: Decode variable
+		default:
+			return nil, errs.New("Build expression's value must be a map[string]interface{}")
 		}
 	}
 
@@ -190,12 +191,31 @@ func newLet(path []string, m map[string]interface{}) (*Let, error) {
 	// Delete in so it doesn't get parsed as an assignment.
 	delete(m, "in")
 
+	result := &Let{In: in}
+	let, ok := m["let"]
+	if ok {
+		letMap, ok := let.(map[string]interface{})
+		if !ok {
+			return nil, errs.New("'let' key's value is not a map[string]interface{}")
+		}
+
+		l, err := newLet(path, letMap)
+		if err != nil {
+			return nil, errs.Wrap(err, "Could not parse 'let' key")
+		}
+		result.Let = l
+
+		// Delete let so it doesn't get parsed as an assignment.
+		delete(m, "let")
+	}
+
 	assignments, err := newAssignments(path, m)
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not parse assignments")
 	}
 
-	return &Let{Assignments: *assignments, In: in}, nil
+	result.Assignments = assignments
+	return result, nil
 }
 
 func isAp(path []string, value map[string]interface{}) bool {
@@ -234,6 +254,9 @@ func newValue(path []string, valueInterface interface{}) (*Value, error) {
 				continue
 			}
 
+			// If the length of the value is greater than 1,
+			// then it's not a function call. It's an object
+			// and will be set as such outside the loop.
 			if len(v) > 1 {
 				continue
 			}
@@ -344,7 +367,7 @@ func newAp(path []string, m map[string]interface{}) (*Ap, error) {
 	return &Ap{Name: name, Arguments: args}, nil
 }
 
-func newAssignments(path []string, m map[string]interface{}) (*[]*Assignment, error) {
+func newAssignments(path []string, m map[string]interface{}) ([]*Var, error) {
 	path = append(path, ctxAssignments)
 	defer func() {
 		_, _, err := sliceutils.Pop(path)
@@ -353,34 +376,19 @@ func newAssignments(path []string, m map[string]interface{}) (*[]*Assignment, er
 		}
 	}()
 
-	assignments := []*Assignment{}
+	assignments := []*Var{}
 	for key, valueInterface := range m {
-		if key == "let" {
-			letMap, ok := valueInterface.(map[string]interface{})
-			if !ok {
-				return nil, errs.New("'let' key's value is not a map[string]interface{}")
-			}
-
-			let, err := newLet(path, letMap)
-			if err != nil {
-				return nil, errs.Wrap(err, "Could not parse 'let' key")
-			}
-			assignments = append(assignments, &Assignment{Let: let})
-		} else {
-			value, err := newValue(path, valueInterface)
-			if err != nil {
-				return nil, errs.Wrap(err, "Could not parse '%s' key's value: %v", key, valueInterface)
-			}
-			assignments = append(assignments, &Assignment{Var: &Var{Name: key, Value: value}})
+		value, err := newValue(path, valueInterface)
+		if err != nil {
+			return nil, errs.Wrap(err, "Could not parse '%s' key's value: %v", key, valueInterface)
 		}
+		assignments = append(assignments, &Var{Name: key, Value: value})
+
 	}
 	sort.SliceStable(assignments, func(i, j int) bool {
-		if assignments[i].Var == nil || assignments[j].Var == nil {
-			return assignments[i].Var.Name < assignments[j].Var.Name
-		}
-		return false
+		return assignments[i].Name < assignments[j].Name
 	})
-	return &assignments, nil
+	return assignments, nil
 }
 
 func newObject(path []string, m map[string]interface{}) (*[]*Var, error) {
@@ -587,43 +595,63 @@ func getVersionRequirements(v *[]*Value) []model.VersionRequirement {
 //	  }
 //	}
 func (e *BuildExpression) getSolveNode() (*Ap, error) {
+	// First, try to find the solve node via lets.
 	if e.Let != nil {
-		return recurseAssignments(e.Let.Assignments)
+		solveAp, err := recurseLets(e.Let)
+		if err != nil {
+			return nil, errs.Wrap(err, "Could not recurse lets")
+		}
+
+		return solveAp, nil
 	}
 
-	if e.Value != nil {
-		if e.Value.Ap == nil {
-			return nil, funcNodeNotFoundError
+	// Search for solve node in the top level assignments.
+	for _, a := range e.Values {
+		if a.Assignment == nil {
+			continue
+		}
+
+		if a.Assignment.Name == "" && a.Assignment.Name != "runtime" {
+			continue
+		}
+
+		if a.Assignment.Value == nil {
+			continue
+		}
+
+		if a.Assignment.Value.Ap == nil {
+			continue
+		}
+
+		if a.Assignment.Value.Ap.Name == SolveFuncName || a.Assignment.Value.Ap.Name == SolveLegacyFuncName {
+			return a.Assignment.Value.Ap, nil
 		}
 	}
 
 	return nil, funcNodeNotFoundError
 }
 
-func recurseAssignments(assignments []*Assignment) (*Ap, error) {
-	for _, a := range assignments {
-		if a.Let != nil {
-			return recurseAssignments(a.Let.Assignments)
+func recurseLets(let *Let) (*Ap, error) {
+	for _, a := range let.Assignments {
+		if a.Value == nil {
+			continue
 		}
 
-		if a.Var != nil {
-			if a.Var.Name == "" && a.Var.Name != "runtime" {
-				continue
-			}
-
-			if a.Var.Value == nil {
-				continue
-			}
-
-			if a.Var.Value.Ap == nil {
-				continue
-			}
-
-			if a.Var.Value.Ap.Name == SolveFuncName || a.Var.Value.Ap.Name == SolveLegacyFuncName {
-				return a.Var.Value.Ap, nil
-			}
-
+		if a.Value.Ap == nil {
+			continue
 		}
+
+		if a.Value.Ap.Name == "" && a.Value.Ap.Name != "runtime" {
+			continue
+		}
+
+		if a.Value.Ap.Name == SolveFuncName || a.Value.Ap.Name == SolveLegacyFuncName {
+			return a.Value.Ap, nil
+		}
+	}
+
+	if let.Let != nil {
+		return recurseLets(let.Let)
 	}
 
 	return nil, funcNodeNotFoundError
@@ -845,11 +873,21 @@ func (e *BuildExpression) UpdateTimestamp(timestamp strfmt.DateTime) error {
 }
 
 func (e *BuildExpression) MarshalJSON() ([]byte, error) {
+	m := make(map[string]interface{})
+
 	if e.Let != nil {
-		return e.Let.MarshalJSON()
+		m["let"] = e.Let
 	}
 
-	return e.Value.MarshalJSON()
+	for _, value := range e.Values {
+		if value.Assignment == nil {
+			continue
+		}
+
+		m[value.Assignment.Name] = value
+	}
+
+	return json.Marshal(m)
 }
 
 func (l *Let) MarshalJSON() ([]byte, error) {
@@ -863,19 +901,23 @@ func (l *Let) MarshalJSON() ([]byte, error) {
 }
 
 func buildLetMap(l *Let, result map[string]interface{}) error {
-	let := make(map[string]interface{})
-	for _, assignment := range l.Assignments {
-		if assignment.Var != nil {
-			let[assignment.Var.Name] = assignment.Var.Value
-			continue
+	if l.Let != nil {
+		let := make(map[string]interface{})
+
+		err := buildLetMap(l.Let, let)
+		if err != nil {
+			return errs.Wrap(err, "Could not marshal let")
 		}
-		if assignment.Let != nil {
-			buildLetMap(assignment.Let, let)
-			continue
-		}
+		result["let"] = let
 	}
 
-	result["let"] = let
+	for _, assignment := range l.Assignments {
+		if assignment.Value == nil {
+			continue
+		}
+		result[assignment.Name] = assignment.Value
+	}
+
 	result["in"] = l.In
 
 	return nil
