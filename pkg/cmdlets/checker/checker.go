@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
@@ -14,6 +15,7 @@ import (
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/profile"
+	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -56,11 +58,13 @@ func CommitsBehind(p *project.Project) (int, error) {
 	return model.CommitsBehind(*latestCommitID, p.CommitUUID())
 }
 
-func RunUpdateNotifier(svc *model.SvcModel, out output.Outputer) {
+func RunUpdateNotifier(an analytics.Dispatcher, svc *model.SvcModel, out output.Outputer) {
 	defer profile.Measure("RunUpdateNotifier", time.Now())
+
 	ctx, cancel := context.WithTimeout(context.Background(), model.SvcTimeoutMinimal)
 	defer cancel()
-	up, err := svc.CheckUpdate(ctx)
+
+	upd, err := svc.CheckUpdate(ctx, constants.BranchName, "")
 	if err != nil {
 		var timeoutErr net.Error
 		if errors.As(err, &timeoutErr) && timeoutErr.Timeout() {
@@ -70,9 +74,14 @@ func RunUpdateNotifier(svc *model.SvcModel, out output.Outputer) {
 		multilog.Error("Could not check for update when running update notifier, error: %v", errs.JoinMessage(err))
 		return
 	}
-	if up == nil {
+
+	avUpdate := updater.NewAvailableUpdate(upd.Channel, upd.Version, upd.Platform, upd.Path, upd.Sha256, "")
+	origin := &updater.Origin{Channel: constants.BranchName, Version: constants.Version}
+	update := updater.NewUpdate(an, origin, avUpdate)
+	if update.ShouldSkip() {
 		return
 	}
+
 	out.Notice(output.Title(locale.Tr("update_available_header")))
-	out.Notice(locale.Tr("update_available", constants.Version, up.Version))
+	out.Notice(locale.Tr("update_available", constants.Version, avUpdate.Version))
 }

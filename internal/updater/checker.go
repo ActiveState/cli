@@ -51,7 +51,6 @@ type Checker struct {
 	done           chan struct{}
 
 	InvocationSource InvocationSource
-	VerifyVersion    bool
 }
 
 func NewDefaultChecker(cfg Configurable, an analytics.Dispatcher) *Checker {
@@ -73,23 +72,18 @@ func NewChecker(cfg Configurable, an analytics.Dispatcher, infoURL, currentChann
 		nil,
 		make(chan struct{}),
 		InvocationSourceUpdate,
-		os.Getenv(constants.ForceUpdateEnvVarName) != "true",
 	}
 }
 
-func (u *Checker) Check() (*Update, error) {
+/*func (u *Checker) Check() (*Update, error) {
 	return u.CheckFor(os.Getenv(constants.UpdateBranchEnvVarName), "")
-}
+}*/
 
 func (u *Checker) CheckFor(desiredChannel, desiredVersion string) (*Update, error) {
 	info, err := u.GetUpdateInfo(desiredChannel, desiredVersion)
 	if err != nil {
 		return nil, errs.Wrap(err, "Failed to get update info")
 	}
-
-	info.AvUpdate.SkipCurrent = u.VerifyVersion &&
-		info.AvUpdate.Channel == u.currentChannel &&
-		info.AvUpdate.Version == u.currentVersion
 
 	return info, nil
 }
@@ -158,6 +152,11 @@ func (u *Checker) GetUpdateInfo(desiredChannel, desiredVersion string) (*Update,
 		return nil, errs.Wrap(err, "Could not unmarshal update info: %s", res)
 	}
 
+	origin := &Origin{
+		Version: u.currentVersion,
+		Channel: u.currentChannel,
+	}
+
 	u.an.EventWithLabel(anaConst.CatUpdates, anaConst.ActUpdateCheck, anaConst.UpdateLabelAvailable, &dimensions.Values{Version: ptr.To(info.Version)})
-	return NewUpdate(u.an, info), nil
+	return NewUpdate(u.an, origin, info), nil
 }

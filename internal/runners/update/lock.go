@@ -1,6 +1,8 @@
 package update
 
 import (
+	"context"
+
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/constants"
@@ -10,6 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/updater"
+	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
@@ -46,6 +49,7 @@ type Lock struct {
 	prompt  prompt.Prompter
 	cfg     updater.Configurable
 	an      analytics.Dispatcher
+	svc     *model.SvcModel
 }
 
 func NewLock(prime primeable) *Lock {
@@ -55,6 +59,7 @@ func NewLock(prime primeable) *Lock {
 		prime.Prompt(),
 		prime.Config(),
 		prime.Analytics(),
+		prime.SvcModel(),
 	}
 }
 
@@ -89,7 +94,7 @@ func (l *Lock) Run(params *LockParams) error {
 		version = l.project.Version()
 	}
 
-	exactVersion, err := fetchExactVersion(l.cfg, l.an, version, channel)
+	exactVersion, err := fetchExactVersion(l.an, l.svc, channel, version)
 	if err != nil {
 		return errs.Wrap(err, "fetchUpdater failed, version: %s, channel: %s", version, channel)
 	}
@@ -131,16 +136,20 @@ func confirmLock(prom prompt.Prompter) error {
 	return nil
 }
 
-func fetchExactVersion(cfg updater.Configurable, an analytics.Dispatcher, version, channel string) (string, error) {
+func fetchExactVersion(an analytics.Dispatcher, svc *model.SvcModel, channel, version string) (string, error) {
 	if channel != constants.BranchName {
 		version = "" // force update
 	}
-	update, err := updater.NewDefaultChecker(cfg, an).CheckFor(channel, version)
+
+	upd, err := svc.CheckUpdate(context.Background(), channel, version)
 	if err != nil {
 		return "", locale.WrapInputError(err, "err_update_fetch", "Could not retrieve update information, please verify that '{{.V0}}' is a valid channel.", channel)
 	}
 
-	if update.AvUpdate.SkipCurrent {
+	avUpdate := updater.NewAvailableUpdate(upd.Channel, upd.Version, upd.Platform, upd.Path, upd.Sha256, "")
+	origin := &updater.Origin{Channel: channel, Version: version}
+	update := updater.NewUpdate(an, origin, avUpdate)
+	if update.ShouldSkip() {
 		return constants.Version, nil
 	}
 

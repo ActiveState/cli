@@ -53,7 +53,7 @@ func New(cfg *config.Instance, an *sync.Client, auth *authentication.Auth) (*Res
 	upchecker := updater.NewDefaultChecker(cfg, an)
 	pollUpdate := poller.New(1*time.Hour, func() (interface{}, error) {
 		logging.Debug("Poller checking for update info")
-		return upchecker.Check()
+		return upchecker.CheckFor(constants.BranchName, "")
 	})
 
 	pollRate := time.Minute.Milliseconds()
@@ -116,29 +116,54 @@ func (r *Resolver) Version(ctx context.Context) (*graph.Version, error) {
 	}, nil
 }
 
-func (r *Resolver) AvailableUpdate(ctx context.Context) (*graph.AvailableUpdate, error) {
+func (r *Resolver) AvailableUpdate(ctx context.Context, channel, version string) (*graph.AvailableUpdate, error) {
 	defer func() { handlePanics(recover(), debug.Stack()) }()
 
 	r.an.EventWithLabel(anaConsts.CatStateSvc, "endpoint", "AvailableUpdate")
 	logging.Debug("AvailableUpdate resolver")
 	defer logging.Debug("AvailableUpdate done")
 
-	update, ok := r.updatePoller.ValueFromCache().(*updater.Update)
-	if !ok || update == nil {
-		logging.Debug("No update info in poller cache")
-		return nil, nil
+	var (
+		update *updater.Update
+		ok     bool
+		err    error
+	)
+
+	switch {
+	case channel == constants.BranchName && version == "":
+		update, ok = r.updatePoller.ValueFromCache().(*updater.Update)
+		if !ok || update == nil {
+			logging.Debug("No update info in poller cache")
+
+			update, err = updateFromChecker(r.cfg, r.an, channel, version)
+		} else {
+			logging.Debug("Update info pulled from poller cache")
+		}
+
+	default:
+		update, err = updateFromChecker(r.cfg, r.an, channel, version)
 	}
 
 	availableUpdate := &graph.AvailableUpdate{
-		Version:     update.AvUpdate.Version,
-		Channel:     update.AvUpdate.Channel,
-		Path:        update.AvUpdate.Path,
-		Platform:    update.AvUpdate.Platform,
-		Sha256:      update.AvUpdate.Sha256,
-		SkipCurrent: update.AvUpdate.SkipCurrent,
+		Version:  update.AvUpdate.Version,
+		Channel:  update.AvUpdate.Channel,
+		Path:     update.AvUpdate.Path,
+		Platform: update.AvUpdate.Platform,
+		Sha256:   update.AvUpdate.Sha256,
 	}
 
 	return availableUpdate, nil
+}
+
+func updateFromChecker(cfg *config.Instance, an *sync.Client, channel, version string) (*updater.Update, error) {
+	logging.Debug("Update info pulled directly")
+
+	upchecker := updater.NewDefaultChecker(cfg, an)
+	update, err := upchecker.CheckFor(channel, version)
+	if err != nil {
+		return nil, errs.Wrap(err, "Cannot check for specified channel/version: %s/%s", channel, version)
+	}
+	return update, nil
 }
 
 func (r *Resolver) Projects(ctx context.Context) ([]*graph.Project, error) {

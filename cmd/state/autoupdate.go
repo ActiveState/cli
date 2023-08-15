@@ -46,17 +46,17 @@ func autoUpdate(svc *model.SvcModel, args []string, cfg *config.Instance, an ana
 	}
 
 	// Check for available update
-	upd, err := svc.CheckUpdate(context.Background())
+	upd, err := svc.CheckUpdate(context.Background(), constants.BranchName, "")
 	if err != nil {
 		return false, errs.Wrap(err, "Failed to check for update")
 	}
-	if upd == nil {
-		logging.Debug("No update found")
+
+	avUpdate := updater.NewAvailableUpdate(upd.Channel, upd.Version, upd.Platform, upd.Path, upd.Sha256, "")
+	up := updater.NewUpdate(an, updater.NewOriginDefault(), avUpdate)
+	if up.ShouldSkip() {
+		logging.Debug("Update is not needed")
 		return false, nil
 	}
-
-	avUpdate := updater.NewAvailableUpdate(upd.Version, upd.Channel, upd.Platform, upd.Path, upd.Sha256, "")
-	up := updater.NewUpdate(an, avUpdate)
 
 	if !isEnabled(cfg) {
 		logging.Debug("Not performing autoupdates because user turned off autoupdates.")

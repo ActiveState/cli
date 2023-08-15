@@ -66,7 +66,7 @@ func NewUse(prime primeable) *Use {
 func (u *Use) Run(params *Params) error {
 	logging.Debug("Use %v", params.Namespace)
 
-	checker.RunUpdateNotifier(u.svcModel, u.out)
+	checker.RunUpdateNotifier(u.analytics, u.svcModel, u.out)
 
 	proj, err := findproject.FromNamespaceLocal(params.Namespace, u.config, u.prompt)
 	if err != nil {

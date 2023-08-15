@@ -35,27 +35,36 @@ type ErrorInProgress struct{ *locale.LocalizedError }
 
 var errPrivilegeMistmatch = errs.New("Privilege mismatch")
 
+type Origin struct {
+	Channel string
+	Version string
+}
+
+func NewOriginDefault() *Origin {
+	return &Origin{
+		Version: constants.Version,
+		Channel: constants.BranchName,
+	}
+}
+
 type AvailableUpdate struct {
-	Version  string  `json:"version"`
 	Channel  string  `json:"channel"`
+	Version  string  `json:"version"`
 	Platform string  `json:"platform"`
 	Path     string  `json:"path"`
 	Sha256   string  `json:"sha256"`
 	Tag      *string `json:"tag,omitempty"`
-
-	// SkipCurrent signals that the version is current and should be skipped
-	SkipCurrent bool
 }
 
-func NewAvailableUpdate(version, channel, platform, path, sha256, tag string) *AvailableUpdate {
+func NewAvailableUpdate(channel, version, platform, path, sha256, tag string) *AvailableUpdate {
 	var t *string
 	if tag != "" {
 		t = &tag
 	}
 
 	return &AvailableUpdate{
-		Version:  version,
 		Channel:  channel,
+		Version:  version,
 		Platform: platform,
 		Path:     path,
 		Sha256:   sha256,
@@ -65,17 +74,25 @@ func NewAvailableUpdate(version, channel, platform, path, sha256, tag string) *A
 
 type Update struct {
 	AvUpdate *AvailableUpdate
+	Origin   *Origin
 	url      string
 	tmpDir   string
 	an       analytics.Dispatcher
 }
 
-func NewUpdate(an analytics.Dispatcher, avUpdate *AvailableUpdate) *Update {
+func NewUpdate(an analytics.Dispatcher, origin *Origin, avUpdate *AvailableUpdate) *Update {
 	return &Update{
 		AvUpdate: avUpdate,
+		Origin:   origin,
 		url:      APIUpdateURL() + "/" + avUpdate.Path,
 		an:       an,
 	}
+}
+
+func (u *Update) ShouldSkip() bool {
+	return os.Getenv(constants.ForceUpdateEnvVarName) != "true" &&
+		u.AvUpdate.Channel == u.Origin.Channel &&
+		u.AvUpdate.Version == u.Origin.Version
 }
 
 func (u *Update) DownloadAndUnpack() (string, error) {

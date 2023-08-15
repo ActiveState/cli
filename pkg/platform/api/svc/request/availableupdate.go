@@ -1,17 +1,22 @@
 package request
 
 type AvailableUpdate struct {
+	channel string
+	version string
 }
 
-func NewAvailableUpdate() *AvailableUpdate {
-	return &AvailableUpdate{}
+func NewAvailableUpdate(channel, version string) *AvailableUpdate {
+	return &AvailableUpdate{
+		channel: channel,
+		version: version,
+	}
 }
 
 func (u *AvailableUpdate) Query() string {
-	return `query() {
-		availableUpdate() {
-			version
+	return `query($channel: String!, $version: String!) {
+	availableUpdate(channel: $channel, version: $version) {
 			channel
+			version
 			path
 			platform
 			sha256
@@ -20,5 +25,8 @@ func (u *AvailableUpdate) Query() string {
 }
 
 func (u *AvailableUpdate) Vars() map[string]interface{} {
-	return nil
+	return map[string]interface{}{
+		"channel": u.channel,
+		"version": u.version,
+	}
 }

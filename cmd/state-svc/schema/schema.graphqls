@@ -68,7 +68,7 @@ type MessageInfo {
 
 type Query {
     version: Version
-    availableUpdate: AvailableUpdate
+    availableUpdate(channel: String!, version: String!): AvailableUpdate
     projects: [Project]!
     analyticsEvent(category: String!, action: String!, label: String, dimensionsJson: String!): AnalyticsEventResponse
     reportRuntimeUsage(pid: Int!, exec: String!, dimensionsJson: String!): ReportRuntimeUsageResponse
