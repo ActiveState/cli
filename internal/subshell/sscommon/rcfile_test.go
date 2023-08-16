@@ -3,6 +3,7 @@ package sscommon
 import (
 	"fmt"
 	"reflect"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -43,35 +44,50 @@ func TestWriteRcFile(t *testing.T) {
 		path           string
 		env            map[string]string
 	}
+
+	zsh := fmt.Sprintf(
+		`export PATH="foo:$PATH"
+if [[ ! -z "$%s" && -f "$%s/%s" ]]; then
+  echo "State Tool is operating on project $%s, located at $%s"
+fi`,
+		constants.ActivatedStateEnvVarName,
+		constants.ActivatedStateEnvVarName,
+		constants.ConfigFileName,
+		constants.ActivatedStateNamespaceEnvVarName,
+		constants.ActivatedStateEnvVarName)
+	if runtime.GOOS == "windows" {
+		zsh = strings.ReplaceAll(zsh, "\n", "\r\n")
+	}
+
 	tests := []struct {
 		name         string
 		args         args
-		want error
+		want         error
 		wantContents string
 	}{
 		{
 			"Write RC to empty file",
 			args{
-				"fishrc_append.fish",
+				"zshrc_append.sh",
 				fakeFileWithContents("", "", ""),
 				map[string]string{
 					"PATH": "foo",
 				},
 			},
 			nil,
-			fakeContents("", `set -xg PATH "foo:$PATH"`, ""),
+			fakeContents("", zsh, ""),
 		},
 		{
 			"Write RC update",
 			args{
-				"fishrc_append.fish",
+				"zshrc_append.sh",
 				fakeFileWithContents("before", "SOMETHING ELSE", "after"),
 				map[string]string{
 					"PATH": "foo",
 				},
 			},
 			nil,
-			fakeContents(strings.Join([]string{"before", "after"}, fileutils.LineEnd), `set -xg PATH "foo:$PATH"`, ""),
+			fakeContents(strings.Join([]string{"before", "after"}, fileutils.LineEnd), zsh, ""),
 		},
 	}
 	for _, tt := range tests {

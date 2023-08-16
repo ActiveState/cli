@@ -10,6 +10,8 @@ import (
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/subshell"
+	"github.com/ActiveState/cli/internal/subshell/bash"
+	"github.com/ActiveState/cli/internal/subshell/sscommon"
 	"github.com/ActiveState/cli/internal/subshell/zsh"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
@@ -274,6 +276,53 @@ func (suite *ShellIntegrationTestSuite) SetupRCFile(ts *e2e.Session) {
 
 	err = fileutils.CopyFile(rcFile, filepath.Join(ts.Dirs.HomeDir, filepath.Base(zshRcFile)))
 	suite.Require().NoError(err)
+}
+
+func (suite *ShellIntegrationTestSuite) TestNestedShellNotification() {
+	if runtime.GOOS == "windows" {
+		return // cmd.exe does not have an RC file to check for nested shells in
+	}
+	suite.OnlyRunForTags(tagsuite.Shell)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cfg, err := config.New()
+	suite.Require().NoError(err)
+
+	ss := subshell.New(cfg)
+	err = subshell.ConfigureAvailableShells(ss, cfg, nil, sscommon.InstallID, true) // mimic installer
+	suite.Require().NoError(err)
+
+	rcFile, err := ss.RcFile()
+	suite.Require().NoError(err)
+	suite.Require().FileExists(rcFile)
+	suite.Require().Contains(string(fileutils.ReadFileUnsafe(rcFile)), "State Tool is operating on project")
+
+	cp := ts.Spawn("checkout", "ActiveState-CLI/small-python")
+	cp.Expect("Checked out project")
+	cp.ExpectExitCode(0)
+
+	cp = ts.SpawnWithOpts(
+		e2e.WithArgs("shell", "small-python"),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
+	cp.Expect("Activated")
+	suite.Assert().NotContains(cp.TrimmedSnapshot(), "State Tool is operating on project")
+
+	binary := ss.Binary() // platform-specific shell (zsh on macOS, bash on Linux, etc.)
+	// Cannot run bare binary because it will not load the rcFile in ts.Dirs.HomeDir.
+	// Instead, tell the shell to load rcFile. This is not needed in a non-test environment.
+	switch ss.Shell() {
+	case bash.Name:
+		binary = fmt.Sprintf("%s --rcfile %s", binary, rcFile)
+	case zsh.Name:
+		binary = fmt.Sprintf("ZDOTDIR=%s %s", filepath.Dir(rcFile), binary)
+	}
+	cp.SendLine(binary)
+	cp.ExpectLongString("State Tool is operating on project ActiveState-CLI/small-python")
+	cp.SendLine("exit") // subshell within a subshell
+	cp.SendLine("exit")
+	cp.ExpectExitCode(0)
 }
 
 func TestShellIntegrationTestSuite(t *testing.T) {
