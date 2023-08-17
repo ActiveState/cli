@@ -268,7 +268,7 @@ func (suite *UpdateIntegrationTestSuite) testAutoUpdate(ts *e2e.Session, baseDir
 	cp := ts.SpawnCmdWithOpts(stateExec, spawnOpts...)
 	cp.Expect("Auto Update")
 	cp.Expect("Updating State Tool")
-	cp.Expect("Done", 2*time.Minute)
+	cp.Expect("Done", 1*time.Minute)
 }
 
 func (suite *UpdateIntegrationTestSuite) installLatestReleaseVersion(ts *e2e.Session, dir string) {
