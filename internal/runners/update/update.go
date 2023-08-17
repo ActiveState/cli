@@ -61,8 +61,7 @@ func (u *Update) Run(params *Params) error {
 	}
 
 	avUpdate := updater.NewAvailableUpdate(upd.Channel, upd.Version, upd.Platform, upd.Path, upd.Sha256, "")
-	origin := &updater.Origin{Channel: constants.BranchName, Version: constants.Version}
-	update := updater.NewUpdate(u.an, origin, avUpdate)
+	update := updater.NewUpdateCurrent(u.an, avUpdate)
 	if update.ShouldSkip() {
 		logging.Debug("No update found")
 		u.out.Print(output.Prepare(

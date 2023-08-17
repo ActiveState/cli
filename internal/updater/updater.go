@@ -42,8 +42,8 @@ type Origin struct {
 
 func NewOriginDefault() *Origin {
 	return &Origin{
-		Version: constants.Version,
 		Channel: constants.BranchName,
+		Version: constants.Version,
 	}
 }
 
@@ -87,6 +87,10 @@ func NewUpdate(an analytics.Dispatcher, origin *Origin, avUpdate *AvailableUpdat
 		url:      APIUpdateURL() + "/" + avUpdate.Path,
 		an:       an,
 	}
+}
+
+func NewUpdateCurrent(an analytics.Dispatcher, avUpdate *AvailableUpdate) *Update {
+	return NewUpdate(an, NewOriginDefault(), avUpdate)
 }
 
 func (u *Update) ShouldSkip() bool {

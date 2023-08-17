@@ -144,6 +144,8 @@ func (r *Resolver) AvailableUpdate(ctx context.Context, channel, version string)
 		}
 
 	default:
+		logging.Debug("Update info requested for specific branch/version")
+
 		update, err = updateFromChecker(r.cfg, r.an, channel, version)
 		if err != nil {
 			return nil, err

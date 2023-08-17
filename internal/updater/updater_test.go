@@ -1,6 +1,6 @@
 package updater
 
-/*import (
+import (
 	"encoding/json"
 	"testing"
 
@@ -24,13 +24,12 @@ func (m *httpGetMock) Get(url string) ([]byte, int, error) {
 
 func mockAvailableUpdate(channel, version, tag string, skip bool) *AvailableUpdate {
 	return &AvailableUpdate{
-		Version:     version,
-		Channel:     channel,
-		Platform:    "platform",
-		Path:        "path/to/zipfile.zip",
-		Sha256:      "123456",
-		Tag:         &tag,
-		SkipCurrent: skip,
+		Version:  version,
+		Channel:  channel,
+		Platform: "platform",
+		Path:     "path/to/zipfile.zip",
+		Sha256:   "123456",
+		Tag:      &tag,
 	}
 }
 
@@ -93,4 +92,4 @@ func TestCheckerCheckFor(t *testing.T) {
 			assert.Equal(t, tt.ExpectedResult, res.AvUpdate)
 		})
 	}
-}*/
+}

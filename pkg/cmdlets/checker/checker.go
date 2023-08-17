@@ -76,8 +76,7 @@ func RunUpdateNotifier(an analytics.Dispatcher, svc *model.SvcModel, out output.
 	}
 
 	avUpdate := updater.NewAvailableUpdate(upd.Channel, upd.Version, upd.Platform, upd.Path, upd.Sha256, "")
-	origin := &updater.Origin{Channel: constants.BranchName, Version: constants.Version}
-	update := updater.NewUpdate(an, origin, avUpdate)
+	update := updater.NewUpdateCurrent(an, avUpdate)
 	if update.ShouldSkip() {
 		return
 	}

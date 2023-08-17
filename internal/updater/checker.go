@@ -75,10 +75,6 @@ func NewChecker(cfg Configurable, an analytics.Dispatcher, infoURL, currentChann
 	}
 }
 
-/*func (u *Checker) Check() (*Update, error) {
-	return u.CheckFor(os.Getenv(constants.UpdateBranchEnvVarName), "")
-}*/
-
 func (u *Checker) CheckFor(desiredChannel, desiredVersion string) (*Update, error) {
 	info, err := u.GetUpdateInfo(desiredChannel, desiredVersion)
 	if err != nil {

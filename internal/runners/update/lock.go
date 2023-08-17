@@ -147,8 +147,7 @@ func fetchExactVersion(an analytics.Dispatcher, svc *model.SvcModel, channel, ve
 	}
 
 	avUpdate := updater.NewAvailableUpdate(upd.Channel, upd.Version, upd.Platform, upd.Path, upd.Sha256, "")
-	origin := &updater.Origin{Channel: channel, Version: version}
-	update := updater.NewUpdate(an, origin, avUpdate)
+	update := updater.NewUpdateCurrent(an, avUpdate)
 	if update.ShouldSkip() {
 		return constants.Version, nil
 	}
