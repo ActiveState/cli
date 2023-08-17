@@ -41,11 +41,13 @@ const (
 var funcNodeNotFoundError = errors.New("Could not find function node")
 
 type BuildExpression struct {
-	Let    *Let
-	Values []*Value
+	Let         *Let
+	Assignments []*Value
 }
 
 type Let struct {
+	// Let statements can be nested.
+	// Each let will contain its own assignments and an in statement.
 	Let         *Let
 	Assignments []*Var
 	In          *In
@@ -147,14 +149,14 @@ func New(data []byte) (*BuildExpression, error) {
 					return nil, errs.Wrap(err, "Could not parse '%s' key", key)
 				}
 
-				expr.Values = append(expr.Values, &Value{Ap: ap})
+				expr.Assignments = append(expr.Assignments, &Value{Ap: ap})
 			} else {
 				assignments, err := newAssignments(path, v)
 				if err != nil {
 					return nil, errs.Wrap(err, "Could not parse assignments")
 				}
 
-				expr.Values = append(expr.Values, &Value{Assignment: &Var{Name: key, Value: &Value{Object: &assignments}}})
+				expr.Assignments = append(expr.Assignments, &Value{Assignment: &Var{Name: key, Value: &Value{Object: &assignments}}})
 			}
 		default:
 			return nil, errs.New("Build expression's value must be a map[string]interface{}")
@@ -272,11 +274,11 @@ func newValue(path []string, valueInterface interface{}) (*Value, error) {
 
 		if value.Ap == nil {
 			// It's not a function call, but an object.
-			object, err := newObject(path, v)
+			object, err := newAssignments(path, v)
 			if err != nil {
 				return nil, errs.Wrap(err, "Could not parse object: %v", v)
 			}
-			value.Object = object
+			value.Object = &object
 		}
 
 	case []interface{}:
@@ -389,27 +391,6 @@ func newAssignments(path []string, m map[string]interface{}) ([]*Var, error) {
 		return assignments[i].Name < assignments[j].Name
 	})
 	return assignments, nil
-}
-
-func newObject(path []string, m map[string]interface{}) (*[]*Var, error) {
-	path = append(path, ctxAssignments)
-	defer func() {
-		_, _, err := sliceutils.Pop(path)
-		if err != nil {
-			multilog.Error("Could not pop context: %v", err)
-		}
-	}()
-
-	object := []*Var{}
-	for key, valueInterface := range m {
-		value, err := newValue(path, valueInterface)
-		if err != nil {
-			return nil, errs.Wrap(err, "Could not parse '%s' key's value: %v", key, valueInterface)
-		}
-		object = append(object, &Var{Name: key, Value: value})
-	}
-	sort.SliceStable(object, func(i, j int) bool { return object[i].Name < object[j].Name })
-	return &object, nil
 }
 
 func newIn(path []string, inValue interface{}) (*In, error) {
@@ -606,12 +587,12 @@ func (e *BuildExpression) getSolveNode() (*Ap, error) {
 	}
 
 	// Search for solve node in the top level assignments.
-	for _, a := range e.Values {
+	for _, a := range e.Assignments {
 		if a.Assignment == nil {
 			continue
 		}
 
-		if a.Assignment.Name == "" && a.Assignment.Name != "runtime" {
+		if a.Assignment.Name == "" || a.Assignment.Name != "runtime" {
 			continue
 		}
 
@@ -631,6 +612,9 @@ func (e *BuildExpression) getSolveNode() (*Ap, error) {
 	return nil, funcNodeNotFoundError
 }
 
+// recurseLets recursively searches for the solve node in the let statements.
+// The solve node is specified by the name "runtime" and the function name "solve"
+// or "solve_legacy".
 func recurseLets(let *Let) (*Ap, error) {
 	for _, a := range let.Assignments {
 		if a.Value == nil {
@@ -641,7 +625,7 @@ func recurseLets(let *Let) (*Ap, error) {
 			continue
 		}
 
-		if a.Value.Ap.Name == "" && a.Value.Ap.Name != "runtime" {
+		if a.Name == "" || a.Name != "runtime" {
 			continue
 		}
 
@@ -650,6 +634,7 @@ func recurseLets(let *Let) (*Ap, error) {
 		}
 	}
 
+	// The highest level solve node is not found, so recurse into the next let.
 	if let.Let != nil {
 		return recurseLets(let.Let)
 	}
@@ -879,7 +864,7 @@ func (e *BuildExpression) MarshalJSON() ([]byte, error) {
 		m["let"] = e.Let
 	}
 
-	for _, value := range e.Values {
+	for _, value := range e.Assignments {
 		if value.Assignment == nil {
 			continue
 		}
@@ -892,35 +877,22 @@ func (e *BuildExpression) MarshalJSON() ([]byte, error) {
 
 func (l *Let) MarshalJSON() ([]byte, error) {
 	m := make(map[string]interface{})
-	err := buildLetMap(l, m)
-	if err != nil {
-		return nil, errs.Wrap(err, "Could not marshal let")
-	}
 
-	return json.Marshal(m)
-}
-
-func buildLetMap(l *Let, result map[string]interface{}) error {
 	if l.Let != nil {
-		let := make(map[string]interface{})
-
-		err := buildLetMap(l.Let, let)
-		if err != nil {
-			return errs.Wrap(err, "Could not marshal let")
-		}
-		result["let"] = let
+		m["let"] = l.Let
 	}
 
-	for _, assignment := range l.Assignments {
-		if assignment.Value == nil {
+	for _, v := range l.Assignments {
+		if v.Value == nil {
 			continue
 		}
-		result[assignment.Name] = assignment.Value
+
+		m[v.Name] = v.Value
 	}
 
-	result["in"] = l.In
+	m["in"] = l.In
 
-	return nil
+	return json.Marshal(m)
 }
 
 func (a *Var) MarshalJSON() ([]byte, error) {
