@@ -37,24 +37,21 @@ func newExecutorMeta(execPath string) (*executorMeta, error) {
 		return nil, fmt.Errorf("cannot get matching bin by path: %w", err)
 	}
 
-	transformEnv := true
+	onlyTransformPath := false
 	if projectDir := os.Getenv(constants.ActivatedStateEnvVarName); projectDir != "" {
 		// Note: cannot import runtime/target for ProjectDirToTargetDir() because that would bloat
 		// up the exe from <4MB to >15MB.
 		projectCacheDir := filepath.Join(storage.CachePath(), hash.ShortHash(projectDir))
-		if projectCacheDir == execDir {
-			transformEnv = false // runtime environment variables already set
+		if projectCacheDir == filepath.Dir(execDir) {
+			onlyTransformPath = true // runtime environment variables already set
 		}
 	}
 
 	env := os.Environ()
-	if transformEnv {
-		env = transformedEnv(env, meta.Env)
-	}
 	em := executorMeta{
 		ExecMeta:       meta,
 		MatchingBin:    matchingBin,
-		TransformedEnv: env,
+		TransformedEnv: transformedEnv(env, meta.Env, onlyTransformPath),
 	}
 
 	return &em, nil
@@ -74,7 +71,7 @@ func matchingBinByPath(bins map[string]string, path string) (string, error) {
 // transformedEnv will update the current environment. Update entries are
 // appended (which supersede existing entries) except for: PATH is updated with
 // the update value prepended to the existing PATH.
-func transformedEnv(current []string, updates []string) []string {
+func transformedEnv(current []string, updates []string, onlyTransformPath bool) []string {
 	for _, update := range updates {
 		if strings.HasPrefix(strings.ToLower(update), strings.ToLower(pathEnvVarPrefix)) {
 			pathCurrentV, pathCurrentK, ok := getEnvVar(current, pathEnvVarPrefix)
@@ -82,6 +79,8 @@ func transformedEnv(current []string, updates []string) []string {
 				current[pathCurrentK] = update + pathListSeparator + pathCurrentV
 				continue
 			}
+		} else if onlyTransformPath {
+			continue
 		}
 		current = append(current, update)
 	}
