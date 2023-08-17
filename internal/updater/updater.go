@@ -81,10 +81,15 @@ type Update struct {
 }
 
 func NewUpdate(an analytics.Dispatcher, origin *Origin, avUpdate *AvailableUpdate) *Update {
+	apiUpdateURL := constants.APIUpdateURL
+	if url, ok := os.LookupEnv("_TEST_UPDATE_URL"); ok {
+		apiUpdateURL = url
+	}
+
 	return &Update{
 		AvUpdate: avUpdate,
 		Origin:   origin,
-		url:      APIUpdateURL() + "/" + avUpdate.Path,
+		url:      apiUpdateURL + "/" + avUpdate.Path,
 		an:       an,
 	}
 }

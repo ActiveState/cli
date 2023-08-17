@@ -33,13 +33,6 @@ var (
 	InvocationSourceUpdate  InvocationSource = "update"
 )
 
-func APIUpdateURL() string {
-	if url, ok := os.LookupEnv("_TEST_UPDATE_URL"); ok {
-		return url
-	}
-	return constants.APIUpdateURL
-}
-
 type Checker struct {
 	cfg            Configurable
 	an             analytics.Dispatcher
