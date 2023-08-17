@@ -69,6 +69,7 @@ const (
 	HeadOnBranchMovedErrorType       = "HeadOnBranchMoved"
 	ForbiddenErrorType               = "Forbidden"
 	RemediableSolveErrorType         = "RemediableSolveError"
+	PlanningErrorType                = "PlanningError"
 )
 
 func IsStateToolArtifact(mimeType string) bool {
@@ -161,54 +162,24 @@ func (b *BuildPlanByProject) Build() (*Build, error) {
 		return nil, errs.New("BuildPlanByProject.Build: Project is nil")
 	}
 
-	if b.Project.Error != nil {
-		if b.Project.Error.Message != "" {
-			return nil, errs.New("BuildPlanByProject.Build: Could not get build, API returned project error message: %s", b.Project.Message)
-		}
-		return nil, errs.New("BuildPlanByProject.Build: Could not retrieve project")
+	if IsErrorResponse(b.Project.Type) {
+		return nil, ProcessProjectError(b.Project)
 	}
 
 	if b.Project.Commit == nil {
 		return nil, errs.New("BuildPlanByProject.Build: Commit is nil")
 	}
 
-	if b.Project.Commit.Error != nil {
-		if b.Project.Commit.Error.Message != "" {
-			return nil, errs.New("Could not get build, API returned commit error message: %s", b.Project.Commit.Message)
-		}
-		return nil, errs.New("BuildPlanByProject.Build: Could not retrieve commit")
-	}
-
-	if b.Project.Commit.Type == NotFoundErrorType {
-		return nil, locale.NewError("err_buildplanner_commit_not_found", "Build plan does not contain commit")
+	if IsErrorResponse(b.Project.Commit.Type) {
+		return nil, ProcessCommitError(b.Project.Commit)
 	}
 
 	if b.Project.Commit.Build == nil {
 		return nil, errs.New("BuildPlanByProject.Build: Commit does not contain build")
 	}
 
-	if b.Project.Commit.Build.PlanningError != nil {
-		var errs []string
-		var isTransient bool
-		for _, se := range b.Project.Commit.Build.SubErrors {
-			if se.Type != RemediableSolveErrorType {
-				continue
-			}
-
-			if se.Message != "" {
-				errs = append(errs, se.Message)
-				isTransient = se.IsTransient
-			}
-			for _, ve := range se.ValidationErrors {
-				if ve.Error != "" {
-					errs = append(errs, ve.Error)
-				}
-			}
-		}
-		return nil, &BuildPlannerError{
-			ValidationErrors: errs,
-			IsTransient:      isTransient,
-		}
+	if IsErrorResponse(b.Project.Commit.Build.Type) {
+		return nil, ProcessBuildError(b.Project.Commit.Build)
 	}
 
 	return b.Project.Commit.Build, nil
@@ -250,46 +221,16 @@ func (b *BuildPlanByCommit) Build() (*Build, error) {
 		return nil, errs.New("BuildPlanByCommit.Build: Commit is nil")
 	}
 
-	if b.Commit.Error != nil {
-		if b.Commit.Error.Message != "" {
-			return nil, errs.New("BuildPlanByCommit.Build: Could not get build via commit ID, API returned commit error message: %s", b.Commit.Message)
-		}
-		return nil, errs.New("BuildPlanByCommit.Build: Could not retrieve commit")
-	}
-
-	if b.Commit.Type == NotFoundErrorType {
-		return nil, locale.NewError("err_buildplanner_commit_not_found", "Build plan does not contain commit")
+	if IsErrorResponse(b.Commit.Type) {
+		return nil, ProcessCommitError(b.Commit)
 	}
 
 	if b.Commit.Build == nil {
-		if b.Commit.Error != nil {
-			return nil, errs.New("BuildPlanByCommit.Build: Commit not found: %s", b.Commit.Error.Message)
-		}
 		return nil, errs.New("BuildPlanByCommit.Build: Commit does not contain build")
 	}
 
-	if b.Commit.Build.PlanningError != nil {
-		var errs []string
-		var isTransient bool
-		for _, se := range b.Commit.Build.SubErrors {
-			if se.Type != RemediableSolveErrorType {
-				continue
-			}
-
-			if se.Message != "" {
-				errs = append(errs, se.Message)
-				isTransient = se.IsTransient
-			}
-			for _, ve := range se.ValidationErrors {
-				if ve.Error != "" {
-					errs = append(errs, ve.Error)
-				}
-			}
-		}
-		return nil, &BuildPlannerError{
-			ValidationErrors: errs,
-			IsTransient:      isTransient,
-		}
+	if IsErrorResponse(b.Commit.Build.Type) {
+		return nil, ProcessBuildError(b.Commit.Build)
 	}
 
 	return b.Commit.Build, nil
@@ -316,7 +257,8 @@ func IsErrorResponse(errorType string) bool {
 		errorType == NoChangeSinceLastCommitErrorType ||
 		errorType == HeadOnBranchMovedErrorType ||
 		errorType == ForbiddenErrorType ||
-		errorType == RemediableSolveErrorType
+		errorType == RemediableSolveErrorType ||
+		errorType == PlanningErrorType
 }
 
 func ProcessCommitError(commit *Commit) error {
@@ -333,8 +275,44 @@ func ProcessCommitError(commit *Commit) error {
 	case NoChangeSinceLastCommitErrorType:
 		return locale.NewInputError("err_buildplanner_no_change_since_last_commit", "No change since last commit: {{.V0}}, recieved message: {{.V1}}", commit.NoChangeCommitID.String(), commit.Message)
 	default:
-		return locale.NewInputError("err_buildplanner_commit", "Encountered error processing commit")
+		return locale.NewInputError("err_buildplanner_commit", "Encountered error processing commit response")
 	}
+}
+
+func ProcessBuildError(build *Build) error {
+	if build.PlanningError != nil {
+		var errs []string
+		var isTransient bool
+		for _, se := range build.SubErrors {
+			if se.Type != RemediableSolveErrorType {
+				continue
+			}
+
+			if se.Message != "" {
+				errs = append(errs, se.Message)
+				isTransient = se.IsTransient
+			}
+			for _, ve := range se.ValidationErrors {
+				if ve.Error != "" {
+					errs = append(errs, ve.Error)
+				}
+			}
+		}
+		return &BuildPlannerError{
+			ValidationErrors: errs,
+			IsTransient:      isTransient,
+		}
+	}
+
+	return locale.NewInputError("err_buildplanner_build", "Encountered error processing build response")
+}
+
+func ProcessProjectError(project *Project) error {
+	if project.Type == NotFoundErrorType {
+		return locale.NewInputError("err_buildplanner_project_not_found", "Unable to find project, recieved message: {{.V0}}", project.Message)
+	}
+
+	return locale.NewInputError("err_buildplanner_project", "Encountered error processing project response")
 }
 
 type BuildExpression struct {
@@ -365,6 +343,7 @@ type Error struct {
 
 // Project contains the commit and any errors.
 type Project struct {
+	Type   string  `json:"__typename"`
 	Commit *Commit `json:"commit"`
 	*Error
 }
@@ -472,6 +451,7 @@ type Build struct {
 	Steps       []*Step        `json:"steps"`
 	Sources     []*Source      `json:"sources"`
 	BuildLogIDs []*BuildLogID  `json:"buildLogIds"`
+	*Error
 	*PlanningError
 }
 
