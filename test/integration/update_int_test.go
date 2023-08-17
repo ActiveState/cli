@@ -105,7 +105,10 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateAvailable() {
 
 	// Technically state tool automatically starts the state-svc, but the update notification only happens if the svc
 	// happens to already be running and fails silently if not, so in this case we want to ensure the svc is running
-	cp := ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("start"), e2e.AppendEnv(suite.env(false, true)...))
+	cp := ts.SpawnCmd(ts.SvcExe, "stop")
+	cp.ExpectExitCode(0)
+
+	cp = ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("start"), e2e.AppendEnv(suite.env(false, true)...))
 	cp.ExpectExitCode(0)
 
 	// Give svc time to check for updates and cache the info
