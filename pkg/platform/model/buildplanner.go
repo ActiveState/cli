@@ -283,21 +283,12 @@ func (bp *BuildPlanner) StageCommit(params StageCommitParams) (strfmt.UUID, erro
 		return "", processBuildPlannerError(err, "failed to stage commit")
 	}
 
-	if resp.Error != nil {
-		return "", locale.NewError("Failed to stage commit, API returned message: {{.V0}}", resp.Error.Message)
-	}
-
-	if resp.ParseError != nil {
-		return "", locale.NewInputError(
-			"err_stage_commit_parse",
-			"The platform failed to parse the build expression, received the following message: {{.V0}}. Path: {{.V1}}",
-			resp.ParseError.Message,
-			resp.ParseError.Path,
-		)
-	}
-
 	if resp.Commit == nil {
 		return "", errs.New("Staged commit is nil")
+	}
+
+	if bpModel.IsErrorResponse(resp.Commit.Type) {
+		return "", bpModel.ProcessCommitError(resp.Commit)
 	}
 
 	if resp.Commit.CommitID == "" {
@@ -365,6 +356,32 @@ func (bp *BuildPlanner) GetBuildExpression(owner, project, commitID string) (*bu
 // processBuildPlannerError will check for special error types that should be
 // handled differently. If no special error type is found, the fallback message
 // will be used.
+// It expects the errors field to be the top-level field in the response. This is
+// different from special error types that are returned as part of the data field.
+// Example:
+//
+//	{
+//	  "errors": [
+//	    {
+//	      "message": "deprecation error",
+//	      "locations": [
+//	        {
+//	          "line": 7,
+//	          "column": 11
+//	        }
+//	      ],
+//	      "path": [
+//	        "project",
+//	        "commit",
+//	        "build"
+//	      ],
+//	      "extensions": {
+//	        "code": "CLIENT_DEPRECATION_ERROR"
+//	      }
+//	    }
+//	  ],
+//	  "data": null
+//	}
 func processBuildPlannerError(bpErr error, fallbackMessage string) error {
 	graphqlErr := &graphql.GraphErr{}
 	if errors.As(bpErr, graphqlErr) {

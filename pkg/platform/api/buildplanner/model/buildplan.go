@@ -33,10 +33,6 @@ const (
 	ArtifactSkipped           = "SKIPPED"
 	ArtifactSucceeded         = "SUCCEEDED"
 
-	// Types
-	NotFound                 = "NotFound"
-	BuildResultPlanningError = "PlanningError"
-
 	// Tag types
 	TagSource     = "src"
 	TagDependency = "dep"
@@ -64,7 +60,15 @@ const (
 	XActiveStateBuilderMimeType  = "application/x-activestate-builder"
 
 	// Error types
-	RemediableSolveErrorType = "RemediableSolveError"
+	ErrorType                        = "Error"
+	NotFoundErrorType                = "NotFound"
+	BuildResultPlanningErrorType     = "PlanningError"
+	ParseErrorType                   = "ParseError"
+	AlreadyExistsErrorType           = "AlreadyExists"
+	NoChangeSinceLastCommitErrorType = "NoChangeSinceLastCommit"
+	HeadOnBranchMovedErrorType       = "HeadOnBranchMoved"
+	ForbiddenErrorType               = "Forbidden"
+	RemediableSolveErrorType         = "RemediableSolveError"
 )
 
 func IsStateToolArtifact(mimeType string) bool {
@@ -175,7 +179,7 @@ func (b *BuildPlanByProject) Build() (*Build, error) {
 		return nil, errs.New("BuildPlanByProject.Build: Could not retrieve commit")
 	}
 
-	if b.Project.Commit.Type == NotFound {
+	if b.Project.Commit.Type == NotFoundErrorType {
 		return nil, locale.NewError("err_buildplanner_commit_not_found", "Build plan does not contain commit")
 	}
 
@@ -253,7 +257,7 @@ func (b *BuildPlanByCommit) Build() (*Build, error) {
 		return nil, errs.New("BuildPlanByCommit.Build: Could not retrieve commit")
 	}
 
-	if b.Commit.Type == NotFound {
+	if b.Commit.Type == NotFoundErrorType {
 		return nil, locale.NewError("err_buildplanner_commit_not_found", "Build plan does not contain commit")
 	}
 
@@ -306,6 +310,33 @@ func (b *BuildPlanByCommit) CommitID() (strfmt.UUID, error) {
 	return b.Commit.CommitID, nil
 }
 
+func IsErrorResponse(errorType string) bool {
+	return errorType == ErrorType ||
+		errorType == AlreadyExistsErrorType ||
+		errorType == NoChangeSinceLastCommitErrorType ||
+		errorType == HeadOnBranchMovedErrorType ||
+		errorType == ForbiddenErrorType ||
+		errorType == RemediableSolveErrorType
+}
+
+func ProcessCommitError(commit *Commit) error {
+	switch commit.Type {
+	case NotFoundErrorType:
+		return locale.NewInputError("err_buildplanner_commit_not_found", "{{.V0}}", commit.Message)
+	case ParseErrorType:
+		return locale.NewInputError("err_buildplanner_parse_error", "The platform failed to parse the build expression, received the following message: {{.V0}}. Path: {{.V1}}", commit.Message, commit.Path)
+	case ForbiddenErrorType:
+		// TODO: Add auth tips?
+		return locale.NewInputError("err_buildplanner_forbidden", "Unable to complete the operation: {{.V0}}, recieved message: {{.V1}}", commit.Operation, commit.Message)
+	case HeadOnBranchMovedErrorType:
+		return locale.NewInputError("err_buildplanner_head_on_branch_moved", "Head on branch {{.V0}} at commit: {{.V1}} has moved, recieved message: {{.V2}}", commit.HeadBranchID.String(), commit.HeadCommitID.String(), commit.Message)
+	case NoChangeSinceLastCommitErrorType:
+		return locale.NewInputError("err_buildplanner_no_change_since_last_commit", "No change since last commit: {{.V0}}, recieved message: {{.V1}}", commit.NoChangeCommitID.String(), commit.Message)
+	default:
+		return locale.NewInputError("err_buildplanner_commit", "Encountered error processing commit")
+	}
+}
+
 type BuildExpression struct {
 	Commit *Commit `json:"commit"`
 	*Error
@@ -325,18 +356,15 @@ type PushCommitResult struct {
 type StageCommitResult struct {
 	Commit *Commit `json:"stageCommit"`
 	*Error
-	*ParseError
 }
 
 // Error contains an error message.
 type Error struct {
-	Type    string `json:"__typename"`
 	Message string `json:"message"`
 }
 
 // Project contains the commit and any errors.
 type Project struct {
-	Type   string  `json:"__typename"`
 	Commit *Commit `json:"commit"`
 	*Error
 }
@@ -348,6 +376,10 @@ type Commit struct {
 	CommitID   strfmt.UUID     `json:"commitId"`
 	Build      *Build          `json:"build"`
 	*Error
+	*ParseError
+	*ForbiddenError
+	*HeadOnBranchMovedError
+	*NoChangeSinceLastCommitError
 }
 
 // Build is a directed acyclic graph. It begins with a set of terminal nodes
@@ -500,9 +532,20 @@ type PlanningError struct {
 
 // ParseError is an error that occurred while parsing the build expression.
 type ParseError struct {
-	Type    string `json:"__typename"`
-	Message string `json:"message"`
-	Path    string `json:"path"`
+	Path string `json:"path"`
+}
+
+type ForbiddenError struct {
+	Operation string `json:"operation"`
+}
+
+type HeadOnBranchMovedError struct {
+	HeadCommitID strfmt.UUID `json:"commitId"`
+	HeadBranchID strfmt.UUID `json:"branchId"`
+}
+
+type NoChangeSinceLastCommitError struct {
+	NoChangeCommitID strfmt.UUID `json:"commitId"`
 }
 
 // BuildExprLocation represents a location in the build script where an error occurred.

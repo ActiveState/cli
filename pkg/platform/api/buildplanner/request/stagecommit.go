@@ -169,6 +169,22 @@ mutation ($organization: String!, $project: String!, $parentCommit: ID, $expr:Bu
       __typename
       message
     }
+    ... on NoChangeSinceLastCommit {
+      __typename
+      commitId
+      message
+    }
+    ... on Forbidden {
+      __typename
+      operation
+      message
+    }
+    ... on HeadOnBranchMoved {
+      __typename
+      commitId
+      branchId
+      message
+    }
   }
 }
 `
