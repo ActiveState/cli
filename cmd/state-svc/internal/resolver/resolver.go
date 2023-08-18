@@ -169,7 +169,7 @@ func updateFromChecker(cfg *config.Instance, an *sync.Client, channel, version s
 	upchecker := updater.NewDefaultChecker(cfg, an)
 	update, err := upchecker.CheckFor(channel, version)
 	if err != nil {
-		return nil, errs.Wrap(err, "Cannot check for specified channel/version: %s/%s", channel, version)
+		return nil, errs.Wrap(err, "Failed to check for specified channel/version: %s/%s", channel, version)
 	}
 	return update, nil
 }
