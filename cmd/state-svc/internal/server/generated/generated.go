@@ -79,7 +79,7 @@ type ComplexityRoot struct {
 
 	Query struct {
 		AnalyticsEvent     func(childComplexity int, category string, action string, label *string, dimensionsJSON string) int
-		AvailableUpdate    func(childComplexity int, channel string, version string) int
+		AvailableUpdate    func(childComplexity int, desiredChannel string, desiredVersion string) int
 		CheckMessages      func(childComplexity int, command string, flags []string) int
 		CheckRuntimeUsage  func(childComplexity int, organizationName string) int
 		ConfigChanged      func(childComplexity int, key string) int
@@ -108,7 +108,7 @@ type ComplexityRoot struct {
 
 type QueryResolver interface {
 	Version(ctx context.Context) (*graph.Version, error)
-	AvailableUpdate(ctx context.Context, channel string, version string) (*graph.AvailableUpdate, error)
+	AvailableUpdate(ctx context.Context, desiredChannel string, desiredVersion string) (*graph.AvailableUpdate, error)
 	Projects(ctx context.Context) ([]*graph.Project, error)
 	AnalyticsEvent(ctx context.Context, category string, action string, label *string, dimensionsJSON string) (*graph.AnalyticsEventResponse, error)
 	ReportRuntimeUsage(ctx context.Context, pid int, exec string, dimensionsJSON string) (*graph.ReportRuntimeUsageResponse, error)
@@ -274,7 +274,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.AvailableUpdate(childComplexity, args["channel"].(string), args["version"].(string)), true
+		return e.complexity.Query.AvailableUpdate(childComplexity, args["desiredChannel"].(string), args["desiredVersion"].(string)), true
 
 	case "Query.checkMessages":
 		if e.complexity.Query.CheckMessages == nil {
@@ -515,7 +515,7 @@ type MessageInfo {
 
 type Query {
     version: Version
-    availableUpdate(channel: String!, version: String!): AvailableUpdate
+    availableUpdate(desiredChannel: String!, desiredVersion: String!): AvailableUpdate
     projects: [Project]!
     analyticsEvent(category: String!, action: String!, label: String, dimensionsJson: String!): AnalyticsEventResponse
     reportRuntimeUsage(pid: Int!, exec: String!, dimensionsJson: String!): ReportRuntimeUsageResponse
@@ -597,23 +597,23 @@ func (ec *executionContext) field_Query_availableUpdate_args(ctx context.Context
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
-	if tmp, ok := rawArgs["channel"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("channel"))
+	if tmp, ok := rawArgs["desiredChannel"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("desiredChannel"))
 		arg0, err = ec.unmarshalNString2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["channel"] = arg0
+	args["desiredChannel"] = arg0
 	var arg1 string
-	if tmp, ok := rawArgs["version"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("version"))
+	if tmp, ok := rawArgs["desiredVersion"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("desiredVersion"))
 		arg1, err = ec.unmarshalNString2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["version"] = arg1
+	args["desiredVersion"] = arg1
 	return args, nil
 }
 
@@ -1548,7 +1548,7 @@ func (ec *executionContext) _Query_availableUpdate(ctx context.Context, field gr
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().AvailableUpdate(rctx, fc.Args["channel"].(string), fc.Args["version"].(string))
+		return ec.resolvers.Query().AvailableUpdate(rctx, fc.Args["desiredChannel"].(string), fc.Args["desiredVersion"].(string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)

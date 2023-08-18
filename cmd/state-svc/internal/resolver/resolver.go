@@ -116,11 +116,11 @@ func (r *Resolver) Version(ctx context.Context) (*graph.Version, error) {
 	}, nil
 }
 
-func (r *Resolver) AvailableUpdate(ctx context.Context, channel, version string) (*graph.AvailableUpdate, error) {
+func (r *Resolver) AvailableUpdate(ctx context.Context, desiredChannel, desiredVersion string) (*graph.AvailableUpdate, error) {
 	defer func() { handlePanics(recover(), debug.Stack()) }()
 
 	r.an.EventWithLabel(anaConsts.CatStateSvc, "endpoint", "AvailableUpdate")
-	logging.Debug("AvailableUpdate resolver: %s/%s", channel, version)
+	logging.Debug("AvailableUpdate resolver: %s/%s", desiredChannel, desiredVersion)
 	defer logging.Debug("AvailableUpdate done")
 
 	var (
@@ -130,12 +130,12 @@ func (r *Resolver) AvailableUpdate(ctx context.Context, channel, version string)
 	)
 
 	switch {
-	case channel == constants.BranchName && version == "":
+	case desiredChannel == constants.BranchName && desiredVersion == "":
 		update, ok = r.updatePoller.ValueFromCache().(*updater.Update)
 		if !ok || update == nil {
 			logging.Debug("No update info in poller cache")
 
-			update, err = updateFromChecker(r.cfg, r.an, channel, version)
+			update, err = updateFromChecker(r.cfg, r.an, desiredChannel, desiredVersion)
 			if err != nil {
 				return nil, err
 			}
@@ -146,7 +146,7 @@ func (r *Resolver) AvailableUpdate(ctx context.Context, channel, version string)
 	default:
 		logging.Debug("Update info requested for specific branch/version")
 
-		update, err = updateFromChecker(r.cfg, r.an, channel, version)
+		update, err = updateFromChecker(r.cfg, r.an, desiredChannel, desiredVersion)
 		if err != nil {
 			return nil, err
 		}
