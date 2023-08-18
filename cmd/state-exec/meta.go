@@ -6,9 +6,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/hash"
-	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/pkg/platform/runtime/executors/execmeta"
 )
 
@@ -37,24 +34,10 @@ func newExecutorMeta(execPath string) (*executorMeta, error) {
 		return nil, fmt.Errorf("cannot get matching bin by path: %w", err)
 	}
 
-	transformEnv := true
-	if projectDir := os.Getenv(constants.ActivatedStateEnvVarName); projectDir != "" {
-		// Note: cannot import runtime/target for ProjectDirToTargetDir() because that would bloat
-		// up the exe from <4MB to >15MB.
-		projectCacheDir := filepath.Join(storage.CachePath(), hash.ShortHash(projectDir))
-		if projectCacheDir == execDir {
-			transformEnv = false // runtime environment variables already set
-		}
-	}
-
-	env := os.Environ()
-	if transformEnv {
-		env = transformedEnv(env, meta.Env)
-	}
 	em := executorMeta{
 		ExecMeta:       meta,
 		MatchingBin:    matchingBin,
-		TransformedEnv: env,
+		TransformedEnv: transformedEnv(os.Environ(), meta.Env),
 	}
 
 	return &em, nil
