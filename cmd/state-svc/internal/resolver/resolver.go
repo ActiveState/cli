@@ -120,7 +120,7 @@ func (r *Resolver) AvailableUpdate(ctx context.Context, channel, version string)
 	defer func() { handlePanics(recover(), debug.Stack()) }()
 
 	r.an.EventWithLabel(anaConsts.CatStateSvc, "endpoint", "AvailableUpdate")
-	logging.Debug("AvailableUpdate resolver")
+	logging.Debug("AvailableUpdate resolver: %s/%s", channel, version)
 	defer logging.Debug("AvailableUpdate done")
 
 	var (
