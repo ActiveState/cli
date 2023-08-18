@@ -30,39 +30,39 @@ func (f *Fetcher) Fetch(update *Update, targetDir string) error {
 	b, _, err := f.httpreq.Get(update.url)
 	if err != nil {
 		msg := fmt.Sprintf("Fetch %s failed", update.url)
-		f.analyticsEvent(update.AvUpdate.Version, msg)
+		f.analyticsEvent(update.AvailableUpdate.Version, msg)
 		return errs.Wrap(err, msg)
 	}
 
-	if err := verifySha(b, update.AvUpdate.Sha256); err != nil {
+	if err := verifySha(b, update.AvailableUpdate.Sha256); err != nil {
 		msg := "Could not verify sha256"
-		f.analyticsEvent(update.AvUpdate.Version, msg)
+		f.analyticsEvent(update.AvailableUpdate.Version, msg)
 		return errs.Wrap(err, msg)
 	}
 
 	logging.Debug("Preparing target dir: %s", targetDir)
 	if err := fileutils.MkdirUnlessExists(targetDir); err != nil {
 		msg := "Could not create target dir"
-		f.analyticsEvent(update.AvUpdate.Version, msg)
+		f.analyticsEvent(update.AvailableUpdate.Version, msg)
 		return errs.Wrap(err, msg)
 	}
 
 	isEmpty, err := fileutils.IsEmptyDir(targetDir)
 	if err != nil {
 		msg := "Could not verify if target dir is empty"
-		f.analyticsEvent(update.AvUpdate.Version, msg)
+		f.analyticsEvent(update.AvailableUpdate.Version, msg)
 		return errs.Wrap(err, msg)
 	}
 	if !isEmpty {
 		msg := "Target dir is not empty"
-		f.analyticsEvent(update.AvUpdate.Version, msg)
+		f.analyticsEvent(update.AvailableUpdate.Version, msg)
 		return errs.Wrap(err, msg)
 	}
 
 	a := blobUnarchiver(b)
 	if err := a.Unarchive(targetDir); err != nil {
 		msg := "Unarchiving failed"
-		f.analyticsEvent(update.AvUpdate.Version, msg)
+		f.analyticsEvent(update.AvailableUpdate.Version, msg)
 		return errs.Wrap(err, msg)
 	}
 

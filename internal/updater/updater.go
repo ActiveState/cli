@@ -73,11 +73,12 @@ func NewAvailableUpdate(channel, version, platform, path, sha256, tag string) *A
 }
 
 type Update struct {
-	AvUpdate *AvailableUpdate
-	Origin   *Origin
-	url      string
-	tmpDir   string
-	an       analytics.Dispatcher
+	AvailableUpdate *AvailableUpdate
+	Origin          *Origin
+
+	url    string
+	tmpDir string
+	an     analytics.Dispatcher
 }
 
 func NewUpdate(an analytics.Dispatcher, origin *Origin, avUpdate *AvailableUpdate) *Update {
@@ -87,10 +88,10 @@ func NewUpdate(an analytics.Dispatcher, origin *Origin, avUpdate *AvailableUpdat
 	}
 
 	return &Update{
-		AvUpdate: avUpdate,
-		Origin:   origin,
-		url:      apiUpdateURL + "/" + avUpdate.Path,
-		an:       an,
+		AvailableUpdate: avUpdate,
+		Origin:          origin,
+		url:             apiUpdateURL + "/" + avUpdate.Path,
+		an:              an,
 	}
 }
 
@@ -100,8 +101,8 @@ func NewUpdateCurrent(an analytics.Dispatcher, avUpdate *AvailableUpdate) *Updat
 
 func (u *Update) ShouldSkip() bool {
 	return os.Getenv(constants.ForceUpdateEnvVarName) != "true" &&
-		u.AvUpdate.Channel == u.Origin.Channel &&
-		u.AvUpdate.Version == u.Origin.Version
+		u.AvailableUpdate.Channel == u.Origin.Channel &&
+		u.AvailableUpdate.Version == u.Origin.Version
 }
 
 func (u *Update) DownloadAndUnpack() (string, error) {
@@ -113,7 +114,7 @@ func (u *Update) DownloadAndUnpack() (string, error) {
 	tmpDir, err := os.MkdirTemp("", "state-update")
 	if err != nil {
 		msg := anaConst.UpdateErrorTempDir
-		u.analyticsEvent(anaConst.ActUpdateDownload, anaConst.UpdateLabelFailed, u.AvUpdate.Version, msg)
+		u.analyticsEvent(anaConst.ActUpdateDownload, anaConst.UpdateLabelFailed, u.AvailableUpdate.Version, msg)
 		return "", errs.Wrap(err, msg)
 	}
 
@@ -130,13 +131,13 @@ func (u *Update) prepareInstall(installTargetPath string, args []string) (string
 	if err != nil {
 		return "", nil, err
 	}
-	u.analyticsEvent(anaConst.ActUpdateDownload, "success", u.AvUpdate.Version, "")
+	u.analyticsEvent(anaConst.ActUpdateDownload, "success", u.AvailableUpdate.Version, "")
 
 	installerPath := filepath.Join(sourcePath, InstallerName)
 	logging.Debug("Using installer: %s", installerPath)
 	if !fileutils.FileExists(installerPath) {
 		msg := anaConst.UpdateErrorNoInstaller
-		u.analyticsEvent(anaConst.ActUpdateInstall, anaConst.UpdateLabelFailed, u.AvUpdate.Version, msg)
+		u.analyticsEvent(anaConst.ActUpdateInstall, anaConst.UpdateLabelFailed, u.AvailableUpdate.Version, msg)
 		return "", nil, errs.Wrap(err, msg)
 	}
 
@@ -144,7 +145,7 @@ func (u *Update) prepareInstall(installTargetPath string, args []string) (string
 		installTargetPath, err = installation.InstallPathFromExecPath()
 		if err != nil {
 			msg := anaConst.UpdateErrorInstallPath
-			u.analyticsEvent(anaConst.ActUpdateInstall, anaConst.UpdateLabelFailed, u.AvUpdate.Version, msg)
+			u.analyticsEvent(anaConst.ActUpdateInstall, anaConst.UpdateLabelFailed, u.AvailableUpdate.Version, msg)
 			return "", nil, errs.Wrap(err, msg)
 		}
 	}
@@ -188,8 +189,8 @@ func (u *Update) InstallBlocking(installTargetPath string, args ...string) error
 	}
 
 	var envs []string
-	if u.AvUpdate.Tag != nil {
-		envs = append(envs, fmt.Sprintf("%s=%s", constants.UpdateTagEnvVarName, *u.AvUpdate.Tag))
+	if u.AvailableUpdate.Tag != nil {
+		envs = append(envs, fmt.Sprintf("%s=%s", constants.UpdateTagEnvVarName, *u.AvailableUpdate.Tag))
 	}
 
 	_, _, err = exeutils.ExecuteAndPipeStd(installerPath, args, envs)
@@ -217,8 +218,8 @@ func (u *Update) InstallWithProgress(installTargetPath string, progressCb func(s
 		if stdout, err = cmd.StdoutPipe(); err != nil {
 			return errs.Wrap(err, "Could not obtain stderr pipe")
 		}
-		if u.AvUpdate.Tag != nil {
-			cmd.Env = append(os.Environ(), fmt.Sprintf("%s=%s", constants.UpdateTagEnvVarName, *u.AvUpdate.Tag))
+		if u.AvailableUpdate.Tag != nil {
+			cmd.Env = append(os.Environ(), fmt.Sprintf("%s=%s", constants.UpdateTagEnvVarName, *u.AvailableUpdate.Tag))
 		}
 		go func() {
 			scanner := bufio.NewScanner(io.MultiReader(stderr, stdout))

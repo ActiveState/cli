@@ -153,11 +153,11 @@ func (r *Resolver) AvailableUpdate(ctx context.Context, channel, version string)
 	}
 
 	availableUpdate := &graph.AvailableUpdate{
-		Version:  update.AvUpdate.Version,
-		Channel:  update.AvUpdate.Channel,
-		Path:     update.AvUpdate.Path,
-		Platform: update.AvUpdate.Platform,
-		Sha256:   update.AvUpdate.Sha256,
+		Version:  update.AvailableUpdate.Version,
+		Channel:  update.AvailableUpdate.Channel,
+		Path:     update.AvailableUpdate.Path,
+		Platform: update.AvailableUpdate.Platform,
+		Sha256:   update.AvailableUpdate.Sha256,
 	}
 
 	return availableUpdate, nil

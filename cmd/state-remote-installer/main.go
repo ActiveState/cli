@@ -177,7 +177,7 @@ func execute(out output.Outputer, prompt prompt.Prompter, cfg *config.Instance, 
 		return errs.Wrap(err, "Could not retrieve install package information")
 	}
 
-	version := update.AvUpdate.Version
+	version := update.AvailableUpdate.Version
 	if params.branch != "" {
 		version = fmt.Sprintf("%s (%s)", version, branch)
 	}

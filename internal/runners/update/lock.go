@@ -152,5 +152,5 @@ func fetchExactVersion(an analytics.Dispatcher, svc *model.SvcModel, channel, ve
 		return constants.Version, nil
 	}
 
-	return update.AvUpdate.Version, nil
+	return update.AvailableUpdate.Version, nil
 }
