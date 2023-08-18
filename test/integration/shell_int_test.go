@@ -7,6 +7,7 @@ import (
 	"runtime"
 	"testing"
 
+	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -288,6 +289,9 @@ func (suite *ShellIntegrationTestSuite) TestNestedShellNotification() {
 
 	cfg, err := config.New()
 	suite.Require().NoError(err)
+	if runtime.GOOS == "darwin" && condition.OnCI() {
+		cfg.Set(subshell.ConfigKeyShell, "zsh") // GitHub actions runs on bash, so override with zsh
+	}
 
 	os.Setenv(constants.HomeEnvVarName, ts.Dirs.HomeDir)
 	defer func() { os.Unsetenv(constants.HomeEnvVarName) }()
