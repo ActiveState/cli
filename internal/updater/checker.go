@@ -147,5 +147,5 @@ func (u *Checker) GetUpdateInfo(desiredChannel, desiredVersion string) (*Update,
 	}
 
 	u.an.EventWithLabel(anaConst.CatUpdates, anaConst.ActUpdateCheck, anaConst.UpdateLabelAvailable, &dimensions.Values{Version: ptr.To(info.Version)})
-	return NewUpdate(u.an, origin, info), nil
+	return NewUpdateByOrigin(u.an, origin, info), nil
 }

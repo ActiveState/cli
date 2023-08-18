@@ -81,7 +81,9 @@ type Update struct {
 	an     analytics.Dispatcher
 }
 
-func NewUpdate(an analytics.Dispatcher, origin *Origin, avUpdate *AvailableUpdate) *Update {
+// NewUpdateByOrigin returns an instance of Update. Allowing origin to be set
+// is useful for testing.
+func NewUpdateByOrigin(an analytics.Dispatcher, origin *Origin, avUpdate *AvailableUpdate) *Update {
 	apiUpdateURL := constants.APIUpdateURL
 	if url, ok := os.LookupEnv("_TEST_UPDATE_URL"); ok {
 		apiUpdateURL = url
@@ -95,8 +97,8 @@ func NewUpdate(an analytics.Dispatcher, origin *Origin, avUpdate *AvailableUpdat
 	}
 }
 
-func NewUpdateCurrent(an analytics.Dispatcher, avUpdate *AvailableUpdate) *Update {
-	return NewUpdate(an, NewOriginDefault(), avUpdate)
+func NewUpdate(an analytics.Dispatcher, avUpdate *AvailableUpdate) *Update {
+	return NewUpdateByOrigin(an, NewOriginDefault(), avUpdate)
 }
 
 func (u *Update) ShouldSkip() bool {
