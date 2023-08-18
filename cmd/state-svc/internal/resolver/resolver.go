@@ -124,18 +124,18 @@ func (r *Resolver) AvailableUpdate(ctx context.Context, desiredChannel, desiredV
 	defer logging.Debug("AvailableUpdate done")
 
 	var (
-		update *updater.Update
-		ok     bool
-		err    error
+		avUpdate *updater.AvailableUpdate
+		ok       bool
+		err      error
 	)
 
 	switch {
 	case desiredChannel == constants.BranchName && desiredVersion == "":
-		update, ok = r.updatePoller.ValueFromCache().(*updater.Update)
-		if !ok || update == nil {
+		avUpdate, ok = r.updatePoller.ValueFromCache().(*updater.AvailableUpdate)
+		if !ok || avUpdate == nil {
 			logging.Debug("No update info in poller cache")
 
-			update, err = updateFromChecker(r.cfg, r.an, desiredChannel, desiredVersion)
+			avUpdate, err = updateFromChecker(r.cfg, r.an, desiredChannel, desiredVersion)
 			if err != nil {
 				return nil, err
 			}
@@ -146,24 +146,24 @@ func (r *Resolver) AvailableUpdate(ctx context.Context, desiredChannel, desiredV
 	default:
 		logging.Debug("Update info requested for specific branch/version")
 
-		update, err = updateFromChecker(r.cfg, r.an, desiredChannel, desiredVersion)
+		avUpdate, err = updateFromChecker(r.cfg, r.an, desiredChannel, desiredVersion)
 		if err != nil {
 			return nil, err
 		}
 	}
 
 	availableUpdate := &graph.AvailableUpdate{
-		Version:  update.AvailableUpdate.Version,
-		Channel:  update.AvailableUpdate.Channel,
-		Path:     update.AvailableUpdate.Path,
-		Platform: update.AvailableUpdate.Platform,
-		Sha256:   update.AvailableUpdate.Sha256,
+		Version:  avUpdate.Version,
+		Channel:  avUpdate.Channel,
+		Path:     avUpdate.Path,
+		Platform: avUpdate.Platform,
+		Sha256:   avUpdate.Sha256,
 	}
 
 	return availableUpdate, nil
 }
 
-func updateFromChecker(cfg *config.Instance, an *sync.Client, channel, version string) (*updater.Update, error) {
+func updateFromChecker(cfg *config.Instance, an *sync.Client, channel, version string) (*updater.AvailableUpdate, error) {
 	logging.Debug("Update info pulled directly")
 
 	upchecker := updater.NewDefaultChecker(cfg, an)

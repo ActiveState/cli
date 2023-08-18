@@ -75,12 +75,11 @@ func RunUpdateNotifier(an analytics.Dispatcher, svc *model.SvcModel, out output.
 		return
 	}
 
-	avUpdate := updater.NewAvailableUpdate(upd.Channel, upd.Version, upd.Platform, upd.Path, upd.Sha256, "")
-	update := updater.NewUpdate(an, avUpdate)
+	update := updater.NewUpdate(an, updater.NewAvailableUpdateFromGraph(upd))
 	if update.ShouldSkip() {
 		return
 	}
 
 	out.Notice(output.Title(locale.Tr("update_available_header")))
-	out.Notice(locale.Tr("update_available", constants.Version, avUpdate.Version))
+	out.Notice(locale.Tr("update_available", constants.Version, update.AvailableUpdate.Version))
 }

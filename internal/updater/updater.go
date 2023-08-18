@@ -18,6 +18,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/graph"
 	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/locale"
@@ -70,6 +71,10 @@ func NewAvailableUpdate(channel, version, platform, path, sha256, tag string) *A
 		Sha256:   sha256,
 		Tag:      t,
 	}
+}
+
+func NewAvailableUpdateFromGraph(au *graph.AvailableUpdate) *AvailableUpdate {
+	return NewAvailableUpdate(au.Channel, au.Version, au.Platform, au.Path, au.Sha256, "")
 }
 
 type Update struct {

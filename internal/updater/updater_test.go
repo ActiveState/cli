@@ -89,7 +89,7 @@ func TestCheckerCheckFor(t *testing.T) {
 			check := NewChecker(&configMock.Mock{}, blackhole.New(), constants.APIUpdateInfoURL, "master", "1.2.3", m)
 			res, err := check.CheckFor(tt.CheckChannel, tt.CheckVersion)
 			require.NoError(t, err)
-			assert.Equal(t, tt.ExpectedResult, res.AvailableUpdate)
+			assert.Equal(t, tt.ExpectedResult, res)
 		})
 	}
 }

@@ -40,7 +40,7 @@ type Checker struct {
 	currentChannel string
 	currentVersion string
 	httpreq        httpGetter
-	cache          *Update
+	cache          *AvailableUpdate
 	done           chan struct{}
 
 	InvocationSource InvocationSource
@@ -68,7 +68,7 @@ func NewChecker(cfg Configurable, an analytics.Dispatcher, infoURL, currentChann
 	}
 }
 
-func (u *Checker) CheckFor(desiredChannel, desiredVersion string) (*Update, error) {
+func (u *Checker) CheckFor(desiredChannel, desiredVersion string) (*AvailableUpdate, error) {
 	info, err := u.GetUpdateInfo(desiredChannel, desiredVersion)
 	if err != nil {
 		return nil, errs.Wrap(err, "Failed to get update info")
@@ -94,7 +94,7 @@ func (u *Checker) infoURL(tag, desiredVersion, branchName, platform string) stri
 	return u.apiInfoURL + "/info?" + v.Encode()
 }
 
-func (u *Checker) GetUpdateInfo(desiredChannel, desiredVersion string) (*Update, error) {
+func (u *Checker) GetUpdateInfo(desiredChannel, desiredVersion string) (*AvailableUpdate, error) {
 	if desiredChannel == "" {
 		if overrideBranch := os.Getenv(constants.UpdateBranchEnvVarName); overrideBranch != "" {
 			desiredChannel = overrideBranch
@@ -141,11 +141,5 @@ func (u *Checker) GetUpdateInfo(desiredChannel, desiredVersion string) (*Update,
 		return nil, errs.Wrap(err, "Could not unmarshal update info: %s", res)
 	}
 
-	origin := &Origin{
-		Version: u.currentVersion,
-		Channel: u.currentChannel,
-	}
-
-	u.an.EventWithLabel(anaConst.CatUpdates, anaConst.ActUpdateCheck, anaConst.UpdateLabelAvailable, &dimensions.Values{Version: ptr.To(info.Version)})
-	return NewUpdateByOrigin(u.an, origin, info), nil
+	return info, nil
 }
