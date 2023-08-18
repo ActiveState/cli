@@ -45,18 +45,18 @@ func TestWriteRcFile(t *testing.T) {
 		env            map[string]string
 	}
 
-	zsh := fmt.Sprintf(
-		`export PATH="foo:$PATH"
-if [[ ! -z "$%s" && -f "$%s/%s" ]]; then
+	fish := fmt.Sprintf(
+		`set -xg PATH "foo:$PATH"
+if test ! -z "$%s"; test -f "$%s/%s"
   echo "State Tool is operating on project $%s, located at $%s"
-fi`,
+end`,
 		constants.ActivatedStateEnvVarName,
 		constants.ActivatedStateEnvVarName,
 		constants.ConfigFileName,
 		constants.ActivatedStateNamespaceEnvVarName,
 		constants.ActivatedStateEnvVarName)
 	if runtime.GOOS == "windows" {
-		zsh = strings.ReplaceAll(zsh, "\n", "\r\n")
+		fish = strings.ReplaceAll(fish, "\n", "\r\n")
 	}
 
 	tests := []struct {
@@ -68,26 +68,26 @@ fi`,
 		{
 			"Write RC to empty file",
 			args{
-				"zshrc_append.sh",
+				"fishrc_append.fish",
 				fakeFileWithContents("", "", ""),
 				map[string]string{
 					"PATH": "foo",
 				},
 			},
 			nil,
-			fakeContents("", zsh, ""),
+			fakeContents("", fish, ""),
 		},
 		{
 			"Write RC update",
 			args{
-				"zshrc_append.sh",
+				"fishrc_append.fish",
 				fakeFileWithContents("before", "SOMETHING ELSE", "after"),
 				map[string]string{
 					"PATH": "foo",
 				},
 			},
 			nil,
-			fakeContents(strings.Join([]string{"before", "after"}, fileutils.LineEnd), zsh, ""),
+			fakeContents(strings.Join([]string{"before", "after"}, fileutils.LineEnd), fish, ""),
 		},
 	}
 	for _, tt := range tests {
