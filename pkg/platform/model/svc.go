@@ -75,9 +75,9 @@ func (m *SvcModel) LocalProjects(ctx context.Context) ([]*graph.Project, error) 
 	return response.Projects, nil
 }
 
-func (m *SvcModel) CheckUpdate(ctx context.Context, channel, version string) (*graph.AvailableUpdate, error) {
+func (m *SvcModel) CheckUpdate(ctx context.Context, desiredChannel, desiredVersion string) (*graph.AvailableUpdate, error) {
 	defer profile.Measure("svc:CheckUpdate", time.Now())
-	r := request.NewAvailableUpdate(channel, version)
+	r := request.NewAvailableUpdate(desiredChannel, desiredVersion)
 	u := graph.AvailableUpdateResponse{}
 	if err := m.request(ctx, r, &u); err != nil {
 		return nil, errs.Wrap(err, "Error checking if update is available.")
