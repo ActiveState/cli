@@ -172,16 +172,17 @@ func execute(out output.Outputer, prompt prompt.Prompter, cfg *config.Instance, 
 	// Fetch payload
 	checker := updater.NewDefaultChecker(cfg, an)
 	checker.InvocationSource = updater.InvocationSourceInstall // Installing from a remote source is only ever encountered via the install flow
-	update, err := checker.CheckFor(branch, params.version)
+	availableUpdate, err := checker.CheckFor(branch, params.version)
 	if err != nil {
 		return errs.Wrap(err, "Could not retrieve install package information")
 	}
 
-	version := update.AvailableUpdate.Version
+	version := availableUpdate.Version
 	if params.branch != "" {
 		version = fmt.Sprintf("%s (%s)", version, branch)
 	}
 
+	update := updater.NewUpdate(an, availableUpdate)
 	out.Fprint(os.Stdout, locale.Tl("remote_install_downloading", "• Downloading State Tool version [NOTICE]{{.V0}}[/RESET]... ", version))
 	tmpDir, err := update.DownloadAndUnpack()
 	if err != nil {
