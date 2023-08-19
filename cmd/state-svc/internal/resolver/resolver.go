@@ -119,6 +119,10 @@ func (r *Resolver) Version(ctx context.Context) (*graph.Version, error) {
 func (r *Resolver) AvailableUpdate(ctx context.Context, desiredChannel, desiredVersion string) (*graph.AvailableUpdate, error) {
 	defer func() { handlePanics(recover(), debug.Stack()) }()
 
+	if desiredChannel == "" {
+		desiredChannel = constants.BranchName
+	}
+
 	r.an.EventWithLabel(anaConsts.CatStateSvc, "endpoint", "AvailableUpdate")
 	logging.Debug("AvailableUpdate resolver: %s/%s", desiredChannel, desiredVersion)
 	defer logging.Debug("AvailableUpdate done")
