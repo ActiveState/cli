@@ -1,20 +1,20 @@
 package request
 
 type AvailableUpdate struct {
-	channel string
-	version string
+	desiredChannel string
+	desiredVersion string
 }
 
-func NewAvailableUpdate(channel, version string) *AvailableUpdate {
+func NewAvailableUpdate(desiredChannel, desiredVersion string) *AvailableUpdate {
 	return &AvailableUpdate{
-		channel: channel,
-		version: version,
+		desiredChannel: desiredChannel,
+		desiredVersion: desiredVersion,
 	}
 }
 
 func (u *AvailableUpdate) Query() string {
-	return `query($channel: String!, $version: String!) {
-	availableUpdate(channel: $channel, version: $version) {
+	return `query($desiredChannel: String!, $desiredVersion: String!) {
+	availableUpdate(desiredChannel: $desiredChannel, desiredVersion: $desiredVersion) {
 			channel
 			version
 			path
@@ -26,7 +26,7 @@ func (u *AvailableUpdate) Query() string {
 
 func (u *AvailableUpdate) Vars() map[string]interface{} {
 	return map[string]interface{}{
-		"channel": u.channel,
-		"version": u.version,
+		"desiredChannel": u.desiredChannel,
+		"desiredVersion": u.desiredVersion,
 	}
 }
