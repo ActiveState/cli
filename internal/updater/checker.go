@@ -34,14 +34,12 @@ var (
 )
 
 type Checker struct {
-	cfg            Configurable
-	an             analytics.Dispatcher
-	apiInfoURL     string
-	currentChannel string
-	currentVersion string
-	httpreq        httpGetter
-	cache          *AvailableUpdate
-	done           chan struct{}
+	cfg        Configurable
+	an         analytics.Dispatcher
+	apiInfoURL string
+	httpreq    httpGetter
+	cache      *AvailableUpdate
+	done       chan struct{}
 
 	InvocationSource InvocationSource
 }
@@ -51,16 +49,14 @@ func NewDefaultChecker(cfg Configurable, an analytics.Dispatcher) *Checker {
 	if url, ok := os.LookupEnv("_TEST_UPDATE_INFO_URL"); ok {
 		infoURL = url
 	}
-	return NewChecker(cfg, an, infoURL, constants.BranchName, constants.Version, httpreq.New())
+	return NewChecker(cfg, an, infoURL, httpreq.New())
 }
 
-func NewChecker(cfg Configurable, an analytics.Dispatcher, infoURL, currentChannel, currentVersion string, httpget httpGetter) *Checker {
+func NewChecker(cfg Configurable, an analytics.Dispatcher, infoURL string, httpget httpGetter) *Checker {
 	return &Checker{
 		cfg,
 		an,
 		infoURL,
-		currentChannel,
-		currentVersion,
 		httpget,
 		nil,
 		make(chan struct{}),
@@ -69,7 +65,7 @@ func NewChecker(cfg Configurable, an analytics.Dispatcher, infoURL, currentChann
 }
 
 func (u *Checker) CheckFor(desiredChannel, desiredVersion string) (*AvailableUpdate, error) {
-	info, err := u.GetUpdateInfo(desiredChannel, desiredVersion)
+	info, err := u.getUpdateInfo(desiredChannel, desiredVersion)
 	if err != nil {
 		return nil, errs.Wrap(err, "Failed to get update info")
 	}
@@ -94,15 +90,7 @@ func (u *Checker) infoURL(tag, desiredVersion, branchName, platform string) stri
 	return u.apiInfoURL + "/info?" + v.Encode()
 }
 
-func (u *Checker) GetUpdateInfo(desiredChannel, desiredVersion string) (*AvailableUpdate, error) {
-	if desiredChannel == "" {
-		if overrideBranch := os.Getenv(constants.UpdateBranchEnvVarName); overrideBranch != "" {
-			desiredChannel = overrideBranch
-		} else {
-			desiredChannel = u.currentChannel
-		}
-	}
-
+func (u *Checker) getUpdateInfo(desiredChannel, desiredVersion string) (*AvailableUpdate, error) {
 	tag := u.cfg.GetString(CfgUpdateTag)
 	infoURL := u.infoURL(tag, desiredVersion, desiredChannel, runtime.GOOS)
 	logging.Debug("Getting update info: %s", infoURL)
@@ -129,10 +117,15 @@ func (u *Checker) GetUpdateInfo(desiredChannel, desiredVersion string) (*Availab
 			err = errs.Wrap(err, "Could not fetch update info from %s", infoURL)
 		}
 
-		u.an.EventWithLabel(anaConst.CatUpdates, anaConst.ActUpdateCheck, label, &dimensions.Values{
-			Version: ptr.To(desiredVersion),
-			Error:   ptr.To(msg),
-		})
+		u.an.EventWithLabel(
+			anaConst.CatUpdates,
+			anaConst.ActUpdateCheck,
+			label,
+			&dimensions.Values{
+				Version: ptr.To(desiredVersion),
+				Error:   ptr.To(msg),
+			},
+		)
 		return nil, err
 	}
 
@@ -140,6 +133,15 @@ func (u *Checker) GetUpdateInfo(desiredChannel, desiredVersion string) (*Availab
 	if err := json.Unmarshal(res, &info); err != nil {
 		return nil, errs.Wrap(err, "Could not unmarshal update info: %s", res)
 	}
+
+	u.an.EventWithLabel(
+		anaConst.CatUpdates,
+		anaConst.ActUpdateCheck,
+		anaConst.UpdateLabelAvailable,
+		&dimensions.Values{
+			Version: ptr.To(info.Version),
+		},
+	)
 
 	return info, nil
 }

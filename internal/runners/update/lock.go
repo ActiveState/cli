@@ -5,7 +5,6 @@ import (
 
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/captain"
-	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/multilog"
@@ -137,20 +136,10 @@ func confirmLock(prom prompt.Prompter) error {
 }
 
 func fetchExactVersion(an analytics.Dispatcher, svc *model.SvcModel, channel, version string) (string, error) {
-	if channel != constants.BranchName {
-		version = "" // force update
-	}
-
 	upd, err := svc.CheckUpdate(context.Background(), channel, version)
 	if err != nil {
 		return "", locale.WrapInputError(err, "err_update_fetch", "Could not retrieve update information, please verify that '{{.V0}}' is a valid channel.", channel)
 	}
 
-	avUpdate := updater.NewAvailableUpdate(upd.Channel, upd.Version, upd.Platform, upd.Path, upd.Sha256, "")
-	update := updater.NewUpdate(an, avUpdate)
-	if update.ShouldSkip() {
-		return constants.Version, nil
-	}
-
-	return update.AvailableUpdate.Version, nil
+	return upd.Version, nil
 }

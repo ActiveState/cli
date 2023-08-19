@@ -106,7 +106,7 @@ func NewUpdate(an analytics.Dispatcher, avUpdate *AvailableUpdate) *Update {
 	return NewUpdateByOrigin(an, NewOriginDefault(), avUpdate)
 }
 
-func (u *Update) ShouldSkip() bool {
+func (u *Update) NotNeeded() bool {
 	return os.Getenv(constants.ForceUpdateEnvVarName) != "true" &&
 		u.AvailableUpdate.Channel == u.Origin.Channel &&
 		u.AvailableUpdate.Version == u.Origin.Version
