@@ -137,22 +137,20 @@ func (r *Resolver) AvailableUpdate(ctx context.Context, desiredChannel, desiredV
 	case desiredChannel == constants.BranchName && desiredVersion == "":
 		avUpdate, ok = r.updatePoller.ValueFromCache().(*updater.AvailableUpdate)
 		if !ok || avUpdate == nil {
+			avUpdate = &updater.AvailableUpdate{}
 			logging.Debug("No update info in poller cache")
-
-			avUpdate, err = updateFromChecker(r.cfg, r.an, desiredChannel, desiredVersion)
-			if err != nil {
-				return nil, err
-			}
-		} else {
-			logging.Debug("Update info pulled from poller cache")
+			return nil, nil
 		}
+
+		logging.Debug("Update info pulled from poller cache")
 
 	default:
 		logging.Debug("Update info requested for specific branch/version")
 
-		avUpdate, err = updateFromChecker(r.cfg, r.an, desiredChannel, desiredVersion)
+		upchecker := updater.NewDefaultChecker(r.cfg, r.an)
+		avUpdate, err = upchecker.CheckFor(desiredChannel, desiredVersion)
 		if err != nil {
-			return nil, err
+			return nil, errs.Wrap(err, "Failed to check for specified channel/version: %s/%s", desiredChannel, desiredVersion)
 		}
 	}
 
@@ -165,17 +163,6 @@ func (r *Resolver) AvailableUpdate(ctx context.Context, desiredChannel, desiredV
 	}
 
 	return availableUpdate, nil
-}
-
-func updateFromChecker(cfg *config.Instance, an *sync.Client, channel, version string) (*updater.AvailableUpdate, error) {
-	logging.Debug("Update info pulled directly")
-
-	upchecker := updater.NewDefaultChecker(cfg, an)
-	update, err := upchecker.CheckFor(channel, version)
-	if err != nil {
-		return nil, errs.Wrap(err, "Failed to check for specified channel/version: %s/%s", channel, version)
-	}
-	return update, nil
 }
 
 func (r *Resolver) Projects(ctx context.Context) ([]*graph.Project, error) {

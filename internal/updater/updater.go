@@ -74,7 +74,18 @@ func NewAvailableUpdate(channel, version, platform, path, sha256, tag string) *A
 }
 
 func NewAvailableUpdateFromGraph(au *graph.AvailableUpdate) *AvailableUpdate {
+	if au == nil {
+		return &AvailableUpdate{}
+	}
 	return NewAvailableUpdate(au.Channel, au.Version, au.Platform, au.Path, au.Sha256, "")
+}
+
+func (u *AvailableUpdate) IsValid() bool {
+	return u != nil && u.Channel != "" && u.Version != "" && u.Platform != "" && u.Path != "" && u.Sha256 != ""
+}
+
+func (u *AvailableUpdate) Differs(origin *Origin) bool {
+	return u.Channel != origin.Channel || u.Version != origin.Version
 }
 
 type Update struct {
@@ -107,9 +118,9 @@ func NewUpdate(an analytics.Dispatcher, avUpdate *AvailableUpdate) *Update {
 }
 
 func (u *Update) NotNeeded() bool {
-	return os.Getenv(constants.ForceUpdateEnvVarName) != "true" &&
-		u.AvailableUpdate.Channel == u.Origin.Channel &&
-		u.AvailableUpdate.Version == u.Origin.Version
+	return !u.AvailableUpdate.IsValid() ||
+		(os.Getenv(constants.ForceUpdateEnvVarName) != "true" &&
+			u.AvailableUpdate.Differs(u.Origin))
 }
 
 func (u *Update) DownloadAndUnpack() (string, error) {
