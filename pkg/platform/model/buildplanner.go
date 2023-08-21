@@ -2,7 +2,6 @@ package model
 
 import (
 	"errors"
-	"net/http"
 	"os"
 	"regexp"
 	"strconv"
@@ -76,7 +75,7 @@ func NewBuildPlannerModel(auth *authentication.Auth) *BuildPlanner {
 	bpURL := api.GetServiceURL(api.ServiceBuildPlanner).String()
 	logging.Debug("Using build planner at: %s", bpURL)
 
-	client := gqlclient.NewWithOpts(bpURL, 0, graphql.WithHTTPClient(&http.Client{}))
+	client := gqlclient.NewWithOpts(bpURL, 0, graphql.WithHTTPClient(api.NewHTTPClient()))
 
 	if auth != nil && auth.Authenticated() {
 		client.SetTokenProvider(auth)
