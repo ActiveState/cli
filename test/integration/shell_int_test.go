@@ -9,7 +9,6 @@ import (
 
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/config"
-	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
@@ -292,27 +291,33 @@ func (suite *ShellIntegrationTestSuite) TestNestedShellNotification() {
 	cfg, err := config.New()
 	suite.Require().NoError(err)
 
+	// Setup subshell. Since our CI tests are running in bash, override with zsh on macOS.
 	var ss subshell.SubShell
 	env := []string{"ACTIVESTATE_CLI_DISABLE_RUNTIME=false"}
 	if runtime.GOOS != "darwin" || !condition.OnCI() {
 		ss = subshell.New(cfg)
 	} else {
-		os.Setenv("SHELL", "zsh") // GitHub actions runs on bash, so override with zsh
+		os.Setenv("SHELL", "zsh")
 		ss = subshell.New(cfg)
 		os.Unsetenv("SHELL")
 		env = append(env, "SHELL=zsh")
 	}
-	os.Setenv(constants.HomeEnvVarName, ts.Dirs.HomeDir)
-	err = subshell.ConfigureAvailableShells(ss, cfg, nil, sscommon.InstallID, true) // mimic installer
-	os.Unsetenv(constants.HomeEnvVarName)
-	suite.Require().NoError(err)
 
-	os.Setenv(constants.HomeEnvVarName, ts.Dirs.HomeDir)
-	rcFile, err := ss.RcFile()
-	os.Unsetenv(constants.HomeEnvVarName)
-	suite.Require().NoError(err)
+	// Setup shell-specific RC file in test-specific home directory.
+	var rcFile, rcFileAppend string
+	switch ss.Shell() {
+	case "bash":
+		rcFile = filepath.Join(ts.Dirs.HomeDir, ".bashrc")
+		rcFileAppend = "bashrc_append.sh"
+	case "zsh":
+		rcFile = filepath.Join(ts.Dirs.HomeDir, ".zshrc")
+		rcFileAppend = "zshrc_append.sh"
+	default:
+		suite.Fail("Unknown subshell: %s", ss.Shell())
+	}
 	suite.Require().Equal(filepath.Dir(rcFile), ts.Dirs.HomeDir, "rc file not in test suite homedir")
-	suite.Require().FileExists(rcFile)
+	fileutils.TouchFileUnlessExists(rcFile)
+	sscommon.WriteRcFile(rcFileAppend, rcFile, sscommon.InstallID, nil)
 	suite.Require().Contains(string(fileutils.ReadFileUnsafe(rcFile)), "State Tool is operating on project")
 
 	cp := ts.Spawn("checkout", "ActiveState-CLI/small-python")
