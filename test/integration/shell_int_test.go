@@ -289,20 +289,27 @@ func (suite *ShellIntegrationTestSuite) TestNestedShellNotification() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	if runtime.GOOS == "darwin" && condition.OnCI() {
-		os.Setenv("SHELL", "zsh") // GitHub actions runs on bash, so override with zsh
-		defer os.Unsetenv("SHELL")
-	}
 	cfg, err := config.New()
 	suite.Require().NoError(err)
 
+	var ss subshell.SubShell
+	env := []string{"ACTIVESTATE_CLI_DISABLE_RUNTIME=false"}
+	if runtime.GOOS != "darwin" || !condition.OnCI() {
+		ss = subshell.New(cfg)
+	} else {
+		os.Setenv("SHELL", "zsh") // GitHub actions runs on bash, so override with zsh
+		ss = subshell.New(cfg)
+		os.Unsetenv("SHELL")
+		env = append(env, "SHELL=zsh")
+	}
 	os.Setenv(constants.HomeEnvVarName, ts.Dirs.HomeDir)
-	defer os.Unsetenv(constants.HomeEnvVarName)
-	ss := subshell.New(cfg)
 	err = subshell.ConfigureAvailableShells(ss, cfg, nil, sscommon.InstallID, true) // mimic installer
+	os.Unsetenv(constants.HomeEnvVarName)
 	suite.Require().NoError(err)
 
+	os.Setenv(constants.HomeEnvVarName, ts.Dirs.HomeDir)
 	rcFile, err := ss.RcFile()
+	os.Unsetenv(constants.HomeEnvVarName)
 	suite.Require().NoError(err)
 	suite.Require().Equal(filepath.Dir(rcFile), ts.Dirs.HomeDir, "rc file not in test suite homedir")
 	suite.Require().FileExists(rcFile)
@@ -314,7 +321,7 @@ func (suite *ShellIntegrationTestSuite) TestNestedShellNotification() {
 
 	cp = ts.SpawnWithOpts(
 		e2e.WithArgs("shell", "small-python"),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"))
+		e2e.AppendEnv(env...))
 	cp.Expect("Activated")
 	suite.Assert().NotContains(cp.TrimmedSnapshot(), "State Tool is operating on project")
 	cp.SendLine(fmt.Sprintf(`export HOME="%s"`, ts.Dirs.HomeDir)) // some shells do not forward this
