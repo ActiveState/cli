@@ -289,14 +289,15 @@ func (suite *ShellIntegrationTestSuite) TestNestedShellNotification() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
+	if runtime.GOOS == "darwin" && condition.OnCI() {
+		os.Setenv("SHELL", "zsh") // GitHub actions runs on bash, so override with zsh
+		defer os.Unsetenv("SHELL")
+	}
 	cfg, err := config.New()
 	suite.Require().NoError(err)
-	if runtime.GOOS == "darwin" && condition.OnCI() {
-		cfg.Set(subshell.ConfigKeyShell, "zsh") // GitHub actions runs on bash, so override with zsh
-	}
 
 	os.Setenv(constants.HomeEnvVarName, ts.Dirs.HomeDir)
-	defer func() { os.Unsetenv(constants.HomeEnvVarName) }()
+	defer os.Unsetenv(constants.HomeEnvVarName)
 	ss := subshell.New(cfg)
 	err = subshell.ConfigureAvailableShells(ss, cfg, nil, sscommon.InstallID, true) // mimic installer
 	suite.Require().NoError(err)
