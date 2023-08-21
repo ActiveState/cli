@@ -297,9 +297,9 @@ func (suite *ShellIntegrationTestSuite) TestNestedShellNotification() {
 	if runtime.GOOS != "darwin" || !condition.OnCI() {
 		ss = subshell.New(cfg)
 	} else {
-		os.Setenv("SHELL", "zsh")
+		cfg.Set(subshell.ConfigKeyShell, "zsh")
 		ss = subshell.New(cfg)
-		os.Unsetenv("SHELL")
+		cfg.Set(subshell.ConfigKeyShell, "")
 		env = append(env, "SHELL=zsh")
 	}
 
