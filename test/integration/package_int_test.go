@@ -367,7 +367,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_headless_operation() {
 }
 
 func (suite *PackageIntegrationTestSuite) TestPackage_operation() {
-	suite.OnlyRunForTags(tagsuite.Package, tagsuite.Package)
+	suite.OnlyRunForTags(tagsuite.Package)
 	if runtime.GOOS == "darwin" {
 		suite.T().Skip("Skipping mac for now as the builds are still too unreliable")
 		return
@@ -409,6 +409,25 @@ func (suite *PackageIntegrationTestSuite) TestPackage_operation() {
 		cp.ExpectRe("(?:Package uninstalled|being built)", 30*time.Second)
 		cp.Wait()
 	})
+}
+
+func (suite *PackageIntegrationTestSuite) TestPackage_Duplicate(ts *e2e.Session) {
+	suite.OnlyRunForTags(tagsuite.Package)
+
+	ts = e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.Spawn("checkout", "ActiveState-CLI/small-python", ".")
+	cp.Expect("Skipping runtime setup")
+	cp.Expect("Checked out project")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("install", "requests") // install
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("install", "requests") // install again
+	cp.ExpectLongString("No change since last commit")
+	cp.ExpectNotExitCode(0)
 }
 
 func (suite *PackageIntegrationTestSuite) PrepareActiveStateYAML(ts *e2e.Session) {
