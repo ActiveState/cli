@@ -288,7 +288,7 @@ func (bp *BuildPlanner) StageCommit(params StageCommitParams) (strfmt.UUID, erro
 	}
 
 	if bpModel.IsErrorResponse(resp.Commit.Type) {
-		return "", bpModel.ProcessCommitError(resp.Commit)
+		return "", bpModel.ProcessCommitError(resp.Commit, "Could not process error response from stage commit")
 	}
 
 	if resp.Commit.CommitID == "" {
@@ -296,34 +296,11 @@ func (bp *BuildPlanner) StageCommit(params StageCommitParams) (strfmt.UUID, erro
 	}
 
 	if resp.Commit.Build == nil {
-		if resp.Error != nil {
-			return "", errs.New(resp.Error.Message)
-		}
 		return "", errs.New("Commit does not contain build")
 	}
 
-	if resp.Commit.Build.PlanningError != nil {
-		var errs []string
-		var isTransient bool
-		for _, se := range resp.Commit.Build.SubErrors {
-			if se.Type != bpModel.RemediableSolveErrorType {
-				continue
-			}
-
-			if se.Message != "" {
-				errs = append(errs, se.Message)
-				isTransient = se.IsTransient
-			}
-			for _, ve := range se.ValidationErrors {
-				if ve.Error != "" {
-					errs = append(errs, ve.Error)
-				}
-			}
-		}
-		return "", &bpModel.BuildPlannerError{
-			ValidationErrors: errs,
-			IsTransient:      isTransient,
-		}
+	if bpModel.IsErrorResponse(resp.Commit.Build.Type) {
+		return "", bpModel.ProcessBuildError(resp.Commit.Build, "Could not get build from commit")
 	}
 
 	return resp.Commit.CommitID, nil
@@ -339,6 +316,10 @@ func (bp *BuildPlanner) GetBuildExpression(owner, project, commitID string) (*bu
 
 	if resp.Commit == nil {
 		return nil, errs.New("Commit is nil")
+	}
+
+	if bpModel.IsErrorResponse(resp.Commit.Type) {
+		return nil, bpModel.ProcessCommitError(resp.Commit, "Could not get build expression from commit")
 	}
 
 	if resp.Commit.Expression == nil {

@@ -154,7 +154,6 @@ func NewBuildPlanResponse(owner, project string) BuildPlan {
 
 type BuildPlanByProject struct {
 	Project *Project `json:"project"`
-	*Error
 }
 
 func (b *BuildPlanByProject) Build() (*Build, error) {
@@ -163,7 +162,7 @@ func (b *BuildPlanByProject) Build() (*Build, error) {
 	}
 
 	if IsErrorResponse(b.Project.Type) {
-		return nil, ProcessProjectError(b.Project)
+		return nil, ProcessProjectError(b.Project, "Could not get build from project response")
 	}
 
 	if b.Project.Commit == nil {
@@ -171,7 +170,7 @@ func (b *BuildPlanByProject) Build() (*Build, error) {
 	}
 
 	if IsErrorResponse(b.Project.Commit.Type) {
-		return nil, ProcessCommitError(b.Project.Commit)
+		return nil, ProcessCommitError(b.Project.Commit, "Could not get build from commit from project response")
 	}
 
 	if b.Project.Commit.Build == nil {
@@ -179,7 +178,7 @@ func (b *BuildPlanByProject) Build() (*Build, error) {
 	}
 
 	if IsErrorResponse(b.Project.Commit.Build.Type) {
-		return nil, ProcessBuildError(b.Project.Commit.Build)
+		return nil, ProcessBuildError(b.Project.Commit.Build, "Could not get build from project commit response")
 	}
 
 	return b.Project.Commit.Build, nil
@@ -190,22 +189,16 @@ func (b *BuildPlanByProject) CommitID() (strfmt.UUID, error) {
 		return "", errs.New("BuildPlanByProject.CommitID: Project is nil")
 	}
 
-	if b.Project.Error != nil {
-		if b.Project.Error.Message != "" {
-			return "", errs.New("BuildPlanByProject.CommitID: Could not get commit ID, API returned project error message: %s", b.Project.Message)
-		}
-		return "", errs.New("BuildPlanByProject.CommitID: Could not retrieve project")
+	if IsErrorResponse(b.Project.Type) {
+		return "", ProcessProjectError(b.Project, "Could not get commit ID from project response")
 	}
 
 	if b.Project.Commit == nil {
 		return "", errs.New("BuildPlanByProject.CommitID: Commit is nil")
 	}
 
-	if b.Project.Commit.Error != nil {
-		if b.Project.Commit.Error.Message != "" {
-			return "", errs.New("BuildPlanByProject.CommitID: Could not get commit ID. API returned commit error message: %s", b.Project.Commit.Message)
-		}
-		return "", errs.New("BuildPlanByProject.CommitID: Could not retrieve commit")
+	if IsErrorResponse(b.Project.Commit.Type) {
+		return "", ProcessCommitError(b.Project.Commit, "Could not get commit ID from project commit response")
 	}
 
 	return b.Project.Commit.CommitID, nil
@@ -213,7 +206,6 @@ func (b *BuildPlanByProject) CommitID() (strfmt.UUID, error) {
 
 type BuildPlanByCommit struct {
 	Commit *Commit `json:"commit"`
-	*Error
 }
 
 func (b *BuildPlanByCommit) Build() (*Build, error) {
@@ -222,7 +214,7 @@ func (b *BuildPlanByCommit) Build() (*Build, error) {
 	}
 
 	if IsErrorResponse(b.Commit.Type) {
-		return nil, ProcessCommitError(b.Commit)
+		return nil, ProcessCommitError(b.Commit, "Could not get build from commit response")
 	}
 
 	if b.Commit.Build == nil {
@@ -230,7 +222,7 @@ func (b *BuildPlanByCommit) Build() (*Build, error) {
 	}
 
 	if IsErrorResponse(b.Commit.Build.Type) {
-		return nil, ProcessBuildError(b.Commit.Build)
+		return nil, ProcessBuildError(b.Commit.Build, "Could not get build from commit response")
 	}
 
 	return b.Commit.Build, nil
@@ -241,11 +233,8 @@ func (b *BuildPlanByCommit) CommitID() (strfmt.UUID, error) {
 		return "", errs.New("BuildPlanByCommit.CommitID: Commit is nil")
 	}
 
-	if b.Commit.Error != nil {
-		if b.Commit.Error.Message != "" {
-			return "", errs.New("BuildPlanByCommit.CommitID: Could not get commit ID, API returned commit error message: %s", b.Commit.Message)
-		}
-		return "", errs.New("BuildPlanByCommit.CommitID: Could not retrieve commit")
+	if IsErrorResponse(b.Commit.Type) {
+		return "", ProcessCommitError(b.Commit, "Could not get commit ID from commit response")
 	}
 
 	return b.Commit.CommitID, nil
@@ -261,26 +250,29 @@ func IsErrorResponse(errorType string) bool {
 		errorType == PlanningErrorType
 }
 
-func ProcessCommitError(commit *Commit) error {
+func ProcessCommitError(commit *Commit, fallbackMessage string) error {
+	if commit.Error == nil {
+		return errs.New(fallbackMessage)
+	}
+
 	switch commit.Type {
 	case NotFoundErrorType:
-		return locale.NewInputError("err_buildplanner_commit_not_found", "{{.V0}}", commit.Message)
+		return locale.NewInputError("err_buildplanner_commit_not_found", "Could not find commit, recieved message: {{.V0}}", commit.Message)
 	case ParseErrorType:
-		return locale.NewInputError("err_buildplanner_parse_error", "The platform failed to parse the build expression, received the following message: {{.V0}}. Path: {{.V1}}", commit.Message, commit.Path)
+		return locale.NewInputError("err_buildplanner_parse_error", "The platform failed to parse the build expression, received the following message: {{.V0}}. Path: {{.V1}}", commit.Message, commit.ParseError.Path)
 	case ForbiddenErrorType:
-		// TODO: Add auth tips?
 		return locale.NewInputError("err_buildplanner_forbidden", "Unable to complete the operation: {{.V0}}, recieved message: {{.V1}}", commit.Operation, commit.Message)
 	case HeadOnBranchMovedErrorType:
-		return locale.NewInputError("err_buildplanner_head_on_branch_moved", "Head on branch {{.V0}} at commit: {{.V1}} has moved, recieved message: {{.V2}}", commit.HeadBranchID.String(), commit.HeadCommitID.String(), commit.Message)
+		return locale.NewInputError("err_buildplanner_head_on_branch_moved", "Head on branch has moved, recieved message: {{.V0}}", commit.Error.Message)
 	case NoChangeSinceLastCommitErrorType:
-		return locale.NewInputError("err_buildplanner_no_change_since_last_commit", "No change since last commit: {{.V0}}, recieved message: {{.V1}}", commit.NoChangeCommitID.String(), commit.Message)
+		return locale.NewInputError("err_buildplanner_no_change_since_last_commit", "No change since last commit, recieved message: {{.V0}}", commit.Error.Message)
 	default:
-		return locale.NewInputError("err_buildplanner_commit", "Encountered error processing commit response")
+		return errs.New(fallbackMessage)
 	}
 }
 
-func ProcessBuildError(build *Build) error {
-	if build.PlanningError != nil {
+func ProcessBuildError(build *Build, fallbackMessage string) error {
+	if build.Type == PlanningErrorType {
 		var errs []string
 		var isTransient bool
 		for _, se := range build.SubErrors {
@@ -307,15 +299,20 @@ func ProcessBuildError(build *Build) error {
 	return locale.NewInputError("err_buildplanner_build", "Encountered error processing build response")
 }
 
-func ProcessProjectError(project *Project) error {
+func ProcessProjectError(project *Project, fallbackMessage string) error {
+	if project.Error == nil {
+		return errs.New(fallbackMessage)
+	}
+
 	if project.Type == NotFoundErrorType {
 		return locale.NewInputError("err_buildplanner_project_not_found", "Unable to find project, recieved message: {{.V0}}", project.Message)
 	}
 
-	return locale.NewInputError("err_buildplanner_project", "Encountered error processing project response")
+	return errs.New(fallbackMessage)
 }
 
 type BuildExpression struct {
+	Type   string  `json:"__typename"`
 	Commit *Commit `json:"commit"`
 	*Error
 }
@@ -324,6 +321,7 @@ type BuildExpression struct {
 // It contains the resulting commit from the operation and any errors.
 // The resulting commit is pushed to the platform automatically.
 type PushCommitResult struct {
+	Type   string  `json:"__typename"`
 	Commit *Commit `json:"pushCommit"`
 	*Error
 }
@@ -333,7 +331,6 @@ type PushCommitResult struct {
 // The resulting commit is NOT pushed to the platform automatically.
 type StageCommitResult struct {
 	Commit *Commit `json:"stageCommit"`
-	*Error
 }
 
 // Error contains an error message.
@@ -504,6 +501,13 @@ type Source struct {
 	Version   string      `json:"version"`
 }
 
+// NotFoundError represents an error that occurred because a resource was not found.
+type NotFoundError struct {
+	Type                  string `json:"type"`
+	Resource              string `json:"resource"`
+	MayNeedAuthentication bool   `json:"mayNeedAuthentication"`
+}
+
 // PlanningError represents an error that occurred during planning.
 type PlanningError struct {
 	Message   string               `json:"message"`
@@ -519,11 +523,14 @@ type ForbiddenError struct {
 	Operation string `json:"operation"`
 }
 
+// HeadOnBranchMovedError represents an error that occurred because the head on
+// a remote branch has moved.
 type HeadOnBranchMovedError struct {
-	HeadCommitID strfmt.UUID `json:"commitId"`
 	HeadBranchID strfmt.UUID `json:"branchId"`
 }
 
+// NoChangeSinceLastCommitError represents an error that occurred because there
+// were no changes since the last commit.
 type NoChangeSinceLastCommitError struct {
 	NoChangeCommitID strfmt.UUID `json:"commitId"`
 }

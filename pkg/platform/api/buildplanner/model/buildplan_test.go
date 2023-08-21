@@ -44,7 +44,7 @@ func TestProcessCommitError(t *testing.T) {
 			assert.NoError(t, err)
 			t.Log(string(data))
 
-			if err := ProcessCommitError(commit); (err != nil) != tt.wantErr {
+			if err := ProcessCommitError(commit, "placeholder"); (err != nil) != tt.wantErr {
 				t.Errorf("ProcessCommitError() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})

@@ -168,14 +168,23 @@ query ($commitID: String!, $organization: String!, $project: String!) {
           message
         }
         ... on NotFound {
+          __typename
+          type
+          resource
+          mayNeedAuthentication
           message
         }
       }
     }
-    ... on Error{
+    ... on Error {
+      __typename
       message
     }
     ... on NotFound {
+      __typename
+      type
+      resource
+      mayNeedAuthentication
       message
     }
   }
