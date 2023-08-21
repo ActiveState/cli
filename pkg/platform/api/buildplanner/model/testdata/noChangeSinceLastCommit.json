@@ -1,7 +1,0 @@
-{
-    "__typename": "NoChangeSinceLastCommit",
-    "expr": null,
-    "commitId": "",
-    "build": null,
-    "message": "Tried to create a commit identical with its parent at 48c1dd2e-0934-459a-ae9e-c121df8a00c3 in project ActiveState-Projects/ActiveState-Perl-5.36.0"
-  }
