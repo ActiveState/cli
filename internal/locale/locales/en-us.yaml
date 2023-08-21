@@ -2078,6 +2078,14 @@ err_country_blocked:
   other: This service is not available in your region.
 err_shortcutdir_writable:
   other: Could not continue as we don't have permission to create [ACTIONABLE]{{.V0}}[/RESET].
+move_prompt:
+  other: |
+    You are about to move the project [NOTICE]{{.V0}}[/RESET] to the organization [NOTICE]{{.V1}}[/RESET].
+    This action will invalidate any local checkouts that already exist for this project. If you or your team members have checked out this project anywhere else, please update them with the new namespace: [ACTIONABLE]{{.V1}}/{{.V2}}[/RESET].
+    Continue?
+edit_prompt_name_notice:
+  other: |
+    Renaming a project will invalidate any local checkouts that already exist for this project. If you or your team members have checked out this project anywhere else, please update them with the new namespace: [ACTIONABLE]{{.V0}}/{{.V1}}[/RESET].
 err_edit_local_checkouts:
   other: Could not update local checkouts
 err_edit_project_mapping:
