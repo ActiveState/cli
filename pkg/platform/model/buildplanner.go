@@ -17,7 +17,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/request"
-	"github.com/ActiveState/cli/pkg/platform/api/headchef"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
 	"github.com/ActiveState/cli/pkg/platform/api/reqsimport"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -53,7 +52,7 @@ type BuildResult struct {
 	CommitID            strfmt.UUID
 	Build               *bpModel.Build
 	BuildStatusResponse *headchef_models.V1BuildStatusResponse
-	BuildStatus         headchef.BuildStatusEnum
+	BuildStatus         string
 	BuildReady          bool
 }
 
@@ -154,6 +153,7 @@ func (bp *BuildPlanner) FetchBuildResult(commitID strfmt.UUID, owner, project st
 		BuildEngine: buildEngine,
 		Build:       build,
 		BuildReady:  build.Status == bpModel.Completed,
+		BuildStatus: build.Status,
 		CommitID:    id,
 	}
 
