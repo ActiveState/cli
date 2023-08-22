@@ -26,6 +26,12 @@ type InstallMarkerMeta struct {
 	Version string `json:"version"`
 }
 
+type StateExeDoesNotExistError struct{ *errs.WrapperError }
+
+func IsStateExeDoesNotExistError(err error) bool {
+	return errs.Matches(err, &StateExeDoesNotExistError{})
+}
+
 func DefaultInstallPath() (string, error) {
 	return InstallPathForBranch(constants.BranchName)
 }
@@ -84,7 +90,7 @@ func InstallPathFromReference(dir string) (string, error) {
 
 	stateExe := filepath.Join(binPath, cmdName)
 	if !fileutils.TargetExists(stateExe) {
-		return "", errs.New("Installation bin directory does not contain %s", stateExe)
+		return "", &StateExeDoesNotExistError{errs.New("Installation bin directory does not contain %s", stateExe)}
 	}
 
 	return filepath.Dir(binPath), nil

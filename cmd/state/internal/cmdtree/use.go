@@ -16,7 +16,7 @@ func newUseCommand(prime *primer.Values) *captain.Command {
 	cmd := captain.NewCommand(
 		"use",
 		"",
-		locale.Tl("use_description", "Use the given project runtime"),
+		locale.Tl("use_description", "Use the given project as your default. This configures it globally in all your shells, and makes State Tool default to it if not other project was found."),
 		prime,
 		[]*captain.Flag{},
 		[]*captain.Argument{
