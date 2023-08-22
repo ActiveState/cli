@@ -21,7 +21,7 @@ func (suite *LanguagesIntegrationTestSuite) TestLanguages_list() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	suite.PrepareActiveStateYAML(ts)
+	ts.PrepareProject("ActiveState-CLI/Languages", "1eb82b25-a564-42ee-a7d4-d51d2ea73cd5")
 
 	cp := ts.Spawn("languages")
 	cp.Expect("Name")
@@ -35,7 +35,7 @@ func (suite *LanguagesIntegrationTestSuite) TestLanguages_listNoCommitID() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	suite.PrepareActiveStateYAMLNoCommitID(ts)
+	ts.PrepareProject("ActiveState-CLI/Languages", "")
 
 	cp := ts.Spawn("languages")
 	cp.ExpectNotExitCode(0)
@@ -46,7 +46,7 @@ func (suite *LanguagesIntegrationTestSuite) TestLanguages_install() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	suite.PrepareActiveStateYAML(ts)
+	ts.PrepareProject("ActiveState-CLI/Languages", "1eb82b25-a564-42ee-a7d4-d51d2ea73cd5")
 
 	ts.LoginAsPersistentUser()
 
@@ -78,16 +78,6 @@ func (suite *LanguagesIntegrationTestSuite) TestLanguages_install() {
 	suite.Require().NoError(err, "parsing version %s", vs)
 	minVersion := goversion.Must(goversion.NewVersion("3.8.1"))
 	suite.True(!v.LessThan(minVersion), "%v >= 3.8.1", v)
-}
-
-func (suite *LanguagesIntegrationTestSuite) PrepareActiveStateYAML(ts *e2e.Session) {
-	asyData := `project: "https://platform.activestate.com/ActiveState-CLI/Languages?commitID=1eb82b25-a564-42ee-a7d4-d51d2ea73cd5&branch=main"`
-	ts.PrepareActiveStateYAML(asyData)
-}
-
-func (suite *LanguagesIntegrationTestSuite) PrepareActiveStateYAMLNoCommitID(ts *e2e.Session) {
-	asyData := `project: "https://platform.activestate.com/ActiveState-CLI/Languages"`
-	ts.PrepareActiveStateYAML(asyData)
 }
 
 func (suite *LanguagesIntegrationTestSuite) TestJSON() {

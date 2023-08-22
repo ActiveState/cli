@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"log"
 	"net/http"
+	"os"
 	"reflect"
 	"strings"
 
@@ -44,6 +45,14 @@ func (r *RoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
 	resp, err := r.transport.RoundTrip(req)
 	if err != nil && resp != nil && resp.StatusCode == http.StatusForbidden && strings.EqualFold(resp.Header.Get("server"), "cloudfront") {
 		return nil, platform.NewCountryBlockedError()
+	}
+
+	// This code block is for integration testing purposes only.
+	if os.Getenv(constants.PlatformApiPrintRequestsEnvVarName) != "" &&
+		(condition.OnCI() || condition.BuiltOnDevMachine()) {
+		logging.Debug("URL: %s\n", req.URL)
+		logging.Debug("User-Agent: %s\n", resp.Request.Header.Get("User-Agent"))
+		logging.Debug("X-Requestor: %s\n", resp.Request.Header.Get("X-Requestor"))
 	}
 
 	return resp, err

@@ -14,6 +14,7 @@ import (
 
 	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/platform/runtime/buildscript"
 
 	"github.com/ActiveState/cli/internal/analytics"
 	anaConsts "github.com/ActiveState/cli/internal/analytics/constants"
@@ -113,6 +114,7 @@ type Targeter interface {
 	Dir() string
 	Headless() bool
 	Trigger() target.Trigger
+	ProjectDir() string
 
 	// ReadOnly communicates that this target should only use cached runtime information (ie. don't check for updates)
 	ReadOnly() bool
@@ -148,11 +150,6 @@ type artifactUninstaller func() error
 
 // New returns a new Setup instance that can install a Runtime locally on the machine.
 func New(target Targeter, eventHandler events.Handler, auth *authentication.Auth, an analytics.Dispatcher) *Setup {
-	return NewWithModel(target, eventHandler, auth, an)
-}
-
-// NewWithModel returns a new Setup instance with a customized model eg., for testing purposes
-func NewWithModel(target Targeter, eventHandler events.Handler, auth *authentication.Auth, an analytics.Dispatcher) *Setup {
 	cache, err := artifactcache.New()
 	if err != nil {
 		multilog.Error("Could not create artifact cache: %v", err)
@@ -552,6 +549,16 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 
 	if err := s.store.StoreBuildPlan(buildResult.Build); err != nil {
 		return nil, nil, errs.Wrap(err, "Could not save recipe file.")
+	}
+
+	if err := s.store.StoreBuildExpression(buildResult.BuildExpression, s.target.CommitUUID().String()); err != nil {
+		return nil, nil, errs.Wrap(err, "Could not save buildexpression file.")
+	}
+
+	if s.target.ProjectDir() != "" {
+		if err := buildscript.Update(s.target, buildResult.BuildExpression, s.auth); err != nil {
+			return nil, nil, errs.Wrap(err, "Could not save build script.")
+		}
 	}
 
 	return buildResult.OrderedArtifacts(), uninstallArtifacts, nil
