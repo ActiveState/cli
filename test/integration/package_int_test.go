@@ -426,7 +426,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_Duplicate() {
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("install", "requests") // install again
-	cp.ExpectLongString("No change since last commit")
+	cp.ExpectLongString("No new changes to commit")
 	cp.ExpectNotExitCode(0)
 }
 
