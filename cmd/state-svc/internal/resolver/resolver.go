@@ -137,7 +137,6 @@ func (r *Resolver) AvailableUpdate(ctx context.Context, desiredChannel, desiredV
 	case desiredChannel == constants.BranchName && desiredVersion == "":
 		avUpdate, ok = r.updatePoller.ValueFromCache().(*updater.AvailableUpdate)
 		if !ok || avUpdate == nil {
-			avUpdate = &updater.AvailableUpdate{}
 			logging.Debug("No update info in poller cache")
 			return nil, nil
 		}
