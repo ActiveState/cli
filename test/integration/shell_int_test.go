@@ -7,10 +7,10 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/subshell"
+	"github.com/ActiveState/cli/internal/subshell/bash"
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
 	"github.com/ActiveState/cli/internal/subshell/zsh"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
@@ -288,36 +288,25 @@ func (suite *ShellIntegrationTestSuite) TestNestedShellNotification() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	cfg, err := config.New()
-	suite.Require().NoError(err)
-
-	// Setup subshell. Since our CI tests are running in bash, override with zsh on macOS.
 	var ss subshell.SubShell
+	var rcFile string
 	env := []string{"ACTIVESTATE_CLI_DISABLE_RUNTIME=false"}
-	if runtime.GOOS != "darwin" || !condition.OnCI() {
-		ss = subshell.New(cfg)
-	} else {
-		cfg.Set(subshell.ConfigKeyShell, "zsh")
-		ss = subshell.New(cfg)
-		cfg.Set(subshell.ConfigKeyShell, "")
-		env = append(env, "SHELL=zsh")
-	}
-
-	// Setup shell-specific RC file in test-specific home directory.
-	var rcFile, rcFileAppend string
-	switch ss.Shell() {
-	case "bash":
-		rcFile = filepath.Join(ts.Dirs.HomeDir, ".bashrc")
-		rcFileAppend = "bashrc_append.sh"
-	case "zsh":
+	switch runtime.GOOS {
+	case "darwin":
+		ss = &zsh.SubShell{}
+		ss.SetBinary("zsh")
 		rcFile = filepath.Join(ts.Dirs.HomeDir, ".zshrc")
-		rcFileAppend = "zshrc_append.sh"
+		suite.Require().NoError(sscommon.WriteRcFile("zshrc_append.sh", rcFile, sscommon.DefaultID, nil))
+		env = append(env, "SHELL=zsh") // override since CI tests are running on bash
+	case "linux":
+		ss = &bash.SubShell{}
+		ss.SetBinary("bash")
+		rcFile = filepath.Join(ts.Dirs.HomeDir, ".bashrc")
+		suite.Require().NoError(sscommon.WriteRcFile("bashrc_append.sh", rcFile, sscommon.DefaultID, nil))
 	default:
-		suite.Fail("Unknown subshell: %s", ss.Shell())
+		suite.Fail("Unsupported OS")
 	}
 	suite.Require().Equal(filepath.Dir(rcFile), ts.Dirs.HomeDir, "rc file not in test suite homedir")
-	fileutils.TouchFileUnlessExists(rcFile)
-	sscommon.WriteRcFile(rcFileAppend, rcFile, sscommon.InstallID, nil)
 	suite.Require().Contains(string(fileutils.ReadFileUnsafe(rcFile)), "State Tool is operating on project")
 
 	cp := ts.Spawn("checkout", "ActiveState-CLI/small-python")
