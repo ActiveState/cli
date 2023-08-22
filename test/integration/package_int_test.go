@@ -411,10 +411,10 @@ func (suite *PackageIntegrationTestSuite) TestPackage_operation() {
 	})
 }
 
-func (suite *PackageIntegrationTestSuite) TestPackage_Duplicate(ts *e2e.Session) {
+func (suite *PackageIntegrationTestSuite) TestPackage_Duplicate() {
 	suite.OnlyRunForTags(tagsuite.Package)
 
-	ts = e2e.New(suite.T(), false)
+	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
 	cp := ts.Spawn("checkout", "ActiveState-CLI/small-python", ".")
