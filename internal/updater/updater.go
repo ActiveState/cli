@@ -84,8 +84,8 @@ func (u *AvailableUpdate) IsValid() bool {
 	return u != nil && u.Channel != "" && u.Version != "" && u.Platform != "" && u.Path != "" && u.Sha256 != ""
 }
 
-func (u *AvailableUpdate) Differs(origin *Origin) bool {
-	return u.Channel != origin.Channel || u.Version != origin.Version
+func (u *AvailableUpdate) Equals(origin *Origin) bool {
+	return u.Channel == origin.Channel && u.Version == origin.Version
 }
 
 type Update struct {
@@ -120,7 +120,7 @@ func NewUpdate(an analytics.Dispatcher, avUpdate *AvailableUpdate) *Update {
 func (u *Update) NotNeeded() bool {
 	return !u.AvailableUpdate.IsValid() ||
 		(os.Getenv(constants.ForceUpdateEnvVarName) != "true" &&
-			u.AvailableUpdate.Differs(u.Origin))
+			u.AvailableUpdate.Equals(u.Origin))
 }
 
 func (u *Update) DownloadAndUnpack() (string, error) {

@@ -12,36 +12,40 @@ func newAvailableUpdate(channel, version string) *AvailableUpdate {
 
 func TestUpdateNotNeeded(t *testing.T) {
 	tests := []struct {
-		Name             string
-		OriginChannel    string
-		OriginVersion    string
-		AvailableChannel string
-		AvailableVersion string
-		NotNeeded        bool
+		Name            string
+		Origin          *Origin
+		AvailableUpdate *AvailableUpdate
+		NotNeeded       bool
 	}{
 		{
-			Name:          "same-version",
-			OriginChannel: "master", OriginVersion: "1.2.3",
-			AvailableChannel: "master", AvailableVersion: "1.2.3",
-			NotNeeded: true,
+			Name:            "same-version",
+			Origin:          &Origin{Channel: "master", Version: "1.2.3"},
+			AvailableUpdate: newAvailableUpdate("master", "1.2.3"),
+			NotNeeded:       true,
 		},
 		{
-			Name:          "updated-version",
-			OriginChannel: "master", OriginVersion: "2.3.4",
-			AvailableChannel: "master", AvailableVersion: "2.3.5",
-			NotNeeded: false,
+			Name:            "updated-version",
+			Origin:          &Origin{Channel: "master", Version: "2.3.4"},
+			AvailableUpdate: newAvailableUpdate("master", "2.3.5"),
+			NotNeeded:       false,
 		},
 		{
-			Name:          "check-different-channel",
-			OriginChannel: "master", OriginVersion: "1.2.3",
-			AvailableChannel: "beta", AvailableVersion: "1.2.3",
-			NotNeeded: false,
+			Name:            "check-different-channel",
+			Origin:          &Origin{Channel: "master", Version: "3.4.5"},
+			AvailableUpdate: newAvailableUpdate("beta", "3.4.5"),
+			NotNeeded:       false,
+		},
+		{
+			Name:            "empty AvailableUpdate",
+			Origin:          &Origin{"master", "5.6.7"},
+			AvailableUpdate: &AvailableUpdate{},
+			NotNeeded:       true,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.Name, func(t *testing.T) {
-			upd := NewUpdateByOrigin(nil, &Origin{Channel: tt.OriginChannel, Version: tt.OriginVersion}, newAvailableUpdate(tt.AvailableChannel, tt.AvailableVersion))
+			upd := NewUpdateByOrigin(nil, tt.Origin, tt.AvailableUpdate)
 			assert.Equal(t, tt.NotNeeded, upd.NotNeeded())
 		})
 	}
