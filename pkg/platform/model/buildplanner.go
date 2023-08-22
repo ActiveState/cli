@@ -156,12 +156,12 @@ func (bp *BuildPlanner) FetchBuildResult(commitID strfmt.UUID, owner, project st
 	}
 
 	res := BuildResult{
-		BuildEngine: buildEngine,
-		Build:       build,
-		BuildReady:  build.Status == bpModel.Completed,
-		BuildStatus: build.Status,
-		CommitID:    id,
-    BuildExpression: expr,
+		BuildEngine:     buildEngine,
+		Build:           build,
+		BuildReady:      build.Status == bpModel.Completed,
+		BuildStatus:     build.Status,
+		CommitID:        id,
+		BuildExpression: expr,
 	}
 
 	// We want to extract the recipe ID from the BuildLogIDs.
