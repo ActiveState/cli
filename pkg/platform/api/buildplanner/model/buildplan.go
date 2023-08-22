@@ -263,7 +263,7 @@ func ProcessCommitError(commit *Commit, fallbackMessage string) error {
 	case ForbiddenErrorType:
 		return locale.NewInputError("err_buildplanner_forbidden", "Operation forbidden: {{.V0}}, received message: {{.V1}}", commit.Operation, commit.Message)
 	case HeadOnBranchMovedErrorType:
-		return errs.Wrap(locale.NewInputError("err_buildplanner_head_on_branch_moved", "The branch you're trying to update has changed remotely, please run '[ACTIONABLE]state pull[/RESET]'."), "received message: " + commit.Error.Message)
+		return errs.Wrap(locale.NewInputError("err_buildplanner_head_on_branch_moved", "The branch you're trying to update has changed remotely, please run '[ACTIONABLE]state pull[/RESET]'."), "received message: "+commit.Error.Message)
 	case NoChangeSinceLastCommitErrorType:
 		return errs.Wrap(locale.NewInputError("err_buildplanner_no_change_since_last_commit", "No new changes to commit."), commit.Error.Message)
 	default:
@@ -272,6 +272,10 @@ func ProcessCommitError(commit *Commit, fallbackMessage string) error {
 }
 
 func ProcessBuildError(build *Build, fallbackMessage string) error {
+	if build.Error == nil {
+		return errs.New(fallbackMessage)
+	}
+
 	if build.Type == PlanningErrorType {
 		var errs []string
 		var isTransient bool
