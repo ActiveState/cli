@@ -117,42 +117,6 @@ func (suite *UpdateIntegrationTestSuite) TestUpdate() {
 	suite.testUpdate(ts, filepath.Dir(ts.Dirs.Bin))
 }
 
-type iterantCheck struct {
-	t     *testing.T
-	iters int
-	pause time.Duration
-}
-
-func newIterantCheck(t *testing.T, iters int, pause time.Duration) *iterantCheck {
-	return &iterantCheck{
-		t:     t,
-		iters: iters,
-		pause: pause,
-	}
-}
-
-func (c *iterantCheck) expect(text func() string, substrs ...string) {
-	printf := c.t.Logf
-	pause := c.pause
-
-	for i := 0; i < c.iters; i++ {
-		if i == c.iters-1 {
-			printf = c.t.Fatalf
-			pause = 0
-		}
-
-		txt := text()
-		for _, substr := range substrs {
-			if strings.Contains(txt, substr) {
-				return
-			}
-			printf("Expected to find:\n%q\nReceived\n%q", substr, txt)
-		}
-
-		time.Sleep(pause)
-	}
-}
-
 func (suite *UpdateIntegrationTestSuite) testUpdate(ts *e2e.Session, baseDir string, opts ...e2e.SpawnOptions) {
 	cfg, err := config.NewCustom(ts.Dirs.Config, singlethread.New(), true)
 	suite.Require().NoError(err)
@@ -178,7 +142,6 @@ func (suite *UpdateIntegrationTestSuite) testUpdate(ts *e2e.Session, baseDir str
 	icheck := newIterantCheck(suite.T(), 4, time.Second*3)
 	icheck.expect(textFn, "Updating State Tool to")
 	icheck.expect(textFn, "Installing Update")
-	icheck.expect(textFn, "slarty")
 }
 
 func (suite *UpdateIntegrationTestSuite) TestUpdate_Repair() {
@@ -317,7 +280,6 @@ func (suite *UpdateIntegrationTestSuite) testAutoUpdate(ts *e2e.Session, baseDir
 	icheck := newIterantCheck(suite.T(), 3, time.Second*4)
 	icheck.expect(textFn, "Auto Update")
 	icheck.expect(textFn, "Updating State Tool")
-	icheck.expect(textFn, "slarty")
 }
 
 func (suite *UpdateIntegrationTestSuite) installLatestReleaseVersion(ts *e2e.Session, dir string) {
@@ -377,4 +339,40 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateToCurrent() {
 	suite.installLatestReleaseVersion(ts, installDir)
 
 	suite.testUpdate(ts, installDir, e2e.AppendEnv(fmt.Sprintf("ACTIVESTATE_CLI_UPDATE_BRANCH=%s", constants.BranchName)))
+}
+
+type iterantCheck struct {
+	t     *testing.T
+	iters int
+	pause time.Duration
+}
+
+func newIterantCheck(t *testing.T, iters int, pause time.Duration) *iterantCheck {
+	return &iterantCheck{
+		t:     t,
+		iters: iters,
+		pause: pause,
+	}
+}
+
+func (c *iterantCheck) expect(text func() string, substrs ...string) {
+	printf := c.t.Logf
+	pause := c.pause
+
+	for i := 0; i < c.iters; i++ {
+		if i == c.iters-1 {
+			printf = c.t.Fatalf
+			pause = 0
+		}
+
+		txt := text()
+		for _, substr := range substrs {
+			if strings.Contains(txt, substr) {
+				return
+			}
+			printf("Expected to find:\n%q\nReceived:\n%q", substr, txt)
+		}
+
+		time.Sleep(pause)
+	}
 }
