@@ -234,6 +234,11 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 
 	err = runbits.RefreshRuntime(r.auth, r.out, r.analytics, proj, commitID, true, target.TriggerInit, r.svcModel)
 	if err != nil {
+		logging.Debug("Deleting remotely created project due to runtime setup error")
+		err2 := model.DeleteProject(namespace.Owner, namespace.Project, r.auth)
+		if err2 != nil {
+			multilog.Error("Error deleting remotely created project after runtime setup error: %v", errs.JoinMessage(err2))
+		}
 		return locale.WrapError(err, "err_init_refresh", "Could not setup runtime after init")
 	}
 
