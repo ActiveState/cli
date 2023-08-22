@@ -15,9 +15,6 @@ type buildPlanByStageCommit struct {
 	vars map[string]interface{}
 }
 
-// TODO: When making the same request with the state tool the query is now creating a new commit
-// with the same package as the last commit when it should be returning an error. Look into this
-// and file a bug with PB if necessary.
 func (b *buildPlanByStageCommit) Query() string {
 	return `
 mutation ($organization: String!, $project: String!, $parentCommit: ID, $expr:BuildExpr!) {
