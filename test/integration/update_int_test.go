@@ -145,8 +145,7 @@ func (suite *UpdateIntegrationTestSuite) testUpdate(ts *e2e.Session, baseDir str
 	}
 
 	rptCheck := newRepeatCheck(suite.T(), 4, time.Second*3)
-	rptCheck.contains(textFn, "Updating State Tool to")
-	rptCheck.contains(textFn, "Installing Update")
+	rptCheck.contains(textFn, "Updating State Tool to", "Installing Update")
 }
 
 func (suite *UpdateIntegrationTestSuite) TestUpdate_Repair() {
@@ -174,10 +173,14 @@ func (suite *UpdateIntegrationTestSuite) TestUpdate_Repair() {
 		e2e.AppendEnv(suite.env(false, true)...),
 	}
 
-	cp := ts.SpawnCmdWithOpts(stateExePath, spawnOpts...)
-	cp.Expect("Updating State Tool to version")
-	cp.Expect("Installing Update", time.Minute)
-	cp.ExpectExitCode(0)
+	textFn := func() string {
+		cp := ts.SpawnCmdWithOpts(stateExePath, spawnOpts...)
+		cp.Wait(time.Minute * 3)
+		return cp.Snapshot()
+	}
+
+	rptCheck := newRepeatCheck(suite.T(), 4, time.Second*3)
+	rptCheck.contains(textFn, "Updating State Tool to version", "Installing Update")
 
 	suite.NoFileExists(filepath.Join(ts.Dirs.Bin, constants.StateCmd+exeutils.Extension), "State Tool executable at install dir should no longer exist")
 	suite.NoFileExists(filepath.Join(ts.Dirs.Bin, constants.StateSvcCmd+exeutils.Extension), "State Service executable at install dir should no longer exist")
@@ -283,8 +286,7 @@ func (suite *UpdateIntegrationTestSuite) testAutoUpdate(ts *e2e.Session, baseDir
 	}
 
 	rptCheck := newRepeatCheck(suite.T(), 3, time.Second*4)
-	rptCheck.contains(textFn, "Auto Update")
-	rptCheck.contains(textFn, "Updating State Tool")
+	rptCheck.contains(textFn, "Auto Update", "Updating State Tool")
 }
 
 func (suite *UpdateIntegrationTestSuite) installLatestReleaseVersion(ts *e2e.Session, dir string) {
