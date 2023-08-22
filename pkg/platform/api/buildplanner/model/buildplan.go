@@ -257,15 +257,15 @@ func ProcessCommitError(commit *Commit, fallbackMessage string) error {
 
 	switch commit.Type {
 	case NotFoundErrorType:
-		return locale.NewInputError("err_buildplanner_commit_not_found", "Could not find commit, recieved message: {{.V0}}", commit.Message)
+		return locale.NewInputError("err_buildplanner_commit_not_found", "Could not find commit, received message: {{.V0}}", commit.Message)
 	case ParseErrorType:
-		return locale.NewInputError("err_buildplanner_parse_error", "The platform failed to parse the build expression, received the following message: {{.V0}}. Path: {{.V1}}", commit.Message, commit.ParseError.Path)
+		return locale.NewInputError("err_buildplanner_parse_error", "The platform failed to parse the build expression, received message: {{.V0}}. Path: {{.V1}}", commit.Message, commit.ParseError.Path)
 	case ForbiddenErrorType:
-		return locale.NewInputError("err_buildplanner_forbidden", "Unable to complete the operation: {{.V0}}, recieved message: {{.V1}}", commit.Operation, commit.Message)
+		return locale.NewInputError("err_buildplanner_forbidden", "Operation forbidden: {{.V0}}, received message: {{.V1}}", commit.Operation, commit.Message)
 	case HeadOnBranchMovedErrorType:
-		return locale.NewInputError("err_buildplanner_head_on_branch_moved", "Head on branch has moved, recieved message: {{.V0}}", commit.Error.Message)
+		return errs.Wrap(locale.NewInputError("err_buildplanner_head_on_branch_moved", "The branch you're trying to update has changed remotely, please run '[ACTIONABLE]state pull[/RESET]'."), "received message: " + commit.Error.Message)
 	case NoChangeSinceLastCommitErrorType:
-		return locale.NewInputError("err_buildplanner_no_change_since_last_commit", "No change since last commit, recieved message: {{.V0}}", commit.Error.Message)
+		return errs.Wrap(locale.NewInputError("err_buildplanner_no_change_since_last_commit", "No new changes to commit."), commit.Error.Message)
 	default:
 		return errs.New(fallbackMessage)
 	}
