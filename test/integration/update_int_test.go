@@ -103,9 +103,14 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateAvailable() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	cp := ts.SpawnWithOpts(e2e.WithArgs("--version"), e2e.AppendEnv(suite.env(false, true)...))
-	cp.Expect("Update Available")
-	cp.ExpectExitCode(0)
+	textFn := func() string {
+		cp := ts.SpawnWithOpts(e2e.WithArgs("--version"), e2e.AppendEnv(suite.env(false, true)...))
+		cp.ExpectExitCode(0)
+		return cp.Snapshot()
+	}
+
+	rptCheck := newRepeatCheck(suite.T(), 4, time.Second*3)
+	rptCheck.contains(textFn, "Update Available")
 }
 
 func (suite *UpdateIntegrationTestSuite) TestUpdate() {
@@ -139,9 +144,9 @@ func (suite *UpdateIntegrationTestSuite) testUpdate(ts *e2e.Session, baseDir str
 		return cp.Snapshot()
 	}
 
-	icheck := newIterantCheck(suite.T(), 4, time.Second*3)
-	icheck.expect(textFn, "Updating State Tool to")
-	icheck.expect(textFn, "Installing Update")
+	rptCheck := newRepeatCheck(suite.T(), 4, time.Second*3)
+	rptCheck.contains(textFn, "Updating State Tool to")
+	rptCheck.contains(textFn, "Installing Update")
 }
 
 func (suite *UpdateIntegrationTestSuite) TestUpdate_Repair() {
@@ -277,9 +282,9 @@ func (suite *UpdateIntegrationTestSuite) testAutoUpdate(ts *e2e.Session, baseDir
 		return cp.Snapshot()
 	}
 
-	icheck := newIterantCheck(suite.T(), 3, time.Second*4)
-	icheck.expect(textFn, "Auto Update")
-	icheck.expect(textFn, "Updating State Tool")
+	rptCheck := newRepeatCheck(suite.T(), 3, time.Second*4)
+	rptCheck.contains(textFn, "Auto Update")
+	rptCheck.contains(textFn, "Updating State Tool")
 }
 
 func (suite *UpdateIntegrationTestSuite) installLatestReleaseVersion(ts *e2e.Session, dir string) {
@@ -341,21 +346,24 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateToCurrent() {
 	suite.testUpdate(ts, installDir, e2e.AppendEnv(fmt.Sprintf("ACTIVESTATE_CLI_UPDATE_BRANCH=%s", constants.BranchName)))
 }
 
-type iterantCheck struct {
+// repeatCheck provides methods to check a callback multiple times. This is
+// useful when a callback may not succeed on the first try, but subsequent
+// tries are expected to pass.
+type repeatCheck struct {
 	t     *testing.T
 	iters int
 	pause time.Duration
 }
 
-func newIterantCheck(t *testing.T, iters int, pause time.Duration) *iterantCheck {
-	return &iterantCheck{
+func newRepeatCheck(t *testing.T, iters int, pause time.Duration) *repeatCheck {
+	return &repeatCheck{
 		t:     t,
 		iters: iters,
 		pause: pause,
 	}
 }
 
-func (c *iterantCheck) expect(text func() string, substrs ...string) {
+func (c *repeatCheck) contains(text func() string, substrs ...string) {
 	printf := c.t.Logf
 	pause := c.pause
 
@@ -370,7 +378,7 @@ func (c *iterantCheck) expect(text func() string, substrs ...string) {
 			if strings.Contains(txt, substr) {
 				return
 			}
-			printf("Expected to find:\n%q\nReceived:\n%q", substr, txt)
+			printf("Expected to find (iter %d):\n%q\nReceived:\n%q", i, substr, txt)
 		}
 
 		time.Sleep(pause)
