@@ -21,7 +21,7 @@ const (
 	// BuildPlan statuses
 	Planning  = "PLANNING"
 	Planned   = "PLANNED"
-	Building  = "BUILDING"
+	Started   = "STARTED"
 	Completed = "COMPLETED"
 
 	// Artifact statuses
