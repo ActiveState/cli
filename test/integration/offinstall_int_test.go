@@ -118,7 +118,7 @@ func (suite *OffInstallIntegrationTestSuite) TestInstallAndUninstall() {
 		} else {
 			// Disabled for now: DX-1307
 			// tp = ts.SpawnCmd("bash")
-			// time.Sleep(1 * time.Second) // Give zsh a second to start -- can't use WaitForInput as it doesn't respect a custom HOME dir
+			// time.Sleep(1 * time.Second) // Give zsh a second to start -- can't use ExpectInput as it doesn't respect a custom HOME dir
 			// tp.Send("test-offline-install")
 			// tp.Expect("TEST REPLACEMENT", termtest.OptExpectTimeout(5*time.Second))
 			// tp.Send("exit")

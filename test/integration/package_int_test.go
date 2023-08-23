@@ -428,7 +428,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_Duplicate() {
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("install", "requests") // install again
-	cp.ExpectLongString("No new changes to commit")
+	cp.Expect("No new changes to commit")
 	cp.ExpectNotExitCode(0)
 }
 
@@ -528,17 +528,17 @@ func (suite *PackageIntegrationTestSuite) TestNormalize() {
 	dir := filepath.Join(ts.Dirs.Work, "normalized")
 	suite.Require().NoError(fileutils.Mkdir(dir))
 	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("checkout", "ActiveState-CLI/small-python", "."),
-		e2e.WithWorkDirectory(dir),
+		e2e.OptArgs("checkout", "ActiveState-CLI/small-python", "."),
+		e2e.OptWD(dir),
 	)
 	cp.Expect("Skipping runtime setup")
 	cp.Expect("Checked out project")
 	cp.ExpectExitCode(0)
 
 	cp = ts.SpawnWithOpts(
-		e2e.WithArgs("install", "Charset_normalizer"),
-		e2e.WithWorkDirectory(dir),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.OptArgs("install", "Charset_normalizer"),
+		e2e.OptWD(dir),
+		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cp.Expect("charset-normalizer")
 	cp.Expect("is different")
@@ -548,21 +548,21 @@ func (suite *PackageIntegrationTestSuite) TestNormalize() {
 	anotherDir := filepath.Join(ts.Dirs.Work, "not-normalized")
 	suite.Require().NoError(fileutils.Mkdir(anotherDir))
 	cp = ts.SpawnWithOpts(
-		e2e.WithArgs("checkout", "ActiveState-CLI/small-python", "."),
-		e2e.WithWorkDirectory(anotherDir),
+		e2e.OptArgs("checkout", "ActiveState-CLI/small-python", "."),
+		e2e.OptWD(anotherDir),
 	)
 	cp.Expect("Skipping runtime setup")
 	cp.Expect("Checked out project")
 	cp.ExpectExitCode(0)
 
 	cp = ts.SpawnWithOpts(
-		e2e.WithArgs("install", "charset-normalizer"),
-		e2e.WithWorkDirectory(anotherDir),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.OptArgs("install", "charset-normalizer"),
+		e2e.OptWD(anotherDir),
+		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cp.Expect("charset-normalizer")
 	cp.ExpectExitCode(0)
-	suite.NotContains(cp.TrimmedSnapshot(), "is different")
+	suite.NotContains(cp.Snapshot(), "is different")
 }
 
 func (suite *PackageIntegrationTestSuite) TestInstall_InvalidVersion() {
@@ -576,8 +576,8 @@ func (suite *PackageIntegrationTestSuite) TestInstall_InvalidVersion() {
 	cp.ExpectExitCode(0)
 
 	cp = ts.SpawnWithOpts(
-		e2e.WithArgs("install", "pytest@999.9999.9999"),
-		e2e.AppendEnv(constants.DisableRuntime+"=false"),
+		e2e.OptArgs("install", "pytest@999.9999.9999"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
 	cp.Expect("Error occurred while trying to create a commit")
 	cp.ExpectExitCode(1)
@@ -598,8 +598,8 @@ func (suite *PackageIntegrationTestSuite) TestUpdate_InvalidVersion() {
 	cp.ExpectExitCode(0)
 
 	cp = ts.SpawnWithOpts(
-		e2e.WithArgs("install", "pytest@999.9999.9999"),  // update
-		e2e.AppendEnv(constants.DisableRuntime+"=false"), // We DO want to test the runtime part, just not for every step
+		e2e.OptArgs("install", "pytest@999.9999.9999"),      // update
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"), // We DO want to test the runtime part, just not for every step
 	)
 	cp.Expect("Error occurred while trying to create a commit")
 	cp.ExpectExitCode(1)
@@ -629,8 +629,8 @@ func (suite *PackageIntegrationTestSuite) TestUpdate() {
 	cp.ExpectExitCode(0)
 
 	cp = ts.SpawnWithOpts(
-		e2e.WithArgs("install", "pytest@7.4.0"),          // update
-		e2e.AppendEnv(constants.DisableRuntime+"=false"), // We DO want to test the runtime part, just not for every step
+		e2e.OptArgs("install", "pytest@7.4.0"),              // update
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"), // We DO want to test the runtime part, just not for every step
 	)
 	cp.ExpectExitCode(0)
 

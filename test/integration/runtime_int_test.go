@@ -86,8 +86,8 @@ func (suite *RuntimeIntegrationTestSuite) TestInterruptSetup() {
 	defer ts.Close()
 
 	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("checkout", "ActiveState-CLI/test-interrupt-small-python#863c45e2-3626-49b6-893c-c15e85a17241", "."),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.OptArgs("checkout", "ActiveState-CLI/test-interrupt-small-python#863c45e2-3626-49b6-893c-c15e85a17241", "."),
+		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cp.Expect("Checked out project")
 
@@ -98,8 +98,8 @@ func (suite *RuntimeIntegrationTestSuite) TestInterruptSetup() {
 	cp.ExpectExitCode(0)
 
 	cp = ts.SpawnWithOpts(
-		e2e.WithArgs("pull"),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false",
+		e2e.OptArgs("pull"),
+		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false",
 			"ACTIVESTATE_CLI_RUNTIME_SETUP_WAIT=true"),
 	)
 	time.Sleep(30 * time.Second)

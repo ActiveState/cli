@@ -224,7 +224,7 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckoutCaseInsensitive() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	cp := ts.SpawnWithOpts(e2e.WithArgs("checkout", "ACTIVESTATE-CLI/SMALL-PYTHON"))
+	cp := ts.SpawnWithOpts(e2e.OptArgs("checkout", "ACTIVESTATE-CLI/SMALL-PYTHON"))
 	cp.Expect("Skipping runtime setup")
 	cp.Expect("Checked out project")
 	cp.ExpectExitCode(0)

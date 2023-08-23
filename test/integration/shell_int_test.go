@@ -314,14 +314,14 @@ func (suite *ShellIntegrationTestSuite) TestNestedShellNotification() {
 	cp.ExpectExitCode(0)
 
 	cp = ts.SpawnWithOpts(
-		e2e.WithArgs("shell", "small-python"),
-		e2e.AppendEnv(env...))
+		e2e.OptArgs("shell", "small-python"),
+		e2e.OptAppendEnv(env...))
 	cp.Expect("Activated")
-	suite.Assert().NotContains(cp.TrimmedSnapshot(), "State Tool is operating on project")
+	suite.Assert().NotContains(cp.Snapshot(), "State Tool is operating on project")
 	cp.SendLine(fmt.Sprintf(`export HOME="%s"`, ts.Dirs.HomeDir)) // some shells do not forward this
 
 	cp.SendLine(ss.Binary()) // platform-specific shell (zsh on macOS, bash on Linux, etc.)
-	cp.ExpectLongString("State Tool is operating on project ActiveState-CLI/small-python")
+	cp.Expect("State Tool is operating on project ActiveState-CLI/small-python")
 	cp.SendLine("exit") // subshell within a subshell
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)

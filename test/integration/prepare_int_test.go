@@ -49,7 +49,7 @@ func (suite *PrepareIntegrationTestSuite) TestPrepare() {
 	cp := ts.SpawnWithOpts(
 		e2e.OptArgs("_prepare"),
 		e2e.OptAppendEnv(fmt.Sprintf("%s=%s", constants.AutostartPathOverrideEnvVarName, autostartDir)),
-		// e2e.AppendEnv(fmt.Sprintf("ACTIVESTATE_CLI_CONFIGDIR=%s", ts.Dirs.Work)),
+		// e2e.OptAppendEnv(fmt.Sprintf("ACTIVESTATE_CLI_CONFIGDIR=%s", ts.Dirs.Work)),
 	)
 	cp.ExpectExitCode(0)
 

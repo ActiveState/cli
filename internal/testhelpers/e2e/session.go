@@ -62,7 +62,7 @@ var (
 	PersistentPassword string
 	PersistentToken    string
 
-	defaultnTimeout = 5 * time.Second
+	defaultnTimeout = 40 * time.Second
 )
 
 func init() {

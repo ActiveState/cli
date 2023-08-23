@@ -71,7 +71,7 @@ func (suite *InstallerIntegrationTestSuite) TestInstallFromLocalSource() {
 		e2e.OptAppendEnv(fmt.Sprintf("%s=%s", constants.OverwriteDefaultSystemPathEnvVarName, dir)),
 	)
 	cp.Expect("successfully installed")
-	cp.WaitForInput()
+	cp.ExpectInput()
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
 
@@ -80,9 +80,9 @@ func (suite *InstallerIntegrationTestSuite) TestInstallFromLocalSource() {
 	suite.Require().NoError(fileutils.WriteFile(filepath.Join(installationDir(ts), installation.InstallDirMarker), []byte{}))
 	cp = ts.SpawnCmdWithOpts(
 		suite.installerExe,
-		e2e.WithArgs(installationDir(ts)),
-		e2e.AppendEnv(constants.DisableUpdates+"=false"),
-		e2e.AppendEnv(fmt.Sprintf("%s=%s", constants.OverwriteDefaultSystemPathEnvVarName, dir)),
+		e2e.OptArgs(installationDir(ts)),
+		e2e.OptAppendEnv(constants.DisableUpdates+"=false"),
+		e2e.OptAppendEnv(fmt.Sprintf("%s=%s", constants.OverwriteDefaultSystemPathEnvVarName, dir)),
 	)
 	cp.Expect("successfully installed")
 

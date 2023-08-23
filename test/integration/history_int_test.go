@@ -39,7 +39,7 @@ func (suite *HistoryIntegrationTestSuite) TestHistory_History() {
 	cp.Expect("+ autopip 1.6.0")
 	cp.Expect("- convertdate")
 	cp.Expect(`+ Platform`)
-	suite.Assert().NotContains(cp.TrimmedSnapshot(), "StructuredChanges")
+	suite.Assert().NotContains(cp.Snapshot(), "StructuredChanges")
 	cp.ExpectExitCode(0)
 }
 
@@ -61,7 +61,7 @@ func (suite *HistoryIntegrationTestSuite) TestJSON() {
 	cp.Expect(`"version_constraints_old":`)
 	cp.Expect(`"version_constraints_new":`)
 	cp.ExpectExitCode(0)
-	//AssertValidJSON(suite.T(), cp) // list is too large to fit in terminal snapshot
+	// AssertValidJSON(suite.T(), cp) // list is too large to fit in terminal snapshot
 }
 
 func TestHistoryIntegrationTestSuite(t *testing.T) {
