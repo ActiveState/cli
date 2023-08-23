@@ -117,10 +117,10 @@ func NewUpdate(an analytics.Dispatcher, avUpdate *AvailableUpdate) *Update {
 	return NewUpdateByOrigin(an, NewOriginDefault(), avUpdate)
 }
 
-func (u *Update) NotNeeded() bool {
-	return !u.AvailableUpdate.IsValid() ||
-		(os.Getenv(constants.ForceUpdateEnvVarName) != "true" &&
-			u.AvailableUpdate.Equals(u.Origin))
+func (u *Update) IsUseful() bool {
+	return u.AvailableUpdate.IsValid() &&
+		(os.Getenv(constants.ForceUpdateEnvVarName) == "true" ||
+			!u.AvailableUpdate.Equals(u.Origin))
 }
 
 func (u *Update) DownloadAndUnpack() (string, error) {

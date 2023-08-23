@@ -15,38 +15,38 @@ func TestUpdateNotNeeded(t *testing.T) {
 		Name            string
 		Origin          *Origin
 		AvailableUpdate *AvailableUpdate
-		NotNeeded       bool
+		IsUseful        bool
 	}{
 		{
 			Name:            "same-version",
 			Origin:          &Origin{Channel: "master", Version: "1.2.3"},
 			AvailableUpdate: newAvailableUpdate("master", "1.2.3"),
-			NotNeeded:       true,
+			IsUseful:        false,
 		},
 		{
 			Name:            "updated-version",
 			Origin:          &Origin{Channel: "master", Version: "2.3.4"},
 			AvailableUpdate: newAvailableUpdate("master", "2.3.5"),
-			NotNeeded:       false,
+			IsUseful:        true,
 		},
 		{
 			Name:            "check-different-channel",
 			Origin:          &Origin{Channel: "master", Version: "3.4.5"},
 			AvailableUpdate: newAvailableUpdate("beta", "3.4.5"),
-			NotNeeded:       false,
+			IsUseful:        true,
 		},
 		{
 			Name:            "empty AvailableUpdate",
 			Origin:          &Origin{"master", "5.6.7"},
 			AvailableUpdate: &AvailableUpdate{},
-			NotNeeded:       true,
+			IsUseful:        false,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.Name, func(t *testing.T) {
 			upd := NewUpdateByOrigin(nil, tt.Origin, tt.AvailableUpdate)
-			assert.Equal(t, tt.NotNeeded, upd.NotNeeded())
+			assert.Equal(t, tt.IsUseful, upd.IsUseful())
 		})
 	}
 }
