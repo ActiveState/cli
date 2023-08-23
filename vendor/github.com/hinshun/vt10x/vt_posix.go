@@ -1,4 +1,3 @@
-//go:build linux || darwin || dragonfly || solaris || openbsd || netbsd || freebsd
 // +build linux darwin dragonfly solaris openbsd netbsd freebsd
 
 package vt10x
@@ -69,9 +68,6 @@ func (t *terminal) Parse(br *bufio.Reader) error {
 	for {
 		c, sz, err := br.ReadRune()
 		if err != nil {
-			if err == io.EOF {
-				continue
-			}
 			return err
 		}
 		if c == unicode.ReplacementChar && sz == 1 {
