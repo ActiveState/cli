@@ -87,7 +87,7 @@ func (suite *RunIntegrationTestSuite) expectTerminateBatchJob(cp *e2e.SpawnedCmd
 		// send N to "Terminate batch job (Y/N)" question
 		cp.Expect("Terminate batch job")
 		time.Sleep(200 * time.Millisecond)
-		cp.Send("N")
+		cp.SendLine("N")
 		cp.Expect("N", termtest.OptExpectTimeout(500*time.Millisecond))
 	}
 }

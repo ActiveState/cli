@@ -68,7 +68,7 @@ func (suite *EditIntegrationTestSuite) TestEdit() {
 	cp := ts.SpawnWithOpts(e2e.OptArgs("scripts", "edit", "test-script"), env)
 	cp.Expect("Watching file changes")
 	cp.Expect("Script changes detected")
-	cp.Send("Y")
+	cp.SendLine("Y")
 	cp.ExpectExitCode(0)
 }
 
@@ -103,7 +103,7 @@ func (suite *EditIntegrationTestSuite) TestEdit_UpdateCorrectPlatform() {
 		e2e.OptWD(ts.Dirs.Work),
 		env,
 	)
-	cp.Send("Y")
+	cp.SendLine("Y")
 	cp.ExpectExitCode(0)
 
 	time.Sleep(time.Second * 2) // let CI env catch up

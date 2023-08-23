@@ -62,9 +62,9 @@ func (suite *AuthIntegrationTestSuite) TestAuthToken() {
 func (suite *AuthIntegrationTestSuite) interactiveLogin(ts *e2e.Session, username, password string) {
 	cp := ts.Spawn(tagsuite.Auth, "--prompt")
 	cp.Expect("username:")
-	cp.Send(username)
+	cp.SendLine(username)
 	cp.Expect("password:")
-	cp.Send(password)
+	cp.SendLine(password)
 	cp.Expect("logged in")
 	cp.ExpectExitCode(0)
 

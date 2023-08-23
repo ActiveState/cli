@@ -136,11 +136,11 @@ func (suite *PushIntegrationTestSuite) TestPush_HeadlessConvert_NewProject() {
 
 	cp = ts.SpawnWithOpts(e2e.OptArgs("push"))
 	cp.Expect("Who would you like the owner of this project to be?")
-	cp.Send("")
+	cp.SendLine("")
 	cp.Expect("What would you like the name of this project to be?")
-	cp.Send(string([]byte{0033, '[', 'B'})) // move cursor down, and then press enter
+	cp.SendLine(string([]byte{0033, '[', 'B'})) // move cursor down, and then press enter
 	cp.Expect("> Other")
-	cp.Send("")
+	cp.SendLine("")
 	cp.Expect(">")
 	cp.SendLine(pname.String())
 	cp.Expect("Project created")
@@ -185,13 +185,13 @@ func (suite *PushIntegrationTestSuite) TestPush_NoPermission_NewProject() {
 
 	cp = ts.SpawnWithOpts(e2e.OptArgs("push"))
 	cp.Expect("not authorized")
-	cp.Send("y")
+	cp.SendLine("y")
 	cp.Expect("Who would you like the owner of this project to be?")
-	cp.Send("")
+	cp.SendLine("")
 	cp.Expect("What would you like the name of this project to be?")
-	cp.Send(string([]byte{0033, '[', 'B'})) // move cursor down, and then press enter
+	cp.SendLine(string([]byte{0033, '[', 'B'})) // move cursor down, and then press enter
 	cp.Expect("> Other")
-	cp.Send("")
+	cp.SendLine("")
 	cp.Expect(">")
 	cp.SendLine(pname.String())
 	cp.Expect("Project created")
@@ -250,7 +250,7 @@ func (suite *PushIntegrationTestSuite) TestCarlisle() {
 
 	cp = ts.SpawnWithOpts(e2e.OptArgs("push", namespace), e2e.OptWD(wd))
 	cp.Expect("You are about to create the project")
-	cp.Send("y")
+	cp.SendLine("y")
 	cp.Expect("Project created")
 	cp.ExpectExitCode(0)
 	ts.NotifyProjectCreated(suite.username, pname.String())

@@ -323,7 +323,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_import() {
 
 		cp = ts.Spawn("import", "requirements.txt")
 		cp.Expect("Are you sure you want to do this")
-		cp.Send("n")
+		cp.SendLine("n")
 		cp.ExpectNotExitCode(0, termtest.OptExpectTimeout(time.Second*60))
 	})
 }

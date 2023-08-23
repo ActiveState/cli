@@ -108,7 +108,7 @@ func (suite *ProjectsIntegrationTestSuite) TestEdit_Name() {
 
 	cp = ts.Spawn("projects", "edit", fmt.Sprintf("ActiveState-CLI/%s", originalName), "--name", newName)
 	cp.Expect("You are about to edit")
-	cp.Send("y")
+	cp.SendLine("y")
 	cp.Expect("Project edited successfully")
 	cp.ExpectExitCode(0)
 
@@ -120,7 +120,7 @@ func (suite *ProjectsIntegrationTestSuite) TestEdit_Name() {
 	// Change name back to original
 	cp = ts.Spawn("projects", "edit", fmt.Sprintf("ActiveState-CLI/%s", newName), "--name", originalName)
 	cp.Expect("You are about to edit")
-	cp.Send("y")
+	cp.SendLine("y")
 	cp.Expect("Project edited successfully")
 	cp.ExpectExitCode(0)
 
@@ -141,7 +141,7 @@ func (suite *ProjectsIntegrationTestSuite) TestEdit_Visibility() {
 
 	cp := ts.Spawn("projects", "edit", namespace, "--visibility", "private")
 	cp.Expect("You are about to edit")
-	cp.Send("y")
+	cp.SendLine("y")
 	cp.Expect("Project edited successfully")
 	cp.ExpectExitCode(0)
 
@@ -155,7 +155,7 @@ func (suite *ProjectsIntegrationTestSuite) TestEdit_Visibility() {
 
 	cp = ts.Spawn("projects", "edit", namespace, "--visibility", "public")
 	cp.Expect("You are about to edit")
-	cp.Send("y")
+	cp.SendLine("y")
 	cp.Expect("Project edited successfully")
 	cp.ExpectExitCode(0)
 }

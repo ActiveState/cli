@@ -154,10 +154,10 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateLockedConfirmation() {
 			)
 			cp.Expect("sure you want")
 			if tt.Confirm || tt.Forced {
-				cp.Send("y")
+				cp.SendLine("y")
 				cp.Expect("Version locked at")
 			} else {
-				cp.Send("n")
+				cp.SendLine("n")
 				cp.Expect("Cancelling")
 			}
 			cp.ExpectNotExitCode(0)
