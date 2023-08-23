@@ -25,7 +25,7 @@ var (
 // Checkpoint represents a collection of requirements
 type Checkpoint []*mono_models.Checkpoint
 
-// Language represents a langauge requirement
+// Language represents a language requirement
 type Language struct {
 	Name    string `json:"name"`
 	Version string `json:"version"`
@@ -49,6 +49,24 @@ func GetRequirement(commitID strfmt.UUID, namespace Namespace, requirement strin
 	return nil, nil
 }
 
+// getVersionFromConstraints attempts to determine a language version from a set of requirement
+// constraints.
+// For example, `state init --language python` creates a commit with the constraints
+// "python >=3.x.y,<3.x.y+1". In these cases, return 3.x.y.
+// For other cases, return an error.
+func getVersionFromConstraints(constraints mono_models.Constraints) (string, error) {
+	if len(constraints) == 0 {
+		return "", nil // could be auto, or the Platform did not specify one
+	}
+	if len(constraints) != 2 {
+		return "", errs.New("Unrecognized constraint")
+	}
+	if constraints[0].Comparator != "gte" || constraints[1].Comparator != "lt" {
+		return "", errs.New("Unrecognized constraint")
+	}
+	return constraints[0].Version, nil
+}
+
 // FetchLanguagesForCommit fetches a list of language names for the given commit
 func FetchLanguagesForCommit(commitID strfmt.UUID) ([]Language, error) {
 	checkpoint, _, err := FetchCheckpointForCommit(commitID)
@@ -59,10 +77,18 @@ func FetchLanguagesForCommit(commitID strfmt.UUID) ([]Language, error) {
 	languages := []Language{}
 	for _, requirement := range checkpoint {
 		if NamespaceMatch(requirement.Namespace, NamespaceLanguageMatch) {
-			languages = append(languages, Language{
+			lang := Language{
 				Name:    requirement.Requirement,
 				Version: requirement.VersionConstraint,
-			})
+			}
+			if lang.Version == "" {
+				version, err := getVersionFromConstraints(requirement.VersionConstraints)
+				if err != nil {
+					return nil, errs.Wrap(err, "Unable to determine commit's language version based on constraints")
+				}
+				lang.Version = version
+			}
+			languages = append(languages, lang)
 		}
 	}
 
@@ -189,7 +215,15 @@ func CheckpointToLanguage(requirements []*gqlModel.Requirement) (*Language, erro
 		if !NamespaceMatch(req.Namespace, NamespaceLanguageMatch) {
 			continue
 		}
-		lang, err := FetchLanguageByDetails(req.Requirement, req.VersionConstraint)
+		version := req.VersionConstraint
+		if version == "" {
+			var err error
+			version, err = getVersionFromConstraints(req.VersionConstraints)
+			if err != nil {
+				return nil, locale.WrapError(err, "err_detect_language")
+			}
+		}
+		lang, err := FetchLanguageByDetails(req.Requirement, version)
 		if err != nil {
 			return nil, err
 		}

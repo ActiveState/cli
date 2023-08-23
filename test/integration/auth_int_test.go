@@ -34,9 +34,9 @@ func (suite *AuthIntegrationTestSuite) TestAuth() {
 	suite.OnlyRunForTags(tagsuite.Auth, tagsuite.Critical)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
-	username := ts.CreateNewUser()
+	username, password := ts.CreateNewUser()
 	ts.LogoutUser()
-	suite.interactiveLogin(ts, username)
+	suite.interactiveLogin(ts, username, password)
 	ts.LogoutUser()
 	suite.loginFlags(ts, username)
 	suite.ensureLogout(ts)
@@ -59,13 +59,13 @@ func (suite *AuthIntegrationTestSuite) TestAuthToken() {
 	suite.ensureLogout(ts)
 }
 
-func (suite *AuthIntegrationTestSuite) interactiveLogin(ts *e2e.Session, username string) {
+func (suite *AuthIntegrationTestSuite) interactiveLogin(ts *e2e.Session, username, password string) {
 	cp := ts.Spawn(tagsuite.Auth, "--prompt")
 	cp.Expect("username:")
 	cp.Send(username)
 	cp.Expect("password:")
-	cp.Send(username)
-	cp.Expect("logged in", termtest.OptExpectTimeout(40*time.Second))
+	cp.Send(password)
+	cp.Expect("logged in")
 	cp.ExpectExitCode(0)
 
 	// still logged in?

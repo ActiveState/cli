@@ -7,6 +7,7 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/thoas/go-funk"
 )
 
 // Language tracks the languages potentially used.
@@ -84,7 +85,7 @@ var lookup = [...]languageData{
 		Executable{constants.ActivePython2Executable, false},
 	},
 	{
-		"ruby", "Ruby", ".rb", true, "ruby", "3.0.4",
+		"ruby", "Ruby", ".rb", true, "ruby", "3.2.2",
 		Executable{constants.RubyExecutable, false},
 	},
 }
@@ -120,16 +121,14 @@ func MakeByName(name string) Language {
 
 // MakeByNameAndVersion will retrieve a language by a given name and version.
 func MakeByNameAndVersion(name, version string) (Language, error) {
-	if version != "" && strings.ToLower(name) == Python3.Requirement() {
-		parts := strings.Split(version, ".")
-		if len(parts) == 0 || parts[0] == "" {
-			return Unknown, locale.NewError("err_invalid_language_version", "Invalid language version number: {{.V0}}", version)
-		}
-		name = name + parts[0]
-	}
-	if version == "" && strings.ToLower(name) == Python3.Requirement() {
-		// This addressed the language only specifying "python", in this case we default to python3
+	if strings.ToLower(name) == Python3.Requirement() {
 		name = Python3.String()
+		// Disambiguate python, preferring Python3.
+		major, _, _ := strings.Cut(version, ".")
+		major = strings.TrimLeft(major, ">=<") // constraint characters (e.g. ">3.9")
+		if major == "2" {
+			name = Python2.String()
+		}
 	}
 	return MakeByName(name), nil
 }
@@ -346,8 +345,8 @@ func RecognizedSupportedsNames() []string {
 	var supporteds []string
 	for i, data := range lookup {
 		l := Supported{Language(i)}
-		if l.Recognized() {
-			supporteds = append(supporteds, data.name)
+		if l.Recognized() && !funk.Contains(supporteds, data.require) {
+			supporteds = append(supporteds, data.require)
 		}
 	}
 	return supporteds

@@ -16,7 +16,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
-	"github.com/ActiveState/cli/pkg/platform/model/auth"
+	model "github.com/ActiveState/cli/pkg/platform/model/auth"
 	"github.com/go-openapi/strfmt"
 )
 
@@ -30,7 +30,14 @@ func Authenticate(cfg keypairs.Configurable, out output.Outputer, prompt prompt.
 }
 
 // AuthenticateWithInput will prompt the user for authentication if the input doesn't already provide it
-func AuthenticateWithInput(username, password, totp string, nonInteractive bool, cfg keypairs.Configurable, out output.Outputer, prompt prompt.Prompter, auth *authentication.Auth) error {
+func AuthenticateWithInput(
+	username, password, totp string,
+	nonInteractive bool,
+	cfg keypairs.Configurable,
+	out output.Outputer,
+	prompt prompt.Prompter,
+	auth *authentication.Auth,
+) error {
 	logging.Debug("Authenticating with input")
 
 	credentials := &mono_models.Credentials{Username: username, Password: password, Totp: totp}
@@ -240,9 +247,11 @@ func AuthenticateWithBrowser(out output.Outputer, auth *authentication.Auth, pro
 		out.Notice(locale.Tr("err_browser_open", *response.VerificationURIComplete))
 	}
 
+	var apiKey string
 	if !response.Nopoll {
 		// Wait for user to complete authentication
-		if err := auth.AuthenticateWithDevicePolling(strfmt.UUID(*response.DeviceCode), time.Duration(response.Interval)*time.Second); err != nil {
+		apiKey, err = auth.AuthenticateWithDevicePolling(strfmt.UUID(*response.DeviceCode), time.Duration(response.Interval)*time.Second)
+		if err != nil {
 			return locale.WrapError(err, "err_auth_device")
 		}
 	} else {
@@ -256,12 +265,13 @@ func AuthenticateWithBrowser(out output.Outputer, auth *authentication.Auth, pro
 				return errs.Wrap(err, "Prompt failed")
 			}
 		}
-		if err := auth.AuthenticateWithDevice(strfmt.UUID(*response.DeviceCode)); err != nil {
+		apiKey, err = auth.AuthenticateWithDevice(strfmt.UUID(*response.DeviceCode))
+		if err != nil {
 			return locale.WrapError(err, "err_auth_device")
 		}
 	}
 
-	if err := auth.CreateToken(); err != nil {
+	if err := auth.SaveToken(apiKey); err != nil {
 		return locale.WrapError(err, "err_auth_token", "Failed to create token after authenticating with browser.")
 	}
 

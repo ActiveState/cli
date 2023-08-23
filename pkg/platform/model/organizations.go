@@ -24,9 +24,7 @@ var ErrMemberNotFound = errs.New("member not found")
 func FetchOrganizations() ([]*mono_models.Organization, error) {
 	params := clientOrgs.NewListOrganizationsParams()
 	memberOnly := true
-	personal := false
 	params.SetMemberOnly(&memberOnly)
-	params.SetPersonal(&personal)
 	res, err := authentication.Client().Organizations.ListOrganizations(params, authentication.ClientAuth())
 
 	if err != nil {

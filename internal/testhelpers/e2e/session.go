@@ -342,12 +342,12 @@ func (s *Session) LogoutUser() {
 	p.ExpectExitCode(0)
 }
 
-func (s *Session) CreateNewUser() string {
+func (s *Session) CreateNewUser() (string, string) {
 	uid, err := uuid.NewRandom()
 	require.NoError(s.t, err)
 
 	username := fmt.Sprintf("user-%s", uid.String()[0:8])
-	password := username
+	password := uid.String()[8:]
 	email := fmt.Sprintf("%s@test.tld", username)
 
 	p := s.Spawn(tagsuite.Auth, "signup", "--prompt")
@@ -368,7 +368,7 @@ func (s *Session) CreateNewUser() string {
 
 	s.users = append(s.users, username)
 
-	return username
+	return username, password
 }
 
 // NotifyProjectCreated indicates that the given project was created on the Platform and needs to

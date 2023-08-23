@@ -20,7 +20,7 @@ func (suite *RevertIntegrationTestSuite) TestRevert() {
 	defer ts.Close()
 	ts.LoginAsPersistentUser()
 
-	namespace := "activestate-cli/Revert"
+	namespace := "ActiveState-CLI/Revert"
 	cp := ts.SpawnWithOpts(e2e.OptArgs("checkout", namespace))
 	cp.Expect("Skipping runtime setup")
 	cp.Expect("Checked out project")
@@ -70,7 +70,7 @@ func (suite *RevertIntegrationTestSuite) TestRevert_failsOnCommitNotInHistory() 
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	namespace := "activestate-cli/small-python"
+	namespace := "ActiveState-CLI/small-python"
 	cp := ts.SpawnWithOpts(e2e.OptArgs("checkout", namespace))
 	cp.Expect("Skipping runtime setup")
 	cp.Expect("Checked out project")
@@ -93,7 +93,7 @@ func (suite *RevertIntegrationTestSuite) TestRevertTo() {
 	defer ts.Close()
 	ts.LoginAsPersistentUser()
 
-	namespace := "activestate-cli/Revert"
+	namespace := "ActiveState-CLI/Revert"
 	cp := ts.SpawnWithOpts(e2e.OptArgs("checkout", namespace))
 	cp.Expect("Skipping runtime setup")
 	cp.Expect("Checked out project")
@@ -127,7 +127,7 @@ func (suite *RevertIntegrationTestSuite) TestRevertTo_failsOnCommitNotInHistory(
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	namespace := "activestate-cli/small-python"
+	namespace := "ActiveState-CLI/small-python"
 	cp := ts.SpawnWithOpts(e2e.OptArgs("checkout", namespace))
 	cp.Expect("Skipping runtime setup")
 	cp.Expect("Checked out project")

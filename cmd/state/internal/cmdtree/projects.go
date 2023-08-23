@@ -44,11 +44,11 @@ func newRemoteProjectsCommand(prime *primer.Values) *captain.Command {
 
 func newProjectsEditCommand(prime *primer.Values) *captain.Command {
 	runner := projects.NewEdit(prime)
-	params := projects.EditParams{
+	params := &projects.EditParams{
 		Namespace: &project.Namespaced{},
 	}
 
-	return captain.NewCommand(
+	cmd := captain.NewCommand(
 		"edit",
 		locale.Tl("projects_edit_title", "Edit Project"),
 		locale.Tl("projects_edit_description", "Edit the project details for the specified project"),
@@ -81,14 +81,20 @@ func newProjectsEditCommand(prime *primer.Values) *captain.Command {
 		func(ccmd *captain.Command, args []string) error {
 			return runner.Run(params)
 		},
-	).SetGroup(ProjectUsageGroup).SetUnstable(true)
+	)
+
+	cmd.SetGroup(ProjectUsageGroup)
+	cmd.SetDoesNotSupportStructuredOutput()
+	cmd.SetUnstable(true)
+
+	return cmd
 }
 
 func newDeleteProjectsCommand(prime *primer.Values) *captain.Command {
 	runner := projects.NewDelete(prime)
 	params := projects.NewDeleteParams()
 
-	return captain.NewCommand(
+	cmd := captain.NewCommand(
 		"delete",
 		locale.Tl("projects_delete_title", "Delete a project"),
 		locale.Tl("projects_delete_description", "Delete the specified project from the Platform"),
@@ -105,5 +111,45 @@ func newDeleteProjectsCommand(prime *primer.Values) *captain.Command {
 		func(_ *captain.Command, _ []string) error {
 			return runner.Run(params)
 		},
-	).SetGroup(ProjectUsageGroup).SetUnstable(true)
+	)
+	cmd.SetGroup(ProjectUsageGroup)
+	cmd.SetDoesNotSupportStructuredOutput()
+	cmd.SetUnstable(true)
+
+	return cmd
+}
+
+func newMoveProjectsCommand(prime *primer.Values) *captain.Command {
+	runner := projects.NewMove(prime)
+	params := projects.NewMoveParams()
+
+	cmd := captain.NewCommand(
+		"move",
+		locale.Tl("projects_move_title", "Move a project"),
+		locale.Tl("projects_move_description", "Move the specified project to another organization"),
+		prime,
+		[]*captain.Flag{},
+		[]*captain.Argument{
+			{
+				Name:        locale.Tl("projects_move_namespace", "org/project"),
+				Description: locale.Tl("projects_move_namespace_description", "The project to move"),
+				Value:       params.Namespace,
+				Required:    true,
+			},
+			{
+				Name:        locale.Tl("projects_move_new_org", "new-org-name"),
+				Description: locale.Tl("projects_move_org_description", "The organization to move the project to"),
+				Value:       &params.NewOwner,
+				Required:    true,
+			},
+		},
+		func(_ *captain.Command, _ []string) error {
+			return runner.Run(params)
+		},
+	)
+	cmd.SetGroup(ProjectUsageGroup)
+	cmd.SetDoesNotSupportStructuredOutput()
+	cmd.SetUnstable(true)
+
+	return cmd
 }

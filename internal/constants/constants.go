@@ -1,6 +1,8 @@
 package constants
 
-import "time"
+import (
+	"time"
+)
 
 // LibraryName contains the main name of this library
 const LibraryName = "cli"
@@ -70,6 +72,9 @@ const ActivatedStateEnvVarName = "ACTIVESTATE_ACTIVATED"
 
 // ActivatedStateIDEnvVarName is the name of the environment variable that is set when in an activated state, its value will be a unique id identifying a specific instance of an activated state
 const ActivatedStateIDEnvVarName = "ACTIVESTATE_ACTIVATED_ID"
+
+// ActivatedStateProjectEnvVarName is the name of the environment variable that specifies the activated state's org/project namespace.
+const ActivatedStateNamespaceEnvVarName = "ACTIVESTATE_ACTIVATED_NAMESPACE"
 
 // ForwardedStateEnvVarName is the name of the environment variable that is set when in an activated state, its value will be the path of the project
 const ForwardedStateEnvVarName = "ACTIVESTATE_FORWARDED"
@@ -254,6 +259,9 @@ const MediatorAPIPath = "/sv/mediator/api"
 // RequirementsImportAPIPath is the path used for the requirements import api
 const RequirementsImportAPIPath = "/sv/reqsvc/reqs"
 
+// BuildPlannerAPIPath is the path used for the build planner api
+const BuildPlannerAPIPath = "/sv/buildplanner/graphql"
+
 // MessagesInfoURL is the URL we check against to see what versions are deprecated
 const MessagesInfoURL = "https://state-tool.s3.amazonaws.com/messages.json"
 
@@ -309,14 +317,14 @@ const PlatformURL = "platform.activestate.com"
 const CheatSheetURL = "https://platform.activestate.com/state-tool-cheat-sheet"
 
 // StateToolRollbarToken is the token used by the State Tool to talk to rollbar
-const StateToolRollbarToken = "8ddf0c31267b49ca9680083cf850f1e3"
+const StateToolRollbarToken = "4062b6b437ed40e9aa710ce8931d7897"
 
 // StateServiceRollbarToken is the token used by the State Service to talk to rollbar
-const StateServiceRollbarToken = "c03b12fa567e4753bc9c1d97111b8767"
+const StateServiceRollbarToken = "9dce777154b84824b1a16eb4654886a9"
 
 // StateInstallerRollbarToken is the token used by the State Installer to talk to rollbar
 // Todo It is currently the same as the State Tool's
-const StateInstallerRollbarToken = "0d6d1440fafe44058f3a0a9fc8d44e29"
+const StateInstallerRollbarToken = "f4105fee70c5478eab063abb1acdffa9"
 
 // OfflineInstallerRollbarToken is the token used by the Offline Installer to talk to rollbar
 const OfflineInstallerRollbarToken = "0ab5e19218bd494680bf8f5d08cf37ad"
@@ -357,6 +365,9 @@ const RuntimeBuildEngineStore = "build_engine"
 
 // RuntimeRecipeStore contains a serialization of the recipe used to create this build
 const RuntimeRecipeStore = "recipe"
+
+// RuntimeBuildPlanStore containts a serialization of the build plan used to create this build
+const RuntimeBuildPlanStore = "build_plan"
 
 // StateToolMarketingPage links to the marketing page for the state tool
 const StateToolMarketingPage = "https://www.activestate.com/products/platform/state-tool/"
@@ -449,7 +460,6 @@ const InstallerName = "State Installer"
 const StateExecutorCmd = "state-exec"
 
 // ToplevelInstallArchiveDir is the top-level directory for files in an installation archive
-// Cf., https://www.pivotaltracker.com/story/show/177781411
 const ToplevelInstallArchiveDir = "state-install"
 
 // FirstMultiFileStateToolVersion is the State Tool version that introduced multi-file updates
@@ -490,3 +500,7 @@ const AnalyticsPixelOverrideEnv = "ACTIVESTATE_CLI_ANALYTICS_PIXEL"
 
 // TerminalAnimationInterval is the interval we use for terminal animations
 const TerminalAnimationInterval = 150 * time.Millisecond
+
+// RuntimeSetupWaitEnvVarName is only used for an integration test to pause installation and wait
+// for Ctrl+C.
+const RuntimeSetupWaitEnvVarName = "ACTIVESTATE_CLI_RUNTIME_SETUP_WAIT"

@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 )
@@ -86,7 +87,7 @@ func (suite *PackageIntegrationTestSuite) TestPackages_project_invalid() {
 	defer ts.Close()
 
 	cp := ts.Spawn("packages", "--namespace", "junk/junk")
-	cp.Expect("The requested project junk/junk could not be found.")
+	cp.Expect("The requested project junk/junk could not be found")
 	cp.ExpectExitCode(1)
 }
 
@@ -295,10 +296,10 @@ func (suite *PackageIntegrationTestSuite) TestPackage_import() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	username := ts.CreateNewUser()
+	username, _ := ts.CreateNewUser()
 	namespace := fmt.Sprintf("%s/%s", username, "Python3")
 
-	cp := ts.Spawn("init", "--language", "python3", namespace, ts.Dirs.Work)
+	cp := ts.Spawn("init", "--language", "python", namespace, ts.Dirs.Work)
 	cp.Expect("successfully initialized")
 	cp.ExpectExitCode(0)
 
@@ -368,7 +369,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_headless_operation() {
 }
 
 func (suite *PackageIntegrationTestSuite) TestPackage_operation() {
-	suite.OnlyRunForTags(tagsuite.Package, tagsuite.Package)
+	suite.OnlyRunForTags(tagsuite.Package)
 	if runtime.GOOS == "darwin" {
 		suite.T().Skip("Skipping mac for now as the builds are still too unreliable")
 		return
@@ -376,7 +377,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_operation() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	username := ts.CreateNewUser()
+	username, _ := ts.CreateNewUser()
 	namespace := fmt.Sprintf("%s/%s", username, "python3-pkgtest")
 
 	cp := ts.Spawn("fork", "ActiveState-CLI/Packages", "--org", username, "--name", "python3-pkgtest")
@@ -410,6 +411,25 @@ func (suite *PackageIntegrationTestSuite) TestPackage_operation() {
 		cp.ExpectRe("(?:Package uninstalled|being built)", termtest.OptExpectTimeout(30*time.Second))
 		cp.Wait()
 	})
+}
+
+func (suite *PackageIntegrationTestSuite) TestPackage_Duplicate() {
+	suite.OnlyRunForTags(tagsuite.Package)
+
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.Spawn("checkout", "ActiveState-CLI/small-python", ".")
+	cp.Expect("Skipping runtime setup")
+	cp.Expect("Checked out project")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("install", "requests") // install
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("install", "requests") // install again
+	cp.ExpectLongString("No new changes to commit")
+	cp.ExpectNotExitCode(0)
 }
 
 func (suite *PackageIntegrationTestSuite) PrepareActiveStateYAML(ts *e2e.Session) {
@@ -494,6 +514,135 @@ func (suite *PackageIntegrationTestSuite) TestJSON() {
 	cp.Expect(`{"name":"Text-CSV"`)
 	cp.ExpectExitCode(0)
 	AssertValidJSON(suite.T(), cp)
+}
+
+func (suite *PackageIntegrationTestSuite) TestNormalize() {
+	suite.OnlyRunForTags(tagsuite.Package)
+	if runtime.GOOS == "darwin" {
+		suite.T().Skip("Skipping mac for now as the builds are still too unreliable")
+		return
+	}
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	dir := filepath.Join(ts.Dirs.Work, "normalized")
+	suite.Require().NoError(fileutils.Mkdir(dir))
+	cp := ts.SpawnWithOpts(
+		e2e.WithArgs("checkout", "ActiveState-CLI/small-python", "."),
+		e2e.WithWorkDirectory(dir),
+	)
+	cp.Expect("Skipping runtime setup")
+	cp.Expect("Checked out project")
+	cp.ExpectExitCode(0)
+
+	cp = ts.SpawnWithOpts(
+		e2e.WithArgs("install", "Charset_normalizer"),
+		e2e.WithWorkDirectory(dir),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
+	cp.Expect("charset-normalizer")
+	cp.Expect("is different")
+	cp.Expect("Charset_normalizer")
+	cp.ExpectExitCode(0)
+
+	anotherDir := filepath.Join(ts.Dirs.Work, "not-normalized")
+	suite.Require().NoError(fileutils.Mkdir(anotherDir))
+	cp = ts.SpawnWithOpts(
+		e2e.WithArgs("checkout", "ActiveState-CLI/small-python", "."),
+		e2e.WithWorkDirectory(anotherDir),
+	)
+	cp.Expect("Skipping runtime setup")
+	cp.Expect("Checked out project")
+	cp.ExpectExitCode(0)
+
+	cp = ts.SpawnWithOpts(
+		e2e.WithArgs("install", "charset-normalizer"),
+		e2e.WithWorkDirectory(anotherDir),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
+	cp.Expect("charset-normalizer")
+	cp.ExpectExitCode(0)
+	suite.NotContains(cp.TrimmedSnapshot(), "is different")
+}
+
+func (suite *PackageIntegrationTestSuite) TestInstall_InvalidVersion() {
+	suite.OnlyRunForTags(tagsuite.Package)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.Spawn("checkout", "ActiveState-CLI/small-python", ".")
+	cp.Expect("Skipping runtime setup")
+	cp.Expect("Checked out project")
+	cp.ExpectExitCode(0)
+
+	cp = ts.SpawnWithOpts(
+		e2e.WithArgs("install", "pytest@999.9999.9999"),
+		e2e.AppendEnv(constants.DisableRuntime+"=false"),
+	)
+	cp.Expect("Error occurred while trying to create a commit")
+	cp.ExpectExitCode(1)
+	cp.Wait()
+}
+
+func (suite *PackageIntegrationTestSuite) TestUpdate_InvalidVersion() {
+	suite.OnlyRunForTags(tagsuite.Package)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.Spawn("checkout", "ActiveState-CLI/small-python", ".")
+	cp.Expect("Skipping runtime setup")
+	cp.Expect("Checked out project")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("install", "pytest") // install
+	cp.ExpectExitCode(0)
+
+	cp = ts.SpawnWithOpts(
+		e2e.WithArgs("install", "pytest@999.9999.9999"),  // update
+		e2e.AppendEnv(constants.DisableRuntime+"=false"), // We DO want to test the runtime part, just not for every step
+	)
+	cp.Expect("Error occurred while trying to create a commit")
+	cp.ExpectExitCode(1)
+}
+
+func (suite *PackageIntegrationTestSuite) TestUpdate() {
+	suite.OnlyRunForTags(tagsuite.Package)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.Spawn("checkout", "ActiveState-CLI/small-python", ".")
+	cp.Expect("Skipping runtime setup")
+	cp.Expect("Checked out project")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("install", "pytest@7.3.2") // install
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("history")
+	cp.Expect("pytest")
+	cp.Expect("7.3.2")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("packages")
+	cp.Expect("pytest")
+	cp.Expect("7.3.2")
+	cp.ExpectExitCode(0)
+
+	cp = ts.SpawnWithOpts(
+		e2e.WithArgs("install", "pytest@7.4.0"),          // update
+		e2e.AppendEnv(constants.DisableRuntime+"=false"), // We DO want to test the runtime part, just not for every step
+	)
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("history")
+	cp.Expect("pytest")
+	cp.Expect("7.4.0")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("packages")
+	cp.Expect("pytest")
+	cp.Expect("7.4.0")
+	cp.ExpectExitCode(0)
 }
 
 func TestPackageIntegrationTestSuite(t *testing.T) {

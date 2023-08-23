@@ -40,7 +40,9 @@ func FetchProjectByName(orgName string, projectName string) (*mono_models.Projec
 
 	if len(response.Projects) == 0 {
 		if !authentication.LegacyGet().Authenticated() {
-			return nil, locale.NewInputError("err_api_project_not_found_unauthenticated", "", orgName, projectName)
+			return nil, errs.AddTips(
+				locale.NewInputError("err_api_project_not_found_unauthenticated", "", orgName, projectName),
+				locale.T("tip_private_project_auth"))
 		}
 		return nil, &ErrProjectNotFound{locale.NewInputError("err_api_project_not_found", "", projectName, orgName)}
 	}
@@ -291,6 +293,21 @@ func DeleteProject(owner, project string, auth *authentication.Auth) error {
 	params.SetProjectName(project)
 
 	_, err := auth.Client().Projects.DeleteProject(params, auth.ClientAuth())
+	if err != nil {
+		msg := api.ErrorMessageFromPayload(err)
+		return locale.WrapError(err, msg)
+	}
+
+	return nil
+}
+
+func MoveProject(owner, project, newOwner string, auth *authentication.Auth) error {
+	params := projects.NewMoveProjectParams()
+	params.SetOrganizationIdentifier(owner)
+	params.SetProjectName(project)
+	params.SetDestination(projects.MoveProjectBody{newOwner})
+
+	_, err := auth.Client().Projects.MoveProject(params, auth.ClientAuth())
 	if err != nil {
 		msg := api.ErrorMessageFromPayload(err)
 		return locale.WrapError(err, msg)

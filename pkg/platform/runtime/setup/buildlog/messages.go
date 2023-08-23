@@ -88,7 +88,7 @@ type ArtifactMessage struct {
 // ArtifactSucceededMessage extends an ArtifactMessage with information that becomes available after an artifact built successfully
 type ArtifactSucceededMessage struct {
 	ArtifactMessage
-	ArtifactURI      string `json:"artifact_uri"`
+	ArtifactURI      string `json:"artifact_download_uri"`
 	ArtifactChecksum string `json:"artifact_checksum"`
 	ArtifactMIMEType string `json:"artifact_mime_type"`
 	LogURI           string `json:"log_uri"`

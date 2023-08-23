@@ -5,6 +5,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/runbits/requirements"
+	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	"github.com/ActiveState/cli/pkg/platform/model"
 )
 
@@ -42,7 +43,7 @@ func (r *Remove) Run(ps RemoveRunParams) error {
 		params.name,
 		params.version,
 		params.BitWidth,
-		model.OperationRemoved,
+		bpModel.OperationRemoved,
 		model.NamespacePlatform,
 	); err != nil {
 		return locale.WrapError(err, "err_remove_platform", "Could not remove platform.")

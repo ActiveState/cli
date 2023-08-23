@@ -17,7 +17,7 @@ func (suite *PushIntegrationTestSuite) TestInitAndPush_VSCode() {
 
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
-	username := ts.CreateNewUser()
+	username, _ := ts.CreateNewUser()
 
 	namespace := fmt.Sprintf("%s/%s", username, "Perl")
 	cp := ts.Spawn(

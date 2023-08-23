@@ -15,7 +15,7 @@ import (
 
 // LibcVersion Libc Version
 //
-// The full libc version data model
+// # The full libc version data model
 //
 // swagger:model libcVersion
 type LibcVersion struct {

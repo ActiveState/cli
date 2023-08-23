@@ -1,6 +1,7 @@
 package runtime
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -20,10 +21,12 @@ import (
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
+	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/envdef"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
+	"github.com/ActiveState/cli/pkg/platform/runtime/setup/buildlog"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup/events"
 	"github.com/ActiveState/cli/pkg/platform/runtime/store"
 	"github.com/ActiveState/cli/pkg/project"
@@ -171,16 +174,58 @@ func (r *Runtime) recordCompletion(err error) {
 	var action string
 	if err != nil {
 		action = anaConsts.ActRuntimeFailure
-		if locale.IsInputError(err) {
-			action = anaConsts.ActRuntimeUserFailure
-		}
 	} else {
 		action = anaConsts.ActRuntimeSuccess
 		r.recordUsage()
 	}
 
-	r.analytics.EventWithLabel(anaConsts.CatRuntime, action, anaConsts.LblRtFailEnv, &dimensions.Values{
+	ns := project.Namespaced{
+		Owner:   r.target.Owner(),
+		Project: r.target.Name(),
+	}
+
+	errorType := "unknown"
+	switch {
+	// IsInputError should always be first because it is technically possible for something like a
+	// download error to be cause by an input error.
+	case locale.IsInputError(err):
+		errorType = "input"
+	case errs.Matches(err, &model.SolverError{}):
+		errorType = "solve"
+	case errs.Matches(err, &setup.BuildError{}) || errs.Matches(err, &buildlog.BuildError{}):
+		errorType = "build"
+	case errs.Matches(err, &bpModel.BuildPlannerError{}):
+		errorType = "buildplan"
+	case errs.Matches(err, &setup.ArtifactSetupErrors{}):
+		if setupErrors := (&setup.ArtifactSetupErrors{}); errors.As(err, &setupErrors) {
+			for _, err := range setupErrors.Errors() {
+				switch {
+				case errs.Matches(err, &setup.ArtifactDownloadError{}):
+					errorType = "download"
+					break // it only takes one download failure to report the runtime failure as due to download error
+				case errs.Matches(err, &setup.ArtifactInstallError{}):
+					errorType = "install"
+					// Note: do not break because there could be download errors, and those take precedence
+				}
+			}
+		}
+	// Progress/event handler errors should come last because they can wrap one of the above errors,
+	// and those errors actually caused the failure, not these.
+	case errs.Matches(err, &setup.ProgressReportError{}) || errs.Matches(err, &buildlog.EventHandlerError{}):
+		errorType = "progress"
+	}
+
+	var message string
+	if err != nil {
+		message = errs.JoinMessage(err)
+	}
+
+	r.analytics.Event(anaConsts.CatRuntime, action, &dimensions.Values{
 		CommitID: ptr.To(r.target.CommitUUID().String()),
+		// Note: ProjectID is set by state-svc since ProjectNameSpace is specified.
+		ProjectNameSpace: ptr.To(ns.String()),
+		Error:            ptr.To(errorType),
+		Message:          &message,
 	})
 }
 

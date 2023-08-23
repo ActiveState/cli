@@ -57,7 +57,8 @@ func NewCalculateTaxOK() *CalculateTaxOK {
 	return &CalculateTaxOK{}
 }
 
-/* CalculateTaxOK describes a response with status code 200, with default header values.
+/*
+CalculateTaxOK describes a response with status code 200, with default header values.
 
 Success
 */
@@ -87,7 +88,8 @@ func NewCalculateTaxBadRequest() *CalculateTaxBadRequest {
 	return &CalculateTaxBadRequest{}
 }
 
-/* CalculateTaxBadRequest describes a response with status code 400, with default header values.
+/*
+CalculateTaxBadRequest describes a response with status code 400, with default header values.
 
 Bad Request
 */
@@ -119,7 +121,8 @@ func NewCalculateTaxForbidden() *CalculateTaxForbidden {
 	return &CalculateTaxForbidden{}
 }
 
-/* CalculateTaxForbidden describes a response with status code 403, with default header values.
+/*
+CalculateTaxForbidden describes a response with status code 403, with default header values.
 
 Forbidden
 */
@@ -151,7 +154,8 @@ func NewCalculateTaxInternalServerError() *CalculateTaxInternalServerError {
 	return &CalculateTaxInternalServerError{}
 }
 
-/* CalculateTaxInternalServerError describes a response with status code 500, with default header values.
+/*
+CalculateTaxInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */

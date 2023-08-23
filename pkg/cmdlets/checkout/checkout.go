@@ -44,7 +44,7 @@ func New(repo git.Repository, prime primeable) *Checkout {
 	return &Checkout{repo, prime.Output(), prime.Config(), prime.Analytics(), "", prime.Auth()}
 }
 
-func (r *Checkout) Run(ns *project.Namespaced, branchName, cachePath, targetPath string) (string, error) {
+func (r *Checkout) Run(ns *project.Namespaced, branchName, cachePath, targetPath string, noClone bool) (string, error) {
 	path, err := r.pathToUse(ns, targetPath)
 	if err != nil {
 		return "", errs.Wrap(err, "Could not get path to use")
@@ -84,7 +84,7 @@ func (r *Checkout) Run(ns *project.Namespaced, branchName, cachePath, targetPath
 	}
 
 	// Clone the related repo, if it is defined
-	if pj.RepoURL != nil && *pj.RepoURL != "" {
+	if !noClone && pj.RepoURL != nil && *pj.RepoURL != "" {
 		err := r.repo.CloneProject(ns.Owner, ns.Project, path, r.Outputer, r.analytics)
 		if err != nil {
 			return "", locale.WrapError(err, "err_clone_project", "Could not clone associated git repository")
@@ -103,12 +103,23 @@ func (r *Checkout) Run(ns *project.Namespaced, branchName, cachePath, targetPath
 		}
 	}
 
+	// Match the case of the organization.
+	// Otherwise the incorrect case will be written to the project file.
+	owners, err := model.FetchOrganizationsByIDs([]strfmt.UUID{pj.OrganizationID})
+	if err != nil {
+		return "", errs.Wrap(err, "Unable to get the project's org")
+	}
+	if len(owners) == 0 {
+		return "", locale.NewInputError("err_no_org_name", "Your project's organization name could not be found")
+	}
+	owner := owners[0].DisplayName
+
 	// Create the config file, if the repo clone didn't already create it
 	configFile := filepath.Join(path, constants.ConfigFileName)
 	if !fileutils.FileExists(configFile) {
 		_, err = projectfile.Create(&projectfile.CreateParams{
-			Owner:      ns.Owner,
-			Project:    ns.Project,
+			Owner:      owner,
+			Project:    pj.Name, // match case on the Platform
 			CommitID:   commitID,
 			BranchName: branchName,
 			Directory:  path,

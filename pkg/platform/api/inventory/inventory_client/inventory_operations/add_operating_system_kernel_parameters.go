@@ -54,10 +54,12 @@ func NewAddOperatingSystemKernelParamsWithHTTPClient(client *http.Client) *AddOp
 	}
 }
 
-/* AddOperatingSystemKernelParams contains all the parameters to send to the API endpoint
-   for the add operating system kernel operation.
+/*
+AddOperatingSystemKernelParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the add operating system kernel operation.
+
+	Typically these are written to a http.Request.
 */
 type AddOperatingSystemKernelParams struct {
 

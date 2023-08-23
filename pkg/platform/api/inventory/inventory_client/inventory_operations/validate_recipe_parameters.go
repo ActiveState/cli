@@ -54,10 +54,12 @@ func NewValidateRecipeParamsWithHTTPClient(client *http.Client) *ValidateRecipeP
 	}
 }
 
-/* ValidateRecipeParams contains all the parameters to send to the API endpoint
-   for the validate recipe operation.
+/*
+ValidateRecipeParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the validate recipe operation.
+
+	Typically these are written to a http.Request.
 */
 type ValidateRecipeParams struct {
 

@@ -98,5 +98,6 @@ func legacyDimensionMap(d *dimensions.Values) map[string]string {
 		"23": strconv.FormatBool(ptr.From(d.Interactive, false)),
 		"24": ptr.From(d.TargetVersion, ""),
 		"25": ptr.From(d.Error, ""),
+		"26": ptr.From(d.Message, ""),
 	}
 }

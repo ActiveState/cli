@@ -321,6 +321,8 @@ err_activate_output_build_in_progress:
   other: Platform project build is in progress. Please wait for a few minutes and try "Reactivate Runtime" option in "State Tool" menu
 err_unsupported_platform:
   other: "Unsupported platform: [NOTICE]{{.V0}}[/RESET]"
+err_detect_language:
+  other: Could not detect which language to use
 err_language_not_found:
   other: "Could not find language: [NOTICE]{{.V0}}@{{.V1}}[/RESET]"
 error_state_activate_copy_save:
@@ -374,7 +376,9 @@ err_api_org_not_found:
 err_api_project_not_found:
   other: The requested project [NOTICE]{{.V0}}[/RESET] does not exist under [NOTICE]{{.V1}}[/RESET]. Please ensure the owner is correct and that the project has been created.
 err_api_project_not_found_unauthenticated:
-  other: The requested project [NOTICE]{{.V0}}/{{.V1}}[/RESET] could not be found. If this is a private project you may need to authenticate with 'state auth'.
+  other: The requested project [NOTICE]{{.V0}}/{{.V1}}[/RESET] could not be found
+tip_private_project_auth:
+  other: If this is a private project you may need to authenticate with 'state auth'.
 err_api_member_not_found:
   other: Unable to find requested Member
 err_api_org_invite_expected_one_invite:
@@ -874,6 +878,8 @@ err_no_valid_artifact:
   other: Your project is not producing any usable artifacts, is your State Tool up to date?
 err_runtime_download_no_response:
   other: Could not find bits associated with your runtime environment, please contact support
+err_runtime_setup:
+  other: Error setting up runtime
 err_signs3_invalid_url:
   other: API Responded with an invalid S3 URL, please contact support
 err_artifact_invalid_url:
@@ -1308,6 +1314,8 @@ request_timed_out:
   other: A request for data took too long - Trying again may help
 err_recipe_no_platform:
   other: Filter returned no valid platform IDs.
+err_filter_current_platform:
+  other: Filter returned no valid platform IDs for the current platform.
 no_commits:
   other: No commits exist yet for [NOTICE]{{.V0}}[/RESET]
 err_orgs_length:
@@ -1730,6 +1738,8 @@ artifact_download_failed:
   other: Failed to download artifact {{.V0}} ({{.V1}})
 artifact_setup_failed:
   other: Failed to install artifact {{.V0}} ({{.V1}})
+err_stored_artifacts:
+  other: Could not unmarshal stored artifacts, your install may be corrupted.
 err_fetch_branch:
   other: "Could not get branch [NOTICE]{{.V0}}[/RESET] for project"
 err_refresh_runtime:
@@ -1742,6 +1752,8 @@ err_user_network_solution:
     If your issue persists consider reporting it on our forums at {{.V0}}.
 err_revert_refresh:
   other: Could not get revert commit to check if changes were indeed made
+err_revert_commit:
+  other: "Could not revert{{.V0}} commit: {{.V1}}"
 install_initial_success:
   other: "An activestate.yaml has been created at: {{.V0}}."
 err_package_info_no_packages:
@@ -1900,6 +1912,10 @@ err_shell_commit_id_mismatch:
   other: "Cannot start a shell/prompt for the given commit ID. Please use [ACTIONABLE]`state checkout`[/RESET] to check out a specific commit ID and then try again."
 err_shell_cannot_load_project:
   other: Cannot load project to start a shell/prompt in.
+err_shell_already_active:
+  other: |
+    You are already in a shell for '[ACTIONABLE]{{.V0}}[/RESET]', located at '[ACTIONABLE]{{.V1}}[/RESET]'. You cannot enter a new shell when you are already in one.
+    To exit your current shell simply run: [ACTIONABLE]exit[/RESET].
 err_checkout_project:
   other: Could not checkout project {{.V0}}
 err_project_frompath:
@@ -1986,6 +2002,13 @@ svcctl_file_not_found:
     If this problem persists please report it on our forums: [ACTIONABLE]{{.V0}}[/RESET]
 err_autostart_app:
   other: Could not create new autostart app
+err_install_state_exe_does_not_exist:
+  other: |
+    Could not install State Tool. One or more of the installed executables appears to have been deleted during installation. Please check with your antivirus to see if it might have triggered a false-positive.
+
+    Please consider letting us know what antivirus you are running so that we can address this false-positive: [ACTIONABLE]{{.V0}}[/RESET].
+
+    Note the source code of the State Tool is open source, and you can review it yourself should you have concerns: [ACTIONABLE]https://github.com/ActiveState/cli[/RESET]
 install_remote_title:
   other: This will install the State Tool
 err_already_checked_out:
@@ -2055,3 +2078,15 @@ err_country_blocked:
   other: This service is not available in your region.
 err_shortcutdir_writable:
   other: Could not continue as we don't have permission to create [ACTIONABLE]{{.V0}}[/RESET].
+move_prompt:
+  other: |
+    You are about to move the project [NOTICE]{{.V0}}[/RESET] to the organization [NOTICE]{{.V1}}[/RESET].
+    This action will invalidate any local checkouts that already exist for this project. If you or your team members have checked out this project anywhere else, please update them with the new namespace: [ACTIONABLE]{{.V1}}/{{.V2}}[/RESET].
+    Continue?
+edit_prompt_name_notice:
+  other: |
+    Renaming a project will invalidate any local checkouts that already exist for this project. If you or your team members have checked out this project anywhere else, please update them with the new namespace: [ACTIONABLE]{{.V0}}/{{.V1}}[/RESET].
+err_edit_local_checkouts:
+  other: Could not update local checkouts
+err_edit_project_mapping:
+  other: Could not update project mapping

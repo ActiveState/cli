@@ -116,8 +116,8 @@ func (s *Auth) SyncRequired() bool {
 func (s *Auth) Sync() error {
 	defer profile.Measure("auth:Sync", time.Now())
 
-	if s.AvailableAPIToken() != "" {
-		logging.Debug("Authenticating with stored API token")
+	if token := s.AvailableAPIToken(); token != "" {
+		logging.Debug("Authenticating with stored API token: %s..", desensitizeToken(token))
 		if err := s.Authenticate(); err != nil {
 			return errs.Wrap(err, "Failed to authenticate with API token")
 		}
@@ -233,39 +233,38 @@ func (s *Auth) AuthenticateWithModel(credentials *mono_models.Credentials) error
 	return nil
 }
 
-func (s *Auth) AuthenticateWithDevice(deviceCode strfmt.UUID) error {
+func (s *Auth) AuthenticateWithDevice(deviceCode strfmt.UUID) (apiKey string, err error) {
 	logging.Debug("AuthenticateWithDevice")
 
-	token, err := model.CheckDeviceAuthorization(deviceCode)
+	jwtToken, apiKeyToken, err := model.CheckDeviceAuthorization(deviceCode)
 	if err != nil {
-		return errs.Wrap(err, "Authorization failed")
+		return "", errs.Wrap(err, "Authorization failed")
 	}
 
-	if token == nil {
-		return errNotYetGranted
+	if jwtToken == nil {
+		return "", errNotYetGranted
 	}
 
-	if err := s.updateSession(token); err != nil {
-		return errs.Wrap(err, "Storing JWT failed")
+	if err := s.updateSession(jwtToken); err != nil {
+		return "", errs.Wrap(err, "Storing JWT failed")
 	}
 
-	return nil
-
+	return apiKeyToken.Token, nil
 }
 
-func (s *Auth) AuthenticateWithDevicePolling(deviceCode strfmt.UUID, interval time.Duration) error {
+func (s *Auth) AuthenticateWithDevicePolling(deviceCode strfmt.UUID, interval time.Duration) (string, error) {
 	logging.Debug("AuthenticateWithDevicePolling, polling: %v", interval.String())
 	for start := time.Now(); time.Since(start) < 5*time.Minute; {
-		err := s.AuthenticateWithDevice(deviceCode)
+		token, err := s.AuthenticateWithDevice(deviceCode)
 		if err == nil {
-			return nil
+			return token, nil
 		} else if !errors.Is(err, errNotYetGranted) {
-			return errs.Wrap(err, "Device authentication failed")
+			return "", errs.Wrap(err, "Device authentication failed")
 		}
 		time.Sleep(interval) // then try again
 	}
 
-	return locale.NewInputError("err_auth_device_timeout")
+	return "", locale.NewInputError("err_auth_device_timeout")
 }
 
 // AuthenticateWithToken will try to authenticate using the given token
@@ -387,6 +386,7 @@ func (s *Auth) CreateToken() error {
 
 	for _, token := range tokensOK.Payload {
 		if token.Name == constants.APITokenName {
+			logging.Debug("Deleting stale token")
 			params := authentication.NewDeleteTokenParams()
 			params.SetTokenID(token.TokenID)
 			_, err := client.Authentication.DeleteToken(params, s.ClientAuth())
@@ -413,6 +413,7 @@ func (s *Auth) CreateToken() error {
 
 // SaveToken will save an API token
 func (s *Auth) SaveToken(token string) error {
+	logging.Debug("Saving token: %s..", desensitizeToken(token))
 	err := s.cfg.Set(ApiTokenConfigKey, token)
 	if err != nil {
 		return locale.WrapError(err, "err_set_token", "Could not set token in config")
@@ -436,6 +437,8 @@ func (s *Auth) NewAPIKey(name string) (string, error) {
 		return "", locale.WrapError(err, "err_token_create", "", err.Error())
 	}
 
+	logging.Debug("Created token: %s..", desensitizeToken(tokenOK.Payload.Token))
+
 	return tokenOK.Payload.Token, nil
 }
 
@@ -445,4 +448,11 @@ func (s *Auth) AvailableAPIToken() (v string) {
 		return tkn
 	}
 	return s.cfg.GetString(ApiTokenConfigKey)
+}
+
+func desensitizeToken(v string) string {
+	if len(v) <= 2 {
+		return "invalid token value"
+	}
+	return v[0:2]
 }
