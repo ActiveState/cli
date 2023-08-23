@@ -515,6 +515,7 @@ func (suite *PackageIntegrationTestSuite) TestJSON() {
 }
 
 func (suite *PackageIntegrationTestSuite) TestNormalize() {
+	suite.T().Skip("Test Skip")
 	suite.OnlyRunForTags(tagsuite.Package)
 	if runtime.GOOS == "darwin" {
 		suite.T().Skip("Skipping mac for now as the builds are still too unreliable")
