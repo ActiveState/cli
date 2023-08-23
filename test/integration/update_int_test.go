@@ -73,7 +73,7 @@ func (suite *UpdateIntegrationTestSuite) versionCompare(ts *e2e.Session, expecte
 	cp.ExpectExitCode(0)
 
 	version := versionData{}
-	out := strings.Trim(cp.Snapshot(), "\x00")
+	out := strings.Trim(cp.Output(), "\x00")
 	json.Unmarshal([]byte(out), &version)
 
 	matcher(expected, version.Version, fmt.Sprintf("Version could not be matched, output:\n\n%s", out))
@@ -88,7 +88,7 @@ func (suite *UpdateIntegrationTestSuite) branchCompare(ts *e2e.Session, expected
 	cp.ExpectExitCode(0, termtest.OptExpectTimeout(30*time.Second))
 
 	branch := branchData{}
-	out := strings.Trim(cp.Snapshot(), "\x00")
+	out := strings.Trim(cp.Output(), "\x00")
 	json.Unmarshal([]byte(out), &branch)
 
 	matcher(expected, branch.Branch, fmt.Sprintf("Branch could not be matched, output:\n\n%s", out))

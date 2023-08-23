@@ -58,7 +58,7 @@ func (suite *InstallerIntegrationTestSuite) TestInstallFromLocalSource() {
 	if runtime.GOOS == "darwin" && condition.OnCI() {
 		cp.Expect("You are running bash on macOS")
 	}
-	suite.NotContains(cp.Snapshot(), "Downloading State Tool")
+	suite.NotContains(cp.Output(), "Downloading State Tool")
 	cp.ExpectInput()
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
@@ -113,7 +113,7 @@ func (suite *InstallerIntegrationTestSuite) TestInstallFromLocalSource() {
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
 
-	snapshot := strings.Replace(cp.Snapshot(), "\n", "", -1)
+	snapshot := strings.Replace(cp.Output(), "\n", "", -1)
 	if !strings.Contains(snapshot, stateExec) && !strings.Contains(snapshot, stateExecResolved) {
 		suite.Fail(fmt.Sprintf("Snapshot does not include '%s' or '%s', snapshot:\n %s", stateExec, stateExecResolved, snapshot))
 	}
@@ -166,7 +166,7 @@ func (suite *InstallerIntegrationTestSuite) TestInstallNoErrorTips() {
 	)
 
 	cp.ExpectExitCode(1)
-	suite.Assert().NotContains(cp.Snapshot(), "Need More Help?", "error tips should not be displayed when invoking installer")
+	suite.Assert().NotContains(cp.Output(), "Need More Help?", "error tips should not be displayed when invoking installer")
 }
 
 func (suite *InstallerIntegrationTestSuite) TestInstallErrorTips() {
@@ -189,7 +189,7 @@ func (suite *InstallerIntegrationTestSuite) TestInstallErrorTips() {
 	cp.ExpectInput()
 	cp.SendLine("exit")
 	cp.Wait()
-	suite.Assert().Contains(cp.Snapshot(), "Need More Help?", "error tips should be displayed in shell created by installer")
+	suite.Assert().Contains(cp.Output(), "Need More Help?", "error tips should be displayed in shell created by installer")
 }
 
 func (suite *InstallerIntegrationTestSuite) TestStateTrayRemoval() {
@@ -248,7 +248,7 @@ func (suite *InstallerIntegrationTestSuite) TestStateTrayRemoval() {
 	stateExec, err := installation.StateExecFromDir(dir)
 	suite.Require().NoError(err)
 	cp = ts.SpawnCmdWithOpts(stateExec, e2e.OptArgs("--version"))
-	suite.Assert().NotContains(cp.Snapshot(), version)
+	suite.Assert().NotContains(cp.Output(), version)
 	cp.ExpectExitCode(0)
 }
 

@@ -66,8 +66,8 @@ func (suite *ConditionIntegrationTestSuite) TestMixin() {
 		e2e.OptArgs("run", "MixinUser"),
 	)
 	cp.ExpectExitCode(0)
-	suite.Assert().NotContains(cp.Snapshot(), "authenticated: yes", "expected not to be authenticated, output was:\n%s.", cp.Snapshot())
-	suite.Assert().NotContains(cp.Snapshot(), e2e.PersistentUsername, "expected not to be authenticated, output was:\n%s", cp.Snapshot())
+	suite.Assert().NotContains(cp.Output(), "authenticated: yes", "expected not to be authenticated, output was:\n%s.", cp.Output())
+	suite.Assert().NotContains(cp.Output(), e2e.PersistentUsername, "expected not to be authenticated, output was:\n%s", cp.Output())
 
 	ts.LoginAsPersistentUser()
 	defer ts.LogoutUser()

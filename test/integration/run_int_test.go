@@ -124,7 +124,7 @@ func (suite *RunIntegrationTestSuite) TestInActivatedEnv() {
 	cp.SendLine("exit 0")
 	cp.ExpectExitCode(0)
 	suite.Require().NotContains(
-		cp.Snapshot(), "not printed after second interrupt",
+		cp.Output(), "not printed after second interrupt",
 	)
 }
 
@@ -195,7 +195,7 @@ func (suite *RunIntegrationTestSuite) TestTwoInterrupts() {
 	suite.expectTerminateBatchJob(cp)
 	cp.ExpectExitCode(123)
 	suite.Require().NotContains(
-		cp.Snapshot(), "not printed after second interrupt",
+		cp.Output(), "not printed after second interrupt",
 	)
 }
 

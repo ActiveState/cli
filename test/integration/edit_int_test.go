@@ -115,7 +115,7 @@ func (suite *EditIntegrationTestSuite) TestEdit_UpdateCorrectPlatform() {
 	suite.Require().NotNil(s, "test-script should not be empty")
 	v, err := s.Value()
 	suite.Require().NoError(err)
-	suite.Contains(v, "more info!", "Output of edit command:\n%s", cp.Snapshot())
+	suite.Contains(v, "more info!", "Output of edit command:\n%s", cp.Output())
 }
 
 func TestEditIntegrationTestSuite(t *testing.T) {

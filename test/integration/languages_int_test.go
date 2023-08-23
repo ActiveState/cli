@@ -73,7 +73,7 @@ func (suite *LanguagesIntegrationTestSuite) TestLanguages_install() {
 	cp.ExpectExitCode(0)
 
 	// assert that version number changed
-	output := cp.Snapshot()
+	output := cp.Output()
 	vs := versionRe.FindString(output)
 	v, err := goversion.NewVersion(vs)
 	suite.Require().NoError(err, "parsing version %s", vs)

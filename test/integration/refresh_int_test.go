@@ -51,7 +51,7 @@ func (suite *RefreshIntegrationTestSuite) TestRefresh() {
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("refresh")
-	suite.Assert().NotContains(cp.Snapshot(), "Setting Up Runtime", "Unchanged runtime should not refresh")
+	suite.Assert().NotContains(cp.Output(), "Setting Up Runtime", "Unchanged runtime should not refresh")
 	cp.Expect("Runtime updated")
 	cp.ExpectExitCode(0)
 }

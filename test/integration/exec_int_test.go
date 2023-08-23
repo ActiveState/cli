@@ -51,7 +51,7 @@ func (suite *ExecIntegrationTestSuite) TestExec_Environment() {
 		e2e.OptArgs("exec", testScript),
 	)
 	cp.ExpectExitCode(0)
-	output := cp.Snapshot()
+	output := cp.Output()
 	suite.Contains(output, ts.Dirs.Bin, "PATH was not updated to contain cache directory, original PATH:", os.Getenv("PATH"))
 }
 

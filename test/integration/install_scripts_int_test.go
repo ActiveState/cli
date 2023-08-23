@@ -242,7 +242,7 @@ func (suite *InstallScriptsIntegrationTestSuite) assertCorrectVersion(ts *e2e.Se
 	cp := ts.SpawnCmd(stateExec, "--version", "--output=json")
 	cp.ExpectExitCode(0)
 	actual := versionData{}
-	out := strings.Trim(cp.Snapshot(), "\x00")
+	out := strings.Trim(cp.Output(), "\x00")
 	json.Unmarshal([]byte(out), &actual)
 
 	if expectedVersion != "" {

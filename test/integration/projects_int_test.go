@@ -95,7 +95,7 @@ func (suite *ProjectsIntegrationTestSuite) TestEdit_Name() {
 
 	// If the checkout failed, it's probably because the project name was changed
 	// in a previous run of this test. Try again with the new name.
-	if strings.Contains(cp.Snapshot(), "Could not checkout project") {
+	if strings.Contains(cp.Output(), "Could not checkout project") {
 		cp = ts.Spawn("checkout", fmt.Sprintf("ActiveState-CLI/%s", newName))
 		originalName = newName
 		newName = originalName

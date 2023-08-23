@@ -29,16 +29,16 @@ func (suite *PushIntegrationTestSuite) TestInitAndPush_VSCode() {
 		filepath.Join(ts.Dirs.Work, namespace),
 	)
 	cp.ExpectExitCode(0)
-	suite.Contains(cp.Snapshot(), "Skipping runtime setup because it was disabled by an environment variable")
-	suite.Contains(cp.Snapshot(), "{")
-	suite.Contains(cp.Snapshot(), "}")
+	suite.Contains(cp.Output(), "Skipping runtime setup because it was disabled by an environment variable")
+	suite.Contains(cp.Output(), "{")
+	suite.Contains(cp.Output(), "}")
 	wd := filepath.Join(cp.WorkDirectory(), namespace)
 	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("push", "--output", "editor"),
 		e2e.OptWD(wd),
 	)
 	cp.ExpectExitCode(0)
-	suite.Equal("", cp.Snapshot())
+	suite.Equal("", cp.Output())
 
 	// check that pushed project exists
 	cp = ts.Spawn("show", namespace)
@@ -73,8 +73,8 @@ func (suite *ShowIntegrationTestSuite) TestShow_VSCode() {
 	}
 
 	var out ShowOutput
-	err := json.Unmarshal([]byte(cp.Snapshot()), &out)
-	suite.Require().NoError(err, "Failed to parse JSON from: %s", cp.Snapshot())
+	err := json.Unmarshal([]byte(cp.Output()), &out)
+	suite.Require().NoError(err, "Failed to parse JSON from: %s", cp.Output())
 	suite.Equal("Show", out.Name)
 	suite.Equal(e2e.PersistentUsername, out.Organization)
 	suite.Equal("Public", out.Visibility)
@@ -111,7 +111,7 @@ func (suite *PushIntegrationTestSuite) TestOrganizations_VSCode() {
 	expected, err := json.Marshal(org)
 	suite.Require().NoError(err)
 
-	suite.Contains(cp.Snapshot(), string(expected))
+	suite.Contains(cp.Output(), string(expected))
 }
 
 func (suite *AuthIntegrationTestSuite) TestAuth_VSCode() {
@@ -136,11 +136,11 @@ func (suite *AuthIntegrationTestSuite) TestAuth_VSCode() {
 	)
 	cp.Expect(`"privateProjects":false}`)
 	cp.ExpectExitCode(0)
-	suite.Equal(string(expected), cp.Snapshot())
+	suite.Equal(string(expected), cp.Output())
 
 	cp = ts.Spawn("export", "jwt", "--output", "editor")
 	cp.ExpectExitCode(0)
-	suite.Assert().Greater(len(cp.Snapshot()), 3, "expected jwt token to be non-empty")
+	suite.Assert().Greater(len(cp.Output()), 3, "expected jwt token to be non-empty")
 }
 
 func (suite *PackageIntegrationTestSuite) TestPackages_VSCode() {
@@ -165,8 +165,8 @@ func (suite *PackageIntegrationTestSuite) TestPackages_VSCode() {
 	}
 
 	var po []PackageOutput
-	err := json.Unmarshal([]byte(cp.Snapshot()), &po)
-	suite.Require().NoError(err, "Could not parse JSON from: %s", cp.Snapshot())
+	err := json.Unmarshal([]byte(cp.Output()), &po)
+	suite.Require().NoError(err, "Could not parse JSON from: %s", cp.Output())
 
 	suite.Len(po, 2)
 }

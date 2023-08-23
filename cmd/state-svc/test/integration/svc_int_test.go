@@ -54,14 +54,14 @@ func (suite *SvcIntegrationTestSuite) TestStartStop() {
 	// Verify the server is running on its reported port.
 	cp.ExpectRe("Port:\\s+:\\d+\\s")
 	portRe := regexp.MustCompile("Port:\\s+:(\\d+)")
-	port := portRe.FindStringSubmatch(cp.Snapshot())[1]
+	port := portRe.FindStringSubmatch(cp.Output())[1]
 	_, err := net.Listen("tcp", "localhost:"+port)
 	suite.Error(err)
 
 	// Verify it created and wrote to its reported log file.
 	cp.ExpectRe("Log:\\s+.+?\\.log")
 	logRe := regexp.MustCompile("Log:\\s+(.+?\\.log)")
-	logFile := logRe.FindStringSubmatch(cp.Snapshot())[1]
+	logFile := logRe.FindStringSubmatch(cp.Output())[1]
 	suite.True(fileutils.FileExists(logFile), "log file '"+logFile+"' does not exist")
 	suite.True(len(fileutils.ReadFileUnsafe(logFile)) > 0, "log file is empty")
 
@@ -113,7 +113,7 @@ func (suite *SvcIntegrationTestSuite) TestSignals() {
 	cp.Expect("Starting")
 	time.Sleep(1 * time.Second) // wait for the service to start up
 	cp.Cmd().Process.Signal(syscall.SIGTERM)
-	suite.NotContains(cp.Snapshot(), "caught a signal")
+	suite.NotContains(cp.Output(), "caught a signal")
 	cp.ExpectExitCode(0) // should exit gracefully
 
 	cp = ts.SpawnCmdWithOpts(ts.SvcExe, e2e.OptArgs("status"))

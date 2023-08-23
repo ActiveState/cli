@@ -122,7 +122,7 @@ func (suite *InviteNegativeAutomationTestSuite) TestInvite_NonExistentArgValues_
 	// `-n` flag used
 	cp = ts.Spawn("invite", "qatesting+3@activestate.com", "-n")
 	cp.ExpectExitCode(1)
-	suite.Assert().NotContains(cp.Snapshot(), "Invalid role") // there is an error, just not this one
+	suite.Assert().NotContains(cp.Output(), "Invalid role") // there is an error, just not this one
 }
 
 func (suite *InviteNegativeAutomationTestSuite) TestInvite_NonExistentArgValues_Private() {
@@ -153,7 +153,7 @@ func (suite *InviteNegativeAutomationTestSuite) TestInvite_NonExistentArgValues_
 	// `-n` flag used
 	cp = ts.Spawn("invite", "qatesting+3@activestate.com", "-n")
 	cp.ExpectExitCode(1)
-	suite.Assert().NotContains(cp.Snapshot(), "Invalid role") // there is an error, just not this one
+	suite.Assert().NotContains(cp.Output(), "Invalid role") // there is an error, just not this one
 }
 
 func TestInviteAutomationTestSuite(t *testing.T) {

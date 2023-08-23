@@ -317,7 +317,7 @@ func (suite *ShellIntegrationTestSuite) TestNestedShellNotification() {
 		e2e.OptArgs("shell", "small-python"),
 		e2e.OptAppendEnv(env...))
 	cp.Expect("Activated")
-	suite.Assert().NotContains(cp.Snapshot(), "State Tool is operating on project")
+	suite.Assert().NotContains(cp.Output(), "State Tool is operating on project")
 	cp.SendLine(fmt.Sprintf(`export HOME="%s"`, ts.Dirs.HomeDir)) // some shells do not forward this
 
 	cp.SendLine(ss.Binary()) // platform-specific shell (zsh on macOS, bash on Linux, etc.)

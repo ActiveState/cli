@@ -58,7 +58,7 @@ events:
 	cp.ExpectInput()
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
-	output := cp.Snapshot()
+	output := cp.Output()
 	if strings.Contains(output, "First activate event") {
 		suite.T().Fatal("Output from second activate event should not contain first-activate output")
 	}

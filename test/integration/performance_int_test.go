@@ -55,16 +55,16 @@ func performanceTest(commands []string, expect string, samples int, maxTime time
 			cp.Expect(expect)
 		}
 		cp.ExpectExitCode(0)
-		v := rx.FindStringSubmatch(cp.Snapshot())
+		v := rx.FindStringSubmatch(cp.Output())
 		if len(v) < 2 {
-			suite.T().Fatalf("Could not find '%s' in output: %s", rx.String(), cp.Snapshot())
+			suite.T().Fatalf("Could not find '%s' in output: %s", rx.String(), cp.Output())
 		}
 		durMS, err := strconv.Atoi(v[1])
 		suite.Require().NoError(err)
 		dur := time.Millisecond * time.Duration(durMS)
 
 		if firstEntry == "" {
-			firstEntry = cp.Snapshot()
+			firstEntry = cp.Output()
 			firstLogs = ts.DebugLogs()
 		}
 		if x == 0 {

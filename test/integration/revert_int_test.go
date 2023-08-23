@@ -59,7 +59,7 @@ func (suite *RevertIntegrationTestSuite) TestRevert() {
 	cp.SendLine("import urllib3")
 	cp.Expect("No module named 'urllib3'")
 	cp.SendLine("import argparse")
-	suite.Assert().NotContains(cp.Snapshot(), "No module named 'argparse'")
+	suite.Assert().NotContains(cp.Output(), "No module named 'argparse'")
 	cp.SendLine("exit()") // exit python3
 	cp.SendLine("exit")   // exit state shell
 	cp.ExpectExitCode(0)

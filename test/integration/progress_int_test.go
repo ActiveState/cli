@@ -24,7 +24,7 @@ func (suite *ProgressIntegrationTestSuite) TestProgress() {
 	)
 	cp.Expect(locale.T("setup_runtime"))
 	cp.Expect("Checked out")
-	suite.Assert().NotContains(cp.Snapshot(), "...")
+	suite.Assert().NotContains(cp.Output(), "...")
 	cp.ExpectExitCode(0)
 
 	cp = ts.SpawnWithOpts(

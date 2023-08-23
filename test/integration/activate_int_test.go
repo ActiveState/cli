@@ -308,7 +308,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_PythonPath() {
 	} else {
 		cp.Send("echo $PYTHONPATH")
 	}
-	suite.Assert().NotContains(cp.Snapshot(), constants.LocalRuntimeTempDirectory)
+	suite.Assert().NotContains(cp.Output(), constants.LocalRuntimeTempDirectory)
 	// Verify the temp runtime setup directory has been removed.
 	runtimeFound := false
 	entries, err := fileutils.ListDir(ts.Dirs.Cache, true)
@@ -382,7 +382,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivatePerl() {
 	cp.Expect("Installing", termtest.OptExpectTimeout(140*time.Second))
 	cp.Expect("Activated")
 
-	suite.assertCompletedStatusBarReport(cp.Snapshot())
+	suite.assertCompletedStatusBarReport(cp.Output())
 
 	// ensure that shell is functional
 	cp.ExpectInput()
@@ -515,7 +515,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_FromCache() {
 	cp.Expect("Installing")
 	cp.Expect("Activated")
 
-	suite.assertCompletedStatusBarReport(cp.Snapshot())
+	suite.assertCompletedStatusBarReport(cp.Output())
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
 
@@ -528,7 +528,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_FromCache() {
 	cp.ExpectInput()
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
-	suite.NotContains(cp.Snapshot(), "Downloading")
+	suite.NotContains(cp.Output(), "Downloading")
 }
 
 func TestActivateIntegrationTestSuite(t *testing.T) {

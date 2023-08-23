@@ -39,7 +39,7 @@ func (suite *HistoryIntegrationTestSuite) TestHistory_History() {
 	cp.Expect("+ autopip 1.6.0")
 	cp.Expect("- convertdate")
 	cp.Expect(`+ Platform`)
-	suite.Assert().NotContains(cp.Snapshot(), "StructuredChanges")
+	suite.Assert().NotContains(cp.Output(), "StructuredChanges")
 	cp.ExpectExitCode(0)
 }
 

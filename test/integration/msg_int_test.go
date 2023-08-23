@@ -89,7 +89,7 @@ func (suite *MsgIntegrationTestSuite) TestMessage_Basic() {
 			}
 			cp.ExpectExitCode(0)
 			if !tt.ExpectRepeat {
-				suite.Require().NotContains(cp.Snapshot(), "This is a simple message", "Should not repeat as that's the default behavior")
+				suite.Require().NotContains(cp.Output(), "This is a simple message", "Should not repeat as that's the default behavior")
 			}
 		})
 	}
@@ -136,7 +136,7 @@ func (suite *MsgIntegrationTestSuite) TestMessage_Basic_InterruptPrompt() {
 	cp.Expect(`This is a simple message`)
 	cp.Expect("Press ENTER to continue")
 	time.Sleep(time.Millisecond * 100)
-	suite.Require().NotContains(cp.Snapshot(), "Usage:")
+	suite.Require().NotContains(cp.Output(), "Usage:")
 	cp.SendLine("")
 	cp.Expect("Usage:")
 	cp.ExpectExitCode(0)
@@ -146,7 +146,7 @@ func (suite *MsgIntegrationTestSuite) TestMessage_Basic_InterruptPrompt() {
 	cp.Expect(`This is a simple message`)
 	cp.Expect("Usage:")
 	cp.ExpectExitCode(0)
-	suite.Require().NotContains(cp.Snapshot(), "Press ENTER to continue")
+	suite.Require().NotContains(cp.Output(), "Press ENTER to continue")
 }
 
 func (suite *MsgIntegrationTestSuite) TestMessage_Basic_InterruptExit() {
@@ -166,7 +166,7 @@ func (suite *MsgIntegrationTestSuite) TestMessage_Basic_InterruptExit() {
 	cp := ts.SpawnWithOpts(e2e.OptArgs("config"), e2e.OptAppendEnv(constants.MessagesOverrideEnvVarName+"="+msgFile))
 	cp.Expect(`This is a simple message`)
 	cp.ExpectExitCode(1)
-	suite.Require().NotContains(cp.Snapshot(), "Usage:")
+	suite.Require().NotContains(cp.Output(), "Usage:")
 }
 
 func TestMsgIntegrationTestSuite(t *testing.T) {

@@ -95,7 +95,7 @@ func (suite *ExportIntegrationTestSuite) TestExport_Env() {
 	cp.Expect(`PATH: `)
 	cp.ExpectExitCode(0)
 
-	suite.Assert().NotContains(cp.Snapshot(), "ACTIVESTATE_ACTIVATED")
+	suite.Assert().NotContains(cp.Output(), "ACTIVESTATE_ACTIVATED")
 }
 
 func (suite *ExportIntegrationTestSuite) TestJSON() {

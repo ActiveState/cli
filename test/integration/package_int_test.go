@@ -562,7 +562,7 @@ func (suite *PackageIntegrationTestSuite) TestNormalize() {
 	)
 	cp.Expect("charset-normalizer")
 	cp.ExpectExitCode(0)
-	suite.NotContains(cp.Snapshot(), "is different")
+	suite.NotContains(cp.Output(), "is different")
 }
 
 func (suite *PackageIntegrationTestSuite) TestInstall_InvalidVersion() {
