@@ -236,6 +236,14 @@ func TestGetProjectFilePath(t *testing.T) {
 	assert.Equal(t, expectedPath, configPath, "Project path is properly detected using the ProjectEnvVarName")
 
 	os.Unsetenv(constants.ProjectEnvVarName)
+
+	os.Setenv(constants.ActivatedStateEnvVarName, "/some/path")
+	defer os.Unsetenv(constants.ActivatedStateEnvVarName)
+	configPath, err = GetProjectFilePath()
+	require.Nil(t, err)
+	assert.Equal(t, expectedPath, configPath, "Project path prioritizes working directory project over activated project")
+	os.Unsetenv(constants.ActivatedStateEnvVarName)
+
 	cfg, err := config.New()
 	require.NoError(t, err)
 	defer func() { require.NoError(t, cfg.Close()) }()
@@ -246,6 +254,11 @@ func TestGetProjectFilePath(t *testing.T) {
 	os.Chdir(tmpDir)
 	_, err = GetProjectFilePath()
 	assert.Error(t, err, "GetProjectFilePath should fail")
+	os.Setenv(constants.ActivatedStateEnvVarName, filepath.Dir(expectedPath))
+	configPath, err = GetProjectFilePath()
+	require.Nil(t, err)
+	assert.Equal(t, expectedPath, configPath, "Project path falls back on activated project path")
+	os.Unsetenv(constants.ActivatedStateEnvVarName)
 	cfg.Set(constants.GlobalDefaultPrefname, expectedPath)
 	configPath, err = GetProjectFilePath()
 	assert.NoError(t, err, "GetProjectFilePath should succeed")

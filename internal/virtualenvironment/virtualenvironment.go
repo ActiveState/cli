@@ -42,14 +42,12 @@ func (v *VirtualEnvironment) GetEnv(inherit bool, useExecutors bool, projectDir,
 	}
 
 	if projectDir != "" {
-		configFile := filepath.Join(projectDir, constants.ConfigFileName)
-
 		envMap[constants.ActivatedStateEnvVarName] = projectDir
-		envMap[constants.ProjectEnvVarName] = configFile
 		envMap[constants.ActivatedStateIDEnvVarName] = v.activationID
 		envMap[constants.ActivatedStateNamespaceEnvVarName] = namespace
 
 		// Get project from explicitly defined configuration file
+		configFile := filepath.Join(projectDir, constants.ConfigFileName)
 		pj, err := project.Parse(configFile)
 		if err != nil {
 			return envMap, locale.WrapError(err, "err_parse_project", "", configFile)

@@ -752,6 +752,7 @@ func GetProjectFilePath() (string, error) {
 	lookup := []func() (string, error){
 		getProjectFilePathFromEnv,
 		getProjectFilePathFromWd,
+		getProjectFilePathFromShell,
 		getProjectFilePathFromDefault,
 	}
 	for _, getProjectFilePath := range lookup {
@@ -790,6 +791,18 @@ func getProjectFilePathFromWd() (string, error) {
 	}
 
 	return path, nil
+}
+
+func getProjectFilePathFromShell() (string, error) {
+	projectFilePath := os.Getenv(constants.ActivatedStateEnvVarName)
+	if projectFilePath != "" {
+		configFile := filepath.Join(projectFilePath, constants.ConfigFileName)
+		if fileutils.FileExists(configFile) {
+			return configFile, nil
+		}
+		return "", &ErrorNoProject{locale.NewInputError("err_shell_no_projectfile", "The project for the shell you are in no longer exists.")}
+	}
+	return "", nil
 }
 
 func getProjectFilePathFromDefault() (_ string, rerr error) {
