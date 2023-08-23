@@ -103,14 +103,22 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateAvailable() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	textFn := func() string {
+	search, found := "Update Available", false
+	for i := 0; i < 4; i++ {
+		if i > 0 {
+			time.Sleep(time.Second * 3)
+		}
+
 		cp := ts.SpawnWithOpts(e2e.WithArgs("--version"), e2e.AppendEnv(suite.env(false, true)...))
 		cp.ExpectExitCode(0)
-		return cp.Snapshot()
+
+		if strings.Contains(cp.Snapshot(), search) {
+			found = true
+			break
+		}
 	}
 
-	rptCheck := newRepeatCheck(suite.T(), 4, time.Second*3)
-	rptCheck.contains(textFn, "Update Available")
+	suite.Require().True(found, "Expecting to find %q", search)
 }
 
 func (suite *UpdateIntegrationTestSuite) TestUpdate() {
@@ -138,14 +146,23 @@ func (suite *UpdateIntegrationTestSuite) testUpdate(ts *e2e.Session, baseDir str
 	stateExec, err := installation.StateExecFromDir(baseDir)
 	suite.NoError(err)
 
-	textFn := func() string {
+	searchA, searchB, found := "Updating State Tool to", "Installing Update", false
+	for i := 0; i < 4; i++ {
+		if i > 0 {
+			time.Sleep(time.Second * 3)
+		}
+
 		cp := ts.SpawnCmdWithOpts(stateExec, spawnOpts...)
 		cp.ExpectExitCode(0)
-		return cp.Snapshot()
+
+		snap := cp.Snapshot()
+		if strings.Contains(snap, searchA) && strings.Contains(snap, searchB) {
+			found = true
+			break
+		}
 	}
 
-	rptCheck := newRepeatCheck(suite.T(), 4, time.Second*3)
-	rptCheck.contains(textFn, "Updating State Tool to", "Installing Update")
+	suite.Require().True(found, "Expecting to find %q and %q", searchA, searchB)
 }
 
 func (suite *UpdateIntegrationTestSuite) TestUpdate_Repair() {
@@ -173,14 +190,23 @@ func (suite *UpdateIntegrationTestSuite) TestUpdate_Repair() {
 		e2e.AppendEnv(suite.env(false, true)...),
 	}
 
-	textFn := func() string {
+	searchA, searchB, found := "Updating State Tool to version", "Installing Update", false
+	for i := 0; i < 4; i++ {
+		if i > 0 {
+			time.Sleep(time.Second * 3)
+		}
+
 		cp := ts.SpawnCmdWithOpts(stateExePath, spawnOpts...)
 		cp.Wait(time.Minute * 3)
-		return cp.Snapshot()
+
+		snap := cp.Snapshot()
+		if strings.Contains(snap, searchA) && strings.Contains(snap, searchB) {
+			found = true
+			break
+		}
 	}
 
-	rptCheck := newRepeatCheck(suite.T(), 4, time.Second*3)
-	rptCheck.contains(textFn, "Updating State Tool to version", "Installing Update")
+	suite.Require().True(found, "Expecting to find %q and %q", searchA, searchB)
 
 	suite.NoFileExists(filepath.Join(ts.Dirs.Bin, constants.StateCmd+exeutils.Extension), "State Tool executable at install dir should no longer exist")
 	suite.NoFileExists(filepath.Join(ts.Dirs.Bin, constants.StateSvcCmd+exeutils.Extension), "State Service executable at install dir should no longer exist")
@@ -279,14 +305,22 @@ func (suite *UpdateIntegrationTestSuite) testAutoUpdate(ts *e2e.Session, baseDir
 	stateExec, err := installation.StateExecFromDir(baseDir)
 	suite.NoError(err)
 
-	textFn := func() string {
+	search, found := "Updating State Tool", false
+	for i := 0; i < 4; i++ {
+		if i > 0 {
+			time.Sleep(time.Second * 4)
+		}
+
 		cp := ts.SpawnCmdWithOpts(stateExec, spawnOpts...)
 		cp.ExpectExitCode(0, time.Minute*1)
-		return cp.Snapshot()
+
+		if strings.Contains(cp.Snapshot(), search) {
+			found = true
+			break
+		}
 	}
 
-	rptCheck := newRepeatCheck(suite.T(), 3, time.Second*4)
-	rptCheck.contains(textFn, "Auto Update", "Updating State Tool")
+	suite.Require().True(found, "Expecting to find %q", search)
 }
 
 func (suite *UpdateIntegrationTestSuite) installLatestReleaseVersion(ts *e2e.Session, dir string) {
@@ -346,43 +380,4 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateToCurrent() {
 	suite.installLatestReleaseVersion(ts, installDir)
 
 	suite.testUpdate(ts, installDir, e2e.AppendEnv(fmt.Sprintf("ACTIVESTATE_CLI_UPDATE_BRANCH=%s", constants.BranchName)))
-}
-
-// repeatCheck provides methods to check a callback multiple times. This is
-// useful when a callback may not succeed on the first try, but subsequent
-// tries are expected to pass.
-type repeatCheck struct {
-	t     *testing.T
-	iters int
-	pause time.Duration
-}
-
-func newRepeatCheck(t *testing.T, iters int, pause time.Duration) *repeatCheck {
-	return &repeatCheck{
-		t:     t,
-		iters: iters,
-		pause: pause,
-	}
-}
-
-func (c *repeatCheck) contains(text func() string, substrs ...string) {
-	printf := c.t.Logf
-	pause := c.pause
-
-	for i := 0; i < c.iters; i++ {
-		if i == c.iters-1 {
-			printf = c.t.Fatalf
-			pause = 0
-		}
-
-		txt := text()
-		for _, substr := range substrs {
-			if strings.Contains(txt, substr) {
-				return
-			}
-			printf("Expected to find (iter %d):\n%q\nReceived:\n%q", i, substr, txt)
-		}
-
-		time.Sleep(pause)
-	}
 }
