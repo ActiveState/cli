@@ -262,7 +262,8 @@ func IsErrorResponse(errorType string) bool {
 		errorType == HeadOnBranchMovedErrorType ||
 		errorType == ForbiddenErrorType ||
 		errorType == RemediableSolveErrorType ||
-		errorType == PlanningErrorType
+		errorType == PlanningErrorType ||
+		errorType == NotFoundErrorType
 }
 
 func ProcessCommitError(commit *Commit, fallbackMessage string) error {
