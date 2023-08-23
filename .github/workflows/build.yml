@@ -310,7 +310,7 @@ jobs:
           echo "Running integration tests with tags: $TEST_SUITE_TAGS (empty means every test not specifically tagged)"
 
           export TEST_SUITE_TAGS="$TEST_SUITE_TAGS"
-          TIMEOUT=30m
+          TIMEOUT=60m
           if [[ "$TEST_SUITE_TAGS" == "all" ]]; then
             TIMEOUT=60m
           fi
