@@ -39,7 +39,7 @@ func ActivateAndWait(
 		}
 	}
 
-	ve, err := venv.GetEnv(false, true, projectDir)
+	ve, err := venv.GetEnv(false, true, projectDir, proj.Namespace().String())
 	if err != nil {
 		return locale.WrapError(err, "error_could_not_activate_venv", "Could not retrieve environment information.")
 	}
