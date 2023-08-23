@@ -57,14 +57,19 @@ func (u *Update) Run(params *Params) error {
 	// Check for available update
 	upd, err := u.svc.CheckUpdate(context.Background(), params.Channel, "")
 	if err != nil {
-		return locale.WrapInputError(err, "err_update_fetch", "Could not retrieve update information, please verify that '{{.V0}}' is a valid channel.", params.Channel)
+		return errs.AddTips(locale.WrapError(
+			err, "err_update_fetch",
+			"Could not retrieve update information.",
+		), locale.Tl(
+			"err_tip_update_fetch", "Try again, and/or try restarting State Service",
+		))
 	}
 
 	update := updater.NewUpdateInstall(u.an, updater.NewAvailableUpdateFromGraph(upd))
 	if !update.IsUseful() {
 		logging.Debug("No update found")
 		u.out.Print(output.Prepare(
-			locale.T("update_none_found"),
+			locale.Tr("update_none_found", params.Channel),
 			&struct{}{},
 		))
 		return nil

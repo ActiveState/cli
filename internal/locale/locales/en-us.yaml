@@ -764,7 +764,7 @@ update_available:
     Available Version: [NOTICE]{{.V1}}[/RESET]
     You can update by running [ACTIONABLE]`state update`[/RESET]
 update_none_found:
-  other: No new update available.
+  other: Update not found for {{.V0}}.
 updating_version:
   other: Updating State Tool to version {{.V0}}
 runtime_update_notice_known_count:
