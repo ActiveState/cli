@@ -259,10 +259,16 @@ func (suite *ActivateIntegrationTestSuite) activatePython(version string, extraE
 	// test that other executables that use python work as well
 	pipExe := "pip" + version
 	cp.SendLine(fmt.Sprintf("%s --version", pipExe))
+
+	// Exit activated state
+	cp.SendLine("exit")
+	cp.ExpectExitCode(0)
+	snapshot := cp.Snapshot() // Without waiting for exit this isn't guaranteed to have our output yet
+
+	// Assert pip output
 	pipVersionRe := regexp.MustCompile(`pip \d+(?:\.\d+)+ from ([^ ]+) \(python`)
-	cp.ExpectRe(pipVersionRe.String())
-	pipVersionMatch := pipVersionRe.FindStringSubmatch(cp.Snapshot())
-	suite.Require().Len(pipVersionMatch, 2, "expected pip version to match")
+	pipVersionMatch := pipVersionRe.FindStringSubmatch(snapshot)
+	suite.Require().Len(pipVersionMatch, 2, "expected pip version to match, snapshot: %s", snapshot)
 	suite.Contains(pipVersionMatch[1], "cache", "pip loaded from activestate cache dir")
 
 	executor := filepath.Join(ts.Dirs.DefaultBin, pythonShim)
