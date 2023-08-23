@@ -297,21 +297,12 @@ func (bp *BuildPlanner) StageCommit(params StageCommitParams) (strfmt.UUID, erro
 		return "", processBuildPlannerError(err, "failed to stage commit")
 	}
 
-	if resp.Error != nil {
-		return "", locale.NewError("Failed to stage commit, API returned message: {{.V0}}", resp.Error.Message)
-	}
-
-	if resp.ParseError != nil {
-		return "", locale.NewInputError(
-			"err_stage_commit_parse",
-			"The platform failed to parse the build expression, received the following message: {{.V0}}. Path: {{.V1}}",
-			resp.ParseError.Message,
-			resp.ParseError.Path,
-		)
-	}
-
 	if resp.Commit == nil {
 		return "", errs.New("Staged commit is nil")
+	}
+
+	if bpModel.IsErrorResponse(resp.Commit.Type) {
+		return "", bpModel.ProcessCommitError(resp.Commit, "Could not process error response from stage commit")
 	}
 
 	if resp.Commit.CommitID == "" {
@@ -319,34 +310,11 @@ func (bp *BuildPlanner) StageCommit(params StageCommitParams) (strfmt.UUID, erro
 	}
 
 	if resp.Commit.Build == nil {
-		if resp.Error != nil {
-			return "", errs.New(resp.Error.Message)
-		}
 		return "", errs.New("Commit does not contain build")
 	}
 
-	if resp.Commit.Build.PlanningError != nil {
-		var errs []string
-		var isTransient bool
-		for _, se := range resp.Commit.Build.SubErrors {
-			if se.Type != bpModel.RemediableSolveErrorType {
-				continue
-			}
-
-			if se.Message != "" {
-				errs = append(errs, se.Message)
-				isTransient = se.IsTransient
-			}
-			for _, ve := range se.ValidationErrors {
-				if ve.Error != "" {
-					errs = append(errs, ve.Error)
-				}
-			}
-		}
-		return "", &bpModel.BuildPlannerError{
-			ValidationErrors: errs,
-			IsTransient:      isTransient,
-		}
+	if bpModel.IsErrorResponse(resp.Commit.Build.Type) {
+		return "", bpModel.ProcessBuildError(resp.Commit.Build, "Could not get build from commit")
 	}
 
 	return resp.Commit.CommitID, nil
@@ -364,6 +332,10 @@ func (bp *BuildPlanner) GetBuildExpression(owner, project, commitID string) (*bu
 		return nil, errs.New("Commit is nil")
 	}
 
+	if bpModel.IsErrorResponse(resp.Commit.Type) {
+		return nil, bpModel.ProcessCommitError(resp.Commit, "Could not get build expression from commit")
+	}
+
 	if resp.Commit.Expression == nil {
 		return nil, errs.New("Commit does not contain expression")
 	}
@@ -379,6 +351,32 @@ func (bp *BuildPlanner) GetBuildExpression(owner, project, commitID string) (*bu
 // processBuildPlannerError will check for special error types that should be
 // handled differently. If no special error type is found, the fallback message
 // will be used.
+// It expects the errors field to be the top-level field in the response. This is
+// different from special error types that are returned as part of the data field.
+// Example:
+//
+//	{
+//	  "errors": [
+//	    {
+//	      "message": "deprecation error",
+//	      "locations": [
+//	        {
+//	          "line": 7,
+//	          "column": 11
+//	        }
+//	      ],
+//	      "path": [
+//	        "project",
+//	        "commit",
+//	        "build"
+//	      ],
+//	      "extensions": {
+//	        "code": "CLIENT_DEPRECATION_ERROR"
+//	      }
+//	    }
+//	  ],
+//	  "data": null
+//	}
 func processBuildPlannerError(bpErr error, fallbackMessage string) error {
 	graphqlErr := &graphql.GraphErr{}
 	if errors.As(bpErr, graphqlErr) {
