@@ -73,6 +73,9 @@ const ActivatedStateEnvVarName = "ACTIVESTATE_ACTIVATED"
 // ActivatedStateIDEnvVarName is the name of the environment variable that is set when in an activated state, its value will be a unique id identifying a specific instance of an activated state
 const ActivatedStateIDEnvVarName = "ACTIVESTATE_ACTIVATED_ID"
 
+// ActivatedStateProjectEnvVarName is the name of the environment variable that specifies the activated state's org/project namespace.
+const ActivatedStateNamespaceEnvVarName = "ACTIVESTATE_ACTIVATED_NAMESPACE"
+
 // ForwardedStateEnvVarName is the name of the environment variable that is set when in an activated state, its value will be the path of the project
 const ForwardedStateEnvVarName = "ACTIVESTATE_FORWARDED"
 
