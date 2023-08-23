@@ -60,7 +60,7 @@ func (u *Update) Run(params *Params) error {
 		return locale.WrapInputError(err, "err_update_fetch", "Could not retrieve update information, please verify that '{{.V0}}' is a valid channel.", params.Channel)
 	}
 
-	update := updater.NewUpdate(u.an, updater.NewAvailableUpdateFromGraph(upd))
+	update := updater.NewUpdateInstall(u.an, updater.NewAvailableUpdateFromGraph(upd))
 	if !update.IsUseful() {
 		logging.Debug("No update found")
 		u.out.Print(output.Prepare(

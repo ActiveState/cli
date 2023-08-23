@@ -88,7 +88,7 @@ func (u *AvailableUpdate) Equals(origin *Origin) bool {
 	return u.Channel == origin.Channel && u.Version == origin.Version
 }
 
-type Update struct {
+type UpdateInstall struct {
 	AvailableUpdate *AvailableUpdate
 	Origin          *Origin
 
@@ -97,15 +97,15 @@ type Update struct {
 	an     analytics.Dispatcher
 }
 
-// NewUpdateByOrigin returns an instance of Update. Allowing origin to be set
-// is useful for testing.
-func NewUpdateByOrigin(an analytics.Dispatcher, origin *Origin, avUpdate *AvailableUpdate) *Update {
+// NewUpdateInstallByOrigin returns an instance of Update. Allowing origin to
+// be set is useful for testing.
+func NewUpdateInstallByOrigin(an analytics.Dispatcher, origin *Origin, avUpdate *AvailableUpdate) *UpdateInstall {
 	apiUpdateURL := constants.APIUpdateURL
 	if url, ok := os.LookupEnv("_TEST_UPDATE_URL"); ok {
 		apiUpdateURL = url
 	}
 
-	return &Update{
+	return &UpdateInstall{
 		AvailableUpdate: avUpdate,
 		Origin:          origin,
 		url:             apiUpdateURL + "/" + avUpdate.Path,
@@ -113,17 +113,17 @@ func NewUpdateByOrigin(an analytics.Dispatcher, origin *Origin, avUpdate *Availa
 	}
 }
 
-func NewUpdate(an analytics.Dispatcher, avUpdate *AvailableUpdate) *Update {
-	return NewUpdateByOrigin(an, NewOriginDefault(), avUpdate)
+func NewUpdateInstall(an analytics.Dispatcher, avUpdate *AvailableUpdate) *UpdateInstall {
+	return NewUpdateInstallByOrigin(an, NewOriginDefault(), avUpdate)
 }
 
-func (u *Update) IsUseful() bool {
+func (u *UpdateInstall) IsUseful() bool {
 	return u.AvailableUpdate.IsValid() &&
 		(os.Getenv(constants.ForceUpdateEnvVarName) == "true" ||
 			!u.AvailableUpdate.Equals(u.Origin))
 }
 
-func (u *Update) DownloadAndUnpack() (string, error) {
+func (u *UpdateInstall) DownloadAndUnpack() (string, error) {
 	if u.tmpDir != "" {
 		// To facilitate callers explicitly calling this method we cache the tmp dir and just return it if it's set
 		return u.tmpDir, nil
@@ -144,7 +144,7 @@ func (u *Update) DownloadAndUnpack() (string, error) {
 	return u.tmpDir, nil
 }
 
-func (u *Update) prepareInstall(installTargetPath string, args []string) (string, []string, error) {
+func (u *UpdateInstall) prepareInstall(installTargetPath string, args []string) (string, []string, error) {
 	sourcePath, err := u.DownloadAndUnpack()
 	if err != nil {
 		return "", nil, err
@@ -173,7 +173,7 @@ func (u *Update) prepareInstall(installTargetPath string, args []string) (string
 	return installerPath, args, nil
 }
 
-func (u *Update) InstallBlocking(installTargetPath string, args ...string) error {
+func (u *UpdateInstall) InstallBlocking(installTargetPath string, args ...string) error {
 	logging.Debug("InstallBlocking path: %s, args: %v", installTargetPath, args)
 
 	err := checkAdmin()
@@ -221,7 +221,7 @@ func (u *Update) InstallBlocking(installTargetPath string, args ...string) error
 
 // InstallWithProgress will fetch the update and run its installer
 // Leave installTargetPath empty to use the default/existing installation path
-func (u *Update) InstallWithProgress(installTargetPath string, progressCb func(string, bool)) (*os.Process, error) {
+func (u *UpdateInstall) InstallWithProgress(installTargetPath string, progressCb func(string, bool)) (*os.Process, error) {
 	installerPath, args, err := u.prepareInstall(installTargetPath, []string{})
 	if err != nil {
 		return nil, err
@@ -259,7 +259,7 @@ func (u *Update) InstallWithProgress(installTargetPath string, progressCb func(s
 	return proc, nil
 }
 
-func (u *Update) analyticsEvent(action, label, version, msg string) {
+func (u *UpdateInstall) analyticsEvent(action, label, version, msg string) {
 	dims := &dimensions.Values{
 		TargetVersion: ptr.To(version),
 	}

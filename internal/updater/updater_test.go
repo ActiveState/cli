@@ -45,7 +45,7 @@ func TestUpdateNotNeeded(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.Name, func(t *testing.T) {
-			upd := NewUpdateByOrigin(nil, tt.Origin, tt.AvailableUpdate)
+			upd := NewUpdateInstallByOrigin(nil, tt.Origin, tt.AvailableUpdate)
 			assert.Equal(t, tt.IsUseful, upd.IsUseful())
 		})
 	}
