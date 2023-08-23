@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"reflect"
 	"strings"
+	"time"
 
 	"github.com/alecthomas/template"
 
@@ -27,6 +28,7 @@ func NewHTTPClient() *http.Client {
 	}
 
 	return &http.Client{
+		Timeout:   5 * time.Second,
 		Transport: NewRoundTripper(retryhttp.DefaultClient.StandardClient().Transport),
 	}
 }
@@ -42,8 +44,12 @@ func (r *RoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
 	req.Header.Add("X-Requestor", uniqid.Text())
 
 	resp, err := r.transport.RoundTrip(req)
-	if err != nil && resp != nil && resp.StatusCode == http.StatusForbidden && strings.EqualFold(resp.Header.Get("server"), "cloudfront") {
-		return nil, platform.NewCountryBlockedError()
+	if err != nil {
+		if resp != nil && resp.StatusCode == http.StatusForbidden && strings.EqualFold(resp.Header.Get("server"), "cloudfront") {
+			return nil, platform.NewCountryBlockedError()
+		}
+
+		return resp, err
 	}
 
 	return resp, err

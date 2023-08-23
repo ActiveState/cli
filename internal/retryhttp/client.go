@@ -201,6 +201,11 @@ func retryPolicy(ctx context.Context, resp *http.Response, err error) (bool, err
 			}
 		}
 
+		var dnsError *net.DNSError
+		if errors.As(err, &dnsError) {
+			return false, locale.NewError("err_network", "Network error, please ensure you have a stable internet connection")
+		}
+
 		// The error is likely recoverable so retry.
 		return true, err
 	}
