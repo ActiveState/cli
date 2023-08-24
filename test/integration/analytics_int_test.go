@@ -600,6 +600,8 @@ func (suite *AnalyticsIntegrationTestSuite) TestCIAndInteractiveDimensions() {
 				}
 				suite.Equal(condition.OnCI(), *e.Dimensions.CI, "analytics should report being on CI")
 				suite.Equal(interactive, *e.Dimensions.Interactive, "analytics did not report the correct interactive value for %v", e)
+				suite.Equal(condition.OnCI(), // not InActiveStateCI() because if it's false, we forgot to set ACTIVESTATE_CI env var in GitHub Actions scripts
+					*e.Dimensions.ActiveStateCI, "analytics did not report being in ActiveState CI")
 				processedAnEvent = true
 			}
 			suite.True(processedAnEvent, "did not actually test CI and Interactive dimensions")
