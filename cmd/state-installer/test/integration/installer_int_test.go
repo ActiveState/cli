@@ -338,10 +338,10 @@ func installationDir(ts *e2e.Session) string {
 func (suite *InstallerIntegrationTestSuite) SetupSuite() {
 	rootPath := environment.GetRootPathUnsafe()
 	localPayload := filepath.Join(rootPath, "build", "payload", constants.ToplevelInstallArchiveDir)
-	suite.Assert().DirExists(localPayload, "locally generated payload exists")
+	suite.Require().DirExists(localPayload, "locally generated payload exists")
 
 	installerExe := filepath.Join(localPayload, constants.StateInstallerCmd+osutils.ExeExt)
-	suite.Assert().FileExists(installerExe, "locally generated installer exists")
+	suite.Require().FileExists(installerExe, "locally generated installer exists")
 
 	suite.installerExe = installerExe
 }
