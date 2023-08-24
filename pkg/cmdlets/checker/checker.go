@@ -76,7 +76,7 @@ func RunUpdateNotifier(an analytics.Dispatcher, svc *model.SvcModel, out output.
 	}
 
 	update := updater.NewUpdateInstall(an, updater.NewAvailableUpdateFromGraph(upd))
-	if !update.IsUseful() {
+	if !update.ShouldInstall() {
 		return
 	}
 

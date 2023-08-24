@@ -117,7 +117,7 @@ func NewUpdateInstall(an analytics.Dispatcher, avUpdate *AvailableUpdate) *Updat
 	return NewUpdateInstallByOrigin(an, NewOriginDefault(), avUpdate)
 }
 
-func (u *UpdateInstall) IsUseful() bool {
+func (u *UpdateInstall) ShouldInstall() bool {
 	return u.AvailableUpdate.IsValid() &&
 		(os.Getenv(constants.ForceUpdateEnvVarName) == "true" ||
 			!u.AvailableUpdate.Equals(u.Origin))
