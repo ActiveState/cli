@@ -189,7 +189,7 @@ func (suite *InstallerIntegrationTestSuite) TestInstallErrorTips() {
 	cp.ExpectInput()
 	cp.SendLine("exit")
 	cp.Wait()
-	suite.Assert().Contains(cp.Output(), "Need More Help?", "error tips should be displayed in shell created by installer")
+	suite.Assert().Contains(cp.Snapshot(), "Need More Help?", "error tips should be displayed in shell created by installer")
 }
 
 func (suite *InstallerIntegrationTestSuite) TestStateTrayRemoval() {

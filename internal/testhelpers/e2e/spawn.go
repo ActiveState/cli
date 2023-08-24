@@ -1,10 +1,14 @@
 package e2e
 
 import (
+	"fmt"
+	"path/filepath"
 	"regexp"
+	"strings"
 	"time"
 
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/sliceutils"
 	"github.com/ActiveState/termtest"
 )
 
@@ -31,6 +35,25 @@ func (s *SpawnedCmd) ExpectRe(v string, opts ...termtest.SetExpectOpt) error {
 		return errs.Wrap(err, "ExpectRe received invalid regex string")
 	}
 	return s.TermTest.ExpectRe(rx, opts...)
+}
+
+func (s *SpawnedCmd) ExpectInput(opts ...termtest.SetExpectOpt) error {
+	cmdName := strings.TrimSuffix(strings.ToLower(filepath.Base(s.Cmd().Path)), ".exe")
+	if !sliceutils.Contains([]string{"bash", "zsh", "cmd"}, cmdName) {
+		return errs.New("ExpectInput can only be used with bash, zsh, or cmd")
+	}
+
+	send := `echo ExpectInput-$SHELL`
+	expectRe := fmt.Sprintf(`ExpectInput-[\w\/\\:]+%s`, cmdName)
+	if cmdName == "cmd" {
+		send = `echo %COMSPEC%`
+	}
+
+	if err := s.SendLine(send); err != nil {
+		return fmt.Errorf("could not send line to terminal: %w", err)
+	}
+
+	return s.ExpectRe(expectRe, opts...)
 }
 
 type SpawnOpts struct {

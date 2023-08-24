@@ -19,6 +19,7 @@ import (
 // TermTest bonds a command with a pseudo-terminal for automation
 type TermTest struct {
 	cmd            *exec.Cmd
+	term           vt10x.Terminal
 	ptmx           pty.Pty
 	outputProducer *outputProducer
 	listenError    chan error
@@ -30,8 +31,8 @@ type ErrorHandler func(*TermTest, error) error
 type Opts struct {
 	Logger             *log.Logger
 	ExpectErrorHandler ErrorHandler
-	Cols               uint16
-	Rows               uint16
+	Cols               int
+	Rows               int
 	Posix              bool
 	DefaultTimeout     time.Duration
 }
@@ -125,7 +126,7 @@ func OptTestErrorHandler(t *testing.T) SetOpt {
 	return OptErrorHandler(TestErrorHandler(t))
 }
 
-func OptCols(cols uint16) SetOpt {
+func OptCols(cols int) SetOpt {
 	return func(o *Opts) error {
 		o.Cols = cols
 		return nil
@@ -134,7 +135,7 @@ func OptCols(cols uint16) SetOpt {
 
 // OptRows sets the number of rows for the pty, increase this if you find your output appears to stop prematurely
 // appears to only make a difference on Windows. Linux/Mac will happily function with a single row
-func OptRows(rows uint16) SetOpt {
+func OptRows(rows int) SetOpt {
 	return func(o *Opts) error {
 		o.Rows = rows
 		return nil
@@ -180,13 +181,13 @@ func (tt *TermTest) start() error {
 		return fmt.Errorf("already started")
 	}
 
-	ptmx, err := pty.StartWithSize(tt.cmd, &pty.Winsize{Cols: tt.opts.Cols, Rows: tt.opts.Rows})
+	ptmx, err := pty.StartWithSize(tt.cmd, &pty.Winsize{Cols: uint16(tt.opts.Cols), Rows: uint16(tt.opts.Rows)})
 	if err != nil {
 		return fmt.Errorf("could not start pty: %w", err)
 	}
 	tt.ptmx = ptmx
 
-	term := vt10x.New(vt10x.WithWriter(ptmx))
+	tt.term = vt10x.New(vt10x.WithWriter(ptmx), vt10x.WithSize(tt.opts.Cols, tt.opts.Rows))
 
 	// Start listening for output
 	wg := &sync.WaitGroup{}
@@ -194,7 +195,7 @@ func (tt *TermTest) start() error {
 	go func() {
 		defer tt.opts.Logger.Printf("termtest finished listening")
 		wg.Done()
-		err := tt.outputProducer.Listen(tt.ptmx, term)
+		err := tt.outputProducer.Listen(tt.ptmx, tt.term)
 		tt.listenError <- err
 	}()
 	wg.Wait()
@@ -265,6 +266,11 @@ func (tt *TermTest) Cmd() *exec.Cmd {
 
 // Snapshot returns a string containing a terminal snapshot as a user would see it in a "real" terminal
 func (tt *TermTest) Snapshot() string {
+	return tt.term.String()
+}
+
+// PendingOutput returns any output produced that has not yet been matched against
+func (tt *TermTest) PendingOutput() string {
 	return string(tt.outputProducer.Snapshot())
 }
 
