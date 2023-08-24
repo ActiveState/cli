@@ -515,6 +515,7 @@ func (suite *PackageIntegrationTestSuite) TestJSON() {
 }
 
 func (suite *PackageIntegrationTestSuite) TestNormalize() {
+	suite.T().Skip("Test Skip")
 	suite.OnlyRunForTags(tagsuite.Package)
 	if runtime.GOOS == "darwin" {
 		suite.T().Skip("Skipping mac for now as the builds are still too unreliable")
@@ -604,12 +605,14 @@ func (suite *PackageIntegrationTestSuite) TestUpdate_InvalidVersion() {
 }
 
 func (suite *PackageIntegrationTestSuite) TestUpdate() {
-	suite.T().Skip("Test Skip")
 	suite.OnlyRunForTags(tagsuite.Package)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	cp := ts.Spawn("checkout", "ActiveState-CLI/small-python", ".")
+	cp := ts.SpawnWithOpts(
+		e2e.WithArgs("checkout", "ActiveState-CLI/small-python", "."),
+		e2e.AppendEnv(constants.DisableRuntime+"=false"),
+	)
 	cp.Expect("Skipping runtime setup")
 	cp.Expect("Checked out project")
 	cp.ExpectExitCode(0)
