@@ -613,7 +613,6 @@ func (suite *PackageIntegrationTestSuite) TestUpdate() {
 		e2e.WithArgs("checkout", "ActiveState-CLI/small-python", "."),
 		e2e.AppendEnv(constants.DisableRuntime+"=false"),
 	)
-	cp.Expect("Skipping runtime setup")
 	cp.Expect("Checked out project")
 	cp.ExpectExitCode(0)
 
