@@ -58,11 +58,18 @@ func (s *SpawnedCmd) ExpectInput(opts ...termtest.SetExpectOpt) error {
 }
 
 type SpawnOpts struct {
-	Args         []string
-	Env          []string
-	Dir          string
-	TermtestOpts []termtest.SetOpt
-	HideCmdArgs  bool
+	Args           []string
+	Env            []string
+	Dir            string
+	TermtestOpts   []termtest.SetOpt
+	HideCmdArgs    bool
+	RunInsideShell bool
+}
+
+func NewSpawnOpts() SpawnOpts {
+	return SpawnOpts{
+		RunInsideShell: false,
+	}
 }
 
 type SpawnOptSetter func(opts *SpawnOpts)
@@ -94,5 +101,10 @@ func OptTermTest(opt ...termtest.SetOpt) SpawnOptSetter {
 func OptHideArgs() SpawnOptSetter {
 	return func(opts *SpawnOpts) {
 		opts.HideCmdArgs = true
+	}
+}
+func OptRunInsideShell(v bool) SpawnOptSetter {
+	return func(opts *SpawnOpts) {
+		opts.RunInsideShell = v
 	}
 }

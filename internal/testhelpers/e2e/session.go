@@ -236,38 +236,43 @@ func (s *Session) SpawnShellWithOpts(shell Shell, opts ...SpawnOptSetter) *Spawn
 	if shell != Cmd {
 		opts = append(opts, OptAppendEnv("SHELL="+string(shell)))
 	}
+	opts = append(opts, OptRunInsideShell(false))
 	return s.SpawnCmdWithOpts(string(shell), opts...)
 }
 
 // SpawnCmdWithOpts executes an executable in a pseudo-terminal for integration tests
 // Arguments and other parameters can be specified by specifying SpawnOptSetter
 func (s *Session) SpawnCmdWithOpts(exe string, optSetters ...SpawnOptSetter) *SpawnedCmd {
-	spawnOpts := SpawnOpts{
-		Env: s.Env,
-		Dir: s.Dirs.Work,
-	}
+	spawnOpts := NewSpawnOpts()
+	spawnOpts.Env = s.Env
+	spawnOpts.Dir = s.Dirs.Work
+
 	for _, optSet := range optSetters {
 		optSet(&spawnOpts)
 	}
 
 	var shell string
 	var args []string
-	switch runtime.GOOS {
-	case "windows":
-		shell = "cmd.exe"
-		args = []string{"/C"}
-	case "darwin":
-		shell = "zsh"
-		args = []string{"-i", "-c"}
-	default:
-		shell = "bash"
-		args = []string{"-i", "-c"}
-	}
-
-	if len(spawnOpts.Args) == 0 {
-		args = append(args, fmt.Sprintf(`"%s"`, exe))
+	if spawnOpts.RunInsideShell {
+		switch runtime.GOOS {
+		case "windows":
+			shell = "cmd.exe"
+			args = []string{"/C"}
+		case "darwin":
+			shell = "zsh"
+			args = []string{"-i", "-c"}
+		default:
+			shell = "bash"
+			args = []string{"-i", "-c"}
+		}
+		if len(spawnOpts.Args) == 0 {
+			args = append(args, fmt.Sprintf(`"%s"`, exe))
+		} else {
+			args = append(args, fmt.Sprintf(`"%s" "%s"`, exe, strings.Join(spawnOpts.Args, `" "`)))
+		}
 	} else {
-		args = append(args, fmt.Sprintf(`"%s" "%s"`, exe, strings.Join(spawnOpts.Args, `" "`)))
+		shell = exe
+		args = spawnOpts.Args
 	}
 
 	cmd := exec.Command(shell, args...)
