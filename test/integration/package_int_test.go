@@ -641,6 +641,7 @@ func (suite *PackageIntegrationTestSuite) TestUpdate() {
 	)
 	cp.Expect("pytest")
 	// cp.ExpectExitCode(0)
+	cp.WaitForInput()
 
 	cp = ts.Spawn("history")
 	cp.Expect("pytest")
