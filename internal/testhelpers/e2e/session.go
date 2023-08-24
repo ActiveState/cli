@@ -208,6 +208,10 @@ func NewNoPathUpdate(t *testing.T, retainDirs bool, extraEnv ...string) *Session
 	return new(t, retainDirs, false, extraEnv...)
 }
 
+func (s *Session) SetT(t *testing.T) {
+	s.t = t
+}
+
 func (s *Session) ClearCache() error {
 	return os.RemoveAll(s.Dirs.Cache)
 }
@@ -260,7 +264,11 @@ func (s *Session) SpawnCmdWithOpts(exe string, optSetters ...SpawnOptSetter) *Sp
 		args = []string{"-i", "-c"}
 	}
 
-	args = append(args, fmt.Sprintf(`"%s" "%s"`, exe, strings.Join(spawnOpts.Args, `" "`)))
+	if len(spawnOpts.Args) == 0 {
+		args = append(args, fmt.Sprintf(`"%s"`, exe))
+	} else {
+		args = append(args, fmt.Sprintf(`"%s" "%s"`, exe, strings.Join(spawnOpts.Args, `" "`)))
+	}
 
 	cmd := exec.Command(shell, args...)
 
@@ -417,7 +425,7 @@ func (s *Session) DebugMessage(prefix string) string {
 		if spawn.opts.HideCmdArgs {
 			name = spawn.Cmd().Path
 		}
-		output = append(output, fmt.Sprintf("\noutput for cmd: %s\n\n%s", name, spawn.Output()))
+		output = append(output, fmt.Sprintf("\n--- Output for cmd: %s\n\n%s", name, spawn.Output()))
 	}
 
 	v, err := strutils.ParseTemplate(`
@@ -429,7 +437,7 @@ func (s *Session) DebugMessage(prefix string) string {
 `, map[string]interface{}{
 		"Prefix":       prefix,
 		"Stacktrace":   stacktrace.Get().String(),
-		"FullSnapshot": output,
+		"FullSnapshot": strings.Join(output, "\n"),
 		"Logs":         s.DebugLogs(),
 		"A":            sectionStart,
 		"Z":            sectionEnd,

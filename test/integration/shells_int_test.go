@@ -40,8 +40,10 @@ func (suite *ShellsIntegrationTestSuite) TestShells() {
 
 	for _, shell := range shells {
 		suite.T().Run(fmt.Sprintf("using_%s", shell), func(t *testing.T) {
+			ts.SetT(t)
+
 			// Run the checkout in a particular shell.
-			cp := ts.SpawnShellWithOpts(shell)
+			cp = ts.SpawnShellWithOpts(shell)
 			cp.SendLine(e2e.QuoteCommand(shell, ts.ExecutablePath(), "checkout", "ActiveState-CLI/small-python", string(shell)))
 			cp.Expect("Checked out project")
 			cp.SendLine("exit")
