@@ -37,6 +37,7 @@ type Client struct {
 	sequence         int
 	ci               bool
 	interactive      bool
+	activestateCI    bool
 }
 
 var _ analytics.Dispatcher = &Client{}
@@ -55,6 +56,7 @@ func New(svcModel *model.SvcModel, cfg *config.Instance, auth *authentication.Au
 	a.auth = auth
 	a.ci = condition.OnCI()
 	a.interactive = out.Config().Interactive
+	a.activestateCI = condition.InActiveStateCI()
 
 	if condition.InUnitTest() {
 		return a
@@ -118,6 +120,7 @@ func (a *Client) sendEvent(category, action, label string, dims ...*dimensions.V
 	a.sequence++
 	dim.CI = &a.ci
 	dim.Interactive = &a.interactive
+	dim.ActiveStateCI = &a.activestateCI
 	dim.Merge(dims...)
 
 	dimMarshalled, err := dim.Marshal()
