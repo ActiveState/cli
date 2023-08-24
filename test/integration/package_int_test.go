@@ -576,7 +576,7 @@ func (suite *PackageIntegrationTestSuite) TestInstall_InvalidVersion() {
 
 	cp = ts.SpawnWithOpts(
 		e2e.WithArgs("install", "pytest@999.9999.9999"),
-		e2e.AppendEnv(constants.DisableRuntime+"=false"),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cp.Expect("Error occurred while trying to create a commit")
 	cp.ExpectExitCode(1)
@@ -590,7 +590,7 @@ func (suite *PackageIntegrationTestSuite) TestUpdate_InvalidVersion() {
 
 	cp := ts.SpawnWithOpts(
 		e2e.WithArgs("checkout", "ActiveState-CLI/small-python", "."),
-		e2e.AppendEnv(constants.DisableRuntime+"=false"),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cp.Expect("Checked out project")
 	cp.ExpectExitCode(0)
@@ -599,8 +599,8 @@ func (suite *PackageIntegrationTestSuite) TestUpdate_InvalidVersion() {
 	cp.ExpectExitCode(0)
 
 	cp = ts.SpawnWithOpts(
-		e2e.WithArgs("install", "pytest@999.9999.9999"),  // update
-		e2e.AppendEnv(constants.DisableRuntime+"=false"), // We DO want to test the runtime part, just not for every step
+		e2e.WithArgs("install", "pytest@999.9999.9999"),        // update
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"), // We DO want to test the runtime part, just not for every step
 	)
 	cp.Expect("Error occurred while trying to create a commit")
 	cp.ExpectExitCode(1)
@@ -613,14 +613,14 @@ func (suite *PackageIntegrationTestSuite) TestUpdate() {
 
 	cp := ts.SpawnWithOpts(
 		e2e.WithArgs("checkout", "ActiveState-CLI/small-python", "."),
-		e2e.AppendEnv(constants.DisableRuntime+"=false"),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cp.Expect("Checked out project")
 	cp.ExpectExitCode(0)
 
 	cp = ts.SpawnWithOpts(
 		e2e.WithArgs("install", "pytest@7.3.2"), // install
-		e2e.AppendEnv(constants.DisableRuntime+"=false"),
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cp.Expect("pytest")
 	cp.ExpectExitCode(0)
@@ -636,12 +636,11 @@ func (suite *PackageIntegrationTestSuite) TestUpdate() {
 	cp.ExpectExitCode(0)
 
 	cp = ts.SpawnWithOpts(
-		e2e.WithArgs("install", "pytest@7.4.0"),          // update
-		e2e.AppendEnv(constants.DisableRuntime+"=false"), // We DO want to test the runtime part, just not for every step
+		e2e.WithArgs("install", "pytest@7.4.0"),                // update
+		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"), // We DO want to test the runtime part, just not for every step
 	)
 	cp.Expect("pytest")
-	// cp.ExpectExitCode(0)
-	cp.WaitForInput()
+	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("history")
 	cp.Expect("pytest")
