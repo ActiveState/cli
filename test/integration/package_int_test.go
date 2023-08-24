@@ -616,7 +616,10 @@ func (suite *PackageIntegrationTestSuite) TestUpdate() {
 	cp.Expect("Checked out project")
 	cp.ExpectExitCode(0)
 
-	cp = ts.Spawn("install", "pytest@7.3.2") // install
+	cp = ts.SpawnWithOpts(
+		e2e.WithArgs("install", "pytest@7.3.2"), // install
+		e2e.AppendEnv(constants.DisableRuntime+"=false"),
+	)
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("history")
