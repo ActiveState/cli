@@ -125,6 +125,7 @@ query ($commitID: ID!) {
           }
         }
         ... on PlanningError {
+          __typename
           message
           subErrors {
             __typename
@@ -155,15 +156,21 @@ query ($commitID: ID!) {
           }
         }
         ... on Error {
+          __typename
           message
         }
       }
     }
     ... on Error {
+      __typename
       message
     }
     ... on NotFound {
+      __typename
       message
+      type
+      resource
+      mayNeedAuthentication
     }
   }
 }
