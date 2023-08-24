@@ -627,12 +627,12 @@ func (suite *PackageIntegrationTestSuite) TestUpdate() {
 
 	cp = ts.Spawn("history")
 	cp.Expect("requests")
-	cp.Expect("7.3.2")
+	cp.Expect("2.28.2")
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("packages")
 	cp.Expect("requests")
-	cp.Expect("7.3.2")
+	cp.Expect("2.28.2")
 	cp.ExpectExitCode(0)
 
 	cp = ts.SpawnWithOpts(
@@ -644,12 +644,12 @@ func (suite *PackageIntegrationTestSuite) TestUpdate() {
 
 	cp = ts.Spawn("history")
 	cp.Expect("requests")
-	cp.Expect("7.4.0")
+	cp.Expect("2.31.0")
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("packages")
 	cp.Expect("requests")
-	cp.Expect("7.4.0")
+	cp.Expect("2.31.0")
 	cp.ExpectExitCode(0)
 }
 
