@@ -521,3 +521,6 @@ const RuntimeSetupWaitEnvVarName = "ACTIVESTATE_CLI_RUNTIME_SETUP_WAIT"
 // PlatformApiRequestRequestsEnvVarName is only used for an integration test to print some Platform
 // API request info.
 const PlatformApiPrintRequestsEnvVarName = "ACTIVESTATE_CLI_PLATFORM_API_PRINT_REQUESTS"
+
+// ActiveStateCIEnvVarName is the environment variable set when running in an ActiveState CI environment.
+const ActiveStateCIEnvVarName = "ACTIVESTATE_CI"

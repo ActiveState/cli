@@ -20,6 +20,7 @@ jobs:
         go-version:
           - 1.20.x
     env:
+      ACTIVESTATE_CI: true
       ACTIVESTATE_CLI_DISABLE_RUNTIME: true
       SHELL: bash
       GITHUB_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
