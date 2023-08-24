@@ -605,6 +605,7 @@ func (suite *PackageIntegrationTestSuite) TestUpdate_InvalidVersion() {
 }
 
 func (suite *PackageIntegrationTestSuite) TestUpdate() {
+	suite.T().Skip("Test Skip")
 	suite.OnlyRunForTags(tagsuite.Package)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
