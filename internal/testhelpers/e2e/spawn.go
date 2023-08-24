@@ -43,17 +43,18 @@ func (s *SpawnedCmd) ExpectInput(opts ...termtest.SetExpectOpt) error {
 		return errs.New("ExpectInput can only be used with bash, zsh, or cmd")
 	}
 
-	send := `echo ExpectInput-$SHELL`
-	expectRe := fmt.Sprintf(`ExpectInput-[\w\/\\:]+%s`, cmdName)
+	send := `echo $'expect\'input'`
+	expect := `expect'input`
 	if cmdName == "cmd" {
-		send = `echo %COMSPEC%`
+		send = `echo ^<expect input^>`
+		expect = `<expect input>`
 	}
 
 	if err := s.SendLine(send); err != nil {
 		return fmt.Errorf("could not send line to terminal: %w", err)
 	}
 
-	return s.ExpectRe(expectRe, opts...)
+	return s.Expect(expect, opts...)
 }
 
 type SpawnOpts struct {
