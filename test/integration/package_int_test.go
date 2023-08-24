@@ -619,36 +619,36 @@ func (suite *PackageIntegrationTestSuite) TestUpdate() {
 	cp.ExpectExitCode(0)
 
 	cp = ts.SpawnWithOpts(
-		e2e.WithArgs("install", "pytest@7.3.2"), // install
+		e2e.WithArgs("install", "requests@2.28.2"), // install
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
-	cp.Expect("pytest")
+	cp.Expect("requests")
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("history")
-	cp.Expect("pytest")
+	cp.Expect("requests")
 	cp.Expect("7.3.2")
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("packages")
-	cp.Expect("pytest")
+	cp.Expect("requests")
 	cp.Expect("7.3.2")
 	cp.ExpectExitCode(0)
 
 	cp = ts.SpawnWithOpts(
-		e2e.WithArgs("install", "pytest@7.4.0"),                // update
+		e2e.WithArgs("install", "requests@2.31.0"),             // update
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"), // We DO want to test the runtime part, just not for every step
 	)
-	cp.Expect("pytest")
+	cp.Expect("requests")
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("history")
-	cp.Expect("pytest")
+	cp.Expect("requests")
 	cp.Expect("7.4.0")
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("packages")
-	cp.Expect("pytest")
+	cp.Expect("requests")
 	cp.Expect("7.4.0")
 	cp.ExpectExitCode(0)
 }
