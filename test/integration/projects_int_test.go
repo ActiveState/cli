@@ -5,7 +5,9 @@ import (
 	"runtime"
 	"strings"
 	"testing"
+	"time"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
@@ -57,7 +59,43 @@ func (suite *ProjectsIntegrationTestSuite) TestProjects() {
 	cp.ExpectExitCode(0)
 }
 
-func (suite *ProjectsIntegrationTestSuite) TestJSON() {
+func (suite *ProjectsIntegrationTestSuite) TestCurrentlyInUse() {
+	suite.OnlyRunForTags(tagsuite.Projects)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.Spawn("checkout", "ActiveState-CLI/small-python", ".")
+	cp.Expect("Checked out")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("projects")
+	cp.Expect("small-python")
+	cp.Expect("Last Used")
+	cp.Expect("unknown")
+	cp.ExpectExitCode(0)
+
+	cp = ts.SpawnWithOpts(e2e.WithArgs("shell"), e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"))
+	cp.Expect("Activated")
+	cp.SendLine("python --version")
+	cp.SendLine("exit")
+	cp.ExpectExitCode(0)
+
+	time.Sleep(2 * time.Second) // give state-svc time to record usage
+
+	cp = ts.Spawn("projects")
+	cp.Expect("small-python")
+	cp.Expect("Last Used")
+	cp.Expect("currently in use")
+	cp.ExpectExitCode(0)
+
+	cp = ts.SpawnWithOpts(e2e.WithArgs("projects"), e2e.AppendEnv(constants.RuntimeInUseNoCutoffTimeEnvVarName+"=true"))
+	cp.Expect("small-python")
+	cp.Expect("Last Used")
+	cp.Expect(time.Now().Format(time.DateOnly))
+	cp.ExpectExitCode(0)
+}
+
+func (suite *ProjectsIntegrationTestSuite) NoTestJSON() {
 	suite.OnlyRunForTags(tagsuite.Projects, tagsuite.JSON)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()

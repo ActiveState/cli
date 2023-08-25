@@ -507,3 +507,7 @@ const RuntimeSetupWaitEnvVarName = "ACTIVESTATE_CLI_RUNTIME_SETUP_WAIT"
 
 // ActiveStateCIEnvVarName is the environment variable set when running in an ActiveState CI environment.
 const ActiveStateCIEnvVarName = "ACTIVESTATE_CI"
+
+// RuntimeInUseNoCutoffTimeEnvVarName is the environment variable used by integration tests
+// to displaying a runtime's last use time as a datetime or "currently in use". If this is set,
+const RuntimeInUseNoCutoffTimeEnvVarName = "ACTIVESTATE_CLI_RUNTIME_IN_USE_NO_CUTOFF"

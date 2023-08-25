@@ -2,10 +2,12 @@ package projects
 
 import (
 	"context"
+	"os"
 	"sort"
 	"strings"
 	"time"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/output"
@@ -27,6 +29,8 @@ type projectWithOrg struct {
 	LastUsed       []string `json:"last_used,omitempty"`
 }
 
+const runtimeInUseCutoff = 90 * time.Second // heartbeats are usually sent once per minute
+
 func newProjectWithOrg(name, org string, checkouts []string, lastUsedTimes map[string]interface{}) projectWithOrg {
 	p := projectWithOrg{Name: name, Organization: org, LocalCheckouts: checkouts}
 	for _, checkout := range checkouts {
@@ -41,7 +45,11 @@ func newProjectWithOrg(name, org string, checkouts []string, lastUsedTimes map[s
 		lastUsed := locale.Tl("projects_last_use_unknown", "unknown")
 		if v, exists := lastUsedTimes[execDir]; exists {
 			if t, err := time.Parse(time.RFC3339, v.(string)); err == nil {
-				lastUsed = t.Format(time.DateTime)
+				if time.Since(t) <= runtimeInUseCutoff && os.Getenv(constants.RuntimeInUseNoCutoffTimeEnvVarName) == "" {
+					lastUsed = locale.Tl("projects_last_use_currently_in_use", "currently in use")
+				} else {
+					lastUsed = t.Format(time.DateTime)
+				}
 			} else {
 				multilog.Error("Last used time was not a datetime string")
 			}
