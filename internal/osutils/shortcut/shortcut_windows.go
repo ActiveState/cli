@@ -66,7 +66,7 @@ func (s *Shortcut) Enable() error {
 	logging.Debug("Creating Shortcut: %s", filename)
 	cs, err := oleutil.CallMethod(wshell, "CreateShortcut", filename)
 	if err != nil {
-		var oleErr *ole.OleError
+		oleErr := &ole.OleError{}
 		if errors.As(err, &oleErr) {
 			return errs.Wrap(err, "oleutil CreateShortcut returned error: %s, parent error: %s", oleErr.Description(), oleErr.SubError())
 		}

@@ -228,7 +228,7 @@ func AuthenticateWithBrowser(out output.Outputer, auth *authentication.Auth, pro
 	if response.UserCode == nil {
 		return errs.New("Invalid response: Missing user code.")
 	}
-	out.Notice(locale.Tr("auth_device_verify_security_code", *response.UserCode))
+	out.Notice(locale.Tr("auth_device_verify_security_code", *response.UserCode, *response.VerificationURIComplete))
 
 	// Open URL in browser
 	if response.VerificationURIComplete == nil {
@@ -237,7 +237,7 @@ func AuthenticateWithBrowser(out output.Outputer, auth *authentication.Auth, pro
 	err = OpenURI(*response.VerificationURIComplete)
 	if err != nil {
 		logging.Warning("Could not open browser: %v", err)
-		out.Notice(locale.Tr("err_browser_open", *response.VerificationURIComplete))
+		out.Notice(locale.Tr("err_browser_open"))
 	}
 
 	if !response.Nopoll {
