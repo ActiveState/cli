@@ -109,6 +109,9 @@ const NonInteractiveEnvVarName = "ACTIVESTATE_NONINTERACTIVE"
 // E2ETestEnvVarName is the name of the environment variable that specifies that we are running under E2E tests
 const E2ETestEnvVarName = "ACTIVESTATE_E2E_TEST"
 
+// RuntimeHeartbeatInterval is the interval between runtime heartbeats sent via state-svc.
+const RuntimeHeartbeatInterval = 1 * time.Minute
+
 // HeartbeatIntervalEnvVarName is the name of the environment variable used to override the heartbeat interval
 const HeartbeatIntervalEnvVarName = "ACTIVESTATE_HEARTBEAT_INTERVAL"
 

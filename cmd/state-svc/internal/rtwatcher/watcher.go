@@ -3,9 +3,9 @@ package rtwatcher
 import (
 	"encoding/json"
 	"os"
+	"path/filepath"
 	"runtime/debug"
 	"strconv"
-	"strings"
 	"time"
 
 	anaConst "github.com/ActiveState/cli/internal/analytics/constants"
@@ -13,6 +13,8 @@ import (
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
@@ -24,7 +26,6 @@ import (
 	"github.com/spf13/cast"
 )
 
-const defaultInterval = 1 * time.Minute
 const CfgKey = "runtime-watchers"
 const LastUsedCfgKey = "runtime-last-used"
 
@@ -41,7 +42,7 @@ type analytics interface {
 }
 
 func New(cfg *config.Instance, an analytics) *Watcher {
-	w := &Watcher{an: an, stop: make(chan struct{}, 1), cfg: cfg, interval: defaultInterval}
+	w := &Watcher{an: an, stop: make(chan struct{}, 1), cfg: cfg, interval: constants.RuntimeHeartbeatInterval}
 
 	if watchersJson := w.cfg.GetString(CfgKey); watchersJson != "" {
 		watchers := []entry{}
@@ -109,31 +110,45 @@ func (w *Watcher) RecordUsage(e entry) {
 }
 
 func (w *Watcher) UpdateLastUsed(e entry) {
+	if stateExec, err := installation.StateExec(); err == nil {
+		if isStateExec, err := fileutils.PathsEqual(e.Exec, stateExec); err == nil && isStateExec {
+			return // cannot infer which runtime is being used
+		} else if err != nil {
+			multilog.Error("Could not determine if %s is the State Tool executable: %s", e.Exec, errs.JoinMessage(err))
+		}
+	} else {
+		multilog.Error("Could not determine the state tool executable: %s", errs.JoinMessage(err))
+	}
+
 	logging.Debug("Updating last usage of project that contains %s", e.Exec)
 	localProjects := projectfile.GetProjectMapping(w.cfg)
 	for namespace, checkouts := range localProjects {
 		for _, checkout := range checkouts {
 			proj, err := project.FromPath(checkout)
 			if err != nil {
-				multilog.Error("Unable to get project %s from checkout: %v", checkout, err)
+				logging.Error("Unable to get project %s from checkout: %v", checkout, err) // do not send to rollbar
 				continue
 			}
 			projectTarget := target.NewProjectTarget(proj, nil, "")
 			execDir := setup.ExecDir(projectTarget.Dir())
 			logging.Debug("Looking at project %s located at %s whose executables are in %s", namespace, checkout, execDir)
-			if !strings.HasPrefix(e.Exec, execDir) {
-				logging.Debug("Executable is not in this runtime")
+			if inRuntime, err := fileutils.PathsEqual(filepath.Dir(e.Exec), execDir); err != nil || !inRuntime {
+				if err != nil {
+					multilog.Error("Unable to determine if this executable is in the project: %s", errs.JoinMessage(err))
+				}
 				continue
 			}
-			logging.Debug("Executable is in this runtime")
+			logging.Debug("Executable is in this runtime; updating 'last used' time")
 			err = w.cfg.GetThenSet(
 				LastUsedCfgKey,
 				func(v interface{}) (interface{}, error) {
 					lastUsed := cast.ToStringMap(v)
 					lastUsed[execDir] = time.Now().Format(time.RFC3339)
-					logging.Debug("New 'last used' time for %s is %v", execDir, lastUsed[execDir])
 					return lastUsed, nil
 				})
+			if err != nil {
+				multilog.Error("Unable to update last used time: %s", errs.JoinMessage(err))
+			}
 			return
 		}
 	}

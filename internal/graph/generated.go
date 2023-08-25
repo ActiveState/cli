@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"strconv"
+	"time"
 )
 
 type AnalyticsEventResponse struct {
@@ -18,10 +19,6 @@ type AvailableUpdate struct {
 	Path     string `json:"path"`
 	Platform string `json:"platform"`
 	Sha256   string `json:"sha256"`
-}
-
-type CheckRuntimeLastUsedResponse struct {
-	Times map[string]interface{} `json:"times"`
 }
 
 type CheckRuntimeUsageResponse struct {
@@ -49,6 +46,12 @@ type Project struct {
 
 type ReportRuntimeUsageResponse struct {
 	Received bool `json:"received"`
+}
+
+type RuntimeLastUsed struct {
+	ExecDir string    `json:"execDir"`
+	Time    time.Time `json:"time"`
+	InUse   bool      `json:"inUse"`
 }
 
 type StateVersion struct {

@@ -27,6 +27,7 @@ import (
 	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/projectfile"
+	"github.com/spf13/cast"
 	"golang.org/x/net/context"
 )
 
@@ -230,12 +231,29 @@ func (r *Resolver) CheckRuntimeUsage(_ context.Context, organizationName string)
 	}, nil
 }
 
-func (r *Resolver) CheckRuntimeLastUsed(_ context.Context) (*graph.CheckRuntimeLastUsedResponse, error) {
+const runtimeInUseCutoff time.Duration = constants.RuntimeHeartbeatInterval + 2*time.Second // account for latency
+
+func (r *Resolver) CheckRuntimeLastUsed(_ context.Context) ([]*graph.RuntimeLastUsed, error) {
 	defer func() { handlePanics(recover(), debug.Stack()) }()
 
 	logging.Debug("CheckRuntimeLastUsed")
 
-	return &graph.CheckRuntimeLastUsedResponse{Times: r.cfg.GetStringMap(rtwatcher.LastUsedCfgKey)}, nil
+	runtimes := []*graph.RuntimeLastUsed{}
+
+	for execDir, timeString := range cast.ToStringMapString(r.cfg.GetStringMap(rtwatcher.LastUsedCfgKey)) {
+		lastUsed := &graph.RuntimeLastUsed{ExecDir: execDir}
+		if t, err := time.Parse(time.RFC3339, timeString); err == nil {
+			lastUsed.Time = t
+			if time.Since(t) <= runtimeInUseCutoff {
+				lastUsed.InUse = true
+			}
+		} else {
+			multilog.Error("Last used time was not a datetime string")
+		}
+		runtimes = append(runtimes, lastUsed)
+	}
+
+	return runtimes, nil
 }
 
 func (r *Resolver) CheckMessages(ctx context.Context, command string, flags []string) ([]*graph.MessageInfo, error) {

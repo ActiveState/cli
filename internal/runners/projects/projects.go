@@ -8,6 +8,9 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/graph"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/output"
@@ -29,9 +32,7 @@ type projectWithOrg struct {
 	LastUsed       []string `json:"last_used,omitempty"`
 }
 
-const runtimeInUseCutoff = 90 * time.Second // heartbeats are usually sent once per minute
-
-func newProjectWithOrg(name, org string, checkouts []string, lastUsedTimes map[string]interface{}) projectWithOrg {
+func newProjectWithOrg(name, org string, checkouts []string, runtimeLastUseds []*graph.RuntimeLastUsed) projectWithOrg {
 	p := projectWithOrg{Name: name, Organization: org, LocalCheckouts: checkouts}
 	for _, checkout := range checkouts {
 		var execDir string
@@ -42,19 +43,21 @@ func newProjectWithOrg(name, org string, checkouts []string, lastUsedTimes map[s
 			multilog.Error("Unable to get project %s from checkout: %v", checkout, err)
 		}
 		p.Executables = append(p.Executables, execDir)
-		lastUsed := locale.Tl("projects_last_use_unknown", "unknown")
-		if v, exists := lastUsedTimes[execDir]; exists {
-			if t, err := time.Parse(time.RFC3339, v.(string)); err == nil {
-				if time.Since(t) <= runtimeInUseCutoff && os.Getenv(constants.RuntimeInUseNoCutoffTimeEnvVarName) == "" {
-					lastUsed = locale.Tl("projects_last_use_currently_in_use", "currently in use")
+
+		lastUsedString := locale.Tl("projects_last_use_unknown", "unknown")
+		for _, lastUsed := range runtimeLastUseds {
+			if exists, err := fileutils.PathsEqual(execDir, lastUsed.ExecDir); err == nil && exists {
+				if lastUsed.InUse && os.Getenv(constants.RuntimeInUseNoCutoffTimeEnvVarName) == "" {
+					lastUsedString = locale.Tl("projects_last_use_currently_in_use", "currently in use")
 				} else {
-					lastUsed = t.Format(time.DateTime)
+					lastUsedString = lastUsed.Time.Format(time.DateTime)
 				}
-			} else {
-				multilog.Error("Last used time was not a datetime string")
+				break
+			} else if err != nil {
+				multilog.Error("Unable to compare paths: %s", errs.JoinMessage(err))
 			}
 		}
-		p.LastUsed = append(p.LastUsed, lastUsed)
+		p.LastUsed = append(p.LastUsed, lastUsedString)
 	}
 	return p
 }
@@ -87,19 +90,17 @@ func (o *projectsOutput) MarshalOutput(f output.Format) interface{} {
 			}
 			execDir := v.Executables[i]
 			lastUsed := v.LastUsed[i]
-			if execDir != "" || lastUsed != "" {
-				checkouts = append(checkouts, locale.Tl("projects_local_checkout_exec", " ├─ Local Checkout → {{.V0}}", checkout))
-				if f == output.PlainFormatName {
-					// Show executable path and last used below checkout path for plain text output.
+			checkouts = append(checkouts, locale.Tl("projects_local_checkout_exec", " ├─ Local Checkout → {{.V0}}", checkout))
+			if f == output.PlainFormatName {
+				// Show executable path and last used below checkout path for plain text output.
+				if execDir != "" {
 					checkouts = append(checkouts, locale.Tl("projects_executables", " ├─ Executables → {{.V0}}", execDir))
-					checkouts = append(checkouts, locale.Tl("projects_lastused", " └─ Last Used → {{.V0}}", lastUsed))
-				} else {
-					// Show executables and last used in a separate table.
-					executables = append(executables, execDir)
-					lastUseds = append(lastUseds, lastUsed)
 				}
+				checkouts = append(checkouts, locale.Tl("projects_lastused", " └─ Last Used → {{.V0}}", lastUsed))
 			} else {
-				checkouts = append(checkouts, locale.Tl("projects_local_checkout", " └─ Local Checkout → {{.V0}}", checkout))
+				// Show executables and last used in a separate table.
+				executables = append(executables, execDir)
+				lastUseds = append(lastUseds, lastUsed)
 			}
 		}
 		r = append(r, projectOutputPlain{v.Name, v.Organization, strings.Join(checkouts, "\n"), strings.Join(executables, "\n"), strings.Join(lastUseds, "\n")})
@@ -156,7 +157,7 @@ func (r *Projects) Run(params *Params) error {
 	localProjects := projectfile.GetProjectMapping(r.config)
 	var projects []projectWithOrg
 
-	lastUsed, err := r.svcModel.CheckRuntimeLastUsed(context.Background())
+	runtimes, err := r.svcModel.CheckRuntimeLastUsed(context.Background())
 	if err != nil {
 		multilog.Error("Unable to determine runtime last used times: %v", err)
 	}
@@ -167,7 +168,7 @@ func (r *Projects) Run(params *Params) error {
 			multilog.Error("Invalid project namespace stored to config mapping: %s", namespace)
 			continue
 		}
-		projects = append(projects, newProjectWithOrg(ns.Project, ns.Owner, checkouts, lastUsed.Times))
+		projects = append(projects, newProjectWithOrg(ns.Project, ns.Owner, checkouts, runtimes))
 	}
 
 	sort.SliceStable(projects, func(i, j int) bool {

@@ -9,7 +9,9 @@ func NewCheckRuntimeLastUsed() *CheckRuntimeLastUsed {
 func (e *CheckRuntimeLastUsed) Query() string {
 	return `query() {
 		checkRuntimeLastUsed() {
-			times
+			execDir
+			time
+			inUse
 		}
 	}`
 }

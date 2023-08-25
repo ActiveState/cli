@@ -95,7 +95,7 @@ func (suite *ProjectsIntegrationTestSuite) TestCurrentlyInUse() {
 	cp.ExpectExitCode(0)
 }
 
-func (suite *ProjectsIntegrationTestSuite) NoTestJSON() {
+func (suite *ProjectsIntegrationTestSuite) TestJSON() {
 	suite.OnlyRunForTags(tagsuite.Projects, tagsuite.JSON)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()

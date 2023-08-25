@@ -36,10 +36,12 @@ type CheckRuntimeUsageResponse {
     usage: Int!
 }
 
-scalar Map
+scalar Time
 
-type CheckRuntimeLastUsedResponse {
-    times: Map!
+type RuntimeLastUsed {
+    execDir: String!
+    time: Time!
+    inUse: Boolean!
 }
 
 enum MessageRepeatType {
@@ -78,7 +80,7 @@ type Query {
     analyticsEvent(category: String!, action: String!, label: String, dimensionsJson: String!): AnalyticsEventResponse
     reportRuntimeUsage(pid: Int!, exec: String!, dimensionsJson: String!): ReportRuntimeUsageResponse
     checkRuntimeUsage(organizationName: String!): CheckRuntimeUsageResponse
-    checkRuntimeLastUsed: CheckRuntimeLastUsedResponse
+    checkRuntimeLastUsed: [RuntimeLastUsed!]!
     checkMessages(command: String!, flags: [String!]!): [MessageInfo!]!
     configChanged(key: String!): ConfigChangedResponse
     fetchLogTail: String!

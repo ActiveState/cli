@@ -21,5 +21,5 @@ type CheckRuntimeUsageResponseOuter struct {
 }
 
 type CheckRuntimeLastUsedResponseOuter struct {
-	Times CheckRuntimeLastUsedResponse `json:"checkRuntimeLastUsed"`
+	Runtimes []*RuntimeLastUsed `json:"checkRuntimeLastUsed"`
 }
