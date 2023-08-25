@@ -68,7 +68,7 @@ type SpawnOpts struct {
 
 func NewSpawnOpts() SpawnOpts {
 	return SpawnOpts{
-		RunInsideShell: false,
+		RunInsideShell: true,
 	}
 }
 
