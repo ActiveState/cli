@@ -230,6 +230,14 @@ func (r *Resolver) CheckRuntimeUsage(_ context.Context, organizationName string)
 	}, nil
 }
 
+func (r *Resolver) CheckRuntimeLastUsed(_ context.Context) (*graph.CheckRuntimeLastUsedResponse, error) {
+	defer func() { handlePanics(recover(), debug.Stack()) }()
+
+	logging.Debug("CheckRuntimeLastUsed")
+
+	return &graph.CheckRuntimeLastUsedResponse{Times: r.cfg.GetStringMap(rtwatcher.LastUsedCfgKey)}, nil
+}
+
 func (r *Resolver) CheckMessages(ctx context.Context, command string, flags []string) ([]*graph.MessageInfo, error) {
 	defer func() { handlePanics(recover(), debug.Stack()) }()
 	logging.Debug("Check messages resolver")

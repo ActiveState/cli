@@ -5,6 +5,7 @@ import (
 	"os"
 	"runtime/debug"
 	"strconv"
+	"strings"
 	"time"
 
 	anaConst "github.com/ActiveState/cli/internal/analytics/constants"
@@ -16,10 +17,16 @@ import (
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/runbits/panics"
+	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
+	"github.com/ActiveState/cli/pkg/platform/runtime/target"
+	"github.com/ActiveState/cli/pkg/project"
+	"github.com/ActiveState/cli/pkg/projectfile"
+	"github.com/spf13/cast"
 )
 
 const defaultInterval = 1 * time.Minute
 const CfgKey = "runtime-watchers"
+const LastUsedCfgKey = "runtime-last-used"
 
 type Watcher struct {
 	an       analytics
@@ -98,6 +105,39 @@ func (w *Watcher) check() {
 func (w *Watcher) RecordUsage(e entry) {
 	logging.Debug("Recording usage of %s (%d)", e.Exec, e.PID)
 	w.an.Event(anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat, e.Dims)
+	w.UpdateLastUsed(e)
+}
+
+func (w *Watcher) UpdateLastUsed(e entry) {
+	logging.Debug("Updating last usage of project that contains %s", e.Exec)
+	localProjects := projectfile.GetProjectMapping(w.cfg)
+	for namespace, checkouts := range localProjects {
+		for _, checkout := range checkouts {
+			proj, err := project.FromPath(checkout)
+			if err != nil {
+				multilog.Error("Unable to get project %s from checkout: %v", checkout, err)
+				continue
+			}
+			projectTarget := target.NewProjectTarget(proj, nil, "")
+			execDir := setup.ExecDir(projectTarget.Dir())
+			logging.Debug("Looking at project %s located at %s whose executables are in %s", namespace, checkout, execDir)
+			if !strings.HasPrefix(e.Exec, execDir) {
+				logging.Debug("Executable is not in this runtime")
+				continue
+			}
+			logging.Debug("Executable is in this runtime")
+			err = w.cfg.GetThenSet(
+				LastUsedCfgKey,
+				func(v interface{}) (interface{}, error) {
+					lastUsed := cast.ToStringMap(v)
+					lastUsed[execDir] = time.Now().Format(time.RFC3339)
+					logging.Debug("New 'last used' time for %s is %v", execDir, lastUsed[execDir])
+					return lastUsed, nil
+				})
+			return
+		}
+	}
+	logging.Debug("Unable to find project associated with %s to update last usage for", e.Exec)
 }
 
 func (w *Watcher) Close() error {

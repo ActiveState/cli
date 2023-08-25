@@ -54,6 +54,10 @@ type ComplexityRoot struct {
 		Version  func(childComplexity int) int
 	}
 
+	CheckRuntimeLastUsedResponse struct {
+		Times func(childComplexity int) int
+	}
+
 	CheckRuntimeUsageResponse struct {
 		Limit func(childComplexity int) int
 		Usage func(childComplexity int) int
@@ -78,15 +82,16 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		AnalyticsEvent     func(childComplexity int, category string, action string, label *string, dimensionsJSON string) int
-		AvailableUpdate    func(childComplexity int) int
-		CheckMessages      func(childComplexity int, command string, flags []string) int
-		CheckRuntimeUsage  func(childComplexity int, organizationName string) int
-		ConfigChanged      func(childComplexity int, key string) int
-		FetchLogTail       func(childComplexity int) int
-		Projects           func(childComplexity int) int
-		ReportRuntimeUsage func(childComplexity int, pid int, exec string, dimensionsJSON string) int
-		Version            func(childComplexity int) int
+		AnalyticsEvent       func(childComplexity int, category string, action string, label *string, dimensionsJSON string) int
+		AvailableUpdate      func(childComplexity int) int
+		CheckMessages        func(childComplexity int, command string, flags []string) int
+		CheckRuntimeLastUsed func(childComplexity int) int
+		CheckRuntimeUsage    func(childComplexity int, organizationName string) int
+		ConfigChanged        func(childComplexity int, key string) int
+		FetchLogTail         func(childComplexity int) int
+		Projects             func(childComplexity int) int
+		ReportRuntimeUsage   func(childComplexity int, pid int, exec string, dimensionsJSON string) int
+		Version              func(childComplexity int) int
 	}
 
 	ReportRuntimeUsageResponse struct {
@@ -113,6 +118,7 @@ type QueryResolver interface {
 	AnalyticsEvent(ctx context.Context, category string, action string, label *string, dimensionsJSON string) (*graph.AnalyticsEventResponse, error)
 	ReportRuntimeUsage(ctx context.Context, pid int, exec string, dimensionsJSON string) (*graph.ReportRuntimeUsageResponse, error)
 	CheckRuntimeUsage(ctx context.Context, organizationName string) (*graph.CheckRuntimeUsageResponse, error)
+	CheckRuntimeLastUsed(ctx context.Context) (*graph.CheckRuntimeLastUsedResponse, error)
 	CheckMessages(ctx context.Context, command string, flags []string) ([]*graph.MessageInfo, error)
 	ConfigChanged(ctx context.Context, key string) (*graph.ConfigChangedResponse, error)
 	FetchLogTail(ctx context.Context) (string, error)
@@ -174,6 +180,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.AvailableUpdate.Version(childComplexity), true
+
+	case "CheckRuntimeLastUsedResponse.times":
+		if e.complexity.CheckRuntimeLastUsedResponse.Times == nil {
+			break
+		}
+
+		return e.complexity.CheckRuntimeLastUsedResponse.Times(childComplexity), true
 
 	case "CheckRuntimeUsageResponse.limit":
 		if e.complexity.CheckRuntimeUsageResponse.Limit == nil {
@@ -282,6 +295,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.CheckMessages(childComplexity, args["command"].(string), args["flags"].([]string)), true
+
+	case "Query.checkRuntimeLastUsed":
+		if e.complexity.Query.CheckRuntimeLastUsed == nil {
+			break
+		}
+
+		return e.complexity.Query.CheckRuntimeLastUsed(childComplexity), true
 
 	case "Query.checkRuntimeUsage":
 		if e.complexity.Query.CheckRuntimeUsage == nil {
@@ -479,6 +499,12 @@ type CheckRuntimeUsageResponse {
     usage: Int!
 }
 
+scalar Map
+
+type CheckRuntimeLastUsedResponse {
+    times: Map!
+}
+
 enum MessageRepeatType {
     Disabled
     Constantly
@@ -515,6 +541,7 @@ type Query {
     analyticsEvent(category: String!, action: String!, label: String, dimensionsJson: String!): AnalyticsEventResponse
     reportRuntimeUsage(pid: Int!, exec: String!, dimensionsJson: String!): ReportRuntimeUsageResponse
     checkRuntimeUsage(organizationName: String!): CheckRuntimeUsageResponse
+    checkRuntimeLastUsed: CheckRuntimeLastUsedResponse
     checkMessages(command: String!, flags: [String!]!): [MessageInfo!]!
     configChanged(key: String!): ConfigChangedResponse
     fetchLogTail: String!
@@ -972,6 +999,50 @@ func (ec *executionContext) fieldContext_AvailableUpdate_sha256(ctx context.Cont
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CheckRuntimeLastUsedResponse_times(ctx context.Context, field graphql.CollectedField, obj *graph.CheckRuntimeLastUsedResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CheckRuntimeLastUsedResponse_times(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Times, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(map[string]interface{})
+	fc.Result = res
+	return ec.marshalNMap2map(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CheckRuntimeLastUsedResponse_times(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CheckRuntimeLastUsedResponse",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Map does not have child fields")
 		},
 	}
 	return fc, nil
@@ -1769,6 +1840,50 @@ func (ec *executionContext) fieldContext_Query_checkRuntimeUsage(ctx context.Con
 	if fc.Args, err = ec.field_Query_checkRuntimeUsage_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_checkRuntimeLastUsed(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_checkRuntimeLastUsed(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().CheckRuntimeLastUsed(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*graph.CheckRuntimeLastUsedResponse)
+	fc.Result = res
+	return ec.marshalOCheckRuntimeLastUsedResponse2ᚖgithubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐCheckRuntimeLastUsedResponse(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_checkRuntimeLastUsed(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "times":
+				return ec.fieldContext_CheckRuntimeLastUsedResponse_times(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type CheckRuntimeLastUsedResponse", field.Name)
+		},
 	}
 	return fc, nil
 }
@@ -4251,6 +4366,34 @@ func (ec *executionContext) _AvailableUpdate(ctx context.Context, sel ast.Select
 	return out
 }
 
+var checkRuntimeLastUsedResponseImplementors = []string{"CheckRuntimeLastUsedResponse"}
+
+func (ec *executionContext) _CheckRuntimeLastUsedResponse(ctx context.Context, sel ast.SelectionSet, obj *graph.CheckRuntimeLastUsedResponse) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, checkRuntimeLastUsedResponseImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("CheckRuntimeLastUsedResponse")
+		case "times":
+
+			out.Values[i] = ec._CheckRuntimeLastUsedResponse_times(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var checkRuntimeUsageResponseImplementors = []string{"CheckRuntimeUsageResponse"}
 
 func (ec *executionContext) _CheckRuntimeUsageResponse(ctx context.Context, sel ast.SelectionSet, obj *graph.CheckRuntimeUsageResponse) graphql.Marshaler {
@@ -4540,6 +4683,26 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_checkRuntimeUsage(ctx, field)
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return rrm(innerCtx)
+			})
+		case "checkRuntimeLastUsed":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_checkRuntimeLastUsed(ctx, field)
 				return res
 			}
 
@@ -5090,6 +5253,27 @@ func (ec *executionContext) marshalNInt2int(ctx context.Context, sel ast.Selecti
 	return res
 }
 
+func (ec *executionContext) unmarshalNMap2map(ctx context.Context, v interface{}) (map[string]interface{}, error) {
+	res, err := graphql.UnmarshalMap(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNMap2map(ctx context.Context, sel ast.SelectionSet, v map[string]interface{}) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	res := graphql.MarshalMap(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+	}
+	return res
+}
+
 func (ec *executionContext) marshalNMessageInfo2ᚕᚖgithubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐMessageInfoᚄ(ctx context.Context, sel ast.SelectionSet, v []*graph.MessageInfo) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
@@ -5560,6 +5744,13 @@ func (ec *executionContext) marshalOBoolean2ᚖbool(ctx context.Context, sel ast
 	}
 	res := graphql.MarshalBoolean(*v)
 	return res
+}
+
+func (ec *executionContext) marshalOCheckRuntimeLastUsedResponse2ᚖgithubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐCheckRuntimeLastUsedResponse(ctx context.Context, sel ast.SelectionSet, v *graph.CheckRuntimeLastUsedResponse) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._CheckRuntimeLastUsedResponse(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOCheckRuntimeUsageResponse2ᚖgithubᚗcomᚋActiveStateᚋcliᚋinternalᚋgraphᚐCheckRuntimeUsageResponse(ctx context.Context, sel ast.SelectionSet, v *graph.CheckRuntimeUsageResponse) graphql.Marshaler {

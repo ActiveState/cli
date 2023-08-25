@@ -39,6 +39,8 @@ func (suite *ProjectsIntegrationTestSuite) TestProjects() {
 	}
 	cp.Expect("Executables")
 	cp.ExpectLongString(ts.Dirs.Cache)
+	cp.Expect("Last Used")
+	cp.Expect("unknown")
 	cp.Expect("small-python")
 	cp.Expect("Local Checkout")
 	if runtime.GOOS != "windows" {
@@ -50,6 +52,8 @@ func (suite *ProjectsIntegrationTestSuite) TestProjects() {
 	}
 	cp.Expect("Executables")
 	cp.ExpectLongString(ts.Dirs.Cache)
+	cp.Expect("Last Used")
+	cp.Expect("unknown")
 	cp.ExpectExitCode(0)
 }
 
@@ -66,6 +70,7 @@ func (suite *ProjectsIntegrationTestSuite) TestJSON() {
 	cp.Expect(`[{"name":`)
 	cp.Expect(`"local_checkouts":`)
 	cp.Expect(`"executables":`)
+	cp.Expect(`"last_used":`)
 	cp.ExpectExitCode(0)
 	AssertValidJSON(suite.T(), cp)
 

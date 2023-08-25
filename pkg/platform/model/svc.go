@@ -133,6 +133,18 @@ func (m *SvcModel) CheckRuntimeUsage(ctx context.Context, organizationName strin
 	return &u.Usage, nil
 }
 
+func (m *SvcModel) CheckRuntimeLastUsed(ctx context.Context) (*graph.CheckRuntimeLastUsedResponse, error) {
+	defer profile.Measure("svc:CheckRuntimeLastUsed", time.Now())
+
+	r := request.NewCheckRuntimeLastUsed()
+	u := graph.CheckRuntimeLastUsedResponseOuter{}
+	if err := m.request(ctx, r, &u); err != nil {
+		return nil, errs.Wrap(err, "Error sending check runtime last used even via state-svc")
+	}
+
+	return &u.Times, nil
+}
+
 func (m *SvcModel) CheckMessages(ctx context.Context, command string, flags []string) ([]*graph.MessageInfo, error) {
 	logging.Debug("Checking for messages")
 	defer profile.Measure("svc:CheckMessages", time.Now())

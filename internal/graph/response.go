@@ -19,3 +19,7 @@ type CheckMessagesResponse struct {
 type CheckRuntimeUsageResponseOuter struct {
 	Usage CheckRuntimeUsageResponse `json:"checkRuntimeUsage"`
 }
+
+type CheckRuntimeLastUsedResponseOuter struct {
+	Times CheckRuntimeLastUsedResponse `json:"checkRuntimeLastUsed"`
+}
