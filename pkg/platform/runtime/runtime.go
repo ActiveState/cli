@@ -71,6 +71,8 @@ func newRuntime(target setup.Targeter, an analytics.Dispatcher, svcModel *model.
 
 // New attempts to create a new runtime from local storage.  If it fails with a NeedsUpdateError, Update() needs to be called to update the locally stored runtime.
 func New(target setup.Targeter, an analytics.Dispatcher, svcm *model.SvcModel) (*Runtime, error) {
+	logging.Debug("Initializing runtime for: %s/%s@%s", target.Owner(), target.Name(), target.CommitUUID())
+
 	if strings.ToLower(os.Getenv(constants.DisableRuntime)) == "true" {
 		fmt.Fprintln(os.Stderr, locale.Tl("notice_runtime_disabled", "Skipping runtime setup because it was disabled by an environment variable"))
 		return &Runtime{disabled: true, target: target}, nil
@@ -105,6 +107,7 @@ func (r *Runtime) Target() setup.Targeter {
 // This function is usually called, after New() returned with a NeedsUpdateError
 func (r *Runtime) Update(auth *authentication.Auth, eventHandler events.Handler) (rerr error) {
 	if r.disabled {
+		logging.Debug("Skipping update as it is disabled")
 		return nil // nothing to do
 	}
 
