@@ -25,7 +25,7 @@ func NewFetcher(an analytics.Dispatcher) *Fetcher {
 	return &Fetcher{httpreq.New(), an}
 }
 
-func (f *Fetcher) Fetch(update *UpdateInstall, targetDir string) error {
+func (f *Fetcher) Fetch(update *UpdateInstaller, targetDir string) error {
 	logging.Debug("Fetching update: %s", update.url)
 	b, _, err := f.httpreq.Get(update.url)
 	if err != nil {

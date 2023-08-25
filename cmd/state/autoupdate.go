@@ -52,7 +52,7 @@ func autoUpdate(svc *model.SvcModel, args []string, cfg *config.Instance, an ana
 	}
 
 	avUpdate := updater.NewAvailableUpdate(upd.Channel, upd.Version, upd.Platform, upd.Path, upd.Sha256, "")
-	up := updater.NewUpdateInstall(an, avUpdate)
+	up := updater.NewUpdateInstaller(an, avUpdate)
 	if !up.ShouldInstall() {
 		logging.Debug("Update is not needed")
 		return false, nil

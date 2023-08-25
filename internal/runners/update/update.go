@@ -65,7 +65,7 @@ func (u *Update) Run(params *Params) error {
 		))
 	}
 
-	update := updater.NewUpdateInstall(u.an, updater.NewAvailableUpdateFromGraph(upd))
+	update := updater.NewUpdateInstaller(u.an, updater.NewAvailableUpdateFromGraph(upd))
 	if !update.ShouldInstall() {
 		logging.Debug("No update found")
 		u.out.Print(output.Prepare(
