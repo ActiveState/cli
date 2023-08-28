@@ -30,17 +30,31 @@ func (s *SpawnedCmd) Executable() string {
 }
 
 func (s *SpawnedCmd) ExpectRe(v string, opts ...termtest.SetExpectOpt) error {
+	expectOpts, err := termtest.NewExpectOpts(opts...)
+	if err != nil {
+		err = fmt.Errorf("could not create expect options: %w", err)
+		return s.ExpectErrorHandler(&err, expectOpts)
+	}
+
 	rx, err := regexp.Compile(v)
 	if err != nil {
-		return errs.Wrap(err, "ExpectRe received invalid regex string")
+		err = errs.Wrap(err, "ExpectRe received invalid regex string")
+		return s.ExpectErrorHandler(&err, expectOpts)
 	}
 	return s.TermTest.ExpectRe(rx, opts...)
 }
 
 func (s *SpawnedCmd) ExpectInput(opts ...termtest.SetExpectOpt) error {
+	expectOpts, err := termtest.NewExpectOpts(opts...)
+	if err != nil {
+		err = fmt.Errorf("could not create expect options: %w", err)
+		return s.ExpectErrorHandler(&err, expectOpts)
+	}
+
 	cmdName := strings.TrimSuffix(strings.ToLower(filepath.Base(s.Cmd().Path)), ".exe")
 	if !sliceutils.Contains([]string{"bash", "zsh", "cmd"}, cmdName) {
-		return errs.New("ExpectInput can only be used with bash, zsh, or cmd")
+		err = errs.New("ExpectInput can only be used with bash, zsh, or cmd")
+		return s.ExpectErrorHandler(&err, expectOpts)
 	}
 
 	send := `echo $'expect\'input'`
@@ -50,6 +64,7 @@ func (s *SpawnedCmd) ExpectInput(opts ...termtest.SetExpectOpt) error {
 		expect = `<expect input>`
 	}
 
+	// Termtest internal functions already implement error handling
 	if err := s.SendLine(send); err != nil {
 		return fmt.Errorf("could not send line to terminal: %w", err)
 	}
