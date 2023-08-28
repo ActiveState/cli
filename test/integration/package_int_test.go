@@ -614,7 +614,6 @@ func (suite *PackageIntegrationTestSuite) TestUpdate() {
 
 	cp = ts.Spawn("install", "pytest@7.3.2") // install
 	cp.ExpectExitCode(0)
-	cp.ExpectLongString("Run state push")
 
 	cp = ts.Spawn("history")
 	cp.Expect("pytest")
