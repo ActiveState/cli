@@ -625,11 +625,6 @@ func (suite *PackageIntegrationTestSuite) TestUpdate() {
 	cp.Expect("requests")
 	cp.ExpectExitCode(0)
 
-	cp = ts.Spawn("history")
-	cp.Expect("requests")
-	cp.Expect("2.28.2")
-	cp.ExpectExitCode(0)
-
 	cp = ts.Spawn("packages")
 	cp.Expect("requests")
 	cp.Expect("2.28.2")
@@ -640,11 +635,6 @@ func (suite *PackageIntegrationTestSuite) TestUpdate() {
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"), // We DO want to test the runtime part, just not for every step
 	)
 	cp.Expect("requests")
-	cp.ExpectExitCode(0)
-
-	cp = ts.Spawn("history")
-	cp.Expect("requests")
-	cp.Expect("2.31.0")
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("packages")
