@@ -118,6 +118,7 @@ func OptHideArgs() SpawnOptSetter {
 		opts.HideCmdArgs = true
 	}
 }
+
 func OptRunInsideShell(v bool) SpawnOptSetter {
 	return func(opts *SpawnOpts) {
 		opts.RunInsideShell = v

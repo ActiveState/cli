@@ -1,6 +1,7 @@
 package e2e
 
 import (
+	"bytes"
 	"fmt"
 	"io/fs"
 	"io/ioutil"
@@ -247,6 +248,24 @@ func (s *Session) SpawnCmdWithOpts(exe string, optSetters ...SpawnOptSetter) *Sp
 	spawnOpts.Env = s.Env
 	spawnOpts.Dir = s.Dirs.Work
 
+	spawnOpts.TermtestOpts = append(spawnOpts.TermtestOpts,
+		termtest.OptErrorHandler(func(tt *termtest.TermTest, err error) error {
+			s.t.Fatal(s.DebugMessage(errs.JoinMessage(err)))
+			return err
+		}),
+		termtest.OptDefaultTimeout(defaultnTimeout),
+	)
+
+	if runtime.GOOS != "windows" {
+		// Work around issue where multiline values sometimes have the wrong line endings
+		// See for example TestBranch_List
+		spawnOpts.TermtestOpts = append(spawnOpts.TermtestOpts,
+			termtest.OptOutputSanitizer(func(v []byte) ([]byte, error) {
+				return bytes.ReplaceAll(v, []byte("\r\n"), []byte("\n")), nil
+			}),
+		)
+	}
+
 	for _, optSet := range optSetters {
 		optSet(&spawnOpts)
 	}
@@ -282,14 +301,6 @@ func (s *Session) SpawnCmdWithOpts(exe string, optSetters ...SpawnOptSetter) *Sp
 	if spawnOpts.Dir != "" {
 		cmd.Dir = spawnOpts.Dir
 	}
-
-	spawnOpts.TermtestOpts = append(spawnOpts.TermtestOpts,
-		termtest.OptErrorHandler(func(tt *termtest.TermTest, err error) error {
-			s.t.Fatal(s.DebugMessage(errs.JoinMessage(err)))
-			return err
-		}),
-		termtest.OptDefaultTimeout(defaultnTimeout),
-	)
 
 	tt, err := termtest.New(cmd, spawnOpts.TermtestOpts...)
 	require.NoError(s.t, err)

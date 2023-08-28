@@ -35,6 +35,7 @@ type Opts struct {
 	Rows               int
 	Posix              bool
 	DefaultTimeout     time.Duration
+	OutputSanitizer    func([]byte) ([]byte, error)
 }
 
 var TimeoutError = errors.New("timeout")
@@ -81,7 +82,7 @@ func New(cmd *exec.Cmd, opts ...SetOpt) (*TermTest, error) {
 
 func TestErrorHandler(t *testing.T) ErrorHandler {
 	return func(tt *TermTest, err error) error {
-		t.Errorf("Error encountered: %s\nSnapshot: %s\nStack: %s", unwrapErrorMessage(err), tt.Snapshot(), debug.Stack())
+		t.Errorf("Error encountered: %s\nOutput: %s\nStack: %s", unwrapErrorMessage(err), tt.Output(), debug.Stack())
 		return err
 	}
 }
@@ -159,6 +160,13 @@ func OptPosix(v bool) SetOpt {
 func OptDefaultTimeout(duration time.Duration) SetOpt {
 	return func(o *Opts) error {
 		o.DefaultTimeout = duration
+		return nil
+	}
+}
+
+func OptOutputSanitizer(f func([]byte) ([]byte, error)) SetOpt {
+	return func(o *Opts) error {
+		o.OutputSanitizer = f
 		return nil
 	}
 }
@@ -273,7 +281,7 @@ func (tt *TermTest) Snapshot() string {
 
 // PendingOutput returns any output produced that has not yet been matched against
 func (tt *TermTest) PendingOutput() string {
-	return string(tt.outputProducer.Snapshot())
+	return string(tt.outputProducer.PendingOutput())
 }
 
 // Output is similar to snapshot, except that it returns all output produced, rather than the current snapshot of output

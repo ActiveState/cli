@@ -3,9 +3,11 @@ package integration
 import (
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
+	"github.com/ActiveState/termtest"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/suite"
 )
@@ -21,15 +23,13 @@ func (suite *BranchIntegrationTestSuite) TestBranch_List() {
 
 	suite.PrepareActiveStateYAML(ts, "ActiveState-CLI", "Branches")
 
-	cp := ts.Spawn("branch")
-	expected := `main (Current)
- ├─ firstbranch
- │  └─ firstbranchchild
- │     └─ childoffirstbranchchild
- ├─ secondbranch
- └─ thirdbranch
-`
-	cp.Expect(expected)
+	cp := ts.SpawnWithOpts(e2e.OptArgs("branch"), e2e.OptTermTest(termtest.OptVerboseLogging()))
+	cp.Expect(` main (Current)
+  ├─ firstbranch
+  │  └─ firstbranchchild
+  │     └─ childoffirstbranchchild
+  ├─ secondbranch
+  └─ thirdbranch`, termtest.OptExpectTimeout(5*time.Second))
 	cp.ExpectExitCode(0)
 }
 

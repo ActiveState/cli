@@ -78,6 +78,13 @@ func (o *outputProducer) processNextRead(r io.Reader, w io.Writer, appendBuffer 
 			return fmt.Errorf("could not write: %w", err)
 		}
 		snapshot = cleanPtySnapshot(snapshot[:n], o.opts.Posix)
+		if o.opts.OutputSanitizer != nil {
+			v, err := o.opts.OutputSanitizer(snapshot)
+			if err != nil {
+				return fmt.Errorf("could not sanitize output: %w", err)
+			}
+			snapshot = v
+		}
 		if err := appendBuffer(snapshot); err != nil {
 			return fmt.Errorf("could not append buffer: %w", err)
 		}
@@ -114,7 +121,7 @@ func (o *outputProducer) flushConsumers() error {
 
 	for n := 0; n < len(o.consumers); n++ {
 		consumer := o.consumers[n]
-		snapshot := o.Snapshot() // o.Snapshot() considers the snapshotPos
+		snapshot := o.PendingOutput() // o.PendingOutput() considers the snapshotPos
 		if len(snapshot) == 0 {
 			o.opts.Logger.Println("no snapshot to flush")
 			return nil
@@ -181,7 +188,7 @@ func (o *outputProducer) addConsumer(consume consumer, opts ...SetConsOpt) (*out
 	return listener, nil
 }
 
-func (o *outputProducer) Snapshot() []byte {
+func (o *outputProducer) PendingOutput() []byte {
 	return o.output[o.snapshotPos:]
 }
 
