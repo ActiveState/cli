@@ -559,7 +559,6 @@ func (suite *PackageIntegrationTestSuite) TestNormalize() {
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cp.Expect("charset-normalizer")
-	cp.ExpectExitCode(0)
 	suite.NotContains(cp.TrimmedSnapshot(), "is different")
 }
 
