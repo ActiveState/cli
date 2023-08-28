@@ -492,10 +492,13 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_InterruptedInstallation(
 	close := suite.addForegroundSvc(ts)
 	defer close()
 
-	cp := ts.Spawn("deploy", "install", "ActiveState-CLI/small-python")
-	// interrupting installation
+	cp := ts.SpawnShellWithOpts("bash", e2e.OptAppendEnv(constants.DisableRuntime+"=false"))
+	cp.SendLine("state deploy install ActiveState-CLI/small-python")
+	cp.Expect("Installing Runtime") // Ensure we don't send Ctrl+C too soon
 	cp.SendCtrlC()
-	cp.ExpectNotExitCode(0)
+	cp.Expect("User interrupted")
+	cp.SendLine("exit")
+	cp.ExpectExit()
 }
 
 func (suite *ActivateIntegrationTestSuite) TestActivate_FromCache() {
