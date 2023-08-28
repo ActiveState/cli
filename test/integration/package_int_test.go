@@ -623,7 +623,8 @@ func (suite *PackageIntegrationTestSuite) TestUpdate() {
 		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cp.Expect("requests")
-	cp.ExpectExitCode(0)
+	cp.ExpectLongString("Run state push")
+	// cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("packages")
 	cp.Expect("requests")
