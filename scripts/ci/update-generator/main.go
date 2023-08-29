@@ -28,6 +28,7 @@ var (
 	defaultBuildDir  = filepath.Join(rootPath, "build")
 	defaultInputDir  = filepath.Join(defaultBuildDir, "payload", constants.ToplevelInstallArchiveDir)
 	defaultOutputDir = filepath.Join(rootPath, "public")
+	infoFileName     = "info.json"
 )
 
 func main() {
@@ -53,9 +54,12 @@ func generateSha256(path string) string {
 	hasher := sha256.New()
 	b, err := ioutil.ReadFile(path)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalln(err)
 	}
-	hasher.Write(b)
+	if _, err := hasher.Write(b); err != nil {
+		log.Fatalln(err)
+	}
+
 	return hex.EncodeToString(hasher.Sum(nil))
 }
 
@@ -84,23 +88,33 @@ func createUpdate(outputPath, channel, version, platform, target string) error {
 		return errs.Wrap(err, "Archiving failed")
 	}
 
+	tmpDir, err := os.MkdirTemp("", "")
+	if err != nil {
+		fmt.Printf("TmpDir creation failed: %v\n", err)
+	}
+	if err := archiver.Unarchive(archivePath, tmpDir); err != nil {
+		fmt.Printf("Unarchiving failed: %v\n", err)
+	}
+
 	avUpdate := updater.NewAvailableUpdate(channel, version, platform, filepath.ToSlash(relArchivePath), generateSha256(archivePath), "")
 	b, err := json.MarshalIndent(avUpdate, "", "    ")
 	if err != nil {
 		return errs.Wrap(err, "Failed to marshal AvailableUpdate information.")
 	}
 
-	infoPath := filepath.Join(outputPath, relChannelPath, "info.json")
+	infoPath := filepath.Join(outputPath, relChannelPath, infoFileName)
 	fmt.Printf("Creating %s\n", infoPath)
 	err = ioutil.WriteFile(infoPath, b, 0o755)
 	if err != nil {
-		return errs.Wrap(err, "Failed to write info.json.")
+		return errs.Wrap(err, "Failed to write info file (%s).", infoPath)
 	}
 
 	err = fileutils.CopyFile(infoPath, filepath.Join(outputPath, relVersionedPath, filepath.Base(infoPath)))
 	if err != nil {
-		return errs.Wrap(err, "Could not copy info.json file")
+		return errs.Wrap(err, "Could not copy info file (%s).", infoPath)
 	}
+
+	fmt.Printf("Generated SHA: %s", avUpdate.Sha256)
 
 	return nil
 }
