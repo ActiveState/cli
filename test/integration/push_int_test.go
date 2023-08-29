@@ -140,8 +140,9 @@ func (suite *PushIntegrationTestSuite) TestPush_HeadlessConvert_NewProject() {
 	cp.Expect("What would you like the name of this project to be?")
 	cp.SendLine(string([]byte{0033, '[', 'B'})) // move cursor down, and then press enter
 	cp.Expect("> Other")
-	cp.SendLine("")
+	cp.SendLine("") // enter
 	cp.Expect(">")
+	time.Sleep(100 * time.Millisecond) // Without this we seem to hit a race condition
 	cp.SendLine(pname.String())
 	cp.Expect("Project created")
 	cp.ExpectExitCode(0)
