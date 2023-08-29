@@ -43,26 +43,27 @@ func (suite *PerformanceExpansionIntegrationTestSuite) startSvc(ts *e2e.Session)
 func (suite *PerformanceExpansionIntegrationTestSuite) TestExpansionPerformance() {
 	suite.OnlyRunForTags(tagsuite.Performance)
 	baseline := DefaultMaxTime
-	suite.Run("CallScript", func() {
-		median := suite.testScriptPerformance(scriptPerformanceOptions{
-			script: projectfile.Script{
-				NameVal: projectfile.NameVal{
-					Name:  "call-script",
-					Value: `echo "Hello World"`,
-				},
-				ScriptFields: projectfile.ScriptFields{
-					Language: "bash",
-				},
-			},
-			expect:  "Hello World",
-			samples: DefaultSamples,
-			max:     DefaultMaxTime,
-		})
-		variance := float64(median) + (float64(median) * DefaultVariance)
-		baseline = time.Duration(variance)
-	})
 
-	suite.Require().NotEqual(baseline, DefaultMaxTime)
+	// Establish baseline
+	// Must not be called as a subtest as it breaks the running of other subtests
+	median := suite.testScriptPerformance(scriptPerformanceOptions{
+		script: projectfile.Script{
+			NameVal: projectfile.NameVal{
+				Name:  "call-script",
+				Value: `echo "Hello World"`,
+			},
+			ScriptFields: projectfile.ScriptFields{
+				Language: "bash",
+			},
+		},
+		expect:  "Hello World",
+		samples: DefaultSamples,
+		max:     DefaultMaxTime,
+	})
+	variance := float64(median) + (float64(median) * DefaultVariance)
+	baseline = time.Duration(variance)
+
+	suite.Require().NotEqual(DefaultMaxTime, baseline)
 
 	suite.Run("CallScriptFromMerged", func() {
 		additionalYamls := make(map[string]projectfile.Project)
@@ -149,7 +150,7 @@ func (suite *PerformanceExpansionIntegrationTestSuite) TestExpansionPerformance(
 					Language: "bash",
 				},
 			},
-			//expect:  "Yaml-Test", // TODO: re-enable in https://activestatef.atlassian.net/browse/DX-1312
+			// expect:  "Yaml-Test", // TODO: re-enable in https://activestatef.atlassian.net/browse/DX-1312
 			samples: DefaultSamples,
 			max:     baseline,
 		})
