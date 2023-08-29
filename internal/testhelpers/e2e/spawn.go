@@ -72,6 +72,26 @@ func (s *SpawnedCmd) ExpectInput(opts ...termtest.SetExpectOpt) error {
 	return s.Expect(expect, opts...)
 }
 
+func (s *SpawnedCmd) SendEnter() error {
+	return s.SendLine("")
+}
+
+func (s *SpawnedCmd) SendKeyUp() error {
+	return s.Send(string([]byte{0033, '[', 'A'})) // move cursor down
+}
+
+func (s *SpawnedCmd) SendKeyDown() error {
+	return s.Send(string([]byte{0033, '[', 'B'})) // move cursor down
+}
+
+func (s *SpawnedCmd) SendKeyRight() error {
+	return s.Send(string([]byte{0033, '[', 'C'})) // move cursor down
+}
+
+func (s *SpawnedCmd) SendKeyLeft() error {
+	return s.Send(string([]byte{0033, '[', 'D'})) // move cursor down
+}
+
 type SpawnOpts struct {
 	Args           []string
 	Env            []string
