@@ -146,7 +146,7 @@ func createUpdate(outputPath, channel, version, platform, target string) error {
 
 	fmt.Printf("Generated SHA sum: %s\n", avUpdate.Sha256)
 
-	systemSum := systemSHA256Sum("../../readme.md")
+	systemSum := systemSHA256Sum(archivePath)
 	fmt.Printf("System calculated SHA sum: %s\n", systemSum)
 
 	return nil
