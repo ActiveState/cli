@@ -288,7 +288,15 @@ func (s *Session) SpawnCmdWithOpts(exe string, optSetters ...SpawnOptSetter) *Sp
 		if len(spawnOpts.Args) == 0 {
 			args = append(args, fmt.Sprintf(`"%s"`, exe))
 		} else {
-			args = append(args, fmt.Sprintf(`"%s" "%s"`, exe, strings.Join(spawnOpts.Args, `" "`)))
+			if shell == "cmd.exe" {
+				aa := spawnOpts.Args
+				for i, a := range aa {
+					aa[i] = strings.ReplaceAll(a, " ", "^ ")
+				}
+				args = append(args, fmt.Sprintf(`%s %s`, strings.ReplaceAll(exe, " ", "^ "), strings.Join(aa, " ")))
+			} else {
+				args = append(args, fmt.Sprintf(`"%s" "%s"`, exe, strings.Join(spawnOpts.Args, `" "`)))
+			}
 		}
 	} else {
 		shell = exe
