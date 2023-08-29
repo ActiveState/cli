@@ -306,25 +306,27 @@ func (suite *PackageIntegrationTestSuite) TestPackage_import() {
 	reqsFilePath := filepath.Join(cp.WorkDirectory(), reqsFileName)
 
 	suite.Run("invalid requirements.txt", func() {
+		ts.SetT(suite.T())
 		ts.PrepareFile(reqsFilePath, badReqsData)
 
 		cp := ts.Spawn("import", "requirements.txt")
-		cp.ExpectNotExitCode(0, termtest.OptExpectTimeout(time.Second*60))
+		cp.ExpectNotExitCode(0)
 	})
 
 	suite.Run("valid requirements.txt", func() {
+		ts.SetT(suite.T())
 		ts.PrepareFile(reqsFilePath, reqsData)
 
 		cp := ts.Spawn("import", "requirements.txt")
-		cp.ExpectExitCode(0, termtest.OptExpectTimeout(time.Second*60))
+		cp.ExpectExitCode(0)
 
 		cp = ts.Spawn("push")
-		cp.ExpectExitCode(0, termtest.OptExpectTimeout(time.Second*60))
+		cp.ExpectExitCode(0)
 
 		cp = ts.Spawn("import", "requirements.txt")
-		cp.Expect("Are you sure you want to do this")
+		cp.Expect("Are you sure")
 		cp.SendLine("n")
-		cp.ExpectNotExitCode(0, termtest.OptExpectTimeout(time.Second*60))
+		cp.ExpectNotExitCode(0)
 	})
 }
 
