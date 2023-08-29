@@ -136,7 +136,7 @@ func (suite *OffInstallIntegrationTestSuite) TestInstallAndUninstall() {
 		tp.SendLine("y")
 		tp.Expect("Uninstall Complete", termtest.OptExpectTimeout(5*time.Second))
 		tp.Expect("Press enter to exit")
-		tp.SendLine("")
+		tp.SendEnter()
 		tp.ExpectExitCode(0)
 
 		// Ensure shell env is updated
@@ -176,7 +176,7 @@ func (suite *OffInstallIntegrationTestSuite) TestInstallNoPermission() {
 	)
 	tp.Expect("Please ensure that the directory is writeable", termtest.OptExpectTimeout(5*time.Second))
 	tp.Expect("Press enter to exit", termtest.OptExpectTimeout(5*time.Second))
-	tp.SendLine("")
+	tp.SendEnter()
 	tp.ExpectExitCode(1)
 }
 
@@ -306,7 +306,7 @@ func (suite *OffInstallIntegrationTestSuite) TestInstallTwice() {
 	tp.Expect("Extracting", termtest.OptExpectTimeout(time.Second))
 	tp.Expect("Installation complete")
 	tp.Expect("Press enter to exit")
-	tp.SendLine("")
+	tp.SendEnter()
 	tp.ExpectExitCode(0)
 
 	// Uninstall
@@ -325,7 +325,7 @@ func (suite *OffInstallIntegrationTestSuite) runOfflineInstaller(ts *e2e.Session
 	tp.Expect("Installing")
 	tp.Expect("Installation complete")
 	tp.Expect("Press enter to exit")
-	tp.SendLine("")
+	tp.SendEnter()
 	tp.ExpectExitCode(0)
 }
 
@@ -339,7 +339,7 @@ func (suite *OffInstallIntegrationTestSuite) runOfflineUninstaller(ts *e2e.Sessi
 	tp.SendLine("y")
 	tp.Expect("Uninstall Complete", termtest.OptExpectTimeout(5*time.Second))
 	tp.Expect("Press enter to exit")
-	tp.SendLine("")
+	tp.SendEnter()
 	tp.ExpectExitCode(0)
 }
 

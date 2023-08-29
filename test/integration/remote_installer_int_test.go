@@ -70,7 +70,7 @@ func (suite *RemoteInstallIntegrationTestSuite) TestInstall() {
 			cp.Expect("Installing")
 			cp.Expect("Installation Complete")
 			cp.Expect("Press ENTER to exit")
-			cp.SendLine("")
+			cp.SendEnter()
 			cp.ExpectExitCode(0)
 
 			suite.Require().FileExists(stateExePath)

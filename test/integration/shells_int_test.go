@@ -58,7 +58,7 @@ func (suite *ShellsIntegrationTestSuite) TestShells() {
 			cp.Expect("Multiple project paths")
 
 			// Just pick the first one and verify the selection prompt works.
-			cp.SendLine("")
+			cp.SendEnter()
 			cp.Expect("Activated")
 
 			// Verify that the command prompt contains the right info, except for tcsh, whose prompt does

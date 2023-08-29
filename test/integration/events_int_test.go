@@ -44,7 +44,7 @@ events:
 `))
 
 	cp := ts.Spawn("activate")
-	cp.SendLine("")
+	cp.SendEnter()
 	cp.Expect("before-script")
 	cp.Expect("First activate event")
 	cp.Expect("Activate event")

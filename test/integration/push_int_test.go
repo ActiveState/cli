@@ -136,7 +136,7 @@ func (suite *PushIntegrationTestSuite) TestPush_HeadlessConvert_NewProject() {
 
 	cp = ts.SpawnWithOpts(e2e.OptArgs("push"))
 	cp.Expect("Who would you like the owner of this project to be?")
-	cp.SendLine("")
+	cp.SendEnter()
 	cp.Expect("What would you like the name of this project to be?")
 	cp.SendKeyDown()
 	cp.Expect("> Other")
@@ -187,7 +187,7 @@ func (suite *PushIntegrationTestSuite) TestPush_NoPermission_NewProject() {
 	cp.Expect("not authorized")
 	cp.SendLine("y")
 	cp.Expect("Who would you like the owner of this project to be?")
-	cp.SendLine("")
+	cp.SendEnter()
 	cp.Expect("What would you like the name of this project to be?")
 	cp.SendKeyDown()
 	cp.Expect("> Other")

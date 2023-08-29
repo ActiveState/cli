@@ -137,7 +137,7 @@ func (suite *MsgIntegrationTestSuite) TestMessage_Basic_InterruptPrompt() {
 	cp.Expect("Press ENTER to continue")
 	time.Sleep(time.Millisecond * 100)
 	suite.Require().NotContains(cp.Output(), "Usage:")
-	cp.SendLine("")
+	cp.SendEnter()
 	cp.Expect("Usage:")
 	cp.ExpectExitCode(0)
 
