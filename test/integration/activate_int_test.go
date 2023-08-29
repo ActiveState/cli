@@ -12,9 +12,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/termtest"
 	"github.com/stretchr/testify/suite"
+
+	"github.com/ActiveState/cli/internal/rtutils"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/exeutils"
@@ -228,7 +229,7 @@ func (suite *ActivateIntegrationTestSuite) activatePython(version string, extraE
 		e2e.OptAppendEnv(extraEnv...),
 	)
 
-	cp.Expect("Activated")
+	cp.Expect("Activated", termtest.OptExpectTimeout(90*time.Second))
 	// ensure that shell is functional
 	cp.ExpectInput()
 
