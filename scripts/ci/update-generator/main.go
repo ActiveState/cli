@@ -9,8 +9,10 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strings"
 
 	"github.com/mholt/archiver"
 
@@ -70,6 +72,34 @@ func archiveMeta() (archiveMethod archiver.Archiver, ext string) {
 	return archiver.NewTarGz(), ".tar.gz"
 }
 
+func systemSHA256Sum(file string) string {
+	cmdText := "sha256sum"
+	var cmdArgs []string
+
+	if runtime.GOOS == "darwin" {
+		cmdText = "shasum"
+		cmdArgs = []string{"-a", "256"}
+	}
+
+	cmdArgs = append(cmdArgs, file)
+
+	cmd := exec.Command(cmdText, cmdArgs...)
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		fmt.Printf("error collecting sha sum: gather combined output: %v\n", err)
+		return ""
+	}
+
+	rawText := string(out)
+	sum, _, ok := strings.Cut(rawText, " ")
+	if !ok {
+		fmt.Printf("error collecting sha sum: cannot find sum in %q\n", rawText)
+		return ""
+	}
+
+	return sum
+}
+
 func createUpdate(outputPath, channel, version, platform, target string) error {
 	relChannelPath := filepath.Join(channel, platform)
 	relVersionedPath := filepath.Join(channel, version, platform)
@@ -114,7 +144,10 @@ func createUpdate(outputPath, channel, version, platform, target string) error {
 		return errs.Wrap(err, "Could not copy info file (%s).", infoPath)
 	}
 
-	fmt.Printf("Generated SHA: %s\n", avUpdate.Sha256)
+	fmt.Printf("Generated SHA sum: %s\n", avUpdate.Sha256)
+
+	systemSum := systemSHA256Sum("../../readme.md")
+	fmt.Printf("System calculated SHA sum: %s\n", systemSum)
 
 	return nil
 }
