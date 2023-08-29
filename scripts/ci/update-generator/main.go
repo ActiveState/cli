@@ -114,7 +114,7 @@ func createUpdate(outputPath, channel, version, platform, target string) error {
 		return errs.Wrap(err, "Could not copy info file (%s).", infoPath)
 	}
 
-	fmt.Printf("Generated SHA: %s", avUpdate.Sha256)
+	fmt.Printf("Generated SHA: %s\n", avUpdate.Sha256)
 
 	return nil
 }
