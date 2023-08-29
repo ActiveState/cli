@@ -109,7 +109,7 @@ func (suite *RunIntegrationTestSuite) TestInActivatedEnv() {
 	cp.Expect("Activated")
 	cp.ExpectInput(termtest.OptExpectTimeout(10 * time.Second))
 
-	cp.SendLine(fmt.Sprintf("%s run testMultipleLanguages", cp.Executable()))
+	cp.SendLine(fmt.Sprintf("%s run testMultipleLanguages", ts.Exe))
 	cp.Expect("Operating on project ActiveState-CLI/Python3")
 	cp.Expect("3")
 
