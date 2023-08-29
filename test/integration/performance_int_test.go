@@ -11,6 +11,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/exeutils"
+	"github.com/ActiveState/termtest"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
@@ -50,7 +51,8 @@ func performanceTest(commands []string, expect string, samples int, maxTime time
 	for x := 0; x < samples+1; x++ {
 		cp := ts.SpawnWithOpts(
 			e2e.OptArgs(commands...),
-			e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_UPDATES=true", "ACTIVESTATE_PROFILE=true"))
+			e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_UPDATES=true", "ACTIVESTATE_PROFILE=true"),
+			e2e.OptTermTest(termtest.OptVerboseLogging()))
 		if expect != "" {
 			cp.Expect(expect)
 		}
