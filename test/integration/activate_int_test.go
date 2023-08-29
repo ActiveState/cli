@@ -688,14 +688,16 @@ func (suite *ActivateIntegrationTestSuite) TestActivateArtifactsCached() {
 	suite.NoError(err)
 	for _, entry := range files {
 		if entry.IsDir() && entry.RelativePath() != constants.ArtifactMetaDir {
-			fmt.Println("removing " + entry.Path())
 			os.RemoveAll(entry.Path())
 		}
 	}
 
 	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("activate", namespace),
-		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.OptAppendEnv(
+			"ACTIVESTATE_CLI_DISABLE_RUNTIME=false",
+			"VERBOSE=true", // Necessary to assert "Fetched cached artifact"
+		),
 	)
 
 	cp.Expect("Fetched cached artifact")

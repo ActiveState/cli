@@ -57,7 +57,10 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckout() {
 
 		cp = ts.SpawnWithOpts(
 			e2e.OptArgs("checkout", "ActiveState-CLI/Python-3.9", "."),
-			e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+			e2e.OptAppendEnv(
+				"ACTIVESTATE_CLI_DISABLE_RUNTIME=false",
+				"VERBOSE=true", // Necessary to assert "Fetched cached artifact"
+			),
 		)
 		cp.Expect("Fetched cached artifact") // Comes from log, which is why we're using VERBOSE=true
 		cp.Expect("Checked out project")
