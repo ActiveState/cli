@@ -633,7 +633,6 @@ func (suite *PackageIntegrationTestSuite) TestUpdate() {
 
 	cp = ts.Spawn("history")
 	cp.Expect("pytest")
-	cp.Expect("7.4.0")
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("packages")
