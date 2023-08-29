@@ -254,6 +254,7 @@ func (s *Session) SpawnCmdWithOpts(exe string, optSetters ...SpawnOptSetter) *Sp
 			return err
 		}),
 		termtest.OptDefaultTimeout(defaultnTimeout),
+		termtest.OptCols(140),
 	)
 
 	if runtime.GOOS != "windows" {
