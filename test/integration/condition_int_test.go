@@ -24,7 +24,6 @@ func (suite *ConditionIntegrationTestSuite) TestCondition() {
 
 	cp := ts.SpawnWithOpts(
 		e2e.OptArgs("run", "test"),
-		e2e.OptAppendEnv("VERBOSE=true"),
 	)
 	cp.Expect(`projectNameValue`)
 	cp.Expect(`projectOwnerValue`)

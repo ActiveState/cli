@@ -31,7 +31,6 @@ languages:
 
 	cp := ts.SpawnWithOpts(
 		e2e.OptArgs("scripts"),
-		e2e.OptAppendEnv("VERBOSE=true"),
 	)
 	cp.ExpectExitCode(1)
 }

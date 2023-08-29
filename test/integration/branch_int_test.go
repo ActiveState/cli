@@ -23,7 +23,7 @@ func (suite *BranchIntegrationTestSuite) TestBranch_List() {
 
 	suite.PrepareActiveStateYAML(ts, "ActiveState-CLI", "Branches")
 
-	cp := ts.SpawnWithOpts(e2e.OptArgs("branch"), e2e.OptTermTest(termtest.OptVerboseLogging()))
+	cp := ts.SpawnWithOpts(e2e.OptArgs("branch"))
 	cp.Expect(` main (Current)
   ├─ firstbranch
   │  └─ firstbranchchild

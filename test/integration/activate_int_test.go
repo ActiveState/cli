@@ -695,7 +695,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivateArtifactsCached() {
 
 	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("activate", namespace),
-		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false", "VERBOSE=true"),
+		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 
 	cp.Expect("Fetched cached artifact")
