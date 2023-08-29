@@ -4,12 +4,13 @@ import (
 	"fmt"
 	"path/filepath"
 	"regexp"
+	"runtime"
 	"strings"
 	"time"
 
-	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/sliceutils"
 	"github.com/ActiveState/termtest"
+
+	"github.com/ActiveState/cli/internal/errs"
 )
 
 type SpawnedCmd struct {
@@ -52,16 +53,12 @@ func (s *SpawnedCmd) ExpectInput(opts ...termtest.SetExpectOpt) error {
 	}
 
 	cmdName := strings.TrimSuffix(strings.ToLower(filepath.Base(s.Cmd().Path)), ".exe")
-	if !sliceutils.Contains([]string{"bash", "zsh", "cmd"}, cmdName) {
-		err = errs.New("ExpectInput can only be used with bash, zsh, or cmd")
-		return s.ExpectErrorHandler(&err, expectOpts)
-	}
 
-	send := `echo $'expect\'input'`
-	expect := `expect'input`
-	if cmdName == "cmd" {
-		send = `echo ^<expect input^>`
-		expect = `<expect input>`
+	send := `echo $'expect\'input from posix shell'`
+	expect := `expect'input from posix shell`
+	if cmdName == "cmd" || (cmdName == "state" && runtime.GOOS == "windows") {
+		send = `echo ^<expect input from cmd prompt^>`
+		expect = `<expect input from cmd prompt>`
 	}
 
 	// Termtest internal functions already implement error handling
