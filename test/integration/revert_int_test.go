@@ -33,7 +33,7 @@ func (suite *RevertIntegrationTestSuite) TestRevert() {
 	cp.Expect(fmt.Sprintf("Operating on project %s", namespace))
 	cp.Expect("You are about to revert the following commit:")
 	cp.Expect(commitID)
-	cp.SendLine("Y")
+	cp.SendLine("y")
 	cp.Expect("Successfully reverted commit:")
 	cp.ExpectExitCode(0)
 
