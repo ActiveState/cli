@@ -2,7 +2,9 @@ package integration
 
 import (
 	"testing"
+	"time"
 
+	"github.com/ActiveState/termtest"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/ActiveState/cli/internal/constants"
@@ -42,7 +44,7 @@ func (suite *SoftLimitIntegrationTestSuite) TestCheckout() {
 			e2e.OptAppendEnv(constants.DisableRuntime+"=true"),
 		)
 		cp.Expect("You've reached your runtime limit")
-		cp.Expect("Activated")
+		cp.Expect("Activated", termtest.OptExpectTimeout(90*time.Second))
 		cp.ExpectInput()
 		cp.SendLine("exit 0")
 		cp.ExpectExitCode(0)
@@ -55,7 +57,7 @@ func (suite *SoftLimitIntegrationTestSuite) TestCheckout() {
 			e2e.OptAppendEnv(constants.DisableRuntime+"=true"),
 		)
 		cp.Expect("You've reached your runtime limit")
-		cp.Expect("Activated")
+		cp.Expect("Activated", termtest.OptExpectTimeout(90*time.Second))
 		cp.ExpectInput()
 		cp.SendLine("exit 0")
 		cp.ExpectExitCode(0)

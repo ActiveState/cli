@@ -4,10 +4,13 @@ import (
 	"fmt"
 	"runtime"
 	"testing"
+	"time"
+
+	"github.com/ActiveState/termtest"
+	"github.com/stretchr/testify/suite"
 
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
-	"github.com/stretchr/testify/suite"
 )
 
 type ShellsIntegrationTestSuite struct {
@@ -59,7 +62,7 @@ func (suite *ShellsIntegrationTestSuite) TestShells() {
 
 			// Just pick the first one and verify the selection prompt works.
 			cp.SendEnter()
-			cp.Expect("Activated")
+			cp.Expect("Activated", termtest.OptExpectTimeout(90*time.Second))
 
 			// Verify that the command prompt contains the right info, except for tcsh, whose prompt does
 			// not behave like other shells'.

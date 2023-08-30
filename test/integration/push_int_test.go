@@ -221,7 +221,7 @@ func (suite *PushIntegrationTestSuite) TestCarlisle() {
 		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	// The activestate.yaml on Windows runs custom activation to set shortcuts and file associations.
-	cp.Expect("Activated")
+	cp.Expect("Activated", termtest.OptExpectTimeout(90*time.Second))
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
 

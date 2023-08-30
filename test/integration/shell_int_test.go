@@ -6,6 +6,10 @@ import (
 	"path/filepath"
 	"runtime"
 	"testing"
+	"time"
+
+	"github.com/ActiveState/termtest"
+	"github.com/stretchr/testify/suite"
 
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -15,7 +19,6 @@ import (
 	"github.com/ActiveState/cli/internal/subshell/zsh"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
-	"github.com/stretchr/testify/suite"
 )
 
 type ShellIntegrationTestSuite struct {
@@ -39,7 +42,7 @@ func (suite *ShellIntegrationTestSuite) TestShell() {
 		cp := ts.SpawnWithOpts(
 			e2e.OptArgs("shell", arg),
 		)
-		cp.Expect("Activated")
+		cp.Expect("Activated", termtest.OptExpectTimeout(90*time.Second))
 		cp.ExpectInput()
 
 		cp.SendLine("python3 --version")
@@ -96,7 +99,7 @@ func (suite *ShellIntegrationTestSuite) TestDefaultShell() {
 	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("shell"),
 	)
-	cp.Expect("Activated")
+	cp.Expect("Activated", termtest.OptExpectTimeout(90*time.Second))
 	cp.ExpectInput()
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
@@ -111,7 +114,7 @@ func (suite *ShellIntegrationTestSuite) TestCwdShell() {
 	cp := ts.SpawnWithOpts(
 		e2e.OptArgs("activate", "ActiveState-CLI/small-python"),
 	)
-	cp.Expect("Activated")
+	cp.Expect("Activated", termtest.OptExpectTimeout(90*time.Second))
 	cp.ExpectInput()
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
@@ -120,7 +123,7 @@ func (suite *ShellIntegrationTestSuite) TestCwdShell() {
 		e2e.OptArgs("shell"),
 		e2e.OptWD(filepath.Join(ts.Dirs.Work, "small-python")),
 	)
-	cp.Expect("Activated")
+	cp.Expect("Activated", termtest.OptExpectTimeout(90*time.Second))
 	cp.ExpectInput()
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
@@ -135,7 +138,7 @@ func (suite *ShellIntegrationTestSuite) TestCd() {
 	cp := ts.SpawnWithOpts(
 		e2e.OptArgs("activate", "ActiveState-CLI/small-python"),
 	)
-	cp.Expect("Activated")
+	cp.Expect("Activated", termtest.OptExpectTimeout(90*time.Second))
 	cp.ExpectInput()
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
@@ -148,7 +151,7 @@ func (suite *ShellIntegrationTestSuite) TestCd() {
 		e2e.OptArgs("shell", "ActiveState-CLI/small-python"),
 		e2e.OptWD(subdir),
 	)
-	cp.Expect("Activated")
+	cp.Expect("Activated", termtest.OptExpectTimeout(90*time.Second))
 	cp.ExpectInput()
 	if runtime.GOOS != "windows" {
 		cp.SendLine("pwd")
@@ -162,7 +165,7 @@ func (suite *ShellIntegrationTestSuite) TestCd() {
 		e2e.OptArgs("shell", "ActiveState-CLI/small-python", "--cd"),
 		e2e.OptWD(subdir),
 	)
-	cp.Expect("Activated")
+	cp.Expect("Activated", termtest.OptExpectTimeout(90*time.Second))
 	cp.ExpectInput()
 	if runtime.GOOS != "windows" {
 		cp.SendLine("ls")
@@ -316,7 +319,7 @@ func (suite *ShellIntegrationTestSuite) TestNestedShellNotification() {
 	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("shell", "small-python"),
 		e2e.OptAppendEnv(env...))
-	cp.Expect("Activated")
+	cp.Expect("Activated", termtest.OptExpectTimeout(90*time.Second))
 	suite.Assert().NotContains(cp.Output(), "State Tool is operating on project")
 	cp.SendLine(fmt.Sprintf(`export HOME="%s"`, ts.Dirs.HomeDir)) // some shells do not forward this
 

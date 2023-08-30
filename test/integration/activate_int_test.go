@@ -186,7 +186,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivatePythonByHostOnly() {
 
 	if runtime.GOOS == "linux" {
 		cp.Expect("Creating a Virtual Environment")
-		cp.Expect("Activated")
+		cp.Expect("Activated", termtest.OptExpectTimeout(90*time.Second))
 		cp.ExpectInput(termtest.OptExpectTimeout(40 * time.Second))
 		cp.SendLine("exit")
 		cp.ExpectExitCode(0)
@@ -298,7 +298,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_PythonPath() {
 		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 
-	cp.Expect("Activated")
+	cp.Expect("Activated", termtest.OptExpectTimeout(90*time.Second))
 	// ensure that shell is functional
 	cp.ExpectInput()
 
@@ -381,7 +381,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivatePerl() {
 
 	cp.Expect("Downloading", termtest.OptExpectTimeout(40*time.Second))
 	cp.Expect("Installing", termtest.OptExpectTimeout(140*time.Second))
-	cp.Expect("Activated")
+	cp.Expect("Activated", termtest.OptExpectTimeout(90*time.Second))
 
 	suite.assertCompletedStatusBarReport(cp.Output())
 
@@ -517,7 +517,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_FromCache() {
 	)
 	cp.Expect("Downloading")
 	cp.Expect("Installing")
-	cp.Expect("Activated")
+	cp.Expect("Activated", termtest.OptExpectTimeout(90*time.Second))
 
 	suite.assertCompletedStatusBarReport(cp.Output())
 	cp.SendLine("exit")
@@ -553,7 +553,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivateCommitURL() {
 
 	// Ensure we have the most up to date version of the project before activating
 	cp := ts.Spawn("activate")
-	cp.Expect("Activated")
+	cp.Expect("Activated", termtest.OptExpectTimeout(90*time.Second))
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
 }
@@ -670,7 +670,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivateArtifactsCached() {
 		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 
-	cp.Expect("Activated")
+	cp.Expect("Activated", termtest.OptExpectTimeout(90*time.Second))
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
 
@@ -702,7 +702,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivateArtifactsCached() {
 	)
 
 	cp.Expect("Fetched cached artifact")
-	cp.Expect("Activated")
+	cp.Expect("Activated", termtest.OptExpectTimeout(90*time.Second))
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
 }

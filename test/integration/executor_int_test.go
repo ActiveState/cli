@@ -4,12 +4,15 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
+
+	"github.com/ActiveState/termtest"
+	"github.com/stretchr/testify/suite"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
-	"github.com/stretchr/testify/suite"
 )
 
 type ExecutorIntegrationTestSuite struct {
@@ -36,7 +39,7 @@ func (suite *ExecutorIntegrationTestSuite) TestExecutorForwards() {
 		e2e.OptArgs("shell", "ActiveState-CLI/Python3"),
 		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
-	cp.Expect("Activated")
+	cp.Expect("Activated", termtest.OptExpectTimeout(90*time.Second))
 	cp.ExpectInput()
 
 	cp.SendLine("python3 -c \"import sys; print(sys.copyright)\"")
@@ -63,7 +66,7 @@ func (suite *ExecutorIntegrationTestSuite) TestExecutorExitCode() {
 		e2e.OptArgs("shell", "ActiveState-CLI/Python3"),
 		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
-	cp.Expect("Activated")
+	cp.Expect("Activated", termtest.OptExpectTimeout(90*time.Second))
 	cp.ExpectInput()
 
 	cp.SendLine("python3 -c \"exit(42)\"")

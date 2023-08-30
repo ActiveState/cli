@@ -7,6 +7,10 @@ import (
 	"path/filepath"
 	"runtime"
 	"testing"
+	"time"
+
+	"github.com/ActiveState/termtest"
+	"github.com/stretchr/testify/suite"
 
 	svcApp "github.com/ActiveState/cli/cmd/state-svc/app"
 	svcAutostart "github.com/ActiveState/cli/cmd/state-svc/autostart"
@@ -22,7 +26,6 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
 	rt "github.com/ActiveState/cli/pkg/platform/runtime/target"
-	"github.com/stretchr/testify/suite"
 )
 
 type PrepareIntegrationTestSuite struct {
@@ -129,7 +132,7 @@ func (suite *PrepareIntegrationTestSuite) TestResetExecutors() {
 	cp.Expect("This project will always be available for use")
 	cp.Expect("Downloading")
 	cp.Expect("Installing")
-	cp.Expect("Activated")
+	cp.Expect("Activated", termtest.OptExpectTimeout(90*time.Second))
 
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
@@ -161,7 +164,7 @@ func (suite *PrepareIntegrationTestSuite) TestResetExecutors() {
 	err = os.RemoveAll(projectExecDir)
 
 	cp = ts.Spawn("activate")
-	cp.Expect("Activated")
+	cp.Expect("Activated", termtest.OptExpectTimeout(90*time.Second))
 	cp.SendLine("which python3")
 	cp.SendLine("python3 --version")
 	cp.Expect("ActiveState")

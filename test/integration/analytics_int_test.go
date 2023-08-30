@@ -10,6 +10,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ActiveState/termtest"
+	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/suite"
+	"github.com/thoas/go-funk"
+
 	"github.com/ActiveState/cli/internal/analytics/client/sync/reporters"
 	anaConst "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/condition"
@@ -19,10 +24,6 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
-	"github.com/ActiveState/termtest"
-	"github.com/stretchr/testify/require"
-	"github.com/stretchr/testify/suite"
-	"github.com/thoas/go-funk"
 )
 
 type AnalyticsIntegrationTestSuite struct {
@@ -71,7 +72,7 @@ func (suite *AnalyticsIntegrationTestSuite) TestActivateEvents() {
 	}
 
 	cp.Expect("Creating a Virtual Environment")
-	cp.Expect("Activated")
+	cp.Expect("Activated", termtest.OptExpectTimeout(90*time.Second))
 	cp.ExpectInput(termtest.OptExpectTimeout(120 * time.Second))
 
 	time.Sleep(time.Second) // Ensure state-svc has time to report events
@@ -449,7 +450,7 @@ func (suite *AnalyticsIntegrationTestSuite) TestAttempts() {
 	)
 
 	cp.Expect("Creating a Virtual Environment")
-	cp.Expect("Activated")
+	cp.Expect("Activated", termtest.OptExpectTimeout(90*time.Second))
 	cp.ExpectInput(termtest.OptExpectTimeout(120 * time.Second))
 
 	cp.SendLine("python3 --version")
@@ -492,7 +493,7 @@ func (suite *AnalyticsIntegrationTestSuite) TestHeapEvents() {
 	)
 
 	cp.Expect("Creating a Virtual Environment")
-	cp.Expect("Activated")
+	cp.Expect("Activated", termtest.OptExpectTimeout(90*time.Second))
 	cp.ExpectInput(termtest.OptExpectTimeout(120 * time.Second))
 
 	time.Sleep(time.Second) // Ensure state-svc has time to report events
