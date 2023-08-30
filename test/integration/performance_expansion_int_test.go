@@ -59,6 +59,7 @@ func (suite *PerformanceExpansionIntegrationTestSuite) TestExpansionPerformance(
 		expect:  "Hello World",
 		samples: DefaultSamples,
 		max:     DefaultMaxTime,
+		verbose: true,
 	})
 	variance := float64(median) + (float64(median) * DefaultVariance)
 	baseline = time.Duration(variance)
