@@ -188,8 +188,9 @@ func (suite *InstallerIntegrationTestSuite) TestInstallErrorTips() {
 	cp.SendLine("state command-does-not-exist")
 	cp.ExpectInput()
 	cp.SendLine("exit")
-	cp.Wait()
-	suite.Assert().Contains(cp.Snapshot(), "Need More Help?", "error tips should be displayed in shell created by installer")
+	cp.ExpectExit()
+	suite.Assert().Contains(cp.Output(), "Need More Help?",
+		"error tips should be displayed in shell created by installer")
 }
 
 func (suite *InstallerIntegrationTestSuite) TestStateTrayRemoval() {
