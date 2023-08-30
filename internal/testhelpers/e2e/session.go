@@ -14,6 +14,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ActiveState/termtest"
+	"github.com/go-openapi/strfmt"
+	"github.com/google/uuid"
+	"github.com/phayes/permbits"
+	"github.com/stretchr/testify/require"
+
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
@@ -32,11 +38,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/ActiveState/termtest"
-	"github.com/go-openapi/strfmt"
-	"github.com/google/uuid"
-	"github.com/phayes/permbits"
-	"github.com/stretchr/testify/require"
 )
 
 // Session represents an end-to-end testing session during which several console process can be spawned and tested
@@ -257,15 +258,13 @@ func (s *Session) SpawnCmdWithOpts(exe string, optSetters ...SpawnOptSetter) *Sp
 		termtest.OptCols(140),
 	)
 
-	if runtime.GOOS != "windows" {
-		// Work around issue where multiline values sometimes have the wrong line endings
-		// See for example TestBranch_List
-		spawnOpts.TermtestOpts = append(spawnOpts.TermtestOpts,
-			termtest.OptOutputSanitizer(func(v []byte) ([]byte, error) {
-				return bytes.ReplaceAll(v, []byte("\r\n"), []byte("\n")), nil
-			}),
-		)
-	}
+	// Work around issue where multiline values sometimes have the wrong line endings
+	// See for example TestBranch_List
+	spawnOpts.TermtestOpts = append(spawnOpts.TermtestOpts,
+		termtest.OptOutputSanitizer(func(v []byte) ([]byte, error) {
+			return bytes.ReplaceAll(v, []byte("\r"), []byte("")), nil
+		}),
+	)
 
 	for _, optSet := range optSetters {
 		optSet(&spawnOpts)
