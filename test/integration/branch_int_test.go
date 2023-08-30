@@ -5,11 +5,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ActiveState/cli/internal/testhelpers/e2e"
-	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/ActiveState/termtest"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/suite"
+
+	"github.com/ActiveState/cli/internal/testhelpers/e2e"
+	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 )
 
 type BranchIntegrationTestSuite struct {

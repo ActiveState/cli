@@ -1,7 +1,6 @@
 package e2e
 
 import (
-	"bytes"
 	"fmt"
 	"io/fs"
 	"io/ioutil"
@@ -261,9 +260,7 @@ func (s *Session) SpawnCmdWithOpts(exe string, optSetters ...SpawnOptSetter) *Sp
 	// Work around issue where multiline values sometimes have the wrong line endings
 	// See for example TestBranch_List
 	spawnOpts.TermtestOpts = append(spawnOpts.TermtestOpts,
-		termtest.OptOutputSanitizer(func(v []byte) ([]byte, error) {
-			return bytes.ReplaceAll(v, []byte("\r"), []byte("")), nil
-		}),
+		termtest.OptNormalizedLineEnds(true),
 	)
 
 	for _, optSet := range optSetters {
