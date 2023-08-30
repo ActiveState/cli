@@ -245,7 +245,7 @@ func (r *Runtime) recordCompletion(err error) {
 		errorType = "input"
 	case errs.Matches(err, &model.SolverError{}):
 		errorType = "solve"
-	case errs.Matches(err, &setup.BuildError{}) || errs.Matches(err, &buildlog.BuildError{}):
+	case errs.Matches(err, &setup.BuildError{}), errs.Matches(err, &buildlog.BuildError{}):
 		errorType = "build"
 	case errs.Matches(err, &bpModel.BuildPlannerError{}):
 		errorType = "buildplan"
@@ -259,6 +259,9 @@ func (r *Runtime) recordCompletion(err error) {
 				case errs.Matches(err, &setup.ArtifactInstallError{}):
 					errorType = "install"
 					// Note: do not break because there could be download errors, and those take precedence
+				case errs.Matches(err, &setup.BuildError{}), errs.Matches(err, &buildlog.BuildError{}):
+					errorType = "build"
+					break // it only takes one build failure to report the runtime failure as due to build error
 				}
 			}
 		}
@@ -266,6 +269,8 @@ func (r *Runtime) recordCompletion(err error) {
 	// and those errors actually caused the failure, not these.
 	case errs.Matches(err, &setup.ProgressReportError{}) || errs.Matches(err, &buildlog.EventHandlerError{}):
 		errorType = "progress"
+	case errs.Matches(err, &setup.ExecutorSetupError{}):
+		errorType = "postprocess"
 	}
 
 	var message string
