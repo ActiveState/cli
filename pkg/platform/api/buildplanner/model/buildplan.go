@@ -92,6 +92,7 @@ func (o Operation) String() string {
 }
 
 type BuildPlannerError struct {
+	Err              error
 	ValidationErrors []string
 	IsTransient      bool
 }
@@ -111,6 +112,10 @@ func (e *BuildPlannerError) UserError() string {
 }
 
 func (e *BuildPlannerError) Error() string {
+	if e.Err != nil {
+		return e.Err.Error()
+	}
+
 	// Append last five lines to error message
 	offset := 0
 	numLines := len(e.ValidationErrors)

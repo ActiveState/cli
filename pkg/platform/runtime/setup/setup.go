@@ -79,6 +79,10 @@ type ArtifactSetupErrors struct {
 	errs []error
 }
 
+type ExecutorSetupError struct {
+	*errs.WrapperError
+}
+
 func (a *ArtifactSetupErrors) Error() string {
 	var errors []string
 	for _, err := range a.errs {
@@ -189,7 +193,7 @@ func (s *Setup) Update() (rerr error) {
 
 	// Update executors
 	if err := s.updateExecutors(artifacts); err != nil {
-		return errs.Wrap(err, "Failed to update executors")
+		return ExecutorSetupError{errs.Wrap(err, "Failed to update executors")}
 	}
 
 	// Mark installation as completed
@@ -745,12 +749,16 @@ func (s *Setup) moveToInstallPath(a artifact.ArtifactID, unpackedDir string, env
 func (s *Setup) downloadArtifact(a artifact.ArtifactDownload, targetFile string) (rerr error) {
 	defer func() {
 		if rerr != nil {
-			rerr = &ArtifactDownloadError{errs.Wrap(rerr, "Unable to download artifact")}
+			if !errs.Matches(rerr, &ProgressReportError{}) {
+				rerr = &ArtifactDownloadError{errs.Wrap(rerr, "Unable to download artifact")}
+			}
+
 			if err := s.handleEvent(events.ArtifactDownloadFailure{a.ArtifactID, rerr}); err != nil {
 				rerr = errs.Wrap(rerr, "Could not handle ArtifactDownloadFailure event")
 				return
 			}
 		}
+
 		if err := s.handleEvent(events.ArtifactDownloadSuccess{a.ArtifactID}); err != nil {
 			rerr = errs.Wrap(rerr, "Could not handle ArtifactDownloadSuccess event")
 			return
@@ -765,7 +773,7 @@ func (s *Setup) downloadArtifact(a artifact.ArtifactDownload, targetFile string)
 	b, err := httputil.GetWithProgress(artifactURL.String(), &progress.Report{
 		ReportSizeCb: func(size int) error {
 			if err := s.handleEvent(events.ArtifactDownloadStarted{a.ArtifactID, size}); err != nil {
-				return errs.Wrap(err, "Could not handle ArtifactDownloadStarted event")
+				return ProgressReportError{errs.Wrap(err, "Could not handle ArtifactDownloadStarted event")}
 			}
 			return nil
 		},
@@ -779,9 +787,11 @@ func (s *Setup) downloadArtifact(a artifact.ArtifactDownload, targetFile string)
 	if err != nil {
 		return errs.Wrap(err, "Download %s failed", artifactURL.String())
 	}
+
 	if err := fileutils.WriteFile(targetFile, b); err != nil {
 		return errs.Wrap(err, "Writing download to target file %s failed", targetFile)
 	}
+
 	return nil
 }
 
