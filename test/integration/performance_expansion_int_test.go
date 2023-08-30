@@ -204,6 +204,7 @@ func (suite *PerformanceExpansionIntegrationTestSuite) TestExpansionPerformance(
 			// expect:  "https://platform.activestate.com/ActiveState-CLI/Yaml-Test", // TODO: re-enable in https://activestatef.atlassian.net/browse/DX-1312
 			samples: DefaultSamples,
 			max:     baseline,
+			verbose: true,
 		})
 	})
 
@@ -346,6 +347,7 @@ type scriptPerformanceOptions struct {
 	additionalScripts   projectfile.Scripts
 	constants           projectfile.Constants
 	additionalYamlFiles map[string]projectfile.Project
+	verbose             bool
 }
 
 func (suite *PerformanceExpansionIntegrationTestSuite) testScriptPerformance(opts scriptPerformanceOptions) time.Duration {
@@ -377,7 +379,7 @@ func (suite *PerformanceExpansionIntegrationTestSuite) testScriptPerformance(opt
 		suite.prepareAlternateActiveStateYaml(name, string(contents), ts)
 	}
 
-	return performanceTest([]string{"run", opts.script.Name}, opts.expect, opts.samples, opts.max, suite.Suite, ts)
+	return performanceTest([]string{"run", opts.script.Name}, opts.expect, opts.samples, opts.max, opts.verbose, suite.Suite, ts)
 }
 
 func (suite *PerformanceExpansionIntegrationTestSuite) prepareAlternateActiveStateYaml(name, contents string, ts *e2e.Session) {
