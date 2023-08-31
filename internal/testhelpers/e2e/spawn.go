@@ -89,6 +89,15 @@ func (s *SpawnedCmd) ExpectInput(opts ...termtest.SetExpectOpt) error {
 	return s.Expect(expect, opts...)
 }
 
+func (s *SpawnedCmd) SendLine(value string) error {
+	if runtime.GOOS == "windows" {
+		// Work around race condition - on Windows it appears more likely to happen
+		// https://activestatef.atlassian.net/browse/DX-2171
+		time.Sleep(100 * time.Second)
+	}
+	return s.TermTest.SendLine(value)
+}
+
 func (s *SpawnedCmd) SendEnter() error {
 	return s.SendLine("")
 }
