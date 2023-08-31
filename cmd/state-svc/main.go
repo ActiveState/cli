@@ -122,7 +122,7 @@ func run(cfg *config.Instance) error {
 	)
 
 	var foregroundArgText string
-	var startup bool
+	var autostart bool
 
 	cmd.AddChildren(
 		captain.NewCommand(
@@ -131,14 +131,14 @@ func run(cfg *config.Instance) error {
 			"Start the ActiveState Service (Background)",
 			p,
 			[]*captain.Flag{
-				{Name: "startup", Value: &startup}, // differentiate between autostart and cli invocation
+				{Name: "autostart", Value: &autostart, Hidden: true}, // differentiate between autostart and cli invocation
 			},
 			nil,
 			func(ccmd *captain.Command, args []string) error {
 				logging.Debug("Running CmdStart")
 				argText := "svc-start:cli"
-				if startup {
-					argText = "svc-start:startup"
+				if autostart {
+					argText += "-autostart"
 				}
 				return runStart(out, argText)
 			},
