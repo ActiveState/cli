@@ -69,7 +69,7 @@ func performanceTest(commands []string, expect string, samples int, maxTime time
 		cp.ExpectExitCode(0)
 		v := rx.FindStringSubmatch(cp.Output())
 		if len(v) < 2 {
-			suite.T().Fatalf("Could not find '%s' in output:\n%\n\ntermtest logs:\n%s", rx.String(), cp.Output(), termtestLogs.String())
+			suite.T().Fatalf("Could not find '%s' in output:\n%s\n\ntermtest logs:\n%s", rx.String(), cp.Output(), termtestLogs.String())
 		}
 		durMS, err := strconv.Atoi(v[1])
 		suite.Require().NoError(err)
