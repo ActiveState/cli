@@ -3,6 +3,7 @@ package integration
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"log"
 	"regexp"
 	"sort"
@@ -67,9 +68,11 @@ func performanceTest(commands []string, expect string, samples int, maxTime time
 			cp.Expect(expect)
 		}
 		cp.ExpectExitCode(0)
+		logs, err := io.ReadAll(termtestLogs)
+		suite.NoError(err)
 		v := rx.FindStringSubmatch(cp.Output())
 		if len(v) < 2 {
-			suite.T().Fatalf("Could not find '%s' in output:\n%s\n\ntermtest logs:\n%s", rx.String(), cp.Output(), termtestLogs.String())
+			suite.T().Fatalf("Could not find '%s' in output:\n%s\n\ntermtest logs:\n%s", rx.String(), cp.Output(), logs)
 		}
 		durMS, err := strconv.Atoi(v[1])
 		suite.Require().NoError(err)
