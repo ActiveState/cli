@@ -19,19 +19,6 @@ type SpawnedCmd struct {
 	opts SpawnOpts
 }
 
-func (s *SpawnedCmd) Output() string {
-	if runtime.GOOS != "windows" {
-		return s.TermTest.Output()
-	}
-	// For some reason on Windows the PTY starts with the path of the executable followed by the unicode Alert character (U+0007)
-	// For now we are working around this bug here
-	out := s.TermTest.Output()
-	if i := strings.Index(out, "\a"); i != -1 {
-		out = out[i+1:]
-	}
-	return out
-}
-
 func (s *SpawnedCmd) WorkDirectory() string {
 	return s.TermTest.Cmd().Dir
 }
