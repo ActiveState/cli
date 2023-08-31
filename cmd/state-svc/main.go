@@ -138,7 +138,7 @@ func run(cfg *config.Instance) error {
 				logging.Debug("Running CmdStart")
 				argText := "svc-start:cli"
 				if autostart {
-					argText += "-autostart"
+					argText = "svc-start:auto"
 				}
 				return runStart(out, argText)
 			},
