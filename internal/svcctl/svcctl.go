@@ -154,7 +154,7 @@ func startAndWait(ctx context.Context, ipComm IPCommunicator, exec, argText stri
 		args = args[:len(args)-1]
 	}
 
-	debugInfo := newDebugData(ipComm, startSvc)
+	debugInfo := newDebugData(ipComm, startSvc, argText)
 
 	if _, err := exeutils.ExecuteAndForget(exec, args); err != nil {
 		return locale.WrapError(err, "svcctl_cannot_exec_and_forget", "Cannot execute service in background: {{.V0}}", err.Error())
@@ -212,7 +212,7 @@ func waitUp(ctx context.Context, ipComm IPCommunicator, debugInfo *debugData) er
 }
 
 func stopAndWait(ctx context.Context, ipComm IPCommunicator) error {
-	debugInfo := newDebugData(ipComm, stopSvc)
+	debugInfo := newDebugData(ipComm, stopSvc, "")
 
 	if err := ipComm.StopServer(ctx); err != nil {
 		return locale.WrapError(err, "svcctl_stop_req_failed", "Service stop request failed")

@@ -20,6 +20,8 @@ const (
 )
 
 type debugData struct {
+	argText string
+
 	sockInfo    *fileInfo
 	sockDirInfo *fileInfo
 	sockDirList []string
@@ -33,11 +35,12 @@ type debugData struct {
 	waitDur      time.Duration
 }
 
-func newDebugData(ipComm IPCommunicator, kind execKind) *debugData {
+func newDebugData(ipComm IPCommunicator, kind execKind, argText string) *debugData {
 	sock := ipComm.SockPath().String()
 	sockDir := filepath.Dir(sock)
 
 	return &debugData{
+		argText:     argText,
 		sockInfo:    newFileInfo(sock),
 		sockDirInfo: newFileInfo(sockDir),
 		sockDirList: fileutils.ListDirSimple(sockDir, false),
@@ -61,6 +64,7 @@ func (d *debugData) Error() string {
 	}
 
 	return fmt.Sprintf(strings.TrimSpace(`
+Arg Text      : %s
 Sock Info     : %s
 Sock Dir Info : %s
 Sock Dir List : %s
@@ -70,6 +74,7 @@ Wait Start    : %s
 Wait Duration : %s
 Wait Log: %s
 `),
+		d.argText,
 		strings.ReplaceAll(d.sockInfo.LogString(), "\n", "\n  "),
 		strings.ReplaceAll(d.sockDirInfo.LogString(), "\n", "\n  "),
 		sockDirList,
