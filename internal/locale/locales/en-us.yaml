@@ -281,8 +281,6 @@ organization:
   other: Organization
 organizations_description:
   other: List member organizations on the ActiveState Platform
-organizations_add_description:
-  other: Add a new organization to the ActiveState Platform
 organizations_err:
   other: Unable to list member organizations
 organizations_unknown_tier:

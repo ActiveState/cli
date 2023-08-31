@@ -30,33 +30,3 @@ func newOrganizationsCommand(prime *primer.Values) *captain.Command {
 
 	return cmd
 }
-
-func newOrganizationsAddCommand(prime *primer.Values) *captain.Command {
-	runner := organizations.NewOrganizationsAdd(prime)
-
-	params := organizations.OrgAddParams{}
-
-	cmd := captain.NewCommand(
-		"add",
-		locale.Tl("organizations_add_title", "Creating Organization"),
-		locale.T("organizations_add_description"),
-		prime,
-		[]*captain.Flag{},
-		[]*captain.Argument{
-			{
-				Name:        locale.Tl("organizations_add_name", "Name"),
-				Description: locale.Tl("organizations_add_name_description", "The name of the organization"),
-				Required:    true,
-				Value:       &params.Name,
-			},
-		},
-		func(ccmd *captain.Command, _ []string) error {
-			return runner.Run(&params)
-		},
-	)
-
-	cmd.SetUnstable(true)
-	cmd.SetHidden(true) // for test use only at this time
-
-	return cmd
-}

@@ -20,27 +20,6 @@ import (
 
 var ErrMemberNotFound = errs.New("member not found")
 
-func CreateOrg(name string) error {
-	params := clientOrgs.NewAddOrganizationParams()
-	params.Organization = &mono_models.OrganizationEditable{
-		URLname:     name,
-		DisplayName: name,
-	}
-	_, err := authentication.Client().Organizations.AddOrganization(params, authentication.ClientAuth())
-	if err != nil {
-		switch statusCode := api.ErrorCode(err); statusCode {
-		case 400:
-			return locale.WrapInputError(err, "", err.Error())
-		case 403:
-			return locale.WrapInputError(err, "err_auth_required")
-		case 409:
-			return locale.WrapInputError(err, "err_organization_add_exists", "Organization name already exists")
-		}
-		return errs.Wrap(err, "failed to create organization")
-	}
-	return nil
-}
-
 // FetchOrganizations fetches all organizations for the current user.
 func FetchOrganizations() ([]*mono_models.Organization, error) {
 	params := clientOrgs.NewListOrganizationsParams()

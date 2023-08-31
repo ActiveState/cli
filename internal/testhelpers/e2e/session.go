@@ -379,7 +379,7 @@ func (s *Session) CreateNewUser() (string, string) {
 	password := uid.String()[8:]
 	email := fmt.Sprintf("%s@test.tld", username)
 
-	p := s.Spawn("auth", "signup", "--prompt")
+	p := s.Spawn(tagsuite.Auth, "signup", "--prompt")
 
 	p.Expect("I accept")
 	p.SendLine("")
@@ -396,14 +396,7 @@ func (s *Session) CreateNewUser() (string, string) {
 
 	s.users = append(s.users, username)
 
-	s.CreateOrg(username) // Many of our tests rely on this implicitly also creating an org as that's how the API used to behave
-
 	return username, password
-}
-
-func (s *Session) CreateOrg(name string) {
-	p := s.Spawn("organizations", "add", name)
-	p.ExpectExitCode(0)
 }
 
 // NotifyProjectCreated indicates that the given project was created on the Platform and needs to
