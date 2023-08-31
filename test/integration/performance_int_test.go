@@ -55,10 +55,10 @@ func performanceTest(commands []string, expect string, samples int, maxTime time
 			e2e.OptArgs(commands...),
 			e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_UPDATES=true", "ACTIVESTATE_PROFILE=true"),
 		}
-		termtestLogs := bytes.Buffer{}
+		termtestLogs := &bytes.Buffer{}
 		if verbose {
 			opts = append(opts, e2e.OptTermTest(func(o *termtest.Opts) error {
-				o.Logger = log.New(&termtestLogs, "TermTest: ", log.LstdFlags|log.Lshortfile)
+				o.Logger = log.New(termtestLogs, "TermTest: ", log.LstdFlags|log.Lshortfile)
 				return nil
 			}))
 		}
@@ -69,7 +69,7 @@ func performanceTest(commands []string, expect string, samples int, maxTime time
 		cp.ExpectExitCode(0)
 		v := rx.FindStringSubmatch(cp.Output())
 		if len(v) < 2 {
-			suite.T().Fatalf("Could not find '%s' in output: %s, termtest logs: %s", rx.String(), cp.Output(), termtestLogs.String())
+			suite.T().Fatalf("Could not find '%s' in output:\n%\n\ntermtest logs:\n%s", rx.String(), cp.Output(), termtestLogs.String())
 		}
 		durMS, err := strconv.Atoi(v[1])
 		suite.Require().NoError(err)
