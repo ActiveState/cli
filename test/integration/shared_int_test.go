@@ -7,9 +7,10 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
-	"github.com/stretchr/testify/assert"
 )
 
 func init() {
@@ -22,7 +23,7 @@ func init() {
 // any non-JSON/structured output.
 // This should only be called after a command has executed and all output is available.
 func AssertValidJSON(t *testing.T, cp *e2e.SpawnedCmd) {
-	output := cp.Output()
+	output := cp.StrippedSnapshot()
 	if runtime.GOOS != "windows" {
 		assert.True(t, json.Valid([]byte(output)), "The command produced invalid JSON/structured output:\n"+output)
 	} else {

@@ -31,6 +31,12 @@ func (s *SpawnedCmd) Executable() string {
 	return s.TermTest.Cmd().Path
 }
 
+// StrippedSnapshot returns the snapshot with trimmed whitespace and stripped line endings
+// Mainly intended for JSON parsing
+func (s *SpawnedCmd) StrippedSnapshot() string {
+	return strings.Trim(strings.ReplaceAll(s.TermTest.Snapshot(), "\n", ""), "\x00\x20\x0a\x0d")
+}
+
 func (s *SpawnedCmd) ExpectRe(v string, opts ...termtest.SetExpectOpt) error {
 	expectOpts, err := termtest.NewExpectOpts(opts...)
 	if err != nil {

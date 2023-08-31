@@ -11,6 +11,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ActiveState/termtest"
+	"github.com/stretchr/testify/suite"
+
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/exeutils"
@@ -20,8 +23,6 @@ import (
 	"github.com/ActiveState/cli/internal/rtutils/singlethread"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
-	"github.com/ActiveState/termtest"
-	"github.com/stretchr/testify/suite"
 )
 
 type UpdateIntegrationTestSuite struct {
@@ -73,7 +74,7 @@ func (suite *UpdateIntegrationTestSuite) versionCompare(ts *e2e.Session, expecte
 	cp.ExpectExitCode(0)
 
 	version := versionData{}
-	out := strings.Trim(cp.Output(), "\x00")
+	out := cp.StrippedSnapshot()
 	json.Unmarshal([]byte(out), &version)
 
 	matcher(expected, version.Version, fmt.Sprintf("Version could not be matched, output:\n\n%s", out))
@@ -88,7 +89,7 @@ func (suite *UpdateIntegrationTestSuite) branchCompare(ts *e2e.Session, expected
 	cp.ExpectExitCode(0, termtest.OptExpectTimeout(30*time.Second))
 
 	branch := branchData{}
-	out := strings.Trim(cp.Output(), "\x00")
+	out := cp.StrippedSnapshot()
 	json.Unmarshal([]byte(out), &branch)
 
 	matcher(expected, branch.Branch, fmt.Sprintf("Branch could not be matched, output:\n\n%s", out))

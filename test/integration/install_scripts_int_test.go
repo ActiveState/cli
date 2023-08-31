@@ -5,9 +5,13 @@ import (
 	"fmt"
 	"path/filepath"
 	"runtime"
-	"strings"
 	"testing"
 	"time"
+
+	"github.com/ActiveState/termtest"
+	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/suite"
+	"github.com/thoas/go-funk"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
@@ -17,10 +21,6 @@ import (
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
-	"github.com/ActiveState/termtest"
-	"github.com/stretchr/testify/require"
-	"github.com/stretchr/testify/suite"
-	"github.com/thoas/go-funk"
 )
 
 type InstallScriptsIntegrationTestSuite struct {
@@ -242,8 +242,8 @@ func (suite *InstallScriptsIntegrationTestSuite) assertCorrectVersion(ts *e2e.Se
 	cp := ts.SpawnCmd(stateExec, "--version", "--output=json")
 	cp.ExpectExitCode(0)
 	actual := versionData{}
-	out := strings.Trim(cp.Output(), "\x00")
-	json.Unmarshal([]byte(out), &actual)
+	out := cp.StrippedSnapshot()
+	suite.Require().NoError(json.Unmarshal([]byte(out), &actual))
 
 	if expectedVersion != "" {
 		suite.Equal(expectedVersion, actual.Version)

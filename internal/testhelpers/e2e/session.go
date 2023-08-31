@@ -255,6 +255,7 @@ func (s *Session) SpawnCmdWithOpts(exe string, optSetters ...SpawnOptSetter) *Sp
 		}),
 		termtest.OptDefaultTimeout(defaultnTimeout),
 		termtest.OptCols(140),
+		termtest.OptRows(30), // Needs to be able to accommodate JSON output
 	)
 
 	// Work around issue where multiline values sometimes have the wrong line endings

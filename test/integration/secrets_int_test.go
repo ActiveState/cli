@@ -44,7 +44,7 @@ func (suite *SecretsIntegrationTestSuite) TestSecrets_JSON() {
 
 	cp = ts.Spawn("secrets", "get", "project.test-secret", "--output", "json")
 	cp.ExpectExitCode(0)
-	suite.Equal(string(expected), cp.Output())
+	suite.Equal(string(expected), cp.StrippedSnapshot())
 
 	cp = ts.Spawn("secrets", "sync")
 	cp.Expect("Operating on project cli-integration-tests/Python3")

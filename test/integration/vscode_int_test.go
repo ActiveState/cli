@@ -38,7 +38,7 @@ func (suite *PushIntegrationTestSuite) TestInitAndPush_VSCode() {
 		e2e.OptWD(wd),
 	)
 	cp.ExpectExitCode(0)
-	suite.Equal("", cp.Output())
+	suite.Equal("", strings.TrimSpace(cp.Snapshot()))
 
 	// check that pushed project exists
 	cp = ts.Spawn("show", namespace)
@@ -73,8 +73,9 @@ func (suite *ShowIntegrationTestSuite) TestShow_VSCode() {
 	}
 
 	var out ShowOutput
-	err := json.Unmarshal([]byte(cp.Output()), &out)
-	suite.Require().NoError(err, "Failed to parse JSON from: %s", cp.Output())
+	snapshot := cp.StrippedSnapshot()
+	err := json.Unmarshal([]byte(snapshot), &out)
+	suite.Require().NoError(err, "Failed to parse JSON from: %s", snapshot)
 	suite.Equal("Show", out.Name)
 	suite.Equal(e2e.PersistentUsername, out.Organization)
 	suite.Equal("Public", out.Visibility)
@@ -136,11 +137,11 @@ func (suite *AuthIntegrationTestSuite) TestAuth_VSCode() {
 	)
 	cp.Expect(`"privateProjects":false}`)
 	cp.ExpectExitCode(0)
-	suite.Equal(string(expected), cp.Output())
+	suite.Equal(string(expected), strings.TrimSpace(cp.Snapshot()))
 
 	cp = ts.Spawn("export", "jwt", "--output", "editor")
 	cp.ExpectExitCode(0)
-	suite.Assert().Greater(len(cp.Output()), 3, "expected jwt token to be non-empty")
+	suite.Assert().Greater(strings.TrimSpace(cp.Snapshot()), 3, "expected jwt token to be non-empty")
 }
 
 func (suite *PackageIntegrationTestSuite) TestPackages_VSCode() {
@@ -165,8 +166,9 @@ func (suite *PackageIntegrationTestSuite) TestPackages_VSCode() {
 	}
 
 	var po []PackageOutput
-	err := json.Unmarshal([]byte(cp.Output()), &po)
-	suite.Require().NoError(err, "Could not parse JSON from: %s", cp.Output())
+	out := cp.StrippedSnapshot()
+	err := json.Unmarshal([]byte(out), &po)
+	suite.Require().NoError(err, "Could not parse JSON from: %s", out)
 
 	suite.Len(po, 2)
 }
