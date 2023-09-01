@@ -121,7 +121,7 @@ func getFileList() []string {
 func prepareFile(p string) *s3.PutObjectInput {
 	fmt.Printf("Uploading %s\n", p)
 
-	file, err := os.Create(p)
+	file, err := os.Open(p)
 	if err != nil {
 		fmt.Println("Failed to open file", file, err)
 		os.Exit(1)
