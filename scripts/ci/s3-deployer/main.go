@@ -67,6 +67,7 @@ func run() {
 				fmt.Println(err)
 				continue
 			}
+			fmt.Printf("Downloaded %q with hash: ", filename)
 			fmt.Println(generateSHA256(filename))
 		}
 	}
@@ -202,12 +203,6 @@ func generateSHA256(path string) string {
 }*/
 
 func downloadFile(dir string, put *s3.PutObjectInput) (string, error) {
-	dler := s3manager.NewDownloader(sess)
-	params := &s3.GetObjectInput{
-		Bucket: put.Bucket,
-		Key:    put.Key,
-	}
-
 	filename := filepath.Join(dir, *put.Key)
 
 	if err := os.MkdirAll(filepath.Dir(filename), 0o755); err != nil {
@@ -219,6 +214,12 @@ func downloadFile(dir string, put *s3.PutObjectInput) (string, error) {
 		return "", err
 	}
 	defer file.Close()
+
+	dler := s3manager.NewDownloader(sess)
+	params := &s3.GetObjectInput{
+		Bucket: put.Bucket,
+		Key:    put.Key,
+	}
 
 	if _, err := dler.Download(file, params); err != nil {
 		return "", err
