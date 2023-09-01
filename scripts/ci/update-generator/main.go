@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
@@ -54,7 +53,7 @@ func fetchPlatform() string {
 
 func generateSha256(path string) string {
 	hasher := sha256.New()
-	b, err := ioutil.ReadFile(path)
+	b, err := os.ReadFile(path)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -134,7 +133,7 @@ func createUpdate(outputPath, channel, version, platform, target string) error {
 
 	infoPath := filepath.Join(outputPath, relChannelPath, infoFileName)
 	fmt.Printf("Creating %s\n", infoPath)
-	err = ioutil.WriteFile(infoPath, b, 0o755)
+	err = os.WriteFile(infoPath, b, 0o755)
 	if err != nil {
 		return errs.Wrap(err, "Failed to write info file (%s).", infoPath)
 	}
