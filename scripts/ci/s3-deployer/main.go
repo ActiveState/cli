@@ -62,7 +62,12 @@ func run() {
 		uploadFile(params)
 
 		if hasTmpDir {
-			downloadAndPrintHash(tmpDir, params)
+			filename, err := downloadFile(tmpDir, params)
+			if err != nil {
+				fmt.Println(err)
+				continue
+			}
+			fmt.Println(generateSHA256(filename))
 		}
 	}
 }
@@ -196,7 +201,7 @@ func generateSHA256(path string) string {
 	return sum, nil
 }*/
 
-func downloadAndPrintHash(dir string, put *s3.PutObjectInput) {
+func downloadFile(dir string, put *s3.PutObjectInput) (string, error) {
 	dler := s3manager.NewDownloader(sess)
 	params := &s3.GetObjectInput{
 		Bucket: put.Bucket,
@@ -206,22 +211,20 @@ func downloadAndPrintHash(dir string, put *s3.PutObjectInput) {
 	filename := filepath.Join(dir, *put.Key)
 
 	if err := os.MkdirAll(filepath.Dir(filename), 0o755); err != nil {
-		fmt.Println(err)
-		return
+		return "", err
 	}
 
 	file, err := os.Create(filename)
 	if err != nil {
-		fmt.Println(err)
-		return
+		return "", err
 	}
+	defer file.Close()
 
 	if _, err := dler.Download(file, params); err != nil {
-		fmt.Println(err)
-		return
+		return "", err
 	}
 
-	fmt.Println(generateSHA256(filename))
+	return filename, nil
 }
 
 func normalizePath(p string) string {
