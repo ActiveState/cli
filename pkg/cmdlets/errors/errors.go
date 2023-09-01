@@ -93,8 +93,6 @@ func ParseUserFacing(err error) (int, error) {
 		return 0, nil
 	}
 
-	_, hasMarshaller := err.(output.Marshaller)
-
 	// unwrap exit code before we remove un-localized wrapped errors from err variable
 	code := errs.ParseExitCode(err)
 
@@ -103,8 +101,10 @@ func ParseUserFacing(err error) (int, error) {
 		return code, nil
 	}
 
-	if hasMarshaller {
-		return code, err
+	uerr, ok := errs.UserFacing(err)
+	if ok {
+		logging.Debug("Returning user facing error, error stack: \n%s", errs.JoinMessage(err))
+		return code, uerr
 	}
 
 	return code, &OutputError{err}

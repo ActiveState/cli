@@ -36,6 +36,10 @@ type TransientError interface {
 	IsTransient()
 }
 
+type UserFacingError interface {
+	UserFacingError() error
+}
+
 // PackedErrors represents a collection of errors that aren't necessarily related to each other
 // note that rtutils replicates this functionality to avoid import cycles
 type PackedErrors struct {
@@ -257,4 +261,15 @@ func Unpack(err error) []error {
 		}
 	}
 	return result
+}
+
+func UserFacing(err error) (error, bool) {
+	errs := Unpack(err)
+	for _, err := range errs {
+		if uerr, ok := err.(UserFacingError); ok {
+			return uerr.UserFacingError(), true
+		}
+	}
+
+	return err, false
 }

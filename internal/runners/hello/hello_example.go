@@ -24,6 +24,16 @@ type primeable interface {
 	primer.Projecter
 }
 
+// HelloUserFacingError is an error from this runner that is intended to be
+// shown to the user. It is a wrapper around a localized error.
+type HelloUserFacingError struct {
+	*locale.LocalizedError
+}
+
+func (e *HelloUserFacingError) UserFacingError() error {
+	return e
+}
+
 // RunParams defines the parameters needed to execute a given runner. These
 // values are typically collected from flags and arguments entered into the
 // cli, but there is no reason that they couldn't be set in another manner.
@@ -37,9 +47,7 @@ type RunParams struct {
 // can be set. If no default or construction-time values are necessary, direct
 // construction of RunParams is fine, and this construction func may be dropped.
 func NewRunParams() *RunParams {
-	return &RunParams{
-		Name: "Friend",
-	}
+	return &RunParams{}
 }
 
 // Hello defines the app-level dependencies that are accessible within the Run
@@ -58,8 +66,40 @@ func New(p primeable) *Hello {
 	}
 }
 
-// Run contains the scope in which the hello runner logic is executed.
+// Run wraps the scope in which the hello runner logic is executed. This
+// is to ensure we catch specific errors that we are looking for and wrap
+// them in a user-facing error.
 func (h *Hello) Run(params *RunParams) error {
+	err := h.run(params)
+	if err != nil {
+		for _, unpackedError := range errs.Unpack(err) {
+			switch unpackedError.(type) {
+			case *runbits.NoNameProvidedError:
+				// Errors that we are looking for should be wrapped in a user-facing error.
+				// Ensure we wrap the top-level error returned from the runner and not
+				// the unpacked error that we are inspecting.
+				return &HelloUserFacingError{
+					locale.WrapInputError(
+						err,
+						"hello_err_no_name",
+						"Cannot say hello because no name was provided.",
+					),
+				}
+
+			default:
+				// If this is not a specific error we are looking for, do nothing.
+				continue
+			}
+		}
+
+		return locale.WrapError(err, "hello_cannot_say", "Cannot say hello.")
+	}
+
+	return nil
+}
+
+// Run contains the scope in which the hello runner logic is executed.
+func (h *Hello) run(params *RunParams) error {
 	h.out.Print(locale.Tl("hello_notice", "This command is for example use only"))
 
 	if h.project == nil {
@@ -79,7 +119,7 @@ func (h *Hello) Run(params *RunParams) error {
 	// runners. Runners should NEVER invoke other runners.
 	if err := runbits.SayHello(h.out, params.Name); err != nil {
 		// Errors should nearly always be localized.
-		return locale.WrapError(
+		return locale.WrapInputError(
 			err, "hello_cannot_say", "Cannot say hello.",
 		)
 	}
@@ -127,7 +167,8 @@ func currentCommitMessage(proj *project.Project) (string, error) {
 
 	commit, err := model.GetCommit(proj.CommitUUID())
 	if err != nil {
-		return "", locale.NewError(
+		return "", locale.WrapError(
+			err,
 			"hello_info_err_get_commitr", "Cannot get commit from server",
 		)
 	}
