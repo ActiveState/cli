@@ -204,6 +204,12 @@ func downloadAndPrintHash(dir string, put *s3.PutObjectInput) {
 	}
 
 	filename := filepath.Join(dir, *put.Key)
+
+	if err := os.MkdirAll(filepath.Dir(filename), 0o755); err != nil {
+		fmt.Println(err)
+		return
+	}
+
 	file, err := os.Create(filename)
 	if err != nil {
 		fmt.Println(err)
