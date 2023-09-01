@@ -239,44 +239,6 @@ func (tt *TermTest) Wait(timeout time.Duration) error {
 	}
 }
 
-func (tt *TermTest) WaitIndefinitely() error {
-	tt.opts.Logger.Println("WaitIndefinitely called")
-	defer tt.opts.Logger.Println("WaitIndefinitely closed")
-
-	// On windows there is a race condition where ClosePseudoConsole will hang if we call it around the same
-	// time as the parent process exits.
-	// This is not a clean solution, as there's no guarantee that 100 milliseconds will be sufficient. But in
-	// my tests it has been, and I can't afford to keep digging on this.
-	if runtime.GOOS == "windows" {
-		time.Sleep(time.Millisecond * 100)
-	}
-
-	tt.opts.Logger.Println("Closing pty")
-	if err := tt.ptmx.Close(); err != nil {
-		if syscallErrorCode(err) == 0 {
-			tt.opts.Logger.Println("Ignoring 'The operation completed successfully' error")
-		} else if errors.Is(err, ERR_ACCESS_DENIED) {
-			// Ignore access denied error - means process has already finished
-			tt.opts.Logger.Println("Ignoring access denied error")
-		} else {
-			return fmt.Errorf("failed to close pty: %w", err)
-		}
-	}
-	tt.opts.Logger.Println("Closed pty")
-
-	// wait outputProducer
-	// This should trigger listenError from being written to (on a goroutine)
-	tt.opts.Logger.Println("Closing outputProducer")
-	if err := tt.outputProducer.close(); err != nil {
-		return fmt.Errorf("failed to close output digester: %w", err)
-	}
-	tt.opts.Logger.Println("Closed outputProducer")
-
-	// listenError will be written to when the process exits, and this is the only reasonable place for us to
-	// catch listener errors
-	return <-tt.listenError
-}
-
 // Cmd returns the underlying command
 func (tt *TermTest) Cmd() *exec.Cmd {
 	return tt.cmd

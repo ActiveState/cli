@@ -19,7 +19,7 @@ github.com/ActiveState/graphql
 # github.com/ActiveState/pty v0.0.0-20230628221854-6fb90eb08a14
 ## explicit; go 1.13
 github.com/ActiveState/pty
-# github.com/ActiveState/termtest v0.7.3-0.20230831190140-b647873f765e
+# github.com/ActiveState/termtest v0.7.3-0.20230901200644-d5396a3f4815
 ## explicit; go 1.18
 github.com/ActiveState/termtest
 # github.com/Azure/go-ansiterm v0.0.0-20170929234023-d6e3b3328b78
@@ -383,13 +383,17 @@ github.com/sergi/go-diff/diffmatchpatch
 # github.com/shibukawa/configdir v0.0.0-20170330084843-e180dbdc8da0
 ## explicit
 github.com/shibukawa/configdir
-# github.com/shirou/gopsutil/v3 v3.22.7
+# github.com/shirou/gopsutil/v3 v3.23.8
 ## explicit; go 1.15
+github.com/shirou/gopsutil/v3/common
 github.com/shirou/gopsutil/v3/cpu
 github.com/shirou/gopsutil/v3/internal/common
 github.com/shirou/gopsutil/v3/mem
 github.com/shirou/gopsutil/v3/net
 github.com/shirou/gopsutil/v3/process
+# github.com/shoenig/go-m1cpu v0.1.6
+## explicit; go 1.20
+github.com/shoenig/go-m1cpu
 # github.com/skratchdot/open-golang v0.0.0-20190104022628-a2dfa6d0dab6
 ## explicit
 github.com/skratchdot/open-golang/open
@@ -411,8 +415,8 @@ github.com/src-d/gcfg/types
 # github.com/stretchr/objx v0.5.0
 ## explicit; go 1.12
 github.com/stretchr/objx
-# github.com/stretchr/testify v1.8.1
-## explicit; go 1.13
+# github.com/stretchr/testify v1.8.4
+## explicit; go 1.20
 github.com/stretchr/testify/assert
 github.com/stretchr/testify/mock
 github.com/stretchr/testify/require
@@ -420,11 +424,11 @@ github.com/stretchr/testify/suite
 # github.com/thoas/go-funk v0.8.0
 ## explicit; go 1.13
 github.com/thoas/go-funk
-# github.com/tklauser/go-sysconf v0.3.10
+# github.com/tklauser/go-sysconf v0.3.12
 ## explicit; go 1.13
 github.com/tklauser/go-sysconf
-# github.com/tklauser/numcpus v0.4.0
-## explicit; go 1.11
+# github.com/tklauser/numcpus v0.6.1
+## explicit; go 1.13
 github.com/tklauser/numcpus
 # github.com/trivago/tgo v1.0.7
 ## explicit
@@ -463,7 +467,7 @@ github.com/xanzy/ssh-agent
 # github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8
 ## explicit
 github.com/xi2/xz
-# github.com/yusufpapurcu/wmi v1.2.2
+# github.com/yusufpapurcu/wmi v1.2.3
 ## explicit; go 1.16
 github.com/yusufpapurcu/wmi
 # go.mongodb.org/mongo-driver v1.5.3
@@ -514,7 +518,7 @@ golang.org/x/net/http2/hpack
 golang.org/x/net/idna
 golang.org/x/net/internal/socks
 golang.org/x/net/proxy
-# golang.org/x/sys v0.9.0
+# golang.org/x/sys v0.11.0
 ## explicit; go 1.17
 golang.org/x/sys/cpu
 golang.org/x/sys/execabs
