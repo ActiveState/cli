@@ -138,9 +138,11 @@ func createUpdate(outputPath, channel, version, platform, target string) error {
 		return errs.Wrap(err, "Failed to write info file (%s).", infoPath)
 	}
 
-	err = fileutils.CopyFile(infoPath, filepath.Join(outputPath, relVersionedPath, filepath.Base(infoPath)))
+	copyInfoPath := filepath.Join(outputPath, relVersionedPath, filepath.Base(infoPath))
+	fmt.Printf("Creating copy of info file as %s\n", copyInfoPath)
+	err = fileutils.CopyFile(infoPath, copyInfoPath)
 	if err != nil {
-		return errs.Wrap(err, "Could not copy info file (%s).", infoPath)
+		return errs.Wrap(err, "Could not copy info file to (%s).", copyInfoPath)
 	}
 
 	fmt.Printf("Generated SHA sum: %s\n", avUpdate.Sha256)
