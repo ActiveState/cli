@@ -5,7 +5,6 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -160,7 +159,7 @@ func uploadFile(params *s3.PutObjectInput) {
 
 func generateSHA256(path string) string {
 	hasher := sha256.New()
-	b, err := ioutil.ReadFile(path)
+	b, err := os.ReadFile(path)
 	if err != nil {
 		log.Fatalln(err)
 	}
