@@ -131,7 +131,6 @@ progress "Preparing Installer for State Tool Package Manager version $VERSION"
 STATEURL="$BASE_FILE_URL/$RELURL"
 ARCHIVE="$OS-amd64$DOWNLOADEXT"
 echo "Downloading ${STATEURL} to ${TMPDIR}/${ARCHIVE}"
-ls -l ${TMPDIR}
 $FETCH $TMPDIR/$ARCHIVE $STATEURL
 # wget and curl differ on how to handle AWS' "Forbidden" result for unknown versions.
 # wget will exit with nonzero status. curl simply creates an XML file with the forbidden error.
