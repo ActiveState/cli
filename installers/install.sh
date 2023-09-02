@@ -130,6 +130,8 @@ fi
 progress "Preparing Installer for State Tool Package Manager version $VERSION"
 STATEURL="$BASE_FILE_URL/$RELURL"
 ARCHIVE="$OS-amd64$DOWNLOADEXT"
+echo "Downloading ${STATEURL} to ${TMPDIR}/${ARCHIVE}"
+ls -l ${TMPDIR}
 $FETCH $TMPDIR/$ARCHIVE $STATEURL
 # wget and curl differ on how to handle AWS' "Forbidden" result for unknown versions.
 # wget will exit with nonzero status. curl simply creates an XML file with the forbidden error.
@@ -148,6 +150,7 @@ if [ ! -z "$SUM" -a  "`$SHA256SUM -b $TMPDIR/$ARCHIVE | cut -d ' ' -f1`" != "$SU
   error "SHA256 sum did not match:"
   error "Expected: $SUM"
   error "Received: `$SHA256SUM -b $TMPDIR/$ARCHIVE | cut -d ' ' -f1`"
+  ls -l "${TMPDIR}/${ARCHIVE}"
   error "Aborting installation."
   exit 1
 fi
