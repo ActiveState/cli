@@ -325,7 +325,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_PythonPath() {
 	// test that PYTHONPATH is preserved in environment (https://www.pivotaltracker.com/story/show/178458102)
 	if runtime.GOOS == "windows" {
 		cp.SendLine("set PYTHONPATH=/custom_pythonpath")
-		cp.SendLine(`python3 -c 'import os; print(os.environ["PYTHONPATH"]);'`)
+		cp.SendLine(`python3 -c "import os; print(os.environ['PYTHONPATH']);"`)
 	} else {
 		cp.SendLine(`PYTHONPATH=/custom_pythonpath python3 -c 'import os; print(os.environ["PYTHONPATH"]);'`)
 	}
