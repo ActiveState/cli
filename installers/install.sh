@@ -94,8 +94,10 @@ esac
 
 # Determine a fetch method
 if [ ! -z "`command -v wget`" ]; then
-  FETCH="wget -q -O"
+  echo "Using wget"
+  FETCH="wget -nv -O"
 elif [ ! -z "`command -v curl`" ]; then
+  echo "Using curl"
   FETCH="curl -sS -o"
 else
   error "Either wget or curl is required to download files"
