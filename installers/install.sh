@@ -94,10 +94,12 @@ esac
 
 # Determine a fetch method
 if [ ! -z "`command -v wget`" ]; then
-  echo "Using wget"
+  which wget
+  wget --version
   FETCH="wget -nv -O"
 elif [ ! -z "`command -v curl`" ]; then
-  echo "Using curl"
+  which curl
+  curl --version
   FETCH="curl -sS -o"
 else
   error "Either wget or curl is required to download files"
@@ -133,6 +135,7 @@ progress "Preparing Installer for State Tool Package Manager version $VERSION"
 STATEURL="$BASE_FILE_URL/$RELURL"
 ARCHIVE="$OS-amd64$DOWNLOADEXT"
 echo "Downloading ${STATEURL} to ${TMPDIR}/${ARCHIVE}"
+ls -l "${TMPDIR}/${ARCHIVE}"
 $FETCH $TMPDIR/$ARCHIVE $STATEURL
 # wget and curl differ on how to handle AWS' "Forbidden" result for unknown versions.
 # wget will exit with nonzero status. curl simply creates an XML file with the forbidden error.
