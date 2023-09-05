@@ -6,9 +6,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ActiveState/termtest"
+
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
-	"github.com/ActiveState/termtest"
 )
 
 /*
@@ -30,7 +31,7 @@ func TestMultipleSends(t *testing.T) {
 set /p "prompt1=Prompt 1: "
 echo "Prompt 1: %prompt1%"
 set /p "prompt2=Prompt 2: "
-echo "Prompt 2: %prompt1%"
+echo "Prompt 2: %prompt2%"
 `))
 	if err != nil {
 		t.Fatal(err)
@@ -38,10 +39,10 @@ echo "Prompt 2: %prompt1%"
 
 	tp := ts.SpawnCmd(promptFile)
 	tp.Expect("Prompt 1: ", termtest.OptExpectTimeout(5*time.Second))
-	tp.Send("Answer 1")
+	tp.SendLine("Answer 1")
 	tp.Expect("Prompt 1: Answer 1", termtest.OptExpectTimeout(5*time.Second))
 	tp.Expect("Prompt 2: ", termtest.OptExpectTimeout(5*time.Second))
-	tp.Send("Answer 2")
+	tp.SendLine("Answer 2")
 	tp.Expect("Prompt 2: Answer 2", termtest.OptExpectTimeout(5*time.Second))
 	tp.ExpectExitCode(0, termtest.OptExpectTimeout(5*time.Second))
 }
