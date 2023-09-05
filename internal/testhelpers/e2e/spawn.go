@@ -86,7 +86,7 @@ func (s *SpawnedCmd) SendLine(value string) error {
 	if runtime.GOOS == "windows" {
 		// Work around race condition - on Windows it appears more likely to happen
 		// https://activestatef.atlassian.net/browse/DX-2171
-		time.Sleep(100 * time.Second)
+		time.Sleep(100 * time.Millisecond)
 	}
 	return s.TermTest.SendLine(value)
 }
