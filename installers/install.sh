@@ -99,10 +99,10 @@ fi
 # Determine a fetch method
 if [ ! -z "`command -v wget`" ]; then
   which wget
-  wget --version
+  wget --version | head -1
   FETCH="wget -nv -O"
 elif [ ! -z "`command -v curl`" ]; then
-  which curl
+  which curl | head -1
   curl --version
   FETCH="curl -sS -o"
 else
