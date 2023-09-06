@@ -343,6 +343,10 @@ type StageCommitResult struct {
 	Commit *Commit `json:"stageCommit"`
 }
 
+type AttachStagedCommitResult struct {
+	Commit *Commit `json:"attachStagedCommit"`
+}
+
 // Error contains an error message.
 type Error struct {
 	Message string `json:"message"`

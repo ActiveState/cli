@@ -333,6 +333,37 @@ func (bp *BuildPlanner) GetBuildExpression(owner, project, commitID string) (*bu
 	return expression, nil
 }
 
+func (bp *BuildPlanner) AttachStagedCommit(owner, project, parentCommit, stagedCommit, branch string) error {
+	logging.Debug("AttachStagedCommit, owner: %s, project: %s, parentCommit: %s, stagedCommit: %s, branch: %s", owner, project, parentCommit, stagedCommit, branch)
+	resp := &bpModel.AttachStagedCommitResult{}
+	err := bp.client.Run(request.AttachStagedCommit(owner, project, parentCommit, stagedCommit, branch), resp)
+	if err != nil {
+		return processBuildPlannerError(err, "failed to attach staged commit")
+	}
+
+	if resp.Commit == nil {
+		return errs.New("Commit is nil")
+	}
+
+	if bpModel.IsErrorResponse(resp.Commit.Type) {
+		return bpModel.ProcessCommitError(resp.Commit, "Could not attach staged commit")
+	}
+
+	if resp.Commit.CommitID == "" {
+		return errs.New("Commit does not contain commitID")
+	}
+
+	if resp.Commit.Build == nil {
+		return errs.New("Commit does not contain build")
+	}
+
+	if bpModel.IsErrorResponse(resp.Commit.Build.Type) {
+		return bpModel.ProcessBuildError(resp.Commit.Build, "Could not get build from commit")
+	}
+
+	return nil
+}
+
 // processBuildPlannerError will check for special error types that should be
 // handled differently. If no special error type is found, the fallback message
 // will be used.

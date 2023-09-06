@@ -105,7 +105,7 @@ func (r *Push) Run(params PushParams) error {
 	}
 
 	// Prompt for namespace IF:
-	// - No namespace could be detect so far
+	// - No namespace could be detected so far
 	// - We want to create a copy of the current namespace, and no custom namespace was provided
 	if !targetNamespace.IsValid() || (intend&pushFromNoPermission > 0 && !params.Namespace.IsValid()) {
 		var err error
@@ -209,14 +209,19 @@ func (r *Push) Run(params PushParams) error {
 	}
 
 	// Update the project at the given commit id.
-	err = model.UpdateProjectBranchCommitWithModel(targetPjm, branch.Label, commitID)
+	bp := model.NewBuildPlannerModel(r.auth)
+	err = bp.AttachStagedCommit(targetNamespace.Owner, targetNamespace.Project, branch.CommitID.String(), commitID.String(), branch.Label)
 	if err != nil {
-		if errs.Matches(err, &model.ErrUpdateBranchAuth{}) {
-			return locale.WrapInputError(err, "push_project_branch_no_permission", "You do not have permission to push to {{.V0}}.", targetNamespace.String())
-		} else {
-			return locale.WrapError(err, "push_project_branch_commit_err", "Failed to update new project {{.V0}} to current commitID.", targetNamespace.String())
-		}
+		return locale.WrapError(err, "err_push_attach_staged_commit", "Failed to attach staged commit to project.")
 	}
+	// err = model.UpdateProjectBranchCommitWithModel(targetPjm, branch.Label, commitID)
+	// if err != nil {
+	// 	if errs.Matches(err, &model.ErrUpdateBranchAuth{}) {
+	// 		return locale.WrapInputError(err, "push_project_branch_no_permission", "You do not have permission to push to {{.V0}}.", targetNamespace.String())
+	// 	} else {
+	// 		return locale.WrapError(err, "push_project_branch_commit_err", "Failed to update new project {{.V0}} to current commitID.", targetNamespace.String())
+	// 	}
+	// }
 
 	// Write the project namespace to the as.yaml, if it changed
 	if r.project.Owner() != targetNamespace.Owner || r.project.Name() != targetNamespace.Project {
