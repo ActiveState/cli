@@ -100,7 +100,9 @@ jobs:
       - # == Setup macOS ==
         name: Setup (macOS)
         shell: bash
-        run: brew install fish
+        run: |
+          system_profiler | grep Processor
+          brew install fish
         if: runner.os == 'macOS'
 
       - # === Install Deps ===
