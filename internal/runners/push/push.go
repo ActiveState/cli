@@ -211,11 +211,13 @@ func (r *Push) Run(params PushParams) error {
 	// Update the project at the given commit id.
 	bp := model.NewBuildPlannerModel(r.auth)
 	if branch.CommitID != nil {
+		logging.Debug("Attaching staged commit via build planner")
 		err = bp.AttachStagedCommit(targetNamespace.Owner, targetNamespace.Project, branch.CommitID.String(), commitID.String(), branch.Label)
 		if err != nil {
 			return locale.WrapError(err, "err_push_attach_staged_commit", "Failed to attach staged commit to project.")
 		}
 	} else {
+		logging.Debug("Updating project branch commit via VCS")
 		err = model.UpdateProjectBranchCommitWithModel(targetPjm, branch.Label, commitID)
 		if err != nil {
 			if errs.Matches(err, &model.ErrUpdateBranchAuth{}) {
