@@ -210,7 +210,11 @@ func (r *Push) Run(params PushParams) error {
 
 	// Update the project at the given commit id.
 	bp := model.NewBuildPlannerModel(r.auth)
-	err = bp.AttachStagedCommit(targetNamespace.Owner, targetNamespace.Project, branch.CommitID.String(), commitID.String(), branch.Label)
+	var branchCommitID string
+	if branch.CommitID != nil {
+		branchCommitID = branch.CommitID.String()
+	}
+	err = bp.AttachStagedCommit(targetNamespace.Owner, targetNamespace.Project, branchCommitID, commitID.String(), branch.Label)
 	if err != nil {
 		return locale.WrapError(err, "err_push_attach_staged_commit", "Failed to attach staged commit to project.")
 	}
