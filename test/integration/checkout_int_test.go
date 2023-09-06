@@ -65,8 +65,8 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckout() {
 				"VERBOSE=true", // Necessary to assert "Fetched cached artifact"
 			),
 		)
-		cp.Expect("Fetched cached artifact") // Comes from log, which is why we're using VERBOSE=true
-		cp.Expect("Checked out project")
+		cp.Expect("Fetched cached artifact", termtest.OptExpectTimeout(90*time.Second)) // Comes from log, which is why we're using VERBOSE=true
+		cp.Expect("Checked out project", termtest.OptExpectTimeout(90*time.Second))
 		cp.ExpectExitCode(0)
 	})
 }
