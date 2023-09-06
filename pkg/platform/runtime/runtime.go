@@ -74,7 +74,7 @@ func newRuntime(target setup.Targeter, an analytics.Dispatcher, svcModel *model.
 func New(target setup.Targeter, an analytics.Dispatcher, svcm *model.SvcModel) (*Runtime, error) {
 	if strings.ToLower(os.Getenv(constants.DisableRuntime)) == "true" {
 		fmt.Fprintln(os.Stderr, locale.T("notice_runtime_disabled"))
-		return &Runtime{disabled: true, target: target}, nil
+		return &Runtime{disabled: true, target: target, analytics: an}, nil
 	}
 	recordAttempt(an, target)
 	an.Event(anaConsts.CatRuntime, anaConsts.ActRuntimeStart, &dimensions.Values{
