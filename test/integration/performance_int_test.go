@@ -80,7 +80,7 @@ func performanceTest(commands []string, expect string, samples int, maxTime time
 
 		if firstEntry == "" {
 			firstEntry = cp.Output()
-			firstLogs = ts.DebugLogs()
+			firstLogs = ts.DebugLogsDump()
 		}
 		if x == 0 {
 			// Skip the first one as this one will always be slower due to having to wait for state-svc or sourcing a runtime

@@ -85,12 +85,12 @@ func (suite *AnalyticsIntegrationTestSuite) TestActivateEvents() {
 	// Runtime:start events
 	suite.assertNEvents(events, 1, anaConst.CatRuntime, anaConst.ActRuntimeStart,
 		fmt.Sprintf("output:\n%s\n%s",
-			cp.Output(), ts.DebugLogs()))
+			cp.Output(), ts.DebugLogsDump()))
 
 	// Runtime:success events
 	suite.assertNEvents(events, 1, anaConst.CatRuntime, anaConst.ActRuntimeSuccess,
 		fmt.Sprintf("output:\n%s\n%s",
-			cp.Output(), ts.DebugLogs()))
+			cp.Output(), ts.DebugLogsDump()))
 
 	heartbeatInitialCount := countEvents(events, anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat)
 	if heartbeatInitialCount < 2 {
@@ -107,7 +107,7 @@ func (suite *AnalyticsIntegrationTestSuite) TestActivateEvents() {
 	// Runtime-use:heartbeat events - should now be at least +1 because we waited <heartbeatInterval>
 	suite.assertGtEvents(events, heartbeatInitialCount, anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat,
 		fmt.Sprintf("output:\n%s\n%s",
-			cp.Output(), ts.DebugLogs()))
+			cp.Output(), ts.DebugLogsDump()))
 
 	// Test that executor is sending heartbeats
 	{
@@ -425,7 +425,7 @@ func (suite *AnalyticsIntegrationTestSuite) TestInputError() {
 
 	suite.assertNEvents(events, 1, anaConst.CatDebug, anaConst.ActCommandInputError,
 		fmt.Sprintf("output:\n%s\n%s",
-			cp.Output(), ts.DebugLogs()))
+			cp.Output(), ts.DebugLogsDump()))
 
 	for _, event := range events {
 		if event.Category == anaConst.CatDebug && event.Action == anaConst.ActCommandInputError {

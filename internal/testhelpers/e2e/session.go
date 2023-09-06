@@ -441,31 +441,40 @@ func (s *Session) DebugMessage(prefix string) string {
 		prefix = prefix + "\n"
 	}
 
-	output := []string{}
+	output := map[string]string{}
 	for _, spawn := range s.spawned {
 		name := spawn.Cmd().String()
 		if spawn.opts.HideCmdArgs {
 			name = spawn.Cmd().Path
 		}
-		output = append(output, fmt.Sprintf("\n--- Output for cmd: %s\n\n%s", name, spawn.Output()))
+		output[name] = spawn.Output()
 	}
 
 	v, err := strutils.ParseTemplate(`
-{{.Prefix}}{{.A}}Stack:
-{{.Stacktrace}}{{.Z}}
-{{.A}}Terminal output:
-{{.FullSnapshot}}{{.Z}}
-{{.Logs}}
+{{.Prefix}}Stack:
+{{.Stacktrace}}
+{{range $title, $value := .Outputs}}
+{{$.A}}Output for Cmd '{{$title}}':
+{{$value}}
+{{$.Z}}
+{{end}}
+{{range $title, $value := .Logs}}
+{{$.A}}Log '{{$title}}':
+{{$value}}
+{{$.Z}}
+{{else}}
+No logs
+{{end}}
 `, map[string]interface{}{
-		"Prefix":       prefix,
-		"Stacktrace":   stacktrace.Get().String(),
-		"FullSnapshot": strings.Join(output, "\n"),
-		"Logs":         s.DebugLogs(),
-		"A":            sectionStart,
-		"Z":            sectionEnd,
+		"Prefix":     prefix,
+		"Stacktrace": stacktrace.Get().String(),
+		"Outputs":    output,
+		"Logs":       s.DebugLogs(),
+		"A":          sectionStart,
+		"Z":          sectionEnd,
 	}, nil)
 	if err != nil {
-		s.t.Fatalf("Parsing template failed: %s", err)
+		s.t.Fatalf("Parsing template failed: %s", errs.JoinMessage(err))
 	}
 
 	return v
@@ -610,10 +619,26 @@ func (s *Session) LogFiles() []string {
 	return result
 }
 
-func (s *Session) DebugLogs() string {
+func (s *Session) DebugLogs() map[string]string {
+	result := map[string]string{}
+
 	logDir := filepath.Join(s.Dirs.Config, "logs")
 	if !fileutils.DirExists(logDir) {
-		return "No logs found in " + logDir
+		return result
+	}
+
+	for _, path := range s.LogFiles() {
+		result[filepath.Base(path)] = string(fileutils.ReadFileUnsafe(path))
+	}
+
+	return result
+}
+
+func (s *Session) DebugLogsDump() string {
+	logs := s.DebugLogs()
+
+	if len(logs) == 0 {
+		return "No logs found in " + filepath.Join(s.Dirs.Config, "logs")
 	}
 
 	var sectionStart, sectionEnd string
@@ -624,8 +649,8 @@ func (s *Session) DebugLogs() string {
 	}
 
 	result := "Logs:\n"
-	for _, path := range s.LogFiles() {
-		result += fmt.Sprintf("%s%s:\n%s%s\n", sectionStart, filepath.Base(path), fileutils.ReadFileUnsafe(path), sectionEnd)
+	for name, log := range logs {
+		result += fmt.Sprintf("%s%s:\n%s%s\n", sectionStart, name, log, sectionEnd)
 	}
 
 	return result
