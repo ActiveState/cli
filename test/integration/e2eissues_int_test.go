@@ -37,12 +37,12 @@ echo "Prompt 2: %prompt2%"
 		t.Fatal(err)
 	}
 
-	tp := ts.SpawnCmd(promptFile)
-	tp.Expect("Prompt 1: ", termtest.OptExpectTimeout(5*time.Second))
+	tp := ts.SpawnCmdWithOpts(promptFile, e2e.OptTermTest(termtest.OptDefaultTimeout(5*time.Second)))
+	tp.Expect("Prompt 1:")
 	tp.SendLine("Answer 1")
-	tp.Expect("Prompt 1: Answer 1", termtest.OptExpectTimeout(5*time.Second))
-	tp.Expect("Prompt 2: ", termtest.OptExpectTimeout(5*time.Second))
+	tp.Expect("Prompt 1: Answer 1")
+	tp.Expect("Prompt 2:")
 	tp.SendLine("Answer 2")
-	tp.Expect("Prompt 2: Answer 2", termtest.OptExpectTimeout(5*time.Second))
-	tp.ExpectExitCode(0, termtest.OptExpectTimeout(5*time.Second))
+	tp.Expect("Prompt 2: Answer 2")
+	tp.ExpectExitCode(0)
 }
