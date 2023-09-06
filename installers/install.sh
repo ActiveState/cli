@@ -92,6 +92,10 @@ MINGW*|MSYS*)
   ;;
 esac
 
+if [ $OS = "darwin" ]; then
+  system_profiler | grep Processor
+fi
+
 # Determine a fetch method
 if [ ! -z "`command -v wget`" ]; then
   which wget
