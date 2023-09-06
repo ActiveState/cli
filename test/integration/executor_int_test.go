@@ -39,7 +39,7 @@ func (suite *ExecutorIntegrationTestSuite) TestExecutorForwards() {
 		e2e.OptArgs("shell", "ActiveState-CLI/Python3"),
 		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
-	cp.Expect("Activated", termtest.OptExpectTimeout(90*time.Second))
+	cp.Expect("Activated", termtest.OptExpectTimeout(120*time.Second))
 	cp.ExpectInput()
 
 	cp.SendLine("python3 -c \"import sys; print(sys.copyright)\"")
@@ -66,7 +66,7 @@ func (suite *ExecutorIntegrationTestSuite) TestExecutorExitCode() {
 		e2e.OptArgs("shell", "ActiveState-CLI/Python3"),
 		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
-	cp.Expect("Activated", termtest.OptExpectTimeout(90*time.Second))
+	cp.Expect("Activated", termtest.OptExpectTimeout(120*time.Second))
 	cp.ExpectInput()
 
 	cp.SendLine("python3 -c \"exit(42)\"")

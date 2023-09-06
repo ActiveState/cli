@@ -132,7 +132,7 @@ func (suite *PrepareIntegrationTestSuite) TestResetExecutors() {
 	cp.Expect("This project will always be available for use")
 	cp.Expect("Downloading")
 	cp.Expect("Installing")
-	cp.Expect("Activated", termtest.OptExpectTimeout(90*time.Second))
+	cp.Expect("Activated", termtest.OptExpectTimeout(120*time.Second))
 
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
@@ -164,7 +164,7 @@ func (suite *PrepareIntegrationTestSuite) TestResetExecutors() {
 	err = os.RemoveAll(projectExecDir)
 
 	cp = ts.Spawn("activate")
-	cp.Expect("Activated", termtest.OptExpectTimeout(90*time.Second))
+	cp.Expect("Activated", termtest.OptExpectTimeout(120*time.Second))
 	cp.SendLine("which python3")
 	cp.SendLine("python3 --version")
 	cp.Expect("ActiveState")

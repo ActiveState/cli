@@ -93,7 +93,7 @@ func (suite *ShellIntegrationTestSuite) TestDefaultShell() {
 		e2e.OptArgs("use", "ActiveState-CLI/small-python"),
 		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
-	cp.Expect("Switched to project", termtest.OptExpectTimeout(90*time.Second))
+	cp.Expect("Switched to project", termtest.OptExpectTimeout(120*time.Second))
 	cp.ExpectExitCode(0)
 
 	cp = ts.SpawnWithOpts(
@@ -319,7 +319,7 @@ func (suite *ShellIntegrationTestSuite) TestNestedShellNotification() {
 	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("shell", "small-python"),
 		e2e.OptAppendEnv(env...))
-	cp.Expect("Activated", termtest.OptExpectTimeout(90*time.Second))
+	cp.Expect("Activated", termtest.OptExpectTimeout(120*time.Second))
 	suite.Assert().NotContains(cp.Output(), "State Tool is operating on project")
 	cp.SendLine(fmt.Sprintf(`export HOME="%s"`, ts.Dirs.HomeDir)) // some shells do not forward this
 

@@ -62,7 +62,7 @@ func (suite *ShellsIntegrationTestSuite) TestShells() {
 
 			// Just pick the first one and verify the selection prompt works.
 			cp.SendEnter()
-			cp.Expect("Activated", termtest.OptExpectTimeout(90*time.Second))
+			cp.Expect("Activated", termtest.OptExpectTimeout(120*time.Second))
 
 			// Verify that the command prompt contains the right info, except for tcsh, whose prompt does
 			// not behave like other shells'.

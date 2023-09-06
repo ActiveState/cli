@@ -44,7 +44,7 @@ func (suite *SoftLimitIntegrationTestSuite) TestCheckout() {
 			e2e.OptAppendEnv(constants.DisableRuntime+"=true"),
 		)
 		cp.Expect("You've reached your runtime limit")
-		cp.Expect("Activated", termtest.OptExpectTimeout(90*time.Second))
+		cp.Expect("Activated", termtest.OptExpectTimeout(120*time.Second))
 		cp.ExpectInput()
 		cp.SendLine("exit 0")
 		cp.ExpectExitCode(0)
@@ -57,7 +57,7 @@ func (suite *SoftLimitIntegrationTestSuite) TestCheckout() {
 			e2e.OptAppendEnv(constants.DisableRuntime+"=true"),
 		)
 		cp.Expect("You've reached your runtime limit")
-		cp.Expect("Activated", termtest.OptExpectTimeout(90*time.Second))
+		cp.Expect("Activated", termtest.OptExpectTimeout(120*time.Second))
 		cp.ExpectInput()
 		cp.SendLine("exit 0")
 		cp.ExpectExitCode(0)

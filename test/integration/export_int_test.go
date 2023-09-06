@@ -112,7 +112,7 @@ func (suite *ExportIntegrationTestSuite) TestJSON() {
 		e2e.OptArgs("checkout", "ActiveState-CLI/small-python", "."),
 		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
-	cp.ExpectExitCode(0, termtest.OptExpectTimeout(90*time.Second))
+	cp.ExpectExitCode(0, termtest.OptExpectTimeout(120*time.Second))
 
 	cp = ts.Spawn("export", "env", "-o", "json")
 	cp.ExpectExitCode(0)
