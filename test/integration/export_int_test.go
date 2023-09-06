@@ -114,7 +114,10 @@ func (suite *ExportIntegrationTestSuite) TestJSON() {
 	)
 	cp.ExpectExitCode(0, termtest.OptExpectTimeout(120*time.Second))
 
-	cp = ts.Spawn("export", "env", "-o", "json")
+	cp = ts.SpawnWithOpts(
+		e2e.OptArgs("export", "env", "-o", "json"),
+		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
 	cp.ExpectExitCode(0)
 	AssertValidJSON(suite.T(), cp)
 
