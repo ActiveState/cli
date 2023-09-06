@@ -2090,3 +2090,5 @@ err_edit_local_checkouts:
   other: Could not update local checkouts
 err_edit_project_mapping:
   other: Could not update project mapping
+notice_runtime_disabled:
+  other: Skipping runtime setup because it was disabled by an environment variable

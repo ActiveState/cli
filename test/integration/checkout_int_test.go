@@ -217,11 +217,8 @@ func (suite *CheckoutIntegrationTestSuite) TestJSON() {
 	defer ts.Close()
 
 	cp := ts.SpawnWithOpts(e2e.OptArgs("checkout", "ActiveState-CLI/small-python", "-o", "json"))
-	cp.Expect(`"namespace":`)
-	cp.Expect(`"path":`)
-	cp.Expect(`"executables":`)
 	cp.ExpectExitCode(0)
-	// AssertValidJSON(suite.T(), cp) // cannot assert here due to "Skipping runtime setup" notice
+	AssertValidJSON(suite.T(), cp)
 }
 
 func (suite *CheckoutIntegrationTestSuite) TestCheckoutCaseInsensitive() {
