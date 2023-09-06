@@ -101,7 +101,7 @@ jobs:
         name: Setup (macOS)
         shell: bash
         run: |
-          system_profiler | grep Processor
+          system_profiler -detailLevel basic | grep Processor
           brew install fish
         if: runner.os == 'macOS'
 
