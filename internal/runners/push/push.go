@@ -209,8 +209,10 @@ func (r *Push) Run(params PushParams) error {
 	}
 
 	// Update the project at the given commit id.
-	bp := model.NewBuildPlannerModel(r.auth)
+	// Currently, the build planner doesn't support attaching a staged commit
+	// without a parent commit ID
 	if branch.CommitID != nil {
+		bp := model.NewBuildPlannerModel(r.auth)
 		logging.Debug("Attaching staged commit via build planner")
 		err = bp.AttachStagedCommit(targetNamespace.Owner, targetNamespace.Project, branch.CommitID.String(), commitID.String(), branch.Label)
 		if err != nil {
