@@ -101,7 +101,7 @@ jobs:
         name: Setup (macOS)
         shell: bash
         run: |
-          system_profiler -detailLevel basic | grep Processor
+          brew uninstall wget
           brew install fish
         if: runner.os == 'macOS'
 
