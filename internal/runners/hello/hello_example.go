@@ -72,24 +72,12 @@ func New(p primeable) *Hello {
 func (h *Hello) Run(params *RunParams) error {
 	err := h.run(params)
 	if err != nil {
-		for _, unpackedError := range errs.Unpack(err) {
-			switch unpackedError.(type) {
-			case *runbits.NoNameProvidedError:
-				// Errors that we are looking for should be wrapped in a user-facing error.
-				// Ensure we wrap the top-level error returned from the runner and not
-				// the unpacked error that we are inspecting.
-				return &HelloUserFacingError{
-					locale.WrapInputError(
-						err,
-						"hello_err_no_name",
-						"Cannot say hello because no name was provided.",
-					),
-				}
-
-			default:
-				// If this is not a specific error we are looking for, do nothing.
-				continue
-			}
+		switch {
+		case errs.Matches(err, &runbits.NoNameProvidedError{}):
+			// Errors that we are looking for should be wrapped in a user-facing error.
+			// Ensure we wrap the top-level error returned from the runner and not
+			// the unpacked error that we are inspecting.
+			return errs.WrapUserFacingError(err, locale.Tl("hello_err_no_name", "Cannot say hello because no name was provided."))
 		}
 
 		return locale.WrapError(err, "hello_cannot_say", "Cannot say hello.")

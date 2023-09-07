@@ -36,8 +36,17 @@ type TransientError interface {
 	IsTransient()
 }
 
-type UserFacingError interface {
-	UserFacingError() error
+type UserFacingError struct {
+	wrapped error
+	message string
+}
+
+func (e UserFacingError) Error() string {
+	return JoinMessage(Wrap(e.wrapped, e.message))
+}
+
+func (e UserFacingError) UserError() string {
+	return e.message
 }
 
 // PackedErrors represents a collection of errors that aren't necessarily related to each other
@@ -106,6 +115,13 @@ func New(message string, args ...interface{}) *WrapperError {
 func Wrap(wrapTarget error, message string, args ...interface{}) *WrapperError {
 	msg := fmt.Sprintf(message, args...)
 	return newError(msg, wrapTarget)
+}
+
+func WrapUserFacingError(wrapTarget error, message string, args ...interface{}) *UserFacingError {
+	return &UserFacingError{
+		wrapTarget,
+		fmt.Sprintf(message, args...),
+	}
 }
 
 // Pack creates a new error that packs the given errors together, allowing for multiple errors to be returned
@@ -263,12 +279,12 @@ func Unpack(err error) []error {
 	return result
 }
 
-func UserFacing(err error) (error, bool) {
-	errs := Unpack(err)
-	for _, err := range errs {
-		if uerr, ok := err.(UserFacingError); ok {
-			return uerr.UserFacingError(), true
-		}
+// IsUserFacing identifies whether this error was curated for end-users and
+// returns that error. This is NOT the same as an error that is localized.
+func IsUserFacing(err error) (error, bool) {
+	var userFacingError *UserFacingError
+	if errors.As(err, &userFacingError) {
+		return userFacingError, true
 	}
 
 	return err, false

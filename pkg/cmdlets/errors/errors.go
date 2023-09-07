@@ -93,18 +93,28 @@ func ParseUserFacing(err error) (int, error) {
 		return 0, nil
 	}
 
+	_, hasMarshaller := err.(output.Marshaller)
+
 	// unwrap exit code before we remove un-localized wrapped errors from err variable
 	code := errs.ParseExitCode(err)
+
+	// If there is a user facing error in the error stack we want to ensure
+	// that is it forwarded to the user.
+	uerr, ok := errs.IsUserFacing(err)
+	if ok {
+		logging.Debug("Returning user facing error, error stack: \n%s", errs.JoinMessage(err))
+		return code, &OutputError{uerr}
+	}
 
 	if errs.IsSilent(err) {
 		logging.Debug("Suppressing silent failure: %v", err.Error())
 		return code, nil
 	}
 
-	uerr, ok := errs.UserFacing(err)
-	if ok {
-		logging.Debug("Returning user facing error, error stack: \n%s", errs.JoinMessage(err))
-		return code, uerr
+	// If the error already has a marshalling function we do not want to wrap
+	// it again in the OutputError type.
+	if hasMarshaller {
+		return code, err
 	}
 
 	return code, &OutputError{err}
