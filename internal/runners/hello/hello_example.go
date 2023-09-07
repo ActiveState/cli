@@ -107,7 +107,7 @@ func (h *Hello) run(params *RunParams) error {
 	// runners. Runners should NEVER invoke other runners.
 	if err := runbits.SayHello(h.out, params.Name); err != nil {
 		// Errors should nearly always be localized.
-		return locale.WrapInputError(
+		return locale.WrapError(
 			err, "hello_cannot_say", "Cannot say hello.",
 		)
 	}
