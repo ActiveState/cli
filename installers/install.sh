@@ -93,7 +93,7 @@ MINGW*|MSYS*)
 esac
 
 # Determine a fetch method
-if [ ! -z "`command -v wget`" ]; then
+if [ ! -z "`command -v wget`" ] && [ $OS != "darwin" ]; then
   which wget
   wget --version | head -1
   FETCH="wget -nv -O"
