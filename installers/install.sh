@@ -100,7 +100,7 @@ if [ ! -z "`command -v wget`" ] && [ $OS != "darwin" ]; then
 elif [ ! -z "`command -v curl`" ]; then
   which curl | head -1
   curl --version
-  FETCH="curl -sS -o"
+  FETCH="curl -sS -v -o"
 else
   error "Either wget or curl is required to download files"
   exit 1
@@ -136,7 +136,7 @@ STATEURL="$BASE_FILE_URL/$RELURL"
 ARCHIVE="$OS-amd64$DOWNLOADEXT"
 echo "Downloading ${STATEURL} to ${TMPDIR}/${ARCHIVE}"
 ls -l "${TMPDIR}/${ARCHIVE}"
-$FETCH $TMPDIR/$ARCHIVE $STATEURL
+$FETCH $TMPDIR/$ARCHIVE $STATEURL 2>&1 | grep -v "\* TLS\|^{ \|^} "
 # wget and curl differ on how to handle AWS' "Forbidden" result for unknown versions.
 # wget will exit with nonzero status. curl simply creates an XML file with the forbidden error.
 # If curl was used, make sure the file downloaded is of type 'data', according to the UNIX `file`
