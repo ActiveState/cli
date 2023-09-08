@@ -61,7 +61,7 @@ func (suite *SecretsIntegrationTestSuite) TestSecrets_JSON() {
 	cp.ExpectExitCode(0)
 }
 
-func (suite *SecretsIntegrationTestSuite) TestSecrect_Expand() {
+func (suite *SecretsIntegrationTestSuite) TestSecret_Expand() {
 	suite.OnlyRunForTags(tagsuite.Secrets, tagsuite.JSON)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
