@@ -24,16 +24,6 @@ type primeable interface {
 	primer.Projecter
 }
 
-// HelloUserFacingError is an error from this runner that is intended to be
-// shown to the user. It is a wrapper around a localized error.
-type HelloUserFacingError struct {
-	*locale.LocalizedError
-}
-
-func (e *HelloUserFacingError) UserFacingError() error {
-	return e
-}
-
 // RunParams defines the parameters needed to execute a given runner. These
 // values are typically collected from flags and arguments entered into the
 // cli, but there is no reason that they couldn't be set in another manner.
