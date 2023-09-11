@@ -308,12 +308,11 @@ func ProcessBuildError(build *Build, fallbackMessage string) error {
 }
 
 func ProcessProjectError(project *Project, fallbackMessage string) error {
-	if project.Error == nil {
-		return errs.New(fallbackMessage)
-	}
-
 	if project.Type == NotFoundErrorType {
-		return locale.NewInputError("err_buildplanner_project_not_found", "Unable to find project, recieved message: {{.V0}}", project.Message)
+		return errs.AddTips(
+			locale.NewInputError("err_buildplanner_project_not_found", "Unable to find project, received message: {{.V0}}", project.Message),
+			locale.T("tip_private_project_auth"),
+		)
 	}
 
 	return errs.New(fallbackMessage)
