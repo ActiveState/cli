@@ -109,14 +109,14 @@ func autoUpdate(args []string, cfg *config.Instance, an analytics.Dispatcher, ou
 			msg = anaConst.UpdateErrorRelaunch
 		}
 		an.EventWithLabel(anaConst.CatUpdates, anaConst.ActUpdateRelaunch, anaConst.UpdateLabelFailed, &dimensions.Values{
-			Version: ptr.To(up.Version),
-			Error:   ptr.To(msg),
+			TargetVersion: ptr.To(up.Version),
+			Error:         ptr.To(msg),
 		})
 		return true, errs.Silence(errs.WrapExitCode(err, code))
 	}
 
 	an.EventWithLabel(anaConst.CatUpdates, anaConst.ActUpdateRelaunch, anaConst.UpdateLabelSuccess, &dimensions.Values{
-		Version: ptr.To(up.Version),
+		TargetVersion: ptr.To(up.Version),
 	})
 	return true, nil
 }
