@@ -55,6 +55,14 @@ func (e *userFacingError) UserError() string {
 	return e.message
 }
 
+func (e *userFacingError) AddTips(tips ...string) {
+	e.tips = append(e.tips, tips...)
+}
+
+func (e *userFacingError) ErrorTips() []string {
+	return e.tips
+}
+
 // PackedErrors represents a collection of errors that aren't necessarily related to each other
 // note that rtutils replicates this functionality to avoid import cycles
 type PackedErrors struct {
@@ -137,14 +145,6 @@ func WrapUserFacingError(wrapTarget error, message string, args ...interface{}) 
 		fmt.Sprintf(message, args...),
 		nil,
 	}
-}
-
-func (e *userFacingError) AddTips(tips ...string) {
-	e.tips = append(e.tips, tips...)
-}
-
-func (e *userFacingError) ErrorTips() []string {
-	return e.tips
 }
 
 // Pack creates a new error that packs the given errors together, allowing for multiple errors to be returned

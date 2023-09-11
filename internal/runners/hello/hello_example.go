@@ -59,33 +59,32 @@ func New(p primeable) *Hello {
 // Run wraps the scope in which the hello runner logic is executed. This
 // is to ensure we catch specific errors that we are looking for and wrap
 // them in a user-facing error.
-func (h *Hello) Run(params *RunParams) error {
-	err := h.run(params)
+func processError(err *error) {
 	if err != nil {
 		switch {
-		case errs.Matches(err, &runbits.NoNameProvidedError{}):
+		case errs.Matches(*err, &runbits.NoNameProvidedError{}):
 			// Errors that we are looking for should be wrapped in a user-facing error.
 			// Ensure we wrap the top-level error returned from the runner and not
 			// the unpacked error that we are inspecting.
-			return errs.WrapUserFacingError(err, locale.Tl("hello_err_no_name", "Cannot say hello because no name was provided."))
-		case errs.Matches(err, &errs.ErrNoProject{}):
-			err := errs.WrapUserFacingError(err, locale.Tl("hello_err_no_project", "Cannot say hello because you are not in a project directory."))
+			*err = errs.WrapUserFacingError(*err, locale.Tl("hello_err_no_name", "Cannot say hello because no name was provided."))
+		case errs.Matches(*err, &errs.ErrNoProject{}):
+			werr := errs.WrapUserFacingError(*err, locale.Tl("hello_err_no_project", "Cannot say hello because you are not in a project directory."))
 
 			// It's useful to offer users reasonable tips on recourses.
-			return errs.AddTips(err, locale.Tl(
+			*err = errs.AddTips(werr, locale.Tl(
 				"hello_suggest_checkout",
 				"Try using [ACTIONABLE]`state checkout`[/RESET] first.",
 			))
 		}
 
-		return errs.Wrap(err, "Cannot say hello")
+		*err = errs.Wrap(*err, "Cannot say hello")
 	}
-
-	return nil
 }
 
 // Run contains the scope in which the hello runner logic is executed.
-func (h *Hello) run(params *RunParams) error {
+func (h *Hello) Run(params *RunParams) (rerr error) {
+	defer processError(&rerr)
+
 	h.out.Print(locale.Tl("hello_notice", "This command is for example use only"))
 
 	if h.project == nil {
