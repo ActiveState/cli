@@ -59,7 +59,7 @@ jobs:
         name: Disabling Windows Defender
         if: runner.os == 'Windows'
         shell: powershell.exe
-        command: Set-MpPreference -DisableRealtimeMonitoring $true
+        run: Set-MpPreference -DisableRealtimeMonitoring $true
 
       - # === Checkout Code ===
         name: Checkout code
