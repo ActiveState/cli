@@ -150,7 +150,10 @@ func (suite *ActivateIntegrationTestSuite) TestActivateNotOnPath() {
 	close := suite.addForegroundSvc(ts)
 	defer close()
 
-	cp := ts.SpawnWithOpts(e2e.OptArgs("activate", "activestate-cli/small-python", "--path", ts.Dirs.Work))
+	cp := ts.SpawnWithOpts(
+		e2e.OptArgs("activate", "activestate-cli/small-python", "--path", ts.Dirs.Work),
+		e2e.OptTermTest(termtest.OptVerboseLogging()),
+	)
 	cp.Expect("Skipping runtime setup")
 	cp.Expect("Activated")
 	cp.ExpectInput(termtest.OptExpectTimeout(10 * time.Second))
@@ -227,6 +230,7 @@ func (suite *ActivateIntegrationTestSuite) activatePython(version string, extraE
 		e2e.OptArgs("activate", namespace),
 		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 		e2e.OptAppendEnv(extraEnv...),
+		e2e.OptTermTest(termtest.OptVerboseLogging()),
 	)
 
 	cp.Expect("Activated", termtest.OptExpectTimeout(120*time.Second))
@@ -377,6 +381,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivatePerl() {
 		e2e.OptAppendEnv(
 			"ACTIVESTATE_CLI_DISABLE_RUNTIME=false",
 		),
+		e2e.OptTermTest(termtest.OptVerboseLogging()),
 	)
 
 	cp.Expect("Downloading", termtest.OptExpectTimeout(40*time.Second))
