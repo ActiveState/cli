@@ -58,7 +58,7 @@ jobs:
       - # === Disable Windows Defender as it slows things down significantly ===
         name: Disabling Windows Defender
         if: runner.os == 'Windows'
-        shell: powershell.exe
+        shell: powershell
         run: Set-MpPreference -DisableRealtimeMonitoring $true
 
       - # === Checkout Code ===
