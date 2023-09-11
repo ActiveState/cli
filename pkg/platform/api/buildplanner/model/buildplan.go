@@ -278,10 +278,6 @@ func ProcessCommitError(commit *Commit, fallbackMessage string) error {
 }
 
 func ProcessBuildError(build *Build, fallbackMessage string) error {
-	if build.Error == nil {
-		return errs.New(fallbackMessage)
-	}
-
 	if build.Type == PlanningErrorType {
 		var errs []string
 		var isTransient bool
@@ -304,6 +300,8 @@ func ProcessBuildError(build *Build, fallbackMessage string) error {
 			ValidationErrors: errs,
 			IsTransient:      isTransient,
 		}
+	} else if build.Error == nil {
+		return errs.New(fallbackMessage)
 	}
 
 	return locale.NewInputError("err_buildplanner_build", "Encountered error processing build response")
