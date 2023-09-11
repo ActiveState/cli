@@ -56,9 +56,9 @@ func New(p primeable) *Hello {
 	}
 }
 
-// Run wraps the scope in which the hello runner logic is executed. This
-// is to ensure we catch specific errors that we are looking for and wrap
-// them in a user-facing error.
+// processError contains the scope in which errors are processed. This is
+// useful for ensuring that errors are wrapped in a user-facing error and
+// localized.
 func processError(err *error) {
 	if err != nil {
 		switch {
