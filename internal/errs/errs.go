@@ -44,6 +44,7 @@ type UserFacingError interface {
 type userFacingError struct {
 	wrapped error
 	message string
+	tips    []string
 }
 
 func (e *userFacingError) Error() string {
@@ -122,11 +123,28 @@ func Wrap(wrapTarget error, message string, args ...interface{}) *WrapperError {
 	return newError(msg, wrapTarget)
 }
 
+func NewUserFacingError(message string, args ...interface{}) *userFacingError {
+	return &userFacingError{
+		nil,
+		fmt.Sprintf(message, args...),
+		nil,
+	}
+}
+
 func WrapUserFacingError(wrapTarget error, message string, args ...interface{}) *userFacingError {
 	return &userFacingError{
 		wrapTarget,
 		fmt.Sprintf(message, args...),
+		nil,
 	}
+}
+
+func (e *userFacingError) AddTips(tips ...string) {
+	e.tips = append(e.tips, tips...)
+}
+
+func (e *userFacingError) ErrorTips() []string {
+	return e.tips
 }
 
 // Pack creates a new error that packs the given errors together, allowing for multiple errors to be returned
