@@ -101,15 +101,12 @@ func (o *outputProducer) processNextRead(r io.Reader, w io.Writer, appendBuffer 
 	return nil
 }
 
-var appends []string
-
 func (o *outputProducer) appendBuffer(value []byte, isFinal bool) error {
 	if o.opts.NormalizedLineEnds {
 		o.opts.Logger.Println("NormalizedLineEnds prior to appendBuffer")
 		value = NormalizeLineEndsB(value)
 	}
 
-	appends = append(appends, string(value))
 	output := append(o.output, value...)
 
 	// Clean output
@@ -243,9 +240,6 @@ func (o *outputProducer) addConsumer(consume consumer, opts ...SetConsOpt) (*out
 }
 
 func (o *outputProducer) PendingOutput() []byte {
-	if len(o.output) < o.cursorPos {
-		fmt.Printf("About to panic, output so far:\n%sappends\n\n%v", string(o.output), appends)
-	}
 	return o.output[o.cursorPos:]
 }
 
