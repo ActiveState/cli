@@ -7,7 +7,7 @@ replace cloud.google.com/go => cloud.google.com/go v0.110.0
 require (
 	github.com/99designs/gqlgen v0.17.19
 	github.com/ActiveState/go-ogle-analytics v0.0.0-20170510030904-9b3f14901527
-	github.com/ActiveState/termtest v0.7.3-0.20230911215029-1efe417bb14e
+	github.com/ActiveState/termtest v0.7.3-0.20230912192220-6c6570d31b54
 	github.com/Azure/go-ansiterm v0.0.0-20170929234023-d6e3b3328b78
 	github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751
 	github.com/andygrunwald/go-jira v1.15.1
