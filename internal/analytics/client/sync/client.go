@@ -32,7 +32,7 @@ import (
 
 type Reporter interface {
 	ID() string
-	Event(category, action, label string, dimensions *dimensions.Values) error
+	Event(category, action, source, label string, dimensions *dimensions.Values) error
 }
 
 // Client instances send analytics events to GA and S3 endpoints without delay. It is only supposed to be used inside the `state-svc`.  All other processes should use the DefaultClient.
@@ -150,13 +150,13 @@ func (a *Client) Wait() {
 }
 
 // Events returns a channel to feed eventData directly to the report loop
-func (a *Client) report(category, action, label string, dimensions *dimensions.Values) {
+func (a *Client) report(category, action, source, label string, dimensions *dimensions.Values) {
 	if !a.sendReports {
 		return
 	}
 
 	for _, reporter := range a.reporters {
-		if err := reporter.Event(category, action, label, dimensions); err != nil {
+		if err := reporter.Event(category, action, source, label, dimensions); err != nil {
 			logging.Debug(
 				"Reporter failed: %s, category: %s, action: %s, error: %s",
 				reporter.ID(), category, action, errs.JoinMessage(err),
@@ -165,8 +165,8 @@ func (a *Client) report(category, action, label string, dimensions *dimensions.V
 	}
 }
 
-func (a *Client) Event(category string, action string, dims ...*dimensions.Values) {
-	a.EventWithLabel(category, action, "", dims...)
+func (a *Client) Event(category, action, source string, dims ...*dimensions.Values) {
+	a.EventWithLabel(category, action, source, "", dims...)
 }
 
 func mergeDimensions(target *dimensions.Values, dims ...*dimensions.Values) *dimensions.Values {
@@ -180,7 +180,7 @@ func mergeDimensions(target *dimensions.Values, dims ...*dimensions.Values) *dim
 	return actualDims
 }
 
-func (a *Client) EventWithLabel(category string, action, label string, dims ...*dimensions.Values) {
+func (a *Client) EventWithLabel(category, action, source, label string, dims ...*dimensions.Values) {
 	if a.customDimensions == nil {
 		if condition.InUnitTest() {
 			return
@@ -210,7 +210,7 @@ func (a *Client) EventWithLabel(category string, action, label string, dims ...*
 	go func() {
 		defer a.eventWaitGroup.Done()
 		defer func() { handlePanics(recover(), debug.Stack()) }()
-		a.report(category, action, label, actualDims)
+		a.report(category, action, source, label, actualDims)
 	}()
 }
 

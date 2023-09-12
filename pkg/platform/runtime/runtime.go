@@ -50,6 +50,14 @@ func IsNeedsUpdateError(err error) bool {
 	return errs.Matches(err, &NeedsUpdateError{})
 }
 
+var analyticsSource string = anaConsts.SrcStateTool
+
+func init() {
+	if osutils.Executable() == constants.StateExecutorCmd {
+		analyticsSource = anaConsts.SrcExecutor
+	}
+}
+
 func newRuntime(target setup.Targeter, an analytics.Dispatcher, svcModel *model.SvcModel) (*Runtime, error) {
 	rt := &Runtime{
 		target:    target,
@@ -76,7 +84,7 @@ func New(target setup.Targeter, an analytics.Dispatcher, svcm *model.SvcModel) (
 		return &Runtime{disabled: true, target: target}, nil
 	}
 	recordAttempt(an, target)
-	an.Event(anaConsts.CatRuntime, anaConsts.ActRuntimeStart, &dimensions.Values{
+	an.Event(anaConsts.CatRuntime, anaConsts.ActRuntimeStart, analyticsSource, &dimensions.Values{
 		Trigger:          ptr.To(target.Trigger().String()),
 		Headless:         ptr.To(strconv.FormatBool(target.Headless())),
 		CommitID:         ptr.To(target.CommitUUID().String()),
@@ -86,7 +94,7 @@ func New(target setup.Targeter, an analytics.Dispatcher, svcm *model.SvcModel) (
 
 	r, err := newRuntime(target, an, svcm)
 	if err == nil {
-		an.Event(anaConsts.CatRuntime, anaConsts.ActRuntimeCache, &dimensions.Values{
+		an.Event(anaConsts.CatRuntime, anaConsts.ActRuntimeCache, analyticsSource, &dimensions.Values{
 			CommitID: ptr.To(target.CommitUUID().String()),
 		})
 	}
@@ -225,7 +233,7 @@ func (r *Runtime) recordCompletion(err error) {
 		message = errs.JoinMessage(err)
 	}
 
-	r.analytics.Event(anaConsts.CatRuntime, action, &dimensions.Values{
+	r.analytics.Event(anaConsts.CatRuntime, action, analyticsSource, &dimensions.Values{
 		CommitID: ptr.To(r.target.CommitUUID().String()),
 		// Note: ProjectID is set by state-svc since ProjectNameSpace is specified.
 		ProjectNameSpace: ptr.To(ns.String()),
@@ -257,7 +265,7 @@ func recordAttempt(an analytics.Dispatcher, target setup.Targeter) {
 		return
 	}
 
-	an.Event(anaConsts.CatRuntimeUsage, anaConsts.ActRuntimeAttempt, usageDims(target))
+	an.Event(anaConsts.CatRuntimeUsage, anaConsts.ActRuntimeAttempt, analyticsSource, usageDims(target))
 }
 
 func usageDims(target setup.Targeter) *dimensions.Values {

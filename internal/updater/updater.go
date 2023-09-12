@@ -207,5 +207,5 @@ func (u *AvailableUpdate) analyticsEvent(action, label, version, msg string) {
 		dims.Error = ptr.To(msg)
 	}
 
-	u.an.EventWithLabel(anaConst.CatUpdates, anaConst.ActUpdateDownload, label, dims)
+	u.an.EventWithLabel(anaConst.CatUpdates, anaConst.ActUpdateDownload, anaConst.SrcStateTool, label, dims)
 }

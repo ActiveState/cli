@@ -15,7 +15,7 @@ import (
 )
 
 type EventDispatcher interface {
-	EventWithLabel(category string, action string, label string, dim ...*dimensions.Values)
+	EventWithLabel(category, action, source string, label string, dim ...*dimensions.Values)
 }
 
 // Prompter is the interface used to run our prompt from, useful for mocking in tests
@@ -169,7 +169,7 @@ func (p *Prompt) Confirm(title, message string, defaultChoice *bool) (bool, erro
 		p.out.Notice(output.Emphasize(title))
 	}
 
-	p.analytics.EventWithLabel(constants.CatPrompt, title, "present")
+	p.analytics.EventWithLabel(constants.CatPrompt, title, constants.SrcStateTool, "present")
 
 	var defChoice bool
 	if defaultChoice != nil {
@@ -183,11 +183,11 @@ func (p *Prompt) Confirm(title, message string, defaultChoice *bool) (bool, erro
 	}}, &resp, nil)
 	if err != nil {
 		if err == terminal.InterruptErr {
-			p.analytics.EventWithLabel(constants.CatPrompt, title, "interrupt")
+			p.analytics.EventWithLabel(constants.CatPrompt, title, constants.SrcStateTool, "interrupt")
 		}
 		return false, locale.NewInputError(err.Error())
 	}
-	p.analytics.EventWithLabel(constants.CatPrompt, title, translateConfirm(resp))
+	p.analytics.EventWithLabel(constants.CatPrompt, title, constants.SrcStateTool, translateConfirm(resp))
 
 	return resp, nil
 }

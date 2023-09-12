@@ -25,6 +25,21 @@ const CatConfig = "config"
 // CatUpdate is the event category used for all update events
 const CatUpdates = "updates"
 
+// CatInstaller is the event category used for installer events.
+const CatInstaller = "installer"
+
+// CatInstallerFunnel is the event category used for installer funnel events.
+const CatInstallerFunnel = "installer-funnel"
+
+// SrcStateTool is the event source for State Tool.
+const SrcStateTool = "State Tool"
+
+// SrcOfflineInstaller is the event source for offline installers.
+const SrcOfflineInstaller = "Offline Installer"
+
+// SrcExecutor is the event source for executors.
+const SrcExecutor = "Executor"
+
 // ActRuntimeHeartbeat is the event action sent when a runtime is in use
 const ActRuntimeHeartbeat = "heartbeat"
 

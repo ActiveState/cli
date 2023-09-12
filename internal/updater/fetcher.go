@@ -70,7 +70,7 @@ func (f *Fetcher) Fetch(update *AvailableUpdate, targetDir string) error {
 }
 
 func (f *Fetcher) analyticsEvent(version, msg string) {
-	f.an.EventWithLabel(anaConst.CatUpdates, anaConst.ActUpdateDownload, anaConst.UpdateLabelFailed, &dimensions.Values{
+	f.an.EventWithLabel(anaConst.CatUpdates, anaConst.ActUpdateDownload, anaConst.SrcStateTool, anaConst.UpdateLabelFailed, &dimensions.Values{
 		TargetVersion: ptr.To(version),
 		Error:         ptr.To(msg),
 	})

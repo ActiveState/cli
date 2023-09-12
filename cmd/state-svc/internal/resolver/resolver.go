@@ -102,7 +102,7 @@ func (r *Resolver) Query() genserver.QueryResolver { return r }
 func (r *Resolver) Version(ctx context.Context) (*graph.Version, error) {
 	defer func() { handlePanics(recover(), debug.Stack()) }()
 
-	r.an.EventWithLabel(anaConsts.CatStateSvc, "endpoint", "Version")
+	r.an.EventWithLabel(anaConsts.CatStateSvc, "endpoint", anaConsts.SrcStateTool, "Version")
 	logging.Debug("Version resolver")
 	return &graph.Version{
 		State: &graph.StateVersion{
@@ -118,7 +118,7 @@ func (r *Resolver) Version(ctx context.Context) (*graph.Version, error) {
 func (r *Resolver) AvailableUpdate(ctx context.Context) (*graph.AvailableUpdate, error) {
 	defer func() { handlePanics(recover(), debug.Stack()) }()
 
-	r.an.EventWithLabel(anaConsts.CatStateSvc, "endpoint", "AvailableUpdate")
+	r.an.EventWithLabel(anaConsts.CatStateSvc, "endpoint", anaConsts.SrcStateTool, "AvailableUpdate")
 	logging.Debug("AvailableUpdate resolver")
 	defer logging.Debug("AvailableUpdate done")
 
@@ -142,7 +142,7 @@ func (r *Resolver) AvailableUpdate(ctx context.Context) (*graph.AvailableUpdate,
 func (r *Resolver) Projects(ctx context.Context) ([]*graph.Project, error) {
 	defer func() { handlePanics(recover(), debug.Stack()) }()
 
-	r.an.EventWithLabel(anaConsts.CatStateSvc, "endpoint", "Projects")
+	r.an.EventWithLabel(anaConsts.CatStateSvc, "endpoint", anaConsts.SrcStateTool, "Projects")
 	logging.Debug("Projects resolver")
 	var projects []*graph.Project
 	localConfigProjects := projectfile.GetProjectMapping(r.cfg)
@@ -159,10 +159,10 @@ func (r *Resolver) Projects(ctx context.Context) ([]*graph.Project, error) {
 	return projects, nil
 }
 
-func (r *Resolver) AnalyticsEvent(_ context.Context, category, action string, _label *string, dimensionsJson string) (*graph.AnalyticsEventResponse, error) {
+func (r *Resolver) AnalyticsEvent(_ context.Context, category, action, source string, _label *string, dimensionsJson string) (*graph.AnalyticsEventResponse, error) {
 	defer func() { handlePanics(recover(), debug.Stack()) }()
 
-	logging.Debug("Analytics event resolver: %s - %s", category, action)
+	logging.Debug("Analytics event resolver: %s - %s (%s)", category, action, source)
 
 	label := ""
 	if _label != nil {
@@ -188,7 +188,7 @@ func (r *Resolver) AnalyticsEvent(_ context.Context, category, action string, _l
 		return nil
 	})
 
-	r.anForClient.EventWithLabel(category, action, label, dims)
+	r.anForClient.EventWithLabel(category, action, source, label, dims)
 
 	return &graph.AnalyticsEventResponse{Sent: true}, nil
 }

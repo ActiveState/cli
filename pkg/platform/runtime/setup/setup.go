@@ -26,6 +26,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
+	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/proxyreader"
 	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
@@ -432,8 +433,12 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 	}
 
 	// send analytics build event, if a new runtime has to be built in the cloud
+	analyticsSource := anaConsts.SrcStateTool
+	if osutils.ExecutableName() == constants.StateExecutorCmd {
+		analyticsSource = anaConsts.SrcExecutor
+	}
 	if buildResult.BuildStatus == bpModel.Started {
-		s.analytics.Event(anaConsts.CatRuntime, anaConsts.ActRuntimeBuild, dimensions)
+		s.analytics.Event(anaConsts.CatRuntime, anaConsts.ActRuntimeBuild, analyticsSource, dimensions)
 	}
 
 	changedArtifacts, err := buildplan.NewBaseArtifactChangesetByBuildPlan(buildResult.Build, false)
@@ -542,7 +547,7 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 	// only send the download analytics event, if we have to install artifacts that are not yet installed
 	if len(artifactsToInstall) > 0 {
 		// if we get here, we dowload artifacts
-		s.analytics.Event(anaConsts.CatRuntime, anaConsts.ActRuntimeDownload, dimensions)
+		s.analytics.Event(anaConsts.CatRuntime, anaConsts.ActRuntimeDownload, analyticsSource, dimensions)
 	}
 
 	err = s.installArtifactsFromBuild(buildResult, runtimeArtifacts, artifact.ArtifactIDsToMap(artifactsToInstall), downloadablePrebuiltResults, setup, installFunc, logFilePath)

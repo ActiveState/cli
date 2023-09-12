@@ -53,9 +53,9 @@ func newTutorialProjectCommand(prime *primer.Values) *captain.Command {
 		func(ccmd *captain.Command, args []string) error {
 			err := runner.RunNewProject(params)
 			if err != nil {
-				prime.Analytics().EventWithLabel(constants.CatTutorial, "error", errs.JoinMessage(err))
+				prime.Analytics().EventWithLabel(constants.CatTutorial, "error", constants.SrcStateTool, errs.JoinMessage(err))
 			} else {
-				prime.Analytics().Event(constants.CatTutorial, "completed")
+				prime.Analytics().Event(constants.CatTutorial, "completed", constants.SrcStateTool)
 			}
 			return err
 		},

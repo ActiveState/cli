@@ -179,7 +179,7 @@ func (suite *AnalyticsIntegrationTestSuite) TestActivateEvents() {
 
 func countEvents(events []reporters.TestLogEntry, category, action string) int {
 	filteredEvents := funk.Filter(events, func(e reporters.TestLogEntry) bool {
-		return e.Category == category && e.Action == action
+		return e.Category == category && e.Action == action && e.Source != ""
 	}).([]reporters.TestLogEntry)
 	return len(filteredEvents)
 }

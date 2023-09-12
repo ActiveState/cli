@@ -122,7 +122,7 @@ func EnsureCorrectProject(owner, name, projectFilePath, repoURL string, out outp
 		if err != nil {
 			return locale.WrapError(err, "err_git_update_mismatch", "Could not update projectfile namespace")
 		}
-		an.Event(anaConsts.CatMisc, "git-project-mismatch")
+		an.Event(anaConsts.CatMisc, "git-project-mismatch", anaConsts.SrcStateTool)
 	}
 
 	return nil

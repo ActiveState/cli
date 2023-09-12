@@ -92,9 +92,9 @@ func (r *runner) Run(params *Params) (rerr error) {
 			return
 		}
 		if locale.IsInputError(rerr) {
-			r.analytics.EventWithLabel(ac.CatOfflineInstaller, ac.ActOfflineInstallerAbort, errs.JoinMessage(rerr), installerDimensions)
+			r.analytics.EventWithLabel(ac.CatOfflineInstaller, ac.ActOfflineInstallerAbort, ac.SrcOfflineInstaller, errs.JoinMessage(rerr), installerDimensions)
 		} else {
-			r.analytics.EventWithLabel(ac.CatOfflineInstaller, ac.ActOfflineInstallerFailure, errs.JoinMessage(rerr), installerDimensions)
+			r.analytics.EventWithLabel(ac.CatOfflineInstaller, ac.ActOfflineInstallerFailure, ac.SrcOfflineInstaller, errs.JoinMessage(rerr), installerDimensions)
 		}
 	}()
 
@@ -122,7 +122,7 @@ func (r *runner) Run(params *Params) (rerr error) {
 		CommitID:         &r.icfg.CommitID,
 		Trigger:          ptr.To(target.TriggerOfflineInstaller.String()),
 	}
-	r.analytics.Event(ac.CatOfflineInstaller, "start", installerDimensions)
+	r.analytics.Event(ac.CatOfflineInstaller, "start", ac.SrcOfflineInstaller, installerDimensions)
 
 	// Detect target path
 	targetPath, err := r.getTargetPath(params.path)
@@ -248,7 +248,7 @@ func (r *runner) Run(params *Params) (rerr error) {
 		return errs.Wrap(err, "Could not configure environment")
 	}
 
-	r.analytics.Event(ac.CatOfflineInstaller, ac.ActOfflineInstallerSuccess, installerDimensions)
+	r.analytics.Event(ac.CatOfflineInstaller, ac.ActOfflineInstallerSuccess, ac.SrcOfflineInstaller, installerDimensions)
 
 	r.out.Print(fmt.Sprintf(`Installation complete.
 Your language runtime has been installed in [ACTIONABLE]%s[/RESET].`, targetPath))

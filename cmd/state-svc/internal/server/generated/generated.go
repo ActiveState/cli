@@ -78,7 +78,7 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		AnalyticsEvent     func(childComplexity int, category string, action string, label *string, dimensionsJSON string) int
+		AnalyticsEvent     func(childComplexity int, category string, action string, source string, label *string, dimensionsJSON string) int
 		AvailableUpdate    func(childComplexity int) int
 		CheckMessages      func(childComplexity int, command string, flags []string) int
 		CheckRuntimeUsage  func(childComplexity int, organizationName string) int
@@ -110,7 +110,7 @@ type QueryResolver interface {
 	Version(ctx context.Context) (*graph.Version, error)
 	AvailableUpdate(ctx context.Context) (*graph.AvailableUpdate, error)
 	Projects(ctx context.Context) ([]*graph.Project, error)
-	AnalyticsEvent(ctx context.Context, category string, action string, label *string, dimensionsJSON string) (*graph.AnalyticsEventResponse, error)
+	AnalyticsEvent(ctx context.Context, category string, action string, source string, label *string, dimensionsJSON string) (*graph.AnalyticsEventResponse, error)
 	ReportRuntimeUsage(ctx context.Context, pid int, exec string, dimensionsJSON string) (*graph.ReportRuntimeUsageResponse, error)
 	CheckRuntimeUsage(ctx context.Context, organizationName string) (*graph.CheckRuntimeUsageResponse, error)
 	CheckMessages(ctx context.Context, command string, flags []string) ([]*graph.MessageInfo, error)
@@ -262,7 +262,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.AnalyticsEvent(childComplexity, args["category"].(string), args["action"].(string), args["label"].(*string), args["dimensionsJson"].(string)), true
+		return e.complexity.Query.AnalyticsEvent(childComplexity, args["category"].(string), args["action"].(string), args["source"].(string), args["label"].(*string), args["dimensionsJson"].(string)), true
 
 	case "Query.availableUpdate":
 		if e.complexity.Query.AvailableUpdate == nil {
@@ -512,7 +512,7 @@ type Query {
     version: Version
     availableUpdate: AvailableUpdate
     projects: [Project]!
-    analyticsEvent(category: String!, action: String!, label: String, dimensionsJson: String!): AnalyticsEventResponse
+    analyticsEvent(category: String!, action: String!, source: String!, label: String, dimensionsJson: String!): AnalyticsEventResponse
     reportRuntimeUsage(pid: Int!, exec: String!, dimensionsJson: String!): ReportRuntimeUsageResponse
     checkRuntimeUsage(organizationName: String!): CheckRuntimeUsageResponse
     checkMessages(command: String!, flags: [String!]!): [MessageInfo!]!
@@ -567,24 +567,33 @@ func (ec *executionContext) field_Query_analyticsEvent_args(ctx context.Context,
 		}
 	}
 	args["action"] = arg1
-	var arg2 *string
+	var arg2 string
+	if tmp, ok := rawArgs["source"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("source"))
+		arg2, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["source"] = arg2
+	var arg3 *string
 	if tmp, ok := rawArgs["label"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("label"))
-		arg2, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		arg3, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["label"] = arg2
-	var arg3 string
+	args["label"] = arg3
+	var arg4 string
 	if tmp, ok := rawArgs["dimensionsJson"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("dimensionsJson"))
-		arg3, err = ec.unmarshalNString2string(ctx, tmp)
+		arg4, err = ec.unmarshalNString2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["dimensionsJson"] = arg3
+	args["dimensionsJson"] = arg4
 	return args, nil
 }
 
@@ -1620,7 +1629,7 @@ func (ec *executionContext) _Query_analyticsEvent(ctx context.Context, field gra
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().AnalyticsEvent(rctx, fc.Args["category"].(string), fc.Args["action"].(string), fc.Args["label"].(*string), fc.Args["dimensionsJson"].(string))
+		return ec.resolvers.Query().AnalyticsEvent(rctx, fc.Args["category"].(string), fc.Args["action"].(string), fc.Args["source"].(string), fc.Args["label"].(*string), fc.Args["dimensionsJson"].(string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)

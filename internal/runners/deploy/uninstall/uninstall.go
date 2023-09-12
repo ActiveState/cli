@@ -99,7 +99,7 @@ func (u *Uninstall) Run(params *Params) error {
 		return locale.WrapError(err, "err_deploy_uninstall", "Unable to remove deployed runtime at '{{.V0}}'", path)
 	}
 
-	u.analytics.Event(constants.CatRuntimeUsage, constants.ActRuntimeDelete, &dimensions.Values{
+	u.analytics.Event(constants.CatRuntimeUsage, constants.ActRuntimeDelete, constants.SrcStateTool, &dimensions.Values{
 		Trigger:          ptr.To(target.TriggerDeploy.String()),
 		CommitID:         ptr.To(commitID),
 		ProjectNameSpace: ptr.To(namespace),

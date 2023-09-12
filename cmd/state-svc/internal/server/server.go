@@ -75,16 +75,16 @@ func (s *Server) Resolver() *resolver.Resolver {
 }
 
 func (s *Server) Start() error {
-	s.analytics.Event(constants.CatStateSvc, "start")
+	s.analytics.Event(constants.CatStateSvc, "start", constants.SrcStateTool)
 	err := s.httpServer.Start(s.listener.Addr().String())
 	if err != nil {
-		s.analytics.Event(constants.CatStateSvc, "start-failure")
+		s.analytics.Event(constants.CatStateSvc, "start-failure", constants.SrcStateTool)
 	}
 	return err
 }
 
 func (s *Server) Shutdown() error {
-	s.analytics.Event(constants.CatStateSvc, "shutdown")
+	s.analytics.Event(constants.CatStateSvc, "shutdown", constants.SrcStateTool)
 	logging.Debug("shutting down server")
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()

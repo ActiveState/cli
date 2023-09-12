@@ -106,5 +106,5 @@ func (s *Set) sendEvent(key string, value string, option configMediator.Option) 
 		}
 	}
 
-	s.analytics.EventWithLabel(constants.CatConfig, action, key)
+	s.analytics.EventWithLabel(constants.CatConfig, action, constants.SrcStateTool, key)
 }

@@ -63,7 +63,7 @@ func autoUpdate(args []string, cfg *config.Instance, an analytics.Dispatcher, ou
 
 	if !isEnabled(cfg) {
 		logging.Debug("Not performing autoupdates because user turned off autoupdates.")
-		an.EventWithLabel(anaConst.CatUpdates, anaConst.ActShouldUpdate, anaConst.UpdateLabelDisabledConfig)
+		an.EventWithLabel(anaConst.CatUpdates, anaConst.ActShouldUpdate, anaConst.SrcStateTool, anaConst.UpdateLabelDisabledConfig)
 		out.Notice(output.Title(locale.Tl("update_available_header", "Auto Update")))
 		out.Notice(locale.Tr("update_available", constants.Version, up.Version))
 		return false, nil
@@ -77,20 +77,20 @@ func autoUpdate(args []string, cfg *config.Instance, an analytics.Dispatcher, ou
 	err = up.InstallBlocking("")
 	if err != nil {
 		if os.IsPermission(err) {
-			an.EventWithLabel(anaConst.CatUpdates, anaConst.ActUpdateInstall, anaConst.UpdateLabelFailed, &dimensions.Values{
+			an.EventWithLabel(anaConst.CatUpdates, anaConst.ActUpdateInstall, anaConst.SrcStateTool, anaConst.UpdateLabelFailed, &dimensions.Values{
 				TargetVersion: ptr.To(up.Version),
 				Error:         ptr.To("Could not update the state tool due to insufficient permissions."),
 			})
 			return false, locale.WrapInputError(err, locale.Tl("auto_update_permission_err", "", constants.DocumentationURL, errs.JoinMessage(err)))
 		}
 		if errs.Matches(err, &updater.ErrorInProgress{}) {
-			an.EventWithLabel(anaConst.CatUpdates, anaConst.ActUpdateInstall, anaConst.UpdateLabelFailed, &dimensions.Values{
+			an.EventWithLabel(anaConst.CatUpdates, anaConst.ActUpdateInstall, anaConst.SrcStateTool, anaConst.UpdateLabelFailed, &dimensions.Values{
 				TargetVersion: ptr.To(up.Version),
 				Error:         ptr.To(anaConst.UpdateErrorInProgress),
 			})
 			return false, nil
 		}
-		an.EventWithLabel(anaConst.CatUpdates, anaConst.ActUpdateInstall, anaConst.UpdateLabelFailed, &dimensions.Values{
+		an.EventWithLabel(anaConst.CatUpdates, anaConst.ActUpdateInstall, anaConst.SrcStateTool, anaConst.UpdateLabelFailed, &dimensions.Values{
 			TargetVersion: ptr.To(up.Version),
 			Error:         ptr.To(anaConst.UpdateErrorInstallFailed),
 		})
@@ -108,14 +108,14 @@ func autoUpdate(args []string, cfg *config.Instance, an analytics.Dispatcher, ou
 		} else if errs.Matches(err, &ErrExecuteRelaunch{}) {
 			msg = anaConst.UpdateErrorRelaunch
 		}
-		an.EventWithLabel(anaConst.CatUpdates, anaConst.ActUpdateRelaunch, anaConst.UpdateLabelFailed, &dimensions.Values{
+		an.EventWithLabel(anaConst.CatUpdates, anaConst.ActUpdateRelaunch, anaConst.SrcStateTool, anaConst.UpdateLabelFailed, &dimensions.Values{
 			TargetVersion: ptr.To(up.Version),
 			Error:         ptr.To(msg),
 		})
 		return true, errs.Silence(errs.WrapExitCode(err, code))
 	}
 
-	an.EventWithLabel(anaConst.CatUpdates, anaConst.ActUpdateRelaunch, anaConst.UpdateLabelSuccess, &dimensions.Values{
+	an.EventWithLabel(anaConst.CatUpdates, anaConst.ActUpdateRelaunch, anaConst.SrcStateTool, anaConst.UpdateLabelSuccess, &dimensions.Values{
 		TargetVersion: ptr.To(up.Version),
 	})
 	return true, nil
@@ -187,7 +187,7 @@ func shouldRunAutoUpdate(args []string, cfg *config.Instance, an analytics.Dispa
 		label = anaConst.UpdateLabelLocked
 	}
 
-	an.EventWithLabel(anaConst.CatUpdates, anaConst.ActShouldUpdate, label)
+	an.EventWithLabel(anaConst.CatUpdates, anaConst.ActShouldUpdate, anaConst.SrcStateTool, label)
 	return shouldUpdate
 }
 

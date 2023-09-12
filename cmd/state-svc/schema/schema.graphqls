@@ -69,7 +69,7 @@ type Query {
     version: Version
     availableUpdate: AvailableUpdate
     projects: [Project]!
-    analyticsEvent(category: String!, action: String!, label: String, dimensionsJson: String!): AnalyticsEventResponse
+    analyticsEvent(category: String!, action: String!, source: String!, label: String, dimensionsJson: String!): AnalyticsEventResponse
     reportRuntimeUsage(pid: Int!, exec: String!, dimensionsJson: String!): ReportRuntimeUsageResponse
     checkRuntimeUsage(organizationName: String!): CheckRuntimeUsageResponse
     checkMessages(command: String!, flags: [String!]!): [MessageInfo!]!

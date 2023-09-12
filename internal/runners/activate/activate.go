@@ -151,7 +151,7 @@ func (r *Activate) Run(params *ActivateParams) error {
 	}
 
 	// Have to call this once the project has been set
-	r.analytics.Event(anaConsts.CatActivationFlow, "start")
+	r.analytics.Event(anaConsts.CatActivationFlow, "start", anaConsts.SrcStateTool)
 
 	proj.Source().Persist()
 

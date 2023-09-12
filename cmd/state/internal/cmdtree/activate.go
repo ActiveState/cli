@@ -66,19 +66,19 @@ func newActivateCommand(prime *primer.Values) *captain.Command {
 				an := prime.Analytics()
 				var serr interface{ Signal() os.Signal }
 				if errors.As(err, &serr) {
-					an.Event(constants.CatActivationFlow, "user-interrupt-error")
+					an.Event(constants.CatActivationFlow, "user-interrupt-error", constants.SrcStateTool)
 				}
 				if locale.IsInputError(err) {
 					// Failed due to user input
-					an.Event(constants.CatActivationFlow, "user-input-error")
+					an.Event(constants.CatActivationFlow, "user-input-error", constants.SrcStateTool)
 				} else {
 					var exitErr = &exec.ExitError{}
 					if !errors.As(err, &exitErr) {
 						// Failed due to an error we might need to address
-						an.Event(constants.CatActivationFlow, "error")
+						an.Event(constants.CatActivationFlow, "error", constants.SrcStateTool)
 					} else {
 						// Failed due to user subshell actions / events
-						an.Event(constants.CatActivationFlow, "user-exit-error")
+						an.Event(constants.CatActivationFlow, "user-exit-error", constants.SrcStateTool)
 					}
 				}
 			}

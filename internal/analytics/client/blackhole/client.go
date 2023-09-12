@@ -13,10 +13,10 @@ func New() *Client {
 	return &Client{}
 }
 
-func (c Client) Event(category string, action string, dim ...*dimensions.Values) {
+func (c Client) Event(category, action, source string, dim ...*dimensions.Values) {
 }
 
-func (c Client) EventWithLabel(category string, action string, label string, dim ...*dimensions.Values) {
+func (c Client) EventWithLabel(category, action, source, label string, dim ...*dimensions.Values) {
 }
 
 func (c Client) Wait() {

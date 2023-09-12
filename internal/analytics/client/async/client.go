@@ -75,13 +75,13 @@ func New(svcModel *model.SvcModel, cfg *config.Instance, auth *authentication.Au
 }
 
 // Event logs an event to google analytics
-func (a *Client) Event(category string, action string, dims ...*dimensions.Values) {
-	a.EventWithLabel(category, action, "", dims...)
+func (a *Client) Event(category, action, source string, dims ...*dimensions.Values) {
+	a.EventWithLabel(category, action, source, "", dims...)
 }
 
 // EventWithLabel logs an event with a label to google analytics
-func (a *Client) EventWithLabel(category string, action string, label string, dims ...*dimensions.Values) {
-	err := a.sendEvent(category, action, label, dims...)
+func (a *Client) EventWithLabel(category, action, source, label string, dims ...*dimensions.Values) {
+	err := a.sendEvent(category, action, source, label, dims...)
 	if err != nil {
 		multilog.Error("Error during analytics.sendEvent: %v", errs.JoinMessage(err))
 	}
@@ -98,7 +98,7 @@ func (a *Client) Wait() {
 	a.eventWaitGroup.Wait()
 }
 
-func (a *Client) sendEvent(category, action, label string, dims ...*dimensions.Values) error {
+func (a *Client) sendEvent(category, action, source, label string, dims ...*dimensions.Values) error {
 	if a.svcModel == nil { // this is only true on CI
 		return nil
 	}
@@ -133,7 +133,7 @@ func (a *Client) sendEvent(category, action, label string, dims ...*dimensions.V
 		defer func() { handlePanics(recover(), debug.Stack()) }()
 		defer a.eventWaitGroup.Done()
 
-		if err := a.svcModel.AnalyticsEvent(context.Background(), category, action, label, string(dimMarshalled)); err != nil {
+		if err := a.svcModel.AnalyticsEvent(context.Background(), category, action, source, label, string(dimMarshalled)); err != nil {
 			logging.Debug("Failed to report analytics event via state-svc: %s", errs.JoinMessage(err))
 		}
 	}()
