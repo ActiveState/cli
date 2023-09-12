@@ -501,7 +501,7 @@ type Artifact struct {
 
 	// Error fields
 	Errors      []string `json:"errors"`
-	Attempts    string   `json:"attempts"`
+	Attempts    float64  `json:"attempts"`
 	NextAttempt string   `json:"nextAttempt"`
 }
 
