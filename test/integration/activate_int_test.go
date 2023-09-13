@@ -356,6 +356,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_SpaceInCacheDir() {
 		e2e.OptArgs("activate", "ActiveState-CLI/Python3"),
 	)
 
+	cp.Expect("Activated", termtest.OptExpectTimeout(120*time.Second))
 	cp.SendLine("python3 --version")
 	cp.Expect("Python 3.")
 
