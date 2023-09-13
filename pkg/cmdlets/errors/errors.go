@@ -100,10 +100,10 @@ func ParseUserFacing(err error) (int, error) {
 
 	// If there is a user facing error in the error stack we want to ensure
 	// that is it forwarded to the user.
-	uerr, ok := errs.IsUserFacing(err)
-	if ok {
+	var userFacingError errs.UserFacingError
+	if errors.As(err, &userFacingError) {
 		logging.Debug("Returning user facing error, error stack: \n%s", errs.JoinMessage(err))
-		return code, &OutputError{uerr}
+		return code, &OutputError{userFacingError}
 	}
 
 	if errs.IsSilent(err) {

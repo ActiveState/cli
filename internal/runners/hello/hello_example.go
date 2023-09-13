@@ -13,6 +13,7 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runbits"
+	"github.com/ActiveState/cli/internal/runbits/errors"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -60,24 +61,23 @@ func New(p primeable) *Hello {
 // useful for ensuring that errors are wrapped in a user-facing error and
 // localized.
 func processError(err *error) {
-	if err != nil {
-		switch {
-		case errs.Matches(*err, &runbits.NoNameProvidedError{}):
-			// Errors that we are looking for should be wrapped in a user-facing error.
-			// Ensure we wrap the top-level error returned from the runner and not
-			// the unpacked error that we are inspecting.
-			*err = errs.WrapUserFacingError(*err, locale.Tl("hello_err_no_name", "Cannot say hello because no name was provided."))
-		case errs.Matches(*err, &errs.ErrNoProject{}):
-			werr := errs.WrapUserFacingError(*err, locale.Tl("hello_err_no_project", "Cannot say hello because you are not in a project directory."))
+	if err == nil {
+		return
+	}
 
-			// It's useful to offer users reasonable tips on recourses.
-			*err = errs.AddTips(werr, locale.Tl(
-				"hello_suggest_checkout",
-				"Try using [ACTIONABLE]`state checkout`[/RESET] first.",
-			))
-		}
-
-		*err = errs.Wrap(*err, "Cannot say hello")
+	switch {
+	case errs.Matches(*err, &runbits.NoNameProvidedError{}):
+		// Errors that we are looking for should be wrapped in a user-facing error.
+		// Ensure we wrap the top-level error returned from the runner and not
+		// the unpacked error that we are inspecting.
+		*err = errs.WrapUserFacingError(*err, locale.Tl("hello_err_no_name", "Cannot say hello because no name was provided."))
+	case errs.Matches(*err, &errors.ErrNoProject{}):
+		// It's useful to offer users reasonable tips on recourses.
+		*err = errs.WrapUserFacingError(
+			*err,
+			locale.Tl("hello_err_no_project", "Cannot say hello because you are not in a project directory."),
+			locale.Tl("hello_suggest_checkout", "Try using [ACTIONABLE]`state checkout`[/RESET] first."),
+		)
 	}
 }
 
@@ -88,7 +88,7 @@ func (h *Hello) Run(params *RunParams) (rerr error) {
 	h.out.Print(locale.Tl("hello_notice", "This command is for example use only"))
 
 	if h.project == nil {
-		return &errs.ErrNoProject{errs.New("Not in a project directory")}
+		return &errors.ErrNoProject{errs.New("Not in a project directory")}
 	}
 
 	// Reusable runner logic is contained within the runbits package.

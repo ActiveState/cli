@@ -36,33 +36,6 @@ type TransientError interface {
 	IsTransient()
 }
 
-type UserFacingError interface {
-	error
-	UserError() string
-}
-
-type userFacingError struct {
-	wrapped error
-	message string
-	tips    []string
-}
-
-func (e *userFacingError) Error() string {
-	return JoinMessage(Wrap(e.wrapped, e.message))
-}
-
-func (e *userFacingError) UserError() string {
-	return e.message
-}
-
-func (e *userFacingError) AddTips(tips ...string) {
-	e.tips = append(e.tips, tips...)
-}
-
-func (e *userFacingError) ErrorTips() []string {
-	return e.tips
-}
-
 // PackedErrors represents a collection of errors that aren't necessarily related to each other
 // note that rtutils replicates this functionality to avoid import cycles
 type PackedErrors struct {
@@ -129,22 +102,6 @@ func New(message string, args ...interface{}) *WrapperError {
 func Wrap(wrapTarget error, message string, args ...interface{}) *WrapperError {
 	msg := fmt.Sprintf(message, args...)
 	return newError(msg, wrapTarget)
-}
-
-func NewUserFacingError(message string, args ...interface{}) *userFacingError {
-	return &userFacingError{
-		nil,
-		fmt.Sprintf(message, args...),
-		nil,
-	}
-}
-
-func WrapUserFacingError(wrapTarget error, message string, args ...interface{}) *userFacingError {
-	return &userFacingError{
-		wrapTarget,
-		fmt.Sprintf(message, args...),
-		nil,
-	}
 }
 
 // Pack creates a new error that packs the given errors together, allowing for multiple errors to be returned
@@ -300,15 +257,4 @@ func Unpack(err error) []error {
 		}
 	}
 	return result
-}
-
-// IsUserFacing identifies whether this error was curated for end-users and
-// returns that error. This is NOT the same as an error that is localized.
-func IsUserFacing(err error) (error, bool) {
-	var userFacingError UserFacingError
-	if errors.As(err, &userFacingError) {
-		return userFacingError, true
-	}
-
-	return err, false
 }
