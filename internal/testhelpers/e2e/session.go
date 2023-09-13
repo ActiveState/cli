@@ -447,7 +447,7 @@ func (s *Session) DebugMessage(prefix string) string {
 		if spawn.opts.HideCmdArgs {
 			name = spawn.Cmd().Path
 		}
-		output[name] = spawn.Output()
+		output[name] = fmt.Sprintf("%#v", spawn.Output())
 	}
 
 	v, err := strutils.ParseTemplate(`
