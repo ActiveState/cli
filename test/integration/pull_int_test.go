@@ -44,7 +44,7 @@ func (suite *PullIntegrationTestSuite) TestPullSetProject() {
 
 	// update to related project
 	cp := ts.Spawn("pull", "--set-project", "ActiveState-CLI/small-python-fork")
-	cp.Expect("you may lose changes to your project")
+	cp.Expect("Are you sure you want to do this? (y/N)")
 	cp.SendLine("n")
 	cp.Expect("Pull aborted by user")
 	cp.ExpectNotExitCode(0)
@@ -62,7 +62,7 @@ func (suite *PullIntegrationTestSuite) TestPullSetProjectUnrelated() {
 	ts.PrepareActiveStateYAML(`project: "https://platform.activestate.com/ActiveState-CLI/small-python?commitID=9733d11a-dfb3-41de-a37a-843b7c421db4"`)
 
 	cp := ts.Spawn("pull", "--set-project", "ActiveState-CLI/Python3")
-	cp.Expect("you may lose changes to your project")
+	cp.Expect("Are you sure you want to do this? (y/N)")
 	cp.SendLine("n")
 	cp.Expect("Pull aborted by user")
 	cp.ExpectNotExitCode(0)
