@@ -1348,6 +1348,8 @@ namespace_label_platform:
   other: "Platform"
 namespace_label_preplatform:
   other: "Bits"
+namespace_label_packager:
+  other: "Docker/Installer packagers"
 print_commit:
   other: "[NOTICE]commit {{.V0}}[/RESET]"
 print_commit_author:
