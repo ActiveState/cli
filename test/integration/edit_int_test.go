@@ -103,6 +103,7 @@ func (suite *EditIntegrationTestSuite) TestEdit_UpdateCorrectPlatform() {
 		e2e.OptWD(ts.Dirs.Work),
 		env,
 	)
+	cp.Expect("(Y/n)")
 	cp.SendLine("Y")
 	cp.ExpectExitCode(0)
 
