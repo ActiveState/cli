@@ -634,10 +634,10 @@ func (c *Command) cobraExecHandler(cobraCmd *cobra.Command, args []string) error
 			label = append(label, name)
 		})
 
-		c.analytics.EventWithLabel(anaConsts.CatRunCmd, appEventPrefix+subCommandString, anaConsts.SrcStateTool, strings.Join(label, " "))
+		c.analytics.EventWithLabel(anaConsts.CatRunCmd, appEventPrefix+subCommandString, strings.Join(label, " "))
 
 		if shim, got := os.LookupEnv(constants.ShimEnvVarName); got {
-			c.analytics.Event(anaConsts.CatShim, shim, anaConsts.SrcStateTool)
+			c.analytics.Event(anaConsts.CatShim, shim)
 		}
 	}
 
@@ -708,16 +708,16 @@ func (c *Command) cobraExecHandler(cobraCmd *cobra.Command, args []string) error
 	var serr interface{ Signal() os.Signal }
 	if errors.As(err, &serr) {
 		if c.analytics != nil {
-			c.analytics.EventWithLabel(anaConsts.CatCommandExit, appEventPrefix+subCommandString, anaConsts.SrcStateTool, "interrupt")
+			c.analytics.EventWithLabel(anaConsts.CatCommandExit, appEventPrefix+subCommandString, "interrupt")
 		}
 		err = locale.WrapInputError(err, "user_interrupt", "User interrupted the State Tool process.")
 	} else {
 		if c.analytics != nil {
 			if err != nil && (subCommandString == "install" || subCommandString == "activate") {
 				// This is a temporary hack; proper implementation: https://activestatef.atlassian.net/browse/DX-495
-				c.analytics.EventWithLabel(anaConsts.CatCommandError, appEventPrefix+subCommandString, anaConsts.SrcStateTool, errs.JoinMessage(err))
+				c.analytics.EventWithLabel(anaConsts.CatCommandError, appEventPrefix+subCommandString, errs.JoinMessage(err))
 			}
-			c.analytics.EventWithLabel(anaConsts.CatCommandExit, appEventPrefix+subCommandString, anaConsts.SrcStateTool, strconv.Itoa(exitCode))
+			c.analytics.EventWithLabel(anaConsts.CatCommandExit, appEventPrefix+subCommandString, strconv.Itoa(exitCode))
 		}
 	}
 

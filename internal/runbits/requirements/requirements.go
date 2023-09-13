@@ -204,7 +204,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 	}
 
 	r.Analytics.EventWithLabel(
-		anaConsts.CatPackageOp, fmt.Sprintf("%s-%s", operation, langName), anaConsts.SrcStateTool, requirementName,
+		anaConsts.CatPackageOp, fmt.Sprintf("%s-%s", operation, langName), requirementName,
 	)
 
 	if !hasParentCommit {

@@ -73,7 +73,9 @@ func New(cfg *config.Instance, an *sync.Client, auth *authentication.Auth) (*Res
 
 	usageChecker := rtusage.NewChecker(cfg, auth)
 
-	anForClient := sync.New(cfg, auth, nil)
+	// Note: source does not matter here, as analytics sent via the resolver have a source
+	// (e.g. State Tool or Executor), and that source will be used.
+	anForClient := sync.New(anaConsts.SrcStateTool, cfg, auth, nil)
 	return &Resolver{
 		cfg,
 		msg,
@@ -102,7 +104,7 @@ func (r *Resolver) Query() genserver.QueryResolver { return r }
 func (r *Resolver) Version(ctx context.Context) (*graph.Version, error) {
 	defer func() { handlePanics(recover(), debug.Stack()) }()
 
-	r.an.EventWithLabel(anaConsts.CatStateSvc, "endpoint", anaConsts.SrcStateTool, "Version")
+	r.an.EventWithLabel(anaConsts.CatStateSvc, "endpoint", "Version")
 	logging.Debug("Version resolver")
 	return &graph.Version{
 		State: &graph.StateVersion{
@@ -118,7 +120,7 @@ func (r *Resolver) Version(ctx context.Context) (*graph.Version, error) {
 func (r *Resolver) AvailableUpdate(ctx context.Context) (*graph.AvailableUpdate, error) {
 	defer func() { handlePanics(recover(), debug.Stack()) }()
 
-	r.an.EventWithLabel(anaConsts.CatStateSvc, "endpoint", anaConsts.SrcStateTool, "AvailableUpdate")
+	r.an.EventWithLabel(anaConsts.CatStateSvc, "endpoint", "AvailableUpdate")
 	logging.Debug("AvailableUpdate resolver")
 	defer logging.Debug("AvailableUpdate done")
 
@@ -142,7 +144,7 @@ func (r *Resolver) AvailableUpdate(ctx context.Context) (*graph.AvailableUpdate,
 func (r *Resolver) Projects(ctx context.Context) ([]*graph.Project, error) {
 	defer func() { handlePanics(recover(), debug.Stack()) }()
 
-	r.an.EventWithLabel(anaConsts.CatStateSvc, "endpoint", anaConsts.SrcStateTool, "Projects")
+	r.an.EventWithLabel(anaConsts.CatStateSvc, "endpoint", "Projects")
 	logging.Debug("Projects resolver")
 	var projects []*graph.Project
 	localConfigProjects := projectfile.GetProjectMapping(r.cfg)
@@ -188,7 +190,7 @@ func (r *Resolver) AnalyticsEvent(_ context.Context, category, action, source st
 		return nil
 	})
 
-	r.anForClient.EventWithLabel(category, action, source, label, dims)
+	r.anForClient.EventWithSourceAndLabel(category, action, source, label, dims)
 
 	return &graph.AnalyticsEventResponse{Sent: true}, nil
 }

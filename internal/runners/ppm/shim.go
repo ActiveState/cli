@@ -81,9 +81,9 @@ func (s *Shim) RunList(converted bool, args ...string) error {
 func (s *Shim) shim(intercepted, replaced string, args ...string) error {
 	err := s.executeShim(intercepted, replaced, args...)
 	if err != nil {
-		s.analytics.EventWithLabel(constants.CatPPMShimCmd, intercepted, constants.SrcStateTool, fmt.Sprintf("error: %v", errs.JoinMessage(err)))
+		s.analytics.EventWithLabel(constants.CatPPMShimCmd, intercepted, fmt.Sprintf("error: %v", errs.JoinMessage(err)))
 	} else {
-		s.analytics.EventWithLabel(constants.CatPPMShimCmd, intercepted, constants.SrcStateTool, "success")
+		s.analytics.EventWithLabel(constants.CatPPMShimCmd, intercepted, "success")
 	}
 	return err
 }
@@ -91,7 +91,7 @@ func (s *Shim) shim(intercepted, replaced string, args ...string) error {
 func (s *Shim) executeShim(intercepted, replaced string, args ...string) error {
 	if s.project == nil {
 		// TODO: Replace this function call when conversion flow is complete
-		s.analytics.Event(constants.CatPPMShimCmd, "tutorial", constants.SrcStateTool)
+		s.analytics.Event(constants.CatPPMShimCmd, "tutorial")
 		return tutorial()
 	}
 

@@ -79,9 +79,9 @@ func (r *runner) Run(params *Params) (rerr error) {
 			return
 		}
 		if locale.IsInputError(rerr) {
-			r.analytics.EventWithLabel(ac.CatOfflineInstaller, ac.ActOfflineInstallerAbort, ac.SrcOfflineInstaller, errs.JoinMessage(rerr), installerDimensions)
+			r.analytics.EventWithLabel(ac.CatOfflineInstaller, ac.ActOfflineInstallerAbort, errs.JoinMessage(rerr), installerDimensions)
 		} else {
-			r.analytics.EventWithLabel(ac.CatOfflineInstaller, ac.ActOfflineInstallerFailure, ac.SrcOfflineInstaller, errs.JoinMessage(rerr), installerDimensions)
+			r.analytics.EventWithLabel(ac.CatOfflineInstaller, ac.ActOfflineInstallerFailure, errs.JoinMessage(rerr), installerDimensions)
 		}
 	}()
 
@@ -116,7 +116,7 @@ func (r *runner) Run(params *Params) (rerr error) {
 		CommitID:         &r.icfg.CommitID,
 		Trigger:          ptr.To(target.TriggerOfflineUninstaller.String()),
 	}
-	r.analytics.Event(ac.CatOfflineInstaller, ac.ActOfflineInstallerStart, ac.SrcOfflineInstaller, installerDimensions)
+	r.analytics.Event(ac.CatOfflineInstaller, ac.ActOfflineInstallerStart, installerDimensions)
 
 	r.out.Print("Removing environment configuration")
 	err = r.removeEnvPaths(namespace)
@@ -130,8 +130,8 @@ func (r *runner) Run(params *Params) (rerr error) {
 		return errs.Wrap(err, "Error removing installation directory")
 	}
 
-	r.analytics.Event(ac.CatOfflineInstaller, ac.ActOfflineInstallerSuccess, ac.SrcOfflineInstaller, installerDimensions)
-	r.analytics.Event(ac.CatRuntimeUsage, ac.ActRuntimeDelete, ac.SrcOfflineInstaller, installerDimensions)
+	r.analytics.Event(ac.CatOfflineInstaller, ac.ActOfflineInstallerSuccess, installerDimensions)
+	r.analytics.Event(ac.CatRuntimeUsage, ac.ActRuntimeDelete, installerDimensions)
 
 	r.out.Print("Uninstall Complete")
 

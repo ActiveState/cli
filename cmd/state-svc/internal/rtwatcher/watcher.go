@@ -30,7 +30,7 @@ type Watcher struct {
 }
 
 type analytics interface {
-	Event(category, action, source string, dim ...*dimensions.Values)
+	EventWithSource(category, action, source string, dim ...*dimensions.Values)
 }
 
 func New(cfg *config.Instance, an analytics) *Watcher {
@@ -97,7 +97,7 @@ func (w *Watcher) check() {
 
 func (w *Watcher) RecordUsage(e entry) {
 	logging.Debug("Recording usage of %s (%d)", e.Exec, e.PID)
-	w.an.Event(anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat, anaConst.SrcStateTool, e.Dims)
+	w.an.EventWithSource(anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat, anaConst.SrcExecutor, e.Dims)
 }
 
 func (w *Watcher) Close() error {

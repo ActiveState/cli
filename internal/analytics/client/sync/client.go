@@ -45,16 +45,18 @@ type Client struct {
 	reporters        []Reporter
 	sequence         int
 	auth             *authentication.Auth
+	source           string
 }
 
 var _ analytics.Dispatcher = &Client{}
 
 // New initializes the analytics instance with all custom dimensions known at this time
-func New(cfg *config.Instance, auth *authentication.Auth, out output.Outputer) *Client {
+func New(source string, cfg *config.Instance, auth *authentication.Auth, out output.Outputer) *Client {
 	a := &Client{
 		eventWaitGroup: &sync.WaitGroup{},
 		sendReports:    true,
 		auth:           auth,
+		source:         source,
 	}
 
 	installSource, err := storage.InstallSource()
@@ -165,8 +167,8 @@ func (a *Client) report(category, action, source, label string, dimensions *dime
 	}
 }
 
-func (a *Client) Event(category, action, source string, dims ...*dimensions.Values) {
-	a.EventWithLabel(category, action, source, "", dims...)
+func (a *Client) Event(category, action string, dims ...*dimensions.Values) {
+	a.EventWithLabel(category, action, "", dims...)
 }
 
 func mergeDimensions(target *dimensions.Values, dims ...*dimensions.Values) *dimensions.Values {
@@ -180,7 +182,20 @@ func mergeDimensions(target *dimensions.Values, dims ...*dimensions.Values) *dim
 	return actualDims
 }
 
-func (a *Client) EventWithLabel(category, action, source, label string, dims ...*dimensions.Values) {
+func (a *Client) EventWithLabel(category, action, label string, dims ...*dimensions.Values) {
+	a.EventWithSourceAndLabel(category, action, a.source, label, dims...)
+}
+
+// EventWithSource should only be used by clients forwarding events on behalf of another source.
+// Otherwise, use Event().
+func (a *Client) EventWithSource(category, action, source string, dims ...*dimensions.Values) {
+	a.EventWithSourceAndLabel(category, action, source, "", dims...)
+}
+
+// EventWithSourceAndLabel should only be used by clients forwarding events on behalf of another
+// source (for example, state-svc forwarding events on behalf of State Tool or an executor).
+// Otherwise, use EventWithLabel().
+func (a *Client) EventWithSourceAndLabel(category, action, source, label string, dims ...*dimensions.Values) {
 	if a.customDimensions == nil {
 		if condition.InUnitTest() {
 			return

@@ -80,7 +80,7 @@ func ActivateAndWait(
 	}
 	defer fe.Close()
 
-	an.Event(anaConst.CatActivationFlow, "before-subshell", anaConst.SrcStateTool)
+	an.Event(anaConst.CatActivationFlow, "before-subshell")
 
 	err = <-ss.Errors()
 	if err != nil {

@@ -153,7 +153,7 @@ func ReportError(err error, cmd *captain.Command, an analytics.Dispatcher) {
 		}
 	}
 
-	an.EventWithLabel(anaConst.CatDebug, action, anaConst.SrcStateTool, strings.Join(label, " "), &dimensions.Values{
+	an.EventWithLabel(anaConst.CatDebug, action, strings.Join(label, " "), &dimensions.Values{
 		Error: ptr.To(errorMsg),
 	})
 

@@ -31,13 +31,22 @@ const CatInstaller = "installer"
 // CatInstallerFunnel is the event category used for installer funnel events.
 const CatInstallerFunnel = "installer-funnel"
 
-// SrcStateTool is the event source for State Tool.
+// SrcStateTool is the event source for events sent by state.
 const SrcStateTool = "State Tool"
 
-// SrcOfflineInstaller is the event source for offline installers.
+// SrcStateService is the event source for events sent by state-svc.
+const SrcStateService = "State Service"
+
+// SrcStateInstaller is the event source for events sent by state-installer.
+const SrcStateInstaller = "State Installer"
+
+// SrcStateRemoteInstaller is the event source for events sent by state-remote-installer.
+const SrcStateRemoteInstaller = "State Remote Installer"
+
+// SrcOfflineInstaller is the event source for events sent by offline installers.
 const SrcOfflineInstaller = "Offline Installer"
 
-// SrcExecutor is the event source for executors.
+// SrcExecutor is the event source for events sent by executors.
 const SrcExecutor = "Executor"
 
 // ActRuntimeHeartbeat is the event action sent when a runtime is in use
