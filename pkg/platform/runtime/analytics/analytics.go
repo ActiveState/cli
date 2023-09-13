@@ -4,15 +4,15 @@ import (
 	"github.com/ActiveState/cli/internal/analytics"
 	anaConsts "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/analytics/dimensions"
-	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/osutils"
+	"github.com/ActiveState/cli/pkg/platform/runtime/executors"
 )
 
 var isExecutor bool
 
 func init() {
-	if osutils.Executable() == constants.StateExecutorCmd {
-		isExecutor = true
+	if isExec, err := executors.IsExecutor(osutils.Executable()); err == nil {
+		isExecutor = isExec
 	}
 }
 
