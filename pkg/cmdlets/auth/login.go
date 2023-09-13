@@ -1,9 +1,7 @@
 package auth
 
 import (
-	"fmt"
 	"net/url"
-	"strings"
 	"time"
 
 	"github.com/ActiveState/cli/internal/constants"
@@ -251,20 +249,36 @@ func authenticateWithBrowser(out output.Outputer, auth *authentication.Auth, pro
 		return errs.New("Invalid response: Missing verification URL.")
 	}
 
-	verificationUrl := *response.VerificationURIComplete
+	verificationURL := *response.VerificationURIComplete
 	if signup {
-		baseUrl := strings.TrimPrefix(*response.VerificationURIComplete, "https://"+constants.PlatformURL)
-		verificationUrl = fmt.Sprintf("%s?nextRoute=%s", constants.PlatformSignupURL, url.QueryEscape(baseUrl))
+		// verificationURL is of the form:
+		//   https://platform.activestate.com/authorize/device?user-code=...
+		// Transform it to the form:
+		//   https://platform.activestate.com/create-account?nextRoute=%2Fauthorize%2Fdevice%3Fuser-code%3D...
+		parsedURL, err := url.Parse(verificationURL)
+		if err != nil {
+			return errs.Wrap(err, "Verification URL is not valid")
+		}
+
+		signupURL, err := url.Parse(constants.PlatformSignupURL)
+		if err != nil {
+			return errs.Wrap(err, "constants.PlatformSignupURL is not valid")
+		}
+		query := signupURL.Query()
+		query.Add("nextRoute", parsedURL.RequestURI())
+		signupURL.RawQuery = query.Encode()
+
+		verificationURL = signupURL.String()
 	}
 
 	// Print code to user
 	if response.UserCode == nil {
 		return errs.New("Invalid response: Missing user code.")
 	}
-	out.Notice(locale.Tr("auth_device_verify_security_code", *response.UserCode, verificationUrl))
+	out.Notice(locale.Tr("auth_device_verify_security_code", *response.UserCode, verificationURL))
 
 	// Open URL in browser
-	err = OpenURI(verificationUrl)
+	err = OpenURI(verificationURL)
 	if err != nil {
 		logging.Warning("Could not open browser: %v", err)
 		out.Notice(locale.Tr("err_browser_open"))
