@@ -7,6 +7,8 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/ActiveState/termtest"
+
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
@@ -134,6 +136,7 @@ func (suite *AuthIntegrationTestSuite) TestAuth_VSCode() {
 	cp := ts.SpawnWithOpts(
 		e2e.OptArgs("auth", "--username", e2e.PersistentUsername, "--password", e2e.PersistentPassword, "--output", "editor"),
 		e2e.OptHideArgs(),
+		e2e.OptTermTest(termtest.OptVerboseLogging()),
 	)
 	cp.Expect(`"privateProjects":false}`)
 	cp.ExpectExitCode(0)
