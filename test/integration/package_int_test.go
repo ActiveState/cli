@@ -583,7 +583,6 @@ func (suite *PackageIntegrationTestSuite) TestInstall_InvalidVersion() {
 	)
 	cp.Expect("Error occurred while trying to create a commit")
 	cp.ExpectExitCode(1)
-	cp.Wait()
 }
 
 func (suite *PackageIntegrationTestSuite) TestUpdate_InvalidVersion() {
