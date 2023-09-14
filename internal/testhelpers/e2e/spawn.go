@@ -105,19 +105,19 @@ func (s *SpawnedCmd) SendEnter() error {
 }
 
 func (s *SpawnedCmd) SendKeyUp() error {
-	return s.Send(string([]byte{0033, '[', 'A'})) // move cursor down
+	return s.Send(string([]byte{0033, '[', 'A'}))
 }
 
 func (s *SpawnedCmd) SendKeyDown() error {
-	return s.Send(string([]byte{0033, '[', 'B'})) // move cursor down
+	return s.Send(string([]byte{0033, '[', 'B'}))
 }
 
 func (s *SpawnedCmd) SendKeyRight() error {
-	return s.Send(string([]byte{0033, '[', 'C'})) // move cursor down
+	return s.Send(string([]byte{0033, '[', 'C'}))
 }
 
 func (s *SpawnedCmd) SendKeyLeft() error {
-	return s.Send(string([]byte{0033, '[', 'D'})) // move cursor down
+	return s.Send(string([]byte{0033, '[', 'D'}))
 }
 
 type SpawnOpts struct {
