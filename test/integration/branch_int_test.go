@@ -25,12 +25,7 @@ func (suite *BranchIntegrationTestSuite) TestBranch_List() {
 	suite.PrepareActiveStateYAML(ts, "ActiveState-CLI", "Branches")
 
 	cp := ts.SpawnWithOpts(e2e.OptArgs("branch"))
-	cp.Expect(` main (Current)
-  ├─ firstbranch
-  │  └─ firstbranchchild
-  │     └─ childoffirstbranchchild
-  ├─ secondbranch
-  └─ thirdbranch`, termtest.OptExpectTimeout(5*time.Second))
+	cp.Expect("main (Current)\n  ├─ firstbranch\n  │  └─ firstbranchchild\n  │     └─ childoffirstbranchchild \n  ├─ secondbranch\n  └─ thirdbranch", termtest.OptExpectTimeout(5*time.Second))
 	cp.ExpectExitCode(0)
 }
 
