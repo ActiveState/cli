@@ -108,6 +108,10 @@ func (suite *PushIntegrationTestSuite) TestInitAndPush() {
 
 // Test pushing to a new project from a headless commit
 func (suite *PushIntegrationTestSuite) TestPush_HeadlessConvert_NewProject() {
+	if runtime.GOOS == "windows" {
+		suite.T().Skip("Skipped on Windows for now because SendKeyDown() doesnt work (regardless of bash/cmd)")
+	}
+
 	suite.OnlyRunForTags(tagsuite.Push)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
@@ -156,6 +160,10 @@ func (suite *PushIntegrationTestSuite) TestPush_HeadlessConvert_NewProject() {
 
 // Test pushing without permission, and choosing to create a new project
 func (suite *PushIntegrationTestSuite) TestPush_NoPermission_NewProject() {
+	if runtime.GOOS == "windows" {
+		suite.T().Skip("Skipped on Windows for now because SendKeyDown() doesnt work (regardless of bash/cmd)")
+	}
+
 	suite.OnlyRunForTags(tagsuite.Push)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
