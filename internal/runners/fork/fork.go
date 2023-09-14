@@ -95,11 +95,17 @@ func determineOwner(username string, prompter prompt.Prompter) (string, error) {
 	}
 
 	options := make([]string, len(orgs))
+	displayNameToURLNameMap := make(map[string]string)
 	for i, org := range orgs {
 		options[i] = org.DisplayName
+		displayNameToURLNameMap[org.DisplayName] = org.URLname
 	}
 	options = append([]string{username}, options...)
 
 	r, err := prompter.Select(locale.Tl("fork_owner_title", "Owner"), locale.Tl("fork_select_org", "Who should the new project belong to?"), options, new(string))
-	return r, err
+	owner, exists := displayNameToURLNameMap[r]
+	if !exists {
+		return "", errs.New("Selected organization does not have a URL name")
+	}
+	return owner, err
 }
