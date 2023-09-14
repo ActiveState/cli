@@ -33,7 +33,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	apimodel "github.com/ActiveState/cli/pkg/platform/model"
-	anaRun "github.com/ActiveState/cli/pkg/platform/runtime/analytics"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifactcache"
 	"github.com/ActiveState/cli/pkg/platform/runtime/buildplan"
@@ -433,7 +432,7 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 
 	// send analytics build event, if a new runtime has to be built in the cloud
 	if buildResult.BuildStatus == bpModel.Started {
-		anaRun.Event(s.analytics, anaConsts.CatRuntime, anaConsts.ActRuntimeBuild, dimensions)
+		s.analytics.Event(anaConsts.CatRuntime, anaConsts.ActRuntimeBuild, dimensions)
 	}
 
 	changedArtifacts, err := buildplan.NewBaseArtifactChangesetByBuildPlan(buildResult.Build, false)
@@ -542,7 +541,7 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 	// only send the download analytics event, if we have to install artifacts that are not yet installed
 	if len(artifactsToInstall) > 0 {
 		// if we get here, we download artifacts
-		anaRun.Event(s.analytics, anaConsts.CatRuntime, anaConsts.ActRuntimeDownload, dimensions)
+		s.analytics.Event(anaConsts.CatRuntime, anaConsts.ActRuntimeDownload, dimensions)
 	}
 
 	err = s.installArtifactsFromBuild(buildResult, runtimeArtifacts, artifact.ArtifactIDsToMap(artifactsToInstall), downloadablePrebuiltResults, setup, installFunc, logFilePath)
