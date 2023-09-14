@@ -39,7 +39,8 @@ func (suite *ImportIntegrationTestSuite) TestImport_headless() {
 	suite.Require().NoError(err)
 
 	cp = ts.Spawn("import", importPath)
-	cp.Expect("Operating on project ActiveState-CLI/Python3-Import")
+	cp.Expect("Operating on project")
+	cp.Expect("ActiveState-CLI/Python3-Import")
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("packages")

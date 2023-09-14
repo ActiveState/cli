@@ -39,7 +39,8 @@ func (suite *SecretsIntegrationTestSuite) TestSecrets_JSON() {
 
 	ts.LoginAsPersistentUser()
 	cp := ts.Spawn("secrets", "set", "project.test-secret", "test-value")
-	cp.Expect("Operating on project cli-integration-tests/Python3")
+	cp.Expect("Operating on project")
+	cp.Expect("cli-integration-tests/Python3")
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("secrets", "get", "project.test-secret", "--output", "json")
@@ -47,12 +48,14 @@ func (suite *SecretsIntegrationTestSuite) TestSecrets_JSON() {
 	suite.Equal(string(expected), cp.StrippedSnapshot())
 
 	cp = ts.Spawn("secrets", "sync")
-	cp.Expect("Operating on project cli-integration-tests/Python3")
+	cp.Expect("Operating on project")
+	cp.Expect("cli-integration-tests/Python3")
 	cp.Expect("Successfully synchronized")
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("secrets")
-	cp.Expect("Operating on project cli-integration-tests/Python3")
+	cp.Expect("Operating on project")
+	cp.Expect("cli-integration-tests/Python3")
 	cp.Expect("Name")
 	cp.Expect("project")
 	cp.Expect("Description")

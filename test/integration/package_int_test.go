@@ -29,7 +29,8 @@ func (suite *PackageIntegrationTestSuite) TestPackage_listingSimple() {
 	suite.PrepareActiveStateYAML(ts)
 
 	cp := ts.Spawn("packages")
-	cp.Expect("Operating on project ActiveState-CLI/List")
+	cp.Expect("Operating on project")
+	cp.Expect("ActiveState-CLI/List")
 	cp.Expect("Name")
 	cp.Expect("pytest")
 	cp.ExpectExitCode(0)

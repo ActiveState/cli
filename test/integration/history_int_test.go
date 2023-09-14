@@ -29,7 +29,8 @@ func (suite *HistoryIntegrationTestSuite) TestHistory_History() {
 		e2e.OptArgs("history"),
 		e2e.OptWD(filepath.Join(ts.Dirs.Work, "History")),
 	)
-	cp.Expect("Operating on project ActiveState-CLI/History")
+	cp.Expect("Operating on project")
+	cp.Expect("ActiveState-CLI/History")
 	cp.Expect("Commit")
 	cp.Expect("Author")
 	cp.Expect("Date")
