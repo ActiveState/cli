@@ -142,6 +142,7 @@ func (suite *UpdateIntegrationTestSuite) testUpdate(ts *e2e.Session, baseDir str
 	cp := ts.SpawnCmdWithOpts(stateExec, spawnOpts...)
 	cp.Expect("Updating State Tool to")
 	cp.Expect("Installing Update")
+	cp.ExpectExitCode(0)
 }
 
 func (suite *UpdateIntegrationTestSuite) TestUpdate_Repair() {
