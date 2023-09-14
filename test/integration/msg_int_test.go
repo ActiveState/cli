@@ -164,8 +164,8 @@ func (suite *MsgIntegrationTestSuite) TestMessage_Basic_InterruptExit() {
 	suite.Require().NoError(err)
 
 	cp := ts.SpawnWithOpts(e2e.OptArgs("config"), e2e.OptAppendEnv(constants.MessagesOverrideEnvVarName+"="+msgFile))
-	cp.Expect(`This is a simple message`)
 	cp.ExpectExitCode(1)
+	suite.Require().Contains(cp.Snapshot(), "This is a simple message")
 	suite.Require().NotContains(cp.Output(), "Usage:")
 }
 
