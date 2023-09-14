@@ -10,6 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
+	"github.com/ActiveState/termtest"
 )
 
 func (suite *PushIntegrationTestSuite) TestInitAndPush_VSCode() {
@@ -184,7 +185,10 @@ func (suite *ProjectsIntegrationTestSuite) TestProjects_VSCode() {
 	cp.ExpectExitCode(0)
 
 	// Verify separate "local_checkouts" and "executables" fields for editor output.
-	cp = ts.SpawnWithOpts(e2e.OptArgs("projects", "--output", "editor"))
+	cp = ts.SpawnWithOpts(
+		e2e.OptArgs("projects", "--output", "editor"),
+		e2e.OptTermTest(termtest.OptCols(2000)), // Line breaks make it hard to assert long output
+	)
 	cp.Expect(`"name":"Python3"`)
 	cp.Expect(`"local_checkouts":["`)
 	if runtime.GOOS != "windows" {
