@@ -447,14 +447,14 @@ func (s *Session) DebugMessage(prefix string) string {
 		if spawn.opts.HideCmdArgs {
 			name = spawn.Cmd().Path
 		}
-		output[name] = fmt.Sprintf("%#v", spawn.Output())
+		output[name] = strings.TrimSpace(spawn.Snapshot())
 	}
 
 	v, err := strutils.ParseTemplate(`
 {{.Prefix}}Stack:
 {{.Stacktrace}}
 {{range $title, $value := .Outputs}}
-{{$.A}}Output for Cmd '{{$title}}':
+{{$.A}}Snapshot for Cmd '{{$title}}':
 {{$value}}
 {{$.Z}}
 {{end}}
