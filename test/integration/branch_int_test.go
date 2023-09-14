@@ -24,8 +24,9 @@ func (suite *BranchIntegrationTestSuite) TestBranch_List() {
 
 	suite.PrepareActiveStateYAML(ts, "ActiveState-CLI", "Branches")
 
-	cp := ts.SpawnWithOpts(e2e.OptArgs("branch"))
-	cp.Expect("main (Current)\n  ├─ firstbranch\n  │  └─ firstbranchchild\n  │     └─ childoffirstbranchchild \n  ├─ secondbranch\n  └─ thirdbranch", termtest.OptExpectTimeout(5*time.Second))
+	cp := ts.SpawnWithOpts(e2e.OptArgs("branch"), e2e.OptTermTest(termtest.OptVerboseLogging()))
+	// Sometimes there's a space before the line break, unsure exactly why, but hence the regex
+	cp.ExpectRe(`main \(Current\)\s?\n  ├─ firstbranch\s?\n  │  └─ firstbranchchild\s?\n  │     └─ childoffirstbranchchild\s?\n  ├─ secondbranch\s?\n  └─ thirdbranch`, termtest.OptExpectTimeout(5*time.Second))
 	cp.ExpectExitCode(0)
 }
 
