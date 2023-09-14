@@ -140,11 +140,11 @@ func (suite *AuthIntegrationTestSuite) TestAuth_VSCode() {
 	)
 	cp.Expect(`"privateProjects":false}`)
 	cp.ExpectExitCode(0)
-	suite.Equal(string(expected), strings.TrimSpace(cp.Output()))
+	suite.Equal(string(expected), strings.TrimSpace(cp.Snapshot()))
 
 	cp = ts.Spawn("export", "jwt", "--output", "editor")
 	cp.ExpectExitCode(0)
-	suite.Assert().NotEmpty(strings.TrimSpace(cp.Output()), "expected jwt token to be non-empty")
+	suite.Assert().NotEmpty(strings.TrimSpace(cp.Snapshot()), "expected jwt token to be non-empty")
 }
 
 func (suite *PackageIntegrationTestSuite) TestPackages_VSCode() {
