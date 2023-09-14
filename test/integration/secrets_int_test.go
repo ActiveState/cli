@@ -85,11 +85,13 @@ scripts:
 	ts.PrepareActiveStateYAML(asyData)
 
 	cp := ts.Spawn("secrets", "set", "project.project-secret", "project-value")
-	cp.Expect("Operating on project ActiveState-CLI/secrets-test")
+	cp.Expect("Operating on project")
+	cp.Expect("ActiveState-CLI/secrets-test")
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("secrets", "set", "user.user-secret", "user-value")
-	cp.Expect("Operating on project ActiveState-CLI/secrets-test")
+	cp.Expect("Operating on project")
+	cp.Expect("ActiveState-CLI/secrets-test")
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("run", "project-secret")
