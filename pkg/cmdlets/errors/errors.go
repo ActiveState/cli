@@ -39,18 +39,23 @@ func (o *OutputError) MarshalOutput(f output.Format) interface{} {
 		outLines = append(outLines, output.Title(locale.Tl("err_what_happened", "[ERROR]Something Went Wrong[/RESET]")).String())
 	}
 
-	rerrs := locale.UnpackError(o.error)
-	if len(rerrs) == 0 {
-		// It's possible the error came from cobra or something else low level that doesn't use localization
-		logging.Warning("Error does not have localization: %s", errs.JoinMessage(o.error))
-		rerrs = []error{o.error}
-	}
-	for _, errv := range rerrs {
-		message := trimError(locale.ErrorMessage(errv))
-		if f == output.PlainFormatName {
-			outLines = append(outLines, fmt.Sprintf(" [NOTICE][ERROR]x[/RESET] %s", message))
-		} else {
-			outLines = append(outLines, message)
+	var userFacingError errs.UserFacingError
+	if errors.As(o.error, &userFacingError) {
+		outLines = append(outLines, fmt.Sprintf(" [NOTICE][ERROR]x[/RESET] %s", userFacingError.UserError()))
+	} else {
+		rerrs := locale.UnpackError(o.error)
+		if len(rerrs) == 0 {
+			// It's possible the error came from cobra or something else low level that doesn't use localization
+			logging.Warning("Error does not have localization: %s", errs.JoinMessage(o.error))
+			rerrs = []error{o.error}
+		}
+		for _, errv := range rerrs {
+			message := trimError(locale.ErrorMessage(errv))
+			if f == output.PlainFormatName {
+				outLines = append(outLines, fmt.Sprintf(" [NOTICE][ERROR]x[/RESET] %s", message))
+			} else {
+				outLines = append(outLines, message)
+			}
 		}
 	}
 
