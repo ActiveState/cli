@@ -41,7 +41,12 @@ func (o *OutputError) MarshalOutput(f output.Format) interface{} {
 
 	var userFacingError errs.UserFacingError
 	if errors.As(o.error, &userFacingError) {
-		outLines = append(outLines, fmt.Sprintf(" [NOTICE][ERROR]x[/RESET] %s", userFacingError.UserError()))
+		message := userFacingError.UserError()
+		if f == output.PlainFormatName {
+			outLines = append(outLines, fmt.Sprintf(" [NOTICE][ERROR]x[/RESET] %s", message))
+		} else {
+			outLines = append(outLines, message)
+		}
 	} else {
 		rerrs := locale.UnpackError(o.error)
 		if len(rerrs) == 0 {
