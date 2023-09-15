@@ -3,6 +3,7 @@ package rtwatcher
 import (
 	"encoding/json"
 	"os"
+	"path/filepath"
 	"runtime/debug"
 	"strconv"
 	"time"
@@ -14,6 +15,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
+	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/runbits/panics"
 )
@@ -97,7 +99,11 @@ func (w *Watcher) check() {
 
 func (w *Watcher) RecordUsage(e entry) {
 	logging.Debug("Recording usage of %s (%d)", e.Exec, e.PID)
-	w.an.EventWithSource(anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat, anaConst.SrcExecutor, e.Dims)
+	source := anaConst.SrcExecutor
+	if filepath.Base(e.Exec) == constants.StateCmd+osutils.ExeExt {
+		source = anaConst.SrcStateTool
+	}
+	w.an.EventWithSource(anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat, source, e.Dims)
 }
 
 func (w *Watcher) Close() error {
