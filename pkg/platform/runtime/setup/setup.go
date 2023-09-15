@@ -96,7 +96,7 @@ func (a *ArtifactSetupErrors) Errors() []error {
 }
 
 // UserError returns a message including all user-facing sub-error messages
-func (a *ArtifactSetupErrors) UserError() string {
+func (a *ArtifactSetupErrors) LocalizedError() string {
 	var errStrings []string
 	for _, err := range a.errs {
 		errStrings = append(errStrings, locale.JoinedErrorMessage(err))
