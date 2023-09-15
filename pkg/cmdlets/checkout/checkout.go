@@ -119,7 +119,7 @@ func (r *Checkout) Run(ns *project.Namespaced, branchName, cachePath, targetPath
 	if len(owners) == 0 {
 		return "", locale.NewInputError("err_no_org_name", "Your project's organization name could not be found")
 	}
-	owner := owners[0].DisplayName
+	owner := owners[0].URLName
 
 	// Create the config file, if the repo clone didn't already create it
 	configFile := filepath.Join(path, constants.ConfigFileName)
