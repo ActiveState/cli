@@ -98,17 +98,17 @@ func ParseUserFacing(err error) (int, error) {
 	// unwrap exit code before we remove un-localized wrapped errors from err variable
 	code := errs.ParseExitCode(err)
 
+	if errs.IsSilent(err) {
+		logging.Debug("Suppressing silent failure: %v", err.Error())
+		return code, nil
+	}
+
 	// If there is a user facing error in the error stack we want to ensure
 	// that is it forwarded to the user.
 	var userFacingError errs.UserFacingError
 	if errors.As(err, &userFacingError) {
 		logging.Debug("Returning user facing error, error stack: \n%s", errs.JoinMessage(err))
 		return code, &OutputError{userFacingError}
-	}
-
-	if errs.IsSilent(err) {
-		logging.Debug("Suppressing silent failure: %v", err.Error())
-		return code, nil
 	}
 
 	// If the error already has a marshalling function we do not want to wrap
@@ -167,7 +167,7 @@ func ReportError(err error, cmd *captain.Command, an analytics.Dispatcher) {
 		Error: ptr.To(errorMsg),
 	})
 
-	if !locale.HasError(err) && isErrs && !hasMarshaller {
+	if (!locale.HasError(err) && !errs.IsUserFacing(err)) && isErrs && !hasMarshaller {
 		multilog.Error("MUST ADDRESS: Error does not have localization: %s", errs.JoinMessage(err))
 
 		// If this wasn't built via CI then this is a dev workstation, and we should be more aggressive

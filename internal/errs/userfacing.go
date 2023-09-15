@@ -1,9 +1,13 @@
 package errs
 
+import "errors"
+
 type UserFacingError interface {
 	error
 	UserError() string
 }
+
+type ErrOpts func(err *userFacingError) *userFacingError
 
 type userFacingError struct {
 	wrapped error
@@ -19,10 +23,6 @@ func (e *userFacingError) UserError() string {
 	return e.message
 }
 
-func (e *userFacingError) AddTips(tips ...string) {
-	e.tips = append(e.tips, tips...)
-}
-
 func (e *userFacingError) ErrorTips() []string {
 	return e.tips
 }
@@ -31,10 +31,28 @@ func NewUserFacingError(message string, tips ...string) *userFacingError {
 	return WrapUserFacingError(nil, message)
 }
 
-func WrapUserFacingError(wrapTarget error, message string, tips ...string) *userFacingError {
-	return &userFacingError{
+func WrapUserFacingError(wrapTarget error, message string, opts ...ErrOpts) *userFacingError {
+	err := &userFacingError{
 		wrapTarget,
 		message,
-		tips,
+		nil,
+	}
+
+	for _, opt := range opts {
+		err = opt(err)
+	}
+
+	return err
+}
+
+func IsUserFacing(err error) bool {
+	var userFacingError UserFacingError
+	return errors.As(err, &userFacingError)
+}
+
+func WithTips(tips ...string) ErrOpts {
+	return func(err *userFacingError) *userFacingError {
+		err.tips = append(err.tips, tips...)
+		return err
 	}
 }

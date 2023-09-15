@@ -76,7 +76,9 @@ func processError(err *error) {
 		*err = errs.WrapUserFacingError(
 			*err,
 			locale.Tl("hello_err_no_project", "Cannot say hello because you are not in a project directory."),
-			locale.Tl("hello_suggest_checkout", "Try using [ACTIONABLE]`state checkout`[/RESET] first."),
+			errs.WithTips(
+				locale.Tl("hello_suggest_checkout", "Try using [ACTIONABLE]`state checkout`[/RESET] first."),
+			),
 		)
 	}
 }
