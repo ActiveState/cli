@@ -38,7 +38,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 }
 
 func (suite *InstallScriptsIntegrationTestSuite) testInstall() {
-	suite.OnlyRunForTags(tagsuite.InstallScripts, tagsuite.Critical)
+	// suite.OnlyRunForTags(tagsuite.InstallScripts, tagsuite.Critical)
 
 	tests := []struct {
 		Name              string
