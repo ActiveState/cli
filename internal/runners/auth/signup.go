@@ -30,7 +30,7 @@ func (s *Signup) Run(params *SignupParams) error {
 	}
 
 	if !params.Prompt {
-		return authlet.AuthenticateWithBrowser(s.Outputer, s.Auth, s.Prompter) // user can sign up from this page too
+		return authlet.SignupWithBrowser(s.Outputer, s.Auth, s.Prompter)
 	}
 	return authlet.Signup(s.Configurable, s.Outputer, s.Prompter, s.Auth)
 }

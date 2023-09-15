@@ -32,7 +32,7 @@ func (suite *RunIntegrationTestSuite) createProjectFile(ts *e2e.Session, pythonV
 
 	// ActiveState-CLI/Python3 is just a place-holder that is never used
 	configFileContent := strings.TrimPrefix(fmt.Sprintf(`
-project: https://platform.activestate.com/ActiveState-CLI/Python%d?commitID=fbc613d6-b0b1-4f84-b26e-4aa5869c4e54
+project: https://platform.activestate.com/ActiveState-CLI/Python%d
 scripts:
   - name: test-interrupt
     description: A script that sleeps for a very long time.  It should be interrupted.  The first interrupt does not terminate.
@@ -68,6 +68,7 @@ scripts:
 `, pythonVersion), "\n")
 
 	ts.PrepareActiveStateYAML(configFileContent)
+	ts.PrepareCommitIdFile("fbc613d6-b0b1-4f84-b26e-4aa5869c4e54")
 }
 
 func (suite *RunIntegrationTestSuite) SetupTest() {
@@ -286,9 +287,7 @@ func (suite *RunIntegrationTestSuite) TestRun_Perl_Variable() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	ts.PrepareActiveStateYAML(strings.TrimSpace(`
-    project: https://platform.activestate.com/ActiveState-CLI/Perl-5.32?commitID=a4762408-def6-41e4-b709-4cb548765005
-	`))
+	ts.PrepareProject("ActiveState-CLI/Perl-5.32", "a4762408-def6-41e4-b709-4cb548765005")
 
 	cp := ts.SpawnWithOpts(
 		e2e.OptArgs("activate"),

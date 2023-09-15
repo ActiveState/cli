@@ -54,6 +54,7 @@ type BuildResult struct {
 	BuildStatusResponse *headchef_models.V1BuildStatusResponse
 	BuildStatus         string
 	BuildReady          bool
+	BuildExpression     *buildexpression.BuildExpression
 }
 
 func (b *BuildResult) OrderedArtifacts() []artifact.ArtifactID {
@@ -75,7 +76,7 @@ func NewBuildPlannerModel(auth *authentication.Auth) *BuildPlanner {
 
 	client := gqlclient.NewWithOpts(bpURL, 0, graphql.WithHTTPClient(api.NewHTTPClient()))
 
-	if auth.Authenticated() {
+	if auth != nil && auth.Authenticated() {
 		client.SetTokenProvider(auth)
 	}
 
@@ -149,12 +150,18 @@ func (bp *BuildPlanner) FetchBuildResult(commitID strfmt.UUID, owner, project st
 		return nil, errs.Wrap(err, "Response does not contain commitID")
 	}
 
+	expr, err := bp.GetBuildExpression(owner, project, commitID.String())
+	if err != nil {
+		return nil, errs.Wrap(err, "Failed to get build expression")
+	}
+
 	res := BuildResult{
-		BuildEngine: buildEngine,
-		Build:       build,
-		BuildReady:  build.Status == bpModel.Completed,
-		BuildStatus: build.Status,
-		CommitID:    id,
+		BuildEngine:     buildEngine,
+		Build:           build,
+		BuildReady:      build.Status == bpModel.Completed,
+		CommitID:        id,
+		BuildExpression: expr,
+		BuildStatus:     build.Status,
 	}
 
 	// We want to extract the recipe ID from the BuildLogIDs.
@@ -233,51 +240,59 @@ func removeEmptyTargets(bp *bpModel.Build) {
 }
 
 type StageCommitParams struct {
-	Owner                string
-	Project              string
-	ParentCommit         string
+	Owner        string
+	Project      string
+	ParentCommit string
+	// Commits can have either an operation (e.g. installing a package)...
 	RequirementName      string
 	RequirementVersion   []bpModel.VersionRequirement
 	RequirementNamespace Namespace
 	Operation            bpModel.Operation
-	TimeStamp            strfmt.DateTime
+	TimeStamp            *strfmt.DateTime
+	// ... or commits can have an expression (e.g. from pull). When pulling an expression, we do not
+	// compute its changes into a series of above operations. Instead, we just pass the new
+	// expression directly.
+	Expression *buildexpression.BuildExpression
 }
 
 func (bp *BuildPlanner) StageCommit(params StageCommitParams) (strfmt.UUID, error) {
 	logging.Debug("StageCommit, params: %+v", params)
-	var err error
-	expression, err := bp.GetBuildExpression(params.Owner, params.Project, params.ParentCommit)
-	if err != nil {
-		return "", errs.Wrap(err, "Failed to get build expression")
-	}
-
-	if params.RequirementNamespace.Type() == NamespacePlatform {
-		err = expression.UpdatePlatform(params.Operation, strfmt.UUID(params.RequirementName))
+	expression := params.Expression
+	if expression == nil {
+		var err error
+		expression, err = bp.GetBuildExpression(params.Owner, params.Project, params.ParentCommit)
 		if err != nil {
-			return "", errs.Wrap(err, "Failed to update build expression with platform")
-		}
-	} else {
-		requirement := bpModel.Requirement{
-			Namespace:          params.RequirementNamespace.String(),
-			Name:               params.RequirementName,
-			VersionRequirement: params.RequirementVersion,
+			return "", errs.Wrap(err, "Failed to get build expression")
 		}
 
-		err = expression.UpdateRequirement(params.Operation, requirement)
+		if params.RequirementNamespace.Type() == NamespacePlatform {
+			err = expression.UpdatePlatform(params.Operation, strfmt.UUID(params.RequirementName))
+			if err != nil {
+				return "", errs.Wrap(err, "Failed to update build expression with platform")
+			}
+		} else {
+			requirement := bpModel.Requirement{
+				Namespace:          params.RequirementNamespace.String(),
+				Name:               params.RequirementName,
+				VersionRequirement: params.RequirementVersion,
+			}
+
+			err = expression.UpdateRequirement(params.Operation, requirement)
+			if err != nil {
+				return "", errs.Wrap(err, "Failed to update build expression with requirement")
+			}
+		}
+
+		err = expression.UpdateTimestamp(*params.TimeStamp)
 		if err != nil {
-			return "", errs.Wrap(err, "Failed to update build expression with requirement")
+			return "", errs.Wrap(err, "Failed to update build expression with timestamp")
 		}
-	}
-
-	err = expression.UpdateTimestamp(params.TimeStamp)
-	if err != nil {
-		return "", errs.Wrap(err, "Failed to update build expression with timestamp")
 	}
 
 	// With the updated build expression call the stage commit mutation
 	request := request.StageCommit(params.Owner, params.Project, params.ParentCommit, expression)
 	resp := &bpModel.StageCommitResult{}
-	err = bp.client.Run(request, resp)
+	err := bp.client.Run(request, resp)
 	if err != nil {
 		return "", processBuildPlannerError(err, "failed to stage commit")
 	}
@@ -367,10 +382,10 @@ func processBuildPlannerError(bpErr error, fallbackMessage string) error {
 	if errors.As(bpErr, graphqlErr) {
 		code, ok := graphqlErr.Extensions[codeExtensionKey].(string)
 		if ok && code == clientDeprecationErrorKey {
-			return locale.NewInputError("err_buildplanner_deprecated", "Encountered deprecation error: {{.V0}}", graphqlErr.Message)
+			return &bpModel.BuildPlannerError{Err: locale.NewInputError("err_buildplanner_deprecated", "Encountered deprecation error: {{.V0}}", graphqlErr.Message)}
 		}
 	}
-	return errs.Wrap(bpErr, fallbackMessage)
+	return &bpModel.BuildPlannerError{Err: errs.Wrap(bpErr, fallbackMessage)}
 }
 
 var versionRe = regexp.MustCompile(`^\d+(\.\d+)*$`)

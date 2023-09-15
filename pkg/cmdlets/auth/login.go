@@ -1,8 +1,10 @@
 package auth
 
 import (
+	"net/url"
 	"time"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/locale"
@@ -121,7 +123,7 @@ func RequireAuthentication(message string, cfg keypairs.Configurable, out output
 			return errs.Wrap(err, "Authenticate failed")
 		}
 	case locale.T("prompt_signup_browser_action"):
-		if err := AuthenticateWithBrowser(out, auth, prompt); err != nil { // user can sign up from this page too
+		if err := SignupWithBrowser(out, auth, prompt); err != nil {
 			return errs.Wrap(err, "Signup failed")
 		}
 	case locale.T("prompt_signup_action"):
@@ -226,25 +228,60 @@ func promptToken(credentials *mono_models.Credentials, out output.Outputer, prom
 func AuthenticateWithBrowser(out output.Outputer, auth *authentication.Auth, prompt prompt.Prompter) error {
 	logging.Debug("Authenticating with browser")
 
+	err := authenticateWithBrowser(out, auth, prompt, false)
+	if err != nil {
+		return errs.Wrap(err, "Error authenticating with browser")
+	}
+
+	out.Notice(locale.T("auth_device_success"))
+
+	return nil
+}
+
+// authenticateWithBrowser authenticates after signup if applicable.
+func authenticateWithBrowser(out output.Outputer, auth *authentication.Auth, prompt prompt.Prompter, signup bool) error {
 	response, err := model.RequestDeviceAuthorization()
 	if err != nil {
 		return locale.WrapError(err, "err_auth_device")
+	}
+
+	if response.VerificationURIComplete == nil {
+		return errs.New("Invalid response: Missing verification URL.")
+	}
+
+	verificationURL := *response.VerificationURIComplete
+	if signup {
+		// verificationURL is of the form:
+		//   https://platform.activestate.com/authorize/device?user-code=...
+		// Transform it to the form:
+		//   https://platform.activestate.com/create-account?nextRoute=%2Fauthorize%2Fdevice%3Fuser-code%3D...
+		parsedURL, err := url.Parse(verificationURL)
+		if err != nil {
+			return errs.Wrap(err, "Verification URL is not valid")
+		}
+
+		signupURL, err := url.Parse(constants.PlatformSignupURL)
+		if err != nil {
+			return errs.Wrap(err, "constants.PlatformSignupURL is not valid")
+		}
+		query := signupURL.Query()
+		query.Add("nextRoute", parsedURL.RequestURI())
+		signupURL.RawQuery = query.Encode()
+
+		verificationURL = signupURL.String()
 	}
 
 	// Print code to user
 	if response.UserCode == nil {
 		return errs.New("Invalid response: Missing user code.")
 	}
-	out.Notice(locale.Tr("auth_device_verify_security_code", *response.UserCode))
+	out.Notice(locale.Tr("auth_device_verify_security_code", *response.UserCode, verificationURL))
 
 	// Open URL in browser
-	if response.VerificationURIComplete == nil {
-		return errs.New("Invalid response: Missing verification URL.")
-	}
-	err = OpenURI(*response.VerificationURIComplete)
+	err = OpenURI(verificationURL)
 	if err != nil {
 		logging.Warning("Could not open browser: %v", err)
-		out.Notice(locale.Tr("err_browser_open", *response.VerificationURIComplete))
+		out.Notice(locale.Tr("err_browser_open"))
 	}
 
 	var apiKey string
@@ -274,8 +311,6 @@ func AuthenticateWithBrowser(out output.Outputer, auth *authentication.Auth, pro
 	if err := auth.SaveToken(apiKey); err != nil {
 		return locale.WrapError(err, "err_auth_token", "Failed to create token after authenticating with browser.")
 	}
-
-	out.Notice(locale.T("auth_device_success"))
 
 	return nil
 }

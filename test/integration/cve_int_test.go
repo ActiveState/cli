@@ -20,7 +20,7 @@ func (suite *CveIntegrationTestSuite) TestCveSummary() {
 
 	ts.LoginAsPersistentUser()
 
-	ts.PrepareActiveStateYAML(`project: https://platform.activestate.com/ActiveState-CLI/VulnerablePython-3.7?commitID=0b87e7a4-dc62-46fd-825b-9c35a53fe0a2`)
+	ts.PrepareProject("ActiveState-CLI/VulnerablePython-3.7", "0b87e7a4-dc62-46fd-825b-9c35a53fe0a2")
 
 	cp := ts.Spawn("cve")
 	cp.Expect("Operating on project")
@@ -74,7 +74,7 @@ func (suite *CveIntegrationTestSuite) TestCveNoVulnerabilities() {
 
 	ts.LoginAsPersistentUser()
 
-	ts.PrepareActiveStateYAML(`project: https://platform.activestate.com/ActiveState-CLI/small-python?commitID=9733d11a-dfb3-41de-a37a-843b7c421db4`)
+	ts.PrepareProject("ActiveState-CLI/small-python", "9733d11a-dfb3-41de-a37a-843b7c421db4")
 
 	cp := ts.Spawn("cve")
 	cp.Expect("No CVEs detected")

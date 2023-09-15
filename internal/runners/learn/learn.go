@@ -27,7 +27,7 @@ func (l *Learn) Run() error {
 	err := open.Run(constants.CheatSheetURL)
 	if err != nil {
 		logging.Warning("Could not open browser: %v", err)
-		l.out.Notice(locale.Tr("err_browser_open", constants.CheatSheetURL))
+		l.out.Notice(locale.Tr("err_browser_open"))
 	}
 
 	return nil

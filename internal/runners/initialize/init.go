@@ -17,6 +17,7 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runbits"
+	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
@@ -68,7 +69,11 @@ func inferLanguage(config projectfile.ConfigGetter) (string, string, bool) {
 	if err != nil {
 		return "", "", false
 	}
-	commitID := defaultProj.CommitUUID()
+	commitID, err := localcommit.Get(defaultProj.Dir())
+	if err != nil && !localcommit.IsFileDoesNotExistError(err) {
+		multilog.Error("Unable to get local commit: %v", errs.JoinMessage(err))
+		return "", "", false
+	}
 	if commitID == "" {
 		return "", "", false
 	}
@@ -148,6 +153,11 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 		}
 	}
 
+	emptyDir, err := fileutils.IsEmptyDir(path)
+	if err != nil {
+		multilog.Error("Unable to check if directory is empty: %v", err)
+	}
+
 	// Match the case of the organization.
 	// Otherwise the incorrect case will be written to the project file.
 	var owner string
@@ -211,8 +221,15 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 		return locale.WrapError(err, "err_init_commit", "Could not create initial commit")
 	}
 
-	if err := proj.SetCommit(commitID.String()); err != nil {
-		return locale.WrapError(err, "err_init_setcommit", "Could not store commit to project file")
+	if err := localcommit.Set(proj.Dir(), commitID.String()); err != nil {
+		return errs.Wrap(err, "Unable to create local commit file")
+	}
+	if emptyDir || fileutils.DirExists(filepath.Join(path, ".git")) {
+		err := localcommit.AddToGitIgnore(path)
+		if err != nil {
+			r.out.Notice(locale.Tr("notice_commit_id_gitignore", constants.ProjectConfigDirName, constants.CommitIdFileName))
+			multilog.Error("Unable to add local commit file to .gitignore: %v", err)
+		}
 	}
 
 	logging.Debug("Creating Platform project and pushing it")
@@ -234,6 +251,12 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 
 	err = runbits.RefreshRuntime(r.auth, r.out, r.analytics, proj, commitID, true, target.TriggerInit, r.svcModel)
 	if err != nil {
+		logging.Debug("Deleting remotely created project due to runtime setup error")
+		err2 := model.DeleteProject(namespace.Owner, namespace.Project, r.auth)
+		if err2 != nil {
+			multilog.Error("Error deleting remotely created project after runtime setup error: %v", errs.JoinMessage(err2))
+			return locale.WrapError(err, "err_init_refresh_delete_project", "Could not setup runtime after init, and could not delete newly created Platform project. Please delete it manually before trying again")
+		}
 		return locale.WrapError(err, "err_init_refresh", "Could not setup runtime after init")
 	}
 

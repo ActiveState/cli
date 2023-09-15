@@ -115,6 +115,7 @@ func New(cfg *config.Instance, auth *authentication.Auth, out output.Outputer) *
 		Sequence:      ptr.To(0),
 		CI:            ptr.To(condition.OnCI()),
 		Interactive:   ptr.To(interactive),
+		ActiveStateCI: ptr.To(condition.InActiveStateCI()),
 	}
 
 	a.customDimensions = customDimensions

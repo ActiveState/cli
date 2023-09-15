@@ -21,7 +21,8 @@ import (
 
 // Configuration values for the performance tests
 const (
-	DefaultProject = "https://platform.activestate.com/ActiveState-CLI/Yaml-Test/?branch=main&commitID=0476ac66-007c-4da7-8922-d6ea9b284fae"
+	DefaultProject  = "https://platform.activestate.com/ActiveState-CLI/Yaml-Test/?branch=main"
+	DefaultCommitID = "0476ac66-007c-4da7-8922-d6ea9b284fae"
 
 	DefaultMaxTime        = 1000 * time.Millisecond
 	DefaultSamples        = 10
@@ -373,6 +374,7 @@ func (suite *PerformanceExpansionIntegrationTestSuite) testScriptPerformance(opt
 	suite.NoError(err)
 
 	ts.PrepareActiveStateYAML(string(contents))
+	ts.PrepareCommitIdFile(DefaultCommitID)
 
 	for name, file := range opts.additionalYamlFiles {
 		contents, err := yaml.Marshal(file)

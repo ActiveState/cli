@@ -208,8 +208,7 @@ func (suite *BundleIntegrationTestSuite) TestBundle_headless_operation() {
 }
 
 func (suite *BundleIntegrationTestSuite) PrepareActiveStateYAML(ts *e2e.Session) {
-	asyData := `project: "https://platform.activestate.com/ActiveState/Perl-5.32?commitID=c9b1b41a-a153-46fb-b18d-3caa38e19377"`
-	ts.PrepareActiveStateYAML(asyData)
+	ts.PrepareProject("ActiveState/Perl-5.32", "c9b1b41a-a153-46fb-b18d-3caa38e19377")
 }
 
 func (suite *BundleIntegrationTestSuite) TestJSON() {

@@ -456,11 +456,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_NamespaceWins() {
 	suite.Require().NoError(err)
 
 	// Create the project file at the root of the temp dir
-	content := strings.TrimSpace(fmt.Sprintf(`
-project: "https://platform.activestate.com/ActiveState-CLI/Python3"
-`))
-
-	ts.PrepareActiveStateYAML(content)
+	ts.PrepareProject("ActiveState-CLI/Python3", "")
 
 	// Pull to ensure we have an up to date config file
 	cp := ts.Spawn("pull")

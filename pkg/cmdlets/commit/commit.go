@@ -105,6 +105,14 @@ func FormatChanges(commit *mono_models.Commit) ([]string, []*requirementChange) 
 			versionConstraints = ""
 		}
 
+		// This is a temporary fix until we start getting history in the form of build expressions
+		// https://activestatef.atlassian.net/browse/DX-2197
+		if model.NamespaceMatch(change.Namespace, model.NamespaceBuildFlagsMatch) &&
+			(strings.Contains(change.Requirement, "docker") || strings.Contains(change.Requirement, "installer")) {
+			requirement = locale.T("namespace_label_packager")
+			versionConstraints = ""
+		}
+
 		var result, oldConstraints, newConstraints string
 		switch change.Operation {
 		case string(model.OperationAdded):

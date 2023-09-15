@@ -45,6 +45,7 @@ type Values struct {
 	Message          *string
 	CI               *bool
 	Interactive      *bool
+	ActiveStateCI    *bool
 
 	preProcessor func(*Values) error
 }
@@ -98,6 +99,7 @@ func NewDefaultDimensions(pjNamespace, sessionToken, updateTag string) *Values {
 		ptr.To(""),
 		ptr.To(false),
 		ptr.To(false),
+		ptr.To(false),
 		nil,
 	}
 }
@@ -128,6 +130,7 @@ func (v *Values) Clone() *Values {
 		Message:          ptr.Clone(v.Message),
 		CI:               ptr.Clone(v.CI),
 		Interactive:      ptr.Clone(v.Interactive),
+		ActiveStateCI:    ptr.Clone(v.ActiveStateCI),
 		preProcessor:     v.preProcessor,
 	}
 }
@@ -207,6 +210,9 @@ func (m *Values) Merge(mergeWith ...*Values) {
 		}
 		if dim.Interactive != nil {
 			m.Interactive = dim.Interactive
+		}
+		if dim.ActiveStateCI != nil {
+			m.ActiveStateCI = dim.ActiveStateCI
 		}
 		if dim.preProcessor != nil {
 			m.preProcessor = dim.preProcessor
