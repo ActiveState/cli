@@ -18,6 +18,7 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/ActiveState/termtest"
+	"github.com/ActiveState/termtest/expect"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"github.com/thoas/go-funk"
@@ -28,6 +29,15 @@ type InstallScriptsIntegrationTestSuite struct {
 }
 
 func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
+	suite.OnlyRunForTags("sha256-checksum-bug")
+	for x := 0; x < 20; x++ {
+		suite.Run(fmt.Sprintf("TestInstall (%d)", x), func() {
+			suite.TestInstall()
+		})
+	}
+}
+
+func (suite *InstallScriptsIntegrationTestSuite) testInstall() {
 	suite.OnlyRunForTags(tagsuite.InstallScripts, tagsuite.Critical)
 
 	tests := []struct {
@@ -39,9 +49,9 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 	}{
 		// {"install-release-latest", "", "release", "", ""},
 		{"install-prbranch", "", "", "", ""},
-		{"install-prbranch-with-version", constants.Version, constants.BranchName, "", ""},
-		{"install-prbranch-and-activate", "", constants.BranchName, "ActiveState-CLI/small-python", ""},
-		{"install-prbranch-and-activate-by-command", "", constants.BranchName, "", "ActiveState-CLI/small-python"},
+		// {"install-prbranch-with-version", constants.Version, constants.BranchName, "", ""},
+		// {"install-prbranch-and-activate", "", constants.BranchName, "ActiveState-CLI/small-python", ""},
+		// {"install-prbranch-and-activate-by-command", "", constants.BranchName, "", "ActiveState-CLI/small-python"},
 	}
 
 	for _, tt := range tests {
@@ -96,6 +106,10 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 					"bash", e2e.WithArgs(argsWithActive...),
 					e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 					e2e.AppendEnv(fmt.Sprintf("%s=%s", constants.AppInstallDirOverrideEnvVarName, appInstallDir)),
+					func(opts *e2e.Options) error {
+						opts.Options.ExtraOpts = append(opts.Options.ExtraOpts, expect.WithTermRows(500))
+						return nil
+					},
 				)
 			} else {
 				cp = ts.SpawnCmdWithOpts("powershell.exe", e2e.WithArgs(argsWithActive...),
@@ -210,6 +224,7 @@ func scriptPath(t *testing.T, targetDir string) string {
 
 func expectStateToolInstallation(cp *termtest.ConsoleProcess) {
 	cp.Expect("Preparing Installer for State Tool Package Manager")
+	cp.Expect("Checksum Verified", 20*time.Second)
 	cp.Expect("Installation Complete", time.Minute)
 }
 

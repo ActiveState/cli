@@ -148,9 +148,12 @@ if [ ! -z "$SUM" -a  "`$SHA256SUM -b $TMPDIR/$ARCHIVE | cut -d ' ' -f1`" != "$SU
   error "SHA256 sum did not match:"
   error "Expected: $SUM"
   error "Received: `$SHA256SUM -b $TMPDIR/$ARCHIVE | cut -d ' ' -f1`"
+  error "sha256sum: `sha256sum $TMPDIR/$ARCHIVE | cut -d ' ' -f1`"
   error "Aborting installation."
   exit 1
 fi
+
+echo "Checksum Verified"
 
 # Extract it.
 if [ $OS = "windows" ]; then
