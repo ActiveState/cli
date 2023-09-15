@@ -11,11 +11,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ActiveState/cli/cmd/state/internal/cmdtree/exechandlers/messenger"
-	"github.com/ActiveState/cli/internal/captain"
-
 	"github.com/ActiveState/cli/cmd/state/internal/cmdtree"
+	"github.com/ActiveState/cli/cmd/state/internal/cmdtree/exechandlers/messenger"
 	anAsync "github.com/ActiveState/cli/internal/analytics/client/async"
+	anaConst "github.com/ActiveState/cli/internal/analytics/constants"
+	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/constraints"
@@ -201,7 +201,7 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 		logging.Warning("Could not sync authenticated state: %s", errs.JoinMessage(err))
 	}
 
-	an := anAsync.New(svcmodel, cfg, auth, out, pjNamespace)
+	an := anAsync.New(anaConst.SrcStateTool, svcmodel, cfg, auth, out, pjNamespace)
 	defer func() {
 		if err := events.WaitForEvents(time.Second, an.Wait); err != nil {
 			logging.Warning("Failed waiting for events: %v", err)
