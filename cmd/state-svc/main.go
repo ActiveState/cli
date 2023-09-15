@@ -13,6 +13,7 @@ import (
 
 	"github.com/ActiveState/cli/cmd/state-svc/autostart"
 	anaSync "github.com/ActiveState/cli/internal/analytics/client/sync"
+	anaConst "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
@@ -98,7 +99,7 @@ func run(cfg *config.Instance) error {
 	}
 
 	auth := authentication.New(cfg)
-	an := anaSync.New(cfg, auth, out)
+	an := anaSync.New(anaConst.SrcStateService, cfg, auth, out)
 	defer an.Wait()
 
 	if err := autostart.RegisterConfigListener(cfg); err != nil {

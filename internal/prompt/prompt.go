@@ -15,7 +15,7 @@ import (
 )
 
 type EventDispatcher interface {
-	EventWithLabel(category string, action string, label string, dim ...*dimensions.Values)
+	EventWithLabel(category, action string, label string, dim ...*dimensions.Values)
 }
 
 // Prompter is the interface used to run our prompt from, useful for mocking in tests

@@ -82,16 +82,16 @@ func (suite *AnalyticsIntegrationTestSuite) TestActivateEvents() {
 	suite.Require().NotEmpty(events)
 
 	// Runtime:start events
-	suite.assertNEvents(events, 1, anaConst.CatRuntime, anaConst.ActRuntimeStart,
+	suite.assertNEvents(events, 1, anaConst.CatRuntime, anaConst.ActRuntimeStart, anaConst.SrcStateTool,
 		fmt.Sprintf("output:\n%s\n%s",
 			cp.Snapshot(), ts.DebugLogs()))
 
 	// Runtime:success events
-	suite.assertNEvents(events, 1, anaConst.CatRuntime, anaConst.ActRuntimeSuccess,
+	suite.assertNEvents(events, 1, anaConst.CatRuntime, anaConst.ActRuntimeSuccess, anaConst.SrcStateTool,
 		fmt.Sprintf("output:\n%s\n%s",
 			cp.Snapshot(), ts.DebugLogs()))
 
-	heartbeatInitialCount := countEvents(events, anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat)
+	heartbeatInitialCount := countEvents(events, anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat, anaConst.SrcStateTool)
 	if heartbeatInitialCount < 2 {
 		// It's possible due to the timing of the heartbeats and the fact that they are async that we have gotten either
 		// one or two by this point. Technically more is possible, just very unlikely.
@@ -104,7 +104,7 @@ func (suite *AnalyticsIntegrationTestSuite) TestActivateEvents() {
 	suite.Require().NotEmpty(events)
 
 	// Runtime-use:heartbeat events - should now be at least +1 because we waited <heartbeatInterval>
-	suite.assertGtEvents(events, heartbeatInitialCount, anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat,
+	suite.assertGtEvents(events, heartbeatInitialCount, anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat, anaConst.SrcStateTool,
 		fmt.Sprintf("output:\n%s\n%s",
 			cp.Snapshot(), ts.DebugLogs()))
 
@@ -121,11 +121,11 @@ func (suite *AnalyticsIntegrationTestSuite) TestActivateEvents() {
 			}
 			return (*e.Dimensions.Trigger) == target.TriggerExecutor.String()
 		})
-		suite.Require().Equal(1, countEvents(executorEvents, anaConst.CatRuntimeUsage, anaConst.ActRuntimeAttempt),
+		suite.Require().Equal(1, countEvents(executorEvents, anaConst.CatRuntimeUsage, anaConst.ActRuntimeAttempt, anaConst.SrcExecutor),
 			ts.DebugMessage("Should have a runtime attempt, events:\n"+debugEvents(suite.T(), executorEvents)))
 		// It's possible due to the timing of the heartbeats and the fact that they are async that we have gotten either
 		// one or two by this point. Technically more is possible, just very unlikely.
-		numHeartbeats := countEvents(executorEvents, anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat)
+		numHeartbeats := countEvents(executorEvents, anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat, anaConst.SrcExecutor)
 		suite.Require().Greater(numHeartbeats, 0, "Should have a heartbeat")
 		suite.Require().LessOrEqual(numHeartbeats, 2, "Should not have excessive heartbeats")
 		var heartbeatEvent *reporters.TestLogEntry
@@ -153,13 +153,13 @@ func (suite *AnalyticsIntegrationTestSuite) TestActivateEvents() {
 
 	events = parseAnalyticsEvents(suite, ts)
 	suite.Require().NotEmpty(events)
-	eventsAfterExit := countEvents(events, anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat)
+	eventsAfterExit := countEvents(events, anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat, anaConst.SrcExecutor)
 
 	time.Sleep(sleepTime)
 
 	eventsAfter := parseAnalyticsEvents(suite, ts)
 	suite.Require().NotEmpty(eventsAfter)
-	eventsAfterWait := countEvents(eventsAfter, anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat)
+	eventsAfterWait := countEvents(eventsAfter, anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat, anaConst.SrcExecutor)
 
 	suite.Equal(eventsAfterExit, eventsAfterWait,
 		fmt.Sprintf("Heartbeats should stop ticking after exiting subshell.\n"+
@@ -177,9 +177,9 @@ func (suite *AnalyticsIntegrationTestSuite) TestActivateEvents() {
 	suite.assertSequentialEvents(events)
 }
 
-func countEvents(events []reporters.TestLogEntry, category, action string) int {
+func countEvents(events []reporters.TestLogEntry, category, action, source string) int {
 	filteredEvents := funk.Filter(events, func(e reporters.TestLogEntry) bool {
-		return e.Category == category && e.Action == action
+		return e.Category == category && e.Action == action && e.Source == source
 	}).([]reporters.TestLogEntry)
 	return len(filteredEvents)
 }
@@ -203,15 +203,15 @@ func filterEvents(events []reporters.TestLogEntry, filters ...func(e reporters.T
 }
 
 func (suite *AnalyticsIntegrationTestSuite) assertNEvents(events []reporters.TestLogEntry,
-	expectedN int, category, action string, errMsg string) {
-	suite.Assert().Equal(expectedN, countEvents(events, category, action),
+	expectedN int, category, action, source string, errMsg string) {
+	suite.Assert().Equal(expectedN, countEvents(events, category, action, source),
 		"Expected %d %s:%s events.\nFile location: %s\nEvents received:\n%s\nError:\n%s",
 		expectedN, category, action, suite.eventsfile, suite.summarizeEvents(events), errMsg)
 }
 
 func (suite *AnalyticsIntegrationTestSuite) assertGtEvents(events []reporters.TestLogEntry,
-	greaterThanN int, category, action string, errMsg string) {
-	suite.Assert().Greater(countEvents(events, category, action), greaterThanN,
+	greaterThanN int, category, action, source string, errMsg string) {
+	suite.Assert().Greater(countEvents(events, category, action, source), greaterThanN,
 		fmt.Sprintf("Expected more than %d %s:%s events.\nFile location: %s\nEvents received:\n%s\nError:\n%s",
 			greaterThanN, category, action, suite.eventsfile, suite.summarizeEvents(events), errMsg))
 }
@@ -254,7 +254,7 @@ func (suite *AnalyticsIntegrationTestSuite) assertSequentialEvents(events []repo
 func (suite *AnalyticsIntegrationTestSuite) summarizeEvents(events []reporters.TestLogEntry) string {
 	summary := []string{}
 	for _, event := range events {
-		summary = append(summary, fmt.Sprintf("%s:%s:%s", event.Category, event.Action, event.Label))
+		summary = append(summary, fmt.Sprintf("%s:%s:%s (%s)", event.Category, event.Action, event.Label, event.Source))
 	}
 	return strings.Join(summary, "\n")
 }
@@ -262,8 +262,8 @@ func (suite *AnalyticsIntegrationTestSuite) summarizeEvents(events []reporters.T
 func (suite *AnalyticsIntegrationTestSuite) summarizeEventSequence(events []reporters.TestLogEntry) string {
 	summary := []string{}
 	for _, event := range events {
-		summary = append(summary, fmt.Sprintf("%s:%s:%s (seq: %s:%s:%d)\n",
-			event.Category, event.Action, event.Label,
+		summary = append(summary, fmt.Sprintf("%s:%s:%s (%s seq: %s:%s:%d)\n",
+			event.Category, event.Action, event.Label, event.Source,
 			*event.Dimensions.Command, (*event.Dimensions.InstanceID)[0:6], *event.Dimensions.Sequence))
 	}
 	return strings.Join(summary, "\n")
@@ -423,7 +423,7 @@ func (suite *AnalyticsIntegrationTestSuite) TestInputError() {
 	events := parseAnalyticsEvents(suite, ts)
 	suite.assertSequentialEvents(events)
 
-	suite.assertNEvents(events, 1, anaConst.CatDebug, anaConst.ActCommandInputError,
+	suite.assertNEvents(events, 1, anaConst.CatDebug, anaConst.ActCommandInputError, anaConst.SrcStateTool,
 		fmt.Sprintf("output:\n%s\n%s",
 			cp.Snapshot(), ts.DebugLogs()))
 
@@ -466,7 +466,7 @@ func (suite *AnalyticsIntegrationTestSuite) TestAttempts() {
 	for _, e := range events {
 		if strings.Contains(e.Category, "runtime") && strings.Contains(e.Action, "attempt") {
 			foundAttempts++
-			if strings.Contains(*e.Dimensions.Trigger, "exec") {
+			if strings.Contains(*e.Dimensions.Trigger, "exec") && strings.Contains(e.Source, anaConst.SrcExecutor) {
 				foundExecs++
 			}
 		}
@@ -564,8 +564,8 @@ func (suite *AnalyticsIntegrationTestSuite) TestConfigEvents() {
 		suite.Fail("Should find multiple config events")
 	}
 
-	suite.assertNEvents(events, 1, anaConst.CatConfig, anaConst.ActConfigSet, "Should be at one config set event")
-	suite.assertNEvents(events, 1, anaConst.CatConfig, anaConst.ActConfigUnset, "Should be at one config unset event")
+	suite.assertNEvents(events, 1, anaConst.CatConfig, anaConst.ActConfigSet, anaConst.SrcStateTool, "Should be at one config set event")
+	suite.assertNEvents(events, 1, anaConst.CatConfig, anaConst.ActConfigUnset, anaConst.SrcStateTool, "Should be at one config unset event")
 	suite.assertSequentialEvents(events)
 }
 
