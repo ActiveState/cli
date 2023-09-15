@@ -195,7 +195,7 @@ func (r *Resolver) AnalyticsEvent(_ context.Context, category, action, source st
 	return &graph.AnalyticsEventResponse{Sent: true}, nil
 }
 
-func (r *Resolver) ReportRuntimeUsage(_ context.Context, pid int, exec string, dimensionsJSON string) (*graph.ReportRuntimeUsageResponse, error) {
+func (r *Resolver) ReportRuntimeUsage(_ context.Context, pid int, exec, source string, dimensionsJSON string) (*graph.ReportRuntimeUsageResponse, error) {
 	defer func() { handlePanics(recover(), debug.Stack()) }()
 
 	logging.Debug("Runtime usage resolver: %d - %s", pid, exec)
@@ -204,7 +204,7 @@ func (r *Resolver) ReportRuntimeUsage(_ context.Context, pid int, exec string, d
 		return &graph.ReportRuntimeUsageResponse{Received: false}, errs.Wrap(err, "Could not unmarshal")
 	}
 
-	r.rtwatch.Watch(pid, exec, dims)
+	r.rtwatch.Watch(pid, exec, source, dims)
 
 	return &graph.ReportRuntimeUsageResponse{Received: true}, nil
 }

@@ -3,7 +3,6 @@ package rtwatcher
 import (
 	"encoding/json"
 	"os"
-	"path/filepath"
 	"runtime/debug"
 	"strconv"
 	"time"
@@ -15,7 +14,6 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
-	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/runbits/panics"
 )
@@ -99,11 +97,7 @@ func (w *Watcher) check() {
 
 func (w *Watcher) RecordUsage(e entry) {
 	logging.Debug("Recording usage of %s (%d)", e.Exec, e.PID)
-	source := anaConst.SrcExecutor
-	if filepath.Base(e.Exec) == constants.StateCmd+osutils.ExeExt {
-		source = anaConst.SrcStateTool
-	}
-	w.an.EventWithSource(anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat, source, e.Dims)
+	w.an.EventWithSource(anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat, e.Source, e.Dims)
 }
 
 func (w *Watcher) Close() error {
@@ -122,10 +116,10 @@ func (w *Watcher) Close() error {
 	return nil
 }
 
-func (w *Watcher) Watch(pid int, exec string, dims *dimensions.Values) {
+func (w *Watcher) Watch(pid int, exec, source string, dims *dimensions.Values) {
 	logging.Debug("Watching %s (%d)", exec, pid)
 	dims.Sequence = ptr.To(-1) // sequence is meaningless for heartbeat events
-	e := entry{pid, exec, dims}
+	e := entry{pid, exec, source, dims}
 	w.watching = append(w.watching, e)
 	go w.RecordUsage(e) // initial event
 }

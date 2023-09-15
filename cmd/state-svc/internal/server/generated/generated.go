@@ -85,7 +85,7 @@ type ComplexityRoot struct {
 		ConfigChanged      func(childComplexity int, key string) int
 		FetchLogTail       func(childComplexity int) int
 		Projects           func(childComplexity int) int
-		ReportRuntimeUsage func(childComplexity int, pid int, exec string, dimensionsJSON string) int
+		ReportRuntimeUsage func(childComplexity int, pid int, exec string, source string, dimensionsJSON string) int
 		Version            func(childComplexity int) int
 	}
 
@@ -111,7 +111,7 @@ type QueryResolver interface {
 	AvailableUpdate(ctx context.Context) (*graph.AvailableUpdate, error)
 	Projects(ctx context.Context) ([]*graph.Project, error)
 	AnalyticsEvent(ctx context.Context, category string, action string, source string, label *string, dimensionsJSON string) (*graph.AnalyticsEventResponse, error)
-	ReportRuntimeUsage(ctx context.Context, pid int, exec string, dimensionsJSON string) (*graph.ReportRuntimeUsageResponse, error)
+	ReportRuntimeUsage(ctx context.Context, pid int, exec string, source string, dimensionsJSON string) (*graph.ReportRuntimeUsageResponse, error)
 	CheckRuntimeUsage(ctx context.Context, organizationName string) (*graph.CheckRuntimeUsageResponse, error)
 	CheckMessages(ctx context.Context, command string, flags []string) ([]*graph.MessageInfo, error)
 	ConfigChanged(ctx context.Context, key string) (*graph.ConfigChangedResponse, error)
@@ -331,7 +331,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.ReportRuntimeUsage(childComplexity, args["pid"].(int), args["exec"].(string), args["dimensionsJson"].(string)), true
+		return e.complexity.Query.ReportRuntimeUsage(childComplexity, args["pid"].(int), args["exec"].(string), args["source"].(string), args["dimensionsJson"].(string)), true
 
 	case "Query.version":
 		if e.complexity.Query.Version == nil {
@@ -513,7 +513,7 @@ type Query {
     availableUpdate: AvailableUpdate
     projects: [Project]!
     analyticsEvent(category: String!, action: String!, source: String!, label: String, dimensionsJson: String!): AnalyticsEventResponse
-    reportRuntimeUsage(pid: Int!, exec: String!, dimensionsJson: String!): ReportRuntimeUsageResponse
+    reportRuntimeUsage(pid: Int!, exec: String!, source: String!, dimensionsJson: String!): ReportRuntimeUsageResponse
     checkRuntimeUsage(organizationName: String!): CheckRuntimeUsageResponse
     checkMessages(command: String!, flags: [String!]!): [MessageInfo!]!
     configChanged(key: String!): ConfigChangedResponse
@@ -673,14 +673,23 @@ func (ec *executionContext) field_Query_reportRuntimeUsage_args(ctx context.Cont
 	}
 	args["exec"] = arg1
 	var arg2 string
-	if tmp, ok := rawArgs["dimensionsJson"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("dimensionsJson"))
+	if tmp, ok := rawArgs["source"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("source"))
 		arg2, err = ec.unmarshalNString2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["dimensionsJson"] = arg2
+	args["source"] = arg2
+	var arg3 string
+	if tmp, ok := rawArgs["dimensionsJson"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("dimensionsJson"))
+		arg3, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["dimensionsJson"] = arg3
 	return args, nil
 }
 
@@ -1684,7 +1693,7 @@ func (ec *executionContext) _Query_reportRuntimeUsage(ctx context.Context, field
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().ReportRuntimeUsage(rctx, fc.Args["pid"].(int), fc.Args["exec"].(string), fc.Args["dimensionsJson"].(string))
+		return ec.resolvers.Query().ReportRuntimeUsage(rctx, fc.Args["pid"].(int), fc.Args["exec"].(string), fc.Args["source"].(string), fc.Args["dimensionsJson"].(string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)

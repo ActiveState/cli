@@ -73,7 +73,7 @@ func (c *Comm) GetLogFileName(ctx context.Context) (string, error) {
 }
 
 type Resolver interface {
-	ReportRuntimeUsage(ctx context.Context, pid int, exec, dimensionsJSON string) (*graph.ReportRuntimeUsageResponse, error)
+	ReportRuntimeUsage(ctx context.Context, pid int, exec, source string, dimensionsJSON string) (*graph.ReportRuntimeUsageResponse, error)
 	CheckRuntimeUsage(ctx context.Context, organizationName string) (*graph.CheckRuntimeUsageResponse, error)
 }
 
@@ -139,7 +139,7 @@ func HeartbeatHandler(cfg *config.Instance, resolver Resolver, analyticsReporter
 
 			logging.Debug("Firing runtime usage events for %s", metaData.Namespace)
 			analyticsReporter.EventWithSource(constants.CatRuntimeUsage, constants.ActRuntimeAttempt, constants.SrcExecutor, dims)
-			_, err = resolver.ReportRuntimeUsage(context.Background(), pidNum, hb.ExecPath, dimsJSON)
+			_, err = resolver.ReportRuntimeUsage(context.Background(), pidNum, hb.ExecPath, constants.SrcExecutor, dimsJSON)
 			if err != nil {
 				multilog.Critical("Heartbeat Failure: Failed to report runtime usage in heartbeat handler: %s", errs.JoinMessage(err))
 				return
