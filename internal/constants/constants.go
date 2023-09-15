@@ -504,3 +504,6 @@ const TerminalAnimationInterval = 150 * time.Millisecond
 // RuntimeSetupWaitEnvVarName is only used for an integration test to pause installation and wait
 // for Ctrl+C.
 const RuntimeSetupWaitEnvVarName = "ACTIVESTATE_CLI_RUNTIME_SETUP_WAIT"
+
+// ActiveStateCIEnvVarName is the environment variable set when running in an ActiveState CI environment.
+const ActiveStateCIEnvVarName = "ACTIVESTATE_CI"

@@ -78,7 +78,7 @@ func (suite *PerformanceIntegrationTestSuite) TestSvcPerformance() {
 
 	suite.Run("Query Analytics", func() {
 		t := time.Now()
-		err := svcmodel.AnalyticsEvent(context.Background(), "performance-test", "performance-test", "performance-test", "{}")
+		err := svcmodel.AnalyticsEvent(context.Background(), "performance-test", "performance-test", "performance-test", "performance-test", "{}")
 		suite.Require().NoError(err, ts.DebugMessage(fmt.Sprintf("Error: %s\nLog Tail:\n%s", errs.JoinMessage(err), logging.ReadTail())))
 		duration := time.Since(t)
 

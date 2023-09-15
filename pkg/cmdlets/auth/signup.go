@@ -1,12 +1,13 @@
 package auth
 
 import (
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/prompt"
-
 	"github.com/ActiveState/cli/pkg/cmdlets/legalprompt"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/api/mono"
@@ -163,5 +164,18 @@ func UsernameValidator(val interface{}) error {
 	if err != nil || *res.Payload.Code != int64(200) {
 		return locale.NewError("err_username_taken")
 	}
+	return nil
+}
+
+func SignupWithBrowser(out output.Outputer, auth *authentication.Auth, prompt prompt.Prompter) error {
+	logging.Debug("Signing up with browser")
+
+	err := authenticateWithBrowser(out, auth, prompt, true)
+	if err != nil {
+		return errs.Wrap(err, "Error signing up with browser")
+	}
+
+	out.Notice(locale.Tl("auth_signup_success", "Successfully signed up and authorized this device"))
+
 	return nil
 }

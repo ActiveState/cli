@@ -12,9 +12,6 @@ import (
 	"sync"
 	"time"
 
-	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
-	"github.com/ActiveState/cli/pkg/platform/model"
-
 	"github.com/ActiveState/cli/internal/analytics"
 	anaConsts "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/analytics/dimensions"
@@ -31,8 +28,10 @@ import (
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/svcctl"
 	"github.com/ActiveState/cli/internal/unarchiver"
+	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
+	"github.com/ActiveState/cli/pkg/platform/model"
 	apimodel "github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifactcache"
@@ -77,6 +76,10 @@ type ArtifactInstallError struct {
 // ArtifactSetupErrors combines all errors that can happen while installing artifacts in parallel
 type ArtifactSetupErrors struct {
 	errs []error
+}
+
+type ExecutorSetupError struct {
+	*errs.WrapperError
 }
 
 func (a *ArtifactSetupErrors) Error() string {
@@ -189,7 +192,7 @@ func (s *Setup) Update() (rerr error) {
 
 	// Update executors
 	if err := s.updateExecutors(artifacts); err != nil {
-		return errs.Wrap(err, "Failed to update executors")
+		return ExecutorSetupError{errs.Wrap(err, "Failed to update executors")}
 	}
 
 	// Mark installation as completed
@@ -481,7 +484,7 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 	)
 
 	artifactsToInstall := []artifact.ArtifactID{}
-	buildtimeArtifacts := runtimeArtifacts
+	// buildtimeArtifacts := runtimeArtifacts
 	if buildResult.BuildReady {
 		// If the build is already done we can just look at the downloadable artifacts as they will be a fully accurate
 		// prediction of what we will be installing.
@@ -497,13 +500,6 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 			if _, alreadyInstalled := alreadyInstalled[a.ArtifactID]; !alreadyInstalled {
 				artifactsToInstall = append(artifactsToInstall, a.ArtifactID)
 			}
-		}
-
-		// We also caclulate the artifacts to be built which includes more than the runtime artifacts.
-		// This is used to determine if we need to show the "build in progress" screen.
-		buildtimeArtifacts, err = buildplan.BuildtimeArtifacts(buildResult.Build, false)
-		if err != nil {
-			return nil, nil, errs.Wrap(err, "Could not get buildtime artifacts")
 		}
 	}
 
@@ -521,7 +517,7 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 		ArtifactNames: artifactNames,
 		LogFilePath:   logFilePath,
 		ArtifactsToBuild: func() []artifact.ArtifactID {
-			return artifact.ArtifactIDsFromBuildPlanMap(buildtimeArtifacts) // This does not account for cached builds
+			return artifact.ArtifactIDsFromBuildPlanMap(runtimeArtifacts) // This does not account for cached builds
 		}(),
 		// Yes these have the same value; this is intentional.
 		// Separating these out just allows us to be more explicit and intentional in our event handling logic.
@@ -537,7 +533,7 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 
 	// only send the download analytics event, if we have to install artifacts that are not yet installed
 	if len(artifactsToInstall) > 0 {
-		// if we get here, we dowload artifacts
+		// if we get here, we download artifacts
 		s.analytics.Event(anaConsts.CatRuntime, anaConsts.ActRuntimeDownload, dimensions)
 	}
 
@@ -745,12 +741,16 @@ func (s *Setup) moveToInstallPath(a artifact.ArtifactID, unpackedDir string, env
 func (s *Setup) downloadArtifact(a artifact.ArtifactDownload, targetFile string) (rerr error) {
 	defer func() {
 		if rerr != nil {
-			rerr = &ArtifactDownloadError{errs.Wrap(rerr, "Unable to download artifact")}
+			if !errs.Matches(rerr, &ProgressReportError{}) {
+				rerr = &ArtifactDownloadError{errs.Wrap(rerr, "Unable to download artifact")}
+			}
+
 			if err := s.handleEvent(events.ArtifactDownloadFailure{a.ArtifactID, rerr}); err != nil {
 				rerr = errs.Wrap(rerr, "Could not handle ArtifactDownloadFailure event")
 				return
 			}
 		}
+
 		if err := s.handleEvent(events.ArtifactDownloadSuccess{a.ArtifactID}); err != nil {
 			rerr = errs.Wrap(rerr, "Could not handle ArtifactDownloadSuccess event")
 			return
@@ -765,7 +765,7 @@ func (s *Setup) downloadArtifact(a artifact.ArtifactDownload, targetFile string)
 	b, err := httputil.GetWithProgress(artifactURL.String(), &progress.Report{
 		ReportSizeCb: func(size int) error {
 			if err := s.handleEvent(events.ArtifactDownloadStarted{a.ArtifactID, size}); err != nil {
-				return errs.Wrap(err, "Could not handle ArtifactDownloadStarted event")
+				return ProgressReportError{errs.Wrap(err, "Could not handle ArtifactDownloadStarted event")}
 			}
 			return nil
 		},
@@ -779,9 +779,11 @@ func (s *Setup) downloadArtifact(a artifact.ArtifactDownload, targetFile string)
 	if err != nil {
 		return errs.Wrap(err, "Download %s failed", artifactURL.String())
 	}
+
 	if err := fileutils.WriteFile(targetFile, b); err != nil {
 		return errs.Wrap(err, "Writing download to target file %s failed", targetFile)
 	}
+
 	return nil
 }
 

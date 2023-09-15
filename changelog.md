@@ -6,6 +6,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+### 0.40.1
+
+### Added
+
+* State tool will now warn users if its executables are deleted during
+  installation, indicating a false-positive action from antivirus software.
+
+### Fixed
+
+* Fixed auto updates not being run (if you are on an older version:
+  run `state update`).
+* Fixed a rare parsing panic that would happen when running particularly complex
+  builds.
+* Fixed race condition during artifact installation that could lead to errors
+  like "Could not unpack artifact .. file already exists".
+
 ### 0.40.0
 
 ### Added

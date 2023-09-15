@@ -85,6 +85,9 @@ const (
 
 	// NamespaceSharedMatch is the namespace used for shared requirements (usually runtime libraries)
 	NamespaceSharedMatch = `^shared$`
+
+	// NamespaceBuildFlagsMatch is the namespace used for passing build flags
+	NamespaceBuildFlagsMatch = `^build-flags$`
 )
 
 type TrackingType string

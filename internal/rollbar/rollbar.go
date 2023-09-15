@@ -94,10 +94,7 @@ func SetupRollbar(token string) {
 			data["request"] = map[string]string{}
 		}
 		if request, ok := data["request"].(map[string]string); ok {
-			// Rollbar specially interprets the body["request"]["user_ip"] key, but it does not have to
-			// actually be an IP address. Use device_id for now. We may want to use real IP later if it
-			// is easily accessible (Rollbar does not provide it for us with non-http.Request errors).
-			request["user_ip"] = uniqid.Text()
+			request["user_ip"] = "$remote_ip" // ask Rollbar to log the user's IP
 		}
 	})
 

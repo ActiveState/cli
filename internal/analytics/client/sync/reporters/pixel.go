@@ -29,7 +29,7 @@ func (r *PixelReporter) ID() string {
 	return "PixelReporter"
 }
 
-func (r *PixelReporter) Event(category, action, label string, d *dimensions.Values) error {
+func (r *PixelReporter) Event(category, action, source, label string, d *dimensions.Values) error {
 	pixelURL, err := url.Parse(r.url)
 	if err != nil {
 		return errs.Wrap(err, "Invalid pixel URL: %s", r.url)
@@ -38,6 +38,7 @@ func (r *PixelReporter) Event(category, action, label string, d *dimensions.Valu
 	query := &url.Values{}
 	query.Add("x-category", category)
 	query.Add("x-action", action)
+	query.Add("x-source", source)
 	query.Add("x-label", label)
 
 	for num, value := range legacyDimensionMap(d) {
