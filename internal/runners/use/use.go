@@ -5,6 +5,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/config"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/globaldefault"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -18,6 +19,7 @@ import (
 	"github.com/ActiveState/cli/pkg/cmdlets/checker"
 	"github.com/ActiveState/cli/pkg/cmdlets/checkout"
 	"github.com/ActiveState/cli/pkg/cmdlets/git"
+	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
@@ -78,7 +80,12 @@ func (u *Use) Run(params *Params) error {
 
 	rtusage.PrintRuntimeUsage(u.svcModel, u.out, proj.Owner())
 
-	if cid := params.Namespace.CommitID; cid != nil && *cid != proj.CommitUUID() {
+	commitID, err := localcommit.Get(proj.Dir())
+	if err != nil {
+		return errs.Wrap(err, "Unable to get local commit")
+	}
+
+	if cid := params.Namespace.CommitID; cid != nil && *cid != commitID {
 		return locale.NewInputError("err_use_commit_id_mismatch")
 	}
 

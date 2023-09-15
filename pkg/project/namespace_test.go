@@ -64,7 +64,7 @@ func TestParseNamespaceOrConfigfile(t *testing.T) {
 		expected   *Namespaced
 	}{
 		{"InvalidConfigfile", invalidConfigFile, nil},
-		{"FromConfigFile", validConfigFile, &Namespaced{Owner: "ActiveState", Project: "CodeIntel", CommitID: newUUID("00000000-0000-0000-0000-00000d7ebc72")}},
+		{"FromConfigFile", validConfigFile, &Namespaced{Owner: "ActiveState", Project: "CodeIntel"}},
 	}
 
 	for _, tt := range tests {

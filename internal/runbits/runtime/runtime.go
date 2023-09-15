@@ -25,17 +25,17 @@ func NewFromProject(
 	svcModel *model.SvcModel,
 	out output.Outputer,
 	auth *authentication.Auth) (_ *rt.Runtime, rerr error) {
-	projectTarget := target.NewProjectTarget(proj, nil, trigger)
-	rti, err := rt.New(projectTarget, an, svcModel)
-	if err != nil {
-		if !rt.IsNeedsUpdateError(err) {
-			return nil, locale.WrapError(err, "err_activate_runtime", "Could not initialize a runtime for this project.")
-		}
 
+	rti, err := rt.New(target.NewProjectTarget(proj, nil, trigger), an, svcModel, auth)
+	switch {
+	case err == nil:
+		break
+
+	case rt.IsNeedsUpdateError(err):
 		pg := runbits.NewRuntimeProgressIndicator(out)
 		defer rtutils.Closer(pg.Close, &rerr)
 
-		if err = rti.Update(auth, pg); err != nil {
+		if err = rti.Update(pg); err != nil {
 			if errs.Matches(err, &model.ErrOrderAuth{}) {
 				return nil, errs.AddTips(
 					locale.WrapInputError(err, "err_update_auth", "Could not update runtime"),
@@ -54,6 +54,13 @@ func NewFromProject(
 			}
 			return nil, locale.WrapError(err, "err_update_runtime", "Could not update runtime installation.")
 		}
+
+	case rt.IsNeedsCommitError(err):
+		out.Notice(locale.T("notice_commit_build_script"))
+
+	default:
+		return nil, locale.WrapError(err, "err_activate_runtime", "Could not initialize a runtime for this project.")
 	}
+
 	return rti, nil
 }
