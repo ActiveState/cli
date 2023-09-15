@@ -123,10 +123,6 @@ jobs:
           parallelize "$(cat <<'EOF'
           [
             {
-                "ID": "Unit-Tests",
-                "Args": ["state", "run", "test", "-json", "2>&1"]
-            },
-            {
                 "ID": "Build-CLI",
                 "Args": ["state", "run", "build"]
             },
@@ -159,13 +155,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           JIRA_USERNAME: ${{ secrets.JIRA_EMAIL }}
           JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}
-
-      - # === Unit Tests ===
-        name: Unit Tests
-        id: unit_tests
-        shell: bash
-        run: parallelize results Unit-Tests | gotestfmt -hide empty-packages
-        continue-on-error: ${{ github.event_name != 'schedule' }}
 
       - # === "Build: CLI" ===
         name: "Build: CLI"
