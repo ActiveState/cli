@@ -145,8 +145,8 @@ func (suite *PullIntegrationTestSuite) TestMergeBuildScript() {
 	ts.LoginAsPersistentUser()
 
 	cp = ts.SpawnWithOpts(
-		e2e.WithArgs("install", "requests"),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.OptArgs("install", "requests"),
+		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cp.Expect("Package added")
 	cp.ExpectExitCode(0)
