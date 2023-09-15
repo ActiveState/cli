@@ -172,7 +172,7 @@ func (suite *ProjectsIntegrationTestSuite) TestMove() {
 	cp.Expect("You are about to move")
 	cp.Expect("ActiveState-CLI/small-python")
 	cp.Expect("ActiveState-CLI")
-	cp.Expect("Continue?")
+	cp.Expect("Continue? (y/N)")
 	cp.SendLine("n")
 	cp.Expect("aborted")
 	cp.ExpectExitCode(0)

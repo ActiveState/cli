@@ -258,7 +258,7 @@ func (suite *PushIntegrationTestSuite) TestCarlisle() {
 	ts.LoginAsPersistentUser()
 
 	cp = ts.SpawnWithOpts(e2e.OptArgs("push", namespace), e2e.OptWD(wd))
-	cp.Expect("You are about to create the project")
+	cp.Expect("continue? (Y/n)")
 	cp.SendLine("y")
 	cp.Expect("Project created")
 	cp.ExpectExitCode(0)
