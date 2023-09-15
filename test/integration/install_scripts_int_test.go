@@ -32,7 +32,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 	suite.OnlyRunForTags("sha256-checksum-bug")
 	for x := 0; x < 20; x++ {
 		suite.Run(fmt.Sprintf("TestInstall (%d)", x), func() {
-			suite.TestInstall()
+			suite.testInstall()
 		})
 	}
 }
