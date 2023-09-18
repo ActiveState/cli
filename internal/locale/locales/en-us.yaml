@@ -129,8 +129,6 @@ flag_state_auth_totp_description:
   other: The TOTP code generated via two-factor authentication (must be used in conjunction with username and password flags)
 flag_state_auth_interactive_description:
   other: Sign in via your terminal, rather than your web browser.
-flag_state_auth_signup_interactive_description:
-  other: Sign up via your terminal, rather than your web browser.
 username_prompt:
   other: "Enter your username:"
 password_prompt:
@@ -164,28 +162,14 @@ secret_prompt_project:
   other: Organization members can access the value
 secret_no_description:
   other: "- (This secret has no description, you can set one via the web dashboard)"
-username_prompt_signup:
-  other: "Choose a username:"
-password_prompt_signup:
-  other: "Choose a password:"
-password_prompt_confirm:
-  other: "Enter your password again:"
 name_prompt:
   other: "Enter your name:"
-email_prompt:
-  other: "Enter your email:"
 totp_prompt:
   other: "Enter your two-factor authentication code:"
 survey_error_template:
   other: '[[color "red"]] Invalid response: [[.Error]][[color "reset"]][[BR]]'
 err_value_required:
   other: value required
-err_prompt_unknown:
-  other: An unknown error occurred whilst processing your response, check the error log for more information
-prompt_login_to_signup:
-  other: No account was found for that username, would you like to register it?
-err_download_tos:
-  other: Could not download terms of service file
 tos_disclaimer:
   other: |
     Your use of the ActiveState Platform is subject to the Terms of Service.
@@ -195,16 +179,6 @@ tos_disclaimer_prompt:
   other: |
 
     By continuing you accept the Terms of Service. Continue?
-tos_acceptance:
-  other: Do you accept the ActiveState Platform Terms of Service?
-tos_not_accepted:
-  other: You may not create an ActiveState Platform account without accepting the Terms of Service
-tos_accept:
-  other: Yes, I accept the ActiveState Terms of Service
-tos_not_accept:
-  other: No, I do not accept the ActiveState Terms of Service
-tos_show_full:
-  other: Display the full Terms of Service in this terminal window
 err_get_license_text:
   other: Could not get license text
 
@@ -227,18 +201,8 @@ err_auth_token:
   other: "Failed to create authentication token, please try again or run '[ACTIONABLE]state clean config[/RESET]' if the issue persists."
 auth_err_password_prompt:
   other: The provided password is invalid
-confirm_password_account_creation:
-  other: Please enter your password again to create your account.
-err_password_confirmation_failed:
-  other: Your password confirmation does not match
-err_username_taken:
-  other: Username is already taken
 signup_description:
   other: Signup a new account
-err_auth_signup_user_exists:
-  other: "An account with the given information already exists, error received: {{.V0}}"
-err_auth_signup_bad_request:
-  other: "Invalid signup request. The error received was: {{.V0}}"
 login_success_welcome_back:
   other: You have successfully authenticated, hello [NOTICE]{{.Name}}[/RESET]!
 logged_in_as:
@@ -249,10 +213,6 @@ logged_out:
   other: You have been logged out
 logout_still_have_api_token:
   other: Logout is incomplete because you have authenticated with an environment variable. To complete logout please unset the '[ACTIONABLE]ACTIVESTATE_API_KEY[/RESET]' environment variable.
-signup_success:
-  other: Your account has been registered and a confirmation email has been sent to [NOTICE]{{.Email}}[/RESET], your account will have limited permissions until you confirm it.
-signup_failure:
-  other: Signup was not successful.
 login_cancelled:
   other: Authentication Cancelled
 login_err_output:
@@ -702,8 +662,6 @@ keypair_err_not_found:
   other: Keypair not yet generated
 keypair_err_save:
   other: Keypair could not be saved
-keypair_err_generate:
-  other: Keypair could not be generated
 keypair_err_publickey_not_found:
   other: 'No public-key found for user [NOTICE]"{{.V0}}"[/RESET] ([NOTICE]"{{.V1}}"[/RESET])'
 keypair_err_passphrase_prompt:
@@ -930,8 +888,6 @@ prompt_login_browser_action:
   other: Login with my existing account using your browser
 prompt_login_action:
   other: Login with my existing account by typing my username and password
-prompt_signup_action:
-  other: Signup for a new account by entering in a username and password
 prompt_signup_browser_action:
   other: Signup for a new account using the ActiveState Platform website
 prompt_login_after_browser_signup:

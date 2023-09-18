@@ -58,8 +58,8 @@ func AuthenticateWithInput(
 			if !uniqueUsername(credentials) {
 				return errs.Wrap(err, "uniqueUsername failed")
 			}
-			if err := promptSignup(credentials, out, prompt, auth); err != nil {
-				return errs.Wrap(err, "promptSignup failed")
+			if err := SignupWithBrowser(out, auth, prompt); err != nil {
+				return errs.Wrap(err, "SignupWithBrowser failed")
 			}
 		default:
 			return locale.WrapError(err, "err_auth_failed_unknown_cause", "", err.Error())
@@ -106,7 +106,6 @@ func RequireAuthentication(message string, cfg keypairs.Configurable, out output
 		locale.T("prompt_login_browser_action"),
 		locale.T("prompt_login_action"),
 		locale.T("prompt_signup_browser_action"),
-		locale.T("prompt_signup_action"),
 	}
 	choice, err := prompt.Select(locale.Tl("login_signup", "Login or Signup"), locale.T("prompt_login_or_signup"), choices, new(string))
 	if err != nil {
@@ -124,10 +123,6 @@ func RequireAuthentication(message string, cfg keypairs.Configurable, out output
 		}
 	case locale.T("prompt_signup_browser_action"):
 		if err := SignupWithBrowser(out, auth, prompt); err != nil {
-			return errs.Wrap(err, "Signup failed")
-		}
-	case locale.T("prompt_signup_action"):
-		if err := Signup(cfg, out, prompt, auth); err != nil {
 			return errs.Wrap(err, "Signup failed")
 		}
 	}
@@ -190,19 +185,6 @@ func uniqueUsername(credentials *mono_models.Credentials) bool {
 	}
 
 	return true
-}
-
-func promptSignup(credentials *mono_models.Credentials, out output.Outputer, prompt prompt.Prompter, auth *authentication.Auth) error {
-	loginConfirmDefault := true
-	yesSignup, err := prompt.Confirm("", locale.T("prompt_login_to_signup"), &loginConfirmDefault)
-	if err != nil {
-		return err
-	}
-	if yesSignup {
-		return signupFromLogin(credentials.Username, credentials.Password, out, prompt, auth)
-	}
-
-	return nil
 }
 
 func promptToken(credentials *mono_models.Credentials, out output.Outputer, prompt prompt.Prompter, auth *authentication.Auth) error {
