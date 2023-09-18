@@ -526,6 +526,10 @@ func (s *Session) Close() error {
 		}
 	}
 
+	// Trap "flisten in use" errors to help debug DX-2090.
+	svcLogContents := s.SvcLog()
+	require.NotContains(s.t, svcLogContents, "flisten in use", "Found flisten in use error in state-svc log file, contents:\n%s", svcLogContents)
+
 	return nil
 }
 
@@ -615,16 +619,12 @@ func (s *Session) DebugLogs() string {
 }
 
 var errorOrPanicRegex = regexp.MustCompile(`(?:\[ERR:|Panic:)`)
-var flistenInUseRegex = regexp.MustCompile(`flisten in use`)
 
 func (s *Session) DetectLogErrors() {
 	for _, path := range s.LogFiles() {
 		if contents := string(fileutils.ReadFileUnsafe(path)); errorOrPanicRegex.MatchString(contents) {
 			s.t.Errorf("Found error and/or panic in log file %s, contents:\n%s", path, contents)
 		}
-	}
-	if contents := s.SvcLog(); flistenInUseRegex.MatchString(contents) {
-		s.t.Errorf("Found flisten in use error in state-svc log file, contents:\n%s", contents)
 	}
 }
 
