@@ -39,18 +39,28 @@ func (o *OutputError) MarshalOutput(f output.Format) interface{} {
 		outLines = append(outLines, output.Title(locale.Tl("err_what_happened", "[ERROR]Something Went Wrong[/RESET]")).String())
 	}
 
-	rerrs := locale.UnpackError(o.error)
-	if len(rerrs) == 0 {
-		// It's possible the error came from cobra or something else low level that doesn't use localization
-		logging.Warning("Error does not have localization: %s", errs.JoinMessage(o.error))
-		rerrs = []error{o.error}
-	}
-	for _, errv := range rerrs {
-		message := trimError(locale.ErrorMessage(errv))
+	var userFacingError errs.UserFacingError
+	if errors.As(o.error, &userFacingError) {
+		message := userFacingError.UserError()
 		if f == output.PlainFormatName {
 			outLines = append(outLines, fmt.Sprintf(" [NOTICE][ERROR]x[/RESET] %s", message))
 		} else {
 			outLines = append(outLines, message)
+		}
+	} else {
+		rerrs := locale.UnpackError(o.error)
+		if len(rerrs) == 0 {
+			// It's possible the error came from cobra or something else low level that doesn't use localization
+			logging.Warning("Error does not have localization: %s", errs.JoinMessage(o.error))
+			rerrs = []error{o.error}
+		}
+		for _, errv := range rerrs {
+			message := trimError(locale.ErrorMessage(errv))
+			if f == output.PlainFormatName {
+				outLines = append(outLines, fmt.Sprintf(" [NOTICE][ERROR]x[/RESET] %s", message))
+			} else {
+				outLines = append(outLines, message)
+			}
 		}
 	}
 
@@ -103,6 +113,16 @@ func ParseUserFacing(err error) (int, error) {
 		return code, nil
 	}
 
+	// If there is a user facing error in the error stack we want to ensure
+	// that is it forwarded to the user.
+	var userFacingError errs.UserFacingError
+	if errors.As(err, &userFacingError) {
+		logging.Debug("Returning user facing error, error stack: \n%s", errs.JoinMessage(err))
+		return code, &OutputError{userFacingError}
+	}
+
+	// If the error already has a marshalling function we do not want to wrap
+	// it again in the OutputError type.
 	if hasMarshaller {
 		return code, err
 	}
@@ -157,7 +177,7 @@ func ReportError(err error, cmd *captain.Command, an analytics.Dispatcher) {
 		Error: ptr.To(errorMsg),
 	})
 
-	if !locale.HasError(err) && isErrs && !hasMarshaller {
+	if (!locale.HasError(err) && !errs.IsUserFacing(err)) && isErrs && !hasMarshaller {
 		multilog.Error("MUST ADDRESS: Error does not have localization: %s", errs.JoinMessage(err))
 
 		// If this wasn't built via CI then this is a dev workstation, and we should be more aggressive

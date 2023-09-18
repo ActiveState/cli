@@ -92,6 +92,7 @@ func (o Operation) String() string {
 }
 
 type BuildPlannerError struct {
+	Err              error
 	ValidationErrors []string
 	IsTransient      bool
 }
@@ -106,11 +107,15 @@ func (e *BuildPlannerError) InputError() bool {
 // UserError returns the error message to be displayed to the user.
 // This function is added so that BuildPlannerErrors will be displayed
 // to the user
-func (e *BuildPlannerError) UserError() string {
+func (e *BuildPlannerError) LocalizedError() string {
 	return e.Error()
 }
 
 func (e *BuildPlannerError) Error() string {
+	if e.Err != nil {
+		return e.Err.Error()
+	}
+
 	// Append last five lines to error message
 	offset := 0
 	numLines := len(e.ValidationErrors)
@@ -273,10 +278,6 @@ func ProcessCommitError(commit *Commit, fallbackMessage string) error {
 }
 
 func ProcessBuildError(build *Build, fallbackMessage string) error {
-	if build.Error == nil {
-		return errs.New(fallbackMessage)
-	}
-
 	if build.Type == PlanningErrorType {
 		var errs []string
 		var isTransient bool
@@ -299,18 +300,19 @@ func ProcessBuildError(build *Build, fallbackMessage string) error {
 			ValidationErrors: errs,
 			IsTransient:      isTransient,
 		}
+	} else if build.Error == nil {
+		return errs.New(fallbackMessage)
 	}
 
 	return locale.NewInputError("err_buildplanner_build", "Encountered error processing build response")
 }
 
 func ProcessProjectError(project *Project, fallbackMessage string) error {
-	if project.Error == nil {
-		return errs.New(fallbackMessage)
-	}
-
 	if project.Type == NotFoundErrorType {
-		return locale.NewInputError("err_buildplanner_project_not_found", "Unable to find project, recieved message: {{.V0}}", project.Message)
+		return errs.AddTips(
+			locale.NewInputError("err_buildplanner_project_not_found", "Unable to find project, received message: {{.V0}}", project.Message),
+			locale.T("tip_private_project_auth"),
+		)
 	}
 
 	return errs.New(fallbackMessage)
@@ -484,7 +486,7 @@ type Artifact struct {
 
 	// Error fields
 	Errors      []string `json:"errors"`
-	Attempts    string   `json:"attempts"`
+	Attempts    float64  `json:"attempts"`
 	NextAttempt string   `json:"nextAttempt"`
 }
 

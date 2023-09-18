@@ -76,7 +76,7 @@ func (r *Revert) Run(params *Params) error {
 		priorCommits, err := model.CommitHistoryPaged(commitID, 0, 2)
 		if err != nil {
 			return errs.AddTips(
-				locale.WrapError(err, "err_revert_get_commit", "Could not fetch commit details for commit with ID: {{.V0}}", params.CommitID),
+				locale.WrapError(err, "err_revert_get_commit", "", params.CommitID),
 				locale.T("tip_private_project_auth"),
 			)
 		}
@@ -90,7 +90,10 @@ func (r *Revert) Run(params *Params) error {
 		var err error
 		targetCommit, err = model.GetCommitWithinCommitHistory(latestCommit, commitID)
 		if err != nil {
-			return locale.WrapError(err, "err_revert_to_get_commit", "Could not fetch commit details for commit with ID: {{.V0}}", params.CommitID)
+			return errs.AddTips(
+				locale.WrapError(err, "err_revert_get_commit", "", params.CommitID),
+				locale.T("tip_private_project_auth"),
+			)
 		}
 		fromCommit = latestCommit
 		toCommit = targetCommit.CommitID

@@ -156,8 +156,8 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 		return errs.Wrap(err, "Unable to get the user's writable orgs")
 	}
 	for _, org := range orgs {
-		if strings.EqualFold(org.DisplayName, params.Namespace.Owner) {
-			owner = org.DisplayName
+		if strings.EqualFold(org.URLname, params.Namespace.Owner) {
+			owner = org.URLname
 			break
 		}
 	}
@@ -234,6 +234,12 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 
 	err = runbits.RefreshRuntime(r.auth, r.out, r.analytics, proj, commitID, true, target.TriggerInit, r.svcModel)
 	if err != nil {
+		logging.Debug("Deleting remotely created project due to runtime setup error")
+		err2 := model.DeleteProject(namespace.Owner, namespace.Project, r.auth)
+		if err2 != nil {
+			multilog.Error("Error deleting remotely created project after runtime setup error: %v", errs.JoinMessage(err2))
+			return locale.WrapError(err, "err_init_refresh_delete_project", "Could not setup runtime after init, and could not delete newly created Platform project. Please delete it manually before trying again")
+		}
 		return locale.WrapError(err, "err_init_refresh", "Could not setup runtime after init")
 	}
 

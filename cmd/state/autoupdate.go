@@ -75,21 +75,21 @@ func autoUpdate(svc *model.SvcModel, args []string, cfg *config.Instance, an ana
 	if err != nil {
 		if os.IsPermission(err) {
 			an.EventWithLabel(anaConst.CatUpdates, anaConst.ActUpdateInstall, anaConst.UpdateLabelFailed, &dimensions.Values{
-				Version: ptr.To(avUpdate.Version),
-				Error:   ptr.To("Could not update the state tool due to insufficient permissions."),
+				TargetVersion: ptr.To(avUpdate.Version),
+				Error:         ptr.To("Could not update the state tool due to insufficient permissions."),
 			})
 			return false, locale.WrapInputError(err, locale.Tl("auto_update_permission_err", "", constants.DocumentationURL, errs.JoinMessage(err)))
 		}
 		if errs.Matches(err, &updater.ErrorInProgress{}) {
 			an.EventWithLabel(anaConst.CatUpdates, anaConst.ActUpdateInstall, anaConst.UpdateLabelFailed, &dimensions.Values{
-				Version: ptr.To(avUpdate.Version),
-				Error:   ptr.To(anaConst.UpdateErrorInProgress),
+				TargetVersion: ptr.To(avUpdate.Version),
+				Error:         ptr.To(anaConst.UpdateErrorInProgress),
 			})
 			return false, nil
 		}
 		an.EventWithLabel(anaConst.CatUpdates, anaConst.ActUpdateInstall, anaConst.UpdateLabelFailed, &dimensions.Values{
-			Version: ptr.To(avUpdate.Version),
-			Error:   ptr.To(anaConst.UpdateErrorInstallFailed),
+			TargetVersion: ptr.To(avUpdate.Version),
+			Error:         ptr.To(anaConst.UpdateErrorInstallFailed),
 		})
 		return false, locale.WrapError(err, locale.T("auto_update_failed"))
 	}
@@ -106,14 +106,14 @@ func autoUpdate(svc *model.SvcModel, args []string, cfg *config.Instance, an ana
 			msg = anaConst.UpdateErrorRelaunch
 		}
 		an.EventWithLabel(anaConst.CatUpdates, anaConst.ActUpdateRelaunch, anaConst.UpdateLabelFailed, &dimensions.Values{
-			Version: ptr.To(avUpdate.Version),
-			Error:   ptr.To(msg),
+			TargetVersion: ptr.To(avUpdate.Version),
+			Error:         ptr.To(msg),
 		})
 		return true, errs.Silence(errs.WrapExitCode(err, code))
 	}
 
 	an.EventWithLabel(anaConst.CatUpdates, anaConst.ActUpdateRelaunch, anaConst.UpdateLabelSuccess, &dimensions.Values{
-		Version: ptr.To(avUpdate.Version),
+		TargetVersion: ptr.To(avUpdate.Version),
 	})
 	return true, nil
 }

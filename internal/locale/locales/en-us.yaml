@@ -937,7 +937,7 @@ prompt_signup_browser_action:
 prompt_login_after_browser_signup:
   other: Please login once you've registered your account
 err_browser_open:
-  other: "Could not open your browser, please manually open the following URL in your browser: {{.V0}}"
+  other: "Could not open your browser, please manually open the following URL above."
 err_activate_auth_required:
   other: Activating a project requires you to be authenticated against the ActiveState Platform
 err_os_not_a_directory:
@@ -1032,6 +1032,10 @@ auth_device_verify_security_code:
 
     Please sign into the ActiveState Platform (if you have not already done so) and click "Authorize".
     After that, it may take a few seconds for the authorization process here to complete.
+
+    If the URL does not open automatically, please copy and paste it into your browser.
+
+        [ACTIONABLE]{{.V1}}[/RESET]
 auth_device_timeout:
   other: Authorization timeout. Please try again.
 auth_device_success:
@@ -1340,6 +1344,8 @@ namespace_label_platform:
   other: "Platform"
 namespace_label_preplatform:
   other: "Bits"
+namespace_label_packager:
+  other: "Docker/Installer packagers"
 print_commit:
   other: "[NOTICE]commit {{.V0}}[/RESET]"
 print_commit_author:
@@ -1750,6 +1756,8 @@ err_user_network_solution:
   other: |
     Please ensure your device has access to internet during installation. Make sure software like a VPN, Firewall or Anti-Virus are not blocking your connectivity.
     If your issue persists consider reporting it on our forums at {{.V0}}.
+err_revert_get_commit:
+  other: "Could not fetch commit details for commit with ID: {{.V0}}"
 err_revert_refresh:
   other: Could not get revert commit to check if changes were indeed made
 err_revert_commit:
