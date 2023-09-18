@@ -38,15 +38,6 @@ type MessageInfo struct {
 	Placement MessagePlacementType `json:"placement"`
 }
 
-/*
-[
-	{
-		"ID": "simple",
-		"Message": "This is a [NOTICE]simple[/RESET] message\nwith a line break",
-	}
-]
-*/
-
 type Project struct {
 	Namespace string   `json:"namespace"`
 	Locations []string `json:"locations"`

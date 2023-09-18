@@ -74,7 +74,9 @@ func New(cfg *config.Instance, an *sync.Client, auth *authentication.Auth) (*Res
 
 	usageChecker := rtusage.NewChecker(cfg, auth)
 
-	anForClient := sync.New(cfg, auth, nil)
+	// Note: source does not matter here, as analytics sent via the resolver have a source
+	// (e.g. State Tool or Executor), and that source will be used.
+	anForClient := sync.New(anaConsts.SrcStateTool, cfg, auth, nil)
 	return &Resolver{
 		cfg,
 		msg,
@@ -160,10 +162,10 @@ func (r *Resolver) Projects(ctx context.Context) ([]*graph.Project, error) {
 	return projects, nil
 }
 
-func (r *Resolver) AnalyticsEvent(_ context.Context, category, action string, _label *string, dimensionsJson string) (*graph.AnalyticsEventResponse, error) {
+func (r *Resolver) AnalyticsEvent(_ context.Context, category, action, source string, _label *string, dimensionsJson string) (*graph.AnalyticsEventResponse, error) {
 	defer func() { handlePanics(recover(), debug.Stack()) }()
 
-	logging.Debug("Analytics event resolver: %s - %s: %s", category, action, ptr.From(_label, "NIL"))
+	logging.Debug("Analytics event resolver: %s - %s: %s (%s)", category, action, ptr.From(_label, "NIL"), source)
 
 	label := ""
 	if _label != nil {
@@ -189,12 +191,12 @@ func (r *Resolver) AnalyticsEvent(_ context.Context, category, action string, _l
 		return nil
 	})
 
-	r.anForClient.EventWithLabel(category, action, label, dims)
+	r.anForClient.EventWithSourceAndLabel(category, action, source, label, dims)
 
 	return &graph.AnalyticsEventResponse{Sent: true}, nil
 }
 
-func (r *Resolver) ReportRuntimeUsage(_ context.Context, pid int, exec string, dimensionsJSON string) (*graph.ReportRuntimeUsageResponse, error) {
+func (r *Resolver) ReportRuntimeUsage(_ context.Context, pid int, exec, source string, dimensionsJSON string) (*graph.ReportRuntimeUsageResponse, error) {
 	defer func() { handlePanics(recover(), debug.Stack()) }()
 
 	logging.Debug("Runtime usage resolver: %d - %s", pid, exec)
@@ -203,7 +205,7 @@ func (r *Resolver) ReportRuntimeUsage(_ context.Context, pid int, exec string, d
 		return &graph.ReportRuntimeUsageResponse{Received: false}, errs.Wrap(err, "Could not unmarshal")
 	}
 
-	r.rtwatch.Watch(pid, exec, dims)
+	r.rtwatch.Watch(pid, exec, source, dims)
 
 	return &graph.ReportRuntimeUsageResponse{Received: true}, nil
 }

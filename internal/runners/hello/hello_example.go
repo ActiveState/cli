@@ -13,6 +13,7 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runbits"
+	"github.com/ActiveState/cli/internal/runbits/errors"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -37,9 +38,7 @@ type RunParams struct {
 // can be set. If no default or construction-time values are necessary, direct
 // construction of RunParams is fine, and this construction func may be dropped.
 func NewRunParams() *RunParams {
-	return &RunParams{
-		Name: "Friend",
-	}
+	return &RunParams{}
 }
 
 // Hello defines the app-level dependencies that are accessible within the Run
@@ -58,20 +57,40 @@ func New(p primeable) *Hello {
 	}
 }
 
+// processError contains the scope in which errors are processed. This is
+// useful for ensuring that errors are wrapped in a user-facing error and
+// localized.
+func processError(err *error) {
+	if err == nil {
+		return
+	}
+
+	switch {
+	case errs.Matches(*err, &runbits.NoNameProvidedError{}):
+		// Errors that we are looking for should be wrapped in a user-facing error.
+		// Ensure we wrap the top-level error returned from the runner and not
+		// the unpacked error that we are inspecting.
+		*err = errs.WrapUserFacingError(*err, locale.Tl("hello_err_no_name", "Cannot say hello because no name was provided."))
+	case errs.Matches(*err, &errors.ErrNoProject{}):
+		// It's useful to offer users reasonable tips on recourses.
+		*err = errs.WrapUserFacingError(
+			*err,
+			locale.Tl("hello_err_no_project", "Cannot say hello because you are not in a project directory."),
+			errs.WithTips(
+				locale.Tl("hello_suggest_checkout", "Try using [ACTIONABLE]`state checkout`[/RESET] first."),
+			),
+		)
+	}
+}
+
 // Run contains the scope in which the hello runner logic is executed.
-func (h *Hello) Run(params *RunParams) error {
+func (h *Hello) Run(params *RunParams) (rerr error) {
+	defer processError(&rerr)
+
 	h.out.Print(locale.Tl("hello_notice", "This command is for example use only"))
 
 	if h.project == nil {
-		err := locale.NewInputError(
-			"hello_info_err_no_project", "Not in a project directory.",
-		)
-
-		// It's useful to offer users reasonable tips on recourses.
-		return errs.AddTips(err, locale.Tl(
-			"hello_suggest_checkout",
-			"Try using [ACTIONABLE]`state checkout`[/RESET] first.",
-		))
+		return &errors.ErrNoProject{errs.New("Not in a project directory")}
 	}
 
 	// Reusable runner logic is contained within the runbits package.
@@ -79,8 +98,8 @@ func (h *Hello) Run(params *RunParams) error {
 	// runners. Runners should NEVER invoke other runners.
 	if err := runbits.SayHello(h.out, params.Name); err != nil {
 		// Errors should nearly always be localized.
-		return locale.WrapError(
-			err, "hello_cannot_say", "Cannot say hello.",
+		return errs.Wrap(
+			err, "Cannot say hello.",
 		)
 	}
 
@@ -98,8 +117,8 @@ func (h *Hello) Run(params *RunParams) error {
 	// Grab data from the platform.
 	commitMsg, err := currentCommitMessage(h.project)
 	if err != nil {
-		err = locale.WrapError(
-			err, "hello_info_err_get_commit_msg", " Cannot get commit message",
+		err = errs.Wrap(
+			err, "Cannot get commit message",
 		)
 		return errs.AddTips(
 			err,
@@ -127,9 +146,7 @@ func currentCommitMessage(proj *project.Project) (string, error) {
 
 	commit, err := model.GetCommit(proj.CommitUUID())
 	if err != nil {
-		return "", locale.NewError(
-			"hello_info_err_get_commitr", "Cannot get commit from server",
-		)
+		return "", errs.Wrap(err, "Cannot get commit from server")
 	}
 
 	commitMsg := locale.Tl("hello_info_warn_no_commit", "Commit description not provided.")
