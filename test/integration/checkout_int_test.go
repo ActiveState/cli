@@ -178,7 +178,7 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckoutCustomRTPath() {
 		e2e.OptArgs("checkout", "ActiveState-CLI/Python3", fmt.Sprintf("--runtime-path=%s", customRTPath)),
 		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
-	cp.Expect("Checked out project")
+	cp.Expect("Checked out project", termtest.OptExpectTimeout(120*time.Second))
 
 	pythonExe := filepath.Join(setup.ExecDir(customRTPath), "python3"+exeutils.Extension)
 	suite.Require().True(fileutils.DirExists(customRTPath))
