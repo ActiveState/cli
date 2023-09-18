@@ -98,7 +98,7 @@ func (suite *OffInstallIntegrationTestSuite) TestInstallAndUninstall() {
 		heartbeat := suite.filterEvent(events, anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat)
 		suite.assertDimensions(heartbeat)
 
-		nDelete := countEvents(events, anaConst.CatRuntimeUsage, anaConst.ActRuntimeDelete)
+		nDelete := countEvents(events, anaConst.CatRuntimeUsage, anaConst.ActRuntimeDelete, anaConst.SrcOfflineInstaller)
 		if nDelete != 0 {
 			suite.FailNow(fmt.Sprintf("Expected 0 delete events, got %d, events:\n%#v", nDelete, events))
 		}
@@ -148,7 +148,7 @@ func (suite *OffInstallIntegrationTestSuite) TestInstallAndUninstall() {
 		// Verify that our analytics event was fired
 		events := parseAnalyticsEvents(suite, ts)
 		suite.Require().NotEmpty(events)
-		nHeartbeat := countEvents(events, anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat)
+		nHeartbeat := countEvents(events, anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat, anaConst.SrcExecutor)
 		if nHeartbeat != 1 {
 			suite.FailNow(fmt.Sprintf("Expected 1 heartbeat event, got %d, events:\n%#v", nHeartbeat, events))
 		}

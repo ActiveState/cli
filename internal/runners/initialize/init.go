@@ -166,8 +166,8 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 		return errs.Wrap(err, "Unable to get the user's writable orgs")
 	}
 	for _, org := range orgs {
-		if strings.EqualFold(org.DisplayName, params.Namespace.Owner) {
-			owner = org.DisplayName
+		if strings.EqualFold(org.URLname, params.Namespace.Owner) {
+			owner = org.URLname
 			break
 		}
 	}

@@ -122,7 +122,7 @@ func (e *BuildPlannerError) InputError() bool {
 // UserError returns the error message to be displayed to the user.
 // This function is added so that BuildPlannerErrors will be displayed
 // to the user
-func (e *BuildPlannerError) UserError() string {
+func (e *BuildPlannerError) LocalizedError() string {
 	return e.Error()
 }
 
