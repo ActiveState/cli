@@ -58,6 +58,10 @@ github.com/acarl005/stripansi
 # github.com/agnivade/levenshtein v1.1.1
 ## explicit; go 1.13
 github.com/agnivade/levenshtein
+# github.com/alecthomas/participle/v2 v2.0.0
+## explicit; go 1.18
+github.com/alecthomas/participle/v2
+github.com/alecthomas/participle/v2/lexer
 # github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751
 ## explicit
 github.com/alecthomas/template
@@ -398,7 +402,7 @@ github.com/rivo/uniseg
 # github.com/rollbar/rollbar-go v1.1.0
 ## explicit
 github.com/rollbar/rollbar-go
-# github.com/sergi/go-diff v1.1.0
+# github.com/sergi/go-diff v1.3.1
 ## explicit; go 1.12
 github.com/sergi/go-diff/diffmatchpatch
 # github.com/shibukawa/configdir v0.0.0-20170330084843-e180dbdc8da0

@@ -19,6 +19,7 @@ import (
 	"github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
+	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
@@ -77,7 +78,12 @@ func (u *Shell) Run(params *Params) error {
 
 	rtusage.PrintRuntimeUsage(u.svcModel, u.out, proj.Owner())
 
-	if cid := params.Namespace.CommitID; cid != nil && *cid != proj.CommitUUID() {
+	commitID, err := localcommit.Get(proj.Dir())
+	if err != nil {
+		return errs.Wrap(err, "Unable to get local commit")
+	}
+
+	if cid := params.Namespace.CommitID; cid != nil && *cid != commitID {
 		return locale.NewInputError("err_shell_commit_id_mismatch")
 	}
 
