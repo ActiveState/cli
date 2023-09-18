@@ -527,8 +527,9 @@ func (s *Session) Close() error {
 	}
 
 	// Trap "flisten in use" errors to help debug DX-2090.
-	svcLogContents := s.SvcLog()
-	require.NotContains(s.t, svcLogContents, "flisten in use", "Found flisten in use error in state-svc log file, contents:\n%s", svcLogContents)
+	if contents := s.SvcLog(); strings.Contains(contents, "flisten in use") {
+		s.t.Fatal(s.DebugMessage("Found 'flisten in use' error in state-svc log file"))
+	}
 
 	return nil
 }
