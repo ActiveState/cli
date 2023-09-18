@@ -111,6 +111,9 @@ if [ -z "$TMPDIR" ]; then
   TMPDIR="/tmp"
 fi
 
+TMPDIR="$TMPDIR/state-install-$RANDOM"
+mkdir -p "$TMPDIR"
+
 if [ -z "$VERSION" ]; then
   # Determine the latest version to fetch.
   STATEURL="$BASE_INFO_URL?channel=$CHANNEL&source=install&platform=$OS"
@@ -173,3 +176,6 @@ echo ""
 
 # Run the installer.
 ACTIVESTATE_SESSION_TOKEN=$SESSION_TOKEN_VALUE $TMPDIR/$INSTALLERNAME$BINARYEXT "$@" --source-installer="install.sh"
+
+# Remote temp files
+rm -r $TMPDIR
