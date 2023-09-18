@@ -80,12 +80,14 @@ func newRuntime(target setup.Targeter, an analytics.Dispatcher, svcModel *model.
 
 // New attempts to create a new runtime from local storage.  If it fails with a NeedsUpdateError, Update() needs to be called to update the locally stored runtime.
 func New(target setup.Targeter, an analytics.Dispatcher, svcm *model.SvcModel, auth *authentication.Auth) (*Runtime, error) {
+	logging.Debug("Initializing runtime for: %s/%s@%s", target.Owner(), target.Name(), target.CommitUUID())
+
 	if strings.ToLower(os.Getenv(constants.DisableRuntime)) == "true" {
 		fmt.Fprintln(os.Stderr, locale.Tl("notice_runtime_disabled", "Skipping runtime setup because it was disabled by an environment variable"))
 		return &Runtime{disabled: true, target: target}, nil
 	}
 	recordAttempt(an, target)
-	an.Event(anaConsts.CatRuntime, anaConsts.ActRuntimeStart, &dimensions.Values{
+	an.Event(anaConsts.CatRuntimeDebug, anaConsts.ActRuntimeStart, &dimensions.Values{
 		Trigger:          ptr.To(target.Trigger().String()),
 		Headless:         ptr.To(strconv.FormatBool(target.Headless())),
 		CommitID:         ptr.To(target.CommitUUID().String()),
@@ -95,7 +97,7 @@ func New(target setup.Targeter, an analytics.Dispatcher, svcm *model.SvcModel, a
 
 	r, err := newRuntime(target, an, svcm, auth)
 	if err == nil {
-		an.Event(anaConsts.CatRuntime, anaConsts.ActRuntimeCache, &dimensions.Values{
+		an.Event(anaConsts.CatRuntimeDebug, anaConsts.ActRuntimeCache, &dimensions.Values{
 			CommitID: ptr.To(target.CommitUUID().String()),
 		})
 	}
@@ -158,6 +160,7 @@ func (r *Runtime) Target() setup.Targeter {
 // This function is usually called, after New() returned with a NeedsUpdateError
 func (r *Runtime) Update(eventHandler events.Handler) (rerr error) {
 	if r.disabled {
+		logging.Debug("Skipping update as it is disabled")
 		return nil // nothing to do
 	}
 
@@ -278,7 +281,7 @@ func (r *Runtime) recordCompletion(err error) {
 		message = errs.JoinMessage(err)
 	}
 
-	r.analytics.Event(anaConsts.CatRuntime, action, &dimensions.Values{
+	r.analytics.Event(anaConsts.CatRuntimeDebug, action, &dimensions.Values{
 		CommitID: ptr.To(r.target.CommitUUID().String()),
 		// Note: ProjectID is set by state-svc since ProjectNameSpace is specified.
 		ProjectNameSpace: ptr.To(ns.String()),

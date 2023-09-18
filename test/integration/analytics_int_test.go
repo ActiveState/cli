@@ -30,12 +30,14 @@ type AnalyticsIntegrationTestSuite struct {
 	eventsfile string
 }
 
-// TestActivateEvents ensures that the right events are sent when we activate
+// TestHeartbeats ensures that heartbeats are send on runtime use
 // Note the heartbeat code especially is a little awkward as we have to account for timing offsets between state and
 // state-svc. For that reason we tend to assert "greater than" rather than equals, because checking for equals introduces
 // race conditions into the testing suite (not the state tool itself).
-func (suite *AnalyticsIntegrationTestSuite) TestActivateEvents() {
+func (suite *AnalyticsIntegrationTestSuite) TestHeartbeats() {
 	suite.OnlyRunForTags(tagsuite.Analytics, tagsuite.Critical)
+
+	/* TEST SETUP */
 
 	ts := e2e.New(suite.T(), true)
 	defer ts.Close()
@@ -54,6 +56,10 @@ func (suite *AnalyticsIntegrationTestSuite) TestActivateEvents() {
 		constants.DisableRuntime + "=false",
 		fmt.Sprintf("%s=%d", constants.HeartbeatIntervalEnvVarName, heartbeatInterval),
 	}
+
+	/* ACTIVATE TESTS */
+
+	// Produce Activate Heartbeats
 
 	var cp *termtest.ConsoleProcess
 	if runtime.GOOS == "windows" {
@@ -75,21 +81,31 @@ func (suite *AnalyticsIntegrationTestSuite) TestActivateEvents() {
 
 	time.Sleep(time.Second) // Ensure state-svc has time to report events
 
+	// By this point the activate heartbeats should have been recorded
+
 	suite.eventsfile = filepath.Join(ts.Dirs.Config, reporters.TestReportFilename)
 
 	events := parseAnalyticsEvents(suite, ts)
+
+	// Now it's time for us to assert that we are seeing the expected number of events
+
 	suite.Require().NotEmpty(events)
 
 	// Runtime:start events
-	suite.assertNEvents(events, 1, anaConst.CatRuntime, anaConst.ActRuntimeStart, anaConst.SrcStateTool,
+	suite.assertNEvents(events, 1, anaConst.CatRuntimeDebug, anaConst.ActRuntimeStart, anaConst.SrcStateTool,
 		fmt.Sprintf("output:\n%s\n%s",
 			cp.Snapshot(), ts.DebugLogs()))
 
 	// Runtime:success events
-	suite.assertNEvents(events, 1, anaConst.CatRuntime, anaConst.ActRuntimeSuccess, anaConst.SrcStateTool,
+	suite.assertNEvents(events, 1, anaConst.CatRuntimeDebug, anaConst.ActRuntimeSuccess, anaConst.SrcStateTool,
 		fmt.Sprintf("output:\n%s\n%s",
 			cp.Snapshot(), ts.DebugLogs()))
 
+	// Runtime-use:attempts events
+	attemptInitialCount := countEvents(events, anaConst.CatRuntimeUsage, anaConst.ActRuntimeAttempt, anaConst.SrcStateTool)
+	suite.Equal(1, attemptInitialCount, "Activate should have resulted in 1 attempt")
+
+	// Runtime-use:heartbeat events
 	heartbeatInitialCount := countEvents(events, anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat, anaConst.SrcStateTool)
 	if heartbeatInitialCount < 2 {
 		// It's possible due to the timing of the heartbeats and the fact that they are async that we have gotten either
@@ -97,23 +113,32 @@ func (suite *AnalyticsIntegrationTestSuite) TestActivateEvents() {
 		suite.Fail(fmt.Sprintf("Received %d heartbeats, realistically we should at least have gotten 2", heartbeatInitialCount))
 	}
 
+	// Wait for additional heartbeats to be reported, because our activated shell is still open
+
 	time.Sleep(sleepTime)
 
 	events = parseAnalyticsEvents(suite, ts)
 	suite.Require().NotEmpty(events)
+
+	suite.assertNEvents(events, 1, anaConst.CatRuntimeUsage, anaConst.ActRuntimeAttempt, anaConst.SrcStateTool, "Should still only have 1 attempt")
 
 	// Runtime-use:heartbeat events - should now be at least +1 because we waited <heartbeatInterval>
 	suite.assertGtEvents(events, heartbeatInitialCount, anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat, anaConst.SrcStateTool,
 		fmt.Sprintf("output:\n%s\n%s",
 			cp.Snapshot(), ts.DebugLogs()))
 
+	/* EXECUTOR TESTS */
+
 	// Test that executor is sending heartbeats
-	{
+	suite.Run("Executors", func() {
 		cp.SendLine("python3 -c \"import sys; print(sys.copyright)\"")
 		cp.Expect("provided by ActiveState")
+
 		time.Sleep(sleepTime)
+
 		eventsAfterExecutor := parseAnalyticsEvents(suite, ts)
 		suite.Require().Greater(len(eventsAfterExecutor), len(events), "Should have received more events after running executor")
+
 		executorEvents := filterEvents(eventsAfterExecutor, func(e reporters.TestLogEntry) bool {
 			if e.Dimensions == nil || e.Dimensions.Trigger == nil {
 				return false
@@ -121,7 +146,8 @@ func (suite *AnalyticsIntegrationTestSuite) TestActivateEvents() {
 			return (*e.Dimensions.Trigger) == target.TriggerExecutor.String()
 		})
 		suite.Require().Equal(1, countEvents(executorEvents, anaConst.CatRuntimeUsage, anaConst.ActRuntimeAttempt, anaConst.SrcExecutor),
-			ts.DebugMessage("Should have a runtime attempt, events:\n"+debugEvents(suite.T(), executorEvents)))
+			ts.DebugMessage("Should have a runtime attempt, events:\n"+suite.summarizeEvents(executorEvents)))
+
 		// It's possible due to the timing of the heartbeats and the fact that they are async that we have gotten either
 		// one or two by this point. Technically more is possible, just very unlikely.
 		numHeartbeats := countEvents(executorEvents, anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat, anaConst.SrcExecutor)
@@ -136,7 +162,9 @@ func (suite *AnalyticsIntegrationTestSuite) TestActivateEvents() {
 		suite.Require().NotNil(heartbeatEvent, "Should have a heartbeat event")
 		suite.Require().Equal(*heartbeatEvent.Dimensions.ProjectNameSpace, namespace)
 		suite.Require().Equal(*heartbeatEvent.Dimensions.CommitID, commitID)
-	}
+	})
+
+	/* ACTIVATE SHUTDOWN TESTS */
 
 	cp.SendLine("exit")
 	if runtime.GOOS == "windows" {
@@ -150,6 +178,8 @@ func (suite *AnalyticsIntegrationTestSuite) TestActivateEvents() {
 
 	time.Sleep(sleepTime) // give time to let rtwatcher detect process has exited
 
+	// Test that we are no longer sending heartbeats
+
 	events = parseAnalyticsEvents(suite, ts)
 	suite.Require().NotEmpty(events)
 	eventsAfterExit := countEvents(events, anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat, anaConst.SrcExecutor)
@@ -158,11 +188,11 @@ func (suite *AnalyticsIntegrationTestSuite) TestActivateEvents() {
 
 	eventsAfter := parseAnalyticsEvents(suite, ts)
 	suite.Require().NotEmpty(eventsAfter)
-	eventsAfterWait := countEvents(eventsAfter, anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat, anaConst.SrcExecutor)
+	eventsAfterExitAndWait := countEvents(eventsAfter, anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat, anaConst.SrcExecutor)
 
-	suite.Equal(eventsAfterExit, eventsAfterWait,
+	suite.Equal(eventsAfterExit, eventsAfterExitAndWait,
 		fmt.Sprintf("Heartbeats should stop ticking after exiting subshell.\n"+
-			"Unexpected events: %s", debugEvents(suite.T(), filterHeartbeats(eventsAfter[len(events):])),
+			"Unexpected events: %s", suite.summarizeEvents(filterHeartbeats(eventsAfter[len(events):])),
 		))
 
 	// Ensure any analytics events from the state tool have the instance ID set
@@ -174,6 +204,58 @@ func (suite *AnalyticsIntegrationTestSuite) TestActivateEvents() {
 	}
 
 	suite.assertSequentialEvents(events)
+}
+
+func (suite *AnalyticsIntegrationTestSuite) TestExecEvents() {
+	suite.OnlyRunForTags(tagsuite.Analytics, tagsuite.Critical)
+
+	/* TEST SETUP */
+
+	ts := e2e.New(suite.T(), true)
+	defer ts.Close()
+
+	namespace := "ActiveState-CLI/Alternate-Python"
+	commitID := "efcc851f-1451-4d0a-9dcb-074ac3f35f0a"
+
+	// We want to do a clean test without an activate event, so we have to manually seed the yaml
+	url := fmt.Sprintf("https://platform.activestate.com/%s?branch=main&commitID=%s", namespace, commitID)
+	suite.Require().NoError(fileutils.WriteFile(filepath.Join(ts.Dirs.Work, "activestate.yaml"), []byte("project: "+url)))
+
+	heartbeatInterval := 1000 // in milliseconds
+	sleepTime := time.Duration(heartbeatInterval) * time.Millisecond
+	sleepTime = sleepTime + (sleepTime / 2)
+
+	env := []string{
+		constants.DisableRuntime + "=false",
+		fmt.Sprintf("%s=%d", constants.HeartbeatIntervalEnvVarName, heartbeatInterval),
+	}
+
+	/* EXEC TESTS */
+
+	cp := ts.SpawnWithOpts(
+		e2e.WithArgs("exec", "--", "python3", "-c", fmt.Sprintf("import time; time.sleep(%f); print('DONE')", sleepTime.Seconds())),
+		e2e.WithWorkDirectory(ts.Dirs.Work),
+		e2e.AppendEnv(env...),
+	)
+
+	cp.Expect("DONE")
+
+	time.Sleep(sleepTime)
+
+	events := parseAnalyticsEvents(suite, ts)
+	suite.Require().NotEmpty(events)
+
+	runtimeEvents := filterEvents(events, func(e reporters.TestLogEntry) bool {
+		return e.Category == anaConst.CatRuntimeUsage
+	})
+
+	suite.Equal(1, countEvents(events, anaConst.CatRuntimeUsage, anaConst.ActRuntimeAttempt, anaConst.SrcStateTool),
+		ts.DebugMessage("Should have a runtime attempt, events:\n"+suite.summarizeEvents(runtimeEvents)))
+
+	suite.assertGtEvents(events, 0, anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat, anaConst.SrcStateTool,
+		fmt.Sprintf("Expected new heartbeats after state exec"))
+
+	cp.ExpectExitCode(0)
 }
 
 func countEvents(events []reporters.TestLogEntry, category, action, source string) int {
@@ -270,12 +352,6 @@ func (suite *AnalyticsIntegrationTestSuite) summarizeEventSequence(events []repo
 
 type TestingSuiteForAnalytics interface {
 	Require() *require.Assertions
-}
-
-func debugEvents(t *testing.T, events []reporters.TestLogEntry) string {
-	v, err := json.Marshal(events)
-	require.NoError(t, err)
-	return string(v)
 }
 
 func parseAnalyticsEvents(suite TestingSuiteForAnalytics, ts *e2e.Session) []reporters.TestLogEntry {
