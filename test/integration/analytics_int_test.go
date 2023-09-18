@@ -93,12 +93,12 @@ func (suite *AnalyticsIntegrationTestSuite) TestHeartbeats() {
 	suite.Require().NotEmpty(events)
 
 	// Runtime:start events
-	suite.assertNEvents(events, 1, anaConst.CatRuntime, anaConst.ActRuntimeStart, anaConst.SrcStateTool,
+	suite.assertNEvents(events, 1, anaConst.CatRuntimeDebug, anaConst.ActRuntimeStart, anaConst.SrcStateTool,
 		fmt.Sprintf("output:\n%s\n%s",
 			cp.Snapshot(), ts.DebugLogs()))
 
 	// Runtime:success events
-	suite.assertNEvents(events, 1, anaConst.CatRuntime, anaConst.ActRuntimeSuccess, anaConst.SrcStateTool,
+	suite.assertNEvents(events, 1, anaConst.CatRuntimeDebug, anaConst.ActRuntimeSuccess, anaConst.SrcStateTool,
 		fmt.Sprintf("output:\n%s\n%s",
 			cp.Snapshot(), ts.DebugLogs()))
 
@@ -121,7 +121,7 @@ func (suite *AnalyticsIntegrationTestSuite) TestHeartbeats() {
 	events = parseAnalyticsEvents(suite, ts)
 	suite.Require().NotEmpty(events)
 
-	suite.assertNEvents(events, 1, anaConst.CatRuntime, anaConst.ActRuntimeAttempt, "Should still only have 1 attempt")
+	suite.assertNEvents(events, 1, anaConst.CatRuntimeUsage, anaConst.ActRuntimeAttempt, anaConst.SrcStateTool, "Should still only have 1 attempt")
 
 	// Runtime-use:heartbeat events - should now be at least +1 because we waited <heartbeatInterval>
 	suite.assertGtEvents(events, heartbeatInitialCount, anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat, anaConst.SrcStateTool,
@@ -147,7 +147,7 @@ func (suite *AnalyticsIntegrationTestSuite) TestHeartbeats() {
 			return (*e.Dimensions.Trigger) == target.TriggerExecutor.String()
 		})
 		suite.Require().Equal(1, countEvents(executorEvents, anaConst.CatRuntimeUsage, anaConst.ActRuntimeAttempt, anaConst.SrcExecutor),
-			ts.DebugMessage("Should have a runtime attempt, events:\n"+debugEvents(suite.T(), executorEvents)))
+			ts.DebugMessage("Should have a runtime attempt, events:\n"+suite.summarizeEvents(executorEvents)))
 
 		// It's possible due to the timing of the heartbeats and the fact that they are async that we have gotten either
 		// one or two by this point. Technically more is possible, just very unlikely.
@@ -193,7 +193,7 @@ func (suite *AnalyticsIntegrationTestSuite) TestHeartbeats() {
 
 	suite.Equal(eventsAfterExit, eventsAfterExitAndWait,
 		fmt.Sprintf("Heartbeats should stop ticking after exiting subshell.\n"+
-			"Unexpected events: %s", debugEvents(suite.T(), filterHeartbeats(eventsAfter[len(events):])),
+			"Unexpected events: %s", suite.summarizeEvents(filterHeartbeats(eventsAfter[len(events):])),
 		))
 
 	// Ensure any analytics events from the state tool have the instance ID set
@@ -250,10 +250,10 @@ func (suite *AnalyticsIntegrationTestSuite) TestExecEvents() {
 		return e.Category == anaConst.CatRuntimeUsage
 	})
 
-	suite.Equal(1, countEvents(events, anaConst.CatRuntimeUsage, anaConst.ActRuntimeAttempt, anaConst.SrcExecutor),
-		ts.DebugMessage("Should have a runtime attempt, events:\n"+debugEvents(suite.T(), runtimeEvents)))
+	suite.Equal(1, countEvents(events, anaConst.CatRuntimeUsage, anaConst.ActRuntimeAttempt, anaConst.SrcStateTool),
+		ts.DebugMessage("Should have a runtime attempt, events:\n"+suite.summarizeEvents(runtimeEvents)))
 
-	suite.assertGtEvents(events, 0, anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat, anaConst.SrcExecutor,
+	suite.assertGtEvents(events, 0, anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat, anaConst.SrcStateTool,
 		fmt.Sprintf("Expected new heartbeats after state exec"))
 
 	cp.ExpectExitCode(0)
@@ -353,12 +353,6 @@ func (suite *AnalyticsIntegrationTestSuite) summarizeEventSequence(events []repo
 
 type TestingSuiteForAnalytics interface {
 	Require() *require.Assertions
-}
-
-func debugEvents(t *testing.T, events []reporters.TestLogEntry) string {
-	v, err := json.Marshal(events)
-	require.NoError(t, err)
-	return string(v)
 }
 
 func parseAnalyticsEvents(suite TestingSuiteForAnalytics, ts *e2e.Session) []reporters.TestLogEntry {

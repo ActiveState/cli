@@ -12,9 +12,9 @@ const CatShim = "shim"
 // CatBuild is the event category used for headchef builds
 const CatBuild = "build"
 
-// CatRuntime is the event category used for debugging runtime setup and usage.
+// CatRuntimeDebug is the event category used for debugging runtime setup and usage.
 // It should only be used to help diagnose where errors and dropoffs may be happening.
-const CatRuntime = "runtime-debug"
+const CatRuntimeDebug = "runtime-debug"
 
 // CatRuntimeUsage is the event category used for all runtime usage
 const CatRuntimeUsage = "runtime-use"

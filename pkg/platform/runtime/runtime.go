@@ -78,7 +78,7 @@ func New(target setup.Targeter, an analytics.Dispatcher, svcm *model.SvcModel) (
 		return &Runtime{disabled: true, target: target}, nil
 	}
 	recordAttempt(an, target)
-	an.Event(anaConsts.CatRuntime, anaConsts.ActRuntimeStart, &dimensions.Values{
+	an.Event(anaConsts.CatRuntimeDebug, anaConsts.ActRuntimeStart, &dimensions.Values{
 		Trigger:          ptr.To(target.Trigger().String()),
 		Headless:         ptr.To(strconv.FormatBool(target.Headless())),
 		CommitID:         ptr.To(target.CommitUUID().String()),
@@ -88,7 +88,7 @@ func New(target setup.Targeter, an analytics.Dispatcher, svcm *model.SvcModel) (
 
 	r, err := newRuntime(target, an, svcm)
 	if err == nil {
-		an.Event(anaConsts.CatRuntime, anaConsts.ActRuntimeCache, &dimensions.Values{
+		an.Event(anaConsts.CatRuntimeDebug, anaConsts.ActRuntimeCache, &dimensions.Values{
 			CommitID: ptr.To(target.CommitUUID().String()),
 		})
 	}
@@ -228,7 +228,7 @@ func (r *Runtime) recordCompletion(err error) {
 		message = errs.JoinMessage(err)
 	}
 
-	r.analytics.Event(anaConsts.CatRuntime, action, &dimensions.Values{
+	r.analytics.Event(anaConsts.CatRuntimeDebug, action, &dimensions.Values{
 		CommitID: ptr.To(r.target.CommitUUID().String()),
 		// Note: ProjectID is set by state-svc since ProjectNameSpace is specified.
 		ProjectNameSpace: ptr.To(ns.String()),
