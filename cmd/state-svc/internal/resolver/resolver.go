@@ -24,6 +24,7 @@ import (
 	configMediator "github.com/ActiveState/cli/internal/mediators/config"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/poller"
+	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/projectfile"
@@ -164,7 +165,7 @@ func (r *Resolver) Projects(ctx context.Context) ([]*graph.Project, error) {
 func (r *Resolver) AnalyticsEvent(_ context.Context, category, action, source string, _label *string, dimensionsJson string) (*graph.AnalyticsEventResponse, error) {
 	defer func() { handlePanics(recover(), debug.Stack()) }()
 
-	logging.Debug("Analytics event resolver: %s - %s (%s)", category, action, source)
+	logging.Debug("Analytics event resolver: %s - %s: %s (%s)", category, action, ptr.From(_label, "NIL"), source)
 
 	label := ""
 	if _label != nil {
