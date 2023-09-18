@@ -2,8 +2,6 @@ package main
 
 import (
 	"bytes"
-	"crypto/sha256"
-	"encoding/hex"
 	"fmt"
 	"log"
 	"net/http"
@@ -16,7 +14,6 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
-	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 
 	"github.com/ActiveState/cli/internal/condition"
 )
@@ -48,28 +45,11 @@ func run() {
 	createSession()
 	fileList := getFileList()
 
-	hasTmpDir := true
-	tmpDir, err := os.MkdirTemp("", "")
-	if err != nil {
-		fmt.Println(err)
-		hasTmpDir = false
-	}
-
 	// Upload the files
 	fmt.Printf("Uploading %d files\n", len(fileList))
 	for _, path := range fileList {
 		params := prepareFile(path)
 		uploadFile(params)
-
-		if hasTmpDir {
-			filename, err := downloadFile(tmpDir, params)
-			if err != nil {
-				fmt.Println(err)
-				continue
-			}
-			fmt.Printf("Downloaded %q with hash: ", filename)
-			fmt.Println(generateSHA256(filename))
-		}
 	}
 }
 
@@ -82,8 +62,8 @@ func (l *logger) Log(v ...interface{}) {
 func createSession() {
 	// Specify profile to load for the session's config
 	var err error
-	verboseErr := true
-	logLevel := aws.LogDebug
+	var verboseErr = true
+	var logLevel = aws.LogDebug
 	_ = logLevel
 	opts := session.Options{
 		Config: aws.Config{
@@ -161,71 +141,6 @@ func uploadFile(params *s3.PutObjectInput) {
 			awsBucketName, *params.Key, err.Error())
 		os.Exit(1)
 	}
-}
-
-func generateSHA256(path string) string {
-	hasher := sha256.New()
-	b, err := os.ReadFile(path)
-	if err != nil {
-		log.Fatalln(err)
-	}
-	if _, err := hasher.Write(b); err != nil {
-		log.Fatalln(err)
-	}
-
-	return hex.EncodeToString(hasher.Sum(nil))
-}
-
-/*func systemSHA256Sum(file string) (string, error) {
-	cmdText := "sha256sum"
-	var cmdArgs []string
-
-	if runtime.GOOS == "darwin" {
-		cmdText = "shasum"
-		cmdArgs = []string{"-a", "256"}
-	}
-
-	cmdArgs = append(cmdArgs, file)
-
-	cmd := exec.Command(cmdText, cmdArgs...)
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		return "", fmt.Errorf("failed to collect sha sum: gather combined output: %w\n", err)
-	}
-
-	rawText := string(out)
-	sum, _, ok := strings.Cut(rawText, " ")
-	if !ok {
-		return "", fmt.Errorf("failed to collect sha sum: cannot find sum in %q\n", rawText)
-	}
-
-	return sum, nil
-}*/
-
-func downloadFile(dir string, put *s3.PutObjectInput) (string, error) {
-	filename := filepath.Join(dir, *put.Key)
-
-	if err := os.MkdirAll(filepath.Dir(filename), 0o755); err != nil {
-		return "", err
-	}
-
-	file, err := os.Create(filename)
-	if err != nil {
-		return "", err
-	}
-	defer file.Close()
-
-	dler := s3manager.NewDownloader(sess)
-	params := &s3.GetObjectInput{
-		Bucket: put.Bucket,
-		Key:    put.Key,
-	}
-
-	if _, err := dler.Download(file, params); err != nil {
-		return "", err
-	}
-
-	return filename, nil
 }
 
 func normalizePath(p string) string {

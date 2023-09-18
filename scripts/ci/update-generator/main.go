@@ -6,12 +6,11 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"runtime"
-	"strings"
 
 	"github.com/mholt/archiver"
 
@@ -29,7 +28,6 @@ var (
 	defaultBuildDir  = filepath.Join(rootPath, "build")
 	defaultInputDir  = filepath.Join(defaultBuildDir, "payload", constants.ToplevelInstallArchiveDir)
 	defaultOutputDir = filepath.Join(rootPath, "public")
-	infoFileName     = "info.json"
 )
 
 func main() {
@@ -53,14 +51,11 @@ func fetchPlatform() string {
 
 func generateSha256(path string) string {
 	hasher := sha256.New()
-	b, err := os.ReadFile(path)
+	b, err := ioutil.ReadFile(path)
 	if err != nil {
-		log.Fatalln(err)
+		log.Fatal(err)
 	}
-	if _, err := hasher.Write(b); err != nil {
-		log.Fatalln(err)
-	}
-
+	hasher.Write(b)
 	return hex.EncodeToString(hasher.Sum(nil))
 }
 
@@ -69,34 +64,6 @@ func archiveMeta() (archiveMethod archiver.Archiver, ext string) {
 		return archiver.NewZip(), ".zip"
 	}
 	return archiver.NewTarGz(), ".tar.gz"
-}
-
-func systemSHA256Sum(file string) string {
-	cmdText := "sha256sum"
-	var cmdArgs []string
-
-	if runtime.GOOS == "darwin" {
-		cmdText = "shasum"
-		cmdArgs = []string{"-a", "256"}
-	}
-
-	cmdArgs = append(cmdArgs, file)
-
-	cmd := exec.Command(cmdText, cmdArgs...)
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		fmt.Printf("error collecting sha sum: gather combined output: %v\n", err)
-		return ""
-	}
-
-	rawText := string(out)
-	sum, _, ok := strings.Cut(rawText, " ")
-	if !ok {
-		fmt.Printf("error collecting sha sum: cannot find sum in %q\n", rawText)
-		return ""
-	}
-
-	return sum
 }
 
 func createUpdate(outputPath, channel, version, platform, target string) error {
@@ -117,38 +84,23 @@ func createUpdate(outputPath, channel, version, platform, target string) error {
 		return errs.Wrap(err, "Archiving failed")
 	}
 
-	tmpDir, err := os.MkdirTemp("", "")
-	if err != nil {
-		fmt.Printf("TmpDir creation failed: %v\n", err)
-	}
-	if err := archiver.Unarchive(archivePath, tmpDir); err != nil {
-		fmt.Printf("Unarchiving failed: %v\n", err)
-	}
-
 	avUpdate := updater.NewAvailableUpdate(channel, version, platform, filepath.ToSlash(relArchivePath), generateSha256(archivePath), "")
 	b, err := json.MarshalIndent(avUpdate, "", "    ")
 	if err != nil {
 		return errs.Wrap(err, "Failed to marshal AvailableUpdate information.")
 	}
 
-	infoPath := filepath.Join(outputPath, relChannelPath, infoFileName)
+	infoPath := filepath.Join(outputPath, relChannelPath, "info.json")
 	fmt.Printf("Creating %s\n", infoPath)
-	err = os.WriteFile(infoPath, b, 0o755)
+	err = ioutil.WriteFile(infoPath, b, 0o755)
 	if err != nil {
-		return errs.Wrap(err, "Failed to write info file (%s).", infoPath)
+		return errs.Wrap(err, "Failed to write info.json.")
 	}
 
-	copyInfoPath := filepath.Join(outputPath, relVersionedPath, filepath.Base(infoPath))
-	fmt.Printf("Creating copy of info file as %s\n", copyInfoPath)
-	err = fileutils.CopyFile(infoPath, copyInfoPath)
+	err = fileutils.CopyFile(infoPath, filepath.Join(outputPath, relVersionedPath, filepath.Base(infoPath)))
 	if err != nil {
-		return errs.Wrap(err, "Could not copy info file to (%s).", copyInfoPath)
+		return errs.Wrap(err, "Could not copy info.json file")
 	}
-
-	fmt.Printf("Generated SHA sum: %s\n", avUpdate.Sha256)
-
-	systemSum := systemSHA256Sum(archivePath)
-	fmt.Printf("System calculated SHA sum: %s\n", systemSum)
 
 	return nil
 }

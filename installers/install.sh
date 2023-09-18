@@ -93,14 +93,10 @@ MINGW*|MSYS*)
 esac
 
 # Determine a fetch method
-if [ ! -z "`command -v wget`" ] && [ $OS != "darwin" ]; then
-  which wget
-  wget --version | head -1
-  FETCH="wget -nv -O"
+if [ ! -z "`command -v wget`" ]; then
+  FETCH="wget -q -O"
 elif [ ! -z "`command -v curl`" ]; then
-  which curl | head -1
-  curl --version
-  FETCH="curl -sS -v -o"
+  FETCH="curl -sS -o"
 else
   error "Either wget or curl is required to download files"
   exit 1
@@ -137,9 +133,7 @@ fi
 progress "Preparing Installer for State Tool Package Manager version $VERSION"
 STATEURL="$BASE_FILE_URL/$RELURL"
 ARCHIVE="$OS-amd64$DOWNLOADEXT"
-echo "Downloading ${STATEURL} to ${TMPDIR}/${ARCHIVE}"
-ls -l "${TMPDIR}/${ARCHIVE}"
-$FETCH $TMPDIR/$ARCHIVE $STATEURL 2>&1 | grep -v "\* TLS\|^{ \|^} "
+$FETCH $TMPDIR/$ARCHIVE $STATEURL
 # wget and curl differ on how to handle AWS' "Forbidden" result for unknown versions.
 # wget will exit with nonzero status. curl simply creates an XML file with the forbidden error.
 # If curl was used, make sure the file downloaded is of type 'data', according to the UNIX `file`
@@ -157,7 +151,6 @@ if [ ! -z "$SUM" -a  "`$SHA256SUM -b $TMPDIR/$ARCHIVE | cut -d ' ' -f1`" != "$SU
   error "SHA256 sum did not match:"
   error "Expected: $SUM"
   error "Received: `$SHA256SUM -b $TMPDIR/$ARCHIVE | cut -d ' ' -f1`"
-  ls -l "${TMPDIR}/${ARCHIVE}"
   error "Aborting installation."
   exit 1
 fi
