@@ -86,6 +86,9 @@ func (suite *ActivateIntegrationTestSuite) addForegroundSvc(ts *e2e.Session) fun
 	// Stop function
 	return func() {
 		go func() {
+			defer func() {
+				suite.Require().Nil(recover())
+			}()
 			stdout, stderr, err := exeutils.ExecSimple(ts.SvcExe, []string{"stop"}, ts.Env)
 			suite.Require().NoError(err, "svc stop failed: %s\n%s", stdout, stderr)
 		}()
@@ -97,16 +100,8 @@ func (suite *ActivateIntegrationTestSuite) addForegroundSvc(ts *e2e.Session) fun
 			if !errors.Is(err2, rtutils.ErrTimeout) {
 				suite.Require().NoError(err2)
 			}
-			fmt.Printf("svc did not stop in time, Stdout:\n%s\n\nStderr:\n%s", stdout.String(), stderr.String())
+			suite.T().Logf("svc did not stop in time, Stdout:\n%s\n\nStderr:\n%s", stdout.String(), stderr.String())
 			cmd.Process.Kill()
-
-			// If we have to kill it we can't verify the exit code as it will be non-zero due to the fact that we killed it
-			// thing is; due to the nature of our integration testing framework there are too many factors to consider here
-			// and we there's going to be cases where the stop call above didn't work due to reasons other than "it broke".
-			// Sadly we just can't fail on that, as we'd have periodic failures happening constantly.
-			// We'll address this properly with the refactor: DX-1312
-			// All that said; we should still be able to verify the output, which is the real meat of this function anyway.
-			verifyExit = false
 		}
 
 		errMsg := fmt.Sprintf("svc foreground did not complete as expected. Stdout:\n%s\n\nStderr:\n%s", stdout.String(), stderr.String())
