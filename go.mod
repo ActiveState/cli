@@ -13,7 +13,7 @@ require (
 	github.com/alecthomas/participle/v2 v2.0.0
 	github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751
 	github.com/andygrunwald/go-jira v1.15.1
-	github.com/aws/aws-sdk-go v1.34.28
+	github.com/aws/aws-sdk-go v1.45.1
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/creack/pty v1.1.11
 	github.com/dave/jennifer v0.18.0

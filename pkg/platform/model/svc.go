@@ -18,9 +18,7 @@ import (
 	"github.com/ActiveState/graphql"
 )
 
-var (
-	SvcTimeoutMinimal = time.Millisecond * 500
-)
+var SvcTimeoutMinimal = time.Millisecond * 500
 
 type SvcModel struct {
 	client *gqlclient.Client
@@ -77,18 +75,18 @@ func (m *SvcModel) LocalProjects(ctx context.Context) ([]*graph.Project, error) 
 	return response.Projects, nil
 }
 
-func (m *SvcModel) CheckUpdate(ctx context.Context) (*graph.AvailableUpdate, error) {
+// CheckUpdate returns cached update information. There is no guarantee that
+// available information is immediately cached. For instance, if this info is
+// requested shortly after the service is started up, the data may return
+// empty for a little while.
+func (m *SvcModel) CheckUpdate(ctx context.Context, desiredChannel, desiredVersion string) (*graph.AvailableUpdate, error) {
 	defer profile.Measure("svc:CheckUpdate", time.Now())
-	r := request.NewAvailableUpdate()
+	r := request.NewAvailableUpdate(desiredChannel, desiredVersion)
 	u := graph.AvailableUpdateResponse{}
 	if err := m.request(ctx, r, &u); err != nil {
 		return nil, errs.Wrap(err, "Error checking if update is available.")
 	}
 
-	// TODO: https://activestatef.atlassian.net/browse/DX-866
-	if u.AvailableUpdate.Version == "" {
-		return nil, nil
-	}
 	return &u.AvailableUpdate, nil
 }
 

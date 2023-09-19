@@ -15,8 +15,7 @@ name: Build-Test-Deploy
       - synchronize
       - reopened
   schedule:
-    -
-      cron: 0 0 * * *
+    - cron: 0 0 * * *
 
 # === Workflow Permissions ===
 permissions:
@@ -25,7 +24,7 @@ permissions:
 
 # === Workflow-level environment variables ===
 env:
-  AWS_REGION : us-east-1
+  AWS_REGION: us-east-1
   AWS_ROLE_SESSION_NAME: gha-activestate-cli
 
 # === JOBS ===
@@ -243,7 +242,7 @@ jobs:
         name: Generate Remote Install Deployment
         shell: bash
         run: state run generate-remote-install-deployment
-      
+
       - # === Configure AWS credentials ==
         name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v2
