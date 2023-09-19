@@ -13,8 +13,6 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
-	"github.com/ActiveState/cli/pkg/platform/api/mono"
-	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/users"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -55,12 +53,7 @@ func AuthenticateWithInput(
 				return errs.Wrap(err, "promptToken failed")
 			}
 		case errs.Matches(err, &authentication.ErrUnauthorized{}):
-			if !uniqueUsername(credentials) {
-				return errs.Wrap(err, "uniqueUsername failed")
-			}
-			if err := SignupWithBrowser(out, auth, prompt); err != nil {
-				return errs.Wrap(err, "SignupWithBrowser failed")
-			}
+			return locale.WrapError(err, "err_auth_failed")
 		default:
 			return locale.WrapError(err, "err_auth_failed_unknown_cause", "", err.Error())
 		}
@@ -172,19 +165,6 @@ func AuthenticateWithCredentials(credentials *mono_models.Credentials, auth *aut
 	}
 
 	return nil
-}
-
-func uniqueUsername(credentials *mono_models.Credentials) bool {
-	params := users.NewUniqueUsernameParams()
-	params.SetUsername(credentials.Username)
-	_, err := mono.Get().Users.UniqueUsername(params)
-	if err != nil {
-		// This error is not useful to the user so we do not return it and log instead
-		logging.Debug("Error when checking for unique username: %v", err)
-		return false
-	}
-
-	return true
 }
 
 func promptToken(credentials *mono_models.Credentials, out output.Outputer, prompt prompt.Prompter, auth *authentication.Auth) error {
