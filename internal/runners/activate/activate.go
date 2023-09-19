@@ -84,7 +84,7 @@ func NewActivate(prime primeable) *Activate {
 func (r *Activate) Run(params *ActivateParams) error {
 	logging.Debug("Activate %v, %v", params.Namespace, params.PreferredPath)
 
-	checker.RunUpdateNotifier(r.svcModel, r.out)
+	checker.RunUpdateNotifier(r.analytics, r.svcModel, r.out)
 
 	r.out.Notice(output.Title(locale.T("info_activating_state")))
 
@@ -133,7 +133,11 @@ func (r *Activate) Run(params *ActivateParams) error {
 		}
 
 		if params.Namespace == nil || params.Namespace.IsValid() {
-			return locale.NewInputError("err_conflicting_default_while_activated", "Cannot make [NOTICE]{{.V0}}[/RESET] always available for use while in an activated state.", params.Namespace.String())
+			return locale.NewInputError(
+				"err_conflicting_default_while_activated",
+				"Cannot make [NOTICE]{{.V0}}[/RESET] always available for use while in an activated state.",
+				params.Namespace.String(),
+			)
 		}
 	}
 

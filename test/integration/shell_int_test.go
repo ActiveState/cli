@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/ActiveState/cli/internal/config"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/subshell/bash"
@@ -328,6 +329,29 @@ func (suite *ShellIntegrationTestSuite) TestNestedShellNotification() {
 	cp.SendLine("exit") // subshell within a subshell
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
+}
+
+func (suite *ShellIntegrationTestSuite) TestRuby() {
+	if runtime.GOOS == "darwin" {
+		return // Ruby support is not yet enabled on the Platform
+	}
+	suite.OnlyRunForTags(tagsuite.Shell)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.Spawn("checkout", "ActiveState-CLI/Ruby-3.2.2")
+	cp.Expect("Checked out project")
+	cp.ExpectExitCode(0)
+
+	cp = ts.SpawnWithOpts(
+		e2e.WithArgs("shell", "Ruby-3.2.2"),
+		e2e.AppendEnv(constants.DisableRuntime+"=false"),
+	)
+	cp.Expect("Activated")
+	cp.WaitForInput()
+	cp.SendLine("ruby -v")
+	cp.Expect("3.2.2")
+	cp.Expect("ActiveState")
 }
 
 func TestShellIntegrationTestSuite(t *testing.T) {

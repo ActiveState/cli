@@ -63,7 +63,7 @@ func NewCheckout(prime primeable) *Checkout {
 func (u *Checkout) Run(params *Params) error {
 	logging.Debug("Checkout %v", params.Namespace)
 
-	checker.RunUpdateNotifier(u.svcModel, u.out)
+	checker.RunUpdateNotifier(u.analytics, u.svcModel, u.out)
 
 	logging.Debug("Checking out %s to %s", params.Namespace.String(), params.PreferredPath)
 	var err error
