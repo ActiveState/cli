@@ -233,9 +233,9 @@ func (suite *AnalyticsIntegrationTestSuite) TestExecEvents() {
 	/* EXEC TESTS */
 
 	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("exec", "--", "python3", "-c", fmt.Sprintf("import time; time.sleep(%f); print('DONE')", sleepTime.Seconds())),
-		e2e.WithWorkDirectory(ts.Dirs.Work),
-		e2e.AppendEnv(env...),
+		e2e.OptArgs("exec", "--", "python3", "-c", fmt.Sprintf("import time; time.sleep(%f); print('DONE')", sleepTime.Seconds())),
+		e2e.OptWD(ts.Dirs.Work),
+		e2e.OptAppendEnv(env...),
 	)
 
 	cp.Expect("DONE")
