@@ -113,14 +113,6 @@ func ParseUserFacing(err error) (int, error) {
 		return code, nil
 	}
 
-	// If there is a user facing error in the error stack we want to ensure
-	// that is it forwarded to the user.
-	var userFacingError errs.UserFacingError
-	if errors.As(err, &userFacingError) {
-		logging.Debug("Returning user facing error, error stack: \n%s", errs.JoinMessage(err))
-		return code, &OutputError{userFacingError}
-	}
-
 	// If the error already has a marshalling function we do not want to wrap
 	// it again in the OutputError type.
 	if hasMarshaller {

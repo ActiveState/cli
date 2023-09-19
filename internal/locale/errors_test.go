@@ -109,45 +109,54 @@ func TestUnwrapError(t *testing.T) {
 	errMulti := errs.Pack(errLocalized, errLocalized2, errPlain, errPlainWrapWithLocale, errLocaleWrapWithPlain)
 	errPlainWrappedMulti := errs.Wrap(errMulti, "wrapped plain error")
 
+	type customType struct{ *locale.LocalizedError }
+	errCustomTypedInner := locale.NewError("custom typed")
+	errCustomTyped := &customType{errCustomTypedInner}
+
 	tests := []struct {
 		name       string
 		inError    error
-		wantErrors []error
+		wantErrors []locale.ErrorLocalizer
 	}{
 		{
 			"Plain",
 			errPlain,
-			[]error{},
+			[]locale.ErrorLocalizer{},
 		},
 		{
 			"Localized",
 			errLocalized,
-			[]error{errLocalized},
+			[]locale.ErrorLocalizer{errLocalized},
 		},
 		{
 			"Localized wrapped with plain",
 			errLocaleWrapWithPlain,
-			[]error{errLocaleWrapWithPlain},
+			[]locale.ErrorLocalizer{errLocaleWrapWithPlain},
 		},
 		{
 			"Plain wrapped with localized",
 			errPlainWrapWithLocale,
-			[]error{errLocalizedForWrapWithLocale},
+			[]locale.ErrorLocalizer{errLocalizedForWrapWithLocale},
 		},
 		{
 			"Multi error",
 			errMulti,
-			[]error{errLocalized, errLocalized2, errLocalizedForWrapWithLocale, errLocaleWrapWithPlain},
+			[]locale.ErrorLocalizer{errLocalized, errLocalized2, errLocalizedForWrapWithLocale, errLocaleWrapWithPlain},
 		},
 		{
 			"Plain wrapped Multi error",
 			errPlainWrappedMulti,
-			[]error{errLocalized, errLocalized2, errLocalizedForWrapWithLocale, errLocaleWrapWithPlain},
+			[]locale.ErrorLocalizer{errLocalized, errLocalized2, errLocalizedForWrapWithLocale, errLocaleWrapWithPlain},
 		},
 		{
 			"Multi error with locale wrap",
 			errMultiWithLocaleWrap,
-			[]error{errLocalizedForWrapWithLocale},
+			[]locale.ErrorLocalizer{errLocalizedForWrapWithLocale},
+		},
+		{
+			"Custom typed",
+			errCustomTyped,
+			[]locale.ErrorLocalizer{errCustomTypedInner},
 		},
 	}
 	for _, tt := range tests {
@@ -159,7 +168,11 @@ func TestUnwrapError(t *testing.T) {
 			}
 
 			for n, wantErr := range tt.wantErrors {
-				if got[n].Error() != wantErr.Error() {
+				gotErr, ok := got[n].(locale.ErrorLocalizer)
+				if !ok {
+					t.Fatalf("Error is not localized, this shouldn't have happened since UnpackError should only return localized errors")
+				}
+				if gotErr.LocaleError() != wantErr.LocaleError() {
 					t.Errorf("Resulting error: %s, did not match: %s", got[n].Error(), wantErr.Error())
 				}
 			}
