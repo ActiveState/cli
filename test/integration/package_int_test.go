@@ -643,6 +643,33 @@ func (suite *PackageIntegrationTestSuite) TestUpdate() {
 	cp.ExpectExitCode(0)
 }
 
+// TestProjectWithOfflineInstallerAndDocker just makes sure we can checkout and install/uninstall
+// packages for projects with offline installers and docker runtimes.
+func (suite *PackageIntegrationTestSuite) TestProjectWithOfflineInstallerAndDocker() {
+	suite.OnlyRunForTags(tagsuite.Package)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	ts.LoginAsPersistentUser()
+
+	cp := ts.Spawn("checkout", "ActiveState-CLI/Python-OfflineInstaller-Docker", ".")
+	cp.Expect("Skipping runtime setup")
+	cp.Expect("Checked out project")
+	cp.ExpectExitCode(0)
+
+	cp = ts.SpawnWithOpts(
+		e2e.WithArgs("install", "requests"),
+		e2e.AppendEnv(constants.DisableRuntime+"=false"),
+	)
+	cp.ExpectExitCode(0)
+
+	cp = ts.SpawnWithOpts(
+		e2e.WithArgs("uninstall", "requests"),
+		e2e.AppendEnv(constants.DisableRuntime+"=false"),
+	)
+	cp.ExpectExitCode(0)
+}
+
 func TestPackageIntegrationTestSuite(t *testing.T) {
 	suite.Run(t, new(PackageIntegrationTestSuite))
 }
