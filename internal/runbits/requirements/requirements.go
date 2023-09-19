@@ -261,11 +261,21 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 		if err != nil {
 			return errs.Wrap(err, "Unable to get local commit")
 		}
-		revertCommit, err := model.GetRevertCommit(localCommitID, commitID)
+
+		parentExpr, err := bp.GetBuildExpression(pj.Owner(), pj.Name(), localCommitID.String())
 		if err != nil {
-			return locale.WrapError(err, "err_revert_refresh")
+			return errs.Wrap(err, "Could not get remote build expr to see if changes were made")
 		}
-		exprChanged = len(revertCommit.Changeset) > 0
+		parentScript, err := buildscript.NewScriptFromBuildExpression(parentExpr)
+		if err != nil {
+			return errs.Wrap(err, "Could not transform remote build expr to build script to see if changes were made")
+		}
+
+		expr, err := bp.GetBuildExpression(pj.Owner(), pj.Name(), commitID.String())
+		if err != nil {
+			return errs.Wrap(err, "Could not get new build expr to see if changes were made")
+		}
+		exprChanged = !parentScript.EqualsBuildExpression(expr)
 	}
 	logging.Debug("Order changed: %v", exprChanged)
 
