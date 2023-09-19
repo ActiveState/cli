@@ -15,7 +15,7 @@ func TestTrigger_IndicatesUsage(t *testing.T) {
 		},
 		{
 			"Reset exec does not count as usage",
-			TriggerRefresh,
+			TriggerResetExec,
 			false,
 		},
 	}

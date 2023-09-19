@@ -54,7 +54,8 @@ func NewExecTrigger(cmd string) Trigger {
 }
 
 func (t Trigger) IndicatesUsage() bool {
-	return !strings.EqualFold(string(t), string(TriggerRefresh))
+	// All triggers should indicate runtime use except for refreshing executors
+	return !strings.EqualFold(string(t), string(TriggerResetExec))
 }
 
 type ProjectTarget struct {
