@@ -388,9 +388,6 @@ const StateToolMarketingPage = "https://www.activestate.com/products/platform/st
 // PlatformMarketingPage links to the marketing page for the ActiveState Platform
 const PlatformMarketingPage = "https://www.activestate.com/products/platform/"
 
-// TermsOfServiceURLText is the URL to get the current terms of service in txt form
-const TermsOfServiceURLText = "https://www.activestate.com/wp-content/uploads/2020/03/activestate_platform_terms_service_agreement.txt"
-
 // TermsOfServiceURLLatest is the URL to get the latest terms of service in PDF form
 const TermsOfServiceURLLatest = "https://www.activestate.com/wp-content/uploads/2018/10/activestate_platform_terms_service_agreement.pdf"
 

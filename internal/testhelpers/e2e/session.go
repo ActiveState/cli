@@ -26,6 +26,9 @@ import (
 	"github.com/ActiveState/cli/internal/rtutils/singlethread"
 	"github.com/ActiveState/cli/internal/strutils"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
+	"github.com/ActiveState/cli/pkg/platform/api"
+	"github.com/ActiveState/cli/pkg/platform/api/mono"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/users"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -323,13 +326,6 @@ func (s *Session) PrepareFile(path, contents string) {
 	require.NoError(s.t, err, errMsg)
 }
 
-func (s *Session) LoginUser(userName string) {
-	p := s.Spawn(tagsuite.Auth, "--username", userName, "--password", userName)
-
-	p.Expect("logged in", authnTimeout)
-	p.ExpectExitCode(0)
-}
-
 // LoginAsPersistentUser is a common test case after which an integration test user should be logged in to the platform
 func (s *Session) LoginAsPersistentUser() {
 	p := s.SpawnWithOpts(
@@ -357,20 +353,28 @@ func (s *Session) CreateNewUser() (string, string) {
 	password := uid.String()[8:]
 	email := fmt.Sprintf("%s@test.tld", username)
 
-	p := s.Spawn(tagsuite.Auth, "signup", "--prompt")
+	params := users.NewAddUserParams()
+	params.SetUser(&mono_models.UserEditable{
+		Username: username,
+		Password: password,
+		Name:     username,
+		Email:    email,
+	})
 
-	p.Expect("I accept")
-	time.Sleep(time.Millisecond * 100)
-	p.Send("y")
-	p.Expect("username:")
-	p.Send(username)
-	p.Expect("password:")
-	p.Send(password)
-	p.Expect("again:")
-	p.Send(password)
-	p.Expect("email:")
-	p.Send(email)
-	p.Expect("account has been registered", authnTimeout)
+	// The default mono API client host is "testing.tld" inside unit tests.
+	// Since we actually want to create production users, we need to manually instantiate a mono API
+	// client with the right host.
+	serviceURL := api.GetServiceURL(api.ServiceMono)
+	host := os.Getenv(constants.APIHostEnvVarName)
+	if host == "" {
+		host = constants.DefaultAPIHost
+	}
+	serviceURL.Host = strings.Replace(serviceURL.Host, string(api.ServiceMono)+api.TestingPlatform, host, 1)
+	_, err = mono.Init(serviceURL, nil).Users.AddUser(params)
+	require.NoError(s.t, err, "Error creating new user")
+
+	p := s.Spawn(tagsuite.Auth, "--username", username, "--password", password)
+	p.Expect("logged in")
 	p.ExpectExitCode(0)
 
 	s.users = append(s.users, username)
