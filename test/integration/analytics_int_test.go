@@ -46,8 +46,7 @@ func (suite *AnalyticsIntegrationTestSuite) TestHeartbeats() {
 	commitID := "efcc851f-1451-4d0a-9dcb-074ac3f35f0a"
 
 	// We want to do a clean test without an activate event, so we have to manually seed the yaml
-	url := fmt.Sprintf("https://platform.activestate.com/%s?branch=main&commitID=%s", namespace, commitID)
-	suite.Require().NoError(fileutils.WriteFile(filepath.Join(ts.Dirs.Work, "activestate.yaml"), []byte("project: "+url)))
+	ts.PrepareProject(namespace, commitID)
 
 	heartbeatInterval := 1000 // in milliseconds
 	sleepTime := time.Duration(heartbeatInterval) * time.Millisecond
@@ -387,7 +386,7 @@ func (suite *AnalyticsIntegrationTestSuite) TestShim() {
 	defer ts.Close()
 
 	asyData := strings.TrimSpace(`
-project: https://platform.activestate.com/ActiveState-CLI/test?commitID=9090c128-e948-4388-8f7f-96e2c1e00d98
+project: https://platform.activestate.com/ActiveState-CLI/test
 scripts:
   - name: pip
     language: bash
@@ -396,6 +395,7 @@ scripts:
 `)
 
 	ts.PrepareActiveStateYAML(asyData)
+	ts.PrepareCommitIdFile("9090c128-e948-4388-8f7f-96e2c1e00d98")
 
 	cp := ts.SpawnWithOpts(
 		e2e.WithArgs("activate", "ActiveState-CLI/Alternate-Python"),
@@ -516,8 +516,7 @@ func (suite *AnalyticsIntegrationTestSuite) TestAttempts() {
 	ts := e2e.New(suite.T(), true)
 	defer ts.Close()
 
-	asyData := strings.TrimSpace(`project: https://platform.activestate.com/ActiveState-CLI/test?commitID=9090c128-e948-4388-8f7f-96e2c1e00d98`)
-	ts.PrepareActiveStateYAML(asyData)
+	ts.PrepareProject("ActiveState-CLI/test", "9090c128-e948-4388-8f7f-96e2c1e00d98")
 
 	cp := ts.SpawnWithOpts(
 		e2e.WithArgs("activate", "ActiveState-CLI/Alternate-Python"),

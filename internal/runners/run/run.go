@@ -62,7 +62,7 @@ func (r *Run) Run(name string, args []string) error {
 	}
 
 	rtusage.PrintRuntimeUsage(r.svcModel, r.out, r.proj.Owner())
-	checker.RunUpdateNotifier(r.svcModel, r.out)
+	checker.RunUpdateNotifier(r.analytics, r.svcModel, r.out)
 
 	r.out.Notice(locale.Tl("operating_message", "", r.proj.NamespaceString(), r.proj.Dir()))
 
@@ -93,7 +93,8 @@ func (r *Run) Run(name string, args []string) error {
 		r.out.Notice(locale.Tl(
 			"run_warn_deprecated_script_without_language",
 			"Scripts without a defined language currently fall back to using the default shell for your platform. This fallback mechanic will soon stop working and a language will need to be explicitly defined for each script. Please configure the '[ACTIONABLE]language[/RESET]' field with a valid option (one of [ACTIONABLE]{{.V0}}[/RESET])",
-			strings.Join(language.RecognizedNames(), ", ")))
+			strings.Join(language.RecognizedNames(), ", "),
+		))
 	}
 
 	r.out.Notice(output.Title(locale.Tl("script_output", "Script Output")))

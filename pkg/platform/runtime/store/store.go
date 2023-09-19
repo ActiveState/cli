@@ -17,6 +17,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
+	"github.com/ActiveState/cli/pkg/platform/runtime/buildexpression"
 	"github.com/ActiveState/cli/pkg/platform/runtime/envdef"
 )
 
@@ -61,6 +62,10 @@ func (s *Store) recipeFile() string {
 
 func (s *Store) buildPlanFile() string {
 	return filepath.Join(s.storagePath, constants.RuntimeBuildPlanStore)
+}
+
+func (s *Store) buildExpressionFile() string {
+	return filepath.Join(s.storagePath, constants.BuildExpressionStore)
 }
 
 // BuildEngine returns the runtime build engine value stored in the runtime directory
@@ -266,4 +271,41 @@ func (s *Store) StoreBuildPlan(build *bpModel.Build) error {
 		return errs.Wrap(err, "Could not write recipe file.")
 	}
 	return nil
+}
+
+type buildExpressionData struct {
+	CommitID string `json:"commitId"`
+	Expr     string `json:"buildExpression"`
+}
+
+func (s *Store) GetAndValidateBuildExpression(commitID string) (string, error) {
+	contents, err := fileutils.ReadFile(s.buildExpressionFile())
+	if err != nil {
+		return "", errs.Wrap(err, "Could not read buildexpression file")
+	}
+
+	data := &buildExpressionData{}
+	err = json.Unmarshal(contents, data)
+	if err != nil {
+		return "", errs.Wrap(err, "Could not unmarshal buildexpression file")
+	}
+
+	if data.CommitID != commitID {
+		logging.Debug("buildexpression commitID mismatch")
+		return "", errs.New("The given buildexpression commitID does not match the stored one's commitID")
+	}
+
+	return data.Expr, nil
+}
+
+func (s *Store) StoreBuildExpression(expr *buildexpression.BuildExpression, commitID string) error {
+	data, err := json.Marshal(expr)
+	if err != nil {
+		return errs.Wrap(err, "Could not marshal buildexpression")
+	}
+	data, err = json.Marshal(buildExpressionData{commitID, string(data)})
+	if err != nil {
+		return errs.Wrap(err, "Could not marshal buildexpression")
+	}
+	return fileutils.WriteFile(s.buildExpressionFile(), data)
 }

@@ -14,6 +14,7 @@ import (
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/internal/runbits/errors"
+	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -140,11 +141,16 @@ func (h *Hello) Run(params *RunParams) (rerr error) {
 // complexity, it is helpful to provide localized error context. Secluding this
 // sort of logic is helpful to keep the subhandlers clean.
 func currentCommitMessage(proj *project.Project) (string, error) {
-	if proj == nil || proj.CommitUUID() == "" {
-		return "", errs.New("Cannot determine which commit UUID to use")
+	if proj == nil {
+		return "", errs.New("Cannot determine which project to use")
 	}
 
-	commit, err := model.GetCommit(proj.CommitUUID())
+	commitId, err := localcommit.Get(proj.Dir())
+	if err != nil {
+		return "", errs.Wrap(err, "Cannot determine which commit to use")
+	}
+
+	commit, err := model.GetCommit(commitId)
 	if err != nil {
 		return "", errs.Wrap(err, "Cannot get commit from server")
 	}

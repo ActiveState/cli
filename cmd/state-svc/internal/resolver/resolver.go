@@ -1,6 +1,7 @@
 package resolver
 
 import (
+	"context"
 	"encoding/json"
 	"os"
 	"runtime/debug"
@@ -28,7 +29,6 @@ import (
 	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/projectfile"
-	"golang.org/x/net/context"
 )
 
 type Resolver struct {
@@ -53,7 +53,8 @@ func New(cfg *config.Instance, an *sync.Client, auth *authentication.Auth) (*Res
 
 	upchecker := updater.NewDefaultChecker(cfg, an)
 	pollUpdate := poller.New(1*time.Hour, func() (interface{}, error) {
-		return upchecker.Check()
+		logging.Debug("Poller checking for update info")
+		return upchecker.CheckFor(constants.BranchName, "")
 	})
 
 	pollRate := time.Minute.Milliseconds()
@@ -118,25 +119,49 @@ func (r *Resolver) Version(ctx context.Context) (*graph.Version, error) {
 	}, nil
 }
 
-func (r *Resolver) AvailableUpdate(ctx context.Context) (*graph.AvailableUpdate, error) {
+func (r *Resolver) AvailableUpdate(ctx context.Context, desiredChannel, desiredVersion string) (*graph.AvailableUpdate, error) {
 	defer func() { handlePanics(recover(), debug.Stack()) }()
 
+	if desiredChannel == "" {
+		desiredChannel = constants.BranchName
+	}
+
 	r.an.EventWithLabel(anaConsts.CatStateSvc, "endpoint", "AvailableUpdate")
-	logging.Debug("AvailableUpdate resolver")
+	logging.Debug("AvailableUpdate resolver: %s/%s", desiredChannel, desiredVersion)
 	defer logging.Debug("AvailableUpdate done")
 
-	update, ok := r.updatePoller.ValueFromCache().(*updater.AvailableUpdate)
-	if !ok || update == nil {
-		logging.Debug("No update info in cache")
-		return nil, nil
+	var (
+		avUpdate *updater.AvailableUpdate
+		ok       bool
+		err      error
+	)
+
+	switch {
+	case desiredChannel == constants.BranchName && desiredVersion == "":
+		avUpdate, ok = r.updatePoller.ValueFromCache().(*updater.AvailableUpdate)
+		if !ok || avUpdate == nil {
+			logging.Debug("No update info in poller cache")
+			return nil, nil
+		}
+
+		logging.Debug("Update info pulled from poller cache")
+
+	default:
+		logging.Debug("Update info requested for specific branch/version")
+
+		upchecker := updater.NewDefaultChecker(r.cfg, r.an)
+		avUpdate, err = upchecker.CheckFor(desiredChannel, desiredVersion)
+		if err != nil {
+			return nil, errs.Wrap(err, "Failed to check for specified channel/version: %s/%s", desiredChannel, desiredVersion)
+		}
 	}
 
 	availableUpdate := &graph.AvailableUpdate{
-		Version:  update.Version,
-		Channel:  update.Channel,
-		Path:     update.Path,
-		Platform: update.Platform,
-		Sha256:   update.Sha256,
+		Version:  avUpdate.Version,
+		Channel:  avUpdate.Channel,
+		Path:     avUpdate.Path,
+		Platform: avUpdate.Platform,
+		Sha256:   avUpdate.Sha256,
 	}
 
 	return availableUpdate, nil

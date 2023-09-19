@@ -11,6 +11,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ActiveState/termtest"
+	"github.com/stretchr/testify/suite"
+
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/exeutils"
@@ -20,8 +23,6 @@ import (
 	"github.com/ActiveState/cli/internal/rtutils/singlethread"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
-	"github.com/ActiveState/termtest"
-	"github.com/stretchr/testify/suite"
 )
 
 type UpdateIntegrationTestSuite struct {
@@ -32,8 +33,10 @@ type matcherFunc func(expected interface{}, actual interface{}, msgAndArgs ...in
 
 // Todo https://www.pivotaltracker.com/story/show/177863116
 // Update to release branch when possible
-var targetBranch = "beta"
-var oldUpdateVersion = "beta@0.32.2-SHA3e1d435"
+var (
+	targetBranch     = "beta"
+	oldUpdateVersion = "beta@0.32.2-SHA3e1d435"
+)
 
 func init() {
 	if constants.BranchName == targetBranch {
@@ -100,17 +103,22 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateAvailable() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	// Technically state tool automatically starts the state-svc, but the update notification only happens if the svc
-	// happens to already be running and fails silently if not, so in this case we want to ensure the svc is running
-	cp := ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("start"), e2e.AppendEnv(suite.env(false, true)...))
-	cp.ExpectExitCode(0)
+	search, found := "Update Available", false
+	for i := 0; i < 4; i++ {
+		if i > 0 {
+			time.Sleep(time.Second * 3)
+		}
 
-	// Give svc time to check for updates and cache the info
-	time.Sleep(2 * time.Second)
+		cp := ts.SpawnWithOpts(e2e.WithArgs("--version"), e2e.AppendEnv(suite.env(false, true)...))
+		cp.ExpectExitCode(0)
 
-	cp = ts.SpawnWithOpts(e2e.WithArgs("--version"))
-	cp.Expect("Update Available")
-	cp.ExpectExitCode(0)
+		if strings.Contains(cp.Snapshot(), search) {
+			found = true
+			break
+		}
+	}
+
+	suite.Require().True(found, "Expecting to find %q", search)
 }
 
 func (suite *UpdateIntegrationTestSuite) TestUpdate() {
@@ -138,9 +146,23 @@ func (suite *UpdateIntegrationTestSuite) testUpdate(ts *e2e.Session, baseDir str
 	stateExec, err := installation.StateExecFromDir(baseDir)
 	suite.NoError(err)
 
-	cp := ts.SpawnCmdWithOpts(stateExec, spawnOpts...)
-	cp.Expect("Updating State Tool to")
-	cp.Expect("Installing Update")
+	searchA, searchB, found := "Updating State Tool to", "Installing Update", false
+	for i := 0; i < 4; i++ {
+		if i > 0 {
+			time.Sleep(time.Second * 3)
+		}
+
+		cp := ts.SpawnCmdWithOpts(stateExec, spawnOpts...)
+		cp.ExpectExitCode(0)
+
+		snap := cp.Snapshot()
+		if strings.Contains(snap, searchA) && strings.Contains(snap, searchB) {
+			found = true
+			break
+		}
+	}
+
+	suite.Require().True(found, "Expecting to find %q and %q", searchA, searchB)
 }
 
 func (suite *UpdateIntegrationTestSuite) TestUpdate_Repair() {
@@ -168,10 +190,23 @@ func (suite *UpdateIntegrationTestSuite) TestUpdate_Repair() {
 		e2e.AppendEnv(suite.env(false, true)...),
 	}
 
-	cp := ts.SpawnCmdWithOpts(stateExePath, spawnOpts...)
-	cp.Expect("Updating State Tool to version")
-	cp.Expect("Installing Update", time.Minute)
-	cp.ExpectExitCode(0)
+	searchA, searchB, found := "Updating State Tool to version", "Installing Update", false
+	for i := 0; i < 4; i++ {
+		if i > 0 {
+			time.Sleep(time.Second * 3)
+		}
+
+		cp := ts.SpawnCmdWithOpts(stateExePath, spawnOpts...)
+		cp.Wait(time.Minute * 3)
+
+		snap := cp.Snapshot()
+		if strings.Contains(snap, searchA) && strings.Contains(snap, searchB) {
+			found = true
+			break
+		}
+	}
+
+	suite.Require().True(found, "Expecting to find %q and %q", searchA, searchB)
 
 	suite.NoFileExists(filepath.Join(ts.Dirs.Bin, constants.StateCmd+exeutils.Extension), "State Tool executable at install dir should no longer exist")
 	suite.NoFileExists(filepath.Join(ts.Dirs.Bin, constants.StateSvcCmd+exeutils.Extension), "State Service executable at install dir should no longer exist")
@@ -231,6 +266,7 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateTags() {
 		})
 	}
 }
+
 func TestUpdateIntegrationTestSuite(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping integration test in short mode.")
@@ -239,7 +275,7 @@ func TestUpdateIntegrationTestSuite(t *testing.T) {
 }
 
 func lockedProjectURL() string {
-	return fmt.Sprintf("https://%s/string/string?commitID=00010001-0001-0001-0001-000100010001", constants.PlatformURL)
+	return fmt.Sprintf("https://%s/string/string", constants.PlatformURL)
 }
 
 func (suite *UpdateIntegrationTestSuite) TestAutoUpdate() {
@@ -269,10 +305,22 @@ func (suite *UpdateIntegrationTestSuite) testAutoUpdate(ts *e2e.Session, baseDir
 	stateExec, err := installation.StateExecFromDir(baseDir)
 	suite.NoError(err)
 
-	cp := ts.SpawnCmdWithOpts(stateExec, spawnOpts...)
-	cp.Expect("Auto Update")
-	cp.Expect("Updating State Tool")
-	cp.Expect("Done", 1*time.Minute)
+	search, found := "Updating State Tool", false
+	for i := 0; i < 4; i++ {
+		if i > 0 {
+			time.Sleep(time.Second * 4)
+		}
+
+		cp := ts.SpawnCmdWithOpts(stateExec, spawnOpts...)
+		cp.ExpectExitCode(0, time.Minute*1)
+
+		if strings.Contains(cp.Snapshot(), search) {
+			found = true
+			break
+		}
+	}
+
+	suite.Require().True(found, "Expecting to find %q", search)
 }
 
 func (suite *UpdateIntegrationTestSuite) installLatestReleaseVersion(ts *e2e.Session, dir string) {

@@ -1,21 +1,22 @@
 package update
 
 import (
+	"context"
+
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/captain"
-	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/updater"
+	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
-//var _ captain.FlagMarshaler = (*StateToolChannelVersion)(nil)
-
+// var _ captain.FlagMarshaler = (*StateToolChannelVersion)(nil)
 type StateToolChannelVersion struct {
 	captain.NameVersion
 }
@@ -23,7 +24,11 @@ type StateToolChannelVersion struct {
 func (stv *StateToolChannelVersion) Set(arg string) error {
 	err := stv.NameVersion.Set(arg)
 	if err != nil {
-		return locale.WrapInputError(err, "err_channel_format", "The State Tool channel and version provided is not formatting correctly, must be in the form of <channel>@<version>")
+		return locale.WrapInputError(
+			err,
+			"err_channel_format",
+			"The State Tool channel and version provided is not formatting correctly, must be in the form of <channel>@<version>",
+		)
 	}
 	return nil
 }
@@ -43,6 +48,7 @@ type Lock struct {
 	prompt  prompt.Prompter
 	cfg     updater.Configurable
 	an      analytics.Dispatcher
+	svc     *model.SvcModel
 }
 
 func NewLock(prime primeable) *Lock {
@@ -52,6 +58,7 @@ func NewLock(prime primeable) *Lock {
 		prime.Prompt(),
 		prime.Config(),
 		prime.Analytics(),
+		prime.SvcModel(),
 	}
 }
 
@@ -86,7 +93,7 @@ func (l *Lock) Run(params *LockParams) error {
 		version = l.project.Version()
 	}
 
-	exactVersion, err := fetchExactVersion(l.cfg, l.an, version, channel)
+	exactVersion, err := fetchExactVersion(l.an, l.svc, channel, version)
 	if err != nil {
 		return errs.Wrap(err, "fetchUpdater failed, version: %s, channel: %s", version, channel)
 	}
@@ -128,18 +135,11 @@ func confirmLock(prom prompt.Prompter) error {
 	return nil
 }
 
-func fetchExactVersion(cfg updater.Configurable, an analytics.Dispatcher, version, channel string) (string, error) {
-	if channel != constants.BranchName {
-		version = "" // force update
-	}
-	info, err := updater.NewDefaultChecker(cfg, an).CheckFor(channel, version)
+func fetchExactVersion(an analytics.Dispatcher, svc *model.SvcModel, channel, version string) (string, error) {
+	upd, err := svc.CheckUpdate(context.Background(), channel, version)
 	if err != nil {
 		return "", locale.WrapInputError(err, "err_update_fetch", "Could not retrieve update information, please verify that '{{.V0}}' is a valid channel.", channel)
 	}
 
-	if info == nil { // if info is empty, we are at the current version
-		return constants.Version, nil
-	}
-
-	return info.Version, nil
+	return upd.Version, nil
 }

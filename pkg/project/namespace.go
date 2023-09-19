@@ -4,11 +4,13 @@ import (
 	"fmt"
 	"regexp"
 
-	"github.com/go-openapi/strfmt"
-
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/multilog"
+	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/projectfile"
+	"github.com/go-openapi/strfmt"
 )
 
 // NamespaceRegex matches the org and project name in a namespace, eg. org/project
@@ -151,10 +153,12 @@ func NameSpaceForConfig(configFile string) *Namespaced {
 		Project: prj.Name(),
 	}
 
-	prjCommitID := prj.CommitID()
-	if prjCommitID != "" {
-		uuid := strfmt.UUID(prjCommitID)
-		names.CommitID = &uuid
+	commitID, err := localcommit.Get(prj.Dir())
+	if err != nil && !localcommit.IsFileDoesNotExistError(err) {
+		multilog.Error("Unable to get local commit: %v", errs.JoinMessage(err))
+	}
+	if commitID != "" {
+		names.CommitID = &commitID
 	}
 
 	return &names

@@ -431,7 +431,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_Duplicate() {
 }
 
 func (suite *PackageIntegrationTestSuite) PrepareActiveStateYAML(ts *e2e.Session) {
-	asyData := `project: "https://platform.activestate.com/ActiveState-CLI/List?commitID=a9d0bc88-585a-49cf-89c1-6c07af781cff"
+	asyData := `project: "https://platform.activestate.com/ActiveState-CLI/List"
 scripts:
   - name: test-pyparsing
     language: python3
@@ -440,6 +440,7 @@ scripts:
       print(Word(alphas).parseString("TEST"))
 `
 	ts.PrepareActiveStateYAML(asyData)
+	ts.PrepareCommitIdFile("a9d0bc88-585a-49cf-89c1-6c07af781cff")
 }
 
 func (suite *PackageIntegrationTestSuite) TestInstall_Empty() {
@@ -467,6 +468,9 @@ func (suite *PackageIntegrationTestSuite) TestInstall_Empty() {
 	if !suite.Contains(string(content), constants.DashboardCommitURL) {
 		suite.Fail("activestate.yaml does not contain dashboard commit URL")
 	}
+
+	commitIdFile := filepath.Join(ts.Dirs.Work, constants.ProjectConfigDirName, constants.CommitIdFileName)
+	suite.Assert().FileExists(commitIdFile)
 }
 
 func (suite *PackageIntegrationTestSuite) TestPackage_UninstallDoesNotExist() {
@@ -640,6 +644,29 @@ func (suite *PackageIntegrationTestSuite) TestUpdate() {
 	cp = ts.Spawn("packages")
 	cp.Expect("pytest")
 	cp.Expect("7.4.0")
+	cp.ExpectExitCode(0)
+}
+
+func (suite *PackageIntegrationTestSuite) TestRuby() {
+	if runtime.GOOS == "darwin" {
+		return // Ruby support is not yet enabled on the Platform
+	}
+	suite.OnlyRunForTags(tagsuite.Package)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.Spawn("checkout", "ActiveState-CLI/Ruby-3.2.2", ".")
+	cp.Expect("Checked out project")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("install", "rake")
+	cp.ExpectExitCode(0)
+
+	cp = ts.SpawnWithOpts(
+		e2e.WithArgs("exec", "rake", "--", "--version"),
+		e2e.AppendEnv(constants.DisableRuntime+"=false"),
+	)
+	cp.ExpectRe(`rake, version \d+\.\d+\.\d+`)
 	cp.ExpectExitCode(0)
 }
 
