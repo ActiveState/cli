@@ -667,8 +667,8 @@ func (suite *PackageIntegrationTestSuite) TestRuby() {
 	cp.ExpectExitCode(0)
 
 	cp = ts.SpawnWithOpts(
-		e2e.WithArgs("exec", "rake", "--", "--version"),
-		e2e.AppendEnv(constants.DisableRuntime+"=false"),
+		e2e.OptArgs("exec", "rake", "--", "--version"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
 	cp.ExpectRe(`rake, version \d+\.\d+\.\d+`)
 	cp.ExpectExitCode(0)

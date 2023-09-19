@@ -344,11 +344,11 @@ func (suite *ShellIntegrationTestSuite) TestRuby() {
 	cp.ExpectExitCode(0)
 
 	cp = ts.SpawnWithOpts(
-		e2e.WithArgs("shell", "Ruby-3.2.2"),
-		e2e.AppendEnv(constants.DisableRuntime+"=false"),
+		e2e.OptArgs("shell", "Ruby-3.2.2"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
 	cp.Expect("Activated")
-	cp.WaitForInput()
+	cp.ExpectInput()
 	cp.SendLine("ruby -v")
 	cp.Expect("3.2.2")
 	cp.Expect("ActiveState")
