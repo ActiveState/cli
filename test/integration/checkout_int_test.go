@@ -92,6 +92,10 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckoutNonEmptyDir() {
 	cp.Expect("already a project checked out at")
 	cp.ExpectExitCode(1)
 
+	if strings.Count(cp.Snapshot(), " x ") != 1 {
+		suite.Fail("Expected exactly ONE error message, got: %s", cp.Snapshot())
+	}
+
 	// remove file
 	suite.Require().NoError(os.Remove(filepath.Join(tmpdir, constants.ConfigFileName)))
 	cp = ts.SpawnWithOpts(
@@ -222,7 +226,7 @@ func (suite *CheckoutIntegrationTestSuite) TestJSON() {
 	cp.Expect(`"path":`)
 	cp.Expect(`"executables":`)
 	cp.ExpectExitCode(0)
-	//AssertValidJSON(suite.T(), cp) // cannot assert here due to "Skipping runtime setup" notice
+	// AssertValidJSON(suite.T(), cp) // cannot assert here due to "Skipping runtime setup" notice
 }
 
 func (suite *CheckoutIntegrationTestSuite) TestCheckoutCaseInsensitive() {

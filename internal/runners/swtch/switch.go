@@ -88,7 +88,7 @@ func (s *Switch) Run(params SwitchParams) error {
 
 	rtusage.PrintRuntimeUsage(s.svcModel, s.out, s.project.Owner())
 
-	project, err := model.FetchProjectByName(s.project.Owner(), s.project.Name())
+	project, err := model.LegacyFetchProjectByName(s.project.Owner(), s.project.Name())
 	if err != nil {
 		return locale.WrapError(err, "err_fetch_project", "", s.project.Namespace().String())
 	}

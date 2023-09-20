@@ -7,11 +7,12 @@ type UserFacingError interface {
 	UserError() string
 }
 
-type ErrOpt func(err *userFacingError) *userFacingError
+type ErrOpt func(err *userFacingError)
 
 type userFacingError struct {
 	wrapped error
 	message string
+	input   bool
 	tips    []string
 }
 
@@ -27,19 +28,24 @@ func (e *userFacingError) ErrorTips() []string {
 	return e.tips
 }
 
-func NewUserFacingError(message string, tips ...string) *userFacingError {
-	return WrapUserFacingError(nil, message)
+func (e *userFacingError) InputError() bool {
+	return e.input
 }
 
-func WrapUserFacingError(wrapTarget error, message string, opts ...ErrOpt) *userFacingError {
+func NewUserFacingError(message string, tips ...string) *userFacingError {
+	return WrapUserFacing(nil, message)
+}
+
+func WrapUserFacing(wrapTarget error, message string, opts ...ErrOpt) *userFacingError {
 	err := &userFacingError{
 		wrapTarget,
 		message,
+		false,
 		nil,
 	}
 
 	for _, opt := range opts {
-		err = opt(err)
+		opt(err)
 	}
 
 	return err
@@ -50,9 +56,14 @@ func IsUserFacing(err error) bool {
 	return errors.As(err, &userFacingError)
 }
 
-func WithTips(tips ...string) ErrOpt {
-	return func(err *userFacingError) *userFacingError {
+func SetTips(tips ...string) ErrOpt {
+	return func(err *userFacingError) {
 		err.tips = append(err.tips, tips...)
-		return err
+	}
+}
+
+func SetInput(v bool) ErrOpt {
+	return func(err *userFacingError) {
+		err.input = v
 	}
 }

@@ -117,7 +117,7 @@ func (e *SecretExpander) Project() (*mono_models.Project, error) {
 	}
 	var err error
 	if e.remoteProject == nil {
-		e.remoteProject, err = model.FetchProjectByName(e.project.Owner(), e.project.Name())
+		e.remoteProject, err = model.LegacyFetchProjectByName(e.project.Owner(), e.project.Name())
 		if err != nil {
 			return nil, err
 		}

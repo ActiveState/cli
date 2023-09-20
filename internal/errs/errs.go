@@ -206,6 +206,30 @@ func Matches(err error, target interface{}) bool {
 	return false
 }
 
+// Hoist will try to match err against the given targets, the first one that matches will be returned.
+// If none matches the original error will be returned.
+// This uses the As() implementation of errors, so the targets may be updated as a result.
+func Hoist(err error, targets ...interface{}) error {
+	for _, target := range targets {
+		val := reflect.ValueOf(target)
+		targetType := val.Type()
+		if targetType.Kind() != reflect.Interface && !targetType.Implements(errorType) {
+			return errors.New("errors: *target must be interface or implement error")
+		}
+		errs := Unpack(err)
+		for _, err := range errs {
+			if reflect.TypeOf(err).AssignableTo(targetType) {
+				return err
+			}
+			if x, ok := err.(interface{ As(interface{}) bool }); ok && x.As(&target) {
+				return err
+			}
+		}
+	}
+	return err
+}
+
+
 func IsAny(err error, errs ...error) bool {
 	for _, e := range errs {
 		if errors.Is(err, e) {

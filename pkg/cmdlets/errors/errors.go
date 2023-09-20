@@ -72,13 +72,13 @@ func (o *OutputError) MarshalOutput(f output.Format) interface{} {
 			errorTips = append(errorTips, v.ErrorTips()...)
 		}
 	}
-	errorTips = append(errorTips, locale.Tl("err_help_forum", "[NOTICE]Ask For Help →[/RESET] [ACTIONABLE]{{.V0}}[/RESET]", constants.ForumsURL))
+	errorTips = append(errorTips, locale.Tl("err_help_forum", "Ask For Help → [ACTIONABLE]{{.V0}}[/RESET]", constants.ForumsURL))
 
 	// Print tips
 	enableTips := os.Getenv(constants.DisableErrorTipsEnvVarName) != "true" && f == output.PlainFormatName
 	if enableTips {
 		outLines = append(outLines, "") // separate error from "Need More Help?" header
-		outLines = append(outLines, output.Title(locale.Tl("err_more_help", "Need More Help?")).String())
+		outLines = append(outLines, strings.TrimSpace(output.Title(locale.Tl("err_more_help", "Need More Help?")).String()))
 		for _, tip := range errorTips {
 			outLines = append(outLines, fmt.Sprintf(" [DISABLED]•[/RESET] %s", trimError(tip)))
 		}

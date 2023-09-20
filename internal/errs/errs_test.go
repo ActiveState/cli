@@ -317,3 +317,33 @@ func TestJoinMessage(t *testing.T) {
 		})
 	}
 }
+
+func TestHoist(t *testing.T) {
+	type errType1 struct{ error }
+	err1 := &errType1{errors.New("err1")}
+
+	tests := []struct {
+		name    string
+		err     error
+		targets []interface{}
+		wantErr assert.ErrorAssertionFunc
+	}{
+		{
+			"Base",
+			errs.Wrap(errs.Wrap(err1, "Wrapped inner"), "Wrapped outer"),
+			[]interface{}{&errType1{}},
+			func(t assert.TestingT, err error, msgAndArgs ...interface{}) bool {
+				_, ok := err.(*errType1)
+				if !ok {
+					return assert.Fail(t, "Should have returned *errType1", msgAndArgs...)
+				}
+				return true
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tt.wantErr(t, errs.Hoist(tt.err, tt.targets...))
+		})
+	}
+}
