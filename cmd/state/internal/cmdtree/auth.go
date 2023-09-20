@@ -65,14 +65,7 @@ func newSignupCommand(prime *primer.Values) *captain.Command {
 		locale.Tl("signup_title", "Signing Up With The ActiveState Platform"),
 		locale.T("signup_description"),
 		prime,
-		[]*captain.Flag{
-			{
-				Name:        "prompt",
-				Shorthand:   "",
-				Description: locale.T("flag_state_auth_signup_interactive_description"),
-				Value:       &params.Prompt,
-			},
-		},
+		[]*captain.Flag{},
 		[]*captain.Argument{},
 		func(ccmd *captain.Command, args []string) error {
 			return signupRunner.Run(&params)
