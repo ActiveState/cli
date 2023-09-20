@@ -677,7 +677,7 @@ func (suite *PackageIntegrationTestSuite) TestProjectWithOfflineInstallerAndDock
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	ts.LoginAsPersistentUser()
+	ts.LoginAsPersistentUser() // needed for Enterprise-tier features
 
 	cp := ts.Spawn("checkout", "ActiveState-CLI/Python-OfflineInstaller-Docker", ".")
 	cp.Expect("Skipping runtime setup")
