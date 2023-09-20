@@ -14,7 +14,6 @@ import (
 	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/go-openapi/strfmt"
-	"github.com/thoas/go-funk"
 )
 
 type Trigger string
@@ -50,40 +49,13 @@ const (
 	triggerUnknown            Trigger = "unknown"
 )
 
-// usageTriggers are triggers that indicate actual usage of the runtime (as oppose to simply making changes to the runtime)
-var usageTriggers = []Trigger{
-	TriggerActivate,
-	TriggerScript,
-	TriggerDeploy,
-	TriggerExec,
-	TriggerExecutor,
-	TriggerSwitch,
-	TriggerImport,
-	TriggerInit,
-	TriggerPackage,
-	TriggerPull,
-	TriggerReset,
-	TriggerRevert,
-	TriggerShell,
-	TriggerCheckout,
-	TriggerUse,
-	TriggerOfflineInstaller,
-	TriggerOfflineUninstaller,
-}
-
 func NewExecTrigger(cmd string) Trigger {
 	return Trigger(fmt.Sprintf("%s: %s", TriggerExec, cmd))
 }
 
 func (t Trigger) IndicatesUsage() bool {
-	if funk.Contains(usageTriggers, t) {
-		return true
-	}
-	return t.IsExecTrigger() && funk.Contains(usageTriggers, TriggerExec)
-}
-
-func (t Trigger) IsExecTrigger() bool {
-	return strings.HasPrefix(string(t), string(TriggerExec)+": ")
+	// All triggers should indicate runtime use except for refreshing executors
+	return !strings.EqualFold(string(t), string(TriggerResetExec))
 }
 
 type ProjectTarget struct {
