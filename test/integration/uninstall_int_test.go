@@ -79,7 +79,7 @@ func (suite *UninstallIntegrationTestSuite) testUninstall(all bool) {
 
 	if runtime.GOOS == "windows" {
 		// Allow time for spawned script to remove directories
-		time.Sleep(500 * time.Millisecond)
+		time.Sleep(2000 * time.Millisecond)
 	}
 
 	if all {
