@@ -255,30 +255,6 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 		return locale.WrapError(err, "err_package_save_and_build", "Error occurred while trying to create a commit")
 	}
 
-	exprChanged := !hasParentCommit
-	if hasParentCommit {
-		localCommitID, err := localcommit.Get(pj.Dir())
-		if err != nil {
-			return errs.Wrap(err, "Unable to get local commit")
-		}
-
-		parentExpr, err := bp.GetBuildExpression(pj.Owner(), pj.Name(), localCommitID.String())
-		if err != nil {
-			return errs.Wrap(err, "Could not get remote build expr to see if changes were made")
-		}
-		parentScript, err := buildscript.NewScriptFromBuildExpression(parentExpr)
-		if err != nil {
-			return errs.Wrap(err, "Could not transform remote build expr to build script to see if changes were made")
-		}
-
-		expr, err := bp.GetBuildExpression(pj.Owner(), pj.Name(), commitID.String())
-		if err != nil {
-			return errs.Wrap(err, "Could not get new build expr to see if changes were made")
-		}
-		exprChanged = !parentScript.EqualsBuildExpression(expr)
-	}
-	logging.Debug("Order changed: %v", exprChanged)
-
 	pg.Stop(locale.T("progress_success"))
 	pg = nil
 
@@ -294,25 +270,23 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 		return errs.Wrap(err, "Unsupported namespace type: %s", ns.Type().String())
 	}
 
-	if exprChanged {
-		expr, err := bp.GetBuildExpression(pj.Owner(), pj.Name(), commitID.String())
-		if err != nil {
-			return errs.Wrap(err, "Could not get remote build expr")
-		}
+	expr, err := bp.GetBuildExpression(pj.Owner(), pj.Name(), commitID.String())
+	if err != nil {
+		return errs.Wrap(err, "Could not get remote build expr")
+	}
 
-		if err := localcommit.Set(pj.Dir(), commitID.String()); err != nil {
-			return locale.WrapError(err, "err_package_update_commit_id")
-		}
+	if err := localcommit.Set(pj.Dir(), commitID.String()); err != nil {
+		return locale.WrapError(err, "err_package_update_commit_id")
+	}
 
-		// Note: a commit ID file needs to exist at this point.
-		err = buildscript.Update(pj, expr, r.Auth)
-		if err != nil {
-			return locale.WrapError(err, "err_update_build_script")
-		}
+	// Note: a commit ID file needs to exist at this point.
+	err = buildscript.Update(pj, expr, r.Auth)
+	if err != nil {
+		return locale.WrapError(err, "err_update_build_script")
 	}
 
 	// refresh or install runtime
-	err = runbits.RefreshRuntime(r.Auth, r.Output, r.Analytics, pj, commitID, exprChanged, trigger, r.SvcModel)
+	err = runbits.RefreshRuntime(r.Auth, r.Output, r.Analytics, pj, commitID, true, trigger, r.SvcModel)
 	if err != nil {
 		return err
 	}
