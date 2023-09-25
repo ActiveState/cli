@@ -481,7 +481,7 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 	)
 
 	artifactsToInstall := []artifact.ArtifactID{}
-	// buildtimeArtifacts := runtimeArtifacts
+	buildtimeArtifacts := runtimeArtifacts
 	if buildResult.BuildReady {
 		// If the build is already done we can just look at the downloadable artifacts as they will be a fully accurate
 		// prediction of what we will be installing.
@@ -498,6 +498,19 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 				artifactsToInstall = append(artifactsToInstall, a.ArtifactID)
 			}
 		}
+
+		// We also caclulate the artifacts to be built which includes more than the runtime artifacts.
+		// This is used to determine if we need to show the "build in progress" screen.
+		buildtimeArtifacts, err = buildplan.BuildtimeArtifacts(buildResult.Build)
+		if err != nil {
+			return nil, nil, errs.Wrap(err, "Could not get buildtime artifacts")
+		}
+
+		buildList := []string{}
+		for _, a := range buildtimeArtifacts {
+			buildList = append(buildList, artifactNames[a.ArtifactID])
+		}
+		logging.Debug("Buildtime artifacts: %v", buildList)
 	}
 
 	// The log file we want to use for builds
@@ -514,7 +527,7 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 		ArtifactNames: artifactNames,
 		LogFilePath:   logFilePath,
 		ArtifactsToBuild: func() []artifact.ArtifactID {
-			return artifact.ArtifactIDsFromBuildPlanMap(runtimeArtifacts) // This does not account for cached builds
+			return artifact.ArtifactIDsFromBuildPlanMap(buildtimeArtifacts) // This does not account for cached builds
 		}(),
 		// Yes these have the same value; this is intentional.
 		// Separating these out just allows us to be more explicit and intentional in our event handling logic.

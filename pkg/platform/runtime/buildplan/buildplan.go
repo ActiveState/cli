@@ -1,10 +1,13 @@
 package buildplan
 
 import (
+	"strings"
+
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
+	platformModel "github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/go-openapi/strfmt"
 )
@@ -39,7 +42,7 @@ func NewMapFromBuildPlan(build *model.Build) (artifact.Map, error) {
 	}
 
 	for _, id := range terminalTargetIDs {
-		err := buildMap(id, lookup, res)
+		err := buildRuntimeClosureMap(id, lookup, res)
 		if err != nil {
 			return nil, errs.Wrap(err, "Could not build map for terminal %s", id)
 		}
@@ -82,7 +85,7 @@ func buildTerminals(nodeID strfmt.UUID, lookup map[strfmt.UUID]interface{}, resu
 	}
 }
 
-// buildMap recursively builds the artifact map from the lookup table. It expects an ID that
+// buildRuntimeClosureMap recursively builds the artifact map from the lookup table. It expects an ID that
 // represents an artifact. With that ID it retrieves the artifact from the lookup table and
 // recursively calls itself with each of the artifacts dependencies. Finally, once all of the
 // dependencies have been processed, it adds the artifact to the result map.
@@ -91,7 +94,7 @@ func buildTerminals(nodeID strfmt.UUID, lookup map[strfmt.UUID]interface{}, resu
 // iterate through the artifact's dependencies, we also have to build up the dependencies of
 // each of those dependencies. Once we have a complete list of dependencies for the artifact,
 // we can continue to build up the results map.
-func buildMap(baseID strfmt.UUID, lookup map[strfmt.UUID]interface{}, result artifact.Map) error {
+func buildRuntimeClosureMap(baseID strfmt.UUID, lookup map[strfmt.UUID]interface{}, result artifact.Map) error {
 	target := lookup[baseID]
 	currentArtifact, ok := target.(*model.Artifact)
 	if !ok {
@@ -110,7 +113,7 @@ func buildMap(baseID strfmt.UUID, lookup map[strfmt.UUID]interface{}, result art
 			deps[id] = struct{}{}
 		}
 
-		err = buildMap(depID, lookup, result)
+		err = buildRuntimeClosureMap(depID, lookup, result)
 		if err != nil {
 			return errs.Wrap(err, "Could not build map for runtime dependency %s", currentArtifact.NodeID)
 		}
@@ -273,10 +276,31 @@ func NewNamedMapFromBuildPlan(build *model.Build) (artifact.NamedMap, error) {
 // runtime dependency calculation as it includes ALL of the input artifacts of the
 // step that generated each artifact. The includeBuilders argument determines whether
 // or not to include builder artifacts in the final result.
-func BuildtimeArtifacts(build *model.Build, includeBuilders bool) (artifact.Map, error) {
-	result := make(artifact.Map)
-	lookup := make(map[strfmt.UUID]interface{})
+func BuildtimeArtifacts(build *model.Build) (artifact.Map, error) {
+	// Extract the available platforms from the build plan
+	var bpPlatforms []strfmt.UUID
+	for _, t := range build.Terminals {
+		if t.Tag == model.TagOrphan {
+			continue
+		}
+		bpPlatforms = append(bpPlatforms, strfmt.UUID(strings.TrimPrefix(t.Tag, "platform:")))
+	}
 
+	// Get the platform ID for the current platform
+	platformID, err := platformModel.FilterCurrentPlatform(platformModel.HostPlatform, bpPlatforms)
+	if err != nil {
+		return nil, locale.WrapError(err, "err_filter_current_platform")
+	}
+
+	// Filter the build terminals to only include the current platform
+	var filteredTerminals []*model.NamedTarget
+	for _, t := range build.Terminals {
+		if platformID.String() == strings.TrimPrefix(t.Tag, "platform:") {
+			filteredTerminals = append(filteredTerminals, t)
+		}
+	}
+
+	lookup := make(map[strfmt.UUID]interface{})
 	for _, artifact := range build.Artifacts {
 		lookup[artifact.NodeID] = artifact
 	}
@@ -287,80 +311,108 @@ func BuildtimeArtifacts(build *model.Build, includeBuilders bool) (artifact.Map,
 		lookup[source.NodeID] = source
 	}
 
-	for _, a := range build.Artifacts {
-		if !includeBuilders && a.MimeType == model.XActiveStateBuilderMimeType {
-			continue
+	var terminalTargetIDs []strfmt.UUID
+	for _, terminal := range filteredTerminals {
+		// If there is an artifact for this terminal and its mime type is not a state tool artifact
+		// then we need to recurse back through the DAG until we find nodeIDs that are state tool
+		// artifacts. These are the terminal targets.
+		for _, nodeID := range terminal.NodeIDs {
+			buildTerminals(nodeID, lookup, &terminalTargetIDs)
 		}
+	}
+	logging.Debug("Terminal Targets: %v", terminalTargetIDs)
 
-		_, ok := result[strfmt.UUID(a.NodeID)]
-		// We are only interested in artifacts that have not already been added
-		// to the result and that have been submitted to be built.
-		if !ok && a.Status != model.ArtifactNotSubmitted {
-			// deps here refer to the dependencies of the artifact itself.
-			// This includes the direct dependencies, which we get through
-			// the RuntimeDependencies field, as well as the inputs of the
-			// step that generated the artifact.
-			deps := make(map[strfmt.UUID]struct{})
-			for _, depID := range a.RuntimeDependencies {
-				artifact, ok := lookup[depID].(*model.Artifact)
-				if ok {
-					if !includeBuilders && artifact.MimeType == model.XActiveStateBuilderMimeType {
-						continue
-					}
-				}
-
-				// Add our current dependency to the map of dependencies
-				// and then recursively add all of its dependencies.
-				deps[depID] = struct{}{}
-				recursiveDeps, err := generateBuildtimeDependencies(depID, includeBuilders, lookup, deps)
-				if err != nil {
-					return nil, errs.Wrap(err, "Could not resolve runtime dependencies for artifact: %s", depID)
-				}
-
-				// This is a list of all of the dependencies of the current
-				// artifact, including the dependencies of its dependencies.
-				for id := range recursiveDeps {
-					deps[id] = struct{}{}
-				}
-			}
-
-			// We need to convert the map of dependencies to a list of
-			// dependencies.
-			var uniqueDeps []strfmt.UUID
-			for depID := range deps {
-				uniqueDeps = append(uniqueDeps, depID)
-			}
-
-			// We need to get the source information for the artifact.
-			// This is done by looking at the step that generated the
-			// artifact and then looking at the source that was used
-			// in that step.
-			info, err := getSourceInfo(a.GeneratedBy, lookup)
-			if err != nil {
-				return nil, errs.Wrap(err, "Could not resolve source information")
-			}
-
-			result[strfmt.UUID(a.NodeID)] = artifact.Artifact{
-				ArtifactID:       strfmt.UUID(a.NodeID),
-				Name:             info.Name,
-				Namespace:        info.Namespace,
-				Version:          &info.Version,
-				RequestedByOrder: false,
-				GeneratedBy:      a.GeneratedBy,
-				Dependencies:     uniqueDeps,
-			}
+	result := make(artifact.Map)
+	// TODO: How can we calculate the build time closure from the terminal targets?
+	// From the terminal targets we iterate through the runtime dependencies as we
+	// normall do but this time when we get to a step we also include it's dependencies.
+	// This will include the builder artifacts.
+	// We also need to inspect each dependencies to ensure that it was generated by a step
+	// and not a source. If the depenedency was generated by a source then it will not
+	// be built so we don't need to worry about events from it.
+	for _, id := range terminalTargetIDs {
+		err = buildBuildClosureMap(id, lookup, result)
+		if err != nil {
+			return nil, errs.Wrap(err, "Could not build map for terminal %s", id)
 		}
 	}
 
 	return result, nil
 }
 
+func buildBuildClosureMap(baseID strfmt.UUID, lookup map[strfmt.UUID]interface{}, result artifact.Map) error {
+	currentArtifact, ok := lookup[baseID].(*model.Artifact)
+	if !ok {
+		return errs.New("Incorrect target type for id %s, expected Artifact", baseID)
+	}
+
+	_, ok = result[strfmt.UUID(currentArtifact.NodeID)]
+	// We are only interested in artifacts that have not already been added
+	// to the result and that have been submitted to be built.
+	if ok || currentArtifact.Status == model.ArtifactNotSubmitted {
+		return nil
+	}
+
+	// deps here refer to the dependencies of the artifact itself.
+	// This includes the direct dependencies, which we get through
+	// the RuntimeDependencies field, as well as the inputs of the
+	// step that generated the artifact.
+	deps := make(map[strfmt.UUID]struct{})
+	for _, depID := range currentArtifact.RuntimeDependencies {
+		// Add our current dependency to the map of dependencies
+		// and then recursively add all of its dependencies.
+		deps[depID] = struct{}{}
+		recursiveDeps, err := generateBuildtimeDependencies(depID, lookup, deps)
+		if err != nil {
+			return errs.Wrap(err, "Could not resolve runtime dependencies for artifact: %s", depID)
+		}
+
+		// This is a list of all of the dependencies of the current
+		// artifact, including the dependencies of its dependencies.
+		for a := range recursiveDeps {
+			deps[a] = struct{}{}
+		}
+
+		err = buildBuildClosureMap(depID, lookup, result)
+		if err != nil {
+			return errs.Wrap(err, "Could not build map for runtime dependency %s", currentArtifact.NodeID)
+		}
+	}
+
+	// We need to convert the map of dependencies to a list of
+	// dependencies.
+	var uniqueDeps []strfmt.UUID
+	for depID := range deps {
+		uniqueDeps = append(uniqueDeps, depID)
+	}
+
+	// We need to get the source information for the artifact.
+	// This is done by looking at the step that generated the
+	// artifact and then looking at the source that was used
+	// in that step.
+	info, err := getSourceInfo(currentArtifact.GeneratedBy, lookup)
+	if err != nil {
+		return errs.Wrap(err, "Could not resolve source information")
+	}
+
+	result[strfmt.UUID(currentArtifact.NodeID)] = artifact.Artifact{
+		ArtifactID:       strfmt.UUID(currentArtifact.NodeID),
+		Name:             info.Name,
+		Namespace:        info.Namespace,
+		Version:          &info.Version,
+		RequestedByOrder: false,
+		GeneratedBy:      currentArtifact.GeneratedBy,
+		Dependencies:     uniqueDeps,
+	}
+
+	return nil
+}
+
 // generateBuildtimeDependencies recursively iterates through an artifacts dependencies
 // looking to the step that generated the artifact and then to ALL of the artifacts that
 // are inputs to that step. This will lead to the result containing more than what is in
-// the runtime closure. The includeBuilders argument is used to determine if we should
-// include artifacts that are builders.
-func generateBuildtimeDependencies(artifactID strfmt.UUID, includeBuilders bool, lookup map[strfmt.UUID]interface{}, result map[strfmt.UUID]struct{}) (map[strfmt.UUID]struct{}, error) {
+// the runtime closure.
+func generateBuildtimeDependencies(artifactID strfmt.UUID, lookup map[strfmt.UUID]interface{}, result map[strfmt.UUID]struct{}) (map[strfmt.UUID]struct{}, error) {
 	artifact, ok := lookup[artifactID].(*model.Artifact)
 	if !ok {
 		_, sourceOK := lookup[artifactID].(*model.Source)
@@ -368,18 +420,23 @@ func generateBuildtimeDependencies(artifactID strfmt.UUID, includeBuilders bool,
 			// Dependency is a source, skipping
 			return nil, nil
 		}
+
 		return nil, errs.New("Incorrect target type for id %s, expected Artifact or Source", artifactID)
 	}
 
-	if !includeBuilders && artifact.MimeType == model.XActiveStateBuilderMimeType {
+	if artifact.MimeType == model.XActiveStateBuilderMimeType {
+		// Dependency is a builder, skipping
 		return nil, nil
 	}
+
+	// Once we have verified that the artifact has a step that generated it
+	// we add it to the result map.
+	result[artifactID] = struct{}{}
 
 	// We iterate through the direct dependencies of the artifact
 	// and recursively add all of the dependencies of those artifacts map.
 	for _, depID := range artifact.RuntimeDependencies {
-		result[depID] = struct{}{}
-		_, err := generateBuildtimeDependencies(depID, includeBuilders, lookup, result)
+		_, err := generateBuildtimeDependencies(depID, lookup, result)
 		if err != nil {
 			return nil, errs.Wrap(err, "Could not build map for runtime dependencies of artifact %s", artifact.NodeID)
 		}
@@ -387,26 +444,24 @@ func generateBuildtimeDependencies(artifactID strfmt.UUID, includeBuilders bool,
 
 	step, ok := lookup[artifact.GeneratedBy].(*model.Step)
 	if !ok {
+		// Artifact was not generated by a step or a source, meaning that
+		// the buildplan is likely malformed.
 		_, ok := lookup[artifact.GeneratedBy].(*model.Source)
 		if !ok {
 			return nil, errs.New("Incorrect target type for id %s, expected Step or Source", artifact.GeneratedBy)
 		}
 
-		// Artifact was not generated by a step, skipping
+		// Artifact was not generated by a step, skipping because these
+		// artifacts do not need to be built.
 		return nil, nil
 	}
 
 	// We iterate through the inputs of the step that generated the
-	// artifact and recursively add all of the dependencies of those
-	// artifacts, skipping over the builder artifacts as those resolve
-	// directly to sources. This is because they are not built and therefore
-	// not generated by a step.
+	// artifact and recursively add all of the dependencies and builders
+	// of those artifacts.
 	for _, input := range step.Inputs {
-		if input.Tag == model.TagBuilder {
-			continue
-		}
 		for _, id := range input.NodeIDs {
-			_, err := generateBuildtimeDependencies(id, includeBuilders, lookup, result)
+			_, err := generateBuildtimeDependencies(id, lookup, result)
 			if err != nil {
 				return nil, errs.Wrap(err, "Could not build map for step dependencies of artifact %s", artifact.NodeID)
 			}
