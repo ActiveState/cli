@@ -9,6 +9,8 @@ import (
 	"strconv"
 	"strings"
 
+	"golang.org/x/net/context"
+
 	"github.com/ActiveState/cli/internal/analytics"
 	anaConsts "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/analytics/dimensions"
@@ -32,7 +34,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup/events"
 	"github.com/ActiveState/cli/pkg/platform/runtime/store"
 	"github.com/ActiveState/cli/pkg/project"
-	"golang.org/x/net/context"
 )
 
 type Runtime struct {
@@ -83,8 +84,8 @@ func New(target setup.Targeter, an analytics.Dispatcher, svcm *model.SvcModel, a
 	logging.Debug("Initializing runtime for: %s/%s@%s", target.Owner(), target.Name(), target.CommitUUID())
 
 	if strings.ToLower(os.Getenv(constants.DisableRuntime)) == "true" {
-		fmt.Fprintln(os.Stderr, locale.Tl("notice_runtime_disabled", "Skipping runtime setup because it was disabled by an environment variable"))
-		return &Runtime{disabled: true, target: target}, nil
+		fmt.Fprintln(os.Stderr, locale.T("notice_runtime_disabled"))
+		return &Runtime{disabled: true, target: target, analytics: an}, nil
 	}
 	recordAttempt(an, target)
 	an.Event(anaConsts.CatRuntimeDebug, anaConsts.ActRuntimeStart, &dimensions.Values{

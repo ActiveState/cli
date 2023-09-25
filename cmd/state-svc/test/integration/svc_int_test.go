@@ -37,37 +37,37 @@ func (suite *SvcIntegrationTestSuite) TestStartStop() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	cp := ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("stop"))
+	cp := ts.SpawnCmdWithOpts(ts.SvcExe, e2e.OptArgs("stop"))
 	cp.ExpectExitCode(0)
 
-	cp = ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("status"))
+	cp = ts.SpawnCmdWithOpts(ts.SvcExe, e2e.OptArgs("status"))
 	cp.Expect("Service cannot be reached")
 	cp.ExpectExitCode(1)
 
-	cp = ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("start"))
+	cp = ts.SpawnCmdWithOpts(ts.SvcExe, e2e.OptArgs("start"))
 	cp.Expect("Starting")
 	cp.ExpectExitCode(0)
 
-	cp = ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("status"))
+	cp = ts.SpawnCmdWithOpts(ts.SvcExe, e2e.OptArgs("status"))
 	cp.Expect("Checking")
 
 	// Verify the server is running on its reported port.
 	cp.ExpectRe("Port:\\s+:\\d+\\s")
 	portRe := regexp.MustCompile("Port:\\s+:(\\d+)")
-	port := portRe.FindStringSubmatch(cp.TrimmedSnapshot())[1]
+	port := portRe.FindStringSubmatch(cp.Output())[1]
 	_, err := net.Listen("tcp", "localhost:"+port)
 	suite.Error(err)
 
 	// Verify it created and wrote to its reported log file.
 	cp.ExpectRe("Log:\\s+.+?\\.log")
 	logRe := regexp.MustCompile("Log:\\s+(.+?\\.log)")
-	logFile := logRe.FindStringSubmatch(cp.TrimmedSnapshot())[1]
+	logFile := logRe.FindStringSubmatch(cp.Output())[1]
 	suite.True(fileutils.FileExists(logFile), "log file '"+logFile+"' does not exist")
 	suite.True(len(fileutils.ReadFileUnsafe(logFile)) > 0, "log file is empty")
 
 	cp.ExpectExitCode(0)
 
-	cp = ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("stop"))
+	cp = ts.SpawnCmdWithOpts(ts.SvcExe, e2e.OptArgs("stop"))
 	cp.Expect("Stopping")
 	cp.ExpectExitCode(0)
 	time.Sleep(500 * time.Millisecond) // wait for service to stop
@@ -94,14 +94,14 @@ func (suite *SvcIntegrationTestSuite) TestSignals() {
 	defer ts.Close()
 
 	// SIGINT (^C)
-	cp := ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("foreground"))
+	cp := ts.SpawnCmdWithOpts(ts.SvcExe, e2e.OptArgs("foreground"))
 	cp.Expect("Starting")
 	time.Sleep(1 * time.Second) // wait for the service to start up
-	cp.Signal(syscall.SIGINT)
+	cp.Cmd().Process.Signal(syscall.SIGINT)
 	cp.Expect("caught a signal: interrupt")
 	cp.ExpectNotExitCode(0)
 
-	cp = ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("status"))
+	cp = ts.SpawnCmdWithOpts(ts.SvcExe, e2e.OptArgs("status"))
 	cp.Expect("Service cannot be reached")
 	cp.ExpectExitCode(1)
 
@@ -109,14 +109,14 @@ func (suite *SvcIntegrationTestSuite) TestSignals() {
 	suite.False(fileutils.TargetExists(sockFile), "socket file was not deleted")
 
 	// SIGTERM
-	cp = ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("foreground"))
+	cp = ts.SpawnCmdWithOpts(ts.SvcExe, e2e.OptArgs("foreground"))
 	cp.Expect("Starting")
 	time.Sleep(1 * time.Second) // wait for the service to start up
-	cp.Signal(syscall.SIGTERM)
-	suite.NotContains(cp.TrimmedSnapshot(), "caught a signal")
+	cp.Cmd().Process.Signal(syscall.SIGTERM)
+	suite.NotContains(cp.Output(), "caught a signal")
 	cp.ExpectExitCode(0) // should exit gracefully
 
-	cp = ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("status"))
+	cp = ts.SpawnCmdWithOpts(ts.SvcExe, e2e.OptArgs("status"))
 	cp.Expect("Service cannot be reached")
 	cp.ExpectExitCode(1)
 
@@ -133,20 +133,20 @@ func (suite *SvcIntegrationTestSuite) TestStartDuplicateErrorOutput() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	cp := ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("stop"))
+	cp := ts.SpawnCmdWithOpts(ts.SvcExe, e2e.OptArgs("stop"))
 	cp.ExpectExitCode(0)
 
-	cp = ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("status"))
+	cp = ts.SpawnCmdWithOpts(ts.SvcExe, e2e.OptArgs("status"))
 	cp.ExpectNotExitCode(0)
 
-	cp = ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("start"))
+	cp = ts.SpawnCmdWithOpts(ts.SvcExe, e2e.OptArgs("start"))
 	cp.ExpectExitCode(0)
 
-	cp = ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("foreground"))
+	cp = ts.SpawnCmdWithOpts(ts.SvcExe, e2e.OptArgs("foreground"))
 	cp.Expect("An existing server instance appears to be in use")
 	cp.ExpectExitCode(1)
 
-	cp = ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("stop"))
+	cp = ts.SpawnCmdWithOpts(ts.SvcExe, e2e.OptArgs("stop"))
 	cp.ExpectExitCode(0)
 }
 
@@ -155,12 +155,12 @@ func (suite *SvcIntegrationTestSuite) TestSingleSvc() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	ts.SpawnCmdWithOpts(ts.SvcExe, e2e.WithArgs("stop"))
+	ts.SpawnCmdWithOpts(ts.SvcExe, e2e.OptArgs("stop"))
 	time.Sleep(2 * time.Second) // allow for some time to stop the existing available process
 
 	oldCount := suite.GetNumStateSvcProcesses() // may be non-zero due to non-test state-svc processes (using different sock file)
 	for i := 1; i <= 10; i++ {
-		go ts.SpawnCmdWithOpts(ts.Exe, e2e.WithArgs("--version"))
+		go ts.SpawnCmdWithOpts(ts.Exe, e2e.OptArgs("--version"))
 		time.Sleep(50 * time.Millisecond) // do not spam CPU
 	}
 	time.Sleep(2 * time.Second) // allow for some time to spawn the processes
@@ -205,19 +205,19 @@ func (suite *SvcIntegrationTestSuite) TestAutostartConfigEnableDisable() {
 
 	// Toggle it via state tool config.
 	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("config", "set", constants.AutostartSvcConfigKey, "false"),
+		e2e.OptArgs("config", "set", constants.AutostartSvcConfigKey, "false"),
 	)
 	cp.ExpectExitCode(0)
-	cp = ts.SpawnWithOpts(e2e.WithArgs("config", "get", constants.AutostartSvcConfigKey))
+	cp = ts.SpawnWithOpts(e2e.OptArgs("config", "get", constants.AutostartSvcConfigKey))
 	cp.Expect("false")
 	cp.ExpectExitCode(0)
 
 	// Toggle it again via state tool config.
 	cp = ts.SpawnWithOpts(
-		e2e.WithArgs("config", "set", constants.AutostartSvcConfigKey, "true"),
+		e2e.OptArgs("config", "set", constants.AutostartSvcConfigKey, "true"),
 	)
 	cp.ExpectExitCode(0)
-	cp = ts.SpawnWithOpts(e2e.WithArgs("config", "get", constants.AutostartSvcConfigKey))
+	cp = ts.SpawnWithOpts(e2e.OptArgs("config", "get", constants.AutostartSvcConfigKey))
 	cp.Expect("true")
 	cp.ExpectExitCode(0)
 }

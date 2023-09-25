@@ -72,11 +72,11 @@ func (suite *UpdateIntegrationTestSuite) versionCompare(ts *e2e.Session, expecte
 		Version string `json:"version"`
 	}
 
-	cp := ts.SpawnWithOpts(e2e.WithArgs("--version", "--output=json"), e2e.AppendEnv(suite.env(true, false)...))
+	cp := ts.SpawnWithOpts(e2e.OptArgs("--version", "--output=json"), e2e.OptAppendEnv(suite.env(true, false)...))
 	cp.ExpectExitCode(0)
 
 	version := versionData{}
-	out := strings.Trim(cp.TrimmedSnapshot(), "\x00")
+	out := cp.StrippedSnapshot()
 	json.Unmarshal([]byte(out), &version)
 
 	matcher(expected, version.Version, fmt.Sprintf("Version could not be matched, output:\n\n%s", out))
@@ -87,11 +87,11 @@ func (suite *UpdateIntegrationTestSuite) branchCompare(ts *e2e.Session, expected
 		Branch string `json:"branch"`
 	}
 
-	cp := ts.SpawnWithOpts(e2e.WithArgs("--version", "--output=json"), e2e.AppendEnv(suite.env(true, false)...))
-	cp.ExpectExitCode(0, 30*time.Second)
+	cp := ts.SpawnWithOpts(e2e.OptArgs("--version", "--output=json"), e2e.OptAppendEnv(suite.env(true, false)...))
+	cp.ExpectExitCode(0, termtest.OptExpectTimeout(30*time.Second))
 
 	branch := branchData{}
-	out := strings.Trim(cp.TrimmedSnapshot(), "\x00")
+	out := cp.StrippedSnapshot()
 	json.Unmarshal([]byte(out), &branch)
 
 	matcher(expected, branch.Branch, fmt.Sprintf("Branch could not be matched, output:\n\n%s", out))
@@ -109,7 +109,7 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateAvailable() {
 			time.Sleep(time.Second * 3)
 		}
 
-		cp := ts.SpawnWithOpts(e2e.WithArgs("--version"), e2e.AppendEnv(suite.env(false, true)...))
+		cp := ts.SpawnWithOpts(e2e.OptArgs("--version"), e2e.OptAppendEnv(suite.env(false, true)...))
 		cp.ExpectExitCode(0)
 
 		if strings.Contains(cp.Snapshot(), search) {
@@ -130,14 +130,14 @@ func (suite *UpdateIntegrationTestSuite) TestUpdate() {
 	suite.testUpdate(ts, filepath.Dir(ts.Dirs.Bin))
 }
 
-func (suite *UpdateIntegrationTestSuite) testUpdate(ts *e2e.Session, baseDir string, opts ...e2e.SpawnOptions) {
+func (suite *UpdateIntegrationTestSuite) testUpdate(ts *e2e.Session, baseDir string, opts ...e2e.SpawnOptSetter) {
 	cfg, err := config.NewCustom(ts.Dirs.Config, singlethread.New(), true)
 	suite.Require().NoError(err)
 	defer cfg.Close()
 
-	spawnOpts := []e2e.SpawnOptions{
-		e2e.WithArgs("update"),
-		e2e.AppendEnv(suite.env(false, true)...),
+	spawnOpts := []e2e.SpawnOptSetter{
+		e2e.OptArgs("update"),
+		e2e.OptAppendEnv(suite.env(false, true)...),
 	}
 	if opts != nil {
 		spawnOpts = append(spawnOpts, opts...)
@@ -184,10 +184,10 @@ func (suite *UpdateIntegrationTestSuite) TestUpdate_Repair() {
 
 	stateExePath := filepath.Join(ts.Dirs.Bin, filepath.Base(ts.Exe))
 
-	spawnOpts := []e2e.SpawnOptions{
-		e2e.WithArgs("update"),
-		e2e.AppendEnv(fmt.Sprintf("%s=%s", constants.OverwriteDefaultInstallationPathEnvVarName, ts.Dirs.Bin)),
-		e2e.AppendEnv(suite.env(false, true)...),
+	spawnOpts := []e2e.SpawnOptSetter{
+		e2e.OptArgs("update"),
+		e2e.OptAppendEnv(fmt.Sprintf("%s=%s", constants.OverwriteDefaultInstallationPathEnvVarName, ts.Dirs.Bin)),
+		e2e.OptAppendEnv(suite.env(false, true)...),
 	}
 
 	searchA, searchB, found := "Updating State Tool to version", "Installing Update", false
@@ -197,7 +197,7 @@ func (suite *UpdateIntegrationTestSuite) TestUpdate_Repair() {
 		}
 
 		cp := ts.SpawnCmdWithOpts(stateExePath, spawnOpts...)
-		cp.Wait(time.Minute * 3)
+		cp.ExpectExitCode(0, termtest.OptExpectTimeout(time.Minute))
 
 		snap := cp.Snapshot()
 		if strings.Contains(snap, searchA) && strings.Contains(snap, searchB) {
@@ -234,11 +234,11 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateChannel() {
 			env := []string{fmt.Sprintf("%s=%s", constants.OverwriteDefaultInstallationPathEnvVarName, ts.Dirs.Bin)}
 			env = append(env, suite.env(false, false)...)
 			cp := ts.SpawnWithOpts(
-				e2e.WithArgs(updateArgs...),
-				e2e.AppendEnv(env...),
+				e2e.OptArgs(updateArgs...),
+				e2e.OptAppendEnv(env...),
 			)
 			cp.Expect("Updating")
-			cp.ExpectExitCode(0, 1*time.Minute)
+			cp.ExpectExitCode(0, termtest.OptExpectTimeout(1*time.Minute))
 
 			suite.branchCompare(ts, tt.Channel, suite.Equal)
 		})
@@ -288,15 +288,15 @@ func (suite *UpdateIntegrationTestSuite) TestAutoUpdate() {
 	suite.testAutoUpdate(ts, filepath.Dir(ts.Dirs.Bin))
 }
 
-func (suite *UpdateIntegrationTestSuite) testAutoUpdate(ts *e2e.Session, baseDir string, opts ...e2e.SpawnOptions) {
+func (suite *UpdateIntegrationTestSuite) testAutoUpdate(ts *e2e.Session, baseDir string, opts ...e2e.SpawnOptSetter) {
 	fakeHome := filepath.Join(ts.Dirs.Work, "home")
 	suite.Require().NoError(fileutils.Mkdir(fakeHome))
 
-	spawnOpts := []e2e.SpawnOptions{
-		e2e.WithArgs("--version"),
-		e2e.AppendEnv(suite.env(false, true)...),
-		e2e.AppendEnv(fmt.Sprintf("HOME=%s", fakeHome)),
-		e2e.AppendEnv("ACTIVESTATE_TEST_AUTO_UPDATE=true"),
+	spawnOpts := []e2e.SpawnOptSetter{
+		e2e.OptArgs("--version"),
+		e2e.OptAppendEnv(suite.env(false, true)...),
+		e2e.OptAppendEnv(fmt.Sprintf("HOME=%s", fakeHome)),
+		e2e.OptAppendEnv("ACTIVESTATE_TEST_AUTO_UPDATE=true"),
 	}
 	if opts != nil {
 		spawnOpts = append(spawnOpts, opts...)
@@ -312,7 +312,7 @@ func (suite *UpdateIntegrationTestSuite) testAutoUpdate(ts *e2e.Session, baseDir
 		}
 
 		cp := ts.SpawnCmdWithOpts(stateExec, spawnOpts...)
-		cp.ExpectExitCode(0, time.Minute*1)
+		cp.ExpectExitCode(0, termtest.OptExpectTimeout(time.Minute))
 
 		if strings.Contains(cp.Snapshot(), search) {
 			found = true
@@ -324,11 +324,11 @@ func (suite *UpdateIntegrationTestSuite) testAutoUpdate(ts *e2e.Session, baseDir
 }
 
 func (suite *UpdateIntegrationTestSuite) installLatestReleaseVersion(ts *e2e.Session, dir string) {
-	var cp *termtest.ConsoleProcess
+	var cp *e2e.SpawnedCmd
 	if runtime.GOOS != "windows" {
 		oneLiner := fmt.Sprintf("sh <(curl -q https://platform.activestate.com/dl/cli/pdli01/install.sh) -f -n -t %s", dir)
 		cp = ts.SpawnCmdWithOpts(
-			"bash", e2e.WithArgs("-c", oneLiner),
+			"bash", e2e.OptArgs("-c", oneLiner),
 		)
 	} else {
 		b, err := httputil.GetDirect("https://platform.activestate.com/dl/cli/pdli01/install.ps1")
@@ -337,11 +337,11 @@ func (suite *UpdateIntegrationTestSuite) installLatestReleaseVersion(ts *e2e.Ses
 		ps1File := filepath.Join(ts.Dirs.Work, "install.ps1")
 		suite.Require().NoError(fileutils.WriteFile(ps1File, b))
 
-		cp = ts.SpawnCmdWithOpts("powershell.exe", e2e.WithArgs(ps1File, "-f", "-n", "-t", dir),
-			e2e.AppendEnv("SHELL="),
+		cp = ts.SpawnCmdWithOpts("powershell.exe", e2e.OptArgs(ps1File, "-f", "-n", "-t", dir),
+			e2e.OptAppendEnv("SHELL="),
 		)
 	}
-	cp.Expect("Installation Complete", 5*time.Minute)
+	cp.Expect("Installation Complete", termtest.OptExpectTimeout(5*time.Minute))
 
 	stateExec, err := installation.StateExecFromDir(dir)
 	suite.NoError(err)
@@ -361,7 +361,7 @@ func (suite *UpdateIntegrationTestSuite) TestAutoUpdateToCurrent() {
 
 	suite.installLatestReleaseVersion(ts, installDir)
 
-	suite.testAutoUpdate(ts, installDir, e2e.AppendEnv(fmt.Sprintf("ACTIVESTATE_CLI_UPDATE_BRANCH=%s", constants.BranchName)))
+	suite.testAutoUpdate(ts, installDir, e2e.OptAppendEnv(fmt.Sprintf("ACTIVESTATE_CLI_UPDATE_BRANCH=%s", constants.BranchName)))
 }
 
 func (suite *UpdateIntegrationTestSuite) TestUpdateToCurrent() {
@@ -379,5 +379,5 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateToCurrent() {
 
 	suite.installLatestReleaseVersion(ts, installDir)
 
-	suite.testUpdate(ts, installDir, e2e.AppendEnv(fmt.Sprintf("ACTIVESTATE_CLI_UPDATE_BRANCH=%s", constants.BranchName)))
+	suite.testUpdate(ts, installDir, e2e.OptAppendEnv(fmt.Sprintf("ACTIVESTATE_CLI_UPDATE_BRANCH=%s", constants.BranchName)))
 }

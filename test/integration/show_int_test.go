@@ -25,10 +25,10 @@ func (suite *ShowIntegrationTestSuite) TestShow() {
 	suite.PrepareProject(ts)
 
 	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("activate"),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.OptArgs("activate"),
+		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
-	cp.WaitForInput()
+	cp.ExpectInput()
 
 	cp = ts.Spawn("show")
 	cp.Expect(`Name`)
@@ -38,13 +38,13 @@ func (suite *ShowIntegrationTestSuite) TestShow() {
 	cp.Expect(`Namespace`)
 	cp.Expect(`cli-integration-tests/Show`)
 	cp.Expect(`Location`)
-	cp.ExpectLongString(ts.Dirs.Work)
+	cp.Expect(ts.Dirs.Work)
 	cp.Expect(`Executables`)
-	cp.ExpectLongString(ts.Dirs.Cache)
+	cp.Expect(ts.Dirs.Cache)
 	cp.Expect(`Visibility`)
 	cp.Expect(`Public`)
 	cp.Expect(`Latest Commit`)
-	cp.ExpectLongString(`d5d84598-fc2e-4a45-b075-a845e587b5bf`)
+	cp.Expect(`d5d84598-fc2e-4a45-b075-a845e587b5bf`)
 	cp.Expect(`Events`)
 	cp.Expect(`• FIRST_INSTALL`)
 	cp.Expect(`• AFTER_UPDATE`)
@@ -65,7 +65,7 @@ func (suite *ShowIntegrationTestSuite) TestShowWithoutBranch() {
 
 	ts.PrepareProject("cli-integration-tests/Show", "e8f3b07b-502f-4763-83c1-763b9b952e18")
 
-	cp := ts.SpawnWithOpts(e2e.WithArgs("show"))
+	cp := ts.SpawnWithOpts(e2e.OptArgs("show"))
 	cp.ExpectExitCode(0)
 
 	contents, err := fileutils.ReadFile(filepath.Join(ts.Dirs.Work, constants.ConfigFileName))

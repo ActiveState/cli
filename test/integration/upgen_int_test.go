@@ -15,7 +15,6 @@ import (
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
-	"github.com/ActiveState/termtest"
 )
 
 type UpdateGenIntegrationTestSuite struct {
@@ -46,7 +45,7 @@ func (suite *UpdateGenIntegrationTestSuite) TestUpdateBits() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	var cp *termtest.ConsoleProcess
+	var cp *e2e.SpawnedCmd
 
 	if runtime.GOOS == "windows" {
 		cp = ts.SpawnCmd("powershell.exe", "-nologo", "-noprofile", "-command",

@@ -22,12 +22,12 @@ func (suite *InviteNegativeAutomationTestSuite) TestInvite_NotInProject() {
 
 	// Single email invite
 	cp := ts.Spawn("invite", "qatesting+3@activestate.com")
-	cp.ExpectLongString("No activestate.yaml file exists in the current working directory")
+	cp.Expect("No activestate.yaml file exists in the current working directory")
 	cp.ExpectExitCode(1)
 
 	// Multiple emails invite
 	cp = ts.Spawn("invite", "qatesting+3@activestate.com,", "qatesting+4@activestate.com")
-	cp.ExpectLongString("No activestate.yaml file exists in the current working directory")
+	cp.Expect("No activestate.yaml file exists in the current working directory")
 	cp.ExpectExitCode(1)
 }
 
@@ -42,7 +42,7 @@ func (suite *InviteNegativeAutomationTestSuite) TestInvite_NotAuthPublic() {
 	suite.Require().NoError(fileutils.WriteFile(filepath.Join(ts.Dirs.Work, "activestate.yaml"), []byte("project: "+url)))
 
 	cp := ts.Spawn("invite", "qatesting+3@activestate.com")
-	cp.ExpectLongString("Cannot authenticate")
+	cp.Expect("Cannot authenticate")
 	cp.ExpectExitCode(1)
 }
 
@@ -57,7 +57,7 @@ func (suite *InviteNegativeAutomationTestSuite) TestInvite_NotAuthPrivate() {
 	suite.Require().NoError(fileutils.WriteFile(filepath.Join(ts.Dirs.Work, "activestate.yaml"), []byte("project: "+url)))
 
 	cp := ts.Spawn("invite", "qatesting+3@activestate.com")
-	cp.ExpectLongString("Cannot authenticate")
+	cp.Expect("Cannot authenticate")
 	cp.ExpectExitCode(1)
 }
 
@@ -72,25 +72,25 @@ func (suite *InviteNegativeAutomationTestSuite) TestInvite_MissingArg() {
 
 	// No arguments
 	cp := ts.Spawn("invite")
-	cp.ExpectLongString("The following argument is required")
-	cp.ExpectLongString("Name: email1")
-	cp.ExpectLongString("Description: Email addresses to send the invitations to")
+	cp.Expect("The following argument is required")
+	cp.Expect("Name: email1")
+	cp.Expect("Description: Email addresses to send the invitations to")
 	cp.ExpectExitCode(1)
 
 	// No `--role` argument
 	cp = ts.Spawn("invite", "qatesting+3@activestate.com", "--role")
-	cp.ExpectLongString("Flag needs an argument: --role")
+	cp.Expect("Flag needs an argument: --role")
 	cp.ExpectExitCode(1)
 	cp = ts.Spawn("invite", "qatesting+3@activestate.com", "--organization", "ActiveState-CLI", "--role")
-	cp.ExpectLongString("Flag needs an argument: --role")
+	cp.Expect("Flag needs an argument: --role")
 	cp.ExpectExitCode(1)
 
 	// No `--organization` argument
 	cp = ts.Spawn("invite", "qatesting+3@activestate.com", "--organization")
-	cp.ExpectLongString("Flag needs an argument: --organization")
+	cp.Expect("Flag needs an argument: --organization")
 	cp.ExpectExitCode(1)
 	cp = ts.Spawn("invite", "qatesting+3@activestate.com", "--role", "member", "--organization")
-	cp.ExpectLongString("Flag needs an argument: --organization")
+	cp.Expect("Flag needs an argument: --organization")
 	cp.ExpectExitCode(1)
 }
 
@@ -109,20 +109,20 @@ func (suite *InviteNegativeAutomationTestSuite) TestInvite_NonExistentArgValues_
 
 	// Non existent Role test
 	cp := ts.Spawn("invite", "qatesting+3@activestate.com", "--role", "first")
-	cp.ExpectLongString("Invalid value for \"--role\" flag")
-	cp.ExpectLongString("Invalid role: first, should be one of: owner, member")
+	cp.Expect("Invalid value for \"--role\" flag")
+	cp.Expect("Invalid role: first, should be one of: owner, member")
 	cp.ExpectExitCode(1)
 
 	// Non existent Organization test
 	cp = ts.Spawn("invite", "qatesting+3@activestate.com", "--organization", "noorg")
-	cp.ExpectLongString("Invalid value for \"--organization\" flag")
-	cp.ExpectLongString("Unable to find requested Organization")
+	cp.Expect("Invalid value for \"--organization\" flag")
+	cp.Expect("Unable to find requested Organization")
 	cp.ExpectExitCode(1)
 
 	// `-n` flag used
 	cp = ts.Spawn("invite", "qatesting+3@activestate.com", "-n")
 	cp.ExpectExitCode(1)
-	suite.Assert().NotContains(cp.TrimmedSnapshot(), "Invalid role") // there is an error, just not this one
+	suite.Assert().NotContains(cp.Output(), "Invalid role") // there is an error, just not this one
 }
 
 func (suite *InviteNegativeAutomationTestSuite) TestInvite_NonExistentArgValues_Private() {
@@ -140,20 +140,20 @@ func (suite *InviteNegativeAutomationTestSuite) TestInvite_NonExistentArgValues_
 
 	// Non existent Role test
 	cp := ts.Spawn("invite", "qatesting+3@activestate.com", "--role", "first")
-	cp.ExpectLongString("Invalid value for \"--role\" flag")
-	cp.ExpectLongString("Invalid role: first, should be one of: owner, member")
+	cp.Expect("Invalid value for \"--role\" flag")
+	cp.Expect("Invalid role: first, should be one of: owner, member")
 	cp.ExpectExitCode(1)
 
 	// Non existent Organization test
 	cp = ts.Spawn("invite", "qatesting+3@activestate.com", "--organization", "noorg")
-	cp.ExpectLongString("Invalid value for \"--organization\" flag")
-	cp.ExpectLongString("Unable to find requested Organization")
+	cp.Expect("Invalid value for \"--organization\" flag")
+	cp.Expect("Unable to find requested Organization")
 	cp.ExpectExitCode(1)
 
 	// `-n` flag used
 	cp = ts.Spawn("invite", "qatesting+3@activestate.com", "-n")
 	cp.ExpectExitCode(1)
-	suite.Assert().NotContains(cp.TrimmedSnapshot(), "Invalid role") // there is an error, just not this one
+	suite.Assert().NotContains(cp.Output(), "Invalid role") // there is an error, just not this one
 }
 
 func TestInviteAutomationTestSuite(t *testing.T) {

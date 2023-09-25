@@ -1,12 +1,13 @@
 package automation
 
 import (
+	"path/filepath"
+	"testing"
+
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/stretchr/testify/suite"
-	"path/filepath"
-	"testing"
 )
 
 type RevertAutomationTestSuite struct {
@@ -20,9 +21,9 @@ func (suite *RevertAutomationTestSuite) TestRevert_MissingArg() {
 	defer ts.Close()
 
 	cp := ts.Spawn("revert")
-	cp.ExpectLongString("The following argument is required")
-	cp.ExpectLongString("Name: commit-id")
-	cp.ExpectLongString("Description: The commit ID to revert to")
+	cp.Expect("The following argument is required")
+	cp.Expect("Name: commit-id")
+	cp.Expect("Description: The commit ID to revert to")
 	cp.ExpectExitCode(1)
 }
 
@@ -33,7 +34,7 @@ func (suite *RevertAutomationTestSuite) TestRevert_NotInProjects() {
 	defer ts.Close()
 
 	cp := ts.Spawn("revert", "111")
-	cp.ExpectLongString("you need to be in an existing project")
+	cp.Expect("you need to be in an existing project")
 	cp.ExpectExitCode(1)
 }
 
@@ -48,7 +49,7 @@ func (suite *RevertAutomationTestSuite) TestRevert_NotAuthPublic() {
 	suite.Require().NoError(fileutils.WriteFile(filepath.Join(ts.Dirs.Work, "activestate.yaml"), []byte("project: "+url)))
 
 	cp := ts.Spawn("revert", "111")
-	cp.ExpectLongString("You are not authenticated")
+	cp.Expect("You are not authenticated")
 	cp.ExpectExitCode(1)
 }
 
@@ -63,7 +64,7 @@ func (suite *RevertAutomationTestSuite) TestRevert_NotAuthPrivate() {
 	suite.Require().NoError(fileutils.WriteFile(filepath.Join(ts.Dirs.Work, "activestate.yaml"), []byte("project: "+url)))
 
 	cp := ts.Spawn("revert", "111")
-	cp.ExpectLongString("You are not authenticated")
+	cp.Expect("You are not authenticated")
 	cp.ExpectExitCode(1)
 }
 
@@ -81,8 +82,8 @@ func (suite *RevertAutomationTestSuite) TestRevert_NonexistentCommitPublic() {
 	suite.Require().NoError(fileutils.WriteFile(filepath.Join(ts.Dirs.Work, "activestate.yaml"), []byte("project: "+url)))
 
 	cp := ts.Spawn("revert", "111")
-	cp.ExpectLongString("Could not fetch commit details for commit with ID: 111")
-	cp.ExpectLongString("Could not get commit from ID: 111")
+	cp.Expect("Could not fetch commit details for commit with ID: 111")
+	cp.Expect("Could not get commit from ID: 111")
 	cp.ExpectExitCode(1)
 }
 
@@ -100,8 +101,8 @@ func (suite *RevertAutomationTestSuite) TestRevert_NonexistentCommitPrivate() {
 	suite.Require().NoError(fileutils.WriteFile(filepath.Join(ts.Dirs.Work, "activestate.yaml"), []byte("project: "+url)))
 
 	cp := ts.Spawn("revert", "111")
-	cp.ExpectLongString("Could not fetch commit details for commit with ID: 111")
-	cp.ExpectLongString("Could not get commit from ID: 111")
+	cp.Expect("Could not fetch commit details for commit with ID: 111")
+	cp.Expect("Could not get commit from ID: 111")
 	cp.ExpectExitCode(1)
 }
 
@@ -127,7 +128,7 @@ func (suite *RevertAutomationTestSuite) TestRevert_PublicProject() {
 	// Testing if user choose YES for reset and reset have been successful
 	cp = ts.Spawn("revert", "66e5a9ba-6762-4027-a001-6e9c54437dde")
 	cp.SendLine("y")
-	cp.ExpectLongString("Successfully reverted to commit: 66e5a9ba-6762-4027-a001-6e9c54437dde")
+	cp.Expect("Successfully reverted to commit: 66e5a9ba-6762-4027-a001-6e9c54437dde")
 	cp.ExpectExitCode(0)
 }
 
@@ -153,7 +154,7 @@ func (suite *RevertAutomationTestSuite) TestRevert_PrivateProject() {
 	// Testing if user choose YES for reset and reset have been successful
 	cp = ts.Spawn("revert", "d5b7cf36-bcc2-4ba9-a910-6b8ad1098eb2")
 	cp.SendLine("y")
-	cp.ExpectLongString("Successfully reverted to commit: d5b7cf36-bcc2-4ba9-a910-6b8ad1098eb2")
+	cp.Expect("Successfully reverted to commit: d5b7cf36-bcc2-4ba9-a910-6b8ad1098eb2")
 	cp.ExpectExitCode(0)
 }
 

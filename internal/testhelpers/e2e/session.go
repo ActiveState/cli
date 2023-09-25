@@ -5,12 +5,19 @@ import (
 	"io/fs"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"regexp"
 	"runtime"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/ActiveState/termtest"
+	"github.com/go-openapi/strfmt"
+	"github.com/google/uuid"
+	"github.com/phayes/permbits"
+	"github.com/stretchr/testify/require"
 
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/config"
@@ -33,12 +40,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/ActiveState/termtest"
-	"github.com/ActiveState/termtest/expect"
-	"github.com/go-openapi/strfmt"
-	"github.com/google/uuid"
-	"github.com/phayes/permbits"
-	"github.com/stretchr/testify/require"
 )
 
 // Session represents an end-to-end testing session during which several console process can be spawned and tested
@@ -47,7 +48,6 @@ import (
 // The session is approximately the equivalent of a terminal session, with the
 // main difference processes in this session are not spawned by a shell.
 type Session struct {
-	cp              *termtest.ConsoleProcess
 	Dirs            *Dirs
 	Env             []string
 	retainDirs      bool
@@ -58,15 +58,7 @@ type Session struct {
 	Exe         string
 	SvcExe      string
 	ExecutorExe string
-}
-
-// Options for spawning a testable terminal process
-type Options struct {
-	termtest.Options
-	// removes write-permissions in the bin directory from which executables are spawned.
-	NonWriteableBinDir bool
-	// expect the process to run in background (will not be stopped by subsequent processes)
-	BackgroundProcess bool
+	spawned     []*SpawnedCmd
 }
 
 var (
@@ -75,7 +67,6 @@ var (
 	PersistentToken    string
 
 	defaultTimeout = 40 * time.Second
-	authnTimeout   = 40 * time.Second
 )
 
 func init() {
@@ -187,6 +178,7 @@ func new(t *testing.T, retainDirs, updatePath bool, extraEnv ...string) *Session
 		constants.OptinUnstableEnvVarName + "=true",
 		constants.ServiceSockDir + "=" + dirs.SockRoot,
 		constants.HomeEnvVarName + "=" + dirs.HomeDir,
+		"NO_COLOR=true",
 	}...)
 
 	if updatePath {
@@ -220,76 +212,125 @@ func NewNoPathUpdate(t *testing.T, retainDirs bool, extraEnv ...string) *Session
 	return new(t, retainDirs, false, extraEnv...)
 }
 
+func (s *Session) SetT(t *testing.T) {
+	s.t = t
+}
+
 func (s *Session) ClearCache() error {
 	return os.RemoveAll(s.Dirs.Cache)
 }
 
 // Spawn spawns the state tool executable to be tested with arguments
-func (s *Session) Spawn(args ...string) *termtest.ConsoleProcess {
-	return s.SpawnCmdWithOpts(s.Exe, WithArgs(args...))
+func (s *Session) Spawn(args ...string) *SpawnedCmd {
+	return s.SpawnCmdWithOpts(s.Exe, OptArgs(args...))
 }
 
 // SpawnWithOpts spawns the state tool executable to be tested with arguments
-func (s *Session) SpawnWithOpts(opts ...SpawnOptions) *termtest.ConsoleProcess {
+func (s *Session) SpawnWithOpts(opts ...SpawnOptSetter) *SpawnedCmd {
 	return s.SpawnCmdWithOpts(s.Exe, opts...)
 }
 
 // SpawnCmd executes an executable in a pseudo-terminal for integration tests
-func (s *Session) SpawnCmd(cmdName string, args ...string) *termtest.ConsoleProcess {
-	return s.SpawnCmdWithOpts(cmdName, WithArgs(args...))
+func (s *Session) SpawnCmd(cmdName string, args ...string) *SpawnedCmd {
+	return s.SpawnCmdWithOpts(cmdName, OptArgs(args...))
 }
 
 // SpawnShellWithOpts spawns the given shell and options in interactive mode.
-func (s *Session) SpawnShellWithOpts(shell Shell, opts ...SpawnOptions) *termtest.ConsoleProcess {
+func (s *Session) SpawnShellWithOpts(shell Shell, opts ...SpawnOptSetter) *SpawnedCmd {
 	if shell != Cmd {
-		opts = append(opts, AppendEnv("SHELL="+string(shell)))
+		opts = append(opts, OptAppendEnv("SHELL="+string(shell)))
 	}
+	opts = append(opts, OptRunInsideShell(false))
 	return s.SpawnCmdWithOpts(string(shell), opts...)
 }
 
 // SpawnCmdWithOpts executes an executable in a pseudo-terminal for integration tests
-// Arguments and other parameters can be specified by specifying SpawnOptions
-func (s *Session) SpawnCmdWithOpts(exe string, opts ...SpawnOptions) *termtest.ConsoleProcess {
-	if s.cp != nil {
-		s.cp.Close()
+// Arguments and other parameters can be specified by specifying SpawnOptSetter
+func (s *Session) SpawnCmdWithOpts(exe string, optSetters ...SpawnOptSetter) *SpawnedCmd {
+	spawnOpts := NewSpawnOpts()
+	spawnOpts.Env = s.Env
+	spawnOpts.Dir = s.Dirs.Work
+
+	spawnOpts.TermtestOpts = append(spawnOpts.TermtestOpts,
+		termtest.OptErrorHandler(func(tt *termtest.TermTest, err error) error {
+			s.t.Fatal(s.DebugMessage(errs.JoinMessage(err)))
+			return err
+		}),
+		termtest.OptDefaultTimeout(defaultTimeout),
+		termtest.OptCols(140),
+		termtest.OptRows(30), // Needs to be able to accommodate most JSON output
+	)
+
+	// Work around issue where multiline values sometimes have the wrong line endings
+	// See for example TestBranch_List
+	// https://activestatef.atlassian.net/browse/DX-2169
+	spawnOpts.TermtestOpts = append(spawnOpts.TermtestOpts,
+		termtest.OptNormalizedLineEnds(true),
+	)
+
+	for _, optSet := range optSetters {
+		optSet(&spawnOpts)
 	}
 
-	env := s.Env
-
-	pOpts := Options{
-		Options: termtest.Options{
-			DefaultTimeout: defaultTimeout,
-			Environment:    env,
-			WorkDirectory:  s.Dirs.Work,
-			RetainWorkDir:  true,
-			ObserveExpect:  observeExpectFn(s),
-			ObserveSend:    observeSendFn(s),
-		},
-		NonWriteableBinDir: false,
-	}
-
-	for _, opt := range opts {
-		opt(&pOpts)
-	}
-
-	pOpts.Options.CmdName = exe
-
-	if pOpts.NonWriteableBinDir {
-		// make bin dir read-only
-		os.Chmod(s.Dirs.Bin, 0555)
+	var shell string
+	var args []string
+	if spawnOpts.RunInsideShell {
+		switch runtime.GOOS {
+		case "windows":
+			shell = Cmd
+			// /C = next argument is command that will be ran
+			args = []string{"/C"}
+		case "darwin":
+			shell = "zsh"
+			// -i = interactive mode
+			// -c = next argument is command that will be ran
+			args = []string{"-i", "-c"}
+		default:
+			shell = "bash"
+			args = []string{"-i", "-c"}
+		}
+		if len(spawnOpts.Args) == 0 {
+			args = append(args, fmt.Sprintf(`"%s"`, exe))
+		} else {
+			if shell == Cmd {
+				aa := spawnOpts.Args
+				for i, a := range aa {
+					aa[i] = strings.ReplaceAll(a, " ", "^ ")
+				}
+				// Windows is weird, it doesn't seem to let you quote arguments, so instead we need to escape spaces
+				// which on Windows is done with the '^' character.
+				args = append(args, fmt.Sprintf(`%s %s`, strings.ReplaceAll(exe, " ", "^ "), strings.Join(aa, " ")))
+			} else {
+				args = append(args, fmt.Sprintf(`"%s" "%s"`, exe, strings.Join(spawnOpts.Args, `" "`)))
+			}
+		}
 	} else {
-		os.Chmod(s.Dirs.Bin, 0777)
+		shell = exe
+		args = spawnOpts.Args
 	}
 
-	console, err := termtest.New(pOpts.Options)
+	cmd := exec.Command(shell, args...)
+
+	cmd.Env = spawnOpts.Env
+
+	if spawnOpts.Dir != "" {
+		cmd.Dir = spawnOpts.Dir
+	}
+
+	tt, err := termtest.New(cmd, spawnOpts.TermtestOpts...)
 	require.NoError(s.t, err)
-	if !pOpts.BackgroundProcess {
-		s.cp = console
+
+	spawn := &SpawnedCmd{tt, spawnOpts}
+
+	s.spawned = append(s.spawned, spawn)
+
+	cmdArgs := spawnOpts.Args
+	if spawnOpts.HideCmdArgs {
+		cmdArgs = []string{"<hidden>"}
 	}
+	logging.Debug("Spawning CMD: %s, args: %v", exe, cmdArgs)
 
-	logging.Debug("Spawning CMD: %s, args: %v", pOpts.Options.CmdName, pOpts.Options.Args)
-
-	return console
+	return spawn
 }
 
 // PrepareActiveStateYAML creates an activestate.yaml in the session's work directory from the
@@ -329,12 +370,12 @@ func (s *Session) PrepareFile(path, contents string) {
 // LoginAsPersistentUser is a common test case after which an integration test user should be logged in to the platform
 func (s *Session) LoginAsPersistentUser() {
 	p := s.SpawnWithOpts(
-		WithArgs(tagsuite.Auth, "--username", PersistentUsername, "--password", PersistentPassword),
+		OptArgs(tagsuite.Auth, "--username", PersistentUsername, "--password", PersistentPassword),
 		// as the command line includes a password, we do not print the executed command, so the password does not get logged
-		HideCmdLine(),
+		OptHideArgs(),
 	)
 
-	p.Expect("logged in", authnTimeout)
+	p.Expect("logged in", termtest.OptExpectTimeout(defaultTimeout))
 	p.ExpectExitCode(0)
 }
 
@@ -423,49 +464,43 @@ func (s *Session) DebugMessage(prefix string) string {
 		prefix = prefix + "\n"
 	}
 
-	snapshot := ""
-	if s.cp != nil {
-		snapshot = s.cp.Snapshot()
+	output := map[string]string{}
+	for _, spawn := range s.spawned {
+		name := spawn.Cmd().String()
+		if spawn.opts.HideCmdArgs {
+			name = spawn.Cmd().Path
+		}
+		output[name] = strings.TrimSpace(spawn.Snapshot())
 	}
 
 	v, err := strutils.ParseTemplate(`
-{{.Prefix}}{{.A}}Stack:
-{{.Stacktrace}}{{.Z}}
-{{.A}}Terminal snapshot:
-{{.FullSnapshot}}{{.Z}}
-{{.Logs}}
+{{.Prefix}}Stack:
+{{.Stacktrace}}
+{{range $title, $value := .Outputs}}
+{{$.A}}Snapshot for Cmd '{{$title}}':
+{{$value}}
+{{$.Z}}
+{{end}}
+{{range $title, $value := .Logs}}
+{{$.A}}Log '{{$title}}':
+{{$value}}
+{{$.Z}}
+{{else}}
+No logs
+{{end}}
 `, map[string]interface{}{
-		"Prefix":       prefix,
-		"Stacktrace":   stacktrace.Get().String(),
-		"FullSnapshot": snapshot,
-		"Logs":         s.DebugLogs(),
-		"A":            sectionStart,
-		"Z":            sectionEnd,
+		"Prefix":     prefix,
+		"Stacktrace": stacktrace.Get().String(),
+		"Outputs":    output,
+		"Logs":       s.DebugLogs(),
+		"A":          sectionStart,
+		"Z":          sectionEnd,
 	}, nil)
 	if err != nil {
-		s.t.Fatalf("Parsing template failed: %s", err)
+		s.t.Fatalf("Parsing template failed: %s", errs.JoinMessage(err))
 	}
 
 	return v
-}
-
-func observeExpectFn(s *Session) expect.ExpectObserver {
-	return func(matchers []expect.Matcher, ms *expect.MatchState, err error) {
-		if err == nil {
-			return
-		}
-
-		var value string
-		var sep string
-		for _, matcher := range matchers {
-			value += fmt.Sprintf("%s%v", sep, matcher.Criteria())
-			sep = ", "
-		}
-
-		s.t.Fatal(s.DebugMessage(fmt.Sprintf(`
-Could not meet expectation: '%s'
-Error: %s`, value, err)))
-	}
 }
 
 // Close removes the temporary directory unless RetainDirs is specified
@@ -483,9 +518,7 @@ func (s *Session) Close() error {
 		defer s.Dirs.Close()
 	}
 
-	if s.cp != nil {
-		s.cp.Close()
-	}
+	s.spawned = []*SpawnedCmd{}
 
 	if os.Getenv("PLATFORM_API_TOKEN") == "" {
 		s.t.Log("PLATFORM_API_TOKEN env var not set, not running suite tear down")
@@ -614,10 +647,26 @@ func (s *Session) LogFiles() []string {
 	return result
 }
 
-func (s *Session) DebugLogs() string {
+func (s *Session) DebugLogs() map[string]string {
+	result := map[string]string{}
+
 	logDir := filepath.Join(s.Dirs.Config, "logs")
 	if !fileutils.DirExists(logDir) {
-		return "No logs found in " + logDir
+		return result
+	}
+
+	for _, path := range s.LogFiles() {
+		result[filepath.Base(path)] = string(fileutils.ReadFileUnsafe(path))
+	}
+
+	return result
+}
+
+func (s *Session) DebugLogsDump() string {
+	logs := s.DebugLogs()
+
+	if len(logs) == 0 {
+		return "No logs found in " + filepath.Join(s.Dirs.Config, "logs")
 	}
 
 	var sectionStart, sectionEnd string
@@ -628,8 +677,8 @@ func (s *Session) DebugLogs() string {
 	}
 
 	result := "Logs:\n"
-	for _, path := range s.LogFiles() {
-		result += fmt.Sprintf("%s%s:\n%s%s\n", sectionStart, filepath.Base(path), fileutils.ReadFileUnsafe(path), sectionEnd)
+	for name, log := range logs {
+		result += fmt.Sprintf("%s%s:\n%s%s\n", sectionStart, name, log, sectionEnd)
 	}
 
 	return result

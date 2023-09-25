@@ -37,20 +37,23 @@ func (suite *SecretsIntegrationTestSuite) TestSecrets_JSON() {
 
 	ts.LoginAsPersistentUser()
 	cp := ts.Spawn("secrets", "set", "project.test-secret", "test-value")
-	cp.ExpectLongString("Operating on project cli-integration-tests/Python3")
+	cp.Expect("Operating on project")
+	cp.Expect("cli-integration-tests/Python3")
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("secrets", "get", "project.test-secret", "--output", "json")
 	cp.ExpectExitCode(0)
-	suite.Equal(string(expected), cp.TrimmedSnapshot())
+	suite.Equal(string(expected), cp.StrippedSnapshot())
 
 	cp = ts.Spawn("secrets", "sync")
-	cp.ExpectLongString("Operating on project cli-integration-tests/Python3")
+	cp.Expect("Operating on project")
+	cp.Expect("cli-integration-tests/Python3")
 	cp.Expect("Successfully synchronized")
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("secrets")
-	cp.ExpectLongString("Operating on project cli-integration-tests/Python3")
+	cp.Expect("Operating on project")
+	cp.Expect("cli-integration-tests/Python3")
 	cp.Expect("Name")
 	cp.Expect("project")
 	cp.Expect("Description")
@@ -59,7 +62,7 @@ func (suite *SecretsIntegrationTestSuite) TestSecrets_JSON() {
 	cp.ExpectExitCode(0)
 }
 
-func (suite *SecretsIntegrationTestSuite) TestSecrect_Expand() {
+func (suite *SecretsIntegrationTestSuite) TestSecret_Expand() {
 	suite.OnlyRunForTags(tagsuite.Secrets, tagsuite.JSON)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
@@ -83,11 +86,13 @@ scripts:
 	ts.PrepareActiveStateYAML(asyData)
 
 	cp := ts.Spawn("secrets", "set", "project.project-secret", "project-value")
-	cp.ExpectLongString("Operating on project ActiveState-CLI/secrets-test")
+	cp.Expect("Operating on project")
+	cp.Expect("ActiveState-CLI/secrets-test")
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("secrets", "set", "user.user-secret", "user-value")
-	cp.ExpectLongString("Operating on project ActiveState-CLI/secrets-test")
+	cp.Expect("Operating on project")
+	cp.Expect("ActiveState-CLI/secrets-test")
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("run", "project-secret")

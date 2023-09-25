@@ -2,11 +2,14 @@ package integration
 
 import (
 	"testing"
+	"time"
+
+	"github.com/ActiveState/termtest"
+	"github.com/google/uuid"
+	"github.com/stretchr/testify/suite"
 
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
-	"github.com/google/uuid"
-	"github.com/stretchr/testify/suite"
 )
 
 type BranchIntegrationTestSuite struct {
@@ -20,15 +23,9 @@ func (suite *BranchIntegrationTestSuite) TestBranch_List() {
 
 	ts.PrepareProject("ActiveState-CLI/Branches", "")
 
-	cp := ts.Spawn("branch")
-	expected := `main (Current)
- ├─ firstbranch
- │  └─ firstbranchchild
- │     └─ childoffirstbranchchild
- ├─ secondbranch
- └─ thirdbranch
-`
-	cp.ExpectLongString(expected)
+	cp := ts.SpawnWithOpts(e2e.OptArgs("branch"), e2e.OptTermTest(termtest.OptVerboseLogging()))
+	// Sometimes there's a space before the line break, unsure exactly why, but hence the regex
+	cp.ExpectRe(`main \(Current\)\s?\n  ├─ firstbranch\s?\n  │  └─ firstbranchchild\s?\n  │     └─ childoffirstbranchchild\s?\n  ├─ secondbranch\s?\n  └─ thirdbranch`, termtest.OptExpectTimeout(5*time.Second))
 	cp.ExpectExitCode(0)
 }
 
@@ -43,7 +40,7 @@ func (suite *BranchIntegrationTestSuite) TestBranch_Add() {
 	ts.LoginAsPersistentUser()
 
 	cp := ts.Spawn("pull")
-	cp.ExpectLongString("Your project in the activestate.yaml has been updated")
+	cp.Expect("Your project in the activestate.yaml has been updated")
 	cp.ExpectExitCode(0)
 
 	branchName, err := uuid.NewRandom()
