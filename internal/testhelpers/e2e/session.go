@@ -297,6 +297,8 @@ func (s *Session) SpawnCmdWithOpts(exe string, optSetters ...SpawnOptSetter) *Sp
 				for i, a := range aa {
 					aa[i] = strings.ReplaceAll(a, " ", "^ ")
 				}
+				// Windows is weird, it doesn't seem to let you quote arguments, so instead we need to escape spaces
+				// which on Windows is done with the '^' character.
 				args = append(args, fmt.Sprintf(`%s %s`, strings.ReplaceAll(exe, " ", "^ "), strings.Join(aa, " ")))
 			} else {
 				args = append(args, fmt.Sprintf(`"%s" "%s"`, exe, strings.Join(spawnOpts.Args, `" "`)))
