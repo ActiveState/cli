@@ -66,7 +66,7 @@ var (
 	PersistentPassword string
 	PersistentToken    string
 
-	defaultnTimeout = 40 * time.Second
+	defaultTimeout = 40 * time.Second
 )
 
 func init() {
@@ -256,7 +256,7 @@ func (s *Session) SpawnCmdWithOpts(exe string, optSetters ...SpawnOptSetter) *Sp
 			s.t.Fatal(s.DebugMessage(errs.JoinMessage(err)))
 			return err
 		}),
-		termtest.OptDefaultTimeout(defaultnTimeout),
+		termtest.OptDefaultTimeout(defaultTimeout),
 		termtest.OptCols(140),
 		termtest.OptRows(30), // Needs to be able to accommodate JSON output
 	)
@@ -369,7 +369,7 @@ func (s *Session) LoginAsPersistentUser() {
 		OptHideArgs(),
 	)
 
-	p.Expect("logged in", termtest.OptExpectTimeout(defaultnTimeout))
+	p.Expect("logged in", termtest.OptExpectTimeout(defaultTimeout))
 	p.ExpectExitCode(0)
 }
 
