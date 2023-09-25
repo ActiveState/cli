@@ -33,6 +33,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 * The default Ruby version is now 3.2.2
 * Errors encountered while sourcing a runtime now have more informative error
   messages.
+* Improved parsing to reduce runtime installation errors.
 * Updated help details of `state use` to be more informative.
 * The State Tool can now be installed by extracting its archive file to a
   directory of your choice.
@@ -40,7 +41,6 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Fixed
 
 * Several error message improvements for errors arising from unauthenticated actions.
-* Fixed failed runtime installations due to parsing errors.
 * Some runtime installations will now be faster due to improved artifact handling.
 
 ### 0.40.1
