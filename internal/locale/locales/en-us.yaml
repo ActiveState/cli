@@ -1718,8 +1718,6 @@ err_user_network_solution:
     If your issue persists consider reporting it on our forums at {{.V0}}.
 err_revert_get_commit:
   other: "Could not fetch commit details for commit with ID: {{.V0}}"
-err_revert_refresh:
-  other: Could not get revert commit to check if changes were indeed made
 err_revert_commit:
   other: "Could not revert{{.V0}} commit: {{.V1}}"
 install_initial_success:
