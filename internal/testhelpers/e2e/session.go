@@ -292,7 +292,7 @@ func (s *Session) SpawnCmdWithOpts(exe string, optSetters ...SpawnOptSetter) *Sp
 		if len(spawnOpts.Args) == 0 {
 			args = append(args, fmt.Sprintf(`"%s"`, exe))
 		} else {
-			if shell == "cmd.exe" {
+			if shell == Cmd {
 				aa := spawnOpts.Args
 				for i, a := range aa {
 					aa[i] = strings.ReplaceAll(a, " ", "^ ")
