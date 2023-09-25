@@ -243,6 +243,7 @@ type StageCommitParams struct {
 	Owner        string
 	Project      string
 	ParentCommit string
+	Description  string
 	// Commits can have either an operation (e.g. installing a package)...
 	RequirementName      string
 	RequirementVersion   []bpModel.VersionRequirement
@@ -290,7 +291,7 @@ func (bp *BuildPlanner) StageCommit(params StageCommitParams) (strfmt.UUID, erro
 	}
 
 	// With the updated build expression call the stage commit mutation
-	request := request.StageCommit(params.Owner, params.Project, params.ParentCommit, expression)
+	request := request.StageCommit(params.Owner, params.Project, params.ParentCommit, params.Description, expression)
 	resp := &bpModel.StageCommitResult{}
 	err := bp.client.Run(request, resp)
 	if err != nil {

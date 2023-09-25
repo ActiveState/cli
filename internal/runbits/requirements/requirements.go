@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/analytics"
@@ -242,6 +243,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 		Owner:                pj.Owner(),
 		Project:              pj.Name(),
 		ParentCommit:         string(parentCommitID),
+		Description:          commitMessage(operation, name, version, ns, requirementBitWidth),
 		RequirementName:      name,
 		RequirementVersion:   requirements,
 		RequirementNamespace: ns,
@@ -417,4 +419,62 @@ func initializeProject() (*project.Project, error) {
 	}
 
 	return project.FromPath(target)
+}
+
+func commitMessage(op bpModel.Operation, name, version string, namespace model.Namespace, word int) string {
+	switch namespace.Type() {
+	case model.NamespaceLanguage:
+		return languageCommitMessage(op, name, version)
+	case model.NamespacePlatform:
+		return platformCommitMessage(op, name, version, word)
+	case model.NamespacePackage, model.NamespaceBundle:
+		return packageCommitMessage(op, name, version)
+	}
+
+	return ""
+}
+
+func languageCommitMessage(op bpModel.Operation, name, version string) string {
+	var msgL10nKey string
+	switch op {
+	case bpModel.OperationAdded:
+		msgL10nKey = "commit_message_added_language"
+	case bpModel.OperationUpdated:
+		msgL10nKey = "commit_message_updated_language"
+	case bpModel.OperationRemoved:
+		msgL10nKey = "commit_message_removed_language"
+	}
+
+	return locale.Tr(msgL10nKey, name, version)
+}
+
+func platformCommitMessage(op bpModel.Operation, name, version string, word int) string {
+	var msgL10nKey string
+	switch op {
+	case bpModel.OperationAdded:
+		msgL10nKey = "commit_message_added_platform"
+	case bpModel.OperationUpdated:
+		msgL10nKey = "commit_message_updated_platform"
+	case bpModel.OperationRemoved:
+		msgL10nKey = "commit_message_removed_platform"
+	}
+
+	return locale.Tr(msgL10nKey, name, strconv.Itoa(word), version)
+}
+
+func packageCommitMessage(op bpModel.Operation, name, version string) string {
+	var msgL10nKey string
+	switch op {
+	case bpModel.OperationAdded:
+		msgL10nKey = "commit_message_added_package"
+	case bpModel.OperationUpdated:
+		msgL10nKey = "commit_message_updated_package"
+	case bpModel.OperationRemoved:
+		msgL10nKey = "commit_message_removed_package"
+	}
+
+	if version == "" {
+		version = locale.Tl("package_version_auto", "auto")
+	}
+	return locale.Tr(msgL10nKey, name, version)
 }
