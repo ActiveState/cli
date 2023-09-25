@@ -263,6 +263,7 @@ func (s *Session) SpawnCmdWithOpts(exe string, optSetters ...SpawnOptSetter) *Sp
 
 	// Work around issue where multiline values sometimes have the wrong line endings
 	// See for example TestBranch_List
+	// https://activestatef.atlassian.net/browse/DX-2169
 	spawnOpts.TermtestOpts = append(spawnOpts.TermtestOpts,
 		termtest.OptNormalizedLineEnds(true),
 	)
