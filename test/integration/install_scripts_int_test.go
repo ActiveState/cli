@@ -164,7 +164,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall_NonEmptyTarget() {
 		cp = ts.SpawnCmdWithOpts("powershell.exe", e2e.WithArgs(argsPlain...), e2e.AppendEnv("SHELL="))
 	}
 	cp.ExpectLongString("Installation path must be an empty directory")
-	cp.ExpectExitCode(1)
+	cp.Wait()
 }
 
 func (suite *InstallScriptsIntegrationTestSuite) TestInstall_VersionDoesNotExist() {

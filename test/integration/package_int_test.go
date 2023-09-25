@@ -647,6 +647,56 @@ func (suite *PackageIntegrationTestSuite) TestUpdate() {
 	cp.ExpectExitCode(0)
 }
 
+func (suite *PackageIntegrationTestSuite) TestRuby() {
+	if runtime.GOOS == "darwin" {
+		return // Ruby support is not yet enabled on the Platform
+	}
+	suite.OnlyRunForTags(tagsuite.Package)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.Spawn("checkout", "ActiveState-CLI/Ruby-3.2.2", ".")
+	cp.Expect("Checked out project")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("install", "rake")
+	cp.ExpectExitCode(0)
+
+	cp = ts.SpawnWithOpts(
+		e2e.WithArgs("exec", "rake", "--", "--version"),
+		e2e.AppendEnv(constants.DisableRuntime+"=false"),
+	)
+	cp.ExpectRe(`rake, version \d+\.\d+\.\d+`)
+	cp.ExpectExitCode(0)
+}
+
+// TestProjectWithOfflineInstallerAndDocker just makes sure we can checkout and install/uninstall
+// packages for projects with offline installers and docker runtimes.
+func (suite *PackageIntegrationTestSuite) TestProjectWithOfflineInstallerAndDocker() {
+	suite.OnlyRunForTags(tagsuite.Package)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	ts.LoginAsPersistentUser() // needed for Enterprise-tier features
+
+	cp := ts.Spawn("checkout", "ActiveState-CLI/Python-OfflineInstaller-Docker", ".")
+	cp.Expect("Skipping runtime setup")
+	cp.Expect("Checked out project")
+	cp.ExpectExitCode(0)
+
+	cp = ts.SpawnWithOpts(
+		e2e.WithArgs("install", "requests"),
+		e2e.AppendEnv(constants.DisableRuntime+"=false"),
+	)
+	cp.ExpectExitCode(0)
+
+	cp = ts.SpawnWithOpts(
+		e2e.WithArgs("uninstall", "requests"),
+		e2e.AppendEnv(constants.DisableRuntime+"=false"),
+	)
+	cp.ExpectExitCode(0)
+}
+
 func TestPackageIntegrationTestSuite(t *testing.T) {
 	suite.Run(t, new(PackageIntegrationTestSuite))
 }
