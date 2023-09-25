@@ -121,6 +121,14 @@ func NewCommand(name, title, description string, prime primer, flags []*Flag, ar
 			)
 			panic(msg)
 		}
+		if idx > 0 && args[idx-1].VariableLength {
+			msg := fmt.Sprintf(
+				"Variable length argument must be the last argument, variable argument '%s', "+
+					"is followed by non-variable argument '%s'.\n",
+				args[idx-1].Name, arg.Name,
+			)
+			panic(msg)
+		}
 	}
 
 	cmd := &Command{
@@ -663,9 +671,20 @@ func (c *Command) cobraExecHandler(cobraCmd *cobra.Command, args []string) error
 
 		switch v := arg.Value.(type) {
 		case *string:
-			*v = args[idx]
+			if arg.VariableLength {
+				*v = strings.Join(args[idx:], " ")
+			} else {
+				*v = args[idx]
+			}
 		case ArgMarshaler:
 			if err := v.Set(args[idx]); err != nil {
+				return err
+			}
+		case ArgMarshalerVariable:
+			if !arg.VariableLength {
+				return errs.New("Argument '%s' implements ArgMarshalerVariable but does not have VariableLength=true", arg.Name)
+			}
+			if err := v.Set(args[idx:]...); err != nil {
 				return err
 			}
 		default:

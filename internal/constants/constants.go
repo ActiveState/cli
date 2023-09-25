@@ -442,6 +442,9 @@ const ReportErrorsConfig = "report.errors"
 // ReportAnalyticsConfig is the config key used to determine if we will send analytics reports
 const ReportAnalyticsConfig = "report.analytics"
 
+// OpenAITokenConfig is the config key used to determine the OpenAI API key
+const OpenAITokenConfig = "openai.token"
+
 // SvcAppName is the name we give our state-svc application
 const SvcAppName = "State Service"
 

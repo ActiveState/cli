@@ -156,6 +156,9 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 
 	refreshCmd := newRefreshCommand(prime)
 
+	aiCmd := newAICommand(prime)
+	aiCmd.AddChildren(newAISearchCommand(prime))
+
 	stateCmd := newStateCommand(globals, prime)
 	stateCmd.AddChildren(
 		newHelloCommand(prime),
@@ -205,6 +208,7 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 		newSwitchCommand(prime),
 		newTestCommand(prime),
 		newCommitCommand(prime),
+		aiCmd,
 	)
 
 	return &CmdTree{
