@@ -13,7 +13,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 * `state init` is now a stable command, meaning you no longer need to opt-in to
   unstable commands to use it.
 * Signing up for a new account now opens the account creation page in your
-  browser. Instead of bringing you to the sign in page.
+  browser instead of the login page.
 * `state shell` can now detect currently active subshells preventing nested
   shells from being created.
 * The State Tool will now print a message when starting a subshell, indicating
