@@ -19,15 +19,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 * The State Tool will now print a message when starting a subshell, indicating
   the project that is being used.
 * Wildcard and partial version matching is now supported for `state install` 
-  and for language versions with `state init`.\
-  For example:
-  * `state install pytest@2.x`
-  * `state init "python@>3.7,<3.8"`
+  and for language versions with `state init`. For example: `state install pytest@2.x`
 * Added messaging on the potentially disruptive nature of editing or moving a project.
 * Users can now check out a project without cloning the associated git
-  repository.\
-  For example: 
-  * `state checkout <orgname/project> --no-clone`
+  repository. For example: `state checkout <orgname/project> --no-clone`
 
 ### Changed
 
