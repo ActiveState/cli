@@ -278,9 +278,12 @@ func (s *Session) SpawnCmdWithOpts(exe string, optSetters ...SpawnOptSetter) *Sp
 		switch runtime.GOOS {
 		case "windows":
 			shell = "cmd.exe"
+			// /C = next argument is command that will be ran
 			args = []string{"/C"}
 		case "darwin":
 			shell = "zsh"
+			// -i = interactive mode
+			// -c = next argument is command that will be ran
 			args = []string{"-i", "-c"}
 		default:
 			shell = "bash"
