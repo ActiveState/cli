@@ -277,7 +277,7 @@ func (s *Session) SpawnCmdWithOpts(exe string, optSetters ...SpawnOptSetter) *Sp
 	if spawnOpts.RunInsideShell {
 		switch runtime.GOOS {
 		case "windows":
-			shell = "cmd.exe"
+			shell = Cmd
 			// /C = next argument is command that will be ran
 			args = []string{"/C"}
 		case "darwin":
