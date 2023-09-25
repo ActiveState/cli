@@ -689,14 +689,14 @@ func (suite *PackageIntegrationTestSuite) TestProjectWithOfflineInstallerAndDock
 	cp.ExpectExitCode(0)
 
 	cp = ts.SpawnWithOpts(
-		e2e.WithArgs("install", "requests"),
-		e2e.AppendEnv(constants.DisableRuntime+"=false"),
+		e2e.OptArgs("install", "requests"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
 	cp.ExpectExitCode(0)
 
 	cp = ts.SpawnWithOpts(
-		e2e.WithArgs("uninstall", "requests"),
-		e2e.AppendEnv(constants.DisableRuntime+"=false"),
+		e2e.OptArgs("uninstall", "requests"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
 	cp.ExpectExitCode(0)
 }
