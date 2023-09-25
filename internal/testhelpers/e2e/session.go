@@ -220,7 +220,7 @@ func (s *Session) ClearCache() error {
 	return os.RemoveAll(s.Dirs.Cache)
 }
 
-// SpawnedCmd spawns the state tool executable to be tested with arguments
+// Spawn spawns the state tool executable to be tested with arguments
 func (s *Session) Spawn(args ...string) *SpawnedCmd {
 	return s.SpawnCmdWithOpts(s.Exe, OptArgs(args...))
 }
