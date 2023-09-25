@@ -164,6 +164,10 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall_NonEmptyTarget() {
 		cp = ts.SpawnCmdWithOpts("powershell.exe", e2e.OptArgs(argsPlain...), e2e.OptAppendEnv("SHELL="))
 	}
 	cp.Expect("Installation path must be an empty directory")
+
+	// Originally this was ExpectExitCode(1), but particularly on Windows this turned out to be unreliable. Probably
+	// because of powershell.
+	// Since we asserted the expected error above we don't need to go on a wild goose chase here.
 	cp.ExpectExit()
 }
 
