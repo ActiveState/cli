@@ -37,6 +37,9 @@ func (s *SpawnedCmd) StrippedSnapshot() string {
 	return strings.Trim(strings.ReplaceAll(s.TermTest.Snapshot(), "\n", ""), "\x00\x20\x0a\x0d")
 }
 
+// ExpectRe takes a string rather than an already compiled regex, so that we can handle regex compilation failures
+// through our error handling chain rather than have it fail on eg. a panic through regexp.MustCompile, or needing
+// to manually error check it before sending it to ExpectRe.
 func (s *SpawnedCmd) ExpectRe(v string, opts ...termtest.SetExpectOpt) error {
 	expectOpts, err := termtest.NewExpectOpts(opts...)
 	if err != nil {
