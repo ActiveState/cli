@@ -7,3 +7,16 @@ type Inner error
 type ErrNoProject struct {
 	Inner
 }
+
+type ErrNotAuthenticated struct {
+	Inner
+}
+
+type ErrActionAborted struct {
+	Inner
+}
+
+type ErrPermission struct {
+	Inner
+	Details interface{}
+}
