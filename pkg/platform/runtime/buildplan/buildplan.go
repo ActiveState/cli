@@ -339,10 +339,8 @@ func buildBuildClosureMap(baseID strfmt.UUID, lookup map[strfmt.UUID]interface{}
 		return errs.New("Incorrect target type for id %s, expected Artifact", baseID)
 	}
 
-	_, ok = result[strfmt.UUID(currentArtifact.NodeID)]
-	// We are only interested in artifacts that have not already been added
-	// to the result and that have been submitted to be built.
-	if ok || currentArtifact.Status == model.ArtifactNotSubmitted {
+	if currentArtifact.MimeType == model.XActiveStateBuilderMimeType {
+		// Dependency is a builder, skipping
 		return nil
 	}
 
@@ -365,13 +363,6 @@ func buildBuildClosureMap(baseID strfmt.UUID, lookup map[strfmt.UUID]interface{}
 		for a := range recursiveDeps {
 			deps[a] = struct{}{}
 		}
-
-		// For each runtime dependency we need to add its dependencies
-		// to the result map.
-		err = buildBuildClosureMap(depID, lookup, result)
-		if err != nil {
-			return errs.Wrap(err, "Could not build map for runtime dependency %s", currentArtifact.NodeID)
-		}
 	}
 
 	// We need to convert the map of dependencies to a list of
@@ -379,6 +370,13 @@ func buildBuildClosureMap(baseID strfmt.UUID, lookup map[strfmt.UUID]interface{}
 	var uniqueDeps []strfmt.UUID
 	for depID := range deps {
 		uniqueDeps = append(uniqueDeps, depID)
+
+		// For each buildtime dependency we need to add it and its dependencies
+		// to the result map.
+		err := buildBuildClosureMap(depID, lookup, result)
+		if err != nil {
+			return errs.Wrap(err, "Could not build map for runtime dependency %s", currentArtifact.NodeID)
+		}
 	}
 
 	// We need to get the source information for the artifact.
@@ -419,18 +417,17 @@ func generateBuildtimeDependencies(artifactID strfmt.UUID, lookup map[strfmt.UUI
 		return nil, errs.New("Incorrect target type for id %s, expected Artifact or Source", artifactID)
 	}
 
+	result[artifactID] = struct{}{}
+
 	if artifact.MimeType == model.XActiveStateBuilderMimeType {
 		// Dependency is a builder, skipping
 		return nil, nil
 	}
 
-	// Once we have verified that the artifact has a step that generated it
-	// we add it to the result map.
-	result[artifactID] = struct{}{}
-
 	// We iterate through the direct dependencies of the artifact
 	// and recursively add all of the dependencies of those artifacts map.
 	for _, depID := range artifact.RuntimeDependencies {
+		result[artifactID] = struct{}{}
 		_, err := generateBuildtimeDependencies(depID, lookup, result)
 		if err != nil {
 			return nil, errs.Wrap(err, "Could not build map for runtime dependencies of artifact %s", artifact.NodeID)
@@ -455,7 +452,7 @@ func generateBuildtimeDependencies(artifactID strfmt.UUID, lookup map[strfmt.UUI
 	// artifact and recursively add all of the dependencies and builders
 	// of those artifacts.
 	for _, input := range step.Inputs {
-		if input.Tag != model.TagDependency || input.Tag != model.TagBuilder {
+		if input.Tag != model.TagDependency && input.Tag != model.TagBuilder {
 			continue
 		}
 

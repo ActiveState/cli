@@ -36,7 +36,7 @@ const (
 
 	// Tag types
 	TagSource     = "src"
-	TagDependency = "dep"
+	TagDependency = "deps"
 	TagBuilder    = "builder"
 	TagOrphan     = "orphans"
 

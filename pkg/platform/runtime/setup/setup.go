@@ -382,15 +382,20 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 
 	// Compute and handle the change summary
 	// runtimeAndBuildtimeArtifacts records all artifacts that will need to be built in order to obtain the runtime.
-	// Disabled due to DX-2033.
-	// Please use this var when we come back to this in the future as we need to make a clear distinction between this
-	// and runtime-only artifacts.
-	// var runtimeAndBuildtimeArtifacts artifact.Map
+	var runtimeAndBuildtimeArtifacts artifact.Map
 	var runtimeArtifacts artifact.Map // Artifacts required for the runtime to function
 	if buildResult.Build != nil {
 		runtimeArtifacts, err = buildplan.NewMapFromBuildPlan(buildResult.Build)
 		if err != nil {
 			return nil, nil, errs.Wrap(err, "Failed to create artifact map from build plan")
+		}
+
+		if strings.EqualFold(os.Getenv(constants.InstallBuildDependencies), "true") {
+			runtimeAndBuildtimeArtifacts, err = buildplan.BuildtimeArtifacts(buildResult.Build)
+			if err != nil {
+				return nil, nil, errs.Wrap(err, "Failed to create artifact map from build plan")
+			}
+			runtimeArtifacts = runtimeAndBuildtimeArtifacts
 		}
 	}
 
@@ -505,6 +510,14 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 		if err != nil {
 			return nil, nil, errs.Wrap(err, "Could not get buildtime artifacts")
 		}
+
+		buildtimeArtifactIDs := []artifact.ArtifactID{}
+		for _, a := range buildtimeArtifacts {
+			buildtimeArtifactIDs = append(buildtimeArtifactIDs, a.ArtifactID)
+		}
+
+		// Update artifactNames to ensure it now includes buildtime artifacts
+		artifactNames = artifact.ResolveArtifactNames(setup.ResolveArtifactName, buildtimeArtifactIDs)
 
 		buildList := []string{}
 		for _, a := range buildtimeArtifacts {

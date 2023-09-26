@@ -156,10 +156,9 @@ func (bp *BuildPlanner) FetchBuildResult(commitID strfmt.UUID, owner, project st
 	}
 
 	res := BuildResult{
-		BuildEngine: buildEngine,
-		Build:       build,
-		// BuildReady:      build.Status == bpModel.Completed,
-		BuildReady:      false,
+		BuildEngine:     buildEngine,
+		Build:           build,
+		BuildReady:      build.Status == bpModel.Completed,
 		CommitID:        id,
 		BuildExpression: expr,
 		BuildStatus:     build.Status,
