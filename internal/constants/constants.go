@@ -1,6 +1,8 @@
 package constants
 
-import "time"
+import (
+	"time"
+)
 
 // LibraryName contains the main name of this library
 const LibraryName = "cli"
@@ -70,6 +72,9 @@ const ActivatedStateEnvVarName = "ACTIVESTATE_ACTIVATED"
 
 // ActivatedStateIDEnvVarName is the name of the environment variable that is set when in an activated state, its value will be a unique id identifying a specific instance of an activated state
 const ActivatedStateIDEnvVarName = "ACTIVESTATE_ACTIVATED_ID"
+
+// ActivatedStateProjectEnvVarName is the name of the environment variable that specifies the activated state's org/project namespace.
+const ActivatedStateNamespaceEnvVarName = "ACTIVESTATE_ACTIVATED_NAMESPACE"
 
 // ForwardedStateEnvVarName is the name of the environment variable that is set when in an activated state, its value will be the path of the project
 const ForwardedStateEnvVarName = "ACTIVESTATE_FORWARDED"
@@ -455,7 +460,6 @@ const InstallerName = "State Installer"
 const StateExecutorCmd = "state-exec"
 
 // ToplevelInstallArchiveDir is the top-level directory for files in an installation archive
-// Cf., https://www.pivotaltracker.com/story/show/177781411
 const ToplevelInstallArchiveDir = "state-install"
 
 // FirstMultiFileStateToolVersion is the State Tool version that introduced multi-file updates
@@ -500,3 +504,6 @@ const TerminalAnimationInterval = 150 * time.Millisecond
 // RuntimeSetupWaitEnvVarName is only used for an integration test to pause installation and wait
 // for Ctrl+C.
 const RuntimeSetupWaitEnvVarName = "ACTIVESTATE_CLI_RUNTIME_SETUP_WAIT"
+
+// ActiveStateCIEnvVarName is the environment variable set when running in an ActiveState CI environment.
+const ActiveStateCIEnvVarName = "ACTIVESTATE_CI"

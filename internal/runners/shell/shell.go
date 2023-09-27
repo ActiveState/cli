@@ -1,13 +1,17 @@
 package shell
 
 import (
+	"os"
+
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/config"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
+	"github.com/ActiveState/cli/internal/process"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runbits/activation"
 	"github.com/ActiveState/cli/internal/runbits/findproject"
@@ -80,6 +84,12 @@ func (u *Shell) Run(params *Params) error {
 	rti, err := runtime.NewFromProject(proj, target.TriggerShell, u.analytics, u.svcModel, u.out, u.auth)
 	if err != nil {
 		return locale.WrapInputError(err, "err_shell_runtime_new", "Could not start a shell/prompt for this project.")
+	}
+
+	if process.IsActivated(u.config) {
+		activatedProjectNamespace := os.Getenv(constants.ActivatedStateNamespaceEnvVarName)
+		activatedProjectDir := os.Getenv(constants.ActivatedStateEnvVarName)
+		return locale.NewInputError("err_shell_already_active", "", activatedProjectNamespace, activatedProjectDir)
 	}
 
 	u.out.Notice(locale.Tl("shell_project_statement", "",

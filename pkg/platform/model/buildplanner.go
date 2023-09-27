@@ -2,8 +2,9 @@ package model
 
 import (
 	"errors"
-	"net/http"
 	"os"
+	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -16,8 +17,8 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/request"
-	"github.com/ActiveState/cli/pkg/platform/api/headchef"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
+	"github.com/ActiveState/cli/pkg/platform/api/reqsimport"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/ActiveState/cli/pkg/platform/runtime/buildexpression"
@@ -51,7 +52,7 @@ type BuildResult struct {
 	CommitID            strfmt.UUID
 	Build               *bpModel.Build
 	BuildStatusResponse *headchef_models.V1BuildStatusResponse
-	BuildStatus         headchef.BuildStatusEnum
+	BuildStatus         string
 	BuildReady          bool
 }
 
@@ -72,7 +73,7 @@ func NewBuildPlannerModel(auth *authentication.Auth) *BuildPlanner {
 	bpURL := api.GetServiceURL(api.ServiceBuildPlanner).String()
 	logging.Debug("Using build planner at: %s", bpURL)
 
-	client := gqlclient.NewWithOpts(bpURL, 0, graphql.WithHTTPClient(&http.Client{}))
+	client := gqlclient.NewWithOpts(bpURL, 0, graphql.WithHTTPClient(api.NewHTTPClient()))
 
 	if auth.Authenticated() {
 		client.SetTokenProvider(auth)
@@ -152,6 +153,7 @@ func (bp *BuildPlanner) FetchBuildResult(commitID strfmt.UUID, owner, project st
 		BuildEngine: buildEngine,
 		Build:       build,
 		BuildReady:  build.Status == bpModel.Completed,
+		BuildStatus: build.Status,
 		CommitID:    id,
 	}
 
@@ -235,7 +237,7 @@ type StageCommitParams struct {
 	Project              string
 	ParentCommit         string
 	RequirementName      string
-	RequirementVersion   string
+	RequirementVersion   []bpModel.VersionRequirement
 	RequirementNamespace Namespace
 	Operation            bpModel.Operation
 	TimeStamp            strfmt.DateTime
@@ -256,15 +258,9 @@ func (bp *BuildPlanner) StageCommit(params StageCommitParams) (strfmt.UUID, erro
 		}
 	} else {
 		requirement := bpModel.Requirement{
-			Namespace: params.RequirementNamespace.String(),
-			Name:      params.RequirementName,
-		}
-
-		if params.RequirementVersion != "" {
-			requirement.VersionRequirement = []bpModel.VersionRequirement{{
-				bpModel.VersionRequirementComparatorKey: bpModel.ComparatorEQ,
-				bpModel.VersionRequirementVersionKey:    params.RequirementVersion,
-			}}
+			Namespace:          params.RequirementNamespace.String(),
+			Name:               params.RequirementName,
+			VersionRequirement: params.RequirementVersion,
 		}
 
 		err = expression.UpdateRequirement(params.Operation, requirement)
@@ -286,21 +282,12 @@ func (bp *BuildPlanner) StageCommit(params StageCommitParams) (strfmt.UUID, erro
 		return "", processBuildPlannerError(err, "failed to stage commit")
 	}
 
-	if resp.Error != nil {
-		return "", locale.NewError("Failed to stage commit, API returned message: {{.V0}}", resp.Error.Message)
-	}
-
-	if resp.ParseError != nil {
-		return "", locale.NewInputError(
-			"err_stage_commit_parse",
-			"The platform failed to parse the build expression, received the following message: {{.V0}}. Path: {{.V1}}",
-			resp.ParseError.Message,
-			resp.ParseError.Path,
-		)
-	}
-
 	if resp.Commit == nil {
 		return "", errs.New("Staged commit is nil")
+	}
+
+	if bpModel.IsErrorResponse(resp.Commit.Type) {
+		return "", bpModel.ProcessCommitError(resp.Commit, "Could not process error response from stage commit")
 	}
 
 	if resp.Commit.CommitID == "" {
@@ -308,34 +295,11 @@ func (bp *BuildPlanner) StageCommit(params StageCommitParams) (strfmt.UUID, erro
 	}
 
 	if resp.Commit.Build == nil {
-		if resp.Error != nil {
-			return "", errs.New(resp.Error.Message)
-		}
 		return "", errs.New("Commit does not contain build")
 	}
 
-	if resp.Commit.Build.PlanningError != nil {
-		var errs []string
-		var isTransient bool
-		for _, se := range resp.Commit.Build.SubErrors {
-			if se.Type != bpModel.RemediableSolveErrorType {
-				continue
-			}
-
-			if se.Message != "" {
-				errs = append(errs, se.Message)
-				isTransient = se.IsTransient
-			}
-			for _, ve := range se.ValidationErrors {
-				if ve.Error != "" {
-					errs = append(errs, ve.Error)
-				}
-			}
-		}
-		return "", &bpModel.BuildPlannerError{
-			ValidationErrors: errs,
-			IsTransient:      isTransient,
-		}
+	if bpModel.IsErrorResponse(resp.Commit.Build.Type) {
+		return "", bpModel.ProcessBuildError(resp.Commit.Build, "Could not get build from commit")
 	}
 
 	return resp.Commit.CommitID, nil
@@ -353,6 +317,10 @@ func (bp *BuildPlanner) GetBuildExpression(owner, project, commitID string) (*bu
 		return nil, errs.New("Commit is nil")
 	}
 
+	if bpModel.IsErrorResponse(resp.Commit.Type) {
+		return nil, bpModel.ProcessCommitError(resp.Commit, "Could not get build expression from commit")
+	}
+
 	if resp.Commit.Expression == nil {
 		return nil, errs.New("Commit does not contain expression")
 	}
@@ -368,13 +336,106 @@ func (bp *BuildPlanner) GetBuildExpression(owner, project, commitID string) (*bu
 // processBuildPlannerError will check for special error types that should be
 // handled differently. If no special error type is found, the fallback message
 // will be used.
+// It expects the errors field to be the top-level field in the response. This is
+// different from special error types that are returned as part of the data field.
+// Example:
+//
+//	{
+//	  "errors": [
+//	    {
+//	      "message": "deprecation error",
+//	      "locations": [
+//	        {
+//	          "line": 7,
+//	          "column": 11
+//	        }
+//	      ],
+//	      "path": [
+//	        "project",
+//	        "commit",
+//	        "build"
+//	      ],
+//	      "extensions": {
+//	        "code": "CLIENT_DEPRECATION_ERROR"
+//	      }
+//	    }
+//	  ],
+//	  "data": null
+//	}
 func processBuildPlannerError(bpErr error, fallbackMessage string) error {
 	graphqlErr := &graphql.GraphErr{}
 	if errors.As(bpErr, graphqlErr) {
 		code, ok := graphqlErr.Extensions[codeExtensionKey].(string)
 		if ok && code == clientDeprecationErrorKey {
-			return locale.NewInputError("err_buildplanner_deprecated", "Encountered deprecation error: {{.V0}}", graphqlErr.Message)
+			return &bpModel.BuildPlannerError{Err: locale.NewInputError("err_buildplanner_deprecated", "Encountered deprecation error: {{.V0}}", graphqlErr.Message)}
 		}
 	}
-	return errs.Wrap(bpErr, fallbackMessage)
+	return &bpModel.BuildPlannerError{Err: errs.Wrap(bpErr, fallbackMessage)}
+}
+
+var versionRe = regexp.MustCompile(`^\d+(\.\d+)*$`)
+
+func isExactVersion(version string) bool {
+	return versionRe.MatchString(version)
+}
+
+func isWildcardVersion(version string) bool {
+	return strings.Index(version, ".x") >= 0 || strings.Index(version, ".X") >= 0
+}
+
+func VersionStringToRequirements(version string) ([]bpModel.VersionRequirement, error) {
+	if isExactVersion(version) {
+		return []bpModel.VersionRequirement{{
+			bpModel.VersionRequirementComparatorKey: "eq",
+			bpModel.VersionRequirementVersionKey:    version,
+		}}, nil
+	}
+
+	if !isWildcardVersion(version) {
+		// Ask the Platform to translate a string like ">=1.2,<1.3" into a list of requirements.
+		// Note that:
+		// - The given requirement name does not matter; it is not looked up.
+		changeset, err := reqsimport.Init().Changeset([]byte("name "+version), "")
+		if err != nil {
+			return nil, locale.WrapInputError(err, "err_invalid_version_string", "Invalid version string")
+		}
+		requirements := []bpModel.VersionRequirement{}
+		for _, change := range changeset {
+			for _, constraint := range change.VersionConstraints {
+				requirements = append(requirements, bpModel.VersionRequirement{
+					bpModel.VersionRequirementComparatorKey: constraint.Comparator,
+					bpModel.VersionRequirementVersionKey:    constraint.Version,
+				})
+			}
+		}
+		return requirements, nil
+	}
+
+	// Construct version constraints to be >= given version, and < given version's last part + 1.
+	// For example, given a version number of 3.10.x, constraints should be >= 3.10, < 3.11.
+	// Given 2.x, constraints should be >= 2, < 3.
+	requirements := []bpModel.VersionRequirement{}
+	parts := strings.Split(version, ".")
+	for i, part := range parts {
+		if part != "x" && part != "X" {
+			continue
+		}
+		if i == 0 {
+			return nil, locale.NewInputError("err_version_wildcard_start", "A version number cannot start with a wildcard")
+		}
+		requirements = append(requirements, bpModel.VersionRequirement{
+			bpModel.VersionRequirementComparatorKey: "gte",
+			bpModel.VersionRequirementVersionKey:    strings.Join(parts[:i], "."),
+		})
+		previousPart, err := strconv.Atoi(parts[i-1])
+		if err != nil {
+			return nil, locale.WrapInputError(err, "err_version_number_expected", "Version parts are expected to be numeric")
+		}
+		parts[i-1] = strconv.Itoa(previousPart + 1)
+		requirements = append(requirements, bpModel.VersionRequirement{
+			bpModel.VersionRequirementComparatorKey: "lt",
+			bpModel.VersionRequirementVersionKey:    strings.Join(parts[:i], "."),
+		})
+	}
+	return requirements, nil
 }

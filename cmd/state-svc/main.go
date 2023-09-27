@@ -13,6 +13,7 @@ import (
 
 	"github.com/ActiveState/cli/cmd/state-svc/autostart"
 	anaSync "github.com/ActiveState/cli/internal/analytics/client/sync"
+	anaConst "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
@@ -98,7 +99,7 @@ func run(cfg *config.Instance) error {
 	}
 
 	auth := authentication.New(cfg)
-	an := anaSync.New(cfg, auth, out)
+	an := anaSync.New(anaConst.SrcStateService, cfg, auth, out)
 	defer an.Wait()
 
 	if err := autostart.RegisterConfigListener(cfg); err != nil {
@@ -122,16 +123,25 @@ func run(cfg *config.Instance) error {
 	)
 
 	var foregroundArgText string
+	var autostart bool
 
 	cmd.AddChildren(
 		captain.NewCommand(
 			cmdStart,
 			"",
 			"Start the ActiveState Service (Background)",
-			p, nil, nil,
+			p,
+			[]*captain.Flag{
+				{Name: "autostart", Value: &autostart, Hidden: true}, // differentiate between autostart and cli invocation
+			},
+			nil,
 			func(ccmd *captain.Command, args []string) error {
 				logging.Debug("Running CmdStart")
-				return runStart(out, "svc-start:cli")
+				argText := "svc-start:cli"
+				if autostart {
+					argText = "svc-start:auto"
+				}
+				return runStart(out, argText)
 			},
 		),
 		captain.NewCommand(

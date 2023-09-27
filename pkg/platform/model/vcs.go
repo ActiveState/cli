@@ -14,6 +14,7 @@ import (
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/singleton/uniqid"
 	"github.com/ActiveState/cli/pkg/platform/api"
+	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	gqlModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model"
 	"github.com/ActiveState/cli/pkg/platform/api/mediator/model"
 	"github.com/ActiveState/cli/pkg/platform/api/mono"
@@ -84,6 +85,9 @@ const (
 
 	// NamespaceSharedMatch is the namespace used for shared requirements (usually runtime libraries)
 	NamespaceSharedMatch = `^shared$`
+
+	// NamespaceBuildFlagsMatch is the namespace used for passing build flags
+	NamespaceBuildFlagsMatch = `^build-flags$`
 )
 
 type TrackingType string
@@ -445,20 +449,6 @@ func AddChangeset(parentCommitID strfmt.UUID, commitMessage string, changeset Ch
 	return res.Payload, nil
 }
 
-// AddCommit creates a new commit with a single change. This is lower level than Commit{X} functions.
-func AddCommit(parentCommitID strfmt.UUID, commitMessage string, operation Operation, namespace Namespace, requirement string, version string) (*mono_models.Commit, error) {
-	changeset := []*mono_models.CommitChangeEditable{
-		{
-			Operation:         string(operation),
-			Namespace:         namespace.String(),
-			Requirement:       requirement,
-			VersionConstraint: version,
-		},
-	}
-
-	return AddChangeset(parentCommitID, commitMessage, changeset)
-}
-
 func UpdateBranchForProject(pj ProjectInfo, commitID strfmt.UUID) error {
 	pjm, err := FetchProjectByName(pj.Owner(), pj.Name())
 	if err != nil {
@@ -526,29 +516,6 @@ func DeleteBranch(branchID strfmt.UUID) error {
 	return nil
 }
 
-// CommitPackage commits a package to an existing parent commit
-func CommitPackage(parentCommitID strfmt.UUID, operation Operation, packageName string, namespace Namespace, packageVersion string) (strfmt.UUID, error) {
-	var message string
-	switch operation {
-	case OperationAdded:
-		message = "commit_message_added_package"
-	case OperationUpdated:
-		message = "commit_message_updated_package"
-	case OperationRemoved:
-		message = "commit_message_removed_package"
-	}
-
-	commit, err := AddCommit(
-		parentCommitID, locale.Tr(message, packageName, packageVersion),
-		operation, namespace,
-		packageName, packageVersion,
-	)
-	if err != nil {
-		return "", err
-	}
-	return commit.CommitID, nil
-}
-
 // UpdateProjectBranchCommitByName updates the vcs branch for a project given by its namespace with a new commitID
 func UpdateProjectBranchCommit(pj ProjectInfo, commitID strfmt.UUID) error {
 	pjm, err := FetchProjectByName(pj.Owner(), pj.Name())
@@ -602,14 +569,9 @@ func CommitInitial(hostPlatform string, langName, langVersion string) (strfmt.UU
 	var changes []*mono_models.CommitChangeEditable
 
 	if langName != "" {
-		// Construct version constraints to be >= given version, and < given version's last part + 1.
-		// For example, given a version number of 3.10, constraints should be >= 3.10, < 3.11.
-		// Given 2, constraints should be >= 2, < 3.
-		versionConstraints := []*mono_models.Constraint{&mono_models.Constraint{Comparator: "gte", Version: langVersion}}
-		versionParts := strings.Split(langVersion, ".")
-		if lastPart, err := strconv.Atoi(versionParts[len(versionParts)-1]); err == nil {
-			versionParts[len(versionParts)-1] = strconv.Itoa(lastPart + 1)
-			versionConstraints = append(versionConstraints, &mono_models.Constraint{Comparator: "lt", Version: strings.Join(versionParts, ".")})
+		versionConstraints, err := versionStringToConstraints(langVersion)
+		if err != nil {
+			return "", errs.Wrap(err, "Could not process version string into constraints")
 		}
 		c := &mono_models.CommitChangeEditable{
 			Operation:          string(OperationAdded),
@@ -621,10 +583,9 @@ func CommitInitial(hostPlatform string, langName, langVersion string) (strfmt.UU
 	}
 
 	c := &mono_models.CommitChangeEditable{
-		Operation:         string(OperationAdded),
-		Namespace:         NewNamespacePlatform().String(),
-		Requirement:       platformID,
-		VersionConstraint: "",
+		Operation:   string(OperationAdded),
+		Namespace:   NewNamespacePlatform().String(),
+		Requirement: platformID,
 	}
 	changes = append(changes, c)
 
@@ -641,6 +602,22 @@ func CommitInitial(hostPlatform string, langName, langVersion string) (strfmt.UU
 	}
 
 	return res.Payload.CommitID, nil
+}
+
+func versionStringToConstraints(version string) ([]*mono_models.Constraint, error) {
+	requirements, err := VersionStringToRequirements(version)
+	if err != nil {
+		return nil, errs.Wrap(err, "Unable to process version string into requirements")
+	}
+
+	constraints := make([]*mono_models.Constraint, len(requirements))
+	for i, constraint := range requirements {
+		constraints[i] = &mono_models.Constraint{
+			Comparator: constraint[bpModel.VersionRequirementComparatorKey],
+			Version:    constraint[bpModel.VersionRequirementVersionKey],
+		}
+	}
+	return constraints, nil
 }
 
 type indexedCommits map[string]string // key == commit id / val == parent id
@@ -689,23 +666,6 @@ func (cs indexedCommits) countBetween(first, last string) (int, error) {
 	}
 
 	return ct, nil
-}
-
-// CommitRequirement commits a single requirement to the platform
-func CommitRequirement(commitID strfmt.UUID, op Operation, name, version string, word int, namespace Namespace) (strfmt.UUID, error) {
-	msgL10nKey := commitMessage(op, name, version, namespace, word)
-	msg := locale.Tr(msgL10nKey, name, version)
-
-	name, version, err := ResolveRequirementNameAndVersion(name, version, word, namespace)
-	if err != nil {
-		return "", errs.Wrap(err, "Could not resolve requirement name and version")
-	}
-
-	commit, err := AddCommit(commitID, msg, op, namespace, name, version)
-	if err != nil {
-		return "", errs.Wrap(err, "Could not add changeset")
-	}
-	return commit.CommitID, nil
 }
 
 func commitMessage(op Operation, name, version string, namespace Namespace, word int) string {

@@ -12,9 +12,6 @@ import (
 	"sync"
 	"time"
 
-	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
-	"github.com/ActiveState/cli/pkg/platform/model"
-
 	"github.com/ActiveState/cli/internal/analytics"
 	anaConsts "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/analytics/dimensions"
@@ -31,9 +28,10 @@ import (
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/svcctl"
 	"github.com/ActiveState/cli/internal/unarchiver"
-	"github.com/ActiveState/cli/pkg/platform/api/headchef"
+	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
+	"github.com/ActiveState/cli/pkg/platform/model"
 	apimodel "github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifactcache"
@@ -80,6 +78,10 @@ type ArtifactSetupErrors struct {
 	errs []error
 }
 
+type ExecutorSetupError struct {
+	*errs.WrapperError
+}
+
 func (a *ArtifactSetupErrors) Error() string {
 	var errors []string
 	for _, err := range a.errs {
@@ -94,7 +96,7 @@ func (a *ArtifactSetupErrors) Errors() []error {
 }
 
 // UserError returns a message including all user-facing sub-error messages
-func (a *ArtifactSetupErrors) UserError() string {
+func (a *ArtifactSetupErrors) LocalizedError() string {
 	var errStrings []string
 	for _, err := range a.errs {
 		errStrings = append(errStrings, locale.JoinedErrorMessage(err))
@@ -190,7 +192,7 @@ func (s *Setup) Update() (rerr error) {
 
 	// Update executors
 	if err := s.updateExecutors(artifacts); err != nil {
-		return errs.Wrap(err, "Failed to update executors")
+		return ExecutorSetupError{errs.Wrap(err, "Failed to update executors")}
 	}
 
 	// Mark installation as completed
@@ -429,12 +431,8 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 	}
 
 	// send analytics build event, if a new runtime has to be built in the cloud
-	if buildResult.BuildStatus == headchef.Started {
-		s.analytics.Event(anaConsts.CatRuntime, anaConsts.ActRuntimeBuild, dimensions)
-	}
-
-	if buildResult.BuildStatus == headchef.Failed {
-		return nil, nil, &BuildError{locale.NewError("headchef_build_failure", "Build Failed: {{.V0}}", buildResult.BuildStatusResponse.Message)}
+	if buildResult.BuildStatus == bpModel.Started {
+		s.analytics.Event(anaConsts.CatRuntimeDebug, anaConsts.ActRuntimeBuild, dimensions)
 	}
 
 	changedArtifacts, err := buildplan.NewBaseArtifactChangesetByBuildPlan(buildResult.Build, false)
@@ -486,6 +484,7 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 	)
 
 	artifactsToInstall := []artifact.ArtifactID{}
+	// buildtimeArtifacts := runtimeArtifacts
 	if buildResult.BuildReady {
 		// If the build is already done we can just look at the downloadable artifacts as they will be a fully accurate
 		// prediction of what we will be installing.
@@ -534,8 +533,8 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 
 	// only send the download analytics event, if we have to install artifacts that are not yet installed
 	if len(artifactsToInstall) > 0 {
-		// if we get here, we dowload artifacts
-		s.analytics.Event(anaConsts.CatRuntime, anaConsts.ActRuntimeDownload, dimensions)
+		// if we get here, we download artifacts
+		s.analytics.Event(anaConsts.CatRuntimeDebug, anaConsts.ActRuntimeDownload, dimensions)
 	}
 
 	err = s.installArtifactsFromBuild(buildResult, runtimeArtifacts, artifact.ArtifactIDsToMap(artifactsToInstall), downloadablePrebuiltResults, setup, installFunc, logFilePath)
@@ -742,12 +741,16 @@ func (s *Setup) moveToInstallPath(a artifact.ArtifactID, unpackedDir string, env
 func (s *Setup) downloadArtifact(a artifact.ArtifactDownload, targetFile string) (rerr error) {
 	defer func() {
 		if rerr != nil {
-			rerr = &ArtifactDownloadError{errs.Wrap(rerr, "Unable to download artifact")}
+			if !errs.Matches(rerr, &ProgressReportError{}) {
+				rerr = &ArtifactDownloadError{errs.Wrap(rerr, "Unable to download artifact")}
+			}
+
 			if err := s.handleEvent(events.ArtifactDownloadFailure{a.ArtifactID, rerr}); err != nil {
 				rerr = errs.Wrap(rerr, "Could not handle ArtifactDownloadFailure event")
 				return
 			}
 		}
+
 		if err := s.handleEvent(events.ArtifactDownloadSuccess{a.ArtifactID}); err != nil {
 			rerr = errs.Wrap(rerr, "Could not handle ArtifactDownloadSuccess event")
 			return
@@ -762,7 +765,7 @@ func (s *Setup) downloadArtifact(a artifact.ArtifactDownload, targetFile string)
 	b, err := httputil.GetWithProgress(artifactURL.String(), &progress.Report{
 		ReportSizeCb: func(size int) error {
 			if err := s.handleEvent(events.ArtifactDownloadStarted{a.ArtifactID, size}); err != nil {
-				return errs.Wrap(err, "Could not handle ArtifactDownloadStarted event")
+				return ProgressReportError{errs.Wrap(err, "Could not handle ArtifactDownloadStarted event")}
 			}
 			return nil
 		},
@@ -776,9 +779,11 @@ func (s *Setup) downloadArtifact(a artifact.ArtifactDownload, targetFile string)
 	if err != nil {
 		return errs.Wrap(err, "Download %s failed", artifactURL.String())
 	}
+
 	if err := fileutils.WriteFile(targetFile, b); err != nil {
 		return errs.Wrap(err, "Writing download to target file %s failed", targetFile)
 	}
+
 	return nil
 }
 

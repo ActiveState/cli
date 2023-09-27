@@ -186,9 +186,10 @@ func (p *Pull) performMerge(strategies *mono_models.MergeStrategies, remoteCommi
 	if err != nil {
 		return "", locale.WrapError(err, "err_pull_getcommit", "Could not inspect resulting commit.")
 	}
+	changes, _ := commit.FormatChanges(cmit)
 	p.out.Notice(locale.Tl(
 		"pull_diverged_changes",
-		"The following changes will be merged:\n{{.V0}}\n", strings.Join(commit.FormatChanges(cmit), "\n")))
+		"The following changes will be merged:\n{{.V0}}\n", strings.Join(changes, "\n")))
 
 	return resultCommit, nil
 }

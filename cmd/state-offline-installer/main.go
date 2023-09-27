@@ -8,6 +8,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/analytics/client/sync"
+	anaConst "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
@@ -78,7 +79,7 @@ func main() {
 		return
 	}
 
-	an = sync.New(cfg, nil, out)
+	an = sync.New(anaConst.SrcOfflineInstaller, cfg, nil, out)
 
 	prime := primer.New(
 		nil, out, nil,

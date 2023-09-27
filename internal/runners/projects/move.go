@@ -42,9 +42,7 @@ func (m *Move) Run(params *MoveParams) error {
 	}
 
 	defaultChoice := !m.out.Config().Interactive
-	move, err := m.prompt.Confirm("", locale.Tl("move_prompt",
-		"You are about to move the project [NOTICE]{{.V0}}[/RESET] to the organization [NOTICE]{{.V1}}[/RESET].\nContinue?",
-		params.Namespace.String(), params.NewOwner), &defaultChoice)
+	move, err := m.prompt.Confirm("", locale.Tr("move_prompt", params.Namespace.String(), params.NewOwner, params.Namespace.Project), &defaultChoice)
 	if err != nil {
 		return locale.WrapError(err, "err_move_prompt", "Could not prompt for move confirmation")
 	}
