@@ -390,7 +390,8 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 			return nil, nil, errs.Wrap(err, "Failed to create artifact map from build plan")
 		}
 
-		if strings.EqualFold(os.Getenv(constants.InstallBuildDependencies), "true") {
+		if strings.EqualFold(os.Getenv(constants.InstallBuildDependencies), "true") || !buildResult.BuildReady {
+			logging.Debug("Installing build dependencies")
 			runtimeAndBuildtimeArtifacts, err = buildplan.BuildtimeArtifacts(buildResult.Build)
 			if err != nil {
 				return nil, nil, errs.Wrap(err, "Failed to create artifact map from build plan")
@@ -487,43 +488,10 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 
 	artifactsToInstall := []artifact.ArtifactID{}
 	buildtimeArtifacts := runtimeArtifacts
-	if buildResult.BuildReady {
-		// If the build is already done we can just look at the downloadable artifacts as they will be a fully accurate
-		// prediction of what we will be installing.
-		for _, a := range downloadablePrebuiltResults {
-			if _, alreadyInstalled := alreadyInstalled[a.ArtifactID]; !alreadyInstalled {
-				artifactsToInstall = append(artifactsToInstall, a.ArtifactID)
-			}
+	for _, a := range downloadablePrebuiltResults {
+		if _, alreadyInstalled := alreadyInstalled[a.ArtifactID]; !alreadyInstalled {
+			artifactsToInstall = append(artifactsToInstall, a.ArtifactID)
 		}
-	} else {
-		// If the build is not yet complete then we have to speculate as to the artifacts that will be installed.
-		// The actual number of installable artifacts may be lower than what we have here, we can only do a best effort.
-		for _, a := range runtimeArtifacts {
-			if _, alreadyInstalled := alreadyInstalled[a.ArtifactID]; !alreadyInstalled {
-				artifactsToInstall = append(artifactsToInstall, a.ArtifactID)
-			}
-		}
-
-		// We also caclulate the artifacts to be built which includes more than the runtime artifacts.
-		// This is used to determine if we need to show the "build in progress" screen.
-		buildtimeArtifacts, err = buildplan.BuildtimeArtifacts(buildResult.Build)
-		if err != nil {
-			return nil, nil, errs.Wrap(err, "Could not get buildtime artifacts")
-		}
-
-		buildtimeArtifactIDs := []artifact.ArtifactID{}
-		for _, a := range buildtimeArtifacts {
-			buildtimeArtifactIDs = append(buildtimeArtifactIDs, a.ArtifactID)
-		}
-
-		// Update artifactNames to ensure it now includes buildtime artifacts
-		artifactNames = artifact.ResolveArtifactNames(setup.ResolveArtifactName, buildtimeArtifactIDs)
-
-		buildList := []string{}
-		for _, a := range buildtimeArtifacts {
-			buildList = append(buildList, artifactNames[a.ArtifactID])
-		}
-		logging.Debug("Buildtime artifacts: %v", buildList)
 	}
 
 	// The log file we want to use for builds
