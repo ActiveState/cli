@@ -592,10 +592,6 @@ func (e *BuildExpression) getSolveNode() (*Ap, error) {
 			continue
 		}
 
-		if a.Assignment.Name == "" || a.Assignment.Name != "runtime" {
-			continue
-		}
-
 		if a.Assignment.Value == nil {
 			continue
 		}
@@ -613,8 +609,7 @@ func (e *BuildExpression) getSolveNode() (*Ap, error) {
 }
 
 // recurseLets recursively searches for the solve node in the let statements.
-// The solve node is specified by the name "runtime" and the function name "solve"
-// or "solve_legacy".
+// The solve node is specified by the function name "solve" or "solve_legacy".
 func recurseLets(let *Let) (*Ap, error) {
 	for _, a := range let.Assignments {
 		if a.Value == nil {
@@ -622,10 +617,6 @@ func recurseLets(let *Let) (*Ap, error) {
 		}
 
 		if a.Value.Ap == nil {
-			continue
-		}
-
-		if a.Name == "" || a.Name != "runtime" {
 			continue
 		}
 
