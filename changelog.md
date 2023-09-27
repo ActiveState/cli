@@ -3,8 +3,58 @@
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres
-to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+and this project adheres to
+[Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+### 0.41.0
+
+### Added
+
+* `state init` is now a stable command, meaning you no longer need to opt-in to
+  unstable commands to use it.
+* Signing up for a new account now opens the account creation page in your
+  browser instead of the login page.
+* `state shell` can now detect currently active subshells preventing nested
+  shells from being created.
+* The State Tool will now print a message when starting a subshell, indicating
+  the project that is being used.
+* Wildcard and partial version matching is now supported for `state install`
+  and for language versions with `state init`. For example:
+  `state install pytest@2.x`.
+* Added messaging on the potentially disruptive nature of editing or moving a
+  project.
+* Users can now check out a project without cloning the associated git
+  repository. For example: `state checkout <orgname/project> --no-clone`.
+
+### Changed
+
+* Errors encountered while sourcing a runtime now have more informative error
+  messages.
+* The default Ruby version is now 3.2.2.
+* Improved parsing to reduce runtime installation errors.
+* Updated help details of `state use` to be more informative.
+* The State Tool can now be installed by extracting its archive file to a
+  directory of your choice.
+* Some runtime installations will now be faster due to improved artifact
+  handling.
+
+### Fixed
+
+* Improved error messages when unauthenticated to better indicate that
+  authentication may resolve the error.
+* Fixed issue where build time dependencies ended up being downloaded/installed.
+* Fixed issue where API requests would not be retried, sometimes resulting in
+  a "decoding response: EOF" error.
+* Fixed issue where we would sometimes print the wrong project name when
+  interacting via the current working directory.
+* Fixed `state history` showing JSON formatted data in changes section.
+* Fixed "Error setting up runtime" message that would happen in some rare cases.
+* Fixed "Invalid value for 'project' field" error that could sometimes happen
+  when running checkout/init/fork.
+* Fixed issue where `state init` created the project on the platform even though
+  an error happened, leaving the project in an uncertain state.
+* Fixed issue where `state checkout` and `state init` would not respect the
+  casing of the owner and/or project on the platform.
 
 ### 0.40.1
 
