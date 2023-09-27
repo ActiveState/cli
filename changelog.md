@@ -6,6 +6,39 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+### 0.41.0
+
+### Added
+
+* `state init` is now a stable command, meaning you no longer need to opt-in to
+  unstable commands to use it.
+* Signing up for a new account now opens the account creation page in your
+  browser instead of the login page.
+* `state shell` can now detect currently active subshells preventing nested
+  shells from being created.
+* The State Tool will now print a message when starting a subshell, indicating
+  the project that is being used.
+* Wildcard and partial version matching is now supported for `state install` 
+  and for language versions with `state init`. For example: `state install pytest@2.x`
+* Added messaging on the potentially disruptive nature of editing or moving a project.
+* Users can now check out a project without cloning the associated git
+  repository. For example: `state checkout <orgname/project> --no-clone`
+
+### Changed
+
+* The default Ruby version is now 3.2.2
+* Errors encountered while sourcing a runtime now have more informative error
+  messages.
+* Improved parsing to reduce runtime installation errors.
+* Updated help details of `state use` to be more informative.
+* The State Tool can now be installed by extracting its archive file to a
+  directory of your choice.
+
+### Fixed
+
+* Several error message improvements for errors arising from unauthenticated actions.
+* Some runtime installations will now be faster due to improved artifact handling.
+
 ### 0.40.1
 
 ### Added
