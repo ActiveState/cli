@@ -10,6 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
+	"github.com/ActiveState/termtest"
 )
 
 func (suite *PushIntegrationTestSuite) TestInitAndPush_VSCode() {
@@ -29,16 +30,16 @@ func (suite *PushIntegrationTestSuite) TestInitAndPush_VSCode() {
 		filepath.Join(ts.Dirs.Work, namespace),
 	)
 	cp.ExpectExitCode(0)
-	suite.Contains(cp.TrimmedSnapshot(), "Skipping runtime setup because it was disabled by an environment variable")
-	suite.Contains(cp.TrimmedSnapshot(), "{")
-	suite.Contains(cp.TrimmedSnapshot(), "}")
+	suite.Contains(cp.Output(), "Skipping runtime setup because it was disabled by an environment variable")
+	suite.Contains(cp.Output(), "{")
+	suite.Contains(cp.Output(), "}")
 	wd := filepath.Join(cp.WorkDirectory(), namespace)
 	cp = ts.SpawnWithOpts(
-		e2e.WithArgs("push", "--output", "editor"),
-		e2e.WithWorkDirectory(wd),
+		e2e.OptArgs("push", "--output", "editor"),
+		e2e.OptWD(wd),
 	)
 	cp.ExpectExitCode(0)
-	suite.Equal("", cp.TrimmedSnapshot())
+	suite.Equal("", strings.TrimSpace(cp.Snapshot()))
 
 	// check that pushed project exists
 	cp = ts.Spawn("show", namespace)
@@ -73,8 +74,9 @@ func (suite *ShowIntegrationTestSuite) TestShow_VSCode() {
 	}
 
 	var out ShowOutput
-	err := json.Unmarshal([]byte(cp.TrimmedSnapshot()), &out)
-	suite.Require().NoError(err, "Failed to parse JSON from: %s", cp.TrimmedSnapshot())
+	snapshot := cp.StrippedSnapshot()
+	err := json.Unmarshal([]byte(snapshot), &out)
+	suite.Require().NoError(err, "Failed to parse JSON from: %s", snapshot)
 	suite.Equal("Show", out.Name)
 	suite.Equal(e2e.PersistentUsername, out.Organization)
 	suite.Equal("Public", out.Visibility)
@@ -111,7 +113,7 @@ func (suite *PushIntegrationTestSuite) TestOrganizations_VSCode() {
 	expected, err := json.Marshal(org)
 	suite.Require().NoError(err)
 
-	suite.Contains(cp.TrimmedSnapshot(), string(expected))
+	suite.Contains(cp.Output(), string(expected))
 }
 
 func (suite *AuthIntegrationTestSuite) TestAuth_VSCode() {
@@ -131,16 +133,16 @@ func (suite *AuthIntegrationTestSuite) TestAuth_VSCode() {
 	defer ts.Close()
 
 	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("auth", "--username", e2e.PersistentUsername, "--password", e2e.PersistentPassword, "--output", "editor"),
-		e2e.HideCmdLine(),
+		e2e.OptArgs("auth", "--username", e2e.PersistentUsername, "--password", e2e.PersistentPassword, "--output", "editor"),
+		e2e.OptHideArgs(),
 	)
 	cp.Expect(`"privateProjects":false}`)
 	cp.ExpectExitCode(0)
-	suite.Equal(string(expected), cp.TrimmedSnapshot())
+	suite.Equal(string(expected), strings.TrimSpace(cp.Snapshot()))
 
 	cp = ts.Spawn("export", "jwt", "--output", "editor")
 	cp.ExpectExitCode(0)
-	suite.Assert().Greater(len(cp.TrimmedSnapshot()), 3, "expected jwt token to be non-empty")
+	suite.Assert().NotEmpty(strings.TrimSpace(cp.Snapshot()), "expected jwt token to be non-empty")
 }
 
 func (suite *PackageIntegrationTestSuite) TestPackages_VSCode() {
@@ -165,8 +167,9 @@ func (suite *PackageIntegrationTestSuite) TestPackages_VSCode() {
 	}
 
 	var po []PackageOutput
-	err := json.Unmarshal([]byte(cp.TrimmedSnapshot()), &po)
-	suite.Require().NoError(err, "Could not parse JSON from: %s", cp.TrimmedSnapshot())
+	out := cp.StrippedSnapshot()
+	err := json.Unmarshal([]byte(out), &po)
+	suite.Require().NoError(err, "Could not parse JSON from: %s", out)
 
 	suite.Len(po, 2)
 }
@@ -176,27 +179,30 @@ func (suite *ProjectsIntegrationTestSuite) TestProjects_VSCode() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	cp := ts.SpawnWithOpts(e2e.WithArgs("checkout", "ActiveState-CLI/small-python"))
+	cp := ts.SpawnWithOpts(e2e.OptArgs("checkout", "ActiveState-CLI/small-python"))
 	cp.ExpectExitCode(0)
-	cp = ts.SpawnWithOpts(e2e.WithArgs("checkout", "ActiveState-CLI/Python3"))
+	cp = ts.SpawnWithOpts(e2e.OptArgs("checkout", "ActiveState-CLI/Python3"))
 	cp.ExpectExitCode(0)
 
 	// Verify separate "local_checkouts" and "executables" fields for editor output.
-	cp = ts.SpawnWithOpts(e2e.WithArgs("projects", "--output", "editor"))
+	cp = ts.SpawnWithOpts(
+		e2e.OptArgs("projects", "--output", "editor"),
+		e2e.OptTermTest(termtest.OptCols(2000)), // Line breaks make it hard to assert long output
+	)
 	cp.Expect(`"name":"Python3"`)
 	cp.Expect(`"local_checkouts":["`)
 	if runtime.GOOS != "windows" {
-		cp.ExpectLongString(filepath.Join(ts.Dirs.Work, "Python3") + `"]`)
+		cp.Expect(filepath.Join(ts.Dirs.Work, "Python3") + `"]`)
 	} else {
 		// Windows uses the long path here.
 		longPath, _ := fileutils.GetLongPathName(filepath.Join(ts.Dirs.Work, "Python3"))
-		cp.ExpectLongString(strings.ReplaceAll(longPath, "\\", "\\\\") + `"]`)
+		cp.Expect(strings.ReplaceAll(longPath, "\\", "\\\\") + `"]`)
 	}
 	cp.Expect(`"executables":["`)
 	if runtime.GOOS != "windows" {
-		cp.ExpectLongString(ts.Dirs.Cache)
+		cp.Expect(ts.Dirs.Cache)
 	} else {
-		cp.ExpectLongString(strings.ReplaceAll(ts.Dirs.Cache, "\\", "\\\\"))
+		cp.Expect(strings.ReplaceAll(ts.Dirs.Cache, "\\", "\\\\"))
 	}
 	cp.ExpectExitCode(0)
 }

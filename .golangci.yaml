@@ -9,7 +9,7 @@ linters-settings:
       - (*github.com/ActiveState/termtest.ConsoleProcess).ExpectExitCode
       - (*github.com/ActiveState/termtest.ConsoleProcess).ExpectNotExitCode
       - (*github.com/ActiveState/termtest.ConsoleProcess).ExpectRe
-      - (*github.com/ActiveState/termtest.ConsoleProcess).ExpectLongString
+      - (*github.com/ActiveState/termtest.ConsoleProcess).Expect
       - (*github.com/ActiveState/termtest.ConsoleProcess).WaitForInput
 
 # When issues occur with linting us the snippet below to help with debugging

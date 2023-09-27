@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -11,6 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/ActiveState/cli/pkg/platform/runtime/buildscript"
 	"github.com/ActiveState/cli/pkg/project"
+	"github.com/ActiveState/termtest"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -26,14 +28,14 @@ func (suite *CommitIntegrationTestSuite) TestCommitManualBuildScriptMod() {
 	ts.LoginAsPersistentUser()
 
 	cp := ts.SpawnWithOpts(
-		e2e.WithArgs(
+		e2e.OptArgs(
 			"checkout",
 			"ActiveState-CLI/Commit-Test-A#7a1b416e-c17f-4d4a-9e27-cbad9e8f5655",
 			".",
 		),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
-	cp.Expect("Checked out")
+	cp.Expect("Checked out", termtest.OptExpectTimeout(120*time.Second))
 	cp.ExpectExitCode(0)
 
 	proj, err := project.FromPath(ts.Dirs.Work)

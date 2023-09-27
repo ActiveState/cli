@@ -44,26 +44,28 @@ func (suite *PerformanceExpansionIntegrationTestSuite) startSvc(ts *e2e.Session)
 func (suite *PerformanceExpansionIntegrationTestSuite) TestExpansionPerformance() {
 	suite.OnlyRunForTags(tagsuite.Performance)
 	baseline := DefaultMaxTime
-	suite.Run("CallScript", func() {
-		median := suite.testScriptPerformance(scriptPerformanceOptions{
-			script: projectfile.Script{
-				NameVal: projectfile.NameVal{
-					Name:  "call-script",
-					Value: `echo "Hello World"`,
-				},
-				ScriptFields: projectfile.ScriptFields{
-					Language: "bash",
-				},
-			},
-			expect:  "Hello World",
-			samples: DefaultSamples,
-			max:     DefaultMaxTime,
-		})
-		variance := float64(median) + (float64(median) * DefaultVariance)
-		baseline = time.Duration(variance)
-	})
 
-	suite.Require().NotEqual(baseline, DefaultMaxTime)
+	// Establish baseline
+	// Must not be called as a subtest as it breaks the running of other subtests
+	median := suite.testScriptPerformance(scriptPerformanceOptions{
+		script: projectfile.Script{
+			NameVal: projectfile.NameVal{
+				Name:  "call-script",
+				Value: `echo "Hello World"`,
+			},
+			ScriptFields: projectfile.ScriptFields{
+				Language: "bash",
+			},
+		},
+		expect:  "Hello World",
+		samples: DefaultSamples,
+		max:     DefaultMaxTime,
+		verbose: true,
+	})
+	variance := float64(median) + (float64(median) * DefaultVariance)
+	baseline = time.Duration(variance)
+
+	suite.Require().NotEqual(DefaultMaxTime, baseline)
 
 	suite.Run("CallScriptFromMerged", func() {
 		additionalYamls := make(map[string]projectfile.Project)
@@ -150,7 +152,7 @@ func (suite *PerformanceExpansionIntegrationTestSuite) TestExpansionPerformance(
 					Language: "bash",
 				},
 			},
-			//expect:  "Yaml-Test", // TODO: re-enable in https://activestatef.atlassian.net/browse/DX-1312
+			expect:  "Yaml-Test",
 			samples: DefaultSamples,
 			max:     baseline,
 		})
@@ -201,9 +203,10 @@ func (suite *PerformanceExpansionIntegrationTestSuite) TestExpansionPerformance(
 					Language: "bash",
 				},
 			},
-			// expect:  "https://platform.activestate.com/ActiveState-CLI/Yaml-Test", // TODO: re-enable in https://activestatef.atlassian.net/browse/DX-1312
+			expect:  "https://platform.activestate.com/ActiveState-CLI/Yaml-Test",
 			samples: DefaultSamples,
 			max:     baseline,
+			verbose: true,
 		})
 	})
 
@@ -346,6 +349,7 @@ type scriptPerformanceOptions struct {
 	additionalScripts   projectfile.Scripts
 	constants           projectfile.Constants
 	additionalYamlFiles map[string]projectfile.Project
+	verbose             bool
 }
 
 func (suite *PerformanceExpansionIntegrationTestSuite) testScriptPerformance(opts scriptPerformanceOptions) time.Duration {
@@ -378,7 +382,7 @@ func (suite *PerformanceExpansionIntegrationTestSuite) testScriptPerformance(opt
 		suite.prepareAlternateActiveStateYaml(name, string(contents), ts)
 	}
 
-	return performanceTest([]string{"run", opts.script.Name}, opts.expect, opts.samples, opts.max, suite.Suite, ts)
+	return performanceTest([]string{"run", opts.script.Name}, opts.expect, opts.samples, opts.max, opts.verbose, suite.Suite, ts)
 }
 
 func (suite *PerformanceExpansionIntegrationTestSuite) prepareAlternateActiveStateYaml(name, contents string, ts *e2e.Session) {

@@ -11,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ActiveState/termtest"
 	"github.com/mholt/archiver"
 
 	"github.com/ActiveState/cli/internal/analytics/client/sync/reporters"
@@ -112,14 +113,14 @@ func (suite *OffInstallIntegrationTestSuite) TestInstallAndUninstall() {
 		if runtime.GOOS == "windows" {
 			refreshEnv := filepath.Join(environment.GetRootPathUnsafe(), "test", "integration", "testdata", "tools", "refreshenv", "refreshenv.bat")
 			tp := ts.SpawnCmd("cmd", "/C", refreshEnv+" && "+defaultInstalledExecutable)
-			tp.Expect("TEST REPLACEMENT", 5*time.Second)
+			tp.Expect("TEST REPLACEMENT", termtest.OptExpectTimeout(5*time.Second))
 			tp.ExpectExitCode(0)
 		} else {
 			// Disabled for now: DX-1307
 			// tp = ts.SpawnCmd("bash")
-			// time.Sleep(1 * time.Second) // Give zsh a second to start -- can't use WaitForInput as it doesn't respect a custom HOME dir
+			// time.Sleep(1 * time.Second) // Give zsh a second to start -- can't use ExpectInput as it doesn't respect a custom HOME dir
 			// tp.Send("test-offline-install")
-			// tp.Expect("TEST REPLACEMENT", 5*time.Second)
+			// tp.Expect("TEST REPLACEMENT", termtest.OptExpectTimeout(5*time.Second))
 			// tp.Send("exit")
 			// tp.ExpectExitCode(0)
 		}
@@ -128,14 +129,14 @@ func (suite *OffInstallIntegrationTestSuite) TestInstallAndUninstall() {
 	{ // Uninstall
 		tp := ts.SpawnCmdWithOpts(
 			suite.uninstallerPath,
-			e2e.WithArgs(defaultInstallDir),
-			e2e.AppendEnv(env...),
+			e2e.OptArgs(defaultInstallDir),
+			e2e.OptAppendEnv(env...),
 		)
 		tp.Expect("continue?")
 		tp.SendLine("y")
-		tp.Expect("Uninstall Complete", 5*time.Second)
+		tp.Expect("Uninstall Complete", termtest.OptExpectTimeout(5*time.Second))
 		tp.Expect("Press enter to exit")
-		tp.SendLine("")
+		tp.SendEnter()
 		tp.ExpectExitCode(0)
 
 		// Ensure shell env is updated
@@ -171,11 +172,11 @@ func (suite *OffInstallIntegrationTestSuite) TestInstallNoPermission() {
 
 	tp := ts.SpawnCmdWithOpts(
 		suite.installerPath,
-		e2e.WithArgs(pathWithNoPermission),
+		e2e.OptArgs(pathWithNoPermission),
 	)
-	tp.Expect("Please ensure that the directory is writeable", 5*time.Second)
-	tp.Expect("Press enter to exit", 5*time.Second)
-	tp.SendLine("")
+	tp.Expect("Please ensure that the directory is writeable", termtest.OptExpectTimeout(5*time.Second))
+	tp.Expect("Press enter to exit", termtest.OptExpectTimeout(5*time.Second))
+	tp.SendEnter()
 	tp.ExpectExitCode(1)
 }
 
@@ -295,17 +296,17 @@ func (suite *OffInstallIntegrationTestSuite) TestInstallTwice() {
 	// Running offline installer again should not cause an error
 	tp := ts.SpawnCmdWithOpts(
 		suite.installerPath,
-		e2e.WithArgs(defaultInstallDir),
-		e2e.AppendEnv(env...),
+		e2e.OptArgs(defaultInstallDir),
+		e2e.OptAppendEnv(env...),
 	)
 	tp.Expect("Installation directory is not empty")
 	tp.Send("y")
-	tp.Expect("Do you accept the ActiveState Runtime Installer License Agreement? (y/N)", 5*time.Second)
+	tp.Expect("Do you accept the ActiveState Runtime Installer License Agreement? (y/N)", termtest.OptExpectTimeout(5*time.Second))
 	tp.Send("y")
-	tp.Expect("Extracting", time.Second)
+	tp.Expect("Extracting", termtest.OptExpectTimeout(time.Second))
 	tp.Expect("Installation complete")
 	tp.Expect("Press enter to exit")
-	tp.SendLine("")
+	tp.SendEnter()
 	tp.ExpectExitCode(0)
 
 	// Uninstall
@@ -315,30 +316,30 @@ func (suite *OffInstallIntegrationTestSuite) TestInstallTwice() {
 func (suite *OffInstallIntegrationTestSuite) runOfflineInstaller(ts *e2e.Session, installDir string, env []string) {
 	tp := ts.SpawnCmdWithOpts(
 		suite.installerPath,
-		e2e.WithArgs(installDir),
-		e2e.AppendEnv(env...),
+		e2e.OptArgs(installDir),
+		e2e.OptAppendEnv(env...),
 	)
-	tp.Expect("Do you accept the ActiveState Runtime Installer License Agreement? (y/N)", 5*time.Second)
+	tp.Expect("Do you accept the ActiveState Runtime Installer License Agreement? (y/N)", termtest.OptExpectTimeout(5*time.Second))
 	tp.Send("y")
-	tp.Expect("Extracting", time.Second)
+	tp.Expect("Extracting", termtest.OptExpectTimeout(time.Second))
 	tp.Expect("Installing")
 	tp.Expect("Installation complete")
 	tp.Expect("Press enter to exit")
-	tp.SendLine("")
+	tp.SendEnter()
 	tp.ExpectExitCode(0)
 }
 
 func (suite *OffInstallIntegrationTestSuite) runOfflineUninstaller(ts *e2e.Session, installDir string, env []string) {
 	tp := ts.SpawnCmdWithOpts(
 		suite.uninstallerPath,
-		e2e.WithArgs(installDir),
-		e2e.AppendEnv(env...),
+		e2e.OptArgs(installDir),
+		e2e.OptAppendEnv(env...),
 	)
 	tp.Expect("continue?")
 	tp.SendLine("y")
-	tp.Expect("Uninstall Complete", 5*time.Second)
+	tp.Expect("Uninstall Complete", termtest.OptExpectTimeout(5*time.Second))
 	tp.Expect("Press enter to exit")
-	tp.SendLine("")
+	tp.SendEnter()
 	tp.ExpectExitCode(0)
 }
 
@@ -402,8 +403,8 @@ func (suite *OffInstallIntegrationTestSuite) preparePayload(ts *e2e.Session, pay
 
 	// Append our assets to the installer executable
 	tp := ts.SpawnCmdWithOpts("gozip",
-		e2e.WithWorkDirectory(buildPath),
-		e2e.WithArgs(
+		e2e.OptWD(buildPath),
+		e2e.OptArgs(
 			"-c", suite.installerPath,
 			filepath.Base(payloadMockPath),
 			"installer_config.json",

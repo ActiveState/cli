@@ -60,25 +60,25 @@ func (suite *RemoteInstallIntegrationTestSuite) TestInstall() {
 
 			cp := ts.SpawnCmdWithOpts(
 				suite.remoteInstallerExe,
-				e2e.WithArgs(args...),
-				e2e.AppendEnv(constants.InstallPathOverrideEnvVarName+"="+installPath),
-				e2e.AppendEnv(fmt.Sprintf("%s=%s", constants.AppInstallDirOverrideEnvVarName, appInstallDir)),
+				e2e.OptArgs(args...),
+				e2e.OptAppendEnv(constants.InstallPathOverrideEnvVarName+"="+installPath),
+				e2e.OptAppendEnv(fmt.Sprintf("%s=%s", constants.AppInstallDirOverrideEnvVarName, appInstallDir)),
 			)
 
 			cp.Expect("Terms of Service")
-			cp.SendLine("y")
+			cp.SendLine("Y")
 			cp.Expect("Installing")
 			cp.Expect("Installation Complete")
 			cp.Expect("Press ENTER to exit")
-			cp.SendLine("")
+			cp.SendEnter()
 			cp.ExpectExitCode(0)
 
 			suite.Require().FileExists(stateExePath)
 
 			cp = ts.SpawnCmdWithOpts(
 				stateExePath,
-				e2e.WithArgs("--version"),
-				e2e.AppendEnv(constants.InstallPathOverrideEnvVarName+"="+installPath),
+				e2e.OptArgs("--version"),
+				e2e.OptAppendEnv(constants.InstallPathOverrideEnvVarName+"="+installPath),
 			)
 			if tt.Version != "" {
 				cp.Expect("Version " + tt.Version)

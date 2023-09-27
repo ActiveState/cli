@@ -23,8 +23,7 @@ func (suite *ConditionIntegrationTestSuite) TestCondition() {
 	suite.PrepareActiveStateYAML(ts)
 
 	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("run", "test"),
-		e2e.AppendEnv("VERBOSE=true"),
+		e2e.OptArgs("run", "test"),
 	)
 	cp.Expect(`projectNameValue`)
 	cp.Expect(`projectOwnerValue`)
@@ -36,21 +35,21 @@ func (suite *ConditionIntegrationTestSuite) TestCondition() {
 	cp.ExpectExitCode(0)
 
 	cp = ts.SpawnWithOpts(
-		e2e.WithArgs("activate"),
+		e2e.OptArgs("activate"),
 	)
 	cp.Expect(`Activation Event Ran`)
-	cp.WaitForInput()
+	cp.ExpectInput()
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
 
 	cp = ts.SpawnWithOpts(
-		e2e.WithArgs("run", "complex-true"),
+		e2e.OptArgs("run", "complex-true"),
 	)
 	cp.Expect(`I exist`)
 	cp.ExpectExitCode(0)
 
 	cp = ts.SpawnWithOpts(
-		e2e.WithArgs("run", "complex-false"),
+		e2e.OptArgs("run", "complex-false"),
 	)
 	cp.ExpectExitCode(1)
 }
@@ -63,17 +62,17 @@ func (suite *ConditionIntegrationTestSuite) TestMixin() {
 	suite.PrepareActiveStateYAML(ts)
 
 	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("run", "MixinUser"),
+		e2e.OptArgs("run", "MixinUser"),
 	)
 	cp.ExpectExitCode(0)
-	suite.Assert().NotContains(cp.TrimmedSnapshot(), "authenticated: yes", "expected not to be authenticated, output was:\n%s.", cp.Snapshot())
-	suite.Assert().NotContains(cp.TrimmedSnapshot(), e2e.PersistentUsername, "expected not to be authenticated, output was:\n%s", cp.Snapshot())
+	suite.Assert().NotContains(cp.Output(), "authenticated: yes", "expected not to be authenticated, output was:\n%s.", cp.Output())
+	suite.Assert().NotContains(cp.Output(), e2e.PersistentUsername, "expected not to be authenticated, output was:\n%s", cp.Output())
 
 	ts.LoginAsPersistentUser()
 	defer ts.LogoutUser()
 
 	cp = ts.SpawnWithOpts(
-		e2e.WithArgs("run", "MixinUser"),
+		e2e.OptArgs("run", "MixinUser"),
 	)
 	cp.Expect("authenticated: yes")
 	cp.Expect(e2e.PersistentUsername)
@@ -88,7 +87,7 @@ func (suite *ConditionIntegrationTestSuite) TestConditionOSName() {
 	suite.PrepareActiveStateYAML(ts)
 
 	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("run", "OSName"),
+		e2e.OptArgs("run", "OSName"),
 	)
 	if runtime.GOOS == "windows" {
 		cp.Expect(`using-windows`)
@@ -108,7 +107,7 @@ func (suite *ConditionIntegrationTestSuite) TestConditionSyntaxError() {
 	suite.PrepareActiveStateYAMLWithSyntaxError(ts)
 
 	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("run", "test"),
+		e2e.OptArgs("run", "test"),
 	)
 	cp.Expect(`not defined`) // for now we aren't passing the error up the chain, so invalid syntax will lead to empty result
 	cp.ExpectExitCode(1)

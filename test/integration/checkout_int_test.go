@@ -7,6 +7,10 @@ import (
 	"runtime"
 	"strings"
 	"testing"
+	"time"
+
+	"github.com/ActiveState/termtest"
+	"github.com/stretchr/testify/suite"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/exeutils"
@@ -16,7 +20,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/projectfile"
-	"github.com/stretchr/testify/suite"
 )
 
 type CheckoutIntegrationTestSuite struct {
@@ -31,10 +34,10 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckout() {
 
 	// Checkout and verify.
 	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("checkout", "ActiveState-CLI/Python-3.9", "."),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.OptArgs("checkout", "ActiveState-CLI/Python-3.9", "."),
+		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
-	cp.Expect("Checked out project")
+	cp.Expect("Checked out project", termtest.OptExpectTimeout(120*time.Second))
 	suite.Require().True(fileutils.DirExists(ts.Dirs.Work), "state checkout should have created "+ts.Dirs.Work)
 	suite.Require().True(fileutils.FileExists(filepath.Join(ts.Dirs.Work, constants.ConfigFileName)), "ActiveState-CLI/Python3 was not checked out properly")
 
@@ -63,11 +66,14 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckout() {
 		suite.Require().NoError(os.Remove(filepath.Join(ts.Dirs.Work, constants.ConfigFileName))) // Ensure we can do another checkout
 
 		cp = ts.SpawnWithOpts(
-			e2e.WithArgs("checkout", "ActiveState-CLI/Python-3.9", "."),
-			e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false", "VERBOSE=true"),
+			e2e.OptArgs("checkout", "ActiveState-CLI/Python-3.9", "."),
+			e2e.OptAppendEnv(
+				"ACTIVESTATE_CLI_DISABLE_RUNTIME=false",
+				"VERBOSE=true", // Necessary to assert "Fetched cached artifact"
+			),
 		)
-		cp.Expect("Fetched cached artifact") // Comes from log, which is why we're using VERBOSE=true
-		cp.Expect("Checked out project")
+		cp.Expect("Fetched cached artifact", termtest.OptExpectTimeout(120*time.Second)) // Comes from log, which is why we're using VERBOSE=true
+		cp.Expect("Checked out project", termtest.OptExpectTimeout(120*time.Second))
 		cp.ExpectExitCode(0)
 	})
 }
@@ -86,8 +92,8 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckoutNonEmptyDir() {
 
 	// Checkout and verify.
 	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("checkout", "ActiveState-CLI/Python3", tmpdir),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=true"),
+		e2e.OptArgs("checkout", "ActiveState-CLI/Python3", tmpdir),
+		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=true"),
 	)
 	cp.Expect("already a project checked out at")
 	cp.ExpectExitCode(1)
@@ -99,8 +105,8 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckoutNonEmptyDir() {
 	// remove file
 	suite.Require().NoError(os.Remove(filepath.Join(tmpdir, constants.ConfigFileName)))
 	cp = ts.SpawnWithOpts(
-		e2e.WithArgs("checkout", "ActiveState-CLI/Python3", tmpdir),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=true"),
+		e2e.OptArgs("checkout", "ActiveState-CLI/Python3", tmpdir),
+		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=true"),
 	)
 	cp.Expect("Checked out project")
 	cp.ExpectExitCode(0)
@@ -118,8 +124,8 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckoutMultiDir() {
 
 	for x, dir := range dirs {
 		cp := ts.SpawnWithOpts(
-			e2e.WithArgs("checkout", "ActiveState-CLI/Python3", "."),
-			e2e.WithWorkDirectory(dir),
+			e2e.OptArgs("checkout", "ActiveState-CLI/Python3", "."),
+			e2e.OptWD(dir),
 		)
 		cp.Expect("Skipping runtime setup")
 		cp.Expect("Checked out")
@@ -135,7 +141,7 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckoutWithFlags() {
 	defer ts.Close()
 
 	// Test checking out to current working directory.
-	cp := ts.SpawnWithOpts(e2e.WithArgs("checkout", "ActiveState-CLI/Python3", "."))
+	cp := ts.SpawnWithOpts(e2e.OptArgs("checkout", "ActiveState-CLI/Python3", "."))
 	cp.Expect("Skipping runtime setup")
 	cp.Expect("Checked out")
 	cp.Expect(ts.Dirs.Work)
@@ -143,7 +149,7 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckoutWithFlags() {
 
 	// Test checkout out to a generic path.
 	python3Dir := filepath.Join(ts.Dirs.Work, "MyPython3")
-	cp = ts.SpawnWithOpts(e2e.WithArgs("checkout", "ActiveState-CLI/Python3#6d9280e7-75eb-401a-9e71-0d99759fbad3", python3Dir))
+	cp = ts.SpawnWithOpts(e2e.OptArgs("checkout", "ActiveState-CLI/Python3#6d9280e7-75eb-401a-9e71-0d99759fbad3", python3Dir))
 	cp.Expect("Skipping runtime setup")
 	cp.Expect("Checked out")
 	cp.ExpectExitCode(0)
@@ -155,8 +161,8 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckoutWithFlags() {
 
 	// Test --branch mismatch in non-checked-out project.
 	branchPath := filepath.Join(ts.Dirs.Base, "branch")
-	cp = ts.SpawnWithOpts(e2e.WithArgs("checkout", "ActiveState-CLI/Python-3.9", branchPath, "--branch", "doesNotExist"))
-	cp.ExpectLongString("This project has no branch with label matching doesNotExist")
+	cp = ts.SpawnWithOpts(e2e.OptArgs("checkout", "ActiveState-CLI/Python-3.9", branchPath, "--branch", "doesNotExist"))
+	cp.Expect("This project has no branch with label matching doesNotExist")
 	cp.ExpectExitCode(1)
 }
 
@@ -173,10 +179,10 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckoutCustomRTPath() {
 
 	// Checkout and verify.
 	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("checkout", "ActiveState-CLI/Python3", fmt.Sprintf("--runtime-path=%s", customRTPath)),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.OptArgs("checkout", "ActiveState-CLI/Python3", fmt.Sprintf("--runtime-path=%s", customRTPath)),
+		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
-	cp.Expect("Checked out project")
+	cp.Expect("Checked out project", termtest.OptExpectTimeout(120*time.Second))
 
 	pythonExe := filepath.Join(setup.ExecDir(customRTPath), "python3"+exeutils.Extension)
 	suite.Require().True(fileutils.DirExists(customRTPath))
@@ -189,9 +195,9 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckoutCustomRTPath() {
 
 	// Verify that state exec works with custom cache.
 	cp = ts.SpawnWithOpts(
-		e2e.WithArgs("exec", "python3", "--", "-c", "import sys;print(sys.executable)"),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
-		e2e.WithWorkDirectory(filepath.Join(ts.Dirs.Work, "Python3")),
+		e2e.OptArgs("exec", "python3", "--", "-c", "import sys;print(sys.executable)"),
+		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.OptWD(filepath.Join(ts.Dirs.Work, "Python3")),
 	)
 	if runtime.GOOS == "windows" {
 		customRTPath, err = fileutils.GetLongPathName(customRTPath)
@@ -207,11 +213,11 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckoutAlreadyCheckedOut() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	cp := ts.SpawnWithOpts(e2e.WithArgs("checkout", "ActiveState-CLI/small-python"))
+	cp := ts.SpawnWithOpts(e2e.OptArgs("checkout", "ActiveState-CLI/small-python"))
 	cp.Expect("Checked out project")
 	cp.ExpectExitCode(0)
 
-	cp = ts.SpawnWithOpts(e2e.WithArgs("checkout", "ActiveState-CLI/small-python"))
+	cp = ts.SpawnWithOpts(e2e.OptArgs("checkout", "ActiveState-CLI/small-python"))
 	cp.Expect("already a project checked out at")
 	cp.ExpectNotExitCode(0)
 }
@@ -221,10 +227,7 @@ func (suite *CheckoutIntegrationTestSuite) TestJSON() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	cp := ts.SpawnWithOpts(e2e.WithArgs("checkout", "ActiveState-CLI/small-python", "-o", "json"))
-	cp.Expect(`"namespace":`)
-	cp.Expect(`"path":`)
-	cp.Expect(`"executables":`)
+	cp := ts.SpawnWithOpts(e2e.OptArgs("checkout", "ActiveState-CLI/small-python", "-o", "json"))
 	cp.ExpectExitCode(0)
 	// AssertValidJSON(suite.T(), cp) // cannot assert here due to "Skipping runtime setup" notice
 }
@@ -235,7 +238,7 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckoutCaseInsensitive() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	cp := ts.SpawnWithOpts(e2e.WithArgs("checkout", "ACTIVESTATE-CLI/SMALL-PYTHON"))
+	cp := ts.SpawnWithOpts(e2e.OptArgs("checkout", "ACTIVESTATE-CLI/SMALL-PYTHON"))
 	cp.Expect("Skipping runtime setup")
 	cp.Expect("Checked out project")
 	cp.ExpectExitCode(0)

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/analytics"
@@ -242,6 +243,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 		Owner:                pj.Owner(),
 		Project:              pj.Name(),
 		ParentCommit:         string(parentCommitID),
+		Description:          commitMessage(operation, name, version, ns, requirementBitWidth),
 		RequirementName:      name,
 		RequirementVersion:   requirements,
 		RequirementNamespace: ns,
@@ -254,20 +256,6 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 	if err != nil {
 		return locale.WrapError(err, "err_package_save_and_build", "Error occurred while trying to create a commit")
 	}
-
-	exprChanged := !hasParentCommit
-	if hasParentCommit {
-		localCommitID, err := localcommit.Get(pj.Dir())
-		if err != nil {
-			return errs.Wrap(err, "Unable to get local commit")
-		}
-		revertCommit, err := model.GetRevertCommit(localCommitID, commitID)
-		if err != nil {
-			return locale.WrapError(err, "err_revert_refresh")
-		}
-		exprChanged = len(revertCommit.Changeset) > 0
-	}
-	logging.Debug("Order changed: %v", exprChanged)
 
 	pg.Stop(locale.T("progress_success"))
 	pg = nil
@@ -284,25 +272,23 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 		return errs.Wrap(err, "Unsupported namespace type: %s", ns.Type().String())
 	}
 
-	if exprChanged {
-		expr, err := bp.GetBuildExpression(pj.Owner(), pj.Name(), commitID.String())
-		if err != nil {
-			return errs.Wrap(err, "Could not get remote build expr")
-		}
+	expr, err := bp.GetBuildExpression(pj.Owner(), pj.Name(), commitID.String())
+	if err != nil {
+		return errs.Wrap(err, "Could not get remote build expr")
+	}
 
-		if err := localcommit.Set(pj.Dir(), commitID.String()); err != nil {
-			return locale.WrapError(err, "err_package_update_commit_id")
-		}
+	if err := localcommit.Set(pj.Dir(), commitID.String()); err != nil {
+		return locale.WrapError(err, "err_package_update_commit_id")
+	}
 
-		// Note: a commit ID file needs to exist at this point.
-		err = buildscript.Update(pj, expr, r.Auth)
-		if err != nil {
-			return locale.WrapError(err, "err_update_build_script")
-		}
+	// Note: a commit ID file needs to exist at this point.
+	err = buildscript.Update(pj, expr, r.Auth)
+	if err != nil {
+		return locale.WrapError(err, "err_update_build_script")
 	}
 
 	// refresh or install runtime
-	err = runbits.RefreshRuntime(r.Auth, r.Output, r.Analytics, pj, commitID, exprChanged, trigger, r.SvcModel)
+	err = runbits.RefreshRuntime(r.Auth, r.Output, r.Analytics, pj, commitID, true, trigger, r.SvcModel)
 	if err != nil {
 		return err
 	}
@@ -433,4 +419,62 @@ func initializeProject() (*project.Project, error) {
 	}
 
 	return project.FromPath(target)
+}
+
+func commitMessage(op bpModel.Operation, name, version string, namespace model.Namespace, word int) string {
+	switch namespace.Type() {
+	case model.NamespaceLanguage:
+		return languageCommitMessage(op, name, version)
+	case model.NamespacePlatform:
+		return platformCommitMessage(op, name, version, word)
+	case model.NamespacePackage, model.NamespaceBundle:
+		return packageCommitMessage(op, name, version)
+	}
+
+	return ""
+}
+
+func languageCommitMessage(op bpModel.Operation, name, version string) string {
+	var msgL10nKey string
+	switch op {
+	case bpModel.OperationAdded:
+		msgL10nKey = "commit_message_added_language"
+	case bpModel.OperationUpdated:
+		msgL10nKey = "commit_message_updated_language"
+	case bpModel.OperationRemoved:
+		msgL10nKey = "commit_message_removed_language"
+	}
+
+	return locale.Tr(msgL10nKey, name, version)
+}
+
+func platformCommitMessage(op bpModel.Operation, name, version string, word int) string {
+	var msgL10nKey string
+	switch op {
+	case bpModel.OperationAdded:
+		msgL10nKey = "commit_message_added_platform"
+	case bpModel.OperationUpdated:
+		msgL10nKey = "commit_message_updated_platform"
+	case bpModel.OperationRemoved:
+		msgL10nKey = "commit_message_removed_platform"
+	}
+
+	return locale.Tr(msgL10nKey, name, strconv.Itoa(word), version)
+}
+
+func packageCommitMessage(op bpModel.Operation, name, version string) string {
+	var msgL10nKey string
+	switch op {
+	case bpModel.OperationAdded:
+		msgL10nKey = "commit_message_added_package"
+	case bpModel.OperationUpdated:
+		msgL10nKey = "commit_message_updated_package"
+	case bpModel.OperationRemoved:
+		msgL10nKey = "commit_message_removed_package"
+	}
+
+	if version == "" {
+		version = locale.Tl("package_version_auto", "auto")
+	}
+	return locale.Tr(msgL10nKey, name, version)
 }
