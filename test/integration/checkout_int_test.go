@@ -7,9 +7,7 @@ import (
 	"runtime"
 	"strings"
 	"testing"
-	"time"
 
-	"github.com/ActiveState/termtest"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/ActiveState/cli/internal/constants"
@@ -37,7 +35,7 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckout() {
 		e2e.OptArgs("checkout", "ActiveState-CLI/Python-3.9", "."),
 		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
-	cp.Expect("Checked out project", termtest.OptExpectTimeout(120*time.Second))
+	cp.Expect("Checked out project", e2e.RuntimeSourcingTimeoutOpt)
 	suite.Require().True(fileutils.DirExists(ts.Dirs.Work), "state checkout should have created "+ts.Dirs.Work)
 	suite.Require().True(fileutils.FileExists(filepath.Join(ts.Dirs.Work, constants.ConfigFileName)), "ActiveState-CLI/Python3 was not checked out properly")
 
@@ -72,8 +70,8 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckout() {
 				"VERBOSE=true", // Necessary to assert "Fetched cached artifact"
 			),
 		)
-		cp.Expect("Fetched cached artifact", termtest.OptExpectTimeout(120*time.Second)) // Comes from log, which is why we're using VERBOSE=true
-		cp.Expect("Checked out project", termtest.OptExpectTimeout(120*time.Second))
+		cp.Expect("Fetched cached artifact", e2e.RuntimeSourcingTimeoutOpt) // Comes from log, which is why we're using VERBOSE=true
+		cp.Expect("Checked out project", e2e.RuntimeSourcingTimeoutOpt)
 		cp.ExpectExitCode(0)
 	})
 }
@@ -178,7 +176,7 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckoutCustomRTPath() {
 		e2e.OptArgs("checkout", "ActiveState-CLI/Python3", fmt.Sprintf("--runtime-path=%s", customRTPath)),
 		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
-	cp.Expect("Checked out project", termtest.OptExpectTimeout(120*time.Second))
+	cp.Expect("Checked out project", e2e.RuntimeSourcingTimeoutOpt)
 
 	pythonExe := filepath.Join(setup.ExecDir(customRTPath), "python3"+exeutils.Extension)
 	suite.Require().True(fileutils.DirExists(customRTPath))

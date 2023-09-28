@@ -66,7 +66,9 @@ var (
 	PersistentPassword string
 	PersistentToken    string
 
-	defaultTimeout = 40 * time.Second
+	defaultTimeout            = 40 * time.Second
+	RuntimeSourcingTimeout    = 3 * time.Minute
+	RuntimeSourcingTimeoutOpt = termtest.OptExpectTimeout(3 * time.Minute)
 )
 
 func init() {
