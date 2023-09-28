@@ -255,9 +255,9 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckoutBuildtimeClosure() {
 	defer ts.Close()
 
 	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("checkout", "ActiveState-CLI/small-python"),
-		e2e.AppendEnv(constants.InstallBuildDependencies+"=true"),
-		e2e.AppendEnv(constants.DisableRuntime+"=false"),
+		e2e.OptArgs("checkout", "ActiveState-CLI/small-python"),
+		e2e.OptAppendEnv(constants.InstallBuildDependencies+"=true"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
 	// Expect the number of build deps to be 27 which is more than the number of runtime deps.
 	cp.Expect("27")
