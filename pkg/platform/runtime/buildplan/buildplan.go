@@ -377,10 +377,15 @@ func buildBuildClosureMap(baseID strfmt.UUID, lookup map[strfmt.UUID]interface{}
 	return nil
 }
 
-func buildBuildClosureDependencies(depdendencyID strfmt.UUID, lookup map[strfmt.UUID]interface{}, deps map[strfmt.UUID]struct{}, result artifact.Map) (map[strfmt.UUID]struct{}, error) {
-	currentArtifact, ok := lookup[depdendencyID].(*model.Artifact)
+func buildBuildClosureDependencies(artifactID strfmt.UUID, lookup map[strfmt.UUID]interface{}, deps map[strfmt.UUID]struct{}, result artifact.Map) (map[strfmt.UUID]struct{}, error) {
+	if _, ok := result[artifactID]; ok {
+		// We have already processed this artifact, skipping
+		return nil, nil
+	}
+
+	currentArtifact, ok := lookup[artifactID].(*model.Artifact)
 	if !ok {
-		return nil, errs.New("Incorrect target type for id %s, expected Artifact", depdendencyID)
+		return nil, errs.New("Incorrect target type for id %s, expected Artifact", artifactID)
 	}
 
 	for _, depID := range currentArtifact.RuntimeDependencies {
