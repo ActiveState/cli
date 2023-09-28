@@ -56,6 +56,16 @@ func IsUserFacing(err error) bool {
 	return errors.As(err, &userFacingError)
 }
 
+// SetIf is a helper for setting options if some conditional evaluated to true.
+// This is mainly intended for setting tips, as without this you'd have to evaluate your conditional outside of
+// NewUserFacing/WrapUserFacing, adding to the boilerplate.
+func SetIf(evaluated bool, opt ErrOpt) ErrOpt {
+	if evaluated {
+		return opt
+	}
+	return func(err *userFacingError) {}
+}
+
 func SetTips(tips ...string) ErrOpt {
 	return func(err *userFacingError) {
 		err.tips = append(err.tips, tips...)

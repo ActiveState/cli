@@ -21,11 +21,10 @@ func (c *Checkout) rationalizeError(err *error) {
 			errs.SetInput(true),
 		)
 	case errors.As(*err, &errProjectNotFound):
-		if !c.auth.Authenticated() {
-			*err = errs.Pack(*err, errs.AddTips(
-				locale.NewInputError("err_api_project_not_found_unauthenticated", "", errProjectNotFound.Organization, errProjectNotFound.Project),
-				locale.T("tip_private_project_auth")))
-		}
-		*err = errs.Pack(*err, locale.NewInputError("err_api_project_not_found", "", errProjectNotFound.Organization, errProjectNotFound.Project))
+		*err = errs.WrapUserFacing(*err,
+			locale.Tr("err_api_project_not_found", errProjectNotFound.Organization, errProjectNotFound.Project),
+			errs.SetIf(!c.auth.Authenticated(), errs.SetTips(locale.T("tip_private_project_auth"))),
+			errs.SetInput(true),
+		)
 	}
 }

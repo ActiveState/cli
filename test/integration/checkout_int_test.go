@@ -207,6 +207,22 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckoutCustomRTPath() {
 	cp.Expect(customRTPath)
 }
 
+func (suite *CheckoutIntegrationTestSuite) TestCheckoutNotFound() {
+	suite.OnlyRunForTags(tagsuite.Checkout)
+
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.SpawnWithOpts(e2e.OptArgs("checkout", "ActiveState-CLI/Bogus-Project-That-Doesnt-Exist"))
+	cp.Expect("does not exist under")         // error
+	cp.Expect("If this is a private project") // tip
+	cp.ExpectExitCode(1)
+
+	if strings.Count(cp.Snapshot(), " x ") != 1 {
+		suite.Fail("Expected exactly ONE error message, got: %s", cp.Snapshot())
+	}
+}
+
 func (suite *CheckoutIntegrationTestSuite) TestCheckoutAlreadyCheckedOut() {
 	suite.OnlyRunForTags(tagsuite.Checkout)
 

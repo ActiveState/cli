@@ -62,8 +62,6 @@ func NewCheckout(prime primeable) *Checkout {
 }
 
 func (u *Checkout) Run(params *Params) (rerr error) {
-	defer rationalizeError(&rerr)
-
 	logging.Debug("Checkout %v", params.Namespace)
 
 	checker.RunUpdateNotifier(u.analytics, u.svcModel, u.out)

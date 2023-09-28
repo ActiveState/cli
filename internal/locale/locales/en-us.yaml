@@ -335,8 +335,6 @@ err_api_org_not_found:
   other: Unable to find requested Organization
 err_api_project_not_found:
   other: The requested project [NOTICE]{{.V1}}[/RESET] does not exist under [NOTICE]{{.V0}}[/RESET]. Please ensure the owner is correct and that the project has been created.
-err_api_project_not_found_unauthenticated:
-  other: The requested project [NOTICE]{{.V0}}/{{.V1}}[/RESET] could not be found
 tip_private_project_auth:
   other: If this is a private project you may need to authenticate with 'state auth'.
 err_api_member_not_found:
@@ -2067,5 +2065,3 @@ err_edit_project_mapping:
   other: Could not update project mapping
 notice_runtime_disabled:
   other: Skipping runtime setup because it was disabled by an environment variable
-err_runtime_order_forbidden:
-  other: You do not have permission to view the order. Ensure you are logged in to the correct account.

@@ -24,16 +24,6 @@ func rationalizeError(auth *authentication.Auth, proj *project.Project, rerr *er
 		multilog.Error("runtime:rationalizeError called with nil project, error: %s", errs.JoinMessage(*rerr))
 		*rerr = errs.Pack(*rerr, errs.New("project is nil"))
 
-	// Error due to authentication
-	// Note not all authentication errors will be typed; namely being unauthenticated will not give a typed error
-	// when attempting to access private projects, as this would disclose that the private project exists.
-	case isUpdateErr && errors.Is(*rerr, model.ErrOrderForbidden):
-		*rerr = errs.WrapUserFacing(*rerr,
-			locale.T("err_runtime_order_forbidden"),
-			errs.SetTips(
-				locale.T("tip_private_project_auth"),
-			))
-
 	// Could not find a platform that matches on the given branch, so suggest alternate branches if ones exist
 	case isUpdateErr && errors.As(*rerr, &errNoMatchingPlatform):
 		branches, err := model.BranchNamesForProjectFiltered(proj.Owner(), proj.Name(), proj.BranchName())
