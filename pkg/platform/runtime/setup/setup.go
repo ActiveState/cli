@@ -391,12 +391,15 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 		}
 
 		if strings.EqualFold(os.Getenv(constants.InstallBuildDependencies), "true") || !buildResult.BuildReady {
-			logging.Debug("Installing build dependencies")
-			runtimeAndBuildtimeArtifacts, err = buildplan.BuildtimeArtifacts(buildResult.Build)
+			runtimeAndBuildtimeArtifacts, err = buildplan.NewBuildtimeMapFromBuildPlan(buildResult.Build)
 			if err != nil {
 				return nil, nil, errs.Wrap(err, "Failed to create artifact map from build plan")
 			}
-			runtimeArtifacts = runtimeAndBuildtimeArtifacts
+
+			if strings.EqualFold(os.Getenv(constants.InstallBuildDependencies), "true") {
+				logging.Debug("Installing build dependencies")
+				runtimeArtifacts = runtimeAndBuildtimeArtifacts
+			}
 		}
 	}
 
@@ -464,8 +467,14 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 
 	// Report resolved artifacts
 	artifactIDs := []artifact.ArtifactID{}
-	for _, a := range runtimeArtifacts {
-		artifactIDs = append(artifactIDs, a.ArtifactID)
+	if runtimeAndBuildtimeArtifacts != nil {
+		for _, a := range runtimeAndBuildtimeArtifacts {
+			artifactIDs = append(artifactIDs, a.ArtifactID)
+		}
+	} else {
+		for _, a := range runtimeArtifacts {
+			artifactIDs = append(artifactIDs, a.ArtifactID)
+		}
 	}
 
 	artifactNames := artifact.ResolveArtifactNames(setup.ResolveArtifactName, artifactIDs)
@@ -487,11 +496,17 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 	)
 
 	artifactsToInstall := []artifact.ArtifactID{}
-	buildtimeArtifacts := runtimeArtifacts
 	for _, a := range downloadablePrebuiltResults {
 		if _, alreadyInstalled := alreadyInstalled[a.ArtifactID]; !alreadyInstalled {
 			artifactsToInstall = append(artifactsToInstall, a.ArtifactID)
 		}
+	}
+
+	var buildtimeArtifacts artifact.Map
+	if runtimeAndBuildtimeArtifacts != nil {
+		buildtimeArtifacts = runtimeAndBuildtimeArtifacts
+	} else {
+		buildtimeArtifacts = runtimeArtifacts
 	}
 
 	// The log file we want to use for builds

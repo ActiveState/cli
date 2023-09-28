@@ -271,12 +271,12 @@ func NewNamedMapFromBuildPlan(build *model.Build) (artifact.NamedMap, error) {
 	return res, nil
 }
 
-// BuildtimeArtifacts iterates through all artifacts in a given build and
+// NewBuildtimeMapFromBuildPlan iterates through all artifacts in a given build and
 // adds the artifact's dependencies to a map. This is different from the
 // runtime dependency calculation as it includes ALL of the input artifacts of the
 // step that generated each artifact. The includeBuilders argument determines whether
 // or not to include builder artifacts in the final result.
-func BuildtimeArtifacts(build *model.Build) (artifact.Map, error) {
+func NewBuildtimeMapFromBuildPlan(build *model.Build) (artifact.Map, error) {
 	// Extract the available platforms from the build plan
 	var bpPlatforms []strfmt.UUID
 	for _, t := range build.Terminals {

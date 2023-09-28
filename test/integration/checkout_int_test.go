@@ -241,6 +241,26 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckoutCaseInsensitive() {
 	suite.Assert().NotContains(string(bytes), "ACTIVESTATE-CLI/SMALL-PYTHON", "kept incorrect namespace case")
 }
 
+func (suite *CheckoutIntegrationTestSuite) TestCheckoutBuildtimeClosure() {
+	suite.OnlyRunForTags(tagsuite.Checkout)
+
+	if runtime.GOOS != "linux" {
+		suite.T().Skip("Skipping buildtime closure test on non-linux platform")
+	}
+
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.SpawnWithOpts(
+		e2e.WithArgs("checkout", "ActiveState-CLI/small-python"),
+		e2e.AppendEnv(constants.InstallBuildDependencies+"=true"),
+		e2e.AppendEnv(constants.DisableRuntime+"=false"),
+	)
+	// Expect the number of build deps to be 27 which is more than the number of runtime deps.
+	cp.Expect("27")
+	cp.ExpectExitCode(0)
+}
+
 func TestCheckoutIntegrationTestSuite(t *testing.T) {
 	suite.Run(t, new(CheckoutIntegrationTestSuite))
 }
