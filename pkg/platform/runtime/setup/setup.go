@@ -384,26 +384,38 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 	// runtimeAndBuildtimeArtifacts records all artifacts that will need to be built in order to obtain the runtime.
 	var runtimeAndBuildtimeArtifacts artifact.Map
 	var runtimeArtifacts artifact.Map // Artifacts required for the runtime to function
-	if buildResult.Build != nil {
-		runtimeArtifacts, err = buildplan.NewMapFromBuildPlan(buildResult.Build)
+
+	// If the build is not ready, we need to get the runtime and buildtime closure
+	if !buildResult.BuildReady {
+		runtimeAndBuildtimeArtifacts, err = buildplan.NewBuildtimeMapFromBuildPlan(buildResult.Build)
 		if err != nil {
 			return nil, nil, errs.Wrap(err, "Failed to create artifact map from build plan")
 		}
+	}
 
-		if strings.EqualFold(os.Getenv(constants.InstallBuildDependencies), "true") || !buildResult.BuildReady {
+	// If we are installing build dependencies, then buildtime dependences are also runtime dependencies
+	if strings.EqualFold(os.Getenv(constants.InstallBuildDependencies), "true") {
+		logging.Debug("Installing build dependencies")
+		if runtimeAndBuildtimeArtifacts == nil {
 			runtimeAndBuildtimeArtifacts, err = buildplan.NewBuildtimeMapFromBuildPlan(buildResult.Build)
 			if err != nil {
 				return nil, nil, errs.Wrap(err, "Failed to create artifact map from build plan")
 			}
-
-			if strings.EqualFold(os.Getenv(constants.InstallBuildDependencies), "true") {
-				logging.Debug("Installing build dependencies")
-				runtimeArtifacts = runtimeAndBuildtimeArtifacts
-			}
+		}
+		runtimeArtifacts = runtimeAndBuildtimeArtifacts
+	} else {
+		runtimeArtifacts, err = buildplan.NewMapFromBuildPlan(buildResult.Build)
+		if err != nil {
+			return nil, nil, errs.Wrap(err, "Failed to create artifact map from build plan")
 		}
 	}
 
-	setup, err := s.selectSetupImplementation(buildResult.BuildEngine, runtimeArtifacts)
+	var setup Setuper
+	if !buildResult.BuildReady {
+		setup, err = s.selectSetupImplementation(buildResult.BuildEngine, runtimeAndBuildtimeArtifacts)
+	} else {
+		setup, err = s.selectSetupImplementation(buildResult.BuildEngine, runtimeArtifacts)
+	}
 	if err != nil {
 		return nil, nil, errs.Wrap(err, "Failed to select setup implementation")
 	}
@@ -467,7 +479,7 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 
 	// Report resolved artifacts
 	artifactIDs := []artifact.ArtifactID{}
-	if runtimeAndBuildtimeArtifacts != nil {
+	if !buildResult.BuildReady {
 		for _, a := range runtimeAndBuildtimeArtifacts {
 			artifactIDs = append(artifactIDs, a.ArtifactID)
 		}
@@ -502,11 +514,11 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 		}
 	}
 
-	var buildtimeArtifacts artifact.Map
-	if runtimeAndBuildtimeArtifacts != nil {
-		buildtimeArtifacts = runtimeAndBuildtimeArtifacts
+	var artifactsToBuild artifact.Map
+	if !buildResult.BuildReady {
+		artifactsToBuild = runtimeAndBuildtimeArtifacts
 	} else {
-		buildtimeArtifacts = runtimeArtifacts
+		artifactsToBuild = runtimeArtifacts
 	}
 
 	// The log file we want to use for builds
@@ -523,7 +535,7 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 		ArtifactNames: artifactNames,
 		LogFilePath:   logFilePath,
 		ArtifactsToBuild: func() []artifact.ArtifactID {
-			return artifact.ArtifactIDsFromBuildPlanMap(buildtimeArtifacts) // This does not account for cached builds
+			return artifact.ArtifactIDsFromBuildPlanMap(artifactsToBuild) // This does not account for cached builds
 		}(),
 		// Yes these have the same value; this is intentional.
 		// Separating these out just allows us to be more explicit and intentional in our event handling logic.
