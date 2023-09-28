@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ActiveState/termtest"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
@@ -79,7 +80,7 @@ func (suite *BundleIntegrationTestSuite) TestBundle_project_invalid() {
 	defer ts.Close()
 
 	cp := ts.Spawn("bundles", "--namespace", "junk/junk")
-	cp.ExpectLongString("The requested project junk/junk could not be found")
+	cp.Expect("The requested project junk/junk could not be found")
 	cp.ExpectExitCode(1)
 }
 
@@ -127,7 +128,7 @@ func (suite *BundleIntegrationTestSuite) TestBundle_searchWithExactTermWrongTerm
 	suite.PrepareActiveStateYAML(ts)
 
 	cp := ts.Spawn("bundles", "search", "xxxUtilitiesxxx", "--exact-term")
-	cp.ExpectLongString("No bundles in our catalog match")
+	cp.Expect("No bundles in our catalog match")
 	cp.ExpectExitCode(1)
 }
 
@@ -149,7 +150,7 @@ func (suite *BundleIntegrationTestSuite) TestBundle_searchWithWrongLang() {
 	suite.PrepareActiveStateYAML(ts)
 
 	cp := ts.Spawn("bundles", "search", "Utilities", "--language=python")
-	cp.ExpectLongString("No bundles in our catalog match")
+	cp.Expect("No bundles in our catalog match")
 	cp.ExpectExitCode(1)
 }
 
@@ -181,13 +182,13 @@ func (suite *BundleIntegrationTestSuite) TestBundle_headless_operation() {
 	suite.Run("install non-existing", func() {
 		cp := ts.Spawn("bundles", "install", "non-existing")
 		cp.Expect("No results found for search term")
-		cp.ExpectLongString(`Run "state search non-existing" to find alternatives`)
+		cp.Expect(`Run "state search non-existing" to find alternatives`)
 		cp.Wait()
 	})
 
 	suite.Run("install", func() {
 		cp := ts.Spawn("bundles", "install", "Utilities")
-		cp.ExpectRe("successfully installed", 45*time.Second)
+		cp.ExpectRe("successfully installed", termtest.OptExpectTimeout(45*time.Second))
 		cp.Wait()
 	})
 
@@ -201,7 +202,7 @@ func (suite *BundleIntegrationTestSuite) TestBundle_headless_operation() {
 
 	suite.Run("uninstall", func() {
 		cp := ts.Spawn("bundles", "uninstall", "Utilities")
-		cp.ExpectRe("Bundle uninstalled", 30*time.Second)
+		cp.ExpectRe("Bundle uninstalled", termtest.OptExpectTimeout(30*time.Second))
 		cp.Wait()
 	})
 }
@@ -221,16 +222,16 @@ func (suite *BundleIntegrationTestSuite) TestJSON() {
 	AssertValidJSON(suite.T(), cp)
 
 	cp = ts.SpawnWithOpts(
-		e2e.WithArgs("bundles", "install", "Testing", "--output", "json"),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.OptArgs("bundles", "install", "Testing", "--output", "json"),
+		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cp.Expect(`"name":"Testing"`)
 	cp.ExpectExitCode(0)
 	AssertValidJSON(suite.T(), cp)
 
 	cp = ts.SpawnWithOpts(
-		e2e.WithArgs("bundles", "uninstall", "Testing", "-o", "editor"),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.OptArgs("bundles", "uninstall", "Testing", "-o", "editor"),
+		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cp.Expect(`"name":"Testing"`)
 	cp.ExpectExitCode(0)

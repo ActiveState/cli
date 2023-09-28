@@ -91,7 +91,7 @@ func (suite *PlatformsIntegrationTestSuite) TestPlatforms_addRemove() {
 
 	cp = ts.Spawn("platforms")
 	cp.ExpectExitCode(0)
-	output := cp.TrimmedSnapshot()
+	output := cp.Output()
 	if strings.Contains(output, "Windows") {
 		suite.T().Fatal("Windows platform should not be present after removal")
 	}
@@ -127,7 +127,7 @@ func (suite *PlatformsIntegrationTestSuite) TestPlatforms_addRemoveLatest() {
 
 	cp = ts.Spawn("platforms")
 	cp.ExpectExitCode(0)
-	output := cp.TrimmedSnapshot()
+	output := cp.Output()
 	if strings.Contains(output, "Windows") {
 		suite.T().Fatal("Windows platform should not be present after removal")
 	}

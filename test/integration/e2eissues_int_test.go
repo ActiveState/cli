@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ActiveState/termtest"
+
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 )
@@ -16,8 +18,6 @@ The intend is to collect e2e bugs here so that we can test that they are fixed o
 */
 
 func TestMultipleSends(t *testing.T) {
-	t.Skip("")
-
 	if runtime.GOOS != "windows" {
 		t.Skip("This test is only relevant on Windows")
 	}
@@ -31,18 +31,18 @@ func TestMultipleSends(t *testing.T) {
 set /p "prompt1=Prompt 1: "
 echo "Prompt 1: %prompt1%"
 set /p "prompt2=Prompt 2: "
-echo "Prompt 2: %prompt1%"
+echo "Prompt 2: %prompt2%"
 `))
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	tp := ts.SpawnCmd(promptFile)
-	tp.Expect("Prompt 1: ", 5*time.Second)
-	tp.Send("Answer 1")
-	tp.Expect("Prompt 1: Answer 1", 5*time.Second)
-	tp.Expect("Prompt 2: ", 5*time.Second)
-	tp.Send("Answer 2")
-	tp.Expect("Prompt 2: Answer 2", 5*time.Second)
-	tp.ExpectExitCode(0, 5*time.Second)
+	tp := ts.SpawnCmdWithOpts(promptFile, e2e.OptTermTest(termtest.OptDefaultTimeout(5*time.Second)))
+	tp.Expect("Prompt 1:")
+	tp.SendLine("Answer 1")
+	tp.Expect("Prompt 1: Answer 1")
+	tp.Expect("Prompt 2:")
+	tp.SendLine("Answer 2")
+	tp.Expect("Prompt 2: Answer 2")
+	tp.ExpectExitCode(0)
 }

@@ -6,6 +6,10 @@ import (
 	"path/filepath"
 	"runtime"
 	"testing"
+	"time"
+
+	"github.com/ActiveState/termtest"
+	"github.com/stretchr/testify/suite"
 
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
@@ -16,7 +20,6 @@ import (
 	"github.com/ActiveState/cli/internal/subshell/zsh"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
-	"github.com/stretchr/testify/suite"
 )
 
 type ShellIntegrationTestSuite struct {
@@ -30,7 +33,7 @@ func (suite *ShellIntegrationTestSuite) TestShell() {
 	defer ts.Close()
 
 	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("checkout", "ActiveState-CLI/small-python"),
+		e2e.OptArgs("checkout", "ActiveState-CLI/small-python"),
 	)
 	cp.Expect("Checked out project")
 	cp.ExpectExitCode(0)
@@ -38,10 +41,10 @@ func (suite *ShellIntegrationTestSuite) TestShell() {
 	args := []string{"small-python", "ActiveState-CLI/small-python"}
 	for _, arg := range args {
 		cp := ts.SpawnWithOpts(
-			e2e.WithArgs("shell", arg),
+			e2e.OptArgs("shell", arg),
 		)
 		cp.Expect("Activated")
-		cp.WaitForInput()
+		cp.ExpectInput()
 
 		cp.SendLine("python3 --version")
 		cp.Expect("Python 3")
@@ -60,14 +63,14 @@ func (suite *ShellIntegrationTestSuite) TestShell() {
 		suite.Require().NoError(err)
 
 		cp = ts.Spawn("shell", projectName)
-		cp.ExpectLongString(fmt.Sprintf("Could not load project %s from path: %s", projectName, projectDir))
+		cp.Expect(fmt.Sprintf("Could not load project %s from path: %s", projectName, projectDir))
 	}
 
 	// Check for project not checked out.
 	args = []string{"Python-3.9", "ActiveState-CLI/Python-3.9"}
 	for _, arg := range args {
 		cp := ts.SpawnWithOpts(
-			e2e.WithArgs("shell", arg),
+			e2e.OptArgs("shell", arg),
 		)
 		cp.Expect("Cannot find the Python-3.9 project")
 		cp.ExpectExitCode(1)
@@ -81,24 +84,24 @@ func (suite *ShellIntegrationTestSuite) TestDefaultShell() {
 	defer ts.Close()
 
 	// Checkout.
-	cp := ts.SpawnWithOpts(e2e.WithArgs("checkout", "ActiveState-CLI/small-python"))
+	cp := ts.SpawnWithOpts(e2e.OptArgs("checkout", "ActiveState-CLI/small-python"))
 	cp.Expect("Skipping runtime setup")
 	cp.Expect("Checked out project")
 	cp.ExpectExitCode(0)
 
 	// Use.
 	cp = ts.SpawnWithOpts(
-		e2e.WithArgs("use", "ActiveState-CLI/small-python"),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.OptArgs("use", "ActiveState-CLI/small-python"),
+		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
-	cp.Expect("Switched to project")
+	cp.Expect("Switched to project", termtest.OptExpectTimeout(120*time.Second))
 	cp.ExpectExitCode(0)
 
 	cp = ts.SpawnWithOpts(
-		e2e.WithArgs("shell"),
+		e2e.OptArgs("shell"),
 	)
 	cp.Expect("Activated")
-	cp.WaitForInput()
+	cp.ExpectInput()
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
 }
@@ -110,19 +113,19 @@ func (suite *ShellIntegrationTestSuite) TestCwdShell() {
 	defer ts.Close()
 
 	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("activate", "ActiveState-CLI/small-python"),
+		e2e.OptArgs("activate", "ActiveState-CLI/small-python"),
 	)
 	cp.Expect("Activated")
-	cp.WaitForInput()
+	cp.ExpectInput()
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
 
 	cp = ts.SpawnWithOpts(
-		e2e.WithArgs("shell"),
-		e2e.WithWorkDirectory(filepath.Join(ts.Dirs.Work, "small-python")),
+		e2e.OptArgs("shell"),
+		e2e.OptWD(filepath.Join(ts.Dirs.Work, "small-python")),
 	)
 	cp.Expect("Activated")
-	cp.WaitForInput()
+	cp.ExpectInput()
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
 }
@@ -134,10 +137,10 @@ func (suite *ShellIntegrationTestSuite) TestCd() {
 	defer ts.Close()
 
 	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("activate", "ActiveState-CLI/small-python"),
+		e2e.OptArgs("activate", "ActiveState-CLI/small-python"),
 	)
 	cp.Expect("Activated")
-	cp.WaitForInput()
+	cp.ExpectInput()
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
 
@@ -146,25 +149,25 @@ func (suite *ShellIntegrationTestSuite) TestCd() {
 	suite.Require().NoError(err)
 
 	cp = ts.SpawnWithOpts(
-		e2e.WithArgs("shell", "ActiveState-CLI/small-python"),
-		e2e.WithWorkDirectory(subdir),
+		e2e.OptArgs("shell", "ActiveState-CLI/small-python"),
+		e2e.OptWD(subdir),
 	)
 	cp.Expect("Activated")
-	cp.WaitForInput()
+	cp.ExpectInput()
 	if runtime.GOOS != "windows" {
 		cp.SendLine("pwd")
 	} else {
 		cp.SendLine("echo %cd%")
 	}
-	cp.ExpectLongString(subdir)
+	cp.Expect(subdir)
 	cp.SendLine("exit")
 
 	cp = ts.SpawnWithOpts(
-		e2e.WithArgs("shell", "ActiveState-CLI/small-python", "--cd"),
-		e2e.WithWorkDirectory(subdir),
+		e2e.OptArgs("shell", "ActiveState-CLI/small-python", "--cd"),
+		e2e.OptWD(subdir),
 	)
 	cp.Expect("Activated")
-	cp.WaitForInput()
+	cp.ExpectInput()
 	if runtime.GOOS != "windows" {
 		cp.SendLine("ls")
 	} else {
@@ -182,14 +185,14 @@ func (suite *ShellIntegrationTestSuite) TestDefaultNoLongerExists() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	cp := ts.SpawnWithOpts(e2e.WithArgs("checkout", "ActiveState-CLI/Python3"))
+	cp := ts.SpawnWithOpts(e2e.OptArgs("checkout", "ActiveState-CLI/Python3"))
 	cp.Expect("Skipping runtime setup")
 	cp.Expect("Checked out project")
 	cp.ExpectExitCode(0)
 
 	cp = ts.SpawnWithOpts(
-		e2e.WithArgs("use", "ActiveState-CLI/Python3"),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.OptArgs("use", "ActiveState-CLI/Python3"),
+		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cp.Expect("Switched to project")
 	cp.ExpectExitCode(0)
@@ -197,7 +200,7 @@ func (suite *ShellIntegrationTestSuite) TestDefaultNoLongerExists() {
 	err := os.RemoveAll(filepath.Join(ts.Dirs.Work, "Python3"))
 	suite.Require().NoError(err)
 
-	cp = ts.SpawnWithOpts(e2e.WithArgs("shell"))
+	cp = ts.SpawnWithOpts(e2e.OptArgs("shell"))
 	cp.Expect("Cannot find your project")
 	cp.ExpectExitCode(1)
 }
@@ -225,9 +228,9 @@ func (suite *ShellIntegrationTestSuite) TestUseShellUpdates() {
 	}
 
 	cp = ts.SpawnWithOpts(
-		e2e.WithArgs("use", "ActiveState-CLI/Python3"),
-		e2e.AppendEnv("SHELL=bash"),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.OptArgs("use", "ActiveState-CLI/Python3"),
+		e2e.OptAppendEnv("SHELL=bash"),
+		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cp.Expect("Switched to project")
 	cp.ExpectExitCode(0)
@@ -249,7 +252,7 @@ func (suite *ShellIntegrationTestSuite) TestJSON() {
 	defer ts.Close()
 
 	cp := ts.Spawn("shell", "--output", "json")
-	cp.ExpectLongString(`"error":"This command does not support the json output format`)
+	cp.Expect(`"error":"This command does not support the json output format`)
 	cp.ExpectExitCode(0)
 	AssertValidJSON(suite.T(), cp)
 }
@@ -315,14 +318,14 @@ func (suite *ShellIntegrationTestSuite) TestNestedShellNotification() {
 	cp.ExpectExitCode(0)
 
 	cp = ts.SpawnWithOpts(
-		e2e.WithArgs("shell", "small-python"),
-		e2e.AppendEnv(env...))
-	cp.Expect("Activated")
-	suite.Assert().NotContains(cp.TrimmedSnapshot(), "State Tool is operating on project")
+		e2e.OptArgs("shell", "small-python"),
+		e2e.OptAppendEnv(env...))
+	cp.Expect("Activated", termtest.OptExpectTimeout(120*time.Second))
+	suite.Assert().NotContains(cp.Output(), "State Tool is operating on project")
 	cp.SendLine(fmt.Sprintf(`export HOME="%s"`, ts.Dirs.HomeDir)) // some shells do not forward this
 
 	cp.SendLine(ss.Binary()) // platform-specific shell (zsh on macOS, bash on Linux, etc.)
-	cp.ExpectLongString("State Tool is operating on project ActiveState-CLI/small-python")
+	cp.Expect("State Tool is operating on project ActiveState-CLI/small-python")
 	cp.SendLine("exit") // subshell within a subshell
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
@@ -341,11 +344,11 @@ func (suite *ShellIntegrationTestSuite) TestRuby() {
 	cp.ExpectExitCode(0)
 
 	cp = ts.SpawnWithOpts(
-		e2e.WithArgs("shell", "Ruby-3.2.2"),
-		e2e.AppendEnv(constants.DisableRuntime+"=false"),
+		e2e.OptArgs("shell", "Ruby-3.2.2"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
 	cp.Expect("Activated")
-	cp.WaitForInput()
+	cp.ExpectInput()
 	cp.SendLine("ruby -v")
 	cp.Expect("3.2.2")
 	cp.Expect("ActiveState")

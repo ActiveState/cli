@@ -8,11 +8,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ActiveState/termtest"
+	"github.com/stretchr/testify/suite"
+
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
-	"github.com/stretchr/testify/suite"
 )
 
 type PackageIntegrationTestSuite struct {
@@ -27,7 +29,8 @@ func (suite *PackageIntegrationTestSuite) TestPackage_listingSimple() {
 	suite.PrepareActiveStateYAML(ts)
 
 	cp := ts.Spawn("packages")
-	cp.ExpectLongString("Operating on project ActiveState-CLI/List")
+	cp.Expect("Operating on project")
+	cp.Expect("ActiveState-CLI/List")
 	cp.Expect("Name")
 	cp.Expect("pytest")
 	cp.ExpectExitCode(0)
@@ -85,7 +88,7 @@ func (suite *PackageIntegrationTestSuite) TestPackages_project_invalid() {
 	defer ts.Close()
 
 	cp := ts.Spawn("packages", "--namespace", "junk/junk")
-	cp.ExpectLongString("The requested project junk/junk could not be found")
+	cp.Expect("The requested project junk/junk could not be found")
 	cp.ExpectExitCode(1)
 }
 
@@ -169,7 +172,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchWithExactTerm() {
 		"older versions",
 	}
 	for _, expectation := range expectations {
-		cp.ExpectLongString(expectation)
+		cp.Expect(expectation)
 	}
 	cp.ExpectExitCode(0)
 }
@@ -181,11 +184,11 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchWithExactTermWrongTe
 	suite.PrepareActiveStateYAML(ts)
 
 	cp := ts.Spawn("search", "Requests", "--exact-term")
-	cp.ExpectLongString("No packages in our catalog match")
+	cp.Expect("No packages in our catalog match")
 	cp.ExpectExitCode(1)
 
 	cp = ts.Spawn("search", "xxxrequestsxxx", "--exact-term")
-	cp.ExpectLongString("No packages in our catalog match")
+	cp.Expect("No packages in our catalog match")
 	cp.ExpectExitCode(1)
 }
 
@@ -228,7 +231,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchWithWrongLang() {
 	suite.PrepareActiveStateYAML(ts)
 
 	cp := ts.Spawn("search", "xxxjunkxxx", "--language=perl")
-	cp.ExpectLongString("No packages in our catalog match")
+	cp.Expect("No packages in our catalog match")
 	cp.ExpectExitCode(1)
 }
 
@@ -298,31 +301,33 @@ func (suite *PackageIntegrationTestSuite) TestPackage_import() {
 	namespace := fmt.Sprintf("%s/%s", username, "Python3")
 
 	cp := ts.Spawn("init", "--language", "python", namespace, ts.Dirs.Work)
-	cp.ExpectLongString("successfully initialized")
+	cp.Expect("successfully initialized")
 	cp.ExpectExitCode(0)
 
 	reqsFilePath := filepath.Join(cp.WorkDirectory(), reqsFileName)
 
 	suite.Run("invalid requirements.txt", func() {
+		ts.SetT(suite.T())
 		ts.PrepareFile(reqsFilePath, badReqsData)
 
 		cp := ts.Spawn("import", "requirements.txt")
-		cp.ExpectNotExitCode(0, time.Second*60)
+		cp.ExpectNotExitCode(0)
 	})
 
 	suite.Run("valid requirements.txt", func() {
+		ts.SetT(suite.T())
 		ts.PrepareFile(reqsFilePath, reqsData)
 
 		cp := ts.Spawn("import", "requirements.txt")
-		cp.ExpectExitCode(0, time.Second*60)
+		cp.ExpectExitCode(0)
 
 		cp = ts.Spawn("push")
-		cp.ExpectExitCode(0, time.Second*60)
+		cp.ExpectExitCode(0)
 
 		cp = ts.Spawn("import", "requirements.txt")
-		cp.Expect("Are you sure you want to do this")
-		cp.Send("n")
-		cp.ExpectNotExitCode(0, time.Second*60)
+		cp.Expect("Are you sure")
+		cp.SendLine("n")
+		cp.ExpectNotExitCode(0)
 	})
 }
 
@@ -349,19 +354,19 @@ func (suite *PackageIntegrationTestSuite) TestPackage_headless_operation() {
 
 	suite.Run("install", func() {
 		cp := ts.Spawn("install", "dateparser@0.7.2")
-		cp.ExpectRe("(?:Package added|being built)", 30*time.Second)
+		cp.ExpectRe("(?:Package added|being built)", termtest.OptExpectTimeout(30*time.Second))
 		cp.Wait()
 	})
 
 	suite.Run("install (update)", func() {
 		cp := ts.Spawn("install", "dateparser@0.7.6")
-		cp.ExpectRe("(?:Package updated|being built)", 50*time.Second)
+		cp.ExpectRe("(?:Package updated|being built)", termtest.OptExpectTimeout(50*time.Second))
 		cp.Wait()
 	})
 
 	suite.Run("uninstall", func() {
 		cp := ts.Spawn("uninstall", "dateparser")
-		cp.ExpectRe("(?:Package uninstalled|being built)", 30*time.Second)
+		cp.ExpectRe("(?:Package uninstalled|being built)", termtest.OptExpectTimeout(30*time.Second))
 		cp.Wait()
 	})
 }
@@ -391,22 +396,22 @@ func (suite *PackageIntegrationTestSuite) TestPackage_operation() {
 
 	suite.Run("install", func() {
 		cp := ts.Spawn("install", "urllib3@1.25.6")
-		cp.ExpectLongString(fmt.Sprintf("Operating on project %s/python3-pkgtest", username))
-		cp.ExpectRe("(?:Package added|being built)", 30*time.Second)
+		cp.Expect(fmt.Sprintf("Operating on project %s/python3-pkgtest", username))
+		cp.ExpectRe("(?:Package added|being built)", termtest.OptExpectTimeout(30*time.Second))
 		cp.Wait()
 	})
 
 	suite.Run("install (update)", func() {
 		cp := ts.Spawn("install", "urllib3@1.25.8")
-		cp.ExpectLongString(fmt.Sprintf("Operating on project %s/python3-pkgtest", username))
-		cp.ExpectRe("(?:Package updated|being built)", 30*time.Second)
+		cp.Expect(fmt.Sprintf("Operating on project %s/python3-pkgtest", username))
+		cp.ExpectRe("(?:Package updated|being built)", termtest.OptExpectTimeout(30*time.Second))
 		cp.Wait()
 	})
 
 	suite.Run("uninstall", func() {
 		cp := ts.Spawn("uninstall", "urllib3")
-		cp.ExpectLongString(fmt.Sprintf("Operating on project %s/python3-pkgtest", username))
-		cp.ExpectRe("(?:Package uninstalled|being built)", 30*time.Second)
+		cp.Expect(fmt.Sprintf("Operating on project %s/python3-pkgtest", username))
+		cp.ExpectRe("(?:Package uninstalled|being built)", termtest.OptExpectTimeout(30*time.Second))
 		cp.Wait()
 	})
 }
@@ -426,7 +431,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_Duplicate() {
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("install", "requests") // install again
-	cp.ExpectLongString("No new changes to commit")
+	cp.Expect("No new changes to commit")
 	cp.ExpectNotExitCode(0)
 }
 
@@ -454,11 +459,11 @@ func (suite *PackageIntegrationTestSuite) TestInstall_Empty() {
 	defer ts.Close()
 
 	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("install", "JSON"),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.OptArgs("install", "JSON"),
+		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cp.Expect("Installing Package")
-	cp.ExpectExitCode(0)
+	cp.ExpectExitCode(0, termtest.OptExpectTimeout(120*time.Second))
 
 	configFilepath := filepath.Join(ts.Dirs.Work, constants.ConfigFileName)
 	suite.Require().FileExists(configFilepath)
@@ -497,10 +502,10 @@ func (suite *PackageIntegrationTestSuite) TestJSON() {
 	AssertValidJSON(suite.T(), cp)
 
 	cp = ts.SpawnWithOpts(
-		e2e.WithArgs("install", "Text-CSV", "--output", "editor"),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.OptArgs("install", "Text-CSV", "--output", "editor"),
+		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
-	cp.Expect(`{"name":"Text-CSV"`)
+	cp.Expect(`{"name":"Text-CSV"`, termtest.OptExpectTimeout(120*time.Second))
 	cp.ExpectExitCode(0)
 	AssertValidJSON(suite.T(), cp)
 
@@ -510,8 +515,8 @@ func (suite *PackageIntegrationTestSuite) TestJSON() {
 	AssertValidJSON(suite.T(), cp)
 
 	cp = ts.SpawnWithOpts(
-		e2e.WithArgs("uninstall", "Text-CSV", "-o", "json"),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.OptArgs("uninstall", "Text-CSV", "-o", "json"),
+		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cp.Expect(`{"name":"Text-CSV"`)
 	cp.ExpectExitCode(0)
@@ -530,17 +535,17 @@ func (suite *PackageIntegrationTestSuite) TestNormalize() {
 	dir := filepath.Join(ts.Dirs.Work, "normalized")
 	suite.Require().NoError(fileutils.Mkdir(dir))
 	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("checkout", "ActiveState-CLI/small-python", "."),
-		e2e.WithWorkDirectory(dir),
+		e2e.OptArgs("checkout", "ActiveState-CLI/small-python", "."),
+		e2e.OptWD(dir),
 	)
 	cp.Expect("Skipping runtime setup")
 	cp.Expect("Checked out project")
 	cp.ExpectExitCode(0)
 
 	cp = ts.SpawnWithOpts(
-		e2e.WithArgs("install", "Charset_normalizer"),
-		e2e.WithWorkDirectory(dir),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.OptArgs("install", "Charset_normalizer"),
+		e2e.OptWD(dir),
+		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cp.Expect("charset-normalizer")
 	cp.Expect("is different")
@@ -550,21 +555,21 @@ func (suite *PackageIntegrationTestSuite) TestNormalize() {
 	anotherDir := filepath.Join(ts.Dirs.Work, "not-normalized")
 	suite.Require().NoError(fileutils.Mkdir(anotherDir))
 	cp = ts.SpawnWithOpts(
-		e2e.WithArgs("checkout", "ActiveState-CLI/small-python", "."),
-		e2e.WithWorkDirectory(anotherDir),
+		e2e.OptArgs("checkout", "ActiveState-CLI/small-python", "."),
+		e2e.OptWD(anotherDir),
 	)
 	cp.Expect("Skipping runtime setup")
 	cp.Expect("Checked out project")
 	cp.ExpectExitCode(0)
 
 	cp = ts.SpawnWithOpts(
-		e2e.WithArgs("install", "charset-normalizer"),
-		e2e.WithWorkDirectory(anotherDir),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.OptArgs("install", "charset-normalizer"),
+		e2e.OptWD(anotherDir),
+		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cp.Expect("charset-normalizer")
 	cp.ExpectExitCode(0)
-	suite.NotContains(cp.TrimmedSnapshot(), "is different")
+	suite.NotContains(cp.Output(), "is different")
 }
 
 func (suite *PackageIntegrationTestSuite) TestInstall_InvalidVersion() {
@@ -578,12 +583,11 @@ func (suite *PackageIntegrationTestSuite) TestInstall_InvalidVersion() {
 	cp.ExpectExitCode(0)
 
 	cp = ts.SpawnWithOpts(
-		e2e.WithArgs("install", "pytest@999.9999.9999"),
-		e2e.AppendEnv(constants.DisableRuntime+"=false"),
+		e2e.OptArgs("install", "pytest@999.9999.9999"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
 	cp.Expect("Error occurred while trying to create a commit")
 	cp.ExpectExitCode(1)
-	cp.Wait()
 }
 
 func (suite *PackageIntegrationTestSuite) TestUpdate_InvalidVersion() {
@@ -600,8 +604,8 @@ func (suite *PackageIntegrationTestSuite) TestUpdate_InvalidVersion() {
 	cp.ExpectExitCode(0)
 
 	cp = ts.SpawnWithOpts(
-		e2e.WithArgs("install", "pytest@999.9999.9999"),  // update
-		e2e.AppendEnv(constants.DisableRuntime+"=false"), // We DO want to test the runtime part, just not for every step
+		e2e.OptArgs("install", "pytest@999.9999.9999"),      // update
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"), // We DO want to test the runtime part, just not for every step
 	)
 	cp.Expect("Error occurred while trying to create a commit")
 	cp.ExpectExitCode(1)
@@ -631,8 +635,8 @@ func (suite *PackageIntegrationTestSuite) TestUpdate() {
 	cp.ExpectExitCode(0)
 
 	cp = ts.SpawnWithOpts(
-		e2e.WithArgs("install", "pytest@7.4.0"),          // update
-		e2e.AppendEnv(constants.DisableRuntime+"=false"), // We DO want to test the runtime part, just not for every step
+		e2e.OptArgs("install", "pytest@7.4.0"),              // update
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"), // We DO want to test the runtime part, just not for every step
 	)
 	cp.ExpectExitCode(0)
 
@@ -663,8 +667,8 @@ func (suite *PackageIntegrationTestSuite) TestRuby() {
 	cp.ExpectExitCode(0)
 
 	cp = ts.SpawnWithOpts(
-		e2e.WithArgs("exec", "rake", "--", "--version"),
-		e2e.AppendEnv(constants.DisableRuntime+"=false"),
+		e2e.OptArgs("exec", "rake", "--", "--version"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
 	cp.ExpectRe(`rake, version \d+\.\d+\.\d+`)
 	cp.ExpectExitCode(0)
@@ -685,14 +689,14 @@ func (suite *PackageIntegrationTestSuite) TestProjectWithOfflineInstallerAndDock
 	cp.ExpectExitCode(0)
 
 	cp = ts.SpawnWithOpts(
-		e2e.WithArgs("install", "requests"),
-		e2e.AppendEnv(constants.DisableRuntime+"=false"),
+		e2e.OptArgs("install", "requests"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
 	cp.ExpectExitCode(0)
 
 	cp = ts.SpawnWithOpts(
-		e2e.WithArgs("uninstall", "requests"),
-		e2e.AppendEnv(constants.DisableRuntime+"=false"),
+		e2e.OptArgs("uninstall", "requests"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
 	cp.ExpectExitCode(0)
 }

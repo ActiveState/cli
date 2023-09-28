@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ActiveState/termtest"
 	goversion "github.com/hashicorp/go-version"
 	"github.com/stretchr/testify/suite"
 
@@ -62,7 +63,7 @@ func (suite *LanguagesIntegrationTestSuite) TestLanguages_install() {
 	cp = ts.Spawn("languages", "install", "python@3.9.16")
 	cp.Expect("Language added: python@3.9.16")
 	// This can take a little while
-	cp.ExpectExitCode(0, 60*time.Second)
+	cp.ExpectExitCode(0, termtest.OptExpectTimeout(60*time.Second))
 
 	cp = ts.Spawn("languages")
 	cp.Expect("Name")
@@ -72,7 +73,7 @@ func (suite *LanguagesIntegrationTestSuite) TestLanguages_install() {
 	cp.ExpectExitCode(0)
 
 	// assert that version number changed
-	output := cp.MatchState().TermState.StringBeforeCursor()
+	output := cp.Output()
 	vs := versionRe.FindString(output)
 	v, err := goversion.NewVersion(vs)
 	suite.Require().NoError(err, "parsing version %s", vs)

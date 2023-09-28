@@ -10,6 +10,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ActiveState/termtest"
+	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/suite"
+	"github.com/thoas/go-funk"
+
 	"github.com/ActiveState/cli/internal/analytics/client/sync/reporters"
 	anaConst "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/condition"
@@ -19,10 +24,6 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
-	"github.com/ActiveState/termtest"
-	"github.com/stretchr/testify/require"
-	"github.com/stretchr/testify/suite"
-	"github.com/thoas/go-funk"
 )
 
 type AnalyticsIntegrationTestSuite struct {
@@ -61,23 +62,23 @@ func (suite *AnalyticsIntegrationTestSuite) TestHeartbeats() {
 
 	// Produce Activate Heartbeats
 
-	var cp *termtest.ConsoleProcess
+	var cp *e2e.SpawnedCmd
 	if runtime.GOOS == "windows" {
 		cp = ts.SpawnCmdWithOpts("cmd.exe",
-			e2e.WithArgs("/k", "state", "activate"),
-			e2e.WithWorkDirectory(ts.Dirs.Work),
-			e2e.AppendEnv(env...),
+			e2e.OptArgs("/k", "state", "activate"),
+			e2e.OptWD(ts.Dirs.Work),
+			e2e.OptAppendEnv(env...),
 		)
 	} else {
-		cp = ts.SpawnWithOpts(e2e.WithArgs("activate"),
-			e2e.WithWorkDirectory(ts.Dirs.Work),
-			e2e.AppendEnv(env...),
+		cp = ts.SpawnWithOpts(e2e.OptArgs("activate"),
+			e2e.OptWD(ts.Dirs.Work),
+			e2e.OptAppendEnv(env...),
 		)
 	}
 
 	cp.Expect("Creating a Virtual Environment")
-	cp.Expect("Activated")
-	cp.WaitForInput(120 * time.Second)
+	cp.Expect("Activated", termtest.OptExpectTimeout(120*time.Second))
+	cp.ExpectInput(termtest.OptExpectTimeout(120 * time.Second))
 
 	time.Sleep(time.Second) // Ensure state-svc has time to report events
 
@@ -94,12 +95,12 @@ func (suite *AnalyticsIntegrationTestSuite) TestHeartbeats() {
 	// Runtime:start events
 	suite.assertNEvents(events, 1, anaConst.CatRuntimeDebug, anaConst.ActRuntimeStart, anaConst.SrcStateTool,
 		fmt.Sprintf("output:\n%s\n%s",
-			cp.Snapshot(), ts.DebugLogs()))
+			cp.Output(), ts.DebugLogsDump()))
 
 	// Runtime:success events
 	suite.assertNEvents(events, 1, anaConst.CatRuntimeDebug, anaConst.ActRuntimeSuccess, anaConst.SrcStateTool,
 		fmt.Sprintf("output:\n%s\n%s",
-			cp.Snapshot(), ts.DebugLogs()))
+			cp.Output(), ts.DebugLogsDump()))
 
 	// Runtime-use:attempts events
 	attemptInitialCount := countEvents(events, anaConst.CatRuntimeUsage, anaConst.ActRuntimeAttempt, anaConst.SrcStateTool)
@@ -125,7 +126,7 @@ func (suite *AnalyticsIntegrationTestSuite) TestHeartbeats() {
 	// Runtime-use:heartbeat events - should now be at least +1 because we waited <heartbeatInterval>
 	suite.assertGtEvents(events, heartbeatInitialCount, anaConst.CatRuntimeUsage, anaConst.ActRuntimeHeartbeat, anaConst.SrcStateTool,
 		fmt.Sprintf("output:\n%s\n%s",
-			cp.Snapshot(), ts.DebugLogs()))
+			cp.Output(), ts.DebugLogsDump()))
 
 	/* EXECUTOR TESTS */
 
@@ -172,8 +173,7 @@ func (suite *AnalyticsIntegrationTestSuite) TestHeartbeats() {
 		cp.SendLine("exit")
 	}
 	suite.Require().NoError(rtutils.Timeout(func() error {
-		_, err := cp.ExpectExitCode(0)
-		return err
+		return cp.ExpectExitCode(0)
 	}, 5*time.Second), ts.DebugMessage("Timed out waiting for exit code"))
 
 	time.Sleep(sleepTime) // give time to let rtwatcher detect process has exited
@@ -233,9 +233,9 @@ func (suite *AnalyticsIntegrationTestSuite) TestExecEvents() {
 	/* EXEC TESTS */
 
 	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("exec", "--", "python3", "-c", fmt.Sprintf("import time; time.sleep(%f); print('DONE')", sleepTime.Seconds())),
-		e2e.WithWorkDirectory(ts.Dirs.Work),
-		e2e.AppendEnv(env...),
+		e2e.OptArgs("exec", "--", "python3", "-c", fmt.Sprintf("import time; time.sleep(%f); print('DONE')", sleepTime.Seconds())),
+		e2e.OptWD(ts.Dirs.Work),
+		e2e.OptAppendEnv(env...),
 	)
 
 	cp.Expect("DONE")
@@ -398,14 +398,14 @@ scripts:
 	ts.PrepareCommitIdFile("9090c128-e948-4388-8f7f-96e2c1e00d98")
 
 	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("activate", "ActiveState-CLI/Alternate-Python"),
-		e2e.WithWorkDirectory(ts.Dirs.Work),
+		e2e.OptArgs("activate", "ActiveState-CLI/Alternate-Python"),
+		e2e.OptWD(ts.Dirs.Work),
 	)
 
 	cp.Expect("Creating a Virtual Environment")
 	cp.Expect("Skipping runtime setup")
 	cp.Expect("Activated")
-	cp.WaitForInput(10 * time.Second)
+	cp.ExpectInput(termtest.OptExpectTimeout(10 * time.Second))
 
 	cp = ts.Spawn("run", "pip")
 	cp.Wait()
@@ -501,7 +501,7 @@ func (suite *AnalyticsIntegrationTestSuite) TestInputError() {
 
 	suite.assertNEvents(events, 1, anaConst.CatDebug, anaConst.ActCommandInputError, anaConst.SrcStateTool,
 		fmt.Sprintf("output:\n%s\n%s",
-			cp.Snapshot(), ts.DebugLogs()))
+			cp.Output(), ts.DebugLogsDump()))
 
 	for _, event := range events {
 		if event.Category == anaConst.CatDebug && event.Action == anaConst.ActCommandInputError {
@@ -519,14 +519,14 @@ func (suite *AnalyticsIntegrationTestSuite) TestAttempts() {
 	ts.PrepareProject("ActiveState-CLI/test", "9090c128-e948-4388-8f7f-96e2c1e00d98")
 
 	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("activate", "ActiveState-CLI/Alternate-Python"),
-		e2e.AppendEnv(constants.DisableRuntime+"=false"),
-		e2e.WithWorkDirectory(ts.Dirs.Work),
+		e2e.OptArgs("activate", "ActiveState-CLI/Alternate-Python"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
+		e2e.OptWD(ts.Dirs.Work),
 	)
 
 	cp.Expect("Creating a Virtual Environment")
-	cp.Expect("Activated")
-	cp.WaitForInput(120 * time.Second)
+	cp.Expect("Activated", termtest.OptExpectTimeout(120*time.Second))
+	cp.ExpectInput(termtest.OptExpectTimeout(120 * time.Second))
 
 	cp.SendLine("python3 --version")
 	cp.Expect("Python 3.")
@@ -563,13 +563,13 @@ func (suite *AnalyticsIntegrationTestSuite) TestHeapEvents() {
 
 	ts.LoginAsPersistentUser()
 
-	cp := ts.SpawnWithOpts(e2e.WithArgs("activate", "ActiveState-CLI/Alternate-Python"),
-		e2e.WithWorkDirectory(ts.Dirs.Work),
+	cp := ts.SpawnWithOpts(e2e.OptArgs("activate", "ActiveState-CLI/Alternate-Python"),
+		e2e.OptWD(ts.Dirs.Work),
 	)
 
 	cp.Expect("Creating a Virtual Environment")
-	cp.Expect("Activated")
-	cp.WaitForInput(120 * time.Second)
+	cp.Expect("Activated", termtest.OptExpectTimeout(120*time.Second))
+	cp.ExpectInput(termtest.OptExpectTimeout(120 * time.Second))
 
 	time.Sleep(time.Second) // Ensure state-svc has time to report events
 
@@ -603,15 +603,15 @@ func (suite *AnalyticsIntegrationTestSuite) TestConfigEvents() {
 	ts := e2e.New(suite.T(), true)
 	defer ts.Close()
 
-	cp := ts.SpawnWithOpts(e2e.WithArgs("config", "set", "optin.unstable", "false"),
-		e2e.WithWorkDirectory(ts.Dirs.Work),
+	cp := ts.SpawnWithOpts(e2e.OptArgs("config", "set", "optin.unstable", "false"),
+		e2e.OptWD(ts.Dirs.Work),
 	)
 	cp.Expect("Successfully set config key")
 
 	time.Sleep(time.Second) // Ensure state-svc has time to report events
 
-	cp = ts.SpawnWithOpts(e2e.WithArgs("config", "set", "optin.unstable", "true"),
-		e2e.WithWorkDirectory(ts.Dirs.Work),
+	cp = ts.SpawnWithOpts(e2e.OptArgs("config", "set", "optin.unstable", "true"),
+		e2e.OptWD(ts.Dirs.Work),
 	)
 	cp.Expect("Successfully set config key")
 
@@ -656,7 +656,7 @@ func (suite *AnalyticsIntegrationTestSuite) TestCIAndInteractiveDimensions() {
 			if !interactive {
 				args = append(args, "--non-interactive")
 			}
-			cp := ts.SpawnWithOpts(e2e.WithArgs(args...))
+			cp := ts.SpawnWithOpts(e2e.OptArgs(args...))
 			cp.Expect("ActiveState CLI")
 			cp.ExpectExitCode(0)
 
