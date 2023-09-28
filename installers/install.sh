@@ -170,8 +170,5 @@ echo ""
 # Run the installer.
 ACTIVESTATE_SESSION_TOKEN=$SESSION_TOKEN_VALUE $INSTALLERTMPDIR/$INSTALLERNAME$BINARYEXT "$@" --source-installer="install.sh"
 
-# Remote temp files
+# Remove temp files
 rm -r $INSTALLERTMPDIR
-
-# Remote temp files
-rm -r $TMPDIR
