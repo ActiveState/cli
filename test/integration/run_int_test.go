@@ -107,7 +107,7 @@ func (suite *RunIntegrationTestSuite) TestInActivatedEnv() {
 	suite.createProjectFile(ts, 3)
 
 	cp := ts.Spawn("activate")
-	cp.Expect("Activated", termtest.OptExpectTimeout(120*time.Second))
+	cp.Expect("Activated", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectInput(termtest.OptExpectTimeout(10 * time.Second))
 
 	cp.SendLine(fmt.Sprintf("%s run testMultipleLanguages", ts.Exe))
@@ -144,7 +144,7 @@ func (suite *RunIntegrationTestSuite) TestScriptBashSubshell() {
 	suite.createProjectFile(ts, 3)
 
 	cp := ts.SpawnWithOpts(e2e.OptArgs("activate"), e2e.OptAppendEnv("SHELL=bash"))
-	cp.Expect("Activated", termtest.OptExpectTimeout(120*time.Second))
+	cp.Expect("Activated", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectInput(termtest.OptExpectTimeout(10 * time.Second))
 
 	cp.SendLine("helloWorld")
@@ -296,7 +296,7 @@ func (suite *RunIntegrationTestSuite) TestRun_Perl_Variable() {
 			"PERL_VERSION=does_not_exist",
 		),
 	)
-	cp.Expect("Activated", termtest.OptExpectTimeout(120*time.Second))
+	cp.Expect("Activated", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectInput(termtest.OptExpectTimeout(10 * time.Second))
 
 	cp.SendLine("perl -MEnglish -e 'print $PERL_VERSION'")

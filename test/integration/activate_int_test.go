@@ -183,7 +183,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivatePythonByHostOnly() {
 
 	if runtime.GOOS == "linux" {
 		cp.Expect("Creating a Virtual Environment")
-		cp.Expect("Activated", termtest.OptExpectTimeout(120*time.Second))
+		cp.Expect("Activated", e2e.RuntimeSourcingTimeoutOpt)
 		cp.ExpectInput(termtest.OptExpectTimeout(40 * time.Second))
 		cp.SendLine("exit")
 		cp.ExpectExitCode(0)
@@ -226,7 +226,7 @@ func (suite *ActivateIntegrationTestSuite) activatePython(version string, extraE
 		e2e.OptAppendEnv(extraEnv...),
 	)
 
-	cp.Expect("Activated", termtest.OptExpectTimeout(120*time.Second))
+	cp.Expect("Activated", e2e.RuntimeSourcingTimeoutOpt)
 	// ensure that shell is functional
 	cp.ExpectInput()
 
@@ -295,7 +295,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_PythonPath() {
 		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 
-	cp.Expect("Activated", termtest.OptExpectTimeout(120*time.Second))
+	cp.Expect("Activated", e2e.RuntimeSourcingTimeoutOpt)
 	// ensure that shell is functional
 	cp.ExpectInput()
 
@@ -351,7 +351,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_SpaceInCacheDir() {
 		e2e.OptArgs("activate", "ActiveState-CLI/Python3"),
 	)
 
-	cp.Expect("Activated", termtest.OptExpectTimeout(120*time.Second))
+	cp.Expect("Activated", e2e.RuntimeSourcingTimeoutOpt)
 	cp.SendLine("python3 --version")
 	cp.Expect("Python 3.")
 
@@ -379,7 +379,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivatePerl() {
 
 	cp.Expect("Downloading", termtest.OptExpectTimeout(40*time.Second))
 	cp.Expect("Installing", termtest.OptExpectTimeout(140*time.Second))
-	cp.Expect("Activated", termtest.OptExpectTimeout(120*time.Second))
+	cp.Expect("Activated", e2e.RuntimeSourcingTimeoutOpt)
 
 	suite.assertCompletedStatusBarReport(cp.Output())
 
@@ -511,7 +511,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_FromCache() {
 	)
 	cp.Expect("Downloading")
 	cp.Expect("Installing")
-	cp.Expect("Activated", termtest.OptExpectTimeout(120*time.Second))
+	cp.Expect("Activated", e2e.RuntimeSourcingTimeoutOpt)
 
 	suite.assertCompletedStatusBarReport(cp.Output())
 	cp.SendLine("exit")
@@ -547,7 +547,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivateCommitURL() {
 
 	// Ensure we have the most up to date version of the project before activating
 	cp := ts.Spawn("activate")
-	cp.Expect("Activated", termtest.OptExpectTimeout(120*time.Second))
+	cp.Expect("Activated", e2e.RuntimeSourcingTimeoutOpt)
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
 }
@@ -664,7 +664,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivateArtifactsCached() {
 		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 
-	cp.Expect("Activated", termtest.OptExpectTimeout(120*time.Second))
+	cp.Expect("Activated", e2e.RuntimeSourcingTimeoutOpt)
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
 
@@ -696,7 +696,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivateArtifactsCached() {
 	)
 
 	cp.Expect("Fetched cached artifact")
-	cp.Expect("Activated", termtest.OptExpectTimeout(120*time.Second))
+	cp.Expect("Activated", e2e.RuntimeSourcingTimeoutOpt)
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
 }
