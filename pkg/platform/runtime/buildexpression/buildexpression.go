@@ -302,6 +302,10 @@ func newValue(path []string, valueInterface interface{}) (*Value, error) {
 	case float64:
 		value.Float = ptr.To(v)
 
+	case nil:
+		// An empty value is interpreted as JSON null.
+		value.Null = &Null{}
+
 	default:
 		logging.Debug("Unknown type: %T at path %s", v, strings.Join(path, "."))
 		// An empty value is interpreted as JSON null.
