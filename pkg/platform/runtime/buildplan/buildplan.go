@@ -344,6 +344,10 @@ func NewBuildtimeMap(build *model.Build) (artifact.Map, error) {
 	return result, nil
 }
 
+// newBuildClosureMap recursively builds the artifact map from the lookup table.
+// If the current artifact is not already contained in the results map it first
+// builds the artifacts build-time dependencies and then adds the artifact to the
+// results map.
 func newBuildClosureMap(baseID strfmt.UUID, lookup map[strfmt.UUID]interface{}, result artifact.Map) error {
 	if _, ok := result[baseID]; ok {
 		// We have already processed this artifact, skipping
@@ -389,6 +393,12 @@ func newBuildClosureMap(baseID strfmt.UUID, lookup map[strfmt.UUID]interface{}, 
 	return nil
 }
 
+// buildBuildClosureDependencies is a recursive function that builds up a map
+// of build-time dependencies for a given artifact if it is not already present
+// in the results map. It first iterates through the runtime dependencies of the
+// artifact recursively adding all of the dependencies to the results map.
+// Then it iterates through the inputs of the step that generated the
+// artifact and recursively adds all of those dependencies as well.
 func buildBuildClosureDependencies(artifactID strfmt.UUID, lookup map[strfmt.UUID]interface{}, deps map[strfmt.UUID]struct{}, result artifact.Map) (map[strfmt.UUID]struct{}, error) {
 	if _, ok := result[artifactID]; ok {
 		// We have already processed this artifact, skipping
@@ -430,6 +440,9 @@ func buildBuildClosureDependencies(artifactID strfmt.UUID, lookup map[strfmt.UUI
 		return nil, nil
 	}
 
+	// We iterate through the inputs of the step that generated the
+	// artifact, specifically the inputs that are tagged as dependencies and
+	// build a build-time closure for each.
 	for _, input := range step.Inputs {
 		if input.Tag != model.TagDependency {
 			continue
