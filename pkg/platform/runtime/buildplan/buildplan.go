@@ -145,8 +145,7 @@ func buildRuntimeClosureMap(baseID strfmt.UUID, lookup map[strfmt.UUID]interface
 			deps[id] = struct{}{}
 		}
 
-		err = buildRuntimeClosureMap(depID, lookup, result)
-		if err != nil {
+		if err := buildRuntimeClosureMap(depID, lookup, result); err != nil {
 			return errs.Wrap(err, "Could not build map for runtime dependency %s", currentArtifact.NodeID)
 		}
 	}
@@ -337,8 +336,7 @@ func NewBuildtimeMap(build *model.Build) (artifact.Map, error) {
 
 	result := make(artifact.Map)
 	for _, id := range terminalTargetIDs {
-		err = newBuildClosureMap(id, lookup, result)
-		if err != nil {
+		if err := newBuildClosureMap(id, lookup, result); err != nil {
 			return nil, errs.Wrap(err, "Could not build map for terminal %s", id)
 		}
 	}
