@@ -149,7 +149,7 @@ func (u *UpdateInstaller) prepareInstall(installTargetPath string, args []string
 	if err != nil {
 		return "", nil, err
 	}
-	u.analyticsEvent(anaConst.ActUpdateDownload, "success", u.AvailableUpdate.Version, "")
+	u.analyticsEvent(anaConst.ActUpdateDownload, anaConst.UpdateLabelSuccess, u.AvailableUpdate.Version, "")
 
 	installerPath := filepath.Join(sourcePath, InstallerName)
 	logging.Debug("Using installer: %s", installerPath)
@@ -268,5 +268,5 @@ func (u *UpdateInstaller) analyticsEvent(action, label, version, msg string) {
 		dims.Error = ptr.To(msg)
 	}
 
-	u.an.EventWithLabel(anaConst.CatUpdates, anaConst.ActUpdateDownload, label, dims)
+	u.an.EventWithLabel(anaConst.CatUpdates, action, label, dims)
 }

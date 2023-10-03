@@ -94,6 +94,10 @@ func autoUpdate(svc *model.SvcModel, args []string, cfg *config.Instance, an ana
 		return false, locale.WrapError(err, locale.T("auto_update_failed"))
 	}
 
+	an.EventWithLabel(anaConst.CatUpdates, anaConst.ActUpdateInstall, anaConst.UpdateLabelSuccess, &dimensions.Values{
+		TargetVersion: ptr.To(avUpdate.Version),
+	})
+
 	out.Notice(locale.Tr("auto_update_relaunch"))
 	out.Notice("") // Ensure output doesn't stick to our messaging
 
