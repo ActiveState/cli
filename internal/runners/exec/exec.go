@@ -136,7 +136,7 @@ func (s *Exec) Run(params *Params, args ...string) (rerr error) {
 	}
 	venv := virtualenvironment.New(rt)
 
-	env, err := venv.GetEnv(true, false, projectDir, projectNamespace)
+	env, err := venv.GetEnv(true, false, projectDir)
 	if err != nil {
 		return locale.WrapError(err, "err_exec_env", "Could not retrieve environment information for your runtime")
 	}
