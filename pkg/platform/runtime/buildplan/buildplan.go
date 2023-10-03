@@ -459,9 +459,6 @@ func buildBuildClosureDependencies(artifactID strfmt.UUID, lookup map[strfmt.UUI
 
 	var uniqueDeps []strfmt.UUID
 	for id := range deps {
-		if _, ok := deps[id]; !ok {
-			continue
-		}
 		uniqueDeps = append(uniqueDeps, id)
 	}
 

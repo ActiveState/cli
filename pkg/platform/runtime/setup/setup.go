@@ -385,26 +385,14 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 	var runtimeAndBuildtimeArtifacts artifact.Map
 	var runtimeArtifacts artifact.Map // Artifacts required for the runtime to function
 
+	runtimeArtifacts, err = buildplan.NewMapFromBuildPlan(buildResult.Build)
+	if err != nil {
+		return nil, nil, errs.Wrap(err, "Failed to create artifact map from build plan")
+	}
+
 	// If the build is not ready, we need to get the runtime and buildtime closure
 	if !buildResult.BuildReady {
 		runtimeAndBuildtimeArtifacts, err = buildplan.NewBuildtimeMap(buildResult.Build)
-		if err != nil {
-			return nil, nil, errs.Wrap(err, "Failed to create artifact map from build plan")
-		}
-	}
-
-	// If we are installing build dependencies, then buildtime dependences are also runtime dependencies
-	if strings.EqualFold(os.Getenv(constants.InstallBuildDependencies), "true") {
-		logging.Debug("Installing build dependencies")
-		if runtimeAndBuildtimeArtifacts == nil {
-			runtimeAndBuildtimeArtifacts, err = buildplan.NewBuildtimeMap(buildResult.Build)
-			if err != nil {
-				return nil, nil, errs.Wrap(err, "Failed to create artifact map from build plan")
-			}
-		}
-		runtimeArtifacts = runtimeAndBuildtimeArtifacts
-	} else {
-		runtimeArtifacts, err = buildplan.NewMapFromBuildPlan(buildResult.Build)
 		if err != nil {
 			return nil, nil, errs.Wrap(err, "Failed to create artifact map from build plan")
 		}
@@ -508,17 +496,16 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 	)
 
 	artifactsToInstall := []artifact.ArtifactID{}
-	for _, a := range downloadablePrebuiltResults {
-		if _, alreadyInstalled := alreadyInstalled[a.ArtifactID]; !alreadyInstalled {
-			artifactsToInstall = append(artifactsToInstall, a.ArtifactID)
-		}
-	}
-
 	var artifactsToBuild artifact.Map
-	if !buildResult.BuildReady {
-		artifactsToBuild = runtimeAndBuildtimeArtifacts
-	} else {
+	if buildResult.BuildReady {
+		for _, a := range downloadablePrebuiltResults {
+			if _, alreadyInstalled := alreadyInstalled[a.ArtifactID]; !alreadyInstalled {
+				artifactsToInstall = append(artifactsToInstall, a.ArtifactID)
+			}
+		}
 		artifactsToBuild = runtimeArtifacts
+	} else {
+		artifactsToBuild = runtimeAndBuildtimeArtifacts
 	}
 
 	// The log file we want to use for builds
