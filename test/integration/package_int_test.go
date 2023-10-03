@@ -703,4 +703,5 @@ func (suite *PackageIntegrationTestSuite) TestProjectWithOfflineInstallerAndDock
 
 func TestPackageIntegrationTestSuite(t *testing.T) {
 	suite.Run(t, new(PackageIntegrationTestSuite))
+
 }
