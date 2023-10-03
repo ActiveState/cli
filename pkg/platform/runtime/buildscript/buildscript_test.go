@@ -12,18 +12,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// toBuildExpression converts given script constructed by Participle into a buildexpression.
-// This function should not be used to convert an arbitrary script to buildexpression.
-// NewScript*() populates the expr field with the equivalent build expression.
-// This function exists solely for testing that functionality.
-func toBuildExpression(script *Script) (*buildexpression.BuildExpression, error) {
-	bytes, err := json.Marshal(script)
-	if err != nil {
-		return nil, err
-	}
-	return buildexpression.New(bytes)
-}
-
 func TestBasic(t *testing.T) {
 	script, err := NewScript([]byte(
 		`let:
@@ -49,9 +37,6 @@ func TestBasic(t *testing.T) {
 in:
   runtime
 `))
-	require.NoError(t, err)
-
-	expr, err := toBuildExpression(script)
 	require.NoError(t, err)
 
 	assert.Equal(t, &Script{
@@ -88,12 +73,10 @@ in:
 			},
 		},
 		&In{Name: ptr.To("runtime")},
-		expr,
 	}, script)
 }
 
-func NoTestComplex(t *testing.T) {
-	t.Skip("Multiple solve notes are not supported now") // DX-2238
+func TestComplex(t *testing.T) {
 	script, err := NewScript([]byte(
 		`let:
     linux_runtime = solve(
@@ -114,14 +97,11 @@ func NoTestComplex(t *testing.T) {
     )
 
 in:
-    merge(
+   merge(
         win_installer(win_runtime),
         tar_installer(linux_runtime)
     )
 `))
-	require.NoError(t, err)
-
-	expr, err := toBuildExpression(script)
 	require.NoError(t, err)
 
 	assert.Equal(t, &Script{
@@ -165,7 +145,6 @@ in:
 			{FuncCall: &FuncCall{"win_installer", []*Value{{Ident: ptr.To("win_runtime")}}}},
 			{FuncCall: &FuncCall{"tar_installer", []*Value{{Ident: ptr.To("linux_runtime")}}}},
 		}}},
-		expr,
 	}, script)
 }
 
@@ -196,9 +175,6 @@ in:
 
 func TestExample(t *testing.T) {
 	script, err := NewScript([]byte(example))
-	require.NoError(t, err)
-
-	expr, err := toBuildExpression(script)
 	require.NoError(t, err)
 
 	assert.Equal(t, &Script{
@@ -241,7 +217,6 @@ func TestExample(t *testing.T) {
 			},
 		},
 		&In{Name: ptr.To("runtime")},
-		expr,
 	}, script)
 }
 
@@ -249,8 +224,8 @@ func TestString(t *testing.T) {
 	script, err := NewScript([]byte(
 		`let:
     runtime = solve(
-        platforms=["12345", "67890"],
-        requirements=[{name="language/python"}]
+        requirements=[{name="language/python"}],
+        platforms=["12345", "67890"]
     )
 in:
     runtime
@@ -260,14 +235,14 @@ in:
 	assert.Equal(t,
 		`let:
 	runtime = solve(
-		platforms = [
-			"12345",
-			"67890"
-		],
 		requirements = [
 			{
 				name = "language/python"
 			}
+		],
+		platforms = [
+			"12345",
+			"67890"
 		]
 	)
 
@@ -387,7 +362,8 @@ func TestBuildExpression(t *testing.T) {
 	script, err := NewScriptFromBuildExpression(expr)
 	require.NoError(t, err)
 	require.NotNil(t, script)
-	//newExpr := script.Expr
+	//newExpr, err := script.ToBuildExpression()
+	//require.NoError(t, err)
 	exprBytes, err := json.Marshal(expr)
 	require.NoError(t, err)
 	//newExprBytes, err := json.Marshal(newExpr)
@@ -403,12 +379,12 @@ func TestBuildExpression(t *testing.T) {
 	// Verify null JSON value is handled correctly.
 	var null *string
 	nullHandled := false
-	for _, assignment := range script.Expr.Let.Assignments {
-		if assignment.Name == "runtime" {
-			args := assignment.Value.Ap.Arguments
+	for _, assignment := range script.Let.Assignments {
+		if assignment.Key == "runtime" {
+			args := assignment.Value.FuncCall.Arguments
 			require.NotNil(t, args)
 			for _, arg := range args {
-				if arg.Assignment != nil && arg.Assignment.Name == "solver_version" {
+				if arg.Assignment != nil && arg.Assignment.Key == "solver_version" {
 					assert.Equal(t, null, arg.Assignment.Value.Str)
 					nullHandled = true
 				}

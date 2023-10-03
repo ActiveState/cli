@@ -1,11 +1,9 @@
 package buildscript
 
 import (
-	"encoding/json"
 	"testing"
 
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
-	"github.com/ActiveState/cli/pkg/platform/runtime/buildexpression"
 	"github.com/ActiveState/cli/pkg/platform/runtime/buildscript"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -31,16 +29,11 @@ in:
 	runtime`))
 	require.NoError(t, err)
 
-	// Make a copy of the original expression.
-	bytes, err := json.Marshal(script.Expr)
-	require.NoError(t, err)
-	expr, err := buildexpression.New(bytes)
+	expr, err := script.ToBuildExpression()
 	require.NoError(t, err)
 
-	// Modify the build script.
-	(*script.Expr.Let.Assignments[0].Value.Ap.Arguments[0].Assignment.Value.List)[0].Str = ptr.To(`77777`)
+	(*script.Let.Assignments[0].Value.FuncCall.Arguments[0].Assignment.Value.List)[0].Str = ptr.To(`"77777"`)
 
-	// Generate the difference between the modified script and the original expression.
 	result, err := generateDiff(script, expr)
 	require.NoError(t, err)
 	assert.Equal(t, `let:
