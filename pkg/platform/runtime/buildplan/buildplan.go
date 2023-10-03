@@ -31,8 +31,13 @@ func NewMapFromBuildPlan(build *model.Build) (artifact.Map, error) {
 		lookup[source.NodeID] = source
 	}
 
+	filtered, err := filterTerminals(build)
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not filter terminals")
+	}
+
 	var terminalTargetIDs []strfmt.UUID
-	for _, terminal := range build.Terminals {
+	for _, terminal := range filtered {
 		// If there is an artifact for this terminal and its mime type is not a state tool artifact
 		// then we need to recurse back through the DAG until we find nodeIDs that are state tool
 		// artifacts. These are the terminal targets.
@@ -49,6 +54,33 @@ func NewMapFromBuildPlan(build *model.Build) (artifact.Map, error) {
 	}
 
 	return res, nil
+}
+
+func filterTerminals(build *model.Build) ([]*model.NamedTarget, error) {
+	// Extract the available platforms from the build plan
+	var bpPlatforms []strfmt.UUID
+	for _, t := range build.Terminals {
+		if !strings.Contains(t.Tag, "platform:") {
+			continue
+		}
+		bpPlatforms = append(bpPlatforms, strfmt.UUID(strings.TrimPrefix(t.Tag, "platform:")))
+	}
+
+	// Get the platform ID for the current platform
+	platformID, err := platformModel.FilterCurrentPlatform(platformModel.HostPlatform, bpPlatforms)
+	if err != nil {
+		return nil, locale.WrapError(err, "err_filter_current_platform")
+	}
+
+	// Filter the build terminals to only include the current platform
+	var filteredTerminals []*model.NamedTarget
+	for _, t := range build.Terminals {
+		if platformID.String() == strings.TrimPrefix(t.Tag, "platform:") {
+			filteredTerminals = append(filteredTerminals, t)
+		}
+	}
+
+	return filteredTerminals, nil
 }
 
 // buildTerminals recursively builds up a list of terminal targets. It expects an ID that
@@ -277,27 +309,9 @@ func NewNamedMapFromBuildPlan(build *model.Build) (artifact.NamedMap, error) {
 // step that generated each artifact. The includeBuilders argument determines whether
 // or not to include builder artifacts in the final result.
 func NewBuildtimeMap(build *model.Build) (artifact.Map, error) {
-	// Extract the available platforms from the build plan
-	var bpPlatforms []strfmt.UUID
-	for _, t := range build.Terminals {
-		if !strings.Contains(t.Tag, "platform:") {
-			continue
-		}
-		bpPlatforms = append(bpPlatforms, strfmt.UUID(strings.TrimPrefix(t.Tag, "platform:")))
-	}
-
-	// Get the platform ID for the current platform
-	platformID, err := platformModel.FilterCurrentPlatform(platformModel.HostPlatform, bpPlatforms)
+	filteredTerminals, err := filterTerminals(build)
 	if err != nil {
-		return nil, locale.WrapError(err, "err_filter_current_platform")
-	}
-
-	// Filter the build terminals to only include the current platform
-	var filteredTerminals []*model.NamedTarget
-	for _, t := range build.Terminals {
-		if platformID.String() == strings.TrimPrefix(t.Tag, "platform:") {
-			filteredTerminals = append(filteredTerminals, t)
-		}
+		return nil, errs.Wrap(err, "Could not filter terminals")
 	}
 
 	lookup := make(map[strfmt.UUID]interface{})
