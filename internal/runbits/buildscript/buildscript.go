@@ -57,6 +57,11 @@ func Sync(proj *project.Project, commitID *strfmt.UUID, out output.Outputer, aut
 			return false, nil // nothing to do
 		}
 		logging.Debug("Merging changes")
+		expr, err = script.ToBuildExpression()
+		if err != nil {
+			return false, errs.Wrap(err, "Unable to translate local build script to build expression")
+		}
+
 		out.Notice(locale.Tl("buildscript_update", "Updating project to reflect build script changes..."))
 
 		localCommitID, err := localcommit.Get(proj.Dir())
@@ -69,7 +74,7 @@ func Sync(proj *project.Project, commitID *strfmt.UUID, out output.Outputer, aut
 			Owner:        proj.Owner(),
 			Project:      proj.Name(),
 			ParentCommit: localCommitID.String(),
-			Expression:   script.Expr,
+			Expression:   expr,
 		})
 		if err != nil {
 			return false, errs.Wrap(err, "Could not update project to reflect build script changes.")

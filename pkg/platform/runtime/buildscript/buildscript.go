@@ -2,27 +2,18 @@ package buildscript
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"strconv"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/multilog"
-	"github.com/ActiveState/cli/pkg/platform/runtime/buildexpression"
 	"github.com/alecthomas/participle/v2"
 )
 
-// Script's tagged fields will be initially filled in by Participle.
-// Expr will be constructed later and is this script's buildexpression. We keep a copy of the build
-// expression here with any changes that have been applied before either writing it to disk or
-// submitting it to the build planner. It's easier to operate on build expressions directly than to
-// modify or manually populate the Participle-produced fields and re-generate a build expression.
 type Script struct {
-	Let  *Let `parser:"'let' ':' @@"`
-	In   *In  `parser:"'in' ':' @@"`
-	Expr *buildexpression.BuildExpression
+	Let *Let `parser:"'let' ':' @@"`
+	In  *In  `parser:"'in' ':' @@"`
 }
 
 type Let struct {
@@ -71,22 +62,7 @@ func NewScript(data []byte) (*Script, error) {
 		return nil, errs.Wrap(err, "Could not parse build script")
 	}
 
-	// Construct the equivalent buildexpression.
-	bytes, err := json.Marshal(script)
-	if err != nil {
-		return nil, errs.Wrap(err, "Could not marshal build script to build expression")
-	}
-	expr, err := buildexpression.New(bytes)
-	if err != nil {
-		return nil, errs.Wrap(err, "Could not construct build expression")
-	}
-	script.Expr = expr
-
 	return script, nil
-}
-
-func NewScriptFromBuildExpression(expr *buildexpression.BuildExpression) (*Script, error) {
-	return &Script{Expr: expr}, nil
 }
 
 func indent(s string) string {
@@ -96,34 +72,34 @@ func indent(s string) string {
 func (s *Script) String() string {
 	buf := strings.Builder{}
 	buf.WriteString("let:\n")
-	for _, assignment := range s.Expr.Let.Assignments {
-		buf.WriteString(indent(assignmentString(assignment)))
+	for _, assignment := range s.Let.Assignments {
+		buf.WriteString(indent(assignment.String()))
 	}
 	buf.WriteString("\n\n")
 	buf.WriteString("in:\n")
 	switch {
-	case s.Expr.Let.In.FuncCall != nil:
-		buf.WriteString(indent(apString(s.Expr.Let.In.FuncCall)))
-	case s.Expr.Let.In.Name != nil:
-		buf.WriteString(indent(*s.Expr.Let.In.Name))
+	case s.In.FuncCall != nil:
+		buf.WriteString(indent(s.In.FuncCall.String()))
+	case s.In.Name != nil:
+		buf.WriteString(indent(*s.In.Name))
 	}
 	return buf.String()
 }
 
-func assignmentString(a *buildexpression.Var) string {
-	return fmt.Sprintf("%s = %s", a.Name, valueString(a.Value))
+func (a *Assignment) String() string {
+	return fmt.Sprintf("%s = %s", a.Key, a.Value.String())
 }
 
-func valueString(v *buildexpression.Value) string {
+func (v *Value) String() string {
 	switch {
-	case v.Ap != nil:
-		return apString(v.Ap)
+	case v.FuncCall != nil:
+		return v.FuncCall.String()
 
 	case v.List != nil:
 		buf := bytes.Buffer{}
 		buf.WriteString("[\n")
 		for i, item := range *v.List {
-			buf.WriteString(indent(valueString(item)))
+			buf.WriteString(indent(item.String()))
 			if i+1 < len(*v.List) {
 				buf.WriteString(",")
 			}
@@ -133,22 +109,22 @@ func valueString(v *buildexpression.Value) string {
 		return buf.String()
 
 	case v.Str != nil:
-		return strconv.Quote(*v.Str)
+		return *v.Str
 
-	case v.Float != nil:
-		return strconv.FormatFloat(*v.Float, 'G', -1, 64) // 64-bit float with minimum digits on display
+	case v.Number != nil:
+		return strconv.FormatFloat(*v.Number, 'G', -1, 64) // 64-bit float with minimum digits on display
 
 	case v.Null != nil:
 		return "null"
 
 	case v.Assignment != nil:
-		return assignmentString(v.Assignment)
+		return v.Assignment.String()
 
 	case v.Object != nil:
 		buf := bytes.Buffer{}
 		buf.WriteString("{\n")
 		for i, pair := range *v.Object {
-			buf.WriteString(indent(assignmentString(pair)))
+			buf.WriteString(indent(pair.String()))
 			if i+1 < len(*v.Object) {
 				buf.WriteString(",")
 			}
@@ -164,11 +140,11 @@ func valueString(v *buildexpression.Value) string {
 	return fmt.Sprintf("[\n]") // participle does not create v.List if it's empty
 }
 
-func apString(f *buildexpression.Ap) string {
+func (f *FuncCall) String() string {
 	buf := bytes.Buffer{}
 	buf.WriteString(fmt.Sprintf("%s(\n", f.Name))
 	for i, argument := range f.Arguments {
-		buf.WriteString(indent(valueString(argument)))
+		buf.WriteString(indent(argument.String()))
 		if i+1 < len(f.Arguments) {
 			buf.WriteString(",")
 		}
@@ -176,27 +152,4 @@ func apString(f *buildexpression.Ap) string {
 	}
 	buf.WriteString(")")
 	return buf.String()
-}
-
-func (s *Script) EqualsBuildExpressionBytes(exprBytes []byte) bool {
-	expr, err := buildexpression.New(exprBytes)
-	if err != nil {
-		multilog.Error("Unable to create buildexpression from incoming JSON: %v", err)
-		return false
-	}
-	return s.EqualsBuildExpression(expr)
-}
-
-func (s *Script) EqualsBuildExpression(expr *buildexpression.BuildExpression) bool {
-	myJson, err := json.Marshal(s.Expr)
-	if err != nil {
-		multilog.Error("Unable to marshal this buildscript to JSON: %v", err)
-		return false
-	}
-	otherJson, err := json.Marshal(expr)
-	if err != nil {
-		multilog.Error("Unable to marshal other buildscript to JSON: %v", err)
-		return false
-	}
-	return string(myJson) == string(otherJson)
 }

@@ -6,11 +6,19 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+
+	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/pkg/platform/runtime/buildexpression"
 )
 
-// MarshalJSON marshals the Participle-produced Script into an equivalent buildexpression.
-// Users of buildscripts do not need to do this manually; the Expr field contains the
-// equivalent buildexpression.
+func (s *Script) ToBuildExpression() (*buildexpression.BuildExpression, error) {
+	data, err := json.Marshal(s)
+	if err != nil {
+		return nil, errs.Wrap(err, "Unable to marshal buildscript into JSON")
+	}
+	return buildexpression.New(data)
+}
+
 func (s *Script) MarshalJSON() ([]byte, error) {
 	m := make(map[string]interface{})
 	let := make(map[string]interface{})
@@ -71,8 +79,6 @@ func (f *FuncCall) MarshalJSON() ([]byte, error) {
 		switch {
 		case argument.Assignment != nil:
 			args[argument.Assignment.Key] = argument.Assignment.Value
-		case argument.FuncCall != nil:
-			args[argument.FuncCall.Name] = argument.FuncCall.Arguments
 		default:
 			return nil, errors.New(fmt.Sprintf("Cannot marshal %v (arg %v)", f, argument))
 		}
