@@ -280,7 +280,7 @@ func NewBuildtimeMap(build *model.Build) (artifact.Map, error) {
 	// Extract the available platforms from the build plan
 	var bpPlatforms []strfmt.UUID
 	for _, t := range build.Terminals {
-		if t.Tag == model.TagOrphan {
+		if !strings.Contains(t.Tag, "platform:") {
 			continue
 		}
 		bpPlatforms = append(bpPlatforms, strfmt.UUID(strings.TrimPrefix(t.Tag, "platform:")))
