@@ -387,7 +387,7 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 
 	// If the build is not ready, we need to get the runtime and buildtime closure
 	if !buildResult.BuildReady {
-		runtimeAndBuildtimeArtifacts, err = buildplan.NewBuildtimeMapFromBuildPlan(buildResult.Build)
+		runtimeAndBuildtimeArtifacts, err = buildplan.NewBuildtimeMap(buildResult.Build)
 		if err != nil {
 			return nil, nil, errs.Wrap(err, "Failed to create artifact map from build plan")
 		}
@@ -397,7 +397,7 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 	if strings.EqualFold(os.Getenv(constants.InstallBuildDependencies), "true") {
 		logging.Debug("Installing build dependencies")
 		if runtimeAndBuildtimeArtifacts == nil {
-			runtimeAndBuildtimeArtifacts, err = buildplan.NewBuildtimeMapFromBuildPlan(buildResult.Build)
+			runtimeAndBuildtimeArtifacts, err = buildplan.NewBuildtimeMap(buildResult.Build)
 			if err != nil {
 				return nil, nil, errs.Wrap(err, "Failed to create artifact map from build plan")
 			}

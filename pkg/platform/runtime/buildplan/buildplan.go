@@ -271,12 +271,12 @@ func NewNamedMapFromBuildPlan(build *model.Build) (artifact.NamedMap, error) {
 	return res, nil
 }
 
-// NewBuildtimeMapFromBuildPlan iterates through all artifacts in a given build and
+// NewBuildtimeMap iterates through all artifacts in a given build and
 // adds the artifact's dependencies to a map. This is different from the
 // runtime dependency calculation as it includes ALL of the input artifacts of the
 // step that generated each artifact. The includeBuilders argument determines whether
 // or not to include builder artifacts in the final result.
-func NewBuildtimeMapFromBuildPlan(build *model.Build) (artifact.Map, error) {
+func NewBuildtimeMap(build *model.Build) (artifact.Map, error) {
 	// Extract the available platforms from the build plan
 	var bpPlatforms []strfmt.UUID
 	for _, t := range build.Terminals {
@@ -323,7 +323,7 @@ func NewBuildtimeMapFromBuildPlan(build *model.Build) (artifact.Map, error) {
 
 	result := make(artifact.Map)
 	for _, id := range terminalTargetIDs {
-		err = buildBuildClosureMap(id, lookup, result)
+		err = newBuildClosureMap(id, lookup, result)
 		if err != nil {
 			return nil, errs.Wrap(err, "Could not build map for terminal %s", id)
 		}
@@ -332,7 +332,7 @@ func NewBuildtimeMapFromBuildPlan(build *model.Build) (artifact.Map, error) {
 	return result, nil
 }
 
-func buildBuildClosureMap(baseID strfmt.UUID, lookup map[strfmt.UUID]interface{}, result artifact.Map) error {
+func newBuildClosureMap(baseID strfmt.UUID, lookup map[strfmt.UUID]interface{}, result artifact.Map) error {
 	if _, ok := result[baseID]; ok {
 		// We have already processed this artifact, skipping
 		return nil
