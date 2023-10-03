@@ -92,8 +92,8 @@ in:
 	}, script)
 }
 
-// Re-enable when multiple solves are supported in DX-2238.
 func NoTestComplex(t *testing.T) {
+	t.Skip("Multiple solve notes are not supported now") // DX-2238
 	script, err := NewScript([]byte(
 		`let:
     linux_runtime = solve(
