@@ -263,9 +263,9 @@ func (s *Session) SpawnCmdWithOpts(exe string, optSetters ...SpawnOptSetter) *Sp
 		termtest.OptRows(30), // Needs to be able to accommodate most JSON output
 	)
 
-	// Work around issue where multiline values sometimes have the wrong line endings
-	// See for example TestBranch_List
-	// https://activestatef.atlassian.net/browse/DX-2169
+	// Multi-line expectation strings (e.g. TestBranch_List), as well as macOS and Linux, use '\n' to
+	// represent newlines. However, Windows uses '\r\n' to represent newlines. Normalize all line
+	// endings to be just '\n' or else the expectation will fail on Windows.
 	spawnOpts.TermtestOpts = append(spawnOpts.TermtestOpts,
 		termtest.OptNormalizedLineEnds(true),
 	)
