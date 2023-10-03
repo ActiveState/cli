@@ -15,7 +15,10 @@ import (
 )
 
 // Script's tagged fields will be initially filled in by Participle.
-// Expr will be constructed later and is this script's buildexpression.
+// Expr will be constructed later and is this script's buildexpression. We keep a copy of the build
+// expression here with any changes that have been applied before either writing it to disk or
+// submitting it to the build planner. It's easier to operate on build expressions directly than to
+// modify or manually populate the Participle-produced fields and re-generate a build expression.
 type Script struct {
 	Let  *Let `parser:"'let' ':' @@"`
 	In   *In  `parser:"'in' ':' @@"`
