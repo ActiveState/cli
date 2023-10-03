@@ -77,6 +77,10 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
+      - # === Install State Tool ===
+        name: Install State Tool
+        uses: ActiveState/setup-state-tool@v1
+
       - # === Setup ===
         name: Setup
         shell: bash
