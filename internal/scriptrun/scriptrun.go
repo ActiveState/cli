@@ -81,7 +81,7 @@ func (s *ScriptRun) PrepareVirtualEnv() (rerr error) {
 	venv := virtualenvironment.New(rt)
 
 	projDir := filepath.Dir(s.project.Source().Path())
-	env, err := venv.GetEnv(true, true, projDir, s.project.Namespace().String())
+	env, err := venv.GetEnv(true, true, projDir)
 	if err != nil {
 		return errs.Wrap(err, "Could not get venv environment")
 	}
@@ -91,7 +91,7 @@ func (s *ScriptRun) PrepareVirtualEnv() (rerr error) {
 	}
 
 	// search the "clean" path first (PATHS that are set by venv)
-	env, err = venv.GetEnv(false, true, "", "")
+	env, err = venv.GetEnv(false, true, "")
 	if err != nil {
 		return errs.Wrap(err, "Could not get venv environment")
 	}
