@@ -136,10 +136,9 @@ ARCHIVE="$OS-amd64$DOWNLOADEXT"
 $FETCH $INSTALLERTMPDIR/$ARCHIVE $STATEURL
 # wget and curl differ on how to handle AWS' "Forbidden" result for unknown versions.
 # wget will exit with nonzero status. curl simply creates an XML file with the forbidden error.
-# If curl was used, make sure the file downloaded is of type 'data', according to the UNIX `file`
-# command. (The XML error will be reported as a 'text' type.)
+# If curl was used, make sure the file downloaded is not an XML file (i.e. it does not start with "<?xml").
 # If wget returned an error or curl fetched a "forbidden" response, raise an error and exit.
-if [ $? -ne 0 -o \( "`echo $FETCH | grep -o 'curl'`" = "curl" -a -z "`file -b $INSTALLERTMPDIR/$ARCHIVE | grep -o 'data'`" \) ]; then
+if [ $? -ne 0 -o \( "`echo $FETCH | grep -o 'curl'`" = "curl" -a ! -z "`grep -o '^<?xml' $INSTALLERTMPDIR/$ARCHIVE`" \) ]; then
   rm -f $INSTALLERTMPDIR/$ARCHIVE
   progress_fail
   error "Could not download the State Tool installer at $STATEURL. Please try again."
