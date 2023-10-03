@@ -108,7 +108,7 @@ func LoadKeypairFromConfigDir(cfg keypairs.Configurable) (keypairs.Keypair, erro
 
 // DefsByProject fetches the secret definitions for the current user relevant to the given project
 func DefsByProject(secretsClient *secretsapi.Client, owner string, projectName string) ([]*secretsModels.SecretDefinition, error) {
-	pjm, err := model.FetchProjectByName(owner, projectName)
+	pjm, err := model.LegacyFetchProjectByName(owner, projectName)
 	if err != nil {
 		return nil, err
 	}
@@ -120,7 +120,7 @@ func DefsByProject(secretsClient *secretsapi.Client, owner string, projectName s
 func ByProject(secretsClient *secretsapi.Client, owner string, projectName string, auth *authentication.Auth) ([]*secretsModels.UserSecret, error) {
 	result := []*secretsModels.UserSecret{}
 
-	pjm, err := model.FetchProjectByName(owner, projectName)
+	pjm, err := model.LegacyFetchProjectByName(owner, projectName)
 	if err != nil {
 		return result, err
 	}

@@ -46,7 +46,9 @@ func New(repo git.Repository, prime primeable) *Checkout {
 	return &Checkout{repo, prime.Output(), prime.Config(), prime.Analytics(), "", prime.Auth()}
 }
 
-func (r *Checkout) Run(ns *project.Namespaced, branchName, cachePath, targetPath string, noClone bool) (string, error) {
+func (r *Checkout) Run(ns *project.Namespaced, branchName, cachePath, targetPath string, noClone bool) (_ string, rerr error) {
+	defer r.rationalizeError(&rerr)
+
 	path, err := r.pathToUse(ns, targetPath)
 	if err != nil {
 		return "", errs.Wrap(err, "Could not get path to use")

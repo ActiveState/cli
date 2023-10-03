@@ -123,7 +123,7 @@ func (r *Push) Run(params PushParams) error {
 
 	// Get the project remotely if it already exists
 	var targetPjm *mono_models.Project
-	targetPjm, err = model.FetchProjectByName(targetNamespace.Owner, targetNamespace.Project)
+	targetPjm, err = model.LegacyFetchProjectByName(targetNamespace.Owner, targetNamespace.Project)
 	if err != nil {
 		if !errs.Matches(err, &model.ErrProjectNotFound{}) {
 			return locale.WrapError(err, "err_push_try_project", "Failed to check for existence of project.")

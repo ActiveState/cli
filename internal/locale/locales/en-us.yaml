@@ -334,9 +334,7 @@ err_api_forbidden:
 err_api_org_not_found:
   other: Unable to find requested Organization
 err_api_project_not_found:
-  other: The requested project [NOTICE]{{.V0}}[/RESET] does not exist under [NOTICE]{{.V1}}[/RESET]. Please ensure the owner is correct and that the project has been created.
-err_api_project_not_found_unauthenticated:
-  other: The requested project [NOTICE]{{.V0}}/{{.V1}}[/RESET] could not be found
+  other: The requested project [NOTICE]{{.V1}}[/RESET] does not exist under [NOTICE]{{.V0}}[/RESET]. Please ensure the owner is correct and that the project has been created.
 tip_private_project_auth:
   other: If this is a private project you may need to authenticate with 'state auth'.
 err_api_member_not_found:
@@ -1685,11 +1683,11 @@ err_non_interactive_mode:
   other: You are running the State Tool in non-interactive mode, but interactive input was needed. Please re-run the State Tool in interactive mode. If you are using a non-interactive terminal like Git Bash on Windows, prefix your command with [ACTIONABLE]`winpty`[/RESET]. (See https://github.com/git-for-windows/git/wiki/FAQ#some-native-console-programs-dont-work-when-run-from-git-bash-how-to-fix-it for more information.)
 err_alternate_branches:
   other: |
-    There are no valid dependencies for your platform in branch [ACTIONABLE]`{{.V0}}`[/RESET], perhaps you could try one of the alternate branches on your project:
+    Your current platform ([ACTIONABLE]{{.V0}}/{{.V1}}[/RESET]) does not appear to be configured in your branch: [ACTIONABLE]'{{.V2}}'[/RESET], perhaps you could try one of the alternate branches on your project:
 
-     - {{.V1}}
+     - {{.V3}}
 
-    Type [ACTIONABLE]`state branch switch <NAME>`[/RESET] to switch to a different branch.
+    Type [ACTIONABLE]'state branch switch <NAME>'[/RESET] to switch to a different branch.
 err_fetch_project:
   other: "Could not fetch details for project: {{.V0}}"
 err_set_default_branch:

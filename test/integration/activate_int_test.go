@@ -196,6 +196,10 @@ func (suite *ActivateIntegrationTestSuite) TestActivatePythonByHostOnly() {
 		cp.Expect("Your current platform")
 		cp.Expect("does not appear to be configured")
 		cp.ExpectNotExitCode(0)
+
+		if strings.Count(cp.Snapshot(), " x ") != 1 {
+			suite.Fail("Expected exactly ONE error message, got: %s", cp.Snapshot())
+		}
 	}
 }
 

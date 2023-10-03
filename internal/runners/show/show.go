@@ -209,7 +209,7 @@ func (s *Show) Run(params Params) error {
 		projectTarget = target.NewProjectTarget(s.project, nil, "").Dir()
 	}
 
-	remoteProject, err := model.FetchProjectByName(owner, projectName)
+	remoteProject, err := model.LegacyFetchProjectByName(owner, projectName)
 	if err != nil && errs.Matches(err, &model.ErrProjectNotFound{}) {
 		return locale.WrapError(err, "err_show_project_not_found", "Please run `state push` to synchronize this project with the ActiveState Platform.")
 	} else if err != nil {
