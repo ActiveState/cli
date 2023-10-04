@@ -111,7 +111,7 @@ func (r *Push) Run(params PushParams) (rerr error) {
 	switch {
 	case r.project.IsHeadless():
 		intend = pushFromHeadless | intendCreateProject
-	case targetNamespace.IsValid() && !r.auth.CanWrite(targetNamespace.Owner):
+	case targetNamespace.IsValid() && !r.auth.CanWrite(r.project.Owner()):
 		intend = pushFromNoPermission | intendCreateProject
 	case params.Namespace.IsValid():
 		intend = pushCustomNamespace // Could still lead to creating a project, but that's not explicitly the intend
