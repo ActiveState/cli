@@ -355,6 +355,7 @@ func (suite *PushIntegrationTestSuite) TestPush_NameInUse() {
 }
 
 func (suite *PushIntegrationTestSuite) TestPush_Aborted() {
+	// Skipped for now due to DX-2244
 	suite.T().Skip("Confirming prompt with N not working, must fix first")
 
 	suite.OnlyRunForTags(tagsuite.Push)
