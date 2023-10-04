@@ -1,11 +1,8 @@
 package shell
 
 import (
-	"os"
-
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/config"
-	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -93,9 +90,7 @@ func (u *Shell) Run(params *Params) error {
 	}
 
 	if process.IsActivated(u.config) {
-		activatedProjectNamespace := os.Getenv(constants.ActivatedStateNamespaceEnvVarName)
-		activatedProjectDir := os.Getenv(constants.ActivatedStateEnvVarName)
-		return locale.NewInputError("err_shell_already_active", "", activatedProjectNamespace, activatedProjectDir)
+		return locale.NewInputError("err_shell_already_active", "", proj.NamespaceString(), proj.Dir())
 	}
 
 	u.out.Notice(locale.Tl("shell_project_statement", "",
