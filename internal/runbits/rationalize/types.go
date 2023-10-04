@@ -1,22 +1,15 @@
 package rationalize
 
+import "errors"
+
 // Inner is just an alias because otherwise external use of this struct would not be able to construct the error
 // property, and we want to keep the boilerplate minimal.
 type Inner error
 
-type ErrNoProject struct {
-	Inner
-}
+// ErrNoProject communicates that we were unable to find an activestate.yaml
+var ErrNoProject = errors.New("no project")
 
-type ErrNotAuthenticated struct {
-	Inner
-}
+// ErrNotAuthenticated communicates that the user is not logged in
+var ErrNotAuthenticated = errors.New("not authenticated")
 
-type ErrActionAborted struct {
-	Inner
-}
-
-type ErrPermission struct {
-	Inner
-	Details interface{}
-}
+var ErrActionAborted = errors.New("aborted by user")

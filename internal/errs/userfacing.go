@@ -32,7 +32,7 @@ func (e *userFacingError) InputError() bool {
 	return e.input
 }
 
-func NewUserFacingError(message string, tips ...string) *userFacingError {
+func NewUserFacing(message string, opts ...ErrOpt) *userFacingError {
 	return WrapUserFacing(nil, message)
 }
 
@@ -72,8 +72,8 @@ func SetTips(tips ...string) ErrOpt {
 	}
 }
 
-func SetInput(v bool) ErrOpt {
+func SetInput() ErrOpt {
 	return func(err *userFacingError) {
-		err.input = v
+		err.input = true
 	}
 }

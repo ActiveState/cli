@@ -29,12 +29,12 @@ func rationalizeError(auth *authentication.Auth, proj *project.Project, rerr *er
 		branches, err := model.BranchNamesForProjectFiltered(proj.Owner(), proj.Name(), proj.BranchName())
 		if err == nil && len(branches) > 1 {
 			// Suggest alternate branches
-			*rerr = errs.NewUserFacingError(locale.Tr(
+			*rerr = errs.NewUserFacing(locale.Tr(
 				"err_alternate_branches",
 				errNoMatchingPlatform.HostPlatform, errNoMatchingPlatform.HostArch,
 				proj.BranchName(), strings.Join(branches, "\n - ")))
 		} else {
-			*rerr = errs.NewUserFacingError(locale.Tr(
+			*rerr = errs.NewUserFacing(locale.Tr(
 				"err_no_platform_data_remains",
 				errNoMatchingPlatform.HostPlatform, errNoMatchingPlatform.HostArch))
 		}

@@ -62,51 +62,24 @@ const (
 	intendCreateProject = 0x0008
 )
 
-type errNoChanges struct{ *errs.WrapperError }
-type errProjectInUse struct {
-	*errs.WrapperError
+var errNoChanges = errors.New("no changes")
+
+var errTargetInvalidHistory = errors.New("local and remove histories do not match")
+
+type errProjectNameInUse struct {
+	error
 	Namespace *project.Namespaced
 }
-type errHistoryMismatch struct{ *errs.WrapperError }
-type errFastForward struct{ *errs.WrapperError }
 
-func processError(err *error) {
-	if err == nil {
-		return
-	}
-
-	switch {
-	case errs.Matches(*err, &rationalize.ErrNotAuthenticated{}):
-		*err = errs.WrapUserFacing(*err, locale.Tl("err_push_not_authenticated", "In order to update your project you need to be authenticated, please run '[ACTIONABLE]state auth[/RESET]' to authenticate."))
-	case errs.Matches(*err, &rationalize.ErrNoProject{}):
-		*err = errs.WrapUserFacing(*err, locale.Tl("err_push_headless", "You must first create a project."),
-			errs.SetTips(
-				locale.Tl("push_headless_push_tip_state_init", "Run [ACTIONABLE]state init[/RESET] to create a project with the State Tool."),
-			))
-	case errs.Matches(*err, &errNoChanges{}):
-		*err = errs.WrapUserFacing(*err, locale.Tl("err_push_nocommit", "You have nothing to push, make some changes first with [ACTIONABLE]state install[/RESET]."))
-	case errs.Matches(*err, &errProjectInUse{}):
-		e := &errProjectInUse{}
-		errors.As(*err, &e)
-		*err = errs.WrapUserFacing(*err, locale.Tl(
-			"err_push_create_nonunique",
-			"The project [NOTICE]{{.V0}}[/RESET] is already in use.", e.Namespace.String()))
-	case errs.Matches(*err, &rationalize.ErrActionAborted{}):
-		*err = errs.WrapUserFacing(*err, locale.Tl("push_create_project_aborted", "Project creation aborted by user"))
-	case errs.Matches(*err, &rationalize.ErrPermission{}):
-		e := &rationalize.ErrPermission{}
-		errors.As(*err, &e)
-		*err = errs.WrapUserFacing(*err, locale.Tl("push_project_branch_no_permission", "You do not have permission to push to {{.V0}}.", e.Details.(*project.Namespaced).String()))
-	case errs.Matches(*err, &errHistoryMismatch{}):
-		*err = errs.WrapUserFacing(*err, locale.Tl("err_mergecommit_customtarget", "The targets commit history does not match your local commit history. Are you pushing to the right project?"))
-	case errs.Matches(*err, &errFastForward{}):
-		*err = errs.WrapUserFacing(*err, locale.T("err_push_outdated"),
-			errs.SetTips(locale.Tl("err_tip_push_outdated", "Run `[ACTIONABLE]state pull[/RESET]`")))
-	}
+type errNoPermission struct {
+	error
+	Namespace *project.Namespaced
 }
 
+var errPullNeeded = errors.New("pull needed")
+
 func (r *Push) Run(params PushParams) (rerr error) {
-	defer processError(&rerr)
+	defer rationalizeError(&rerr)
 
 	if err := r.verifyInput(); err != nil {
 		return errs.Wrap(err, "verifyInput failed")
@@ -181,7 +154,7 @@ func (r *Push) Run(params PushParams) (rerr error) {
 	var projectCreated bool
 	if intend&intendCreateProject > 0 || targetPjm == nil {
 		if targetPjm != nil {
-			return &errProjectInUse{errs.New("The project is already in use"), targetNamespace}
+			return &errProjectNameInUse{errs.New("project name in use"), targetNamespace}
 		}
 
 		// If the user didn't necessarily intend to create the project we should ask them for confirmation
@@ -195,7 +168,7 @@ func (r *Push) Run(params PushParams) (rerr error) {
 				return errs.Wrap(err, "Confirmation failed")
 			}
 			if !createProject {
-				return &rationalize.ErrActionAborted{errs.New("Aborted")}
+				return rationalize.ErrActionAborted
 			}
 		}
 
@@ -243,13 +216,13 @@ func (r *Push) Run(params PushParams) (rerr error) {
 			}
 			if !errors.Is(err, model.ErrMergeFastForward) {
 				if params.Namespace.IsValid() {
-					return &errHistoryMismatch{errs.New("Commit history does not match")}
+					return errTargetInvalidHistory
 				}
 				return errs.Wrap(err, "Could not detect if merge is necessary")
 			}
 		}
 		if mergeStrategy != nil {
-			return &errFastForward{errs.New("Merge needed")}
+			return errPullNeeded
 		}
 	}
 
@@ -257,7 +230,7 @@ func (r *Push) Run(params PushParams) (rerr error) {
 	err = model.UpdateProjectBranchCommitWithModel(targetPjm, branch.Label, commitID)
 	if err != nil {
 		if errs.Matches(err, &model.ErrUpdateBranchAuth{}) {
-			return &rationalize.ErrPermission{errs.New("No permission to push"), targetNamespace}
+			return &errNoPermission{errors.New("no permission"), targetNamespace}
 		} else {
 			return errs.Wrap(err, "Failed to update new project %s to current commitID", targetNamespace.String())
 		}
@@ -290,12 +263,12 @@ func (r *Push) Run(params PushParams) (rerr error) {
 
 func (r *Push) verifyInput() error {
 	if !r.auth.Authenticated() {
-		return &rationalize.ErrNotAuthenticated{errs.New("Not authenticated")}
+		return rationalize.ErrNotAuthenticated
 	}
 
 	// Check if as.yaml exists
 	if r.project == nil {
-		return &rationalize.ErrNoProject{errs.New("Not in project")}
+		return rationalize.ErrNoProject
 	}
 
 	commitID, err := localcommit.Get(r.project.Dir())
@@ -303,7 +276,7 @@ func (r *Push) verifyInput() error {
 		return errs.Wrap(err, "Unable to get local commit")
 	}
 	if commitID == "" {
-		return &errNoChanges{errs.New("No changes")}
+		return errNoChanges
 	}
 
 	return nil
