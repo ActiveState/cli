@@ -120,8 +120,7 @@ func (r *Push) Run(params PushParams) (rerr error) {
 	// Ask to create a copy if the user does not have org permissions
 	if intend&pushFromNoPermission > 0 && !params.Namespace.IsValid() {
 		var err error
-		var createCopy bool
-		createCopy, err = r.prompt.Confirm("", locale.T("push_prompt_not_authorized"), &createCopy)
+		createCopy, err := r.prompt.Confirm("", locale.T("push_prompt_not_authorized"), ptr.To(true))
 		if err != nil || !createCopy {
 			return err
 		}
