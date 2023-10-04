@@ -14,7 +14,6 @@ func rationalizeError(err *error) {
 	}
 
 	var projectNameInUseErr *errProjectNameInUse
-	var noPermissionErr *errNoPermission
 
 	switch {
 
@@ -34,10 +33,17 @@ func rationalizeError(err *error) {
 				locale.T("push_push_tip_headless_cwd"),
 			))
 
-	// No changes were made
-	case errors.Is(*err, errNoChanges):
+	// No commits made yet
+	case errors.Is(*err, errNoCommit):
 		*err = errs.WrapUserFacing(*err,
 			locale.T("err_push_nocommit"),
+			errs.SetInput(),
+		)
+
+	// No changes made
+	case errors.Is(*err, errNoChanges):
+		*err = errs.WrapUserFacing(*err,
+			locale.T("push_no_changes"),
 			errs.SetInput(),
 		)
 
@@ -52,12 +58,6 @@ func rationalizeError(err *error) {
 	case errors.Is(*err, rationalize.ErrActionAborted):
 		*err = errs.WrapUserFacing(*err,
 			locale.T("err_push_create_project_aborted"),
-			errs.SetInput())
-
-	// No permission to push to project
-	case errors.As(*err, &noPermissionErr):
-		*err = errs.WrapUserFacing(*err,
-			locale.Tr("err_push_no_permission", noPermissionErr.Namespace.String()),
 			errs.SetInput())
 
 	// Custom target does not have a compatible history

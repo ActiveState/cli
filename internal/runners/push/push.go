@@ -11,6 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
+	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
@@ -63,6 +64,8 @@ const (
 )
 
 var errNoChanges = errors.New("no changes")
+
+var errNoCommit = errors.New("no commit")
 
 var errTargetInvalidHistory = errors.New("local and remove histories do not match")
 
@@ -200,8 +203,7 @@ func (r *Push) Run(params PushParams) (rerr error) {
 
 	// Check if branch is already up to date
 	if branch.CommitID != nil && branch.CommitID.String() == commitID.String() {
-		r.out.Notice(locale.T("push_no_changes"))
-		return nil
+		return errNoChanges
 	}
 
 	// Check whether there is a conflict
@@ -209,8 +211,7 @@ func (r *Push) Run(params PushParams) (rerr error) {
 		mergeStrategy, err := model.MergeCommit(*branch.CommitID, commitID)
 		if err != nil {
 			if errors.Is(err, model.ErrMergeCommitInHistory) {
-				r.out.Notice(locale.T("push_no_changes"))
-				return nil
+				return errNoChanges
 			}
 			if !errors.Is(err, model.ErrMergeFastForward) {
 				if params.Namespace.IsValid() {
@@ -227,11 +228,7 @@ func (r *Push) Run(params PushParams) (rerr error) {
 	// Update the project at the given commit id.
 	err = model.UpdateProjectBranchCommitWithModel(targetPjm, branch.Label, commitID)
 	if err != nil {
-		if errs.Matches(err, &model.ErrUpdateBranchAuth{}) {
-			return &errNoPermission{errors.New("no permission"), targetNamespace}
-		} else {
-			return errs.Wrap(err, "Failed to update new project %s to current commitID", targetNamespace.String())
-		}
+		return errs.Wrap(err, "Failed to update new project %s to current commitID", targetNamespace.String())
 	}
 
 	// Write the project namespace to the as.yaml, if it changed
@@ -274,7 +271,7 @@ func (r *Push) verifyInput() error {
 		return errs.Wrap(err, "Unable to get local commit")
 	}
 	if commitID == "" {
-		return errNoChanges
+		return errNoCommit
 	}
 
 	return nil

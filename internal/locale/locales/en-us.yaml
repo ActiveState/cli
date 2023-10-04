@@ -1233,8 +1233,6 @@ push_project_updated:
   other: "The remote Project has been updated"
 push_project_created:
   other: "Project created at [ACTIONABLE]{{.V0}}[/RESET]."
-push_no_changes:
-  other: "You have no local changes to push. To pull in remote changes run `[ACTIONABLE]state pull[/RESET]`."
 init_description:
   other: Initialize a new project
 push_description:
@@ -1730,23 +1728,23 @@ err_push_outdated:
   other: |
     Your project has new changes available that need to be merged first. Please first run `[ACTIONABLE]state pull[/RESET]` to update your project.
 err_tip_push_outdated:
-  other: Run `[ACTIONABLE]state pull[/RESET]`.
+  other: Run '[ACTIONABLE]state pull[/RESET]'.
 err_push_not_authenticated:
   other: In order to update your project you need to be authenticated, please run '[ACTIONABLE]state auth[/RESET]' to authenticate.
 err_push_headless:
   other: No project found, you may need to create one first.
 push_push_tip_headless_init:
-  other: Run [ACTIONABLE]state init[/RESET] to create a project with the State Tool.
+  other: Run '[ACTIONABLE]state init[/RESET]' to create a project with the State Tool.
 push_push_tip_headless_cwd:
   other: Navigate to a directory with an activestate.yaml.
 err_push_nocommit:
-  other: You have nothing to push, make some changes first with [ACTIONABLE]state install[/RESET].
+  other: You have nothing to push, make some changes first with '[ACTIONABLE]state install[/RESET]'.
+push_no_changes:
+  other: You have no local changes to push. To pull in remote changes run '[ACTIONABLE]state pull[/RESET]'.
 err_push_create_nonunique:
-  other: The project name [NOTICE]{{.V0}}[/RESET] is already in use.
+  other: The project name '[NOTICE]{{.V0}}[/RESET]' is already in use.
 err_push_create_project_aborted:
   other: Project creation aborted by user.
-err_push_no_permission:
-  other: You do not have permission to push to {{.V0}}.
 err_push_target_invalid_history:
   other: The targets commit history does not match your local commit history. Are you pushing to the right project?
 err_pull_incompatible:
