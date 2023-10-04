@@ -159,11 +159,10 @@ func (r *Push) Run(params PushParams) (rerr error) {
 
 		// If the user didn't necessarily intend to create the project we should ask them for confirmation
 		if intend&intendCreateProject == 0 {
-			createProject := true
-			createProject, err = r.prompt.Confirm(
+			createProject, err := r.prompt.Confirm(
 				locale.Tl("create_project", "Create Project"),
 				locale.Tl("push_confirm_create_project", "You are about to create the project [NOTICE]{{.V0}}[/RESET], continue?", targetNamespace.String()),
-				&createProject)
+				ptr.To(true))
 			if err != nil {
 				return errs.Wrap(err, "Confirmation failed")
 			}
