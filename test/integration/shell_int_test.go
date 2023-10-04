@@ -267,8 +267,6 @@ func (suite *ShellIntegrationTestSuite) SetupRCFile(ts *e2e.Session) {
 	rcFile, err := subshell.RcFile()
 	suite.Require().NoError(err)
 
-	err = fileutils.TouchFileUnlessExists(rcFile)
-	suite.Require().NoError(err)
 	err = fileutils.CopyFile(rcFile, filepath.Join(ts.Dirs.HomeDir, filepath.Base(rcFile)))
 	suite.Require().NoError(err)
 
