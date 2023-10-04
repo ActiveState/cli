@@ -701,6 +701,51 @@ func (suite *PackageIntegrationTestSuite) TestProjectWithOfflineInstallerAndDock
 	cp.ExpectExitCode(0)
 }
 
+func (suite *PackageIntegrationTestSuite) TestProjectWithCustomVersionRequirements() {
+	suite.OnlyRunForTags(tagsuite.Package)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	// Because the ActiveState-CLI org has enterprise features enabled, we need to login
+	ts.LoginAsPersistentUser()
+
+	cp := ts.Spawn("checkout", "ActiveState-CLI/Comparators", ".")
+	cp.Expect("Skipping runtime setup")
+	cp.Expect("Checked out project")
+	cp.ExpectExitCode(0)
+
+	// Uninstall all of the packages with custom version requirements
+	cp = ts.SpawnWithOpts(
+		e2e.OptArgs("uninstall", "coverage"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
+	)
+	cp.ExpectExitCode(0)
+
+	cp = ts.SpawnWithOpts(
+		e2e.OptArgs("uninstall", "docopt"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
+	)
+	cp.ExpectExitCode(0)
+
+	cp = ts.SpawnWithOpts(
+		e2e.OptArgs("uninstall", "Mopidy-Dirble"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
+	)
+	cp.ExpectExitCode(0)
+
+	cp = ts.SpawnWithOpts(
+		e2e.OptArgs("uninstall", "requests"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
+	)
+	cp.ExpectExitCode(0)
+
+	cp = ts.SpawnWithOpts(
+		e2e.OptArgs("uninstall", "urllib3"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
+	)
+	cp.ExpectExitCode(0)
+}
+
 func TestPackageIntegrationTestSuite(t *testing.T) {
 	suite.Run(t, new(PackageIntegrationTestSuite))
 }
