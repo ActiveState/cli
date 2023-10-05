@@ -88,7 +88,7 @@ func (suite *PackageIntegrationTestSuite) TestPackages_project_invalid() {
 	defer ts.Close()
 
 	cp := ts.Spawn("packages", "--namespace", "junk/junk")
-	cp.Expect("The requested project junk/junk could not be found")
+	cp.Expect("The requested project junk does not exist under junk")
 	cp.ExpectExitCode(1)
 }
 
