@@ -703,6 +703,10 @@ func (suite *PackageIntegrationTestSuite) TestProjectWithOfflineInstallerAndDock
 
 func (suite *PackageIntegrationTestSuite) TestProjectWithCustomVersionRequirements() {
 	suite.OnlyRunForTags(tagsuite.Package)
+	if runtime.GOOS == "windows" {
+		suite.T().Skip("Skipping windows as builds can be slow and we only really need to test this one one platform")
+		return
+	}
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
