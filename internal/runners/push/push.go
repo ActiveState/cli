@@ -63,23 +63,17 @@ const (
 	intendCreateProject = 0x0008
 )
 
-var errNoChanges = errors.New("no changes")
-
-var errNoCommit = errors.New("no commit")
-
-var errTargetInvalidHistory = errors.New("local and remove histories do not match")
+var (
+	errNoChanges            = errors.New("no changes")
+	errNoCommit             = errors.New("no commit")
+	errTargetInvalidHistory = errors.New("local and remove histories do not match")
+	errPullNeeded           = errors.New("pull needed")
+)
 
 type errProjectNameInUse struct {
 	error
 	Namespace *project.Namespaced
 }
-
-type errNoPermission struct {
-	error
-	Namespace *project.Namespaced
-}
-
-var errPullNeeded = errors.New("pull needed")
 
 func (r *Push) Run(params PushParams) (rerr error) {
 	defer rationalizeError(&rerr)
