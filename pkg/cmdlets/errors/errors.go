@@ -87,7 +87,14 @@ func (o *OutputError) MarshalOutput(f output.Format) interface{} {
 }
 
 func (o *OutputError) MarshalStructured(f output.Format) interface{} {
-	return output.StructuredError{locale.JoinedErrorMessage(o.error)}
+	var userFacingError errs.UserFacingError
+	var message string
+	if errors.As(o.error, &userFacingError) {
+		message = userFacingError.UserError()
+	} else {
+		message = locale.JoinedErrorMessage(o.error)
+	}
+	return output.StructuredError{message}
 }
 
 func trimError(msg string) string {
