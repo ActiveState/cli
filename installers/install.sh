@@ -113,6 +113,7 @@ mkdir -p "$INSTALLERTMPDIR"
 if [ -z "$VERSION" ]; then
   # Determine the latest version to fetch.
   STATEURL="$BASE_INFO_URL?channel=$CHANNEL&source=install&platform=$OS"
+  echo "Fetching latest version information from $STATEURL"
   $FETCH $INSTALLERTMPDIR/info.json $STATEURL || exit 1
 
   # Parse info.

@@ -62,6 +62,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 			// Fetch it.
 			b, err := httputil.GetDirect(scriptUrl)
 			suite.Require().NoError(err)
+			fmt.Println("Script contents:", string(b))
 			script := filepath.Join(ts.Dirs.Work, scriptBaseName)
 			suite.Require().NoError(fileutils.WriteFile(script, b))
 
