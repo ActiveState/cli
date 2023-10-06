@@ -118,6 +118,8 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 				cp.Expect("ActiveState")
 			}
 
+			cp.SendLine("which state")
+			cp.Expect("state")
 			cp.SendLine("state --version")
 			cp.Expect("Version " + constants.Version)
 			cp.Expect("Branch " + constants.BranchName)
