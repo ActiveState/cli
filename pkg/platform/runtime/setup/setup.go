@@ -2,7 +2,6 @@ package setup
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/url"
