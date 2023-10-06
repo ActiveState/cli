@@ -6,6 +6,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
+	"github.com/ActiveState/termtest"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -38,7 +39,9 @@ func (suite *HistoryIntegrationTestSuite) TestHistory_History() {
 	cp.Expect("• requests (2.26.0 → 2.7.0)")
 	cp.Expect("• autopip (1.6.0 → Auto)")
 	cp.Expect("+ autopip 1.6.0")
+	cp.SetLogger(termtest.VerboseLogger)
 	cp.Expect("- convertdate")
+	cp.SetLogger(termtest.VoidLogger)
 	cp.Expect(`+ Platform`)
 	suite.Assert().NotContains(cp.Output(), "StructuredChanges")
 	cp.ExpectExitCode(0)
