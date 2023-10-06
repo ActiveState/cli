@@ -170,9 +170,13 @@ func (s *Setup) Update() (rerr error) {
 			if err != nil {
 				logging.Error("Could not get raw buildplan: %s", err)
 			}
+			env, err := s.store.EnvDef()
+			if err != nil {
+				logging.Error("Could not get envdef: %s", err)
+			}
 			// We do a standard error log first here, as rollbar reports will pick up the most recent log lines.
 			// We can't put the buildplan in the multilog message as it'd be way too big a message for rollbar.
-			logging.Error("Panic during runtime update: %s, build plan:\n%s", r, buildplan)
+			logging.Error("Panic during runtime update: %s, build plan:\n%s\n\nEnvDef:\n%#v", r, buildplan, env)
 			multilog.Critical("Panic during runtime update: %s", r)
 			panic(r) // We're just logging the panic while we have context, we're not meant to handle it here
 		}
