@@ -120,7 +120,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 
 			cp.SendLine("which state")
 			cp.Expect("state")
-			cp.SendLine("env")
+			cp.SendLine("env | grep PATH")
 			cp.Expect("ACTIVESTATE_CLI_DISABLE_RUNTIME=false")
 			cp.SendLine("state --version")
 			cp.Expect("Version " + constants.Version)
