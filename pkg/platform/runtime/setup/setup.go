@@ -166,12 +166,12 @@ func (s *Setup) Update() (rerr error) {
 		// Panics are serious, and reproducing them in the runtime package is HARD. To help with this we dump
 		// the build plan when a panic occurs so we have something more to go on.
 		if r := recover(); r != nil {
-			// We do a standard error log first here, as rollbar reports will pick up the most recent log lines.
-			// We can't put the buildplan in the multilog message as it'd be way too big a message for rollbar.
 			buildplan, err := s.store.BuildPlanRaw()
 			if err != nil {
 				logging.Error("Could not get raw buildplan: %s", err)
 			}
+			// We do a standard error log first here, as rollbar reports will pick up the most recent log lines.
+			// We can't put the buildplan in the multilog message as it'd be way too big a message for rollbar.
 			logging.Error("Panic during runtime update: %s, build plan:\n%s", r, buildplan)
 			multilog.Critical("Panic during runtime update: %s", r)
 			panic(r) // We're just logging the panic while we have context, we're not meant to handle it here
