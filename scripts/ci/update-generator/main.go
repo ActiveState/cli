@@ -11,6 +11,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 
 	"github.com/mholt/archiver"
 
@@ -68,7 +69,11 @@ func archiveMeta() (archiveMethod archiver.Archiver, ext string) {
 
 func createUpdate(outputPath, channel, version, platform, target string) error {
 	relChannelPath := filepath.Join(channel, platform)
-	relVersionedPath := filepath.Join(channel, version, platform)
+	versionNoSHA := version
+	if i := strings.Index(version, "-SHA"); i != -1 {
+		versionNoSHA = version[0:i]
+	}
+	relVersionedPath := filepath.Join(channel, versionNoSHA, platform)
 	_ = os.MkdirAll(filepath.Join(outputPath, relChannelPath), 0o755)
 	_ = os.MkdirAll(filepath.Join(outputPath, relVersionedPath), 0o755)
 
