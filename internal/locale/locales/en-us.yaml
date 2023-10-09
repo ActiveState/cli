@@ -610,12 +610,8 @@ secrets_err_value_empty:
   other: "Secret has no value defined: [NOTICE]{{.V0}}[/RESET]"
 secrets_err_invalid_namespace:
   other: "Invalid namespace given for secret: [NOTICE]{{.V0}}[/RESET], namespace must be in format of 'scope.secretName', eg. 'user.mySecret' or 'project.ourSecret'."
-secrets_warn_deprecated_namespace:
-  other: "DEPRECATION WARNING: Setting or retrieving secrets without a namespace is deprecated and soon won't be supported. Please reference your secret along with its scope, eg. 'user.mySecret' or 'project.ourSecret'."
 secrets_warn_deprecated_var:
   other: "DEPRECATION WARNING: 'state variables' (or 'state vars') has been retired in favour of secrets and constants. Please use 'state secrets' instead."
-secrets_warn_deprecated_var_expand:
-  other: "DEPRECATION WARNING: You are accessing a secret via '$variables.{{.V0}}', please update your activestate.yaml to instead use the format of '$secrets.project.{{.V0}}'"
 secrets_err_user_not_defined:
   other: "Secret has not been defined: [NOTICE]{{.V0}}[/RESET]. Define it by running 'state secrets set [NOTICE]{{.V0}}[/RESET]'."
 secrets_err_project_not_defined:
@@ -856,22 +852,6 @@ activate_select_optout:
   other: "None, I want to create a new copy"
 activate_namespace_location:
   other: Where would you like to place the project files for [NOTICE]{{.V0}}[/RESET]?
-warn_deprecation:
-  other: |
-    You are running a deprecated version of the State Tool. This version will stop working as of [NOTICE]{{.V0}}[/RESET].
-
-    Reason for deprecation:
-      [NOTICE]{{.V1}}[/RESET]
-
-    Please update by running [ACTIONABLE]`state update`[/RESET].
-err_deprecation:
-  other: |
-    You are running a version of the State Tool that is no longer supported! You will be encountering issues.
-
-    Reason for deprecation:
-      [NOTICE]{{.V1}}[/RESET]
-
-    Please update by running [ACTIONABLE]`state update`[/RESET].
 err_auth_required:
   other: Authentication is required, please authenticate by running 'state auth'
 err_auth_needinput:
@@ -998,8 +978,6 @@ err_invalid_project:
   other: Your activestate.yaml is missing the 'project' field.
 err_persist_invalid_project:
   other: Trying to persist an invalid project
-variable_deprecation_warning:
-  other: "DEPRECATION WARNING: Your project holds a 'variables' field. Variables have been replaced by separate 'secrets' and 'constants' fields. Please update your activestate.yaml."
 err_replaceall_check_log:
   other: "Error occurred while replacing file contents, please check the error log or contact support."
 err_bad_project_url:

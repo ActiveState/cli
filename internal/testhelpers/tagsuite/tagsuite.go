@@ -74,7 +74,6 @@ const (
 	Service         = "service"
 	SoftLimit       = "softlimit"
 	Executor        = "executor"
-	Deprecation     = "deprecation"
 	Compatibility   = "compatibility"
 	Automation      = "automation"
 	Checkout        = "checkout"
