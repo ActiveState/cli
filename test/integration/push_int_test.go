@@ -192,7 +192,7 @@ func (suite *PushIntegrationTestSuite) TestPush_NoPermission_NewProject() {
 
 	cp = ts.SpawnWithOpts(e2e.OptArgs("push"))
 	cp.Expect("not authorized")
-	cp.Expect("(y/N)")
+	cp.Expect("(Y/n)")
 	cp.SendLine("y")
 	cp.Expect("Who would you like the owner of this project to be?")
 	cp.SendEnter()
