@@ -114,14 +114,34 @@ function error([string] $msg)
 }
 
 if (!$script:VERSION) {
-  # Determine the latest version to fetch and parse info.
-  $jsonURL = "$script:BASEINFOURL/?channel=$script:CHANNEL&platform=windows&source=install"
-  $infoJson = ConvertFrom-Json -InputObject (download $jsonURL)
-  $version = $infoJson.Version
-  $checksum = $infoJson.Sha256
-  $relUrl = $infoJson.Path
+    # Determine the latest version to fetch.
+    $jsonURL = "$script:BASEINFOURL/?channel=$script:CHANNEL&platform=windows&source=install"
+} elseif (!($script:VERSION | Select-String -Pattern "-SHA" -SimpleMatch)) {
+    # Determine the full version SHA to fetch.
+    $jsonURL = "$script:BASEINFOURL/?channel=$script:CHANNEL&platform=windows&source=install&target-version=$script:VERSION"
+}
+
+if ($jsonURL) {
+  # Parse info.
+    try {
+        $infoJson = ConvertFrom-Json -InputObject (download $jsonURL)
+    } catch [System.Exception] {
+    }
+    if (!$infoJson) {
+      if (!$script:VERSION) {
+        Write-Error "Unable to retrieve the latest version number"
+      } else {
+        Write-Error "Could not download a State Tool Installer for the given command line arguments"
+      }
+      Write-Error $_.Exception.Message
+      exit 1
+    }
+    $version = $infoJson.Version
+    $checksum = $infoJson.Sha256
+    $relUrl = $infoJson.Path
 } else {
-  $relUrl = "$script:CHANNEL/$script:VERSION/windows-amd64/state-windows-amd64-$script:VERSION.zip"
+    $versionNoSHA = $script:VERSION -replace "-SHA.*", ""
+    $relUrl = "$script:CHANNEL/$versionNoSHA/windows-amd64/state-windows-amd64-$script:VERSION.zip"
 }
 
 # Fetch the requested or latest version.
@@ -182,5 +202,5 @@ if (Test-Path env:ACTIVESTATE_SESSION_TOKEN)
     Remove-Item Env:\ACTIVESTATE_SESSION_TOKEN
 }
 if ( !$success ) {
-  exit 1
+    exit 1
 }

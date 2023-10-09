@@ -186,7 +186,6 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall_VersionDoesNotExist
 		cp = ts.SpawnCmdWithOpts("powershell.exe", e2e.OptArgs(args...), e2e.OptAppendEnv("SHELL="))
 	}
 	cp.Expect("Could not download")
-	cp.Expect("does-not-exist")
 	cp.ExpectExitCode(1)
 }
 
