@@ -119,11 +119,16 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 				cp.Expect("ActiveState")
 			}
 
-			cp.SendLine("which state")
-			cp.Expect("state")
+			installPath, err := installation.InstallPathForBranch(constants.BranchName)
+			suite.NoError(err)
+
+			binPath := filepath.Join(installPath, "bin")
+
+			statePath := filepath.Join(binPath, "state"+osutils.ExeExt)
+
 			cp.SendLine("env | grep PATH")
-			cp.Expect("state")
-			cp.SendLine("state --version")
+			cp.Expect(installPath)
+			cp.SendLine(statePath + " --version")
 			cp.Expect("Version " + constants.Version)
 			cp.Expect("Branch " + constants.BranchName)
 			cp.Expect("Built")
@@ -136,10 +141,6 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 			suite.NoError(err)
 			suite.FileExists(stateExec)
 
-			installPath, err := installation.InstallPathForBranch(constants.BranchName)
-			suite.NoError(err)
-
-			binPath := filepath.Join(installPath, "bin")
 			suite.assertBinDirContents(binPath)
 			suite.assertCorrectVersion(ts, binPath, tt.Version, tt.Channel)
 			suite.DirExists(ts.Dirs.Config)
