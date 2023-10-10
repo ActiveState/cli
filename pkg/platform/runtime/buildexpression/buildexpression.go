@@ -596,7 +596,7 @@ func (e *BuildExpression) getSolveNode() (*Ap, error) {
 			continue
 		}
 
-		if a.Assignment.Name == "" || a.Assignment.Name != "runtime" {
+		if a.Assignment.Name == "" {
 			continue
 		}
 
@@ -629,7 +629,7 @@ func recurseLets(let *Let) (*Ap, error) {
 			continue
 		}
 
-		if a.Name == "" || a.Name != "runtime" {
+		if a.Name == "" {
 			continue
 		}
 

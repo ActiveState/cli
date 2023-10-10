@@ -27,14 +27,14 @@ func rationalizeError(auth *authentication.Auth, proj *project.Project, rerr *er
 	// Could not find a platform that matches on the given branch, so suggest alternate branches if ones exist
 	case isUpdateErr && errors.As(*rerr, &errNoMatchingPlatform):
 		branches, err := model.BranchNamesForProjectFiltered(proj.Owner(), proj.Name(), proj.BranchName())
-		if err == nil && len(branches) > 1 {
+		if err == nil && len(branches) > 0 {
 			// Suggest alternate branches
-			*rerr = errs.NewUserFacingError(locale.Tr(
+			*rerr = errs.NewUserFacing(locale.Tr(
 				"err_alternate_branches",
 				errNoMatchingPlatform.HostPlatform, errNoMatchingPlatform.HostArch,
 				proj.BranchName(), strings.Join(branches, "\n - ")))
 		} else {
-			*rerr = errs.NewUserFacingError(locale.Tr(
+			*rerr = errs.NewUserFacing(locale.Tr(
 				"err_no_platform_data_remains",
 				errNoMatchingPlatform.HostPlatform, errNoMatchingPlatform.HostArch))
 		}

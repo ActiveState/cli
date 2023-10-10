@@ -238,7 +238,7 @@ func (suite *AnalyticsIntegrationTestSuite) TestExecEvents() {
 		e2e.OptAppendEnv(env...),
 	)
 
-	cp.Expect("DONE")
+	cp.Expect("DONE", e2e.RuntimeSourcingTimeoutOpt)
 
 	time.Sleep(sleepTime)
 
