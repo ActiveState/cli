@@ -68,8 +68,8 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 			suite.Require().NoError(fileutils.WriteFile(script, b))
 
 			// Construct installer command to execute.
-			installDir := filepath.Join(ts.Dirs.HomeDir, "install")
-			argsPlain := []string{script, "-t", installDir}
+			// installDir := filepath.Join(ts.Dirs.Work, "install")
+			argsPlain := []string{script}
 			if tt.Channel != "" {
 				argsPlain = append(argsPlain, "-b", tt.Channel)
 			}
@@ -130,12 +130,16 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 
 			cp.ExpectExitCode(0)
 
-			stateExec, err := installation.StateExecFromDir(installDir)
+			stateExec, err := installation.StateExecFromDir(ts.Dirs.HomeDir)
 			suite.NoError(err)
 			suite.FileExists(stateExec)
 
-			suite.assertBinDirContents(filepath.Join(installDir, "bin"))
-			suite.assertCorrectVersion(ts, installDir, tt.Version, tt.Channel)
+			installPath, err := installation.InstallPathForBranch(constants.BranchName)
+			suite.NoError(err)
+
+			binPath := filepath.Join(installPath, "bin")
+			suite.assertBinDirContents(binPath)
+			suite.assertCorrectVersion(ts, binPath, tt.Version, tt.Channel)
 			suite.DirExists(ts.Dirs.Config)
 
 			// Verify that can install overtop
