@@ -113,7 +113,6 @@ mkdir -p "$INSTALLERTMPDIR"
 if [ -z "$VERSION" ]; then
   # Determine the latest version to fetch.
   STATEURL="$BASE_INFO_URL?channel=$CHANNEL&source=install&platform=$OS"
-  echo "Fetching latest version from $STATEURL"
   $FETCH $INSTALLERTMPDIR/info.json $STATEURL || exit 1
 
   # Parse info.
@@ -134,7 +133,6 @@ fi
 progress "Preparing Installer for State Tool Package Manager version $VERSION"
 STATEURL="$BASE_FILE_URL/$RELURL"
 ARCHIVE="$OS-amd64$DOWNLOADEXT"
-echo "Fetching installer from $STATEURL"
 $FETCH $INSTALLERTMPDIR/$ARCHIVE $STATEURL
 # wget and curl differ on how to handle AWS' "Forbidden" result for unknown versions.
 # wget will exit with nonzero status. curl simply creates an XML file with the forbidden error.

@@ -68,7 +68,6 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 			suite.Require().NoError(fileutils.WriteFile(script, b))
 
 			// Construct installer command to execute.
-			// installDir := filepath.Join(ts.Dirs.Work, "install")
 			argsPlain := []string{script}
 			if tt.Channel != "" {
 				argsPlain = append(argsPlain, "-b", tt.Channel)
@@ -132,7 +131,6 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 			cp.Expect("Version " + constants.Version)
 			cp.Expect("Branch " + constants.BranchName)
 			cp.Expect("Built")
-			fmt.Println("Snapshot: ", cp.Snapshot())
 			cp.SendLine("exit")
 
 			cp.ExpectExitCode(0)
