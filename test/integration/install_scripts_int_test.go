@@ -121,6 +121,11 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 			installPath, err := installation.InstallPathForBranch(constants.BranchName)
 			suite.NoError(err)
 
+			if runtime.GOOS == "windows" {
+				installPath, err = osutils.BashifyPath(installPath)
+				suite.NoError(err)
+			}
+
 			binPath := filepath.Join(installPath, "bin")
 
 			statePath := filepath.Join(binPath, "state"+osutils.ExeExt)
