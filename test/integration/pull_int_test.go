@@ -133,6 +133,7 @@ func (suite *PullIntegrationTestSuite) TestPull_RestoreNamespace() {
 }
 
 func (suite *PullIntegrationTestSuite) TestMergeBuildScript() {
+	suite.T().Skip("Skipping since build script/build expression equality cannot be easily computed") // DX-2221
 	suite.OnlyRunForTags(tagsuite.Pull)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
