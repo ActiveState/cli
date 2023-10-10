@@ -64,7 +64,6 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 			// Fetch it.
 			b, err := httputil.GetDirect(scriptUrl)
 			suite.Require().NoError(err)
-			fmt.Println("Script contents:", string(b))
 			script := filepath.Join(ts.Dirs.Work, scriptBaseName)
 			suite.Require().NoError(fileutils.WriteFile(script, b))
 
@@ -122,8 +121,6 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 
 			cp.SendLine("which state")
 			cp.Expect("state")
-			cp.SendLine("env | grep PATH")
-			cp.Expect("PATH")
 			cp.SendLine("state --version")
 			cp.Expect("Version " + constants.Version)
 			cp.Expect("Branch " + constants.BranchName)
@@ -226,7 +223,9 @@ func expectStateToolInstallation(cp *e2e.SpawnedCmd) {
 
 // assertBinDirContents checks if given files are or are not in the bin directory
 func (suite *InstallScriptsIntegrationTestSuite) assertBinDirContents(dir string) {
+	fmt.Println("Searching dir:", dir)
 	binFiles := listFilesOnly(dir)
+	fmt.Println("Bin files:", binFiles)
 	suite.Contains(binFiles, "state"+osutils.ExeExt)
 	suite.Contains(binFiles, "state-svc"+osutils.ExeExt)
 }
