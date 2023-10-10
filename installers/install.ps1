@@ -114,15 +114,18 @@ function error([string] $msg)
 }
 
 if (!$script:VERSION) {
-    # Determine the latest version to fetch.
+    # If the user did not specify a version, formulate a query to fetch the JSON info of the latest
+    # version, including where it is.
     $jsonURL = "$script:BASEINFOURL/?channel=$script:CHANNEL&platform=windows&source=install"
 } elseif (!($script:VERSION | Select-String -Pattern "-SHA" -SimpleMatch)) {
-    # Determine the full version SHA to fetch.
+    # If the user specified a partial version (i.e. no SHA), formulate a query to fetch the JSON
+    # info of that version's latest SHA, including where it is.
     $jsonURL = "$script:BASEINFOURL/?channel=$script:CHANNEL&platform=windows&source=install&target-version=$script:VERSION"
 }
 
 if ($jsonURL) {
-  # Parse info.
+    # If the user specified no version or a partial version we need to use the json URL to get the
+    # actual installer URL.
     try {
         $infoJson = ConvertFrom-Json -InputObject (download $jsonURL)
     } catch [System.Exception] {
@@ -140,6 +143,8 @@ if ($jsonURL) {
     $checksum = $infoJson.Sha256
     $relUrl = $infoJson.Path
 } else {
+    # If the user specified a full version, strip the SHA to get the folder name of the installer
+    # URL. Then we can construct the installer URL.
     $versionNoSHA = $script:VERSION -replace "-SHA.*", ""
     $relUrl = "$script:CHANNEL/$versionNoSHA/windows-amd64/state-windows-amd64-$script:VERSION.zip"
 }

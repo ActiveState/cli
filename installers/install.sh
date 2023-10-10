@@ -111,14 +111,18 @@ INSTALLERTMPDIR="$TMPDIR/state-install-$RANDOM"
 mkdir -p "$INSTALLERTMPDIR"
 
 if [ -z "$VERSION" ]; then
-  # Determine the latest version to fetch.
+  # If the user did not specify a version, formulate a query to fetch the JSON info of the latest
+  # version, including where it is.
   JSONURL="$BASE_INFO_URL?channel=$CHANNEL&source=install&platform=$OS"
 elif [ -z "`echo $VERSION | grep -o '\-SHA'`" ]; then
-  # Determine the full version SHA to fetch.
+  # If the user specified a partial version (i.e. no SHA), formulate a query to fetch the JSON info
+  # of that version's latest SHA, including where it is.
   JSONURL="$BASE_INFO_URL?channel=$CHANNEL&source=install&platform=$OS&target-version=$VERSION"
 fi
 
 if [ ! -z "$JSONURL" ]; then
+  # If the user specified no version or a partial version we need to use the json URL to get the
+  # actual installer URL.
   $FETCH $INSTALLERTMPDIR/info.json $JSONURL || exit 1
   if [ ! -z "`grep -o Invalid $INSTALLERTMPDIR/info.json`" ]; then
     error "Could not download a State Tool installer for the given command line arguments"
@@ -136,6 +140,8 @@ if [ ! -z "$JSONURL" ]; then
   rm $INSTALLERTMPDIR/info.json
 
 else
+  # If the user specified a full version, strip the SHA to get the folder name of the installer URL.
+  # Then we can construct the installer URL.
   VERSIONNOSHA="`echo $VERSION | sed 's/-SHA.*$//'`"
   RELURL="$CHANNEL/$VERSIONNOSHA/$OS-amd64/state-$OS-amd64-$VERSION$DOWNLOADEXT"
 fi
