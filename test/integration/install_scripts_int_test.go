@@ -121,11 +121,11 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 
 			cp.SendLine("which state")
 			cp.Expect("state")
-			fmt.Println("Snapshot: ", cp.Snapshot())
 			cp.SendLine("state --version")
 			cp.Expect("Version " + constants.Version)
 			cp.Expect("Branch " + constants.BranchName)
 			cp.Expect("Built")
+			fmt.Println("Snapshot: ", cp.Snapshot())
 			cp.SendLine("exit")
 
 			cp.ExpectExitCode(0)
