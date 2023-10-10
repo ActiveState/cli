@@ -277,8 +277,9 @@ func (u *UpdateInstaller) InstallWithProgress(installTargetPath string, progress
 }
 
 func (u *UpdateInstaller) analyticsEvent(action, label, msg string) {
-	dims := &dimensions.Values{
-		TargetVersion: ptr.To(u.AvailableUpdate.Version),
+	dims := &dimensions.Values{}
+	if u.AvailableUpdate != nil {
+		dims.TargetVersion = ptr.To(u.AvailableUpdate.Version)
 	}
 
 	if msg != "" {
