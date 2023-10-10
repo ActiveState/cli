@@ -92,8 +92,7 @@ in:
 	}, script)
 }
 
-func NoTestComplex(t *testing.T) {
-	t.Skip("Multiple solve notes are not supported now") // DX-2238
+func TestComplex(t *testing.T) {
 	script, err := NewScript([]byte(
 		`let:
     linux_runtime = solve(
