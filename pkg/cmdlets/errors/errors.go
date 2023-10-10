@@ -6,6 +6,8 @@ import (
 	"os"
 	"strings"
 
+	"github.com/thoas/go-funk"
+
 	"github.com/ActiveState/cli/internal/analytics"
 	anaConst "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/analytics/dimensions"
@@ -69,7 +71,11 @@ func (o *OutputError) MarshalOutput(f output.Format) interface{} {
 	err := o.error
 	for _, err := range errs.Unpack(err) {
 		if v, ok := err.(ErrorTips); ok {
-			errorTips = append(errorTips, v.ErrorTips()...)
+			for _, tip := range v.ErrorTips() {
+				if !funk.Contains(errorTips, tip) {
+					errorTips = append(errorTips, tip)
+				}
+			}
 		}
 	}
 	errorTips = append(errorTips, locale.Tl("err_help_forum", "Ask For Help → [ACTIONABLE]{{.V0}}[/RESET]", constants.ForumsURL))
