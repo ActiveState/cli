@@ -298,6 +298,30 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 	}
 
 	// Print the result
+	if (operation == bpModel.OperationAdded || operation == bpModel.OperationUpdated) && !model.IsExactVersion(version) {
+		// Print the exact version installed if the user specified a version string.
+		if requirements, err := expr.Requirements(); err == nil {
+			for _, req := range requirements {
+				if req.Name != name {
+					continue
+				}
+				for _, versionReq := range req.VersionRequirement {
+					comp, ok := versionReq["version"]
+					if !ok || comp != bpModel.ComparatorEQ {
+						continue
+					}
+					installedVersion, ok := versionReq["version"]
+					if !ok {
+						multilog.Error("Malformed buildexpression requirement for %s: %v", req.Name, versionReq)
+						break
+					}
+					requirementVersion = installedVersion
+				}
+			}
+		} else {
+			multilog.Error("Could not get buildexpression requirements after install: %v", errs.JoinMessage(err))
+		}
+	}
 	message := locale.Tr(fmt.Sprintf("%s_version_%s", ns.Type(), operation), requirementName, requirementVersion)
 	if requirementVersion == "" {
 		message = locale.Tr(fmt.Sprintf("%s_%s", ns.Type(), operation), requirementName)

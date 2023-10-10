@@ -391,7 +391,7 @@ func processBuildPlannerError(bpErr error, fallbackMessage string) error {
 
 var versionRe = regexp.MustCompile(`^\d+(\.\d+)*$`)
 
-func isExactVersion(version string) bool {
+func IsExactVersion(version string) bool {
 	return versionRe.MatchString(version)
 }
 
@@ -400,7 +400,7 @@ func isWildcardVersion(version string) bool {
 }
 
 func VersionStringToRequirements(version string) ([]bpModel.VersionRequirement, error) {
-	if isExactVersion(version) {
+	if IsExactVersion(version) {
 		return []bpModel.VersionRequirement{{
 			bpModel.VersionRequirementComparatorKey: "eq",
 			bpModel.VersionRequirementVersionKey:    version,
