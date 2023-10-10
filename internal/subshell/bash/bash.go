@@ -179,6 +179,8 @@ func (v *SubShell) Activate(proj *project.Project, cfg sscommon.Configurable, ou
 	}
 
 	cmd := sscommon.NewCommand(v.Binary(), shellArgs, directEnv)
+	fmt.Println("Start cmd: ", cmd.String())
+	fmt.Println("Start cmd env: ", cmd.Env)
 	v.errs = sscommon.Start(cmd)
 	v.cmd = cmd
 	return nil
