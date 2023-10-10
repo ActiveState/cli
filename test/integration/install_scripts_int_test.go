@@ -69,8 +69,8 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 			suite.Require().NoError(fileutils.WriteFile(script, b))
 
 			// Construct installer command to execute.
-			installDir := filepath.Join(ts.Dirs.Work, "install")
-			argsPlain := []string{script, "-t", installDir}
+			// installDir := filepath.Join(ts.Dirs.Work, "install")
+			argsPlain := []string{script}
 			if tt.Channel != "" {
 				argsPlain = append(argsPlain, "-b", tt.Channel)
 			}
