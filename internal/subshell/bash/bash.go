@@ -1,6 +1,7 @@
 package bash
 
 import (
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -149,6 +150,7 @@ func (v *SubShell) SetEnv(env map[string]string) error {
 		env["PATH"] = bashified
 	}
 
+	fmt.Println("Setting env:", env)
 	v.env = env
 	return nil
 }
