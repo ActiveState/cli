@@ -132,12 +132,12 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 
 			cp.ExpectExitCode(0)
 
-			stateExec, err := installation.StateExecFromDir(installDir)
+			stateExec, err := installation.StateExecFromDir(ts.Dirs.HomeDir)
 			suite.NoError(err)
 			suite.FileExists(stateExec)
 
-			suite.assertBinDirContents(filepath.Join(installDir, "bin"))
-			suite.assertCorrectVersion(ts, installDir, tt.Version, tt.Channel)
+			suite.assertBinDirContents(filepath.Join(ts.Dirs.HomeDir, "bin"))
+			suite.assertCorrectVersion(ts, ts.Dirs.HomeDir, tt.Version, tt.Channel)
 			suite.DirExists(ts.Dirs.Config)
 
 			// Verify that can install overtop
