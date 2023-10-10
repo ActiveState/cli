@@ -16,8 +16,6 @@ and this project adheres to
   browser instead of the login page.
 * `state shell` can now detect currently active subshells preventing nested
   shells from being created.
-* The State Tool will now print a message when starting a subshell, indicating
-  the project that is being used.
 * Wildcard and partial version matching is now supported for `state install`
   and for language versions with `state init`. For example:
   `state install pytest@2.x`.
@@ -55,22 +53,6 @@ and this project adheres to
   an error happened, leaving the project in an uncertain state.
 * Fixed issue where `state checkout` and `state init` would not respect the
   casing of the owner and/or project on the platform.
-
-### 0.40.1
-
-### Added
-
-* State tool will now warn users if its executables are deleted during
-  installation, indicating a false-positive action from antivirus software.
-
-### Fixed
-
-* Fixed auto updates not being run (if you are on an older version:
-  run `state update`).
-* Fixed a rare parsing panic that would happen when running particularly complex
-  builds.
-* Fixed race condition during artifact installation that could lead to errors
-  like "Could not unpack artifact .. file already exists".
 
 ### 0.40.1
 
