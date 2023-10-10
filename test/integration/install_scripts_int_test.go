@@ -261,6 +261,7 @@ func (suite *InstallScriptsIntegrationTestSuite) assertCorrectVersion(ts *e2e.Se
 	cp.ExpectExitCode(0)
 	actual := versionData{}
 	out := cp.StrippedSnapshot()
+	fmt.Println("Stripped snapshot:", out)
 	suite.Require().NoError(json.Unmarshal([]byte(out), &actual))
 
 	if expectedVersion != "" {
