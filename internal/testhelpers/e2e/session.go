@@ -263,9 +263,11 @@ func (s *Session) SpawnCmdWithOpts(exe string, optSetters ...SpawnOptSetter) *Sp
 		termtest.OptRows(30), // Needs to be able to accommodate most JSON output
 	)
 
-	// Multi-line expectation strings (e.g. TestBranch_List), as well as macOS and Linux, use '\n' to
-	// represent newlines. However, Windows uses '\r\n' to represent newlines. Normalize all line
-	// endings to be just '\n' or else the expectation will fail on Windows.
+	// TTYs output newlines in two steps: '\r' (CR) to move the caret to the beginning of the line,
+	// and '\n' (LF) to move the caret one line down. Terminal emulators do the same thing, so the
+	// raw terminal output will contain "\r\n". Since our multi-line expectation messages often use
+	// '\n', normalize line endings to that for convenience, regardless of platform ('\n' for Linux
+	// and macOS, "\r\n" for Windows).
 	spawnOpts.TermtestOpts = append(spawnOpts.TermtestOpts,
 		termtest.OptNormalizedLineEnds(true),
 	)
