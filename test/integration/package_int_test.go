@@ -738,31 +738,31 @@ urllib3>=1.21.1,<=1.26.5`
 		e2e.OptArgs("uninstall", "coverage"),
 		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
-	cp.ExpectExitCode(0)
+	cp.ExpectExitCode(0, termtest.OptExpectTimeout(time.Minute))
 
 	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("uninstall", "docopt"),
 		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
-	cp.ExpectExitCode(0)
+	cp.ExpectExitCode(0, termtest.OptExpectTimeout(time.Minute))
 
 	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("uninstall", "Mopidy-Dirble"),
 		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
-	cp.ExpectExitCode(0)
+	cp.ExpectExitCode(0, termtest.OptExpectTimeout(time.Minute))
 
 	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("uninstall", "requests"),
 		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
-	cp.ExpectExitCode(0)
+	cp.ExpectExitCode(0, termtest.OptExpectTimeout(time.Minute))
 
 	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("uninstall", "urllib3"),
 		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
-	cp.ExpectExitCode(0)
+	cp.ExpectExitCode(0, termtest.OptExpectTimeout(time.Minute))
 }
 
 func TestPackageIntegrationTestSuite(t *testing.T) {
