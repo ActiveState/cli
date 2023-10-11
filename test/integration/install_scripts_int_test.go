@@ -131,8 +131,14 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 				installPath, err = osutils.BashifyPath(installPath)
 				suite.NoError(err)
 
+				installPath, err = fileutils.GetLongPathName(installPath)
+				suite.Require().NoError(err)
+
 				statePath, err = osutils.BashifyPath(statePath)
 				suite.NoError(err)
+
+				statePath, err = fileutils.GetLongPathName(statePath)
+				suite.Require().NoError(err)
 				fmt.Println("Updated install path:", installPath)
 				fmt.Println("UPdated state path:", statePath)
 			}
