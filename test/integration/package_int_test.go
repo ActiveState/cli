@@ -729,6 +729,10 @@ urllib3>=1.21.1,<=1.26.5`
 	cp = ts.Spawn("import", "requirements.txt")
 	cp.ExpectExitCode(0)
 
+	cp = ts.Spawn("packages")
+	cp.Expect("coverage")
+	cp.ExpectExitCode(0)
+
 	// Uninstall all of the packages with custom version requirements
 	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("uninstall", "coverage"),
