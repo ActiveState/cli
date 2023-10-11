@@ -718,6 +718,17 @@ func (suite *PackageIntegrationTestSuite) TestProjectWithCustomVersionRequiremen
 	cp.Expect("Checked out project")
 	cp.ExpectExitCode(0)
 
+	complexReqsData := `coverate!=3.5
+docopt>=0.6.1
+Mopidy-Dirble>=1.1,<2
+requests>=2.2
+urllib3>=1.21.1,<=1.26.5`
+
+	ts.PrepareFile(complexReqsData, reqsData)
+
+	cp = ts.Spawn("import", "requirements.txt")
+	cp.ExpectExitCode(0)
+
 	// Uninstall all of the packages with custom version requirements
 	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("uninstall", "coverage"),
