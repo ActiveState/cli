@@ -144,10 +144,10 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 			}
 
 			if runtime.GOOS != "windows" {
-				cp = ts.SpawnCmd("env | grep PATH")
+				cp = ts.SpawnCmd("env", " | grep PATH")
 				cp.Expect(installPath)
 			} else {
-				cp = ts.SpawnCmd("echo %PATH%")
+				cp = ts.SpawnCmd("echo", "%PATH%")
 				cp.Expect(installPath)
 			}
 			cp.SendLine(statePath + " --version")
