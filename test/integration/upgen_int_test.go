@@ -5,7 +5,6 @@ import (
 	"io/ioutil"
 	"path/filepath"
 	"runtime"
-	"strings"
 	"testing"
 
 	"github.com/ActiveState/cli/internal/installation"
@@ -36,8 +35,7 @@ func (suite *UpdateGenIntegrationTestSuite) TestUpdateBits() {
 	}
 	platform := runtime.GOOS + "-" + hostArch
 
-	versionNoSHA := constants.Version[0:strings.Index(constants.Version, "-SHA")]
-	archivePath := filepath.Join(root, "build/update", constants.BranchName, versionNoSHA, platform, fmt.Sprintf("state-%s-%s%s", platform, constants.Version, ext))
+	archivePath := filepath.Join(root, "build/update", constants.BranchName, constants.VersionNumber, platform, fmt.Sprintf("state-%s-%s%s", platform, constants.Version, ext))
 	suite.Require().FileExists(archivePath, "Make sure you ran 'state run generate-update'")
 	suite.T().Logf("file %s exists\n", archivePath)
 
