@@ -107,6 +107,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 			}
 
 			expectStateToolInstallation(cp)
+			fmt.Println("Installation snapshot:", cp.Snapshot())
 
 			if tt.Activate != "" || tt.ActivateByCommand != "" {
 				cp.Expect("Creating a Virtual Environment")
@@ -126,6 +127,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 			statePath := filepath.Join(binPath, "state"+osutils.ExeExt)
 
 			if runtime.GOOS == "windows" {
+				fmt.Println("Bashifying windows path:", installPath, statePath)
 				installPath, err = osutils.BashifyPath(installPath)
 				suite.NoError(err)
 
