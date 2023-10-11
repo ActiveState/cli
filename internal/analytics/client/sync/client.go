@@ -212,9 +212,13 @@ func (a *Client) EventWithSourceAndLabel(category, action, source, label string,
 	}
 
 	a.customDimensions.Sequence = ptr.To(a.sequence)
-	a.sequence++
 
 	actualDims := mergeDimensions(a.customDimensions, dims...)
+
+	if a.sequence == *actualDims.Sequence {
+		// Increment the sequence number unless dims overrides it (e.g. heartbeats use -1).
+		a.sequence++
+	}
 
 	if err := actualDims.PreProcess(); err != nil {
 		multilog.Critical("Analytics dimensions cannot be processed properly: %s", errs.JoinMessage(err))

@@ -148,6 +148,8 @@ func (suite *AnalyticsIntegrationTestSuite) TestHeartbeats() {
 		})
 		suite.Require().Equal(1, countEvents(executorEvents, anaConst.CatRuntimeUsage, anaConst.ActRuntimeAttempt, anaConst.SrcExecutor),
 			ts.DebugMessage("Should have a runtime attempt, events:\n"+suite.summarizeEvents(executorEvents)))
+		suite.Require().Equal(1, countEvents(eventsAfterExecutor, anaConst.CatDebug, anaConst.ActExecutorExit, anaConst.SrcExecutor),
+			ts.DebugMessage("Should have an executor exit event, events:\n"+suite.summarizeEvents(executorEvents)))
 
 		// It's possible due to the timing of the heartbeats and the fact that they are async that we have gotten either
 		// one or two by this point. Technically more is possible, just very unlikely.
