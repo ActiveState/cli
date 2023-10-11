@@ -724,7 +724,7 @@ Mopidy-Dirble>=1.1,<2
 requests>=2.2
 urllib3>=1.21.1,<=1.26.5`
 
-	ts.PrepareFile(reqsFileName, complexReqsData)
+	ts.PrepareFile(filepath.Join(cp.WorkDirectory(), reqsFileName), complexReqsData)
 
 	cp = ts.Spawn("import", "requirements.txt")
 	cp.ExpectExitCode(0)
