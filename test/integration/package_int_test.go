@@ -701,6 +701,36 @@ func (suite *PackageIntegrationTestSuite) TestProjectWithOfflineInstallerAndDock
 	cp.ExpectExitCode(0)
 }
 
+func (suite *PackageIntegrationTestSuite) TestImportWithCustomVersionRequirements() {
+	suite.OnlyRunForTags(tagsuite.Package)
+	if runtime.GOOS == "windows" {
+		suite.T().Skip("Skipping windows as builds can be slow and we only really need to test this one one platform")
+		return
+	}
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	// Because the ActiveState-CLI org has enterprise features enabled, we need to login
+	ts.LoginAsPersistentUser()
+
+	complexReqsData := `coverage!=3.5
+docopt>=0.6.1
+Mopidy-Dirble>=1.1,<2
+requests>=2.2,<2.31.0
+urllib3>=1.21.1,<=1.26.5
+`
+
+	cp := ts.Spawn("checkout", "ActiveState-CLI/Comparators-Import", ".")
+	cp.Expect("Skipping runtime setup")
+	cp.Expect("Checked out project")
+	cp.ExpectExitCode(0)
+
+	ts.PrepareFile(filepath.Join(cp.WorkDirectory(), reqsFileName), complexReqsData)
+
+	cp = ts.Spawn("import", reqsFileName)
+	cp.ExpectExitCode(0)
+}
+
 func (suite *PackageIntegrationTestSuite) TestProjectWithCustomVersionRequirements() {
 	suite.OnlyRunForTags(tagsuite.Package)
 	if runtime.GOOS == "windows" {
