@@ -755,34 +755,19 @@ func (suite *PackageIntegrationTestSuite) TestProjectWithCustomVersionRequiremen
 	cp.ExpectExitCode(0)
 
 	// Uninstall all of the packages with custom version requirements
-	cp = ts.SpawnWithOpts(
-		e2e.OptArgs("uninstall", "coverage"),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
-	)
+	cp = ts.Spawn("uninstall", "coverage")
 	cp.ExpectExitCode(0)
 
-	cp = ts.SpawnWithOpts(
-		e2e.OptArgs("uninstall", "docopt"),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
-	)
+	cp = ts.Spawn("uninstall", "docopt")
 	cp.ExpectExitCode(0)
 
-	cp = ts.SpawnWithOpts(
-		e2e.OptArgs("uninstall", "Mopidy-Dirble"),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
-	)
+	cp = ts.Spawn("uninstall", "Mopidy-Dirble")
 	cp.ExpectExitCode(0)
 
-	cp = ts.SpawnWithOpts(
-		e2e.OptArgs("uninstall", "requests"),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
-	)
+	cp = ts.Spawn("uninstall", "requests")
 	cp.ExpectExitCode(0)
 
-	cp = ts.SpawnWithOpts(
-		e2e.OptArgs("uninstall", "urllib3"),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
-	)
+	cp = ts.Spawn("uninstall", "urllib3")
 	cp.ExpectExitCode(0)
 }
 
