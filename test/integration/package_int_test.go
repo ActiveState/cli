@@ -718,7 +718,7 @@ func (suite *PackageIntegrationTestSuite) TestProjectWithCustomVersionRequiremen
 	cp.Expect("Checked out project")
 	cp.ExpectExitCode(0)
 
-	complexReqsData := `coverate!=3.5
+	complexReqsData := `coverage!=3.5
 docopt>=0.6.1
 Mopidy-Dirble>=1.1,<2
 requests>=2.2
