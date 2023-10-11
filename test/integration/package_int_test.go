@@ -730,6 +730,8 @@ urllib3>=1.21.1,<=1.26.5
 	cp = ts.Spawn("import", reqsFileName)
 	cp.ExpectExitCode(0)
 
+	// Test version numbers once the following story is resolved:
+	// https://activestatef.atlassian.net/browse/DX-2272
 	cp = ts.Spawn("packages")
 	cp.Expect("Mopidy-Dirble")
 	cp.Expect("coverage")
