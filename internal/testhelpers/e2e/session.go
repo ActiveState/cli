@@ -268,6 +268,7 @@ func (s *Session) SpawnCmdWithOpts(exe string, optSetters ...SpawnOptSetter) *Sp
 	// raw terminal output will contain "\r\n". Since our multi-line expectation messages often use
 	// '\n', normalize line endings to that for convenience, regardless of platform ('\n' for Linux
 	// and macOS, "\r\n" for Windows).
+	// More info: https://superuser.com/a/1774370
 	spawnOpts.TermtestOpts = append(spawnOpts.TermtestOpts,
 		termtest.OptNormalizedLineEnds(true),
 	)
