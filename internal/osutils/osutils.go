@@ -10,6 +10,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/multilog"
 )
 
 // CmdString returns a human-readable description of c.
@@ -41,17 +42,17 @@ func BashifyPath(absolutePath string) (string, error) {
 		return "", errs.New("Unrecognized absolute path format: %s", absolutePath)
 	}
 
-	// winPath, err := winPathToLinPath(absolutePath)
-	// if err == nil {
-	// 	winPath = strings.Replace(winPath, ` `, `\ `, -1) // escape space
-	// 	return winPath, nil
-	// }
-	// multilog.Error("Failed to bashify path using installed bash executable, falling back to slash replacement: %v", err)
+	winPath, err := winPathToLinPath(absolutePath)
+	if err == nil {
+		winPath = strings.Replace(winPath, ` `, `\ `, -1) // escape space
+		return winPath, nil
+	}
+	multilog.Error("Failed to bashify path using installed bash executable, falling back to slash replacement: %v", err)
 
 	vol := filepath.VolumeName(absolutePath)
 	absolutePath = absolutePath[len(vol):]
 	vol = strings.Replace(vol, ":", "", 1)
-	winPath := "/" + vol + filepath.ToSlash(absolutePath)
+	winPath = "/" + vol + filepath.ToSlash(absolutePath)
 	winPath = strings.Replace(winPath, ` `, `\ `, -1) // escape space
 	return winPath, nil
 }
