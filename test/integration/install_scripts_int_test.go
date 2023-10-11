@@ -113,7 +113,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 				cp.Expect("Creating a Virtual Environment")
 				// cp.Expect("Quick Start", termtest.OptExpectTimeout(time.Minute*2))
 				// ensure that shell is functional
-				cp.ExpectInput(termtest.OptExpectTimeout(time.Minute * 2))
+				cp.ExpectInput(termtest.OptExpectTimeout(time.Minute))
 
 				cp.SendLine("python3 -c \"import sys; print(sys.copyright)\"")
 				cp.Expect("ActiveState")
@@ -128,17 +128,16 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 
 			if runtime.GOOS == "windows" {
 				fmt.Println("Bashifying windows path:", installPath, statePath)
-				installPath, err = osutils.BashifyPath(installPath)
-				suite.NoError(err)
-
 				installPath, err = fileutils.GetLongPathName(installPath)
 				suite.Require().NoError(err)
-
-				statePath, err = osutils.BashifyPath(statePath)
+				installPath, err = osutils.BashifyPath(installPath)
 				suite.NoError(err)
 
 				statePath, err = fileutils.GetLongPathName(statePath)
 				suite.Require().NoError(err)
+				statePath, err = osutils.BashifyPath(statePath)
+				suite.NoError(err)
+
 				fmt.Println("Updated install path:", installPath)
 				fmt.Println("UPdated state path:", statePath)
 			}
