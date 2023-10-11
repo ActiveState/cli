@@ -11,7 +11,6 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
-	"strings"
 
 	"github.com/mholt/archiver"
 
@@ -67,13 +66,9 @@ func archiveMeta() (archiveMethod archiver.Archiver, ext string) {
 	return archiver.NewTarGz(), ".tar.gz"
 }
 
-func createUpdate(outputPath, channel, version, platform, target string) error {
+func createUpdate(outputPath, channel, version, versionNumber, platform, target string) error {
 	relChannelPath := filepath.Join(channel, platform)
-	versionNoSHA := version
-	if i := strings.Index(version, "-SHA"); i != -1 {
-		versionNoSHA = version[0:i]
-	}
-	relVersionedPath := filepath.Join(channel, versionNoSHA, platform)
+	relVersionedPath := filepath.Join(channel, versionNumber, platform)
 	_ = os.MkdirAll(filepath.Join(outputPath, relChannelPath), 0o755)
 	_ = os.MkdirAll(filepath.Join(outputPath, relVersionedPath), 0o755)
 
@@ -134,12 +129,13 @@ func createInstaller(buildPath, outputPath, channel, platform string) error {
 
 func run() error {
 	var (
-		binDir   = defaultBuildDir
-		inDir    = defaultInputDir
-		outDir   = defaultOutputDir
-		platform = fetchPlatform()
-		branch   = constants.BranchName
-		version  = constants.Version
+		binDir        = defaultBuildDir
+		inDir         = defaultInputDir
+		outDir        = defaultOutputDir
+		platform      = fetchPlatform()
+		branch        = constants.BranchName
+		version       = constants.Version
+		versionNumber = constants.VersionNumber
 	)
 
 	flag.StringVar(&outDir, "o", outDir, "Override directory to output archive to.")
@@ -155,7 +151,7 @@ func run() error {
 		return err
 	}
 
-	if err := createUpdate(outDir, branch, version, platform, inDir); err != nil {
+	if err := createUpdate(outDir, branch, version, versionNumber, platform, inDir); err != nil {
 		return err
 	}
 
