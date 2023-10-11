@@ -713,24 +713,15 @@ func (suite *PackageIntegrationTestSuite) TestProjectWithCustomVersionRequiremen
 	// Because the ActiveState-CLI org has enterprise features enabled, we need to login
 	ts.LoginAsPersistentUser()
 
+	// This project was created with the following requirements.txt:
+	//   coverage!=3.5
+	//   docopt>=0.6.1
+	//   Mopidy-Dirble>=1.1,<2
+	//   requests>=2.2,<2.31.0
+	//   urllib3>=1.21.1,<=1.26.5
 	cp := ts.Spawn("checkout", "ActiveState-CLI/Comparators", ".")
 	cp.Expect("Skipping runtime setup")
 	cp.Expect("Checked out project")
-	cp.ExpectExitCode(0)
-
-	complexReqsData := `coverage!=3.5
-docopt>=0.6.1
-Mopidy-Dirble>=1.1,<2
-requests>=2.2
-urllib3>=1.21.1,<=1.26.5`
-
-	ts.PrepareFile(filepath.Join(cp.WorkDirectory(), reqsFileName), complexReqsData)
-
-	cp = ts.Spawn("import", "requirements.txt")
-	cp.ExpectExitCode(0)
-
-	cp = ts.Spawn("packages")
-	cp.Expect("coverage")
 	cp.ExpectExitCode(0)
 
 	// Uninstall all of the packages with custom version requirements
@@ -738,31 +729,31 @@ urllib3>=1.21.1,<=1.26.5`
 		e2e.OptArgs("uninstall", "coverage"),
 		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
-	cp.ExpectExitCode(0, termtest.OptExpectTimeout(time.Minute))
+	cp.ExpectExitCode(0)
 
 	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("uninstall", "docopt"),
 		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
-	cp.ExpectExitCode(0, termtest.OptExpectTimeout(time.Minute))
+	cp.ExpectExitCode(0)
 
 	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("uninstall", "Mopidy-Dirble"),
 		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
-	cp.ExpectExitCode(0, termtest.OptExpectTimeout(time.Minute))
+	cp.ExpectExitCode(0)
 
 	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("uninstall", "requests"),
 		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
-	cp.ExpectExitCode(0, termtest.OptExpectTimeout(time.Minute))
+	cp.ExpectExitCode(0)
 
 	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("uninstall", "urllib3"),
 		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
-	cp.ExpectExitCode(0, termtest.OptExpectTimeout(time.Minute))
+	cp.ExpectExitCode(0)
 }
 
 func TestPackageIntegrationTestSuite(t *testing.T) {
