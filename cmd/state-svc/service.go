@@ -12,6 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/ipc"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/svcctl"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -61,7 +62,7 @@ func (s *service) Start() error {
 	err = s.ipcSrv.Start()
 	if err != nil {
 		if errors.Is(err, ipc.ErrInUse) {
-			return errs.Wrap(err, "An existing server instance appears to be in use")
+			return locale.WrapInputError(err, "err_service_ipc_in_use", "An existing server instance appears to be in use")
 		}
 		return errs.Wrap(err, "Failed to start server")
 	}
