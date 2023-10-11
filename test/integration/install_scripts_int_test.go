@@ -133,7 +133,8 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 
 				statePath, err = osutils.BashifyPath(statePath)
 				suite.NoError(err)
-				fmt.Println("Updated paths:", installPath, statePath)
+				fmt.Println("Updated install path:", installPath)
+				fmt.Println("UPdated state path:", statePath)
 			}
 
 			cp.SendLine("env | grep PATH")
