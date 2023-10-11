@@ -127,22 +127,6 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 
 			statePath := filepath.Join(binPath, "state"+osutils.ExeExt)
 
-			if runtime.GOOS == "windows" {
-				fmt.Println("Bashifying windows path:", installPath, statePath)
-				installPath, err = fileutils.GetLongPathName(installPath)
-				suite.Require().NoError(err)
-				installPath, err = osutils.BashifyPath(installPath)
-				suite.NoError(err)
-
-				statePath, err = fileutils.GetLongPathName(statePath)
-				suite.Require().NoError(err)
-				statePath, err = osutils.BashifyPath(statePath)
-				suite.NoError(err)
-
-				fmt.Println("Updated install path:", installPath)
-				fmt.Println("UPdated state path:", statePath)
-			}
-
 			if runtime.GOOS != "windows" {
 				cp.SendLine("echo $PATH")
 			} else {
