@@ -263,9 +263,12 @@ func (s *Session) SpawnCmdWithOpts(exe string, optSetters ...SpawnOptSetter) *Sp
 		termtest.OptRows(30), // Needs to be able to accommodate most JSON output
 	)
 
-	// Work around issue where multiline values sometimes have the wrong line endings
-	// See for example TestBranch_List
-	// https://activestatef.atlassian.net/browse/DX-2169
+	// TTYs output newlines in two steps: '\r' (CR) to move the caret to the beginning of the line,
+	// and '\n' (LF) to move the caret one line down. Terminal emulators do the same thing, so the
+	// raw terminal output will contain "\r\n". Since our multi-line expectation messages often use
+	// '\n', normalize line endings to that for convenience, regardless of platform ('\n' for Linux
+	// and macOS, "\r\n" for Windows).
+	// More info: https://superuser.com/a/1774370
 	spawnOpts.TermtestOpts = append(spawnOpts.TermtestOpts,
 		termtest.OptNormalizedLineEnds(true),
 	)

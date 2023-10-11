@@ -192,7 +192,7 @@ func (suite *PushIntegrationTestSuite) TestPush_NoPermission_NewProject() {
 
 	cp = ts.SpawnWithOpts(e2e.OptArgs("push"))
 	cp.Expect("not authorized")
-	cp.Expect("(y/N)")
+	cp.Expect("(Y/n)")
 	cp.SendLine("y")
 	cp.Expect("Who would you like the owner of this project to be?")
 	cp.SendEnter()
@@ -262,6 +262,160 @@ func (suite *PushIntegrationTestSuite) TestCarlisle() {
 	cp.Expect("Project created")
 	cp.ExpectExitCode(0)
 	ts.NotifyProjectCreated(suite.username, pname.String())
+}
+
+func (suite *PushIntegrationTestSuite) TestPush_NoProject() {
+	suite.OnlyRunForTags(tagsuite.Push)
+
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	ts.LoginAsPersistentUser()
+	cp := ts.SpawnWithOpts(e2e.OptArgs("push"))
+	cp.Expect("No project found")
+	cp.ExpectExitCode(1)
+
+	if strings.Count(cp.Snapshot(), " x ") != 1 {
+		suite.Fail("Expected exactly ONE error message, got: %s", cp.Snapshot())
+	}
+}
+
+func (suite *PushIntegrationTestSuite) TestPush_NoAuth() {
+	suite.OnlyRunForTags(tagsuite.Push)
+
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	ts.PrepareProject("ActiveState-CLI/cli", "882ae76e-fbb7-4989-acc9-9a8b87d49388")
+
+	cp := ts.SpawnWithOpts(e2e.OptArgs("push"))
+	cp.Expect("you need to be authenticated")
+	cp.ExpectExitCode(1)
+
+	if strings.Count(cp.Snapshot(), " x ") != 1 {
+		suite.Fail("Expected exactly ONE error message, got: %s", cp.Snapshot())
+	}
+}
+
+func (suite *PushIntegrationTestSuite) TestPush_NoChanges() {
+	suite.OnlyRunForTags(tagsuite.Push)
+
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.SpawnWithOpts(e2e.OptArgs("checkout", "ActiveState-CLI/small-python", "."))
+	cp.ExpectExitCode(0)
+
+	ts.LoginAsPersistentUser()
+	cp = ts.SpawnWithOpts(e2e.OptArgs("push"))
+	cp.Expect("no local changes to push")
+	cp.ExpectExitCode(1)
+
+	if strings.Count(cp.Snapshot(), " x ") != 1 {
+		suite.Fail("Expected exactly ONE error message, got: %s", cp.Snapshot())
+	}
+}
+
+func (suite *PushIntegrationTestSuite) TestPush_NoCommit() {
+	suite.OnlyRunForTags(tagsuite.Push)
+
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	ts.PrepareProject("ActiveState-CLI/cli", "")
+
+	ts.LoginAsPersistentUser()
+	cp := ts.SpawnWithOpts(e2e.OptArgs("push"))
+	cp.Expect("nothing to push")
+	cp.ExpectExitCode(1)
+
+	if strings.Count(cp.Snapshot(), " x ") != 1 {
+		suite.Fail("Expected exactly ONE error message, got: %s", cp.Snapshot())
+	}
+}
+
+func (suite *PushIntegrationTestSuite) TestPush_NameInUse() {
+	suite.OnlyRunForTags(tagsuite.Push)
+
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	// Source project we do not have access to
+	ts.PrepareProject("ActiveState-Test-DevNull/push-error-test", "2aa0b8fa-04e2-4079-bde1-d46764e3cb53")
+
+	ts.LoginAsPersistentUser()
+	// Target project already exists
+	cp := ts.SpawnWithOpts(e2e.OptArgs("push", "-n", "ActiveState-CLI/push-error-test"))
+	cp.Expect("already in use")
+	cp.ExpectExitCode(1)
+
+	if strings.Count(cp.Snapshot(), " x ") != 1 {
+		suite.Fail("Expected exactly ONE error message, got: %s", cp.Snapshot())
+	}
+}
+
+func (suite *PushIntegrationTestSuite) TestPush_Aborted() {
+	// Skipped for now due to DX-2244
+	suite.T().Skip("Confirming prompt with N not working, must fix first")
+
+	suite.OnlyRunForTags(tagsuite.Push)
+
+	ts := e2e.New(suite.T(), true)
+	defer ts.Close()
+
+	// Source project we do not have access to
+	ts.PrepareProject("ActiveState-Test-DevNull/push-error-test", "2aa0b8fa-04e2-4079-bde1-d46764e3cb53")
+
+	ts.LoginAsPersistentUser()
+	// Target project already exists
+	cp := ts.SpawnWithOpts(e2e.OptArgs("push"))
+	cp.Expect("Would you like to create a new project")
+	cp.SendLine("n")
+	cp.Expect("Project creation aborted by user", termtest.OptExpectTimeout(5*time.Second))
+	cp.ExpectExitCode(1)
+
+	if strings.Count(cp.Snapshot(), " x ") != 1 {
+		suite.Fail("Expected exactly ONE error message, got: %s", cp.Snapshot())
+	}
+}
+
+func (suite *PushIntegrationTestSuite) TestPush_InvalidHistory() {
+	suite.OnlyRunForTags(tagsuite.Push)
+
+	ts := e2e.New(suite.T(), true)
+	defer ts.Close()
+
+	// Note the commit we're using here is for another project, in order to repro the error
+	ts.PrepareProject("ActiveState-CLI/small-python", "dbc0415e-91e8-407b-ad36-1de0cc5c0cbb")
+
+	ts.LoginAsPersistentUser()
+	// Target project already exists
+	cp := ts.SpawnWithOpts(e2e.OptArgs("push", "ActiveState-CLI/push-error-test"))
+	cp.Expect("commit history does not match")
+	cp.ExpectExitCode(1)
+
+	if strings.Count(cp.Snapshot(), " x ") != 1 {
+		suite.Fail("Expected exactly ONE error message, got: %s", cp.Snapshot())
+	}
+}
+
+func (suite *PushIntegrationTestSuite) TestPush_PullNeeded() {
+	suite.OnlyRunForTags(tagsuite.Push)
+
+	ts := e2e.New(suite.T(), true)
+	defer ts.Close()
+
+	ts.PrepareProject("ActiveState-CLI/push-error-test", "899c9b4c-d28d-441a-9c28-c84819ba8b1a")
+
+	ts.LoginAsPersistentUser()
+	// Target project already exists
+	cp := ts.SpawnWithOpts(e2e.OptArgs("push"))
+	cp.Expect("changes available that need to be merged")
+	cp.ExpectExitCode(1)
+
+	if strings.Count(cp.Snapshot(), " x ") != 1 {
+		suite.Fail("Expected exactly ONE error message, got: %s", cp.Snapshot())
+	}
 }
 
 func (suite *PushIntegrationTestSuite) TestPush_Outdated() {

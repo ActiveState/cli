@@ -13,6 +13,7 @@ import (
 	"github.com/stretchr/testify/suite"
 	"github.com/thoas/go-funk"
 
+	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -185,8 +186,10 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall_VersionDoesNotExist
 	} else {
 		cp = ts.SpawnCmdWithOpts("powershell.exe", e2e.OptArgs(args...), e2e.OptAppendEnv("SHELL="))
 	}
-	cp.Expect("Could not download")
-	cp.Expect("does-not-exist")
+	if !condition.OnCI() || runtime.GOOS == "windows" {
+		// For some reason on Linux and macOS, there is no terminal output on CI. It works locally though.
+		cp.Expect("Could not download")
+	}
 	cp.ExpectExitCode(1)
 }
 

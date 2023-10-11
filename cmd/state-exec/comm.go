@@ -12,14 +12,14 @@ const (
 	msgWidth = 1024
 )
 
-func sendMsgToService(sockPath string, hb *svcmsg.Heartbeat) error {
+func sendMsgToService(sockPath string, msg svcmsg.Messager) error {
 	conn, err := net.Dial(network, sockPath)
 	if err != nil {
 		return fmt.Errorf("dial failed: %w", err)
 	}
 	defer conn.Close()
 
-	_, err = conn.Write([]byte(hb.SvcMsg()))
+	_, err = conn.Write([]byte(msg.SvcMsg()))
 	if err != nil {
 		return fmt.Errorf("write to connection failed: %w", err)
 	}

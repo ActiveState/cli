@@ -18,13 +18,13 @@ func (c *Checkout) rationalizeError(err *error) {
 	case errors.As(*err, &errAlreadyCheckedOut):
 		*err = errs.WrapUserFacing(
 			*err, locale.Tr("err_already_checked_out", errAlreadyCheckedOut.Path),
-			errs.SetInput(true),
+			errs.SetInput(),
 		)
 	case errors.As(*err, &errProjectNotFound):
 		*err = errs.WrapUserFacing(*err,
 			locale.Tr("err_api_project_not_found", errProjectNotFound.Organization, errProjectNotFound.Project),
 			errs.SetIf(!c.auth.Authenticated(), errs.SetTips(locale.T("tip_private_project_auth"))),
-			errs.SetInput(true),
+			errs.SetInput(),
 		)
 	}
 }

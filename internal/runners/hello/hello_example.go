@@ -8,6 +8,8 @@
 package hello
 
 import (
+	"errors"
+
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
@@ -70,7 +72,7 @@ func rationalizeError(err *error) {
 		// Ensure we wrap the top-level error returned from the runner and not
 		// the unpacked error that we are inspecting.
 		*err = errs.WrapUserFacing(*err, locale.Tl("hello_err_no_name", "Cannot say hello because no name was provided."))
-	case errs.Matches(*err, &rationalize.ErrNoProject{}):
+	case errors.Is(*err, rationalize.ErrNoProject):
 		// It's useful to offer users reasonable tips on recourses.
 		*err = errs.WrapUserFacing(
 			*err,
@@ -89,7 +91,7 @@ func (h *Hello) Run(params *RunParams) (rerr error) {
 	h.out.Print(locale.Tl("hello_notice", "This command is for example use only"))
 
 	if h.project == nil {
-		return &rationalize.ErrNoProject{errs.New("Not in a project directory")}
+		return rationalize.ErrNoProject
 	}
 
 	// Reusable runner logic is contained within the runbits package.
