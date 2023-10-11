@@ -729,6 +729,14 @@ urllib3>=1.21.1,<=1.26.5
 
 	cp = ts.Spawn("import", reqsFileName)
 	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("packages")
+	cp.Expect("coverage")
+	cp.Expect("docopt")
+	cp.Expect("Mopidy-Dirble")
+	cp.Expect("requests")
+	cp.Expect("urllib3")
+	cp.ExpectExitCode(0)
 }
 
 func (suite *PackageIntegrationTestSuite) TestProjectWithCustomVersionRequirements() {
