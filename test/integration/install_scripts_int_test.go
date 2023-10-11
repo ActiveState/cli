@@ -143,8 +143,13 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 				fmt.Println("UPdated state path:", statePath)
 			}
 
-			cp.SendLine("env | grep PATH")
-			cp.Expect(installPath)
+			if runtime.GOOS != "windows" {
+				cp = ts.SpawnCmd("env | grep PATH")
+				cp.Expect(installPath)
+			} else {
+				cp = ts.SpawnCmd("echo %PATH%")
+				cp.Expect(installPath)
+			}
 			cp.SendLine(statePath + " --version")
 			cp.Expect("Version " + constants.Version)
 			cp.Expect("Branch " + constants.BranchName)
