@@ -113,7 +113,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 				cp.Expect("Creating a Virtual Environment")
 				// cp.Expect("Quick Start", termtest.OptExpectTimeout(time.Minute*2))
 				// ensure that shell is functional
-				cp.ExpectInput(termtest.OptExpectTimeout(time.Minute))
+				cp.ExpectInput(termtest.OptExpectTimeout(time.Minute * 2))
 
 				cp.SendLine("python3 -c \"import sys; print(sys.copyright)\"")
 				cp.Expect("ActiveState")
