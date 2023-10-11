@@ -144,9 +144,9 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 			}
 
 			if runtime.GOOS != "windows" {
-				cp.SendLine("echo %PATH%")
-			} else {
 				cp.SendLine("echo $PATH")
+			} else {
+				cp.SendLine("echo %PATH%")
 			}
 			cp.Expect(installPath)
 			cp.SendLine(statePath + " --version")
