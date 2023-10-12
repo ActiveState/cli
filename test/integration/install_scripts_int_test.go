@@ -114,17 +114,19 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 				cp.Expect("Creating a Virtual Environment")
 				cp.Expect("Quick Start", termtest.OptExpectTimeout(time.Minute*2))
 				// ensure that shell is functional
-				cp.ExpectInput(termtest.OptExpectTimeout(time.Minute * 2))
+				cp.ExpectInput()
 
 				cp.SendLine("python3 -c \"import sys; print(sys.copyright)\"")
 				cp.Expect("ActiveState")
 			}
 
+			// We get the default install path and use that to directly invoke
+			// the state tool. This is to avoid inadvertently using the state
+			// tool that is already on the PATH.
 			installPath, err := installation.InstallPathForBranch(constants.BranchName)
 			suite.NoError(err)
 
 			binPath := filepath.Join(installPath, "bin")
-
 			statePath := filepath.Join(binPath, "state"+osutils.ExeExt)
 
 			if runtime.GOOS != "windows" {
