@@ -49,7 +49,6 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 			ts := e2e.New(suite.T(), false)
 			defer ts.Close()
 
-			fmt.Println("Using home dir:", ts.Dirs.HomeDir)
 			suite.T().Setenv(constants.HomeEnvVarName, ts.Dirs.HomeDir)
 
 			// Determine URL of install script.
@@ -108,11 +107,10 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 			}
 
 			expectStateToolInstallation(cp)
-			fmt.Println("Installation snapshot:", cp.Snapshot())
 
 			if tt.Activate != "" || tt.ActivateByCommand != "" {
 				cp.Expect("Creating a Virtual Environment")
-				// cp.Expect("Quick Start", termtest.OptExpectTimeout(time.Minute*2))
+				cp.Expect("Quick Start", termtest.OptExpectTimeout(time.Minute*2))
 				// ensure that shell is functional
 				cp.ExpectInput(termtest.OptExpectTimeout(time.Minute * 2))
 
@@ -235,9 +233,7 @@ func expectStateToolInstallation(cp *e2e.SpawnedCmd) {
 
 // assertBinDirContents checks if given files are or are not in the bin directory
 func (suite *InstallScriptsIntegrationTestSuite) assertBinDirContents(dir string) {
-	fmt.Println("Searching dir:", dir)
 	binFiles := listFilesOnly(dir)
-	fmt.Println("Bin files:", binFiles)
 	suite.Contains(binFiles, "state"+osutils.ExeExt)
 	suite.Contains(binFiles, "state-svc"+osutils.ExeExt)
 }
@@ -265,7 +261,6 @@ func (suite *InstallScriptsIntegrationTestSuite) assertCorrectVersion(ts *e2e.Se
 	cp.ExpectExitCode(0)
 	actual := versionData{}
 	out := cp.StrippedSnapshot()
-	fmt.Println("Stripped snapshot:", out)
 	suite.Require().NoError(json.Unmarshal([]byte(out), &actual))
 
 	if expectedVersion != "" {
