@@ -16,8 +16,6 @@ and this project adheres to
   browser instead of the login page.
 * `state shell` can now detect currently active subshells preventing nested
   shells from being created.
-* The State Tool will now print a message when starting a subshell, indicating
-  the project that is being used.
 * Wildcard and partial version matching is now supported for `state install`
   and for language versions with `state init`. For example:
   `state install pytest@2.x`.
