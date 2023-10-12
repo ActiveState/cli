@@ -16,7 +16,12 @@ import (
 // lookup table and calls the recursive function buildMap to build up the
 // artifact map by traversing the build plan from the terminal targets through
 // all of the runtime dependencies for each of the artifacts in the DAG.
-func NewMapFromBuildPlan(build *model.Build) (artifact.Map, error) {
+
+// Setting calculateBuildtimeClosure as true calculates the artifact map with the builtime
+// dependencies. This is different from the runtime dependency calculation as it
+// includes ALL of the input artifacts of the step that generated each artifact.
+// The includeBuilders argument determines whether or not to include builder artifacts in the final result.
+func NewMapFromBuildPlan(build *model.Build, calculateBuildtimeClosure bool) (artifact.Map, error) {
 	res := make(artifact.Map)
 
 	lookup := make(map[strfmt.UUID]interface{})
@@ -46,10 +51,17 @@ func NewMapFromBuildPlan(build *model.Build) (artifact.Map, error) {
 		}
 	}
 
-	for _, id := range terminalTargetIDs {
-		err := buildRuntimeClosureMap(id, lookup, res)
-		if err != nil {
-			return nil, errs.Wrap(err, "Could not build map for terminal %s", id)
+	if calculateBuildtimeClosure {
+		for _, id := range terminalTargetIDs {
+			if err := newBuildClosureMap(id, lookup, res); err != nil {
+				return nil, errs.Wrap(err, "Could not build map for terminal %s", id)
+			}
+		}
+	} else {
+		for _, id := range terminalTargetIDs {
+			if err := buildRuntimeClosureMap(id, lookup, res); err != nil {
+				return nil, errs.Wrap(err, "Could not build map for terminal %s", id)
+			}
 		}
 	}
 
@@ -288,8 +300,8 @@ func RecursiveDependenciesFor(a artifact.ArtifactID, artifacts artifact.Map) []a
 
 // NewMapFromBuildPlan creates an artifact map from a build plan
 // where the key is the artifact name rather than the artifact ID.
-func NewNamedMapFromBuildPlan(build *model.Build) (artifact.NamedMap, error) {
-	am, err := NewMapFromBuildPlan(build)
+func NewNamedMapFromBuildPlan(build *model.Build, buildtimeClosure bool) (artifact.NamedMap, error) {
+	am, err := NewMapFromBuildPlan(build, buildtimeClosure)
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not create artifact map")
 	}
@@ -300,48 +312,6 @@ func NewNamedMapFromBuildPlan(build *model.Build) (artifact.NamedMap, error) {
 	}
 
 	return res, nil
-}
-
-// NewBuildtimeMap iterates through all artifacts in a given build and
-// adds the artifact's dependencies to a map. This is different from the
-// runtime dependency calculation as it includes ALL of the input artifacts of the
-// step that generated each artifact. The includeBuilders argument determines whether
-// or not to include builder artifacts in the final result.
-func NewBuildtimeMap(build *model.Build) (artifact.Map, error) {
-	filteredTerminals, err := filterTerminals(build)
-	if err != nil {
-		return nil, errs.Wrap(err, "Could not filter terminals")
-	}
-
-	lookup := make(map[strfmt.UUID]interface{})
-	for _, artifact := range build.Artifacts {
-		lookup[artifact.NodeID] = artifact
-	}
-	for _, step := range build.Steps {
-		lookup[step.StepID] = step
-	}
-	for _, source := range build.Sources {
-		lookup[source.NodeID] = source
-	}
-
-	var terminalTargetIDs []strfmt.UUID
-	for _, terminal := range filteredTerminals {
-		// If there is an artifact for this terminal and its mime type is not a state tool artifact
-		// then we need to recurse back through the DAG until we find nodeIDs that are state tool
-		// artifacts. These are the terminal targets.
-		for _, nodeID := range terminal.NodeIDs {
-			buildTerminals(nodeID, lookup, &terminalTargetIDs)
-		}
-	}
-
-	result := make(artifact.Map)
-	for _, id := range terminalTargetIDs {
-		if err := newBuildClosureMap(id, lookup, result); err != nil {
-			return nil, errs.Wrap(err, "Could not build map for terminal %s", id)
-		}
-	}
-
-	return result, nil
 }
 
 // newBuildClosureMap recursively builds the artifact map from the lookup table.

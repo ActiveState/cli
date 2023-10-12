@@ -390,24 +390,26 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 
 	// If the build is not ready, we need to get the runtime and buildtime closure
 	if !buildResult.BuildReady {
-		runtimeAndBuildtimeArtifacts, err = buildplan.NewBuildtimeMap(buildResult.Build)
+		runtimeAndBuildtimeArtifacts, err = buildplan.NewMapFromBuildPlan(buildResult.Build, true)
 		if err != nil {
 			return nil, nil, errs.Wrap(err, "Failed to create artifact map from build plan")
 		}
 	}
 
+	var includeBuildtimeClosure bool
 	// If we are installing build dependencies, then buildtime dependencies are also runtime dependencies
 	if strings.EqualFold(os.Getenv(constants.InstallBuildDependencies), "true") {
 		logging.Debug("Installing build dependencies")
+		includeBuildtimeClosure = true
 		if runtimeAndBuildtimeArtifacts == nil {
-			runtimeAndBuildtimeArtifacts, err = buildplan.NewBuildtimeMap(buildResult.Build)
+			runtimeAndBuildtimeArtifacts, err = buildplan.NewMapFromBuildPlan(buildResult.Build, includeBuildtimeClosure)
 			if err != nil {
 				return nil, nil, errs.Wrap(err, "Failed to create artifact map from build plan")
 			}
 		}
 		runtimeArtifacts = runtimeAndBuildtimeArtifacts
 	} else {
-		runtimeArtifacts, err = buildplan.NewMapFromBuildPlan(buildResult.Build)
+		runtimeArtifacts, err = buildplan.NewMapFromBuildPlan(buildResult.Build, false)
 		if err != nil {
 			return nil, nil, errs.Wrap(err, "Failed to create artifact map from build plan")
 		}
@@ -461,7 +463,7 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 		s.analytics.Event(anaConsts.CatRuntimeDebug, anaConsts.ActRuntimeBuild, dimensions)
 	}
 
-	changedArtifacts, err := buildplan.NewBaseArtifactChangesetByBuildPlan(buildResult.Build, false)
+	changedArtifacts, err := buildplan.NewBaseArtifactChangesetByBuildPlan(buildResult.Build, false, includeBuildtimeClosure)
 	if err != nil {
 		return nil, nil, errs.Wrap(err, "Could not compute base artifact changeset")
 	}
@@ -472,7 +474,7 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 	}
 
 	if oldBuildPlan != nil {
-		changedArtifacts, err = buildplan.NewArtifactChangesetByBuildPlan(oldBuildPlan, buildResult.Build, false)
+		changedArtifacts, err = buildplan.NewArtifactChangesetByBuildPlan(oldBuildPlan, buildResult.Build, false, includeBuildtimeClosure)
 		if err != nil {
 			return nil, nil, errs.Wrap(err, "Could not compute artifact changeset")
 		}
