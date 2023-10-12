@@ -49,6 +49,10 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 			ts := e2e.New(suite.T(), false)
 			defer ts.Close()
 
+			// The home dir is set already for the test session, but we need to
+			// set it for the test so helper functions can find it.
+			suite.T().Setenv(constants.HomeEnvVarName, ts.Dirs.HomeDir)
+
 			// Determine URL of install script.
 			baseUrl := "https://state-tool.s3.amazonaws.com/update/state/"
 			scriptBaseName := "install."
