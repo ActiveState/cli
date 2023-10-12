@@ -21,7 +21,7 @@ const S3Bucket = "update/state/"
 const VersionsJson = "versions.json"
 
 // Valid channels to update the master version file with.
-var ValidChannels = []string{"master", "beta", "release", "LTS"}
+var ValidChannels = []string{"beta", "release", "LTS"}
 
 func init() {
 	if !condition.OnCI() {
