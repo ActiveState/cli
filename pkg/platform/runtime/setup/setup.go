@@ -137,7 +137,6 @@ type Setup struct {
 type Setuper interface {
 	// DeleteOutdatedArtifacts deletes outdated artifact as best as it can
 	DeleteOutdatedArtifacts(artifact.ArtifactChangeset, store.StoredArtifactMap, store.StoredArtifactMap) error
-	ResolveArtifactName(artifact.ArtifactID) string
 	DownloadsFromBuild(build bpModel.Build, artifacts map[strfmt.UUID]artifact.Artifact) (download []artifact.ArtifactDownload, err error)
 }
 
@@ -146,6 +145,10 @@ type Setuper interface {
 type ArtifactSetuper interface {
 	EnvDef(tmpInstallDir string) (*envdef.EnvironmentDefinition, error)
 	Unarchiver() unarchiver.Unarchiver
+}
+
+type ArtifactResolver interface {
+	ResolveArtifactName(artifact.ArtifactID) string
 }
 
 type artifactInstaller func(artifact.ArtifactID, string, ArtifactSetuper) error
@@ -410,12 +413,17 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 		}
 	}
 
-	var setup Setuper
+	var resolver ArtifactResolver
 	if !buildResult.BuildReady {
-		setup, err = s.selectSetupImplementation(buildResult.BuildEngine, runtimeAndBuildtimeArtifacts)
+		resolver, err = selectArtifactResolver(buildResult.BuildEngine, runtimeAndBuildtimeArtifacts)
 	} else {
-		setup, err = s.selectSetupImplementation(buildResult.BuildEngine, runtimeArtifacts)
+		resolver, err = selectArtifactResolver(buildResult.BuildEngine, runtimeArtifacts)
 	}
+	if err != nil {
+		return nil, nil, errs.Wrap(err, "Failed to select artifact resolver")
+	}
+
+	setup, err := s.selectSetupImplementation(buildResult.BuildEngine)
 	if err != nil {
 		return nil, nil, errs.Wrap(err, "Failed to select setup implementation")
 	}
@@ -489,7 +497,7 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 		}
 	}
 
-	artifactNames := artifact.ResolveArtifactNames(setup.ResolveArtifactName, artifactIDs)
+	artifactNames := artifact.ResolveArtifactNames(resolver.ResolveArtifactName, artifactIDs)
 	artifactNamesList := []string{}
 	for _, n := range artifactNames {
 		artifactNamesList = append(artifactNamesList, n)
@@ -554,7 +562,7 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 		s.analytics.Event(anaConsts.CatRuntimeDebug, anaConsts.ActRuntimeDownload, dimensions)
 	}
 
-	err = s.installArtifactsFromBuild(buildResult, runtimeArtifacts, artifact.ArtifactIDsToMap(artifactsToInstall), downloadablePrebuiltResults, setup, installFunc, logFilePath)
+	err = s.installArtifactsFromBuild(buildResult, runtimeArtifacts, artifact.ArtifactIDsToMap(artifactsToInstall), downloadablePrebuiltResults, setup, resolver, installFunc, logFilePath)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -599,7 +607,7 @@ func aggregateErrors() (chan<- error, <-chan error) {
 	return bgErrs, aggErr
 }
 
-func (s *Setup) installArtifactsFromBuild(buildResult *model.BuildResult, artifacts artifact.Map, artifactsToInstall map[artifact.ArtifactID]struct{}, downloads []artifact.ArtifactDownload, setup Setuper, installFunc artifactInstaller, logFilePath string) error {
+func (s *Setup) installArtifactsFromBuild(buildResult *model.BuildResult, artifacts artifact.Map, artifactsToInstall map[artifact.ArtifactID]struct{}, downloads []artifact.ArtifactDownload, setup Setuper, resolver ArtifactResolver, installFunc artifactInstaller, logFilePath string) error {
 	// Artifacts are installed in two stages
 	// - The first stage runs concurrently in MaxConcurrency worker threads (download, unpacking, relocation)
 	// - The second stage moves all files into its final destination is running in a single thread (using the mainthread library) to avoid file conflicts
@@ -609,16 +617,16 @@ func (s *Setup) installArtifactsFromBuild(buildResult *model.BuildResult, artifa
 		if err := s.handleEvent(events.BuildSkipped{}); err != nil {
 			return errs.Wrap(err, "Could not handle BuildSkipped event")
 		}
-		err = s.installFromBuildResult(buildResult, artifacts, artifactsToInstall, downloads, setup, installFunc)
+		err = s.installFromBuildResult(buildResult, artifacts, artifactsToInstall, downloads, setup, resolver, installFunc)
 	} else {
-		err = s.installFromBuildLog(buildResult, artifacts, artifactsToInstall, setup, installFunc, logFilePath)
+		err = s.installFromBuildLog(buildResult, artifacts, artifactsToInstall, setup, resolver, installFunc, logFilePath)
 	}
 
 	return err
 }
 
 // setupArtifactSubmitFunction returns a function that sets up an artifact and can be submitted to a workerpool
-func (s *Setup) setupArtifactSubmitFunction(a artifact.ArtifactDownload, ar *artifact.Artifact, expectedArtifactInstalls map[artifact.ArtifactID]struct{}, buildResult *model.BuildResult, setup Setuper, installFunc artifactInstaller, errors chan<- error) func() {
+func (s *Setup) setupArtifactSubmitFunction(a artifact.ArtifactDownload, ar *artifact.Artifact, expectedArtifactInstalls map[artifact.ArtifactID]struct{}, buildResult *model.BuildResult, setup Setuper, resolver ArtifactResolver, installFunc artifactInstaller, errors chan<- error) func() {
 	return func() {
 		// If artifact has no valid download, just count it as completed and return
 		if strings.Contains(ar.URL, "as-builds/noop") ||
@@ -645,21 +653,21 @@ func (s *Setup) setupArtifactSubmitFunction(a artifact.ArtifactDownload, ar *art
 		unarchiver := as.Unarchiver()
 		archivePath, err := s.obtainArtifact(a, unarchiver.Ext())
 		if err != nil {
-			name := setup.ResolveArtifactName(a.ArtifactID)
+			name := resolver.ResolveArtifactName(a.ArtifactID)
 			errors <- locale.WrapError(err, "artifact_download_failed", "", name, a.ArtifactID.String())
 			return
 		}
 
 		err = installFunc(a.ArtifactID, archivePath, as)
 		if err != nil {
-			name := setup.ResolveArtifactName(a.ArtifactID)
+			name := resolver.ResolveArtifactName(a.ArtifactID)
 			errors <- locale.WrapError(err, "artifact_setup_failed", "", name, a.ArtifactID.String())
 			return
 		}
 	}
 }
 
-func (s *Setup) installFromBuildResult(buildResult *model.BuildResult, artifacts artifact.Map, artifactsToInstall map[artifact.ArtifactID]struct{}, downloads []artifact.ArtifactDownload, setup Setuper, installFunc artifactInstaller) error {
+func (s *Setup) installFromBuildResult(buildResult *model.BuildResult, artifacts artifact.Map, artifactsToInstall map[artifact.ArtifactID]struct{}, downloads []artifact.ArtifactDownload, setup Setuper, resolver ArtifactResolver, installFunc artifactInstaller) error {
 	logging.Debug("Installing artifacts from build result")
 	errs, aggregatedErr := aggregateErrors()
 	mainthread.Run(func() {
@@ -673,7 +681,7 @@ func (s *Setup) installFromBuildResult(buildResult *model.BuildResult, artifacts
 			if arv, ok := artifacts[a.ArtifactID]; ok {
 				ar = &arv
 			}
-			wp.Submit(s.setupArtifactSubmitFunction(a, ar, map[artifact.ArtifactID]struct{}{}, buildResult, setup, installFunc, errs))
+			wp.Submit(s.setupArtifactSubmitFunction(a, ar, map[artifact.ArtifactID]struct{}{}, buildResult, setup, resolver, installFunc, errs))
 		}
 
 		wp.StopWait()
@@ -682,7 +690,7 @@ func (s *Setup) installFromBuildResult(buildResult *model.BuildResult, artifacts
 	return <-aggregatedErr
 }
 
-func (s *Setup) installFromBuildLog(buildResult *model.BuildResult, artifacts artifact.Map, artifactsToInstall map[artifact.ArtifactID]struct{}, setup Setuper, installFunc artifactInstaller, logFilePath string) error {
+func (s *Setup) installFromBuildLog(buildResult *model.BuildResult, artifacts artifact.Map, artifactsToInstall map[artifact.ArtifactID]struct{}, setup Setuper, resolver ArtifactResolver, installFunc artifactInstaller, logFilePath string) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -723,7 +731,7 @@ func (s *Setup) installFromBuildLog(buildResult *model.BuildResult, artifacts ar
 					logging.Debug("Unmonitored artifact buildlog event discarded: %s", a.ArtifactID)
 					continue
 				}
-				wp.Submit(s.setupArtifactSubmitFunction(a, ar, artifactsToInstall, buildResult, setup, installFunc, errs))
+				wp.Submit(s.setupArtifactSubmitFunction(a, ar, artifactsToInstall, buildResult, setup, resolver, installFunc, errs))
 			}
 		}()
 
@@ -872,12 +880,23 @@ func (s *Setup) unpackArtifact(ua unarchiver.Unarchiver, tarballPath string, tar
 	return numUnpackedFiles, ua.Unarchive(proxy, i, targetDir)
 }
 
-func (s *Setup) selectSetupImplementation(buildEngine model.BuildEngine, artifacts artifact.Map) (Setuper, error) {
+func (s *Setup) selectSetupImplementation(buildEngine model.BuildEngine) (Setuper, error) {
 	switch buildEngine {
 	case model.Alternative:
-		return alternative.NewSetup(s.store, artifacts), nil
+		return alternative.NewSetup(s.store), nil
 	case model.Camel:
 		return camel.NewSetup(s.store), nil
+	default:
+		return nil, errs.New("Unknown build engine: %s", buildEngine)
+	}
+}
+
+func selectArtifactResolver(buildEngine model.BuildEngine, artifacts artifact.Map) (ArtifactResolver, error) {
+	switch buildEngine {
+	case model.Alternative:
+		return alternative.NewResolver(artifacts), nil
+	case model.Camel:
+		return camel.NewResolver(), nil
 	default:
 		return nil, errs.New("Unknown build engine: %s", buildEngine)
 	}
