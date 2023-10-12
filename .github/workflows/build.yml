@@ -465,6 +465,11 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
           mask-aws-account-id: true
 
+      - # === Generate updated master versions.json if necessary ===
+        name: Generate version list
+        shell: bash
+        run: state run generate-versions-list
+
       - # === Deploy ===
         name: Deploy
         shell: bash
