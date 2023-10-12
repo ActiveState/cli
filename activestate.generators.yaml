@@ -129,13 +129,3 @@ scripts:
       $constants.SET_ENV
 
       go run scripts/ci/update-version-list/main.go ./build/update
-  - name: generate-test-versions-list
-    language: bash
-    description: Generates test versions.json
-    value: |
-      set -e
-      $constants.SET_ENV
-
-      $scripts.generate-test-update
-
-      go run scripts/ci/update-version-list/main.go ./build/test-update

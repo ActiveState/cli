@@ -11,8 +11,10 @@ import (
 	"github.com/thoas/go-funk"
 
 	"github.com/ActiveState/cli/internal/condition"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/httputil"
+	"github.com/ActiveState/cli/internal/updater"
 )
 
 // Where the master version file lives on S3.
@@ -21,7 +23,7 @@ const S3Bucket = "update/state/"
 const VersionsJson = "versions.json"
 
 // Valid channels to update the master version file with.
-var ValidChannels = []string{"beta", "release", "LTS"}
+var ValidChannels = []string{constants.BetaBranch, constants.ReleaseBranch}
 
 func init() {
 	if !condition.OnCI() {
@@ -36,7 +38,7 @@ func main() {
 	}
 
 	// Fetch the current master list from S3.
-	versions := []map[string]string{}
+	versions := []updater.AvailableUpdate{}
 	fmt.Printf("Fetching master %s file from S3\n", VersionsJson)
 	bytes, err := httputil.Get(S3PrefixURL + S3Bucket + VersionsJson)
 	if err != nil {
@@ -68,12 +70,12 @@ func main() {
 		if err != nil {
 			log.Fatalf("Unable to read file: %s", err.Error())
 		}
-		info := map[string]string{}
+		info := updater.AvailableUpdate{}
 		err = json.Unmarshal(bytes, &info)
 		if err != nil {
 			log.Fatalf("Unable to decode JSON: %s", err.Error())
 		}
-		info["path"] = S3PrefixURL + S3Bucket + info["path"] // convert relative path to full URL
+		info.Path = S3PrefixURL + S3Bucket + info.Path // convert relative path to full URL
 		versions = append(versions, info)
 		updated = true
 	}
