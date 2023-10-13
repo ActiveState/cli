@@ -199,6 +199,13 @@ func new(t *testing.T, retainDirs, updatePath bool, extraEnv ...string) *Session
 		)
 		env = append(env, newPath)
 		t.Setenv("PATH", newPath)
+
+		fmt.Println("Setting home dir to: ", dirs.HomeDir)
+		if runtime.GOOS != "windows" {
+			t.Setenv("USERPROFILE", dirs.HomeDir)
+		} else {
+			t.Setenv("HOME", dirs.HomeDir)
+		}
 	}
 
 	// add session environment variables
