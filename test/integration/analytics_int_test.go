@@ -77,7 +77,7 @@ func (suite *AnalyticsIntegrationTestSuite) TestHeartbeats() {
 	}
 
 	cp.Expect("Creating a Virtual Environment")
-	cp.Expect("Activated", termtest.OptExpectTimeout(120*time.Second))
+	cp.Expect("Activated", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectInput(termtest.OptExpectTimeout(120 * time.Second))
 
 	time.Sleep(time.Second) // Ensure state-svc has time to report events
@@ -148,6 +148,8 @@ func (suite *AnalyticsIntegrationTestSuite) TestHeartbeats() {
 		})
 		suite.Require().Equal(1, countEvents(executorEvents, anaConst.CatRuntimeUsage, anaConst.ActRuntimeAttempt, anaConst.SrcExecutor),
 			ts.DebugMessage("Should have a runtime attempt, events:\n"+suite.summarizeEvents(executorEvents)))
+		suite.Require().Equal(1, countEvents(eventsAfterExecutor, anaConst.CatDebug, anaConst.ActExecutorExit, anaConst.SrcExecutor),
+			ts.DebugMessage("Should have an executor exit event, events:\n"+suite.summarizeEvents(executorEvents)))
 
 		// It's possible due to the timing of the heartbeats and the fact that they are async that we have gotten either
 		// one or two by this point. Technically more is possible, just very unlikely.
@@ -238,7 +240,7 @@ func (suite *AnalyticsIntegrationTestSuite) TestExecEvents() {
 		e2e.OptAppendEnv(env...),
 	)
 
-	cp.Expect("DONE")
+	cp.Expect("DONE", e2e.RuntimeSourcingTimeoutOpt)
 
 	time.Sleep(sleepTime)
 
@@ -525,7 +527,7 @@ func (suite *AnalyticsIntegrationTestSuite) TestAttempts() {
 	)
 
 	cp.Expect("Creating a Virtual Environment")
-	cp.Expect("Activated", termtest.OptExpectTimeout(120*time.Second))
+	cp.Expect("Activated", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectInput(termtest.OptExpectTimeout(120 * time.Second))
 
 	cp.SendLine("python3 --version")
@@ -568,7 +570,7 @@ func (suite *AnalyticsIntegrationTestSuite) TestHeapEvents() {
 	)
 
 	cp.Expect("Creating a Virtual Environment")
-	cp.Expect("Activated", termtest.OptExpectTimeout(120*time.Second))
+	cp.Expect("Activated", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectInput(termtest.OptExpectTimeout(120 * time.Second))
 
 	time.Sleep(time.Second) // Ensure state-svc has time to report events

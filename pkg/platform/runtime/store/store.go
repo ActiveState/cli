@@ -247,10 +247,19 @@ func (s *Store) InstallPath() string {
 	return s.installPath
 }
 
-func (s *Store) BuildPlan() (*bpModel.Build, error) {
+func (s *Store) BuildPlanRaw() ([]byte, error) {
 	data, err := fileutils.ReadFile(s.buildPlanFile())
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not read build plan file.")
+	}
+
+	return data, nil
+}
+
+func (s *Store) BuildPlan() (*bpModel.Build, error) {
+	data, err := s.BuildPlanRaw()
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not get build plan file.")
 	}
 
 	var buildPlan bpModel.Build

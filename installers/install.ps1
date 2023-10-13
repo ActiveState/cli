@@ -114,14 +114,39 @@ function error([string] $msg)
 }
 
 if (!$script:VERSION) {
-  # Determine the latest version to fetch and parse info.
-  $jsonURL = "$script:BASEINFOURL/?channel=$script:CHANNEL&platform=windows&source=install"
-  $infoJson = ConvertFrom-Json -InputObject (download $jsonURL)
-  $version = $infoJson.Version
-  $checksum = $infoJson.Sha256
-  $relUrl = $infoJson.Path
+    # If the user did not specify a version, formulate a query to fetch the JSON info of the latest
+    # version, including where it is.
+    $jsonURL = "$script:BASEINFOURL/?channel=$script:CHANNEL&platform=windows&source=install"
+} elseif (!($script:VERSION | Select-String -Pattern "-SHA" -SimpleMatch)) {
+    # If the user specified a partial version (i.e. no SHA), formulate a query to fetch the JSON
+    # info of that version's latest SHA, including where it is.
+    $jsonURL = "$script:BASEINFOURL/?channel=$script:CHANNEL&platform=windows&source=install&target-version=$script:VERSION"
+}
+
+if ($jsonURL) {
+    # If the user specified no version or a partial version we need to use the json URL to get the
+    # actual installer URL.
+    try {
+        $infoJson = ConvertFrom-Json -InputObject (download $jsonURL)
+    } catch [System.Exception] {
+    }
+    if (!$infoJson) {
+      if (!$script:VERSION) {
+        Write-Error "Unable to retrieve the latest version number"
+      } else {
+        Write-Error "Could not download a State Tool Installer for the given command line arguments"
+      }
+      Write-Error $_.Exception.Message
+      exit 1
+    }
+    $version = $infoJson.Version
+    $checksum = $infoJson.Sha256
+    $relUrl = $infoJson.Path
 } else {
-  $relUrl = "$script:CHANNEL/$script:VERSION/windows-amd64/state-windows-amd64-$script:VERSION.zip"
+    # If the user specified a full version, strip the SHA to get the folder name of the installer
+    # URL. Then we can construct the installer URL.
+    $versionNoSHA = $script:VERSION -replace "-SHA.*", ""
+    $relUrl = "$script:CHANNEL/$versionNoSHA/windows-amd64/state-windows-amd64-$script:VERSION.zip"
 }
 
 # Fetch the requested or latest version.
@@ -182,5 +207,5 @@ if (Test-Path env:ACTIVESTATE_SESSION_TOKEN)
     Remove-Item Env:\ACTIVESTATE_SESSION_TOKEN
 }
 if ( !$success ) {
-  exit 1
+    exit 1
 }

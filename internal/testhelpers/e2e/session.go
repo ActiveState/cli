@@ -66,7 +66,9 @@ var (
 	PersistentPassword string
 	PersistentToken    string
 
-	defaultTimeout = 40 * time.Second
+	defaultTimeout            = 40 * time.Second
+	RuntimeSourcingTimeout    = 3 * time.Minute
+	RuntimeSourcingTimeoutOpt = termtest.OptExpectTimeout(3 * time.Minute)
 )
 
 func init() {
@@ -261,9 +263,12 @@ func (s *Session) SpawnCmdWithOpts(exe string, optSetters ...SpawnOptSetter) *Sp
 		termtest.OptRows(30), // Needs to be able to accommodate most JSON output
 	)
 
-	// Work around issue where multiline values sometimes have the wrong line endings
-	// See for example TestBranch_List
-	// https://activestatef.atlassian.net/browse/DX-2169
+	// TTYs output newlines in two steps: '\r' (CR) to move the caret to the beginning of the line,
+	// and '\n' (LF) to move the caret one line down. Terminal emulators do the same thing, so the
+	// raw terminal output will contain "\r\n". Since our multi-line expectation messages often use
+	// '\n', normalize line endings to that for convenience, regardless of platform ('\n' for Linux
+	// and macOS, "\r\n" for Windows).
+	// More info: https://superuser.com/a/1774370
 	spawnOpts.TermtestOpts = append(spawnOpts.TermtestOpts,
 		termtest.OptNormalizedLineEnds(true),
 	)
@@ -573,11 +578,6 @@ func (s *Session) Close() error {
 		if err != nil {
 			s.t.Errorf("Could not delete user %s: %v", user, errs.JoinMessage(err))
 		}
-	}
-
-	// Trap "flisten in use" errors to help debug DX-2090.
-	if contents := s.SvcLog(); strings.Contains(contents, "flisten in use") {
-		s.t.Fatal(s.DebugMessage("Found 'flisten in use' error in state-svc log file"))
 	}
 
 	return nil

@@ -132,7 +132,7 @@ func (u *UpdateInstaller) DownloadAndUnpack() (string, error) {
 	tmpDir, err := os.MkdirTemp("", "state-update")
 	if err != nil {
 		msg := anaConst.UpdateErrorTempDir
-		u.analyticsEvent(anaConst.ActUpdateDownload, anaConst.UpdateLabelFailed, u.AvailableUpdate.Version, msg)
+		u.analyticsEvent(anaConst.ActUpdateDownload, anaConst.UpdateLabelFailed, msg)
 		return "", errs.Wrap(err, msg)
 	}
 
@@ -149,13 +149,13 @@ func (u *UpdateInstaller) prepareInstall(installTargetPath string, args []string
 	if err != nil {
 		return "", nil, err
 	}
-	u.analyticsEvent(anaConst.ActUpdateDownload, "success", u.AvailableUpdate.Version, "")
+	u.analyticsEvent(anaConst.ActUpdateDownload, anaConst.UpdateLabelSuccess, "")
 
 	installerPath := filepath.Join(sourcePath, InstallerName)
 	logging.Debug("Using installer: %s", installerPath)
 	if !fileutils.FileExists(installerPath) {
 		msg := anaConst.UpdateErrorNoInstaller
-		u.analyticsEvent(anaConst.ActUpdateInstall, anaConst.UpdateLabelFailed, u.AvailableUpdate.Version, msg)
+		u.analyticsEvent(anaConst.ActUpdateInstall, anaConst.UpdateLabelFailed, msg)
 		return "", nil, errs.Wrap(err, msg)
 	}
 
@@ -163,7 +163,7 @@ func (u *UpdateInstaller) prepareInstall(installTargetPath string, args []string
 		installTargetPath, err = installation.InstallPathFromExecPath()
 		if err != nil {
 			msg := anaConst.UpdateErrorInstallPath
-			u.analyticsEvent(anaConst.ActUpdateInstall, anaConst.UpdateLabelFailed, u.AvailableUpdate.Version, msg)
+			u.analyticsEvent(anaConst.ActUpdateInstall, anaConst.UpdateLabelFailed, msg)
 			return "", nil, errs.Wrap(err, msg)
 		}
 	}
@@ -173,8 +173,23 @@ func (u *UpdateInstaller) prepareInstall(installTargetPath string, args []string
 	return installerPath, args, nil
 }
 
-func (u *UpdateInstaller) InstallBlocking(installTargetPath string, args ...string) error {
+func (u *UpdateInstaller) InstallBlocking(installTargetPath string, args ...string) (rerr error) {
 	logging.Debug("InstallBlocking path: %s, args: %v", installTargetPath, args)
+
+	// Report any failure to analytics.
+	defer func() {
+		if rerr == nil {
+			return
+		}
+		switch {
+		case os.IsPermission(rerr):
+			u.analyticsEvent(anaConst.ActUpdateInstall, anaConst.UpdateLabelFailed, "Could not update the state tool due to insufficient permissions.")
+		case errs.Matches(rerr, &ErrorInProgress{}):
+			u.analyticsEvent(anaConst.ActUpdateInstall, anaConst.UpdateLabelFailed, anaConst.UpdateErrorInProgress)
+		default:
+			u.analyticsEvent(anaConst.ActUpdateInstall, anaConst.UpdateLabelFailed, anaConst.UpdateErrorInstallFailed)
+		}
+	}()
 
 	err := checkAdmin()
 	if errors.Is(err, errPrivilegeMistmatch) {
@@ -215,6 +230,8 @@ func (u *UpdateInstaller) InstallBlocking(installTargetPath string, args ...stri
 	if err != nil {
 		return errs.Wrap(err, "Could not run installer")
 	}
+
+	u.analyticsEvent(anaConst.ActUpdateInstall, anaConst.UpdateLabelSuccess, "")
 
 	return nil
 }
@@ -259,14 +276,15 @@ func (u *UpdateInstaller) InstallWithProgress(installTargetPath string, progress
 	return proc, nil
 }
 
-func (u *UpdateInstaller) analyticsEvent(action, label, version, msg string) {
-	dims := &dimensions.Values{
-		TargetVersion: ptr.To(version),
+func (u *UpdateInstaller) analyticsEvent(action, label, msg string) {
+	dims := &dimensions.Values{}
+	if u.AvailableUpdate != nil {
+		dims.TargetVersion = ptr.To(u.AvailableUpdate.Version)
 	}
 
 	if msg != "" {
 		dims.Error = ptr.To(msg)
 	}
 
-	u.an.EventWithLabel(anaConst.CatUpdates, anaConst.ActUpdateDownload, label, dims)
+	u.an.EventWithLabel(anaConst.CatUpdates, action, label, dims)
 }

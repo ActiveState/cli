@@ -3,7 +3,6 @@ package sscommon
 import (
 	"fmt"
 	"reflect"
-	"runtime"
 	"strings"
 	"testing"
 
@@ -44,25 +43,10 @@ func TestWriteRcFile(t *testing.T) {
 		path           string
 		env            map[string]string
 	}
-
-	fish := fmt.Sprintf(
-		`set -xg PATH "foo:$PATH"
-if test ! -z "$%s"; test -f "$%s/%s"
-  echo "State Tool is operating on project $%s, located at $%s"
-end`,
-		constants.ActivatedStateEnvVarName,
-		constants.ActivatedStateEnvVarName,
-		constants.ConfigFileName,
-		constants.ActivatedStateNamespaceEnvVarName,
-		constants.ActivatedStateEnvVarName)
-	if runtime.GOOS == "windows" {
-		fish = strings.ReplaceAll(fish, "\n", "\r\n")
-	}
-
 	tests := []struct {
 		name         string
 		args         args
-		want         error
+		want error
 		wantContents string
 	}{
 		{
@@ -75,7 +59,7 @@ end`,
 				},
 			},
 			nil,
-			fakeContents("", fish, ""),
+			fakeContents("", `set -xg PATH "foo:$PATH"`, ""),
 		},
 		{
 			"Write RC update",
@@ -87,7 +71,7 @@ end`,
 				},
 			},
 			nil,
-			fakeContents(strings.Join([]string{"before", "after"}, fileutils.LineEnd), fish, ""),
+			fakeContents(strings.Join([]string{"before", "after"}, fileutils.LineEnd), `set -xg PATH "foo:$PATH"`, ""),
 		},
 	}
 	for _, tt := range tests {

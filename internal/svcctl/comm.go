@@ -29,6 +29,7 @@ var (
 	KeyHTTPAddr  = "http-addr"
 	KeyLogFile   = "log-file"
 	KeyHeartbeat = "heart<"
+	KeyExitCode  = "exitcode<"
 )
 
 type Requester interface {
@@ -79,6 +80,7 @@ type Resolver interface {
 
 type AnalyticsReporter interface {
 	EventWithSource(category, action, source string, dims ...*dimensions.Values)
+	EventWithSourceAndLabel(category, action, source, label string, dims ...*dimensions.Values)
 }
 
 func HeartbeatHandler(cfg *config.Instance, resolver Resolver, analyticsReporter AnalyticsReporter) ipc.RequestHandler {
@@ -150,6 +152,24 @@ func HeartbeatHandler(cfg *config.Instance, resolver Resolver, analyticsReporter
 	}
 }
 
-func (c *Comm) SendHeartbeat(ctx context.Context, pid string) (string, error) {
-	return c.req.Request(ctx, KeyHeartbeat+pid)
+func ExitCodeHandler(cfg *config.Instance, resolver Resolver, analyticsReporter AnalyticsReporter) ipc.RequestHandler {
+	return func(input string) (string, bool) {
+		defer func() { panics.HandlePanics(recover(), debug.Stack()) }()
+
+		if !strings.HasPrefix(input, KeyExitCode) {
+			return "", false
+		}
+
+		logging.Debug("Exit Code: Received exit code through ipc")
+
+		data := input[len(KeyExitCode):]
+		exitCode := svcmsg.NewExitCodeFromSvcMsg(data)
+
+		logging.Debug("Firing exit code event for %s", exitCode.ExecPath)
+		analyticsReporter.EventWithSourceAndLabel(constants.CatDebug, constants.ActExecutorExit, constants.SrcExecutor, exitCode.ExitCode, &dimensions.Values{
+			Command: ptr.To(exitCode.ExecPath),
+		})
+
+		return "ok", true
+	}
 }

@@ -88,7 +88,7 @@ func (suite *PackageIntegrationTestSuite) TestPackages_project_invalid() {
 	defer ts.Close()
 
 	cp := ts.Spawn("packages", "--namespace", "junk/junk")
-	cp.Expect("The requested project junk/junk could not be found")
+	cp.Expect("The requested project junk does not exist under junk")
 	cp.ExpectExitCode(1)
 }
 
@@ -463,7 +463,7 @@ func (suite *PackageIntegrationTestSuite) TestInstall_Empty() {
 		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cp.Expect("Installing Package")
-	cp.ExpectExitCode(0, termtest.OptExpectTimeout(120*time.Second))
+	cp.ExpectExitCode(0, e2e.RuntimeSourcingTimeoutOpt)
 
 	configFilepath := filepath.Join(ts.Dirs.Work, constants.ConfigFileName)
 	suite.Require().FileExists(configFilepath)
@@ -505,7 +505,7 @@ func (suite *PackageIntegrationTestSuite) TestJSON() {
 		e2e.OptArgs("install", "Text-CSV", "--output", "editor"),
 		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
-	cp.Expect(`{"name":"Text-CSV"`, termtest.OptExpectTimeout(120*time.Second))
+	cp.Expect(`{"name":"Text-CSV"`, e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
 	AssertValidJSON(suite.T(), cp)
 

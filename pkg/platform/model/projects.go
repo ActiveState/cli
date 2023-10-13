@@ -23,7 +23,28 @@ import (
 
 type ErrProjectNameConflict struct{ *locale.LocalizedError }
 
-type ErrProjectNotFound struct{ *locale.LocalizedError }
+type ErrProjectNotFound struct {
+	Organization string
+	Project      string
+}
+
+func (e *ErrProjectNotFound) Error() string {
+	return fmt.Sprintf("project not found: %s/%s", e.Organization, e.Project)
+}
+
+// LegacyFetchProjectByName is intended for legacy code which still relies on localised errors, do NOT use it for new code.
+func LegacyFetchProjectByName(orgName string, projectName string) (*mono_models.Project, error) {
+	project, err := FetchProjectByName(orgName, projectName)
+	if err == nil || !errs.Matches(err, &ErrProjectNotFound{}) {
+		return project, err
+	}
+	if !authentication.LegacyGet().Authenticated() {
+		return nil, errs.AddTips(
+			locale.NewInputError("err_api_project_not_found", "", orgName, projectName),
+			locale.T("tip_private_project_auth"))
+	}
+	return nil, errs.Pack(err, locale.NewInputError("err_api_project_not_found", "", orgName, projectName))
+}
 
 // FetchProjectByName fetches a project for an organization.
 func FetchProjectByName(orgName string, projectName string) (*mono_models.Project, error) {
@@ -39,12 +60,7 @@ func FetchProjectByName(orgName string, projectName string) (*mono_models.Projec
 	}
 
 	if len(response.Projects) == 0 {
-		if !authentication.LegacyGet().Authenticated() {
-			return nil, errs.AddTips(
-				locale.NewInputError("err_api_project_not_found_unauthenticated", "", orgName, projectName),
-				locale.T("tip_private_project_auth"))
-		}
-		return nil, &ErrProjectNotFound{locale.NewInputError("err_api_project_not_found", "", projectName, orgName)}
+		return nil, &ErrProjectNotFound{orgName, projectName}
 	}
 
 	return response.Projects[0].ToMonoProject()
@@ -56,7 +72,15 @@ func FetchOrganizationProjects(orgName string) ([]*mono_models.Project, error) {
 	projParams.SetOrganizationName(orgName)
 	orgProjects, err := authentication.Client().Projects.ListProjects(projParams, authentication.ClientAuth())
 	if err != nil {
-		return nil, processProjectErrorResponse(err)
+		switch statusCode := api.ErrorCode(err); statusCode {
+		case 401:
+			return nil, locale.WrapInputError(err, "err_api_not_authenticated")
+		case 404:
+			// NOT a project not found error; we didn't ask for a specific project.
+			return nil, locale.WrapInputError(err, "err_api_org_not_found")
+		default:
+			return nil, locale.WrapError(err, "err_api_unknown", "Unexpected API error")
+		}
 	}
 	return orgProjects.Payload, nil
 }
@@ -76,7 +100,7 @@ func LanguageByCommit(commitID strfmt.UUID) (Language, error) {
 
 // DefaultBranchForProjectName retrieves the default branch for the given project owner/name.
 func DefaultBranchForProjectName(owner, name string) (*mono_models.Branch, error) {
-	proj, err := FetchProjectByName(owner, name)
+	proj, err := LegacyFetchProjectByName(owner, name)
 	if err != nil {
 		return nil, err
 	}
@@ -85,7 +109,7 @@ func DefaultBranchForProjectName(owner, name string) (*mono_models.Branch, error
 }
 
 func BranchesForProject(owner, name string) ([]*mono_models.Branch, error) {
-	proj, err := FetchProjectByName(owner, name)
+	proj, err := LegacyFetchProjectByName(owner, name)
 	if err != nil {
 		return nil, err
 	}
@@ -93,7 +117,7 @@ func BranchesForProject(owner, name string) ([]*mono_models.Branch, error) {
 }
 
 func BranchNamesForProjectFiltered(owner, name string, excludes ...string) ([]string, error) {
-	proj, err := FetchProjectByName(owner, name)
+	proj, err := LegacyFetchProjectByName(owner, name)
 	if err != nil {
 		return nil, err
 	}
@@ -121,7 +145,7 @@ func DefaultBranchForProject(pj *mono_models.Project) (*mono_models.Branch, erro
 // BranchForProjectNameByName retrieves the named branch for the given project
 // org/name
 func BranchForProjectNameByName(owner, name, branch string) (*mono_models.Branch, error) {
-	proj, err := FetchProjectByName(owner, name)
+	proj, err := LegacyFetchProjectByName(owner, name)
 	if err != nil {
 		return nil, err
 	}
@@ -167,7 +191,7 @@ func CreateEmptyProject(owner, name string, private bool) (*mono_models.Project,
 
 func CreateCopy(sourceOwner, sourceName, targetOwner, targetName string, makePrivate bool) (*mono_models.Project, error) {
 	// Retrieve the source project that we'll be forking
-	sourceProject, err := FetchProjectByName(sourceOwner, sourceName)
+	sourceProject, err := LegacyFetchProjectByName(sourceOwner, sourceName)
 	if err != nil {
 		return nil, locale.WrapInputError(err, "err_fork_fetchProject", "Could not find the source project: {{.V0}}/{{.V1}}", sourceOwner, sourceName)
 	}
@@ -243,18 +267,6 @@ func ProjectURL(owner, name, commitID string) string {
 // CommitURL creates a valid platform commit URL for the given commit
 func CommitURL(commitID string) string {
 	return fmt.Sprintf("%s/%s", strings.TrimSuffix(constants.DashboardCommitURL, "/"), commitID)
-}
-
-func processProjectErrorResponse(err error, params ...string) error {
-	switch statusCode := api.ErrorCode(err); statusCode {
-	case 401:
-		return locale.WrapInputError(err, "err_api_not_authenticated")
-	case 404:
-		p := append([]string{""}, params...)
-		return &ErrProjectNotFound{locale.WrapInputError(err, "err_api_project_not_found", p...)}
-	default:
-		return locale.WrapError(err, "err_api_unknown", "Unexpected API error")
-	}
 }
 
 func AddBranch(projectID strfmt.UUID, label string) (strfmt.UUID, error) {

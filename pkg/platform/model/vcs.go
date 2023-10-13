@@ -33,7 +33,7 @@ var (
 	ErrMergeCommitInHistory = errs.New("Can't merge commit thats already in target commits history")
 )
 
-type ErrOrderAuth struct{ *locale.LocalizedError }
+var ErrOrderForbidden = errs.New("no permission to retrieve order")
 
 type ErrUpdateBranchAuth struct{ *locale.LocalizedError }
 
@@ -228,7 +228,7 @@ func FilterSupportedIngredients(supported []model.SupportedLanguage, ingredients
 // BranchCommitID returns the latest commit id by owner and project names. It
 // is possible for a nil commit id to be returned without failure.
 func BranchCommitID(ownerName, projectName, branchName string) (*strfmt.UUID, error) {
-	proj, err := FetchProjectByName(ownerName, projectName)
+	proj, err := LegacyFetchProjectByName(ownerName, projectName)
 	if err != nil {
 		return nil, err
 	}
@@ -449,7 +449,7 @@ func AddChangeset(parentCommitID strfmt.UUID, commitMessage string, changeset Ch
 }
 
 func UpdateBranchForProject(pj ProjectInfo, commitID strfmt.UUID) error {
-	pjm, err := FetchProjectByName(pj.Owner(), pj.Name())
+	pjm, err := LegacyFetchProjectByName(pj.Owner(), pj.Name())
 	if err != nil {
 		return errs.Wrap(err, "Could not fetch project")
 	}
@@ -517,7 +517,7 @@ func DeleteBranch(branchID strfmt.UUID) error {
 
 // UpdateProjectBranchCommitByName updates the vcs branch for a project given by its namespace with a new commitID
 func UpdateProjectBranchCommit(pj ProjectInfo, commitID strfmt.UUID) error {
-	pjm, err := FetchProjectByName(pj.Owner(), pj.Name())
+	pjm, err := LegacyFetchProjectByName(pj.Owner(), pj.Name())
 	if err != nil {
 		return errs.Wrap(err, "Could not fetch project")
 	}
@@ -737,7 +737,7 @@ func FetchOrderFromCommit(commitID strfmt.UUID) (*mono_models.Order, error) {
 		if err != nil {
 			code := api.ErrorCode(err)
 			if code == 401 || code == 403 {
-				return nil, &ErrOrderAuth{locale.NewInputError("err_order_auth", "Fetch order failed with authentication error")}
+				return nil, errs.Pack(err, ErrOrderForbidden)
 			}
 			return nil, errors.New(api.ErrorMessageFromPayload(err))
 		}

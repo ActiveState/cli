@@ -248,8 +248,8 @@ func (suite *DeployIntegrationTestSuite) InstallAndAssert(ts *e2e.Session, targe
 	)
 
 	cp.Expect("Installing Runtime")
-	cp.Expect("Installing", termtest.OptExpectTimeout(120*time.Second))
-	cp.Expect("Installation completed", termtest.OptExpectTimeout(120*time.Second))
+	cp.Expect("Installing", e2e.RuntimeSourcingTimeoutOpt)
+	cp.Expect("Installation completed", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
 }
 

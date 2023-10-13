@@ -302,6 +302,10 @@ func newValue(path []string, valueInterface interface{}) (*Value, error) {
 	case float64:
 		value.Float = ptr.To(v)
 
+	case nil:
+		// An empty value is interpreted as JSON null.
+		value.Null = &Null{}
+
 	default:
 		logging.Debug("Unknown type: %T at path %s", v, strings.Join(path, "."))
 		// An empty value is interpreted as JSON null.
@@ -592,7 +596,7 @@ func (e *BuildExpression) getSolveNode() (*Ap, error) {
 			continue
 		}
 
-		if a.Assignment.Name == "" || a.Assignment.Name != "runtime" {
+		if a.Assignment.Name == "" {
 			continue
 		}
 
@@ -625,7 +629,7 @@ func recurseLets(let *Let) (*Ap, error) {
 			continue
 		}
 
-		if a.Name == "" || a.Name != "runtime" {
+		if a.Name == "" {
 			continue
 		}
 
@@ -906,7 +910,17 @@ func (v *Value) MarshalJSON() ([]byte, error) {
 	case v.Ap != nil:
 		return json.Marshal(v.Ap)
 	case v.List != nil:
-		return json.Marshal(v.List)
+		// Buildexpression list order does not matter, so sorting is necessary for
+		// comparisons. Go's JSON marshaling is deterministic, so utilize that.
+		// This should not be necessary when PB-4607 is implemented.
+		list := make([]*Value, len(*v.List))
+		copy(list, *v.List)
+		sort.SliceStable(list, func(i, j int) bool {
+			b1, err1 := json.Marshal(list[i])
+			b2, err2 := json.Marshal(list[j])
+			return err1 == nil && err2 == nil && string(b1) < string(b2)
+		})
+		return json.Marshal(list)
 	case v.Str != nil:
 		return json.Marshal(strings.Trim(*v.Str, `"`))
 	case v.Null != nil:

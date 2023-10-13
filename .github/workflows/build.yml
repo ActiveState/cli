@@ -77,6 +77,10 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
+      - # === Install State Tool ===
+        name: Install State Tool
+        uses: ActiveState/setup-state-tool@v1
+
       - # === Setup ===
         name: Setup
         shell: bash
@@ -412,6 +416,10 @@ jobs:
         with:
           go-version: ${{ matrix.go-version }}
 
+      - # === Install State Tool ===
+        name: Install State Tool
+        uses: ActiveState/setup-state-tool@v1
+
       - # === Setup ===
         name: Setup
         shell: bash
@@ -460,6 +468,11 @@ jobs:
           role-session-name: ${{ env.AWS_ROLE_SESSION_NAME }}
           aws-region: ${{ env.AWS_REGION }}
           mask-aws-account-id: true
+
+      - # === Generate updated master versions.json if necessary ===
+        name: Generate version list
+        shell: bash
+        run: state run generate-versions-list
 
       - # === Deploy ===
         name: Deploy
