@@ -198,6 +198,7 @@ func new(t *testing.T, retainDirs, updatePath bool, extraEnv ...string) *Session
 			dirs.Bin, string(os.PathListSeparator), oldPath,
 		)
 		env = append(env, newPath)
+		t.Setenv("PATH", newPath)
 	}
 
 	// add session environment variables
