@@ -204,6 +204,12 @@ func new(t *testing.T, retainDirs, updatePath bool, extraEnv ...string) *Session
 	session.SvcExe = session.copyExeToBinDir(svcExe)
 	session.ExecutorExe = session.copyExeToBinDir(execExe)
 
+	// Set up environment for test runs. This is separate
+	// from the environment for the session itself.
+	// Setting environment variables here allows helper
+	// functions access to them.
+	t.Setenv(constants.HomeEnvVarName, dirs.HomeDir)
+
 	err = fileutils.Touch(filepath.Join(dirs.Base, installation.InstallDirMarker))
 	require.NoError(session.t, err)
 
