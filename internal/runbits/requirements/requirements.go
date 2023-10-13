@@ -19,6 +19,7 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
+	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/internal/runbits/rtusage"
 	"github.com/ActiveState/cli/pkg/localcommit"
@@ -80,7 +81,16 @@ func NewRequirementOperation(prime primeable) *RequirementOperation {
 
 const latestVersion = "latest"
 
-func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requirementVersion string, requirementBitWidth int, operation bpModel.Operation, nsType model.NamespaceType) (rerr error) {
+type ErrNoMatches struct {
+	*locale.LocalizedError
+	Query        string
+	Alternatives *string
+}
+
+func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requirementVersion string,
+	requirementBitWidth int, operation bpModel.Operation, nsType model.NamespaceType) (rerr error) {
+	defer r.rationalizeError(&rerr)
+
 	var ns model.Namespace
 	var langVersion string
 	langName := "undetermined"
@@ -182,9 +192,13 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 				multilog.Error("Failed to retrieve suggestions: %v", err)
 			}
 			if len(suggestions) == 0 {
-				return locale.WrapInputError(err, "package_ingredient_alternatives_nosuggest", "", requirementName)
+				return &ErrNoMatches{
+					locale.WrapInputError(err, "package_ingredient_alternatives_nosuggest", "", requirementName),
+					requirementName, nil}
 			}
-			return locale.WrapInputError(err, "package_ingredient_alternatives", "", requirementName, strings.Join(suggestions, "\n"))
+			return &ErrNoMatches{
+				locale.WrapInputError(err, "package_ingredient_alternatives", "", requirementName, strings.Join(suggestions, "\n")),
+				requirementName, ptr.To(strings.Join(suggestions, "\n"))}
 		}
 
 		requirementName = normalized
