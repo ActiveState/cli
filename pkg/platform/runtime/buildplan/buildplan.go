@@ -36,7 +36,7 @@ func NewMapFromBuildPlan(build *model.Build, calculateBuildtimeClosure bool) (ar
 		lookup[source.NodeID] = source
 	}
 
-	filtered, err := filterTerminals(build)
+	filtered, err := filterPlatformTerminals(build)
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not filter terminals")
 	}
@@ -53,7 +53,7 @@ func NewMapFromBuildPlan(build *model.Build, calculateBuildtimeClosure bool) (ar
 
 	if calculateBuildtimeClosure {
 		for _, id := range terminalTargetIDs {
-			if err := newBuildClosureMap(id, lookup, res); err != nil {
+			if err := buildBuildtimeClosureMap(id, lookup, res); err != nil {
 				return nil, errs.Wrap(err, "Could not build map for terminal %s", id)
 			}
 		}
@@ -68,8 +68,11 @@ func NewMapFromBuildPlan(build *model.Build, calculateBuildtimeClosure bool) (ar
 	return res, nil
 }
 
-func filterTerminals(build *model.Build) ([]*model.NamedTarget, error) {
+// filterPlatformTerminals filters the build terminal nodes to only include
+// terminals that are for the current host platform.
+func filterPlatformTerminals(build *model.Build) ([]*model.NamedTarget, error) {
 	// Extract the available platforms from the build plan
+	// We are only interested in terminals with the platform tag
 	var bpPlatforms []strfmt.UUID
 	for _, t := range build.Terminals {
 		if !strings.Contains(t.Tag, "platform:") {
@@ -78,7 +81,7 @@ func filterTerminals(build *model.Build) ([]*model.NamedTarget, error) {
 		bpPlatforms = append(bpPlatforms, strfmt.UUID(strings.TrimPrefix(t.Tag, "platform:")))
 	}
 
-	// Get the platform ID for the current platform
+	// Get the platform ID for the current host platform
 	platformID, err := platformModel.FilterCurrentPlatform(platformModel.HostPlatform, bpPlatforms)
 	if err != nil {
 		return nil, locale.WrapError(err, "err_filter_current_platform")
@@ -314,11 +317,11 @@ func NewNamedMapFromBuildPlan(build *model.Build, buildtimeClosure bool) (artifa
 	return res, nil
 }
 
-// newBuildClosureMap recursively builds the artifact map from the lookup table.
+// buildBuildtimeClosureMap recursively builds the artifact map from the lookup table.
 // If the current artifact is not already contained in the results map it first
 // builds the artifacts build-time dependencies and then adds the artifact to the
 // results map.
-func newBuildClosureMap(baseID strfmt.UUID, lookup map[strfmt.UUID]interface{}, result artifact.Map) error {
+func buildBuildtimeClosureMap(baseID strfmt.UUID, lookup map[strfmt.UUID]interface{}, result artifact.Map) error {
 	if _, ok := result[baseID]; ok {
 		// We have already processed this artifact, skipping
 		return nil
