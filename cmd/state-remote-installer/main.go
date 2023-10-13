@@ -95,6 +95,12 @@ func main() {
 		return
 	}
 
+	// Store sessionToken to config
+	err = cfg.Set(anaConst.CfgSessionToken, "remote_"+constants.RemoteInstallerVersion)
+	if err != nil {
+		logging.Error("Unable to set session token: " + errs.JoinMessage(err))
+	}
+
 	an = sync.New(anaConst.SrcStateRemoteInstaller, cfg, nil, out)
 
 	// Set up prompter
