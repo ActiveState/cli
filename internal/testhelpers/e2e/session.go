@@ -188,13 +188,11 @@ func new(t *testing.T, retainDirs, updatePath bool, extraEnv ...string) *Session
 	if updatePath {
 		// add bin path
 		oldPath, _ := os.LookupEnv("PATH")
-		fmt.Println("Initial old path: ", oldPath)
 		installPath, err := installation.InstallPathForBranch("release")
 		require.NoError(t, err)
+
 		binPath := filepath.Join(installPath, "bin")
-		fmt.Println("Looking to remove: ", binPath+string(os.PathListSeparator))
 		oldPath = strings.Replace(oldPath, binPath+string(os.PathListSeparator), "", -1)
-		fmt.Println("Updated old path: ", oldPath)
 		newPath := fmt.Sprintf(
 			"PATH=%s%s%s",
 			dirs.Bin, string(os.PathListSeparator), oldPath,
@@ -202,21 +200,13 @@ func new(t *testing.T, retainDirs, updatePath bool, extraEnv ...string) *Session
 		env = append(env, newPath)
 		t.Setenv("PATH", newPath)
 
-		if runtime.GOOS == "linux" {
+		cfg, err := config.New()
+		require.NoError(t, err)
+		if runtime.GOOS != "windows" {
 			s := bash.SubShell{}
-			cfg, err := config.New()
-			require.NoError(t, err)
 			err = s.CleanUserEnv(cfg, sscommon.InstallID, false)
 			require.NoError(t, err)
 		}
-
-		fmt.Println("Setting home dir to: ", dirs.HomeDir)
-		if runtime.GOOS != "windows" {
-			t.Setenv("USERPROFILE", dirs.HomeDir)
-		} else {
-			t.Setenv("HOME", dirs.HomeDir)
-		}
-
 		t.Setenv(constants.HomeEnvVarName, dirs.HomeDir)
 	}
 

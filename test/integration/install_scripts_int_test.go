@@ -131,9 +131,6 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 				cp.SendLine("echo %PATH%")
 			}
 			cp.Expect(installPath)
-			if runtime.GOOS != "windows" {
-				cp.SendLine("cat $HOME/.bashrc")
-			}
 			cp.SendLine("state --version")
 			cp.Expect("Version " + constants.Version)
 			cp.Expect("Branch " + constants.BranchName)
