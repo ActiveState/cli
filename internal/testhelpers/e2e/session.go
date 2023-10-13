@@ -32,6 +32,8 @@ import (
 	"github.com/ActiveState/cli/internal/osutils/stacktrace"
 	"github.com/ActiveState/cli/internal/rtutils/singlethread"
 	"github.com/ActiveState/cli/internal/strutils"
+	"github.com/ActiveState/cli/internal/subshell/bash"
+	"github.com/ActiveState/cli/internal/subshell/sscommon"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/api/mono"
@@ -200,12 +202,22 @@ func new(t *testing.T, retainDirs, updatePath bool, extraEnv ...string) *Session
 		env = append(env, newPath)
 		t.Setenv("PATH", newPath)
 
+		if runtime.GOOS == "linux" {
+			s := bash.SubShell{}
+			cfg, err := config.New()
+			require.NoError(t, err)
+			err = s.CleanUserEnv(cfg, sscommon.InstallID, false)
+			require.NoError(t, err)
+		}
+
 		fmt.Println("Setting home dir to: ", dirs.HomeDir)
 		if runtime.GOOS != "windows" {
 			t.Setenv("USERPROFILE", dirs.HomeDir)
 		} else {
 			t.Setenv("HOME", dirs.HomeDir)
 		}
+
+		t.Setenv(constants.HomeEnvVarName, dirs.HomeDir)
 	}
 
 	// add session environment variables
