@@ -189,7 +189,9 @@ func new(t *testing.T, retainDirs, updatePath bool, extraEnv ...string) *Session
 		fmt.Println("Initial old path: ", oldPath)
 		installPath, err := installation.InstallPathForBranch("release")
 		require.NoError(t, err)
-		oldPath = strings.Replace(oldPath, installPath+string(os.PathListSeparator), "", -1)
+		binPath := filepath.Join(installPath, "bin")
+		fmt.Println("Looking to remove: ", binPath+string(os.PathListSeparator))
+		oldPath = strings.Replace(oldPath, binPath+string(os.PathListSeparator), "", -1)
 		fmt.Println("Updated old path: ", oldPath)
 		newPath := fmt.Sprintf(
 			"PATH=%s%s%s",
