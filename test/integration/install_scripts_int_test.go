@@ -124,7 +124,6 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 			suite.NoError(err)
 
 			binPath := filepath.Join(installPath, "bin")
-			statePath := filepath.Join(binPath, "state"+osutils.ExeExt)
 
 			if runtime.GOOS != "windows" {
 				cp.SendLine("echo $PATH")
@@ -132,7 +131,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 				cp.SendLine("echo %PATH%")
 			}
 			cp.Expect(installPath)
-			cp.SendLine(statePath + " --version")
+			cp.SendLine("state --version")
 			cp.Expect("Version " + constants.Version)
 			cp.Expect("Branch " + constants.BranchName)
 			cp.Expect("Built")
