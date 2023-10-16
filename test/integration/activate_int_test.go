@@ -198,7 +198,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivatePythonByHostOnly() {
 		cp.ExpectNotExitCode(0)
 
 		if strings.Count(cp.Snapshot(), " x ") != 1 {
-			suite.Fail("Expected exactly ONE error message, got: %s", cp.Snapshot())
+			suite.Fail("Expected exactly ONE error message, got: ", cp.Snapshot())
 		}
 	}
 }

@@ -41,7 +41,7 @@ func (r *RequirementOperation) rationalizeError(err *error) {
 	// No matches, but have alternate suggestions
 	case errors.As(*err, &noMatchesErr) && noMatchesErr.Alternatives != nil:
 		*err = errs.WrapUserFacing(*err,
-			locale.Tr("package_ingredient_alternatives", tooManyMatchesErr.Query, *noMatchesErr.Alternatives),
+			locale.Tr("package_ingredient_alternatives", noMatchesErr.Query, *noMatchesErr.Alternatives),
 			errs.SetInput())
 
 	// We communicate buildplanner errors verbatim as the intend is that these are curated by the buildplanner

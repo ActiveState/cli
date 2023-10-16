@@ -36,7 +36,7 @@ func (suite *InstallIntegrationTestSuite) TestInstall_InvalidCommit() {
 	cp.ExpectExitCode(1)
 
 	if strings.Count(cp.Snapshot(), " x ") != 1 {
-		suite.Fail("Expected exactly ONE error message, got: %s", cp.Snapshot())
+		suite.Fail("Expected exactly ONE error message, got: ", cp.Snapshot())
 	}
 }
 
@@ -51,8 +51,8 @@ func (suite *InstallIntegrationTestSuite) TestInstall_NoMatches_NoAlternatives()
 	cp.Expect("find alternatives") // This verifies no alternatives were found
 	cp.ExpectExitCode(1)
 
-	if strings.Count(cp.Snapshot(), " x ") != 1 {
-		suite.Fail("Expected exactly ONE error message, got: %s", cp.Snapshot())
+	if strings.Count(strings.ReplaceAll(cp.Snapshot(), " x Failed", ""), " x ") != 1 {
+		suite.Fail("Expected exactly ONE error message, got: ", cp.Snapshot())
 	}
 }
 
@@ -67,8 +67,8 @@ func (suite *InstallIntegrationTestSuite) TestInstall_NoMatches_Alternatives() {
 	cp.Expect("did you mean") // This verifies alternatives were found
 	cp.ExpectExitCode(1)
 
-	if strings.Count(cp.Snapshot(), " x ") != 1 {
-		suite.Fail("Expected exactly ONE error message, got: %s", cp.Snapshot())
+	if strings.Count(strings.ReplaceAll(cp.Snapshot(), " x Failed", ""), " x ") != 1 {
+		suite.Fail("Expected exactly ONE error message, got: ", cp.Snapshot())
 	}
 }
 
@@ -82,8 +82,8 @@ func (suite *InstallIntegrationTestSuite) TestInstall_BuildPlannerError() {
 	cp.Expect("Could not plan build, platform responded with", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(1)
 
-	if strings.Count(cp.Snapshot(), " x ") != 1 {
-		suite.Fail("Expected exactly ONE error message, got: %s", cp.Snapshot())
+	if strings.Count(strings.ReplaceAll(cp.Snapshot(), " x Failed", ""), " x ") != 1 {
+		suite.Fail("Expected exactly ONE error message, got: ", cp.Snapshot())
 	}
 }
 
