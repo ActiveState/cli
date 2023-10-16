@@ -13,6 +13,7 @@ import (
 	"github.com/stretchr/testify/suite"
 	"github.com/thoas/go-funk"
 
+	anaConst "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
@@ -97,12 +98,14 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 					"bash", e2e.OptArgs(argsWithActive...),
 					e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 					e2e.OptAppendEnv(fmt.Sprintf("%s=%s", constants.AppInstallDirOverrideEnvVarName, appInstallDir)),
+					e2e.OptAppendEnv(fmt.Sprintf("%s=FOO", constants.OverrideSessionTokenEnvVarName)),
 				)
 			} else {
 				cp = ts.SpawnCmdWithOpts("powershell.exe", e2e.OptArgs(argsWithActive...),
 					e2e.OptAppendEnv("SHELL="),
 					e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 					e2e.OptAppendEnv(fmt.Sprintf("%s=%s", constants.AppInstallDirOverrideEnvVarName, appInstallDir)),
+					e2e.OptAppendEnv(fmt.Sprintf("%s=FOO", constants.OverrideSessionTokenEnvVarName)),
 				)
 			}
 
@@ -132,6 +135,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 
 			suite.assertBinDirContents(filepath.Join(installDir, "bin"))
 			suite.assertCorrectVersion(ts, installDir, tt.Version, tt.Channel)
+			suite.assertAnalytics(ts)
 			suite.DirExists(ts.Dirs.Config)
 
 			// Verify that can install overtop
@@ -258,6 +262,21 @@ func (suite *InstallScriptsIntegrationTestSuite) assertCorrectVersion(ts *e2e.Se
 	if expectedBranch != "" {
 		suite.Equal(expectedBranch, actual.Branch)
 	}
+}
+
+func (suite *InstallScriptsIntegrationTestSuite) assertAnalytics(ts *e2e.Session) {
+	// Verify analytics reported the correct sessionToken.
+	sessionTokenFound := false
+	events := parseAnalyticsEvents(suite, ts)
+	suite.Require().NotEmpty(events)
+	for _, event := range events {
+		if event.Category == anaConst.CatInstallerFunnel && event.Dimensions != nil {
+			suite.Assert().NotEmpty(*event.Dimensions.SessionToken)
+			sessionTokenFound = true
+			break
+		}
+	}
+	suite.Assert().True(sessionTokenFound, "sessionToken was not found in analytics")
 }
 
 func TestInstallScriptsIntegrationTestSuite(t *testing.T) {

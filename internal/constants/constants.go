@@ -107,6 +107,9 @@ const ProfileEnvVarName = "ACTIVESTATE_PROFILE"
 // SessionTokenEnvVarName records the session token
 const SessionTokenEnvVarName = "ACTIVESTATE_SESSION_TOKEN"
 
+// OverrideSessionTokenEnvVarName overrides SessionTokenEnvVarName for integration tests.
+const OverrideSessionTokenEnvVarName = "ACTIVESTATE_OVERRIDE_SESSION_TOKEN"
+
 // UpdateTagEnvVarName
 const UpdateTagEnvVarName = "ACTIVESTATE_UPDATE_TAG"
 
