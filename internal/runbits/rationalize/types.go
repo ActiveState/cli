@@ -1,6 +1,9 @@
 package rationalize
 
-import "errors"
+import (
+	"errors"
+	"fmt"
+)
 
 // Inner is just an alias because otherwise external use of this struct would not be able to construct the error
 // property, and we want to keep the boilerplate minimal.
@@ -13,3 +16,13 @@ var ErrNoProject = errors.New("no project")
 var ErrNotAuthenticated = errors.New("not authenticated")
 
 var ErrActionAborted = errors.New("aborted by user")
+
+type ErrAPI struct {
+	Wrapped error
+	Code    int
+	Message string
+}
+
+func (e *ErrAPI) Error() string { return fmt.Sprintf("API code %d: %s", e.Code, e.Message) }
+
+func (e *ErrAPI) Unwrap() error { return e.Wrapped }

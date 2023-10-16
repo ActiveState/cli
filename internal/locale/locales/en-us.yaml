@@ -1761,8 +1761,8 @@ operation_success_local:
   other: |
     Your local project has been updated.
     Run [ACTIONABLE]state push[/RESET] to save changes to the platform.
-solver_err:
-  other: "The Platform failed to resolve the dependencies for this build. {{.V0}}\n{{.V1}}"
+buildplan_err:
+  other: "Could not plan build, platform responded with:\n{{.V0}}\n{{.V1}}"
 transient_solver_tip:
   other: You may want to retry this command if the failure was related to a resourcing or networking issue.
 warning_git_project_mismatch:
@@ -2059,7 +2059,7 @@ err_init_authenticated:
 err_country_blocked:
   other: This service is not available in your region.
 err_commit_id_invalid:
-  other: "Invalid project commit ID: {{.V0}}"
+  other: "Expected commit ID to be UUID formatted, but got: {{.V0}}"
 commit_id_gitignore:
   other: |
     # Ignore {{.V0}}/{{.V1}} file; tracking this via VCS will cause users to have to resolve redundant conflicts
@@ -2083,3 +2083,15 @@ err_edit_project_mapping:
   other: Could not update project mapping
 notice_runtime_disabled:
   other: Skipping runtime setup because it was disabled by an environment variable
+err_local_commit_file:
+  other: |
+    Could not find or read the commit file for your project at '[ACTIONABLE]{{.V0}}[/RESET]'.
+    
+    You can fix this by either running '[ACTIONABLE]state pull[/RESET]' to update to the latest commit, or manually switch to a specific
+    commit by running '[ACTIONABLE]state switch <commit-id>[/RESET]'.
+    
+    To view your projects commits run '[ACTIONABLE]state history[/RESET]'.
+    
+    Please avoid deleting or editing this file directly.
+err_searchingredient_toomany:
+  other: Too many ingredients match the query '[ACTIONABLE]{{.V0}}[/RESET]', please try to be more specific.

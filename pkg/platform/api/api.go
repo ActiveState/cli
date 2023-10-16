@@ -8,6 +8,7 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/alecthomas/template"
 
 	"github.com/ActiveState/cli/pkg/sysinfo"
@@ -143,4 +144,19 @@ func ErrorMessageFromPayload(err error) string {
 		return err.Error()
 	}
 	return codeVal.String()
+}
+
+func ErrorFromPayload(err error) error {
+	return ErrorFromPayloadTyped(err)
+}
+
+func ErrorFromPayloadTyped(err error) *rationalize.ErrAPI {
+	if err == nil {
+		return nil
+	}
+	return &rationalize.ErrAPI{
+		err,
+		ErrorCodeFromPayload(err),
+		ErrorMessageFromPayload(err),
+	}
 }
