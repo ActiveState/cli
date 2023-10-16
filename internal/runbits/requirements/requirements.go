@@ -21,7 +21,6 @@ import (
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/runbits"
-	"github.com/ActiveState/cli/internal/runbits/rtusage"
 	"github.com/ActiveState/cli/pkg/localcommit"
 	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	medmodel "github.com/ActiveState/cli/pkg/platform/api/mediator/model"
@@ -143,8 +142,6 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 	case model.NamespacePlatform:
 		ns = model.NewNamespacePlatform()
 	}
-
-	rtusage.PrintRuntimeUsage(r.SvcModel, out, pj.Owner())
 
 	var validatePkg = operation == bpModel.OperationAdded && (ns.Type() == model.NamespacePackage || ns.Type() == model.NamespaceBundle)
 	if !ns.IsValid() && (nsType == model.NamespacePackage || nsType == model.NamespaceBundle) {

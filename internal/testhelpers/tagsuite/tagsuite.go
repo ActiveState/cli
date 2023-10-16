@@ -72,7 +72,6 @@ const (
 	Commit          = "commit"
 	Performance     = "performance"
 	Service         = "service"
-	SoftLimit       = "softlimit"
 	Executor        = "executor"
 	Deprecation     = "deprecation"
 	Compatibility   = "compatibility"

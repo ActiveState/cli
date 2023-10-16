@@ -2039,19 +2039,6 @@ pjfile_deprecation_msg:
     {{.V1}}
     To find out how to update these please read the deprecation information at:
     [ACTIONABLE]{{.V2}}[/RESET]
-runtime_usage_limit_reached:
-  other: |
-    [WARNING]Heads up! You've reached your runtime limit for [/RESET][ACTIONABLE]{{.V0}}[/RESET][WARNING].[/RESET]
-    [WARNING]You can upgrade your plan or enroll in a free trial by visiting: [/RESET][ACTIONABLE]https://platform.activestate.com/upgrade/?org={{.V0}}[/RESET][WARNING].[/RESET]
-
-    [WARNING]You are using [/RESET][ACTIONABLE]{{.V1}}[/RESET][WARNING] out of [/RESET][ACTIONABLE]{{.V2}}[/RESET][WARNING] available runtimes.[/RESET]
-
-runtime_limit_reached_title:
-  other: Runtime Limit Reached
-runtime_limit_reached_msg:
-  other: Heads up! You've reached your runtime limit for {{.V0}}.
-runtime_limit_reached_action:
-  other: Upgrade
 pjfile_deprecation_entry:
   other: " - '[ACTIONABLE]{{.V0}}[/RESET]' located at byte [ACTIONABLE]{{.V1}}[/RESET]"
 err_init_authenticated:
