@@ -187,6 +187,7 @@ func new(t *testing.T, retainDirs, updatePath bool, extraEnv ...string) *Session
 
 	if updatePath {
 		// add bin path
+		// Remove release state tool installation from PATH in tests
 		oldPath, _ := os.LookupEnv("PATH")
 		installPath, err := installation.InstallPathForBranch("release")
 		require.NoError(t, err)
@@ -202,6 +203,10 @@ func new(t *testing.T, retainDirs, updatePath bool, extraEnv ...string) *Session
 
 		cfg, err := config.New()
 		require.NoError(t, err)
+
+		// In order to ensure that the release state tool does not appear on the PATH
+		// when a new subshell is started we remove the installation entries from the
+		// rc file. This is added back later in the session's Close method.
 		if runtime.GOOS != "windows" {
 			s := bash.SubShell{}
 			err = s.CleanUserEnv(cfg, sscommon.InstallID, false)
@@ -600,6 +605,21 @@ func (s *Session) Close() error {
 		err := cleanUser(s.t, user, auth)
 		if err != nil {
 			s.t.Errorf("Could not delete user %s: %v", user, errs.JoinMessage(err))
+		}
+	}
+
+	// Add back the release state tool installation to the bash RC file.
+	if runtime.GOOS != "windows" {
+		installPath, err := installation.InstallPathForBranch("release")
+		if err != nil {
+			s.t.Errorf("Could not get install path: %v", errs.JoinMessage(err))
+		}
+		binDir := filepath.Join(installPath, "bin")
+
+		ss := bash.SubShell{}
+		err = ss.WriteUserEnv(cfg, map[string]string{"PATH": binDir}, sscommon.InstallID, false)
+		if err != nil {
+			s.t.Errorf("Could not clean user env: %v", errs.JoinMessage(err))
 		}
 	}
 
