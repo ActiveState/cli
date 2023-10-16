@@ -376,7 +376,9 @@ err_api_org_not_found:
 err_api_project_not_found:
   other: The requested project [NOTICE]{{.V0}}[/RESET] does not exist under [NOTICE]{{.V1}}[/RESET]. Please ensure the owner is correct and that the project has been created.
 err_api_project_not_found_unauthenticated:
-  other: The requested project [NOTICE]{{.V0}}/{{.V1}}[/RESET] could not be found. If this is a private project you may need to authenticate with 'state auth'.
+  other: The requested project [NOTICE]{{.V0}}/{{.V1}}[/RESET] could not be found
+tip_private_project_auth:
+  other: If this is a private project you may need to authenticate with 'state auth'.
 err_api_member_not_found:
   other: Unable to find requested Member
 err_api_org_invite_expected_one_invite:
@@ -935,7 +937,7 @@ prompt_signup_browser_action:
 prompt_login_after_browser_signup:
   other: Please login once you've registered your account
 err_browser_open:
-  other: "Could not open your browser, please manually open the following URL in your browser: {{.V0}}"
+  other: "Could not open your browser, please manually open the following URL above."
 err_activate_auth_required:
   other: Activating a project requires you to be authenticated against the ActiveState Platform
 err_os_not_a_directory:
@@ -1030,6 +1032,10 @@ auth_device_verify_security_code:
 
     Please sign into the ActiveState Platform (if you have not already done so) and click "Authorize".
     After that, it may take a few seconds for the authorization process here to complete.
+
+    If the URL does not open automatically, please copy and paste it into your browser.
+
+        [ACTIONABLE]{{.V1}}[/RESET]
 auth_device_timeout:
   other: Authorization timeout. Please try again.
 auth_device_success:
@@ -1338,6 +1344,8 @@ namespace_label_platform:
   other: "Platform"
 namespace_label_preplatform:
   other: "Bits"
+namespace_label_packager:
+  other: "Docker/Installer packagers"
 print_commit:
   other: "[NOTICE]commit {{.V0}}[/RESET]"
 print_commit_author:
@@ -1748,8 +1756,12 @@ err_user_network_solution:
   other: |
     Please ensure your device has access to internet during installation. Make sure software like a VPN, Firewall or Anti-Virus are not blocking your connectivity.
     If your issue persists consider reporting it on our forums at {{.V0}}.
+err_revert_get_commit:
+  other: "Could not fetch commit details for commit with ID: {{.V0}}"
 err_revert_refresh:
   other: Could not get revert commit to check if changes were indeed made
+err_revert_commit:
+  other: "Could not revert{{.V0}} commit: {{.V1}}"
 install_initial_success:
   other: "An activestate.yaml has been created at: {{.V0}}."
 err_package_info_no_packages:
@@ -1908,6 +1920,10 @@ err_shell_commit_id_mismatch:
   other: "Cannot start a shell/prompt for the given commit ID. Please use [ACTIONABLE]`state checkout`[/RESET] to check out a specific commit ID and then try again."
 err_shell_cannot_load_project:
   other: Cannot load project to start a shell/prompt in.
+err_shell_already_active:
+  other: |
+    You are already in a shell for '[ACTIONABLE]{{.V0}}[/RESET]', located at '[ACTIONABLE]{{.V1}}[/RESET]'. You cannot enter a new shell when you are already in one.
+    To exit your current shell simply run: [ACTIONABLE]exit[/RESET].
 err_checkout_project:
   other: Could not checkout project {{.V0}}
 err_project_frompath:
@@ -2070,6 +2086,14 @@ err_country_blocked:
   other: This service is not available in your region.
 err_shortcutdir_writable:
   other: Could not continue as we don't have permission to create [ACTIONABLE]{{.V0}}[/RESET].
+move_prompt:
+  other: |
+    You are about to move the project [NOTICE]{{.V0}}[/RESET] to the organization [NOTICE]{{.V1}}[/RESET].
+    This action will invalidate any local checkouts that already exist for this project. If you or your team members have checked out this project anywhere else, please update them with the new namespace: [ACTIONABLE]{{.V1}}/{{.V2}}[/RESET].
+    Continue?
+edit_prompt_name_notice:
+  other: |
+    Renaming a project will invalidate any local checkouts that already exist for this project. If you or your team members have checked out this project anywhere else, please update them with the new namespace: [ACTIONABLE]{{.V0}}/{{.V1}}[/RESET].
 err_edit_local_checkouts:
   other: Could not update local checkouts
 err_edit_project_mapping:

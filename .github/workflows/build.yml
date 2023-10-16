@@ -46,6 +46,7 @@ jobs:
       fail-fast: false
     runs-on: ${{ matrix.platform }}
     env:
+      ACTIVESTATE_CI: true
       ACTIVESTATE_CLI_DISABLE_RUNTIME: true
       SHELL: bash
       GITHUB_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -321,7 +322,6 @@ jobs:
         continue-on-error: ${{ github.event_name == 'schedule' }}
         env:
           ACTIVESTATE_VERBOSE: true
-          ACTIVESTATE_DEBUG_SERVICE_REQUESTS: true
           INTEGRATION_TEST_USERNAME: ${{ secrets.INTEGRATION_TEST_USERNAME }}
           INTEGRATION_TEST_PASSWORD: ${{ secrets.INTEGRATION_TEST_PASSWORD }}
           INTEGRATION_TEST_TOKEN: ${{ secrets.INTEGRATION_TEST_TOKEN }}
@@ -389,6 +389,7 @@ jobs:
       - os_specific
     runs-on: ubuntu-20.04
     env:
+      ACTIVESTATE_CI: true
       ACTIVESTATE_CLI_DISABLE_RUNTIME: true
       SHELL: bash
       GITHUB_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,6 +1,8 @@
 package constants
 
-import "time"
+import (
+	"time"
+)
 
 // LibraryName contains the main name of this library
 const LibraryName = "cli"
@@ -455,7 +457,6 @@ const InstallerName = "State Installer"
 const StateExecutorCmd = "state-exec"
 
 // ToplevelInstallArchiveDir is the top-level directory for files in an installation archive
-// Cf., https://www.pivotaltracker.com/story/show/177781411
 const ToplevelInstallArchiveDir = "state-install"
 
 // FirstMultiFileStateToolVersion is the State Tool version that introduced multi-file updates
@@ -500,3 +501,6 @@ const TerminalAnimationInterval = 150 * time.Millisecond
 // RuntimeSetupWaitEnvVarName is only used for an integration test to pause installation and wait
 // for Ctrl+C.
 const RuntimeSetupWaitEnvVarName = "ACTIVESTATE_CLI_RUNTIME_SETUP_WAIT"
+
+// ActiveStateCIEnvVarName is the environment variable set when running in an ActiveState CI environment.
+const ActiveStateCIEnvVarName = "ACTIVESTATE_CI"

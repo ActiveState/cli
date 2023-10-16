@@ -71,12 +71,14 @@ func newRuntime(target setup.Targeter, an analytics.Dispatcher, svcModel *model.
 
 // New attempts to create a new runtime from local storage.  If it fails with a NeedsUpdateError, Update() needs to be called to update the locally stored runtime.
 func New(target setup.Targeter, an analytics.Dispatcher, svcm *model.SvcModel) (*Runtime, error) {
+	logging.Debug("Initializing runtime for: %s/%s@%s", target.Owner(), target.Name(), target.CommitUUID())
+
 	if strings.ToLower(os.Getenv(constants.DisableRuntime)) == "true" {
 		fmt.Fprintln(os.Stderr, locale.Tl("notice_runtime_disabled", "Skipping runtime setup because it was disabled by an environment variable"))
 		return &Runtime{disabled: true, target: target}, nil
 	}
 	recordAttempt(an, target)
-	an.Event(anaConsts.CatRuntime, anaConsts.ActRuntimeStart, &dimensions.Values{
+	an.Event(anaConsts.CatRuntimeDebug, anaConsts.ActRuntimeStart, &dimensions.Values{
 		Trigger:          ptr.To(target.Trigger().String()),
 		Headless:         ptr.To(strconv.FormatBool(target.Headless())),
 		CommitID:         ptr.To(target.CommitUUID().String()),
@@ -86,7 +88,7 @@ func New(target setup.Targeter, an analytics.Dispatcher, svcm *model.SvcModel) (
 
 	r, err := newRuntime(target, an, svcm)
 	if err == nil {
-		an.Event(anaConsts.CatRuntime, anaConsts.ActRuntimeCache, &dimensions.Values{
+		an.Event(anaConsts.CatRuntimeDebug, anaConsts.ActRuntimeCache, &dimensions.Values{
 			CommitID: ptr.To(target.CommitUUID().String()),
 		})
 	}
@@ -105,6 +107,7 @@ func (r *Runtime) Target() setup.Targeter {
 // This function is usually called, after New() returned with a NeedsUpdateError
 func (r *Runtime) Update(auth *authentication.Auth, eventHandler events.Handler) (rerr error) {
 	if r.disabled {
+		logging.Debug("Skipping update as it is disabled")
 		return nil // nothing to do
 	}
 
@@ -192,7 +195,7 @@ func (r *Runtime) recordCompletion(err error) {
 		errorType = "input"
 	case errs.Matches(err, &model.SolverError{}):
 		errorType = "solve"
-	case errs.Matches(err, &setup.BuildError{}) || errs.Matches(err, &buildlog.BuildError{}):
+	case errs.Matches(err, &setup.BuildError{}), errs.Matches(err, &buildlog.BuildError{}):
 		errorType = "build"
 	case errs.Matches(err, &bpModel.BuildPlannerError{}):
 		errorType = "buildplan"
@@ -206,6 +209,9 @@ func (r *Runtime) recordCompletion(err error) {
 				case errs.Matches(err, &setup.ArtifactInstallError{}):
 					errorType = "install"
 					// Note: do not break because there could be download errors, and those take precedence
+				case errs.Matches(err, &setup.BuildError{}), errs.Matches(err, &buildlog.BuildError{}):
+					errorType = "build"
+					break // it only takes one build failure to report the runtime failure as due to build error
 				}
 			}
 		}
@@ -213,6 +219,8 @@ func (r *Runtime) recordCompletion(err error) {
 	// and those errors actually caused the failure, not these.
 	case errs.Matches(err, &setup.ProgressReportError{}) || errs.Matches(err, &buildlog.EventHandlerError{}):
 		errorType = "progress"
+	case errs.Matches(err, &setup.ExecutorSetupError{}):
+		errorType = "postprocess"
 	}
 
 	var message string
@@ -220,7 +228,7 @@ func (r *Runtime) recordCompletion(err error) {
 		message = errs.JoinMessage(err)
 	}
 
-	r.analytics.Event(anaConsts.CatRuntime, action, &dimensions.Values{
+	r.analytics.Event(anaConsts.CatRuntimeDebug, action, &dimensions.Values{
 		CommitID: ptr.To(r.target.CommitUUID().String()),
 		// Note: ProjectID is set by state-svc since ProjectNameSpace is specified.
 		ProjectNameSpace: ptr.To(ns.String()),
@@ -242,7 +250,7 @@ func (r *Runtime) recordUsage() {
 		multilog.Critical("Could not marshal dimensions for runtime-usage: %s", errs.JoinMessage(err))
 	}
 	if r.svcm != nil {
-		r.svcm.ReportRuntimeUsage(context.Background(), os.Getpid(), osutils.Executable(), dimsJson)
+		r.svcm.ReportRuntimeUsage(context.Background(), os.Getpid(), osutils.Executable(), anaConsts.SrcStateTool, dimsJson)
 	}
 }
 

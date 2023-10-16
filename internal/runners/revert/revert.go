@@ -1,10 +1,12 @@
 package revert
 
 import (
-	"github.com/ActiveState/cli/internal/analytics"
-	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/go-openapi/strfmt"
 
+	"github.com/ActiveState/cli/internal/analytics"
+	"github.com/ActiveState/cli/pkg/platform/runtime/target"
+
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
@@ -73,7 +75,10 @@ func (r *Revert) Run(params *Params) error {
 	if !params.To {
 		priorCommits, err := model.CommitHistoryPaged(commitID, 0, 2)
 		if err != nil {
-			return locale.WrapError(err, "err_revert_get_commit", "Could not fetch commit details for commit with ID: {{.V0}}", params.CommitID)
+			return errs.AddTips(
+				locale.WrapError(err, "err_revert_get_commit", "", params.CommitID),
+				locale.T("tip_private_project_auth"),
+			)
 		}
 		if priorCommits.TotalCommits < 2 {
 			return locale.NewInputError("err_revert_no_history", "Cannot revert commit {{.V0}}: no prior history", params.CommitID)
@@ -85,7 +90,10 @@ func (r *Revert) Run(params *Params) error {
 		var err error
 		targetCommit, err = model.GetCommitWithinCommitHistory(latestCommit, commitID)
 		if err != nil {
-			return locale.WrapError(err, "err_revert_to_get_commit", "Could not fetch commit details for commit with ID: {{.V0}}", params.CommitID)
+			return errs.AddTips(
+				locale.WrapError(err, "err_revert_get_commit", "", params.CommitID),
+				locale.T("tip_private_project_auth"),
+			)
 		}
 		fromCommit = latestCommit
 		toCommit = targetCommit.CommitID
@@ -119,13 +127,10 @@ func (r *Revert) Run(params *Params) error {
 
 	revertCommit, err := model.RevertCommitWithinHistory(fromCommit, toCommit, latestCommit)
 	if err != nil {
-		return locale.WrapError(
-			err,
-			"err_revert_commit",
-			"Could not revert{{.V0}} commit: {{.V1}} please ensure that the local project is synchronized with the platform and that the given commit ID belongs to the current project",
-			preposition,
-			params.CommitID,
-		)
+		return errs.AddTips(
+			locale.WrapError(err, "err_revert_commit", "", preposition, params.CommitID),
+			locale.Tl("tip_revert_sync", "Please ensure that the local project is synchronized with the platform and that the given commit ID belongs to the current project"),
+			locale.T("tip_private_project_auth"))
 	}
 
 	err = runbits.RefreshRuntime(r.auth, r.out, r.analytics, r.project, revertCommit.CommitID, true, target.TriggerRevert, r.svcModel)

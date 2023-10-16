@@ -13,7 +13,7 @@ import (
 var Options = autostart.Options{
 	Name:           constants.SvcAppName,
 	LaunchFileName: constants.SvcLaunchFileName,
-	Args:           []string{"start"},
+	Args:           []string{"start", "--autostart"},
 }
 
 func RegisterConfigListener(cfg *config.Instance) error {

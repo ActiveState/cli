@@ -17,11 +17,19 @@ import (
 )
 
 type commitOutput struct {
-	Hash    string   `locale:"hash,[HEADING]Commit[/RESET]" json:"hash"`
-	Author  string   `locale:"author,[HEADING]Author[/RESET]" json:"author"`
-	Date    string   `locale:"date,[HEADING]Date[/RESET]" json:"date"`
-	Message string   `locale:"message,[HEADING]Message[/RESET]" json:"message"`
-	Changes []string `locale:"changes,[HEADING]Changes[/RESET]" json:"changes"`
+	Hash              string               `locale:"hash,[HEADING]Commit[/RESET]" json:"hash"`
+	Author            string               `locale:"author,[HEADING]Author[/RESET]" json:"author"`
+	Date              string               `locale:"date,[HEADING]Date[/RESET]" json:"date"`
+	Message           string               `locale:"message,[HEADING]Message[/RESET]" json:"message"`
+	PlainChanges      []string             `locale:"changes,[HEADING]Changes[/RESET]" json:"-"`
+	StructuredChanges []*requirementChange `opts:"hidePlain" json:"changes"`
+}
+
+type requirementChange struct {
+	Operation             string `json:"operation"`
+	Requirement           string `json:"requirement"`
+	VersionConstraintsOld string `json:"version_constraints_old,omitempty"`
+	VersionConstraintsNew string `json:"version_constraints_new,omitempty"`
 }
 
 func (o *commitOutput) MarshalOutput(format output.Format) interface{} {
@@ -57,10 +65,13 @@ func newCommitOutput(commit *mono_models.Commit, orgs []gmodel.Organization, isL
 		username = usernameForID(*commit.Author, orgs)
 	}
 
+	plainChanges, structuredChanges := FormatChanges(commit)
+
 	commitOutput := &commitOutput{
-		Hash:    locale.Tl("print_commit_hash", "[ACTIONABLE]{{.V0}}[/RESET]{{.V1}}", commit.CommitID.String(), localTxt),
-		Author:  username,
-		Changes: FormatChanges(commit),
+		Hash:              locale.Tl("print_commit_hash", "[ACTIONABLE]{{.V0}}[/RESET]{{.V1}}", commit.CommitID.String(), localTxt),
+		Author:            username,
+		PlainChanges:      plainChanges,
+		StructuredChanges: structuredChanges,
 	}
 
 	commitOutput.Date = commit.AtTime.String()
@@ -78,8 +89,9 @@ func newCommitOutput(commit *mono_models.Commit, orgs []gmodel.Organization, isL
 	return commitOutput, nil
 }
 
-func FormatChanges(commit *mono_models.Commit) []string {
+func FormatChanges(commit *mono_models.Commit) ([]string, []*requirementChange) {
 	results := []string{}
+	requirements := []*requirementChange{}
 
 	for _, change := range commit.Changeset {
 		requirement := change.Requirement
@@ -93,19 +105,38 @@ func FormatChanges(commit *mono_models.Commit) []string {
 			versionConstraints = ""
 		}
 
-		var result string
+		// This is a temporary fix until we start getting history in the form of build expressions
+		// https://activestatef.atlassian.net/browse/DX-2197
+		if model.NamespaceMatch(change.Namespace, model.NamespaceBuildFlagsMatch) &&
+			(strings.Contains(change.Requirement, "docker") || strings.Contains(change.Requirement, "installer")) {
+			requirement = locale.T("namespace_label_packager")
+			versionConstraints = ""
+		}
+
+		var result, oldConstraints, newConstraints string
 		switch change.Operation {
 		case string(model.OperationAdded):
 			result = locale.Tr("change_added", requirement, versionConstraints)
+			newConstraints = formatConstraints(change.VersionConstraints)
 		case string(model.OperationRemoved):
 			result = locale.Tr("change_removed", requirement)
+			oldConstraints = formatConstraints(change.VersionConstraintsOld)
 		case string(model.OperationUpdated):
 			result = locale.Tr("change_updated", requirement, formatConstraints(change.VersionConstraintsOld), versionConstraints)
+			oldConstraints = formatConstraints(change.VersionConstraintsOld)
+			newConstraints = formatConstraints(change.VersionConstraints)
 		}
 		results = append(results, result)
+
+		requirements = append(requirements, &requirementChange{
+			Operation:             change.Operation,
+			Requirement:           change.Requirement,
+			VersionConstraintsOld: oldConstraints,
+			VersionConstraintsNew: newConstraints,
+		})
 	}
 
-	return results
+	return results, requirements
 }
 
 func formatConstraints(constraints []*mono_models.Constraint) string {

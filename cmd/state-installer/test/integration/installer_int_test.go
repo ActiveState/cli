@@ -10,6 +10,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ActiveState/termtest"
+	"github.com/stretchr/testify/suite"
+
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
@@ -22,8 +25,6 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/ActiveState/cli/pkg/sysinfo"
-	"github.com/ActiveState/termtest"
-	"github.com/stretchr/testify/suite"
 )
 
 type InstallerIntegrationTestSuite struct {
@@ -33,14 +34,11 @@ type InstallerIntegrationTestSuite struct {
 
 func (suite *InstallerIntegrationTestSuite) TestInstallFromLocalSource() {
 	suite.OnlyRunForTags(tagsuite.Installer, tagsuite.Critical)
-	ts := e2e.New(suite.T(), true)
+	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	suite.setupTest(ts)
 	suite.SetupRCFile(ts)
-	suite.T().Setenv("ACTIVESTATE_HOME", ts.Dirs.HomeDir)
-
-	target := filepath.Join(ts.Dirs.Work, "installation")
+	suite.T().Setenv(constants.HomeEnvVarName, ts.Dirs.HomeDir)
 
 	dir, err := ioutil.TempDir("", "system*")
 	suite.NoError(err)
@@ -48,7 +46,7 @@ func (suite *InstallerIntegrationTestSuite) TestInstallFromLocalSource() {
 	// Run installer with source-path flag (ie. install from this local path)
 	cp := ts.SpawnCmdWithOpts(
 		suite.installerExe,
-		e2e.WithArgs(target),
+		e2e.WithArgs(installationDir(ts)),
 		e2e.AppendEnv(constants.DisableUpdates+"=false"),
 		e2e.AppendEnv(fmt.Sprintf("%s=%s", constants.OverwriteDefaultSystemPathEnvVarName, dir)),
 	)
@@ -68,7 +66,7 @@ func (suite *InstallerIntegrationTestSuite) TestInstallFromLocalSource() {
 	// Ensure installing overtop doesn't result in errors
 	cp = ts.SpawnCmdWithOpts(
 		suite.installerExe,
-		e2e.WithArgs(target),
+		e2e.WithArgs(installationDir(ts)),
 		e2e.AppendEnv(constants.DisableUpdates+"=false"),
 		e2e.AppendEnv(fmt.Sprintf("%s=%s", constants.OverwriteDefaultSystemPathEnvVarName, dir)),
 	)
@@ -79,23 +77,25 @@ func (suite *InstallerIntegrationTestSuite) TestInstallFromLocalSource() {
 
 	// Again ensure installing overtop doesn't result in errors, but mock an older state tool format where
 	// the marker has no contents
-	suite.Require().NoError(fileutils.WriteFile(filepath.Join(target, installation.InstallDirMarker), []byte{}))
+	suite.Require().NoError(fileutils.WriteFile(filepath.Join(installationDir(ts), installation.InstallDirMarker), []byte{}))
 	cp = ts.SpawnCmdWithOpts(
 		suite.installerExe,
-		e2e.WithArgs(target),
+		e2e.WithArgs(installationDir(ts)),
 		e2e.AppendEnv(constants.DisableUpdates+"=false"),
 		e2e.AppendEnv(fmt.Sprintf("%s=%s", constants.OverwriteDefaultSystemPathEnvVarName, dir)),
 	)
 	cp.Expect("successfully installed")
 
-	stateExec, err := installation.StateExecFromDir(target)
-	suite.Contains(stateExec, target, "Ensure we're not grabbing state tool from integration test bin dir")
+	installDir := installationDir(ts)
+
+	stateExec, err := installation.StateExecFromDir(installDir)
+	suite.Contains(stateExec, installDir, "Ensure we're not grabbing state tool from integration test bin dir")
 	suite.NoError(err)
 
 	stateExecResolved, err := fileutils.ResolvePath(stateExec)
 	suite.Require().NoError(err)
 
-	serviceExec, err := installation.ServiceExecFromDir(target)
+	serviceExec, err := installation.ServiceExecFromDir(installDir)
 	suite.NoError(err)
 
 	// Verify that launched subshell has State tool on PATH
@@ -138,14 +138,10 @@ func (suite *InstallerIntegrationTestSuite) TestInstallIncompatible() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	suite.setupTest(ts)
-
-	target := filepath.Join(ts.Dirs.Work, "installation")
-
 	// Run installer with source-path flag (ie. install from this local path)
 	cp := ts.SpawnCmdWithOpts(
 		suite.installerExe,
-		e2e.WithArgs(target),
+		e2e.WithArgs(installationDir(ts)),
 		e2e.AppendEnv(constants.DisableUpdates+"=false", sysinfo.VersionOverrideEnvVar+"=10.0.0"),
 	)
 
@@ -159,16 +155,12 @@ func (suite *InstallerIntegrationTestSuite) TestInstallNoErrorTips() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	suite.setupTest(ts)
-
-	target := filepath.Join(ts.Dirs.Work, "installation")
-
 	dir, err := ioutil.TempDir("", "system*")
 	suite.NoError(err)
 
 	cp := ts.SpawnCmdWithOpts(
 		suite.installerExe,
-		e2e.WithArgs(target, "--activate", "ActiveState/DoesNotExist"),
+		e2e.WithArgs(installationDir(ts), "--activate", "ActiveState/DoesNotExist"),
 		e2e.AppendEnv(constants.DisableUpdates+"=true"),
 		e2e.AppendEnv(fmt.Sprintf("%s=%s", constants.OverwriteDefaultSystemPathEnvVarName, dir)),
 	)
@@ -182,16 +174,12 @@ func (suite *InstallerIntegrationTestSuite) TestInstallErrorTips() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	suite.setupTest(ts)
-
-	target := filepath.Join(ts.Dirs.Work, "installation")
-
 	dir, err := ioutil.TempDir("", "system*")
 	suite.NoError(err)
 
 	cp := ts.SpawnCmdWithOpts(
 		suite.installerExe,
-		e2e.WithArgs(target, "--activate", "ActiveState-CLI/Python3"),
+		e2e.WithArgs(installationDir(ts), "--activate", "ActiveState-CLI/Python3"),
 		e2e.AppendEnv(constants.DisableUpdates+"=true"),
 		e2e.AppendEnv(fmt.Sprintf("%s=%s", constants.OverwriteDefaultSystemPathEnvVarName, dir)),
 	)
@@ -209,9 +197,7 @@ func (suite *InstallerIntegrationTestSuite) TestStateTrayRemoval() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	suite.setupTest(ts)
-
-	dir := filepath.Join(ts.Dirs.Work, "installation")
+	dir := installationDir(ts)
 
 	// Install a release version that still has state-tray.
 	version := "0.35.0-SHAb78e2a4"
@@ -281,7 +267,7 @@ func (suite *InstallerIntegrationTestSuite) TestInstallerOverwriteServiceApp() {
 
 	cp := ts.SpawnCmdWithOpts(
 		suite.installerExe,
-		e2e.WithArgs(filepath.Join(ts.Dirs.Work, "installation")),
+		e2e.WithArgs(installationDir(ts)),
 		e2e.AppendEnv(fmt.Sprintf("%s=%s", constants.AppInstallDirOverrideEnvVarName, appInstallDir)),
 	)
 	cp.Expect("Done")
@@ -291,7 +277,7 @@ func (suite *InstallerIntegrationTestSuite) TestInstallerOverwriteServiceApp() {
 	// State Service.app should be overwritten cleanly without error.
 	cp = ts.SpawnCmdWithOpts(
 		suite.installerExe,
-		e2e.WithArgs(filepath.Join(ts.Dirs.Work, "installation2")),
+		e2e.WithArgs(installationDir(ts)+"2"),
 		e2e.AppendEnv(fmt.Sprintf("%s=%s", constants.AppInstallDirOverrideEnvVarName, appInstallDir)),
 	)
 	cp.Expect("Done")
@@ -345,18 +331,19 @@ func (suite *InstallerIntegrationTestSuite) AssertConfig(ts *e2e.Session) {
 	}
 }
 
-func (s *InstallerIntegrationTestSuite) setupTest(ts *e2e.Session) {
-	root := environment.GetRootPathUnsafe()
-	buildDir := fileutils.Join(root, "build")
-	installerExe := filepath.Join(buildDir, constants.StateInstallerCmd+osutils.ExeExt)
-	if !fileutils.FileExists(installerExe) {
-		s.T().Fatal("E2E tests require a state-installer binary. Run `state run build-installer`.")
-	}
-	s.installerExe = ts.CopyExeToDir(installerExe, filepath.Join(ts.Dirs.Base, "installer"))
+func installationDir(ts *e2e.Session) string {
+	return filepath.Join(ts.Dirs.Work, "installation")
+}
 
-	payloadDir := filepath.Dir(s.installerExe)
-	ts.CopyExeToDir(ts.Exe, filepath.Join(payloadDir, installation.BinDirName))
-	ts.CopyExeToDir(ts.SvcExe, filepath.Join(payloadDir, installation.BinDirName))
+func (suite *InstallerIntegrationTestSuite) SetupSuite() {
+	rootPath := environment.GetRootPathUnsafe()
+	localPayload := filepath.Join(rootPath, "build", "payload", constants.ToplevelInstallArchiveDir)
+	suite.Assert().DirExists(localPayload, "locally generated payload exists")
+
+	installerExe := filepath.Join(localPayload, constants.StateInstallerCmd+osutils.ExeExt)
+	suite.Assert().FileExists(installerExe, "locally generated installer exists")
+
+	suite.installerExe = installerExe
 }
 
 func TestInstallerIntegrationTestSuite(t *testing.T) {

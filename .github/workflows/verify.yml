@@ -17,6 +17,7 @@ jobs:
     name: Target & Verify PR
     runs-on: ubuntu-20.04
     env:
+      ACTIVESTATE_CI: true
       ACTIVESTATE_CLI_DISABLE_RUNTIME: true
       SHELL: bash
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -10,21 +10,6 @@ import (
 // Secrets determines whether the authorized user has access
 // to the current project's secrets
 func Secrets(orgName string, auth *authentication.Auth) (bool, error) {
-	if isProjectOwner(orgName, auth) {
-		return true, nil
-	}
-
-	return isOrgMember(orgName, auth)
-}
-
-func isProjectOwner(orgName string, auth *authentication.Auth) bool {
-	if orgName != auth.WhoAmI() {
-		return false
-	}
-	return true
-}
-
-func isOrgMember(orgName string, auth *authentication.Auth) (bool, error) {
 	_, err := model.FetchOrgMember(orgName, auth.WhoAmI(), auth)
 	if err != nil {
 		if errors.Is(err, model.ErrMemberNotFound) {
@@ -32,6 +17,5 @@ func isOrgMember(orgName string, auth *authentication.Auth) (bool, error) {
 		}
 		return false, err
 	}
-
 	return true, nil
 }

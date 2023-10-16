@@ -44,7 +44,7 @@ func (r *GaCLIReporter) AddOmitCategory(category string) {
 	r.omit[category] = struct{}{}
 }
 
-func (r *GaCLIReporter) Event(category, action, label string, d *dimensions.Values) error {
+func (r *GaCLIReporter) Event(category, action, source, label string, d *dimensions.Values) error {
 	if _, ok := r.omit[category]; ok {
 		logging.Debug("Not sending event with category: %s to Google Analytics", category)
 		return nil
@@ -99,5 +99,6 @@ func legacyDimensionMap(d *dimensions.Values) map[string]string {
 		"24": ptr.From(d.TargetVersion, ""),
 		"25": ptr.From(d.Error, ""),
 		"26": ptr.From(d.Message, ""),
+		"27": strconv.FormatBool(ptr.From(d.ActiveStateCI, false)),
 	}
 }
