@@ -6,7 +6,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/pkg/localcommit"
-	model2 "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
+	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	"github.com/ActiveState/cli/pkg/platform/model"
 )
 
@@ -14,7 +14,7 @@ func (r *RequirementOperation) rationalizeError(err *error) {
 	var localCommitFileErr *localcommit.ErrLocalCommitFile
 	var tooManyMatchesErr *model.ErrTooManyMatches
 	var noMatchesErr *ErrNoMatches
-	var buildPlannerErr *model2.BuildPlannerError
+	var buildPlannerErr *bpModel.BuildPlannerError
 
 	switch {
 	case err == nil:
