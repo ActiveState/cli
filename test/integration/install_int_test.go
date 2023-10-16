@@ -72,7 +72,7 @@ func (suite *InstallIntegrationTestSuite) TestInstall_NoMatches_Alternatives() {
 	}
 }
 
-func (suite *InstallIntegrationTestSuite) TestInstall_or() {
+func (suite *InstallIntegrationTestSuite) TestInstall_BuildPlannerError() {
 	suite.OnlyRunForTags(tagsuite.Install)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
