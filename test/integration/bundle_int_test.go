@@ -165,7 +165,7 @@ func (suite *BundleIntegrationTestSuite) TestBundle_searchWithBadLang() {
 	cp.ExpectExitCode(1)
 }
 
-func (suite *BundleIntegrationTestSuite) TestBundle_headless_operation() {
+func (suite *BundleIntegrationTestSuite) TestBundle_detached_operation() {
 	suite.OnlyRunForTags(tagsuite.Bundle)
 	if runtime.GOOS == "darwin" {
 		suite.T().Skip("Skipping mac for now as the builds are still too unreliable")

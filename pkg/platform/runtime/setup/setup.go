@@ -421,13 +421,7 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 	downloadablePrebuiltResults, err := setup.DownloadsFromBuild(*buildResult.Build, runtimeArtifacts)
 	if err != nil {
 		if errors.Is(err, artifact.CamelRuntimeBuilding) {
-			localeID := "build_status_in_progress"
-			messageURL := apimodel.ProjectURL(s.target.Owner(), s.target.Name(), s.target.CommitUUID().String())
-			if s.target.Owner() == "" && s.target.Name() == "" {
-				localeID = "build_status_in_progress_headless"
-				messageURL = apimodel.CommitURL(s.target.CommitUUID().String())
-			}
-			return nil, nil, locale.WrapInputError(err, localeID, "", messageURL)
+			return nil, nil, locale.WrapInputError(err, "build_status_in_progress", "", apimodel.ProjectURL(s.target.Owner(), s.target.Name(), s.target.CommitUUID().String()))
 		}
 		return nil, nil, errs.Wrap(err, "could not extract artifacts that are ready to download.")
 	}
