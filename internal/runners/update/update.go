@@ -55,7 +55,8 @@ func New(prime primeable) *Update {
 
 func (u *Update) Run(params *Params) error {
 	// Check for available update
-	upd, err := u.svc.CheckUpdate(context.Background(), params.Channel, "")
+	channel := fetchChannel(params.Channel, false)
+	upd, err := u.svc.CheckUpdate(context.Background(), channel, "")
 	if err != nil {
 		return errs.AddTips(locale.WrapError(
 			err, "err_update_fetch",
@@ -69,7 +70,7 @@ func (u *Update) Run(params *Params) error {
 	if !update.ShouldInstall() {
 		logging.Debug("No update found")
 		u.out.Print(output.Prepare(
-			locale.Tr("update_none_found", params.Channel),
+			locale.Tr("update_none_found", channel),
 			&struct{}{},
 		))
 		return nil
@@ -79,10 +80,10 @@ func (u *Update) Run(params *Params) error {
 
 	// Handle switching channels
 	var installPath string
-	if params.Channel != "" && params.Channel != constants.BranchName {
-		installPath, err = installation.InstallPathForBranch(params.Channel)
+	if channel != constants.BranchName {
+		installPath, err = installation.InstallPathForBranch(channel)
 		if err != nil {
-			return locale.WrapError(err, "err_update_install_path", "Could not get installation path for branch {{.V0}}", params.Channel)
+			return locale.WrapError(err, "err_update_install_path", "Could not get installation path for branch {{.V0}}", channel)
 		}
 	}
 
@@ -100,7 +101,7 @@ func (u *Update) Run(params *Params) error {
 	}
 
 	message := ""
-	if params.Channel != constants.BranchName {
+	if channel != constants.BranchName {
 		message = locale.Tl("update_switch_channel", "[NOTICE]Please start a new shell for the update to take effect.[/RESET]")
 	}
 	u.out.Print(output.Prepare(
