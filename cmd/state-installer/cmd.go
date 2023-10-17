@@ -131,7 +131,7 @@ func main() {
 		}
 		err := cfg.Set(anaConst.CfgSessionToken, sessionToken)
 		if err != nil {
-			logging.Error("Unable to set session token: " + errs.JoinMessage(err))
+			multilog.Error("Unable to set session token: " + errs.JoinMessage(err))
 		}
 		break
 	}

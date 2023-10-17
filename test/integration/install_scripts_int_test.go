@@ -265,7 +265,7 @@ func (suite *InstallScriptsIntegrationTestSuite) assertCorrectVersion(ts *e2e.Se
 }
 
 func (suite *InstallScriptsIntegrationTestSuite) assertAnalytics(ts *e2e.Session) {
-	// Verify analytics reported the correct sessionToken.
+	// Verify analytics reported a non-empty sessionToken.
 	sessionTokenFound := false
 	events := parseAnalyticsEvents(suite, ts)
 	suite.Require().NotEmpty(events)
