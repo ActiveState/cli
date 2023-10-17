@@ -156,6 +156,10 @@ if (!$version) {
     $relUrl = $infoJson.Path
 } else {
     # If the user specified a full version, construct the installer URL.
+    if ($version -ne $infoJson.Version) {
+        Write-Error "Unknown version: $version"
+        exit 1
+    }
     $relUrl = "$script:CHANNEL/$versionNoSHA/windows-amd64/state-windows-amd64-$version.zip"
 }
 

@@ -148,10 +148,12 @@ if [ -z "$VERSION" ]; then
   RELURL=`cat $INSTALLERTMPDIR/info.json | sed -ne 's/.*"path":[ \t]*"\([^"]*\)".*/\1/p'`
 else
   # If the user specified a full version, construct the installer URL.
+  if [ "$VERSION" != "`cat $INSTALLERTMPDIR/info.json | sed -ne 's/.*"version":[ \t]*"\([^"]*\)".*/\1/p'`" ]; then
+    error "Unknown version: $VERSION"
+    exit 1
+  fi
   RELURL="$CHANNEL/$VERSIONNOSHA/$OS-amd64/state-$OS-amd64-$VERSION$DOWNLOADEXT"
 fi
-
-rm $INSTALLERTMPDIR/info.json
 
 # Fetch the requested or latest version.
 progress "Preparing Installer for State Tool Package Manager version $VERSION"
