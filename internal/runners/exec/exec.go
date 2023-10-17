@@ -23,7 +23,6 @@ import (
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/cli/internal/runbits"
-	"github.com/ActiveState/cli/internal/runbits/rtusage"
 	"github.com/ActiveState/cli/internal/scriptfile"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
@@ -120,8 +119,6 @@ func (s *Exec) Run(params *Params, args ...string) (rerr error) {
 		projectNamespace = proj.NamespaceString()
 		rtTarget = target.NewProjectTarget(proj, nil, trigger)
 	}
-
-	rtusage.PrintRuntimeUsage(s.svcModel, s.out, rtTarget.Owner())
 
 	s.out.Notice(locale.Tl("operating_message", "", projectNamespace, projectDir))
 

@@ -169,12 +169,6 @@ const AutostartPathOverrideEnvVarName = "ACTIVESTATE_CLI_AUTOSTARTPATH_OVERRIDE"
 // AppInstallDirOverrideEnvVarName is used to override the default app installation path of the state tool.
 const AppInstallDirOverrideEnvVarName = "ACTIVESTATE_CLI_APPINSTALLDIR_OVERRIDE"
 
-// RuntimeUsageOverrideEnvVarName is used to override the default usage of the runtime intended for use in integration testing
-const RuntimeUsageOverrideEnvVarName = "ACTIVESTATE_OVERRIDE_RTUSAGE_USAGE"
-
-// RuntimeUsageSilenceTimeOverrideEnvVarName is used to override the default usage of the runtime intended for use in integration testing
-const RuntimeUsageSilenceTimeOverrideEnvVarName = "ACTIVESTATE_OVERRIDE_RTUSAGE_SILENCETIME"
-
 // SvcAuthPollingRateEnvVarName is used to override the default polling rate for syncing the authenticated state with the svc
 const SvcAuthPollingRateEnvVarName = "ACTIVESTATE_SVC_AUTH_POLLING_RATE"
 
