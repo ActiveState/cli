@@ -188,6 +188,8 @@ func new(t *testing.T, retainDirs, updatePath bool, extraEnv ...string) *Session
 	if updatePath {
 		// add bin path
 		// Remove release state tool installation from PATH in tests
+		// This is a workaround as our test sessions are not compeltely
+		// sandboxed. This should be addressed in: https://activestatef.atlassian.net/browse/DX-2285
 		oldPath, _ := os.LookupEnv("PATH")
 		installPath, err := installation.InstallPathForBranch("release")
 		require.NoError(t, err)
@@ -207,6 +209,7 @@ func new(t *testing.T, retainDirs, updatePath bool, extraEnv ...string) *Session
 		// In order to ensure that the release state tool does not appear on the PATH
 		// when a new subshell is started we remove the installation entries from the
 		// rc file. This is added back later in the session's Close method.
+		// Again, this is a workaround to be addressed in: https://activestatef.atlassian.net/browse/DX-2285
 		if runtime.GOOS != "windows" {
 			s := bash.SubShell{}
 			err = s.CleanUserEnv(cfg, sscommon.InstallID, false)
@@ -230,6 +233,8 @@ func new(t *testing.T, retainDirs, updatePath bool, extraEnv ...string) *Session
 	// from the environment for the session itself.
 	// Setting environment variables here allows helper
 	// functions access to them.
+	// This is a workaround as our test sessions are not compeltely
+	// sandboxed. This should be addressed in: https://activestatef.atlassian.net/browse/DX-2285
 	t.Setenv(constants.HomeEnvVarName, dirs.HomeDir)
 
 	err = fileutils.Touch(filepath.Join(dirs.Base, installation.InstallDirMarker))
@@ -609,6 +614,9 @@ func (s *Session) Close() error {
 	}
 
 	// Add back the release state tool installation to the bash RC file.
+	// This was done on session creation to ensure that the release state tool
+	// does not appear on the PATH when a new subshell is started. This is a
+	// workaround to be addressed in: https://activestatef.atlassian.net/browse/DX-2285
 	if runtime.GOOS != "windows" {
 		installPath, err := installation.InstallPathForBranch("release")
 		if err != nil {
