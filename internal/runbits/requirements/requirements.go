@@ -127,7 +127,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 	switch nsType {
 	case model.NamespacePackage, model.NamespaceBundle:
 		commitID, err := localcommit.Get(pj.Dir())
-		if err != nil && !localcommit.IsFileDoesNotExistError(err) {
+		if err != nil {
 			return errs.Wrap(err, "Unable to get local commit")
 		}
 		language, err := model.LanguageByCommit(commitID)
@@ -205,7 +205,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 	}
 
 	parentCommitID, err := localcommit.Get(pj.Dir())
-	if err != nil && !localcommit.IsFileDoesNotExistError(err) {
+	if err != nil {
 		return errs.Wrap(err, "Unable to get local commit")
 	}
 	hasParentCommit := parentCommitID != ""
