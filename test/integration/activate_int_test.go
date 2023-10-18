@@ -425,6 +425,7 @@ version: %s
 `, constants.BranchName, constants.Version))
 
 	ts.PrepareActiveStateYAML(content)
+	ts.PrepareCommitIdFile("59404293-e5a9-4fd0-8843-77cd4761b5b5")
 
 	// Pull to ensure we have an up to date config file
 	cp := ts.Spawn("pull")
@@ -550,7 +551,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivateCommitURL() {
 	ts.PrepareActiveStateYAML(contents)
 
 	// Ensure we have the most up to date version of the project before activating
-	cp := ts.Spawn("activate")
+	cp := ts.Spawn("activate", "--non-interactive") // do not prompt to migrate
 	cp.Expect("Activated", e2e.RuntimeSourcingTimeoutOpt)
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
