@@ -1,12 +1,13 @@
 package executors
 
 import (
-	"github.com/ActiveState/cli/pkg/project"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	rt "runtime"
 	"strings"
+
+	"github.com/ActiveState/cli/pkg/project"
 
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/installation"
@@ -31,7 +32,6 @@ type Targeter interface {
 	Name() string
 	Owner() string
 	Dir() string
-	Headless() bool
 }
 
 type Executors struct {
@@ -74,7 +74,6 @@ func (es *Executors) Apply(sockPath string, targeter Targeter, env map[string]st
 		CommitUUID: targeter.CommitUUID().String(),
 		Namespace:  ns.String(),
 		Dir:        targeter.Dir(),
-		Headless:   targeter.Headless(),
 	}
 	m := execmeta.New(sockPath, osutils.EnvMapToSlice(env), t, executors)
 	if err := m.WriteToDisk(es.executorPath); err != nil {

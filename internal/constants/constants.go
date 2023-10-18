@@ -281,9 +281,6 @@ const PlatformSignupURL = "https://platform.activestate.com" + "/create-account"
 // DocumentationURL is the url for the state tool documentation
 const DocumentationURL = "http://docs.activestate.com/platform/state/"
 
-// DocumentationURLHeadless is the documentation URL for headless state docs
-const DocumentationURLHeadless = DocumentationURL + "advanced-topics/detached/"
-
 // DocumentationURLGetStarted is the documentation URL for creating projects
 const DocumentationURLGetStarted = DocumentationURL + "create-project/?utm_source=platform-application-gui&utm_medium=activestate-desktop&utm_content=drop-down&utm_campaign=maru"
 

@@ -784,8 +784,6 @@ build_status_unknown:
   other: "Build status could not be retrieved, please view the project at: [NOTICE]{{.V0}}[/RESET] for more information"
 build_status_in_progress:
   other: "Your changes are currently being built remotely on the ActiveState Platform. Please visit [NOTICE]{{.V0}}[/RESET] to see the progress."
-build_status_in_progress_headless:
-  other: "Your changes are currently being built remotely on the ActiveState Platform. Please visit [NOTICE]{{.V0}}[/RESET] to see the progress (you may have to first convert your runtime to a project)."
 build_status_unknown_error:
   other: "Build reported an unknown error: {{.V0}}; Please view the project at: [ACTIONABLE]{{.V1}}[/RESET] for more information"
 build_status_failed:
@@ -1156,12 +1154,6 @@ bundle_updated:
   other: "Bundle updated: [NOTICE]{{.V0}}[/RESET]"
 bundle_version_updated:
   other: "Bundle updated: [NOTICE]{{.V0}}@{{.V1}}[/RESET]"
-package_headless_added:
-  other: "Package added: [NOTICE]{{.V0}}[/RESET]"
-package_headless_updated:
-  other: "Package updated: [NOTICE]{{.V0}}[/RESET]"
-package_headless_removed:
-  other: "Package uninstalled: [NOTICE]{{.V0}}[/RESET]"
 err_package_removed:
   other: Failed to remove package
 err_bundle_removed:

@@ -115,7 +115,6 @@ type Targeter interface {
 	Name() string
 	Owner() string
 	Dir() string
-	Headless() bool
 	Trigger() target.Trigger
 	ProjectDir() string
 
