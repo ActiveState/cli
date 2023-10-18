@@ -12,6 +12,78 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
+type ArtifactListing struct {
+	build            *model.Build
+	runtimeClosure   artifact.Map
+	buildtimeClosure artifact.Map
+	artifactIDs      []artifact.ArtifactID
+}
+
+func NewArtifactListing(build *model.Build) *ArtifactListing {
+	return &ArtifactListing{build: build}
+}
+
+func (al *ArtifactListing) RuntimeClosure() (artifact.Map, error) {
+	if al.runtimeClosure != nil {
+		return al.runtimeClosure, nil
+	}
+
+	runtimeClosure, err := NewMapFromBuildPlan(al.build, false)
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not create runtime closure")
+	}
+	al.runtimeClosure = runtimeClosure
+
+	return runtimeClosure, nil
+}
+
+func (al *ArtifactListing) BuildtimeClosure() (artifact.Map, error) {
+	if al.buildtimeClosure != nil {
+		return al.buildtimeClosure, nil
+	}
+
+	buildtimeClosure, err := NewMapFromBuildPlan(al.build, true)
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not create buildtime closure")
+	}
+	al.buildtimeClosure = buildtimeClosure
+
+	return buildtimeClosure, nil
+}
+
+func (al *ArtifactListing) ArtifactIDs() ([]artifact.ArtifactID, error) {
+	if al.artifactIDs != nil {
+		return al.artifactIDs, nil
+	}
+
+	if al.buildtimeClosure != nil {
+		for _, artifact := range al.buildtimeClosure {
+			al.artifactIDs = append(al.artifactIDs, artifact.ArtifactID)
+		}
+		return al.artifactIDs, nil
+	}
+
+	if al.runtimeClosure != nil {
+		for _, artifact := range al.runtimeClosure {
+			al.artifactIDs = append(al.artifactIDs, artifact.ArtifactID)
+		}
+		return al.artifactIDs, nil
+	}
+
+	// Favor the buildtime closure over the runtime closure as it will
+	// include more artifact IDs
+	buildTimeClosure, err := al.BuildtimeClosure()
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not create buildtime closure")
+	}
+
+	for _, artifact := range buildTimeClosure {
+		al.artifactIDs = append(al.artifactIDs, artifact.ArtifactID)
+	}
+
+	return al.artifactIDs, nil
+}
+
 // NewMapFromBuildPlan creates an artifact map from a build plan. It creates a
 // lookup table and calls the recursive function buildMap to build up the
 // artifact map by traversing the build plan from the terminal targets through

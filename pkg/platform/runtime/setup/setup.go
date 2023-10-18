@@ -403,43 +403,25 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 	}
 
 	// Compute and handle the change summary
-	// runtimeAndBuildtimeArtifacts records all artifacts that will need to be built in order to obtain the runtime.
-	var runtimeAndBuildtimeArtifacts artifact.Map
 	var runtimeArtifacts artifact.Map // Artifacts required for the runtime to function
-
-	// If the build is not ready, we need to get the runtime and buildtime closure
-	if !buildResult.BuildReady {
-		runtimeAndBuildtimeArtifacts, err = buildplan.NewMapFromBuildPlan(buildResult.Build, true)
-		if err != nil {
-			return nil, nil, errs.Wrap(err, "Failed to create artifact map from build plan")
-		}
-	}
+	artifactListing := buildplan.NewArtifactListing(buildResult.Build)
 
 	var includeBuildtimeClosure bool
 	// If we are installing build dependencies, then buildtime dependencies are also runtime dependencies
 	if strings.EqualFold(os.Getenv(constants.InstallBuildDependencies), "true") {
 		logging.Debug("Installing build dependencies")
-		includeBuildtimeClosure = true
-		if runtimeAndBuildtimeArtifacts == nil {
-			runtimeAndBuildtimeArtifacts, err = buildplan.NewMapFromBuildPlan(buildResult.Build, includeBuildtimeClosure)
-			if err != nil {
-				return nil, nil, errs.Wrap(err, "Failed to create artifact map from build plan")
-			}
+		runtimeArtifacts, err = artifactListing.BuildtimeClosure()
+		if err != nil {
+			return nil, nil, errs.Wrap(err, "Failed to compute buildtime closure")
 		}
-		runtimeArtifacts = runtimeAndBuildtimeArtifacts
 	} else {
-		runtimeArtifacts, err = buildplan.NewMapFromBuildPlan(buildResult.Build, false)
+		runtimeArtifacts, err = artifactListing.RuntimeClosure()
 		if err != nil {
 			return nil, nil, errs.Wrap(err, "Failed to create artifact map from build plan")
 		}
 	}
 
-	var resolver ArtifactResolver
-	if !buildResult.BuildReady {
-		resolver, err = selectArtifactResolver(buildResult.BuildEngine, runtimeAndBuildtimeArtifacts)
-	} else {
-		resolver, err = selectArtifactResolver(buildResult.BuildEngine, runtimeArtifacts)
-	}
+	resolver, err := selectArtifactResolver(buildResult, artifactListing)
 	if err != nil {
 		return nil, nil, errs.Wrap(err, "Failed to select artifact resolver")
 	}
@@ -507,15 +489,9 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 	alreadyInstalled := reusableArtifacts(buildResult.Build.Artifacts, storedArtifacts)
 
 	// Report resolved artifacts
-	artifactIDs := []artifact.ArtifactID{}
-	if !buildResult.BuildReady {
-		for _, a := range runtimeAndBuildtimeArtifacts {
-			artifactIDs = append(artifactIDs, a.ArtifactID)
-		}
-	} else {
-		for _, a := range runtimeArtifacts {
-			artifactIDs = append(artifactIDs, a.ArtifactID)
-		}
+	artifactIDs, err := artifactListing.ArtifactIDs()
+	if err != nil {
+		return nil, nil, errs.Wrap(err, "Could not get artifact IDs from build plan")
 	}
 
 	artifactNames := artifact.ResolveArtifactNames(resolver.ResolveArtifactName, artifactIDs)
@@ -544,9 +520,12 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 				artifactsToInstall = append(artifactsToInstall, a.ArtifactID)
 			}
 		}
-		artifactsToBuild = runtimeArtifacts
+		artifactsToBuild, err = artifactListing.BuildtimeClosure()
 	} else {
-		artifactsToBuild = runtimeAndBuildtimeArtifacts
+		artifactsToBuild, err = artifactListing.RuntimeClosure()
+	}
+	if err != nil {
+		return nil, nil, errs.Wrap(err, "Failed to compute artifacts to build")
 	}
 
 	// The log file we want to use for builds
@@ -912,14 +891,25 @@ func (s *Setup) selectSetupImplementation(buildEngine model.BuildEngine) (Setupe
 	}
 }
 
-func selectArtifactResolver(buildEngine model.BuildEngine, artifacts artifact.Map) (ArtifactResolver, error) {
-	switch buildEngine {
+func selectArtifactResolver(buildResult *model.BuildResult, artifactListing *buildplan.ArtifactListing) (ArtifactResolver, error) {
+	var artifacts artifact.Map
+	var err error
+	if buildResult.BuildReady || strings.EqualFold(os.Getenv(constants.InstallBuildDependencies), "true") {
+		artifacts, err = artifactListing.BuildtimeClosure()
+	} else {
+		artifacts, err = artifactListing.RuntimeClosure()
+	}
+	if err != nil {
+		return nil, errs.Wrap(err, "Failed to create artifact map from build plan")
+	}
+
+	switch buildResult.BuildEngine {
 	case model.Alternative:
 		return alternative.NewResolver(artifacts), nil
 	case model.Camel:
 		return camel.NewResolver(), nil
 	default:
-		return nil, errs.New("Unknown build engine: %s", buildEngine)
+		return nil, errs.New("Unknown build engine: %s", buildResult.BuildEngine)
 	}
 }
 
