@@ -23,7 +23,6 @@ import (
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/cli/internal/runbits"
-	"github.com/ActiveState/cli/internal/runbits/rtusage"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -155,8 +154,6 @@ func (d *Deploy) commitID(namespace project.Namespaced) (strfmt.UUID, error) {
 
 func (d *Deploy) install(rtTarget setup.Targeter) (rerr error) {
 	d.output.Notice(output.Title(locale.T("deploy_install")))
-
-	rtusage.PrintRuntimeUsage(d.svcModel, d.output, rtTarget.Owner())
 
 	rti, err := runtime.New(rtTarget, d.analytics, d.svcModel, d.auth)
 	if err == nil {

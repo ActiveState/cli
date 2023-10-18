@@ -468,8 +468,15 @@ func (p *Project) Init() error {
 	if p.parsedURL.LegacyCommitID != "" {
 		// Migrate from commitID in activestate.yaml to .activestate/commit file.
 		// Writing to disk during Parse() feels wrong though.
-		if err := localcommit.Set(filepath.Dir(p.Path()), p.parsedURL.LegacyCommitID); err != nil {
+		projectDir := filepath.Dir(p.Path())
+		if err := localcommit.Set(projectDir, p.parsedURL.LegacyCommitID); err != nil {
 			return errs.Wrap(err, "Could not create local commit file")
+		}
+		if fileutils.DirExists(filepath.Join(projectDir, ".git")) {
+			err := localcommit.AddToGitIgnore(projectDir)
+			if err != nil {
+				multilog.Error("Unable to add local commit file to .gitignore: %v", err)
+			}
 		}
 		pf := NewProjectField()
 		if err := pf.LoadProject(p.Project); err != nil {

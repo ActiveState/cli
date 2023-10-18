@@ -87,7 +87,7 @@ func run() error {
 	if err := sendMsgToService(meta.SockPath, hb); err != nil {
 		logr.Debug("                 sock - error: %v", err)
 
-		if onCI() { // halt control flow on CI only
+		if inActiveStateCI() { // halt control flow on CI only
 			return fmt.Errorf("cannot send message to service (this error is handled in CI only): %w", err)
 		}
 	}
@@ -108,7 +108,7 @@ func run() error {
 	if err := sendMsgToService(meta.SockPath, msg); err != nil {
 		logr.Debug("                 sock - error: %v", err)
 
-		if onCI() { // halt control flow on CI only
+		if inActiveStateCI() { // halt control flow on CI only
 			return fmt.Errorf("cannot send message to service (this error is handled in CI only): %w", err)
 		}
 	}

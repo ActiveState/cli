@@ -2,20 +2,33 @@ package localcommit
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"path/filepath"
 
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/go-openapi/strfmt"
 )
 
-type FileDoesNotExistError struct{ *locale.LocalizedError }
+type ErrLocalCommitFile struct {
+	*locale.LocalizedError // for backwards compatibility with runners that don't implement rationalizers
+	errorMsg               string
+	IsDoesNotExist         bool
+	File                   string
+}
+
+func (e *ErrLocalCommitFile) Error() string {
+	return e.errorMsg
+}
 
 func IsFileDoesNotExistError(err error) bool {
-	return errs.Matches(err, &FileDoesNotExistError{})
+	var errLocalCommit *ErrLocalCommitFile
+	if errors.As(err, &errLocalCommit) {
+		return errLocalCommit.IsDoesNotExist
+	}
+	return false
 }
 
 func getCommitFile(projectDir string) string {
@@ -26,18 +39,26 @@ func Get(projectDir string) (strfmt.UUID, error) {
 	configDir := filepath.Join(projectDir, constants.ProjectConfigDirName)
 	commitFile := getCommitFile(projectDir)
 	if !fileutils.DirExists(configDir) || !fileutils.TargetExists(commitFile) {
-		return "", &FileDoesNotExistError{locale.NewError("err_commit_file_does_not_exist",
-			"Your project runtime's commit ID file '{{.V0}}' does not exist", commitFile)}
+		return "", &ErrLocalCommitFile{
+			locale.NewError("err_local_commit_file", commitFile),
+			"local commit file does not exist",
+			true, commitFile}
 	}
 
 	b, err := fileutils.ReadFile(commitFile)
 	if err != nil {
-		return "", locale.WrapError(err, "err_get_commit_file", "Could not read your project runtime's commit ID file")
+		return "", &ErrLocalCommitFile{
+			locale.NewError("err_local_commit_file", commitFile),
+			"local commit could not be read",
+			false, commitFile}
 	}
 
 	commitID := string(b)
 	if !strfmt.IsUUID(commitID) {
-		return "", locale.NewError("err_commit_id_invalid", commitID)
+		return "", &ErrLocalCommitFile{
+			locale.NewError("err_local_commit_file", commitFile),
+			"local commit is not uuid formatted",
+			false, commitFile}
 	}
 
 	return strfmt.UUID(commitID), nil

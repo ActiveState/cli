@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/cmd/state-svc/internal/messages"
-	"github.com/ActiveState/cli/cmd/state-svc/internal/rtusage"
 	"github.com/ActiveState/cli/cmd/state-svc/internal/rtwatcher"
 	genserver "github.com/ActiveState/cli/cmd/state-svc/internal/server/generated"
 	"github.com/ActiveState/cli/internal/analytics/client/sync"
@@ -36,7 +35,6 @@ type Resolver struct {
 	messages       *messages.Messages
 	updatePoller   *poller.Poller
 	authPoller     *poller.Poller
-	usageChecker   *rtusage.Checker
 	projectIDCache *projectcache.ID
 	an             *sync.Client
 	anForClient    *sync.Client // Use separate client for events sent through service so we don't contaminate one with the other
@@ -73,8 +71,6 @@ func New(cfg *config.Instance, an *sync.Client, auth *authentication.Auth) (*Res
 		return nil, nil
 	})
 
-	usageChecker := rtusage.NewChecker(cfg, auth)
-
 	// Note: source does not matter here, as analytics sent via the resolver have a source
 	// (e.g. State Tool or Executor), and that source will be used.
 	anForClient := sync.New(anaConsts.SrcStateTool, cfg, auth, nil)
@@ -83,7 +79,6 @@ func New(cfg *config.Instance, an *sync.Client, auth *authentication.Auth) (*Res
 		msg,
 		pollUpdate,
 		pollAuth,
-		usageChecker,
 		projectcache.NewID(),
 		an,
 		anForClient,
@@ -233,29 +228,6 @@ func (r *Resolver) ReportRuntimeUsage(_ context.Context, pid int, exec, source s
 	r.rtwatch.Watch(pid, exec, source, dims)
 
 	return &graph.ReportRuntimeUsageResponse{Received: true}, nil
-}
-
-func (r *Resolver) CheckRuntimeUsage(_ context.Context, organizationName string) (*graph.CheckRuntimeUsageResponse, error) {
-	defer func() { handlePanics(recover(), debug.Stack()) }()
-
-	logging.Debug("CheckRuntimeUsage resolver")
-
-	usage, err := r.usageChecker.Check(organizationName)
-	if err != nil {
-		return nil, errs.Wrap(err, "Could not check runtime usage: %s", errs.JoinMessage(err))
-	}
-
-	if usage == nil {
-		return &graph.CheckRuntimeUsageResponse{
-			Limit: 1,
-			Usage: 0,
-		}, nil
-	}
-
-	return &graph.CheckRuntimeUsageResponse{
-		Limit: int(usage.LimitDynamicRuntimes),
-		Usage: int(usage.ActiveDynamicRuntimes),
-	}, nil
 }
 
 func (r *Resolver) CheckMessages(ctx context.Context, command string, flags []string) ([]*graph.MessageInfo, error) {
