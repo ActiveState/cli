@@ -12,5 +12,5 @@ func NewResolver() *Resolver {
 }
 
 func (r *Resolver) ResolveArtifactName(_ artifact.ArtifactID) string {
-	return locale.Tl("camel_bundle_name", "bundle")
+	return locale.Tl("camel_bundle_name", "legacy bundle")
 }
