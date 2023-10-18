@@ -98,8 +98,9 @@ func (s *Script) String() string {
 	buf.WriteString("let:\n")
 	for _, assignment := range s.Expr.Let.Assignments {
 		buf.WriteString(indent(assignmentString(assignment)))
+		buf.WriteString("\n")
 	}
-	buf.WriteString("\n\n")
+	buf.WriteString("\n")
 	buf.WriteString("in:\n")
 	switch {
 	case s.Expr.Let.In.FuncCall != nil:
