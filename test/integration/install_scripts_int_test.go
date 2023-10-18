@@ -146,10 +146,9 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 			suite.NoError(err)
 			suite.FileExists(stateExec)
 
-
 			suite.assertBinDirContents(binPath)
 			suite.assertCorrectVersion(ts, binPath, tt.Version, tt.Channel)
-      suite.assertAnalytics(ts)
+			suite.assertAnalytics(ts)
 			suite.DirExists(ts.Dirs.Config)
 
 			// Verify that can install overtop
