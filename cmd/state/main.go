@@ -212,6 +212,8 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 	// Set up prompter
 	prompter := prompt.New(isInteractive, an)
 
+	projectmigration.Register(prompter, out)
+
 	// Set up conditional, which accesses a lot of primer data
 	sshell := subshell.New(cfg)
 
@@ -219,10 +221,6 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 	project.RegisterConditional(conditional)
 	project.RegisterExpander("mixin", project.NewMixin(auth).Expander)
 	project.RegisterExpander("secrets", project.NewSecretPromptingExpander(secretsapi.Get(), prompter, cfg, auth))
-
-	if pj != nil {
-		projectmigration.PromptToMigrateIfNecessary(pj, prompter, out)
-	}
 
 	// Run the actual command
 	cmds := cmdtree.New(primer.New(pj, out, auth, prompter, sshell, conditional, cfg, ipcClient, svcmodel, an), args...)

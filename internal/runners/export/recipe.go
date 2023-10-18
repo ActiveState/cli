@@ -8,7 +8,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/pkg/localcommit"
+	"github.com/ActiveState/cli/internal/runbits/commitid"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/sysinfo"
@@ -83,7 +83,7 @@ func fetchRecipe(proj *project.Project, commitID strfmt.UUID, platform string) (
 
 	if commitID == "" {
 		var err error
-		commitID, err = localcommit.GetCompatible(proj)
+		commitID, err = commitid.GetCompatible(proj)
 		if err != nil {
 			return "", errs.Wrap(err, "Unable to get local commit")
 		}

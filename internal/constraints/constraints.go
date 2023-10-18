@@ -13,7 +13,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
-	"github.com/ActiveState/cli/pkg/localcommit"
+	"github.com/ActiveState/cli/internal/runbits/commitid"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/ActiveState/cli/pkg/sysinfo"
@@ -81,7 +81,7 @@ type projectable interface {
 	Path() string
 	Dir() string
 	URL() string
-	LegacyCommitID() string // for localcommit.GetCompatible
+	LegacyCommitID() string // for commitid.GetCompatible
 }
 
 func NewPrimeConditional(auth *authentication.Auth, pj projectable, subshellName string) *Conditional {
@@ -99,7 +99,7 @@ func NewPrimeConditional(auth *authentication.Auth, pj projectable, subshellName
 		pjName = pj.Name()
 		pjNamespace = pj.NamespaceString()
 		pjURL = pj.URL()
-		commitID, err := localcommit.GetCompatible(pj)
+		commitID, err := commitid.GetCompatible(pj)
 		if err != nil {
 			multilog.Error("Unable to get local commit: %v", errs.JoinMessage(err))
 		}

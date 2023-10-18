@@ -11,7 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
-	"github.com/ActiveState/cli/pkg/localcommit"
+	"github.com/ActiveState/cli/internal/runbits/commitid"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/go-openapi/strfmt"
 )
@@ -88,7 +88,7 @@ func (p *ProjectTarget) CommitUUID() strfmt.UUID {
 	if p.customCommit != nil {
 		return *p.customCommit
 	}
-	commitID, err := localcommit.GetCompatible(p.Project)
+	commitID, err := commitid.GetCompatible(p.Project)
 	if err != nil {
 		multilog.Error("Unable to get local commit: %v", errs.JoinMessage(err))
 		return ""

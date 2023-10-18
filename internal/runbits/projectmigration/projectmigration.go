@@ -13,6 +13,7 @@ import (
 )
 
 type projecter interface {
+	Dir() string
 	URL() string
 	Path() string
 	LegacyCommitID() string
@@ -22,13 +23,22 @@ type promptable interface {
 	Confirm(title, message string, defaultChoice *bool) (bool, error)
 }
 
-// PromptToMigrateIfNecessary checks if the given project has been migrated to the new project
-// format. If not, the user is prompted to do so. This should be called in main() as soon as a
-// project file is parsed.
-func PromptToMigrateIfNecessary(proj projecter, prompt promptable, out output.Outputer) error {
-	projectDir := filepath.Dir(proj.Path())
-	if _, err := localcommit.Get(projectDir); err == nil || !localcommit.IsFileDoesNotExistError(err) {
-		return err
+var prompt promptable
+var out output.Outputer
+var declined bool
+
+func Register(prompt_ promptable, out_ output.Outputer) {
+	prompt = prompt_
+	out = out_
+}
+
+func PromptAndMigrate(proj projecter) (bool, error) {
+	if prompt == nil || out == nil {
+		return false, errs.New("projectmigration.Register() has not been called")
+	}
+
+	if declined {
+		return false, nil
 	}
 
 	defaultChoice := false
@@ -36,17 +46,18 @@ func PromptToMigrateIfNecessary(proj projecter, prompt promptable, out output.Ou
 		if out.Config().Interactive {
 			out.Notice(locale.Tl("projectmigration_declined", "Migration declined for now"))
 		}
-		return nil
+		declined = true
+		return false, nil
 	} else if err != nil {
-		return locale.WrapError(err, "err_projectmigration_confirm", "Could not confirm migration choice")
+		return false, errs.Wrap(err, "Could not confirm migration choice")
 	}
 
-	if err := localcommit.Set(projectDir, proj.LegacyCommitID()); err != nil {
-		return errs.Wrap(err, "Could not create local commit file")
+	if err := localcommit.Set(proj.Dir(), proj.LegacyCommitID()); err != nil {
+		return false, errs.Wrap(err, "Could not create local commit file")
 	}
 
-	if fileutils.DirExists(filepath.Join(projectDir, ".git")) {
-		err := localcommit.AddToGitIgnore(projectDir)
+	if fileutils.DirExists(filepath.Join(proj.Dir(), ".git")) {
+		err := localcommit.AddToGitIgnore(proj.Dir())
 		if err != nil {
 			multilog.Error("Unable to add local commit file to .gitignore: %v", err)
 			out.Notice(locale.T("notice_commit_id_gitignore"))
@@ -55,14 +66,14 @@ func PromptToMigrateIfNecessary(proj projecter, prompt promptable, out output.Ou
 
 	pf := projectfile.NewProjectField()
 	if err := pf.LoadProject(proj.URL()); err != nil {
-		return errs.Wrap(err, "Could not load activestate.yaml")
+		return false, errs.Wrap(err, "Could not load activestate.yaml")
 	}
 	pf.StripCommitID()
 	if err := pf.Save(proj.Path()); err != nil {
-		return errs.Wrap(err, "Could not save activestate.yaml")
+		return false, errs.Wrap(err, "Could not save activestate.yaml")
 	}
 
 	out.Notice(locale.Tl("projectmigration_success", "Your project was successfully migrated"))
 
-	return nil
+	return true, nil
 }

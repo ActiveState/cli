@@ -558,7 +558,7 @@ func (p *Project) Path() string {
 	return p.path
 }
 
-// LegacyCommitID is for use by localcommit.GetCompatible() ONLY.
+// LegacyCommitID is for use by commitid.GetCompatible() ONLY.
 // It returns a pre-migrated project's commit ID from activestate.yaml.
 func (p *Project) LegacyCommitID() string {
 	return p.parsedURL.LegacyCommitID

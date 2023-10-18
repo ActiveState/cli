@@ -23,6 +23,7 @@ import (
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/projectfile"
+	"github.com/go-openapi/strfmt"
 )
 
 // Build covers the build structure
@@ -215,7 +216,7 @@ func (p *Project) ProjectDir() string {
 	return p.Dir()
 }
 
-// LegacyCommitID is for use by localcommit.GetCompatible() ONLY.
+// LegacyCommitID is for use by commitid.GetCompatible() ONLY.
 func (p *Project) LegacyCommitID() string {
 	return p.projectfile.LegacyCommitID()
 }
@@ -247,9 +248,15 @@ func (p *Project) Cache() string { return p.projectfile.Cache }
 
 // Namespace returns project namespace
 func (p *Project) Namespace() *Namespaced {
-	commitID, err := localcommit.GetCompatible(p)
+	commitID, err := localcommit.Get(p.Dir())
 	if err != nil {
-		multilog.Error("Unable to get local commit: %v", errs.JoinMessage(err))
+		if !localcommit.IsFileDoesNotExistError(err) {
+			// Note: cannot use commitid.GetCompatible() because this is called by main before analytics
+			// and a prompt are set up.
+			commitID = strfmt.UUID(p.projectfile.LegacyCommitID())
+		} else {
+			multilog.Error("Unable to get local commit: %v", errs.JoinMessage(err))
+		}
 	}
 	return &Namespaced{p.projectfile.Owner(), p.projectfile.Name(), &commitID, false}
 }

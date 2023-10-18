@@ -19,11 +19,6 @@ type ErrLocalCommitFile struct {
 	File                   string
 }
 
-type projecter interface {
-	Dir() string
-	LegacyCommitID() string
-}
-
 func (e *ErrLocalCommitFile) Error() string {
 	return e.errorMsg
 }
@@ -67,18 +62,6 @@ func Get(projectDir string) (strfmt.UUID, error) {
 	}
 
 	return strfmt.UUID(commitID), nil
-}
-
-// GetCompatible returns the given project's commit ID in either the new format (commit file), or
-// the old format (activestate.yaml).
-func GetCompatible(proj projecter) (strfmt.UUID, error) {
-	if commitID, err := Get(proj.Dir()); err == nil {
-		return commitID, nil
-	} else if IsFileDoesNotExistError(err) {
-		return strfmt.UUID(proj.LegacyCommitID()), nil
-	} else {
-		return "", err
-	}
 }
 
 func Set(projectDir, commitID string) error {
