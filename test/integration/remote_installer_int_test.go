@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	anaConst "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/exeutils"
@@ -88,6 +89,19 @@ func (suite *RemoteInstallIntegrationTestSuite) TestInstall() {
 			}
 			cp.Expect("Built")
 			cp.ExpectExitCode(0)
+
+			// Verify analytics reported the correct sessionToken.
+			sessionTokenFound := false
+			events := parseAnalyticsEvents(suite, ts)
+			suite.Require().NotEmpty(events)
+			for _, event := range events {
+				if event.Category == anaConst.CatUpdates && event.Dimensions != nil {
+					suite.Assert().Contains(*event.Dimensions.SessionToken, constants.RemoteInstallerVersion)
+					sessionTokenFound = true
+					break
+				}
+			}
+			suite.Assert().True(sessionTokenFound, "sessionToken was not found in analytics")
 		})
 	}
 }

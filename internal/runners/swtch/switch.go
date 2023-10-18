@@ -8,7 +8,6 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runbits"
-	"github.com/ActiveState/cli/internal/runbits/rtusage"
 	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -85,8 +84,6 @@ func (s *Switch) Run(params SwitchParams) error {
 		return locale.NewInputError("err_no_project")
 	}
 	s.out.Notice(locale.Tl("operating_message", "", s.project.NamespaceString(), s.project.Dir()))
-
-	rtusage.PrintRuntimeUsage(s.svcModel, s.out, s.project.Owner())
 
 	project, err := model.LegacyFetchProjectByName(s.project.Owner(), s.project.Name())
 	if err != nil {

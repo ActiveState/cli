@@ -113,40 +113,54 @@ function error([string] $msg)
     Write-Host $msg -ForegroundColor Red
 }
 
-if (!$script:VERSION) {
+$version = $script:VERSION
+if (!$version) {
     # If the user did not specify a version, formulate a query to fetch the JSON info of the latest
     # version, including where it is.
     $jsonURL = "$script:BASEINFOURL/?channel=$script:CHANNEL&platform=windows&source=install"
-} elseif (!($script:VERSION | Select-String -Pattern "-SHA" -SimpleMatch)) {
+} elseif (!($version | Select-String -Pattern "-SHA" -SimpleMatch)) {
     # If the user specified a partial version (i.e. no SHA), formulate a query to fetch the JSON
     # info of that version's latest SHA, including where it is.
-    $jsonURL = "$script:BASEINFOURL/?channel=$script:CHANNEL&platform=windows&source=install&target-version=$script:VERSION"
+    $versionNoSHA = $version
+    $version = ""
+    $jsonURL = "$script:BASEINFOURL/?channel=$script:CHANNEL&platform=windows&source=install&target-version=$versionNoSHA"
+} else {
+    # If the user specified a full version with SHA, formulate a query to fetch the JSON info of
+    # that version.
+    $versionNoSHA = $version -replace "-SHA.*", ""
+    $jsonURL = "$script:BASEINFOURL/?channel=$script:CHANNEL&platform=windows&source=install&target-version=$versionNoSHA"
 }
 
-if ($jsonURL) {
+# Fetch version info.
+try {
+    $infoJson = ConvertFrom-Json -InputObject (download $jsonURL)
+} catch [System.Exception] {
+}
+if (!$infoJson) {
+    if (!$version) {
+        Write-Error "Unable to retrieve the latest version number"
+    } else {
+        Write-Error "Could not download a State Tool Installer for the given command line arguments"
+    }
+    Write-Error $_.Exception.Message
+    exit 1
+}
+
+# Extract checksum.
+$checksum = $infoJson.Sha256
+
+if (!$version) {
     # If the user specified no version or a partial version we need to use the json URL to get the
     # actual installer URL.
-    try {
-        $infoJson = ConvertFrom-Json -InputObject (download $jsonURL)
-    } catch [System.Exception] {
-    }
-    if (!$infoJson) {
-      if (!$script:VERSION) {
-        Write-Error "Unable to retrieve the latest version number"
-      } else {
-        Write-Error "Could not download a State Tool Installer for the given command line arguments"
-      }
-      Write-Error $_.Exception.Message
-      exit 1
-    }
     $version = $infoJson.Version
-    $checksum = $infoJson.Sha256
     $relUrl = $infoJson.Path
 } else {
-    # If the user specified a full version, strip the SHA to get the folder name of the installer
-    # URL. Then we can construct the installer URL.
-    $versionNoSHA = $script:VERSION -replace "-SHA.*", ""
-    $relUrl = "$script:CHANNEL/$versionNoSHA/windows-amd64/state-windows-amd64-$script:VERSION.zip"
+    # If the user specified a full version, construct the installer URL.
+    if ($version -ne $infoJson.Version) {
+        Write-Error "Unknown version: $version"
+        exit 1
+    }
+    $relUrl = "$script:CHANNEL/$versionNoSHA/windows-amd64/state-windows-amd64-$version.zip"
 }
 
 # Fetch the requested or latest version.
@@ -167,9 +181,9 @@ catch [System.Exception]
     exit 1
 }
 
-# Verify checksum if possible.
+# Verify checksum.
 $hash = (Get-FileHash -Path $zipPath -Algorithm SHA256).Hash
-if ($checksum -and $hash -ne $checksum)
+if ($hash -ne $checksum)
 {
     Write-Warning "SHA256 sum did not match:"
     Write-Warning "Expected: $checksum"

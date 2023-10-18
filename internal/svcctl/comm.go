@@ -18,11 +18,9 @@ import (
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/runbits/panics"
-	"github.com/ActiveState/cli/internal/runbits/rtusage"
 	"github.com/ActiveState/cli/internal/svcctl/svcmsg"
 	"github.com/ActiveState/cli/pkg/platform/runtime/executors/execmeta"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
-	"github.com/ActiveState/cli/pkg/project"
 )
 
 var (
@@ -75,7 +73,6 @@ func (c *Comm) GetLogFileName(ctx context.Context) (string, error) {
 
 type Resolver interface {
 	ReportRuntimeUsage(ctx context.Context, pid int, exec, source string, dimensionsJSON string) (*graph.ReportRuntimeUsageResponse, error)
-	CheckRuntimeUsage(ctx context.Context, organizationName string) (*graph.CheckRuntimeUsageResponse, error)
 }
 
 type AnalyticsReporter interface {
@@ -126,17 +123,6 @@ func HeartbeatHandler(cfg *config.Instance, resolver Resolver, analyticsReporter
 			if err != nil {
 				multilog.Critical("Heartbeat Failure: Could not marshal dimensions in heartbeat handler: %s", err)
 				return
-			}
-
-			// Soft limit notification
-			logging.Debug("Checking runtime usage for %s", metaData.Namespace)
-			if metaData.Namespace != "" {
-				ns, err := project.ParseNamespace(metaData.Namespace)
-				if err != nil {
-					multilog.Error("Soft limit: Could not parse namespace in heartbeat handler: %s", err)
-				} else {
-					rtusage.NotifyRuntimeUsage(cfg, resolver, ns.Owner)
-				}
 			}
 
 			logging.Debug("Firing runtime usage events for %s", metaData.Namespace)

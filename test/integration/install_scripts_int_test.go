@@ -13,6 +13,7 @@ import (
 	"github.com/stretchr/testify/suite"
 	"github.com/thoas/go-funk"
 
+	anaConst "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
@@ -67,8 +68,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 			suite.Require().NoError(fileutils.WriteFile(script, b))
 
 			// Construct installer command to execute.
-			installDir := filepath.Join(ts.Dirs.Work, "install")
-			argsPlain := []string{script, "-t", installDir}
+			argsPlain := []string{script}
 			if tt.Channel != "" {
 				argsPlain = append(argsPlain, "-b", tt.Channel)
 			}
@@ -97,12 +97,14 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 					"bash", e2e.OptArgs(argsWithActive...),
 					e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 					e2e.OptAppendEnv(fmt.Sprintf("%s=%s", constants.AppInstallDirOverrideEnvVarName, appInstallDir)),
+					e2e.OptAppendEnv(fmt.Sprintf("%s=FOO", constants.OverrideSessionTokenEnvVarName)),
 				)
 			} else {
 				cp = ts.SpawnCmdWithOpts("powershell.exe", e2e.OptArgs(argsWithActive...),
 					e2e.OptAppendEnv("SHELL="),
 					e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 					e2e.OptAppendEnv(fmt.Sprintf("%s=%s", constants.AppInstallDirOverrideEnvVarName, appInstallDir)),
+					e2e.OptAppendEnv(fmt.Sprintf("%s=FOO", constants.OverrideSessionTokenEnvVarName)),
 				)
 			}
 
@@ -110,7 +112,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 
 			if tt.Activate != "" || tt.ActivateByCommand != "" {
 				cp.Expect("Creating a Virtual Environment")
-				cp.Expect("Quick Start", termtest.OptExpectTimeout(time.Second*60))
+				cp.Expect("Quick Start", e2e.RuntimeSourcingTimeoutOpt)
 				// ensure that shell is functional
 				cp.ExpectInput()
 
@@ -118,6 +120,20 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 				cp.Expect("ActiveState")
 			}
 
+			// We get the default install path and use that to directly invoke
+			// the state tool. This is to avoid inadvertently using the state
+			// tool that is already on the PATH.
+			installPath, err := installation.InstallPathForBranch(constants.BranchName)
+			suite.NoError(err)
+
+			binPath := filepath.Join(installPath, "bin")
+
+			if runtime.GOOS != "windows" {
+				cp.SendLine("echo $PATH")
+			} else {
+				cp.SendLine("echo %PATH%")
+			}
+			cp.Expect(installPath)
 			cp.SendLine("state --version")
 			cp.Expect("Version " + constants.Version)
 			cp.Expect("Branch " + constants.BranchName)
@@ -126,12 +142,13 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 
 			cp.ExpectExitCode(0)
 
-			stateExec, err := installation.StateExecFromDir(installDir)
+			stateExec, err := installation.StateExecFromDir(ts.Dirs.HomeDir)
 			suite.NoError(err)
 			suite.FileExists(stateExec)
 
-			suite.assertBinDirContents(filepath.Join(installDir, "bin"))
-			suite.assertCorrectVersion(ts, installDir, tt.Version, tt.Channel)
+			suite.assertBinDirContents(binPath)
+			suite.assertCorrectVersion(ts, binPath, tt.Version, tt.Channel)
+			suite.assertAnalytics(ts)
 			suite.DirExists(ts.Dirs.Config)
 
 			// Verify that can install overtop
@@ -258,6 +275,21 @@ func (suite *InstallScriptsIntegrationTestSuite) assertCorrectVersion(ts *e2e.Se
 	if expectedBranch != "" {
 		suite.Equal(expectedBranch, actual.Branch)
 	}
+}
+
+func (suite *InstallScriptsIntegrationTestSuite) assertAnalytics(ts *e2e.Session) {
+	// Verify analytics reported a non-empty sessionToken.
+	sessionTokenFound := false
+	events := parseAnalyticsEvents(suite, ts)
+	suite.Require().NotEmpty(events)
+	for _, event := range events {
+		if event.Category == anaConst.CatInstallerFunnel && event.Dimensions != nil {
+			suite.Assert().NotEmpty(*event.Dimensions.SessionToken)
+			sessionTokenFound = true
+			break
+		}
+	}
+	suite.Assert().True(sessionTokenFound, "sessionToken was not found in analytics")
 }
 
 func TestInstallScriptsIntegrationTestSuite(t *testing.T) {

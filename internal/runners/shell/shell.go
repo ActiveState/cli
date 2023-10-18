@@ -12,7 +12,6 @@ import (
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runbits/activation"
 	"github.com/ActiveState/cli/internal/runbits/findproject"
-	"github.com/ActiveState/cli/internal/runbits/rtusage"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
@@ -72,8 +71,6 @@ func (u *Shell) Run(params *Params) error {
 		}
 		return locale.WrapError(err, "err_shell_cannot_load_project")
 	}
-
-	rtusage.PrintRuntimeUsage(u.svcModel, u.out, proj.Owner())
 
 	commitID, err := localcommit.Get(proj.Dir())
 	if err != nil {

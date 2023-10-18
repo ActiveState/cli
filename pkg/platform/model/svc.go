@@ -119,18 +119,6 @@ func (m *SvcModel) ReportRuntimeUsage(ctx context.Context, pid int, exec, source
 	return nil
 }
 
-func (m *SvcModel) CheckRuntimeUsage(ctx context.Context, organizationName string) (*graph.CheckRuntimeUsageResponse, error) {
-	defer profile.Measure("svc:CheckRuntimeUsage", time.Now())
-
-	r := request.NewCheckRuntimeUsage(organizationName)
-	u := graph.CheckRuntimeUsageResponseOuter{}
-	if err := m.request(ctx, r, &u); err != nil {
-		return nil, errs.Wrap(err, "Error sending check runtime usage event via state-svc")
-	}
-
-	return &u.Usage, nil
-}
-
 func (m *SvcModel) CheckMessages(ctx context.Context, command string, flags []string) ([]*graph.MessageInfo, error) {
 	logging.Debug("Checking for messages")
 	defer profile.Measure("svc:CheckMessages", time.Now())

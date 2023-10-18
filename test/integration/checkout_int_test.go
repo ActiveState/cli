@@ -97,7 +97,7 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckoutNonEmptyDir() {
 	cp.ExpectExitCode(1)
 
 	if strings.Count(cp.Snapshot(), " x ") != 1 {
-		suite.Fail("Expected exactly ONE error message, got: %s", cp.Snapshot())
+		suite.Fail("Expected exactly ONE error message, got: ", cp.Snapshot())
 	}
 
 	// remove file
@@ -217,7 +217,7 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckoutNotFound() {
 	cp.ExpectExitCode(1)
 
 	if strings.Count(cp.Snapshot(), " x ") != 1 {
-		suite.Fail("Expected exactly ONE error message, got: %s", cp.Snapshot())
+		suite.Fail("Expected exactly ONE error message, got: ", cp.Snapshot())
 	}
 }
 

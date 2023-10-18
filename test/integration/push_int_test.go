@@ -276,7 +276,7 @@ func (suite *PushIntegrationTestSuite) TestPush_NoProject() {
 	cp.ExpectExitCode(1)
 
 	if strings.Count(cp.Snapshot(), " x ") != 1 {
-		suite.Fail("Expected exactly ONE error message, got: %s", cp.Snapshot())
+		suite.Fail("Expected exactly ONE error message, got: ", cp.Snapshot())
 	}
 }
 
@@ -293,7 +293,7 @@ func (suite *PushIntegrationTestSuite) TestPush_NoAuth() {
 	cp.ExpectExitCode(1)
 
 	if strings.Count(cp.Snapshot(), " x ") != 1 {
-		suite.Fail("Expected exactly ONE error message, got: %s", cp.Snapshot())
+		suite.Fail("Expected exactly ONE error message, got: ", cp.Snapshot())
 	}
 }
 
@@ -312,7 +312,7 @@ func (suite *PushIntegrationTestSuite) TestPush_NoChanges() {
 	cp.ExpectExitCode(1)
 
 	if strings.Count(cp.Snapshot(), " x ") != 1 {
-		suite.Fail("Expected exactly ONE error message, got: %s", cp.Snapshot())
+		suite.Fail("Expected exactly ONE error message, got: ", cp.Snapshot())
 	}
 }
 
@@ -330,7 +330,7 @@ func (suite *PushIntegrationTestSuite) TestPush_NoCommit() {
 	cp.ExpectExitCode(1)
 
 	if strings.Count(cp.Snapshot(), " x ") != 1 {
-		suite.Fail("Expected exactly ONE error message, got: %s", cp.Snapshot())
+		suite.Fail("Expected exactly ONE error message, got: ", cp.Snapshot())
 	}
 }
 
@@ -350,7 +350,7 @@ func (suite *PushIntegrationTestSuite) TestPush_NameInUse() {
 	cp.ExpectExitCode(1)
 
 	if strings.Count(cp.Snapshot(), " x ") != 1 {
-		suite.Fail("Expected exactly ONE error message, got: %s", cp.Snapshot())
+		suite.Fail("Expected exactly ONE error message, got: ", cp.Snapshot())
 	}
 }
 
@@ -375,7 +375,7 @@ func (suite *PushIntegrationTestSuite) TestPush_Aborted() {
 	cp.ExpectExitCode(1)
 
 	if strings.Count(cp.Snapshot(), " x ") != 1 {
-		suite.Fail("Expected exactly ONE error message, got: %s", cp.Snapshot())
+		suite.Fail("Expected exactly ONE error message, got: ", cp.Snapshot())
 	}
 }
 
@@ -395,7 +395,7 @@ func (suite *PushIntegrationTestSuite) TestPush_InvalidHistory() {
 	cp.ExpectExitCode(1)
 
 	if strings.Count(cp.Snapshot(), " x ") != 1 {
-		suite.Fail("Expected exactly ONE error message, got: %s", cp.Snapshot())
+		suite.Fail("Expected exactly ONE error message, got: ", cp.Snapshot())
 	}
 }
 
@@ -414,7 +414,7 @@ func (suite *PushIntegrationTestSuite) TestPush_PullNeeded() {
 	cp.ExpectExitCode(1)
 
 	if strings.Count(cp.Snapshot(), " x ") != 1 {
-		suite.Fail("Expected exactly ONE error message, got: %s", cp.Snapshot())
+		suite.Fail("Expected exactly ONE error message, got: ", cp.Snapshot())
 	}
 }
 

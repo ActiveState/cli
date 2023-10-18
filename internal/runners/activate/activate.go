@@ -23,7 +23,6 @@ import (
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runbits/activation"
 	"github.com/ActiveState/cli/internal/runbits/findproject"
-	"github.com/ActiveState/cli/internal/runbits/rtusage"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
@@ -105,8 +104,6 @@ func (r *Activate) Run(params *ActivateParams) (rerr error) {
 			return locale.WrapError(err, "err_activate_projecttouse", "Could not figure out what project to use.")
 		}
 	}
-
-	rtusage.PrintRuntimeUsage(r.svcModel, r.out, proj.Owner())
 
 	alreadyActivated := process.IsActivated(r.config)
 	if alreadyActivated {

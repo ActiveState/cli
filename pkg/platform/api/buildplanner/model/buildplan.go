@@ -151,7 +151,7 @@ func (e *BuildPlannerError) Error() string {
 	}
 
 	var err error
-	err = locale.NewError("solver_err", "", croppedMessage, errorLines)
+	err = locale.NewError("buildplan_err", "", croppedMessage, errorLines)
 	if e.IsTransient {
 		err = errs.AddTips(err, locale.Tr("transient_solver_tip"))
 	}
