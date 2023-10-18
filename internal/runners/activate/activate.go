@@ -195,8 +195,8 @@ func (r *Activate) Run(params *ActivateParams) (rerr error) {
 		}
 	}
 
-	commitID, err := localcommit.Get(proj.Dir())
-	if err != nil && !localcommit.IsFileDoesNotExistError(err) {
+	commitID, err := localcommit.GetCompatible(proj)
+	if err != nil {
 		return errs.Wrap(err, "Unable to get local commit")
 	}
 	if commitID == "" {

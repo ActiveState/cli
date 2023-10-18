@@ -66,7 +66,7 @@ func (c *Cve) Run() error {
 		)
 	}
 
-	commitID, err := localcommit.Get(c.proj.Dir())
+	commitID, err := localcommit.GetCompatible(c.proj)
 	if err != nil {
 		return errs.Wrap(err, "Could not get local commit")
 	}

@@ -74,7 +74,7 @@ func (r *Prepare) resetExecutors() error {
 		return errs.Wrap(err, "Could not get project from its directory")
 	}
 
-	commitID, err := localcommit.Get(proj.Dir())
+	commitID, err := localcommit.GetCompatible(proj)
 	if err != nil {
 		return errs.Wrap(err, "Unable to get local commit")
 	}

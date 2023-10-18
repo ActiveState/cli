@@ -32,7 +32,6 @@ import (
 	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/cli/internal/sliceutils"
 	"github.com/ActiveState/cli/internal/strutils"
-	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/sysinfo"
 	"github.com/go-openapi/strfmt"
 	"github.com/google/uuid"
@@ -465,28 +464,6 @@ func (p *Project) Init() error {
 	}
 	p.parsedURL = parsedURL
 
-	if p.parsedURL.LegacyCommitID != "" {
-		// Migrate from commitID in activestate.yaml to .activestate/commit file.
-		// Writing to disk during Parse() feels wrong though.
-		projectDir := filepath.Dir(p.Path())
-		if err := localcommit.Set(projectDir, p.parsedURL.LegacyCommitID); err != nil {
-			return errs.Wrap(err, "Could not create local commit file")
-		}
-		if fileutils.DirExists(filepath.Join(projectDir, ".git")) {
-			err := localcommit.AddToGitIgnore(projectDir)
-			if err != nil {
-				multilog.Error("Unable to add local commit file to .gitignore: %v", err)
-			}
-		}
-		pf := NewProjectField()
-		if err := pf.LoadProject(p.Project); err != nil {
-			return errs.Wrap(err, "Could not load activestate.yaml")
-		}
-		if err := pf.Save(p.path); err != nil {
-			return errs.Wrap(err, "Could not save activestate.yaml")
-		}
-	}
-
 	// Ensure branch name is set
 	if p.parsedURL.Owner != "" && p.parsedURL.BranchName == "" {
 		logging.Debug("Appending default branch as none is set")
@@ -556,6 +533,11 @@ func detectDeprecations(dat []byte, configFilepath string) error {
 	}
 }
 
+// URL returns the project namespace's string URL from activestate.yaml.
+func (p *Project) URL() string {
+	return p.Project
+}
+
 // Owner returns the project namespace's organization
 func (p *Project) Owner() string {
 	return p.parsedURL.Owner
@@ -574,6 +556,12 @@ func (p *Project) BranchName() string {
 // Path returns the project's activestate.yaml file path.
 func (p *Project) Path() string {
 	return p.path
+}
+
+// LegacyCommitID is for use by localcommit.GetCompatible() ONLY.
+// It returns a pre-migrated project's commit ID from activestate.yaml.
+func (p *Project) LegacyCommitID() string {
+	return p.parsedURL.LegacyCommitID
 }
 
 // SetPath sets the path of the project file and should generally only be used by tests

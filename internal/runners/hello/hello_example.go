@@ -145,7 +145,7 @@ func currentCommitMessage(proj *project.Project) (string, error) {
 		return "", errs.New("Cannot determine which project to use")
 	}
 
-	commitId, err := localcommit.Get(proj.Dir())
+	commitId, err := localcommit.GetCompatible(proj)
 	if err != nil {
 		return "", errs.Wrap(err, "Cannot determine which commit to use")
 	}

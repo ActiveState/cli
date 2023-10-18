@@ -88,8 +88,8 @@ func (p *ProjectTarget) CommitUUID() strfmt.UUID {
 	if p.customCommit != nil {
 		return *p.customCommit
 	}
-	commitID, err := localcommit.Get(p.Project.Dir())
-	if err != nil && !localcommit.IsFileDoesNotExistError(err) {
+	commitID, err := localcommit.GetCompatible(p.Project)
+	if err != nil {
 		multilog.Error("Unable to get local commit: %v", errs.JoinMessage(err))
 		return ""
 	}

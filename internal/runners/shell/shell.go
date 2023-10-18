@@ -72,7 +72,7 @@ func (u *Shell) Run(params *Params) error {
 		return locale.WrapError(err, "err_shell_cannot_load_project")
 	}
 
-	commitID, err := localcommit.Get(proj.Dir())
+	commitID, err := localcommit.GetCompatible(proj)
 	if err != nil {
 		return errs.Wrap(err, "Unable to get local commit")
 	}

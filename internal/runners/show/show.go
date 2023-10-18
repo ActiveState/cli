@@ -193,7 +193,7 @@ func (s *Show) Run(params Params) error {
 			return locale.WrapError(err, "err_show_scripts", "Could not parse scripts")
 		}
 
-		commitID, err = localcommit.Get(s.project.Dir())
+		commitID, err = localcommit.GetCompatible(s.project)
 		if err != nil {
 			return errs.Wrap(err, "Unable to get local commit")
 		}
@@ -385,7 +385,7 @@ func commitsData(owner, project, branchName string, commitID strfmt.UUID, localP
 		if err != nil {
 			return "", locale.WrapError(err, "err_show_commits_behind", "Could not determine number of commits behind latest")
 		}
-		localCommitID, err := localcommit.Get(localProject.Dir())
+		localCommitID, err := localcommit.GetCompatible(localProject)
 		if err != nil {
 			return "", errs.Wrap(err, "Unable to get local commit")
 		}

@@ -238,7 +238,7 @@ func ProjectExpander(_ string, name string, _ string, isFunction bool, ctx *Expa
 	case "url":
 		return project.URL(), nil
 	case "commit":
-		commitID, err := localcommit.Get(project.Dir())
+		commitID, err := localcommit.GetCompatible(project)
 		if err != nil {
 			return "", errs.Wrap(err, "Unable to get local commit")
 		}

@@ -102,7 +102,7 @@ func (r *Report) fetchVulnerabilities(namespaceOverride project.Namespaced) (*me
 		commitID = namespaceOverride.CommitID.String()
 	} else {
 		var err error
-		commitUUID, err := localcommit.Get(r.proj.Dir())
+		commitUUID, err := localcommit.GetCompatible(r.proj)
 		if err != nil {
 			return nil, errs.Wrap(err, "Unable to get local commit")
 		}

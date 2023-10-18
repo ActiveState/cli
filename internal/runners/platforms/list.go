@@ -33,8 +33,8 @@ func (l *List) Run() error {
 		return locale.NewInputError("err_no_project")
 	}
 
-	commitID, err := localcommit.Get(l.proj.Dir())
-	if err != nil && !localcommit.IsFileDoesNotExistError(err) {
+	commitID, err := localcommit.GetCompatible(l.proj)
+	if err != nil {
 		return errs.Wrap(err, "Unable to get local commit")
 	}
 

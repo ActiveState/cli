@@ -39,7 +39,7 @@ func (h *History) Run(params *HistoryParams) error {
 	}
 	h.out.Notice(locale.Tl("operating_message", "", h.project.NamespaceString(), h.project.Dir()))
 
-	localCommitID, err := localcommit.Get(h.project.Dir())
+	localCommitID, err := localcommit.GetCompatible(h.project)
 	if err != nil {
 		return errs.Wrap(err, "Unable to get local commit")
 	}

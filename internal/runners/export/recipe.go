@@ -83,8 +83,8 @@ func fetchRecipe(proj *project.Project, commitID strfmt.UUID, platform string) (
 
 	if commitID == "" {
 		var err error
-		commitID, err = localcommit.Get(proj.Dir())
-		if err != nil && !localcommit.IsFileDoesNotExistError(err) {
+		commitID, err = localcommit.GetCompatible(proj)
+		if err != nil {
 			return "", errs.Wrap(err, "Unable to get local commit")
 		}
 	}

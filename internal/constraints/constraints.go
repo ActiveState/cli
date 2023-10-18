@@ -81,6 +81,7 @@ type projectable interface {
 	Path() string
 	Dir() string
 	URL() string
+	LegacyCommitID() string // for localcommit.GetCompatible
 }
 
 func NewPrimeConditional(auth *authentication.Auth, pj projectable, subshellName string) *Conditional {
@@ -98,8 +99,8 @@ func NewPrimeConditional(auth *authentication.Auth, pj projectable, subshellName
 		pjName = pj.Name()
 		pjNamespace = pj.NamespaceString()
 		pjURL = pj.URL()
-		commitID, err := localcommit.Get(pj.Dir())
-		if err != nil && !localcommit.IsFileDoesNotExistError(err) {
+		commitID, err := localcommit.GetCompatible(pj)
+		if err != nil {
 			multilog.Error("Unable to get local commit: %v", errs.JoinMessage(err))
 		}
 		pjCommit = commitID.String()
