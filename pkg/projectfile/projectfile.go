@@ -923,14 +923,6 @@ type CreateParams struct {
 	Cache      string
 }
 
-// TestOnlyCreateWithProjectURL a new activestate.yaml with default content
-func TestOnlyCreateWithProjectURL(projectURL, path string) (*Project, error) {
-	return createCustom(&CreateParams{
-		ProjectURL: projectURL,
-		Directory:  path,
-	}, language.Python3)
-}
-
 // Create will create a new activestate.yaml with a projectURL for the given details
 func Create(params *CreateParams) (*Project, error) {
 	lang := language.MakeByName(params.Language)
