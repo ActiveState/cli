@@ -28,7 +28,7 @@ func (al *ArtifactListing) RuntimeClosure() (artifact.Map, error) {
 		return al.runtimeClosure, nil
 	}
 
-	runtimeClosure, err := NewMapFromBuildPlan(al.build, false)
+	runtimeClosure, err := newMapFromBuildPlan(al.build, false)
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not create runtime closure")
 	}
@@ -42,7 +42,7 @@ func (al *ArtifactListing) BuildtimeClosure() (artifact.Map, error) {
 		return al.buildtimeClosure, nil
 	}
 
-	buildtimeClosure, err := NewMapFromBuildPlan(al.build, true)
+	buildtimeClosure, err := newMapFromBuildPlan(al.build, true)
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not create buildtime closure")
 	}
@@ -93,7 +93,7 @@ func (al *ArtifactListing) ArtifactIDs() ([]artifact.ArtifactID, error) {
 // dependencies. This is different from the runtime dependency calculation as it
 // includes ALL of the input artifacts of the step that generated each artifact.
 // The includeBuilders argument determines whether or not to include builder artifacts in the final result.
-func NewMapFromBuildPlan(build *model.Build, calculateBuildtimeClosure bool) (artifact.Map, error) {
+func newMapFromBuildPlan(build *model.Build, calculateBuildtimeClosure bool) (artifact.Map, error) {
 	res := make(artifact.Map)
 
 	lookup := make(map[strfmt.UUID]interface{})
@@ -376,7 +376,7 @@ func RecursiveDependenciesFor(a artifact.ArtifactID, artifacts artifact.Map) []a
 // NewMapFromBuildPlan creates an artifact map from a build plan
 // where the key is the artifact name rather than the artifact ID.
 func NewNamedMapFromBuildPlan(build *model.Build, buildtimeClosure bool) (artifact.NamedMap, error) {
-	am, err := NewMapFromBuildPlan(build, buildtimeClosure)
+	am, err := newMapFromBuildPlan(build, buildtimeClosure)
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not create artifact map")
 	}

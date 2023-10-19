@@ -406,7 +406,6 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 	var runtimeArtifacts artifact.Map // Artifacts required for the runtime to function
 	artifactListing := buildplan.NewArtifactListing(buildResult.Build)
 
-	var includeBuildtimeClosure bool
 	// If we are installing build dependencies, then buildtime dependencies are also runtime dependencies
 	if strings.EqualFold(os.Getenv(constants.InstallBuildDependencies), "true") {
 		logging.Debug("Installing build dependencies")
@@ -464,6 +463,7 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 		s.analytics.Event(anaConsts.CatRuntimeDebug, anaConsts.ActRuntimeBuild, dimensions)
 	}
 
+	includeBuildtimeClosure := strings.EqualFold(os.Getenv(constants.InstallBuildDependencies), "true") || !buildResult.BuildReady
 	changedArtifacts, err := buildplan.NewBaseArtifactChangesetByBuildPlan(buildResult.Build, false, includeBuildtimeClosure)
 	if err != nil {
 		return nil, nil, errs.Wrap(err, "Could not compute base artifact changeset")
