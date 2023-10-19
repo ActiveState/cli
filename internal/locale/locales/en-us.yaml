@@ -1229,8 +1229,6 @@ init_description:
   other: Initialize a new project
 push_description:
   other: Push your latest changes to the platform
-push_first_new_project:
-  other: 'Since this is your first time running "push" you''ll need to create a new project on the ActiveState Platform.'
 push_prompt_owner:
   other: "Who would you like the owner of this project to be?"
 push_prompt_not_authorized:
