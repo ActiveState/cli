@@ -983,8 +983,9 @@ func createCustom(params *CreateParams, lang language.Language) (*Project, error
 		shell = "batch"
 	}
 
+	languageDisabled := os.Getenv(constants.DisableRuntime) == "true"
 	content := params.Content
-	if content == "" && lang != language.Unset && lang != language.Unknown {
+	if !languageDisabled && content == "" && lang != language.Unset && lang != language.Unknown {
 		tplName := "activestate.yaml." + strings.TrimRight(lang.String(), "23") + ".tpl"
 		template, err := assets.ReadFileBytes(tplName)
 		if err != nil {
