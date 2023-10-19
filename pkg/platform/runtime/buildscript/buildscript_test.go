@@ -386,14 +386,12 @@ func TestBuildExpression(t *testing.T) {
 	script, err := NewScriptFromBuildExpression(expr)
 	require.NoError(t, err)
 	require.NotNil(t, script)
-	//newExpr := script.Expr
+	newExpr := script.Expr
 	exprBytes, err := json.Marshal(expr)
 	require.NoError(t, err)
-	//newExprBytes, err := json.Marshal(newExpr)
-	//require.NoError(t, err)
-	// TODO: re-enable this test in DX-1939. Buildexpression equality is implicitly tested
-	// elsewhere, so temporarily disabling this explicit test is okay.
-	//assert.Equal(t, string(exprBytes), string(newExprBytes))
+	newExprBytes, err := json.Marshal(newExpr)
+	require.NoError(t, err)
+	assert.Equal(t, string(exprBytes), string(newExprBytes))
 
 	// Verify comparisons between buildscripts and buildexpressions is accurate.
 	assert.True(t, script.EqualsBuildExpression(expr))
@@ -415,49 +413,4 @@ func TestBuildExpression(t *testing.T) {
 		}
 	}
 	assert.True(t, nullHandled, "JSON null not encountered")
-}
-
-func TestJsonListEquality(t *testing.T) {
-	// When comparing buildscripts to buildexpressions, the former is converted to the latter
-	// via JSON marshaling. Since buildexpression list order does not matter (in addition to
-	// key-value order not mattering), test for list equality.
-	// This should not be necessary after DX-1939.
-
-	// Test that ["foo", "bar"] == ["bar", "foo"].
-	v1 := &Value{List: &[]*Value{
-		{Str: ptr.To(`"foo"`)},
-		{Str: ptr.To(`"bar"`)},
-	}}
-	v2 := &Value{List: &[]*Value{
-		{Str: ptr.To(`"bar"`)},
-		{Str: ptr.To(`"foo"`)},
-	}}
-
-	b1, err := json.Marshal(v1)
-	require.NoError(t, err)
-	b2, err := json.Marshal(v2)
-	require.NoError(t, err)
-
-	assert.Equal(t, string(b2), string(b1))
-
-	// Test that [{"name": "foo"}, {"name": "bar"}] == [{"name": "bar"}, {"name": "foo"}].
-	v1 = &Value{List: &[]*Value{
-		{Object: &[]*Assignment{
-			{"name", &Value{Str: ptr.To(`"foo"`)}},
-			{"name", &Value{Str: ptr.To(`"bar"`)}},
-		}},
-	}}
-	v2 = &Value{List: &[]*Value{
-		{Object: &[]*Assignment{
-			{"name", &Value{Str: ptr.To(`"foo"`)}},
-			{"name", &Value{Str: ptr.To(`"bar"`)}},
-		}},
-	}}
-
-	b1, err = json.Marshal(v1)
-	require.NoError(t, err)
-	b2, err = json.Marshal(v2)
-	require.NoError(t, err)
-
-	assert.Equal(t, string(b2), string(b1))
 }
