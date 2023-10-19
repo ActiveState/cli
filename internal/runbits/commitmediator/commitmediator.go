@@ -16,8 +16,8 @@ type projecter interface {
 	LegacyCommitID() string
 }
 
-// GetCompatible returns the given project's commit ID in either the new format (commit file), or
-// the old format (activestate.yaml).
+// Get returns the given project's commit ID in either the new format (commit file), or the old
+// format (activestate.yaml).
 // If you require the commit file, use localcommit.Get().
 func Get(proj projecter, prompter prompt.Prompter, out output.Outputer) (strfmt.UUID, error) {
 	if commitID, err := localcommit.Get(proj.Dir()); err == nil {

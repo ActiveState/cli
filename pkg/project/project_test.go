@@ -46,7 +46,7 @@ func (suite *ProjectTestSuite) BeforeTest(suiteName, testName string) {
 
 	cfg, err := config.New()
 	suite.Require().NoError(err)
-	project.RegisterConditional(constraints.NewPrimeConditional(nil, suite.project, subshell.New(cfg).Shell()), nil, nil)
+	project.RegisterConditional(constraints.NewPrimeConditional(nil, suite.project, subshell.New(cfg).Shell(), nil, nil))
 }
 
 func (suite *ProjectTestSuite) TestGet() {

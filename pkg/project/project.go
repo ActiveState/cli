@@ -20,7 +20,6 @@ import (
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/prompt"
-	"github.com/ActiveState/cli/pkg/localcommit"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/projectfile"
@@ -259,17 +258,8 @@ func (p *Project) Cache() string { return p.projectfile.Cache }
 
 // Namespace returns project namespace
 func (p *Project) Namespace() *Namespaced {
-	commitID, err := localcommit.Get(p.Dir())
-	if err != nil {
-		if !localcommit.IsFileDoesNotExistError(err) {
-			// Note: cannot use commitmediator.Get() because this is called by main before analytics
-			// and a prompt and output are set up.
-			commitID = strfmt.UUID(p.projectfile.LegacyCommitID())
-		} else {
-			multilog.Error("Unable to get local commit: %v", errs.JoinMessage(err))
-		}
-	}
-	return &Namespaced{p.projectfile.Owner(), p.projectfile.Name(), &commitID, false}
+	commitId := strfmt.UUID(p.projectfile.LegacyCommitID())
+	return &Namespaced{p.projectfile.Owner(), p.projectfile.Name(), &commitId, false}
 }
 
 // NamespaceString is a convenience function to make interfaces simpler
