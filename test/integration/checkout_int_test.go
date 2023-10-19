@@ -278,6 +278,8 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckoutBuildtimeClosure() {
 		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
 	// Expect the number of build deps to be 27 which is more than the number of runtime deps.
+	// Also expect libxcrypt which should not be in the runtime closure.
+	cp.Expect("27")
 	cp.Expect("libxcrypt")
 	cp.ExpectExitCode(0)
 }
