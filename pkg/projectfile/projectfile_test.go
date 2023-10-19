@@ -12,7 +12,6 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -467,26 +466,4 @@ languages:
 			}
 		})
 	}
-}
-
-func TestMigrateCommitFromASY(t *testing.T) {
-	tempDir := fileutils.TempDirUnsafe()
-	defer os.RemoveAll(tempDir)
-
-	commitID := "7BA74758-8665-4D3F-921C-757CD271A0C1"
-	asy := filepath.Join(tempDir, constants.ConfigFileName)
-	err := fileutils.WriteFile(asy, []byte("project: https://platform.activestate.com/Owner/Name?branch=main&commitID="+commitID))
-	require.NoError(t, err)
-
-	proj, err := Parse(asy)
-	require.NoError(t, err)
-	assert.Equal(t, "Owner", proj.Owner())
-	assert.Equal(t, "Name", proj.Name())
-	assert.Equal(t, "main", proj.BranchName())
-
-	commitIdFile := filepath.Join(tempDir, constants.ProjectConfigDirName, constants.CommitIdFileName)
-	require.FileExists(t, commitIdFile)
-	assert.Equal(t, commitID, string(fileutils.ReadFileUnsafe(commitIdFile)))
-
-	assert.NotContains(t, string(fileutils.ReadFileUnsafe(asy)), commitID)
 }

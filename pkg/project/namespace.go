@@ -153,12 +153,14 @@ func NameSpaceForConfig(configFile string) *Namespaced {
 		Project: prj.Name(),
 	}
 
-	commitID, err := commitmediator.Get(prj, pPrompt, pOut)
-	if err != nil {
-		multilog.Error("Unable to get local commit: %v", errs.JoinMessage(err))
-	}
-	if commitID != "" {
-		names.CommitID = &commitID
+	if pPrompt != nil && pOut != nil {
+		commitID, err := commitmediator.Get(prj, pPrompt, pOut)
+		if err != nil {
+			multilog.Error("Unable to get local commit: %v", errs.JoinMessage(err))
+		}
+		if commitID != "" {
+			names.CommitID = &commitID
+		}
 	}
 
 	return &names
