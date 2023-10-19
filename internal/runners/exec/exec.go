@@ -21,6 +21,7 @@ import (
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
+	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/internal/scriptfile"
@@ -44,6 +45,7 @@ type Exec struct {
 	cfg       projectfile.ConfigGetter
 	analytics analytics.Dispatcher
 	svcModel  *model.SvcModel
+	prompt    prompt.Prompter
 }
 
 type primeable interface {
@@ -54,6 +56,7 @@ type primeable interface {
 	primer.Configurer
 	primer.Analyticer
 	primer.SvcModeler
+	primer.Prompter
 }
 
 type Params struct {
@@ -69,6 +72,7 @@ func New(prime primeable) *Exec {
 		prime.Config(),
 		prime.Analytics(),
 		prime.SvcModel(),
+		prime.Prompt(),
 	}
 }
 
@@ -100,7 +104,7 @@ func (s *Exec) Run(params *Params, args ...string) (rerr error) {
 			// as there is no head
 			rtTarget = target.NewCustomTarget("", "", "", params.Path, trigger, true)
 		} else {
-			rtTarget = target.NewProjectTarget(proj, nil, trigger)
+			rtTarget = target.NewProjectTarget(proj, nil, trigger, s.prompt, s.out)
 		}
 		projectNamespace = proj.NamespaceString()
 	} else {
@@ -117,7 +121,7 @@ func (s *Exec) Run(params *Params, args ...string) (rerr error) {
 		}
 		projectDir = filepath.Dir(proj.Source().Path())
 		projectNamespace = proj.NamespaceString()
-		rtTarget = target.NewProjectTarget(proj, nil, trigger)
+		rtTarget = target.NewProjectTarget(proj, nil, trigger, s.prompt, s.out)
 	}
 
 	s.out.Notice(locale.Tl("operating_message", "", projectNamespace, projectDir))

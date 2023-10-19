@@ -5,7 +5,8 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/runbits/commitid"
+	"github.com/ActiveState/cli/internal/prompt"
+	"github.com/ActiveState/cli/internal/runbits/commitmediator"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/go-openapi/strfmt"
@@ -13,15 +14,17 @@ import (
 
 // List manages the listing execution context.
 type List struct {
-	out  output.Outputer
-	proj *project.Project
+	out    output.Outputer
+	proj   *project.Project
+	prompt prompt.Prompter
 }
 
 // NewList prepares a list execution context for use.
 func NewList(prime primeable) *List {
 	return &List{
-		out:  prime.Output(),
-		proj: prime.Project(),
+		out:    prime.Output(),
+		proj:   prime.Project(),
+		prompt: prime.Prompt(),
 	}
 }
 
@@ -33,7 +36,7 @@ func (l *List) Run() error {
 		return locale.NewInputError("err_no_project")
 	}
 
-	commitID, err := commitid.GetCompatible(l.proj)
+	commitID, err := commitmediator.Get(l.proj, l.prompt, l.out)
 	if err != nil {
 		return errs.Wrap(err, "Unable to get local commit")
 	}

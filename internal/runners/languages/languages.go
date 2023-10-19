@@ -6,7 +6,8 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/runbits/commitid"
+	"github.com/ActiveState/cli/internal/prompt"
+	"github.com/ActiveState/cli/internal/runbits/commitmediator"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -15,6 +16,7 @@ import (
 type Languages struct {
 	out     output.Outputer
 	project *project.Project
+	prompt  prompt.Prompter
 }
 
 // NewLanguages prepares a list execution context for use.
@@ -22,6 +24,7 @@ func NewLanguages(prime primeable) *Languages {
 	return &Languages{
 		prime.Output(),
 		prime.Project(),
+		prime.Prompt(),
 	}
 }
 
@@ -31,7 +34,7 @@ func (l *Languages) Run() error {
 		return locale.NewInputError("err_no_project")
 	}
 
-	commitID, err := commitid.GetCompatible(l.project)
+	commitID, err := commitmediator.Get(l.project, l.prompt, l.out)
 	if err != nil {
 		return errs.AddTips(
 			locale.WrapError(

@@ -10,6 +10,8 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/osutils"
+	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
 	"github.com/ActiveState/cli/internal/svcctl"
@@ -63,7 +65,7 @@ func Prepare(cfg DefaultConfigurer, shell subshell.SubShell) error {
 }
 
 // SetupDefaultActivation sets symlinks in the global bin directory to the currently activated runtime
-func SetupDefaultActivation(subshell subshell.SubShell, cfg DefaultConfigurer, runtime *runtime.Runtime, proj *project.Project) error {
+func SetupDefaultActivation(subshell subshell.SubShell, cfg DefaultConfigurer, runtime *runtime.Runtime, proj *project.Project, prompter prompt.Prompter, out output.Outputer) error {
 	logging.Debug("Setting up globaldefault")
 	if err := Prepare(cfg, subshell); err != nil {
 		return locale.WrapError(err, "err_globaldefault_prepare", "Could not prepare environment.")
@@ -79,7 +81,7 @@ func SetupDefaultActivation(subshell subshell.SubShell, cfg DefaultConfigurer, r
 		return locale.WrapError(err, "err_globaldefault_rtenv", "Could not construct runtime environment variables")
 	}
 
-	target := target.NewProjectTargetCache(proj, storage.GlobalBinDir(), nil, target.TriggerActivate)
+	target := target.NewProjectTargetCache(proj, storage.GlobalBinDir(), nil, target.TriggerActivate, prompter, out)
 	execInit := executors.New(BinDir())
 	if err := execInit.Apply(svcctl.NewIPCSockPathFromGlobals().String(), target, env, exes); err != nil {
 		return locale.WrapError(err, "err_globaldefault_fw", "Could not set up forwarders")

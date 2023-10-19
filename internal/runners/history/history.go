@@ -5,7 +5,8 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
-	"github.com/ActiveState/cli/internal/runbits/commitid"
+	"github.com/ActiveState/cli/internal/prompt"
+	"github.com/ActiveState/cli/internal/runbits/commitmediator"
 	"github.com/ActiveState/cli/pkg/cmdlets/commit"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -16,17 +17,20 @@ import (
 type primeable interface {
 	primer.Projecter
 	primer.Outputer
+	primer.Prompter
 }
 
 type History struct {
 	project *project.Project
 	out     output.Outputer
+	prompt  prompt.Prompter
 }
 
 func NewHistory(prime primeable) *History {
 	return &History{
 		prime.Project(),
 		prime.Output(),
+		prime.Prompt(),
 	}
 }
 
@@ -39,7 +43,7 @@ func (h *History) Run(params *HistoryParams) error {
 	}
 	h.out.Notice(locale.Tl("operating_message", "", h.project.NamespaceString(), h.project.Dir()))
 
-	localCommitID, err := commitid.GetCompatible(h.project)
+	localCommitID, err := commitmediator.Get(h.project, h.prompt, h.out)
 	if err != nil {
 		return errs.Wrap(err, "Unable to get local commit")
 	}

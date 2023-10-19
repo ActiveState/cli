@@ -4,6 +4,7 @@ import (
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -25,10 +26,11 @@ func NewFromProject(
 	an analytics.Dispatcher,
 	svcModel *model.SvcModel,
 	out output.Outputer,
-	auth *authentication.Auth) (_ *rt.Runtime, rerr error) {
+	auth *authentication.Auth,
+	prompter prompt.Prompter) (_ *rt.Runtime, rerr error) {
 	defer rationalizeError(auth, proj, &rerr)
 
-	rti, err := rt.New(target.NewProjectTarget(proj, nil, trigger), an, svcModel, auth)
+	rti, err := rt.New(target.NewProjectTarget(proj, nil, trigger, prompter, out), an, svcModel, auth)
 	if err == nil {
 		return rti, nil
 	}

@@ -6,6 +6,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
@@ -13,14 +14,16 @@ import (
 )
 
 type Show struct {
-	out output.Outputer
-	cfg *config.Instance
+	out    output.Outputer
+	cfg    *config.Instance
+	prompt prompt.Prompter
 }
 
 func NewShow(prime primeable) *Show {
 	return &Show{
 		prime.Output(),
 		prime.Config(),
+		prime.Prompt(),
 	}
 }
 
@@ -38,7 +41,7 @@ func (s *Show) Run() error {
 		return locale.WrapError(err, "err_use_show_get_project", "Could not get your project.")
 	}
 
-	projectTarget := target.NewProjectTarget(proj, nil, "")
+	projectTarget := target.NewProjectTarget(proj, nil, "", s.prompt, s.out)
 	executables := setup.ExecDir(projectTarget.Dir())
 
 	s.out.Print(output.Prepare(

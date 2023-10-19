@@ -5,6 +5,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
+	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runbits/buildscript"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -20,6 +21,7 @@ type primeable interface {
 	primer.Auther
 	primer.Analyticer
 	primer.SvcModeler
+	primer.Prompter
 }
 
 type Commit struct {
@@ -28,6 +30,7 @@ type Commit struct {
 	auth      *authentication.Auth
 	analytics analytics.Dispatcher
 	svcModel  *model.SvcModel
+	prompt    prompt.Prompter
 }
 
 func New(p primeable) *Commit {
@@ -37,6 +40,7 @@ func New(p primeable) *Commit {
 		auth:      p.Auth(),
 		analytics: p.Analytics(),
 		svcModel:  p.SvcModel(),
+		prompt:    p.Prompt(),
 	}
 }
 
@@ -54,7 +58,7 @@ func (c *Commit) Run() error {
 	}
 
 	trigger := target.TriggerCommit
-	rti, err := runtime.NewFromProject(c.proj, trigger, c.analytics, c.svcModel, c.out, c.auth)
+	rti, err := runtime.NewFromProject(c.proj, trigger, c.analytics, c.svcModel, c.out, c.auth, c.prompt)
 	if err != nil {
 		return locale.WrapInputError(
 			err, "err_commit_runtime_new",

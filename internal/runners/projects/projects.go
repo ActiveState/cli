@@ -7,6 +7,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
@@ -23,12 +24,12 @@ type projectWithOrg struct {
 	Executables    []string `json:"executables,omitempty"`
 }
 
-func newProjectWithOrg(name, org string, checkouts []string) projectWithOrg {
+func newProjectWithOrg(name, org string, checkouts []string, prompter prompt.Prompter, out output.Outputer) projectWithOrg {
 	p := projectWithOrg{Name: name, Organization: org, LocalCheckouts: checkouts}
 	for _, checkout := range checkouts {
 		var execDir string
 		if proj, err := project.FromPath(checkout); err == nil {
-			projectTarget := target.NewProjectTarget(proj, nil, "")
+			projectTarget := target.NewProjectTarget(proj, nil, "", prompter, out)
 			execDir = setup.ExecDir(projectTarget.Dir())
 		} else {
 			multilog.Error("Unable to get project %s from checkout: %v", checkout, err)
@@ -98,6 +99,7 @@ type Projects struct {
 	auth   *authentication.Auth
 	out    output.Outputer
 	config configGetter
+	prompt prompt.Prompter
 }
 
 type primeable interface {
@@ -112,14 +114,15 @@ func NewParams() *Params {
 }
 
 func NewProjects(prime primeable) *Projects {
-	return newProjects(prime.Auth(), prime.Output(), prime.Config())
+	return newProjects(prime.Auth(), prime.Output(), prime.Config(), prime.Prompt())
 }
 
-func newProjects(auth *authentication.Auth, out output.Outputer, config configGetter) *Projects {
+func newProjects(auth *authentication.Auth, out output.Outputer, config configGetter, prompter prompt.Prompter) *Projects {
 	return &Projects{
 		auth,
 		out,
 		config,
+		prompter,
 	}
 }
 
@@ -133,7 +136,7 @@ func (r *Projects) Run(params *Params) error {
 			multilog.Error("Invalid project namespace stored to config mapping: %s", namespace)
 			continue
 		}
-		projects = append(projects, newProjectWithOrg(ns.Project, ns.Owner, checkouts))
+		projects = append(projects, newProjectWithOrg(ns.Project, ns.Owner, checkouts, r.prompt, r.out))
 	}
 
 	sort.SliceStable(projects, func(i, j int) bool {

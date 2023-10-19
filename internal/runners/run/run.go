@@ -10,6 +10,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
+	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/scriptrun"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/pkg/cmdlets/checker"
@@ -27,6 +28,7 @@ type Run struct {
 	cfg       *config.Instance
 	svcModel  *model.SvcModel
 	analytics analytics.Dispatcher
+	prompt    prompt.Prompter
 }
 
 type primeable interface {
@@ -37,6 +39,7 @@ type primeable interface {
 	primer.Configurer
 	primer.SvcModeler
 	primer.Analyticer
+	primer.Prompter
 }
 
 // New constructs a new instance of Run.
@@ -49,6 +52,7 @@ func New(prime primeable) *Run {
 		prime.Config(),
 		prime.SvcModel(),
 		prime.Analytics(),
+		prime.Prompt(),
 	}
 }
 
@@ -71,7 +75,7 @@ func (r *Run) Run(name string, args []string) error {
 	r.out.Notice(output.Title(locale.Tl("run_script_title", "Running Script: [ACTIONABLE]{{.V0}}[/RESET]", name)))
 
 	if authentication.LegacyGet().Authenticated() {
-		checker.RunCommitsBehindNotifier(r.proj, r.out)
+		checker.RunCommitsBehindNotifier(r.proj, r.prompt, r.out)
 	}
 
 	script := r.proj.ScriptByName(name)
@@ -79,7 +83,7 @@ func (r *Run) Run(name string, args []string) error {
 		return locale.NewInputError("error_state_run_unknown_name", "", name)
 	}
 
-	scriptrunner := scriptrun.New(r.auth, r.out, r.subshell, r.proj, r.cfg, r.analytics, r.svcModel)
+	scriptrunner := scriptrun.New(r.auth, r.out, r.subshell, r.proj, r.cfg, r.analytics, r.svcModel, r.prompt)
 	if !script.Standalone() && scriptrunner.NeedsActivation() {
 		if err := scriptrunner.PrepareVirtualEnv(); err != nil {
 			return locale.WrapError(err, "err_script_run_preparevenv", "Could not prepare virtual environment.")

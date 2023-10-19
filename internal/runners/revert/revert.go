@@ -134,7 +134,7 @@ func (r *Revert) Run(params *Params) error {
 			locale.T("tip_private_project_auth"))
 	}
 
-	err = runbits.RefreshRuntime(r.auth, r.out, r.analytics, r.project, revertCommit.CommitID, true, target.TriggerRevert, r.svcModel)
+	err = runbits.RefreshRuntime(r.auth, r.out, r.analytics, r.project, revertCommit.CommitID, true, target.TriggerRevert, r.svcModel, r.prompt)
 	if err != nil {
 		return locale.WrapError(err, "err_refresh_runtime")
 	}

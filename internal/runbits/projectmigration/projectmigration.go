@@ -23,22 +23,11 @@ type promptable interface {
 	Confirm(title, message string, defaultChoice *bool) (bool, error)
 }
 
-var prompt promptable
-var out output.Outputer
 var declined bool
 
-func Register(prompt_ promptable, out_ output.Outputer) {
-	prompt = prompt_
-	out = out_
-}
-
-func PromptAndMigrate(proj projecter) (bool, error) {
-	if prompt == nil || out == nil {
-		return false, errs.New("projectmigration.Register() has not been called")
-	}
-
+func PromptAndMigrate(proj projecter, prompt promptable, out output.Outputer) (bool, error) {
 	if declined {
-		return false, nil
+		return false, nil // already declined; do not prompt again
 	}
 
 	defaultChoice := false

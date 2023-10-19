@@ -33,7 +33,6 @@ import (
 	_ "github.com/ActiveState/cli/internal/prompt" // Sets up survey defaults
 	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/ActiveState/cli/internal/runbits/panics"
-	"github.com/ActiveState/cli/internal/runbits/projectmigration"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/svcctl"
 	cmdletErrors "github.com/ActiveState/cli/pkg/cmdlets/errors"
@@ -212,13 +211,13 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 	// Set up prompter
 	prompter := prompt.New(isInteractive, an)
 
-	projectmigration.Register(prompter, out)
-
 	// Set up conditional, which accesses a lot of primer data
 	sshell := subshell.New(cfg)
 
-	conditional := constraints.NewPrimeConditional(auth, pj, sshell.Shell())
+	conditional := constraints.NewPrimeConditional(auth, pj, sshell.Shell(), prompter, out)
 	project.RegisterConditional(conditional)
+	project.RegisterPrompt(prompter)
+	project.RegisterOutput(out)
 	project.RegisterExpander("mixin", project.NewMixin(auth).Expander)
 	project.RegisterExpander("secrets", project.NewSecretPromptingExpander(secretsapi.Get(), prompter, cfg, auth))
 

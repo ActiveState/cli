@@ -8,7 +8,8 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/runbits/commitid"
+	"github.com/ActiveState/cli/internal/prompt"
+	"github.com/ActiveState/cli/internal/runbits/commitmediator"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/sysinfo"
@@ -18,10 +19,11 @@ import (
 type Recipe struct {
 	output.Outputer
 	*project.Project
+	prompt.Prompter
 }
 
 func NewRecipe(prime primeable) *Recipe {
-	return &Recipe{prime.Output(), prime.Project()}
+	return &Recipe{prime.Output(), prime.Project(), prime.Prompt()}
 }
 
 type RecipeParams struct {
@@ -34,7 +36,7 @@ type RecipeParams struct {
 func (r *Recipe) Run(params *RecipeParams) error {
 	logging.Debug("Execute")
 
-	data, err := recipeData(r.Project, params.CommitID, params.Platform)
+	data, err := recipeData(r.Project, params.CommitID, params.Platform, r.Prompter, r.Outputer)
 	if err != nil {
 		return err
 	}
@@ -51,10 +53,10 @@ func (r *Recipe) Run(params *RecipeParams) error {
 	return nil
 }
 
-func recipeData(proj *project.Project, commitID, platform string) ([]byte, error) {
+func recipeData(proj *project.Project, commitID, platform string, prompter prompt.Prompter, out output.Outputer) ([]byte, error) {
 	cid := strfmt.UUID(commitID)
 
-	r, err := fetchRecipe(proj, cid, platform)
+	r, err := fetchRecipe(proj, cid, platform, prompter, out)
 	if err != nil {
 		return nil, err
 	}
@@ -72,7 +74,7 @@ func beautifyJSON(d []byte) ([]byte, error) {
 	return out.Bytes(), nil
 }
 
-func fetchRecipe(proj *project.Project, commitID strfmt.UUID, platform string) (string, error) {
+func fetchRecipe(proj *project.Project, commitID strfmt.UUID, platform string, prompter prompt.Prompter, out output.Outputer) (string, error) {
 	if platform == "" {
 		platform = sysinfo.OS().String()
 	}
@@ -83,7 +85,7 @@ func fetchRecipe(proj *project.Project, commitID strfmt.UUID, platform string) (
 
 	if commitID == "" {
 		var err error
-		commitID, err = commitid.GetCompatible(proj)
+		commitID, err = commitmediator.Get(proj, prompter, out)
 		if err != nil {
 			return "", errs.Wrap(err, "Unable to get local commit")
 		}

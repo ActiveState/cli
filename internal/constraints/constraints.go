@@ -12,8 +12,10 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
+	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
-	"github.com/ActiveState/cli/internal/runbits/commitid"
+	"github.com/ActiveState/cli/internal/runbits/commitmediator"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/ActiveState/cli/pkg/sysinfo"
@@ -81,10 +83,10 @@ type projectable interface {
 	Path() string
 	Dir() string
 	URL() string
-	LegacyCommitID() string // for commitid.GetCompatible
+	LegacyCommitID() string // for commitmediator.Get
 }
 
-func NewPrimeConditional(auth *authentication.Auth, pj projectable, subshellName string) *Conditional {
+func NewPrimeConditional(auth *authentication.Auth, pj projectable, subshellName string, prompter prompt.Prompter, out output.Outputer) *Conditional {
 	var (
 		pjOwner     string
 		pjName      string
@@ -99,7 +101,7 @@ func NewPrimeConditional(auth *authentication.Auth, pj projectable, subshellName
 		pjName = pj.Name()
 		pjNamespace = pj.NamespaceString()
 		pjURL = pj.URL()
-		commitID, err := commitid.GetCompatible(pj)
+		commitID, err := commitmediator.Get(pj, prompter, out)
 		if err != nil {
 			multilog.Error("Unable to get local commit: %v", errs.JoinMessage(err))
 		}

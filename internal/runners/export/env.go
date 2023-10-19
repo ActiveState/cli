@@ -4,6 +4,7 @@ import (
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -17,6 +18,7 @@ type Env struct {
 	svcModel  *model.SvcModel
 	auth      *authentication.Auth
 	project   *project.Project
+	prompt    prompt.Prompter
 }
 
 func NewEnv(prime primeable) *Env {
@@ -26,6 +28,7 @@ func NewEnv(prime primeable) *Env {
 		prime.SvcModel(),
 		prime.Auth(),
 		prime.Project(),
+		prime.Prompt(),
 	}
 }
 
@@ -39,7 +42,7 @@ func (e *Env) Run() error {
 		e.project.Dir()),
 	)
 
-	rt, err := runtime.NewFromProject(e.project, target.TriggerActivate, e.analytics, e.svcModel, e.out, e.auth)
+	rt, err := runtime.NewFromProject(e.project, target.TriggerActivate, e.analytics, e.svcModel, e.out, e.auth, e.prompt)
 	if err != nil {
 		return locale.WrapError(err, "err_export_new_runtime", "Could not initialize runtime")
 	}

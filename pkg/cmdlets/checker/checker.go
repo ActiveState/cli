@@ -15,7 +15,8 @@ import (
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/profile"
-	"github.com/ActiveState/cli/internal/runbits/commitid"
+	"github.com/ActiveState/cli/internal/prompt"
+	"github.com/ActiveState/cli/internal/runbits/commitmediator"
 	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
@@ -23,8 +24,8 @@ import (
 
 // RunCommitsBehindNotifier checks for the commits behind count based on the
 // provided project and displays the results to the user in a helpful manner.
-func RunCommitsBehindNotifier(p *project.Project, out output.Outputer) {
-	count, err := CommitsBehind(p)
+func RunCommitsBehindNotifier(p *project.Project, prompter prompt.Prompter, out output.Outputer) {
+	count, err := CommitsBehind(p, prompter, out)
 	if err != nil {
 		if errors.Is(err, model.ErrCommitCountUnknowable) {
 			out.Notice(output.Title(locale.Tr("runtime_update_notice_unknown_count")))
@@ -42,7 +43,7 @@ func RunCommitsBehindNotifier(p *project.Project, out output.Outputer) {
 	}
 }
 
-func CommitsBehind(p *project.Project) (int, error) {
+func CommitsBehind(p *project.Project, prompter prompt.Prompter, out output.Outputer) (int, error) {
 	if p.IsHeadless() {
 		return 0, nil
 	}
@@ -56,7 +57,7 @@ func CommitsBehind(p *project.Project) (int, error) {
 		return 0, locale.NewError("err_latest_commit", "Latest commit ID is nil")
 	}
 
-	commitID, err := commitid.GetCompatible(p)
+	commitID, err := commitmediator.Get(p, prompter, out)
 	if err != nil {
 		return 0, errs.Wrap(err, "Unable to get local commit")
 	}

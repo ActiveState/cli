@@ -7,7 +7,8 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
-	"github.com/ActiveState/cli/internal/runbits/commitid"
+	"github.com/ActiveState/cli/internal/prompt"
+	"github.com/ActiveState/cli/internal/runbits/commitmediator"
 	medmodel "github.com/ActiveState/cli/pkg/platform/api/mediator/model"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -15,9 +16,10 @@ import (
 )
 
 type Cve struct {
-	proj *project.Project
-	auth *authentication.Auth
-	out  output.Outputer
+	proj   *project.Project
+	auth   *authentication.Auth
+	out    output.Outputer
+	prompt prompt.Prompter
 }
 
 type outputData struct {
@@ -47,10 +49,11 @@ type primeable interface {
 	primer.Projecter
 	primer.Auther
 	primer.Outputer
+	primer.Prompter
 }
 
 func NewCve(prime *primer.Values) *Cve {
-	return &Cve{prime.Project(), prime.Auth(), prime.Output()}
+	return &Cve{prime.Project(), prime.Auth(), prime.Output(), prime.Prompt()}
 }
 
 func (c *Cve) Run() error {
@@ -66,7 +69,7 @@ func (c *Cve) Run() error {
 		)
 	}
 
-	commitID, err := commitid.GetCompatible(c.proj)
+	commitID, err := commitmediator.Get(c.proj, c.prompt, c.out)
 	if err != nil {
 		return errs.Wrap(err, "Could not get local commit")
 	}

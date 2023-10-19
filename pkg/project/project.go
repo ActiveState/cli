@@ -19,6 +19,7 @@ import (
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/pkg/localcommit"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -30,6 +31,8 @@ import (
 type Build map[string]string
 
 var pConditional *constraints.Conditional
+var pPrompt prompt.Prompter
+var pOut output.Outputer
 var normalizeRx *regexp.Regexp
 
 func init() {
@@ -44,6 +47,14 @@ func init() {
 // yes this is bad, but at the time of implementation refactoring the project package to not be global is out of scope
 func RegisterConditional(conditional *constraints.Conditional) {
 	pConditional = conditional
+}
+
+func RegisterPrompt(prompter prompt.Prompter) {
+	pPrompt = prompter
+}
+
+func RegisterOutput(out output.Outputer) {
+	pOut = out
 }
 
 // Project covers the platform structure
@@ -216,7 +227,7 @@ func (p *Project) ProjectDir() string {
 	return p.Dir()
 }
 
-// LegacyCommitID is for use by commitid.GetCompatible() ONLY.
+// LegacyCommitID is for use by commitmediator.Get() ONLY.
 func (p *Project) LegacyCommitID() string {
 	return p.projectfile.LegacyCommitID()
 }
@@ -251,8 +262,8 @@ func (p *Project) Namespace() *Namespaced {
 	commitID, err := localcommit.Get(p.Dir())
 	if err != nil {
 		if !localcommit.IsFileDoesNotExistError(err) {
-			// Note: cannot use commitid.GetCompatible() because this is called by main before analytics
-			// and a prompt are set up.
+			// Note: cannot use commitmediator.Get() because this is called by main before analytics
+			// and a prompt and output are set up.
 			commitID = strfmt.UUID(p.projectfile.LegacyCommitID())
 		} else {
 			multilog.Error("Unable to get local commit: %v", errs.JoinMessage(err))

@@ -20,7 +20,8 @@ import (
 	"github.com/ActiveState/cli/internal/osutils/autostart"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
-	"github.com/ActiveState/cli/internal/runbits/commitid"
+	"github.com/ActiveState/cli/internal/prompt"
+	"github.com/ActiveState/cli/internal/runbits/commitmediator"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	rt "github.com/ActiveState/cli/pkg/platform/runtime"
@@ -37,6 +38,7 @@ type primeable interface {
 	primer.Configurer
 	primer.Analyticer
 	primer.SvcModeler
+	primer.Prompter
 }
 
 // Prepare manages the prepare execution context.
@@ -46,6 +48,7 @@ type Prepare struct {
 	cfg       *config.Instance
 	analytics analytics.Dispatcher
 	svcModel  *model.SvcModel
+	prompt    prompt.Prompter
 }
 
 // New prepares a prepare execution context for use.
@@ -55,6 +58,7 @@ func New(prime primeable) *Prepare {
 		subshell:  prime.Subshell(),
 		cfg:       prime.Config(),
 		analytics: prime.Analytics(),
+		prompt:    prime.Prompt(),
 	}
 }
 
@@ -74,7 +78,7 @@ func (r *Prepare) resetExecutors() error {
 		return errs.Wrap(err, "Could not get project from its directory")
 	}
 
-	commitID, err := commitid.GetCompatible(proj)
+	commitID, err := commitmediator.Get(proj, r.prompt, r.out)
 	if err != nil {
 		return errs.Wrap(err, "Unable to get local commit")
 	}
@@ -87,7 +91,7 @@ func (r *Prepare) resetExecutors() error {
 		return errs.Wrap(err, "Could not initialize runtime for project.")
 	}
 
-	if err := globaldefault.SetupDefaultActivation(r.subshell, r.cfg, run, proj); err != nil {
+	if err := globaldefault.SetupDefaultActivation(r.subshell, r.cfg, run, proj, r.prompt, r.out); err != nil {
 		return errs.Wrap(err, "Failed to rewrite the executors.")
 	}
 
