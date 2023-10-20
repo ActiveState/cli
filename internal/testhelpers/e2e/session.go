@@ -13,6 +13,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/termtest"
 	"github.com/go-openapi/strfmt"
 	"github.com/google/uuid"
@@ -743,6 +744,33 @@ func (s *Session) DetectLogErrors() {
 			s.t.Errorf("Found error and/or panic in log file %s, contents:\n%s", path, contents)
 		}
 	}
+}
+
+func (s *Session) SetupRCFile() {
+	if runtime.GOOS == "windows" {
+		return
+	}
+
+	cfg, err := config.New()
+	require.NoError(s.t, err)
+
+	s.SetupRCFileCustom(subshell.New(cfg))
+}
+
+func (s *Session) SetupRCFileCustom(subshell subshell.SubShell) {
+	if runtime.GOOS == "windows" {
+		return
+	}
+
+	rcFile, err := subshell.RcFile()
+	require.NoError(s.t, err)
+
+	if fileutils.TargetExists(filepath.Join(s.Dirs.HomeDir, filepath.Base(rcFile))) {
+		err = fileutils.CopyFile(rcFile, filepath.Join(s.Dirs.HomeDir, filepath.Base(rcFile)))
+	} else {
+		err = fileutils.Touch(rcFile)
+	}
+	require.NoError(s.t, err)
 }
 
 func RunningOnCI() bool {
