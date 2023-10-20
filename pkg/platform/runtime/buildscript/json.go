@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"sort"
 	"strings"
 )
 
@@ -33,17 +32,7 @@ func (v *Value) MarshalJSON() ([]byte, error) {
 	case v.FuncCall != nil:
 		return json.Marshal(v.FuncCall)
 	case v.List != nil:
-		// Buildexpression list order does not matter, so sorting is necessary for
-		// comparisons. Go's JSON marshaling is deterministic, so utilize that.
-		// This should not be necessary when DX-1939 is implemented.
-		list := make([]*Value, len(*v.List))
-		copy(list, *v.List)
-		sort.SliceStable(list, func(i, j int) bool {
-			b1, err1 := json.Marshal(list[i])
-			b2, err2 := json.Marshal(list[j])
-			return err1 == nil && err2 == nil && string(b1) < string(b2)
-		})
-		return json.Marshal(list)
+		return json.Marshal(v.List)
 	case v.Str != nil:
 		return json.Marshal(strings.Trim(*v.Str, `"`))
 	case v.Number != nil:

@@ -117,32 +117,41 @@ if [ -z "$VERSION" ]; then
 elif [ -z "`echo $VERSION | grep -o '\-SHA'`" ]; then
   # If the user specified a partial version (i.e. no SHA), formulate a query to fetch the JSON info
   # of that version's latest SHA, including where it is.
-  JSONURL="$BASE_INFO_URL?channel=$CHANNEL&source=install&platform=$OS&target-version=$VERSION"
+  VERSIONNOSHA="$VERSION"
+  VERSION=""
+  JSONURL="$BASE_INFO_URL?channel=$CHANNEL&source=install&platform=$OS&target-version=$VERSIONNOSHA"
+else
+  # If the user specified a full version with SHA, formulate a query to fetch the JSON info of that
+  # version.
+  VERSIONNOSHA="`echo $VERSION | sed 's/-SHA.*$//'`"
+  JSONURL="$BASE_INFO_URL?channel=$CHANNEL&source=install&platform=$OS&target-version=$VERSIONNOSHA"
 fi
 
-if [ ! -z "$JSONURL" ]; then
+# Fetch version info.
+$FETCH $INSTALLERTMPDIR/info.json $JSONURL || exit 1
+if [ ! -z "`grep -o Invalid $INSTALLERTMPDIR/info.json`" ]; then
+	error "Could not download a State Tool installer for the given command line arguments"
+	exit 1
+fi
+
+# Extract checksum.
+SUM=`cat $INSTALLERTMPDIR/info.json | sed -ne 's/.*"sha256":[ \t]*"\([^"]*\)".*/\1/p'`
+
+if [ -z "$VERSION" ]; then
   # If the user specified no version or a partial version we need to use the json URL to get the
   # actual installer URL.
-  $FETCH $INSTALLERTMPDIR/info.json $JSONURL || exit 1
-  if [ ! -z "`grep -o Invalid $INSTALLERTMPDIR/info.json`" ]; then
-    error "Could not download a State Tool installer for the given command line arguments"
-    exit 1
-  fi
-
-  # Parse info.
   VERSION=`cat $INSTALLERTMPDIR/info.json | sed -ne 's/.*"version":[ \t]*"\([^"]*\)".*/\1/p'`
   if [ -z "$VERSION" ]; then
     error "Unable to retrieve the latest version number"
     exit 1
   fi
-  SUM=`cat $INSTALLERTMPDIR/info.json | sed -ne 's/.*"sha256":[ \t]*"\([^"]*\)".*/\1/p'`
   RELURL=`cat $INSTALLERTMPDIR/info.json | sed -ne 's/.*"path":[ \t]*"\([^"]*\)".*/\1/p'`
-  rm $INSTALLERTMPDIR/info.json
-
 else
-  # If the user specified a full version, strip the SHA to get the folder name of the installer URL.
-  # Then we can construct the installer URL.
-  VERSIONNOSHA="`echo $VERSION | sed 's/-SHA.*$//'`"
+  # If the user specified a full version, construct the installer URL.
+  if [ "$VERSION" != "`cat $INSTALLERTMPDIR/info.json | sed -ne 's/.*"version":[ \t]*"\([^"]*\)".*/\1/p'`" ]; then
+    error "Unknown version: $VERSION"
+    exit 1
+  fi
   RELURL="$CHANNEL/$VERSIONNOSHA/$OS-amd64/state-$OS-amd64-$VERSION$DOWNLOADEXT"
 fi
 
@@ -162,8 +171,8 @@ if [ $? -ne 0 -o \( "`echo $FETCH | grep -o 'curl'`" = "curl" -a ! -z "`grep -o 
   exit 1
 fi
 
-# Verify checksum if possible.
-if [ ! -z "$SUM" -a  "`$SHA256SUM -b $INSTALLERTMPDIR/$ARCHIVE | cut -d ' ' -f1`" != "$SUM" ]; then
+# Verify checksum.
+if [ "`$SHA256SUM -b $INSTALLERTMPDIR/$ARCHIVE | cut -d ' ' -f1`" != "$SUM" ]; then
   error "SHA256 sum did not match:"
   error "Expected: $SUM"
   error "Received: `$SHA256SUM -b $INSTALLERTMPDIR/$ARCHIVE | cut -d ' ' -f1`"
