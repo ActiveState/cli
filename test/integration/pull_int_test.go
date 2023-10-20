@@ -24,7 +24,7 @@ func (suite *PullIntegrationTestSuite) TestPull() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	ts.PrepareProject("ActiveState-CLI/Python3", "")
+	ts.PrepareProject("ActiveState-CLI/Python3", "59404293-e5a9-4fd0-8843-77cd4761b5b5")
 
 	cp := ts.Spawn("pull")
 	cp.Expect("Operating on project")
