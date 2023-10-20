@@ -6,9 +6,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"testing"
-	"time"
 
-	"github.com/ActiveState/termtest"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"github.com/thoas/go-funk"
@@ -234,7 +232,7 @@ func scriptPath(t *testing.T, targetDir string) string {
 
 func expectStateToolInstallation(cp *e2e.SpawnedCmd) {
 	cp.Expect("Preparing Installer for State Tool Package Manager")
-	cp.Expect("Installation Complete", termtest.OptExpectTimeout(time.Minute))
+	cp.Expect("Installation Complete", e2e.RuntimeSourcingTimeoutOpt)
 }
 
 // assertBinDirContents checks if given files are or are not in the bin directory

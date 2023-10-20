@@ -518,7 +518,7 @@ func (suite *PackageIntegrationTestSuite) TestJSON() {
 		e2e.OptArgs("uninstall", "Text-CSV", "-o", "json"),
 		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
-	cp.Expect(`{"name":"Text-CSV"`)
+	cp.Expect(`{"name":"Text-CSV"`, e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
 	AssertValidJSON(suite.T(), cp)
 }

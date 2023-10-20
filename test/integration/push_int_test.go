@@ -243,10 +243,10 @@ func (suite *PushIntegrationTestSuite) TestCarlisle() {
 		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"))
 	switch runtime.GOOS {
 	case "darwin":
-		cp.ExpectRe("added|being built", termtest.OptExpectTimeout(60*time.Second)) // while cold storage is off
+		cp.ExpectRe("added|being built", e2e.RuntimeSourcingTimeoutOpt) // while cold storage is off
 		cp.Wait()
 	default:
-		cp.Expect("added", termtest.OptExpectTimeout(60*time.Second))
+		cp.Expect("added", e2e.RuntimeSourcingTimeoutOpt)
 		cp.ExpectExitCode(0)
 	}
 

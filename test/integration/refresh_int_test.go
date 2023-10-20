@@ -25,7 +25,7 @@ func (suite *RefreshIntegrationTestSuite) TestRefresh() {
 		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cp.Expect("Setting Up Runtime")
-	cp.Expect("Runtime updated")
+	cp.Expect("Runtime updated", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
 
 	cp = ts.SpawnWithOpts(
@@ -41,14 +41,14 @@ func (suite *RefreshIntegrationTestSuite) TestRefresh() {
 		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cp.Expect("Setting Up Runtime")
-	cp.Expect("Runtime updated")
+	cp.Expect("Runtime updated", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
 
 	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("exec", "--", "python3", "-c", "import requests"),
 		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
-	cp.ExpectExitCode(0)
+	cp.ExpectExitCode(0, e2e.RuntimeSourcingTimeoutOpt)
 
 	cp = ts.Spawn("refresh")
 	suite.Assert().NotContains(cp.Output(), "Setting Up Runtime", "Unchanged runtime should not refresh")

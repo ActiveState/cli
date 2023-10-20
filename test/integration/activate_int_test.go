@@ -280,7 +280,7 @@ func (suite *ActivateIntegrationTestSuite) activatePython(version string, extraE
 		e2e.OptArgs("-c", "import sys; print(sys.copyright);"),
 		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
-	cp.Expect("ActiveState Software Inc.")
+	cp.Expect("ActiveState Software Inc.", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
 }
 
@@ -529,7 +529,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_FromCache() {
 		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 
-	cp.ExpectInput()
+	cp.ExpectInput(e2e.RuntimeSourcingTimeoutOpt)
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
 	suite.NotContains(cp.Output(), "Downloading")

@@ -202,7 +202,7 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckoutCustomRTPath() {
 		suite.Require().NoError(err)
 		customRTPath = strings.ToLower(customRTPath)
 	}
-	cp.Expect(customRTPath)
+	cp.Expect(customRTPath, e2e.RuntimeSourcingTimeoutOpt)
 }
 
 func (suite *CheckoutIntegrationTestSuite) TestCheckoutNotFound() {
