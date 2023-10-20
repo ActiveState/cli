@@ -22,7 +22,6 @@ import (
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/projectfile"
-	"github.com/go-openapi/strfmt"
 )
 
 // Build covers the build structure
@@ -247,8 +246,7 @@ func (p *Project) Cache() string { return p.projectfile.Cache }
 
 // Namespace returns project namespace
 func (p *Project) Namespace() *Namespaced {
-	commitId := strfmt.UUID(p.projectfile.LegacyCommitID())
-	return &Namespaced{p.projectfile.Owner(), p.projectfile.Name(), &commitId, false}
+	return &Namespaced{Owner: p.projectfile.Owner(), Project: p.projectfile.Name()}
 }
 
 // NamespaceString is a convenience function to make interfaces simpler
