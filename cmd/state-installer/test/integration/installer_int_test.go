@@ -34,7 +34,7 @@ func (suite *InstallerIntegrationTestSuite) TestInstallFromLocalSource() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	suite.SetupRCFile(ts)
+	ts.SetupRCFile()
 	suite.T().Setenv(constants.HomeEnvVarName, ts.Dirs.HomeDir)
 
 	dir, err := ioutil.TempDir("", "system*")
@@ -221,22 +221,6 @@ func (suite *InstallerIntegrationTestSuite) TestInstallerOverwriteServiceApp() {
 	cp.Expect("Done")
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
-}
-
-func (suite *InstallerIntegrationTestSuite) SetupRCFile(ts *e2e.Session) {
-	if runtime.GOOS == "windows" {
-		return
-	}
-
-	cfg, err := config.New()
-	suite.Require().NoError(err)
-
-	subshell := subshell.New(cfg)
-	rcFile, err := subshell.RcFile()
-	suite.Require().NoError(err)
-
-	err = fileutils.CopyFile(rcFile, filepath.Join(ts.Dirs.HomeDir, filepath.Base(rcFile)))
-	suite.Require().NoError(err)
 }
 
 func (suite *InstallerIntegrationTestSuite) AssertConfig(ts *e2e.Session) {
