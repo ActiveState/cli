@@ -1,6 +1,8 @@
 package projectmigration
 
 import (
+	"errors"
+	"io/fs"
 	"path/filepath"
 
 	"github.com/ActiveState/cli/internal/errs"
@@ -56,12 +58,18 @@ func PromptAndMigrate(proj projecter) (bool, error) {
 		return false, errs.Wrap(err, "Could not create local commit file")
 	}
 
-	if fileutils.DirExists(filepath.Join(proj.Dir(), ".git")) {
-		err := localcommit.AddToGitIgnore(proj.Dir())
+	for dir := proj.Dir(); filepath.Dir(dir) != dir; dir = filepath.Dir(dir) {
+		if !fileutils.DirExists(filepath.Join(dir, ".git")) {
+			continue
+		}
+		err := localcommit.AddToGitIgnore(dir)
 		if err != nil {
-			multilog.Error("Unable to add local commit file to .gitignore: %v", err)
+			if !errors.Is(err, fs.ErrPermission) {
+				multilog.Error("Unable to add local commit file to .gitignore: %v", err)
+			}
 			out.Notice(locale.T("notice_commit_id_gitignore"))
 		}
+		break
 	}
 
 	pf := projectfile.NewProjectField()
