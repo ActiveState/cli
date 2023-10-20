@@ -71,7 +71,7 @@ func (suite *SecretsIntegrationTestSuite) TestSecret_Expand() {
 	defer clearSecrets(ts, "project.test-secret", "user.test-secret")
 
 	asyData := strings.TrimSpace(`
-project: https://platform.activestate.com/ActiveState-CLI/secrets-test?commitID=c7f8f45d-39e2-4f22-bd2e-4182b914880f
+project: https://platform.activestate.com/ActiveState-CLI/secrets-test
 scripts:
   - name: project-secret
     language: bash
@@ -84,6 +84,7 @@ scripts:
 `)
 
 	ts.PrepareActiveStateYAML(asyData)
+	ts.PrepareCommitIdFile("c7f8f45d-39e2-4f22-bd2e-4182b914880f")
 
 	cp := ts.Spawn("secrets", "set", "project.project-secret", "project-value")
 	cp.Expect("Operating on project")

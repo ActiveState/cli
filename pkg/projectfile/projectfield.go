@@ -29,9 +29,6 @@ func (p *projectField) LoadProject(rawProjectValue string) error {
 	}
 	p.url = u
 
-	// Strip legacy commitID parameter.
-	p.unsetQuery("commitID")
-
 	return nil
 }
 
@@ -45,6 +42,10 @@ func (p *projectField) SetNamespace(owner, name string) {
 
 func (p *projectField) SetBranch(branch string) {
 	p.setQuery("branch", branch)
+}
+
+func (p *projectField) StripCommitID() {
+	p.unsetQuery("commitID") // legacy
 }
 
 func (p *projectField) setPath(path string) {
