@@ -53,7 +53,7 @@ func (suite *RevertIntegrationTestSuite) TestRevert() {
 		e2e.OptArgs("shell", "Revert"),
 		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
-	cp.ExpectInput()
+	cp.ExpectInput(e2e.RuntimeSourcingTimeoutOpt)
 	cp.SendLine("python3")
 	cp.Expect("3.9.15")
 	cp.SendLine("import urllib3")

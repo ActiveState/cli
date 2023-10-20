@@ -225,7 +225,7 @@ func (suite *BundleIntegrationTestSuite) TestJSON() {
 		e2e.OptArgs("bundles", "install", "Testing", "--output", "json"),
 		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
-	cp.Expect(`"name":"Testing"`)
+	cp.Expect(`"name":"Testing"`, e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
 	AssertValidJSON(suite.T(), cp)
 
@@ -233,7 +233,7 @@ func (suite *BundleIntegrationTestSuite) TestJSON() {
 		e2e.OptArgs("bundles", "uninstall", "Testing", "-o", "editor"),
 		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
-	cp.Expect(`"name":"Testing"`)
+	cp.Expect(`"name":"Testing"`, e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
 	AssertValidJSON(suite.T(), cp)
 }

@@ -89,7 +89,7 @@ func (suite *RuntimeIntegrationTestSuite) TestInterruptSetup() {
 		e2e.OptArgs("checkout", "ActiveState-CLI/test-interrupt-small-python#863c45e2-3626-49b6-893c-c15e85a17241", "."),
 		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
-	cp.Expect("Checked out project")
+	cp.Expect("Checked out project", e2e.RuntimeSourcingTimeoutOpt)
 
 	targetDir := target.ProjectDirToTargetDir(ts.Dirs.Work, ts.Dirs.Cache)
 	pythonExe := filepath.Join(setup.ExecDir(targetDir), "python3"+exeutils.Extension)

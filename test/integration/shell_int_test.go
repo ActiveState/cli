@@ -190,7 +190,7 @@ func (suite *ShellIntegrationTestSuite) TestDefaultNoLongerExists() {
 		e2e.OptArgs("use", "ActiveState-CLI/Python3"),
 		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
-	cp.Expect("Switched to project")
+	cp.Expect("Switched to project", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
 
 	err := os.RemoveAll(filepath.Join(ts.Dirs.Work, "Python3"))
@@ -228,7 +228,7 @@ func (suite *ShellIntegrationTestSuite) TestUseShellUpdates() {
 		e2e.OptAppendEnv("SHELL=bash"),
 		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
-	cp.Expect("Switched to project")
+	cp.Expect("Switched to project", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
 
 	// Ensure both bash and zsh RC files are updated
@@ -294,7 +294,7 @@ func (suite *ShellIntegrationTestSuite) TestRuby() {
 		e2e.OptArgs("shell", "Ruby-3.2.2"),
 		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
-	cp.Expect("Activated")
+	cp.Expect("Activated", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectInput()
 	cp.SendLine("ruby -v")
 	cp.Expect("3.2.2")

@@ -183,7 +183,7 @@ func (suite *ExecIntegrationTestSuite) TestExecWithPath() {
 		e2e.OptArgs("exec", "--path", pythonDir, "which", "python3"),
 		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
-	cp.Expect("Operating on project ActiveState-CLI/Python-3.9")
+	cp.Expect("Operating on project ActiveState-CLI/Python-3.9", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectRe(regexp.MustCompile("cache/[0-9A-Fa-f]+/usr/bin/python3").String())
 	cp.ExpectExitCode(0)
 

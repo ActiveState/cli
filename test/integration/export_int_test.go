@@ -89,7 +89,7 @@ func (suite *ExportIntegrationTestSuite) TestExport_Env() {
 		e2e.OptArgs("export", "env"),
 		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
-	cp.Expect(`PATH: `)
+	cp.Expect(`PATH: `, e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
 
 	suite.Assert().NotContains(cp.Output(), "ACTIVESTATE_ACTIVATED")
@@ -115,7 +115,7 @@ func (suite *ExportIntegrationTestSuite) TestJSON() {
 		e2e.OptArgs("export", "env", "-o", "json"),
 		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
-	cp.ExpectExitCode(0)
+	cp.ExpectExitCode(0, e2e.RuntimeSourcingTimeoutOpt)
 	AssertValidJSON(suite.T(), cp)
 
 	ts.LoginAsPersistentUser()
