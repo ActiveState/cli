@@ -19,7 +19,6 @@ import (
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/pkg/localcommit"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/projectfile"
@@ -215,6 +214,11 @@ func (p *Project) ProjectDir() string {
 	return p.Dir()
 }
 
+// LegacyCommitID is for use by commitmediator.Get() ONLY.
+func (p *Project) LegacyCommitID() string {
+	return p.projectfile.LegacyCommitID()
+}
+
 func (p *Project) IsHeadless() bool {
 	match := projectfile.CommitURLRe.FindStringSubmatch(p.URL())
 	return len(match) > 1
@@ -242,11 +246,7 @@ func (p *Project) Cache() string { return p.projectfile.Cache }
 
 // Namespace returns project namespace
 func (p *Project) Namespace() *Namespaced {
-	commitID, err := localcommit.Get(p.Dir())
-	if err != nil && !localcommit.IsFileDoesNotExistError(err) {
-		multilog.Error("Unable to get local commit: %v", errs.JoinMessage(err))
-	}
-	return &Namespaced{p.projectfile.Owner(), p.projectfile.Name(), &commitID, false}
+	return &Namespaced{Owner: p.projectfile.Owner(), Project: p.projectfile.Name()}
 }
 
 // NamespaceString is a convenience function to make interfaces simpler
