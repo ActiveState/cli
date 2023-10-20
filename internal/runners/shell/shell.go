@@ -11,7 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/process"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runbits/activation"
-	"github.com/ActiveState/cli/internal/runbits/commitid"
+	"github.com/ActiveState/cli/internal/runbits/commitmediator"
 	"github.com/ActiveState/cli/internal/runbits/findproject"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/internal/subshell"
@@ -72,7 +72,7 @@ func (u *Shell) Run(params *Params) error {
 		return locale.WrapError(err, "err_shell_cannot_load_project")
 	}
 
-	commitID, err := commitid.GetCompatible(proj)
+	commitID, err := commitmediator.Get(proj)
 	if err != nil {
 		return errs.Wrap(err, "Unable to get local commit")
 	}

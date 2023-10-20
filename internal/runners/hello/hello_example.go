@@ -15,7 +15,7 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runbits"
-	"github.com/ActiveState/cli/internal/runbits/commitid"
+	"github.com/ActiveState/cli/internal/runbits/commitmediator"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
@@ -145,7 +145,7 @@ func currentCommitMessage(proj *project.Project) (string, error) {
 		return "", errs.New("Cannot determine which project to use")
 	}
 
-	commitId, err := commitid.GetCompatible(proj)
+	commitId, err := commitmediator.Get(proj)
 	if err != nil {
 		return "", errs.Wrap(err, "Cannot determine which commit to use")
 	}

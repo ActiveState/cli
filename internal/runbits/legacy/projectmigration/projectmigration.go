@@ -8,6 +8,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
@@ -19,21 +20,20 @@ type projecter interface {
 	LegacyCommitID() string
 }
 
-type promptable interface {
-	Confirm(title, message string, defaultChoice *bool) (bool, error)
-}
-
-var prompt promptable
+var prompter prompt.Prompter
 var out output.Outputer
 var declined bool
 
-func Register(prompt_ promptable, out_ output.Outputer) {
-	prompt = prompt_
+// Register exists to avoid boilerplate in passing prompt and out to every caller of
+// commitmediator.Get() for retrieving legacy commitId from activestate.yaml.
+// This is an anti-pattern and is only used to make this legacy feature palatable.
+func Register(prompter_ prompt.Prompter, out_ output.Outputer) {
+	prompter = prompter_
 	out = out_
 }
 
 func PromptAndMigrate(proj projecter) (bool, error) {
-	if prompt == nil || out == nil {
+	if prompter == nil || out == nil {
 		return false, errs.New("projectmigration.Register() has not been called")
 	}
 
@@ -42,7 +42,7 @@ func PromptAndMigrate(proj projecter) (bool, error) {
 	}
 
 	defaultChoice := false
-	if migrate, err := prompt.Confirm("", locale.T("projectmigration_confirm"), &defaultChoice); err == nil && !migrate {
+	if migrate, err := prompter.Confirm("", locale.T("projectmigration_confirm"), &defaultChoice); err == nil && !migrate {
 		if out.Config().Interactive {
 			out.Notice(locale.Tl("projectmigration_declined", "Migration declined for now"))
 		}

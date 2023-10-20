@@ -1,8 +1,8 @@
-package commitid
+package commitmediator
 
 import (
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/runbits/projectmigration"
+	"github.com/ActiveState/cli/internal/runbits/legacy/projectmigration"
 	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/go-openapi/strfmt"
 )
@@ -17,7 +17,7 @@ type projecter interface {
 // Get returns the given project's commit ID in either the new format (commit file), or the old
 // format (activestate.yaml).
 // If you require the commit file, use localcommit.Get().
-func GetCompatible(proj projecter) (strfmt.UUID, error) {
+func Get(proj projecter) (strfmt.UUID, error) {
 	if commitID, err := localcommit.Get(proj.Dir()); err == nil {
 		return commitID, nil
 	} else if localcommit.IsFileDoesNotExistError(err) {

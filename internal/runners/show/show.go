@@ -14,7 +14,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
-	"github.com/ActiveState/cli/internal/runbits/commitid"
+	"github.com/ActiveState/cli/internal/runbits/commitmediator"
 	"github.com/ActiveState/cli/internal/secrets"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
@@ -193,7 +193,7 @@ func (s *Show) Run(params Params) error {
 			return locale.WrapError(err, "err_show_scripts", "Could not parse scripts")
 		}
 
-		commitID, err = commitid.GetCompatible(s.project)
+		commitID, err = commitmediator.Get(s.project)
 		if err != nil {
 			return errs.Wrap(err, "Unable to get local commit")
 		}
@@ -385,7 +385,7 @@ func commitsData(owner, project, branchName string, commitID strfmt.UUID, localP
 		if err != nil {
 			return "", locale.WrapError(err, "err_show_commits_behind", "Could not determine number of commits behind latest")
 		}
-		localCommitID, err := commitid.GetCompatible(localProject)
+		localCommitID, err := commitmediator.Get(localProject)
 		if err != nil {
 			return "", errs.Wrap(err, "Unable to get local commit")
 		}

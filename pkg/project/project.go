@@ -215,7 +215,7 @@ func (p *Project) ProjectDir() string {
 	return p.Dir()
 }
 
-// LegacyCommitID is for use by commitid.GetCompatible() ONLY.
+// LegacyCommitID is for use by commitmediator.Get() ONLY.
 func (p *Project) LegacyCommitID() string {
 	return p.projectfile.LegacyCommitID()
 }
