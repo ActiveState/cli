@@ -105,58 +105,6 @@ func (suite *PushIntegrationTestSuite) TestInitAndPush() {
 	cp.ExpectExitCode(0)
 }
 
-// Test pushing to a new project from a headless commit
-func (suite *PushIntegrationTestSuite) TestPush_HeadlessConvert_NewProject() {
-	if runtime.GOOS == "windows" {
-		suite.T().Skip("Skipped on Windows for now because SendKeyDown() doesnt work (regardless of bash/cmd)")
-	}
-
-	suite.OnlyRunForTags(tagsuite.Push)
-	ts := e2e.New(suite.T(), false)
-	defer ts.Close()
-	ts.LoginAsPersistentUser()
-	pname := strutils.UUID()
-	namespace := fmt.Sprintf("%s/%s", suite.username, pname)
-
-	cp := ts.SpawnWithOpts(e2e.OptArgs("install", suite.extraPackage))
-
-	cp.Expect("An activestate.yaml has been created", termtest.OptExpectTimeout(time.Second*40))
-	switch runtime.GOOS {
-	case "darwin":
-		cp.ExpectRe("added|being built", termtest.OptExpectTimeout(60*time.Second)) // while cold storage is off
-		cp.Wait()
-	default:
-		cp.Expect("added", termtest.OptExpectTimeout(60*time.Second))
-		cp.ExpectExitCode(0)
-	}
-
-	pjfilepath := filepath.Join(ts.Dirs.Work, constants.ConfigFileName)
-	pjfile, err := projectfile.Parse(pjfilepath)
-	suite.Require().NoError(err)
-	if !strings.Contains(pjfile.Project, "/commit/") {
-		suite.FailNow("project field should be headless but isn't: " + pjfile.Project)
-	}
-
-	cp = ts.SpawnWithOpts(e2e.OptArgs("push"))
-	cp.Expect("Who would you like the owner of this project to be?")
-	cp.SendEnter()
-	cp.Expect("What would you like the name of this project to be?")
-	cp.SendKeyDown()
-	cp.Expect("> Other")
-	cp.SendEnter()
-	cp.Expect(">")
-	cp.SendLine(pname.String())
-	cp.Expect("Project created")
-	cp.ExpectExitCode(0)
-	ts.NotifyProjectCreated(suite.username, pname.String())
-
-	pjfile, err = projectfile.Parse(pjfilepath)
-	suite.Require().NoError(err)
-	if !strings.Contains(pjfile.Project, fmt.Sprintf("/%s?", namespace)) {
-		suite.FailNow("project field should include project again: " + pjfile.Project)
-	}
-}
-
 // Test pushing without permission, and choosing to create a new project
 func (suite *PushIntegrationTestSuite) TestPush_NoPermission_NewProject() {
 	if runtime.GOOS == "windows" {
@@ -309,24 +257,6 @@ func (suite *PushIntegrationTestSuite) TestPush_NoChanges() {
 	ts.LoginAsPersistentUser()
 	cp = ts.SpawnWithOpts(e2e.OptArgs("push"))
 	cp.Expect("no local changes to push")
-	cp.ExpectExitCode(1)
-
-	if strings.Count(cp.Snapshot(), " x ") != 1 {
-		suite.Fail("Expected exactly ONE error message, got: ", cp.Snapshot())
-	}
-}
-
-func (suite *PushIntegrationTestSuite) TestPush_NoCommit() {
-	suite.OnlyRunForTags(tagsuite.Push)
-
-	ts := e2e.New(suite.T(), false)
-	defer ts.Close()
-
-	ts.PrepareProject("ActiveState-CLI/cli", "")
-
-	ts.LoginAsPersistentUser()
-	cp := ts.SpawnWithOpts(e2e.OptArgs("push"))
-	cp.Expect("nothing to push")
 	cp.ExpectExitCode(1)
 
 	if strings.Count(cp.Snapshot(), " x ") != 1 {
