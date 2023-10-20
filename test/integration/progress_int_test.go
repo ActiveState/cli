@@ -23,7 +23,7 @@ func (suite *ProgressIntegrationTestSuite) TestProgress() {
 		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cp.Expect(locale.T("setup_runtime"))
-	cp.Expect("Checked out")
+	cp.Expect("Checked out", e2e.RuntimeSourcingTimeoutOpt)
 	suite.Assert().NotContains(cp.Output(), "...")
 	cp.ExpectExitCode(0)
 
@@ -33,7 +33,7 @@ func (suite *ProgressIntegrationTestSuite) TestProgress() {
 	)
 	cp.Expect(locale.T("setup_runtime"))
 	cp.Expect("...")
-	cp.Expect("Checked out")
+	cp.Expect("Checked out", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
 }
 
