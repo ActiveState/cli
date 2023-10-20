@@ -2082,8 +2082,10 @@ err_local_commit_file:
     Please avoid deleting or editing this file directly.
 projectmigration_confirm:
   other: |
-    Your project is currently read-only until you migrate to the new project format.
-    After you migrate, older versions of the State Tool will not be able to use your project until they update.
+    State Tool has introduced a new project format to provide enhanced functionality. Your project is currently using the old format and will remain read-only until you migrate to the new project format.
+
+    [ERROR]WARNING:[/RESET] After you migrate, older versions of the State Tool will not be able to use your project.
+
     Would you like to perform the migration now?
 err_searchingredient_toomany:
   other: Too many ingredients match the query '[ACTIONABLE]{{.V0}}[/RESET]', please try to be more specific.
