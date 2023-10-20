@@ -4,7 +4,6 @@ import (
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/cli/internal/runbits/buildscript"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -25,13 +24,12 @@ func RefreshRuntime(
 	changed bool,
 	trigger target.Trigger,
 	svcm *model.SvcModel,
-	prompter prompt.Prompter,
 ) (rerr error) {
 	_, err := buildscript.Sync(proj, &commitID, out, auth)
 	if err != nil {
 		return locale.WrapError(err, "err_update_build_script")
 	}
-	target := target.NewProjectTarget(proj, nil, trigger, prompter, out)
+	target := target.NewProjectTarget(proj, nil, trigger)
 	isCached := true
 	rt, err := runtime.New(target, an, svcm, auth)
 	if err != nil {

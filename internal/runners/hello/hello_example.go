@@ -14,9 +14,8 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
-	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runbits"
-	"github.com/ActiveState/cli/internal/runbits/commitmediator"
+	"github.com/ActiveState/cli/internal/runbits/commitid"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
@@ -27,7 +26,6 @@ type primeable interface {
 	primer.Outputer
 	primer.Auther
 	primer.Projecter
-	primer.Prompter
 }
 
 // RunParams defines the parameters needed to execute a given runner. These
@@ -51,7 +49,6 @@ func NewRunParams() *RunParams {
 type Hello struct {
 	out     output.Outputer
 	project *project.Project
-	prompt  prompt.Prompter
 }
 
 // New contains the scope in which an instance of Hello is constructed from an
@@ -60,7 +57,6 @@ func New(p primeable) *Hello {
 	return &Hello{
 		out:     p.Output(),
 		project: p.Project(),
-		prompt:  p.Prompt(),
 	}
 }
 
@@ -120,7 +116,7 @@ func (h *Hello) Run(params *RunParams) (rerr error) {
 	}
 
 	// Grab data from the platform.
-	commitMsg, err := currentCommitMessage(h.project, h.prompt, h.out)
+	commitMsg, err := currentCommitMessage(h.project)
 	if err != nil {
 		err = errs.Wrap(
 			err, "Cannot get commit message",
@@ -144,12 +140,12 @@ func (h *Hello) Run(params *RunParams) (rerr error) {
 // is obtained. Since it is a sort of construction function that has some
 // complexity, it is helpful to provide localized error context. Secluding this
 // sort of logic is helpful to keep the subhandlers clean.
-func currentCommitMessage(proj *project.Project, prompter prompt.Prompter, out output.Outputer) (string, error) {
+func currentCommitMessage(proj *project.Project) (string, error) {
 	if proj == nil {
 		return "", errs.New("Cannot determine which project to use")
 	}
 
-	commitId, err := commitmediator.Get(proj, prompter, out)
+	commitId, err := commitid.GetCompatible(proj)
 	if err != nil {
 		return "", errs.Wrap(err, "Cannot determine which commit to use")
 	}

@@ -11,9 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
-	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/prompt"
-	"github.com/ActiveState/cli/internal/runbits/commitmediator"
+	"github.com/ActiveState/cli/internal/runbits/commitid"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/go-openapi/strfmt"
 )
@@ -65,20 +63,18 @@ type ProjectTarget struct {
 	cacheDir     string
 	customCommit *strfmt.UUID
 	trigger      Trigger
-	prompt.Prompter
-	output.Outputer
 }
 
-func NewProjectTarget(pj *project.Project, customCommit *strfmt.UUID, trigger Trigger, prompter prompt.Prompter, out output.Outputer) *ProjectTarget {
+func NewProjectTarget(pj *project.Project, customCommit *strfmt.UUID, trigger Trigger) *ProjectTarget {
 	runtimeCacheDir := storage.CachePath()
 	if pj.Cache() != "" {
 		runtimeCacheDir = pj.Cache()
 	}
-	return &ProjectTarget{pj, runtimeCacheDir, customCommit, trigger, prompter, out}
+	return &ProjectTarget{pj, runtimeCacheDir, customCommit, trigger}
 }
 
-func NewProjectTargetCache(pj *project.Project, cacheDir string, customCommit *strfmt.UUID, trigger Trigger, prompter prompt.Prompter, out output.Outputer) *ProjectTarget {
-	return &ProjectTarget{pj, cacheDir, customCommit, trigger, prompter, out}
+func NewProjectTargetCache(pj *project.Project, cacheDir string, customCommit *strfmt.UUID, trigger Trigger) *ProjectTarget {
+	return &ProjectTarget{pj, cacheDir, customCommit, trigger}
 }
 
 func (p *ProjectTarget) Dir() string {
@@ -92,7 +88,7 @@ func (p *ProjectTarget) CommitUUID() strfmt.UUID {
 	if p.customCommit != nil {
 		return *p.customCommit
 	}
-	commitID, err := commitmediator.Get(p.Project, p.Prompter, p.Outputer)
+	commitID, err := commitid.GetCompatible(p.Project)
 	if err != nil {
 		multilog.Error("Unable to get local commit: %v", errs.JoinMessage(err))
 		return ""

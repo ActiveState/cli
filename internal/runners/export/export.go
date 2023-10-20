@@ -13,7 +13,6 @@ type primeable interface {
 	primer.Projecter
 	primer.Analyticer
 	primer.SvcModeler
-	primer.Prompter
 }
 
 type Export struct{}

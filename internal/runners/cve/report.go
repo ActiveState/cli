@@ -9,8 +9,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/prompt"
-	"github.com/ActiveState/cli/internal/runbits/commitmediator"
+	"github.com/ActiveState/cli/internal/runbits/commitid"
 	medmodel "github.com/ActiveState/cli/pkg/platform/api/mediator/model"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -18,10 +17,9 @@ import (
 )
 
 type Report struct {
-	proj   *project.Project
-	auth   *authentication.Auth
-	out    output.Outputer
-	prompt prompt.Prompter
+	proj *project.Project
+	auth *authentication.Auth
+	out  output.Outputer
 }
 
 type ReportInfo struct {
@@ -31,7 +29,7 @@ type ReportInfo struct {
 }
 
 func NewReport(prime primeable) *Report {
-	return &Report{prime.Project(), prime.Auth(), prime.Output(), prime.Prompt()}
+	return &Report{prime.Project(), prime.Auth(), prime.Output()}
 }
 
 type ReportParams struct {
@@ -104,7 +102,7 @@ func (r *Report) fetchVulnerabilities(namespaceOverride project.Namespaced) (*me
 		commitID = namespaceOverride.CommitID.String()
 	} else {
 		var err error
-		commitUUID, err := commitmediator.Get(r.proj, r.prompt, r.out)
+		commitUUID, err := commitid.GetCompatible(r.proj)
 		if err != nil {
 			return nil, errs.Wrap(err, "Unable to get local commit")
 		}

@@ -16,9 +16,8 @@ import (
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
-	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runbits"
-	"github.com/ActiveState/cli/internal/runbits/commitmediator"
+	"github.com/ActiveState/cli/internal/runbits/commitid"
 	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -43,7 +42,6 @@ type Initialize struct {
 	out       output.Outputer
 	analytics analytics.Dispatcher
 	svcModel  *model.SvcModel
-	prompt    prompt.Prompter
 }
 
 type primeable interface {
@@ -52,19 +50,18 @@ type primeable interface {
 	primer.Outputer
 	primer.Analyticer
 	primer.SvcModeler
-	primer.Prompter
 }
 
 // New returns a prepared ptr to Initialize instance.
 func New(prime primeable) *Initialize {
-	return &Initialize{prime.Auth(), prime.Config(), prime.Output(), prime.Analytics(), prime.SvcModel(), prime.Prompt()}
+	return &Initialize{prime.Auth(), prime.Config(), prime.Output(), prime.Analytics(), prime.SvcModel()}
 }
 
 // inferLanguage tries to infer a reasonable default language from the project currently in use
 // (i.e. `state use show`).
 // Error handling is not necessary because it's an input error to not include a language to
 // `state init`. We're just trying to infer one as a convenience to the user.
-func inferLanguage(config projectfile.ConfigGetter, prompter prompt.Prompter, out output.Outputer) (string, string, bool) {
+func inferLanguage(config projectfile.ConfigGetter) (string, string, bool) {
 	defaultProjectDir := config.GetString(constants.GlobalDefaultPrefname)
 	if defaultProjectDir == "" {
 		return "", "", false
@@ -73,7 +70,7 @@ func inferLanguage(config projectfile.ConfigGetter, prompter prompt.Prompter, ou
 	if err != nil {
 		return "", "", false
 	}
-	commitID, err := commitmediator.Get(defaultProj, prompter, out)
+	commitID, err := commitid.GetCompatible(defaultProj)
 	if err != nil {
 		multilog.Error("Unable to get local commit: %v", errs.JoinMessage(err))
 		return "", "", false
@@ -127,7 +124,7 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 			languageVersion = langParts[1]
 		}
 	} else {
-		languageName, languageVersion, inferred = inferLanguage(r.config, r.prompt, r.out)
+		languageName, languageVersion, inferred = inferLanguage(r.config)
 	}
 
 	if languageName == "" {
@@ -253,7 +250,7 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 		return locale.WrapError(err, "err_init_push", "Failed to push to the newly created Platform project at {{.V0}}", namespace.String())
 	}
 
-	err = runbits.RefreshRuntime(r.auth, r.out, r.analytics, proj, commitID, true, target.TriggerInit, r.svcModel, r.prompt)
+	err = runbits.RefreshRuntime(r.auth, r.out, r.analytics, proj, commitID, true, target.TriggerInit, r.svcModel)
 	if err != nil {
 		logging.Debug("Deleting remotely created project due to runtime setup error")
 		err2 := model.DeleteProject(namespace.Owner, namespace.Project, r.auth)
@@ -266,7 +263,7 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 
 	projectfile.StoreProjectMapping(r.config, namespace.String(), filepath.Dir(proj.Source().Path()))
 
-	projectTarget := target.NewProjectTarget(proj, nil, "", r.prompt, r.out).Dir()
+	projectTarget := target.NewProjectTarget(proj, nil, "").Dir()
 	executables := setup.ExecDir(projectTarget)
 
 	r.out.Print(output.Prepare(

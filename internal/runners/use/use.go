@@ -12,7 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
-	"github.com/ActiveState/cli/internal/runbits/commitmediator"
+	"github.com/ActiveState/cli/internal/runbits/commitid"
 	"github.com/ActiveState/cli/internal/runbits/findproject"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/internal/subshell"
@@ -77,7 +77,7 @@ func (u *Use) Run(params *Params) error {
 		return locale.WrapInputError(err, "err_use_cannot_find_local_project", "Local project cannot be found.")
 	}
 
-	commitID, err := commitmediator.Get(proj, u.prompt, u.out)
+	commitID, err := commitid.GetCompatible(proj)
 	if err != nil {
 		return errs.Wrap(err, "Unable to get local commit")
 	}
@@ -86,12 +86,12 @@ func (u *Use) Run(params *Params) error {
 		return locale.NewInputError("err_use_commit_id_mismatch")
 	}
 
-	rti, err := runtime.NewFromProject(proj, target.TriggerUse, u.analytics, u.svcModel, u.out, u.auth, u.prompt)
+	rti, err := runtime.NewFromProject(proj, target.TriggerUse, u.analytics, u.svcModel, u.out, u.auth)
 	if err != nil {
 		return locale.WrapError(err, "err_use_runtime_new", "Cannot use this project.")
 	}
 
-	if err := globaldefault.SetupDefaultActivation(u.subshell, u.config, rti, proj, u.prompt, u.out); err != nil {
+	if err := globaldefault.SetupDefaultActivation(u.subshell, u.config, rti, proj); err != nil {
 		return locale.WrapError(err, "err_use_default", "Could not setup your project for use.")
 	}
 

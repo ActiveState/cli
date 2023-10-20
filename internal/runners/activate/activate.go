@@ -22,7 +22,7 @@ import (
 	"github.com/ActiveState/cli/internal/process"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runbits/activation"
-	"github.com/ActiveState/cli/internal/runbits/commitmediator"
+	"github.com/ActiveState/cli/internal/runbits/commitid"
 	"github.com/ActiveState/cli/internal/runbits/findproject"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/internal/subshell"
@@ -175,7 +175,7 @@ func (r *Activate) Run(params *ActivateParams) (rerr error) {
 		}
 	}
 
-	rt, err := runtime.NewFromProject(proj, target.TriggerActivate, r.analytics, r.svcModel, r.out, r.auth, r.prompt)
+	rt, err := runtime.NewFromProject(proj, target.TriggerActivate, r.analytics, r.svcModel, r.out, r.auth)
 	if err != nil {
 		return locale.WrapError(err, "err_could_not_activate_venv", "Could not activate project")
 	}
@@ -183,7 +183,7 @@ func (r *Activate) Run(params *ActivateParams) (rerr error) {
 	venv := virtualenvironment.New(rt)
 
 	if setDefault {
-		err := globaldefault.SetupDefaultActivation(r.subshell, r.config, rt, proj, r.prompt, r.out)
+		err := globaldefault.SetupDefaultActivation(r.subshell, r.config, rt, proj)
 		if err != nil {
 			return locale.WrapError(err, "err_activate_default", "Could not make your project always available for use.")
 		}
@@ -195,7 +195,7 @@ func (r *Activate) Run(params *ActivateParams) (rerr error) {
 		}
 	}
 
-	commitID, err := commitmediator.Get(proj, r.prompt, r.out)
+	commitID, err := commitid.GetCompatible(proj)
 	if err != nil {
 		return errs.Wrap(err, "Unable to get local commit")
 	}

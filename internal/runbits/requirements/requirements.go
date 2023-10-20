@@ -299,7 +299,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 	}
 
 	// refresh or install runtime
-	err = runbits.RefreshRuntime(r.Auth, r.Output, r.Analytics, pj, commitID, true, trigger, r.SvcModel, r.Prompt)
+	err = runbits.RefreshRuntime(r.Auth, r.Output, r.Analytics, pj, commitID, true, trigger, r.SvcModel)
 	if err != nil {
 		return err
 	}

@@ -8,7 +8,6 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
-	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/pkg/cmdlets/checker"
@@ -37,7 +36,6 @@ type primeable interface {
 	primer.Configurer
 	primer.SvcModeler
 	primer.Analyticer
-	primer.Prompter
 }
 
 type Checkout struct {
@@ -48,7 +46,6 @@ type Checkout struct {
 	config    *config.Instance
 	subshell  subshell.SubShell
 	analytics analytics.Dispatcher
-	prompt    prompt.Prompter
 }
 
 func NewCheckout(prime primeable) *Checkout {
@@ -60,7 +57,6 @@ func NewCheckout(prime primeable) *Checkout {
 		prime.Config(),
 		prime.Subshell(),
 		prime.Analytics(),
-		prime.Prompt(),
 	}
 }
 
@@ -81,7 +77,7 @@ func (u *Checkout) Run(params *Params) (rerr error) {
 		return locale.WrapError(err, "err_project_frompath")
 	}
 
-	rti, err := runtime.NewFromProject(proj, target.TriggerCheckout, u.analytics, u.svcModel, u.out, u.auth, u.prompt)
+	rti, err := runtime.NewFromProject(proj, target.TriggerCheckout, u.analytics, u.svcModel, u.out, u.auth)
 	if err != nil {
 		return locale.WrapError(err, "err_checkout_runtime_new", "Could not checkout this project.")
 	}

@@ -9,8 +9,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/prompt"
-	"github.com/ActiveState/cli/internal/runbits/commitmediator"
+	"github.com/ActiveState/cli/internal/runbits/commitid"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -24,17 +23,15 @@ type SearchRunParams struct {
 
 // Search manages the searching execution context.
 type Search struct {
-	out    output.Outputer
-	proj   *project.Project
-	prompt prompt.Prompter
+	out  output.Outputer
+	proj *project.Project
 }
 
 // NewSearch prepares a searching execution context for use.
 func NewSearch(prime primeable) *Search {
 	return &Search{
-		out:    prime.Output(),
-		proj:   prime.Project(),
-		prompt: prime.Prompt(),
+		out:  prime.Output(),
+		proj: prime.Project(),
 	}
 }
 
@@ -42,7 +39,7 @@ func NewSearch(prime primeable) *Search {
 func (s *Search) Run(params SearchRunParams, nstype model.NamespaceType) error {
 	logging.Debug("ExecuteSearch")
 
-	language, err := targetedLanguage(params.Language, s.proj, s.prompt, s.out)
+	language, err := targetedLanguage(params.Language, s.proj)
 	if err != nil {
 		return locale.WrapError(err, fmt.Sprintf("%s_err_cannot_obtain_language", nstype))
 	}
@@ -70,7 +67,7 @@ func (s *Search) Run(params SearchRunParams, nstype model.NamespaceType) error {
 	return nil
 }
 
-func targetedLanguage(languageOpt string, proj *project.Project, prompter prompt.Prompter, out output.Outputer) (string, error) {
+func targetedLanguage(languageOpt string, proj *project.Project) (string, error) {
 	if languageOpt != "" {
 		return languageOpt, nil
 	}
@@ -81,7 +78,7 @@ func targetedLanguage(languageOpt string, proj *project.Project, prompter prompt
 		)
 	}
 
-	commitID, err := commitmediator.Get(proj, prompter, out)
+	commitID, err := commitid.GetCompatible(proj)
 	if err != nil {
 		return "", errs.Wrap(err, "Unable to get local commit")
 	}

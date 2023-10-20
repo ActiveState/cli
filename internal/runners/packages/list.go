@@ -13,8 +13,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/prompt"
-	"github.com/ActiveState/cli/internal/runbits/commitmediator"
+	"github.com/ActiveState/cli/internal/runbits/commitid"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -30,7 +29,6 @@ type ListRunParams struct {
 type List struct {
 	out     output.Outputer
 	project *project.Project
-	prompt  prompt.Prompter
 }
 
 // NewList prepares a list execution context for use.
@@ -38,7 +36,6 @@ func NewList(prime primeable) *List {
 	return &List{
 		out:     prime.Output(),
 		project: prime.Project(),
-		prompt:  prime.Prompt(),
 	}
 }
 
@@ -64,7 +61,7 @@ func (l *List) Run(params ListRunParams, nstype model.NamespaceType) error {
 			return locale.WrapError(err, fmt.Sprintf("%s_err_cannot_obtain_commit", nstype))
 		}
 	default:
-		commit, err = targetFromProjectFile(l.project, l.prompt, l.out)
+		commit, err = targetFromProjectFile(l.project)
 		if err != nil {
 			return locale.WrapError(err, fmt.Sprintf("%s_err_cannot_obtain_commit", nstype))
 		}
@@ -107,12 +104,12 @@ func targetFromProject(projectString string) (*strfmt.UUID, error) {
 	return branch.CommitID, nil
 }
 
-func targetFromProjectFile(proj *project.Project, prompter prompt.Prompter, out output.Outputer) (*strfmt.UUID, error) {
+func targetFromProjectFile(proj *project.Project) (*strfmt.UUID, error) {
 	logging.Debug("commit from project file")
 	if proj == nil {
 		return nil, locale.NewInputError("err_no_project")
 	}
-	commit, err := commitmediator.Get(proj, prompter, out)
+	commit, err := commitid.GetCompatible(proj)
 	if err != nil {
 		return nil, errs.Wrap(err, "Unable to get local commit")
 	}

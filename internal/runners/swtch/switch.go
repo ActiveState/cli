@@ -7,7 +7,6 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
-	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
@@ -24,7 +23,6 @@ type Switch struct {
 	project   *project.Project
 	analytics analytics.Dispatcher
 	svcModel  *model.SvcModel
-	prompt    prompt.Prompter
 }
 
 type SwitchParams struct {
@@ -38,7 +36,6 @@ type primeable interface {
 	primer.Configurer
 	primer.Analyticer
 	primer.SvcModeler
-	primer.Prompter
 }
 
 type identifier interface {
@@ -77,7 +74,6 @@ func New(prime primeable) *Switch {
 		project:   prime.Project(),
 		analytics: prime.Analytics(),
 		svcModel:  prime.SvcModel(),
-		prompt:    prime.Prompt(),
 	}
 }
 
@@ -119,7 +115,7 @@ func (s *Switch) Run(params SwitchParams) error {
 		return errs.Wrap(err, "Unable to set local commit")
 	}
 
-	err = runbits.RefreshRuntime(s.auth, s.out, s.analytics, s.project, identifier.CommitID(), false, target.TriggerSwitch, s.svcModel, s.prompt)
+	err = runbits.RefreshRuntime(s.auth, s.out, s.analytics, s.project, identifier.CommitID(), false, target.TriggerSwitch, s.svcModel)
 	if err != nil {
 		return locale.WrapError(err, "err_refresh_runtime")
 	}

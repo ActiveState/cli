@@ -1,9 +1,7 @@
-package commitmediator
+package commitid
 
 import (
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runbits/projectmigration"
 	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/go-openapi/strfmt"
@@ -19,11 +17,11 @@ type projecter interface {
 // Get returns the given project's commit ID in either the new format (commit file), or the old
 // format (activestate.yaml).
 // If you require the commit file, use localcommit.Get().
-func Get(proj projecter, prompter prompt.Prompter, out output.Outputer) (strfmt.UUID, error) {
+func GetCompatible(proj projecter) (strfmt.UUID, error) {
 	if commitID, err := localcommit.Get(proj.Dir()); err == nil {
 		return commitID, nil
 	} else if localcommit.IsFileDoesNotExistError(err) {
-		if migrated, err := projectmigration.PromptAndMigrate(proj, prompter, out); err == nil && migrated {
+		if migrated, err := projectmigration.PromptAndMigrate(proj); err == nil && migrated {
 			return localcommit.Get(proj.Dir())
 		} else if err != nil {
 			return "", errs.Wrap(err, "Could not prompt and/or migrate project")

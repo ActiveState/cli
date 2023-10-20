@@ -8,7 +8,6 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
@@ -23,17 +22,15 @@ type InfoRunParams struct {
 
 // Info manages the information execution context.
 type Info struct {
-	out    output.Outputer
-	proj   *project.Project
-	prompt prompt.Prompter
+	out  output.Outputer
+	proj *project.Project
 }
 
 // NewInfo prepares an information execution context for use.
 func NewInfo(prime primeable) *Info {
 	return &Info{
-		out:    prime.Output(),
-		proj:   prime.Project(),
-		prompt: prime.Prompt(),
+		out:  prime.Output(),
+		proj: prime.Project(),
 	}
 }
 
@@ -41,7 +38,7 @@ func NewInfo(prime primeable) *Info {
 func (i *Info) Run(params InfoRunParams, nstype model.NamespaceType) error {
 	logging.Debug("ExecuteInfo")
 
-	language, err := targetedLanguage(params.Language, i.proj, i.prompt, i.out)
+	language, err := targetedLanguage(params.Language, i.proj)
 	if err != nil {
 
 		return locale.WrapError(err, fmt.Sprintf("%s_err_cannot_obtain_language", nstype))

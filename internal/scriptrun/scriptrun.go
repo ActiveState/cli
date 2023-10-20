@@ -14,7 +14,6 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/process"
-	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/internal/scriptfile"
@@ -36,14 +35,13 @@ type ScriptRun struct {
 	cfg       *config.Instance
 	analytics analytics.Dispatcher
 	svcModel  *model.SvcModel
-	prompt    prompt.Prompter
 
 	venvPrepared bool
 	venvExePath  string
 }
 
 // New returns a pointer to a prepared instance of ScriptRun.
-func New(auth *authentication.Auth, out output.Outputer, subs subshell.SubShell, proj *project.Project, cfg *config.Instance, analytics analytics.Dispatcher, svcModel *model.SvcModel, prompter prompt.Prompter) *ScriptRun {
+func New(auth *authentication.Auth, out output.Outputer, subs subshell.SubShell, proj *project.Project, cfg *config.Instance, analytics analytics.Dispatcher, svcModel *model.SvcModel) *ScriptRun {
 	return &ScriptRun{
 		auth,
 		out,
@@ -52,7 +50,6 @@ func New(auth *authentication.Auth, out output.Outputer, subs subshell.SubShell,
 		cfg,
 		analytics,
 		svcModel,
-		prompter,
 
 		false,
 
@@ -70,7 +67,7 @@ func (s *ScriptRun) NeedsActivation() bool {
 
 // PrepareVirtualEnv sets up the relevant runtime and prepares the environment.
 func (s *ScriptRun) PrepareVirtualEnv() (rerr error) {
-	rt, err := runtime.New(target.NewProjectTarget(s.project, nil, target.TriggerScript, s.prompt, s.out), s.analytics, s.svcModel, s.auth)
+	rt, err := runtime.New(target.NewProjectTarget(s.project, nil, target.TriggerScript), s.analytics, s.svcModel, s.auth)
 	switch {
 	case err == nil:
 		break
