@@ -923,14 +923,6 @@ type CreateParams struct {
 	Cache      string
 }
 
-// TestOnlyCreateWithProjectURL a new activestate.yaml with default content
-func TestOnlyCreateWithProjectURL(projectURL, path string) (*Project, error) {
-	return createCustom(&CreateParams{
-		ProjectURL: projectURL,
-		Directory:  path,
-	}, language.Python3)
-}
-
 // Create will create a new activestate.yaml with a projectURL for the given details
 func Create(params *CreateParams) (*Project, error) {
 	lang := language.MakeByName(params.Language)
@@ -983,8 +975,9 @@ func createCustom(params *CreateParams, lang language.Language) (*Project, error
 		shell = "batch"
 	}
 
+	languageDisabled := os.Getenv(constants.DisableLanguageTemplates) == "true"
 	content := params.Content
-	if content == "" && lang != language.Unset && lang != language.Unknown {
+	if !languageDisabled && content == "" && lang != language.Unset && lang != language.Unknown {
 		tplName := "activestate.yaml." + strings.TrimRight(lang.String(), "23") + ".tpl"
 		template, err := assets.ReadFileBytes(tplName)
 		if err != nil {

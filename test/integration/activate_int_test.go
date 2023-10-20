@@ -466,6 +466,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_NamespaceWins() {
 	c2 := ts.SpawnWithOpts(
 		e2e.OptArgs("activate", "ActiveState-CLI/Python2"), // activate a different namespace
 		e2e.OptWD(targetPath),
+		e2e.OptAppendEnv(constants.DisableLanguageTemplates+"=true"),
 	)
 	c2.Expect("ActiveState-CLI/Python2")
 	c2.Expect("Activated")
