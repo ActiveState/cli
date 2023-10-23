@@ -74,18 +74,14 @@ func (al *ArtifactListing) ArtifactIDs(buildtimeClosure bool) ([]artifact.Artifa
 	var artifactMap artifact.Map
 	var err error
 	if buildtimeClosure {
-		if al.buildtimeClosure == nil {
-			artifactMap, err = al.BuildtimeClosure()
-			if err != nil {
-				return nil, errs.Wrap(err, "Could not calculate buildtime closure")
-			}
+		artifactMap, err = al.BuildtimeClosure()
+		if err != nil {
+			return nil, errs.Wrap(err, "Could not calculate buildtime closure")
 		}
 	} else {
-		if al.runtimeClosure == nil {
-			artifactMap, err = al.RuntimeClosure()
-			if err != nil {
-				return nil, errs.Wrap(err, "Could not calculate runtime closure")
-			}
+		artifactMap, err = al.RuntimeClosure()
+		if err != nil {
+			return nil, errs.Wrap(err, "Could not calculate runtime closure")
 		}
 	}
 
