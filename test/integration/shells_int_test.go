@@ -36,7 +36,7 @@ func (suite *ShellsIntegrationTestSuite) TestShells() {
 		e2e.OptArgs("checkout", "ActiveState-CLI/small-python"),
 		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
-	cp.Expect("Checked out project")
+	cp.Expect("Checked out project", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
 
 	for _, shell := range shells {

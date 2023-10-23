@@ -13,6 +13,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/termtest"
 	"github.com/go-openapi/strfmt"
 	"github.com/google/uuid"
@@ -32,6 +33,8 @@ import (
 	"github.com/ActiveState/cli/internal/osutils/stacktrace"
 	"github.com/ActiveState/cli/internal/rtutils/singlethread"
 	"github.com/ActiveState/cli/internal/strutils"
+	"github.com/ActiveState/cli/internal/subshell/bash"
+	"github.com/ActiveState/cli/internal/subshell/sscommon"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/api/mono"
@@ -177,6 +180,7 @@ func new(t *testing.T, retainDirs, updatePath bool, extraEnv ...string) *Session
 		constants.ProjectEnvVarName + "=",
 		constants.E2ETestEnvVarName + "=true",
 		constants.DisableUpdates + "=true",
+		constants.DisableProjectMigrationPrompt + "=true",
 		constants.OptinUnstableEnvVarName + "=true",
 		constants.ServiceSockDir + "=" + dirs.SockRoot,
 		constants.HomeEnvVarName + "=" + dirs.HomeDir,
@@ -185,12 +189,35 @@ func new(t *testing.T, retainDirs, updatePath bool, extraEnv ...string) *Session
 
 	if updatePath {
 		// add bin path
+		// Remove release state tool installation from PATH in tests
+		// This is a workaround as our test sessions are not compeltely
+		// sandboxed. This should be addressed in: https://activestatef.atlassian.net/browse/DX-2285
 		oldPath, _ := os.LookupEnv("PATH")
+		installPath, err := installation.InstallPathForBranch("release")
+		require.NoError(t, err)
+
+		binPath := filepath.Join(installPath, "bin")
+		oldPath = strings.Replace(oldPath, binPath+string(os.PathListSeparator), "", -1)
 		newPath := fmt.Sprintf(
 			"PATH=%s%s%s",
 			dirs.Bin, string(os.PathListSeparator), oldPath,
 		)
 		env = append(env, newPath)
+		t.Setenv("PATH", newPath)
+
+		cfg, err := config.New()
+		require.NoError(t, err)
+
+		// In order to ensure that the release state tool does not appear on the PATH
+		// when a new subshell is started we remove the installation entries from the
+		// rc file. This is added back later in the session's Close method.
+		// Again, this is a workaround to be addressed in: https://activestatef.atlassian.net/browse/DX-2285
+		if runtime.GOOS != "windows" {
+			s := bash.SubShell{}
+			err = s.CleanUserEnv(cfg, sscommon.InstallID, false)
+			require.NoError(t, err)
+		}
+		t.Setenv(constants.HomeEnvVarName, dirs.HomeDir)
 	}
 
 	// add session environment variables
@@ -203,6 +230,14 @@ func new(t *testing.T, retainDirs, updatePath bool, extraEnv ...string) *Session
 	session.Exe = session.copyExeToBinDir(exe)
 	session.SvcExe = session.copyExeToBinDir(svcExe)
 	session.ExecutorExe = session.copyExeToBinDir(execExe)
+
+	// Set up environment for test runs. This is separate
+	// from the environment for the session itself.
+	// Setting environment variables here allows helper
+	// functions access to them.
+	// This is a workaround as our test sessions are not compeltely
+	// sandboxed. This should be addressed in: https://activestatef.atlassian.net/browse/DX-2285
+	t.Setenv(constants.HomeEnvVarName, dirs.HomeDir)
 
 	err = fileutils.Touch(filepath.Join(dirs.Base, installation.InstallDirMarker))
 	require.NoError(session.t, err)
@@ -580,6 +615,24 @@ func (s *Session) Close() error {
 		}
 	}
 
+	// Add back the release state tool installation to the bash RC file.
+	// This was done on session creation to ensure that the release state tool
+	// does not appear on the PATH when a new subshell is started. This is a
+	// workaround to be addressed in: https://activestatef.atlassian.net/browse/DX-2285
+	if runtime.GOOS != "windows" {
+		installPath, err := installation.InstallPathForBranch("release")
+		if err != nil {
+			s.t.Errorf("Could not get install path: %v", errs.JoinMessage(err))
+		}
+		binDir := filepath.Join(installPath, "bin")
+
+		ss := bash.SubShell{}
+		err = ss.WriteUserEnv(cfg, map[string]string{"PATH": binDir}, sscommon.InstallID, false)
+		if err != nil {
+			s.t.Errorf("Could not clean user env: %v", errs.JoinMessage(err))
+		}
+	}
+
 	return nil
 }
 
@@ -692,6 +745,33 @@ func (s *Session) DetectLogErrors() {
 			s.t.Errorf("Found error and/or panic in log file %s, contents:\n%s", path, contents)
 		}
 	}
+}
+
+func (s *Session) SetupRCFile() {
+	if runtime.GOOS == "windows" {
+		return
+	}
+
+	cfg, err := config.New()
+	require.NoError(s.t, err)
+
+	s.SetupRCFileCustom(subshell.New(cfg))
+}
+
+func (s *Session) SetupRCFileCustom(subshell subshell.SubShell) {
+	if runtime.GOOS == "windows" {
+		return
+	}
+
+	rcFile, err := subshell.RcFile()
+	require.NoError(s.t, err)
+
+	if fileutils.TargetExists(filepath.Join(s.Dirs.HomeDir, filepath.Base(rcFile))) {
+		err = fileutils.CopyFile(rcFile, filepath.Join(s.Dirs.HomeDir, filepath.Base(rcFile)))
+	} else {
+		err = fileutils.Touch(rcFile)
+	}
+	require.NoError(s.t, err)
 }
 
 func RunningOnCI() bool {

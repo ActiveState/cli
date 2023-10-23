@@ -3,7 +3,6 @@ package merge
 import (
 	"encoding/json"
 	"reflect"
-	"sort"
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/logging"
@@ -71,7 +70,7 @@ func isAutoMergePossible(exprA *buildexpression.BuildExpression, exprB *buildexp
 	logging.Debug("Checking for possibility of auto-merging build expressions")
 	logging.Debug("JsonA: %v", jsonA)
 	logging.Debug("JsonB: %v", jsonB)
-	return reflect.DeepEqual(jsonA, jsonB) // TODO: replace with DX-1939 solution
+	return reflect.DeepEqual(jsonA, jsonB)
 }
 
 // getComparableJson returns a comparable JSON map[string]interface{} structure for the given build
@@ -98,8 +97,6 @@ func getComparableJson(expr *buildexpression.BuildExpression) (map[string]interf
 		return nil, errs.New("'let' key is not a JSON object")
 	}
 	deleteKey(&letMap, "requirements")
-	// TODO: the following shouldn't be needed after DX-1939.
-	sortLists(&letMap)
 	deleteKey(&letMap, "at_time")
 
 	return m, nil
@@ -120,22 +117,4 @@ func deleteKey(m *map[string]interface{}, key string) bool {
 		}
 	}
 	return false
-}
-
-// sortLists recursively iterates over the given JSON map looking for string lists, and sorts them.
-// This is needed because isAutoMergePossible() does a reflect.DeepEqual(), but build expression
-// list order does not matter.
-// This will not be necessary after DX-1939 is implemented.
-func sortLists(m *map[string]interface{}) {
-	for _, v := range *m {
-		if list, ok := v.([]interface{}); ok {
-			sort.SliceStable(list, func(i, j int) bool {
-				s1, ok1 := list[i].(string)
-				s2, ok2 := list[j].(string)
-				return ok1 && ok2 && s1 < s2
-			})
-		} else if m2, ok := v.(map[string]interface{}); ok {
-			sortLists(&m2)
-		}
-	}
 }

@@ -487,7 +487,7 @@ func (suite *PackageIntegrationTestSuite) TestJSON() {
 		e2e.OptArgs("uninstall", "Text-CSV", "-o", "json"),
 		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
-	cp.Expect(`{"name":"Text-CSV"`)
+	cp.Expect(`{"name":"Text-CSV"`, e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
 	AssertValidJSON(suite.T(), cp)
 }
@@ -555,7 +555,9 @@ func (suite *PackageIntegrationTestSuite) TestInstall_InvalidVersion() {
 		e2e.OptArgs("install", "pytest@999.9999.9999"),
 		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
-	cp.Expect("Error occurred while trying to create a commit")
+	// User facing error from build planner
+	// We only assert the state tool curated part of the error as the underlying build planner error may change
+	cp.Expect("Could not plan build")
 	cp.ExpectExitCode(1)
 }
 
@@ -576,7 +578,9 @@ func (suite *PackageIntegrationTestSuite) TestUpdate_InvalidVersion() {
 		e2e.OptArgs("install", "pytest@999.9999.9999"),      // update
 		e2e.OptAppendEnv(constants.DisableRuntime+"=false"), // We DO want to test the runtime part, just not for every step
 	)
-	cp.Expect("Error occurred while trying to create a commit")
+	// User facing error from build planner
+	// We only assert the state tool curated part of the error as the underlying build planner error may change
+	cp.Expect("Could not plan build")
 	cp.ExpectExitCode(1)
 }
 

@@ -190,7 +190,7 @@ func (suite *ShellIntegrationTestSuite) TestDefaultNoLongerExists() {
 		e2e.OptArgs("use", "ActiveState-CLI/Python3"),
 		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
-	cp.Expect("Switched to project")
+	cp.Expect("Switched to project", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
 
 	err := os.RemoveAll(filepath.Join(ts.Dirs.Work, "Python3"))
@@ -228,7 +228,7 @@ func (suite *ShellIntegrationTestSuite) TestUseShellUpdates() {
 		e2e.OptAppendEnv("SHELL=bash"),
 		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
-	cp.Expect("Switched to project")
+	cp.Expect("Switched to project", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
 
 	// Ensure both bash and zsh RC files are updated
@@ -258,24 +258,8 @@ func (suite *ShellIntegrationTestSuite) SetupRCFile(ts *e2e.Session) {
 		return
 	}
 
-	cfg, err := config.New()
-	suite.Require().NoError(err)
-
-	subshell := subshell.New(cfg)
-	rcFile, err := subshell.RcFile()
-	suite.Require().NoError(err)
-
-	err = fileutils.CopyFile(rcFile, filepath.Join(ts.Dirs.HomeDir, filepath.Base(rcFile)))
-	suite.Require().NoError(err)
-
-	zsh := &zsh.SubShell{}
-	zshRcFile, err := zsh.RcFile()
-	suite.NoError(err)
-	err = fileutils.TouchFileUnlessExists(zshRcFile)
-	suite.NoError(err)
-
-	err = fileutils.CopyFile(rcFile, filepath.Join(ts.Dirs.HomeDir, filepath.Base(zshRcFile)))
-	suite.Require().NoError(err)
+	ts.SetupRCFile()
+	ts.SetupRCFileCustom(&zsh.SubShell{})
 }
 
 func (suite *ShellIntegrationTestSuite) TestRuby() {
@@ -294,7 +278,7 @@ func (suite *ShellIntegrationTestSuite) TestRuby() {
 		e2e.OptArgs("shell", "Ruby-3.2.2"),
 		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
-	cp.Expect("Activated")
+	cp.Expect("Activated", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectInput()
 	cp.SendLine("ruby -v")
 	cp.Expect("3.2.2")

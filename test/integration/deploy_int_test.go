@@ -7,9 +7,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"testing"
-	"time"
 
-	"github.com/ActiveState/termtest"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/suite"
 
@@ -57,12 +55,12 @@ func (suite *DeployIntegrationTestSuite) deploy(ts *e2e.Session, prj string, tar
 		)
 	}
 
-	cp.Expect("Installing", termtest.OptExpectTimeout(40*time.Second))
-	cp.Expect("Configuring", termtest.OptExpectTimeout(40*time.Second))
+	cp.Expect("Installing", e2e.RuntimeSourcingTimeoutOpt)
+	cp.Expect("Configuring")
 	if runtime.GOOS != "windows" {
-		cp.Expect("Symlinking", termtest.OptExpectTimeout(30*time.Second))
+		cp.Expect("Symlinking")
 	}
-	cp.Expect("Deployment Information", termtest.OptExpectTimeout(60*time.Second))
+	cp.Expect("Deployment Information")
 	cp.Expect(targetID) // expect bin dir
 	if runtime.GOOS == "windows" {
 		cp.Expect("log out")
@@ -158,7 +156,7 @@ func (suite *DeployIntegrationTestSuite) TestDeployPython() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	suite.SetupRCFile(ts)
+	ts.SetupRCFile()
 	suite.T().Setenv("ACTIVESTATE_HOME", ts.Dirs.HomeDir)
 
 	targetID, err := uuid.NewUUID()
@@ -261,7 +259,7 @@ func (suite *DeployIntegrationTestSuite) TestDeployConfigure() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	suite.SetupRCFile(ts)
+	ts.SetupRCFile()
 	suite.T().Setenv("ACTIVESTATE_HOME", ts.Dirs.HomeDir)
 
 	targetID, err := uuid.NewUUID()
@@ -291,7 +289,7 @@ func (suite *DeployIntegrationTestSuite) TestDeployConfigure() {
 		)
 	}
 
-	cp.Expect("Configuring shell", termtest.OptExpectTimeout(60*time.Second))
+	cp.Expect("Configuring shell", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
 	suite.AssertConfig(ts, targetID.String())
 
@@ -300,29 +298,13 @@ func (suite *DeployIntegrationTestSuite) TestDeployConfigure() {
 			e2e.OptArgs("deploy", "configure", "ActiveState-CLI/Python3", "--path", targetPath, "--user"),
 			e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 		)
-		cp.Expect("Configuring shell", termtest.OptExpectTimeout(60*time.Second))
+		cp.Expect("Configuring shell", e2e.RuntimeSourcingTimeoutOpt)
 		cp.ExpectExitCode(0)
 
 		out, err := exec.Command("reg", "query", `HKCU\Environment`, "/v", "Path").Output()
 		suite.Require().NoError(err)
 		suite.Contains(string(out), targetID.String(), "Windows user PATH should contain our target dir")
 	}
-}
-
-func (suite *DeployIntegrationTestSuite) SetupRCFile(ts *e2e.Session) {
-	if runtime.GOOS == "windows" {
-		return
-	}
-
-	cfg, err := config.New()
-	suite.Require().NoError(err)
-
-	subshell := subshell.New(cfg)
-	rcFile, err := subshell.RcFile()
-	suite.Require().NoError(err)
-
-	err = fileutils.CopyFile(rcFile, filepath.Join(ts.Dirs.HomeDir, filepath.Base(rcFile)))
-	suite.Require().NoError(err)
 }
 
 func (suite *DeployIntegrationTestSuite) AssertConfig(ts *e2e.Session, targetID string) {

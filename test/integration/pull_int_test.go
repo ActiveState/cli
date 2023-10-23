@@ -148,7 +148,7 @@ func (suite *PullIntegrationTestSuite) TestMergeBuildScript() {
 		e2e.OptArgs("install", "requests"),
 		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
-	cp.Expect("Package added")
+	cp.Expect("Package added", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
 
 	proj, err := project.FromPath(ts.Dirs.Work)

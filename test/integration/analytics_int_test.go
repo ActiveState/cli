@@ -220,8 +220,7 @@ func (suite *AnalyticsIntegrationTestSuite) TestExecEvents() {
 	commitID := "efcc851f-1451-4d0a-9dcb-074ac3f35f0a"
 
 	// We want to do a clean test without an activate event, so we have to manually seed the yaml
-	url := fmt.Sprintf("https://platform.activestate.com/%s?branch=main&commitID=%s", namespace, commitID)
-	suite.Require().NoError(fileutils.WriteFile(filepath.Join(ts.Dirs.Work, "activestate.yaml"), []byte("project: "+url)))
+	ts.PrepareProject(namespace, commitID)
 
 	heartbeatInterval := 1000 // in milliseconds
 	sleepTime := time.Duration(heartbeatInterval) * time.Millisecond

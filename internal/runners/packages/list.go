@@ -13,7 +13,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/pkg/localcommit"
+	"github.com/ActiveState/cli/internal/runbits/commitmediator"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -109,8 +109,8 @@ func targetFromProjectFile(proj *project.Project) (*strfmt.UUID, error) {
 	if proj == nil {
 		return nil, locale.NewInputError("err_no_project")
 	}
-	commit, err := localcommit.Get(proj.Dir())
-	if err != nil && !localcommit.IsFileDoesNotExistError(err) {
+	commit, err := commitmediator.Get(proj)
+	if err != nil {
 		return nil, errs.Wrap(err, "Unable to get local commit")
 	}
 	if commit == "" {

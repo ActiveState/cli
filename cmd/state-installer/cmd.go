@@ -123,6 +123,19 @@ func main() {
 	logging.Debug("Original Args: %v", os.Args)
 	logging.Debug("Processed Args: %v", processedArgs)
 
+	// Store sessionToken to config
+	for _, envVar := range []string{constants.OverrideSessionTokenEnvVarName, constants.SessionTokenEnvVarName} {
+		sessionToken, ok := os.LookupEnv(envVar)
+		if !ok {
+			continue
+		}
+		err := cfg.Set(anaConst.CfgSessionToken, sessionToken)
+		if err != nil {
+			multilog.Error("Unable to set session token: " + errs.JoinMessage(err))
+		}
+		break
+	}
+
 	an = sync.New(anaConst.SrcStateInstaller, cfg, nil, out)
 	an.Event(anaConst.CatInstallerFunnel, "start")
 
