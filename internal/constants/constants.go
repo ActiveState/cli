@@ -62,6 +62,10 @@ const DisableUpdates = "ACTIVESTATE_CLI_DISABLE_UPDATES"
 // DisableLanguageTemplates is the env var used to disable templating for new activestate.yaml files
 const DisableLanguageTemplates = "ACTIVESTATE_CLI_DISABLE_LANGUAGE_TEMPLATES"
 
+// DisableProjectMigrationPrompt is the env var used to disable the project migration prompt for legacy projects.
+// This is set by default for integration tests for backward-compatibility with old integration tests.
+const DisableProjectMigrationPrompt = "ACTIVESTATE_CLI_DISABLE_PROJECT_MIGRATION_PROMPT"
+
 // UpdateBranchEnvVarName is the env var that is used to override which branch to pull the update from
 const UpdateBranchEnvVarName = "ACTIVESTATE_CLI_UPDATE_BRANCH"
 

@@ -3,8 +3,10 @@ package projectmigration
 import (
 	"errors"
 	"io/fs"
+	"os"
 	"path/filepath"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
@@ -40,6 +42,10 @@ func PromptAndMigrate(proj projecter) (bool, error) {
 	}
 
 	if declined {
+		return false, nil
+	}
+
+	if os.Getenv(constants.DisableProjectMigrationPrompt) == "true" {
 		return false, nil
 	}
 

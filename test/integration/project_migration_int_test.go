@@ -26,7 +26,10 @@ func (suite *ProjectMigrationIntegrationTestSuite) TestPromptMigration() {
 	suite.Require().NoError(fileutils.Mkdir(filepath.Join(ts.Dirs.Work, ".git")), "could not mimic this being a git repo")
 
 	// Verify the user is prompted to migrate an unmigrated project.
-	cp := ts.Spawn("packages")
+	cp := ts.SpawnWithOpts(
+		e2e.OptArgs("packages"),
+		e2e.OptAppendEnv(constants.DisableProjectMigrationPrompt+"=false"),
+	)
 	cp.Expect("migrate")
 	cp.Expect("? (y/N)")
 	cp.SendEnter()
@@ -47,7 +50,10 @@ func (suite *ProjectMigrationIntegrationTestSuite) TestPromptMigration() {
 	suite.Assert().NoFileExists(gitignoreFile, ".gitignore was created")
 
 	// Verify that migration works.
-	cp = ts.Spawn("packages")
+	cp = ts.SpawnWithOpts(
+		e2e.OptArgs("packages"),
+		e2e.OptAppendEnv(constants.DisableProjectMigrationPrompt+"=false"),
+	)
 	cp.Expect("migrate")
 	cp.Expect("? (y/N)")
 	cp.SendLine("Y")
@@ -66,7 +72,10 @@ func (suite *ProjectMigrationIntegrationTestSuite) TestPromptMigration() {
 	suite.Assert().Contains(string(fileutils.ReadFileUnsafe(gitignoreFile)), fmt.Sprintf("%s/%s", constants.ProjectConfigDirName, constants.CommitIdFileName), "commit file not added to .gitignore")
 
 	// Verify no prompt for migrated project.
-	cp = ts.Spawn("packages")
+	cp = ts.SpawnWithOpts(
+		e2e.OptArgs("packages"),
+		e2e.OptAppendEnv(constants.DisableProjectMigrationPrompt+"=false"),
+	)
 	cp.Expect("pylint")
 	cp.Expect("pytest")
 	cp.ExpectExitCode(0)
