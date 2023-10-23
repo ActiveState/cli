@@ -31,8 +31,7 @@ func (suite *ImportIntegrationTestSuite) TestImport_headless() {
 	cp.Expect("Checked out project")
 	cp.ExpectExitCode(0)
 
-	contents := `requests
-	urllib3`
+	contents := "requests\nurllib3"
 	importPath := filepath.Join(ts.Dirs.Work, "requirements.txt")
 
 	err := ioutil.WriteFile(importPath, []byte(strings.TrimSpace(contents)), 0644)
