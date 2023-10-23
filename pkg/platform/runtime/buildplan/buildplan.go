@@ -19,8 +19,23 @@ type ArtifactListing struct {
 	artifactIDs      []artifact.ArtifactID
 }
 
-func NewArtifactListing(build *model.Build) *ArtifactListing {
-	return &ArtifactListing{build: build}
+func NewArtifactListing(build *model.Build, buildtimeClosure bool) (*ArtifactListing, error) {
+	al := &ArtifactListing{build: build}
+	if buildtimeClosure {
+		buildtimeClosure, err := newMapFromBuildPlan(al.build, true)
+		if err != nil {
+			return nil, errs.Wrap(err, "Could not create buildtime closure")
+		}
+		al.buildtimeClosure = buildtimeClosure
+	} else {
+		runtimeClosure, err := newMapFromBuildPlan(al.build, false)
+		if err != nil {
+			return nil, errs.Wrap(err, "Could not create runtime closure")
+		}
+		al.runtimeClosure = runtimeClosure
+	}
+
+	return al, nil
 }
 
 func (al *ArtifactListing) RuntimeClosure() (artifact.Map, error) {
@@ -56,28 +71,26 @@ func (al *ArtifactListing) ArtifactIDs(buildtimeClosure bool) ([]artifact.Artifa
 		return al.artifactIDs, nil
 	}
 
+	var artifactMap artifact.Map
+	var err error
 	if buildtimeClosure {
-		if al.buildtimeClosure != nil {
-			for _, artifact := range al.buildtimeClosure {
-				al.artifactIDs = append(al.artifactIDs, artifact.ArtifactID)
+		if al.buildtimeClosure == nil {
+			artifactMap, err = al.BuildtimeClosure()
+			if err != nil {
+				return nil, errs.Wrap(err, "Could not calculate buildtime closure")
 			}
-			return al.artifactIDs, nil
-		}
-
-		buildTimeClosure, err := al.BuildtimeClosure()
-		if err != nil {
-			return nil, errs.Wrap(err, "Could not create buildtime closure")
-		}
-
-		for _, artifact := range buildTimeClosure {
-			al.artifactIDs = append(al.artifactIDs, artifact.ArtifactID)
 		}
 	} else {
-		if al.runtimeClosure != nil {
-			for _, artifact := range al.runtimeClosure {
-				al.artifactIDs = append(al.artifactIDs, artifact.ArtifactID)
+		if al.runtimeClosure == nil {
+			artifactMap, err = al.RuntimeClosure()
+			if err != nil {
+				return nil, errs.Wrap(err, "Could not calculate runtime closure")
 			}
 		}
+	}
+
+	for _, artifact := range artifactMap {
+		al.artifactIDs = append(al.artifactIDs, artifact.ArtifactID)
 	}
 
 	return al.artifactIDs, nil

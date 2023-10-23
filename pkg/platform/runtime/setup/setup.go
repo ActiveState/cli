@@ -402,9 +402,17 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 		return nil, nil, errs.Wrap(err, "Could not handle SolveSuccess event")
 	}
 
+	// If the build is not ready or if we are installing the buildtime closure
+	// then we need to include the buildtime closure in the changed artifacts
+	// and the progress reporting.
+	includeBuildtimeClosure := strings.EqualFold(os.Getenv(constants.InstallBuildDependencies), "true") || !buildResult.BuildReady
+
 	// Compute and handle the change summary
 	var requestedArtifacts artifact.Map // Artifacts required for the runtime to function
-	artifactListing := buildplan.NewArtifactListing(buildResult.Build)
+	artifactListing, err := buildplan.NewArtifactListing(buildResult.Build, includeBuildtimeClosure)
+	if err != nil {
+		return nil, nil, errs.Wrap(err, "Failed to create artifact listing")
+	}
 
 	// If we are installing build dependencies, then the requested artifacts
 	// will include the buildtime closure. Otherwise, we only need the runtime
@@ -465,10 +473,6 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 		s.analytics.Event(anaConsts.CatRuntimeDebug, anaConsts.ActRuntimeBuild, dimensions)
 	}
 
-	// If the build is not ready or if we are installing the buildtime closure
-	// then we need to include the buildtime closure in the changed artifacts
-	// and the progress reporting.
-	includeBuildtimeClosure := strings.EqualFold(os.Getenv(constants.InstallBuildDependencies), "true") || !buildResult.BuildReady
 	changedArtifacts, err := buildplan.NewBaseArtifactChangesetByBuildPlan(buildResult.Build, false, includeBuildtimeClosure)
 	if err != nil {
 		return nil, nil, errs.Wrap(err, "Could not compute base artifact changeset")
