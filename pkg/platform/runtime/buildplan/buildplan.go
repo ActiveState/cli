@@ -51,34 +51,33 @@ func (al *ArtifactListing) BuildtimeClosure() (artifact.Map, error) {
 	return buildtimeClosure, nil
 }
 
-func (al *ArtifactListing) ArtifactIDs() ([]artifact.ArtifactID, error) {
+func (al *ArtifactListing) ArtifactIDs(buildtimeClosure bool) ([]artifact.ArtifactID, error) {
 	if al.artifactIDs != nil {
 		return al.artifactIDs, nil
 	}
 
-	if al.buildtimeClosure != nil {
-		for _, artifact := range al.buildtimeClosure {
+	if buildtimeClosure {
+		if al.buildtimeClosure != nil {
+			for _, artifact := range al.buildtimeClosure {
+				al.artifactIDs = append(al.artifactIDs, artifact.ArtifactID)
+			}
+			return al.artifactIDs, nil
+		}
+
+		buildTimeClosure, err := al.BuildtimeClosure()
+		if err != nil {
+			return nil, errs.Wrap(err, "Could not create buildtime closure")
+		}
+
+		for _, artifact := range buildTimeClosure {
 			al.artifactIDs = append(al.artifactIDs, artifact.ArtifactID)
 		}
-		return al.artifactIDs, nil
-	}
-
-	if al.runtimeClosure != nil {
-		for _, artifact := range al.runtimeClosure {
-			al.artifactIDs = append(al.artifactIDs, artifact.ArtifactID)
+	} else {
+		if al.runtimeClosure != nil {
+			for _, artifact := range al.runtimeClosure {
+				al.artifactIDs = append(al.artifactIDs, artifact.ArtifactID)
+			}
 		}
-		return al.artifactIDs, nil
-	}
-
-	// Favor the buildtime closure over the runtime closure as it will
-	// include more artifact IDs
-	buildTimeClosure, err := al.BuildtimeClosure()
-	if err != nil {
-		return nil, errs.Wrap(err, "Could not create buildtime closure")
-	}
-
-	for _, artifact := range buildTimeClosure {
-		al.artifactIDs = append(al.artifactIDs, artifact.ArtifactID)
 	}
 
 	return al.artifactIDs, nil

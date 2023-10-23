@@ -403,18 +403,20 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 	}
 
 	// Compute and handle the change summary
-	var runtimeArtifacts artifact.Map // Artifacts required for the runtime to function
+	var requestedArtifacts artifact.Map // Artifacts required for the runtime to function
 	artifactListing := buildplan.NewArtifactListing(buildResult.Build)
 
-	// If we are installing build dependencies, then buildtime dependencies are also runtime dependencies
+	// If we are installing build dependencies, then the requested artifacts
+	// will include the buildtime closure. Otherwise, we only need the runtime
+	// closure.
 	if strings.EqualFold(os.Getenv(constants.InstallBuildDependencies), "true") {
 		logging.Debug("Installing build dependencies")
-		runtimeArtifacts, err = artifactListing.BuildtimeClosure()
+		requestedArtifacts, err = artifactListing.BuildtimeClosure()
 		if err != nil {
 			return nil, nil, errs.Wrap(err, "Failed to compute buildtime closure")
 		}
 	} else {
-		runtimeArtifacts, err = artifactListing.RuntimeClosure()
+		requestedArtifacts, err = artifactListing.RuntimeClosure()
 		if err != nil {
 			return nil, nil, errs.Wrap(err, "Failed to create artifact map from build plan")
 		}
@@ -430,7 +432,7 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 		return nil, nil, errs.Wrap(err, "Failed to select setup implementation")
 	}
 
-	downloadablePrebuiltResults, err := setup.DownloadsFromBuild(*buildResult.Build, runtimeArtifacts)
+	downloadablePrebuiltResults, err := setup.DownloadsFromBuild(*buildResult.Build, requestedArtifacts)
 	if err != nil {
 		if errors.Is(err, artifact.CamelRuntimeBuilding) {
 			localeID := "build_status_in_progress"
@@ -446,7 +448,7 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 
 	// buildResult doesn't have namespace info and will happily report internal only artifacts
 	downloadablePrebuiltResults = funk.Filter(downloadablePrebuiltResults, func(ad artifact.ArtifactDownload) bool {
-		ar, ok := runtimeArtifacts[ad.ArtifactID]
+		ar, ok := requestedArtifacts[ad.ArtifactID]
 		if !ok {
 			return true
 		}
@@ -463,6 +465,9 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 		s.analytics.Event(anaConsts.CatRuntimeDebug, anaConsts.ActRuntimeBuild, dimensions)
 	}
 
+	// If the build is not ready or if we are installing the buildtime closure
+	// then we need to include the buildtime closure in the changed artifacts
+	// and the progress reporting.
 	includeBuildtimeClosure := strings.EqualFold(os.Getenv(constants.InstallBuildDependencies), "true") || !buildResult.BuildReady
 	changedArtifacts, err := buildplan.NewBaseArtifactChangesetByBuildPlan(buildResult.Build, false, includeBuildtimeClosure)
 	if err != nil {
@@ -489,7 +494,7 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 	alreadyInstalled := reusableArtifacts(buildResult.Build.Artifacts, storedArtifacts)
 
 	// Report resolved artifacts
-	artifactIDs, err := artifactListing.ArtifactIDs()
+	artifactIDs, err := artifactListing.ArtifactIDs(includeBuildtimeClosure)
 	if err != nil {
 		return nil, nil, errs.Wrap(err, "Could not get artifact IDs from build plan")
 	}
@@ -562,7 +567,7 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 		s.analytics.Event(anaConsts.CatRuntimeDebug, anaConsts.ActRuntimeDownload, dimensions)
 	}
 
-	err = s.installArtifactsFromBuild(buildResult, runtimeArtifacts, artifact.ArtifactIDsToMap(artifactsToInstall), downloadablePrebuiltResults, setup, resolver, installFunc, logFilePath)
+	err = s.installArtifactsFromBuild(buildResult, requestedArtifacts, artifact.ArtifactIDsToMap(artifactsToInstall), downloadablePrebuiltResults, setup, resolver, installFunc, logFilePath)
 	if err != nil {
 		return nil, nil, err
 	}
