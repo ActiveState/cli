@@ -171,6 +171,37 @@ func New(data []byte) (*BuildExpression, error) {
 	return expr, nil
 }
 
+// NewFromPlatformIDAndRequirements creates a minimal buildexpression from the given platform UUID
+// and requirement list.
+func NewFromPlatformIDAndRequirements(platformID string, requirements []model.Requirement) (*BuildExpression, error) {
+	// At this time, there is no way to ask the Platform for an empty buildexpression, so build one
+	// manually and then add a timestamp, platform, and language requirement to it.
+	expr, err := New([]byte(fmt.Sprintf(`
+		{
+			"let": {
+				"runtime": {
+					"solve_legacy": {
+						"at_time": "%s",
+						"build_flags": [],
+						"camel_flags": [],
+						"platforms": ["%s"],
+						"requirements": [],
+						"solver_version": null
+					}
+				},
+				"in": "$runtime"
+			}
+		}
+	`, time.Now().Format(time.RFC3339), platformID)))
+	if err != nil {
+		return nil, errs.Wrap(err, "Unable to create initial buildexpression")
+	}
+	for _, requirement := range requirements {
+		expr.UpdateRequirement(model.OperationAdded, requirement)
+	}
+	return expr, nil
+}
+
 func newLet(path []string, m map[string]interface{}) (*Let, error) {
 	path = append(path, ctxLet)
 	defer func() {

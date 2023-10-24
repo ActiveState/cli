@@ -2,7 +2,6 @@ package model
 
 import (
 	"errors"
-	"fmt"
 	"os"
 	"regexp"
 	"strconv"
@@ -353,38 +352,24 @@ func (bp *BuildPlanner) GetBuildExpression(owner, project, commitID string) (*bu
 func (bp *BuildPlanner) CreateProject(owner, project, platformID, language, version string, private bool) (strfmt.UUID, error) {
 	logging.Debug("CreateProject, owner: %s, project: %s, language: %s, version: %s", owner, project, language, version)
 
-	// At this time, there is no way to ask the Platform for an empty buildexpression, so build one
-	// manually and then add a timestamp, platform, and language requirement to it.
-	expr, err := buildexpression.New([]byte(fmt.Sprintf(`
-		{
-			"let": {
-				"runtime": {
-					"solve_legacy": {
-						"at_time": "%s",
-						"build_flags": [],
-						"camel_flags": [],
-						"platforms": ["%s"],
-						"requirements": [],
-						"solver_version": null
-					}
-				},
-				"in": "$runtime"
-			}
-		}
-	`, time.Now().Format(time.RFC3339), platformID)))
-	if err != nil {
-		return "", errs.Wrap(err, "Unable to create initial buildexpression")
-	}
+	// Create a requirement for the given language and version.
 	versionRequirements, err := VersionStringToRequirements(version)
 	if err != nil {
 		return "", errs.Wrap(err, "Unable to read version")
 	}
-	expr.UpdateRequirement(bpModel.OperationAdded, bpModel.Requirement{
+	requirement := bpModel.Requirement{
 		Name:               language,
 		Namespace:          "language", // TODO: make this a constant DX-1738
 		VersionRequirement: versionRequirements,
-	})
+	}
 
+	// Construct an initial buildexpression for the new project.
+	expr, err := buildexpression.NewFromPlatformIDAndRequirements(platformID, []bpModel.Requirement{requirement})
+	if err != nil {
+		return "", errs.Wrap(err, "Unable to create initial buildexpression")
+	}
+
+	// Create the project.
 	request := request.CreateProject(owner, project, private, expr, locale.T("commit_message_add_initial"))
 	resp := &bpModel.CreateProjectResult{}
 	err = bp.client.Run(request, resp)
