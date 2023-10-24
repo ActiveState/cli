@@ -130,11 +130,9 @@ func newMapFromBuildPlan(build *model.Build, calculateBuildtimeClosure bool) (ar
 		}
 	}
 
-	var buildMap func(strfmt.UUID, map[strfmt.UUID]interface{}, artifact.Map) error
+	buildMap := buildRuntimeClosureMap
 	if calculateBuildtimeClosure {
 		buildMap = buildBuildtimeClosureMap
-	} else {
-		buildMap = buildRuntimeClosureMap
 	}
 
 	for _, id := range terminalTargetIDs {
