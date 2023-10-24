@@ -273,7 +273,7 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckoutBuildtimeClosure() {
 	defer ts.Close()
 
 	cp := ts.SpawnWithOpts(
-		e2e.OptArgs("checkout", "ActiveState-CLI/small-python"),
+		e2e.OptArgs("checkout", "ActiveState-CLI/small-python#5a1e49e5-8ceb-4a09-b605-ed334474855b"),
 		e2e.OptAppendEnv(constants.InstallBuildDependencies+"=true"),
 		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
