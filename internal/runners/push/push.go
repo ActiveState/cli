@@ -74,6 +74,11 @@ type errProjectNameInUse struct {
 	Namespace *project.Namespaced
 }
 
+type errHeadless struct {
+	error
+	ProjectURL string
+}
+
 func (r *Push) Run(params PushParams) (rerr error) {
 	defer rationalizeError(&rerr)
 
@@ -103,7 +108,7 @@ func (r *Push) Run(params PushParams) (rerr error) {
 	}
 
 	if r.project.IsHeadless() {
-		return locale.NewInputError("err_push_headless", "Cannot push headless projects. Please visit {{.V0}} to create your project.", r.project.URL())
+		return &errHeadless{err, r.project.URL()}
 	}
 
 	// Capture the primary intend of the user

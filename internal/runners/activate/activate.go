@@ -138,7 +138,7 @@ func (r *Activate) Run(params *ActivateParams) (rerr error) {
 		}
 	}
 
-	if proj.IsHeadless() {
+	if proj != nil && proj.IsHeadless() {
 		return locale.NewInputError("err_activate_headless", "Cannot activate a headless project. Please visit {{.V0}} to create your project.", proj.URL())
 	}
 

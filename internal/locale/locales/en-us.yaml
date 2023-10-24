@@ -57,8 +57,6 @@ err_output_flag_value_invalid:
   other: Could not recognize output type
 info_deactivated:
   other: "[DISABLED]Deactivated {{.Owner}}/{{.Name}}[/RESET]"
-info_deactivated_by_commit:
-  other: "[DISABLED]Deactivated[/RESET]"
 venv_installer_is_nil:
   other: Provided installer should not be nil
 error_unsupported_language:
@@ -1721,8 +1719,10 @@ err_tip_push_outdated:
   other: Run '[ACTIONABLE]state pull[/RESET]'.
 err_push_not_authenticated:
   other: In order to update your project you need to be authenticated, please run '[ACTIONABLE]state auth[/RESET]' to authenticate.
-err_push_headless:
+err_push_no_project:
   other: No project found, you may need to create one first.
+err_push_headless:
+  other: Cannot push a headless project. To convert your project please visit {{.V0}}
 push_push_tip_headless_init:
   other: Run '[ACTIONABLE]state init[/RESET]' to create a project with the State Tool.
 push_push_tip_headless_cwd:

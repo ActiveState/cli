@@ -17,6 +17,8 @@ var ErrNotAuthenticated = errors.New("not authenticated")
 
 var ErrActionAborted = errors.New("aborted by user")
 
+var ErrHeadless = errors.New("headless")
+
 type ErrAPI struct {
 	Wrapped error
 	Code    int
