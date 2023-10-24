@@ -102,6 +102,10 @@ func (r *Push) Run(params PushParams) (rerr error) {
 		logging.Debug("%s can write to %s: %v", r.auth.WhoAmI(), targetNamespace.Owner, r.auth.CanWrite(targetNamespace.Owner))
 	}
 
+	if r.project.IsHeadless() {
+		return locale.NewInputError("err_push_headless", "Cannot push headless projects. Please visit {{.V0}} to create your project.", r.project.URL())
+	}
+
 	// Capture the primary intend of the user
 	var intend intention
 	switch {
