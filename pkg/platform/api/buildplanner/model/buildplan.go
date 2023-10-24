@@ -333,6 +333,19 @@ func ProcessProjectError(project *Project, fallbackMessage string) error {
 	return errs.New(fallbackMessage)
 }
 
+type ProjectCreatedError struct{ Type string }
+
+func (p *ProjectCreatedError) Error() string { return "ProjectCreatedError" }
+
+func ProcessProjectCreatedError(pcErr *projectCreated, fallbackMessage string) error {
+	switch pcErr.Type {
+	case AlreadyExistsErrorType, ForbiddenErrorType:
+		return &ProjectCreatedError{pcErr.Type}
+	default:
+		return errs.New(fallbackMessage)
+	}
+}
+
 type BuildExpression struct {
 	Type   string  `json:"__typename"`
 	Commit *Commit `json:"commit"`
@@ -356,7 +369,9 @@ type StageCommitResult struct {
 }
 
 type projectCreated struct {
+	Type   string  `json:"__typename"`
 	Commit *Commit `json:"commit"`
+	*Error
 }
 
 type CreateProjectResult struct {

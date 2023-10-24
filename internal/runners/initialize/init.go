@@ -86,6 +86,7 @@ func inferLanguage(config projectfile.ConfigGetter) (string, string, bool) {
 }
 
 func (r *Initialize) Run(params *RunParams) (rerr error) {
+	defer rationalizeError(&rerr)
 	logging.Debug("Init: %s/%s %v", params.Namespace.Owner, params.Namespace.Project, params.Private)
 
 	if !r.auth.Authenticated() {

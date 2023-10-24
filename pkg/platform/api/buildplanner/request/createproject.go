@@ -34,7 +34,6 @@ mutation ($organization: String!, $project: String!, $private: Boolean!, $expr: 
 		... on NotFound {
 			__typename
 			message
-			mayNeedAuthentication
 		}
 		... on ParseError {
 			__typename

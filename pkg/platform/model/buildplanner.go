@@ -391,8 +391,17 @@ func (bp *BuildPlanner) CreateProject(owner, project, platformID, language, vers
 	if err != nil {
 		return "", processBuildPlannerError(err, "Failed to create project")
 	}
+
 	if resp.ProjectCreated == nil {
 		return "", errs.New("ProjectCreated is nil")
+	}
+
+	if bpModel.IsErrorResponse(resp.ProjectCreated.Type) {
+		return "", bpModel.ProcessProjectCreatedError(resp.ProjectCreated, "Could not create project")
+	}
+
+	if resp.ProjectCreated.Commit == nil {
+		return "", errs.New("ProjectCreated.Commit is nil")
 	}
 
 	return resp.ProjectCreated.Commit.CommitID, nil
