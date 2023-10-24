@@ -130,17 +130,16 @@ func newMapFromBuildPlan(build *model.Build, calculateBuildtimeClosure bool) (ar
 		}
 	}
 
+	var buildMap func(strfmt.UUID, map[strfmt.UUID]interface{}, artifact.Map) error
 	if calculateBuildtimeClosure {
-		for _, id := range terminalTargetIDs {
-			if err := buildBuildtimeClosureMap(id, lookup, res); err != nil {
-				return nil, errs.Wrap(err, "Could not build map for terminal %s", id)
-			}
-		}
+		buildMap = buildBuildtimeClosureMap
 	} else {
-		for _, id := range terminalTargetIDs {
-			if err := buildRuntimeClosureMap(id, lookup, res); err != nil {
-				return nil, errs.Wrap(err, "Could not build map for terminal %s", id)
-			}
+		buildMap = buildRuntimeClosureMap
+	}
+
+	for _, id := range terminalTargetIDs {
+		if err := buildMap(id, lookup, res); err != nil {
+			return nil, errs.Wrap(err, "Could not build map for terminal %s", id)
 		}
 	}
 
