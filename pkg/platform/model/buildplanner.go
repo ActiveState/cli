@@ -113,30 +113,6 @@ func (bp *BuildPlanner) FetchBuildResult(commitID strfmt.UUID, owner, project st
 	// response with emtpy targets that we should remove
 	removeEmptyTargets(build)
 
-	// Extract the available platforms from the build plan
-	var bpPlatforms []strfmt.UUID
-	for _, t := range build.Terminals {
-		if t.Tag == bpModel.TagOrphan {
-			continue
-		}
-		bpPlatforms = append(bpPlatforms, strfmt.UUID(strings.TrimPrefix(t.Tag, "platform:")))
-	}
-
-	// Get the platform ID for the current platform
-	platformID, err := FilterCurrentPlatform(HostPlatform, bpPlatforms)
-	if err != nil {
-		return nil, locale.WrapError(err, "err_filter_current_platform")
-	}
-
-	// Filter the build terminals to only include the current platform
-	var filteredTerminals []*bpModel.NamedTarget
-	for _, t := range build.Terminals {
-		if platformID.String() == strings.TrimPrefix(t.Tag, "platform:") {
-			filteredTerminals = append(filteredTerminals, t)
-		}
-	}
-	build.Terminals = filteredTerminals
-
 	buildEngine := Alternative
 	for _, s := range build.Sources {
 		if s.Namespace == "builder" && s.Name == "camel" {

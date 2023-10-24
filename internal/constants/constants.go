@@ -69,6 +69,9 @@ const DisableProjectMigrationPrompt = "ACTIVESTATE_CLI_DISABLE_PROJECT_MIGRATION
 // UpdateBranchEnvVarName is the env var that is used to override which branch to pull the update from
 const UpdateBranchEnvVarName = "ACTIVESTATE_CLI_UPDATE_BRANCH"
 
+// InstallBuildDependencies is the env var that is used to override whether to install build dependencies
+const InstallBuildDependencies = "ACTIVESTATE_CLI_INSTALL_BUILD_DEPENDENCIES"
+
 // InternalConfigFileNameLegacy is effectively the same as InternalConfigName, but includes our preferred extension
 const InternalConfigFileNameLegacy = "config.yaml"
 
