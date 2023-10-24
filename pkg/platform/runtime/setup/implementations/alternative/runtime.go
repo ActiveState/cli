@@ -139,7 +139,7 @@ func artifactsContainFile(file string, artifactCache map[artifact.ArtifactID]sto
 }
 
 func (s *Setup) ResolveArtifactName(a artifact.ArtifactID) string {
-	return locale.Tl("alternative_unknown_pkg_name", "unknown")
+	return locale.T("alternative_unknown_pkg_name")
 }
 
 func (s *Setup) DownloadsFromBuild(build model.Build, artifacts map[strfmt.UUID]artifact.Artifact) (download []artifact.ArtifactDownload, err error) {

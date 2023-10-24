@@ -17,5 +17,5 @@ func (r *Resolver) ResolveArtifactName(id artifact.ArtifactID) string {
 	if artf, ok := r.artifactsForNameResolving[id]; ok {
 		return artf.Name
 	}
-	return locale.Tl("alternative_unknown_pkg_name", "unknown")
+	return locale.T("alternative_unknown_pkg_name")
 }
