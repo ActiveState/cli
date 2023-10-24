@@ -355,6 +355,14 @@ type StageCommitResult struct {
 	Commit *Commit `json:"stageCommit"`
 }
 
+type projectCreated struct {
+	Commit *Commit `json:"commit"`
+}
+
+type CreateProjectResult struct {
+	ProjectCreated *projectCreated `json:"createProject"`
+}
+
 // Error contains an error message.
 type Error struct {
 	Message string `json:"message"`

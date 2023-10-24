@@ -2,6 +2,7 @@ package model
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"regexp"
 	"strconv"
@@ -347,6 +348,54 @@ func (bp *BuildPlanner) GetBuildExpression(owner, project, commitID string) (*bu
 	}
 
 	return expression, nil
+}
+
+func (bp *BuildPlanner) CreateProject(owner, project, platformID, language, version string, private bool) (strfmt.UUID, error) {
+	logging.Debug("CreateProject, owner: %s, project: %s, language: %s, version: %s", owner, project, language, version)
+
+	// At this time, there is no way to ask the Platform for an empty buildexpression, so build one
+	// manually and then add a timestamp, platform, and language requirement to it.
+	expr, err := buildexpression.New([]byte(fmt.Sprintf(`
+		{
+			"let": {
+				"runtime": {
+					"solve_legacy": {
+						"at_time": "%s",
+						"build_flags": [],
+						"camel_flags": [],
+						"platforms": ["%s"],
+						"requirements": [],
+						"solver_version": null
+					}
+				},
+				"in": "$runtime"
+			}
+		}
+	`, time.Now().Format(time.RFC3339), platformID)))
+	if err != nil {
+		return "", errs.Wrap(err, "Unable to create initial buildexpression")
+	}
+	versionRequirements, err := VersionStringToRequirements(version)
+	if err != nil {
+		return "", errs.Wrap(err, "Unable to read version")
+	}
+	expr.UpdateRequirement(bpModel.OperationAdded, bpModel.Requirement{
+		Name:               language,
+		Namespace:          "language", // TODO: make this a constant DX-1738
+		VersionRequirement: versionRequirements,
+	})
+
+	request := request.CreateProject(owner, project, private, expr, locale.T("commit_message_add_initial"))
+	resp := &bpModel.CreateProjectResult{}
+	err = bp.client.Run(request, resp)
+	if err != nil {
+		return "", processBuildPlannerError(err, "Failed to create project")
+	}
+	if resp.ProjectCreated == nil {
+		return "", errs.New("ProjectCreated is nil")
+	}
+
+	return resp.ProjectCreated.Commit.CommitID, nil
 }
 
 // processBuildPlannerError will check for special error types that should be
