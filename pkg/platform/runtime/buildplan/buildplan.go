@@ -92,15 +92,14 @@ func (al *ArtifactListing) ArtifactIDs(buildtimeClosure bool) ([]artifact.Artifa
 	return al.artifactIDs, nil
 }
 
-// NewMapFromBuildPlan creates an artifact map from a build plan. It creates a
+// newMapFromBuildPlan creates an artifact map from a build plan. It creates a
 // lookup table and calls the recursive function buildMap to build up the
 // artifact map by traversing the build plan from the terminal targets through
 // all of the runtime dependencies for each of the artifacts in the DAG.
 
-// Setting calculateBuildtimeClosure as true calculates the artifact map with the builtime
+// Setting calculateBuildtimeClosure as true calculates the artifact map with the buildtime
 // dependencies. This is different from the runtime dependency calculation as it
 // includes ALL of the input artifacts of the step that generated each artifact.
-// The includeBuilders argument determines whether or not to include builder artifacts in the final result.
 func newMapFromBuildPlan(build *model.Build, calculateBuildtimeClosure bool) (artifact.Map, error) {
 	res := make(artifact.Map)
 
