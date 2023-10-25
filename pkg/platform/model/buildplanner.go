@@ -325,6 +325,66 @@ func (bp *BuildPlanner) GetBuildExpression(owner, project, commitID string) (*bu
 	return expression, nil
 }
 
+type CreateProjectParams struct {
+	Owner       string
+	Project     string
+	PlatformID  strfmt.UUID
+	Language    string
+	Version     string
+	Private     bool
+	Timestamp   strfmt.DateTime
+	Description string
+}
+
+func (bp *BuildPlanner) CreateProject(params *CreateProjectParams) (strfmt.UUID, error) {
+	logging.Debug("CreateProject, owner: %s, project: %s, language: %s, version: %s", params.Owner, params.Project, params.Language, params.Version)
+
+	// Construct an initial buildexpression for the new project.
+	expr, err := buildexpression.NewEmpty()
+	if err != nil {
+		return "", errs.Wrap(err, "Unable to create initial buildexpression")
+	}
+
+	// Add the platform.
+	expr.UpdatePlatform(model.OperationAdded, params.PlatformID)
+
+	// Create a requirement for the given language and version.
+	versionRequirements, err := VersionStringToRequirements(params.Version)
+	if err != nil {
+		return "", errs.Wrap(err, "Unable to read version")
+	}
+	expr.UpdateRequirement(model.OperationAdded, bpModel.Requirement{
+		Name:               params.Language,
+		Namespace:          "language", // TODO: make this a constant DX-1738
+		VersionRequirement: versionRequirements,
+	})
+
+	// Add the timestamp.
+	expr.UpdateTimestamp(params.Timestamp)
+
+	// Create the project.
+	request := request.CreateProject(params.Owner, params.Project, params.Private, expr, params.Description)
+	resp := &bpModel.CreateProjectResult{}
+	err = bp.client.Run(request, resp)
+	if err != nil {
+		return "", processBuildPlannerError(err, "Failed to create project")
+	}
+
+	if resp.ProjectCreated == nil {
+		return "", errs.New("ProjectCreated is nil")
+	}
+
+	if bpModel.IsErrorResponse(resp.ProjectCreated.Type) {
+		return "", bpModel.ProcessProjectCreatedError(resp.ProjectCreated, "Could not create project")
+	}
+
+	if resp.ProjectCreated.Commit == nil {
+		return "", errs.New("ProjectCreated.Commit is nil")
+	}
+
+	return resp.ProjectCreated.Commit.CommitID, nil
+}
+
 // processBuildPlannerError will check for special error types that should be
 // handled differently. If no special error type is found, the fallback message
 // will be used.

@@ -5,6 +5,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/go-openapi/strfmt"
+
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
@@ -86,6 +88,7 @@ func inferLanguage(config projectfile.ConfigGetter) (string, string, bool) {
 }
 
 func (r *Initialize) Run(params *RunParams) (rerr error) {
+	defer rationalizeError(&rerr)
 	logging.Debug("Init: %s/%s %v", params.Namespace.Owner, params.Namespace.Project, params.Private)
 
 	if !r.auth.Authenticated() {
@@ -217,7 +220,29 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 		return err
 	}
 
-	commitID, err := model.CommitInitial(model.HostPlatform, lang.Requirement(), version)
+	logging.Debug("Creating Platform project")
+
+	platformID, err := model.PlatformNameToPlatformID(model.HostPlatform)
+	if err != nil {
+		return errs.Wrap(err, "Unable to determine Platform ID from %s", model.HostPlatform)
+	}
+
+	timestamp, err := model.FetchLatestTimeStamp()
+	if err != nil {
+		return errs.Wrap(err, "Unable to fetch latest timestamp")
+	}
+
+	bp := model.NewBuildPlannerModel(r.auth)
+	commitID, err := bp.CreateProject(&model.CreateProjectParams{
+		Owner:       namespace.Owner,
+		Project:     namespace.Project,
+		PlatformID:  strfmt.UUID(platformID),
+		Language:    lang.Requirement(),
+		Version:     version,
+		Private:     params.Private,
+		Timestamp:   *timestamp,
+		Description: locale.T("commit_message_add_initial"),
+	})
 	if err != nil {
 		return locale.WrapError(err, "err_init_commit", "Could not create initial commit")
 	}
@@ -231,23 +256,6 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 			r.out.Notice(locale.Tr("notice_commit_id_gitignore", constants.ProjectConfigDirName, constants.CommitIdFileName))
 			multilog.Error("Unable to add local commit file to .gitignore: %v", err)
 		}
-	}
-
-	logging.Debug("Creating Platform project and pushing it")
-
-	platformProject, err := model.CreateEmptyProject(namespace.Owner, namespace.Project, params.Private)
-	if err != nil {
-		return locale.WrapInputError(err, "err_init_create_project", "Failed to create a Platform project at {{.V0}}.", namespace.String())
-	}
-
-	branch, err := model.DefaultBranchForProject(platformProject) // only one branch for newly created project
-	if err != nil {
-		return locale.NewInputError("err_no_default_branch")
-	}
-
-	err = model.UpdateProjectBranchCommitWithModel(platformProject, branch.Label, commitID)
-	if err != nil {
-		return locale.WrapError(err, "err_init_push", "Failed to push to the newly created Platform project at {{.V0}}", namespace.String())
 	}
 
 	err = runbits.RefreshRuntime(r.auth, r.out, r.analytics, proj, commitID, true, target.TriggerInit, r.svcModel)
