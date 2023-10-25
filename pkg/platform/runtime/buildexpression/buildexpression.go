@@ -84,7 +84,7 @@ type In struct {
 	Name     *string
 }
 
-// NewBuildExpression creates a BuildExpression from a JSON byte array.
+// New creates a BuildExpression from a JSON byte array.
 // The JSON must be a valid BuildExpression in the following format:
 //
 //	{
@@ -168,6 +168,33 @@ func New(data []byte) (*BuildExpression, error) {
 		return nil, errs.Wrap(err, "Could not validate requirements")
 	}
 
+	return expr, nil
+}
+
+// NewEmpty creates a minimal, empty buildexpression.
+func NewEmpty() (*BuildExpression, error) {
+	// At this time, there is no way to ask the Platform for an empty buildexpression, so build one
+	// manually.
+	expr, err := New([]byte(`
+		{
+			"let": {
+				"runtime": {
+					"solve_legacy": {
+						"at_time": "",
+						"build_flags": [],
+						"camel_flags": [],
+						"platforms": [],
+						"requirements": [],
+						"solver_version": null
+					}
+				},
+				"in": "$runtime"
+			}
+		}
+	`))
+	if err != nil {
+		return nil, errs.Wrap(err, "Unable to create initial buildexpression")
+	}
 	return expr, nil
 }
 
