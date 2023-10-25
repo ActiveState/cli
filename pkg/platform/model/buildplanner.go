@@ -297,6 +297,38 @@ func (bp *BuildPlanner) StageCommit(params StageCommitParams) (strfmt.UUID, erro
 	return resp.Commit.CommitID, nil
 }
 
+type AttachStagedCommitParams struct {
+	Owner          string
+	Project        string
+	ParentCommitID strfmt.UUID
+	StagedCommitID strfmt.UUID
+	Branch         string
+}
+
+func (bp *BuildPlanner) AttachStagedCommit(params *AttachStagedCommitParams) (strfmt.UUID, error) {
+	logging.Debug("AttachStagedCommit, owner: %s, project: %s", params.Owner, params.Project)
+	request := request.AttachStagedCommit(params.Owner, params.Project, params.ParentCommitID.String(), params.StagedCommitID.String(), params.Branch)
+	resp := &bpModel.AttachStagedCommitResult{}
+	err := bp.client.Run(request, resp)
+	if err != nil {
+		return "", processBuildPlannerError(err, "Failed to attach staged commit")
+	}
+
+	if resp.Commit == nil {
+		return "", errs.New("Attached, staged commit is nil")
+	}
+
+	if bpModel.IsErrorResponse(resp.Commit.Type) {
+		return "", bpModel.ProcessCommitError(resp.Commit, "Could not process error response from attach stage commit")
+	}
+
+	if resp.Commit.CommitID == "" {
+		return "", errs.New("Attach, staged commit does not contain commitID")
+	}
+
+	return resp.Commit.CommitID, nil
+}
+
 func (bp *BuildPlanner) GetBuildExpression(owner, project, commitID string) (*buildexpression.BuildExpression, error) {
 	logging.Debug("GetBuildExpression, owner: %s, project: %s, commitID: %s", owner, project, commitID)
 	resp := &bpModel.BuildExpression{}
@@ -325,6 +357,11 @@ func (bp *BuildPlanner) GetBuildExpression(owner, project, commitID string) (*bu
 	return expression, nil
 }
 
+// CreateProjectParams contains information for the project to create.
+// When creating a project from scratch, the PlatformID, Language, Version, and Timestamp fields
+// are used to create a buildexpression to use.
+// When creating a project based off of another one, the Expr field is used (PlatformID, Language,
+// Version, and Timestamp are ignored).
 type CreateProjectParams struct {
 	Owner       string
 	Project     string
@@ -334,38 +371,43 @@ type CreateProjectParams struct {
 	Private     bool
 	Timestamp   strfmt.DateTime
 	Description string
+	Expr        *buildexpression.BuildExpression
 }
 
 func (bp *BuildPlanner) CreateProject(params *CreateProjectParams) (strfmt.UUID, error) {
 	logging.Debug("CreateProject, owner: %s, project: %s, language: %s, version: %s", params.Owner, params.Project, params.Language, params.Version)
 
-	// Construct an initial buildexpression for the new project.
-	expr, err := buildexpression.NewEmpty()
-	if err != nil {
-		return "", errs.Wrap(err, "Unable to create initial buildexpression")
+	expr := params.Expr
+	if expr == nil {
+		// Construct an initial buildexpression for the new project.
+		var err error
+		expr, err = buildexpression.NewEmpty()
+		if err != nil {
+			return "", errs.Wrap(err, "Unable to create initial buildexpression")
+		}
+
+		// Add the platform.
+		expr.UpdatePlatform(model.OperationAdded, params.PlatformID)
+
+		// Create a requirement for the given language and version.
+		versionRequirements, err := VersionStringToRequirements(params.Version)
+		if err != nil {
+			return "", errs.Wrap(err, "Unable to read version")
+		}
+		expr.UpdateRequirement(model.OperationAdded, bpModel.Requirement{
+			Name:               params.Language,
+			Namespace:          "language", // TODO: make this a constant DX-1738
+			VersionRequirement: versionRequirements,
+		})
+
+		// Add the timestamp.
+		expr.UpdateTimestamp(params.Timestamp)
 	}
-
-	// Add the platform.
-	expr.UpdatePlatform(model.OperationAdded, params.PlatformID)
-
-	// Create a requirement for the given language and version.
-	versionRequirements, err := VersionStringToRequirements(params.Version)
-	if err != nil {
-		return "", errs.Wrap(err, "Unable to read version")
-	}
-	expr.UpdateRequirement(model.OperationAdded, bpModel.Requirement{
-		Name:               params.Language,
-		Namespace:          "language", // TODO: make this a constant DX-1738
-		VersionRequirement: versionRequirements,
-	})
-
-	// Add the timestamp.
-	expr.UpdateTimestamp(params.Timestamp)
 
 	// Create the project.
 	request := request.CreateProject(params.Owner, params.Project, params.Private, expr, params.Description)
 	resp := &bpModel.CreateProjectResult{}
-	err = bp.client.Run(request, resp)
+	err := bp.client.Run(request, resp)
 	if err != nil {
 		return "", processBuildPlannerError(err, "Failed to create project")
 	}
