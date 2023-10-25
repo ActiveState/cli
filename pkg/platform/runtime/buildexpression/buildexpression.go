@@ -84,7 +84,7 @@ type In struct {
 	Name     *string
 }
 
-// NewBuildExpression creates a BuildExpression from a JSON byte array.
+// New creates a BuildExpression from a JSON byte array.
 // The JSON must be a valid BuildExpression in the following format:
 //
 //	{
@@ -171,20 +171,19 @@ func New(data []byte) (*BuildExpression, error) {
 	return expr, nil
 }
 
-// NewFromPlatformIDAndRequirements creates a minimal buildexpression from the given platform UUID
-// and requirement list.
-func NewFromPlatformIDAndRequirements(platformID string, requirements []model.Requirement) (*BuildExpression, error) {
+// NewEmpty creates a minimal, empty buildexpression.
+func NewEmpty() (*BuildExpression, error) {
 	// At this time, there is no way to ask the Platform for an empty buildexpression, so build one
-	// manually and then add a timestamp, platform, and language requirement to it.
-	expr, err := New([]byte(fmt.Sprintf(`
+	// manually.
+	expr, err := New([]byte(`
 		{
 			"let": {
 				"runtime": {
 					"solve_legacy": {
-						"at_time": "%s",
+						"at_time": "",
 						"build_flags": [],
 						"camel_flags": [],
-						"platforms": ["%s"],
+						"platforms": [],
 						"requirements": [],
 						"solver_version": null
 					}
@@ -192,12 +191,9 @@ func NewFromPlatformIDAndRequirements(platformID string, requirements []model.Re
 				"in": "$runtime"
 			}
 		}
-	`, time.Now().Format(time.RFC3339), platformID)))
+	`))
 	if err != nil {
 		return nil, errs.Wrap(err, "Unable to create initial buildexpression")
-	}
-	for _, requirement := range requirements {
-		expr.UpdateRequirement(model.OperationAdded, requirement)
 	}
 	return expr, nil
 }

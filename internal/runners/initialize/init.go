@@ -5,6 +5,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/go-openapi/strfmt"
+
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
@@ -225,8 +227,22 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 		return errs.Wrap(err, "Unable to determine Platform ID from %s", model.HostPlatform)
 	}
 
+	timestamp, err := model.FetchLatestTimeStamp()
+	if err != nil {
+		return errs.Wrap(err, "Unable to fetch latest timestamp")
+	}
+
 	bp := model.NewBuildPlannerModel(r.auth)
-	commitID, err := bp.CreateProject(namespace.Owner, namespace.Project, platformID, lang.Requirement(), version, params.Private)
+	commitID, err := bp.CreateProject(&model.CreateProjectParams{
+		Owner:       namespace.Owner,
+		Project:     namespace.Project,
+		PlatformID:  strfmt.UUID(platformID),
+		Language:    lang.Requirement(),
+		Version:     version,
+		Private:     params.Private,
+		Timestamp:   *timestamp,
+		Description: locale.T("commit_message_add_initial"),
+	})
 	if err != nil {
 		return locale.WrapError(err, "err_init_commit", "Could not create initial commit")
 	}

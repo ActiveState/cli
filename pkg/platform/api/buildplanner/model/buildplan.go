@@ -333,17 +333,18 @@ func ProcessProjectError(project *Project, fallbackMessage string) error {
 	return errs.New(fallbackMessage)
 }
 
-type ProjectCreatedError struct{ Type string }
+type ProjectCreatedError struct {
+	Type    string
+	Message string
+}
 
-func (p *ProjectCreatedError) Error() string { return "ProjectCreatedError" }
+func (p *ProjectCreatedError) Error() string { return p.Message }
 
 func ProcessProjectCreatedError(pcErr *projectCreated, fallbackMessage string) error {
-	switch pcErr.Type {
-	case AlreadyExistsErrorType, ForbiddenErrorType:
-		return &ProjectCreatedError{pcErr.Type}
-	default:
-		return errs.New(fallbackMessage)
+	if pcErr.Type != "" {
+		return &ProjectCreatedError{pcErr.Type, pcErr.Message}
 	}
+	return errs.New(fallbackMessage)
 }
 
 type BuildExpression struct {

@@ -349,28 +349,45 @@ func (bp *BuildPlanner) GetBuildExpression(owner, project, commitID string) (*bu
 	return expression, nil
 }
 
-func (bp *BuildPlanner) CreateProject(owner, project, platformID, language, version string, private bool) (strfmt.UUID, error) {
-	logging.Debug("CreateProject, owner: %s, project: %s, language: %s, version: %s", owner, project, language, version)
+type CreateProjectParams struct {
+	Owner       string
+	Project     string
+	PlatformID  strfmt.UUID
+	Language    string
+	Version     string
+	Private     bool
+	Timestamp   strfmt.DateTime
+	Description string
+}
 
-	// Create a requirement for the given language and version.
-	versionRequirements, err := VersionStringToRequirements(version)
-	if err != nil {
-		return "", errs.Wrap(err, "Unable to read version")
-	}
-	requirement := bpModel.Requirement{
-		Name:               language,
-		Namespace:          "language", // TODO: make this a constant DX-1738
-		VersionRequirement: versionRequirements,
-	}
+func (bp *BuildPlanner) CreateProject(params *CreateProjectParams) (strfmt.UUID, error) {
+	logging.Debug("CreateProject, owner: %s, project: %s, language: %s, version: %s", params.Owner, params.Project, params.Language, params.Version)
 
 	// Construct an initial buildexpression for the new project.
-	expr, err := buildexpression.NewFromPlatformIDAndRequirements(platformID, []bpModel.Requirement{requirement})
+	expr, err := buildexpression.NewEmpty()
 	if err != nil {
 		return "", errs.Wrap(err, "Unable to create initial buildexpression")
 	}
 
+	// Add the platform.
+	expr.UpdatePlatform(model.OperationAdded, params.PlatformID)
+
+	// Create a requirement for the given language and version.
+	versionRequirements, err := VersionStringToRequirements(params.Version)
+	if err != nil {
+		return "", errs.Wrap(err, "Unable to read version")
+	}
+	expr.UpdateRequirement(model.OperationAdded, bpModel.Requirement{
+		Name:               params.Language,
+		Namespace:          "language", // TODO: make this a constant DX-1738
+		VersionRequirement: versionRequirements,
+	})
+
+	// Add the timestamp.
+	expr.UpdateTimestamp(params.Timestamp)
+
 	// Create the project.
-	request := request.CreateProject(owner, project, private, expr, locale.T("commit_message_add_initial"))
+	request := request.CreateProject(params.Owner, params.Project, params.Private, expr, params.Description)
 	resp := &bpModel.CreateProjectResult{}
 	err = bp.client.Run(request, resp)
 	if err != nil {
