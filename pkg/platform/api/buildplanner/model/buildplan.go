@@ -333,6 +333,21 @@ func ProcessProjectError(project *Project, fallbackMessage string) error {
 	return errs.New(fallbackMessage)
 }
 
+type ProjectCreatedError struct {
+	Type    string
+	Message string
+}
+
+func (p *ProjectCreatedError) Error() string { return p.Message }
+
+func ProcessProjectCreatedError(pcErr *projectCreated, fallbackMessage string) error {
+	if pcErr.Type != "" {
+		// These will be handled individually per type as user-facing errors in DX-2300.
+		return &ProjectCreatedError{pcErr.Type, pcErr.Message}
+	}
+	return errs.New(fallbackMessage)
+}
+
 type BuildExpression struct {
 	Type   string  `json:"__typename"`
 	Commit *Commit `json:"commit"`
@@ -353,6 +368,16 @@ type PushCommitResult struct {
 // The resulting commit is NOT pushed to the platform automatically.
 type StageCommitResult struct {
 	Commit *Commit `json:"stageCommit"`
+}
+
+type projectCreated struct {
+	Type   string  `json:"__typename"`
+	Commit *Commit `json:"commit"`
+	*Error
+}
+
+type CreateProjectResult struct {
+	ProjectCreated *projectCreated `json:"createProject"`
 }
 
 // Error contains an error message.
