@@ -22,7 +22,7 @@ func newCommitCommand(prime *primer.Values) *captain.Command {
 		},
 	)
 
-	cmd.SetGroup(EnvironmentSetupGroup)
+	cmd.SetGroup(EnvironmentSetupGroup).SetUnstable(true)
 
 	return cmd
 }
