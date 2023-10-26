@@ -305,28 +305,24 @@ type AttachStagedCommitParams struct {
 	Branch         string
 }
 
-func (bp *BuildPlanner) AttachStagedCommit(params *AttachStagedCommitParams) (strfmt.UUID, error) {
+func (bp *BuildPlanner) AttachStagedCommit(params *AttachStagedCommitParams) error {
 	logging.Debug("AttachStagedCommit, owner: %s, project: %s", params.Owner, params.Project)
 	request := request.AttachStagedCommit(params.Owner, params.Project, params.ParentCommitID.String(), params.StagedCommitID.String(), params.Branch)
 	resp := &bpModel.AttachStagedCommitResult{}
 	err := bp.client.Run(request, resp)
 	if err != nil {
-		return "", processBuildPlannerError(err, "Failed to attach staged commit")
+		return processBuildPlannerError(err, "Failed to attach staged commit")
 	}
 
 	if resp.Commit == nil {
-		return "", errs.New("Attached, staged commit is nil")
+		return errs.New("Attached, staged commit is nil")
 	}
 
 	if bpModel.IsErrorResponse(resp.Commit.Type) {
-		return "", bpModel.ProcessCommitError(resp.Commit, "Could not process error response from attach stage commit")
+		return bpModel.ProcessCommitError(resp.Commit, "Could not process error response from attach stage commit")
 	}
 
-	if resp.Commit.CommitID == "" {
-		return "", errs.New("Attach, staged commit does not contain commitID")
-	}
-
-	return resp.Commit.CommitID, nil
+	return nil
 }
 
 func (bp *BuildPlanner) GetBuildExpression(owner, project, commitID string) (*buildexpression.BuildExpression, error) {

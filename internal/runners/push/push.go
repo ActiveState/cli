@@ -149,7 +149,6 @@ func (r *Push) Run(params PushParams) (rerr error) {
 	}
 
 	bp := model.NewBuildPlannerModel(r.auth)
-	var newCommitID strfmt.UUID    // the commit to update localcommit with
 	var branch *mono_models.Branch // the branch to write to as.yaml if it changed
 
 	// Create remote project
@@ -180,7 +179,7 @@ func (r *Push) Run(params PushParams) (rerr error) {
 		if err != nil {
 			return errs.Wrap(err, "Could not get buildexpression")
 		}
-		newCommitID, err = bp.CreateProject(&model.CreateProjectParams{
+		commitID, err = bp.CreateProject(&model.CreateProjectParams{
 			Owner:       targetNamespace.Owner,
 			Project:     targetNamespace.Project,
 			Private:     r.project.Private(),
@@ -189,6 +188,11 @@ func (r *Push) Run(params PushParams) (rerr error) {
 		})
 		if err != nil {
 			return locale.WrapError(err, "err_push_create_project", "Could not create new project")
+		}
+
+		// Update the project's commitID with the create project or push result.
+		if err := localcommit.Set(r.project.Dir(), commitID.String()); err != nil {
+			return errs.Wrap(err, "Unable to create local commit file")
 		}
 
 		// Fetch the newly created project's default branch (for updating activestate.yaml with).
@@ -246,7 +250,7 @@ func (r *Push) Run(params PushParams) (rerr error) {
 		}
 
 		// Perform the push.
-		newCommitID, err = bp.AttachStagedCommit(&model.AttachStagedCommitParams{
+		err = bp.AttachStagedCommit(&model.AttachStagedCommitParams{
 			Owner:          targetNamespace.Owner,
 			Project:        targetNamespace.Project,
 			ParentCommitID: *branch.CommitID,
@@ -256,11 +260,6 @@ func (r *Push) Run(params PushParams) (rerr error) {
 		if err != nil {
 			return errs.Wrap(err, "Could not attach staged commit")
 		}
-	}
-
-	// Update the project's commitID with the create project or push result.
-	if err := localcommit.Set(r.project.Dir(), newCommitID.String()); err != nil {
-		return errs.Wrap(err, "Unable to create local commit file")
 	}
 
 	// Write the project namespace to the as.yaml, if it changed
