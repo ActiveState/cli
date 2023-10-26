@@ -1088,14 +1088,10 @@ commit_message_updated_package:
   other: "Updated package: {{.V0}} to {{.V1}}"
 commit_message_add_initial:
   other: Initialize project via the State Tool
-confirm_remove_existing_prompt:
-  other: "Your project already has packages configured for it, continuing will overwrite your existing package selection. Are you sure you want to do this?"
 commit_reqstext_message:
   other: "Import from requirements file"
 commit_reqstext_remove_existing_message:
   other: "Remove current packages prior to import from requirements file"
-err_cannot_remove_existing:
-  other: "The already configured packages were not able to be overwritten"
 commit_failed_push_tip:
   other: Ensure any previous changes have been saved by running [ACTIONABLE]state push[/RESET]. Then try running your command again.
 commit_failed_pull_tip:
@@ -2073,12 +2069,12 @@ notice_runtime_disabled:
 err_local_commit_file:
   other: |
     Could not find or read the commit file for your project at '[ACTIONABLE]{{.V0}}[/RESET]'.
-    
+
     You can fix this by either running '[ACTIONABLE]state pull[/RESET]' to update to the latest commit, or manually switch to a specific
     commit by running '[ACTIONABLE]state switch <commit-id>[/RESET]'.
-    
+
     To view your projects commits run '[ACTIONABLE]state history[/RESET]'.
-    
+
     Please avoid deleting or editing this file directly.
 projectmigration_confirm:
   other: |
