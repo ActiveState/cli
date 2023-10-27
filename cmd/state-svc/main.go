@@ -195,12 +195,12 @@ func runForeground(cfg *config.Instance, an *anaSync.Client, auth *authenticatio
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	logFile := logging.FilePath()
-	logging.Debug("Logging to %q", logFile)
+	logFileName := logging.FileName()
+	logging.Debug("Logging to %q", logging.FilePathFor(logFileName))
 	stopTimer := logging.StartRotateLogTimer()
 	defer stopTimer()
 
-	p := NewService(ctx, cfg, an, auth, logFile)
+	p := NewService(ctx, cfg, an, auth, logFileName)
 
 	if argText != "" {
 		argText = fmt.Sprintf(" (invoked by %q)", argText)

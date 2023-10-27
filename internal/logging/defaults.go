@@ -72,9 +72,6 @@ func FilePath() string {
 }
 
 func FilePathFor(filename string) string {
-	if filepath.IsAbs(filename) {
-		return filename
-	}
 	return filepath.Join(datadir, "logs", filename)
 }
 
