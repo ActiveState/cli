@@ -31,6 +31,10 @@ mutation ($organization: String!, $project: String!, $parentCommit: ID!, $commit
       __typename
       message
     }
+    ... on ValidationError {
+      __typename
+      message
+    }
     ... on Forbidden {
       __typename
       message
