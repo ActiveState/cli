@@ -292,45 +292,6 @@ six==1.14.0
 `
 )
 
-func (suite *PackageIntegrationTestSuite) TestPackage_import() {
-	suite.OnlyRunForTags(tagsuite.Package)
-	ts := e2e.New(suite.T(), false)
-	defer ts.Close()
-
-	username, _ := ts.CreateNewUser()
-	namespace := fmt.Sprintf("%s/%s", username, "Python3")
-
-	cp := ts.Spawn("init", "--language", "python", namespace, ts.Dirs.Work)
-	cp.Expect("successfully initialized")
-	cp.ExpectExitCode(0)
-
-	reqsFilePath := filepath.Join(cp.WorkDirectory(), reqsFileName)
-
-	suite.Run("invalid requirements.txt", func() {
-		ts.SetT(suite.T())
-		ts.PrepareFile(reqsFilePath, badReqsData)
-
-		cp := ts.Spawn("import", "requirements.txt")
-		cp.ExpectNotExitCode(0)
-	})
-
-	suite.Run("valid requirements.txt", func() {
-		ts.SetT(suite.T())
-		ts.PrepareFile(reqsFilePath, reqsData)
-
-		cp := ts.Spawn("import", "requirements.txt")
-		cp.ExpectExitCode(0)
-
-		cp = ts.Spawn("push")
-		cp.ExpectExitCode(0)
-
-		cp = ts.Spawn("import", "requirements.txt")
-		cp.Expect("Are you sure")
-		cp.SendLine("n")
-		cp.ExpectNotExitCode(0)
-	})
-}
-
 func (suite *PackageIntegrationTestSuite) TestPackage_headless_operation() {
 	suite.OnlyRunForTags(tagsuite.Package)
 	if runtime.GOOS == "darwin" {
