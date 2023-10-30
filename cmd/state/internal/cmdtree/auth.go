@@ -54,7 +54,7 @@ func newAuthCommand(prime *primer.Values, globals *globalOptions) *captain.Comma
 			params.NonInteractive = globals.NonInteractive
 			return authRunner.Run(&params)
 		},
-	).SetGroup(PlatformGroup)
+	).SetGroup(PlatformGroup).SetSupportsStructuredOutput()
 }
 
 func newSignupCommand(prime *primer.Values) *captain.Command {
@@ -70,7 +70,7 @@ func newSignupCommand(prime *primer.Values) *captain.Command {
 		func(ccmd *captain.Command, args []string) error {
 			return signupRunner.Run(&params)
 		},
-	).SetDoesNotSupportStructuredOutput()
+	)
 }
 
 func newLogoutCommand(prime *primer.Values) *captain.Command {
@@ -85,5 +85,5 @@ func newLogoutCommand(prime *primer.Values) *captain.Command {
 		func(ccmd *captain.Command, args []string) error {
 			return logoutRunner.Run()
 		},
-	).SetDoesNotSupportStructuredOutput()
+	)
 }

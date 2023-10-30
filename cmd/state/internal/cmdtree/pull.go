@@ -29,5 +29,5 @@ func newPullCommand(prime *primer.Values, globals *globalOptions) *captain.Comma
 		func(cmd *captain.Command, args []string) error {
 			params.Force = globals.NonInteractive
 			return runner.Run(params)
-		}).SetGroup(VCSGroup)
+		}).SetGroup(VCSGroup).SetSupportsStructuredOutput()
 }

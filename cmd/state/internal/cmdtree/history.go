@@ -21,5 +21,5 @@ func newHistoryCommand(prime *primer.Values) *captain.Command {
 		func(ccmd *captain.Command, _ []string) error {
 			return initRunner.Run(&params)
 		},
-	).SetGroup(VCSGroup)
+	).SetGroup(VCSGroup).SetSupportsStructuredOutput()
 }

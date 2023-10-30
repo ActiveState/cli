@@ -39,6 +39,7 @@ func newSecretsCommand(secretsClient *secretsapi.Client, prime *primer.Values) *
 
 	ccmd.SetGroup(PlatformGroup)
 	ccmd.SetAliases("variables", "vars")
+	ccmd.SetSupportsStructuredOutput()
 	ccmd.SetUnstable(true)
 
 	return ccmd
@@ -66,7 +67,7 @@ func newSecretsGetCommand(prime *primer.Values) *captain.Command {
 		func(_ *captain.Command, _ []string) error {
 			return runner.Run(params)
 		},
-	)
+	).SetSupportsStructuredOutput()
 }
 
 func newSecretsSetCommand(prime *primer.Values) *captain.Command {
@@ -97,7 +98,7 @@ func newSecretsSetCommand(prime *primer.Values) *captain.Command {
 		func(_ *captain.Command, _ []string) error {
 			return runner.Run(params)
 		},
-	).SetDoesNotSupportStructuredOutput()
+	)
 }
 
 func newSecretsSyncCommand(secretsClient *secretsapi.Client, prime *primer.Values) *captain.Command {
@@ -113,5 +114,5 @@ func newSecretsSyncCommand(secretsClient *secretsapi.Client, prime *primer.Value
 		func(_ *captain.Command, _ []string) error {
 			return runner.Run()
 		},
-	).SetDoesNotSupportStructuredOutput()
+	)
 }
