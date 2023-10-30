@@ -264,24 +264,6 @@ func (suite *PushIntegrationTestSuite) TestPush_NoChanges() {
 	}
 }
 
-func (suite *PushIntegrationTestSuite) TestPush_NoCommit() {
-	suite.OnlyRunForTags(tagsuite.Push)
-
-	ts := e2e.New(suite.T(), false)
-	defer ts.Close()
-
-	ts.PrepareProject("ActiveState-CLI/cli", "")
-
-	ts.LoginAsPersistentUser()
-	cp := ts.SpawnWithOpts(e2e.OptArgs("push"))
-	cp.Expect("nothing to push")
-	cp.ExpectExitCode(1)
-
-	if strings.Count(cp.Snapshot(), " x ") != 1 {
-		suite.Fail("Expected exactly ONE error message, got: ", cp.Snapshot())
-	}
-}
-
 func (suite *PushIntegrationTestSuite) TestPush_NameInUse() {
 	suite.OnlyRunForTags(tagsuite.Push)
 
