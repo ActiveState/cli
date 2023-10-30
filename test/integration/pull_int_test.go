@@ -141,6 +141,7 @@ func (suite *PullIntegrationTestSuite) TestPull_RestoreNamespace() {
 
 func (suite *PullIntegrationTestSuite) TestMergeBuildScript() {
 	suite.OnlyRunForTags(tagsuite.Pull)
+	suite.T().Skip("Temporarily disable buildscripts until DX-2307") // remove in DX-2307
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
