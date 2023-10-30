@@ -50,7 +50,7 @@ func (suite *PrepareIntegrationTestSuite) TestPrepare() {
 	cp := ts.SpawnWithOpts(
 		e2e.OptArgs("_prepare"),
 		e2e.OptAppendEnv(fmt.Sprintf("%s=%s", constants.AutostartPathOverrideEnvVarName, autostartDir)),
-		// e2e.OptAppendEnv(fmt.Sprintf("ACTIVESTATE_CLI_CONFIGDIR=%s", ts.Dirs.Work)),
+		// e2e.OptAppendEnv(fmt.Sprintf("%s=%s", constants.ConfigEnvVarName, ts.Dirs.Work)),
 	)
 	cp.ExpectExitCode(0)
 
@@ -119,7 +119,7 @@ func (suite *PrepareIntegrationTestSuite) AssertConfig(target string) {
 
 func (suite *PrepareIntegrationTestSuite) TestResetExecutors() {
 	suite.OnlyRunForTags(tagsuite.Prepare)
-	ts := e2e.New(suite.T(), true, "ACTIVESTATE_CLI_DISABLE_RUNTIME=false")
+	ts := e2e.New(suite.T(), true, constants.DisableRuntime+"=false")
 	err := ts.ClearCache()
 	suite.Require().NoError(err)
 	defer ts.Close()

@@ -10,6 +10,7 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
@@ -79,7 +80,7 @@ func (suite *EditIntegrationTestSuite) TestEdit_NonInteractive() {
 	}
 	ts, env := suite.setup()
 	defer ts.Close()
-	extraEnv := e2e.OptAppendEnv("ACTIVESTATE_NONINTERACTIVE=true")
+	extraEnv := e2e.OptAppendEnv(constants.NonInteractiveEnvVarName + "=true")
 
 	cp := ts.SpawnWithOpts(e2e.OptArgs("scripts", "edit", "test-script"), env, extraEnv)
 	cp.Expect("Watching file changes")

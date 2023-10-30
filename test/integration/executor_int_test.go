@@ -35,7 +35,7 @@ func (suite *ExecutorIntegrationTestSuite) TestExecutorForwards() {
 
 	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("shell", "ActiveState-CLI/Python3"),
-		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
 	cp.Expect("Activated", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectInput()
@@ -62,7 +62,7 @@ func (suite *ExecutorIntegrationTestSuite) TestExecutorExitCode() {
 
 	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("shell", "ActiveState-CLI/Python3"),
-		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
 	cp.Expect("Activated", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectInput()

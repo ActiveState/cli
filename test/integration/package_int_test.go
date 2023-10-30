@@ -421,7 +421,7 @@ func (suite *PackageIntegrationTestSuite) TestInstall_Empty() {
 
 	cp := ts.SpawnWithOpts(
 		e2e.OptArgs("install", "JSON"),
-		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
 	cp.Expect("Installing Package")
 	cp.ExpectExitCode(0, e2e.RuntimeSourcingTimeoutOpt)
@@ -464,7 +464,7 @@ func (suite *PackageIntegrationTestSuite) TestJSON() {
 
 	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("install", "Text-CSV", "--output", "editor"),
-		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
 	cp.Expect(`{"name":"Text-CSV"`, e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
@@ -477,7 +477,7 @@ func (suite *PackageIntegrationTestSuite) TestJSON() {
 
 	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("uninstall", "Text-CSV", "-o", "json"),
-		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
 	cp.Expect(`{"name":"Text-CSV"`, e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
@@ -506,7 +506,7 @@ func (suite *PackageIntegrationTestSuite) TestNormalize() {
 	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("install", "Charset_normalizer"),
 		e2e.OptWD(dir),
-		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
 	cp.Expect("charset-normalizer")
 	cp.Expect("is different")
@@ -526,7 +526,7 @@ func (suite *PackageIntegrationTestSuite) TestNormalize() {
 	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("install", "charset-normalizer"),
 		e2e.OptWD(anotherDir),
-		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
 	cp.Expect("charset-normalizer")
 	cp.ExpectExitCode(0)

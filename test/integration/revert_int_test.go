@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/stretchr/testify/suite"
@@ -51,7 +52,7 @@ func (suite *RevertIntegrationTestSuite) TestRevert() {
 	// Verify that argparse still exists (it was not reverted along with urllib3).
 	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("shell", "Revert"),
-		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
 	cp.ExpectInput(e2e.RuntimeSourcingTimeoutOpt)
 	cp.SendLine("python3")

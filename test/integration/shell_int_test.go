@@ -88,7 +88,7 @@ func (suite *ShellIntegrationTestSuite) TestDefaultShell() {
 	// Use.
 	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("use", "ActiveState-CLI/small-python"),
-		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
 	cp.Expect("Switched to project", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
@@ -188,7 +188,7 @@ func (suite *ShellIntegrationTestSuite) TestDefaultNoLongerExists() {
 
 	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("use", "ActiveState-CLI/Python3"),
-		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
 	cp.Expect("Switched to project", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
@@ -226,7 +226,7 @@ func (suite *ShellIntegrationTestSuite) TestUseShellUpdates() {
 	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("use", "ActiveState-CLI/Python3"),
 		e2e.OptAppendEnv("SHELL=bash"),
-		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
 	cp.Expect("Switched to project", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)

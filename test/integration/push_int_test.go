@@ -225,7 +225,7 @@ func (suite *PushIntegrationTestSuite) TestCarlisle() {
 		e2e.OptArgs(
 			"activate", suite.baseProject,
 			"--path", wd),
-		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
 	// The activestate.yaml on Windows runs custom activation to set shortcuts and file associations.
 	cp.Expect("Activated", e2e.RuntimeSourcingTimeoutOpt)
@@ -240,7 +240,8 @@ func (suite *PushIntegrationTestSuite) TestCarlisle() {
 	cp = ts.SpawnWithOpts(e2e.OptArgs(
 		"install", suite.extraPackage),
 		e2e.OptWD(wd),
-		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"))
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
+	)
 	switch runtime.GOOS {
 	case "darwin":
 		cp.ExpectRe("added|being built", e2e.RuntimeSourcingTimeoutOpt) // while cold storage is off
