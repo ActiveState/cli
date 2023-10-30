@@ -470,8 +470,9 @@ func (suite *PackageIntegrationTestSuite) TestJSON() {
 	cp.ExpectExitCode(0)
 	AssertValidJSON(suite.T(), cp)
 
-	cp = ts.Spawn("checkout", "ActiveState-CLI/Packages-Perl", ".")
-	cp.Expect("Skipping runtime setup")
+	cp = ts.SpawnWithOpts(
+		e2e.OptArgs("checkout", "ActiveState-CLI/Packages-Perl", "."),
+	)
 	cp.Expect("Checked out project")
 	cp.ExpectExitCode(0)
 

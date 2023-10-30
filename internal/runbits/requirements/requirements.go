@@ -19,6 +19,7 @@ import (
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/runbits"
+	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/pkg/localcommit"
 	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	medmodel "github.com/ActiveState/cli/pkg/platform/api/mediator/model"
@@ -101,7 +102,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 
 	var err error
 	if r.Project == nil {
-		return locale.NewInputError("err_no_project", "No project found")
+		return rationalize.ErrNoProject
 	}
 	out.Notice(locale.Tl("operating_message", "", r.Project.NamespaceString(), r.Project.Dir()))
 
