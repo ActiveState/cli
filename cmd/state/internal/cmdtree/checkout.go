@@ -53,5 +53,6 @@ func newCheckoutCommand(prime *primer.Values) *captain.Command {
 		},
 	)
 	cmd.SetGroup(EnvironmentSetupGroup)
+	cmd.SetSupportsStructuredOutput()
 	return cmd
 }

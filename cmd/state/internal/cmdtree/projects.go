@@ -22,7 +22,7 @@ func newProjectsCommand(prime *primer.Values) *captain.Command {
 		func(ccmd *captain.Command, args []string) error {
 			return runner.Run(params)
 		},
-	).SetGroup(ProjectUsageGroup)
+	).SetGroup(ProjectUsageGroup).SetSupportsStructuredOutput()
 }
 
 func newRemoteProjectsCommand(prime *primer.Values) *captain.Command {
@@ -39,7 +39,7 @@ func newRemoteProjectsCommand(prime *primer.Values) *captain.Command {
 		func(ccmd *captain.Command, args []string) error {
 			return runner.RunRemote(params)
 		},
-	).SetGroup(ProjectUsageGroup)
+	).SetGroup(ProjectUsageGroup).SetSupportsStructuredOutput()
 }
 
 func newProjectsEditCommand(prime *primer.Values) *captain.Command {
@@ -84,7 +84,6 @@ func newProjectsEditCommand(prime *primer.Values) *captain.Command {
 	)
 
 	cmd.SetGroup(ProjectUsageGroup)
-	cmd.SetDoesNotSupportStructuredOutput()
 	cmd.SetUnstable(true)
 
 	return cmd
@@ -113,7 +112,6 @@ func newDeleteProjectsCommand(prime *primer.Values) *captain.Command {
 		},
 	)
 	cmd.SetGroup(ProjectUsageGroup)
-	cmd.SetDoesNotSupportStructuredOutput()
 	cmd.SetUnstable(true)
 
 	return cmd
@@ -148,7 +146,6 @@ func newMoveProjectsCommand(prime *primer.Values) *captain.Command {
 		},
 	)
 	cmd.SetGroup(ProjectUsageGroup)
-	cmd.SetDoesNotSupportStructuredOutput()
 	cmd.SetUnstable(true)
 
 	return cmd

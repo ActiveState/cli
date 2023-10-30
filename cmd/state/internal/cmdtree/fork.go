@@ -43,5 +43,5 @@ func newForkCommand(prime *primer.Values) *captain.Command {
 		},
 		func(cmd *captain.Command, args []string) error {
 			return runner.Run(params)
-		}).SetGroup(VCSGroup)
+		}).SetGroup(VCSGroup).SetSupportsStructuredOutput()
 }

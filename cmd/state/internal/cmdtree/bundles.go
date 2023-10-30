@@ -39,7 +39,7 @@ func newBundlesCommand(prime *primer.Values) *captain.Command {
 		func(_ *captain.Command, _ []string) error {
 			return runner.Run(params, model.NamespaceBundle)
 		},
-	).SetGroup(PackagesGroup).SetUnstable(true)
+	).SetGroup(PackagesGroup).SetSupportsStructuredOutput().SetUnstable(true)
 }
 
 func newBundleInstallCommand(prime *primer.Values) *captain.Command {
@@ -64,7 +64,7 @@ func newBundleInstallCommand(prime *primer.Values) *captain.Command {
 		func(_ *captain.Command, _ []string) error {
 			return runner.Run(params, model.NamespaceBundle)
 		},
-	)
+	).SetSupportsStructuredOutput()
 }
 
 func newBundleUninstallCommand(prime *primer.Values) *captain.Command {
@@ -89,7 +89,7 @@ func newBundleUninstallCommand(prime *primer.Values) *captain.Command {
 		func(_ *captain.Command, _ []string) error {
 			return runner.Run(params, model.NamespaceBundle)
 		},
-	)
+	).SetSupportsStructuredOutput()
 }
 
 func newBundlesSearchCommand(prime *primer.Values) *captain.Command {
@@ -125,5 +125,5 @@ func newBundlesSearchCommand(prime *primer.Values) *captain.Command {
 		func(_ *captain.Command, _ []string) error {
 			return runner.Run(params, model.NamespaceBundle)
 		},
-	)
+	).SetSupportsStructuredOutput()
 }
