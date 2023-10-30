@@ -87,20 +87,13 @@ func (suite *AuthIntegrationTestSuite) ensureLogout(ts *e2e.Session) {
 }
 
 type userJSON struct {
-	Username        string `json:"username,omitempty"`
-	URLName         string `json:"urlname,omitempty"`
-	Tier            string `json:"tier,omitempty"`
-	PrivateProjects bool   `json:"privateProjects"`
+	Username string `json:"username,omitempty"`
 }
 
 func (suite *AuthIntegrationTestSuite) authOutput(method string) {
-	user := userJSON{
-		Username:        e2e.PersistentUsername,
-		URLName:         e2e.PersistentUsername,
-		Tier:            "free",
-		PrivateProjects: false,
-	}
-	data, err := json.Marshal(user)
+	data, err := json.Marshal(userJSON{
+		Username: e2e.PersistentUsername,
+	})
 	suite.Require().NoError(err)
 
 	ts := e2e.New(suite.T(), false)
@@ -109,7 +102,7 @@ func (suite *AuthIntegrationTestSuite) authOutput(method string) {
 	expected := string(data)
 	ts.LoginAsPersistentUser()
 	cp := ts.Spawn(tagsuite.Auth, "--output", method)
-	cp.Expect("false}")
+	cp.Expect(`"}`)
 	cp.ExpectExitCode(0)
 	suite.Contains(cp.Output(), fmt.Sprintf("%s", string(expected)))
 }
