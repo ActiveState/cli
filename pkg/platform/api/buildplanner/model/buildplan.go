@@ -380,6 +380,12 @@ type CreateProjectResult struct {
 	ProjectCreated *projectCreated `json:"createProject"`
 }
 
+type AttachStagedCommitResult struct {
+	Type   string  `json:"__typename"`
+	Commit *Commit `json:"attachStagedCommit"`
+	*Error
+}
+
 // Error contains an error message.
 type Error struct {
 	Message string `json:"message"`
