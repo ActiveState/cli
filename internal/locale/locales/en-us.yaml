@@ -1569,8 +1569,6 @@ deploy_usable_path:
     Please ensure '[NOTICE]{{.V0}}[/RESET]' exists and is on your PATH.
 script_watcher_watch_file:
   other: "Watching file changes at: [NOTICE]{{.V0}}[/RESET]"
-confirm_exit_on_error_prompt:
-  other: Press enter to continue...
 tutorial_newproject_intro:
   other: |
     The State Tool lets you create and maintain a set of virtual environments (eg., one per project), allowing you to

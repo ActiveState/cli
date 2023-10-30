@@ -1,12 +1,9 @@
 package main
 
 import (
-	"bufio"
 	"context"
-	"errors"
 	"fmt"
 	"os"
-	"os/exec"
 	"runtime/debug"
 	"strings"
 	"time"
@@ -107,17 +104,6 @@ func main() {
 		exitCode, err = cmdletErrors.ParseUserFacing(err)
 		if err != nil {
 			out.Error(err)
-		}
-
-		// If a state tool error occurs in a VSCode integrated terminal, we want
-		// to pause and give time to the user to read the error message.
-		// But not, if we exit, because the last command in the activated sub-shell failed.
-		var eerr *exec.ExitError
-		isExitError := errors.As(err, &eerr)
-		if !isExitError && outFlags.ConfirmExit {
-			out.Print(locale.T("confirm_exit_on_error_prompt"))
-			br := bufio.NewReader(os.Stdin)
-			br.ReadLine()
 		}
 	}
 }
