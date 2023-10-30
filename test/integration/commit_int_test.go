@@ -31,7 +31,7 @@ func (suite *CommitIntegrationTestSuite) TestCommitManualBuildScriptMod() {
 			"ActiveState-CLI/Commit-Test-A#7a1b416e-c17f-4d4a-9e27-cbad9e8f5655",
 			".",
 		),
-		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
 	cp.Expect("Checked out", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)

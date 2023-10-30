@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
@@ -87,7 +88,7 @@ func (suite *RuntimeIntegrationTestSuite) TestInterruptSetup() {
 
 	cp := ts.SpawnWithOpts(
 		e2e.OptArgs("checkout", "ActiveState-CLI/test-interrupt-small-python#863c45e2-3626-49b6-893c-c15e85a17241", "."),
-		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
 	cp.Expect("Checked out project", e2e.RuntimeSourcingTimeoutOpt)
 
@@ -99,8 +100,8 @@ func (suite *RuntimeIntegrationTestSuite) TestInterruptSetup() {
 
 	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("pull"),
-		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false",
-			"ACTIVESTATE_CLI_RUNTIME_SETUP_WAIT=true"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false",
+			constants.RuntimeSetupWaitEnvVarName+"=true"),
 	)
 	time.Sleep(30 * time.Second)
 	cp.SendCtrlC() // cancel pull/update

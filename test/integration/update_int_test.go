@@ -51,13 +51,13 @@ func (suite *UpdateIntegrationTestSuite) env(disableUpdates, forceUpdate bool) [
 	env := []string{}
 
 	if disableUpdates {
-		env = append(env, "ACTIVESTATE_CLI_DISABLE_UPDATES=true")
+		env = append(env, constants.DisableUpdates+"=true")
 	} else {
-		env = append(env, "ACTIVESTATE_CLI_DISABLE_UPDATES=false")
+		env = append(env, constants.DisableUpdates+"=false")
 	}
 
 	if forceUpdate {
-		env = append(env, "ACTIVESTATE_FORCE_UPDATE=true")
+		env = append(env, constants.ForceUpdateEnvVarName+"=true")
 	}
 
 	dir, err := ioutil.TempDir("", "system*")
@@ -296,7 +296,7 @@ func (suite *UpdateIntegrationTestSuite) testAutoUpdate(ts *e2e.Session, baseDir
 		e2e.OptArgs("--version"),
 		e2e.OptAppendEnv(suite.env(false, true)...),
 		e2e.OptAppendEnv(fmt.Sprintf("HOME=%s", fakeHome)),
-		e2e.OptAppendEnv("ACTIVESTATE_TEST_AUTO_UPDATE=true"),
+		e2e.OptAppendEnv(constants.TestAutoUpdateEnvVarName + "=true"),
 	}
 	if opts != nil {
 		spawnOpts = append(spawnOpts, opts...)
@@ -361,7 +361,7 @@ func (suite *UpdateIntegrationTestSuite) TestAutoUpdateToCurrent() {
 
 	suite.installLatestReleaseVersion(ts, installDir)
 
-	suite.testAutoUpdate(ts, installDir, e2e.OptAppendEnv(fmt.Sprintf("ACTIVESTATE_CLI_UPDATE_BRANCH=%s", constants.BranchName)))
+	suite.testAutoUpdate(ts, installDir, e2e.OptAppendEnv(fmt.Sprintf("%s=%s", constants.UpdateBranchEnvVarName, constants.BranchName)))
 }
 
 func (suite *UpdateIntegrationTestSuite) TestUpdateToCurrent() {
@@ -379,5 +379,5 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateToCurrent() {
 
 	suite.installLatestReleaseVersion(ts, installDir)
 
-	suite.testUpdate(ts, installDir, e2e.OptAppendEnv(fmt.Sprintf("ACTIVESTATE_CLI_UPDATE_BRANCH=%s", constants.BranchName)))
+	suite.testUpdate(ts, installDir, e2e.OptAppendEnv(fmt.Sprintf("%s=%s", constants.UpdateBranchEnvVarName, constants.BranchName)))
 }

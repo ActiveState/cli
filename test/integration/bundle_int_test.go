@@ -8,6 +8,7 @@ import (
 	"github.com/ActiveState/termtest"
 	"github.com/stretchr/testify/suite"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 )
@@ -223,7 +224,7 @@ func (suite *BundleIntegrationTestSuite) TestJSON() {
 
 	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("bundles", "install", "Testing", "--output", "json"),
-		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
 	cp.Expect(`"name":"Testing"`, e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
@@ -231,7 +232,7 @@ func (suite *BundleIntegrationTestSuite) TestJSON() {
 
 	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("bundles", "uninstall", "Testing", "-o", "editor"),
-		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
 	cp.Expect(`"name":"Testing"`, e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)

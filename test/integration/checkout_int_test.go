@@ -33,7 +33,7 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckout() {
 	// Checkout and verify.
 	cp := ts.SpawnWithOpts(
 		e2e.OptArgs("checkout", "ActiveState-CLI/Python-3.9", "."),
-		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
 	cp.Expect("Checked out project", e2e.RuntimeSourcingTimeoutOpt)
 	suite.Require().True(fileutils.DirExists(ts.Dirs.Work), "state checkout should have created "+ts.Dirs.Work)
@@ -66,7 +66,7 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckout() {
 		cp = ts.SpawnWithOpts(
 			e2e.OptArgs("checkout", "ActiveState-CLI/Python-3.9", "."),
 			e2e.OptAppendEnv(
-				"ACTIVESTATE_CLI_DISABLE_RUNTIME=false",
+				constants.DisableRuntime+"=false",
 				"VERBOSE=true", // Necessary to assert "Fetched cached artifact"
 			),
 		)
@@ -91,7 +91,7 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckoutNonEmptyDir() {
 	// Checkout and verify.
 	cp := ts.SpawnWithOpts(
 		e2e.OptArgs("checkout", "ActiveState-CLI/Python3", tmpdir),
-		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=true"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
 	cp.Expect("already a project checked out at")
 	cp.ExpectExitCode(1)
@@ -104,7 +104,7 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckoutNonEmptyDir() {
 	suite.Require().NoError(os.Remove(filepath.Join(tmpdir, constants.ConfigFileName)))
 	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("checkout", "ActiveState-CLI/Python3", tmpdir),
-		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=true"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
 	cp.Expect("Checked out project")
 	cp.ExpectExitCode(0)
@@ -178,7 +178,7 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckoutCustomRTPath() {
 	// Checkout and verify.
 	cp := ts.SpawnWithOpts(
 		e2e.OptArgs("checkout", "ActiveState-CLI/Python3", fmt.Sprintf("--runtime-path=%s", customRTPath)),
-		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
 	cp.Expect("Checked out project", e2e.RuntimeSourcingTimeoutOpt)
 
@@ -194,7 +194,7 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckoutCustomRTPath() {
 	// Verify that state exec works with custom cache.
 	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("exec", "python3", "--", "-c", "import sys;print(sys.executable)"),
-		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 		e2e.OptWD(filepath.Join(ts.Dirs.Work, "Python3")),
 	)
 	if runtime.GOOS == "windows" {
