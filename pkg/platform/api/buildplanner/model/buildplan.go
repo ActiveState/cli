@@ -44,6 +44,7 @@ const (
 	BuildLogRecipeID = "RECIPE_ID"
 	BuildRequestID   = "BUILD_REQUEST_ID"
 
+	// Version Comparators
 	ComparatorEQ  string = "eq"
 	ComparatorGT         = "gt"
 	ComparatorGTE        = "gte"
@@ -51,14 +52,20 @@ const (
 	ComparatorLTE        = "lte"
 	ComparatorNE         = "ne"
 
+	// Version Requirement keys
 	VersionRequirementComparatorKey = "comparator"
 	VersionRequirementVersionKey    = "version"
 
+	// MIME types
 	XArtifactMimeType            = "application/x.artifact"
 	XActiveStateArtifactMimeType = "application/x-activestate-artifacts"
 	XCamelInstallerMimeType      = "application/x-camel-installer"
 	XGozipInstallerMimeType      = "application/x-gozip-installer"
 	XActiveStateBuilderMimeType  = "application/x-activestate-builder"
+
+	// RevertCommit strategies
+	RevertCommitStrategyForce   = "Force"
+	RevertCommitStrategyDefault = "Default"
 
 	// Error types
 	ErrorType                        = "Error"
@@ -378,6 +385,18 @@ type projectCreated struct {
 
 type CreateProjectResult struct {
 	ProjectCreated *projectCreated `json:"createProject"`
+}
+
+type RevertedCommit struct {
+	Type           string      `json:"__typename"`
+	Commit         *Commit     `json:"commit"`
+	CommonAncestor strfmt.UUID `json:"commonAncestorID"`
+	ConflictPaths  []string    `json:"conflictPaths"`
+	*Error
+}
+
+type RevertCommitResult struct {
+	RevertedCommit *RevertedCommit `json:"revertCommit"`
 }
 
 // Error contains an error message.

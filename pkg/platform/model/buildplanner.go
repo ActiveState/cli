@@ -385,6 +385,29 @@ func (bp *BuildPlanner) CreateProject(params *CreateProjectParams) (strfmt.UUID,
 	return resp.ProjectCreated.Commit.CommitID, nil
 }
 
+func (bp *BuildPlanner) RevertCommit(organization, project, branch, commitID string) (strfmt.UUID, error) {
+	logging.Debug("RevertCommit, organization: %s, project: %s, commitID: %s", organization, project, commitID)
+	resp := &bpModel.RevertCommitResult{}
+	err := bp.client.Run(request.RevertCommit(organization, project, branch, commitID), resp)
+	if err != nil {
+		return "", processBuildPlannerError(err, "failed to revert commit")
+	}
+
+	if resp.RevertedCommit == nil {
+		return "", errs.New("Commit is nil")
+	}
+
+	if bpModel.IsErrorResponse(resp.RevertedCommit.Type) {
+		return "", bpModel.ProcessCommitError(resp.RevertedCommit.Commit, "Could not revert commit")
+	}
+
+	if resp.RevertedCommit.Commit.CommitID == "" {
+		return "", errs.New("Commit does not contain commitID")
+	}
+
+	return resp.RevertedCommit.Commit.CommitID, nil
+}
+
 // processBuildPlannerError will check for special error types that should be
 // handled differently. If no special error type is found, the fallback message
 // will be used.
