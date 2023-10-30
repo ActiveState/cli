@@ -19,8 +19,9 @@ import (
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/runbits"
+	"github.com/ActiveState/cli/internal/runbits/commitmediator"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
-	"github.com/ActiveState/cli/pkg/localcommit"
+	//"github.com/ActiveState/cli/pkg/localcommit" // re-enable in DX-2307
 	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	medmodel "github.com/ActiveState/cli/pkg/platform/api/mediator/model"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -108,7 +109,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 
 	switch nsType {
 	case model.NamespacePackage, model.NamespaceBundle:
-		commitID, err := localcommit.Get(r.Project.Dir())
+		commitID, err := commitmediator.Get(r.Project)
 		if err != nil {
 			return errs.Wrap(err, "Unable to get local commit")
 		}
@@ -190,7 +191,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 		pg = nil
 	}
 
-	parentCommitID, err := localcommit.Get(r.Project.Dir())
+	parentCommitID, err := commitmediator.Get(r.Project)
 	if err != nil {
 		return errs.Wrap(err, "Unable to get local commit")
 	}
@@ -274,7 +275,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 		return errs.Wrap(err, "Could not get remote build expr")
 	}
 
-	if err := localcommit.Set(r.Project.Dir(), commitID.String()); err != nil {
+	if err := commitmediator.Set(r.Project, commitID.String()); err != nil {
 		return locale.WrapError(err, "err_package_update_commit_id")
 	}
 
