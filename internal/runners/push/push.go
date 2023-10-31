@@ -263,7 +263,7 @@ func (r *Push) verifyInput() error {
 	}
 
 	commitID, err := localcommit.Get(r.project.Dir())
-	if err != nil && !localcommit.IsFileDoesNotExistError(err) {
+	if err != nil {
 		return errs.Wrap(err, "Unable to get local commit")
 	}
 	if commitID == "" {
