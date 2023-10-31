@@ -95,8 +95,7 @@ func (d *Deploy) Run(params *Params) error {
 		return locale.WrapError(err, "err_deploy_commitid", "Could not grab commit ID for project: {{.V0}}.", params.Namespace.String())
 	}
 
-	// Headless argument is simply false here as you cannot deploy a headless project
-	rtTarget := target.NewCustomTarget(params.Namespace.Owner, params.Namespace.Project, commitID, params.Path, target.TriggerDeploy, false) /* TODO: handle empty path */
+	rtTarget := target.NewCustomTarget(params.Namespace.Owner, params.Namespace.Project, commitID, params.Path, target.TriggerDeploy) /* TODO: handle empty path */
 
 	logging.Debug("runSteps: %s", d.step.String())
 

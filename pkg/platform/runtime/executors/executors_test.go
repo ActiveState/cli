@@ -25,7 +25,7 @@ func TestExecutor(t *testing.T) {
 	err = fileutils.WriteFile(dummyExecSrc, dummyExecData)
 	require.NoError(t, err, errs.JoinMessage(err))
 
-	target := target.NewCustomTarget("owner", "project", "1234abcd-1234-abcd-1234-abcd1234abcd", "dummy/path", target.NewExecTrigger("test"), false)
+	target := target.NewCustomTarget("owner", "project", "1234abcd-1234-abcd-1234-abcd1234abcd", "dummy/path", target.NewExecTrigger("test"))
 	execDir := filepath.Join(tmpDir, "exec")
 	execInit := New(execDir)
 	execInit.altExecSrcPath = dummyExecSrc
