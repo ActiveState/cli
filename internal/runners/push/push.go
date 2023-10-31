@@ -14,6 +14,7 @@ import (
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/pkg/localcommit"
+	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -63,10 +64,8 @@ const (
 )
 
 var (
-	errNoChanges            = errors.New("no changes")
-	errNoCommit             = errors.New("no commit")
-	errTargetInvalidHistory = errors.New("local and remove histories do not match")
-	errPullNeeded           = errors.New("pull needed")
+	errNoChanges = errors.New("no changes")
+	errNoCommit  = errors.New("no commit")
 )
 
 type errProjectNameInUse struct {
@@ -230,35 +229,16 @@ func (r *Push) Run(params PushParams) (rerr error) {
 			return errNoChanges
 		}
 
-		// Check whether there is a conflict
-		if branch.CommitID != nil {
-			mergeStrategy, err := model.MergeCommit(*branch.CommitID, commitID)
-			if err != nil {
-				if errors.Is(err, model.ErrMergeCommitInHistory) {
-					return errNoChanges
-				}
-				if !errors.Is(err, model.ErrMergeFastForward) {
-					if params.Namespace.IsValid() {
-						return errTargetInvalidHistory
-					}
-					return errs.Wrap(err, "Could not detect if merge is necessary")
-				}
-			}
-			if mergeStrategy != nil {
-				return errPullNeeded
-			}
-		}
-
-		// Perform the push.
-		err = bp.AttachStagedCommit(&model.AttachStagedCommitParams{
-			Owner:          targetNamespace.Owner,
-			Project:        targetNamespace.Project,
-			ParentCommitID: *branch.CommitID,
-			StagedCommitID: commitID,
-			Branch:         branch.BranchID.String(),
+		// Perform the (fast-forward) push.
+		_, err = bp.MergeCommit(&model.MergeCommitParams{
+			Owner:     targetNamespace.Owner,
+			Project:   targetNamespace.Project,
+			TargetRef: branch.Label, // using branch name will fast-forward
+			OtherRef:  commitID.String(),
+			Strategy:  bpModel.MergeCommitStrategyFastForward,
 		})
 		if err != nil {
-			return errs.Wrap(err, "Could not attach staged commit")
+			return errs.Wrap(err, "Could not push")
 		}
 	}
 
