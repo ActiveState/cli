@@ -99,7 +99,7 @@ func (p *Pull) Run(params *PullParams) error {
 
 	var localCommit *strfmt.UUID
 	localCommitID, err := localcommit.Get(p.project.Dir())
-	if err != nil && !localcommit.IsFileDoesNotExistError(err) {
+	if err != nil {
 		return errs.Wrap(err, "Unable to get local commit")
 	}
 	if localCommitID != "" {
@@ -151,7 +151,7 @@ func (p *Pull) Run(params *PullParams) error {
 	}
 
 	commitID, err := localcommit.Get(p.project.Dir())
-	if err != nil && !localcommit.IsFileDoesNotExistError(err) {
+	if err != nil {
 		return errs.Wrap(err, "Unable to get local commit")
 	}
 
