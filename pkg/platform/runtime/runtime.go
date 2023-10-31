@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 
 	"golang.org/x/net/context"
@@ -90,7 +89,6 @@ func New(target setup.Targeter, an analytics.Dispatcher, svcm *model.SvcModel, a
 	recordAttempt(an, target)
 	an.Event(anaConsts.CatRuntimeDebug, anaConsts.ActRuntimeStart, &dimensions.Values{
 		Trigger:          ptr.To(target.Trigger().String()),
-		Headless:         ptr.To(strconv.FormatBool(target.Headless())),
 		CommitID:         ptr.To(target.CommitUUID().String()),
 		ProjectNameSpace: ptr.To(project.NewNamespace(target.Owner(), target.Name(), target.CommitUUID().String()).String()),
 		InstanceID:       ptr.To(instanceid.ID()),
@@ -321,7 +319,6 @@ func usageDims(target setup.Targeter) *dimensions.Values {
 	return &dimensions.Values{
 		Trigger:          ptr.To(target.Trigger().String()),
 		CommitID:         ptr.To(target.CommitUUID().String()),
-		Headless:         ptr.To(strconv.FormatBool(target.Headless())),
 		ProjectNameSpace: ptr.To(project.NewNamespace(target.Owner(), target.Name(), target.CommitUUID().String()).String()),
 		InstanceID:       ptr.To(instanceid.ID()),
 	}

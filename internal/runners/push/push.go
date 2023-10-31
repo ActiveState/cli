@@ -57,7 +57,6 @@ type intention uint16
 const (
 	pushCustomNamespace  intention = 0x0001 // User is pushing to a custom remote, ignoring the namespace in the current yaml
 	pushFromNoPermission           = 0x0002 // User made modifications to someone elses project, and it now trying to push them
-	pushFromHeadless               = 0x0004 // User is operating in headless mode and is now trying to push
 
 	// The rest is supplemental
 	intendCreateProject = 0x0008
@@ -73,6 +72,11 @@ var (
 type errProjectNameInUse struct {
 	error
 	Namespace *project.Namespaced
+}
+
+type errHeadless struct {
+	error
+	ProjectURL string
 }
 
 func (r *Push) Run(params PushParams) (rerr error) {
@@ -103,11 +107,13 @@ func (r *Push) Run(params PushParams) (rerr error) {
 		logging.Debug("%s can write to %s: %v", r.auth.WhoAmI(), targetNamespace.Owner, r.auth.CanWrite(targetNamespace.Owner))
 	}
 
+	if r.project.IsHeadless() {
+		return &errHeadless{err, r.project.URL()}
+	}
+
 	// Capture the primary intend of the user
 	var intend intention
 	switch {
-	case r.project.IsHeadless():
-		intend = pushFromHeadless | intendCreateProject
 	case targetNamespace.IsValid() && !r.auth.CanWrite(r.project.Owner()):
 		intend = pushFromNoPermission | intendCreateProject
 	case params.Namespace.IsValid():
@@ -127,10 +133,6 @@ func (r *Push) Run(params PushParams) (rerr error) {
 	// - No namespace could be detect so far
 	// - We want to create a copy of the current namespace, and no custom namespace was provided
 	if !targetNamespace.IsValid() || (intend&pushFromNoPermission > 0 && !params.Namespace.IsValid()) {
-		var err error
-		if intend&pushFromHeadless > 0 {
-			r.out.Notice(locale.T("push_first_new_project"))
-		}
 		targetNamespace, err = r.promptNamespace()
 		if err != nil {
 			return errs.Wrap(err, "Could not prompt for namespace")

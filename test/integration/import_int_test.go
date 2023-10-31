@@ -16,7 +16,7 @@ type ImportIntegrationTestSuite struct {
 	tagsuite.Suite
 }
 
-func (suite *ImportIntegrationTestSuite) TestImport_headless() {
+func (suite *ImportIntegrationTestSuite) TestImport_detached() {
 	suite.OnlyRunForTags(tagsuite.Import)
 	if runtime.GOOS == "darwin" {
 		suite.T().Skip("Skipping mac for now as the builds are still too unreliable")

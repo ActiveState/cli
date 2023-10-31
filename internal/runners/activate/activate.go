@@ -138,18 +138,12 @@ func (r *Activate) Run(params *ActivateParams) (rerr error) {
 		}
 	}
 
-	if proj != nil && params.Branch != "" {
-		if proj.IsHeadless() {
-			return locale.NewInputError(
-				"err_conflicting_branch_while_headless",
-				"Cannot activate branch [NOTICE]{{.V0}}[/RESET] while in a headless state. Please visit {{.V1}} to create your project.",
-				params.Branch, proj.URL(),
-			)
-		}
+	if proj != nil && proj.IsHeadless() {
+		return locale.NewInputError("err_activate_headless", "Cannot activate a headless project. Please visit {{.V0}} to create your project.", proj.URL())
+	}
 
-		if params.Branch != proj.BranchName() {
-			return locale.NewInputError("err_conflicting_branch_while_checkedout", "", params.Branch, proj.BranchName())
-		}
+	if proj != nil && params.Branch != "" && params.Branch != proj.BranchName() {
+		return locale.NewInputError("err_conflicting_branch_while_checkedout", "", params.Branch, proj.BranchName())
 	}
 
 	// Have to call this once the project has been set
@@ -208,11 +202,7 @@ func (r *Activate) Run(params *ActivateParams) (rerr error) {
 		return locale.WrapError(err, "err_activate_wait", "Could not activate runtime environment.")
 	}
 
-	if proj.IsHeadless() {
-		r.out.Notice(locale.T("info_deactivated_by_commit"))
-	} else {
-		r.out.Notice(locale.T("info_deactivated", proj))
-	}
+	r.out.Notice(locale.T("info_deactivated", proj))
 
 	return nil
 }

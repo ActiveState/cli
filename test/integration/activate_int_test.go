@@ -552,9 +552,8 @@ func (suite *ActivateIntegrationTestSuite) TestActivateCommitURL() {
 
 	// Ensure we have the most up to date version of the project before activating
 	cp := ts.Spawn("activate")
-	cp.Expect("Activated", e2e.RuntimeSourcingTimeoutOpt)
-	cp.SendLine("exit")
-	cp.ExpectExitCode(0)
+	cp.Expect("Cannot activate a headless project", e2e.RuntimeSourcingTimeoutOpt)
+	cp.ExpectExitCode(1)
 }
 
 func (suite *ActivateIntegrationTestSuite) TestActivate_AlreadyActive() {
