@@ -252,7 +252,7 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 		return errs.Wrap(err, "Unable to create local commit file")
 	}
 	// Re-enable in DX-2307.
-	//if emptyDir || fileutils.DirExists(filepath.Join(path, ".git")) {B
+	//if emptyDir || fileutils.DirExists(filepath.Join(path, ".git")) {
 	//	err := localcommit.AddToGitIgnore(path)
 	//	if err != nil {
 	//		r.out.Notice(locale.Tr("notice_commit_id_gitignore", constants.ProjectConfigDirName, constants.CommitIdFileName))

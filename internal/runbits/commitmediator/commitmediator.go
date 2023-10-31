@@ -1,10 +1,6 @@
 package commitmediator
 
 import (
-	// Re-enable in DX-2307.
-	//"github.com/ActiveState/cli/internal/errs"
-	//"github.com/ActiveState/cli/internal/runbits/legacy/projectmigration"
-	//"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/go-openapi/strfmt"
 )
 

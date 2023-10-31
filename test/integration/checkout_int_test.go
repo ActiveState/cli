@@ -153,8 +153,8 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckoutWithFlags() {
 	cp.Expect("Checked out")
 	cp.ExpectExitCode(0)
 
+	suite.Require().True(fileutils.DirExists(python3Dir), "state checkout should have created "+python3Dir)
 	// Re-enable the following lines in DX-2307.
-	//suite.Require().True(fileutils.DirExists(python3Dir), "state checkout should have created "+python3Dir)
 	//commitIdFile := filepath.Join(python3Dir, constants.ProjectConfigDirName, constants.CommitIdFileName)
 	//suite.Require().True(fileutils.FileExists(commitIdFile), "ActiveState-CLI/Python3 was not checked out properly")
 	//suite.Assert().Equal(string(fileutils.ReadFileUnsafe(commitIdFile)), "6d9280e7-75eb-401a-9e71-0d99759fbad3", "did not check out specific commit ID")
