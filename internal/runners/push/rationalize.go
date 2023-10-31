@@ -15,6 +15,8 @@ func rationalizeError(err *error) {
 
 	var projectNameInUseErr *errProjectNameInUse
 
+	var headlessErr *errHeadless
+
 	switch {
 
 	// Not authenticated
@@ -26,12 +28,18 @@ func rationalizeError(err *error) {
 	// No activestate.yaml
 	case errors.Is(*err, rationalize.ErrNoProject):
 		*err = errs.WrapUserFacing(*err,
-			locale.T("err_push_headless"),
+			locale.T("err_push_no_project"),
 			errs.SetInput(),
 			errs.SetTips(
 				locale.T("push_push_tip_headless_init"),
 				locale.T("push_push_tip_headless_cwd"),
 			))
+
+	case errors.As(*err, &headlessErr):
+		*err = errs.WrapUserFacing(*err,
+			locale.Tr("err_push_headless", headlessErr.ProjectURL),
+			errs.SetInput(),
+		)
 
 	// No commits made yet
 	case errors.Is(*err, errNoCommit):

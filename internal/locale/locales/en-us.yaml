@@ -57,8 +57,6 @@ err_output_flag_value_invalid:
   other: Could not recognize output type
 info_deactivated:
   other: "[DISABLED]Deactivated {{.Owner}}/{{.Name}}[/RESET]"
-info_deactivated_by_commit:
-  other: "[DISABLED]Deactivated[/RESET]"
 venv_installer_is_nil:
   other: Provided installer should not be nil
 error_unsupported_language:
@@ -784,8 +782,6 @@ build_status_unknown:
   other: "Build status could not be retrieved, please view the project at: [NOTICE]{{.V0}}[/RESET] for more information"
 build_status_in_progress:
   other: "Your changes are currently being built remotely on the ActiveState Platform. Please visit [NOTICE]{{.V0}}[/RESET] to see the progress."
-build_status_in_progress_headless:
-  other: "Your changes are currently being built remotely on the ActiveState Platform. Please visit [NOTICE]{{.V0}}[/RESET] to see the progress (you may have to first convert your runtime to a project)."
 build_status_unknown_error:
   other: "Build reported an unknown error: {{.V0}}; Please view the project at: [ACTIONABLE]{{.V1}}[/RESET] for more information"
 build_status_failed:
@@ -1152,12 +1148,6 @@ bundle_updated:
   other: "Bundle updated: [NOTICE]{{.V0}}[/RESET]"
 bundle_version_updated:
   other: "Bundle updated: [NOTICE]{{.V0}}@{{.V1}}[/RESET]"
-package_headless_added:
-  other: "Package added: [NOTICE]{{.V0}}[/RESET]"
-package_headless_updated:
-  other: "Package updated: [NOTICE]{{.V0}}[/RESET]"
-package_headless_removed:
-  other: "Package uninstalled: [NOTICE]{{.V0}}[/RESET]"
 err_package_removed:
   other: Failed to remove package
 err_bundle_removed:
@@ -1233,8 +1223,6 @@ init_description:
   other: Initialize a new project
 push_description:
   other: Push your latest changes to the platform
-push_first_new_project:
-  other: 'Since this is your first time running "push" you''ll need to create a new project on the ActiveState Platform.'
 push_prompt_owner:
   other: "Who would you like the owner of this project to be?"
 push_prompt_not_authorized:
@@ -1725,8 +1713,10 @@ err_tip_push_outdated:
   other: Run '[ACTIONABLE]state pull[/RESET]'.
 err_push_not_authenticated:
   other: In order to update your project you need to be authenticated, please run '[ACTIONABLE]state auth[/RESET]' to authenticate.
-err_push_headless:
+err_push_no_project:
   other: No project found, you may need to create one first.
+err_push_headless:
+  other: Cannot push a headless project. To convert your project please visit {{.V0}}
 push_push_tip_headless_init:
   other: Run '[ACTIONABLE]state init[/RESET]' to create a project with the State Tool.
 push_push_tip_headless_cwd:
@@ -1831,8 +1821,6 @@ package_ingredient_alternatives_nolang:
     No results found for search term "[NOTICE]{{.V0}}[/RESET]".
 
     This may be because you have not installed a language for your project. Install a language by running "[ACTIONABLE]state languages install <language-name>[/RESET]".
-progress_project:
-  other: " • Initializing Project"
 progress_search:
   other: " • Searching for [ACTIONABLE]{{.V0}}[/RESET] in the ActiveState Catalog"
 setup_runtime:

@@ -95,13 +95,9 @@ func (s *Exec) Run(params *Params, args ...string) (rerr error) {
 		projectDir = projectFromRuntimeDir(s.cfg, params.Path)
 		proj, err = project.FromPath(projectDir)
 		if err != nil {
-			logging.Warning("Could not get project dir from path: %s", errs.JoinMessage(err))
-			// We do not know if the project is headless at this point so we default to true
-			// as there is no head
-			rtTarget = target.NewCustomTarget("", "", "", params.Path, trigger, true)
-		} else {
-			rtTarget = target.NewProjectTarget(proj, nil, trigger)
+			return locale.WrapInputError(err, "exec_no_project_at_path", "Could not find project file at {{.V0}}", projectDir)
 		}
+		rtTarget = target.NewProjectTarget(proj, nil, trigger)
 		projectNamespace = proj.NamespaceString()
 	} else {
 		proj = s.proj

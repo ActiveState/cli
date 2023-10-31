@@ -2,7 +2,6 @@ package model
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/go-openapi/strfmt"
 
@@ -262,11 +261,6 @@ func ProjectURL(owner, name, commitID string) string {
 		url = url + "?commitID=" + commitID
 	}
 	return url
-}
-
-// CommitURL creates a valid platform commit URL for the given commit
-func CommitURL(commitID string) string {
-	return fmt.Sprintf("%s/%s", strings.TrimSuffix(constants.DashboardCommitURL, "/"), commitID)
 }
 
 func AddBranch(projectID strfmt.UUID, label string) (strfmt.UUID, error) {
