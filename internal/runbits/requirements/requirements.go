@@ -21,12 +21,10 @@ import (
 	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/internal/runbits/commitmediator"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
-	//"github.com/ActiveState/cli/pkg/localcommit" // re-enable in DX-2307
 	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	medmodel "github.com/ActiveState/cli/pkg/platform/api/mediator/model"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
-	//"github.com/ActiveState/cli/pkg/platform/runtime/buildscript" // re-enable in DX-2307
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/thoas/go-funk"

@@ -17,7 +17,6 @@ import (
 	buildscriptRunbits "github.com/ActiveState/cli/internal/runbits/buildscript"
 	"github.com/ActiveState/cli/internal/runbits/commitmediator"
 	"github.com/ActiveState/cli/pkg/cmdlets/commit"
-	//"github.com/ActiveState/cli/pkg/localcommit" // re-enable in DX-2307
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"

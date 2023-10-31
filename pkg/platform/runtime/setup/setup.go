@@ -36,7 +36,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifactcache"
 	"github.com/ActiveState/cli/pkg/platform/runtime/buildplan"
-	//"github.com/ActiveState/cli/pkg/platform/runtime/buildscript" // re-enable in DX-2307
 	"github.com/ActiveState/cli/pkg/platform/runtime/envdef"
 	"github.com/ActiveState/cli/pkg/platform/runtime/executors"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup/buildlog"

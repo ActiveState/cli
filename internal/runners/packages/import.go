@@ -13,7 +13,6 @@ import (
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/internal/runbits/commitmediator"
-	//"github.com/ActiveState/cli/pkg/localcommit" // re-enable in DX-2307
 	"github.com/ActiveState/cli/pkg/platform/api"
 	gqlModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model"
 	"github.com/ActiveState/cli/pkg/platform/api/reqsimport"

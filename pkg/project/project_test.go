@@ -13,7 +13,6 @@ import (
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/runbits/commitmediator"
 	"github.com/ActiveState/cli/internal/subshell"
-	//"github.com/ActiveState/cli/pkg/localcommit" // re-enable in DX-2307
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
