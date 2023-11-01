@@ -431,11 +431,6 @@ func (suite *PackageIntegrationTestSuite) TestJSON() {
 	cp.ExpectExitCode(0)
 	AssertValidJSON(suite.T(), cp)
 
-	cp = ts.Spawn("checkout", "ActiveState-CLI/Perl-5.32", ".")
-	cp.Expect("Skipping runtime setup")
-	cp.Expect("Checked out project")
-	cp.ExpectExitCode(0)
-
 	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("checkout", "ActiveState-CLI/Packages-Perl", "."),
 		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
