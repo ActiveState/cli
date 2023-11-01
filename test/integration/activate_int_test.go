@@ -423,6 +423,7 @@ version: %s
 `, constants.BranchName, constants.Version))
 
 	ts.PrepareActiveStateYAML(content)
+	ts.PrepareCommitIdFile("59404293-e5a9-4fd0-8843-77cd4761b5b5")
 
 	// Pull to ensure we have an up to date config file
 	cp := ts.Spawn("pull")
@@ -453,7 +454,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_NamespaceWins() {
 	suite.Require().NoError(err)
 
 	// Create the project file at the root of the temp dir
-	ts.PrepareProject("ActiveState-CLI/Python3", "")
+	ts.PrepareProject("ActiveState-CLI/Python3", "59404293-e5a9-4fd0-8843-77cd4761b5b5")
 
 	// Pull to ensure we have an up to date config file
 	cp := ts.Spawn("pull")
