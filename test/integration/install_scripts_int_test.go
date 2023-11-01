@@ -258,11 +258,14 @@ func (suite *InstallScriptsIntegrationTestSuite) assertCorrectVersion(ts *e2e.Se
 		Branch  string `json:"branch"`
 	}
 
+	fmt.Println("Install path: ", installDir)
 	stateExec, err := installation.StateExecFromDir(installDir)
 	suite.NoError(err)
+	fmt.Println("State exec path: ", stateExec)
 
 	cp := ts.SpawnCmd(stateExec, "--version", "--output=json")
 	cp.ExpectExitCode(0)
+	fmt.Println("Snapshot: ", cp.Snapshot())
 	actual := versionData{}
 	out := cp.StrippedSnapshot()
 	suite.Require().NoError(json.Unmarshal([]byte(out), &actual))
