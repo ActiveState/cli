@@ -78,7 +78,9 @@ func (o *pullOutput) MarshalStructured(format output.Format) interface{} {
 	return o
 }
 
-func (p *Pull) Run(params *PullParams) error {
+func (p *Pull) Run(params *PullParams) (rerr error) {
+	defer rationalizeError(&rerr)
+
 	if p.project == nil {
 		return locale.NewInputError("err_no_project")
 	}
