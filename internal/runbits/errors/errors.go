@@ -67,17 +67,7 @@ func (o *OutputError) MarshalOutput(f output.Format) interface{} {
 	}
 
 	// Concatenate error tips
-	errorTips := []string{}
-	err := o.error
-	for _, err := range errs.Unpack(err) {
-		if v, ok := err.(ErrorTips); ok {
-			for _, tip := range v.ErrorTips() {
-				if !funk.Contains(errorTips, tip) {
-					errorTips = append(errorTips, tip)
-				}
-			}
-		}
-	}
+	errorTips := getErrorTips(o.error)
 	errorTips = append(errorTips, locale.Tl("err_help_forum", "Ask For Help → [ACTIONABLE]{{.V0}}[/RESET]", constants.ForumsURL))
 
 	// Print tips
@@ -92,6 +82,23 @@ func (o *OutputError) MarshalOutput(f output.Format) interface{} {
 	return strings.Join(outLines, "\n")
 }
 
+func getErrorTips(err error) []string {
+	errorTips := []string{}
+	for _, err := range errs.Unpack(err) {
+		v, ok := err.(ErrorTips)
+		if !ok {
+			continue
+		}
+		for _, tip := range v.ErrorTips() {
+			if funk.Contains(errorTips, tip) {
+				continue
+			}
+			errorTips = append(errorTips, tip)
+		}
+	}
+	return errorTips
+}
+
 func (o *OutputError) MarshalStructured(f output.Format) interface{} {
 	var userFacingError errs.UserFacingError
 	var message string
@@ -100,7 +107,7 @@ func (o *OutputError) MarshalStructured(f output.Format) interface{} {
 	} else {
 		message = locale.JoinedErrorMessage(o.error)
 	}
-	return output.StructuredError{message}
+	return output.StructuredError{message, getErrorTips(o.error)}
 }
 
 func trimError(msg string) string {
