@@ -75,7 +75,6 @@ func (r *Revert) Run(params *Params) error {
 	revertParams := revertParams{
 		organization:   r.project.Owner(),
 		project:        r.project.Name(),
-		branch:         r.project.BranchName(),
 		parentCommitID: latestCommit.String(),
 		revertCommitID: params.CommitID,
 	}
@@ -126,11 +125,6 @@ func (r *Revert) Run(params *Params) error {
 			locale.T("tip_private_project_auth"))
 	}
 
-	err = runbits.RefreshRuntime(r.auth, r.out, r.analytics, r.project, revertCommit, true, target.TriggerRevert, r.svcModel)
-	if err != nil {
-		return locale.WrapError(err, "err_refresh_runtime")
-	}
-
 	err = commitmediator.Set(r.project, revertCommit.String())
 	if err != nil {
 		return errs.Wrap(err, "Unable to set local commit")
@@ -158,13 +152,12 @@ type revertFunc func(params revertParams, bp *model.BuildPlanner) (strfmt.UUID, 
 type revertParams struct {
 	organization   string
 	project        string
-	branch         string
 	parentCommitID string
 	revertCommitID string
 }
 
 func (r *Revert) revertCommit(params revertParams, bp *model.BuildPlanner) (strfmt.UUID, error) {
-	newCommitID, err := bp.RevertCommit(params.organization, params.project, params.branch, params.revertCommitID)
+	newCommitID, err := bp.RevertCommit(params.organization, params.project, params.parentCommitID, params.revertCommitID)
 	if err != nil {
 		return "", errs.Wrap(err, "could not revert commit")
 	}

@@ -395,10 +395,10 @@ func (bp *BuildPlanner) CreateProject(params *CreateProjectParams) (strfmt.UUID,
 	return resp.ProjectCreated.Commit.CommitID, nil
 }
 
-func (bp *BuildPlanner) RevertCommit(organization, project, branch, commitID string) (strfmt.UUID, error) {
+func (bp *BuildPlanner) RevertCommit(organization, project, parentCommitID, commitID string) (strfmt.UUID, error) {
 	logging.Debug("RevertCommit, organization: %s, project: %s, commitID: %s", organization, project, commitID)
 	resp := &bpModel.RevertCommitResult{}
-	err := bp.client.Run(request.RevertCommit(organization, project, branch, commitID), resp)
+	err := bp.client.Run(request.RevertCommit(organization, project, parentCommitID, commitID), resp)
 	if err != nil {
 		return "", processBuildPlannerError(err, "failed to revert commit")
 	}

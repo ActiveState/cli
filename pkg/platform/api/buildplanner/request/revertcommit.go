@@ -2,11 +2,11 @@ package request
 
 import "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 
-func RevertCommit(organization, project, branch, commitID string) *revertCommit {
+func RevertCommit(organization, project, targetVcsRef, commitID string) *revertCommit {
 	return &revertCommit{map[string]interface{}{
 		"organization": organization,
 		"project":      project,
-		"branch":       branch,
+		"targetVcsRef": targetVcsRef,
 		"commitId":     commitID,
 		// Currently, we use the force strategy for all revert commits.
 		// This is because we don't have a way to show the user the conflicts
@@ -22,9 +22,9 @@ type revertCommit struct {
 
 func (r *revertCommit) Query() string {
 	return `
-mutation ($organization: String!, $project: String!, $commitId: String!, $branch: String!, $strategy: RevertStrategy) {
+mutation ($organization: String!, $project: String!, $commitId: String!, $targetVcsRef: String!, $strategy: RevertStrategy) {
   revertCommit(
-    input: {organization: $organization, project: $project, commitId: $commitId, branch: $branch, strategy: $strategy}
+    input: {organization: $organization, project: $project, commitId: $commitId, targetVcsRef: $targetVcsRef, strategy: $strategy}
   ) {
     ... on RevertedCommit {
       __typename
@@ -36,7 +36,8 @@ mutation ($organization: String!, $project: String!, $commitId: String!, $branch
     ... on RevertConflict {
       __typename
       message
-      branchName
+      commitId
+      targetCommitId
       conflictPaths
     }
     ... on CommitHasNoParent {
