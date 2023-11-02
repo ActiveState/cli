@@ -85,12 +85,15 @@ func (o *OutputError) MarshalOutput(f output.Format) interface{} {
 func getErrorTips(err error) []string {
 	errorTips := []string{}
 	for _, err := range errs.Unpack(err) {
-		if v, ok := err.(ErrorTips); ok {
-			for _, tip := range v.ErrorTips() {
-				if !funk.Contains(errorTips, tip) {
-					errorTips = append(errorTips, tip)
-				}
+		v, ok := err.(ErrorTips)
+		if !ok {
+			continue
+		}
+		for _, tip := range v.ErrorTips() {
+			if funk.Contains(errorTips, tip) {
+				continue
 			}
+			errorTips = append(errorTips, tip)
 		}
 	}
 	return errorTips
