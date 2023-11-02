@@ -297,34 +297,6 @@ func (bp *BuildPlanner) StageCommit(params StageCommitParams) (strfmt.UUID, erro
 	return resp.Commit.CommitID, nil
 }
 
-type AttachStagedCommitParams struct {
-	Owner          string
-	Project        string
-	ParentCommitID strfmt.UUID
-	StagedCommitID strfmt.UUID
-	Branch         string
-}
-
-func (bp *BuildPlanner) AttachStagedCommit(params *AttachStagedCommitParams) error {
-	logging.Debug("AttachStagedCommit, owner: %s, project: %s", params.Owner, params.Project)
-	request := request.AttachStagedCommit(params.Owner, params.Project, params.ParentCommitID.String(), params.StagedCommitID.String(), params.Branch)
-	resp := &bpModel.AttachStagedCommitResult{}
-	err := bp.client.Run(request, resp)
-	if err != nil {
-		return processBuildPlannerError(err, "Failed to attach staged commit")
-	}
-
-	if resp.Commit == nil {
-		return errs.New("Attached, staged commit is nil")
-	}
-
-	if bpModel.IsErrorResponse(resp.Commit.Type) {
-		return bpModel.ProcessCommitError(resp.Commit, "Could not process error response from attach stage commit")
-	}
-
-	return nil
-}
-
 func (bp *BuildPlanner) GetBuildExpression(owner, project, commitID string) (*buildexpression.BuildExpression, error) {
 	logging.Debug("GetBuildExpression, owner: %s, project: %s, commitID: %s", owner, project, commitID)
 	resp := &bpModel.BuildExpression{}
@@ -421,6 +393,42 @@ func (bp *BuildPlanner) CreateProject(params *CreateProjectParams) (strfmt.UUID,
 	}
 
 	return resp.ProjectCreated.Commit.CommitID, nil
+}
+
+type MergeCommitParams struct {
+	Owner     string
+	Project   string
+	TargetRef string // the commit ID or branch name to merge into
+	OtherRef  string // the commit ID or branch name to merge from
+	Strategy  model.MergeStrategy
+}
+
+func (bp *BuildPlanner) MergeCommit(params *MergeCommitParams) (strfmt.UUID, error) {
+	logging.Debug("MergeCommit, owner: %s, project: %s", params.Owner, params.Project)
+	request := request.MergeCommit(params.Owner, params.Project, params.TargetRef, params.OtherRef, params.Strategy)
+	resp := &bpModel.MergeCommitResult{}
+	err := bp.client.Run(request, resp)
+	if err != nil {
+		return "", processBuildPlannerError(err, "Failed to merge commit")
+	}
+
+	if resp.MergedCommit == nil {
+		return "", errs.New("MergedCommit is nil")
+	}
+
+	if bpModel.IsErrorResponse(resp.MergedCommit.Type) {
+		return "", bpModel.ProcessMergedCommitError(resp.MergedCommit, "Could not merge commit")
+	}
+
+	if resp.MergedCommit.Commit == nil {
+		return "", errs.New("Merge commit's commit is nil'")
+	}
+
+	if bpModel.IsErrorResponse(resp.MergedCommit.Commit.Type) {
+		return "", bpModel.ProcessCommitError(resp.MergedCommit.Commit, "Could not process error response from merge commit")
+	}
+
+	return resp.MergedCommit.Commit.CommitID, nil
 }
 
 // processBuildPlannerError will check for special error types that should be
