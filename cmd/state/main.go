@@ -251,7 +251,9 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 		if childCmd != nil {
 			cmdName = childCmd.JoinedSubCommandNames() + " "
 		}
-		err = errs.AddTips(err, locale.Tl("err_tip_run_help", "Run → [ACTIONABLE]`state {{.V0}}--help`[/RESET] for general help", cmdName))
+		if !out.Type().IsStructured() {
+			err = errs.AddTips(err, locale.Tl("err_tip_run_help", "Run → [ACTIONABLE]`state {{.V0}}--help`[/RESET] for general help", cmdName))
+		}
 		cmdletErrors.ReportError(err, cmds.Command(), an)
 	}
 

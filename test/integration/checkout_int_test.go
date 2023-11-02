@@ -244,6 +244,12 @@ func (suite *CheckoutIntegrationTestSuite) TestJSON() {
 	cp := ts.SpawnWithOpts(e2e.OptArgs("checkout", "ActiveState-CLI/small-python", "-o", "json"))
 	cp.ExpectExitCode(0)
 	AssertValidJSON(suite.T(), cp)
+
+	cp = ts.SpawnWithOpts(e2e.OptArgs("checkout", "ActiveState-CLI/Bogus-Project-That-Doesnt-Exist", "-o", "json"))
+	cp.Expect("does not exist")                        // error
+	cp.Expect(`"tips":["If this is a private project`) // tip
+	cp.ExpectNotExitCode(0)
+	AssertValidJSON(suite.T(), cp)
 }
 
 func (suite *CheckoutIntegrationTestSuite) TestCheckoutCaseInsensitive() {
