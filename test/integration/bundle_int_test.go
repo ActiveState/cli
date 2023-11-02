@@ -165,7 +165,7 @@ func (suite *BundleIntegrationTestSuite) TestBundle_searchWithBadLang() {
 	cp.ExpectExitCode(1)
 }
 
-func (suite *BundleIntegrationTestSuite) TestBundle_headless_operation() {
+func (suite *BundleIntegrationTestSuite) TestBundle_detached_operation() {
 	suite.OnlyRunForTags(tagsuite.Bundle)
 	if runtime.GOOS == "darwin" {
 		suite.T().Skip("Skipping mac for now as the builds are still too unreliable")
@@ -220,6 +220,13 @@ func (suite *BundleIntegrationTestSuite) TestJSON() {
 	cp.Expect(`"package":"Email"`)
 	cp.ExpectExitCode(0)
 	AssertValidJSON(suite.T(), cp)
+
+	cp = ts.SpawnWithOpts(
+		e2e.OptArgs("checkout", "ActiveState-CLI/Bundles", "."),
+		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
+	cp.Expect("Checked out project")
+	cp.ExpectExitCode(0)
 
 	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("bundles", "install", "Testing", "--output", "json"),

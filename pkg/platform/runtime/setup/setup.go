@@ -36,7 +36,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifactcache"
 	"github.com/ActiveState/cli/pkg/platform/runtime/buildplan"
-	"github.com/ActiveState/cli/pkg/platform/runtime/buildscript"
 	"github.com/ActiveState/cli/pkg/platform/runtime/envdef"
 	"github.com/ActiveState/cli/pkg/platform/runtime/executors"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup/buildlog"
@@ -115,7 +114,6 @@ type Targeter interface {
 	Name() string
 	Owner() string
 	Dir() string
-	Headless() bool
 	Trigger() target.Trigger
 	ProjectDir() string
 
@@ -443,13 +441,7 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 	downloadablePrebuiltResults, err := setup.DownloadsFromBuild(*buildResult.Build, requestedArtifacts)
 	if err != nil {
 		if errors.Is(err, artifact.CamelRuntimeBuilding) {
-			localeID := "build_status_in_progress"
-			messageURL := apimodel.ProjectURL(s.target.Owner(), s.target.Name(), s.target.CommitUUID().String())
-			if s.target.Owner() == "" && s.target.Name() == "" {
-				localeID = "build_status_in_progress_headless"
-				messageURL = apimodel.CommitURL(s.target.CommitUUID().String())
-			}
-			return nil, nil, locale.WrapInputError(err, localeID, "", messageURL)
+			return nil, nil, locale.WrapInputError(err, "build_status_in_progress", "", apimodel.ProjectURL(s.target.Owner(), s.target.Name(), s.target.CommitUUID().String()))
 		}
 		return nil, nil, errs.Wrap(err, "could not extract artifacts that are ready to download.")
 	}
@@ -589,9 +581,10 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 	}
 
 	if s.target.ProjectDir() != "" {
-		if err := buildscript.Update(s.target, buildResult.BuildExpression, s.auth); err != nil {
-			return nil, nil, errs.Wrap(err, "Could not save build script.")
-		}
+		// Re-enable in DX-2307
+		//if err := buildscript.Update(s.target, buildResult.BuildExpression, s.auth); err != nil {
+		//	return nil, nil, errs.Wrap(err, "Could not save build script.")
+		//}
 	}
 
 	return buildResult.OrderedArtifacts(), uninstallArtifacts, nil

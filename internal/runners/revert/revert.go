@@ -8,8 +8,8 @@ import (
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runbits"
+	"github.com/ActiveState/cli/internal/runbits/commitmediator"
 	"github.com/ActiveState/cli/pkg/cmdlets/commit"
-	"github.com/ActiveState/cli/pkg/localcommit"
 	gqlmodel "github.com/ActiveState/cli/pkg/platform/api/graphql/model"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -60,8 +60,7 @@ func (r *Revert) Run(params *Params) error {
 	if !strfmt.IsUUID(params.CommitID) {
 		return locale.NewInputError("err_invalid_commit_id", "Invalid commit ID")
 	}
-
-	latestCommit, err := localcommit.Get(r.project.Dir())
+	latestCommit, err := commitmediator.Get(r.project)
 	if err != nil {
 		return errs.Wrap(err, "Unable to get local commit")
 	}
@@ -127,7 +126,12 @@ func (r *Revert) Run(params *Params) error {
 			locale.T("tip_private_project_auth"))
 	}
 
-	err = localcommit.Set(r.project.Dir(), revertCommit.String())
+	err = runbits.RefreshRuntime(r.auth, r.out, r.analytics, r.project, revertCommit, true, target.TriggerRevert, r.svcModel)
+	if err != nil {
+		return locale.WrapError(err, "err_refresh_runtime")
+	}
+
+	err = commitmediator.Set(r.project, revertCommit.String())
 	if err != nil {
 		return errs.Wrap(err, "Unable to set local commit")
 	}

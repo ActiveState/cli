@@ -44,17 +44,18 @@ func (h *History) Run(params *HistoryParams) error {
 		return errs.Wrap(err, "Unable to get local commit")
 	}
 
-	var latestRemoteID *strfmt.UUID
-	if !h.project.IsHeadless() {
-		remoteBranch, err := model.BranchForProjectNameByName(h.project.Owner(), h.project.Name(), h.project.BranchName())
-		if err != nil {
-			return locale.WrapError(err, "err_history_remote_branch", "Could not get branch by local branch name")
-		}
+	if h.project.IsHeadless() {
+		return locale.NewInputError("err_history_headless", "Cannot get history for headless project. Please visit {{.V0}} to convert your project and try again.", h.project.URL())
+	}
 
-		latestRemoteID, err = model.CommonParent(remoteBranch.CommitID, &localCommitID)
-		if err != nil {
-			return locale.WrapError(err, "err_history_common_parent", "Could not determine common parent commit")
-		}
+	remoteBranch, err := model.BranchForProjectNameByName(h.project.Owner(), h.project.Name(), h.project.BranchName())
+	if err != nil {
+		return locale.WrapError(err, "err_history_remote_branch", "Could not get branch by local branch name")
+	}
+
+	latestRemoteID, err := model.CommonParent(remoteBranch.CommitID, &localCommitID)
+	if err != nil {
+		return locale.WrapError(err, "err_history_common_parent", "Could not determine common parent commit")
 	}
 
 	commits, err := model.CommitHistoryFromID(localCommitID)

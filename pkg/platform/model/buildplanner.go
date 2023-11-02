@@ -325,6 +325,11 @@ func (bp *BuildPlanner) GetBuildExpression(owner, project, commitID string) (*bu
 	return expression, nil
 }
 
+// CreateProjectParams contains information for the project to create.
+// When creating a project from scratch, the PlatformID, Language, Version, and Timestamp fields
+// are used to create a buildexpression to use.
+// When creating a project based off of another one, the Expr field is used (PlatformID, Language,
+// Version, and Timestamp are ignored).
 type CreateProjectParams struct {
 	Owner       string
 	Project     string
@@ -334,38 +339,43 @@ type CreateProjectParams struct {
 	Private     bool
 	Timestamp   strfmt.DateTime
 	Description string
+	Expr        *buildexpression.BuildExpression
 }
 
 func (bp *BuildPlanner) CreateProject(params *CreateProjectParams) (strfmt.UUID, error) {
 	logging.Debug("CreateProject, owner: %s, project: %s, language: %s, version: %s", params.Owner, params.Project, params.Language, params.Version)
 
-	// Construct an initial buildexpression for the new project.
-	expr, err := buildexpression.NewEmpty()
-	if err != nil {
-		return "", errs.Wrap(err, "Unable to create initial buildexpression")
+	expr := params.Expr
+	if expr == nil {
+		// Construct an initial buildexpression for the new project.
+		var err error
+		expr, err = buildexpression.NewEmpty()
+		if err != nil {
+			return "", errs.Wrap(err, "Unable to create initial buildexpression")
+		}
+
+		// Add the platform.
+		expr.UpdatePlatform(model.OperationAdded, params.PlatformID)
+
+		// Create a requirement for the given language and version.
+		versionRequirements, err := VersionStringToRequirements(params.Version)
+		if err != nil {
+			return "", errs.Wrap(err, "Unable to read version")
+		}
+		expr.UpdateRequirement(model.OperationAdded, bpModel.Requirement{
+			Name:               params.Language,
+			Namespace:          "language", // TODO: make this a constant DX-1738
+			VersionRequirement: versionRequirements,
+		})
+
+		// Add the timestamp.
+		expr.UpdateTimestamp(params.Timestamp)
 	}
-
-	// Add the platform.
-	expr.UpdatePlatform(model.OperationAdded, params.PlatformID)
-
-	// Create a requirement for the given language and version.
-	versionRequirements, err := VersionStringToRequirements(params.Version)
-	if err != nil {
-		return "", errs.Wrap(err, "Unable to read version")
-	}
-	expr.UpdateRequirement(model.OperationAdded, bpModel.Requirement{
-		Name:               params.Language,
-		Namespace:          "language", // TODO: make this a constant DX-1738
-		VersionRequirement: versionRequirements,
-	})
-
-	// Add the timestamp.
-	expr.UpdateTimestamp(params.Timestamp)
 
 	// Create the project.
 	request := request.CreateProject(params.Owner, params.Project, params.Private, expr, params.Description)
 	resp := &bpModel.CreateProjectResult{}
-	err = bp.client.Run(request, resp)
+	err := bp.client.Run(request, resp)
 	if err != nil {
 		return "", processBuildPlannerError(err, "Failed to create project")
 	}
@@ -406,6 +416,42 @@ func (bp *BuildPlanner) RevertCommit(organization, project, branch, commitID str
 	}
 
 	return resp.RevertedCommit.Commit.CommitID, nil
+}
+
+type MergeCommitParams struct {
+	Owner     string
+	Project   string
+	TargetRef string // the commit ID or branch name to merge into
+	OtherRef  string // the commit ID or branch name to merge from
+	Strategy  model.MergeStrategy
+}
+
+func (bp *BuildPlanner) MergeCommit(params *MergeCommitParams) (strfmt.UUID, error) {
+	logging.Debug("MergeCommit, owner: %s, project: %s", params.Owner, params.Project)
+	request := request.MergeCommit(params.Owner, params.Project, params.TargetRef, params.OtherRef, params.Strategy)
+	resp := &bpModel.MergeCommitResult{}
+	err := bp.client.Run(request, resp)
+	if err != nil {
+		return "", processBuildPlannerError(err, "Failed to merge commit")
+	}
+
+	if resp.MergedCommit == nil {
+		return "", errs.New("MergedCommit is nil")
+	}
+
+	if bpModel.IsErrorResponse(resp.MergedCommit.Type) {
+		return "", bpModel.ProcessMergedCommitError(resp.MergedCommit, "Could not merge commit")
+	}
+
+	if resp.MergedCommit.Commit == nil {
+		return "", errs.New("Merge commit's commit is nil'")
+	}
+
+	if bpModel.IsErrorResponse(resp.MergedCommit.Commit.Type) {
+		return "", bpModel.ProcessCommitError(resp.MergedCommit.Commit, "Could not process error response from merge commit")
+	}
+
+	return resp.MergedCommit.Commit.CommitID, nil
 }
 
 // processBuildPlannerError will check for special error types that should be

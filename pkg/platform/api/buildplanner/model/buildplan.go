@@ -13,6 +13,8 @@ import (
 
 type Operation int
 
+type MergeStrategy string
+
 const (
 	OperationAdded Operation = iota
 	OperationRemoved
@@ -67,6 +69,12 @@ const (
 	RevertCommitStrategyForce   = "Force"
 	RevertCommitStrategyDefault = "Default"
 
+	// MergeCommit strategies
+	MergeCommitStrategyRecursive                    MergeStrategy = "Recursive"
+	MergeCommitStrategyRecursiveOverwriteOnConflict MergeStrategy = "RecursiveOverwriteOnConflict"
+	MergeCommitStrategyRecursiveKeepOnConflict      MergeStrategy = "RecursiveKeepOnConflict"
+	MergeCommitStrategyFastForward                  MergeStrategy = "FastForward"
+
 	// Error types
 	ErrorType                        = "Error"
 	NotFoundErrorType                = "NotFound"
@@ -78,6 +86,9 @@ const (
 	ForbiddenErrorType               = "Forbidden"
 	RemediableSolveErrorType         = "RemediableSolveError"
 	PlanningErrorType                = "PlanningError"
+	MergeConflictType                = "MergeConflict"
+	FastForwardErrorType             = "FastForwardError"
+	NoCommonBaseFoundType            = "NoCommonBaseFound"
 )
 
 func IsStateToolArtifact(mimeType string) bool {
@@ -275,7 +286,10 @@ func IsErrorResponse(errorType string) bool {
 		errorType == ForbiddenErrorType ||
 		errorType == RemediableSolveErrorType ||
 		errorType == PlanningErrorType ||
-		errorType == NotFoundErrorType
+		errorType == NotFoundErrorType ||
+		errorType == MergeConflictType ||
+		errorType == FastForwardErrorType ||
+		errorType == NoCommonBaseFoundType
 }
 
 func ProcessCommitError(commit *Commit, fallbackMessage string) error {
@@ -361,6 +375,20 @@ type BuildExpression struct {
 	*Error
 }
 
+type MergedCommitError struct {
+	Type    string
+	Message string
+}
+
+func (m *MergedCommitError) Error() string { return m.Message }
+
+func ProcessMergedCommitError(mcErr *mergedCommit, fallbackMessage string) error {
+	if mcErr.Type != "" {
+		return &MergedCommitError{mcErr.Type, mcErr.Message}
+	}
+	return errs.New(fallbackMessage)
+}
+
 // PushCommitResult is the result of a push commit mutation.
 // It contains the resulting commit from the operation and any errors.
 // The resulting commit is pushed to the platform automatically.
@@ -397,6 +425,19 @@ type RevertedCommit struct {
 
 type RevertCommitResult struct {
 	RevertedCommit *RevertedCommit `json:"revertCommit"`
+}
+
+type mergedCommit struct {
+	Type   string  `json:"__typename"`
+	Commit *Commit `json:"commit"`
+	*Error
+}
+
+// MergeCommitResult is the result of a merge commit mutation.
+// The resulting commit is only pushed to the platform automatically if the target ref was a named
+// branch and the merge strategy was FastForward.
+type MergeCommitResult struct {
+	MergedCommit *mergedCommit `json:"mergeCommit"`
 }
 
 // Error contains an error message.
