@@ -8,8 +8,8 @@ import (
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runbits"
+	"github.com/ActiveState/cli/internal/runbits/commitmediator"
 	"github.com/ActiveState/cli/pkg/cmdlets/commit"
-	"github.com/ActiveState/cli/pkg/localcommit"
 	gqlmodel "github.com/ActiveState/cli/pkg/platform/api/graphql/model"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -61,7 +61,7 @@ func (r *Revert) Run(params *Params) error {
 	if !strfmt.IsUUID(params.CommitID) {
 		return locale.NewInputError("err_invalid_commit_id", "Invalid commit ID")
 	}
-	latestCommit, err := localcommit.Get(r.project.Dir())
+	latestCommit, err := commitmediator.Get(r.project)
 	if err != nil {
 		return errs.Wrap(err, "Unable to get local commit")
 	}
@@ -139,7 +139,7 @@ func (r *Revert) Run(params *Params) error {
 		return locale.WrapError(err, "err_refresh_runtime")
 	}
 
-	err = localcommit.Set(r.project.Dir(), revertCommit.CommitID.String())
+	err = commitmediator.Set(r.project, revertCommit.CommitID.String())
 	if err != nil {
 		return errs.Wrap(err, "Unable to set local commit")
 	}

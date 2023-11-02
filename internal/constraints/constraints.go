@@ -81,7 +81,8 @@ type projectable interface {
 	Path() string
 	Dir() string
 	URL() string
-	LegacyCommitID() string // for commitmediator.Get
+	LegacyCommitID() string       // for commitmediator.Get
+	LegacySetCommit(string) error // for commitmediator.Set; remove in DX-2307
 }
 
 func NewPrimeConditional(auth *authentication.Auth, pj projectable, subshellName string) *Conditional {

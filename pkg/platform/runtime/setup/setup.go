@@ -36,7 +36,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifactcache"
 	"github.com/ActiveState/cli/pkg/platform/runtime/buildplan"
-	"github.com/ActiveState/cli/pkg/platform/runtime/buildscript"
 	"github.com/ActiveState/cli/pkg/platform/runtime/envdef"
 	"github.com/ActiveState/cli/pkg/platform/runtime/executors"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup/buildlog"
@@ -582,9 +581,10 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 	}
 
 	if s.target.ProjectDir() != "" {
-		if err := buildscript.Update(s.target, buildResult.BuildExpression, s.auth); err != nil {
-			return nil, nil, errs.Wrap(err, "Could not save build script.")
-		}
+		// Re-enable in DX-2307
+		//if err := buildscript.Update(s.target, buildResult.BuildExpression, s.auth); err != nil {
+		//	return nil, nil, errs.Wrap(err, "Could not save build script.")
+		//}
 	}
 
 	return buildResult.OrderedArtifacts(), uninstallArtifacts, nil
