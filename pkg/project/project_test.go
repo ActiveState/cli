@@ -11,8 +11,8 @@ import (
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/language"
+	"github.com/ActiveState/cli/internal/runbits/commitmediator"
 	"github.com/ActiveState/cli/internal/subshell"
-	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
@@ -61,9 +61,11 @@ func (suite *ProjectTestSuite) TestGetSafe() {
 }
 
 func (suite *ProjectTestSuite) TestProject() {
-	suite.Equal("https://platform.activestate.com/ActiveState/project?branch=main", suite.project.URL(), "Values should match")
+	projectLine := "https://platform.activestate.com/ActiveState/project?branch=main"
+	projectLine += "&commitID=00010001-0001-0001-0001-000100010001" // remove in DX-2307
+	suite.Equal(projectLine, suite.project.URL(), "Values should match")
 	suite.Equal("project", suite.project.Name(), "Values should match")
-	commitID, err := localcommit.Get(suite.project.Dir())
+	commitID, err := commitmediator.Get(suite.project)
 	suite.NoError(err)
 	suite.Equal("00010001-0001-0001-0001-000100010001", commitID.String(), "Values should match")
 	suite.Equal("ActiveState", suite.project.Owner(), "Values should match")

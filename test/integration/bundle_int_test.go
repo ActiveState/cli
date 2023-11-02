@@ -221,8 +221,10 @@ func (suite *BundleIntegrationTestSuite) TestJSON() {
 	cp.ExpectExitCode(0)
 	AssertValidJSON(suite.T(), cp)
 
-	cp = ts.Spawn("checkout", "ActiveState-CLI/Bundles", ".")
-	cp.Expect("Skipping runtime setup")
+	cp = ts.SpawnWithOpts(
+		e2e.OptArgs("checkout", "ActiveState-CLI/Bundles", "."),
+		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+	)
 	cp.Expect("Checked out project")
 	cp.ExpectExitCode(0)
 
