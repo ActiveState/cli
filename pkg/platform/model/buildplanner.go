@@ -400,7 +400,7 @@ func (bp *BuildPlanner) RevertCommit(organization, project, parentCommitID, comm
 	resp := &bpModel.RevertCommitResult{}
 	err := bp.client.Run(request.RevertCommit(organization, project, parentCommitID, commitID), resp)
 	if err != nil {
-		return "", processBuildPlannerError(err, "failed to revert commit")
+		return "", processBuildPlannerError(err, "Failed to revert commit")
 	}
 
 	if resp.RevertedCommit == nil {

@@ -415,7 +415,7 @@ type CreateProjectResult struct {
 	ProjectCreated *projectCreated `json:"createProject"`
 }
 
-type RevertedCommit struct {
+type revertedCommit struct {
 	Type           string      `json:"__typename"`
 	Commit         *Commit     `json:"commit"`
 	CommonAncestor strfmt.UUID `json:"commonAncestorID"`
@@ -424,7 +424,7 @@ type RevertedCommit struct {
 }
 
 type RevertCommitResult struct {
-	RevertedCommit *RevertedCommit `json:"revertCommit"`
+	RevertedCommit *revertedCommit `json:"revertCommit"`
 }
 
 type mergedCommit struct {

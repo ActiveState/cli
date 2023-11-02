@@ -115,10 +115,12 @@ func (suite *RevertIntegrationTestSuite) TestRevertTo() {
 		e2e.OptArgs("history"),
 		e2e.OptWD(wd),
 	)
+	cp.Expect("Revert to commit " + commitID)
 	cp.Expect("- argparse") // effectively reverting previous commit
 	cp.Expect("+ argparse") // commit being effectively reverted
 	cp.Expect("+ urllib3")  // commit reverted to
 	cp.Expect("+ python")   // initial commit
+	fmt.Println("Output: ", cp.Snapshot())
 }
 
 func (suite *RevertIntegrationTestSuite) TestRevertTo_failsOnCommitNotInHistory() {

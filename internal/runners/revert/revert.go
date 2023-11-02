@@ -158,7 +158,7 @@ type revertParams struct {
 func (r *Revert) revertCommit(params revertParams, bp *model.BuildPlanner) (strfmt.UUID, error) {
 	newCommitID, err := bp.RevertCommit(params.organization, params.project, params.parentCommitID, params.revertCommitID)
 	if err != nil {
-		return "", errs.Wrap(err, "could not revert commit")
+		return "", errs.Wrap(err, "Could not revert commit")
 	}
 
 	return newCommitID, nil
@@ -167,7 +167,7 @@ func (r *Revert) revertCommit(params revertParams, bp *model.BuildPlanner) (strf
 func (r *Revert) revertToCommit(params revertParams, bp *model.BuildPlanner) (strfmt.UUID, error) {
 	buildExpression, err := bp.GetBuildExpression(params.organization, params.project, params.revertCommitID)
 	if err != nil {
-		return "", errs.Wrap(err, "could not get build expression")
+		return "", errs.Wrap(err, "Could not get build expression")
 	}
 
 	stageCommitParams := model.StageCommitParams{
@@ -180,7 +180,7 @@ func (r *Revert) revertToCommit(params revertParams, bp *model.BuildPlanner) (st
 
 	newCommitID, err := bp.StageCommit(stageCommitParams)
 	if err != nil {
-		return "", errs.Wrap(err, "could not stage commit")
+		return "", errs.Wrap(err, "Could not stage commit")
 	}
 
 	return newCommitID, nil
