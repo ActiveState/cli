@@ -42,7 +42,7 @@ func (suite *RevertIntegrationTestSuite) TestRevert() {
 		e2e.OptArgs("history"),
 		e2e.OptWD(wd),
 	)
-	cp.Expect("Reverted commit " + commitID)
+	cp.Expect("Reverted commit for commit " + commitID)
 	cp.Expect("- urllib3")
 	cp.Expect("+ argparse") // parent commit
 	cp.Expect("+ urllib3")  // commit whose changes were just reverted
