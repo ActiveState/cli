@@ -16,8 +16,8 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
+	runbitsGit "github.com/ActiveState/cli/internal/runbits/git"
 	"github.com/ActiveState/cli/internal/testhelpers/outputhelper"
-	gitlet "github.com/ActiveState/cli/pkg/cmdlets/git"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
@@ -79,7 +79,7 @@ func (suite *GitTestSuite) AfterTest(suiteName, testName string) {
 }
 
 func (suite *GitTestSuite) TestEnsureCorrectProject() {
-	err := gitlet.EnsureCorrectProject("test-owner", "test-project", filepath.Join(suite.dir, constants.ConfigFileName), "test-repo", outputhelper.NewCatcher(), blackhole.New())
+	err := runbitsGit.EnsureCorrectProject("test-owner", "test-project", filepath.Join(suite.dir, constants.ConfigFileName), "test-repo", outputhelper.NewCatcher(), blackhole.New())
 	suite.NoError(err, "projectfile URL should contain owner and name")
 }
 
@@ -88,7 +88,7 @@ func (suite *GitTestSuite) TestEnsureCorrectProject_Missmatch() {
 	name := "bad-project"
 	projectPath := filepath.Join(suite.dir, constants.ConfigFileName)
 	actualCatcher := outputhelper.NewCatcher()
-	err := gitlet.EnsureCorrectProject(owner, name, projectPath, "test-repo", actualCatcher, blackhole.New())
+	err := runbitsGit.EnsureCorrectProject(owner, name, projectPath, "test-repo", actualCatcher, blackhole.New())
 	suite.NoError(err)
 
 	proj, err := project.Parse(projectPath)
@@ -104,7 +104,7 @@ func (suite *GitTestSuite) TestEnsureCorrectProject_Missmatch() {
 
 func (suite *GitTestSuite) TestMoveFiles() {
 	anotherDir := filepath.Join(suite.anotherDir, "anotherDir")
-	err := gitlet.MoveFiles(suite.dir, anotherDir)
+	err := runbitsGit.MoveFiles(suite.dir, anotherDir)
 	suite.NoError(err, "should be able to move files wihout error")
 
 	_, err = os.Stat(filepath.Join(anotherDir, constants.ConfigFileName))
@@ -122,7 +122,7 @@ func (suite *GitTestSuite) TestMoveFilesDirNoEmpty() {
 	err = fileutils.Touch(filepath.Join(anotherDir, "file.txt"))
 	suite.Require().NoError(err)
 
-	err = gitlet.MoveFiles(suite.dir, anotherDir)
+	err = runbitsGit.MoveFiles(suite.dir, anotherDir)
 	expected := locale.WrapError(err, "err_git_verify_dir", "Could not verify destination directory")
 	suite.EqualError(err, expected.Error())
 }

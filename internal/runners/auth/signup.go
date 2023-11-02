@@ -5,7 +5,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/prompt"
-	authlet "github.com/ActiveState/cli/pkg/cmdlets/auth"
+	"github.com/ActiveState/cli/internal/runbits/auth"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 )
 
@@ -29,5 +29,5 @@ func (s *Signup) Run(params *SignupParams) error {
 		return locale.NewInputError("err_auth_authenticated", "You are already authenticated as: {{.V0}}. You can log out by running `state auth logout`.", s.Auth.WhoAmI())
 	}
 
-	return authlet.SignupWithBrowser(s.Outputer, s.Auth, s.Prompter)
+	return auth.SignupWithBrowser(s.Outputer, s.Auth, s.Prompter)
 }
