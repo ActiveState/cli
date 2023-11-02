@@ -15,8 +15,8 @@ import (
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runbits"
 	buildscriptRunbits "github.com/ActiveState/cli/internal/runbits/buildscript"
+	"github.com/ActiveState/cli/internal/runbits/commitmediator"
 	"github.com/ActiveState/cli/pkg/cmdlets/commit"
-	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -98,7 +98,7 @@ func (p *Pull) Run(params *PullParams) error {
 	}
 
 	var localCommit *strfmt.UUID
-	localCommitID, err := localcommit.Get(p.project.Dir())
+	localCommitID, err := commitmediator.Get(p.project)
 	if err != nil {
 		return errs.Wrap(err, "Unable to get local commit")
 	}
@@ -150,13 +150,13 @@ func (p *Pull) Run(params *PullParams) error {
 		}
 	}
 
-	commitID, err := localcommit.Get(p.project.Dir())
+	commitID, err := commitmediator.Get(p.project)
 	if err != nil {
 		return errs.Wrap(err, "Unable to get local commit")
 	}
 
 	if commitID != *resultingCommit {
-		err := localcommit.Set(p.project.Dir(), resultingCommit.String())
+		err := commitmediator.Set(p.project, resultingCommit.String())
 		if err != nil {
 			return errs.Wrap(err, "Unable to set local commit")
 		}
@@ -181,17 +181,18 @@ func (p *Pull) Run(params *PullParams) error {
 }
 
 func (p *Pull) performMerge(strategies *mono_models.MergeStrategies, remoteCommit strfmt.UUID, localCommit strfmt.UUID, namespace *project.Namespaced, branchName string) (strfmt.UUID, error) {
-	err := p.mergeBuildScript(strategies, remoteCommit)
-	if err != nil {
-		return "", errs.Wrap(err, "Could not merge local build script with remote changes")
-	}
+	// Re-enable in DX-2307.
+	//err := p.mergeBuildScript(strategies, remoteCommit)
+	//if err != nil {
+	//	return "", errs.Wrap(err, "Could not merge local build script with remote changes")
+	//}
 
 	p.out.Notice(output.Title(locale.Tl("pull_diverged", "Merging history")))
 	p.out.Notice(locale.Tr(
 		"pull_diverged_message",
 		namespace.String(), branchName, localCommit.String(), remoteCommit.String()))
 
-	commitID, err := localcommit.Get(p.project.Dir())
+	commitID, err := commitmediator.Get(p.project)
 	if err != nil {
 		return "", errs.Wrap(err, "Unable to get local commit")
 	}

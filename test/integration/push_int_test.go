@@ -13,10 +13,10 @@ import (
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/runbits/commitmediator"
 	"github.com/ActiveState/cli/internal/strutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
-	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 )
@@ -73,7 +73,7 @@ func (suite *PushIntegrationTestSuite) TestInitAndPush() {
 	// Check that languages were reset
 	pjfile, err := projectfile.Parse(pjfilepath)
 	suite.Require().NoError(err)
-	commitID, err := localcommit.Get(filepath.Join(ts.Dirs.Work, namespace))
+	commitID, err := commitmediator.Get(pjfile)
 	suite.Require().NoError(err)
 	suite.Require().NotEmpty(commitID.String(), "commitID was not set after running push for project creation")
 	suite.Require().NotEmpty(pjfile.BranchName(), "branch was not set after running push for project creation")
@@ -359,8 +359,13 @@ func (suite *PushIntegrationTestSuite) TestPush_Outdated() {
 	wd := filepath.Join(ts.Dirs.Work, "cli")
 	pjfilepath := filepath.Join(ts.Dirs.Work, "cli", constants.ConfigFileName)
 	suite.Require().NoError(fileutils.WriteFile(pjfilepath, []byte(projectLine)))
-	commitIdFile := filepath.Join(ts.Dirs.Work, "cli", constants.ProjectConfigDirName, constants.CommitIdFileName)
-	suite.Require().NoError(fileutils.WriteFile(commitIdFile, []byte(unPushedCommit)))
+	// Remove the following lines in DX-2307.
+	pjfile, err := projectfile.Parse(pjfilepath)
+	suite.Require().NoError(err)
+	suite.Require().NoError(pjfile.LegacySetCommit(unPushedCommit))
+	// Re-enable the following lines in DX-2307.
+	//commitIdFile := filepath.Join(ts.Dirs.Work, "cli", constants.ProjectConfigDirName, constants.CommitIdFileName)
+	//suite.Require().NoError(fileutils.WriteFile(commitIdFile, []byte(unPushedCommit)))
 
 	ts.LoginAsPersistentUser()
 	cp := ts.SpawnWithOpts(e2e.OptArgs("push"), e2e.OptWD(wd))

@@ -19,13 +19,12 @@ import (
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/runbits"
+	"github.com/ActiveState/cli/internal/runbits/commitmediator"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
-	"github.com/ActiveState/cli/pkg/localcommit"
 	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	medmodel "github.com/ActiveState/cli/pkg/platform/api/mediator/model"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/ActiveState/cli/pkg/platform/runtime/buildscript"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/thoas/go-funk"
@@ -108,7 +107,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 
 	switch nsType {
 	case model.NamespacePackage, model.NamespaceBundle:
-		commitID, err := localcommit.Get(r.Project.Dir())
+		commitID, err := commitmediator.Get(r.Project)
 		if err != nil {
 			return errs.Wrap(err, "Unable to get local commit")
 		}
@@ -190,7 +189,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 		pg = nil
 	}
 
-	parentCommitID, err := localcommit.Get(r.Project.Dir())
+	parentCommitID, err := commitmediator.Get(r.Project)
 	if err != nil {
 		return errs.Wrap(err, "Unable to get local commit")
 	}
@@ -269,20 +268,22 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 		return errs.Wrap(err, "Unsupported namespace type: %s", ns.Type().String())
 	}
 
-	expr, err := bp.GetBuildExpression(r.Project.Owner(), r.Project.Name(), commitID.String())
-	if err != nil {
-		return errs.Wrap(err, "Could not get remote build expr")
-	}
+	// Re-enable in DX-2307.
+	//expr, err := bp.GetBuildExpression(r.Project.Owner(), r.Project.Name(), commitID.String())
+	//if err != nil {
+	//	return errs.Wrap(err, "Could not get remote build expr")
+	//}
 
-	if err := localcommit.Set(r.Project.Dir(), commitID.String()); err != nil {
+	if err := commitmediator.Set(r.Project, commitID.String()); err != nil {
 		return locale.WrapError(err, "err_package_update_commit_id")
 	}
 
 	// Note: a commit ID file needs to exist at this point.
-	err = buildscript.Update(r.Project, expr, r.Auth)
-	if err != nil {
-		return locale.WrapError(err, "err_update_build_script")
-	}
+	// Re-enable in DX-2307.
+	//err = buildscript.Update(r.Project, expr, r.Auth)
+	//if err != nil {
+	//	return locale.WrapError(err, "err_update_build_script")
+	//}
 
 	// refresh or install runtime
 	err = runbits.RefreshRuntime(r.Auth, r.Output, r.Analytics, r.Project, commitID, true, trigger, r.SvcModel)
