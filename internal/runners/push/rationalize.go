@@ -6,6 +6,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
+	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 )
 
 func rationalizeError(err *error) {
@@ -16,6 +17,8 @@ func rationalizeError(err *error) {
 	var projectNameInUseErr *errProjectNameInUse
 
 	var headlessErr *errHeadless
+
+	var mergeCommitErr *bpModel.MergedCommitError
 
 	switch {
 
@@ -68,17 +71,28 @@ func rationalizeError(err *error) {
 			locale.T("err_push_create_project_aborted"),
 			errs.SetInput())
 
-	// Custom target does not have a compatible history
-	case errors.Is(*err, errTargetInvalidHistory):
-		*err = errs.WrapUserFacing(*err,
-			locale.T("err_push_target_invalid_history"),
-			errs.SetInput())
+	case errors.As(*err, &mergeCommitErr):
+		switch mergeCommitErr.Type {
+		// Need to pull first
+		case bpModel.FastForwardErrorType:
+			*err = errs.WrapUserFacing(*err,
+				locale.T("err_push_outdated"),
+				errs.SetInput(),
+				errs.SetTips(locale.T("err_tip_push_outdated")))
 
-	// Need to pull first
-	case errors.Is(*err, errPullNeeded):
-		*err = errs.WrapUserFacing(*err,
-			locale.T("err_push_outdated"),
-			errs.SetInput(),
-			errs.SetTips(locale.T("err_tip_push_outdated")))
+			// Custom target does not have a compatible history
+		case bpModel.NoCommonBaseFoundType:
+			*err = errs.WrapUserFacing(*err,
+				locale.T("err_push_target_invalid_history"),
+				errs.SetInput())
+
+			// No changes made
+		case bpModel.NoChangeSinceLastCommitErrorType:
+			*err = errs.WrapUserFacing(*err,
+				locale.T("push_no_changes"),
+				errs.SetInput(),
+			)
+
+		}
 	}
 }
