@@ -14,6 +14,7 @@ import (
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/pkg/localcommit"
+	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -63,10 +64,8 @@ const (
 )
 
 var (
-	errNoChanges            = errors.New("no changes")
-	errNoCommit             = errors.New("no commit")
-	errTargetInvalidHistory = errors.New("local and remove histories do not match")
-	errPullNeeded           = errors.New("pull needed")
+	errNoChanges = errors.New("no changes")
+	errNoCommit  = errors.New("no commit")
 )
 
 type errProjectNameInUse struct {
@@ -148,6 +147,9 @@ func (r *Push) Run(params PushParams) (rerr error) {
 		}
 	}
 
+	bp := model.NewBuildPlannerModel(r.auth)
+	var branch *mono_models.Branch // the branch to write to as.yaml if it changed
+
 	// Create remote project
 	var projectCreated bool
 	if intend&intendCreateProject > 0 || targetPjm == nil {
@@ -170,61 +172,74 @@ func (r *Push) Run(params PushParams) (rerr error) {
 		}
 
 		r.out.Notice(locale.Tl("push_creating_project", "Creating project [NOTICE]{{.V1}}[/RESET] under [NOTICE]{{.V0}}[/RESET] on the ActiveState Platform", targetNamespace.Owner, targetNamespace.Project))
-		targetPjm, err = model.CreateEmptyProject(targetNamespace.Owner, targetNamespace.Project, r.project.Private())
+
+		// Create a new project with the current project's buildexpression.
+		expr, err := bp.GetBuildExpression(r.project.Owner(), r.project.Name(), commitID.String())
 		if err != nil {
-			return errs.Wrap(err, "Failed to create project %s", r.project.Namespace().String())
+			return errs.Wrap(err, "Could not get buildexpression")
+		}
+		commitID, err = bp.CreateProject(&model.CreateProjectParams{
+			Owner:       targetNamespace.Owner,
+			Project:     targetNamespace.Project,
+			Private:     r.project.Private(),
+			Description: locale.T("commit_message_add_initial"),
+			Expr:        expr,
+		})
+		if err != nil {
+			return locale.WrapError(err, "err_push_create_project", "Could not create new project")
 		}
 
-		projectCreated = true
-	}
+		// Update the project's commitID with the create project or push result.
+		if err := localcommit.Set(r.project.Dir(), commitID.String()); err != nil {
+			return errs.Wrap(err, "Unable to create local commit file")
+		}
 
-	// Now we get to the actual push logic
-	r.out.Notice(locale.Tl("push_to_project", "Pushing to project [NOTICE]{{.V1}}[/RESET] under [NOTICE]{{.V0}}[/RESET].", targetNamespace.Owner, targetNamespace.Project))
-
-	// Detect the target branch
-	var branch *mono_models.Branch
-	if projectCreated || r.project.BranchName() == "" {
-		// https://www.pivotaltracker.com/story/show/176806415
-		// If we have created an empty project the only existing branch will be the default one
+		// Fetch the newly created project's default branch (for updating activestate.yaml with).
+		targetPjm, err = model.LegacyFetchProjectByName(targetNamespace.Owner, targetNamespace.Project)
+		if err != nil {
+			return errs.Wrap(err, "Failed to fetch newly created project")
+		}
 		branch, err = model.DefaultBranchForProject(targetPjm)
 		if err != nil {
 			return errs.Wrap(err, "Project has no default branch")
 		}
+
+		projectCreated = true
+
 	} else {
-		branch, err = model.BranchForProjectByName(targetPjm, r.project.BranchName())
-		if err != nil {
-			return errs.Wrap(err, "Could not get branch %s", r.project.BranchName())
-		}
-	}
 
-	// Check if branch is already up to date
-	if branch.CommitID != nil && branch.CommitID.String() == commitID.String() {
-		return errNoChanges
-	}
+		// Now we get to the actual push logic
+		r.out.Notice(locale.Tl("push_to_project", "Pushing to project [NOTICE]{{.V1}}[/RESET] under [NOTICE]{{.V0}}[/RESET].", targetNamespace.Owner, targetNamespace.Project))
 
-	// Check whether there is a conflict
-	if branch.CommitID != nil {
-		mergeStrategy, err := model.MergeCommit(*branch.CommitID, commitID)
-		if err != nil {
-			if errors.Is(err, model.ErrMergeCommitInHistory) {
-				return errNoChanges
+		// Detect the target branch
+		if r.project.BranchName() == "" {
+			branch, err = model.DefaultBranchForProject(targetPjm)
+			if err != nil {
+				return errs.Wrap(err, "Project has no default branch")
 			}
-			if !errors.Is(err, model.ErrMergeFastForward) {
-				if params.Namespace.IsValid() {
-					return errTargetInvalidHistory
-				}
-				return errs.Wrap(err, "Could not detect if merge is necessary")
+		} else {
+			branch, err = model.BranchForProjectByName(targetPjm, r.project.BranchName())
+			if err != nil {
+				return errs.Wrap(err, "Could not get branch %s", r.project.BranchName())
 			}
 		}
-		if mergeStrategy != nil {
-			return errPullNeeded
-		}
-	}
 
-	// Update the project at the given commit id.
-	err = model.UpdateProjectBranchCommitWithModel(targetPjm, branch.Label, commitID)
-	if err != nil {
-		return errs.Wrap(err, "Failed to update new project %s to current commitID", targetNamespace.String())
+		// Check if branch is already up to date
+		if branch.CommitID != nil && branch.CommitID.String() == commitID.String() {
+			return errNoChanges
+		}
+
+		// Perform the (fast-forward) push.
+		_, err = bp.MergeCommit(&model.MergeCommitParams{
+			Owner:     targetNamespace.Owner,
+			Project:   targetNamespace.Project,
+			TargetRef: branch.Label, // using branch name will fast-forward
+			OtherRef:  commitID.String(),
+			Strategy:  bpModel.MergeCommitStrategyFastForward,
+		})
+		if err != nil {
+			return errs.Wrap(err, "Could not push")
+		}
 	}
 
 	// Write the project namespace to the as.yaml, if it changed
