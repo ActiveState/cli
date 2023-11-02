@@ -79,8 +79,10 @@ func (r *Revert) Run(params *Params) error {
 		revertCommitID: params.CommitID,
 	}
 	revertFunc := r.revertCommit
+	preposition := ""
 	if params.To {
 		revertFunc = r.revertToCommit
+		preposition = " to" // need leading whitespace
 	}
 
 	targetCommit, err := model.GetCommitWithinCommitHistory(latestCommit, strfmt.UUID(targetCommitID))
@@ -99,10 +101,7 @@ func (r *Revert) Run(params *Params) error {
 			return locale.WrapError(err, "err_revert_get_organizations", "Could not get organizations for current user")
 		}
 	}
-	preposition := ""
-	if params.To {
-		preposition = " to" // need leading whitespace
-	}
+
 	if !r.out.Type().IsStructured() {
 		r.out.Print(locale.Tl("revert_info", "You are about to revert{{.V0}} the following commit:", preposition))
 		commit.PrintCommit(r.out, targetCommit, orgs)
