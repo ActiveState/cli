@@ -350,6 +350,7 @@ func (s *Session) SpawnCmdWithOpts(exe string, optSetters ...SpawnOptSetter) *Sp
 	}
 
 	cmd := exec.Command(shell, args...)
+	fmt.Println("Executing: ", cmd.String())
 
 	cmd.Env = spawnOpts.Env
 
