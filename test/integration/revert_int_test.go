@@ -120,7 +120,6 @@ func (suite *RevertIntegrationTestSuite) TestRevertTo() {
 	cp.Expect("+ argparse") // commit being effectively reverted
 	cp.Expect("+ urllib3")  // commit reverted to
 	cp.Expect("+ python")   // initial commit
-	fmt.Println("Output: ", cp.Snapshot())
 }
 
 func (suite *RevertIntegrationTestSuite) TestRevertTo_failsOnCommitNotInHistory() {
