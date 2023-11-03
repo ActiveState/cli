@@ -239,6 +239,14 @@ func (s *Store) updateEnviron(orderedArtifacts []artifact.ArtifactID, artifacts 
 		}
 	}
 
+	if rtGlobal == nil {
+		// Returning nil will end up causing a nil-pointer-exception panic in setup.Update().
+		// There is additional logging of the buildplan there that may help diagnose why this is happening.
+		logging.Error("There were artifacts returned, but none of them ended up being stored/installed.")
+		logging.Error("Artifacts returned: %v", orderedArtifacts)
+		logging.Error("Artifacts stored: %v", artifacts)
+	}
+
 	return rtGlobal, nil
 }
 
