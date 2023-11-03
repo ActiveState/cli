@@ -313,6 +313,7 @@ func newStateCommand(globals *globalOptions, prime *primer.Values) *captain.Comm
 	cmd.SetHasVariableArguments()
 	cmd.OnExecStart(cmdCall.OnExecStart)
 	cmd.OnExecStop(cmdCall.OnExecStop)
+	cmd.SetSupportsStructuredOutput()
 
 	return cmd
 }
