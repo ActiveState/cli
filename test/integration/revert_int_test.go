@@ -42,7 +42,7 @@ func (suite *RevertIntegrationTestSuite) TestRevert() {
 		e2e.OptArgs("history"),
 		e2e.OptWD(wd),
 	)
-	cp.Expect("Revert commit " + commitID)
+	cp.Expect("Reverted commit for commit " + commitID)
 	cp.Expect("- urllib3")
 	cp.Expect("+ argparse") // parent commit
 	cp.Expect("+ urllib3")  // commit whose changes were just reverted
@@ -83,7 +83,7 @@ func (suite *RevertIntegrationTestSuite) TestRevert_failsOnCommitNotInHistory() 
 	cp.Expect(fmt.Sprintf("Operating on project %s", namespace))
 	cp.SendLine("Y")
 	cp.Expect(commitID)
-	cp.Expect("The commit being reverted is not within the current commit's history")
+	cp.Expect("The target commit is not within the current commit's history")
 	cp.ExpectNotExitCode(0)
 }
 
@@ -115,7 +115,7 @@ func (suite *RevertIntegrationTestSuite) TestRevertTo() {
 		e2e.OptArgs("history"),
 		e2e.OptWD(wd),
 	)
-	cp.Expect("Reverting to commit " + commitID)
+	cp.Expect("Revert to commit " + commitID)
 	cp.Expect("- argparse") // effectively reverting previous commit
 	cp.Expect("+ argparse") // commit being effectively reverted
 	cp.Expect("+ urllib3")  // commit reverted to

@@ -395,6 +395,29 @@ func (bp *BuildPlanner) CreateProject(params *CreateProjectParams) (strfmt.UUID,
 	return resp.ProjectCreated.Commit.CommitID, nil
 }
 
+func (bp *BuildPlanner) RevertCommit(organization, project, parentCommitID, commitID string) (strfmt.UUID, error) {
+	logging.Debug("RevertCommit, organization: %s, project: %s, commitID: %s", organization, project, commitID)
+	resp := &bpModel.RevertCommitResult{}
+	err := bp.client.Run(request.RevertCommit(organization, project, parentCommitID, commitID), resp)
+	if err != nil {
+		return "", processBuildPlannerError(err, "Failed to revert commit")
+	}
+
+	if resp.RevertedCommit == nil {
+		return "", errs.New("Commit is nil")
+	}
+
+	if bpModel.IsErrorResponse(resp.RevertedCommit.Type) {
+		return "", bpModel.ProcessCommitError(resp.RevertedCommit.Commit, "Could not revert commit")
+	}
+
+	if resp.RevertedCommit.Commit.CommitID == "" {
+		return "", errs.New("Commit does not contain commitID")
+	}
+
+	return resp.RevertedCommit.Commit.CommitID, nil
+}
+
 type MergeCommitParams struct {
 	Owner     string
 	Project   string
