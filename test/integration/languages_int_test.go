@@ -40,6 +40,7 @@ func (suite *LanguagesIntegrationTestSuite) TestLanguages_listNoCommitID() {
 
 	cp := ts.Spawn("languages")
 	cp.ExpectNotExitCode(0)
+	ts.IgnoreLogErrors()
 }
 
 func (suite *LanguagesIntegrationTestSuite) TestLanguages_install() {
@@ -59,6 +60,7 @@ func (suite *LanguagesIntegrationTestSuite) TestLanguages_install() {
 	cp = ts.Spawn("languages", "install", "python")
 	cp.Expect("Language: python is already installed")
 	cp.ExpectExitCode(1)
+	ts.IgnoreLogErrors()
 
 	cp = ts.Spawn("languages", "install", "python@3.9.16")
 	cp.Expect("Language added: python@3.9.16")

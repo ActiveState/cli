@@ -185,6 +185,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall_NonEmptyTarget() {
 	// because of powershell.
 	// Since we asserted the expected error above we don't need to go on a wild goose chase here.
 	cp.ExpectExit()
+	ts.IgnoreLogErrors()
 }
 
 func (suite *InstallScriptsIntegrationTestSuite) TestInstall_VersionDoesNotExist() {
@@ -206,6 +207,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall_VersionDoesNotExist
 		cp.Expect("Could not download")
 	}
 	cp.ExpectExitCode(1)
+	ts.IgnoreLogErrors()
 }
 
 // scriptPath returns the path to an installation script copied to targetDir, if useTestUrl is true, the install script is modified to download from the local test server instead

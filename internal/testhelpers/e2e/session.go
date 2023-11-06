@@ -57,12 +57,13 @@ type Session struct {
 	retainDirs      bool
 	createdProjects []*project.Namespaced
 	// users created during session
-	users       []string
-	t           *testing.T
-	Exe         string
-	SvcExe      string
-	ExecutorExe string
-	spawned     []*SpawnedCmd
+	users           []string
+	t               *testing.T
+	Exe             string
+	SvcExe          string
+	ExecutorExe     string
+	spawned         []*SpawnedCmd
+	ignoreLogErrors bool
 }
 
 var (
@@ -638,6 +639,10 @@ func (s *Session) Close() error {
 		}
 	}
 
+	if !s.ignoreLogErrors {
+		s.detectLogErrors()
+	}
+
 	return nil
 }
 
@@ -742,12 +747,19 @@ func (s *Session) DebugLogsDump() string {
 	return result
 }
 
+// IgnoreLogErrors disables log error checking after the session closes.
+// Normally, logged errors automatically cause test failures, so calling this is needed for tests
+// with expected errors.
+func (s *Session) IgnoreLogErrors() {
+	s.ignoreLogErrors = true
+}
+
 var errorOrPanicRegex = regexp.MustCompile(`(?:\[ERR:|Panic:)`)
 
-func (s *Session) DetectLogErrors() {
+func (s *Session) detectLogErrors() {
 	for _, path := range s.LogFiles() {
 		if contents := string(fileutils.ReadFileUnsafe(path)); errorOrPanicRegex.MatchString(contents) {
-			s.t.Errorf("Found error and/or panic in log file %s, contents:\n%s", path, contents)
+			s.t.Errorf("Found error and/or panic in log file %s\nIf this was expected, call session.IgnoreLogErrors() to avoid this check\nLog contents:\n%s", path, contents)
 		}
 	}
 }

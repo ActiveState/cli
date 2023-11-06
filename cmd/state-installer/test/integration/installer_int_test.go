@@ -145,6 +145,7 @@ func (suite *InstallerIntegrationTestSuite) TestInstallIncompatible() {
 	// Assert output
 	cp.Expect("not compatible")
 	cp.ExpectExitCode(1)
+	ts.IgnoreLogErrors()
 }
 
 func (suite *InstallerIntegrationTestSuite) TestInstallNoErrorTips() {
@@ -164,6 +165,7 @@ func (suite *InstallerIntegrationTestSuite) TestInstallNoErrorTips() {
 
 	cp.ExpectExitCode(1)
 	suite.Assert().NotContains(cp.Output(), "Need More Help?", "error tips should not be displayed when invoking installer")
+	ts.IgnoreLogErrors()
 }
 
 func (suite *InstallerIntegrationTestSuite) TestInstallErrorTips() {

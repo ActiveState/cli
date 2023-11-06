@@ -496,6 +496,7 @@ func (suite *AnalyticsIntegrationTestSuite) TestInputError() {
 
 	cp := ts.Spawn("clean", "uninstall", "badarg", "--mono")
 	cp.ExpectExitCode(1)
+	ts.IgnoreLogErrors()
 
 	events := parseAnalyticsEvents(suite, ts)
 	suite.assertSequentialEvents(events)

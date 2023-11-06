@@ -23,6 +23,7 @@ func (suite *InviteIntegrationTestSuite) TestInvite_NotAuthenticated() {
 	cp := ts.Spawn("invite", "test-user@test.com")
 	cp.Expect("You need to authenticate")
 	cp.ExpectNotExitCode(0)
+	ts.IgnoreLogErrors()
 }
 
 func TestInviteIntegrationTestSuite(t *testing.T) {

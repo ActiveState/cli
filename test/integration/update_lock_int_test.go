@@ -106,6 +106,7 @@ func (suite *UpdateIntegrationTestSuite) TestLockedChannel() {
 				cp = ts.SpawnWithOpts(e2e.OptArgs("--version"), e2e.OptAppendEnv(suite.env(true, false)...))
 				cp.Expect("This project is locked at State Tool version")
 				cp.ExpectExitCode(1)
+				ts.IgnoreLogErrors()
 				return
 			}
 		})
@@ -161,6 +162,7 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateLockedConfirmation() {
 				cp.Expect("Cancelling")
 			}
 			cp.ExpectNotExitCode(0)
+			ts.IgnoreLogErrors()
 		})
 	}
 }

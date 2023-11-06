@@ -37,6 +37,7 @@ func (suite *ForkIntegrationTestSuite) TestFork() {
 	cp = ts.Spawn("fork", "ActiveState-CLI/Python3", "--name", "Test-Python3", "--org", username)
 	cp.Expect(`You already have a project with the name`)
 	cp.ExpectExitCode(1)
+	ts.IgnoreLogErrors()
 }
 
 func (suite *ForkIntegrationTestSuite) TestFork_FailNameExists() {
@@ -48,6 +49,7 @@ func (suite *ForkIntegrationTestSuite) TestFork_FailNameExists() {
 	cp := ts.SpawnWithOpts(e2e.OptArgs("fork", "ActiveState-CLI/Python3", "--org", e2e.PersistentUsername))
 	cp.Expect("You already have a project with the name 'Python3'", termtest.OptExpectTimeout(30*time.Second))
 	cp.ExpectNotExitCode(0)
+	ts.IgnoreLogErrors()
 }
 
 func TestForkIntegrationTestSuite(t *testing.T) {

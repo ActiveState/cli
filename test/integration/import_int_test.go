@@ -86,6 +86,7 @@ func (suite *ImportIntegrationTestSuite) TestImport() {
 		cp.Expect("already exists")
 		cp.ExpectNotExitCode(0)
 	})
+	ts.IgnoreLogErrors()
 }
 
 func TestImportIntegrationTestSuite(t *testing.T) {

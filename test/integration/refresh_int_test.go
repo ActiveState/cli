@@ -35,6 +35,7 @@ func (suite *RefreshIntegrationTestSuite) TestRefresh() {
 	)
 	cp.Expect("ModuleNotFoundError")
 	cp.ExpectExitCode(1)
+	ts.IgnoreLogErrors()
 
 	suite.PrepareActiveStateYAML(ts, "ActiveState-CLI/Branches", "secondbranch", "46c83477-d580-43e2-a0c6-f5d3677517f1")
 	cp = ts.SpawnWithOpts(

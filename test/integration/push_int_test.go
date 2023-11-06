@@ -223,6 +223,7 @@ func (suite *PushIntegrationTestSuite) TestPush_NoProject() {
 	cp := ts.SpawnWithOpts(e2e.OptArgs("push"))
 	cp.Expect("No project found")
 	cp.ExpectExitCode(1)
+	ts.IgnoreLogErrors()
 
 	if strings.Count(cp.Snapshot(), " x ") != 1 {
 		suite.Fail("Expected exactly ONE error message, got: ", cp.Snapshot())
@@ -240,6 +241,7 @@ func (suite *PushIntegrationTestSuite) TestPush_NoAuth() {
 	cp := ts.SpawnWithOpts(e2e.OptArgs("push"))
 	cp.Expect("you need to be authenticated")
 	cp.ExpectExitCode(1)
+	ts.IgnoreLogErrors()
 
 	if strings.Count(cp.Snapshot(), " x ") != 1 {
 		suite.Fail("Expected exactly ONE error message, got: ", cp.Snapshot())
@@ -259,6 +261,7 @@ func (suite *PushIntegrationTestSuite) TestPush_NoChanges() {
 	cp = ts.SpawnWithOpts(e2e.OptArgs("push"))
 	cp.Expect("no local changes to push")
 	cp.ExpectExitCode(1)
+	ts.IgnoreLogErrors()
 
 	if strings.Count(cp.Snapshot(), " x ") != 1 {
 		suite.Fail("Expected exactly ONE error message, got: ", cp.Snapshot())
@@ -279,6 +282,7 @@ func (suite *PushIntegrationTestSuite) TestPush_NameInUse() {
 	cp := ts.SpawnWithOpts(e2e.OptArgs("push", "-n", "ActiveState-CLI/push-error-test"))
 	cp.Expect("already in use")
 	cp.ExpectExitCode(1)
+	ts.IgnoreLogErrors()
 
 	if strings.Count(cp.Snapshot(), " x ") != 1 {
 		suite.Fail("Expected exactly ONE error message, got: ", cp.Snapshot())
@@ -304,6 +308,7 @@ func (suite *PushIntegrationTestSuite) TestPush_Aborted() {
 	cp.SendLine("n")
 	cp.Expect("Project creation aborted by user", termtest.OptExpectTimeout(5*time.Second))
 	cp.ExpectExitCode(1)
+	ts.IgnoreLogErrors()
 
 	if strings.Count(cp.Snapshot(), " x ") != 1 {
 		suite.Fail("Expected exactly ONE error message, got: ", cp.Snapshot())
@@ -324,6 +329,7 @@ func (suite *PushIntegrationTestSuite) TestPush_InvalidHistory() {
 	cp := ts.SpawnWithOpts(e2e.OptArgs("push", "ActiveState-CLI/push-error-test"))
 	cp.Expect("commit history does not match")
 	cp.ExpectExitCode(1)
+	ts.IgnoreLogErrors()
 
 	if strings.Count(cp.Snapshot(), " x ") != 1 {
 		suite.Fail("Expected exactly ONE error message, got: ", cp.Snapshot())
@@ -343,6 +349,7 @@ func (suite *PushIntegrationTestSuite) TestPush_PullNeeded() {
 	cp := ts.SpawnWithOpts(e2e.OptArgs("push"))
 	cp.Expect("changes available that need to be merged")
 	cp.ExpectExitCode(1)
+	ts.IgnoreLogErrors()
 
 	if strings.Count(cp.Snapshot(), " x ") != 1 {
 		suite.Fail("Expected exactly ONE error message, got: ", cp.Snapshot())
@@ -372,6 +379,7 @@ func (suite *PushIntegrationTestSuite) TestPush_Outdated() {
 	cp := ts.SpawnWithOpts(e2e.OptArgs("push"), e2e.OptWD(wd))
 	cp.Expect("Your project has new changes available")
 	cp.ExpectExitCode(1)
+	ts.IgnoreLogErrors()
 }
 
 func TestPushIntegrationTestSuite(t *testing.T) {
