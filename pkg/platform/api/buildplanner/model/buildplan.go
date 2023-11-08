@@ -46,6 +46,7 @@ const (
 	BuildLogRecipeID = "RECIPE_ID"
 	BuildRequestID   = "BUILD_REQUEST_ID"
 
+	// Version Comparators
 	ComparatorEQ  string = "eq"
 	ComparatorGT         = "gt"
 	ComparatorGTE        = "gte"
@@ -53,14 +54,20 @@ const (
 	ComparatorLTE        = "lte"
 	ComparatorNE         = "ne"
 
+	// Version Requirement keys
 	VersionRequirementComparatorKey = "comparator"
 	VersionRequirementVersionKey    = "version"
 
+	// MIME types
 	XArtifactMimeType            = "application/x.artifact"
 	XActiveStateArtifactMimeType = "application/x-activestate-artifacts"
 	XCamelInstallerMimeType      = "application/x-camel-installer"
 	XGozipInstallerMimeType      = "application/x-gozip-installer"
 	XActiveStateBuilderMimeType  = "application/x-activestate-builder"
+
+	// RevertCommit strategies
+	RevertCommitStrategyForce   = "Force"
+	RevertCommitStrategyDefault = "Default"
 
 	// MergeCommit strategies
 	MergeCommitStrategyRecursive                    MergeStrategy = "Recursive"
@@ -82,6 +89,8 @@ const (
 	MergeConflictType                = "MergeConflict"
 	FastForwardErrorType             = "FastForwardError"
 	NoCommonBaseFoundType            = "NoCommonBaseFound"
+	ValidationErrorType              = "ValidationError"
+	MergeConflictErrorType           = "MergeConflict"
 )
 
 func IsStateToolArtifact(mimeType string) bool {
@@ -282,7 +291,8 @@ func IsErrorResponse(errorType string) bool {
 		errorType == NotFoundErrorType ||
 		errorType == MergeConflictType ||
 		errorType == FastForwardErrorType ||
-		errorType == NoCommonBaseFoundType
+		errorType == NoCommonBaseFoundType ||
+		errorType == ValidationErrorType
 }
 
 func ProcessCommitError(commit *Commit, fallbackMessage string) error {
@@ -402,16 +412,38 @@ type projectCreated struct {
 	Type   string  `json:"__typename"`
 	Commit *Commit `json:"commit"`
 	*Error
+	*NotFoundError
+	*ParseError
+	*ForbiddenError
 }
 
 type CreateProjectResult struct {
 	ProjectCreated *projectCreated `json:"createProject"`
 }
 
+type revertedCommit struct {
+	Type           string      `json:"__typename"`
+	Commit         *Commit     `json:"commit"`
+	CommonAncestor strfmt.UUID `json:"commonAncestorID"`
+	ConflictPaths  []string    `json:"conflictPaths"`
+	*Error
+}
+
+type RevertCommitResult struct {
+	RevertedCommit *revertedCommit `json:"revertCommit"`
+}
+
 type mergedCommit struct {
 	Type   string  `json:"__typename"`
 	Commit *Commit `json:"commit"`
 	*Error
+	*MergeConflictError
+	*MergeError
+	*NotFoundError
+	*ParseError
+	*ForbiddenError
+	*HeadOnBranchMovedError
+	*NoChangeSinceLastCommitError
 }
 
 // MergeCommitResult is the result of a merge commit mutation.
@@ -621,6 +653,20 @@ type HeadOnBranchMovedError struct {
 // were no changes since the last commit.
 type NoChangeSinceLastCommitError struct {
 	NoChangeCommitID strfmt.UUID `json:"commitId"`
+}
+
+// MergeConflictError represents an error that occurred because of a merge conflict.
+type MergeConflictError struct {
+	CommonAncestorID strfmt.UUID `json:"commonAncestorId"`
+	ConflictPaths    []string    `json:"conflictPaths"`
+}
+
+// MergeError represents two different errors in the BuildPlanner's graphQL
+// schema with the same fields. Those errors being: FastForwardError and
+// NoCommonBaseFound. Inspect the Type field to determine which error it is.
+type MergeError struct {
+	TargetVCSRef strfmt.UUID `json:"targetVcsRef"`
+	OtherVCSRef  strfmt.UUID `json:"otherVcsRef"`
 }
 
 // BuildExprLocation represents a location in the build script where an error occurred.
