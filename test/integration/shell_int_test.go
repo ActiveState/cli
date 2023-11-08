@@ -13,6 +13,8 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/subshell"
+	"github.com/ActiveState/cli/internal/subshell/bash"
+	"github.com/ActiveState/cli/internal/subshell/sscommon"
 	"github.com/ActiveState/cli/internal/subshell/zsh"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
@@ -283,6 +285,53 @@ func (suite *ShellIntegrationTestSuite) TestRuby() {
 	cp.SendLine("ruby -v")
 	cp.Expect("3.2.2")
 	cp.Expect("ActiveState")
+}
+
+func (suite *ShellIntegrationTestSuite) TestNestedShellNotification() {
+	if runtime.GOOS == "windows" {
+		return // cmd.exe does not have an RC file to check for nested shells in
+	}
+	suite.OnlyRunForTags(tagsuite.Shell)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	var ss subshell.SubShell
+	var rcFile string
+	env := []string{"ACTIVESTATE_CLI_DISABLE_RUNTIME=false"}
+	switch runtime.GOOS {
+	case "darwin":
+		ss = &zsh.SubShell{}
+		ss.SetBinary("zsh")
+		rcFile = filepath.Join(ts.Dirs.HomeDir, ".zshrc")
+		suite.Require().NoError(sscommon.WriteRcFile("zshrc_append.sh", rcFile, sscommon.DefaultID, nil))
+		env = append(env, "SHELL=zsh") // override since CI tests are running on bash
+	case "linux":
+		ss = &bash.SubShell{}
+		ss.SetBinary("bash")
+		rcFile = filepath.Join(ts.Dirs.HomeDir, ".bashrc")
+		suite.Require().NoError(sscommon.WriteRcFile("bashrc_append.sh", rcFile, sscommon.DefaultID, nil))
+	default:
+		suite.Fail("Unsupported OS")
+	}
+	suite.Require().Equal(filepath.Dir(rcFile), ts.Dirs.HomeDir, "rc file not in test suite homedir")
+	suite.Require().Contains(string(fileutils.ReadFileUnsafe(rcFile)), "State Tool is operating on project")
+
+	cp := ts.Spawn("checkout", "ActiveState-CLI/small-python")
+	cp.Expect("Checked out project")
+	cp.ExpectExitCode(0)
+
+	cp = ts.SpawnWithOpts(
+		e2e.OptArgs("shell", "small-python"),
+		e2e.OptAppendEnv(env...))
+	cp.Expect("Activated")
+	suite.Assert().NotContains(cp.Snapshot(), "State Tool is operating on project")
+	cp.SendLine(fmt.Sprintf(`export HOME="%s"`, ts.Dirs.HomeDir)) // some shells do not forward this
+
+	cp.SendLine(ss.Binary()) // platform-specific shell (zsh on macOS, bash on Linux, etc.)
+	cp.Expect("State Tool is operating on project ActiveState-CLI/small-python")
+	cp.SendLine("exit") // subshell within a subshell
+	cp.SendLine("exit")
+	cp.ExpectExitCode(0)
 }
 
 func TestShellIntegrationTestSuite(t *testing.T) {
