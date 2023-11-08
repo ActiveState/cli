@@ -5,7 +5,9 @@ setenv {{$K}} "{{$V}}:$PATH"
 {{- else}}
 {{- end}}
 {{- end}}
-if ( "${{.ActivatedEnv}}" != "" && -f "${{.ActivatedEnv}}/{{.ConfigFile}}" ) then
-  echo "State Tool is operating on project ${{.ActivatedNamespaceEnv}}, located at ${{.ActivatedEnv}}"
+if ( $?{{.ActivatedEnv}} ) then
+  if ( -f "${{.ActivatedEnv}}/{{.ConfigFile}}" ) then
+    echo "State Tool is operating on project ${{.ActivatedNamespaceEnv}}, located at ${{.ActivatedEnv}}"
+  endif
 endif
 # {{.Stop}}
