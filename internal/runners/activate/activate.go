@@ -138,10 +138,6 @@ func (r *Activate) Run(params *ActivateParams) (rerr error) {
 		}
 	}
 
-	if proj != nil && proj.IsHeadless() {
-		return locale.NewInputError("err_activate_headless", "Cannot activate a headless project. Please visit {{.V0}} to create your project.", proj.URL())
-	}
-
 	if proj != nil && params.Branch != "" && params.Branch != proj.BranchName() {
 		return locale.NewInputError("err_conflicting_branch_while_checkedout", "", params.Branch, proj.BranchName())
 	}

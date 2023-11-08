@@ -5,6 +5,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/pkg/localcommit"
 	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -50,5 +51,9 @@ func (r *RequirementOperation) rationalizeError(err *error) {
 			buildPlannerErr.LocalizedError(),
 			errs.SetIf(buildPlannerErr.InputError(), errs.SetInput()))
 
+	case errors.Is(*err, rationalize.ErrNoProject):
+		*err = errs.WrapUserFacing(*err,
+			locale.Tr("err_no_project"),
+			errs.SetInput())
 	}
 }
