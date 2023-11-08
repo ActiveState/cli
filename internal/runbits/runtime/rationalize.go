@@ -24,6 +24,16 @@ func rationalizeError(auth *authentication.Auth, proj *project.Project, rerr *er
 		multilog.Error("runtime:rationalizeError called with nil project, error: %s", errs.JoinMessage(*rerr))
 		*rerr = errs.Pack(*rerr, errs.New("project is nil"))
 
+	case proj.IsHeadless():
+		*rerr = errs.NewUserFacing(
+			locale.Tl(
+				"err_runtime_headless",
+				"Cannot initialize runtime for a headless project. Please visit {{.V0}} to convert your project and try again.",
+				proj.URL(),
+			),
+			errs.SetInput(),
+		)
+
 	// Could not find a platform that matches on the given branch, so suggest alternate branches if ones exist
 	case isUpdateErr && errors.As(*rerr, &errNoMatchingPlatform):
 		branches, err := model.BranchNamesForProjectFiltered(proj.Owner(), proj.Name(), proj.BranchName())
