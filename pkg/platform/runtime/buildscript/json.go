@@ -4,21 +4,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"sort"
 	"strings"
-
-	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/pkg/platform/runtime/buildexpression"
 )
 
-func (s *Script) ToBuildExpression() (*buildexpression.BuildExpression, error) {
-	data, err := json.Marshal(s)
-	if err != nil {
-		return nil, errs.Wrap(err, "Unable to marshal buildscript into JSON")
-	}
-	return buildexpression.New(data)
-}
-
+// MarshalJSON marshals the Participle-produced Script into an equivalent buildexpression.
+// Users of buildscripts do not need to do this manually; the Expr field contains the
+// equivalent buildexpression.
 func (s *Script) MarshalJSON() ([]byte, error) {
 	m := make(map[string]interface{})
 	let := make(map[string]interface{})
@@ -41,17 +32,7 @@ func (v *Value) MarshalJSON() ([]byte, error) {
 	case v.FuncCall != nil:
 		return json.Marshal(v.FuncCall)
 	case v.List != nil:
-		// Buildexpression list order does not matter, so sorting is necessary for
-		// comparisons. Go's JSON marshaling is deterministic, so utilize that.
-		// This should not be necessary when DX-1939 is implemented.
-		list := make([]*Value, len(*v.List))
-		copy(list, *v.List)
-		sort.SliceStable(list, func(i, j int) bool {
-			b1, err1 := json.Marshal(list[i])
-			b2, err2 := json.Marshal(list[j])
-			return err1 == nil && err2 == nil && string(b1) < string(b2)
-		})
-		return json.Marshal(list)
+		return json.Marshal(v.List)
 	case v.Str != nil:
 		return json.Marshal(strings.Trim(*v.Str, `"`))
 	case v.Number != nil:
@@ -79,6 +60,8 @@ func (f *FuncCall) MarshalJSON() ([]byte, error) {
 		switch {
 		case argument.Assignment != nil:
 			args[argument.Assignment.Key] = argument.Assignment.Value
+		case argument.FuncCall != nil:
+			args[argument.FuncCall.Name] = argument.FuncCall.Arguments
 		default:
 			return nil, errors.New(fmt.Sprintf("Cannot marshal %v (arg %v)", f, argument))
 		}

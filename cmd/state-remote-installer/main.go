@@ -25,9 +25,9 @@ import (
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
+	"github.com/ActiveState/cli/internal/runbits/errors"
 	"github.com/ActiveState/cli/internal/runbits/panics"
 	"github.com/ActiveState/cli/internal/updater"
-	"github.com/ActiveState/cli/pkg/cmdlets/errors"
 )
 
 type Params struct {
@@ -93,6 +93,12 @@ func main() {
 		fmt.Fprintln(os.Stderr, err.Error())
 		exitCode = 1
 		return
+	}
+
+	// Store sessionToken to config
+	err = cfg.Set(anaConst.CfgSessionToken, "remote_"+constants.RemoteInstallerVersion)
+	if err != nil {
+		logging.Error("Unable to set session token: " + errs.JoinMessage(err))
 	}
 
 	an = sync.New(anaConst.SrcStateRemoteInstaller, cfg, nil, out)

@@ -59,8 +59,18 @@ const DisableRuntime = "ACTIVESTATE_CLI_DISABLE_RUNTIME"
 // DisableUpdates is the env var used to disable automatic updates
 const DisableUpdates = "ACTIVESTATE_CLI_DISABLE_UPDATES"
 
+// DisableLanguageTemplates is the env var used to disable templating for new activestate.yaml files
+const DisableLanguageTemplates = "ACTIVESTATE_CLI_DISABLE_LANGUAGE_TEMPLATES"
+
+// DisableProjectMigrationPrompt is the env var used to disable the project migration prompt for legacy projects.
+// This is set by default for integration tests for backward-compatibility with old integration tests.
+const DisableProjectMigrationPrompt = "ACTIVESTATE_CLI_DISABLE_PROJECT_MIGRATION_PROMPT"
+
 // UpdateBranchEnvVarName is the env var that is used to override which branch to pull the update from
 const UpdateBranchEnvVarName = "ACTIVESTATE_CLI_UPDATE_BRANCH"
+
+// InstallBuildDependencies is the env var that is used to override whether to install build dependencies
+const InstallBuildDependencies = "ACTIVESTATE_CLI_INSTALL_BUILD_DEPENDENCIES"
 
 // InternalConfigFileNameLegacy is effectively the same as InternalConfigName, but includes our preferred extension
 const InternalConfigFileNameLegacy = "config.yaml"
@@ -82,9 +92,6 @@ const ActivatedStateEnvVarName = "ACTIVESTATE_ACTIVATED"
 
 // ActivatedStateIDEnvVarName is the name of the environment variable that is set when in an activated state, its value will be a unique id identifying a specific instance of an activated state
 const ActivatedStateIDEnvVarName = "ACTIVESTATE_ACTIVATED_ID"
-
-// ActivatedStateProjectEnvVarName is the name of the environment variable that specifies the activated state's org/project namespace.
-const ActivatedStateNamespaceEnvVarName = "ACTIVESTATE_ACTIVATED_NAMESPACE"
 
 // ForwardedStateEnvVarName is the name of the environment variable that is set when in an activated state, its value will be the path of the project
 const ForwardedStateEnvVarName = "ACTIVESTATE_FORWARDED"
@@ -109,6 +116,9 @@ const ProfileEnvVarName = "ACTIVESTATE_PROFILE"
 
 // SessionTokenEnvVarName records the session token
 const SessionTokenEnvVarName = "ACTIVESTATE_SESSION_TOKEN"
+
+// OverrideSessionTokenEnvVarName overrides SessionTokenEnvVarName for integration tests.
+const OverrideSessionTokenEnvVarName = "ACTIVESTATE_OVERRIDE_SESSION_TOKEN"
 
 // UpdateTagEnvVarName
 const UpdateTagEnvVarName = "ACTIVESTATE_UPDATE_TAG"
@@ -171,12 +181,6 @@ const AutostartPathOverrideEnvVarName = "ACTIVESTATE_CLI_AUTOSTARTPATH_OVERRIDE"
 
 // AppInstallDirOverrideEnvVarName is used to override the default app installation path of the state tool.
 const AppInstallDirOverrideEnvVarName = "ACTIVESTATE_CLI_APPINSTALLDIR_OVERRIDE"
-
-// RuntimeUsageOverrideEnvVarName is used to override the default usage of the runtime intended for use in integration testing
-const RuntimeUsageOverrideEnvVarName = "ACTIVESTATE_OVERRIDE_RTUSAGE_USAGE"
-
-// RuntimeUsageSilenceTimeOverrideEnvVarName is used to override the default usage of the runtime intended for use in integration testing
-const RuntimeUsageSilenceTimeOverrideEnvVarName = "ACTIVESTATE_OVERRIDE_RTUSAGE_SILENCETIME"
 
 // SvcAuthPollingRateEnvVarName is used to override the default polling rate for syncing the authenticated state with the svc
 const SvcAuthPollingRateEnvVarName = "ACTIVESTATE_SVC_AUTH_POLLING_RATE"
@@ -290,9 +294,6 @@ const PlatformSignupURL = "https://platform.activestate.com" + "/create-account"
 // DocumentationURL is the url for the state tool documentation
 const DocumentationURL = "http://docs.activestate.com/platform/state/"
 
-// DocumentationURLHeadless is the documentation URL for headless state docs
-const DocumentationURLHeadless = DocumentationURL + "advanced-topics/detached/"
-
 // DocumentationURLGetStarted is the documentation URL for creating projects
 const DocumentationURLGetStarted = DocumentationURL + "create-project/?utm_source=platform-application-gui&utm_medium=activestate-desktop&utm_content=drop-down&utm_campaign=maru"
 
@@ -310,9 +311,6 @@ const ActiveStateSupportURL = "https://www.activestate.com/support/?utm_source=p
 
 // ActiveStateDashboardURL is the URL for the ActiveState account preferences page
 const ActiveStateDashboardURL = "https://platform.activestate.com/?utm_source=platform-application-gui&utm_medium=activestate-desktop&utm_content=drop-down&utm_campaign=maru"
-
-// DashboardCommitURL is the URL used to inspect commits
-const DashboardCommitURL = "https://platform.activestate.com/commit/"
 
 // BugTrackerURL is the URL of our bug tracker
 const BugTrackerURL = "https://github.com/ActiveState/state-tool/issues"

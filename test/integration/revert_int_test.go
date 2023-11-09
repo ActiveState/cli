@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/stretchr/testify/suite"
@@ -42,7 +43,7 @@ func (suite *RevertIntegrationTestSuite) TestRevert() {
 		e2e.OptArgs("history"),
 		e2e.OptWD(wd),
 	)
-	cp.Expect("Revert commit " + commitID)
+	cp.Expect("Reverted commit for commit " + commitID)
 	cp.Expect("- urllib3")
 	cp.Expect("+ argparse") // parent commit
 	cp.Expect("+ urllib3")  // commit whose changes were just reverted
@@ -51,9 +52,9 @@ func (suite *RevertIntegrationTestSuite) TestRevert() {
 	// Verify that argparse still exists (it was not reverted along with urllib3).
 	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("shell", "Revert"),
-		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
-	cp.ExpectInput()
+	cp.ExpectInput(e2e.RuntimeSourcingTimeoutOpt)
 	cp.SendLine("python3")
 	cp.Expect("3.9.15")
 	cp.SendLine("import urllib3")
@@ -83,7 +84,7 @@ func (suite *RevertIntegrationTestSuite) TestRevert_failsOnCommitNotInHistory() 
 	cp.Expect(fmt.Sprintf("Operating on project %s", namespace))
 	cp.SendLine("Y")
 	cp.Expect(commitID)
-	cp.Expect("The commit being reverted is not within the current commit's history")
+	cp.Expect("The target commit is not within the current commit's history")
 	cp.ExpectNotExitCode(0)
 }
 
@@ -115,7 +116,7 @@ func (suite *RevertIntegrationTestSuite) TestRevertTo() {
 		e2e.OptArgs("history"),
 		e2e.OptWD(wd),
 	)
-	cp.Expect("Reverting to commit " + commitID)
+	cp.Expect("Revert to commit " + commitID)
 	cp.Expect("- argparse") // effectively reverting previous commit
 	cp.Expect("+ argparse") // commit being effectively reverted
 	cp.Expect("+ urllib3")  // commit reverted to

@@ -9,7 +9,6 @@ import (
 
 	svcApp "github.com/ActiveState/cli/cmd/state-svc/app"
 	svcAutostart "github.com/ActiveState/cli/cmd/state-svc/autostart"
-	anaConst "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
@@ -30,10 +29,9 @@ import (
 )
 
 type Installer struct {
-	out          output.Outputer
-	cfg          *config.Instance
-	payloadPath  string
-	sessionToken string
+	out         output.Outputer
+	cfg         *config.Instance
+	payloadPath string
 	*Params
 }
 
@@ -49,13 +47,6 @@ func NewInstaller(cfg *config.Instance, out output.Outputer, payloadPath string,
 }
 
 func (i *Installer) Install() (rerr error) {
-	// Store sessionToken to config
-	if i.sessionToken != "" && i.cfg.GetString(anaConst.CfgSessionToken) == "" {
-		if err := i.cfg.Set(anaConst.CfgSessionToken, i.sessionToken); err != nil {
-			return errs.Wrap(err, "Failed to set session token")
-		}
-	}
-
 	// Store update tag
 	if i.updateTag != "" {
 		if err := i.cfg.Set(updater.CfgUpdateTag, i.updateTag); err != nil {
@@ -145,9 +136,6 @@ func (i *Installer) InstallPath() string {
 
 // sanitizeInput cleans up the input and inserts fallback values
 func (i *Installer) sanitizeInput() error {
-	if sessionToken, ok := os.LookupEnv(constants.SessionTokenEnvVarName); ok {
-		i.sessionToken = sessionToken
-	}
 	if tag, ok := os.LookupEnv(constants.UpdateTagEnvVarName); ok {
 		i.updateTag = tag
 	}

@@ -41,13 +41,6 @@ func TestParseProjectNoOwner(t *testing.T) {
 	assert.Equal(t, parsed.Project, "project")
 	assert.Empty(t, parsed.CommitID)
 	assert.True(t, parsed.AllowOmitOwner)
-
-	parsed, err = ParseProjectNoOwner("project#a10-b11c12-d13e14-f15")
-	assert.NoError(t, err, "should be able to parse project part of namspace")
-	assert.Empty(t, parsed.Owner)
-	assert.Equal(t, parsed.Project, "project")
-	assert.Equal(t, *parsed.CommitID, strfmt.UUID("a10-b11c12-d13e14-f15"))
-	assert.True(t, parsed.AllowOmitOwner)
 }
 
 func TestParseNamespaceOrConfigfile(t *testing.T) {

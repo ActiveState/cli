@@ -1,12 +1,9 @@
 package main
 
 import (
-	"bufio"
 	"context"
-	"errors"
 	"fmt"
 	"os"
-	"os/exec"
 	"runtime/debug"
 	"strings"
 	"time"
@@ -32,10 +29,11 @@ import (
 	"github.com/ActiveState/cli/internal/prompt"
 	_ "github.com/ActiveState/cli/internal/prompt" // Sets up survey defaults
 	"github.com/ActiveState/cli/internal/rollbar"
+	"github.com/ActiveState/cli/internal/runbits/errors"
+	"github.com/ActiveState/cli/internal/runbits/legacy/projectmigration"
 	"github.com/ActiveState/cli/internal/runbits/panics"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/svcctl"
-	cmdletErrors "github.com/ActiveState/cli/pkg/cmdlets/errors"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -103,20 +101,9 @@ func main() {
 	// Run our main command logic, which is logic that defers to the error handling logic below
 	err = run(os.Args, isInteractive, cfg, out)
 	if err != nil {
-		exitCode, err = cmdletErrors.ParseUserFacing(err)
+		exitCode, err = errors.ParseUserFacing(err)
 		if err != nil {
 			out.Error(err)
-		}
-
-		// If a state tool error occurs in a VSCode integrated terminal, we want
-		// to pause and give time to the user to read the error message.
-		// But not, if we exit, because the last command in the activated sub-shell failed.
-		var eerr *exec.ExitError
-		isExitError := errors.As(err, &eerr)
-		if !isExitError && outFlags.ConfirmExit {
-			out.Print(locale.T("confirm_exit_on_error_prompt"))
-			br := bufio.NewReader(os.Stdin)
-			br.ReadLine()
 		}
 	}
 }
@@ -211,6 +198,13 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 	// Set up prompter
 	prompter := prompt.New(isInteractive, an)
 
+	// This is an anti-pattern. DO NOT DO THIS! Normally we should be passing prompt and out as
+	// arguments everywhere it is needed. However, we need to support legacy projects with commitId in
+	// activestate.yaml, and whenever that commitId is needed, we need to prompt the user to migrate
+	// their project. This would result in a lot of boilerplate for a legacy feature, so we're
+	// working around it with package "globals".
+	projectmigration.Register(prompter, out)
+
 	// Set up conditional, which accesses a lot of primer data
 	sshell := subshell.New(cfg)
 
@@ -257,8 +251,10 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 		if childCmd != nil {
 			cmdName = childCmd.JoinedSubCommandNames() + " "
 		}
-		err = errs.AddTips(err, locale.Tl("err_tip_run_help", "Run → [ACTIONABLE]`state {{.V0}}--help`[/RESET] for general help", cmdName))
-		cmdletErrors.ReportError(err, cmds.Command(), an)
+		if !out.Type().IsStructured() {
+			err = errs.AddTips(err, locale.Tl("err_tip_run_help", "Run → [ACTIONABLE]`state {{.V0}}--help`[/RESET] for general help", cmdName))
+		}
+		errors.ReportError(err, cmds.Command(), an)
 	}
 
 	return err

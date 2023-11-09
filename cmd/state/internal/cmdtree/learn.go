@@ -19,5 +19,5 @@ func newLearnCommand(prime *primer.Values) *captain.Command {
 		[]*captain.Argument{},
 		func(cmd *captain.Command, args []string) error {
 			return learnRunner.Run()
-		}).SetGroup(UtilsGroup).SetDoesNotSupportStructuredOutput()
+		}).SetGroup(UtilsGroup)
 }

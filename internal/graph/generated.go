@@ -20,11 +20,6 @@ type AvailableUpdate struct {
 	Sha256   string `json:"sha256"`
 }
 
-type CheckRuntimeUsageResponse struct {
-	Limit int `json:"limit"`
-	Usage int `json:"usage"`
-}
-
 type ConfigChangedResponse struct {
 	Received bool `json:"received"`
 }

@@ -29,10 +29,10 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/rollbar"
+	"github.com/ActiveState/cli/internal/runbits/errors"
 	"github.com/ActiveState/cli/internal/runbits/panics"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/subshell/bash"
-	"github.com/ActiveState/cli/pkg/cmdlets/errors"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/sysinfo"
 	"golang.org/x/crypto/ssh/terminal"
@@ -122,6 +122,19 @@ func main() {
 
 	logging.Debug("Original Args: %v", os.Args)
 	logging.Debug("Processed Args: %v", processedArgs)
+
+	// Store sessionToken to config
+	for _, envVar := range []string{constants.OverrideSessionTokenEnvVarName, constants.SessionTokenEnvVarName} {
+		sessionToken, ok := os.LookupEnv(envVar)
+		if !ok {
+			continue
+		}
+		err := cfg.Set(anaConst.CfgSessionToken, sessionToken)
+		if err != nil {
+			multilog.Error("Unable to set session token: " + errs.JoinMessage(err))
+		}
+		break
+	}
 
 	an = sync.New(anaConst.SrcStateInstaller, cfg, nil, out)
 	an.Event(anaConst.CatInstallerFunnel, "start")

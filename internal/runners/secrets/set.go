@@ -60,7 +60,7 @@ func (s *Set) Run(params SetRunParams) error {
 		return err
 	}
 
-	remoteProject, err := model.FetchProjectByName(org.URLname, s.proj.Name())
+	remoteProject, err := model.LegacyFetchProjectByName(org.URLname, s.proj.Name())
 	if err != nil {
 		return err
 	}

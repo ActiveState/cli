@@ -12,6 +12,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/termtest"
@@ -54,7 +55,7 @@ func performanceTest(commands []string, expect string, samples int, maxTime time
 	for x := 0; x < samples+1; x++ {
 		opts := []e2e.SpawnOptSetter{
 			e2e.OptArgs(commands...),
-			e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_UPDATES=true", "ACTIVESTATE_PROFILE=true"),
+			e2e.OptAppendEnv(constants.DisableUpdates+"=true", constants.ProfileEnvVarName+"=true"),
 		}
 		termtestLogs := &bytes.Buffer{}
 		if verbose {

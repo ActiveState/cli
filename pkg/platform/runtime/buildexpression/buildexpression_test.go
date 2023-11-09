@@ -63,6 +63,13 @@ func TestNew(t *testing.T) {
 			},
 			wantErr: false,
 		},
+		{
+			name: "alternate",
+			args: args{
+				filename: "buildexpression-alternate.json",
+			},
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -139,6 +146,29 @@ func TestBuildExpression_Requirements(t *testing.T) {
 						map[string]string{
 							"comparator": string(model.ComparatorEQ),
 							"version":    "5.36.0",
+						},
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "alternate",
+			args: args{
+				filename: "buildexpression-alternate.json",
+			},
+			want: []model.Requirement{
+				{
+					Name:      "Path-Tiny",
+					Namespace: "language/perl",
+				},
+				{
+					Name:      "perl",
+					Namespace: "language",
+					VersionRequirement: []model.VersionRequirement{
+						map[string]string{
+							"comparator": string(model.ComparatorEQ),
+							"version":    "5.36.1",
 						},
 					},
 				},
@@ -362,6 +392,38 @@ func TestBuildExpression_Update(t *testing.T) {
 						map[string]string{
 							"comparator": string(model.ComparatorEQ),
 							"version":    "5.36.0",
+						},
+					},
+				},
+				{
+					Name:      "JSON",
+					Namespace: "language/perl",
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "add-alternate",
+			args: args{
+				requirement: model.Requirement{
+					Name:      "JSON",
+					Namespace: "language/perl",
+				},
+				operation: model.OperationAdded,
+				filename:  "buildexpression-alternate.json",
+			},
+			want: []model.Requirement{
+				{
+					Name:      "Path-Tiny",
+					Namespace: "language/perl",
+				},
+				{
+					Name:      "perl",
+					Namespace: "language",
+					VersionRequirement: []model.VersionRequirement{
+						map[string]string{
+							"comparator": string(model.ComparatorEQ),
+							"version":    "5.36.1",
 						},
 					},
 				},

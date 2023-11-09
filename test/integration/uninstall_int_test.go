@@ -11,7 +11,6 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/osutils"
-	"github.com/ActiveState/cli/internal/osutils/user"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/stretchr/testify/suite"
@@ -98,6 +97,7 @@ func (suite *UninstallIntegrationTestSuite) testUninstall(all bool) {
 		suite.Fail("State service executable should not exist after uninstall")
 	}
 
+	/* Disabled because we never configured anything in the first place: https://activestatef.atlassian.net/browse/DX-2296
 	if runtime.GOOS == "linux" {
 		// When installed in a non-desktop environment (i.e. on a server), verify the user's ~/.profile was reverted.
 		homeDir, err := user.HomeDir()
@@ -105,6 +105,7 @@ func (suite *UninstallIntegrationTestSuite) testUninstall(all bool) {
 		profile := filepath.Join(homeDir, ".profile")
 		suite.NotContains(string(fileutils.ReadFileUnsafe(profile)), ts.SvcExe, "autostart should not be configured for Linux server environment anymore")
 	}
+	*/
 
 	if runtime.GOOS == "darwin" {
 		if fileutils.DirExists(filepath.Join(ts.Dirs.Bin, "system")) {

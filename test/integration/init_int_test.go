@@ -115,9 +115,9 @@ func (suite *InitIntegrationTestSuite) TestInit_InferLanguageFromUse() {
 
 	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("use", "Python3"),
-		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
-	cp.Expect("Switched to project")
+	cp.Expect("Switched to project", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
 
 	pname := strutils.UUID()

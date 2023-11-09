@@ -77,7 +77,7 @@ func (suite *AnalyticsIntegrationTestSuite) TestHeartbeats() {
 	}
 
 	cp.Expect("Creating a Virtual Environment")
-	cp.Expect("Activated", termtest.OptExpectTimeout(120*time.Second))
+	cp.Expect("Activated", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectInput(termtest.OptExpectTimeout(120 * time.Second))
 
 	time.Sleep(time.Second) // Ensure state-svc has time to report events
@@ -148,6 +148,8 @@ func (suite *AnalyticsIntegrationTestSuite) TestHeartbeats() {
 		})
 		suite.Require().Equal(1, countEvents(executorEvents, anaConst.CatRuntimeUsage, anaConst.ActRuntimeAttempt, anaConst.SrcExecutor),
 			ts.DebugMessage("Should have a runtime attempt, events:\n"+suite.summarizeEvents(executorEvents)))
+		suite.Require().Equal(1, countEvents(eventsAfterExecutor, anaConst.CatDebug, anaConst.ActExecutorExit, anaConst.SrcExecutor),
+			ts.DebugMessage("Should have an executor exit event, events:\n"+suite.summarizeEvents(executorEvents)))
 
 		// It's possible due to the timing of the heartbeats and the fact that they are async that we have gotten either
 		// one or two by this point. Technically more is possible, just very unlikely.
@@ -218,8 +220,7 @@ func (suite *AnalyticsIntegrationTestSuite) TestExecEvents() {
 	commitID := "efcc851f-1451-4d0a-9dcb-074ac3f35f0a"
 
 	// We want to do a clean test without an activate event, so we have to manually seed the yaml
-	url := fmt.Sprintf("https://platform.activestate.com/%s?branch=main&commitID=%s", namespace, commitID)
-	suite.Require().NoError(fileutils.WriteFile(filepath.Join(ts.Dirs.Work, "activestate.yaml"), []byte("project: "+url)))
+	ts.PrepareProject(namespace, commitID)
 
 	heartbeatInterval := 1000 // in milliseconds
 	sleepTime := time.Duration(heartbeatInterval) * time.Millisecond
@@ -238,7 +239,7 @@ func (suite *AnalyticsIntegrationTestSuite) TestExecEvents() {
 		e2e.OptAppendEnv(env...),
 	)
 
-	cp.Expect("DONE")
+	cp.Expect("DONE", e2e.RuntimeSourcingTimeoutOpt)
 
 	time.Sleep(sleepTime)
 
@@ -525,7 +526,7 @@ func (suite *AnalyticsIntegrationTestSuite) TestAttempts() {
 	)
 
 	cp.Expect("Creating a Virtual Environment")
-	cp.Expect("Activated", termtest.OptExpectTimeout(120*time.Second))
+	cp.Expect("Activated", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectInput(termtest.OptExpectTimeout(120 * time.Second))
 
 	cp.SendLine("python3 --version")
@@ -568,7 +569,7 @@ func (suite *AnalyticsIntegrationTestSuite) TestHeapEvents() {
 	)
 
 	cp.Expect("Creating a Virtual Environment")
-	cp.Expect("Activated", termtest.OptExpectTimeout(120*time.Second))
+	cp.Expect("Activated", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectInput(termtest.OptExpectTimeout(120 * time.Second))
 
 	time.Sleep(time.Second) // Ensure state-svc has time to report events

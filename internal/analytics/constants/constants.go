@@ -154,6 +154,9 @@ const ActCommandError = "command-error"
 // ActCommandInputError is the event action used for command input errors
 const ActCommandInputError = "command-input-error"
 
+// ActExecutorExit is the event action used for executor exit codes
+const ActExecutorExit = "executor-exit"
+
 // UpdateLabelSuccess is the sent if an auto-update was successful
 const UpdateLabelSuccess = "success"
 

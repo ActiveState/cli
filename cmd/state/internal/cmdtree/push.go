@@ -32,5 +32,5 @@ func newPushCommand(prime *primer.Values) *captain.Command {
 		func(ccmd *captain.Command, args []string) error {
 			return pushRunner.Run(params)
 		},
-	).SetGroup(VCSGroup)
+	).SetGroup(VCSGroup).SetSupportsStructuredOutput()
 }

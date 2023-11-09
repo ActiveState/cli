@@ -67,7 +67,7 @@ func Test_mediatorValue(t *testing.T) {
 				"unstructured",
 				JSONFormatName,
 			},
-			StructuredError{locale.Tr("err_no_structured_output", string(JSONFormatName))},
+			StructuredError{Error: locale.Tr("err_no_structured_output", string(JSONFormatName))},
 		},
 	}
 	for _, tt := range tests {

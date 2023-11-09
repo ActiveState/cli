@@ -57,8 +57,6 @@ err_output_flag_value_invalid:
   other: Could not recognize output type
 info_deactivated:
   other: "[DISABLED]Deactivated {{.Owner}}/{{.Name}}[/RESET]"
-info_deactivated_by_commit:
-  other: "[DISABLED]Deactivated[/RESET]"
 venv_installer_is_nil:
   other: Provided installer should not be nil
 error_unsupported_language:
@@ -334,9 +332,7 @@ err_api_forbidden:
 err_api_org_not_found:
   other: Unable to find requested Organization
 err_api_project_not_found:
-  other: The requested project [NOTICE]{{.V0}}[/RESET] does not exist under [NOTICE]{{.V1}}[/RESET]. Please ensure the owner is correct and that the project has been created.
-err_api_project_not_found_unauthenticated:
-  other: The requested project [NOTICE]{{.V0}}/{{.V1}}[/RESET] could not be found
+  other: The requested project [NOTICE]{{.V1}}[/RESET] does not exist under [NOTICE]{{.V0}}[/RESET]. Please ensure the owner is correct and that the project has been created.
 tip_private_project_auth:
   other: If this is a private project you may need to authenticate with 'state auth'.
 err_api_member_not_found:
@@ -786,8 +782,6 @@ build_status_unknown:
   other: "Build status could not be retrieved, please view the project at: [NOTICE]{{.V0}}[/RESET] for more information"
 build_status_in_progress:
   other: "Your changes are currently being built remotely on the ActiveState Platform. Please visit [NOTICE]{{.V0}}[/RESET] to see the progress."
-build_status_in_progress_headless:
-  other: "Your changes are currently being built remotely on the ActiveState Platform. Please visit [NOTICE]{{.V0}}[/RESET] to see the progress (you may have to first convert your runtime to a project)."
 build_status_unknown_error:
   other: "Build reported an unknown error: {{.V0}}; Please view the project at: [ACTIONABLE]{{.V1}}[/RESET] for more information"
 build_status_failed:
@@ -1090,14 +1084,10 @@ commit_message_updated_package:
   other: "Updated package: {{.V0}} to {{.V1}}"
 commit_message_add_initial:
   other: Initialize project via the State Tool
-confirm_remove_existing_prompt:
-  other: "Your project already has packages configured for it, continuing will overwrite your existing package selection. Are you sure you want to do this?"
 commit_reqstext_message:
   other: "Import from requirements file"
 commit_reqstext_remove_existing_message:
   other: "Remove current packages prior to import from requirements file"
-err_cannot_remove_existing:
-  other: "The already configured packages were not able to be overwritten"
 commit_failed_push_tip:
   other: Ensure any previous changes have been saved by running [ACTIONABLE]state push[/RESET]. Then try running your command again.
 commit_failed_pull_tip:
@@ -1158,12 +1148,6 @@ bundle_updated:
   other: "Bundle updated: [NOTICE]{{.V0}}[/RESET]"
 bundle_version_updated:
   other: "Bundle updated: [NOTICE]{{.V0}}@{{.V1}}[/RESET]"
-package_headless_added:
-  other: "Package added: [NOTICE]{{.V0}}[/RESET]"
-package_headless_updated:
-  other: "Package updated: [NOTICE]{{.V0}}[/RESET]"
-package_headless_removed:
-  other: "Package uninstalled: [NOTICE]{{.V0}}[/RESET]"
 err_package_removed:
   other: Failed to remove package
 err_bundle_removed:
@@ -1235,14 +1219,10 @@ push_project_updated:
   other: "The remote Project has been updated"
 push_project_created:
   other: "Project created at [ACTIONABLE]{{.V0}}[/RESET]."
-push_no_changes:
-  other: "You have no local changes to push. To pull in remote changes run `[ACTIONABLE]state pull[/RESET]`."
 init_description:
   other: Initialize a new project
 push_description:
   other: Push your latest changes to the platform
-push_first_new_project:
-  other: 'Since this is your first time running "push" you''ll need to create a new project on the ActiveState Platform.'
 push_prompt_owner:
   other: "Who would you like the owner of this project to be?"
 push_prompt_not_authorized:
@@ -1577,8 +1557,6 @@ deploy_usable_path:
     Please ensure '[NOTICE]{{.V0}}[/RESET]' exists and is on your PATH.
 script_watcher_watch_file:
   other: "Watching file changes at: [NOTICE]{{.V0}}[/RESET]"
-confirm_exit_on_error_prompt:
-  other: Press enter to continue...
 tutorial_newproject_intro:
   other: |
     The State Tool lets you create and maintain a set of virtual environments (eg., one per project), allowing you to
@@ -1685,11 +1663,11 @@ err_non_interactive_mode:
   other: You are running the State Tool in non-interactive mode, but interactive input was needed. Please re-run the State Tool in interactive mode. If you are using a non-interactive terminal like Git Bash on Windows, prefix your command with [ACTIONABLE]`winpty`[/RESET]. (See https://github.com/git-for-windows/git/wiki/FAQ#some-native-console-programs-dont-work-when-run-from-git-bash-how-to-fix-it for more information.)
 err_alternate_branches:
   other: |
-    There are no valid dependencies for your platform in branch [ACTIONABLE]`{{.V0}}`[/RESET], perhaps you could try one of the alternate branches on your project:
+    Your current platform ([ACTIONABLE]{{.V0}}/{{.V1}}[/RESET]) does not appear to be configured in your branch: [ACTIONABLE]'{{.V2}}'[/RESET], perhaps you could try one of the alternate branches on your project:
 
-     - {{.V1}}
+     - {{.V3}}
 
-    Type [ACTIONABLE]`state branch switch <NAME>`[/RESET] to switch to a different branch.
+    Type [ACTIONABLE]'state branch switch <NAME>'[/RESET] to switch to a different branch.
 err_fetch_project:
   other: "Could not fetch details for project: {{.V0}}"
 err_set_default_branch:
@@ -1731,6 +1709,28 @@ package_info_request:
 err_push_outdated:
   other: |
     Your project has new changes available that need to be merged first. Please first run `[ACTIONABLE]state pull[/RESET]` to update your project.
+err_tip_push_outdated:
+  other: Run '[ACTIONABLE]state pull[/RESET]'.
+err_push_not_authenticated:
+  other: In order to update your project you need to be authenticated, please run '[ACTIONABLE]state auth[/RESET]' to authenticate.
+err_push_no_project:
+  other: No project found, you may need to create one first.
+err_push_headless:
+  other: Cannot push a headless project. To convert your project please visit {{.V0}}
+push_push_tip_headless_init:
+  other: Run '[ACTIONABLE]state init[/RESET]' to create a project with the State Tool.
+push_push_tip_headless_cwd:
+  other: Navigate to a directory with an activestate.yaml.
+err_push_nocommit:
+  other: You have nothing to push, make some changes first with '[ACTIONABLE]state install[/RESET]'.
+push_no_changes:
+  other: You have no local changes to push. To pull in remote changes run '[ACTIONABLE]state pull[/RESET]'.
+err_push_create_nonunique:
+  other: The project name '[NOTICE]{{.V0}}[/RESET]' is already in use.
+err_push_create_project_aborted:
+  other: Project creation aborted by user.
+err_push_target_invalid_history:
+  other: The target's commit history does not match your local commit history. Are you pushing to the right project?
 err_pull_incompatible:
   other: |
     The remote project has an incompatible commit history. Target a different project with `[ACTIONABLE--set-project[/RESET]` or reset your local checkout with `[ACTIONABLE]state reset[/RESET]`.
@@ -1745,8 +1745,8 @@ operation_success_local:
   other: |
     Your local project has been updated.
     Run [ACTIONABLE]state push[/RESET] to save changes to the platform.
-solver_err:
-  other: "The Platform failed to resolve the dependencies for this build. {{.V0}}\n{{.V1}}"
+buildplan_err:
+  other: "Could not plan build, platform responded with:\n{{.V0}}\n{{.V1}}"
 transient_solver_tip:
   other: You may want to retry this command if the failure was related to a resourcing or networking issue.
 warning_git_project_mismatch:
@@ -1821,8 +1821,6 @@ package_ingredient_alternatives_nolang:
     No results found for search term "[NOTICE]{{.V0}}[/RESET]".
 
     This may be because you have not installed a language for your project. Install a language by running "[ACTIONABLE]state languages install <language-name>[/RESET]".
-progress_project:
-  other: " • Initializing Project"
 progress_search:
   other: " • Searching for [ACTIONABLE]{{.V0}}[/RESET] in the ActiveState Catalog"
 setup_runtime:
@@ -2023,19 +2021,6 @@ pjfile_deprecation_msg:
     {{.V1}}
     To find out how to update these please read the deprecation information at:
     [ACTIONABLE]{{.V2}}[/RESET]
-runtime_usage_limit_reached:
-  other: |
-    [WARNING]Heads up! You've reached your runtime limit for [/RESET][ACTIONABLE]{{.V0}}[/RESET][WARNING].[/RESET]
-    [WARNING]You can upgrade your plan or enroll in a free trial by visiting: [/RESET][ACTIONABLE]https://platform.activestate.com/upgrade/?org={{.V0}}[/RESET][WARNING].[/RESET]
-
-    [WARNING]You are using [/RESET][ACTIONABLE]{{.V1}}[/RESET][WARNING] out of [/RESET][ACTIONABLE]{{.V2}}[/RESET][WARNING] available runtimes.[/RESET]
-
-runtime_limit_reached_title:
-  other: Runtime Limit Reached
-runtime_limit_reached_msg:
-  other: Heads up! You've reached your runtime limit for {{.V0}}.
-runtime_limit_reached_action:
-  other: Upgrade
 pjfile_deprecation_entry:
   other: " - '[ACTIONABLE]{{.V0}}[/RESET]' located at byte [ACTIONABLE]{{.V1}}[/RESET]"
 err_init_authenticated:
@@ -2043,7 +2028,7 @@ err_init_authenticated:
 err_country_blocked:
   other: This service is not available in your region.
 err_commit_id_invalid:
-  other: "Invalid project commit ID: {{.V0}}"
+  other: "Expected commit ID to be UUID formatted, but got: {{.V0}}"
 commit_id_gitignore:
   other: |
     # Ignore {{.V0}}/{{.V1}} file; tracking this via VCS will cause users to have to resolve redundant conflicts
@@ -2067,3 +2052,24 @@ err_edit_project_mapping:
   other: Could not update project mapping
 notice_runtime_disabled:
   other: Skipping runtime setup because it was disabled by an environment variable
+err_local_commit_file:
+  other: |
+    Could not find or read the commit file for your project at '[ACTIONABLE]{{.V0}}[/RESET]'.
+
+    You can fix this by either running '[ACTIONABLE]state pull[/RESET]' to update to the latest commit, or manually switch to a specific
+    commit by running '[ACTIONABLE]state switch <commit-id>[/RESET]'.
+
+    To view your projects commits run '[ACTIONABLE]state history[/RESET]'.
+
+    Please avoid deleting or editing this file directly.
+projectmigration_confirm:
+  other: |
+    State Tool has introduced a new project format to provide enhanced functionality. Your project is currently using the old format and will remain read-only until you migrate to the new project format.
+
+    [ERROR]WARNING:[/RESET] After you migrate, older versions of the State Tool will not be able to use your project.
+
+    Would you like to perform the migration now?
+err_searchingredient_toomany:
+  other: Too many ingredients match the query '[ACTIONABLE]{{.V0}}[/RESET]', please try to be more specific.
+alternative_unknown_pkg_name:
+  other: unknown

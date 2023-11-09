@@ -7,9 +7,7 @@ import (
 	"runtime"
 	"strings"
 	"testing"
-	"time"
 
-	"github.com/ActiveState/termtest"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/ActiveState/cli/internal/constants"
@@ -35,19 +33,20 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckout() {
 	// Checkout and verify.
 	cp := ts.SpawnWithOpts(
 		e2e.OptArgs("checkout", "ActiveState-CLI/Python-3.9", "."),
-		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
-	cp.Expect("Checked out project", termtest.OptExpectTimeout(120*time.Second))
+	cp.Expect("Checked out project", e2e.RuntimeSourcingTimeoutOpt)
 	suite.Require().True(fileutils.DirExists(ts.Dirs.Work), "state checkout should have created "+ts.Dirs.Work)
 	suite.Require().True(fileutils.FileExists(filepath.Join(ts.Dirs.Work, constants.ConfigFileName)), "ActiveState-CLI/Python3 was not checked out properly")
 
 	// Verify .activestate/commit and .gitignore were created.
-	projectConfigDir := filepath.Join(ts.Dirs.Work, constants.ProjectConfigDirName)
-	suite.Require().True(fileutils.DirExists(projectConfigDir), "state checkout should have created "+projectConfigDir)
-	suite.Assert().True(fileutils.FileExists(filepath.Join(projectConfigDir, constants.CommitIdFileName)), "commit file not created")
-	gitignoreFile := filepath.Join(ts.Dirs.Work, ".gitignore")
-	suite.Assert().True(fileutils.FileExists(gitignoreFile), "fresh checkout did not create .gitignore")
-	suite.Assert().Contains(string(fileutils.ReadFileUnsafe(gitignoreFile)), fmt.Sprintf("%s/%s", constants.ProjectConfigDirName, constants.CommitIdFileName), "commit file not added to .gitignore")
+	// Re-enable the following lines in DX-2307.
+	//projectConfigDir := filepath.Join(ts.Dirs.Work, constants.ProjectConfigDirName)
+	//suite.Require().True(fileutils.DirExists(projectConfigDir), "state checkout should have created "+projectConfigDir)
+	//suite.Assert().True(fileutils.FileExists(filepath.Join(projectConfigDir, constants.CommitIdFileName)), "commit file not created")
+	//gitignoreFile := filepath.Join(ts.Dirs.Work, ".gitignore")
+	//suite.Assert().True(fileutils.FileExists(gitignoreFile), "fresh checkout did not create .gitignore")
+	//suite.Assert().Contains(string(fileutils.ReadFileUnsafe(gitignoreFile)), fmt.Sprintf("%s/%s", constants.ProjectConfigDirName, constants.CommitIdFileName), "commit file not added to .gitignore")
 
 	// Verify runtime was installed correctly and works.
 	targetDir := target.ProjectDirToTargetDir(ts.Dirs.Work, ts.Dirs.Cache)
@@ -68,12 +67,12 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckout() {
 		cp = ts.SpawnWithOpts(
 			e2e.OptArgs("checkout", "ActiveState-CLI/Python-3.9", "."),
 			e2e.OptAppendEnv(
-				"ACTIVESTATE_CLI_DISABLE_RUNTIME=false",
+				constants.DisableRuntime+"=false",
 				"VERBOSE=true", // Necessary to assert "Fetched cached artifact"
 			),
 		)
-		cp.Expect("Fetched cached artifact", termtest.OptExpectTimeout(120*time.Second)) // Comes from log, which is why we're using VERBOSE=true
-		cp.Expect("Checked out project", termtest.OptExpectTimeout(120*time.Second))
+		cp.Expect("Fetched cached artifact", e2e.RuntimeSourcingTimeoutOpt) // Comes from log, which is why we're using VERBOSE=true
+		cp.Expect("Checked out project", e2e.RuntimeSourcingTimeoutOpt)
 		cp.ExpectExitCode(0)
 	})
 }
@@ -93,16 +92,20 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckoutNonEmptyDir() {
 	// Checkout and verify.
 	cp := ts.SpawnWithOpts(
 		e2e.OptArgs("checkout", "ActiveState-CLI/Python3", tmpdir),
-		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=true"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
 	cp.Expect("already a project checked out at")
 	cp.ExpectExitCode(1)
+
+	if strings.Count(cp.Snapshot(), " x ") != 1 {
+		suite.Fail("Expected exactly ONE error message, got: ", cp.Snapshot())
+	}
 
 	// remove file
 	suite.Require().NoError(os.Remove(filepath.Join(tmpdir, constants.ConfigFileName)))
 	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("checkout", "ActiveState-CLI/Python3", tmpdir),
-		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=true"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
 	cp.Expect("Checked out project")
 	cp.ExpectExitCode(0)
@@ -151,9 +154,10 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckoutWithFlags() {
 	cp.ExpectExitCode(0)
 
 	suite.Require().True(fileutils.DirExists(python3Dir), "state checkout should have created "+python3Dir)
-	commitIdFile := filepath.Join(python3Dir, constants.ProjectConfigDirName, constants.CommitIdFileName)
-	suite.Require().True(fileutils.FileExists(commitIdFile), "ActiveState-CLI/Python3 was not checked out properly")
-	suite.Assert().Equal(string(fileutils.ReadFileUnsafe(commitIdFile)), "6d9280e7-75eb-401a-9e71-0d99759fbad3", "did not check out specific commit ID")
+	// Re-enable the following lines in DX-2307.
+	//commitIdFile := filepath.Join(python3Dir, constants.ProjectConfigDirName, constants.CommitIdFileName)
+	//suite.Require().True(fileutils.FileExists(commitIdFile), "ActiveState-CLI/Python3 was not checked out properly")
+	//suite.Assert().Equal(string(fileutils.ReadFileUnsafe(commitIdFile)), "6d9280e7-75eb-401a-9e71-0d99759fbad3", "did not check out specific commit ID")
 
 	// Test --branch mismatch in non-checked-out project.
 	branchPath := filepath.Join(ts.Dirs.Base, "branch")
@@ -176,9 +180,9 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckoutCustomRTPath() {
 	// Checkout and verify.
 	cp := ts.SpawnWithOpts(
 		e2e.OptArgs("checkout", "ActiveState-CLI/Python3", fmt.Sprintf("--runtime-path=%s", customRTPath)),
-		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
-	cp.Expect("Checked out project", termtest.OptExpectTimeout(120*time.Second))
+	cp.Expect("Checked out project", e2e.RuntimeSourcingTimeoutOpt)
 
 	pythonExe := filepath.Join(setup.ExecDir(customRTPath), "python3"+exeutils.Extension)
 	suite.Require().True(fileutils.DirExists(customRTPath))
@@ -192,7 +196,7 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckoutCustomRTPath() {
 	// Verify that state exec works with custom cache.
 	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("exec", "python3", "--", "-c", "import sys;print(sys.executable)"),
-		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 		e2e.OptWD(filepath.Join(ts.Dirs.Work, "Python3")),
 	)
 	if runtime.GOOS == "windows" {
@@ -200,7 +204,23 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckoutCustomRTPath() {
 		suite.Require().NoError(err)
 		customRTPath = strings.ToLower(customRTPath)
 	}
-	cp.Expect(customRTPath)
+	cp.Expect(customRTPath, e2e.RuntimeSourcingTimeoutOpt)
+}
+
+func (suite *CheckoutIntegrationTestSuite) TestCheckoutNotFound() {
+	suite.OnlyRunForTags(tagsuite.Checkout)
+
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.SpawnWithOpts(e2e.OptArgs("checkout", "ActiveState-CLI/Bogus-Project-That-Doesnt-Exist"))
+	cp.Expect("does not exist under")         // error
+	cp.Expect("If this is a private project") // tip
+	cp.ExpectExitCode(1)
+
+	if strings.Count(cp.Snapshot(), " x ") != 1 {
+		suite.Fail("Expected exactly ONE error message, got: ", cp.Snapshot())
+	}
 }
 
 func (suite *CheckoutIntegrationTestSuite) TestCheckoutAlreadyCheckedOut() {
@@ -226,6 +246,12 @@ func (suite *CheckoutIntegrationTestSuite) TestJSON() {
 	cp := ts.SpawnWithOpts(e2e.OptArgs("checkout", "ActiveState-CLI/small-python", "-o", "json"))
 	cp.ExpectExitCode(0)
 	AssertValidJSON(suite.T(), cp)
+
+	cp = ts.SpawnWithOpts(e2e.OptArgs("checkout", "ActiveState-CLI/Bogus-Project-That-Doesnt-Exist", "-o", "json"))
+	cp.Expect("does not exist")                        // error
+	cp.Expect(`"tips":["If this is a private project`) // tip
+	cp.ExpectNotExitCode(0)
+	AssertValidJSON(suite.T(), cp)
 }
 
 func (suite *CheckoutIntegrationTestSuite) TestCheckoutCaseInsensitive() {
@@ -242,6 +268,28 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckoutCaseInsensitive() {
 	bytes := fileutils.ReadFileUnsafe(filepath.Join(ts.Dirs.Work, "SMALL-PYTHON", constants.ConfigFileName))
 	suite.Assert().Contains(string(bytes), "ActiveState-CLI/small-python", "did not match namespace case")
 	suite.Assert().NotContains(string(bytes), "ACTIVESTATE-CLI/SMALL-PYTHON", "kept incorrect namespace case")
+}
+
+func (suite *CheckoutIntegrationTestSuite) TestCheckoutBuildtimeClosure() {
+	suite.OnlyRunForTags(tagsuite.Checkout)
+
+	if runtime.GOOS != "linux" {
+		suite.T().Skip("Skipping buildtime closure test on non-linux platform")
+	}
+
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.SpawnWithOpts(
+		e2e.OptArgs("checkout", "ActiveState-CLI/small-python#5a1e49e5-8ceb-4a09-b605-ed334474855b"),
+		e2e.OptAppendEnv(constants.InstallBuildDependencies+"=true"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
+	)
+	// Expect the number of build deps to be 27 which is more than the number of runtime deps.
+	// Also expect libxcrypt which should not be in the runtime closure.
+	cp.Expect("27")
+	cp.Expect("libxcrypt")
+	cp.ExpectExitCode(0)
 }
 
 func TestCheckoutIntegrationTestSuite(t *testing.T) {

@@ -2,7 +2,6 @@ package integration
 
 import (
 	"fmt"
-	"io/ioutil"
 	"path/filepath"
 	"runtime"
 	"testing"
@@ -88,7 +87,7 @@ func (suite *PackageIntegrationTestSuite) TestPackages_project_invalid() {
 	defer ts.Close()
 
 	cp := ts.Spawn("packages", "--namespace", "junk/junk")
-	cp.Expect("The requested project junk/junk could not be found")
+	cp.Expect("The requested project junk does not exist under junk")
 	cp.ExpectExitCode(1)
 }
 
@@ -292,46 +291,7 @@ six==1.14.0
 `
 )
 
-func (suite *PackageIntegrationTestSuite) TestPackage_import() {
-	suite.OnlyRunForTags(tagsuite.Package)
-	ts := e2e.New(suite.T(), false)
-	defer ts.Close()
-
-	username, _ := ts.CreateNewUser()
-	namespace := fmt.Sprintf("%s/%s", username, "Python3")
-
-	cp := ts.Spawn("init", "--language", "python", namespace, ts.Dirs.Work)
-	cp.Expect("successfully initialized")
-	cp.ExpectExitCode(0)
-
-	reqsFilePath := filepath.Join(cp.WorkDirectory(), reqsFileName)
-
-	suite.Run("invalid requirements.txt", func() {
-		ts.SetT(suite.T())
-		ts.PrepareFile(reqsFilePath, badReqsData)
-
-		cp := ts.Spawn("import", "requirements.txt")
-		cp.ExpectNotExitCode(0)
-	})
-
-	suite.Run("valid requirements.txt", func() {
-		ts.SetT(suite.T())
-		ts.PrepareFile(reqsFilePath, reqsData)
-
-		cp := ts.Spawn("import", "requirements.txt")
-		cp.ExpectExitCode(0)
-
-		cp = ts.Spawn("push")
-		cp.ExpectExitCode(0)
-
-		cp = ts.Spawn("import", "requirements.txt")
-		cp.Expect("Are you sure")
-		cp.SendLine("n")
-		cp.ExpectNotExitCode(0)
-	})
-}
-
-func (suite *PackageIntegrationTestSuite) TestPackage_headless_operation() {
+func (suite *PackageIntegrationTestSuite) TestPackage_detached_operation() {
 	suite.OnlyRunForTags(tagsuite.Package)
 	if runtime.GOOS == "darwin" {
 		suite.T().Skip("Skipping mac for now as the builds are still too unreliable")
@@ -448,36 +408,6 @@ scripts:
 	ts.PrepareCommitIdFile("a9d0bc88-585a-49cf-89c1-6c07af781cff")
 }
 
-func (suite *PackageIntegrationTestSuite) TestInstall_Empty() {
-	suite.OnlyRunForTags(tagsuite.Package)
-	if runtime.GOOS == "darwin" {
-		suite.T().Skip("Skipping mac for now as the builds are still too unreliable")
-		return
-	}
-
-	ts := e2e.New(suite.T(), false)
-	defer ts.Close()
-
-	cp := ts.SpawnWithOpts(
-		e2e.OptArgs("install", "JSON"),
-		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
-	)
-	cp.Expect("Installing Package")
-	cp.ExpectExitCode(0, termtest.OptExpectTimeout(120*time.Second))
-
-	configFilepath := filepath.Join(ts.Dirs.Work, constants.ConfigFileName)
-	suite.Require().FileExists(configFilepath)
-
-	content, err := ioutil.ReadFile(configFilepath)
-	suite.Require().NoError(err)
-	if !suite.Contains(string(content), constants.DashboardCommitURL) {
-		suite.Fail("activestate.yaml does not contain dashboard commit URL")
-	}
-
-	commitIdFile := filepath.Join(ts.Dirs.Work, constants.ProjectConfigDirName, constants.CommitIdFileName)
-	suite.Assert().FileExists(commitIdFile)
-}
-
 func (suite *PackageIntegrationTestSuite) TestPackage_UninstallDoesNotExist() {
 	suite.OnlyRunForTags(tagsuite.Package)
 
@@ -502,10 +432,17 @@ func (suite *PackageIntegrationTestSuite) TestJSON() {
 	AssertValidJSON(suite.T(), cp)
 
 	cp = ts.SpawnWithOpts(
-		e2e.OptArgs("install", "Text-CSV", "--output", "editor"),
+		e2e.OptArgs("checkout", "ActiveState-CLI/Packages-Perl", "."),
 		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
-	cp.Expect(`{"name":"Text-CSV"`, termtest.OptExpectTimeout(120*time.Second))
+	cp.Expect("Checked out project")
+	cp.ExpectExitCode(0)
+
+	cp = ts.SpawnWithOpts(
+		e2e.OptArgs("install", "Text-CSV", "--output", "editor"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
+	)
+	cp.Expect(`{"name":"Text-CSV"`, e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
 	AssertValidJSON(suite.T(), cp)
 
@@ -516,9 +453,9 @@ func (suite *PackageIntegrationTestSuite) TestJSON() {
 
 	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("uninstall", "Text-CSV", "-o", "json"),
-		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
-	cp.Expect(`{"name":"Text-CSV"`)
+	cp.Expect(`{"name":"Text-CSV"`, e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
 	AssertValidJSON(suite.T(), cp)
 }
@@ -545,7 +482,7 @@ func (suite *PackageIntegrationTestSuite) TestNormalize() {
 	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("install", "Charset_normalizer"),
 		e2e.OptWD(dir),
-		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
 	cp.Expect("charset-normalizer")
 	cp.Expect("is different")
@@ -565,7 +502,7 @@ func (suite *PackageIntegrationTestSuite) TestNormalize() {
 	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("install", "charset-normalizer"),
 		e2e.OptWD(anotherDir),
-		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
 	cp.Expect("charset-normalizer")
 	cp.ExpectExitCode(0)
@@ -586,7 +523,9 @@ func (suite *PackageIntegrationTestSuite) TestInstall_InvalidVersion() {
 		e2e.OptArgs("install", "pytest@999.9999.9999"),
 		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
-	cp.Expect("Error occurred while trying to create a commit")
+	// User facing error from build planner
+	// We only assert the state tool curated part of the error as the underlying build planner error may change
+	cp.Expect("Could not plan build")
 	cp.ExpectExitCode(1)
 }
 
@@ -607,7 +546,9 @@ func (suite *PackageIntegrationTestSuite) TestUpdate_InvalidVersion() {
 		e2e.OptArgs("install", "pytest@999.9999.9999"),      // update
 		e2e.OptAppendEnv(constants.DisableRuntime+"=false"), // We DO want to test the runtime part, just not for every step
 	)
-	cp.Expect("Error occurred while trying to create a commit")
+	// User facing error from build planner
+	// We only assert the state tool curated part of the error as the underlying build planner error may change
+	cp.Expect("Could not plan build")
 	cp.ExpectExitCode(1)
 }
 

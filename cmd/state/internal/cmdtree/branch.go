@@ -20,7 +20,7 @@ func newBranchCommand(prime *primer.Values) *captain.Command {
 		[]*captain.Argument{},
 		func(_ *captain.Command, _ []string) error {
 			return runner.Run()
-		}).SetGroup(PlatformGroup).SetUnstable(true)
+		}).SetGroup(PlatformGroup).SetSupportsStructuredOutput().SetUnstable(true)
 }
 
 func newBranchAddCommand(prime *primer.Values) *captain.Command {
@@ -44,7 +44,7 @@ func newBranchAddCommand(prime *primer.Values) *captain.Command {
 		},
 		func(_ *captain.Command, _ []string) error {
 			return runner.Run(params)
-		})
+		}).SetSupportsStructuredOutput()
 }
 
 func newBranchSwitchCommand(prime *primer.Values) *captain.Command {
@@ -69,6 +69,7 @@ func newBranchSwitchCommand(prime *primer.Values) *captain.Command {
 		func(_ *captain.Command, _ []string) error {
 			return runner.Run(params)
 		})
+	cmd.SetSupportsStructuredOutput()
 	// We set this command to hidden for backwards compatibility as we cannot
 	// alias `state switch` to `state branch switch`
 	cmd.SetHidden(true)

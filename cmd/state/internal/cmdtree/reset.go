@@ -28,5 +28,5 @@ func newResetCommand(prime *primer.Values, globals *globalOptions) *captain.Comm
 			params.Force = globals.NonInteractive
 			return runner.Run(params)
 		},
-	).SetGroup(VCSGroup)
+	).SetGroup(VCSGroup).SetSupportsStructuredOutput()
 }

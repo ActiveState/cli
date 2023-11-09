@@ -8,6 +8,7 @@ import (
 	"github.com/ActiveState/termtest"
 	"github.com/stretchr/testify/suite"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 )
@@ -80,7 +81,7 @@ func (suite *BundleIntegrationTestSuite) TestBundle_project_invalid() {
 	defer ts.Close()
 
 	cp := ts.Spawn("bundles", "--namespace", "junk/junk")
-	cp.Expect("The requested project junk/junk could not be found")
+	cp.Expect("The requested project junk does not exist under junk")
 	cp.ExpectExitCode(1)
 }
 
@@ -165,7 +166,7 @@ func (suite *BundleIntegrationTestSuite) TestBundle_searchWithBadLang() {
 	cp.ExpectExitCode(1)
 }
 
-func (suite *BundleIntegrationTestSuite) TestBundle_headless_operation() {
+func (suite *BundleIntegrationTestSuite) TestBundle_detached_operation() {
 	suite.OnlyRunForTags(tagsuite.Bundle)
 	if runtime.GOOS == "darwin" {
 		suite.T().Skip("Skipping mac for now as the builds are still too unreliable")
@@ -222,18 +223,25 @@ func (suite *BundleIntegrationTestSuite) TestJSON() {
 	AssertValidJSON(suite.T(), cp)
 
 	cp = ts.SpawnWithOpts(
-		e2e.OptArgs("bundles", "install", "Testing", "--output", "json"),
+		e2e.OptArgs("checkout", "ActiveState-CLI/Bundles", "."),
 		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
-	cp.Expect(`"name":"Testing"`)
+	cp.Expect("Checked out project")
+	cp.ExpectExitCode(0)
+
+	cp = ts.SpawnWithOpts(
+		e2e.OptArgs("bundles", "install", "Testing", "--output", "json"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
+	)
+	cp.Expect(`"name":"Testing"`, e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
 	AssertValidJSON(suite.T(), cp)
 
 	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("bundles", "uninstall", "Testing", "-o", "editor"),
-		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
-	cp.Expect(`"name":"Testing"`)
+	cp.Expect(`"name":"Testing"`, e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
 	AssertValidJSON(suite.T(), cp)
 }

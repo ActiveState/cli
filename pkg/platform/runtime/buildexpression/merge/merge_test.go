@@ -80,35 +80,6 @@ in:
 	mergedScript, err := buildscript.NewScriptFromBuildExpression(mergedExpr)
 	require.NoError(t, err)
 
-	// TODO: delete this block after DX-1939. Sorting requirements is needed until we have
-	// buildexpression hashes for comparing equality.
-	assert.Equal(t,
-		`let:
-	runtime = solve(
-		platforms = [
-			"12345",
-			"67890"
-		],
-		requirements = [
-			{
-				name = "JSON",
-				namespace = "language/perl"
-			},
-			{
-				name = "perl",
-				namespace = "language"
-			},
-			{
-				name = "DateTime",
-				namespace = "language/perl"
-			}
-		]
-	)
-
-in:
-	runtime`, mergedScript.String())
-	return
-
 	assert.Equal(t,
 		`let:
 	runtime = solve(
@@ -168,14 +139,12 @@ in:
 	exprA, err := buildexpression.New(bytes)
 	require.NoError(t, err)
 
-	// Note the intentional swap of platform order. Buildexpression list order does not matter.
-	// isAutoMergePossible() should still return true, and the original platforms will be used.
 	scriptB, err := buildscript.NewScript([]byte(
 		`let:
 	runtime = solve(
 		platforms = [
-			"67890",
-			"12345"
+			"12345",
+			"67890"
 		],
 		requirements = [
 			{
@@ -210,31 +179,6 @@ in:
 
 	mergedScript, err := buildscript.NewScriptFromBuildExpression(mergedExpr)
 	require.NoError(t, err)
-
-	// TODO: delete this block after DX-1939. Sorting requirements is needed until we have
-	// buildexpression hashes for comparing equality.
-	assert.Equal(t,
-		`let:
-	runtime = solve(
-		platforms = [
-			"12345",
-			"67890"
-		],
-		requirements = [
-			{
-				name = "DateTime",
-				namespace = "language/perl"
-			},
-			{
-				name = "perl",
-				namespace = "language"
-			}
-		]
-	)
-
-in:
-	runtime`, mergedScript.String())
-	return
 
 	assert.Equal(t,
 		`let:
@@ -320,16 +264,4 @@ func TestDeleteKey(t *testing.T) {
 	assert.True(t, deleteKey(&m, "quux"), "did not find quux")
 	_, exists := m["foo"].(map[string]interface{})["quux"]
 	assert.False(t, exists, "did not delete quux")
-}
-
-func TestSortLists(t *testing.T) {
-	m := map[string]interface{}{
-		"one": []interface{}{"foo", "bar", "baz"},
-		"two": map[string]interface{}{
-			"three": []interface{}{"foobar", "barfoo", "barbaz"},
-		},
-	}
-	sortLists(&m)
-	assert.Equal(t, []interface{}{"bar", "baz", "foo"}, m["one"])
-	assert.Equal(t, []interface{}{"barbaz", "barfoo", "foobar"}, m["two"].(map[string]interface{})["three"])
 }

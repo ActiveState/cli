@@ -23,7 +23,6 @@ import (
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/cli/internal/runbits"
-	"github.com/ActiveState/cli/internal/runbits/rtusage"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -96,8 +95,7 @@ func (d *Deploy) Run(params *Params) error {
 		return locale.WrapError(err, "err_deploy_commitid", "Could not grab commit ID for project: {{.V0}}.", params.Namespace.String())
 	}
 
-	// Headless argument is simply false here as you cannot deploy a headless project
-	rtTarget := target.NewCustomTarget(params.Namespace.Owner, params.Namespace.Project, commitID, params.Path, target.TriggerDeploy, false) /* TODO: handle empty path */
+	rtTarget := target.NewCustomTarget(params.Namespace.Owner, params.Namespace.Project, commitID, params.Path, target.TriggerDeploy) /* TODO: handle empty path */
 
 	logging.Debug("runSteps: %s", d.step.String())
 
@@ -155,8 +153,6 @@ func (d *Deploy) commitID(namespace project.Namespaced) (strfmt.UUID, error) {
 
 func (d *Deploy) install(rtTarget setup.Targeter) (rerr error) {
 	d.output.Notice(output.Title(locale.T("deploy_install")))
-
-	rtusage.PrintRuntimeUsage(d.svcModel, d.output, rtTarget.Owner())
 
 	rti, err := runtime.New(rtTarget, d.analytics, d.svcModel, d.auth)
 	if err == nil {

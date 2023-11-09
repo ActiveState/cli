@@ -2,6 +2,7 @@ package updater
 
 import (
 	"encoding/json"
+	"net"
 	"net/url"
 	"os"
 	"runtime"
@@ -115,6 +116,10 @@ func (u *Checker) getUpdateInfo(desiredChannel, desiredVersion string) (*Availab
 			label = anaConst.UpdateLabelFailed
 			msg = anaConst.UpdateErrorFetch
 			err = errs.Wrap(err, "Could not fetch update info from %s", infoURL)
+			if e, ok := err.(net.Error); ok && e.Timeout() {
+				logging.Debug("Silencing network timeout error: %v", err)
+				err = errs.Silence(err)
+			}
 		}
 
 		u.an.EventWithLabel(

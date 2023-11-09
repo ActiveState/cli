@@ -22,15 +22,14 @@ import (
 	"github.com/ActiveState/cli/internal/process"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runbits/activation"
+	"github.com/ActiveState/cli/internal/runbits/checker"
+	"github.com/ActiveState/cli/internal/runbits/checkout"
+	"github.com/ActiveState/cli/internal/runbits/commitmediator"
 	"github.com/ActiveState/cli/internal/runbits/findproject"
-	"github.com/ActiveState/cli/internal/runbits/rtusage"
+	"github.com/ActiveState/cli/internal/runbits/git"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
-	"github.com/ActiveState/cli/pkg/cmdlets/checker"
-	"github.com/ActiveState/cli/pkg/cmdlets/checkout"
-	"github.com/ActiveState/cli/pkg/cmdlets/git"
-	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
@@ -81,7 +80,7 @@ func NewActivate(prime primeable) *Activate {
 	}
 }
 
-func (r *Activate) Run(params *ActivateParams) error {
+func (r *Activate) Run(params *ActivateParams) (rerr error) {
 	logging.Debug("Activate %v, %v", params.Namespace, params.PreferredPath)
 
 	checker.RunUpdateNotifier(r.analytics, r.svcModel, r.out)
@@ -105,8 +104,6 @@ func (r *Activate) Run(params *ActivateParams) error {
 			return locale.WrapError(err, "err_activate_projecttouse", "Could not figure out what project to use.")
 		}
 	}
-
-	rtusage.PrintRuntimeUsage(r.svcModel, r.out, proj.Owner())
 
 	alreadyActivated := process.IsActivated(r.config)
 	if alreadyActivated {
@@ -141,18 +138,8 @@ func (r *Activate) Run(params *ActivateParams) error {
 		}
 	}
 
-	if proj != nil && params.Branch != "" {
-		if proj.IsHeadless() {
-			return locale.NewInputError(
-				"err_conflicting_branch_while_headless",
-				"Cannot activate branch [NOTICE]{{.V0}}[/RESET] while in a headless state. Please visit {{.V1}} to create your project.",
-				params.Branch, proj.URL(),
-			)
-		}
-
-		if params.Branch != proj.BranchName() {
-			return locale.NewInputError("err_conflicting_branch_while_checkedout", "", params.Branch, proj.BranchName())
-		}
+	if proj != nil && params.Branch != "" && params.Branch != proj.BranchName() {
+		return locale.NewInputError("err_conflicting_branch_while_checkedout", "", params.Branch, proj.BranchName())
 	}
 
 	// Have to call this once the project has been set
@@ -198,8 +185,8 @@ func (r *Activate) Run(params *ActivateParams) error {
 		}
 	}
 
-	commitID, err := localcommit.Get(proj.Dir())
-	if err != nil && !localcommit.IsFileDoesNotExistError(err) {
+	commitID, err := commitmediator.Get(proj)
+	if err != nil {
 		return errs.Wrap(err, "Unable to get local commit")
 	}
 	if commitID == "" {
@@ -211,11 +198,7 @@ func (r *Activate) Run(params *ActivateParams) error {
 		return locale.WrapError(err, "err_activate_wait", "Could not activate runtime environment.")
 	}
 
-	if proj.IsHeadless() {
-		r.out.Notice(locale.T("info_deactivated_by_commit"))
-	} else {
-		r.out.Notice(locale.T("info_deactivated", proj))
-	}
+	r.out.Notice(locale.T("info_deactivated", proj))
 
 	return nil
 }

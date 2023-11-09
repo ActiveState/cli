@@ -12,6 +12,18 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// toBuildExpression converts given script constructed by Participle into a buildexpression.
+// This function should not be used to convert an arbitrary script to buildexpression.
+// NewScript*() populates the expr field with the equivalent build expression.
+// This function exists solely for testing that functionality.
+func toBuildExpression(script *Script) (*buildexpression.BuildExpression, error) {
+	bytes, err := json.Marshal(script)
+	if err != nil {
+		return nil, err
+	}
+	return buildexpression.New(bytes)
+}
+
 func TestBasic(t *testing.T) {
 	script, err := NewScript([]byte(
 		`let:
@@ -37,6 +49,9 @@ func TestBasic(t *testing.T) {
 in:
   runtime
 `))
+	require.NoError(t, err)
+
+	expr, err := toBuildExpression(script)
 	require.NoError(t, err)
 
 	assert.Equal(t, &Script{
@@ -73,6 +88,7 @@ in:
 			},
 		},
 		&In{Name: ptr.To("runtime")},
+		expr,
 	}, script)
 }
 
@@ -97,11 +113,14 @@ func TestComplex(t *testing.T) {
     )
 
 in:
-   merge(
+    merge(
         win_installer(win_runtime),
         tar_installer(linux_runtime)
     )
 `))
+	require.NoError(t, err)
+
+	expr, err := toBuildExpression(script)
 	require.NoError(t, err)
 
 	assert.Equal(t, &Script{
@@ -145,6 +164,7 @@ in:
 			{FuncCall: &FuncCall{"win_installer", []*Value{{Ident: ptr.To("win_runtime")}}}},
 			{FuncCall: &FuncCall{"tar_installer", []*Value{{Ident: ptr.To("linux_runtime")}}}},
 		}}},
+		expr,
 	}, script)
 }
 
@@ -175,6 +195,9 @@ in:
 
 func TestExample(t *testing.T) {
 	script, err := NewScript([]byte(example))
+	require.NoError(t, err)
+
+	expr, err := toBuildExpression(script)
 	require.NoError(t, err)
 
 	assert.Equal(t, &Script{
@@ -217,6 +240,7 @@ func TestExample(t *testing.T) {
 			},
 		},
 		&In{Name: ptr.To("runtime")},
+		expr,
 	}, script)
 }
 
@@ -224,8 +248,8 @@ func TestString(t *testing.T) {
 	script, err := NewScript([]byte(
 		`let:
     runtime = solve(
-        requirements=[{name="language/python"}],
-        platforms=["12345", "67890"]
+        platforms=["12345", "67890"],
+        requirements=[{name="language/python"}]
     )
 in:
     runtime
@@ -235,14 +259,14 @@ in:
 	assert.Equal(t,
 		`let:
 	runtime = solve(
+		platforms = [
+			"12345",
+			"67890"
+		],
 		requirements = [
 			{
 				name = "language/python"
 			}
-		],
-		platforms = [
-			"12345",
-			"67890"
 		]
 	)
 
@@ -362,15 +386,12 @@ func TestBuildExpression(t *testing.T) {
 	script, err := NewScriptFromBuildExpression(expr)
 	require.NoError(t, err)
 	require.NotNil(t, script)
-	//newExpr, err := script.ToBuildExpression()
-	//require.NoError(t, err)
+	newExpr := script.Expr
 	exprBytes, err := json.Marshal(expr)
 	require.NoError(t, err)
-	//newExprBytes, err := json.Marshal(newExpr)
-	//require.NoError(t, err)
-	// TODO: re-enable this test in DX-1939. Buildexpression equality is implicitly tested
-	// elsewhere, so temporarily disabling this explicit test is okay.
-	//assert.Equal(t, string(exprBytes), string(newExprBytes))
+	newExprBytes, err := json.Marshal(newExpr)
+	require.NoError(t, err)
+	assert.Equal(t, string(exprBytes), string(newExprBytes))
 
 	// Verify comparisons between buildscripts and buildexpressions is accurate.
 	assert.True(t, script.EqualsBuildExpression(expr))
@@ -379,12 +400,12 @@ func TestBuildExpression(t *testing.T) {
 	// Verify null JSON value is handled correctly.
 	var null *string
 	nullHandled := false
-	for _, assignment := range script.Let.Assignments {
-		if assignment.Key == "runtime" {
-			args := assignment.Value.FuncCall.Arguments
+	for _, assignment := range script.Expr.Let.Assignments {
+		if assignment.Name == "runtime" {
+			args := assignment.Value.Ap.Arguments
 			require.NotNil(t, args)
 			for _, arg := range args {
-				if arg.Assignment != nil && arg.Assignment.Key == "solver_version" {
+				if arg.Assignment != nil && arg.Assignment.Name == "solver_version" {
 					assert.Equal(t, null, arg.Assignment.Value.Str)
 					nullHandled = true
 				}
@@ -392,49 +413,4 @@ func TestBuildExpression(t *testing.T) {
 		}
 	}
 	assert.True(t, nullHandled, "JSON null not encountered")
-}
-
-func TestJsonListEquality(t *testing.T) {
-	// When comparing buildscripts to buildexpressions, the former is converted to the latter
-	// via JSON marshaling. Since buildexpression list order does not matter (in addition to
-	// key-value order not mattering), test for list equality.
-	// This should not be necessary after DX-1939.
-
-	// Test that ["foo", "bar"] == ["bar", "foo"].
-	v1 := &Value{List: &[]*Value{
-		{Str: ptr.To(`"foo"`)},
-		{Str: ptr.To(`"bar"`)},
-	}}
-	v2 := &Value{List: &[]*Value{
-		{Str: ptr.To(`"bar"`)},
-		{Str: ptr.To(`"foo"`)},
-	}}
-
-	b1, err := json.Marshal(v1)
-	require.NoError(t, err)
-	b2, err := json.Marshal(v2)
-	require.NoError(t, err)
-
-	assert.Equal(t, string(b2), string(b1))
-
-	// Test that [{"name": "foo"}, {"name": "bar"}] == [{"name": "bar"}, {"name": "foo"}].
-	v1 = &Value{List: &[]*Value{
-		{Object: &[]*Assignment{
-			{"name", &Value{Str: ptr.To(`"foo"`)}},
-			{"name", &Value{Str: ptr.To(`"bar"`)}},
-		}},
-	}}
-	v2 = &Value{List: &[]*Value{
-		{Object: &[]*Assignment{
-			{"name", &Value{Str: ptr.To(`"foo"`)}},
-			{"name", &Value{Str: ptr.To(`"bar"`)}},
-		}},
-	}}
-
-	b1, err = json.Marshal(v1)
-	require.NoError(t, err)
-	b2, err = json.Marshal(v2)
-	require.NoError(t, err)
-
-	assert.Equal(t, string(b2), string(b1))
 }

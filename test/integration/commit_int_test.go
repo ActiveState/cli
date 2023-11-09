@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"path/filepath"
 	"testing"
-	"time"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -12,7 +11,6 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/ActiveState/cli/pkg/platform/runtime/buildscript"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/ActiveState/termtest"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -22,6 +20,7 @@ type CommitIntegrationTestSuite struct {
 
 func (suite *CommitIntegrationTestSuite) TestCommitManualBuildScriptMod() {
 	suite.OnlyRunForTags(tagsuite.Commit)
+	suite.T().Skip("Temporarily disable buildscripts until DX-2307") // remove in DX-2307
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
@@ -33,9 +32,9 @@ func (suite *CommitIntegrationTestSuite) TestCommitManualBuildScriptMod() {
 			"ActiveState-CLI/Commit-Test-A#7a1b416e-c17f-4d4a-9e27-cbad9e8f5655",
 			".",
 		),
-		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
-	cp.Expect("Checked out", termtest.OptExpectTimeout(120*time.Second))
+	cp.Expect("Checked out", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
 
 	proj, err := project.FromPath(ts.Dirs.Work)

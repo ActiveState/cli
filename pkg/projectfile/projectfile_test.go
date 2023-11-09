@@ -12,7 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -314,17 +314,17 @@ func TestNewProjectfile(t *testing.T) {
 	assert.NoError(t, err, "Should be no error when getting a temp directory")
 	os.Chdir(dir)
 
-	pjFile, err := TestOnlyCreateWithProjectURL("https://platform.activestate.com/xowner/xproject", dir)
+	pjFile, err := testOnlyCreateWithProjectURL("https://platform.activestate.com/xowner/xproject", dir)
 	assert.NoError(t, err, "There should be no error when loading from a path")
 	assert.Equal(t, "activationMessage", pjFile.Scripts[0].Name)
 
-	_, err = TestOnlyCreateWithProjectURL("https://platform.activestate.com/xowner/xproject", "")
+	_, err = testOnlyCreateWithProjectURL("https://platform.activestate.com/xowner/xproject", "")
 	assert.Error(t, err, "We don't accept blank paths")
 
 	setCwd(t, "")
 	dir, err = os.Getwd()
 	assert.NoError(t, err, "Should be no error when getting the CWD")
-	_, err = TestOnlyCreateWithProjectURL("https://platform.activestate.com/xowner/xproject", dir)
+	_, err = testOnlyCreateWithProjectURL("https://platform.activestate.com/xowner/xproject", dir)
 	assert.Error(t, err, "Cannot create new project if existing as.yaml ...exists")
 }
 
@@ -469,24 +469,10 @@ languages:
 	}
 }
 
-func TestMigrateCommitFromASY(t *testing.T) {
-	tempDir := fileutils.TempDirUnsafe()
-	defer os.RemoveAll(tempDir)
-
-	commitID := "7BA74758-8665-4D3F-921C-757CD271A0C1"
-	asy := filepath.Join(tempDir, constants.ConfigFileName)
-	err := fileutils.WriteFile(asy, []byte("project: https://platform.activestate.com/Owner/Name?branch=main&commitID="+commitID))
-	require.NoError(t, err)
-
-	proj, err := Parse(asy)
-	require.NoError(t, err)
-	assert.Equal(t, "Owner", proj.Owner())
-	assert.Equal(t, "Name", proj.Name())
-	assert.Equal(t, "main", proj.BranchName())
-
-	commitIdFile := filepath.Join(tempDir, constants.ProjectConfigDirName, constants.CommitIdFileName)
-	require.FileExists(t, commitIdFile)
-	assert.Equal(t, commitID, string(fileutils.ReadFileUnsafe(commitIdFile)))
-
-	assert.NotContains(t, string(fileutils.ReadFileUnsafe(asy)), commitID)
+// testOnlyCreateWithProjectURL a new activestate.yaml with default content
+func testOnlyCreateWithProjectURL(projectURL, path string) (*Project, error) {
+	return createCustom(&CreateParams{
+		ProjectURL: projectURL,
+		Directory:  path,
+	}, language.Python3)
 }

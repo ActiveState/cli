@@ -37,7 +37,7 @@ func (l *List) Run() error {
 		return locale.NewInputError("err_no_project")
 	}
 
-	project, err := model.FetchProjectByName(l.project.Owner(), l.project.Name())
+	project, err := model.LegacyFetchProjectByName(l.project.Owner(), l.project.Name())
 	if err != nil {
 		return locale.WrapError(err, "err_fetch_project", "", l.project.Namespace().String())
 	}

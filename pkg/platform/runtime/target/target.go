@@ -11,7 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
-	"github.com/ActiveState/cli/pkg/localcommit"
+	"github.com/ActiveState/cli/internal/runbits/commitmediator"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/go-openapi/strfmt"
 )
@@ -88,8 +88,8 @@ func (p *ProjectTarget) CommitUUID() strfmt.UUID {
 	if p.customCommit != nil {
 		return *p.customCommit
 	}
-	commitID, err := localcommit.Get(p.Project.Dir())
-	if err != nil && !localcommit.IsFileDoesNotExistError(err) {
+	commitID, err := commitmediator.Get(p.Project)
+	if err != nil {
 		multilog.Error("Unable to get local commit: %v", errs.JoinMessage(err))
 		return ""
 	}
@@ -101,10 +101,6 @@ func (p *ProjectTarget) Trigger() Trigger {
 		return triggerUnknown
 	}
 	return p.trigger
-}
-
-func (p *ProjectTarget) Headless() bool {
-	return p.Project.IsHeadless()
 }
 
 func (p *ProjectTarget) ReadOnly() bool {
@@ -136,17 +132,16 @@ type CustomTarget struct {
 	commitUUID strfmt.UUID
 	dir        string
 	trigger    Trigger
-	headless   bool
 }
 
-func NewCustomTarget(owner string, name string, commitUUID strfmt.UUID, dir string, trigger Trigger, headless bool) *CustomTarget {
+func NewCustomTarget(owner string, name string, commitUUID strfmt.UUID, dir string, trigger Trigger) *CustomTarget {
 	cleanDir, err := fileutils.ResolveUniquePath(dir)
 	if err != nil {
 		multilog.Error("Could not resolve unique path for dir: %s, error: %s", dir, err.Error())
 	} else {
 		dir = cleanDir
 	}
-	return &CustomTarget{owner, name, commitUUID, dir, trigger, headless}
+	return &CustomTarget{owner, name, commitUUID, dir, trigger}
 }
 
 func (c *CustomTarget) Owner() string {
@@ -170,10 +165,6 @@ func (c *CustomTarget) Trigger() Trigger {
 		return triggerUnknown
 	}
 	return c.trigger
-}
-
-func (c *CustomTarget) Headless() bool {
-	return c.headless
 }
 
 func (c *CustomTarget) ReadOnly() bool {
@@ -236,10 +227,6 @@ func (i *OfflineTarget) SetTrigger(t Trigger) {
 
 func (i *OfflineTarget) Trigger() Trigger {
 	return i.trigger
-}
-
-func (i *OfflineTarget) Headless() bool {
-	return false
 }
 
 func (i *OfflineTarget) ReadOnly() bool {

@@ -5,7 +5,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/pkg/localcommit"
+	"github.com/ActiveState/cli/internal/runbits/commitmediator"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -33,7 +33,7 @@ func (a *Add) Run(params AddParams) error {
 		return locale.NewInputError("err_no_project")
 	}
 
-	project, err := model.FetchProjectByName(a.project.Owner(), a.project.Name())
+	project, err := model.LegacyFetchProjectByName(a.project.Owner(), a.project.Name())
 	if err != nil {
 		return locale.WrapError(err, "err_fetch_project", a.project.Namespace().String())
 	}
@@ -49,7 +49,7 @@ func (a *Add) Run(params AddParams) error {
 		return locale.WrapError(err, "err_fetch_branch", "", localBranch)
 	}
 
-	commitID, err := localcommit.Get(a.project.Dir())
+	commitID, err := commitmediator.Get(a.project)
 	if err != nil {
 		return errs.Wrap(err, "Unable to get local commit")
 	}

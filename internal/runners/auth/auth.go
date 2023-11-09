@@ -1,15 +1,13 @@
 package auth
 
 import (
-	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/keypairs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
-	authlet "github.com/ActiveState/cli/pkg/cmdlets/auth"
+	"github.com/ActiveState/cli/internal/runbits/auth"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
-	"github.com/ActiveState/cli/pkg/platform/model"
 )
 
 type Auth struct {
@@ -72,37 +70,12 @@ func (a *Auth) Run(params *AuthParams) error {
 	}
 
 	username := a.Auth.WhoAmI()
-	organization, err := model.FetchOrgByURLName(username, a.Auth)
-	if err != nil {
-		return errs.Wrap(err, "Could not fetch organizations")
-	}
-
-	tiers, err := model.FetchTiers()
-	if err != nil {
-		return errs.Wrap(err, "Could not fetch tiers")
-	}
-
-	tier := organization.Tier
-	privateProjects := false
-	for _, t := range tiers {
-		if tier == t.Name && t.RequiresPayment {
-			privateProjects = true
-			break
-		}
-	}
-
 	a.Outputer.Print(output.Prepare(
 		locale.T("logged_in_as", map[string]string{"Name": username}),
 		&struct {
-			Username        string `json:"username,omitempty"`
-			URLName         string `json:"urlname,omitempty"`
-			Tier            string `json:"tier,omitempty"`
-			PrivateProjects bool   `json:"privateProjects"`
+			Username string `json:"username"`
 		}{
 			username,
-			organization.URLname,
-			tier,
-			privateProjects,
 		},
 	))
 
@@ -111,18 +84,18 @@ func (a *Auth) Run(params *AuthParams) error {
 
 func (a *Auth) authenticate(params *AuthParams) error {
 	if params.Prompt || params.Username != "" {
-		return authlet.AuthenticateWithInput(params.Username, params.Password, params.Totp, params.NonInteractive, a.Cfg, a.Outputer, a.Prompter, a.Auth)
+		return auth.AuthenticateWithInput(params.Username, params.Password, params.Totp, params.NonInteractive, a.Cfg, a.Outputer, a.Prompter, a.Auth)
 	}
 
 	if params.Token != "" {
-		return authlet.AuthenticateWithToken(params.Token, a.Auth)
+		return auth.AuthenticateWithToken(params.Token, a.Auth)
 	}
 
 	if params.NonInteractive {
 		return locale.NewInputError("err_auth_needinput")
 	}
 
-	return authlet.AuthenticateWithBrowser(a.Outputer, a.Auth, a.Prompter)
+	return auth.AuthenticateWithBrowser(a.Outputer, a.Auth, a.Prompter)
 }
 
 func (a *Auth) verifyAuthentication() error {

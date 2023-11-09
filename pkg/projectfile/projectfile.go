@@ -32,7 +32,6 @@ import (
 	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/cli/internal/sliceutils"
 	"github.com/ActiveState/cli/internal/strutils"
-	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/sysinfo"
 	"github.com/go-openapi/strfmt"
 	"github.com/google/uuid"
@@ -465,21 +464,6 @@ func (p *Project) Init() error {
 	}
 	p.parsedURL = parsedURL
 
-	if p.parsedURL.LegacyCommitID != "" {
-		// Migrate from commitID in activestate.yaml to .activestate/commit file.
-		// Writing to disk during Parse() feels wrong though.
-		if err := localcommit.Set(filepath.Dir(p.Path()), p.parsedURL.LegacyCommitID); err != nil {
-			return errs.Wrap(err, "Could not create local commit file")
-		}
-		pf := NewProjectField()
-		if err := pf.LoadProject(p.Project); err != nil {
-			return errs.Wrap(err, "Could not load activestate.yaml")
-		}
-		if err := pf.Save(p.path); err != nil {
-			return errs.Wrap(err, "Could not save activestate.yaml")
-		}
-	}
-
 	// Ensure branch name is set
 	if p.parsedURL.Owner != "" && p.parsedURL.BranchName == "" {
 		logging.Debug("Appending default branch as none is set")
@@ -549,6 +533,11 @@ func detectDeprecations(dat []byte, configFilepath string) error {
 	}
 }
 
+// URL returns the project namespace's string URL from activestate.yaml.
+func (p *Project) URL() string {
+	return p.Project
+}
+
 // Owner returns the project namespace's organization
 func (p *Project) Owner() string {
 	return p.parsedURL.Owner
@@ -567,6 +556,35 @@ func (p *Project) BranchName() string {
 // Path returns the project's activestate.yaml file path.
 func (p *Project) Path() string {
 	return p.path
+}
+
+// LegacyCommitID is for use by commitmediator.Get() ONLY.
+// It returns a pre-migrated project's commit ID from activestate.yaml.
+func (p *Project) LegacyCommitID() string {
+	return p.parsedURL.LegacyCommitID
+}
+
+// LegacySetCommit is for use by commitmediator.Set() ONLY.
+// It changes the legacy commit ID in activestate.yaml.
+// Remove this in DX-2307.
+func (p *Project) LegacySetCommit(commitID string) error {
+	pf := NewProjectField()
+	if err := pf.LoadProject(p.Project); err != nil {
+		return errs.Wrap(err, "Could not load activestate.yaml")
+	}
+	pf.LegacySetCommit(commitID)
+	if err := pf.Save(p.path); err != nil {
+		return errs.Wrap(err, "Could not save activestate.yaml")
+	}
+
+	p.parsedURL.LegacyCommitID = commitID
+	p.Project = pf.String()
+	return nil
+}
+
+// Remove this function in DX-2307.
+func (p *Project) Dir() string {
+	return filepath.Dir(p.path)
 }
 
 // SetPath sets the path of the project file and should generally only be used by tests
@@ -904,24 +922,17 @@ func FromExactPath(path string) (*Project, error) {
 
 // CreateParams are parameters that we create a custom activestate.yaml file from
 type CreateParams struct {
-	Owner      string
-	Project    string
-	BranchName string
-	Directory  string
-	Content    string
-	Language   string
-	Private    bool
-	path       string
-	ProjectURL string
-	Cache      string
-}
-
-// TestOnlyCreateWithProjectURL a new activestate.yaml with default content
-func TestOnlyCreateWithProjectURL(projectURL, path string) (*Project, error) {
-	return createCustom(&CreateParams{
-		ProjectURL: projectURL,
-		Directory:  path,
-	}, language.Python3)
+	Owner          string
+	Project        string
+	BranchName     string
+	Directory      string
+	Content        string
+	Language       string
+	Private        bool
+	path           string
+	ProjectURL     string
+	Cache          string
+	LegacyCommitID string // remove in DX-2307
 }
 
 // Create will create a new activestate.yaml with a projectURL for the given details
@@ -952,6 +963,11 @@ func createCustom(params *CreateParams, lang language.Language) (*Project, error
 			q.Set("branch", params.BranchName)
 		}
 
+		// Remove this block in DX-2307.
+		if params.LegacyCommitID != "" {
+			q.Set("commitID", params.LegacyCommitID)
+		}
+
 		u.RawQuery = q.Encode()
 		params.ProjectURL = u.String()
 	}
@@ -976,8 +992,9 @@ func createCustom(params *CreateParams, lang language.Language) (*Project, error
 		shell = "batch"
 	}
 
+	languageDisabled := os.Getenv(constants.DisableLanguageTemplates) == "true"
 	content := params.Content
-	if content == "" && lang != language.Unset && lang != language.Unknown {
+	if !languageDisabled && content == "" && lang != language.Unset && lang != language.Unknown {
 		tplName := "activestate.yaml." + strings.TrimRight(lang.String(), "23") + ".tpl"
 		template, err := assets.ReadFileBytes(tplName)
 		if err != nil {

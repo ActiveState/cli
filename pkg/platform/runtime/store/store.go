@@ -239,6 +239,14 @@ func (s *Store) updateEnviron(orderedArtifacts []artifact.ArtifactID, artifacts 
 		}
 	}
 
+	if rtGlobal == nil {
+		// Returning nil will end up causing a nil-pointer-exception panic in setup.Update().
+		// There is additional logging of the buildplan there that may help diagnose why this is happening.
+		logging.Error("There were artifacts returned, but none of them ended up being stored/installed.")
+		logging.Error("Artifacts returned: %v", orderedArtifacts)
+		logging.Error("Artifacts stored: %v", artifacts)
+	}
+
 	return rtGlobal, nil
 }
 
@@ -247,10 +255,19 @@ func (s *Store) InstallPath() string {
 	return s.installPath
 }
 
-func (s *Store) BuildPlan() (*bpModel.Build, error) {
+func (s *Store) BuildPlanRaw() ([]byte, error) {
 	data, err := fileutils.ReadFile(s.buildPlanFile())
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not read build plan file.")
+	}
+
+	return data, nil
+}
+
+func (s *Store) BuildPlan() (*bpModel.Build, error) {
+	data, err := s.BuildPlanRaw()
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not get build plan file.")
 	}
 
 	var buildPlan bpModel.Build

@@ -23,7 +23,6 @@ import (
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/cli/internal/runbits"
-	"github.com/ActiveState/cli/internal/runbits/rtusage"
 	"github.com/ActiveState/cli/internal/scriptfile"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
@@ -96,13 +95,9 @@ func (s *Exec) Run(params *Params, args ...string) (rerr error) {
 		projectDir = projectFromRuntimeDir(s.cfg, params.Path)
 		proj, err = project.FromPath(projectDir)
 		if err != nil {
-			logging.Warning("Could not get project dir from path: %s", errs.JoinMessage(err))
-			// We do not know if the project is headless at this point so we default to true
-			// as there is no head
-			rtTarget = target.NewCustomTarget("", "", "", params.Path, trigger, true)
-		} else {
-			rtTarget = target.NewProjectTarget(proj, nil, trigger)
+			return locale.WrapInputError(err, "exec_no_project_at_path", "Could not find project file at {{.V0}}", projectDir)
 		}
+		rtTarget = target.NewProjectTarget(proj, nil, trigger)
 		projectNamespace = proj.NamespaceString()
 	} else {
 		proj = s.proj
@@ -120,8 +115,6 @@ func (s *Exec) Run(params *Params, args ...string) (rerr error) {
 		projectNamespace = proj.NamespaceString()
 		rtTarget = target.NewProjectTarget(proj, nil, trigger)
 	}
-
-	rtusage.PrintRuntimeUsage(s.svcModel, s.out, rtTarget.Owner())
 
 	s.out.Notice(locale.Tl("operating_message", "", projectNamespace, projectDir))
 
@@ -142,7 +135,7 @@ func (s *Exec) Run(params *Params, args ...string) (rerr error) {
 	}
 	venv := virtualenvironment.New(rt)
 
-	env, err := venv.GetEnv(true, false, projectDir, projectNamespace)
+	env, err := venv.GetEnv(true, false, projectDir)
 	if err != nil {
 		return locale.WrapError(err, "err_exec_env", "Could not retrieve environment information for your runtime")
 	}

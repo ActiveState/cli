@@ -26,9 +26,9 @@ func (suite *ShowIntegrationTestSuite) TestShow() {
 
 	cp := ts.SpawnWithOpts(
 		e2e.OptArgs("activate"),
-		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
-	cp.ExpectInput()
+	cp.ExpectInput(e2e.RuntimeSourcingTimeoutOpt)
 
 	cp = ts.Spawn("show")
 	cp.Expect(`Name`)

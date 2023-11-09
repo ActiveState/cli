@@ -64,8 +64,7 @@ from use by external code.
 #### internal/runbits/
 
 Packages that are made available for use by "runner" packages. In essence,
-`internal/runners/internal/runbits`. A synonymous and deprecated directory
-exists at `pkg/cmdlets/`.
+`internal/runners/internal/runbits`.
 
 #### internal/runners/
 

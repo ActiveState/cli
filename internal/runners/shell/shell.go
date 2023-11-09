@@ -1,11 +1,8 @@
 package shell
 
 import (
-	"os"
-
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/config"
-	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -14,12 +11,11 @@ import (
 	"github.com/ActiveState/cli/internal/process"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runbits/activation"
+	"github.com/ActiveState/cli/internal/runbits/commitmediator"
 	"github.com/ActiveState/cli/internal/runbits/findproject"
-	"github.com/ActiveState/cli/internal/runbits/rtusage"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
-	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
@@ -76,9 +72,7 @@ func (u *Shell) Run(params *Params) error {
 		return locale.WrapError(err, "err_shell_cannot_load_project")
 	}
 
-	rtusage.PrintRuntimeUsage(u.svcModel, u.out, proj.Owner())
-
-	commitID, err := localcommit.Get(proj.Dir())
+	commitID, err := commitmediator.Get(proj)
 	if err != nil {
 		return errs.Wrap(err, "Unable to get local commit")
 	}
@@ -93,9 +87,7 @@ func (u *Shell) Run(params *Params) error {
 	}
 
 	if process.IsActivated(u.config) {
-		activatedProjectNamespace := os.Getenv(constants.ActivatedStateNamespaceEnvVarName)
-		activatedProjectDir := os.Getenv(constants.ActivatedStateEnvVarName)
-		return locale.NewInputError("err_shell_already_active", "", activatedProjectNamespace, activatedProjectDir)
+		return locale.NewInputError("err_shell_already_active", "", proj.NamespaceString(), proj.Dir())
 	}
 
 	u.out.Notice(locale.Tl("shell_project_statement", "",
@@ -110,11 +102,7 @@ func (u *Shell) Run(params *Params) error {
 		return locale.WrapError(err, "err_shell_wait", "Could not start runtime shell/prompt.")
 	}
 
-	if proj.IsHeadless() {
-		u.out.Notice(locale.T("info_deactivated_by_commit"))
-	} else {
-		u.out.Notice(locale.T("info_deactivated", proj))
-	}
+	u.out.Notice(locale.T("info_deactivated", proj))
 
 	return nil
 }

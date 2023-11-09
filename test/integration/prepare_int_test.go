@@ -7,9 +7,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"testing"
-	"time"
 
-	"github.com/ActiveState/termtest"
 	"github.com/stretchr/testify/suite"
 
 	svcApp "github.com/ActiveState/cli/cmd/state-svc/app"
@@ -52,7 +50,7 @@ func (suite *PrepareIntegrationTestSuite) TestPrepare() {
 	cp := ts.SpawnWithOpts(
 		e2e.OptArgs("_prepare"),
 		e2e.OptAppendEnv(fmt.Sprintf("%s=%s", constants.AutostartPathOverrideEnvVarName, autostartDir)),
-		// e2e.OptAppendEnv(fmt.Sprintf("ACTIVESTATE_CLI_CONFIGDIR=%s", ts.Dirs.Work)),
+		// e2e.OptAppendEnv(fmt.Sprintf("%s=%s", constants.ConfigEnvVarName, ts.Dirs.Work)),
 	)
 	cp.ExpectExitCode(0)
 
@@ -121,7 +119,7 @@ func (suite *PrepareIntegrationTestSuite) AssertConfig(target string) {
 
 func (suite *PrepareIntegrationTestSuite) TestResetExecutors() {
 	suite.OnlyRunForTags(tagsuite.Prepare)
-	ts := e2e.New(suite.T(), true, "ACTIVESTATE_CLI_DISABLE_RUNTIME=false")
+	ts := e2e.New(suite.T(), true, constants.DisableRuntime+"=false")
 	err := ts.ClearCache()
 	suite.Require().NoError(err)
 	defer ts.Close()
@@ -132,7 +130,7 @@ func (suite *PrepareIntegrationTestSuite) TestResetExecutors() {
 	cp.Expect("This project will always be available for use")
 	cp.Expect("Downloading")
 	cp.Expect("Installing")
-	cp.Expect("Activated", termtest.OptExpectTimeout(120*time.Second))
+	cp.Expect("Activated", e2e.RuntimeSourcingTimeoutOpt)
 
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
@@ -164,7 +162,7 @@ func (suite *PrepareIntegrationTestSuite) TestResetExecutors() {
 	err = os.RemoveAll(projectExecDir)
 
 	cp = ts.Spawn("activate")
-	cp.Expect("Activated", termtest.OptExpectTimeout(120*time.Second))
+	cp.Expect("Activated", e2e.RuntimeSourcingTimeoutOpt)
 	cp.SendLine("which python3")
 	cp.SendLine("python3 --version")
 	cp.Expect("ActiveState")

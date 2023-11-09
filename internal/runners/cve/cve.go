@@ -7,7 +7,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
-	"github.com/ActiveState/cli/pkg/localcommit"
+	"github.com/ActiveState/cli/internal/runbits/commitmediator"
 	medmodel "github.com/ActiveState/cli/pkg/platform/api/mediator/model"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -66,7 +66,7 @@ func (c *Cve) Run() error {
 		)
 	}
 
-	commitID, err := localcommit.Get(c.proj.Dir())
+	commitID, err := commitmediator.Get(c.proj)
 	if err != nil {
 		return errs.Wrap(err, "Could not get local commit")
 	}

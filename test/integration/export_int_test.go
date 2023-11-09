@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/ActiveState/termtest"
@@ -87,9 +88,9 @@ func (suite *ExportIntegrationTestSuite) TestExport_Env() {
 	ts.PrepareProject("ActiveState-CLI/Export", "5397f645-da8a-4591-b106-9d7fa99545fe")
 	cp := ts.SpawnWithOpts(
 		e2e.OptArgs("export", "env"),
-		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
-	cp.Expect(`PATH: `)
+	cp.Expect(`PATH: `, e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
 
 	suite.Assert().NotContains(cp.Output(), "ACTIVESTATE_ACTIVATED")
@@ -107,15 +108,15 @@ func (suite *ExportIntegrationTestSuite) TestJSON() {
 
 	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("checkout", "ActiveState-CLI/small-python", "."),
-		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
-	cp.ExpectExitCode(0, termtest.OptExpectTimeout(120*time.Second))
+	cp.ExpectExitCode(0, e2e.RuntimeSourcingTimeoutOpt)
 
 	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("export", "env", "-o", "json"),
-		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
-	cp.ExpectExitCode(0)
+	cp.ExpectExitCode(0, e2e.RuntimeSourcingTimeoutOpt)
 	AssertValidJSON(suite.T(), cp)
 
 	ts.LoginAsPersistentUser()

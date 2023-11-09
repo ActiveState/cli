@@ -1,7 +1,6 @@
 package pull
 
 import (
-	"errors"
 	"path/filepath"
 	"strings"
 
@@ -10,14 +9,15 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runbits"
 	buildscriptRunbits "github.com/ActiveState/cli/internal/runbits/buildscript"
-	"github.com/ActiveState/cli/internal/runbits/rtusage"
-	"github.com/ActiveState/cli/pkg/cmdlets/commit"
-	"github.com/ActiveState/cli/pkg/localcommit"
+	"github.com/ActiveState/cli/internal/runbits/commit"
+	"github.com/ActiveState/cli/internal/runbits/commitmediator"
+	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -78,19 +78,19 @@ func (o *pullOutput) MarshalStructured(format output.Format) interface{} {
 	return o
 }
 
-func (p *Pull) Run(params *PullParams) error {
+func (p *Pull) Run(params *PullParams) (rerr error) {
+	defer rationalizeError(&rerr)
+
 	if p.project == nil {
 		return locale.NewInputError("err_no_project")
 	}
 	p.out.Notice(locale.Tl("operating_message", "", p.project.NamespaceString(), p.project.Dir()))
 
-	rtusage.PrintRuntimeUsage(p.svcModel, p.out, p.project.Owner())
-
-	if p.project.IsHeadless() && params.SetProject == "" {
+	if p.project.IsHeadless() {
 		return locale.NewInputError("err_pull_headless", "You must first create a project. Please visit {{.V0}} to create your project.", p.project.URL())
 	}
 
-	if !p.project.IsHeadless() && p.project.BranchName() == "" {
+	if p.project.BranchName() == "" {
 		return locale.NewError("err_pull_branch", "Your [NOTICE]activestate.yaml[/RESET] project field does not contain a branch. Please ensure you are using the latest version of the State Tool by running [ACTIONABLE]`state update`[/RESET] and then trying again.")
 	}
 
@@ -101,8 +101,8 @@ func (p *Pull) Run(params *PullParams) error {
 	}
 
 	var localCommit *strfmt.UUID
-	localCommitID, err := localcommit.Get(p.project.Dir())
-	if err != nil && !localcommit.IsFileDoesNotExistError(err) {
+	localCommitID, err := commitmediator.Get(p.project)
+	if err != nil {
 		return errs.Wrap(err, "Unable to get local commit")
 	}
 	if localCommitID != "" {
@@ -128,21 +128,31 @@ func (p *Pull) Run(params *PullParams) error {
 	resultingCommit := remoteCommit // resultingCommit is the commit we want to update the local project file with
 
 	if localCommit != nil {
-		strategies, err := model.MergeCommit(*remoteCommit, *localCommit)
-		if err != nil {
-			if errors.Is(err, model.ErrMergeFastForward) {
-				// No merge necessary
-				resultingCommit = localCommit
-			} else if !errors.Is(err, model.ErrMergeCommitInHistory) {
-				return locale.WrapError(err, "err_mergecommit", "Could not detect if merge is necessary.")
-			}
+		// Attempt to fast-forward merge. This will succeed if the commits are
+		// compatible, meaning that we can simply update the local commit ID to
+		// the remoteCommit ID. The commitID returned from MergeCommit with this
+		// strategy should just be the remote commit ID.
+		// If this call fails then we will try a recursive merge.
+		bp := model.NewBuildPlannerModel(p.auth)
+		params := &model.MergeCommitParams{
+			Owner:     remoteProject.Owner,
+			Project:   remoteProject.Project,
+			TargetRef: localCommit.String(),
+			OtherRef:  remoteCommit.String(),
+			Strategy:  bpModel.MergeCommitStrategyFastForward,
 		}
-		if err == nil && strategies != nil {
-			c, err := p.performMerge(strategies, *remoteCommit, *localCommit, remoteProject, p.project.BranchName())
+
+		resultCommit, mergeErr := bp.MergeCommit(params)
+		if mergeErr != nil {
+			logging.Debug("Merge with fast-forward failed with error: %s, trying recursive overwrite", mergeErr.Error())
+			c, err := p.performMerge(*remoteCommit, *localCommit, remoteProject, p.project.BranchName())
 			if err != nil {
 				return errs.Wrap(err, "performing merge commit failed")
 			}
 			resultingCommit = &c
+		} else {
+			logging.Debug("Fast-forward merge succeeded, setting commit ID to %s", resultCommit.String())
+			resultingCommit = &resultCommit
 		}
 	}
 
@@ -153,13 +163,13 @@ func (p *Pull) Run(params *PullParams) error {
 		}
 	}
 
-	commitID, err := localcommit.Get(p.project.Dir())
-	if err != nil && !localcommit.IsFileDoesNotExistError(err) {
+	commitID, err := commitmediator.Get(p.project)
+	if err != nil {
 		return errs.Wrap(err, "Unable to get local commit")
 	}
 
 	if commitID != *resultingCommit {
-		err := localcommit.Set(p.project.Dir(), resultingCommit.String())
+		err := commitmediator.Set(p.project, resultingCommit.String())
 		if err != nil {
 			return errs.Wrap(err, "Unable to set local commit")
 		}
@@ -183,24 +193,28 @@ func (p *Pull) Run(params *PullParams) error {
 	return nil
 }
 
-func (p *Pull) performMerge(strategies *mono_models.MergeStrategies, remoteCommit strfmt.UUID, localCommit strfmt.UUID, namespace *project.Namespaced, branchName string) (strfmt.UUID, error) {
-	err := p.mergeBuildScript(strategies, remoteCommit)
-	if err != nil {
-		return "", errs.Wrap(err, "Could not merge local build script with remote changes")
-	}
+func (p *Pull) performMerge(remoteCommit, localCommit strfmt.UUID, namespace *project.Namespaced, branchName string) (strfmt.UUID, error) {
+	// Re-enable in DX-2307.
+	//err := p.mergeBuildScript(strategies, remoteCommit)
+	//if err != nil {
+	//	return "", errs.Wrap(err, "Could not merge local build script with remote changes")
+	//}
 
 	p.out.Notice(output.Title(locale.Tl("pull_diverged", "Merging history")))
 	p.out.Notice(locale.Tr(
 		"pull_diverged_message",
-		namespace.String(), branchName, localCommit.String(), remoteCommit.String()))
+		namespace.String(), branchName, localCommit.String(), remoteCommit.String()),
+	)
 
-	commitID, err := localcommit.Get(p.project.Dir())
-	if err != nil {
-		return "", errs.Wrap(err, "Unable to get local commit")
+	bp := model.NewBuildPlannerModel(p.auth)
+	params := &model.MergeCommitParams{
+		Owner:     namespace.Owner,
+		Project:   namespace.Project,
+		TargetRef: localCommit.String(),
+		OtherRef:  remoteCommit.String(),
+		Strategy:  bpModel.MergeCommitStrategyRecursiveOverwriteOnConflict,
 	}
-
-	commitMessage := locale.Tr("pull_merge_commit", remoteCommit.String(), commitID.String())
-	resultCommit, err := model.CommitChangeset(remoteCommit, commitMessage, strategies.OverwriteChanges)
+	resultCommit, err := bp.MergeCommit(params)
 	if err != nil {
 		return "", locale.WrapError(err, "err_pull_merge_commit", "Could not create merge commit.")
 	}
@@ -212,7 +226,8 @@ func (p *Pull) performMerge(strategies *mono_models.MergeStrategies, remoteCommi
 	changes, _ := commit.FormatChanges(cmit)
 	p.out.Notice(locale.Tl(
 		"pull_diverged_changes",
-		"The following changes will be merged:\n{{.V0}}\n", strings.Join(changes, "\n")))
+		"The following changes will be merged:\n{{.V0}}\n", strings.Join(changes, "\n")),
+	)
 
 	return resultCommit, nil
 }
@@ -227,10 +242,7 @@ func (p *Pull) mergeBuildScript(strategies *mono_models.MergeStrategies, remoteC
 	}
 
 	// Get the local and remote build expressions to merge.
-	exprA, err := script.ToBuildExpression()
-	if err != nil {
-		return errs.Wrap(err, "Unable to transform local buildscript into buildexpression")
-	}
+	exprA := script.Expr
 	bp := model.NewBuildPlannerModel(p.auth)
 	exprB, err := bp.GetBuildExpression(p.project.Owner(), p.project.Name(), remoteCommit.String())
 	if err != nil {
