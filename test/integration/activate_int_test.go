@@ -549,9 +549,8 @@ func (suite *ActivateIntegrationTestSuite) TestActivateCommitURL() {
 	contents := fmt.Sprintf("project: https://platform.activestate.com/commit/%s\n", commitID)
 	ts.PrepareActiveStateYAML(contents)
 
-	// Ensure we have the most up to date version of the project before activating
 	cp := ts.Spawn("activate")
-	cp.Expect("Cannot activate a headless project", e2e.RuntimeSourcingTimeoutOpt)
+	cp.Expect("Cannot initialize runtime for a headless project", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(1)
 }
 
