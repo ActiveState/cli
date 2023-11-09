@@ -96,6 +96,7 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckoutNonEmptyDir() {
 	)
 	cp.Expect("already a project checked out at")
 	cp.ExpectExitCode(1)
+	ts.IgnoreLogErrors()
 
 	if strings.Count(cp.Snapshot(), " x ") != 1 {
 		suite.Fail("Expected exactly ONE error message, got: ", cp.Snapshot())
@@ -164,6 +165,7 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckoutWithFlags() {
 	cp = ts.SpawnWithOpts(e2e.OptArgs("checkout", "ActiveState-CLI/Python-3.9", branchPath, "--branch", "doesNotExist"))
 	cp.Expect("This project has no branch with label matching doesNotExist")
 	cp.ExpectExitCode(1)
+	ts.IgnoreLogErrors()
 }
 
 func (suite *CheckoutIntegrationTestSuite) TestCheckoutCustomRTPath() {
@@ -217,6 +219,7 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckoutNotFound() {
 	cp.Expect("does not exist under")         // error
 	cp.Expect("If this is a private project") // tip
 	cp.ExpectExitCode(1)
+	ts.IgnoreLogErrors()
 
 	if strings.Count(cp.Snapshot(), " x ") != 1 {
 		suite.Fail("Expected exactly ONE error message, got: ", cp.Snapshot())
@@ -236,6 +239,7 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckoutAlreadyCheckedOut() {
 	cp = ts.SpawnWithOpts(e2e.OptArgs("checkout", "ActiveState-CLI/small-python"))
 	cp.Expect("already a project checked out at")
 	cp.ExpectNotExitCode(0)
+	ts.IgnoreLogErrors()
 }
 
 func (suite *CheckoutIntegrationTestSuite) TestJSON() {
@@ -252,6 +256,7 @@ func (suite *CheckoutIntegrationTestSuite) TestJSON() {
 	cp.Expect(`"tips":["If this is a private project`) // tip
 	cp.ExpectNotExitCode(0)
 	AssertValidJSON(suite.T(), cp)
+	ts.IgnoreLogErrors()
 }
 
 func (suite *CheckoutIntegrationTestSuite) TestCheckoutCaseInsensitive() {

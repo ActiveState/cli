@@ -197,6 +197,7 @@ func (suite *RunIntegrationTestSuite) TestTwoInterrupts() {
 	cp.SendCtrlC()
 	suite.expectTerminateBatchJob(cp)
 	cp.ExpectExitCode(123)
+	ts.IgnoreLogErrors()
 	suite.Require().NotContains(
 		cp.Output(), "not printed after second interrupt",
 	)

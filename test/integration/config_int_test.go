@@ -21,6 +21,7 @@ func (suite *ConfigIntegrationTestSuite) TestConfig() {
 	cp := ts.Spawn("config", "set", "invalid++", "value")
 	cp.Expect("Invalid")
 	cp.ExpectExitCode(1)
+	ts.IgnoreLogErrors()
 
 	cp = ts.Spawn("config", "set", constants.UnstableConfig, "true")
 	cp.Expect("Successfully")

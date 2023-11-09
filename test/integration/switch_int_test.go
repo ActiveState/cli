@@ -102,6 +102,7 @@ func (suite *SwitchIntegrationTestSuite) TestSwitch_CommitID_NotInHistory() {
 	cp.Expect("Commit does not belong")
 	if runtime.GOOS != "windows" {
 		cp.ExpectExitCode(1)
+		ts.IgnoreLogErrors()
 	}
 
 	// Check that branch and commitID were not updated

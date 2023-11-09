@@ -201,6 +201,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivatePythonByHostOnly() {
 			suite.Fail("Expected exactly ONE error message, got: ", cp.Snapshot())
 		}
 	}
+	ts.IgnoreLogErrors()
 }
 
 func (suite *ActivateIntegrationTestSuite) assertCompletedStatusBarReport(snapshot string) {
@@ -552,6 +553,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivateCommitURL() {
 	cp := ts.Spawn("activate")
 	cp.Expect("Cannot initialize runtime for a headless project", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(1)
+	ts.IgnoreLogErrors()
 }
 
 func (suite *ActivateIntegrationTestSuite) TestActivate_AlreadyActive() {

@@ -111,6 +111,7 @@ func (suite *ConditionIntegrationTestSuite) TestConditionSyntaxError() {
 	)
 	cp.Expect(`not defined`) // for now we aren't passing the error up the chain, so invalid syntax will lead to empty result
 	cp.ExpectExitCode(1)
+	ts.IgnoreLogErrors()
 }
 
 func (suite *ConditionIntegrationTestSuite) PrepareActiveStateYAML(ts *e2e.Session) {

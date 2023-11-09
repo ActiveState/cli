@@ -71,6 +71,7 @@ func (suite *ShellIntegrationTestSuite) TestShell() {
 		cp.Expect("Cannot find the Python-3.9 project")
 		cp.ExpectExitCode(1)
 	}
+	ts.IgnoreLogErrors()
 }
 
 func (suite *ShellIntegrationTestSuite) TestDefaultShell() {
@@ -199,6 +200,7 @@ func (suite *ShellIntegrationTestSuite) TestDefaultNoLongerExists() {
 	cp = ts.SpawnWithOpts(e2e.OptArgs("shell"))
 	cp.Expect("Cannot find your project")
 	cp.ExpectExitCode(1)
+	ts.IgnoreLogErrors()
 }
 
 func (suite *ShellIntegrationTestSuite) TestUseShellUpdates() {

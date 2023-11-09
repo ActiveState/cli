@@ -78,6 +78,7 @@ func (suite *AuthIntegrationTestSuite) loginFlags(ts *e2e.Session, username stri
 	cp := ts.Spawn(tagsuite.Auth, "--username", username, "--password", "bad-password")
 	cp.Expect("You are not authorized, did you provide valid login credentials?")
 	cp.ExpectExitCode(1)
+	ts.IgnoreLogErrors()
 }
 
 func (suite *AuthIntegrationTestSuite) ensureLogout(ts *e2e.Session) {

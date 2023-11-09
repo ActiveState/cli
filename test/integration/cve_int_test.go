@@ -97,6 +97,7 @@ func (suite *CveIntegrationTestSuite) TestCveInvalidProject() {
 	cp.Expect("Found no project with specified organization and name")
 
 	cp.ExpectNotExitCode(0)
+	ts.IgnoreLogErrors()
 }
 
 func (suite *CveIntegrationTestSuite) TestJSON() {

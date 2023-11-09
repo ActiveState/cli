@@ -29,6 +29,7 @@ func (suite *HelloIntegrationTestSuite) TestHello() {
 	cp = ts.Spawn("_hello", "")
 	cp.Expect("Cannot say hello because no name was provided")
 	cp.ExpectNotExitCode(0)
+	ts.IgnoreLogErrors()
 
 	cp = ts.Spawn("_hello", "Person", "--extra")
 	cp.Expect("Project: ActiveState-CLI/small-python")

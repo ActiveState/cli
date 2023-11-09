@@ -56,6 +56,7 @@ func (suite *ExportIntegrationTestSuite) TestExport_InvalidPlatform() {
 	ts.PrepareProject("cli-integration-tests/Export", "")
 	cp := ts.Spawn("export", "recipe", "--platform", "junk")
 	cp.ExpectExitCode(1)
+	ts.IgnoreLogErrors()
 }
 
 func (suite *ExportIntegrationTestSuite) TestExport_ConfigDir() {
@@ -66,6 +67,7 @@ func (suite *ExportIntegrationTestSuite) TestExport_ConfigDir() {
 	ts.PrepareProject("cli-integration-tests/Export", "")
 	cp := ts.Spawn("export", "config", "--filter", "junk")
 	cp.ExpectExitCode(1)
+	ts.IgnoreLogErrors()
 }
 
 func (suite *ExportIntegrationTestSuite) TestExport_Config() {

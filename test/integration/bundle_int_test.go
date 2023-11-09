@@ -83,6 +83,7 @@ func (suite *BundleIntegrationTestSuite) TestBundle_project_invalid() {
 	cp := ts.Spawn("bundles", "--namespace", "junk/junk")
 	cp.Expect("The requested project junk does not exist under junk")
 	cp.ExpectExitCode(1)
+	ts.IgnoreLogErrors()
 }
 
 func (suite *BundleIntegrationTestSuite) TestBundle_searchSimple() {
@@ -131,6 +132,7 @@ func (suite *BundleIntegrationTestSuite) TestBundle_searchWithExactTermWrongTerm
 	cp := ts.Spawn("bundles", "search", "xxxUtilitiesxxx", "--exact-term")
 	cp.Expect("No bundles in our catalog match")
 	cp.ExpectExitCode(1)
+	ts.IgnoreLogErrors()
 }
 
 func (suite *BundleIntegrationTestSuite) TestBundle_searchWithLang() {
@@ -153,6 +155,7 @@ func (suite *BundleIntegrationTestSuite) TestBundle_searchWithWrongLang() {
 	cp := ts.Spawn("bundles", "search", "Utilities", "--language=python")
 	cp.Expect("No bundles in our catalog match")
 	cp.ExpectExitCode(1)
+	ts.IgnoreLogErrors()
 }
 
 func (suite *BundleIntegrationTestSuite) TestBundle_searchWithBadLang() {
@@ -164,6 +167,7 @@ func (suite *BundleIntegrationTestSuite) TestBundle_searchWithBadLang() {
 	cp := ts.Spawn("bundles", "search", "Utilities", "--language=bad")
 	cp.Expect("Cannot obtain search")
 	cp.ExpectExitCode(1)
+	ts.IgnoreLogErrors()
 }
 
 func (suite *BundleIntegrationTestSuite) TestBundle_detached_operation() {
@@ -198,6 +202,7 @@ func (suite *BundleIntegrationTestSuite) TestBundle_detached_operation() {
 		cp := ts.Spawn("bundles", "install", "Utilities@0.7.6")
 		cp.ExpectRe("(?:bundle updated|being built)")
 		cp.ExpectExitCode(1)
+		ts.IgnoreLogErrors()
 	})
 	*/
 

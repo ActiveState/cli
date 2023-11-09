@@ -83,6 +83,7 @@ func (suite *UseIntegrationTestSuite) TestUse() {
 	cp = ts.SpawnWithOpts(e2e.OptArgs("use", "NotCheckedOut"))
 	cp.Expect("Cannot find the NotCheckedOut project.")
 	cp.ExpectExitCode(1)
+	ts.IgnoreLogErrors()
 }
 
 func (suite *UseIntegrationTestSuite) TestUseCwd() {
@@ -114,6 +115,7 @@ func (suite *UseIntegrationTestSuite) TestUseCwd() {
 	)
 	cp.Expect("Unable to use project")
 	cp.ExpectExitCode(1)
+	ts.IgnoreLogErrors()
 }
 
 func (suite *UseIntegrationTestSuite) TestReset() {
@@ -153,6 +155,7 @@ func (suite *UseIntegrationTestSuite) TestReset() {
 	cp.SendLine("n")
 	cp.Expect("Reset aborted by user")
 	cp.ExpectExitCode(1)
+	ts.IgnoreLogErrors()
 
 	cp = ts.SpawnWithOpts(e2e.OptArgs("use", "reset", "--non-interactive"))
 	cp.Expect("Stopped using your project runtime")
@@ -179,6 +182,7 @@ func (suite *UseIntegrationTestSuite) TestShow() {
 	cp := ts.SpawnWithOpts(e2e.OptArgs("use", "show"))
 	cp.Expect("No project is being used")
 	cp.ExpectExitCode(1)
+	ts.IgnoreLogErrors()
 
 	cp = ts.SpawnWithOpts(e2e.OptArgs("checkout", "ActiveState-CLI/Python3"))
 	cp.Expect("Skipping runtime setup")

@@ -56,6 +56,7 @@ func (suite *PullIntegrationTestSuite) TestPullSetProject() {
 	cp.SendLine("n")
 	cp.Expect("Pull aborted by user")
 	cp.ExpectNotExitCode(0)
+	ts.IgnoreLogErrors()
 
 	cp = ts.Spawn("pull", "--non-interactive", "--set-project", "ActiveState-CLI/small-python-fork")
 	cp.Expect("activestate.yaml has been updated")
@@ -74,6 +75,7 @@ func (suite *PullIntegrationTestSuite) TestPullSetProjectUnrelated() {
 	cp.SendLine("n")
 	cp.Expect("Pull aborted by user")
 	cp.ExpectNotExitCode(0)
+	ts.IgnoreLogErrors()
 
 	cp = ts.Spawn("pull", "--non-interactive", "--set-project", "ActiveState-CLI/Python3")
 	cp.Expect("no common base")
@@ -106,6 +108,7 @@ func (suite *PullIntegrationTestSuite) TestPull_Merge() {
 	cp := ts.SpawnWithOpts(e2e.OptArgs("push"), e2e.OptWD(wd))
 	cp.Expect("Your project has new changes available")
 	cp.ExpectExitCode(1)
+	ts.IgnoreLogErrors()
 
 	cp = ts.SpawnWithOpts(e2e.OptArgs("pull"), e2e.OptWD(wd))
 	cp.Expect("Merging history")
@@ -132,6 +135,7 @@ func (suite *PullIntegrationTestSuite) TestPull_RestoreNamespace() {
 	cp := ts.Spawn("pull", "--non-interactive", "--set-project", "ActiveState-CLI/Python3")
 	cp.Expect("no common base")
 	cp.ExpectNotExitCode(0)
+	ts.IgnoreLogErrors()
 
 	// Verify namespace is unchanged.
 	cp = ts.Spawn("show")
@@ -168,6 +172,7 @@ func (suite *PullIntegrationTestSuite) TestMergeBuildScript() {
 	cp = ts.Spawn("pull")
 	cp.Expect("Unable to automatically merge build scripts")
 	cp.ExpectNotExitCode(0)
+	ts.IgnoreLogErrors()
 
 	_, err = buildscript.NewScriptFromProject(proj, nil)
 	suite.Assert().Error(err)

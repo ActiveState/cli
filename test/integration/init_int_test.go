@@ -100,6 +100,7 @@ func (suite *InitIntegrationTestSuite) TestInit_NoLanguage() {
 
 	cp := ts.Spawn("init", "test-user/test-project")
 	cp.ExpectNotExitCode(0)
+	ts.IgnoreLogErrors()
 }
 
 func (suite *InitIntegrationTestSuite) TestInit_InferLanguageFromUse() {

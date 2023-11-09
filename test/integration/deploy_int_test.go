@@ -276,6 +276,7 @@ func (suite *DeployIntegrationTestSuite) TestDeployConfigure() {
 	)
 	cp.Expect("need to run the install step")
 	cp.ExpectExitCode(1)
+	ts.IgnoreLogErrors()
 	suite.InstallAndAssert(ts, targetPath)
 
 	if runtime.GOOS != "windows" {
@@ -352,6 +353,7 @@ func (suite *DeployIntegrationTestSuite) TestDeploySymlink() {
 	)
 	cp.Expect("need to run the install step")
 	cp.ExpectExitCode(1)
+	ts.IgnoreLogErrors()
 	suite.InstallAndAssert(ts, targetPath)
 
 	if runtime.GOOS != "darwin" {
@@ -393,6 +395,7 @@ func (suite *DeployIntegrationTestSuite) TestDeployReport() {
 	)
 	cp.Expect("need to run the install step")
 	cp.ExpectExitCode(1)
+	ts.IgnoreLogErrors()
 	suite.InstallAndAssert(ts, targetPath)
 
 	cp = ts.SpawnWithOpts(
@@ -482,6 +485,7 @@ func (suite *DeployIntegrationTestSuite) TestDeployUninstall() {
 	)
 	cp.Expect("no deployed runtime")
 	cp.ExpectExitCode(1)
+	ts.IgnoreLogErrors()
 	suite.True(fileutils.IsDir(ts.Dirs.Work), "Work dir was unexpectedly deleted")
 
 	// Trying to uninstall in a non-deployment directory should fail.

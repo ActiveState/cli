@@ -43,6 +43,7 @@ func (suite *SvcIntegrationTestSuite) TestStartStop() {
 	cp = ts.SpawnCmdWithOpts(ts.SvcExe, e2e.OptArgs("status"))
 	cp.Expect("Service cannot be reached")
 	cp.ExpectExitCode(1)
+	ts.IgnoreLogErrors()
 
 	cp = ts.SpawnCmdWithOpts(ts.SvcExe, e2e.OptArgs("start"))
 	cp.Expect("Starting")
@@ -91,6 +92,7 @@ func (suite *SvcIntegrationTestSuite) TestSignals() {
 
 	suite.OnlyRunForTags(tagsuite.Service)
 	ts := e2e.New(suite.T(), false)
+	ts.IgnoreLogErrors()
 	defer ts.Close()
 
 	// SIGINT (^C)
@@ -145,6 +147,7 @@ func (suite *SvcIntegrationTestSuite) TestStartDuplicateErrorOutput() {
 	cp = ts.SpawnCmdWithOpts(ts.SvcExe, e2e.OptArgs("foreground"))
 	cp.Expect("An existing server instance appears to be in use")
 	cp.ExpectExitCode(1)
+	ts.IgnoreLogErrors()
 
 	cp = ts.SpawnCmdWithOpts(ts.SvcExe, e2e.OptArgs("stop"))
 	cp.ExpectExitCode(0)

@@ -89,6 +89,7 @@ func (suite *PackageIntegrationTestSuite) TestPackages_project_invalid() {
 	cp := ts.Spawn("packages", "--namespace", "junk/junk")
 	cp.Expect("The requested project junk does not exist under junk")
 	cp.ExpectExitCode(1)
+	ts.IgnoreLogErrors()
 }
 
 func (suite *PackageIntegrationTestSuite) TestPackage_listingWithCommitValid() {
@@ -114,6 +115,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_listingWithCommitInvalid()
 	cp := ts.Spawn("packages", "--commit", "junk")
 	cp.Expect("Cannot obtain")
 	cp.ExpectExitCode(1)
+	ts.IgnoreLogErrors()
 }
 
 func (suite *PackageIntegrationTestSuite) TestPackage_listingWithCommitUnknown() {
@@ -126,6 +128,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_listingWithCommitUnknown()
 	cp := ts.Spawn("packages", "--commit", "00010001-0001-0001-0001-000100010001")
 	cp.Expect("No data")
 	cp.ExpectExitCode(1)
+	ts.IgnoreLogErrors()
 }
 
 func (suite *PackageIntegrationTestSuite) TestPackage_listingWithCommitValidNoPackages() {
@@ -185,6 +188,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchWithExactTermWrongTe
 	cp := ts.Spawn("search", "Requests", "--exact-term")
 	cp.Expect("No packages in our catalog match")
 	cp.ExpectExitCode(1)
+	ts.IgnoreLogErrors()
 
 	cp = ts.Spawn("search", "xxxrequestsxxx", "--exact-term")
 	cp.Expect("No packages in our catalog match")
@@ -232,6 +236,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchWithWrongLang() {
 	cp := ts.Spawn("search", "xxxjunkxxx", "--language=perl")
 	cp.Expect("No packages in our catalog match")
 	cp.ExpectExitCode(1)
+	ts.IgnoreLogErrors()
 }
 
 func (suite *PackageIntegrationTestSuite) TestPackage_searchWithBadLang() {
@@ -243,6 +248,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_searchWithBadLang() {
 	cp := ts.Spawn("search", "numpy", "--language=bad")
 	cp.Expect("Cannot obtain search")
 	cp.ExpectExitCode(1)
+	ts.IgnoreLogErrors()
 }
 
 func (suite *PackageIntegrationTestSuite) TestPackage_info() {
@@ -270,6 +276,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_infoWrongCase() {
 	cp := ts.Spawn("info", "Pexpect")
 	cp.Expect("No packages in our catalog are an exact match")
 	cp.ExpectExitCode(1)
+	ts.IgnoreLogErrors()
 }
 
 const (
@@ -393,6 +400,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_Duplicate() {
 	cp = ts.Spawn("install", "requests") // install again
 	cp.Expect("No new changes to commit")
 	cp.ExpectNotExitCode(0)
+	ts.IgnoreLogErrors()
 }
 
 func (suite *PackageIntegrationTestSuite) PrepareActiveStateYAML(ts *e2e.Session) {
@@ -419,6 +427,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_UninstallDoesNotExist() {
 	cp := ts.Spawn("uninstall", "doesNotExist")
 	cp.Expect("Error occurred while trying to create a commit")
 	cp.ExpectExitCode(1)
+	ts.IgnoreLogErrors()
 }
 
 func (suite *PackageIntegrationTestSuite) TestJSON() {
@@ -527,6 +536,7 @@ func (suite *PackageIntegrationTestSuite) TestInstall_InvalidVersion() {
 	// We only assert the state tool curated part of the error as the underlying build planner error may change
 	cp.Expect("Could not plan build")
 	cp.ExpectExitCode(1)
+	ts.IgnoreLogErrors()
 }
 
 func (suite *PackageIntegrationTestSuite) TestUpdate_InvalidVersion() {
@@ -550,6 +560,7 @@ func (suite *PackageIntegrationTestSuite) TestUpdate_InvalidVersion() {
 	// We only assert the state tool curated part of the error as the underlying build planner error may change
 	cp.Expect("Could not plan build")
 	cp.ExpectExitCode(1)
+	ts.IgnoreLogErrors()
 }
 
 func (suite *PackageIntegrationTestSuite) TestUpdate() {
