@@ -53,7 +53,9 @@ func New(prime primeable) *Revert {
 	}
 }
 
-func (r *Revert) Run(params *Params) error {
+func (r *Revert) Run(params *Params) (rerr error) {
+	defer rationalizeError(&rerr)
+
 	if r.project == nil {
 		return locale.NewInputError("err_no_project")
 	}

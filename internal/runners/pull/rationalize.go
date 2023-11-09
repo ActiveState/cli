@@ -26,6 +26,23 @@ func rationalizeError(err *error) {
 				),
 				errs.SetInput(),
 			)
+		case model.NotFoundErrorType, model.ForbiddenErrorType:
+			*err = errs.WrapUserFacing(*err,
+				locale.Tl("err_pull_not_found",
+					mergeCommitErr.Error(),
+				),
+				errs.SetInput(),
+				errs.SetTips(
+					locale.T("tip_private_project_auth"),
+				),
+			)
+		default:
+			*err = errs.WrapUserFacing(*err,
+				locale.Tl("err_pull_no_common_base",
+					"Could not merge, recieved error message: {{.V0}}",
+					mergeCommitErr.Error(),
+				),
+			)
 		}
 	}
 }
