@@ -404,11 +404,19 @@ func (bp *BuildPlanner) RevertCommit(organization, project, parentCommitID, comm
 	}
 
 	if resp.RevertedCommit == nil {
-		return "", errs.New("Commit is nil")
+		return "", errs.New("Revert commit response is nil")
 	}
 
 	if bpModel.IsErrorResponse(resp.RevertedCommit.Type) {
-		return "", bpModel.ProcessCommitError(resp.RevertedCommit.Commit, "Could not revert commit")
+		return "", bpModel.ProcessRevertCommitError(resp.RevertedCommit, "Could not revert commit")
+	}
+
+	if resp.RevertedCommit.Commit == nil {
+		return "", errs.New("Revert commit's commit is nil'")
+	}
+
+	if bpModel.IsErrorResponse(resp.RevertedCommit.Commit.Type) {
+		return "", bpModel.ProcessCommitError(resp.RevertedCommit.Commit, "Could not process error response from revert commit")
 	}
 
 	if resp.RevertedCommit.Commit.CommitID == "" {

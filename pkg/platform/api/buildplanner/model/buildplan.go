@@ -76,21 +76,23 @@ const (
 	MergeCommitStrategyFastForward                  MergeStrategy = "FastForward"
 
 	// Error types
-	ErrorType                        = "Error"
-	NotFoundErrorType                = "NotFound"
-	BuildResultPlanningErrorType     = "PlanningError"
-	ParseErrorType                   = "ParseError"
-	AlreadyExistsErrorType           = "AlreadyExists"
-	NoChangeSinceLastCommitErrorType = "NoChangeSinceLastCommit"
-	HeadOnBranchMovedErrorType       = "HeadOnBranchMoved"
-	ForbiddenErrorType               = "Forbidden"
-	RemediableSolveErrorType         = "RemediableSolveError"
-	PlanningErrorType                = "PlanningError"
-	MergeConflictType                = "MergeConflict"
-	FastForwardErrorType             = "FastForwardError"
-	NoCommonBaseFoundType            = "NoCommonBaseFound"
-	ValidationErrorType              = "ValidationError"
-	MergeConflictErrorType           = "MergeConflict"
+	ErrorType                         = "Error"
+	NotFoundErrorType                 = "NotFound"
+	ParseErrorType                    = "ParseError"
+	AlreadyExistsErrorType            = "AlreadyExists"
+	NoChangeSinceLastCommitErrorType  = "NoChangeSinceLastCommit"
+	HeadOnBranchMovedErrorType        = "HeadOnBranchMoved"
+	ForbiddenErrorType                = "Forbidden"
+	RemediableSolveErrorType          = "RemediableSolveError"
+	PlanningErrorType                 = "PlanningError"
+	MergeConflictType                 = "MergeConflict"
+	FastForwardErrorType              = "FastForwardError"
+	NoCommonBaseFoundType             = "NoCommonBaseFound"
+	ValidationErrorType               = "ValidationError"
+	MergeConflictErrorType            = "MergeConflict"
+	RevertConflictErrorType           = "RevertConflict"
+	CommitNotInTargetHistoryErrorType = "CommitNotInTargetHistory"
+	ComitHasNoParentErrorType         = "CommitHasNoParent"
 )
 
 func IsStateToolArtifact(mimeType string) bool {
@@ -282,17 +284,22 @@ func (b *BuildPlanByCommit) CommitID() (strfmt.UUID, error) {
 
 func IsErrorResponse(errorType string) bool {
 	return errorType == ErrorType ||
+		errorType == NotFoundErrorType ||
+		errorType == ParseErrorType ||
 		errorType == AlreadyExistsErrorType ||
 		errorType == NoChangeSinceLastCommitErrorType ||
 		errorType == HeadOnBranchMovedErrorType ||
 		errorType == ForbiddenErrorType ||
 		errorType == RemediableSolveErrorType ||
 		errorType == PlanningErrorType ||
-		errorType == NotFoundErrorType ||
 		errorType == MergeConflictType ||
 		errorType == FastForwardErrorType ||
 		errorType == NoCommonBaseFoundType ||
-		errorType == ValidationErrorType
+		errorType == ValidationErrorType ||
+		errorType == MergeConflictErrorType ||
+		errorType == RevertConflictErrorType ||
+		errorType == CommitNotInTargetHistoryErrorType ||
+		errorType == ComitHasNoParentErrorType
 }
 
 func ProcessCommitError(commit *Commit, fallbackMessage string) error {
@@ -354,6 +361,20 @@ func ProcessProjectError(project *Project, fallbackMessage string) error {
 		)
 	}
 
+	return errs.New(fallbackMessage)
+}
+
+type RevertCommitError struct {
+	Type    string
+	Message string
+}
+
+func (m *RevertCommitError) Error() string { return m.Message }
+
+func ProcessRevertCommitError(rcErr *revertedCommit, fallbackMessage string) error {
+	if rcErr.Type != "" {
+		return &RevertCommitError{rcErr.Type, rcErr.Message}
+	}
 	return errs.New(fallbackMessage)
 }
 
