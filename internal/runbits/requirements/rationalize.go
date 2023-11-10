@@ -51,9 +51,20 @@ func (r *RequirementOperation) rationalizeError(err *error) {
 			buildPlannerErr.LocalizedError(),
 			errs.SetIf(buildPlannerErr.InputError(), errs.SetInput()))
 
+		// Project not found
 	case errors.Is(*err, rationalize.ErrNoProject):
 		*err = errs.WrapUserFacing(*err,
 			locale.Tr("err_no_project"),
+			errs.SetInput())
+
+		// Headless
+	case errors.Is(*err, rationalize.ErrHeadless):
+		*err = errs.WrapUserFacing(*err,
+			locale.Tl(
+				"err_requirement_headless",
+				"Cannot update requirements for a headless project. Please visit {{.V0}} to convert your project and try again.",
+				r.Project.URL(),
+			),
 			errs.SetInput())
 	}
 }
