@@ -103,6 +103,9 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 	if r.Project == nil {
 		return rationalize.ErrNoProject
 	}
+	if r.Project.IsHeadless() {
+		return rationalize.ErrHeadless
+	}
 	out.Notice(locale.Tl("operating_message", "", r.Project.NamespaceString(), r.Project.Dir()))
 
 	switch nsType {
