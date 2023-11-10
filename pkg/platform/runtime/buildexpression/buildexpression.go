@@ -767,6 +767,11 @@ func (e *BuildExpression) addRequirement(requirement model.Requirement) error {
 	return nil
 }
 
+type RequirementNotFoundError struct {
+	Name                   string
+	*locale.LocalizedError // for legacy non-user-facing error usages
+}
+
 func (e *BuildExpression) removeRequirement(requirement model.Requirement) error {
 	requirementsNode, err := e.getRequirementsNode()
 	if err != nil {
@@ -789,7 +794,10 @@ func (e *BuildExpression) removeRequirement(requirement model.Requirement) error
 	}
 
 	if !found {
-		return locale.NewInputError("err_remove_requirement_not_found", "Could not remove requirement '[ACTIONABLE]{{.V0}}[/RESET]', because it does not exist.", requirement.Name)
+		return &RequirementNotFoundError{
+			requirement.Name,
+			locale.NewInputError("err_remove_requirement_not_found", "", requirement.Name),
+		}
 	}
 
 	solveNode, err := e.getSolveNode()

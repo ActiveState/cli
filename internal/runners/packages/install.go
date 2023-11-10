@@ -37,7 +37,8 @@ func NewInstall(prime primeable) *Install {
 }
 
 // Run executes the install behavior.
-func (a *Install) Run(params InstallRunParams, nsType model.NamespaceType) error {
+func (a *Install) Run(params InstallRunParams, nsType model.NamespaceType) (rerr error) {
+	defer rationalizeError(a.prime.Auth(), &rerr)
 	logging.Debug("ExecuteInstall")
 	return requirements.NewRequirementOperation(a.prime).ExecuteRequirementOperation(
 		params.Package.Name(),
