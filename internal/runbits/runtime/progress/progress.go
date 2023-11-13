@@ -7,17 +7,17 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ActiveState/cli/internal/multilog"
-	"github.com/go-openapi/strfmt"
-	"github.com/vbauerster/mpb/v7"
-	"golang.org/x/net/context"
-
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/multilog"
+	"github.com/ActiveState/cli/internal/osutils/termecho"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup/events"
+	"github.com/go-openapi/strfmt"
+	"github.com/vbauerster/mpb/v7"
+	"golang.org/x/net/context"
 )
 
 type step struct {
@@ -89,6 +89,10 @@ type ProgressDigester struct {
 }
 
 func NewProgressIndicator(w io.Writer, out output.Outputer) *ProgressDigester {
+	err := termecho.Off()
+	if err != nil {
+		multilog.Error("Unable to turn off terminal echoing: %v", errs.JoinMessage(err))
+	}
 	ctx, cancel := context.WithCancel(context.Background())
 	return &ProgressDigester{
 		mainProgress: mpb.NewWithContext(
@@ -379,6 +383,11 @@ Still expecting:
 
 	// Blank line to separate progress from rest of output
 	p.out.Notice("")
+
+	err := termecho.On()
+	if err != nil {
+		multilog.Error("Unable to turn terminal echoing back on: %v", errs.JoinMessage(err))
+	}
 
 	return nil
 }
