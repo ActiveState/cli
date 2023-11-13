@@ -11,7 +11,6 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
-	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
@@ -52,9 +51,6 @@ func (suite *InstallerIntegrationTestSuite) TestInstallFromLocalSource() {
 	cp.Expect("Installing State Tool")
 	cp.Expect("Done")
 	cp.Expect("successfully installed")
-	if runtime.GOOS == "darwin" && condition.OnCI() {
-		cp.Expect("You are running bash on macOS")
-	}
 	suite.NotContains(cp.Output(), "Downloading State Tool")
 	cp.ExpectInput()
 	cp.SendLine("exit")
@@ -212,7 +208,7 @@ func (suite *InstallerIntegrationTestSuite) TestInstallerOverwriteServiceApp() {
 	)
 	cp.Expect("Done")
 	cp.SendLine("exit")
-	cp.ExpectExitCode(0)
+	cp.ExpectExit() // the return code can vary depending on shell (e.g. zsh vs. bash); just assert the installer shell exited
 
 	// State Service.app should be overwritten cleanly without error.
 	cp = ts.SpawnCmdWithOpts(
@@ -222,7 +218,7 @@ func (suite *InstallerIntegrationTestSuite) TestInstallerOverwriteServiceApp() {
 	)
 	cp.Expect("Done")
 	cp.SendLine("exit")
-	cp.ExpectExitCode(0)
+	cp.ExpectExit() // the return code can vary depending on shell (e.g. zsh vs. bash); just assert the installer shell exited
 }
 
 func (suite *InstallerIntegrationTestSuite) AssertConfig(ts *e2e.Session) {
