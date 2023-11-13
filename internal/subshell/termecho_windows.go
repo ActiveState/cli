@@ -1,19 +1,22 @@
-package termecho
+package subshell
 
 import (
 	"os"
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/subshell/cmd"
+	"github.com/ActiveState/cli/internal/subshell/sscommon"
 	"golang.org/x/sys/windows"
 )
 
-func toggle(on bool) error {
+func toggleEcho(cfg sscommon.Configurable, on bool) error {
 	fd := windows.Handle(os.Stdin.Fd())
 	var mode uint32
 	err := windows.GetConsoleMode(fd, &mode)
 	if err != nil {
-		if shell := os.Getenv("SHELL"); shell != "" {
+		shell, _ := DetectShell(cfg)
+		if shell != cmd.Name {
 			logging.Debug("Cannot turn off terminal echo in %s", shell)
 			return nil
 		}

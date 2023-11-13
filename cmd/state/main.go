@@ -98,6 +98,14 @@ func main() {
 	setPrinterColors(outFlags)
 
 	isInteractive := strings.ToLower(os.Getenv(constants.NonInteractiveEnvVarName)) != "true" && out.Config().Interactive
+	if isInteractive {
+		// Disable terminal echo while State Tool is running.
+		// Other than prompts (which temporarily re-enable echo), user typing should not interfere with
+		// output (e.g. runtime progress bars).
+		subshell.TurnOffEcho(cfg)
+		defer subshell.TurnOnEcho(cfg)
+	}
+
 	// Run our main command logic, which is logic that defers to the error handling logic below
 	err = run(os.Args, isInteractive, cfg, out)
 	if err != nil {

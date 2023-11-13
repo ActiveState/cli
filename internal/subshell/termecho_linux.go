@@ -1,4 +1,4 @@
-package termecho
+package subshell
 
 import "golang.org/x/sys/unix"
 

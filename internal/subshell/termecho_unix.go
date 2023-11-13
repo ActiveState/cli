@@ -1,16 +1,17 @@
 //go:build linux || darwin
 // +build linux darwin
 
-package termecho
+package subshell
 
 import (
 	"os"
 
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/subshell/sscommon"
 	"golang.org/x/sys/unix"
 )
 
-func toggle(on bool) error {
+func toggleEcho(cfg sscommon.Configurable, on bool) error {
 	fd := int(os.Stdin.Fd())
 	termios, err := unix.IoctlGetTermios(fd, ioctlReadTermios)
 	if err != nil {

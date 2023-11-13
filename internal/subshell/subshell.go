@@ -237,3 +237,11 @@ func DetectShell(cfg sscommon.Configurable) (string, string) {
 
 	return name, path
 }
+
+func TurnOffEcho(cfg sscommon.Configurable) error {
+	return toggleEcho(cfg, false)
+}
+
+func TurnOnEcho(cfg sscommon.Configurable) error {
+	return toggleEcho(cfg, true)
+}
