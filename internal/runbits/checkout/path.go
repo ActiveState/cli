@@ -1,7 +1,6 @@
 package checkout
 
 import (
-	"os"
 	"path/filepath"
 
 	"github.com/ActiveState/cli/internal/constants"
@@ -9,6 +8,7 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
@@ -22,7 +22,7 @@ func (r *Checkout) pathToUse(namespace *project.Namespaced, preferredPath string
 		logging.Debug("No path provided, using default")
 
 		// Get path from working directory
-		wd, err := os.Getwd()
+		wd, err := osutils.Getwd()
 		if err != nil {
 			return "", errs.Wrap(err, "Could not get working directory")
 		}

@@ -14,6 +14,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v2"
@@ -212,7 +213,7 @@ func TestGetProjectFilePath(t *testing.T) {
 
 	root, err := environment.GetRootPath()
 	assert.NoError(t, err, "Should detect root path")
-	cwd, err := os.Getwd()
+	cwd, err := osutils.Getwd()
 	assert.NoError(t, err, "Should fetch cwd")
 	defer os.Chdir(cwd) // restore
 	os.Chdir(filepath.Join(root, "pkg", "projectfile", "testdata"))
@@ -256,7 +257,7 @@ func TestGetProjectFilePath(t *testing.T) {
 func TestGet(t *testing.T) {
 	root, err := environment.GetRootPath()
 	assert.NoError(t, err, "Should detect root path")
-	cwd, _ := os.Getwd()
+	cwd, _ := osutils.Getwd()
 	os.Chdir(filepath.Join(root, "pkg", "projectfile", "testdata"))
 
 	config := Get()
@@ -270,7 +271,7 @@ func TestGet(t *testing.T) {
 
 func TestGetActivated(t *testing.T) {
 	root, _ := environment.GetRootPath()
-	cwd, _ := os.Getwd()
+	cwd, _ := osutils.Getwd()
 	os.Chdir(filepath.Join(root, "pkg", "projectfile", "testdata"))
 
 	config1 := Get()
@@ -322,7 +323,7 @@ func TestNewProjectfile(t *testing.T) {
 	assert.Error(t, err, "We don't accept blank paths")
 
 	setCwd(t, "")
-	dir, err = os.Getwd()
+	dir, err = osutils.Getwd()
 	assert.NoError(t, err, "Should be no error when getting the CWD")
 	_, err = testOnlyCreateWithProjectURL("https://platform.activestate.com/xowner/xproject", dir)
 	assert.Error(t, err, "Cannot create new project if existing as.yaml ...exists")
