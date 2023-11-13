@@ -4,7 +4,6 @@ import (
 	"os"
 
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/logging"
 	"golang.org/x/sys/windows"
 )
 
@@ -13,10 +12,6 @@ func toggle(on bool) error {
 	var mode uint32
 	err := windows.GetConsoleMode(fd, &mode)
 	if err != nil {
-		if shell := os.Getenv("SHELL"); shell != "" {
-			logging.Debug("Cannot turn off terminal echo in %s", shell)
-			return nil
-		}
 		return errs.Wrap(err, "Error calling GetConsoleMode")
 	}
 
