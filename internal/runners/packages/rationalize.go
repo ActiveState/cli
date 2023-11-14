@@ -35,6 +35,12 @@ func rationalizeError(auth *authentication.Auth, err *error) {
 				errs.SetInput(),
 				errs.SetTips(locale.T("tip_private_project_auth")),
 			)
+		case bpModel.ForbiddenErrorType:
+			*err = errs.WrapUserFacing(*err,
+				locale.Tl("err_packages_forbidden", "Could not make runtime changes because you do not have permission to do so."),
+				errs.SetInput(),
+				errs.SetTips(locale.T("tip_private_project_auth")),
+			)
 		case bpModel.HeadOnBranchMovedErrorType:
 			*err = errs.WrapUserFacing(*err,
 				locale.T("err_buildplanner_head_on_branch_moved"),
@@ -42,7 +48,12 @@ func rationalizeError(auth *authentication.Auth, err *error) {
 			)
 		case bpModel.NoChangeSinceLastCommitErrorType:
 			*err = errs.WrapUserFacing(*err,
-				locale.Tl("err_packages_exists", "That package is already installed"),
+				locale.Tl("err_packages_exists", "That package is already installed."),
+				errs.SetInput(),
+			)
+		default:
+			*err = errs.WrapUserFacing(*err,
+				locale.Tl("err_packages_buildplanner_error", "Could not make runtime changes due to the following error: {{.V0}}", commitError.Message),
 				errs.SetInput(),
 			)
 		}
