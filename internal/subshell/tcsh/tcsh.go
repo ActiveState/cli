@@ -203,5 +203,5 @@ func (v *SubShell) TurnOnEcho() {
 	if runtime.GOOS == "windows" {
 		return // not supported
 	}
-	termecho.Off()
+	termecho.On()
 }

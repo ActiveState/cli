@@ -210,5 +210,5 @@ func (v *SubShell) TurnOffEcho() {
 }
 
 func (v *SubShell) TurnOnEcho() {
-	termecho.Off()
+	termecho.On()
 }
