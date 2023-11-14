@@ -124,7 +124,7 @@ func normalizeResponse(res *http.Response, err error) (*http.Response, error) {
 
 	var dnsError *net.DNSError
 	if errors.As(err, &dnsError) {
-		return res, locale.WrapError(&UserNetworkError{}, "err_user_network_dns", "Request failed due to DNS error: {{.V0}}. {{.V1}}", err.Error(), locale.Tr("err_user_network_solution", constants.ForumsURL))
+		return res, locale.WrapInputError(&UserNetworkError{}, "err_user_network_dns", "Request failed due to DNS error: {{.V0}}. {{.V1}}", err.Error(), locale.Tr("err_user_network_solution", constants.ForumsURL))
 	}
 
 	// Due to Go's handling of these types of errors and due to Windows localizing the errors in question we have to rely on the `wsarecv:` keyword to capture a series
