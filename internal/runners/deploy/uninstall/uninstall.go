@@ -63,7 +63,7 @@ func (u *Uninstall) Run(params *Params) error {
 	var cwd string
 	if path == "" {
 		var err error
-		cwd, err = os.Getwd()
+		cwd, err = osutils.Getwd()
 		if err != nil {
 			return locale.WrapInputError(
 				err,
