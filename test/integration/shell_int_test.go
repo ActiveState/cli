@@ -287,6 +287,37 @@ func (suite *ShellIntegrationTestSuite) TestRuby() {
 	cp.Expect("ActiveState")
 }
 
+func (suite *ShellIntegrationTestSuite) TestPs1() {
+	if runtime.GOOS == "windows" {
+		return // cmd.exe does not have a PS1 to modify
+	}
+	suite.OnlyRunForTags(tagsuite.Shell)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.Spawn("checkout", "ActiveState-CLI/small-python")
+	cp.Expect("Checked out project")
+	cp.ExpectExitCode(0)
+
+	cp = ts.SpawnWithOpts(
+		e2e.OptArgs("shell", "small-python"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
+	)
+	cp.Expect("Activated")
+	cp.Expect("[ActiveState-CLI/small-python]")
+	cp.SendLine("exit")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("config", "set", constants.PreservePs1ConfigKey, "true")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("shell", "small-python")
+	cp.Expect("Activated")
+	suite.Assert().NotContains(cp.Snapshot(), "[ActiveState-CLI/small-python]")
+	cp.SendLine("exit")
+	cp.ExpectExitCode(0)
+}
+
 func TestShellIntegrationTestSuite(t *testing.T) {
 	suite.Run(t, new(ShellIntegrationTestSuite))
 }
