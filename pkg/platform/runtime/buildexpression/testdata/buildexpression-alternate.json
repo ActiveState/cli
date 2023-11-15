@@ -1,0 +1,37 @@
+{
+  "let": {
+    "sources": {
+      "solve": {
+        "at_time": "2023-10-03T22:15:45.727000Z",
+        "platforms": [
+          "0fa42e8c-ac7b-5dd7-9407-8aa15f9b993a",
+          "46a5b48f-226a-4696-9746-ba4d50d661c2"
+        ],
+        "requirements": [
+          {
+            "name": "Path-Tiny",
+            "namespace": "language/perl"
+          },
+          {
+            "name": "perl",
+            "namespace": "language",
+            "version_requirements": [
+              {
+                "comparator": "eq",
+                "version": "5.36.1"
+              }
+            ]
+          }
+        ],
+        "solver_version": null
+      }
+    },
+    "runtime": {
+      "state_tool_artifacts_v1": {
+        "src": "$sources",
+        "build_flags": []
+      }
+    },
+    "in": "$runtime"
+  }
+}

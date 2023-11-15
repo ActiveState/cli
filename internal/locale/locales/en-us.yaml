@@ -57,8 +57,6 @@ err_output_flag_value_invalid:
   other: Could not recognize output type
 info_deactivated:
   other: "[DISABLED]Deactivated {{.Owner}}/{{.Name}}[/RESET]"
-info_deactivated_by_commit:
-  other: "[DISABLED]Deactivated[/RESET]"
 venv_installer_is_nil:
   other: Provided installer should not be nil
 error_unsupported_language:
@@ -129,8 +127,6 @@ flag_state_auth_totp_description:
   other: The TOTP code generated via two-factor authentication (must be used in conjunction with username and password flags)
 flag_state_auth_interactive_description:
   other: Sign in via your terminal, rather than your web browser.
-flag_state_auth_signup_interactive_description:
-  other: Sign up via your terminal, rather than your web browser.
 username_prompt:
   other: "Enter your username:"
 password_prompt:
@@ -164,28 +160,14 @@ secret_prompt_project:
   other: Organization members can access the value
 secret_no_description:
   other: "- (This secret has no description, you can set one via the web dashboard)"
-username_prompt_signup:
-  other: "Choose a username:"
-password_prompt_signup:
-  other: "Choose a password:"
-password_prompt_confirm:
-  other: "Enter your password again:"
 name_prompt:
   other: "Enter your name:"
-email_prompt:
-  other: "Enter your email:"
 totp_prompt:
   other: "Enter your two-factor authentication code:"
 survey_error_template:
   other: '[[color "red"]] Invalid response: [[.Error]][[color "reset"]][[BR]]'
 err_value_required:
   other: value required
-err_prompt_unknown:
-  other: An unknown error occurred whilst processing your response, check the error log for more information
-prompt_login_to_signup:
-  other: No account was found for that username, would you like to register it?
-err_download_tos:
-  other: Could not download terms of service file
 tos_disclaimer:
   other: |
     Your use of the ActiveState Platform is subject to the Terms of Service.
@@ -195,16 +177,6 @@ tos_disclaimer_prompt:
   other: |
 
     By continuing you accept the Terms of Service. Continue?
-tos_acceptance:
-  other: Do you accept the ActiveState Platform Terms of Service?
-tos_not_accepted:
-  other: You may not create an ActiveState Platform account without accepting the Terms of Service
-tos_accept:
-  other: Yes, I accept the ActiveState Terms of Service
-tos_not_accept:
-  other: No, I do not accept the ActiveState Terms of Service
-tos_show_full:
-  other: Display the full Terms of Service in this terminal window
 err_get_license_text:
   other: Could not get license text
 
@@ -227,18 +199,8 @@ err_auth_token:
   other: "Failed to create authentication token, please try again or run '[ACTIONABLE]state clean config[/RESET]' if the issue persists."
 auth_err_password_prompt:
   other: The provided password is invalid
-confirm_password_account_creation:
-  other: Please enter your password again to create your account.
-err_password_confirmation_failed:
-  other: Your password confirmation does not match
-err_username_taken:
-  other: Username is already taken
 signup_description:
   other: Signup a new account
-err_auth_signup_user_exists:
-  other: "An account with the given information already exists, error received: {{.V0}}"
-err_auth_signup_bad_request:
-  other: "Invalid signup request. The error received was: {{.V0}}"
 login_success_welcome_back:
   other: You have successfully authenticated, hello [NOTICE]{{.Name}}[/RESET]!
 logged_in_as:
@@ -249,10 +211,6 @@ logged_out:
   other: You have been logged out
 logout_still_have_api_token:
   other: Logout is incomplete because you have authenticated with an environment variable. To complete logout please unset the '[ACTIONABLE]ACTIVESTATE_API_KEY[/RESET]' environment variable.
-signup_success:
-  other: Your account has been registered and a confirmation email has been sent to [NOTICE]{{.Email}}[/RESET], your account will have limited permissions until you confirm it.
-signup_failure:
-  other: Signup was not successful.
 login_cancelled:
   other: Authentication Cancelled
 login_err_output:
@@ -374,9 +332,7 @@ err_api_forbidden:
 err_api_org_not_found:
   other: Unable to find requested Organization
 err_api_project_not_found:
-  other: The requested project [NOTICE]{{.V0}}[/RESET] does not exist under [NOTICE]{{.V1}}[/RESET]. Please ensure the owner is correct and that the project has been created.
-err_api_project_not_found_unauthenticated:
-  other: The requested project [NOTICE]{{.V0}}/{{.V1}}[/RESET] could not be found
+  other: The requested project [NOTICE]{{.V1}}[/RESET] does not exist under [NOTICE]{{.V0}}[/RESET]. Please ensure the owner is correct and that the project has been created.
 tip_private_project_auth:
   other: If this is a private project you may need to authenticate with 'state auth'.
 err_api_member_not_found:
@@ -680,8 +636,6 @@ secrets_row_value_unset:
   other: "[ERROR]× Not defined[/RESET]"
 secrets_description_unset:
   other: "[DISABLED]Not provided.[/RESET]"
-pull_not_updated:
-  other: Your activestate.yaml is already up to date!
 pull_updated:
   other: Your project in the activestate.yaml has been updated to {{.V0}}@{{.V1}}.
 keypair_cmd_description:
@@ -702,8 +656,6 @@ keypair_err_not_found:
   other: Keypair not yet generated
 keypair_err_save:
   other: Keypair could not be saved
-keypair_err_generate:
-  other: Keypair could not be generated
 keypair_err_publickey_not_found:
   other: 'No public-key found for user [NOTICE]"{{.V0}}"[/RESET] ([NOTICE]"{{.V1}}"[/RESET])'
 keypair_err_passphrase_prompt:
@@ -764,7 +716,7 @@ update_available:
     Available Version: [NOTICE]{{.V1}}[/RESET]
     You can update by running [ACTIONABLE]`state update`[/RESET]
 update_none_found:
-  other: No new update available.
+  other: Update not found for {{.V0}}.
 updating_version:
   other: Updating State Tool to version {{.V0}}
 runtime_update_notice_known_count:
@@ -830,8 +782,6 @@ build_status_unknown:
   other: "Build status could not be retrieved, please view the project at: [NOTICE]{{.V0}}[/RESET] for more information"
 build_status_in_progress:
   other: "Your changes are currently being built remotely on the ActiveState Platform. Please visit [NOTICE]{{.V0}}[/RESET] to see the progress."
-build_status_in_progress_headless:
-  other: "Your changes are currently being built remotely on the ActiveState Platform. Please visit [NOTICE]{{.V0}}[/RESET] to see the progress (you may have to first convert your runtime to a project)."
 build_status_unknown_error:
   other: "Build reported an unknown error: {{.V0}}; Please view the project at: [ACTIONABLE]{{.V1}}[/RESET] for more information"
 build_status_failed:
@@ -930,8 +880,6 @@ prompt_login_browser_action:
   other: Login with my existing account using your browser
 prompt_login_action:
   other: Login with my existing account by typing my username and password
-prompt_signup_action:
-  other: Signup for a new account by entering in a username and password
 prompt_signup_browser_action:
   other: Signup for a new account using the ActiveState Platform website
 prompt_login_after_browser_signup:
@@ -1204,12 +1152,6 @@ bundle_updated:
   other: "Bundle updated: [NOTICE]{{.V0}}[/RESET]"
 bundle_version_updated:
   other: "Bundle updated: [NOTICE]{{.V0}}@{{.V1}}[/RESET]"
-package_headless_added:
-  other: "Package added: [NOTICE]{{.V0}}[/RESET]"
-package_headless_updated:
-  other: "Package updated: [NOTICE]{{.V0}}[/RESET]"
-package_headless_removed:
-  other: "Package uninstalled: [NOTICE]{{.V0}}[/RESET]"
 err_package_removed:
   other: Failed to remove package
 err_bundle_removed:
@@ -1226,6 +1168,12 @@ package_update_config_file:
   other: To ensure your local project is synchronized with the ActiveState platform please use [ACTIONABLE]`state pull`[/RESET]
 inventory_ingredient_not_available:
   other: The package '[NOTICE]{{.V0}}[/RESET]' is not available on the ActiveState Platform, or does not have a matching version
+err_update_build_script:
+  other: Could not update runtime build script
+notice_commit_build_script:
+  other: |
+    Your local build script has changes that should be committed. Please run [ACTIONABLE]`state commit`[/RESET] to do so.
+
 command_flag_invalid_value:
   other: "Invalid value for {{.V0}} flag: [NOTICE]{{.V1}}[/RESET]"
 err_cmdtree:
@@ -1275,14 +1223,10 @@ push_project_updated:
   other: "The remote Project has been updated"
 push_project_created:
   other: "Project created at [ACTIONABLE]{{.V0}}[/RESET]."
-push_no_changes:
-  other: "You have no local changes to push. To pull in remote changes run `[ACTIONABLE]state pull[/RESET]`."
 init_description:
   other: Initialize a new project
 push_description:
   other: Push your latest changes to the platform
-push_first_new_project:
-  other: 'Since this is your first time running "push" you''ll need to create a new project on the ActiveState Platform.'
 push_prompt_owner:
   other: "Who would you like the owner of this project to be?"
 push_prompt_not_authorized:
@@ -1685,8 +1629,8 @@ artifact_succeeded:
   other: "Completed: [NOTICE]{{.V0}} ({{.V1}}/{{.V2}})[/RESET]"
 artifact_failed:
   other: "Failed: [NOTICE]{{.V0}}[/RESET]. Error returned: [ERROR]{{.V1}}[/RESET]"
-err_package_update_pjfile:
-  other: "Could not update your activestate.yaml with the new commit ID. Please run [ACTIONABLE]`state pull`[/RESET] manually."
+err_package_update_commit_id:
+  other: "Could not update your project runtime's commit ID. Please run [ACTIONABLE]`state pull`[/RESET] manually."
 prepare_protocol_warning:
   other: Could not add state protocol
 err_preparestart_shortcut:
@@ -1725,11 +1669,11 @@ err_non_interactive_mode:
   other: You are running the State Tool in non-interactive mode, but interactive input was needed. Please re-run the State Tool in interactive mode. If you are using a non-interactive terminal like Git Bash on Windows, prefix your command with [ACTIONABLE]`winpty`[/RESET]. (See https://github.com/git-for-windows/git/wiki/FAQ#some-native-console-programs-dont-work-when-run-from-git-bash-how-to-fix-it for more information.)
 err_alternate_branches:
   other: |
-    There are no valid dependencies for your platform in branch [ACTIONABLE]`{{.V0}}`[/RESET], perhaps you could try one of the alternate branches on your project:
+    Your current platform ([ACTIONABLE]{{.V0}}/{{.V1}}[/RESET]) does not appear to be configured in your branch: [ACTIONABLE]'{{.V2}}'[/RESET], perhaps you could try one of the alternate branches on your project:
 
-     - {{.V1}}
+     - {{.V3}}
 
-    Type [ACTIONABLE]`state branch switch <NAME>`[/RESET] to switch to a different branch.
+    Type [ACTIONABLE]'state branch switch <NAME>'[/RESET] to switch to a different branch.
 err_fetch_project:
   other: "Could not fetch details for project: {{.V0}}"
 err_set_default_branch:
@@ -1758,8 +1702,6 @@ err_user_network_solution:
     If your issue persists consider reporting it on our forums at {{.V0}}.
 err_revert_get_commit:
   other: "Could not fetch commit details for commit with ID: {{.V0}}"
-err_revert_refresh:
-  other: Could not get revert commit to check if changes were indeed made
 err_revert_commit:
   other: "Could not revert{{.V0}} commit: {{.V1}}"
 install_initial_success:
@@ -1773,6 +1715,28 @@ package_info_request:
 err_push_outdated:
   other: |
     Your project has new changes available that need to be merged first. Please first run `[ACTIONABLE]state pull[/RESET]` to update your project.
+err_tip_push_outdated:
+  other: Run '[ACTIONABLE]state pull[/RESET]'.
+err_push_not_authenticated:
+  other: In order to update your project you need to be authenticated, please run '[ACTIONABLE]state auth[/RESET]' to authenticate.
+err_push_no_project:
+  other: No project found, you may need to create one first.
+err_push_headless:
+  other: Cannot push a headless project. To convert your project please visit {{.V0}}
+push_push_tip_headless_init:
+  other: Run '[ACTIONABLE]state init[/RESET]' to create a project with the State Tool.
+push_push_tip_headless_cwd:
+  other: Navigate to a directory with an activestate.yaml.
+err_push_nocommit:
+  other: You have nothing to push, make some changes first with '[ACTIONABLE]state install[/RESET]'.
+push_no_changes:
+  other: You have no local changes to push. To pull in remote changes run '[ACTIONABLE]state pull[/RESET]'.
+err_push_create_nonunique:
+  other: The project name '[NOTICE]{{.V0}}[/RESET]' is already in use.
+err_push_create_project_aborted:
+  other: Project creation aborted by user.
+err_push_target_invalid_history:
+  other: The target's commit history does not match your local commit history. Are you pushing to the right project?
 err_pull_incompatible:
   other: |
     The remote project has an incompatible commit history. Target a different project with `[ACTIONABLE--set-project[/RESET]` or reset your local checkout with `[ACTIONABLE]state reset[/RESET]`.
@@ -1787,8 +1751,8 @@ operation_success_local:
   other: |
     Your local project has been updated.
     Run [ACTIONABLE]state push[/RESET] to save changes to the platform.
-solver_err:
-  other: "The Platform failed to resolve the dependencies for this build. {{.V0}}\n{{.V1}}"
+buildplan_err:
+  other: "Could not plan build, platform responded with:\n{{.V0}}\n{{.V1}}"
 transient_solver_tip:
   other: You may want to retry this command if the failure was related to a resourcing or networking issue.
 warning_git_project_mismatch:
@@ -1863,8 +1827,6 @@ package_ingredient_alternatives_nolang:
     No results found for search term "[NOTICE]{{.V0}}[/RESET]".
 
     This may be because you have not installed a language for your project. Install a language by running "[ACTIONABLE]state languages install <language-name>[/RESET]".
-progress_project:
-  other: " • Initializing Project"
 progress_search:
   other: " • Searching for [ACTIONABLE]{{.V0}}[/RESET] in the ActiveState Catalog"
 setup_runtime:
@@ -2065,25 +2027,21 @@ pjfile_deprecation_msg:
     {{.V1}}
     To find out how to update these please read the deprecation information at:
     [ACTIONABLE]{{.V2}}[/RESET]
-runtime_usage_limit_reached:
-  other: |
-    [WARNING]Heads up! You've reached your runtime limit for [/RESET][ACTIONABLE]{{.V0}}[/RESET][WARNING].[/RESET]
-    [WARNING]You can upgrade your plan or enroll in a free trial by visiting: [/RESET][ACTIONABLE]https://platform.activestate.com/upgrade/?org={{.V0}}[/RESET][WARNING].[/RESET]
-
-    [WARNING]You are using [/RESET][ACTIONABLE]{{.V1}}[/RESET][WARNING] out of [/RESET][ACTIONABLE]{{.V2}}[/RESET][WARNING] available runtimes.[/RESET]
-
-runtime_limit_reached_title:
-  other: Runtime Limit Reached
-runtime_limit_reached_msg:
-  other: Heads up! You've reached your runtime limit for {{.V0}}.
-runtime_limit_reached_action:
-  other: Upgrade
 pjfile_deprecation_entry:
   other: " - '[ACTIONABLE]{{.V0}}[/RESET]' located at byte [ACTIONABLE]{{.V1}}[/RESET]"
 err_init_authenticated:
   other: You need to be authenticated to initialize a project. Authenticate by running [ACTIONABLE]`state auth`[/RESET].
 err_country_blocked:
   other: This service is not available in your region.
+err_commit_id_invalid:
+  other: "Expected commit ID to be UUID formatted, but got: {{.V0}}"
+commit_id_gitignore:
+  other: |
+    # Ignore {{.V0}}/{{.V1}} file; tracking this via VCS will cause users to have to resolve redundant conflicts
+    {{.V0}}/{{.V1}}
+notice_commit_id_gitignore:
+  other: |
+    The State Tool created an [ACTIONABLE]{{.V0}}/{{.V1}}[/RESET] file with your project's commit ID, but it was unable to add it to your [ACTIONABLE].gitignore[/RESET] file. Please add it manually.
 err_shortcutdir_writable:
   other: Could not continue as we don't have permission to create [ACTIONABLE]{{.V0}}[/RESET].
 move_prompt:
@@ -2098,3 +2056,26 @@ err_edit_local_checkouts:
   other: Could not update local checkouts
 err_edit_project_mapping:
   other: Could not update project mapping
+notice_runtime_disabled:
+  other: Skipping runtime setup because it was disabled by an environment variable
+err_local_commit_file:
+  other: |
+    Could not find or read the commit file for your project at '[ACTIONABLE]{{.V0}}[/RESET]'.
+    
+    You can fix this by either running '[ACTIONABLE]state pull[/RESET]' to update to the latest commit, or manually switch to a specific
+    commit by running '[ACTIONABLE]state switch <commit-id>[/RESET]'.
+    
+    To view your projects commits run '[ACTIONABLE]state history[/RESET]'.
+    
+    Please avoid deleting or editing this file directly.
+projectmigration_confirm:
+  other: |
+    State Tool has introduced a new project format to provide enhanced functionality. Your project is currently using the old format and will remain read-only until you migrate to the new project format.
+
+    [ERROR]WARNING:[/RESET] After you migrate, older versions of the State Tool will not be able to use your project.
+
+    Would you like to perform the migration now?
+err_searchingredient_toomany:
+  other: Too many ingredients match the query '[ACTIONABLE]{{.V0}}[/RESET]', please try to be more specific.
+alternative_unknown_pkg_name:
+  other: unknown

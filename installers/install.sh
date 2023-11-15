@@ -107,47 +107,75 @@ if [ -z "$TMPDIR" ]; then
   TMPDIR="/tmp"
 fi
 
-if [ -z "$VERSION" ]; then
-  # Determine the latest version to fetch.
-  STATEURL="$BASE_INFO_URL?channel=$CHANNEL&source=install&platform=$OS"
-  $FETCH $TMPDIR/info.json $STATEURL || exit 1
+INSTALLERTMPDIR="$TMPDIR/state-install-$RANDOM"
+mkdir -p "$INSTALLERTMPDIR"
 
-  # Parse info.
-  VERSION=`cat $TMPDIR/info.json | sed -ne 's/.*"version":[ \t]*"\([^"]*\)".*/\1/p'`
+if [ -z "$VERSION" ]; then
+  # If the user did not specify a version, formulate a query to fetch the JSON info of the latest
+  # version, including where it is.
+  JSONURL="$BASE_INFO_URL?channel=$CHANNEL&source=install&platform=$OS"
+elif [ -z "`echo $VERSION | grep -o '\-SHA'`" ]; then
+  # If the user specified a partial version (i.e. no SHA), formulate a query to fetch the JSON info
+  # of that version's latest SHA, including where it is.
+  VERSIONNOSHA="$VERSION"
+  VERSION=""
+  JSONURL="$BASE_INFO_URL?channel=$CHANNEL&source=install&platform=$OS&target-version=$VERSIONNOSHA"
+else
+  # If the user specified a full version with SHA, formulate a query to fetch the JSON info of that
+  # version.
+  VERSIONNOSHA="`echo $VERSION | sed 's/-SHA.*$//'`"
+  JSONURL="$BASE_INFO_URL?channel=$CHANNEL&source=install&platform=$OS&target-version=$VERSIONNOSHA"
+fi
+
+# Fetch version info.
+$FETCH $INSTALLERTMPDIR/info.json $JSONURL || exit 1
+if [ ! -z "`grep -o Invalid $INSTALLERTMPDIR/info.json`" ]; then
+	error "Could not download a State Tool installer for the given command line arguments"
+	exit 1
+fi
+
+# Extract checksum.
+SUM=`cat $INSTALLERTMPDIR/info.json | sed -ne 's/.*"sha256":[ \t]*"\([^"]*\)".*/\1/p'`
+
+if [ -z "$VERSION" ]; then
+  # If the user specified no version or a partial version we need to use the json URL to get the
+  # actual installer URL.
+  VERSION=`cat $INSTALLERTMPDIR/info.json | sed -ne 's/.*"version":[ \t]*"\([^"]*\)".*/\1/p'`
   if [ -z "$VERSION" ]; then
     error "Unable to retrieve the latest version number"
     exit 1
   fi
-  SUM=`cat $TMPDIR/info.json | sed -ne 's/.*"sha256":[ \t]*"\([^"]*\)".*/\1/p'`
-  RELURL=`cat $TMPDIR/info.json | sed -ne 's/.*"path":[ \t]*"\([^"]*\)".*/\1/p'`
-  rm $TMPDIR/info.json
-
+  RELURL=`cat $INSTALLERTMPDIR/info.json | sed -ne 's/.*"path":[ \t]*"\([^"]*\)".*/\1/p'`
 else
-  RELURL="$CHANNEL/$VERSION/$OS-amd64/state-$OS-amd64-$VERSION$DOWNLOADEXT"
+  # If the user specified a full version, construct the installer URL.
+  if [ "$VERSION" != "`cat $INSTALLERTMPDIR/info.json | sed -ne 's/.*"version":[ \t]*"\([^"]*\)".*/\1/p'`" ]; then
+    error "Unknown version: $VERSION"
+    exit 1
+  fi
+  RELURL="$CHANNEL/$VERSIONNOSHA/$OS-amd64/state-$OS-amd64-$VERSION$DOWNLOADEXT"
 fi
 
 # Fetch the requested or latest version.
 progress "Preparing Installer for State Tool Package Manager version $VERSION"
 STATEURL="$BASE_FILE_URL/$RELURL"
 ARCHIVE="$OS-amd64$DOWNLOADEXT"
-$FETCH $TMPDIR/$ARCHIVE $STATEURL
+$FETCH $INSTALLERTMPDIR/$ARCHIVE $STATEURL
 # wget and curl differ on how to handle AWS' "Forbidden" result for unknown versions.
 # wget will exit with nonzero status. curl simply creates an XML file with the forbidden error.
-# If curl was used, make sure the file downloaded is of type 'data', according to the UNIX `file`
-# command. (The XML error will be reported as a 'text' type.)
+# If curl was used, make sure the file downloaded is not an XML file (i.e. it does not start with "<?xml").
 # If wget returned an error or curl fetched a "forbidden" response, raise an error and exit.
-if [ $? -ne 0 -o \( "`echo $FETCH | grep -o 'curl'`" = "curl" -a -z "`file -b $TMPDIR/$ARCHIVE | grep -o 'data'`" \) ]; then
-  rm -f $TMPDIR/$ARCHIVE
+if [ $? -ne 0 -o \( "`echo $FETCH | grep -o 'curl'`" = "curl" -a ! -z "`grep -o '^<?xml' $INSTALLERTMPDIR/$ARCHIVE`" \) ]; then
+  rm -f $INSTALLERTMPDIR/$ARCHIVE
   progress_fail
   error "Could not download the State Tool installer at $STATEURL. Please try again."
   exit 1
 fi
 
-# Verify checksum if possible.
-if [ ! -z "$SUM" -a  "`$SHA256SUM -b $TMPDIR/$ARCHIVE | cut -d ' ' -f1`" != "$SUM" ]; then
+# Verify checksum.
+if [ "`$SHA256SUM -b $INSTALLERTMPDIR/$ARCHIVE | cut -d ' ' -f1`" != "$SUM" ]; then
   error "SHA256 sum did not match:"
   error "Expected: $SUM"
-  error "Received: `$SHA256SUM -b $TMPDIR/$ARCHIVE | cut -d ' ' -f1`"
+  error "Received: `$SHA256SUM -b $INSTALLERTMPDIR/$ARCHIVE | cut -d ' ' -f1`"
   error "Aborting installation."
   exit 1
 fi
@@ -155,14 +183,17 @@ fi
 # Extract it.
 if [ $OS = "windows" ]; then
   # Work around bug where MSYS produces a path that looks like `C:/temp` rather than `C:\temp`
-  TMPDIRW=$(echo $(cd $TMPDIR && pwd -W) | sed 's|/|\\|g')
-  powershell -command "& {&'Expand-Archive' -Force '$TMPDIRW\\$ARCHIVE' '$TMPDIRW'}"
+  INSTALLERTMPDIRW=$(echo $(cd $INSTALLERTMPDIR && pwd -W) | sed 's|/|\\|g')
+  powershell -command "& {&'Expand-Archive' -Force '$INSTALLERTMPDIRW\\$ARCHIVE' '$INSTALLERTMPDIRW'}"
 else
-  tar -xzf $TMPDIR/$ARCHIVE -C $TMPDIR || exit 1
+  tar -xzf $INSTALLERTMPDIR/$ARCHIVE -C $INSTALLERTMPDIR || exit 1
 fi
-chmod +x $TMPDIR/$INSTALLERNAME$BINARYEXT
+chmod +x $INSTALLERTMPDIR/$INSTALLERNAME$BINARYEXT
 progress_done
 echo ""
 
 # Run the installer.
-ACTIVESTATE_SESSION_TOKEN=$SESSION_TOKEN_VALUE $TMPDIR/$INSTALLERNAME$BINARYEXT "$@" --source-installer="install.sh"
+ACTIVESTATE_SESSION_TOKEN=$SESSION_TOKEN_VALUE $INSTALLERTMPDIR/$INSTALLERNAME$BINARYEXT "$@" --source-installer="install.sh"
+
+# Remove temp files
+rm -r $INSTALLERTMPDIR

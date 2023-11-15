@@ -17,6 +17,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
+	"github.com/ActiveState/cli/pkg/platform/runtime/buildexpression"
 	"github.com/ActiveState/cli/pkg/platform/runtime/envdef"
 )
 
@@ -61,6 +62,10 @@ func (s *Store) recipeFile() string {
 
 func (s *Store) buildPlanFile() string {
 	return filepath.Join(s.storagePath, constants.RuntimeBuildPlanStore)
+}
+
+func (s *Store) buildExpressionFile() string {
+	return filepath.Join(s.storagePath, constants.BuildExpressionStore)
 }
 
 // BuildEngine returns the runtime build engine value stored in the runtime directory
@@ -234,6 +239,14 @@ func (s *Store) updateEnviron(orderedArtifacts []artifact.ArtifactID, artifacts 
 		}
 	}
 
+	if rtGlobal == nil {
+		// Returning nil will end up causing a nil-pointer-exception panic in setup.Update().
+		// There is additional logging of the buildplan there that may help diagnose why this is happening.
+		logging.Error("There were artifacts returned, but none of them ended up being stored/installed.")
+		logging.Error("Artifacts returned: %v", orderedArtifacts)
+		logging.Error("Artifacts stored: %v", artifacts)
+	}
+
 	return rtGlobal, nil
 }
 
@@ -242,10 +255,19 @@ func (s *Store) InstallPath() string {
 	return s.installPath
 }
 
-func (s *Store) BuildPlan() (*bpModel.Build, error) {
+func (s *Store) BuildPlanRaw() ([]byte, error) {
 	data, err := fileutils.ReadFile(s.buildPlanFile())
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not read build plan file.")
+	}
+
+	return data, nil
+}
+
+func (s *Store) BuildPlan() (*bpModel.Build, error) {
+	data, err := s.BuildPlanRaw()
+	if err != nil {
+		return nil, errs.Wrap(err, "Could not get build plan file.")
 	}
 
 	var buildPlan bpModel.Build
@@ -266,4 +288,41 @@ func (s *Store) StoreBuildPlan(build *bpModel.Build) error {
 		return errs.Wrap(err, "Could not write recipe file.")
 	}
 	return nil
+}
+
+type buildExpressionData struct {
+	CommitID string `json:"commitId"`
+	Expr     string `json:"buildExpression"`
+}
+
+func (s *Store) GetAndValidateBuildExpression(commitID string) (string, error) {
+	contents, err := fileutils.ReadFile(s.buildExpressionFile())
+	if err != nil {
+		return "", errs.Wrap(err, "Could not read buildexpression file")
+	}
+
+	data := &buildExpressionData{}
+	err = json.Unmarshal(contents, data)
+	if err != nil {
+		return "", errs.Wrap(err, "Could not unmarshal buildexpression file")
+	}
+
+	if data.CommitID != commitID {
+		logging.Debug("buildexpression commitID mismatch")
+		return "", errs.New("The given buildexpression commitID does not match the stored one's commitID")
+	}
+
+	return data.Expr, nil
+}
+
+func (s *Store) StoreBuildExpression(expr *buildexpression.BuildExpression, commitID string) error {
+	data, err := json.Marshal(expr)
+	if err != nil {
+		return errs.Wrap(err, "Could not marshal buildexpression")
+	}
+	data, err = json.Marshal(buildExpressionData{commitID, string(data)})
+	if err != nil {
+		return errs.Wrap(err, "Could not marshal buildexpression")
+	}
+	return fileutils.WriteFile(s.buildExpressionFile(), data)
 }

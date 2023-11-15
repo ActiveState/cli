@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
-	"strconv"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/constants"
@@ -34,7 +33,7 @@ var (
 	ErrMergeCommitInHistory = errs.New("Can't merge commit thats already in target commits history")
 )
 
-type ErrOrderAuth struct{ *locale.LocalizedError }
+var ErrOrderForbidden = errs.New("no permission to retrieve order")
 
 type ErrUpdateBranchAuth struct{ *locale.LocalizedError }
 
@@ -229,7 +228,7 @@ func FilterSupportedIngredients(supported []model.SupportedLanguage, ingredients
 // BranchCommitID returns the latest commit id by owner and project names. It
 // is possible for a nil commit id to be returned without failure.
 func BranchCommitID(ownerName, projectName, branchName string) (*strfmt.UUID, error) {
-	proj, err := FetchProjectByName(ownerName, projectName)
+	proj, err := LegacyFetchProjectByName(ownerName, projectName)
 	if err != nil {
 		return nil, err
 	}
@@ -450,7 +449,7 @@ func AddChangeset(parentCommitID strfmt.UUID, commitMessage string, changeset Ch
 }
 
 func UpdateBranchForProject(pj ProjectInfo, commitID strfmt.UUID) error {
-	pjm, err := FetchProjectByName(pj.Owner(), pj.Name())
+	pjm, err := LegacyFetchProjectByName(pj.Owner(), pj.Name())
 	if err != nil {
 		return errs.Wrap(err, "Could not fetch project")
 	}
@@ -518,7 +517,7 @@ func DeleteBranch(branchID strfmt.UUID) error {
 
 // UpdateProjectBranchCommitByName updates the vcs branch for a project given by its namespace with a new commitID
 func UpdateProjectBranchCommit(pj ProjectInfo, commitID strfmt.UUID) error {
-	pjm, err := FetchProjectByName(pj.Owner(), pj.Name())
+	pjm, err := LegacyFetchProjectByName(pj.Owner(), pj.Name())
 	if err != nil {
 		return errs.Wrap(err, "Could not fetch project")
 	}
@@ -668,64 +667,6 @@ func (cs indexedCommits) countBetween(first, last string) (int, error) {
 	return ct, nil
 }
 
-func commitMessage(op Operation, name, version string, namespace Namespace, word int) string {
-	switch namespace.Type() {
-	case NamespaceLanguage:
-		return languageCommitMessage(op, name, version)
-	case NamespacePlatform:
-		return platformCommitMessage(op, name, version, word)
-	case NamespacePackage, NamespaceBundle:
-		return packageCommitMessage(op, name, version)
-	}
-
-	return ""
-}
-
-func languageCommitMessage(op Operation, name, version string) string {
-	var msgL10nKey string
-	switch op {
-	case OperationAdded:
-		msgL10nKey = "commit_message_added_language"
-	case OperationUpdated:
-		msgL10nKey = "commit_message_updated_language"
-	case OperationRemoved:
-		msgL10nKey = "commit_message_removed_language"
-	}
-
-	return locale.Tr(msgL10nKey, name, version)
-}
-
-func platformCommitMessage(op Operation, name, version string, word int) string {
-	var msgL10nKey string
-	switch op {
-	case OperationAdded:
-		msgL10nKey = "commit_message_added_platform"
-	case OperationUpdated:
-		msgL10nKey = "commit_message_updated_platform"
-	case OperationRemoved:
-		msgL10nKey = "commit_message_removed_platform"
-	}
-
-	return locale.Tr(msgL10nKey, name, strconv.Itoa(word), version)
-}
-
-func packageCommitMessage(op Operation, name, version string) string {
-	var msgL10nKey string
-	switch op {
-	case OperationAdded:
-		msgL10nKey = "commit_message_added_package"
-	case OperationUpdated:
-		msgL10nKey = "commit_message_updated_package"
-	case OperationRemoved:
-		msgL10nKey = "commit_message_removed_package"
-	}
-
-	if version == "" {
-		version = locale.Tl("package_version_auto", "auto")
-	}
-	return locale.Tr(msgL10nKey, name, version)
-}
-
 func ResolveRequirementNameAndVersion(name, version string, word int, namespace Namespace) (string, string, error) {
 	if namespace.Type() == NamespacePlatform {
 		platform, err := FetchPlatformByDetails(name, version, word)
@@ -796,7 +737,7 @@ func FetchOrderFromCommit(commitID strfmt.UUID) (*mono_models.Order, error) {
 		if err != nil {
 			code := api.ErrorCode(err)
 			if code == 401 || code == 403 {
-				return nil, &ErrOrderAuth{locale.NewInputError("err_order_auth", "Fetch order failed with authentication error")}
+				return nil, errs.Pack(err, ErrOrderForbidden)
 			}
 			return nil, errors.New(api.ErrorMessageFromPayload(err))
 		}

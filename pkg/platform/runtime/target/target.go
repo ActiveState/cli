@@ -5,14 +5,15 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/hash"
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
+	"github.com/ActiveState/cli/internal/runbits/commitmediator"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/go-openapi/strfmt"
-	"github.com/thoas/go-funk"
 )
 
 type Trigger string
@@ -41,46 +42,20 @@ const (
 	TriggerOffline            Trigger = "offline"
 	TriggerShell              Trigger = "shell"
 	TriggerCheckout           Trigger = "checkout"
+	TriggerCommit             Trigger = "commit"
 	TriggerUse                Trigger = "use"
 	TriggerOfflineInstaller   Trigger = "offline-installer"
 	TriggerOfflineUninstaller Trigger = "offline-uninstaller"
 	triggerUnknown            Trigger = "unknown"
 )
 
-// usageTriggers are triggers that indicate actual usage of the runtime (as oppose to simply making changes to the runtime)
-var usageTriggers = []Trigger{
-	TriggerActivate,
-	TriggerScript,
-	TriggerDeploy,
-	TriggerExec,
-	TriggerExecutor,
-	TriggerSwitch,
-	TriggerImport,
-	TriggerInit,
-	TriggerPackage,
-	TriggerPull,
-	TriggerReset,
-	TriggerRevert,
-	TriggerShell,
-	TriggerCheckout,
-	TriggerUse,
-	TriggerOfflineInstaller,
-	TriggerOfflineUninstaller,
-}
-
 func NewExecTrigger(cmd string) Trigger {
 	return Trigger(fmt.Sprintf("%s: %s", TriggerExec, cmd))
 }
 
 func (t Trigger) IndicatesUsage() bool {
-	if funk.Contains(usageTriggers, t) {
-		return true
-	}
-	return t.IsExecTrigger() && funk.Contains(usageTriggers, TriggerExec)
-}
-
-func (t Trigger) IsExecTrigger() bool {
-	return strings.HasPrefix(string(t), string(TriggerExec)+": ")
+	// All triggers should indicate runtime use except for refreshing executors
+	return !strings.EqualFold(string(t), string(TriggerResetExec))
 }
 
 type ProjectTarget struct {
@@ -113,7 +88,12 @@ func (p *ProjectTarget) CommitUUID() strfmt.UUID {
 	if p.customCommit != nil {
 		return *p.customCommit
 	}
-	return p.Project.CommitUUID()
+	commitID, err := commitmediator.Get(p.Project)
+	if err != nil {
+		multilog.Error("Unable to get local commit: %v", errs.JoinMessage(err))
+		return ""
+	}
+	return commitID
 }
 
 func (p *ProjectTarget) Trigger() Trigger {
@@ -123,16 +103,16 @@ func (p *ProjectTarget) Trigger() Trigger {
 	return p.trigger
 }
 
-func (p *ProjectTarget) Headless() bool {
-	return p.Project.IsHeadless()
-}
-
 func (p *ProjectTarget) ReadOnly() bool {
 	return false
 }
 
 func (p *ProjectTarget) InstallFromDir() *string {
 	return nil
+}
+
+func (p *ProjectTarget) ProjectDir() string {
+	return p.Project.Dir()
 }
 
 func ProjectDirToTargetDir(projectDir, cacheDir string) string {
@@ -152,17 +132,16 @@ type CustomTarget struct {
 	commitUUID strfmt.UUID
 	dir        string
 	trigger    Trigger
-	headless   bool
 }
 
-func NewCustomTarget(owner string, name string, commitUUID strfmt.UUID, dir string, trigger Trigger, headless bool) *CustomTarget {
+func NewCustomTarget(owner string, name string, commitUUID strfmt.UUID, dir string, trigger Trigger) *CustomTarget {
 	cleanDir, err := fileutils.ResolveUniquePath(dir)
 	if err != nil {
 		multilog.Error("Could not resolve unique path for dir: %s, error: %s", dir, err.Error())
 	} else {
 		dir = cleanDir
 	}
-	return &CustomTarget{owner, name, commitUUID, dir, trigger, headless}
+	return &CustomTarget{owner, name, commitUUID, dir, trigger}
 }
 
 func (c *CustomTarget) Owner() string {
@@ -188,16 +167,16 @@ func (c *CustomTarget) Trigger() Trigger {
 	return c.trigger
 }
 
-func (c *CustomTarget) Headless() bool {
-	return c.headless
-}
-
 func (c *CustomTarget) ReadOnly() bool {
 	return c.commitUUID == ""
 }
 
 func (c *CustomTarget) InstallFromDir() *string {
 	return nil
+}
+
+func (c *CustomTarget) ProjectDir() string {
+	return ""
 }
 
 type OfflineTarget struct {
@@ -250,14 +229,14 @@ func (i *OfflineTarget) Trigger() Trigger {
 	return i.trigger
 }
 
-func (i *OfflineTarget) Headless() bool {
-	return false
-}
-
 func (i *OfflineTarget) ReadOnly() bool {
 	return false
 }
 
 func (i *OfflineTarget) InstallFromDir() *string {
 	return &i.artifactsDir
+}
+
+func (i *OfflineTarget) ProjectDir() string {
+	return ""
 }

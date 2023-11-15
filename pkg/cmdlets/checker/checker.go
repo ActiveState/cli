@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
@@ -14,6 +15,8 @@ import (
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/profile"
+	"github.com/ActiveState/cli/internal/runbits/commitmediator"
+	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -53,14 +56,21 @@ func CommitsBehind(p *project.Project) (int, error) {
 		return 0, locale.NewError("err_latest_commit", "Latest commit ID is nil")
 	}
 
-	return model.CommitsBehind(*latestCommitID, p.CommitUUID())
+	commitID, err := commitmediator.Get(p)
+	if err != nil {
+		return 0, errs.Wrap(err, "Unable to get local commit")
+	}
+
+	return model.CommitsBehind(*latestCommitID, commitID)
 }
 
-func RunUpdateNotifier(svc *model.SvcModel, out output.Outputer) {
+func RunUpdateNotifier(an analytics.Dispatcher, svc *model.SvcModel, out output.Outputer) {
 	defer profile.Measure("RunUpdateNotifier", time.Now())
+
 	ctx, cancel := context.WithTimeout(context.Background(), model.SvcTimeoutMinimal)
 	defer cancel()
-	up, err := svc.CheckUpdate(ctx)
+
+	upd, err := svc.CheckUpdate(ctx, constants.BranchName, "")
 	if err != nil {
 		var timeoutErr net.Error
 		if errors.As(err, &timeoutErr) && timeoutErr.Timeout() {
@@ -70,9 +80,12 @@ func RunUpdateNotifier(svc *model.SvcModel, out output.Outputer) {
 		multilog.Error("Could not check for update when running update notifier, error: %v", errs.JoinMessage(err))
 		return
 	}
-	if up == nil {
+
+	update := updater.NewUpdateInstaller(an, updater.NewAvailableUpdateFromGraph(upd))
+	if !update.ShouldInstall() {
 		return
 	}
+
 	out.Notice(output.Title(locale.Tr("update_available_header")))
-	out.Notice(locale.Tr("update_available", constants.Version, up.Version))
+	out.Notice(locale.Tr("update_available", constants.Version, update.AvailableUpdate.Version))
 }

@@ -13,6 +13,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/runbits/commitmediator"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -108,13 +109,16 @@ func targetFromProjectFile(proj *project.Project) (*strfmt.UUID, error) {
 	if proj == nil {
 		return nil, locale.NewInputError("err_no_project")
 	}
-	commit := proj.CommitID()
+	commit, err := commitmediator.Get(proj)
+	if err != nil {
+		return nil, errs.Wrap(err, "Unable to get local commit")
+	}
 	if commit == "" {
 		logging.Debug("latest commit used as fallback selection")
 		return model.BranchCommitID(proj.Owner(), proj.Name(), proj.BranchName())
 	}
 
-	return prepareCommit(commit)
+	return prepareCommit(commit.String())
 }
 
 func prepareCommit(commit string) (*strfmt.UUID, error) {

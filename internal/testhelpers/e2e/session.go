@@ -5,12 +5,20 @@ import (
 	"io/fs"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"regexp"
 	"runtime"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/ActiveState/cli/internal/subshell"
+	"github.com/ActiveState/termtest"
+	"github.com/go-openapi/strfmt"
+	"github.com/google/uuid"
+	"github.com/phayes/permbits"
+	"github.com/stretchr/testify/require"
 
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/config"
@@ -25,17 +33,17 @@ import (
 	"github.com/ActiveState/cli/internal/osutils/stacktrace"
 	"github.com/ActiveState/cli/internal/rtutils/singlethread"
 	"github.com/ActiveState/cli/internal/strutils"
+	"github.com/ActiveState/cli/internal/subshell/bash"
+	"github.com/ActiveState/cli/internal/subshell/sscommon"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
+	"github.com/ActiveState/cli/pkg/platform/api"
+	"github.com/ActiveState/cli/pkg/platform/api/mono"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_client/users"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/ActiveState/termtest"
-	"github.com/ActiveState/termtest/expect"
-	"github.com/go-openapi/strfmt"
-	"github.com/google/uuid"
-	"github.com/phayes/permbits"
-	"github.com/stretchr/testify/require"
+	"github.com/ActiveState/cli/pkg/projectfile" // remove in DX-2307
 )
 
 // Session represents an end-to-end testing session during which several console process can be spawned and tested
@@ -44,7 +52,6 @@ import (
 // The session is approximately the equivalent of a terminal session, with the
 // main difference processes in this session are not spawned by a shell.
 type Session struct {
-	cp              *termtest.ConsoleProcess
 	Dirs            *Dirs
 	Env             []string
 	retainDirs      bool
@@ -55,15 +62,7 @@ type Session struct {
 	Exe         string
 	SvcExe      string
 	ExecutorExe string
-}
-
-// Options for spawning a testable terminal process
-type Options struct {
-	termtest.Options
-	// removes write-permissions in the bin directory from which executables are spawned.
-	NonWriteableBinDir bool
-	// expect the process to run in background (will not be stopped by subsequent processes)
-	BackgroundProcess bool
+	spawned     []*SpawnedCmd
 }
 
 var (
@@ -71,8 +70,9 @@ var (
 	PersistentPassword string
 	PersistentToken    string
 
-	defaultTimeout = 40 * time.Second
-	authnTimeout   = 40 * time.Second
+	defaultTimeout            = 40 * time.Second
+	RuntimeSourcingTimeout    = 3 * time.Minute
+	RuntimeSourcingTimeoutOpt = termtest.OptExpectTimeout(3 * time.Minute)
 )
 
 func init() {
@@ -181,19 +181,44 @@ func new(t *testing.T, retainDirs, updatePath bool, extraEnv ...string) *Session
 		constants.ProjectEnvVarName + "=",
 		constants.E2ETestEnvVarName + "=true",
 		constants.DisableUpdates + "=true",
+		constants.DisableProjectMigrationPrompt + "=true",
 		constants.OptinUnstableEnvVarName + "=true",
 		constants.ServiceSockDir + "=" + dirs.SockRoot,
 		constants.HomeEnvVarName + "=" + dirs.HomeDir,
+		"NO_COLOR=true",
 	}...)
 
 	if updatePath {
 		// add bin path
+		// Remove release state tool installation from PATH in tests
+		// This is a workaround as our test sessions are not compeltely
+		// sandboxed. This should be addressed in: https://activestatef.atlassian.net/browse/DX-2285
 		oldPath, _ := os.LookupEnv("PATH")
+		installPath, err := installation.InstallPathForBranch("release")
+		require.NoError(t, err)
+
+		binPath := filepath.Join(installPath, "bin")
+		oldPath = strings.Replace(oldPath, binPath+string(os.PathListSeparator), "", -1)
 		newPath := fmt.Sprintf(
 			"PATH=%s%s%s",
 			dirs.Bin, string(os.PathListSeparator), oldPath,
 		)
 		env = append(env, newPath)
+		t.Setenv("PATH", newPath)
+
+		cfg, err := config.New()
+		require.NoError(t, err)
+
+		// In order to ensure that the release state tool does not appear on the PATH
+		// when a new subshell is started we remove the installation entries from the
+		// rc file. This is added back later in the session's Close method.
+		// Again, this is a workaround to be addressed in: https://activestatef.atlassian.net/browse/DX-2285
+		if runtime.GOOS != "windows" {
+			s := bash.SubShell{}
+			err = s.CleanUserEnv(cfg, sscommon.InstallID, false)
+			require.NoError(t, err)
+		}
+		t.Setenv(constants.HomeEnvVarName, dirs.HomeDir)
 	}
 
 	// add session environment variables
@@ -207,6 +232,14 @@ func new(t *testing.T, retainDirs, updatePath bool, extraEnv ...string) *Session
 	session.SvcExe = session.copyExeToBinDir(svcExe)
 	session.ExecutorExe = session.copyExeToBinDir(execExe)
 
+	// Set up environment for test runs. This is separate
+	// from the environment for the session itself.
+	// Setting environment variables here allows helper
+	// functions access to them.
+	// This is a workaround as our test sessions are not compeltely
+	// sandboxed. This should be addressed in: https://activestatef.atlassian.net/browse/DX-2285
+	t.Setenv(constants.HomeEnvVarName, dirs.HomeDir)
+
 	err = fileutils.Touch(filepath.Join(dirs.Base, installation.InstallDirMarker))
 	require.NoError(session.t, err)
 
@@ -217,83 +250,151 @@ func NewNoPathUpdate(t *testing.T, retainDirs bool, extraEnv ...string) *Session
 	return new(t, retainDirs, false, extraEnv...)
 }
 
+func (s *Session) SetT(t *testing.T) {
+	s.t = t
+}
+
 func (s *Session) ClearCache() error {
 	return os.RemoveAll(s.Dirs.Cache)
 }
 
 // Spawn spawns the state tool executable to be tested with arguments
-func (s *Session) Spawn(args ...string) *termtest.ConsoleProcess {
-	return s.SpawnCmdWithOpts(s.Exe, WithArgs(args...))
+func (s *Session) Spawn(args ...string) *SpawnedCmd {
+	return s.SpawnCmdWithOpts(s.Exe, OptArgs(args...))
 }
 
 // SpawnWithOpts spawns the state tool executable to be tested with arguments
-func (s *Session) SpawnWithOpts(opts ...SpawnOptions) *termtest.ConsoleProcess {
+func (s *Session) SpawnWithOpts(opts ...SpawnOptSetter) *SpawnedCmd {
 	return s.SpawnCmdWithOpts(s.Exe, opts...)
 }
 
 // SpawnCmd executes an executable in a pseudo-terminal for integration tests
-func (s *Session) SpawnCmd(cmdName string, args ...string) *termtest.ConsoleProcess {
-	return s.SpawnCmdWithOpts(cmdName, WithArgs(args...))
+func (s *Session) SpawnCmd(cmdName string, args ...string) *SpawnedCmd {
+	return s.SpawnCmdWithOpts(cmdName, OptArgs(args...))
 }
 
 // SpawnShellWithOpts spawns the given shell and options in interactive mode.
-func (s *Session) SpawnShellWithOpts(shell Shell, opts ...SpawnOptions) *termtest.ConsoleProcess {
+func (s *Session) SpawnShellWithOpts(shell Shell, opts ...SpawnOptSetter) *SpawnedCmd {
 	if shell != Cmd {
-		opts = append(opts, AppendEnv("SHELL="+string(shell)))
+		opts = append(opts, OptAppendEnv("SHELL="+string(shell)))
 	}
+	opts = append(opts, OptRunInsideShell(false))
 	return s.SpawnCmdWithOpts(string(shell), opts...)
 }
 
 // SpawnCmdWithOpts executes an executable in a pseudo-terminal for integration tests
-// Arguments and other parameters can be specified by specifying SpawnOptions
-func (s *Session) SpawnCmdWithOpts(exe string, opts ...SpawnOptions) *termtest.ConsoleProcess {
-	if s.cp != nil {
-		s.cp.Close()
+// Arguments and other parameters can be specified by specifying SpawnOptSetter
+func (s *Session) SpawnCmdWithOpts(exe string, optSetters ...SpawnOptSetter) *SpawnedCmd {
+	spawnOpts := NewSpawnOpts()
+	spawnOpts.Env = s.Env
+	spawnOpts.Dir = s.Dirs.Work
+
+	spawnOpts.TermtestOpts = append(spawnOpts.TermtestOpts,
+		termtest.OptErrorHandler(func(tt *termtest.TermTest, err error) error {
+			s.t.Fatal(s.DebugMessage(errs.JoinMessage(err)))
+			return err
+		}),
+		termtest.OptDefaultTimeout(defaultTimeout),
+		termtest.OptCols(140),
+		termtest.OptRows(30), // Needs to be able to accommodate most JSON output
+	)
+
+	// TTYs output newlines in two steps: '\r' (CR) to move the caret to the beginning of the line,
+	// and '\n' (LF) to move the caret one line down. Terminal emulators do the same thing, so the
+	// raw terminal output will contain "\r\n". Since our multi-line expectation messages often use
+	// '\n', normalize line endings to that for convenience, regardless of platform ('\n' for Linux
+	// and macOS, "\r\n" for Windows).
+	// More info: https://superuser.com/a/1774370
+	spawnOpts.TermtestOpts = append(spawnOpts.TermtestOpts,
+		termtest.OptNormalizedLineEnds(true),
+	)
+
+	for _, optSet := range optSetters {
+		optSet(&spawnOpts)
 	}
 
-	env := s.Env
-
-	pOpts := Options{
-		Options: termtest.Options{
-			DefaultTimeout: defaultTimeout,
-			Environment:    env,
-			WorkDirectory:  s.Dirs.Work,
-			RetainWorkDir:  true,
-			ObserveExpect:  observeExpectFn(s),
-			ObserveSend:    observeSendFn(s),
-		},
-		NonWriteableBinDir: false,
-	}
-
-	for _, opt := range opts {
-		opt(&pOpts)
-	}
-
-	pOpts.Options.CmdName = exe
-
-	if pOpts.NonWriteableBinDir {
-		// make bin dir read-only
-		os.Chmod(s.Dirs.Bin, 0555)
+	var shell string
+	var args []string
+	if spawnOpts.RunInsideShell {
+		switch runtime.GOOS {
+		case "windows":
+			shell = Cmd
+			// /C = next argument is command that will be ran
+			args = []string{"/C"}
+		case "darwin":
+			shell = "zsh"
+			// -i = interactive mode
+			// -c = next argument is command that will be ran
+			args = []string{"-i", "-c"}
+		default:
+			shell = "bash"
+			args = []string{"-i", "-c"}
+		}
+		if len(spawnOpts.Args) == 0 {
+			args = append(args, fmt.Sprintf(`"%s"`, exe))
+		} else {
+			if shell == Cmd {
+				aa := spawnOpts.Args
+				for i, a := range aa {
+					aa[i] = strings.ReplaceAll(a, " ", "^ ")
+				}
+				// Windows is weird, it doesn't seem to let you quote arguments, so instead we need to escape spaces
+				// which on Windows is done with the '^' character.
+				args = append(args, fmt.Sprintf(`%s %s`, strings.ReplaceAll(exe, " ", "^ "), strings.Join(aa, " ")))
+			} else {
+				args = append(args, fmt.Sprintf(`"%s" "%s"`, exe, strings.Join(spawnOpts.Args, `" "`)))
+			}
+		}
 	} else {
-		os.Chmod(s.Dirs.Bin, 0777)
+		shell = exe
+		args = spawnOpts.Args
 	}
 
-	console, err := termtest.New(pOpts.Options)
+	cmd := exec.Command(shell, args...)
+
+	cmd.Env = spawnOpts.Env
+
+	if spawnOpts.Dir != "" {
+		cmd.Dir = spawnOpts.Dir
+	}
+
+	tt, err := termtest.New(cmd, spawnOpts.TermtestOpts...)
 	require.NoError(s.t, err)
-	if !pOpts.BackgroundProcess {
-		s.cp = console
+
+	spawn := &SpawnedCmd{tt, spawnOpts}
+
+	s.spawned = append(s.spawned, spawn)
+
+	cmdArgs := spawnOpts.Args
+	if spawnOpts.HideCmdArgs {
+		cmdArgs = []string{"<hidden>"}
 	}
+	logging.Debug("Spawning CMD: %s, args: %v", exe, cmdArgs)
 
-	logging.Debug("Spawning CMD: %s, args: %v", pOpts.Options.CmdName, pOpts.Options.Args)
-
-	return console
+	return spawn
 }
 
-// PrepareActiveStateYAML creates a projectfile.Project instance from the
-// provided contents and saves the output to an as.y file within the named
-// directory.
+// PrepareActiveStateYAML creates an activestate.yaml in the session's work directory from the
+// given YAML contents.
 func (s *Session) PrepareActiveStateYAML(contents string) {
-	require.NoError(s.t, fileutils.WriteFile(filepath.Join(s.Dirs.Work, "activestate.yaml"), []byte(contents)))
+	require.NoError(s.t, fileutils.WriteFile(filepath.Join(s.Dirs.Work, constants.ConfigFileName), []byte(contents)))
+}
+
+func (s *Session) PrepareCommitIdFile(commitID string) {
+	// Replace the contents of this function with the line below in DX-2307.
+	//require.NoError(s.t, fileutils.WriteFile(filepath.Join(s.Dirs.Work, constants.ProjectConfigDirName, constants.CommitIdFileName), []byte(commitID)))
+	pjfile, err := projectfile.Parse(filepath.Join(s.Dirs.Work, constants.ConfigFileName))
+	require.NoError(s.t, err)
+	require.NoError(s.t, pjfile.LegacySetCommit(commitID))
+}
+
+// PrepareProject creates a very simple activestate.yaml file for the given org/project and, if a
+// commit ID is given, an .activestate/commit file.
+func (s *Session) PrepareProject(namespace, commitID string) {
+	s.PrepareActiveStateYAML(fmt.Sprintf("project: https://%s/%s", constants.DefaultAPIHost, namespace))
+	if commitID != "" {
+		s.PrepareCommitIdFile(commitID)
+	}
 }
 
 // PrepareFile writes a file to path with contents, expecting no error
@@ -311,22 +412,15 @@ func (s *Session) PrepareFile(path, contents string) {
 	require.NoError(s.t, err, errMsg)
 }
 
-func (s *Session) LoginUser(userName string) {
-	p := s.Spawn(tagsuite.Auth, "--username", userName, "--password", userName)
-
-	p.Expect("logged in", authnTimeout)
-	p.ExpectExitCode(0)
-}
-
 // LoginAsPersistentUser is a common test case after which an integration test user should be logged in to the platform
 func (s *Session) LoginAsPersistentUser() {
 	p := s.SpawnWithOpts(
-		WithArgs(tagsuite.Auth, "--username", PersistentUsername, "--password", PersistentPassword),
+		OptArgs(tagsuite.Auth, "--username", PersistentUsername, "--password", PersistentPassword),
 		// as the command line includes a password, we do not print the executed command, so the password does not get logged
-		HideCmdLine(),
+		OptHideArgs(),
 	)
 
-	p.Expect("logged in", authnTimeout)
+	p.Expect("logged in", termtest.OptExpectTimeout(defaultTimeout))
 	p.ExpectExitCode(0)
 }
 
@@ -345,20 +439,28 @@ func (s *Session) CreateNewUser() (string, string) {
 	password := uid.String()[8:]
 	email := fmt.Sprintf("%s@test.tld", username)
 
-	p := s.Spawn(tagsuite.Auth, "signup", "--prompt")
+	params := users.NewAddUserParams()
+	params.SetUser(&mono_models.UserEditable{
+		Username: username,
+		Password: password,
+		Name:     username,
+		Email:    email,
+	})
 
-	p.Expect("I accept")
-	time.Sleep(time.Millisecond * 100)
-	p.Send("y")
-	p.Expect("username:")
-	p.Send(username)
-	p.Expect("password:")
-	p.Send(password)
-	p.Expect("again:")
-	p.Send(password)
-	p.Expect("email:")
-	p.Send(email)
-	p.Expect("account has been registered", authnTimeout)
+	// The default mono API client host is "testing.tld" inside unit tests.
+	// Since we actually want to create production users, we need to manually instantiate a mono API
+	// client with the right host.
+	serviceURL := api.GetServiceURL(api.ServiceMono)
+	host := os.Getenv(constants.APIHostEnvVarName)
+	if host == "" {
+		host = constants.DefaultAPIHost
+	}
+	serviceURL.Host = strings.Replace(serviceURL.Host, string(api.ServiceMono)+api.TestingPlatform, host, 1)
+	_, err = mono.Init(serviceURL, nil).Users.AddUser(params)
+	require.NoError(s.t, err, "Error creating new user")
+
+	p := s.Spawn(tagsuite.Auth, "--username", username, "--password", password)
+	p.Expect("logged in")
 	p.ExpectExitCode(0)
 
 	s.users = append(s.users, username)
@@ -407,49 +509,43 @@ func (s *Session) DebugMessage(prefix string) string {
 		prefix = prefix + "\n"
 	}
 
-	snapshot := ""
-	if s.cp != nil {
-		snapshot = s.cp.Snapshot()
+	output := map[string]string{}
+	for _, spawn := range s.spawned {
+		name := spawn.Cmd().String()
+		if spawn.opts.HideCmdArgs {
+			name = spawn.Cmd().Path
+		}
+		output[name] = strings.TrimSpace(spawn.Snapshot())
 	}
 
 	v, err := strutils.ParseTemplate(`
-{{.Prefix}}{{.A}}Stack:
-{{.Stacktrace}}{{.Z}}
-{{.A}}Terminal snapshot:
-{{.FullSnapshot}}{{.Z}}
-{{.Logs}}
+{{.Prefix}}Stack:
+{{.Stacktrace}}
+{{range $title, $value := .Outputs}}
+{{$.A}}Snapshot for Cmd '{{$title}}':
+{{$value}}
+{{$.Z}}
+{{end}}
+{{range $title, $value := .Logs}}
+{{$.A}}Log '{{$title}}':
+{{$value}}
+{{$.Z}}
+{{else}}
+No logs
+{{end}}
 `, map[string]interface{}{
-		"Prefix":       prefix,
-		"Stacktrace":   stacktrace.Get().String(),
-		"FullSnapshot": snapshot,
-		"Logs":         s.DebugLogs(),
-		"A":            sectionStart,
-		"Z":            sectionEnd,
+		"Prefix":     prefix,
+		"Stacktrace": stacktrace.Get().String(),
+		"Outputs":    output,
+		"Logs":       s.DebugLogs(),
+		"A":          sectionStart,
+		"Z":          sectionEnd,
 	}, nil)
 	if err != nil {
-		s.t.Fatalf("Parsing template failed: %s", err)
+		s.t.Fatalf("Parsing template failed: %s", errs.JoinMessage(err))
 	}
 
 	return v
-}
-
-func observeExpectFn(s *Session) expect.ExpectObserver {
-	return func(matchers []expect.Matcher, ms *expect.MatchState, err error) {
-		if err == nil {
-			return
-		}
-
-		var value string
-		var sep string
-		for _, matcher := range matchers {
-			value += fmt.Sprintf("%s%v", sep, matcher.Criteria())
-			sep = ", "
-		}
-
-		s.t.Fatal(s.DebugMessage(fmt.Sprintf(`
-Could not meet expectation: '%s'
-Error: %s`, value, err)))
-	}
 }
 
 // Close removes the temporary directory unless RetainDirs is specified
@@ -467,9 +563,7 @@ func (s *Session) Close() error {
 		defer s.Dirs.Close()
 	}
 
-	if s.cp != nil {
-		s.cp.Close()
-	}
+	s.spawned = []*SpawnedCmd{}
 
 	if os.Getenv("PLATFORM_API_TOKEN") == "" {
 		s.t.Log("PLATFORM_API_TOKEN env var not set, not running suite tear down")
@@ -526,9 +620,22 @@ func (s *Session) Close() error {
 		}
 	}
 
-	// Trap "flisten in use" errors to help debug DX-2090.
-	if contents := s.SvcLog(); strings.Contains(contents, "flisten in use") {
-		s.t.Fatal(s.DebugMessage("Found 'flisten in use' error in state-svc log file"))
+	// Add back the release state tool installation to the bash RC file.
+	// This was done on session creation to ensure that the release state tool
+	// does not appear on the PATH when a new subshell is started. This is a
+	// workaround to be addressed in: https://activestatef.atlassian.net/browse/DX-2285
+	if runtime.GOOS != "windows" {
+		installPath, err := installation.InstallPathForBranch("release")
+		if err != nil {
+			s.t.Errorf("Could not get install path: %v", errs.JoinMessage(err))
+		}
+		binDir := filepath.Join(installPath, "bin")
+
+		ss := bash.SubShell{}
+		err = ss.WriteUserEnv(cfg, map[string]string{"PATH": binDir}, sscommon.InstallID, false)
+		if err != nil {
+			s.t.Errorf("Could not clean user env: %v", errs.JoinMessage(err))
+		}
 	}
 
 	return nil
@@ -598,10 +705,26 @@ func (s *Session) LogFiles() []string {
 	return result
 }
 
-func (s *Session) DebugLogs() string {
+func (s *Session) DebugLogs() map[string]string {
+	result := map[string]string{}
+
 	logDir := filepath.Join(s.Dirs.Config, "logs")
 	if !fileutils.DirExists(logDir) {
-		return "No logs found in " + logDir
+		return result
+	}
+
+	for _, path := range s.LogFiles() {
+		result[filepath.Base(path)] = string(fileutils.ReadFileUnsafe(path))
+	}
+
+	return result
+}
+
+func (s *Session) DebugLogsDump() string {
+	logs := s.DebugLogs()
+
+	if len(logs) == 0 {
+		return "No logs found in " + filepath.Join(s.Dirs.Config, "logs")
 	}
 
 	var sectionStart, sectionEnd string
@@ -612,8 +735,8 @@ func (s *Session) DebugLogs() string {
 	}
 
 	result := "Logs:\n"
-	for _, path := range s.LogFiles() {
-		result += fmt.Sprintf("%s%s:\n%s%s\n", sectionStart, filepath.Base(path), fileutils.ReadFileUnsafe(path), sectionEnd)
+	for name, log := range logs {
+		result += fmt.Sprintf("%s%s:\n%s%s\n", sectionStart, name, log, sectionEnd)
 	}
 
 	return result
@@ -627,6 +750,33 @@ func (s *Session) DetectLogErrors() {
 			s.t.Errorf("Found error and/or panic in log file %s, contents:\n%s", path, contents)
 		}
 	}
+}
+
+func (s *Session) SetupRCFile() {
+	if runtime.GOOS == "windows" {
+		return
+	}
+
+	cfg, err := config.New()
+	require.NoError(s.t, err)
+
+	s.SetupRCFileCustom(subshell.New(cfg))
+}
+
+func (s *Session) SetupRCFileCustom(subshell subshell.SubShell) {
+	if runtime.GOOS == "windows" {
+		return
+	}
+
+	rcFile, err := subshell.RcFile()
+	require.NoError(s.t, err)
+
+	if fileutils.TargetExists(filepath.Join(s.Dirs.HomeDir, filepath.Base(rcFile))) {
+		err = fileutils.CopyFile(rcFile, filepath.Join(s.Dirs.HomeDir, filepath.Base(rcFile)))
+	} else {
+		err = fileutils.Touch(rcFile)
+	}
+	require.NoError(s.t, err)
 }
 
 func RunningOnCI() bool {

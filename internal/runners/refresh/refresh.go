@@ -10,7 +10,6 @@ import (
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runbits/findproject"
-	"github.com/ActiveState/cli/internal/runbits/rtusage"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -63,8 +62,6 @@ func (r *Refresh) Run(params *Params) error {
 		}
 		return locale.WrapError(err, "err_refresh_cannot_load_project", "Cannot load project to update runtime for")
 	}
-
-	rtusage.PrintRuntimeUsage(r.svcModel, r.out, proj.Owner())
 
 	rti, err := runtime.NewFromProject(proj, target.TriggerRefresh, r.analytics, r.svcModel, r.out, r.auth)
 	if err != nil {

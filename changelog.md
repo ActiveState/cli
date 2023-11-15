@@ -6,6 +6,59 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+### 0.42.0
+
+### Added
+* The State Tool now has better user-facing errors. These should provide more context
+  and actionable information when an error occurs. Currently, this is only implemented
+  on a subset of commands, but will be expanded to all commands in the future.
+* The State Tool now fully supports Ruby as a language.
+* Users can now install their runtime with all of the build dependencies by using
+  the `ACTIVESTATE_INSTALL_BUILD_DEPENDENCIES` environment variable.
+* Users can now install a specific version of the State Tool by passing the version
+  to the installer script without the SHA suffix. Previously, users would have to
+  know the SHA of the version they wanted to install.
+
+### Changed
+
+* `state init` now uses the new buildplanner API to create a project on the
+  platform.
+* Runtime counts and limits are no longer surfaced to the user.
+* `state revert` now uses the new buildplanner API to revert a previous commit
+  as well as revert to a specific commit using `state revert --to`.
+* `state pull` now uses the buildplanner API to merge changes from the platform
+  into the local project.
+* We no longer depend on the `file` utility when installing the State Tool. This
+  should make the installation process more reliable.
+* Updated detection for requirement changes when installing packages. This brings
+  the installation process in line with new APIs and should make the process more
+  reliable.
+* Update checks have been moved to the `state-svc`. This should speed up State
+  Tool execution and improve the reliability of the update process.
+
+### Removed
+
+* Support for headless commits has been removed. Users can no longer get into a
+  state where they have a headless commit. Existing projects that are headless
+  will now be prompted to convert their project before it can be used.
+* The State Tool no longer supports signup via the prompt. Users may still sign
+  up with `state signup` however this will open the signup page in their
+  browser.
+
+### Fixed
+
+* Fixed an issue where the `state-svc` log file path was not being presented
+  correctly in the `state-svc status` output.
+* Fixed an issue where the version number could be empty when running
+  `state update` and no update is available.
+* Fixed an issue where executors would halt on most CI systems.
+* The install scripts now verify the checksum of the downloaded archive before
+  extracting it even when a full version is provided as a flag.
+* Fixed unneccessary repetition of certain error tips.
+* The commit date has been fixed when running `state history`.
+* Fixed an issue where the commit message would be missing on some commits when
+  running `state history`.
+
 ### 0.41.0
 
 ### Added

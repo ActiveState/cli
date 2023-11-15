@@ -19,7 +19,6 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/outputhelper"
 	gitlet "github.com/ActiveState/cli/pkg/cmdlets/git"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/ActiveState/cli/pkg/projectfile"
 )
 
 type GitTestSuite struct {
@@ -42,7 +41,7 @@ func (suite *GitTestSuite) BeforeTest(suiteName, testName string) {
 
 	projectURL := fmt.Sprintf("https://%s/%s/%s", constants.PlatformURL, "test-owner", "test-project")
 
-	_, err = projectfile.TestOnlyCreateWithProjectURL(projectURL, suite.dir)
+	err = fileutils.WriteFile(filepath.Join(suite.dir, "activestate.yaml"), []byte("project: "+projectURL))
 	suite.NoError(err, "could not create a projectfile")
 
 	err = fileutils.Touch(filepath.Join(suite.dir, "test-file"))

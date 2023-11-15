@@ -1,9 +1,11 @@
 package history
 
 import (
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
+	"github.com/ActiveState/cli/internal/runbits/commitmediator"
 	"github.com/ActiveState/cli/pkg/cmdlets/commit"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -37,19 +39,23 @@ func (h *History) Run(params *HistoryParams) error {
 	}
 	h.out.Notice(locale.Tl("operating_message", "", h.project.NamespaceString(), h.project.Dir()))
 
-	localCommitID := h.project.CommitUUID()
+	localCommitID, err := commitmediator.Get(h.project)
+	if err != nil {
+		return errs.Wrap(err, "Unable to get local commit")
+	}
 
-	var latestRemoteID *strfmt.UUID
-	if !h.project.IsHeadless() {
-		remoteBranch, err := model.BranchForProjectNameByName(h.project.Owner(), h.project.Name(), h.project.BranchName())
-		if err != nil {
-			return locale.WrapError(err, "err_history_remote_branch", "Could not get branch by local branch name")
-		}
+	if h.project.IsHeadless() {
+		return locale.NewInputError("err_history_headless", "Cannot get history for headless project. Please visit {{.V0}} to convert your project and try again.", h.project.URL())
+	}
 
-		latestRemoteID, err = model.CommonParent(remoteBranch.CommitID, &localCommitID)
-		if err != nil {
-			return locale.WrapError(err, "err_history_common_parent", "Could not determine common parent commit")
-		}
+	remoteBranch, err := model.BranchForProjectNameByName(h.project.Owner(), h.project.Name(), h.project.BranchName())
+	if err != nil {
+		return locale.WrapError(err, "err_history_remote_branch", "Could not get branch by local branch name")
+	}
+
+	latestRemoteID, err := model.CommonParent(remoteBranch.CommitID, &localCommitID)
+	if err != nil {
+		return locale.WrapError(err, "err_history_common_parent", "Could not determine common parent commit")
 	}
 
 	commits, err := model.CommitHistoryFromID(localCommitID)

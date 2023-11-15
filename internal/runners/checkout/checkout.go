@@ -3,11 +3,11 @@ package checkout
 import (
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/config"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
-	"github.com/ActiveState/cli/internal/runbits/rtusage"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/pkg/cmdlets/checker"
@@ -60,24 +60,22 @@ func NewCheckout(prime primeable) *Checkout {
 	}
 }
 
-func (u *Checkout) Run(params *Params) error {
+func (u *Checkout) Run(params *Params) (rerr error) {
 	logging.Debug("Checkout %v", params.Namespace)
 
-	checker.RunUpdateNotifier(u.svcModel, u.out)
+	checker.RunUpdateNotifier(u.analytics, u.svcModel, u.out)
 
 	logging.Debug("Checking out %s to %s", params.Namespace.String(), params.PreferredPath)
 	var err error
 	projectDir, err := u.checkout.Run(params.Namespace, params.Branch, params.RuntimePath, params.PreferredPath, params.NoClone)
 	if err != nil {
-		return locale.WrapError(err, "err_checkout_project", "", params.Namespace.String())
+		return errs.Wrap(err, "Checkout failed")
 	}
 
 	proj, err := project.FromPath(projectDir)
 	if err != nil {
 		return locale.WrapError(err, "err_project_frompath")
 	}
-
-	rtusage.PrintRuntimeUsage(u.svcModel, u.out, proj.Owner())
 
 	rti, err := runtime.NewFromProject(proj, target.TriggerCheckout, u.analytics, u.svcModel, u.out, u.auth)
 	if err != nil {

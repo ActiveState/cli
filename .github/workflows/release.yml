@@ -39,6 +39,10 @@ jobs:
         with:
           go-version: ${{ matrix.go-version }}
 
+      - # === Install State Tool ===
+        name: Install State Tool
+        uses: ActiveState/setup-state-tool@v1
+
       - # === Setup ===
         name: Setup
         shell: bash

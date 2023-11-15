@@ -6,18 +6,17 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/constraints"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/osutils"
+	"github.com/ActiveState/cli/internal/runbits/commitmediator"
+	"github.com/ActiveState/cli/internal/rxutils"
 	"github.com/ActiveState/cli/internal/scriptfile"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/projectfile"
-
-	"github.com/ActiveState/cli/internal/rxutils"
-
-	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/constraints"
 )
 
 type Expansion struct {
@@ -239,7 +238,11 @@ func ProjectExpander(_ string, name string, _ string, isFunction bool, ctx *Expa
 	case "url":
 		return project.URL(), nil
 	case "commit":
-		return project.CommitID(), nil
+		commitID, err := commitmediator.Get(project)
+		if err != nil {
+			return "", errs.Wrap(err, "Unable to get local commit")
+		}
+		return commitID.String(), nil
 	case "branch":
 		return project.BranchName(), nil
 	case "owner":

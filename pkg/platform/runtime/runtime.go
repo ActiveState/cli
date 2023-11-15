@@ -1,12 +1,14 @@
 package runtime
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
+
+	"golang.org/x/net/context"
 
 	"github.com/ActiveState/cli/internal/analytics"
 	anaConsts "github.com/ActiveState/cli/internal/analytics/constants"
@@ -24,13 +26,13 @@ import (
 	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/platform/runtime/buildscript"
 	"github.com/ActiveState/cli/pkg/platform/runtime/envdef"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup/buildlog"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup/events"
 	"github.com/ActiveState/cli/pkg/platform/runtime/store"
 	"github.com/ActiveState/cli/pkg/project"
-	"golang.org/x/net/context"
 )
 
 type Runtime struct {
@@ -39,6 +41,7 @@ type Runtime struct {
 	store     *store.Store
 	analytics analytics.Dispatcher
 	svcm      *model.SvcModel
+	auth      *authentication.Auth
 	completed bool
 }
 
@@ -50,49 +53,100 @@ func IsNeedsUpdateError(err error) bool {
 	return errs.Matches(err, &NeedsUpdateError{})
 }
 
-func newRuntime(target setup.Targeter, an analytics.Dispatcher, svcModel *model.SvcModel) (*Runtime, error) {
+// NeedsCommitError is an error returned when the local runtime's build script has changes that need
+// staging. This is not a fatal error. A runtime can still be used, but a warning should be emitted.
+type NeedsCommitError struct{ error }
+
+func IsNeedsCommitError(err error) bool {
+	return errs.Matches(err, &NeedsCommitError{})
+}
+
+func newRuntime(target setup.Targeter, an analytics.Dispatcher, svcModel *model.SvcModel, auth *authentication.Auth) (*Runtime, error) {
 	rt := &Runtime{
 		target:    target,
 		store:     store.New(target.Dir()),
 		analytics: an,
 		svcm:      svcModel,
+		auth:      auth,
 	}
 
-	if !rt.store.MarkerIsValid(target.CommitUUID()) {
-		if target.ReadOnly() {
-			logging.Debug("Using forced cache")
-		} else {
-			return rt, &NeedsUpdateError{errs.New("Runtime requires setup.")}
-		}
+	err := rt.validateCache()
+	if err != nil {
+		return rt, err
 	}
 
 	return rt, nil
 }
 
 // New attempts to create a new runtime from local storage.  If it fails with a NeedsUpdateError, Update() needs to be called to update the locally stored runtime.
-func New(target setup.Targeter, an analytics.Dispatcher, svcm *model.SvcModel) (*Runtime, error) {
+func New(target setup.Targeter, an analytics.Dispatcher, svcm *model.SvcModel, auth *authentication.Auth) (*Runtime, error) {
 	logging.Debug("Initializing runtime for: %s/%s@%s", target.Owner(), target.Name(), target.CommitUUID())
 
 	if strings.ToLower(os.Getenv(constants.DisableRuntime)) == "true" {
-		fmt.Fprintln(os.Stderr, locale.Tl("notice_runtime_disabled", "Skipping runtime setup because it was disabled by an environment variable"))
-		return &Runtime{disabled: true, target: target}, nil
+		fmt.Fprintln(os.Stderr, locale.T("notice_runtime_disabled"))
+		return &Runtime{disabled: true, target: target, analytics: an}, nil
 	}
 	recordAttempt(an, target)
 	an.Event(anaConsts.CatRuntimeDebug, anaConsts.ActRuntimeStart, &dimensions.Values{
 		Trigger:          ptr.To(target.Trigger().String()),
-		Headless:         ptr.To(strconv.FormatBool(target.Headless())),
 		CommitID:         ptr.To(target.CommitUUID().String()),
 		ProjectNameSpace: ptr.To(project.NewNamespace(target.Owner(), target.Name(), target.CommitUUID().String()).String()),
 		InstanceID:       ptr.To(instanceid.ID()),
 	})
 
-	r, err := newRuntime(target, an, svcm)
+	r, err := newRuntime(target, an, svcm, auth)
 	if err == nil {
 		an.Event(anaConsts.CatRuntimeDebug, anaConsts.ActRuntimeCache, &dimensions.Values{
 			CommitID: ptr.To(target.CommitUUID().String()),
 		})
 	}
 	return r, err
+}
+
+func (r *Runtime) validateCache() error {
+	if !r.store.MarkerIsValid(r.target.CommitUUID()) {
+		if r.target.ReadOnly() {
+			logging.Debug("Using forced cache")
+		} else {
+			return &NeedsUpdateError{errs.New("Runtime requires setup.")}
+		}
+	}
+
+	if r.target.ProjectDir() == "" {
+		return nil
+	}
+
+	return nil // remove in DX-2307 to re-enable buildscripts below
+
+	// Check if local build script has changes that should be committed.
+	script, err := buildscript.NewScriptFromProject(r.target, r.auth)
+	if err != nil {
+		return errs.Wrap(err, "Unable to get local build script")
+	}
+
+	commitID := r.target.CommitUUID().String()
+	expr, err := r.store.GetAndValidateBuildExpression(commitID)
+	if err != nil {
+		bp := model.NewBuildPlannerModel(r.auth)
+		bpExpr, err := bp.GetBuildExpression(r.target.Owner(), r.target.Name(), commitID)
+		if err != nil {
+			return errs.Wrap(err, "Unable to get remote build expression")
+		}
+		if err := r.store.StoreBuildExpression(bpExpr, commitID); err != nil {
+			return errs.Wrap(err, "Unable to store build expression")
+		}
+		data, err := json.Marshal(bpExpr)
+		if err != nil {
+			return errs.Wrap(err, "Unable to marshal buildexpression to JSON: %v", err)
+		}
+		expr = string(data)
+	}
+
+	if !script.EqualsBuildExpressionBytes([]byte(expr)) {
+		return &NeedsCommitError{errs.New("Runtime changes should be committed")}
+	}
+
+	return nil
 }
 
 func (r *Runtime) Disabled() bool {
@@ -105,7 +159,7 @@ func (r *Runtime) Target() setup.Targeter {
 
 // Update updates the runtime by downloading all necessary artifacts from the Platform and installing them locally.
 // This function is usually called, after New() returned with a NeedsUpdateError
-func (r *Runtime) Update(auth *authentication.Auth, eventHandler events.Handler) (rerr error) {
+func (r *Runtime) Update(eventHandler events.Handler) (rerr error) {
 	if r.disabled {
 		logging.Debug("Skipping update as it is disabled")
 		return nil // nothing to do
@@ -117,12 +171,12 @@ func (r *Runtime) Update(auth *authentication.Auth, eventHandler events.Handler)
 		r.recordCompletion(rerr)
 	}()
 
-	if err := setup.New(r.target, eventHandler, auth, r.analytics).Update(); err != nil {
+	if err := setup.New(r.target, eventHandler, r.auth, r.analytics).Update(); err != nil {
 		return errs.Wrap(err, "Update failed")
 	}
 
 	// Reinitialize
-	rt, err := newRuntime(r.target, r.analytics, r.svcm)
+	rt, err := newRuntime(r.target, r.analytics, r.svcm, r.auth)
 	if err != nil {
 		return errs.Wrap(err, "Could not reinitialize runtime after update")
 	}
@@ -267,7 +321,6 @@ func usageDims(target setup.Targeter) *dimensions.Values {
 	return &dimensions.Values{
 		Trigger:          ptr.To(target.Trigger().String()),
 		CommitID:         ptr.To(target.CommitUUID().String()),
-		Headless:         ptr.To(strconv.FormatBool(target.Headless())),
 		ProjectNameSpace: ptr.To(project.NewNamespace(target.Owner(), target.Name(), target.CommitUUID().String()).String()),
 		InstanceID:       ptr.To(instanceid.ID()),
 	}

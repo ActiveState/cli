@@ -1,6 +1,7 @@
 package update
 
 import (
+	"context"
 	"os"
 
 	"github.com/ActiveState/cli/internal/analytics"
@@ -15,6 +16,7 @@ import (
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/updater"
+	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
@@ -28,6 +30,7 @@ type Update struct {
 	out     output.Outputer
 	prompt  prompt.Prompter
 	an      analytics.Dispatcher
+	svc     *model.SvcModel
 }
 
 type primeable interface {
@@ -36,6 +39,7 @@ type primeable interface {
 	primer.Outputer
 	primer.Prompter
 	primer.Analyticer
+	primer.SvcModeler
 }
 
 func New(prime primeable) *Update {
@@ -45,37 +49,45 @@ func New(prime primeable) *Update {
 		prime.Output(),
 		prime.Prompt(),
 		prime.Analytics(),
+		prime.SvcModel(),
 	}
 }
 
 func (u *Update) Run(params *Params) error {
 	// Check for available update
-	checker := updater.NewDefaultChecker(u.cfg, u.an)
-	up, err := checker.CheckFor(params.Channel, "")
+	channel := fetchChannel(params.Channel, false)
+	upd, err := u.svc.CheckUpdate(context.Background(), channel, "")
 	if err != nil {
-		return locale.WrapError(err, "err_update_check", "Could not check for updates.")
+		return errs.AddTips(locale.WrapError(
+			err, "err_update_fetch",
+			"Could not retrieve update information.",
+		), locale.Tl(
+			"err_tip_update_fetch", "Try again, and/or try restarting State Service",
+		))
 	}
-	if up == nil {
+
+	update := updater.NewUpdateInstaller(u.an, updater.NewAvailableUpdateFromGraph(upd))
+	if !update.ShouldInstall() {
 		logging.Debug("No update found")
 		u.out.Print(output.Prepare(
-			locale.T("update_none_found"),
+			locale.Tr("update_none_found", channel),
 			&struct{}{},
 		))
 		return nil
 	}
 
-	u.out.Notice(locale.Tr("updating_version", up.Version))
+	u.out.Notice(locale.Tr("updating_version", update.AvailableUpdate.Version))
 
 	// Handle switching channels
 	var installPath string
-	if params.Channel != "" && params.Channel != constants.BranchName {
-		installPath, err = installation.InstallPathForBranch(params.Channel)
+	if channel != constants.BranchName {
+		installPath, err = installation.InstallPathForBranch(channel)
 		if err != nil {
-			return locale.WrapError(err, "err_update_install_path", "Could not get installation path for branch {{.V0}}", params.Channel)
+			return locale.WrapError(err, "err_update_install_path", "Could not get installation path for branch {{.V0}}", channel)
 		}
 	}
 
-	err = up.InstallBlocking(installPath)
+	err = update.InstallBlocking(installPath)
 	if err != nil {
 		if os.IsPermission(err) {
 			return locale.WrapInputError(err, "update_permission_err", "", constants.DocumentationURL, errs.JoinMessage(err))
@@ -89,7 +101,7 @@ func (u *Update) Run(params *Params) error {
 	}
 
 	message := ""
-	if params.Channel != constants.BranchName {
+	if channel != constants.BranchName {
 		message = locale.Tl("update_switch_channel", "[NOTICE]Please start a new shell for the update to take effect.[/RESET]")
 	}
 	u.out.Print(output.Prepare(

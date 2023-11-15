@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ActiveState/termtest"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/suite"
 
@@ -47,11 +48,11 @@ func (suite *AuthIntegrationTestSuite) TestAuthToken() {
 	defer ts.Close()
 
 	cp := ts.Spawn(tagsuite.Auth, "--token", e2e.PersistentToken, "-n")
-	cp.Expect("logged in", 40*time.Second)
+	cp.Expect("logged in", termtest.OptExpectTimeout(40*time.Second))
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn(tagsuite.Auth, "--non-interactive")
-	cp.Expect("logged in", 40*time.Second)
+	cp.Expect("logged in", termtest.OptExpectTimeout(40*time.Second))
 	cp.ExpectExitCode(0)
 
 	ts.LogoutUser()
@@ -61,10 +62,10 @@ func (suite *AuthIntegrationTestSuite) TestAuthToken() {
 func (suite *AuthIntegrationTestSuite) interactiveLogin(ts *e2e.Session, username, password string) {
 	cp := ts.Spawn(tagsuite.Auth, "--prompt")
 	cp.Expect("username:")
-	cp.Send(username)
+	cp.SendLine(username)
 	cp.Expect("password:")
-	cp.Send(password)
-	cp.Expect("logged in", 40*time.Second)
+	cp.SendLine(password)
+	cp.Expect("logged in")
 	cp.ExpectExitCode(0)
 
 	// still logged in?
@@ -75,7 +76,7 @@ func (suite *AuthIntegrationTestSuite) interactiveLogin(ts *e2e.Session, usernam
 
 func (suite *AuthIntegrationTestSuite) loginFlags(ts *e2e.Session, username string) {
 	cp := ts.Spawn(tagsuite.Auth, "--username", username, "--password", "bad-password")
-	cp.ExpectLongString("You are not authorized, did you provide valid login credentials?")
+	cp.Expect("You are not authorized, did you provide valid login credentials?")
 	cp.ExpectExitCode(1)
 }
 
@@ -86,20 +87,13 @@ func (suite *AuthIntegrationTestSuite) ensureLogout(ts *e2e.Session) {
 }
 
 type userJSON struct {
-	Username        string `json:"username,omitempty"`
-	URLName         string `json:"urlname,omitempty"`
-	Tier            string `json:"tier,omitempty"`
-	PrivateProjects bool   `json:"privateProjects"`
+	Username string `json:"username,omitempty"`
 }
 
 func (suite *AuthIntegrationTestSuite) authOutput(method string) {
-	user := userJSON{
-		Username:        e2e.PersistentUsername,
-		URLName:         e2e.PersistentUsername,
-		Tier:            "free",
-		PrivateProjects: false,
-	}
-	data, err := json.Marshal(user)
+	data, err := json.Marshal(userJSON{
+		Username: e2e.PersistentUsername,
+	})
 	suite.Require().NoError(err)
 
 	ts := e2e.New(suite.T(), false)
@@ -108,9 +102,9 @@ func (suite *AuthIntegrationTestSuite) authOutput(method string) {
 	expected := string(data)
 	ts.LoginAsPersistentUser()
 	cp := ts.Spawn(tagsuite.Auth, "--output", method)
-	cp.Expect("false}")
+	cp.Expect(`"}`)
 	cp.ExpectExitCode(0)
-	suite.Equal(fmt.Sprintf("%s", string(expected)), cp.TrimmedSnapshot())
+	suite.Contains(cp.Output(), fmt.Sprintf("%s", string(expected)))
 }
 
 func (suite *AuthIntegrationTestSuite) TestAuth_JsonOutput() {
