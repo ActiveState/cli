@@ -1150,6 +1150,8 @@ bundle_version_updated:
   other: "Bundle updated: [NOTICE]{{.V0}}@{{.V1}}[/RESET]"
 err_package_removed:
   other: Failed to remove package
+err_remove_requirement_not_found:
+  other: Could not remove requirement '[ACTIONABLE]{{.V0}}[/RESET]', because it does not exist.
 err_bundle_removed:
   other: Failed to remove bundle
 err_packages_removed:
@@ -1747,6 +1749,8 @@ operation_success_local:
     Run [ACTIONABLE]state push[/RESET] to save changes to the platform.
 buildplan_err:
   other: "Could not plan build, platform responded with:\n{{.V0}}\n{{.V1}}"
+err_buildplanner_head_on_branch_moved:
+  other: The branch you're trying to update has changed remotely, please run '[ACTIONABLE]state pull[/RESET]'.
 transient_solver_tip:
   other: You may want to retry this command if the failure was related to a resourcing or networking issue.
 warning_git_project_mismatch:

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"testing"
 	"time"
 
@@ -398,9 +399,13 @@ func (suite *PackageIntegrationTestSuite) TestPackage_Duplicate() {
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("install", "requests") // install again
-	cp.Expect("No new changes to commit")
+	cp.Expect("already installed")
 	cp.ExpectNotExitCode(0)
 	ts.IgnoreLogErrors()
+
+	if strings.Count(cp.Snapshot(), " x ") != 2 { // 2 because "Creating commit x Failed" is also printed
+		suite.Fail("Expected exactly ONE error message, got: ", cp.Snapshot())
+	}
 }
 
 func (suite *PackageIntegrationTestSuite) PrepareActiveStateYAML(ts *e2e.Session) {
@@ -425,9 +430,13 @@ func (suite *PackageIntegrationTestSuite) TestPackage_UninstallDoesNotExist() {
 	suite.PrepareActiveStateYAML(ts)
 
 	cp := ts.Spawn("uninstall", "doesNotExist")
-	cp.Expect("Error occurred while trying to create a commit")
+	cp.Expect("does not exist")
 	cp.ExpectExitCode(1)
 	ts.IgnoreLogErrors()
+
+	if strings.Count(cp.Snapshot(), " x ") != 2 { // 2 because "Creating commit x Failed" is also printed
+		suite.Fail("Expected exactly ONE error message, got: ", cp.Snapshot())
+	}
 }
 
 func (suite *PackageIntegrationTestSuite) TestJSON() {
