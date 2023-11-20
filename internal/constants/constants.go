@@ -503,6 +503,9 @@ const PipShim = "pip"
 // AutoUpdateConfigKey is the config key for storing whether or not autoupdates can be performed
 const AutoUpdateConfigKey = "autoupdate"
 
+// PreservePs1ConfigKey is the config key that specifies whether to modify the shell PS1/prompt to show [org/project] info.
+const PreservePs1ConfigKey = "preserve.prompt"
+
 // DefaultAnalyticsPixel is the default url for the analytics pixel
 const DefaultAnalyticsPixel = "https://state-tool.s3.amazonaws.com/pixel"
 
