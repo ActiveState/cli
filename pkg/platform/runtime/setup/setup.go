@@ -49,6 +49,7 @@ import (
 	"github.com/faiface/mainthread"
 	"github.com/gammazero/workerpool"
 	"github.com/go-openapi/strfmt"
+	"github.com/shirou/gopsutil/v3/process"
 	"github.com/thoas/go-funk"
 )
 
@@ -107,6 +108,11 @@ func (a *ArtifactSetupErrors) LocalizedError() string {
 // ProgressReportError designates an error in the event handler for reporting progress.
 type ProgressReportError struct {
 	*errs.WrapperError
+}
+
+type RuntimeInUseError struct {
+	*locale.LocalizedError
+	Processes map[string]int32 // exe path to process ID
 }
 
 type Targeter interface {
@@ -201,6 +207,15 @@ func (s *Setup) Update() (rerr error) {
 		return locale.NewInputError("err_runtime_setup_root", "Cannot set up a runtime in the root directory. Please specify or run from a user-writable directory.")
 	}
 
+	procs := s.getProcessesInUse()
+	if len(procs) > 0 {
+		list := []string{}
+		for exe, pid := range procs {
+			list = append(list, fmt.Sprintf("   - %s (process: %d)", exe, pid))
+		}
+		return &RuntimeInUseError{locale.NewInputError("runtime_setup_in_use_err", "", strings.Join(list, "\n")), procs}
+	}
+
 	// Update all the runtime artifacts
 	artifacts, err := s.updateArtifacts()
 	if err != nil {
@@ -218,6 +233,35 @@ func (s *Setup) Update() (rerr error) {
 	}
 
 	return nil
+}
+
+func (s *Setup) getProcessesInUse() map[string]int32 {
+	inUse := map[string]int32{}
+
+	procs, err := process.Processes()
+	if err != nil {
+		multilog.Error("Unable to get running processes: %v", err)
+		return inUse
+	}
+
+	execDir := ExecDir(s.target.Dir())
+	if rt.GOOS != "linux" {
+		execDir = strings.ToLower(execDir) // Windows and macOS filesystems are case-insensitive
+	}
+	for _, p := range procs {
+		exe, err := p.Exe()
+		if err != nil {
+			continue // probably a permission error; ignore
+		}
+		exeToCompare := exe
+		if rt.GOOS != "linux" {
+			exeToCompare = strings.ToLower(exeToCompare) // Windows and macOS filesystems are case-insensitive
+		}
+		if strings.Contains(exeToCompare, execDir) {
+			inUse[exe] = p.Pid
+		}
+	}
+	return inUse
 }
 
 func (s *Setup) updateArtifacts() ([]artifact.ArtifactID, error) {
