@@ -302,6 +302,12 @@ func IsErrorResponse(errorType string) bool {
 		errorType == ComitHasNoParentErrorType
 }
 
+type CommitError struct {
+	Type                   string
+	Message                string
+	*locale.LocalizedError // for legacy, non-user-facing error usages
+}
+
 func ProcessCommitError(commit *Commit, fallbackMessage string) error {
 	if commit.Error == nil {
 		return errs.New(fallbackMessage)
@@ -309,15 +315,30 @@ func ProcessCommitError(commit *Commit, fallbackMessage string) error {
 
 	switch commit.Type {
 	case NotFoundErrorType:
-		return locale.NewInputError("err_buildplanner_commit_not_found", "Could not find commit, received message: {{.V0}}", commit.Message)
+		return &CommitError{
+			commit.Type, commit.Message,
+			locale.NewInputError("err_buildplanner_commit_not_found", "Could not find commit, received message: {{.V0}}", commit.Message),
+		}
 	case ParseErrorType:
-		return locale.NewInputError("err_buildplanner_parse_error", "The platform failed to parse the build expression, received message: {{.V0}}. Path: {{.V1}}", commit.Message, commit.ParseError.Path)
+		return &CommitError{
+			commit.Type, commit.Message,
+			locale.NewInputError("err_buildplanner_parse_error", "The platform failed to parse the build expression, received message: {{.V0}}. Path: {{.V1}}", commit.Message, commit.ParseError.Path),
+		}
 	case ForbiddenErrorType:
-		return locale.NewInputError("err_buildplanner_forbidden", "Operation forbidden: {{.V0}}, received message: {{.V1}}", commit.Operation, commit.Message)
+		return &CommitError{
+			commit.Type, commit.Message,
+			locale.NewInputError("err_buildplanner_forbidden", "Operation forbidden: {{.V0}}, received message: {{.V1}}", commit.Operation, commit.Message),
+		}
 	case HeadOnBranchMovedErrorType:
-		return errs.Wrap(locale.NewInputError("err_buildplanner_head_on_branch_moved", "The branch you're trying to update has changed remotely, please run '[ACTIONABLE]state pull[/RESET]'."), "received message: "+commit.Error.Message)
+		return errs.Wrap(&CommitError{
+			commit.Type, commit.Error.Message,
+			locale.NewInputError("err_buildplanner_head_on_branch_moved"),
+		}, "received message: "+commit.Error.Message)
 	case NoChangeSinceLastCommitErrorType:
-		return errs.Wrap(locale.NewInputError("err_buildplanner_no_change_since_last_commit", "No new changes to commit."), commit.Error.Message)
+		return errs.Wrap(&CommitError{
+			commit.Type, commit.Error.Message,
+			locale.NewInputError("err_buildplanner_no_change_since_last_commit", "No new changes to commit."),
+		}, commit.Error.Message)
 	default:
 		return errs.New(fallbackMessage)
 	}

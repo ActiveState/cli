@@ -78,9 +78,12 @@ func WriteRcFile(rcTemplateName string, path string, data RcIdentification, env 
 	}
 
 	rcData := map[string]interface{}{
-		"Start": data.Start,
-		"Stop":  data.Stop,
-		"Env":   env,
+		"Start":                 data.Start,
+		"Stop":                  data.Stop,
+		"Env":                   env,
+		"ActivatedEnv":          constants.ActivatedStateEnvVarName,
+		"ConfigFile":            constants.ConfigFileName,
+		"ActivatedNamespaceEnv": constants.ActivatedStateNamespaceEnvVarName,
 	}
 
 	if err := CleanRcFile(path, data); err != nil {
