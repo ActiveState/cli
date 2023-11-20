@@ -1,6 +1,7 @@
 package integration
 
 import (
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -98,6 +99,24 @@ func (suite *ExportIntegrationTestSuite) TestExport_Env() {
 	suite.Assert().NotContains(cp.Output(), "ACTIVESTATE_ACTIVATED")
 }
 
+func (suite *ExportIntegrationTestSuite) TestLog() {
+	suite.OnlyRunForTags(tagsuite.Export)
+	ts := e2e.New(suite.T(), false)
+	defer ts.ClearCache()
+
+	cp := ts.Spawn("export", "log")
+	cp.Expect(filepath.Join(ts.Dirs.Config, "logs"))
+	cp.ExpectRe(`state-\d+`)
+	cp.Expect(".log")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("export", "log", "state-svc")
+	cp.Expect(filepath.Join(ts.Dirs.Config, "logs"))
+	cp.ExpectRe(`state-svc-\d+`)
+	cp.Expect(".log")
+	cp.ExpectExitCode(0)
+}
+
 func (suite *ExportIntegrationTestSuite) TestJSON() {
 	suite.OnlyRunForTags(tagsuite.Export, tagsuite.JSON)
 	ts := e2e.New(suite.T(), false)
@@ -132,6 +151,12 @@ func (suite *ExportIntegrationTestSuite) TestJSON() {
 	cp.Expect(`}`)
 	cp.ExpectExitCode(0)
 	// AssertValidJSON(suite.T(), cp) // recipe is too large to fit in terminal snapshot
+
+	cp = ts.Spawn("export", "log", "-o", "json")
+	cp.Expect(`{"logFile":"`)
+	cp.Expect(`.log"}`)
+	cp.ExpectExitCode(0)
+	AssertValidJSON(suite.T(), cp)
 }
 
 func TestExportIntegrationTestSuite(t *testing.T) {
