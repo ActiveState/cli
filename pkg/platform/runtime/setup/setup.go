@@ -521,9 +521,14 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 				artifactsToInstall = append(artifactsToInstall, a.ArtifactID)
 			}
 		}
-		artifactsToBuild, err = artifactListing.BuildtimeClosure()
-	} else {
 		artifactsToBuild, err = artifactListing.RuntimeClosure()
+	} else {
+		for _, a := range requestedArtifacts {
+			if _, alreadyInstalled := alreadyInstalled[a.ArtifactID]; !alreadyInstalled {
+				artifactsToInstall = append(artifactsToInstall, a.ArtifactID)
+			}
+		}
+		artifactsToBuild, err = artifactListing.BuildtimeClosure()
 	}
 	if err != nil {
 		return nil, nil, errs.Wrap(err, "Failed to compute artifacts to build")
@@ -587,7 +592,9 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 		//}
 	}
 
-	return buildResult.OrderedArtifacts(), uninstallArtifacts, nil
+	artifacts := buildResult.OrderedArtifacts()
+	logging.Debug("Returning artifacts: %v", artifacts)
+	return artifacts, uninstallArtifacts, nil
 }
 
 func aggregateErrors() (chan<- error, <-chan error) {
