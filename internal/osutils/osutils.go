@@ -6,7 +6,10 @@ import (
 	"os/exec"
 	"path"
 	"path/filepath"
+	"runtime"
 	"strings"
+
+	"github.com/shirou/gopsutil/v3/process"
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -122,4 +125,34 @@ func ExecutableName() string {
 	name := filepath.Base(Executable())
 	name = strings.TrimSuffix(name, path.Ext(name))
 	return name
+}
+
+// GetProcessesInUse returns a map of currently running executables to their process IDs where
+// those executables are in the given directory or a subdirectory of that given directory.
+func GetProcessesInUse(dir string) map[string]int32 {
+	inUse := map[string]int32{}
+
+	procs, err := process.Processes()
+	if err != nil {
+		multilog.Error("Unable to get running processes: %v", err)
+		return inUse
+	}
+
+	if runtime.GOOS != "linux" {
+		dir = strings.ToLower(dir) // Windows and macOS filesystems are case-insensitive
+	}
+	for _, p := range procs {
+		exe, err := p.Exe()
+		if err != nil {
+			continue // probably a permission error; ignore
+		}
+		exeToCompare := exe
+		if runtime.GOOS != "linux" {
+			exeToCompare = strings.ToLower(exeToCompare) // Windows and macOS filesystems are case-insensitive
+		}
+		if strings.Contains(exeToCompare, dir) {
+			inUse[exe] = p.Pid
+		}
+	}
+	return inUse
 }

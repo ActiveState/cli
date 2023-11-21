@@ -23,6 +23,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
+	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/proxyreader"
 	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
@@ -49,7 +50,6 @@ import (
 	"github.com/faiface/mainthread"
 	"github.com/gammazero/workerpool"
 	"github.com/go-openapi/strfmt"
-	"github.com/shirou/gopsutil/v3/process"
 	"github.com/thoas/go-funk"
 )
 
@@ -207,7 +207,7 @@ func (s *Setup) Update() (rerr error) {
 		return locale.NewInputError("err_runtime_setup_root", "Cannot set up a runtime in the root directory. Please specify or run from a user-writable directory.")
 	}
 
-	procs := s.getProcessesInUse()
+	procs := osutils.GetProcessesInUse(ExecDir(s.target.Dir()))
 	if len(procs) > 0 {
 		list := []string{}
 		for exe, pid := range procs {
@@ -233,35 +233,6 @@ func (s *Setup) Update() (rerr error) {
 	}
 
 	return nil
-}
-
-func (s *Setup) getProcessesInUse() map[string]int32 {
-	inUse := map[string]int32{}
-
-	procs, err := process.Processes()
-	if err != nil {
-		multilog.Error("Unable to get running processes: %v", err)
-		return inUse
-	}
-
-	execDir := ExecDir(s.target.Dir())
-	if rt.GOOS != "linux" {
-		execDir = strings.ToLower(execDir) // Windows and macOS filesystems are case-insensitive
-	}
-	for _, p := range procs {
-		exe, err := p.Exe()
-		if err != nil {
-			continue // probably a permission error; ignore
-		}
-		exeToCompare := exe
-		if rt.GOOS != "linux" {
-			exeToCompare = strings.ToLower(exeToCompare) // Windows and macOS filesystems are case-insensitive
-		}
-		if strings.Contains(exeToCompare, execDir) {
-			inUse[exe] = p.Pid
-		}
-	}
-	return inUse
 }
 
 func (s *Setup) updateArtifacts() ([]artifact.ArtifactID, error) {
