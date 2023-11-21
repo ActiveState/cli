@@ -381,7 +381,7 @@ func postInstallEvents(out output.Outputer, cfg *config.Instance, an analytics.D
 	case params.command != "":
 		an.Event(anaConst.CatInstallerFunnel, "forward-command")
 
-		out.Print(fmt.Sprintf("\nRunning `[ACTIONABLE]%s[/RESET]`\n", params.command))
+		out.Print(fmt.Sprintf("\nRunning '[ACTIONABLE]%s[/RESET]'\n", params.command))
 		cmd, args := exeutils.DecodeCmd(params.command)
 		if _, _, err := exeutils.ExecuteAndPipeStd(cmd, args, envSlice(binPath)); err != nil {
 			an.EventWithLabel(anaConst.CatInstallerFunnel, "forward-command-err", err.Error())
@@ -391,7 +391,7 @@ func postInstallEvents(out output.Outputer, cfg *config.Instance, an analytics.D
 	case params.activate.IsValid():
 		an.Event(anaConst.CatInstallerFunnel, "forward-activate")
 
-		out.Print(fmt.Sprintf("\nRunning `[ACTIONABLE]state activate %s[/RESET]`\n", params.activate.String()))
+		out.Print(fmt.Sprintf("\nRunning '[ACTIONABLE]state activate %s[/RESET]'\n", params.activate.String()))
 		if _, _, err := exeutils.ExecuteAndPipeStd(stateExe, []string{"activate", params.activate.String()}, envSlice(binPath)); err != nil {
 			an.EventWithLabel(anaConst.CatInstallerFunnel, "forward-activate-err", err.Error())
 			return errs.Silence(errs.Wrap(err, "Could not activate %s, error returned: %s", params.activate.String(), errs.JoinMessage(err)))
@@ -400,7 +400,7 @@ func postInstallEvents(out output.Outputer, cfg *config.Instance, an analytics.D
 	case params.activateDefault.IsValid():
 		an.Event(anaConst.CatInstallerFunnel, "forward-activate-default")
 
-		out.Print(fmt.Sprintf("\nRunning `[ACTIONABLE]state activate --default %s[/RESET]`\n", params.activateDefault.String()))
+		out.Print(fmt.Sprintf("\nRunning '[ACTIONABLE]state activate --default %s[/RESET]'\n", params.activateDefault.String()))
 		if _, _, err := exeutils.ExecuteAndPipeStd(stateExe, []string{"activate", params.activateDefault.String(), "--default"}, envSlice(binPath)); err != nil {
 			an.EventWithLabel(anaConst.CatInstallerFunnel, "forward-activate-default-err", err.Error())
 			return errs.Silence(errs.Wrap(err, "Could not activate %s, error returned: %s", params.activateDefault.String(), errs.JoinMessage(err)))

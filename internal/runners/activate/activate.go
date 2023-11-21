@@ -160,7 +160,7 @@ func (r *Activate) Run(params *ActivateParams) (rerr error) {
 		} else {
 			r.out.Notice(locale.Tl(
 				"activate_default_optin_msg",
-				"To make this project always available for use without activating it in the future, run your activate command with the `[ACTIONABLE]--default[/RESET]` flag.",
+				"To make this project always available for use without activating it in the future, run your activate command with the '[ACTIONABLE]--default[/RESET]' flag.",
 			))
 		}
 	}
@@ -190,7 +190,7 @@ func (r *Activate) Run(params *ActivateParams) (rerr error) {
 		return errs.Wrap(err, "Unable to get local commit")
 	}
 	if commitID == "" {
-		err := locale.NewInputError("err_project_no_commit", "Your project does not have a commit ID, please run `state push` first.", model.ProjectURL(proj.Owner(), proj.Name(), ""))
+		err := locale.NewInputError("err_project_no_commit", "Your project does not have a commit ID, please run [ACTIONIABLE]'state push'[/RESET] first.", model.ProjectURL(proj.Owner(), proj.Name(), ""))
 		return errs.AddTips(err, "Run → [ACTIONABLE]state push[/RESET] to create your project")
 	}
 

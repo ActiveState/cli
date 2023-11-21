@@ -23,7 +23,7 @@ func FetchProjectVulnerabilities(auth *authentication.Auth, org, project string)
 	if !auth.Authenticated() {
 		return nil, errs.AddTips(
 			locale.NewError("cve_needs_authentication", "You need to be authenticated in order to access vulnerability information about your project."),
-			locale.Tl("auth_tip", "Run `state auth` to authenticate."),
+			locale.T("auth_tip"),
 		)
 	}
 	req := request.VulnerabilitiesByProject(org, project)
@@ -48,7 +48,7 @@ func FetchCommitVulnerabilities(auth *authentication.Auth, commitID string) (*mo
 	if !auth.Authenticated() {
 		return nil, errs.AddTips(
 			locale.NewError("cve_needs_authentication", "You need to be authenticated in order to access vulnerability information about your project."),
-			locale.Tl("auth_tip", "Run `state auth` to authenticate."),
+			locale.T("auth_tip"),
 		)
 	}
 	req := request.VulnerabilitiesByCommit(commitID)
