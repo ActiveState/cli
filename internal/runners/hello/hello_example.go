@@ -78,7 +78,7 @@ func rationalizeError(err *error) {
 			*err,
 			locale.Tl("hello_err_no_project", "Cannot say hello because you are not in a project directory."),
 			errs.SetTips(
-				locale.Tl("hello_suggest_checkout", "Try using [ACTIONABLE]'state checkout'[/RESET] first."),
+				locale.Tl("hello_suggest_checkout", "Try using '[ACTIONABLE]state checkout[/RESET]' first."),
 			),
 		)
 	}

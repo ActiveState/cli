@@ -203,8 +203,8 @@ func (s *Auth) AuthenticateWithModel(credentials *mono_models.Credentials) error
 	if err != nil {
 		tips := []string{
 			locale.Tl("relog_tip", "If you're having trouble authenticating try logging out and logging back in again."),
-			locale.Tl("logout_tip", "Logout with [ACTIONABLE]'state auth logout'[/RESET]."),
-			locale.Tl("logout_tip", "Login with [ACTIONABLE]'state auth'[/RESET]."),
+			locale.Tl("logout_tip", "Logout with '[ACTIONABLE]state auth logout[/RESET]'."),
+			locale.Tl("logout_tip", "Login with '[ACTIONABLE]state auth[/RESET]'."),
 		}
 
 		switch err.(type) {

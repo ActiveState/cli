@@ -222,7 +222,7 @@ func whatsNextMessages(name string, versions []string) []string {
 		locale.Tl(
 			"install_latest_version",
 			"To install the latest version, run "+
-				"[ACTIONABLE]'state install {{.V0}}'[/RESET]",
+				"'[ACTIONABLE]state install {{.V0}}[/RESET]'",
 			name,
 		),
 	)
@@ -236,7 +236,7 @@ func whatsNextMessages(name string, versions []string) []string {
 		locale.Tl(
 			"install_specific_version",
 			"To install a specific version, run "+
-				"[ACTIONABLE]'state install {{.V0}}@{{.V1}}'[/RESET]",
+				"'[ACTIONABLE]state install {{.V0}}@{{.V1}}[/RESET]'",
 			name, version,
 		),
 	)
@@ -248,7 +248,7 @@ func whatsNextMessages(name string, versions []string) []string {
 		locale.Tl(
 			"show_specific_version",
 			"To view details for a specific version, run "+
-				"[ACTIONABLE]'state info {{.V0}}@{{.V1}}'[/RESET]",
+				"'[ACTIONABLE]state info {{.V0}}@{{.V1}}[/RESET]'",
 			name, version,
 		),
 	)

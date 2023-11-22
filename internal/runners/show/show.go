@@ -211,7 +211,7 @@ func (s *Show) Run(params Params) error {
 
 	remoteProject, err := model.LegacyFetchProjectByName(owner, projectName)
 	if err != nil && errs.Matches(err, &model.ErrProjectNotFound{}) {
-		return locale.WrapError(err, "err_show_project_not_found", "Please run [ACTIONABLE]'state push'[/RESET] to synchronize this project with the ActiveState Platform.")
+		return locale.WrapError(err, "err_show_project_not_found", "Please run '[ACTIONABLE]state push[/RESET]' to synchronize this project with the ActiveState Platform.")
 	} else if err != nil {
 		return locale.WrapError(err, "err_show_get_project", "Could not get remote project details")
 	}

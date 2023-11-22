@@ -286,7 +286,7 @@ err_language_not_found:
 error_state_activate_copy_save:
   other: Error saving project file
 error_state_activate_new_no_commit_aborted:
-  other: "Platform project created but cannot activate.  Try [ACTIONABLE]'state activate {{.Owner}}/{{.ProjectName}}'[/RESET]."
+  other: "Platform project created but cannot activate.  Try '[ACTIONABLE]state activate {{.Owner}}/{{.ProjectName}}[/RESET]'."
 state_activate_new_prompt_owner:
   other: "Please provide an owner for the new project:"
 error_state_activate_new_fetch_organizations:
@@ -294,7 +294,7 @@ error_state_activate_new_fetch_organizations:
 state_activate_new_created:
   other: Created new project in [NOTICE]{{.Dir}}[/RESET]
 state_activate_new_platform_project:
-  other: New platform project successfully created as [NOTICE]{{.Owner}}/{{.Project}}[/RESET]. To activate your new project run [ACTIONABLE]'state activate {{.Owner}}/{{.Project}}'[/RESET]
+  other: New platform project successfully created as [NOTICE]{{.Owner}}/{{.Project}}[/RESET]. To activate your new project run '[ACTIONABLE]state activate {{.Owner}}/{{.Project}}[/RESET]'
 state_activate_new_prompt_language:
   other: Which language would you like to use to manage your State Tool scripts?
 state_activate_new_language_none:
@@ -326,7 +326,7 @@ projects_description:
 projects_list_description:
   other: List your platform projects
 err_api_not_authenticated:
-  other: You are not authenticated, authenticate with [ACTIONABLE]'state auth'[/RESET].
+  other: You are not authenticated, authenticate with '[ACTIONABLE]state auth[/RESET]'.
 err_api_forbidden:
   other: You are not allowed to access or modify the requested resource
 err_api_org_not_found:
@@ -659,7 +659,7 @@ keypair_err_publickey_not_found:
 keypair_err_passphrase_prompt:
   other: The provided passphrase is invalid
 keypair_err_require_auth:
-  other: You need to be authenticated to run this command, please run [ACTIONABLE]'state auth'[/RESET] first
+  other: You need to be authenticated to run this command, please run '[ACTIONABLE]state auth[/RESET]' first
 keypairs_err_bitlength_too_short:
   other: bit-length too short
 keypairs_err_pem_encoding:
@@ -679,7 +679,7 @@ keypairs_err_override_with_save:
 keypairs_err_override_with_delete:
   other: "cannot delete key file while key override is set"
 err_command_requires_auth:
-  other: You need to be authenticated to run this command. Authenticate by running [ACTIONABLE]'state auth'[/RESET].
+  other: You need to be authenticated to run this command. Authenticate by running '[ACTIONABLE]state auth[/RESET]'.
 warn_script_name_in_use:
   other: "[ERROR]WARNING:[/RESET] The following scripts collide with existing commands and should be renamed: [NOTICE]{{.V0}}[/RESET]."
 warn_move_incompatible_modes:
@@ -712,7 +712,7 @@ update_available:
   other: |
     Your version: [NOTICE]{{.V0}}[/RESET]
     Available Version: [NOTICE]{{.V1}}[/RESET]
-    You can update by running [ACTIONABLE]'state update'[/RESET]
+    You can update by running '[ACTIONABLE]state update[/RESET]'
 update_none_found:
   other: Update not found for {{.V0}}.
 updating_version:
@@ -722,7 +722,7 @@ runtime_update_notice_known_count:
 runtime_update_notice_unknown_count:
   other: "Your activestate.yaml is behind."
 runtime_update_help:
-  other: "Run [ACTIONABLE]'state pull'[/RESET] to pull in the latest runtime environment as defined in your project on [NOTICE]https://platform.activestate.com/{{.V0}}/{{.V1}}[/RESET]"
+  other: "Run '[ACTIONABLE]state pull[/RESET]' to pull in the latest runtime environment as defined in your project on [NOTICE]https://platform.activestate.com/{{.V0}}/{{.V1}}[/RESET]"
 err_no_credentials:
   other: Cannot authenticate without credentials
 err_token_list:
@@ -857,7 +857,7 @@ warn_deprecation:
     Reason for deprecation:
       [NOTICE]{{.V1}}[/RESET]
 
-    Please update by running [ACTIONABLE]'state update'[/RESET].
+    Please update by running '[ACTIONABLE]state update[/RESET]'.
 err_deprecation:
   other: |
     You are running a version of the State Tool that is no longer supported! You will be encountering issues.
@@ -865,7 +865,7 @@ err_deprecation:
     Reason for deprecation:
       [NOTICE]{{.V1}}[/RESET]
 
-    Please update by running [ACTIONABLE]'state update'[/RESET].
+    Please update by running '[ACTIONABLE]state update[/RESET]'.
 err_auth_required:
   other: Authentication is required, please authenticate by running 'state auth'
 err_auth_needinput:
@@ -999,9 +999,9 @@ err_replaceall_check_log:
 err_bad_project_url:
   other: "Invalid value for 'project' field in your activestate.yaml, please ensure it is in the format of: 'https://platform.activestate.com/org/project'."
 err_set_commit_id:
-  other: "Could not update your activestate.yaml with the latest commit ID. Please ensure you have your project defined in the format of [ACTIONABLE]'project: https://platform.activestate.com/org/project'[/RESET]"
+  other: "Could not update your activestate.yaml with the latest commit ID. Please ensure you have your project defined in the format of '[ACTIONABLE]project: https://platform.activestate.com/org/project[/RESET]'"
 err_set_project:
-  other: "Could not update the project field in your activestate.yaml. Please ensure you have your project defined in the format of [ACTIONABLE]'project: https://platform.activestate.com/org/project'[/RESET]"
+  other: "Could not update the project field in your activestate.yaml. Please ensure you have your project defined in the format of '[ACTIONABLE]project: https://platform.activestate.com/org/project[/RESET]'"
 err_unauthorized:
   other: You are not authorized, did you provide valid login credentials?
 err_projectfile_exists:
@@ -1159,16 +1159,16 @@ package_removed:
 bundle_removed:
   other: "Bundle uninstalled: [NOTICE]{{.V0}}[/RESET]"
 update_config:
-  other: To ensure your local project is synchronized with the ActiveState platform please use [ACTIONABLE]'state pull'[/RESET]
+  other: To ensure your local project is synchronized with the ActiveState platform please use '[ACTIONABLE]state pull[/RESET]'
 package_update_config_file:
-  other: To ensure your local project is synchronized with the ActiveState platform please use [ACTIONABLE]'state pull'[/RESET]
+  other: To ensure your local project is synchronized with the ActiveState platform please use '[ACTIONABLE]state pull[/RESET]'
 inventory_ingredient_not_available:
   other: The package '[NOTICE]{{.V0}}[/RESET]' is not available on the ActiveState Platform, or does not have a matching version
 err_update_build_script:
   other: Could not update runtime build script
 notice_commit_build_script:
   other: |
-    Your local build script has changes that should be committed. Please run [ACTIONABLE]'state commit'[/RESET] to do so.
+    Your local build script has changes that should be committed. Please run '[ACTIONABLE]state commit[/RESET]' to do so.
 
 command_flag_invalid_value:
   other: "Invalid value for {{.V0}} flag: [NOTICE]{{.V1}}[/RESET]"
@@ -1195,7 +1195,7 @@ err_init_lang:
 init_success:
   other: |
     Project '[NOTICE]{{.V0}}[/RESET]' has been successfully initialized at '[NOTICE]{{.V1}}[/RESET]' and pushed to the Platform.
-    You can start using your project with [ACTIONABLE]'state shell'[/RESET] and [ACTIONABLE]'state use'[/RESET].
+    You can start using your project with '[ACTIONABLE]state shell[/RESET]' and '[ACTIONABLE]state use[/RESET]'.
     For editors and other tooling use the executables at: [ACTIONABLE]{{.V2}}[/RESET].
 arg_state_init_namespace:
   other: org/project
@@ -1436,7 +1436,7 @@ deploy_restart_shell:
 deploy_restart_cmd:
   other: |
     Please log out and back in again in order to start using the newly configured Runtime Environment.
-    Alternatively, you can run [ACTIONABLE]'setenv'[/RESET] from the installation directory to update your environment
+    Alternatively, you can run '[ACTIONABLE]setenv[/RESET]' from the installation directory to update your environment
 flag_state_deploy_path_description:
   other: The path to deploy the runtime installation files to. This directory will not be affected by 'state clean'
 flag_state_deploy_force_description:
@@ -1509,23 +1509,23 @@ ppm_print_main:
     See [ACTIONABLE]https://docs.activestate.com/platform/state/[/RESET] for details.
 ppm_print_forward:
   other: |
-    Your command is being forwarded to [ACTIONABLE]'{{.V0}}'[/RESET].
-    In the future you can run [ACTIONABLE]'{{.V0}}'[/RESET] directly instead of running [ACTIONABLE]'{{.V1}}'[/RESET], which will soon be deprecated.
+    Your command is being forwarded to '[ACTIONABLE]{{.V0}}[/RESET]'.
+    In the future you can run '[ACTIONABLE]{{.V0}}[/RESET]' directly instead of running '[ACTIONABLE]{{.V1}}[/RESET]', which will soon be deprecated.
 ppm_print_forward_after_convert:
   other: |
-    Please navigate to your newly created project directory and run [ACTIONABLE]'{{.V1}}'[/RESET] again.
-    You can also run [ACTIONABLE]'{{.V0}}'[/RESET] directly instead of running [ACTIONABLE]'{{.V1}}'[/RESET], which will soon be deprecated.
+    Please navigate to your newly created project directory and run '[ACTIONABLE]{{.V1}}[/RESET]' again.
+    You can also run '[ACTIONABLE]{{.V0}}[/RESET]' directly instead of running '[ACTIONABLE]{{.V1}}[/RESET]', which will soon be deprecated.
 ppm_print_forward_failure:
   other: |
-    Your command is being forwarded to [ACTIONABLE]'{{.V0}}'[/RESET].
-    In the future you can run [ACTIONABLE]'{{.V0}}'[/RESET] directly instead of running [ACTIONABLE]'{{.V1}}'[/RESET], which will soon be deprecated.
+    Your command is being forwarded to '[ACTIONABLE]{{.V0}}[/RESET]'.
+    In the future you can run '[ACTIONABLE]{{.V0}}[/RESET]' directly instead of running '[ACTIONABLE]{{.V1}}[/RESET]', which will soon be deprecated.
 
-    Note that [ACTIONABLE]'{{.V0}}'[/RESET] is not a direct analog for [ACTIONABLE]'{{.V1}}'[/RESET] and your command may have failed as a result.
-    Please run [ACTIONABLE]'{{.V0}} --help'[/RESET] for further information on how to use it for your use-case.
+    Note that '[ACTIONABLE]{{.V0}}[/RESET]' is not a direct analog for '[ACTIONABLE]{{.V1}}[/RESET]' and your command may have failed as a result.
+    Please run '[ACTIONABLE]{{.V0}} --help[/RESET]' for further information on how to use it for your use-case.
 ppm_print_area_redundant:
   other: |
     `ppm area` and its subcommands have been made redundant thanks to State Tool's use of virtual environments.
-    You can simply start managing your packages, run [ACTIONABLE]'{{.V0}} --help'[/RESET] for more information.
+    You can simply start managing your packages, run '[ACTIONABLE]{{.V0}} --help[/RESET]' for more information.
 ppm_install_intent:
   other: add new packages to your project
 ppm_upgrade_intent:
@@ -1567,17 +1567,17 @@ tutorial_newproject_intro:
     set up shared scripts, and much more.
     [[BR]][[BR]]
     We'll help you create your first virtual environment, after that you can create as many as you want by running
-    [ACTIONABLE]'state init'[/RESET].
+    '[ACTIONABLE]state init[/RESET]'.
     [[BR]]
 tutorial_newproject_outro:
   other: |
     Your Virtual Runtime Environment has been created.
     [[BR]][[BR]]
-    To start using your project simply run [ACTIONABLE]'state activate'[/RESET] from your project directory at [ACTIONABLE]{{.Dir}}[/RESET].
+    To start using your project simply run '[ACTIONABLE]state activate[/RESET]' from your project directory at [ACTIONABLE]{{.Dir}}[/RESET].
     You can also manage your project in your browser at [ACTIONABLE]{{.URL}}[/RESET].
     [[BR]][[BR]]
-    To create another project run [ACTIONABLE]'state init'[/RESET], or if you want to find out more about the State Tool and what it can do
-    run [ACTIONABLE]'state --help'[/RESET] or check out [ACTIONABLE]{{.Docs}}[/RESET]
+    To create another project run '[ACTIONABLE]state init[/RESET]', or if you want to find out more about the State Tool and what it can do
+    run '[ACTIONABLE]state --help[/RESET]' or check out [ACTIONABLE]{{.Docs}}[/RESET]
 ppm_convert_after_tutorial:
   other: |
     For your convenience you can continue to use ppm commands once you've activated your virtual runtime environment.
@@ -1598,8 +1598,8 @@ ppm_convert_ask_feedback:
     We understand your need to do things traditionally, but we currently do not support it. We'd love to hear more about
     your use case to see if we can better meet your needs. Please consider posting to our forum at {{.ForumURL}}.
     [[BR]]
-    To create another project run [ACTIONABLE]'state init'[/RESET], or if you want to find out more about the State Tool and what it can do
-    run [ACTIONABLE]'state --help'[/RESET] or check out [ACTIONABLE]{{.Docs}}[/RESET]
+    To create another project run '[ACTIONABLE]state init[/RESET]', or if you want to find out more about the State Tool and what it can do
+    run '[ACTIONABLE]state --help[/RESET]' or check out [ACTIONABLE]{{.Docs}}[/RESET]
 windows_compatibility_warning:
   other: |
     Unable to detect your Windows version. You may encounter issues; please ensure you are running at least Windows 10 build 17134.1.
@@ -1624,7 +1624,7 @@ artifact_succeeded:
 artifact_failed:
   other: "Failed: [NOTICE]{{.V0}}[/RESET]. Error returned: [ERROR]{{.V1}}[/RESET]"
 err_package_update_commit_id:
-  other: "Could not update your project runtime's commit ID. Please run [ACTIONABLE]'state pull'[/RESET] manually."
+  other: "Could not update your project runtime's commit ID. Please run '[ACTIONABLE]state pull[/RESET]' manually."
 prepare_protocol_warning:
   other: Could not add state protocol
 err_preparestart_shortcut:
@@ -1634,7 +1634,7 @@ err_preparestart_icon:
 confirm:
   other: Please Confirm
 err_no_project:
-  other: To run this command you need to be in an existing project. You can create a new project with [ACTIONABLE]state init[/RESET] or run this command from a directory that is in an existing project. You can also use an existing project by running [ACTIONABLE]'state activate --default'[/RESET] inside your project directory.
+  other: To run this command you need to be in an existing project. You can create a new project with [ACTIONABLE]state init[/RESET] or run this command from a directory that is in an existing project. You can also use an existing project by running '[ACTIONABLE]state activate --default[/RESET]' inside your project directory.
 activate_default_prompt:
   other: |
     Would you like always use [NOTICE]{{.V0}}[/RESET]?
@@ -1658,16 +1658,16 @@ config_get_error:
 cve_needs_authentication:
   other: You need to be authenticated in order to access vulnerability information about your project.
 auth_tip:
-  other: Run [ACTIONABLE]'state auth'[/RESET] to authenticate.
+  other: Run '[ACTIONABLE]state auth[/RESET]' to authenticate.
 err_non_interactive_mode:
-  other: You are running the State Tool in non-interactive mode, but interactive input was needed. Please re-run the State Tool in interactive mode. If you are using a non-interactive terminal like Git Bash on Windows, prefix your command with [ACTIONABLE]'winpty'[/RESET]. (See https://github.com/git-for-windows/git/wiki/FAQ#some-native-console-programs-dont-work-when-run-from-git-bash-how-to-fix-it for more information.)
+  other: You are running the State Tool in non-interactive mode, but interactive input was needed. Please re-run the State Tool in interactive mode. If you are using a non-interactive terminal like Git Bash on Windows, prefix your command with '[ACTIONABLE]winpty[/RESET]'. (See https://github.com/git-for-windows/git/wiki/FAQ#some-native-console-programs-dont-work-when-run-from-git-bash-how-to-fix-it for more information.)
 err_alternate_branches:
   other: |
-    Your current platform ([ACTIONABLE]{{.V0}}/{{.V1}}[/RESET]) does not appear to be configured in your branch: [ACTIONABLE]'{{.V2}}'[/RESET], perhaps you could try one of the alternate branches on your project:
+    Your current platform ([ACTIONABLE]{{.V0}}/{{.V1}}[/RESET]) does not appear to be configured in your branch: '[ACTIONABLE]{{.V2}}[/RESET]', perhaps you could try one of the alternate branches on your project:
 
      - {{.V3}}
 
-    Type [ACTIONABLE]'state branch switch <NAME>'[/RESET] to switch to a different branch.
+    Type '[ACTIONABLE]state branch switch <NAME>[/RESET]' to switch to a different branch.
 err_fetch_project:
   other: "Could not fetch details for project: {{.V0}}"
 err_set_default_branch:
@@ -1703,7 +1703,7 @@ install_initial_success:
 err_package_info_no_packages:
   other: No packages in our catalog are an exact match for [NOTICE]"{{.V0}}"[/RESET].
 package_try_search:
-  other: "Valid package names can be searched using [ACTIONABLE]'state search <package_name>'[/RESET]"
+  other: "Valid package names can be searched using '[ACTIONABLE]state search <package_name>[/RESET]'"
 package_info_request:
   other: "Request a package at [ACTIONABLE]https://community.activestate.com/[/RESET]"
 err_push_outdated:
@@ -1869,13 +1869,13 @@ err_update_corrupt_install:
 arg_state_use_namespace:
   other: org/project or project
 arg_state_use_namespace_description:
-  other: "The fully qualified namespace (org/project) or just the project name (project) of the project to use. Must have been previously checked out using [ACTIONABLE]'state checkout'[/RESET]."
+  other: "The fully qualified namespace (org/project) or just the project name (project) of the project to use. Must have been previously checked out using '[ACTIONABLE]state checkout[/RESET]'."
 err_use_commit_id_mismatch:
-  other: "Cannot switch to the given commit ID. Please use [ACTIONABLE]'state checkout'[/RESET] to check out a specific commit ID and then try again."
+  other: "Cannot switch to the given commit ID. Please use '[ACTIONABLE]state checkout[/RESET]' to check out a specific commit ID and then try again."
 err_use_default_project_does_not_exist:
   other: "Cannot find your project. Please either check it out again with [ACTIONABLE]state checkout[/RESET] or run [ACTIONABLE]state use reset[/RESET] to stop using it."
 err_shell_commit_id_mismatch:
-  other: "Cannot start a shell/prompt for the given commit ID. Please use [ACTIONABLE]'state checkout'[/RESET] to check out a specific commit ID and then try again."
+  other: "Cannot start a shell/prompt for the given commit ID. Please use '[ACTIONABLE]state checkout[/RESET]' to check out a specific commit ID and then try again."
 err_shell_cannot_load_project:
   other: Cannot load project to start a shell/prompt in.
 err_shell_already_active:
@@ -1893,7 +1893,7 @@ err_project_namespace_missmatch:
 err_project_fromenv:
   other: Could not detect an appropriate project to use, please provide a valid path or namespace.
 err_local_project_not_checked_out:
-  other: "Cannot find the [ACTIONABLE]{{.V0}}[/RESET] project. Please either check it out using [ACTIONABLE]'state checkout'[/RESET] or run this command again from the project directory."
+  other: "Cannot find the [ACTIONABLE]{{.V0}}[/RESET] project. Please either check it out using '[ACTIONABLE]state checkout[/RESET]' or run this command again from the project directory."
 err_findproject_notfound:
   other: "Could not load project [ACTIONABLE]{{.V0}}[/RESET] from path: [ACTIONABLE]{{.V1}}[/RESET]"
 arg_state_shell_namespace_description:
@@ -2026,7 +2026,7 @@ pjfile_deprecation_msg:
 pjfile_deprecation_entry:
   other: " - '[ACTIONABLE]{{.V0}}[/RESET]' located at byte [ACTIONABLE]{{.V1}}[/RESET]"
 err_init_authenticated:
-  other: You need to be authenticated to initialize a project. Authenticate by running [ACTIONABLE]'state auth'[/RESET].
+  other: You need to be authenticated to initialize a project. Authenticate by running '[ACTIONABLE]state auth[/RESET]'.
 err_country_blocked:
   other: This service is not available in your region.
 err_commit_id_invalid:

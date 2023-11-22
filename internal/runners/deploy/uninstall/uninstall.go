@@ -68,7 +68,7 @@ func (u *Uninstall) Run(params *Params) error {
 			return locale.WrapInputError(
 				err,
 				"err_deploy_uninstall_cannot_get_cwd",
-				"Cannot determine current working directory. Please supply [ACTIONABLE]'--path'[/RESET] argument")
+				"Cannot determine current working directory. Please supply '[ACTIONABLE]--path[/RESET]' argument")
 		}
 		path = cwd
 	}
