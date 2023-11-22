@@ -264,7 +264,7 @@ func (suite *PackageIntegrationTestSuite) TestPackage_info() {
 	cp.Expect("Version")
 	cp.Expect("Available")
 	cp.Expect("What's next?")
-	cp.Expect("run `state install")
+	cp.Expect("run 'state install")
 	cp.ExpectExitCode(0)
 }
 
