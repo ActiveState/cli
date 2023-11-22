@@ -91,7 +91,7 @@ func (p *Pull) Run(params *PullParams) (rerr error) {
 	}
 
 	if p.project.BranchName() == "" {
-		return locale.NewError("err_pull_branch", "Your [NOTICE]activestate.yaml[/RESET] project field does not contain a branch. Please ensure you are using the latest version of the State Tool by running [ACTIONABLE]`state update`[/RESET] and then trying again.")
+		return locale.NewError("err_pull_branch", "Your [NOTICE]activestate.yaml[/RESET] project field does not contain a branch. Please ensure you are using the latest version of the State Tool by running '[ACTIONABLE]state update[/RESET]' and then trying again.")
 	}
 
 	// Determine the project to pull from
@@ -258,7 +258,7 @@ func (p *Pull) mergeBuildScript(strategies *mono_models.MergeStrategies, remoteC
 		}
 		return locale.NewInputError(
 			"err_build_script_merge",
-			"Unable to automatically merge build scripts. Please resolve conflicts manually in '{{.V0}}' and then run [ACTIONABLE]`state commit`[/RESET]",
+			"Unable to automatically merge build scripts. Please resolve conflicts manually in '{{.V0}}' and then run '[ACTIONABLE]state commit[/RESET]'",
 			filepath.Join(p.project.Dir(), constants.BuildScriptFileName))
 	}
 

@@ -354,7 +354,7 @@ func (a *addCmdAs) deprecatedAlias(aliased *captain.Command, name string) {
 		func(c *captain.Command, args []string) error {
 			msg := locale.Tl(
 				"cmd_deprecated_notice",
-				"This command is deprecated. Please use `state {{.V0}}` instead.",
+				"This command is deprecated. Please use '[ACTIONABLE]state {{.V0}}[/RESET]' instead.",
 				aliased.Name(),
 			)
 

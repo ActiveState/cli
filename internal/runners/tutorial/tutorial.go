@@ -109,7 +109,7 @@ func (t *Tutorial) RunNewProject(params NewProjectParams) error {
 
 	// Run state push
 	if err := runbits.Invoke(t.outputer, "push"); err != nil {
-		return locale.WrapInputError(err, "err_tutorial_state_push", "Could not push project to ActiveState Platform, try manually running `state push` from your project directory at {{.V0}}.", dir)
+		return locale.WrapInputError(err, "err_tutorial_state_push", "Could not push project to ActiveState Platform, try manually running '[ACTIONABLE]state push[/RESET]' from your project directory at {{.V0}}.", dir)
 	}
 
 	// Print outro
@@ -149,12 +149,12 @@ func (t *Tutorial) authFlow() error {
 	case signIn:
 		t.analytics.EventWithLabel(anaConsts.CatTutorial, "authentication-action", "sign-in")
 		if err := runbits.Invoke(t.outputer, "auth"); err != nil {
-			return locale.WrapInputError(err, "err_tutorial_signin", "Sign in failed. You could try manually signing in by running `state auth`.")
+			return locale.WrapInputError(err, "err_tutorial_signin", "Sign in failed. You could try manually signing in by running '[ACTIONABLE]state auth[/RESET]'.")
 		}
 	case signUpCLI:
 		t.analytics.EventWithLabel(anaConsts.CatTutorial, "authentication-action", "sign-up")
 		if err := runbits.Invoke(t.outputer, "auth", "signup"); err != nil {
-			return locale.WrapInputError(err, "err_tutorial_signup", "Sign up failed. You could try manually signing up by running `state auth signup`.")
+			return locale.WrapInputError(err, "err_tutorial_signup", "Sign up failed. You could try manually signing up by running '[ACTIONABLE]state auth signup[/RESET]'.")
 		}
 	case signUpBrowser:
 		t.analytics.EventWithLabel(anaConsts.CatTutorial, "authentication-action", "sign-up-browser")
@@ -164,7 +164,7 @@ func (t *Tutorial) authFlow() error {
 		}
 		t.outputer.Notice(locale.Tl("tutorial_signing_ready", "[NOTICE]Please sign in once you have finished signing up via your browser.[/RESET]"))
 		if err := runbits.Invoke(t.outputer, "auth"); err != nil {
-			return locale.WrapInputError(err, "err_tutorial_signin", "Sign in failed. You could try manually signing in by running `state auth`.")
+			return locale.WrapInputError(err, "err_tutorial_signin", "Sign in failed. You could try manually signing in by running '[ACTIONABLE]state auth[/RESET]'.")
 		}
 	}
 
