@@ -84,6 +84,7 @@ func WriteRcFile(rcTemplateName string, path string, data RcIdentification, env 
 		"ActivatedEnv":          constants.ActivatedStateEnvVarName,
 		"ConfigFile":            constants.ConfigFileName,
 		"ActivatedNamespaceEnv": constants.ActivatedStateNamespaceEnvVarName,
+		"Default":               data == DefaultID,
 	}
 
 	if err := CleanRcFile(path, data); err != nil {
