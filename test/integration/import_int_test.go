@@ -119,6 +119,16 @@ func (suite *ImportIntegrationTestSuite) TestImport() {
 
 		cp := ts.Spawn("import", "requirements.txt")
 		cp.ExpectExitCode(0)
+
+		cp = ts.Spawn("packages")
+		cp.Expect("coverage")
+		cp.Expect("docopt")
+		cp.Expect("Mopidy-Dirble")
+		cp.Expect("requests")
+		cp.Expect("Auto") // DX-2272 will change this to 2.30.0
+		cp.Expect("urllib3")
+		cp.Expect("Auto") // DX-2272 will change this to 1.26.5
+		cp.ExpectExitCode(0)
 	})
 	ts.IgnoreLogErrors()
 }
