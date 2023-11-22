@@ -200,3 +200,38 @@ func newExportEnvCommand(prime *primer.Values) *captain.Command {
 
 	return cmd
 }
+
+func newLogCommand(prime *primer.Values) *captain.Command {
+	runner := export.NewLog(prime)
+	params := &export.LogParams{}
+
+	cmd := captain.NewCommand(
+		"log",
+		locale.Tl("export_log_title", "Show Log File"),
+		locale.Tl("export_log_description", "Show the path to a State Tool log file"),
+		prime,
+		[]*captain.Flag{
+			{
+				Name:        "index",
+				Shorthand:   "i",
+				Description: locale.Tl("flag_export_log_index", "The 0-based index of the log file to show, starting with the newest"),
+				Value:       &params.Index,
+			},
+		},
+		[]*captain.Argument{
+			{
+				Name:        "prefix",
+				Description: locale.Tl("arg_export_log_prefix", "The prefix of the log file to show (e.g. state or state-svc). The default is 'state'"),
+				Required:    false,
+				Value:       &params.Prefix,
+			},
+		},
+		func(ccmd *captain.Command, _ []string) error {
+			return runner.Run(params)
+		})
+
+	cmd.SetSupportsStructuredOutput()
+	cmd.SetUnstable(true)
+
+	return cmd
+}
