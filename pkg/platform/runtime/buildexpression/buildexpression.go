@@ -152,7 +152,7 @@ func New(data []byte) (*BuildExpression, error) {
 				if err != nil {
 					return nil, errs.Wrap(err, "Could not parse 'fail' key")
 				}
-				return nil, locale.NewError("err_build_expression_fail", "BuildExpression", fail.Message)
+				return nil, locale.NewError("err_build_expression_fail", "", fail.Message)
 			} else if isAp(path, v) {
 				ap, err := newAp(path, v)
 				if err != nil {
