@@ -84,6 +84,10 @@ type In struct {
 	Name     *string
 }
 
+type Fail struct {
+	Message string
+}
+
 // New creates a BuildExpression from a JSON byte array.
 // The JSON must be a valid BuildExpression in the following format:
 //
@@ -143,6 +147,12 @@ func New(data []byte) (*BuildExpression, error) {
 				}
 
 				expr.Let = let
+			} else if key == "fail" {
+				fail, err := newFail(path, v)
+				if err != nil {
+					return nil, errs.Wrap(err, "Could not parse 'fail' key")
+				}
+				return nil, locale.NewError("err_build_expression_fail", "BuildExpression", fail.Message)
 			} else if isAp(path, v) {
 				ap, err := newAp(path, v)
 				if err != nil {
@@ -451,6 +461,28 @@ func newIn(path []string, inValue interface{}) (*In, error) {
 	}
 
 	return in, nil
+}
+
+func newFail(path []string, m map[string]interface{}) (*Fail, error) {
+	path = append(path, "fail")
+	defer func() {
+		_, _, err := sliceutils.Pop(path)
+		if err != nil {
+			multilog.Error("Could not pop context: %v", err)
+		}
+	}()
+
+	message, ok := m["message"]
+	if !ok {
+		return nil, errs.New("Build expression's 'fail' object has no 'message' key")
+	}
+
+	messageStr, ok := message.(string)
+	if !ok {
+		return nil, errs.New("'message' key's value is not a string")
+	}
+
+	return &Fail{Message: messageStr}, nil
 }
 
 // validateRequirements ensures that the requirements in the BuildExpression contain

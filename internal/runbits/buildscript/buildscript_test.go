@@ -48,11 +48,8 @@ in:
 	assert.Equal(t, `let:
 	runtime = solve(
 		platforms = [
-<<<<<<< local
 			"77777",
-=======
 			"12345",
->>>>>>> remote
 			"67890"
 		],
 		requirements = [
