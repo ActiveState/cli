@@ -500,8 +500,6 @@ type Error struct {
 	Message string `json:"message"`
 }
 
-func (e *Error) Error() string { return e.Message }
-
 // Project contains the commit and any errors.
 type Project struct {
 	Type   string  `json:"__typename"`
