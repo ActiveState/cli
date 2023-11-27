@@ -32,7 +32,7 @@ type SolverError struct {
 }
 
 func (e *SolverError) Error() string {
-	return "solver_error"
+	return "buildplan_error"
 }
 
 func (e *SolverError) Unwrap() error {

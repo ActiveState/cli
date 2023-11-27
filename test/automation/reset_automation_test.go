@@ -1,12 +1,13 @@
 package automation
 
 import (
+	"path/filepath"
+	"testing"
+
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/stretchr/testify/suite"
-	"path/filepath"
-	"testing"
 )
 
 type ResetAutomationTestSuite struct {
@@ -20,7 +21,7 @@ func (suite *ResetAutomationTestSuite) TestReset_NotInProjects() {
 	defer ts.Close()
 
 	cp := ts.Spawn("reset")
-	cp.ExpectLongString("you need to be in an existing project")
+	cp.Expect("you need to be in an existing project")
 	cp.ExpectExitCode(1)
 }
 
@@ -64,7 +65,7 @@ func (suite *ResetAutomationTestSuite) TestReset_NoAuthPrivateProject() {
 	suite.Require().NoError(fileutils.WriteFile(filepath.Join(ts.Dirs.Work, "activestate.yaml"), []byte("project: "+url)))
 
 	cp := ts.Spawn("reset")
-	cp.ExpectLongString("If this is a private project you may need to authenticate")
+	cp.Expect("If this is a private project you may need to authenticate")
 	cp.ExpectExitCode(1)
 }
 

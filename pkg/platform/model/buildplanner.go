@@ -54,6 +54,7 @@ type BuildResult struct {
 	BuildStatusResponse *headchef_models.V1BuildStatusResponse
 	BuildStatus         string
 	BuildReady          bool
+	BuildExpression     *buildexpression.BuildExpression
 }
 
 func (b *BuildResult) OrderedArtifacts() []artifact.ArtifactID {
@@ -75,7 +76,7 @@ func NewBuildPlannerModel(auth *authentication.Auth) *BuildPlanner {
 
 	client := gqlclient.NewWithOpts(bpURL, 0, graphql.WithHTTPClient(api.NewHTTPClient()))
 
-	if auth.Authenticated() {
+	if auth != nil && auth.Authenticated() {
 		client.SetTokenProvider(auth)
 	}
 
@@ -112,30 +113,6 @@ func (bp *BuildPlanner) FetchBuildResult(commitID strfmt.UUID, owner, project st
 	// response with emtpy targets that we should remove
 	removeEmptyTargets(build)
 
-	// Extract the available platforms from the build plan
-	var bpPlatforms []strfmt.UUID
-	for _, t := range build.Terminals {
-		if t.Tag == bpModel.TagOrphan {
-			continue
-		}
-		bpPlatforms = append(bpPlatforms, strfmt.UUID(strings.TrimPrefix(t.Tag, "platform:")))
-	}
-
-	// Get the platform ID for the current platform
-	platformID, err := FilterCurrentPlatform(HostPlatform, bpPlatforms)
-	if err != nil {
-		return nil, locale.WrapError(err, "err_filter_current_platform")
-	}
-
-	// Filter the build terminals to only include the current platform
-	var filteredTerminals []*bpModel.NamedTarget
-	for _, t := range build.Terminals {
-		if platformID.String() == strings.TrimPrefix(t.Tag, "platform:") {
-			filteredTerminals = append(filteredTerminals, t)
-		}
-	}
-	build.Terminals = filteredTerminals
-
 	buildEngine := Alternative
 	for _, s := range build.Sources {
 		if s.Namespace == "builder" && s.Name == "camel" {
@@ -149,12 +126,18 @@ func (bp *BuildPlanner) FetchBuildResult(commitID strfmt.UUID, owner, project st
 		return nil, errs.Wrap(err, "Response does not contain commitID")
 	}
 
+	expr, err := bp.GetBuildExpression(owner, project, commitID.String())
+	if err != nil {
+		return nil, errs.Wrap(err, "Failed to get build expression")
+	}
+
 	res := BuildResult{
-		BuildEngine: buildEngine,
-		Build:       build,
-		BuildReady:  build.Status == bpModel.Completed,
-		BuildStatus: build.Status,
-		CommitID:    id,
+		BuildEngine:     buildEngine,
+		Build:           build,
+		BuildReady:      build.Status == bpModel.Completed,
+		CommitID:        id,
+		BuildExpression: expr,
+		BuildStatus:     build.Status,
 	}
 
 	// We want to extract the recipe ID from the BuildLogIDs.
@@ -233,51 +216,60 @@ func removeEmptyTargets(bp *bpModel.Build) {
 }
 
 type StageCommitParams struct {
-	Owner                string
-	Project              string
-	ParentCommit         string
+	Owner        string
+	Project      string
+	ParentCommit string
+	Description  string
+	// Commits can have either an operation (e.g. installing a package)...
 	RequirementName      string
 	RequirementVersion   []bpModel.VersionRequirement
 	RequirementNamespace Namespace
 	Operation            bpModel.Operation
-	TimeStamp            strfmt.DateTime
+	TimeStamp            *strfmt.DateTime
+	// ... or commits can have an expression (e.g. from pull). When pulling an expression, we do not
+	// compute its changes into a series of above operations. Instead, we just pass the new
+	// expression directly.
+	Expression *buildexpression.BuildExpression
 }
 
 func (bp *BuildPlanner) StageCommit(params StageCommitParams) (strfmt.UUID, error) {
 	logging.Debug("StageCommit, params: %+v", params)
-	var err error
-	expression, err := bp.GetBuildExpression(params.Owner, params.Project, params.ParentCommit)
-	if err != nil {
-		return "", errs.Wrap(err, "Failed to get build expression")
-	}
-
-	if params.RequirementNamespace.Type() == NamespacePlatform {
-		err = expression.UpdatePlatform(params.Operation, strfmt.UUID(params.RequirementName))
+	expression := params.Expression
+	if expression == nil {
+		var err error
+		expression, err = bp.GetBuildExpression(params.Owner, params.Project, params.ParentCommit)
 		if err != nil {
-			return "", errs.Wrap(err, "Failed to update build expression with platform")
-		}
-	} else {
-		requirement := bpModel.Requirement{
-			Namespace:          params.RequirementNamespace.String(),
-			Name:               params.RequirementName,
-			VersionRequirement: params.RequirementVersion,
+			return "", errs.Wrap(err, "Failed to get build expression")
 		}
 
-		err = expression.UpdateRequirement(params.Operation, requirement)
+		if params.RequirementNamespace.Type() == NamespacePlatform {
+			err = expression.UpdatePlatform(params.Operation, strfmt.UUID(params.RequirementName))
+			if err != nil {
+				return "", errs.Wrap(err, "Failed to update build expression with platform")
+			}
+		} else {
+			requirement := bpModel.Requirement{
+				Namespace:          params.RequirementNamespace.String(),
+				Name:               params.RequirementName,
+				VersionRequirement: params.RequirementVersion,
+			}
+
+			err = expression.UpdateRequirement(params.Operation, requirement)
+			if err != nil {
+				return "", errs.Wrap(err, "Failed to update build expression with requirement")
+			}
+		}
+
+		err = expression.UpdateTimestamp(*params.TimeStamp)
 		if err != nil {
-			return "", errs.Wrap(err, "Failed to update build expression with requirement")
+			return "", errs.Wrap(err, "Failed to update build expression with timestamp")
 		}
-	}
-
-	err = expression.UpdateTimestamp(params.TimeStamp)
-	if err != nil {
-		return "", errs.Wrap(err, "Failed to update build expression with timestamp")
 	}
 
 	// With the updated build expression call the stage commit mutation
-	request := request.StageCommit(params.Owner, params.Project, params.ParentCommit, expression)
+	request := request.StageCommit(params.Owner, params.Project, params.ParentCommit, params.Description, expression)
 	resp := &bpModel.StageCommitResult{}
-	err = bp.client.Run(request, resp)
+	err := bp.client.Run(request, resp)
 	if err != nil {
 		return "", processBuildPlannerError(err, "failed to stage commit")
 	}
@@ -331,6 +323,143 @@ func (bp *BuildPlanner) GetBuildExpression(owner, project, commitID string) (*bu
 	}
 
 	return expression, nil
+}
+
+// CreateProjectParams contains information for the project to create.
+// When creating a project from scratch, the PlatformID, Language, Version, and Timestamp fields
+// are used to create a buildexpression to use.
+// When creating a project based off of another one, the Expr field is used (PlatformID, Language,
+// Version, and Timestamp are ignored).
+type CreateProjectParams struct {
+	Owner       string
+	Project     string
+	PlatformID  strfmt.UUID
+	Language    string
+	Version     string
+	Private     bool
+	Timestamp   strfmt.DateTime
+	Description string
+	Expr        *buildexpression.BuildExpression
+}
+
+func (bp *BuildPlanner) CreateProject(params *CreateProjectParams) (strfmt.UUID, error) {
+	logging.Debug("CreateProject, owner: %s, project: %s, language: %s, version: %s", params.Owner, params.Project, params.Language, params.Version)
+
+	expr := params.Expr
+	if expr == nil {
+		// Construct an initial buildexpression for the new project.
+		var err error
+		expr, err = buildexpression.NewEmpty()
+		if err != nil {
+			return "", errs.Wrap(err, "Unable to create initial buildexpression")
+		}
+
+		// Add the platform.
+		expr.UpdatePlatform(model.OperationAdded, params.PlatformID)
+
+		// Create a requirement for the given language and version.
+		versionRequirements, err := VersionStringToRequirements(params.Version)
+		if err != nil {
+			return "", errs.Wrap(err, "Unable to read version")
+		}
+		expr.UpdateRequirement(model.OperationAdded, bpModel.Requirement{
+			Name:               params.Language,
+			Namespace:          "language", // TODO: make this a constant DX-1738
+			VersionRequirement: versionRequirements,
+		})
+
+		// Add the timestamp.
+		expr.UpdateTimestamp(params.Timestamp)
+	}
+
+	// Create the project.
+	request := request.CreateProject(params.Owner, params.Project, params.Private, expr, params.Description)
+	resp := &bpModel.CreateProjectResult{}
+	err := bp.client.Run(request, resp)
+	if err != nil {
+		return "", processBuildPlannerError(err, "Failed to create project")
+	}
+
+	if resp.ProjectCreated == nil {
+		return "", errs.New("ProjectCreated is nil")
+	}
+
+	if bpModel.IsErrorResponse(resp.ProjectCreated.Type) {
+		return "", bpModel.ProcessProjectCreatedError(resp.ProjectCreated, "Could not create project")
+	}
+
+	if resp.ProjectCreated.Commit == nil {
+		return "", errs.New("ProjectCreated.Commit is nil")
+	}
+
+	return resp.ProjectCreated.Commit.CommitID, nil
+}
+
+func (bp *BuildPlanner) RevertCommit(organization, project, parentCommitID, commitID string) (strfmt.UUID, error) {
+	logging.Debug("RevertCommit, organization: %s, project: %s, commitID: %s", organization, project, commitID)
+	resp := &bpModel.RevertCommitResult{}
+	err := bp.client.Run(request.RevertCommit(organization, project, parentCommitID, commitID), resp)
+	if err != nil {
+		return "", processBuildPlannerError(err, "Failed to revert commit")
+	}
+
+	if resp.RevertedCommit == nil {
+		return "", errs.New("Revert commit response is nil")
+	}
+
+	if bpModel.IsErrorResponse(resp.RevertedCommit.Type) {
+		return "", bpModel.ProcessRevertCommitError(resp.RevertedCommit, "Could not revert commit")
+	}
+
+	if resp.RevertedCommit.Commit == nil {
+		return "", errs.New("Revert commit's commit is nil'")
+	}
+
+	if bpModel.IsErrorResponse(resp.RevertedCommit.Commit.Type) {
+		return "", bpModel.ProcessCommitError(resp.RevertedCommit.Commit, "Could not process error response from revert commit")
+	}
+
+	if resp.RevertedCommit.Commit.CommitID == "" {
+		return "", errs.New("Commit does not contain commitID")
+	}
+
+	return resp.RevertedCommit.Commit.CommitID, nil
+}
+
+type MergeCommitParams struct {
+	Owner     string
+	Project   string
+	TargetRef string // the commit ID or branch name to merge into
+	OtherRef  string // the commit ID or branch name to merge from
+	Strategy  model.MergeStrategy
+}
+
+func (bp *BuildPlanner) MergeCommit(params *MergeCommitParams) (strfmt.UUID, error) {
+	logging.Debug("MergeCommit, owner: %s, project: %s", params.Owner, params.Project)
+	request := request.MergeCommit(params.Owner, params.Project, params.TargetRef, params.OtherRef, params.Strategy)
+	resp := &bpModel.MergeCommitResult{}
+	err := bp.client.Run(request, resp)
+	if err != nil {
+		return "", processBuildPlannerError(err, "Failed to merge commit")
+	}
+
+	if resp.MergedCommit == nil {
+		return "", errs.New("MergedCommit is nil")
+	}
+
+	if bpModel.IsErrorResponse(resp.MergedCommit.Type) {
+		return "", bpModel.ProcessMergedCommitError(resp.MergedCommit, "Could not merge commit")
+	}
+
+	if resp.MergedCommit.Commit == nil {
+		return "", errs.New("Merge commit's commit is nil'")
+	}
+
+	if bpModel.IsErrorResponse(resp.MergedCommit.Commit.Type) {
+		return "", bpModel.ProcessCommitError(resp.MergedCommit.Commit, "Could not process error response from merge commit")
+	}
+
+	return resp.MergedCommit.Commit.CommitID, nil
 }
 
 // processBuildPlannerError will check for special error types that should be

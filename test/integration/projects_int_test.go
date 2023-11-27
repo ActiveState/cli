@@ -21,35 +21,35 @@ func (suite *ProjectsIntegrationTestSuite) TestProjects() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	cp := ts.SpawnWithOpts(e2e.WithArgs("checkout", "ActiveState-CLI/small-python"))
+	cp := ts.SpawnWithOpts(e2e.OptArgs("checkout", "ActiveState-CLI/small-python"))
 	cp.ExpectExitCode(0)
-	cp = ts.SpawnWithOpts(e2e.WithArgs("checkout", "ActiveState-CLI/Python3"))
+	cp = ts.SpawnWithOpts(e2e.OptArgs("checkout", "ActiveState-CLI/Python3"))
 	cp.ExpectExitCode(0)
 
 	// Verify local checkouts and executables are grouped together under projects.
-	cp = ts.SpawnWithOpts(e2e.WithArgs("projects"))
+	cp = ts.SpawnWithOpts(e2e.OptArgs("projects"))
 	cp.Expect("Python3")
 	cp.Expect("Local Checkout")
 	if runtime.GOOS != "windows" {
-		cp.ExpectLongString(ts.Dirs.Work)
+		cp.Expect(ts.Dirs.Work)
 	} else {
 		// Windows uses the long path here.
 		longPath, _ := fileutils.GetLongPathName(ts.Dirs.Work)
-		cp.ExpectLongString(longPath)
+		cp.Expect(longPath)
 	}
 	cp.Expect("Executables")
-	cp.ExpectLongString(ts.Dirs.Cache)
+	cp.Expect(ts.Dirs.Cache)
 	cp.Expect("small-python")
 	cp.Expect("Local Checkout")
 	if runtime.GOOS != "windows" {
-		cp.ExpectLongString(ts.Dirs.Work)
+		cp.Expect(ts.Dirs.Work)
 	} else {
 		// Windows uses the long path here.
 		longPath, _ := fileutils.GetLongPathName(ts.Dirs.Work)
-		cp.ExpectLongString(longPath)
+		cp.Expect(longPath)
 	}
 	cp.Expect("Executables")
-	cp.ExpectLongString(ts.Dirs.Cache)
+	cp.Expect(ts.Dirs.Cache)
 	cp.ExpectExitCode(0)
 }
 
@@ -74,7 +74,7 @@ func (suite *ProjectsIntegrationTestSuite) TestJSON() {
 	cp.Expect(`[{`)
 	cp.Expect(`}]`)
 	cp.ExpectExitCode(0)
-	//AssertValidJSON(suite.T(), cp) // list is too large to fit in terminal snapshot
+	// AssertValidJSON(suite.T(), cp) // list is too large to fit in terminal snapshot
 }
 
 func (suite *ProjectsIntegrationTestSuite) TestEdit_Name() {
@@ -95,7 +95,7 @@ func (suite *ProjectsIntegrationTestSuite) TestEdit_Name() {
 
 	// If the checkout failed, it's probably because the project name was changed
 	// in a previous run of this test. Try again with the new name.
-	if strings.Contains(cp.TrimmedSnapshot(), "Could not checkout project") {
+	if strings.Contains(cp.Output(), "Could not checkout project") {
 		cp = ts.Spawn("checkout", fmt.Sprintf("ActiveState-CLI/%s", newName))
 		originalName = newName
 		newName = originalName
@@ -108,7 +108,7 @@ func (suite *ProjectsIntegrationTestSuite) TestEdit_Name() {
 
 	cp = ts.Spawn("projects", "edit", fmt.Sprintf("ActiveState-CLI/%s", originalName), "--name", newName)
 	cp.Expect("You are about to edit")
-	cp.Send("y")
+	cp.SendLine("y")
 	cp.Expect("Project edited successfully")
 	cp.ExpectExitCode(0)
 
@@ -120,7 +120,7 @@ func (suite *ProjectsIntegrationTestSuite) TestEdit_Name() {
 	// Change name back to original
 	cp = ts.Spawn("projects", "edit", fmt.Sprintf("ActiveState-CLI/%s", newName), "--name", originalName)
 	cp.Expect("You are about to edit")
-	cp.Send("y")
+	cp.SendLine("y")
 	cp.Expect("Project edited successfully")
 	cp.ExpectExitCode(0)
 
@@ -141,21 +141,21 @@ func (suite *ProjectsIntegrationTestSuite) TestEdit_Visibility() {
 
 	cp := ts.Spawn("projects", "edit", namespace, "--visibility", "private")
 	cp.Expect("You are about to edit")
-	cp.Send("y")
+	cp.SendLine("y")
 	cp.Expect("Project edited successfully")
 	cp.ExpectExitCode(0)
 
 	ts.LogoutUser()
 
 	cp = ts.Spawn("checkout", namespace)
-	cp.Expect("Could not checkout")
+	cp.Expect("does not exist under ActiveState-CLI")
 	cp.ExpectExitCode(1)
 
 	ts.LoginAsPersistentUser()
 
 	cp = ts.Spawn("projects", "edit", namespace, "--visibility", "public")
 	cp.Expect("You are about to edit")
-	cp.Send("y")
+	cp.SendLine("y")
 	cp.Expect("Project edited successfully")
 	cp.ExpectExitCode(0)
 }
@@ -172,7 +172,7 @@ func (suite *ProjectsIntegrationTestSuite) TestMove() {
 	cp.Expect("You are about to move")
 	cp.Expect("ActiveState-CLI/small-python")
 	cp.Expect("ActiveState-CLI")
-	cp.Expect("Continue?")
+	cp.Expect("Continue? (y/N)")
 	cp.SendLine("n")
 	cp.Expect("aborted")
 	cp.ExpectExitCode(0)

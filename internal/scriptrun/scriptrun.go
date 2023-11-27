@@ -67,16 +67,20 @@ func (s *ScriptRun) NeedsActivation() bool {
 
 // PrepareVirtualEnv sets up the relevant runtime and prepares the environment.
 func (s *ScriptRun) PrepareVirtualEnv() (rerr error) {
-	rt, err := runtime.New(target.NewProjectTarget(s.project, nil, target.TriggerScript), s.analytics, s.svcModel)
-	if err != nil {
-		if !runtime.IsNeedsUpdateError(err) {
-			return locale.WrapError(err, "err_activate_runtime", "Could not initialize a runtime for this project.")
-		}
+	rt, err := runtime.New(target.NewProjectTarget(s.project, nil, target.TriggerScript), s.analytics, s.svcModel, s.auth)
+	switch {
+	case err == nil:
+		break
+	case runtime.IsNeedsUpdateError(err):
 		pg := runbits.NewRuntimeProgressIndicator(s.out)
 		defer rtutils.Closer(pg.Close, &rerr)
-		if err := rt.Update(s.auth, pg); err != nil {
+		if err := rt.Update(pg); err != nil {
 			return locale.WrapError(err, "err_update_runtime", "Could not update runtime installation.")
 		}
+	case runtime.IsNeedsCommitError(err):
+		s.out.Notice(locale.T("notice_commit_build_script"))
+	default:
+		return locale.WrapError(err, "err_activate_runtime", "Could not initialize a runtime for this project.")
 	}
 	venv := virtualenvironment.New(rt)
 

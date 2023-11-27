@@ -42,6 +42,10 @@ jobs:
         with:
           go-version: ${{ matrix.go-version }}
 
+      - # === Install State Tool ===
+        name: Install State Tool
+        uses: ActiveState/setup-state-tool@v1
+
       - # === Setup ===
         name: Setup
         shell: bash
@@ -84,6 +88,13 @@ jobs:
                   "text": {
                     "type": "mrkdwn",
                     "text": "Propagate-PR failed for *<${{ github.event.pull_request.html_url }}|${{ github.event.pull_request.title }}>*\nFailure should be addressed by *${{ github.event.pull_request.user.login }}*"
+                  }
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "Failed job: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
                   }
                 }
               ]

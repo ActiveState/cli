@@ -35,7 +35,7 @@ func (suite *EditTestSuite) BeforeTest(suiteName, testName string) {
 
 	suite.projectFile = &projectfile.Project{}
 	contents := strings.TrimSpace(`
-project: "https://platform.activestate.com/EditOrg/EditProject?commitID=00010001-0001-0001-0001-000100010001"
+project: "https://platform.activestate.com/EditOrg/EditProject"
 constants:
   - name: HELLO
     value: hello

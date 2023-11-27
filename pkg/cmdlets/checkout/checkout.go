@@ -44,7 +44,9 @@ func New(repo git.Repository, prime primeable) *Checkout {
 	return &Checkout{repo, prime.Output(), prime.Config(), prime.Analytics(), "", prime.Auth()}
 }
 
-func (r *Checkout) Run(ns *project.Namespaced, branchName, cachePath, targetPath string, noClone bool) (string, error) {
+func (r *Checkout) Run(ns *project.Namespaced, branchName, cachePath, targetPath string, noClone bool) (_ string, rerr error) {
+	defer r.rationalizeError(&rerr)
+
 	path, err := r.pathToUse(ns, targetPath)
 	if err != nil {
 		return "", errs.Wrap(err, "Could not get path to use")
@@ -54,6 +56,12 @@ func (r *Checkout) Run(ns *project.Namespaced, branchName, cachePath, targetPath
 	if err != nil {
 		return "", errs.Wrap(err, "Could not get absolute path")
 	}
+
+	// Re-enable in DX-2307.
+	//emptyDir, err := fileutils.IsEmptyDir(path)
+	//if err != nil {
+	//	multilog.Error("Unable to check if directory is empty: %v", err)
+	//}
 
 	// If project does not exist at path then we must checkout
 	// the project and create the project file
@@ -118,18 +126,31 @@ func (r *Checkout) Run(ns *project.Namespaced, branchName, cachePath, targetPath
 	configFile := filepath.Join(path, constants.ConfigFileName)
 	if !fileutils.FileExists(configFile) {
 		_, err = projectfile.Create(&projectfile.CreateParams{
-			Owner:      owner,
-			Project:    pj.Name, // match case on the Platform
-			CommitID:   commitID,
-			BranchName: branchName,
-			Directory:  path,
-			Language:   language.String(),
-			Cache:      cachePath,
+			Owner:          owner,
+			Project:        pj.Name, // match case on the Platform
+			BranchName:     branchName,
+			Directory:      path,
+			Language:       language.String(),
+			Cache:          cachePath,
+			LegacyCommitID: commitID.String(), // remove in DX-2307
 		})
 		if err != nil {
 			return "", errs.Wrap(err, "Could not create projectfile")
 		}
 	}
+
+	// Re-enable in DX-2307.
+	//err = localcommit.Set(path, commitID.String())
+	//if err != nil {
+	//	return "", errs.Wrap(err, "Could not create local commit file")
+	//}
+	//if emptyDir || fileutils.DirExists(filepath.Join(path, ".git")) {
+	//	err = localcommit.AddToGitIgnore(path)
+	//	if err != nil {
+	//		r.Outputer.Notice(locale.Tr("notice_commit_id_gitignore", constants.ProjectConfigDirName, constants.CommitIdFileName))
+	//		multilog.Error("Unable to add local commit file to .gitignore: %v", err)
+	//	}
+	//}
 
 	return path, nil
 }

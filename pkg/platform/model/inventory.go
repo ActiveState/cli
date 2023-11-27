@@ -16,7 +16,14 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 )
 
-type ErrNoMatchingPlatform struct{ *locale.LocalizedError }
+type ErrNoMatchingPlatform struct {
+	HostPlatform string
+	HostArch     string
+}
+
+func (e ErrNoMatchingPlatform) Error() string {
+	return "no matching platform"
+}
 
 // IngredientAndVersion is a sane version of whatever the hell it is go-swagger thinks it's doing
 type IngredientAndVersion struct {
@@ -93,6 +100,11 @@ func FetchAuthors(ingredID, ingredVersionID *strfmt.UUID) (Authors, error) {
 	return results.Payload.Authors, nil
 }
 
+type ErrTooManyMatches struct {
+	*locale.LocalizedError
+	Query string
+}
+
 func searchIngredientsNamespace(ns Namespace, name string, includeVersions bool, exactOnly bool) ([]*IngredientAndVersion, error) {
 	limit := int64(100)
 	offset := int64(0)
@@ -116,7 +128,7 @@ func searchIngredientsNamespace(ns Namespace, name string, includeVersions bool,
 	for offset == 0 || len(entries) == int(limit) {
 		if offset > (limit * 10) { // at most we will get 10 pages of ingredients (that's ONE THOUSAND ingredients)
 			// Guard against queries that match TOO MANY ingredients
-			return nil, locale.NewError("err_searchingredient_toomany", "Query matched too many ingredients. Please use a more specific query.")
+			return nil, &ErrTooManyMatches{locale.NewInputError("err_searchingredient_toomany", "", name), name}
 		}
 
 		params.SetOffset(&offset)
@@ -248,9 +260,7 @@ func filterPlatformIDs(hostPlatform, hostArch string, platformIDs []strfmt.UUID)
 		return fallback, nil
 	}
 
-	return nil, &ErrNoMatchingPlatform{locale.NewInputError(
-		"err_no_platform_data_remains", "", hostPlatform, hostArch,
-	)}
+	return nil, &ErrNoMatchingPlatform{hostPlatform, hostArch}
 }
 
 func FetchPlatformByUID(uid strfmt.UUID) (*Platform, error) {

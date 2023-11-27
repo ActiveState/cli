@@ -20,7 +20,7 @@ func (suite *EventsIntegrationTestSuite) TestEvents() {
 	defer ts.Close()
 
 	ts.PrepareActiveStateYAML(strings.TrimSpace(`
-project: https://platform.activestate.com/ActiveState-CLI/Python3?commitID=fbc613d6-b0b1-4f84-b26e-4aa5869c4e54
+project: https://platform.activestate.com/ActiveState-CLI/Python3
 scripts:
   - name: before
     language: bash
@@ -42,23 +42,24 @@ events:
     scope: ["activate"]
     value: after
 `))
+	ts.PrepareCommitIdFile("fbc613d6-b0b1-4f84-b26e-4aa5869c4e54")
 
 	cp := ts.Spawn("activate")
-	cp.Send("")
+	cp.SendEnter()
 	cp.Expect("before-script")
 	cp.Expect("First activate event")
 	cp.Expect("Activate event")
-	cp.WaitForInput()
+	cp.ExpectInput()
 	cp.SendLine("exit")
 	cp.Expect("after-script")
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("activate")
 	cp.Expect("Activate event")
-	cp.WaitForInput()
+	cp.ExpectInput()
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
-	output := cp.TrimmedSnapshot()
+	output := cp.Output()
 	if strings.Contains(output, "First activate event") {
 		suite.T().Fatal("Output from second activate event should not contain first-activate output")
 	}

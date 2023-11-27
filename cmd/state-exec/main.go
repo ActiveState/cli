@@ -87,15 +87,30 @@ func run() error {
 	if err := sendMsgToService(meta.SockPath, hb); err != nil {
 		logr.Debug("                 sock - error: %v", err)
 
-		if onCI() { // halt control flow on CI only
+		if inActiveStateCI() { // halt control flow on CI only
 			return fmt.Errorf("cannot send message to service (this error is handled in CI only): %w", err)
 		}
 	}
 
 	logr.Debug("cmd - running: %s", meta.MatchingBin)
-	if err := runCmd(meta); err != nil {
+	exitCode, err := runCmd(meta)
+	if err != nil {
 		logr.Debug("      running - failed: bins (%v)", meta.ExecMeta.Bins)
 		return fmt.Errorf("cannot run command: %w", err)
+	}
+
+	msg, err := newExitCodeMessage(exitCode)
+	if err != nil {
+		return fmt.Errorf("cannot create new exit code message: %w", err)
+	}
+	logr.Debug("message data - exec: %s, exit code: %s", msg.ExecPath, msg.ExitCode)
+
+	if err := sendMsgToService(meta.SockPath, msg); err != nil {
+		logr.Debug("                 sock - error: %v", err)
+
+		if inActiveStateCI() { // halt control flow on CI only
+			return fmt.Errorf("cannot send message to service (this error is handled in CI only): %w", err)
+		}
 	}
 
 	return nil

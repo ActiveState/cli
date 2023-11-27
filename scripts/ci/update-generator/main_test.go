@@ -32,12 +32,12 @@ func TestCreateUpdate(t *testing.T) {
 		require.NoError(t, err)
 	}
 
-	err = createUpdate(dir, "channel", "version", "platform", dir)
+	err = createUpdate(dir, "channel", "version-SHA", "version", "platform", dir)
 	require.NoError(t, err)
 
 	_, ext := archiveMeta()
 
 	assert.FileExists(t, filepath.Join(dir, "channel", "platform", "info.json"), "Should create update bits")
 	assert.FileExists(t, filepath.Join(dir, "channel", "version", "platform", "info.json"), "Should create update bits")
-	assert.FileExists(t, filepath.Join(dir, "channel", "version", "platform", "state-platform-version"+ext), "Should create update bits")
+	assert.FileExists(t, filepath.Join(dir, "channel", "version", "platform", "state-platform-version-SHA"+ext), "Should create update bits")
 }

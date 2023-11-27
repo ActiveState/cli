@@ -15,8 +15,7 @@ name: Build-Test-Deploy
       - synchronize
       - reopened
   schedule:
-    -
-      cron: 0 0 * * *
+    - cron: 0 0 * * *
 
 # === Workflow Permissions ===
 permissions:
@@ -25,7 +24,7 @@ permissions:
 
 # === Workflow-level environment variables ===
 env:
-  AWS_REGION : us-east-1
+  AWS_REGION: us-east-1
   AWS_ROLE_SESSION_NAME: gha-activestate-cli
 
 # === JOBS ===
@@ -56,6 +55,11 @@ jobs:
 
     # === OS Specific Steps ===
     steps:
+      - # === Disable Windows Defender as it slows things down significantly ===
+        name: Disabling Windows Defender
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: Set-MpPreference -DisableRealtimeMonitoring $true
 
       - # === Checkout Code ===
         name: Checkout code
@@ -72,6 +76,10 @@ jobs:
         uses: gotesttools/gotestfmt-action@v2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
+
+      - # === Install State Tool ===
+        name: Install State Tool
+        uses: ActiveState/setup-state-tool@v1
 
       - # === Setup ===
         name: Setup
@@ -243,7 +251,7 @@ jobs:
         name: Generate Remote Install Deployment
         shell: bash
         run: state run generate-remote-install-deployment
-      
+
       - # === Configure AWS credentials ==
         name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v2
@@ -314,14 +322,13 @@ jobs:
           echo "Running integration tests with tags: $TEST_SUITE_TAGS (empty means every test not specifically tagged)"
 
           export TEST_SUITE_TAGS="$TEST_SUITE_TAGS"
-          TIMEOUT=15m
+          TIMEOUT=30m
           if [[ "$TEST_SUITE_TAGS" == "all" ]]; then
             TIMEOUT=60m
           fi
           SHELL='' go test -timeout $TIMEOUT -v `go list ./... | grep "integration"` -json 2>&1 | gotestfmt -hide empty-packages
         continue-on-error: ${{ github.event_name == 'schedule' }}
         env:
-          ACTIVESTATE_VERBOSE: true
           INTEGRATION_TEST_USERNAME: ${{ secrets.INTEGRATION_TEST_USERNAME }}
           INTEGRATION_TEST_PASSWORD: ${{ secrets.INTEGRATION_TEST_PASSWORD }}
           INTEGRATION_TEST_TOKEN: ${{ secrets.INTEGRATION_TEST_TOKEN }}
@@ -409,6 +416,10 @@ jobs:
         with:
           go-version: ${{ matrix.go-version }}
 
+      - # === Install State Tool ===
+        name: Install State Tool
+        uses: ActiveState/setup-state-tool@v1
+
       - # === Setup ===
         name: Setup
         shell: bash
@@ -457,6 +468,11 @@ jobs:
           role-session-name: ${{ env.AWS_ROLE_SESSION_NAME }}
           aws-region: ${{ env.AWS_REGION }}
           mask-aws-account-id: true
+
+      - # === Generate updated master versions.json if necessary ===
+        name: Generate version list
+        shell: bash
+        run: state run generate-versions-list
 
       - # === Deploy ===
         name: Deploy

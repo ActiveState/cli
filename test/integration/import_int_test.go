@@ -16,7 +16,7 @@ type ImportIntegrationTestSuite struct {
 	tagsuite.Suite
 }
 
-func (suite *ImportIntegrationTestSuite) TestImport_headless() {
+func (suite *ImportIntegrationTestSuite) TestImport_detached() {
 	suite.OnlyRunForTags(tagsuite.Import)
 	if runtime.GOOS == "darwin" {
 		suite.T().Skip("Skipping mac for now as the builds are still too unreliable")
@@ -39,7 +39,8 @@ func (suite *ImportIntegrationTestSuite) TestImport_headless() {
 	suite.Require().NoError(err)
 
 	cp = ts.Spawn("import", importPath)
-	cp.ExpectLongString("Operating on project ActiveState-CLI/Python3-Import")
+	cp.Expect("Operating on project")
+	cp.Expect("ActiveState-CLI/Python3-Import")
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("packages")

@@ -8,14 +8,17 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ActiveState/termtest"
+	"github.com/stretchr/testify/suite"
+
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/runbits/commitmediator"
 	"github.com/ActiveState/cli/internal/strutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
-	"github.com/stretchr/testify/suite"
 )
 
 type PushIntegrationTestSuite struct {
@@ -60,7 +63,7 @@ func (suite *PushIntegrationTestSuite) TestInitAndPush() {
 		namespace,
 		wd,
 	)
-	cp.ExpectLongString("successfully initialized")
+	cp.Expect("successfully initialized")
 	cp.ExpectExitCode(0)
 	ts.NotifyProjectCreated(suite.username, pname.String())
 
@@ -70,24 +73,22 @@ func (suite *PushIntegrationTestSuite) TestInitAndPush() {
 	// Check that languages were reset
 	pjfile, err := projectfile.Parse(pjfilepath)
 	suite.Require().NoError(err)
-	if pjfile.CommitID() == "" {
-		suite.FailNow("commitID was not set after running push for project creation")
-	}
-	if pjfile.BranchName() == "" {
-		suite.FailNow("branch was not set after running push for project creation")
-	}
+	commitID, err := commitmediator.Get(pjfile)
+	suite.Require().NoError(err)
+	suite.Require().NotEmpty(commitID.String(), "commitID was not set after running push for project creation")
+	suite.Require().NotEmpty(pjfile.BranchName(), "branch was not set after running push for project creation")
 
 	// ensure that we are logged out
 	cp = ts.Spawn(tagsuite.Auth, "logout")
 	cp.ExpectExitCode(0)
 
-	cp = ts.SpawnWithOpts(e2e.WithArgs("install", suite.extraPackage), e2e.WithWorkDirectory(wd))
+	cp = ts.SpawnWithOpts(e2e.OptArgs("install", suite.extraPackage), e2e.OptWD(wd))
 	switch runtime.GOOS {
 	case "darwin":
-		cp.ExpectRe("added|being built", 60*time.Second) // while cold storage is off
+		cp.ExpectRe("added|being built", termtest.OptExpectTimeout(60*time.Second)) // while cold storage is off
 		cp.Wait()
 	default:
-		cp.Expect("added", 60*time.Second)
+		cp.Expect("added", termtest.OptExpectTimeout(60*time.Second))
 		cp.ExpectExitCode(0)
 	}
 
@@ -99,80 +100,36 @@ func (suite *PushIntegrationTestSuite) TestInitAndPush() {
 
 	ts.LoginAsPersistentUser()
 
-	cp = ts.SpawnWithOpts(e2e.WithArgs("push", namespace), e2e.WithWorkDirectory(wd))
+	cp = ts.SpawnWithOpts(e2e.OptArgs("push", namespace), e2e.OptWD(wd))
 	cp.Expect("Pushing to project")
 	cp.ExpectExitCode(0)
 }
 
-// Test pushing to a new project from a headless commit
-func (suite *PushIntegrationTestSuite) TestPush_HeadlessConvert_NewProject() {
-	suite.OnlyRunForTags(tagsuite.Push)
-	ts := e2e.New(suite.T(), false)
-	defer ts.Close()
-	ts.LoginAsPersistentUser()
-	pname := strutils.UUID()
-	namespace := fmt.Sprintf("%s/%s", suite.username, pname)
-
-	cp := ts.SpawnWithOpts(e2e.WithArgs("install", suite.extraPackage))
-
-	cp.ExpectLongString("An activestate.yaml has been created", time.Second*40)
-	switch runtime.GOOS {
-	case "darwin":
-		cp.ExpectRe("added|being built", 60*time.Second) // while cold storage is off
-		cp.Wait()
-	default:
-		cp.Expect("added", 60*time.Second)
-		cp.ExpectExitCode(0)
-	}
-
-	pjfilepath := filepath.Join(ts.Dirs.Work, constants.ConfigFileName)
-	pjfile, err := projectfile.Parse(pjfilepath)
-	suite.Require().NoError(err)
-	if !strings.Contains(pjfile.Project, "/commit/") {
-		suite.FailNow("project field should be headless but isn't: " + pjfile.Project)
-	}
-
-	cp = ts.SpawnWithOpts(e2e.WithArgs("push"))
-	cp.ExpectLongString("Who would you like the owner of this project to be?")
-	cp.Send("")
-	cp.ExpectLongString("What would you like the name of this project to be?")
-	cp.SendUnterminated(string([]byte{0033, '[', 'B'})) // move cursor down, and then press enter
-	cp.Expect("> Other")
-	cp.Send("")
-	cp.Expect(">")
-	cp.SendLine(pname.String())
-	cp.Expect("Project created")
-	cp.ExpectExitCode(0)
-	ts.NotifyProjectCreated(suite.username, pname.String())
-
-	pjfile, err = projectfile.Parse(pjfilepath)
-	suite.Require().NoError(err)
-	if !strings.Contains(pjfile.Project, fmt.Sprintf("/%s?", namespace)) {
-		suite.FailNow("project field should include project again: " + pjfile.Project)
-	}
-}
-
 // Test pushing without permission, and choosing to create a new project
 func (suite *PushIntegrationTestSuite) TestPush_NoPermission_NewProject() {
+	if runtime.GOOS == "windows" {
+		suite.T().Skip("Skipped on Windows for now because SendKeyDown() doesnt work (regardless of bash/cmd)")
+	}
+
 	suite.OnlyRunForTags(tagsuite.Push)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 	username, _ := ts.CreateNewUser()
 	pname := strutils.UUID()
 
-	cp := ts.SpawnWithOpts(e2e.WithArgs("activate", suite.baseProject, "--path", ts.Dirs.Work))
-	cp.Expect("Activated", 40*time.Second)
-	cp.WaitForInput(10 * time.Second)
+	cp := ts.SpawnWithOpts(e2e.OptArgs("activate", suite.baseProject, "--path", ts.Dirs.Work))
+	cp.Expect("Activated", termtest.OptExpectTimeout(40*time.Second))
+	cp.ExpectInput(termtest.OptExpectTimeout(10 * time.Second))
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
 
-	cp = ts.SpawnWithOpts(e2e.WithArgs("install", suite.extraPackage))
+	cp = ts.SpawnWithOpts(e2e.OptArgs("install", suite.extraPackage))
 	switch runtime.GOOS {
 	case "darwin":
-		cp.ExpectRe("added|being built", 60*time.Second) // while cold storage is off
+		cp.ExpectRe("added|being built", termtest.OptExpectTimeout(60*time.Second)) // while cold storage is off
 		cp.Wait()
 	default:
-		cp.Expect("added", 60*time.Second)
+		cp.Expect("added", termtest.OptExpectTimeout(60*time.Second))
 		cp.ExpectExitCode(0)
 	}
 
@@ -181,15 +138,16 @@ func (suite *PushIntegrationTestSuite) TestPush_NoPermission_NewProject() {
 	suite.Require().NoError(err)
 	suite.Require().Contains(pjfile.Project, suite.baseProject)
 
-	cp = ts.SpawnWithOpts(e2e.WithArgs("push"))
+	cp = ts.SpawnWithOpts(e2e.OptArgs("push"))
 	cp.Expect("not authorized")
-	cp.Send("y")
-	cp.ExpectLongString("Who would you like the owner of this project to be?")
-	cp.Send("")
-	cp.ExpectLongString("What would you like the name of this project to be?")
-	cp.SendUnterminated(string([]byte{0033, '[', 'B'})) // move cursor down, and then press enter
+	cp.Expect("(Y/n)")
+	cp.SendLine("y")
+	cp.Expect("Who would you like the owner of this project to be?")
+	cp.SendEnter()
+	cp.Expect("What would you like the name of this project to be?")
+	cp.SendKeyDown()
 	cp.Expect("> Other")
-	cp.Send("")
+	cp.SendEnter()
 	cp.Expect(">")
 	cp.SendLine(pname.String())
 	cp.Expect("Project created")
@@ -212,13 +170,13 @@ func (suite *PushIntegrationTestSuite) TestCarlisle() {
 
 	wd := filepath.Join(ts.Dirs.Work, namespace)
 	cp := ts.SpawnWithOpts(
-		e2e.WithArgs(
+		e2e.OptArgs(
 			"activate", suite.baseProject,
 			"--path", wd),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	// The activestate.yaml on Windows runs custom activation to set shortcuts and file associations.
-	cp.Expect("Activated")
+	cp.Expect("Activated", e2e.RuntimeSourcingTimeoutOpt)
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
 
@@ -227,16 +185,16 @@ func (suite *PushIntegrationTestSuite) TestCarlisle() {
 	cp.ExpectExitCode(0)
 
 	// anonymous commit
-	cp = ts.SpawnWithOpts(e2e.WithArgs(
+	cp = ts.SpawnWithOpts(e2e.OptArgs(
 		"install", suite.extraPackage),
-		e2e.WithWorkDirectory(wd),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"))
+		e2e.OptWD(wd),
+		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"))
 	switch runtime.GOOS {
 	case "darwin":
-		cp.ExpectRe("added|being built", 60*time.Second) // while cold storage is off
+		cp.ExpectRe("added|being built", e2e.RuntimeSourcingTimeoutOpt) // while cold storage is off
 		cp.Wait()
 	default:
-		cp.Expect("added", 60*time.Second)
+		cp.Expect("added", e2e.RuntimeSourcingTimeoutOpt)
 		cp.ExpectExitCode(0)
 	}
 
@@ -246,17 +204,153 @@ func (suite *PushIntegrationTestSuite) TestCarlisle() {
 
 	ts.LoginAsPersistentUser()
 
-	cp = ts.SpawnWithOpts(e2e.WithArgs("push", namespace), e2e.WithWorkDirectory(wd))
-	cp.ExpectLongString("You are about to create the project")
-	cp.Send("y")
+	cp = ts.SpawnWithOpts(e2e.OptArgs("push", namespace), e2e.OptWD(wd))
+	cp.Expect("continue? (Y/n)")
+	cp.SendLine("y")
 	cp.Expect("Project created")
 	cp.ExpectExitCode(0)
 	ts.NotifyProjectCreated(suite.username, pname.String())
 }
 
+func (suite *PushIntegrationTestSuite) TestPush_NoProject() {
+	suite.OnlyRunForTags(tagsuite.Push)
+
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	ts.LoginAsPersistentUser()
+	cp := ts.SpawnWithOpts(e2e.OptArgs("push"))
+	cp.Expect("No project found")
+	cp.ExpectExitCode(1)
+
+	if strings.Count(cp.Snapshot(), " x ") != 1 {
+		suite.Fail("Expected exactly ONE error message, got: ", cp.Snapshot())
+	}
+}
+
+func (suite *PushIntegrationTestSuite) TestPush_NoAuth() {
+	suite.OnlyRunForTags(tagsuite.Push)
+
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	ts.PrepareProject("ActiveState-CLI/cli", "882ae76e-fbb7-4989-acc9-9a8b87d49388")
+
+	cp := ts.SpawnWithOpts(e2e.OptArgs("push"))
+	cp.Expect("you need to be authenticated")
+	cp.ExpectExitCode(1)
+
+	if strings.Count(cp.Snapshot(), " x ") != 1 {
+		suite.Fail("Expected exactly ONE error message, got: ", cp.Snapshot())
+	}
+}
+
+func (suite *PushIntegrationTestSuite) TestPush_NoChanges() {
+	suite.OnlyRunForTags(tagsuite.Push)
+
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.SpawnWithOpts(e2e.OptArgs("checkout", "ActiveState-CLI/small-python", "."))
+	cp.ExpectExitCode(0)
+
+	ts.LoginAsPersistentUser()
+	cp = ts.SpawnWithOpts(e2e.OptArgs("push"))
+	cp.Expect("no local changes to push")
+	cp.ExpectExitCode(1)
+
+	if strings.Count(cp.Snapshot(), " x ") != 1 {
+		suite.Fail("Expected exactly ONE error message, got: ", cp.Snapshot())
+	}
+}
+
+func (suite *PushIntegrationTestSuite) TestPush_NameInUse() {
+	suite.OnlyRunForTags(tagsuite.Push)
+
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	// Source project we do not have access to
+	ts.PrepareProject("ActiveState-Test-DevNull/push-error-test", "2aa0b8fa-04e2-4079-bde1-d46764e3cb53")
+
+	ts.LoginAsPersistentUser()
+	// Target project already exists
+	cp := ts.SpawnWithOpts(e2e.OptArgs("push", "-n", "ActiveState-CLI/push-error-test"))
+	cp.Expect("already in use")
+	cp.ExpectExitCode(1)
+
+	if strings.Count(cp.Snapshot(), " x ") != 1 {
+		suite.Fail("Expected exactly ONE error message, got: ", cp.Snapshot())
+	}
+}
+
+func (suite *PushIntegrationTestSuite) TestPush_Aborted() {
+	// Skipped for now due to DX-2244
+	suite.T().Skip("Confirming prompt with N not working, must fix first")
+
+	suite.OnlyRunForTags(tagsuite.Push)
+
+	ts := e2e.New(suite.T(), true)
+	defer ts.Close()
+
+	// Source project we do not have access to
+	ts.PrepareProject("ActiveState-Test-DevNull/push-error-test", "2aa0b8fa-04e2-4079-bde1-d46764e3cb53")
+
+	ts.LoginAsPersistentUser()
+	// Target project already exists
+	cp := ts.SpawnWithOpts(e2e.OptArgs("push"))
+	cp.Expect("Would you like to create a new project")
+	cp.SendLine("n")
+	cp.Expect("Project creation aborted by user", termtest.OptExpectTimeout(5*time.Second))
+	cp.ExpectExitCode(1)
+
+	if strings.Count(cp.Snapshot(), " x ") != 1 {
+		suite.Fail("Expected exactly ONE error message, got: ", cp.Snapshot())
+	}
+}
+
+func (suite *PushIntegrationTestSuite) TestPush_InvalidHistory() {
+	suite.OnlyRunForTags(tagsuite.Push)
+
+	ts := e2e.New(suite.T(), true)
+	defer ts.Close()
+
+	// Note the commit we're using here is for another project, in order to repro the error
+	ts.PrepareProject("ActiveState-CLI/small-python", "dbc0415e-91e8-407b-ad36-1de0cc5c0cbb")
+
+	ts.LoginAsPersistentUser()
+	// Target project already exists
+	cp := ts.SpawnWithOpts(e2e.OptArgs("push", "ActiveState-CLI/push-error-test"))
+	cp.Expect("commit history does not match")
+	cp.ExpectExitCode(1)
+
+	if strings.Count(cp.Snapshot(), " x ") != 1 {
+		suite.Fail("Expected exactly ONE error message, got: ", cp.Snapshot())
+	}
+}
+
+func (suite *PushIntegrationTestSuite) TestPush_PullNeeded() {
+	suite.OnlyRunForTags(tagsuite.Push)
+
+	ts := e2e.New(suite.T(), true)
+	defer ts.Close()
+
+	ts.PrepareProject("ActiveState-CLI/push-error-test", "899c9b4c-d28d-441a-9c28-c84819ba8b1a")
+
+	ts.LoginAsPersistentUser()
+	// Target project already exists
+	cp := ts.SpawnWithOpts(e2e.OptArgs("push"))
+	cp.Expect("changes available that need to be merged")
+	cp.ExpectExitCode(1)
+
+	if strings.Count(cp.Snapshot(), " x ") != 1 {
+		suite.Fail("Expected exactly ONE error message, got: ", cp.Snapshot())
+	}
+}
+
 func (suite *PushIntegrationTestSuite) TestPush_Outdated() {
 	suite.OnlyRunForTags(tagsuite.Push)
-	projectLine := "project: https://platform.activestate.com/ActiveState-CLI/cli?branch=main&commitID="
+	projectLine := "project: https://platform.activestate.com/ActiveState-CLI/cli?branch=main"
 	unPushedCommit := "882ae76e-fbb7-4989-acc9-9a8b87d49388"
 
 	ts := e2e.New(suite.T(), false)
@@ -264,12 +358,18 @@ func (suite *PushIntegrationTestSuite) TestPush_Outdated() {
 
 	wd := filepath.Join(ts.Dirs.Work, "cli")
 	pjfilepath := filepath.Join(ts.Dirs.Work, "cli", constants.ConfigFileName)
-	err := fileutils.WriteFile(pjfilepath, []byte(projectLine+unPushedCommit))
+	suite.Require().NoError(fileutils.WriteFile(pjfilepath, []byte(projectLine)))
+	// Remove the following lines in DX-2307.
+	pjfile, err := projectfile.Parse(pjfilepath)
 	suite.Require().NoError(err)
+	suite.Require().NoError(pjfile.LegacySetCommit(unPushedCommit))
+	// Re-enable the following lines in DX-2307.
+	//commitIdFile := filepath.Join(ts.Dirs.Work, "cli", constants.ProjectConfigDirName, constants.CommitIdFileName)
+	//suite.Require().NoError(fileutils.WriteFile(commitIdFile, []byte(unPushedCommit)))
 
 	ts.LoginAsPersistentUser()
-	cp := ts.SpawnWithOpts(e2e.WithArgs("push"), e2e.WithWorkDirectory(wd))
-	cp.ExpectLongString("Your project has new changes available")
+	cp := ts.SpawnWithOpts(e2e.OptArgs("push"), e2e.OptWD(wd))
+	cp.Expect("Your project has new changes available")
 	cp.ExpectExitCode(1)
 }
 

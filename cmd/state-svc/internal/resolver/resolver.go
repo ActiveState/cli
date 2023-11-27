@@ -1,6 +1,7 @@
 package resolver
 
 import (
+	"context"
 	"encoding/json"
 	"os"
 	"runtime/debug"
@@ -9,7 +10,6 @@ import (
 	"time"
 
 	"github.com/ActiveState/cli/cmd/state-svc/internal/messages"
-	"github.com/ActiveState/cli/cmd/state-svc/internal/rtusage"
 	"github.com/ActiveState/cli/cmd/state-svc/internal/rtwatcher"
 	genserver "github.com/ActiveState/cli/cmd/state-svc/internal/server/generated"
 	"github.com/ActiveState/cli/internal/analytics/client/sync"
@@ -28,7 +28,6 @@ import (
 	"github.com/ActiveState/cli/internal/updater"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/projectfile"
-	"golang.org/x/net/context"
 )
 
 type Resolver struct {
@@ -36,7 +35,6 @@ type Resolver struct {
 	messages       *messages.Messages
 	updatePoller   *poller.Poller
 	authPoller     *poller.Poller
-	usageChecker   *rtusage.Checker
 	projectIDCache *projectcache.ID
 	an             *sync.Client
 	anForClient    *sync.Client // Use separate client for events sent through service so we don't contaminate one with the other
@@ -53,7 +51,8 @@ func New(cfg *config.Instance, an *sync.Client, auth *authentication.Auth) (*Res
 
 	upchecker := updater.NewDefaultChecker(cfg, an)
 	pollUpdate := poller.New(1*time.Hour, func() (interface{}, error) {
-		return upchecker.Check()
+		logging.Debug("Poller checking for update info")
+		return upchecker.CheckFor(constants.BranchName, "")
 	})
 
 	pollRate := time.Minute.Milliseconds()
@@ -72,8 +71,6 @@ func New(cfg *config.Instance, an *sync.Client, auth *authentication.Auth) (*Res
 		return nil, nil
 	})
 
-	usageChecker := rtusage.NewChecker(cfg, auth)
-
 	// Note: source does not matter here, as analytics sent via the resolver have a source
 	// (e.g. State Tool or Executor), and that source will be used.
 	anForClient := sync.New(anaConsts.SrcStateTool, cfg, auth, nil)
@@ -82,7 +79,6 @@ func New(cfg *config.Instance, an *sync.Client, auth *authentication.Auth) (*Res
 		msg,
 		pollUpdate,
 		pollAuth,
-		usageChecker,
 		projectcache.NewID(),
 		an,
 		anForClient,
@@ -118,25 +114,49 @@ func (r *Resolver) Version(ctx context.Context) (*graph.Version, error) {
 	}, nil
 }
 
-func (r *Resolver) AvailableUpdate(ctx context.Context) (*graph.AvailableUpdate, error) {
+func (r *Resolver) AvailableUpdate(ctx context.Context, desiredChannel, desiredVersion string) (*graph.AvailableUpdate, error) {
 	defer func() { handlePanics(recover(), debug.Stack()) }()
 
+	if desiredChannel == "" {
+		desiredChannel = constants.BranchName
+	}
+
 	r.an.EventWithLabel(anaConsts.CatStateSvc, "endpoint", "AvailableUpdate")
-	logging.Debug("AvailableUpdate resolver")
+	logging.Debug("AvailableUpdate resolver: %s/%s", desiredChannel, desiredVersion)
 	defer logging.Debug("AvailableUpdate done")
 
-	update, ok := r.updatePoller.ValueFromCache().(*updater.AvailableUpdate)
-	if !ok || update == nil {
-		logging.Debug("No update info in cache")
-		return nil, nil
+	var (
+		avUpdate *updater.AvailableUpdate
+		ok       bool
+		err      error
+	)
+
+	switch {
+	case desiredChannel == constants.BranchName && desiredVersion == "":
+		avUpdate, ok = r.updatePoller.ValueFromCache().(*updater.AvailableUpdate)
+		if !ok || avUpdate == nil {
+			logging.Debug("No update info in poller cache")
+			return nil, nil
+		}
+
+		logging.Debug("Update info pulled from poller cache")
+
+	default:
+		logging.Debug("Update info requested for specific branch/version")
+
+		upchecker := updater.NewDefaultChecker(r.cfg, r.an)
+		avUpdate, err = upchecker.CheckFor(desiredChannel, desiredVersion)
+		if err != nil {
+			return nil, errs.Wrap(err, "Failed to check for specified channel/version: %s/%s", desiredChannel, desiredVersion)
+		}
 	}
 
 	availableUpdate := &graph.AvailableUpdate{
-		Version:  update.Version,
-		Channel:  update.Channel,
-		Path:     update.Path,
-		Platform: update.Platform,
-		Sha256:   update.Sha256,
+		Version:  avUpdate.Version,
+		Channel:  avUpdate.Channel,
+		Path:     avUpdate.Path,
+		Platform: avUpdate.Platform,
+		Sha256:   avUpdate.Sha256,
 	}
 
 	return availableUpdate, nil
@@ -208,29 +228,6 @@ func (r *Resolver) ReportRuntimeUsage(_ context.Context, pid int, exec, source s
 	r.rtwatch.Watch(pid, exec, source, dims)
 
 	return &graph.ReportRuntimeUsageResponse{Received: true}, nil
-}
-
-func (r *Resolver) CheckRuntimeUsage(_ context.Context, organizationName string) (*graph.CheckRuntimeUsageResponse, error) {
-	defer func() { handlePanics(recover(), debug.Stack()) }()
-
-	logging.Debug("CheckRuntimeUsage resolver")
-
-	usage, err := r.usageChecker.Check(organizationName)
-	if err != nil {
-		return nil, errs.Wrap(err, "Could not check runtime usage: %s", errs.JoinMessage(err))
-	}
-
-	if usage == nil {
-		return &graph.CheckRuntimeUsageResponse{
-			Limit: 1,
-			Usage: 0,
-		}, nil
-	}
-
-	return &graph.CheckRuntimeUsageResponse{
-		Limit: int(usage.LimitDynamicRuntimes),
-		Usage: int(usage.ActiveDynamicRuntimes),
-	}, nil
 }
 
 func (r *Resolver) CheckMessages(ctx context.Context, command string, flags []string) ([]*graph.MessageInfo, error) {

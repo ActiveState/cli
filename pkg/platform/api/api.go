@@ -4,9 +4,11 @@ import (
 	"bytes"
 	"log"
 	"net/http"
+	"os"
 	"reflect"
 	"strings"
 
+	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/alecthomas/template"
 
 	"github.com/ActiveState/cli/pkg/sysinfo"
@@ -44,6 +46,14 @@ func (r *RoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
 	resp, err := r.transport.RoundTrip(req)
 	if err != nil && resp != nil && resp.StatusCode == http.StatusForbidden && strings.EqualFold(resp.Header.Get("server"), "cloudfront") {
 		return nil, platform.NewCountryBlockedError()
+	}
+
+	// This code block is for integration testing purposes only.
+	if os.Getenv(constants.PlatformApiPrintRequestsEnvVarName) != "" &&
+		(condition.OnCI() || condition.BuiltOnDevMachine()) {
+		logging.Debug("URL: %s\n", req.URL)
+		logging.Debug("User-Agent: %s\n", resp.Request.Header.Get("User-Agent"))
+		logging.Debug("X-Requestor: %s\n", resp.Request.Header.Get("X-Requestor"))
 	}
 
 	return resp, err
@@ -134,4 +144,19 @@ func ErrorMessageFromPayload(err error) string {
 		return err.Error()
 	}
 	return codeVal.String()
+}
+
+func ErrorFromPayload(err error) error {
+	return ErrorFromPayloadTyped(err)
+}
+
+func ErrorFromPayloadTyped(err error) *rationalize.ErrAPI {
+	if err == nil {
+		return nil
+	}
+	return &rationalize.ErrAPI{
+		err,
+		ErrorCodeFromPayload(err),
+		ErrorMessageFromPayload(err),
+	}
 }

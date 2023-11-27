@@ -32,6 +32,7 @@ import (
 	"github.com/ActiveState/cli/internal/prompt"
 	_ "github.com/ActiveState/cli/internal/prompt" // Sets up survey defaults
 	"github.com/ActiveState/cli/internal/rollbar"
+	"github.com/ActiveState/cli/internal/runbits/legacy/projectmigration"
 	"github.com/ActiveState/cli/internal/runbits/panics"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/svcctl"
@@ -211,6 +212,13 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 	// Set up prompter
 	prompter := prompt.New(isInteractive, an)
 
+	// This is an anti-pattern. DO NOT DO THIS! Normally we should be passing prompt and out as
+	// arguments everywhere it is needed. However, we need to support legacy projects with commitId in
+	// activestate.yaml, and whenever that commitId is needed, we need to prompt the user to migrate
+	// their project. This would result in a lot of boilerplate for a legacy feature, so we're
+	// working around it with package "globals".
+	projectmigration.Register(prompter, out)
+
 	// Set up conditional, which accesses a lot of primer data
 	sshell := subshell.New(cfg)
 
@@ -233,7 +241,7 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 
 	if childCmd != nil && !childCmd.SkipChecks() {
 		// Auto update to latest state tool version
-		if updated, err := autoUpdate(args, cfg, an, out); err == nil && updated {
+		if updated, err := autoUpdate(svcmodel, args, cfg, an, out); err == nil && updated {
 			return nil // command will be run by updated exe
 		} else if err != nil {
 			multilog.Error("Failed to autoupdate: %v", err)

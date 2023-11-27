@@ -1,10 +1,8 @@
 package integration
 
 import (
-	"path/filepath"
 	"testing"
 
-	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/stretchr/testify/suite"
@@ -20,8 +18,7 @@ func (suite *InviteIntegrationTestSuite) TestInvite_NotAuthenticated() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	url := "https://platform.activestate.com/ActiveState-CLI/Invite-Test?branch=main&commitID=eb8dd176-d557-4adc-8b79-7b17e3a03bd7"
-	suite.Require().NoError(fileutils.WriteFile(filepath.Join(ts.Dirs.Work, "activestate.yaml"), []byte("project: "+url)))
+	ts.PrepareProject("ActiveState-CLI/Invite-Test", "")
 
 	cp := ts.Spawn("invite", "test-user@test.com")
 	cp.Expect("You need to authenticate")

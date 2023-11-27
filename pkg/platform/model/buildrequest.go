@@ -14,7 +14,7 @@ func RequestBuild(auth *authentication.Auth, recipeID, commitID strfmt.UUID, own
 	var platProj *mono_models.Project
 	if owner != "" && project != "" {
 		var err error
-		platProj, err = FetchProjectByName(owner, project)
+		platProj, err = LegacyFetchProjectByName(owner, project)
 		if err != nil {
 			return headchef.Error, nil, locale.WrapError(err, "build_request_get_project_err", "Could not find project {{.V0}}/{{.V1}} on ActiveState Platform.", owner, project)
 		}

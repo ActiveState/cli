@@ -62,7 +62,7 @@ func (suite *InitIntegrationTestSuite) runInitTest(addPath bool, lang string, ex
 	// Run `state init`, creating the project.
 	cp := ts.Spawn(computedArgs...)
 	cp.Expect("Skipping runtime setup")
-	cp.ExpectLongString(fmt.Sprintf("Project '%s' has been successfully initialized", namespace))
+	cp.Expect(fmt.Sprintf("Project '%s' has been successfully initialized", namespace))
 	cp.ExpectExitCode(0)
 	ts.NotifyProjectCreated(e2e.PersistentUsername, pname.String())
 
@@ -114,10 +114,10 @@ func (suite *InitIntegrationTestSuite) TestInit_InferLanguageFromUse() {
 	cp.ExpectExitCode(0)
 
 	cp = ts.SpawnWithOpts(
-		e2e.WithArgs("use", "Python3"),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.OptArgs("use", "Python3"),
+		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
-	cp.Expect("Switched to project")
+	cp.Expect("Switched to project", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
 
 	pname := strutils.UUID()
@@ -137,7 +137,7 @@ func (suite *InitIntegrationTestSuite) TestInit_NotAuthenticated() {
 	defer ts.Close()
 
 	cp := ts.Spawn("init", "test-user/test-project", "python3")
-	cp.ExpectLongString("You need to be authenticated to initialize a project.")
+	cp.Expect("You need to be authenticated to initialize a project.")
 }
 
 func TestInitIntegrationTestSuite(t *testing.T) {

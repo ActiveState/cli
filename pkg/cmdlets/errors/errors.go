@@ -6,6 +6,8 @@ import (
 	"os"
 	"strings"
 
+	"github.com/thoas/go-funk"
+
 	"github.com/ActiveState/cli/internal/analytics"
 	anaConst "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/analytics/dimensions"
@@ -69,16 +71,20 @@ func (o *OutputError) MarshalOutput(f output.Format) interface{} {
 	err := o.error
 	for _, err := range errs.Unpack(err) {
 		if v, ok := err.(ErrorTips); ok {
-			errorTips = append(errorTips, v.ErrorTips()...)
+			for _, tip := range v.ErrorTips() {
+				if !funk.Contains(errorTips, tip) {
+					errorTips = append(errorTips, tip)
+				}
+			}
 		}
 	}
-	errorTips = append(errorTips, locale.Tl("err_help_forum", "[NOTICE]Ask For Help →[/RESET] [ACTIONABLE]{{.V0}}[/RESET]", constants.ForumsURL))
+	errorTips = append(errorTips, locale.Tl("err_help_forum", "Ask For Help → [ACTIONABLE]{{.V0}}[/RESET]", constants.ForumsURL))
 
 	// Print tips
 	enableTips := os.Getenv(constants.DisableErrorTipsEnvVarName) != "true" && f == output.PlainFormatName
 	if enableTips {
 		outLines = append(outLines, "") // separate error from "Need More Help?" header
-		outLines = append(outLines, output.Title(locale.Tl("err_more_help", "Need More Help?")).String())
+		outLines = append(outLines, strings.TrimSpace(output.Title(locale.Tl("err_more_help", "Need More Help?")).String()))
 		for _, tip := range errorTips {
 			outLines = append(outLines, fmt.Sprintf(" [DISABLED]•[/RESET] %s", trimError(tip)))
 		}
@@ -87,7 +93,14 @@ func (o *OutputError) MarshalOutput(f output.Format) interface{} {
 }
 
 func (o *OutputError) MarshalStructured(f output.Format) interface{} {
-	return output.StructuredError{locale.JoinedErrorMessage(o.error)}
+	var userFacingError errs.UserFacingError
+	var message string
+	if errors.As(o.error, &userFacingError) {
+		message = userFacingError.UserError()
+	} else {
+		message = locale.JoinedErrorMessage(o.error)
+	}
+	return output.StructuredError{message}
 }
 
 func trimError(msg string) string {

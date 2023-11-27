@@ -11,8 +11,8 @@ import (
 	"github.com/ActiveState/cli/internal/process"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runbits/activation"
+	"github.com/ActiveState/cli/internal/runbits/commitmediator"
 	"github.com/ActiveState/cli/internal/runbits/findproject"
-	"github.com/ActiveState/cli/internal/runbits/rtusage"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
@@ -72,9 +72,12 @@ func (u *Shell) Run(params *Params) error {
 		return locale.WrapError(err, "err_shell_cannot_load_project")
 	}
 
-	rtusage.PrintRuntimeUsage(u.svcModel, u.out, proj.Owner())
+	commitID, err := commitmediator.Get(proj)
+	if err != nil {
+		return errs.Wrap(err, "Unable to get local commit")
+	}
 
-	if cid := params.Namespace.CommitID; cid != nil && *cid != proj.CommitUUID() {
+	if cid := params.Namespace.CommitID; cid != nil && *cid != commitID {
 		return locale.NewInputError("err_shell_commit_id_mismatch")
 	}
 
@@ -99,11 +102,7 @@ func (u *Shell) Run(params *Params) error {
 		return locale.WrapError(err, "err_shell_wait", "Could not start runtime shell/prompt.")
 	}
 
-	if proj.IsHeadless() {
-		u.out.Notice(locale.T("info_deactivated_by_commit"))
-	} else {
-		u.out.Notice(locale.T("info_deactivated", proj))
-	}
+	u.out.Notice(locale.T("info_deactivated", proj))
 
 	return nil
 }

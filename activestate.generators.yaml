@@ -59,7 +59,7 @@ scripts:
     value: |
       set -e
       $constants.SET_ENV
-      
+
       echo "# Generate payload"
       go run ./scripts/ci/payload-generator/main.go "$@"
   - name: generate-update
@@ -120,3 +120,12 @@ scripts:
       go run scripts/ci/payload-generator/main.go -b ${TEST_CHANNEL} -v ${TEST_VERSION}
       copy_test_payload
       go run scripts/ci/update-generator/main.go -b ${TEST_CHANNEL} -v ${TEST_VERSION} -o ${TEST_ARCHIVE_DIR}
+  - name: generate-versions-list
+    language: bash
+    standalone: true
+    description: Generates master versions.json from S3 and info.json's from generate-update
+    value: |
+      set -e
+      $constants.SET_ENV
+
+      go run scripts/ci/update-version-list/main.go ./build/update

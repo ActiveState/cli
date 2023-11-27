@@ -28,22 +28,20 @@ type Configurable interface {
 
 type InvocationSource string
 
-var InvocationSourceInstall InvocationSource = "install"
-var InvocationSourceUpdate InvocationSource = "update"
+var (
+	InvocationSourceInstall InvocationSource = "install"
+	InvocationSourceUpdate  InvocationSource = "update"
+)
 
 type Checker struct {
-	cfg            Configurable
-	an             analytics.Dispatcher
-	apiInfoURL     string
-	fileURL        string
-	currentChannel string
-	currentVersion string
-	httpreq        httpGetter
-	cache          *AvailableUpdate
-	done           chan struct{}
+	cfg        Configurable
+	an         analytics.Dispatcher
+	apiInfoURL string
+	httpreq    httpGetter
+	cache      *AvailableUpdate
+	done       chan struct{}
 
 	InvocationSource InvocationSource
-	VerifyVersion    bool
 }
 
 func NewDefaultChecker(cfg Configurable, an analytics.Dispatcher) *Checker {
@@ -51,41 +49,25 @@ func NewDefaultChecker(cfg Configurable, an analytics.Dispatcher) *Checker {
 	if url, ok := os.LookupEnv("_TEST_UPDATE_INFO_URL"); ok {
 		infoURL = url
 	}
-	updateURL := constants.APIUpdateURL
-	if url, ok := os.LookupEnv("_TEST_UPDATE_URL"); ok {
-		updateURL = url
-	}
-	return NewChecker(cfg, an, infoURL, updateURL, constants.BranchName, constants.Version, httpreq.New())
+	return NewChecker(cfg, an, infoURL, httpreq.New())
 }
 
-func NewChecker(cfg Configurable, an analytics.Dispatcher, infoURL, fileURL, currentChannel, currentVersion string, httpget httpGetter) *Checker {
+func NewChecker(cfg Configurable, an analytics.Dispatcher, infoURL string, httpget httpGetter) *Checker {
 	return &Checker{
 		cfg,
 		an,
 		infoURL,
-		fileURL,
-		currentChannel,
-		currentVersion,
 		httpget,
 		nil,
 		make(chan struct{}),
 		InvocationSourceUpdate,
-		os.Getenv(constants.ForceUpdateEnvVarName) != "true",
 	}
-}
-
-func (u *Checker) Check() (*AvailableUpdate, error) {
-	return u.CheckFor(os.Getenv(constants.UpdateBranchEnvVarName), "")
 }
 
 func (u *Checker) CheckFor(desiredChannel, desiredVersion string) (*AvailableUpdate, error) {
-	info, err := u.GetUpdateInfo(desiredChannel, desiredVersion)
+	info, err := u.getUpdateInfo(desiredChannel, desiredVersion)
 	if err != nil {
 		return nil, errs.Wrap(err, "Failed to get update info")
-	}
-
-	if info == nil || (u.VerifyVersion && info.Channel == u.currentChannel && info.Version == u.currentVersion) {
-		return nil, nil
 	}
 
 	return info, nil
@@ -108,15 +90,7 @@ func (u *Checker) infoURL(tag, desiredVersion, branchName, platform string) stri
 	return u.apiInfoURL + "/info?" + v.Encode()
 }
 
-func (u *Checker) GetUpdateInfo(desiredChannel, desiredVersion string) (*AvailableUpdate, error) {
-	if desiredChannel == "" {
-		if overrideBranch := os.Getenv(constants.UpdateBranchEnvVarName); overrideBranch != "" {
-			desiredChannel = overrideBranch
-		} else {
-			desiredChannel = u.currentChannel
-		}
-	}
-
+func (u *Checker) getUpdateInfo(desiredChannel, desiredVersion string) (*AvailableUpdate, error) {
 	tag := u.cfg.GetString(CfgUpdateTag)
 	infoURL := u.infoURL(tag, desiredVersion, desiredChannel, runtime.GOOS)
 	logging.Debug("Getting update info: %s", infoURL)
@@ -143,22 +117,31 @@ func (u *Checker) GetUpdateInfo(desiredChannel, desiredVersion string) (*Availab
 			err = errs.Wrap(err, "Could not fetch update info from %s", infoURL)
 		}
 
-		u.an.EventWithLabel(anaConst.CatUpdates, anaConst.ActUpdateCheck, label, &dimensions.Values{
-			Version: ptr.To(desiredVersion),
-			Error:   ptr.To(msg),
-		})
+		u.an.EventWithLabel(
+			anaConst.CatUpdates,
+			anaConst.ActUpdateCheck,
+			label,
+			&dimensions.Values{
+				Version: ptr.To(desiredVersion),
+				Error:   ptr.To(msg),
+			},
+		)
 		return nil, err
 	}
 
-	info := &AvailableUpdate{
-		an: u.an,
-	}
+	var info *AvailableUpdate
 	if err := json.Unmarshal(res, &info); err != nil {
 		return nil, errs.Wrap(err, "Could not unmarshal update info: %s", res)
 	}
 
-	info.url = u.fileURL + "/" + info.Path
+	u.an.EventWithLabel(
+		anaConst.CatUpdates,
+		anaConst.ActUpdateCheck,
+		anaConst.UpdateLabelAvailable,
+		&dimensions.Values{
+			Version: ptr.To(info.Version),
+		},
+	)
 
-	u.an.EventWithLabel(anaConst.CatUpdates, anaConst.ActUpdateCheck, anaConst.UpdateLabelAvailable, &dimensions.Values{Version: ptr.To(info.Version)})
 	return info, nil
 }

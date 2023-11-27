@@ -74,8 +74,7 @@ func newCommitOutput(commit *mono_models.Commit, orgs []gmodel.Organization, isL
 		StructuredChanges: structuredChanges,
 	}
 
-	commitOutput.Date = commit.AtTime.String()
-	dt, err := time.Parse(time.RFC3339, commit.AtTime.String())
+	dt, err := time.Parse(time.RFC3339, commit.Added.String())
 	if err != nil {
 		multilog.Error("Could not parse commit time: %v", err)
 	}

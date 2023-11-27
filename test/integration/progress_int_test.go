@@ -19,21 +19,21 @@ func (suite *ProgressIntegrationTestSuite) TestProgress() {
 	defer ts.Close()
 
 	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("checkout", "ActiveState-CLI/small-python"),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.OptArgs("checkout", "ActiveState-CLI/small-python"),
+		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cp.Expect(locale.T("setup_runtime"))
-	cp.Expect("Checked out")
-	suite.Assert().NotContains(cp.TrimmedSnapshot(), "...")
+	cp.Expect("Checked out", e2e.RuntimeSourcingTimeoutOpt)
+	suite.Assert().NotContains(cp.Output(), "...")
 	cp.ExpectExitCode(0)
 
 	cp = ts.SpawnWithOpts(
-		e2e.WithArgs("checkout", "ActiveState-CLI/small-python", "small-python2", "--non-interactive"),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.OptArgs("checkout", "ActiveState-CLI/small-python", "small-python2", "--non-interactive"),
+		e2e.OptAppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
 	)
 	cp.Expect(locale.T("setup_runtime"))
 	cp.Expect("...")
-	cp.Expect("Checked out")
+	cp.Expect("Checked out", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
 }
 

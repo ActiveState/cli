@@ -8,15 +8,15 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ActiveState/cli/internal/locale"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-	"gopkg.in/yaml.v2"
-
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/language"
+	"github.com/ActiveState/cli/internal/locale"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"gopkg.in/yaml.v2"
 )
 
 func setCwd(t *testing.T, subdir string) {
@@ -314,17 +314,17 @@ func TestNewProjectfile(t *testing.T) {
 	assert.NoError(t, err, "Should be no error when getting a temp directory")
 	os.Chdir(dir)
 
-	pjFile, err := TestOnlyCreateWithProjectURL("https://platform.activestate.com/xowner/xproject", dir)
+	pjFile, err := testOnlyCreateWithProjectURL("https://platform.activestate.com/xowner/xproject", dir)
 	assert.NoError(t, err, "There should be no error when loading from a path")
 	assert.Equal(t, "activationMessage", pjFile.Scripts[0].Name)
 
-	_, err = TestOnlyCreateWithProjectURL("https://platform.activestate.com/xowner/xproject", "")
+	_, err = testOnlyCreateWithProjectURL("https://platform.activestate.com/xowner/xproject", "")
 	assert.Error(t, err, "We don't accept blank paths")
 
 	setCwd(t, "")
 	dir, err = os.Getwd()
 	assert.NoError(t, err, "Should be no error when getting the CWD")
-	_, err = TestOnlyCreateWithProjectURL("https://platform.activestate.com/xowner/xproject", dir)
+	_, err = testOnlyCreateWithProjectURL("https://platform.activestate.com/xowner/xproject", dir)
 	assert.Error(t, err, "Cannot create new project if existing as.yaml ...exists")
 }
 
@@ -350,13 +350,13 @@ func Test_parseURL(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			"Valid full URL",
+			"Valid full legacy URL",
 			"https://platform.activestate.com/Owner/Name?commitID=7BA74758-8665-4D3F-921C-757CD271A0C1&branch=main",
 			projectURL{
-				Owner:      "Owner",
-				Name:       "Name",
-				CommitID:   "7BA74758-8665-4D3F-921C-757CD271A0C1",
-				BranchName: "main",
+				Owner:          "Owner",
+				Name:           "Name",
+				LegacyCommitID: "7BA74758-8665-4D3F-921C-757CD271A0C1",
+				BranchName:     "main",
 			},
 			false,
 		},
@@ -364,10 +364,10 @@ func Test_parseURL(t *testing.T) {
 			"Valid commit URL",
 			"https://platform.activestate.com/commit/7BA74758-8665-4D3F-921C-757CD271A0C1",
 			projectURL{
-				Owner:      "",
-				Name:       "",
-				CommitID:   "7BA74758-8665-4D3F-921C-757CD271A0C1",
-				BranchName: "",
+				Owner:          "",
+				Name:           "",
+				LegacyCommitID: "7BA74758-8665-4D3F-921C-757CD271A0C1",
+				BranchName:     "",
 			},
 			false,
 		},
@@ -387,34 +387,6 @@ func Test_parseURL(t *testing.T) {
 			}
 			if !tt.wantErr && !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("parseURL() got = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func TestProject_Init(t *testing.T) {
-	tests := []struct {
-		name           string
-		project        *Project
-		wantProjectURL *projectURL
-		wantErr        bool
-	}{
-		{
-			"Adds default branch",
-			&Project{Project: "https://platform.activestate.com/owner/name"},
-			&projectURL{
-				"owner",
-				"name",
-				"",
-				"main",
-			},
-			false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if err := tt.project.Init(); (err != nil) != tt.wantErr {
-				t.Errorf("Init() error = %v, wantErr %v", errs.JoinMessage(err), tt.wantErr)
 			}
 		})
 	}
@@ -463,7 +435,7 @@ func Test_detectDeprecations(t *testing.T) {
 		},
 		{
 			"Real world",
-			`project: https://platform.activestate.com/ActiveState-CLI/test?commitID=9090c128-e948-4388-8f7f-96e2c1e00d98
+			`project: https://platform.activestate.com/ActiveState-CLI/test
 platforms:
   - name: Linux64Label
 languages:
@@ -471,9 +443,9 @@ languages:
     constraints:
         platform: Windows10Label,Linux64Label`,
 			[]string{
-				locale.Tr("pjfile_deprecation_entry", "platforms", "109"),
-				locale.Tr("pjfile_deprecation_entry", "languages", "143"),
-				locale.Tr("pjfile_deprecation_entry", "constraints", "167"),
+				locale.Tr("pjfile_deprecation_entry", "platforms", "63"),
+				locale.Tr("pjfile_deprecation_entry", "languages", "97"),
+				locale.Tr("pjfile_deprecation_entry", "constraints", "121"),
 			},
 		},
 		{
@@ -495,4 +467,12 @@ languages:
 			}
 		})
 	}
+}
+
+// testOnlyCreateWithProjectURL a new activestate.yaml with default content
+func testOnlyCreateWithProjectURL(projectURL, path string) (*Project, error) {
+	return createCustom(&CreateParams{
+		ProjectURL: projectURL,
+		Directory:  path,
+	}, language.Python3)
 }

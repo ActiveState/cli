@@ -18,12 +18,11 @@ import (
 )
 
 type Setup struct {
-	artifactsForNameResolving artifact.Map
-	store                     *store.Store
+	store *store.Store
 }
 
-func NewSetup(store *store.Store, artifactsForNameResolving artifact.Map) *Setup {
-	return &Setup{store: store, artifactsForNameResolving: artifactsForNameResolving}
+func NewSetup(store *store.Store) *Setup {
+	return &Setup{store: store}
 }
 
 func (s *Setup) DeleteOutdatedArtifacts(changeset artifact.ArtifactChangeset, storedArtifacted, alreadyInstalled store.StoredArtifactMap) error {
@@ -140,10 +139,7 @@ func artifactsContainFile(file string, artifactCache map[artifact.ArtifactID]sto
 }
 
 func (s *Setup) ResolveArtifactName(a artifact.ArtifactID) string {
-	if artf, ok := s.artifactsForNameResolving[a]; ok {
-		return artf.Name
-	}
-	return locale.Tl("alternative_unknown_pkg_name", "unknown")
+	return locale.T("alternative_unknown_pkg_name")
 }
 
 func (s *Setup) DownloadsFromBuild(build model.Build, artifacts map[strfmt.UUID]artifact.Artifact) (download []artifact.ArtifactDownload, err error) {

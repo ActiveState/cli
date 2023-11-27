@@ -26,7 +26,7 @@ func setup(t *testing.T) {
 }
 
 func TestRunCommand(t *testing.T) {
-	projectURL := fmt.Sprintf("https://%s/string/string?commitID=00010001-0001-0001-0001-000100010001", constants.PlatformURL)
+	projectURL := fmt.Sprintf("https://%s/string/string", constants.PlatformURL)
 	pjfile := projectfile.Project{
 		Project: projectURL,
 	}

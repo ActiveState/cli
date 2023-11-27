@@ -1,10 +1,11 @@
 package automation
 
 import (
+	"testing"
+
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/stretchr/testify/suite"
-	"testing"
 )
 
 type LearnAutomationTestSuite struct {
@@ -18,7 +19,7 @@ func (suite *LearnAutomationTestSuite) TestLearn_UrlProvided() {
 	defer ts.Close()
 
 	cp := ts.Spawn("learn")
-	cp.ExpectLongString("https://platform.activestate.com/state-tool-cheat-sheet")
+	cp.Expect("https://platform.activestate.com/state-tool-cheat-sheet")
 	cp.ExpectExitCode(0)
 }
 

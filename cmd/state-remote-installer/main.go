@@ -95,6 +95,12 @@ func main() {
 		return
 	}
 
+	// Store sessionToken to config
+	err = cfg.Set(anaConst.CfgSessionToken, "remote_"+constants.RemoteInstallerVersion)
+	if err != nil {
+		logging.Error("Unable to set session token: " + errs.JoinMessage(err))
+	}
+
 	an = sync.New(anaConst.SrcStateRemoteInstaller, cfg, nil, out)
 
 	// Set up prompter
@@ -173,20 +179,17 @@ func execute(out output.Outputer, prompt prompt.Prompter, cfg *config.Instance, 
 	// Fetch payload
 	checker := updater.NewDefaultChecker(cfg, an)
 	checker.InvocationSource = updater.InvocationSourceInstall // Installing from a remote source is only ever encountered via the install flow
-	checker.VerifyVersion = false
-	update, err := checker.CheckFor(branch, params.version)
+	availableUpdate, err := checker.CheckFor(branch, params.version)
 	if err != nil {
 		return errs.Wrap(err, "Could not retrieve install package information")
 	}
-	if update == nil {
-		return errs.New("No update information could be found.")
-	}
 
-	version := update.Version
+	version := availableUpdate.Version
 	if params.branch != "" {
 		version = fmt.Sprintf("%s (%s)", version, branch)
 	}
 
+	update := updater.NewUpdateInstaller(an, availableUpdate)
 	out.Fprint(os.Stdout, locale.Tl("remote_install_downloading", "• Downloading State Tool version [NOTICE]{{.V0}}[/RESET]... ", version))
 	tmpDir, err := update.DownloadAndUnpack()
 	if err != nil {

@@ -303,15 +303,6 @@ func SetupProjectRcFile(prj *project.Project, templateName, ext string, env map[
 
 	isConsole := ext == ".bat" // yeah this is a dirty cheat, should find something more deterministic
 
-	var activatedMessage string
-	if !prj.IsHeadless() {
-		activatedMessage = locale.Tl("project_activated",
-			"[SUCCESS]✔ Project \"{{.V0}}\" Has Been Activated[/RESET]", prj.Namespace().String())
-	} else {
-		activatedMessage = locale.Tl("headless_project_activated",
-			"[SUCCESS]✔ Virtual Environment Activated[/RESET]")
-	}
-
 	actualEnv := map[string]string{}
 	for k, v := range env {
 		if strings.Contains(v, "\n") {
@@ -322,14 +313,15 @@ func SetupProjectRcFile(prj *project.Project, templateName, ext string, env map[
 	}
 
 	rcData := map[string]interface{}{
-		"Owner":            prj.Owner(),
-		"Name":             prj.Name(),
-		"Env":              actualEnv,
-		"WD":               wd,
-		"UserScripts":      userScripts,
-		"Scripts":          scripts,
-		"ExecName":         constants.CommandName,
-		"ActivatedMessage": colorize.ColorizedOrStrip(activatedMessage, isConsole),
+		"Owner":       prj.Owner(),
+		"Name":        prj.Name(),
+		"Env":         actualEnv,
+		"WD":          wd,
+		"UserScripts": userScripts,
+		"Scripts":     scripts,
+		"ExecName":    constants.CommandName,
+		"ActivatedMessage": colorize.ColorizedOrStrip(locale.Tl("project_activated",
+			"[SUCCESS]✔ Project \"{{.V0}}\" Has Been Activated[/RESET]", prj.Namespace().String()), isConsole),
 	}
 
 	currExec := osutils.Executable()

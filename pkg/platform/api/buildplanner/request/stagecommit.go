@@ -2,11 +2,12 @@ package request
 
 import "github.com/ActiveState/cli/pkg/platform/runtime/buildexpression"
 
-func StageCommit(owner, project, parentCommit string, expression *buildexpression.BuildExpression) *buildPlanByStageCommit {
+func StageCommit(owner, project, parentCommit, description string, expression *buildexpression.BuildExpression) *buildPlanByStageCommit {
 	return &buildPlanByStageCommit{map[string]interface{}{
 		"organization": owner,
 		"project":      project,
 		"parentCommit": parentCommit,
+		"description":  description,
 		"expr":         expression,
 	}}
 }
@@ -17,8 +18,8 @@ type buildPlanByStageCommit struct {
 
 func (b *buildPlanByStageCommit) Query() string {
 	return `
-mutation ($organization: String!, $project: String!, $parentCommit: ID, $expr:BuildExpr!) {
-  stageCommit(input:{organization:$organization, project:$project, parentCommitId:$parentCommit, expr:$expr}) {
+mutation ($organization: String!, $project: String!, $parentCommit: ID, $description: String!, $expr:BuildExpr!) {
+  stageCommit(input:{organization:$organization, project:$project, parentCommitId:$parentCommit, description:$description, expr:$expr}) {
     ... on Commit {
       __typename
 			expr

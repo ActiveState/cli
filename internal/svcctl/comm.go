@@ -18,17 +18,16 @@ import (
 	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/runbits/panics"
-	"github.com/ActiveState/cli/internal/runbits/rtusage"
 	"github.com/ActiveState/cli/internal/svcctl/svcmsg"
 	"github.com/ActiveState/cli/pkg/platform/runtime/executors/execmeta"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
-	"github.com/ActiveState/cli/pkg/project"
 )
 
 var (
 	KeyHTTPAddr  = "http-addr"
 	KeyLogFile   = "log-file"
 	KeyHeartbeat = "heart<"
+	KeyExitCode  = "exitcode<"
 )
 
 type Requester interface {
@@ -74,11 +73,11 @@ func (c *Comm) GetLogFileName(ctx context.Context) (string, error) {
 
 type Resolver interface {
 	ReportRuntimeUsage(ctx context.Context, pid int, exec, source string, dimensionsJSON string) (*graph.ReportRuntimeUsageResponse, error)
-	CheckRuntimeUsage(ctx context.Context, organizationName string) (*graph.CheckRuntimeUsageResponse, error)
 }
 
 type AnalyticsReporter interface {
 	EventWithSource(category, action, source string, dims ...*dimensions.Values)
+	EventWithSourceAndLabel(category, action, source, label string, dims ...*dimensions.Values)
 }
 
 func HeartbeatHandler(cfg *config.Instance, resolver Resolver, analyticsReporter AnalyticsReporter) ipc.RequestHandler {
@@ -126,17 +125,6 @@ func HeartbeatHandler(cfg *config.Instance, resolver Resolver, analyticsReporter
 				return
 			}
 
-			// Soft limit notification
-			logging.Debug("Checking runtime usage for %s", metaData.Namespace)
-			if metaData.Namespace != "" {
-				ns, err := project.ParseNamespace(metaData.Namespace)
-				if err != nil {
-					multilog.Error("Soft limit: Could not parse namespace in heartbeat handler: %s", err)
-				} else {
-					rtusage.NotifyRuntimeUsage(cfg, resolver, ns.Owner)
-				}
-			}
-
 			logging.Debug("Firing runtime usage events for %s", metaData.Namespace)
 			analyticsReporter.EventWithSource(constants.CatRuntimeUsage, constants.ActRuntimeAttempt, constants.SrcExecutor, dims)
 			_, err = resolver.ReportRuntimeUsage(context.Background(), pidNum, hb.ExecPath, constants.SrcExecutor, dimsJSON)
@@ -150,6 +138,24 @@ func HeartbeatHandler(cfg *config.Instance, resolver Resolver, analyticsReporter
 	}
 }
 
-func (c *Comm) SendHeartbeat(ctx context.Context, pid string) (string, error) {
-	return c.req.Request(ctx, KeyHeartbeat+pid)
+func ExitCodeHandler(cfg *config.Instance, resolver Resolver, analyticsReporter AnalyticsReporter) ipc.RequestHandler {
+	return func(input string) (string, bool) {
+		defer func() { panics.HandlePanics(recover(), debug.Stack()) }()
+
+		if !strings.HasPrefix(input, KeyExitCode) {
+			return "", false
+		}
+
+		logging.Debug("Exit Code: Received exit code through ipc")
+
+		data := input[len(KeyExitCode):]
+		exitCode := svcmsg.NewExitCodeFromSvcMsg(data)
+
+		logging.Debug("Firing exit code event for %s", exitCode.ExecPath)
+		analyticsReporter.EventWithSourceAndLabel(constants.CatDebug, constants.ActExecutorExit, constants.SrcExecutor, exitCode.ExitCode, &dimensions.Values{
+			Command: ptr.To(exitCode.ExecPath),
+		})
+
+		return "ok", true
+	}
 }

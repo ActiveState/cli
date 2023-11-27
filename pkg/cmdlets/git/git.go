@@ -40,7 +40,7 @@ type Repo struct {
 // CloneProject will attempt to clone the associalted public git repository
 // for the project identified by <owner>/<name> to the given directory
 func (r *Repo) CloneProject(owner, name, path string, out output.Outputer, an analytics.Dispatcher) error {
-	project, err := model.FetchProjectByName(owner, name)
+	project, err := model.LegacyFetchProjectByName(owner, name)
 	if err != nil {
 		return locale.WrapError(err, "err_git_fetch_project", "Could not fetch project details")
 	}

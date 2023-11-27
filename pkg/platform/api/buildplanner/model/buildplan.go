@@ -7,10 +7,13 @@ import (
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/go-openapi/strfmt"
 )
 
 type Operation int
+
+type MergeStrategy string
 
 const (
 	OperationAdded Operation = iota
@@ -35,7 +38,7 @@ const (
 
 	// Tag types
 	TagSource     = "src"
-	TagDependency = "dep"
+	TagDependency = "deps"
 	TagBuilder    = "builder"
 	TagOrphan     = "orphans"
 
@@ -43,6 +46,7 @@ const (
 	BuildLogRecipeID = "RECIPE_ID"
 	BuildRequestID   = "BUILD_REQUEST_ID"
 
+	// Version Comparators
 	ComparatorEQ  string = "eq"
 	ComparatorGT         = "gt"
 	ComparatorGTE        = "gte"
@@ -50,26 +54,45 @@ const (
 	ComparatorLTE        = "lte"
 	ComparatorNE         = "ne"
 
+	// Version Requirement keys
 	VersionRequirementComparatorKey = "comparator"
 	VersionRequirementVersionKey    = "version"
 
+	// MIME types
 	XArtifactMimeType            = "application/x.artifact"
 	XActiveStateArtifactMimeType = "application/x-activestate-artifacts"
 	XCamelInstallerMimeType      = "application/x-camel-installer"
 	XGozipInstallerMimeType      = "application/x-gozip-installer"
 	XActiveStateBuilderMimeType  = "application/x-activestate-builder"
 
+	// RevertCommit strategies
+	RevertCommitStrategyForce   = "Force"
+	RevertCommitStrategyDefault = "Default"
+
+	// MergeCommit strategies
+	MergeCommitStrategyRecursive                    MergeStrategy = "Recursive"
+	MergeCommitStrategyRecursiveOverwriteOnConflict MergeStrategy = "RecursiveOverwriteOnConflict"
+	MergeCommitStrategyRecursiveKeepOnConflict      MergeStrategy = "RecursiveKeepOnConflict"
+	MergeCommitStrategyFastForward                  MergeStrategy = "FastForward"
+
 	// Error types
-	ErrorType                        = "Error"
-	NotFoundErrorType                = "NotFound"
-	BuildResultPlanningErrorType     = "PlanningError"
-	ParseErrorType                   = "ParseError"
-	AlreadyExistsErrorType           = "AlreadyExists"
-	NoChangeSinceLastCommitErrorType = "NoChangeSinceLastCommit"
-	HeadOnBranchMovedErrorType       = "HeadOnBranchMoved"
-	ForbiddenErrorType               = "Forbidden"
-	RemediableSolveErrorType         = "RemediableSolveError"
-	PlanningErrorType                = "PlanningError"
+	ErrorType                         = "Error"
+	NotFoundErrorType                 = "NotFound"
+	ParseErrorType                    = "ParseError"
+	AlreadyExistsErrorType            = "AlreadyExists"
+	NoChangeSinceLastCommitErrorType  = "NoChangeSinceLastCommit"
+	HeadOnBranchMovedErrorType        = "HeadOnBranchMoved"
+	ForbiddenErrorType                = "Forbidden"
+	RemediableSolveErrorType          = "RemediableSolveError"
+	PlanningErrorType                 = "PlanningError"
+	MergeConflictType                 = "MergeConflict"
+	FastForwardErrorType              = "FastForwardError"
+	NoCommonBaseFoundType             = "NoCommonBaseFound"
+	ValidationErrorType               = "ValidationError"
+	MergeConflictErrorType            = "MergeConflict"
+	RevertConflictErrorType           = "RevertConflict"
+	CommitNotInTargetHistoryErrorType = "CommitNotInTargetHistory"
+	ComitHasNoParentErrorType         = "CommitHasNoParent"
 )
 
 func IsStateToolArtifact(mimeType string) bool {
@@ -89,6 +112,20 @@ func (o Operation) String() string {
 	default:
 		return "unknown"
 	}
+}
+
+func (o *Operation) Unmarshal(v string) error {
+	switch v {
+	case mono_models.CommitChangeEditableOperationAdded:
+		*o = OperationAdded
+	case mono_models.CommitChangeEditableOperationRemoved:
+		*o = OperationRemoved
+	case mono_models.CommitChangeEditableOperationUpdated:
+		*o = OperationUpdated
+	default:
+		return errs.New("Unknown requirement operation: %s", v)
+	}
+	return nil
 }
 
 type BuildPlannerError struct {
@@ -136,7 +173,7 @@ func (e *BuildPlannerError) Error() string {
 	}
 
 	var err error
-	err = locale.NewError("solver_err", "", croppedMessage, errorLines)
+	err = locale.NewError("buildplan_err", "", croppedMessage, errorLines)
 	if e.IsTransient {
 		err = errs.AddTips(err, locale.Tr("transient_solver_tip"))
 	}
@@ -247,13 +284,22 @@ func (b *BuildPlanByCommit) CommitID() (strfmt.UUID, error) {
 
 func IsErrorResponse(errorType string) bool {
 	return errorType == ErrorType ||
+		errorType == NotFoundErrorType ||
+		errorType == ParseErrorType ||
 		errorType == AlreadyExistsErrorType ||
 		errorType == NoChangeSinceLastCommitErrorType ||
 		errorType == HeadOnBranchMovedErrorType ||
 		errorType == ForbiddenErrorType ||
 		errorType == RemediableSolveErrorType ||
 		errorType == PlanningErrorType ||
-		errorType == NotFoundErrorType
+		errorType == MergeConflictType ||
+		errorType == FastForwardErrorType ||
+		errorType == NoCommonBaseFoundType ||
+		errorType == ValidationErrorType ||
+		errorType == MergeConflictErrorType ||
+		errorType == RevertConflictErrorType ||
+		errorType == CommitNotInTargetHistoryErrorType ||
+		errorType == ComitHasNoParentErrorType
 }
 
 func ProcessCommitError(commit *Commit, fallbackMessage string) error {
@@ -318,10 +364,53 @@ func ProcessProjectError(project *Project, fallbackMessage string) error {
 	return errs.New(fallbackMessage)
 }
 
+type RevertCommitError struct {
+	Type    string
+	Message string
+}
+
+func (m *RevertCommitError) Error() string { return m.Message }
+
+func ProcessRevertCommitError(rcErr *revertedCommit, fallbackMessage string) error {
+	if rcErr.Type != "" {
+		return &RevertCommitError{rcErr.Type, rcErr.Message}
+	}
+	return errs.New(fallbackMessage)
+}
+
+type ProjectCreatedError struct {
+	Type    string
+	Message string
+}
+
+func (p *ProjectCreatedError) Error() string { return p.Message }
+
+func ProcessProjectCreatedError(pcErr *projectCreated, fallbackMessage string) error {
+	if pcErr.Type != "" {
+		// These will be handled individually per type as user-facing errors in DX-2300.
+		return &ProjectCreatedError{pcErr.Type, pcErr.Message}
+	}
+	return errs.New(fallbackMessage)
+}
+
 type BuildExpression struct {
 	Type   string  `json:"__typename"`
 	Commit *Commit `json:"commit"`
 	*Error
+}
+
+type MergedCommitError struct {
+	Type    string
+	Message string
+}
+
+func (m *MergedCommitError) Error() string { return m.Message }
+
+func ProcessMergedCommitError(mcErr *mergedCommit, fallbackMessage string) error {
+	if mcErr.Type != "" {
+		return &MergedCommitError{mcErr.Type, mcErr.Message}
+	}
+	return errs.New(fallbackMessage)
 }
 
 // PushCommitResult is the result of a push commit mutation.
@@ -338,6 +427,51 @@ type PushCommitResult struct {
 // The resulting commit is NOT pushed to the platform automatically.
 type StageCommitResult struct {
 	Commit *Commit `json:"stageCommit"`
+}
+
+type projectCreated struct {
+	Type   string  `json:"__typename"`
+	Commit *Commit `json:"commit"`
+	*Error
+	*NotFoundError
+	*ParseError
+	*ForbiddenError
+}
+
+type CreateProjectResult struct {
+	ProjectCreated *projectCreated `json:"createProject"`
+}
+
+type revertedCommit struct {
+	Type           string      `json:"__typename"`
+	Commit         *Commit     `json:"commit"`
+	CommonAncestor strfmt.UUID `json:"commonAncestorID"`
+	ConflictPaths  []string    `json:"conflictPaths"`
+	*Error
+}
+
+type RevertCommitResult struct {
+	RevertedCommit *revertedCommit `json:"revertCommit"`
+}
+
+type mergedCommit struct {
+	Type   string  `json:"__typename"`
+	Commit *Commit `json:"commit"`
+	*Error
+	*MergeConflictError
+	*MergeError
+	*NotFoundError
+	*ParseError
+	*ForbiddenError
+	*HeadOnBranchMovedError
+	*NoChangeSinceLastCommitError
+}
+
+// MergeCommitResult is the result of a merge commit mutation.
+// The resulting commit is only pushed to the platform automatically if the target ref was a named
+// branch and the merge strategy was FastForward.
+type MergeCommitResult struct {
+	MergedCommit *mergedCommit `json:"mergeCommit"`
 }
 
 // Error contains an error message.
@@ -540,6 +674,20 @@ type HeadOnBranchMovedError struct {
 // were no changes since the last commit.
 type NoChangeSinceLastCommitError struct {
 	NoChangeCommitID strfmt.UUID `json:"commitId"`
+}
+
+// MergeConflictError represents an error that occurred because of a merge conflict.
+type MergeConflictError struct {
+	CommonAncestorID strfmt.UUID `json:"commonAncestorId"`
+	ConflictPaths    []string    `json:"conflictPaths"`
+}
+
+// MergeError represents two different errors in the BuildPlanner's graphQL
+// schema with the same fields. Those errors being: FastForwardError and
+// NoCommonBaseFound. Inspect the Type field to determine which error it is.
+type MergeError struct {
+	TargetVCSRef strfmt.UUID `json:"targetVcsRef"`
+	OtherVCSRef  strfmt.UUID `json:"otherVcsRef"`
 }
 
 // BuildExprLocation represents a location in the build script where an error occurred.

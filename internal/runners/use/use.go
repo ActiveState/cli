@@ -5,14 +5,15 @@ import (
 
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/config"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/globaldefault"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
+	"github.com/ActiveState/cli/internal/runbits/commitmediator"
 	"github.com/ActiveState/cli/internal/runbits/findproject"
-	"github.com/ActiveState/cli/internal/runbits/rtusage"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/pkg/cmdlets/checker"
@@ -66,7 +67,7 @@ func NewUse(prime primeable) *Use {
 func (u *Use) Run(params *Params) error {
 	logging.Debug("Use %v", params.Namespace)
 
-	checker.RunUpdateNotifier(u.svcModel, u.out)
+	checker.RunUpdateNotifier(u.analytics, u.svcModel, u.out)
 
 	proj, err := findproject.FromNamespaceLocal(params.Namespace, u.config, u.prompt)
 	if err != nil {
@@ -76,9 +77,12 @@ func (u *Use) Run(params *Params) error {
 		return locale.WrapInputError(err, "err_use_cannot_find_local_project", "Local project cannot be found.")
 	}
 
-	rtusage.PrintRuntimeUsage(u.svcModel, u.out, proj.Owner())
+	commitID, err := commitmediator.Get(proj)
+	if err != nil {
+		return errs.Wrap(err, "Unable to get local commit")
+	}
 
-	if cid := params.Namespace.CommitID; cid != nil && *cid != proj.CommitUUID() {
+	if cid := params.Namespace.CommitID; cid != nil && *cid != commitID {
 		return locale.NewInputError("err_use_commit_id_mismatch")
 	}
 

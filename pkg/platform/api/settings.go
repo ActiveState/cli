@@ -42,6 +42,9 @@ const (
 
 	// ServiceBuildPlanner is our service that processes build plans.
 	ServiceBuildPlanner = "build-planner"
+
+	// TestingPlatform is the API host used by tests so-as not to affect production.
+	TestingPlatform = ".testing.tld"
 )
 
 var urlsByService = map[Service]*url.URL{
@@ -117,7 +120,7 @@ func getProjectHost(service Service) *string {
 	}
 
 	if condition.InUnitTest() {
-		testingPlatform := string(service) + ".testing.tld"
+		testingPlatform := string(service) + TestingPlatform
 		return &testingPlatform
 	}
 

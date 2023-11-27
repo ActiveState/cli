@@ -22,8 +22,8 @@ import (
 	"github.com/ActiveState/cli/internal/process"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runbits/activation"
+	"github.com/ActiveState/cli/internal/runbits/commitmediator"
 	"github.com/ActiveState/cli/internal/runbits/findproject"
-	"github.com/ActiveState/cli/internal/runbits/rtusage"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
@@ -80,10 +80,10 @@ func NewActivate(prime primeable) *Activate {
 	}
 }
 
-func (r *Activate) Run(params *ActivateParams) error {
+func (r *Activate) Run(params *ActivateParams) (rerr error) {
 	logging.Debug("Activate %v, %v", params.Namespace, params.PreferredPath)
 
-	checker.RunUpdateNotifier(r.svcModel, r.out)
+	checker.RunUpdateNotifier(r.analytics, r.svcModel, r.out)
 
 	r.out.Notice(output.Title(locale.T("info_activating_state")))
 
@@ -104,8 +104,6 @@ func (r *Activate) Run(params *ActivateParams) error {
 			return locale.WrapError(err, "err_activate_projecttouse", "Could not figure out what project to use.")
 		}
 	}
-
-	rtusage.PrintRuntimeUsage(r.svcModel, r.out, proj.Owner())
 
 	alreadyActivated := process.IsActivated(r.config)
 	if alreadyActivated {
@@ -132,22 +130,16 @@ func (r *Activate) Run(params *ActivateParams) error {
 		}
 
 		if params.Namespace == nil || params.Namespace.IsValid() {
-			return locale.NewInputError("err_conflicting_default_while_activated", "Cannot make [NOTICE]{{.V0}}[/RESET] always available for use while in an activated state.", params.Namespace.String())
+			return locale.NewInputError(
+				"err_conflicting_default_while_activated",
+				"Cannot make [NOTICE]{{.V0}}[/RESET] always available for use while in an activated state.",
+				params.Namespace.String(),
+			)
 		}
 	}
 
-	if proj != nil && params.Branch != "" {
-		if proj.IsHeadless() {
-			return locale.NewInputError(
-				"err_conflicting_branch_while_headless",
-				"Cannot activate branch [NOTICE]{{.V0}}[/RESET] while in a headless state. Please visit {{.V1}} to create your project.",
-				params.Branch, proj.URL(),
-			)
-		}
-
-		if params.Branch != proj.BranchName() {
-			return locale.NewInputError("err_conflicting_branch_while_checkedout", "", params.Branch, proj.BranchName())
-		}
+	if proj != nil && params.Branch != "" && params.Branch != proj.BranchName() {
+		return locale.NewInputError("err_conflicting_branch_while_checkedout", "", params.Branch, proj.BranchName())
 	}
 
 	// Have to call this once the project has been set
@@ -193,7 +185,11 @@ func (r *Activate) Run(params *ActivateParams) error {
 		}
 	}
 
-	if proj.CommitID() == "" {
+	commitID, err := commitmediator.Get(proj)
+	if err != nil {
+		return errs.Wrap(err, "Unable to get local commit")
+	}
+	if commitID == "" {
 		err := locale.NewInputError("err_project_no_commit", "Your project does not have a commit ID, please run `state push` first.", model.ProjectURL(proj.Owner(), proj.Name(), ""))
 		return errs.AddTips(err, "Run → [ACTIONABLE]state push[/RESET] to create your project")
 	}
@@ -202,41 +198,7 @@ func (r *Activate) Run(params *ActivateParams) error {
 		return locale.WrapError(err, "err_activate_wait", "Could not activate runtime environment.")
 	}
 
-	if proj.IsHeadless() {
-		r.out.Notice(locale.T("info_deactivated_by_commit"))
-	} else {
-		r.out.Notice(locale.T("info_deactivated", proj))
-	}
-
-	return nil
-}
-
-func updateProjectFile(prj *project.Project, names *project.Namespaced, providedBranch string) error {
-	branch := providedBranch
-	if branch == "" {
-		branch = constants.DefaultBranchName
-	}
-
-	var commitID string
-	if names.CommitID == nil || *names.CommitID == "" {
-		latestID, err := model.BranchCommitID(names.Owner, names.Project, branch)
-		if err != nil {
-			return locale.WrapInputError(err, "err_set_namespace_retrieve_commit", "Could not retrieve the latest commit for the specified project {{.V0}}.", names.String())
-		}
-		commitID = latestID.String()
-	} else {
-		commitID = names.CommitID.String()
-	}
-
-	if err := prj.Source().SetNamespace(names.Owner, names.Project); err != nil {
-		return locale.WrapError(err, "err_activate_replace_write_namespace", "Failed to update project namespace.")
-	}
-	if err := prj.SetCommit(commitID); err != nil {
-		return locale.WrapError(err, "err_activate_replace_write_commit", "Failed to update commitID.")
-	}
-	if err := prj.Source().SetBranch(branch); err != nil {
-		return locale.WrapError(err, "err_activate_replace_write_branch", "Failed to update Branch.")
-	}
+	r.out.Notice(locale.T("info_deactivated", proj))
 
 	return nil
 }
