@@ -407,11 +407,11 @@ type ProjectCreatedError struct {
 func (p *ProjectCreatedError) Error() string { return p.Message }
 
 func ProcessProjectCreatedError(pcErr *projectCreated, fallbackMessage string) error {
-	if pcErr.Type != "" {
-		// These will be handled individually per type as user-facing errors in DX-2300.
-		return &ProjectCreatedError{pcErr.Type, pcErr.Message}
+	if pcErr.Error == nil {
+		return errs.New(fallbackMessage)
 	}
-	return errs.New(fallbackMessage)
+
+	return &ProjectCreatedError{pcErr.Type, pcErr.Message}
 }
 
 type BuildExpression struct {
@@ -499,6 +499,8 @@ type MergeCommitResult struct {
 type Error struct {
 	Message string `json:"message"`
 }
+
+func (e *Error) Error() string { return e.Message }
 
 // Project contains the commit and any errors.
 type Project struct {

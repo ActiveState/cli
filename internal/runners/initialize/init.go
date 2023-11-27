@@ -87,7 +87,7 @@ func inferLanguage(config projectfile.ConfigGetter) (string, string, bool) {
 }
 
 func (r *Initialize) Run(params *RunParams) (rerr error) {
-	defer rationalizeError(&rerr)
+	defer rationalizeError(params.Namespace, &rerr)
 	logging.Debug("Init: %s/%s %v", params.Namespace.Owner, params.Namespace.Project, params.Private)
 
 	if !r.auth.Authenticated() {
@@ -99,7 +99,7 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 		var err error
 		path, err = osutils.Getwd()
 		if err != nil {
-			return locale.WrapInputError(err, "err_init_sanitize_path", "Could not prepare path: {{.V0}}", err.Error())
+			return errs.Wrap(err, "Unable to get current working directory")
 		}
 	}
 
