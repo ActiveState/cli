@@ -2,6 +2,7 @@ package auth
 
 import (
 	"net/url"
+	"os"
 	"time"
 
 	"github.com/ActiveState/cli/internal/constants"
@@ -222,9 +223,14 @@ func authenticateWithBrowser(out output.Outputer, auth *authentication.Auth, pro
 			return errs.Wrap(err, "Verification URL is not valid")
 		}
 
-		signupURL, err := url.Parse(constants.PlatformSignupURL)
+		apiHost := constants.DefaultAPIHost
+		if hostOverride := os.Getenv(constants.APIHostEnvVarName); hostOverride != "" {
+			apiHost = hostOverride
+		}
+		fullURL := "https://" + apiHost + constants.PlatformSignupPath
+		signupURL, err := url.Parse(fullURL)
 		if err != nil {
-			return errs.Wrap(err, "constants.PlatformSignupURL is not valid")
+			return errs.Wrap(err, "Platform signup URL '%s' is not valid", fullURL)
 		}
 		query := signupURL.Query()
 		query.Add("nextRoute", parsedURL.RequestURI())

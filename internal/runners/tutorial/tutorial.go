@@ -158,9 +158,10 @@ func (t *Tutorial) authFlow() error {
 		}
 	case signUpBrowser:
 		t.analytics.EventWithLabel(anaConsts.CatTutorial, "authentication-action", "sign-up-browser")
-		err := open.Run(constants.PlatformSignupURL)
+		signupURL := "https://" + constants.DefaultAPIHost + constants.PlatformSignupPath
+		err := open.Run(signupURL)
 		if err != nil {
-			return locale.WrapInputError(err, "err_tutorial_browser", "Could not open browser, please manually navigate to {{.V0}}.", constants.PlatformSignupURL)
+			return locale.WrapInputError(err, "err_tutorial_browser", "Could not open browser, please manually navigate to {{.V0}}.", signupURL)
 		}
 		t.outputer.Notice(locale.Tl("tutorial_signing_ready", "[NOTICE]Please sign in once you have finished signing up via your browser.[/RESET]"))
 		if err := runbits.Invoke(t.outputer, "auth"); err != nil {
