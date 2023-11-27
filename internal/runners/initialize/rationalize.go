@@ -6,6 +6,7 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
 	"github.com/ActiveState/cli/pkg/project"
@@ -14,10 +15,37 @@ import (
 func rationalizeError(namespace *project.Namespaced, rerr *error) {
 	var pcErr *bpModel.ProjectCreatedError
 	var errArtifactSetup *setup.ArtifactSetupErrors
+	var projectExistsErr *errProjectExists
+	var noOwnerErr *errNoOwner
 
 	switch {
 	case rerr == nil:
 		return
+
+		// Not authenticated
+	case errors.Is(*rerr, rationalize.ErrNotAuthenticated):
+		*rerr = errs.WrapUserFacing(*rerr,
+			locale.T("err_init_authenticated"),
+			errs.SetInput(),
+		)
+
+	case errors.As(*rerr, &projectExistsErr):
+		*rerr = errs.WrapUserFacing(*rerr,
+			locale.Tr("err_init_project_exists", projectExistsErr.name, projectExistsErr.path),
+			errs.SetInput(),
+		)
+
+	case errors.Is(*rerr, errNoLanguage):
+		*rerr = errs.WrapUserFacing(*rerr,
+			locale.T("err_init_no_language"),
+			errs.SetInput(),
+		)
+
+	case errors.As(*rerr, &noOwnerErr):
+		*rerr = errs.WrapUserFacing(*rerr,
+			locale.Tr("err_invalid_org", noOwnerErr.owner),
+			errs.SetInput(),
+		)
 
 	// Error creating project.
 	case errors.As(*rerr, &pcErr):

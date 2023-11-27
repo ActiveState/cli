@@ -20,6 +20,7 @@ import (
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/internal/runbits/commitmediator"
+	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
@@ -52,6 +53,19 @@ type primeable interface {
 	primer.Analyticer
 	primer.SvcModeler
 }
+
+type errProjectExists struct {
+	error
+	name string
+	path string
+}
+
+type errNoOwner struct {
+	error
+	owner string
+}
+
+var errNoLanguage = errs.New("No language specified")
 
 // New returns a prepared ptr to Initialize instance.
 func New(prime primeable) *Initialize {
@@ -91,7 +105,7 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 	logging.Debug("Init: %s/%s %v", params.Namespace.Owner, params.Namespace.Project, params.Private)
 
 	if !r.auth.Authenticated() {
-		return locale.NewInputError("err_init_authenticated")
+		return rationalize.ErrNotAuthenticated
 	}
 
 	path := params.Path
@@ -104,7 +118,11 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 	}
 
 	if fileutils.TargetExists(filepath.Join(path, constants.ConfigFileName)) {
-		return locale.NewInputError("err_projectfile_exists")
+		return errProjectExists{
+			error: errs.New("Project file already exists"),
+			name:  params.Namespace.Project,
+			path:  path,
+		}
 	}
 
 	err := fileutils.MkdirUnlessExists(path)
@@ -130,7 +148,7 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 	}
 
 	if languageName == "" {
-		return locale.NewInputError("err_init_no_language")
+		return errNoLanguage
 	}
 
 	// Require 'python', 'python@3', or 'python@2' instead of 'python3' or 'python2'.
@@ -176,9 +194,10 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 		}
 	}
 	if owner == "" {
-		return locale.NewInputError("err_invalid_org",
-			"The organization '[ACTIONABLE]{{.V0}}[/RESET]' either does not exist, or you do not have permissions to create a project in it.",
-			params.Namespace.Owner)
+		return errNoOwner{
+			error: errs.New("Could not find organization"),
+			owner: params.Namespace.Owner,
+		}
 	}
 	namespace := project.Namespaced{Owner: owner, Project: params.Namespace.Project}
 
@@ -244,7 +263,7 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 		Description: locale.T("commit_message_add_initial"),
 	})
 	if err != nil {
-		return locale.WrapError(err, "err_init_commit", "Could not create initial commit")
+		return locale.WrapError(err, "err_init_commit", "Could not create project")
 	}
 
 	if err := commitmediator.Set(proj, commitID.String()); err != nil {

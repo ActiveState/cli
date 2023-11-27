@@ -1218,6 +1218,8 @@ err_invalid_output_format:
   other: "Invalid output format specified: '[NOTICE]{{.V0}}[/RESET]'; Supported formats: [ACTIONABLE]{{.V1}}[/RESET]"
 err_invalid_language:
   other: "Invalid language specified: '[NOTICE]{{.V0}}[/RESET]'; Supported languages: [ACTIONABLE]{{.V1}}[/RESET]"
+err_init_invalid_org:
+  other: The organization '[ACTIONABLE]{{.V0}}[/RESET]' either does not exist, or you do not have permissions to create a project in it.
 push_creating_project:
   other: "Creating project [NOTICE]{{.V1}}[/RESET] under [NOTICE]{{.V0}}[/RESET] on the ActiveState Platform"
 push_project_updated:
@@ -2032,6 +2034,8 @@ pjfile_deprecation_entry:
   other: " - '[ACTIONABLE]{{.V0}}[/RESET]' located at byte [ACTIONABLE]{{.V1}}[/RESET]"
 err_init_authenticated:
   other: You need to be authenticated to initialize a project. Authenticate by running '[ACTIONABLE]state auth[/RESET]'.
+err_init_project_exists:
+  other: A project file already exists for {{.V0}} at {{.V1}}
 err_country_blocked:
   other: This service is not available in your region.
 err_commit_id_invalid:
