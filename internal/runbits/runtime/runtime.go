@@ -6,6 +6,7 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/cli/internal/runbits"
+	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	rt "github.com/ActiveState/cli/pkg/platform/runtime"
@@ -27,6 +28,10 @@ func NewFromProject(
 	out output.Outputer,
 	auth *authentication.Auth) (_ *rt.Runtime, rerr error) {
 	defer rationalizeError(auth, proj, &rerr)
+
+	if proj.IsHeadless() {
+		return nil, rationalize.ErrHeadless
+	}
 
 	rti, err := rt.New(target.NewProjectTarget(proj, nil, trigger), an, svcModel, auth)
 	if err == nil {
