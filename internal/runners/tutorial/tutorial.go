@@ -17,6 +17,7 @@ import (
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runbits"
+	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 )
 
@@ -158,7 +159,7 @@ func (t *Tutorial) authFlow() error {
 		}
 	case signUpBrowser:
 		t.analytics.EventWithLabel(anaConsts.CatTutorial, "authentication-action", "sign-up-browser")
-		signupURL := "https://" + constants.DefaultAPIHost + constants.PlatformSignupPath
+		signupURL := api.GetURL(constants.PlatformSignupPath).String()
 		err := open.Run(signupURL)
 		if err != nil {
 			return locale.WrapInputError(err, "err_tutorial_browser", "Could not open browser, please manually navigate to {{.V0}}.", signupURL)

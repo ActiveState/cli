@@ -2,7 +2,6 @@ package auth
 
 import (
 	"net/url"
-	"os"
 	"time"
 
 	"github.com/ActiveState/cli/internal/constants"
@@ -14,6 +13,7 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
+	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -223,15 +223,7 @@ func authenticateWithBrowser(out output.Outputer, auth *authentication.Auth, pro
 			return errs.Wrap(err, "Verification URL is not valid")
 		}
 
-		apiHost := constants.DefaultAPIHost
-		if hostOverride := os.Getenv(constants.APIHostEnvVarName); hostOverride != "" {
-			apiHost = hostOverride
-		}
-		fullURL := "https://" + apiHost + constants.PlatformSignupPath
-		signupURL, err := url.Parse(fullURL)
-		if err != nil {
-			return errs.Wrap(err, "Platform signup URL '%s' is not valid", fullURL)
-		}
+		signupURL := api.GetURL(constants.PlatformSignupPath)
 		query := signupURL.Query()
 		query.Add("nextRoute", parsedURL.RequestURI())
 		signupURL.RawQuery = query.Encode()
