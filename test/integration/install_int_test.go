@@ -32,15 +32,13 @@ func (suite *InstallIntegrationTestSuite) TestInstall_InvalidCommit() {
 
 	ts.PrepareProject("ActiveState-CLI/small-python", "malformed-commit-id")
 	cp := ts.SpawnWithOpts(e2e.OptArgs("install", "trender"))
-	//cp.Expect("Could not find or read the commit file") // re-enable in DX-2307
-	cp.Expect("Invalid commit ID") // remove in DX-2307
+	cp.Expect("Could not find or read the commit file")
 	cp.ExpectExitCode(1)
 	ts.IgnoreLogErrors()
 
-	// Re-enable in DX-2307.
-	//if strings.Count(cp.Snapshot(), " x ") != 1 {
-	//	suite.Fail("Expected exactly ONE error message, got: ", cp.Snapshot())
-	//}
+	if strings.Count(cp.Snapshot(), " x ") != 1 {
+		suite.Fail("Expected exactly ONE error message, got: ", cp.Snapshot())
+	}
 }
 
 func (suite *InstallIntegrationTestSuite) TestInstall_NoMatches_NoAlternatives() {

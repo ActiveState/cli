@@ -25,6 +25,7 @@ import (
 	medmodel "github.com/ActiveState/cli/pkg/platform/api/mediator/model"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/platform/runtime/buildscript"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/thoas/go-funk"
@@ -271,22 +272,20 @@ func (r *RequirementOperation) ExecuteRequirementOperation(requirementName, requ
 		return errs.Wrap(err, "Unsupported namespace type: %s", ns.Type().String())
 	}
 
-	// Re-enable in DX-2307.
-	//expr, err := bp.GetBuildExpression(r.Project.Owner(), r.Project.Name(), commitID.String())
-	//if err != nil {
-	//	return errs.Wrap(err, "Could not get remote build expr")
-	//}
+	expr, err := bp.GetBuildExpression(r.Project.Owner(), r.Project.Name(), commitID.String())
+	if err != nil {
+		return errs.Wrap(err, "Could not get remote build expr")
+	}
 
 	if err := commitmediator.Set(r.Project, commitID.String()); err != nil {
 		return locale.WrapError(err, "err_package_update_commit_id")
 	}
 
 	// Note: a commit ID file needs to exist at this point.
-	// Re-enable in DX-2307.
-	//err = buildscript.Update(r.Project, expr, r.Auth)
-	//if err != nil {
-	//	return locale.WrapError(err, "err_update_build_script")
-	//}
+	err = buildscript.Update(r.Project, expr, r.Auth)
+	if err != nil {
+		return locale.WrapError(err, "err_update_build_script")
+	}
 
 	// refresh or install runtime
 	err = runbits.RefreshRuntime(r.Auth, r.Output, r.Analytics, r.Project, commitID, true, trigger, r.SvcModel)

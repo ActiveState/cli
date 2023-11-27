@@ -219,12 +219,6 @@ func (p *Project) LegacyCommitID() string {
 	return p.projectfile.LegacyCommitID()
 }
 
-// LegacySetCommit is for use by commitmediator.Set() ONLY.
-// Remove in DX-2307.
-func (p *Project) LegacySetCommit(commitID string) error {
-	return p.projectfile.LegacySetCommit(commitID)
-}
-
 func (p *Project) IsHeadless() bool {
 	match := projectfile.CommitURLRe.FindStringSubmatch(p.URL())
 	return len(match) > 1
