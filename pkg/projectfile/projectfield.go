@@ -48,11 +48,6 @@ func (p *projectField) StripCommitID() {
 	p.unsetQuery("commitID") // legacy
 }
 
-// Remove this in DX-2307.
-func (p *projectField) LegacySetCommit(commitID string) {
-	p.setQuery("commitID", commitID)
-}
-
 func (p *projectField) setPath(path string) {
 	p.url.Path = path
 	p.url.RawPath = p.url.EscapedPath()

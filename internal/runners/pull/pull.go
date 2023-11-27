@@ -1,6 +1,7 @@
 package pull
 
 import (
+	"errors"
 	"path/filepath"
 	"strings"
 
@@ -18,7 +19,6 @@ import (
 	"github.com/ActiveState/cli/internal/runbits/commit"
 	"github.com/ActiveState/cli/internal/runbits/commitmediator"
 	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
-	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/buildexpression/merge"
@@ -194,11 +194,10 @@ func (p *Pull) Run(params *PullParams) (rerr error) {
 }
 
 func (p *Pull) performMerge(remoteCommit, localCommit strfmt.UUID, namespace *project.Namespaced, branchName string) (strfmt.UUID, error) {
-	// Re-enable in DX-2307.
-	//err := p.mergeBuildScript(strategies, remoteCommit)
-	//if err != nil {
-	//	return "", errs.Wrap(err, "Could not merge local build script with remote changes")
-	//}
+	err := p.mergeBuildScript(remoteCommit, localCommit)
+	if err != nil {
+		return "", errs.Wrap(err, "Could not merge local build script with remote changes")
+	}
 
 	p.out.Notice(output.Title(locale.Tl("pull_diverged", "Merging history")))
 	p.out.Notice(locale.Tr(
@@ -232,9 +231,8 @@ func (p *Pull) performMerge(remoteCommit, localCommit strfmt.UUID, namespace *pr
 	return resultCommit, nil
 }
 
-// mergeBuildScript merges the local build script with the remote buildexpression (not script) for a
-// given UUID, performing the given merge strategy (e.g. from model.MergeCommit).
-func (p *Pull) mergeBuildScript(strategies *mono_models.MergeStrategies, remoteCommit strfmt.UUID) error {
+// mergeBuildScript merges the local build script with the remote buildexpression (not script).
+func (p *Pull) mergeBuildScript(remoteCommit, localCommit strfmt.UUID) error {
 	// Get the build script to merge.
 	script, err := buildscript.NewScriptFromProject(p.project, p.auth)
 	if err != nil {
@@ -247,6 +245,14 @@ func (p *Pull) mergeBuildScript(strategies *mono_models.MergeStrategies, remoteC
 	exprB, err := bp.GetBuildExpression(p.project.Owner(), p.project.Name(), remoteCommit.String())
 	if err != nil {
 		return errs.Wrap(err, "Unable to get buildexpression for remote commit")
+	}
+
+	// Compute the merge strategy.
+	strategies, err := model.MergeCommit(remoteCommit, localCommit)
+	if err != nil {
+		if !errors.Is(err, model.ErrMergeCommitInHistory) {
+			return locale.WrapError(err, "err_mergecommit", "Could not detect if merge is necessary.")
+		}
 	}
 
 	// Attempt the merge.

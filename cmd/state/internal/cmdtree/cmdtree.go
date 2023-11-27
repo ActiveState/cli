@@ -205,7 +205,7 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 		refreshCmd,
 		newSwitchCommand(prime),
 		newTestCommand(prime),
-		//newCommitCommand(prime), // re-enable in DX-2307
+		newCommitCommand(prime),
 	)
 
 	return &CmdTree{

@@ -12,7 +12,6 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/ActiveState/cli/pkg/platform/runtime/buildscript"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/ActiveState/cli/pkg/projectfile" // remove in DX-2307
 	"github.com/stretchr/testify/suite"
 )
 
@@ -33,10 +32,9 @@ func (suite *PullIntegrationTestSuite) TestPull() {
 	cp.Expect("activestate.yaml has been updated")
 	cp.ExpectExitCode(0)
 
-	// Re-enable this block in DX-2307.
-	//projectConfigDir := filepath.Join(ts.Dirs.Work, constants.ProjectConfigDirName)
-	//suite.Require().True(fileutils.DirExists(projectConfigDir))
-	//suite.Assert().True(fileutils.FileExists(filepath.Join(projectConfigDir, constants.CommitIdFileName)))
+	projectConfigDir := filepath.Join(ts.Dirs.Work, constants.ProjectConfigDirName)
+	suite.Require().True(fileutils.DirExists(projectConfigDir))
+	suite.Assert().True(fileutils.FileExists(filepath.Join(projectConfigDir, constants.CommitIdFileName)))
 
 	cp = ts.Spawn("pull")
 	cp.Expect("already up to date")
@@ -94,14 +92,9 @@ func (suite *PullIntegrationTestSuite) TestPull_Merge() {
 	pjfilepath := filepath.Join(ts.Dirs.Work, "cli", constants.ConfigFileName)
 	err := fileutils.WriteFile(pjfilepath, []byte(projectLine))
 	suite.Require().NoError(err)
-	// Remove the following lines in DX-2307.
-	pjfile, err := projectfile.Parse(pjfilepath)
+	commitIdFile := filepath.Join(ts.Dirs.Work, "cli", constants.ProjectConfigDirName, constants.CommitIdFileName)
+	err = fileutils.WriteFile(commitIdFile, []byte(unPulledCommit))
 	suite.Require().NoError(err)
-	suite.Require().NoError(pjfile.LegacySetCommit(unPulledCommit))
-	// Re-enable the following lines in DX-2307.
-	//commitIdFile := filepath.Join(ts.Dirs.Work, "cli", constants.ProjectConfigDirName, constants.CommitIdFileName)
-	//err = fileutils.WriteFile(commitIdFile, []byte(unPulledCommit))
-	//suite.Require().NoError(err)
 
 	ts.LoginAsPersistentUser()
 
@@ -145,7 +138,6 @@ func (suite *PullIntegrationTestSuite) TestPull_RestoreNamespace() {
 
 func (suite *PullIntegrationTestSuite) TestMergeBuildScript() {
 	suite.OnlyRunForTags(tagsuite.Pull)
-	suite.T().Skip("Temporarily disable buildscripts until DX-2307") // remove in DX-2307
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 

@@ -20,6 +20,7 @@ import (
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/internal/runbits/commitmediator"
+	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
@@ -156,11 +157,10 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 		}
 	}
 
-	// Re-enable in DX-2307.
-	//emptyDir, err := fileutils.IsEmptyDir(path)
-	//if err != nil {
-	//	multilog.Error("Unable to check if directory is empty: %v", err)
-	//}
+	emptyDir, err := fileutils.IsEmptyDir(path)
+	if err != nil {
+		multilog.Error("Unable to check if directory is empty: %v", err)
+	}
 
 	// Match the case of the organization.
 	// Otherwise the incorrect case will be written to the project file.
@@ -250,14 +250,13 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 	if err := commitmediator.Set(proj, commitID.String()); err != nil {
 		return errs.Wrap(err, "Unable to create local commit file")
 	}
-	// Re-enable in DX-2307.
-	//if emptyDir || fileutils.DirExists(filepath.Join(path, ".git")) {
-	//	err := localcommit.AddToGitIgnore(path)
-	//	if err != nil {
-	//		r.out.Notice(locale.Tr("notice_commit_id_gitignore", constants.ProjectConfigDirName, constants.CommitIdFileName))
-	//		multilog.Error("Unable to add local commit file to .gitignore: %v", err)
-	//	}
-	//}
+	if emptyDir || fileutils.DirExists(filepath.Join(path, ".git")) {
+		err := localcommit.AddToGitIgnore(path)
+		if err != nil {
+			r.out.Notice(locale.Tr("notice_commit_id_gitignore", constants.ProjectConfigDirName, constants.CommitIdFileName))
+			multilog.Error("Unable to add local commit file to .gitignore: %v", err)
+		}
+	}
 
 	err = runbits.RefreshRuntime(r.auth, r.out, r.analytics, proj, commitID, true, target.TriggerInit, r.svcModel)
 	if err != nil {
