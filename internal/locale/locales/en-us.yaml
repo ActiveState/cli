@@ -1177,6 +1177,8 @@ notice_commit_build_script:
 
 command_flag_invalid_value:
   other: "Invalid value for {{.V0}} flag: [NOTICE]{{.V1}}[/RESET]"
+command_cmd_no_such_cmd:
+  other: "No such command: [NOTICE]{{.V0}}[/RESET]"
 err_cmdtree:
   other: Could not run the requested command
 err_fetch_languages:
