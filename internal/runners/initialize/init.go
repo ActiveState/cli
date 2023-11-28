@@ -118,7 +118,7 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 	}
 
 	if fileutils.TargetExists(filepath.Join(path, constants.ConfigFileName)) {
-		return errProjectExists{
+		return &errProjectExists{
 			error: errs.New("Project file already exists"),
 			name:  params.Namespace.Project,
 			path:  path,
@@ -194,7 +194,7 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 		}
 	}
 	if owner == "" {
-		return errNoOwner{
+		return &errNoOwner{
 			error: errs.New("Could not find organization"),
 			owner: params.Namespace.Owner,
 		}

@@ -22,7 +22,7 @@ func rationalizeError(namespace *project.Namespaced, rerr *error) {
 	case rerr == nil:
 		return
 
-		// Not authenticated
+	// Not authenticated
 	case errors.Is(*rerr, rationalize.ErrNotAuthenticated):
 		*rerr = errs.WrapUserFacing(*rerr,
 			locale.T("err_init_authenticated"),
@@ -43,7 +43,7 @@ func rationalizeError(namespace *project.Namespaced, rerr *error) {
 
 	case errors.As(*rerr, &noOwnerErr):
 		*rerr = errs.WrapUserFacing(*rerr,
-			locale.Tr("err_invalid_org", noOwnerErr.owner),
+			locale.Tr("err_init_invalid_org", noOwnerErr.owner),
 			errs.SetInput(),
 		)
 

@@ -1219,7 +1219,7 @@ err_invalid_output_format:
 err_invalid_language:
   other: "Invalid language specified: '[NOTICE]{{.V0}}[/RESET]'; Supported languages: [ACTIONABLE]{{.V1}}[/RESET]"
 err_init_invalid_org:
-  other: The organization '[ACTIONABLE]{{.V0}}[/RESET]' either does not exist, or you do not have permissions to create a project in it.
+  other: The organization [ACTIONABLE]{{.V0}}[/RESET] either does not exist, or you do not have permissions to create a project in it.
 push_creating_project:
   other: "Creating project [NOTICE]{{.V1}}[/RESET] under [NOTICE]{{.V0}}[/RESET] on the ActiveState Platform"
 push_project_updated:
