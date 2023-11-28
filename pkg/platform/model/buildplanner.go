@@ -286,14 +286,6 @@ func (bp *BuildPlanner) StageCommit(params StageCommitParams) (strfmt.UUID, erro
 		return "", errs.New("Staged commit does not contain commitID")
 	}
 
-	if resp.Commit.Build == nil {
-		return "", errs.New("Commit does not contain build")
-	}
-
-	if bpModel.IsErrorResponse(resp.Commit.Build.Type) {
-		return "", bpModel.ProcessBuildError(resp.Commit.Build, "Could not get build from commit")
-	}
-
 	return resp.Commit.CommitID, nil
 }
 
