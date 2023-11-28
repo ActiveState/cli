@@ -137,9 +137,9 @@ func getProjectHost(service Service) *string {
 	return &url.Host
 }
 
-// GetURL returns a generic Platform URL for the given path.
+// GetPlatformURL returns a generic Platform URL for the given path.
 // This is for retrieving non-service URLs (e.g. signup URL).
-func GetURL(path string) *url.URL {
+func GetPlatformURL(path string) *url.URL {
 	host := constants.DefaultAPIHost
 	if hostOverride := os.Getenv(constants.APIHostEnvVarName); hostOverride != "" {
 		host = hostOverride

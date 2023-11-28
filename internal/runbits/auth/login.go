@@ -223,7 +223,7 @@ func authenticateWithBrowser(out output.Outputer, auth *authentication.Auth, pro
 			return errs.Wrap(err, "Verification URL is not valid")
 		}
 
-		signupURL := api.GetURL(constants.PlatformSignupPath)
+		signupURL := api.GetPlatformURL(constants.PlatformSignupPath)
 		query := signupURL.Query()
 		query.Add("nextRoute", parsedURL.RequestURI())
 		signupURL.RawQuery = query.Encode()
