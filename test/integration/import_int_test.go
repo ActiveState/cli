@@ -81,7 +81,7 @@ func (suite *ImportIntegrationTestSuite) TestImport() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	username, _ := ts.CreateNewUser()
+	username, _, _ := ts.CreateNewUser()
 	namespace := fmt.Sprintf("%s/%s", username, "Python3")
 
 	cp := ts.Spawn("init", "--language", "python", namespace, ts.Dirs.Work)
