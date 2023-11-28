@@ -52,12 +52,10 @@ func NewGetOrganizationMutationsParamsWithHTTPClient(client *http.Client) *GetOr
 	}
 }
 
-/*
-GetOrganizationMutationsParams contains all the parameters to send to the API endpoint
+/* GetOrganizationMutationsParams contains all the parameters to send to the API endpoint
+   for the get organization mutations operation.
 
-	for the get organization mutations operation.
-
-	Typically these are written to a http.Request.
+   Typically these are written to a http.Request.
 */
 type GetOrganizationMutationsParams struct {
 

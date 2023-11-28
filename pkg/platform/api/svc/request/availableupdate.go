@@ -24,9 +24,9 @@ func (u *AvailableUpdate) Query() string {
 	}`
 }
 
-func (u *AvailableUpdate) Vars() map[string]interface{} {
+func (u *AvailableUpdate) Vars() (map[string]interface{}, error) {
 	return map[string]interface{}{
 		"desiredChannel": u.desiredChannel,
 		"desiredVersion": u.desiredVersion,
-	}
+	}, nil
 }

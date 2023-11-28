@@ -189,6 +189,6 @@ query ($commitID: String!, $organization: String!, $project: String!) {
 `
 }
 
-func (b *buildPlanByProject) Vars() map[string]interface{} {
-	return b.vars
+func (b *buildPlanByProject) Vars() (map[string]interface{}, error) {
+	return b.vars, nil
 }

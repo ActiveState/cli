@@ -52,12 +52,10 @@ func NewNewTOTPParamsWithHTTPClient(client *http.Client) *NewTOTPParams {
 	}
 }
 
-/*
-NewTOTPParams contains all the parameters to send to the API endpoint
+/* NewTOTPParams contains all the parameters to send to the API endpoint
+   for the new t o t p operation.
 
-	for the new t o t p operation.
-
-	Typically these are written to a http.Request.
+   Typically these are written to a http.Request.
 */
 type NewTOTPParams struct {
 	timeout    time.Duration

@@ -53,12 +53,10 @@ func NewGetIngredientOptionSetIngredientVersionsParamsWithHTTPClient(client *htt
 	}
 }
 
-/*
-GetIngredientOptionSetIngredientVersionsParams contains all the parameters to send to the API endpoint
+/* GetIngredientOptionSetIngredientVersionsParams contains all the parameters to send to the API endpoint
+   for the get ingredient option set ingredient versions operation.
 
-	for the get ingredient option set ingredient versions operation.
-
-	Typically these are written to a http.Request.
+   Typically these are written to a http.Request.
 */
 type GetIngredientOptionSetIngredientVersionsParams struct {
 

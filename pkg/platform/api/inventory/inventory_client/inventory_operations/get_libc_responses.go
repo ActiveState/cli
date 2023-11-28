@@ -46,8 +46,7 @@ func NewGetLibcOK() *GetLibcOK {
 	return &GetLibcOK{}
 }
 
-/*
-GetLibcOK describes a response with status code 200, with default header values.
+/* GetLibcOK describes a response with status code 200, with default header values.
 
 The retrieved libc
 */
@@ -81,8 +80,7 @@ func NewGetLibcDefault(code int) *GetLibcDefault {
 	}
 }
 
-/*
-GetLibcDefault describes a response with status code -1, with default header values.
+/* GetLibcDefault describes a response with status code -1, with default header values.
 
 generic error response
 */
