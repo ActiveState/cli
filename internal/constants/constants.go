@@ -291,8 +291,8 @@ const DateTimeFormatUser = "2 Jan 2006 15:04"
 // DateTimeFormatRecord is the datetime format we use when recording for internal use
 const DateTimeFormatRecord = "Mon Jan 2 2006 15:04:05 -0700 MST"
 
-// PlatformSignupURL is the account creation url used by the platform
-const PlatformSignupURL = "https://platform.activestate.com" + "/create-account"
+// PlatformSignupPath is the account creation path used by the platform
+const PlatformSignupPath = "/create-account"
 
 // DocumentationURL is the url for the state tool documentation
 const DocumentationURL = "http://docs.activestate.com/platform/state/"
