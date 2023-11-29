@@ -295,7 +295,7 @@ scripts:
     language: bash
     description: Builds the State Tool and runs it with `--help`
     value: |
-      $scripts.build
+      $scripts.build.path()
       build/state --help
   - name: debug
     language: bash
@@ -409,8 +409,8 @@ events:
   - name: activate
     if: ne .Shell "cmd"
     value: |
-      $scripts.install-deps-dev
-      $scripts.install-deps
+      $scripts.install-deps-dev.path()
+      $scripts.install-deps.path()
   - name: file-changed
     scope: ["internal/locale/locales"]
     value: build
