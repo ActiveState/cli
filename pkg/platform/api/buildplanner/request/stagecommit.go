@@ -18,149 +18,18 @@ type buildPlanByStageCommit struct {
 
 func (b *buildPlanByStageCommit) Query() string {
 	return `
-mutation ($organization: String!, $project: String!, $parentCommit: ID, $description: String!, $expr:BuildExpr!) {
-  stageCommit(input:{organization:$organization, project:$project, parentCommitId:$parentCommit, description:$description, expr:$expr}) {
+mutation ($organization: String!, $project: String!, $parentCommit: ID, $description: String!, $expr: BuildExpr!) {
+  stageCommit(
+    input: {organization: $organization, project: $project, parentCommitId: $parentCommit, description: $description, expr: $expr}
+  ) {
     ... on Commit {
       __typename
-			expr
+      expr
       commitId
-      build {
-        __typename
-        ... on BuildStarted {
-          buildLogIds {
-            ... on AltBuildId {
-              id
-            }
-          }
-        }
-        ... on BuildStarted {
-          buildLogIds {
-            ... on AltBuildId {
-              id
-            }
-          }
-        }
-        ... on Build {
-          status
-          terminals {
-            tag
-            nodeIds
-          }
-          sources: nodes {
-            ... on Source {
-              nodeId
-              name
-              namespace
-              version
-            }
-          }
-          steps: steps {
-            ... on Step {
-              stepId
-              inputs {
-                tag
-                nodeIds
-              }
-              outputs
-            }
-          }
-          artifacts: nodes {
-            ... on ArtifactSucceeded {
-              __typename
-              nodeId
-              mimeType
-              generatedBy
-              runtimeDependencies
-              status
-              logURL
-              url
-              checksum
-            }
-            ... on ArtifactUnbuilt {
-              __typename
-              nodeId
-              mimeType
-              generatedBy
-              runtimeDependencies
-              status
-            }
-            ... on ArtifactStarted {
-              __typename
-              nodeId
-              mimeType
-              generatedBy
-              runtimeDependencies
-              status
-            }
-            ... on ArtifactTransientlyFailed {
-              __typename
-              nodeId
-              mimeType
-              generatedBy
-              runtimeDependencies
-              status
-              logURL
-              errors
-              attempts
-              nextAttemptAt
-            }
-            ... on ArtifactPermanentlyFailed {
-              __typename
-              nodeId
-              mimeType
-              generatedBy
-              runtimeDependencies
-              status
-              logURL
-              errors
-            }
-            ... on ArtifactFailed {
-              __typename
-              nodeId
-              mimeType
-              generatedBy
-              runtimeDependencies
-              status
-              logURL
-              errors
-            }
-          }
-        }
-        ... on PlanningError {
-          message
-          subErrors {
-            __typename
-            ... on GenericSolveError {
-              path
-              message
-              isTransient
-              validationErrors {
-                jsonPath
-                error
-              }
-            }
-            ... on RemediableSolveError {
-              path
-              message
-              isTransient
-              errorType
-              validationErrors {
-                jsonPath
-              }
-              suggestedRemediations {
-                remediationType
-                command
-                parameters
-              }
-            }
-          }
-        }
-      }
     }
-    ... on ParseError {
+    ... on Error {
       __typename
       message
-      path
     }
     ... on NotFound {
       __typename
@@ -169,14 +38,10 @@ mutation ($organization: String!, $project: String!, $parentCommit: ID, $descrip
       resource
       mayNeedAuthentication
     }
-    ... on Error {
+    ... on ParseError {
       __typename
       message
-    }
-    ... on NoChangeSinceLastCommit {
-      __typename
-      commitId
-      message
+      path
     }
     ... on Forbidden {
       __typename
@@ -188,6 +53,11 @@ mutation ($organization: String!, $project: String!, $parentCommit: ID, $descrip
       __typename
       commitId
       branchId
+      message
+    }
+    ... on NoChangeSinceLastCommit {
+      __typename
+      commitId
       message
     }
   }
