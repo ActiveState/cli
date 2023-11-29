@@ -82,6 +82,9 @@ func (o *OutputError) MarshalOutput(f output.Format) interface{} {
 	return strings.Join(outLines, "\n")
 }
 
+// formatMessage formats the error message for plain output. It adds a
+// x prefix to the first line and indents the rest of the lines to match
+// the indentation of the first line.
 func formatMessage(message string) []string {
 	var output []string
 	lines := strings.Split(message, "\n")
