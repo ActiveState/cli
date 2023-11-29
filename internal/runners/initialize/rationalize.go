@@ -16,7 +16,6 @@ func rationalizeError(namespace *project.Namespaced, rerr *error) {
 	var pcErr *bpModel.ProjectCreatedError
 	var errArtifactSetup *setup.ArtifactSetupErrors
 	var projectExistsErr *errProjectExists
-	var noOwnerErr *errNoOwner
 
 	switch {
 	case rerr == nil:
@@ -31,7 +30,7 @@ func rationalizeError(namespace *project.Namespaced, rerr *error) {
 
 	case errors.As(*rerr, &projectExistsErr):
 		*rerr = errs.WrapUserFacing(*rerr,
-			locale.Tr("err_init_project_exists", projectExistsErr.name, projectExistsErr.path),
+			locale.Tr("err_init_project_exists", namespace.Project, projectExistsErr.path),
 			errs.SetInput(),
 		)
 
@@ -41,9 +40,9 @@ func rationalizeError(namespace *project.Namespaced, rerr *error) {
 			errs.SetInput(),
 		)
 
-	case errors.As(*rerr, &noOwnerErr):
+	case errors.Is(*rerr, errNoOwner):
 		*rerr = errs.WrapUserFacing(*rerr,
-			locale.Tr("err_init_invalid_org", noOwnerErr.owner),
+			locale.Tr("err_init_invalid_org", namespace.Owner),
 			errs.SetInput(),
 		)
 

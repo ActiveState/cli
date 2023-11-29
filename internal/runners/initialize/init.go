@@ -56,14 +56,10 @@ type primeable interface {
 
 type errProjectExists struct {
 	error
-	name string
 	path string
 }
 
-type errNoOwner struct {
-	error
-	owner string
-}
+var errNoOwner = errs.New("Could not find organization")
 
 var errNoLanguage = errs.New("No language specified")
 
@@ -120,7 +116,6 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 	if fileutils.TargetExists(filepath.Join(path, constants.ConfigFileName)) {
 		return &errProjectExists{
 			error: errs.New("Project file already exists"),
-			name:  params.Namespace.Project,
 			path:  path,
 		}
 	}
@@ -194,10 +189,7 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 		}
 	}
 	if owner == "" {
-		return &errNoOwner{
-			error: errs.New("Could not find organization"),
-			owner: params.Namespace.Owner,
-		}
+		return errNoOwner
 	}
 	namespace := project.Namespaced{Owner: owner, Project: params.Namespace.Project}
 
