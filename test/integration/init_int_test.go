@@ -141,6 +141,28 @@ func (suite *InitIntegrationTestSuite) TestInit_NotAuthenticated() {
 	cp.Expect("You need to be authenticated to initialize a project.")
 }
 
+func (suite *InitIntegrationTestSuite) TestInit_AlreadyExists() {
+	suite.OnlyRunForTags(tagsuite.Init)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+	ts.LoginAsPersistentUser()
+
+	cp := ts.Spawn("init", fmt.Sprintf("%s/test-project", e2e.PersistentUsername), "--language", "python@3")
+	cp.Expect("The project test-project already exists under cli-integration-tests")
+	cp.ExpectExitCode(1)
+}
+
+func (suite *InitIntegrationTestSuite) TestInit_NoOrg() {
+	suite.OnlyRunForTags(tagsuite.Init)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+	ts.LoginAsPersistentUser()
+
+	cp := ts.Spawn("init", "random-org/test-project", "--language", "python@3")
+	cp.Expect("The organization random-org either does not exist, or you do not have permissions to create a project in it.")
+	cp.ExpectExitCode(1)
+}
+
 func TestInitIntegrationTestSuite(t *testing.T) {
 	suite.Run(t, new(InitIntegrationTestSuite))
 }
