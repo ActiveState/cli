@@ -32,7 +32,9 @@ func TestMergeAdd(t *testing.T) {
 	)
 
 in:
-	runtime`))
+	runtime
+
+version: 1`))
 	require.NoError(t, err)
 	bytes, err := json.Marshal(scriptA)
 	require.NoError(t, err)
@@ -59,7 +61,9 @@ in:
 	)
 
 in:
-	runtime`))
+	runtime
+
+version: 1`))
 	require.NoError(t, err)
 	bytes, err = json.Marshal(scriptB)
 	require.NoError(t, err)
@@ -104,7 +108,9 @@ in:
 	)
 
 in:
-	runtime`, mergedScript.String())
+	runtime
+
+version: 1`, mergedScript.String())
 }
 
 func TestMergeRemove(t *testing.T) {
@@ -132,7 +138,9 @@ func TestMergeRemove(t *testing.T) {
 	)
 
 in:
-	runtime`))
+	runtime
+
+version: 1`))
 	require.NoError(t, err)
 	bytes, err := json.Marshal(scriptA)
 	require.NoError(t, err)
@@ -159,7 +167,9 @@ in:
 	)
 
 in:
-	runtime`))
+	runtime
+
+version: 1`))
 	require.NoError(t, err)
 	bytes, err = json.Marshal(scriptB)
 	require.NoError(t, err)
@@ -200,7 +210,9 @@ in:
 	)
 
 in:
-	runtime`, mergedScript.String())
+	runtime
+
+version: 1`, mergedScript.String())
 }
 
 func TestMergeConflict(t *testing.T) {
@@ -220,7 +232,9 @@ func TestMergeConflict(t *testing.T) {
 	)
 
 in:
-	runtime`))
+	runtime
+
+version: 1`))
 	require.NoError(t, err)
 	bytes, err := json.Marshal(scriptA)
 	require.NoError(t, err)
@@ -246,7 +260,9 @@ in:
 	)
 
 in:
-	runtime`))
+	runtime
+
+version: 1`))
 	require.NoError(t, err)
 	bytes, err = json.Marshal(scriptB)
 	require.NoError(t, err)
