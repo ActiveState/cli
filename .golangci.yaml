@@ -12,7 +12,7 @@ linters-settings:
       - (*github.com/ActiveState/termtest.ConsoleProcess).Expect
       - (*github.com/ActiveState/termtest.ConsoleProcess).WaitForInput
 
-# When issues occur with linting us the snippet below to help with debugging
+# When issues occur with linting use the snippet below to help with debugging
 # linters:
 #   # Disable all and re-enable the default linters as a starting point.
 #   disable-all: true
