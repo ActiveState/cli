@@ -1,10 +1,9 @@
 package requirements
 
 import (
-	"fmt"
 	"strconv"
 	"strings"
-
+	
 	"github.com/ActiveState/cli/internal/analytics"
 	anaConsts "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/captain"
@@ -19,6 +18,7 @@ import (
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/runbits"
+	"fmt"
 	"github.com/ActiveState/cli/internal/runbits/commitmediator"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"

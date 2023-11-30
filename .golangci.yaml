@@ -13,6 +13,7 @@ linters-settings:
       - (*github.com/ActiveState/termtest.ConsoleProcess).WaitForInput
 
 linters:
+  disable-all: true
   enable:
     - gci
 
