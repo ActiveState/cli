@@ -85,6 +85,19 @@ func (r *Checkout) Run(ns *project.Namespaced, branchName, cachePath, targetPath
 			return "", locale.WrapError(err, "err_fetch_branch", "", branchName)
 		}
 		commitID = branch.CommitID
+	} else {
+		// It's possible the given commitID does not belong to the default project branch.
+		// If so, find the correct branch.
+		for _, branch := range pj.Branches {
+			belongs, err := model.CommitBelongsToBranch(ns.Owner, ns.Project, branch.Label, *commitID)
+			if err != nil {
+				return "", errs.Wrap(err, "Could not determine if the given commitID belongs to a project branch")
+			}
+			if belongs {
+				branchName = branch.Label
+				break
+			}
+		}
 	}
 
 	if commitID == nil {
