@@ -10,7 +10,7 @@ on:
 permissions:
   contents: read
   # Optional: allow read access to pull request. Use with `only-new-issues` option.
-  # pull-requests: read
+  pull-requests: read
 
 jobs:
   golangci:
@@ -31,7 +31,7 @@ jobs:
           version: v1.54
 
           # Show only new issues if it's a pull request. The default value is `false`.
-          only-new-issues: false
+          only-new-issues: true
 
           # Command line arguments
           args: --timeout 5m --config .golangci.yaml
