@@ -32,3 +32,6 @@ jobs:
 
           # Show only new issues if it's a pull request. The default value is `false`.
           only-new-issues: true
+
+          # Command line arguments
+          args: --timeout 5m
