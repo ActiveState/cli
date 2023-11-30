@@ -34,4 +34,4 @@ jobs:
           only-new-issues: true
 
           # Command line arguments
-          args: --timeout 5m --config .golangci.yaml
+          args: --timeout 5m
