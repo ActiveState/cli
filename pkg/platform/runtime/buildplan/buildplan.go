@@ -190,7 +190,7 @@ func buildTerminals(nodeID strfmt.UUID, lookup map[strfmt.UUID]interface{}, resu
 	}
 
 	if !model.IsSuccessArtifactStatus(targetArtifact.Status) {
-		return locale.NewError("err_artifact_failed", "Artifact {{.V0}} failed to build", targetArtifact.DisplayName)
+		return locale.NewError("err_artifact_failed", "Artifact {{.V0}} failed to build", trimDisplayName(targetArtifact.DisplayName))
 	}
 
 	if model.IsStateToolArtifact(targetArtifact.MimeType) {
@@ -215,6 +215,15 @@ func buildTerminals(nodeID strfmt.UUID, lookup map[strfmt.UUID]interface{}, resu
 	}
 
 	return nil
+}
+
+func trimDisplayName(displayName string) string {
+	index := strings.Index(displayName, ".")
+	if index != -1 {
+		return displayName[:index]
+	}
+
+	return displayName
 }
 
 // buildRuntimeClosureMap recursively builds the artifact map from the lookup table. It expects an ID that
