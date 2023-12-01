@@ -32,8 +32,8 @@ const (
 	ArtifactFailedPermanently = "FAILED_PERMANENTLY"
 	ArtifactFailedTransiently = "FAILED_TRANSIENTLY"
 	ArtifactReady             = "READY"
-	ArtifactRunning           = "RUNNING"
 	ArtifactSkipped           = "SKIPPED"
+	ArtifactStarted           = "STARTED"
 	ArtifactSucceeded         = "SUCCEEDED"
 
 	// Tag types
@@ -99,6 +99,11 @@ func IsStateToolArtifact(mimeType string) bool {
 	return mimeType == XArtifactMimeType ||
 		mimeType == XActiveStateArtifactMimeType ||
 		mimeType == XCamelInstallerMimeType
+}
+
+func IsSuccessArtifactStatus(status string) bool {
+	return status == ArtifactSucceeded || status == ArtifactBlocked ||
+		status == ArtifactStarted
 }
 
 func (o Operation) String() string {
@@ -631,6 +636,7 @@ type NamedTarget struct {
 type Artifact struct {
 	Type                string        `json:"__typename"`
 	NodeID              strfmt.UUID   `json:"nodeId"`
+	DisplayName         string        `json:"displayName"`
 	MimeType            string        `json:"mimeType"`
 	GeneratedBy         strfmt.UUID   `json:"generatedBy"`
 	RuntimeDependencies []strfmt.UUID `json:"runtimeDependencies"`

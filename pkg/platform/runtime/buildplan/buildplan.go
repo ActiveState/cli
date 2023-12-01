@@ -115,7 +115,7 @@ func newMapFromBuildPlan(build *model.Build, calculateBuildtimeClosure bool) (ar
 		lookup[source.NodeID] = source
 	}
 
-	filtered, err := filterPlatformTerminals(build)
+	filtered, err := FilterPlatformTerminals(build)
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not filter terminals")
 	}
@@ -126,7 +126,10 @@ func newMapFromBuildPlan(build *model.Build, calculateBuildtimeClosure bool) (ar
 		// then we need to recurse back through the DAG until we find nodeIDs that are state tool
 		// artifacts. These are the terminal targets.
 		for _, nodeID := range terminal.NodeIDs {
-			buildTerminals(nodeID, lookup, &terminalTargetIDs)
+			err = buildTerminals(nodeID, lookup, &terminalTargetIDs)
+			if err != nil {
+				return nil, errs.Wrap(err, "Could not build terminals")
+			}
 		}
 	}
 
@@ -144,9 +147,9 @@ func newMapFromBuildPlan(build *model.Build, calculateBuildtimeClosure bool) (ar
 	return res, nil
 }
 
-// filterPlatformTerminals filters the build terminal nodes to only include
+// FilterPlatformTerminals filters the build terminal nodes to only include
 // terminals that are for the current host platform.
-func filterPlatformTerminals(build *model.Build) ([]*model.NamedTarget, error) {
+func FilterPlatformTerminals(build *model.Build) ([]*model.NamedTarget, error) {
 	// Extract the available platforms from the build plan
 	// We are only interested in terminals with the platform tag
 	var bpPlatforms []strfmt.UUID
@@ -179,23 +182,27 @@ func filterPlatformTerminals(build *model.Build) ([]*model.NamedTarget, error) {
 // adds it to the terminal listing. Otherwise it looks up the step that generated the artifact
 // and recursively calls itself with each of the step's inputs that are tagged as sources until
 // it finds a state tool artifact. That artifact is then added to the terminal listing.
-func buildTerminals(nodeID strfmt.UUID, lookup map[strfmt.UUID]interface{}, result *[]strfmt.UUID) {
+func buildTerminals(nodeID strfmt.UUID, lookup map[strfmt.UUID]interface{}, result *[]strfmt.UUID) error {
 	targetArtifact, ok := lookup[nodeID].(*model.Artifact)
 	if !ok {
 		logging.Debug("NodeID %s does not resolve to an artifact", nodeID)
-		return
+		return nil
+	}
+
+	if !model.IsSuccessArtifactStatus(targetArtifact.Status) {
+		return locale.NewError("err_artifact_failed", "Artifact {{.V0}} failed to build", targetArtifact.DisplayName)
 	}
 
 	if model.IsStateToolArtifact(targetArtifact.MimeType) {
 		*result = append(*result, targetArtifact.NodeID)
-		return
+		return nil
 	}
 
 	step, ok := lookup[targetArtifact.GeneratedBy].(*model.Step)
 	if !ok {
 		// Dead branch
 		logging.Debug("Artifact %s does not have an associated step, considering this a dead branch", nodeID)
-		return
+		return nil
 	}
 
 	for _, input := range step.Inputs {
@@ -206,6 +213,8 @@ func buildTerminals(nodeID strfmt.UUID, lookup map[strfmt.UUID]interface{}, resu
 			buildTerminals(id, lookup, result)
 		}
 	}
+
+	return nil
 }
 
 // buildRuntimeClosureMap recursively builds the artifact map from the lookup table. It expects an ID that
