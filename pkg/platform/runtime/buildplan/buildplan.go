@@ -115,7 +115,7 @@ func newMapFromBuildPlan(build *model.Build, calculateBuildtimeClosure bool) (ar
 		lookup[source.NodeID] = source
 	}
 
-	filtered, err := FilterPlatformTerminals(build)
+	filtered, err := filterPlatformTerminals(build)
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not filter terminals")
 	}
@@ -147,9 +147,9 @@ func newMapFromBuildPlan(build *model.Build, calculateBuildtimeClosure bool) (ar
 	return res, nil
 }
 
-// FilterPlatformTerminals filters the build terminal nodes to only include
+// filterPlatformTerminals filters the build terminal nodes to only include
 // terminals that are for the current host platform.
-func FilterPlatformTerminals(build *model.Build) ([]*model.NamedTarget, error) {
+func filterPlatformTerminals(build *model.Build) ([]*model.NamedTarget, error) {
 	// Extract the available platforms from the build plan
 	// We are only interested in terminals with the platform tag
 	var bpPlatforms []strfmt.UUID
