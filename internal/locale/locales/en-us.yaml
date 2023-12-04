@@ -762,27 +762,6 @@ installer_err_runtime_executable_not_exec:
   other: Executable '[NOTICE]{{.V1}}[/RESET]' does not have execute permissions for runtime '[NOTICE]{{.V0}}[/RESET]'
 installer_err_fail_obtain_prefixes:
   other: Unable to obtain relocation prefixes for runtime '[NOTICE]{{.V0}}[/RESET]'
-installer_err_runtime_already_exists:
-  other: A runtime is already installed at '[NOTICE]{{.V0}}[/RESET]'
-installer_err_runtime_move_files_access_denied:
-  other: |
-    Unable to move runtime files.  Please ensure that you have write permissions for the directory '[NOTICE]{{.V0}}[/RESET]'
-    If you believe this is happening due to antivirus software please report your issue on our forums:
-    [ACTIONABLE]{{.V1}}[/RESET]
-installer_err_runtime_move_files_failed:
-  other: Unable to move runtime files from '[NOTICE]{{.V0}}[/RESET]' to '[NOTICE]{{.V1}}[/RESET]'
-installer_err_runtime_rm_installdir:
-  other: Unable to remove '[NOTICE]{{.V0}}[/RESET]' after unpacking runtime
-installer_err_runtime_no_commitid:
-  other: A CommitID is required to install this runtime environment
-fetch_err_runtime_no_commitid:
-  other: Could not get a CommitID for this project
-installer_err_runtime_preplatform:
-  other: The version of the installer used in the project you specified is not compatible with the State Tool. Please make a new project.
-installer_err_engine_unknown:
-  other: Build engine is unknown.
-build_status_unknown:
-  other: "Build status could not be retrieved, please view the project at: [NOTICE]{{.V0}}[/RESET] for more information"
 build_status_in_progress:
   other: "Your changes are currently being built remotely on the ActiveState Platform. Please visit [NOTICE]{{.V0}}[/RESET] to see the progress."
 build_status_unknown_error:
@@ -1939,6 +1918,13 @@ err_insufficient_permissions:
     Could not stop running State Tool process due to insufficient permissions.
 
     State Tool works best if you run it as a user, rather than an admin. You might be encountering this issue because you have originally installed or ran the State Tool as admin. If this is the case it is suggested that you uninstall the State Tool as admin, and install it again as a user.
+err_update_access_denied:
+  other: |
+    Could not update the State Tool due to insufficient permissions in the installation folder.
+
+    State Tool works best if you run it as a user, rather than an admin. You might be encountering this issue because you have originally installed or ran the State Tool as admin. If this is the case it is suggested that you uninstall the State Tool as admin, and install it again as a user.
+
+    Error received: {{.V0}}
 err_search_no_package:
   other: |
     No packages in our catalog match [NOTICE]"{{.V0}}"[/RESET].
