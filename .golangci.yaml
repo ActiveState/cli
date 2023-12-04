@@ -13,8 +13,7 @@ linters-settings:
       - (*github.com/ActiveState/termtest.ConsoleProcess).WaitForInput
 
 linters:
-  enable:
-    - gci
+  enable-all: true
 
 # When issues occur with linting use the snippet below to help with debugging
 # Make sure to disable the other linters block first
