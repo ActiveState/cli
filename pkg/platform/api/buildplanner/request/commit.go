@@ -63,6 +63,7 @@ query ($commitID: ID!) {
             ... on ArtifactSucceeded {
               __typename
               nodeId
+              displayName
               mimeType
               generatedBy
               runtimeDependencies
@@ -74,6 +75,7 @@ query ($commitID: ID!) {
             ... on ArtifactUnbuilt {
               __typename
               nodeId
+              displayName
               mimeType
               generatedBy
               runtimeDependencies
@@ -82,6 +84,7 @@ query ($commitID: ID!) {
             ... on ArtifactStarted {
               __typename
               nodeId
+              displayName
               mimeType
               generatedBy
               runtimeDependencies
@@ -90,6 +93,7 @@ query ($commitID: ID!) {
             ... on ArtifactTransientlyFailed {
               __typename
               nodeId
+              displayName
               mimeType
               generatedBy
               runtimeDependencies
@@ -102,6 +106,7 @@ query ($commitID: ID!) {
             ... on ArtifactPermanentlyFailed {
               __typename
               nodeId
+              displayName
               mimeType
               generatedBy
               runtimeDependencies
@@ -112,6 +117,7 @@ query ($commitID: ID!) {
             ... on ArtifactFailed {
               __typename
               nodeId
+              displayName
               mimeType
               generatedBy
               runtimeDependencies
