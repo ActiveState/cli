@@ -1,0 +1,260 @@
+name: Deploy
+
+# === Triggers ===
+'on':
+  workflow_run:
+    workflows: ['Test']
+    types:
+      - completed
+
+# === Workflow Permissions ===
+permissions:
+  id-token: write # This is required for requesting the JWT
+  contents: read # This is required for actions/checkout
+
+# === Workflow-level environment variables ===
+env:
+  AWS_REGION: us-east-1
+  AWS_ROLE_SESSION_NAME: gha-activestate-cli
+
+# === JOBS ===
+jobs:
+  # === OS Specific Job (runs on each OS) ===
+  os_specific:
+    name: ${{ matrix.sys.os }}
+    timeout-minutes: 90
+    strategy:
+      matrix:
+        go-version:
+          - 1.20.x
+        sys:
+          - { os: ubuntu-20.04 }
+          - { os: macos-11, shell: zsh }
+          - { os: windows-2019 }
+      fail-fast: false
+    runs-on: ${{ matrix.sys.os }}
+    env:
+      ACTIVESTATE_CI: true
+      ACTIVESTATE_CLI_DISABLE_RUNTIME: true
+      SHELL: bash
+      GITHUB_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    concurrency:
+      group: ${{ github.ref }}-${{ github.event_name }}-${{ matrix.sys.os }}
+      cancel-in-progress: true
+
+    # === OS Specific Steps ===
+    steps:
+      - # === Disable Windows Defender as it slows things down significantly ===
+        name: Disabling Windows Defender
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: Set-MpPreference -DisableRealtimeMonitoring $true
+
+      - # === Checkout Code ===
+        name: Checkout code
+        uses: actions/checkout@v2
+
+      - # === Install Go ===
+        name: Install Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: ${{ matrix.go-version }}
+
+      - # === Install State Tool ===
+        name: Install State Tool
+        uses: ActiveState/setup-state-tool@v1
+
+      - # === Setup ===
+        name: Setup
+        shell: bash
+        run: |
+          bin=$(pwd)/.github/deps/${{ runner.os }}/bin
+          echo "Adding $bin to PATH"
+          echo "$bin" >> $GITHUB_PATH
+
+          if [ -x "$(command -v apt-get)" ]; then
+            sudo apt-get update
+            sudo apt-get install fish zsh tcsh -y
+            # Prevent zsh insecure directory warning.
+            sudo chmod -R 755 /usr/share/zsh/vendor-completions /usr/share/zsh
+            sudo chown -R root:root /usr/share/zsh/vendor-completions /usr/share/zsh
+            touch ~/.zshrc
+          fi
+
+          printenv
+
+      - # === Setup Windows ===
+        name: Setup (Windows)
+        shell: pwsh
+        run: |
+          echo "${PSScriptRoot}/.github/deps/${{ runner.os }}/bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
+      - # == Setup macOS ==
+        name: Setup (macOS)
+        shell: bash
+        run: brew install fish
+        if: runner.os == 'macOS'
+
+      - # === Install Deps ===
+        name: Install Deps
+        shell: bash
+        run: state run install-deps
+
+      - # === Preprocess ===
+        name: Preprocess
+        shell: bash
+        timeout-minutes: 3
+        run: state run preprocess -v
+
+      - # === Prepare Windows Cert ===
+        name: Prepare Windows Cert
+        shell: bash
+        if: runner.os == 'Windows'
+        run: |
+          echo $MSI_CERT_BASE64 | base64 --decode > Cert.p12
+        env:
+          MSI_CERT_BASE64: ${{ secrets.MSI_CERT_BASE64 }}
+
+      - # === Sign Binaries (Windows only) ===
+        name: Sign Binaries (Windows only)
+        shell: bash
+        if: runner.os == 'Windows' && contains(fromJSON('["refs/heads/beta", "refs/heads/release", "refs/heads/LTS"]'), github.ref)
+        run: |
+          export PATH=/c/Program\ Files\ \(x86\)/WiX\ Toolset\ v3.11/bin/:/c/Program\ Files\ \(x86\)/Windows\ Kits/10/bin/10.0.16299.0/x86/:$PATH
+
+          signtool.exe sign -d "ActiveState State Tool" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/state.exe
+          signtool.exe sign -d "ActiveState State Service" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/state-svc.exe
+          signtool.exe sign -d "ActiveState State Installer" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/state-installer.exe
+          signtool.exe sign -d "ActiveState State Tool Remote Installer" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/state-remote-installer.exe
+        env:
+          CODE_SIGNING_PASSWD: ${{ secrets.CODE_SIGNING_PASSWD }}
+
+      - # === Sign Install Scripts (Windows only) ===
+        name: Sign Install Scripts (Windows only)
+        shell: powershell
+        if: runner.os == 'Windows' && contains(fromJSON('["refs/heads/beta", "refs/heads/release", "refs/heads/LTS"]'), github.ref)
+        run: |
+          $branchInfix = $Env:GITHUB_REF.Replace("refs/heads/", "").Replace("release", "")
+          $cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
+          $cert.Import('Cert.p12',$env:CODE_SIGNING_PASSWD,'DefaultKeySet')
+          Set-AuthenticodeSignature -FilePath build\installers\$branchInfix\install.ps1 -Certificate $cert
+          Set-AuthenticodeSignature -FilePath build\installers\$branchInfix\legacy-install.ps1 -Certificate $cert
+        env:
+          CODE_SIGNING_PASSWD: ${{ secrets.CODE_SIGNING_PASSWD }}
+
+      - # === Configure AWS credentials ==
+        name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          role-session-name: ${{ env.AWS_ROLE_SESSION_NAME }}
+          aws-region: ${{ env.AWS_REGION }}
+          mask-aws-account-id: true
+
+  # === Deploy job (runs once with combined artifacts from OS specific job) ===
+  deploy:
+    name: Deploy
+    needs:
+      - os_specific
+    runs-on: ubuntu-20.04
+    env:
+      ACTIVESTATE_CI: true
+      ACTIVESTATE_CLI_DISABLE_RUNTIME: true
+      SHELL: bash
+      GITHUB_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    timeout-minutes: 10
+    if: contains(fromJSON('["refs/heads/master", "refs/heads/beta", "refs/heads/release", "refs/heads/LTS"]'), github.ref) || startsWith(github.event.pull_request.head.ref, 'version/')
+
+    # === Deploy Steps ===
+    steps:
+      - # === Checkout code ===
+        name: Checkout code
+        uses: actions/checkout@v2
+
+      - # === Install Go ===
+        name: Install Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: ${{ matrix.go-version }}
+
+      - # === Install State Tool ===
+        name: Install State Tool
+        uses: ActiveState/setup-state-tool@v1
+
+      - # === Setup ===
+        name: Setup
+        shell: bash
+        run: |
+          bin=$(pwd)/.github/deps/${{ runner.os }}/bin
+          echo "Adding $bin to PATH"
+          echo "$bin" >> $GITHUB_PATH
+          ls -ahl $bin
+          printenv
+
+      - # === Download All Build Session Artifacts ===
+        name: Download All Build Session Artifacts
+        uses: actions/download-artifact@v2
+        with:
+          path: build/
+
+      - # === Sanitize All Session Artifacts ===
+        name: Sanitize All Session Artifacts
+        shell: bash
+        run: |
+          cd build
+          rm -Rf session-shared-build
+          find . -mindepth 2 -maxdepth 2 -print0 | xargs -0 -I file rsync -av file .
+          rm -Rf session*
+
+      - # === Install Deps ===
+        name: Install Deps
+        shell: bash
+        run: state run install-deps
+
+      - # === Preprocess ===
+        name: Preprocess
+        shell: bash
+        run: state run preprocess -v
+
+      - # === Cleanup Build Dir ===
+        name: Cleanup Build Dir
+        shell: bash
+        run: rm build/state* || true
+
+      - # === Configure AWS credentials ==
+        name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          role-session-name: ${{ env.AWS_ROLE_SESSION_NAME }}
+          aws-region: ${{ env.AWS_REGION }}
+          mask-aws-account-id: true
+
+      - # === Generate updated master versions.json if necessary ===
+        name: Generate version list
+        shell: bash
+        run: state run generate-versions-list
+
+      - # === Deploy ===
+        name: Deploy
+        shell: bash
+        run: |
+          state run deploy-updates
+          state run deploy-installers
+          state run deploy-remote-installer
+
+      - # === Cleanup Session Artifacts ===
+        name: Cleanup Session Artifacts
+        uses: geekyeggo/delete-artifact@v1
+        with:
+          name: |
+            session-build-ubuntu-20.04
+            session-build-macos-11
+            session-build-windows-2019
+
+      - # === Upload Artifacts ===
+        name: Upload Artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: build
+          path: build/

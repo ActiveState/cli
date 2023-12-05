@@ -1,19 +1,11 @@
-name: Build
+name: Test
 
 # === Triggers ===
 'on':
-  push:
-    branches:
-      - master
-      - beta
-      - release
-      - LTS*
-  pull_request:
+  workflow_run:
+    workflows: ['Build']
     types:
-      - labeled
-      - opened
-      - synchronize
-      - reopened
+      - completed
   schedule:
     - cron: 0 0 * * *
 
@@ -76,10 +68,6 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - # === Install State Tool ===
-        name: Install State Tool
-        uses: ActiveState/setup-state-tool@v1
-
       - # === Setup ===
         name: Setup
         shell: bash
@@ -111,16 +99,11 @@ jobs:
         run: brew install fish
         if: runner.os == 'macOS'
 
-      - # === Install Deps ===
-        name: Install Deps
-        shell: bash
-        run: state run install-deps
-
-      - # === Preprocess ===
-        name: Preprocess
-        shell: bash
-        timeout-minutes: 3
-        run: state run preprocess -v
+      - # === Download All Build Session Artifacts ===
+        name: Download All Build Session Artifacts
+        uses: actions/download-artifact@v2
+        with:
+          path: build/
 
       - # === Parallel Tasks ===
         name: Parallel Tasks
@@ -133,30 +116,6 @@ jobs:
             {
                 "ID": "Unit-Tests",
                 "Args": ["state", "run", "test", "-json", "2>&1"]
-            },
-            {
-                "ID": "Build-CLI",
-                "Args": ["state", "run", "build"]
-            },
-            {
-                "ID": "Build-Service",
-                "Args": ["state", "run", "build-svc"]
-            },
-            {
-                "ID": "Build-Installer",
-                "Args": ["state", "run", "build-installer"]
-            },
-            {
-                "ID": "Build-Remote-Installer",
-                "Args": ["state", "run", "build-remote-installer"]
-            },
-            {
-                "ID": "Build-Install-Scripts",
-                "Args": ["state", "run", "build-install-scripts"]
-            },
-            {
-                "ID": "Build-Executor",
-                "Args": ["state", "run", "build-exec"]
             }
           ]
           EOF
@@ -174,115 +133,6 @@ jobs:
         shell: bash
         run: parallelize results Unit-Tests | gotestfmt -hide empty-packages
         continue-on-error: ${{ github.event_name != 'schedule' }}
-
-      - # === "Build: CLI" ===
-        name: 'Build: CLI'
-        shell: bash
-        run: parallelize results Build-CLI
-
-      - # === "Build: Service" ===
-        name: 'Build: Service'
-        shell: bash
-        run: parallelize results Build-Service
-
-      - # === "Build: Installer" ===
-        name: 'Build: Installer'
-        shell: bash
-        run: parallelize results Build-Installer
-
-      - # === "Build: Remote Installer" ===
-        name: 'Build: Remote Installer'
-        shell: bash
-        run: parallelize results Build-Remote-Installer
-
-      - # === "Build: Install Scripts" ===
-        name: 'Build: Install Scripts'
-        shell: bash
-        run: parallelize results Build-Install-Scripts
-
-      - # === "Build: Executor" ===
-        name: 'Build: Executor'
-        shell: bash
-        run: parallelize results Build-Executor
-
-      - # === Prepare Windows Cert ===
-        name: Prepare Windows Cert
-        shell: bash
-        if: runner.os == 'Windows'
-        run: |
-          echo $MSI_CERT_BASE64 | base64 --decode > Cert.p12
-        env:
-          MSI_CERT_BASE64: ${{ secrets.MSI_CERT_BASE64 }}
-
-      - # === Sign Binaries (Windows only) ===
-        name: Sign Binaries (Windows only)
-        shell: bash
-        if: runner.os == 'Windows' && contains(fromJSON('["refs/heads/beta", "refs/heads/release", "refs/heads/LTS"]'), github.ref)
-        run: |
-          export PATH=/c/Program\ Files\ \(x86\)/WiX\ Toolset\ v3.11/bin/:/c/Program\ Files\ \(x86\)/Windows\ Kits/10/bin/10.0.16299.0/x86/:$PATH
-
-          signtool.exe sign -d "ActiveState State Tool" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/state.exe
-          signtool.exe sign -d "ActiveState State Service" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/state-svc.exe
-          signtool.exe sign -d "ActiveState State Installer" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/state-installer.exe
-          signtool.exe sign -d "ActiveState State Tool Remote Installer" -f "Cert.p12" -p ${CODE_SIGNING_PASSWD} ./build/state-remote-installer.exe
-        env:
-          CODE_SIGNING_PASSWD: ${{ secrets.CODE_SIGNING_PASSWD }}
-
-      - # === Sign Install Scripts (Windows only) ===
-        name: Sign Install Scripts (Windows only)
-        shell: powershell
-        if: runner.os == 'Windows' && contains(fromJSON('["refs/heads/beta", "refs/heads/release", "refs/heads/LTS"]'), github.ref)
-        run: |
-          $branchInfix = $Env:GITHUB_REF.Replace("refs/heads/", "").Replace("release", "")
-          $cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
-          $cert.Import('Cert.p12',$env:CODE_SIGNING_PASSWD,'DefaultKeySet')
-          Set-AuthenticodeSignature -FilePath build\installers\$branchInfix\install.ps1 -Certificate $cert
-          Set-AuthenticodeSignature -FilePath build\installers\$branchInfix\legacy-install.ps1 -Certificate $cert
-        env:
-          CODE_SIGNING_PASSWD: ${{ secrets.CODE_SIGNING_PASSWD }}
-
-      - # === Generate Update ===
-        name: Generate Update
-        shell: bash
-        run: state run generate-update
-
-      - # === Generate Remote Install Deployment ==
-        name: Generate Remote Install Deployment
-        shell: bash
-        run: state run generate-remote-install-deployment
-
-      - # === Configure AWS credentials ==
-        name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v2
-        with:
-          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
-          role-session-name: ${{ env.AWS_ROLE_SESSION_NAME }}
-          aws-region: ${{ env.AWS_REGION }}
-          mask-aws-account-id: true
-
-      - # === Deploy for Integration Tests # NEVER run this against production branches. This is meant for PR deployments. ===
-        name: Deploy for Integration Tests # NEVER run this against production branches. This is meant for PR deployments.
-        if: '!contains(fromJSON(''["refs/heads/beta", "refs/heads/release", "refs/heads/LTS"]''), github.ref)'
-        shell: bash
-        run: |
-          if [ "$GITHUB_EVENT_NAME" != "schedule" ]; then
-            set +e
-            LABELS="${{ join(github.event.pull_request.labels.*.name, ',') }}"
-            LABELCHECK="$(echo $LABELS | grep "Test:")" # This line is causing a non-zero exit if `set -e` is set, and I can't figure out why
-            TARGET_BRANCH="${{ github.event.pull_request.base.ref }}"
-            set -e
-            echo "Labels: $LABELS"
-            echo "Target Branch: $TARGET_BRANCH"
-
-            if [ "$LABELCHECK" == "" ] && [ "$TARGET_BRANCH" != "beta" ] && [ "$TARGET_BRANCH" != "release" ] && [[ -z "`echo $TARGET_BRANCH | grep -o '^LTS'`" ]]; then
-              echo "Not running because no test labels were set nor beta, release or LTS were targeted."
-              exit 0
-            fi
-          fi
-
-          state run deploy-updates
-          state run deploy-installers
-          state run deploy-remote-installer
 
       - # === Integration Tests ===
         name: Integration Tests
@@ -380,10 +230,3 @@ jobs:
         if: github.event_name == 'schedule' && steps.integration_tests.outcome == 'failure'
         shell: bash
         run: exit 1
-
-      - # === Upload Session Artifacts ===
-        name: Upload Session Artifacts
-        uses: actions/upload-artifact@v2
-        with:
-          name: session-build-${{ matrix.sys.os }}
-          path: build/
