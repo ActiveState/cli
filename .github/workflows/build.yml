@@ -420,16 +420,6 @@ jobs:
         name: Install State Tool
         uses: ActiveState/setup-state-tool@v1
 
-      - # === Setup ===
-        name: Setup
-        shell: bash
-        run: |
-          bin=$(pwd)/.github/deps/${{ runner.os }}/bin
-          echo "Adding $bin to PATH"
-          echo "$bin" >> $GITHUB_PATH
-          ls -ahl $bin
-          printenv
-
       - # === Download All Build Session Artifacts ===
         name: Download All Build Session Artifacts
         uses: actions/download-artifact@v2
@@ -444,16 +434,6 @@ jobs:
           rm -Rf session-shared-build
           find . -mindepth 2 -maxdepth 2 -print0 | xargs -0 -I file rsync -av file .
           rm -Rf session*
-
-      - # === Install Deps ===
-        name: Install Deps
-        shell: bash
-        run: state run install-deps
-
-      - # === Preprocess ===
-        name: Preprocess
-        shell: bash
-        run: state run preprocess -v
 
       - # === Cleanup Build Dir ===
         name: Cleanup Build Dir
