@@ -44,7 +44,7 @@ jobs:
       - # === Preprocess ===
         name: Preprocess
         shell: bash
-        timeout-minutes: 1
+        timeout-minutes: 2
         run: state run preprocess -v
 
       - # === Build Remote Installer ===
