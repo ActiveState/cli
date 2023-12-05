@@ -2,7 +2,11 @@ name: Release
 
 # === Triggers ===
 "on":
-  create
+  pull_request:
+    types:
+      - edited
+      - labeled
+      - synchronize
 
 # === JOBS ===
 jobs:
@@ -12,7 +16,7 @@ jobs:
     name: Remote Installer
     timeout-minutes: 30
     runs-on: windows-2019
-    if: github.event.ref_type == 'tag' && contains(github.event.ref, 'release/remote-installer')
+    #if: github.event.ref_type == 'tag' && contains(github.event.ref, 'release/remote-installer')
     permissions:
       id-token: write # This is required for requesting the JWT
     env:
