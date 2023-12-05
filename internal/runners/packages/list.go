@@ -162,7 +162,7 @@ func newFilteredRequirementsTable(requirements []*gqlModel.Requirement, filter s
 
 	rows := make([]packageRow, 0, len(requirements))
 	for _, req := range requirements {
-		if !strings.Contains(req.Requirement, filter) {
+		if !strings.Contains(strings.ToLower(req.Requirement), strings.ToLower(filter)) {
 			continue
 		}
 
