@@ -260,6 +260,15 @@ func (suite *InstallerIntegrationTestSuite) TestInstallWhileInUse() {
 	cp2.SendLine("exit")
 	cp2.ExpectExit() // the return code can vary depending on shell (e.g. zsh vs. bash); just assert the installer shell exited
 
+	oldStateExeFound := false
+	for _, file := range fileutils.ListDirSimple(filepath.Join(installationDir(ts), "bin"), false) {
+		if strings.Contains(file, "state.exe") && strings.HasSuffix(file, ".old") {
+			oldStateExeFound = true
+			break
+		}
+	}
+	suite.Assert().True(oldStateExeFound, "the state.exe currently in use was not copied to a '.old' file")
+
 	cp.SendLine("exit") // state shell
 	cp.SendLine("exit") // installer shell
 	cp.ExpectExit()     // the return code can vary depending on shell (e.g. zsh vs. bash); just assert the installer shell exited

@@ -1917,12 +1917,12 @@ err_insufficient_permissions:
   other: |
     Could not stop running State Tool process due to insufficient permissions.
 
-    State Tool works best if you run it as a user, rather than an admin. You might be encountering this issue because you have originally installed or ran the State Tool as admin. If this is the case it is suggested that you uninstall the State Tool as admin, and install it again as a user.
+    State Tool works best if you run it as a user, rather than an administrator. You might be encountering this issue because you have originally installed or ran the State Tool as an administrator. If this is the case it is suggested that you uninstall the State Tool as an administrator, and install it again as a user.
 err_update_access_denied:
   other: |
     Could not update the State Tool due to insufficient permissions in the installation folder.
 
-    State Tool works best if you run it as a user, rather than an admin. You might be encountering this issue because you have originally installed or ran the State Tool as admin. If this is the case it is suggested that you uninstall the State Tool as admin, and install it again as a user.
+    State Tool works best if you run it as a user, rather than an administrator. You might be encountering this issue because you have originally installed or ran the State Tool as an administrator. If this is the case it is suggested that you uninstall the State Tool as an administrator, and install it again as a user.
 
     Error received: {{.V0}}
 err_search_no_package:
