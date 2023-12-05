@@ -6,6 +6,17 @@ name: Test
     workflows: ['Build']
     types:
       - completed
+    branches:
+      - master
+      - beta
+      - release
+      - LTS*
+  pull_request:
+    types:
+      - labeled
+      - opened
+      - synchronize
+      - reopened
   schedule:
     - cron: 0 0 * * *
 

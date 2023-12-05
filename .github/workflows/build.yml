@@ -168,13 +168,6 @@ jobs:
           JIRA_USERNAME: ${{ secrets.JIRA_EMAIL }}
           JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}
 
-      - # === Unit Tests ===
-        name: Unit Tests
-        id: unit_tests
-        shell: bash
-        run: parallelize results Unit-Tests | gotestfmt -hide empty-packages
-        continue-on-error: ${{ github.event_name != 'schedule' }}
-
       - # === "Build: CLI" ===
         name: 'Build: CLI'
         shell: bash
@@ -283,103 +276,6 @@ jobs:
           state run deploy-updates
           state run deploy-installers
           state run deploy-remote-installer
-
-      - # === Integration Tests ===
-        name: Integration Tests
-        id: integration_tests
-        if: '!contains(fromJSON(''["refs/heads/beta", "refs/heads/release", "refs/heads/LTS"]''), github.ref)'
-        shell: bash
-        run: |
-          if [ "$GITHUB_EVENT_NAME" != "schedule" ]; then
-            LABELS="${{ join(github.event.pull_request.labels.*.name, ',') }}"
-            IFS=',' read -r -a TESTS <<< "$LABELS"
-            TEST_SUITE_TAGS=""
-            for i in "${TESTS[@]}"; do
-              START=${i%:*}
-              if [ "$START" == "Test" ]; then
-                TAG=${i##*:}
-                TAG=$(echo $TAG | xargs)
-                if [[ "$TEST_SUITE_TAGS" == "" ]]; then
-                  TEST_SUITE_TAGS=$TAG
-                else
-                  TEST_SUITE_TAGS="$TAG:$TEST_SUITE_TAGS"
-                fi
-              fi
-            done
-
-            TARGET_BRANCH="${{ github.event.pull_request.base.ref }}"
-            echo "Target branch: $TARGET_BRANCH"
-
-            if [ "$TEST_SUITE_TAGS" == "" ] && [ "$TARGET_BRANCH" != "master" ] && [ "$TARGET_BRANCH" != "beta" ] && [ "$TARGET_BRANCH" != "release" ] && [ "$TARGET_BRANCH" != "lts-release" ]; then
-              echo "Not running because no test labels were set nor master, beta or release were targeted."
-              exit 0
-            fi
-          else
-            TEST_SUITE_TAGS="all"
-          fi
-
-          echo "Running integration tests with tags: $TEST_SUITE_TAGS (empty means every test not specifically tagged)"
-
-          export TEST_SUITE_TAGS="$TEST_SUITE_TAGS"
-          TIMEOUT=30m
-          if [[ "$TEST_SUITE_TAGS" == "all" ]]; then
-            TIMEOUT=60m
-          fi
-          SHELL='${{ matrix.sys.shell }}' go test -timeout $TIMEOUT -v `go list ./... | grep "integration"` -json 2>&1 | gotestfmt -hide empty-packages
-        continue-on-error: ${{ github.event_name == 'schedule' }}
-        env:
-          INTEGRATION_TEST_USERNAME: ${{ secrets.INTEGRATION_TEST_USERNAME }}
-          INTEGRATION_TEST_PASSWORD: ${{ secrets.INTEGRATION_TEST_PASSWORD }}
-          INTEGRATION_TEST_TOKEN: ${{ secrets.INTEGRATION_TEST_TOKEN }}
-          PLATFORM_API_TOKEN: ${{ secrets.PLATFORM_API_TOKEN }}
-
-      - # === Fail If Unscheduled Unit Tests Failed (Expand 'Unit Tests' above for more information) ===
-        name: Fail If Unscheduled Unit Tests Failed
-        if: github.event_name != 'schedule' && steps.unit_tests.outcome == 'failure'
-        shell: bash
-        run: exit 1
-
-      - # === Notify Slack of Nightly Integration Test Failures ===
-        name: Notify Slack of Nightly Integration Test Failures
-        if: github.event_name == 'schedule' && steps.integration_tests.outcome == 'failure'
-        uses: slackapi/slack-github-action@v1.18.0
-        with:
-          payload: |
-            {
-              "text": "Nightly integration test failure(s) on ${{ runner.os }}",
-              "blocks": [
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "plain_text",
-                    "text": "Nightly integration test failure(s) on ${{ runner.os }}"
-                  }
-                },
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-                  }
-                },
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "plain_text",
-                    "text": "Select the '${{ matrix.sys.os }}' job and expand 'Integration Tests' to inspect the failures."
-                  }
-                }
-              ]
-            }
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
-
-      - # === Fail If Nightly Integration Tests Failed (Expand 'Integration Tests' above for more information) ===
-        name: Fail If Nightly Integration Tests Failed
-        if: github.event_name == 'schedule' && steps.integration_tests.outcome == 'failure'
-        shell: bash
-        run: exit 1
 
       - # === Upload Session Artifacts ===
         name: Upload Session Artifacts
