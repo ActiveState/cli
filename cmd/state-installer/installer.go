@@ -87,6 +87,12 @@ func (i *Installer) Install() (rerr error) {
 
 	// Copy all the files except for the current executable
 	if err := fileutils.CopyAndRenameFiles(i.payloadPath, i.path, filepath.Base(osutils.Executable())); err != nil {
+		if osutils.IsAccessDeniedError(err) {
+			// If we got to this point, we could not copy and rename over existing files.
+			// This is a permission issue. (We have an installer test for copying and renaming over a file
+			// in use, which does not raise an error.)
+			return locale.WrapInputError(err, "err_update_access_denied", "", errs.JoinMessage(err))
+		}
 		return errs.Wrap(err, "Failed to copy installation files to dir %s. Error received: %s", i.path, errs.JoinMessage(err))
 	}
 
