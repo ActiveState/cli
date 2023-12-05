@@ -3,20 +3,9 @@ name: Deploy
 # === Triggers ===
 'on':
   workflow_run:
-    workflows: ['Test']
+    workflows: [Test]
     types:
       - completed
-    branches:
-      - master
-      - beta
-      - release
-      - LTS*
-  pull_request:
-    types:
-      - labeled
-      - opened
-      - synchronize
-      - reopened
 
 # === Workflow Permissions ===
 permissions:
