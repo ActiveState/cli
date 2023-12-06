@@ -98,7 +98,7 @@ func (i *Import) Run(params *ImportRunParams) error {
 		return locale.NewInputError("err_no_project")
 	}
 
-	i.out.Notice(locale.Tl("operating_message", "", i.proj.NamespaceString(), i.proj.Dir()))
+	i.out.Notice(locale.Tr("operating_message", i.proj.NamespaceString(), i.proj.Dir()))
 
 	if params.FileName == "" {
 		params.FileName = defaultImportFile

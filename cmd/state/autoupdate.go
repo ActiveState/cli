@@ -77,7 +77,7 @@ func autoUpdate(svc *model.SvcModel, args []string, cfg *config.Instance, an ana
 			return false, nil // ignore
 		}
 		if os.IsPermission(err) {
-			return false, locale.WrapInputError(err, locale.Tl("auto_update_permission_err", "", constants.DocumentationURL, errs.JoinMessage(err)))
+			return false, locale.WrapInputError(err, locale.Tr("auto_update_permission_err", constants.DocumentationURL, errs.JoinMessage(err)))
 		}
 		return false, locale.WrapError(err, locale.T("auto_update_failed"))
 	}
