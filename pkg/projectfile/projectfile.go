@@ -953,7 +953,12 @@ func createCustom(params *CreateParams, lang language.Language) (*Project, error
 	}
 
 	if params.ProjectURL == "" {
-		u, err := url.Parse(fmt.Sprintf("https://%s/%s/%s", constants.PlatformURL, params.Owner, params.Project))
+		// Note: cannot use api.GetPlatformURL() due to import cycle.
+		host := constants.DefaultAPIHost
+		if hostOverride := os.Getenv(constants.APIHostEnvVarName); hostOverride != "" {
+			host = hostOverride
+		}
+		u, err := url.Parse(fmt.Sprintf("https://%s/%s/%s", host, params.Owner, params.Project))
 		if err != nil {
 			return nil, errs.Wrap(err, "url parse new project url failed")
 		}

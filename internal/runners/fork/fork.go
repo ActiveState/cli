@@ -1,12 +1,12 @@
 package fork
 
 import (
-	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
+	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
@@ -61,7 +61,9 @@ func (f *Fork) Run(params *Params) error {
 		target.Project = params.Namespace.Project
 	}
 
-	f.out.Notice(locale.Tl("fork_forking", "Creating fork of {{.V0}} at https://{{.V1}}/{{.V2}}..", params.Namespace.String(), constants.PlatformURL, target.String()))
+	url := api.GetPlatformURL(target.String()).String()
+
+	f.out.Notice(locale.Tl("fork_forking", "Creating fork of {{.V0}} at {{.V1}}...", params.Namespace.String(), url))
 
 	_, err := model.CreateCopy(params.Namespace.Owner, params.Namespace.Project, target.Owner, target.Project, params.Private)
 	if err != nil {
@@ -69,7 +71,7 @@ func (f *Fork) Run(params *Params) error {
 	}
 
 	f.out.Print(output.Prepare(
-		locale.Tl("fork_success", "Your fork has been successfully created at https://{{.V0}}/{{.V1}}.", constants.PlatformURL, target.String()),
+		locale.Tl("fork_success", "Your fork has been successfully created at {{.V0}}.", url),
 		&struct {
 			OriginalOwner string `json:"OriginalOwner"`
 			OriginalName  string `json:"OriginalName"`
