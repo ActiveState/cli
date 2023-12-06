@@ -34,7 +34,7 @@ func (e *Events) Run() error {
 	if e.project == nil {
 		return locale.NewInputError("err_events_noproject", "You have to be inside a project folder to be able to view its events. Project folders contain an activestate.yaml.")
 	}
-	e.out.Notice(locale.Tl("operating_message", "", e.project.NamespaceString(), e.project.Dir()))
+	e.out.Notice(locale.Tr("operating_message", e.project.NamespaceString(), e.project.Dir()))
 
 	events := e.project.Events()
 	rows := make([]eventOutput, len(events))

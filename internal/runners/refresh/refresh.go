@@ -70,7 +70,7 @@ func (r *Refresh) Run(params *Params) error {
 
 	execDir := setup.ExecDir(rti.Target().Dir())
 	r.out.Print(output.Prepare(
-		locale.Tl("refresh_project_statement", "", proj.NamespaceString(), proj.Dir(), execDir),
+		locale.Tr("refresh_project_statement", proj.NamespaceString(), proj.Dir(), execDir),
 		&struct {
 			Namespace   string `json:"namespace"`
 			Path        string `json:"path"`

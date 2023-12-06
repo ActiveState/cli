@@ -97,7 +97,7 @@ func (u *Use) Run(params *Params) error {
 
 	execDir := setup.ExecDir(rti.Target().Dir())
 	u.out.Print(output.Prepare(
-		locale.Tl("use_project_statement", "", proj.NamespaceString(), proj.Dir(), execDir),
+		locale.Tr("use_project_statement", proj.NamespaceString(), proj.Dir(), execDir),
 		&struct {
 			Namespace   string `json:"namespace"`
 			Path        string `json:"path"`
