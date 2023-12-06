@@ -142,7 +142,8 @@ jobs:
         name: Unit Tests
         id: unit_tests
         shell: bash
-        run: parallelize results Unit-Tests | gotestfmt -hide empty-packages
+        run: |
+          ACTIVESTATE_PROJECT="" go test -v `go list ./... | grep -v integration | grep -v automation | grep -v expect | grep -v state-svc | grep -v state-offline` | gotestfmt -hide empty-packages
         continue-on-error: ${{ github.event_name != 'schedule' }}
 
       - # === Integration Tests ===
