@@ -501,6 +501,10 @@ arg_platforms_shared_name:
   other: name
 arg_platforms_shared_name_description:
   other: Name[@<version>]
+field_version:
+  other: Version
+field_bitwidth:
+  other: Bit Width
 commit_message_added_platform:
   other: "Added platform: {{.V0}} {{.V1}}bit {{.V2}}"
 commit_message_updated_platform:
@@ -759,6 +763,12 @@ err_no_structured_output:
   other: "This command does not support the {{.V0}} output format. Please try again without that output flag."
 err_main_outputer:
   other: "Could not create output writer, please contact developers if this problem persists. Error: {{.V0}}"
+field_name:
+  other: Name
+field_description:
+  other: Description
+field_organization:
+  other: Organization
 request_timed_out:
   other: A request for data took too long - Trying again may help
 err_recipe_no_platform:
@@ -767,6 +777,14 @@ err_filter_current_platform:
   other: Filter returned no valid platform IDs for the current platform.
 no_commits:
   other: No commits exist yet for [NOTICE]{{.V0}}[/RESET]
+field_date:
+  other: Date
+field_author:
+  other: Author
+field_id:
+  other: ID
+field_changes:
+  other: Changes
 change_added:
   other: "[SUCCESS]+[/RESET] {{.V0}} {{.V1}}"
 change_removed:
