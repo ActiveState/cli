@@ -146,7 +146,7 @@ func startAndWait(ctx context.Context, ipComm IPCommunicator, exec, argText stri
 	defer profile.Measure("svcmanager:Start", time.Now())
 
 	if !fileutils.FileExists(exec) {
-		return locale.NewError("svcctl_file_not_found", constants.ForumsURL)
+		return locale.NewError("svcctl_file_not_found", "", constants.ForumsURL)
 	}
 
 	args := []string{"foreground", argText}
