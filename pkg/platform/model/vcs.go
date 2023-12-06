@@ -6,7 +6,6 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -241,7 +240,7 @@ func BranchCommitID(ownerName, projectName, branchName string) (*strfmt.UUID, er
 	if branch.CommitID == nil {
 		return nil, locale.NewInputError(
 			"err_project_no_commit",
-			"Your project does not have any commits yet, head over to https://{{.V0}}/{{.V1}}/{{.V2}} to set up your project.", constants.PlatformURL, ownerName, projectName)
+			"Your project does not have any commits yet, head over to {{.V0}} to set up your project.", api.GetPlatformURL(fmt.Sprintf("%s/%s", ownerName, projectName)).String())
 	}
 
 	return branch.CommitID, nil

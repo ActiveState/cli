@@ -117,7 +117,7 @@ func (t *Tutorial) RunNewProject(params NewProjectParams) error {
 	t.outputer.Print(locale.Tt(
 		"tutorial_newproject_outro", map[string]interface{}{
 			"Dir":  dir,
-			"URL":  fmt.Sprintf("https://%s/%s/%s", constants.PlatformURL, t.auth.WhoAmI(), name),
+			"URL":  api.GetPlatformURL(fmt.Sprintf("%s/%s", t.auth.WhoAmI(), name)),
 			"Docs": constants.DocumentationURL,
 		}))
 
