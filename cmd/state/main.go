@@ -245,7 +245,7 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 				(pj.VersionBranch() != "" && pj.VersionBranch() != constants.BranchName) {
 				return errs.AddTips(
 					locale.NewInputError("lock_version_mismatch", "", pj.Source().Lock, constants.BranchName, constants.Version),
-					locale.Tl("lock_update_legacy_version", "", constants.DocumentationURLLocking),
+					locale.Tr("lock_update_legacy_version", constants.DocumentationURLLocking),
 					locale.T("lock_update_lock"),
 				)
 			}

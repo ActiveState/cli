@@ -93,7 +93,7 @@ func (l *List) Run(params ListRunParams) error {
 	if l.proj == nil {
 		return locale.NewInputError("err_no_project")
 	}
-	l.out.Notice(locale.Tl("operating_message", "", l.proj.NamespaceString(), l.proj.Dir()))
+	l.out.Notice(locale.Tr("operating_message", l.proj.NamespaceString(), l.proj.Dir()))
 
 	if err := checkSecretsAccess(l.proj, l.auth); err != nil {
 		return locale.WrapError(err, "secrets_err_check_access")

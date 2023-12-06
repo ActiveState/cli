@@ -83,7 +83,7 @@ func (s *Switch) Run(params SwitchParams) error {
 	if s.project == nil {
 		return locale.NewInputError("err_no_project")
 	}
-	s.out.Notice(locale.Tl("operating_message", "", s.project.NamespaceString(), s.project.Dir()))
+	s.out.Notice(locale.Tr("operating_message", s.project.NamespaceString(), s.project.Dir()))
 
 	project, err := model.LegacyFetchProjectByName(s.project.Owner(), s.project.Name())
 	if err != nil {

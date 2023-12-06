@@ -70,7 +70,7 @@ func (r *Revert) Run(params *Params) (rerr error) {
 	if params.CommitID == latestCommit.String() && params.To {
 		return locale.NewInputError("err_revert_to_current_commit", "The commit to revert to cannot be the latest commit")
 	}
-	r.out.Notice(locale.Tl("operating_message", "", r.project.NamespaceString(), r.project.Dir()))
+	r.out.Notice(locale.Tr("operating_message", r.project.NamespaceString(), r.project.Dir()))
 
 	bp := model.NewBuildPlannerModel(r.auth)
 	targetCommitID := params.CommitID // the commit to revert the contents of, or the commit to revert to

@@ -116,7 +116,7 @@ func (s *Exec) Run(params *Params, args ...string) (rerr error) {
 		rtTarget = target.NewProjectTarget(proj, nil, trigger)
 	}
 
-	s.out.Notice(locale.Tl("operating_message", "", projectNamespace, projectDir))
+	s.out.Notice(locale.Tr("operating_message", projectNamespace, projectDir))
 
 	rt, err := runtime.New(rtTarget, s.analytics, s.svcModel, s.auth)
 	switch {

@@ -95,7 +95,7 @@ func (u *Shell) Run(params *Params) error {
 		return locale.NewInputError("err_shell_already_active", "", activatedProjectNamespace, activatedProjectDir)
 	}
 
-	u.out.Notice(locale.Tl("shell_project_statement", "",
+	u.out.Notice(locale.Tr("shell_project_statement",
 		proj.NamespaceString(),
 		proj.Dir(),
 		setup.ExecDir(rti.Target().Dir()),
