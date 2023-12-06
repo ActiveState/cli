@@ -34,7 +34,7 @@ func (e *Env) Run() error {
 		return locale.NewInputError("err_env_no_project", "No project found.")
 	}
 
-	e.out.Notice(locale.Tl("export_project_statement", "",
+	e.out.Notice(locale.Tr("export_project_statement",
 		e.project.NamespaceString(),
 		e.project.Dir()),
 	)

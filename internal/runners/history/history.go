@@ -37,7 +37,7 @@ func (h *History) Run(params *HistoryParams) error {
 	if h.project == nil {
 		return locale.NewInputError("err_history_no_project", "No project found. Please run this command in a project directory")
 	}
-	h.out.Notice(locale.Tl("operating_message", "", h.project.NamespaceString(), h.project.Dir()))
+	h.out.Notice(locale.Tr("operating_message", h.project.NamespaceString(), h.project.Dir()))
 
 	localCommitID, err := commitmediator.Get(h.project)
 	if err != nil {

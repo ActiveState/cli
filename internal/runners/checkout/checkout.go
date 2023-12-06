@@ -84,7 +84,7 @@ func (u *Checkout) Run(params *Params) (rerr error) {
 
 	execDir := setup.ExecDir(rti.Target().Dir())
 	u.out.Print(output.Prepare(
-		locale.Tl("checkout_project_statement", "", proj.NamespaceString(), proj.Dir(), execDir),
+		locale.Tr("checkout_project_statement", proj.NamespaceString(), proj.Dir(), execDir),
 		&struct {
 			Namespace   string `json:"namespace"`
 			Path        string `json:"path"`

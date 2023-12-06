@@ -42,7 +42,7 @@ func (s *Show) Run() error {
 	executables := setup.ExecDir(projectTarget.Dir())
 
 	s.out.Print(output.Prepare(
-		locale.Tl("use_show_project_statement", "",
+		locale.Tr("use_show_project_statement",
 			proj.NamespaceString(),
 			projectDir,
 			executables,
