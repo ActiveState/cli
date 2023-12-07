@@ -17,14 +17,7 @@ func newPullCommand(prime *primer.Values, globals *globalOptions) *captain.Comma
 		locale.Tl("pull_title", "Pulling Remote Project"),
 		locale.Tl("pull_description", "Pull in the latest version of your project from the ActiveState Platform"),
 		prime,
-		[]*captain.Flag{
-			{
-				Name:        "set-project",
-				Shorthand:   "",
-				Description: locale.Tl("flag_state_pull_set_project_description", "Pull from the specified project instead of the checked out one. That project and the current one must share a common commit in their histories"),
-				Value:       &params.SetProject,
-			},
-		},
+		[]*captain.Flag{},
 		[]*captain.Argument{},
 		func(cmd *captain.Command, args []string) error {
 			params.Force = globals.NonInteractive
