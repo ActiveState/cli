@@ -39,8 +39,7 @@ type Pull struct {
 }
 
 type PullParams struct {
-	Force      bool
-	SetProject string
+	Force bool
 }
 
 type primeable interface {
@@ -95,7 +94,7 @@ func (p *Pull) Run(params *PullParams) (rerr error) {
 	}
 
 	// Determine the project to pull from
-	remoteProject, err := resolveRemoteProject(p.project, params.SetProject)
+	remoteProject, err := resolveRemoteProject(p.project)
 	if err != nil {
 		return errs.Wrap(err, "Unable to determine target project")
 	}
@@ -107,21 +106,6 @@ func (p *Pull) Run(params *PullParams) (rerr error) {
 	}
 	if localCommitID != "" {
 		localCommit = &localCommitID
-	}
-
-	if params.SetProject != "" {
-		defaultChoice := params.Force
-		confirmed, err := p.prompt.Confirm(
-			locale.T("confirm"),
-			locale.Tl("confirm_unrelated_pull_set_project",
-				"If you switch to {{.V0}}, you may lose changes to your project. Are you sure you want to do this?", remoteProject.String()),
-			&defaultChoice)
-		if err != nil {
-			return locale.WrapError(err, "err_pull_confirm", "Failed to get user confirmation to update project")
-		}
-		if !confirmed {
-			return locale.NewInputError("err_pull_aborted", "Pull aborted by user")
-		}
 	}
 
 	remoteCommit := remoteProject.CommitID
@@ -153,13 +137,6 @@ func (p *Pull) Run(params *PullParams) (rerr error) {
 		} else {
 			logging.Debug("Fast-forward merge succeeded, setting commit ID to %s", resultCommit.String())
 			resultingCommit = &resultCommit
-		}
-	}
-
-	if params.SetProject != "" {
-		err = p.project.Source().SetNamespace(remoteProject.Owner, remoteProject.Project)
-		if err != nil {
-			return locale.WrapError(err, "err_pull_update_namespace", "Cannot update the namespace in your project file.")
 		}
 	}
 
@@ -266,29 +243,12 @@ func (p *Pull) mergeBuildScript(strategies *mono_models.MergeStrategies, remoteC
 	return buildscript.Update(p.project, mergedExpr, p.auth)
 }
 
-func resolveRemoteProject(prj *project.Project, overwrite string) (*project.Namespaced, error) {
+func resolveRemoteProject(prj *project.Project) (*project.Namespaced, error) {
 	ns := prj.Namespace()
-	if overwrite != "" {
-		var err error
-		ns, err = project.ParseNamespace(overwrite)
-		if err != nil {
-			return nil, locale.WrapInputError(err, "pull_set_project_parse_err", "Failed to parse namespace {{.V0}}", overwrite)
-		}
-	}
-
-	// Retrieve commit ID to set the project to (if unset)
-	if overwrite != "" {
-		branch, err := model.DefaultBranchForProjectName(ns.Owner, ns.Project)
-		if err != nil {
-			return nil, locale.WrapError(err, "err_pull_commit", "Could not retrieve the latest commit for your project.")
-		}
-		ns.CommitID = branch.CommitID
-	} else {
-		var err error
-		ns.CommitID, err = model.BranchCommitID(ns.Owner, ns.Project, prj.BranchName())
-		if err != nil {
-			return nil, locale.WrapError(err, "err_pull_commit_branch", "Could not retrieve the latest commit for your project and branch.")
-		}
+	var err error
+	ns.CommitID, err = model.BranchCommitID(ns.Owner, ns.Project, prj.BranchName())
+	if err != nil {
+		return nil, locale.WrapError(err, "err_pull_commit_branch", "Could not retrieve the latest commit for your project and branch.")
 	}
 
 	return ns, nil
