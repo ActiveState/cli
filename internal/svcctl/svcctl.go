@@ -15,12 +15,12 @@ import (
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/ipc"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/profile"
 )
 
@@ -156,7 +156,7 @@ func startAndWait(ctx context.Context, ipComm IPCommunicator, exec, argText stri
 
 	debugInfo := newDebugData(ipComm, startSvc, argText)
 
-	if _, err := exeutils.ExecuteAndForget(exec, args); err != nil {
+	if _, err := osutils.ExecuteAndForget(exec, args); err != nil {
 		return locale.WrapError(err, "svcctl_cannot_exec_and_forget", "Cannot execute service in background: {{.V0}}", err.Error())
 	}
 

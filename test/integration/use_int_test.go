@@ -42,7 +42,7 @@ func (suite *UseIntegrationTestSuite) TestUse() {
 	cp.ExpectExitCode(0)
 
 	// Verify runtime works.
-	pythonExe := filepath.Join(ts.Dirs.DefaultBin, "python3"+osutils.ExeExt)
+	pythonExe := filepath.Join(ts.Dirs.DefaultBin, "python3"+osutils.ExeExtension)
 	cp = ts.SpawnCmd(pythonExe, "--version")
 	cp.Expect("Python 3")
 	cp.ExpectExitCode(0)
@@ -139,7 +139,7 @@ func (suite *UseIntegrationTestSuite) TestReset() {
 	cp.Expect("Switched to project", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
 
-	python3Exe := filepath.Join(ts.Dirs.DefaultBin, "python3"+osutils.ExeExt)
+	python3Exe := filepath.Join(ts.Dirs.DefaultBin, "python3"+osutils.ExeExtension)
 	suite.True(fileutils.TargetExists(python3Exe), python3Exe+" not found")
 
 	cfg, err := config.New()

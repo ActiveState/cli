@@ -14,7 +14,6 @@ import (
 	"github.com/ActiveState/cli/internal/assets"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/language"
@@ -154,7 +153,7 @@ func removePaths(logFile string, paths ...string) error {
 	args := []string{"/C", sf.Filename(), logFile, fmt.Sprintf("%d", os.Getpid()), filepath.Base(exe)}
 	args = append(args, paths...)
 
-	_, err = exeutils.ExecuteAndForget("cmd.exe", args)
+	_, err = osutils.ExecuteAndForget("cmd.exe", args)
 	if err != nil {
 		return locale.WrapError(err, "err_clean_start", "Could not start remove direcotry script")
 	}

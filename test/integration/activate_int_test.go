@@ -18,8 +18,8 @@ import (
 	"github.com/ActiveState/cli/internal/rtutils"
 
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 )
@@ -65,7 +65,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivateWithoutRuntime() {
 // addForegroundSvc launches the state-svc in a way where we can track its output for debugging purposes
 // without this we are mostly blind to the svc exiting prematurely
 func (suite *ActivateIntegrationTestSuite) addForegroundSvc(ts *e2e.Session) func() {
-	cmd, stdout, stderr, err := exeutils.ExecuteInBackground(ts.SvcExe, []string{"foreground"}, func(cmd *exec.Cmd) error {
+	cmd, stdout, stderr, err := osutils.ExecuteInBackground(ts.SvcExe, []string{"foreground"}, func(cmd *exec.Cmd) error {
 		cmd.Env = append(ts.Env, "VERBOSE=true", "") // For whatever reason the last entry is ignored..
 		return nil
 	})
@@ -75,7 +75,7 @@ func (suite *ActivateIntegrationTestSuite) addForegroundSvc(ts *e2e.Session) fun
 	rtutils.Timeout(func() error {
 		code := -1
 		for code != 0 {
-			code, _, _ = exeutils.Execute(ts.SvcExe, []string{"status"}, func(cmd *exec.Cmd) error {
+			code, _, _ = osutils.Execute(ts.SvcExe, []string{"status"}, func(cmd *exec.Cmd) error {
 				cmd.Env = ts.Env
 				return nil
 			})
@@ -89,7 +89,7 @@ func (suite *ActivateIntegrationTestSuite) addForegroundSvc(ts *e2e.Session) fun
 			defer func() {
 				suite.Require().Nil(recover())
 			}()
-			stdout, stderr, err := exeutils.ExecSimple(ts.SvcExe, []string{"stop"}, ts.Env)
+			stdout, stderr, err := osutils.ExecSimple(ts.SvcExe, []string{"stop"}, ts.Env)
 			suite.Require().NoError(err, "svc stop failed: %s\n%s", stdout, stderr)
 		}()
 
@@ -257,7 +257,7 @@ func (suite *ActivateIntegrationTestSuite) activatePython(version string, extraE
 	cp.SendLine("state activate --default")
 	cp.Expect("Creating a Virtual Environment")
 	cp.ExpectInput(termtest.OptExpectTimeout(40 * time.Second))
-	pythonShim := pythonExe + exeutils.Extension
+	pythonShim := pythonExe + osutils.ExeExtension
 
 	// test that other executables that use python work as well
 	pipExe := "pip" + version

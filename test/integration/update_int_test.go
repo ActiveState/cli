@@ -16,10 +16,10 @@ import (
 
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/httputil"
 	"github.com/ActiveState/cli/internal/installation"
+	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/rtutils/singlethread"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
@@ -208,8 +208,8 @@ func (suite *UpdateIntegrationTestSuite) TestUpdate_Repair() {
 
 	suite.Require().True(found, "Expecting to find %q and %q", searchA, searchB)
 
-	suite.NoFileExists(filepath.Join(ts.Dirs.Bin, constants.StateCmd+exeutils.Extension), "State Tool executable at install dir should no longer exist")
-	suite.NoFileExists(filepath.Join(ts.Dirs.Bin, constants.StateSvcCmd+exeutils.Extension), "State Service executable at install dir should no longer exist")
+	suite.NoFileExists(filepath.Join(ts.Dirs.Bin, constants.StateCmd+osutils.ExeExtension), "State Tool executable at install dir should no longer exist")
+	suite.NoFileExists(filepath.Join(ts.Dirs.Bin, constants.StateSvcCmd+osutils.ExeExtension), "State Service executable at install dir should no longer exist")
 }
 
 func (suite *UpdateIntegrationTestSuite) TestUpdateChannel() {

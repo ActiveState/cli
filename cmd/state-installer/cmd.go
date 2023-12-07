@@ -18,7 +18,6 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/events"
-	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/installation/storage"
@@ -382,8 +381,8 @@ func postInstallEvents(out output.Outputer, cfg *config.Instance, an analytics.D
 		an.Event(anaConst.CatInstallerFunnel, "forward-command")
 
 		out.Print(fmt.Sprintf("\nRunning '[ACTIONABLE]%s[/RESET]'\n", params.command))
-		cmd, args := exeutils.DecodeCmd(params.command)
-		if _, _, err := exeutils.ExecuteAndPipeStd(cmd, args, envSlice(binPath)); err != nil {
+		cmd, args := osutils.DecodeCmd(params.command)
+		if _, _, err := osutils.ExecuteAndPipeStd(cmd, args, envSlice(binPath)); err != nil {
 			an.EventWithLabel(anaConst.CatInstallerFunnel, "forward-command-err", err.Error())
 			return errs.Silence(errs.Wrap(err, "Running provided command failed, error returned: %s", errs.JoinMessage(err)))
 		}
@@ -392,7 +391,7 @@ func postInstallEvents(out output.Outputer, cfg *config.Instance, an analytics.D
 		an.Event(anaConst.CatInstallerFunnel, "forward-activate")
 
 		out.Print(fmt.Sprintf("\nRunning '[ACTIONABLE]state activate %s[/RESET]'\n", params.activate.String()))
-		if _, _, err := exeutils.ExecuteAndPipeStd(stateExe, []string{"activate", params.activate.String()}, envSlice(binPath)); err != nil {
+		if _, _, err := osutils.ExecuteAndPipeStd(stateExe, []string{"activate", params.activate.String()}, envSlice(binPath)); err != nil {
 			an.EventWithLabel(anaConst.CatInstallerFunnel, "forward-activate-err", err.Error())
 			return errs.Silence(errs.Wrap(err, "Could not activate %s, error returned: %s", params.activate.String(), errs.JoinMessage(err)))
 		}
@@ -401,7 +400,7 @@ func postInstallEvents(out output.Outputer, cfg *config.Instance, an analytics.D
 		an.Event(anaConst.CatInstallerFunnel, "forward-activate-default")
 
 		out.Print(fmt.Sprintf("\nRunning '[ACTIONABLE]state activate --default %s[/RESET]'\n", params.activateDefault.String()))
-		if _, _, err := exeutils.ExecuteAndPipeStd(stateExe, []string{"activate", params.activateDefault.String(), "--default"}, envSlice(binPath)); err != nil {
+		if _, _, err := osutils.ExecuteAndPipeStd(stateExe, []string{"activate", params.activateDefault.String(), "--default"}, envSlice(binPath)); err != nil {
 			an.EventWithLabel(anaConst.CatInstallerFunnel, "forward-activate-default-err", err.Error())
 			return errs.Silence(errs.Wrap(err, "Could not activate %s, error returned: %s", params.activateDefault.String(), errs.JoinMessage(err)))
 		}
@@ -478,7 +477,7 @@ func noArgs() bool {
 func shouldUpdateInstalledStateTool(stateExePath string) bool {
 	logging.Debug("Checking if installed state tool is an older version.")
 
-	stdout, _, err := exeutils.ExecSimple(stateExePath, []string{"--version", "--output", "json"}, os.Environ())
+	stdout, _, err := osutils.ExecSimple(stateExePath, []string{"--version", "--output", "json"}, os.Environ())
 	if err != nil {
 		logging.Debug("Could not determine state tool version.")
 		return true // probably corrupted install

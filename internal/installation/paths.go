@@ -8,8 +8,8 @@ import (
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/osutils"
 )
 
 const (
@@ -81,7 +81,7 @@ func InstallPathFromExecPath() (string, error) {
 }
 
 func InstallPathFromReference(dir string) (string, error) {
-	cmdName := constants.StateCmd + exeutils.Extension
+	cmdName := constants.StateCmd + osutils.ExeExtension
 	installPath := filepath.Dir(dir)
 	binPath, err := BinPathFromInstallPath(installPath)
 	if err != nil {

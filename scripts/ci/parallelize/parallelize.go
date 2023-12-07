@@ -12,7 +12,6 @@ import (
 
 	"github.com/ActiveState/cli/internal/constraints"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/osutils"
@@ -35,7 +34,7 @@ func main() {
 }
 
 func run() error {
-	if len(os.Args) <= 1{
+	if len(os.Args) <= 1 {
 		return errs.New("Must provide single argument with JSON blob, or [job <ID>] to check the results of a job.")
 	}
 
@@ -120,8 +119,7 @@ func runJob(job Job) {
 		return
 	}
 
-
-	code, _, err := exeutils.Execute(job.Args[0] + osutils.ExeExt, job.Args[1:], func(cmd *exec.Cmd) error {
+	code, _, err := osutils.Execute(job.Args[0]+osutils.ExeExtension, job.Args[1:], func(cmd *exec.Cmd) error {
 		cmd.Stdout = outfile
 		cmd.Stderr = outfile
 		cmd.Env = append(job.Env, os.Environ()...)
@@ -136,14 +134,14 @@ func runJob(job Job) {
 
 func readJob(id string) error {
 	jobfile := filepath.Join(jobDir(), fmt.Sprintf("%s.out", id))
-	if ! fileutils.FileExists(jobfile) {
+	if !fileutils.FileExists(jobfile) {
 		return errs.New("Job does not exist: %s", jobfile)
 	}
 
 	contents := strings.Split(string(fileutils.ReadFileUnsafe(jobfile)), "\n")
 	code, err := strconv.Atoi(contents[len(contents)-1])
 	if err != nil {
-		return errs.Wrap(err,"Expected last line to be the exit code, instead found: %s", contents[len(contents)-1])
+		return errs.Wrap(err, "Expected last line to be the exit code, instead found: %s", contents[len(contents)-1])
 	}
 
 	fmt.Println(strings.Join(contents[0:(len(contents)-2)], "\n"))

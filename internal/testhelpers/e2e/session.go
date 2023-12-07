@@ -25,7 +25,6 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/logging"
@@ -83,21 +82,21 @@ func init() {
 
 	// Get username / password from `state secrets` so we can run tests without needing special env setup
 	if PersistentUsername == "" {
-		out, stderr, err := exeutils.ExecSimpleFromDir(environment.GetRootPathUnsafe(), "state", []string{"secrets", "get", "project.INTEGRATION_TEST_USERNAME"}, []string{})
+		out, stderr, err := osutils.ExecSimpleFromDir(environment.GetRootPathUnsafe(), "state", []string{"secrets", "get", "project.INTEGRATION_TEST_USERNAME"}, []string{})
 		if err != nil {
 			fmt.Printf("WARNING!!! Could not retrieve username via state secrets: %v, stdout/stderr: %v\n%v\n", err, out, stderr)
 		}
 		PersistentUsername = strings.TrimSpace(out)
 	}
 	if PersistentPassword == "" {
-		out, stderr, err := exeutils.ExecSimpleFromDir(environment.GetRootPathUnsafe(), "state", []string{"secrets", "get", "project.INTEGRATION_TEST_PASSWORD"}, []string{})
+		out, stderr, err := osutils.ExecSimpleFromDir(environment.GetRootPathUnsafe(), "state", []string{"secrets", "get", "project.INTEGRATION_TEST_PASSWORD"}, []string{})
 		if err != nil {
 			fmt.Printf("WARNING!!! Could not retrieve password via state secrets: %v, stdout/stderr: %v\n%v\n", err, out, stderr)
 		}
 		PersistentPassword = strings.TrimSpace(out)
 	}
 	if PersistentToken == "" {
-		out, stderr, err := exeutils.ExecSimpleFromDir(environment.GetRootPathUnsafe(), "state", []string{"secrets", "get", "project.INTEGRATION_TEST_TOKEN"}, []string{})
+		out, stderr, err := osutils.ExecSimpleFromDir(environment.GetRootPathUnsafe(), "state", []string{"secrets", "get", "project.INTEGRATION_TEST_TOKEN"}, []string{})
 		if err != nil {
 			fmt.Printf("WARNING!!! Could not retrieve token via state secrets: %v, stdout/stderr: %v\n%v\n", err, out, stderr)
 		}
@@ -149,9 +148,9 @@ func executablePaths(t *testing.T) (string, string, string) {
 	root := environment.GetRootPathUnsafe()
 	buildDir := fileutils.Join(root, "build")
 
-	stateExec := filepath.Join(buildDir, constants.StateCmd+osutils.ExeExt)
-	svcExec := filepath.Join(buildDir, constants.StateSvcCmd+osutils.ExeExt)
-	executorExec := filepath.Join(buildDir, constants.StateExecutorCmd+osutils.ExeExt)
+	stateExec := filepath.Join(buildDir, constants.StateCmd+osutils.ExeExtension)
+	svcExec := filepath.Join(buildDir, constants.StateSvcCmd+osutils.ExeExtension)
+	executorExec := filepath.Join(buildDir, constants.StateExecutorCmd+osutils.ExeExtension)
 
 	if !fileutils.FileExists(stateExec) {
 		t.Fatal("E2E tests require a State Tool binary. Run `state run build`.")
@@ -678,7 +677,7 @@ func (s *Session) SvcLog() string {
 		}
 		b := fileutils.ReadFileUnsafe(file)
 		lines = append(lines, filepath.Base(file)+":"+strings.Split(string(b), "\n")[0])
-		if !strings.Contains(string(b), fmt.Sprintf("state-svc%s foreground", exeutils.Extension)) {
+		if !strings.Contains(string(b), fmt.Sprintf("state-svc%s foreground", osutils.ExeExtension)) {
 			continue
 		}
 

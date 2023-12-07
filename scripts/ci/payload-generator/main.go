@@ -9,9 +9,9 @@ import (
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
-	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/installation"
+	"github.com/ActiveState/cli/internal/osutils"
 )
 
 var (
@@ -67,10 +67,10 @@ func generatePayload(inDir, outDir, binDir, branch, version string) error {
 	}
 
 	files := map[string]string{
-		filepath.Join(inDir, constants.StateInstallerCmd+exeutils.Extension): outDir,
-		filepath.Join(inDir, constants.StateCmd+exeutils.Extension):          binDir,
-		filepath.Join(inDir, constants.StateSvcCmd+exeutils.Extension):       binDir,
-		filepath.Join(inDir, constants.StateExecutorCmd+exeutils.Extension):  binDir,
+		filepath.Join(inDir, constants.StateInstallerCmd+osutils.ExeExtension): outDir,
+		filepath.Join(inDir, constants.StateCmd+osutils.ExeExtension):          binDir,
+		filepath.Join(inDir, constants.StateSvcCmd+osutils.ExeExtension):       binDir,
+		filepath.Join(inDir, constants.StateExecutorCmd+osutils.ExeExtension):  binDir,
 	}
 	if err := copyFiles(files); err != nil {
 		return fmt.Errorf(emsg, err)
