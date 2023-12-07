@@ -148,7 +148,7 @@ func (suite *InitIntegrationTestSuite) TestInit_AlreadyExists() {
 	ts.LoginAsPersistentUser()
 
 	cp := ts.Spawn("init", fmt.Sprintf("%s/test-project", e2e.PersistentUsername), "--language", "python@3")
-	cp.Expect("The project test-project already exists under cli-integration-tests")
+	cp.Expect("The project 'test-project' already exists under 'cli-integration-tests'")
 	cp.ExpectExitCode(1)
 }
 

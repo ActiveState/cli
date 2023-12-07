@@ -760,7 +760,7 @@ field_localized_field:
 err_could_not_marshal_print:
   other: "Could not marshal the value being printed, please check the error log for more information."
 err_no_structured_output:
-  other: "This command does not support the {{.V0}} output format. Please try again without that output flag."
+  other: "This command does not support the '{{.V0}}' output format. Please try again without that output flag."
 err_main_outputer:
   other: "Could not create output writer, please contact developers if this problem persists. Error: {{.V0}}"
 field_name:
@@ -1101,9 +1101,9 @@ err_fetch_project:
 err_set_default_branch:
   other: Could not update project field with branch, please manually set the `branch={{.V0}}` query parameter on the project field in your activestate.yaml.
 artifact_download_failed:
-  other: Failed to download artifact {{.V0}} ({{.V1}})
+  other: Failed to download artifact '{{.V0}}' ({{.V1}})
 artifact_setup_failed:
-  other: Failed to install artifact {{.V0}} ({{.V1}})
+  other: Failed to install artifact '{{.V0}}' ({{.V1}})
 err_stored_artifacts:
   other: Could not unmarshal stored artifacts, your install may be corrupted.
 err_fetch_branch:
