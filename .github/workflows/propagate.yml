@@ -13,14 +13,8 @@ jobs:
   propagate:
     name: Propagate to affected version branches
     runs-on: ubuntu-20.04
-    strategy:
-      matrix:
-        go-version:
-          - 1.20.x
     env:
       ACTIVESTATE_CI: true
-      ACTIVESTATE_CLI_DISABLE_RUNTIME: true
-      SHELL: bash
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       JIRA_USERNAME: ${{ secrets.JIRA_EMAIL }}
       JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}
@@ -40,7 +34,7 @@ jobs:
         name: Install Go
         uses: actions/setup-go@v3
         with:
-          go-version: ${{ matrix.go-version }}
+          go-version: '1.20.x'
 
       - # === Install State Tool ===
         name: Install State Tool
@@ -50,17 +44,9 @@ jobs:
         name: Setup
         shell: bash
         run: |
-          bin=$(pwd)/.github/deps/${{ runner.os }}/bin
-          echo "Adding $bin to PATH"
-          echo "$bin" >> $GITHUB_PATH
           # We specify our custom user because we need privileges to push to protected branches
           git config user.name "AS-builds"
           git config user.email "nathanr+asbuilds@activestate.com"
-
-      - # === Install Deps ===
-        name: Install Deps
-        shell: bash
-        run: state run install-deps
 
       - # === Preprocess ===
         name: Preprocess
