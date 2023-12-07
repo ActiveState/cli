@@ -779,13 +779,21 @@ func GetProjectFilePath() (string, error) {
 }
 
 func getProjectFilePathFromEnv() (string, error) {
-	projectFilePath := os.Getenv(constants.ProjectEnvVarName)
+	var projectFilePath string
+
+	if activatedProjectDirPath := os.Getenv(constants.ActivatedStateEnvVarName); activatedProjectDirPath != "" {
+		projectFilePath = filepath.Join(activatedProjectDirPath, constants.ConfigFileName)
+	} else {
+		projectFilePath = os.Getenv(constants.ProjectEnvVarName)
+	}
+
 	if projectFilePath != "" {
 		if fileutils.FileExists(projectFilePath) {
 			return projectFilePath, nil
 		}
 		return "", &ErrorNoProjectFromEnv{locale.NewInputError("err_project_env_file_not_exist", "", projectFilePath)}
 	}
+
 	return "", nil
 }
 
