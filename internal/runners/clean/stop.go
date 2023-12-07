@@ -3,10 +3,10 @@ package clean
 import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/svcctl"
 )
@@ -22,7 +22,7 @@ func stopServices(cfg configurable, out output.Outputer, ipComm svcctl.IPCommuni
 
 	// Stop state-svc before accessing its files
 	if fileutils.FileExists(svcExec) {
-		code, _, err := exeutils.Execute(svcExec, []string{"stop"}, nil)
+		code, _, err := osutils.Execute(svcExec, []string{"stop"}, nil)
 		if err != nil {
 			if !ignoreErrors {
 				return errs.AddTips(

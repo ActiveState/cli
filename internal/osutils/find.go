@@ -1,4 +1,4 @@
-package exeutils
+package osutils
 
 import (
 	"os"
@@ -20,7 +20,7 @@ func FindExeOnPATH(executable string) string {
 
 // FindExeOnPATH returns the first path from the PATH env var for which the executable exists
 func FilterExesOnPATH(executable string, PATH string, filter func(exe string) bool) []string {
-	return findExes(executable, PATH, exts, fileutils.TargetExists,  filter)
+	return findExes(executable, PATH, exts, fileutils.TargetExists, filter)
 }
 
 func FindExeInside(executable string, PATH string) string {
@@ -50,7 +50,7 @@ func findExes(executable string, PATH string, exts []string, fileExists func(str
 	return result
 }
 
-func findExe(executable string, PATH string, exts []string,fileExists func(string) bool, filter func(exe string) bool) string {
+func findExe(executable string, PATH string, exts []string, fileExists func(string) bool, filter func(exe string) bool) string {
 	r := findExes(executable, PATH, exts, fileExists, filter)
 	if len(r) > 0 {
 		return r[0]

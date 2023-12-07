@@ -16,10 +16,10 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/events"
-	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
+	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
@@ -201,7 +201,7 @@ func execute(out output.Outputer, prompt prompt.Prompter, cfg *config.Instance, 
 	env := []string{
 		constants.InstallerNoSubshell + "=true",
 	}
-	_, cmd, err := exeutils.ExecuteAndPipeStd(filepath.Join(tmpDir, constants.StateInstallerCmd+exeutils.Extension), args, env)
+	_, cmd, err := osutils.ExecuteAndPipeStd(filepath.Join(tmpDir, constants.StateInstallerCmd+osutils.ExeExtension), args, env)
 	if err != nil {
 		if cmd != nil && cmd.ProcessState.Sys().(syscall.WaitStatus).Exited() {
 			// The issue happened while running the command itself, meaning the responsibility for conveying the error

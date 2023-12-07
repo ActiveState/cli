@@ -106,7 +106,7 @@ func createUpdate(outputPath, channel, version, versionNumber, platform, target 
 }
 
 func createInstaller(buildPath, outputPath, channel, platform string) error {
-	installer := filepath.Join(buildPath, "state-installer"+osutils.ExeExt)
+	installer := filepath.Join(buildPath, "state-installer"+osutils.ExeExtension)
 	if !fileutils.FileExists(installer) {
 		return errs.New("state-installer does not exist in build dir")
 	}

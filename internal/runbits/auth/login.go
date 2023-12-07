@@ -21,7 +21,7 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// OpenURI aliases to exeutils.OpenURI which opens the given URI in your browser. This is being exposed so that it can be
+// OpenURI aliases to osutils.OpenURI which opens the given URI in your browser. This is being exposed so that it can be
 // overwritten in tests
 var OpenURI = osutils.OpenURI
 

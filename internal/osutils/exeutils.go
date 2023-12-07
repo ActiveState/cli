@@ -1,4 +1,4 @@
-package exeutils
+package osutils
 
 import (
 	"bytes"
@@ -15,7 +15,6 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/osutils"
 )
 
 // Executables will return all the Executables that need to be symlinked in the various provided bin directories
@@ -133,7 +132,7 @@ func Execute(command string, arg []string, optSetter func(cmd *exec.Cmd) error) 
 	if err != nil {
 		logging.Debug("Executing command returned error: %v", err)
 	}
-	return osutils.CmdExitCode(cmd), cmd, err
+	return CmdExitCode(cmd), cmd, err
 }
 
 // ExecuteAndPipeStd will run the given command and pipe stdin, stdout and stderr
@@ -157,7 +156,7 @@ func ExecuteAndForget(command string, args []string, opts ...func(cmd *exec.Cmd)
 		}
 	}
 
-	cmd.SysProcAttr = osutils.SysProcAttrForBackgroundProcess()
+	cmd.SysProcAttr = SysProcAttrForBackgroundProcess()
 	if err := cmd.Start(); err != nil {
 		return nil, errs.Wrap(err, "Could not start %s %v", command, args)
 	}

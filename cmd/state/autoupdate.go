@@ -16,7 +16,6 @@ import (
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -178,7 +177,7 @@ func relaunch(args []string) (int, error) {
 		return -1, &ErrStateExe{locale.WrapError(err, "err_state_exec")}
 	}
 
-	code, _, err := exeutils.ExecuteAndPipeStd(exec, args[1:], []string{fmt.Sprintf("%s=true", constants.ForwardedStateEnvVarName)})
+	code, _, err := osutils.ExecuteAndPipeStd(exec, args[1:], []string{fmt.Sprintf("%s=true", constants.ForwardedStateEnvVarName)})
 	if err != nil {
 		return code, &ErrExecuteRelaunch{errs.Wrap(err, "Forwarded command after auto-updating failed. Exit code: %d", code)}
 	}

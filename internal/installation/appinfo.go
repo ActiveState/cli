@@ -22,10 +22,10 @@ const (
 )
 
 var execData = map[executableType]string{
-	state:     constants.StateCmd + osutils.ExeExt,
-	service:   constants.StateSvcCmd + osutils.ExeExt,
-	installer: constants.StateInstallerCmd + osutils.ExeExt,
-	executor:  constants.StateExecutorCmd + osutils.ExeExt,
+	state:     constants.StateCmd + osutils.ExeExtension,
+	service:   constants.StateSvcCmd + osutils.ExeExtension,
+	installer: constants.StateInstallerCmd + osutils.ExeExtension,
+	executor:  constants.StateExecutorCmd + osutils.ExeExtension,
 }
 
 func newExec(exec executableType) (string, error) {
