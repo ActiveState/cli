@@ -14,6 +14,7 @@ jobs:
     name: Propagate to affected version branches
     runs-on: ubuntu-20.04
     env:
+      ACTIVESTATE_CI: true
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       JIRA_USERNAME: ${{ secrets.JIRA_EMAIL }}
       JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}
@@ -35,6 +36,10 @@ jobs:
         with:
           go-version: '1.20.x'
 
+      - # === Install State Tool ===
+        name: Install State Tool
+        uses: ActiveState/setup-state-tool@v1
+
       - # === Setup ===
         name: Setup
         shell: bash
@@ -42,6 +47,11 @@ jobs:
           # We specify our custom user because we need privileges to push to protected branches
           git config user.name "AS-builds"
           git config user.email "nathanr+asbuilds@activestate.com"
+
+      - # === Preprocess ===
+        name: Preprocess
+        shell: bash
+        run: state run preprocess -v
 
       - # === Propagate PR ===
         name: Propagate PR
