@@ -222,6 +222,7 @@ func TestGetProjectFilePath(t *testing.T) {
 	require.Nil(t, err)
 	expectedPath := filepath.Join(root, "pkg", "projectfile", "testdata", constants.ConfigFileName)
 	assert.Equal(t, expectedPath, configPath, "Project path is properly detected")
+	os.Chdir(cwd) // restore
 
 	defer os.Unsetenv(constants.ProjectEnvVarName)
 
@@ -251,6 +252,14 @@ func TestGetProjectFilePath(t *testing.T) {
 	configPath, err = GetProjectFilePath()
 	assert.NoError(t, err, "GetProjectFilePath should succeed")
 	assert.Equal(t, expectedPath, configPath, "Project path is properly detected using default path from config")
+
+	// The activestate.yaml for an activated project should be used no matter what.
+	defer os.Unsetenv(constants.ActivatedStateEnvVarName)
+	os.Setenv(constants.ActivatedStateEnvVarName, filepath.Dir(expectedPath))
+	configPath, err = GetProjectFilePath()
+	require.Nil(t, err)
+	assert.Equal(t, expectedPath, configPath, "Project path is properly detected using the ActivatedStateEnvVarName")
+	os.Unsetenv(constants.ActivatedStateEnvVarName)
 }
 
 // TestGet the config
