@@ -57,8 +57,8 @@ func (suite *UpdateGenIntegrationTestSuite) TestUpdateBits() {
 	cp.ExpectExitCode(0)
 
 	baseDir := filepath.Join(tempPath, constants.ToplevelInstallArchiveDir)
-	suite.FileExists(filepath.Join(baseDir, installation.BinDirName, constants.StateCmd+osutils.ExeExt))
-	suite.FileExists(filepath.Join(baseDir, installation.BinDirName, constants.StateSvcCmd+osutils.ExeExt))
+	suite.FileExists(filepath.Join(baseDir, installation.BinDirName, constants.StateCmd+osutils.ExeExtension))
+	suite.FileExists(filepath.Join(baseDir, installation.BinDirName, constants.StateSvcCmd+osutils.ExeExtension))
 }
 
 func TestUpdateGenIntegrationTestSuite(t *testing.T) {

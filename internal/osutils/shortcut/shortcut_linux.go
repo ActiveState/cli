@@ -6,10 +6,10 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
+	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/ActiveState/cli/internal/strutils"
 )
@@ -72,7 +72,7 @@ func Save(target, path string, args []string, opts SaveOpts) (file string, err e
 
 	// set the executable as trusted so users do not need to do it manually
 	// gio is "Gnome input/output"
-	stdoutText, stderrText, err := exeutils.ExecSimple("gio", []string{"set", path, "metadata::trusted", "true"}, []string{})
+	stdoutText, stderrText, err := osutils.ExecSimple("gio", []string{"set", path, "metadata::trusted", "true"}, []string{})
 	if err != nil {
 		multilog.Log(logging.ErrorNoStacktrace, rollbar.Error)("Could not set desktop file as trusted: %v (stdout: %s; stderr: %s)", errs.JoinMessage(err), stdoutText, stderrText)
 	}

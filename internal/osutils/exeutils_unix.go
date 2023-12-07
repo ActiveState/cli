@@ -1,8 +1,8 @@
 //go:build !windows
 // +build !windows
 
-package exeutils
+package osutils
 
-const Extension = ""
+const ExeExtension = ""
 
 var exts = []string{}

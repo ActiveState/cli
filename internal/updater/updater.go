@@ -16,7 +16,6 @@ import (
 	"github.com/ActiveState/cli/internal/analytics/dimensions"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/graph"
 	"github.com/ActiveState/cli/internal/installation"
@@ -29,7 +28,7 @@ import (
 
 const (
 	CfgKeyInstallVersion = "state_tool_installer_version"
-	InstallerName        = "state-installer" + osutils.ExeExt
+	InstallerName        = "state-installer" + osutils.ExeExtension
 )
 
 type ErrorInProgress struct{ *locale.LocalizedError }
@@ -226,7 +225,7 @@ func (u *UpdateInstaller) InstallBlocking(installTargetPath string, args ...stri
 		envs = append(envs, fmt.Sprintf("%s=%s", constants.UpdateTagEnvVarName, *u.AvailableUpdate.Tag))
 	}
 
-	_, _, err = exeutils.ExecuteAndPipeStd(installerPath, args, envs)
+	_, _, err = osutils.ExecuteAndPipeStd(installerPath, args, envs)
 	if err != nil {
 		return errs.Wrap(err, "Could not run installer")
 	}
@@ -244,7 +243,7 @@ func (u *UpdateInstaller) InstallWithProgress(installTargetPath string, progress
 		return nil, err
 	}
 
-	proc, err := exeutils.ExecuteAndForget(installerPath, args, func(cmd *exec.Cmd) error {
+	proc, err := osutils.ExecuteAndForget(installerPath, args, func(cmd *exec.Cmd) error {
 		var stdout io.ReadCloser
 		var stderr io.ReadCloser
 		if stderr, err = cmd.StderrPipe(); err != nil {

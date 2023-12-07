@@ -12,13 +12,13 @@ import (
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/hash"
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
+	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/rtutils"
@@ -155,7 +155,7 @@ func (s *Exec) Run(params *Params, args ...string) (rerr error) {
 		RTPATH := strings.Join(rtDirs, string(os.PathListSeparator))
 
 		// Report recursive execution of executor: The path for the executable should be different from the default bin dir
-		exesOnPath := exeutils.FilterExesOnPATH(args[0], RTPATH, func(exe string) bool {
+		exesOnPath := osutils.FilterExesOnPATH(args[0], RTPATH, func(exe string) bool {
 			v, err := executors.IsExecutor(exe)
 			if err != nil {
 				logging.Error("Could not find out if executable is an executor: %s", errs.JoinMessage(err))
@@ -171,7 +171,7 @@ func (s *Exec) Run(params *Params, args ...string) (rerr error) {
 
 	// Guard against invoking the executor from PATH (ie. by name alone)
 	if os.Getenv(constants.ExecRecursionAllowEnvVarName) != "true" && filepath.Base(exeTarget) == exeTarget { // not a full path
-		exe := exeutils.FindExeInside(exeTarget, env["PATH"])
+		exe := osutils.FindExeInside(exeTarget, env["PATH"])
 		if exe != exeTarget { // Found the exe name on our PATH
 			isExec, err := executors.IsExecutor(exe)
 			if err != nil {

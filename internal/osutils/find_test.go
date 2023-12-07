@@ -1,4 +1,4 @@
-package exeutils
+package osutils
 
 import (
 	"os"
@@ -11,12 +11,12 @@ import (
 
 func Test_FilterExesOnPATH(t *testing.T) {
 	fileExistsIfEquals := func(equals string) func(string) bool {
-		return func(f string) bool { return f==equals }
+		return func(f string) bool { return f == equals }
 	}
 	fileExistsTrue := func(f string) bool { return true }
 	fileExistsFalse := func(f string) bool { return false }
-	filterTrue := func(string) bool { return true}
-	filterFalse := func(string) bool { return false}
+	filterTrue := func(string) bool { return true }
+	filterFalse := func(string) bool { return false }
 
 	PATH := strings.Join([]string{"test2", "test"}, string(os.PathListSeparator))
 

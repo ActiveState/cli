@@ -313,7 +313,7 @@ func (suite *InstallerIntegrationTestSuite) SetupSuite() {
 	localPayload := filepath.Join(rootPath, "build", "payload", constants.ToplevelInstallArchiveDir)
 	suite.Require().DirExists(localPayload, "locally generated payload exists")
 
-	installerExe := filepath.Join(localPayload, constants.StateInstallerCmd+osutils.ExeExt)
+	installerExe := filepath.Join(localPayload, constants.StateInstallerCmd+osutils.ExeExtension)
 	suite.Require().FileExists(installerExe, "locally generated installer exists")
 
 	suite.installerExe = installerExe
