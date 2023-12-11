@@ -190,7 +190,7 @@ func (s *ScriptRun) Run(script *project.Script, args []string) error {
 			err = locale.WrapInputError(
 				err,
 				"err_run_script",
-				"Script execution fell back to {{.V0}} after {{.V1}} was not detected in your project or system. Please ensure your script is compatible with one, or more, of: {{.V0}}, {{.V1}}",
+				"Script execution fell back to '{{.V0}}' after '{{.V1}}' was not detected in your project or system. Please ensure your script is compatible with one, or more, of: {{.V0}}, {{.V1}}",
 				lang.String(),
 				strings.Join(attempted, ", "),
 			)

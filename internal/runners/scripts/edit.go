@@ -266,7 +266,7 @@ func verifyPathEditor(editor string) (string, error) {
 
 	_, err := os.Stat(editor)
 	if err != nil {
-		return "", locale.WrapInputError(err, "error_edit_stat_editor", "Failed to find editor {{.V0}} on file system.", editor)
+		return "", locale.WrapInputError(err, "error_edit_stat_editor", "Failed to find editor '{{.V0}}' on file system.", editor)
 	}
 
 	return editor, nil
