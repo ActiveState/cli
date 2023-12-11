@@ -52,7 +52,7 @@ func rationalizeError(namespace *project.Namespaced, rerr *error) {
 		case bpModel.AlreadyExistsErrorType:
 			*rerr = errs.WrapUserFacing(
 				pcErr,
-				locale.Tl("err_create_project_exists", "The project {{.V0}} already exists under {{.V1}}", namespace.Project, namespace.Owner),
+				locale.Tl("err_create_project_exists", "The project '{{.V0}}' already exists under '{{.V1}}'", namespace.Project, namespace.Owner),
 				errs.SetInput(),
 			)
 		case bpModel.ForbiddenErrorType:
@@ -63,7 +63,7 @@ func rationalizeError(namespace *project.Namespaced, rerr *error) {
 		case bpModel.NotFoundErrorType:
 			*rerr = errs.WrapUserFacing(
 				pcErr,
-				locale.Tl("err_create_project_not_found", "Could not create project because the organization {{.V0}} was not found.", namespace.Owner),
+				locale.Tl("err_create_project_not_found", "Could not create project because the organization '{{.V0}}' was not found.", namespace.Owner),
 				errs.SetInput(),
 				errs.SetTips(locale.T("err_init_authenticated")))
 		}

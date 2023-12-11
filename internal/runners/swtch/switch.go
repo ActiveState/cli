@@ -139,7 +139,7 @@ func resolveIdentifier(project *mono_models.Project, idParam string) (identifier
 
 	branch, err := model.BranchForProjectByName(project, idParam)
 	if err != nil {
-		return nil, locale.WrapError(err, "err_identifier_branch", "Could not get branch {{.V0}} for current project", idParam)
+		return nil, locale.WrapError(err, "err_identifier_branch", "Could not get branch '{{.V0}}' for current project", idParam)
 
 	}
 
