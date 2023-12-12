@@ -233,6 +233,10 @@ func new(t *testing.T, retainDirs, updatePath bool, extraEnv ...string) *Session
 }
 
 func prepareHomeDir(dir string) error {
+	if runtime.GOOS == "windows" {
+		return nil
+	}
+
 	// Create dir if it doesn't exist
 	if !fileutils.DirExists(dir) {
 		err := fileutils.Mkdir(dir)
