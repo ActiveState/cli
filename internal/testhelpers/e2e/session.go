@@ -173,7 +173,6 @@ func new(t *testing.T, retainDirs, updatePath bool, extraEnv ...string) *Session
 	dirs, err := NewDirs("")
 	require.NoError(t, err)
 	var env []string
-	env = append(env, os.Environ()...)
 	env = append(env, []string{
 		constants.ConfigEnvVarName + "=" + dirs.Config,
 		constants.CacheEnvVarName + "=" + dirs.Cache,
