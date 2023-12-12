@@ -235,9 +235,9 @@ func new(t *testing.T, retainDirs, updatePath bool, extraEnv ...string) *Session
 func prepareHomeDir(dir string) error {
 	// Create dir if it doesn't exist
 	if !fileutils.DirExists(dir) {
-		err := os.MkdirAll(dir, 0770)
+		err := fileutils.Mkdir(dir)
 		if err != nil {
-			return err
+			return errs.Wrap(err, "Could not create home dir")
 		}
 	}
 
@@ -253,7 +253,7 @@ func prepareHomeDir(dir string) error {
 	rcFile := filepath.Join(dir, filename)
 	err := fileutils.Touch(rcFile)
 	if err != nil {
-		return err
+		return errs.Wrap(err, "Could not create rc file")
 	}
 
 	return nil
