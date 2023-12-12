@@ -190,9 +190,7 @@ func new(t *testing.T, retainDirs, updatePath bool, extraEnv ...string) *Session
 
 	if updatePath {
 		// add bin path
-		// Remove release state tool installation from PATH in tests
-		// This is a workaround as our test sessions are not compeltely
-		// sandboxed. This should be addressed in: https://activestatef.atlassian.net/browse/DX-2285
+		// Remove release state tool installation from PATH
 		oldPath, _ := os.LookupEnv("PATH")
 		installPath, err := installation.InstallPathForBranch("release")
 		require.NoError(t, err)
@@ -204,22 +202,10 @@ func new(t *testing.T, retainDirs, updatePath bool, extraEnv ...string) *Session
 			dirs.Bin, string(os.PathListSeparator), oldPath,
 		)
 		env = append(env, newPath)
-		t.Setenv("PATH", newPath)
-
-		cfg, err := config.New()
-		require.NoError(t, err)
-
-		// In order to ensure that the release state tool does not appear on the PATH
-		// when a new subshell is started we remove the installation entries from the
-		// rc file. This is added back later in the session's Close method.
-		// Again, this is a workaround to be addressed in: https://activestatef.atlassian.net/browse/DX-2285
-		if runtime.GOOS != "windows" {
-			s := bash.SubShell{}
-			err = s.CleanUserEnv(cfg, sscommon.InstallID, false)
-			require.NoError(t, err)
-		}
-		t.Setenv(constants.HomeEnvVarName, dirs.HomeDir)
 	}
+
+	err = prepareHomeDir(dirs.HomeDir)
+	require.NoError(t, err)
 
 	// add session environment variables
 	env = append(env, extraEnv...)
@@ -244,6 +230,39 @@ func new(t *testing.T, retainDirs, updatePath bool, extraEnv ...string) *Session
 	require.NoError(session.t, err)
 
 	return session
+}
+
+func prepareHomeDir(dir string) error {
+	// Create dir if it doesn't exist
+	if !fileutils.DirExists(dir) {
+		err := os.MkdirAll(dir, 0770)
+		if err != nil {
+			return err
+		}
+	}
+
+	// Depending on OS, copy files from asset dir
+	var filename string
+	switch runtime.GOOS {
+	case "linux":
+		filename = ".bashrc"
+	case "darwin":
+		filename = ".zshrc"
+	}
+
+	wd, err := os.Getwd()
+	if err != nil {
+		return err
+	}
+
+	rcFile := filepath.Join(wd, "assets", filename)
+	err = fileutils.Touch(rcFile)
+	if err != nil {
+		return err
+	}
+
+	return nil
+
 }
 
 func NewNoPathUpdate(t *testing.T, retainDirs bool, extraEnv ...string) *Session {
