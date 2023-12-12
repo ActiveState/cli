@@ -758,6 +758,10 @@ func (p *Project) SetBranch(branch string) error {
 }
 
 // GetProjectFilePath returns the path to the project activestate.yaml
+// It considers projects in the following order:
+// 1. Environment variable (e.g. `state shell` sets one)
+// 2. Working directory (i.e. walk up directory tree looking for activestate.yaml)
+// 3. Fall back on default project
 func GetProjectFilePath() (string, error) {
 	defer profile.Measure("GetProjectFilePath", time.Now())
 	lookup := []func() (string, error){
