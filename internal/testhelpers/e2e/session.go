@@ -250,13 +250,8 @@ func prepareHomeDir(dir string) error {
 		filename = ".zshrc"
 	}
 
-	wd, err := os.Getwd()
-	if err != nil {
-		return err
-	}
-
-	rcFile := filepath.Join(wd, "assets", filename)
-	err = fileutils.Touch(rcFile)
+	rcFile := filepath.Join(dir, filename)
+	err := fileutils.Touch(rcFile)
 	if err != nil {
 		return err
 	}
