@@ -253,6 +253,7 @@ func prepareHomeDir(dir string) error {
 	rcFile := filepath.Join(dir, filename)
 	err := fileutils.Touch(rcFile)
 	if err != nil {
+		fmt.Println("Create err: ", err)
 		return errs.Wrap(err, "Could not create rc file")
 	}
 
