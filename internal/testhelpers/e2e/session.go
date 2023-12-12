@@ -191,16 +191,15 @@ func new(t *testing.T, retainDirs, updatePath bool, extraEnv ...string) *Session
 		// add bin path
 		// Remove release state tool installation from PATH
 		oldPath, _ := os.LookupEnv("PATH")
-		installPath, err := installation.InstallPathForBranch("release")
-		require.NoError(t, err)
-
-		binPath := filepath.Join(installPath, "bin")
-		oldPath = strings.Replace(oldPath, binPath+string(os.PathListSeparator), "", -1)
 		newPath := fmt.Sprintf(
 			"PATH=%s%s%s",
 			dirs.Bin, string(os.PathListSeparator), oldPath,
 		)
 		env = append(env, newPath)
+	}
+
+	if runtime.GOOS != "windows" {
+		env = append(env, "HOME="+dirs.HomeDir)
 	}
 
 	err = prepareHomeDir(dirs.HomeDir)
