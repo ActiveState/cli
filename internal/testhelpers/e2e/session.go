@@ -201,6 +201,8 @@ func new(t *testing.T, retainDirs, updatePath bool, extraEnv ...string) *Session
 			dirs.Bin, string(os.PathListSeparator), oldPath,
 		)
 		env = append(env, newPath)
+	} else {
+		env = append(env, "PATH="+testPath)
 	}
 
 	if runtime.GOOS != "windows" {
