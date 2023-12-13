@@ -200,8 +200,7 @@ func new(t *testing.T, retainDirs, updatePath bool, extraEnv ...string) *Session
 
 	if runtime.GOOS != "windows" {
 		env = append(env, "HOME="+dirs.HomeDir)
-		// env = append(env, "PATH=/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local:/usr/local/sbin:/usr/local/opt")
-		env = append(env, "SHELL="+os.Getenv("SHELL"))
+		env = append(env, "PATH=/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local:/usr/local/sbin:/usr/local/opt")
 	}
 
 	err = prepareHomeDir(dirs.HomeDir)
@@ -255,9 +254,9 @@ func prepareHomeDir(dir string) error {
 	}
 
 	rcFile := filepath.Join(dir, filename)
+	fmt.Println("Creating rc file: " + rcFile)
 	err := fileutils.Touch(rcFile)
 	if err != nil {
-		fmt.Println("Create err: ", err)
 		return errs.Wrap(err, "Could not create rc file")
 	}
 
