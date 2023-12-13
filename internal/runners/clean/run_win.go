@@ -117,11 +117,14 @@ func removeInstall(logFile string, params *UninstallParams, cfg *config.Instance
 		return locale.WrapError(err, "err_state_exec")
 	}
 
-	// Schedule removal of the entire branch name directory.
+	// Schedule removal of the entire install directory.
 	// This is because Windows often thinks the installation.InstallDirMarker and
 	// constants.StateInstallerCmd files are still in use.
-	branchDir := filepath.Dir(filepath.Dir(stateExec))
-	paths := []string{stateExec, branchDir}
+	installDir, err := installation.InstallPathFromExecPath()
+	if err != nil {
+		return errs.Wrap(err, "Could not get installation path")
+	}
+	paths := []string{stateExec, installDir}
 	if params.All {
 		paths = append(paths, cfg.ConfigPath()) // also remove the config directory
 	}
