@@ -200,7 +200,7 @@ func new(t *testing.T, retainDirs, updatePath bool, extraEnv ...string) *Session
 
 	if runtime.GOOS != "windows" {
 		env = append(env, "HOME="+dirs.HomeDir)
-		env = append(env, "PATH=/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local:/usr/local/sbin:/usr/local/opt")
+		// env = append(env, "PATH=/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local:/usr/local/sbin:/usr/local/opt")
 		env = append(env, "SHELL="+os.Getenv("SHELL"))
 	}
 
