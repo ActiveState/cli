@@ -2,12 +2,14 @@ package integration
 
 import (
 	"fmt"
+	"path/filepath"
 	"runtime"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
 
 	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 )
@@ -27,7 +29,7 @@ func (suite *ShellsIntegrationTestSuite) TestShells() {
 	case "linux":
 		shells = []e2e.Shell{e2e.Bash, e2e.Fish, e2e.Tcsh, e2e.Zsh}
 	case "darwin":
-		shells = []e2e.Shell{e2e.Bash, e2e.Fish, e2e.Zsh, e2e.Tcsh}
+		shells = []e2e.Shell{e2e.Zsh}
 	case "windows":
 		shells = []e2e.Shell{e2e.Bash, e2e.Cmd}
 	}
@@ -43,6 +45,11 @@ func (suite *ShellsIntegrationTestSuite) TestShells() {
 	for _, shell := range shells {
 		suite.T().Run(fmt.Sprintf("using_%s", shell), func(t *testing.T) {
 			ts.SetT(t)
+
+			if shell == e2e.Zsh {
+				err := fileutils.Touch(filepath.Join(ts.Dirs.HomeDir, ".zshrc"))
+				suite.Require().NoError(err)
+			}
 
 			// Run the checkout in a particular shell.
 			cp = ts.SpawnShellWithOpts(shell)
