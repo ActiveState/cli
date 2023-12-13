@@ -15,14 +15,14 @@ import (
 )
 
 func rationalizeError(auth *authentication.Auth, proj *project.Project, rerr *error) {
+	if rerr == nil {
+		return
+	}
 	var errNoMatchingPlatform *model.ErrNoMatchingPlatform
 	var errArtifactSetup *setup.ArtifactSetupErrors
 
 	isUpdateErr := errs.Matches(*rerr, &ErrUpdate{})
 	switch {
-	case rerr == nil:
-		return
-
 	case proj == nil:
 		multilog.Error("runtime:rationalizeError called with nil project, error: %s", errs.JoinMessage(*rerr))
 		*rerr = errs.Pack(*rerr, errs.New("project is nil"))
