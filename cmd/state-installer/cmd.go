@@ -186,15 +186,14 @@ func main() {
 				Value:     &params.path,
 			},
 			{
-				Name:      "version",
-				Shorthand: "v",
-				Value:     &params.showVersion,
+				Name:  "version", // note: no shorthand because install.sh uses -v for selecting version
+				Value: &params.showVersion,
 			},
 			// The remaining flags are for backwards compatibility (ie. we don't want to error out when they're provided)
 			{Name: "nnn", Shorthand: "n", Hidden: true, Value: &garbageBool}, // don't prompt; useless cause we don't prompt anyway
 			{Name: "channel", Hidden: true, Value: &garbageString},
 			{Name: "bbb", Shorthand: "b", Hidden: true, Value: &garbageString},
-			{Name: "vvv", Hidden: true, Value: &garbageString},
+			{Name: "vvv", Shorthand: "v", Hidden: true, Value: &garbageString},
 			{Name: "source-path", Hidden: true, Value: &garbageString},
 		},
 		[]*captain.Argument{
