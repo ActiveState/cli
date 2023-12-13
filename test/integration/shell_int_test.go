@@ -365,6 +365,111 @@ func (suite *ShellIntegrationTestSuite) TestPs1() {
 	cp.ExpectExitCode(0)
 }
 
+func (suite *ShellIntegrationTestSuite) TestProjectOrder() {
+	suite.OnlyRunForTags(tagsuite.Critical, tagsuite.Shell)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	// First, set up a new project with a subproject.
+	cp := ts.Spawn("checkout", "ActiveState-CLI/Perl-5.32", "project")
+	cp.Expect("Skipping runtime setup")
+	cp.Expect("Checked out project")
+	cp.ExpectExitCode(0)
+	projectDir := filepath.Join(ts.Dirs.Work, "project")
+
+	cp = ts.SpawnWithOpts(
+		e2e.OptArgs("checkout", "ActiveState-CLI/Perl-5.32", "subproject"),
+		e2e.OptWD(projectDir),
+	)
+	cp.Expect("Skipping runtime setup")
+	cp.Expect("Checked out project")
+	cp.ExpectExitCode(0)
+	subprojectDir := filepath.Join(projectDir, "subproject")
+
+	// Then set up a separate project and make it the default.
+	cp = ts.Spawn("checkout", "ActiveState-CLI/Perl-5.32", "default")
+	cp.Expect("Skipping runtime setup")
+	cp.Expect("Checked out project")
+	cp.ExpectExitCode(0)
+	defaultDir := filepath.Join(ts.Dirs.Work, "default")
+
+	cp = ts.SpawnWithOpts(
+		e2e.OptArgs("use"),
+		e2e.OptWD(defaultDir),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
+	)
+	cp.Expect("Setting Up Runtime", e2e.RuntimeSourcingTimeoutOpt)
+	cp.Expect("Switched to project", e2e.RuntimeSourcingTimeoutOpt)
+	cp.Expect(defaultDir)
+	cp.ExpectExitCode(0)
+
+	// Now set up an empty directory.
+	emptyDir := filepath.Join(ts.Dirs.Work, "empty")
+	suite.Require().NoError(fileutils.Mkdir(emptyDir))
+
+	// Now change to the project directory and assert that project is used instead of the default
+	// project.
+	cp = ts.SpawnWithOpts(
+		e2e.OptArgs("refresh"),
+		e2e.OptWD(projectDir),
+	)
+	cp.Expect(projectDir)
+	cp.ExpectExitCode(0)
+
+	// Run `state shell` in this project, change to the subproject directory, and assert the parent
+	// project is used instead of the subproject.
+	cp = ts.SpawnWithOpts(
+		e2e.OptArgs("shell"),
+		e2e.OptWD(projectDir),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
+	)
+	cp.Expect("Activated", e2e.RuntimeSourcingTimeoutOpt)
+	cp.Expect(projectDir)
+	cp.SendLine("cd subproject")
+	cp.SendLine("state refresh")
+	cp.Expect(projectDir) // not subprojectDir
+	cp.SendLine("exit")
+	cp.Expect("Deactivated")
+	cp.ExpectExit() // exit code varies depending on shell; just assert the shell exited
+
+	// After exiting the shell, assert the subproject is used instead of the parent project.
+	cp = ts.SpawnWithOpts(
+		e2e.OptArgs("refresh"),
+		e2e.OptWD(subprojectDir),
+	)
+	cp.Expect(subprojectDir)
+	cp.ExpectExitCode(0)
+
+	// If a project subdirectory does not contain an activestate.yaml file, assert the project that
+	// owns the subdirectory will be used.
+	nestedDir := filepath.Join(subprojectDir, "nested")
+	suite.Require().NoError(fileutils.Mkdir(nestedDir))
+	cp = ts.SpawnWithOpts(
+		e2e.OptArgs("refresh"),
+		e2e.OptWD(nestedDir),
+	)
+	cp.Expect(subprojectDir)
+	cp.ExpectExitCode(0)
+
+	// Change to an empty directory and assert the default project is used.
+	cp = ts.SpawnWithOpts(
+		e2e.OptArgs("refresh"),
+		e2e.OptWD(emptyDir),
+	)
+	cp.Expect(defaultDir)
+	cp.ExpectExitCode(0)
+
+	// If none of the above, assert an error.
+	cp = ts.Spawn("use", "reset", "-n")
+	cp.ExpectExitCode(0)
+
+	cp = ts.SpawnWithOpts(
+		e2e.OptArgs("refresh"),
+		e2e.OptWD(emptyDir),
+	)
+	cp.ExpectNotExitCode(0)
+}
+
 func TestShellIntegrationTestSuite(t *testing.T) {
 	suite.Run(t, new(ShellIntegrationTestSuite))
 }
