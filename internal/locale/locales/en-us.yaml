@@ -35,7 +35,7 @@ confirm_update_unlocked_version_prompt:
   other: "Are you sure you want to unlock the State Tool version from your project?"
 version_info:
   other: |
-    ActiveState CLI by ActiveState Software Inc.
+    ActiveState {{.Name}} by ActiveState Software Inc.
     License [NOTICE]{{.License}}[/RESET]
     Version [NOTICE]{{.Version}}[/RESET]
     Revision [NOTICE]{{.Revision}}[/RESET]
