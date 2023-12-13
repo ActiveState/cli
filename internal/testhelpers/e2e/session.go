@@ -371,7 +371,7 @@ func (s *Session) SpawnCmdWithOpts(exe string, optSetters ...SpawnOptSetter) *Sp
 	cmd := exec.Command(shell, args...)
 
 	cmd.Env = spawnOpts.Env
-
+	fmt.Println("Cmd env: ", cmd.Env)
 	if spawnOpts.Dir != "" {
 		cmd.Dir = spawnOpts.Dir
 	}
