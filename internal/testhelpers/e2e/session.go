@@ -187,10 +187,14 @@ func new(t *testing.T, retainDirs, updatePath bool, extraEnv ...string) *Session
 		"NO_COLOR=true",
 	}...)
 
+	testPath := "/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local:/usr/local/sbin:/usr/local/opt"
+	if runtime.GOOS == "windows" {
+		testPath = os.Getenv("PATH")
+	}
 	if updatePath {
 		// add bin path
 		// Remove release state tool installation from PATH
-		oldPath, _ := os.LookupEnv("PATH")
+		oldPath := testPath
 		newPath := fmt.Sprintf(
 			"PATH=%s%s%s",
 			dirs.Bin, string(os.PathListSeparator), oldPath,
@@ -200,7 +204,6 @@ func new(t *testing.T, retainDirs, updatePath bool, extraEnv ...string) *Session
 
 	if runtime.GOOS != "windows" {
 		env = append(env, "HOME="+dirs.HomeDir)
-		env = append(env, "PATH=/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local:/usr/local/sbin:/usr/local/opt")
 	}
 
 	err = prepareHomeDir(dirs.HomeDir)
@@ -371,7 +374,7 @@ func (s *Session) SpawnCmdWithOpts(exe string, optSetters ...SpawnOptSetter) *Sp
 	cmd := exec.Command(shell, args...)
 
 	cmd.Env = spawnOpts.Env
-	fmt.Println("Cmd env: ", cmd.Env)
+	fmt.Println("Cmd env:", cmd.Env)
 	if spawnOpts.Dir != "" {
 		cmd.Dir = spawnOpts.Dir
 	}
