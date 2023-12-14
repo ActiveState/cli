@@ -45,10 +45,10 @@ scripts:
     language: bash
     description: Generates all api clients
     value: |
-      $scripts.generate-api-client
-      $scripts.generate-secrets-client
-      $scripts.generate-headchef-client
-      $scripts.generate-inventory-client
+      $scripts.generate-api-client.path()
+      $scripts.generate-secrets-client.path()
+      $scripts.generate-headchef-client.path()
+      $scripts.generate-inventory-client.path()
   - name: generate-locale
     language: bash
     description: Detects new localisation calls and generates placeholder entries in en-us.yaml
@@ -70,7 +70,7 @@ scripts:
       export GOARCH=${1:-amd64}
       $constants.SET_ENV
 
-      $scripts.generate-payload
+      $scripts.generate-payload.path()
 
       echo "# Create update dir"
       mkdir -p ./build/update

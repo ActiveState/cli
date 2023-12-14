@@ -634,7 +634,7 @@ func (p *Project) parseURL() (projectURL, error) {
 
 func validateUUID(uuidStr string) error {
 	if ok := strfmt.Default.Validates("uuid", uuidStr); !ok {
-		return locale.NewError("invalid_uuid_val", "Invalid commit ID {{.V0}} in activestate.yaml.  You could replace it with 'latest'", uuidStr)
+		return locale.NewError("invalid_uuid_val", "Invalid commit ID {{.V0}} in activestate.yaml. Please remove it and run `[ACTIONABLE]state pull[/RESET]` to reset it", uuidStr)
 	}
 
 	var uuid strfmt.UUID
@@ -758,6 +758,10 @@ func (p *Project) SetBranch(branch string) error {
 }
 
 // GetProjectFilePath returns the path to the project activestate.yaml
+// It considers projects in the following order:
+// 1. Environment variable (e.g. `state shell` sets one)
+// 2. Working directory (i.e. walk up directory tree looking for activestate.yaml)
+// 3. Fall back on default project
 func GetProjectFilePath() (string, error) {
 	defer profile.Measure("GetProjectFilePath", time.Now())
 	lookup := []func() (string, error){
@@ -779,13 +783,21 @@ func GetProjectFilePath() (string, error) {
 }
 
 func getProjectFilePathFromEnv() (string, error) {
-	projectFilePath := os.Getenv(constants.ProjectEnvVarName)
+	var projectFilePath string
+
+	if activatedProjectDirPath := os.Getenv(constants.ActivatedStateEnvVarName); activatedProjectDirPath != "" {
+		projectFilePath = filepath.Join(activatedProjectDirPath, constants.ConfigFileName)
+	} else {
+		projectFilePath = os.Getenv(constants.ProjectEnvVarName)
+	}
+
 	if projectFilePath != "" {
 		if fileutils.FileExists(projectFilePath) {
 			return projectFilePath, nil
 		}
 		return "", &ErrorNoProjectFromEnv{locale.NewInputError("err_project_env_file_not_exist", "", projectFilePath)}
 	}
+
 	return "", nil
 }
 
@@ -953,7 +965,12 @@ func createCustom(params *CreateParams, lang language.Language) (*Project, error
 	}
 
 	if params.ProjectURL == "" {
-		u, err := url.Parse(fmt.Sprintf("https://%s/%s/%s", constants.PlatformURL, params.Owner, params.Project))
+		// Note: cannot use api.GetPlatformURL() due to import cycle.
+		host := constants.DefaultAPIHost
+		if hostOverride := os.Getenv(constants.APIHostEnvVarName); hostOverride != "" {
+			host = hostOverride
+		}
+		u, err := url.Parse(fmt.Sprintf("https://%s/%s/%s", host, params.Owner, params.Project))
 		if err != nil {
 			return nil, errs.Wrap(err, "url parse new project url failed")
 		}

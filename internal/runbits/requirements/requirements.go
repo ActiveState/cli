@@ -112,7 +112,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(
 	if r.Project.IsHeadless() {
 		return rationalize.ErrHeadless
 	}
-	out.Notice(locale.Tl("operating_message", "", r.Project.NamespaceString(), r.Project.Dir()))
+	out.Notice(locale.Tr("operating_message", r.Project.NamespaceString(), r.Project.Dir()))
 
 	if nsType != nil {
 		switch *nsType {
@@ -134,7 +134,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(
 
 	var validatePkg = operation == bpModel.OperationAdded && (ns.Type() == model.NamespacePackage || ns.Type() == model.NamespaceBundle)
 	if (ns == nil || !ns.IsValid()) && nsType != nil && (*nsType == model.NamespacePackage || *nsType == model.NamespaceBundle) {
-		pg = output.StartSpinner(out, locale.Tl("progress_pkg_nolang", "", requirementName), constants.TerminalAnimationInterval)
+		pg = output.StartSpinner(out, locale.Tr("progress_pkg_nolang", requirementName), constants.TerminalAnimationInterval)
 
 		supported, err := model.FetchSupportedLanguages(model.HostPlatform)
 		if err != nil {
@@ -167,7 +167,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(
 
 	origRequirementName := requirementName
 	if validatePkg {
-		pg = output.StartSpinner(out, locale.Tl("progress_search", "", requirementName), constants.TerminalAnimationInterval)
+		pg = output.StartSpinner(out, locale.Tr("progress_search", requirementName), constants.TerminalAnimationInterval)
 
 		normalized, err := model.FetchNormalizedName(*ns, requirementName)
 		if err != nil {

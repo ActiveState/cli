@@ -6,8 +6,8 @@ import (
 	"testing"
 
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -110,7 +110,7 @@ func TestInstallPathFromReference(t *testing.T) {
 	err = fileutils.Mkdir(binDir)
 	require.NoError(t, err)
 
-	err = fileutils.Touch(filepath.Join(binDir, constants.StateCmd+exeutils.Extension))
+	err = fileutils.Touch(filepath.Join(binDir, constants.StateCmd+osutils.ExeExtension))
 	require.NoError(t, err)
 
 	t.Setenv(constants.HomeEnvVarName, home)

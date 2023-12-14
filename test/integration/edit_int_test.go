@@ -92,10 +92,6 @@ func (suite *EditIntegrationTestSuite) TestEdit_NonInteractive() {
 
 func (suite *EditIntegrationTestSuite) TestEdit_UpdateCorrectPlatform() {
 	suite.OnlyRunForTags(tagsuite.Edit)
-	if runtime.GOOS == "windows" {
-		// https://www.pivotaltracker.com/story/show/174477457
-		suite.T().Skipf("Skipping on windows due to random failures")
-	}
 
 	ts, env := suite.setup()
 	defer ts.Close()

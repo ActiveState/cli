@@ -8,9 +8,9 @@ import (
 	"github.com/ActiveState/cli/internal/app"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/installation"
+	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/osutils/autostart"
 	"github.com/shirou/gopsutil/v3/process"
 )
@@ -21,7 +21,7 @@ const stateUpdateDialogCmd = "state-update-dialog"
 
 func DetectAndRemove(path string, cfg *config.Instance) error {
 	binDir := filepath.Join(path, installation.BinDirName)
-	trayExec := filepath.Join(binDir, stateTrayCmd+exeutils.Extension)
+	trayExec := filepath.Join(binDir, stateTrayCmd+osutils.ExeExtension)
 	if !fileutils.FileExists(trayExec) {
 		return nil // nothing to do
 	}
@@ -57,7 +57,7 @@ func DetectAndRemove(path string, cfg *config.Instance) error {
 
 	// Finally, remove state-tray and state-update-dialog executables.
 	for _, name := range []string{stateTrayCmd, stateUpdateDialogCmd} {
-		if exec := filepath.Join(binDir, name+exeutils.Extension); fileutils.FileExists(exec) {
+		if exec := filepath.Join(binDir, name+osutils.ExeExtension); fileutils.FileExists(exec) {
 			err = os.Remove(exec)
 			if err != nil {
 				return errs.Wrap(err, "Unable to remove %s", name)

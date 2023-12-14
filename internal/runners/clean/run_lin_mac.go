@@ -12,13 +12,13 @@ import (
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/legacytray"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/strutils"
 )
@@ -197,7 +197,7 @@ func cleanInstallDir(dir string, cfg *config.Instance) error {
 
 	var asFiles = []string{
 		installation.InstallDirMarker,
-		constants.StateInstallerCmd + exeutils.Extension,
+		constants.StateInstallerCmd + osutils.ExeExtension,
 	}
 
 	// Remove all of the state tool executables and finally the

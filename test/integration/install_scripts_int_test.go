@@ -86,27 +86,25 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 				argsWithActive = append(argsWithActive, "-c", cmd)
 			}
 
+			// Make the directory to install to.
 			appInstallDir := filepath.Join(ts.Dirs.Work, "app")
 			suite.NoError(fileutils.Mkdir(appInstallDir))
 
-			var cp *e2e.SpawnedCmd
-			if runtime.GOOS != "windows" {
-				cp = ts.SpawnCmdWithOpts(
-					"bash", e2e.OptArgs(argsWithActive...),
-					e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
-					e2e.OptAppendEnv(fmt.Sprintf("%s=%s", constants.AppInstallDirOverrideEnvVarName, appInstallDir)),
-					e2e.OptAppendEnv(fmt.Sprintf("%s=FOO", constants.OverrideSessionTokenEnvVarName)),
-				)
-			} else {
-				cp = ts.SpawnCmdWithOpts("powershell.exe", e2e.OptArgs(argsWithActive...),
-					e2e.OptAppendEnv("SHELL="),
-					e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
-					e2e.OptAppendEnv(fmt.Sprintf("%s=%s", constants.AppInstallDirOverrideEnvVarName, appInstallDir)),
-					e2e.OptAppendEnv(fmt.Sprintf("%s=FOO", constants.OverrideSessionTokenEnvVarName)),
-				)
+			// Perform the installation.
+			cmd := "bash"
+			opts := []e2e.SpawnOptSetter{
+				e2e.OptArgs(argsWithActive...),
+				e2e.OptAppendEnv(constants.DisableRuntime + "=false"),
+				e2e.OptAppendEnv(fmt.Sprintf("%s=%s", constants.AppInstallDirOverrideEnvVarName, appInstallDir)),
+				e2e.OptAppendEnv(fmt.Sprintf("%s=FOO", constants.OverrideSessionTokenEnvVarName)),
 			}
-
-			expectStateToolInstallation(cp)
+			if runtime.GOOS == "windows" {
+				cmd = "powershell.exe"
+				opts = append(opts, e2e.OptAppendEnv("SHELL="))
+			}
+			cp := ts.SpawnCmdWithOpts(cmd, opts...)
+			cp.Expect("Preparing Installer for State Tool Package Manager")
+			cp.Expect("Installation Complete", e2e.RuntimeSourcingTimeoutOpt)
 
 			if tt.Activate != "" || tt.ActivateByCommand != "" {
 				cp.Expect("Creating a Virtual Environment")
@@ -232,16 +230,11 @@ func scriptPath(t *testing.T, targetDir string) string {
 	return target
 }
 
-func expectStateToolInstallation(cp *e2e.SpawnedCmd) {
-	cp.Expect("Preparing Installer for State Tool Package Manager")
-	cp.Expect("Installation Complete", e2e.RuntimeSourcingTimeoutOpt)
-}
-
 // assertBinDirContents checks if given files are or are not in the bin directory
 func (suite *InstallScriptsIntegrationTestSuite) assertBinDirContents(dir string) {
 	binFiles := listFilesOnly(dir)
-	suite.Contains(binFiles, "state"+osutils.ExeExt)
-	suite.Contains(binFiles, "state-svc"+osutils.ExeExt)
+	suite.Contains(binFiles, "state"+osutils.ExeExtension)
+	suite.Contains(binFiles, "state-svc"+osutils.ExeExtension)
 }
 
 // listFilesOnly is a helper function for assertBinDirContents filtering a directory recursively for base filenames

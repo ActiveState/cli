@@ -17,6 +17,7 @@ import (
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runbits"
+	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 )
 
@@ -116,7 +117,7 @@ func (t *Tutorial) RunNewProject(params NewProjectParams) error {
 	t.outputer.Print(locale.Tt(
 		"tutorial_newproject_outro", map[string]interface{}{
 			"Dir":  dir,
-			"URL":  fmt.Sprintf("https://%s/%s/%s", constants.PlatformURL, t.auth.WhoAmI(), name),
+			"URL":  api.GetPlatformURL(fmt.Sprintf("%s/%s", t.auth.WhoAmI(), name)),
 			"Docs": constants.DocumentationURL,
 		}))
 
@@ -158,9 +159,10 @@ func (t *Tutorial) authFlow() error {
 		}
 	case signUpBrowser:
 		t.analytics.EventWithLabel(anaConsts.CatTutorial, "authentication-action", "sign-up-browser")
-		err := open.Run(constants.PlatformSignupURL)
+		signupURL := api.GetPlatformURL(constants.PlatformSignupPath).String()
+		err := open.Run(signupURL)
 		if err != nil {
-			return locale.WrapInputError(err, "err_tutorial_browser", "Could not open browser, please manually navigate to {{.V0}}.", constants.PlatformSignupURL)
+			return locale.WrapInputError(err, "err_tutorial_browser", "Could not open browser, please manually navigate to {{.V0}}.", signupURL)
 		}
 		t.outputer.Notice(locale.Tl("tutorial_signing_ready", "[NOTICE]Please sign in once you have finished signing up via your browser.[/RESET]"))
 		if err := runbits.Invoke(t.outputer, "auth"); err != nil {

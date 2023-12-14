@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/exeutils"
+	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/thoas/go-funk"
 
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -397,13 +397,13 @@ func (ed *EnvironmentDefinition) ExecutablePaths() (ExecutablePaths, error) {
 		bins = strings.Split(p, string(os.PathListSeparator))
 	}
 
-	exes, err := exeutils.Executables(bins)
+	exes, err := osutils.Executables(bins)
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not detect executables")
 	}
 
 	// Remove duplicate executables as per PATH and PATHEXT
-	exes, err = exeutils.UniqueExes(exes, os.Getenv("PATHEXT"))
+	exes, err = osutils.UniqueExes(exes, os.Getenv("PATHEXT"))
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not detect unique executables, make sure your PATH and PATHEXT environment variables are properly configured.")
 	}

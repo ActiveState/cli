@@ -13,6 +13,7 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
+	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	secretsapi "github.com/ActiveState/cli/pkg/platform/api/secrets"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -20,7 +21,7 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// OpenURI aliases to exeutils.OpenURI which opens the given URI in your browser. This is being exposed so that it can be
+// OpenURI aliases to osutils.OpenURI which opens the given URI in your browser. This is being exposed so that it can be
 // overwritten in tests
 var OpenURI = osutils.OpenURI
 
@@ -222,10 +223,7 @@ func authenticateWithBrowser(out output.Outputer, auth *authentication.Auth, pro
 			return errs.Wrap(err, "Verification URL is not valid")
 		}
 
-		signupURL, err := url.Parse(constants.PlatformSignupURL)
-		if err != nil {
-			return errs.Wrap(err, "constants.PlatformSignupURL is not valid")
-		}
+		signupURL := api.GetPlatformURL(constants.PlatformSignupPath)
 		query := signupURL.Query()
 		query.Add("nextRoute", parsedURL.RequestURI())
 		signupURL.RawQuery = query.Encode()

@@ -158,7 +158,7 @@ func (suite *PrepareIntegrationTestSuite) TestResetExecutors() {
 	err = os.Remove(filepath.Join(targetDir, constants.LocalRuntimeEnvironmentDirectory, constants.RuntimeInstallationCompleteMarker))
 	suite.Assert().NoError(err, "removal of complete marker should have worked")
 
-	suite.FileExists(filepath.Join(globalExecDir, "python3"+osutils.ExeExt))
+	suite.FileExists(filepath.Join(globalExecDir, "python3"+osutils.ExeExtension))
 	err = os.RemoveAll(projectExecDir)
 
 	cp = ts.Spawn("activate")

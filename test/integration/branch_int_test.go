@@ -26,6 +26,13 @@ func (suite *BranchIntegrationTestSuite) TestBranch_List() {
 	cp := ts.SpawnWithOpts(e2e.OptArgs("branch"), e2e.OptTermTest(termtest.OptVerboseLogger()))
 	// Sometimes there's a space before the line break, unsure exactly why, but hence the regex
 	cp.ExpectRe(`main \(Current\)\s?\n  ├─ firstbranch\s?\n  │  └─ firstbranchchild\s?\n  │     └─ childoffirstbranchchild\s?\n  ├─ secondbranch\s?\n  └─ thirdbranch`, termtest.OptExpectTimeout(5*time.Second))
+	cp.Expect("To switch to another branch,")
+	cp.ExpectExitCode(0)
+
+	ts.PrepareProject("ActiveState-CLI/small-python", "")
+	cp = ts.Spawn("branch")
+	cp.Expect("main")
+	suite.Assert().NotContains(cp.Snapshot(), "To switch to another branch,") // only shows when multiple branches are listed
 	cp.ExpectExitCode(0)
 }
 

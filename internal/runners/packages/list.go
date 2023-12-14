@@ -44,7 +44,7 @@ func (l *List) Run(params ListRunParams, nstype model.NamespaceType) error {
 	logging.Debug("ExecuteList")
 
 	if l.project != nil && params.Project == "" {
-		l.out.Notice(locale.Tl("operating_message", "", l.project.NamespaceString(), l.project.Dir()))
+		l.out.Notice(locale.Tr("operating_message", l.project.NamespaceString(), l.project.Dir()))
 	}
 
 	var commit *strfmt.UUID
@@ -162,7 +162,7 @@ func newFilteredRequirementsTable(requirements []*gqlModel.Requirement, filter s
 
 	rows := make([]packageRow, 0, len(requirements))
 	for _, req := range requirements {
-		if !strings.Contains(req.Requirement, filter) {
+		if !strings.Contains(strings.ToLower(req.Requirement), strings.ToLower(filter)) {
 			continue
 		}
 

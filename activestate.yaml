@@ -46,14 +46,6 @@ constants:
     if: ne .OS.Name "Windows"
     value: .sh
 scripts:
-  - name: install-deps
-    language: bash
-    if: ne .Shell "cmd"
-    value: |
-      if ! type "gozip" &> /dev/null; then
-        echo "gozip was not found on your PATH, installing .."
-        go install github.com/ActiveState/gozip/cmd/gozip@e455986
-      fi
   - name: install-deps-dev
     language: bash
     if: ne .Shell "cmd"
@@ -295,7 +287,7 @@ scripts:
     language: bash
     description: Builds the State Tool and runs it with `--help`
     value: |
-      $scripts.build
+      $scripts.build.path()
       build/state --help
   - name: debug
     language: bash
@@ -409,8 +401,7 @@ events:
   - name: activate
     if: ne .Shell "cmd"
     value: |
-      $scripts.install-deps-dev
-      $scripts.install-deps
+      $scripts.install-deps-dev.path()
   - name: file-changed
     scope: ["internal/locale/locales"]
     value: build
