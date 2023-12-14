@@ -54,10 +54,12 @@ func NewAddTagParamsWithHTTPClient(client *http.Client) *AddTagParams {
 	}
 }
 
-/* AddTagParams contains all the parameters to send to the API endpoint
-   for the add tag operation.
+/*
+AddTagParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the add tag operation.
+
+	Typically these are written to a http.Request.
 */
 type AddTagParams struct {
 

@@ -17,7 +17,7 @@ import (
 
 // SolverRemediation Solver Remediation
 //
-// An action that a user can take to attempt to resolve a solver error
+// # An action that a user can take to attempt to resolve a solver error
 //
 // swagger:model solverRemediation
 type SolverRemediation struct {

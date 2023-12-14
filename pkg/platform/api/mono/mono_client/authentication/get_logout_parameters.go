@@ -52,10 +52,12 @@ func NewGetLogoutParamsWithHTTPClient(client *http.Client) *GetLogoutParams {
 	}
 }
 
-/* GetLogoutParams contains all the parameters to send to the API endpoint
-   for the get logout operation.
+/*
+GetLogoutParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the get logout operation.
+
+	Typically these are written to a http.Request.
 */
 type GetLogoutParams struct {
 	timeout    time.Duration

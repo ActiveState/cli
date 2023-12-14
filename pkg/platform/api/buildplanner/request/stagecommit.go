@@ -65,6 +65,6 @@ mutation ($organization: String!, $project: String!, $parentCommit: ID, $descrip
 `
 }
 
-func (b *buildPlanByStageCommit) Vars() (map[string]interface{}, error) {
-	return b.vars, nil
+func (b *buildPlanByStageCommit) Vars() map[string]interface{} {
+	return b.vars
 }

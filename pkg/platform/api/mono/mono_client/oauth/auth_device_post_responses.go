@@ -45,7 +45,8 @@ func NewAuthDevicePostOK() *AuthDevicePostOK {
 	return &AuthDevicePostOK{}
 }
 
-/* AuthDevicePostOK describes a response with status code 200, with default header values.
+/*
+AuthDevicePostOK describes a response with status code 200, with default header values.
 
 Success
 */
@@ -77,7 +78,8 @@ func NewAuthDevicePostInternalServerError() *AuthDevicePostInternalServerError {
 	return &AuthDevicePostInternalServerError{}
 }
 
-/* AuthDevicePostInternalServerError describes a response with status code 500, with default header values.
+/*
+AuthDevicePostInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */

@@ -52,10 +52,12 @@ func NewMergeBranchParamsWithHTTPClient(client *http.Client) *MergeBranchParams 
 	}
 }
 
-/* MergeBranchParams contains all the parameters to send to the API endpoint
-   for the merge branch operation.
+/*
+MergeBranchParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the merge branch operation.
+
+	Typically these are written to a http.Request.
 */
 type MergeBranchParams struct {
 

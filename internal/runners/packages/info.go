@@ -4,12 +4,10 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
@@ -18,9 +16,8 @@ import (
 
 // InfoRunParams tracks the info required for running Info.
 type InfoRunParams struct {
-	Package   captain.PackageValue
-	Timestamp captain.TimeValue
-	Language  string
+	Package  PackageVersion
+	Language string
 }
 
 // Info manages the information execution context.
@@ -41,24 +38,15 @@ func NewInfo(prime primeable) *Info {
 func (i *Info) Run(params InfoRunParams, nstype model.NamespaceType) error {
 	logging.Debug("ExecuteInfo")
 
-	var nsTypeV *model.NamespaceType
-	var ns *model.Namespace
+	language, err := targetedLanguage(params.Language, i.proj)
+	if err != nil {
 
-	if params.Package.Namespace != "" {
-		ns = ptr.To(model.NewRawNamespace(params.Package.Namespace))
-	} else {
-		nsTypeV = &nstype
+		return locale.WrapError(err, fmt.Sprintf("%s_err_cannot_obtain_language", nstype))
 	}
 
-	if nsTypeV != nil {
-		language, err := targetedLanguage(params.Language, i.proj)
-		if err != nil {
-			return locale.WrapError(err, fmt.Sprintf("%s_err_cannot_obtain_language", *nsTypeV))
-		}
-		ns = ptr.To(model.NewNamespacePkgOrBundle(language, nstype))
-	}
+	ns := model.NewNamespacePkgOrBundle(language, nstype)
 
-	packages, err := model.SearchIngredientsStrict(ns.String(), params.Package.Name, true, true, params.Timestamp.Time)
+	packages, err := model.SearchIngredientsStrict(ns, params.Package.Name(), true, true)
 	if err != nil {
 		return locale.WrapError(err, "package_err_cannot_obtain_search_results")
 	}
@@ -74,10 +62,10 @@ func (i *Info) Run(params InfoRunParams, nstype model.NamespaceType) error {
 	pkg := packages[0]
 	ingredientVersion := pkg.LatestVersion
 
-	if params.Package.Version != "" {
-		ingredientVersion, err = specificIngredientVersion(pkg.Ingredient.IngredientID, params.Package.Version)
+	if params.Package.Version() != "" {
+		ingredientVersion, err = specificIngredientVersion(pkg.Ingredient.IngredientID, params.Package.Version())
 		if err != nil {
-			return locale.WrapInputError(err, "info_err_version_not_found", "Could not find version {{.V0}} for package {{.V1}}", params.Package.Version, params.Package.Name)
+			return locale.WrapInputError(err, "info_err_version_not_found", "Could not find version {{.V0}} for package {{.V1}}", params.Package.Version(), params.Package.Name())
 		}
 	}
 
@@ -86,12 +74,12 @@ func (i *Info) Run(params InfoRunParams, nstype model.NamespaceType) error {
 		return locale.WrapError(err, "package_err_cannot_obtain_authors_info", "Cannot obtain authors info")
 	}
 
-	i.out.Print(&infoOutput{i.out, structuredOutput{
-		pkg.Ingredient,
-		ingredientVersion,
-		authors,
-		pkg.Versions,
-	}})
+	res := newInfoResult(pkg.Ingredient, ingredientVersion, authors, pkg.Versions)
+	i.out.Print(&infoOutput{
+		i.out,
+		res,
+		whatsNextMessages(res.name, res.Versions),
+	})
 
 	return nil
 }
@@ -115,8 +103,8 @@ func specificIngredientVersion(ingredientID *strfmt.UUID, version string) (*inve
 type PkgDetailsTable struct {
 	Authors   []string `locale:"package_authors,Authors" json:"authors"`
 	Website   string   `locale:"package_website,Website" json:"website"`
-	copyright string   // `locale:"package_copyright,Copyright" json:"copyright"`
-	license   string   // `locale:"package_license,License" json:"license"`
+	copyright string   //`locale:"package_copyright,Copyright" json:"copyright"`
+	license   string   //`locale:"package_license,License" json:"license"`
 }
 
 type infoResult struct {
@@ -179,21 +167,14 @@ func newInfoResult(ingredient *inventory_models.Ingredient, ingredientVersion *i
 	return &res
 }
 
-type structuredOutput struct {
-	Ingredient        *inventory_models.Ingredient                         `json:"ingredient"`
-	IngredientVersion *inventory_models.IngredientVersion                  `json:"ingredient_version"`
-	Authors           model.Authors                                        `json:"authors"`
-	Versions          []*inventory_models.SearchIngredientsResponseVersion `json:"versions"`
-}
-
 type infoOutput struct {
-	out output.Outputer
-	so  structuredOutput
+	out  output.Outputer
+	res  *infoResult
+	next []string
 }
 
-func (o *infoOutput) MarshalOutput(_ output.Format) interface{} {
-	res := newInfoResult(o.so.Ingredient, o.so.IngredientVersion, o.so.Authors, o.so.Versions)
-	print := o.out.Print
+func (o *infoOutput) MarshalOutput(format output.Format) interface{} {
+	print, res := o.out.Print, o.res
 	{
 		print(output.Title(
 			locale.Tl(
@@ -224,14 +205,14 @@ func (o *infoOutput) MarshalOutput(_ output.Format) interface{} {
 
 	{
 		print(output.Title(locale.Tl("packages_info_next_header", "What's next?")))
-		print(whatsNextMessages(res.name, res.Versions))
+		print(o.next)
 	}
 
 	return output.Suppress
 }
 
-func (o *infoOutput) MarshalStructured(_ output.Format) interface{} {
-	return o.so
+func (o *infoOutput) MarshalStructured(format output.Format) interface{} {
+	return o.res
 }
 
 func whatsNextMessages(name string, versions []string) []string {

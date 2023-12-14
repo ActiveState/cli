@@ -1,7 +1,6 @@
 package request
 
-type VersionRequest struct {
-}
+type VersionRequest struct{}
 
 func NewVersionRequest() *VersionRequest {
 	return &VersionRequest{}
@@ -21,6 +20,6 @@ func (v *VersionRequest) Query() string {
     }`
 }
 
-func (v *VersionRequest) Vars() (map[string]interface{}, error) {
-	return nil, nil
+func (v *VersionRequest) Vars() map[string]interface{} {
+	return nil
 }

@@ -38,9 +38,9 @@ type ClientService interface {
 }
 
 /*
-  GetInfo tests method for developer testing
+GetInfo tests method for developer testing
 
-  Helpful for testing JWT operation
+Helpful for testing JWT operation
 */
 func (a *Client) GetInfo(params *GetInfoParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInfoOK, error) {
 	// TODO: Validate the params before sending
@@ -79,9 +79,9 @@ func (a *Client) GetInfo(params *GetInfoParams, authInfo runtime.ClientAuthInfoW
 }
 
 /*
-  Usage reports platform usage statistics
+Usage reports platform usage statistics
 
-  Active users by date range
+Active users by date range
 */
 func (a *Client) Usage(params *UsageParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UsageOK, error) {
 	// TODO: Validate the params before sending

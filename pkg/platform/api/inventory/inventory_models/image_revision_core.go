@@ -15,7 +15,7 @@ import (
 
 // ImageRevisionCore Image Revision Core
 //
-// The properties of an image revision needed to create a new one
+// # The properties of an image revision needed to create a new one
 //
 // swagger:model imageRevisionCore
 type ImageRevisionCore struct {

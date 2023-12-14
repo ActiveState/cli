@@ -52,10 +52,12 @@ func NewGetOrganizationTierParamsWithHTTPClient(client *http.Client) *GetOrganiz
 	}
 }
 
-/* GetOrganizationTierParams contains all the parameters to send to the API endpoint
-   for the get organization tier operation.
+/*
+GetOrganizationTierParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the get organization tier operation.
+
+	Typically these are written to a http.Request.
 */
 type GetOrganizationTierParams struct {
 

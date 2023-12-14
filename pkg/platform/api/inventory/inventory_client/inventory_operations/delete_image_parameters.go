@@ -52,10 +52,12 @@ func NewDeleteImageParamsWithHTTPClient(client *http.Client) *DeleteImageParams 
 	}
 }
 
-/* DeleteImageParams contains all the parameters to send to the API endpoint
-   for the delete image operation.
+/*
+DeleteImageParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the delete image operation.
+
+	Typically these are written to a http.Request.
 */
 type DeleteImageParams struct {
 

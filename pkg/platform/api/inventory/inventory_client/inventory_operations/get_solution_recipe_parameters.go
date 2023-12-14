@@ -52,10 +52,12 @@ func NewGetSolutionRecipeParamsWithHTTPClient(client *http.Client) *GetSolutionR
 	}
 }
 
-/* GetSolutionRecipeParams contains all the parameters to send to the API endpoint
-   for the get solution recipe operation.
+/*
+GetSolutionRecipeParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the get solution recipe operation.
+
+	Typically these are written to a http.Request.
 */
 type GetSolutionRecipeParams struct {
 

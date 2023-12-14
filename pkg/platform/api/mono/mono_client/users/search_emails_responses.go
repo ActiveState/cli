@@ -53,7 +53,8 @@ func NewSearchEmailsOK() *SearchEmailsOK {
 	return &SearchEmailsOK{}
 }
 
-/* SearchEmailsOK describes a response with status code 200, with default header values.
+/*
+SearchEmailsOK describes a response with status code 200, with default header values.
 
 Search for users matching the given search string
 */
@@ -83,7 +84,8 @@ func NewSearchEmailsForbidden() *SearchEmailsForbidden {
 	return &SearchEmailsForbidden{}
 }
 
-/* SearchEmailsForbidden describes a response with status code 403, with default header values.
+/*
+SearchEmailsForbidden describes a response with status code 403, with default header values.
 
 Forbidden
 */
@@ -115,7 +117,8 @@ func NewSearchEmailsInternalServerError() *SearchEmailsInternalServerError {
 	return &SearchEmailsInternalServerError{}
 }
 
-/* SearchEmailsInternalServerError describes a response with status code 500, with default header values.
+/*
+SearchEmailsInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */
@@ -142,7 +145,8 @@ func (o *SearchEmailsInternalServerError) readResponse(response runtime.ClientRe
 	return nil
 }
 
-/*SearchEmailsBody search emails body
+/*
+SearchEmailsBody search emails body
 swagger:model SearchEmailsBody
 */
 type SearchEmailsBody struct {

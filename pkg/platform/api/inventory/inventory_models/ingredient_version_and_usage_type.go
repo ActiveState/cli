@@ -15,7 +15,7 @@ import (
 
 // IngredientVersionAndUsageType Ingredient, Version, and Usage Type
 //
-// An ingredient, its version, and the way the version uses a particular ingredient option set
+// # An ingredient, its version, and the way the version uses a particular ingredient option set
 //
 // swagger:model ingredientVersionAndUsageType
 type IngredientVersionAndUsageType struct {

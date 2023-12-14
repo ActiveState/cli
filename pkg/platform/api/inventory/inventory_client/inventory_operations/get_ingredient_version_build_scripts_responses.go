@@ -46,7 +46,8 @@ func NewGetIngredientVersionBuildScriptsOK() *GetIngredientVersionBuildScriptsOK
 	return &GetIngredientVersionBuildScriptsOK{}
 }
 
-/* GetIngredientVersionBuildScriptsOK describes a response with status code 200, with default header values.
+/*
+GetIngredientVersionBuildScriptsOK describes a response with status code 200, with default header values.
 
 A paginated list of build scripts
 */
@@ -80,7 +81,8 @@ func NewGetIngredientVersionBuildScriptsDefault(code int) *GetIngredientVersionB
 	}
 }
 
-/* GetIngredientVersionBuildScriptsDefault describes a response with status code -1, with default header values.
+/*
+GetIngredientVersionBuildScriptsDefault describes a response with status code -1, with default header values.
 
 generic error response
 */

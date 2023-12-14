@@ -52,10 +52,12 @@ func NewGetInvitationsByUserParamsWithHTTPClient(client *http.Client) *GetInvita
 	}
 }
 
-/* GetInvitationsByUserParams contains all the parameters to send to the API endpoint
-   for the get invitations by user operation.
+/*
+GetInvitationsByUserParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the get invitations by user operation.
+
+	Typically these are written to a http.Request.
 */
 type GetInvitationsByUserParams struct {
 	timeout    time.Duration

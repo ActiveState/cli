@@ -52,10 +52,12 @@ func NewMergeCommitsParamsWithHTTPClient(client *http.Client) *MergeCommitsParam
 	}
 }
 
-/* MergeCommitsParams contains all the parameters to send to the API endpoint
-   for the merge commits operation.
+/*
+MergeCommitsParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the merge commits operation.
+
+	Typically these are written to a http.Request.
 */
 type MergeCommitsParams struct {
 

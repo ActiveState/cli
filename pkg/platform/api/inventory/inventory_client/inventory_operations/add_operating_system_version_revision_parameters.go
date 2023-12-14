@@ -54,10 +54,12 @@ func NewAddOperatingSystemVersionRevisionParamsWithHTTPClient(client *http.Clien
 	}
 }
 
-/* AddOperatingSystemVersionRevisionParams contains all the parameters to send to the API endpoint
-   for the add operating system version revision operation.
+/*
+AddOperatingSystemVersionRevisionParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the add operating system version revision operation.
+
+	Typically these are written to a http.Request.
 */
 type AddOperatingSystemVersionRevisionParams struct {
 

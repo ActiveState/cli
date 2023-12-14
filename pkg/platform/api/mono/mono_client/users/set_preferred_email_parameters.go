@@ -52,10 +52,12 @@ func NewSetPreferredEmailParamsWithHTTPClient(client *http.Client) *SetPreferred
 	}
 }
 
-/* SetPreferredEmailParams contains all the parameters to send to the API endpoint
-   for the set preferred email operation.
+/*
+SetPreferredEmailParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the set preferred email operation.
+
+	Typically these are written to a http.Request.
 */
 type SetPreferredEmailParams struct {
 

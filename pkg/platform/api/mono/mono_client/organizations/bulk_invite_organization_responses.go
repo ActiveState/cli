@@ -63,7 +63,8 @@ func NewBulkInviteOrganizationOK() *BulkInviteOrganizationOK {
 	return &BulkInviteOrganizationOK{}
 }
 
-/* BulkInviteOrganizationOK describes a response with status code 200, with default header values.
+/*
+BulkInviteOrganizationOK describes a response with status code 200, with default header values.
 
 Success
 */
@@ -93,7 +94,8 @@ func NewBulkInviteOrganizationBadRequest() *BulkInviteOrganizationBadRequest {
 	return &BulkInviteOrganizationBadRequest{}
 }
 
-/* BulkInviteOrganizationBadRequest describes a response with status code 400, with default header values.
+/*
+BulkInviteOrganizationBadRequest describes a response with status code 400, with default header values.
 
 Bad Request
 */
@@ -125,7 +127,8 @@ func NewBulkInviteOrganizationUnauthorized() *BulkInviteOrganizationUnauthorized
 	return &BulkInviteOrganizationUnauthorized{}
 }
 
-/* BulkInviteOrganizationUnauthorized describes a response with status code 401, with default header values.
+/*
+BulkInviteOrganizationUnauthorized describes a response with status code 401, with default header values.
 
 Unauthorized
 */
@@ -146,7 +149,8 @@ func NewBulkInviteOrganizationForbidden() *BulkInviteOrganizationForbidden {
 	return &BulkInviteOrganizationForbidden{}
 }
 
-/* BulkInviteOrganizationForbidden describes a response with status code 403, with default header values.
+/*
+BulkInviteOrganizationForbidden describes a response with status code 403, with default header values.
 
 Forbidden
 */
@@ -178,7 +182,8 @@ func NewBulkInviteOrganizationInternalServerError() *BulkInviteOrganizationInter
 	return &BulkInviteOrganizationInternalServerError{}
 }
 
-/* BulkInviteOrganizationInternalServerError describes a response with status code 500, with default header values.
+/*
+BulkInviteOrganizationInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */

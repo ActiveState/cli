@@ -74,6 +74,6 @@ mutation ($organization: String!, $project: String!, $commitId: String!, $target
 }`
 }
 
-func (r *revertCommit) Vars() (map[string]interface{}, error) {
-	return r.vars, nil
+func (r *revertCommit) Vars() map[string]interface{} {
+	return r.vars
 }

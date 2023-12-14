@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/go-openapi/strfmt"
 
@@ -26,8 +25,6 @@ func (e ErrNoMatchingPlatform) Error() string {
 	return "no matching platform"
 }
 
-type ErrSearch404 struct{ *locale.LocalizedError }
-
 // IngredientAndVersion is a sane version of whatever the hell it is go-swagger thinks it's doing
 type IngredientAndVersion struct {
 	*inventory_models.SearchIngredientsResponseItem
@@ -44,14 +41,14 @@ var platformCache []*Platform
 
 // SearchIngredients will return all ingredients+ingredientVersions that fuzzily
 // match the ingredient name.
-func SearchIngredients(namespace string, name string, includeVersions bool, ts *time.Time) ([]*IngredientAndVersion, error) {
-	return searchIngredientsNamespace(namespace, name, includeVersions, false, ts)
+func SearchIngredients(namespace Namespace, name string, includeVersions bool) ([]*IngredientAndVersion, error) {
+	return searchIngredientsNamespace(namespace, name, includeVersions, false)
 }
 
 // SearchIngredientsStrict will return all ingredients+ingredientVersions that
 // strictly match the ingredient name.
-func SearchIngredientsStrict(namespace string, name string, caseSensitive bool, includeVersions bool, ts *time.Time) ([]*IngredientAndVersion, error) {
-	results, err := searchIngredientsNamespace(namespace, name, includeVersions, true, ts)
+func SearchIngredientsStrict(namespace Namespace, name string, caseSensitive bool, includeVersions bool) ([]*IngredientAndVersion, error) {
+	results, err := searchIngredientsNamespace(namespace, name, includeVersions, true)
 	if err != nil {
 		return nil, err
 	}
@@ -108,27 +105,23 @@ type ErrTooManyMatches struct {
 	Query string
 }
 
-func searchIngredientsNamespace(ns string, name string, includeVersions bool, exactOnly bool, ts *time.Time) ([]*IngredientAndVersion, error) {
+func searchIngredientsNamespace(ns Namespace, name string, includeVersions bool, exactOnly bool) ([]*IngredientAndVersion, error) {
 	limit := int64(100)
 	offset := int64(0)
 
 	client := inventory.Get()
 
+	namespace := ns.String()
 	params := inventory_operations.NewSearchIngredientsParams()
 	params.SetQ(&name)
 	if exactOnly {
 		params.SetExactOnly(&exactOnly)
 	}
-	if ns != "" {
-		params.SetNamespaces(&ns)
+	if ns.Type() != NamespaceBlank {
+		params.SetNamespaces(&namespace)
 	}
 	params.SetLimit(&limit)
 	params.SetHTTPClient(api.NewHTTPClient())
-
-	if ts != nil {
-		dt := strfmt.DateTime(*ts)
-		params.SetStateAt(&dt)
-	}
 
 	var ingredients []*IngredientAndVersion
 	var entries []*inventory_models.SearchIngredientsResponseItem
@@ -142,11 +135,7 @@ func searchIngredientsNamespace(ns string, name string, includeVersions bool, ex
 		results, err := client.SearchIngredients(params, authentication.ClientAuth())
 		if err != nil {
 			if sidErr, ok := err.(*inventory_operations.SearchIngredientsDefault); ok {
-				errv := locale.NewError(*sidErr.Payload.Message)
-				if sidErr.Code() == 404 {
-					return nil, &ErrSearch404{errv}
-				}
-				return nil, errv
+				return nil, locale.NewError(*sidErr.Payload.Message)
 			}
 			return nil, errs.Wrap(err, "SearchIngredients failed")
 		}
@@ -412,14 +401,14 @@ func FetchIngredientVersions(ingredientID *strfmt.UUID) ([]*inventory_models.Ing
 }
 
 // FetchLatestTimeStamp fetches the latest timestamp from the inventory service.
-func FetchLatestTimeStamp() (time.Time, error) {
+func FetchLatestTimeStamp() (*strfmt.DateTime, error) {
 	client := inventory.Get()
 	result, err := client.GetLatestTimestamp(inventory_operations.NewGetLatestTimestampParams())
 	if err != nil {
-		return time.Now(), errs.Wrap(err, "GetLatestTimestamp failed")
+		return nil, errs.Wrap(err, "GetLatestTimestamp failed")
 	}
 
-	return time.Time(*result.Payload.Timestamp), nil
+	return result.Payload.Timestamp, nil
 }
 
 func FetchNormalizedName(namespace Namespace, name string) (string, error) {

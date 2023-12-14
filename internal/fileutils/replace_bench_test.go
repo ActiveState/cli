@@ -40,7 +40,7 @@ func BenchmarkRead(b *testing.B) {
 	newPath := "def/ghi"
 	byts := setup(oldPath, newPath, "/bin/python.sh", true)
 
-	testFile := TempFileUnsafe("", "")
+	testFile := TempFileUnsafe()
 	_, err := testFile.Write(byts)
 	if err != nil {
 		b.Errorf("failed to write test file: %v", err)
@@ -138,7 +138,7 @@ func BenchmarkWrite(b *testing.B) {
 	b.ResetTimer()
 
 	for n := 0; n < b.N; n++ {
-		f := TempFileUnsafe("", "")
+		f := TempFileUnsafe()
 		defer func() {
 			f.Close()
 			os.Remove(f.Name())

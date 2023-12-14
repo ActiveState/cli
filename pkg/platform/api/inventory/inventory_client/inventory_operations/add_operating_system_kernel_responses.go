@@ -52,7 +52,8 @@ func NewAddOperatingSystemKernelOK() *AddOperatingSystemKernelOK {
 	return &AddOperatingSystemKernelOK{}
 }
 
-/* AddOperatingSystemKernelOK describes a response with status code 200, with default header values.
+/*
+AddOperatingSystemKernelOK describes a response with status code 200, with default header values.
 
 The kernel added to the operating system
 */
@@ -84,7 +85,8 @@ func NewAddOperatingSystemKernelBadRequest() *AddOperatingSystemKernelBadRequest
 	return &AddOperatingSystemKernelBadRequest{}
 }
 
-/* AddOperatingSystemKernelBadRequest describes a response with status code 400, with default header values.
+/*
+AddOperatingSystemKernelBadRequest describes a response with status code 400, with default header values.
 
 If the kernel ID doesn't exist
 */
@@ -118,7 +120,8 @@ func NewAddOperatingSystemKernelDefault(code int) *AddOperatingSystemKernelDefau
 	}
 }
 
-/* AddOperatingSystemKernelDefault describes a response with status code -1, with default header values.
+/*
+AddOperatingSystemKernelDefault describes a response with status code -1, with default header values.
 
 generic error response
 */

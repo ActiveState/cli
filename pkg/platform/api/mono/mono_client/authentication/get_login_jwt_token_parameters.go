@@ -52,10 +52,12 @@ func NewGetLoginJwtTokenParamsWithHTTPClient(client *http.Client) *GetLoginJwtTo
 	}
 }
 
-/* GetLoginJwtTokenParams contains all the parameters to send to the API endpoint
-   for the get login jwt token operation.
+/*
+GetLoginJwtTokenParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the get login jwt token operation.
+
+	Typically these are written to a http.Request.
 */
 type GetLoginJwtTokenParams struct {
 

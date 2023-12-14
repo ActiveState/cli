@@ -17,7 +17,7 @@ import (
 
 // BuildScriptPagedList Build Script Paged List
 //
-// A paginated list of build scripts
+// # A paginated list of build scripts
 //
 // swagger:model buildScriptPagedList
 type BuildScriptPagedList struct {

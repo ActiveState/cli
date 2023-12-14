@@ -52,7 +52,8 @@ func NewAddPlatformCreated() *AddPlatformCreated {
 	return &AddPlatformCreated{}
 }
 
-/* AddPlatformCreated describes a response with status code 201, with default header values.
+/*
+AddPlatformCreated describes a response with status code 201, with default header values.
 
 The added platform
 */
@@ -84,7 +85,8 @@ func NewAddPlatformBadRequest() *AddPlatformBadRequest {
 	return &AddPlatformBadRequest{}
 }
 
-/* AddPlatformBadRequest describes a response with status code 400, with default header values.
+/*
+AddPlatformBadRequest describes a response with status code 400, with default header values.
 
 If the platform is invalid
 */
@@ -118,7 +120,8 @@ func NewAddPlatformDefault(code int) *AddPlatformDefault {
 	}
 }
 
-/* AddPlatformDefault describes a response with status code -1, with default header values.
+/*
+AddPlatformDefault describes a response with status code -1, with default header values.
 
 If there is an error processing the request
 */

@@ -54,10 +54,12 @@ func NewAddBuildScriptParamsWithHTTPClient(client *http.Client) *AddBuildScriptP
 	}
 }
 
-/* AddBuildScriptParams contains all the parameters to send to the API endpoint
-   for the add build script operation.
+/*
+AddBuildScriptParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the add build script operation.
+
+	Typically these are written to a http.Request.
 */
 type AddBuildScriptParams struct {
 

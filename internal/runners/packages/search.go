@@ -5,7 +5,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -17,10 +16,9 @@ import (
 
 // SearchRunParams tracks the info required for running search.
 type SearchRunParams struct {
-	Language   string
-	ExactTerm  bool
-	Ingredient captain.PackageValueNoVersion
-	Timestamp  captain.TimeValue
+	Language  string
+	ExactTerm bool
+	Name      string
 }
 
 // Search manages the searching execution context.
@@ -41,37 +39,30 @@ func NewSearch(prime primeable) *Search {
 func (s *Search) Run(params SearchRunParams, nstype model.NamespaceType) error {
 	logging.Debug("ExecuteSearch")
 
-	var ns model.Namespace
-	if params.Ingredient.Namespace == "" {
-		language, err := targetedLanguage(params.Language, s.proj)
-		if err != nil {
-			return locale.WrapError(err, fmt.Sprintf("%s_err_cannot_obtain_language", nstype))
-		}
-
-		ns = model.NewNamespacePkgOrBundle(language, nstype)
-	} else {
-		ns = model.NewRawNamespace(params.Ingredient.Namespace)
+	language, err := targetedLanguage(params.Language, s.proj)
+	if err != nil {
+		return locale.WrapError(err, fmt.Sprintf("%s_err_cannot_obtain_language", nstype))
 	}
 
-	var err error
+	ns := model.NewNamespacePkgOrBundle(language, nstype)
+
 	var packages []*model.IngredientAndVersion
 	if params.ExactTerm {
-		packages, err = model.SearchIngredientsStrict(ns.String(), params.Ingredient.Name, true, true, params.Timestamp.Time)
+		packages, err = model.SearchIngredientsStrict(ns, params.Name, true, true)
 	} else {
-		packages, err = model.SearchIngredients(ns.String(), params.Ingredient.Name, true, params.Timestamp.Time)
+		packages, err = model.SearchIngredients(ns, params.Name, true)
 	}
 	if err != nil {
 		return locale.WrapError(err, "package_err_cannot_obtain_search_results")
 	}
 	if len(packages) == 0 {
 		return errs.AddTips(
-			locale.NewInputError("err_search_no_"+ns.Type().String(), "", params.Ingredient.Name),
+			locale.NewInputError("err_search_no_"+ns.Type().String(), "", params.Name),
 			locale.Tl("search_try_term", "Try a different search term"),
 			locale.Tl("search_request_"+ns.Type().String(), ""),
 		)
 	}
-
-	s.out.Print(output.Prepare(formatSearchResults(packages, params.Ingredient.Namespace != ""), packages))
+	s.out.Print(formatSearchResults(packages))
 
 	return nil
 }
@@ -150,7 +141,7 @@ type searchPackageRow struct {
 
 type searchOutput []searchPackageRow
 
-func formatSearchResults(packages []*model.IngredientAndVersion, showNamespace bool) *searchOutput {
+func formatSearchResults(packages []*model.IngredientAndVersion) *searchOutput {
 	rows := make(searchOutput, len(packages))
 
 	filterNilStr := func(s *string) string {
@@ -161,12 +152,8 @@ func formatSearchResults(packages []*model.IngredientAndVersion, showNamespace b
 	}
 
 	for i, pack := range packages {
-		name := filterNilStr(pack.Ingredient.Name)
-		if showNamespace {
-			name = fmt.Sprintf("%s/%s", *pack.Ingredient.PrimaryNamespace, name)
-		}
 		row := searchPackageRow{
-			Pkg:      name,
+			Pkg:      filterNilStr(pack.Ingredient.Name),
 			Version:  pack.Version,
 			versions: len(pack.Versions),
 			Modules:  makeModules(pack.Ingredient.NormalizedName, pack),

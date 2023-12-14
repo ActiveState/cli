@@ -56,7 +56,8 @@ func NewAuthDeviceGetOK() *AuthDeviceGetOK {
 	return &AuthDeviceGetOK{}
 }
 
-/* AuthDeviceGetOK describes a response with status code 200, with default header values.
+/*
+AuthDeviceGetOK describes a response with status code 200, with default header values.
 
 Success
 */
@@ -88,13 +89,14 @@ func NewAuthDeviceGetBadRequest() *AuthDeviceGetBadRequest {
 	return &AuthDeviceGetBadRequest{}
 }
 
-/* AuthDeviceGetBadRequest describes a response with status code 400, with default header values.
+/*
+	AuthDeviceGetBadRequest describes a response with status code 400, with default header values.
 
- authorization_pending: The authorization request is still pending as the end user hasn't yet completed the user-interaction steps
+	authorization_pending: The authorization request is still pending as the end user hasn't yet completed the user-interaction steps
+
 slow_down: A variant of "authorization_pending", the authorization request is still pending and polling should continue, but the interval MUST be increased by 5 seconds for this and all subsequent requests.
 expired_token: The "device_code" has expired, and the device authorization session has concluded.
 The only error key that the client MUST stop making requests after is 'expired_token'.
-
 */
 type AuthDeviceGetBadRequest struct {
 	Payload *AuthDeviceGetBadRequestBody
@@ -124,7 +126,8 @@ func NewAuthDeviceGetInternalServerError() *AuthDeviceGetInternalServerError {
 	return &AuthDeviceGetInternalServerError{}
 }
 
-/* AuthDeviceGetInternalServerError describes a response with status code 500, with default header values.
+/*
+AuthDeviceGetInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */
@@ -151,7 +154,8 @@ func (o *AuthDeviceGetInternalServerError) readResponse(response runtime.ClientR
 	return nil
 }
 
-/*AuthDeviceGetBadRequestBody auth device get bad request body
+/*
+AuthDeviceGetBadRequestBody auth device get bad request body
 swagger:model AuthDeviceGetBadRequestBody
 */
 type AuthDeviceGetBadRequestBody struct {

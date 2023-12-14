@@ -1,7 +1,7 @@
 package request
 
 func ProjectByOrgAndName(org string, project string) *projectByOrgAndName {
-	return &projectByOrgAndName{vars: map[string]interface{}{
+	return &projectByOrgAndName{map[string]interface{}{
 		"org":  org,
 		"name": project,
 	}}
@@ -45,6 +45,6 @@ func (p *projectByOrgAndName) Query() string {
 	`
 }
 
-func (p *projectByOrgAndName) Vars() (map[string]interface{}, error) {
-	return p.vars, nil
+func (p *projectByOrgAndName) Vars() map[string]interface{} {
+	return p.vars
 }

@@ -45,7 +45,8 @@ func NewDisableTOTPOK() *DisableTOTPOK {
 	return &DisableTOTPOK{}
 }
 
-/* DisableTOTPOK describes a response with status code 200, with default header values.
+/*
+DisableTOTPOK describes a response with status code 200, with default header values.
 
 Disabled TOTP
 */
@@ -77,7 +78,8 @@ func NewDisableTOTPBadRequest() *DisableTOTPBadRequest {
 	return &DisableTOTPBadRequest{}
 }
 
-/* DisableTOTPBadRequest describes a response with status code 400, with default header values.
+/*
+DisableTOTPBadRequest describes a response with status code 400, with default header values.
 
 Bad Request
 */

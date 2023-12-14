@@ -54,10 +54,12 @@ func NewUpdateAuthorParamsWithHTTPClient(client *http.Client) *UpdateAuthorParam
 	}
 }
 
-/* UpdateAuthorParams contains all the parameters to send to the API endpoint
-   for the update author operation.
+/*
+UpdateAuthorParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the update author operation.
+
+	Typically these are written to a http.Request.
 */
 type UpdateAuthorParams struct {
 

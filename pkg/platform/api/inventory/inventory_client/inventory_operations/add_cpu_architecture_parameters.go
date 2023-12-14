@@ -54,10 +54,12 @@ func NewAddCPUArchitectureParamsWithHTTPClient(client *http.Client) *AddCPUArchi
 	}
 }
 
-/* AddCPUArchitectureParams contains all the parameters to send to the API endpoint
-   for the add Cpu architecture operation.
+/*
+AddCPUArchitectureParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the add Cpu architecture operation.
+
+	Typically these are written to a http.Request.
 */
 type AddCPUArchitectureParams struct {
 

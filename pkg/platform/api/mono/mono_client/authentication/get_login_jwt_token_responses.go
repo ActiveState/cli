@@ -51,7 +51,8 @@ func NewGetLoginJwtTokenFound() *GetLoginJwtTokenFound {
 	return &GetLoginJwtTokenFound{}
 }
 
-/* GetLoginJwtTokenFound describes a response with status code 302, with default header values.
+/*
+GetLoginJwtTokenFound describes a response with status code 302, with default header values.
 
 Found
 */
@@ -72,7 +73,8 @@ func NewGetLoginJwtTokenBadRequest() *GetLoginJwtTokenBadRequest {
 	return &GetLoginJwtTokenBadRequest{}
 }
 
-/* GetLoginJwtTokenBadRequest describes a response with status code 400, with default header values.
+/*
+GetLoginJwtTokenBadRequest describes a response with status code 400, with default header values.
 
 Bad Request
 */
@@ -104,7 +106,8 @@ func NewGetLoginJwtTokenInternalServerError() *GetLoginJwtTokenInternalServerErr
 	return &GetLoginJwtTokenInternalServerError{}
 }
 
-/* GetLoginJwtTokenInternalServerError describes a response with status code 500, with default header values.
+/*
+GetLoginJwtTokenInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */

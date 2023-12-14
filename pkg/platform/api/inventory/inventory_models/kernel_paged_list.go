@@ -17,7 +17,7 @@ import (
 
 // KernelPagedList Kernel Paged List
 //
-// A paginated list of kernels
+// # A paginated list of kernels
 //
 // swagger:model kernelPagedList
 type KernelPagedList struct {

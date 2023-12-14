@@ -46,7 +46,8 @@ func NewGetOperatingSystemKernelsOK() *GetOperatingSystemKernelsOK {
 	return &GetOperatingSystemKernelsOK{}
 }
 
-/* GetOperatingSystemKernelsOK describes a response with status code 200, with default header values.
+/*
+GetOperatingSystemKernelsOK describes a response with status code 200, with default header values.
 
 A paginated list of kernels
 */
@@ -80,7 +81,8 @@ func NewGetOperatingSystemKernelsDefault(code int) *GetOperatingSystemKernelsDef
 	}
 }
 
-/* GetOperatingSystemKernelsDefault describes a response with status code -1, with default header values.
+/*
+GetOperatingSystemKernelsDefault describes a response with status code -1, with default header values.
 
 generic error response
 */

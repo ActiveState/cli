@@ -46,7 +46,8 @@ func NewGetKernelCPUArchitecturesOK() *GetKernelCPUArchitecturesOK {
 	return &GetKernelCPUArchitecturesOK{}
 }
 
-/* GetKernelCPUArchitecturesOK describes a response with status code 200, with default header values.
+/*
+GetKernelCPUArchitecturesOK describes a response with status code 200, with default header values.
 
 A paginated list of CPU architectures
 */
@@ -80,7 +81,8 @@ func NewGetKernelCPUArchitecturesDefault(code int) *GetKernelCPUArchitecturesDef
 	}
 }
 
-/* GetKernelCPUArchitecturesDefault describes a response with status code -1, with default header values.
+/*
+GetKernelCPUArchitecturesDefault describes a response with status code -1, with default header values.
 
 generic error response
 */

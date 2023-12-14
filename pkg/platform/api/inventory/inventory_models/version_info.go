@@ -17,7 +17,7 @@ import (
 
 // VersionInfo Version Info
 //
-// Properties shared by all versioned resources
+// # Properties shared by all versioned resources
 //
 // swagger:model versionInfo
 type VersionInfo struct {

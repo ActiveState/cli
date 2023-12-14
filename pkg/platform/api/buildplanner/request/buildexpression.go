@@ -31,6 +31,6 @@ query ($commitID: ID!) {
 `
 }
 
-func (b *buildScriptByCommitID) Vars() (map[string]interface{}, error) {
-	return b.vars, nil
+func (b *buildScriptByCommitID) Vars() map[string]interface{} {
+	return b.vars
 }

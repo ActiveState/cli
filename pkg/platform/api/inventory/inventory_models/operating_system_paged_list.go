@@ -17,7 +17,7 @@ import (
 
 // OperatingSystemPagedList Operating System Paged List
 //
-// A paginated list of operating systems
+// # A paginated list of operating systems
 //
 // swagger:model operatingSystemPagedList
 type OperatingSystemPagedList struct {

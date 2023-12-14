@@ -15,7 +15,7 @@ import (
 
 // CPUExtensionCore CPU Extension Core
 //
-// The properties of a CPU extension needed to create a new one
+// # The properties of a CPU extension needed to create a new one
 //
 // swagger:model cpuExtensionCore
 type CPUExtensionCore struct {

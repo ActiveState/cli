@@ -54,7 +54,6 @@ const (
 	Progress        = "progress"
 	Projects        = "projects"
 	Projectfile     = "projectfile"
-	Publish         = "publish"
 	Pull            = "pull"
 	Push            = "push"
 	Python          = "python"

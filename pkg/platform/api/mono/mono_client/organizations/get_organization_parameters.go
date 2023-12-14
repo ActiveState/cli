@@ -52,10 +52,12 @@ func NewGetOrganizationParamsWithHTTPClient(client *http.Client) *GetOrganizatio
 	}
 }
 
-/* GetOrganizationParams contains all the parameters to send to the API endpoint
-   for the get organization operation.
+/*
+GetOrganizationParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the get organization operation.
+
+	Typically these are written to a http.Request.
 */
 type GetOrganizationParams struct {
 
