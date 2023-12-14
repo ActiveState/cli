@@ -45,8 +45,7 @@ func NewListOrganizationsOK() *ListOrganizationsOK {
 	return &ListOrganizationsOK{}
 }
 
-/*
-ListOrganizationsOK describes a response with status code 200, with default header values.
+/* ListOrganizationsOK describes a response with status code 200, with default header values.
 
 Success
 */
@@ -76,8 +75,7 @@ func NewListOrganizationsBadRequest() *ListOrganizationsBadRequest {
 	return &ListOrganizationsBadRequest{}
 }
 
-/*
-ListOrganizationsBadRequest describes a response with status code 400, with default header values.
+/* ListOrganizationsBadRequest describes a response with status code 400, with default header values.
 
 Bad Request
 */

@@ -590,7 +590,7 @@ package_info_cmd_description:
 package_arg_name:
   other: name
 package_arg_name_description:
-  other: Package name
+  other: Package name, optionally with namespace, eg. '[<namespace>/]<name>'.
 package_info_flag_language_description:
   other: The language used to constrain package information selection
 bundle_arg_name:
@@ -600,7 +600,7 @@ bundle_arg_name_description:
 package_arg_nameversion:
   other: name[@version]
 package_arg_nameversion_description:
-  other: Package name and optionally the desired version
+  other: Package name and optionally the desired version, optionally with namespace, eg. '[<namespace>/]<name>'.
 bundle_arg_nameversion:
   other: name[@version]
 bundle_arg_nameversion_description:
@@ -611,6 +611,10 @@ package_list_flag_name_description:
   other: The filter for package names to include in the listing
 namespace_list_flag_project_description:
   other: The namespace packages should be listed from
+package_search_flag_ns_description:
+  other: The namespace to search within. This trumps the language flag.
+package_flag_ts_description:
+  other: The timestamp at which you want to query. Can be either 'now' or RFC3339 formatted timestamp.
 package_search_flag_language_description:
   other: The language used to constrain search results
 package_search_flag_exact-term_description:
@@ -1483,3 +1487,18 @@ err_searchingredient_toomany:
   other: Too many ingredients match the query '[ACTIONABLE]{{.V0}}[/RESET]', please try to be more specific.
 alternative_unknown_pkg_name:
   other: unknown
+err_uploadingredient_edit_version_required:
+  other: When editing you must always provide a new version number.
+err_uploadingredient_edit_version_different:
+  other: You did not provide a unique version number. Make sure the version number you provided has not been used before.
+err_uploadingredient_edit_description_not_supported:
+  other: Editing an ingredient description is not yet supported.
+uploadingredient_editor_opening:
+  other: |
+    Opening editor to edit ingredient meta information. Alternatively you may manually edit the following file: [ACTIONABLE]{{.V0}}[/RESET].
+uploadingredient_success:
+  other: |
+    Successfully published as:
+    Ingredient ID: [[ACTIONABLE]{{.V0}}[/RESET]
+    Ingredient Version ID: [ACTIONABLE]{{.V1}}[/RESET]
+    Revision: [ACTIONABLE]{{.V2}}[/RESET]

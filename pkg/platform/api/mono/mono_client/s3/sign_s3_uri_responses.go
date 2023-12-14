@@ -57,8 +57,7 @@ func NewSignS3URIOK() *SignS3URIOK {
 	return &SignS3URIOK{}
 }
 
-/*
-SignS3URIOK describes a response with status code 200, with default header values.
+/* SignS3URIOK describes a response with status code 200, with default header values.
 
 Success
 */
@@ -90,8 +89,7 @@ func NewSignS3URIBadRequest() *SignS3URIBadRequest {
 	return &SignS3URIBadRequest{}
 }
 
-/*
-SignS3URIBadRequest describes a response with status code 400, with default header values.
+/* SignS3URIBadRequest describes a response with status code 400, with default header values.
 
 Bad Request
 */
@@ -123,8 +121,7 @@ func NewSignS3URIForbidden() *SignS3URIForbidden {
 	return &SignS3URIForbidden{}
 }
 
-/*
-SignS3URIForbidden describes a response with status code 403, with default header values.
+/* SignS3URIForbidden describes a response with status code 403, with default header values.
 
 Forbidden
 */
@@ -156,8 +153,7 @@ func NewSignS3URIInternalServerError() *SignS3URIInternalServerError {
 	return &SignS3URIInternalServerError{}
 }
 
-/*
-SignS3URIInternalServerError describes a response with status code 500, with default header values.
+/* SignS3URIInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */

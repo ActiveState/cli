@@ -69,8 +69,7 @@ func NewAddCommitOK() *AddCommitOK {
 	return &AddCommitOK{}
 }
 
-/*
-AddCommitOK describes a response with status code 200, with default header values.
+/* AddCommitOK describes a response with status code 200, with default header values.
 
 Create a new commit
 */
@@ -102,8 +101,7 @@ func NewAddCommitBadRequest() *AddCommitBadRequest {
 	return &AddCommitBadRequest{}
 }
 
-/*
-AddCommitBadRequest describes a response with status code 400, with default header values.
+/* AddCommitBadRequest describes a response with status code 400, with default header values.
 
 Bad Request
 */
@@ -135,8 +133,7 @@ func NewAddCommitForbidden() *AddCommitForbidden {
 	return &AddCommitForbidden{}
 }
 
-/*
-AddCommitForbidden describes a response with status code 403, with default header values.
+/* AddCommitForbidden describes a response with status code 403, with default header values.
 
 Forbidden
 */
@@ -168,8 +165,7 @@ func NewAddCommitNotFound() *AddCommitNotFound {
 	return &AddCommitNotFound{}
 }
 
-/*
-AddCommitNotFound describes a response with status code 404, with default header values.
+/* AddCommitNotFound describes a response with status code 404, with default header values.
 
 branch was not found
 */
@@ -201,8 +197,7 @@ func NewAddCommitConflict() *AddCommitConflict {
 	return &AddCommitConflict{}
 }
 
-/*
-AddCommitConflict describes a response with status code 409, with default header values.
+/* AddCommitConflict describes a response with status code 409, with default header values.
 
 Commit changes conflict with checkpoint
 */
@@ -234,8 +229,7 @@ func NewAddCommitInternalServerError() *AddCommitInternalServerError {
 	return &AddCommitInternalServerError{}
 }
 
-/*
-AddCommitInternalServerError describes a response with status code 500, with default header values.
+/* AddCommitInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */

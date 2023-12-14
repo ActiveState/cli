@@ -57,8 +57,7 @@ func NewGetCheckpointOK() *GetCheckpointOK {
 	return &GetCheckpointOK{}
 }
 
-/*
-GetCheckpointOK describes a response with status code 200, with default header values.
+/* GetCheckpointOK describes a response with status code 200, with default header values.
 
 Get the checkpoint for the given commit
 */
@@ -88,8 +87,7 @@ func NewGetCheckpointForbidden() *GetCheckpointForbidden {
 	return &GetCheckpointForbidden{}
 }
 
-/*
-GetCheckpointForbidden describes a response with status code 403, with default header values.
+/* GetCheckpointForbidden describes a response with status code 403, with default header values.
 
 Forbidden
 */
@@ -121,8 +119,7 @@ func NewGetCheckpointNotFound() *GetCheckpointNotFound {
 	return &GetCheckpointNotFound{}
 }
 
-/*
-GetCheckpointNotFound describes a response with status code 404, with default header values.
+/* GetCheckpointNotFound describes a response with status code 404, with default header values.
 
 checkpoint was not found
 */
@@ -154,8 +151,7 @@ func NewGetCheckpointInternalServerError() *GetCheckpointInternalServerError {
 	return &GetCheckpointInternalServerError{}
 }
 
-/*
-GetCheckpointInternalServerError describes a response with status code 500, with default header values.
+/* GetCheckpointInternalServerError describes a response with status code 500, with default header values.
 
 error retrieving checkpoint
 */

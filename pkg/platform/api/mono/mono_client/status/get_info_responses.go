@@ -51,8 +51,7 @@ func NewGetInfoOK() *GetInfoOK {
 	return &GetInfoOK{}
 }
 
-/*
-GetInfoOK describes a response with status code 200, with default header values.
+/* GetInfoOK describes a response with status code 200, with default header values.
 
 Success
 */
@@ -84,8 +83,7 @@ func NewGetInfoUnauthorized() *GetInfoUnauthorized {
 	return &GetInfoUnauthorized{}
 }
 
-/*
-GetInfoUnauthorized describes a response with status code 401, with default header values.
+/* GetInfoUnauthorized describes a response with status code 401, with default header values.
 
 Unauthenticated
 */
@@ -117,8 +115,7 @@ func NewGetInfoForbidden() *GetInfoForbidden {
 	return &GetInfoForbidden{}
 }
 
-/*
-GetInfoForbidden describes a response with status code 403, with default header values.
+/* GetInfoForbidden describes a response with status code 403, with default header values.
 
 Unauthorized
 */

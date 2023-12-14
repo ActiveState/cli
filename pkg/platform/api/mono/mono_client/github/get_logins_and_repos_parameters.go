@@ -52,12 +52,10 @@ func NewGetLoginsAndReposParamsWithHTTPClient(client *http.Client) *GetLoginsAnd
 	}
 }
 
-/*
-GetLoginsAndReposParams contains all the parameters to send to the API endpoint
+/* GetLoginsAndReposParams contains all the parameters to send to the API endpoint
+   for the get logins and repos operation.
 
-	for the get logins and repos operation.
-
-	Typically these are written to a http.Request.
+   Typically these are written to a http.Request.
 */
 type GetLoginsAndReposParams struct {
 	timeout    time.Duration

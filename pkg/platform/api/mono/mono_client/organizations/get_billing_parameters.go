@@ -52,12 +52,10 @@ func NewGetBillingParamsWithHTTPClient(client *http.Client) *GetBillingParams {
 	}
 }
 
-/*
-GetBillingParams contains all the parameters to send to the API endpoint
+/* GetBillingParams contains all the parameters to send to the API endpoint
+   for the get billing operation.
 
-	for the get billing operation.
-
-	Typically these are written to a http.Request.
+   Typically these are written to a http.Request.
 */
 type GetBillingParams struct {
 

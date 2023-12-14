@@ -17,7 +17,7 @@ import (
 
 // CPUArchitecturePagedList CPU Architecture Paged List
 //
-// # A paginated list of CPU architectures
+// A paginated list of CPU architectures
 //
 // swagger:model cpuArchitecturePagedList
 type CPUArchitecturePagedList struct {

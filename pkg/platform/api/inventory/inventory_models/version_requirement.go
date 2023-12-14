@@ -17,7 +17,7 @@ import (
 
 // VersionRequirement Version Requirement
 //
-// # The version constraint for a feature
+// The version constraint for a feature
 //
 // swagger:model versionRequirement
 type VersionRequirement struct {
