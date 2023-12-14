@@ -382,6 +382,7 @@ func postInstallEvents(out output.Outputer, cfg *config.Instance, an analytics.D
 
 		out.Print(fmt.Sprintf("\nRunning '[ACTIONABLE]%s[/RESET]'\n", params.command))
 		cmd, args := osutils.DecodeCmd(params.command)
+		logging.Debug("Executing command: %s, with args: %s", cmd, args)
 		if _, _, err := osutils.ExecuteAndPipeStd(cmd, args, envSlice(binPath)); err != nil {
 			an.EventWithLabel(anaConst.CatInstallerFunnel, "forward-command-err", err.Error())
 			return errs.Silence(errs.Wrap(err, "Running provided command failed, error returned: %s", errs.JoinMessage(err)))
