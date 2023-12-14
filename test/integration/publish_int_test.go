@@ -135,7 +135,7 @@ namespace: org/{{.Username}}
 version: 2.3.4
 description: im-a-description
 authors:
-  - name: author-name 
+  - name: author-name
     email: author-email@domain.tld
 `),
 					nil,
@@ -168,7 +168,7 @@ namespace: org/{{.Username}}
 version: 2.3.4
 description: im-a-description
 authors:
-  - name: author-name 
+  - name: author-name
     email: author-email@domain.tld
 `),
 					nil,
@@ -202,7 +202,7 @@ namespace: org/{{.Username}}
 version: 2.3.4
 description: im-a-description
 authors:
-  - name: author-name 
+  - name: author-name
     email: author-email@domain.tld
 `),
 					true,
@@ -363,7 +363,7 @@ authors:
 					}
 
 					cp := ts.SpawnWithOpts(
-						e2e.WithArgs(append([]string{"publish"}, args...)...),
+						e2e.OptArgs(append([]string{"publish"}, args...)...),
 					)
 
 					if inv.expect.immediateOutput != "" {
@@ -398,7 +398,7 @@ authors:
 
 					cp.Expect("Y/n")
 
-					snapshot := cp.MatchState().TermState.String()
+					snapshot := cp.Snapshot()
 					rx := regexp.MustCompile(`(?s)Publish following ingredient\?(.*)\(Y/n`)
 					match := rx.FindSubmatch([]byte(snapshot))
 					suite.Require().NotNil(match, fmt.Sprintf("Could not match '%s' against: %s", rx.String(), snapshot))

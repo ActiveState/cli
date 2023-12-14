@@ -329,7 +329,7 @@ type CreateProjectParams struct {
 	Language    string
 	Version     string
 	Private     bool
-	Timestamp   *time.Time
+	Timestamp   time.Time
 	Description string
 	Expr        *buildexpression.BuildExpression
 }
@@ -361,7 +361,7 @@ func (bp *BuildPlanner) CreateProject(params *CreateProjectParams) (strfmt.UUID,
 		})
 
 		// Add the timestamp.
-		expr.UpdateTimestamp(*params.Timestamp)
+		expr.UpdateTimestamp(params.Timestamp)
 	}
 
 	// Create the project.

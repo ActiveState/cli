@@ -84,9 +84,6 @@ const (
 	// NamespaceOrgMatch is the namespace used for org specific requirements
 	NamespaceOrgMatch = `^org\/`
 
-	// NamespaceSharedMatch is the namespace used for shared requirements (usually runtime libraries)
-	NamespaceSharedMatch = `^shared$`
-
 	// NamespaceBuildFlagsMatch is the namespace used for passing build flags
 	NamespaceBuildFlagsMatch = `^build-flags$`
 )
