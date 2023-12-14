@@ -54,10 +54,12 @@ func NewCalculateTaxParamsWithHTTPClient(client *http.Client) *CalculateTaxParam
 	}
 }
 
-/* CalculateTaxParams contains all the parameters to send to the API endpoint
-   for the calculate tax operation.
+/*
+CalculateTaxParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the calculate tax operation.
+
+	Typically these are written to a http.Request.
 */
 type CalculateTaxParams struct {
 

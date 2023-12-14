@@ -17,7 +17,7 @@ import (
 
 // ImagePagedList Image Paged List
 //
-// A paginated list of images
+// # A paginated list of images
 //
 // swagger:model imagePagedList
 type ImagePagedList struct {

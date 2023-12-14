@@ -36,9 +36,9 @@ type ClientService interface {
 }
 
 /*
-  GetOrganizationLimits organizations limitations
+GetOrganizationLimits organizations limitations
 
-  Returns the limitations that apply to the org (inherited from their tier)
+Returns the limitations that apply to the org (inherited from their tier)
 */
 func (a *Client) GetOrganizationLimits(params *GetOrganizationLimitsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetOrganizationLimitsOK, error) {
 	// TODO: Validate the params before sending

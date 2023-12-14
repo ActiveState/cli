@@ -45,7 +45,8 @@ func NewAddTokenOK() *AddTokenOK {
 	return &AddTokenOK{}
 }
 
-/* AddTokenOK describes a response with status code 200, with default header values.
+/*
+AddTokenOK describes a response with status code 200, with default header values.
 
 Success
 */
@@ -77,7 +78,8 @@ func NewAddTokenBadRequest() *AddTokenBadRequest {
 	return &AddTokenBadRequest{}
 }
 
-/* AddTokenBadRequest describes a response with status code 400, with default header values.
+/*
+AddTokenBadRequest describes a response with status code 400, with default header values.
 
 Bad Request
 */

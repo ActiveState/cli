@@ -15,7 +15,7 @@ import (
 
 // OperatingSystemVersionCore Operating System Version Core
 //
-// The properties of an operating system version needed to create a new one
+// # The properties of an operating system version needed to create a new one
 //
 // swagger:model operatingSystemVersionCore
 type OperatingSystemVersionCore struct {

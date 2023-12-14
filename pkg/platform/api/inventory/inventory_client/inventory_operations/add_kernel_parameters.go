@@ -54,10 +54,12 @@ func NewAddKernelParamsWithHTTPClient(client *http.Client) *AddKernelParams {
 	}
 }
 
-/* AddKernelParams contains all the parameters to send to the API endpoint
-   for the add kernel operation.
+/*
+AddKernelParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the add kernel operation.
+
+	Typically these are written to a http.Request.
 */
 type AddKernelParams struct {
 

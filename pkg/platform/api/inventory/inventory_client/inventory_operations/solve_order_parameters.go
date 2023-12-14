@@ -55,10 +55,12 @@ func NewSolveOrderParamsWithHTTPClient(client *http.Client) *SolveOrderParams {
 	}
 }
 
-/* SolveOrderParams contains all the parameters to send to the API endpoint
-   for the solve order operation.
+/*
+SolveOrderParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the solve order operation.
+
+	Typically these are written to a http.Request.
 */
 type SolveOrderParams struct {
 

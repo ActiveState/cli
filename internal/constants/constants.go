@@ -273,9 +273,6 @@ const GraphqlAPIPath = "/graphql/v1/graphql"
 // MediatorAPIPath is the path used for the platform mediator api
 const MediatorAPIPath = "/sv/mediator/api"
 
-// BuildplanAPIPath is the path used for the build planner api
-const BuildplanAPIPath = "/sv/buildplanner/graphql"
-
 // RequirementsImportAPIPath is the path used for the requirements import api
 const RequirementsImportAPIPath = "/sv/reqsvc/reqs"
 

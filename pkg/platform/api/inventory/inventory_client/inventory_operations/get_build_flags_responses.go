@@ -46,7 +46,8 @@ func NewGetBuildFlagsOK() *GetBuildFlagsOK {
 	return &GetBuildFlagsOK{}
 }
 
-/* GetBuildFlagsOK describes a response with status code 200, with default header values.
+/*
+GetBuildFlagsOK describes a response with status code 200, with default header values.
 
 A paginated list of build flags
 */
@@ -80,7 +81,8 @@ func NewGetBuildFlagsDefault(code int) *GetBuildFlagsDefault {
 	}
 }
 
-/* GetBuildFlagsDefault describes a response with status code -1, with default header values.
+/*
+GetBuildFlagsDefault describes a response with status code -1, with default header values.
 
 generic error response
 */

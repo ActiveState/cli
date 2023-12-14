@@ -1,12 +1,10 @@
 package request
 
-import (
-	"github.com/go-openapi/strfmt"
-)
+import "github.com/go-openapi/strfmt"
 
 // OrganizationsByIDs returns the query for retrieving orgs by ids
 func OrganizationsByIDs(orgIDs []strfmt.UUID) *organizationByIDs {
-	return &organizationByIDs{vars: map[string]interface{}{
+	return &organizationByIDs{map[string]interface{}{
 		"organization_ids": orgIDs,
 	}}
 }
@@ -26,13 +24,13 @@ func (p *organizationByIDs) Query() string {
 	  `
 }
 
-func (p *organizationByIDs) Vars() (map[string]interface{}, error) {
-	return p.vars, nil
+func (p *organizationByIDs) Vars() map[string]interface{} {
+	return p.vars
 }
 
 // OrganizationsByName returns the query for retrieving org by name
 func OrganizationsByName(name string) *organizationByName {
-	return &organizationByName{vars: map[string]interface{}{
+	return &organizationByName{map[string]interface{}{
 		"name": name,
 	}}
 }
@@ -51,6 +49,6 @@ func (p *organizationByName) Query() string {
 	}`
 }
 
-func (p *organizationByName) Vars() (map[string]interface{}, error) {
-	return p.vars, nil
+func (p *organizationByName) Vars() map[string]interface{} {
+	return p.vars
 }

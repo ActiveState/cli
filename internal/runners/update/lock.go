@@ -17,13 +17,12 @@ import (
 )
 
 // var _ captain.FlagMarshaler = (*StateToolChannelVersion)(nil)
-
 type StateToolChannelVersion struct {
-	captain.NameVersionValue
+	captain.NameVersion
 }
 
 func (stv *StateToolChannelVersion) Set(arg string) error {
-	err := stv.NameVersionValue.Set(arg)
+	err := stv.NameVersion.Set(arg)
 	if err != nil {
 		return locale.WrapInputError(
 			err,

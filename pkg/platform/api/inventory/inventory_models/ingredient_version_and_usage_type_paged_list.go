@@ -17,7 +17,7 @@ import (
 
 // IngredientVersionAndUsageTypePagedList Ingredient, Version, and Usage Type Paged List
 //
-// A paginated list of ingredients, their versions, and the way that version uses a particular ingredient option set
+// # A paginated list of ingredients, their versions, and the way that version uses a particular ingredient option set
 //
 // swagger:model ingredientVersionAndUsageTypePagedList
 type IngredientVersionAndUsageTypePagedList struct {

@@ -53,10 +53,12 @@ func NewGetNamespaceIngredientVersionsParamsWithHTTPClient(client *http.Client) 
 	}
 }
 
-/* GetNamespaceIngredientVersionsParams contains all the parameters to send to the API endpoint
-   for the get namespace ingredient versions operation.
+/*
+GetNamespaceIngredientVersionsParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the get namespace ingredient versions operation.
+
+	Typically these are written to a http.Request.
 */
 type GetNamespaceIngredientVersionsParams struct {
 

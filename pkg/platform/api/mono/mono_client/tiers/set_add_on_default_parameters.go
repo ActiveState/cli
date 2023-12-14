@@ -54,10 +54,12 @@ func NewSetAddOnDefaultParamsWithHTTPClient(client *http.Client) *SetAddOnDefaul
 	}
 }
 
-/* SetAddOnDefaultParams contains all the parameters to send to the API endpoint
-   for the set add on default operation.
+/*
+SetAddOnDefaultParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the set add on default operation.
+
+	Typically these are written to a http.Request.
 */
 type SetAddOnDefaultParams struct {
 

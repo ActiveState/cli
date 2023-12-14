@@ -16,7 +16,7 @@ import (
 
 // LibcCore Libc Core
 //
-// The properties of a libc needed to create a new one
+// # The properties of a libc needed to create a new one
 //
 // swagger:model libcCore
 type LibcCore struct {

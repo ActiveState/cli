@@ -52,10 +52,12 @@ func NewDeleteIngredientVersionParamsWithHTTPClient(client *http.Client) *Delete
 	}
 }
 
-/* DeleteIngredientVersionParams contains all the parameters to send to the API endpoint
-   for the delete ingredient version operation.
+/*
+DeleteIngredientVersionParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the delete ingredient version operation.
+
+	Typically these are written to a http.Request.
 */
 type DeleteIngredientVersionParams struct {
 

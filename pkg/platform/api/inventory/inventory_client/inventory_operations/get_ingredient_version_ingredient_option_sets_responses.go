@@ -46,7 +46,8 @@ func NewGetIngredientVersionIngredientOptionSetsOK() *GetIngredientVersionIngred
 	return &GetIngredientVersionIngredientOptionSetsOK{}
 }
 
-/* GetIngredientVersionIngredientOptionSetsOK describes a response with status code 200, with default header values.
+/*
+GetIngredientVersionIngredientOptionSetsOK describes a response with status code 200, with default header values.
 
 A paginated list of ingredient option sets
 */
@@ -80,7 +81,8 @@ func NewGetIngredientVersionIngredientOptionSetsDefault(code int) *GetIngredient
 	}
 }
 
-/* GetIngredientVersionIngredientOptionSetsDefault describes a response with status code -1, with default header values.
+/*
+GetIngredientVersionIngredientOptionSetsDefault describes a response with status code -1, with default header values.
 
 generic error response
 */

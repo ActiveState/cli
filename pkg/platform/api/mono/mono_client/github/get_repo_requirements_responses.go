@@ -57,7 +57,8 @@ func NewGetRepoRequirementsOK() *GetRepoRequirementsOK {
 	return &GetRepoRequirementsOK{}
 }
 
-/* GetRepoRequirementsOK describes a response with status code 200, with default header values.
+/*
+GetRepoRequirementsOK describes a response with status code 200, with default header values.
 
 Success
 */
@@ -87,7 +88,8 @@ func NewGetRepoRequirementsBadRequest() *GetRepoRequirementsBadRequest {
 	return &GetRepoRequirementsBadRequest{}
 }
 
-/* GetRepoRequirementsBadRequest describes a response with status code 400, with default header values.
+/*
+GetRepoRequirementsBadRequest describes a response with status code 400, with default header values.
 
 Bad Request
 */
@@ -119,7 +121,8 @@ func NewGetRepoRequirementsForbidden() *GetRepoRequirementsForbidden {
 	return &GetRepoRequirementsForbidden{}
 }
 
-/* GetRepoRequirementsForbidden describes a response with status code 403, with default header values.
+/*
+GetRepoRequirementsForbidden describes a response with status code 403, with default header values.
 
 Forbidden
 */
@@ -151,7 +154,8 @@ func NewGetRepoRequirementsInternalServerError() *GetRepoRequirementsInternalSer
 	return &GetRepoRequirementsInternalServerError{}
 }
 
-/* GetRepoRequirementsInternalServerError describes a response with status code 500, with default header values.
+/*
+GetRepoRequirementsInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */

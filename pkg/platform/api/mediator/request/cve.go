@@ -2,7 +2,7 @@ package request
 
 // VulnerabilitiesByProject returns the query for retrieving vulnerabilities by projects
 func VulnerabilitiesByProject(org, name string) *vulnerabilitiesByProject {
-	return &vulnerabilitiesByProject{vars: map[string]interface{}{
+	return &vulnerabilitiesByProject{map[string]interface{}{
 		"org":  org,
 		"name": name,
 	}}
@@ -44,8 +44,8 @@ func (p *vulnerabilitiesByProject) Query() string {
 		}`
 }
 
-func (p *vulnerabilitiesByProject) Vars() (map[string]interface{}, error) {
-	return p.vars, nil
+func (p *vulnerabilitiesByProject) Vars() map[string]interface{} {
+	return p.vars
 }
 
 type vulnerabilitiesByCommit struct {
@@ -54,7 +54,7 @@ type vulnerabilitiesByCommit struct {
 
 // VulnerabilitiesByCommit returns the query for retrieving vulnerabilities for a specific commit
 func VulnerabilitiesByCommit(commitID string) *vulnerabilitiesByCommit {
-	return &vulnerabilitiesByCommit{vars: map[string]interface{}{
+	return &vulnerabilitiesByCommit{map[string]interface{}{
 		"commit_id": commitID,
 	}}
 }
@@ -87,6 +87,6 @@ func (p *vulnerabilitiesByCommit) Query() string {
 		}`
 }
 
-func (p *vulnerabilitiesByCommit) Vars() (map[string]interface{}, error) {
-	return p.vars, nil
+func (p *vulnerabilitiesByCommit) Vars() map[string]interface{} {
+	return p.vars
 }

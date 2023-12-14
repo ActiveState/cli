@@ -28,12 +28,12 @@ func (e *AnalyticsEvent) Query() string {
 	}`
 }
 
-func (e *AnalyticsEvent) Vars() (map[string]interface{}, error) {
+func (e *AnalyticsEvent) Vars() map[string]interface{} {
 	return map[string]interface{}{
 		"category":       e.category,
 		"action":         e.action,
 		"source":         e.source,
 		"label":          e.label,
 		"dimensionsJson": e.dimensionsJson,
-	}, nil
+	}
 }

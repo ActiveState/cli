@@ -15,7 +15,7 @@ import (
 
 // BuildFlag Build Flag
 //
-// The full build flag data model
+// # The full build flag data model
 //
 // swagger:model buildFlag
 type BuildFlag struct {

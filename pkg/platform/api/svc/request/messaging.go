@@ -23,9 +23,9 @@ func (m *MessagingRequest) Query() string {
 	}`
 }
 
-func (m *MessagingRequest) Vars() (map[string]interface{}, error) {
+func (m *MessagingRequest) Vars() map[string]interface{} {
 	return map[string]interface{}{
 		"command": m.command,
 		"flags":   m.flags,
-	}, nil
+	}
 }

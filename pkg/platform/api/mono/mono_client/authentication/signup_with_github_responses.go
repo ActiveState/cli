@@ -36,7 +36,8 @@ func NewSignupWithGithubFound() *SignupWithGithubFound {
 	return &SignupWithGithubFound{}
 }
 
-/* SignupWithGithubFound describes a response with status code 302, with default header values.
+/*
+SignupWithGithubFound describes a response with status code 302, with default header values.
 
 Found
 */

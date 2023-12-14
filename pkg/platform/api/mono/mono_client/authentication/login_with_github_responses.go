@@ -36,7 +36,8 @@ func NewLoginWithGithubFound() *LoginWithGithubFound {
 	return &LoginWithGithubFound{}
 }
 
-/* LoginWithGithubFound describes a response with status code 302, with default header values.
+/*
+LoginWithGithubFound describes a response with status code 302, with default header values.
 
 Found
 */

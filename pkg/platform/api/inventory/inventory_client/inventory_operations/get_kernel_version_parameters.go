@@ -53,10 +53,12 @@ func NewGetKernelVersionParamsWithHTTPClient(client *http.Client) *GetKernelVers
 	}
 }
 
-/* GetKernelVersionParams contains all the parameters to send to the API endpoint
-   for the get kernel version operation.
+/*
+GetKernelVersionParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the get kernel version operation.
+
+	Typically these are written to a http.Request.
 */
 type GetKernelVersionParams struct {
 

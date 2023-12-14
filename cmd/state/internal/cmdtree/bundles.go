@@ -82,7 +82,7 @@ func newBundleUninstallCommand(prime *primer.Values) *captain.Command {
 			{
 				Name:        locale.T("bundle_arg_name"),
 				Description: locale.T("bundle_arg_name_description"),
-				Value:       &params.Package,
+				Value:       &params.Name,
 				Required:    true,
 			},
 		},
@@ -118,7 +118,7 @@ func newBundlesSearchCommand(prime *primer.Values) *captain.Command {
 			{
 				Name:        locale.T("bundle_arg_name"),
 				Description: locale.T("bundle_arg_name_description"),
-				Value:       &params.Ingredient,
+				Value:       &params.Name,
 				Required:    true,
 			},
 		},

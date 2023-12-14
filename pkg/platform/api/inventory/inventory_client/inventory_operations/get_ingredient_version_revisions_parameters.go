@@ -53,10 +53,12 @@ func NewGetIngredientVersionRevisionsParamsWithHTTPClient(client *http.Client) *
 	}
 }
 
-/* GetIngredientVersionRevisionsParams contains all the parameters to send to the API endpoint
-   for the get ingredient version revisions operation.
+/*
+GetIngredientVersionRevisionsParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the get ingredient version revisions operation.
+
+	Typically these are written to a http.Request.
 */
 type GetIngredientVersionRevisionsParams struct {
 

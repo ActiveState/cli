@@ -65,7 +65,8 @@ func NewUpdateBillingDateOK() *UpdateBillingDateOK {
 	return &UpdateBillingDateOK{}
 }
 
-/* UpdateBillingDateOK describes a response with status code 200, with default header values.
+/*
+UpdateBillingDateOK describes a response with status code 200, with default header values.
 
 Billing date updated
 */
@@ -97,7 +98,8 @@ func NewUpdateBillingDateBadRequest() *UpdateBillingDateBadRequest {
 	return &UpdateBillingDateBadRequest{}
 }
 
-/* UpdateBillingDateBadRequest describes a response with status code 400, with default header values.
+/*
+UpdateBillingDateBadRequest describes a response with status code 400, with default header values.
 
 Bad Request
 */
@@ -129,7 +131,8 @@ func NewUpdateBillingDateForbidden() *UpdateBillingDateForbidden {
 	return &UpdateBillingDateForbidden{}
 }
 
-/* UpdateBillingDateForbidden describes a response with status code 403, with default header values.
+/*
+UpdateBillingDateForbidden describes a response with status code 403, with default header values.
 
 Forbidden
 */
@@ -161,7 +164,8 @@ func NewUpdateBillingDateNotFound() *UpdateBillingDateNotFound {
 	return &UpdateBillingDateNotFound{}
 }
 
-/* UpdateBillingDateNotFound describes a response with status code 404, with default header values.
+/*
+UpdateBillingDateNotFound describes a response with status code 404, with default header values.
 
 Not Found
 */
@@ -193,7 +197,8 @@ func NewUpdateBillingDateInternalServerError() *UpdateBillingDateInternalServerE
 	return &UpdateBillingDateInternalServerError{}
 }
 
-/* UpdateBillingDateInternalServerError describes a response with status code 500, with default header values.
+/*
+UpdateBillingDateInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */
@@ -220,7 +225,8 @@ func (o *UpdateBillingDateInternalServerError) readResponse(response runtime.Cli
 	return nil
 }
 
-/*UpdateBillingDateBody update billing date body
+/*
+UpdateBillingDateBody update billing date body
 swagger:model UpdateBillingDateBody
 */
 type UpdateBillingDateBody struct {

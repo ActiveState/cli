@@ -69,7 +69,8 @@ func NewEditProjectOK() *EditProjectOK {
 	return &EditProjectOK{}
 }
 
-/* EditProjectOK describes a response with status code 200, with default header values.
+/*
+EditProjectOK describes a response with status code 200, with default header values.
 
 Project updated
 */
@@ -101,7 +102,8 @@ func NewEditProjectBadRequest() *EditProjectBadRequest {
 	return &EditProjectBadRequest{}
 }
 
-/* EditProjectBadRequest describes a response with status code 400, with default header values.
+/*
+EditProjectBadRequest describes a response with status code 400, with default header values.
 
 Bad Request
 */
@@ -133,7 +135,8 @@ func NewEditProjectForbidden() *EditProjectForbidden {
 	return &EditProjectForbidden{}
 }
 
-/* EditProjectForbidden describes a response with status code 403, with default header values.
+/*
+EditProjectForbidden describes a response with status code 403, with default header values.
 
 Unauthorized
 */
@@ -165,7 +168,8 @@ func NewEditProjectNotFound() *EditProjectNotFound {
 	return &EditProjectNotFound{}
 }
 
-/* EditProjectNotFound describes a response with status code 404, with default header values.
+/*
+EditProjectNotFound describes a response with status code 404, with default header values.
 
 Not Found
 */
@@ -197,7 +201,8 @@ func NewEditProjectConflict() *EditProjectConflict {
 	return &EditProjectConflict{}
 }
 
-/* EditProjectConflict describes a response with status code 409, with default header values.
+/*
+EditProjectConflict describes a response with status code 409, with default header values.
 
 Conflict
 */
@@ -229,7 +234,8 @@ func NewEditProjectInternalServerError() *EditProjectInternalServerError {
 	return &EditProjectInternalServerError{}
 }
 
-/* EditProjectInternalServerError describes a response with status code 500, with default header values.
+/*
+EditProjectInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */

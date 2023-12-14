@@ -53,7 +53,8 @@ func NewSearchUsernamesOK() *SearchUsernamesOK {
 	return &SearchUsernamesOK{}
 }
 
-/* SearchUsernamesOK describes a response with status code 200, with default header values.
+/*
+SearchUsernamesOK describes a response with status code 200, with default header values.
 
 Search for users matching the given search string
 */
@@ -83,7 +84,8 @@ func NewSearchUsernamesForbidden() *SearchUsernamesForbidden {
 	return &SearchUsernamesForbidden{}
 }
 
-/* SearchUsernamesForbidden describes a response with status code 403, with default header values.
+/*
+SearchUsernamesForbidden describes a response with status code 403, with default header values.
 
 Forbidden
 */
@@ -115,7 +117,8 @@ func NewSearchUsernamesInternalServerError() *SearchUsernamesInternalServerError
 	return &SearchUsernamesInternalServerError{}
 }
 
-/* SearchUsernamesInternalServerError describes a response with status code 500, with default header values.
+/*
+SearchUsernamesInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */
@@ -142,7 +145,8 @@ func (o *SearchUsernamesInternalServerError) readResponse(response runtime.Clien
 	return nil
 }
 
-/*SearchUsernamesBody search usernames body
+/*
+SearchUsernamesBody search usernames body
 swagger:model SearchUsernamesBody
 */
 type SearchUsernamesBody struct {

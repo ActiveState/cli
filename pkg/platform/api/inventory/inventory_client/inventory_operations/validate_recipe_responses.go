@@ -52,7 +52,8 @@ func NewValidateRecipeOK() *ValidateRecipeOK {
 	return &ValidateRecipeOK{}
 }
 
-/* ValidateRecipeOK describes a response with status code 200, with default header values.
+/*
+ValidateRecipeOK describes a response with status code 200, with default header values.
 
 If there are no errors, then there is no body in the response.
 */
@@ -73,7 +74,8 @@ func NewValidateRecipeBadRequest() *ValidateRecipeBadRequest {
 	return &ValidateRecipeBadRequest{}
 }
 
-/* ValidateRecipeBadRequest describes a response with status code 400, with default header values.
+/*
+ValidateRecipeBadRequest describes a response with status code 400, with default header values.
 
 If the recipe is invalid, this contains information about its errors.
 */
@@ -107,7 +109,8 @@ func NewValidateRecipeDefault(code int) *ValidateRecipeDefault {
 	}
 }
 
-/* ValidateRecipeDefault describes a response with status code -1, with default header values.
+/*
+ValidateRecipeDefault describes a response with status code -1, with default header values.
 
 If there is an error processing the order
 */

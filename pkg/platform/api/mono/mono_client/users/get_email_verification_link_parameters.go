@@ -52,10 +52,12 @@ func NewGetEmailVerificationLinkParamsWithHTTPClient(client *http.Client) *GetEm
 	}
 }
 
-/* GetEmailVerificationLinkParams contains all the parameters to send to the API endpoint
-   for the get email verification link operation.
+/*
+GetEmailVerificationLinkParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the get email verification link operation.
+
+	Typically these are written to a http.Request.
 */
 type GetEmailVerificationLinkParams struct {
 

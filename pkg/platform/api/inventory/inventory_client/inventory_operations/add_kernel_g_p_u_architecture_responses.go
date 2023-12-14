@@ -52,7 +52,8 @@ func NewAddKernelGPUArchitectureOK() *AddKernelGPUArchitectureOK {
 	return &AddKernelGPUArchitectureOK{}
 }
 
-/* AddKernelGPUArchitectureOK describes a response with status code 200, with default header values.
+/*
+AddKernelGPUArchitectureOK describes a response with status code 200, with default header values.
 
 The GPU architecture added to the kernel
 */
@@ -84,7 +85,8 @@ func NewAddKernelGPUArchitectureBadRequest() *AddKernelGPUArchitectureBadRequest
 	return &AddKernelGPUArchitectureBadRequest{}
 }
 
-/* AddKernelGPUArchitectureBadRequest describes a response with status code 400, with default header values.
+/*
+AddKernelGPUArchitectureBadRequest describes a response with status code 400, with default header values.
 
 If the GPU architecture ID doesn't exist
 */
@@ -118,7 +120,8 @@ func NewAddKernelGPUArchitectureDefault(code int) *AddKernelGPUArchitectureDefau
 	}
 }
 
-/* AddKernelGPUArchitectureDefault describes a response with status code -1, with default header values.
+/*
+AddKernelGPUArchitectureDefault describes a response with status code -1, with default header values.
 
 generic error response
 */

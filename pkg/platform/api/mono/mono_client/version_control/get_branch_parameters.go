@@ -52,10 +52,12 @@ func NewGetBranchParamsWithHTTPClient(client *http.Client) *GetBranchParams {
 	}
 }
 
-/* GetBranchParams contains all the parameters to send to the API endpoint
-   for the get branch operation.
+/*
+GetBranchParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the get branch operation.
+
+	Typically these are written to a http.Request.
 */
 type GetBranchParams struct {
 

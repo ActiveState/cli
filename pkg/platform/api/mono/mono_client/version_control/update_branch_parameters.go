@@ -54,10 +54,12 @@ func NewUpdateBranchParamsWithHTTPClient(client *http.Client) *UpdateBranchParam
 	}
 }
 
-/* UpdateBranchParams contains all the parameters to send to the API endpoint
-   for the update branch operation.
+/*
+UpdateBranchParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the update branch operation.
+
+	Typically these are written to a http.Request.
 */
 type UpdateBranchParams struct {
 

@@ -15,7 +15,7 @@ import (
 
 // CPUArchitecture CPU Architecture
 //
-// The full CPU architecture data model
+// # The full CPU architecture data model
 //
 // swagger:model cpuArchitecture
 type CPUArchitecture struct {

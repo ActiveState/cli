@@ -54,10 +54,12 @@ func NewAddKernelCPUArchitectureParamsWithHTTPClient(client *http.Client) *AddKe
 	}
 }
 
-/* AddKernelCPUArchitectureParams contains all the parameters to send to the API endpoint
-   for the add kernel Cpu architecture operation.
+/*
+AddKernelCPUArchitectureParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the add kernel Cpu architecture operation.
+
+	Typically these are written to a http.Request.
 */
 type AddKernelCPUArchitectureParams struct {
 

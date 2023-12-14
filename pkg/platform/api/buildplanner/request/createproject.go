@@ -52,6 +52,6 @@ mutation ($organization: String!, $project: String!, $private: Boolean!, $expr: 
 }`
 }
 
-func (c *createProject) Vars() (map[string]interface{}, error) {
-	return c.vars, nil
+func (c *createProject) Vars() map[string]interface{} {
+	return c.vars
 }

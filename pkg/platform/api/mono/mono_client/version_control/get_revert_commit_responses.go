@@ -57,7 +57,8 @@ func NewGetRevertCommitOK() *GetRevertCommitOK {
 	return &GetRevertCommitOK{}
 }
 
-/* GetRevertCommitOK describes a response with status code 200, with default header values.
+/*
+GetRevertCommitOK describes a response with status code 200, with default header values.
 
 Calculate a revert commit
 */
@@ -89,7 +90,8 @@ func NewGetRevertCommitForbidden() *GetRevertCommitForbidden {
 	return &GetRevertCommitForbidden{}
 }
 
-/* GetRevertCommitForbidden describes a response with status code 403, with default header values.
+/*
+GetRevertCommitForbidden describes a response with status code 403, with default header values.
 
 Forbidden
 */
@@ -121,7 +123,8 @@ func NewGetRevertCommitNotFound() *GetRevertCommitNotFound {
 	return &GetRevertCommitNotFound{}
 }
 
-/* GetRevertCommitNotFound describes a response with status code 404, with default header values.
+/*
+GetRevertCommitNotFound describes a response with status code 404, with default header values.
 
 commit was not found
 */
@@ -153,7 +156,8 @@ func NewGetRevertCommitInternalServerError() *GetRevertCommitInternalServerError
 	return &GetRevertCommitInternalServerError{}
 }
 
-/* GetRevertCommitInternalServerError describes a response with status code 500, with default header values.
+/*
+GetRevertCommitInternalServerError describes a response with status code 500, with default header values.
 
 error calculating commit
 */

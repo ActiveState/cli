@@ -46,7 +46,8 @@ func NewNormalizeNamesOK() *NormalizeNamesOK {
 	return &NormalizeNamesOK{}
 }
 
-/* NormalizeNamesOK describes a response with status code 200, with default header values.
+/*
+NormalizeNamesOK describes a response with status code 200, with default header values.
 
 A list of mappings from requested name to normalized name.
 */
@@ -80,7 +81,8 @@ func NewNormalizeNamesDefault(code int) *NormalizeNamesDefault {
 	}
 }
 
-/* NormalizeNamesDefault describes a response with status code -1, with default header values.
+/*
+NormalizeNamesDefault describes a response with status code -1, with default header values.
 
 generic error response
 */

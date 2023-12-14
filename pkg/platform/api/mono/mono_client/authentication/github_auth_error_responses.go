@@ -36,7 +36,8 @@ func NewGithubAuthErrorFound() *GithubAuthErrorFound {
 	return &GithubAuthErrorFound{}
 }
 
-/* GithubAuthErrorFound describes a response with status code 302, with default header values.
+/*
+GithubAuthErrorFound describes a response with status code 302, with default header values.
 
 Found
 */

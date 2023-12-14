@@ -65,7 +65,8 @@ func NewDeleteEmailOK() *DeleteEmailOK {
 	return &DeleteEmailOK{}
 }
 
-/* DeleteEmailOK describes a response with status code 200, with default header values.
+/*
+DeleteEmailOK describes a response with status code 200, with default header values.
 
 Email deleted
 */
@@ -97,7 +98,8 @@ func NewDeleteEmailBadRequest() *DeleteEmailBadRequest {
 	return &DeleteEmailBadRequest{}
 }
 
-/* DeleteEmailBadRequest describes a response with status code 400, with default header values.
+/*
+DeleteEmailBadRequest describes a response with status code 400, with default header values.
 
 Bad Request
 */
@@ -129,7 +131,8 @@ func NewDeleteEmailForbidden() *DeleteEmailForbidden {
 	return &DeleteEmailForbidden{}
 }
 
-/* DeleteEmailForbidden describes a response with status code 403, with default header values.
+/*
+DeleteEmailForbidden describes a response with status code 403, with default header values.
 
 Forbidden
 */
@@ -161,7 +164,8 @@ func NewDeleteEmailNotFound() *DeleteEmailNotFound {
 	return &DeleteEmailNotFound{}
 }
 
-/* DeleteEmailNotFound describes a response with status code 404, with default header values.
+/*
+DeleteEmailNotFound describes a response with status code 404, with default header values.
 
 Not Found
 */
@@ -193,7 +197,8 @@ func NewDeleteEmailInternalServerError() *DeleteEmailInternalServerError {
 	return &DeleteEmailInternalServerError{}
 }
 
-/* DeleteEmailInternalServerError describes a response with status code 500, with default header values.
+/*
+DeleteEmailInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */
@@ -220,7 +225,8 @@ func (o *DeleteEmailInternalServerError) readResponse(response runtime.ClientRes
 	return nil
 }
 
-/*DeleteEmailBody delete email body
+/*
+DeleteEmailBody delete email body
 swagger:model DeleteEmailBody
 */
 type DeleteEmailBody struct {
