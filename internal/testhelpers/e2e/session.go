@@ -172,48 +172,7 @@ func New(t *testing.T, retainDirs bool, extraEnv ...string) *Session {
 func new(t *testing.T, retainDirs, updatePath bool, extraEnv ...string) *Session {
 	dirs, err := NewDirs("")
 	require.NoError(t, err)
-	var env []string
-	env = append(env, []string{
-		constants.ConfigEnvVarName + "=" + dirs.Config,
-		constants.CacheEnvVarName + "=" + dirs.Cache,
-		constants.DisableRuntime + "=true",
-		constants.ProjectEnvVarName + "=",
-		constants.E2ETestEnvVarName + "=true",
-		constants.DisableUpdates + "=true",
-		constants.DisableProjectMigrationPrompt + "=true",
-		constants.OptinUnstableEnvVarName + "=true",
-		constants.ServiceSockDir + "=" + dirs.SockRoot,
-		constants.HomeEnvVarName + "=" + dirs.HomeDir,
-		"NO_COLOR=true",
-		"CI=true",
-	}...)
-
-	testPath := "/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local:/usr/local/sbin:/usr/local/opt"
-	if runtime.GOOS == "windows" {
-		testPath = os.Getenv("PATH")
-	}
-	if updatePath {
-		// add bin path
-		// Remove release state tool installation from PATH
-		oldPath := testPath
-		newPath := fmt.Sprintf(
-			"PATH=%s%s%s",
-			dirs.Bin, string(os.PathListSeparator), oldPath,
-		)
-		env = append(env, newPath)
-	} else {
-		env = append(env, "PATH="+testPath)
-	}
-
-	if runtime.GOOS != "windows" {
-		env = append(env, "HOME="+dirs.HomeDir)
-	}
-
-	err = prepareHomeDir(dirs.HomeDir)
-	require.NoError(t, err)
-
-	// add session environment variables
-	env = append(env, extraEnv...)
+	env := sandboxedTestEnvironment(t, dirs, updatePath)
 
 	session := &Session{Dirs: dirs, Env: env, retainDirs: retainDirs, t: t}
 
@@ -235,39 +194,6 @@ func new(t *testing.T, retainDirs, updatePath bool, extraEnv ...string) *Session
 	require.NoError(session.t, err)
 
 	return session
-}
-
-func prepareHomeDir(dir string) error {
-	if runtime.GOOS == "windows" {
-		return nil
-	}
-
-	// Create dir if it doesn't exist
-	if !fileutils.DirExists(dir) {
-		err := fileutils.Mkdir(dir)
-		if err != nil {
-			return errs.Wrap(err, "Could not create home dir")
-		}
-	}
-
-	// Depending on OS, copy files from asset dir
-	var filename string
-	switch runtime.GOOS {
-	case "linux":
-		filename = ".bashrc"
-	case "darwin":
-		filename = ".zshrc"
-	}
-
-	rcFile := filepath.Join(dir, filename)
-	fmt.Println("Creating rc file: " + rcFile)
-	err := fileutils.Touch(rcFile)
-	if err != nil {
-		return errs.Wrap(err, "Could not create rc file")
-	}
-
-	return nil
-
 }
 
 func NewNoPathUpdate(t *testing.T, retainDirs bool, extraEnv ...string) *Session {
