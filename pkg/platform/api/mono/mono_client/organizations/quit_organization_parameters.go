@@ -52,10 +52,12 @@ func NewQuitOrganizationParamsWithHTTPClient(client *http.Client) *QuitOrganizat
 	}
 }
 
-/* QuitOrganizationParams contains all the parameters to send to the API endpoint
-   for the quit organization operation.
+/*
+QuitOrganizationParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the quit organization operation.
+
+	Typically these are written to a http.Request.
 */
 type QuitOrganizationParams struct {
 

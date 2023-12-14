@@ -63,7 +63,8 @@ func NewChangePasswordOK() *ChangePasswordOK {
 	return &ChangePasswordOK{}
 }
 
-/* ChangePasswordOK describes a response with status code 200, with default header values.
+/*
+ChangePasswordOK describes a response with status code 200, with default header values.
 
 Success
 */
@@ -95,7 +96,8 @@ func NewChangePasswordBadRequest() *ChangePasswordBadRequest {
 	return &ChangePasswordBadRequest{}
 }
 
-/* ChangePasswordBadRequest describes a response with status code 400, with default header values.
+/*
+ChangePasswordBadRequest describes a response with status code 400, with default header values.
 
 Bad Request
 */
@@ -127,7 +129,8 @@ func NewChangePasswordForbidden() *ChangePasswordForbidden {
 	return &ChangePasswordForbidden{}
 }
 
-/* ChangePasswordForbidden describes a response with status code 403, with default header values.
+/*
+ChangePasswordForbidden describes a response with status code 403, with default header values.
 
 Forbidden
 */
@@ -159,7 +162,8 @@ func NewChangePasswordNotFound() *ChangePasswordNotFound {
 	return &ChangePasswordNotFound{}
 }
 
-/* ChangePasswordNotFound describes a response with status code 404, with default header values.
+/*
+ChangePasswordNotFound describes a response with status code 404, with default header values.
 
 Not Found
 */
@@ -191,7 +195,8 @@ func NewChangePasswordInternalServerError() *ChangePasswordInternalServerError {
 	return &ChangePasswordInternalServerError{}
 }
 
-/* ChangePasswordInternalServerError describes a response with status code 500, with default header values.
+/*
+ChangePasswordInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */

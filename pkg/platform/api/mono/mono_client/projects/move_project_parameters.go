@@ -52,10 +52,12 @@ func NewMoveProjectParamsWithHTTPClient(client *http.Client) *MoveProjectParams 
 	}
 }
 
-/* MoveProjectParams contains all the parameters to send to the API endpoint
-   for the move project operation.
+/*
+MoveProjectParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the move project operation.
+
+	Typically these are written to a http.Request.
 */
 type MoveProjectParams struct {
 

@@ -52,9 +52,9 @@ type ClientService interface {
 }
 
 /*
-  AddBranch adds branch
+AddBranch adds branch
 
-  Add a branch on the specified project
+Add a branch on the specified project
 */
 func (a *Client) AddBranch(params *AddBranchParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddBranchOK, error) {
 	// TODO: Validate the params before sending
@@ -93,9 +93,9 @@ func (a *Client) AddBranch(params *AddBranchParams, authInfo runtime.ClientAuthI
 }
 
 /*
-  AddProject creates a project
+AddProject creates a project
 
-  Add a new project to an organization
+Add a new project to an organization
 */
 func (a *Client) AddProject(params *AddProjectParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddProjectOK, error) {
 	// TODO: Validate the params before sending
@@ -134,9 +134,9 @@ func (a *Client) AddProject(params *AddProjectParams, authInfo runtime.ClientAut
 }
 
 /*
-  DeleteProject deletes a project
+DeleteProject deletes a project
 
-  Delete a Project
+Delete a Project
 */
 func (a *Client) DeleteProject(params *DeleteProjectParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteProjectOK, error) {
 	// TODO: Validate the params before sending
@@ -175,9 +175,9 @@ func (a *Client) DeleteProject(params *DeleteProjectParams, authInfo runtime.Cli
 }
 
 /*
-  EditProject edits a project
+EditProject edits a project
 
-  Edit a project
+Edit a project
 */
 func (a *Client) EditProject(params *EditProjectParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*EditProjectOK, error) {
 	// TODO: Validate the params before sending
@@ -216,9 +216,9 @@ func (a *Client) EditProject(params *EditProjectParams, authInfo runtime.ClientA
 }
 
 /*
-  ForkProject forks a project
+ForkProject forks a project
 
-  Fork a project
+Fork a project
 */
 func (a *Client) ForkProject(params *ForkProjectParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ForkProjectOK, error) {
 	// TODO: Validate the params before sending
@@ -257,9 +257,9 @@ func (a *Client) ForkProject(params *ForkProjectParams, authInfo runtime.ClientA
 }
 
 /*
-  GetProject organizations project info
+GetProject organizations project info
 
-  Get project details
+Get project details
 */
 func (a *Client) GetProject(params *GetProjectParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetProjectOK, error) {
 	// TODO: Validate the params before sending
@@ -298,9 +298,9 @@ func (a *Client) GetProject(params *GetProjectParams, authInfo runtime.ClientAut
 }
 
 /*
-  GetProjectByID projects info
+GetProjectByID projects info
 
-  Get project details by ID
+Get project details by ID
 */
 func (a *Client) GetProjectByID(params *GetProjectByIDParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetProjectByIDOK, error) {
 	// TODO: Validate the params before sending
@@ -339,9 +339,9 @@ func (a *Client) GetProjectByID(params *GetProjectByIDParams, authInfo runtime.C
 }
 
 /*
-  ListProjects organizations projects
+ListProjects organizations projects
 
-  Return a list of projects for an organization
+Return a list of projects for an organization
 */
 func (a *Client) ListProjects(params *ListProjectsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListProjectsOK, error) {
 	// TODO: Validate the params before sending
@@ -380,9 +380,9 @@ func (a *Client) ListProjects(params *ListProjectsParams, authInfo runtime.Clien
 }
 
 /*
-  MoveProject moves a project to a different organization
+MoveProject moves a project to a different organization
 
-  Move a project to a different organization
+Move a project to a different organization
 */
 func (a *Client) MoveProject(params *MoveProjectParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*MoveProjectOK, error) {
 	// TODO: Validate the params before sending

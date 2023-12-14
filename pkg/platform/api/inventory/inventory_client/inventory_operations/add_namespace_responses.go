@@ -52,7 +52,8 @@ func NewAddNamespaceCreated() *AddNamespaceCreated {
 	return &AddNamespaceCreated{}
 }
 
-/* AddNamespaceCreated describes a response with status code 201, with default header values.
+/*
+AddNamespaceCreated describes a response with status code 201, with default header values.
 
 Returns the created namespace
 */
@@ -84,7 +85,8 @@ func NewAddNamespaceBadRequest() *AddNamespaceBadRequest {
 	return &AddNamespaceBadRequest{}
 }
 
-/* AddNamespaceBadRequest describes a response with status code 400, with default header values.
+/*
+AddNamespaceBadRequest describes a response with status code 400, with default header values.
 
 If the namespace is invalid
 */
@@ -118,7 +120,8 @@ func NewAddNamespaceDefault(code int) *AddNamespaceDefault {
 	}
 }
 
-/* AddNamespaceDefault describes a response with status code -1, with default header values.
+/*
+AddNamespaceDefault describes a response with status code -1, with default header values.
 
 If there is an error processing the namespace
 */

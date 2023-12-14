@@ -52,10 +52,12 @@ func NewGetCommitParamsWithHTTPClient(client *http.Client) *GetCommitParams {
 	}
 }
 
-/* GetCommitParams contains all the parameters to send to the API endpoint
-   for the get commit operation.
+/*
+GetCommitParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the get commit operation.
+
+	Typically these are written to a http.Request.
 */
 type GetCommitParams struct {
 

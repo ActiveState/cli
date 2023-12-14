@@ -57,7 +57,8 @@ func NewGetOrganizationOK() *GetOrganizationOK {
 	return &GetOrganizationOK{}
 }
 
-/* GetOrganizationOK describes a response with status code 200, with default header values.
+/*
+GetOrganizationOK describes a response with status code 200, with default header values.
 
 Organization Record
 */
@@ -89,7 +90,8 @@ func NewGetOrganizationBadRequest() *GetOrganizationBadRequest {
 	return &GetOrganizationBadRequest{}
 }
 
-/* GetOrganizationBadRequest describes a response with status code 400, with default header values.
+/*
+GetOrganizationBadRequest describes a response with status code 400, with default header values.
 
 Bad Request
 */
@@ -121,7 +123,8 @@ func NewGetOrganizationNotFound() *GetOrganizationNotFound {
 	return &GetOrganizationNotFound{}
 }
 
-/* GetOrganizationNotFound describes a response with status code 404, with default header values.
+/*
+GetOrganizationNotFound describes a response with status code 404, with default header values.
 
 Not Found
 */
@@ -153,7 +156,8 @@ func NewGetOrganizationInternalServerError() *GetOrganizationInternalServerError
 	return &GetOrganizationInternalServerError{}
 }
 
-/* GetOrganizationInternalServerError describes a response with status code 500, with default header values.
+/*
+GetOrganizationInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */

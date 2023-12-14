@@ -1,9 +1,7 @@
 package packages
 
 import (
-	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/internal/runbits/requirements"
 	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
@@ -12,7 +10,7 @@ import (
 
 // UninstallRunParams tracks the info required for running Uninstall.
 type UninstallRunParams struct {
-	Package captain.PackageValueNoVersion
+	Name string
 }
 
 // Uninstall manages the uninstalling execution context.
@@ -33,21 +31,11 @@ func (u *Uninstall) Run(params UninstallRunParams, nsType model.NamespaceType) (
 		return rationalize.ErrNoProject
 	}
 
-	var nsTypeV *model.NamespaceType
-	var ns *model.Namespace
-
-	if params.Package.Namespace != "" {
-		ns = ptr.To(model.NewRawNamespace(params.Package.Namespace))
-	} else {
-		nsTypeV = &nsType
-	}
-
 	return requirements.NewRequirementOperation(u.prime).ExecuteRequirementOperation(
-		params.Package.Name,
+		params.Name,
 		"",
+		0,
 		bpModel.OperationRemoved,
-		ns,
-		nsTypeV,
-		nil,
+		nsType,
 	)
 }

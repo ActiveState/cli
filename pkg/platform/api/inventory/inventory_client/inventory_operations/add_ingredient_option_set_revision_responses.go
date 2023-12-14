@@ -52,7 +52,8 @@ func NewAddIngredientOptionSetRevisionOK() *AddIngredientOptionSetRevisionOK {
 	return &AddIngredientOptionSetRevisionOK{}
 }
 
-/* AddIngredientOptionSetRevisionOK describes a response with status code 200, with default header values.
+/*
+AddIngredientOptionSetRevisionOK describes a response with status code 200, with default header values.
 
 The updated state of the ingredient option set
 */
@@ -84,7 +85,8 @@ func NewAddIngredientOptionSetRevisionBadRequest() *AddIngredientOptionSetRevisi
 	return &AddIngredientOptionSetRevisionBadRequest{}
 }
 
-/* AddIngredientOptionSetRevisionBadRequest describes a response with status code 400, with default header values.
+/*
+AddIngredientOptionSetRevisionBadRequest describes a response with status code 400, with default header values.
 
 If the ingredient option set revision is invalid
 */
@@ -118,7 +120,8 @@ func NewAddIngredientOptionSetRevisionDefault(code int) *AddIngredientOptionSetR
 	}
 }
 
-/* AddIngredientOptionSetRevisionDefault describes a response with status code -1, with default header values.
+/*
+AddIngredientOptionSetRevisionDefault describes a response with status code -1, with default header values.
 
 If there is an error processing the ingredient option set revision
 */

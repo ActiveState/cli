@@ -71,7 +71,8 @@ func NewAddEmailOK() *AddEmailOK {
 	return &AddEmailOK{}
 }
 
-/* AddEmailOK describes a response with status code 200, with default header values.
+/*
+AddEmailOK describes a response with status code 200, with default header values.
 
 Email added
 */
@@ -103,7 +104,8 @@ func NewAddEmailBadRequest() *AddEmailBadRequest {
 	return &AddEmailBadRequest{}
 }
 
-/* AddEmailBadRequest describes a response with status code 400, with default header values.
+/*
+AddEmailBadRequest describes a response with status code 400, with default header values.
 
 Bad Request
 */
@@ -135,7 +137,8 @@ func NewAddEmailForbidden() *AddEmailForbidden {
 	return &AddEmailForbidden{}
 }
 
-/* AddEmailForbidden describes a response with status code 403, with default header values.
+/*
+AddEmailForbidden describes a response with status code 403, with default header values.
 
 Forbidden
 */
@@ -167,7 +170,8 @@ func NewAddEmailNotFound() *AddEmailNotFound {
 	return &AddEmailNotFound{}
 }
 
-/* AddEmailNotFound describes a response with status code 404, with default header values.
+/*
+AddEmailNotFound describes a response with status code 404, with default header values.
 
 Not Found
 */
@@ -199,7 +203,8 @@ func NewAddEmailConflict() *AddEmailConflict {
 	return &AddEmailConflict{}
 }
 
-/* AddEmailConflict describes a response with status code 409, with default header values.
+/*
+AddEmailConflict describes a response with status code 409, with default header values.
 
 Conflict
 */
@@ -231,7 +236,8 @@ func NewAddEmailInternalServerError() *AddEmailInternalServerError {
 	return &AddEmailInternalServerError{}
 }
 
-/* AddEmailInternalServerError describes a response with status code 500, with default header values.
+/*
+AddEmailInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */
@@ -258,7 +264,8 @@ func (o *AddEmailInternalServerError) readResponse(response runtime.ClientRespon
 	return nil
 }
 
-/*AddEmailBody add email body
+/*
+AddEmailBody add email body
 swagger:model AddEmailBody
 */
 type AddEmailBody struct {

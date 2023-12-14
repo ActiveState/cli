@@ -16,7 +16,7 @@ import (
 
 // KernelCore Kernel Core
 //
-// The properties of a kernel needed to create a new one
+// # The properties of a kernel needed to create a new one
 //
 // swagger:model kernelCore
 type KernelCore struct {

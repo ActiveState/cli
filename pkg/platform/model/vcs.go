@@ -81,8 +81,8 @@ const (
 	// NamespaceCamelFlagsMatch is the namespace used for passing camel flags
 	NamespaceCamelFlagsMatch = `^camel-flags$`
 
-	// NamespaceOrgMatch is the namespace used for org specific requirements
-	NamespaceOrgMatch = `^org\/`
+	// NamespaceSharedMatch is the namespace used for shared requirements (usually runtime libraries)
+	NamespaceSharedMatch = `^shared$`
 
 	// NamespaceBuildFlagsMatch is the namespace used for passing build flags
 	NamespaceBuildFlagsMatch = `^build-flags$`
@@ -133,8 +133,6 @@ var (
 	NamespaceBundle   = NamespaceType{"bundle", "bundles", NamespaceBundlesMatch}
 	NamespaceLanguage = NamespaceType{"language", "", NamespaceLanguageMatch}
 	NamespacePlatform = NamespaceType{"platform", "", NamespacePlatformMatch}
-	NamespaceOrg      = NamespaceType{"org", "org", NamespaceOrgMatch}
-	NamespaceRaw      = NamespaceType{"raw", "", ""}
 	NamespaceBlank    = NamespaceType{"", "", ""}
 )
 
@@ -180,10 +178,6 @@ func NewNamespacePackage(language string) Namespace {
 	return Namespace{NamespacePackage, fmt.Sprintf("language/%s", language)}
 }
 
-func NewRawNamespace(value string) Namespace {
-	return Namespace{NamespaceRaw, value}
-}
-
 func NewBlankNamespace() Namespace {
 	return Namespace{NamespaceBlank, ""}
 }
@@ -201,13 +195,6 @@ func NewNamespaceLanguage() Namespace {
 // NewNamespacePlatform provides the base platform namespace.
 func NewNamespacePlatform() Namespace {
 	return Namespace{NamespacePlatform, "platform"}
-}
-
-func NewOrgNamespace(orgName string) Namespace {
-	return Namespace{
-		nsType: NamespaceOrg,
-		value:  fmt.Sprintf("org/%s", orgName),
-	}
 }
 
 func LanguageFromNamespace(ns string) string {

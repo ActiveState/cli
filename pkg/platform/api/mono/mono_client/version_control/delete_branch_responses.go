@@ -57,7 +57,8 @@ func NewDeleteBranchOK() *DeleteBranchOK {
 	return &DeleteBranchOK{}
 }
 
-/* DeleteBranchOK describes a response with status code 200, with default header values.
+/*
+DeleteBranchOK describes a response with status code 200, with default header values.
 
 Branch deleted successfully
 */
@@ -89,7 +90,8 @@ func NewDeleteBranchForbidden() *DeleteBranchForbidden {
 	return &DeleteBranchForbidden{}
 }
 
-/* DeleteBranchForbidden describes a response with status code 403, with default header values.
+/*
+DeleteBranchForbidden describes a response with status code 403, with default header values.
 
 Forbidden
 */
@@ -121,7 +123,8 @@ func NewDeleteBranchNotFound() *DeleteBranchNotFound {
 	return &DeleteBranchNotFound{}
 }
 
-/* DeleteBranchNotFound describes a response with status code 404, with default header values.
+/*
+DeleteBranchNotFound describes a response with status code 404, with default header values.
 
 branch was not found
 */
@@ -153,7 +156,8 @@ func NewDeleteBranchInternalServerError() *DeleteBranchInternalServerError {
 	return &DeleteBranchInternalServerError{}
 }
 
-/* DeleteBranchInternalServerError describes a response with status code 500, with default header values.
+/*
+DeleteBranchInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */

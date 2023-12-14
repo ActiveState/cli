@@ -52,10 +52,12 @@ func NewDeleteInviteParamsWithHTTPClient(client *http.Client) *DeleteInviteParam
 	}
 }
 
-/* DeleteInviteParams contains all the parameters to send to the API endpoint
-   for the delete invite operation.
+/*
+DeleteInviteParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the delete invite operation.
+
+	Typically these are written to a http.Request.
 */
 type DeleteInviteParams struct {
 

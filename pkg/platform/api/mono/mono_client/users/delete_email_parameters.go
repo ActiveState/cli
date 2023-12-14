@@ -52,10 +52,12 @@ func NewDeleteEmailParamsWithHTTPClient(client *http.Client) *DeleteEmailParams 
 	}
 }
 
-/* DeleteEmailParams contains all the parameters to send to the API endpoint
-   for the delete email operation.
+/*
+DeleteEmailParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the delete email operation.
+
+	Typically these are written to a http.Request.
 */
 type DeleteEmailParams struct {
 

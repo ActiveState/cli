@@ -45,7 +45,8 @@ func NewGetInvitationsByUserOK() *GetInvitationsByUserOK {
 	return &GetInvitationsByUserOK{}
 }
 
-/* GetInvitationsByUserOK describes a response with status code 200, with default header values.
+/*
+GetInvitationsByUserOK describes a response with status code 200, with default header values.
 
 Pending Invitations
 */
@@ -75,7 +76,8 @@ func NewGetInvitationsByUserInternalServerError() *GetInvitationsByUserInternalS
 	return &GetInvitationsByUserInternalServerError{}
 }
 
-/* GetInvitationsByUserInternalServerError describes a response with status code 500, with default header values.
+/*
+GetInvitationsByUserInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */

@@ -63,7 +63,8 @@ func NewGetHARepoOK() *GetHARepoOK {
 	return &GetHARepoOK{}
 }
 
-/* GetHARepoOK describes a response with status code 200, with default header values.
+/*
+GetHARepoOK describes a response with status code 200, with default header values.
 
 Success
 */
@@ -95,7 +96,8 @@ func NewGetHARepoBadRequest() *GetHARepoBadRequest {
 	return &GetHARepoBadRequest{}
 }
 
-/* GetHARepoBadRequest describes a response with status code 400, with default header values.
+/*
+GetHARepoBadRequest describes a response with status code 400, with default header values.
 
 Bad Request
 */
@@ -127,7 +129,8 @@ func NewGetHARepoForbidden() *GetHARepoForbidden {
 	return &GetHARepoForbidden{}
 }
 
-/* GetHARepoForbidden describes a response with status code 403, with default header values.
+/*
+GetHARepoForbidden describes a response with status code 403, with default header values.
 
 Unauthorized
 */
@@ -159,7 +162,8 @@ func NewGetHARepoNotFound() *GetHARepoNotFound {
 	return &GetHARepoNotFound{}
 }
 
-/* GetHARepoNotFound describes a response with status code 404, with default header values.
+/*
+GetHARepoNotFound describes a response with status code 404, with default header values.
 
 Not Found
 */
@@ -191,7 +195,8 @@ func NewGetHARepoInternalServerError() *GetHARepoInternalServerError {
 	return &GetHARepoInternalServerError{}
 }
 
-/* GetHARepoInternalServerError describes a response with status code 500, with default header values.
+/*
+GetHARepoInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */

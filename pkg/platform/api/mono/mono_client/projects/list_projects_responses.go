@@ -51,7 +51,8 @@ func NewListProjectsOK() *ListProjectsOK {
 	return &ListProjectsOK{}
 }
 
-/* ListProjectsOK describes a response with status code 200, with default header values.
+/*
+ListProjectsOK describes a response with status code 200, with default header values.
 
 Success
 */
@@ -81,7 +82,8 @@ func NewListProjectsNotFound() *ListProjectsNotFound {
 	return &ListProjectsNotFound{}
 }
 
-/* ListProjectsNotFound describes a response with status code 404, with default header values.
+/*
+ListProjectsNotFound describes a response with status code 404, with default header values.
 
 Not Found
 */
@@ -113,7 +115,8 @@ func NewListProjectsInternalServerError() *ListProjectsInternalServerError {
 	return &ListProjectsInternalServerError{}
 }
 
-/* ListProjectsInternalServerError describes a response with status code 500, with default header values.
+/*
+ListProjectsInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */

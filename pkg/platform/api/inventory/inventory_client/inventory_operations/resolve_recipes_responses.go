@@ -58,7 +58,8 @@ func NewResolveRecipesOK() *ResolveRecipesOK {
 	return &ResolveRecipesOK{}
 }
 
-/* ResolveRecipesOK describes a response with status code 200, with default header values.
+/*
+ResolveRecipesOK describes a response with status code 200, with default header values.
 
 Returns one or more recipes that fulfill the requirements of the order
 */
@@ -90,7 +91,8 @@ func NewResolveRecipesAccepted() *ResolveRecipesAccepted {
 	return &ResolveRecipesAccepted{}
 }
 
-/* ResolveRecipesAccepted describes a response with status code 202, with default header values.
+/*
+ResolveRecipesAccepted describes a response with status code 202, with default header values.
 
 If the recipe is not found in the cache when only_cached_responses is set, submits the order and returns
 */
@@ -122,7 +124,8 @@ func NewResolveRecipesBadRequest() *ResolveRecipesBadRequest {
 	return &ResolveRecipesBadRequest{}
 }
 
-/* ResolveRecipesBadRequest describes a response with status code 400, with default header values.
+/*
+ResolveRecipesBadRequest describes a response with status code 400, with default header values.
 
 If the order is invalid
 */
@@ -156,7 +159,8 @@ func NewResolveRecipesDefault(code int) *ResolveRecipesDefault {
 	}
 }
 
-/* ResolveRecipesDefault describes a response with status code -1, with default header values.
+/*
+ResolveRecipesDefault describes a response with status code -1, with default header values.
 
 If there is an error processing the order
 */

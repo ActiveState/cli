@@ -27,7 +27,7 @@ func (suite *ForkIntegrationTestSuite) TestFork() {
 	ts := e2e.New(suite.T(), false)
 	defer suite.cleanup(ts)
 
-	username, _, _ := ts.CreateNewUser()
+	username, _ := ts.CreateNewUser()
 
 	cp := ts.Spawn("fork", "ActiveState-CLI/Python3", "--name", "Test-Python3", "--org", username)
 	cp.Expect("fork has been successfully created")

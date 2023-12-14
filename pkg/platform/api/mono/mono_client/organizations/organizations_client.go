@@ -86,9 +86,9 @@ type ClientService interface {
 }
 
 /*
-  AddOrganization creates a new organization
+AddOrganization creates a new organization
 
-  Create a new organization
+Create a new organization
 */
 func (a *Client) AddOrganization(params *AddOrganizationParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddOrganizationOK, error) {
 	// TODO: Validate the params before sending
@@ -127,9 +127,9 @@ func (a *Client) AddOrganization(params *AddOrganizationParams, authInfo runtime
 }
 
 /*
-  AddOrganizationAutoInvite adds a domain to organization auto invite
+AddOrganizationAutoInvite adds a domain to organization auto invite
 
-  Add a domain to an organization's auto-invite settings
+Add a domain to an organization's auto-invite settings
 */
 func (a *Client) AddOrganizationAutoInvite(params *AddOrganizationAutoInviteParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddOrganizationAutoInviteOK, error) {
 	// TODO: Validate the params before sending
@@ -168,21 +168,22 @@ func (a *Client) AddOrganizationAutoInvite(params *AddOrganizationAutoInvitePara
 }
 
 /*
-  BulkInviteOrganization bulks organization invitations
+	BulkInviteOrganization bulks organization invitations
 
-  Invite many users to an organization at once. Note that while the content type
+	Invite many users to an organization at once. Note that while the content type
+
 must be sent as `text/plain`, the body is actually two column CSV data. First
 column is the role to assign them. It should be one of `admin`, `editor`, or
 `reader`. Second is email address.
 
 Example:
-  ```
-  editor, person1@email.com
-  editor, person2@email.com
-  ```
 
-  Note that quoted strings are not supported.
+	```
+	editor, person1@email.com
+	editor, person2@email.com
+	```
 
+	Note that quoted strings are not supported.
 */
 func (a *Client) BulkInviteOrganization(params *BulkInviteOrganizationParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*BulkInviteOrganizationOK, error) {
 	// TODO: Validate the params before sending
@@ -221,9 +222,9 @@ func (a *Client) BulkInviteOrganization(params *BulkInviteOrganizationParams, au
 }
 
 /*
-  DeleteInvite invites a user to an organization
+DeleteInvite invites a user to an organization
 
-  Revoke a user's invitation
+Revoke a user's invitation
 */
 func (a *Client) DeleteInvite(params *DeleteInviteParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteInviteOK, error) {
 	// TODO: Validate the params before sending
@@ -262,9 +263,9 @@ func (a *Client) DeleteInvite(params *DeleteInviteParams, authInfo runtime.Clien
 }
 
 /*
-  DeleteOrganization deletes an organization
+DeleteOrganization deletes an organization
 
-  Delete an organization
+Delete an organization
 */
 func (a *Client) DeleteOrganization(params *DeleteOrganizationParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteOrganizationOK, error) {
 	// TODO: Validate the params before sending
@@ -303,9 +304,9 @@ func (a *Client) DeleteOrganization(params *DeleteOrganizationParams, authInfo r
 }
 
 /*
-  DeleteOrganizationAutoInvite removes a domain from an organization s auto invite settings
+DeleteOrganizationAutoInvite removes a domain from an organization s auto invite settings
 
-  Remove a domain from an organization's auto-invite settings
+Remove a domain from an organization's auto-invite settings
 */
 func (a *Client) DeleteOrganizationAutoInvite(params *DeleteOrganizationAutoInviteParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteOrganizationAutoInviteOK, error) {
 	// TODO: Validate the params before sending
@@ -344,9 +345,9 @@ func (a *Client) DeleteOrganizationAutoInvite(params *DeleteOrganizationAutoInvi
 }
 
 /*
-  EditBilling updates an orgs billing information
+EditBilling updates an orgs billing information
 
-  Update an orgs billing information
+Update an orgs billing information
 */
 func (a *Client) EditBilling(params *EditBillingParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*EditBillingOK, error) {
 	// TODO: Validate the params before sending
@@ -385,9 +386,9 @@ func (a *Client) EditBilling(params *EditBillingParams, authInfo runtime.ClientA
 }
 
 /*
-  EditMember edits a member of an organization
+EditMember edits a member of an organization
 
-  Edit a member of an organization
+Edit a member of an organization
 */
 func (a *Client) EditMember(params *EditMemberParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*EditMemberOK, error) {
 	// TODO: Validate the params before sending
@@ -426,9 +427,9 @@ func (a *Client) EditMember(params *EditMemberParams, authInfo runtime.ClientAut
 }
 
 /*
-  EditOrganization edits an organization
+EditOrganization edits an organization
 
-  Edit an organization
+Edit an organization
 */
 func (a *Client) EditOrganization(params *EditOrganizationParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*EditOrganizationOK, error) {
 	// TODO: Validate the params before sending
@@ -467,9 +468,9 @@ func (a *Client) EditOrganization(params *EditOrganizationParams, authInfo runti
 }
 
 /*
-  GetAdminMetadata gets admin metadata for organization
+GetAdminMetadata gets admin metadata for organization
 
-  Get admin metadata
+Get admin metadata
 */
 func (a *Client) GetAdminMetadata(params *GetAdminMetadataParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAdminMetadataOK, error) {
 	// TODO: Validate the params before sending
@@ -508,9 +509,9 @@ func (a *Client) GetAdminMetadata(params *GetAdminMetadataParams, authInfo runti
 }
 
 /*
-  GetBilling retrieves an orgs billing information
+GetBilling retrieves an orgs billing information
 
-  Retrieve an orgs billing information
+Retrieve an orgs billing information
 */
 func (a *Client) GetBilling(params *GetBillingParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetBillingOK, error) {
 	// TODO: Validate the params before sending
@@ -549,9 +550,9 @@ func (a *Client) GetBilling(params *GetBillingParams, authInfo runtime.ClientAut
 }
 
 /*
-  GetNextMutationID nexts mutation ID
+GetNextMutationID nexts mutation ID
 
-  Get the id that the next mutation of this org should use
+Get the id that the next mutation of this org should use
 */
 func (a *Client) GetNextMutationID(params *GetNextMutationIDParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetNextMutationIDOK, error) {
 	// TODO: Validate the params before sending
@@ -590,9 +591,9 @@ func (a *Client) GetNextMutationID(params *GetNextMutationIDParams, authInfo run
 }
 
 /*
-  GetOrganization retrieves an organization
+GetOrganization retrieves an organization
 
-  Return a specific organization
+Return a specific organization
 */
 func (a *Client) GetOrganization(params *GetOrganizationParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetOrganizationOK, error) {
 	// TODO: Validate the params before sending
@@ -631,9 +632,9 @@ func (a *Client) GetOrganization(params *GetOrganizationParams, authInfo runtime
 }
 
 /*
-  GetOrganizationAutoInvite organizations auto invite settings
+GetOrganizationAutoInvite organizations auto invite settings
 
-  Return organization auto-invite settings
+Return organization auto-invite settings
 */
 func (a *Client) GetOrganizationAutoInvite(params *GetOrganizationAutoInviteParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetOrganizationAutoInviteOK, error) {
 	// TODO: Validate the params before sending
@@ -672,9 +673,9 @@ func (a *Client) GetOrganizationAutoInvite(params *GetOrganizationAutoInvitePara
 }
 
 /*
-  GetOrganizationInvitations organizations invitations
+GetOrganizationInvitations organizations invitations
 
-  Return a list of pending invitations
+Return a list of pending invitations
 */
 func (a *Client) GetOrganizationInvitations(params *GetOrganizationInvitationsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetOrganizationInvitationsOK, error) {
 	// TODO: Validate the params before sending
@@ -713,9 +714,9 @@ func (a *Client) GetOrganizationInvitations(params *GetOrganizationInvitationsPa
 }
 
 /*
-  GetOrganizationMembers organizations membership
+GetOrganizationMembers organizations membership
 
-  Return a list of users who are members of the organization
+Return a list of users who are members of the organization
 */
 func (a *Client) GetOrganizationMembers(params *GetOrganizationMembersParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetOrganizationMembersOK, error) {
 	// TODO: Validate the params before sending
@@ -754,9 +755,9 @@ func (a *Client) GetOrganizationMembers(params *GetOrganizationMembersParams, au
 }
 
 /*
-  GetOrganizationMutations gets history of mutations applied to an organization
+GetOrganizationMutations gets history of mutations applied to an organization
 
-  Query mutation records for the org
+Query mutation records for the org
 */
 func (a *Client) GetOrganizationMutations(params *GetOrganizationMutationsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetOrganizationMutationsOK, error) {
 	// TODO: Validate the params before sending
@@ -795,9 +796,9 @@ func (a *Client) GetOrganizationMutations(params *GetOrganizationMutationsParams
 }
 
 /*
-  GetOrganizationTier gets information about an organization s tier
+GetOrganizationTier gets information about an organization s tier
 
-  Get information about an organization's tier
+Get information about an organization's tier
 */
 func (a *Client) GetOrganizationTier(params *GetOrganizationTierParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetOrganizationTierOK, error) {
 	// TODO: Validate the params before sending
@@ -836,9 +837,9 @@ func (a *Client) GetOrganizationTier(params *GetOrganizationTierParams, authInfo
 }
 
 /*
-  InviteOrganization invites a user to an organization
+InviteOrganization invites a user to an organization
 
-  Invite a user to an organization's roster
+Invite a user to an organization's roster
 */
 func (a *Client) InviteOrganization(params *InviteOrganizationParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*InviteOrganizationOK, error) {
 	// TODO: Validate the params before sending
@@ -877,9 +878,9 @@ func (a *Client) InviteOrganization(params *InviteOrganizationParams, authInfo r
 }
 
 /*
-  JoinOrganization joins a user to an organization
+JoinOrganization joins a user to an organization
 
-  Add a user to an organization's roster
+Add a user to an organization's roster
 */
 func (a *Client) JoinOrganization(params *JoinOrganizationParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*JoinOrganizationOK, error) {
 	// TODO: Validate the params before sending
@@ -918,9 +919,9 @@ func (a *Client) JoinOrganization(params *JoinOrganizationParams, authInfo runti
 }
 
 /*
-  KomodoAuthorized is user authorized to use komodo ID e
+KomodoAuthorized is user authorized to use komodo ID e
 
-  Check that the authenticated user is permitted to use Komodo IDE
+Check that the authenticated user is permitted to use Komodo IDE
 */
 func (a *Client) KomodoAuthorized(params *KomodoAuthorizedParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*KomodoAuthorizedOK, error) {
 	// TODO: Validate the params before sending
@@ -959,9 +960,9 @@ func (a *Client) KomodoAuthorized(params *KomodoAuthorizedParams, authInfo runti
 }
 
 /*
-  ListOrganizations lists of visible organizations
+ListOrganizations lists of visible organizations
 
-  Retrieve all organizations from the system that the user has access to
+Retrieve all organizations from the system that the user has access to
 */
 func (a *Client) ListOrganizations(params *ListOrganizationsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListOrganizationsOK, error) {
 	// TODO: Validate the params before sending
@@ -1000,9 +1001,9 @@ func (a *Client) ListOrganizations(params *ListOrganizationsParams, authInfo run
 }
 
 /*
-  MutateOrganization mutates organization
+MutateOrganization mutates organization
 
-  Perform an atomic mutation on the org
+Perform an atomic mutation on the org
 */
 func (a *Client) MutateOrganization(params *MutateOrganizationParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*MutateOrganizationOK, error) {
 	// TODO: Validate the params before sending
@@ -1041,9 +1042,9 @@ func (a *Client) MutateOrganization(params *MutateOrganizationParams, authInfo r
 }
 
 /*
-  QuitOrganization drops a user from an organization
+QuitOrganization drops a user from an organization
 
-  Remove a user from an organization's roster
+Remove a user from an organization's roster
 */
 func (a *Client) QuitOrganization(params *QuitOrganizationParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*QuitOrganizationOK, error) {
 	// TODO: Validate the params before sending
@@ -1082,9 +1083,9 @@ func (a *Client) QuitOrganization(params *QuitOrganizationParams, authInfo runti
 }
 
 /*
-  SetAdminMetadata changes admin metadata for organization
+SetAdminMetadata changes admin metadata for organization
 
-  Set admin metadata
+Set admin metadata
 */
 func (a *Client) SetAdminMetadata(params *SetAdminMetadataParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*SetAdminMetadataOK, error) {
 	// TODO: Validate the params before sending
@@ -1123,9 +1124,9 @@ func (a *Client) SetAdminMetadata(params *SetAdminMetadataParams, authInfo runti
 }
 
 /*
-  UpdateBillingDate changes billing date for organization
+UpdateBillingDate changes billing date for organization
 
-  Set a new billing date
+Set a new billing date
 */
 func (a *Client) UpdateBillingDate(params *UpdateBillingDateParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateBillingDateOK, error) {
 	// TODO: Validate the params before sending

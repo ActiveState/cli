@@ -15,7 +15,7 @@ import (
 
 // OperatingSystem Operating System
 //
-// The full operating system data model
+// # The full operating system data model
 //
 // swagger:model operatingSystem
 type OperatingSystem struct {

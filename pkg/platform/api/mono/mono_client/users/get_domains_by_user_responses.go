@@ -51,7 +51,8 @@ func NewGetDomainsByUserOK() *GetDomainsByUserOK {
 	return &GetDomainsByUserOK{}
 }
 
-/* GetDomainsByUserOK describes a response with status code 200, with default header values.
+/*
+GetDomainsByUserOK describes a response with status code 200, with default header values.
 
 Domain records
 */
@@ -81,7 +82,8 @@ func NewGetDomainsByUserForbidden() *GetDomainsByUserForbidden {
 	return &GetDomainsByUserForbidden{}
 }
 
-/* GetDomainsByUserForbidden describes a response with status code 403, with default header values.
+/*
+GetDomainsByUserForbidden describes a response with status code 403, with default header values.
 
 Forbidden
 */
@@ -113,7 +115,8 @@ func NewGetDomainsByUserInternalServerError() *GetDomainsByUserInternalServerErr
 	return &GetDomainsByUserInternalServerError{}
 }
 
-/* GetDomainsByUserInternalServerError describes a response with status code 500, with default header values.
+/*
+GetDomainsByUserInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */

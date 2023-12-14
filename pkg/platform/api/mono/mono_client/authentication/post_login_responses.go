@@ -63,7 +63,8 @@ func NewPostLoginOK() *PostLoginOK {
 	return &PostLoginOK{}
 }
 
-/* PostLoginOK describes a response with status code 200, with default header values.
+/*
+PostLoginOK describes a response with status code 200, with default header values.
 
 Success
 */
@@ -95,7 +96,8 @@ func NewPostLoginBadRequest() *PostLoginBadRequest {
 	return &PostLoginBadRequest{}
 }
 
-/* PostLoginBadRequest describes a response with status code 400, with default header values.
+/*
+PostLoginBadRequest describes a response with status code 400, with default header values.
 
 Bad Request
 */
@@ -127,7 +129,8 @@ func NewPostLoginUnauthorized() *PostLoginUnauthorized {
 	return &PostLoginUnauthorized{}
 }
 
-/* PostLoginUnauthorized describes a response with status code 401, with default header values.
+/*
+PostLoginUnauthorized describes a response with status code 401, with default header values.
 
 Invalid credentials
 */
@@ -159,7 +162,8 @@ func NewPostLoginRetryWith() *PostLoginRetryWith {
 	return &PostLoginRetryWith{}
 }
 
-/* PostLoginRetryWith describes a response with status code 449, with default header values.
+/*
+PostLoginRetryWith describes a response with status code 449, with default header values.
 
 TOTP Required
 */
@@ -191,7 +195,8 @@ func NewPostLoginInternalServerError() *PostLoginInternalServerError {
 	return &PostLoginInternalServerError{}
 }
 
-/* PostLoginInternalServerError describes a response with status code 500, with default header values.
+/*
+PostLoginInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */

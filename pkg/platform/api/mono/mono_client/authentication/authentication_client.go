@@ -72,9 +72,9 @@ type ClientService interface {
 }
 
 /*
-  GetLoginJwtToken logins with a valid j w t and redirect to a platform URL
+GetLoginJwtToken logins with a valid j w t and redirect to a platform URL
 
-  Login with a valid JWT and redirect to a platform URL
+Login with a valid JWT and redirect to a platform URL
 */
 func (a *Client) GetLoginJwtToken(params *GetLoginJwtTokenParams, opts ...ClientOption) error {
 	// TODO: Validate the params before sending
@@ -105,9 +105,9 @@ func (a *Client) GetLoginJwtToken(params *GetLoginJwtTokenParams, opts ...Client
 }
 
 /*
-  GetLogout logs out of the current session
+GetLogout logs out of the current session
 
-  Log out of the current session
+Log out of the current session
 */
 func (a *Client) GetLogout(params *GetLogoutParams, opts ...ClientOption) (*GetLogoutNoContent, error) {
 	// TODO: Validate the params before sending
@@ -145,9 +145,9 @@ func (a *Client) GetLogout(params *GetLogoutParams, opts ...ClientOption) (*GetL
 }
 
 /*
-  GetRenew renews a valid j w t
+GetRenew renews a valid j w t
 
-  Renew your current JWT to forestall expiration
+Renew your current JWT to forestall expiration
 */
 func (a *Client) GetRenew(params *GetRenewParams, opts ...ClientOption) (*GetRenewOK, error) {
 	// TODO: Validate the params before sending
@@ -185,9 +185,9 @@ func (a *Client) GetRenew(params *GetRenewParams, opts ...ClientOption) (*GetRen
 }
 
 /*
-  PostLogin trades your credentials for a j w t
+PostLogin trades your credentials for a j w t
 
-  Supply either username/password OR token
+Supply either username/password OR token
 */
 func (a *Client) PostLogin(params *PostLoginParams, opts ...ClientOption) (*PostLoginOK, error) {
 	// TODO: Validate the params before sending
@@ -225,9 +225,9 @@ func (a *Client) PostLogin(params *PostLoginParams, opts ...ClientOption) (*Post
 }
 
 /*
-  AddToken generates an API token for current user
+AddToken generates an API token for current user
 
-  Produces an API token for use with automated API clients
+Produces an API token for use with automated API clients
 */
 func (a *Client) AddToken(params *AddTokenParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddTokenOK, error) {
 	// TODO: Validate the params before sending
@@ -266,9 +266,9 @@ func (a *Client) AddToken(params *AddTokenParams, authInfo runtime.ClientAuthInf
 }
 
 /*
-  ChangePassword changes the current password
+ChangePassword changes the current password
 
-  Prompts for current password which is used to change it to something new.
+Prompts for current password which is used to change it to something new.
 */
 func (a *Client) ChangePassword(params *ChangePasswordParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ChangePasswordOK, error) {
 	// TODO: Validate the params before sending
@@ -307,9 +307,9 @@ func (a *Client) ChangePassword(params *ChangePasswordParams, authInfo runtime.C
 }
 
 /*
-  DeleteToken deletes an API token
+DeleteToken deletes an API token
 
-  Deletes the specified API Token
+Deletes the specified API Token
 */
 func (a *Client) DeleteToken(params *DeleteTokenParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteTokenOK, error) {
 	// TODO: Validate the params before sending
@@ -348,9 +348,9 @@ func (a *Client) DeleteToken(params *DeleteTokenParams, authInfo runtime.ClientA
 }
 
 /*
-  DisableTOTP disables t o t p
+DisableTOTP disables t o t p
 
-  Disable TOTP authentication
+Disable TOTP authentication
 */
 func (a *Client) DisableTOTP(params *DisableTOTPParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DisableTOTPOK, error) {
 	// TODO: Validate the params before sending
@@ -389,9 +389,9 @@ func (a *Client) DisableTOTP(params *DisableTOTPParams, authInfo runtime.ClientA
 }
 
 /*
-  EnableTOTP enables t o t p
+EnableTOTP enables t o t p
 
-  Enable TOTP authentication by performing initial code validation
+Enable TOTP authentication by performing initial code validation
 */
 func (a *Client) EnableTOTP(params *EnableTOTPParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*EnableTOTPOK, error) {
 	// TODO: Validate the params before sending
@@ -430,7 +430,7 @@ func (a *Client) EnableTOTP(params *EnableTOTPParams, authInfo runtime.ClientAut
 }
 
 /*
-  GithubAuthError callbacks endpoint for handling errors that come from github
+GithubAuthError callbacks endpoint for handling errors that come from github
 */
 func (a *Client) GithubAuthError(params *GithubAuthErrorParams, opts ...ClientOption) error {
 	// TODO: Validate the params before sending
@@ -461,7 +461,7 @@ func (a *Client) GithubAuthError(params *GithubAuthErrorParams, opts ...ClientOp
 }
 
 /*
-  LinkGithubAccount callbacks endpoint for linking an account to github
+LinkGithubAccount callbacks endpoint for linking an account to github
 */
 func (a *Client) LinkGithubAccount(params *LinkGithubAccountParams, opts ...ClientOption) error {
 	// TODO: Validate the params before sending
@@ -492,9 +492,9 @@ func (a *Client) LinkGithubAccount(params *LinkGithubAccountParams, opts ...Clie
 }
 
 /*
-  ListTokens lists current user s API tokens
+ListTokens lists current user s API tokens
 
-  List of all active API Tokens for current user
+List of all active API Tokens for current user
 */
 func (a *Client) ListTokens(params *ListTokensParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListTokensOK, error) {
 	// TODO: Validate the params before sending
@@ -533,7 +533,7 @@ func (a *Client) ListTokens(params *ListTokensParams, authInfo runtime.ClientAut
 }
 
 /*
-  LoginAs logins as given user requires you to be a superuser
+LoginAs logins as given user requires you to be a superuser
 */
 func (a *Client) LoginAs(params *LoginAsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*LoginAsOK, error) {
 	// TODO: Validate the params before sending
@@ -572,7 +572,7 @@ func (a *Client) LoginAs(params *LoginAsParams, authInfo runtime.ClientAuthInfoW
 }
 
 /*
-  LoginWithGithub callbacks endpoint for logging in via github auth
+LoginWithGithub callbacks endpoint for logging in via github auth
 */
 func (a *Client) LoginWithGithub(params *LoginWithGithubParams, opts ...ClientOption) error {
 	// TODO: Validate the params before sending
@@ -603,9 +603,9 @@ func (a *Client) LoginWithGithub(params *LoginWithGithubParams, opts ...ClientOp
 }
 
 /*
-  NewTOTP sets up a new t o t p key
+NewTOTP sets up a new t o t p key
 
-  Establish the private key for two-factor authentication
+Establish the private key for two-factor authentication
 */
 func (a *Client) NewTOTP(params *NewTOTPParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*NewTOTPOK, error) {
 	// TODO: Validate the params before sending
@@ -644,9 +644,9 @@ func (a *Client) NewTOTP(params *NewTOTPParams, authInfo runtime.ClientAuthInfoW
 }
 
 /*
-  RequestReset requests a password recovery email
+RequestReset requests a password recovery email
 
-  Sends a link which can be used to reset a forgotten password.
+Sends a link which can be used to reset a forgotten password.
 */
 func (a *Client) RequestReset(params *RequestResetParams, opts ...ClientOption) (*RequestResetOK, error) {
 	// TODO: Validate the params before sending
@@ -684,9 +684,9 @@ func (a *Client) RequestReset(params *RequestResetParams, opts ...ClientOption) 
 }
 
 /*
-  ResetPassword resets a forgotten password
+ResetPassword resets a forgotten password
 
-  Sends a link which can be used to reset a forgotten password.
+Sends a link which can be used to reset a forgotten password.
 */
 func (a *Client) ResetPassword(params *ResetPasswordParams, opts ...ClientOption) (*ResetPasswordOK, error) {
 	// TODO: Validate the params before sending
@@ -724,7 +724,7 @@ func (a *Client) ResetPassword(params *ResetPasswordParams, opts ...ClientOption
 }
 
 /*
-  SignupWithGithub callbacks endpoint for signing up via github auth
+SignupWithGithub callbacks endpoint for signing up via github auth
 */
 func (a *Client) SignupWithGithub(params *SignupWithGithubParams, opts ...ClientOption) error {
 	// TODO: Validate the params before sending
@@ -755,7 +755,7 @@ func (a *Client) SignupWithGithub(params *SignupWithGithubParams, opts ...Client
 }
 
 /*
-  UnlinkGithubAccount callbacks endpoint for unlinking git hub accounts
+UnlinkGithubAccount callbacks endpoint for unlinking git hub accounts
 */
 func (a *Client) UnlinkGithubAccount(params *UnlinkGithubAccountParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UnlinkGithubAccountOK, error) {
 	// TODO: Validate the params before sending

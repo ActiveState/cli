@@ -66,7 +66,8 @@ func NewInviteOrganizationOK() *InviteOrganizationOK {
 	return &InviteOrganizationOK{}
 }
 
-/* InviteOrganizationOK describes a response with status code 200, with default header values.
+/*
+InviteOrganizationOK describes a response with status code 200, with default header values.
 
 Invitation Sent
 */
@@ -96,7 +97,8 @@ func NewInviteOrganizationBadRequest() *InviteOrganizationBadRequest {
 	return &InviteOrganizationBadRequest{}
 }
 
-/* InviteOrganizationBadRequest describes a response with status code 400, with default header values.
+/*
+InviteOrganizationBadRequest describes a response with status code 400, with default header values.
 
 Bad Request
 */
@@ -128,7 +130,8 @@ func NewInviteOrganizationForbidden() *InviteOrganizationForbidden {
 	return &InviteOrganizationForbidden{}
 }
 
-/* InviteOrganizationForbidden describes a response with status code 403, with default header values.
+/*
+InviteOrganizationForbidden describes a response with status code 403, with default header values.
 
 Forbidden
 */
@@ -160,7 +163,8 @@ func NewInviteOrganizationNotFound() *InviteOrganizationNotFound {
 	return &InviteOrganizationNotFound{}
 }
 
-/* InviteOrganizationNotFound describes a response with status code 404, with default header values.
+/*
+InviteOrganizationNotFound describes a response with status code 404, with default header values.
 
 Not Found
 */
@@ -192,7 +196,8 @@ func NewInviteOrganizationInternalServerError() *InviteOrganizationInternalServe
 	return &InviteOrganizationInternalServerError{}
 }
 
-/* InviteOrganizationInternalServerError describes a response with status code 500, with default header values.
+/*
+InviteOrganizationInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */
@@ -219,7 +224,8 @@ func (o *InviteOrganizationInternalServerError) readResponse(response runtime.Cl
 	return nil
 }
 
-/*InviteOrganizationBody invite organization body
+/*
+InviteOrganizationBody invite organization body
 swagger:model InviteOrganizationBody
 */
 type InviteOrganizationBody struct {

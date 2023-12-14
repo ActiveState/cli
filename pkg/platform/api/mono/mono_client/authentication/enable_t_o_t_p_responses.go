@@ -45,7 +45,8 @@ func NewEnableTOTPOK() *EnableTOTPOK {
 	return &EnableTOTPOK{}
 }
 
-/* EnableTOTPOK describes a response with status code 200, with default header values.
+/*
+EnableTOTPOK describes a response with status code 200, with default header values.
 
 Enabled
 */
@@ -77,7 +78,8 @@ func NewEnableTOTPBadRequest() *EnableTOTPBadRequest {
 	return &EnableTOTPBadRequest{}
 }
 
-/* EnableTOTPBadRequest describes a response with status code 400, with default header values.
+/*
+EnableTOTPBadRequest describes a response with status code 400, with default header values.
 
 Bad Request
 */

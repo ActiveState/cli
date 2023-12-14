@@ -244,7 +244,7 @@ type ClientService interface {
 }
 
 /*
-  AddAuthor Add a new author
+AddAuthor Add a new author
 */
 func (a *Client) AddAuthor(params *AddAuthorParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddAuthorCreated, error) {
 	// TODO: Validate the params before sending
@@ -282,7 +282,7 @@ func (a *Client) AddAuthor(params *AddAuthorParams, authInfo runtime.ClientAuthI
 }
 
 /*
-  AddBuildFlag Add a new build flag
+AddBuildFlag Add a new build flag
 */
 func (a *Client) AddBuildFlag(params *AddBuildFlagParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddBuildFlagCreated, error) {
 	// TODO: Validate the params before sending
@@ -320,7 +320,7 @@ func (a *Client) AddBuildFlag(params *AddBuildFlagParams, authInfo runtime.Clien
 }
 
 /*
-  AddBuildFlagRevision Add a new revision of this build flag
+AddBuildFlagRevision Add a new revision of this build flag
 */
 func (a *Client) AddBuildFlagRevision(params *AddBuildFlagRevisionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddBuildFlagRevisionOK, error) {
 	// TODO: Validate the params before sending
@@ -358,7 +358,7 @@ func (a *Client) AddBuildFlagRevision(params *AddBuildFlagRevisionParams, authIn
 }
 
 /*
-  AddBuildScript Add a new build script
+AddBuildScript Add a new build script
 */
 func (a *Client) AddBuildScript(params *AddBuildScriptParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddBuildScriptCreated, error) {
 	// TODO: Validate the params before sending
@@ -396,7 +396,7 @@ func (a *Client) AddBuildScript(params *AddBuildScriptParams, authInfo runtime.C
 }
 
 /*
-  AddCPUArchitecture Add a new CPU architecture
+AddCPUArchitecture Add a new CPU architecture
 */
 func (a *Client) AddCPUArchitecture(params *AddCPUArchitectureParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddCPUArchitectureCreated, error) {
 	// TODO: Validate the params before sending
@@ -434,7 +434,7 @@ func (a *Client) AddCPUArchitecture(params *AddCPUArchitectureParams, authInfo r
 }
 
 /*
-  AddCPUArchitectureCPUExtension Add a CPU extension that can be used with this architecture
+AddCPUArchitectureCPUExtension Add a CPU extension that can be used with this architecture
 */
 func (a *Client) AddCPUArchitectureCPUExtension(params *AddCPUArchitectureCPUExtensionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddCPUArchitectureCPUExtensionOK, error) {
 	// TODO: Validate the params before sending
@@ -472,7 +472,7 @@ func (a *Client) AddCPUArchitectureCPUExtension(params *AddCPUArchitectureCPUExt
 }
 
 /*
-  AddCPUArchitectureRevision Add a new revision of this CPU architecture
+AddCPUArchitectureRevision Add a new revision of this CPU architecture
 */
 func (a *Client) AddCPUArchitectureRevision(params *AddCPUArchitectureRevisionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddCPUArchitectureRevisionOK, error) {
 	// TODO: Validate the params before sending
@@ -510,7 +510,7 @@ func (a *Client) AddCPUArchitectureRevision(params *AddCPUArchitectureRevisionPa
 }
 
 /*
-  AddCPUExtension Add a new CPU extension
+AddCPUExtension Add a new CPU extension
 */
 func (a *Client) AddCPUExtension(params *AddCPUExtensionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddCPUExtensionCreated, error) {
 	// TODO: Validate the params before sending
@@ -548,7 +548,7 @@ func (a *Client) AddCPUExtension(params *AddCPUExtensionParams, authInfo runtime
 }
 
 /*
-  AddCPUExtensionRevision Add a new revision of this CPU extension
+AddCPUExtensionRevision Add a new revision of this CPU extension
 */
 func (a *Client) AddCPUExtensionRevision(params *AddCPUExtensionRevisionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddCPUExtensionRevisionOK, error) {
 	// TODO: Validate the params before sending
@@ -586,7 +586,7 @@ func (a *Client) AddCPUExtensionRevision(params *AddCPUExtensionRevisionParams, 
 }
 
 /*
-  AddGPUArchitecture Add a new GPU architecture
+AddGPUArchitecture Add a new GPU architecture
 */
 func (a *Client) AddGPUArchitecture(params *AddGPUArchitectureParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddGPUArchitectureCreated, error) {
 	// TODO: Validate the params before sending
@@ -624,7 +624,7 @@ func (a *Client) AddGPUArchitecture(params *AddGPUArchitectureParams, authInfo r
 }
 
 /*
-  AddGPUArchitectureRevision Add a new revision of this GPU architecture
+AddGPUArchitectureRevision Add a new revision of this GPU architecture
 */
 func (a *Client) AddGPUArchitectureRevision(params *AddGPUArchitectureRevisionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddGPUArchitectureRevisionOK, error) {
 	// TODO: Validate the params before sending
@@ -662,7 +662,7 @@ func (a *Client) AddGPUArchitectureRevision(params *AddGPUArchitectureRevisionPa
 }
 
 /*
-  AddImage Add a new image
+AddImage Add a new image
 */
 func (a *Client) AddImage(params *AddImageParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddImageCreated, error) {
 	// TODO: Validate the params before sending
@@ -700,7 +700,7 @@ func (a *Client) AddImage(params *AddImageParams, authInfo runtime.ClientAuthInf
 }
 
 /*
-  AddImageRevision Add a new revision of this image
+AddImageRevision Add a new revision of this image
 */
 func (a *Client) AddImageRevision(params *AddImageRevisionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddImageRevisionOK, error) {
 	// TODO: Validate the params before sending
@@ -738,7 +738,7 @@ func (a *Client) AddImageRevision(params *AddImageRevisionParams, authInfo runti
 }
 
 /*
-  AddIngredient Add a new ingredient
+AddIngredient Add a new ingredient
 */
 func (a *Client) AddIngredient(params *AddIngredientParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddIngredientCreated, error) {
 	// TODO: Validate the params before sending
@@ -776,7 +776,7 @@ func (a *Client) AddIngredient(params *AddIngredientParams, authInfo runtime.Cli
 }
 
 /*
-  AddIngredientAndVersions Add multiple new versions, and add the ingredient if it doesn't exist
+AddIngredientAndVersions Add multiple new versions, and add the ingredient if it doesn't exist
 */
 func (a *Client) AddIngredientAndVersions(params *AddIngredientAndVersionsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddIngredientAndVersionsCreated, error) {
 	// TODO: Validate the params before sending
@@ -814,7 +814,7 @@ func (a *Client) AddIngredientAndVersions(params *AddIngredientAndVersionsParams
 }
 
 /*
-  AddIngredientOptionSet Add a new ingredient option set
+AddIngredientOptionSet Add a new ingredient option set
 */
 func (a *Client) AddIngredientOptionSet(params *AddIngredientOptionSetParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddIngredientOptionSetCreated, error) {
 	// TODO: Validate the params before sending
@@ -852,7 +852,7 @@ func (a *Client) AddIngredientOptionSet(params *AddIngredientOptionSetParams, au
 }
 
 /*
-  AddIngredientOptionSetRevision Add a new revision of this ingredient option set
+AddIngredientOptionSetRevision Add a new revision of this ingredient option set
 */
 func (a *Client) AddIngredientOptionSetRevision(params *AddIngredientOptionSetRevisionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddIngredientOptionSetRevisionOK, error) {
 	// TODO: Validate the params before sending
@@ -890,7 +890,7 @@ func (a *Client) AddIngredientOptionSetRevision(params *AddIngredientOptionSetRe
 }
 
 /*
-  AddIngredientVersion Add a new version of this ingredient
+AddIngredientVersion Add a new version of this ingredient
 */
 func (a *Client) AddIngredientVersion(params *AddIngredientVersionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddIngredientVersionCreated, error) {
 	// TODO: Validate the params before sending
@@ -928,7 +928,7 @@ func (a *Client) AddIngredientVersion(params *AddIngredientVersionParams, authIn
 }
 
 /*
-  AddIngredientVersionAuthor Add an author of this ingredient version
+AddIngredientVersionAuthor Add an author of this ingredient version
 */
 func (a *Client) AddIngredientVersionAuthor(params *AddIngredientVersionAuthorParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddIngredientVersionAuthorOK, error) {
 	// TODO: Validate the params before sending
@@ -966,7 +966,7 @@ func (a *Client) AddIngredientVersionAuthor(params *AddIngredientVersionAuthorPa
 }
 
 /*
-  AddIngredientVersionRevision Add a new revision of this ingredient version
+AddIngredientVersionRevision Add a new revision of this ingredient version
 */
 func (a *Client) AddIngredientVersionRevision(params *AddIngredientVersionRevisionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddIngredientVersionRevisionOK, error) {
 	// TODO: Validate the params before sending
@@ -1004,7 +1004,7 @@ func (a *Client) AddIngredientVersionRevision(params *AddIngredientVersionRevisi
 }
 
 /*
-  AddKernel Add a new kernel
+AddKernel Add a new kernel
 */
 func (a *Client) AddKernel(params *AddKernelParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddKernelCreated, error) {
 	// TODO: Validate the params before sending
@@ -1042,7 +1042,7 @@ func (a *Client) AddKernel(params *AddKernelParams, authInfo runtime.ClientAuthI
 }
 
 /*
-  AddKernelCPUArchitecture Add a CPU architecture that can be used with this kernel
+AddKernelCPUArchitecture Add a CPU architecture that can be used with this kernel
 */
 func (a *Client) AddKernelCPUArchitecture(params *AddKernelCPUArchitectureParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddKernelCPUArchitectureOK, error) {
 	// TODO: Validate the params before sending
@@ -1080,7 +1080,7 @@ func (a *Client) AddKernelCPUArchitecture(params *AddKernelCPUArchitectureParams
 }
 
 /*
-  AddKernelGPUArchitecture Add a GPU architecture that can be used with this kernel
+AddKernelGPUArchitecture Add a GPU architecture that can be used with this kernel
 */
 func (a *Client) AddKernelGPUArchitecture(params *AddKernelGPUArchitectureParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddKernelGPUArchitectureOK, error) {
 	// TODO: Validate the params before sending
@@ -1118,7 +1118,7 @@ func (a *Client) AddKernelGPUArchitecture(params *AddKernelGPUArchitectureParams
 }
 
 /*
-  AddKernelVersion Add a new version for this kernel
+AddKernelVersion Add a new version for this kernel
 */
 func (a *Client) AddKernelVersion(params *AddKernelVersionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddKernelVersionCreated, error) {
 	// TODO: Validate the params before sending
@@ -1156,7 +1156,7 @@ func (a *Client) AddKernelVersion(params *AddKernelVersionParams, authInfo runti
 }
 
 /*
-  AddKernelVersionRevision Add a new revision of this kernel version
+AddKernelVersionRevision Add a new revision of this kernel version
 */
 func (a *Client) AddKernelVersionRevision(params *AddKernelVersionRevisionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddKernelVersionRevisionOK, error) {
 	// TODO: Validate the params before sending
@@ -1194,7 +1194,7 @@ func (a *Client) AddKernelVersionRevision(params *AddKernelVersionRevisionParams
 }
 
 /*
-  AddLibc Add a new libc
+AddLibc Add a new libc
 */
 func (a *Client) AddLibc(params *AddLibcParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddLibcCreated, error) {
 	// TODO: Validate the params before sending
@@ -1232,7 +1232,7 @@ func (a *Client) AddLibc(params *AddLibcParams, authInfo runtime.ClientAuthInfoW
 }
 
 /*
-  AddLibcVersion Add a new version for this libc
+AddLibcVersion Add a new version for this libc
 */
 func (a *Client) AddLibcVersion(params *AddLibcVersionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddLibcVersionCreated, error) {
 	// TODO: Validate the params before sending
@@ -1270,7 +1270,7 @@ func (a *Client) AddLibcVersion(params *AddLibcVersionParams, authInfo runtime.C
 }
 
 /*
-  AddLibcVersionRevision Add a new revision of this libc version
+AddLibcVersionRevision Add a new revision of this libc version
 */
 func (a *Client) AddLibcVersionRevision(params *AddLibcVersionRevisionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddLibcVersionRevisionOK, error) {
 	// TODO: Validate the params before sending
@@ -1308,7 +1308,7 @@ func (a *Client) AddLibcVersionRevision(params *AddLibcVersionRevisionParams, au
 }
 
 /*
-  AddNamespace Add a new namespace
+AddNamespace Add a new namespace
 */
 func (a *Client) AddNamespace(params *AddNamespaceParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddNamespaceCreated, error) {
 	// TODO: Validate the params before sending
@@ -1346,7 +1346,7 @@ func (a *Client) AddNamespace(params *AddNamespaceParams, authInfo runtime.Clien
 }
 
 /*
-  AddOperatingSystem Add a new operating system
+AddOperatingSystem Add a new operating system
 */
 func (a *Client) AddOperatingSystem(params *AddOperatingSystemParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddOperatingSystemCreated, error) {
 	// TODO: Validate the params before sending
@@ -1384,7 +1384,7 @@ func (a *Client) AddOperatingSystem(params *AddOperatingSystemParams, authInfo r
 }
 
 /*
-  AddOperatingSystemKernel Add a kernel that can be used with this operating system
+AddOperatingSystemKernel Add a kernel that can be used with this operating system
 */
 func (a *Client) AddOperatingSystemKernel(params *AddOperatingSystemKernelParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddOperatingSystemKernelOK, error) {
 	// TODO: Validate the params before sending
@@ -1422,7 +1422,7 @@ func (a *Client) AddOperatingSystemKernel(params *AddOperatingSystemKernelParams
 }
 
 /*
-  AddOperatingSystemLibc Add a libc that can be used with this operating system
+AddOperatingSystemLibc Add a libc that can be used with this operating system
 */
 func (a *Client) AddOperatingSystemLibc(params *AddOperatingSystemLibcParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddOperatingSystemLibcOK, error) {
 	// TODO: Validate the params before sending
@@ -1460,7 +1460,7 @@ func (a *Client) AddOperatingSystemLibc(params *AddOperatingSystemLibcParams, au
 }
 
 /*
-  AddOperatingSystemVersion Add a new version for this operating system
+AddOperatingSystemVersion Add a new version for this operating system
 */
 func (a *Client) AddOperatingSystemVersion(params *AddOperatingSystemVersionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddOperatingSystemVersionCreated, error) {
 	// TODO: Validate the params before sending
@@ -1498,7 +1498,7 @@ func (a *Client) AddOperatingSystemVersion(params *AddOperatingSystemVersionPara
 }
 
 /*
-  AddOperatingSystemVersionRevision Add a new revision of this operating system version
+AddOperatingSystemVersionRevision Add a new revision of this operating system version
 */
 func (a *Client) AddOperatingSystemVersionRevision(params *AddOperatingSystemVersionRevisionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddOperatingSystemVersionRevisionOK, error) {
 	// TODO: Validate the params before sending
@@ -1536,7 +1536,7 @@ func (a *Client) AddOperatingSystemVersionRevision(params *AddOperatingSystemVer
 }
 
 /*
-  AddPatch Add a new patch
+AddPatch Add a new patch
 */
 func (a *Client) AddPatch(params *AddPatchParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddPatchCreated, error) {
 	// TODO: Validate the params before sending
@@ -1574,7 +1574,7 @@ func (a *Client) AddPatch(params *AddPatchParams, authInfo runtime.ClientAuthInf
 }
 
 /*
-  AddPlatform Add a new platform
+AddPlatform Add a new platform
 */
 func (a *Client) AddPlatform(params *AddPlatformParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddPlatformCreated, error) {
 	// TODO: Validate the params before sending
@@ -1612,7 +1612,7 @@ func (a *Client) AddPlatform(params *AddPlatformParams, authInfo runtime.ClientA
 }
 
 /*
-  DeleteImage Delete this image
+DeleteImage Delete this image
 */
 func (a *Client) DeleteImage(params *DeleteImageParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteImageNoContent, error) {
 	// TODO: Validate the params before sending
@@ -1650,7 +1650,7 @@ func (a *Client) DeleteImage(params *DeleteImageParams, authInfo runtime.ClientA
 }
 
 /*
-  DeleteIngredientVersion Delete this ingredient version
+DeleteIngredientVersion Delete this ingredient version
 */
 func (a *Client) DeleteIngredientVersion(params *DeleteIngredientVersionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteIngredientVersionNoContent, error) {
 	// TODO: Validate the params before sending
@@ -1688,7 +1688,7 @@ func (a *Client) DeleteIngredientVersion(params *DeleteIngredientVersionParams, 
 }
 
 /*
-  GetAuthor Retrieve an author
+GetAuthor Retrieve an author
 */
 func (a *Client) GetAuthor(params *GetAuthorParams, opts ...ClientOption) (*GetAuthorOK, error) {
 	// TODO: Validate the params before sending
@@ -1725,7 +1725,7 @@ func (a *Client) GetAuthor(params *GetAuthorParams, opts ...ClientOption) (*GetA
 }
 
 /*
-  GetAuthors Retrieve a paged set of authors
+GetAuthors Retrieve a paged set of authors
 */
 func (a *Client) GetAuthors(params *GetAuthorsParams, opts ...ClientOption) (*GetAuthorsOK, error) {
 	// TODO: Validate the params before sending
@@ -1762,7 +1762,7 @@ func (a *Client) GetAuthors(params *GetAuthorsParams, opts ...ClientOption) (*Ge
 }
 
 /*
-  GetBuildFlag Retrieve a build flag
+GetBuildFlag Retrieve a build flag
 */
 func (a *Client) GetBuildFlag(params *GetBuildFlagParams, opts ...ClientOption) (*GetBuildFlagOK, error) {
 	// TODO: Validate the params before sending
@@ -1799,7 +1799,7 @@ func (a *Client) GetBuildFlag(params *GetBuildFlagParams, opts ...ClientOption) 
 }
 
 /*
-  GetBuildFlags Retrieve a paged set of build flags
+GetBuildFlags Retrieve a paged set of build flags
 */
 func (a *Client) GetBuildFlags(params *GetBuildFlagsParams, opts ...ClientOption) (*GetBuildFlagsOK, error) {
 	// TODO: Validate the params before sending
@@ -1836,7 +1836,7 @@ func (a *Client) GetBuildFlags(params *GetBuildFlagsParams, opts ...ClientOption
 }
 
 /*
-  GetBuildScript Retrieve a single build script
+GetBuildScript Retrieve a single build script
 */
 func (a *Client) GetBuildScript(params *GetBuildScriptParams, opts ...ClientOption) (*GetBuildScriptOK, error) {
 	// TODO: Validate the params before sending
@@ -1873,7 +1873,7 @@ func (a *Client) GetBuildScript(params *GetBuildScriptParams, opts ...ClientOpti
 }
 
 /*
-  GetBuildScripts Retrieve all build scripts
+GetBuildScripts Retrieve all build scripts
 */
 func (a *Client) GetBuildScripts(params *GetBuildScriptsParams, opts ...ClientOption) (*GetBuildScriptsOK, error) {
 	// TODO: Validate the params before sending
@@ -1910,7 +1910,7 @@ func (a *Client) GetBuildScripts(params *GetBuildScriptsParams, opts ...ClientOp
 }
 
 /*
-  GetCPUArchitecture Retrieve a single CPU architecture
+GetCPUArchitecture Retrieve a single CPU architecture
 */
 func (a *Client) GetCPUArchitecture(params *GetCPUArchitectureParams, opts ...ClientOption) (*GetCPUArchitectureOK, error) {
 	// TODO: Validate the params before sending
@@ -1947,7 +1947,7 @@ func (a *Client) GetCPUArchitecture(params *GetCPUArchitectureParams, opts ...Cl
 }
 
 /*
-  GetCPUArchitectureCPUExtensions Retrieve all CPU extensions that can be used with this architecture
+GetCPUArchitectureCPUExtensions Retrieve all CPU extensions that can be used with this architecture
 */
 func (a *Client) GetCPUArchitectureCPUExtensions(params *GetCPUArchitectureCPUExtensionsParams, opts ...ClientOption) (*GetCPUArchitectureCPUExtensionsOK, error) {
 	// TODO: Validate the params before sending
@@ -1984,7 +1984,7 @@ func (a *Client) GetCPUArchitectureCPUExtensions(params *GetCPUArchitectureCPUEx
 }
 
 /*
-  GetCPUArchitectures Retrieve all CPU architectures
+GetCPUArchitectures Retrieve all CPU architectures
 */
 func (a *Client) GetCPUArchitectures(params *GetCPUArchitecturesParams, opts ...ClientOption) (*GetCPUArchitecturesOK, error) {
 	// TODO: Validate the params before sending
@@ -2021,7 +2021,7 @@ func (a *Client) GetCPUArchitectures(params *GetCPUArchitecturesParams, opts ...
 }
 
 /*
-  GetCPUExtension Retrieve a single CPU extension
+GetCPUExtension Retrieve a single CPU extension
 */
 func (a *Client) GetCPUExtension(params *GetCPUExtensionParams, opts ...ClientOption) (*GetCPUExtensionOK, error) {
 	// TODO: Validate the params before sending
@@ -2058,7 +2058,7 @@ func (a *Client) GetCPUExtension(params *GetCPUExtensionParams, opts ...ClientOp
 }
 
 /*
-  GetCPUExtensions Retrieve all CPU extensions
+GetCPUExtensions Retrieve all CPU extensions
 */
 func (a *Client) GetCPUExtensions(params *GetCPUExtensionsParams, opts ...ClientOption) (*GetCPUExtensionsOK, error) {
 	// TODO: Validate the params before sending
@@ -2095,7 +2095,7 @@ func (a *Client) GetCPUExtensions(params *GetCPUExtensionsParams, opts ...Client
 }
 
 /*
-  GetGPUArchitecture Retrieve a single GPU architecture
+GetGPUArchitecture Retrieve a single GPU architecture
 */
 func (a *Client) GetGPUArchitecture(params *GetGPUArchitectureParams, opts ...ClientOption) (*GetGPUArchitectureOK, error) {
 	// TODO: Validate the params before sending
@@ -2132,7 +2132,7 @@ func (a *Client) GetGPUArchitecture(params *GetGPUArchitectureParams, opts ...Cl
 }
 
 /*
-  GetGPUArchitectures Retrieve all GPU architectures
+GetGPUArchitectures Retrieve all GPU architectures
 */
 func (a *Client) GetGPUArchitectures(params *GetGPUArchitecturesParams, opts ...ClientOption) (*GetGPUArchitecturesOK, error) {
 	// TODO: Validate the params before sending
@@ -2169,7 +2169,7 @@ func (a *Client) GetGPUArchitectures(params *GetGPUArchitecturesParams, opts ...
 }
 
 /*
-  GetImage Retrieve an image
+GetImage Retrieve an image
 */
 func (a *Client) GetImage(params *GetImageParams, opts ...ClientOption) (*GetImageOK, error) {
 	// TODO: Validate the params before sending
@@ -2206,7 +2206,7 @@ func (a *Client) GetImage(params *GetImageParams, opts ...ClientOption) (*GetIma
 }
 
 /*
-  GetImages Retrieve a paged set of images
+GetImages Retrieve a paged set of images
 */
 func (a *Client) GetImages(params *GetImagesParams, opts ...ClientOption) (*GetImagesOK, error) {
 	// TODO: Validate the params before sending
@@ -2243,7 +2243,7 @@ func (a *Client) GetImages(params *GetImagesParams, opts ...ClientOption) (*GetI
 }
 
 /*
-  GetIngredient Retrieve a single ingredient
+GetIngredient Retrieve a single ingredient
 */
 func (a *Client) GetIngredient(params *GetIngredientParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetIngredientOK, error) {
 	// TODO: Validate the params before sending
@@ -2281,7 +2281,7 @@ func (a *Client) GetIngredient(params *GetIngredientParams, authInfo runtime.Cli
 }
 
 /*
-  GetIngredientOptionSet Retrieve a single ingredient option set
+GetIngredientOptionSet Retrieve a single ingredient option set
 */
 func (a *Client) GetIngredientOptionSet(params *GetIngredientOptionSetParams, opts ...ClientOption) (*GetIngredientOptionSetOK, error) {
 	// TODO: Validate the params before sending
@@ -2318,7 +2318,7 @@ func (a *Client) GetIngredientOptionSet(params *GetIngredientOptionSetParams, op
 }
 
 /*
-  GetIngredientOptionSetIngredientVersions Retrieve all ingredient versions which use this ingredient option set
+GetIngredientOptionSetIngredientVersions Retrieve all ingredient versions which use this ingredient option set
 */
 func (a *Client) GetIngredientOptionSetIngredientVersions(params *GetIngredientOptionSetIngredientVersionsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetIngredientOptionSetIngredientVersionsOK, error) {
 	// TODO: Validate the params before sending
@@ -2356,7 +2356,7 @@ func (a *Client) GetIngredientOptionSetIngredientVersions(params *GetIngredientO
 }
 
 /*
-  GetIngredientOptionSets Iterate over all matching ingredient option sets
+GetIngredientOptionSets Iterate over all matching ingredient option sets
 */
 func (a *Client) GetIngredientOptionSets(params *GetIngredientOptionSetsParams, opts ...ClientOption) (*GetIngredientOptionSetsOK, error) {
 	// TODO: Validate the params before sending
@@ -2393,7 +2393,7 @@ func (a *Client) GetIngredientOptionSets(params *GetIngredientOptionSetsParams, 
 }
 
 /*
-  GetIngredientVersion Retrieve a single ingredient version
+GetIngredientVersion Retrieve a single ingredient version
 */
 func (a *Client) GetIngredientVersion(params *GetIngredientVersionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetIngredientVersionOK, error) {
 	// TODO: Validate the params before sending
@@ -2431,7 +2431,7 @@ func (a *Client) GetIngredientVersion(params *GetIngredientVersionParams, authIn
 }
 
 /*
-  GetIngredientVersionAuthors Retrieve all authors of this ingredient version
+GetIngredientVersionAuthors Retrieve all authors of this ingredient version
 */
 func (a *Client) GetIngredientVersionAuthors(params *GetIngredientVersionAuthorsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetIngredientVersionAuthorsOK, error) {
 	// TODO: Validate the params before sending
@@ -2469,7 +2469,7 @@ func (a *Client) GetIngredientVersionAuthors(params *GetIngredientVersionAuthors
 }
 
 /*
-  GetIngredientVersionBuildScripts Retrieve all build scripts used by the ingredient version revision
+GetIngredientVersionBuildScripts Retrieve all build scripts used by the ingredient version revision
 */
 func (a *Client) GetIngredientVersionBuildScripts(params *GetIngredientVersionBuildScriptsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetIngredientVersionBuildScriptsOK, error) {
 	// TODO: Validate the params before sending
@@ -2507,7 +2507,7 @@ func (a *Client) GetIngredientVersionBuildScripts(params *GetIngredientVersionBu
 }
 
 /*
-  GetIngredientVersionIngredientOptionSets Retrieve all ingredient option sets used by the ingredient version
+GetIngredientVersionIngredientOptionSets Retrieve all ingredient option sets used by the ingredient version
 */
 func (a *Client) GetIngredientVersionIngredientOptionSets(params *GetIngredientVersionIngredientOptionSetsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetIngredientVersionIngredientOptionSetsOK, error) {
 	// TODO: Validate the params before sending
@@ -2545,7 +2545,7 @@ func (a *Client) GetIngredientVersionIngredientOptionSets(params *GetIngredientV
 }
 
 /*
-  GetIngredientVersionPatches Retrieve all patches used by the ingredient version revision
+GetIngredientVersionPatches Retrieve all patches used by the ingredient version revision
 */
 func (a *Client) GetIngredientVersionPatches(params *GetIngredientVersionPatchesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetIngredientVersionPatchesOK, error) {
 	// TODO: Validate the params before sending
@@ -2583,7 +2583,7 @@ func (a *Client) GetIngredientVersionPatches(params *GetIngredientVersionPatches
 }
 
 /*
-  GetIngredientVersionRevision Retrieve a single ingredient version revision
+GetIngredientVersionRevision Retrieve a single ingredient version revision
 */
 func (a *Client) GetIngredientVersionRevision(params *GetIngredientVersionRevisionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetIngredientVersionRevisionOK, error) {
 	// TODO: Validate the params before sending
@@ -2621,7 +2621,7 @@ func (a *Client) GetIngredientVersionRevision(params *GetIngredientVersionRevisi
 }
 
 /*
-  GetIngredientVersionRevisions Retrieve all ingredient version revisions for an ingredient version
+GetIngredientVersionRevisions Retrieve all ingredient version revisions for an ingredient version
 */
 func (a *Client) GetIngredientVersionRevisions(params *GetIngredientVersionRevisionsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetIngredientVersionRevisionsOK, error) {
 	// TODO: Validate the params before sending
@@ -2659,7 +2659,7 @@ func (a *Client) GetIngredientVersionRevisions(params *GetIngredientVersionRevis
 }
 
 /*
-  GetIngredientVersions Retrieve all versions of this ingredient
+GetIngredientVersions Retrieve all versions of this ingredient
 */
 func (a *Client) GetIngredientVersions(params *GetIngredientVersionsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetIngredientVersionsOK, error) {
 	// TODO: Validate the params before sending
@@ -2697,7 +2697,7 @@ func (a *Client) GetIngredientVersions(params *GetIngredientVersionsParams, auth
 }
 
 /*
-  GetIngredients Retrieve all ingredients
+GetIngredients Retrieve all ingredients
 */
 func (a *Client) GetIngredients(params *GetIngredientsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetIngredientsOK, error) {
 	// TODO: Validate the params before sending
@@ -2735,7 +2735,7 @@ func (a *Client) GetIngredients(params *GetIngredientsParams, authInfo runtime.C
 }
 
 /*
-  GetKernel Retrieve a single kernel
+GetKernel Retrieve a single kernel
 */
 func (a *Client) GetKernel(params *GetKernelParams, opts ...ClientOption) (*GetKernelOK, error) {
 	// TODO: Validate the params before sending
@@ -2772,7 +2772,7 @@ func (a *Client) GetKernel(params *GetKernelParams, opts ...ClientOption) (*GetK
 }
 
 /*
-  GetKernelCPUArchitectures Retrieve all CPU architectures that can be used with this kernel
+GetKernelCPUArchitectures Retrieve all CPU architectures that can be used with this kernel
 */
 func (a *Client) GetKernelCPUArchitectures(params *GetKernelCPUArchitecturesParams, opts ...ClientOption) (*GetKernelCPUArchitecturesOK, error) {
 	// TODO: Validate the params before sending
@@ -2809,7 +2809,7 @@ func (a *Client) GetKernelCPUArchitectures(params *GetKernelCPUArchitecturesPara
 }
 
 /*
-  GetKernelGPUArchitectures Retrieve all GPU architectures that can be used with this kernel
+GetKernelGPUArchitectures Retrieve all GPU architectures that can be used with this kernel
 */
 func (a *Client) GetKernelGPUArchitectures(params *GetKernelGPUArchitecturesParams, opts ...ClientOption) (*GetKernelGPUArchitecturesOK, error) {
 	// TODO: Validate the params before sending
@@ -2846,7 +2846,7 @@ func (a *Client) GetKernelGPUArchitectures(params *GetKernelGPUArchitecturesPara
 }
 
 /*
-  GetKernelVersion Retrieve a single kernel version
+GetKernelVersion Retrieve a single kernel version
 */
 func (a *Client) GetKernelVersion(params *GetKernelVersionParams, opts ...ClientOption) (*GetKernelVersionOK, error) {
 	// TODO: Validate the params before sending
@@ -2883,7 +2883,7 @@ func (a *Client) GetKernelVersion(params *GetKernelVersionParams, opts ...Client
 }
 
 /*
-  GetKernelVersions Retrieve all versions of this kernel
+GetKernelVersions Retrieve all versions of this kernel
 */
 func (a *Client) GetKernelVersions(params *GetKernelVersionsParams, opts ...ClientOption) (*GetKernelVersionsOK, error) {
 	// TODO: Validate the params before sending
@@ -2920,7 +2920,7 @@ func (a *Client) GetKernelVersions(params *GetKernelVersionsParams, opts ...Clie
 }
 
 /*
-  GetKernels Retrieve all kernels
+GetKernels Retrieve all kernels
 */
 func (a *Client) GetKernels(params *GetKernelsParams, opts ...ClientOption) (*GetKernelsOK, error) {
 	// TODO: Validate the params before sending
@@ -2957,7 +2957,7 @@ func (a *Client) GetKernels(params *GetKernelsParams, opts ...ClientOption) (*Ge
 }
 
 /*
-  GetLatestTimestamp Retrieve the latest timestamp to use for solve requests
+GetLatestTimestamp Retrieve the latest timestamp to use for solve requests
 */
 func (a *Client) GetLatestTimestamp(params *GetLatestTimestampParams, opts ...ClientOption) (*GetLatestTimestampOK, error) {
 	// TODO: Validate the params before sending
@@ -2994,7 +2994,7 @@ func (a *Client) GetLatestTimestamp(params *GetLatestTimestampParams, opts ...Cl
 }
 
 /*
-  GetLibc Retrieve a single libc
+GetLibc Retrieve a single libc
 */
 func (a *Client) GetLibc(params *GetLibcParams, opts ...ClientOption) (*GetLibcOK, error) {
 	// TODO: Validate the params before sending
@@ -3031,7 +3031,7 @@ func (a *Client) GetLibc(params *GetLibcParams, opts ...ClientOption) (*GetLibcO
 }
 
 /*
-  GetLibcVersion Retrieve a single libc version
+GetLibcVersion Retrieve a single libc version
 */
 func (a *Client) GetLibcVersion(params *GetLibcVersionParams, opts ...ClientOption) (*GetLibcVersionOK, error) {
 	// TODO: Validate the params before sending
@@ -3068,7 +3068,7 @@ func (a *Client) GetLibcVersion(params *GetLibcVersionParams, opts ...ClientOpti
 }
 
 /*
-  GetLibcVersions Retrieve all versions of this libc
+GetLibcVersions Retrieve all versions of this libc
 */
 func (a *Client) GetLibcVersions(params *GetLibcVersionsParams, opts ...ClientOption) (*GetLibcVersionsOK, error) {
 	// TODO: Validate the params before sending
@@ -3105,7 +3105,7 @@ func (a *Client) GetLibcVersions(params *GetLibcVersionsParams, opts ...ClientOp
 }
 
 /*
-  GetLibcs Retrieve all libcs
+GetLibcs Retrieve all libcs
 */
 func (a *Client) GetLibcs(params *GetLibcsParams, opts ...ClientOption) (*GetLibcsOK, error) {
 	// TODO: Validate the params before sending
@@ -3142,7 +3142,7 @@ func (a *Client) GetLibcs(params *GetLibcsParams, opts ...ClientOption) (*GetLib
 }
 
 /*
-  GetNamespaceIngredient Retrieve a single ingredient by namespace and name
+GetNamespaceIngredient Retrieve a single ingredient by namespace and name
 */
 func (a *Client) GetNamespaceIngredient(params *GetNamespaceIngredientParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetNamespaceIngredientOK, error) {
 	// TODO: Validate the params before sending
@@ -3180,7 +3180,7 @@ func (a *Client) GetNamespaceIngredient(params *GetNamespaceIngredientParams, au
 }
 
 /*
-  GetNamespaceIngredientVersion Retrieve a single ingredient version by namespace, name, and version
+GetNamespaceIngredientVersion Retrieve a single ingredient version by namespace, name, and version
 */
 func (a *Client) GetNamespaceIngredientVersion(params *GetNamespaceIngredientVersionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetNamespaceIngredientVersionOK, error) {
 	// TODO: Validate the params before sending
@@ -3218,7 +3218,7 @@ func (a *Client) GetNamespaceIngredientVersion(params *GetNamespaceIngredientVer
 }
 
 /*
-  GetNamespaceIngredientVersions Retrieve ingredient versions by namespace and ingredient name
+GetNamespaceIngredientVersions Retrieve ingredient versions by namespace and ingredient name
 */
 func (a *Client) GetNamespaceIngredientVersions(params *GetNamespaceIngredientVersionsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetNamespaceIngredientVersionsOK, error) {
 	// TODO: Validate the params before sending
@@ -3256,7 +3256,7 @@ func (a *Client) GetNamespaceIngredientVersions(params *GetNamespaceIngredientVe
 }
 
 /*
-  GetNamespaceIngredients Retrieve (or, if query string provided, search across) all ingredients and versions which provide at least one feature in this namespace
+GetNamespaceIngredients Retrieve (or, if query string provided, search across) all ingredients and versions which provide at least one feature in this namespace
 */
 func (a *Client) GetNamespaceIngredients(params *GetNamespaceIngredientsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetNamespaceIngredientsOK, error) {
 	// TODO: Validate the params before sending
@@ -3294,7 +3294,7 @@ func (a *Client) GetNamespaceIngredients(params *GetNamespaceIngredientsParams, 
 }
 
 /*
-  GetNamespaces Retrieve all namespaces
+GetNamespaces Retrieve all namespaces
 */
 func (a *Client) GetNamespaces(params *GetNamespacesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetNamespacesOK, error) {
 	// TODO: Validate the params before sending
@@ -3332,7 +3332,7 @@ func (a *Client) GetNamespaces(params *GetNamespacesParams, authInfo runtime.Cli
 }
 
 /*
-  GetOperatingSystem Retrieve a single operating system
+GetOperatingSystem Retrieve a single operating system
 */
 func (a *Client) GetOperatingSystem(params *GetOperatingSystemParams, opts ...ClientOption) (*GetOperatingSystemOK, error) {
 	// TODO: Validate the params before sending
@@ -3369,7 +3369,7 @@ func (a *Client) GetOperatingSystem(params *GetOperatingSystemParams, opts ...Cl
 }
 
 /*
-  GetOperatingSystemKernels Retrieve all kernels that can be used with this operating system
+GetOperatingSystemKernels Retrieve all kernels that can be used with this operating system
 */
 func (a *Client) GetOperatingSystemKernels(params *GetOperatingSystemKernelsParams, opts ...ClientOption) (*GetOperatingSystemKernelsOK, error) {
 	// TODO: Validate the params before sending
@@ -3406,7 +3406,7 @@ func (a *Client) GetOperatingSystemKernels(params *GetOperatingSystemKernelsPara
 }
 
 /*
-  GetOperatingSystemLibcs Retrieve all libcs that can be used with this operating system
+GetOperatingSystemLibcs Retrieve all libcs that can be used with this operating system
 */
 func (a *Client) GetOperatingSystemLibcs(params *GetOperatingSystemLibcsParams, opts ...ClientOption) (*GetOperatingSystemLibcsOK, error) {
 	// TODO: Validate the params before sending
@@ -3443,7 +3443,7 @@ func (a *Client) GetOperatingSystemLibcs(params *GetOperatingSystemLibcsParams, 
 }
 
 /*
-  GetOperatingSystemVersion Retrieve a single operating system version
+GetOperatingSystemVersion Retrieve a single operating system version
 */
 func (a *Client) GetOperatingSystemVersion(params *GetOperatingSystemVersionParams, opts ...ClientOption) (*GetOperatingSystemVersionOK, error) {
 	// TODO: Validate the params before sending
@@ -3480,7 +3480,7 @@ func (a *Client) GetOperatingSystemVersion(params *GetOperatingSystemVersionPara
 }
 
 /*
-  GetOperatingSystemVersions Retrieve all versions of this operating system
+GetOperatingSystemVersions Retrieve all versions of this operating system
 */
 func (a *Client) GetOperatingSystemVersions(params *GetOperatingSystemVersionsParams, opts ...ClientOption) (*GetOperatingSystemVersionsOK, error) {
 	// TODO: Validate the params before sending
@@ -3517,7 +3517,7 @@ func (a *Client) GetOperatingSystemVersions(params *GetOperatingSystemVersionsPa
 }
 
 /*
-  GetOperatingSystems Retrieve all operating systems
+GetOperatingSystems Retrieve all operating systems
 */
 func (a *Client) GetOperatingSystems(params *GetOperatingSystemsParams, opts ...ClientOption) (*GetOperatingSystemsOK, error) {
 	// TODO: Validate the params before sending
@@ -3554,7 +3554,7 @@ func (a *Client) GetOperatingSystems(params *GetOperatingSystemsParams, opts ...
 }
 
 /*
-  GetPatch Retrieve a single patch
+GetPatch Retrieve a single patch
 */
 func (a *Client) GetPatch(params *GetPatchParams, opts ...ClientOption) (*GetPatchOK, error) {
 	// TODO: Validate the params before sending
@@ -3591,7 +3591,7 @@ func (a *Client) GetPatch(params *GetPatchParams, opts ...ClientOption) (*GetPat
 }
 
 /*
-  GetPatches Retrieve all patches
+GetPatches Retrieve all patches
 */
 func (a *Client) GetPatches(params *GetPatchesParams, opts ...ClientOption) (*GetPatchesOK, error) {
 	// TODO: Validate the params before sending
@@ -3628,7 +3628,7 @@ func (a *Client) GetPatches(params *GetPatchesParams, opts ...ClientOption) (*Ge
 }
 
 /*
-  GetPlatform Retrieve a single platform
+GetPlatform Retrieve a single platform
 */
 func (a *Client) GetPlatform(params *GetPlatformParams, opts ...ClientOption) (*GetPlatformOK, error) {
 	// TODO: Validate the params before sending
@@ -3665,7 +3665,7 @@ func (a *Client) GetPlatform(params *GetPlatformParams, opts ...ClientOption) (*
 }
 
 /*
-  GetPlatforms Retrieve all platforms
+GetPlatforms Retrieve all platforms
 */
 func (a *Client) GetPlatforms(params *GetPlatformsParams, opts ...ClientOption) (*GetPlatformsOK, error) {
 	// TODO: Validate the params before sending
@@ -3702,7 +3702,7 @@ func (a *Client) GetPlatforms(params *GetPlatformsParams, opts ...ClientOption) 
 }
 
 /*
-  GetSolutionRecipe Retrieve a recipe produced as part of a solution
+GetSolutionRecipe Retrieve a recipe produced as part of a solution
 */
 func (a *Client) GetSolutionRecipe(params *GetSolutionRecipeParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetSolutionRecipeOK, error) {
 	// TODO: Validate the params before sending
@@ -3740,7 +3740,7 @@ func (a *Client) GetSolutionRecipe(params *GetSolutionRecipeParams, authInfo run
 }
 
 /*
-  HealthCheck health check API
+HealthCheck health check API
 */
 func (a *Client) HealthCheck(params *HealthCheckParams, opts ...ClientOption) (*HealthCheckOK, error) {
 	// TODO: Validate the params before sending
@@ -3777,7 +3777,7 @@ func (a *Client) HealthCheck(params *HealthCheckParams, opts ...ClientOption) (*
 }
 
 /*
-  NormalizeNames Normalize a list of names according to the namespace's name normalization rules.
+NormalizeNames Normalize a list of names according to the namespace's name normalization rules.
 */
 func (a *Client) NormalizeNames(params *NormalizeNamesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*NormalizeNamesOK, error) {
 	// TODO: Validate the params before sending
@@ -3815,7 +3815,7 @@ func (a *Client) NormalizeNames(params *NormalizeNamesParams, authInfo runtime.C
 }
 
 /*
-  ReadinessCheck readiness check API
+ReadinessCheck readiness check API
 */
 func (a *Client) ReadinessCheck(params *ReadinessCheckParams, opts ...ClientOption) (*ReadinessCheckOK, error) {
 	// TODO: Validate the params before sending
@@ -3852,9 +3852,9 @@ func (a *Client) ReadinessCheck(params *ReadinessCheckParams, opts ...ClientOpti
 }
 
 /*
-  ResolveRecipes recipes for an order
+ResolveRecipes recipes for an order
 
-  Solve the order's requirements into concrete ingredient versions and return one or more recipes fulfilling the order
+Solve the order's requirements into concrete ingredient versions and return one or more recipes fulfilling the order
 */
 func (a *Client) ResolveRecipes(params *ResolveRecipesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ResolveRecipesOK, *ResolveRecipesAccepted, error) {
 	// TODO: Validate the params before sending
@@ -3894,7 +3894,7 @@ func (a *Client) ResolveRecipes(params *ResolveRecipesParams, authInfo runtime.C
 }
 
 /*
-  SearchIngredients Search ingredients
+SearchIngredients Search ingredients
 */
 func (a *Client) SearchIngredients(params *SearchIngredientsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*SearchIngredientsOK, error) {
 	// TODO: Validate the params before sending
@@ -3932,7 +3932,7 @@ func (a *Client) SearchIngredients(params *SearchIngredientsParams, authInfo run
 }
 
 /*
-  SolveOrder Solve an order's requirements into a solution consisting of one or more recipes that can be built
+SolveOrder Solve an order's requirements into a solution consisting of one or more recipes that can be built
 */
 func (a *Client) SolveOrder(params *SolveOrderParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*SolveOrderCreated, error) {
 	// TODO: Validate the params before sending
@@ -3970,7 +3970,7 @@ func (a *Client) SolveOrder(params *SolveOrderParams, authInfo runtime.ClientAut
 }
 
 /*
-  UpdateAuthor Update an author
+UpdateAuthor Update an author
 */
 func (a *Client) UpdateAuthor(params *UpdateAuthorParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateAuthorOK, error) {
 	// TODO: Validate the params before sending
@@ -4008,7 +4008,7 @@ func (a *Client) UpdateAuthor(params *UpdateAuthorParams, authInfo runtime.Clien
 }
 
 /*
-  UpdateBuildScript Update an existing build script (if it's not in use by any stable ingredient version revisions)
+UpdateBuildScript Update an existing build script (if it's not in use by any stable ingredient version revisions)
 */
 func (a *Client) UpdateBuildScript(params *UpdateBuildScriptParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateBuildScriptOK, error) {
 	// TODO: Validate the params before sending
@@ -4046,7 +4046,7 @@ func (a *Client) UpdateBuildScript(params *UpdateBuildScriptParams, authInfo run
 }
 
 /*
-  UpdateIngredient Update this ingredient
+UpdateIngredient Update this ingredient
 */
 func (a *Client) UpdateIngredient(params *UpdateIngredientParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateIngredientOK, error) {
 	// TODO: Validate the params before sending
@@ -4084,7 +4084,7 @@ func (a *Client) UpdateIngredient(params *UpdateIngredientParams, authInfo runti
 }
 
 /*
-  UpdateIngredientVersion Update this ingredient version
+UpdateIngredientVersion Update this ingredient version
 */
 func (a *Client) UpdateIngredientVersion(params *UpdateIngredientVersionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateIngredientVersionOK, error) {
 	// TODO: Validate the params before sending
@@ -4122,7 +4122,7 @@ func (a *Client) UpdateIngredientVersion(params *UpdateIngredientVersionParams, 
 }
 
 /*
-  UpdatePatch Update an existing patch (if it's not in use by any stable ingredient version revisions)
+UpdatePatch Update an existing patch (if it's not in use by any stable ingredient version revisions)
 */
 func (a *Client) UpdatePatch(params *UpdatePatchParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdatePatchOK, error) {
 	// TODO: Validate the params before sending
@@ -4160,7 +4160,7 @@ func (a *Client) UpdatePatch(params *UpdatePatchParams, authInfo runtime.ClientA
 }
 
 /*
-  UpdatePlatform Update the platform end of support date
+UpdatePlatform Update the platform end of support date
 */
 func (a *Client) UpdatePlatform(params *UpdatePlatformParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdatePlatformOK, error) {
 	// TODO: Validate the params before sending
@@ -4198,7 +4198,7 @@ func (a *Client) UpdatePlatform(params *UpdatePlatformParams, authInfo runtime.C
 }
 
 /*
-  ValidateRecipe Given a single recipe, this endpoint tells you if the recipe is valid. If not, it returns one more errors explaining the problem(s).
+ValidateRecipe Given a single recipe, this endpoint tells you if the recipe is valid. If not, it returns one more errors explaining the problem(s).
 */
 func (a *Client) ValidateRecipe(params *ValidateRecipeParams, opts ...ClientOption) (*ValidateRecipeOK, error) {
 	// TODO: Validate the params before sending

@@ -52,10 +52,12 @@ func NewBulkInviteOrganizationParamsWithHTTPClient(client *http.Client) *BulkInv
 	}
 }
 
-/* BulkInviteOrganizationParams contains all the parameters to send to the API endpoint
-   for the bulk invite organization operation.
+/*
+BulkInviteOrganizationParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the bulk invite organization operation.
+
+	Typically these are written to a http.Request.
 */
 type BulkInviteOrganizationParams struct {
 

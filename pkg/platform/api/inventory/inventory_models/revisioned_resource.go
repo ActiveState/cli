@@ -16,7 +16,7 @@ import (
 
 // RevisionedResource Revisioned Resource
 //
-// Properties shared by all revisioned resources
+// # Properties shared by all revisioned resources
 //
 // swagger:model revisionedResource
 type RevisionedResource struct {

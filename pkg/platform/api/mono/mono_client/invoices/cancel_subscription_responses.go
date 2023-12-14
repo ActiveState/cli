@@ -63,7 +63,8 @@ func NewCancelSubscriptionOK() *CancelSubscriptionOK {
 	return &CancelSubscriptionOK{}
 }
 
-/* CancelSubscriptionOK describes a response with status code 200, with default header values.
+/*
+CancelSubscriptionOK describes a response with status code 200, with default header values.
 
 Success
 */
@@ -93,7 +94,8 @@ func NewCancelSubscriptionBadRequest() *CancelSubscriptionBadRequest {
 	return &CancelSubscriptionBadRequest{}
 }
 
-/* CancelSubscriptionBadRequest describes a response with status code 400, with default header values.
+/*
+CancelSubscriptionBadRequest describes a response with status code 400, with default header values.
 
 Bad Request
 */
@@ -125,7 +127,8 @@ func NewCancelSubscriptionForbidden() *CancelSubscriptionForbidden {
 	return &CancelSubscriptionForbidden{}
 }
 
-/* CancelSubscriptionForbidden describes a response with status code 403, with default header values.
+/*
+CancelSubscriptionForbidden describes a response with status code 403, with default header values.
 
 Forbidden
 */
@@ -157,7 +160,8 @@ func NewCancelSubscriptionNotFound() *CancelSubscriptionNotFound {
 	return &CancelSubscriptionNotFound{}
 }
 
-/* CancelSubscriptionNotFound describes a response with status code 404, with default header values.
+/*
+CancelSubscriptionNotFound describes a response with status code 404, with default header values.
 
 Not Found
 */
@@ -189,7 +193,8 @@ func NewCancelSubscriptionInternalServerError() *CancelSubscriptionInternalServe
 	return &CancelSubscriptionInternalServerError{}
 }
 
-/* CancelSubscriptionInternalServerError describes a response with status code 500, with default header values.
+/*
+CancelSubscriptionInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */

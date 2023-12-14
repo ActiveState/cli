@@ -15,7 +15,7 @@ import (
 
 // CPUArchitectureCore CPU Architecture Core
 //
-// The properties of a CPU architecture needed to create a new one
+// # The properties of a CPU architecture needed to create a new one
 //
 // swagger:model cpuArchitectureCore
 type CPUArchitectureCore struct {

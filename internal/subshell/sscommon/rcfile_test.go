@@ -32,7 +32,7 @@ func fakeContents(before, contents, after string) string {
 }
 
 func fakeFileWithContents(before, contents, after string) string {
-	f := fileutils.TempFileUnsafe("", "")
+	f := fileutils.TempFileUnsafe()
 	defer f.Close()
 	f.WriteString(fakeContents(before, contents, after))
 	return f.Name()

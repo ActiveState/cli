@@ -73,7 +73,8 @@ func NewForkProjectOK() *ForkProjectOK {
 	return &ForkProjectOK{}
 }
 
-/* ForkProjectOK describes a response with status code 200, with default header values.
+/*
+ForkProjectOK describes a response with status code 200, with default header values.
 
 Project forked
 */
@@ -105,7 +106,8 @@ func NewForkProjectBadRequest() *ForkProjectBadRequest {
 	return &ForkProjectBadRequest{}
 }
 
-/* ForkProjectBadRequest describes a response with status code 400, with default header values.
+/*
+ForkProjectBadRequest describes a response with status code 400, with default header values.
 
 Bad Request
 */
@@ -137,7 +139,8 @@ func NewForkProjectForbidden() *ForkProjectForbidden {
 	return &ForkProjectForbidden{}
 }
 
-/* ForkProjectForbidden describes a response with status code 403, with default header values.
+/*
+ForkProjectForbidden describes a response with status code 403, with default header values.
 
 Unauthorized
 */
@@ -169,7 +172,8 @@ func NewForkProjectNotFound() *ForkProjectNotFound {
 	return &ForkProjectNotFound{}
 }
 
-/* ForkProjectNotFound describes a response with status code 404, with default header values.
+/*
+ForkProjectNotFound describes a response with status code 404, with default header values.
 
 Not Found
 */
@@ -201,7 +205,8 @@ func NewForkProjectConflict() *ForkProjectConflict {
 	return &ForkProjectConflict{}
 }
 
-/* ForkProjectConflict describes a response with status code 409, with default header values.
+/*
+ForkProjectConflict describes a response with status code 409, with default header values.
 
 Conflict
 */
@@ -233,7 +238,8 @@ func NewForkProjectInternalServerError() *ForkProjectInternalServerError {
 	return &ForkProjectInternalServerError{}
 }
 
-/* ForkProjectInternalServerError describes a response with status code 500, with default header values.
+/*
+ForkProjectInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */
@@ -260,7 +266,8 @@ func (o *ForkProjectInternalServerError) readResponse(response runtime.ClientRes
 	return nil
 }
 
-/*ForkProjectBody fork project body
+/*
+ForkProjectBody fork project body
 swagger:model ForkProjectBody
 */
 type ForkProjectBody struct {

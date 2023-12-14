@@ -45,7 +45,8 @@ func NewGetOrderFromCheckpointOK() *GetOrderFromCheckpointOK {
 	return &GetOrderFromCheckpointOK{}
 }
 
-/* GetOrderFromCheckpointOK describes a response with status code 200, with default header values.
+/*
+GetOrderFromCheckpointOK describes a response with status code 200, with default header values.
 
 Generate a solver order for the provided checkpoint data
 */
@@ -77,7 +78,8 @@ func NewGetOrderFromCheckpointInternalServerError() *GetOrderFromCheckpointInter
 	return &GetOrderFromCheckpointInternalServerError{}
 }
 
-/* GetOrderFromCheckpointInternalServerError describes a response with status code 500, with default header values.
+/*
+GetOrderFromCheckpointInternalServerError describes a response with status code 500, with default header values.
 
 Error generating order
 */

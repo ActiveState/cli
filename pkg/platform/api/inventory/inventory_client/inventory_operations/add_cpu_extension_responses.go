@@ -52,7 +52,8 @@ func NewAddCPUExtensionCreated() *AddCPUExtensionCreated {
 	return &AddCPUExtensionCreated{}
 }
 
-/* AddCPUExtensionCreated describes a response with status code 201, with default header values.
+/*
+AddCPUExtensionCreated describes a response with status code 201, with default header values.
 
 The added CPU extension
 */
@@ -84,7 +85,8 @@ func NewAddCPUExtensionBadRequest() *AddCPUExtensionBadRequest {
 	return &AddCPUExtensionBadRequest{}
 }
 
-/* AddCPUExtensionBadRequest describes a response with status code 400, with default header values.
+/*
+AddCPUExtensionBadRequest describes a response with status code 400, with default header values.
 
 If the CPU extension is invalid
 */
@@ -118,7 +120,8 @@ func NewAddCPUExtensionDefault(code int) *AddCPUExtensionDefault {
 	}
 }
 
-/* AddCPUExtensionDefault describes a response with status code -1, with default header values.
+/*
+AddCPUExtensionDefault describes a response with status code -1, with default header values.
 
 If there is an error processing the request
 */

@@ -46,7 +46,8 @@ func NewGetPatchOK() *GetPatchOK {
 	return &GetPatchOK{}
 }
 
-/* GetPatchOK describes a response with status code 200, with default header values.
+/*
+GetPatchOK describes a response with status code 200, with default header values.
 
 The retrieved patch
 */
@@ -80,7 +81,8 @@ func NewGetPatchDefault(code int) *GetPatchDefault {
 	}
 }
 
-/* GetPatchDefault describes a response with status code -1, with default header values.
+/*
+GetPatchDefault describes a response with status code -1, with default header values.
 
 generic error response
 */

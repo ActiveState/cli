@@ -46,7 +46,8 @@ func NewGetAuthorsOK() *GetAuthorsOK {
 	return &GetAuthorsOK{}
 }
 
-/* GetAuthorsOK describes a response with status code 200, with default header values.
+/*
+GetAuthorsOK describes a response with status code 200, with default header values.
 
 A paginated list of authors
 */
@@ -80,7 +81,8 @@ func NewGetAuthorsDefault(code int) *GetAuthorsDefault {
 	}
 }
 
-/* GetAuthorsDefault describes a response with status code -1, with default header values.
+/*
+GetAuthorsDefault describes a response with status code -1, with default header values.
 
 generic error response
 */

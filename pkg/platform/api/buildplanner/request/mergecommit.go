@@ -71,6 +71,6 @@ mutation ($organization: String!, $project: String!, $targetRef: String!, $other
 `
 }
 
-func (b *mergeCommit) Vars() (map[string]interface{}, error) {
-	return b.vars, nil
+func (b *mergeCommit) Vars() map[string]interface{} {
+	return b.vars
 }

@@ -17,7 +17,7 @@ import (
 
 // IngredientVersionRevisionPagedList Ingredient Version Revision Paged List
 //
-// A paginated list of ingredient version revisions
+// # A paginated list of ingredient version revisions
 //
 // swagger:model ingredientVersionRevisionPagedList
 type IngredientVersionRevisionPagedList struct {
