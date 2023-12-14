@@ -104,14 +104,13 @@ jobs:
         shell: pwsh
         run: |
           echo "${PSScriptRoot}/.github/deps/${{ runner.os }}/bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-          where cmd
 
       - # === Setup Windows ===
         name: Debug (Windows)
         shell: pwsh
         if: runner.os == 'windows'
         run: |
-          echo "cmd location: $(where cmd)"
+          echo "cmd location: $(which cmd)"
 
       - # == Setup macOS ==
         name: Setup (macOS)
