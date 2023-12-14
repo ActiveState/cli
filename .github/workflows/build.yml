@@ -111,7 +111,7 @@ jobs:
         shell: pwsh
         if: runner.os == 'windows'
         run: |
-          where cmd
+          where "cmd location: $(where cmd)"
 
       - # == Setup macOS ==
         name: Setup (macOS)
