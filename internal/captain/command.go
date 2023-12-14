@@ -101,8 +101,8 @@ type Command struct {
 
 	skipChecks bool
 
-	unstable           bool
-	noStructuredOutput bool
+	unstable         bool
+	structuredOutput bool
 
 	examples []string
 
@@ -180,7 +180,7 @@ func NewCommand(name, title, description string, prime primer, flags []*Flag, ar
 				return nil
 			}
 			cmd.outputTitleIfAny()
-		} else if cmd.out.Type().IsStructured() && cmd.noStructuredOutput {
+		} else if cmd.out.Type().IsStructured() && !cmd.structuredOutput {
 			cmd.out.Error(locale.NewInputError("err_no_structured_output", "", string(cmd.out.Type())))
 			return nil
 		}
@@ -290,7 +290,7 @@ func (c *Command) Execute(args []string) error {
 	c.cobra.SetArgs(args)
 	err := c.cobra.Execute()
 	c.cobra.SetArgs(nil)
-	return setupSensibleErrors(err)
+	return setupSensibleErrors(err, args)
 }
 
 func (c *Command) SetExamples(examples ...string) *Command {
@@ -448,8 +448,8 @@ func (c *Command) SetHasVariableArguments() *Command {
 	return c
 }
 
-func (c *Command) SetDoesNotSupportStructuredOutput() *Command {
-	c.noStructuredOutput = true
+func (c *Command) SetSupportsStructuredOutput() *Command {
+	c.structuredOutput = true
 	return c
 }
 
@@ -644,7 +644,7 @@ func (c *Command) cobraExecHandler(cobraCmd *cobra.Command, args []string) error
 	if c.shouldWarnUnstable() && !condition.OptInUnstable(c.cfg) {
 		c.out.Notice(locale.Tr("unstable_command_warning"))
 		return nil
-	} else if c.out.Type().IsStructured() && c.noStructuredOutput {
+	} else if c.out.Type().IsStructured() && !c.structuredOutput {
 		c.out.Error(locale.NewInputError("err_no_structured_output", "", string(c.out.Type())))
 		return nil
 	}
@@ -768,7 +768,7 @@ func (c *Command) argValidator(cobraCmd *cobra.Command, args []string) error {
 
 // setupSensibleErrors inspects an error value for certain errors and returns a
 // wrapped error that can be checked and that is localized.
-func setupSensibleErrors(err error) error {
+func setupSensibleErrors(err error, args []string) error {
 	if err, ok := err.(error); ok && err == nil {
 		return nil
 	}
@@ -816,10 +816,7 @@ func setupSensibleErrors(err error) error {
 	}
 
 	if pflagErrCmd := pflagCmdErrMsgCmd(errMsg); pflagErrCmd != "" {
-		return locale.NewInputError(
-			"command_cmd_no_such_cmd",
-			"No such command: [NOTICE]{{.V0}}[/RESET]", pflagErrCmd,
-		)
+		return locale.NewInputError("command_cmd_no_such_cmd", "", pflagErrCmd)
 	}
 
 	// Cobra error message of the form "accepts at most 0 arg(s), received 1, called at: "
@@ -829,6 +826,9 @@ func setupSensibleErrors(err error) error {
 		if err != nil || n != 2 {
 			multilog.Error("Unable to parse cobra error message: %v", err)
 			return locale.NewInputError("err_cmd_unexpected_arguments", "Unexpected argument(s) given")
+		}
+		if max == 0 && received > 0 {
+			return locale.NewInputError("command_cmd_no_such_cmd", "", args[len(args)-received])
 		}
 		return locale.NewInputError(
 			"err_cmd_too_many_arguments",

@@ -22,25 +22,21 @@ func (suite *HelloIntegrationTestSuite) TestHello() {
 	cp.Expect("Checked out project")
 	cp.ExpectExitCode(0)
 
-	cp = ts.Spawn("_hello")
-	cp.Expect("Hello, Friend!")
-	cp.ExpectExitCode(0)
-
 	cp = ts.Spawn("_hello", "Person")
 	cp.Expect("Hello, Person!")
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("_hello", "")
-	cp.Expect("Cannot say hello")
-	cp.Expect("No name provided")
+	cp.Expect("Cannot say hello because no name was provided")
 	cp.ExpectNotExitCode(0)
+	ts.IgnoreLogErrors()
 
-	cp = ts.Spawn("_hello", "--extra")
+	cp = ts.Spawn("_hello", "Person", "--extra")
 	cp.Expect("Project: ActiveState-CLI/small-python")
 	cp.Expect("Current commit message:")
 	cp.ExpectExitCode(0)
 
-	cp = ts.Spawn("_hello", "--echo", "example")
+	cp = ts.Spawn("_hello", "Person", "--echo", "example")
 	cp.Expect("Echoing: example")
 	cp.ExpectExitCode(0)
 }

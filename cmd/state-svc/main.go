@@ -13,11 +13,13 @@ import (
 
 	"github.com/ActiveState/cli/cmd/state-svc/autostart"
 	anaSync "github.com/ActiveState/cli/internal/analytics/client/sync"
+	anaConst "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/events"
+	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/ipc"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -98,7 +100,7 @@ func run(cfg *config.Instance) error {
 	}
 
 	auth := authentication.New(cfg)
-	an := anaSync.New(cfg, auth, out)
+	an := anaSync.New(anaConst.SrcStateService, cfg, auth, out)
 	defer an.Wait()
 
 	if err := autostart.RegisterConfigListener(cfg); err != nil {
@@ -113,25 +115,59 @@ func run(cfg *config.Instance) error {
 
 	p := primer.New(nil, out, nil, nil, nil, nil, cfg, nil, nil, an)
 
+	showVersion := false
 	cmd := captain.NewCommand(
-		path.Base(os.Args[0]), "", "", p, nil, nil,
+		path.Base(os.Args[0]),
+		"",
+		"",
+		p,
+		[]*captain.Flag{
+			{
+				Name:      "version",
+				Shorthand: "v",
+				Value:     &showVersion,
+			},
+		},
+		nil,
 		func(ccmd *captain.Command, args []string) error {
+			if showVersion {
+				vd := installation.VersionData{
+					"CLI Service",
+					constants.LibraryLicense,
+					constants.Version,
+					constants.BranchName,
+					constants.RevisionHash,
+					constants.Date,
+					constants.OnCI == "true",
+				}
+				out.Print(locale.T("version_info", vd))
+				return nil
+			}
 			out.Print(ccmd.UsageText())
 			return nil
 		},
 	)
 
 	var foregroundArgText string
+	var autostart bool
 
 	cmd.AddChildren(
 		captain.NewCommand(
 			cmdStart,
 			"",
 			"Start the ActiveState Service (Background)",
-			p, nil, nil,
+			p,
+			[]*captain.Flag{
+				{Name: "autostart", Value: &autostart, Hidden: true}, // differentiate between autostart and cli invocation
+			},
+			nil,
 			func(ccmd *captain.Command, args []string) error {
 				logging.Debug("Running CmdStart")
-				return runStart(out, "svc-start:cli")
+				argText := "svc-start:cli"
+				if autostart {
+					argText = "svc-start:auto"
+				}
+				return runStart(out, argText)
 			},
 		),
 		captain.NewCommand(
@@ -185,12 +221,12 @@ func runForeground(cfg *config.Instance, an *anaSync.Client, auth *authenticatio
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	logFile := logging.FilePath()
-	logging.Debug("Logging to %q", logFile)
+	logFileName := logging.FileName()
+	logging.Debug("Logging to %q", logging.FilePathFor(logFileName))
 	stopTimer := logging.StartRotateLogTimer()
 	defer stopTimer()
 
-	p := NewService(ctx, cfg, an, auth, logFile)
+	p := NewService(ctx, cfg, an, auth, logFileName)
 
 	if argText != "" {
 		argText = fmt.Sprintf(" (invoked by %q)", argText)

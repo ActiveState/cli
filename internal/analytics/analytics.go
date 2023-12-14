@@ -8,8 +8,9 @@ import (
 
 // Dispatcher describes a struct that can send analytics event in the background
 type Dispatcher interface {
-	Event(category string, action string, dim ...*dimensions.Values)
-	EventWithLabel(category string, action string, label string, dim ...*dimensions.Values)
+	Event(category, action string, dim ...*dimensions.Values)
+	EventWithLabel(category, action, label string, dim ...*dimensions.Values)
+	EventWithSource(category, action, source string, dim ...*dimensions.Values)
 	Wait()
 	Close()
 }

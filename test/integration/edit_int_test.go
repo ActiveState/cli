@@ -10,6 +10,7 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
@@ -22,7 +23,7 @@ type EditIntegrationTestSuite struct {
 	tagsuite.Suite
 }
 
-func (suite *EditIntegrationTestSuite) setup() (*e2e.Session, e2e.SpawnOptions) {
+func (suite *EditIntegrationTestSuite) setup() (*e2e.Session, e2e.SpawnOptSetter) {
 	ts := e2e.New(suite.T(), false)
 
 	root := environment.GetRootPathUnsafe()
@@ -33,7 +34,7 @@ func (suite *EditIntegrationTestSuite) setup() (*e2e.Session, e2e.SpawnOptions) 
 	suite.Require().NoError(err)
 
 	configFileContent := strings.TrimSpace(`
-project: "https://platform.activestate.com/EditOrg/EditProject?commitID=00010001-0001-0001-0001-000100010001"
+project: "https://platform.activestate.com/EditOrg/EditProject"
 scripts:
   - name: test-script
     value: echo hello test
@@ -48,13 +49,13 @@ scripts:
 	}
 	cp := ts.SpawnCmdWithOpts(
 		"go",
-		e2e.WithArgs("build", "-o", "editor"+extension, target),
-		e2e.WithWorkDirectory(editorScriptDir),
+		e2e.OptArgs("build", "-o", "editor"+extension, target),
+		e2e.OptWD(editorScriptDir),
 	)
 	cp.ExpectExitCode(0)
 
 	suite.Require().FileExists(filepath.Join(editorScriptDir, "editor"+extension))
-	return ts, e2e.AppendEnv(fmt.Sprintf("EDITOR=%s", filepath.Join(editorScriptDir, "editor"+extension)))
+	return ts, e2e.OptAppendEnv(fmt.Sprintf("EDITOR=%s", filepath.Join(editorScriptDir, "editor"+extension)))
 }
 
 func (suite *EditIntegrationTestSuite) TearDownTest() {
@@ -65,10 +66,10 @@ func (suite *EditIntegrationTestSuite) TestEdit() {
 	suite.OnlyRunForTags(tagsuite.Edit)
 	ts, env := suite.setup()
 	defer ts.Close()
-	cp := ts.SpawnWithOpts(e2e.WithArgs("scripts", "edit", "test-script"), env)
+	cp := ts.SpawnWithOpts(e2e.OptArgs("scripts", "edit", "test-script"), env)
 	cp.Expect("Watching file changes")
 	cp.Expect("Script changes detected")
-	cp.Send("Y")
+	cp.SendLine("Y")
 	cp.ExpectExitCode(0)
 }
 
@@ -79,9 +80,9 @@ func (suite *EditIntegrationTestSuite) TestEdit_NonInteractive() {
 	}
 	ts, env := suite.setup()
 	defer ts.Close()
-	extraEnv := e2e.AppendEnv("ACTIVESTATE_NONINTERACTIVE=true")
+	extraEnv := e2e.OptAppendEnv(constants.NonInteractiveEnvVarName + "=true")
 
-	cp := ts.SpawnWithOpts(e2e.WithArgs("scripts", "edit", "test-script"), env, extraEnv)
+	cp := ts.SpawnWithOpts(e2e.OptArgs("scripts", "edit", "test-script"), env, extraEnv)
 	cp.Expect("Watching file changes")
 	// Can't consistently get this line detected on CI
 	cp.Expect("Script changes detected")
@@ -91,19 +92,16 @@ func (suite *EditIntegrationTestSuite) TestEdit_NonInteractive() {
 
 func (suite *EditIntegrationTestSuite) TestEdit_UpdateCorrectPlatform() {
 	suite.OnlyRunForTags(tagsuite.Edit)
-	if runtime.GOOS == "windows" {
-		// https://www.pivotaltracker.com/story/show/174477457
-		suite.T().Skipf("Skipping on windows due to random failures")
-	}
 
 	ts, env := suite.setup()
 	defer ts.Close()
 	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("scripts", "edit", "test-script"),
-		e2e.WithWorkDirectory(ts.Dirs.Work),
+		e2e.OptArgs("scripts", "edit", "test-script"),
+		e2e.OptWD(ts.Dirs.Work),
 		env,
 	)
-	cp.Send("Y")
+	cp.Expect("(Y/n)")
+	cp.SendLine("Y")
 	cp.ExpectExitCode(0)
 
 	time.Sleep(time.Second * 2) // let CI env catch up
@@ -115,7 +113,7 @@ func (suite *EditIntegrationTestSuite) TestEdit_UpdateCorrectPlatform() {
 	suite.Require().NotNil(s, "test-script should not be empty")
 	v, err := s.Value()
 	suite.Require().NoError(err)
-	suite.Contains(v, "more info!", "Output of edit command:\n%s", cp.Snapshot())
+	suite.Contains(v, "more info!", "Output of edit command:\n%s", cp.Output())
 }
 
 func TestEditIntegrationTestSuite(t *testing.T) {

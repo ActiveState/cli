@@ -8,7 +8,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/exeutils"
+	"github.com/ActiveState/cli/internal/osutils"
 	wc "github.com/ActiveState/cli/scripts/internal/workflow-controllers"
 	wh "github.com/ActiveState/cli/scripts/internal/workflow-helpers"
 	"github.com/andygrunwald/go-jira"
@@ -126,12 +126,12 @@ func run() error {
 		}
 
 		root := environment.GetRootPathUnsafe()
-		stdout, stderr, err := exeutils.ExecSimpleFromDir(root, "git", []string{"checkout", v.TargetBranch}, nil)
+		stdout, stderr, err := osutils.ExecSimpleFromDir(root, "git", []string{"checkout", v.TargetBranch}, nil)
 		if err != nil {
 			return errs.Wrap(err, "failed to checkout %s, stdout:\n%s\nstderr:\n%s", v.TargetBranch, stdout, stderr)
 		}
 
-		stdout, stderr, err = exeutils.ExecSimpleFromDir(root, "git", []string{
+		stdout, stderr, err = osutils.ExecSimpleFromDir(root, "git", []string{
 			"merge", v.SourceBranch,
 			"--no-edit", "-m",
 			fmt.Sprintf("Merge branch %s to adopt changes from PR #%d", v.SourceBranch, prNumber),
@@ -143,7 +143,7 @@ func run() error {
 				v.SourceBranch, v.TargetBranch, intend[i:].String(), stdout, stderr)
 		}
 
-		stdout, stderr, err = exeutils.ExecSimpleFromDir(root, "git", []string{"push"}, nil)
+		stdout, stderr, err = osutils.ExecSimpleFromDir(root, "git", []string{"push"}, nil)
 		if err != nil {
 			return errs.Wrap(err,
 				"failed to merge %s into %s. please manually merge the following branches: %s"+

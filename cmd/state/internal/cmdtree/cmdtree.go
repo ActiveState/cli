@@ -47,6 +47,7 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 		newExportGithubActionCommand(prime),
 		newExportDocsCommand(prime),
 		newExportEnvCommand(prime),
+		newLogCommand(prime),
 	)
 
 	platformsCmd := newPlatformsCommand(prime)
@@ -205,6 +206,7 @@ func New(prime *primer.Values, args ...string) *CmdTree {
 		newSwitchCommand(prime),
 		newTestCommand(prime),
 		newPublish(prime),
+		//newCommitCommand(prime), // re-enable in DX-2307
 	)
 
 	return &CmdTree{
@@ -280,14 +282,6 @@ func newStateCommand(globals *globalOptions, prime *primer.Values) *captain.Comm
 				Value:       &globals.Output,
 			},
 			{
-				/* This option is only used for the vscode extension: It prevents the integrated terminal to close immediately after an error occurs, such that the user can read the message */
-				Name:        "confirm-exit-on-error", // Name and Shorthand should be kept in sync with cmd/state/output.go
-				Description: "prompts the user to press enter before exiting, when an error occurs",
-				Persist:     true,
-				Hidden:      true, // No need to add this to help messages
-				Value:       &opts.ConfirmExit,
-			},
-			{
 				Name:        "non-interactive", // Name and Shorthand should be kept in sync with cmd/state/output.go
 				Description: locale.T("flag_state_non_interactive_description"),
 				Shorthand:   "n",
@@ -322,6 +316,7 @@ func newStateCommand(globals *globalOptions, prime *primer.Values) *captain.Comm
 	cmd.SetHasVariableArguments()
 	cmd.OnExecStart(cmdCall.OnExecStart)
 	cmd.OnExecStop(cmdCall.OnExecStop)
+	cmd.SetSupportsStructuredOutput()
 
 	return cmd
 }
@@ -361,7 +356,7 @@ func (a *addCmdAs) deprecatedAlias(aliased *captain.Command, name string) {
 		func(c *captain.Command, args []string) error {
 			msg := locale.Tl(
 				"cmd_deprecated_notice",
-				"This command is deprecated. Please use `state {{.V0}}` instead.",
+				"This command is deprecated. Please use '[ACTIONABLE]state {{.V0}}[/RESET]' instead.",
 				aliased.Name(),
 			)
 

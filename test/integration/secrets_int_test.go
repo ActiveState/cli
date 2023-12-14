@@ -22,9 +22,7 @@ func (suite *SecretsIntegrationTestSuite) TestSecrets_JSON() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	ts.PrepareActiveStateYAML(
-		`project: "https://platform.activestate.com/cli-integration-tests/Python3"`,
-	)
+	ts.PrepareProject("cli-integration-tests/Python3", "")
 
 	secret := secrets.SecretExport{
 		Name:        "test-secret",
@@ -39,20 +37,23 @@ func (suite *SecretsIntegrationTestSuite) TestSecrets_JSON() {
 
 	ts.LoginAsPersistentUser()
 	cp := ts.Spawn("secrets", "set", "project.test-secret", "test-value")
-	cp.ExpectLongString("Operating on project cli-integration-tests/Python3")
+	cp.Expect("Operating on project")
+	cp.Expect("cli-integration-tests/Python3")
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("secrets", "get", "project.test-secret", "--output", "json")
 	cp.ExpectExitCode(0)
-	suite.Equal(string(expected), cp.TrimmedSnapshot())
+	suite.Equal(string(expected), cp.StrippedSnapshot())
 
 	cp = ts.Spawn("secrets", "sync")
-	cp.ExpectLongString("Operating on project cli-integration-tests/Python3")
+	cp.Expect("Operating on project")
+	cp.Expect("cli-integration-tests/Python3")
 	cp.Expect("Successfully synchronized")
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("secrets")
-	cp.ExpectLongString("Operating on project cli-integration-tests/Python3")
+	cp.Expect("Operating on project")
+	cp.Expect("cli-integration-tests/Python3")
 	cp.Expect("Name")
 	cp.Expect("project")
 	cp.Expect("Description")
@@ -61,7 +62,7 @@ func (suite *SecretsIntegrationTestSuite) TestSecrets_JSON() {
 	cp.ExpectExitCode(0)
 }
 
-func (suite *SecretsIntegrationTestSuite) TestSecrect_Expand() {
+func (suite *SecretsIntegrationTestSuite) TestSecret_Expand() {
 	suite.OnlyRunForTags(tagsuite.Secrets, tagsuite.JSON)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
@@ -70,7 +71,7 @@ func (suite *SecretsIntegrationTestSuite) TestSecrect_Expand() {
 	defer clearSecrets(ts, "project.test-secret", "user.test-secret")
 
 	asyData := strings.TrimSpace(`
-project: https://platform.activestate.com/ActiveState-CLI/secrets-test?commitID=c7f8f45d-39e2-4f22-bd2e-4182b914880f
+project: https://platform.activestate.com/ActiveState-CLI/secrets-test
 scripts:
   - name: project-secret
     language: bash
@@ -83,13 +84,16 @@ scripts:
 `)
 
 	ts.PrepareActiveStateYAML(asyData)
+	ts.PrepareCommitIdFile("c7f8f45d-39e2-4f22-bd2e-4182b914880f")
 
 	cp := ts.Spawn("secrets", "set", "project.project-secret", "project-value")
-	cp.ExpectLongString("Operating on project ActiveState-CLI/secrets-test")
+	cp.Expect("Operating on project")
+	cp.Expect("ActiveState-CLI/secrets-test")
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("secrets", "set", "user.user-secret", "user-value")
-	cp.ExpectLongString("Operating on project ActiveState-CLI/secrets-test")
+	cp.Expect("Operating on project")
+	cp.Expect("ActiveState-CLI/secrets-test")
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("run", "project-secret")

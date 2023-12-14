@@ -55,6 +55,9 @@ func GetRequirement(commitID strfmt.UUID, namespace Namespace, requirement strin
 // "python >=3.x.y,<3.x.y+1". In these cases, return 3.x.y.
 // For other cases, return an error.
 func getVersionFromConstraints(constraints mono_models.Constraints) (string, error) {
+	if len(constraints) == 0 {
+		return "", nil // could be auto, or the Platform did not specify one
+	}
 	if len(constraints) != 2 {
 		return "", errs.New("Unrecognized constraint")
 	}

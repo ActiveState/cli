@@ -21,7 +21,7 @@ func newConfigCommand(prime *primer.Values) *captain.Command {
 				return err
 			}
 			return runner.Run(ccmd.Usage)
-		}).SetGroup(UtilsGroup)
+		}).SetGroup(UtilsGroup).SetSupportsStructuredOutput()
 }
 
 func newConfigGetCommand(prime *primer.Values) *captain.Command {
@@ -43,7 +43,7 @@ func newConfigGetCommand(prime *primer.Values) *captain.Command {
 		func(ccmd *captain.Command, args []string) error {
 			runner := config.NewGet(prime)
 			return runner.Run(params)
-		})
+		}).SetSupportsStructuredOutput()
 }
 
 func newConfigSetCommand(prime *primer.Values) *captain.Command {
@@ -71,5 +71,5 @@ func newConfigSetCommand(prime *primer.Values) *captain.Command {
 		func(ccmd *captain.Command, args []string) error {
 			runner := config.NewSet(prime)
 			return runner.Run(params)
-		})
+		}).SetSupportsStructuredOutput()
 }

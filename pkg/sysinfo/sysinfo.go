@@ -206,9 +206,5 @@ func parseVersionInfo(v string) (*VersionInfo, error) {
 		}
 	}
 
-	return &VersionInfo{
-		Major: major,
-		Minor: minor,
-		Micro: micro,
-	}, nil
+	return &VersionInfo{v, major, minor, micro}, nil
 }

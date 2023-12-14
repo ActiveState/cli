@@ -7,10 +7,13 @@ import (
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/go-openapi/strfmt"
 )
 
 type Operation int
+
+type MergeStrategy string
 
 const (
 	OperationAdded Operation = iota
@@ -20,7 +23,7 @@ const (
 	// BuildPlan statuses
 	Planning  = "PLANNING"
 	Planned   = "PLANNED"
-	Building  = "BUILDING"
+	Started   = "STARTED"
 	Completed = "COMPLETED"
 
 	// Artifact statuses
@@ -29,17 +32,13 @@ const (
 	ArtifactFailedPermanently = "FAILED_PERMANENTLY"
 	ArtifactFailedTransiently = "FAILED_TRANSIENTLY"
 	ArtifactReady             = "READY"
-	ArtifactRunning           = "RUNNING"
 	ArtifactSkipped           = "SKIPPED"
+	ArtifactStarted           = "STARTED"
 	ArtifactSucceeded         = "SUCCEEDED"
-
-	// Types
-	NotFound                 = "NotFound"
-	BuildResultPlanningError = "PlanningError"
 
 	// Tag types
 	TagSource     = "src"
-	TagDependency = "dep"
+	TagDependency = "deps"
 	TagBuilder    = "builder"
 	TagOrphan     = "orphans"
 
@@ -47,6 +46,7 @@ const (
 	BuildLogRecipeID = "RECIPE_ID"
 	BuildRequestID   = "BUILD_REQUEST_ID"
 
+	// Version Comparators
 	ComparatorEQ  string = "eq"
 	ComparatorGT         = "gt"
 	ComparatorGTE        = "gte"
@@ -54,22 +54,56 @@ const (
 	ComparatorLTE        = "lte"
 	ComparatorNE         = "ne"
 
+	// Version Requirement keys
 	VersionRequirementComparatorKey = "comparator"
 	VersionRequirementVersionKey    = "version"
 
+	// MIME types
 	XArtifactMimeType            = "application/x.artifact"
 	XActiveStateArtifactMimeType = "application/x-activestate-artifacts"
 	XCamelInstallerMimeType      = "application/x-camel-installer"
 	XGozipInstallerMimeType      = "application/x-gozip-installer"
+	XActiveStateBuilderMimeType  = "application/x-activestate-builder"
+
+	// RevertCommit strategies
+	RevertCommitStrategyForce   = "Force"
+	RevertCommitStrategyDefault = "Default"
+
+	// MergeCommit strategies
+	MergeCommitStrategyRecursive                    MergeStrategy = "Recursive"
+	MergeCommitStrategyRecursiveOverwriteOnConflict MergeStrategy = "RecursiveOverwriteOnConflict"
+	MergeCommitStrategyRecursiveKeepOnConflict      MergeStrategy = "RecursiveKeepOnConflict"
+	MergeCommitStrategyFastForward                  MergeStrategy = "FastForward"
 
 	// Error types
-	RemediableSolveErrorType = "RemediableSolveError"
+	ErrorType                         = "Error"
+	NotFoundErrorType                 = "NotFound"
+	ParseErrorType                    = "ParseError"
+	AlreadyExistsErrorType            = "AlreadyExists"
+	NoChangeSinceLastCommitErrorType  = "NoChangeSinceLastCommit"
+	HeadOnBranchMovedErrorType        = "HeadOnBranchMoved"
+	ForbiddenErrorType                = "Forbidden"
+	RemediableSolveErrorType          = "RemediableSolveError"
+	PlanningErrorType                 = "PlanningError"
+	MergeConflictType                 = "MergeConflict"
+	FastForwardErrorType              = "FastForwardError"
+	NoCommonBaseFoundType             = "NoCommonBaseFound"
+	ValidationErrorType               = "ValidationError"
+	MergeConflictErrorType            = "MergeConflict"
+	RevertConflictErrorType           = "RevertConflict"
+	CommitNotInTargetHistoryErrorType = "CommitNotInTargetHistory"
+	ComitHasNoParentErrorType         = "CommitHasNoParent"
 )
 
 func IsStateToolArtifact(mimeType string) bool {
 	return mimeType == XArtifactMimeType ||
 		mimeType == XActiveStateArtifactMimeType ||
 		mimeType == XCamelInstallerMimeType
+}
+
+func IsSuccessArtifactStatus(status string) bool {
+	return status == ArtifactSucceeded || status == ArtifactBlocked ||
+		status == ArtifactStarted
 }
 
 func (o Operation) String() string {
@@ -85,7 +119,22 @@ func (o Operation) String() string {
 	}
 }
 
+func (o *Operation) Unmarshal(v string) error {
+	switch v {
+	case mono_models.CommitChangeEditableOperationAdded:
+		*o = OperationAdded
+	case mono_models.CommitChangeEditableOperationRemoved:
+		*o = OperationRemoved
+	case mono_models.CommitChangeEditableOperationUpdated:
+		*o = OperationUpdated
+	default:
+		return errs.New("Unknown requirement operation: %s", v)
+	}
+	return nil
+}
+
 type BuildPlannerError struct {
+	Err              error
 	ValidationErrors []string
 	IsTransient      bool
 }
@@ -100,11 +149,15 @@ func (e *BuildPlannerError) InputError() bool {
 // UserError returns the error message to be displayed to the user.
 // This function is added so that BuildPlannerErrors will be displayed
 // to the user
-func (e *BuildPlannerError) UserError() string {
+func (e *BuildPlannerError) LocalizedError() string {
 	return e.Error()
 }
 
 func (e *BuildPlannerError) Error() string {
+	if e.Err != nil {
+		return e.Err.Error()
+	}
+
 	// Append last five lines to error message
 	offset := 0
 	numLines := len(e.ValidationErrors)
@@ -125,7 +178,7 @@ func (e *BuildPlannerError) Error() string {
 	}
 
 	var err error
-	err = locale.NewError("solver_err", "", croppedMessage, errorLines)
+	err = locale.NewError("buildplan_err", "", croppedMessage, errorLines)
 	if e.IsTransient {
 		err = errs.AddTips(err, locale.Tr("transient_solver_tip"))
 	}
@@ -148,7 +201,6 @@ func NewBuildPlanResponse(owner, project string) BuildPlan {
 
 type BuildPlanByProject struct {
 	Project *Project `json:"project"`
-	*Error
 }
 
 func (b *BuildPlanByProject) Build() (*Build, error) {
@@ -156,54 +208,24 @@ func (b *BuildPlanByProject) Build() (*Build, error) {
 		return nil, errs.New("BuildPlanByProject.Build: Project is nil")
 	}
 
-	if b.Project.Error != nil {
-		if b.Project.Error.Message != "" {
-			return nil, errs.New("BuildPlanByProject.Build: Could not get build, API returned project error message: %s", b.Project.Message)
-		}
-		return nil, errs.New("BuildPlanByProject.Build: Could not retrieve project")
+	if IsErrorResponse(b.Project.Type) {
+		return nil, ProcessProjectError(b.Project, "Could not get build from project response")
 	}
 
 	if b.Project.Commit == nil {
 		return nil, errs.New("BuildPlanByProject.Build: Commit is nil")
 	}
 
-	if b.Project.Commit.Error != nil {
-		if b.Project.Commit.Error.Message != "" {
-			return nil, errs.New("Could not get build, API returned commit error message: %s", b.Project.Commit.Message)
-		}
-		return nil, errs.New("BuildPlanByProject.Build: Could not retrieve commit")
-	}
-
-	if b.Project.Commit.Type == NotFound {
-		return nil, locale.NewError("err_buildplanner_commit_not_found", "Build plan does not contain commit")
+	if IsErrorResponse(b.Project.Commit.Type) {
+		return nil, ProcessCommitError(b.Project.Commit, "Could not get build from commit from project response")
 	}
 
 	if b.Project.Commit.Build == nil {
 		return nil, errs.New("BuildPlanByProject.Build: Commit does not contain build")
 	}
 
-	if b.Project.Commit.Build.PlanningError != nil {
-		var errs []string
-		var isTransient bool
-		for _, se := range b.Project.Commit.Build.SubErrors {
-			if se.Type != RemediableSolveErrorType {
-				continue
-			}
-
-			if se.Message != "" {
-				errs = append(errs, se.Message)
-				isTransient = se.IsTransient
-			}
-			for _, ve := range se.ValidationErrors {
-				if ve.Error != "" {
-					errs = append(errs, ve.Error)
-				}
-			}
-		}
-		return nil, &BuildPlannerError{
-			ValidationErrors: errs,
-			IsTransient:      isTransient,
-		}
+	if IsErrorResponse(b.Project.Commit.Build.Type) {
+		return nil, ProcessBuildError(b.Project.Commit.Build, "Could not get build from project commit response")
 	}
 
 	return b.Project.Commit.Build, nil
@@ -214,22 +236,16 @@ func (b *BuildPlanByProject) CommitID() (strfmt.UUID, error) {
 		return "", errs.New("BuildPlanByProject.CommitID: Project is nil")
 	}
 
-	if b.Project.Error != nil {
-		if b.Project.Error.Message != "" {
-			return "", errs.New("BuildPlanByProject.CommitID: Could not get commit ID, API returned project error message: %s", b.Project.Message)
-		}
-		return "", errs.New("BuildPlanByProject.CommitID: Could not retrieve project")
+	if IsErrorResponse(b.Project.Type) {
+		return "", ProcessProjectError(b.Project, "Could not get commit ID from project response")
 	}
 
 	if b.Project.Commit == nil {
 		return "", errs.New("BuildPlanByProject.CommitID: Commit is nil")
 	}
 
-	if b.Project.Commit.Error != nil {
-		if b.Project.Commit.Error.Message != "" {
-			return "", errs.New("BuildPlanByProject.CommitID: Could not get commit ID. API returned commit error message: %s", b.Project.Commit.Message)
-		}
-		return "", errs.New("BuildPlanByProject.CommitID: Could not retrieve commit")
+	if IsErrorResponse(b.Project.Commit.Type) {
+		return "", ProcessCommitError(b.Project.Commit, "Could not get commit ID from project commit response")
 	}
 
 	return b.Project.Commit.CommitID, nil
@@ -237,7 +253,6 @@ func (b *BuildPlanByProject) CommitID() (strfmt.UUID, error) {
 
 type BuildPlanByCommit struct {
 	Commit *Commit `json:"commit"`
-	*Error
 }
 
 func (b *BuildPlanByCommit) Build() (*Build, error) {
@@ -245,28 +260,100 @@ func (b *BuildPlanByCommit) Build() (*Build, error) {
 		return nil, errs.New("BuildPlanByCommit.Build: Commit is nil")
 	}
 
-	if b.Commit.Error != nil {
-		if b.Commit.Error.Message != "" {
-			return nil, errs.New("BuildPlanByCommit.Build: Could not get build via commit ID, API returned commit error message: %s", b.Commit.Message)
-		}
-		return nil, errs.New("BuildPlanByCommit.Build: Could not retrieve commit")
-	}
-
-	if b.Commit.Type == NotFound {
-		return nil, locale.NewError("err_buildplanner_commit_not_found", "Build plan does not contain commit")
+	if IsErrorResponse(b.Commit.Type) {
+		return nil, ProcessCommitError(b.Commit, "Could not get build from commit response")
 	}
 
 	if b.Commit.Build == nil {
-		if b.Commit.Error != nil {
-			return nil, errs.New("BuildPlanByCommit.Build: Commit not found: %s", b.Commit.Error.Message)
-		}
 		return nil, errs.New("BuildPlanByCommit.Build: Commit does not contain build")
 	}
 
-	if b.Commit.Build.PlanningError != nil {
+	if IsErrorResponse(b.Commit.Build.Type) {
+		return nil, ProcessBuildError(b.Commit.Build, "Could not get build from commit response")
+	}
+
+	return b.Commit.Build, nil
+}
+
+func (b *BuildPlanByCommit) CommitID() (strfmt.UUID, error) {
+	if b.Commit == nil {
+		return "", errs.New("BuildPlanByCommit.CommitID: Commit is nil")
+	}
+
+	if IsErrorResponse(b.Commit.Type) {
+		return "", ProcessCommitError(b.Commit, "Could not get commit ID from commit response")
+	}
+
+	return b.Commit.CommitID, nil
+}
+
+func IsErrorResponse(errorType string) bool {
+	return errorType == ErrorType ||
+		errorType == NotFoundErrorType ||
+		errorType == ParseErrorType ||
+		errorType == AlreadyExistsErrorType ||
+		errorType == NoChangeSinceLastCommitErrorType ||
+		errorType == HeadOnBranchMovedErrorType ||
+		errorType == ForbiddenErrorType ||
+		errorType == RemediableSolveErrorType ||
+		errorType == PlanningErrorType ||
+		errorType == MergeConflictType ||
+		errorType == FastForwardErrorType ||
+		errorType == NoCommonBaseFoundType ||
+		errorType == ValidationErrorType ||
+		errorType == MergeConflictErrorType ||
+		errorType == RevertConflictErrorType ||
+		errorType == CommitNotInTargetHistoryErrorType ||
+		errorType == ComitHasNoParentErrorType
+}
+
+type CommitError struct {
+	Type                   string
+	Message                string
+	*locale.LocalizedError // for legacy, non-user-facing error usages
+}
+
+func ProcessCommitError(commit *Commit, fallbackMessage string) error {
+	if commit.Error == nil {
+		return errs.New(fallbackMessage)
+	}
+
+	switch commit.Type {
+	case NotFoundErrorType:
+		return &CommitError{
+			commit.Type, commit.Message,
+			locale.NewInputError("err_buildplanner_commit_not_found", "Could not find commit, received message: {{.V0}}", commit.Message),
+		}
+	case ParseErrorType:
+		return &CommitError{
+			commit.Type, commit.Message,
+			locale.NewInputError("err_buildplanner_parse_error", "The platform failed to parse the build expression, received message: {{.V0}}. Path: {{.V1}}", commit.Message, commit.ParseError.Path),
+		}
+	case ForbiddenErrorType:
+		return &CommitError{
+			commit.Type, commit.Message,
+			locale.NewInputError("err_buildplanner_forbidden", "Operation forbidden: {{.V0}}, received message: {{.V1}}", commit.Operation, commit.Message),
+		}
+	case HeadOnBranchMovedErrorType:
+		return errs.Wrap(&CommitError{
+			commit.Type, commit.Error.Message,
+			locale.NewInputError("err_buildplanner_head_on_branch_moved"),
+		}, "received message: "+commit.Error.Message)
+	case NoChangeSinceLastCommitErrorType:
+		return errs.Wrap(&CommitError{
+			commit.Type, commit.Error.Message,
+			locale.NewInputError("err_buildplanner_no_change_since_last_commit", "No new changes to commit."),
+		}, commit.Error.Message)
+	default:
+		return errs.New(fallbackMessage)
+	}
+}
+
+func ProcessBuildError(build *Build, fallbackMessage string) error {
+	if build.Type == PlanningErrorType {
 		var errs []string
 		var isTransient bool
-		for _, se := range b.Commit.Build.SubErrors {
+		for _, se := range build.SubErrors {
 			if se.Type != RemediableSolveErrorType {
 				continue
 			}
@@ -281,39 +368,82 @@ func (b *BuildPlanByCommit) Build() (*Build, error) {
 				}
 			}
 		}
-		return nil, &BuildPlannerError{
+		return &BuildPlannerError{
 			ValidationErrors: errs,
 			IsTransient:      isTransient,
 		}
+	} else if build.Error == nil {
+		return errs.New(fallbackMessage)
 	}
 
-	return b.Commit.Build, nil
+	return locale.NewInputError("err_buildplanner_build", "Encountered error processing build response")
 }
 
-func (b *BuildPlanByCommit) CommitID() (strfmt.UUID, error) {
-	if b.Commit == nil {
-		return "", errs.New("BuildPlanByCommit.CommitID: Commit is nil")
+func ProcessProjectError(project *Project, fallbackMessage string) error {
+	if project.Type == NotFoundErrorType {
+		return errs.AddTips(
+			locale.NewInputError("err_buildplanner_project_not_found", "Unable to find project, received message: {{.V0}}", project.Message),
+			locale.T("tip_private_project_auth"),
+		)
 	}
 
-	if b.Commit.Error != nil {
-		if b.Commit.Error.Message != "" {
-			return "", errs.New("BuildPlanByCommit.CommitID: Could not get commit ID, API returned commit error message: %s", b.Commit.Message)
-		}
-		return "", errs.New("BuildPlanByCommit.CommitID: Could not retrieve commit")
+	return errs.New(fallbackMessage)
+}
+
+type RevertCommitError struct {
+	Type    string
+	Message string
+}
+
+func (m *RevertCommitError) Error() string { return m.Message }
+
+func ProcessRevertCommitError(rcErr *revertedCommit, fallbackMessage string) error {
+	if rcErr.Type != "" {
+		return &RevertCommitError{rcErr.Type, rcErr.Message}
+	}
+	return errs.New(fallbackMessage)
+}
+
+type ProjectCreatedError struct {
+	Type    string
+	Message string
+}
+
+func (p *ProjectCreatedError) Error() string { return p.Message }
+
+func ProcessProjectCreatedError(pcErr *projectCreated, fallbackMessage string) error {
+	if pcErr.Error == nil {
+		return errs.New(fallbackMessage)
 	}
 
-	return b.Commit.CommitID, nil
+	return &ProjectCreatedError{pcErr.Type, pcErr.Message}
 }
 
 type BuildExpression struct {
+	Type   string  `json:"__typename"`
 	Commit *Commit `json:"commit"`
 	*Error
+}
+
+type MergedCommitError struct {
+	Type    string
+	Message string
+}
+
+func (m *MergedCommitError) Error() string { return m.Message }
+
+func ProcessMergedCommitError(mcErr *mergedCommit, fallbackMessage string) error {
+	if mcErr.Type != "" {
+		return &MergedCommitError{mcErr.Type, mcErr.Message}
+	}
+	return errs.New(fallbackMessage)
 }
 
 // PushCommitResult is the result of a push commit mutation.
 // It contains the resulting commit from the operation and any errors.
 // The resulting commit is pushed to the platform automatically.
 type PushCommitResult struct {
+	Type   string  `json:"__typename"`
 	Commit *Commit `json:"pushCommit"`
 	*Error
 }
@@ -323,13 +453,55 @@ type PushCommitResult struct {
 // The resulting commit is NOT pushed to the platform automatically.
 type StageCommitResult struct {
 	Commit *Commit `json:"stageCommit"`
+}
+
+type projectCreated struct {
+	Type   string  `json:"__typename"`
+	Commit *Commit `json:"commit"`
 	*Error
+	*NotFoundError
 	*ParseError
+	*ForbiddenError
+}
+
+type CreateProjectResult struct {
+	ProjectCreated *projectCreated `json:"createProject"`
+}
+
+type revertedCommit struct {
+	Type           string      `json:"__typename"`
+	Commit         *Commit     `json:"commit"`
+	CommonAncestor strfmt.UUID `json:"commonAncestorID"`
+	ConflictPaths  []string    `json:"conflictPaths"`
+	*Error
+}
+
+type RevertCommitResult struct {
+	RevertedCommit *revertedCommit `json:"revertCommit"`
+}
+
+type mergedCommit struct {
+	Type   string  `json:"__typename"`
+	Commit *Commit `json:"commit"`
+	*Error
+	*MergeConflictError
+	*MergeError
+	*NotFoundError
+	*ParseError
+	*ForbiddenError
+	*HeadOnBranchMovedError
+	*NoChangeSinceLastCommitError
+}
+
+// MergeCommitResult is the result of a merge commit mutation.
+// The resulting commit is only pushed to the platform automatically if the target ref was a named
+// branch and the merge strategy was FastForward.
+type MergeCommitResult struct {
+	MergedCommit *mergedCommit `json:"mergeCommit"`
 }
 
 // Error contains an error message.
 type Error struct {
-	Type    string `json:"__typename"`
 	Message string `json:"message"`
 }
 
@@ -347,6 +519,10 @@ type Commit struct {
 	CommitID   strfmt.UUID     `json:"commitId"`
 	Build      *Build          `json:"build"`
 	*Error
+	*ParseError
+	*ForbiddenError
+	*HeadOnBranchMovedError
+	*NoChangeSinceLastCommitError
 }
 
 // Build is a directed acyclic graph. It begins with a set of terminal nodes
@@ -439,6 +615,7 @@ type Build struct {
 	Steps       []*Step        `json:"steps"`
 	Sources     []*Source      `json:"sources"`
 	BuildLogIDs []*BuildLogID  `json:"buildLogIds"`
+	*Error
 	*PlanningError
 }
 
@@ -459,6 +636,7 @@ type NamedTarget struct {
 type Artifact struct {
 	Type                string        `json:"__typename"`
 	NodeID              strfmt.UUID   `json:"nodeId"`
+	DisplayName         string        `json:"displayName"`
 	MimeType            string        `json:"mimeType"`
 	GeneratedBy         strfmt.UUID   `json:"generatedBy"`
 	RuntimeDependencies []strfmt.UUID `json:"runtimeDependencies"`
@@ -469,7 +647,7 @@ type Artifact struct {
 
 	// Error fields
 	Errors      []string `json:"errors"`
-	Attempts    string   `json:"attempts"`
+	Attempts    float64  `json:"attempts"`
 	NextAttempt string   `json:"nextAttempt"`
 }
 
@@ -491,6 +669,13 @@ type Source struct {
 	Version   string      `json:"version"`
 }
 
+// NotFoundError represents an error that occurred because a resource was not found.
+type NotFoundError struct {
+	Type                  string `json:"type"`
+	Resource              string `json:"resource"`
+	MayNeedAuthentication bool   `json:"mayNeedAuthentication"`
+}
+
 // PlanningError represents an error that occurred during planning.
 type PlanningError struct {
 	Message   string               `json:"message"`
@@ -499,9 +684,37 @@ type PlanningError struct {
 
 // ParseError is an error that occurred while parsing the build expression.
 type ParseError struct {
-	Type    string `json:"__typename"`
-	Message string `json:"message"`
-	Path    string `json:"path"`
+	Path string `json:"path"`
+}
+
+type ForbiddenError struct {
+	Operation string `json:"operation"`
+}
+
+// HeadOnBranchMovedError represents an error that occurred because the head on
+// a remote branch has moved.
+type HeadOnBranchMovedError struct {
+	HeadBranchID strfmt.UUID `json:"branchId"`
+}
+
+// NoChangeSinceLastCommitError represents an error that occurred because there
+// were no changes since the last commit.
+type NoChangeSinceLastCommitError struct {
+	NoChangeCommitID strfmt.UUID `json:"commitId"`
+}
+
+// MergeConflictError represents an error that occurred because of a merge conflict.
+type MergeConflictError struct {
+	CommonAncestorID strfmt.UUID `json:"commonAncestorId"`
+	ConflictPaths    []string    `json:"conflictPaths"`
+}
+
+// MergeError represents two different errors in the BuildPlanner's graphQL
+// schema with the same fields. Those errors being: FastForwardError and
+// NoCommonBaseFound. Inspect the Type field to determine which error it is.
+type MergeError struct {
+	TargetVCSRef strfmt.UUID `json:"targetVcsRef"`
+	OtherVCSRef  strfmt.UUID `json:"otherVcsRef"`
 }
 
 // BuildExprLocation represents a location in the build script where an error occurred.

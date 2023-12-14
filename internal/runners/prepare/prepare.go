@@ -12,6 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/globaldefault"
+	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -19,6 +20,7 @@ import (
 	"github.com/ActiveState/cli/internal/osutils/autostart"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
+	"github.com/ActiveState/cli/internal/runbits/commitmediator"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	rt "github.com/ActiveState/cli/pkg/platform/runtime"
@@ -72,7 +74,12 @@ func (r *Prepare) resetExecutors() error {
 		return errs.Wrap(err, "Could not get project from its directory")
 	}
 
-	run, err := rt.New(target.NewCustomTarget(proj.Owner(), proj.Name(), proj.CommitUUID(), defaultTargetDir, target.TriggerResetExec, proj.IsHeadless()), r.analytics, r.svcModel)
+	commitID, err := commitmediator.Get(proj)
+	if err != nil {
+		return errs.Wrap(err, "Unable to get local commit")
+	}
+
+	run, err := rt.New(target.NewCustomTarget(proj.Owner(), proj.Name(), commitID, defaultTargetDir, target.TriggerResetExec), r.analytics, r.svcModel, nil)
 	if err != nil {
 		if rt.IsNeedsUpdateError(err) {
 			return nil // project was never set up, so no executors to reset
@@ -113,6 +120,9 @@ func (r *Prepare) Run(cmd *captain.Command) error {
 	// OS specific preparations
 	err := r.prepareOS()
 	if err != nil {
+		if installation.IsStateExeDoesNotExistError(err) && runtime.GOOS == "windows" {
+			return locale.WrapInputError(err, "err_install_state_exe_does_not_exist", "", constants.ForumsURL)
+		}
 		return errs.Wrap(err, "Could not prepare OS")
 	}
 

@@ -1,0 +1,50 @@
+{
+  "let": {
+    "let": {
+        "let": {
+            "runtime": {
+                "solve_legacy": {
+                    "at_time": "2023-04-27T17:30:05.999000Z",
+                    "build_flags": [],
+                    "camel_flags": [],
+                    "platforms": [
+                        "96b7e6f2-bebf-564c-bc1c-f04482398f38"
+                    ],
+                    "requirements": [
+                        {
+                            "name": "jinja2-time",
+                            "namespace": "language/python"
+                        },
+                        {
+                            "name": "jupyter-contrib-nbextensions",
+                            "namespace": "language/python"
+                        },
+                        {
+                            "name": "python",
+                            "namespace": "language",
+                            "version_requirements": [
+                                {
+                                    "comparator": "eq",
+                                    "version": "3.10.10"
+                                }
+                            ]
+                        },
+                        {
+                            "name": "copier",
+                            "namespace": "language/python"
+                        },
+                        {
+                            "name": "jupyterlab",
+                            "namespace": "language/python"
+                        }
+                    ],
+                    "solver_version": null
+                }
+            },
+            "in": "$runtime"
+        },
+        "in": ""
+    },
+    "in": ""
+  }
+}

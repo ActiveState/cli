@@ -5,19 +5,22 @@ import (
 	"path/filepath"
 
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/language"
+	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
+	"github.com/ActiveState/cli/internal/rtutils/ptr"
+	"github.com/ActiveState/cli/internal/runbits/commitmediator"
+	"github.com/ActiveState/cli/internal/runbits/rationalize"
+	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
 	"github.com/go-openapi/strfmt"
-
-	"github.com/ActiveState/cli/internal/language"
-	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/pkg/project"
 )
 
 type configGetter interface {
@@ -55,19 +58,39 @@ type intention uint16
 const (
 	pushCustomNamespace  intention = 0x0001 // User is pushing to a custom remote, ignoring the namespace in the current yaml
 	pushFromNoPermission           = 0x0002 // User made modifications to someone elses project, and it now trying to push them
-	pushFromHeadless               = 0x0004 // User is operating in headless mode and is now trying to push
 
 	// The rest is supplemental
 	intendCreateProject = 0x0008
 )
 
-func (r *Push) Run(params PushParams) error {
+var (
+	errNoChanges = errors.New("no changes")
+	errNoCommit  = errors.New("no commit")
+)
+
+type errProjectNameInUse struct {
+	error
+	Namespace *project.Namespaced
+}
+
+type errHeadless struct {
+	error
+	ProjectURL string
+}
+
+func (r *Push) Run(params PushParams) (rerr error) {
+	defer rationalizeError(&rerr)
+
 	if err := r.verifyInput(); err != nil {
 		return errs.Wrap(err, "verifyInput failed")
 	}
-	r.out.Notice(locale.Tl("operating_message", "", r.project.NamespaceString(), r.project.Dir()))
+	r.out.Notice(locale.Tr("operating_message", r.project.NamespaceString(), r.project.Dir()))
 
-	commitID := r.project.CommitUUID() // The commit we want to push
+	commitID, err := commitmediator.Get(r.project) // The commit we want to push
+	if err != nil {
+		// Note: should not get here, as verifyInput() ensures there is a local commit
+		return errs.Wrap(err, "Unable to get local commit")
+	}
 
 	// Detect target namespace if possible
 	targetNamespace := params.Namespace
@@ -75,7 +98,7 @@ func (r *Push) Run(params PushParams) error {
 		var err error
 		targetNamespace, err = r.namespaceFromProject()
 		if err != nil {
-			return locale.WrapError(err, "err_valid_namespace", "Could not get a valid namespace, is your activestate.yaml malformed?")
+			return errs.Wrap(err, "Could not get a valid namespace, is your activestate.yaml malformed?")
 		}
 	}
 
@@ -83,22 +106,23 @@ func (r *Push) Run(params PushParams) error {
 		logging.Debug("%s can write to %s: %v", r.auth.WhoAmI(), targetNamespace.Owner, r.auth.CanWrite(targetNamespace.Owner))
 	}
 
+	if r.project.IsHeadless() {
+		return &errHeadless{err, r.project.URL()}
+	}
+
 	// Capture the primary intend of the user
 	var intend intention
 	switch {
-	case r.project.IsHeadless():
-		intend = pushFromHeadless | intendCreateProject
-	case targetNamespace.IsValid() && !r.auth.CanWrite(targetNamespace.Owner):
+	case targetNamespace.IsValid() && !r.auth.CanWrite(r.project.Owner()):
 		intend = pushFromNoPermission | intendCreateProject
 	case params.Namespace.IsValid():
 		intend = pushCustomNamespace // Could still lead to creating a project, but that's not explicitly the intend
 	}
 
 	// Ask to create a copy if the user does not have org permissions
-	if intend&pushFromNoPermission > 0 {
+	if intend&pushFromNoPermission > 0 && !params.Namespace.IsValid() {
 		var err error
-		var createCopy bool
-		createCopy, err = r.prompt.Confirm("", locale.T("push_prompt_not_authorized"), &createCopy)
+		createCopy, err := r.prompt.Confirm("", locale.T("push_prompt_not_authorized"), ptr.To(true))
 		if err != nil || !createCopy {
 			return err
 		}
@@ -108,113 +132,113 @@ func (r *Push) Run(params PushParams) error {
 	// - No namespace could be detect so far
 	// - We want to create a copy of the current namespace, and no custom namespace was provided
 	if !targetNamespace.IsValid() || (intend&pushFromNoPermission > 0 && !params.Namespace.IsValid()) {
-		var err error
-		if intend&pushFromHeadless > 0 {
-			r.out.Notice(locale.T("push_first_new_project"))
-		}
 		targetNamespace, err = r.promptNamespace()
 		if err != nil {
-			return locale.WrapError(err, "err_prompt_namespace", "Could not prompt for namespace")
+			return errs.Wrap(err, "Could not prompt for namespace")
 		}
 	}
 
 	// Get the project remotely if it already exists
 	var targetPjm *mono_models.Project
-	var err error
-	targetPjm, err = model.FetchProjectByName(targetNamespace.Owner, targetNamespace.Project)
+	targetPjm, err = model.LegacyFetchProjectByName(targetNamespace.Owner, targetNamespace.Project)
 	if err != nil {
 		if !errs.Matches(err, &model.ErrProjectNotFound{}) {
-			return locale.WrapError(err, "err_push_try_project", "Failed to check for existence of project.")
+			return errs.Wrap(err, "Failed to check for existence of project")
 		}
 	}
+
+	bp := model.NewBuildPlannerModel(r.auth)
+	var branch *mono_models.Branch // the branch to write to as.yaml if it changed
 
 	// Create remote project
 	var projectCreated bool
 	if intend&intendCreateProject > 0 || targetPjm == nil {
 		if targetPjm != nil {
-			return locale.NewInputError(
-				"err_push_create_nonunique",
-				"The project [NOTICE]{{.V0}}[/RESET] is already in use.", targetNamespace.String())
+			return &errProjectNameInUse{errs.New("project name in use"), targetNamespace}
 		}
 
 		// If the user didn't necessarily intend to create the project we should ask them for confirmation
 		if intend&intendCreateProject == 0 {
-			createProject := true
-			createProject, err = r.prompt.Confirm(
+			createProject, err := r.prompt.Confirm(
 				locale.Tl("create_project", "Create Project"),
 				locale.Tl("push_confirm_create_project", "You are about to create the project [NOTICE]{{.V0}}[/RESET], continue?", targetNamespace.String()),
-				&createProject)
+				ptr.To(true))
 			if err != nil {
 				return errs.Wrap(err, "Confirmation failed")
 			}
 			if !createProject {
-				return locale.WrapInputError(err, "push_create_project_aborted", "Project creation aborted by user")
+				return rationalize.ErrActionAborted
 			}
 		}
 
 		r.out.Notice(locale.Tl("push_creating_project", "Creating project [NOTICE]{{.V1}}[/RESET] under [NOTICE]{{.V0}}[/RESET] on the ActiveState Platform", targetNamespace.Owner, targetNamespace.Project))
-		targetPjm, err = model.CreateEmptyProject(targetNamespace.Owner, targetNamespace.Project, r.project.Private())
+
+		// Create a new project with the current project's buildexpression.
+		expr, err := bp.GetBuildExpression(r.project.Owner(), r.project.Name(), commitID.String())
 		if err != nil {
-			return locale.WrapError(err, "push_project_create_empty_err", "Failed to create a project {{.V0}}.", r.project.Namespace().String())
+			return errs.Wrap(err, "Could not get buildexpression")
+		}
+		commitID, err = bp.CreateProject(&model.CreateProjectParams{
+			Owner:       targetNamespace.Owner,
+			Project:     targetNamespace.Project,
+			Private:     r.project.Private(),
+			Description: locale.T("commit_message_add_initial"),
+			Expr:        expr,
+		})
+		if err != nil {
+			return locale.WrapError(err, "err_push_create_project", "Could not create new project")
+		}
+
+		// Update the project's commitID with the create project or push result.
+		if err := commitmediator.Set(r.project, commitID.String()); err != nil {
+			return errs.Wrap(err, "Unable to create local commit file")
+		}
+
+		// Fetch the newly created project's default branch (for updating activestate.yaml with).
+		targetPjm, err = model.LegacyFetchProjectByName(targetNamespace.Owner, targetNamespace.Project)
+		if err != nil {
+			return errs.Wrap(err, "Failed to fetch newly created project")
+		}
+		branch, err = model.DefaultBranchForProject(targetPjm)
+		if err != nil {
+			return errs.Wrap(err, "Project has no default branch")
 		}
 
 		projectCreated = true
-	}
 
-	// Now we get to the actual push logic
-	r.out.Notice(locale.Tl("push_to_project", "Pushing to project [NOTICE]{{.V1}}[/RESET] under [NOTICE]{{.V0}}[/RESET].", targetNamespace.Owner, targetNamespace.Project))
-
-	// Detect the target branch
-	var branch *mono_models.Branch
-	if projectCreated || r.project.BranchName() == "" {
-		// https://www.pivotaltracker.com/story/show/176806415
-		// If we have created an empty project the only existing branch will be the default one
-		branch, err = model.DefaultBranchForProject(targetPjm)
-		if err != nil {
-			return locale.NewInputError("err_no_default_branch")
-		}
 	} else {
-		branch, err = model.BranchForProjectByName(targetPjm, r.project.BranchName())
-		if err != nil {
-			return locale.WrapError(err, "err_fetch_branch", "", r.project.BranchName())
-		}
-	}
 
-	// Check if branch is already up to date
-	if branch.CommitID != nil && branch.CommitID.String() == commitID.String() {
-		r.out.Notice(locale.T("push_no_changes"))
-		return nil
-	}
+		// Now we get to the actual push logic
+		r.out.Notice(locale.Tl("push_to_project", "Pushing to project [NOTICE]{{.V1}}[/RESET] under [NOTICE]{{.V0}}[/RESET].", targetNamespace.Owner, targetNamespace.Project))
 
-	// Check whether there is a conflict
-	if branch.CommitID != nil {
-		mergeStrategy, err := model.MergeCommit(*branch.CommitID, commitID)
-		if err != nil {
-			if errors.Is(err, model.ErrMergeCommitInHistory) {
-				r.out.Notice(locale.T("push_no_changes"))
-				return nil
+		// Detect the target branch
+		if r.project.BranchName() == "" {
+			branch, err = model.DefaultBranchForProject(targetPjm)
+			if err != nil {
+				return errs.Wrap(err, "Project has no default branch")
 			}
-			if !errors.Is(err, model.ErrMergeFastForward) {
-				if params.Namespace.IsValid() {
-					return locale.WrapError(err, "err_mergecommit_customtarget", "The targets commit history does not match your local commit history.")
-				}
-				return locale.WrapError(err, "err_mergecommit", "Could not detect if merge is necessary.")
-			}
-		}
-		if mergeStrategy != nil {
-			return errs.AddTips(
-				locale.NewInputError("err_push_outdated"),
-				locale.Tl("err_tip_push_outdated", "Run `[ACTIONABLE]state pull[/RESET]`"))
-		}
-	}
-
-	// Update the project at the given commit id.
-	err = model.UpdateProjectBranchCommitWithModel(targetPjm, branch.Label, commitID)
-	if err != nil {
-		if errs.Matches(err, &model.ErrUpdateBranchAuth{}) {
-			return locale.WrapInputError(err, "push_project_branch_no_permission", "You do not have permission to push to {{.V0}}.", targetNamespace.String())
 		} else {
-			return locale.WrapError(err, "push_project_branch_commit_err", "Failed to update new project {{.V0}} to current commitID.", targetNamespace.String())
+			branch, err = model.BranchForProjectByName(targetPjm, r.project.BranchName())
+			if err != nil {
+				return errs.Wrap(err, "Could not get branch %s", r.project.BranchName())
+			}
+		}
+
+		// Check if branch is already up to date
+		if branch.CommitID != nil && branch.CommitID.String() == commitID.String() {
+			return errNoChanges
+		}
+
+		// Perform the (fast-forward) push.
+		_, err = bp.MergeCommit(&model.MergeCommitParams{
+			Owner:     targetNamespace.Owner,
+			Project:   targetNamespace.Project,
+			TargetRef: branch.Label, // using branch name will fast-forward
+			OtherRef:  commitID.String(),
+			Strategy:  bpModel.MergeCommitStrategyFastForward,
+		})
+		if err != nil {
+			return errs.Wrap(err, "Could not push")
 		}
 	}
 
@@ -223,11 +247,6 @@ func (r *Push) Run(params PushParams) error {
 		if err := r.project.Source().SetNamespace(targetNamespace.Owner, targetNamespace.Project); err != nil {
 			return errs.Wrap(err, "Could not set project namespace in project file")
 		}
-	}
-
-	// Write the commit to the as.yaml
-	if err := r.project.Source().SetCommit(commitID.String(), false); err != nil {
-		return errs.Wrap(err, "Could not set commit")
 	}
 
 	// Write the branch to the as.yaml, if it changed
@@ -250,20 +269,20 @@ func (r *Push) Run(params PushParams) error {
 
 func (r *Push) verifyInput() error {
 	if !r.auth.Authenticated() {
-		return locale.NewInputError("err_push_not_authenticated", "In order to update your project you need to be authenticated, please run '[ACTIONABLE]state auth[/RESET]' to authenticate.")
+		return rationalize.ErrNotAuthenticated
 	}
 
 	// Check if as.yaml exists
 	if r.project == nil {
-		return errs.AddTips(locale.NewInputError(
-			"err_push_headless",
-			"You must first create a project."),
-			locale.Tl("push_headless_push_tip_state_init", "Run [ACTIONABLE]state init[/RESET] to create a project with the State Tool."),
-		)
+		return rationalize.ErrNoProject
 	}
 
-	if r.project.CommitUUID() == "" {
-		return locale.NewInputError("err_push_nocommit", "You have nothing to push, make some changes first with [ACTIONABLE]state install[/RESET].")
+	commitID, err := commitmediator.Get(r.project)
+	if err != nil {
+		return errs.Wrap(err, "Unable to get local commit")
+	}
+	if commitID == "" {
+		return errNoCommit
 	}
 
 	return nil
@@ -296,7 +315,11 @@ func (r *Push) promptNamespace() (*project.Namespaced, error) {
 	}
 
 	var name string
-	lang, _, err := fetchLanguage(r.project.CommitUUID())
+	commitID, err := commitmediator.Get(r.project)
+	if err != nil {
+		return nil, errs.Wrap(err, "Unable to get local commit")
+	}
+	lang, _, err := fetchLanguage(commitID)
 	if err == nil {
 		name = lang.String()
 	}
@@ -312,12 +335,12 @@ func (r *Push) promptNamespace() (*project.Namespaced, error) {
 func fetchLanguage(commitID strfmt.UUID) (*language.Supported, string, error) {
 	lang, err := model.FetchLanguageForCommit(commitID)
 	if err != nil {
-		return nil, "", errs.Wrap(err, "Failed to retrieve language information for headless commit.")
+		return nil, "", errs.Wrap(err, "Failed to retrieve language information for headless commit")
 	}
 
 	l, err := language.MakeByNameAndVersion(lang.Name, lang.Version)
 	if err != nil {
-		return nil, "", errs.Wrap(err, "Failed to convert commit language to supported language.")
+		return nil, "", errs.Wrap(err, "Failed to convert commit language to supported language")
 	}
 
 	ls := language.Supported{Language: l}

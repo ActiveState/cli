@@ -10,23 +10,24 @@ import (
 
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/analytics/client/sync"
+	anaConst "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/events"
-	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
+	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
+	"github.com/ActiveState/cli/internal/runbits/errors"
 	"github.com/ActiveState/cli/internal/runbits/panics"
 	"github.com/ActiveState/cli/internal/updater"
-	"github.com/ActiveState/cli/pkg/cmdlets/errors"
 )
 
 type Params struct {
@@ -94,7 +95,13 @@ func main() {
 		return
 	}
 
-	an = sync.New(cfg, nil, out)
+	// Store sessionToken to config
+	err = cfg.Set(anaConst.CfgSessionToken, "remote_"+constants.RemoteInstallerVersion)
+	if err != nil {
+		logging.Error("Unable to set session token: " + errs.JoinMessage(err))
+	}
+
+	an = sync.New(anaConst.SrcStateRemoteInstaller, cfg, nil, out)
 
 	// Set up prompter
 	prompter := prompt.New(true, an)
@@ -172,20 +179,17 @@ func execute(out output.Outputer, prompt prompt.Prompter, cfg *config.Instance, 
 	// Fetch payload
 	checker := updater.NewDefaultChecker(cfg, an)
 	checker.InvocationSource = updater.InvocationSourceInstall // Installing from a remote source is only ever encountered via the install flow
-	checker.VerifyVersion = false
-	update, err := checker.CheckFor(branch, params.version)
+	availableUpdate, err := checker.CheckFor(branch, params.version)
 	if err != nil {
 		return errs.Wrap(err, "Could not retrieve install package information")
 	}
-	if update == nil {
-		return errs.New("No update information could be found.")
-	}
 
-	version := update.Version
+	version := availableUpdate.Version
 	if params.branch != "" {
 		version = fmt.Sprintf("%s (%s)", version, branch)
 	}
 
+	update := updater.NewUpdateInstaller(an, availableUpdate)
 	out.Fprint(os.Stdout, locale.Tl("remote_install_downloading", "• Downloading State Tool version [NOTICE]{{.V0}}[/RESET]... ", version))
 	tmpDir, err := update.DownloadAndUnpack()
 	if err != nil {
@@ -197,7 +201,7 @@ func execute(out output.Outputer, prompt prompt.Prompter, cfg *config.Instance, 
 	env := []string{
 		constants.InstallerNoSubshell + "=true",
 	}
-	_, cmd, err := exeutils.ExecuteAndPipeStd(filepath.Join(tmpDir, constants.StateInstallerCmd+exeutils.Extension), args, env)
+	_, cmd, err := osutils.ExecuteAndPipeStd(filepath.Join(tmpDir, constants.StateInstallerCmd+osutils.ExeExtension), args, env)
 	if err != nil {
 		if cmd != nil && cmd.ProcessState.Sys().(syscall.WaitStatus).Exited() {
 			// The issue happened while running the command itself, meaning the responsibility for conveying the error

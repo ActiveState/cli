@@ -1,6 +1,8 @@
 package constants
 
-import "time"
+import (
+	"time"
+)
 
 // LibraryName contains the main name of this library
 const LibraryName = "cli"
@@ -22,6 +24,16 @@ const ServiceCommandName = "state-svc"
 
 // ConfigFileName holds the name of the file that the user uses to configure their project, not to be confused with InternalConfigFileNameLegacy
 const ConfigFileName = "activestate.yaml"
+
+// ProjectConfigDirName is the name of the directory that holds project-specific data like commit ID.
+// This folder does not hold ConfigFileName. It is a sibling to that file in a given directory.
+const ProjectConfigDirName = ".activestate"
+
+// BuildScriptFileName holds the name of the file that represents the build script used to generate the runtime
+const BuildScriptFileName = "buildscript.yaml"
+
+// CommitIdFileName is the name of the file in ProjectConfigDirName that contains a project's commit ID.
+const CommitIdFileName = "commit"
 
 // InternalConfigNamespace holds the appdata folder name under which we store our config
 const InternalConfigNamespace = "activestate"
@@ -47,8 +59,18 @@ const DisableRuntime = "ACTIVESTATE_CLI_DISABLE_RUNTIME"
 // DisableUpdates is the env var used to disable automatic updates
 const DisableUpdates = "ACTIVESTATE_CLI_DISABLE_UPDATES"
 
+// DisableLanguageTemplates is the env var used to disable templating for new activestate.yaml files
+const DisableLanguageTemplates = "ACTIVESTATE_CLI_DISABLE_LANGUAGE_TEMPLATES"
+
+// DisableProjectMigrationPrompt is the env var used to disable the project migration prompt for legacy projects.
+// This is set by default for integration tests for backward-compatibility with old integration tests.
+const DisableProjectMigrationPrompt = "ACTIVESTATE_CLI_DISABLE_PROJECT_MIGRATION_PROMPT"
+
 // UpdateBranchEnvVarName is the env var that is used to override which branch to pull the update from
 const UpdateBranchEnvVarName = "ACTIVESTATE_CLI_UPDATE_BRANCH"
+
+// InstallBuildDependencies is the env var that is used to override whether to install build dependencies
+const InstallBuildDependencies = "ACTIVESTATE_CLI_INSTALL_BUILD_DEPENDENCIES"
 
 // InternalConfigFileNameLegacy is effectively the same as InternalConfigName, but includes our preferred extension
 const InternalConfigFileNameLegacy = "config.yaml"
@@ -70,6 +92,9 @@ const ActivatedStateEnvVarName = "ACTIVESTATE_ACTIVATED"
 
 // ActivatedStateIDEnvVarName is the name of the environment variable that is set when in an activated state, its value will be a unique id identifying a specific instance of an activated state
 const ActivatedStateIDEnvVarName = "ACTIVESTATE_ACTIVATED_ID"
+
+// ActivatedStateNamespaceEnvVarName is the name of the environment variable that specifies the activated state's org/project namespace.
+const ActivatedStateNamespaceEnvVarName = "ACTIVESTATE_ACTIVATED_NAMESPACE"
 
 // ForwardedStateEnvVarName is the name of the environment variable that is set when in an activated state, its value will be the path of the project
 const ForwardedStateEnvVarName = "ACTIVESTATE_FORWARDED"
@@ -94,6 +119,9 @@ const ProfileEnvVarName = "ACTIVESTATE_PROFILE"
 
 // SessionTokenEnvVarName records the session token
 const SessionTokenEnvVarName = "ACTIVESTATE_SESSION_TOKEN"
+
+// OverrideSessionTokenEnvVarName overrides SessionTokenEnvVarName for integration tests.
+const OverrideSessionTokenEnvVarName = "ACTIVESTATE_OVERRIDE_SESSION_TOKEN"
 
 // UpdateTagEnvVarName
 const UpdateTagEnvVarName = "ACTIVESTATE_UPDATE_TAG"
@@ -156,12 +184,6 @@ const AutostartPathOverrideEnvVarName = "ACTIVESTATE_CLI_AUTOSTARTPATH_OVERRIDE"
 
 // AppInstallDirOverrideEnvVarName is used to override the default app installation path of the state tool.
 const AppInstallDirOverrideEnvVarName = "ACTIVESTATE_CLI_APPINSTALLDIR_OVERRIDE"
-
-// RuntimeUsageOverrideEnvVarName is used to override the default usage of the runtime intended for use in integration testing
-const RuntimeUsageOverrideEnvVarName = "ACTIVESTATE_OVERRIDE_RTUSAGE_USAGE"
-
-// RuntimeUsageSilenceTimeOverrideEnvVarName is used to override the default usage of the runtime intended for use in integration testing
-const RuntimeUsageSilenceTimeOverrideEnvVarName = "ACTIVESTATE_OVERRIDE_RTUSAGE_SILENCETIME"
 
 // SvcAuthPollingRateEnvVarName is used to override the default polling rate for syncing the authenticated state with the svc
 const SvcAuthPollingRateEnvVarName = "ACTIVESTATE_SVC_AUTH_POLLING_RATE"
@@ -272,14 +294,11 @@ const DateTimeFormatUser = "2 Jan 2006 15:04"
 // DateTimeFormatRecord is the datetime format we use when recording for internal use
 const DateTimeFormatRecord = "Mon Jan 2 2006 15:04:05 -0700 MST"
 
-// PlatformSignupURL is the account creation url used by the platform
-const PlatformSignupURL = "https://platform.activestate.com" + "/create-account"
+// PlatformSignupPath is the account creation path used by the platform
+const PlatformSignupPath = "/create-account"
 
 // DocumentationURL is the url for the state tool documentation
 const DocumentationURL = "http://docs.activestate.com/platform/state/"
-
-// DocumentationURLHeadless is the documentation URL for headless state docs
-const DocumentationURLHeadless = DocumentationURL + "advanced-topics/detached/"
 
 // DocumentationURLGetStarted is the documentation URL for creating projects
 const DocumentationURLGetStarted = DocumentationURL + "create-project/?utm_source=platform-application-gui&utm_medium=activestate-desktop&utm_content=drop-down&utm_campaign=maru"
@@ -298,9 +317,6 @@ const ActiveStateSupportURL = "https://www.activestate.com/support/?utm_source=p
 
 // ActiveStateDashboardURL is the URL for the ActiveState account preferences page
 const ActiveStateDashboardURL = "https://platform.activestate.com/?utm_source=platform-application-gui&utm_medium=activestate-desktop&utm_content=drop-down&utm_campaign=maru"
-
-// DashboardCommitURL is the URL used to inspect commits
-const DashboardCommitURL = "https://platform.activestate.com/commit/"
 
 // BugTrackerURL is the URL of our bug tracker
 const BugTrackerURL = "https://github.com/ActiveState/state-tool/issues"
@@ -367,14 +383,14 @@ const RuntimeRecipeStore = "recipe"
 // RuntimeBuildPlanStore containts a serialization of the build plan used to create this build
 const RuntimeBuildPlanStore = "build_plan"
 
+// BuildExpressionStore holds the cached build expression for the current commit ID.
+const BuildExpressionStore = "build_expression"
+
 // StateToolMarketingPage links to the marketing page for the state tool
 const StateToolMarketingPage = "https://www.activestate.com/products/platform/state-tool/"
 
 // PlatformMarketingPage links to the marketing page for the ActiveState Platform
 const PlatformMarketingPage = "https://www.activestate.com/products/platform/"
-
-// TermsOfServiceURLText is the URL to get the current terms of service in txt form
-const TermsOfServiceURLText = "https://www.activestate.com/wp-content/uploads/2020/03/activestate_platform_terms_service_agreement.txt"
 
 // TermsOfServiceURLLatest is the URL to get the latest terms of service in PDF form
 const TermsOfServiceURLLatest = "https://www.activestate.com/wp-content/uploads/2018/10/activestate_platform_terms_service_agreement.pdf"
@@ -458,7 +474,6 @@ const InstallerName = "State Installer"
 const StateExecutorCmd = "state-exec"
 
 // ToplevelInstallArchiveDir is the top-level directory for files in an installation archive
-// Cf., https://www.pivotaltracker.com/story/show/177781411
 const ToplevelInstallArchiveDir = "state-install"
 
 // FirstMultiFileStateToolVersion is the State Tool version that introduced multi-file updates
@@ -491,6 +506,9 @@ const PipShim = "pip"
 // AutoUpdateConfigKey is the config key for storing whether or not autoupdates can be performed
 const AutoUpdateConfigKey = "autoupdate"
 
+// PreservePs1ConfigKey is the config key that specifies whether to modify the shell PS1/prompt to show [org/project] info.
+const PreservePs1ConfigKey = "preserve.prompt"
+
 // DefaultAnalyticsPixel is the default url for the analytics pixel
 const DefaultAnalyticsPixel = "https://state-tool.s3.amazonaws.com/pixel"
 
@@ -503,3 +521,10 @@ const TerminalAnimationInterval = 150 * time.Millisecond
 // RuntimeSetupWaitEnvVarName is only used for an integration test to pause installation and wait
 // for Ctrl+C.
 const RuntimeSetupWaitEnvVarName = "ACTIVESTATE_CLI_RUNTIME_SETUP_WAIT"
+
+// PlatformApiRequestRequestsEnvVarName is only used for an integration test to print some Platform
+// API request info.
+const PlatformApiPrintRequestsEnvVarName = "ACTIVESTATE_CLI_PLATFORM_API_PRINT_REQUESTS"
+
+// ActiveStateCIEnvVarName is the environment variable set when running in an ActiveState CI environment.
+const ActiveStateCIEnvVarName = "ACTIVESTATE_CI"

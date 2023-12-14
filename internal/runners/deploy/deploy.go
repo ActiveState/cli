@@ -13,7 +13,6 @@ import (
 	"github.com/ActiveState/cli/internal/assets"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -23,7 +22,6 @@ import (
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/cli/internal/runbits"
-	"github.com/ActiveState/cli/internal/runbits/rtusage"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -96,8 +94,7 @@ func (d *Deploy) Run(params *Params) error {
 		return locale.WrapError(err, "err_deploy_commitid", "Could not grab commit ID for project: {{.V0}}.", params.Namespace.String())
 	}
 
-	// Headless argument is simply false here as you cannot deploy a headless project
-	rtTarget := target.NewCustomTarget(params.Namespace.Owner, params.Namespace.Project, commitID, params.Path, target.TriggerDeploy, false) /* TODO: handle empty path */
+	rtTarget := target.NewCustomTarget(params.Namespace.Owner, params.Namespace.Project, commitID, params.Path, target.TriggerDeploy) /* TODO: handle empty path */
 
 	logging.Debug("runSteps: %s", d.step.String())
 
@@ -156,9 +153,7 @@ func (d *Deploy) commitID(namespace project.Namespaced) (strfmt.UUID, error) {
 func (d *Deploy) install(rtTarget setup.Targeter) (rerr error) {
 	d.output.Notice(output.Title(locale.T("deploy_install")))
 
-	rtusage.PrintRuntimeUsage(d.svcModel, d.output, rtTarget.Owner())
-
-	rti, err := runtime.New(rtTarget, d.analytics, d.svcModel)
+	rti, err := runtime.New(rtTarget, d.analytics, d.svcModel, d.auth)
 	if err == nil {
 		d.output.Notice(locale.Tl("deploy_already_installed", "Already installed"))
 		return nil
@@ -169,7 +164,7 @@ func (d *Deploy) install(rtTarget setup.Targeter) (rerr error) {
 
 	pg := runbits.NewRuntimeProgressIndicator(d.output)
 	defer rtutils.Closer(pg.Close, &rerr)
-	if err := rti.Update(d.auth, pg); err != nil {
+	if err := rti.Update(pg); err != nil {
 		return locale.WrapError(err, "deploy_install_failed", "Installation failed.")
 	}
 
@@ -194,7 +189,7 @@ func (d *Deploy) install(rtTarget setup.Targeter) (rerr error) {
 }
 
 func (d *Deploy) configure(namespace project.Namespaced, rtTarget setup.Targeter, userScope bool) error {
-	rti, err := runtime.New(rtTarget, d.analytics, d.svcModel)
+	rti, err := runtime.New(rtTarget, d.analytics, d.svcModel, d.auth)
 	if err != nil {
 		if runtime.IsNeedsUpdateError(err) {
 			return locale.NewInputError("err_deploy_run_install")
@@ -222,7 +217,7 @@ func (d *Deploy) configure(namespace project.Namespaced, rtTarget setup.Targeter
 
 	// Write global env file
 	d.output.Notice(fmt.Sprintf("Writing shell env file to %s\n", filepath.Join(rtTarget.Dir(), "bin")))
-	err = d.subshell.SetupShellRcFile(binPath, env, &namespace)
+	err = d.subshell.SetupShellRcFile(binPath, env, &namespace, d.cfg)
 	if err != nil {
 		return locale.WrapError(err, "err_deploy_subshell_rc_file", "Could not create environment script.")
 	}
@@ -231,7 +226,7 @@ func (d *Deploy) configure(namespace project.Namespaced, rtTarget setup.Targeter
 }
 
 func (d *Deploy) symlink(rtTarget setup.Targeter, overwrite bool) error {
-	rti, err := runtime.New(rtTarget, d.analytics, d.svcModel)
+	rti, err := runtime.New(rtTarget, d.analytics, d.svcModel, d.auth)
 	if err != nil {
 		if runtime.IsNeedsUpdateError(err) {
 			return locale.NewInputError("err_deploy_run_install")
@@ -254,13 +249,13 @@ func (d *Deploy) symlink(rtTarget setup.Targeter, overwrite bool) error {
 		return locale.WrapError(err, "err_symlink_exes", "Could not detect executable paths")
 	}
 
-	exes, err := exeutils.Executables(bins)
+	exes, err := osutils.Executables(bins)
 	if err != nil {
 		return locale.WrapError(err, "err_symlink_exes", "Could not detect executables")
 	}
 
 	// Remove duplicate executables as per PATH and PATHEXT
-	exes, err = exeutils.UniqueExes(exes, os.Getenv("PATHEXT"))
+	exes, err = osutils.UniqueExes(exes, os.Getenv("PATHEXT"))
 	if err != nil {
 		return locale.WrapError(err, "err_unique_exes", "Could not detect unique executables, make sure your PATH and PATHEXT environment variables are properly configured.")
 	}
@@ -349,7 +344,7 @@ type Report struct {
 }
 
 func (d *Deploy) report(rtTarget setup.Targeter) error {
-	rti, err := runtime.New(rtTarget, d.analytics, d.svcModel)
+	rti, err := runtime.New(rtTarget, d.analytics, d.svcModel, d.auth)
 	if err != nil {
 		if runtime.IsNeedsUpdateError(err) {
 			return locale.NewInputError("err_deploy_run_install")

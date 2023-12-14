@@ -5,7 +5,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/prompt"
-	authlet "github.com/ActiveState/cli/pkg/cmdlets/auth"
+	"github.com/ActiveState/cli/internal/runbits/auth"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 )
 
@@ -26,11 +26,8 @@ func NewSignup(prime primeable) *Signup {
 
 func (s *Signup) Run(params *SignupParams) error {
 	if s.Auth.Authenticated() {
-		return locale.NewInputError("err_auth_authenticated", "You are already authenticated as: {{.V0}}. You can log out by running `state auth logout`.", s.Auth.WhoAmI())
+		return locale.NewInputError("err_auth_authenticated", "You are already authenticated as: {{.V0}}. You can log out by running '[ACTIONABLE]state auth logout[/RESET]'.", s.Auth.WhoAmI())
 	}
 
-	if !params.Prompt {
-		return authlet.AuthenticateWithBrowser(s.Outputer, s.Auth, s.Prompter) // user can sign up from this page too
-	}
-	return authlet.Signup(s.Configurable, s.Outputer, s.Prompter, s.Auth)
+	return auth.SignupWithBrowser(s.Outputer, s.Auth, s.Prompter)
 }

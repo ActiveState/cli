@@ -21,7 +21,7 @@ func (suite *VersionIntegrationTestSuite) TestNotDev() {
 	defer ts.Close()
 
 	cp := ts.Spawn("--version")
-	suite.NotContains(cp.TrimmedSnapshot(), "(dev)")
+	suite.NotContains(cp.Output(), "(dev)")
 	cp.ExpectExitCode(0)
 }
 

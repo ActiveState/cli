@@ -1,4 +1,4 @@
-{{if ne .Project ""}}
+{{if and (ne .Project "") (not .PreservePs1)}}
 export PS1="[{{.Project}}] $PS1"
 {{- end}}
 

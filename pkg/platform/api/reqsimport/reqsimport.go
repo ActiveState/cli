@@ -8,10 +8,11 @@ import (
 	"path"
 	"time"
 
+	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/platform/api"
-	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 )
 
 const (
@@ -63,10 +64,17 @@ func Init() *ReqsImport {
 
 // Changeset posts requirements data to a backend service and returns a
 // Changeset that can be committed to a project.
-func (ri *ReqsImport) Changeset(data []byte, lang string) (model.Changeset, error) {
+func (ri *ReqsImport) Changeset(data []byte, lang string) ([]*mono_models.CommitChangeEditable, error) {
 	reqPayload := &TranslationReqMsg{
 		Data:     string(data),
 		Language: lang,
+	}
+	if lang == "" {
+		// The endpoint requires a valid language name. It is not present in the requirements read and
+		// returned. When coupled with "unformatted=true", the language has no bearing on the
+		// translation, so just pick one.
+		reqPayload.Language = language.Python3.Requirement()
+		reqPayload.Unformatted = true
 	}
 	respPayload := &TranslationRespMsg{}
 
@@ -85,15 +93,16 @@ func (ri *ReqsImport) Changeset(data []byte, lang string) (model.Changeset, erro
 // TranslationReqMsg represents the message sent to the requirements
 // translation service.
 type TranslationReqMsg struct {
-	Data     string `json:"requirements"`
-	Language string `json:"language"`
+	Data        string `json:"requirements"`
+	Language    string `json:"language"`
+	Unformatted bool   `json:"unformatted"`
 }
 
 // TranslationRespMsg represents the message returned by the requirements
 // translation service.
 type TranslationRespMsg struct {
-	Changeset model.Changeset        `json:"changeset,omitempty"`
-	LineErrs  []TranslationLineError `json:"errors,omitempty"`
+	Changeset []*mono_models.CommitChangeEditable `json:"changeset,omitempty"`
+	LineErrs  []TranslationLineError              `json:"errors,omitempty"`
 }
 
 // TranslationLineError represents an error reported by the requirements

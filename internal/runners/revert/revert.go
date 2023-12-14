@@ -2,22 +2,20 @@ package revert
 
 import (
 	"github.com/ActiveState/cli/internal/analytics"
-	"github.com/ActiveState/cli/pkg/platform/runtime/target"
-	"github.com/go-openapi/strfmt"
-
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runbits"
-	"github.com/ActiveState/cli/pkg/cmdlets/commit"
-	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
+	"github.com/ActiveState/cli/internal/runbits/commit"
+	"github.com/ActiveState/cli/internal/runbits/commitmediator"
+	gqlmodel "github.com/ActiveState/cli/pkg/platform/api/graphql/model"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
-
-	gqlmodel "github.com/ActiveState/cli/pkg/platform/api/graphql/model"
+	"github.com/go-openapi/strfmt"
 )
 
 type Revert struct {
@@ -55,41 +53,46 @@ func New(prime primeable) *Revert {
 	}
 }
 
-func (r *Revert) Run(params *Params) error {
+func (r *Revert) Run(params *Params) (rerr error) {
+	defer rationalizeError(&rerr)
+
 	if r.project == nil {
 		return locale.NewInputError("err_no_project")
 	}
 	if !strfmt.IsUUID(params.CommitID) {
 		return locale.NewInputError("err_invalid_commit_id", "Invalid commit ID")
 	}
-	latestCommit := r.project.CommitUUID()
+	latestCommit, err := commitmediator.Get(r.project)
+	if err != nil {
+		return errs.Wrap(err, "Unable to get local commit")
+	}
+
 	if params.CommitID == latestCommit.String() && params.To {
 		return locale.NewInputError("err_revert_to_current_commit", "The commit to revert to cannot be the latest commit")
 	}
-	r.out.Notice(locale.Tl("operating_message", "", r.project.NamespaceString(), r.project.Dir()))
-	commitID := strfmt.UUID(params.CommitID)
+	r.out.Notice(locale.Tr("operating_message", r.project.NamespaceString(), r.project.Dir()))
 
-	var targetCommit *mono_models.Commit // the commit to revert the contents of, or the commit to revert to
-	var fromCommit, toCommit strfmt.UUID
-	if !params.To {
-		priorCommits, err := model.CommitHistoryPaged(commitID, 0, 2)
-		if err != nil {
-			return locale.WrapError(err, "err_revert_get_commit", "Could not fetch commit details for commit with ID: {{.V0}}", params.CommitID)
-		}
-		if priorCommits.TotalCommits < 2 {
-			return locale.NewInputError("err_revert_no_history", "Cannot revert commit {{.V0}}: no prior history", params.CommitID)
-		}
-		targetCommit = priorCommits.Commits[0]
-		fromCommit = commitID
-		toCommit = priorCommits.Commits[1].CommitID // parent commit
-	} else {
-		var err error
-		targetCommit, err = model.GetCommitWithinCommitHistory(latestCommit, commitID)
-		if err != nil {
-			return locale.WrapError(err, "err_revert_to_get_commit", "Could not fetch commit details for commit with ID: {{.V0}}", params.CommitID)
-		}
-		fromCommit = latestCommit
-		toCommit = targetCommit.CommitID
+	bp := model.NewBuildPlannerModel(r.auth)
+	targetCommitID := params.CommitID // the commit to revert the contents of, or the commit to revert to
+	revertParams := revertParams{
+		organization:   r.project.Owner(),
+		project:        r.project.Name(),
+		parentCommitID: latestCommit.String(),
+		revertCommitID: params.CommitID,
+	}
+	revertFunc := r.revertCommit
+	preposition := ""
+	if params.To {
+		revertFunc = r.revertToCommit
+		preposition = " to" // need leading whitespace
+	}
+
+	targetCommit, err := model.GetCommitWithinCommitHistory(latestCommit, strfmt.UUID(targetCommitID))
+	if err != nil {
+		return errs.AddTips(
+			locale.WrapError(err, "err_revert_get_commit", "", params.CommitID),
+			locale.T("tip_private_project_auth"),
+		)
 	}
 
 	var orgs []gqlmodel.Organization
@@ -100,10 +103,7 @@ func (r *Revert) Run(params *Params) error {
 			return locale.WrapError(err, "err_revert_get_organizations", "Could not get organizations for current user")
 		}
 	}
-	preposition := ""
-	if params.To {
-		preposition = " to" // need leading whitespace
-	}
+
 	if !r.out.Type().IsStructured() {
 		r.out.Print(locale.Tl("revert_info", "You are about to revert{{.V0}} the following commit:", preposition))
 		commit.PrintCommit(r.out, targetCommit, orgs)
@@ -118,7 +118,7 @@ func (r *Revert) Run(params *Params) error {
 		return locale.NewInputError("err_revert_aborted", "Revert aborted by user")
 	}
 
-	revertCommit, err := model.RevertCommitWithinHistory(fromCommit, toCommit, latestCommit)
+	revertCommit, err := revertFunc(revertParams, bp)
 	if err != nil {
 		return errs.AddTips(
 			locale.WrapError(err, "err_revert_commit", "", preposition, params.CommitID),
@@ -126,14 +126,14 @@ func (r *Revert) Run(params *Params) error {
 			locale.T("tip_private_project_auth"))
 	}
 
-	err = runbits.RefreshRuntime(r.auth, r.out, r.analytics, r.project, revertCommit.CommitID, true, target.TriggerRevert, r.svcModel)
+	err = commitmediator.Set(r.project, revertCommit.String())
 	if err != nil {
-		return locale.WrapError(err, "err_refresh_runtime")
+		return errs.Wrap(err, "Unable to set local commit")
 	}
 
-	err = r.project.SetCommit(revertCommit.CommitID.String())
+	err = runbits.RefreshRuntime(r.auth, r.out, r.analytics, r.project, revertCommit, true, target.TriggerRevert, r.svcModel)
 	if err != nil {
-		return locale.WrapError(err, "err_revert_set_commit", "Could not set revert commit ID in projectfile")
+		return locale.WrapError(err, "err_refresh_runtime")
 	}
 
 	r.out.Print(output.Prepare(
@@ -141,18 +141,49 @@ func (r *Revert) Run(params *Params) error {
 		&struct {
 			CurrentCommitID string `json:"current_commit_id"`
 		}{
-			revertCommit.CommitID.String(),
+			revertCommit.String(),
 		},
 	))
 	r.out.Notice(locale.T("operation_success_local"))
 	return nil
 }
 
-func containsCommitID(history []*mono_models.Commit, commitID strfmt.UUID) bool {
-	for _, c := range history {
-		if c.CommitID == commitID {
-			return true
-		}
+type revertFunc func(params revertParams, bp *model.BuildPlanner) (strfmt.UUID, error)
+
+type revertParams struct {
+	organization   string
+	project        string
+	parentCommitID string
+	revertCommitID string
+}
+
+func (r *Revert) revertCommit(params revertParams, bp *model.BuildPlanner) (strfmt.UUID, error) {
+	newCommitID, err := bp.RevertCommit(params.organization, params.project, params.parentCommitID, params.revertCommitID)
+	if err != nil {
+		return "", errs.Wrap(err, "Could not revert commit")
 	}
-	return false
+
+	return newCommitID, nil
+}
+
+func (r *Revert) revertToCommit(params revertParams, bp *model.BuildPlanner) (strfmt.UUID, error) {
+	buildExpression, err := bp.GetBuildExpression(params.organization, params.project, params.revertCommitID)
+	if err != nil {
+		return "", errs.Wrap(err, "Could not get build expression")
+	}
+
+	stageCommitParams := model.StageCommitParams{
+		Owner:        params.organization,
+		Project:      params.project,
+		ParentCommit: params.parentCommitID,
+		Description:  locale.Tl("revert_commit_description", "Revert to commit {{.V0}}", params.revertCommitID),
+		Expression:   buildExpression,
+	}
+
+	newCommitID, err := bp.StageCommit(stageCommitParams)
+	if err != nil {
+		return "", errs.Wrap(err, "Could not stage commit")
+	}
+
+	return newCommitID, nil
 }

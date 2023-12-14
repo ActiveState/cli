@@ -12,6 +12,8 @@ import (
 	"github.com/ActiveState/cli/internal/rtutils"
 )
 
+var _ ErrorLocalizer = &LocalizedError{}
+
 // LocalizedError is an error that has the concept of user facing (localized) errors as well as whether an error is due
 // to user input or not
 type LocalizedError struct {
@@ -27,8 +29,8 @@ func (e *LocalizedError) Error() string {
 	return e.localized
 }
 
-// UserError is the user facing error message, it's the same as Error() but identifies it as being user facing
-func (e *LocalizedError) UserError() string {
+// LocaleError is the user facing error message, it's the same as Error() but identifies it as being user facing
+func (e *LocalizedError) LocaleError() string {
 	return e.localized
 }
 
@@ -58,7 +60,7 @@ func (e *LocalizedError) AddTips(tips ...string) {
 // ErrorLocalizer represents a localized error
 type ErrorLocalizer interface {
 	error
-	UserError() string
+	LocaleError() string
 }
 
 type AsError interface {
@@ -162,7 +164,7 @@ func JoinedErrorMessage(err error) string {
 	var message []string
 	for _, err := range UnpackError(err) {
 		if lerr, isLocaleError := err.(ErrorLocalizer); isLocaleError {
-			message = append(message, lerr.UserError())
+			message = append(message, lerr.LocaleError())
 		}
 	}
 	if len(message) == 0 {
@@ -177,7 +179,7 @@ func JoinedErrorMessage(err error) string {
 
 func ErrorMessage(err error) string {
 	if errr, ok := err.(ErrorLocalizer); ok {
-		return errr.UserError()
+		return errr.LocaleError()
 	}
 	return err.Error()
 }

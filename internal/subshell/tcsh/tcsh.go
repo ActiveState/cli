@@ -4,6 +4,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
@@ -13,6 +14,7 @@ import (
 	"github.com/ActiveState/cli/internal/osutils/user"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
+	"github.com/ActiveState/cli/internal/subshell/termecho"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
@@ -104,9 +106,9 @@ func (v *SubShell) EnsureRcFileExists() error {
 }
 
 // SetupShellRcFile - subshell.SubShell
-func (v *SubShell) SetupShellRcFile(targetDir string, env map[string]string, namespace *project.Namespaced) error {
+func (v *SubShell) SetupShellRcFile(targetDir string, env map[string]string, namespace *project.Namespaced, cfg sscommon.Configurable) error {
 	env = sscommon.EscapeEnv(env)
-	return sscommon.SetupShellRcFile(filepath.Join(targetDir, "shell.tcsh"), "tcsh_global.sh", env, namespace)
+	return sscommon.SetupShellRcFile(filepath.Join(targetDir, "shell.tcsh"), "tcsh_global.sh", env, namespace, cfg)
 }
 
 // SetEnv - see subshell.SetEnv
@@ -188,4 +190,18 @@ func (v *SubShell) IsAvailable() bool {
 		return false
 	}
 	return fileutils.FileExists(rcFile)
+}
+
+func (v *SubShell) TurnOffEcho() {
+	if runtime.GOOS == "windows" {
+		return // not supported
+	}
+	termecho.Off()
+}
+
+func (v *SubShell) TurnOnEcho() {
+	if runtime.GOOS == "windows" {
+		return // not supported
+	}
+	termecho.On()
 }

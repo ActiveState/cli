@@ -37,7 +37,7 @@ func (l *List) Run() error {
 		return locale.NewInputError("err_no_project")
 	}
 
-	project, err := model.FetchProjectByName(l.project.Owner(), l.project.Name())
+	project, err := model.LegacyFetchProjectByName(l.project.Owner(), l.project.Name())
 	if err != nil {
 		return locale.WrapError(err, "err_fetch_project", "", l.project.Namespace().String())
 	}
@@ -46,6 +46,10 @@ func (l *List) Run() error {
 		branchTree(project.Branches, l.project.BranchName()),
 		project.Branches,
 	))
+
+	if len(project.Branches) > 1 {
+		l.out.Notice(locale.Tl("branch_switch_notice", "To switch to another branch, run '[ACTIONABLE]state branch switch <name>[/RESET]'."))
+	}
 
 	return nil
 }

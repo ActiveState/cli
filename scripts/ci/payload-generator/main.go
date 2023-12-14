@@ -9,12 +9,16 @@ import (
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
-	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/installation"
+	"github.com/ActiveState/cli/internal/osutils"
 )
 
 var (
+	defaultInputDir     = filepath.Join(environment.GetRootPathUnsafe(), "build")
+	defaultOutputDir    = filepath.Join(defaultInputDir, "payload", constants.ToplevelInstallArchiveDir)
+	defaultOutputBinDir = filepath.Join(defaultOutputDir, "bin")
+
 	log = func(msg string, vals ...any) {
 		fmt.Fprintf(os.Stdout, msg, vals...)
 		fmt.Fprintf(os.Stdout, "\n")
@@ -36,6 +40,9 @@ func main() {
 
 func run() error {
 	var (
+		inDir   = defaultInputDir
+		outDir  = defaultOutputDir
+		binDir  = defaultOutputBinDir
 		branch  = constants.BranchName
 		version = constants.Version
 	)
@@ -44,32 +51,26 @@ func run() error {
 	flag.StringVar(&version, "v", version, "Override version number for this update.")
 	flag.Parse()
 
-	root := environment.GetRootPathUnsafe()
-	buildDir := filepath.Join(root, "build")
-	payloadDir := filepath.Join(buildDir, "payload")
-
-	return generatePayload(buildDir, payloadDir, branch, version)
+	return generatePayload(inDir, outDir, binDir, branch, version)
 }
 
-func generatePayload(buildDir, payloadDir, branch, version string) error {
+func generatePayload(inDir, outDir, binDir, branch, version string) error {
 	emsg := "generate payload: %w"
 
-	payloadBinDir := filepath.Join(payloadDir, "bin")
-
-	if err := fileutils.MkdirUnlessExists(payloadBinDir); err != nil {
+	if err := fileutils.MkdirUnlessExists(binDir); err != nil {
 		return fmt.Errorf(emsg, err)
 	}
 
-	log("Creating install dir marker in %s", payloadDir)
-	if err := createInstallMarker(payloadDir, branch, version); err != nil {
+	log("Creating install dir marker in %s", outDir)
+	if err := createInstallMarker(outDir, branch, version); err != nil {
 		return fmt.Errorf(emsg, err)
 	}
 
 	files := map[string]string{
-		filepath.Join(buildDir, constants.StateInstallerCmd+exeutils.Extension): payloadDir,
-		filepath.Join(buildDir, constants.StateCmd+exeutils.Extension):          payloadBinDir,
-		filepath.Join(buildDir, constants.StateSvcCmd+exeutils.Extension):       payloadBinDir,
-		filepath.Join(buildDir, constants.StateExecutorCmd+exeutils.Extension):  payloadBinDir,
+		filepath.Join(inDir, constants.StateInstallerCmd+osutils.ExeExtension): outDir,
+		filepath.Join(inDir, constants.StateCmd+osutils.ExeExtension):          binDir,
+		filepath.Join(inDir, constants.StateSvcCmd+osutils.ExeExtension):       binDir,
+		filepath.Join(inDir, constants.StateExecutorCmd+osutils.ExeExtension):  binDir,
 	}
 	if err := copyFiles(files); err != nil {
 		return fmt.Errorf(emsg, err)
@@ -78,7 +79,7 @@ func generatePayload(buildDir, payloadDir, branch, version string) error {
 	return nil
 }
 
-func createInstallMarker(payloadDir, branch, version string) error {
+func createInstallMarker(dir, branch, version string) error {
 	emsg := "create install marker: %w"
 
 	markerContents := installation.InstallMarkerMeta{
@@ -89,8 +90,9 @@ func createInstallMarker(payloadDir, branch, version string) error {
 	if err != nil {
 		return fmt.Errorf(emsg, err)
 	}
+	b = append(b, '\n')
 
-	markerPath := filepath.Join(payloadDir, installation.InstallDirMarker)
+	markerPath := filepath.Join(dir, installation.InstallDirMarker)
 	if err := fileutils.WriteFile(markerPath, b); err != nil {
 		return fmt.Errorf(emsg, err)
 	}
@@ -98,24 +100,14 @@ func createInstallMarker(payloadDir, branch, version string) error {
 	return nil
 }
 
-// copyFiles will copy the given files while preserving permissions.
+// copyFiles will copy the given files with logging.
 func copyFiles(files map[string]string) error {
-	emsg := "copy files (%s to %s): %w"
-
 	for src, target := range files {
 		log("Copying %s to %s", src, target)
 		dest := filepath.Join(target, filepath.Base(src))
-		err := fileutils.CopyFile(src, dest)
-		if err != nil {
-			return fmt.Errorf(emsg, src, target, err)
-		}
-		srcStat, err := os.Stat(src)
-		if err != nil {
-			return fmt.Errorf(emsg, src, target, err)
-		}
 
-		if err := os.Chmod(dest, srcStat.Mode().Perm()); err != nil {
-			return fmt.Errorf(emsg, src, target, err)
+		if err := fileutils.CopyFile(src, dest); err != nil {
+			return fmt.Errorf("copy files (%s to %s): %w", src, target, err)
 		}
 	}
 

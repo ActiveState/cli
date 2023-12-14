@@ -5,12 +5,20 @@ run:
 linters-settings:
   errcheck:
     exclude-functions:
-      - (*github.com/ActiveState/termtest.ConsoleProcess).Expect
-      - (*github.com/ActiveState/termtest.ConsoleProcess).ExpectExitCode
-      - (*github.com/ActiveState/termtest.ConsoleProcess).ExpectNotExitCode
-      - (*github.com/ActiveState/termtest.ConsoleProcess).ExpectRe
-      - (*github.com/ActiveState/termtest.ConsoleProcess).ExpectLongString
-      - (*github.com/ActiveState/termtest.ConsoleProcess).WaitForInput
+      - (*github.com/ActiveState/termtest.TermTest).Expect
+      - (*github.com/ActiveState/termtest.TermTest).ExpectExitCode
+      - (*github.com/ActiveState/termtest.TermTest).ExpectNotExitCode
+      - (*github.com/ActiveState/termtest.TermTest).ExpectRe
+      - (*github.com/ActiveState/termtest.TermTest).Expect
+      - (*github.com/ActiveState/termtest.TermTest).WaitForInput
+      - (*github.com/ActiveState/termtest.TermTest).SendLine
+      - (*github.com/ActiveState/termtest.TermTest).ExpectInput
+      - (*github.com/ActiveState/termtest.TermTest).Wait
+      - (*github.com/ActiveState/logging.fileHandler).Printf
+      - (*github.com/ActiveState/logging.standardHandler).Printf
+  govet:
+    disable:
+      - composites
 
 # When issues occur with linting us the snippet below to help with debugging
 # linters:

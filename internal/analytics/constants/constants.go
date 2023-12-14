@@ -12,9 +12,9 @@ const CatShim = "shim"
 // CatBuild is the event category used for headchef builds
 const CatBuild = "build"
 
-// CatRuntime is the event category used for debugging runtime setup and usage.
+// CatRuntimeDebug is the event category used for debugging runtime setup and usage.
 // It should only be used to help diagnose where errors and dropoffs may be happening.
-const CatRuntime = "runtime-debug"
+const CatRuntimeDebug = "runtime-debug"
 
 // CatRuntimeUsage is the event category used for all runtime usage
 const CatRuntimeUsage = "runtime-use"
@@ -24,6 +24,30 @@ const CatConfig = "config"
 
 // CatUpdate is the event category used for all update events
 const CatUpdates = "updates"
+
+// CatInstaller is the event category used for installer events.
+const CatInstaller = "installer"
+
+// CatInstallerFunnel is the event category used for installer funnel events.
+const CatInstallerFunnel = "installer-funnel"
+
+// SrcStateTool is the event source for events sent by state.
+const SrcStateTool = "State Tool"
+
+// SrcStateService is the event source for events sent by state-svc.
+const SrcStateService = "State Service"
+
+// SrcStateInstaller is the event source for events sent by state-installer.
+const SrcStateInstaller = "State Installer"
+
+// SrcStateRemoteInstaller is the event source for events sent by state-remote-installer.
+const SrcStateRemoteInstaller = "State Remote Installer"
+
+// SrcOfflineInstaller is the event source for events sent by offline installers.
+const SrcOfflineInstaller = "Offline Installer"
+
+// SrcExecutor is the event source for events sent by executors.
+const SrcExecutor = "Executor"
 
 // ActRuntimeHeartbeat is the event action sent when a runtime is in use
 const ActRuntimeHeartbeat = "heartbeat"
@@ -129,6 +153,9 @@ const ActCommandError = "command-error"
 
 // ActCommandInputError is the event action used for command input errors
 const ActCommandInputError = "command-input-error"
+
+// ActExecutorExit is the event action used for executor exit codes
+const ActExecutorExit = "executor-exit"
 
 // UpdateLabelSuccess is the sent if an auto-update was successful
 const UpdateLabelSuccess = "success"

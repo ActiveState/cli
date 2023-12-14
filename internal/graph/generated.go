@@ -20,11 +20,6 @@ type AvailableUpdate struct {
 	Sha256   string `json:"sha256"`
 }
 
-type CheckRuntimeUsageResponse struct {
-	Limit int `json:"limit"`
-	Usage int `json:"usage"`
-}
-
 type ConfigChangedResponse struct {
 	Received bool `json:"received"`
 }
@@ -37,15 +32,6 @@ type MessageInfo struct {
 	Interrupt MessageInterruptType `json:"interrupt"`
 	Placement MessagePlacementType `json:"placement"`
 }
-
-/*
-[
-	{
-		"ID": "simple",
-		"Message": "This is a [NOTICE]simple[/RESET] message\nwith a line break",
-	}
-]
-*/
 
 type Project struct {
 	Namespace string   `json:"namespace"`

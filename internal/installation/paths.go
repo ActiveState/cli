@@ -8,8 +8,8 @@ import (
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/osutils"
 )
 
 const (
@@ -24,6 +24,12 @@ const (
 type InstallMarkerMeta struct {
 	Branch  string `json:"branch"`
 	Version string `json:"version"`
+}
+
+type StateExeDoesNotExistError struct{ *errs.WrapperError }
+
+func IsStateExeDoesNotExistError(err error) bool {
+	return errs.Matches(err, &StateExeDoesNotExistError{})
 }
 
 func DefaultInstallPath() (string, error) {
@@ -75,7 +81,7 @@ func InstallPathFromExecPath() (string, error) {
 }
 
 func InstallPathFromReference(dir string) (string, error) {
-	cmdName := constants.StateCmd + exeutils.Extension
+	cmdName := constants.StateCmd + osutils.ExeExtension
 	installPath := filepath.Dir(dir)
 	binPath, err := BinPathFromInstallPath(installPath)
 	if err != nil {
@@ -84,7 +90,7 @@ func InstallPathFromReference(dir string) (string, error) {
 
 	stateExe := filepath.Join(binPath, cmdName)
 	if !fileutils.TargetExists(stateExe) {
-		return "", errs.New("Installation bin directory does not contain %s", stateExe)
+		return "", &StateExeDoesNotExistError{errs.New("Installation bin directory does not contain %s", stateExe)}
 	}
 
 	return filepath.Dir(binPath), nil

@@ -15,12 +15,12 @@ import (
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/ipc"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/profile"
 )
 
@@ -40,6 +40,7 @@ type IPCommunicator interface {
 	Requester
 	PingServer(context.Context) (time.Duration, error)
 	StopServer(context.Context) error
+	SockPath() *ipc.SockPath
 }
 
 func NewIPCSockPathFromGlobals() *ipc.SockPath {
@@ -145,7 +146,7 @@ func startAndWait(ctx context.Context, ipComm IPCommunicator, exec, argText stri
 	defer profile.Measure("svcmanager:Start", time.Now())
 
 	if !fileutils.FileExists(exec) {
-		return locale.NewError("svcctl_file_not_found", constants.ForumsURL)
+		return locale.NewError("svcctl_file_not_found", "", constants.ForumsURL)
 	}
 
 	args := []string{"foreground", argText}
@@ -153,12 +154,14 @@ func startAndWait(ctx context.Context, ipComm IPCommunicator, exec, argText stri
 		args = args[:len(args)-1]
 	}
 
-	if _, err := exeutils.ExecuteAndForget(exec, args); err != nil {
+	debugInfo := newDebugData(ipComm, startSvc, argText)
+
+	if _, err := osutils.ExecuteAndForget(exec, args); err != nil {
 		return locale.WrapError(err, "svcctl_cannot_exec_and_forget", "Cannot execute service in background: {{.V0}}", err.Error())
 	}
 
 	logging.Debug("Waiting for service")
-	if err := waitUp(ctx, ipComm); err != nil {
+	if err := waitUp(ctx, ipComm, debugInfo); err != nil {
 		return locale.WrapError(err, "svcctl_wait_startup_failed", "Waiting for service startup confirmation failed")
 	}
 
@@ -169,19 +172,23 @@ var (
 	waitTimeoutL10nKey = "svcctl_wait_timeout"
 )
 
-func waitUp(ctx context.Context, ipComm IPCommunicator) error {
+func waitUp(ctx context.Context, ipComm IPCommunicator, debugInfo *debugData) error {
+	debugInfo.startWait()
+	defer debugInfo.stopWait()
+
 	start := time.Now()
 	for try := 1; try <= pingRetryIterations; try++ {
 		select {
 		case <-ctx.Done():
-			return locale.WrapError(ctx.Err(), waitTimeoutL10nKey, "", time.Since(start).String(), "1", constants.ForumsURL)
+			err := locale.WrapError(ctx.Err(), waitTimeoutL10nKey, "", time.Since(start).String(), "1", constants.ForumsURL)
+			return errs.Pack(err, debugInfo)
 		default:
 		}
 
 		tryStart := time.Now()
 		timeout := time.Millisecond * time.Duration(try*try)
 
-		logging.Debug("Attempt: %d, timeout: %v, total: %v", try, timeout, time.Since(start))
+		debugInfo.addWaitAttempt(tryStart, try, timeout)
 		if err := ping(ctx, ipComm, timeout); err != nil {
 			// Timeout does not reveal enough info, try again.
 			// We don't need to sleep for this type of error because,
@@ -190,7 +197,8 @@ func waitUp(ctx context.Context, ipComm IPCommunicator) error {
 				continue
 			}
 			if !errors.Is(err, ctlErrNotUp) {
-				return locale.WrapError(err, "svcctl_ping_failed", "Ping encountered unexpected failure: {{.V0}}", err.Error())
+				err := locale.WrapError(err, "svcctl_ping_failed", "Ping encountered unexpected failure: {{.V0}}", err.Error())
+				return errs.Pack(err, debugInfo)
 			}
 			elapsed := time.Since(tryStart)
 			time.Sleep(timeout - elapsed)
@@ -199,35 +207,42 @@ func waitUp(ctx context.Context, ipComm IPCommunicator) error {
 		return nil
 	}
 
-	return locale.NewError(waitTimeoutL10nKey, "", time.Since(start).Round(time.Millisecond).String(), "2", constants.ForumsURL)
+	err := locale.NewError(waitTimeoutL10nKey, "", time.Since(start).Round(time.Millisecond).String(), "2", constants.ForumsURL)
+	return errs.Pack(err, debugInfo)
 }
 
 func stopAndWait(ctx context.Context, ipComm IPCommunicator) error {
+	debugInfo := newDebugData(ipComm, stopSvc, "")
+
 	if err := ipComm.StopServer(ctx); err != nil {
 		return locale.WrapError(err, "svcctl_stop_req_failed", "Service stop request failed")
 	}
 
 	logging.Debug("Waiting for service to die")
-	if err := waitDown(ctx, ipComm); err != nil {
+	if err := waitDown(ctx, ipComm, debugInfo); err != nil {
 		return locale.WrapError(err, "svcctl_wait_shutdown_failed", "Waiting for service shutdown confirmation failed")
 	}
 
 	return nil
 }
 
-func waitDown(ctx context.Context, ipComm IPCommunicator) error {
+func waitDown(ctx context.Context, ipComm IPCommunicator, debugInfo *debugData) error {
+	debugInfo.startWait()
+	defer debugInfo.stopWait()
+
 	start := time.Now()
 	for try := 1; try <= pingRetryIterations; try++ {
 		select {
 		case <-ctx.Done():
-			return locale.WrapError(ctx.Err(), waitTimeoutL10nKey, "", time.Since(start).String(), "3", constants.ForumsURL)
+			err := locale.WrapError(ctx.Err(), waitTimeoutL10nKey, "", time.Since(start).String(), "3", constants.ForumsURL)
+			return errs.Pack(err, debugInfo)
 		default:
 		}
 
 		tryStart := time.Now()
 		timeout := time.Millisecond * time.Duration(try*try)
 
-		logging.Debug("Attempt: %d, timeout: %v, total: %v", try, timeout, time.Since(start))
+		debugInfo.addWaitAttempt(tryStart, try, timeout)
 		if err := ping(ctx, ipComm, timeout); err != nil {
 			// Timeout does not reveal enough info, try again.
 			// We don't need to sleep for this type of error because,
@@ -242,14 +257,16 @@ func waitDown(ctx context.Context, ipComm IPCommunicator) error {
 				return nil
 			}
 			if !errors.Is(err, ctlErrTempNotUp) {
-				return locale.WrapError(err, "svcctl_ping_failed", "Ping encountered unexpected failure: {{.V0}}", err.Error())
+				err := locale.WrapError(err, "svcctl_ping_failed", "Ping encountered unexpected failure: {{.V0}}", err.Error())
+				return errs.Pack(err, debugInfo)
 			}
 		}
 		elapsed := time.Since(tryStart)
 		time.Sleep(timeout - elapsed)
 	}
 
-	return locale.NewError(waitTimeoutL10nKey, "", time.Since(start).Round(time.Millisecond).String(), "4", constants.ForumsURL)
+	err := locale.NewError(waitTimeoutL10nKey, "", time.Since(start).Round(time.Millisecond).String(), "4", constants.ForumsURL)
+	return errs.Pack(err, debugInfo)
 }
 
 func ping(ctx context.Context, ipComm IPCommunicator, timeout time.Duration) error {

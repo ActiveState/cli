@@ -12,18 +12,17 @@ import (
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/hash"
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
+	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/rtutils"
 	"github.com/ActiveState/cli/internal/runbits"
-	"github.com/ActiveState/cli/internal/runbits/rtusage"
 	"github.com/ActiveState/cli/internal/scriptfile"
 	"github.com/ActiveState/cli/internal/subshell"
 	"github.com/ActiveState/cli/internal/virtualenvironment"
@@ -90,20 +89,18 @@ func (s *Exec) Run(params *Params, args ...string) (rerr error) {
 
 	// Detect target and project dir
 	// If the path passed resolves to a runtime dir (ie. has a runtime marker) then the project is not used
+	var proj *project.Project
+	var err error
 	if params.Path != "" && runtime.IsRuntimeDir(params.Path) {
 		projectDir = projectFromRuntimeDir(s.cfg, params.Path)
-		proj, err := project.FromPath(projectDir)
+		proj, err = project.FromPath(projectDir)
 		if err != nil {
-			logging.Warning("Could not get project dir from path: %s", errs.JoinMessage(err))
-			// We do not know if the project is headless at this point so we default to true
-			// as there is no head
-			rtTarget = target.NewCustomTarget("", "", "", params.Path, trigger, true)
-		} else {
-			rtTarget = target.NewProjectTarget(proj, nil, trigger)
+			return locale.WrapInputError(err, "exec_no_project_at_path", "Could not find project file at {{.V0}}", projectDir)
 		}
+		rtTarget = target.NewProjectTarget(proj, nil, trigger)
 		projectNamespace = proj.NamespaceString()
 	} else {
-		proj := s.proj
+		proj = s.proj
 		if params.Path != "" {
 			var err error
 			proj, err = project.FromPath(params.Path)
@@ -119,24 +116,26 @@ func (s *Exec) Run(params *Params, args ...string) (rerr error) {
 		rtTarget = target.NewProjectTarget(proj, nil, trigger)
 	}
 
-	rtusage.PrintRuntimeUsage(s.svcModel, s.out, rtTarget.Owner())
+	s.out.Notice(locale.Tr("operating_message", projectNamespace, projectDir))
 
-	s.out.Notice(locale.Tl("operating_message", "", projectNamespace, projectDir))
-
-	rt, err := runtime.New(rtTarget, s.analytics, s.svcModel)
-	if err != nil {
-		if !runtime.IsNeedsUpdateError(err) {
-			return locale.WrapError(err, "err_activate_runtime", "Could not initialize a runtime for this project.")
-		}
+	rt, err := runtime.New(rtTarget, s.analytics, s.svcModel, s.auth)
+	switch {
+	case err == nil:
+		break
+	case runtime.IsNeedsUpdateError(err):
 		pg := runbits.NewRuntimeProgressIndicator(s.out)
 		defer rtutils.Closer(pg.Close, &rerr)
-		if err := rt.Update(s.auth, pg); err != nil {
+		if err := rt.Update(pg); err != nil {
 			return locale.WrapError(err, "err_update_runtime", "Could not update runtime installation.")
 		}
+	case runtime.IsNeedsCommitError(err):
+		s.out.Notice(locale.T("notice_commit_build_script"))
+	default:
+		return locale.WrapError(err, "err_activate_runtime", "Could not initialize a runtime for this project.")
 	}
 	venv := virtualenvironment.New(rt)
 
-	env, err := venv.GetEnv(true, false, projectDir)
+	env, err := venv.GetEnv(true, false, projectDir, projectNamespace)
 	if err != nil {
 		return locale.WrapError(err, "err_exec_env", "Could not retrieve environment information for your runtime")
 	}
@@ -156,7 +155,7 @@ func (s *Exec) Run(params *Params, args ...string) (rerr error) {
 		RTPATH := strings.Join(rtDirs, string(os.PathListSeparator))
 
 		// Report recursive execution of executor: The path for the executable should be different from the default bin dir
-		exesOnPath := exeutils.FilterExesOnPATH(args[0], RTPATH, func(exe string) bool {
+		exesOnPath := osutils.FilterExesOnPATH(args[0], RTPATH, func(exe string) bool {
 			v, err := executors.IsExecutor(exe)
 			if err != nil {
 				logging.Error("Could not find out if executable is an executor: %s", errs.JoinMessage(err))
@@ -172,7 +171,7 @@ func (s *Exec) Run(params *Params, args ...string) (rerr error) {
 
 	// Guard against invoking the executor from PATH (ie. by name alone)
 	if os.Getenv(constants.ExecRecursionAllowEnvVarName) != "true" && filepath.Base(exeTarget) == exeTarget { // not a full path
-		exe := exeutils.FindExeInside(exeTarget, env["PATH"])
+		exe := osutils.FindExeInside(exeTarget, env["PATH"])
 		if exe != exeTarget { // Found the exe name on our PATH
 			isExec, err := executors.IsExecutor(exe)
 			if err != nil {

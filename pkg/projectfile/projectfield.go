@@ -9,7 +9,6 @@ import (
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/multilog"
 )
 
 var projectFieldRE = regexp.MustCompile(`(?m:^project:["' ]*(https?:\/\/.*?)["' ]*$)`)
@@ -38,38 +37,20 @@ func (p *projectField) String() string {
 }
 
 func (p *projectField) SetNamespace(owner, name string) {
-	wasHeadless := p.isHeadless()
-	pathNodes := p.pathNodes()
 	p.setPath(fmt.Sprintf("%s/%s", owner, name))
-	if wasHeadless && len(pathNodes) == 2 {
-		p.SetCommit(pathNodes[1], false)
-	}
-}
-
-func (p *projectField) SetCommit(commitID string, headless bool) {
-	if headless {
-		p.setPath("/commit/" + commitID)
-		p.unsetQuery("commitID")
-		p.unsetQuery("branch")
-	} else {
-		p.setQuery("commitID", commitID)
-	}
 }
 
 func (p *projectField) SetBranch(branch string) {
-	if p.isHeadless() {
-		multilog.Error("Ignoring SetBranch when project is headless")
-		return
-	}
 	p.setQuery("branch", branch)
 }
 
-func (p *projectField) pathNodes() []string {
-	return strings.Split(strings.Trim(p.url.Path, "/"), "/")
+func (p *projectField) StripCommitID() {
+	p.unsetQuery("commitID") // legacy
 }
 
-func (p *projectField) isHeadless() bool {
-	return strings.HasPrefix(p.url.Path, "/commit/")
+// Remove this in DX-2307.
+func (p *projectField) LegacySetCommit(commitID string) {
+	p.setQuery("commitID", commitID)
 }
 
 func (p *projectField) setPath(path string) {

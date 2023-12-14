@@ -24,6 +24,7 @@ func newCveCommand(prime *primer.Values) *captain.Command {
 	)
 	cmd.SetGroup(PlatformGroup)
 	cmd.SetAliases("cve")
+	cmd.SetSupportsStructuredOutput()
 	cmd.SetUnstable(true)
 	return cmd
 }
@@ -50,7 +51,7 @@ func newReportCommand(prime *primer.Values) *captain.Command {
 		func(_ *captain.Command, _ []string) error {
 			return report.Run(&params)
 		},
-	)
+	).SetSupportsStructuredOutput()
 }
 
 func newOpenCommand(prime *primer.Values) *captain.Command {
@@ -73,5 +74,5 @@ func newOpenCommand(prime *primer.Values) *captain.Command {
 		func(_ *captain.Command, _ []string) error {
 			return open.Run(params)
 		},
-	).SetDoesNotSupportStructuredOutput()
+	)
 }

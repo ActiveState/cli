@@ -19,6 +19,7 @@ query ($commitID: ID!) {
       expr
     }
     ... on Error{
+      __typename
       message
     }
     ... on NotFound {

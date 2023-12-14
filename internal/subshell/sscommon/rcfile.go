@@ -20,6 +20,7 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	configMediator "github.com/ActiveState/cli/internal/mediators/config"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/pkg/project"
@@ -53,6 +54,10 @@ var (
 	}
 )
 
+func init() {
+	configMediator.RegisterOption(constants.PreservePs1ConfigKey, configMediator.Bool, configMediator.EmptyEvent, configMediator.EmptyEvent)
+}
+
 // Configurable defines an interface to store and get configuration data
 type Configurable interface {
 	Set(string, interface{}) error
@@ -73,9 +78,13 @@ func WriteRcFile(rcTemplateName string, path string, data RcIdentification, env 
 	}
 
 	rcData := map[string]interface{}{
-		"Start": data.Start,
-		"Stop":  data.Stop,
-		"Env":   env,
+		"Start":                 data.Start,
+		"Stop":                  data.Stop,
+		"Env":                   env,
+		"ActivatedEnv":          constants.ActivatedStateEnvVarName,
+		"ConfigFile":            constants.ConfigFileName,
+		"ActivatedNamespaceEnv": constants.ActivatedStateNamespaceEnvVarName,
+		"Default":               data == DefaultID,
 	}
 
 	if err := CleanRcFile(path, data); err != nil {
@@ -191,7 +200,7 @@ func CleanRcFile(path string, data RcIdentification) error {
 }
 
 // SetupShellRcFile create a rc file to activate a runtime (without a project being present)
-func SetupShellRcFile(rcFileName, templateName string, env map[string]string, namespace *project.Namespaced) error {
+func SetupShellRcFile(rcFileName, templateName string, env map[string]string, namespace *project.Namespaced, cfg Configurable) error {
 	tpl, err := assets.ReadFileBytes(fmt.Sprintf("shells/%s", templateName))
 	if err != nil {
 		return errs.Wrap(err, "Failed to read asset")
@@ -208,8 +217,9 @@ func SetupShellRcFile(rcFileName, templateName string, env map[string]string, na
 
 	var out bytes.Buffer
 	rcData := map[string]interface{}{
-		"Env":     env,
-		"Project": projectValue,
+		"Env":         env,
+		"Project":     projectValue,
+		"PreservePs1": cfg.GetBool(constants.PreservePs1ConfigKey),
 	}
 	err = t.Execute(&out, rcData)
 	if err != nil {
@@ -303,15 +313,6 @@ func SetupProjectRcFile(prj *project.Project, templateName, ext string, env map[
 
 	isConsole := ext == ".bat" // yeah this is a dirty cheat, should find something more deterministic
 
-	var activatedMessage string
-	if !prj.IsHeadless() {
-		activatedMessage = locale.Tl("project_activated",
-			"[SUCCESS]✔ Project \"{{.V0}}\" Has Been Activated[/RESET]", prj.Namespace().String())
-	} else {
-		activatedMessage = locale.Tl("headless_project_activated",
-			"[SUCCESS]✔ Virtual Environment Activated[/RESET]")
-	}
-
 	actualEnv := map[string]string{}
 	for k, v := range env {
 		if strings.Contains(v, "\n") {
@@ -322,14 +323,16 @@ func SetupProjectRcFile(prj *project.Project, templateName, ext string, env map[
 	}
 
 	rcData := map[string]interface{}{
-		"Owner":            prj.Owner(),
-		"Name":             prj.Name(),
-		"Env":              actualEnv,
-		"WD":               wd,
-		"UserScripts":      userScripts,
-		"Scripts":          scripts,
-		"ExecName":         constants.CommandName,
-		"ActivatedMessage": colorize.ColorizedOrStrip(activatedMessage, isConsole),
+		"Owner":       prj.Owner(),
+		"Name":        prj.Name(),
+		"Env":         actualEnv,
+		"WD":          wd,
+		"UserScripts": userScripts,
+		"Scripts":     scripts,
+		"ExecName":    constants.CommandName,
+		"ActivatedMessage": colorize.ColorizedOrStrip(locale.Tl("project_activated",
+			"[SUCCESS]✔ Project \"{{.V0}}\" Has Been Activated[/RESET]", prj.Namespace().String()), isConsole),
+		"PreservePs1": cfg.GetBool(constants.PreservePs1ConfigKey),
 	}
 
 	currExec := osutils.Executable()

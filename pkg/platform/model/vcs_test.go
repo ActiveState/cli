@@ -1,4 +1,4 @@
-package model_test
+package model
 
 import (
 	"testing"
@@ -6,8 +6,6 @@ import (
 	gqlModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/stretchr/testify/suite"
-
-	"github.com/ActiveState/cli/pkg/platform/model"
 )
 
 type VCSTestSuite struct {
@@ -15,32 +13,32 @@ type VCSTestSuite struct {
 }
 
 func (suite *VCSTestSuite) TestNamespaceMatch() {
-	suite.True(model.NamespaceMatch("platform", model.NamespacePlatformMatch))
-	suite.False(model.NamespaceMatch(" platform ", model.NamespacePlatformMatch))
-	suite.False(model.NamespaceMatch("not-platform", model.NamespacePlatformMatch))
+	suite.True(NamespaceMatch("platform", NamespacePlatformMatch))
+	suite.False(NamespaceMatch(" platform ", NamespacePlatformMatch))
+	suite.False(NamespaceMatch("not-platform", NamespacePlatformMatch))
 
-	suite.True(model.NamespaceMatch("language", model.NamespaceLanguageMatch))
-	suite.False(model.NamespaceMatch(" language ", model.NamespaceLanguageMatch))
-	suite.False(model.NamespaceMatch("not-language", model.NamespaceLanguageMatch))
+	suite.True(NamespaceMatch("language", NamespaceLanguageMatch))
+	suite.False(NamespaceMatch(" language ", NamespaceLanguageMatch))
+	suite.False(NamespaceMatch("not-language", NamespaceLanguageMatch))
 
-	suite.True(model.NamespaceMatch("language/foo", model.NamespacePackageMatch))
-	suite.False(model.NamespaceMatch(" language/foo", model.NamespacePackageMatch))
+	suite.True(NamespaceMatch("language/foo", NamespacePackageMatch))
+	suite.False(NamespaceMatch(" language/foo", NamespacePackageMatch))
 
-	suite.True(model.NamespaceMatch("bundles/foo", model.NamespaceBundlesMatch))
-	suite.False(model.NamespaceMatch(" bundles/foo", model.NamespaceBundlesMatch))
+	suite.True(NamespaceMatch("bundles/foo", NamespaceBundlesMatch))
+	suite.False(NamespaceMatch(" bundles/foo", NamespaceBundlesMatch))
 
-	suite.True(model.NamespaceMatch("pre-platform-installer", model.NamespacePrePlatformMatch))
-	suite.False(model.NamespaceMatch(" pre-platform-installer ", model.NamespacePrePlatformMatch))
+	suite.True(NamespaceMatch("pre-platform-installer", NamespacePrePlatformMatch))
+	suite.False(NamespaceMatch(" pre-platform-installer ", NamespacePrePlatformMatch))
 }
 
 func (suite *VCSTestSuite) TestChangesetFromRequirements() {
 	tests := []struct {
-		op   model.Operation
+		op   Operation
 		reqs []*gqlModel.Requirement
-		want model.Changeset
+		want Changeset
 	}{
 		{
-			model.OperationAdded,
+			OperationAdded,
 			[]*gqlModel.Requirement{
 				{
 					Checkpoint: mono_models.Checkpoint{
@@ -57,15 +55,15 @@ func (suite *VCSTestSuite) TestChangesetFromRequirements() {
 					},
 				},
 			},
-			model.Changeset{
+			Changeset{
 				{
-					Operation:         string(model.OperationAdded),
+					Operation:         string(OperationAdded),
 					Namespace:         "a-name",
 					Requirement:       "a-req",
 					VersionConstraint: "a-vercon",
 				},
 				{
-					Operation:         string(model.OperationAdded),
+					Operation:         string(OperationAdded),
 					Namespace:         "b-name",
 					Requirement:       "b-req",
 					VersionConstraint: "b-vercon",
@@ -73,7 +71,7 @@ func (suite *VCSTestSuite) TestChangesetFromRequirements() {
 			},
 		},
 		{
-			model.OperationRemoved,
+			OperationRemoved,
 			[]*gqlModel.Requirement{
 				{
 					Checkpoint: mono_models.Checkpoint{
@@ -97,21 +95,21 @@ func (suite *VCSTestSuite) TestChangesetFromRequirements() {
 					},
 				},
 			},
-			model.Changeset{
+			Changeset{
 				{
-					Operation:         string(model.OperationRemoved),
+					Operation:         string(OperationRemoved),
 					Namespace:         "x-name",
 					Requirement:       "x-req",
 					VersionConstraint: "x-vercon",
 				},
 				{
-					Operation:         string(model.OperationRemoved),
+					Operation:         string(OperationRemoved),
 					Namespace:         "y-name",
 					Requirement:       "y-req",
 					VersionConstraint: "y-vercon",
 				},
 				{
-					Operation:         string(model.OperationRemoved),
+					Operation:         string(OperationRemoved),
 					Namespace:         "z-name",
 					Requirement:       "z-req",
 					VersionConstraint: "z-vercon",
@@ -121,7 +119,41 @@ func (suite *VCSTestSuite) TestChangesetFromRequirements() {
 	}
 
 	for _, tt := range tests {
-		got := model.ChangesetFromRequirements(tt.op, tt.reqs)
+		got := ChangesetFromRequirements(tt.op, tt.reqs)
+		suite.Equal(tt.want, got)
+	}
+}
+
+func (suite *VCSTestSuite) TestVersionStringToConstraints() {
+	tests := []struct {
+		version string
+		want    []*mono_models.Constraint
+	}{
+		{
+			"3.10.10",
+			[]*mono_models.Constraint{
+				{Comparator: "eq", Version: "3.10.10"},
+			},
+		},
+		{
+			"3.10.x",
+			[]*mono_models.Constraint{
+				{Comparator: "gte", Version: "3.10"},
+				{Comparator: "lt", Version: "3.11"},
+			},
+		},
+		{
+			"2.x",
+			[]*mono_models.Constraint{
+				{Comparator: "gte", Version: "2"},
+				{Comparator: "lt", Version: "3"},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		got, err := versionStringToConstraints(tt.version)
+		suite.NoError(err)
 		suite.Equal(tt.want, got)
 	}
 }
@@ -129,4 +161,3 @@ func (suite *VCSTestSuite) TestChangesetFromRequirements() {
 func TestVCSTestSuite(t *testing.T) {
 	suite.Run(t, new(VCSTestSuite))
 }
-

@@ -5,53 +5,66 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
+
+	"github.com/gofrs/flock"
 
 	"github.com/ActiveState/cli/internal/analytics"
 	anaConst "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/analytics/dimensions"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/graph"
 	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
-	"github.com/gofrs/flock"
+)
+
+const (
+	CfgKeyInstallVersion = "state_tool_installer_version"
+	InstallerName        = "state-installer" + osutils.ExeExtension
 )
 
 type ErrorInProgress struct{ *locale.LocalizedError }
 
-const CfgKeyInstallVersion = "state_tool_installer_version"
-
 var errPrivilegeMistmatch = errs.New("Privilege mismatch")
 
+type Origin struct {
+	Channel string
+	Version string
+}
+
+func NewOriginDefault() *Origin {
+	return &Origin{
+		Channel: constants.BranchName,
+		Version: constants.Version,
+	}
+}
+
 type AvailableUpdate struct {
-	Version  string  `json:"version"`
 	Channel  string  `json:"channel"`
+	Version  string  `json:"version"`
 	Platform string  `json:"platform"`
 	Path     string  `json:"path"`
 	Sha256   string  `json:"sha256"`
 	Tag      *string `json:"tag,omitempty"`
-	url      string
-	tmpDir   string
-	an       analytics.Dispatcher
 }
 
-func NewAvailableUpdate(version, channel, platform, path, sha256, tag string) *AvailableUpdate {
+func NewAvailableUpdate(channel, version, platform, path, sha256, tag string) *AvailableUpdate {
 	var t *string
 	if tag != "" {
 		t = &tag
 	}
+
 	return &AvailableUpdate{
-		Version:  version,
 		Channel:  channel,
+		Version:  version,
 		Platform: platform,
 		Path:     path,
 		Sha256:   sha256,
@@ -59,18 +72,66 @@ func NewAvailableUpdate(version, channel, platform, path, sha256, tag string) *A
 	}
 }
 
-const InstallerName = "state-installer" + osutils.ExeExt
+func NewAvailableUpdateFromGraph(au *graph.AvailableUpdate) *AvailableUpdate {
+	if au == nil {
+		return &AvailableUpdate{}
+	}
+	return NewAvailableUpdate(au.Channel, au.Version, au.Platform, au.Path, au.Sha256, "")
+}
 
-func (u *AvailableUpdate) DownloadAndUnpack() (string, error) {
+func (u *AvailableUpdate) IsValid() bool {
+	return u != nil && u.Channel != "" && u.Version != "" && u.Platform != "" && u.Path != "" && u.Sha256 != ""
+}
+
+func (u *AvailableUpdate) Equals(origin *Origin) bool {
+	return u.Channel == origin.Channel && u.Version == origin.Version
+}
+
+type UpdateInstaller struct {
+	AvailableUpdate *AvailableUpdate
+	Origin          *Origin
+
+	url    string
+	tmpDir string
+	an     analytics.Dispatcher
+}
+
+// NewUpdateInstallerByOrigin returns an instance of Update. Allowing origin to
+// be set is useful for testing.
+func NewUpdateInstallerByOrigin(an analytics.Dispatcher, origin *Origin, avUpdate *AvailableUpdate) *UpdateInstaller {
+	apiUpdateURL := constants.APIUpdateURL
+	if url, ok := os.LookupEnv("_TEST_UPDATE_URL"); ok {
+		apiUpdateURL = url
+	}
+
+	return &UpdateInstaller{
+		AvailableUpdate: avUpdate,
+		Origin:          origin,
+		url:             apiUpdateURL + "/" + avUpdate.Path,
+		an:              an,
+	}
+}
+
+func NewUpdateInstaller(an analytics.Dispatcher, avUpdate *AvailableUpdate) *UpdateInstaller {
+	return NewUpdateInstallerByOrigin(an, NewOriginDefault(), avUpdate)
+}
+
+func (u *UpdateInstaller) ShouldInstall() bool {
+	return u.AvailableUpdate.IsValid() &&
+		(os.Getenv(constants.ForceUpdateEnvVarName) == "true" ||
+			!u.AvailableUpdate.Equals(u.Origin))
+}
+
+func (u *UpdateInstaller) DownloadAndUnpack() (string, error) {
 	if u.tmpDir != "" {
 		// To facilitate callers explicitly calling this method we cache the tmp dir and just return it if it's set
 		return u.tmpDir, nil
 	}
 
-	tmpDir, err := ioutil.TempDir("", "state-update")
+	tmpDir, err := os.MkdirTemp("", "state-update")
 	if err != nil {
 		msg := anaConst.UpdateErrorTempDir
-		u.analyticsEvent(anaConst.ActUpdateDownload, anaConst.UpdateLabelFailed, u.Version, msg)
+		u.analyticsEvent(anaConst.ActUpdateDownload, anaConst.UpdateLabelFailed, msg)
 		return "", errs.Wrap(err, msg)
 	}
 
@@ -82,18 +143,18 @@ func (u *AvailableUpdate) DownloadAndUnpack() (string, error) {
 	return u.tmpDir, nil
 }
 
-func (u *AvailableUpdate) prepareInstall(installTargetPath string, args []string) (string, []string, error) {
+func (u *UpdateInstaller) prepareInstall(installTargetPath string, args []string) (string, []string, error) {
 	sourcePath, err := u.DownloadAndUnpack()
 	if err != nil {
 		return "", nil, err
 	}
-	u.analyticsEvent(anaConst.ActUpdateDownload, "success", u.Version, "")
+	u.analyticsEvent(anaConst.ActUpdateDownload, anaConst.UpdateLabelSuccess, "")
 
 	installerPath := filepath.Join(sourcePath, InstallerName)
 	logging.Debug("Using installer: %s", installerPath)
 	if !fileutils.FileExists(installerPath) {
 		msg := anaConst.UpdateErrorNoInstaller
-		u.analyticsEvent(anaConst.ActUpdateInstall, anaConst.UpdateLabelFailed, u.Version, msg)
+		u.analyticsEvent(anaConst.ActUpdateInstall, anaConst.UpdateLabelFailed, msg)
 		return "", nil, errs.Wrap(err, msg)
 	}
 
@@ -101,7 +162,7 @@ func (u *AvailableUpdate) prepareInstall(installTargetPath string, args []string
 		installTargetPath, err = installation.InstallPathFromExecPath()
 		if err != nil {
 			msg := anaConst.UpdateErrorInstallPath
-			u.analyticsEvent(anaConst.ActUpdateInstall, anaConst.UpdateLabelFailed, u.Version, msg)
+			u.analyticsEvent(anaConst.ActUpdateInstall, anaConst.UpdateLabelFailed, msg)
 			return "", nil, errs.Wrap(err, msg)
 		}
 	}
@@ -111,8 +172,23 @@ func (u *AvailableUpdate) prepareInstall(installTargetPath string, args []string
 	return installerPath, args, nil
 }
 
-func (u *AvailableUpdate) InstallBlocking(installTargetPath string, args ...string) error {
+func (u *UpdateInstaller) InstallBlocking(installTargetPath string, args ...string) (rerr error) {
 	logging.Debug("InstallBlocking path: %s, args: %v", installTargetPath, args)
+
+	// Report any failure to analytics.
+	defer func() {
+		if rerr == nil {
+			return
+		}
+		switch {
+		case os.IsPermission(rerr):
+			u.analyticsEvent(anaConst.ActUpdateInstall, anaConst.UpdateLabelFailed, "Could not update the state tool due to insufficient permissions.")
+		case errs.Matches(rerr, &ErrorInProgress{}):
+			u.analyticsEvent(anaConst.ActUpdateInstall, anaConst.UpdateLabelFailed, anaConst.UpdateErrorInProgress)
+		default:
+			u.analyticsEvent(anaConst.ActUpdateInstall, anaConst.UpdateLabelFailed, anaConst.UpdateErrorInstallFailed)
+		}
+	}()
 
 	err := checkAdmin()
 	if errors.Is(err, errPrivilegeMistmatch) {
@@ -145,27 +221,29 @@ func (u *AvailableUpdate) InstallBlocking(installTargetPath string, args ...stri
 	}
 
 	var envs []string
-	if u.Tag != nil {
-		envs = append(envs, fmt.Sprintf("%s=%s", constants.UpdateTagEnvVarName, *u.Tag))
+	if u.AvailableUpdate.Tag != nil {
+		envs = append(envs, fmt.Sprintf("%s=%s", constants.UpdateTagEnvVarName, *u.AvailableUpdate.Tag))
 	}
 
-	_, _, err = exeutils.ExecuteAndPipeStd(installerPath, args, envs)
+	_, _, err = osutils.ExecuteAndPipeStd(installerPath, args, envs)
 	if err != nil {
 		return errs.Wrap(err, "Could not run installer")
 	}
+
+	u.analyticsEvent(anaConst.ActUpdateInstall, anaConst.UpdateLabelSuccess, "")
 
 	return nil
 }
 
 // InstallWithProgress will fetch the update and run its installer
 // Leave installTargetPath empty to use the default/existing installation path
-func (u *AvailableUpdate) InstallWithProgress(installTargetPath string, progressCb func(string, bool)) (*os.Process, error) {
+func (u *UpdateInstaller) InstallWithProgress(installTargetPath string, progressCb func(string, bool)) (*os.Process, error) {
 	installerPath, args, err := u.prepareInstall(installTargetPath, []string{})
 	if err != nil {
 		return nil, err
 	}
 
-	proc, err := exeutils.ExecuteAndForget(installerPath, args, func(cmd *exec.Cmd) error {
+	proc, err := osutils.ExecuteAndForget(installerPath, args, func(cmd *exec.Cmd) error {
 		var stdout io.ReadCloser
 		var stderr io.ReadCloser
 		if stderr, err = cmd.StderrPipe(); err != nil {
@@ -174,8 +252,8 @@ func (u *AvailableUpdate) InstallWithProgress(installTargetPath string, progress
 		if stdout, err = cmd.StdoutPipe(); err != nil {
 			return errs.Wrap(err, "Could not obtain stderr pipe")
 		}
-		if u.Tag != nil {
-			cmd.Env = append(os.Environ(), fmt.Sprintf("%s=%s", constants.UpdateTagEnvVarName, *u.Tag))
+		if u.AvailableUpdate.Tag != nil {
+			cmd.Env = append(os.Environ(), fmt.Sprintf("%s=%s", constants.UpdateTagEnvVarName, *u.AvailableUpdate.Tag))
 		}
 		go func() {
 			scanner := bufio.NewScanner(io.MultiReader(stderr, stdout))
@@ -197,15 +275,15 @@ func (u *AvailableUpdate) InstallWithProgress(installTargetPath string, progress
 	return proc, nil
 }
 
-func (u *AvailableUpdate) analyticsEvent(action, label, version, msg string) {
-
-	dims := &dimensions.Values{
-		TargetVersion: ptr.To(version),
+func (u *UpdateInstaller) analyticsEvent(action, label, msg string) {
+	dims := &dimensions.Values{}
+	if u.AvailableUpdate != nil {
+		dims.TargetVersion = ptr.To(u.AvailableUpdate.Version)
 	}
 
 	if msg != "" {
 		dims.Error = ptr.To(msg)
 	}
 
-	u.an.EventWithLabel(anaConst.CatUpdates, anaConst.ActUpdateDownload, label, dims)
+	u.an.EventWithLabel(anaConst.CatUpdates, action, label, dims)
 }

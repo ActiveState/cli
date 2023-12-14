@@ -32,7 +32,7 @@ import (
 
 type Reporter interface {
 	ID() string
-	Event(category, action, label string, dimensions *dimensions.Values) error
+	Event(category, action, source, label string, dimensions *dimensions.Values) error
 }
 
 // Client instances send analytics events to GA and S3 endpoints without delay. It is only supposed to be used inside the `state-svc`.  All other processes should use the DefaultClient.
@@ -45,16 +45,18 @@ type Client struct {
 	reporters        []Reporter
 	sequence         int
 	auth             *authentication.Auth
+	source           string
 }
 
 var _ analytics.Dispatcher = &Client{}
 
 // New initializes the analytics instance with all custom dimensions known at this time
-func New(cfg *config.Instance, auth *authentication.Auth, out output.Outputer) *Client {
+func New(source string, cfg *config.Instance, auth *authentication.Auth, out output.Outputer) *Client {
 	a := &Client{
 		eventWaitGroup: &sync.WaitGroup{},
 		sendReports:    true,
 		auth:           auth,
+		source:         source,
 	}
 
 	installSource, err := storage.InstallSource()
@@ -115,6 +117,7 @@ func New(cfg *config.Instance, auth *authentication.Auth, out output.Outputer) *
 		Sequence:      ptr.To(0),
 		CI:            ptr.To(condition.OnCI()),
 		Interactive:   ptr.To(interactive),
+		ActiveStateCI: ptr.To(condition.InActiveStateCI()),
 	}
 
 	a.customDimensions = customDimensions
@@ -149,13 +152,13 @@ func (a *Client) Wait() {
 }
 
 // Events returns a channel to feed eventData directly to the report loop
-func (a *Client) report(category, action, label string, dimensions *dimensions.Values) {
+func (a *Client) report(category, action, source, label string, dimensions *dimensions.Values) {
 	if !a.sendReports {
 		return
 	}
 
 	for _, reporter := range a.reporters {
-		if err := reporter.Event(category, action, label, dimensions); err != nil {
+		if err := reporter.Event(category, action, source, label, dimensions); err != nil {
 			logging.Debug(
 				"Reporter failed: %s, category: %s, action: %s, error: %s",
 				reporter.ID(), category, action, errs.JoinMessage(err),
@@ -164,7 +167,7 @@ func (a *Client) report(category, action, label string, dimensions *dimensions.V
 	}
 }
 
-func (a *Client) Event(category string, action string, dims ...*dimensions.Values) {
+func (a *Client) Event(category, action string, dims ...*dimensions.Values) {
 	a.EventWithLabel(category, action, "", dims...)
 }
 
@@ -179,7 +182,20 @@ func mergeDimensions(target *dimensions.Values, dims ...*dimensions.Values) *dim
 	return actualDims
 }
 
-func (a *Client) EventWithLabel(category string, action, label string, dims ...*dimensions.Values) {
+func (a *Client) EventWithLabel(category, action, label string, dims ...*dimensions.Values) {
+	a.EventWithSourceAndLabel(category, action, a.source, label, dims...)
+}
+
+// EventWithSource should only be used by clients forwarding events on behalf of another source.
+// Otherwise, use Event().
+func (a *Client) EventWithSource(category, action, source string, dims ...*dimensions.Values) {
+	a.EventWithSourceAndLabel(category, action, source, "", dims...)
+}
+
+// EventWithSourceAndLabel should only be used by clients forwarding events on behalf of another
+// source (for example, state-svc forwarding events on behalf of State Tool or an executor).
+// Otherwise, use EventWithLabel().
+func (a *Client) EventWithSourceAndLabel(category, action, source, label string, dims ...*dimensions.Values) {
 	if a.customDimensions == nil {
 		if condition.InUnitTest() {
 			return
@@ -196,9 +212,13 @@ func (a *Client) EventWithLabel(category string, action, label string, dims ...*
 	}
 
 	a.customDimensions.Sequence = ptr.To(a.sequence)
-	a.sequence++
 
 	actualDims := mergeDimensions(a.customDimensions, dims...)
+
+	if a.sequence == *actualDims.Sequence {
+		// Increment the sequence number unless dims overrides it (e.g. heartbeats use -1).
+		a.sequence++
+	}
 
 	if err := actualDims.PreProcess(); err != nil {
 		multilog.Critical("Analytics dimensions cannot be processed properly: %s", errs.JoinMessage(err))
@@ -209,7 +229,7 @@ func (a *Client) EventWithLabel(category string, action, label string, dims ...*
 	go func() {
 		defer a.eventWaitGroup.Done()
 		defer func() { handlePanics(recover(), debug.Stack()) }()
-		a.report(category, action, label, actualDims)
+		a.report(category, action, source, label, actualDims)
 	}()
 }
 

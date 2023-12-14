@@ -12,6 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/subshell/sscommon"
+	"github.com/ActiveState/cli/internal/subshell/termecho"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
@@ -132,9 +133,9 @@ func (v *SubShell) EnsureRcFileExists() error {
 }
 
 // SetupShellRcFile - subshell.SubShell
-func (v *SubShell) SetupShellRcFile(targetDir string, env map[string]string, namespace *project.Namespaced) error {
+func (v *SubShell) SetupShellRcFile(targetDir string, env map[string]string, namespace *project.Namespaced, cfg sscommon.Configurable) error {
 	env = sscommon.EscapeEnv(env)
-	return sscommon.SetupShellRcFile(filepath.Join(targetDir, "shell.bat"), "config_global.bat", env, namespace)
+	return sscommon.SetupShellRcFile(filepath.Join(targetDir, "shell.bat"), "config_global.bat", env, namespace, cfg)
 }
 
 // SetEnv - see subshell.SetEnv
@@ -202,4 +203,12 @@ func (v *SubShell) IsActive() bool {
 
 func (v *SubShell) IsAvailable() bool {
 	return runtime.GOOS == "windows"
+}
+
+func (v *SubShell) TurnOffEcho() {
+	termecho.Off()
+}
+
+func (v *SubShell) TurnOnEcho() {
+	termecho.On()
 }

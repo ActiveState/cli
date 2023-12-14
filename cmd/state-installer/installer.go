@@ -9,11 +9,9 @@ import (
 
 	svcApp "github.com/ActiveState/cli/cmd/state-svc/app"
 	svcAutostart "github.com/ActiveState/cli/cmd/state-svc/autostart"
-	anaConst "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/installmgr"
@@ -30,10 +28,9 @@ import (
 )
 
 type Installer struct {
-	out          output.Outputer
-	cfg          *config.Instance
-	payloadPath  string
-	sessionToken string
+	out         output.Outputer
+	cfg         *config.Instance
+	payloadPath string
 	*Params
 }
 
@@ -49,13 +46,6 @@ func NewInstaller(cfg *config.Instance, out output.Outputer, payloadPath string,
 }
 
 func (i *Installer) Install() (rerr error) {
-	// Store sessionToken to config
-	if i.sessionToken != "" && i.cfg.GetString(anaConst.CfgSessionToken) == "" {
-		if err := i.cfg.Set(anaConst.CfgSessionToken, i.sessionToken); err != nil {
-			return errs.Wrap(err, "Failed to set session token")
-		}
-	}
-
 	// Store update tag
 	if i.updateTag != "" {
 		if err := i.cfg.Set(updater.CfgUpdateTag, i.updateTag); err != nil {
@@ -96,6 +86,12 @@ func (i *Installer) Install() (rerr error) {
 
 	// Copy all the files except for the current executable
 	if err := fileutils.CopyAndRenameFiles(i.payloadPath, i.path, filepath.Base(osutils.Executable())); err != nil {
+		if osutils.IsAccessDeniedError(err) {
+			// If we got to this point, we could not copy and rename over existing files.
+			// This is a permission issue. (We have an installer test for copying and renaming over a file
+			// in use, which does not raise an error.)
+			return locale.WrapInputError(err, "err_update_access_denied", "", errs.JoinMessage(err))
+		}
 		return errs.Wrap(err, "Failed to copy installation files to dir %s. Error received: %s", i.path, errs.JoinMessage(err))
 	}
 
@@ -130,7 +126,7 @@ func (i *Installer) Install() (rerr error) {
 
 	// Run state _prepare after updates to facilitate anything the new version of the state tool might need to set up
 	// Yes this is awkward, followup story here: https://www.pivotaltracker.com/story/show/176507898
-	if stdout, stderr, err := exeutils.ExecSimple(stateExec, []string{"_prepare"}, []string{}); err != nil {
+	if stdout, stderr, err := osutils.ExecSimple(stateExec, []string{"_prepare"}, []string{}); err != nil {
 		multilog.Error("_prepare failed after update: %v\n\nstdout: %s\n\nstderr: %s", err, stdout, stderr)
 	}
 
@@ -145,9 +141,6 @@ func (i *Installer) InstallPath() string {
 
 // sanitizeInput cleans up the input and inserts fallback values
 func (i *Installer) sanitizeInput() error {
-	if sessionToken, ok := os.LookupEnv(constants.SessionTokenEnvVarName); ok {
-		i.sessionToken = sessionToken
-	}
 	if tag, ok := os.LookupEnv(constants.UpdateTagEnvVarName); ok {
 		i.updateTag = tag
 	}
@@ -217,7 +210,7 @@ func detectCorruptedInstallDir(path string) error {
 }
 
 func isStateExecutable(name string) bool {
-	if name == constants.StateCmd+exeutils.Extension || name == constants.StateSvcCmd+exeutils.Extension {
+	if name == constants.StateCmd+osutils.ExeExtension || name == constants.StateSvcCmd+osutils.ExeExtension {
 		return true
 	}
 	return false
@@ -229,7 +222,7 @@ func installedOnPath(installRoot, branch string) (bool, string, error) {
 	}
 
 	// This is not using appinfo on purpose because we want to deal with legacy installation formats, which appinfo does not
-	stateCmd := constants.StateCmd + exeutils.Extension
+	stateCmd := constants.StateCmd + osutils.ExeExtension
 
 	// Check for state.exe in branch, root and bin dir
 	// This is to handle older state tool versions that gave incompatible input paths

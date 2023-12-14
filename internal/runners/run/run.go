@@ -10,10 +10,9 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
-	"github.com/ActiveState/cli/internal/runbits/rtusage"
+	"github.com/ActiveState/cli/internal/runbits/checker"
 	"github.com/ActiveState/cli/internal/scriptrun"
 	"github.com/ActiveState/cli/internal/subshell"
-	"github.com/ActiveState/cli/pkg/cmdlets/checker"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
@@ -61,10 +60,9 @@ func (r *Run) Run(name string, args []string) error {
 		return locale.NewInputError("err_no_project")
 	}
 
-	rtusage.PrintRuntimeUsage(r.svcModel, r.out, r.proj.Owner())
-	checker.RunUpdateNotifier(r.svcModel, r.out)
+	checker.RunUpdateNotifier(r.analytics, r.svcModel, r.out)
 
-	r.out.Notice(locale.Tl("operating_message", "", r.proj.NamespaceString(), r.proj.Dir()))
+	r.out.Notice(locale.Tr("operating_message", r.proj.NamespaceString(), r.proj.Dir()))
 
 	if name == "" {
 		return locale.NewError("error_state_run_undefined_name")
@@ -93,7 +91,8 @@ func (r *Run) Run(name string, args []string) error {
 		r.out.Notice(locale.Tl(
 			"run_warn_deprecated_script_without_language",
 			"Scripts without a defined language currently fall back to using the default shell for your platform. This fallback mechanic will soon stop working and a language will need to be explicitly defined for each script. Please configure the '[ACTIONABLE]language[/RESET]' field with a valid option (one of [ACTIONABLE]{{.V0}}[/RESET])",
-			strings.Join(language.RecognizedNames(), ", ")))
+			strings.Join(language.RecognizedNames(), ", "),
+		))
 	}
 
 	r.out.Notice(output.Title(locale.Tl("script_output", "Script Output")))

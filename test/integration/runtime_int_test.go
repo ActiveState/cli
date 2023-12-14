@@ -5,11 +5,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ActiveState/cli/internal/exeutils"
+	"github.com/ActiveState/cli/internal/constants"
+	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
+	"github.com/ActiveState/termtest"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -52,10 +54,10 @@ import (
 		defer os.Setenv(constants.DisableRuntime, value)
 	}
 
-	rt, err := runtime.New(offlineTarget, analytics, nil)
+	rt, err := runtime.New(offlineTarget, analytics, nil, nil)
 	suite.Require().Error(err)
 	suite.Assert().True(runtime.IsNeedsUpdateError(err), "runtime should require an update")
-	err = rt.Update(nil, eventHandler)
+	err = rt.Update(eventHandler)
 	suite.Require().NoError(err)
 
 	suite.Assert().False(mockProgress.BuildStartedCalled)
@@ -86,21 +88,21 @@ func (suite *RuntimeIntegrationTestSuite) TestInterruptSetup() {
 	defer ts.Close()
 
 	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("checkout", "ActiveState-CLI/test-interrupt-small-python#863c45e2-3626-49b6-893c-c15e85a17241", "."),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.OptArgs("checkout", "ActiveState-CLI/test-interrupt-small-python#863c45e2-3626-49b6-893c-c15e85a17241", "."),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
-	cp.Expect("Checked out project")
+	cp.Expect("Checked out project", e2e.RuntimeSourcingTimeoutOpt)
 
 	targetDir := target.ProjectDirToTargetDir(ts.Dirs.Work, ts.Dirs.Cache)
-	pythonExe := filepath.Join(setup.ExecDir(targetDir), "python3"+exeutils.Extension)
+	pythonExe := filepath.Join(setup.ExecDir(targetDir), "python3"+osutils.ExeExtension)
 	cp = ts.SpawnCmd(pythonExe, "-c", `print(__import__('sys').version)`)
 	cp.Expect("3.8.8")
 	cp.ExpectExitCode(0)
 
 	cp = ts.SpawnWithOpts(
-		e2e.WithArgs("pull"),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false",
-			"ACTIVESTATE_CLI_RUNTIME_SETUP_WAIT=true"),
+		e2e.OptArgs("pull"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false",
+			constants.RuntimeSetupWaitEnvVarName+"=true"),
 	)
 	time.Sleep(30 * time.Second)
 	cp.SendCtrlC() // cancel pull/update
@@ -108,6 +110,37 @@ func (suite *RuntimeIntegrationTestSuite) TestInterruptSetup() {
 	cp = ts.SpawnCmd(pythonExe, "-c", `print(__import__('sys').version)`)
 	cp.Expect("3.8.8") // current runtime still works
 	cp.ExpectExitCode(0)
+}
+
+func (suite *RuntimeIntegrationTestSuite) TestInUse() {
+	suite.OnlyRunForTags(tagsuite.Critical)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.Spawn("checkout", "ActiveState-CLI/Perl-5.32", ".")
+	cp.Expect("Skipping runtime setup")
+	cp.ExpectExitCode(0)
+
+	cp = ts.SpawnWithOpts(
+		e2e.OptArgs("shell"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
+	)
+	cp.Expect("Activated", e2e.RuntimeSourcingTimeoutOpt)
+	cp.SendLine("perl")
+	time.Sleep(1 * time.Second) // allow time for perl to start up
+
+	cp2 := ts.SpawnWithOpts(
+		e2e.OptArgs("install", "DateTime"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
+	)
+	cp2.Expect("currently in use", termtest.OptExpectTimeout(15*time.Second))
+	cp2.Expect("perl")
+	cp2.ExpectNotExitCode(0)
+	ts.IgnoreLogErrors()
+
+	cp.SendCtrlC()
+	cp.SendLine("exit")
+	cp.ExpectExit() // code can vary depending on shell; just assert process finished
 }
 
 func TestRuntimeIntegrationTestSuite(t *testing.T) {

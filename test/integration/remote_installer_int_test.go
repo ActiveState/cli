@@ -5,9 +5,9 @@ import (
 	"path/filepath"
 	"testing"
 
+	anaConst "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/environment"
-	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
@@ -45,7 +45,7 @@ func (suite *RemoteInstallIntegrationTestSuite) TestInstall() {
 			suite.setupTest(ts)
 
 			installPath := filepath.Join(ts.Dirs.Work, "install")
-			stateExePath := filepath.Join(installPath, "bin", constants.StateCmd+exeutils.Extension)
+			stateExePath := filepath.Join(installPath, "bin", constants.StateCmd+osutils.ExeExtension)
 
 			args := []string{}
 			if tt.Version != "" {
@@ -60,25 +60,25 @@ func (suite *RemoteInstallIntegrationTestSuite) TestInstall() {
 
 			cp := ts.SpawnCmdWithOpts(
 				suite.remoteInstallerExe,
-				e2e.WithArgs(args...),
-				e2e.AppendEnv(constants.InstallPathOverrideEnvVarName+"="+installPath),
-				e2e.AppendEnv(fmt.Sprintf("%s=%s", constants.AppInstallDirOverrideEnvVarName, appInstallDir)),
+				e2e.OptArgs(args...),
+				e2e.OptAppendEnv(constants.InstallPathOverrideEnvVarName+"="+installPath),
+				e2e.OptAppendEnv(fmt.Sprintf("%s=%s", constants.AppInstallDirOverrideEnvVarName, appInstallDir)),
 			)
 
 			cp.Expect("Terms of Service")
-			cp.SendLine("y")
+			cp.SendLine("Y")
 			cp.Expect("Installing")
 			cp.Expect("Installation Complete")
 			cp.Expect("Press ENTER to exit")
-			cp.SendLine("")
+			cp.SendEnter()
 			cp.ExpectExitCode(0)
 
 			suite.Require().FileExists(stateExePath)
 
 			cp = ts.SpawnCmdWithOpts(
 				stateExePath,
-				e2e.WithArgs("--version"),
-				e2e.AppendEnv(constants.InstallPathOverrideEnvVarName+"="+installPath),
+				e2e.OptArgs("--version"),
+				e2e.OptAppendEnv(constants.InstallPathOverrideEnvVarName+"="+installPath),
 			)
 			if tt.Version != "" {
 				cp.Expect("Version " + tt.Version)
@@ -88,6 +88,19 @@ func (suite *RemoteInstallIntegrationTestSuite) TestInstall() {
 			}
 			cp.Expect("Built")
 			cp.ExpectExitCode(0)
+
+			// Verify analytics reported the correct sessionToken.
+			sessionTokenFound := false
+			events := parseAnalyticsEvents(suite, ts)
+			suite.Require().NotEmpty(events)
+			for _, event := range events {
+				if event.Category == anaConst.CatUpdates && event.Dimensions != nil {
+					suite.Assert().Contains(*event.Dimensions.SessionToken, constants.RemoteInstallerVersion)
+					sessionTokenFound = true
+					break
+				}
+			}
+			suite.Assert().True(sessionTokenFound, "sessionToken was not found in analytics")
 		})
 	}
 }
@@ -95,7 +108,7 @@ func (suite *RemoteInstallIntegrationTestSuite) TestInstall() {
 func (s *RemoteInstallIntegrationTestSuite) setupTest(ts *e2e.Session) {
 	root := environment.GetRootPathUnsafe()
 	buildDir := fileutils.Join(root, "build")
-	installerExe := filepath.Join(buildDir, constants.StateRemoteInstallerCmd+osutils.ExeExt)
+	installerExe := filepath.Join(buildDir, constants.StateRemoteInstallerCmd+osutils.ExeExtension)
 	if !fileutils.FileExists(installerExe) {
 		s.T().Fatal("E2E tests require a state-remote-installer binary. Run `state run build-installer`.")
 	}

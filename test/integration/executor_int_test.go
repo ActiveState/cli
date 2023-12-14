@@ -5,11 +5,12 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/stretchr/testify/suite"
+
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/exeutils"
+	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
-	"github.com/stretchr/testify/suite"
 )
 
 type ExecutorIntegrationTestSuite struct {
@@ -27,17 +28,17 @@ func (suite *ExecutorIntegrationTestSuite) TestExecutorForwards() {
 	defer ts.Close()
 
 	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("checkout", "ActiveState-CLI/Python3"),
+		e2e.OptArgs("checkout", "ActiveState-CLI/Python3"),
 	)
 	cp.Expect("Checked out project")
 	cp.ExpectExitCode(0)
 
 	cp = ts.SpawnWithOpts(
-		e2e.WithArgs("shell", "ActiveState-CLI/Python3"),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.OptArgs("shell", "ActiveState-CLI/Python3"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
-	cp.Expect("Activated")
-	cp.WaitForInput()
+	cp.Expect("Activated", e2e.RuntimeSourcingTimeoutOpt)
+	cp.ExpectInput()
 
 	cp.SendLine("python3 -c \"import sys; print(sys.copyright)\"")
 	cp.Expect("ActiveState Software Inc.")
@@ -54,17 +55,17 @@ func (suite *ExecutorIntegrationTestSuite) TestExecutorExitCode() {
 	defer ts.Close()
 
 	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("checkout", "ActiveState-CLI/Python3"),
+		e2e.OptArgs("checkout", "ActiveState-CLI/Python3"),
 	)
 	cp.Expect("Checked out project")
 	cp.ExpectExitCode(0)
 
 	cp = ts.SpawnWithOpts(
-		e2e.WithArgs("shell", "ActiveState-CLI/Python3"),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.OptArgs("shell", "ActiveState-CLI/Python3"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
-	cp.Expect("Activated")
-	cp.WaitForInput()
+	cp.Expect("Activated", e2e.RuntimeSourcingTimeoutOpt)
+	cp.ExpectInput()
 
 	cp.SendLine("python3 -c \"exit(42)\"")
 
@@ -82,7 +83,7 @@ func (suite *ExecutorIntegrationTestSuite) TestExecutorSizeOnDisk() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	execFilePath := filepath.Join(ts.Dirs.Bin, constants.StateExecutorCmd+exeutils.Extension)
+	execFilePath := filepath.Join(ts.Dirs.Bin, constants.StateExecutorCmd+osutils.ExeExtension)
 	fi, err := os.Stat(execFilePath)
 	suite.Require().NoError(err, "should be able to obtain executor file info")
 

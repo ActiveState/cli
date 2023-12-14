@@ -71,7 +71,7 @@ type SubShell interface {
 	EnsureRcFileExists() error
 
 	// SetupShellRcFile writes a script or source-able file that updates the environment variables and sets the prompt
-	SetupShellRcFile(string, map[string]string, *project.Namespaced) error
+	SetupShellRcFile(string, map[string]string, *project.Namespaced, sscommon.Configurable) error
 
 	// Shell returns an identifiable string representing the shell, eg. bash, zsh
 	Shell() string
@@ -84,6 +84,12 @@ type SubShell interface {
 
 	// IsAvailable returns whether the shell is available on the system
 	IsAvailable() bool
+
+	// TurnOffEcho turns off input echoing.
+	TurnOffEcho()
+
+	// TurnOnEcho turns on input echoing.
+	TurnOnEcho()
 }
 
 // New returns the subshell relevant to the current process, but does not activate it
@@ -219,7 +225,9 @@ func DetectShell(cfg sscommon.Configurable) (string, string) {
 
 	if !isKnownShell {
 		logging.Debug("Unsupported shell: %s, defaulting to OS default.", name)
-		rollbar.Error("Unsupported shell: %s", name) // we just want to know what this person is using
+		if !strings.EqualFold(name, "powershell") {
+			rollbar.Error("Unsupported shell: %s", name) // we just want to know what this person is using
+		}
 		switch runtime.GOOS {
 		case "windows":
 			name = cmd.Name

@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ActiveState/termtest"
 	goversion "github.com/hashicorp/go-version"
 	"github.com/stretchr/testify/suite"
 
@@ -21,7 +22,7 @@ func (suite *LanguagesIntegrationTestSuite) TestLanguages_list() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	suite.PrepareActiveStateYAML(ts)
+	ts.PrepareProject("ActiveState-CLI/Languages", "1eb82b25-a564-42ee-a7d4-d51d2ea73cd5")
 
 	cp := ts.Spawn("languages")
 	cp.Expect("Name")
@@ -35,10 +36,11 @@ func (suite *LanguagesIntegrationTestSuite) TestLanguages_listNoCommitID() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	suite.PrepareActiveStateYAMLNoCommitID(ts)
+	ts.PrepareProject("ActiveState-CLI/Languages", "")
 
 	cp := ts.Spawn("languages")
 	cp.ExpectNotExitCode(0)
+	ts.IgnoreLogErrors()
 }
 
 func (suite *LanguagesIntegrationTestSuite) TestLanguages_install() {
@@ -46,7 +48,7 @@ func (suite *LanguagesIntegrationTestSuite) TestLanguages_install() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	suite.PrepareActiveStateYAML(ts)
+	ts.PrepareProject("ActiveState-CLI/Languages", "1eb82b25-a564-42ee-a7d4-d51d2ea73cd5")
 
 	ts.LoginAsPersistentUser()
 
@@ -58,11 +60,12 @@ func (suite *LanguagesIntegrationTestSuite) TestLanguages_install() {
 	cp = ts.Spawn("languages", "install", "python")
 	cp.Expect("Language: python is already installed")
 	cp.ExpectExitCode(1)
+	ts.IgnoreLogErrors()
 
 	cp = ts.Spawn("languages", "install", "python@3.9.16")
 	cp.Expect("Language added: python@3.9.16")
 	// This can take a little while
-	cp.ExpectExitCode(0, 60*time.Second)
+	cp.ExpectExitCode(0, termtest.OptExpectTimeout(60*time.Second))
 
 	cp = ts.Spawn("languages")
 	cp.Expect("Name")
@@ -72,22 +75,12 @@ func (suite *LanguagesIntegrationTestSuite) TestLanguages_install() {
 	cp.ExpectExitCode(0)
 
 	// assert that version number changed
-	output := cp.MatchState().TermState.StringBeforeCursor()
+	output := cp.Output()
 	vs := versionRe.FindString(output)
 	v, err := goversion.NewVersion(vs)
 	suite.Require().NoError(err, "parsing version %s", vs)
 	minVersion := goversion.Must(goversion.NewVersion("3.8.1"))
 	suite.True(!v.LessThan(minVersion), "%v >= 3.8.1", v)
-}
-
-func (suite *LanguagesIntegrationTestSuite) PrepareActiveStateYAML(ts *e2e.Session) {
-	asyData := `project: "https://platform.activestate.com/ActiveState-CLI/Languages?commitID=1eb82b25-a564-42ee-a7d4-d51d2ea73cd5&branch=main"`
-	ts.PrepareActiveStateYAML(asyData)
-}
-
-func (suite *LanguagesIntegrationTestSuite) PrepareActiveStateYAMLNoCommitID(ts *e2e.Session) {
-	asyData := `project: "https://platform.activestate.com/ActiveState-CLI/Languages"`
-	ts.PrepareActiveStateYAML(asyData)
 }
 
 func (suite *LanguagesIntegrationTestSuite) TestJSON() {

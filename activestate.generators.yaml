@@ -45,10 +45,10 @@ scripts:
     language: bash
     description: Generates all api clients
     value: |
-      $scripts.generate-api-client
-      $scripts.generate-secrets-client
-      $scripts.generate-headchef-client
-      $scripts.generate-inventory-client
+      $scripts.generate-api-client.path()
+      $scripts.generate-secrets-client.path()
+      $scripts.generate-headchef-client.path()
+      $scripts.generate-inventory-client.path()
   - name: generate-locale
     language: bash
     description: Detects new localisation calls and generates placeholder entries in en-us.yaml
@@ -59,9 +59,9 @@ scripts:
     value: |
       set -e
       $constants.SET_ENV
-      
+
       echo "# Generate payload"
-      go run ./scripts/ci/payload-generator/main.go
+      go run ./scripts/ci/payload-generator/main.go "$@"
   - name: generate-update
     language: bash
     description: Generate update files
@@ -70,13 +70,13 @@ scripts:
       export GOARCH=${1:-amd64}
       $constants.SET_ENV
 
-      $scripts.generate-payload
+      $scripts.generate-payload.path()
 
       echo "# Create update dir"
       mkdir -p ./build/update
 
       echo "# Generate update from temp dir"
-      go run scripts/ci/update-generator/main.go -o ./build/update $PAYLOADDIR
+      go run scripts/ci/update-generator/main.go -o ./build/update
   - name: generate-remote-install-deployment
     language: bash
     value: go run scripts/ci/deploy-generator/remote-installer/main.go "$@"
@@ -94,25 +94,38 @@ scripts:
     value: |
       set -e
       $constants.SET_ENV
-      mkdir -p ./build/test/state-install/bin
-      mkdir -p ./build/test-update
+
       TEST_VERSION="99.99.9999"
       TEST_CHANNEL=${1:-test-channel}
+      TEST_PREPARED_DIR=./build/payload/state-install
+      TEST_PREPARED_BIN_DIR=${TEST_PREPARED_DIR}/bin
+      TEST_FAKE_EXEC=./build/fakeversioncmd
+      TEST_ARCHIVE_DIR=./build/test-update
+      mkdir -p ${TEST_ARCHIVE_DIR}
 
-      TEST_STATE_TOOL=./build/test/state-install/bin/$constants.BUILD_TARGET
-      TEST_STATE_SVC=./build/test/state-install/bin/$constants.BUILD_DAEMON_TARGET
-      TEST_STATE_EXEC=./build/test/state-install/bin/$constants.BUILD_EXEC_TARGET
-      TEST_INSTALLER=./build/test/state-install/$constants.BUILD_INSTALLER_TARGET
-      go build -o $TEST_STATE_TOOL ./internal/testhelpers/installation/fakeversioncmd
-      cp -a $TEST_STATE_TOOL $TEST_STATE_SVC
-      cp -a $TEST_STATE_TOOL $TEST_STATE_EXEC
-      cp -a $BUILD_TARGET_DIR/$constants.BUILD_INSTALLER_TARGET $TEST_INSTALLER
+      copy_test_payload () {
+        cp -a ${TEST_FAKE_EXEC} ${TEST_PREPARED_BIN_DIR}/$constants.BUILD_TARGET
+        cp -a ${TEST_FAKE_EXEC} ${TEST_PREPARED_BIN_DIR}/$constants.BUILD_DAEMON_TARGET
+        cp -a ${TEST_FAKE_EXEC} ${TEST_PREPARED_BIN_DIR}/$constants.BUILD_EXEC_TARGET
+        cp -a ${BUILD_TARGET_DIR}/$constants.BUILD_INSTALLER_TARGET ${TEST_PREPARED_DIR}
+      }
 
-      go run scripts/ci/update-generator/main.go -v ${TEST_VERSION} -o ./build/test-update ./build/test/state-install
+      go build -o ${TEST_FAKE_EXEC} ./internal/testhelpers/installation/fakeversioncmd
+      go run scripts/ci/payload-generator/main.go -v ${TEST_VERSION}
+      copy_test_payload
+      go run scripts/ci/update-generator/main.go -v ${TEST_VERSION} -o ${TEST_ARCHIVE_DIR}
 
       echo "compile ${TEST_CHANNEL} update"
-      go build -o $TEST_STATE_TOOL -ldflags "-X main.channel=${TEST_CHANNEL}" ./internal/testhelpers/installation/fakeversioncmd
-      cp -a $TEST_STATE_TOOL $TEST_STATE_SVC
-      cp -a $TEST_STATE_TOOL $TEST_STATE_EXEC
+      go build -o ${TEST_FAKE_EXEC} -ldflags "-X main.channel=${TEST_CHANNEL}" ./internal/testhelpers/installation/fakeversioncmd
+      go run scripts/ci/payload-generator/main.go -b ${TEST_CHANNEL} -v ${TEST_VERSION}
+      copy_test_payload
+      go run scripts/ci/update-generator/main.go -b ${TEST_CHANNEL} -v ${TEST_VERSION} -o ${TEST_ARCHIVE_DIR}
+  - name: generate-versions-list
+    language: bash
+    standalone: true
+    description: Generates master versions.json from S3 and info.json's from generate-update
+    value: |
+      set -e
+      $constants.SET_ENV
 
-      go run scripts/ci/update-generator/main.go -b ${TEST_CHANNEL} -v ${TEST_VERSION} -o ./build/test-update ./build/test/state-install
+      go run scripts/ci/update-version-list/main.go ./build/update

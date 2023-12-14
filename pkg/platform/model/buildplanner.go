@@ -2,8 +2,9 @@ package model
 
 import (
 	"errors"
-	"net/http"
 	"os"
+	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -16,8 +17,8 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/request"
-	"github.com/ActiveState/cli/pkg/platform/api/headchef"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
+	"github.com/ActiveState/cli/pkg/platform/api/reqsimport"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/ActiveState/cli/pkg/platform/runtime/buildexpression"
@@ -51,8 +52,9 @@ type BuildResult struct {
 	CommitID            strfmt.UUID
 	Build               *bpModel.Build
 	BuildStatusResponse *headchef_models.V1BuildStatusResponse
-	BuildStatus         headchef.BuildStatusEnum
+	BuildStatus         string
 	BuildReady          bool
+	BuildExpression     *buildexpression.BuildExpression
 }
 
 func (b *BuildResult) OrderedArtifacts() []artifact.ArtifactID {
@@ -72,9 +74,9 @@ func NewBuildPlannerModel(auth *authentication.Auth) *BuildPlanner {
 	bpURL := api.GetServiceURL(api.ServiceBuildPlanner).String()
 	logging.Debug("Using build planner at: %s", bpURL)
 
-	client := gqlclient.NewWithOpts(bpURL, 0, graphql.WithHTTPClient(&http.Client{}))
+	client := gqlclient.NewWithOpts(bpURL, 0, graphql.WithHTTPClient(api.NewHTTPClient()))
 
-	if auth.Authenticated() {
+	if auth != nil && auth.Authenticated() {
 		client.SetTokenProvider(auth)
 	}
 
@@ -111,30 +113,6 @@ func (bp *BuildPlanner) FetchBuildResult(commitID strfmt.UUID, owner, project st
 	// response with emtpy targets that we should remove
 	removeEmptyTargets(build)
 
-	// Extract the available platforms from the build plan
-	var bpPlatforms []strfmt.UUID
-	for _, t := range build.Terminals {
-		if t.Tag == bpModel.TagOrphan {
-			continue
-		}
-		bpPlatforms = append(bpPlatforms, strfmt.UUID(strings.TrimPrefix(t.Tag, "platform:")))
-	}
-
-	// Get the platform ID for the current platform
-	platformID, err := FilterCurrentPlatform(HostPlatform, bpPlatforms)
-	if err != nil {
-		return nil, locale.WrapError(err, "err_filter_current_platform")
-	}
-
-	// Filter the build terminals to only include the current platform
-	var filteredTerminals []*bpModel.NamedTarget
-	for _, t := range build.Terminals {
-		if platformID.String() == strings.TrimPrefix(t.Tag, "platform:") {
-			filteredTerminals = append(filteredTerminals, t)
-		}
-	}
-	build.Terminals = filteredTerminals
-
 	buildEngine := Alternative
 	for _, s := range build.Sources {
 		if s.Namespace == "builder" && s.Name == "camel" {
@@ -148,11 +126,18 @@ func (bp *BuildPlanner) FetchBuildResult(commitID strfmt.UUID, owner, project st
 		return nil, errs.Wrap(err, "Response does not contain commitID")
 	}
 
+	expr, err := bp.GetBuildExpression(owner, project, commitID.String())
+	if err != nil {
+		return nil, errs.Wrap(err, "Failed to get build expression")
+	}
+
 	res := BuildResult{
-		BuildEngine: buildEngine,
-		Build:       build,
-		BuildReady:  build.Status == bpModel.Completed,
-		CommitID:    id,
+		BuildEngine:     buildEngine,
+		Build:           build,
+		BuildReady:      build.Status == bpModel.Completed,
+		CommitID:        id,
+		BuildExpression: expr,
+		BuildStatus:     build.Status,
 	}
 
 	// We want to extract the recipe ID from the BuildLogIDs.
@@ -231,111 +216,74 @@ func removeEmptyTargets(bp *bpModel.Build) {
 }
 
 type StageCommitParams struct {
-	Owner                string
-	Project              string
-	ParentCommit         string
+	Owner        string
+	Project      string
+	ParentCommit string
+	Description  string
+	// Commits can have either an operation (e.g. installing a package)...
 	RequirementName      string
-	RequirementVersion   string
+	RequirementVersion   []bpModel.VersionRequirement
 	RequirementNamespace Namespace
 	Operation            bpModel.Operation
-	TimeStamp            time.Time
+	TimeStamp            *time.Time
+	// ... or commits can have an expression (e.g. from pull). When pulling an expression, we do not
+	// compute its changes into a series of above operations. Instead, we just pass the new
+	// expression directly.
+	Expression *buildexpression.BuildExpression
 }
 
 func (bp *BuildPlanner) StageCommit(params StageCommitParams) (strfmt.UUID, error) {
 	logging.Debug("StageCommit, params: %+v", params)
-	var err error
-	expression, err := bp.GetBuildExpression(params.Owner, params.Project, params.ParentCommit)
-	if err != nil {
-		return "", errs.Wrap(err, "Failed to get build expression")
-	}
-
-	if params.RequirementNamespace.Type() == NamespacePlatform {
-		err = expression.UpdatePlatform(params.Operation, strfmt.UUID(params.RequirementName))
+	expression := params.Expression
+	if expression == nil {
+		var err error
+		expression, err = bp.GetBuildExpression(params.Owner, params.Project, params.ParentCommit)
 		if err != nil {
-			return "", errs.Wrap(err, "Failed to update build expression with platform")
-		}
-	} else {
-		requirement := bpModel.Requirement{
-			Namespace: params.RequirementNamespace.String(),
-			Name:      params.RequirementName,
+			return "", errs.Wrap(err, "Failed to get build expression")
 		}
 
-		if params.RequirementVersion != "" {
-			requirement.VersionRequirement = []bpModel.VersionRequirement{{
-				bpModel.VersionRequirementComparatorKey: bpModel.ComparatorEQ,
-				bpModel.VersionRequirementVersionKey:    params.RequirementVersion,
-			}}
+		if params.RequirementNamespace.Type() == NamespacePlatform {
+			err = expression.UpdatePlatform(params.Operation, strfmt.UUID(params.RequirementName))
+			if err != nil {
+				return "", errs.Wrap(err, "Failed to update build expression with platform")
+			}
+		} else {
+			requirement := bpModel.Requirement{
+				Namespace:          params.RequirementNamespace.String(),
+				Name:               params.RequirementName,
+				VersionRequirement: params.RequirementVersion,
+			}
+
+			err = expression.UpdateRequirement(params.Operation, requirement)
+			if err != nil {
+				return "", errs.Wrap(err, "Failed to update build expression with requirement")
+			}
 		}
 
-		err = expression.UpdateRequirement(params.Operation, requirement)
+		err = expression.UpdateTimestamp(*params.TimeStamp)
 		if err != nil {
-			return "", errs.Wrap(err, "Failed to update build expression with requirement")
+			return "", errs.Wrap(err, "Failed to update build expression with timestamp")
 		}
-	}
-
-	err = expression.UpdateTimestamp(params.TimeStamp)
-	if err != nil {
-		return "", errs.Wrap(err, "Failed to update build expression with timestamp")
 	}
 
 	// With the updated build expression call the stage commit mutation
-	request := request.StageCommit(params.Owner, params.Project, params.ParentCommit, expression)
+	request := request.StageCommit(params.Owner, params.Project, params.ParentCommit, params.Description, expression)
 	resp := &bpModel.StageCommitResult{}
-	err = bp.client.Run(request, resp)
+	err := bp.client.Run(request, resp)
 	if err != nil {
 		return "", processBuildPlannerError(err, "failed to stage commit")
-	}
-
-	if resp.Error != nil {
-		return "", locale.NewError("Failed to stage commit, API returned message: {{.V0}}", resp.Error.Message)
-	}
-
-	if resp.ParseError != nil {
-		return "", locale.NewInputError(
-			"err_stage_commit_parse",
-			"The platform failed to parse the build expression, received the following message: {{.V0}}. Path: {{.V1}}",
-			resp.ParseError.Message,
-			resp.ParseError.Path,
-		)
 	}
 
 	if resp.Commit == nil {
 		return "", errs.New("Staged commit is nil")
 	}
 
+	if bpModel.IsErrorResponse(resp.Commit.Type) {
+		return "", bpModel.ProcessCommitError(resp.Commit, "Could not process error response from stage commit")
+	}
+
 	if resp.Commit.CommitID == "" {
 		return "", errs.New("Staged commit does not contain commitID")
-	}
-
-	if resp.Commit.Build == nil {
-		if resp.Error != nil {
-			return "", errs.New(resp.Error.Message)
-		}
-		return "", errs.New("Commit does not contain build")
-	}
-
-	if resp.Commit.Build.PlanningError != nil {
-		var errs []string
-		var isTransient bool
-		for _, se := range resp.Commit.Build.SubErrors {
-			if se.Type != bpModel.RemediableSolveErrorType {
-				continue
-			}
-
-			if se.Message != "" {
-				errs = append(errs, se.Message)
-				isTransient = se.IsTransient
-			}
-			for _, ve := range se.ValidationErrors {
-				if ve.Error != "" {
-					errs = append(errs, ve.Error)
-				}
-			}
-		}
-		return "", &bpModel.BuildPlannerError{
-			ValidationErrors: errs,
-			IsTransient:      isTransient,
-		}
 	}
 
 	return resp.Commit.CommitID, nil
@@ -353,6 +301,10 @@ func (bp *BuildPlanner) GetBuildExpression(owner, project, commitID string) (*bu
 		return nil, errs.New("Commit is nil")
 	}
 
+	if bpModel.IsErrorResponse(resp.Commit.Type) {
+		return nil, bpModel.ProcessCommitError(resp.Commit, "Could not get build expression from commit")
+	}
+
 	if resp.Commit.Expression == nil {
 		return nil, errs.New("Commit does not contain expression")
 	}
@@ -365,16 +317,246 @@ func (bp *BuildPlanner) GetBuildExpression(owner, project, commitID string) (*bu
 	return expression, nil
 }
 
+// CreateProjectParams contains information for the project to create.
+// When creating a project from scratch, the PlatformID, Language, Version, and Timestamp fields
+// are used to create a buildexpression to use.
+// When creating a project based off of another one, the Expr field is used (PlatformID, Language,
+// Version, and Timestamp are ignored).
+type CreateProjectParams struct {
+	Owner       string
+	Project     string
+	PlatformID  strfmt.UUID
+	Language    string
+	Version     string
+	Private     bool
+	Timestamp   *time.Time
+	Description string
+	Expr        *buildexpression.BuildExpression
+}
+
+func (bp *BuildPlanner) CreateProject(params *CreateProjectParams) (strfmt.UUID, error) {
+	logging.Debug("CreateProject, owner: %s, project: %s, language: %s, version: %s", params.Owner, params.Project, params.Language, params.Version)
+
+	expr := params.Expr
+	if expr == nil {
+		// Construct an initial buildexpression for the new project.
+		var err error
+		expr, err = buildexpression.NewEmpty()
+		if err != nil {
+			return "", errs.Wrap(err, "Unable to create initial buildexpression")
+		}
+
+		// Add the platform.
+		expr.UpdatePlatform(model.OperationAdded, params.PlatformID)
+
+		// Create a requirement for the given language and version.
+		versionRequirements, err := VersionStringToRequirements(params.Version)
+		if err != nil {
+			return "", errs.Wrap(err, "Unable to read version")
+		}
+		expr.UpdateRequirement(model.OperationAdded, bpModel.Requirement{
+			Name:               params.Language,
+			Namespace:          "language", // TODO: make this a constant DX-1738
+			VersionRequirement: versionRequirements,
+		})
+
+		// Add the timestamp.
+		expr.UpdateTimestamp(*params.Timestamp)
+	}
+
+	// Create the project.
+	request := request.CreateProject(params.Owner, params.Project, params.Private, expr, params.Description)
+	resp := &bpModel.CreateProjectResult{}
+	err := bp.client.Run(request, resp)
+	if err != nil {
+		return "", processBuildPlannerError(err, "Failed to create project")
+	}
+
+	if resp.ProjectCreated == nil {
+		return "", errs.New("ProjectCreated is nil")
+	}
+
+	if bpModel.IsErrorResponse(resp.ProjectCreated.Type) {
+		return "", bpModel.ProcessProjectCreatedError(resp.ProjectCreated, "Could not create project")
+	}
+
+	if resp.ProjectCreated.Commit == nil {
+		return "", errs.New("ProjectCreated.Commit is nil")
+	}
+
+	return resp.ProjectCreated.Commit.CommitID, nil
+}
+
+func (bp *BuildPlanner) RevertCommit(organization, project, parentCommitID, commitID string) (strfmt.UUID, error) {
+	logging.Debug("RevertCommit, organization: %s, project: %s, commitID: %s", organization, project, commitID)
+	resp := &bpModel.RevertCommitResult{}
+	err := bp.client.Run(request.RevertCommit(organization, project, parentCommitID, commitID), resp)
+	if err != nil {
+		return "", processBuildPlannerError(err, "Failed to revert commit")
+	}
+
+	if resp.RevertedCommit == nil {
+		return "", errs.New("Revert commit response is nil")
+	}
+
+	if bpModel.IsErrorResponse(resp.RevertedCommit.Type) {
+		return "", bpModel.ProcessRevertCommitError(resp.RevertedCommit, "Could not revert commit")
+	}
+
+	if resp.RevertedCommit.Commit == nil {
+		return "", errs.New("Revert commit's commit is nil'")
+	}
+
+	if bpModel.IsErrorResponse(resp.RevertedCommit.Commit.Type) {
+		return "", bpModel.ProcessCommitError(resp.RevertedCommit.Commit, "Could not process error response from revert commit")
+	}
+
+	if resp.RevertedCommit.Commit.CommitID == "" {
+		return "", errs.New("Commit does not contain commitID")
+	}
+
+	return resp.RevertedCommit.Commit.CommitID, nil
+}
+
+type MergeCommitParams struct {
+	Owner     string
+	Project   string
+	TargetRef string // the commit ID or branch name to merge into
+	OtherRef  string // the commit ID or branch name to merge from
+	Strategy  model.MergeStrategy
+}
+
+func (bp *BuildPlanner) MergeCommit(params *MergeCommitParams) (strfmt.UUID, error) {
+	logging.Debug("MergeCommit, owner: %s, project: %s", params.Owner, params.Project)
+	request := request.MergeCommit(params.Owner, params.Project, params.TargetRef, params.OtherRef, params.Strategy)
+	resp := &bpModel.MergeCommitResult{}
+	err := bp.client.Run(request, resp)
+	if err != nil {
+		return "", processBuildPlannerError(err, "Failed to merge commit")
+	}
+
+	if resp.MergedCommit == nil {
+		return "", errs.New("MergedCommit is nil")
+	}
+
+	if bpModel.IsErrorResponse(resp.MergedCommit.Type) {
+		return "", bpModel.ProcessMergedCommitError(resp.MergedCommit, "Could not merge commit")
+	}
+
+	if resp.MergedCommit.Commit == nil {
+		return "", errs.New("Merge commit's commit is nil'")
+	}
+
+	if bpModel.IsErrorResponse(resp.MergedCommit.Commit.Type) {
+		return "", bpModel.ProcessCommitError(resp.MergedCommit.Commit, "Could not process error response from merge commit")
+	}
+
+	return resp.MergedCommit.Commit.CommitID, nil
+}
+
 // processBuildPlannerError will check for special error types that should be
 // handled differently. If no special error type is found, the fallback message
 // will be used.
+// It expects the errors field to be the top-level field in the response. This is
+// different from special error types that are returned as part of the data field.
+// Example:
+//
+//	{
+//	  "errors": [
+//	    {
+//	      "message": "deprecation error",
+//	      "locations": [
+//	        {
+//	          "line": 7,
+//	          "column": 11
+//	        }
+//	      ],
+//	      "path": [
+//	        "project",
+//	        "commit",
+//	        "build"
+//	      ],
+//	      "extensions": {
+//	        "code": "CLIENT_DEPRECATION_ERROR"
+//	      }
+//	    }
+//	  ],
+//	  "data": null
+//	}
 func processBuildPlannerError(bpErr error, fallbackMessage string) error {
 	graphqlErr := &graphql.GraphErr{}
 	if errors.As(bpErr, graphqlErr) {
 		code, ok := graphqlErr.Extensions[codeExtensionKey].(string)
 		if ok && code == clientDeprecationErrorKey {
-			return locale.NewInputError("err_buildplanner_deprecated", "Encountered deprecation error: {{.V0}}", graphqlErr.Message)
+			return &bpModel.BuildPlannerError{Err: locale.NewInputError("err_buildplanner_deprecated", "Encountered deprecation error: {{.V0}}", graphqlErr.Message)}
 		}
 	}
-	return errs.Wrap(bpErr, fallbackMessage)
+	return &bpModel.BuildPlannerError{Err: errs.Wrap(bpErr, fallbackMessage)}
+}
+
+var versionRe = regexp.MustCompile(`^\d+(\.\d+)*$`)
+
+func isExactVersion(version string) bool {
+	return versionRe.MatchString(version)
+}
+
+func isWildcardVersion(version string) bool {
+	return strings.Index(version, ".x") >= 0 || strings.Index(version, ".X") >= 0
+}
+
+func VersionStringToRequirements(version string) ([]bpModel.VersionRequirement, error) {
+	if isExactVersion(version) {
+		return []bpModel.VersionRequirement{{
+			bpModel.VersionRequirementComparatorKey: "eq",
+			bpModel.VersionRequirementVersionKey:    version,
+		}}, nil
+	}
+
+	if !isWildcardVersion(version) {
+		// Ask the Platform to translate a string like ">=1.2,<1.3" into a list of requirements.
+		// Note that:
+		// - The given requirement name does not matter; it is not looked up.
+		changeset, err := reqsimport.Init().Changeset([]byte("name "+version), "")
+		if err != nil {
+			return nil, locale.WrapInputError(err, "err_invalid_version_string", "Invalid version string")
+		}
+		requirements := []bpModel.VersionRequirement{}
+		for _, change := range changeset {
+			for _, constraint := range change.VersionConstraints {
+				requirements = append(requirements, bpModel.VersionRequirement{
+					bpModel.VersionRequirementComparatorKey: constraint.Comparator,
+					bpModel.VersionRequirementVersionKey:    constraint.Version,
+				})
+			}
+		}
+		return requirements, nil
+	}
+
+	// Construct version constraints to be >= given version, and < given version's last part + 1.
+	// For example, given a version number of 3.10.x, constraints should be >= 3.10, < 3.11.
+	// Given 2.x, constraints should be >= 2, < 3.
+	requirements := []bpModel.VersionRequirement{}
+	parts := strings.Split(version, ".")
+	for i, part := range parts {
+		if part != "x" && part != "X" {
+			continue
+		}
+		if i == 0 {
+			return nil, locale.NewInputError("err_version_wildcard_start", "A version number cannot start with a wildcard")
+		}
+		requirements = append(requirements, bpModel.VersionRequirement{
+			bpModel.VersionRequirementComparatorKey: "gte",
+			bpModel.VersionRequirementVersionKey:    strings.Join(parts[:i], "."),
+		})
+		previousPart, err := strconv.Atoi(parts[i-1])
+		if err != nil {
+			return nil, locale.WrapInputError(err, "err_version_number_expected", "Version parts are expected to be numeric")
+		}
+		parts[i-1] = strconv.Itoa(previousPart + 1)
+		requirements = append(requirements, bpModel.VersionRequirement{
+			bpModel.VersionRequirementComparatorKey: "lt",
+			bpModel.VersionRequirementVersionKey:    strings.Join(parts[:i], "."),
+		})
+	}
+	return requirements, nil
 }

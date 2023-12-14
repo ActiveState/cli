@@ -1,7 +1,10 @@
 package integration
 
 import (
+	"bytes"
 	"fmt"
+	"io"
+	"log"
 	"regexp"
 	"sort"
 	"strconv"
@@ -9,8 +12,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/exeutils"
+	"github.com/ActiveState/cli/internal/osutils"
+	"github.com/ActiveState/termtest"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
@@ -32,40 +37,51 @@ func (suite *PerformanceIntegrationTestSuite) TestVersionPerformance() {
 	defer ts.Close()
 
 	// Start svc first, as we don't want to measure svc startup time which would only happen the very first invocation
-	stdout, stderr, err := exeutils.ExecSimple(ts.SvcExe, []string{"start"}, []string{})
+	stdout, stderr, err := osutils.ExecSimple(ts.SvcExe, []string{"start"}, []string{})
 	suite.Require().NoError(err, fmt.Sprintf("Full error:\n%v\nstdout:\n%s\nstderr:\n%s", errs.JoinMessage(err), stdout, stderr))
 
-	performanceTest([]string{"--version"}, "", StateVersionTotalSamples, StateVersionMaxTime, suite.Suite, ts)
+	performanceTest([]string{"--version"}, "", StateVersionTotalSamples, StateVersionMaxTime, false, suite.Suite, ts)
 }
 
 func TestPerformanceIntegrationTestSuite(t *testing.T) {
 	suite.Run(t, new(PerformanceIntegrationTestSuite))
 }
 
-func performanceTest(commands []string, expect string, samples int, maxTime time.Duration, suite tagsuite.Suite, ts *e2e.Session) time.Duration {
+func performanceTest(commands []string, expect string, samples int, maxTime time.Duration, verbose bool, suite tagsuite.Suite, ts *e2e.Session) time.Duration {
 	rx := regexp.MustCompile(`Profiling: main took .*\((\d+)\)`)
 	var firstEntry, firstLogs string
 	times := []time.Duration{}
 	var total time.Duration
 	for x := 0; x < samples+1; x++ {
-		cp := ts.SpawnWithOpts(
-			e2e.WithArgs(commands...),
-			e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_UPDATES=true", "ACTIVESTATE_PROFILE=true"))
+		opts := []e2e.SpawnOptSetter{
+			e2e.OptArgs(commands...),
+			e2e.OptAppendEnv(constants.DisableUpdates+"=true", constants.ProfileEnvVarName+"=true"),
+		}
+		termtestLogs := &bytes.Buffer{}
+		if verbose {
+			opts = append(opts, e2e.OptTermTest(func(o *termtest.Opts) error {
+				o.Logger = log.New(termtestLogs, "TermTest: ", log.LstdFlags|log.Lshortfile)
+				return nil
+			}))
+		}
+		cp := ts.SpawnWithOpts(opts...)
 		if expect != "" {
 			cp.Expect(expect)
 		}
 		cp.ExpectExitCode(0)
-		v := rx.FindStringSubmatch(cp.Snapshot())
+		logs, err := io.ReadAll(termtestLogs)
+		suite.NoError(err)
+		v := rx.FindStringSubmatch(cp.Output())
 		if len(v) < 2 {
-			suite.T().Fatalf("Could not find '%s' in output: %s", rx.String(), cp.Snapshot())
+			suite.T().Fatalf("Could not find '%s' in output:\n%s\n\ntermtest logs:\n%s", rx.String(), cp.Output(), logs)
 		}
 		durMS, err := strconv.Atoi(v[1])
 		suite.Require().NoError(err)
 		dur := time.Millisecond * time.Duration(durMS)
 
 		if firstEntry == "" {
-			firstEntry = cp.Snapshot()
-			firstLogs = ts.DebugLogs()
+			firstEntry = cp.Output()
+			firstLogs = ts.DebugLogsDump()
 		}
 		if x == 0 {
 			// Skip the first one as this one will always be slower due to having to wait for state-svc or sourcing a runtime

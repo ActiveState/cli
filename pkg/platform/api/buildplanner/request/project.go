@@ -1,9 +1,6 @@
 package request
 
-import "github.com/ActiveState/cli/internal/logging"
-
 func BuildPlanByProject(organization, project, commitID string) *buildPlanByProject {
-	logging.Debug("BuildPlanByProject")
 	bp := &buildPlanByProject{map[string]interface{}{
 		"organization": organization,
 		"project":      project,
@@ -71,6 +68,7 @@ query ($commitID: String!, $organization: String!, $project: String!) {
                 ... on ArtifactSucceeded {
                   __typename
                   nodeId
+                  displayName
                   mimeType
                   generatedBy
                   runtimeDependencies
@@ -82,6 +80,7 @@ query ($commitID: String!, $organization: String!, $project: String!) {
                 ... on ArtifactUnbuilt {
                   __typename
                   nodeId
+                  displayName
                   mimeType
                   generatedBy
                   runtimeDependencies
@@ -90,6 +89,7 @@ query ($commitID: String!, $organization: String!, $project: String!) {
                 ... on ArtifactStarted {
                   __typename
                   nodeId
+                  displayName
                   mimeType
                   generatedBy
                   runtimeDependencies
@@ -98,6 +98,7 @@ query ($commitID: String!, $organization: String!, $project: String!) {
                 ... on ArtifactTransientlyFailed {
                   __typename
                   nodeId
+                  displayName
                   mimeType
                   generatedBy
                   runtimeDependencies
@@ -110,6 +111,7 @@ query ($commitID: String!, $organization: String!, $project: String!) {
                 ... on ArtifactPermanentlyFailed {
                   __typename
                   nodeId
+                  displayName
                   mimeType
                   generatedBy
                   runtimeDependencies
@@ -120,6 +122,7 @@ query ($commitID: String!, $organization: String!, $project: String!) {
                 ... on ArtifactFailed {
                   __typename
                   nodeId
+                  displayName
                   mimeType
                   generatedBy
                   runtimeDependencies
@@ -168,14 +171,23 @@ query ($commitID: String!, $organization: String!, $project: String!) {
           message
         }
         ... on NotFound {
+          __typename
+          type
+          resource
+          mayNeedAuthentication
           message
         }
       }
     }
-    ... on Error{
+    ... on Error {
+      __typename
       message
     }
     ... on NotFound {
+      __typename
+      type
+      resource
+      mayNeedAuthentication
       message
     }
   }

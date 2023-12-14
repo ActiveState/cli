@@ -20,7 +20,7 @@ func (suite *PjFileIntegrationTestSuite) TestDeprecation() {
 	defer ts.Close()
 
 	ts.PrepareActiveStateYAML(strings.TrimSpace(`
-project: https://platform.activestate.com/ActiveState-CLI/test?commitID=1090c128-e948-4388-8f7f-96e2c1e00d98
+project: https://platform.activestate.com/ActiveState-CLI/test
 platforms:
   - name: Linux64Label
 languages:
@@ -30,10 +30,10 @@ languages:
 `))
 
 	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("scripts"),
-		e2e.AppendEnv("VERBOSE=true"),
+		e2e.OptArgs("scripts"),
 	)
 	cp.ExpectExitCode(1)
+	ts.IgnoreLogErrors()
 }
 
 func TestPjFileIntegrationTestSuite(t *testing.T) {

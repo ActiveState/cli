@@ -20,7 +20,7 @@ func newPlatformsCommand(prime *primer.Values) *captain.Command {
 		func(_ *captain.Command, _ []string) error {
 			return runner.Run()
 		},
-	).SetGroup(PlatformGroup).SetUnstable(true)
+	).SetGroup(PlatformGroup).SetSupportsStructuredOutput().SetUnstable(true)
 }
 
 func newPlatformsSearchCommand(prime *primer.Values) *captain.Command {
@@ -36,7 +36,7 @@ func newPlatformsSearchCommand(prime *primer.Values) *captain.Command {
 		func(_ *captain.Command, _ []string) error {
 			return runner.Run()
 		},
-	)
+	).SetSupportsStructuredOutput()
 }
 
 func newPlatformsAddCommand(prime *primer.Values) *captain.Command {
@@ -67,7 +67,7 @@ func newPlatformsAddCommand(prime *primer.Values) *captain.Command {
 		func(_ *captain.Command, _ []string) error {
 			return runner.Run(params)
 		},
-	)
+	).SetSupportsStructuredOutput()
 }
 
 func newPlatformsRemoveCommand(prime *primer.Values) *captain.Command {
@@ -98,5 +98,5 @@ func newPlatformsRemoveCommand(prime *primer.Values) *captain.Command {
 		func(_ *captain.Command, _ []string) error {
 			return runner.Run(params)
 		},
-	)
+	).SetSupportsStructuredOutput()
 }

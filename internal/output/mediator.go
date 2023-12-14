@@ -56,7 +56,7 @@ func mediatorValue(v interface{}, format Format) interface{} {
 		if vt, ok := v.(StructuredMarshaller); ok {
 			return vt.MarshalStructured(format)
 		}
-		return StructuredError{locale.Tr("err_no_structured_output", string(format))}
+		return StructuredError{Error: locale.Tr("err_no_structured_output", string(format))}
 	}
 	if vt, ok := v.(Marshaller); ok {
 		return vt.MarshalOutput(format)

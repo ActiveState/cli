@@ -82,7 +82,6 @@ func SetupRollbar(token string) {
 	rollbar.SetCodeVersion(constants.Version)
 	rollbar.SetServerRoot("github.com/ActiveState/cli")
 	rollbar.SetLogger(&rollbar.SilentClientLogger{})
-	rollbar.SetCaptureIp(rollbar.CaptureIpFull)
 
 	// We can't use runtime.GOOS for the official platform field because rollbar sees that as a server-only platform
 	// (which we don't have credentials for). So we're faking it with a custom field untill rollbar gets their act together.
@@ -91,6 +90,12 @@ func SetupRollbar(token string) {
 		// We're not a server, so don't send server info (could contain sensitive info, like hostname)
 		data["server"] = map[string]interface{}{}
 		data["platform_os"] = runtime.GOOS
+		if _, exists := data["request"]; !exists {
+			data["request"] = map[string]string{}
+		}
+		if request, ok := data["request"].(map[string]string); ok {
+			request["user_ip"] = "$remote_ip" // ask Rollbar to log the user's IP
+		}
 	})
 
 	source, err := storage.InstallSource()

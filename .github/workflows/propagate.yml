@@ -13,13 +13,8 @@ jobs:
   propagate:
     name: Propagate to affected version branches
     runs-on: ubuntu-20.04
-    strategy:
-      matrix:
-        go-version:
-          - 1.20.x
     env:
-      ACTIVESTATE_CLI_DISABLE_RUNTIME: true
-      SHELL: bash
+      ACTIVESTATE_CI: true
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       JIRA_USERNAME: ${{ secrets.JIRA_EMAIL }}
       JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}
@@ -39,23 +34,19 @@ jobs:
         name: Install Go
         uses: actions/setup-go@v3
         with:
-          go-version: ${{ matrix.go-version }}
+          go-version: '1.20.x'
+
+      - # === Install State Tool ===
+        name: Install State Tool
+        uses: ActiveState/setup-state-tool@v1
 
       - # === Setup ===
         name: Setup
         shell: bash
         run: |
-          bin=$(pwd)/.github/deps/${{ runner.os }}/bin
-          echo "Adding $bin to PATH"
-          echo "$bin" >> $GITHUB_PATH
           # We specify our custom user because we need privileges to push to protected branches
           git config user.name "AS-builds"
           git config user.email "nathanr+asbuilds@activestate.com"
-
-      - # === Install Deps ===
-        name: Install Deps
-        shell: bash
-        run: state run install-deps
 
       - # === Preprocess ===
         name: Preprocess
@@ -83,6 +74,13 @@ jobs:
                   "text": {
                     "type": "mrkdwn",
                     "text": "Propagate-PR failed for *<${{ github.event.pull_request.html_url }}|${{ github.event.pull_request.title }}>*\nFailure should be addressed by *${{ github.event.pull_request.user.login }}*"
+                  }
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "Failed job: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
                   }
                 }
               ]

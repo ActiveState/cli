@@ -65,10 +65,10 @@ type ErrorNoDefaultProject struct{ *locale.LocalizedError }
 
 // projectURL comprises all fields of a parsed project URL
 type projectURL struct {
-	Owner      string
-	Name       string
-	CommitID   string
-	BranchName string
+	Owner          string
+	Name           string
+	LegacyCommitID string
+	BranchName     string
 }
 
 var projectMapMutex = &sync.Mutex{}
@@ -533,6 +533,11 @@ func detectDeprecations(dat []byte, configFilepath string) error {
 	}
 }
 
+// URL returns the project namespace's string URL from activestate.yaml.
+func (p *Project) URL() string {
+	return p.Project
+}
+
 // Owner returns the project namespace's organization
 func (p *Project) Owner() string {
 	return p.parsedURL.Owner
@@ -543,11 +548,6 @@ func (p *Project) Name() string {
 	return p.parsedURL.Name
 }
 
-// CommitID returns the commit ID specified in the project
-func (p *Project) CommitID() string {
-	return p.parsedURL.CommitID
-}
-
 // BranchName returns the branch name specified in the project
 func (p *Project) BranchName() string {
 	return p.parsedURL.BranchName
@@ -556,6 +556,35 @@ func (p *Project) BranchName() string {
 // Path returns the project's activestate.yaml file path.
 func (p *Project) Path() string {
 	return p.path
+}
+
+// LegacyCommitID is for use by commitmediator.Get() ONLY.
+// It returns a pre-migrated project's commit ID from activestate.yaml.
+func (p *Project) LegacyCommitID() string {
+	return p.parsedURL.LegacyCommitID
+}
+
+// LegacySetCommit is for use by commitmediator.Set() ONLY.
+// It changes the legacy commit ID in activestate.yaml.
+// Remove this in DX-2307.
+func (p *Project) LegacySetCommit(commitID string) error {
+	pf := NewProjectField()
+	if err := pf.LoadProject(p.Project); err != nil {
+		return errs.Wrap(err, "Could not load activestate.yaml")
+	}
+	pf.LegacySetCommit(commitID)
+	if err := pf.Save(p.path); err != nil {
+		return errs.Wrap(err, "Could not save activestate.yaml")
+	}
+
+	p.parsedURL.LegacyCommitID = commitID
+	p.Project = pf.String()
+	return nil
+}
+
+// Remove this function in DX-2307.
+func (p *Project) Dir() string {
+	return filepath.Dir(p.path)
 }
 
 // SetPath sets the path of the project file and should generally only be used by tests
@@ -605,7 +634,7 @@ func (p *Project) parseURL() (projectURL, error) {
 
 func validateUUID(uuidStr string) error {
 	if ok := strfmt.Default.Validates("uuid", uuidStr); !ok {
-		return locale.NewError("invalid_uuid_val", "Invalid commit ID {{.V0}} in activestate.yaml.  You could replace it with 'latest'", uuidStr)
+		return locale.NewError("invalid_uuid_val", "Invalid commit ID {{.V0}} in activestate.yaml. Please remove it and run `[ACTIONABLE]state pull[/RESET]` to reset it", uuidStr)
 	}
 
 	var uuid strfmt.UUID
@@ -632,7 +661,7 @@ func parseURL(rawURL string) (projectURL, error) {
 	path := strings.Split(u.Path, "/")
 	if len(path) > 2 {
 		if path[1] == "commit" {
-			p.CommitID = path[2]
+			p.LegacyCommitID = path[2]
 		} else {
 			p.Owner = path[1]
 			p.Name = path[2]
@@ -641,11 +670,11 @@ func parseURL(rawURL string) (projectURL, error) {
 
 	q := u.Query()
 	if c := q.Get("commitID"); c != "" {
-		p.CommitID = c
+		p.LegacyCommitID = c
 	}
 
-	if p.CommitID != "" {
-		if err := validateUUID(p.CommitID); err != nil {
+	if p.LegacyCommitID != "" {
+		if err := validateUUID(p.LegacyCommitID); err != nil {
 			return p, err
 		}
 	}
@@ -706,24 +735,6 @@ func (p *Project) SetNamespace(owner, project string) error {
 	return nil
 }
 
-// SetCommit sets the commit id within the current project file. This is done
-// in-place so that line order is preserved.
-// If headless is true, the project is defined by a commit-id only
-func (p *Project) SetCommit(commitID string, headless bool) error {
-	pf := NewProjectField()
-	if err := pf.LoadProject(p.Project); err != nil {
-		return errs.Wrap(err, "Could not load activestate.yaml")
-	}
-	pf.SetCommit(commitID, headless)
-	if err := pf.Save(p.path); err != nil {
-		return errs.Wrap(err, "Could not save activestate.yaml")
-	}
-
-	p.parsedURL.CommitID = commitID
-	p.Project = pf.String()
-	return nil
-}
-
 // SetBranch sets the branch within the current project file. This is done
 // in-place so that line order is preserved.
 func (p *Project) SetBranch(branch string) error {
@@ -747,6 +758,10 @@ func (p *Project) SetBranch(branch string) error {
 }
 
 // GetProjectFilePath returns the path to the project activestate.yaml
+// It considers projects in the following order:
+// 1. Environment variable (e.g. `state shell` sets one)
+// 2. Working directory (i.e. walk up directory tree looking for activestate.yaml)
+// 3. Fall back on default project
 func GetProjectFilePath() (string, error) {
 	defer profile.Measure("GetProjectFilePath", time.Now())
 	lookup := []func() (string, error){
@@ -768,13 +783,21 @@ func GetProjectFilePath() (string, error) {
 }
 
 func getProjectFilePathFromEnv() (string, error) {
-	projectFilePath := os.Getenv(constants.ProjectEnvVarName)
+	var projectFilePath string
+
+	if activatedProjectDirPath := os.Getenv(constants.ActivatedStateEnvVarName); activatedProjectDirPath != "" {
+		projectFilePath = filepath.Join(activatedProjectDirPath, constants.ConfigFileName)
+	} else {
+		projectFilePath = os.Getenv(constants.ProjectEnvVarName)
+	}
+
 	if projectFilePath != "" {
 		if fileutils.FileExists(projectFilePath) {
 			return projectFilePath, nil
 		}
 		return "", &ErrorNoProjectFromEnv{locale.NewInputError("err_project_env_file_not_exist", "", projectFilePath)}
 	}
+
 	return "", nil
 }
 
@@ -911,25 +934,17 @@ func FromExactPath(path string) (*Project, error) {
 
 // CreateParams are parameters that we create a custom activestate.yaml file from
 type CreateParams struct {
-	Owner      string
-	Project    string
-	CommitID   *strfmt.UUID
-	BranchName string
-	Directory  string
-	Content    string
-	Language   string
-	Private    bool
-	path       string
-	ProjectURL string
-	Cache      string
-}
-
-// TestOnlyCreateWithProjectURL a new activestate.yaml with default content
-func TestOnlyCreateWithProjectURL(projectURL, path string) (*Project, error) {
-	return createCustom(&CreateParams{
-		ProjectURL: projectURL,
-		Directory:  path,
-	}, language.Python3)
+	Owner          string
+	Project        string
+	BranchName     string
+	Directory      string
+	Content        string
+	Language       string
+	Private        bool
+	path           string
+	ProjectURL     string
+	Cache          string
+	LegacyCommitID string // remove in DX-2307
 }
 
 // Create will create a new activestate.yaml with a projectURL for the given details
@@ -949,20 +964,25 @@ func createCustom(params *CreateParams, lang language.Language) (*Project, error
 		return nil, err
 	}
 
-	var commitID string
 	if params.ProjectURL == "" {
-		u, err := url.Parse(fmt.Sprintf("https://%s/%s/%s", constants.PlatformURL, params.Owner, params.Project))
+		// Note: cannot use api.GetPlatformURL() due to import cycle.
+		host := constants.DefaultAPIHost
+		if hostOverride := os.Getenv(constants.APIHostEnvVarName); hostOverride != "" {
+			host = hostOverride
+		}
+		u, err := url.Parse(fmt.Sprintf("https://%s/%s/%s", host, params.Owner, params.Project))
 		if err != nil {
 			return nil, errs.Wrap(err, "url parse new project url failed")
 		}
 		q := u.Query()
 
-		if params.CommitID != nil {
-			commitID = params.CommitID.String()
-			q.Set("commitID", commitID)
-		}
 		if params.BranchName != "" {
 			q.Set("branch", params.BranchName)
+		}
+
+		// Remove this block in DX-2307.
+		if params.LegacyCommitID != "" {
+			q.Set("commitID", params.LegacyCommitID)
 		}
 
 		u.RawQuery = q.Encode()
@@ -989,8 +1009,9 @@ func createCustom(params *CreateParams, lang language.Language) (*Project, error
 		shell = "batch"
 	}
 
+	languageDisabled := os.Getenv(constants.DisableLanguageTemplates) == "true"
 	content := params.Content
-	if content == "" && lang != language.Unset && lang != language.Unknown {
+	if !languageDisabled && content == "" && lang != language.Unset && lang != language.Unknown {
 		tplName := "activestate.yaml." + strings.TrimRight(lang.String(), "23") + ".tpl"
 		template, err := assets.ReadFileBytes(tplName)
 		if err != nil {
@@ -1006,10 +1027,9 @@ func createCustom(params *CreateParams, lang language.Language) (*Project, error
 	}
 
 	data := map[string]interface{}{
-		"Project":  params.ProjectURL,
-		"CommitID": commitID,
-		"Content":  content,
-		"Private":  params.Private,
+		"Project": params.ProjectURL,
+		"Content": content,
+		"Private": params.Private,
 	}
 
 	tplName := "activestate.yaml.tpl"

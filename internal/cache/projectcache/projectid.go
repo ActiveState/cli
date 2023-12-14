@@ -41,7 +41,7 @@ func (i *ID) FromNamespace(projectNameSpace string) (string, error) {
 	if err := authentication.LegacyGet().Refresh(); err != nil {
 		return "", errs.Wrap(err, "Failed to refresh authentication")
 	}
-	pj, err := model.FetchProjectByName(pn.Owner, pn.Project)
+	pj, err := model.LegacyFetchProjectByName(pn.Owner, pn.Project)
 	if err != nil {
 		return "", errs.Wrap(err, "Failed get project by name")
 	}

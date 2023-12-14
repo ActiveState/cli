@@ -1,9 +1,6 @@
 package request
 
-import "github.com/ActiveState/cli/internal/logging"
-
 func BuildPlanByCommitID(commitID string) *buildPlanByCommitID {
-	logging.Debug("BuildPlanByCommitID")
 	bp := &buildPlanByCommitID{map[string]interface{}{
 		"commitID": commitID,
 	}}
@@ -66,6 +63,7 @@ query ($commitID: ID!) {
             ... on ArtifactSucceeded {
               __typename
               nodeId
+              displayName
               mimeType
               generatedBy
               runtimeDependencies
@@ -77,6 +75,7 @@ query ($commitID: ID!) {
             ... on ArtifactUnbuilt {
               __typename
               nodeId
+              displayName
               mimeType
               generatedBy
               runtimeDependencies
@@ -85,6 +84,7 @@ query ($commitID: ID!) {
             ... on ArtifactStarted {
               __typename
               nodeId
+              displayName
               mimeType
               generatedBy
               runtimeDependencies
@@ -93,6 +93,7 @@ query ($commitID: ID!) {
             ... on ArtifactTransientlyFailed {
               __typename
               nodeId
+              displayName
               mimeType
               generatedBy
               runtimeDependencies
@@ -105,6 +106,7 @@ query ($commitID: ID!) {
             ... on ArtifactPermanentlyFailed {
               __typename
               nodeId
+              displayName
               mimeType
               generatedBy
               runtimeDependencies
@@ -115,6 +117,7 @@ query ($commitID: ID!) {
             ... on ArtifactFailed {
               __typename
               nodeId
+              displayName
               mimeType
               generatedBy
               runtimeDependencies
@@ -125,6 +128,7 @@ query ($commitID: ID!) {
           }
         }
         ... on PlanningError {
+          __typename
           message
           subErrors {
             __typename
@@ -155,15 +159,21 @@ query ($commitID: ID!) {
           }
         }
         ... on Error {
+          __typename
           message
         }
       }
     }
     ... on Error {
+      __typename
       message
     }
     ... on NotFound {
+      __typename
       message
+      type
+      resource
+      mayNeedAuthentication
     }
   }
 }

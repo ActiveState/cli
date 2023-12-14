@@ -8,6 +8,8 @@ import (
 	"runtime"
 	"testing"
 
+	"github.com/stretchr/testify/suite"
+
 	svcApp "github.com/ActiveState/cli/cmd/state-svc/app"
 	svcAutostart "github.com/ActiveState/cli/cmd/state-svc/autostart"
 	"github.com/ActiveState/cli/internal/config"
@@ -22,7 +24,6 @@ import (
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
 	rt "github.com/ActiveState/cli/pkg/platform/runtime/target"
-	"github.com/stretchr/testify/suite"
 )
 
 type PrepareIntegrationTestSuite struct {
@@ -47,9 +48,9 @@ func (suite *PrepareIntegrationTestSuite) TestPrepare() {
 	suite.Require().NoError(err)
 
 	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("_prepare"),
-		e2e.AppendEnv(fmt.Sprintf("%s=%s", constants.AutostartPathOverrideEnvVarName, autostartDir)),
-		// e2e.AppendEnv(fmt.Sprintf("ACTIVESTATE_CLI_CONFIGDIR=%s", ts.Dirs.Work)),
+		e2e.OptArgs("_prepare"),
+		e2e.OptAppendEnv(fmt.Sprintf("%s=%s", constants.AutostartPathOverrideEnvVarName, autostartDir)),
+		// e2e.OptAppendEnv(fmt.Sprintf("%s=%s", constants.ConfigEnvVarName, ts.Dirs.Work)),
 	)
 	cp.ExpectExitCode(0)
 
@@ -118,18 +119,18 @@ func (suite *PrepareIntegrationTestSuite) AssertConfig(target string) {
 
 func (suite *PrepareIntegrationTestSuite) TestResetExecutors() {
 	suite.OnlyRunForTags(tagsuite.Prepare)
-	ts := e2e.New(suite.T(), true, "ACTIVESTATE_CLI_DISABLE_RUNTIME=false")
+	ts := e2e.New(suite.T(), true, constants.DisableRuntime+"=false")
 	err := ts.ClearCache()
 	suite.Require().NoError(err)
 	defer ts.Close()
 
 	cp := ts.SpawnWithOpts(
-		e2e.WithArgs("activate", "ActiveState-CLI/small-python", "--path", ts.Dirs.Work, "--default"),
+		e2e.OptArgs("activate", "ActiveState-CLI/small-python", "--path", ts.Dirs.Work, "--default"),
 	)
-	cp.ExpectLongString("This project will always be available for use")
+	cp.Expect("This project will always be available for use")
 	cp.Expect("Downloading")
 	cp.Expect("Installing")
-	cp.Expect("Activated")
+	cp.Expect("Activated", e2e.RuntimeSourcingTimeoutOpt)
 
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
@@ -157,11 +158,11 @@ func (suite *PrepareIntegrationTestSuite) TestResetExecutors() {
 	err = os.Remove(filepath.Join(targetDir, constants.LocalRuntimeEnvironmentDirectory, constants.RuntimeInstallationCompleteMarker))
 	suite.Assert().NoError(err, "removal of complete marker should have worked")
 
-	suite.FileExists(filepath.Join(globalExecDir, "python3"+osutils.ExeExt))
+	suite.FileExists(filepath.Join(globalExecDir, "python3"+osutils.ExeExtension))
 	err = os.RemoveAll(projectExecDir)
 
 	cp = ts.Spawn("activate")
-	cp.Expect("Activated")
+	cp.Expect("Activated", e2e.RuntimeSourcingTimeoutOpt)
 	cp.SendLine("which python3")
 	cp.SendLine("python3 --version")
 	cp.Expect("ActiveState")

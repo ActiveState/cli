@@ -83,6 +83,11 @@ func (e *Edit) Run(params *EditParams) error {
 		editMsg += locale.Tl("edit_prompt_repo", "  - Repository: {{.V0}}\n", params.Repository)
 		editable.RepoURL = &params.Repository
 	}
+
+	if params.ProjectName != "" {
+		editMsg += locale.Tr("edit_prompt_name_notice", params.Namespace.Owner, params.ProjectName)
+	}
+
 	editMsg += locale.Tl("edit_prompt_confirm", "Continue?")
 
 	defaultChoice := !e.out.Config().Interactive

@@ -11,9 +11,10 @@ import (
 )
 
 type entry struct {
-	PID  int                `json:"pid"`
-	Exec string             `json:"exec"`
-	Dims *dimensions.Values `json:"dims"`
+	PID    int                `json:"pid"`
+	Exec   string             `json:"exec"`
+	Source string             `json:"source"`
+	Dims   *dimensions.Values `json:"dims"`
 }
 
 func (e entry) IsRunning() (bool, error) {

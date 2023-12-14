@@ -19,7 +19,7 @@ func (suite *PlatformsIntegrationTestSuite) TestPlatforms_searchSimple() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	suite.PrepareActiveStateYAML(ts)
+	ts.PrepareProject("cli-integration-tests/ExercisePlatforms", "")
 
 	cp := ts.Spawn("platforms", "search")
 	expectations := []string{
@@ -41,7 +41,7 @@ func (suite *PlatformsIntegrationTestSuite) TestPlatforms_listSimple() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	suite.PrepareActiveStateYAML(ts)
+	ts.PrepareProject("cli-integration-tests/ExercisePlatforms", "")
 
 	cmds := [][]string{
 		[]string{"platforms"},
@@ -68,7 +68,7 @@ func (suite *PlatformsIntegrationTestSuite) TestPlatforms_addRemove() {
 
 	ts.LoginAsPersistentUser()
 
-	ts.PrepareActiveStateYAML(`project: "https://platform.activestate.com/ActiveState-CLI/Platforms?commitID=e685d3d8-98bc-4703-927f-e1d7225c6457&branch=main"`)
+	ts.PrepareProject("ActiveState-CLI/Platforms", "e685d3d8-98bc-4703-927f-e1d7225c6457")
 
 	platform := "Windows"
 	version := "10.0.17134.1"
@@ -91,7 +91,7 @@ func (suite *PlatformsIntegrationTestSuite) TestPlatforms_addRemove() {
 
 	cp = ts.Spawn("platforms")
 	cp.ExpectExitCode(0)
-	output := cp.TrimmedSnapshot()
+	output := cp.Output()
 	if strings.Contains(output, "Windows") {
 		suite.T().Fatal("Windows platform should not be present after removal")
 	}
@@ -104,7 +104,7 @@ func (suite *PlatformsIntegrationTestSuite) TestPlatforms_addRemoveLatest() {
 
 	ts.LoginAsPersistentUser()
 
-	ts.PrepareActiveStateYAML(`project: "https://platform.activestate.com/ActiveState-CLI/Platforms?commitID=e685d3d8-98bc-4703-927f-e1d7225c6457&branch=main"`)
+	ts.PrepareProject("ActiveState-CLI/Platforms", "e685d3d8-98bc-4703-927f-e1d7225c6457")
 
 	platform := "Windows"
 	version := "10.0.17134.1"
@@ -127,15 +127,10 @@ func (suite *PlatformsIntegrationTestSuite) TestPlatforms_addRemoveLatest() {
 
 	cp = ts.Spawn("platforms")
 	cp.ExpectExitCode(0)
-	output := cp.TrimmedSnapshot()
+	output := cp.Output()
 	if strings.Contains(output, "Windows") {
 		suite.T().Fatal("Windows platform should not be present after removal")
 	}
-}
-
-func (suite *PlatformsIntegrationTestSuite) PrepareActiveStateYAML(ts *e2e.Session) {
-	asyData := `project: "https://platform.activestate.com/cli-integration-tests/ExercisePlatforms"`
-	ts.PrepareActiveStateYAML(asyData)
 }
 
 func (suite *PlatformsIntegrationTestSuite) TestJSON() {

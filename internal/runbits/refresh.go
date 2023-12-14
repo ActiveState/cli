@@ -14,10 +14,24 @@ import (
 )
 
 // RefreshRuntime should be called after runtime mutations.
-func RefreshRuntime(auth *authentication.Auth, out output.Outputer, an analytics.Dispatcher, proj *project.Project, commitID strfmt.UUID, changed bool, trigger target.Trigger, svcm *model.SvcModel) (rerr error) {
-	target := target.NewProjectTarget(proj, &commitID, trigger)
+func RefreshRuntime(
+	auth *authentication.Auth,
+	out output.Outputer,
+	an analytics.Dispatcher,
+	proj *project.Project,
+	commitID strfmt.UUID,
+	changed bool,
+	trigger target.Trigger,
+	svcm *model.SvcModel,
+) (rerr error) {
+	// Re-enable in DX-2307.
+	//_, err := buildscript.Sync(proj, &commitID, out, auth)
+	//if err != nil {
+	//	return locale.WrapError(err, "err_update_build_script")
+	//}
+	target := target.NewProjectTarget(proj, nil, trigger)
 	isCached := true
-	rt, err := runtime.New(target, an, svcm)
+	rt, err := runtime.New(target, an, svcm, auth)
 	if err != nil {
 		if runtime.IsNeedsUpdateError(err) {
 			isCached = false
@@ -42,7 +56,7 @@ func RefreshRuntime(auth *authentication.Auth, out output.Outputer, an analytics
 		pg := NewRuntimeProgressIndicator(out)
 		defer rtutils.Closer(pg.Close, &rerr)
 
-		err := rt.Update(auth, pg)
+		err := rt.Update(pg)
 		if err != nil {
 			return locale.WrapError(err, "err_packages_update_runtime_install", "Could not install dependencies.")
 		}

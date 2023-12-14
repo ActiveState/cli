@@ -5,6 +5,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/go-openapi/strfmt"
+
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
@@ -17,6 +19,8 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runbits"
+	"github.com/ActiveState/cli/internal/runbits/commitmediator"
+	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
@@ -50,6 +54,15 @@ type primeable interface {
 	primer.SvcModeler
 }
 
+type errProjectExists struct {
+	error
+	path string
+}
+
+var errNoOwner = errs.New("Could not find organization")
+
+var errNoLanguage = errs.New("No language specified")
+
 // New returns a prepared ptr to Initialize instance.
 func New(prime primeable) *Initialize {
 	return &Initialize{prime.Auth(), prime.Config(), prime.Output(), prime.Analytics(), prime.SvcModel()}
@@ -68,7 +81,11 @@ func inferLanguage(config projectfile.ConfigGetter) (string, string, bool) {
 	if err != nil {
 		return "", "", false
 	}
-	commitID := defaultProj.CommitUUID()
+	commitID, err := commitmediator.Get(defaultProj)
+	if err != nil {
+		multilog.Error("Unable to get local commit: %v", errs.JoinMessage(err))
+		return "", "", false
+	}
 	if commitID == "" {
 		return "", "", false
 	}
@@ -80,10 +97,11 @@ func inferLanguage(config projectfile.ConfigGetter) (string, string, bool) {
 }
 
 func (r *Initialize) Run(params *RunParams) (rerr error) {
+	defer rationalizeError(params.Namespace, &rerr)
 	logging.Debug("Init: %s/%s %v", params.Namespace.Owner, params.Namespace.Project, params.Private)
 
 	if !r.auth.Authenticated() {
-		return locale.NewInputError("err_init_authenticated")
+		return rationalize.ErrNotAuthenticated
 	}
 
 	path := params.Path
@@ -91,12 +109,15 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 		var err error
 		path, err = osutils.Getwd()
 		if err != nil {
-			return locale.WrapInputError(err, "err_init_sanitize_path", "Could not prepare path: {{.V0}}", err.Error())
+			return errs.Wrap(err, "Unable to get current working directory")
 		}
 	}
 
 	if fileutils.TargetExists(filepath.Join(path, constants.ConfigFileName)) {
-		return locale.NewInputError("err_projectfile_exists")
+		return &errProjectExists{
+			error: errs.New("Project file already exists"),
+			path:  path,
+		}
 	}
 
 	err := fileutils.MkdirUnlessExists(path)
@@ -122,7 +143,7 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 	}
 
 	if languageName == "" {
-		return locale.NewInputError("err_init_no_language")
+		return errNoLanguage
 	}
 
 	// Require 'python', 'python@3', or 'python@2' instead of 'python3' or 'python2'.
@@ -139,18 +160,42 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 		}
 	}
 
-	err = verifyLangAndVersion(lang, languageVersion)
+	version, err := deriveVersion(lang, languageVersion)
 	if err != nil {
-		if inferred {
+		if inferred || !locale.IsInputError(err) {
 			return locale.WrapError(err, "err_init_lang", "", languageName, languageVersion)
 		} else {
 			return locale.WrapInputError(err, "err_init_lang", "", languageName, languageVersion)
 		}
 	}
 
+	// Re-enable in DX-2307.
+	//emptyDir, err := fileutils.IsEmptyDir(path)
+	//if err != nil {
+	//	multilog.Error("Unable to check if directory is empty: %v", err)
+	//}
+
+	// Match the case of the organization.
+	// Otherwise the incorrect case will be written to the project file.
+	var owner string
+	orgs, err := model.FetchOrganizations()
+	if err != nil {
+		return errs.Wrap(err, "Unable to get the user's writable orgs")
+	}
+	for _, org := range orgs {
+		if strings.EqualFold(org.URLname, params.Namespace.Owner) {
+			owner = org.URLname
+			break
+		}
+	}
+	if owner == "" {
+		return errNoOwner
+	}
+	namespace := project.Namespaced{Owner: owner, Project: params.Namespace.Project}
+
 	createParams := &projectfile.CreateParams{
-		Owner:     params.Namespace.Owner,
-		Project:   params.Namespace.Project,
+		Owner:     namespace.Owner,
+		Project:   namespace.Project,
 		Language:  lang.String(),
 		Directory: path,
 		Private:   params.Private,
@@ -186,51 +231,69 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 		return err
 	}
 
-	version := deriveVersion(lang, languageVersion)
-	commitID, err := model.CommitInitial(model.HostPlatform, lang.Requirement(), version)
+	logging.Debug("Creating Platform project")
+
+	platformID, err := model.PlatformNameToPlatformID(model.HostPlatform)
 	if err != nil {
-		return locale.WrapError(err, "err_init_commit", "Could not create initial commit")
+		return errs.Wrap(err, "Unable to determine Platform ID from %s", model.HostPlatform)
 	}
 
-	if err := proj.SetCommit(commitID.String()); err != nil {
-		return locale.WrapError(err, "err_init_setcommit", "Could not store commit to project file")
-	}
-
-	logging.Debug("Creating Platform project and pushing it")
-
-	platformProject, err := model.CreateEmptyProject(params.Namespace.Owner, params.Namespace.Project, params.Private)
+	timestamp, err := model.FetchLatestTimeStamp()
 	if err != nil {
-		return locale.WrapInputError(err, "err_init_create_project", "Failed to create a Platform project at {{.V0}}.", params.Namespace.String())
+		return errs.Wrap(err, "Unable to fetch latest timestamp")
 	}
 
-	branch, err := model.DefaultBranchForProject(platformProject) // only one branch for newly created project
+	bp := model.NewBuildPlannerModel(r.auth)
+	commitID, err := bp.CreateProject(&model.CreateProjectParams{
+		Owner:       namespace.Owner,
+		Project:     namespace.Project,
+		PlatformID:  strfmt.UUID(platformID),
+		Language:    lang.Requirement(),
+		Version:     version,
+		Private:     params.Private,
+		Timestamp:   &timestamp,
+		Description: locale.T("commit_message_add_initial"),
+	})
 	if err != nil {
-		return locale.NewInputError("err_no_default_branch")
+		return locale.WrapError(err, "err_init_commit", "Could not create project")
 	}
 
-	err = model.UpdateProjectBranchCommitWithModel(platformProject, branch.Label, commitID)
-	if err != nil {
-		return locale.WrapError(err, "err_init_push", "Failed to push to the newly created Platform project at {{.V0}}", params.Namespace.String())
+	if err := commitmediator.Set(proj, commitID.String()); err != nil {
+		return errs.Wrap(err, "Unable to create local commit file")
 	}
+	// Re-enable in DX-2307.
+	//if emptyDir || fileutils.DirExists(filepath.Join(path, ".git")) {
+	//	err := localcommit.AddToGitIgnore(path)
+	//	if err != nil {
+	//		r.out.Notice(locale.Tr("notice_commit_id_gitignore", constants.ProjectConfigDirName, constants.CommitIdFileName))
+	//		multilog.Error("Unable to add local commit file to .gitignore: %v", err)
+	//	}
+	//}
 
 	err = runbits.RefreshRuntime(r.auth, r.out, r.analytics, proj, commitID, true, target.TriggerInit, r.svcModel)
 	if err != nil {
+		logging.Debug("Deleting remotely created project due to runtime setup error")
+		err2 := model.DeleteProject(namespace.Owner, namespace.Project, r.auth)
+		if err2 != nil {
+			multilog.Error("Error deleting remotely created project after runtime setup error: %v", errs.JoinMessage(err2))
+			return locale.WrapError(err, "err_init_refresh_delete_project", "Could not setup runtime after init, and could not delete newly created Platform project. Please delete it manually before trying again")
+		}
 		return locale.WrapError(err, "err_init_refresh", "Could not setup runtime after init")
 	}
 
-	projectfile.StoreProjectMapping(r.config, params.Namespace.String(), filepath.Dir(proj.Source().Path()))
+	projectfile.StoreProjectMapping(r.config, namespace.String(), filepath.Dir(proj.Source().Path()))
 
 	projectTarget := target.NewProjectTarget(proj, nil, "").Dir()
 	executables := setup.ExecDir(projectTarget)
 
 	r.out.Print(output.Prepare(
-		locale.Tr("init_success", params.Namespace.String(), path, executables),
+		locale.Tr("init_success", namespace.String(), path, executables),
 		&struct {
 			Namespace   string `json:"namespace"`
 			Path        string `json:"path" `
 			Executables string `json:"executables"`
 		}{
-			params.Namespace.String(),
+			namespace.String(),
 			path,
 			executables,
 		},
@@ -239,60 +302,29 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 	return nil
 }
 
-func verifyLangAndVersion(lang language.Language, version string) error {
+func deriveVersion(lang language.Language, version string) (string, error) {
 	err := lang.Validate()
 	if err != nil {
-		return errs.Wrap(err, "Failed to validate language")
+		return "", errs.Wrap(err, "Failed to validate language")
 	}
 
 	if version == "" {
-		return nil // nothing to verify
-	}
-
-	pkgs, err := model.SearchIngredientsStrict(model.NewNamespaceLanguage().String(), lang.Requirement(), false, true, nil)
-	if err != nil {
-		return locale.WrapError(err, "err_init_verify_language", "Inventory search failed unexpectedly")
-	}
-
-	if len(pkgs) == 0 {
-		return locale.NewInputError("err_init_language_not_found", "The selected language cannot be found")
-	}
-
-	for _, pkg := range pkgs {
-		if strings.HasPrefix(pkg.Version, version) {
-			return nil
+		// Return default language.
+		langs, err := model.FetchSupportedLanguages(model.HostPlatform)
+		if err != nil {
+			multilog.Error("Failed to fetch supported languages (using hardcoded default version): %s", errs.JoinMessage(err))
+			return lang.RecommendedVersion(), nil
 		}
-	}
 
-	return errs.AddTips(
-		locale.NewInputError(
-			"err_init_language_version_not_found",
-			"The selected version of the language cannot be found",
-		),
-		locale.Tl(
-			"version_not_found_check_format",
-			"Please ensure that the version format is valid.",
-		),
-	)
-}
-
-func deriveVersion(lang language.Language, version string) string {
-	if version != "" {
-		return version
-	}
-
-	langs, err := model.FetchSupportedLanguages(model.HostPlatform)
-	if err != nil {
-		multilog.Error("Failed to fetch supported languages (using hardcoded default version): %s", errs.JoinMessage(err))
-		return lang.RecommendedVersion()
-	}
-
-	for _, l := range langs {
-		if lang.String() == l.Name || (lang == language.Python3 && l.Name == language.Python3.Requirement()) {
-			return l.DefaultVersion
+		for _, l := range langs {
+			if lang.String() == l.Name || (lang == language.Python3 && l.Name == language.Python3.Requirement()) {
+				return l.DefaultVersion, nil
+			}
 		}
+
+		multilog.Error("Could not find requested language in fetched languages (using hardcoded default version): %s", lang)
+		return lang.RecommendedVersion(), nil
 	}
 
-	multilog.Error("Could not find requested language in fetched languages (using hardcoded default version): %s", lang)
-	return lang.RecommendedVersion()
+	return version, nil
 }

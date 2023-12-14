@@ -12,8 +12,8 @@ import (
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runbits"
+	"github.com/ActiveState/cli/internal/runbits/commitmediator"
 	"github.com/ActiveState/cli/pkg/platform/api"
-	gqlModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model"
 	"github.com/ActiveState/cli/pkg/platform/api/reqsimport"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -98,7 +98,7 @@ func (i *Import) Run(params *ImportRunParams) error {
 		return locale.NewInputError("err_no_project")
 	}
 
-	i.out.Notice(locale.Tl("operating_message", "", i.proj.NamespaceString(), i.proj.Dir()))
+	i.out.Notice(locale.Tr("operating_message", i.proj.NamespaceString(), i.proj.Dir()))
 
 	if params.FileName == "" {
 		params.FileName = defaultImportFile
@@ -124,14 +124,6 @@ func (i *Import) Run(params *ImportRunParams) error {
 		return errs.Wrap(err, "Could not import changeset")
 	}
 
-	packageReqs := model.FilterCheckpointNamespace(reqs, model.NamespacePackage, model.NamespaceBundle)
-	if len(packageReqs) > 0 {
-		err = removeRequirements(i.Prompter, i.proj, params, packageReqs)
-		if err != nil {
-			return locale.WrapError(err, "err_cannot_remove_existing")
-		}
-	}
-
 	msg := locale.T("commit_reqstext_message")
 	commitID, err := commitChangeset(i.proj, msg, changeset)
 	if err != nil {
@@ -139,26 +131,6 @@ func (i *Import) Run(params *ImportRunParams) error {
 	}
 
 	return runbits.RefreshRuntime(i.auth, i.out, i.analytics, i.proj, commitID, true, target.TriggerImport, i.svcModel)
-}
-
-func removeRequirements(conf Confirmer, project *project.Project, params *ImportRunParams, reqs []*gqlModel.Requirement) error {
-	if !params.NonInteractive {
-		msg := locale.T("confirm_remove_existing_prompt")
-
-		defaultChoice := params.NonInteractive
-		confirmed, err := conf.Confirm(locale.T("confirm"), msg, &defaultChoice)
-		if err != nil {
-			return err
-		}
-		if !confirmed {
-			return locale.NewInputError("err_action_was_not_confirmed", "Cancelled Import.")
-		}
-	}
-
-	removal := model.ChangesetFromRequirements(model.OperationRemoved, reqs)
-	msg := locale.T("commit_reqstext_remove_existing_message")
-	_, err := commitChangeset(project, msg, removal)
-	return err
 }
 
 func fetchImportChangeset(cp ChangesetProvider, file string, lang string) (model.Changeset, error) {
@@ -176,15 +148,19 @@ func fetchImportChangeset(cp ChangesetProvider, file string, lang string) (model
 }
 
 func commitChangeset(project *project.Project, msg string, changeset model.Changeset) (strfmt.UUID, error) {
-	commitID, err := model.CommitChangeset(project.CommitUUID(), msg, changeset)
+	localCommitID, err := commitmediator.Get(project)
+	if err != nil {
+		return "", errs.Wrap(err, "Unable to get local commit")
+	}
+	commitID, err := model.CommitChangeset(localCommitID, msg, changeset)
 	if err != nil {
 		return "", errs.AddTips(locale.WrapError(err, "err_packages_removed"),
 			locale.T("commit_failed_push_tip"),
 			locale.T("commit_failed_pull_tip"))
 	}
 
-	if err := project.SetCommit(commitID.String()); err != nil {
-		return "", locale.WrapError(err, "err_package_update_pjfile")
+	if err := commitmediator.Set(project, commitID.String()); err != nil {
+		return "", locale.WrapError(err, "err_package_update_commit_id")
 	}
 	return commitID, nil
 }

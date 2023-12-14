@@ -15,8 +15,7 @@ name: Build-Test-Deploy
       - synchronize
       - reopened
   schedule:
-    -
-      cron: 0 0 * * *
+    - cron: 0 0 * * *
 
 # === Workflow Permissions ===
 permissions:
@@ -25,7 +24,7 @@ permissions:
 
 # === Workflow-level environment variables ===
 env:
-  AWS_REGION : us-east-1
+  AWS_REGION: us-east-1
   AWS_ROLE_SESSION_NAME: gha-activestate-cli
 
 # === JOBS ===
@@ -33,28 +32,34 @@ jobs:
 
   # === OS Specific Job (runs on each OS) ===
   os_specific:
-    name: ${{ matrix.platform }}
+    name: ${{ matrix.sys.os }}
     timeout-minutes: 90
     strategy:
       matrix:
         go-version:
           - 1.20.x
-        platform:
-          - ubuntu-20.04
-          - macos-11
-          - windows-2019
+        sys:
+          - {os: ubuntu-20.04}
+          - {os: macos-11, shell: zsh}
+          - {os: windows-2019}
       fail-fast: false
-    runs-on: ${{ matrix.platform }}
+    runs-on: ${{ matrix.sys.os }}
     env:
+      ACTIVESTATE_CI: true
       ACTIVESTATE_CLI_DISABLE_RUNTIME: true
       SHELL: bash
       GITHUB_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     concurrency:
-      group: ${{ github.ref }}-${{ github.event_name }}-${{ matrix.platform }}
+      group: ${{ github.ref }}-${{ github.event_name }}-${{ matrix.sys.os }}
       cancel-in-progress: true
 
     # === OS Specific Steps ===
     steps:
+      - # === Disable Windows Defender as it slows things down significantly ===
+        name: Disabling Windows Defender
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: Set-MpPreference -DisableRealtimeMonitoring $true
 
       - # === Checkout Code ===
         name: Checkout code
@@ -71,6 +76,10 @@ jobs:
         uses: gotesttools/gotestfmt-action@v2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
+
+      - # === Install State Tool ===
+        name: Install State Tool
+        uses: ActiveState/setup-state-tool@v1
 
       - # === Setup ===
         name: Setup
@@ -102,11 +111,6 @@ jobs:
         shell: bash
         run: brew install fish
         if: runner.os == 'macOS'
-
-      - # === Install Deps ===
-        name: Install Deps
-        shell: bash
-        run: state run install-deps
 
       - # === Preprocess ===
         name: Preprocess
@@ -242,7 +246,7 @@ jobs:
         name: Generate Remote Install Deployment
         shell: bash
         run: state run generate-remote-install-deployment
-      
+
       - # === Configure AWS credentials ==
         name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v2
@@ -313,15 +317,13 @@ jobs:
           echo "Running integration tests with tags: $TEST_SUITE_TAGS (empty means every test not specifically tagged)"
 
           export TEST_SUITE_TAGS="$TEST_SUITE_TAGS"
-          TIMEOUT=15m
+          TIMEOUT=30m
           if [[ "$TEST_SUITE_TAGS" == "all" ]]; then
             TIMEOUT=60m
           fi
-          SHELL='' go test -timeout $TIMEOUT -v `go list ./... | grep "integration"` -json 2>&1 | gotestfmt -hide empty-packages
+          SHELL='${{ matrix.sys.shell }}' go test -timeout $TIMEOUT -v `go list ./... | grep "integration"` -json 2>&1 | gotestfmt -hide empty-packages
         continue-on-error: ${{ github.event_name == 'schedule' }}
         env:
-          ACTIVESTATE_VERBOSE: true
-          ACTIVESTATE_DEBUG_SERVICE_REQUESTS: true
           INTEGRATION_TEST_USERNAME: ${{ secrets.INTEGRATION_TEST_USERNAME }}
           INTEGRATION_TEST_PASSWORD: ${{ secrets.INTEGRATION_TEST_PASSWORD }}
           INTEGRATION_TEST_TOKEN: ${{ secrets.INTEGRATION_TEST_TOKEN }}
@@ -360,7 +362,7 @@ jobs:
                   "type": "section",
                   "text": {
                     "type": "plain_text",
-                    "text": "Select the '${{ matrix.platform }}' job and expand 'Integration Tests' to inspect the failures."
+                    "text": "Select the '${{ matrix.sys.os }}' job and expand 'Integration Tests' to inspect the failures."
                   }
                 }
               ]
@@ -379,7 +381,7 @@ jobs:
         name: Upload Session Artifacts
         uses: actions/upload-artifact@v2
         with:
-          name: session-build-${{ matrix.platform }}
+          name: session-build-${{ matrix.sys.os }}
           path: build/
 
   # === Deploy job (runs once with combined artifacts from OS specific job) ===
@@ -389,6 +391,7 @@ jobs:
       - os_specific
     runs-on: ubuntu-20.04
     env:
+      ACTIVESTATE_CI: true
       ACTIVESTATE_CLI_DISABLE_RUNTIME: true
       SHELL: bash
       GITHUB_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -408,15 +411,9 @@ jobs:
         with:
           go-version: ${{ matrix.go-version }}
 
-      - # === Setup ===
-        name: Setup
-        shell: bash
-        run: |
-          bin=$(pwd)/.github/deps/${{ runner.os }}/bin
-          echo "Adding $bin to PATH"
-          echo "$bin" >> $GITHUB_PATH
-          ls -ahl $bin
-          printenv
+      - # === Install State Tool ===
+        name: Install State Tool
+        uses: ActiveState/setup-state-tool@v1
 
       - # === Download All Build Session Artifacts ===
         name: Download All Build Session Artifacts
@@ -432,11 +429,6 @@ jobs:
           rm -Rf session-shared-build
           find . -mindepth 2 -maxdepth 2 -print0 | xargs -0 -I file rsync -av file .
           rm -Rf session*
-
-      - # === Install Deps ===
-        name: Install Deps
-        shell: bash
-        run: state run install-deps
 
       - # === Preprocess ===
         name: Preprocess
@@ -456,6 +448,11 @@ jobs:
           role-session-name: ${{ env.AWS_ROLE_SESSION_NAME }}
           aws-region: ${{ env.AWS_REGION }}
           mask-aws-account-id: true
+
+      - # === Generate updated master versions.json if necessary ===
+        name: Generate version list
+        shell: bash
+        run: state run generate-versions-list
 
       - # === Deploy ===
         name: Deploy

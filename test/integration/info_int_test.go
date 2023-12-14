@@ -44,6 +44,7 @@ func (suite *InfoIntegrationTestSuite) TestInfo_UnavailableVersion() {
 	cp := ts.Spawn("info", "pylint@9.9.9", "--language", "python")
 	cp.Expect("Could not find version 9.9.9 for package pylint")
 	cp.ExpectExitCode(1)
+	ts.IgnoreLogErrors()
 }
 
 func (suite *InfoIntegrationTestSuite) TestJSON() {
@@ -62,6 +63,7 @@ func (suite *InfoIntegrationTestSuite) TestJSON() {
 	cp.Expect(`"error":`)
 	cp.ExpectExitCode(1)
 	AssertValidJSON(suite.T(), cp)
+	ts.IgnoreLogErrors()
 }
 
 func TestInfoIntegrationTestSuite(t *testing.T) {

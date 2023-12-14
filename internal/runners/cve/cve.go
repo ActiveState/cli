@@ -7,6 +7,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
+	"github.com/ActiveState/cli/internal/runbits/commitmediator"
 	medmodel "github.com/ActiveState/cli/pkg/platform/api/mediator/model"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -56,7 +57,7 @@ func (c *Cve) Run() error {
 	if c.proj == nil {
 		return locale.NewError("cve_no_project", "No project found at the current directory.")
 	}
-	c.out.Notice(locale.Tl("operating_message", "", c.proj.NamespaceString(), c.proj.Dir()))
+	c.out.Notice(locale.Tr("operating_message", c.proj.NamespaceString(), c.proj.Dir()))
 
 	if !c.auth.Authenticated() {
 		return errs.AddTips(
@@ -65,7 +66,12 @@ func (c *Cve) Run() error {
 		)
 	}
 
-	resp, err := model.FetchCommitVulnerabilities(c.auth, c.proj.CommitID())
+	commitID, err := commitmediator.Get(c.proj)
+	if err != nil {
+		return errs.Wrap(err, "Could not get local commit")
+	}
+
+	resp, err := model.FetchCommitVulnerabilities(c.auth, commitID.String())
 	if err != nil {
 		return locale.WrapError(err, "cve_mediator_resp", "Failed to retrieve vulnerability information")
 	}

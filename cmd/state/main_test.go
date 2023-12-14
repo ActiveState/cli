@@ -15,45 +15,44 @@ type MainTestSuite struct {
 
 func (suite *MainTestSuite) TestOutputer() {
 	{
-		outputer, err := initOutput(outputFlags{"", false, false, false}, "", "")
+		outputer, err := initOutput(outputFlags{"", false, false}, "", "")
 		suite.Require().NoError(err, errs.JoinMessage(err))
 		suite.Equal(output.PlainFormatName, outputer.Type(), "Returns Plain outputer")
 	}
 
 	{
-		outputer, err := initOutput(outputFlags{string(output.PlainFormatName), false, false, false}, "", "")
+		outputer, err := initOutput(outputFlags{string(output.PlainFormatName), false, false}, "", "")
 		suite.Require().NoError(err)
 		suite.Equal(output.PlainFormatName, outputer.Type(), "Returns Plain outputer")
 	}
 
 	{
-		outputer, err := initOutput(outputFlags{string(output.JSONFormatName), false, false, false}, "", "")
+		outputer, err := initOutput(outputFlags{string(output.JSONFormatName), false, false}, "", "")
 		suite.Require().NoError(err)
 		suite.Equal(output.JSONFormatName, outputer.Type(), "Returns JSON outputer")
 	}
 
 	{
-		outputer, err := initOutput(outputFlags{"", false, false, false}, string(output.JSONFormatName), "")
+		outputer, err := initOutput(outputFlags{"", false, false}, string(output.JSONFormatName), "")
 		suite.Require().NoError(err)
 		suite.Equal(output.JSONFormatName, outputer.Type(), "Returns JSON outputer")
 	}
 
 	{
-		outputer, err := initOutput(outputFlags{"", false, false, false}, string(output.EditorFormatName), "")
+		outputer, err := initOutput(outputFlags{"", false, false}, string(output.EditorFormatName), "")
 		suite.Require().NoError(err)
 		suite.Equal(output.EditorFormatName, outputer.Type(), "Returns JSON outputer")
 	}
 }
 
 func (suite *MainTestSuite) TestParseOutputFlags() {
-	suite.Equal(outputFlags{"plain", false, false, false}, parseOutputFlags([]string{"state", "foo", "-o", "plain"}))
-	suite.Equal(outputFlags{"json", false, false, false}, parseOutputFlags([]string{"state", "foo", "--output", "json"}))
-	suite.Equal(outputFlags{"json", false, false, false}, parseOutputFlags([]string{"state", "foo", "-o", "json"}))
-	suite.Equal(outputFlags{"editor", false, false, false}, parseOutputFlags([]string{"state", "foo", "--output", "editor"}))
-	suite.Equal(outputFlags{"", true, false, false}, parseOutputFlags([]string{"state", "foo", "--mono"}))
-	suite.Equal(outputFlags{"", false, true, false}, parseOutputFlags([]string{"state", "foo", "--confirm-exit-on-error"}))
-	suite.Equal(outputFlags{"", false, false, true}, parseOutputFlags([]string{"state", "foo", "--non-interactive"}))
-	suite.Equal(outputFlags{"", false, false, true}, parseOutputFlags([]string{"state", "foo", "-n"}))
+	suite.Equal(outputFlags{"plain", false, false}, parseOutputFlags([]string{"state", "foo", "-o", "plain"}))
+	suite.Equal(outputFlags{"json", false, false}, parseOutputFlags([]string{"state", "foo", "--output", "json"}))
+	suite.Equal(outputFlags{"json", false, false}, parseOutputFlags([]string{"state", "foo", "-o", "json"}))
+	suite.Equal(outputFlags{"editor", false, false}, parseOutputFlags([]string{"state", "foo", "--output", "editor"}))
+	suite.Equal(outputFlags{"", true, false}, parseOutputFlags([]string{"state", "foo", "--mono"}))
+	suite.Equal(outputFlags{"", false, true}, parseOutputFlags([]string{"state", "foo", "--non-interactive"}))
+	suite.Equal(outputFlags{"", false, true}, parseOutputFlags([]string{"state", "foo", "-n"}))
 }
 
 func (suite *MainTestSuite) TestDisableColors() {

@@ -28,5 +28,5 @@ func newShowCommand(prime *primer.Values) *captain.Command {
 		func(_ *captain.Command, _ []string) error {
 			return runner.Run(params)
 		},
-	).SetGroup(ProjectUsageGroup).SetUnstable(true)
+	).SetGroup(ProjectUsageGroup).SetSupportsStructuredOutput().SetUnstable(true)
 }

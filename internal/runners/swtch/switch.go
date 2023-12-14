@@ -2,12 +2,13 @@ package swtch
 
 import (
 	"github.com/ActiveState/cli/internal/analytics"
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runbits"
-	"github.com/ActiveState/cli/internal/runbits/rtusage"
+	"github.com/ActiveState/cli/internal/runbits/commitmediator"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -82,11 +83,9 @@ func (s *Switch) Run(params SwitchParams) error {
 	if s.project == nil {
 		return locale.NewInputError("err_no_project")
 	}
-	s.out.Notice(locale.Tl("operating_message", "", s.project.NamespaceString(), s.project.Dir()))
+	s.out.Notice(locale.Tr("operating_message", s.project.NamespaceString(), s.project.Dir()))
 
-	rtusage.PrintRuntimeUsage(s.svcModel, s.out, s.project.Owner())
-
-	project, err := model.FetchProjectByName(s.project.Owner(), s.project.Name())
+	project, err := model.LegacyFetchProjectByName(s.project.Owner(), s.project.Name())
 	if err != nil {
 		return locale.WrapError(err, "err_fetch_project", "", s.project.Namespace().String())
 	}
@@ -111,9 +110,9 @@ func (s *Switch) Run(params SwitchParams) error {
 		return locale.NewInputError("err_identifier_branch_not_on_branch", "Commit does not belong to history for branch [ACTIONABLE]{{.V0}}[/RESET]", s.project.BranchName())
 	}
 
-	err = s.project.SetCommit(identifier.CommitID().String())
+	err = commitmediator.Set(s.project, identifier.CommitID().String())
 	if err != nil {
-		return locale.WrapError(err, "err_switch_set_commitID", "Could not update commit ID")
+		return errs.Wrap(err, "Unable to set local commit")
 	}
 
 	err = runbits.RefreshRuntime(s.auth, s.out, s.analytics, s.project, identifier.CommitID(), false, target.TriggerSwitch, s.svcModel)
@@ -140,7 +139,7 @@ func resolveIdentifier(project *mono_models.Project, idParam string) (identifier
 
 	branch, err := model.BranchForProjectByName(project, idParam)
 	if err != nil {
-		return nil, locale.WrapError(err, "err_identifier_branch", "Could not get branch {{.V0}} for current project", idParam)
+		return nil, locale.WrapError(err, "err_identifier_branch", "Could not get branch '{{.V0}}' for current project", idParam)
 
 	}
 

@@ -42,6 +42,9 @@ const (
 
 	// ServiceBuildPlanner is our service that processes build plans.
 	ServiceBuildPlanner = "build-planner"
+
+	// TestingPlatform is the API host used by tests so-as not to affect production.
+	TestingPlatform = ".testing.tld"
 )
 
 var urlsByService = map[Service]*url.URL{
@@ -117,7 +120,7 @@ func getProjectHost(service Service) *string {
 	}
 
 	if condition.InUnitTest() {
-		testingPlatform := string(service) + ".testing.tld"
+		testingPlatform := string(service) + TestingPlatform
 		return &testingPlatform
 	}
 
@@ -132,4 +135,18 @@ func getProjectHost(service Service) *string {
 	}
 
 	return &url.Host
+}
+
+// GetPlatformURL returns a generic Platform URL for the given path.
+// This is for retrieving non-service URLs (e.g. signup URL).
+func GetPlatformURL(path string) *url.URL {
+	host := constants.DefaultAPIHost
+	if hostOverride := os.Getenv(constants.APIHostEnvVarName); hostOverride != "" {
+		host = hostOverride
+	}
+	return &url.URL{
+		Scheme: "https",
+		Host:   host,
+		Path:   path,
+	}
 }

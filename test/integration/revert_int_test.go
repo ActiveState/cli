@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/stretchr/testify/suite"
@@ -21,7 +22,7 @@ func (suite *RevertIntegrationTestSuite) TestRevert() {
 	ts.LoginAsPersistentUser()
 
 	namespace := "ActiveState-CLI/Revert"
-	cp := ts.SpawnWithOpts(e2e.WithArgs("checkout", namespace))
+	cp := ts.SpawnWithOpts(e2e.OptArgs("checkout", namespace))
 	cp.Expect("Skipping runtime setup")
 	cp.Expect("Checked out project")
 	cp.ExpectExitCode(0)
@@ -29,20 +30,20 @@ func (suite *RevertIntegrationTestSuite) TestRevert() {
 
 	// Revert the commit that added urllib3.
 	commitID := "1f4f4f7d-7883-400e-b2ad-a5803c018ecd"
-	cp = ts.SpawnWithOpts(e2e.WithArgs("revert", commitID), e2e.WithWorkDirectory(wd))
-	cp.ExpectLongString(fmt.Sprintf("Operating on project %s", namespace))
-	cp.SendLine("Y")
+	cp = ts.SpawnWithOpts(e2e.OptArgs("revert", commitID), e2e.OptWD(wd))
+	cp.Expect(fmt.Sprintf("Operating on project %s", namespace))
 	cp.Expect("You are about to revert the following commit:")
 	cp.Expect(commitID)
+	cp.SendLine("y")
 	cp.Expect("Successfully reverted commit:")
 	cp.ExpectExitCode(0)
 
 	// Verify the commit history has both the new revert commit and all prior history.
 	cp = ts.SpawnWithOpts(
-		e2e.WithArgs("history"),
-		e2e.WithWorkDirectory(wd),
+		e2e.OptArgs("history"),
+		e2e.OptWD(wd),
 	)
-	cp.Expect("Revert commit " + commitID)
+	cp.Expect("Reverted commit for commit " + commitID)
 	cp.Expect("- urllib3")
 	cp.Expect("+ argparse") // parent commit
 	cp.Expect("+ urllib3")  // commit whose changes were just reverted
@@ -50,16 +51,16 @@ func (suite *RevertIntegrationTestSuite) TestRevert() {
 
 	// Verify that argparse still exists (it was not reverted along with urllib3).
 	cp = ts.SpawnWithOpts(
-		e2e.WithArgs("shell", "Revert"),
-		e2e.AppendEnv("ACTIVESTATE_CLI_DISABLE_RUNTIME=false"),
+		e2e.OptArgs("shell", "Revert"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
-	cp.WaitForInput()
+	cp.ExpectInput(e2e.RuntimeSourcingTimeoutOpt)
 	cp.SendLine("python3")
 	cp.Expect("3.9.15")
 	cp.SendLine("import urllib3")
 	cp.Expect("No module named 'urllib3'")
 	cp.SendLine("import argparse")
-	suite.Assert().NotContains(cp.TrimmedSnapshot(), "No module named 'argparse'")
+	suite.Assert().NotContains(cp.Output(), "No module named 'argparse'")
 	cp.SendLine("exit()") // exit python3
 	cp.SendLine("exit")   // exit state shell
 	cp.ExpectExitCode(0)
@@ -70,8 +71,8 @@ func (suite *RevertIntegrationTestSuite) TestRevert_failsOnCommitNotInHistory() 
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	namespace := "activestate-cli/small-python"
-	cp := ts.SpawnWithOpts(e2e.WithArgs("checkout", namespace))
+	namespace := "ActiveState-CLI/small-python"
+	cp := ts.SpawnWithOpts(e2e.OptArgs("checkout", namespace))
 	cp.Expect("Skipping runtime setup")
 	cp.Expect("Checked out project")
 	cp.ExpectExitCode(0)
@@ -79,12 +80,13 @@ func (suite *RevertIntegrationTestSuite) TestRevert_failsOnCommitNotInHistory() 
 
 	// valid commit id not from project
 	commitID := "cb9b1aab-8e40-4a1d-8ad6-5ea112da40f1" // from Perl-5.32
-	cp = ts.SpawnWithOpts(e2e.WithArgs("revert", commitID), e2e.WithWorkDirectory(wd))
-	cp.ExpectLongString(fmt.Sprintf("Operating on project %s", namespace))
+	cp = ts.SpawnWithOpts(e2e.OptArgs("revert", commitID), e2e.OptWD(wd))
+	cp.Expect(fmt.Sprintf("Operating on project %s", namespace))
 	cp.SendLine("Y")
 	cp.Expect(commitID)
-	cp.ExpectLongString("The commit being reverted is not within the current commit's history")
+	cp.Expect("The target commit is not within the current commit's history")
 	cp.ExpectNotExitCode(0)
+	ts.IgnoreLogErrors()
 }
 
 func (suite *RevertIntegrationTestSuite) TestRevertTo() {
@@ -93,8 +95,8 @@ func (suite *RevertIntegrationTestSuite) TestRevertTo() {
 	defer ts.Close()
 	ts.LoginAsPersistentUser()
 
-	namespace := "activestate-cli/Revert"
-	cp := ts.SpawnWithOpts(e2e.WithArgs("checkout", namespace))
+	namespace := "ActiveState-CLI/Revert"
+	cp := ts.SpawnWithOpts(e2e.OptArgs("checkout", namespace))
 	cp.Expect("Skipping runtime setup")
 	cp.Expect("Checked out project")
 	cp.ExpectExitCode(0)
@@ -102,8 +104,8 @@ func (suite *RevertIntegrationTestSuite) TestRevertTo() {
 
 	// Revert the commit that added urllib3.
 	commitID := "1f4f4f7d-7883-400e-b2ad-a5803c018ecd"
-	cp = ts.SpawnWithOpts(e2e.WithArgs("revert", "--to", commitID), e2e.WithWorkDirectory(wd))
-	cp.ExpectLongString(fmt.Sprintf("Operating on project %s", namespace))
+	cp = ts.SpawnWithOpts(e2e.OptArgs("revert", "--to", commitID), e2e.OptWD(wd))
+	cp.Expect(fmt.Sprintf("Operating on project %s", namespace))
 	cp.SendLine("Y")
 	cp.Expect("You are about to revert to the following commit:")
 	cp.Expect(commitID)
@@ -112,10 +114,10 @@ func (suite *RevertIntegrationTestSuite) TestRevertTo() {
 
 	// Verify the commit history has both the new revert commit and all prior history.
 	cp = ts.SpawnWithOpts(
-		e2e.WithArgs("history"),
-		e2e.WithWorkDirectory(wd),
+		e2e.OptArgs("history"),
+		e2e.OptWD(wd),
 	)
-	cp.Expect("Reverting to commit " + commitID)
+	cp.Expect("Revert to commit " + commitID)
 	cp.Expect("- argparse") // effectively reverting previous commit
 	cp.Expect("+ argparse") // commit being effectively reverted
 	cp.Expect("+ urllib3")  // commit reverted to
@@ -127,8 +129,8 @@ func (suite *RevertIntegrationTestSuite) TestRevertTo_failsOnCommitNotInHistory(
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	namespace := "activestate-cli/small-python"
-	cp := ts.SpawnWithOpts(e2e.WithArgs("checkout", namespace))
+	namespace := "ActiveState-CLI/small-python"
+	cp := ts.SpawnWithOpts(e2e.OptArgs("checkout", namespace))
 	cp.Expect("Skipping runtime setup")
 	cp.Expect("Checked out project")
 	cp.ExpectExitCode(0)
@@ -136,12 +138,13 @@ func (suite *RevertIntegrationTestSuite) TestRevertTo_failsOnCommitNotInHistory(
 
 	// valid commit id not from project
 	commitID := "cb9b1aab-8e40-4a1d-8ad6-5ea112da40f1" // from Perl-5.32
-	cp = ts.SpawnWithOpts(e2e.WithArgs("revert", "--to", commitID), e2e.WithWorkDirectory(wd))
-	cp.ExpectLongString(fmt.Sprintf("Operating on project %s", namespace))
+	cp = ts.SpawnWithOpts(e2e.OptArgs("revert", "--to", commitID), e2e.OptWD(wd))
+	cp.Expect(fmt.Sprintf("Operating on project %s", namespace))
 	cp.SendLine("Y")
 	cp.Expect(commitID)
 	cp.Expect("The target commit is not")
 	cp.ExpectNotExitCode(0)
+	ts.IgnoreLogErrors()
 }
 
 func (suite *RevertIntegrationTestSuite) TestJSON() {
@@ -157,7 +160,7 @@ func (suite *RevertIntegrationTestSuite) TestJSON() {
 	cp = ts.Spawn("revert", "--to", "1f4f4f7d-7883-400e-b2ad-a5803c018ecd", "-o", "json")
 	cp.Expect(`{"current_commit_id":`)
 	cp.ExpectExitCode(0)
-	//AssertValidJSON(suite.T(), cp) // cannot assert here due to "Skipping runtime setup" notice
+	// AssertValidJSON(suite.T(), cp) // cannot assert here due to "Skipping runtime setup" notice
 }
 
 func TestRevertIntegrationTestSuite(t *testing.T) {

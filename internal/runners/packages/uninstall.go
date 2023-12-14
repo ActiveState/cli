@@ -2,9 +2,9 @@ package packages
 
 import (
 	"github.com/ActiveState/cli/internal/captain"
-	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
+	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/internal/runbits/requirements"
 	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -26,10 +26,11 @@ func NewUninstall(prime primeable) *Uninstall {
 }
 
 // Run executes the uninstall behavior.
-func (u *Uninstall) Run(params UninstallRunParams, nsType model.NamespaceType) error {
+func (u *Uninstall) Run(params UninstallRunParams, nsType model.NamespaceType) (rerr error) {
+	defer rationalizeError(u.prime.Auth(), &rerr)
 	logging.Debug("ExecuteUninstall")
 	if u.prime.Project() == nil {
-		return locale.NewInputError("err_no_project")
+		return rationalize.ErrNoProject
 	}
 
 	var nsTypeV *model.NamespaceType

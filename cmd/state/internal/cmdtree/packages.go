@@ -43,6 +43,7 @@ func newPackagesCommand(prime *primer.Values) *captain.Command {
 
 	cmd.SetGroup(PackagesGroup)
 	cmd.SetAliases("pkg", "package")
+	cmd.SetSupportsStructuredOutput()
 
 	return cmd
 }
@@ -75,7 +76,7 @@ func newInstallCommand(prime *primer.Values) *captain.Command {
 		func(_ *captain.Command, _ []string) error {
 			return runner.Run(params, model.NamespacePackage)
 		},
-	).SetGroup(PackagesGroup)
+	).SetGroup(PackagesGroup).SetSupportsStructuredOutput()
 }
 
 func newUninstallCommand(prime *primer.Values) *captain.Command {
@@ -100,7 +101,7 @@ func newUninstallCommand(prime *primer.Values) *captain.Command {
 		func(_ *captain.Command, _ []string) error {
 			return runner.Run(params, model.NamespacePackage)
 		},
-	).SetGroup(PackagesGroup)
+	).SetGroup(PackagesGroup).SetSupportsStructuredOutput()
 }
 
 func newImportCommand(prime *primer.Values, globals *globalOptions) *captain.Command {
@@ -126,7 +127,7 @@ func newImportCommand(prime *primer.Values, globals *globalOptions) *captain.Com
 			params.NonInteractive = globals.NonInteractive
 			return runner.Run(params)
 		},
-	).SetGroup(PackagesGroup)
+	).SetGroup(PackagesGroup).SetSupportsStructuredOutput()
 }
 
 func newSearchCommand(prime *primer.Values) *captain.Command {
@@ -167,7 +168,7 @@ func newSearchCommand(prime *primer.Values) *captain.Command {
 		func(_ *captain.Command, _ []string) error {
 			return runner.Run(params, model.NamespacePackage)
 		},
-	).SetGroup(PackagesGroup).SetUnstable(true)
+	).SetGroup(PackagesGroup).SetSupportsStructuredOutput().SetUnstable(true)
 }
 
 func newInfoCommand(prime *primer.Values) *captain.Command {
@@ -203,5 +204,5 @@ func newInfoCommand(prime *primer.Values) *captain.Command {
 		func(_ *captain.Command, _ []string) error {
 			return runner.Run(params, model.NamespacePackage)
 		},
-	).SetGroup(PackagesGroup)
+	).SetGroup(PackagesGroup).SetSupportsStructuredOutput()
 }

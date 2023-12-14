@@ -1,16 +1,12 @@
 package requirements
 
 import (
-	"errors"
 	"fmt"
-	"os"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/ActiveState/cli/internal/analytics"
-	"github.com/ActiveState/cli/internal/rtutils/ptr"
-	"github.com/thoas/go-funk"
-
 	anaConsts "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/captain"
 	"github.com/ActiveState/cli/internal/config"
@@ -22,16 +18,17 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
+	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/runbits"
-	"github.com/ActiveState/cli/internal/runbits/rtusage"
+	"github.com/ActiveState/cli/internal/runbits/commitmediator"
+	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	medmodel "github.com/ActiveState/cli/pkg/platform/api/mediator/model"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/ActiveState/cli/pkg/projectfile"
+	"github.com/thoas/go-funk"
 )
 
 type PackageVersion struct {
@@ -80,6 +77,12 @@ func NewRequirementOperation(prime primeable) *RequirementOperation {
 
 const latestVersion = "latest"
 
+type ErrNoMatches struct {
+	*locale.LocalizedError
+	Query        string
+	Alternatives *string
+}
+
 // ExecuteRequirementOperation executes the operation on the requirement
 // This has become quite unwieldy, and is ripe for a refactor - https://activestatef.atlassian.net/browse/DX-1897
 // For now, be aware that you should never provide BOTH ns AND nsType, one or the other should always be nil, but never both.
@@ -87,6 +90,7 @@ const latestVersion = "latest"
 func (r *RequirementOperation) ExecuteRequirementOperation(
 	requirementName, requirementVersion string,
 	operation bpModel.Operation, ns *model.Namespace, nsType *model.NamespaceType, ts *time.Time) (rerr error) {
+	defer r.rationalizeError(&rerr)
 
 	var langVersion string
 	langName := "undetermined"
@@ -101,30 +105,23 @@ func (r *RequirementOperation) ExecuteRequirementOperation(
 	}()
 
 	var err error
-	pj := r.Project
-	if pj == nil {
-		pg = output.StartSpinner(out, locale.Tl("progress_project", "", requirementName), constants.TerminalAnimationInterval)
-		pj, err = initializeProject()
-		if err != nil {
-			return locale.WrapError(err, "err_package_get_project", "Could not get project from path")
-		}
-		pg.Stop(locale.T("progress_success"))
-		pg = nil // The defer above will redundantly call pg.Stop on success if we don't set this to nil
-
-		defer func() {
-			if rerr != nil && !errors.Is(err, artifact.CamelRuntimeBuilding) {
-				if err := os.Remove(pj.Source().Path()); err != nil {
-					multilog.Error("could not remove temporary project file: %s", errs.JoinMessage(err))
-				}
-			}
-		}()
+	if r.Project == nil {
+		return rationalize.ErrNoProject
 	}
-	out.Notice(locale.Tl("operating_message", "", pj.NamespaceString(), pj.Dir()))
+	if r.Project.IsHeadless() {
+		return rationalize.ErrHeadless
+	}
+	out.Notice(locale.Tr("operating_message", r.Project.NamespaceString(), r.Project.Dir()))
 
 	if nsType != nil {
 		switch *nsType {
 		case model.NamespacePackage, model.NamespaceBundle:
-			language, err := model.LanguageByCommit(pj.CommitUUID())
+			commitID, err := commitmediator.Get(r.Project)
+			if err != nil {
+				return errs.Wrap(err, "Unable to get local commit")
+			}
+
+			language, err := model.LanguageByCommit(commitID)
 			if err == nil {
 				langName = language.Name
 				ns = ptr.To(model.NewNamespacePkgOrBundle(langName, *nsType))
@@ -138,11 +135,9 @@ func (r *RequirementOperation) ExecuteRequirementOperation(
 		}
 	}
 
-	rtusage.PrintRuntimeUsage(r.SvcModel, out, pj.Owner())
-
 	var validatePkg = operation == bpModel.OperationAdded && (ns.Type() == model.NamespacePackage || ns.Type() == model.NamespaceBundle)
 	if (ns == nil || !ns.IsValid()) && nsType != nil && (*nsType == model.NamespacePackage || *nsType == model.NamespaceBundle) {
-		pg = output.StartSpinner(out, locale.Tl("progress_pkg_nolang", "", requirementName), constants.TerminalAnimationInterval)
+		pg = output.StartSpinner(out, locale.Tr("progress_pkg_nolang", requirementName), constants.TerminalAnimationInterval)
 
 		supported, err := model.FetchSupportedLanguages(model.HostPlatform)
 		if err != nil {
@@ -175,7 +170,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(
 
 	origRequirementName := requirementName
 	if validatePkg {
-		pg = output.StartSpinner(out, locale.Tl("progress_search", "", requirementName), constants.TerminalAnimationInterval)
+		pg = output.StartSpinner(out, locale.Tr("progress_search", requirementName), constants.TerminalAnimationInterval)
 
 		normalized, err := model.FetchNormalizedName(*ns, requirementName)
 		if err != nil {
@@ -186,15 +181,22 @@ func (r *RequirementOperation) ExecuteRequirementOperation(
 		if err != nil {
 			return locale.WrapError(err, "package_err_cannot_obtain_search_results")
 		}
+
 		if len(packages) == 0 {
 			suggestions, err := getSuggestions(*ns, requirementName)
 			if err != nil {
 				multilog.Error("Failed to retrieve suggestions: %v", err)
 			}
+
 			if len(suggestions) == 0 {
-				return locale.WrapInputError(err, "package_ingredient_alternatives_nosuggest", "", requirementName)
+				return &ErrNoMatches{
+					locale.WrapInputError(err, "package_ingredient_alternatives_nosuggest", "", requirementName),
+					requirementName, nil}
 			}
-			return locale.WrapInputError(err, "package_ingredient_alternatives", "", requirementName, strings.Join(suggestions, "\n"))
+
+			return &ErrNoMatches{
+				locale.WrapInputError(err, "package_ingredient_alternatives", "", requirementName, strings.Join(suggestions, "\n")),
+				requirementName, ptr.To(strings.Join(suggestions, "\n"))}
 		}
 
 		requirementName = normalized
@@ -203,7 +205,10 @@ func (r *RequirementOperation) ExecuteRequirementOperation(
 		pg = nil
 	}
 
-	parentCommitID := pj.CommitUUID()
+	parentCommitID, err := commitmediator.Get(r.Project)
+	if err != nil {
+		return errs.Wrap(err, "Unable to get local commit")
+	}
 	hasParentCommit := parentCommitID != ""
 
 	pg = output.StartSpinner(out, locale.T("progress_commit"), constants.TerminalAnimationInterval)
@@ -240,20 +245,27 @@ func (r *RequirementOperation) ExecuteRequirementOperation(
 	}
 
 	// MUST ADDRESS: we're no longer passing bitwidth, but this needs it. Need to figure out why.
-	name, version, err := model.ResolveRequirementNameAndVersion(requirementName, requirementVersion, -1, *ns)
+	requirementBitWidth := -1
+	name, version, err := model.ResolveRequirementNameAndVersion(requirementName, requirementVersion, requirementBitWidth, *ns)
 	if err != nil {
 		return errs.Wrap(err, "Could not resolve requirement name and version")
 	}
 
+	requirements, err := model.VersionStringToRequirements(version)
+	if err != nil {
+		return errs.Wrap(err, "Could not process version string into requirements")
+	}
+
 	params := model.StageCommitParams{
-		Owner:                pj.Owner(),
-		Project:              pj.Name(),
+		Owner:                r.Project.Owner(),
+		Project:              r.Project.Name(),
 		ParentCommit:         string(parentCommitID),
+		Description:          commitMessage(operation, name, version, *ns, requirementBitWidth),
 		RequirementName:      name,
-		RequirementVersion:   version,
+		RequirementVersion:   requirements,
 		RequirementNamespace: *ns,
 		Operation:            operation,
-		TimeStamp:            *ts,
+		TimeStamp:            ts,
 	}
 
 	bp := model.NewBuildPlannerModel(r.Auth)
@@ -261,16 +273,6 @@ func (r *RequirementOperation) ExecuteRequirementOperation(
 	if err != nil {
 		return locale.WrapError(err, "err_package_save_and_build", "Error occurred while trying to create a commit")
 	}
-
-	orderChanged := !hasParentCommit
-	if hasParentCommit {
-		revertCommit, err := model.GetRevertCommit(pj.CommitUUID(), commitID)
-		if err != nil {
-			return locale.WrapError(err, "err_revert_refresh")
-		}
-		orderChanged = len(revertCommit.Changeset) > 0
-	}
-	logging.Debug("Order changed: %v", orderChanged)
 
 	pg.Stop(locale.T("progress_success"))
 	pg = nil
@@ -287,20 +289,31 @@ func (r *RequirementOperation) ExecuteRequirementOperation(
 		return errs.Wrap(err, "Unsupported namespace type: %s", ns.Type().String())
 	}
 
-	// refresh or install runtime
-	err = runbits.RefreshRuntime(r.Auth, r.Output, r.Analytics, pj, commitID, orderChanged, trigger, r.SvcModel)
-	if err != nil {
-		return errs.Wrap(err, "Failed to refresh runtime")
+	// Re-enable in DX-2307.
+	//expr, err := bp.GetBuildExpression(r.Project.Owner(), r.Project.Name(), commitID.String())
+	//if err != nil {
+	//	return errs.Wrap(err, "Could not get remote build expr")
+	//}
+
+	if err := commitmediator.Set(r.Project, commitID.String()); err != nil {
+		return locale.WrapError(err, "err_package_update_commit_id")
 	}
 
-	if orderChanged {
-		if err := pj.SetCommit(commitID.String()); err != nil {
-			return locale.WrapError(err, "err_package_update_pjfile")
-		}
+	// Note: a commit ID file needs to exist at this point.
+	// Re-enable in DX-2307.
+	//err = buildscript.Update(r.Project, expr, r.Auth)
+	//if err != nil {
+	//	return locale.WrapError(err, "err_update_build_script")
+	//}
+
+	// refresh or install runtime
+	err = runbits.RefreshRuntime(r.Auth, r.Output, r.Analytics, r.Project, commitID, true, trigger, r.SvcModel)
+	if err != nil {
+		return err
 	}
 
 	if !hasParentCommit {
-		out.Notice(locale.Tr("install_initial_success", pj.Source().Path()))
+		out.Notice(locale.Tr("install_initial_success", r.Project.Source().Path()))
 	}
 
 	// Print the result
@@ -408,21 +421,60 @@ func getSuggestions(ns model.Namespace, name string) ([]string, error) {
 	return suggestions, nil
 }
 
-func initializeProject() (*project.Project, error) {
-	target, err := os.Getwd()
-	if err != nil {
-		return nil, locale.WrapError(err, "err_add_get_wd", "Could not get working directory for new  project")
+func commitMessage(op bpModel.Operation, name, version string, namespace model.Namespace, word int) string {
+	switch namespace.Type() {
+	case model.NamespaceLanguage:
+		return languageCommitMessage(op, name, version)
+	case model.NamespacePlatform:
+		return platformCommitMessage(op, name, version, word)
+	case model.NamespacePackage, model.NamespaceBundle:
+		return packageCommitMessage(op, name, version)
 	}
 
-	createParams := &projectfile.CreateParams{
-		ProjectURL: constants.DashboardCommitURL,
-		Directory:  target,
+	return ""
+}
+
+func languageCommitMessage(op bpModel.Operation, name, version string) string {
+	var msgL10nKey string
+	switch op {
+	case bpModel.OperationAdded:
+		msgL10nKey = "commit_message_added_language"
+	case bpModel.OperationUpdated:
+		msgL10nKey = "commit_message_updated_language"
+	case bpModel.OperationRemoved:
+		msgL10nKey = "commit_message_removed_language"
 	}
 
-	_, err = projectfile.Create(createParams)
-	if err != nil {
-		return nil, locale.WrapError(err, "err_add_create_projectfile", "Could not create new projectfile")
+	return locale.Tr(msgL10nKey, name, version)
+}
+
+func platformCommitMessage(op bpModel.Operation, name, version string, word int) string {
+	var msgL10nKey string
+	switch op {
+	case bpModel.OperationAdded:
+		msgL10nKey = "commit_message_added_platform"
+	case bpModel.OperationUpdated:
+		msgL10nKey = "commit_message_updated_platform"
+	case bpModel.OperationRemoved:
+		msgL10nKey = "commit_message_removed_platform"
 	}
 
-	return project.FromPath(target)
+	return locale.Tr(msgL10nKey, name, strconv.Itoa(word), version)
+}
+
+func packageCommitMessage(op bpModel.Operation, name, version string) string {
+	var msgL10nKey string
+	switch op {
+	case bpModel.OperationAdded:
+		msgL10nKey = "commit_message_added_package"
+	case bpModel.OperationUpdated:
+		msgL10nKey = "commit_message_updated_package"
+	case bpModel.OperationRemoved:
+		msgL10nKey = "commit_message_removed_package"
+	}
+
+	if version == "" {
+		version = locale.Tl("package_version_auto", "auto")
+	}
+	return locale.Tr(msgL10nKey, name, version)
 }

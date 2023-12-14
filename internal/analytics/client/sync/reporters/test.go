@@ -36,12 +36,13 @@ func (r *TestReporter) ID() string {
 type TestLogEntry struct {
 	Category   string
 	Action     string
+	Source     string
 	Label      string
 	Dimensions *dimensions.Values
 }
 
-func (r *TestReporter) Event(category, action, label string, d *dimensions.Values) error {
-	b, err := json.Marshal(TestLogEntry{category, action, label, d})
+func (r *TestReporter) Event(category, action, source, label string, d *dimensions.Values) error {
+	b, err := json.Marshal(TestLogEntry{category, action, source, label, d})
 	if err != nil {
 		return errs.Wrap(err, "Could not marshal test log entry")
 	}

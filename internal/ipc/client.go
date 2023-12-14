@@ -23,6 +23,10 @@ func NewClient(n *SockPath) *Client {
 	}
 }
 
+func (c *Client) SockPath() *SockPath {
+	return c.sockpath
+}
+
 func (c *Client) Request(ctx context.Context, key string) (string, error) {
 	spath := c.sockpath.String()
 	conn, err := c.dialer.DialContext(ctx, network, spath)

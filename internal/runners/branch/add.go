@@ -1,9 +1,11 @@
 package branch
 
 import (
+	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/runbits/commitmediator"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -31,7 +33,7 @@ func (a *Add) Run(params AddParams) error {
 		return locale.NewInputError("err_no_project")
 	}
 
-	project, err := model.FetchProjectByName(a.project.Owner(), a.project.Name())
+	project, err := model.LegacyFetchProjectByName(a.project.Owner(), a.project.Name())
 	if err != nil {
 		return locale.WrapError(err, "err_fetch_project", a.project.Namespace().String())
 	}
@@ -47,7 +49,12 @@ func (a *Add) Run(params AddParams) error {
 		return locale.WrapError(err, "err_fetch_branch", "", localBranch)
 	}
 
-	err = model.UpdateBranchTracking(branchID, a.project.CommitUUID(), branch.BranchID, model.TrackingIgnore)
+	commitID, err := commitmediator.Get(a.project)
+	if err != nil {
+		return errs.Wrap(err, "Unable to get local commit")
+	}
+
+	err = model.UpdateBranchTracking(branchID, commitID, branch.BranchID, model.TrackingIgnore)
 	if err != nil {
 		return locale.WrapError(err, "err_add_branch_update_tracking", "Could not update branch: {{.V0}} with tracking information", params.Label)
 	}

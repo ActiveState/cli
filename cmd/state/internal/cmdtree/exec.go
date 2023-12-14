@@ -45,7 +45,6 @@ func newExecCommand(prime *primer.Values, args ...string) *captain.Command {
 
 	cmd.SetGroup(EnvironmentUsageGroup)
 	cmd.SetHasVariableArguments()
-	cmd.SetDoesNotSupportStructuredOutput()
 
 	return cmd
 }

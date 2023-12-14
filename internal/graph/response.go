@@ -15,7 +15,3 @@ type AvailableUpdateResponse struct {
 type CheckMessagesResponse struct {
 	Messages []*MessageInfo `json:"checkMessages"`
 }
-
-type CheckRuntimeUsageResponseOuter struct {
-	Usage CheckRuntimeUsageResponse `json:"checkRuntimeUsage"`
-}

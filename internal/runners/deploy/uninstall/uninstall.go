@@ -63,12 +63,12 @@ func (u *Uninstall) Run(params *Params) error {
 	var cwd string
 	if path == "" {
 		var err error
-		cwd, err = os.Getwd()
+		cwd, err = osutils.Getwd()
 		if err != nil {
 			return locale.WrapInputError(
 				err,
 				"err_deploy_uninstall_cannot_get_cwd",
-				"Cannot determine current working directory. Please supply `--path` argument")
+				"Cannot determine current working directory. Please supply '[ACTIONABLE]--path[/RESET]' argument")
 		}
 		path = cwd
 	}

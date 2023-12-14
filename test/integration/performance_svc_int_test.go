@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/installation/storage"
@@ -17,9 +18,11 @@ import (
 	"golang.org/x/net/context"
 )
 
-var SvcEnsureStartMaxTime = 1000 * time.Millisecond // https://activestatef.atlassian.net/browse/DX-935
-var SvcRequestMaxTime = 200 * time.Millisecond
-var SvcStopMaxTime = 333 * time.Millisecond
+var (
+	SvcEnsureStartMaxTime = 1000 * time.Millisecond // https://activestatef.atlassian.net/browse/DX-935
+	SvcRequestMaxTime     = 200 * time.Millisecond
+	SvcStopMaxTime        = 333 * time.Millisecond
+)
 
 type PerformanceSvcIntegrationTestSuite struct {
 	tagsuite.Suite
@@ -75,7 +78,7 @@ func (suite *PerformanceIntegrationTestSuite) TestSvcPerformance() {
 
 	suite.Run("Query Analytics", func() {
 		t := time.Now()
-		err := svcmodel.AnalyticsEvent(context.Background(), "performance-test", "performance-test", "performance-test", "{}")
+		err := svcmodel.AnalyticsEvent(context.Background(), "performance-test", "performance-test", "performance-test", "performance-test", "{}")
 		suite.Require().NoError(err, ts.DebugMessage(fmt.Sprintf("Error: %s\nLog Tail:\n%s", errs.JoinMessage(err), logging.ReadTail())))
 		duration := time.Since(t)
 
@@ -86,7 +89,7 @@ func (suite *PerformanceIntegrationTestSuite) TestSvcPerformance() {
 
 	suite.Run("Query Update", func() {
 		t := time.Now()
-		_, err := svcmodel.CheckUpdate(context.Background())
+		_, err := svcmodel.CheckUpdate(context.Background(), constants.BranchName, "")
 		suite.Require().NoError(err, ts.DebugMessage(fmt.Sprintf("Error: %s\nLog Tail:\n%s", errs.JoinMessage(err), logging.ReadTail())))
 		duration := time.Since(t)
 

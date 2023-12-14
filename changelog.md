@@ -3,8 +3,125 @@
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres
-to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+and this project adheres to
+[Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+### 0.42.0
+
+### Added
+* The State Tool now has better user-facing errors. These should provide more context
+  and actionable information when an error occurs. Currently, this is only implemented
+  on a subset of commands, but will be expanded to all commands in the future.
+* The State Tool now fully supports Ruby as a language.
+* Users can now install their runtime with all of the build dependencies by using
+  the `ACTIVESTATE_INSTALL_BUILD_DEPENDENCIES` environment variable.
+* Users can now install a specific version of the State Tool by passing the version
+  to the installer script without the SHA suffix. Previously, users would have to
+  know the SHA of the version they wanted to install.
+
+### Changed
+
+* `state init` now uses the new buildplanner API to create a project on the
+  platform.
+* Runtime counts and limits are no longer surfaced to the user.
+* `state revert` now uses the new buildplanner API to revert a previous commit
+  as well as revert to a specific commit using `state revert --to`.
+* `state pull` now uses the buildplanner API to merge changes from the platform
+  into the local project.
+* We no longer depend on the `file` utility when installing the State Tool. This
+  should make the installation process more reliable.
+* Updated detection for requirement changes when installing packages. This brings
+  the installation process in line with new APIs and should make the process more
+  reliable.
+* Update checks have been moved to the `state-svc`. This should speed up State
+  Tool execution and improve the reliability of the update process.
+
+### Removed
+
+* Support for headless commits has been removed. Users can no longer get into a
+  state where they have a headless commit. Existing projects that are headless
+  will now be prompted to convert their project before it can be used.
+* The State Tool no longer supports signup via the prompt. Users may still sign
+  up with `state signup` however this will open the signup page in their
+  browser.
+
+### Fixed
+
+* Fixed an issue where the `state-svc` log file path was not being presented
+  correctly in the `state-svc status` output.
+* Fixed an issue where the version number could be empty when running
+  `state update` and no update is available.
+* Fixed an issue where executors would halt on most CI systems.
+* The install scripts now verify the checksum of the downloaded archive before
+  extracting it even when a full version is provided as a flag.
+* Fixed unneccessary repetition of certain error tips.
+* The commit date has been fixed when running `state history`.
+* Fixed an issue where the commit message would be missing on some commits when
+  running `state history`.
+
+### 0.41.0
+
+### Added
+
+* `state init` is now a stable command, meaning you no longer need to opt-in to
+  unstable commands to use it.
+* Signing up for a new account now opens the account creation page in your
+  browser instead of the login page.
+* `state shell` can now detect currently active subshells preventing nested
+  shells from being created.
+* Wildcard and partial version matching is now supported for `state install`
+  and for language versions with `state init`. For example:
+  `state install pytest@2.x`.
+* Added messaging on the potentially disruptive nature of editing or moving a
+  project.
+* Users can now check out a project without cloning the associated git
+  repository. For example: `state checkout <orgname/project> --no-clone`.
+
+### Changed
+
+* Errors encountered while sourcing a runtime now have more informative error
+  messages.
+* The default Ruby version is now 3.2.2.
+* Improved parsing to reduce runtime installation errors.
+* Updated help details of `state use` to be more informative.
+* The State Tool can now be installed by extracting its archive file to a
+  directory of your choice.
+* Some runtime installations will now be faster due to improved artifact
+  handling.
+
+### Fixed
+
+* Improved error messages when unauthenticated to better indicate that
+  authentication may resolve the error.
+* Fixed issue where build time dependencies ended up being downloaded/installed.
+* Fixed issue where API requests would not be retried, sometimes resulting in
+  a "decoding response: EOF" error.
+* Fixed issue where we would sometimes print the wrong project name when
+  interacting via the current working directory.
+* Fixed `state history` showing JSON formatted data in changes section.
+* Fixed "Error setting up runtime" message that would happen in some rare cases.
+* Fixed "Invalid value for 'project' field" error that could sometimes happen
+  when running checkout/init/fork.
+* Fixed issue where `state init` created the project on the platform even though
+  an error happened, leaving the project in an uncertain state.
+* Fixed issue where `state checkout` and `state init` would not respect the
+  casing of the owner and/or project on the platform.
+
+### 0.40.1
+
+### Added
+
+* State tool will now warn users if its executables are deleted during
+  installation, indicating a false-positive action from antivirus software.
+
+### Fixed
+
+* Fixed auto updates not being run (if you are on an older version:
+  run `state update`).
+* Fixed a rare parsing panic that would happen when running particularly complex
+  builds.
+* Fixed race condition during artifact installation that could lead to errors
+  like "Could not unpack artifact .. file already exists".
 
 ### 0.40.0
 

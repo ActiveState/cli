@@ -35,5 +35,5 @@ func newRevertCommand(prime *primer.Values, globals *globalOptions) *captain.Com
 			params.Force = globals.NonInteractive
 			return runner.Run(params)
 		},
-	).SetGroup(VCSGroup)
+	).SetGroup(VCSGroup).SetSupportsStructuredOutput()
 }
