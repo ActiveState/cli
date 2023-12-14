@@ -384,7 +384,6 @@ func postInstallEvents(out output.Outputer, cfg *config.Instance, an analytics.D
 		cmd, args := osutils.DecodeCmd(params.command)
 		if _, _, err := osutils.ExecuteAndPipeStd(cmd, args, envSlice(binPath)); err != nil {
 			an.EventWithLabel(anaConst.CatInstallerFunnel, "forward-command-err", err.Error())
-			logging.Debug("PATH for failed command: %s", os.Getenv("PATH"))
 			return errs.Silence(errs.Wrap(err, "Running provided command failed, error returned: %s", errs.JoinMessage(err)))
 		}
 	// Activate provided --activate Namespace

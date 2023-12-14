@@ -140,6 +140,7 @@ func ExecuteAndPipeStd(command string, arg []string, env []string) (int, *exec.C
 	return Execute(command, arg, func(cmd *exec.Cmd) error {
 		cmd.Env = os.Environ()
 		cmd.Env = append(cmd.Env, env...)
+		logging.Debug("CMD Env: %s", cmd.Env)
 		cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
 		return nil
 	})
