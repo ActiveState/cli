@@ -42,8 +42,7 @@ func NewUnlinkGithubAccountOK() *UnlinkGithubAccountOK {
 	return &UnlinkGithubAccountOK{}
 }
 
-/*
-UnlinkGithubAccountOK describes a response with status code 200, with default header values.
+/* UnlinkGithubAccountOK describes a response with status code 200, with default header values.
 
 Success
 */
@@ -64,8 +63,7 @@ func NewUnlinkGithubAccountForbidden() *UnlinkGithubAccountForbidden {
 	return &UnlinkGithubAccountForbidden{}
 }
 
-/*
-UnlinkGithubAccountForbidden describes a response with status code 403, with default header values.
+/* UnlinkGithubAccountForbidden describes a response with status code 403, with default header values.
 
 Not found
 */

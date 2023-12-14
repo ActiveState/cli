@@ -52,12 +52,10 @@ func NewUnlinkGithubAccountParamsWithHTTPClient(client *http.Client) *UnlinkGith
 	}
 }
 
-/*
-UnlinkGithubAccountParams contains all the parameters to send to the API endpoint
+/* UnlinkGithubAccountParams contains all the parameters to send to the API endpoint
+   for the unlink github account operation.
 
-	for the unlink github account operation.
-
-	Typically these are written to a http.Request.
+   Typically these are written to a http.Request.
 */
 type UnlinkGithubAccountParams struct {
 	timeout    time.Duration

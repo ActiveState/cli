@@ -15,7 +15,7 @@ import (
 
 // Libc Libc
 //
-// # The full libc data model
+// The full libc data model
 //
 // swagger:model libc
 type Libc struct {

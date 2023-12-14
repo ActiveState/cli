@@ -15,7 +15,7 @@ import (
 
 // OperatingSystemVersion Operating System Version
 //
-// # The full operating system version data model
+// The full operating system version data model
 //
 // swagger:model operatingSystemVersion
 type OperatingSystemVersion struct {

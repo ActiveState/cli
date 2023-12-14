@@ -52,12 +52,10 @@ func NewSignS3URIParamsWithHTTPClient(client *http.Client) *SignS3URIParams {
 	}
 }
 
-/*
-SignS3URIParams contains all the parameters to send to the API endpoint
+/* SignS3URIParams contains all the parameters to send to the API endpoint
+   for the sign s3 URI operation.
 
-	for the sign s3 URI operation.
-
-	Typically these are written to a http.Request.
+   Typically these are written to a http.Request.
 */
 type SignS3URIParams struct {
 

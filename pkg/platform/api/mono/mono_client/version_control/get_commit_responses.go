@@ -57,8 +57,7 @@ func NewGetCommitOK() *GetCommitOK {
 	return &GetCommitOK{}
 }
 
-/*
-GetCommitOK describes a response with status code 200, with default header values.
+/* GetCommitOK describes a response with status code 200, with default header values.
 
 Get commit details
 */
@@ -90,8 +89,7 @@ func NewGetCommitForbidden() *GetCommitForbidden {
 	return &GetCommitForbidden{}
 }
 
-/*
-GetCommitForbidden describes a response with status code 403, with default header values.
+/* GetCommitForbidden describes a response with status code 403, with default header values.
 
 Forbidden
 */
@@ -123,8 +121,7 @@ func NewGetCommitNotFound() *GetCommitNotFound {
 	return &GetCommitNotFound{}
 }
 
-/*
-GetCommitNotFound describes a response with status code 404, with default header values.
+/* GetCommitNotFound describes a response with status code 404, with default header values.
 
 commit was not found
 */
@@ -156,8 +153,7 @@ func NewGetCommitInternalServerError() *GetCommitInternalServerError {
 	return &GetCommitInternalServerError{}
 }
 
-/*
-GetCommitInternalServerError describes a response with status code 500, with default header values.
+/* GetCommitInternalServerError describes a response with status code 500, with default header values.
 
 error retrieving commit
 */

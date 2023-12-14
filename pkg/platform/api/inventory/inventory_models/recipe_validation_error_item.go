@@ -16,7 +16,7 @@ import (
 
 // RecipeValidationErrorItem Recipe Validation Error Item
 //
-// # A single validation error
+// A single validation error
 //
 // swagger:model recipeValidationErrorItem
 type RecipeValidationErrorItem struct {

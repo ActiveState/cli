@@ -52,12 +52,10 @@ func NewSearchUsernamesParamsWithHTTPClient(client *http.Client) *SearchUsername
 	}
 }
 
-/*
-SearchUsernamesParams contains all the parameters to send to the API endpoint
+/* SearchUsernamesParams contains all the parameters to send to the API endpoint
+   for the search usernames operation.
 
-	for the search usernames operation.
-
-	Typically these are written to a http.Request.
+   Typically these are written to a http.Request.
 */
 type SearchUsernamesParams struct {
 

@@ -54,12 +54,10 @@ func NewUpdatePlatformParamsWithHTTPClient(client *http.Client) *UpdatePlatformP
 	}
 }
 
-/*
-UpdatePlatformParams contains all the parameters to send to the API endpoint
+/* UpdatePlatformParams contains all the parameters to send to the API endpoint
+   for the update platform operation.
 
-	for the update platform operation.
-
-	Typically these are written to a http.Request.
+   Typically these are written to a http.Request.
 */
 type UpdatePlatformParams struct {
 

@@ -15,7 +15,7 @@ import (
 
 // Namespace namespace
 //
-// # The full namespace data model
+// The full namespace data model
 //
 // swagger:model namespace
 type Namespace struct {

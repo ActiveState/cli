@@ -57,8 +57,7 @@ func NewGetNextMutationIDOK() *GetNextMutationIDOK {
 	return &GetNextMutationIDOK{}
 }
 
-/*
-GetNextMutationIDOK describes a response with status code 200, with default header values.
+/* GetNextMutationIDOK describes a response with status code 200, with default header values.
 
 Success
 */
@@ -88,8 +87,7 @@ func NewGetNextMutationIDForbidden() *GetNextMutationIDForbidden {
 	return &GetNextMutationIDForbidden{}
 }
 
-/*
-GetNextMutationIDForbidden describes a response with status code 403, with default header values.
+/* GetNextMutationIDForbidden describes a response with status code 403, with default header values.
 
 Unauthorized
 */
@@ -121,8 +119,7 @@ func NewGetNextMutationIDNotFound() *GetNextMutationIDNotFound {
 	return &GetNextMutationIDNotFound{}
 }
 
-/*
-GetNextMutationIDNotFound describes a response with status code 404, with default header values.
+/* GetNextMutationIDNotFound describes a response with status code 404, with default header values.
 
 Not Found
 */
@@ -154,8 +151,7 @@ func NewGetNextMutationIDInternalServerError() *GetNextMutationIDInternalServerE
 	return &GetNextMutationIDInternalServerError{}
 }
 
-/*
-GetNextMutationIDInternalServerError describes a response with status code 500, with default header values.
+/* GetNextMutationIDInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */
