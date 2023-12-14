@@ -47,5 +47,9 @@ func (l *List) Run() error {
 		project.Branches,
 	))
 
+	if len(project.Branches) > 1 {
+		l.out.Notice(locale.Tl("branch_switch_notice", "To switch to another branch, run '[ACTIONABLE]state branch switch <name>[/RESET]'."))
+	}
+
 	return nil
 }
