@@ -121,13 +121,14 @@ func Execute(command string, arg []string, optSetter func(cmd *exec.Cmd) error) 
 	logging.Debug("Executing command: %s, %v", command, arg)
 
 	cmd := exec.Command(command, arg...)
-
+	logging.Debug("Executing command: %s, with args: %s", cmd, arg)
 	if optSetter != nil {
 		if err := optSetter(cmd); err != nil {
 			return -1, nil, err
 		}
 	}
 
+	logging.Debug("CMD Env: %s", cmd.Env)
 	err := cmd.Run()
 	if err != nil {
 		logging.Debug("Executing command returned error: %v", err)
@@ -140,7 +141,6 @@ func ExecuteAndPipeStd(command string, arg []string, env []string) (int, *exec.C
 	return Execute(command, arg, func(cmd *exec.Cmd) error {
 		cmd.Env = os.Environ()
 		cmd.Env = append(cmd.Env, env...)
-		logging.Debug("CMD Env: %s", cmd.Env)
 		cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
 		return nil
 	})
