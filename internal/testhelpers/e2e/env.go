@@ -31,17 +31,22 @@ func sandboxedTestEnvironment(t *testing.T, dirs *Dirs, updatePath bool, extraEn
 		"CI=true",
 	}...)
 
+	path := testPath
+	if runtime.GOOS == "windows" {
+		path = os.Getenv("PATH")
+	}
+
 	if updatePath {
 		// add bin path
 		// Remove release state tool installation from PATH
-		oldPath := testPath
+		oldPath := path
 		newPath := fmt.Sprintf(
 			"PATH=%s%s%s",
 			dirs.Bin, string(os.PathListSeparator), oldPath,
 		)
 		env = append(env, newPath)
 	} else {
-		env = append(env, "PATH="+testPath)
+		env = append(env, "PATH="+path)
 	}
 
 	err := prepareHomeDir(dirs.HomeDir)
