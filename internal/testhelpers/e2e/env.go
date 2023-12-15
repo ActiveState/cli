@@ -33,8 +33,9 @@ func sandboxedTestEnvironment(t *testing.T, dirs *Dirs, updatePath bool, extraEn
 
 	path := testPath
 	if runtime.GOOS == "windows" {
-		path = os.Getenv("PATH")
-		env = append(env, os.Environ()...)
+		// path = os.Getenv("PATH")
+		// env = append(env, os.Environ()...)
+		env = append(env, "COMSPEC=C:\\Windows\\System32\\cmd.exe")
 	}
 
 	if updatePath {
