@@ -1,6 +1,8 @@
 package revert
 
 import (
+	"strings"
+
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
@@ -53,32 +55,39 @@ func New(prime primeable) *Revert {
 	}
 }
 
+const headCommitID = "HEAD"
+
 func (r *Revert) Run(params *Params) (rerr error) {
 	defer rationalizeError(&rerr)
 
 	if r.project == nil {
 		return locale.NewInputError("err_no_project")
 	}
-	if !strfmt.IsUUID(params.CommitID) {
+
+	commitID := params.CommitID
+	if !strfmt.IsUUID(commitID) && !strings.EqualFold(commitID, headCommitID) {
 		return locale.NewInputError("err_invalid_commit_id", "Invalid commit ID")
 	}
 	latestCommit, err := commitmediator.Get(r.project)
 	if err != nil {
 		return errs.Wrap(err, "Unable to get local commit")
 	}
+	if strings.EqualFold(commitID, headCommitID) {
+		commitID = latestCommit.String()
+	}
 
-	if params.CommitID == latestCommit.String() && params.To {
+	if commitID == latestCommit.String() && params.To {
 		return locale.NewInputError("err_revert_to_current_commit", "The commit to revert to cannot be the latest commit")
 	}
 	r.out.Notice(locale.Tr("operating_message", r.project.NamespaceString(), r.project.Dir()))
 
 	bp := model.NewBuildPlannerModel(r.auth)
-	targetCommitID := params.CommitID // the commit to revert the contents of, or the commit to revert to
+	targetCommitID := commitID // the commit to revert the contents of, or the commit to revert to
 	revertParams := revertParams{
 		organization:   r.project.Owner(),
 		project:        r.project.Name(),
 		parentCommitID: latestCommit.String(),
-		revertCommitID: params.CommitID,
+		revertCommitID: commitID,
 	}
 	revertFunc := r.revertCommit
 	preposition := ""
@@ -90,7 +99,7 @@ func (r *Revert) Run(params *Params) (rerr error) {
 	targetCommit, err := model.GetCommitWithinCommitHistory(latestCommit, strfmt.UUID(targetCommitID))
 	if err != nil {
 		return errs.AddTips(
-			locale.WrapError(err, "err_revert_get_commit", "", params.CommitID),
+			locale.WrapError(err, "err_revert_get_commit", "", commitID),
 			locale.T("tip_private_project_auth"),
 		)
 	}
@@ -121,7 +130,7 @@ func (r *Revert) Run(params *Params) (rerr error) {
 	revertCommit, err := revertFunc(revertParams, bp)
 	if err != nil {
 		return errs.AddTips(
-			locale.WrapError(err, "err_revert_commit", "", preposition, params.CommitID),
+			locale.WrapError(err, "err_revert_commit", "", preposition, commitID),
 			locale.Tl("tip_revert_sync", "Please ensure that the local project is synchronized with the platform and that the given commit ID belongs to the current project"),
 			locale.T("tip_private_project_auth"))
 	}
@@ -137,7 +146,7 @@ func (r *Revert) Run(params *Params) (rerr error) {
 	}
 
 	r.out.Print(output.Prepare(
-		locale.Tl("revert_success", "Successfully reverted{{.V0}} commit: {{.V1}}", preposition, params.CommitID),
+		locale.Tl("revert_success", "Successfully reverted{{.V0}} commit: {{.V1}}", preposition, commitID),
 		&struct {
 			CurrentCommitID string `json:"current_commit_id"`
 		}{
