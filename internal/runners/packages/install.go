@@ -42,6 +42,7 @@ func (a *Install) Run(params InstallRunParams, nsType model.NamespaceType) (rerr
 	return requirements.NewRequirementOperation(a.prime).ExecuteRequirementOperation(
 		params.Package.Name,
 		params.Package.Version,
+		0,
 		bpModel.OperationAdded,
 		ns,
 		nsTypeV,

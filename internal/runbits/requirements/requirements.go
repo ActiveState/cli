@@ -91,6 +91,7 @@ type ErrNoMatches struct {
 // The refactor should clean this up.
 func (r *RequirementOperation) ExecuteRequirementOperation(
 	requirementName, requirementVersion string,
+	requirementBitWidth int,
 	operation bpModel.Operation, ns *model.Namespace, nsType *model.NamespaceType, ts *time.Time) (rerr error) {
 	defer r.rationalizeError(&rerr)
 
@@ -130,10 +131,14 @@ func (r *RequirementOperation) ExecuteRequirementOperation(
 			} else {
 				logging.Debug("Could not get language from project: %v", err)
 			}
+		case model.NamespaceLanguage:
+			ns = ptr.To(model.NewNamespaceLanguage())
+		case model.NamespacePlatform:
+			ns = ptr.To(model.NewNamespacePlatform())
 		}
 	}
 
-	var validatePkg = operation == bpModel.OperationAdded && (ns.Type() == model.NamespacePackage || ns.Type() == model.NamespaceBundle)
+	var validatePkg = operation == bpModel.OperationAdded && ns != nil && (ns.Type() == model.NamespacePackage || ns.Type() == model.NamespaceBundle)
 	if (ns == nil || !ns.IsValid()) && nsType != nil && (*nsType == model.NamespacePackage || *nsType == model.NamespaceBundle) {
 		pg = output.StartSpinner(out, locale.Tr("progress_pkg_nolang", requirementName), constants.TerminalAnimationInterval)
 
@@ -243,8 +248,6 @@ func (r *RequirementOperation) ExecuteRequirementOperation(
 	}
 	timestamp := strfmt.DateTime(*ts)
 
-	// MUST ADDRESS: we're no longer passing bitwidth, but this needs it. Need to figure out why.
-	requirementBitWidth := -1
 	name, version, err := model.ResolveRequirementNameAndVersion(requirementName, requirementVersion, requirementBitWidth, *ns)
 	if err != nil {
 		return errs.Wrap(err, "Could not resolve requirement name and version")
