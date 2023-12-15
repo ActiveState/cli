@@ -103,7 +103,7 @@ func IsStateToolArtifact(mimeType string) bool {
 
 func IsSuccessArtifactStatus(status string) bool {
 	return status == ArtifactSucceeded || status == ArtifactBlocked ||
-		status == ArtifactStarted
+		status == ArtifactStarted || status == ArtifactReady
 }
 
 func (o Operation) String() string {
