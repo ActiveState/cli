@@ -63,8 +63,7 @@ func NewSetPreferredEmailOK() *SetPreferredEmailOK {
 	return &SetPreferredEmailOK{}
 }
 
-/*
-SetPreferredEmailOK describes a response with status code 200, with default header values.
+/* SetPreferredEmailOK describes a response with status code 200, with default header values.
 
 Email updated
 */
@@ -96,8 +95,7 @@ func NewSetPreferredEmailBadRequest() *SetPreferredEmailBadRequest {
 	return &SetPreferredEmailBadRequest{}
 }
 
-/*
-SetPreferredEmailBadRequest describes a response with status code 400, with default header values.
+/* SetPreferredEmailBadRequest describes a response with status code 400, with default header values.
 
 Bad Request
 */
@@ -129,8 +127,7 @@ func NewSetPreferredEmailForbidden() *SetPreferredEmailForbidden {
 	return &SetPreferredEmailForbidden{}
 }
 
-/*
-SetPreferredEmailForbidden describes a response with status code 403, with default header values.
+/* SetPreferredEmailForbidden describes a response with status code 403, with default header values.
 
 Forbidden
 */
@@ -162,8 +159,7 @@ func NewSetPreferredEmailNotFound() *SetPreferredEmailNotFound {
 	return &SetPreferredEmailNotFound{}
 }
 
-/*
-SetPreferredEmailNotFound describes a response with status code 404, with default header values.
+/* SetPreferredEmailNotFound describes a response with status code 404, with default header values.
 
 Not Found
 */
@@ -195,8 +191,7 @@ func NewSetPreferredEmailInternalServerError() *SetPreferredEmailInternalServerE
 	return &SetPreferredEmailInternalServerError{}
 }
 
-/*
-SetPreferredEmailInternalServerError describes a response with status code 500, with default header values.
+/* SetPreferredEmailInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */

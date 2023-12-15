@@ -45,10 +45,14 @@ func (m *SvcModel) request(ctx context.Context, request gqlclient.Request, resp 
 	if err != nil {
 		reqError := &gqlclient.RequestError{}
 		if errors.As(err, &reqError) && (!condition.BuiltViaCI() || condition.InTest()) {
+			vars, err := request.Vars()
+			if err != nil {
+				return errs.Wrap(err, "Could not get variables")
+			}
 			logging.Debug(
 				"svc client gql request failed - query: %q, vars: %q",
 				reqError.Request.Query(),
-				jsonFromMap(reqError.Request.Vars()),
+				jsonFromMap(vars),
 			)
 		}
 		return err

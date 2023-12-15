@@ -18,7 +18,7 @@ import (
 
 // IngredientVersionRevisionCore Ingredient Version Revision Core
 //
-// # The fields of an ingredient version that can be updated by creating a new revision
+// The fields of an ingredient version that can be updated by creating a new revision
 //
 // swagger:model ingredientVersionRevisionCore
 type IngredientVersionRevisionCore struct {

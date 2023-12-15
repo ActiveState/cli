@@ -52,12 +52,10 @@ func NewForkProjectParamsWithHTTPClient(client *http.Client) *ForkProjectParams 
 	}
 }
 
-/*
-ForkProjectParams contains all the parameters to send to the API endpoint
+/* ForkProjectParams contains all the parameters to send to the API endpoint
+   for the fork project operation.
 
-	for the fork project operation.
-
-	Typically these are written to a http.Request.
+   Typically these are written to a http.Request.
 */
 type ForkProjectParams struct {
 

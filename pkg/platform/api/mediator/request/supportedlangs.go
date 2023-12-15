@@ -1,7 +1,7 @@
 package request
 
 func SupportedLanguages(osName string) *supportedLanguages {
-	return &supportedLanguages{map[string]interface{}{
+	return &supportedLanguages{vars: map[string]interface{}{
 		"os_name": osName,
 	}}
 }
@@ -19,6 +19,6 @@ func (p *supportedLanguages) Query() string {
 	}`
 }
 
-func (p *supportedLanguages) Vars() map[string]interface{} {
-	return p.vars
+func (p *supportedLanguages) Vars() (map[string]interface{}, error) {
+	return p.vars, nil
 }

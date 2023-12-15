@@ -52,8 +52,7 @@ func NewAddCPUArchitectureCPUExtensionOK() *AddCPUArchitectureCPUExtensionOK {
 	return &AddCPUArchitectureCPUExtensionOK{}
 }
 
-/*
-AddCPUArchitectureCPUExtensionOK describes a response with status code 200, with default header values.
+/* AddCPUArchitectureCPUExtensionOK describes a response with status code 200, with default header values.
 
 The CPU extension added to the kernel
 */
@@ -85,8 +84,7 @@ func NewAddCPUArchitectureCPUExtensionBadRequest() *AddCPUArchitectureCPUExtensi
 	return &AddCPUArchitectureCPUExtensionBadRequest{}
 }
 
-/*
-AddCPUArchitectureCPUExtensionBadRequest describes a response with status code 400, with default header values.
+/* AddCPUArchitectureCPUExtensionBadRequest describes a response with status code 400, with default header values.
 
 If the CPU extension ID doesn't exist
 */
@@ -120,8 +118,7 @@ func NewAddCPUArchitectureCPUExtensionDefault(code int) *AddCPUArchitectureCPUEx
 	}
 }
 
-/*
-AddCPUArchitectureCPUExtensionDefault describes a response with status code -1, with default header values.
+/* AddCPUArchitectureCPUExtensionDefault describes a response with status code -1, with default header values.
 
 generic error response
 */

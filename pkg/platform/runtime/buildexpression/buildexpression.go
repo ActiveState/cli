@@ -872,7 +872,7 @@ func (e *BuildExpression) removePlatform(platformID strfmt.UUID) error {
 	return nil
 }
 
-func (e *BuildExpression) UpdateTimestamp(timestamp strfmt.DateTime) error {
+func (e *BuildExpression) UpdateTimestamp(timestamp time.Time) error {
 	formatted, err := time.Parse(time.RFC3339, timestamp.String())
 	if err != nil {
 		return errs.Wrap(err, "Could not parse latest timestamp")

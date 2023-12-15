@@ -17,7 +17,7 @@ import (
 
 // AuthorPagedList Author Paged List
 //
-// # A page of authors from a paged author list
+// A page of authors from a paged author list
 //
 // swagger:model authorPagedList
 type AuthorPagedList struct {

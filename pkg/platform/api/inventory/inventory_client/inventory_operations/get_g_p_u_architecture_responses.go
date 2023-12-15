@@ -46,8 +46,7 @@ func NewGetGPUArchitectureOK() *GetGPUArchitectureOK {
 	return &GetGPUArchitectureOK{}
 }
 
-/*
-GetGPUArchitectureOK describes a response with status code 200, with default header values.
+/* GetGPUArchitectureOK describes a response with status code 200, with default header values.
 
 The retrieved GPU architecture
 */
@@ -81,8 +80,7 @@ func NewGetGPUArchitectureDefault(code int) *GetGPUArchitectureDefault {
 	}
 }
 
-/*
-GetGPUArchitectureDefault describes a response with status code -1, with default header values.
+/* GetGPUArchitectureDefault describes a response with status code -1, with default header values.
 
 generic error response
 */

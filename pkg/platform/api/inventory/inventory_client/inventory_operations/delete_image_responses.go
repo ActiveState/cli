@@ -46,8 +46,7 @@ func NewDeleteImageNoContent() *DeleteImageNoContent {
 	return &DeleteImageNoContent{}
 }
 
-/*
-DeleteImageNoContent describes a response with status code 204, with default header values.
+/* DeleteImageNoContent describes a response with status code 204, with default header values.
 
 The image has been deleted
 */
@@ -70,8 +69,7 @@ func NewDeleteImageDefault(code int) *DeleteImageDefault {
 	}
 }
 
-/*
-DeleteImageDefault describes a response with status code -1, with default header values.
+/* DeleteImageDefault describes a response with status code -1, with default header values.
 
 If there is an error processing the request
 */

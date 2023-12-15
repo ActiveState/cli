@@ -52,12 +52,10 @@ func NewGetTiersPricingParamsWithHTTPClient(client *http.Client) *GetTiersPricin
 	}
 }
 
-/*
-GetTiersPricingParams contains all the parameters to send to the API endpoint
+/* GetTiersPricingParams contains all the parameters to send to the API endpoint
+   for the get tiers pricing operation.
 
-	for the get tiers pricing operation.
-
-	Typically these are written to a http.Request.
+   Typically these are written to a http.Request.
 */
 type GetTiersPricingParams struct {
 	timeout    time.Duration

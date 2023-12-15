@@ -24,11 +24,11 @@ func (e *ReportRuntimeUsage) Query() string {
 	}`
 }
 
-func (e *ReportRuntimeUsage) Vars() map[string]interface{} {
+func (e *ReportRuntimeUsage) Vars() (map[string]interface{}, error) {
 	return map[string]interface{}{
 		"pid":            e.pid,
 		"exec":           e.exec,
 		"source":         e.source,
 		"dimensionsJson": e.dimensionsJson,
-	}
+	}, nil
 }

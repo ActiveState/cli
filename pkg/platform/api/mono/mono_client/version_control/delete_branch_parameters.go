@@ -52,12 +52,10 @@ func NewDeleteBranchParamsWithHTTPClient(client *http.Client) *DeleteBranchParam
 	}
 }
 
-/*
-DeleteBranchParams contains all the parameters to send to the API endpoint
+/* DeleteBranchParams contains all the parameters to send to the API endpoint
+   for the delete branch operation.
 
-	for the delete branch operation.
-
-	Typically these are written to a http.Request.
+   Typically these are written to a http.Request.
 */
 type DeleteBranchParams struct {
 

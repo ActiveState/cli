@@ -225,7 +225,7 @@ type StageCommitParams struct {
 	RequirementVersion   []bpModel.VersionRequirement
 	RequirementNamespace Namespace
 	Operation            bpModel.Operation
-	TimeStamp            *strfmt.DateTime
+	TimeStamp            *time.Time
 	// ... or commits can have an expression (e.g. from pull). When pulling an expression, we do not
 	// compute its changes into a series of above operations. Instead, we just pass the new
 	// expression directly.
@@ -329,7 +329,7 @@ type CreateProjectParams struct {
 	Language    string
 	Version     string
 	Private     bool
-	Timestamp   strfmt.DateTime
+	Timestamp   time.Time
 	Description string
 	Expr        *buildexpression.BuildExpression
 }

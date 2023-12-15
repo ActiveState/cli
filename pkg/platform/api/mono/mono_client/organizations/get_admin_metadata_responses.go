@@ -63,8 +63,7 @@ func NewGetAdminMetadataOK() *GetAdminMetadataOK {
 	return &GetAdminMetadataOK{}
 }
 
-/*
-GetAdminMetadataOK describes a response with status code 200, with default header values.
+/* GetAdminMetadataOK describes a response with status code 200, with default header values.
 
 Success
 */
@@ -96,8 +95,7 @@ func NewGetAdminMetadataBadRequest() *GetAdminMetadataBadRequest {
 	return &GetAdminMetadataBadRequest{}
 }
 
-/*
-GetAdminMetadataBadRequest describes a response with status code 400, with default header values.
+/* GetAdminMetadataBadRequest describes a response with status code 400, with default header values.
 
 Bad Request
 */
@@ -129,8 +127,7 @@ func NewGetAdminMetadataForbidden() *GetAdminMetadataForbidden {
 	return &GetAdminMetadataForbidden{}
 }
 
-/*
-GetAdminMetadataForbidden describes a response with status code 403, with default header values.
+/* GetAdminMetadataForbidden describes a response with status code 403, with default header values.
 
 Forbidden
 */
@@ -162,8 +159,7 @@ func NewGetAdminMetadataNotFound() *GetAdminMetadataNotFound {
 	return &GetAdminMetadataNotFound{}
 }
 
-/*
-GetAdminMetadataNotFound describes a response with status code 404, with default header values.
+/* GetAdminMetadataNotFound describes a response with status code 404, with default header values.
 
 Not Found
 */
@@ -195,8 +191,7 @@ func NewGetAdminMetadataInternalServerError() *GetAdminMetadataInternalServerErr
 	return &GetAdminMetadataInternalServerError{}
 }
 
-/*
-GetAdminMetadataInternalServerError describes a response with status code 500, with default header values.
+/* GetAdminMetadataInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */
