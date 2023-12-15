@@ -30,6 +30,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
+	"github.com/go-openapi/strfmt"
 )
 
 type PackageVersion struct {
@@ -240,6 +241,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(
 		}
 		ts = &latest
 	}
+	timestamp := strfmt.DateTime(*ts)
 
 	// MUST ADDRESS: we're no longer passing bitwidth, but this needs it. Need to figure out why.
 	requirementBitWidth := -1
@@ -262,7 +264,7 @@ func (r *RequirementOperation) ExecuteRequirementOperation(
 		RequirementVersion:   requirements,
 		RequirementNamespace: *ns,
 		Operation:            operation,
-		TimeStamp:            ts,
+		TimeStamp:            &timestamp,
 	}
 
 	bp := model.NewBuildPlannerModel(r.Auth)
