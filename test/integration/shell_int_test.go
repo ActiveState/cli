@@ -423,7 +423,7 @@ func (suite *ShellIntegrationTestSuite) TestProjectOrder() {
 		e2e.OptWD(projectDir),
 		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
-	cp.Expect("Activated", e2e.RuntimeSourcingTimeoutOpt)
+	cp.Expect("Opening shell", e2e.RuntimeSourcingTimeoutOpt)
 	cp.Expect(projectDir)
 	cp.SendLine("cd subproject")
 	cp.SendLine("state refresh")
