@@ -46,8 +46,7 @@ func NewGetPatchesOK() *GetPatchesOK {
 	return &GetPatchesOK{}
 }
 
-/*
-GetPatchesOK describes a response with status code 200, with default header values.
+/* GetPatchesOK describes a response with status code 200, with default header values.
 
 A paginated list of patches
 */
@@ -81,8 +80,7 @@ func NewGetPatchesDefault(code int) *GetPatchesDefault {
 	}
 }
 
-/*
-GetPatchesDefault describes a response with status code -1, with default header values.
+/* GetPatchesDefault describes a response with status code -1, with default header values.
 
 generic error response
 */

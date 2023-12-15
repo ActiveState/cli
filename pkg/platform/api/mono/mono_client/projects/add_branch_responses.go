@@ -71,8 +71,7 @@ func NewAddBranchOK() *AddBranchOK {
 	return &AddBranchOK{}
 }
 
-/*
-AddBranchOK describes a response with status code 200, with default header values.
+/* AddBranchOK describes a response with status code 200, with default header values.
 
 Success
 */
@@ -104,8 +103,7 @@ func NewAddBranchBadRequest() *AddBranchBadRequest {
 	return &AddBranchBadRequest{}
 }
 
-/*
-AddBranchBadRequest describes a response with status code 400, with default header values.
+/* AddBranchBadRequest describes a response with status code 400, with default header values.
 
 Bad Request
 */
@@ -137,8 +135,7 @@ func NewAddBranchForbidden() *AddBranchForbidden {
 	return &AddBranchForbidden{}
 }
 
-/*
-AddBranchForbidden describes a response with status code 403, with default header values.
+/* AddBranchForbidden describes a response with status code 403, with default header values.
 
 Forbidden
 */
@@ -170,8 +167,7 @@ func NewAddBranchNotFound() *AddBranchNotFound {
 	return &AddBranchNotFound{}
 }
 
-/*
-AddBranchNotFound describes a response with status code 404, with default header values.
+/* AddBranchNotFound describes a response with status code 404, with default header values.
 
 Not Found
 */
@@ -203,8 +199,7 @@ func NewAddBranchConflict() *AddBranchConflict {
 	return &AddBranchConflict{}
 }
 
-/*
-AddBranchConflict describes a response with status code 409, with default header values.
+/* AddBranchConflict describes a response with status code 409, with default header values.
 
 Conflict
 */
@@ -236,8 +231,7 @@ func NewAddBranchInternalServerError() *AddBranchInternalServerError {
 	return &AddBranchInternalServerError{}
 }
 
-/*
-AddBranchInternalServerError describes a response with status code 500, with default header values.
+/* AddBranchInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */
@@ -264,8 +258,7 @@ func (o *AddBranchInternalServerError) readResponse(response runtime.ClientRespo
 	return nil
 }
 
-/*
-AddBranchBody add branch body
+/*AddBranchBody add branch body
 swagger:model AddBranchBody
 */
 type AddBranchBody struct {

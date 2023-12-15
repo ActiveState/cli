@@ -52,12 +52,10 @@ func NewUpdateBillingDateParamsWithHTTPClient(client *http.Client) *UpdateBillin
 	}
 }
 
-/*
-UpdateBillingDateParams contains all the parameters to send to the API endpoint
+/* UpdateBillingDateParams contains all the parameters to send to the API endpoint
+   for the update billing date operation.
 
-	for the update billing date operation.
-
-	Typically these are written to a http.Request.
+   Typically these are written to a http.Request.
 */
 type UpdateBillingDateParams struct {
 

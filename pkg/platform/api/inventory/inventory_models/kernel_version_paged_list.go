@@ -17,7 +17,7 @@ import (
 
 // KernelVersionPagedList Kernel Version Paged List
 //
-// # A paginated list of kernel versions
+// A paginated list of kernel versions
 //
 // swagger:model kernelVersionPagedList
 type KernelVersionPagedList struct {

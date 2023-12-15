@@ -52,12 +52,10 @@ func NewGetNextMutationIDParamsWithHTTPClient(client *http.Client) *GetNextMutat
 	}
 }
 
-/*
-GetNextMutationIDParams contains all the parameters to send to the API endpoint
+/* GetNextMutationIDParams contains all the parameters to send to the API endpoint
+   for the get next mutation ID operation.
 
-	for the get next mutation ID operation.
-
-	Typically these are written to a http.Request.
+   Typically these are written to a http.Request.
 */
 type GetNextMutationIDParams struct {
 

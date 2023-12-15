@@ -57,8 +57,7 @@ func NewAuthDevicePutOK() *AuthDevicePutOK {
 	return &AuthDevicePutOK{}
 }
 
-/*
-AuthDevicePutOK describes a response with status code 200, with default header values.
+/* AuthDevicePutOK describes a response with status code 200, with default header values.
 
 Success
 */
@@ -79,8 +78,7 @@ func NewAuthDevicePutBadRequest() *AuthDevicePutBadRequest {
 	return &AuthDevicePutBadRequest{}
 }
 
-/*
-AuthDevicePutBadRequest describes a response with status code 400, with default header values.
+/* AuthDevicePutBadRequest describes a response with status code 400, with default header values.
 
 Bad Request
 */
@@ -112,8 +110,7 @@ func NewAuthDevicePutUnauthorized() *AuthDevicePutUnauthorized {
 	return &AuthDevicePutUnauthorized{}
 }
 
-/*
-AuthDevicePutUnauthorized describes a response with status code 401, with default header values.
+/* AuthDevicePutUnauthorized describes a response with status code 401, with default header values.
 
 Invalid credentials
 */
@@ -145,8 +142,7 @@ func NewAuthDevicePutInternalServerError() *AuthDevicePutInternalServerError {
 	return &AuthDevicePutInternalServerError{}
 }
 
-/*
-AuthDevicePutInternalServerError describes a response with status code 500, with default header values.
+/* AuthDevicePutInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */

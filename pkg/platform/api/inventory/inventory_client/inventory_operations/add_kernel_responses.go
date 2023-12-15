@@ -52,8 +52,7 @@ func NewAddKernelCreated() *AddKernelCreated {
 	return &AddKernelCreated{}
 }
 
-/*
-AddKernelCreated describes a response with status code 201, with default header values.
+/* AddKernelCreated describes a response with status code 201, with default header values.
 
 The added kernel
 */
@@ -85,8 +84,7 @@ func NewAddKernelBadRequest() *AddKernelBadRequest {
 	return &AddKernelBadRequest{}
 }
 
-/*
-AddKernelBadRequest describes a response with status code 400, with default header values.
+/* AddKernelBadRequest describes a response with status code 400, with default header values.
 
 If the kernel is invalid
 */
@@ -120,8 +118,7 @@ func NewAddKernelDefault(code int) *AddKernelDefault {
 	}
 }
 
-/*
-AddKernelDefault describes a response with status code -1, with default header values.
+/* AddKernelDefault describes a response with status code -1, with default header values.
 
 If there is an error processing the request
 */

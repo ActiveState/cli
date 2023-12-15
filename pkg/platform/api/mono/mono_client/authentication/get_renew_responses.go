@@ -51,8 +51,7 @@ func NewGetRenewOK() *GetRenewOK {
 	return &GetRenewOK{}
 }
 
-/*
-GetRenewOK describes a response with status code 200, with default header values.
+/* GetRenewOK describes a response with status code 200, with default header values.
 
 Success
 */
@@ -84,8 +83,7 @@ func NewGetRenewNotFound() *GetRenewNotFound {
 	return &GetRenewNotFound{}
 }
 
-/*
-GetRenewNotFound describes a response with status code 404, with default header values.
+/* GetRenewNotFound describes a response with status code 404, with default header values.
 
 Not Found
 */
@@ -117,8 +115,7 @@ func NewGetRenewInternalServerError() *GetRenewInternalServerError {
 	return &GetRenewInternalServerError{}
 }
 
-/*
-GetRenewInternalServerError describes a response with status code 500, with default header values.
+/* GetRenewInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */

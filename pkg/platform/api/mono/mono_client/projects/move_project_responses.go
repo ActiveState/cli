@@ -71,8 +71,7 @@ func NewMoveProjectOK() *MoveProjectOK {
 	return &MoveProjectOK{}
 }
 
-/*
-MoveProjectOK describes a response with status code 200, with default header values.
+/* MoveProjectOK describes a response with status code 200, with default header values.
 
 Project moved
 */
@@ -104,8 +103,7 @@ func NewMoveProjectBadRequest() *MoveProjectBadRequest {
 	return &MoveProjectBadRequest{}
 }
 
-/*
-MoveProjectBadRequest describes a response with status code 400, with default header values.
+/* MoveProjectBadRequest describes a response with status code 400, with default header values.
 
 Bad Request
 */
@@ -137,8 +135,7 @@ func NewMoveProjectForbidden() *MoveProjectForbidden {
 	return &MoveProjectForbidden{}
 }
 
-/*
-MoveProjectForbidden describes a response with status code 403, with default header values.
+/* MoveProjectForbidden describes a response with status code 403, with default header values.
 
 Unauthorized
 */
@@ -170,8 +167,7 @@ func NewMoveProjectNotFound() *MoveProjectNotFound {
 	return &MoveProjectNotFound{}
 }
 
-/*
-MoveProjectNotFound describes a response with status code 404, with default header values.
+/* MoveProjectNotFound describes a response with status code 404, with default header values.
 
 Not Found
 */
@@ -203,8 +199,7 @@ func NewMoveProjectConflict() *MoveProjectConflict {
 	return &MoveProjectConflict{}
 }
 
-/*
-MoveProjectConflict describes a response with status code 409, with default header values.
+/* MoveProjectConflict describes a response with status code 409, with default header values.
 
 Conflict
 */
@@ -236,8 +231,7 @@ func NewMoveProjectInternalServerError() *MoveProjectInternalServerError {
 	return &MoveProjectInternalServerError{}
 }
 
-/*
-MoveProjectInternalServerError describes a response with status code 500, with default header values.
+/* MoveProjectInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */
@@ -264,8 +258,7 @@ func (o *MoveProjectInternalServerError) readResponse(response runtime.ClientRes
 	return nil
 }
 
-/*
-MoveProjectBody move project body
+/*MoveProjectBody move project body
 swagger:model MoveProjectBody
 */
 type MoveProjectBody struct {

@@ -46,8 +46,7 @@ func NewHealthCheckOK() *HealthCheckOK {
 	return &HealthCheckOK{}
 }
 
-/*
-HealthCheckOK describes a response with status code 200, with default header values.
+/* HealthCheckOK describes a response with status code 200, with default header values.
 
 Indicates whether the server is healthy
 */
@@ -79,8 +78,7 @@ func NewHealthCheckDefault(code int) *HealthCheckDefault {
 	}
 }
 
-/*
-HealthCheckDefault describes a response with status code -1, with default header values.
+/* HealthCheckDefault describes a response with status code -1, with default header values.
 
 generic error response
 */

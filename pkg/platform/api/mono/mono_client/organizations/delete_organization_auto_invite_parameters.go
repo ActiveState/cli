@@ -52,12 +52,10 @@ func NewDeleteOrganizationAutoInviteParamsWithHTTPClient(client *http.Client) *D
 	}
 }
 
-/*
-DeleteOrganizationAutoInviteParams contains all the parameters to send to the API endpoint
+/* DeleteOrganizationAutoInviteParams contains all the parameters to send to the API endpoint
+   for the delete organization auto invite operation.
 
-	for the delete organization auto invite operation.
-
-	Typically these are written to a http.Request.
+   Typically these are written to a http.Request.
 */
 type DeleteOrganizationAutoInviteParams struct {
 

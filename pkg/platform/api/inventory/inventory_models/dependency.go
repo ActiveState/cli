@@ -17,7 +17,7 @@ import (
 
 // Dependency Dependency
 //
-// # A single dependency for an ingredient version revision
+// A single dependency for an ingredient version revision
 //
 // swagger:model dependency
 type Dependency struct {

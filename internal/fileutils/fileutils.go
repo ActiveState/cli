@@ -831,16 +831,16 @@ func CopySymlink(src, dest string) error {
 
 // TempFileUnsafe returns a tempfile handler or panics if it cannot be created
 // This is for use in tests, do not use it outside tests!
-func TempFileUnsafe() *os.File {
-	f, err := ioutil.TempFile("", "")
+func TempFileUnsafe(dir, pattern string) *os.File {
+	f, err := ioutil.TempFile(dir, pattern)
 	if err != nil {
 		panic(fmt.Sprintf("Could not create tempFile: %v", err))
 	}
 	return f
 }
 
-func TempFilePathUnsafe() string {
-	f := TempFileUnsafe()
+func TempFilePathUnsafe(dir, pattern string) string {
+	f := TempFileUnsafe(dir, pattern)
 	defer f.Close()
 	return f.Name()
 }
