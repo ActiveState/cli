@@ -99,7 +99,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 				e2e.OptAppendEnv(fmt.Sprintf("%s=FOO", constants.OverrideSessionTokenEnvVarName)),
 			}
 			if runtime.GOOS == "windows" {
-				cmd = "powershell.exe"
+				cmd = "cmd.exe"
 				opts = append(opts, e2e.OptAppendEnv("SHELL="))
 			}
 			cp := ts.SpawnCmdWithOpts(cmd, opts...)
