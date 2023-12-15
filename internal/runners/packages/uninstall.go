@@ -45,7 +45,7 @@ func (u *Uninstall) Run(params UninstallRunParams, nsType model.NamespaceType) (
 	return requirements.NewRequirementOperation(u.prime).ExecuteRequirementOperation(
 		params.Package.Name,
 		"",
-		0,
+		0, // bit-width placeholder that does not apply here
 		bpModel.OperationRemoved,
 		ns,
 		nsTypeV,

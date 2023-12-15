@@ -91,7 +91,7 @@ type ErrNoMatches struct {
 // The refactor should clean this up.
 func (r *RequirementOperation) ExecuteRequirementOperation(
 	requirementName, requirementVersion string,
-	requirementBitWidth int,
+	requirementBitWidth int, // this is only needed for platform install/uninstall
 	operation bpModel.Operation, ns *model.Namespace, nsType *model.NamespaceType, ts *time.Time) (rerr error) {
 	defer r.rationalizeError(&rerr)
 
