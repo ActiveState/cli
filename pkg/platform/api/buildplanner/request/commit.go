@@ -180,6 +180,6 @@ query ($commitID: ID!) {
 `
 }
 
-func (b *buildPlanByCommitID) Vars() map[string]interface{} {
-	return b.vars
+func (b *buildPlanByCommitID) Vars() (map[string]interface{}, error) {
+	return b.vars, nil
 }

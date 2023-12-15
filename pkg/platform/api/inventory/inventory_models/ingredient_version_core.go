@@ -15,7 +15,7 @@ import (
 
 // IngredientVersionCore Ingredient Version Core
 //
-// # The fields of an ingredient version that can be set when an ingredient version is created
+// The fields of an ingredient version that can be set when an ingredient version is created
 //
 // swagger:model ingredientVersionCore
 type IngredientVersionCore struct {

@@ -52,8 +52,7 @@ func NewAddAuthorCreated() *AddAuthorCreated {
 	return &AddAuthorCreated{}
 }
 
-/*
-AddAuthorCreated describes a response with status code 201, with default header values.
+/* AddAuthorCreated describes a response with status code 201, with default header values.
 
 The added author
 */
@@ -85,8 +84,7 @@ func NewAddAuthorBadRequest() *AddAuthorBadRequest {
 	return &AddAuthorBadRequest{}
 }
 
-/*
-AddAuthorBadRequest describes a response with status code 400, with default header values.
+/* AddAuthorBadRequest describes a response with status code 400, with default header values.
 
 If the author is invalid
 */
@@ -120,8 +118,7 @@ func NewAddAuthorDefault(code int) *AddAuthorDefault {
 	}
 }
 
-/*
-AddAuthorDefault describes a response with status code -1, with default header values.
+/* AddAuthorDefault describes a response with status code -1, with default header values.
 
 If there is an error processing the author
 */

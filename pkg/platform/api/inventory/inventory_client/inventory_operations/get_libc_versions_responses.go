@@ -46,8 +46,7 @@ func NewGetLibcVersionsOK() *GetLibcVersionsOK {
 	return &GetLibcVersionsOK{}
 }
 
-/*
-GetLibcVersionsOK describes a response with status code 200, with default header values.
+/* GetLibcVersionsOK describes a response with status code 200, with default header values.
 
 A paginated list of libc versions
 */
@@ -81,8 +80,7 @@ func NewGetLibcVersionsDefault(code int) *GetLibcVersionsDefault {
 	}
 }
 
-/*
-GetLibcVersionsDefault describes a response with status code -1, with default header values.
+/* GetLibcVersionsDefault describes a response with status code -1, with default header values.
 
 generic error response
 */

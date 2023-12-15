@@ -46,8 +46,7 @@ func NewGetOperatingSystemLibcsOK() *GetOperatingSystemLibcsOK {
 	return &GetOperatingSystemLibcsOK{}
 }
 
-/*
-GetOperatingSystemLibcsOK describes a response with status code 200, with default header values.
+/* GetOperatingSystemLibcsOK describes a response with status code 200, with default header values.
 
 A paginated list of libcs
 */
@@ -81,8 +80,7 @@ func NewGetOperatingSystemLibcsDefault(code int) *GetOperatingSystemLibcsDefault
 	}
 }
 
-/*
-GetOperatingSystemLibcsDefault describes a response with status code -1, with default header values.
+/* GetOperatingSystemLibcsDefault describes a response with status code -1, with default header values.
 
 generic error response
 */

@@ -17,7 +17,7 @@ import (
 
 // CPUExtensionPagedList CPU Extension Paged List
 //
-// # A paginated list of CPU extensions
+// A paginated list of CPU extensions
 //
 // swagger:model cpuExtensionPagedList
 type CPUExtensionPagedList struct {

@@ -51,8 +51,7 @@ func NewUniqueUsernameOK() *UniqueUsernameOK {
 	return &UniqueUsernameOK{}
 }
 
-/*
-UniqueUsernameOK describes a response with status code 200, with default header values.
+/* UniqueUsernameOK describes a response with status code 200, with default header values.
 
 Username available
 */
@@ -84,8 +83,7 @@ func NewUniqueUsernameBadRequest() *UniqueUsernameBadRequest {
 	return &UniqueUsernameBadRequest{}
 }
 
-/*
-UniqueUsernameBadRequest describes a response with status code 400, with default header values.
+/* UniqueUsernameBadRequest describes a response with status code 400, with default header values.
 
 Bad Request
 */
@@ -117,8 +115,7 @@ func NewUniqueUsernameConflict() *UniqueUsernameConflict {
 	return &UniqueUsernameConflict{}
 }
 
-/*
-UniqueUsernameConflict describes a response with status code 409, with default header values.
+/* UniqueUsernameConflict describes a response with status code 409, with default header values.
 
 Username Conflict
 */

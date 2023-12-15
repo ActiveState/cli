@@ -52,12 +52,10 @@ func NewGetHARepoParamsWithHTTPClient(client *http.Client) *GetHARepoParams {
 	}
 }
 
-/*
-GetHARepoParams contains all the parameters to send to the API endpoint
+/* GetHARepoParams contains all the parameters to send to the API endpoint
+   for the get h a repo operation.
 
-	for the get h a repo operation.
-
-	Typically these are written to a http.Request.
+   Typically these are written to a http.Request.
 */
 type GetHARepoParams struct {
 

@@ -52,12 +52,10 @@ func NewListProjectsParamsWithHTTPClient(client *http.Client) *ListProjectsParam
 	}
 }
 
-/*
-ListProjectsParams contains all the parameters to send to the API endpoint
+/* ListProjectsParams contains all the parameters to send to the API endpoint
+   for the list projects operation.
 
-	for the list projects operation.
-
-	Typically these are written to a http.Request.
+   Typically these are written to a http.Request.
 */
 type ListProjectsParams struct {
 

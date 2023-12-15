@@ -15,7 +15,7 @@ import (
 
 // Author Author
 //
-// # An author
+// An author
 //
 // swagger:model author
 type Author struct {
