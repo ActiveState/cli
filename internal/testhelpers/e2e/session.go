@@ -431,21 +431,22 @@ func (s *Session) LogoutUser() {
 	p.ExpectExitCode(0)
 }
 
-func (s *Session) CreateNewUser() (string, string, string) {
+func (s *Session) CreateNewUser() *mono_models.UserEditable {
 	uid, err := uuid.NewRandom()
 	require.NoError(s.T, err)
 
 	username := fmt.Sprintf("user-%s", uid.String()[0:8])
 	password := uid.String()[8:]
 	email := fmt.Sprintf("%s@test.tld", username)
-
-	params := users.NewAddUserParams()
-	params.SetUser(&mono_models.UserEditable{
+	user := &mono_models.UserEditable{
 		Username: username,
 		Password: password,
 		Name:     username,
 		Email:    email,
-	})
+	}
+
+	params := users.NewAddUserParams()
+	params.SetUser(user)
 
 	// The default mono API client host is "testing.tld" inside unit tests.
 	// Since we actually want to create production users, we need to manually instantiate a mono API
@@ -465,7 +466,7 @@ func (s *Session) CreateNewUser() (string, string, string) {
 
 	s.users = append(s.users, username)
 
-	return username, password, email
+	return user
 }
 
 // NotifyProjectCreated indicates that the given project was created on the Platform and needs to

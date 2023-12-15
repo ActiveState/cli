@@ -67,7 +67,7 @@ func (suite *PublishIntegrationTestSuite) TestPublish() {
 		constants.APIHostEnvVarName+"="+os.Getenv(constants.APIHostEnvVarName),
 	)
 
-	username, _, email := ts.CreateNewUser()
+	user := ts.CreateNewUser()
 
 	tests := []struct {
 		name        string
@@ -338,8 +338,8 @@ authors:
 	for n, tt := range tests {
 		suite.Run(tt.name, func() {
 			templateVars := map[string]interface{}{
-				"Username": username,
-				"Email":    email,
+				"Username": user.Username,
+				"Email":    user.Email,
 			}
 
 			for _, inv := range tt.invocations {

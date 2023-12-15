@@ -27,14 +27,14 @@ func (suite *ForkIntegrationTestSuite) TestFork() {
 	ts := e2e.New(suite.T(), false)
 	defer suite.cleanup(ts)
 
-	username, _, _ := ts.CreateNewUser()
+	user := ts.CreateNewUser()
 
-	cp := ts.Spawn("fork", "ActiveState-CLI/Python3", "--name", "Test-Python3", "--org", username)
+	cp := ts.Spawn("fork", "ActiveState-CLI/Python3", "--name", "Test-Python3", "--org", user.Username)
 	cp.Expect("fork has been successfully created")
 	cp.ExpectExitCode(0)
 
 	// Check if we error out on conflicts properly
-	cp = ts.Spawn("fork", "ActiveState-CLI/Python3", "--name", "Test-Python3", "--org", username)
+	cp = ts.Spawn("fork", "ActiveState-CLI/Python3", "--name", "Test-Python3", "--org", user.Username)
 	cp.Expect(`You already have a project with the name`)
 	cp.ExpectExitCode(1)
 	ts.IgnoreLogErrors()
