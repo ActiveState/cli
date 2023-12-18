@@ -131,7 +131,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivateUsingCommitID() {
 		e2e.OptArgs("activate", "ActiveState-CLI/Python3#6d9280e7-75eb-401a-9e71-0d99759fbad3", "--path", ts.Dirs.Work),
 		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
-	cp.Expect("Activated")
+	cp.Expect("Activated", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectInput()
 
 	cp.SendLine("exit")
