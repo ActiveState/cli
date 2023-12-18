@@ -182,14 +182,6 @@ func new(t *testing.T, retainDirs, updatePath bool, extraEnv ...string) *Session
 	session.SvcExe = session.copyExeToBinDir(svcExe)
 	session.ExecutorExe = session.copyExeToBinDir(execExe)
 
-	// Set up environment for test runs. This is separate
-	// from the environment for the session itself.
-	// Setting environment variables here allows helper
-	// functions access to them.
-	// This is a workaround as our test sessions are not compeltely
-	// sandboxed. This should be addressed in: https://activestatef.atlassian.net/browse/DX-2285
-	t.Setenv(constants.HomeEnvVarName, dirs.HomeDir)
-
 	err = fileutils.Touch(filepath.Join(dirs.Base, installation.InstallDirMarker))
 	require.NoError(session.t, err)
 
@@ -303,7 +295,6 @@ func (s *Session) SpawnCmdWithOpts(exe string, optSetters ...SpawnOptSetter) *Sp
 	cmd := exec.Command(shell, args...)
 
 	cmd.Env = spawnOpts.Env
-	fmt.Println("Cmd env:", cmd.Env)
 	if spawnOpts.Dir != "" {
 		cmd.Dir = spawnOpts.Dir
 	}

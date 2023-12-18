@@ -154,7 +154,6 @@ func OptWD(wd string) SpawnOptSetter {
 
 func OptAppendEnv(env ...string) SpawnOptSetter {
 	return func(opts *SpawnOpts) {
-		fmt.Println("Appending env", env)
 		opts.Env = append(opts.Env, env...)
 	}
 }
