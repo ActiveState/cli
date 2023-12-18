@@ -709,7 +709,8 @@ func (s *Session) SetupRCFile() {
 	if runtime.GOOS == "windows" {
 		return
 	}
-	s.t.Setenv("HOME", s.Dirs.HomeDir)
+	s.T.Setenv("HOME", s.Dirs.HomeDir)
+	defer s.T.Setenv("HOME", os.Getenv("HOME"))
 
 	cfg, err := config.New()
 	require.NoError(s.T, err)
