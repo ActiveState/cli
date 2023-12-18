@@ -32,35 +32,8 @@ func sandboxedTestEnvironment(t *testing.T, dirs *Dirs, updatePath bool, extraEn
 	}...)
 
 	path := testPath
-	if runtime.GOOS == "windows" {
-		// path = os.Getenv("PATH")
-		// env = append(env, os.Environ()...)
-		windowsEnv := []string{
-			"SystemDrive=C:",
-			"SystemRoot=C:\\Windows",
-			"PROGRAMFILES=C:\\Program Files",
-			"ProgramFiles(x86)=C:\\Program Files (x86)",
-			"PATHEXT=.COM;.EXE;.BAT;.CMD;.VBS;.VBE;.JS;.JSE;.WSF;.WSH;.MSC",
-			"HOMEDRIVE=C:",
-			"ALLUSERSPROFILE=C:\\ProgramData",
-			"ProgramData=C:\\ProgramData",
-			"COMSPEC=C:\\Windows\\System32\\cmd.exe",
-			"PROGRAMFILES=C:\\Program Files",
-			"CommonProgramW6432=C:\\Program Files\\Common Files",
-			`PSModulePath=C:\\Modules\azurerm_2.1.0;C:\\Modules\azure_2.1.0;C:\Users\packer\Documents\WindowsPowerShell\Modules;C:\Program Files\WindowsPowerShell\Modules;C:\Windows\system32\WindowsPowerShell\v1.0\Modules;C:\Program Files\Microsoft SQL Server\130\Tools\PowerShell\Modules\;C:\Program Files (x86)\Google\Cloud SDK\google-cloud-sdk\platform\PowerShell`,
-			"SHLVL=1",
-			fmt.Sprintf("HOME=%s", dirs.HomeDir),
-			fmt.Sprintf("HOMEPATH=%s", dirs.HomeDir),
-			`PSModuleAnalysisCachePath=C:\PSModuleAnalysisCachePath\ModuleAnalysisCache`,
-			`WINDIR=C:\Windows`,
-			`PUBLIC=C:\Users\Public`,
-		}
-		env = append(env, windowsEnv...)
-	}
-
 	if updatePath {
 		// add bin path
-		// Remove release state tool installation from PATH
 		oldPath := path
 		newPath := fmt.Sprintf(
 			"PATH=%s%s%s",
@@ -71,6 +44,10 @@ func sandboxedTestEnvironment(t *testing.T, dirs *Dirs, updatePath bool, extraEn
 		env = append(env, "PATH="+path)
 	}
 
+	// append platform specific environment variables
+	env = append(env, platformEnv(dirs)...)
+
+	// Prepare sandboxed home directory
 	err := prepareHomeDir(dirs.HomeDir)
 	require.NoError(t, err)
 
