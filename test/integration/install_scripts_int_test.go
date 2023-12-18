@@ -129,7 +129,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 			} else {
 				cp.SendLine("echo %PATH%")
 			}
-			cp.Expect(installPath)
+			cp.Expect(binPath)
 			cp.SendLine("state --version")
 			cp.Expect("Version " + constants.Version)
 			cp.Expect("Branch " + constants.BranchName)
