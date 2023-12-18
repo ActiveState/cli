@@ -223,7 +223,7 @@ func (suite *BundleIntegrationTestSuite) TestJSON() {
 	defer ts.Close()
 
 	cp := ts.Spawn("bundles", "search", "Email", "--language", "Perl", "-o", "json")
-	cp.Expect(`"package":"Email"`)
+	cp.Expect(`"name":"Email"`)
 	cp.ExpectExitCode(0)
 	AssertValidJSON(suite.T(), cp)
 
