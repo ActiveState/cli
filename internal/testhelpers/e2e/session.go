@@ -708,6 +708,7 @@ func (s *Session) SetupRCFile() {
 	if runtime.GOOS == "windows" {
 		return
 	}
+	s.t.Setenv("HOME", s.Dirs.HomeDir)
 
 	cfg, err := config.New()
 	require.NoError(s.t, err)
@@ -726,7 +727,7 @@ func (s *Session) SetupRCFileCustom(subshell subshell.SubShell) {
 	if fileutils.TargetExists(filepath.Join(s.Dirs.HomeDir, filepath.Base(rcFile))) {
 		err = fileutils.CopyFile(rcFile, filepath.Join(s.Dirs.HomeDir, filepath.Base(rcFile)))
 	} else {
-		err = fileutils.Touch(rcFile)
+		err = fileutils.Touch(filepath.Join(s.Dirs.HomeDir, filepath.Base(rcFile)))
 	}
 	require.NoError(s.t, err)
 }
