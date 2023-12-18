@@ -71,7 +71,7 @@ func (s *Search) Run(params SearchRunParams, nstype model.NamespaceType) error {
 		)
 	}
 
-	s.out.Print(output.Prepare(formatSearchResults(packages, params.Ingredient.Namespace != ""), packages))
+	s.out.Print(formatSearchResults(packages, params.Ingredient.Namespace != ""))
 
 	return nil
 }
