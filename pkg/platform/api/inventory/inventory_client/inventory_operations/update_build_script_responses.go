@@ -52,8 +52,7 @@ func NewUpdateBuildScriptOK() *UpdateBuildScriptOK {
 	return &UpdateBuildScriptOK{}
 }
 
-/*
-UpdateBuildScriptOK describes a response with status code 200, with default header values.
+/* UpdateBuildScriptOK describes a response with status code 200, with default header values.
 
 The updated build script
 */
@@ -85,8 +84,7 @@ func NewUpdateBuildScriptBadRequest() *UpdateBuildScriptBadRequest {
 	return &UpdateBuildScriptBadRequest{}
 }
 
-/*
-UpdateBuildScriptBadRequest describes a response with status code 400, with default header values.
+/* UpdateBuildScriptBadRequest describes a response with status code 400, with default header values.
 
 If the build script update is invalid or the build script cannot be updated because it is in use by a stable ingredient version revision
 */
@@ -120,8 +118,7 @@ func NewUpdateBuildScriptDefault(code int) *UpdateBuildScriptDefault {
 	}
 }
 
-/*
-UpdateBuildScriptDefault describes a response with status code -1, with default header values.
+/* UpdateBuildScriptDefault describes a response with status code -1, with default header values.
 
 If there is an error processing the request
 */

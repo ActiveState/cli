@@ -63,8 +63,7 @@ func NewSendEmailVerificationOK() *SendEmailVerificationOK {
 	return &SendEmailVerificationOK{}
 }
 
-/*
-SendEmailVerificationOK describes a response with status code 200, with default header values.
+/* SendEmailVerificationOK describes a response with status code 200, with default header values.
 
 Email updated
 */
@@ -96,8 +95,7 @@ func NewSendEmailVerificationBadRequest() *SendEmailVerificationBadRequest {
 	return &SendEmailVerificationBadRequest{}
 }
 
-/*
-SendEmailVerificationBadRequest describes a response with status code 400, with default header values.
+/* SendEmailVerificationBadRequest describes a response with status code 400, with default header values.
 
 Bad Request
 */
@@ -129,8 +127,7 @@ func NewSendEmailVerificationForbidden() *SendEmailVerificationForbidden {
 	return &SendEmailVerificationForbidden{}
 }
 
-/*
-SendEmailVerificationForbidden describes a response with status code 403, with default header values.
+/* SendEmailVerificationForbidden describes a response with status code 403, with default header values.
 
 Forbidden
 */
@@ -162,8 +159,7 @@ func NewSendEmailVerificationNotFound() *SendEmailVerificationNotFound {
 	return &SendEmailVerificationNotFound{}
 }
 
-/*
-SendEmailVerificationNotFound describes a response with status code 404, with default header values.
+/* SendEmailVerificationNotFound describes a response with status code 404, with default header values.
 
 Not Found
 */
@@ -195,8 +191,7 @@ func NewSendEmailVerificationInternalServerError() *SendEmailVerificationInterna
 	return &SendEmailVerificationInternalServerError{}
 }
 
-/*
-SendEmailVerificationInternalServerError describes a response with status code 500, with default header values.
+/* SendEmailVerificationInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */

@@ -16,7 +16,7 @@ import (
 
 // InventoryResponse Inventory Response
 //
-// # A generic response to an inventory api request
+// A generic response to an inventory api request
 //
 // swagger:model inventoryResponse
 type InventoryResponse struct {

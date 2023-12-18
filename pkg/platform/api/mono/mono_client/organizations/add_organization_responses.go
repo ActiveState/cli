@@ -63,8 +63,7 @@ func NewAddOrganizationOK() *AddOrganizationOK {
 	return &AddOrganizationOK{}
 }
 
-/*
-AddOrganizationOK describes a response with status code 200, with default header values.
+/* AddOrganizationOK describes a response with status code 200, with default header values.
 
 Organization Created
 */
@@ -96,8 +95,7 @@ func NewAddOrganizationBadRequest() *AddOrganizationBadRequest {
 	return &AddOrganizationBadRequest{}
 }
 
-/*
-AddOrganizationBadRequest describes a response with status code 400, with default header values.
+/* AddOrganizationBadRequest describes a response with status code 400, with default header values.
 
 Bad Request
 */
@@ -129,8 +127,7 @@ func NewAddOrganizationForbidden() *AddOrganizationForbidden {
 	return &AddOrganizationForbidden{}
 }
 
-/*
-AddOrganizationForbidden describes a response with status code 403, with default header values.
+/* AddOrganizationForbidden describes a response with status code 403, with default header values.
 
 Forbidden
 */
@@ -162,8 +159,7 @@ func NewAddOrganizationConflict() *AddOrganizationConflict {
 	return &AddOrganizationConflict{}
 }
 
-/*
-AddOrganizationConflict describes a response with status code 409, with default header values.
+/* AddOrganizationConflict describes a response with status code 409, with default header values.
 
 Conflict
 */
@@ -195,8 +191,7 @@ func NewAddOrganizationInternalServerError() *AddOrganizationInternalServerError
 	return &AddOrganizationInternalServerError{}
 }
 
-/*
-AddOrganizationInternalServerError describes a response with status code 500, with default header values.
+/* AddOrganizationInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */

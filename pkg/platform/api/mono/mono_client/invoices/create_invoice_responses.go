@@ -63,8 +63,7 @@ func NewCreateInvoiceOK() *CreateInvoiceOK {
 	return &CreateInvoiceOK{}
 }
 
-/*
-CreateInvoiceOK describes a response with status code 200, with default header values.
+/* CreateInvoiceOK describes a response with status code 200, with default header values.
 
 Success
 */
@@ -94,8 +93,7 @@ func NewCreateInvoiceBadRequest() *CreateInvoiceBadRequest {
 	return &CreateInvoiceBadRequest{}
 }
 
-/*
-CreateInvoiceBadRequest describes a response with status code 400, with default header values.
+/* CreateInvoiceBadRequest describes a response with status code 400, with default header values.
 
 Bad Request
 */
@@ -127,8 +125,7 @@ func NewCreateInvoiceForbidden() *CreateInvoiceForbidden {
 	return &CreateInvoiceForbidden{}
 }
 
-/*
-CreateInvoiceForbidden describes a response with status code 403, with default header values.
+/* CreateInvoiceForbidden describes a response with status code 403, with default header values.
 
 Forbidden
 */
@@ -160,8 +157,7 @@ func NewCreateInvoiceNotFound() *CreateInvoiceNotFound {
 	return &CreateInvoiceNotFound{}
 }
 
-/*
-CreateInvoiceNotFound describes a response with status code 404, with default header values.
+/* CreateInvoiceNotFound describes a response with status code 404, with default header values.
 
 Not Found
 */
@@ -193,8 +189,7 @@ func NewCreateInvoiceInternalServerError() *CreateInvoiceInternalServerError {
 	return &CreateInvoiceInternalServerError{}
 }
 
-/*
-CreateInvoiceInternalServerError describes a response with status code 500, with default header values.
+/* CreateInvoiceInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */

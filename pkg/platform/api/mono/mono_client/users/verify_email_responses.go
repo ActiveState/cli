@@ -63,8 +63,7 @@ func NewVerifyEmailOK() *VerifyEmailOK {
 	return &VerifyEmailOK{}
 }
 
-/*
-VerifyEmailOK describes a response with status code 200, with default header values.
+/* VerifyEmailOK describes a response with status code 200, with default header values.
 
 Email updated
 */
@@ -96,8 +95,7 @@ func NewVerifyEmailBadRequest() *VerifyEmailBadRequest {
 	return &VerifyEmailBadRequest{}
 }
 
-/*
-VerifyEmailBadRequest describes a response with status code 400, with default header values.
+/* VerifyEmailBadRequest describes a response with status code 400, with default header values.
 
 Invalid Code
 */
@@ -129,8 +127,7 @@ func NewVerifyEmailForbidden() *VerifyEmailForbidden {
 	return &VerifyEmailForbidden{}
 }
 
-/*
-VerifyEmailForbidden describes a response with status code 403, with default header values.
+/* VerifyEmailForbidden describes a response with status code 403, with default header values.
 
 Forbidden
 */
@@ -162,8 +159,7 @@ func NewVerifyEmailNotFound() *VerifyEmailNotFound {
 	return &VerifyEmailNotFound{}
 }
 
-/*
-VerifyEmailNotFound describes a response with status code 404, with default header values.
+/* VerifyEmailNotFound describes a response with status code 404, with default header values.
 
 Not Found
 */
@@ -195,8 +191,7 @@ func NewVerifyEmailInternalServerError() *VerifyEmailInternalServerError {
 	return &VerifyEmailInternalServerError{}
 }
 
-/*
-VerifyEmailInternalServerError describes a response with status code 500, with default header values.
+/* VerifyEmailInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */

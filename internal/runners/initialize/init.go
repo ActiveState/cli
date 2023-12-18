@@ -251,7 +251,7 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 		Language:    lang.Requirement(),
 		Version:     version,
 		Private:     params.Private,
-		Timestamp:   *timestamp,
+		Timestamp:   strfmt.DateTime(timestamp),
 		Description: locale.T("commit_message_add_initial"),
 	})
 	if err != nil {

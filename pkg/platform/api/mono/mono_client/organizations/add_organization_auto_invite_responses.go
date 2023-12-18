@@ -51,8 +51,7 @@ func NewAddOrganizationAutoInviteOK() *AddOrganizationAutoInviteOK {
 	return &AddOrganizationAutoInviteOK{}
 }
 
-/*
-AddOrganizationAutoInviteOK describes a response with status code 200, with default header values.
+/* AddOrganizationAutoInviteOK describes a response with status code 200, with default header values.
 
 Success
 */
@@ -82,8 +81,7 @@ func NewAddOrganizationAutoInviteForbidden() *AddOrganizationAutoInviteForbidden
 	return &AddOrganizationAutoInviteForbidden{}
 }
 
-/*
-AddOrganizationAutoInviteForbidden describes a response with status code 403, with default header values.
+/* AddOrganizationAutoInviteForbidden describes a response with status code 403, with default header values.
 
 Forbidden
 */
@@ -115,8 +113,7 @@ func NewAddOrganizationAutoInviteInternalServerError() *AddOrganizationAutoInvit
 	return &AddOrganizationAutoInviteInternalServerError{}
 }
 
-/*
-AddOrganizationAutoInviteInternalServerError describes a response with status code 500, with default header values.
+/* AddOrganizationAutoInviteInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */

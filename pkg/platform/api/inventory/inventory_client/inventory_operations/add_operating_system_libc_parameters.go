@@ -54,12 +54,10 @@ func NewAddOperatingSystemLibcParamsWithHTTPClient(client *http.Client) *AddOper
 	}
 }
 
-/*
-AddOperatingSystemLibcParams contains all the parameters to send to the API endpoint
+/* AddOperatingSystemLibcParams contains all the parameters to send to the API endpoint
+   for the add operating system libc operation.
 
-	for the add operating system libc operation.
-
-	Typically these are written to a http.Request.
+   Typically these are written to a http.Request.
 */
 type AddOperatingSystemLibcParams struct {
 
