@@ -78,9 +78,7 @@ func (suite *UninstallIntegrationTestSuite) testUninstall(all bool) {
 
 	if runtime.GOOS == "linux" {
 		// When installed in a non-desktop environment (i.e. on a server), verify the user's ~/.profile was changed.
-		homeDir, err := user.HomeDir()
-		suite.Require().NoError(err)
-		profile := filepath.Join(homeDir, ".profile")
+		profile := filepath.Join(ts.Dirs.HomeDir, ".profile")
 		suite.Contains(string(fileutils.ReadFileUnsafe(profile)), svcExe, "autostart should be configured for Linux server environment")
 	}
 
