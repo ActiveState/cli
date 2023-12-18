@@ -56,6 +56,7 @@ func (s *State) Run(usageFunc func() error) error {
 	if s.opts.Version {
 		checker.RunUpdateNotifier(s.an, s.svcMdl, s.out)
 		vd := installation.VersionData{
+			"CLI",
 			constants.LibraryLicense,
 			constants.Version,
 			constants.BranchName,

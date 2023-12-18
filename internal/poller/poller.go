@@ -1,6 +1,7 @@
 package poller
 
 import (
+	"sync"
 	"time"
 
 	"github.com/ActiveState/cli/internal/errs"
@@ -12,6 +13,7 @@ import (
 type Poller struct {
 	pollFunc      func() (interface{}, error)
 	cache         interface{}
+	cacheMutex    sync.Mutex
 	done          chan struct{}
 	errorReported bool
 }
@@ -26,6 +28,8 @@ func New(interval time.Duration, pollFunc func() (interface{}, error)) *Poller {
 }
 
 func (p *Poller) ValueFromCache() interface{} {
+	p.cacheMutex.Lock()
+	defer p.cacheMutex.Unlock()
 	return p.cache
 }
 
@@ -59,9 +63,11 @@ func (p *Poller) refresh() {
 		return
 	}
 
+	p.cacheMutex.Lock()
 	p.cache = info
+	p.cacheMutex.Unlock()
 }
 
 func (p *Poller) Close() {
-	p.done <- struct{}{}
+	close(p.done)
 }

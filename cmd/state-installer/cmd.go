@@ -46,6 +46,7 @@ type Params struct {
 	isUpdate        bool
 	activate        *project.Namespaced
 	activateDefault *project.Namespaced
+	showVersion     bool
 }
 
 func newParams() *Params {
@@ -184,6 +185,10 @@ func main() {
 				Hidden:    true, // Since we already expose the path as an argument, let's not confuse the user
 				Value:     &params.path,
 			},
+			{
+				Name:  "version", // note: no shorthand because install.sh uses -v for selecting version
+				Value: &params.showVersion,
+			},
 			// The remaining flags are for backwards compatibility (ie. we don't want to error out when they're provided)
 			{Name: "nnn", Shorthand: "n", Hidden: true, Value: &garbageBool}, // don't prompt; useless cause we don't prompt anyway
 			{Name: "channel", Hidden: true, Value: &garbageString},
@@ -226,6 +231,20 @@ func main() {
 }
 
 func execute(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher, args []string, params *Params) error {
+	if params.showVersion {
+		vd := installation.VersionData{
+			"CLI Installer",
+			constants.LibraryLicense,
+			constants.Version,
+			constants.BranchName,
+			constants.RevisionHash,
+			constants.Date,
+			constants.OnCI == "true",
+		}
+		out.Print(locale.T("version_info", vd))
+		return nil
+	}
+
 	an.Event(anaConst.CatInstallerFunnel, "exec")
 
 	if params.path == "" {
