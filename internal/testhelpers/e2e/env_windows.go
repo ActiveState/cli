@@ -32,6 +32,6 @@ func platformEnv(dirs *Dirs) []string {
 		fmt.Sprintf("HOMEPATH=%s", dirs.HomeDir),
 		// Other environment variables are commonly set by CI systems, but this one is not.
 		// This is requried for some tests in order to get the correct powershell output.
-		fmt.Sprintf("PSModulePath=%s", os.Getenv("PSModulePath")))
+		fmt.Sprintf("PSModulePath=%s", os.Getenv("PSModulePath")),
 	}
 }
