@@ -754,7 +754,7 @@ func (s *Session) IgnoreLogErrors() {
 	s.ignoreLogErrors = true
 }
 
-var errorOrPanicRegex = regexp.MustCompile(`(?:\[ERR:|Panic:)`)
+var errorOrPanicRegex = regexp.MustCompile(`(?:\[ERR |Panic:)`)
 
 func (s *Session) detectLogErrors() {
 	for _, path := range s.LogFiles() {
