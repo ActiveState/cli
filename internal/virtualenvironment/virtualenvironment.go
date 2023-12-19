@@ -53,6 +53,9 @@ func (v *VirtualEnvironment) GetEnv(inherit bool, useExecutors bool, projectDir,
 			return envMap, locale.WrapError(err, "err_parse_project", "", configFile)
 		}
 		for _, constant := range pj.Constants() {
+			if !constant.Export() {
+				continue
+			}
 			v, err := constant.Value()
 			envMap[constant.Name()] = strings.Replace(v, "\n", `\n`, -1)
 			if err != nil {

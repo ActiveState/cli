@@ -470,6 +470,47 @@ func (suite *ShellIntegrationTestSuite) TestProjectOrder() {
 	cp.ExpectNotExitCode(0)
 }
 
+func (suite *ShellIntegrationTestSuite) TestExportedConstants() {
+	suite.OnlyRunForTags(tagsuite.Shell)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	ts.PrepareProject("ActiveState-CLI/Perl-5.32", "a4762408-def6-41e4-b709-4cb548765005")
+	suite.Require().NoError(fileutils.AmendFile(filepath.Join(ts.Dirs.Work, constants.ConfigFileName), []byte(`
+constants:
+  - name: foo
+    value: bar
+  - name: baz
+    value: quux
+    export: true`), fileutils.AmendByAppend))
+
+	cp := ts.SpawnWithOpts(
+		e2e.OptArgs("shell"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
+	)
+	cp.Expect("Activated", e2e.RuntimeSourcingTimeoutOpt)
+
+	cp.ExpectInput()
+	if runtime.GOOS == "windows" {
+		cp.SendLine("echo %foo%")
+	} else {
+		cp.SendLine("echo $foo")
+	}
+	cp.ExpectInput()
+	suite.Assert().NotContains(cp.Snapshot(), "bar", "variable 'foo' was exported, but should not have been")
+
+	if runtime.GOOS == "windows" {
+		cp.SendLine("echo %baz%")
+	} else {
+		cp.SendLine("echo $baz")
+	}
+	cp.Expect("quux")
+
+	cp.SendLine("exit")
+	cp.Expect("Deactivated")
+	cp.ExpectExit() // exit code varies depending on shell; just assert the shell exited
+}
+
 func TestShellIntegrationTestSuite(t *testing.T) {
 	suite.Run(t, new(ShellIntegrationTestSuite))
 }

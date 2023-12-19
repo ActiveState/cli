@@ -110,13 +110,15 @@ func TestConstantStruct(t *testing.T) {
 	constant := Constant{}
 	dat := strings.TrimSpace(`
 name: valueForName
-value: valueForConstant`)
+value: valueForConstant
+export: true`)
 
 	err := yaml.Unmarshal([]byte(dat), &constant)
 	assert.Nil(t, err, "Should not throw an error")
 
 	assert.Equal(t, "valueForName", constant.Name, "Name should be set")
 	assert.Equal(t, "valueForConstant", constant.Value, "Constant should be set")
+	assert.Equal(t, true, constant.Export, "Constant export should be set")
 }
 
 func TestSecretStruct(t *testing.T) {
@@ -150,6 +152,7 @@ func TestParse(t *testing.T) {
 
 	assert.NotEmpty(t, project.Constants[0].Name, "Constant name should be set")
 	assert.NotEmpty(t, project.Constants[0].Value, "Constant value should be set")
+	assert.False(t, project.Constants[0].Export, "Constant export value should not be set")
 
 	assert.NotEmpty(t, project.Secrets.User[0].Name, "Variable name should be set")
 	assert.NotEmpty(t, project.Secrets.Project[0].Name, "Variable name should be set")

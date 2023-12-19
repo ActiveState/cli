@@ -369,6 +369,9 @@ func (c *Constant) Value() (string, error) {
 	return ExpandFromProject(c.constant.Value, c.project)
 }
 
+// Export returns whether or not the constant should be exported to an activated shell environment.
+func (c *Constant) Export() bool { return c.constant.ConstantFields.Export }
+
 // SecretScope defines the scope of a secret
 type SecretScope string
 

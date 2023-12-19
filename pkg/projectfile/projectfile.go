@@ -113,6 +113,7 @@ type Build map[string]string
 // ConstantFields are the common fields for the Constant type. This is required
 // for type composition related to its yaml.Unmarshaler implementation.
 type ConstantFields struct {
+	Export      bool        `yaml:"export"`
 	Conditional Conditional `yaml:"if"`
 }
 
