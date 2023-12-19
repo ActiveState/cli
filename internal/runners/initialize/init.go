@@ -151,15 +151,7 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 		return language.UnrecognizedLanguageError(languageName, language.RecognizedSupportedsNames())
 	}
 
-	lang, err := language.MakeByNameAndVersion(languageName, languageVersion)
-	if err != nil {
-		if inferred {
-			return locale.WrapError(err, "err_init_lang", "", languageName, languageVersion)
-		} else {
-			return locale.WrapInputError(err, "err_init_lang", "", languageName, languageVersion)
-		}
-	}
-
+	lang := language.MakeByNameAndVersion(languageName, languageVersion)
 	version, err := deriveVersion(lang, languageVersion)
 	if err != nil {
 		if inferred || !locale.IsInputError(err) {

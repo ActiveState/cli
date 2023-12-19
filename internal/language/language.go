@@ -120,7 +120,7 @@ func MakeByName(name string) Language {
 }
 
 // MakeByNameAndVersion will retrieve a language by a given name and version.
-func MakeByNameAndVersion(name, version string) (Language, error) {
+func MakeByNameAndVersion(name, version string) Language {
 	if strings.ToLower(name) == Python3.Requirement() {
 		name = Python3.String()
 		// Disambiguate python, preferring Python3.
@@ -130,7 +130,7 @@ func MakeByNameAndVersion(name, version string) (Language, error) {
 			name = Python2.String()
 		}
 	}
-	return MakeByName(name), nil
+	return MakeByName(name)
 }
 
 // MakeByText will retrieve a language by a given text
