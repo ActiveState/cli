@@ -297,13 +297,6 @@ func (r *RequirementOperation) ExecuteRequirementOperation(
 	//	return errs.Wrap(err, "Could not get remote build expr")
 	//}
 
-	// Note: a commit ID file needs to exist at this point.
-	// Re-enable in DX-2307.
-	//err = buildscript.Update(r.Project, expr, r.Auth)
-	//if err != nil {
-	//	return locale.WrapError(err, "err_update_build_script")
-	//}
-
 	// refresh or install runtime
 	err = runbits.RefreshRuntime(r.Auth, r.Output, r.Analytics, r.Project, commitID, true, trigger, r.SvcModel)
 	if err != nil {
@@ -313,6 +306,13 @@ func (r *RequirementOperation) ExecuteRequirementOperation(
 	if err := commitmediator.Set(r.Project, commitID.String()); err != nil {
 		return locale.WrapError(err, "err_package_update_commit_id")
 	}
+
+	// Note: a commit ID file needs to exist at this point.
+	// Re-enable in DX-2307.
+	//err = buildscript.Update(r.Project, expr, r.Auth)
+	//if err != nil {
+	//	return locale.WrapError(err, "err_update_build_script")
+	//}
 
 	if !hasParentCommit {
 		out.Notice(locale.Tr("install_initial_success", r.Project.Source().Path()))
