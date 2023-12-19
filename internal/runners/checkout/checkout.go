@@ -1,11 +1,16 @@
 package checkout
 
 import (
+	"os"
+	"path/filepath"
+
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/multilog"
+	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runbits/checker"
@@ -26,6 +31,7 @@ type Params struct {
 	Branch        string
 	RuntimePath   string
 	NoClone       bool
+	Force         bool
 }
 
 type primeable interface {
@@ -75,6 +81,28 @@ func (u *Checkout) Run(params *Params) (rerr error) {
 	proj, err := project.FromPath(projectDir)
 	if err != nil {
 		return locale.WrapError(err, "err_project_frompath")
+	}
+
+	// If an error occurs, remove the created activestate.yaml file and/or directory.
+	if !params.Force {
+		defer func() {
+			if rerr == nil {
+				return
+			}
+			err := os.Remove(proj.Path())
+			if err != nil {
+				multilog.Error("Failed to remove activestate.yaml after `state checkout` error: %v", err)
+				return
+			}
+			if cwd, err := osutils.Getwd(); err == nil {
+				if createdDir := filepath.Dir(proj.Path()); createdDir != cwd {
+					err2 := os.RemoveAll(createdDir)
+					if err2 != nil {
+						multilog.Error("Failed to remove created directory after `state checkout` error: %v", err2)
+					}
+				}
+			}
+		}()
 	}
 
 	rti, err := runtime.NewFromProject(proj, target.TriggerCheckout, u.analytics, u.svcModel, u.out, u.auth)
