@@ -118,8 +118,6 @@ func ExecSimpleFromDir(dir, bin string, args []string, env []string) (string, st
 
 // Execute will run the given command and with optional settings for the exec.Cmd struct
 func Execute(command string, arg []string, optSetter func(cmd *exec.Cmd) error) (int, *exec.Cmd, error) {
-	logging.Debug("Executing command: %s, %v", command, arg)
-
 	cmd := exec.Command(command, arg...)
 	logging.Debug("Executing command: %s, with args: %s", cmd, arg)
 	if optSetter != nil {
@@ -128,7 +126,6 @@ func Execute(command string, arg []string, optSetter func(cmd *exec.Cmd) error) 
 		}
 	}
 
-	logging.Debug("CMD Env: %s", cmd.Env)
 	err := cmd.Run()
 	if err != nil {
 		logging.Debug("Executing command returned error: %v", err)
