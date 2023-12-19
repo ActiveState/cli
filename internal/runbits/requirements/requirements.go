@@ -297,21 +297,14 @@ func (r *RequirementOperation) ExecuteRequirementOperation(
 	//	return errs.Wrap(err, "Could not get remote build expr")
 	//}
 
-	if err := commitmediator.Set(r.Project, commitID.String()); err != nil {
-		return locale.WrapError(err, "err_package_update_commit_id")
-	}
-
-	// Note: a commit ID file needs to exist at this point.
-	// Re-enable in DX-2307.
-	//err = buildscript.Update(r.Project, expr, r.Auth)
-	//if err != nil {
-	//	return locale.WrapError(err, "err_update_build_script")
-	//}
-
 	// refresh or install runtime
 	err = runbits.RefreshRuntime(r.Auth, r.Output, r.Analytics, r.Project, commitID, true, trigger, r.SvcModel)
 	if err != nil {
-		return err
+		return handleRefreshError(err, r.Project, parentCommitID)
+	}
+
+	if err := updateCommitID(r.Project, commitID); err != nil {
+		return locale.WrapError(err, "err_package_update_commit_id")
 	}
 
 	if !hasParentCommit {
@@ -344,6 +337,32 @@ func (r *RequirementOperation) ExecuteRequirementOperation(
 	}
 
 	out.Notice(locale.T("operation_success_local"))
+
+	return nil
+}
+
+func handleRefreshError(err error, project *project.Project, parentCommitID strfmt.UUID) error {
+	// If the error is a build error then return, if not update the commit ID then return
+	if !runbits.IsBuildError(err) {
+		if err := updateCommitID(project, parentCommitID); err != nil {
+			return locale.WrapError(err, "err_package_update_commit_id")
+		}
+	}
+	return err
+}
+
+func updateCommitID(project *project.Project, commitID strfmt.UUID) error {
+	if err := commitmediator.Set(project, commitID.String()); err != nil {
+		return locale.WrapError(err, "err_package_update_commit_id")
+	}
+
+	// Note: a commit ID file needs to exist at this point.
+	// Re-enable in DX-2307.
+	// Will have to pass the buildscript as an argument to this function.
+	//err = buildscript.Update(r.Project, expr, r.Auth)
+	//if err != nil {
+	//	return locale.WrapError(err, "err_update_build_script")
+	//}
 
 	return nil
 }
