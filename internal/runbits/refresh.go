@@ -1,6 +1,8 @@
 package runbits
 
 import (
+	"strings"
+
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
@@ -30,7 +32,7 @@ func RefreshRuntime(
 	//	return locale.WrapError(err, "err_update_build_script")
 	//}
 	var t *target.ProjectTarget
-	if proj != nil && *proj.Namespace().CommitID != commitID {
+	if proj != nil && strings.EqualFold(proj.Namespace().CommitID.String(), commitID.String()) {
 		t = target.NewProjectTarget(proj, &commitID, trigger)
 	} else {
 		t = target.NewProjectTarget(proj, nil, trigger)
