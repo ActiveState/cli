@@ -29,14 +29,9 @@ func RefreshRuntime(
 	//if err != nil {
 	//	return locale.WrapError(err, "err_update_build_script")
 	//}
-	var t *target.ProjectTarget
-	if commitIDFromProject(proj) != commitID {
-		t = target.NewProjectTarget(proj, &commitID, trigger)
-	} else {
-		t = target.NewProjectTarget(proj, nil, trigger)
-	}
+	target := target.NewProjectTarget(proj, resolveCommitID(proj, &commitID), trigger)
 	isCached := true
-	rt, err := runtime.New(t, an, svcm, auth)
+	rt, err := runtime.New(target, an, svcm, auth)
 	if err != nil {
 		if runtime.IsNeedsUpdateError(err) {
 			isCached = false
@@ -70,9 +65,15 @@ func RefreshRuntime(
 	return nil
 }
 
-func commitIDFromProject(proj *project.Project) strfmt.UUID {
+func resolveCommitID(proj *project.Project, customCommitID *strfmt.UUID) *strfmt.UUID {
+	var projectCommitID *strfmt.UUID
 	if proj != nil && proj.Namespace() != nil && proj.Namespace().CommitID != nil {
-		return *proj.Namespace().CommitID
+		projectCommitID = proj.Namespace().CommitID
 	}
-	return ""
+
+	if projectCommitID != customCommitID {
+		return customCommitID
+	}
+
+	return nil
 }
