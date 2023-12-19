@@ -15,6 +15,12 @@ import (
 
 func sandboxedTestEnvironment(t *testing.T, dirs *Dirs, updatePath bool, extraEnv ...string) []string {
 	var env []string
+	basePath := platformPath
+	if os.Getenv(constants.OverrideSandbox) != "" {
+		basePath = os.Getenv("PATH")
+		env = append(env, os.Environ()...)
+	}
+
 	env = append(env, []string{
 		constants.ConfigEnvVarName + "=" + dirs.Config,
 		constants.CacheEnvVarName + "=" + dirs.Cache,
@@ -31,21 +37,20 @@ func sandboxedTestEnvironment(t *testing.T, dirs *Dirs, updatePath bool, extraEn
 		"CI=true",
 	}...)
 
-	path := testPath
 	if updatePath {
 		// add bin path
-		oldPath := path
+		oldPath := basePath
 		newPath := fmt.Sprintf(
 			"PATH=%s%s%s",
 			dirs.Bin, string(os.PathListSeparator), oldPath,
 		)
 		env = append(env, newPath)
 	} else {
-		env = append(env, "PATH="+path)
+		env = append(env, "PATH="+basePath)
 	}
 
 	// append platform specific environment variables
-	env = append(env, platformEnv(dirs)...)
+	env = append(env, platformSpecificEnv(dirs)...)
 
 	// Prepare sandboxed home directory
 	err := prepareHomeDir(dirs.HomeDir)
@@ -78,7 +83,6 @@ func prepareHomeDir(dir string) error {
 	}
 
 	rcFile := filepath.Join(dir, filename)
-	fmt.Println("Creating rc file: " + rcFile)
 	err := fileutils.Touch(rcFile)
 	if err != nil {
 		return errs.Wrap(err, "Could not create rc file")

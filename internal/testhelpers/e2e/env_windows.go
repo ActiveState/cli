@@ -9,11 +9,11 @@ import (
 )
 
 const (
-	testPath             = `C:\msys64\usr\bin;C:\Windows\System32;C:\Windows;C:\Windows\System32\Wbem;C:\Windows\System32\WindowsPowerShell\v1.0\;C:\Program Files\PowerShell\7\;`
+	platformPath         = `C:\msys64\usr\bin;C:\Windows\System32;C:\Windows;C:\Windows\System32\Wbem;C:\Windows\System32\WindowsPowerShell\v1.0\;C:\Program Files\PowerShell\7\;`
 	systemHomeEnvVarName = "USERPROFILE"
 )
 
-func platformEnv(dirs *Dirs) []string {
+func platformSpecificEnv(dirs *Dirs) []string {
 	return []string{
 		"SystemDrive=C:",
 		"SystemRoot=C:\\Windows",
