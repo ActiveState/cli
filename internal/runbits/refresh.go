@@ -29,9 +29,14 @@ func RefreshRuntime(
 	//if err != nil {
 	//	return locale.WrapError(err, "err_update_build_script")
 	//}
-	target := target.NewProjectTarget(proj, nil, trigger)
+	var t *target.ProjectTarget
+	if proj != nil && *proj.Namespace().CommitID != commitID {
+		t = target.NewProjectTarget(proj, &commitID, trigger)
+	} else {
+		t = target.NewProjectTarget(proj, nil, trigger)
+	}
 	isCached := true
-	rt, err := runtime.New(target, an, svcm, auth)
+	rt, err := runtime.New(t, an, svcm, auth)
 	if err != nil {
 		if runtime.IsNeedsUpdateError(err) {
 			isCached = false
