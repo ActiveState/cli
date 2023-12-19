@@ -34,6 +34,12 @@ func newCheckoutCommand(prime *primer.Values) *captain.Command {
 				Description: locale.Tl("flag_state_checkout_no_clone_description", "Do not clone the github repository associated with this project (if any)"),
 				Value:       &params.NoClone,
 			},
+			{
+				Name:        "force",
+				Shorthand:   "f",
+				Description: locale.Tl("flag_state_checkout_force", "Leave a failed project checkout on disk; do not delete it"),
+				Value:       &params.Force,
+			},
 		},
 		[]*captain.Argument{
 			{
