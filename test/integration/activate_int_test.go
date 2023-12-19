@@ -259,6 +259,14 @@ func (suite *ActivateIntegrationTestSuite) activatePython(version string, extraE
 	cp.ExpectInput(termtest.OptExpectTimeout(40 * time.Second))
 	pythonShim := pythonExe + osutils.ExeExtension
 
+	// test that existing environment variables are inherited by the activated shell
+	if runtime.GOOS == "windows" {
+		cp.SendLine(fmt.Sprintf("echo %%%s%%", constants.DisableRuntime))
+	} else {
+		cp.SendLine("echo $" + constants.DisableRuntime)
+	}
+	cp.Expect("false")
+
 	// test that other executables that use python work as well
 	pipExe := "pip" + version
 	cp.SendLine(fmt.Sprintf("%s --version", pipExe))
