@@ -231,6 +231,7 @@ func (r *Runtime) recordCompletion(err error) {
 	var action string
 	if err != nil {
 		action = anaConsts.ActRuntimeFailure
+		logging.Error("Runtime failed: %v", errs.JoinMessage(err))
 	} else {
 		action = anaConsts.ActRuntimeSuccess
 		r.recordUsage()
