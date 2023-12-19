@@ -241,7 +241,8 @@ func (u *UpdateInstaller) InstallBlocking(installTargetPath string, args ...stri
 			multilog.Error("Unable to remove update directory '%s': %v", updateDir, err)
 		}
 	} else {
-		multilog.Error("Update directory structure has changed without updating it here, too. "+
+		// Do not report to rollbar, but log the error for our integration tests to catch.
+		logging.Error("Did not remove temporary update directory. "+
 			"installerPath: %s\nupdateDir: %s\nExpected a 'state-update' prefix for the latter", installerPath, updateDir)
 	}
 
