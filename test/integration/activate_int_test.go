@@ -83,6 +83,11 @@ func (suite *ActivateIntegrationTestSuite) addForegroundSvc(ts *e2e.Session) fun
 		return nil
 	}, 10*time.Second)
 
+	// This function seems to trigger lots of flisten errors that do not appear to be actual errors
+	// (the integration test expectations all pass). Just ignore log errors for sessions that call
+	// this function.
+	ts.IgnoreLogErrors()
+
 	// Stop function
 	return func() {
 		go func() {

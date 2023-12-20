@@ -17,6 +17,11 @@ type entry struct {
 	Dims   *dimensions.Values `json:"dims"`
 }
 
+// processError wraps an OS-level error, not a State Tool error.
+type processError struct {
+	*errs.WrapperError
+}
+
 func (e entry) IsRunning() (bool, error) {
 	logging.Debug("Checking if %s (%d) is still running", e.Exec, e.PID)
 
@@ -31,7 +36,7 @@ func (e entry) IsRunning() (bool, error) {
 
 	exe, err := proc.Exe()
 	if err != nil {
-		return false, errs.Wrap(err, "Could not get executable of process: %d", e.PID)
+		return false, &processError{errs.Wrap(err, "Could not get executable of process: %d", e.PID)}
 	}
 
 	match, err := fileutils.PathsMatch(exe, e.Exec)

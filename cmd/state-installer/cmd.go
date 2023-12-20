@@ -430,7 +430,7 @@ func postInstallEvents(out output.Outputer, cfg *config.Instance, an analytics.D
 		if err := ss.Activate(nil, cfg, out); err != nil {
 			return errs.Wrap(err, "Error activating subshell: %s", errs.JoinMessage(err))
 		}
-		if err = <-ss.Errors(); err != nil {
+		if err = <-ss.Errors(); err != nil && !errs.IsSilent(err) {
 			return errs.Wrap(err, "Error during subshell execution: %s", errs.JoinMessage(err))
 		}
 	}
