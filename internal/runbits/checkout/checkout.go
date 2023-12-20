@@ -174,9 +174,5 @@ func getLanguage(commitID strfmt.UUID) (language.Language, error) {
 		return language.Unset, locale.WrapError(err, "err_language_by_commit", "", string(commitID))
 	}
 
-	lang, err := language.MakeByNameAndVersion(modelLanguage.Name, modelLanguage.Version)
-	if err != nil {
-		return language.Unset, locale.WrapError(err, "err_make_language")
-	}
-	return lang, nil
+	return language.MakeByNameAndVersion(modelLanguage.Name, modelLanguage.Version), nil
 }

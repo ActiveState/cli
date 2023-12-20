@@ -1312,8 +1312,6 @@ arg_state_shell_namespace_description:
   other: The namespace of the project you wish to start a virtual environment shell/prompt for, or just the project name if previously used
 err_language_by_commit:
   other: Could not get language from commit ID {{.V0}}
-err_make_language:
-  other: Could not create language from commit ID
 err_parse_project:
   other: Could not parse project file at {{.V0}}
 err_uninstall_privilege_mismatch:

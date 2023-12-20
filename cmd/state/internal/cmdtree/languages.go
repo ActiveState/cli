@@ -47,3 +47,19 @@ func newLanguageInstallCommand(prime *primer.Values) *captain.Command {
 		},
 	).SetSupportsStructuredOutput()
 }
+
+func newLanguageSearchCommand(prime *primer.Values) *captain.Command {
+	runner := languages.NewSearch(prime)
+
+	return captain.NewCommand(
+		"search",
+		locale.Tl("languages_search_title", "Searching Languages"),
+		locale.Tl("languages_search_cmd_description", "Search for an available language to use in your project"),
+		prime,
+		[]*captain.Flag{},
+		[]*captain.Argument{},
+		func(ccmd *captain.Command, _ []string) error {
+			return runner.Run()
+		},
+	).SetSupportsStructuredOutput().SetUnstable(true)
+}
