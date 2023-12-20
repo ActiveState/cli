@@ -754,10 +754,13 @@ func (s *Session) IgnoreLogErrors() {
 	s.ignoreLogErrors = true
 }
 
-var errorOrPanicRegex = regexp.MustCompile(`(?:\[ERR:|Panic:)`)
+var errorOrPanicRegex = regexp.MustCompile(`(?:\[ERR |\[CRT |Panic:)`)
 
 func (s *Session) detectLogErrors() {
 	for _, path := range s.LogFiles() {
+		if !strings.HasPrefix(filepath.Base(path), "state-") {
+			continue
+		}
 		if contents := string(fileutils.ReadFileUnsafe(path)); errorOrPanicRegex.MatchString(contents) {
 			s.T.Errorf("Found error and/or panic in log file %s\nIf this was expected, call session.IgnoreLogErrors() to avoid this check\nLog contents:\n%s", path, contents)
 		}

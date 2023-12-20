@@ -309,6 +309,7 @@ func (suite *CheckoutIntegrationTestSuite) TestFail() {
 	cp.Expect("Something Went Wrong")
 	cp.ExpectNotExitCode(0)
 	suite.Assert().NoDirExists(filepath.Join(ts.Dirs.Work, "fail"), "state checkout fail did not remove created directory")
+	ts.IgnoreLogErrors()
 
 	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("checkout", "ActiveState-CLI/fail", "."),
