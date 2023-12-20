@@ -3,6 +3,9 @@ package checkout
 import (
 	"os"
 	"path/filepath"
+	rt "runtime"
+	"strconv"
+	"strings"
 
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/config"
@@ -23,6 +26,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
+	"github.com/ActiveState/cli/pkg/sysinfo"
 )
 
 type Params struct {
@@ -32,6 +36,7 @@ type Params struct {
 	RuntimePath   string
 	NoClone       bool
 	Force         bool
+	LibcVersion   string
 }
 
 type primeable interface {
@@ -81,6 +86,33 @@ func (u *Checkout) Run(params *Params) (rerr error) {
 	proj, err := project.FromPath(projectDir)
 	if err != nil {
 		return locale.WrapError(err, "err_project_frompath")
+	}
+
+	if params.LibcVersion != "" {
+		if rt.GOOS != "linux" {
+			return locale.NewError("err_libc_version_not_supported", "libc version is only supported on linux")
+		}
+
+		parts := strings.Split(params.LibcVersion, ".")
+		if len(parts) != 2 {
+			return locale.NewError("err_libc_version_invalid", "libc version must be in the form of major.minor")
+		}
+
+		major, err := strconv.Atoi(parts[0])
+		if err != nil {
+			return locale.WrapError(err, "err_libc_version_invalid", "libc version must be in the form of major.minor")
+		}
+
+		minor, err := strconv.Atoi(parts[1])
+		if err != nil {
+			return locale.WrapError(err, "err_libc_version_invalid", "libc version must be in the form of major.minor")
+		}
+
+		sysinfo.SetLibcInfo(sysinfo.LibcInfo{
+			Name:  sysinfo.Glibc,
+			Major: major,
+			Minor: minor,
+		})
 	}
 
 	// If an error occurs, remove the created activestate.yaml file and/or directory.

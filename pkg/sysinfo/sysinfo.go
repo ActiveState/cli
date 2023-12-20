@@ -123,6 +123,10 @@ type LibcInfo struct {
 	Minor int          // minor version number
 }
 
+func (l LibcInfo) Version() string {
+	return fmt.Sprintf("%d.%d", l.Major, l.Minor)
+}
+
 // CompilerNameInfo reprents a compiler toolchain name.
 type CompilerNameInfo int
 
@@ -207,4 +211,8 @@ func parseVersionInfo(v string) (*VersionInfo, error) {
 	}
 
 	return &VersionInfo{v, major, minor, micro}, nil
+}
+
+func SetLibcInfo(info LibcInfo) {
+	sysinfoCache.Set(libcInfoCacheKey, info, cache.NoExpiration)
 }

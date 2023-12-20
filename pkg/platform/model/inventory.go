@@ -2,6 +2,7 @@ package model
 
 import (
 	"fmt"
+	"runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -15,6 +16,7 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_client/inventory_operations"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
+	"github.com/ActiveState/cli/pkg/sysinfo"
 )
 
 type ErrNoMatchingPlatform struct {
@@ -231,6 +233,15 @@ func filterPlatformIDs(hostPlatform, hostArch string, platformIDs []strfmt.UUID)
 		return nil, err
 	}
 
+	var libcVersion string
+	if runtime.GOOS == "linux" {
+		libcInfo, err := sysinfo.Libc()
+		if err != nil {
+			return nil, errs.Wrap(err, "Failed to fetch libc info")
+		}
+		libcVersion = libcInfo.Version()
+	}
+
 	var pids []strfmt.UUID
 	var fallback []strfmt.UUID
 	for _, platformID := range platformIDs {
@@ -256,6 +267,11 @@ func filterPlatformIDs(hostPlatform, hostArch string, platformIDs []strfmt.UUID)
 				fallback = append(fallback, platformID)
 			}
 			if hostArch != platformArch {
+				continue
+			}
+
+			if libcVersion != "" && rtPf.LibcVersion != nil &&
+				rtPf.LibcVersion.Version != nil && libcVersion != *rtPf.LibcVersion.Version {
 				continue
 			}
 
