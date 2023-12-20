@@ -4,6 +4,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/go-openapi/strfmt"
 
@@ -35,6 +36,10 @@ func makePlatformsFromModelPlatforms(platforms []*model.Platform) []*Platform {
 	var ps []*Platform
 
 	for _, platform := range platforms {
+		if platform.EndOfSupportDate != nil && time.Since(time.Time(*platform.EndOfSupportDate)) > 0 {
+			continue // ignore EOL platforms; the Platform will fail to resolve dependencies on them
+		}
+
 		var p Platform
 		if platform.Kernel != nil && platform.Kernel.Name != nil {
 			p.Name = *platform.Kernel.Name
