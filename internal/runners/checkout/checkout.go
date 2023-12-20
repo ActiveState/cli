@@ -108,7 +108,7 @@ func (u *Checkout) Run(params *Params) (rerr error) {
 			return locale.WrapError(err, "err_libc_version_invalid", "libc version must be in the form of major.minor")
 		}
 
-		sysinfo.SetLibcInfo(sysinfo.LibcInfo{
+		sysinfo.SetLibcInfo(&sysinfo.LibcInfo{
 			Name:  sysinfo.Glibc,
 			Major: major,
 			Minor: minor,

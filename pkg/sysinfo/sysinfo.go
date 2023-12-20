@@ -213,6 +213,6 @@ func parseVersionInfo(v string) (*VersionInfo, error) {
 	return &VersionInfo{v, major, minor, micro}, nil
 }
 
-func SetLibcInfo(info LibcInfo) {
+func SetLibcInfo(info *LibcInfo) {
 	sysinfoCache.Set(libcInfoCacheKey, info, cache.NoExpiration)
 }
