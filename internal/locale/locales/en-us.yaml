@@ -802,7 +802,7 @@ namespace_label_preplatform:
 namespace_label_packager:
   other: "Docker/Installer packagers"
 history_cmd_description:
-  other: View history of the active or given project
+  other: View history of the active project
 clean_description:
   other: Clean caches, configuration files, or completely remove the state tool
 uninstall_description:
