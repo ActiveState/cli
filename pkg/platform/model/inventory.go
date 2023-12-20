@@ -286,15 +286,18 @@ func filterPlatformIDs(hostPlatform, hostArch string, platformIDs []strfmt.UUID)
 }
 
 func fetchLibcVersion() string {
-	var libcVersion string
-	if runtime.GOOS == "linux" {
-		libcInfo, err := sysinfo.Libc()
-		if err != nil {
-			logging.Error("Failed to fetch libc info: %v", err)
-			return ""
-		}
-		libcVersion = libcInfo.Version()
+	if runtime.GOOS != "linux" {
+		return ""
 	}
+
+	var libcVersion string
+
+	libcInfo, err := sysinfo.Libc()
+	if err != nil {
+		logging.Error("Failed to fetch libc info: %v", err)
+		return ""
+	}
+	libcVersion = libcInfo.Version()
 
 	return libcVersion
 }
