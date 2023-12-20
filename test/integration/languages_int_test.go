@@ -97,6 +97,26 @@ func (suite *LanguagesIntegrationTestSuite) TestJSON() {
 	cp.Expect(`[{"name":"Python","version":`)
 	cp.ExpectExitCode(0)
 	AssertValidJSON(suite.T(), cp)
+
+	cp = ts.Spawn("languages", "search", "--output", "json")
+	cp.Expect(`[{"name":"perl","version":`)
+	cp.ExpectExitCode(0)
+	//AssertValidJSON(suite.T(), cp) // currently too big to fit in the terminal window for validation
+}
+
+func (suite *LanguagesIntegrationTestSuite) TestSearch() {
+	suite.OnlyRunForTags(tagsuite.Languages)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.Spawn("languages", "search")
+	cp.Expect("perl")
+	cp.Expect("5.32")
+	cp.Expect("python")
+	cp.Expect("3.11")
+	cp.Expect("ruby")
+	cp.Expect("3.2")
+	cp.ExpectExitCode(0)
 }
 
 func TestLanguagesIntegrationTestSuite(t *testing.T) {

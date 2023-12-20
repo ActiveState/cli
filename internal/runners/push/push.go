@@ -338,12 +338,7 @@ func fetchLanguage(commitID strfmt.UUID) (*language.Supported, string, error) {
 		return nil, "", errs.Wrap(err, "Failed to retrieve language information for headless commit")
 	}
 
-	l, err := language.MakeByNameAndVersion(lang.Name, lang.Version)
-	if err != nil {
-		return nil, "", errs.Wrap(err, "Failed to convert commit language to supported language")
-	}
-
-	ls := language.Supported{Language: l}
+	ls := language.Supported{Language: language.MakeByNameAndVersion(lang.Name, lang.Version)}
 	if !ls.Recognized() {
 		return nil, "", locale.NewError("err_push_invalid_language", lang.Name)
 	}
