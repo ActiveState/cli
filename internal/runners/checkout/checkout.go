@@ -88,31 +88,9 @@ func (u *Checkout) Run(params *Params) (rerr error) {
 		return locale.WrapError(err, "err_project_frompath")
 	}
 
-	if params.LibcVersion != "" {
-		if rt.GOOS != "linux" {
-			return locale.NewError("err_libc_version_not_supported", "libc version is only supported on linux")
-		}
-
-		parts := strings.Split(params.LibcVersion, ".")
-		if len(parts) != 2 {
-			return locale.NewError("err_libc_version_invalid", "libc version must be in the form of major.minor")
-		}
-
-		major, err := strconv.Atoi(parts[0])
-		if err != nil {
-			return locale.WrapError(err, "err_libc_version_invalid", "libc version must be in the form of major.minor")
-		}
-
-		minor, err := strconv.Atoi(parts[1])
-		if err != nil {
-			return locale.WrapError(err, "err_libc_version_invalid", "libc version must be in the form of major.minor")
-		}
-
-		sysinfo.SetLibcInfo(&sysinfo.LibcInfo{
-			Name:  sysinfo.Glibc,
-			Major: major,
-			Minor: minor,
-		})
+	err = setLibcVersion(params.LibcVersion)
+	if err != nil {
+		return locale.WrapError(err, "Failed to set libc version")
 	}
 
 	// If an error occurs, remove the created activestate.yaml file and/or directory.
@@ -154,6 +132,39 @@ func (u *Checkout) Run(params *Params) (rerr error) {
 			proj.Dir(),
 			execDir,
 		}))
+
+	return nil
+}
+
+func setLibcVersion(libcVersion string) error {
+	if libcVersion == "" {
+		return nil
+	}
+
+	if rt.GOOS != "linux" {
+		return locale.NewError("err_libc_version_not_supported", "libc version is only supported on linux")
+	}
+
+	parts := strings.Split(libcVersion, ".")
+	if len(parts) != 2 {
+		return locale.NewError("err_libc_version_invalid", "libc version must be in the form of major.minor")
+	}
+
+	major, err := strconv.Atoi(parts[0])
+	if err != nil {
+		return locale.WrapError(err, "err_libc_version_invalid", "libc version must be in the form of major.minor")
+	}
+
+	minor, err := strconv.Atoi(parts[1])
+	if err != nil {
+		return locale.WrapError(err, "err_libc_version_invalid", "libc version must be in the form of major.minor")
+	}
+
+	sysinfo.SetLibcInfo(&sysinfo.LibcInfo{
+		Name:  sysinfo.Glibc,
+		Major: major,
+		Minor: minor,
+	})
 
 	return nil
 }
