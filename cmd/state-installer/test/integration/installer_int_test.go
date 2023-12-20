@@ -186,6 +186,7 @@ func (suite *InstallerIntegrationTestSuite) TestInstallErrorTips() {
 	cp.ExpectExit()
 	suite.Assert().Contains(cp.Output(), "Need More Help?",
 		"error tips should be displayed in shell created by installer")
+	ts.IgnoreLogErrors()
 }
 
 func (suite *InstallerIntegrationTestSuite) TestInstallerOverwriteServiceApp() {

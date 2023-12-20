@@ -80,7 +80,7 @@ func (w *Watcher) check() {
 	for i := range w.watching {
 		e := w.watching[i] // Must use index, because we are deleting indexes further down
 		running, err := e.IsRunning()
-		if err != nil {
+		if err != nil && !errs.Matches(err, &processError{}) {
 			multilog.Error("Could not check if runtime process is running: %s", errs.JoinMessage(err))
 			// Don't return yet, the conditional below still needs to clear this entry
 		}

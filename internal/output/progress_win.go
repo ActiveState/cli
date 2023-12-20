@@ -43,6 +43,9 @@ func (d *Spinner) moveCaretBackInCommandPrompt(n int) {
 
 	var csbi consoleScreenBufferInfo
 	if r, _, err := procGetConsoleScreenBufferInfo.Call(uintptr(handle), uintptr(unsafe.Pointer(&csbi))); r != 0 {
+		if csbi.cursorPosition.x < short(n) {
+			return // cannot back up any further
+		}
 		var cursor coord
 		cursor.x = csbi.cursorPosition.x + short(-n)
 		cursor.y = csbi.cursorPosition.y
