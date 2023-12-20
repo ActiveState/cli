@@ -49,17 +49,12 @@ func rationalizeError(auth *authentication.Auth, proj *project.Project, rerr *er
 				errNoMatchingPlatform.HostPlatform, errNoMatchingPlatform.HostArch,
 				proj.BranchName(), strings.Join(branches, "\n - ")))
 		} else {
-			if errNoMatchingPlatform.LibcVersion != "" {
-				*rerr = errs.NewUserFacing(
-					locale.Tr("err_no_platform_data_remains", errNoMatchingPlatform.HostPlatform, errNoMatchingPlatform.HostArch),
-					errs.SetInput(),
-					errs.SetTips(locale.Tr("err_user_libc_solution", api.GetPlatformURL(fmt.Sprintf("%s/%s", proj.NamespaceString(), "customize")).String())),
-				)
-			} else {
-				*rerr = errs.NewUserFacing(locale.Tr(
-					"err_no_platform_data_remains",
-					errNoMatchingPlatform.HostPlatform, errNoMatchingPlatform.HostArch))
-			}
+			libcErr := errNoMatchingPlatform.LibcVersion != ""
+			*rerr = errs.NewUserFacing(
+				locale.Tr("err_no_platform_data_remains", errNoMatchingPlatform.HostPlatform, errNoMatchingPlatform.HostArch),
+				errs.SetIf(libcErr, errs.SetInput()),
+				errs.SetIf(libcErr, errs.SetTips(locale.Tr("err_user_libc_solution", api.GetPlatformURL(fmt.Sprintf("%s/%s", proj.NamespaceString(), "customize")).String()))),
+			)
 		}
 
 	// If there was an artifact download error, say so, rather than reporting a generic "could not
