@@ -142,22 +142,22 @@ func setLibcVersion(libcVersion string) error {
 	}
 
 	if rt.GOOS != "linux" {
-		return locale.NewError("err_libc_version_not_supported", "libc version is only supported on linux")
+		return locale.NewInputError("err_libc_version_not_supported", "libc version is only supported on linux")
 	}
 
 	parts := strings.Split(libcVersion, ".")
 	if len(parts) != 2 {
-		return locale.NewError("err_libc_version_invalid", "libc version must be in the form of major.minor")
+		return locale.NewInputError("err_libc_version_invalid", "libc version must be in the form of major.minor")
 	}
 
 	major, err := strconv.Atoi(parts[0])
 	if err != nil {
-		return locale.WrapError(err, "err_libc_version_invalid", "libc version must be in the form of major.minor")
+		return locale.WrapInputError(err, "err_libc_version_invalid", "libc version must be in the form of major.minor")
 	}
 
 	minor, err := strconv.Atoi(parts[1])
 	if err != nil {
-		return locale.WrapError(err, "err_libc_version_invalid", "libc version must be in the form of major.minor")
+		return locale.WrapInputError(err, "err_libc_version_invalid", "libc version must be in the form of major.minor")
 	}
 
 	sysinfo.SetLibcInfo(&sysinfo.LibcInfo{
