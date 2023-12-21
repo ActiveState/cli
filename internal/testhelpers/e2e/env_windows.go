@@ -30,7 +30,6 @@ func platformSpecificEnv(dirs *Dirs) []string {
 		"CommonProgramW6432=C:\\Program Files\\Common Files",
 		"WINDIR=C:\\Windows",
 		"PUBLIC=C:\\Users\\Public",
-		fmt.Sprintf("TEMP=%s", dirs.TempDir),
 		fmt.Sprintf("HOMEPATH=%s", dirs.HomeDir),
 		// Other environment variables are commonly set by CI systems, but this one is not.
 		// This is requried for some tests in order to get the correct powershell output.
