@@ -203,11 +203,13 @@ func FilterCurrentPlatform(hostPlatform string, platforms []strfmt.UUID) (strfmt
 	if err != nil {
 		return "", errs.Wrap(err, "filterPlatformIDs failed")
 	}
+
 	if len(platformIDs) == 0 {
 		return "", locale.NewInputError("err_recipe_no_platform")
 	} else if len(platformIDs) > 1 {
 		logging.Debug("Received multiple platform IDs.  Picking the first one.")
 	}
+
 	return platformIDs[0], nil
 }
 

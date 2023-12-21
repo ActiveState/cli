@@ -33,7 +33,7 @@ func (e *userFacingError) InputError() bool {
 }
 
 func NewUserFacing(message string, opts ...ErrOpt) *userFacingError {
-	return WrapUserFacing(nil, message)
+	return WrapUserFacing(nil, message, opts...)
 }
 
 func WrapUserFacing(wrapTarget error, message string, opts ...ErrOpt) *userFacingError {

@@ -2,6 +2,7 @@ package model
 
 import (
 	"fmt"
+	"runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -15,11 +16,13 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_client/inventory_operations"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
+	"github.com/ActiveState/cli/pkg/sysinfo"
 )
 
 type ErrNoMatchingPlatform struct {
 	HostPlatform string
 	HostArch     string
+	LibcVersion  string
 }
 
 func (e ErrNoMatchingPlatform) Error() string {
@@ -231,6 +234,8 @@ func filterPlatformIDs(hostPlatform, hostArch string, platformIDs []strfmt.UUID)
 		return nil, err
 	}
 
+	libcVersion := fetchLibcVersion()
+
 	var pids []strfmt.UUID
 	var fallback []strfmt.UUID
 	for _, platformID := range platformIDs {
@@ -245,6 +250,11 @@ func filterPlatformIDs(hostPlatform, hostArch string, platformIDs []strfmt.UUID)
 				continue
 			}
 			if *rtPf.Kernel.Name != HostPlatformToKernelName(hostPlatform) {
+				continue
+			}
+
+			if libcVersion != "" && rtPf.LibcVersion != nil &&
+				rtPf.LibcVersion.Version != nil && libcVersion != *rtPf.LibcVersion.Version {
 				continue
 			}
 
@@ -271,7 +281,20 @@ func filterPlatformIDs(hostPlatform, hostArch string, platformIDs []strfmt.UUID)
 		return fallback, nil
 	}
 
-	return nil, &ErrNoMatchingPlatform{hostPlatform, hostArch}
+	return nil, &ErrNoMatchingPlatform{hostPlatform, hostArch, libcVersion}
+}
+
+func fetchLibcVersion() string {
+	if runtime.GOOS != "linux" {
+		return ""
+	}
+
+	libcInfo := sysinfo.GetRequestedLibcInfo()
+	if libcInfo == nil {
+		return ""
+	}
+
+	return libcInfo.Version()
 }
 
 func FetchPlatformByUID(uid strfmt.UUID) (*Platform, error) {
