@@ -290,16 +290,13 @@ func fetchLibcVersion() string {
 		return ""
 	}
 
-	var libcVersion string
-
 	libcInfo, err := sysinfo.Libc()
 	if err != nil {
 		logging.Error("Failed to fetch libc info: %v", err)
 		return ""
 	}
-	libcVersion = libcInfo.Version()
 
-	return libcVersion
+	return libcInfo.Version()
 }
 
 func FetchPlatformByUID(uid strfmt.UUID) (*Platform, error) {
