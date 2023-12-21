@@ -159,7 +159,7 @@ func (suite *InitIntegrationTestSuite) TestInit_NoOrg() {
 	ts.LoginAsPersistentUser()
 
 	cp := ts.Spawn("init", "random-org/test-project", "--language", "python@3")
-	cp.Expect("The organization random-org either does not exist, or you do not have permissions to create a project in it.")
+	cp.Expect("The organization 'random-org' either does not exist, or you do not have permissions to create a project in it.")
 	cp.ExpectExitCode(1)
 }
 
