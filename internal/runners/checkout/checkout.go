@@ -160,7 +160,7 @@ func setLibcVersion(libcVersion string) error {
 		return locale.WrapInputError(err, "err_libc_version_invalid", "libc version must be in the form of major.minor")
 	}
 
-	sysinfo.SetLibcInfo(&sysinfo.LibcInfo{
+	sysinfo.SetRequestedLibcInfo(&sysinfo.LibcInfo{
 		Name:  sysinfo.Glibc,
 		Major: major,
 		Minor: minor,

@@ -11,7 +11,6 @@ import (
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_client/inventory_operations"
@@ -290,9 +289,8 @@ func fetchLibcVersion() string {
 		return ""
 	}
 
-	libcInfo, err := sysinfo.Libc()
-	if err != nil {
-		logging.Error("Failed to fetch libc info: %v", err)
+	libcInfo := sysinfo.GetRequestedLibcInfo()
+	if libcInfo == nil {
 		return ""
 	}
 
