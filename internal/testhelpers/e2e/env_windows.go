@@ -39,8 +39,8 @@ func platformSpecificEnv(dirs *Dirs) []string {
 }
 
 func platformPath() string {
-	if condition.InCI() {
-		return `C:\msys64\usr\bin` + os.PathListSeparator + basePath
+	if condition.OnCI() {
+		return `C:\msys64\usr\bin` + string(os.PathListSeparator) + basePath
 	}
 	return basePath
 }
