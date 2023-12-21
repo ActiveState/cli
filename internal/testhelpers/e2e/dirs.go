@@ -23,6 +23,8 @@ type Dirs struct {
 	SockRoot string
 	// HomeDir is used as the test user's home directory
 	HomeDir string
+	// TempDir is the directory where temporary files are stored
+	TempDir string
 }
 
 // NewDirs creates all temporary directories
@@ -42,6 +44,7 @@ func NewDirs(base string) (*Dirs, error) {
 	defaultBin := filepath.Join(base, "cache", "bin")
 	sockRoot := filepath.Join(base, "sock")
 	homeDir := filepath.Join(base, "home")
+	tempDir := filepath.Join(base, "temp")
 
 	subdirs := []string{config, cache, bin, work, defaultBin}
 	for _, subdir := range subdirs {
@@ -59,6 +62,7 @@ func NewDirs(base string) (*Dirs, error) {
 		DefaultBin: defaultBin,
 		SockRoot:   sockRoot,
 		HomeDir:    homeDir,
+		TempDir:    tempDir,
 	}
 
 	return &dirs, nil

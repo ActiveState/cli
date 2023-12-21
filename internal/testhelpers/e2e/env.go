@@ -15,7 +15,7 @@ import (
 
 func sandboxedTestEnvironment(t *testing.T, dirs *Dirs, updatePath bool, extraEnv ...string) []string {
 	var env []string
-	basePath := platformPath
+	basePath := platformPath()
 	if os.Getenv(constants.OverrideSandbox) != "" {
 		basePath = os.Getenv("PATH")
 		env = append(env, os.Environ()...)

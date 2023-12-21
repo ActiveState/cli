@@ -4,10 +4,14 @@
 package e2e
 
 const (
-	platformPath         = "/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local:/usr/local/sbin:/usr/local/opt"
+	basePath             = "/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local:/usr/local/sbin:/usr/local/opt"
 	systemHomeEnvVarName = "HOME"
 )
 
 func platformSpecificEnv(dirs *Dirs) []string {
 	return nil
+}
+
+func platformPath() string {
+	return basePath
 }

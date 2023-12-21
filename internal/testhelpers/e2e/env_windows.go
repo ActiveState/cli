@@ -6,10 +6,12 @@ package e2e
 import (
 	"fmt"
 	"os"
+
+	"github.com/ActiveState/cli/internal/condition"
 )
 
 const (
-	platformPath         = `C:\msys64\usr\bin;C:\Windows\System32;C:\Windows;C:\Windows\System32\Wbem;C:\Windows\System32\WindowsPowerShell\v1.0\;C:\Program Files\PowerShell\7\;`
+	basePath             = `C:\Windows\System32;C:\Windows;C:\Windows\System32\Wbem;C:\Windows\System32\WindowsPowerShell\v1.0\;C:\Program Files\PowerShell\7\;`
 	systemHomeEnvVarName = "USERPROFILE"
 )
 
@@ -26,12 +28,19 @@ func platformSpecificEnv(dirs *Dirs) []string {
 		"COMSPEC=C:\\Windows\\System32\\cmd.exe",
 		"PROGRAMFILES=C:\\Program Files",
 		"CommonProgramW6432=C:\\Program Files\\Common Files",
-		`PSModuleAnalysisCachePath=C:\PSModuleAnalysisCachePath\ModuleAnalysisCache`,
-		`WINDIR=C:\Windows`,
-		`PUBLIC=C:\Users\Public`,
+		"WINDIR=C:\\Windows",
+		"PUBLIC=C:\\Users\\Public",
+		fmt.Sprintf("TEMP=%s", dirs.TempDir),
 		fmt.Sprintf("HOMEPATH=%s", dirs.HomeDir),
 		// Other environment variables are commonly set by CI systems, but this one is not.
 		// This is requried for some tests in order to get the correct powershell output.
 		fmt.Sprintf("PSModulePath=%s", os.Getenv("PSModulePath")),
 	}
+}
+
+func platformPath() string {
+	if condition.InCI() {
+		return `C:\msys64\usr\bin` + os.PathListSeparator + basePath
+	}
+	return basePath
 }
