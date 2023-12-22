@@ -162,7 +162,7 @@ func (suite *PushIntegrationTestSuite) TestPush_NoPermission_NewProject() {
 }
 
 func (suite *PushIntegrationTestSuite) TestCarlisle() {
-	suite.OnlyRunForTags(tagsuite.Push, tagsuite.Carlisle, tagsuite.Headless)
+	suite.OnlyRunForTags(tagsuite.Push, tagsuite.Carlisle)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 	pname := strutils.UUID()
