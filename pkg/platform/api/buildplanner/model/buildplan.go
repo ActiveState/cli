@@ -182,7 +182,7 @@ func (e *BuildPlannerError) Error() string {
 	var err error
 
 	if croppedMessage != "" {
-		err = locale.NewError("buildplan_err", "", croppedMessage, errorLines)
+		err = locale.NewError("buildplan_err_cropped", "", croppedMessage, errorLines)
 	} else {
 		err = locale.NewError("buildplan_err", "", errorLines)
 	}
