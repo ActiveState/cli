@@ -1169,6 +1169,8 @@ operation_success_local:
     Your local project has been updated.
     Run [ACTIONABLE]state push[/RESET] to save changes to the platform.
 buildplan_err:
+  other: "Could not plan build, platform responded with:\n{{.V0}}"
+buildplan_err_cropped:
   other: "Could not plan build, platform responded with:\n{{.V0}}\n{{.V1}}"
 err_buildplanner_head_on_branch_moved:
   other: The branch you're trying to update has changed remotely, please run '[ACTIONABLE]state pull[/RESET]'.
