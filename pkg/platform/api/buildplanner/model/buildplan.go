@@ -7,6 +7,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/go-openapi/strfmt"
 )
@@ -83,6 +84,7 @@ const (
 	NoChangeSinceLastCommitErrorType  = "NoChangeSinceLastCommit"
 	HeadOnBranchMovedErrorType        = "HeadOnBranchMoved"
 	ForbiddenErrorType                = "Forbidden"
+	GenericSolveErrorType             = "GenericSolveError"
 	RemediableSolveErrorType          = "RemediableSolveError"
 	PlanningErrorType                 = "PlanningError"
 	MergeConflictType                 = "MergeConflict"
@@ -178,10 +180,17 @@ func (e *BuildPlannerError) Error() string {
 	}
 
 	var err error
-	err = locale.NewError("buildplan_err", "", croppedMessage, errorLines)
+
+	if croppedMessage != "" {
+		err = locale.NewError("buildplan_err", "", croppedMessage, errorLines)
+	} else {
+		err = locale.NewError("buildplan_err", "", errorLines)
+	}
+
 	if e.IsTransient {
 		err = errs.AddTips(err, locale.Tr("transient_solver_tip"))
 	}
+
 	return err.Error()
 }
 
@@ -350,11 +359,17 @@ func ProcessCommitError(commit *Commit, fallbackMessage string) error {
 }
 
 func ProcessBuildError(build *Build, fallbackMessage string) error {
+	logging.Debug("ProcessBuildError: build.Type=%s", build.Type)
 	if build.Type == PlanningErrorType {
 		var errs []string
 		var isTransient bool
+
+		if build.Message != "" {
+			errs = append(errs, build.Message)
+		}
+
 		for _, se := range build.SubErrors {
-			if se.Type != RemediableSolveErrorType {
+			if se.Type != RemediableSolveErrorType && se.Type != GenericSolveErrorType {
 				continue
 			}
 
@@ -362,6 +377,7 @@ func ProcessBuildError(build *Build, fallbackMessage string) error {
 				errs = append(errs, se.Message)
 				isTransient = se.IsTransient
 			}
+
 			for _, ve := range se.ValidationErrors {
 				if ve.Error != "" {
 					errs = append(errs, ve.Error)
@@ -678,7 +694,6 @@ type NotFoundError struct {
 
 // PlanningError represents an error that occurred during planning.
 type PlanningError struct {
-	Message   string               `json:"message"`
 	SubErrors []*BuildExprLocation `json:"subErrors"`
 }
 
