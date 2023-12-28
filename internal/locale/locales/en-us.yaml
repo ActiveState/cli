@@ -1294,6 +1294,8 @@ err_use_default_project_does_not_exist:
   other: "Cannot find your project. Please either check it out again with [ACTIONABLE]state checkout[/RESET] or run [ACTIONABLE]state use reset[/RESET] to stop using it."
 err_shell_commit_id_mismatch:
   other: "Cannot start a shell/prompt for the given commit ID. Please use '[ACTIONABLE]state checkout[/RESET]' to check out a specific commit ID and then try again."
+err_activate_commit_id_mismatch:
+  other: "Cannot activate a project with the given commit ID. Please use '[ACTIONABLE]state checkout[/RESET]' to check out a specific commit ID and then try again."
 err_shell_cannot_load_project:
   other: Cannot load project to start a shell/prompt in.
 err_shell_already_active:
