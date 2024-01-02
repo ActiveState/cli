@@ -76,6 +76,14 @@ scripts:
     if: ne .OS.Name "Linux"
     description: Install OS specific deps
     value: ""
+  - name: install-deps-ci
+    language: bash
+    if: ne .Shell "cmd"
+    value: |
+      if { [[ "$GOOS" == "windows" ]] || [[ "$OS" == "Windows_NT" ]]; } && ! type "goversioninfo" &> /dev/null; then
+        echo "actionlint was not found on your PATH, installing .."
+        GOFLAGS="" go install github.com/josephspurrier/goversioninfo/cmd/goversioninfo@v1.4.0
+      fi
   - name: preprocess
     language: bash
     description: Generates assets required by the project that aren't just specific to the build
