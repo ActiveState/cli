@@ -2,7 +2,9 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
+	"strings"
 
 	"github.com/ActiveState/cli/internal/assets"
 	"github.com/ActiveState/cli/internal/errs"
@@ -99,6 +101,12 @@ func run() error {
 		return errs.Wrap(err, "failed to read version.txt")
 	}
 
+	// The goversioninfo library does not support prerelease versions
+	if strings.Contains(string(version), "-") {
+		parts := strings.SplitN(string(version), "-", 2)
+		version = []byte(parts[0])
+	}
+
 	// Parse semver from version.txt
 	semver, err := semver.Parse(string(version))
 	if err != nil {
@@ -144,6 +152,7 @@ func run() error {
 	if err != nil {
 		return errs.Wrap(err, "failed to write versioninfo.json")
 	}
+	fmt.Println("Successfully generated versioninfo.json at ", versionInfoFilePath)
 
 	return nil
 
