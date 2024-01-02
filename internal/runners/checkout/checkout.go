@@ -88,11 +88,6 @@ func (u *Checkout) Run(params *Params) (rerr error) {
 		return locale.WrapError(err, "err_project_frompath")
 	}
 
-	err = setLibcVersion(params.LibcVersion)
-	if err != nil {
-		return locale.WrapError(err, "Failed to set libc version")
-	}
-
 	// If an error occurs, remove the created activestate.yaml file and/or directory.
 	if !params.Force {
 		defer func() {
@@ -113,6 +108,11 @@ func (u *Checkout) Run(params *Params) (rerr error) {
 				}
 			}
 		}()
+	}
+
+	err = setLibcVersion(params.LibcVersion)
+	if err != nil {
+		return locale.WrapError(err, "Failed to set libc version")
 	}
 
 	rti, err := runtime.NewFromProject(proj, target.TriggerCheckout, u.analytics, u.svcModel, u.out, u.auth)
