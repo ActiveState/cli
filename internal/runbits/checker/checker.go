@@ -70,7 +70,7 @@ func RunUpdateNotifier(an analytics.Dispatcher, svc *model.SvcModel, out output.
 	ctx, cancel := context.WithTimeout(context.Background(), model.SvcTimeoutMinimal)
 	defer cancel()
 
-	upd, err := svc.CheckUpdate(ctx, constants.BranchName, "")
+	upd, err := svc.CheckUpdate(ctx, constants.ChannelName, "")
 	if err != nil {
 		var timeoutErr net.Error
 		if errors.As(err, &timeoutErr) && timeoutErr.Timeout() {

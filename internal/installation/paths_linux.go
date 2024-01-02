@@ -7,12 +7,12 @@ import (
 	"github.com/ActiveState/cli/internal/osutils/user"
 )
 
-func installPathForBranch(branch string) (string, error) {
+func installPathForChannel(channel string) (string, error) {
 	home, err := user.HomeDir()
 	if err != nil {
 		return "", errs.Wrap(err, "Could not get home directory")
 	}
-	return filepath.Join(home, ".local", "ActiveState", "StateTool", branch), nil
+	return filepath.Join(home, ".local", "ActiveState", "StateTool", channel), nil
 }
 
 func defaultSystemInstallPath() (string, error) {

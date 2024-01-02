@@ -338,7 +338,7 @@ func GetCommitsBehind(client *github.Client, base, head string) ([]*github.Repos
 		}
 		suffix := strings.TrimPrefix(msgWords[len(msgWords)-1], "ActiveState/")
 		if (strings.HasPrefix(msg, "Merge pull request") && IsVersionBranch(suffix)) ||
-			(strings.HasPrefix(msg, "Merge branch '"+constants.BetaBranch+"'") && IsVersionBranch(suffix)) {
+			(strings.HasPrefix(msg, "Merge branch '"+constants.BetaChannel+"'") && IsVersionBranch(suffix)) {
 			// Git's compare commits is not smart enough to consider merge commits from other version branches equal
 			// This matches the following types of messages:
 			// Merge pull request #2531 from ActiveState/version/0-38-1-RC1

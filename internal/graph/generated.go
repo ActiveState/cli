@@ -45,7 +45,7 @@ type ReportRuntimeUsageResponse struct {
 type StateVersion struct {
 	License  string `json:"license"`
 	Version  string `json:"version"`
-	Branch   string `json:"branch"`
+	Channel  string `json:"channel"`
 	Revision string `json:"revision"`
 	Date     string `json:"date"`
 }

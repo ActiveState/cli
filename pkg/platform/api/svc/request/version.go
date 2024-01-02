@@ -13,7 +13,7 @@ func (v *VersionRequest) Query() string {
             state {
                 license,
                 version,
-                branch,
+                channel,
                 revision,
                 date,
             }

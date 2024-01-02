@@ -44,7 +44,7 @@ type Origin struct {
 
 func NewOriginDefault() *Origin {
 	return &Origin{
-		Channel: constants.BranchName,
+		Channel: constants.ChannelName,
 		Version: constants.Version,
 	}
 }

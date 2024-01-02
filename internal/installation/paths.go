@@ -22,7 +22,7 @@ const (
 )
 
 type InstallMarkerMeta struct {
-	Branch  string `json:"branch"`
+	Channel  string `json:"channel"`
 	Version string `json:"version"`
 }
 
@@ -33,18 +33,18 @@ func IsStateExeDoesNotExistError(err error) bool {
 }
 
 func DefaultInstallPath() (string, error) {
-	return InstallPathForBranch(constants.BranchName)
+	return InstallPathForChannel(constants.ChannelName)
 }
 
-// InstallPathForBranch gets the installation path for the given branch.
-func InstallPathForBranch(branch string) (string, error) {
+// InstallPathForBranch gets the installation path for the given channel.
+func InstallPathForChannel(channel string) (string, error) {
 	if v := os.Getenv(constants.InstallPathOverrideEnvVarName); v != "" {
 		return filepath.Clean(v), nil
 	}
 
-	installPath, err := installPathForBranch(branch)
+	installPath, err := installPathForChannel(channel)
 	if err != nil {
-		return "", errs.Wrap(err, "Unable to determine install path for branch")
+		return "", errs.Wrap(err, "Unable to determine install path for channel")
 	}
 
 	return installPath, nil
