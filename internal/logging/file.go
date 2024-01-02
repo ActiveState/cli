@@ -153,5 +153,13 @@ func (l *fileHandler) Close() {
 
 	close(l.quit)
 	l.wg.Wait()
+
+	if l.file != nil {
+		err := l.file.Close()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Failed to close log file. Error: %v\n", err)
+		}
+	}
+
 	l.closed = true
 }
