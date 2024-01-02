@@ -67,6 +67,10 @@ scripts:
         echo "actionlint was not found on your PATH, installing .."
         go install github.com/rhysd/actionlint/cmd/actionlint@v1.6.23
       fi
+      if { [[ "$GOOS" == "windows" ]] || [[ "$OS" == "Windows_NT" ]]; } && ! type "goversioninfo" &> /dev/null; then
+        echo "actionlint was not found on your PATH, installing .."
+        GOFLAGS="" go install github.com/josephspurrier/goversioninfo/cmd/goversioninfo@v1.4.0
+      fi
   - name: install-deps-os
     language: bash
     if: ne .OS.Name "Linux"
@@ -79,6 +83,10 @@ scripts:
       set -e
       $constants.SET_ENV
       go run scripts/constants-generator/main.go ${@} -- internal/constants/generated.go
+      if [[ "$GOOS" == "windows" || "$OS" == "Windows_NT" ]]; then
+        go run scripts/versioninfo-generator/main.go version.txt cmd/state/versioninfo.json "State Tool"
+        go run scripts/versioninfo-generator/main.go version.txt cmd/state-svc/versioninfo.json "State Service"
+      fi
   - name: build
     language: bash
     description: Builds the project with the host OS as the target OS.
@@ -86,6 +94,9 @@ scripts:
       set -e
       $constants.SET_ENV
 
+      pushd cmd/state-svc > /dev/null
+      go generate
+      popd > /dev/null
       go build -tags "$GO_BUILD_TAGS" -o $BUILD_TARGET_DIR/$constants.BUILD_TARGET $constants.CLI_BUILDFLAGS $constants.CLI_PKGS
   - name: build-for
     language: bash
@@ -104,6 +115,9 @@ scripts:
       set -e
       $constants.SET_ENV
 
+      pushd cmd/state-svc > /dev/null
+      go generate
+      popd > /dev/null
       go build -tags "$GO_BUILD_TAGS" -o $BUILD_TARGET_DIR/$constants.BUILD_DAEMON_TARGET $constants.SVC_BUILDFLAGS $constants.DAEMON_PKGS
   - name: build-exec
     description: Builds the State Executor application
