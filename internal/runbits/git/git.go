@@ -13,10 +13,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/output"
-	"github.com/ActiveState/cli/internal/rollbar"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile"
@@ -57,7 +54,7 @@ func (r *Repo) CloneProject(owner, name, path string, out output.Outputer, an an
 
 	out.Notice(output.Title(locale.Tr("git_cloning_project_heading")))
 	out.Notice(locale.Tr("git_cloning_project", *project.RepoURL))
-	_, err = plainClone(tempDir, false, &git.CloneOptions{
+	_, err = git.PlainClone(tempDir, false, &git.CloneOptions{
 		URL:      *project.RepoURL,
 		Progress: os.Stdout,
 	})
@@ -81,24 +78,6 @@ func (r *Repo) CloneProject(owner, name, path string, out output.Outputer, an an
 	}
 
 	return nil
-}
-
-// plainClone wraps git.PlainClone in order to handle a potential "wsarecv"
-// error that is propagated via panic.
-func plainClone(path string, isBare bool, o *git.CloneOptions) (r *git.Repository, derr error) {
-	defer func() {
-		if r := recover(); r != nil {
-			if err, ok := r.(error); ok {
-				derr = err
-			} else {
-				derr = fmt.Errorf("git.PlainClone recover type: %T, %v", r, r)
-			}
-			// removal tracked: https://www.pivotaltracker.com/story/show/179187192
-			multilog.Log(logging.ErrorNoStacktrace, rollbar.Error)("plain clone panic: %v", derr)
-		}
-	}()
-
-	return git.PlainClone(path, isBare, o)
 }
 
 func EnsureCorrectProject(owner, name, projectFilePath, repoURL string, out output.Outputer, an analytics.Dispatcher) error {
