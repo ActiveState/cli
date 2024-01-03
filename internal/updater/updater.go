@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 
 	"github.com/gofrs/flock"
 
@@ -22,6 +23,7 @@ import (
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 )
@@ -42,7 +44,7 @@ type Origin struct {
 
 func NewOriginDefault() *Origin {
 	return &Origin{
-		Channel: constants.BranchName,
+		Channel: constants.ChannelName,
 		Version: constants.Version,
 	}
 }
@@ -228,6 +230,20 @@ func (u *UpdateInstaller) InstallBlocking(installTargetPath string, args ...stri
 	_, _, err = osutils.ExecuteAndPipeStd(installerPath, args, envs)
 	if err != nil {
 		return errs.Wrap(err, "Could not run installer")
+	}
+
+	// installerPath looks like "<tempDir>/state-update\d{10}/state-install/state-installer".
+	updateDir := filepath.Dir(filepath.Dir(installerPath))
+	logging.Debug("Cleaning up temporary update directory: %s", updateDir)
+	if strings.HasPrefix(filepath.Base(updateDir), "state-update") {
+		err = os.RemoveAll(updateDir)
+		if err != nil {
+			multilog.Error("Unable to remove update directory '%s': %v", updateDir, err)
+		}
+	} else {
+		// Do not report to rollbar, but log the error for our integration tests to catch.
+		logging.Error("Did not remove temporary update directory. "+
+			"installerPath: %s\nupdateDir: %s\nExpected a 'state-update' prefix for the latter", installerPath, updateDir)
 	}
 
 	u.analyticsEvent(anaConst.ActUpdateInstall, anaConst.UpdateLabelSuccess, "")

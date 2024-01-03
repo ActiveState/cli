@@ -59,7 +59,7 @@ func (s *State) Run(usageFunc func() error) error {
 			"CLI",
 			constants.LibraryLicense,
 			constants.Version,
-			constants.BranchName,
+			constants.ChannelName,
 			constants.RevisionHash,
 			constants.Date,
 			constants.OnCI == "true",

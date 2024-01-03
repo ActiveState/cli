@@ -66,8 +66,8 @@ const DisableLanguageTemplates = "ACTIVESTATE_CLI_DISABLE_LANGUAGE_TEMPLATES"
 // This is set by default for integration tests for backward-compatibility with old integration tests.
 const DisableProjectMigrationPrompt = "ACTIVESTATE_CLI_DISABLE_PROJECT_MIGRATION_PROMPT"
 
-// UpdateBranchEnvVarName is the env var that is used to override which branch to pull the update from
-const UpdateBranchEnvVarName = "ACTIVESTATE_CLI_UPDATE_BRANCH"
+// UpdateChannelEnvVarName is the env var that is used to override which channel to pull the update from
+const UpdateChannelEnvVarName = "ACTIVESTATE_CLI_UPDATE_CHANNEL"
 
 // InstallBuildDependencies is the env var that is used to override whether to install build dependencies
 const InstallBuildDependencies = "ACTIVESTATE_CLI_INSTALL_BUILD_DEPENDENCIES"
@@ -237,14 +237,14 @@ const DefaultRSABitLength int = 4096
 // ExpanderMaxDepth defines the maximum depth to fully expand a given value.
 const ExpanderMaxDepth = int(10)
 
-// ReleaseBranch is the branch used for release builds
-const ReleaseBranch = "release"
+// ReleaseChannel is the channel used for release builds
+const ReleaseChannel = "release"
 
-// BetaBranch is the branch used for beta builds
-const BetaBranch = "beta"
+// BetaChannel is the channel used for beta builds
+const BetaChannel = "beta"
 
-// ExperimentalBranch is the branch used for experimental builds
-const ExperimentalBranch = "master"
+// ExperimentalChannel is the channel used for experimental builds
+const ExperimentalChannel = "master"
 
 // MonoAPIPath is the api path used for the platform api
 const MonoAPIPath = "/api/v1"

@@ -53,7 +53,7 @@ func NewIPCSockPathFromGlobals() *ipc.SockPath {
 	return &ipc.SockPath{
 		RootDir:    rootDir,
 		AppName:    constants.CommandName,
-		AppChannel: constants.BranchName,
+		AppChannel: constants.ChannelName,
 	}
 }
 

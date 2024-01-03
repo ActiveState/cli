@@ -39,9 +39,9 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 	}{
 		// {"install-release-latest", "", "release", "", ""},
 		{"install-prbranch", "", "", "", ""},
-		{"install-prbranch-with-version", constants.Version, constants.BranchName, "", ""},
-		{"install-prbranch-and-activate", "", constants.BranchName, "ActiveState-CLI/small-python", ""},
-		{"install-prbranch-and-activate-by-command", "", constants.BranchName, "", "ActiveState-CLI/small-python"},
+		{"install-prbranch-with-version", constants.Version, constants.ChannelName, "", ""},
+		{"install-prbranch-and-activate", "", constants.ChannelName, "ActiveState-CLI/small-python", ""},
+		{"install-prbranch-and-activate-by-command", "", constants.ChannelName, "", "ActiveState-CLI/small-python"},
 	}
 
 	for _, tt := range tests {
@@ -57,7 +57,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 			} else {
 				scriptBaseName += "ps1"
 			}
-			scriptUrl := baseUrl + constants.BranchName + "/" + scriptBaseName
+			scriptUrl := baseUrl + constants.ChannelName + "/" + scriptBaseName
 
 			// Fetch it.
 			b, err := httputil.GetDirect(scriptUrl)
@@ -120,7 +120,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 
 			cp.SendLine("state --version")
 			cp.Expect("Version " + constants.Version)
-			cp.Expect("Branch " + constants.BranchName)
+			cp.Expect("Channel " + constants.ChannelName)
 			cp.Expect("Built")
 			cp.SendLine("exit")
 
@@ -158,7 +158,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall_NonEmptyTarget() {
 
 	script := scriptPath(suite.T(), ts.Dirs.Work)
 	argsPlain := []string{script, "-t", ts.Dirs.Work}
-	argsPlain = append(argsPlain, "-b", constants.BranchName)
+	argsPlain = append(argsPlain, "-b", constants.ChannelName)
 	var cp *e2e.SpawnedCmd
 	if runtime.GOOS != "windows" {
 		cp = ts.SpawnCmdWithOpts("bash", e2e.OptArgs(argsPlain...))
@@ -235,10 +235,10 @@ func listFilesOnly(dir string) []string {
 	return funk.Map(files, filepath.Base).([]string)
 }
 
-func (suite *InstallScriptsIntegrationTestSuite) assertCorrectVersion(ts *e2e.Session, installDir, expectedVersion, expectedBranch string) {
+func (suite *InstallScriptsIntegrationTestSuite) assertCorrectVersion(ts *e2e.Session, installDir, expectedVersion, expectedChannel string) {
 	type versionData struct {
 		Version string `json:"version"`
-		Branch  string `json:"branch"`
+		Channel string `json:"channel"`
 	}
 
 	stateExec, err := installation.StateExecFromDir(installDir)
@@ -253,8 +253,8 @@ func (suite *InstallScriptsIntegrationTestSuite) assertCorrectVersion(ts *e2e.Se
 	if expectedVersion != "" {
 		suite.Equal(expectedVersion, actual.Version)
 	}
-	if expectedBranch != "" {
-		suite.Equal(expectedBranch, actual.Branch)
+	if expectedChannel != "" {
+		suite.Equal(expectedChannel, actual.Channel)
 	}
 }
 

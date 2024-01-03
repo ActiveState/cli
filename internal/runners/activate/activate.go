@@ -142,6 +142,16 @@ func (r *Activate) Run(params *ActivateParams) (rerr error) {
 		return locale.NewInputError("err_conflicting_branch_while_checkedout", "", params.Branch, proj.BranchName())
 	}
 
+	if proj != nil {
+		commitID, err := commitmediator.Get(proj)
+		if err != nil {
+			return errs.Wrap(err, "Unable to get local commit")
+		}
+		if cid := params.Namespace.CommitID; cid != nil && *cid != commitID {
+			return locale.NewInputError("err_activate_commit_id_mismatch")
+		}
+	}
+
 	// Have to call this once the project has been set
 	r.analytics.Event(anaConsts.CatActivationFlow, "start")
 

@@ -45,7 +45,7 @@ func (suite *UpdateIntegrationTestSuite) TestLocked() {
 func (suite *UpdateIntegrationTestSuite) TestLockedChannel() {
 	suite.OnlyRunForTags(tagsuite.Update)
 	targetBranch := "release"
-	if constants.BranchName == "release" {
+	if constants.ChannelName == "release" {
 		targetBranch = "master"
 	}
 	tests := []struct {
@@ -132,7 +132,7 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateLockedConfirmation() {
 			suite.OnlyRunForTags(tagsuite.Update)
 			pjfile := projectfile.Project{
 				Project: lockedProjectURL(),
-				Lock:    fmt.Sprintf("%s@%s", constants.BranchName, constants.Version),
+				Lock:    fmt.Sprintf("%s@%s", constants.ChannelName, constants.Version),
 			}
 
 			ts := e2e.New(suite.T(), false)

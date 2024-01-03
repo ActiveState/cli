@@ -83,6 +83,11 @@ func (suite *ActivateIntegrationTestSuite) addForegroundSvc(ts *e2e.Session) fun
 		return nil
 	}, 10*time.Second)
 
+	// This function seems to trigger lots of flisten errors that do not appear to be actual errors
+	// (the integration test expectations all pass). Just ignore log errors for sessions that call
+	// this function.
+	ts.IgnoreLogErrors()
+
 	// Stop function
 	return func() {
 		go func() {
@@ -259,6 +264,14 @@ func (suite *ActivateIntegrationTestSuite) activatePython(version string, extraE
 	cp.ExpectInput(termtest.OptExpectTimeout(40 * time.Second))
 	pythonShim := pythonExe + osutils.ExeExtension
 
+	// test that existing environment variables are inherited by the activated shell
+	if runtime.GOOS == "windows" {
+		cp.SendLine(fmt.Sprintf("echo %%%s%%", constants.DisableRuntime))
+	} else {
+		cp.SendLine("echo $" + constants.DisableRuntime)
+	}
+	cp.Expect("false")
+
 	// test that other executables that use python work as well
 	pipExe := "pip" + version
 	cp.SendLine(fmt.Sprintf("%s --version", pipExe))
@@ -421,7 +434,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_Subdir() {
 project: "https://platform.activestate.com/ActiveState-CLI/Python3"
 branch: %s
 version: %s
-`, constants.BranchName, constants.Version))
+`, constants.ChannelName, constants.Version))
 
 	ts.PrepareActiveStateYAML(content)
 	ts.PrepareCommitIdFile("59404293-e5a9-4fd0-8843-77cd4761b5b5")

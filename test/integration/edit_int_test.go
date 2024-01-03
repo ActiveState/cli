@@ -71,6 +71,7 @@ func (suite *EditIntegrationTestSuite) TestEdit() {
 	cp.Expect("Script changes detected")
 	cp.SendLine("Y")
 	cp.ExpectExitCode(0)
+	ts.IgnoreLogErrors() // ignore EditProject does not exist API errors
 }
 
 func (suite *EditIntegrationTestSuite) TestEdit_NonInteractive() {
@@ -88,6 +89,8 @@ func (suite *EditIntegrationTestSuite) TestEdit_NonInteractive() {
 	cp.Expect("Script changes detected")
 	cp.SendCtrlC()
 	cp.Wait()
+
+	ts.IgnoreLogErrors() // ignore EditProject does not exist API errors
 }
 
 func (suite *EditIntegrationTestSuite) TestEdit_UpdateCorrectPlatform() {
@@ -114,6 +117,8 @@ func (suite *EditIntegrationTestSuite) TestEdit_UpdateCorrectPlatform() {
 	v, err := s.Value()
 	suite.Require().NoError(err)
 	suite.Contains(v, "more info!", "Output of edit command:\n%s", cp.Output())
+
+	ts.IgnoreLogErrors() // ignore EditProject does not exist API errors
 }
 
 func TestEditIntegrationTestSuite(t *testing.T) {

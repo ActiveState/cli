@@ -75,10 +75,10 @@ var projectMapMutex = &sync.Mutex{}
 
 const LocalProjectsConfigKey = "projects"
 
-// VersionInfo is used in cases where we only care about parsing the version field. In all other cases the version is parsed via
-// the Project struct
+// VersionInfo is used in cases where we only care about parsing the version and channel fields.
+// In all other cases the version is parsed via the Project struct
 type VersionInfo struct {
-	Branch  string
+	Channel string `yaml:"branch"` // branch for backward compatibility
 	Version string
 	Lock    string `yaml:"lock"`
 }
@@ -102,7 +102,7 @@ type Project struct {
 	Cache         string        `yaml:"cache,omitempty"`
 	path          string        // "private"
 	parsedURL     projectURL    // parsed url data
-	parsedBranch  string
+	parsedChannel string
 	parsedVersion string
 }
 
@@ -414,7 +414,7 @@ func Parse(configFilepath string) (_ *Project, rerr error) {
 		return nil, err
 	}
 
-	re, _ := regexp.Compile(`activestate.(\w+).yaml`)
+	re, _ := regexp.Compile(`activestate\.(\w+)\.yaml`)
 	for _, file := range files {
 		match := re.FindStringSubmatch(file.Name())
 		if len(match) == 0 {
@@ -478,7 +478,7 @@ func (p *Project) Init() error {
 			return errs.Wrap(err, "ParseLock %s failed", p.Lock)
 		}
 
-		p.parsedBranch = parsedLock.Branch
+		p.parsedChannel = parsedLock.Channel
 		p.parsedVersion = parsedLock.Version
 	}
 
@@ -592,12 +592,12 @@ func (p *Project) SetPath(path string) {
 	p.path = path
 }
 
-// VersionBranch returns the branch as it was interpreted from the lock
-func (p *Project) VersionBranch() string {
-	return p.parsedBranch
+// Channel returns the channel as it was interpreted from the lock
+func (p *Project) Channel() string {
+	return p.parsedChannel
 }
 
-// Version returns the branch as it was interpreted from the lock
+// Version returns the version as it was interpreted from the lock
 func (p *Project) Version() string {
 	return p.parsedVersion
 }
@@ -1133,7 +1133,7 @@ func ParseLock(lock string) (*VersionInfo, error) {
 	}
 
 	return &VersionInfo{
-		Branch:  split[0],
+		Channel: split[0],
 		Version: split[1],
 		Lock:    lock,
 	}, nil

@@ -19,6 +19,10 @@ type ArtifactListing struct {
 	artifactIDs      []artifact.ArtifactID
 }
 
+type ArtifactError struct {
+	*locale.LocalizedError
+}
+
 func NewArtifactListing(build *model.Build, buildtimeClosure bool) (*ArtifactListing, error) {
 	al := &ArtifactListing{build: build}
 	if buildtimeClosure {
@@ -165,6 +169,7 @@ func filterPlatformTerminals(build *model.Build) ([]*model.NamedTarget, error) {
 	if err != nil {
 		return nil, locale.WrapError(err, "err_filter_current_platform")
 	}
+	logging.Debug("Using filtered platform ID %s", platformID)
 
 	// Filter the build terminals to only include the current platform
 	var filteredTerminals []*model.NamedTarget
@@ -190,7 +195,9 @@ func buildTerminals(nodeID strfmt.UUID, lookup map[strfmt.UUID]interface{}, resu
 	}
 
 	if !model.IsSuccessArtifactStatus(targetArtifact.Status) {
-		return locale.NewError("err_artifact_failed", "Artifact '{{.V0}}' failed to build", trimDisplayName(targetArtifact.DisplayName))
+		return &ArtifactError{
+			locale.NewError("err_artifact_failed", "Artifact '{{.V0}}' failed to build", trimDisplayName(targetArtifact.DisplayName)),
+		}
 	}
 
 	if model.IsStateToolArtifact(targetArtifact.MimeType) {

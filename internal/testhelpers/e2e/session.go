@@ -567,7 +567,7 @@ func (s *Session) Close() error {
 	// does not appear on the PATH when a new subshell is started. This is a
 	// workaround to be addressed in: https://activestatef.atlassian.net/browse/DX-2285
 	if runtime.GOOS != "windows" {
-		installPath, err := installation.InstallPathForBranch("release")
+		installPath, err := installation.InstallPathForChannel("release")
 		if err != nil {
 			s.T.Errorf("Could not get install path: %v", errs.JoinMessage(err))
 		}
@@ -695,10 +695,13 @@ func (s *Session) IgnoreLogErrors() {
 	s.ignoreLogErrors = true
 }
 
-var errorOrPanicRegex = regexp.MustCompile(`(?:\[ERR:|Panic:)`)
+var errorOrPanicRegex = regexp.MustCompile(`(?:\[ERR |\[CRT |Panic:)`)
 
 func (s *Session) detectLogErrors() {
 	for _, path := range s.LogFiles() {
+		if !strings.HasPrefix(filepath.Base(path), "state-") {
+			continue
+		}
 		if contents := string(fileutils.ReadFileUnsafe(path)); errorOrPanicRegex.MatchString(contents) {
 			s.T.Errorf("Found error and/or panic in log file %s\nIf this was expected, call session.IgnoreLogErrors() to avoid this check\nLog contents:\n%s", path, contents)
 		}

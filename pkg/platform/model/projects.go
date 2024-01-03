@@ -165,7 +165,7 @@ func BranchForProjectByName(pj *mono_models.Project, name string) (*mono_models.
 
 	return nil, locale.NewInputError(
 		"err_no_matching_branch_label",
-		"This project has no branch with label matching [NOTICE]{{.V0}}[/RESET].",
+		"This project has no branch with label matching '[NOTICE]{{.V0}}[/RESET]'.",
 		name,
 	)
 }

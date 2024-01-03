@@ -595,7 +595,7 @@ func (suite *PackageIntegrationTestSuite) TestUpdate() {
 
 func (suite *PackageIntegrationTestSuite) TestRuby() {
 	if runtime.GOOS == "darwin" {
-		return // Ruby support is not yet enabled on the Platform
+		return // Ruby support for macOS is not yet enabled on the Platform
 	}
 	suite.OnlyRunForTags(tagsuite.Package)
 	ts := e2e.New(suite.T(), false)

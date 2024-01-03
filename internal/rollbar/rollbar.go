@@ -77,7 +77,7 @@ func SetupRollbar(token string) {
 	}
 	rollbar.SetRetryAttempts(0)
 	rollbar.SetToken(token)
-	rollbar.SetEnvironment(constants.BranchName)
+	rollbar.SetEnvironment(constants.ChannelName)
 
 	rollbar.SetCodeVersion(constants.Version)
 	rollbar.SetServerRoot("github.com/ActiveState/cli")
@@ -141,8 +141,8 @@ func AddLogDataAmender(f func(string) string) {
 }
 
 func logToRollbar(critical bool, message string, args ...interface{}) {
-	// only log to rollbar when on release, beta or unstable branch and when built via CI (ie., non-local build)
-	isPublicChannel := constants.BranchName == constants.ReleaseBranch || constants.BranchName == constants.BetaBranch || constants.BranchName == constants.ExperimentalBranch
+	// only log to rollbar when on release, beta or unstable channel and when built via CI (ie., non-local build)
+	isPublicChannel := constants.ChannelName == constants.ReleaseChannel || constants.ChannelName == constants.BetaChannel || constants.ChannelName == constants.ExperimentalChannel
 	if !isPublicChannel || !condition.BuiltViaCI() || reportingDisabled {
 		return
 	}

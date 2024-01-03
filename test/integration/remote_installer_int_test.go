@@ -31,10 +31,10 @@ func (suite *RemoteInstallIntegrationTestSuite) TestInstall() {
 		Channel string
 	}{
 		// Disabled until the target installers support the installpath override env var: DX-1350
-		// {"install-release-latest", "", constants.ReleaseBranch},
+		// {"install-release-latest", "", constants.ReleaseChannel},
 		// {"install-prbranch", "", ""},
-		// {"install-prbranch-with-version", constants.Version, constants.BranchName},
-		{"install-prbranch-and-branch", "", constants.BranchName},
+		// {"install-prbranch-with-version", constants.Version, constants.ChannelName},
+		{"install-prbranch-and-channel", "", constants.ChannelName},
 	}
 
 	for _, tt := range tests {
@@ -84,7 +84,7 @@ func (suite *RemoteInstallIntegrationTestSuite) TestInstall() {
 				cp.Expect("Version " + tt.Version)
 			}
 			if tt.Channel != "" {
-				cp.Expect("Branch " + tt.Channel)
+				cp.Expect("Channel " + tt.Channel)
 			}
 			cp.Expect("Built")
 			cp.ExpectExitCode(0)

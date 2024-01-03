@@ -34,6 +34,5 @@ func newRefreshCommand(prime *primer.Values) *captain.Command {
 	)
 	cmd.SetGroup(EnvironmentUsageGroup)
 	cmd.SetSupportsStructuredOutput()
-	cmd.SetUnstable(true)
 	return cmd
 }

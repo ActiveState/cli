@@ -15,9 +15,10 @@ const VersionOverrideEnvVar = "ACTIVESTATE_CLI_OSVERSION_OVERRIDE"
 
 // Cache keys used for storing/retrieving computed system information.
 const (
-	osVersionInfoCacheKey = "osVersionInfo"
-	libcInfoCacheKey      = "libcInfo"
-	compilersCacheKey     = "compilers"
+	osVersionInfoCacheKey     = "osVersionInfo"
+	libcInfoCacheKey          = "libcInfo"
+	requestedLibcInfoCacheKey = "requestedLibcInfo"
+	compilersCacheKey         = "compilers"
 )
 
 var versionRegex = regexp.MustCompile("^(\\d+)\\D(\\d+)(?:\\D(\\d+))?")
@@ -123,6 +124,10 @@ type LibcInfo struct {
 	Minor int          // minor version number
 }
 
+func (l LibcInfo) Version() string {
+	return fmt.Sprintf("%d.%d", l.Major, l.Minor)
+}
+
 // CompilerNameInfo reprents a compiler toolchain name.
 type CompilerNameInfo int
 
@@ -207,4 +212,16 @@ func parseVersionInfo(v string) (*VersionInfo, error) {
 	}
 
 	return &VersionInfo{v, major, minor, micro}, nil
+}
+
+func SetRequestedLibcInfo(info *LibcInfo) {
+	sysinfoCache.Set(requestedLibcInfoCacheKey, info, cache.NoExpiration)
+}
+
+func GetRequestedLibcInfo() *LibcInfo {
+	info, found := sysinfoCache.Get(requestedLibcInfoCacheKey)
+	if !found {
+		return nil
+	}
+	return info.(*LibcInfo)
 }

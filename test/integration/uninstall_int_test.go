@@ -35,7 +35,7 @@ func (suite *UninstallIntegrationTestSuite) install(ts *e2e.Session) string {
 	} else {
 		scriptBaseName += "ps1"
 	}
-	scriptUrl := baseUrl + constants.BranchName + "/" + scriptBaseName
+	scriptUrl := baseUrl + constants.ChannelName + "/" + scriptBaseName
 
 	// Fetch it.
 	b, err := httputil.GetDirect(scriptUrl)

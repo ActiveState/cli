@@ -39,7 +39,7 @@ version_info:
     License [NOTICE]{{.License}}[/RESET]
     Version [NOTICE]{{.Version}}[/RESET]
     Revision [NOTICE]{{.Revision}}[/RESET]
-    Branch [NOTICE]{{.Branch}}[/RESET]
+    Channel [NOTICE]{{.Channel}}[/RESET]
     Built [NOTICE]{{.Date}}[/RESET]{{if not .BuiltViaCI}} (dev){{end}}
 err_project_file_unavailable:
   other: Could not load the project file
@@ -735,7 +735,7 @@ arg_state_init_path_description:
 err_invalid_language:
   other: "Invalid language specified: '[NOTICE]{{.V0}}[/RESET]'; Supported languages: [ACTIONABLE]{{.V1}}[/RESET]"
 err_init_invalid_org:
-  other: The organization [ACTIONABLE]{{.V0}}[/RESET] either does not exist, or you do not have permissions to create a project in it.
+  other: The organization '[ACTIONABLE]{{.V0}}[/RESET]' either does not exist, or you do not have permissions to create a project in it.
 push_creating_project:
   other: "Creating project [NOTICE]{{.V1}}[/RESET] under [NOTICE]{{.V0}}[/RESET] on the ActiveState Platform"
 push_project_updated:
@@ -802,7 +802,7 @@ namespace_label_preplatform:
 namespace_label_packager:
   other: "Docker/Installer packagers"
 history_cmd_description:
-  other: View history of the active or given project
+  other: View history of the active project
 clean_description:
   other: Clean caches, configuration files, or completely remove the state tool
 uninstall_description:
@@ -1120,6 +1120,8 @@ err_user_network_solution:
   other: |
     Please ensure your device has access to internet during installation. Make sure software like a VPN, Firewall or Anti-Virus are not blocking your connectivity.
     If your issue persists consider reporting it on our forums at {{.V0}}.
+err_user_libc_solution:
+  other: If you specified a glibc version, please check it is configured → [ACTIONABLE]{{.V0}}[/RESET].
 err_revert_get_commit:
   other: "Could not fetch commit details for commit with ID: {{.V0}}"
 err_revert_commit:
@@ -1167,6 +1169,8 @@ operation_success_local:
     Your local project has been updated.
     Run [ACTIONABLE]state push[/RESET] to save changes to the platform.
 buildplan_err:
+  other: "Could not plan build, platform responded with:\n{{.V0}}"
+buildplan_err_cropped:
   other: "Could not plan build, platform responded with:\n{{.V0}}\n{{.V1}}"
 err_buildplanner_head_on_branch_moved:
   other: The branch you're trying to update has changed remotely, please run '[ACTIONABLE]state pull[/RESET]'.
@@ -1290,6 +1294,8 @@ err_use_default_project_does_not_exist:
   other: "Cannot find your project. Please either check it out again with [ACTIONABLE]state checkout[/RESET] or run [ACTIONABLE]state use reset[/RESET] to stop using it."
 err_shell_commit_id_mismatch:
   other: "Cannot start a shell/prompt for the given commit ID. Please use '[ACTIONABLE]state checkout[/RESET]' to check out a specific commit ID and then try again."
+err_activate_commit_id_mismatch:
+  other: "Cannot activate a project with the given commit ID. Please use '[ACTIONABLE]state checkout[/RESET]' to check out a specific commit ID and then try again."
 err_shell_cannot_load_project:
   other: Cannot load project to start a shell/prompt in.
 err_shell_already_active:
@@ -1312,8 +1318,6 @@ arg_state_shell_namespace_description:
   other: The namespace of the project you wish to start a virtual environment shell/prompt for, or just the project name if previously used
 err_language_by_commit:
   other: Could not get language from commit ID {{.V0}}
-err_make_language:
-  other: Could not create language from commit ID
 err_parse_project:
   other: Could not parse project file at {{.V0}}
 err_uninstall_privilege_mismatch:

@@ -122,55 +122,44 @@ func TestMakeByNameAndVersion(t *testing.T) {
 		version string
 	}
 	tests := []struct {
-		name    string
-		args    args
-		want    Language
-		wantErr bool
+		name string
+		args args
+		want Language
 	}{
 		{
 			"Valid Python3 version",
 			args{"python", "3.6.6"},
 			Python3,
-			false,
 		},
 		{
 			"Valid Python2 version",
 			args{"python", "2.7.18"},
 			Python2,
-			false,
 		},
 		{
 			"Valid Python2 invalid patch",
 			args{"python", "2.7.18.1"},
 			Python2,
-			false,
 		},
 		{
 			"Valid Python3 invalid patch",
 			args{"python", "3.9"},
 			Python3,
-			false,
 		},
 		{
 			"Missing version",
 			args{"python", ""},
 			Python3,
-			false,
 		},
 		{
 			"Valid Perl version",
 			args{"perl", "5.28.1"},
 			Perl,
-			false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := MakeByNameAndVersion(tt.args.name, tt.args.version)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("MakeByNameAndVersion() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
+			got := MakeByNameAndVersion(tt.args.name, tt.args.version)
 			if got != tt.want {
 				t.Errorf("MakeByNameAndVersion() = %v, want %v", got, tt.want)
 			}
