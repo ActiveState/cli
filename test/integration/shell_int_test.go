@@ -265,10 +265,8 @@ func (suite *ShellIntegrationTestSuite) SetupRCFile(ts *e2e.Session) {
 }
 
 func (suite *ShellIntegrationTestSuite) TestRuby() {
-	// TODO: Re-enable this test when Ruby is supported on the Platform
-	// https://activestatef.atlassian.net/browse/DX-2384
-	if runtime.GOOS == "darwin" || runtime.GOOS == "windows" {
-		return // Ruby support is not yet enabled on the Platform
+	if runtime.GOOS == "darwin" {
+		return // Ruby support for macOS is not yet enabled on the Platform
 	}
 	suite.OnlyRunForTags(tagsuite.Shell)
 	ts := e2e.New(suite.T(), false)
