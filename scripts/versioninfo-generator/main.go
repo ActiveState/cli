@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/ActiveState/cli/internal/assets"
 	"github.com/ActiveState/cli/internal/errs"
@@ -13,6 +14,7 @@ import (
 
 const (
 	versionInfoAssetsFileName = "versioninfo.json"
+	versionInfoLegalCopyright = "© ActiveState Software, Inc. %d"
 )
 
 type versionInfo struct {
@@ -140,6 +142,7 @@ func run() error {
 	versionInfo.StringFileInfo.FileVersion = semver.String()
 	versionInfo.StringFileInfo.ProductVersion = semver.String()
 	versionInfo.StringFileInfo.ProductName = productName
+	versionInfo.StringFileInfo.LegalCopyright = fmt.Sprintf(versionInfoLegalCopyright, time.Now().Year())
 
 	// Marshal the updated versioninfo.json
 	finalJSON, err := json.MarshalIndent(versionInfo, "", "  ")
