@@ -163,7 +163,7 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckoutWithFlags() {
 	// Test --branch mismatch in non-checked-out project.
 	branchPath := filepath.Join(ts.Dirs.Base, "branch")
 	cp = ts.SpawnWithOpts(e2e.OptArgs("checkout", "ActiveState-CLI/Python-3.9", branchPath, "--branch", "doesNotExist"))
-	cp.Expect("This project has no branch with label matching doesNotExist")
+	cp.Expect("This project has no branch with label matching 'doesNotExist'")
 	cp.ExpectExitCode(1)
 	ts.IgnoreLogErrors()
 }
