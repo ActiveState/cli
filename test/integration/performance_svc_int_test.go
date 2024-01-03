@@ -89,7 +89,7 @@ func (suite *PerformanceIntegrationTestSuite) TestSvcPerformance() {
 
 	suite.Run("Query Update", func() {
 		t := time.Now()
-		_, err := svcmodel.CheckUpdate(context.Background(), constants.BranchName, "")
+		_, err := svcmodel.CheckUpdate(context.Background(), constants.ChannelName, "")
 		suite.Require().NoError(err, ts.DebugMessage(fmt.Sprintf("Error: %s\nLog Tail:\n%s", errs.JoinMessage(err), logging.ReadTail())))
 		duration := time.Since(t)
 

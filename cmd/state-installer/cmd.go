@@ -236,7 +236,7 @@ func execute(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher,
 			"CLI Installer",
 			constants.LibraryLicense,
 			constants.Version,
-			constants.BranchName,
+			constants.ChannelName,
 			constants.RevisionHash,
 			constants.Date,
 			constants.OnCI == "true",
@@ -249,14 +249,14 @@ func execute(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher,
 
 	if params.path == "" {
 		var err error
-		params.path, err = installation.InstallPathForBranch(constants.BranchName)
+		params.path, err = installation.InstallPathForChannel(constants.ChannelName)
 		if err != nil {
 			return errs.Wrap(err, "Could not detect installation path.")
 		}
 	}
 
 	// Detect installed state tool
-	stateToolInstalled, installPath, err := installedOnPath(params.path, constants.BranchName)
+	stateToolInstalled, installPath, err := installedOnPath(params.path, constants.ChannelName)
 	if err != nil {
 		return errs.Wrap(err, "Could not detect if State Tool is already installed.")
 	}
@@ -265,8 +265,8 @@ func execute(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher,
 		params.path = installPath
 	}
 
-	// Detect if target dir is existing install of same target branch
-	var installedBranch string
+	// Detect if target dir is existing install of same target channel
+	var installedChannel string
 	marker := filepath.Join(installPath, installation.InstallDirMarker)
 	if stateToolInstalled && fileutils.TargetExists(marker) {
 		markerContents, err := fileutils.ReadFile(marker)
@@ -279,12 +279,12 @@ func execute(out output.Outputer, cfg *config.Instance, an analytics.Dispatcher,
 			if err := json.Unmarshal(markerContents, &markerMeta); err != nil {
 				return errs.Wrap(err, "Could not parse install marker file")
 			}
-			installedBranch = markerMeta.Branch
+			installedChannel = markerMeta.Channel
 		}
 	}
-	// Older state tools did not bake in meta information, in this case we allow overwriting regardless of branch
-	targetingSameBranch := installedBranch == "" || installedBranch == constants.BranchName
-	stateToolInstalledAndFunctional := stateToolInstalled && installationIsOnPATH(params.path) && targetingSameBranch
+	// Older state tools did not bake in meta information, in this case we allow overwriting regardless of channel
+	targetingSameChannel := installedChannel == "" || installedChannel == constants.ChannelName
+	stateToolInstalledAndFunctional := stateToolInstalled && installationIsOnPATH(params.path) && targetingSameChannel
 
 	// If this is a fresh installation we ensure that the target directory is empty
 	if !stateToolInstalled && fileutils.DirExists(params.path) && !params.force {
@@ -511,8 +511,8 @@ func shouldUpdateInstalledStateTool(stateExePath string) bool {
 		return true
 	}
 
-	if versionData.Branch != constants.BranchName {
-		logging.Debug("State tool branch is different from installer.")
+	if versionData.Channel != constants.ChannelName {
+		logging.Debug("State tool channel is different from installer.")
 		return false // do not update, require --force
 	}
 

@@ -39,7 +39,7 @@ version_info:
     License [NOTICE]{{.License}}[/RESET]
     Version [NOTICE]{{.Version}}[/RESET]
     Revision [NOTICE]{{.Revision}}[/RESET]
-    Branch [NOTICE]{{.Branch}}[/RESET]
+    Channel [NOTICE]{{.Channel}}[/RESET]
     Built [NOTICE]{{.Date}}[/RESET]{{if not .BuiltViaCI}} (dev){{end}}
 err_project_file_unavailable:
   other: Could not load the project file

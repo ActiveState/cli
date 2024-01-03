@@ -434,7 +434,7 @@ func (suite *ActivateIntegrationTestSuite) TestActivate_Subdir() {
 project: "https://platform.activestate.com/ActiveState-CLI/Python3"
 branch: %s
 version: %s
-`, constants.BranchName, constants.Version))
+`, constants.ChannelName, constants.Version))
 
 	ts.PrepareActiveStateYAML(content)
 	ts.PrepareCommitIdFile("59404293-e5a9-4fd0-8843-77cd4761b5b5")

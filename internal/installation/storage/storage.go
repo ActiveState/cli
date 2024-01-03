@@ -16,7 +16,7 @@ import (
 )
 
 func AppDataPath() (string, error) {
-	configDirs := configdir.New(constants.InternalConfigNamespace, fmt.Sprintf("%s-%s", constants.LibraryName, constants.BranchName))
+	configDirs := configdir.New(constants.InternalConfigNamespace, fmt.Sprintf("%s-%s", constants.LibraryName, constants.ChannelName))
 
 	localPath, envSet := os.LookupEnv(constants.ConfigEnvVarName)
 	if envSet {
@@ -80,7 +80,7 @@ func appDataPathInTest() (string, error) {
 }
 
 func AppDataPathWithParent(parentDir string) (string, error) {
-	configDirs := configdir.New(constants.InternalConfigNamespace, fmt.Sprintf("%s-%s", constants.LibraryName, constants.BranchName))
+	configDirs := configdir.New(constants.InternalConfigNamespace, fmt.Sprintf("%s-%s", constants.LibraryName, constants.ChannelName))
 	configDirs.LocalPath = parentDir
 	dir := configDirs.QueryFolders(configdir.Local)[0].Path
 

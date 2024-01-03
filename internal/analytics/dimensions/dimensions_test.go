@@ -19,8 +19,8 @@ func TestMap_Merge(t *testing.T) {
 		{
 			"Simple",
 			&Values{Version: ptr.To("inputVersion")},
-			&Values{BranchName: ptr.To("mergeBranchName")},
-			&Values{Version: ptr.To("inputVersion"), BranchName: ptr.To("mergeBranchName")},
+			&Values{ChannelName: ptr.To("mergeChannelName")},
+			&Values{Version: ptr.To("inputVersion"), ChannelName: ptr.To("mergeChannelName")},
 		},
 		{
 			"Override",

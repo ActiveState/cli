@@ -31,7 +31,7 @@ import (
 )
 
 type Params struct {
-	branch  string
+	channel string
 	force   bool
 	version string
 }
@@ -116,12 +116,12 @@ func main() {
 			{
 				Name:        "channel",
 				Description: "Defaults to 'release'.  Specify an alternative channel to install from (eg. beta)",
-				Value:       &params.branch,
+				Value:       &params.channel,
 			},
 			{
 				Shorthand: "b", // backwards compatibility
 				Hidden:    true,
-				Value:     &params.branch,
+				Value:     &params.channel,
 			},
 			{
 				Name:        "version",
@@ -171,22 +171,22 @@ func execute(out output.Outputer, prompt prompt.Prompter, cfg *config.Instance, 
 		return locale.NewInputError("install_cancel", "Installation cancelled")
 	}
 
-	branch := params.branch
-	if branch == "" {
-		branch = constants.ReleaseBranch
+	channel := params.channel
+	if channel == "" {
+		channel = constants.ReleaseChannel
 	}
 
 	// Fetch payload
 	checker := updater.NewDefaultChecker(cfg, an)
 	checker.InvocationSource = updater.InvocationSourceInstall // Installing from a remote source is only ever encountered via the install flow
-	availableUpdate, err := checker.CheckFor(branch, params.version)
+	availableUpdate, err := checker.CheckFor(channel, params.version)
 	if err != nil {
 		return errs.Wrap(err, "Could not retrieve install package information")
 	}
 
 	version := availableUpdate.Version
-	if params.branch != "" {
-		version = fmt.Sprintf("%s (%s)", version, branch)
+	if params.channel != "" {
+		version = fmt.Sprintf("%s (%s)", version, channel)
 	}
 
 	update := updater.NewUpdateInstaller(an, availableUpdate)

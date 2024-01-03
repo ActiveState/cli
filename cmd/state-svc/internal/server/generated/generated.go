@@ -88,7 +88,7 @@ type ComplexityRoot struct {
 	}
 
 	StateVersion struct {
-		Branch   func(childComplexity int) int
+		Channel  func(childComplexity int) int
 		Date     func(childComplexity int) int
 		License  func(childComplexity int) int
 		Revision func(childComplexity int) int
@@ -319,12 +319,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.ReportRuntimeUsageResponse.Received(childComplexity), true
 
-	case "StateVersion.branch":
-		if e.complexity.StateVersion.Branch == nil {
+	case "StateVersion.channel":
+		if e.complexity.StateVersion.Channel == nil {
 			break
 		}
 
-		return e.complexity.StateVersion.Branch(childComplexity), true
+		return e.complexity.StateVersion.Channel(childComplexity), true
 
 	case "StateVersion.date":
 		if e.complexity.StateVersion.Date == nil {
@@ -420,7 +420,7 @@ var sources = []*ast.Source{
 type StateVersion {
     license: String!
     version: String!
-    branch: String!
+    channel: String!
     revision: String!
     date: String!
 }
@@ -2071,7 +2071,7 @@ func (ec *executionContext) _StateVersion_branch(ctx context.Context, field grap
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Branch, nil
+		return obj.Channel, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2232,7 +2232,7 @@ func (ec *executionContext) fieldContext_Version_state(ctx context.Context, fiel
 				return ec.fieldContext_StateVersion_license(ctx, field)
 			case "version":
 				return ec.fieldContext_StateVersion_version(ctx, field)
-			case "branch":
+			case "channel":
 				return ec.fieldContext_StateVersion_branch(ctx, field)
 			case "revision":
 				return ec.fieldContext_StateVersion_revision(ctx, field)
@@ -4486,7 +4486,7 @@ func (ec *executionContext) _StateVersion(ctx context.Context, sel ast.Selection
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "branch":
+		case "channel":
 
 			out.Values[i] = ec._StateVersion_branch(ctx, field, obj)
 

@@ -194,7 +194,7 @@ func new(t *testing.T, retainDirs, updatePath bool, extraEnv ...string) *Session
 		// This is a workaround as our test sessions are not compeltely
 		// sandboxed. This should be addressed in: https://activestatef.atlassian.net/browse/DX-2285
 		oldPath, _ := os.LookupEnv("PATH")
-		installPath, err := installation.InstallPathForBranch("release")
+		installPath, err := installation.InstallPathForChannel("release")
 		require.NoError(t, err)
 
 		binPath := filepath.Join(installPath, "bin")
@@ -626,7 +626,7 @@ func (s *Session) Close() error {
 	// does not appear on the PATH when a new subshell is started. This is a
 	// workaround to be addressed in: https://activestatef.atlassian.net/browse/DX-2285
 	if runtime.GOOS != "windows" {
-		installPath, err := installation.InstallPathForBranch("release")
+		installPath, err := installation.InstallPathForChannel("release")
 		if err != nil {
 			s.T.Errorf("Could not get install path: %v", errs.JoinMessage(err))
 		}

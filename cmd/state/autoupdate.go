@@ -45,7 +45,7 @@ func autoUpdate(svc *model.SvcModel, args []string, cfg *config.Instance, an ana
 	}
 
 	// Check for available update
-	upd, err := svc.CheckUpdate(context.Background(), constants.BranchName, "")
+	upd, err := svc.CheckUpdate(context.Background(), constants.ChannelName, "")
 	if err != nil {
 		return false, errs.Wrap(err, "Failed to check for update")
 	}
