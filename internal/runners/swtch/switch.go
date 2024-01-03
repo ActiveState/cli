@@ -92,7 +92,7 @@ func (s *Switch) Run(params SwitchParams) error {
 
 	identifier, err := resolveIdentifier(project, params.Identifier)
 	if err != nil {
-		return locale.WrapError(err, "err_resolve_identifier", "Could not resolve identifier: {{.V0}}", params.Identifier)
+		return locale.WrapError(err, "err_resolve_identifier", "Could not resolve identifier '{{.V0}}'", params.Identifier)
 	}
 
 	if id, ok := identifier.(branchIdentifier); ok {
