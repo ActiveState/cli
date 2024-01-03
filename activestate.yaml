@@ -128,7 +128,7 @@ scripts:
 
       # Generate resource.syso for Windows
       if [[ "$GOOS" == "windows" || "$OS" == "Windows_NT" ]]; then
-        pushd cmd/state > /dev/null
+        pushd cmd/state-svc > /dev/null
         go generate
         popd > /dev/null
       fi
