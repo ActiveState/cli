@@ -135,7 +135,7 @@ func run(cfg *config.Instance) error {
 					"CLI Service",
 					constants.LibraryLicense,
 					constants.Version,
-					constants.BranchName,
+					constants.ChannelName,
 					constants.RevisionHash,
 					constants.Date,
 					constants.OnCI == "true",

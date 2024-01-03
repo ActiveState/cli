@@ -216,7 +216,7 @@ func isStateExecutable(name string) bool {
 	return false
 }
 
-func installedOnPath(installRoot, branch string) (bool, string, error) {
+func installedOnPath(installRoot, channel string) (bool, string, error) {
 	if !fileutils.DirExists(installRoot) {
 		return false, "", nil
 	}
@@ -224,11 +224,11 @@ func installedOnPath(installRoot, branch string) (bool, string, error) {
 	// This is not using appinfo on purpose because we want to deal with legacy installation formats, which appinfo does not
 	stateCmd := constants.StateCmd + osutils.ExeExtension
 
-	// Check for state.exe in branch, root and bin dir
+	// Check for state.exe in channel, root and bin dir
 	// This is to handle older state tool versions that gave incompatible input paths
 	candidates := []string{
-		filepath.Join(installRoot, branch, installation.BinDirName, stateCmd),
-		filepath.Join(installRoot, branch, stateCmd),
+		filepath.Join(installRoot, channel, installation.BinDirName, stateCmd),
+		filepath.Join(installRoot, channel, stateCmd),
 		filepath.Join(installRoot, installation.BinDirName, stateCmd),
 		filepath.Join(installRoot, stateCmd),
 	}

@@ -103,7 +103,7 @@ func New(source string, cfg *config.Instance, auth *authentication.Auth, out out
 
 	customDimensions := &dimensions.Values{
 		Version:       ptr.To(constants.Version),
-		BranchName:    ptr.To(constants.BranchName),
+		ChannelName:   ptr.To(constants.ChannelName),
 		OSName:        ptr.To(osName),
 		OSVersion:     ptr.To(osVersion),
 		InstallSource: ptr.To(installSource),

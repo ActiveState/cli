@@ -51,7 +51,7 @@ func New(cfg *config.Instance, auth *auth.Auth) (*Messages, error) {
 		baseParams: &ConditionParams{
 			OS:           sysinfo.OS().String(),
 			OSVersion:    NewVersionFromSysinfo(osVersion),
-			StateChannel: constants.BranchName,
+			StateChannel: constants.ChannelName,
 			StateVersion: NewVersionFromSemver(stateVersion),
 		},
 		cfg:  cfg,

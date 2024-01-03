@@ -19,7 +19,7 @@ import (
 var Constants = map[string]func() interface{}{}
 
 func init() {
-	branchName, commitRef := branchName()
+	channelName, commitRef := channelName()
 	buildNumber := buildNumber()
 
 	if sha, exists := os.LookupEnv("GITHUB_SHA"); exists {
@@ -36,7 +36,7 @@ func init() {
 		log.Fatalf("Could not parse new remote installer version: %s", err)
 	}
 
-	Constants["BranchName"] = func() interface{} { return branchName }
+	Constants["ChannelName"] = func() interface{} { return channelName }
 	Constants["BuildNumber"] = func() interface{} { return buildNumber }
 	Constants["RevisionHash"] = func() interface{} { return getCmdOutput("git rev-parse --verify " + commitRef) }
 	Constants["RevisionHashShort"] = func() interface{} { return getCmdOutput("git rev-parse --short " + commitRef) }
@@ -47,9 +47,9 @@ func init() {
 	Constants["RemoteInstallerVersion"] = func() interface{} { return remoteInstallerVersion.String() }
 	Constants["Date"] = func() interface{} { return time.Now().Format(constants.DateTimeFormatRecord) }
 	Constants["UserAgent"] = func() interface{} {
-		return fmt.Sprintf("%s/%s; %s", constants.CommandName, Constants["Version"](), branchName)
+		return fmt.Sprintf("%s/%s; %s", constants.CommandName, Constants["Version"](), channelName)
 	}
-	Constants["APITokenName"] = func() interface{} { return fmt.Sprintf("%s-%s", constants.APITokenNamePrefix, branchName) }
+	Constants["APITokenName"] = func() interface{} { return fmt.Sprintf("%s-%s", constants.APITokenNamePrefix, channelName) }
 	Constants["OnCI"] = func() interface{} { return os.Getenv("CI") }
 }
 
@@ -66,10 +66,9 @@ func gitBranchName() string {
 	return branch
 }
 
-// branchName returns the release name and the branch name it is generated from
-// Usually the release name is identical to the branch name, unless environment variable
-// `BRANCH_OVERRIDE` is set
-func branchName() (string, string) {
+// channelName returns the release name and the branch name it is generated from
+// Usually the release name is identical to the branch name.
+func channelName() (string, string) {
 	branch := gitBranchName()
 	releaseName := strings.TrimPrefix(branch, "origin/")
 

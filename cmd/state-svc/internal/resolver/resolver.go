@@ -52,7 +52,7 @@ func New(cfg *config.Instance, an *sync.Client, auth *authentication.Auth) (*Res
 	upchecker := updater.NewDefaultChecker(cfg, an)
 	pollUpdate := poller.New(1*time.Hour, func() (interface{}, error) {
 		logging.Debug("Poller checking for update info")
-		return upchecker.CheckFor(constants.BranchName, "")
+		return upchecker.CheckFor(constants.ChannelName, "")
 	})
 
 	pollRate := time.Minute.Milliseconds()
@@ -107,7 +107,7 @@ func (r *Resolver) Version(ctx context.Context) (*graph.Version, error) {
 		State: &graph.StateVersion{
 			License:  constants.LibraryLicense,
 			Version:  constants.Version,
-			Branch:   constants.BranchName,
+			Channel:  constants.ChannelName,
 			Revision: constants.RevisionHash,
 			Date:     constants.Date,
 		},
@@ -118,7 +118,7 @@ func (r *Resolver) AvailableUpdate(ctx context.Context, desiredChannel, desiredV
 	defer func() { handlePanics(recover(), debug.Stack()) }()
 
 	if desiredChannel == "" {
-		desiredChannel = constants.BranchName
+		desiredChannel = constants.ChannelName
 	}
 
 	r.an.EventWithLabel(anaConsts.CatStateSvc, "endpoint", "AvailableUpdate")
@@ -132,7 +132,7 @@ func (r *Resolver) AvailableUpdate(ctx context.Context, desiredChannel, desiredV
 	)
 
 	switch {
-	case desiredChannel == constants.BranchName && desiredVersion == "":
+	case desiredChannel == constants.ChannelName && desiredVersion == "":
 		avUpdate, ok = r.updatePoller.ValueFromCache().(*updater.AvailableUpdate)
 		if !ok || avUpdate == nil {
 			logging.Debug("No update info in poller cache")
@@ -142,7 +142,7 @@ func (r *Resolver) AvailableUpdate(ctx context.Context, desiredChannel, desiredV
 		logging.Debug("Update info pulled from poller cache")
 
 	default:
-		logging.Debug("Update info requested for specific branch/version")
+		logging.Debug("Update info requested for specific channel/version")
 
 		upchecker := updater.NewDefaultChecker(r.cfg, r.an)
 		avUpdate, err = upchecker.CheckFor(desiredChannel, desiredVersion)

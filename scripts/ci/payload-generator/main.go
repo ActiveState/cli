@@ -43,18 +43,18 @@ func run() error {
 		inDir   = defaultInputDir
 		outDir  = defaultOutputDir
 		binDir  = defaultOutputBinDir
-		branch  = constants.BranchName
+		channel = constants.ChannelName
 		version = constants.Version
 	)
 
-	flag.StringVar(&branch, "b", branch, "Override target branch. (Branch to receive update.)")
+	flag.StringVar(&channel, "b", channel, "Override target channel. (Channel to receive update.)")
 	flag.StringVar(&version, "v", version, "Override version number for this update.")
 	flag.Parse()
 
-	return generatePayload(inDir, outDir, binDir, branch, version)
+	return generatePayload(inDir, outDir, binDir, channel, version)
 }
 
-func generatePayload(inDir, outDir, binDir, branch, version string) error {
+func generatePayload(inDir, outDir, binDir, channel, version string) error {
 	emsg := "generate payload: %w"
 
 	if err := fileutils.MkdirUnlessExists(binDir); err != nil {
@@ -62,7 +62,7 @@ func generatePayload(inDir, outDir, binDir, branch, version string) error {
 	}
 
 	log("Creating install dir marker in %s", outDir)
-	if err := createInstallMarker(outDir, branch, version); err != nil {
+	if err := createInstallMarker(outDir, channel, version); err != nil {
 		return fmt.Errorf(emsg, err)
 	}
 
@@ -79,11 +79,11 @@ func generatePayload(inDir, outDir, binDir, branch, version string) error {
 	return nil
 }
 
-func createInstallMarker(dir, branch, version string) error {
+func createInstallMarker(dir, channel, version string) error {
 	emsg := "create install marker: %w"
 
 	markerContents := installation.InstallMarkerMeta{
-		Branch:  branch,
+		Channel: channel,
 		Version: version,
 	}
 	b, err := json.Marshal(markerContents)
