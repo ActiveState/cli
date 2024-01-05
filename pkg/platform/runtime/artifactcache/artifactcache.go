@@ -193,7 +193,7 @@ func (cache *ArtifactCache) Save() error {
 	}
 
 	if cache.timeSpentCopying > 5*time.Second {
-		multilog.Log(logging.Debug, rollbar.Error)("Spent %.1f seconds copying %.1fMB of artifacts to cache", cache.timeSpentCopying.Seconds, float64(cache.sizeCopied)/float64(MB))
+		multilog.Log(logging.Debug, rollbar.Error)("Spent %.1f seconds copying %.1fMB of artifacts to cache", cache.timeSpentCopying.Seconds(), float64(cache.sizeCopied)/float64(MB))
 	}
 	cache.timeSpentCopying = 0 // reset
 	cache.sizeCopied = 0       //reset
