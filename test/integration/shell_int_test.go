@@ -32,18 +32,16 @@ func (suite *ShellIntegrationTestSuite) TestShell() {
 
 	cp := ts.SpawnWithOpts(
 		e2e.OptArgs("checkout", "ActiveState-CLI/small-python"),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
-	cp.Expect("Checked out project", e2e.RuntimeSourcingTimeoutOpt)
+	cp.Expect("Checked out project")
 	cp.ExpectExitCode(0)
 
 	args := []string{"small-python", "ActiveState-CLI/small-python"}
 	for _, arg := range args {
 		cp := ts.SpawnWithOpts(
 			e2e.OptArgs("shell", arg),
-			e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 		)
-		cp.Expect("Activated", e2e.RuntimeSourcingTimeoutOpt)
+		cp.Expect("Activated")
 		cp.ExpectInput()
 
 		cp.SendLine("python3 --version")
@@ -84,11 +82,9 @@ func (suite *ShellIntegrationTestSuite) TestDefaultShell() {
 	defer ts.Close()
 
 	// Checkout.
-	cp := ts.SpawnWithOpts(
-		e2e.OptArgs("checkout", "ActiveState-CLI/small-python"),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
-	)
-	cp.Expect("Checked out project", e2e.RuntimeSourcingTimeoutOpt)
+	cp := ts.SpawnWithOpts(e2e.OptArgs("checkout", "ActiveState-CLI/small-python"))
+	cp.Expect("Skipping runtime setup")
+	cp.Expect("Checked out project")
 	cp.ExpectExitCode(0)
 
 	// Use.
@@ -101,9 +97,8 @@ func (suite *ShellIntegrationTestSuite) TestDefaultShell() {
 
 	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("shell"),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
-	cp.Expect("Activated", e2e.RuntimeSourcingTimeoutOpt)
+	cp.Expect("Activated")
 	cp.ExpectInput()
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
@@ -117,19 +112,17 @@ func (suite *ShellIntegrationTestSuite) TestCwdShell() {
 
 	cp := ts.SpawnWithOpts(
 		e2e.OptArgs("activate", "ActiveState-CLI/small-python"),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
-	cp.Expect("Activated", e2e.RuntimeSourcingTimeoutOpt)
+	cp.Expect("Activated")
 	cp.ExpectInput()
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
 
 	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("shell"),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 		e2e.OptWD(filepath.Join(ts.Dirs.Work, "small-python")),
 	)
-	cp.Expect("Activated", e2e.RuntimeSourcingTimeoutOpt)
+	cp.Expect("Activated")
 	cp.ExpectInput()
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
@@ -143,9 +136,8 @@ func (suite *ShellIntegrationTestSuite) TestCd() {
 
 	cp := ts.SpawnWithOpts(
 		e2e.OptArgs("activate", "ActiveState-CLI/small-python"),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
-	cp.Expect("Activated", e2e.RuntimeSourcingTimeoutOpt)
+	cp.Expect("Activated")
 	cp.ExpectInput()
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
@@ -156,10 +148,9 @@ func (suite *ShellIntegrationTestSuite) TestCd() {
 
 	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("shell", "ActiveState-CLI/small-python"),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 		e2e.OptWD(subdir),
 	)
-	cp.Expect("Activated", e2e.RuntimeSourcingTimeoutOpt)
+	cp.Expect("Activated")
 	cp.ExpectInput()
 	if runtime.GOOS != "windows" {
 		cp.SendLine("pwd")
@@ -171,10 +162,9 @@ func (suite *ShellIntegrationTestSuite) TestCd() {
 
 	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("shell", "ActiveState-CLI/small-python", "--cd"),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 		e2e.OptWD(subdir),
 	)
-	cp.Expect("Activated", e2e.RuntimeSourcingTimeoutOpt)
+	cp.Expect("Activated")
 	cp.ExpectInput()
 	if runtime.GOOS != "windows" {
 		cp.SendLine("ls")

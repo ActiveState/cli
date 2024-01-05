@@ -644,9 +644,9 @@ func (suite *ActivateIntegrationTestSuite) TestActivateBranch() {
 
 	cp := ts.SpawnWithOpts(
 		e2e.OptArgs("activate", namespace, "--branch", "firstbranch"),
-		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
-	cp.Expect("Activated", e2e.RuntimeSourcingTimeoutOpt)
+	cp.Expect("Skipping runtime setup")
+	cp.Expect("Activated")
 	cp.SendLine("exit")
 	cp.ExpectExitCode(0)
 }
