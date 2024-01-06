@@ -2,6 +2,7 @@ package integration
 
 import (
 	"fmt"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -43,14 +44,28 @@ scripts:
 
 	editorScriptDir := filepath.Join(ts.Dirs.Work, "editor")
 
+	locator := "which"
+	env := []string{}
 	var extension string
 	if runtime.GOOS == "windows" {
 		extension = ".exe"
+		locator = "where"
+		// The LOCALAPPDATA env var is used by the go binary to locate the cache dir
+		env = append(env, "LOCALAPPDATA="+ts.Dirs.TempDir)
 	}
+
+	// Locate the go binary as it will not be on PATH in the sandboxed environment
+	cmd := exec.Command(locator, "go")
+	output, err := cmd.Output()
+	suite.Require().NoError(err, "go binary not found in path: %s", string(output))
+	goBinary := string(output)
+	goBinary = strings.TrimSpace(string(goBinary))
+
 	cp := ts.SpawnCmdWithOpts(
-		"go",
+		goBinary,
 		e2e.OptArgs("build", "-o", "editor"+extension, target),
 		e2e.OptWD(editorScriptDir),
+		e2e.OptAppendEnv(env...),
 	)
 	cp.ExpectExitCode(0)
 
