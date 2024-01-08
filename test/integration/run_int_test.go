@@ -236,7 +236,7 @@ func (suite *RunIntegrationTestSuite) TestRun_Unauthenticated() {
 		e2e.OptArgs("activate"),
 		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
-	cp.Expect("Activated")
+	cp.Expect("Activated", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectInput(termtest.OptExpectTimeout(10 * time.Second))
 
 	cp.SendLine(fmt.Sprintf("%s run testMultipleLanguages", cp.Executable()))
