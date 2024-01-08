@@ -27,7 +27,7 @@ func sandboxedTestEnvironment(t *testing.T, dirs *Dirs, updatePath bool, extraEn
 	}
 
 	// add go binary to PATH
-	goBinary := goBinaryPath()
+	goBinary := goBinaryPath(t)
 	basePath = fmt.Sprintf("%s%s%s", basePath, string(os.PathListSeparator), filepath.Dir(goBinary))
 
 	env = append(env, []string{
@@ -100,7 +100,7 @@ func prepareHomeDir(dir string) error {
 	return nil
 }
 
-func goBinaryPath() string {
+func goBinaryPath(t *testing.T) string {
 	locator := "which"
 	if runtime.GOOS == "windows" {
 		locator = "where"
@@ -108,7 +108,8 @@ func goBinaryPath() string {
 	cmd := exec.Command(locator, "go")
 	output, err := cmd.Output()
 	if err != nil {
-		panic(fmt.Sprintf("go binary not found in path: %s", string(output)))
+		t.Log("Could not find go binary")
+		return ""
 	}
 	goBinary := string(output)
 	goBinary = strings.TrimSpace(string(goBinary))
