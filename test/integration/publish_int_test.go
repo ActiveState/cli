@@ -292,26 +292,6 @@ authors:
 						0,
 					},
 				},
-				{ // Must supply version
-					input{
-						[]string{
-							"--edit",
-							"--name", "editable",
-							"--description", "foo",
-						},
-						nil,
-						nil,
-						false,
-					},
-					expect{
-						[]string{
-							`You did not provide a unique version number`,
-						},
-						"",
-						true,
-						1,
-					},
-				},
 				{ // description editing not supported
 					input{
 						[]string{
@@ -325,7 +305,7 @@ authors:
 					},
 					expect{
 						[]string{
-							`You did not provide a unique version number`,
+							`Editing an ingredient description is not yet supported`,
 						},
 						"",
 						true,

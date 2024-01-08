@@ -158,18 +158,6 @@ func (r *Runner) Run(params *Params) error {
 
 	// Validate user input
 	if params.Edit {
-		// Validate that the version input is valid
-		// https://activestatef.atlassian.net/browse/DX-1885
-		if reqVars.Version == "" {
-			return locale.NewInputError("err_uploadingredient_edit_version_required")
-		} else {
-			for _, v := range ingredient.Versions {
-				if reqVars.Version == v.Version {
-					return locale.NewInputError("err_uploadingredient_edit_version_different")
-				}
-			}
-		}
-
 		// Description is not currently supported for edit
 		// https://activestatef.atlassian.net/browse/DX-1886
 		if reqVars.Description != ptr.From(ingredient.Ingredient.Description, "") {
