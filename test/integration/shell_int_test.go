@@ -32,16 +32,18 @@ func (suite *ShellIntegrationTestSuite) TestShell() {
 
 	cp := ts.SpawnWithOpts(
 		e2e.OptArgs("checkout", "ActiveState-CLI/small-python"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
-	cp.Expect("Checked out project")
+	cp.Expect("Checked out project", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
 
 	args := []string{"small-python", "ActiveState-CLI/small-python"}
 	for _, arg := range args {
 		cp := ts.SpawnWithOpts(
 			e2e.OptArgs("shell", arg),
+			e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 		)
-		cp.Expect("Activated")
+		cp.Expect("Activated", e2e.RuntimeSourcingTimeoutOpt)
 		cp.ExpectInput()
 
 		cp.SendLine("python3 --version")
