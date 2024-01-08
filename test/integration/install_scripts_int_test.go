@@ -99,6 +99,7 @@ func (suite *InstallScriptsIntegrationTestSuite) TestInstall() {
 				e2e.OptAppendEnv(constants.DisableRuntime + "=false"),
 				e2e.OptAppendEnv(fmt.Sprintf("%s=%s", constants.AppInstallDirOverrideEnvVarName, appInstallDir)),
 				e2e.OptAppendEnv(fmt.Sprintf("%s=FOO", constants.OverrideSessionTokenEnvVarName)),
+				e2e.OptAppendEnv(fmt.Sprintf("%s=false", constants.DisableActivateEventsEnvVarName)),
 			}
 			if runtime.GOOS == "windows" {
 				cmd = "powershell.exe"
