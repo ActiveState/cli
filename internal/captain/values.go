@@ -204,6 +204,8 @@ func (p *PackageValueNSRequired) Type() string {
 
 // PackagesValue is used to represent multiple PackageValue, this is used when a flag can be passed multiple times.
 type PackagesValue []PackageValue
+type DependsValue []PackageValue
+type FeaturesValue []PackageValue
 
 var _ FlagMarshaler = &PackagesValue{}
 

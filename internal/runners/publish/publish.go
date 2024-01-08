@@ -34,7 +34,8 @@ type Params struct {
 	Owner        string
 	Description  string
 	Authors      captain.UsersValue
-	Depends      captain.PackagesValue
+	Depends      captain.DependsValue
+	Features     captain.FeaturesValue
 	Filepath     string
 	MetaFilepath string
 	Edit         bool
@@ -250,6 +251,16 @@ func prepareRequestFromParams(r *request.PublishVariables, params *Params) error
 			r.Dependencies = append(
 				r.Dependencies,
 				request.PublishVariableDep{request.Dependency{Name: dep.Name, Namespace: dep.Namespace}, []request.Dependency{}},
+			)
+		}
+	}
+
+	if len(params.Features) != 0 {
+		r.Features = []request.PublishVariableFeature{}
+		for _, feature := range params.Features {
+			r.Features = append(
+				r.Features,
+				request.PublishVariableFeature{Name: feature.Name, Namespace: feature.Namespace, Version: feature.Version},
 			)
 		}
 	}
