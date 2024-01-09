@@ -11,6 +11,7 @@ import (
 func (c *Checkout) rationalizeError(err *error) {
 	var errAlreadyCheckedOut *ErrAlreadyCheckedOut
 	var errProjectNotFound *model.ErrProjectNotFound
+	var errNoPermssion *ErrNoPermission
 
 	switch {
 	case err == nil:
@@ -24,6 +25,11 @@ func (c *Checkout) rationalizeError(err *error) {
 		*err = errs.WrapUserFacing(*err,
 			locale.Tr("err_api_project_not_found", errProjectNotFound.Organization, errProjectNotFound.Project),
 			errs.SetIf(!c.auth.Authenticated(), errs.SetTips(locale.T("tip_private_project_auth"))),
+			errs.SetInput(),
+		)
+	case errors.As(*err, &errNoPermssion):
+		*err = errs.WrapUserFacing(*err,
+			locale.Tl("err_checkout_os_permissions", "You do not have permission to check out to '{{.V0}}'. Please try elsewhere.", errNoPermssion.Path),
 			errs.SetInput(),
 		)
 	}
