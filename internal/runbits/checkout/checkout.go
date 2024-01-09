@@ -13,6 +13,7 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/language"
+	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/runbits/git"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
@@ -148,6 +149,9 @@ func (r *Checkout) Run(ns *project.Namespaced, branchName, cachePath, targetPath
 			LegacyCommitID: commitID.String(), // remove in DX-2307
 		})
 		if err != nil {
+			if osutils.IsAccessDeniedError(err) {
+				return "", &ErrNoPermission{err, path}
+			}
 			return "", errs.Wrap(err, "Could not create projectfile")
 		}
 	}
