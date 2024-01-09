@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/stretchr/testify/suite"
@@ -84,7 +85,10 @@ func (suite *ImportIntegrationTestSuite) TestImport() {
 	user := ts.CreateNewUser()
 	namespace := fmt.Sprintf("%s/%s", user.Username, "Python3")
 
-	cp := ts.Spawn("init", "--language", "python", namespace, ts.Dirs.Work)
+	cp := ts.SpawnWithOpts(
+		e2e.OptArgs("init", "--language", "python", namespace, ts.Dirs.Work),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
+	)
 	cp.Expect("successfully initialized")
 	cp.ExpectExitCode(0)
 
