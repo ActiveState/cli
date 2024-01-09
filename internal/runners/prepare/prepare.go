@@ -12,6 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/globaldefault"
 	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/installation/storage"
@@ -63,7 +64,7 @@ func New(prime primeable) *Prepare {
 // This ensures that the installation is compatible with an updated State Tool installation
 func (r *Prepare) resetExecutors() error {
 	defaultProjectDir := r.cfg.GetString(constants.GlobalDefaultPrefname)
-	if defaultProjectDir == "" {
+	if defaultProjectDir == "" || !fileutils.TargetExists(defaultProjectDir) {
 		return nil
 	}
 
