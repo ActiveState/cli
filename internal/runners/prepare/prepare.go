@@ -2,6 +2,7 @@ package prepare
 
 import (
 	"fmt"
+	"os"
 	"runtime"
 
 	svcApp "github.com/ActiveState/cli/cmd/state-svc/app"
@@ -107,7 +108,7 @@ func (r *Prepare) Run(cmd *captain.Command) error {
 	}
 
 	if err := prepareCompletions(cmd, r.subshell); err != nil {
-		if !errs.Matches(err, &ErrorNotSupported{}) {
+		if !errs.Matches(err, &ErrorNotSupported{}) && !os.IsPermission(err) {
 			r.reportError(locale.Tl("err_prepare_generate_completions", "Could not generate completions script, error received: {{.V0}}.", err.Error()), err)
 		}
 	}
