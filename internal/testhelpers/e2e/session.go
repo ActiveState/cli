@@ -172,7 +172,7 @@ func New(t *testing.T, retainDirs bool, extraEnv ...string) *Session {
 func new(t *testing.T, retainDirs, updatePath bool, extraEnv ...string) *Session {
 	dirs, err := NewDirs("")
 	require.NoError(t, err)
-	env := sandboxedTestEnvironment(t, dirs, updatePath, extraEnv...)
+	env := sandboxedTestEnvironment(t, dirs, updatePath)
 
 	session := &Session{Dirs: dirs, Env: env, retainDirs: retainDirs, T: t}
 
