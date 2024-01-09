@@ -20,9 +20,6 @@ func sandboxedTestEnvironment(t *testing.T, dirs *Dirs, updatePath bool, extraEn
 		basePath = os.Getenv("PATH")
 		env = append(env, os.Environ()...)
 	}
-	if value := os.Getenv(constants.ActiveStateCIEnvVarName); value != "" {
-		env = append(env, fmt.Sprintf("%s=%s", constants.ActiveStateCIEnvVarName, value))
-	}
 
 	env = append(env, []string{
 		constants.ConfigEnvVarName + "=" + dirs.Config,
