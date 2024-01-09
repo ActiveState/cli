@@ -99,5 +99,10 @@ func fetchRecipe(proj *project.Project, commitID strfmt.UUID, platform string) (
 		commitID = *dcommitID
 	}
 
-	return model.FetchRawRecipeForCommitAndPlatform(commitID, proj.Owner(), proj.Name(), platform)
+	recipe, err := model.FetchRawRecipeForCommitAndPlatform(commitID, proj.Owner(), proj.Name(), platform)
+	if err != nil {
+		return "", locale.WrapError(err, "err_fetch_recipe", "Unable to fetch recipe")
+	}
+
+	return recipe, nil
 }
