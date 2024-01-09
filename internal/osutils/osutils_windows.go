@@ -38,7 +38,7 @@ func BashifyPathEnv(pathList string) (string, error) {
 	cmd.Env = []string{"PATH=" + pathList}
 	bashified, err := cmd.Output()
 	if err != nil {
-		return "", errs.Wrap(err, "Unable to bashify PATH: %s, output: %s", pathList, string(bashified))
+		return "", errs.Wrap(err, "Unable to bashify PATH: %s", pathList)
 	}
 	return string(bashified), nil
 }

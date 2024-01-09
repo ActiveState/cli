@@ -528,6 +528,3 @@ const PlatformApiPrintRequestsEnvVarName = "ACTIVESTATE_CLI_PLATFORM_API_PRINT_R
 
 // ActiveStateCIEnvVarName is the environment variable set when running in an ActiveState CI environment.
 const ActiveStateCIEnvVarName = "ACTIVESTATE_CI"
-
-// OverrideSandbox is the environment variable to set when overriding the sandbox for integration tests.
-const OverrideSandbox = "ACTIVESTATE_TEST_OVERRIDE_SANDBOX"

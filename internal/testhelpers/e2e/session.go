@@ -172,7 +172,57 @@ func New(t *testing.T, retainDirs bool, extraEnv ...string) *Session {
 func new(t *testing.T, retainDirs, updatePath bool, extraEnv ...string) *Session {
 	dirs, err := NewDirs("")
 	require.NoError(t, err)
-	env := sandboxedTestEnvironment(t, dirs, updatePath)
+	var env []string
+	env = append(env, os.Environ()...)
+	env = append(env, []string{
+		constants.ConfigEnvVarName + "=" + dirs.Config,
+		constants.CacheEnvVarName + "=" + dirs.Cache,
+		constants.DisableRuntime + "=true",
+		constants.ProjectEnvVarName + "=",
+		constants.E2ETestEnvVarName + "=true",
+		constants.DisableUpdates + "=true",
+		constants.DisableProjectMigrationPrompt + "=true",
+		constants.OptinUnstableEnvVarName + "=true",
+		constants.ServiceSockDir + "=" + dirs.SockRoot,
+		constants.HomeEnvVarName + "=" + dirs.HomeDir,
+		"NO_COLOR=true",
+	}...)
+
+	if updatePath {
+		// add bin path
+		// Remove release state tool installation from PATH in tests
+		// This is a workaround as our test sessions are not compeltely
+		// sandboxed. This should be addressed in: https://activestatef.atlassian.net/browse/DX-2285
+		oldPath, _ := os.LookupEnv("PATH")
+		installPath, err := installation.InstallPathForChannel("release")
+		require.NoError(t, err)
+
+		binPath := filepath.Join(installPath, "bin")
+		oldPath = strings.Replace(oldPath, binPath+string(os.PathListSeparator), "", -1)
+		newPath := fmt.Sprintf(
+			"PATH=%s%s%s",
+			dirs.Bin, string(os.PathListSeparator), oldPath,
+		)
+		env = append(env, newPath)
+		t.Setenv("PATH", newPath)
+
+		cfg, err := config.New()
+		require.NoError(t, err)
+
+		// In order to ensure that the release state tool does not appear on the PATH
+		// when a new subshell is started we remove the installation entries from the
+		// rc file. This is added back later in the session's Close method.
+		// Again, this is a workaround to be addressed in: https://activestatef.atlassian.net/browse/DX-2285
+		if runtime.GOOS != "windows" {
+			s := bash.SubShell{}
+			err = s.CleanUserEnv(cfg, sscommon.InstallID, false)
+			require.NoError(t, err)
+		}
+		t.Setenv(constants.HomeEnvVarName, dirs.HomeDir)
+	}
+
+	// add session environment variables
+	env = append(env, extraEnv...)
 
 	session := &Session{Dirs: dirs, Env: env, retainDirs: retainDirs, T: t}
 
@@ -181,6 +231,14 @@ func new(t *testing.T, retainDirs, updatePath bool, extraEnv ...string) *Session
 	session.Exe = session.copyExeToBinDir(exe)
 	session.SvcExe = session.copyExeToBinDir(svcExe)
 	session.ExecutorExe = session.copyExeToBinDir(execExe)
+
+	// Set up environment for test runs. This is separate
+	// from the environment for the session itself.
+	// Setting environment variables here allows helper
+	// functions access to them.
+	// This is a workaround as our test sessions are not compeltely
+	// sandboxed. This should be addressed in: https://activestatef.atlassian.net/browse/DX-2285
+	t.Setenv(constants.HomeEnvVarName, dirs.HomeDir)
 
 	err = fileutils.Touch(filepath.Join(dirs.Base, installation.InstallDirMarker))
 	require.NoError(session.T, err)
@@ -295,6 +353,7 @@ func (s *Session) SpawnCmdWithOpts(exe string, optSetters ...SpawnOptSetter) *Sp
 	cmd := exec.Command(shell, args...)
 
 	cmd.Env = spawnOpts.Env
+
 	if spawnOpts.Dir != "" {
 		cmd.Dir = spawnOpts.Dir
 	}
@@ -712,8 +771,6 @@ func (s *Session) SetupRCFile() {
 	if runtime.GOOS == "windows" {
 		return
 	}
-	s.T.Setenv("HOME", s.Dirs.HomeDir)
-	defer s.T.Setenv("HOME", os.Getenv("HOME"))
 
 	cfg, err := config.New()
 	require.NoError(s.T, err)
@@ -732,7 +789,7 @@ func (s *Session) SetupRCFileCustom(subshell subshell.SubShell) {
 	if fileutils.TargetExists(filepath.Join(s.Dirs.HomeDir, filepath.Base(rcFile))) {
 		err = fileutils.CopyFile(rcFile, filepath.Join(s.Dirs.HomeDir, filepath.Base(rcFile)))
 	} else {
-		err = fileutils.Touch(filepath.Join(s.Dirs.HomeDir, filepath.Base(rcFile)))
+		err = fileutils.Touch(rcFile)
 	}
 	require.NoError(s.T, err)
 }
