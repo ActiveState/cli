@@ -60,7 +60,7 @@ func autoUpdate(svc *model.SvcModel, args []string, cfg *config.Instance, an ana
 	if !isEnabled(cfg) {
 		logging.Debug("Not performing autoupdates because user turned off autoupdates.")
 		an.EventWithLabel(anaConst.CatUpdates, anaConst.ActShouldUpdate, anaConst.UpdateLabelDisabledConfig)
-		out.Notice(output.Title(locale.Tl("update_available_header", "Auto Update")))
+		out.Notice(output.Title(locale.T("update_available_header")))
 		out.Notice(locale.Tr("update_available", constants.Version, avUpdate.Version))
 		return false, nil
 	}

@@ -57,6 +57,7 @@ func (suite *UpdateIntegrationTestSuite) env(disableUpdates, forceUpdate bool) [
 	}
 
 	if forceUpdate {
+		env = append(env, constants.TestAutoUpdateEnvVarName+"=true")
 		env = append(env, constants.ForceUpdateEnvVarName+"=true")
 	}
 
@@ -102,6 +103,11 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateAvailable() {
 
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
+
+	cfg, err := config.NewCustom(ts.Dirs.Config, singlethread.New(), true)
+	suite.Require().NoError(err)
+	defer cfg.Close()
+	cfg.Set(constants.AutoUpdateConfigKey, "false")
 
 	search, found := "Update Available", false
 	for i := 0; i < 4; i++ {
@@ -296,7 +302,6 @@ func (suite *UpdateIntegrationTestSuite) testAutoUpdate(ts *e2e.Session, baseDir
 		e2e.OptArgs("--version"),
 		e2e.OptAppendEnv(suite.env(false, true)...),
 		e2e.OptAppendEnv(fmt.Sprintf("HOME=%s", fakeHome)),
-		e2e.OptAppendEnv(constants.TestAutoUpdateEnvVarName + "=true"),
 	}
 	if opts != nil {
 		spawnOpts = append(spawnOpts, opts...)
