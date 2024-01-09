@@ -376,10 +376,18 @@ func (suite *PackageIntegrationTestSuite) TestPackage_Duplicate() {
 	cp.Expect("Checked out project")
 	cp.ExpectExitCode(0)
 
-	cp = ts.Spawn("install", "requests") // install
+	// install
+	cp = ts.SpawnWithOpts(
+		e2e.OptArgs("install", "requests"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
+	)
 	cp.ExpectExitCode(0)
 
-	cp = ts.Spawn("install", "requests") // install again
+	// install again
+	cp = ts.SpawnWithOpts(
+		e2e.OptArgs("install", "requests"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
+	)
 	cp.Expect("already installed")
 	cp.ExpectNotExitCode(0)
 	ts.IgnoreLogErrors()
