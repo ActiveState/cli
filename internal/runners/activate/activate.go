@@ -22,7 +22,6 @@ import (
 	"github.com/ActiveState/cli/internal/process"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runbits/activation"
-	"github.com/ActiveState/cli/internal/runbits/checker"
 	"github.com/ActiveState/cli/internal/runbits/checkout"
 	"github.com/ActiveState/cli/internal/runbits/commitmediator"
 	"github.com/ActiveState/cli/internal/runbits/findproject"
@@ -82,8 +81,6 @@ func NewActivate(prime primeable) *Activate {
 
 func (r *Activate) Run(params *ActivateParams) (rerr error) {
 	logging.Debug("Activate %v, %v", params.Namespace, params.PreferredPath)
-
-	checker.RunUpdateNotifier(r.analytics, r.svcModel, r.out)
 
 	r.out.Notice(output.Title(locale.T("info_activating_state")))
 
