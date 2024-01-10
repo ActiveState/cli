@@ -37,7 +37,7 @@ func platformSpecificEnv(dirs *Dirs) []string {
 		// This is requried for some tests in order to get the correct powershell output.
 		fmt.Sprintf("PSModulePath=%s", os.Getenv("PSModulePath")),
 		fmt.Sprintf("LOCALAPPDATA=%s", dirs.TempDir),
-		fmt.Sprintf("%s=false", constants.DisableActivateEventsEnvVarName),
+		fmt.Sprintf("%s=true", constants.DisableActivateEventsEnvVarName),
 	}
 }
 
