@@ -5,6 +5,8 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/analytics"
+	anaConst "github.com/ActiveState/cli/internal/analytics/constants"
+	"github.com/ActiveState/cli/internal/analytics/dimensions"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
@@ -13,6 +15,7 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
+	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/runbits"
 	buildscriptRunbits "github.com/ActiveState/cli/internal/runbits/buildscript"
 	"github.com/ActiveState/cli/internal/runbits/commit"
@@ -117,20 +120,24 @@ func (p *Pull) Run(params *PullParams) (rerr error) {
 		// the remoteCommit ID. The commitID returned from MergeCommit with this
 		// strategy should just be the remote commit ID.
 		// If this call fails then we will try a recursive merge.
+		strategy := bpModel.MergeCommitStrategyFastForward
+
 		bp := model.NewBuildPlannerModel(p.auth)
 		params := &model.MergeCommitParams{
 			Owner:     remoteProject.Owner,
 			Project:   remoteProject.Project,
 			TargetRef: localCommit.String(),
 			OtherRef:  remoteCommit.String(),
-			Strategy:  bpModel.MergeCommitStrategyFastForward,
+			Strategy:  strategy,
 		}
 
 		resultCommit, mergeErr := bp.MergeCommit(params)
 		if mergeErr != nil {
 			logging.Debug("Merge with fast-forward failed with error: %s, trying recursive overwrite", mergeErr.Error())
-			c, err := p.performMerge(*remoteCommit, *localCommit, remoteProject, p.project.BranchName())
+			strategy = bpModel.MergeCommitStrategyRecursiveOverwriteOnConflict
+			c, err := p.performMerge(*remoteCommit, *localCommit, remoteProject, p.project.BranchName(), strategy)
 			if err != nil {
+				p.notifyMergeStrategy(anaConst.LabelVcsConflictMergeStrategyFailed, *localCommit, remoteProject)
 				return errs.Wrap(err, "performing merge commit failed")
 			}
 			resultingCommit = &c
@@ -138,6 +145,8 @@ func (p *Pull) Run(params *PullParams) (rerr error) {
 			logging.Debug("Fast-forward merge succeeded, setting commit ID to %s", resultCommit.String())
 			resultingCommit = &resultCommit
 		}
+
+		p.notifyMergeStrategy(string(strategy), *localCommit, remoteProject)
 	}
 
 	commitID, err := commitmediator.Get(p.project)
@@ -170,7 +179,7 @@ func (p *Pull) Run(params *PullParams) (rerr error) {
 	return nil
 }
 
-func (p *Pull) performMerge(remoteCommit, localCommit strfmt.UUID, namespace *project.Namespaced, branchName string) (strfmt.UUID, error) {
+func (p *Pull) performMerge(remoteCommit, localCommit strfmt.UUID, namespace *project.Namespaced, branchName string, strategy bpModel.MergeStrategy) (strfmt.UUID, error) {
 	// Re-enable in DX-2307.
 	//err := p.mergeBuildScript(strategies, remoteCommit)
 	//if err != nil {
@@ -189,7 +198,7 @@ func (p *Pull) performMerge(remoteCommit, localCommit strfmt.UUID, namespace *pr
 		Project:   namespace.Project,
 		TargetRef: localCommit.String(),
 		OtherRef:  remoteCommit.String(),
-		Strategy:  bpModel.MergeCommitStrategyRecursiveOverwriteOnConflict,
+		Strategy:  strategy,
 	}
 	resultCommit, err := bp.MergeCommit(params)
 	if err != nil {
@@ -252,4 +261,11 @@ func resolveRemoteProject(prj *project.Project) (*project.Namespaced, error) {
 	}
 
 	return ns, nil
+}
+
+func (p *Pull) notifyMergeStrategy(strategy string, commitID strfmt.UUID, namespace *project.Namespaced) {
+	p.analytics.EventWithLabel(anaConst.CatInteractions, anaConst.ActVcsConflict, strategy, &dimensions.Values{
+		CommitID:         ptr.To(commitID.String()),
+		ProjectNameSpace: ptr.To(namespace.String()),
+	})
 }
