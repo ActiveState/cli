@@ -6,10 +6,13 @@ import (
 	"runtime"
 	"testing"
 
+	"github.com/ActiveState/cli/internal/analytics/client/sync/reporters"
+	anaConst "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
+	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/buildscript"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/cli/pkg/projectfile" // remove in DX-2307
@@ -37,6 +40,8 @@ func (suite *PullIntegrationTestSuite) TestPull() {
 	//projectConfigDir := filepath.Join(ts.Dirs.Work, constants.ProjectConfigDirName)
 	//suite.Require().True(fileutils.DirExists(projectConfigDir))
 	//suite.Assert().True(fileutils.FileExists(filepath.Join(projectConfigDir, constants.CommitIdFileName)))
+
+	suite.assertMergeStrategyNotification(ts, string(bpModel.MergeCommitStrategyFastForward))
 
 	cp = ts.Spawn("pull")
 	cp.Expect("already up to date")
@@ -83,6 +88,8 @@ func (suite *PullIntegrationTestSuite) TestPull_Merge() {
 	cp = ts.SpawnCmd("bash", "-c", fmt.Sprintf("cd %s && %s history | head -n 10", wd, exe))
 	cp.Expect("Merged")
 	cp.ExpectExitCode(0)
+
+	suite.assertMergeStrategyNotification(ts, string(bpModel.MergeCommitStrategyRecursiveOverwriteOnConflict))
 }
 
 func (suite *PullIntegrationTestSuite) TestMergeBuildScript() {
@@ -122,6 +129,14 @@ func (suite *PullIntegrationTestSuite) TestMergeBuildScript() {
 	suite.Assert().Contains(string(bytes), "<<<<<<<", "No merge conflict markers are in build script")
 	suite.Assert().Contains(string(bytes), "=======", "No merge conflict markers are in build script")
 	suite.Assert().Contains(string(bytes), ">>>>>>>", "No merge conflict markers are in build script")
+}
+
+func (suite *PullIntegrationTestSuite) assertMergeStrategyNotification(ts *e2e.Session, strategy string) {
+	conflictEvents := filterEvents(parseAnalyticsEvents(suite, ts), func(e reporters.TestLogEntry) bool {
+		return e.Category == anaConst.CatInteractions && e.Action == anaConst.ActVcsConflict
+	})
+	suite.Assert().Equal(1, len(conflictEvents), "Should have a single VCS Conflict event report")
+	suite.Assert().Equal(strategy, conflictEvents[0].Label)
 }
 
 func TestPullIntegrationTestSuite(t *testing.T) {
