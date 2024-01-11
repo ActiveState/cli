@@ -77,6 +77,7 @@ urllib3>=1.21.1,<=1.26.5
 )
 
 func (suite *ImportIntegrationTestSuite) TestImport() {
+	suite.T().Skip("Skipping import test until DX-2444 is resolved: https://activestatef.atlassian.net/browse/DX-2444")
 	suite.OnlyRunForTags(tagsuite.Import)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
