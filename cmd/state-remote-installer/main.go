@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"runtime/debug"
 	"syscall"
 	"time"
@@ -39,6 +40,8 @@ type Params struct {
 func newParams() *Params {
 	return &Params{}
 }
+
+var filenameRe = regexp.MustCompile(`(?P<name>[^/\\]+?)_(?P<webclientId>[^/\\_.]+)(\.(?P<ext>[^.]+))?$`)
 
 func main() {
 	var exitCode int
@@ -96,7 +99,15 @@ func main() {
 	}
 
 	// Store sessionToken to config
-	err = cfg.Set(anaConst.CfgSessionToken, "remote_"+constants.RemoteInstallerVersion)
+	webclientId := "remote_" + constants.RemoteInstallerVersion
+	if matches := filenameRe.FindStringSubmatch(os.Args[0]); matches != nil {
+		if index := filenameRe.SubexpIndex("webclientId"); index != -1 {
+			webclientId = matches[index]
+		} else {
+			multilog.Error("Invalid subexpression ID for webclient ID")
+		}
+	}
+	err = cfg.Set(anaConst.CfgSessionToken, webclientId)
 	if err != nil {
 		logging.Error("Unable to set session token: " + errs.JoinMessage(err))
 	}
