@@ -34,8 +34,8 @@ type Params struct {
 	Owner        string
 	Description  string
 	Authors      captain.UsersValue
-	Depends      captain.DependsValue
-	Features     captain.FeaturesValue
+	Depends      captain.PackagesValue
+	Features     captain.PackagesValue
 	Filepath     string
 	MetaFilepath string
 	Edit         bool
