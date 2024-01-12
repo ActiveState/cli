@@ -9,6 +9,7 @@ func CreateProject(owner, project string, private bool, expr *buildexpression.Bu
 		"private":      private,
 		"expr":         expr,
 		"description":  description,
+		"atTime":       "", // default to the latest timestamp
 	}}
 }
 
