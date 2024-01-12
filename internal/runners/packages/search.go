@@ -153,6 +153,19 @@ type searchOutput []searchPackageRow
 func formatSearchResults(packages []*model.IngredientAndVersion, showNamespace bool) *searchOutput {
 	rows := make(searchOutput, len(packages))
 
+	ingredients := make([]*model.VulnerabilityIngredient, len(packages))
+	for i, pack := range packages {
+		ingredients[i] = &model.VulnerabilityIngredient{
+			Namespace: *pack.Ingredient.PrimaryNamespace,
+			Name:      *pack.Ingredient.Name,
+			Version:   pack.Version,
+		}
+	}
+	_, err := model.FetchVulnerabilitiesForIngredients(ingredients)
+	if err != nil {
+		logging.Error("Unable to fetch vulnerabilities for packages: %v", err)
+	}
+
 	filterNilStr := func(s *string) string {
 		if s == nil {
 			return ""
