@@ -6,15 +6,22 @@ import (
 	"sort"
 	"strings"
 
-	gqlModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model"
 	"github.com/go-openapi/strfmt"
 
+	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/runbits/commitmediator"
+	runbitsRuntime "github.com/ActiveState/cli/internal/runbits/runtime"
+	gqlModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/platform/runtime"
+	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
@@ -27,15 +34,21 @@ type ListRunParams struct {
 
 // List manages the listing execution context.
 type List struct {
-	out     output.Outputer
-	project *project.Project
+	out       output.Outputer
+	project   *project.Project
+	analytics analytics.Dispatcher
+	svcModel  *model.SvcModel
+	auth      *authentication.Auth
 }
 
 // NewList prepares a list execution context for use.
 func NewList(prime primeable) *List {
 	return &List{
-		out:     prime.Output(),
-		project: prime.Project(),
+		out:       prime.Output(),
+		project:   prime.Project(),
+		analytics: prime.Analytics(),
+		svcModel:  prime.SvcModel(),
+		auth:      prime.Auth(),
 	}
 }
 
@@ -72,7 +85,22 @@ func (l *List) Run(params ListRunParams, nstype model.NamespaceType) error {
 		return locale.WrapError(err, fmt.Sprintf("%s_err_cannot_fetch_checkpoint", nstype))
 	}
 
-	rows := newFilteredRequirementsTable(model.FilterCheckpointNamespace(checkpoint, model.NamespacePackage, model.NamespaceBundle), params.Name, nstype)
+	var rt *runtime.Runtime
+	if l.project != nil && params.Project == "" {
+		rt, err = runbitsRuntime.NewFromProject(l.project, target.TriggerPackage, l.analytics, l.svcModel, l.out, l.auth)
+		if err != nil {
+			multilog.Error("Unable to initialize runtime for version resolution: %v", errs.JoinMessage(err))
+		}
+	}
+
+	var ns *model.Namespace
+	if language, err := model.LanguageByCommit(*commit); err == nil {
+		ns = ptr.To(model.NewNamespacePkgOrBundle(language.Name, nstype))
+	} else {
+		multilog.Error("Unable to get language from project: %v", errs.JoinMessage(err))
+	}
+
+	rows := newFilteredRequirementsTable(model.FilterCheckpointNamespace(checkpoint, model.NamespacePackage, model.NamespaceBundle), params.Name, nstype, rt, ns)
 	var plainOutput interface{} = rows
 	if len(rows) == 0 {
 		plainOutput = locale.T(fmt.Sprintf("%s_list_no_packages", nstype.String()))
@@ -154,7 +182,7 @@ type packageRow struct {
 	Version string `json:"version" locale:"package_version,Version"`
 }
 
-func newFilteredRequirementsTable(requirements []*gqlModel.Requirement, filter string, nstype model.NamespaceType) []packageRow {
+func newFilteredRequirementsTable(requirements []*gqlModel.Requirement, filter string, nstype model.NamespaceType, rt *runtime.Runtime, ns *model.Namespace) []packageRow {
 	if requirements == nil {
 		logging.Debug("requirements is nil")
 		return nil
@@ -172,7 +200,16 @@ func newFilteredRequirementsTable(requirements []*gqlModel.Requirement, filter s
 
 		versionConstraint := req.VersionConstraint
 		if versionConstraint == "" {
-			versionConstraint = "Auto"
+			if rt == nil || ns == nil {
+				versionConstraint = locale.T("constraint_auto")
+			} else {
+				if resolvedVersion, err := rt.ResolveArtifactVersion(*ns, req.Requirement); err == nil {
+					versionConstraint = locale.Tr("constraint_auto_resolved", resolvedVersion)
+				} else {
+					multilog.Error("Unable to resolve version for '%s' in namespace '%s'", req.Requirement, req.Namespace)
+					versionConstraint = locale.T("constraint_auto")
+				}
+			}
 		}
 
 		row := packageRow{

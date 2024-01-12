@@ -795,6 +795,10 @@ change_removed:
   other: "[ERROR]-[/RESET] {{.V0}}"
 change_updated:
   other: "[ACTIONABLE]•[/RESET] {{.V0}} ({{.V1}} → {{.V2}})"
+constraint_auto:
+  other: Auto
+constraint_auto_resolved:
+  other: Auto → {{.V0}}
 namespace_label_platform:
   other: "Platform"
 namespace_label_preplatform:

@@ -446,7 +446,7 @@ func (suite *PackageIntegrationTestSuite) TestJSON() {
 	AssertValidJSON(suite.T(), cp)
 
 	cp = ts.Spawn("packages", "-o", "json")
-	cp.Expect(`[{"package":"Text-CSV","version":"Auto"}]`)
+	cp.Expect(`[{"package":"Text-CSV","version":"Auto →`)
 	cp.ExpectExitCode(0)
 	AssertValidJSON(suite.T(), cp)
 
