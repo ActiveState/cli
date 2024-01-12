@@ -230,11 +230,6 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 		return errs.Wrap(err, "Unable to determine Platform ID from %s", model.HostPlatform)
 	}
 
-	timestamp, err := model.FetchLatestTimeStamp()
-	if err != nil {
-		return errs.Wrap(err, "Unable to fetch latest timestamp")
-	}
-
 	bp := model.NewBuildPlannerModel(r.auth)
 	commitID, err := bp.CreateProject(&model.CreateProjectParams{
 		Owner:       namespace.Owner,
@@ -243,7 +238,6 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 		Language:    lang.Requirement(),
 		Version:     version,
 		Private:     params.Private,
-		Timestamp:   strfmt.DateTime(timestamp),
 		Description: locale.T("commit_message_add_initial"),
 	})
 	if err != nil {
