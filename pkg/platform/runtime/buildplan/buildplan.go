@@ -1,7 +1,6 @@
 package buildplan
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/errs"
@@ -167,7 +166,6 @@ func filterPlatformTerminals(build *model.Build, cfg platformModel.Configurable)
 	}
 
 	// Get the platform ID for the current host platform
-	fmt.Println("Config in filterPlatformTerminals:", cfg)
 	platformID, err := platformModel.FilterCurrentPlatform(platformModel.HostPlatform, bpPlatforms, cfg)
 	if err != nil {
 		return nil, locale.WrapError(err, "err_filter_current_platform")
