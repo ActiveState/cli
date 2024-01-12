@@ -356,3 +356,25 @@ func (r *Runtime) ExecutableDirs() (envdef.ExecutablePaths, error) {
 func IsRuntimeDir(dir string) bool {
 	return store.New(dir).HasMarker()
 }
+
+// ResolveArtifactVersion returns the actual version number of the artifact in this runtime with
+// the given namespace and name.
+func (r *Runtime) ResolveArtifactVersion(namespace model.Namespace, name string) (string, error) {
+	runtimeStore := r.store
+	if runtimeStore == nil {
+		runtimeStore = store.New(r.target.Dir())
+	}
+
+	plan, err := runtimeStore.BuildPlan()
+	if err != nil {
+		return "", errs.Wrap(err, "Unable to fetch build plan")
+	}
+
+	for _, source := range plan.Sources {
+		if source.Namespace == namespace.String() && source.Name == name {
+			return source.Version, nil
+		}
+	}
+
+	return "", errs.New("Artifact '%s' does not exist in runtime", name)
+}
