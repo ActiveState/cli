@@ -444,7 +444,7 @@ const ReportErrorsConfig = "report.errors"
 const ReportAnalyticsConfig = "report.analytics"
 
 // PreferredGlibcVersionConfig is the config key used to determine the preferred glibc version
-const PreferredGlibcVersionConfig = "runimte.preferred.glibc"
+const PreferredGlibcVersionConfig = "runtime.preferred.glibc"
 
 // SvcAppName is the name we give our state-svc application
 const SvcAppName = "State Service"
