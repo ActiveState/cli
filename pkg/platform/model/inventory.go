@@ -9,15 +9,21 @@ import (
 
 	"github.com/go-openapi/strfmt"
 
+	"github.com/ActiveState/cli/internal/config"
+	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
+	configMediator "github.com/ActiveState/cli/internal/mediators/config"
 	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_client/inventory_operations"
 	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
-	"github.com/ActiveState/cli/pkg/sysinfo"
 )
+
+func init() {
+	configMediator.RegisterOption(constants.PreferredGlibcVersionConfig, configMediator.String, configMediator.EmptyEvent, configMediator.EmptyEvent)
+}
 
 type ErrNoMatchingPlatform struct {
 	HostPlatform string
@@ -234,7 +240,10 @@ func filterPlatformIDs(hostPlatform, hostArch string, platformIDs []strfmt.UUID)
 		return nil, err
 	}
 
-	libcVersion := fetchLibcVersion()
+	libcVersion, err := fetchLibcVersion()
+	if err != nil {
+		return nil, errs.Wrap(err, "failed to fetch libc version")
+	}
 
 	var pids []strfmt.UUID
 	var fallback []strfmt.UUID
@@ -284,17 +293,17 @@ func filterPlatformIDs(hostPlatform, hostArch string, platformIDs []strfmt.UUID)
 	return nil, &ErrNoMatchingPlatform{hostPlatform, hostArch, libcVersion}
 }
 
-func fetchLibcVersion() string {
+func fetchLibcVersion() (string, error) {
 	if runtime.GOOS != "linux" {
-		return ""
+		return "", nil
 	}
 
-	libcInfo := sysinfo.GetRequestedLibcInfo()
-	if libcInfo == nil {
-		return ""
+	cfg, err := config.New()
+	if err != nil {
+		return "", errs.Wrap(err, "failed to load config")
 	}
 
-	return libcInfo.Version()
+	return cfg.GetString(constants.PreferredGlibcVersionConfig), nil
 }
 
 func FetchPlatformByUID(uid strfmt.UUID) (*Platform, error) {
