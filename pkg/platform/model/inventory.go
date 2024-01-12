@@ -9,7 +9,6 @@ import (
 
 	"github.com/go-openapi/strfmt"
 
-	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
@@ -23,6 +22,10 @@ import (
 
 func init() {
 	configMediator.RegisterOption(constants.PreferredGlibcVersionConfig, configMediator.String, configMediator.EmptyEvent, configMediator.EmptyEvent)
+}
+
+type Configurable interface {
+	GetString(key string) string
 }
 
 type ErrNoMatchingPlatform struct {
@@ -234,13 +237,13 @@ func FetchPlatformsForCommit(commitID strfmt.UUID) ([]*Platform, error) {
 	return platforms, nil
 }
 
-func filterPlatformIDs(hostPlatform, hostArch string, platformIDs []strfmt.UUID) ([]strfmt.UUID, error) {
+func filterPlatformIDs(hostPlatform, hostArch string, platformIDs []strfmt.UUID, cfg Configurable) ([]strfmt.UUID, error) {
 	runtimePlatforms, err := FetchPlatforms()
 	if err != nil {
 		return nil, err
 	}
 
-	libcVersion, err := fetchLibcVersion()
+	libcVersion, err := fetchLibcVersion(cfg)
 	if err != nil {
 		return nil, errs.Wrap(err, "failed to fetch libc version")
 	}
@@ -293,14 +296,9 @@ func filterPlatformIDs(hostPlatform, hostArch string, platformIDs []strfmt.UUID)
 	return nil, &ErrNoMatchingPlatform{hostPlatform, hostArch, libcVersion}
 }
 
-func fetchLibcVersion() (string, error) {
+func fetchLibcVersion(cfg Configurable) (string, error) {
 	if runtime.GOOS != "linux" {
 		return "", nil
-	}
-
-	cfg, err := config.New()
-	if err != nil {
-		return "", errs.Wrap(err, "failed to load config")
 	}
 
 	return cfg.GetString(constants.PreferredGlibcVersionConfig), nil

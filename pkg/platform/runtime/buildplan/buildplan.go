@@ -17,22 +17,23 @@ type ArtifactListing struct {
 	runtimeClosure   artifact.Map
 	buildtimeClosure artifact.Map
 	artifactIDs      []artifact.ArtifactID
+	cfg              platformModel.Configurable
 }
 
 type ArtifactError struct {
 	*locale.LocalizedError
 }
 
-func NewArtifactListing(build *model.Build, buildtimeClosure bool) (*ArtifactListing, error) {
+func NewArtifactListing(build *model.Build, buildtimeClosure bool, cfg platformModel.Configurable) (*ArtifactListing, error) {
 	al := &ArtifactListing{build: build}
 	if buildtimeClosure {
-		buildtimeClosure, err := newMapFromBuildPlan(al.build, true)
+		buildtimeClosure, err := newMapFromBuildPlan(al.build, true, cfg)
 		if err != nil {
 			return nil, errs.Wrap(err, "Could not create buildtime closure")
 		}
 		al.buildtimeClosure = buildtimeClosure
 	} else {
-		runtimeClosure, err := newMapFromBuildPlan(al.build, false)
+		runtimeClosure, err := newMapFromBuildPlan(al.build, false, cfg)
 		if err != nil {
 			return nil, errs.Wrap(err, "Could not create runtime closure")
 		}
@@ -47,7 +48,7 @@ func (al *ArtifactListing) RuntimeClosure() (artifact.Map, error) {
 		return al.runtimeClosure, nil
 	}
 
-	runtimeClosure, err := newMapFromBuildPlan(al.build, false)
+	runtimeClosure, err := newMapFromBuildPlan(al.build, false, al.cfg)
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not create runtime closure")
 	}
@@ -61,7 +62,7 @@ func (al *ArtifactListing) BuildtimeClosure() (artifact.Map, error) {
 		return al.buildtimeClosure, nil
 	}
 
-	buildtimeClosure, err := newMapFromBuildPlan(al.build, true)
+	buildtimeClosure, err := newMapFromBuildPlan(al.build, true, al.cfg)
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not create buildtime closure")
 	}
@@ -104,7 +105,7 @@ func (al *ArtifactListing) ArtifactIDs(buildtimeClosure bool) ([]artifact.Artifa
 // Setting calculateBuildtimeClosure as true calculates the artifact map with the buildtime
 // dependencies. This is different from the runtime dependency calculation as it
 // includes ALL of the input artifacts of the step that generated each artifact.
-func newMapFromBuildPlan(build *model.Build, calculateBuildtimeClosure bool) (artifact.Map, error) {
+func newMapFromBuildPlan(build *model.Build, calculateBuildtimeClosure bool, cfg platformModel.Configurable) (artifact.Map, error) {
 	res := make(artifact.Map)
 
 	lookup := make(map[strfmt.UUID]interface{})
@@ -119,7 +120,7 @@ func newMapFromBuildPlan(build *model.Build, calculateBuildtimeClosure bool) (ar
 		lookup[source.NodeID] = source
 	}
 
-	filtered, err := filterPlatformTerminals(build)
+	filtered, err := filterPlatformTerminals(build, cfg)
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not filter terminals")
 	}
@@ -153,7 +154,7 @@ func newMapFromBuildPlan(build *model.Build, calculateBuildtimeClosure bool) (ar
 
 // filterPlatformTerminals filters the build terminal nodes to only include
 // terminals that are for the current host platform.
-func filterPlatformTerminals(build *model.Build) ([]*model.NamedTarget, error) {
+func filterPlatformTerminals(build *model.Build, cfg platformModel.Configurable) ([]*model.NamedTarget, error) {
 	// Extract the available platforms from the build plan
 	// We are only interested in terminals with the platform tag
 	var bpPlatforms []strfmt.UUID
@@ -165,7 +166,7 @@ func filterPlatformTerminals(build *model.Build) ([]*model.NamedTarget, error) {
 	}
 
 	// Get the platform ID for the current host platform
-	platformID, err := platformModel.FilterCurrentPlatform(platformModel.HostPlatform, bpPlatforms)
+	platformID, err := platformModel.FilterCurrentPlatform(platformModel.HostPlatform, bpPlatforms, cfg)
 	if err != nil {
 		return nil, locale.WrapError(err, "err_filter_current_platform")
 	}
@@ -404,8 +405,8 @@ func RecursiveDependenciesFor(a artifact.ArtifactID, artifacts artifact.Map) []a
 
 // NewMapFromBuildPlan creates an artifact map from a build plan
 // where the key is the artifact name rather than the artifact ID.
-func NewNamedMapFromBuildPlan(build *model.Build, buildtimeClosure bool) (artifact.NamedMap, error) {
-	am, err := newMapFromBuildPlan(build, buildtimeClosure)
+func NewNamedMapFromBuildPlan(build *model.Build, buildtimeClosure bool, cfg platformModel.Configurable) (artifact.NamedMap, error) {
+	am, err := newMapFromBuildPlan(build, buildtimeClosure, cfg)
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not create artifact map")
 	}
