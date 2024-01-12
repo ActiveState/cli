@@ -18,6 +18,7 @@ type ImportIntegrationTestSuite struct {
 }
 
 func (suite *ImportIntegrationTestSuite) TestImport_detached() {
+	suite.T().Skip("Skipping import test until DX-2444 is resolved: https://activestatef.atlassian.net/browse/DX-2444")
 	suite.OnlyRunForTags(tagsuite.Import)
 	if runtime.GOOS == "darwin" {
 		suite.T().Skip("Skipping mac for now as the builds are still too unreliable")
