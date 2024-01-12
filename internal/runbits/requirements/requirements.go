@@ -239,15 +239,6 @@ func (r *RequirementOperation) ExecuteRequirementOperation(
 		}
 	}
 
-	if ts == nil {
-		latest, err := model.FetchLatestTimeStamp()
-		if err != nil {
-			return errs.Wrap(err, "Could not fetch latest timestamp")
-		}
-		ts = &latest
-	}
-	timestamp := strfmt.DateTime(*ts)
-
 	name, version, err := model.ResolveRequirementNameAndVersion(requirementName, requirementVersion, requirementBitWidth, *ns)
 	if err != nil {
 		return errs.Wrap(err, "Could not resolve requirement name and version")
@@ -267,7 +258,6 @@ func (r *RequirementOperation) ExecuteRequirementOperation(
 		RequirementVersion:   requirements,
 		RequirementNamespace: *ns,
 		Operation:            operation,
-		TimeStamp:            &timestamp,
 	}
 
 	bp := model.NewBuildPlannerModel(r.Auth)
