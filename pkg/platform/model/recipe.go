@@ -66,21 +66,21 @@ func init() {
 }
 
 // FetchRawRecipeForCommit returns a recipe from a project based off a commitID
-func FetchRawRecipeForCommit(commitID strfmt.UUID, owner, project string) (string, error) {
-	return fetchRawRecipe(commitID, owner, project, nil)
+func FetchRawRecipeForCommit(commitID strfmt.UUID, owner, project string, cfg Configurable) (string, error) {
+	return fetchRawRecipe(commitID, owner, project, nil, cfg)
 }
 
 // FetchRawRecipeForCommitAndPlatform returns a recipe from a project based off a commitID and platform
-func FetchRawRecipeForCommitAndPlatform(commitID strfmt.UUID, owner, project string, platform string) (string, error) {
-	return fetchRawRecipe(commitID, owner, project, &platform)
+func FetchRawRecipeForCommitAndPlatform(commitID strfmt.UUID, owner, project string, platform string, cfg Configurable) (string, error) {
+	return fetchRawRecipe(commitID, owner, project, &platform, cfg)
 }
 
-func ResolveRecipe(commitID strfmt.UUID, owner, projectName string) (*inventory_models.Recipe, error) {
+func ResolveRecipe(commitID strfmt.UUID, owner, projectName string, cfg Configurable) (*inventory_models.Recipe, error) {
 	if commitID == "" {
 		return nil, locale.NewError("err_no_commit", "Missing Commit ID")
 	}
 
-	recipe, err := FetchRecipe(commitID, owner, projectName, &HostPlatform)
+	recipe, err := FetchRecipe(commitID, owner, projectName, &HostPlatform, cfg)
 	if err != nil {
 		return nil, err
 	}
@@ -92,7 +92,7 @@ func ResolveRecipe(commitID strfmt.UUID, owner, projectName string) (*inventory_
 	return recipe, nil
 }
 
-func fetchRawRecipe(commitID strfmt.UUID, owner, project string, hostPlatform *string) (string, error) {
+func fetchRawRecipe(commitID strfmt.UUID, owner, project string, hostPlatform *string, cfg Configurable) (string, error) {
 	_, transport := inventory.Init(authentication.LegacyGet())
 
 	var err error
@@ -105,7 +105,7 @@ func fetchRawRecipe(commitID strfmt.UUID, owner, project string, hostPlatform *s
 	}
 
 	if hostPlatform != nil {
-		params.Order.Platforms, err = filterPlatformIDs(*hostPlatform, runtime.GOARCH, params.Order.Platforms)
+		params.Order.Platforms, err = filterPlatformIDs(*hostPlatform, runtime.GOARCH, params.Order.Platforms, cfg)
 		if err != nil {
 			return "", err
 		}
@@ -158,7 +158,7 @@ func commitToOrder(commitID strfmt.UUID, owner, project string) (*inventory_mode
 	return order, nil
 }
 
-func FetchRecipe(commitID strfmt.UUID, owner, project string, hostPlatform *string) (*inventory_models.Recipe, error) {
+func FetchRecipe(commitID strfmt.UUID, owner, project string, hostPlatform *string, cfg Configurable) (*inventory_models.Recipe, error) {
 	var err error
 	params := iop.NewResolveRecipesParams()
 	params.SetHTTPClient(api.NewHTTPClient())
@@ -184,7 +184,7 @@ func FetchRecipe(commitID strfmt.UUID, owner, project string, hostPlatform *stri
 		return nil, serr
 	}
 
-	platformID, err := FilterCurrentPlatform(*hostPlatform, params.Order.Platforms)
+	platformID, err := FilterCurrentPlatform(*hostPlatform, params.Order.Platforms, cfg)
 	if err != nil {
 		return nil, locale.WrapError(err, "err_filter_current_platform")
 	}
@@ -198,8 +198,8 @@ func FetchRecipe(commitID strfmt.UUID, owner, project string, hostPlatform *stri
 	return nil, locale.NewInputError("err_recipe_not_found")
 }
 
-func FilterCurrentPlatform(hostPlatform string, platforms []strfmt.UUID) (strfmt.UUID, error) {
-	platformIDs, err := filterPlatformIDs(hostPlatform, runtime.GOARCH, platforms)
+func FilterCurrentPlatform(hostPlatform string, platforms []strfmt.UUID, cfg Configurable) (strfmt.UUID, error) {
+	platformIDs, err := filterPlatformIDs(hostPlatform, runtime.GOARCH, platforms, cfg)
 	if err != nil {
 		return "", errs.Wrap(err, "filterPlatformIDs failed")
 	}

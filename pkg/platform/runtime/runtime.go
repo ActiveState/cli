@@ -42,6 +42,7 @@ type Runtime struct {
 	analytics analytics.Dispatcher
 	svcm      *model.SvcModel
 	auth      *authentication.Auth
+	cfg       model.Configurable
 	completed bool
 }
 
@@ -171,7 +172,7 @@ func (r *Runtime) Update(eventHandler events.Handler) (rerr error) {
 		r.recordCompletion(rerr)
 	}()
 
-	if err := setup.New(r.target, eventHandler, r.auth, r.analytics).Update(); err != nil {
+	if err := setup.New(r.target, eventHandler, r.auth, r.analytics, r.cfg).Update(); err != nil {
 		return errs.Wrap(err, "Update failed")
 	}
 
