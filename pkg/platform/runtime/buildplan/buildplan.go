@@ -1,6 +1,7 @@
 package buildplan
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/errs"
@@ -25,7 +26,7 @@ type ArtifactError struct {
 }
 
 func NewArtifactListing(build *model.Build, buildtimeClosure bool, cfg platformModel.Configurable) (*ArtifactListing, error) {
-	al := &ArtifactListing{build: build}
+	al := &ArtifactListing{build: build, cfg: cfg}
 	if buildtimeClosure {
 		buildtimeClosure, err := newMapFromBuildPlan(al.build, true, cfg)
 		if err != nil {
@@ -166,6 +167,7 @@ func filterPlatformTerminals(build *model.Build, cfg platformModel.Configurable)
 	}
 
 	// Get the platform ID for the current host platform
+	fmt.Println("Config in filterPlatformTerminals:", cfg)
 	platformID, err := platformModel.FilterCurrentPlatform(platformModel.HostPlatform, bpPlatforms, cfg)
 	if err != nil {
 		return nil, locale.WrapError(err, "err_filter_current_platform")
