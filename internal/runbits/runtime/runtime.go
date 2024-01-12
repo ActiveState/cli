@@ -26,14 +26,15 @@ func NewFromProject(
 	an analytics.Dispatcher,
 	svcModel *model.SvcModel,
 	out output.Outputer,
-	auth *authentication.Auth) (_ *rt.Runtime, rerr error) {
+	auth *authentication.Auth,
+	cfg model.Configurable) (_ *rt.Runtime, rerr error) {
 	defer rationalizeError(auth, proj, &rerr)
 
 	if proj.IsHeadless() {
 		return nil, rationalize.ErrHeadless
 	}
 
-	rti, err := rt.New(target.NewProjectTarget(proj, nil, trigger), an, svcModel, auth)
+	rti, err := rt.New(target.NewProjectTarget(proj, nil, trigger), an, svcModel, auth, cfg)
 	if err == nil {
 		return rti, nil
 	}
