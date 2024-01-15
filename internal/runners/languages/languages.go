@@ -67,12 +67,21 @@ func (l *Languages) Run() error {
 		multilog.Error("Unable to initialize runtime for version resolution: %v", errs.JoinMessage(err))
 	}
 
+	artifacts, err := rt.ResolvedArtifacts()
+	if err != nil {
+		multilog.Error("Unable to retrieve runtime resolved artifact list: %v", errs.JoinMessage(err))
+	}
+	ns := model.NewNamespaceLanguage()
+
 	for i := range langs {
-		if resolvedVersion, err := rt.ResolveArtifactVersion(model.NewNamespaceLanguage(), langs[i].Name); err == nil {
-			langs[i].Version = locale.Tr("constraint_auto_resolved", resolvedVersion)
-		} else {
-			multilog.Error("Unable to resolve language version: %v", errs.JoinMessage(err))
+		if langs[i].Version == "" {
 			langs[i].Version = locale.T("constraint_auto")
+			for _, a := range artifacts {
+				if a.Namespace == ns.String() && a.Name == langs[i].Name {
+					langs[i].Version = locale.Tr("constraint_auto_resolved", *a.Version)
+					break
+				}
+			}
 		}
 		langs[i].Name = strings.Title(langs[i].Name)
 	}
