@@ -200,14 +200,17 @@ func newFilteredRequirementsTable(requirements []*gqlModel.Requirement, filter s
 
 		versionConstraint := req.VersionConstraint
 		if versionConstraint == "" {
-			if rt == nil || ns == nil {
-				versionConstraint = locale.T("constraint_auto")
-			} else {
-				if resolvedVersion, err := rt.ResolveArtifactVersion(*ns, req.Requirement); err == nil {
-					versionConstraint = locale.Tr("constraint_auto_resolved", resolvedVersion)
+			versionConstraint = locale.T("constraint_auto")
+			if rt != nil && ns != nil {
+				if artifacts, err := rt.ResolvedArtifacts(); err == nil {
+					for _, a := range artifacts {
+						if a.Namespace == ns.String() && a.Name == req.Requirement {
+							versionConstraint = locale.Tr("constraint_auto_resolved", *a.Version)
+							break
+						}
+					}
 				} else {
-					multilog.Error("Unable to resolve version for '%s' in namespace '%s'", req.Requirement, req.Namespace)
-					versionConstraint = locale.T("constraint_auto")
+					multilog.Error("Unable to retrieve ", req.Requirement, req.Namespace)
 				}
 			}
 		}
