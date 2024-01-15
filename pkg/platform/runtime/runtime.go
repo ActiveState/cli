@@ -26,6 +26,7 @@ import (
 	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/ActiveState/cli/pkg/platform/runtime/buildscript"
 	"github.com/ActiveState/cli/pkg/platform/runtime/envdef"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
@@ -36,13 +37,14 @@ import (
 )
 
 type Runtime struct {
-	disabled  bool
-	target    setup.Targeter
-	store     *store.Store
-	analytics analytics.Dispatcher
-	svcm      *model.SvcModel
-	auth      *authentication.Auth
-	completed bool
+	disabled          bool
+	target            setup.Targeter
+	store             *store.Store
+	analytics         analytics.Dispatcher
+	svcm              *model.SvcModel
+	auth              *authentication.Auth
+	completed         bool
+	resolvedArtifacts []artifact.Artifact
 }
 
 // NeedsUpdateError is an error returned when the runtime is not completely installed yet.
@@ -357,24 +359,28 @@ func IsRuntimeDir(dir string) bool {
 	return store.New(dir).HasMarker()
 }
 
-// ResolveArtifactVersion returns the actual version number of the artifact in this runtime with
-// the given namespace and name.
-func (r *Runtime) ResolveArtifactVersion(namespace model.Namespace, name string) (string, error) {
-	runtimeStore := r.store
-	if runtimeStore == nil {
-		runtimeStore = store.New(r.target.Dir())
-	}
+func (r *Runtime) ResolvedArtifacts() ([]artifact.Artifact, error) {
+	if r.resolvedArtifacts == nil {
+		runtimeStore := r.store
+		if runtimeStore == nil {
+			runtimeStore = store.New(r.target.Dir())
+		}
 
-	plan, err := runtimeStore.BuildPlan()
-	if err != nil {
-		return "", errs.Wrap(err, "Unable to fetch build plan")
-	}
+		plan, err := runtimeStore.BuildPlan()
+		if err != nil {
+			return nil, errs.Wrap(err, "Unable to fetch build plan")
+		}
 
-	for _, source := range plan.Sources {
-		if source.Namespace == namespace.String() && source.Name == name {
-			return source.Version, nil
+		r.resolvedArtifacts = make([]artifact.Artifact, len(plan.Sources))
+		for i, source := range plan.Sources {
+			r.resolvedArtifacts[i] = artifact.Artifact{
+				ArtifactID: source.NodeID,
+				Name:       source.Name,
+				Namespace:  source.Namespace,
+				Version:    &source.Version,
+			}
 		}
 	}
 
-	return "", errs.New("Artifact '%s' does not exist in runtime", name)
+	return r.resolvedArtifacts, nil
 }
