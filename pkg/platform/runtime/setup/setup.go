@@ -136,6 +136,7 @@ type Setup struct {
 	store         *store.Store
 	analytics     analytics.Dispatcher
 	artifactCache *artifactcache.ArtifactCache
+	cfg           apimodel.Configurable
 }
 
 type Setuper interface {
@@ -159,12 +160,12 @@ type artifactInstaller func(artifact.ArtifactID, string, ArtifactSetuper) error
 type artifactUninstaller func() error
 
 // New returns a new Setup instance that can install a Runtime locally on the machine.
-func New(target Targeter, eventHandler events.Handler, auth *authentication.Auth, an analytics.Dispatcher) *Setup {
+func New(target Targeter, eventHandler events.Handler, auth *authentication.Auth, an analytics.Dispatcher, cfg apimodel.Configurable) *Setup {
 	cache, err := artifactcache.New()
 	if err != nil {
 		multilog.Error("Could not create artifact cache: %v", err)
 	}
-	return &Setup{auth, target, eventHandler, store.New(target.Dir()), an, cache}
+	return &Setup{auth, target, eventHandler, store.New(target.Dir()), an, cache, cfg}
 }
 
 // Update installs the runtime locally (or updates it if it's already partially installed)
@@ -422,7 +423,7 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 
 	// Compute and handle the change summary
 	var requestedArtifacts artifact.Map // Artifacts required for the runtime to function
-	artifactListing, err := buildplan.NewArtifactListing(buildResult.Build, includeBuildtimeClosure)
+	artifactListing, err := buildplan.NewArtifactListing(buildResult.Build, includeBuildtimeClosure, s.cfg)
 	if err != nil {
 		return nil, nil, errs.Wrap(err, "Failed to create artifact listing")
 	}
@@ -480,7 +481,7 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 		s.analytics.Event(anaConsts.CatRuntimeDebug, anaConsts.ActRuntimeBuild, dimensions)
 	}
 
-	changedArtifacts, err := buildplan.NewBaseArtifactChangesetByBuildPlan(buildResult.Build, false, includeBuildtimeClosure)
+	changedArtifacts, err := buildplan.NewBaseArtifactChangesetByBuildPlan(buildResult.Build, false, includeBuildtimeClosure, s.cfg)
 	if err != nil {
 		return nil, nil, errs.Wrap(err, "Could not compute base artifact changeset")
 	}
@@ -491,7 +492,7 @@ func (s *Setup) fetchAndInstallArtifactsFromBuildPlan(installFunc artifactInstal
 	}
 
 	if oldBuildPlan != nil {
-		changedArtifacts, err = buildplan.NewArtifactChangesetByBuildPlan(oldBuildPlan, buildResult.Build, false, includeBuildtimeClosure)
+		changedArtifacts, err = buildplan.NewArtifactChangesetByBuildPlan(oldBuildPlan, buildResult.Build, false, includeBuildtimeClosure, s.cfg)
 		if err != nil {
 			return nil, nil, errs.Wrap(err, "Could not compute artifact changeset")
 		}
