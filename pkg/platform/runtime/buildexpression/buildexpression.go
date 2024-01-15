@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"sort"
 	"strings"
-	"time"
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
@@ -91,7 +90,7 @@ type In struct {
 //	  "let": {
 //	    "runtime": {
 //	      "solve_legacy": {
-//	        "at_time": "2023-04-27T17:30:05.999000Z",
+//	        "at_time": "$at_time",
 //	        "build_flags": [],
 //	        "camel_flags": [],
 //	        "platforms": [
@@ -180,7 +179,7 @@ func NewEmpty() (*BuildExpression, error) {
 			"let": {
 				"runtime": {
 					"solve_legacy": {
-						"at_time": "",
+						"at_time": "$at_time",
 						"build_flags": [],
 						"camel_flags": [],
 						"platforms": [],
@@ -867,30 +866,6 @@ func (e *BuildExpression) removePlatform(platformID strfmt.UUID) error {
 
 	if !found {
 		return errs.New("Could not find platform")
-	}
-
-	return nil
-}
-
-func (e *BuildExpression) UpdateTimestamp(timestamp strfmt.DateTime) error {
-	formatted, err := time.Parse(time.RFC3339, timestamp.String())
-	if err != nil {
-		return errs.Wrap(err, "Could not parse latest timestamp")
-	}
-
-	solveNode, err := e.getSolveNode()
-	if err != nil {
-		return errs.Wrap(err, "Could not get solve node")
-	}
-
-	for _, arg := range solveNode.Arguments {
-		if arg.Assignment == nil {
-			continue
-		}
-
-		if arg.Assignment.Name == "at_time" {
-			arg.Assignment.Value.Str = ptr.To(formatted.Format(time.RFC3339))
-		}
 	}
 
 	return nil
