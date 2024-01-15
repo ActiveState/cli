@@ -118,7 +118,7 @@ func (s *Exec) Run(params *Params, args ...string) (rerr error) {
 
 	s.out.Notice(locale.Tr("operating_message", projectNamespace, projectDir))
 
-	rt, err := runtime.New(rtTarget, s.analytics, s.svcModel, s.auth)
+	rt, err := runtime.New(rtTarget, s.analytics, s.svcModel, s.auth, s.cfg)
 	switch {
 	case err == nil:
 		break

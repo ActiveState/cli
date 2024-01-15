@@ -3,9 +3,6 @@ package checkout
 import (
 	"os"
 	"path/filepath"
-	rt "runtime"
-	"strconv"
-	"strings"
 
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/config"
@@ -26,7 +23,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/ActiveState/cli/pkg/sysinfo"
 )
 
 type Params struct {
@@ -36,7 +32,6 @@ type Params struct {
 	RuntimePath   string
 	NoClone       bool
 	Force         bool
-	LibcVersion   string
 }
 
 type primeable interface {
@@ -110,12 +105,7 @@ func (u *Checkout) Run(params *Params) (rerr error) {
 		}()
 	}
 
-	err = setLibcVersion(params.LibcVersion)
-	if err != nil {
-		return locale.WrapError(err, "Failed to set libc version")
-	}
-
-	rti, err := runtime.NewFromProject(proj, target.TriggerCheckout, u.analytics, u.svcModel, u.out, u.auth)
+	rti, err := runtime.NewFromProject(proj, target.TriggerCheckout, u.analytics, u.svcModel, u.out, u.auth, u.config)
 	if err != nil {
 		return locale.WrapError(err, "err_checkout_runtime_new", "Could not checkout this project.")
 	}
@@ -132,39 +122,6 @@ func (u *Checkout) Run(params *Params) (rerr error) {
 			proj.Dir(),
 			execDir,
 		}))
-
-	return nil
-}
-
-func setLibcVersion(libcVersion string) error {
-	if libcVersion == "" {
-		return nil
-	}
-
-	if rt.GOOS != "linux" {
-		return locale.NewInputError("err_libc_version_not_supported", "libc version is only supported on linux")
-	}
-
-	parts := strings.Split(libcVersion, ".")
-	if len(parts) != 2 {
-		return locale.NewInputError("err_libc_version_invalid", "libc version must be in the form of major.minor")
-	}
-
-	major, err := strconv.Atoi(parts[0])
-	if err != nil {
-		return locale.WrapInputError(err, "err_libc_version_invalid", "libc version must be in the form of major.minor")
-	}
-
-	minor, err := strconv.Atoi(parts[1])
-	if err != nil {
-		return locale.WrapInputError(err, "err_libc_version_invalid", "libc version must be in the form of major.minor")
-	}
-
-	sysinfo.SetRequestedLibcInfo(&sysinfo.LibcInfo{
-		Name:  sysinfo.Glibc,
-		Major: major,
-		Minor: minor,
-	})
 
 	return nil
 }

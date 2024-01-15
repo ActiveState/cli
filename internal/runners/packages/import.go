@@ -150,8 +150,8 @@ func (i *Import) Run(params *ImportRunParams) error {
 	if err := commitmediator.Set(i.proj, commitID.String()); err != nil {
 		return locale.WrapError(err, "err_package_update_commit_id")
 	}
-
-	return runbits.RefreshRuntime(i.auth, i.out, i.analytics, i.proj, commitID, true, target.TriggerImport, i.svcModel)
+  
+	return runbits.RefreshRuntime(i.auth, i.out, i.analytics, i.proj, commitID, true, target.TriggerImport, i.svcModel, i.cfg)
 }
 
 func fetchImportChangeset(cp ChangesetProvider, file string, lang string) (model.Changeset, error) {
