@@ -201,11 +201,16 @@ func newFilteredRequirementsTable(requirements []*gqlModel.Requirement, filter s
 		versionConstraint := req.VersionConstraint
 		if versionConstraint == "" {
 			versionConstraint = locale.T("constraint_auto")
+			if len(req.VersionConstraints) > 0 {
+				reqs := model.MonoModelConstraintsToRequirements(&req.VersionConstraints)
+				versionConstraint = model.RequirementsToVersionString(reqs)
+			}
+
 			if rt != nil && ns != nil {
 				if artifacts, err := rt.ResolvedArtifacts(); err == nil {
 					for _, a := range artifacts {
 						if a.Namespace == ns.String() && a.Name == req.Requirement {
-							versionConstraint = locale.Tr("constraint_auto_resolved", *a.Version)
+							versionConstraint = locale.Tr("constraint_resolved", versionConstraint, *a.Version)
 							break
 						}
 					}

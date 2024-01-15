@@ -2,6 +2,7 @@ package model
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"regexp"
 	"strconv"
@@ -18,6 +19,7 @@ import (
 	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	"github.com/ActiveState/cli/pkg/platform/api/buildplanner/request"
 	"github.com/ActiveState/cli/pkg/platform/api/headchef/headchef_models"
+	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/ActiveState/cli/pkg/platform/api/reqsimport"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
@@ -545,7 +547,7 @@ func VersionStringToRequirements(version string) ([]bpModel.VersionRequirement, 
 			return nil, locale.NewInputError("err_version_wildcard_start", "A version number cannot start with a wildcard")
 		}
 		requirements = append(requirements, bpModel.VersionRequirement{
-			bpModel.VersionRequirementComparatorKey: "gte",
+			bpModel.VersionRequirementComparatorKey: bpModel.ComparatorGTE,
 			bpModel.VersionRequirementVersionKey:    strings.Join(parts[:i], "."),
 		})
 		previousPart, err := strconv.Atoi(parts[i-1])
@@ -554,9 +556,46 @@ func VersionStringToRequirements(version string) ([]bpModel.VersionRequirement, 
 		}
 		parts[i-1] = strconv.Itoa(previousPart + 1)
 		requirements = append(requirements, bpModel.VersionRequirement{
-			bpModel.VersionRequirementComparatorKey: "lt",
+			bpModel.VersionRequirementComparatorKey: bpModel.ComparatorLT,
 			bpModel.VersionRequirementVersionKey:    strings.Join(parts[:i], "."),
 		})
 	}
 	return requirements, nil
+}
+
+func MonoModelConstraintsToRequirements(constraints *mono_models.Constraints) []bpModel.VersionRequirement {
+	requirements := []bpModel.VersionRequirement{}
+	for _, constraint := range *constraints {
+		requirements = append(requirements, bpModel.VersionRequirement{
+			bpModel.VersionRequirementComparatorKey: constraint.Comparator,
+			bpModel.VersionRequirementVersionKey:    constraint.Version,
+		})
+	}
+	return requirements
+}
+
+func RequirementsToVersionString(requirements []bpModel.VersionRequirement) string {
+	if requirements == nil || len(requirements) == 0 {
+		return ""
+	}
+
+	parts := make([]string, len(requirements))
+	for i, requirement := range requirements {
+		version := requirement[bpModel.VersionRequirementVersionKey]
+		switch requirement[bpModel.VersionRequirementComparatorKey] {
+		case bpModel.ComparatorEQ:
+			parts[i] = version
+		case bpModel.ComparatorGT:
+			parts[i] = fmt.Sprintf(">%s", version)
+		case bpModel.ComparatorGTE:
+			parts[i] = fmt.Sprintf(">=%s", version)
+		case bpModel.ComparatorLT:
+			parts[i] = fmt.Sprintf("<%s", version)
+		case bpModel.ComparatorLTE:
+			parts[i] = fmt.Sprintf("<=%s", version)
+		case bpModel.ComparatorNE:
+			parts[i] = fmt.Sprintf("!%s", version)
+		}
+	}
+	return strings.Join(parts, ",")
 }

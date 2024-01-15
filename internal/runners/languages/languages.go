@@ -74,16 +74,28 @@ func (l *Languages) Run() error {
 	ns := model.NewNamespaceLanguage()
 
 	for i := range langs {
-		if langs[i].Version == "" {
-			langs[i].Version = locale.T("constraint_auto")
+		name := langs[i].Name
+		version := langs[i].Version
+		constraints := langs[i].VersionConstraints()
+
+		langs[i].Name = strings.Title(name)
+
+		if version == "" {
+			version = locale.T("constraint_auto")
+			if constraints != nil && len(*constraints) > 0 {
+				reqs := model.MonoModelConstraintsToRequirements(constraints)
+				version = model.RequirementsToVersionString(reqs)
+			}
 			for _, a := range artifacts {
-				if a.Namespace == ns.String() && a.Name == langs[i].Name {
-					langs[i].Version = locale.Tr("constraint_auto_resolved", *a.Version)
-					break
+				if a.Namespace != ns.String() || a.Name != name {
+					continue
 				}
+				if version != *a.Version {
+					langs[i].Version = locale.Tr("constraint_resolved", version, *a.Version)
+				}
+				break
 			}
 		}
-		langs[i].Name = strings.Title(langs[i].Name)
 	}
 
 	l.out.Print(output.Prepare(langs, langs))
