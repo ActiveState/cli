@@ -210,7 +210,7 @@ func newFilteredRequirementsTable(requirements []*gqlModel.Requirement, filter s
 						}
 					}
 				} else {
-					multilog.Error("Unable to retrieve ", req.Requirement, req.Namespace)
+					multilog.Error("Unable to retrieve runtime resolved artifact list: %v", errs.JoinMessage(err))
 				}
 			}
 		}
