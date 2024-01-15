@@ -94,12 +94,12 @@ func (suite *LanguagesIntegrationTestSuite) TestJSON() {
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("languages", "-o", "json")
-	cp.Expect(`[{"name":"Python","version":`)
+	cp.Expect(`[{"name":"Python","version":"Auto →"`)
 	cp.ExpectExitCode(0)
 	AssertValidJSON(suite.T(), cp)
 
 	cp = ts.Spawn("languages", "search", "--output", "json")
-	cp.Expect(`[{"name":"perl","version":`)
+	cp.Expect(`[{"name":"perl","version":"Auto →"`)
 	cp.ExpectExitCode(0)
 	//AssertValidJSON(suite.T(), cp) // currently too big to fit in the terminal window for validation
 }

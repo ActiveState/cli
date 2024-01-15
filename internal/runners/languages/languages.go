@@ -3,18 +3,26 @@ package languages
 import (
 	"strings"
 
+	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/runbits/commitmediator"
+	"github.com/ActiveState/cli/internal/runbits/runtime"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
 // Languages manages the listing execution context.
 type Languages struct {
-	out     output.Outputer
-	project *project.Project
+	out       output.Outputer
+	project   *project.Project
+	analytics analytics.Dispatcher
+	svcModel  *model.SvcModel
+	auth      *authentication.Auth
 }
 
 // NewLanguages prepares a list execution context for use.
@@ -22,6 +30,9 @@ func NewLanguages(prime primeable) *Languages {
 	return &Languages{
 		prime.Output(),
 		prime.Project(),
+		prime.Analytics(),
+		prime.SvcModel(),
+		prime.Auth(),
 	}
 }
 
@@ -51,7 +62,18 @@ func (l *Languages) Run() error {
 		return locale.WrapError(err, "err_fetching_languages", "Cannot obtain languages")
 	}
 
+	rt, err := runtime.NewFromProject(l.project, target.TriggerLanguage, l.analytics, l.svcModel, l.out, l.auth)
+	if err != nil {
+		multilog.Error("Unable to initialize runtime for version resolution: %v", errs.JoinMessage(err))
+	}
+
 	for i := range langs {
+		if resolvedVersion, err := rt.ResolveArtifactVersion(model.NewNamespaceLanguage(), langs[i].Name); err == nil {
+			langs[i].Version = locale.Tr("constraint_auto_resolved", resolvedVersion)
+		} else {
+			multilog.Error("Unable to resolve language version: %v", errs.JoinMessage(err))
+			langs[i].Version = locale.T("constraint_auto")
+		}
 		langs[i].Name = strings.Title(langs[i].Name)
 	}
 
