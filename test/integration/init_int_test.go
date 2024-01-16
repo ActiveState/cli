@@ -174,7 +174,7 @@ func (suite *InitIntegrationTestSuite) TestInit_Resolved() {
 	// Run `state languages` to verify a full language version was resolved.
 	cp = ts.Spawn("languages")
 	cp.Expect("Python")
-	cp.Expect("3.10.") // trailing '.' means the full version resolved (e.g. 3.10.12)
+	cp.Expect("3.10 → 3.10.0")
 	cp.ExpectExitCode(0)
 }
 

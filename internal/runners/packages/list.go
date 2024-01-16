@@ -21,6 +21,8 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
+	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
+	"github.com/ActiveState/cli/pkg/platform/runtime/store"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -85,19 +87,21 @@ func (l *List) Run(params ListRunParams, nstype model.NamespaceType) error {
 		return locale.WrapError(err, fmt.Sprintf("%s_err_cannot_fetch_checkpoint", nstype))
 	}
 
+	// Initialize the project's runtime and determine its language if possible.
+	// This is used for resolving package version numbers.
+	// Note: any errors here are not fatal, and should not be reported to rollbar.
 	var rt *runtime.Runtime
 	if l.project != nil && params.Project == "" {
 		rt, err = runbitsRuntime.NewFromProject(l.project, target.TriggerPackage, l.analytics, l.svcModel, l.out, l.auth)
 		if err != nil {
-			multilog.Error("Unable to initialize runtime for version resolution: %v", errs.JoinMessage(err))
+			logging.Error("Unable to initialize runtime for version resolution: %v", errs.JoinMessage(err))
 		}
 	}
-
 	var ns *model.Namespace
 	if language, err := model.LanguageByCommit(*commit); err == nil {
 		ns = ptr.To(model.NewNamespacePkgOrBundle(language.Name, nstype))
 	} else {
-		multilog.Error("Unable to get language from project: %v", errs.JoinMessage(err))
+		logging.Error("Unable to get language from project: %v", errs.JoinMessage(err))
 	}
 
 	rows := newFilteredRequirementsTable(model.FilterCheckpointNamespace(checkpoint, model.NamespacePackage, model.NamespaceBundle), params.Name, nstype, rt, ns)
@@ -188,6 +192,17 @@ func newFilteredRequirementsTable(requirements []*gqlModel.Requirement, filter s
 		return nil
 	}
 
+	// Fetch resolved artifacts list for showing full version numbers.
+	// Note: an error here is not fatal.
+	var artifacts []artifact.Artifact
+	if rt != nil && ns != nil {
+		var err error
+		artifacts, err = rt.ResolvedArtifacts()
+		if !errs.Matches(err, store.ErrNoBuildPlanFile) {
+			multilog.Error("Unable to retrieve runtime resolved artifact list: %v", errs.JoinMessage(err))
+		}
+	}
+
 	rows := make([]packageRow, 0, len(requirements))
 	for _, req := range requirements {
 		if !strings.Contains(strings.ToLower(req.Requirement), strings.ToLower(filter)) {
@@ -206,16 +221,10 @@ func newFilteredRequirementsTable(requirements []*gqlModel.Requirement, filter s
 				versionConstraint = model.RequirementsToVersionString(reqs)
 			}
 
-			if rt != nil && ns != nil {
-				if artifacts, err := rt.ResolvedArtifacts(); err == nil {
-					for _, a := range artifacts {
-						if a.Namespace == ns.String() && a.Name == req.Requirement {
-							versionConstraint = locale.Tr("constraint_resolved", versionConstraint, *a.Version)
-							break
-						}
-					}
-				} else {
-					multilog.Error("Unable to retrieve runtime resolved artifact list: %v", errs.JoinMessage(err))
+			for _, a := range artifacts {
+				if a.Namespace == ns.String() && a.Name == req.Requirement {
+					versionConstraint = locale.Tr("constraint_resolved", versionConstraint, *a.Version)
+					break
 				}
 			}
 		}
