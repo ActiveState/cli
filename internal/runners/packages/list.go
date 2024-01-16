@@ -9,6 +9,7 @@ import (
 	"github.com/go-openapi/strfmt"
 
 	"github.com/ActiveState/cli/internal/analytics"
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -41,6 +42,7 @@ type List struct {
 	analytics analytics.Dispatcher
 	svcModel  *model.SvcModel
 	auth      *authentication.Auth
+	cfg       *config.Instance
 }
 
 // NewList prepares a list execution context for use.
@@ -51,6 +53,7 @@ func NewList(prime primeable) *List {
 		analytics: prime.Analytics(),
 		svcModel:  prime.SvcModel(),
 		auth:      prime.Auth(),
+		cfg:       prime.Config(),
 	}
 }
 
@@ -92,7 +95,7 @@ func (l *List) Run(params ListRunParams, nstype model.NamespaceType) error {
 	// Note: any errors here are not fatal, and should not be reported to rollbar.
 	var rt *runtime.Runtime
 	if l.project != nil && params.Project == "" {
-		rt, err = runbitsRuntime.NewFromProject(l.project, target.TriggerPackage, l.analytics, l.svcModel, l.out, l.auth)
+		rt, err = runbitsRuntime.NewFromProject(l.project, target.TriggerPackage, l.analytics, l.svcModel, l.out, l.auth, l.cfg)
 		if err != nil {
 			logging.Error("Unable to initialize runtime for version resolution: %v", errs.JoinMessage(err))
 		}

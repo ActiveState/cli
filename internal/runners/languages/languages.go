@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/analytics"
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -26,6 +27,7 @@ type Languages struct {
 	analytics analytics.Dispatcher
 	svcModel  *model.SvcModel
 	auth      *authentication.Auth
+	cfg       *config.Instance
 }
 
 // NewLanguages prepares a list execution context for use.
@@ -36,6 +38,7 @@ func NewLanguages(prime primeable) *Languages {
 		prime.Analytics(),
 		prime.SvcModel(),
 		prime.Auth(),
+		prime.Config(),
 	}
 }
 
@@ -68,7 +71,7 @@ func (l *Languages) Run() error {
 	// Fetch resolved artifacts list for showing full version numbers.
 	// Note: any errors here are not fatal, and only some of them should be reported to rollbar.
 	var artifacts []artifact.Artifact
-	if rt, err := runtime.NewFromProject(l.project, target.TriggerLanguage, l.analytics, l.svcModel, l.out, l.auth); err == nil {
+	if rt, err := runtime.NewFromProject(l.project, target.TriggerLanguage, l.analytics, l.svcModel, l.out, l.auth, l.cfg); err == nil {
 		artifacts, err = rt.ResolvedArtifacts()
 		if err != nil && !errs.Matches(err, store.ErrNoBuildPlanFile) {
 			multilog.Error("Unable to retrieve runtime resolved artifact list: %v", errs.JoinMessage(err))
