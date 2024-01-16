@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/analytics"
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
@@ -27,6 +28,7 @@ type Revert struct {
 	auth      *authentication.Auth
 	analytics analytics.Dispatcher
 	svcModel  *model.SvcModel
+	cfg       *config.Instance
 }
 
 type Params struct {
@@ -42,6 +44,7 @@ type primeable interface {
 	primer.Auther
 	primer.Analyticer
 	primer.SvcModeler
+	primer.Configurer
 }
 
 func New(prime primeable) *Revert {
@@ -52,6 +55,7 @@ func New(prime primeable) *Revert {
 		prime.Auth(),
 		prime.Analytics(),
 		prime.SvcModel(),
+		prime.Config(),
 	}
 }
 
@@ -140,7 +144,7 @@ func (r *Revert) Run(params *Params) (rerr error) {
 		return errs.Wrap(err, "Unable to set local commit")
 	}
 
-	err = runbits.RefreshRuntime(r.auth, r.out, r.analytics, r.project, revertCommit, true, target.TriggerRevert, r.svcModel)
+	err = runbits.RefreshRuntime(r.auth, r.out, r.analytics, r.project, revertCommit, true, target.TriggerRevert, r.svcModel, r.cfg)
 	if err != nil {
 		return locale.WrapError(err, "err_refresh_runtime")
 	}

@@ -44,6 +44,7 @@ type Runtime struct {
 	svcm              *model.SvcModel
 	auth              *authentication.Auth
 	completed         bool
+	cfg               model.Configurable
 	resolvedArtifacts []artifact.Artifact
 }
 
@@ -63,13 +64,14 @@ func IsNeedsCommitError(err error) bool {
 	return errs.Matches(err, &NeedsCommitError{})
 }
 
-func newRuntime(target setup.Targeter, an analytics.Dispatcher, svcModel *model.SvcModel, auth *authentication.Auth) (*Runtime, error) {
+func newRuntime(target setup.Targeter, an analytics.Dispatcher, svcModel *model.SvcModel, auth *authentication.Auth, cfg model.Configurable) (*Runtime, error) {
 	rt := &Runtime{
 		target:    target,
 		store:     store.New(target.Dir()),
 		analytics: an,
 		svcm:      svcModel,
 		auth:      auth,
+		cfg:       cfg,
 	}
 
 	err := rt.validateCache()
@@ -81,7 +83,7 @@ func newRuntime(target setup.Targeter, an analytics.Dispatcher, svcModel *model.
 }
 
 // New attempts to create a new runtime from local storage.  If it fails with a NeedsUpdateError, Update() needs to be called to update the locally stored runtime.
-func New(target setup.Targeter, an analytics.Dispatcher, svcm *model.SvcModel, auth *authentication.Auth) (*Runtime, error) {
+func New(target setup.Targeter, an analytics.Dispatcher, svcm *model.SvcModel, auth *authentication.Auth, cfg model.Configurable) (*Runtime, error) {
 	logging.Debug("Initializing runtime for: %s/%s@%s", target.Owner(), target.Name(), target.CommitUUID())
 
 	if strings.ToLower(os.Getenv(constants.DisableRuntime)) == "true" {
@@ -96,7 +98,7 @@ func New(target setup.Targeter, an analytics.Dispatcher, svcm *model.SvcModel, a
 		InstanceID:       ptr.To(instanceid.ID()),
 	})
 
-	r, err := newRuntime(target, an, svcm, auth)
+	r, err := newRuntime(target, an, svcm, auth, cfg)
 	if err == nil {
 		an.Event(anaConsts.CatRuntimeDebug, anaConsts.ActRuntimeCache, &dimensions.Values{
 			CommitID: ptr.To(target.CommitUUID().String()),
@@ -173,12 +175,12 @@ func (r *Runtime) Update(eventHandler events.Handler) (rerr error) {
 		r.recordCompletion(rerr)
 	}()
 
-	if err := setup.New(r.target, eventHandler, r.auth, r.analytics).Update(); err != nil {
+	if err := setup.New(r.target, eventHandler, r.auth, r.analytics, r.cfg).Update(); err != nil {
 		return errs.Wrap(err, "Update failed")
 	}
 
 	// Reinitialize
-	rt, err := newRuntime(r.target, r.analytics, r.svcm, r.auth)
+	rt, err := newRuntime(r.target, r.analytics, r.svcm, r.auth, r.cfg)
 	if err != nil {
 		return errs.Wrap(err, "Could not reinitialize runtime after update")
 	}
