@@ -11,6 +11,7 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/runbits/commitmediator"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -27,6 +28,7 @@ type SearchRunParams struct {
 type Search struct {
 	out  output.Outputer
 	proj *project.Project
+	auth *authentication.Auth
 }
 
 // NewSearch prepares a searching execution context for use.
@@ -34,6 +36,7 @@ func NewSearch(prime primeable) *Search {
 	return &Search{
 		out:  prime.Output(),
 		proj: prime.Project(),
+		auth: prime.Auth(),
 	}
 }
 
@@ -71,7 +74,7 @@ func (s *Search) Run(params SearchRunParams, nstype model.NamespaceType) error {
 		)
 	}
 
-	s.out.Print(output.Prepare(formatSearchResults(packages, params.Ingredient.Namespace != ""), packages))
+	s.out.Print(output.Prepare(formatSearchResults(s.auth, packages, params.Ingredient.Namespace != ""), packages))
 
 	return nil
 }
@@ -150,7 +153,7 @@ type searchPackageRow struct {
 
 type searchOutput []searchPackageRow
 
-func formatSearchResults(packages []*model.IngredientAndVersion, showNamespace bool) *searchOutput {
+func formatSearchResults(auth *authentication.Auth, packages []*model.IngredientAndVersion, showNamespace bool) *searchOutput {
 	rows := make(searchOutput, len(packages))
 
 	ingredients := make([]*model.VulnerabilityIngredient, len(packages))
@@ -161,10 +164,13 @@ func formatSearchResults(packages []*model.IngredientAndVersion, showNamespace b
 			Version:   pack.Version,
 		}
 	}
-	_, err := model.FetchVulnerabilitiesForIngredients(ingredients)
+
+	vulnerabilities, err := model.FetchVulnerabilitiesForIngredients(auth, ingredients)
 	if err != nil {
 		logging.Error("Unable to fetch vulnerabilities for packages: %v", err)
 	}
+
+	fmt.Println("Vulnerabilities:", len(vulnerabilities))
 
 	filterNilStr := func(s *string) string {
 		if s == nil {

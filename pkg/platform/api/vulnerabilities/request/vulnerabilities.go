@@ -12,23 +12,26 @@ type vulnerabilities struct {
 
 func VulnerabilitiesByIngredients(ingredients []*Ingredient) *vulnerabilities {
 	return &vulnerabilities{vars: map[string]interface{}{
-		"f": ingredients,
+		"ingredients": ingredients,
 	}}
 }
 
 func (p *vulnerabilities) Query() string {
-	return `query GetVulnerabilities($f: jsonb) {
-  vulnerable_ingredients_filter(args: { ingredient_versions: $f }) {
-    primary_namespace
-    name
-    version
-    vulnerability {
-      cve_identifier
-      alt_identifiers
-      severity
-    }
-  }
-}`
+	return `query q($ingredients: jsonb) {
+              vulnerabilities: vulnerable_ingredients_filter(
+                args: {ingredient_versions: $ingredients}
+              ) {
+                name
+                primary_namespace
+                version
+                vulnerability {
+                  severity
+                  cve_identifier
+                  source
+                }
+                vulnerability_id
+              }
+            }`
 }
 
 func (p *vulnerabilities) Vars() (map[string]interface{}, error) {
