@@ -2,6 +2,7 @@ package swtch
 
 import (
 	"github.com/ActiveState/cli/internal/analytics"
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -23,6 +24,7 @@ type Switch struct {
 	project   *project.Project
 	analytics analytics.Dispatcher
 	svcModel  *model.SvcModel
+	cfg       *config.Instance
 }
 
 type SwitchParams struct {
@@ -115,7 +117,7 @@ func (s *Switch) Run(params SwitchParams) error {
 		return errs.Wrap(err, "Unable to set local commit")
 	}
 
-	err = runbits.RefreshRuntime(s.auth, s.out, s.analytics, s.project, identifier.CommitID(), false, target.TriggerSwitch, s.svcModel)
+	err = runbits.RefreshRuntime(s.auth, s.out, s.analytics, s.project, identifier.CommitID(), false, target.TriggerSwitch, s.svcModel, s.cfg)
 	if err != nil {
 		return locale.WrapError(err, "err_refresh_runtime")
 	}

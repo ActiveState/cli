@@ -23,6 +23,7 @@ func RefreshRuntime(
 	changed bool,
 	trigger target.Trigger,
 	svcm *model.SvcModel,
+	cfg model.Configurable,
 ) (rerr error) {
 	// Re-enable in DX-2307.
 	//_, err := buildscript.Sync(proj, &commitID, out, auth)
@@ -31,7 +32,7 @@ func RefreshRuntime(
 	//}
 	target := target.NewProjectTarget(proj, resolveCommitID(proj, &commitID), trigger)
 	isCached := true
-	rt, err := runtime.New(target, an, svcm, auth)
+	rt, err := runtime.New(target, an, svcm, auth, cfg)
 	if err != nil {
 		if runtime.IsNeedsUpdateError(err) {
 			isCached = false
