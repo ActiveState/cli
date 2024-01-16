@@ -553,10 +553,10 @@ func VersionStringToRequirements(version string) ([]bpModel.VersionRequirement, 
 	return requirements, nil
 }
 
-func MonoModelConstraintsToRequirements(constraints *mono_models.Constraints) []bpModel.VersionRequirement {
-	requirements := []bpModel.VersionRequirement{}
+func MonoModelConstraintsToRequirements(constraints *mono_models.Constraints) []*bpModel.VersionRequirement {
+	requirements := []*bpModel.VersionRequirement{}
 	for _, constraint := range *constraints {
-		requirements = append(requirements, bpModel.VersionRequirement{
+		requirements = append(requirements, &bpModel.VersionRequirement{
 			bpModel.VersionRequirementComparatorKey: constraint.Comparator,
 			bpModel.VersionRequirementVersionKey:    constraint.Version,
 		})
@@ -564,15 +564,15 @@ func MonoModelConstraintsToRequirements(constraints *mono_models.Constraints) []
 	return requirements
 }
 
-func RequirementsToVersionString(requirements []bpModel.VersionRequirement) string {
+func RequirementsToVersionString(requirements []*bpModel.VersionRequirement) string {
 	if requirements == nil || len(requirements) == 0 {
 		return ""
 	}
 
 	parts := make([]string, len(requirements))
 	for i, requirement := range requirements {
-		version := requirement[bpModel.VersionRequirementVersionKey]
-		switch requirement[bpModel.VersionRequirementComparatorKey] {
+		version := (*requirement)[bpModel.VersionRequirementVersionKey]
+		switch (*requirement)[bpModel.VersionRequirementComparatorKey] {
 		case bpModel.ComparatorEQ:
 			parts[i] = version
 		case bpModel.ComparatorGT:
