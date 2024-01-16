@@ -204,6 +204,7 @@ func (suite *UpdateIntegrationTestSuite) TestLockUnlock() {
 	data, err = ioutil.ReadFile(pjfile.Path())
 	suite.Require().NoError(err)
 	suite.Assert().False(lockRegex.Match(data), "lock info was not removed from "+pjfile.Path())
+	ts.IgnoreLogErrors()
 }
 
 func (suite *UpdateIntegrationTestSuite) TestJSON() {
