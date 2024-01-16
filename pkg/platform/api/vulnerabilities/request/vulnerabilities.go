@@ -18,20 +18,20 @@ func VulnerabilitiesByIngredients(ingredients []*Ingredient) *vulnerabilities {
 
 func (p *vulnerabilities) Query() string {
 	return `query q($ingredients: jsonb) {
-              vulnerabilities: vulnerable_ingredients_filter(
-                args: {ingredient_versions: $ingredients}
-              ) {
-                name
-                primary_namespace
-                version
-                vulnerability {
-                  severity
-                  cve_identifier
-                  source
-                }
-                vulnerability_id
-              }
-            }`
+vulnerabilities: vulnerable_ingredients_filter(
+  args: {ingredient_versions: $ingredients}
+  ) {
+    name
+    primary_namespace
+    version
+    vulnerability {
+      severity
+      cve_identifier
+      source
+    }
+    vulnerability_id
+  }
+}`
 }
 
 func (p *vulnerabilities) Vars() (map[string]interface{}, error) {

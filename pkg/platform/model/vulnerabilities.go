@@ -1,10 +1,7 @@
 package model
 
 import (
-	"encoding/json"
-
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/platform/api/vulnerabilities"
 	"github.com/ActiveState/cli/pkg/platform/api/vulnerabilities/model"
 	"github.com/ActiveState/cli/pkg/platform/api/vulnerabilities/request"
@@ -23,19 +20,14 @@ func FetchVulnerabilitiesForIngredients(auth *authentication.Auth, ingredients_ 
 		}
 	}
 
+	med := vulnerabilities.New(auth)
+
 	req := request.VulnerabilitiesByIngredients(ingredients)
 	var resp model.VulnerabilitiesResponse
-	med := vulnerabilities.New(auth)
 	err := med.Run(req, &resp)
 	if err != nil {
-		logging.Debug("Mediator error: %v", err)
 		return nil, errs.Wrap(err, "Failed to run vulnerabilities request")
 	}
 
-	data, err := json.MarshalIndent(resp, "", "  ")
-	if err != nil {
-		return nil, errs.Wrap(err, "Failed to marshal vulnerabilities response")
-	}
-	logging.Debug("Vulnerabilities response: %s", string(data))
 	return resp.Vulnerabilities, nil
 }

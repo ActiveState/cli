@@ -165,13 +165,6 @@ func formatSearchResults(auth *authentication.Auth, packages []*model.Ingredient
 		}
 	}
 
-	vulnerabilities, err := model.FetchVulnerabilitiesForIngredients(auth, ingredients)
-	if err != nil {
-		logging.Error("Unable to fetch vulnerabilities for packages: %v", err)
-	}
-
-	fmt.Println("Vulnerabilities:", len(vulnerabilities))
-
 	filterNilStr := func(s *string) string {
 		if s == nil {
 			return ""
