@@ -63,7 +63,7 @@ func (r *Refresh) Run(params *Params) error {
 		return locale.WrapError(err, "err_refresh_cannot_load_project", "Cannot load project to update runtime for.")
 	}
 
-	rti, err := runtime.NewFromProject(proj, target.TriggerRefresh, r.analytics, r.svcModel, r.out, r.auth)
+	rti, err := runtime.NewFromProject(proj, target.TriggerRefresh, r.analytics, r.svcModel, r.out, r.auth, r.config)
 	if err != nil {
 		return locale.WrapInputError(err, "err_refresh_runtime_new", "Could not update runtime for this project.")
 	}

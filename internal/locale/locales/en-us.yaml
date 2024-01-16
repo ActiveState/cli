@@ -631,10 +631,6 @@ commit_message_add_initial:
   other: Initialize project via the State Tool
 commit_reqstext_message:
   other: "Import from requirements file"
-commit_failed_push_tip:
-  other: Ensure any previous changes have been saved by running [ACTIONABLE]state push[/RESET]. Then try running your command again.
-commit_failed_pull_tip:
-  other: Ensure any remote changes have been pulled in by running [ACTIONABLE]state pull[/RESET]. Then try running your command again.
 err_package_added:
   other: Failed to add package
 err_bundle_added:
@@ -1503,10 +1499,6 @@ err_searchingredient_toomany:
   other: Too many ingredients match the query '[ACTIONABLE]{{.V0}}[/RESET]', please try to be more specific.
 alternative_unknown_pkg_name:
   other: unknown
-err_uploadingredient_edit_version_required:
-  other: When editing you must always provide a new version number.
-err_uploadingredient_edit_version_different:
-  other: You did not provide a unique version number. Make sure the version number you provided has not been used before.
 err_uploadingredient_edit_description_not_supported:
   other: Editing an ingredient description is not yet supported.
 uploadingredient_editor_opening:

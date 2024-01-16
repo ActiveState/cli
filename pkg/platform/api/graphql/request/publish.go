@@ -50,8 +50,9 @@ type PublishVariables struct {
 	Description string `yaml:"description" json:"description"`
 
 	// Optional
-	Authors      []PublishVariableAuthor `yaml:"authors,omitempty" json:"authors,omitempty"`
-	Dependencies []PublishVariableDep    `yaml:"dependencies,omitempty" json:"dependencies,omitempty"`
+	Authors      []PublishVariableAuthor  `yaml:"authors,omitempty" json:"authors,omitempty"`
+	Dependencies []PublishVariableDep     `yaml:"dependencies,omitempty" json:"dependencies,omitempty"`
+	Features     []PublishVariableFeature `yaml:"features,omitempty" json:"features,omitempty"`
 
 	// GraphQL input only
 	Path         string  `yaml:"-" json:"path"`
@@ -68,6 +69,12 @@ type PublishVariableAuthor struct {
 type PublishVariableDep struct {
 	Dependency
 	Conditions []Dependency `yaml:"conditions,omitempty" json:"conditions,omitempty"`
+}
+
+type PublishVariableFeature struct {
+	Name      string `yaml:"name" json:"name"`
+	Namespace string `yaml:"namespace" json:"namespace"`
+	Version   string `yaml:"version" json:"version"`
 }
 
 type Dependency struct {

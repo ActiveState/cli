@@ -230,11 +230,6 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 		return errs.Wrap(err, "Unable to determine Platform ID from %s", model.HostPlatform)
 	}
 
-	timestamp, err := model.FetchLatestTimeStamp()
-	if err != nil {
-		return errs.Wrap(err, "Unable to fetch latest timestamp")
-	}
-
 	bp := model.NewBuildPlannerModel(r.auth)
 	commitID, err := bp.CreateProject(&model.CreateProjectParams{
 		Owner:       namespace.Owner,
@@ -243,7 +238,6 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 		Language:    lang.Requirement(),
 		Version:     version,
 		Private:     params.Private,
-		Timestamp:   strfmt.DateTime(timestamp),
 		Description: locale.T("commit_message_add_initial"),
 	})
 	if err != nil {
@@ -262,7 +256,7 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 	//	}
 	//}
 
-	err = runbits.RefreshRuntime(r.auth, r.out, r.analytics, proj, commitID, true, target.TriggerInit, r.svcModel)
+	err = runbits.RefreshRuntime(r.auth, r.out, r.analytics, proj, commitID, true, target.TriggerInit, r.svcModel, r.config)
 	if err != nil {
 		logging.Debug("Deleting remotely created project due to runtime setup error")
 		err2 := model.DeleteProject(namespace.Owner, namespace.Project, r.auth)

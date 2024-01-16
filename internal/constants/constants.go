@@ -192,6 +192,9 @@ const SvcAuthPollingRateEnvVarName = "ACTIVESTATE_SVC_AUTH_POLLING_RATE"
 // log rotation timer interval (1 minute).
 const SvcLogRotateIntervalEnvVarName = "ACTIVESTATE_CLI_LOG_ROTATE_INTERVAL_MS"
 
+// DisableActivateEventsEnvVarName is the environment variable used to disable events when activating or checking out a project
+const DisableActivateEventsEnvVarName = "ACTIVESTATE_CLI_DISABLE_ACTIVATE_EVENTS"
+
 // APIUpdateInfoURL is the URL for our update info server
 const APIUpdateInfoURL = "https://platform.activestate.com/sv/state-update/api/v1"
 
@@ -443,6 +446,9 @@ const ReportErrorsConfig = "report.errors"
 // ReportAnalyticsConfig is the config key used to determine if we will send analytics reports
 const ReportAnalyticsConfig = "report.analytics"
 
+// PreferredGlibcVersionConfig is the config key used to determine the preferred glibc version
+const PreferredGlibcVersionConfig = "runtime.preferred.glibc"
+
 // SvcAppName is the name we give our state-svc application
 const SvcAppName = "State Service"
 
@@ -528,3 +534,6 @@ const PlatformApiPrintRequestsEnvVarName = "ACTIVESTATE_CLI_PLATFORM_API_PRINT_R
 
 // ActiveStateCIEnvVarName is the environment variable set when running in an ActiveState CI environment.
 const ActiveStateCIEnvVarName = "ACTIVESTATE_CI"
+
+// OverrideSandbox is the environment variable to set when overriding the sandbox for integration tests.
+const OverrideSandbox = "ACTIVESTATE_TEST_OVERRIDE_SANDBOX"

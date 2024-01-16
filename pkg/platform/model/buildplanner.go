@@ -227,7 +227,6 @@ type StageCommitParams struct {
 	RequirementVersion   []bpModel.VersionRequirement
 	RequirementNamespace Namespace
 	Operation            bpModel.Operation
-	TimeStamp            *strfmt.DateTime
 	// ... or commits can have an expression (e.g. from pull). When pulling an expression, we do not
 	// compute its changes into a series of above operations. Instead, we just pass the new
 	// expression directly.
@@ -260,11 +259,6 @@ func (bp *BuildPlanner) StageCommit(params StageCommitParams) (strfmt.UUID, erro
 			if err != nil {
 				return "", errs.Wrap(err, "Failed to update build expression with requirement")
 			}
-		}
-
-		err = expression.UpdateTimestamp(*params.TimeStamp)
-		if err != nil {
-			return "", errs.Wrap(err, "Failed to update build expression with timestamp")
 		}
 	}
 
@@ -331,7 +325,6 @@ type CreateProjectParams struct {
 	Language    string
 	Version     string
 	Private     bool
-	Timestamp   strfmt.DateTime
 	Description string
 	Expr        *buildexpression.BuildExpression
 }
@@ -361,9 +354,6 @@ func (bp *BuildPlanner) CreateProject(params *CreateProjectParams) (strfmt.UUID,
 			Namespace:          "language", // TODO: make this a constant DX-1738
 			VersionRequirement: versionRequirements,
 		})
-
-		// Add the timestamp.
-		expr.UpdateTimestamp(params.Timestamp)
 	}
 
 	// Create the project.
