@@ -201,7 +201,7 @@ func newFilteredRequirementsTable(requirements []*gqlModel.Requirement, filter s
 	if rt != nil && ns != nil {
 		var err error
 		artifacts, err = rt.ResolvedArtifacts()
-		if !errs.Matches(err, store.ErrNoBuildPlanFile) {
+		if err != nil && !errs.Matches(err, store.ErrNoBuildPlanFile) {
 			multilog.Error("Unable to retrieve runtime resolved artifact list: %v", errs.JoinMessage(err))
 		}
 	}
