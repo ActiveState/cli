@@ -169,6 +169,24 @@ func fetchImportChangeset(cp ChangesetProvider, file string, lang string) (model
 }
 
 func applyChangeset(changeset model.Changeset, be *buildexpression.BuildExpression) error {
+	beReqs, err := be.Requirements()
+	if err != nil {
+		return errs.Wrap(err, "Could not get build expression requirements")
+	}
+
+	// Remove all existing requirements for the package and bundle namespace
+	for _, req := range beReqs {
+		if !model.NamespaceMatch(req.Namespace, model.NamespacePackageMatch) &&
+			!model.NamespaceMatch(req.Namespace, model.NamespaceBundlesMatch) {
+			continue
+		}
+
+		if err := be.UpdateRequirement(bpModel.OperationRemoved, req); err != nil {
+			return errs.Wrap(err, "Could not update build expression")
+		}
+	}
+
+	// Interate over the changeset and add/update the requirements
 	for _, change := range changeset {
 		var expressionOperation bpModel.Operation
 		switch change.Operation {
