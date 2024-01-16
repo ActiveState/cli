@@ -7,6 +7,8 @@ import (
 	"os"
 	"os/exec"
 	"syscall"
+
+	"github.com/ActiveState/cli/internal/errs"
 )
 
 // CmdExitCode returns the exit code of a command
@@ -32,6 +34,10 @@ func InheritEnv(env map[string]string) map[string]string {
 // IsAccessDeniedError is primarily used to determine if an operation failed due to insufficient
 // permissions (e.g. attempting to kill an admin process as a normal user)
 func IsAccessDeniedError(err error) bool {
-	errno, ok := err.(syscall.Errno)
-	return ok && errno == syscall.EPERM
+	for _, unwrappedErr := range errs.Unpack(err) {
+		if errno, ok := unwrappedErr.(syscall.Errno); ok && (errno == syscall.EPERM || errno == syscall.EACCES) {
+			return true
+		}
+	}
+	return false
 }
