@@ -11,7 +11,6 @@ import (
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/runbits/commitmediator"
-	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 )
@@ -28,7 +27,6 @@ type SearchRunParams struct {
 type Search struct {
 	out  output.Outputer
 	proj *project.Project
-	auth *authentication.Auth
 }
 
 // NewSearch prepares a searching execution context for use.
@@ -36,7 +34,6 @@ func NewSearch(prime primeable) *Search {
 	return &Search{
 		out:  prime.Output(),
 		proj: prime.Project(),
-		auth: prime.Auth(),
 	}
 }
 
@@ -74,7 +71,7 @@ func (s *Search) Run(params SearchRunParams, nstype model.NamespaceType) error {
 		)
 	}
 
-	s.out.Print(output.Prepare(formatSearchResults(s.auth, packages, params.Ingredient.Namespace != ""), packages))
+	s.out.Print(output.Prepare(formatSearchResults(packages, params.Ingredient.Namespace != ""), packages))
 
 	return nil
 }
@@ -153,17 +150,8 @@ type searchPackageRow struct {
 
 type searchOutput []searchPackageRow
 
-func formatSearchResults(auth *authentication.Auth, packages []*model.IngredientAndVersion, showNamespace bool) *searchOutput {
+func formatSearchResults(packages []*model.IngredientAndVersion, showNamespace bool) *searchOutput {
 	rows := make(searchOutput, len(packages))
-
-	ingredients := make([]*model.VulnerabilityIngredient, len(packages))
-	for i, pack := range packages {
-		ingredients[i] = &model.VulnerabilityIngredient{
-			Namespace: *pack.Ingredient.PrimaryNamespace,
-			Name:      *pack.Ingredient.Name,
-			Version:   pack.Version,
-		}
-	}
 
 	filterNilStr := func(s *string) string {
 		if s == nil {
