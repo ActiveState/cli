@@ -42,6 +42,12 @@ type languagePlainOutput struct {
 	Version string `locale:"version"`
 }
 
+type languageOutput struct {
+	Name            string `json:"name"`
+	Version         string `json:"version"`
+	ResolvedVersion string `json:"resolved_version"`
+}
+
 // Run executes the list behavior.
 func (l *Languages) Run() error {
 	if l.project == nil {
@@ -79,31 +85,40 @@ func (l *Languages) Run() error {
 	}
 	ns := model.NewNamespaceLanguage()
 
-	plainOutput := []languagePlainOutput{}
+	langsPlainOutput := []languagePlainOutput{}
+	langsOutput := []languageOutput{}
 
-	for i := range langs {
-		name := langs[i].Name
-		version := langs[i].Version
-
+	for _, lang := range langs {
+		version := lang.Version
 		if version == "" {
 			version = locale.T("constraint_auto")
 		}
 
+		resolvedVersion := ""
 		for _, a := range artifacts {
-			if a.Namespace == ns.String() && a.Name == name && version != *a.Version {
+			if a.Namespace == ns.String() && a.Name == lang.Name {
 				// e.g. python@3.10, but resolved artifact version is 3.10.0
-				version = locale.Tr("constraint_resolved", version, *a.Version)
-				langs[i].ResolvedVersion = *a.Version // update for structured output
+				resolvedVersion = *a.Version
 				break
 			}
 		}
 
-		plainOutput = append(plainOutput, languagePlainOutput{
-			Name:    name,
-			Version: version,
+		plainVersion := version
+		if resolvedVersion != "" && resolvedVersion != version {
+			plainVersion = locale.Tr("constraint_resolved", version, resolvedVersion)
+		}
+		langsPlainOutput = append(langsPlainOutput, languagePlainOutput{
+			Name:    lang.Name,
+			Version: plainVersion,
+		})
+
+		langsOutput = append(langsOutput, languageOutput{
+			Name:            lang.Name,
+			Version:         version,
+			ResolvedVersion: resolvedVersion,
 		})
 	}
 
-	l.out.Print(output.Prepare(plainOutput, langs))
+	l.out.Print(output.Prepare(langsPlainOutput, langsOutput))
 	return nil
 }

@@ -58,7 +58,7 @@ func NewList(prime primeable) *List {
 type requirement struct {
 	Name            string `json:"package"`
 	Version         string `json:"version" `
-	ResolvedVersion string `json:"resolved_version,omitempty"`
+	ResolvedVersion string `json:"resolved_version"`
 }
 
 type requirementPlainOutput struct {
@@ -142,14 +142,14 @@ func (l *List) Run(params ListRunParams, nstype model.NamespaceType) error {
 
 		resolvedVersion := ""
 		for _, a := range artifacts {
-			if a.Namespace == ns.String() && a.Name == req.Requirement && version != *a.Version {
+			if a.Namespace == ns.String() && a.Name == req.Requirement {
 				resolvedVersion = *a.Version
 				break
 			}
 		}
 
 		plainVersion := version
-		if resolvedVersion != "" {
+		if resolvedVersion != "" && resolvedVersion != version {
 			plainVersion = locale.Tr("constraint_resolved", version, resolvedVersion)
 		}
 		requirementsPlainOutput = append(requirementsPlainOutput, requirementPlainOutput{

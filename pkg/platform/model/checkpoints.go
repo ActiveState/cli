@@ -27,9 +27,8 @@ type Checkpoint []*mono_models.Checkpoint
 
 // Language represents a language requirement
 type Language struct {
-	Name            string `json:"name"`
-	Version         string `json:"version"`
-	ResolvedVersion string `json:"resolved_version,omitempty"`
+	Name    string `json:"name"`
+	Version string `json:"version"`
 }
 
 // GetRequirement searches a commit for a requirement by name.
