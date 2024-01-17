@@ -506,7 +506,7 @@ func (suite *PackageIntegrationTestSuite) TestNormalize() {
 		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
 	cp.Expect("charset-normalizer", termtest.OptExpectTimeout(5*time.Minute))
-	cp.ExpectExitCode(0)
+	cp.ExpectExitCode(0, termtest.OptExpectTimeout(5*time.Minute))
 	suite.NotContains(cp.Output(), "is different")
 }
 
