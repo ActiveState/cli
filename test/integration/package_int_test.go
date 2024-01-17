@@ -485,7 +485,7 @@ func (suite *PackageIntegrationTestSuite) TestNormalize() {
 	)
 	// Even though we are not sourcing a runtime it can still take time to resolve
 	// the dependencies and create the commit
-	cp.Expect("charset-normalizer", e2e.RuntimeSourcingTimeoutOpt)
+	cp.Expect("charset-normalizer", termtest.OptExpectTimeout(5*time.Minute))
 	cp.Expect("is different")
 	cp.Expect("Charset_normalizer")
 	cp.ExpectExitCode(0)
@@ -505,7 +505,7 @@ func (suite *PackageIntegrationTestSuite) TestNormalize() {
 		e2e.OptWD(anotherDir),
 		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
-	cp.Expect("charset-normalizer", e2e.RuntimeSourcingTimeoutOpt)
+	cp.Expect("charset-normalizer", termtest.OptExpectTimeout(5*time.Minute))
 	cp.ExpectExitCode(0)
 	suite.NotContains(cp.Output(), "is different")
 }
