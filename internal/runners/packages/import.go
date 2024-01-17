@@ -135,6 +135,15 @@ func (i *Import) Run(params *ImportRunParams) error {
 		return locale.WrapError(err, "err_cannot_apply_changeset", "Could not apply changeset")
 	}
 
+	latest, err := model.FetchLatestTimeStamp()
+	if err != nil {
+		return errs.Wrap(err, "Could not fetch latest timestamp")
+	}
+
+	if err := be.UpdateTimestamp(*latest); err != nil {
+		return errs.Wrap(err, "Could not set timestamp")
+	}
+
 	msg := locale.T("commit_reqstext_message")
 	commitID, err := bp.StageCommit(model.StageCommitParams{
 		Owner:        i.proj.Owner(),
