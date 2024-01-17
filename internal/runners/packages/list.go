@@ -13,7 +13,6 @@ import (
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/runbits/commitmediator"
@@ -21,7 +20,6 @@ import (
 	gqlModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/ActiveState/cli/pkg/platform/runtime"
 	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/ActiveState/cli/pkg/platform/runtime/store"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
@@ -57,6 +55,17 @@ func NewList(prime primeable) *List {
 	}
 }
 
+type requirement struct {
+	Name            string `json:"package"`
+	Version         string `json:"version" `
+	ResolvedVersion string `json:"resolved_version,omitempty"`
+}
+
+type requirementPlainOutput struct {
+	Name    string `locale:"package_name,Name"`
+	Version string `locale:"package_version,Version"`
+}
+
 // Run executes the list behavior.
 func (l *List) Run(params ListRunParams, nstype model.NamespaceType) error {
 	logging.Debug("ExecuteList")
@@ -90,29 +99,77 @@ func (l *List) Run(params ListRunParams, nstype model.NamespaceType) error {
 		return locale.WrapError(err, fmt.Sprintf("%s_err_cannot_fetch_checkpoint", nstype))
 	}
 
-	// Initialize the project's runtime and determine its language if possible.
-	// This is used for resolving package version numbers.
-	// Note: any errors here are not fatal, and should not be reported to rollbar.
-	var rt *runtime.Runtime
+	language, err := model.LanguageByCommit(*commit)
+	if err != nil {
+		return locale.WrapError(err, "err_package_list_language", "Unable to get language from project")
+	}
+	ns := ptr.To(model.NewNamespacePkgOrBundle(language.Name, nstype))
+
+	// Fetch resolved artifacts list for showing full version numbers, if possible.
+	var artifacts []*artifact.Artifact
 	if l.project != nil && params.Project == "" {
-		rt, err = runbitsRuntime.NewFromProject(l.project, target.TriggerPackage, l.analytics, l.svcModel, l.out, l.auth, l.cfg)
+		rt, err := runbitsRuntime.NewFromProject(l.project, target.TriggerPackage, l.analytics, l.svcModel, l.out, l.auth, l.cfg)
 		if err != nil {
-			logging.Error("Unable to initialize runtime for version resolution: %v", errs.JoinMessage(err))
+			return locale.WrapError(err, "err_package_list_runtime", "Could not initialize runtime")
+		}
+		artifacts, err = rt.ResolvedArtifacts()
+		if err != nil && !errs.Matches(err, store.ErrNoBuildPlanFile) {
+			return locale.WrapError(err, "err_package_list_artifacts", "Unable to resolve package versions")
 		}
 	}
-	var ns *model.Namespace
-	if language, err := model.LanguageByCommit(*commit); err == nil {
-		ns = ptr.To(model.NewNamespacePkgOrBundle(language.Name, nstype))
-	} else {
-		logging.Error("Unable to get language from project: %v", errs.JoinMessage(err))
+
+	requirements := model.FilterCheckpointNamespace(checkpoint, model.NamespacePackage, model.NamespaceBundle)
+	sort.SliceStable(requirements, func(i, j int) bool {
+		return strings.ToLower(requirements[i].Requirement) < strings.ToLower(requirements[j].Requirement)
+	})
+
+	requirementsPlainOutput := []requirementPlainOutput{}
+	requirementsOutput := []requirement{}
+
+	for _, req := range requirements {
+		if !strings.Contains(strings.ToLower(req.Requirement), strings.ToLower(params.Name)) {
+			continue
+		}
+
+		if !strings.HasPrefix(req.Namespace, nstype.Prefix()) {
+			continue
+		}
+
+		version := req.VersionConstraint
+		if version == "" {
+			version = locale.T("constraint_auto")
+		}
+
+		resolvedVersion := ""
+		for _, a := range artifacts {
+			if a.Namespace == ns.String() && a.Name == req.Requirement && version != *a.Version {
+				resolvedVersion = *a.Version
+				break
+			}
+		}
+
+		plainVersion := version
+		if resolvedVersion != "" {
+			plainVersion = locale.Tr("constraint_resolved", version, resolvedVersion)
+		}
+		requirementsPlainOutput = append(requirementsPlainOutput, requirementPlainOutput{
+			Name:    req.Requirement,
+			Version: plainVersion,
+		})
+
+		requirementsOutput = append(requirementsOutput, requirement{
+			Name:            req.Requirement,
+			Version:         version,
+			ResolvedVersion: resolvedVersion,
+		})
 	}
 
-	rows := newFilteredRequirementsTable(model.FilterCheckpointNamespace(checkpoint, model.NamespacePackage, model.NamespaceBundle), params.Name, nstype, rt, ns)
-	var plainOutput interface{} = rows
-	if len(rows) == 0 {
+	var plainOutput interface{} = requirementsPlainOutput
+	if len(requirementsOutput) == 0 {
 		plainOutput = locale.T(fmt.Sprintf("%s_list_no_packages", nstype.String()))
 	}
-	l.out.Print(output.Prepare(plainOutput, rows))
+
+	l.out.Print(output.Prepare(plainOutput, requirementsOutput))
 	return nil
 }
 
@@ -182,73 +239,4 @@ func fetchCheckpoint(commit *strfmt.UUID) ([]*gqlModel.Requirement, error) {
 	}
 
 	return checkpoint, err
-}
-
-type packageRow struct {
-	Pkg     string `json:"package" locale:"package_name,Name"`
-	Version string `json:"version" locale:"package_version,Version"`
-}
-
-func newFilteredRequirementsTable(requirements []*gqlModel.Requirement, filter string, nstype model.NamespaceType, rt *runtime.Runtime, ns *model.Namespace) []packageRow {
-	if requirements == nil {
-		logging.Debug("requirements is nil")
-		return nil
-	}
-
-	// Fetch resolved artifacts list for showing full version numbers.
-	// Note: an error here is not fatal.
-	var artifacts []artifact.Artifact
-	if rt != nil && ns != nil {
-		var err error
-		artifacts, err = rt.ResolvedArtifacts()
-		if err != nil && !errs.Matches(err, store.ErrNoBuildPlanFile) {
-			multilog.Error("Unable to retrieve runtime resolved artifact list: %v", errs.JoinMessage(err))
-		}
-	}
-
-	rows := make([]packageRow, 0, len(requirements))
-	for _, req := range requirements {
-		if !strings.Contains(strings.ToLower(req.Requirement), strings.ToLower(filter)) {
-			continue
-		}
-
-		if !strings.HasPrefix(req.Namespace, nstype.Prefix()) {
-			continue
-		}
-
-		versionConstraint := req.VersionConstraint
-		if versionConstraint == "" {
-			versionConstraint = locale.T("constraint_auto")
-			if len(req.VersionConstraints) > 0 {
-				reqs := model.MonoModelConstraintsToRequirements(&req.VersionConstraints)
-				versionConstraint = model.RequirementsToVersionString(reqs)
-			}
-
-			for _, a := range artifacts {
-				if a.Namespace == ns.String() && a.Name == req.Requirement {
-					versionConstraint = locale.Tr("constraint_resolved", versionConstraint, *a.Version)
-					break
-				}
-			}
-		}
-
-		row := packageRow{
-			req.Requirement,
-			versionConstraint,
-		}
-		rows = append(rows, row)
-	}
-
-	// Sort the rows.
-	less := func(i, j int) bool {
-		a := rows[i].Pkg
-		b := rows[j].Pkg
-		if strings.ToLower(a) < strings.ToLower(b) {
-			return true
-		}
-		return a < b
-	}
-	sort.Slice(rows, less)
-
-	return rows
 }

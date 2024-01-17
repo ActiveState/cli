@@ -1,20 +1,15 @@
 package languages
 
 import (
-	"strings"
-
 	"github.com/ActiveState/cli/internal/analytics"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
-	"github.com/ActiveState/cli/internal/logging"
-	"github.com/ActiveState/cli/internal/multilog"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/runbits/commitmediator"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
-	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/ActiveState/cli/pkg/platform/runtime/store"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
@@ -40,6 +35,11 @@ func NewLanguages(prime primeable) *Languages {
 		prime.Auth(),
 		prime.Config(),
 	}
+}
+
+type languagePlainOutput struct {
+	Name    string `locale:"name"`
+	Version string `locale:"version"`
 }
 
 // Run executes the list behavior.
@@ -69,42 +69,41 @@ func (l *Languages) Run() error {
 	}
 
 	// Fetch resolved artifacts list for showing full version numbers.
-	// Note: any errors here are not fatal, and only some of them should be reported to rollbar.
-	var artifacts []artifact.Artifact
-	if rt, err := runtime.NewFromProject(l.project, target.TriggerLanguage, l.analytics, l.svcModel, l.out, l.auth, l.cfg); err == nil {
-		artifacts, err = rt.ResolvedArtifacts()
-		if err != nil && !errs.Matches(err, store.ErrNoBuildPlanFile) {
-			multilog.Error("Unable to retrieve runtime resolved artifact list: %v", errs.JoinMessage(err))
-		}
-	} else {
-		logging.Error("Unable to initialize runtime for version resolution: %v", errs.JoinMessage(err))
+	rt, err := runtime.NewFromProject(l.project, target.TriggerLanguage, l.analytics, l.svcModel, l.out, l.auth, l.cfg)
+	if err != nil {
+		return locale.WrapError(err, "err_languages_runtime", "Could not initialize runtime")
+	}
+	artifacts, err := rt.ResolvedArtifacts()
+	if err != nil && !errs.Matches(err, store.ErrNoBuildPlanFile) {
+		return locale.WrapError(err, "err_language_resolved_artifacts", "Unable to resolve language version(s)")
 	}
 	ns := model.NewNamespaceLanguage()
+
+	plainOutput := []languagePlainOutput{}
 
 	for i := range langs {
 		name := langs[i].Name
 		version := langs[i].Version
-		constraints := langs[i].VersionConstraints()
-
-		langs[i].Name = strings.Title(name)
 
 		if version == "" {
 			version = locale.T("constraint_auto")
 		}
-		if constraints != nil && len(*constraints) > 0 {
-			reqs := model.MonoModelConstraintsToRequirements(constraints)
-			version = model.RequirementsToVersionString(reqs)
-		}
+
 		for _, a := range artifacts {
 			if a.Namespace == ns.String() && a.Name == name && version != *a.Version {
 				// e.g. python@3.10, but resolved artifact version is 3.10.0
 				version = locale.Tr("constraint_resolved", version, *a.Version)
+				langs[i].ResolvedVersion = *a.Version // update for structured output
 				break
 			}
 		}
-		langs[i].Version = version
+
+		plainOutput = append(plainOutput, languagePlainOutput{
+			Name:    name,
+			Version: version,
+		})
 	}
 
-	l.out.Print(output.Prepare(langs, langs))
+	l.out.Print(output.Prepare(plainOutput, langs))
 	return nil
 }

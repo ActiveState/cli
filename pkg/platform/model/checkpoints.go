@@ -27,9 +27,9 @@ type Checkpoint []*mono_models.Checkpoint
 
 // Language represents a language requirement
 type Language struct {
-	Name               string `json:"name"`
-	Version            string `json:"version"`
-	versionConstraints mono_models.Constraints
+	Name            string `json:"name"`
+	Version         string `json:"version"`
+	ResolvedVersion string `json:"resolved_version,omitempty"`
 }
 
 // GetRequirement searches a commit for a requirement by name.
@@ -61,9 +61,8 @@ func FetchLanguagesForCommit(commitID strfmt.UUID) ([]Language, error) {
 	for _, requirement := range checkpoint {
 		if NamespaceMatch(requirement.Namespace, NamespaceLanguageMatch) {
 			lang := Language{
-				Name:               requirement.Requirement,
-				Version:            requirement.VersionConstraint,
-				versionConstraints: requirement.VersionConstraints,
+				Name:    requirement.Requirement,
+				Version: requirement.VersionConstraint,
 			}
 			languages = append(languages, lang)
 		}
@@ -276,11 +275,4 @@ func fallbackArch(platform, arch string) string {
 		return "amd64"
 	}
 	return arch
-}
-
-func (l *Language) VersionConstraints() *mono_models.Constraints {
-	if l.versionConstraints == nil {
-		return nil
-	}
-	return &l.versionConstraints
 }
