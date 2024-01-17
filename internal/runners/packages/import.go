@@ -131,6 +131,10 @@ func (i *Import) Run(params *ImportRunParams) error {
 		return locale.WrapError(err, "err_cannot_get_build_expression", "Could not get build expression")
 	}
 
+	if err := be.SetDefaultTimestamp(); err != nil {
+		return locale.WrapError(err, "err_cannot_set_timestamp", "Could not set timestamp")
+	}
+
 	if err := applyChangeset(changeset, be); err != nil {
 		return locale.WrapError(err, "err_cannot_apply_changeset", "Could not apply changeset")
 	}
