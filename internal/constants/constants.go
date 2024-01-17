@@ -192,6 +192,9 @@ const SvcAuthPollingRateEnvVarName = "ACTIVESTATE_SVC_AUTH_POLLING_RATE"
 // log rotation timer interval (1 minute).
 const SvcLogRotateIntervalEnvVarName = "ACTIVESTATE_CLI_LOG_ROTATE_INTERVAL_MS"
 
+// DisableActivateEventsEnvVarName is the environment variable used to disable events when activating or checking out a project
+const DisableActivateEventsEnvVarName = "ACTIVESTATE_CLI_DISABLE_ACTIVATE_EVENTS"
+
 // APIUpdateInfoURL is the URL for our update info server
 const APIUpdateInfoURL = "https://platform.activestate.com/sv/state-update/api/v1"
 
@@ -281,6 +284,9 @@ const RequirementsImportAPIPath = "/sv/reqsvc/reqs"
 
 // BuildPlannerAPIPath is the path used for the build planner api
 const BuildPlannerAPIPath = "/sv/buildplanner/graphql"
+
+// VulnerabilitiesAPIPath is the path used for the vulnerabilities api
+const VulnerabilitiesAPIPath = "/v13s/v1/graphql"
 
 // MessagesInfoURL is the URL we check against to see what versions are deprecated
 const MessagesInfoURL = "https://state-tool.s3.amazonaws.com/messages.json"

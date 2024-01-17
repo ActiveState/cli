@@ -3,8 +3,10 @@ package e2e
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"testing"
 
 	"github.com/ActiveState/cli/internal/constants"
@@ -20,6 +22,13 @@ func sandboxedTestEnvironment(t *testing.T, dirs *Dirs, updatePath bool, extraEn
 		basePath = os.Getenv("PATH")
 		env = append(env, os.Environ()...)
 	}
+	if value := os.Getenv(constants.ActiveStateCIEnvVarName); value != "" {
+		env = append(env, fmt.Sprintf("%s=%s", constants.ActiveStateCIEnvVarName, value))
+	}
+
+	// add go binary to PATH
+	goBinary := goBinaryPath(t)
+	basePath = fmt.Sprintf("%s%s%s", basePath, string(os.PathListSeparator), filepath.Dir(goBinary))
 
 	env = append(env, []string{
 		constants.ConfigEnvVarName + "=" + dirs.Config,
@@ -89,5 +98,20 @@ func prepareHomeDir(dir string) error {
 	}
 
 	return nil
+}
 
+func goBinaryPath(t *testing.T) string {
+	locator := "which"
+	if runtime.GOOS == "windows" {
+		locator = "where"
+	}
+	cmd := exec.Command(locator, "go")
+	output, err := cmd.Output()
+	if err != nil {
+		t.Log("Could not find go binary")
+		return ""
+	}
+	goBinary := string(output)
+	goBinary = strings.TrimSpace(string(goBinary))
+	return goBinary
 }

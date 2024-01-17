@@ -60,7 +60,7 @@ func (r *Refresh) Run(params *Params) error {
 		if errs.Matches(err, &projectfile.ErrorNoDefaultProject{}) {
 			return locale.WrapError(err, "err_use_default_project_does_not_exist")
 		}
-		return locale.WrapError(err, "err_refresh_cannot_load_project", "Cannot load project to update runtime for")
+		return locale.WrapError(err, "err_refresh_cannot_load_project", "Cannot load project to update runtime for.")
 	}
 
 	rti, err := runtime.NewFromProject(proj, target.TriggerRefresh, r.analytics, r.svcModel, r.out, r.auth, r.config)

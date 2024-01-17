@@ -26,6 +26,7 @@ import (
 	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/ActiveState/cli/pkg/platform/runtime/buildscript"
 	"github.com/ActiveState/cli/pkg/platform/runtime/envdef"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
@@ -36,14 +37,15 @@ import (
 )
 
 type Runtime struct {
-	disabled  bool
-	target    setup.Targeter
-	store     *store.Store
-	analytics analytics.Dispatcher
-	svcm      *model.SvcModel
-	auth      *authentication.Auth
-	cfg       model.Configurable
-	completed bool
+	disabled          bool
+	target            setup.Targeter
+	store             *store.Store
+	analytics         analytics.Dispatcher
+	svcm              *model.SvcModel
+	auth              *authentication.Auth
+	completed         bool
+	cfg               model.Configurable
+	resolvedArtifacts []artifact.Artifact
 }
 
 // NeedsUpdateError is an error returned when the runtime is not completely installed yet.
@@ -357,4 +359,30 @@ func (r *Runtime) ExecutableDirs() (envdef.ExecutablePaths, error) {
 
 func IsRuntimeDir(dir string) bool {
 	return store.New(dir).HasMarker()
+}
+
+func (r *Runtime) ResolvedArtifacts() ([]artifact.Artifact, error) {
+	if r.resolvedArtifacts == nil {
+		runtimeStore := r.store
+		if runtimeStore == nil {
+			runtimeStore = store.New(r.target.Dir())
+		}
+
+		plan, err := runtimeStore.BuildPlan()
+		if err != nil {
+			return nil, errs.Wrap(err, "Unable to fetch build plan")
+		}
+
+		r.resolvedArtifacts = make([]artifact.Artifact, len(plan.Sources))
+		for i, source := range plan.Sources {
+			r.resolvedArtifacts[i] = artifact.Artifact{
+				ArtifactID: source.NodeID,
+				Name:       source.Name,
+				Namespace:  source.Namespace,
+				Version:    &source.Version,
+			}
+		}
+	}
+
+	return r.resolvedArtifacts, nil
 }

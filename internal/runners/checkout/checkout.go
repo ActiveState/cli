@@ -13,7 +13,6 @@ import (
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
-	"github.com/ActiveState/cli/internal/runbits/checker"
 	"github.com/ActiveState/cli/internal/runbits/checkout"
 	"github.com/ActiveState/cli/internal/runbits/git"
 	"github.com/ActiveState/cli/internal/runbits/runtime"
@@ -68,8 +67,6 @@ func NewCheckout(prime primeable) *Checkout {
 
 func (u *Checkout) Run(params *Params) (rerr error) {
 	logging.Debug("Checkout %v", params.Namespace)
-
-	checker.RunUpdateNotifier(u.analytics, u.svcModel, u.out)
 
 	logging.Debug("Checking out %s to %s", params.Namespace.String(), params.PreferredPath)
 	var err error

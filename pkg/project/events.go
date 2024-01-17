@@ -1,5 +1,12 @@
 package project
 
+import (
+	"os"
+	"strings"
+
+	"github.com/ActiveState/cli/internal/constants"
+)
+
 type EventType string
 
 const (
@@ -14,6 +21,10 @@ func (e EventType) String() string {
 }
 
 func ActivateEvents() []EventType {
+	if strings.EqualFold(os.Getenv(constants.DisableActivateEventsEnvVarName), "true") {
+		return []EventType{}
+	}
+
 	return []EventType{
 		Activate,
 		FirstActivate,

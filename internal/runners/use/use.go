@@ -12,7 +12,6 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
-	"github.com/ActiveState/cli/internal/runbits/checker"
 	"github.com/ActiveState/cli/internal/runbits/checkout"
 	"github.com/ActiveState/cli/internal/runbits/commitmediator"
 	"github.com/ActiveState/cli/internal/runbits/findproject"
@@ -66,8 +65,6 @@ func NewUse(prime primeable) *Use {
 
 func (u *Use) Run(params *Params) error {
 	logging.Debug("Use %v", params.Namespace)
-
-	checker.RunUpdateNotifier(u.analytics, u.svcModel, u.out)
 
 	proj, err := findproject.FromNamespaceLocal(params.Namespace, u.config, u.prompt)
 	if err != nil {
