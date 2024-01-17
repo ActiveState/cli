@@ -604,17 +604,17 @@ func (suite *PackageIntegrationTestSuite) TestRuby() {
 	defer ts.Close()
 
 	cp := ts.Spawn("checkout", "ActiveState-CLI/Ruby-3.2.2", ".")
-	cp.Expect("Checked out project")
+	cp.Expect("Checked out project", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("install", "rake")
-	cp.ExpectExitCode(0)
+	cp.ExpectExitCode(0, e2e.RuntimeSourcingTimeoutOpt)
 
 	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("exec", "rake", "--", "--version"),
 		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
-	cp.ExpectRe(`rake, version \d+\.\d+\.\d+`)
+	cp.ExpectRe(`rake, version \d+\.\d+\.\d+`, e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
 }
 
@@ -636,13 +636,13 @@ func (suite *PackageIntegrationTestSuite) TestProjectWithOfflineInstallerAndDock
 		e2e.OptArgs("install", "requests"),
 		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
-	cp.ExpectExitCode(0)
+	cp.ExpectExitCode(0, e2e.RuntimeSourcingTimeoutOpt)
 
 	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("uninstall", "requests"),
 		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
-	cp.ExpectExitCode(0)
+	cp.ExpectExitCode(0, e2e.RuntimeSourcingTimeoutOpt)
 }
 
 func TestPackageIntegrationTestSuite(t *testing.T) {
