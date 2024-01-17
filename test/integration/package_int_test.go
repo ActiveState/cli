@@ -582,7 +582,7 @@ func (suite *PackageIntegrationTestSuite) TestUpdate() {
 		e2e.OptArgs("install", "pytest@7.4.0"),              // update
 		e2e.OptAppendEnv(constants.DisableRuntime+"=false"), // We DO want to test the runtime part, just not for every step
 	)
-	cp.ExpectExitCode(0)
+	cp.ExpectExitCode(0, e2e.RuntimeSourcingTimeoutOpt)
 
 	cp = ts.Spawn("history")
 	cp.Expect("pytest")
