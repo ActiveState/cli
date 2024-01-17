@@ -3,7 +3,6 @@ package e2e
 import (
 	"fmt"
 	"io/fs"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -408,7 +407,7 @@ func (s *Session) PrepareFile(path, contents string) {
 
 	bs := append([]byte(contents), '\n')
 
-	err = ioutil.WriteFile(path, bs, 0660)
+	err = os.WriteFile(path, bs, 0660)
 	require.NoError(s.t, err, errMsg)
 }
 
