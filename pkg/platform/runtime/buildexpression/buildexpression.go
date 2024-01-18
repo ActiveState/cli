@@ -871,6 +871,25 @@ func (e *BuildExpression) removePlatform(platformID strfmt.UUID) error {
 	return nil
 }
 
+func (e *BuildExpression) SetDefaultTimestamp() error {
+	solveNode, err := e.getSolveNode()
+	if err != nil {
+		return errs.Wrap(err, "Could not get solve node")
+	}
+
+	for _, arg := range solveNode.Arguments {
+		if arg.Assignment == nil {
+			continue
+		}
+
+		if arg.Assignment.Name == AtTimeKey {
+			arg.Assignment.Value.Str = ptr.To(fmt.Sprintf("$%s", AtTimeKey))
+		}
+	}
+
+	return nil
+}
+
 func (e *BuildExpression) MarshalJSON() ([]byte, error) {
 	m := make(map[string]interface{})
 
