@@ -882,8 +882,8 @@ func (e *BuildExpression) SetDefaultTimestamp() error {
 			continue
 		}
 
-		if arg.Assignment.Name == "at_time" {
-			arg.Assignment.Value.Str = ptr.To("$at_time")
+		if arg.Assignment.Name == AtTimeKey {
+			arg.Assignment.Value.Str = ptr.To(fmt.Sprintf("$%s", AtTimeKey))
 		}
 	}
 

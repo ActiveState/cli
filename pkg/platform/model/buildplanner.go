@@ -1,7 +1,6 @@
 package model
 
 import (
-	"encoding/json"
 	"errors"
 	"os"
 	"regexp"
@@ -265,16 +264,10 @@ func (bp *BuildPlanner) StageCommit(params StageCommitParams) (strfmt.UUID, erro
 		}
 	}
 
-	expressionData, err := json.MarshalIndent(expression, "", "  ")
-	if err != nil {
-		return "", errs.Wrap(err, "Failed to marshal build expression")
-	}
-	logging.Debug("Build expression: %s", string(expressionData))
-
 	// With the updated build expression call the stage commit mutation
 	request := request.StageCommit(params.Owner, params.Project, params.ParentCommit, params.Description, expression)
 	resp := &bpModel.StageCommitResult{}
-	err = bp.client.Run(request, resp)
+	err := bp.client.Run(request, resp)
 	if err != nil {
 		return "", processBuildPlannerError(err, "failed to stage commit")
 	}

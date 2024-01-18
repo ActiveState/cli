@@ -485,7 +485,7 @@ func (suite *PackageIntegrationTestSuite) TestNormalize() {
 	)
 	// Even though we are not sourcing a runtime it can still take time to resolve
 	// the dependencies and create the commit
-	cp.Expect("charset-normalizer", termtest.OptExpectTimeout(5*time.Minute))
+	cp.Expect("charset-normalizer", e2e.RuntimeSourcingTimeoutOpt)
 	cp.Expect("is different")
 	cp.Expect("Charset_normalizer")
 	cp.ExpectExitCode(0)
@@ -505,8 +505,8 @@ func (suite *PackageIntegrationTestSuite) TestNormalize() {
 		e2e.OptWD(anotherDir),
 		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
-	cp.Expect("charset-normalizer", termtest.OptExpectTimeout(5*time.Minute))
-	cp.ExpectExitCode(0, termtest.OptExpectTimeout(5*time.Minute))
+	cp.Expect("charset-normalizer", e2e.RuntimeSourcingTimeoutOpt)
+	cp.ExpectExitCode(0, e2e.RuntimeSourcingTimeoutOpt)
 	suite.NotContains(cp.Output(), "is different")
 }
 
@@ -582,7 +582,7 @@ func (suite *PackageIntegrationTestSuite) TestUpdate() {
 		e2e.OptArgs("install", "pytest@7.4.0"),              // update
 		e2e.OptAppendEnv(constants.DisableRuntime+"=false"), // We DO want to test the runtime part, just not for every step
 	)
-	cp.ExpectExitCode(0, termtest.OptExpectTimeout(5*time.Minute))
+	cp.ExpectExitCode(0, e2e.RuntimeSourcingTimeoutOpt)
 
 	cp = ts.Spawn("history")
 	cp.Expect("pytest")
@@ -604,11 +604,11 @@ func (suite *PackageIntegrationTestSuite) TestRuby() {
 	defer ts.Close()
 
 	cp := ts.Spawn("checkout", "ActiveState-CLI/Ruby-3.2.2", ".")
-	cp.Expect("Checked out project", e2e.RuntimeSourcingTimeoutOpt)
+	cp.Expect("Checked out project")
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("install", "rake")
-	cp.ExpectExitCode(0, e2e.RuntimeSourcingTimeoutOpt)
+	cp.ExpectExitCode(0)
 
 	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("exec", "rake", "--", "--version"),
