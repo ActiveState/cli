@@ -659,7 +659,7 @@ func (suite *PackageIntegrationTestSuite) TestResolved() {
 		e2e.OptArgs("install", "requests"),
 		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
-	cp.ExpectExitCode(0)
+	cp.ExpectExitCode(0, e2e.RuntimeSourcingTimeoutOpt)
 
 	cp = ts.Spawn("packages")
 	cp.Expect("Auto →")
