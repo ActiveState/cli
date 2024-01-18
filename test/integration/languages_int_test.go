@@ -26,7 +26,7 @@ func (suite *LanguagesIntegrationTestSuite) TestLanguages_list() {
 
 	cp := ts.Spawn("languages")
 	cp.Expect("Name")
-	cp.Expect("Python")
+	cp.Expect("python")
 	cp.Expect("3.9.15")
 	cp.ExpectExitCode(0)
 }
@@ -54,7 +54,7 @@ func (suite *LanguagesIntegrationTestSuite) TestLanguages_install() {
 
 	cp := ts.Spawn("languages")
 	cp.Expect("Name")
-	cp.Expect("Python")
+	cp.Expect("python")
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("languages", "install", "python")
@@ -69,7 +69,7 @@ func (suite *LanguagesIntegrationTestSuite) TestLanguages_install() {
 
 	cp = ts.Spawn("languages")
 	cp.Expect("Name")
-	cp.Expect("Python")
+	cp.Expect("python")
 	versionRe := regexp.MustCompile(`(\d+)\.(\d+).(\d+)`)
 	cp.ExpectRe(versionRe.String())
 	cp.ExpectExitCode(0)
@@ -94,7 +94,7 @@ func (suite *LanguagesIntegrationTestSuite) TestJSON() {
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("languages", "-o", "json")
-	cp.Expect(`[{"name":"Python","version":`)
+	cp.Expect(`[{"name":"python","version":`)
 	cp.ExpectExitCode(0)
 	AssertValidJSON(suite.T(), cp)
 
