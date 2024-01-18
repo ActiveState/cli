@@ -539,7 +539,7 @@ func VersionStringToRequirements(version string) ([]bpModel.VersionRequirement, 
 			return nil, locale.NewInputError("err_version_wildcard_start", "A version number cannot start with a wildcard")
 		}
 		requirements = append(requirements, bpModel.VersionRequirement{
-			bpModel.VersionRequirementComparatorKey: "gte",
+			bpModel.VersionRequirementComparatorKey: bpModel.ComparatorGTE,
 			bpModel.VersionRequirementVersionKey:    strings.Join(parts[:i], "."),
 		})
 		previousPart, err := strconv.Atoi(parts[i-1])
@@ -548,7 +548,7 @@ func VersionStringToRequirements(version string) ([]bpModel.VersionRequirement, 
 		}
 		parts[i-1] = strconv.Itoa(previousPart + 1)
 		requirements = append(requirements, bpModel.VersionRequirement{
-			bpModel.VersionRequirementComparatorKey: "lt",
+			bpModel.VersionRequirementComparatorKey: bpModel.ComparatorLT,
 			bpModel.VersionRequirementVersionKey:    strings.Join(parts[:i], "."),
 		})
 	}

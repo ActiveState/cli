@@ -446,7 +446,7 @@ func (suite *PackageIntegrationTestSuite) TestJSON() {
 	AssertValidJSON(suite.T(), cp)
 
 	cp = ts.Spawn("packages", "-o", "json")
-	cp.Expect(`[{"package":"Text-CSV","version":"Auto"}]`)
+	cp.Expect(`[{"package":"Text-CSV","version":"Auto","resolved_version":"`)
 	cp.ExpectExitCode(0)
 	AssertValidJSON(suite.T(), cp)
 
@@ -643,6 +643,27 @@ func (suite *PackageIntegrationTestSuite) TestProjectWithOfflineInstallerAndDock
 		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
 	cp.ExpectExitCode(0, e2e.RuntimeSourcingTimeoutOpt)
+}
+
+func (suite *PackageIntegrationTestSuite) TestResolved() {
+	suite.OnlyRunForTags(tagsuite.Package)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.Spawn("checkout", "ActiveState-CLI/small-python", ".")
+	cp.Expect("Skipping runtime setup")
+	cp.Expect("Checked out project")
+	cp.ExpectExitCode(0)
+
+	cp = ts.SpawnWithOpts(
+		e2e.OptArgs("install", "requests"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
+	)
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("packages")
+	cp.Expect("Auto →")
+	cp.ExpectExitCode(0)
 }
 
 func TestPackageIntegrationTestSuite(t *testing.T) {

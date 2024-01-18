@@ -135,6 +135,10 @@ func (i *Import) Run(params *ImportRunParams) error {
 		return locale.WrapError(err, "err_cannot_apply_changeset", "Could not apply changeset")
 	}
 
+	if err := be.SetDefaultTimestamp(); err != nil {
+		return locale.WrapError(err, "err_cannot_set_timestamp", "Could not set timestamp")
+	}
+
 	msg := locale.T("commit_reqstext_message")
 	commitID, err := bp.StageCommit(model.StageCommitParams{
 		Owner:        i.proj.Owner(),
@@ -150,7 +154,7 @@ func (i *Import) Run(params *ImportRunParams) error {
 	if err := commitmediator.Set(i.proj, commitID.String()); err != nil {
 		return locale.WrapError(err, "err_package_update_commit_id")
 	}
-  
+
 	return runbits.RefreshRuntime(i.auth, i.out, i.analytics, i.proj, commitID, true, target.TriggerImport, i.svcModel, i.cfg)
 }
 

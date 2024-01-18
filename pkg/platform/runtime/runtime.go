@@ -45,7 +45,7 @@ type Runtime struct {
 	auth              *authentication.Auth
 	completed         bool
 	cfg               model.Configurable
-	resolvedArtifacts []artifact.Artifact
+	resolvedArtifacts []*artifact.Artifact
 }
 
 // NeedsUpdateError is an error returned when the runtime is not completely installed yet.
@@ -361,7 +361,7 @@ func IsRuntimeDir(dir string) bool {
 	return store.New(dir).HasMarker()
 }
 
-func (r *Runtime) ResolvedArtifacts() ([]artifact.Artifact, error) {
+func (r *Runtime) ResolvedArtifacts() ([]*artifact.Artifact, error) {
 	if r.resolvedArtifacts == nil {
 		runtimeStore := r.store
 		if runtimeStore == nil {
@@ -373,9 +373,9 @@ func (r *Runtime) ResolvedArtifacts() ([]artifact.Artifact, error) {
 			return nil, errs.Wrap(err, "Unable to fetch build plan")
 		}
 
-		r.resolvedArtifacts = make([]artifact.Artifact, len(plan.Sources))
+		r.resolvedArtifacts = make([]*artifact.Artifact, len(plan.Sources))
 		for i, source := range plan.Sources {
-			r.resolvedArtifacts[i] = artifact.Artifact{
+			r.resolvedArtifacts[i] = &artifact.Artifact{
 				ArtifactID: source.NodeID,
 				Name:       source.Name,
 				Namespace:  source.Namespace,
