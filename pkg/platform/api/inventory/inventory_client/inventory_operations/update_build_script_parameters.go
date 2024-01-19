@@ -54,12 +54,10 @@ func NewUpdateBuildScriptParamsWithHTTPClient(client *http.Client) *UpdateBuildS
 	}
 }
 
-/*
-UpdateBuildScriptParams contains all the parameters to send to the API endpoint
+/* UpdateBuildScriptParams contains all the parameters to send to the API endpoint
+   for the update build script operation.
 
-	for the update build script operation.
-
-	Typically these are written to a http.Request.
+   Typically these are written to a http.Request.
 */
 type UpdateBuildScriptParams struct {
 

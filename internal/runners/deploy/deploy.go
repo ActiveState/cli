@@ -13,7 +13,6 @@ import (
 	"github.com/ActiveState/cli/internal/assets"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -154,7 +153,7 @@ func (d *Deploy) commitID(namespace project.Namespaced) (strfmt.UUID, error) {
 func (d *Deploy) install(rtTarget setup.Targeter) (rerr error) {
 	d.output.Notice(output.Title(locale.T("deploy_install")))
 
-	rti, err := runtime.New(rtTarget, d.analytics, d.svcModel, d.auth)
+	rti, err := runtime.New(rtTarget, d.analytics, d.svcModel, d.auth, d.cfg)
 	if err == nil {
 		d.output.Notice(locale.Tl("deploy_already_installed", "Already installed"))
 		return nil
@@ -190,7 +189,7 @@ func (d *Deploy) install(rtTarget setup.Targeter) (rerr error) {
 }
 
 func (d *Deploy) configure(namespace project.Namespaced, rtTarget setup.Targeter, userScope bool) error {
-	rti, err := runtime.New(rtTarget, d.analytics, d.svcModel, d.auth)
+	rti, err := runtime.New(rtTarget, d.analytics, d.svcModel, d.auth, d.cfg)
 	if err != nil {
 		if runtime.IsNeedsUpdateError(err) {
 			return locale.NewInputError("err_deploy_run_install")
@@ -227,7 +226,7 @@ func (d *Deploy) configure(namespace project.Namespaced, rtTarget setup.Targeter
 }
 
 func (d *Deploy) symlink(rtTarget setup.Targeter, overwrite bool) error {
-	rti, err := runtime.New(rtTarget, d.analytics, d.svcModel, d.auth)
+	rti, err := runtime.New(rtTarget, d.analytics, d.svcModel, d.auth, d.cfg)
 	if err != nil {
 		if runtime.IsNeedsUpdateError(err) {
 			return locale.NewInputError("err_deploy_run_install")
@@ -250,13 +249,13 @@ func (d *Deploy) symlink(rtTarget setup.Targeter, overwrite bool) error {
 		return locale.WrapError(err, "err_symlink_exes", "Could not detect executable paths")
 	}
 
-	exes, err := exeutils.Executables(bins)
+	exes, err := osutils.Executables(bins)
 	if err != nil {
 		return locale.WrapError(err, "err_symlink_exes", "Could not detect executables")
 	}
 
 	// Remove duplicate executables as per PATH and PATHEXT
-	exes, err = exeutils.UniqueExes(exes, os.Getenv("PATHEXT"))
+	exes, err = osutils.UniqueExes(exes, os.Getenv("PATHEXT"))
 	if err != nil {
 		return locale.WrapError(err, "err_unique_exes", "Could not detect unique executables, make sure your PATH and PATHEXT environment variables are properly configured.")
 	}
@@ -345,7 +344,7 @@ type Report struct {
 }
 
 func (d *Deploy) report(rtTarget setup.Targeter) error {
-	rti, err := runtime.New(rtTarget, d.analytics, d.svcModel, d.auth)
+	rti, err := runtime.New(rtTarget, d.analytics, d.svcModel, d.auth, d.cfg)
 	if err != nil {
 		if runtime.IsNeedsUpdateError(err) {
 			return locale.NewInputError("err_deploy_run_install")

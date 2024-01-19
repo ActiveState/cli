@@ -20,6 +20,7 @@ import (
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/runbits"
 	"github.com/ActiveState/cli/internal/runbits/commitmediator"
+	"github.com/ActiveState/cli/internal/runbits/rationalize"
 	"github.com/ActiveState/cli/pkg/localcommit"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
@@ -53,6 +54,15 @@ type primeable interface {
 	primer.Analyticer
 	primer.SvcModeler
 }
+
+type errProjectExists struct {
+	error
+	path string
+}
+
+var errNoOwner = errs.New("Could not find organization")
+
+var errNoLanguage = errs.New("No language specified")
 
 // New returns a prepared ptr to Initialize instance.
 func New(prime primeable) *Initialize {
@@ -88,11 +98,11 @@ func inferLanguage(config projectfile.ConfigGetter) (string, string, bool) {
 }
 
 func (r *Initialize) Run(params *RunParams) (rerr error) {
-	defer rationalizeError(&rerr)
+	defer rationalizeError(params.Namespace, &rerr)
 	logging.Debug("Init: %s/%s %v", params.Namespace.Owner, params.Namespace.Project, params.Private)
 
 	if !r.auth.Authenticated() {
-		return locale.NewInputError("err_init_authenticated")
+		return rationalize.ErrNotAuthenticated
 	}
 
 	path := params.Path
@@ -100,12 +110,15 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 		var err error
 		path, err = osutils.Getwd()
 		if err != nil {
-			return locale.WrapInputError(err, "err_init_sanitize_path", "Could not prepare path: {{.V0}}", err.Error())
+			return errs.Wrap(err, "Unable to get current working directory")
 		}
 	}
 
 	if fileutils.TargetExists(filepath.Join(path, constants.ConfigFileName)) {
-		return locale.NewInputError("err_projectfile_exists")
+		return &errProjectExists{
+			error: errs.New("Project file already exists"),
+			path:  path,
+		}
 	}
 
 	err := fileutils.MkdirUnlessExists(path)
@@ -131,7 +144,7 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 	}
 
 	if languageName == "" {
-		return locale.NewInputError("err_init_no_language")
+		return errNoLanguage
 	}
 
 	// Require 'python', 'python@3', or 'python@2' instead of 'python3' or 'python2'.
@@ -139,15 +152,7 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 		return language.UnrecognizedLanguageError(languageName, language.RecognizedSupportedsNames())
 	}
 
-	lang, err := language.MakeByNameAndVersion(languageName, languageVersion)
-	if err != nil {
-		if inferred {
-			return locale.WrapError(err, "err_init_lang", "", languageName, languageVersion)
-		} else {
-			return locale.WrapInputError(err, "err_init_lang", "", languageName, languageVersion)
-		}
-	}
-
+	lang := language.MakeByNameAndVersion(languageName, languageVersion)
 	version, err := deriveVersion(lang, languageVersion)
 	if err != nil {
 		if inferred || !locale.IsInputError(err) {
@@ -176,9 +181,7 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 		}
 	}
 	if owner == "" {
-		return locale.NewInputError("err_invalid_org",
-			"The organization '[ACTIONABLE]{{.V0}}[/RESET]' either does not exist, or you do not have permissions to create a project in it.",
-			params.Namespace.Owner)
+		return errNoOwner
 	}
 	namespace := project.Namespaced{Owner: owner, Project: params.Namespace.Project}
 
@@ -227,11 +230,6 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 		return errs.Wrap(err, "Unable to determine Platform ID from %s", model.HostPlatform)
 	}
 
-	timestamp, err := model.FetchLatestTimeStamp()
-	if err != nil {
-		return errs.Wrap(err, "Unable to fetch latest timestamp")
-	}
-
 	bp := model.NewBuildPlannerModel(r.auth)
 	commitID, err := bp.CreateProject(&model.CreateProjectParams{
 		Owner:       namespace.Owner,
@@ -240,11 +238,10 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 		Language:    lang.Requirement(),
 		Version:     version,
 		Private:     params.Private,
-		Timestamp:   *timestamp,
 		Description: locale.T("commit_message_add_initial"),
 	})
 	if err != nil {
-		return locale.WrapError(err, "err_init_commit", "Could not create initial commit")
+		return locale.WrapError(err, "err_init_commit", "Could not create project")
 	}
 
 	if err := commitmediator.Set(proj, commitID.String()); err != nil {
@@ -258,7 +255,7 @@ func (r *Initialize) Run(params *RunParams) (rerr error) {
 		}
 	}
 
-	err = runbits.RefreshRuntime(r.auth, r.out, r.analytics, proj, commitID, true, target.TriggerInit, r.svcModel)
+	err = runbits.RefreshRuntime(r.auth, r.out, r.analytics, proj, commitID, true, target.TriggerInit, r.svcModel, r.config)
 	if err != nil {
 		logging.Debug("Deleting remotely created project due to runtime setup error")
 		err2 := model.DeleteProject(namespace.Owner, namespace.Project, r.auth)

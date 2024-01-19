@@ -141,6 +141,54 @@ func (suite *InitIntegrationTestSuite) TestInit_NotAuthenticated() {
 	cp.Expect("You need to be authenticated to initialize a project.")
 }
 
+func (suite *InitIntegrationTestSuite) TestInit_AlreadyExists() {
+	suite.OnlyRunForTags(tagsuite.Init)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+	ts.LoginAsPersistentUser()
+
+	cp := ts.Spawn("init", fmt.Sprintf("%s/test-project", e2e.PersistentUsername), "--language", "python@3")
+	cp.Expect("The project 'test-project' already exists under 'cli-integration-tests'")
+	cp.ExpectExitCode(1)
+}
+
+func (suite *InitIntegrationTestSuite) TestInit_Resolved() {
+	suite.OnlyRunForTags(tagsuite.Init)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+	ts.LoginAsPersistentUser()
+
+	// Generate a new namespace for the project to be created.
+	pname := strutils.UUID()
+	namespace := fmt.Sprintf("%s/%s", e2e.PersistentUsername, pname)
+
+	// Run `state init`, creating the project.
+	cp := ts.SpawnWithOpts(
+		e2e.OptArgs("init", namespace, "--language", "python@3.10"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
+	)
+	cp.Expect(fmt.Sprintf("Project '%s' has been successfully initialized", namespace), e2e.RuntimeSourcingTimeoutOpt)
+	cp.ExpectExitCode(0)
+	ts.NotifyProjectCreated(e2e.PersistentUsername, pname.String())
+
+	// Run `state languages` to verify a full language version was resolved.
+	cp = ts.Spawn("languages")
+	cp.Expect("python")
+	cp.Expect("3.10 → 3.10.0")
+	cp.ExpectExitCode(0)
+}
+
+func (suite *InitIntegrationTestSuite) TestInit_NoOrg() {
+	suite.OnlyRunForTags(tagsuite.Init)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+	ts.LoginAsPersistentUser()
+
+	cp := ts.Spawn("init", "random-org/test-project", "--language", "python@3")
+	cp.Expect("The organization 'random-org' either does not exist, or you do not have permissions to create a project in it.")
+	cp.ExpectExitCode(1)
+}
+
 func TestInitIntegrationTestSuite(t *testing.T) {
 	suite.Run(t, new(InitIntegrationTestSuite))
 }

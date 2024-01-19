@@ -11,7 +11,6 @@ import (
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/profile"
-	"github.com/ActiveState/cli/internal/runbits/checker"
 	"github.com/ActiveState/cli/pkg/platform/model"
 )
 
@@ -54,11 +53,11 @@ func (s *State) Run(usageFunc func() error) error {
 	defer profile.Measure("runners:state:run", time.Now())
 
 	if s.opts.Version {
-		checker.RunUpdateNotifier(s.an, s.svcMdl, s.out)
 		vd := installation.VersionData{
+			"CLI",
 			constants.LibraryLicense,
 			constants.Version,
-			constants.BranchName,
+			constants.ChannelName,
 			constants.RevisionHash,
 			constants.Date,
 			constants.OnCI == "true",

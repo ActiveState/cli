@@ -6,15 +6,23 @@ import (
 	"sort"
 	"strings"
 
-	gqlModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model"
 	"github.com/go-openapi/strfmt"
 
+	"github.com/ActiveState/cli/internal/analytics"
+	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/output"
+	"github.com/ActiveState/cli/internal/rtutils/ptr"
 	"github.com/ActiveState/cli/internal/runbits/commitmediator"
+	runbitsRuntime "github.com/ActiveState/cli/internal/runbits/runtime"
+	gqlModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model"
+	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
+	"github.com/ActiveState/cli/pkg/platform/runtime/store"
+	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
 )
 
@@ -27,16 +35,35 @@ type ListRunParams struct {
 
 // List manages the listing execution context.
 type List struct {
-	out     output.Outputer
-	project *project.Project
+	out       output.Outputer
+	project   *project.Project
+	analytics analytics.Dispatcher
+	svcModel  *model.SvcModel
+	auth      *authentication.Auth
+	cfg       *config.Instance
 }
 
 // NewList prepares a list execution context for use.
 func NewList(prime primeable) *List {
 	return &List{
-		out:     prime.Output(),
-		project: prime.Project(),
+		out:       prime.Output(),
+		project:   prime.Project(),
+		analytics: prime.Analytics(),
+		svcModel:  prime.SvcModel(),
+		auth:      prime.Auth(),
+		cfg:       prime.Config(),
 	}
+}
+
+type requirement struct {
+	Name            string `json:"package"`
+	Version         string `json:"version" `
+	ResolvedVersion string `json:"resolved_version"`
+}
+
+type requirementPlainOutput struct {
+	Name    string `locale:"package_name,Name"`
+	Version string `locale:"package_version,Version"`
 }
 
 // Run executes the list behavior.
@@ -44,7 +71,7 @@ func (l *List) Run(params ListRunParams, nstype model.NamespaceType) error {
 	logging.Debug("ExecuteList")
 
 	if l.project != nil && params.Project == "" {
-		l.out.Notice(locale.Tl("operating_message", "", l.project.NamespaceString(), l.project.Dir()))
+		l.out.Notice(locale.Tr("operating_message", l.project.NamespaceString(), l.project.Dir()))
 	}
 
 	var commit *strfmt.UUID
@@ -72,12 +99,77 @@ func (l *List) Run(params ListRunParams, nstype model.NamespaceType) error {
 		return locale.WrapError(err, fmt.Sprintf("%s_err_cannot_fetch_checkpoint", nstype))
 	}
 
-	rows := newFilteredRequirementsTable(model.FilterCheckpointNamespace(checkpoint, model.NamespacePackage, model.NamespaceBundle), params.Name, nstype)
-	var plainOutput interface{} = rows
-	if len(rows) == 0 {
+	language, err := model.LanguageByCommit(*commit)
+	if err != nil {
+		return locale.WrapError(err, "err_package_list_language", "Unable to get language from project")
+	}
+	ns := ptr.To(model.NewNamespacePkgOrBundle(language.Name, nstype))
+
+	// Fetch resolved artifacts list for showing full version numbers, if possible.
+	var artifacts []*artifact.Artifact
+	if l.project != nil && params.Project == "" {
+		rt, err := runbitsRuntime.NewFromProject(l.project, target.TriggerPackage, l.analytics, l.svcModel, l.out, l.auth, l.cfg)
+		if err != nil {
+			return locale.WrapError(err, "err_package_list_runtime", "Could not initialize runtime")
+		}
+		artifacts, err = rt.ResolvedArtifacts()
+		if err != nil && !errs.Matches(err, store.ErrNoBuildPlanFile) {
+			return locale.WrapError(err, "err_package_list_artifacts", "Unable to resolve package versions")
+		}
+	}
+
+	requirements := model.FilterCheckpointNamespace(checkpoint, model.NamespacePackage, model.NamespaceBundle)
+	sort.SliceStable(requirements, func(i, j int) bool {
+		return strings.ToLower(requirements[i].Requirement) < strings.ToLower(requirements[j].Requirement)
+	})
+
+	requirementsPlainOutput := []requirementPlainOutput{}
+	requirementsOutput := []requirement{}
+
+	for _, req := range requirements {
+		if !strings.Contains(strings.ToLower(req.Requirement), strings.ToLower(params.Name)) {
+			continue
+		}
+
+		if !strings.HasPrefix(req.Namespace, nstype.Prefix()) {
+			continue
+		}
+
+		version := req.VersionConstraint
+		if version == "" {
+			version = locale.T("constraint_auto")
+		}
+
+		resolvedVersion := ""
+		for _, a := range artifacts {
+			if a.Namespace == ns.String() && a.Name == req.Requirement {
+				resolvedVersion = *a.Version
+				break
+			}
+		}
+
+		plainVersion := version
+		if resolvedVersion != "" && resolvedVersion != version {
+			plainVersion = locale.Tr("constraint_resolved", version, resolvedVersion)
+		}
+		requirementsPlainOutput = append(requirementsPlainOutput, requirementPlainOutput{
+			Name:    req.Requirement,
+			Version: plainVersion,
+		})
+
+		requirementsOutput = append(requirementsOutput, requirement{
+			Name:            req.Requirement,
+			Version:         version,
+			ResolvedVersion: resolvedVersion,
+		})
+	}
+
+	var plainOutput interface{} = requirementsPlainOutput
+	if len(requirementsOutput) == 0 {
 		plainOutput = locale.T(fmt.Sprintf("%s_list_no_packages", nstype.String()))
 	}
-	l.out.Print(output.Prepare(plainOutput, rows))
+
+	l.out.Print(output.Prepare(plainOutput, requirementsOutput))
 	return nil
 }
 
@@ -147,51 +239,4 @@ func fetchCheckpoint(commit *strfmt.UUID) ([]*gqlModel.Requirement, error) {
 	}
 
 	return checkpoint, err
-}
-
-type packageRow struct {
-	Pkg     string `json:"package" locale:"package_name,Name"`
-	Version string `json:"version" locale:"package_version,Version"`
-}
-
-func newFilteredRequirementsTable(requirements []*gqlModel.Requirement, filter string, nstype model.NamespaceType) []packageRow {
-	if requirements == nil {
-		logging.Debug("requirements is nil")
-		return nil
-	}
-
-	rows := make([]packageRow, 0, len(requirements))
-	for _, req := range requirements {
-		if !strings.Contains(req.Requirement, filter) {
-			continue
-		}
-
-		if !strings.HasPrefix(req.Namespace, nstype.Prefix()) {
-			continue
-		}
-
-		versionConstraint := req.VersionConstraint
-		if versionConstraint == "" {
-			versionConstraint = "Auto"
-		}
-
-		row := packageRow{
-			req.Requirement,
-			versionConstraint,
-		}
-		rows = append(rows, row)
-	}
-
-	// Sort the rows.
-	less := func(i, j int) bool {
-		a := rows[i].Pkg
-		b := rows[j].Pkg
-		if strings.ToLower(a) < strings.ToLower(b) {
-			return true
-		}
-		return a < b
-	}
-	sort.Slice(rows, less)
-
-	return rows
 }

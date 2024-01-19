@@ -242,10 +242,10 @@ func run(args []string, isInteractive bool, cfg *config.Instance, out output.Out
 
 		if childCmd.Name() != "update" && pj != nil && pj.IsLocked() {
 			if (pj.Version() != "" && pj.Version() != constants.Version) ||
-				(pj.VersionBranch() != "" && pj.VersionBranch() != constants.BranchName) {
+				(pj.Channel() != "" && pj.Channel() != constants.ChannelName) {
 				return errs.AddTips(
-					locale.NewInputError("lock_version_mismatch", "", pj.Source().Lock, constants.BranchName, constants.Version),
-					locale.Tl("lock_update_legacy_version", "", constants.DocumentationURLLocking),
+					locale.NewInputError("lock_version_mismatch", "", pj.Source().Lock, constants.ChannelName, constants.Version),
+					locale.Tr("lock_update_legacy_version", constants.DocumentationURLLocking),
 					locale.T("lock_update_lock"),
 				)
 			}

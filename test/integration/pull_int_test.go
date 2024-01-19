@@ -6,10 +6,13 @@ import (
 	"runtime"
 	"testing"
 
+	"github.com/ActiveState/cli/internal/analytics/client/sync/reporters"
+	anaConst "github.com/ActiveState/cli/internal/analytics/constants"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
+	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/buildscript"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/stretchr/testify/suite"
@@ -36,48 +39,11 @@ func (suite *PullIntegrationTestSuite) TestPull() {
 	suite.Require().True(fileutils.DirExists(projectConfigDir))
 	suite.Assert().True(fileutils.FileExists(filepath.Join(projectConfigDir, constants.CommitIdFileName)))
 
+	suite.assertMergeStrategyNotification(ts, string(bpModel.MergeCommitStrategyFastForward))
+
 	cp = ts.Spawn("pull")
 	cp.Expect("already up to date")
 	cp.ExpectExitCode(0)
-}
-
-func (suite *PullIntegrationTestSuite) TestPullSetProject() {
-	suite.OnlyRunForTags(tagsuite.Pull)
-	ts := e2e.New(suite.T(), false)
-	defer ts.Close()
-
-	ts.PrepareProject("ActiveState-CLI/small-python", "9733d11a-dfb3-41de-a37a-843b7c421db4")
-
-	// update to related project
-	cp := ts.Spawn("pull", "--set-project", "ActiveState-CLI/small-python-fork")
-	cp.Expect("Are you sure you want to do this? (y/N)")
-	cp.SendLine("n")
-	cp.Expect("Pull aborted by user")
-	cp.ExpectNotExitCode(0)
-	ts.IgnoreLogErrors()
-
-	cp = ts.Spawn("pull", "--non-interactive", "--set-project", "ActiveState-CLI/small-python-fork")
-	cp.Expect("activestate.yaml has been updated")
-	cp.ExpectExitCode(0)
-}
-
-func (suite *PullIntegrationTestSuite) TestPullSetProjectUnrelated() {
-	suite.OnlyRunForTags(tagsuite.Pull)
-	ts := e2e.New(suite.T(), false)
-	defer ts.Close()
-
-	ts.PrepareProject("ActiveState-CLI/small-python", "9733d11a-dfb3-41de-a37a-843b7c421db4")
-
-	cp := ts.Spawn("pull", "--set-project", "ActiveState-CLI/Python3")
-	cp.Expect("Are you sure you want to do this? (y/N)")
-	cp.SendLine("n")
-	cp.Expect("Pull aborted by user")
-	cp.ExpectNotExitCode(0)
-	ts.IgnoreLogErrors()
-
-	cp = ts.Spawn("pull", "--non-interactive", "--set-project", "ActiveState-CLI/Python3")
-	cp.Expect("no common base")
-	cp.ExpectExitCode(1)
 }
 
 func (suite *PullIntegrationTestSuite) TestPull_Merge() {
@@ -115,25 +81,8 @@ func (suite *PullIntegrationTestSuite) TestPull_Merge() {
 	cp = ts.SpawnCmd("bash", "-c", fmt.Sprintf("cd %s && %s history | head -n 10", wd, exe))
 	cp.Expect("Merged")
 	cp.ExpectExitCode(0)
-}
 
-func (suite *PullIntegrationTestSuite) TestPull_RestoreNamespace() {
-	suite.OnlyRunForTags(tagsuite.Pull)
-	ts := e2e.New(suite.T(), false)
-	defer ts.Close()
-
-	ts.PrepareProject("ActiveState-CLI/small-python", "9733d11a-dfb3-41de-a37a-843b7c421db4")
-
-	// Attempt to update to unrelated project.
-	cp := ts.Spawn("pull", "--non-interactive", "--set-project", "ActiveState-CLI/Python3")
-	cp.Expect("no common base")
-	cp.ExpectNotExitCode(0)
-	ts.IgnoreLogErrors()
-
-	// Verify namespace is unchanged.
-	cp = ts.Spawn("show")
-	cp.Expect("ActiveState-CLI/small-python")
-	cp.ExpectExitCode(0)
+	suite.assertMergeStrategyNotification(ts, string(bpModel.MergeCommitStrategyRecursiveOverwriteOnConflict))
 }
 
 func (suite *PullIntegrationTestSuite) TestMergeBuildScript() {
@@ -172,6 +121,14 @@ func (suite *PullIntegrationTestSuite) TestMergeBuildScript() {
 	suite.Assert().Contains(string(bytes), "<<<<<<<", "No merge conflict markers are in build script")
 	suite.Assert().Contains(string(bytes), "=======", "No merge conflict markers are in build script")
 	suite.Assert().Contains(string(bytes), ">>>>>>>", "No merge conflict markers are in build script")
+}
+
+func (suite *PullIntegrationTestSuite) assertMergeStrategyNotification(ts *e2e.Session, strategy string) {
+	conflictEvents := filterEvents(parseAnalyticsEvents(suite, ts), func(e reporters.TestLogEntry) bool {
+		return e.Category == anaConst.CatInteractions && e.Action == anaConst.ActVcsConflict
+	})
+	suite.Assert().Equal(1, len(conflictEvents), "Should have a single VCS Conflict event report")
+	suite.Assert().Equal(strategy, conflictEvents[0].Label)
 }
 
 func TestPullIntegrationTestSuite(t *testing.T) {

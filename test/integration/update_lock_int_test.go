@@ -2,7 +2,7 @@ package integration
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"regexp"
 
@@ -45,7 +45,7 @@ func (suite *UpdateIntegrationTestSuite) TestLocked() {
 func (suite *UpdateIntegrationTestSuite) TestLockedChannel() {
 	suite.OnlyRunForTags(tagsuite.Update)
 	targetBranch := "release"
-	if constants.BranchName == "release" {
+	if constants.ChannelName == "release" {
 		targetBranch = "master"
 	}
 	tests := []struct {
@@ -132,7 +132,7 @@ func (suite *UpdateIntegrationTestSuite) TestUpdateLockedConfirmation() {
 			suite.OnlyRunForTags(tagsuite.Update)
 			pjfile := projectfile.Project{
 				Project: lockedProjectURL(),
-				Lock:    fmt.Sprintf("%s@%s", constants.BranchName, constants.Version),
+				Lock:    fmt.Sprintf("%s@%s", constants.ChannelName, constants.Version),
 			}
 
 			ts := e2e.New(suite.T(), false)
@@ -189,7 +189,7 @@ func (suite *UpdateIntegrationTestSuite) TestLockUnlock() {
 	)
 	cp.Expect("locked at")
 
-	data, err := ioutil.ReadFile(pjfile.Path())
+	data, err := os.ReadFile(pjfile.Path())
 	suite.Require().NoError(err)
 
 	lockRegex := regexp.MustCompile(`(?m)^lock:.*`)
@@ -201,9 +201,13 @@ func (suite *UpdateIntegrationTestSuite) TestLockUnlock() {
 	)
 	cp.Expect("unlocked")
 
-	data, err = ioutil.ReadFile(pjfile.Path())
+	data, err = os.ReadFile(pjfile.Path())
 	suite.Require().NoError(err)
 	suite.Assert().False(lockRegex.Match(data), "lock info was not removed from "+pjfile.Path())
+	// Ignore log errors here as the project we are using in this test does not
+	// actually exist. So there will be some errors related to fetching the
+	// project into.
+	ts.IgnoreLogErrors()
 }
 
 func (suite *UpdateIntegrationTestSuite) TestJSON() {

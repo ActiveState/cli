@@ -66,8 +66,8 @@ const DisableLanguageTemplates = "ACTIVESTATE_CLI_DISABLE_LANGUAGE_TEMPLATES"
 // This is set by default for integration tests for backward-compatibility with old integration tests.
 const DisableProjectMigrationPrompt = "ACTIVESTATE_CLI_DISABLE_PROJECT_MIGRATION_PROMPT"
 
-// UpdateBranchEnvVarName is the env var that is used to override which branch to pull the update from
-const UpdateBranchEnvVarName = "ACTIVESTATE_CLI_UPDATE_BRANCH"
+// UpdateChannelEnvVarName is the env var that is used to override which channel to pull the update from
+const UpdateChannelEnvVarName = "ACTIVESTATE_CLI_UPDATE_CHANNEL"
 
 // InstallBuildDependencies is the env var that is used to override whether to install build dependencies
 const InstallBuildDependencies = "ACTIVESTATE_CLI_INSTALL_BUILD_DEPENDENCIES"
@@ -192,6 +192,9 @@ const SvcAuthPollingRateEnvVarName = "ACTIVESTATE_SVC_AUTH_POLLING_RATE"
 // log rotation timer interval (1 minute).
 const SvcLogRotateIntervalEnvVarName = "ACTIVESTATE_CLI_LOG_ROTATE_INTERVAL_MS"
 
+// DisableActivateEventsEnvVarName is the environment variable used to disable events when activating or checking out a project
+const DisableActivateEventsEnvVarName = "ACTIVESTATE_CLI_DISABLE_ACTIVATE_EVENTS"
+
 // APIUpdateInfoURL is the URL for our update info server
 const APIUpdateInfoURL = "https://platform.activestate.com/sv/state-update/api/v1"
 
@@ -237,14 +240,14 @@ const DefaultRSABitLength int = 4096
 // ExpanderMaxDepth defines the maximum depth to fully expand a given value.
 const ExpanderMaxDepth = int(10)
 
-// ReleaseBranch is the branch used for release builds
-const ReleaseBranch = "release"
+// ReleaseChannel is the channel used for release builds
+const ReleaseChannel = "release"
 
-// BetaBranch is the branch used for beta builds
-const BetaBranch = "beta"
+// BetaChannel is the channel used for beta builds
+const BetaChannel = "beta"
 
-// ExperimentalBranch is the branch used for experimental builds
-const ExperimentalBranch = "master"
+// ExperimentalChannel is the channel used for experimental builds
+const ExperimentalChannel = "master"
 
 // MonoAPIPath is the api path used for the platform api
 const MonoAPIPath = "/api/v1"
@@ -273,11 +276,17 @@ const GraphqlAPIPath = "/graphql/v1/graphql"
 // MediatorAPIPath is the path used for the platform mediator api
 const MediatorAPIPath = "/sv/mediator/api"
 
+// BuildplanAPIPath is the path used for the build planner api
+const BuildplanAPIPath = "/sv/buildplanner/graphql"
+
 // RequirementsImportAPIPath is the path used for the requirements import api
 const RequirementsImportAPIPath = "/sv/reqsvc/reqs"
 
 // BuildPlannerAPIPath is the path used for the build planner api
 const BuildPlannerAPIPath = "/sv/buildplanner/graphql"
+
+// VulnerabilitiesAPIPath is the path used for the vulnerabilities api
+const VulnerabilitiesAPIPath = "/v13s/v1/graphql"
 
 // MessagesInfoURL is the URL we check against to see what versions are deprecated
 const MessagesInfoURL = "https://state-tool.s3.amazonaws.com/messages.json"
@@ -440,6 +449,9 @@ const ReportErrorsConfig = "report.errors"
 // ReportAnalyticsConfig is the config key used to determine if we will send analytics reports
 const ReportAnalyticsConfig = "report.analytics"
 
+// PreferredGlibcVersionConfig is the config key used to determine the preferred glibc version
+const PreferredGlibcVersionConfig = "runtime.preferred.glibc"
+
 // SvcAppName is the name we give our state-svc application
 const SvcAppName = "State Service"
 
@@ -525,3 +537,6 @@ const PlatformApiPrintRequestsEnvVarName = "ACTIVESTATE_CLI_PLATFORM_API_PRINT_R
 
 // ActiveStateCIEnvVarName is the environment variable set when running in an ActiveState CI environment.
 const ActiveStateCIEnvVarName = "ACTIVESTATE_CI"
+
+// OverrideSandbox is the environment variable to set when overriding the sandbox for integration tests.
+const OverrideSandbox = "ACTIVESTATE_TEST_OVERRIDE_SANDBOX"

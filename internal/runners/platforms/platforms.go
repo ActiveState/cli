@@ -4,6 +4,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/go-openapi/strfmt"
 
@@ -13,11 +14,11 @@ import (
 )
 
 type PlatformVersion struct {
-	captain.NameVersion
+	captain.NameVersionValue
 }
 
 func (pv *PlatformVersion) Set(arg string) error {
-	err := pv.NameVersion.Set(arg)
+	err := pv.NameVersionValue.Set(arg)
 	if err != nil {
 		return locale.WrapInputError(err, "err_platform_format", "The platform and version provided is not formatting correctly, must be in the form of <platform>@<version>")
 	}
@@ -35,6 +36,10 @@ func makePlatformsFromModelPlatforms(platforms []*model.Platform) []*Platform {
 	var ps []*Platform
 
 	for _, platform := range platforms {
+		if platform.EndOfSupportDate != nil && time.Since(time.Time(*platform.EndOfSupportDate)) > 0 {
+			continue // ignore EOL platforms; the Platform will fail to resolve dependencies on them
+		}
+
 		var p Platform
 		if platform.Kernel != nil && platform.Kernel.Name != nil {
 			p.Name = *platform.Kernel.Name

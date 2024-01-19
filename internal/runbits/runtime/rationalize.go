@@ -2,12 +2,14 @@ package runtime
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/multilog"
+	"github.com/ActiveState/cli/pkg/platform/api"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
@@ -15,14 +17,14 @@ import (
 )
 
 func rationalizeError(auth *authentication.Auth, proj *project.Project, rerr *error) {
+	if rerr == nil {
+		return
+	}
 	var errNoMatchingPlatform *model.ErrNoMatchingPlatform
 	var errArtifactSetup *setup.ArtifactSetupErrors
 
 	isUpdateErr := errs.Matches(*rerr, &ErrUpdate{})
 	switch {
-	case rerr == nil:
-		return
-
 	case proj == nil:
 		multilog.Error("runtime:rationalizeError called with nil project, error: %s", errs.JoinMessage(*rerr))
 		*rerr = errs.Pack(*rerr, errs.New("project is nil"))
@@ -47,9 +49,12 @@ func rationalizeError(auth *authentication.Auth, proj *project.Project, rerr *er
 				errNoMatchingPlatform.HostPlatform, errNoMatchingPlatform.HostArch,
 				proj.BranchName(), strings.Join(branches, "\n - ")))
 		} else {
-			*rerr = errs.NewUserFacing(locale.Tr(
-				"err_no_platform_data_remains",
-				errNoMatchingPlatform.HostPlatform, errNoMatchingPlatform.HostArch))
+			libcErr := errNoMatchingPlatform.LibcVersion != ""
+			*rerr = errs.NewUserFacing(
+				locale.Tr("err_no_platform_data_remains", errNoMatchingPlatform.HostPlatform, errNoMatchingPlatform.HostArch),
+				errs.SetIf(libcErr, errs.SetInput()),
+				errs.SetIf(libcErr, errs.SetTips(locale.Tr("err_user_libc_solution", api.GetPlatformURL(fmt.Sprintf("%s/%s", proj.NamespaceString(), "customize")).String()))),
+			)
 		}
 
 	// If there was an artifact download error, say so, rather than reporting a generic "could not

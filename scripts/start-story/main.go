@@ -6,7 +6,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/environment"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/exeutils"
+	"github.com/ActiveState/cli/internal/osutils"
 	wc "github.com/ActiveState/cli/scripts/internal/workflow-controllers"
 	wh "github.com/ActiveState/cli/scripts/internal/workflow-helpers"
 	"github.com/andygrunwald/go-jira"
@@ -103,19 +103,19 @@ func run() error {
 		return nil
 	}
 
-	stdout, stderr, err := exeutils.ExecSimpleFromDir(environment.GetRootPathUnsafe(), "git", []string{"checkout", ref}, nil)
+	stdout, stderr, err := osutils.ExecSimpleFromDir(environment.GetRootPathUnsafe(), "git", []string{"checkout", ref}, nil)
 	if err != nil {
 		return errs.Wrap(err, "failed to checkout base ref, stdout:\n%s\nstderr:\n%s", stdout, stderr)
 	}
-	stdout, stderr, err = exeutils.ExecSimpleFromDir(environment.GetRootPathUnsafe(), "git", []string{"pull", "--rebase"}, nil)
+	stdout, stderr, err = osutils.ExecSimpleFromDir(environment.GetRootPathUnsafe(), "git", []string{"pull", "--rebase"}, nil)
 	if err != nil {
 		return errs.Wrap(err, "failed to pull latest changes, stdout:\n%s\nstderr:\n%s", stdout, stderr)
 	}
-	stdout, stderr, err = exeutils.ExecSimpleFromDir(environment.GetRootPathUnsafe(), "git", []string{"branch", branchName}, nil)
+	stdout, stderr, err = osutils.ExecSimpleFromDir(environment.GetRootPathUnsafe(), "git", []string{"branch", branchName}, nil)
 	if err != nil {
 		return errs.Wrap(err, "failed to create branch, stdout:\n%s\nstderr:\n%s", stdout, stderr)
 	}
-	stdout, stderr, err = exeutils.ExecSimpleFromDir(environment.GetRootPathUnsafe(), "git", []string{"checkout", branchName}, nil)
+	stdout, stderr, err = osutils.ExecSimpleFromDir(environment.GetRootPathUnsafe(), "git", []string{"checkout", branchName}, nil)
 	if err != nil {
 		return errs.Wrap(err, "failed to checkout branch, stdout:\n%s\nstderr:\n%s", stdout, stderr)
 	}

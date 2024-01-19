@@ -7,6 +7,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/pkg/platform/api/mono/mono_models"
 	"github.com/go-openapi/strfmt"
 )
@@ -32,8 +33,8 @@ const (
 	ArtifactFailedPermanently = "FAILED_PERMANENTLY"
 	ArtifactFailedTransiently = "FAILED_TRANSIENTLY"
 	ArtifactReady             = "READY"
-	ArtifactRunning           = "RUNNING"
 	ArtifactSkipped           = "SKIPPED"
+	ArtifactStarted           = "STARTED"
 	ArtifactSucceeded         = "SUCCEEDED"
 
 	// Tag types
@@ -83,6 +84,7 @@ const (
 	NoChangeSinceLastCommitErrorType  = "NoChangeSinceLastCommit"
 	HeadOnBranchMovedErrorType        = "HeadOnBranchMoved"
 	ForbiddenErrorType                = "Forbidden"
+	GenericSolveErrorType             = "GenericSolveError"
 	RemediableSolveErrorType          = "RemediableSolveError"
 	PlanningErrorType                 = "PlanningError"
 	MergeConflictType                 = "MergeConflict"
@@ -99,6 +101,11 @@ func IsStateToolArtifact(mimeType string) bool {
 	return mimeType == XArtifactMimeType ||
 		mimeType == XActiveStateArtifactMimeType ||
 		mimeType == XCamelInstallerMimeType
+}
+
+func IsSuccessArtifactStatus(status string) bool {
+	return status == ArtifactSucceeded || status == ArtifactBlocked ||
+		status == ArtifactStarted || status == ArtifactReady
 }
 
 func (o Operation) String() string {
@@ -173,10 +180,17 @@ func (e *BuildPlannerError) Error() string {
 	}
 
 	var err error
-	err = locale.NewError("buildplan_err", "", croppedMessage, errorLines)
+
+	if croppedMessage != "" {
+		err = locale.NewError("buildplan_err_cropped", "", croppedMessage, errorLines)
+	} else {
+		err = locale.NewError("buildplan_err", "", errorLines)
+	}
+
 	if e.IsTransient {
 		err = errs.AddTips(err, locale.Tr("transient_solver_tip"))
 	}
+
 	return err.Error()
 }
 
@@ -345,11 +359,17 @@ func ProcessCommitError(commit *Commit, fallbackMessage string) error {
 }
 
 func ProcessBuildError(build *Build, fallbackMessage string) error {
+	logging.Debug("ProcessBuildError: build.Type=%s", build.Type)
 	if build.Type == PlanningErrorType {
 		var errs []string
 		var isTransient bool
+
+		if build.Message != "" {
+			errs = append(errs, build.Message)
+		}
+
 		for _, se := range build.SubErrors {
-			if se.Type != RemediableSolveErrorType {
+			if se.Type != RemediableSolveErrorType && se.Type != GenericSolveErrorType {
 				continue
 			}
 
@@ -357,6 +377,7 @@ func ProcessBuildError(build *Build, fallbackMessage string) error {
 				errs = append(errs, se.Message)
 				isTransient = se.IsTransient
 			}
+
 			for _, ve := range se.ValidationErrors {
 				if ve.Error != "" {
 					errs = append(errs, ve.Error)
@@ -407,11 +428,11 @@ type ProjectCreatedError struct {
 func (p *ProjectCreatedError) Error() string { return p.Message }
 
 func ProcessProjectCreatedError(pcErr *projectCreated, fallbackMessage string) error {
-	if pcErr.Type != "" {
-		// These will be handled individually per type as user-facing errors in DX-2300.
-		return &ProjectCreatedError{pcErr.Type, pcErr.Message}
+	if pcErr.Error == nil {
+		return errs.New(fallbackMessage)
 	}
-	return errs.New(fallbackMessage)
+
+	return &ProjectCreatedError{pcErr.Type, pcErr.Message}
 }
 
 type BuildExpression struct {
@@ -631,6 +652,7 @@ type NamedTarget struct {
 type Artifact struct {
 	Type                string        `json:"__typename"`
 	NodeID              strfmt.UUID   `json:"nodeId"`
+	DisplayName         string        `json:"displayName"`
 	MimeType            string        `json:"mimeType"`
 	GeneratedBy         strfmt.UUID   `json:"generatedBy"`
 	RuntimeDependencies []strfmt.UUID `json:"runtimeDependencies"`
@@ -672,7 +694,6 @@ type NotFoundError struct {
 
 // PlanningError represents an error that occurred during planning.
 type PlanningError struct {
-	Message   string               `json:"message"`
 	SubErrors []*BuildExprLocation `json:"subErrors"`
 }
 

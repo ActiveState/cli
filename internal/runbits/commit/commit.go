@@ -20,6 +20,7 @@ type commitOutput struct {
 	Hash              string               `locale:"hash,[HEADING]Commit[/RESET]" json:"hash"`
 	Author            string               `locale:"author,[HEADING]Author[/RESET]" json:"author"`
 	Date              string               `locale:"date,[HEADING]Date[/RESET]" json:"date"`
+	Revision          string               `locale:"revision,[HEADING]Revision[/RESET]" json:"revision"`
 	Message           string               `locale:"message,[HEADING]Message[/RESET]" json:"message"`
 	PlainChanges      []string             `locale:"changes,[HEADING]Changes[/RESET]" json:"-"`
 	StructuredChanges []*requirementChange `opts:"hidePlain" json:"changes"`
@@ -79,6 +80,12 @@ func newCommitOutput(commit *mono_models.Commit, orgs []gmodel.Organization, isL
 		multilog.Error("Could not parse commit time: %v", err)
 	}
 	commitOutput.Date = dt.Format(time.RFC822)
+
+	dt, err = time.Parse(time.RFC3339, commit.AtTime.String())
+	if err != nil {
+		multilog.Error("Could not parse revision time: %v", err)
+	}
+	commitOutput.Revision = dt.Format(time.RFC822)
 
 	commitOutput.Message = locale.Tl("print_commit_no_message", "[DISABLED]Not provided.[/RESET]")
 	if commit.Message != "" {
@@ -140,7 +147,7 @@ func FormatChanges(commit *mono_models.Commit) ([]string, []*requirementChange) 
 
 func formatConstraints(constraints []*mono_models.Constraint) string {
 	if len(constraints) == 0 {
-		return locale.Tl("constraint_auto", "Auto")
+		return locale.T("constraint_auto")
 	}
 
 	var result []string

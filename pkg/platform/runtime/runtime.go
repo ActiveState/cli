@@ -26,6 +26,7 @@ import (
 	bpModel "github.com/ActiveState/cli/pkg/platform/api/buildplanner/model"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/platform/runtime/artifact"
 	"github.com/ActiveState/cli/pkg/platform/runtime/buildscript"
 	"github.com/ActiveState/cli/pkg/platform/runtime/envdef"
 	"github.com/ActiveState/cli/pkg/platform/runtime/setup"
@@ -36,13 +37,15 @@ import (
 )
 
 type Runtime struct {
-	disabled  bool
-	target    setup.Targeter
-	store     *store.Store
-	analytics analytics.Dispatcher
-	svcm      *model.SvcModel
-	auth      *authentication.Auth
-	completed bool
+	disabled          bool
+	target            setup.Targeter
+	store             *store.Store
+	analytics         analytics.Dispatcher
+	svcm              *model.SvcModel
+	auth              *authentication.Auth
+	completed         bool
+	cfg               model.Configurable
+	resolvedArtifacts []*artifact.Artifact
 }
 
 // NeedsUpdateError is an error returned when the runtime is not completely installed yet.
@@ -61,13 +64,14 @@ func IsNeedsCommitError(err error) bool {
 	return errs.Matches(err, &NeedsCommitError{})
 }
 
-func newRuntime(target setup.Targeter, an analytics.Dispatcher, svcModel *model.SvcModel, auth *authentication.Auth) (*Runtime, error) {
+func newRuntime(target setup.Targeter, an analytics.Dispatcher, svcModel *model.SvcModel, auth *authentication.Auth, cfg model.Configurable) (*Runtime, error) {
 	rt := &Runtime{
 		target:    target,
 		store:     store.New(target.Dir()),
 		analytics: an,
 		svcm:      svcModel,
 		auth:      auth,
+		cfg:       cfg,
 	}
 
 	err := rt.validateCache()
@@ -79,7 +83,7 @@ func newRuntime(target setup.Targeter, an analytics.Dispatcher, svcModel *model.
 }
 
 // New attempts to create a new runtime from local storage.  If it fails with a NeedsUpdateError, Update() needs to be called to update the locally stored runtime.
-func New(target setup.Targeter, an analytics.Dispatcher, svcm *model.SvcModel, auth *authentication.Auth) (*Runtime, error) {
+func New(target setup.Targeter, an analytics.Dispatcher, svcm *model.SvcModel, auth *authentication.Auth, cfg model.Configurable) (*Runtime, error) {
 	logging.Debug("Initializing runtime for: %s/%s@%s", target.Owner(), target.Name(), target.CommitUUID())
 
 	if strings.ToLower(os.Getenv(constants.DisableRuntime)) == "true" {
@@ -94,7 +98,7 @@ func New(target setup.Targeter, an analytics.Dispatcher, svcm *model.SvcModel, a
 		InstanceID:       ptr.To(instanceid.ID()),
 	})
 
-	r, err := newRuntime(target, an, svcm, auth)
+	r, err := newRuntime(target, an, svcm, auth, cfg)
 	if err == nil {
 		an.Event(anaConsts.CatRuntimeDebug, anaConsts.ActRuntimeCache, &dimensions.Values{
 			CommitID: ptr.To(target.CommitUUID().String()),
@@ -169,12 +173,12 @@ func (r *Runtime) Update(eventHandler events.Handler) (rerr error) {
 		r.recordCompletion(rerr)
 	}()
 
-	if err := setup.New(r.target, eventHandler, r.auth, r.analytics).Update(); err != nil {
+	if err := setup.New(r.target, eventHandler, r.auth, r.analytics, r.cfg).Update(); err != nil {
 		return errs.Wrap(err, "Update failed")
 	}
 
 	// Reinitialize
-	rt, err := newRuntime(r.target, r.analytics, r.svcm, r.auth)
+	rt, err := newRuntime(r.target, r.analytics, r.svcm, r.auth, r.cfg)
 	if err != nil {
 		return errs.Wrap(err, "Could not reinitialize runtime after update")
 	}
@@ -353,4 +357,30 @@ func (r *Runtime) ExecutableDirs() (envdef.ExecutablePaths, error) {
 
 func IsRuntimeDir(dir string) bool {
 	return store.New(dir).HasMarker()
+}
+
+func (r *Runtime) ResolvedArtifacts() ([]*artifact.Artifact, error) {
+	if r.resolvedArtifacts == nil {
+		runtimeStore := r.store
+		if runtimeStore == nil {
+			runtimeStore = store.New(r.target.Dir())
+		}
+
+		plan, err := runtimeStore.BuildPlan()
+		if err != nil {
+			return nil, errs.Wrap(err, "Unable to fetch build plan")
+		}
+
+		r.resolvedArtifacts = make([]*artifact.Artifact, len(plan.Sources))
+		for i, source := range plan.Sources {
+			r.resolvedArtifacts[i] = &artifact.Artifact{
+				ArtifactID: source.NodeID,
+				Name:       source.Name,
+				Namespace:  source.Namespace,
+				Version:    &source.Version,
+			}
+		}
+	}
+
+	return r.resolvedArtifacts, nil
 }

@@ -52,8 +52,7 @@ func NewAddLibcCreated() *AddLibcCreated {
 	return &AddLibcCreated{}
 }
 
-/*
-AddLibcCreated describes a response with status code 201, with default header values.
+/* AddLibcCreated describes a response with status code 201, with default header values.
 
 The added libc
 */
@@ -85,8 +84,7 @@ func NewAddLibcBadRequest() *AddLibcBadRequest {
 	return &AddLibcBadRequest{}
 }
 
-/*
-AddLibcBadRequest describes a response with status code 400, with default header values.
+/* AddLibcBadRequest describes a response with status code 400, with default header values.
 
 If the libc is invalid
 */
@@ -120,8 +118,7 @@ func NewAddLibcDefault(code int) *AddLibcDefault {
 	}
 }
 
-/*
-AddLibcDefault describes a response with status code -1, with default header values.
+/* AddLibcDefault describes a response with status code -1, with default header values.
 
 If there is an error processing the request
 */

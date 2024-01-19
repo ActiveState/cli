@@ -9,6 +9,7 @@ func CreateProject(owner, project string, private bool, expr *buildexpression.Bu
 		"private":      private,
 		"expr":         expr,
 		"description":  description,
+		"atTime":       "", // default to the latest timestamp
 	}}
 }
 
@@ -52,6 +53,6 @@ mutation ($organization: String!, $project: String!, $private: Boolean!, $expr: 
 }`
 }
 
-func (c *createProject) Vars() map[string]interface{} {
-	return c.vars
+func (c *createProject) Vars() (map[string]interface{}, error) {
+	return c.vars, nil
 }

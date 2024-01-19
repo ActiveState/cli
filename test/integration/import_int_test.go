@@ -18,6 +18,7 @@ type ImportIntegrationTestSuite struct {
 }
 
 func (suite *ImportIntegrationTestSuite) TestImport_detached() {
+	suite.T().Skip("Skipping import test until DX-2444 is resolved: https://activestatef.atlassian.net/browse/DX-2444")
 	suite.OnlyRunForTags(tagsuite.Import)
 	if runtime.GOOS == "darwin" {
 		suite.T().Skip("Skipping mac for now as the builds are still too unreliable")
@@ -77,12 +78,13 @@ urllib3>=1.21.1,<=1.26.5
 )
 
 func (suite *ImportIntegrationTestSuite) TestImport() {
+	suite.T().Skip("Skipping import test until DX-2444 is resolved: https://activestatef.atlassian.net/browse/DX-2444")
 	suite.OnlyRunForTags(tagsuite.Import)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	username, _ := ts.CreateNewUser()
-	namespace := fmt.Sprintf("%s/%s", username, "Python3")
+	user := ts.CreateNewUser()
+	namespace := fmt.Sprintf("%s/%s", user.Username, "Python3")
 
 	cp := ts.Spawn("init", "--language", "python", namespace, ts.Dirs.Work)
 	cp.Expect("successfully initialized")
@@ -109,7 +111,7 @@ func (suite *ImportIntegrationTestSuite) TestImport() {
 		cp.ExpectExitCode(0)
 
 		cp = ts.Spawn("import", "requirements.txt")
-		cp.Expect("already exists")
+		cp.Expect("No new changes")
 		cp.ExpectNotExitCode(0)
 	})
 

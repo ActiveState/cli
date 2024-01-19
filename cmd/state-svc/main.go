@@ -19,6 +19,7 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/events"
+	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/ipc"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -114,9 +115,34 @@ func run(cfg *config.Instance) error {
 
 	p := primer.New(nil, out, nil, nil, nil, nil, cfg, nil, nil, an)
 
+	showVersion := false
 	cmd := captain.NewCommand(
-		path.Base(os.Args[0]), "", "", p, nil, nil,
+		path.Base(os.Args[0]),
+		"",
+		"",
+		p,
+		[]*captain.Flag{
+			{
+				Name:      "version",
+				Shorthand: "v",
+				Value:     &showVersion,
+			},
+		},
+		nil,
 		func(ccmd *captain.Command, args []string) error {
+			if showVersion {
+				vd := installation.VersionData{
+					"CLI Service",
+					constants.LibraryLicense,
+					constants.Version,
+					constants.ChannelName,
+					constants.RevisionHash,
+					constants.Date,
+					constants.OnCI == "true",
+				}
+				out.Print(locale.T("version_info", vd))
+				return nil
+			}
 			out.Print(ccmd.UsageText())
 			return nil
 		},

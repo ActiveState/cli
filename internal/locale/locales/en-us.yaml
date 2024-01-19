@@ -1,13 +1,5 @@
-app_name:
-  other: State Tool
 org_name:
   other: ActiveState
-undefined:
-  other: undefined
-confirmation:
-  other: "Yes"
-contradiction:
-  other: "No"
 state_description:
   other: |
     The ActiveState CLI allows you to easily switch between your ActiveState environments
@@ -15,12 +7,6 @@ state_description:
     Find more information at: https://docs.activestate.com/platform/state/
 activate_project:
   other: Activate a project
-events_header_id:
-  other: ID
-events_header_event:
-  other: Event
-events_header_value:
-  other: Value
 arg_state_activate_namespace:
   other: org/project
 arg_state_activate_namespace_description:
@@ -41,78 +27,28 @@ flag_state_version_description:
   other: Show the version of our state executable
 flag_state_activate_path_description:
   other: Where to install the project
-flag_state_activate_new_description:
-  other: Create a new project on the platform
-flag_state_activate_owner_description:
-  other: The owner to create the project under
-flag_state_activate_project_description:
-  other: The project name to be used
-flag_state_activate_language_description:
-  other: The language for the new project
-error_state_activate:
-  other: Unable to activate. Please refer to the above error message, resolve the issue, and run activate again.
-error_unsupported_shell:
-  other: "You are using an unsupported shell: {{.Shell}}"
-err_output_flag_value_invalid:
-  other: Could not recognize output type
 info_deactivated:
   other: "[DISABLED]Deactivated {{.Owner}}/{{.Name}}[/RESET]"
-venv_installer_is_nil:
-  other: Provided installer should not be nil
-error_unsupported_language:
-  other: "Unsupported language: [NOTICE]{{.Language}}[/RESET]"
-err_language_not_yet_supported:
-  other: "The Platform responded with an artifact that is not supported by this version of the State Tool, artifact name: {{.V0}}. Is your State Tool up to date?"
-error_missing_arg:
-  other: "Argument missing: [NOTICE]{{.V0}}[/RESET]"
-err_invalid_input:
-  other: Invalid input received
-err_no_update_info:
-  other: Cannot retrieve update information
-no_update_available:
-  other: You are using the latest version available
-updating_to_version:
-  other: Updating from [NOTICE]{{.fromVersion}}[/RESET] to [NOTICE]{{.toVersion}}[/RESET]
 confirm_update_locked_version_prompt:
   other: "You ran update from a project directory with a locked State Tool version. This will update the version that your project is locked to. Are you sure you want to do this?"
 confirm_update_unlocked_version_prompt:
   other: "Are you sure you want to unlock the State Tool version from your project?"
 version_info:
   other: |
-    ActiveState CLI by ActiveState Software Inc.
+    ActiveState {{.Name}} by ActiveState Software Inc.
     License [NOTICE]{{.License}}[/RESET]
     Version [NOTICE]{{.Version}}[/RESET]
     Revision [NOTICE]{{.Revision}}[/RESET]
-    Branch [NOTICE]{{.Branch}}[/RESET]
+    Channel [NOTICE]{{.Channel}}[/RESET]
     Built [NOTICE]{{.Date}}[/RESET]{{if not .BuiltViaCI}} (dev){{end}}
-update_complete:
-  other: Update completed successfully
-update_hash_mismatch:
-  other: The archive hash could not be verified
 err_project_file_unavailable:
   other: Could not load the project file
 err_project_unavailable:
   other: "Could not load the project: {{.V0}}"
-err_failure_test:
-  other: one {{.V0}} three {{.V1}}
-distro_obtaining:
-  other: "Obtaining Distribution"
-distro_installing:
-  other: "Installing Artifacts"
-err_hash_mismatch:
-  other: "Invalid file hash for file [NOTICE]{{.V0}}[/RESET], expected hash: [NOTICE]{{.V2}}[/RESET], got: [NOTICE]{{.V1}}[/RESET]"
-err_language_not_supported:
-  other: "Language not yet supported: [NOTICE]{{.V0}}[/RESET]"
-err_artifact_not_supported:
-  other: "Artifact not supported: [NOTICE]{{.V0}}[/RESET]"
-err_artifact_no_parent:
-  other: "The given artifact has no parent: [NOTICE]{{.V0}}[/RESET]. Only Language artifacts can be without parent."
 err_invalid_status_code:
   other: "Invalid status code: [NOTICE]{{.V0}}[/RESET]"
 info_activating_state:
   other: "Creating a Virtual Environment for your Project's Packages"
-info_state_active_repoexists:
-  other: "Repo already exists: [NOTICE]{{.Path}}[/RESET]"
 panic_couldnt_detect_wd:
   other: "Could not detect working directory: {{.Error}}"
 auth_description:
@@ -131,16 +67,12 @@ username_prompt:
   other: "Enter your username:"
 password_prompt:
   other: "Enter your password:"
-passphrase_prompt:
-  other: "Enter your passphrase:"
 previous_password_message:
   other: "Your password may have changed recently. We need to reencrypt your private-key so that you may continue using your secrets, but we need your previous password in order to do so."
 auth_generate_new_keypair_message:
   other: "There is an unrecoverable issue with your existing keypair and the best course of action is to generate a new keypair."
 auth_confirm_generate_new_keypair_prompt:
   other: Generate new keypair?
-auth_unresolved_keypair_issue_message:
-  other: "For security purposes regarding your keypair, we are logging you out."
 auth_err_unrecoverable_keypair:
   other: "Unrecoverable keypair issue"
 previous_password_prompt:
@@ -160,8 +92,6 @@ secret_prompt_project:
   other: Organization members can access the value
 secret_no_description:
   other: "- (This secret has no description, you can set one via the web dashboard)"
-name_prompt:
-  other: "Enter your name:"
 totp_prompt:
   other: "Enter your two-factor authentication code:"
 survey_error_template:
@@ -177,22 +107,8 @@ tos_disclaimer_prompt:
   other: |
 
     By continuing you accept the Terms of Service. Continue?
-err_get_license_text:
-  other: Could not get license text
-
-lic_acceptance:
-  other: Do you accept the ActiveState License?
-lic_accept:
-  other: Yes, I accept the ActiveState License
-lic_not_accept:
-  other: No, I do not accept the ActiveState License
-lic_show_full:
-  other: Display the full License Text in this terminal window
-
 err_auth_failed:
   other: Authentication failed
-err_auth_username_check:
-  other: Could not validate username, check the error log for more information
 err_auth_failed_unknown_cause:
   other: "Authentication failed due to an unknown cause, error received: {{.V0}}"
 err_auth_token:
@@ -213,26 +129,8 @@ logout_still_have_api_token:
   other: Logout is incomplete because you have authenticated with an environment variable. To complete logout please unset the '[ACTIONABLE]ACTIVESTATE_API_KEY[/RESET]' environment variable.
 login_cancelled:
   other: Authentication Cancelled
-login_err_output:
-  other: Failed to display user output
 login_err_auth:
   other: Authentication failed
-login_err_auth_token:
-  other: Token authentication failed
-fetch_org_err:
-  other: Failed to fetch organization [NOTICE]{{.V0}}[/RESET] from ActivateState platform.  Is the organization name correct?
-auth_required_fork:
-  other: You need to be authenticated to fork an ActiveState Platform project
-err_fork_auth_required:
-  other: Forking a project requires you to be authenticated against the ActiveState Platform
-err_fork_invalid_namespace:
-  other: Could not fork the given project as the namespace is incorrect
-err_fork_get_owner:
-  other: Could not fork project, owner required.
-err_cannot_marshal_data:
-  other: Cannot marshal data properly
-state_fork_success:
-  other: Successfully forked project [NOTICE]{{.OriginalOwner}}/{{.OriginalName}}[/RESET] as [NOTICE]{{.NewOwner}}/{{.NewName}}[/RESET]
 local:
   other: Local
 organization:
@@ -241,74 +139,18 @@ organizations_description:
   other: List member organizations on the ActiveState Platform
 organizations_err:
   other: Unable to list member organizations
-organizations_unknown_tier:
-  other: 'Unknown tier [NOTICE]"{{.Tier}}"[/RESET] in organization [NOTICE]"{{.Organization}}"[/RESET]'
-organization_name:
-  other: Organization Name
 organization_no_orgs:
   other: You are not a member of any organizations
 project:
   other: Project
-project_name:
-  other: Project Name
-project_description:
-  other: Project Description
 project_err:
   other: Unable to list projects
-error_state_activate_new_no_auth:
-  other: Please authenticate by running "state auth" before creating a new project.
-state_activate_prompt_create_project:
-  other: The project [NOTICE]{{.V0}}[/RESET] does not exist under [NOTICE]{{.V1}}[/RESET]. Would you like to create it now?
-state_activate_new_prompt_name:
-  other: "Please provide a name for the new project:"
-error_state_activate_new_flags:
-  other: Flags do not contain value project values
-error_state_activate_new_prompt:
-  other: Invalid input value for new project
-error_state_activate_new_create:
-  other: Could not create new project
-error_state_activate_copy_prompts:
-  other: Invalid input value for copy project
-error_state_activate_copy_project_url:
-  other: Could not get project URL
-err_activate_path:
-  other: Could not get project file with given path '{{.V0}}'
-err_activate_output_build_failed:
-  other: Platform project build is has failed. Please select "Manage Packages" option in State Tool menu to go to the platform and browse to "Download Builds" tab for more information
-err_activate_output_build_in_progress:
-  other: Platform project build is in progress. Please wait for a few minutes and try "Reactivate Runtime" option in "State Tool" menu
 err_unsupported_platform:
   other: "Unsupported platform: [NOTICE]{{.V0}}[/RESET]"
 err_detect_language:
   other: Could not detect which language to use
 err_language_not_found:
   other: "Could not find language: [NOTICE]{{.V0}}@{{.V1}}[/RESET]"
-error_state_activate_copy_save:
-  other: Error saving project file
-error_state_activate_new_no_commit_aborted:
-  other: "Platform project created but cannot activate.  Try '[ACTIONABLE]state activate {{.Owner}}/{{.ProjectName}}[/RESET]'."
-state_activate_new_prompt_owner:
-  other: "Please provide an owner for the new project:"
-error_state_activate_new_fetch_organizations:
-  other: "Unable to create new project: cannot determine potential owners."
-state_activate_new_created:
-  other: Created new project in [NOTICE]{{.Dir}}[/RESET]
-state_activate_new_platform_project:
-  other: New platform project successfully created as [NOTICE]{{.Owner}}/{{.Project}}[/RESET]. To activate your new project run '[ACTIONABLE]state activate {{.Owner}}/{{.Project}}[/RESET]'
-state_activate_new_prompt_language:
-  other: Which language would you like to use to manage your State Tool scripts?
-state_activate_new_language_none:
-  other: "None - I'll use shell scripting"
-error_state_activate_owner_flag_not_set:
-  other: The '--owner' flag is not set. This flag must be set in order to use the '--new' flag
-error_state_activate_project_flag_not_set:
-  other: The '--project' flag is not set. This flag must be set in order to use the '--new' flag
-error_state_activate_language_flag_not_set:
-  other: The '--language' flag is not set. This flag must be set in order to use the '--new' flag
-error_state_activate_language_flag_invalid:
-  other: The provided language does not match any of the known languages
-project_empty:
-  other: You have not created any projects yet
 project_checkout_empty:
   other: You have not activated any projects yet
 building:
@@ -323,8 +165,6 @@ total:
   other: Total
 projects_description:
   other: List your projects
-projects_list_description:
-  other: List your platform projects
 err_api_not_authenticated:
   other: You are not authenticated, authenticate with '[ACTIONABLE]state auth[/RESET]'.
 err_api_forbidden:
@@ -349,31 +189,15 @@ run_description:
   other: Run your project scripts
 scripts_description:
   other: Show project scripts
-flag_json_desc:
-  other: Changes output to machine-readable JSON
 runtime_setup_in_use_err:
   other: |
     Could not update your runtime as it is currently in use. Please stop any active runtime processes and try again. State Tool found the following processes to be using the runtime:
 
     {{.V0}}
-runtime_alternative_failed_artifact_order:
-  other: "Could not write runtime.json file: internal error"
 runtime_alternative_file_transforms_err:
   other: "Could not apply necessary file transformations after unpacking."
-runtime_alternative_failed_destination:
-  other: Installation failed due to to failed write to directory {{.V0}}
-scripts_col_name:
-  other: Name
-scripts_col_description:
-  other: Description
-scripts_err:
-  other: Error managing user's Scripts
 scripts_no_scripts:
   other: No scripts in your 'activestate.yaml' or no scripts to run in for your environment
-scripts_no_name:
-  other: No script with name [NOTICE]{{.V0}}[/RESET]
-organizations_err_output:
-  other: Failed to display organizations output
 edit_description:
   other: Edit a given script
 edit_script_cmd_name_arg:
@@ -392,94 +216,26 @@ error_edit_script:
   other: Failed to edit script
 error_edit_unrecognized_platform:
   other: Could not open script file on this platform [NOTICE]{{.V0}}[/RESET]
-error_edit_invalid_editor:
-  other: The EDITOR environment variable was not correctly set, falling back to platform default editor
 prompt_done_editing:
   other: Are you done editing?
 arg_state_run_name:
   other: script
 arg_state_run_name_description:
   other: Name of script to run
-flag_state_run_standalone_description:
-  other: Run a script, regardless of an activated state
-flag_state_run_list_description:
-  other: List available scripts
 error_state_run_undefined_name:
   other: The script name must be provided
 error_state_run_unknown_name:
   other: "[ERROR]The script [/RESET]'[NOTICE]{{.V0}}[/RESET]' [ERROR]is not defined in activestate.yaml.[/RESET]"
-error_state_run_activate:
-  other: Unable to activate a state for running the script in. Try manually running "state activate" first.
 error_state_run_standalone_conflict:
   other: Script is configured as standalone while the language requires state activation. Please unset the standalone value, or use a language native to your shell.
-error_state_run_unknown_exec:
-  other: An executable language interpreter matching the script cannot be found. Please use a language defined in your project on the platform.
 error_state_run_setup_scriptfile:
   other: Cannot setup runnable on-disk script file.
-error_state_run_error:
-  other: Failed to run script.
-error_state_run_no_shell:
-  other: Failed to obtain shell info.
 err_sscommon_binary_path:
   other: Could not find [NOTICE]{{.V0}}[/RESET] in PATH
 err_sscommon_unsupported_language:
   other: Unsupported language extension [NOTICE]{{.V0}}[/RESET]
 err_subshell_setenv:
   other: Could not setup an environment for a new subshell.
-env_description:
-  other: Manage Project Variables
-env_add_description:
-  other: >
-    add variable
-env_remove_description:
-  other: >
-    remove variable
-env_header_id:
-  other: ID
-env_header_variable:
-  other: VARIABLE
-env_header_value:
-  other: VALUE
-env_listing_variables:
-  other: Listing defined variables
-env_add_cannot_add_variable:
-  other: "Cannot add Variable '[NOTICE]{{.Name}} {{.Value}}[/RESET]'"
-env_add_cannot_add_existing_variable:
-  other: "Identical variable already defined"
-env_remove_cannot_remove:
-  other: "Cannot remove variable"
-arg_env_add_variable:
-  other: VARIABLE
-arg_env_add_variable_description:
-  other: The variable that will be defined
-error_env_add_invalid_variable:
-  other: "Invalid variable name given: [NOTICE]{{.V0}}[/RESET]"
-arg_env_add_value:
-  other: VALUE
-arg_env_add_value_description:
-  other: The value that will be assigned
-arg_env_remove_identifier:
-  other: IDENTIFIER
-arg_env_remove_identifier_description:
-  other: Identifies what variable to remove, can be a hash or a variable name
-prompt_choose_variable:
-  other: Which variable do you wish to remove?
-err_env_cannot_list:
-  other: Cannot list variables
-err_env_cannot_find:
-  other: Cannot find variables matching your query
-prompt_env_choose_remove:
-  other: Which variable would you like to remove?
-err_env_cannot_parse:
-  other: Could not parse variables used in your request
-env_removed:
-  other: "Variable removed: [NOTICE]{{.Variable}} ({{.Hash}}[/RESET])"
-env_inherit_description:
-  other: Update the current project to inherit environment variables from the current environment.
-env_inherit_prompt_overwrite:
-  other: Do you want to overwrite the project's existing variable [NOTICE]{{.Name}}[/RESET], whose value is "[NOTICE]{{.OldValue}}[/RESET]", with the new value "[NOTICE]{{.NewValue}}[/RESET]"?
-env_inherit_inherit_aborted:
-  other: "Unable to inherit from current environment: aborted."
 show_project:
   other: Show information about a project
 arg_state_show_remote_description:
@@ -502,17 +258,10 @@ field_localcheckouts:
   other: Local Checkouts
 field_platforms:
   other: Platforms
-err_cannot_obtain_dist:
-  other: "Could not obtain distribution for language: [NOTICE]{{.V0}}[/RESET]"
-err_already_active:
-  other: "You cannot activate a new state when you are already in an activated state."
 err_conflicting_branch_while_checkedout:
   other: |
     Cannot activate branch [NOTICE]{{.V0}}[/RESET]. Branch [NOTICE]{{.V1}}[/RESET] is already checked out.
     Please use [ACTIONABLE]state branch switch <name>[/RESET] followed by [ACTIONABLE]state activate[/RESET] instead.
-run_listing_scripts:
-  other: "Available Scripts: "
-
 secrets_cmd_description:
   other: Manage your secrets
 secrets_flag_filter:
@@ -533,40 +282,10 @@ secrets_set_arg_value_name:
   other: secret-value
 secrets_set_arg_value_description:
   other: Value of unencrypted Secret
-secrets_set_flag_project:
-  other: Scope the secret to the current project
-secrets_set_flag_user:
-  other: Scope the secret to the current user
-secrets_share_cmd_description:
-  other: Share your organization and project secrets with another user
-secrets_share_arg_user_name:
-  other: user-handle
-secrets_share_arg_user_description:
-  other: Username of user in your organization
 secrets_sync_cmd_description:
   other: Synchronize your shareable secrets to everyone in the organization for the current project
 secrets_sync_results_message:
   other: Successfully synchronized [NOTICE]{{.V0}}[/RESET] users of the [NOTICE]{{.V1}}[/RESET] organization
-secrets_col_name:
-  other: Name
-secrets_col_description:
-  other: Description
-secrets_col_setunset:
-  other: Set/Unset
-secrets_col_encrypted:
-  other: Encrypted
-secrets_col_shared:
-  other: Shared
-secrets_col_store:
-  other: Store
-secrets_value_secret_undefined:
-  other: <undefined>
-secrets_value_set:
-  other: Set
-secrets_value_unset:
-  other: Unset
-secrets_value_secret:
-  other: <encrypted>
 secrets_err_defined:
   other: Failed to obtain defined secrets
 secrets_err_values:
@@ -575,64 +294,26 @@ secrets_err_access:
   other: Unable to check access to project secrets. You will not be able to access any secrets for this project
 secrets_warning_no_access:
   other: You are not authorized to view secrets for this project
-secrets_err_missing_field:
-  other: "Secret is missing required field: [NOTICE]{{.V0}}[/RESET]"
-secrets_err_output:
-  other: Failed to display secrets output
-secrets_err_no_secrets_found:
-  other: Unable to find any Secrets for User
-secrets_err_encrypting:
-  other: "Error encrypting a user's Secret: [NOTICE]{{.V0}}[/RESET]"
-secrets_err_decrypting:
-  other: "Error decrypting a user's Secret: [NOTICE]{{.V0}}[/RESET]"
 secrets_err_save:
   other: "Error updating user's Secrets: {{.V0}}"
 secrets_err_base64_decoding:
   other: Error base64 decoding variable value
-secrets_err_no_publickey_found:
-  other: Unable to find any public-key for User
 secrets_err_check_access:
   other: Access check failed
-secrets_expand_err_undefined:
-  other: 'Secret [NOTICE]"{{.V0}}"[/RESET] not defined in project'
 secrets_expand_err_not_found:
   other: 'Unable to obtain value for secret: [NOTICE]"{{.V0}}"[/RESET].'
 secrets_expand_err_no_access:
   other: You are not a member of organization '[NOTICE]{{.V0}}[/RESET]' and therefore cannot access secrets belonging to its projects
-secrets_err_invalid_store:
-  other: "Invalid 'store' property used for variable, value used: [NOTICE]{{.V0}}[/RESET], should be one of: [ACTIONABLE]{{.V1}}[/RESET]"
-secrets_err_invalid_share:
-  other: "Invalid share level used for variable, value used: [NOTICE]{{.V0}}[/RESET], should be one of: [ACTIONABLE]{{.V1}}[/RESET]"
-secrets_err_value_with_store:
-  other: "Secret should not have a local value defined in the activestate.yaml if it's setting the 'share' or 'store' fields: {{.V0}}"
-secrets_err_invalid_value:
-  other: "Secret '[NOTICE]{{.V0}}[/RESET]' has an invalid value: [NOTICE]{{.V1}}[/RESET]"
-secrets_err_value_empty:
-  other: "Secret has no value defined: [NOTICE]{{.V0}}[/RESET]"
 secrets_err_invalid_namespace:
   other: "Invalid namespace given for secret: [NOTICE]{{.V0}}[/RESET], namespace must be in format of 'scope.secretName', eg. 'user.mySecret' or 'project.ourSecret'."
-secrets_warn_deprecated_namespace:
-  other: "DEPRECATION WARNING: Setting or retrieving secrets without a namespace is deprecated and soon won't be supported. Please reference your secret along with its scope, eg. 'user.mySecret' or 'project.ourSecret'."
 secrets_warn_deprecated_var:
   other: "DEPRECATION WARNING: 'state variables' (or 'state vars') has been retired in favour of secrets and constants. Please use 'state secrets' instead."
-secrets_warn_deprecated_var_expand:
-  other: "DEPRECATION WARNING: You are accessing a secret via '$variables.{{.V0}}', please update your activestate.yaml to instead use the format of '$secrets.project.{{.V0}}'"
 secrets_err_user_not_defined:
   other: "Secret has not been defined: [NOTICE]{{.V0}}[/RESET]. Define it by running 'state secrets set [NOTICE]{{.V0}}[/RESET]'."
 secrets_err_project_not_defined:
   other: "Secret has not been defined: [NOTICE]{{.V0}}[/RESET]. Either define it by running 'state secrets set [NOTICE]{{.V0}}[/RESET]' or have someone in your organization sync with you by having them run 'state secrets sync'."
 secrets_err_not_authenticated:
   other: You are running a command that requires access to secrets, please authenticate by running 'state auth'.
-secrets_header_name:
-  other: Name
-secrets_header_scope:
-  other: Scope
-secrets_header_value:
-  other: Value
-secrets_header_description:
-  other: Description
-secrets_header_usage:
-  other: Usage
 secrets_row_value_set:
   other: "[SUCCESS]✔ Defined[/RESET]"
 secrets_row_value_unset:
@@ -641,30 +322,12 @@ secrets_description_unset:
   other: "[DISABLED]Not provided.[/RESET]"
 pull_updated:
   other: Your project in the activestate.yaml has been updated to {{.V0}}@{{.V1}}.
-keypair_cmd_description:
-  other: Manage Your Keypair
-keypair_generate_cmd_description:
-  other: Generate and upload a new Keypair
-keypair_generate_flag_bits:
-  other: Bit-length of keypair to generate
-keypair_generate_flag_dryrun:
-  other: Do not save any changes
-keypair_generate_flag_skippassphrase:
-  other: Do not require a passphrase for new Keypair (implies --dry-run)
-keypair_generate_success:
-  other: Keypair generated successfully
-keypair_auth_cmd_description:
-  other: Authenticate existing Keypair for future sessions
 keypair_err_not_found:
   other: Keypair not yet generated
 keypair_err_save:
   other: Keypair could not be saved
 keypair_err_publickey_not_found:
   other: 'No public-key found for user [NOTICE]"{{.V0}}"[/RESET] ([NOTICE]"{{.V1}}"[/RESET])'
-keypair_err_passphrase_prompt:
-  other: The provided passphrase is invalid
-keypair_err_require_auth:
-  other: You need to be authenticated to run this command, please run '[ACTIONABLE]state auth[/RESET]' first
 keypairs_err_bitlength_too_short:
   other: bit-length too short
 keypairs_err_pem_encoding:
@@ -689,28 +352,12 @@ warn_script_name_in_use:
   other: "[ERROR]WARNING:[/RESET] The following scripts collide with existing commands and should be renamed: [NOTICE]{{.V0}}[/RESET]."
 warn_move_incompatible_modes:
   other: "Permissions of files [NOTICE]{{.V0}}[/RESET] and [NOTICE]{{.V1}}[/RESET] differ. Using permissions of [NOTICE]{{.V0}}[/RESET]"
-warn_move_destination_overwritten:
-  other: "Overwriting existing file [NOTICE]{{.V1}}[/RESET] with file [NOTICE]{{.V0}}[/RESET]"
 err_file_not_found_in_path:
   other: Could not find file=[NOTICE]{{.V0}}[/RESET] in path=[NOTICE]{{.V1}}[/RESET]
 secrets_err_expand_noproject:
   other: Expanding of variable failed because a project was not passed along. This indicates a problem in the underlying code, and is unlikely to be something an end-user can address.
-developer_err_project_match:
-  other: Encountered a situation where the tool is given different project paths. This indicates a bug in our code, please consider reporting it.
-err_version_parse:
-  other: Could not determine the State Tool version to use to run this command. Please ensure the project field in your activestate.yaml is formatted correctly.
 err_invalid_lock:
   other: "Invalid lock specified in your activestate.yaml: '{{.V0}}', should be in the format of: [NOTICE]channel@{number}.{number}.{number}-{hash}[/RESET]"
-err_update_version:
-  other: "Failed to automatically update your locked version schema. Please manually remove your 'version' and 'branch' fields in your activestate.yaml and substitute them for 'lock: <branch>@<version>'."
-downloading_state_version:
-  other: "Downloading State Tool version [NOTICE]{{.V0}}[/RESET], as specified by your activestate.yaml."
-forward_fail:
-  other: Could not forward command to the appropriate State Tool version
-forward_fail_with_error:
-  other: "Could not forward the command to the appropriate State Tool version, error: {{.V0}}"
-forward_fail_info:
-  other: The requested version of the State Tool does not exist, please ensure the version and branch are correct.
 update_available_header:
   other: "[ACTIONABLE]Update Available[/RESET]"
 update_available:
@@ -736,16 +383,6 @@ err_token_delete:
   other: "Something went wrong whilst trying to delete an api token: {{.V0}}"
 err_token_create:
   other: "Something went wrong whilst trying to create an api token: {{.V0}}"
-installer_err_installdir_isfile:
-  other: Expected installation path '[NOTICE]{{.V0}}[/RESET]' to be a directory
-installer_err_installdir_notempty:
-  other: Installation path '[NOTICE]{{.V0}}[/RESET]' is not empty
-installer_err_archive_notfound:
-  other: Distribution archive '[NOTICE]{{.V0}}[/RESET]' does not exist
-installer_err_archive_badext:
-  other: Expected runtime archive '[NOTICE]{{.V0}}[/RESET]' to have .tar.gz or .tgz extension
-installer_err_runtime_missing_install_dir:
-  other: Expected runtime '[NOTICE]{{.V0}}[/RESET]' to contain directory named one of '[ACTIONABLE]{{.V1}}[/RESET]'
 installer_err_runtime_missing_meta:
   other: |
     The requested runtime does not appear to have a metadata file and the metadata could not be inferred.
@@ -762,35 +399,8 @@ installer_err_runtime_executable_not_exec:
   other: Executable '[NOTICE]{{.V1}}[/RESET]' does not have execute permissions for runtime '[NOTICE]{{.V0}}[/RESET]'
 installer_err_fail_obtain_prefixes:
   other: Unable to obtain relocation prefixes for runtime '[NOTICE]{{.V0}}[/RESET]'
-installer_err_runtime_already_exists:
-  other: A runtime is already installed at '[NOTICE]{{.V0}}[/RESET]'
-installer_err_runtime_move_files_access_denied:
-  other: |
-    Unable to move runtime files.  Please ensure that you have write permissions for the directory '[NOTICE]{{.V0}}[/RESET]'
-    If you believe this is happening due to antivirus software please report your issue on our forums:
-    [ACTIONABLE]{{.V1}}[/RESET]
-installer_err_runtime_move_files_failed:
-  other: Unable to move runtime files from '[NOTICE]{{.V0}}[/RESET]' to '[NOTICE]{{.V1}}[/RESET]'
-installer_err_runtime_rm_installdir:
-  other: Unable to remove '[NOTICE]{{.V0}}[/RESET]' after unpacking runtime
-installer_err_runtime_no_commitid:
-  other: A CommitID is required to install this runtime environment
-fetch_err_runtime_no_commitid:
-  other: Could not get a CommitID for this project
-installer_err_runtime_preplatform:
-  other: The version of the installer used in the project you specified is not compatible with the State Tool. Please make a new project.
-installer_err_engine_unknown:
-  other: Build engine is unknown.
-build_status_unknown:
-  other: "Build status could not be retrieved, please view the project at: [NOTICE]{{.V0}}[/RESET] for more information"
 build_status_in_progress:
   other: "Your changes are currently being built remotely on the ActiveState Platform. Please visit [NOTICE]{{.V0}}[/RESET] to see the progress."
-build_status_unknown_error:
-  other: "Build reported an unknown error: {{.V0}}; Please view the project at: [ACTIONABLE]{{.V1}}[/RESET] for more information"
-build_status_failed:
-  other: |
-    The build for your project defined at: [NOTICE]{{.V0}}[/RESET] is not building correctly.
-    Error message recieved was: {{.V1}}. Please correct by visiting the above link.
 err_no_default_branch:
   other: This project has no default branch. This indicates malformed data, please contact support!
 err_no_commit:
@@ -801,10 +411,6 @@ err_order_marshal:
   other: Failed to marshal/unmarshal order
 err_no_data_found:
   other: No data found
-err_no_langauge:
-  other: No language found
-err_get_checkpoint:
-  other: "Error occurred while trying to retrieve the checkpoint for your project: {{.V0}}"
 err_project_no_languages:
   other: Your project does not have any languages configured
 err_add_commit:
@@ -825,58 +431,20 @@ err_recipe_not_found:
   other: Your project does not have a configuration that is compatible with your platform
 err_no_platform_data_remains:
   other: "Your current platform ([ACTIONABLE]{{.V0}}/{{.V1}}[/RESET]) does not appear to be configured in your project. You will need to add it before you are able to activate on this platform. Run 'state platforms --help' for more information on how to do this."
-err_no_artifacts:
-  other: Your project does not seem to produce any artifacts
-err_no_valid_artifact:
-  other: Your project is not producing any usable artifacts, is your State Tool up to date?
-err_runtime_download_no_response:
-  other: Could not find bits associated with your runtime environment, please contact support
 err_runtime_setup:
   other: Error setting up runtime
 err_signs3_invalid_url:
   other: API Responded with an invalid S3 URL, please contact support
-err_artifact_invalid_url:
-  other: API Responded with an invalid artifact URL, please contact support
-err_activate_namespace:
-  other: Could not activate project for the given namespace
-err_activate_create_project:
-  other: Could not create new project
 err_invalid_namespace:
   other: "Invalid namespace: [NOTICE]{{.V0}}[/RESET]. Should be in the format of [NOTICE]org/project[/RESET], and can optionally contain a [NOTICE]#COMMIT_ID[/RESET] suffix. Names should be alphanumeric and may contain dashes and periods."
 err_invalid_project_name:
   other: "Invalid project name: [NOTICE]{{.V0}}[/RESET]. Names should be alphanumeric, may contain dashes and periods, and can optionally contain a [NOTICE]#COMMIT_ID[/RESET] suffix."
 err_could_not_get_commit_behind_count:
   other: Could not obtain commit history properly
-err_must_create_project:
-  other: "You must create the project to activate it."
-activate_namespace_existing:
-  other: "You already have this project checked out, which one would you like to activate?"
-activate_select_optout:
-  other: "None, I want to create a new copy"
-activate_namespace_location:
-  other: Where would you like to place the project files for [NOTICE]{{.V0}}[/RESET]?
-warn_deprecation:
-  other: |
-    You are running a deprecated version of the State Tool. This version will stop working as of [NOTICE]{{.V0}}[/RESET].
-
-    Reason for deprecation:
-      [NOTICE]{{.V1}}[/RESET]
-
-    Please update by running '[ACTIONABLE]state update[/RESET]'.
-err_deprecation:
-  other: |
-    You are running a version of the State Tool that is no longer supported! You will be encountering issues.
-
-    Reason for deprecation:
-      [NOTICE]{{.V1}}[/RESET]
-
-    Please update by running '[ACTIONABLE]state update[/RESET]'.
 err_auth_required:
   other: Authentication is required, please authenticate by running 'state auth'
 err_auth_needinput:
   other: You are logged out, in order to log in either run this command in interactive mode or provide your credentials via flags (see '[ACTIONABLE]state auth --help[/RESET]').
-auth_required_activate:
-  other: You need to be authenticated to activate an ActiveState Platform project
 prompt_login_or_signup:
   other: Would you like to login to an existing ActiveState Platform account, or create a new account?
 prompt_login_browser_action:
@@ -885,12 +453,8 @@ prompt_login_action:
   other: Login with my existing account by typing my username and password
 prompt_signup_browser_action:
   other: Signup for a new account using the ActiveState Platform website
-prompt_login_after_browser_signup:
-  other: Please login once you've registered your account
 err_browser_open:
   other: "Could not open your browser, please manually open the following URL above."
-err_activate_auth_required:
-  other: Activating a project requires you to be authenticated against the ActiveState Platform
 err_os_not_a_directory:
   other: Expected '{{.V0}}' to be a valid directory
 export_cmd_description:
@@ -915,8 +479,6 @@ export_config_cmd_description:
   other: Export state tool configurations
 export_config_flag_filter_description:
   other: "Filter configuration output. Accepts: [ACTIONABLE]{{.V0}}[/RESET]"
-export_config_dir_description:
-  other: Export the config directory details
 export_apikey_user_notice:
   other: "Note that this key is not stored by ActiveState. Please store the value for later use as you cannot retrieve it again."
 err_apikey_name_required:
@@ -939,10 +501,6 @@ arg_platforms_shared_name:
   other: name
 arg_platforms_shared_name_description:
   other: Name[@<version>]
-arg_platforms_shared_version:
-  other: version
-arg_platforms_shared_version_description:
-  other: Platform version (e.g. 12.04.2)
 field_version:
   other: Version
 field_bitwidth:
@@ -959,10 +517,6 @@ commit_message_updated_language:
   other: "Updated language: {{.V0}} to {{.V1}}"
 commit_message_removed_language:
   other: "Removed language: {{.V0}} {{.V1}}"
-downloading_artifacts:
-  other: "Downloading missing artifacts"
-installing_artifacts:
-  other: "Updating missing artifacts"
 fileutils_err_amend_file:
   other: "Could not edit file: [NOTICE]{{.V0}}[/RESET]"
 err_auth_empty_token:
@@ -995,12 +549,6 @@ err_prompt_bad_flag:
   other: Could not validate input due to an unexpected flag, please contact support if this problem persists
 err_invalid_project:
   other: Your activestate.yaml is missing the 'project' field.
-err_persist_invalid_project:
-  other: Trying to persist an invalid project
-variable_deprecation_warning:
-  other: "DEPRECATION WARNING: Your project holds a 'variables' field. Variables have been replaced by separate 'secrets' and 'constants' fields. Please update your activestate.yaml."
-err_replaceall_check_log:
-  other: "Error occurred while replacing file contents, please check the error log or contact support."
 err_bad_project_url:
   other: "Invalid value for 'project' field in your activestate.yaml, please ensure it is in the format of: 'https://platform.activestate.com/org/project'."
 err_set_commit_id:
@@ -1019,10 +567,6 @@ err_project_require_owner:
   other: A project owner was not supplied
 err_project_require_name:
   other: A project name was not supplied
-error_git_project_url_mismatch:
-  other: The project URL in the cloned activestate.yaml does not match the platfom project
-error_git_target_dir_not_empty:
-  other: Target directory for cloning already exists and is not empty
 git_cloning_project_heading:
   other: Cloning Repository
 git_cloning_project:
@@ -1033,14 +577,8 @@ language_unknown_options:
   other: Unknown options
 package_cmd_description:
   other: List packages used in your project
-users_plural:
-  other: users
 package_install_cmd_description:
   other: Add a new package to your project
-package_list_cmd_description:
-  other: List the packages currently used by this project
-package_update_cmd_description:
-  other: Update a package in your project to the latest available version
 package_uninstall_cmd_description:
   other: Remove a package from your project
 package_import_cmd_description:
@@ -1052,7 +590,7 @@ package_info_cmd_description:
 package_arg_name:
   other: name
 package_arg_name_description:
-  other: Package name
+  other: Package name, optionally with namespace, eg. '[<namespace>/]<name>'.
 package_info_flag_language_description:
   other: The language used to constrain package information selection
 bundle_arg_name:
@@ -1062,7 +600,7 @@ bundle_arg_name_description:
 package_arg_nameversion:
   other: name[@version]
 package_arg_nameversion_description:
-  other: Package name and optionally the desired version
+  other: Package name and optionally the desired version, optionally with namespace, eg. '[<namespace>/]<name>'.
 bundle_arg_nameversion:
   other: name[@version]
 bundle_arg_nameversion_description:
@@ -1073,6 +611,10 @@ package_list_flag_name_description:
   other: The filter for package names to include in the listing
 namespace_list_flag_project_description:
   other: The namespace packages should be listed from
+package_search_flag_ns_description:
+  other: The namespace to search within. This trumps the language flag.
+package_flag_ts_description:
+  other: The timestamp at which you want to query. Can be either 'now' or RFC3339 formatted timestamp.
 package_search_flag_language_description:
   other: The language used to constrain search results
 package_search_flag_exact-term_description:
@@ -1089,14 +631,6 @@ commit_message_add_initial:
   other: Initialize project via the State Tool
 commit_reqstext_message:
   other: "Import from requirements file"
-commit_reqstext_remove_existing_message:
-  other: "Remove current packages prior to import from requirements file"
-commit_failed_push_tip:
-  other: Ensure any previous changes have been saved by running [ACTIONABLE]state push[/RESET]. Then try running your command again.
-commit_failed_pull_tip:
-  other: Ensure any remote changes have been pulled in by running [ACTIONABLE]state pull[/RESET]. Then try running your command again.
-err_branch_not_bare:
-  other: Branch is not bare and is unable to be initialized as such
 err_package_added:
   other: Failed to add package
 err_bundle_added:
@@ -1117,8 +651,6 @@ bundle_err_cannot_obtain_language:
   other: Cannot obtain language for bundle search
 package_err_cannot_obtain_search_results:
   other: Cannot obtain search results
-err_cannot_commit_changeset:
-  other: Cannot commit changeset
 package_no_data:
   other: No data found - Please verify the provided commit id
 package_list_no_packages:
@@ -1141,8 +673,6 @@ err_package_updated:
   other: Failed to update package
 err_bundle_updated:
   other: Failed to update bundle
-err_package_project_no_commit:
-  other: Could not find commit for project [NOTICE]{{.V0}}[/RESET]
 package_updated:
   other: "Package updated: [NOTICE]{{.V0}}[/RESET]"
 package_version_updated:
@@ -1163,12 +693,6 @@ package_removed:
   other: "Package uninstalled: [NOTICE]{{.V0}}[/RESET]"
 bundle_removed:
   other: "Bundle uninstalled: [NOTICE]{{.V0}}[/RESET]"
-update_config:
-  other: To ensure your local project is synchronized with the ActiveState platform please use '[ACTIONABLE]state pull[/RESET]'
-package_update_config_file:
-  other: To ensure your local project is synchronized with the ActiveState platform please use '[ACTIONABLE]state pull[/RESET]'
-inventory_ingredient_not_available:
-  other: The package '[NOTICE]{{.V0}}[/RESET]' is not available on the ActiveState Platform, or does not have a matching version
 err_update_build_script:
   other: Could not update runtime build script
 notice_commit_build_script:
@@ -1179,20 +703,10 @@ command_flag_invalid_value:
   other: "Invalid value for {{.V0}} flag: [NOTICE]{{.V1}}[/RESET]"
 command_cmd_no_such_cmd:
   other: "No such command: [NOTICE]{{.V0}}[/RESET]"
-err_cmdtree:
-  other: Could not run the requested command
 err_fetch_languages:
   other: "Could not retrieve languages for your project. Does your project exist on the Platform?"
 err_no_languages:
   other: "Your project does not have any language configured"
-err_project_notexist_push_first:
-  other: The project does not exist on the ActiveState Platform. Please run 'state push' first.
-err_project_notexist_asyaml:
-  other: No activestate.yaml exists at the target directory, you should run 'state init' first.
-err_project_from_path:
-  other: Could not create a project in the target directory. Please ensure that the activestate.yaml exists and is formatted correctly.
-err_must_provide_directory:
-  other: You must provide a valid directory
 err_incompatible_move_file_dir:
   other: |
     Could not move [NOTICE]{{.V0}}[/RESET] to [NOTICE]{{.V1}}[/RESET].  One is a file, the other a directory.
@@ -1214,12 +728,10 @@ arg_state_init_path:
   other: path
 arg_state_init_path_description:
   other: "Where to initialize the project"
-err_wd:
-  other: Could not retrieve the working directory
-err_invalid_output_format:
-  other: "Invalid output format specified: '[NOTICE]{{.V0}}[/RESET]'; Supported formats: [ACTIONABLE]{{.V1}}[/RESET]"
 err_invalid_language:
   other: "Invalid language specified: '[NOTICE]{{.V0}}[/RESET]'; Supported languages: [ACTIONABLE]{{.V1}}[/RESET]"
+err_init_invalid_org:
+  other: The organization '[ACTIONABLE]{{.V0}}[/RESET]' either does not exist, or you do not have permissions to create a project in it.
 push_creating_project:
   other: "Creating project [NOTICE]{{.V1}}[/RESET] under [NOTICE]{{.V0}}[/RESET] on the ActiveState Platform"
 push_project_updated:
@@ -1239,12 +751,8 @@ push_prompt_not_authorized:
     Would you like to create a new project with your changes now?
 export_privkey_cmd_description:
   other: Exports the private key, useful if you want to set it via environment variable (ACTIVESTATE_PRIVATE_KEY)
-err_read_privkey:
-  other: Could not read private key file
 err_unknown_format:
   other: "Unknown format: [NOTICE]{{.V0}}[/RESET]"
-err_unknown_type:
-  other: "Unknown type: [NOTICE]{{.V0}}[/RESET]"
 err_sprint:
   other: "Could not construct output. Encountered the following error: {{.V0}}"
 field_localized_field:
@@ -1252,7 +760,7 @@ field_localized_field:
 err_could_not_marshal_print:
   other: "Could not marshal the value being printed, please check the error log for more information."
 err_no_structured_output:
-  other: "This command does not support the {{.V0}} output format. Please try again without that output flag."
+  other: "This command does not support the '{{.V0}}' output format. Please try again without that output flag."
 err_main_outputer:
   other: "Could not create output writer, please contact developers if this problem persists. Error: {{.V0}}"
 field_name:
@@ -1269,10 +777,6 @@ err_filter_current_platform:
   other: Filter returned no valid platform IDs for the current platform.
 no_commits:
   other: No commits exist yet for [NOTICE]{{.V0}}[/RESET]
-err_orgs_length:
-  other: Could not retrieve the requested users / organizations
-err_user_not_found:
-  other: "Could not find the requested user: [NOTICE]{{.V0}}[/RESET]"
 field_date:
   other: Date
 field_author:
@@ -1287,22 +791,18 @@ change_removed:
   other: "[ERROR]-[/RESET] {{.V0}}"
 change_updated:
   other: "[ACTIONABLE]•[/RESET] {{.V0}} ({{.V1}} → {{.V2}})"
+constraint_auto:
+  other: Auto
+constraint_resolved:
+  other: "{{.V0}} → {{.V1}}"
 namespace_label_platform:
   other: "Platform"
 namespace_label_preplatform:
   other: "Bits"
 namespace_label_packager:
   other: "Docker/Installer packagers"
-print_commit:
-  other: "[NOTICE]commit {{.V0}}[/RESET]"
-print_commit_author:
-  other: "Author: {{.V0}}"
-print_commit_date:
-  other: "Date: {{.V0}}"
-print_commit_description:
-  other: "Description: {{.V0}}"
 history_cmd_description:
-  other: View history of the active or given project
+  other: View history of the active project
 clean_description:
   other: Clean caches, configuration files, or completely remove the state tool
 uninstall_description:
@@ -1313,8 +813,6 @@ clean_config_description:
   other: Removes global State Tool configuration. Project configuration will not be affected.
 flag_state_clean_uninstall_force_description:
   other: Run uninstall operation without prompts and ignoring any errors stopping running services
-flag_state_clean_ignore_errors_description:
-  other: Does not stop when an error occurs, removing as much as possible
 arg_state_clean_cache_project_description:
   other: The project to be removed from the local cache.
 flag_state_clean_config_force_description:
@@ -1323,8 +821,6 @@ err_uninstall_activated:
   other: Cannot uninstall the State Tool while in an activated state. Please deactivate by entering [ACTIONABLE]exit[/RESET] or pressing [ACTIONABLE]Ctrl+D[/RESET] and then try again.
 err_clean_cache_activated:
   other: Cannot remove the cache directory while in an activated state. Please deactivate by entering [ACTIONABLE]exit[/RESET] or pressing [ACTIONABLE]Ctrl+D[/RESET] and then try again.
-err_clean_config_activated:
-  other: Cannot remove the config directory while in an activated state. Please deactivate by entering [ACTIONABLE]exit[/RESET] or pressing [ACTIONABLE]Ctrl+D[/RESET] and then try again.
 uninstall_confirm:
   other: |
     You are about to remove the State Tool.
@@ -1366,23 +862,10 @@ err_language_version_not_found:
   other: The requested version [NOTICE]{{.V0}}[/RESET] for the language [NOTICE]{{.V1}}[/RESET] is not available
 err_language_mismatch:
   other: Cannot change languages, only changes to the current project's language is allowed
-field_languages:
-  other: Languages
 err_no_recipes:
   other: No build recipes could be generated for the current project
-err_solve_order:
-  other: "Could not solve order: {{.V0}}"
-err_order_bad_request:
-  other: "Bad request while resolving order: Please visit [ACTIONABLE]https://platform.activestate.com/commit/{{.V0}}[/RESET] to see details about the error: {{.V1}}"
 err_order_unknown:
   other: Unknown error resolving order"
-using_cached_env:
-  other: "Reusing cached runtime environment"
-update_attempt:
-  other: |
-    Updating state tool:  Downloading latest version of the state tool...
-forward_version:
-  other: "Using locked state tool version: [NOTICE]{{.V0}}[/RESET].\n"
 err_project_env_file_not_exist:
   other: |
     Your activated environment appears to have been corrupted because the activestate.yaml cannot be found anymore.
@@ -1400,8 +883,6 @@ arg_state_deploy_namespace_description:
   other: The namespace of the project that you wish to deploy
 err_deploy_no_commits:
   other: "The project '[NOTICE]{{.V0}}[/RESET]' does not have any packages configured, please add add some packages first."
-err_userrc_notfound:
-  other: "Could not update your environment as your RC file could not be found, expecting to find one of [ACTIONABLE]{{.V0}}[/RESET] in your home directory."
 err_windows_registry:
   other: Error while interacting with Windows registry
 err_deploy_run_install:
@@ -1433,10 +914,6 @@ deploy_symlink_cmd_description:
   other: Symlink the executables to your PATH and to the target directory (must have run install first or this will error)
 deploy_report_cmd_description:
   other: Reports information about the deployed runtime environment, useful for further manual setup (must have run install first or this will error)
-field_binarydirectories:
-  other: Binary Directories
-field_environment:
-  other: Environment Variables
 deploy_restart_shell:
   other: |
     Please restart your terminal or start a new terminal session in order to start using the newly configured Runtime Environment.
@@ -1467,26 +944,14 @@ envdef_unmarshal_error:
 
     Cannot not parse runtime definition file at [NOTICE]{{.V0}}[/RESET]
     This indicates a problem with the build. You can try updating your project
-err_corrupted_build_request_response:
-  other: |
-    Internal error.  You can try manually updating the state tool.
-
 err_arg_required:
   other: "The following argument is required:\n  Name: [NOTICE]{{.V0}}[/RESET]\n  Description: [NOTICE]{{.V1}}[/RESET]"
 err_init_no_language:
   other: "A project has not been set using 'state use'. You must include the [NOTICE]language[/RESET] argument. For more help, run '[ACTIONABLE]state init --help[/RESET]'."
-err_bad_platform_version:
-  other: You have to supply a platform version.
 platform_added:
   other: "[NOTICE]{{.V0}}@{{.V1}}[/RESET] has been added."
 platform_removed:
   other: "[NOTICE]{{.V0}}@{{.V1}}[/RESET] has been removed."
-err_getwd:
-  other: |
-    Could not retrieve your working directory, error received: [NOTICE]{{.V0}}[/RESET].
-    If this problem continues please report it on our forums: [ACTIONABLE]{{.V1}}[/RESET]
-ppm_install_err:
-  other: Failed to install PPM shim command.
 ppm_header_message:
   other: |
     The Perl Package Manager (PPM) is no longer supported.
@@ -1533,32 +998,8 @@ ppm_print_area_redundant:
   other: |
     `ppm area` and its subcommands have been made redundant thanks to State Tool's use of virtual environments.
     You can simply start managing your packages, run '[ACTIONABLE]{{.V0}} --help[/RESET]' for more information.
-ppm_install_intent:
-  other: add new packages to your project
-ppm_upgrade_intent:
-  other: upgrade an existing package
-ppm_remove_intent:
-  other: remove a package from your project
 ppm_search_intent:
   other: search for a package in the ActiveState repository
-ppm_area_message:
-  other: |
-    The Perl Package Manager (PPM) is no longer supported.
-    To manage your Perl packages from the command line, use the State Tool (state) instead. You can find more information on the State Tool at
-    [ACTIONABLE]https://www.activestate.com/products/platform/state-tool/[/RESET]
-
-    To manage several projects with varying dependencies, you can organize them as
-    projects on the ActiveState Platform: https://docs.activestate.com/platform/projects.html.
-
-    To fork an existing project, run:
-
-        [ACTIONABLE]state fork[/RESET]
-
-    See [ACTIONABLE]https://docs.activestate.com/platform/state/fork.html[/RESET] for details.
-
-    To create a new project, see the guide at [ACTIONABLE]https://docs.activestate.com/platform/state/start.html[/RESET] for details.
-ppm_list_intent:
-  other: list the packages installed for a project
 deploy_usable_path:
   other: |
     Please ensure '[NOTICE]{{.V0}}[/RESET]' exists and is on your PATH.
@@ -1585,10 +1026,6 @@ tutorial_newproject_outro:
     [[BR]][[BR]]
     To create another project run '[ACTIONABLE]state init[/RESET]', or if you want to find out more about the State Tool and what it can do
     run '[ACTIONABLE]state --help[/RESET]' or check out [ACTIONABLE]{{.Docs}}[/RESET]
-ppm_convert_after_tutorial:
-  other: |
-    For your convenience you can continue to use ppm commands once you've activated your virtual runtime environment.
-    We'll give you handy tips on how your commands map to State Tool so you can learn as you go.
 ppm_convert_explanation:
   other: |
     State Tool, like Perl 7, is being developed from the ground up with modern software development practices in mind.
@@ -1624,8 +1061,6 @@ flag_state_exec_path_description:
   other: The path of the project that you want to use the runtime environment of. If no path is given the current working directory is used.
 artifact_started:
   other: "Build Starting Remotely: [NOTICE]{{.V0}}[/RESET]"
-artifact_started_cached:
-  other: "Already Cached: [NOTICE]{{.V0}}[/RESET]"
 artifact_succeeded:
   other: "Completed: [NOTICE]{{.V0}} ({{.V1}}/{{.V2}})[/RESET]"
 artifact_failed:
@@ -1636,16 +1071,10 @@ prepare_protocol_warning:
   other: Could not add state protocol
 err_preparestart_shortcut:
   other: Could not create shortcut for {{.V0}}
-err_preparestart_icon:
-  other: Could not set icon for shortcut file {{.V0}}
 confirm:
   other: Please Confirm
 err_no_project:
   other: To run this command you need to be in an existing project. You can create a new project with [ACTIONABLE]state init[/RESET] or run this command from a directory that is in an existing project. You can also use an existing project by running '[ACTIONABLE]state activate --default[/RESET]' inside your project directory.
-activate_default_prompt:
-  other: |
-    Would you like always use [NOTICE]{{.V0}}[/RESET]?
-    This will allow you to operate on this project and run executables provided by its runtime without first "activating" it.
 err_no_projectfile:
   other: No activestate.yaml file exists in the current working directory or its parent directories.
 err_project_not_found:
@@ -1658,10 +1087,14 @@ err_read_projectfile:
   other: The activestate.yaml at {{.V0}} could not be read.
 err_auth_fail_totp:
   other: A two-factor authentication code is required.
-err_lock_version_invalid:
-  other: "The locked version '{{.V0}}' could not be verified, are you sure it's valid?"
-config_get_error:
-  other: Failed to read configuration.
+cve_title:
+  other: Vulnerability Summary
+cve_description:
+  other: Show a summary of project vulnerabilities
+cve_namespace_arg:
+  other: org/project
+cve_namespace_arg_description:
+  other: The project for which the report is created
 cve_needs_authentication:
   other: You need to be authenticated in order to access vulnerability information about your project.
 auth_tip:
@@ -1679,16 +1112,10 @@ err_fetch_project:
   other: "Could not fetch details for project: {{.V0}}"
 err_set_default_branch:
   other: Could not update project field with branch, please manually set the `branch={{.V0}}` query parameter on the project field in your activestate.yaml.
-artifact_progress_step_download:
-  other: Downloading
-artifact_progress_step_unpack:
-  other: Unpacking
-artifact_progress_step_install:
-  other: Installing
 artifact_download_failed:
-  other: Failed to download artifact {{.V0}} ({{.V1}})
+  other: Failed to download artifact '{{.V0}}' ({{.V1}})
 artifact_setup_failed:
-  other: Failed to install artifact {{.V0}} ({{.V1}})
+  other: Failed to install artifact '{{.V0}}' ({{.V1}})
 err_stored_artifacts:
   other: Could not unmarshal stored artifacts, your install may be corrupted.
 err_fetch_branch:
@@ -1701,6 +1128,8 @@ err_user_network_solution:
   other: |
     Please ensure your device has access to internet during installation. Make sure software like a VPN, Firewall or Anti-Virus are not blocking your connectivity.
     If your issue persists consider reporting it on our forums at {{.V0}}.
+err_user_libc_solution:
+  other: If you specified a glibc version, please check it is configured → [ACTIONABLE]{{.V0}}[/RESET].
 err_revert_get_commit:
   other: "Could not fetch commit details for commit with ID: {{.V0}}"
 err_revert_commit:
@@ -1738,21 +1167,18 @@ err_push_create_project_aborted:
   other: Project creation aborted by user.
 err_push_target_invalid_history:
   other: The target's commit history does not match your local commit history. Are you pushing to the right project?
-err_pull_incompatible:
-  other: |
-    The remote project has an incompatible commit history. Target a different project with '[ACTIONABLE]--set-project[/RESET]' or reset your local checkout with '[ACTIONABLE]state reset[/RESET]'.
 pull_diverged_message:
   other: |
     A merge commit will be created for project [NOTICE]{{.V0}}[/RESET] on branch [NOTICE]{{.V1}}[/RESET].
     Merging commits [NOTICE]{{.V2}}[/RESET] (local) and [NOTICE]{{.V3}}[/RESET] (remote).
     Any conflicts will favour your local changes. To view the merge commit run '[ACTIONABLE]state history[/RESET]'
-pull_merge_commit:
-  other: Merged {{.V1}} into {{.V0}}
 operation_success_local:
   other: |
     Your local project has been updated.
     Run [ACTIONABLE]state push[/RESET] to save changes to the platform.
 buildplan_err:
+  other: "Could not plan build, platform responded with:\n{{.V0}}"
+buildplan_err_cropped:
   other: "Could not plan build, platform responded with:\n{{.V0}}\n{{.V1}}"
 err_buildplanner_head_on_branch_moved:
   other: The branch you're trying to update has changed remotely, please run '[ACTIONABLE]state pull[/RESET]'.
@@ -1791,13 +1217,6 @@ lock_version_mismatch:
   other: This project is locked at State Tool version [NOTICE]{{.V0}}[/RESET]. Your current State Tool version is [NOTICE]{{.V1}}@{{.V2}}[/RESET].
 lock_update_lock:
   other: You can lock the project to the running State Tool version with '[ACTIONABLE]state update lock[/RESET]'.
-err_ping_version_mismatch:
-  other: |
-    The installed version of the State Tool Service does not match that of the client.
-    Please stop the service with [ACTIONABLE]state-svc stop[/RESET] and try your command again.
-    If this issue persists please reinstall the State Tool.
-err_get_wd:
-  other: Unable to get appropriate parent directory for project, please ensure you have write permissions in your current directory.
 err_jwt_not_authenticated:
   other: |
     You are not authenticated. In order to export a JWT please first authenticate with [ACTIONABLE]state auth[/RESET]
@@ -1883,14 +1302,14 @@ err_use_default_project_does_not_exist:
   other: "Cannot find your project. Please either check it out again with [ACTIONABLE]state checkout[/RESET] or run [ACTIONABLE]state use reset[/RESET] to stop using it."
 err_shell_commit_id_mismatch:
   other: "Cannot start a shell/prompt for the given commit ID. Please use '[ACTIONABLE]state checkout[/RESET]' to check out a specific commit ID and then try again."
+err_activate_commit_id_mismatch:
+  other: "Cannot activate a project with the given commit ID. Please use '[ACTIONABLE]state checkout[/RESET]' to check out a specific commit ID and then try again."
 err_shell_cannot_load_project:
   other: Cannot load project to start a shell/prompt in.
 err_shell_already_active:
   other: |
     You are already in a shell for '[ACTIONABLE]{{.V0}}[/RESET]', located at '[ACTIONABLE]{{.V1}}[/RESET]'. You cannot enter a new shell when you are already in one.
     To exit your current shell simply run: [ACTIONABLE]exit[/RESET].
-err_checkout_project:
-  other: Could not checkout project {{.V0}}
 err_project_frompath:
   other: Could not create project files
 err_project_frompath_notexist:
@@ -1907,8 +1326,6 @@ arg_state_shell_namespace_description:
   other: The namespace of the project you wish to start a virtual environment shell/prompt for, or just the project name if previously used
 err_language_by_commit:
   other: Could not get language from commit ID {{.V0}}
-err_make_language:
-  other: Could not create language from commit ID
 err_parse_project:
   other: Could not parse project file at {{.V0}}
 err_uninstall_privilege_mismatch:
@@ -1926,17 +1343,20 @@ err_state_exec:
   other: Could not get state exec
 err_service_exec:
   other: Could not get service exec
-err_svc_exec:
-  other: Could not get state service exec
-err_state_exec_dir:
-  other: Could not get state exec from directory {{.V0}}
 err_service_exec_dir:
   other: Could not get service exec from directory {{.V0}}
 err_insufficient_permissions:
   other: |
     Could not stop running State Tool process due to insufficient permissions.
 
-    State Tool works best if you run it as a user, rather than an admin. You might be encountering this issue because you have originally installed or ran the State Tool as admin. If this is the case it is suggested that you uninstall the State Tool as admin, and install it again as a user.
+    State Tool works best if you run it as a user, rather than an administrator. You might be encountering this issue because you have originally installed or ran the State Tool as an administrator. If this is the case it is suggested that you uninstall the State Tool as an administrator, and install it again as a user.
+err_update_access_denied:
+  other: |
+    Could not update the State Tool due to insufficient permissions in the installation folder.
+
+    State Tool works best if you run it as a user, rather than an administrator. You might be encountering this issue because you have originally installed or ran the State Tool as an administrator. If this is the case it is suggested that you uninstall the State Tool as an administrator, and install it again as a user.
+
+    Error received: {{.V0}}
 err_search_no_package:
   other: |
     No packages in our catalog match [NOTICE]"{{.V0}}"[/RESET].
@@ -2013,11 +1433,6 @@ err_rtprogress_outofsync:
   other: |
     Received events that appear to be out of order.
     Please report this issue on [ACTIONABLE]{{.V0}}[/RESET] and include your log file at [ACTIONABLE]{{.V1}}[/RESET].
-err_home_not_found:
-  other: |
-    Could not proceed because your HOME environment variable is unset. Please ensure that your HOME environment variable is set. Alternatively if you do not or cannot set this variable you can instead use the ACTIVESTATE_HOME variable.
-
-    This variable is used by the State Tool to determine things like the installation directory, config directory and cache directory.
 warning_macos_bash:
   other: |
     You are running bash on macOS, which is no longer supported by Apple. To update your account to use zsh, please run 'chsh -s /bin/zsh'. If you continue to use bash you may run into issues finding binaries on your PATH, in order to work around these issues please read: https://scriptingosx.com/2017/04/about-bash_profile-and-bashrc-on-macos/
@@ -2034,6 +1449,8 @@ pjfile_deprecation_entry:
   other: " - '[ACTIONABLE]{{.V0}}[/RESET]' located at byte [ACTIONABLE]{{.V1}}[/RESET]"
 err_init_authenticated:
   other: You need to be authenticated to initialize a project. Authenticate by running '[ACTIONABLE]state auth[/RESET]'.
+err_init_project_exists:
+  other: A project file already exists for {{.V0}} at {{.V1}}
 err_country_blocked:
   other: This service is not available in your region.
 err_commit_id_invalid:
@@ -2082,3 +1499,14 @@ err_searchingredient_toomany:
   other: Too many ingredients match the query '[ACTIONABLE]{{.V0}}[/RESET]', please try to be more specific.
 alternative_unknown_pkg_name:
   other: unknown
+err_uploadingredient_edit_description_not_supported:
+  other: Editing an ingredient description is not yet supported.
+uploadingredient_editor_opening:
+  other: |
+    Opening editor to edit ingredient meta information. Alternatively you may manually edit the following file: [ACTIONABLE]{{.V0}}[/RESET].
+uploadingredient_success:
+  other: |
+    Successfully published as:
+    Ingredient ID: [[ACTIONABLE]{{.V0}}[/RESET]
+    Ingredient Version ID: [ACTIONABLE]{{.V1}}[/RESET]
+    Revision: [ACTIONABLE]{{.V2}}[/RESET]

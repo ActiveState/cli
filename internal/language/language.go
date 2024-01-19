@@ -5,8 +5,8 @@ import (
 	"strings"
 
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/locale"
+	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/thoas/go-funk"
 )
 
@@ -58,11 +58,11 @@ var lookup = [...]languageData{
 	},
 	{
 		"bash", "Bash", ".sh", true, "", "",
-		Executable{"bash" + exeutils.Extension, true},
+		Executable{"bash" + osutils.ExeExtension, true},
 	},
 	{
 		"sh", "Shell", ".sh", true, "", "",
-		Executable{"sh" + exeutils.Extension, true},
+		Executable{"sh" + osutils.ExeExtension, true},
 	},
 	{
 		"batch", "Batch", ".bat", false, "", "",
@@ -120,7 +120,7 @@ func MakeByName(name string) Language {
 }
 
 // MakeByNameAndVersion will retrieve a language by a given name and version.
-func MakeByNameAndVersion(name, version string) (Language, error) {
+func MakeByNameAndVersion(name, version string) Language {
 	if strings.ToLower(name) == Python3.Requirement() {
 		name = Python3.String()
 		// Disambiguate python, preferring Python3.
@@ -130,7 +130,7 @@ func MakeByNameAndVersion(name, version string) (Language, error) {
 			name = Python2.String()
 		}
 	}
-	return MakeByName(name), nil
+	return MakeByName(name)
 }
 
 // MakeByText will retrieve a language by a given text

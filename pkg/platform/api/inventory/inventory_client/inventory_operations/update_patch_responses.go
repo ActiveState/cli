@@ -52,8 +52,7 @@ func NewUpdatePatchOK() *UpdatePatchOK {
 	return &UpdatePatchOK{}
 }
 
-/*
-UpdatePatchOK describes a response with status code 200, with default header values.
+/* UpdatePatchOK describes a response with status code 200, with default header values.
 
 The updated patch
 */
@@ -85,8 +84,7 @@ func NewUpdatePatchBadRequest() *UpdatePatchBadRequest {
 	return &UpdatePatchBadRequest{}
 }
 
-/*
-UpdatePatchBadRequest describes a response with status code 400, with default header values.
+/* UpdatePatchBadRequest describes a response with status code 400, with default header values.
 
 If the patch update is invalid or the patch cannot be updated because it is in use by a stable ingredient version revision
 */
@@ -120,8 +118,7 @@ func NewUpdatePatchDefault(code int) *UpdatePatchDefault {
 	}
 }
 
-/*
-UpdatePatchDefault describes a response with status code -1, with default header values.
+/* UpdatePatchDefault describes a response with status code -1, with default header values.
 
 If there is an error processing the request
 */

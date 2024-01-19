@@ -52,8 +52,7 @@ func NewAddCPUArchitectureCreated() *AddCPUArchitectureCreated {
 	return &AddCPUArchitectureCreated{}
 }
 
-/*
-AddCPUArchitectureCreated describes a response with status code 201, with default header values.
+/* AddCPUArchitectureCreated describes a response with status code 201, with default header values.
 
 The added CPU architecture
 */
@@ -85,8 +84,7 @@ func NewAddCPUArchitectureBadRequest() *AddCPUArchitectureBadRequest {
 	return &AddCPUArchitectureBadRequest{}
 }
 
-/*
-AddCPUArchitectureBadRequest describes a response with status code 400, with default header values.
+/* AddCPUArchitectureBadRequest describes a response with status code 400, with default header values.
 
 If the CPU architecture is invalid
 */
@@ -120,8 +118,7 @@ func NewAddCPUArchitectureDefault(code int) *AddCPUArchitectureDefault {
 	}
 }
 
-/*
-AddCPUArchitectureDefault describes a response with status code -1, with default header values.
+/* AddCPUArchitectureDefault describes a response with status code -1, with default header values.
 
 If there is an error processing the request
 */

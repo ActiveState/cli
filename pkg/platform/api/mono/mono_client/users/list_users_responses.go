@@ -45,8 +45,7 @@ func NewListUsersOK() *ListUsersOK {
 	return &ListUsersOK{}
 }
 
-/*
-ListUsersOK describes a response with status code 200, with default header values.
+/* ListUsersOK describes a response with status code 200, with default header values.
 
 Success
 */
@@ -76,8 +75,7 @@ func NewListUsersInternalServerError() *ListUsersInternalServerError {
 	return &ListUsersInternalServerError{}
 }
 
-/*
-ListUsersInternalServerError describes a response with status code 500, with default header values.
+/* ListUsersInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */

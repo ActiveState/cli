@@ -15,9 +15,9 @@ import (
 
 	"github.com/ActiveState/cli/internal/condition"
 	"github.com/ActiveState/cli/internal/constants"
-	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/logging"
+	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/svcctl"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
@@ -192,7 +192,7 @@ func (suite *SvcIntegrationTestSuite) GetNumStateSvcProcesses() int {
 	for _, p := range procs {
 		if name, err := p.Name(); err == nil {
 			name = filepath.Base(name) // just in case an absolute path is returned
-			if svcName := constants.ServiceCommandName + exeutils.Extension; name == svcName {
+			if svcName := constants.ServiceCommandName + osutils.ExeExtension; name == svcName {
 				count++
 			}
 		}

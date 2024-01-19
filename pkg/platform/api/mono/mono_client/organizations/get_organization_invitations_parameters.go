@@ -52,12 +52,10 @@ func NewGetOrganizationInvitationsParamsWithHTTPClient(client *http.Client) *Get
 	}
 }
 
-/*
-GetOrganizationInvitationsParams contains all the parameters to send to the API endpoint
+/* GetOrganizationInvitationsParams contains all the parameters to send to the API endpoint
+   for the get organization invitations operation.
 
-	for the get organization invitations operation.
-
-	Typically these are written to a http.Request.
+   Typically these are written to a http.Request.
 */
 type GetOrganizationInvitationsParams struct {
 

@@ -146,9 +146,10 @@ func (p *Prompt) Select(title, message string, choices []string, defaultChoice *
 
 	var response string
 	err := survey.AskOne(&Select{&survey.Select{
-		Message: formatMessage(message, !p.out.Config().Colored),
-		Options: choices,
-		Default: defChoice,
+		Message:  formatMessage(message, !p.out.Config().Colored),
+		Options:  choices,
+		Default:  defChoice,
+		FilterFn: func(input string, choices []string) []string { return choices }, // no filter
 	}}, &response, nil)
 	if err != nil {
 		return "", locale.NewInputError(err.Error())

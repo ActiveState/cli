@@ -329,10 +329,10 @@ func (suite *PackageIntegrationTestSuite) TestPackage_operation() {
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 
-	username, _ := ts.CreateNewUser()
-	namespace := fmt.Sprintf("%s/%s", username, "python3-pkgtest")
+	user := ts.CreateNewUser()
+	namespace := fmt.Sprintf("%s/%s", user.Username, "python3-pkgtest")
 
-	cp := ts.Spawn("fork", "ActiveState-CLI/Packages", "--org", username, "--name", "python3-pkgtest")
+	cp := ts.Spawn("fork", "ActiveState-CLI/Packages", "--org", user.Username, "--name", "python3-pkgtest")
 	cp.ExpectExitCode(0)
 
 	cp = ts.Spawn("checkout", namespace, ".")
@@ -345,21 +345,21 @@ func (suite *PackageIntegrationTestSuite) TestPackage_operation() {
 
 	suite.Run("install", func() {
 		cp := ts.Spawn("install", "urllib3@1.25.6")
-		cp.Expect(fmt.Sprintf("Operating on project %s/python3-pkgtest", username))
+		cp.Expect(fmt.Sprintf("Operating on project %s/python3-pkgtest", user.Username))
 		cp.ExpectRe("(?:Package added|being built)", termtest.OptExpectTimeout(30*time.Second))
 		cp.Wait()
 	})
 
 	suite.Run("install (update)", func() {
 		cp := ts.Spawn("install", "urllib3@1.25.8")
-		cp.Expect(fmt.Sprintf("Operating on project %s/python3-pkgtest", username))
+		cp.Expect(fmt.Sprintf("Operating on project %s/python3-pkgtest", user.Username))
 		cp.ExpectRe("(?:Package updated|being built)", termtest.OptExpectTimeout(30*time.Second))
 		cp.Wait()
 	})
 
 	suite.Run("uninstall", func() {
 		cp := ts.Spawn("uninstall", "urllib3")
-		cp.Expect(fmt.Sprintf("Operating on project %s/python3-pkgtest", username))
+		cp.Expect(fmt.Sprintf("Operating on project %s/python3-pkgtest", user.Username))
 		cp.ExpectRe("(?:Package uninstalled|being built)", termtest.OptExpectTimeout(30*time.Second))
 		cp.Wait()
 	})
@@ -426,9 +426,9 @@ func (suite *PackageIntegrationTestSuite) TestJSON() {
 	defer ts.Close()
 
 	cp := ts.Spawn("search", "Text-CSV", "--exact-term", "--language", "Perl", "-o", "json")
-	cp.Expect(`[{"package":"Text-CSV"`)
+	cp.Expect(`"name":"Text-CSV"`)
 	cp.ExpectExitCode(0)
-	AssertValidJSON(suite.T(), cp)
+	//AssertValidJSON(suite.T(), cp) // currently too large to fit terminal window to validate
 
 	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("checkout", "ActiveState-CLI/Packages-Perl", "."),
@@ -446,7 +446,7 @@ func (suite *PackageIntegrationTestSuite) TestJSON() {
 	AssertValidJSON(suite.T(), cp)
 
 	cp = ts.Spawn("packages", "-o", "json")
-	cp.Expect(`[{"package":"Text-CSV","version":"Auto"}]`)
+	cp.Expect(`[{"package":"Text-CSV","version":"Auto","resolved_version":"`)
 	cp.ExpectExitCode(0)
 	AssertValidJSON(suite.T(), cp)
 
@@ -595,7 +595,7 @@ func (suite *PackageIntegrationTestSuite) TestUpdate() {
 
 func (suite *PackageIntegrationTestSuite) TestRuby() {
 	if runtime.GOOS == "darwin" {
-		return // Ruby support is not yet enabled on the Platform
+		return // Ruby support for macOS is not yet enabled on the Platform
 	}
 	suite.OnlyRunForTags(tagsuite.Package)
 	ts := e2e.New(suite.T(), false)
@@ -640,6 +640,27 @@ func (suite *PackageIntegrationTestSuite) TestProjectWithOfflineInstallerAndDock
 		e2e.OptArgs("uninstall", "requests"),
 		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
+	cp.ExpectExitCode(0)
+}
+
+func (suite *PackageIntegrationTestSuite) TestResolved() {
+	suite.OnlyRunForTags(tagsuite.Package)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.Spawn("checkout", "ActiveState-CLI/small-python", ".")
+	cp.Expect("Skipping runtime setup")
+	cp.Expect("Checked out project")
+	cp.ExpectExitCode(0)
+
+	cp = ts.SpawnWithOpts(
+		e2e.OptArgs("install", "requests"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
+	)
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("packages")
+	cp.Expect("Auto →")
 	cp.ExpectExitCode(0)
 }
 

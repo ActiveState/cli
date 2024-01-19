@@ -9,7 +9,6 @@ import (
 
 	"github.com/ActiveState/cli/pkg/project"
 
-	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/pkg/platform/runtime/envdef"
@@ -99,8 +98,8 @@ func makeAlias(destination string) string {
 
 	if rt.GOOS == "windows" {
 		ext := filepath.Ext(alias)
-		if ext != "" && ext != exeutils.Extension { // for non-.exe executables like pip.bat
-			alias = strings.TrimSuffix(alias, ext) + exeutils.Extension // setup alias pip.exe -> pip.bat
+		if ext != "" && ext != osutils.ExeExtension { // for non-.exe executables like pip.bat
+			alias = strings.TrimSuffix(alias, ext) + osutils.ExeExtension // setup alias pip.exe -> pip.bat
 		}
 	}
 

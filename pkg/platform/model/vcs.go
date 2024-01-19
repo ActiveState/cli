@@ -6,7 +6,6 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -82,8 +81,8 @@ const (
 	// NamespaceCamelFlagsMatch is the namespace used for passing camel flags
 	NamespaceCamelFlagsMatch = `^camel-flags$`
 
-	// NamespaceSharedMatch is the namespace used for shared requirements (usually runtime libraries)
-	NamespaceSharedMatch = `^shared$`
+	// NamespaceOrgMatch is the namespace used for org specific requirements
+	NamespaceOrgMatch = `^org\/`
 
 	// NamespaceBuildFlagsMatch is the namespace used for passing build flags
 	NamespaceBuildFlagsMatch = `^build-flags$`
@@ -134,6 +133,8 @@ var (
 	NamespaceBundle   = NamespaceType{"bundle", "bundles", NamespaceBundlesMatch}
 	NamespaceLanguage = NamespaceType{"language", "", NamespaceLanguageMatch}
 	NamespacePlatform = NamespaceType{"platform", "", NamespacePlatformMatch}
+	NamespaceOrg      = NamespaceType{"org", "org", NamespaceOrgMatch}
+	NamespaceRaw      = NamespaceType{"raw", "", ""}
 	NamespaceBlank    = NamespaceType{"", "", ""}
 )
 
@@ -179,6 +180,10 @@ func NewNamespacePackage(language string) Namespace {
 	return Namespace{NamespacePackage, fmt.Sprintf("language/%s", language)}
 }
 
+func NewRawNamespace(value string) Namespace {
+	return Namespace{NamespaceRaw, value}
+}
+
 func NewBlankNamespace() Namespace {
 	return Namespace{NamespaceBlank, ""}
 }
@@ -196,6 +201,13 @@ func NewNamespaceLanguage() Namespace {
 // NewNamespacePlatform provides the base platform namespace.
 func NewNamespacePlatform() Namespace {
 	return Namespace{NamespacePlatform, "platform"}
+}
+
+func NewOrgNamespace(orgName string) Namespace {
+	return Namespace{
+		nsType: NamespaceOrg,
+		value:  fmt.Sprintf("org/%s", orgName),
+	}
 }
 
 func LanguageFromNamespace(ns string) string {
@@ -241,7 +253,7 @@ func BranchCommitID(ownerName, projectName, branchName string) (*strfmt.UUID, er
 	if branch.CommitID == nil {
 		return nil, locale.NewInputError(
 			"err_project_no_commit",
-			"Your project does not have any commits yet, head over to https://{{.V0}}/{{.V1}}/{{.V2}} to set up your project.", constants.PlatformURL, ownerName, projectName)
+			"Your project does not have any commits yet, head over to {{.V0}} to set up your project.", api.GetPlatformURL(fmt.Sprintf("%s/%s", ownerName, projectName)).String())
 	}
 
 	return branch.CommitID, nil

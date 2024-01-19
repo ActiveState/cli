@@ -66,6 +66,30 @@ func (suite *RevertIntegrationTestSuite) TestRevert() {
 	cp.ExpectExitCode(0)
 }
 
+func (suite *RevertIntegrationTestSuite) TestRevertHead() {
+	suite.OnlyRunForTags(tagsuite.Revert)
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	cp := ts.Spawn("checkout", "ActiveState-CLI/Revert", ".")
+	cp.Expect("Skipping runtime setup")
+	cp.Expect("Checked out project")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("install", "requests")
+	cp.Expect("Package added")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("revert", "HEAD", "--non-interactive")
+	cp.Expect("Successfully reverted")
+	cp.ExpectExitCode(0)
+
+	cp = ts.Spawn("history")
+	cp.Expect("- requests")
+	cp.Expect("+ requests")
+	cp.ExpectExitCode(0)
+}
+
 func (suite *RevertIntegrationTestSuite) TestRevert_failsOnCommitNotInHistory() {
 	suite.OnlyRunForTags(tagsuite.Revert)
 	ts := e2e.New(suite.T(), false)

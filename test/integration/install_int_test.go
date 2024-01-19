@@ -81,7 +81,10 @@ func (suite *InstallIntegrationTestSuite) TestInstall_BuildPlannerError() {
 	defer ts.Close()
 
 	ts.PrepareProject("ActiveState-CLI/small-python", "d8f26b91-899c-4d50-8310-2c338786aa0f")
-	cp := ts.SpawnWithOpts(e2e.OptArgs("install", "trender@999.0"), e2e.OptAppendEnv(constants.DisableRuntime+"=true"))
+	cp := ts.SpawnWithOpts(
+		e2e.OptArgs("install", "trender@999.0"),
+		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
+	)
 	cp.Expect("Could not plan build, platform responded with", e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(1)
 	ts.IgnoreLogErrors()

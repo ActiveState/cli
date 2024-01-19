@@ -46,8 +46,7 @@ func NewGetAuthorOK() *GetAuthorOK {
 	return &GetAuthorOK{}
 }
 
-/*
-GetAuthorOK describes a response with status code 200, with default header values.
+/* GetAuthorOK describes a response with status code 200, with default header values.
 
 Retrieve the author
 */
@@ -81,8 +80,7 @@ func NewGetAuthorDefault(code int) *GetAuthorDefault {
 	}
 }
 
-/*
-GetAuthorDefault describes a response with status code -1, with default header values.
+/* GetAuthorDefault describes a response with status code -1, with default header values.
 
 generic error response
 */

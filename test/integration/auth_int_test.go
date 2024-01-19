@@ -34,11 +34,11 @@ func (suite *AuthIntegrationTestSuite) TestAuth() {
 	suite.OnlyRunForTags(tagsuite.Auth, tagsuite.Critical)
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
-	username, password := ts.CreateNewUser()
+	user := ts.CreateNewUser()
 	ts.LogoutUser()
-	suite.interactiveLogin(ts, username, password)
+	suite.interactiveLogin(ts, user.Username, user.Password)
 	ts.LogoutUser()
-	suite.loginFlags(ts, username)
+	suite.loginFlags(ts, user.Username)
 	suite.ensureLogout(ts)
 }
 

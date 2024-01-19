@@ -10,8 +10,8 @@ import (
 
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
+	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/testhelpers/e2e"
 	"github.com/ActiveState/cli/internal/testhelpers/tagsuite"
 	"github.com/ActiveState/cli/pkg/projectfile"
@@ -37,7 +37,7 @@ type PerformanceExpansionIntegrationTestSuite struct {
 
 func (suite *PerformanceExpansionIntegrationTestSuite) startSvc(ts *e2e.Session) {
 	// Start svc first, as we don't want to measure svc startup time which would only happen the very first invocation
-	stdout, stderr, err := exeutils.ExecSimple(ts.SvcExe, []string{"start"}, []string{})
+	stdout, stderr, err := osutils.ExecSimple(ts.SvcExe, []string{"start"}, []string{})
 	suite.Require().NoError(err, fmt.Sprintf("Full error:\n%v\nstdout:\n%s\nstderr:\n%s", errs.JoinMessage(err), stdout, stderr))
 }
 

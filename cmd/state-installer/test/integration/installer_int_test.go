@@ -186,6 +186,7 @@ func (suite *InstallerIntegrationTestSuite) TestInstallErrorTips() {
 	cp.ExpectExit()
 	suite.Assert().Contains(cp.Output(), "Need More Help?",
 		"error tips should be displayed in shell created by installer")
+	ts.IgnoreLogErrors()
 }
 
 func (suite *InstallerIntegrationTestSuite) TestInstallerOverwriteServiceApp() {
@@ -219,6 +220,59 @@ func (suite *InstallerIntegrationTestSuite) TestInstallerOverwriteServiceApp() {
 	cp.Expect("Done")
 	cp.SendLine("exit")
 	cp.ExpectExit() // the return code can vary depending on shell (e.g. zsh vs. bash); just assert the installer shell exited
+}
+
+func (suite *InstallerIntegrationTestSuite) TestInstallWhileInUse() {
+	suite.OnlyRunForTags(tagsuite.Installer)
+	if runtime.GOOS != "windows" {
+		suite.T().Skip("Only windows can have issues with copying over files in use")
+	}
+
+	ts := e2e.New(suite.T(), false)
+	defer ts.Close()
+
+	dir, err := ioutil.TempDir("", "system*")
+	suite.NoError(err)
+
+	cp := ts.SpawnCmdWithOpts(
+		suite.installerExe,
+		e2e.OptArgs(installationDir(ts)),
+		e2e.OptAppendEnv(constants.DisableUpdates+"=true"),
+		e2e.OptAppendEnv(fmt.Sprintf("%s=%s", constants.OverwriteDefaultSystemPathEnvVarName, dir)),
+	)
+	cp.Expect("successfully installed", e2e.RuntimeSourcingTimeoutOpt)
+	cp.ExpectInput()
+	cp.SendLine("state checkout ActiveState/Perl-5.32")
+	cp.Expect("Checked out")
+	cp.SendLine("state shell Perl-5.32")
+	cp.Expect("Activated") // state.exe remains active
+
+	// On Windows we cannot delete files/executables in use. Instead, the installer copies new
+	// executables into the target directory with the ".new" suffix and renames them to the target
+	// executables. Verify that this works without error.
+	cp2 := ts.SpawnCmdWithOpts(
+		suite.installerExe,
+		e2e.OptArgs(installationDir(ts), "-f"),
+		e2e.OptAppendEnv(constants.DisableUpdates+"=true"),
+		e2e.OptAppendEnv(fmt.Sprintf("%s=%s", constants.OverwriteDefaultSystemPathEnvVarName, dir)),
+	)
+	cp2.Expect("successfully installed", e2e.RuntimeSourcingTimeoutOpt)
+	cp2.ExpectInput()
+	cp2.SendLine("exit")
+	cp2.ExpectExit() // the return code can vary depending on shell (e.g. zsh vs. bash); just assert the installer shell exited
+
+	oldStateExeFound := false
+	for _, file := range fileutils.ListDirSimple(filepath.Join(installationDir(ts), "bin"), false) {
+		if strings.Contains(file, "state.exe") && strings.HasSuffix(file, ".old") {
+			oldStateExeFound = true
+			break
+		}
+	}
+	suite.Assert().True(oldStateExeFound, "the state.exe currently in use was not copied to a '.old' file")
+
+	cp.SendLine("exit") // state shell
+	cp.SendLine("exit") // installer shell
+	cp.ExpectExit()     // the return code can vary depending on shell (e.g. zsh vs. bash); just assert the installer shell exited
 }
 
 func (suite *InstallerIntegrationTestSuite) AssertConfig(ts *e2e.Session) {
@@ -260,7 +314,7 @@ func (suite *InstallerIntegrationTestSuite) SetupSuite() {
 	localPayload := filepath.Join(rootPath, "build", "payload", constants.ToplevelInstallArchiveDir)
 	suite.Require().DirExists(localPayload, "locally generated payload exists")
 
-	installerExe := filepath.Join(localPayload, constants.StateInstallerCmd+osutils.ExeExt)
+	installerExe := filepath.Join(localPayload, constants.StateInstallerCmd+osutils.ExeExtension)
 	suite.Require().FileExists(installerExe, "locally generated installer exists")
 
 	suite.installerExe = installerExe

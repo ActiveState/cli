@@ -22,7 +22,6 @@ import (
 	"github.com/ActiveState/cli/internal/process"
 	"github.com/ActiveState/cli/internal/prompt"
 	"github.com/ActiveState/cli/internal/runbits/activation"
-	"github.com/ActiveState/cli/internal/runbits/checker"
 	"github.com/ActiveState/cli/internal/runbits/checkout"
 	"github.com/ActiveState/cli/internal/runbits/commitmediator"
 	"github.com/ActiveState/cli/internal/runbits/findproject"
@@ -83,8 +82,6 @@ func NewActivate(prime primeable) *Activate {
 func (r *Activate) Run(params *ActivateParams) (rerr error) {
 	logging.Debug("Activate %v, %v", params.Namespace, params.PreferredPath)
 
-	checker.RunUpdateNotifier(r.analytics, r.svcModel, r.out)
-
 	r.out.Notice(output.Title(locale.T("info_activating_state")))
 
 	proj, err := findproject.FromInputByPriority(params.PreferredPath, params.Namespace, r.config, r.prompt)
@@ -142,6 +139,16 @@ func (r *Activate) Run(params *ActivateParams) (rerr error) {
 		return locale.NewInputError("err_conflicting_branch_while_checkedout", "", params.Branch, proj.BranchName())
 	}
 
+	if proj != nil {
+		commitID, err := commitmediator.Get(proj)
+		if err != nil {
+			return errs.Wrap(err, "Unable to get local commit")
+		}
+		if cid := params.Namespace.CommitID; cid != nil && *cid != commitID {
+			return locale.NewInputError("err_activate_commit_id_mismatch")
+		}
+	}
+
 	// Have to call this once the project has been set
 	r.analytics.Event(anaConsts.CatActivationFlow, "start")
 
@@ -165,7 +172,7 @@ func (r *Activate) Run(params *ActivateParams) (rerr error) {
 		}
 	}
 
-	rt, err := runtime.NewFromProject(proj, target.TriggerActivate, r.analytics, r.svcModel, r.out, r.auth)
+	rt, err := runtime.NewFromProject(proj, target.TriggerActivate, r.analytics, r.svcModel, r.out, r.auth, r.config)
 	if err != nil {
 		return locale.WrapError(err, "err_could_not_activate_venv", "Could not activate project")
 	}

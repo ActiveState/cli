@@ -52,12 +52,10 @@ func NewVerifyEmailParamsWithHTTPClient(client *http.Client) *VerifyEmailParams 
 	}
 }
 
-/*
-VerifyEmailParams contains all the parameters to send to the API endpoint
+/* VerifyEmailParams contains all the parameters to send to the API endpoint
+   for the verify email operation.
 
-	for the verify email operation.
-
-	Typically these are written to a http.Request.
+   Typically these are written to a http.Request.
 */
 type VerifyEmailParams struct {
 

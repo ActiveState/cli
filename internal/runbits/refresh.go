@@ -24,14 +24,15 @@ func RefreshRuntime(
 	changed bool,
 	trigger target.Trigger,
 	svcm *model.SvcModel,
+	cfg model.Configurable,
 ) (rerr error) {
 	_, err := buildscript.Sync(proj, &commitID, out, auth)
 	if err != nil {
 		return locale.WrapError(err, "err_update_build_script")
 	}
-	target := target.NewProjectTarget(proj, nil, trigger)
+	target := target.NewProjectTarget(proj, resolveCommitID(proj, &commitID), trigger)
 	isCached := true
-	rt, err := runtime.New(target, an, svcm, auth)
+	rt, err := runtime.New(target, an, svcm, auth, cfg)
 	if err != nil {
 		if runtime.IsNeedsUpdateError(err) {
 			isCached = false
@@ -60,6 +61,19 @@ func RefreshRuntime(
 		if err != nil {
 			return locale.WrapError(err, "err_packages_update_runtime_install", "Could not install dependencies.")
 		}
+	}
+
+	return nil
+}
+
+func resolveCommitID(proj *project.Project, customCommitID *strfmt.UUID) *strfmt.UUID {
+	var projectCommitID *strfmt.UUID
+	if proj != nil && proj.Namespace() != nil && proj.Namespace().CommitID != nil {
+		projectCommitID = proj.Namespace().CommitID
+	}
+
+	if projectCommitID != customCommitID {
+		return customCommitID
 	}
 
 	return nil

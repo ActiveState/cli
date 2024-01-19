@@ -1,9 +1,9 @@
 package languages
 
 import (
+	"github.com/ActiveState/cli/pkg/platform/model"
 	"reflect"
 	"testing"
-	"github.com/ActiveState/cli/pkg/platform/model"
 )
 
 func Test_parseLanguage(t *testing.T) {
@@ -19,7 +19,7 @@ func Test_parseLanguage(t *testing.T) {
 		{
 			"Language with version",
 			args{"Python@2"},
-			&model.Language{"Python", "2"},
+			&model.Language{Name: "Python", Version: "2"},
 			false,
 		},
 	}
@@ -51,7 +51,7 @@ func Test_ensureVersionTestable(t *testing.T) {
 		{
 			"Version matches",
 			args{
-				&model.Language{"Python", "3.5"},
+				&model.Language{Name: "Python", Version: "3.5"},
 				func(name string) ([]string, error) { return []string{"2.0", "3.5", "4.0"}, nil },
 			},
 			"3.5",

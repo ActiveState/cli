@@ -225,7 +225,6 @@ type StageCommitParams struct {
 	RequirementVersion   []bpModel.VersionRequirement
 	RequirementNamespace Namespace
 	Operation            bpModel.Operation
-	TimeStamp            *strfmt.DateTime
 	// ... or commits can have an expression (e.g. from pull). When pulling an expression, we do not
 	// compute its changes into a series of above operations. Instead, we just pass the new
 	// expression directly.
@@ -259,11 +258,6 @@ func (bp *BuildPlanner) StageCommit(params StageCommitParams) (strfmt.UUID, erro
 				return "", errs.Wrap(err, "Failed to update build expression with requirement")
 			}
 		}
-
-		err = expression.UpdateTimestamp(*params.TimeStamp)
-		if err != nil {
-			return "", errs.Wrap(err, "Failed to update build expression with timestamp")
-		}
 	}
 
 	// With the updated build expression call the stage commit mutation
@@ -284,14 +278,6 @@ func (bp *BuildPlanner) StageCommit(params StageCommitParams) (strfmt.UUID, erro
 
 	if resp.Commit.CommitID == "" {
 		return "", errs.New("Staged commit does not contain commitID")
-	}
-
-	if resp.Commit.Build == nil {
-		return "", errs.New("Commit does not contain build")
-	}
-
-	if bpModel.IsErrorResponse(resp.Commit.Build.Type) {
-		return "", bpModel.ProcessBuildError(resp.Commit.Build, "Could not get build from commit")
 	}
 
 	return resp.Commit.CommitID, nil
@@ -337,7 +323,6 @@ type CreateProjectParams struct {
 	Language    string
 	Version     string
 	Private     bool
-	Timestamp   strfmt.DateTime
 	Description string
 	Expr        *buildexpression.BuildExpression
 }
@@ -367,9 +352,6 @@ func (bp *BuildPlanner) CreateProject(params *CreateProjectParams) (strfmt.UUID,
 			Namespace:          "language", // TODO: make this a constant DX-1738
 			VersionRequirement: versionRequirements,
 		})
-
-		// Add the timestamp.
-		expr.UpdateTimestamp(params.Timestamp)
 	}
 
 	// Create the project.
@@ -553,7 +535,7 @@ func VersionStringToRequirements(version string) ([]bpModel.VersionRequirement, 
 			return nil, locale.NewInputError("err_version_wildcard_start", "A version number cannot start with a wildcard")
 		}
 		requirements = append(requirements, bpModel.VersionRequirement{
-			bpModel.VersionRequirementComparatorKey: "gte",
+			bpModel.VersionRequirementComparatorKey: bpModel.ComparatorGTE,
 			bpModel.VersionRequirementVersionKey:    strings.Join(parts[:i], "."),
 		})
 		previousPart, err := strconv.Atoi(parts[i-1])
@@ -562,7 +544,7 @@ func VersionStringToRequirements(version string) ([]bpModel.VersionRequirement, 
 		}
 		parts[i-1] = strconv.Itoa(previousPart + 1)
 		requirements = append(requirements, bpModel.VersionRequirement{
-			bpModel.VersionRequirementComparatorKey: "lt",
+			bpModel.VersionRequirementComparatorKey: bpModel.ComparatorLT,
 			bpModel.VersionRequirementVersionKey:    strings.Join(parts[:i], "."),
 		})
 	}

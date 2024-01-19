@@ -14,6 +14,7 @@ import (
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/language"
 	"github.com/ActiveState/cli/internal/multilog"
+	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/runbits/git"
 	"github.com/ActiveState/cli/pkg/localcommit"
@@ -86,6 +87,19 @@ func (r *Checkout) Run(ns *project.Namespaced, branchName, cachePath, targetPath
 			return "", locale.WrapError(err, "err_fetch_branch", "", branchName)
 		}
 		commitID = branch.CommitID
+	} else {
+		// It's possible the given commitID does not belong to the default project branch.
+		// If so, find the correct branch.
+		for _, branch := range pj.Branches {
+			belongs, err := model.CommitBelongsToBranch(ns.Owner, ns.Project, branch.Label, *commitID)
+			if err != nil {
+				return "", errs.Wrap(err, "Could not determine if the given commitID belongs to a project branch")
+			}
+			if belongs {
+				branchName = branch.Label
+				break
+			}
+		}
 	}
 
 	if commitID == nil {
@@ -135,6 +149,9 @@ func (r *Checkout) Run(ns *project.Namespaced, branchName, cachePath, targetPath
 			Cache:      cachePath,
 		})
 		if err != nil {
+			if osutils.IsAccessDeniedError(err) {
+				return "", &ErrNoPermission{err, path}
+			}
 			return "", errs.Wrap(err, "Could not create projectfile")
 		}
 	}
@@ -160,9 +177,5 @@ func getLanguage(commitID strfmt.UUID) (language.Language, error) {
 		return language.Unset, locale.WrapError(err, "err_language_by_commit", "", string(commitID))
 	}
 
-	lang, err := language.MakeByNameAndVersion(modelLanguage.Name, modelLanguage.Version)
-	if err != nil {
-		return language.Unset, locale.WrapError(err, "err_make_language")
-	}
-	return lang, nil
+	return language.MakeByNameAndVersion(modelLanguage.Name, modelLanguage.Version), nil
 }

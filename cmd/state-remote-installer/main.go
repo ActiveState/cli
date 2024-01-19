@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"runtime/debug"
 	"syscall"
 	"time"
@@ -16,10 +17,10 @@ import (
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
 	"github.com/ActiveState/cli/internal/events"
-	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
 	"github.com/ActiveState/cli/internal/multilog"
+	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/primer"
 	"github.com/ActiveState/cli/internal/prompt"
@@ -31,7 +32,7 @@ import (
 )
 
 type Params struct {
-	branch  string
+	channel string
 	force   bool
 	version string
 }
@@ -39,6 +40,8 @@ type Params struct {
 func newParams() *Params {
 	return &Params{}
 }
+
+var filenameRe = regexp.MustCompile(`(?P<name>[^/\\]+?)_(?P<webclientId>[^/\\_.]+)(\.(?P<ext>[^.]+))?$`)
 
 func main() {
 	var exitCode int
@@ -96,7 +99,15 @@ func main() {
 	}
 
 	// Store sessionToken to config
-	err = cfg.Set(anaConst.CfgSessionToken, "remote_"+constants.RemoteInstallerVersion)
+	webclientId := "remote_" + constants.RemoteInstallerVersion
+	if matches := filenameRe.FindStringSubmatch(os.Args[0]); matches != nil {
+		if index := filenameRe.SubexpIndex("webclientId"); index != -1 {
+			webclientId = matches[index]
+		} else {
+			multilog.Error("Invalid subexpression ID for webclient ID")
+		}
+	}
+	err = cfg.Set(anaConst.CfgSessionToken, webclientId)
 	if err != nil {
 		logging.Error("Unable to set session token: " + errs.JoinMessage(err))
 	}
@@ -116,12 +127,12 @@ func main() {
 			{
 				Name:        "channel",
 				Description: "Defaults to 'release'.  Specify an alternative channel to install from (eg. beta)",
-				Value:       &params.branch,
+				Value:       &params.channel,
 			},
 			{
 				Shorthand: "b", // backwards compatibility
 				Hidden:    true,
-				Value:     &params.branch,
+				Value:     &params.channel,
 			},
 			{
 				Name:        "version",
@@ -171,22 +182,22 @@ func execute(out output.Outputer, prompt prompt.Prompter, cfg *config.Instance, 
 		return locale.NewInputError("install_cancel", "Installation cancelled")
 	}
 
-	branch := params.branch
-	if branch == "" {
-		branch = constants.ReleaseBranch
+	channel := params.channel
+	if channel == "" {
+		channel = constants.ReleaseChannel
 	}
 
 	// Fetch payload
 	checker := updater.NewDefaultChecker(cfg, an)
 	checker.InvocationSource = updater.InvocationSourceInstall // Installing from a remote source is only ever encountered via the install flow
-	availableUpdate, err := checker.CheckFor(branch, params.version)
+	availableUpdate, err := checker.CheckFor(channel, params.version)
 	if err != nil {
 		return errs.Wrap(err, "Could not retrieve install package information")
 	}
 
 	version := availableUpdate.Version
-	if params.branch != "" {
-		version = fmt.Sprintf("%s (%s)", version, branch)
+	if params.channel != "" {
+		version = fmt.Sprintf("%s (%s)", version, channel)
 	}
 
 	update := updater.NewUpdateInstaller(an, availableUpdate)
@@ -201,7 +212,7 @@ func execute(out output.Outputer, prompt prompt.Prompter, cfg *config.Instance, 
 	env := []string{
 		constants.InstallerNoSubshell + "=true",
 	}
-	_, cmd, err := exeutils.ExecuteAndPipeStd(filepath.Join(tmpDir, constants.StateInstallerCmd+exeutils.Extension), args, env)
+	_, cmd, err := osutils.ExecuteAndPipeStd(filepath.Join(tmpDir, constants.StateInstallerCmd+osutils.ExeExtension), args, env)
 	if err != nil {
 		if cmd != nil && cmd.ProcessState.Sys().(syscall.WaitStatus).Exited() {
 			// The issue happened while running the command itself, meaning the responsibility for conveying the error

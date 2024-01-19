@@ -36,9 +36,9 @@ type ClientService interface {
 }
 
 /*
-SignS3URI signs an s3 URI
+  SignS3URI signs an s3 URI
 
-Returns a signed, limited-duration S3 URI
+  Returns a signed, limited-duration S3 URI
 */
 func (a *Client) SignS3URI(params *SignS3URIParams, opts ...ClientOption) (*SignS3URIOK, error) {
 	// TODO: Validate the params before sending

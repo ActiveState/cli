@@ -16,7 +16,6 @@ import (
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/logging"
@@ -46,7 +45,7 @@ func autoUpdate(svc *model.SvcModel, args []string, cfg *config.Instance, an ana
 	}
 
 	// Check for available update
-	upd, err := svc.CheckUpdate(context.Background(), constants.BranchName, "")
+	upd, err := svc.CheckUpdate(context.Background(), constants.ChannelName, "")
 	if err != nil {
 		return false, errs.Wrap(err, "Failed to check for update")
 	}
@@ -61,7 +60,7 @@ func autoUpdate(svc *model.SvcModel, args []string, cfg *config.Instance, an ana
 	if !isEnabled(cfg) {
 		logging.Debug("Not performing autoupdates because user turned off autoupdates.")
 		an.EventWithLabel(anaConst.CatUpdates, anaConst.ActShouldUpdate, anaConst.UpdateLabelDisabledConfig)
-		out.Notice(output.Title(locale.Tl("update_available_header", "Auto Update")))
+		out.Notice(output.Title(locale.T("update_available_header")))
 		out.Notice(locale.Tr("update_available", constants.Version, avUpdate.Version))
 		return false, nil
 	}
@@ -77,7 +76,7 @@ func autoUpdate(svc *model.SvcModel, args []string, cfg *config.Instance, an ana
 			return false, nil // ignore
 		}
 		if os.IsPermission(err) {
-			return false, locale.WrapInputError(err, locale.Tl("auto_update_permission_err", "", constants.DocumentationURL, errs.JoinMessage(err)))
+			return false, locale.WrapInputError(err, locale.Tr("auto_update_permission_err", constants.DocumentationURL, errs.JoinMessage(err)))
 		}
 		return false, locale.WrapError(err, locale.T("auto_update_failed"))
 	}
@@ -178,7 +177,7 @@ func relaunch(args []string) (int, error) {
 		return -1, &ErrStateExe{locale.WrapError(err, "err_state_exec")}
 	}
 
-	code, _, err := exeutils.ExecuteAndPipeStd(exec, args[1:], []string{fmt.Sprintf("%s=true", constants.ForwardedStateEnvVarName)})
+	code, _, err := osutils.ExecuteAndPipeStd(exec, args[1:], []string{fmt.Sprintf("%s=true", constants.ForwardedStateEnvVarName)})
 	if err != nil {
 		return code, &ErrExecuteRelaunch{errs.Wrap(err, "Forwarded command after auto-updating failed. Exit code: %d", code)}
 	}

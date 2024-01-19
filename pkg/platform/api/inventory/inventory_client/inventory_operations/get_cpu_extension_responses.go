@@ -46,8 +46,7 @@ func NewGetCPUExtensionOK() *GetCPUExtensionOK {
 	return &GetCPUExtensionOK{}
 }
 
-/*
-GetCPUExtensionOK describes a response with status code 200, with default header values.
+/* GetCPUExtensionOK describes a response with status code 200, with default header values.
 
 The retrieved CPU extension
 */
@@ -81,8 +80,7 @@ func NewGetCPUExtensionDefault(code int) *GetCPUExtensionDefault {
 	}
 }
 
-/*
-GetCPUExtensionDefault describes a response with status code -1, with default header values.
+/* GetCPUExtensionDefault describes a response with status code -1, with default header values.
 
 generic error response
 */

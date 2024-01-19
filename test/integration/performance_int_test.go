@@ -14,7 +14,7 @@ import (
 
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/exeutils"
+	"github.com/ActiveState/cli/internal/osutils"
 	"github.com/ActiveState/termtest"
 	"github.com/stretchr/testify/suite"
 
@@ -37,7 +37,7 @@ func (suite *PerformanceIntegrationTestSuite) TestVersionPerformance() {
 	defer ts.Close()
 
 	// Start svc first, as we don't want to measure svc startup time which would only happen the very first invocation
-	stdout, stderr, err := exeutils.ExecSimple(ts.SvcExe, []string{"start"}, []string{})
+	stdout, stderr, err := osutils.ExecSimple(ts.SvcExe, []string{"start"}, []string{})
 	suite.Require().NoError(err, fmt.Sprintf("Full error:\n%v\nstdout:\n%s\nstderr:\n%s", errs.JoinMessage(err), stdout, stderr))
 
 	performanceTest([]string{"--version"}, "", StateVersionTotalSamples, StateVersionMaxTime, false, suite.Suite, ts)

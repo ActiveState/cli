@@ -12,7 +12,6 @@ import (
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/locale"
@@ -46,7 +45,7 @@ func stopSvc(installPath string) error {
 	}
 
 	if fileutils.FileExists(svcExec) {
-		exitCode, _, err := exeutils.Execute(svcExec, []string{"stop"}, nil)
+		exitCode, _, err := osutils.Execute(svcExec, []string{"stop"}, nil)
 		if err != nil {
 			// We don't return these errors because we want to fall back on killing the process
 			multilog.Error("Stopping %s returned error: %s", constants.SvcAppName, errs.JoinMessage(err))
@@ -74,7 +73,7 @@ func stopSvc(installPath string) error {
 			continue
 		}
 
-		svcName := constants.ServiceCommandName + exeutils.Extension
+		svcName := constants.ServiceCommandName + osutils.ExeExtension
 		if n == svcName {
 			exe, err := p.Exe()
 			if err != nil {

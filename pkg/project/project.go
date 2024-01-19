@@ -232,8 +232,8 @@ func (p *Project) NormalizedName() string {
 // Version returns the locked state tool version
 func (p *Project) Version() string { return p.projectfile.Version() }
 
-// VersionBranch returns branch that we're pinned to (useless unless version is also set)
-func (p *Project) VersionBranch() string { return p.projectfile.VersionBranch() }
+// Channel returns channel that we're pinned to (useless unless version is also set)
+func (p *Project) Channel() string { return p.projectfile.Channel() }
 
 // IsLocked returns whether the current project is locked
 func (p *Project) IsLocked() bool { return p.Lock() != "" }

@@ -68,6 +68,7 @@ query ($commitID: String!, $organization: String!, $project: String!) {
                 ... on ArtifactSucceeded {
                   __typename
                   nodeId
+                  displayName
                   mimeType
                   generatedBy
                   runtimeDependencies
@@ -79,6 +80,7 @@ query ($commitID: String!, $organization: String!, $project: String!) {
                 ... on ArtifactUnbuilt {
                   __typename
                   nodeId
+                  displayName
                   mimeType
                   generatedBy
                   runtimeDependencies
@@ -87,6 +89,7 @@ query ($commitID: String!, $organization: String!, $project: String!) {
                 ... on ArtifactStarted {
                   __typename
                   nodeId
+                  displayName
                   mimeType
                   generatedBy
                   runtimeDependencies
@@ -95,6 +98,7 @@ query ($commitID: String!, $organization: String!, $project: String!) {
                 ... on ArtifactTransientlyFailed {
                   __typename
                   nodeId
+                  displayName
                   mimeType
                   generatedBy
                   runtimeDependencies
@@ -107,6 +111,7 @@ query ($commitID: String!, $organization: String!, $project: String!) {
                 ... on ArtifactPermanentlyFailed {
                   __typename
                   nodeId
+                  displayName
                   mimeType
                   generatedBy
                   runtimeDependencies
@@ -117,6 +122,7 @@ query ($commitID: String!, $organization: String!, $project: String!) {
                 ... on ArtifactFailed {
                   __typename
                   nodeId
+                  displayName
                   mimeType
                   generatedBy
                   runtimeDependencies
@@ -189,6 +195,6 @@ query ($commitID: String!, $organization: String!, $project: String!) {
 `
 }
 
-func (b *buildPlanByProject) Vars() map[string]interface{} {
-	return b.vars
+func (b *buildPlanByProject) Vars() (map[string]interface{}, error) {
+	return b.vars, nil
 }

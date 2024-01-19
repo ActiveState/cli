@@ -17,18 +17,23 @@ type ArtifactListing struct {
 	runtimeClosure   artifact.Map
 	buildtimeClosure artifact.Map
 	artifactIDs      []artifact.ArtifactID
+	cfg              platformModel.Configurable
 }
 
-func NewArtifactListing(build *model.Build, buildtimeClosure bool) (*ArtifactListing, error) {
-	al := &ArtifactListing{build: build}
+type ArtifactError struct {
+	*locale.LocalizedError
+}
+
+func NewArtifactListing(build *model.Build, buildtimeClosure bool, cfg platformModel.Configurable) (*ArtifactListing, error) {
+	al := &ArtifactListing{build: build, cfg: cfg}
 	if buildtimeClosure {
-		buildtimeClosure, err := newMapFromBuildPlan(al.build, true)
+		buildtimeClosure, err := newMapFromBuildPlan(al.build, true, cfg)
 		if err != nil {
 			return nil, errs.Wrap(err, "Could not create buildtime closure")
 		}
 		al.buildtimeClosure = buildtimeClosure
 	} else {
-		runtimeClosure, err := newMapFromBuildPlan(al.build, false)
+		runtimeClosure, err := newMapFromBuildPlan(al.build, false, cfg)
 		if err != nil {
 			return nil, errs.Wrap(err, "Could not create runtime closure")
 		}
@@ -43,7 +48,7 @@ func (al *ArtifactListing) RuntimeClosure() (artifact.Map, error) {
 		return al.runtimeClosure, nil
 	}
 
-	runtimeClosure, err := newMapFromBuildPlan(al.build, false)
+	runtimeClosure, err := newMapFromBuildPlan(al.build, false, al.cfg)
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not create runtime closure")
 	}
@@ -57,7 +62,7 @@ func (al *ArtifactListing) BuildtimeClosure() (artifact.Map, error) {
 		return al.buildtimeClosure, nil
 	}
 
-	buildtimeClosure, err := newMapFromBuildPlan(al.build, true)
+	buildtimeClosure, err := newMapFromBuildPlan(al.build, true, al.cfg)
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not create buildtime closure")
 	}
@@ -100,7 +105,7 @@ func (al *ArtifactListing) ArtifactIDs(buildtimeClosure bool) ([]artifact.Artifa
 // Setting calculateBuildtimeClosure as true calculates the artifact map with the buildtime
 // dependencies. This is different from the runtime dependency calculation as it
 // includes ALL of the input artifacts of the step that generated each artifact.
-func newMapFromBuildPlan(build *model.Build, calculateBuildtimeClosure bool) (artifact.Map, error) {
+func newMapFromBuildPlan(build *model.Build, calculateBuildtimeClosure bool, cfg platformModel.Configurable) (artifact.Map, error) {
 	res := make(artifact.Map)
 
 	lookup := make(map[strfmt.UUID]interface{})
@@ -115,7 +120,7 @@ func newMapFromBuildPlan(build *model.Build, calculateBuildtimeClosure bool) (ar
 		lookup[source.NodeID] = source
 	}
 
-	filtered, err := filterPlatformTerminals(build)
+	filtered, err := filterPlatformTerminals(build, cfg)
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not filter terminals")
 	}
@@ -126,7 +131,10 @@ func newMapFromBuildPlan(build *model.Build, calculateBuildtimeClosure bool) (ar
 		// then we need to recurse back through the DAG until we find nodeIDs that are state tool
 		// artifacts. These are the terminal targets.
 		for _, nodeID := range terminal.NodeIDs {
-			buildTerminals(nodeID, lookup, &terminalTargetIDs)
+			err = buildTerminals(nodeID, lookup, &terminalTargetIDs)
+			if err != nil {
+				return nil, errs.Wrap(err, "Could not build terminals")
+			}
 		}
 	}
 
@@ -146,7 +154,7 @@ func newMapFromBuildPlan(build *model.Build, calculateBuildtimeClosure bool) (ar
 
 // filterPlatformTerminals filters the build terminal nodes to only include
 // terminals that are for the current host platform.
-func filterPlatformTerminals(build *model.Build) ([]*model.NamedTarget, error) {
+func filterPlatformTerminals(build *model.Build, cfg platformModel.Configurable) ([]*model.NamedTarget, error) {
 	// Extract the available platforms from the build plan
 	// We are only interested in terminals with the platform tag
 	var bpPlatforms []strfmt.UUID
@@ -158,10 +166,11 @@ func filterPlatformTerminals(build *model.Build) ([]*model.NamedTarget, error) {
 	}
 
 	// Get the platform ID for the current host platform
-	platformID, err := platformModel.FilterCurrentPlatform(platformModel.HostPlatform, bpPlatforms)
+	platformID, err := platformModel.FilterCurrentPlatform(platformModel.HostPlatform, bpPlatforms, cfg)
 	if err != nil {
 		return nil, locale.WrapError(err, "err_filter_current_platform")
 	}
+	logging.Debug("Using filtered platform ID %s", platformID)
 
 	// Filter the build terminals to only include the current platform
 	var filteredTerminals []*model.NamedTarget
@@ -179,23 +188,29 @@ func filterPlatformTerminals(build *model.Build) ([]*model.NamedTarget, error) {
 // adds it to the terminal listing. Otherwise it looks up the step that generated the artifact
 // and recursively calls itself with each of the step's inputs that are tagged as sources until
 // it finds a state tool artifact. That artifact is then added to the terminal listing.
-func buildTerminals(nodeID strfmt.UUID, lookup map[strfmt.UUID]interface{}, result *[]strfmt.UUID) {
+func buildTerminals(nodeID strfmt.UUID, lookup map[strfmt.UUID]interface{}, result *[]strfmt.UUID) error {
 	targetArtifact, ok := lookup[nodeID].(*model.Artifact)
 	if !ok {
 		logging.Debug("NodeID %s does not resolve to an artifact", nodeID)
-		return
+		return nil
+	}
+
+	if !model.IsSuccessArtifactStatus(targetArtifact.Status) {
+		return &ArtifactError{
+			locale.NewError("err_artifact_failed", "Artifact '{{.V0}}' failed to build", trimDisplayName(targetArtifact.DisplayName)),
+		}
 	}
 
 	if model.IsStateToolArtifact(targetArtifact.MimeType) {
 		*result = append(*result, targetArtifact.NodeID)
-		return
+		return nil
 	}
 
 	step, ok := lookup[targetArtifact.GeneratedBy].(*model.Step)
 	if !ok {
 		// Dead branch
 		logging.Debug("Artifact %s does not have an associated step, considering this a dead branch", nodeID)
-		return
+		return nil
 	}
 
 	for _, input := range step.Inputs {
@@ -206,6 +221,17 @@ func buildTerminals(nodeID strfmt.UUID, lookup map[strfmt.UUID]interface{}, resu
 			buildTerminals(id, lookup, result)
 		}
 	}
+
+	return nil
+}
+
+func trimDisplayName(displayName string) string {
+	index := strings.Index(displayName, ".")
+	if index != -1 {
+		return displayName[:index]
+	}
+
+	return displayName
 }
 
 // buildRuntimeClosureMap recursively builds the artifact map from the lookup table. It expects an ID that
@@ -379,8 +405,8 @@ func RecursiveDependenciesFor(a artifact.ArtifactID, artifacts artifact.Map) []a
 
 // NewMapFromBuildPlan creates an artifact map from a build plan
 // where the key is the artifact name rather than the artifact ID.
-func NewNamedMapFromBuildPlan(build *model.Build, buildtimeClosure bool) (artifact.NamedMap, error) {
-	am, err := newMapFromBuildPlan(build, buildtimeClosure)
+func NewNamedMapFromBuildPlan(build *model.Build, buildtimeClosure bool, cfg platformModel.Configurable) (artifact.NamedMap, error) {
+	am, err := newMapFromBuildPlan(build, buildtimeClosure, cfg)
 	if err != nil {
 		return nil, errs.Wrap(err, "Could not create artifact map")
 	}

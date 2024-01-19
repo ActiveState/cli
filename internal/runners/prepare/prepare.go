@@ -2,6 +2,7 @@ package prepare
 
 import (
 	"fmt"
+	"os"
 	"runtime"
 
 	svcApp "github.com/ActiveState/cli/cmd/state-svc/app"
@@ -11,6 +12,7 @@ import (
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/constants"
 	"github.com/ActiveState/cli/internal/errs"
+	"github.com/ActiveState/cli/internal/fileutils"
 	"github.com/ActiveState/cli/internal/globaldefault"
 	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/installation/storage"
@@ -62,7 +64,7 @@ func New(prime primeable) *Prepare {
 // This ensures that the installation is compatible with an updated State Tool installation
 func (r *Prepare) resetExecutors() error {
 	defaultProjectDir := r.cfg.GetString(constants.GlobalDefaultPrefname)
-	if defaultProjectDir == "" {
+	if defaultProjectDir == "" || !fileutils.TargetExists(defaultProjectDir) {
 		return nil
 	}
 
@@ -79,7 +81,7 @@ func (r *Prepare) resetExecutors() error {
 		return errs.Wrap(err, "Unable to get local commit")
 	}
 
-	run, err := rt.New(target.NewCustomTarget(proj.Owner(), proj.Name(), commitID, defaultTargetDir, target.TriggerResetExec), r.analytics, r.svcModel, nil)
+	run, err := rt.New(target.NewCustomTarget(proj.Owner(), proj.Name(), commitID, defaultTargetDir, target.TriggerResetExec), r.analytics, r.svcModel, nil, r.cfg)
 	if err != nil {
 		if rt.IsNeedsUpdateError(err) {
 			return nil // project was never set up, so no executors to reset
@@ -107,7 +109,7 @@ func (r *Prepare) Run(cmd *captain.Command) error {
 	}
 
 	if err := prepareCompletions(cmd, r.subshell); err != nil {
-		if !errs.Matches(err, &ErrorNotSupported{}) {
+		if !errs.Matches(err, &ErrorNotSupported{}) && !os.IsPermission(err) {
 			r.reportError(locale.Tl("err_prepare_generate_completions", "Could not generate completions script, error received: {{.V0}}.", err.Error()), err)
 		}
 	}

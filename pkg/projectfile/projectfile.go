@@ -75,10 +75,10 @@ var projectMapMutex = &sync.Mutex{}
 
 const LocalProjectsConfigKey = "projects"
 
-// VersionInfo is used in cases where we only care about parsing the version field. In all other cases the version is parsed via
-// the Project struct
+// VersionInfo is used in cases where we only care about parsing the version and channel fields.
+// In all other cases the version is parsed via the Project struct
 type VersionInfo struct {
-	Branch  string
+	Channel string `yaml:"branch"` // branch for backward compatibility
 	Version string
 	Lock    string `yaml:"lock"`
 }
@@ -102,7 +102,7 @@ type Project struct {
 	Cache         string        `yaml:"cache,omitempty"`
 	path          string        // "private"
 	parsedURL     projectURL    // parsed url data
-	parsedBranch  string
+	parsedChannel string
 	parsedVersion string
 }
 
@@ -414,7 +414,7 @@ func Parse(configFilepath string) (_ *Project, rerr error) {
 		return nil, err
 	}
 
-	re, _ := regexp.Compile(`activestate.(\w+).yaml`)
+	re, _ := regexp.Compile(`activestate\.(\w+)\.yaml`)
 	for _, file := range files {
 		match := re.FindStringSubmatch(file.Name())
 		if len(match) == 0 {
@@ -478,7 +478,7 @@ func (p *Project) Init() error {
 			return errs.Wrap(err, "ParseLock %s failed", p.Lock)
 		}
 
-		p.parsedBranch = parsedLock.Branch
+		p.parsedChannel = parsedLock.Channel
 		p.parsedVersion = parsedLock.Version
 	}
 
@@ -573,12 +573,12 @@ func (p *Project) SetPath(path string) {
 	p.path = path
 }
 
-// VersionBranch returns the branch as it was interpreted from the lock
-func (p *Project) VersionBranch() string {
-	return p.parsedBranch
+// Channel returns the channel as it was interpreted from the lock
+func (p *Project) Channel() string {
+	return p.parsedChannel
 }
 
-// Version returns the branch as it was interpreted from the lock
+// Version returns the version as it was interpreted from the lock
 func (p *Project) Version() string {
 	return p.parsedVersion
 }
@@ -615,7 +615,7 @@ func (p *Project) parseURL() (projectURL, error) {
 
 func validateUUID(uuidStr string) error {
 	if ok := strfmt.Default.Validates("uuid", uuidStr); !ok {
-		return locale.NewError("invalid_uuid_val", "Invalid commit ID {{.V0}} in activestate.yaml.  You could replace it with 'latest'", uuidStr)
+		return locale.NewError("invalid_uuid_val", "Invalid commit ID {{.V0}} in activestate.yaml. Please remove it and run `[ACTIONABLE]state pull[/RESET]` to reset it", uuidStr)
 	}
 
 	var uuid strfmt.UUID
@@ -739,6 +739,10 @@ func (p *Project) SetBranch(branch string) error {
 }
 
 // GetProjectFilePath returns the path to the project activestate.yaml
+// It considers projects in the following order:
+// 1. Environment variable (e.g. `state shell` sets one)
+// 2. Working directory (i.e. walk up directory tree looking for activestate.yaml)
+// 3. Fall back on default project
 func GetProjectFilePath() (string, error) {
 	defer profile.Measure("GetProjectFilePath", time.Now())
 	lookup := []func() (string, error){
@@ -760,13 +764,21 @@ func GetProjectFilePath() (string, error) {
 }
 
 func getProjectFilePathFromEnv() (string, error) {
-	projectFilePath := os.Getenv(constants.ProjectEnvVarName)
+	var projectFilePath string
+
+	if activatedProjectDirPath := os.Getenv(constants.ActivatedStateEnvVarName); activatedProjectDirPath != "" {
+		projectFilePath = filepath.Join(activatedProjectDirPath, constants.ConfigFileName)
+	} else {
+		projectFilePath = os.Getenv(constants.ProjectEnvVarName)
+	}
+
 	if projectFilePath != "" {
 		if fileutils.FileExists(projectFilePath) {
 			return projectFilePath, nil
 		}
 		return "", &ErrorNoProjectFromEnv{locale.NewInputError("err_project_env_file_not_exist", "", projectFilePath)}
 	}
+
 	return "", nil
 }
 
@@ -933,7 +945,12 @@ func createCustom(params *CreateParams, lang language.Language) (*Project, error
 	}
 
 	if params.ProjectURL == "" {
-		u, err := url.Parse(fmt.Sprintf("https://%s/%s/%s", constants.PlatformURL, params.Owner, params.Project))
+		// Note: cannot use api.GetPlatformURL() due to import cycle.
+		host := constants.DefaultAPIHost
+		if hostOverride := os.Getenv(constants.APIHostEnvVarName); hostOverride != "" {
+			host = hostOverride
+		}
+		u, err := url.Parse(fmt.Sprintf("https://%s/%s/%s", host, params.Owner, params.Project))
 		if err != nil {
 			return nil, errs.Wrap(err, "url parse new project url failed")
 		}
@@ -1091,7 +1108,7 @@ func ParseLock(lock string) (*VersionInfo, error) {
 	}
 
 	return &VersionInfo{
-		Branch:  split[0],
+		Channel: split[0],
 		Version: split[1],
 		Lock:    lock,
 	}, nil

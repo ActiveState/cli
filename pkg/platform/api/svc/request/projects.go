@@ -1,6 +1,7 @@
 package request
 
-type LocalProjectsRequest struct{}
+type LocalProjectsRequest struct {
+}
 
 func NewLocalProjectsRequest() *LocalProjectsRequest {
 	return &LocalProjectsRequest{}
@@ -15,6 +16,6 @@ func (l *LocalProjectsRequest) Query() string {
 	}`
 }
 
-func (l *LocalProjectsRequest) Vars() map[string]interface{} {
-	return nil
+func (l *LocalProjectsRequest) Vars() (map[string]interface{}, error) {
+	return nil, nil
 }

@@ -69,8 +69,7 @@ func NewMutateOrganizationOK() *MutateOrganizationOK {
 	return &MutateOrganizationOK{}
 }
 
-/*
-MutateOrganizationOK describes a response with status code 200, with default header values.
+/* MutateOrganizationOK describes a response with status code 200, with default header values.
 
 Organization updated
 */
@@ -102,8 +101,7 @@ func NewMutateOrganizationBadRequest() *MutateOrganizationBadRequest {
 	return &MutateOrganizationBadRequest{}
 }
 
-/*
-MutateOrganizationBadRequest describes a response with status code 400, with default header values.
+/* MutateOrganizationBadRequest describes a response with status code 400, with default header values.
 
 Bad Request
 */
@@ -135,8 +133,7 @@ func NewMutateOrganizationForbidden() *MutateOrganizationForbidden {
 	return &MutateOrganizationForbidden{}
 }
 
-/*
-MutateOrganizationForbidden describes a response with status code 403, with default header values.
+/* MutateOrganizationForbidden describes a response with status code 403, with default header values.
 
 Unauthorized
 */
@@ -168,8 +165,7 @@ func NewMutateOrganizationNotFound() *MutateOrganizationNotFound {
 	return &MutateOrganizationNotFound{}
 }
 
-/*
-MutateOrganizationNotFound describes a response with status code 404, with default header values.
+/* MutateOrganizationNotFound describes a response with status code 404, with default header values.
 
 Not Found
 */
@@ -201,8 +197,7 @@ func NewMutateOrganizationConflict() *MutateOrganizationConflict {
 	return &MutateOrganizationConflict{}
 }
 
-/*
-MutateOrganizationConflict describes a response with status code 409, with default header values.
+/* MutateOrganizationConflict describes a response with status code 409, with default header values.
 
 Conflict
 */
@@ -234,8 +229,7 @@ func NewMutateOrganizationInternalServerError() *MutateOrganizationInternalServe
 	return &MutateOrganizationInternalServerError{}
 }
 
-/*
-MutateOrganizationInternalServerError describes a response with status code 500, with default header values.
+/* MutateOrganizationInternalServerError describes a response with status code 500, with default header values.
 
 Server Error
 */

@@ -14,7 +14,6 @@ import (
 	"github.com/ActiveState/cli/internal/assets"
 	"github.com/ActiveState/cli/internal/config"
 	"github.com/ActiveState/cli/internal/errs"
-	"github.com/ActiveState/cli/internal/exeutils"
 	"github.com/ActiveState/cli/internal/installation"
 	"github.com/ActiveState/cli/internal/installation/storage"
 	"github.com/ActiveState/cli/internal/language"
@@ -118,11 +117,14 @@ func removeInstall(logFile string, params *UninstallParams, cfg *config.Instance
 		return locale.WrapError(err, "err_state_exec")
 	}
 
-	// Schedule removal of the entire branch name directory.
+	// Schedule removal of the entire install directory.
 	// This is because Windows often thinks the installation.InstallDirMarker and
 	// constants.StateInstallerCmd files are still in use.
-	branchDir := filepath.Dir(filepath.Dir(stateExec))
-	paths := []string{stateExec, branchDir}
+	installDir, err := installation.InstallPathFromExecPath()
+	if err != nil {
+		return errs.Wrap(err, "Could not get installation path")
+	}
+	paths := []string{stateExec, installDir}
 	if params.All {
 		paths = append(paths, cfg.ConfigPath()) // also remove the config directory
 	}
@@ -154,7 +156,7 @@ func removePaths(logFile string, paths ...string) error {
 	args := []string{"/C", sf.Filename(), logFile, fmt.Sprintf("%d", os.Getpid()), filepath.Base(exe)}
 	args = append(args, paths...)
 
-	_, err = exeutils.ExecuteAndForget("cmd.exe", args)
+	_, err = osutils.ExecuteAndForget("cmd.exe", args)
 	if err != nil {
 		return locale.WrapError(err, "err_clean_start", "Could not start remove direcotry script")
 	}

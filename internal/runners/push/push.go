@@ -84,7 +84,7 @@ func (r *Push) Run(params PushParams) (rerr error) {
 	if err := r.verifyInput(); err != nil {
 		return errs.Wrap(err, "verifyInput failed")
 	}
-	r.out.Notice(locale.Tl("operating_message", "", r.project.NamespaceString(), r.project.Dir()))
+	r.out.Notice(locale.Tr("operating_message", r.project.NamespaceString(), r.project.Dir()))
 
 	commitID, err := commitmediator.Get(r.project) // The commit we want to push
 	if err != nil {
@@ -338,12 +338,7 @@ func fetchLanguage(commitID strfmt.UUID) (*language.Supported, string, error) {
 		return nil, "", errs.Wrap(err, "Failed to retrieve language information for headless commit")
 	}
 
-	l, err := language.MakeByNameAndVersion(lang.Name, lang.Version)
-	if err != nil {
-		return nil, "", errs.Wrap(err, "Failed to convert commit language to supported language")
-	}
-
-	ls := language.Supported{Language: l}
+	ls := language.Supported{Language: language.MakeByNameAndVersion(lang.Name, lang.Version)}
 	if !ls.Recognized() {
 		return nil, "", locale.NewError("err_push_invalid_language", lang.Name)
 	}
