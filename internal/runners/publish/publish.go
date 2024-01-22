@@ -19,10 +19,12 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/api"
 	graphModel "github.com/ActiveState/cli/pkg/platform/api/graphql/model"
 	"github.com/ActiveState/cli/pkg/platform/api/graphql/request"
+	"github.com/ActiveState/cli/pkg/platform/api/inventory/inventory_models"
 	auth "github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/ActiveState/graphql"
+	"github.com/go-openapi/strfmt"
 	"github.com/skratchdot/open-golang/open"
 	"gopkg.in/yaml.v3"
 )
@@ -63,10 +65,17 @@ func New(prime primeable) *Runner {
 		graphql.WithHTTPClient(http.DefaultClient),
 		graphql.UseMultipartForm(),
 	)
-	client.EnableDebugLog()
 	client.SetTokenProvider(prime.Auth())
 	client.EnableDebugLog()
 	return &Runner{auth: prime.Auth(), out: prime.Output(), prompt: prime.Prompt(), project: prime.Project(), client: client}
+}
+
+type ParentIngredient struct {
+	IngredientID        strfmt.UUID
+	IngredientVersionID strfmt.UUID
+	Version             string
+	// dependencies
+	Dependencies []inventory_models.Dependency `json:"dependencies"`
 }
 
 func (r *Runner) Run(params *Params) error {
@@ -118,25 +127,46 @@ func (r *Runner) Run(params *Params) error {
 		reqVars.Name = filepath.Base(params.Filepath)
 	}
 
-	ts := time.Now()
-	ingredients, err := model.SearchIngredientsStrict(reqVars.Namespace, reqVars.Name, true, false, &ts)
-	if err != nil && !errs.Matches(err, &model.ErrSearch404{}) { // 404 means either the ingredient or the namespace was not found, which is fine
-		return locale.WrapError(err, "err_uploadingredient_search", "Could not search for ingredient")
+	var ingredient *ParentIngredient
+
+	isRevision := false
+	if params.Version != "" {
+		// Attempt to get the version if it already exists, it not existing is not an error though
+		i, err := model.GetIngredientByNameAndVersion(params.Namespace, params.Name, params.Version)
+		if err != nil {
+			return locale.WrapInputError(err, "err_uploadingredient_getversion", "Could not grab ingredient by version")
+		}
+		ingredient = &ParentIngredient{*i.IngredientID, *i.IngredientVersionID, *i.Version, i.Dependencies}
+		isRevision = true
 	}
-	var ingredient *model.IngredientAndVersion
+
+	if ingredient == nil {
+		// Attempt to find the existing ingredient, if we didn't already get it from the version specific call above
+		ts := time.Now()
+		ingredients, err := model.SearchIngredientsStrict(reqVars.Namespace, reqVars.Name, true, false, &ts)
+		if err != nil && !errs.Matches(err, &model.ErrSearch404{}) { // 404 means either the ingredient or the namespace was not found, which is fine
+			return locale.WrapError(err, "err_uploadingredient_search", "Could not search for ingredient")
+		}
+		if len(ingredients) > 0 {
+			i := ingredients[0].LatestVersion
+			ingredient = &ParentIngredient{*i.IngredientID, *i.IngredientVersionID, *i.Version, i.Dependencies}
+			if params.Version == "" {
+				isRevision = true
+			}
+		}
+	}
 
 	if params.Edit {
-		if len(ingredients) == 0 {
+		if ingredient == nil {
 			return locale.NewInputError("err_uploadingredient_edit_not_found",
 				"Could not find ingredient to edit with name: '[ACTIONABLE]{{.V0}}[/RESET]', namespace: '[ACTIONABLE]{{.V1}}[/RESET]'.",
 				reqVars.Name, reqVars.Namespace)
 		}
-		ingredient = ingredients[0]
-		if err := prepareEditRequest(ingredient, &reqVars); err != nil {
+		if err := prepareEditRequest(ingredient, &reqVars, isRevision); err != nil {
 			return errs.Wrap(err, "Could not prepare edit request")
 		}
 	} else {
-		if len(ingredients) > 0 {
+		if isRevision {
 			return locale.NewInputError("err_uploadingredient_exists",
 				"Ingredient with namespace '[ACTIONABLE]{{.V0}}[/RESET]' and name '[ACTIONABLE]{{.V1}}[/RESET]' already exists. "+
 					"To edit an existing ingredient you need to pass the '[ACTIONABLE]--edit[/RESET]' flag.",
@@ -144,7 +174,7 @@ func (r *Runner) Run(params *Params) error {
 		}
 	}
 
-	if err := prepareRequestFromParams(&reqVars, params); err != nil {
+	if err := prepareRequestFromParams(&reqVars, params, isRevision); err != nil {
 		return errs.Wrap(err, "Could not prepare request from params")
 	}
 
@@ -161,7 +191,7 @@ func (r *Runner) Run(params *Params) error {
 	if params.Edit {
 		// Description is not currently supported for edit
 		// https://activestatef.atlassian.net/browse/DX-1886
-		if reqVars.Description != ptr.From(ingredient.Ingredient.Description, "") {
+		if reqVars.Description != "" {
 			return locale.NewInputError("err_uploadingredient_edit_description_not_supported")
 		}
 
@@ -220,7 +250,7 @@ func (r *Runner) Run(params *Params) error {
 	return nil
 }
 
-func prepareRequestFromParams(r *request.PublishVariables, params *Params) error {
+func prepareRequestFromParams(r *request.PublishVariables, params *Params, isRevision bool) error {
 	if params.Version != "" {
 		r.Version = params.Version
 	}
@@ -231,8 +261,8 @@ func prepareRequestFromParams(r *request.PublishVariables, params *Params) error
 	if params.Description != "" {
 		r.Description = params.Description
 	}
-	if r.Description == "" {
-		r.Description = "not provided"
+	if r.Description == "" && !isRevision {
+		r.Description = "Not Provided"
 	}
 
 	if len(params.Authors) != 0 {
@@ -250,7 +280,7 @@ func prepareRequestFromParams(r *request.PublishVariables, params *Params) error
 		for _, dep := range params.Depends {
 			r.Dependencies = append(
 				r.Dependencies,
-				request.PublishVariableDep{request.Dependency{Name: dep.Name, Namespace: dep.Namespace}, []request.Dependency{}},
+				request.PublishVariableDep{request.Dependency{Name: dep.Name, Namespace: dep.Namespace, VersionRequirements: dep.Version}, []request.Dependency{}},
 			)
 		}
 	}
@@ -268,39 +298,42 @@ func prepareRequestFromParams(r *request.PublishVariables, params *Params) error
 	return nil
 }
 
-func prepareEditRequest(ingredient *model.IngredientAndVersion, r *request.PublishVariables) error {
-	authors, err := model.FetchAuthors(ingredient.Ingredient.IngredientID, ingredient.LatestVersion.IngredientVersionID)
-	if err != nil {
-		return locale.WrapError(err, "err_uploadingredient_fetch_authors", "Could not fetch authors for ingredient")
-	}
+// prepareEditRequest inherits meta data from the previous ingredient revision if it exists. This should really happen
+// on the API, but at the time of implementation we did this client side as the API side requires significant refactorings
+// to enable this behavior.
+func prepareEditRequest(ingredient *ParentIngredient, r *request.PublishVariables, isRevision bool) error {
+	r.Version = ingredient.Version
 
-	r.Version = ptr.From(ingredient.LatestVersion.Version, "")
-	r.Description = ptr.From(ingredient.Ingredient.Description, "")
-
-	if len(authors) > 0 {
-		r.Authors = []request.PublishVariableAuthor{}
-		for _, author := range authors {
-			var websites []string
-			for _, w := range author.Websites {
-				websites = append(websites, w.String())
+	if !isRevision {
+		authors, err := model.FetchAuthors(&ingredient.IngredientID, &ingredient.IngredientVersionID)
+		if err != nil {
+			return locale.WrapError(err, "err_uploadingredient_fetch_authors", "Could not fetch authors for ingredient")
+		}
+		if len(authors) > 0 {
+			r.Authors = []request.PublishVariableAuthor{}
+			for _, author := range authors {
+				var websites []string
+				for _, w := range author.Websites {
+					websites = append(websites, w.String())
+				}
+				r.Authors = append(r.Authors, request.PublishVariableAuthor{
+					Name:     ptr.From(author.Name, ""),
+					Email:    author.Email.String(),
+					Websites: websites,
+				})
 			}
-			r.Authors = append(r.Authors, request.PublishVariableAuthor{
-				Name:     ptr.From(author.Name, ""),
-				Email:    author.Email.String(),
-				Websites: websites,
-			})
 		}
 	}
 
-	if len(ingredient.LatestVersion.Dependencies) > 0 {
+	if len(ingredient.Dependencies) > 0 {
 		r.Dependencies = []request.PublishVariableDep{}
-		for _, dep := range ingredient.LatestVersion.Dependencies {
+		for _, dep := range ingredient.Dependencies {
 			r.Dependencies = append(
 				r.Dependencies,
 				request.PublishVariableDep{request.Dependency{
 					Name:                ptr.From(dep.Feature, ""),
 					Namespace:           ptr.From(dep.Namespace, ""),
-					VersionRequirements: dep.OriginalRequirement,
+					VersionRequirements: model.RequirementsToString(dep.Requirements),
 				}, []request.Dependency{}},
 			)
 		}
