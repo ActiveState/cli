@@ -731,14 +731,14 @@ func (e *BuildExpression) addRequirement(requirement model.Requirement) error {
 	}
 
 	if requirement.VersionRequirement != nil {
+		values := []*Value{}
 		for _, r := range requirement.VersionRequirement {
-			obj = append(obj, &Var{Name: RequirementVersionRequirementsKey, Value: &Value{List: &[]*Value{
-				{Object: &[]*Var{
-					{Name: RequirementComparatorKey, Value: &Value{Str: ptr.To(r[RequirementComparatorKey])}},
-					{Name: RequirementVersionKey, Value: &Value{Str: ptr.To(r[RequirementVersionKey])}},
-				}}},
+			values = append(values, &Value{Object: &[]*Var{
+				{Name: RequirementComparatorKey, Value: &Value{Str: ptr.To(r[RequirementComparatorKey])}},
+				{Name: RequirementVersionKey, Value: &Value{Str: ptr.To(r[RequirementVersionKey])}},
 			}})
 		}
+		obj = append(obj, &Var{Name: RequirementVersionRequirementsKey, Value: &Value{List: &values}})
 	}
 
 	requirementsNode, err := e.getRequirementsNode()
