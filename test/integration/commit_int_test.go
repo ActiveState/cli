@@ -20,7 +20,6 @@ type CommitIntegrationTestSuite struct {
 
 func (suite *CommitIntegrationTestSuite) TestCommitManualBuildScriptMod() {
 	suite.OnlyRunForTags(tagsuite.Commit)
-	suite.T().Skip("Temporarily disable buildscripts until DX-2307") // remove in DX-2307
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 

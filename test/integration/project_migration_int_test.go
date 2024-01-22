@@ -18,7 +18,6 @@ type ProjectMigrationIntegrationTestSuite struct {
 
 func (suite *ProjectMigrationIntegrationTestSuite) TestPromptMigration() {
 	suite.OnlyRunForTags(tagsuite.Critical)
-	suite.T().Skip("Temporarily disabling project migration until DX-2307") // remove in DX-2307
 	ts := e2e.New(suite.T(), false)
 	defer ts.Close()
 

@@ -564,25 +564,6 @@ func (p *Project) LegacyCommitID() string {
 	return p.parsedURL.LegacyCommitID
 }
 
-// LegacySetCommit is for use by commitmediator.Set() ONLY.
-// It changes the legacy commit ID in activestate.yaml.
-// Remove this in DX-2307.
-func (p *Project) LegacySetCommit(commitID string) error {
-	pf := NewProjectField()
-	if err := pf.LoadProject(p.Project); err != nil {
-		return errs.Wrap(err, "Could not load activestate.yaml")
-	}
-	pf.LegacySetCommit(commitID)
-	if err := pf.Save(p.path); err != nil {
-		return errs.Wrap(err, "Could not save activestate.yaml")
-	}
-
-	p.parsedURL.LegacyCommitID = commitID
-	p.Project = pf.String()
-	return nil
-}
-
-// Remove this function in DX-2307.
 func (p *Project) Dir() string {
 	return filepath.Dir(p.path)
 }
@@ -934,17 +915,16 @@ func FromExactPath(path string) (*Project, error) {
 
 // CreateParams are parameters that we create a custom activestate.yaml file from
 type CreateParams struct {
-	Owner          string
-	Project        string
-	BranchName     string
-	Directory      string
-	Content        string
-	Language       string
-	Private        bool
-	path           string
-	ProjectURL     string
-	Cache          string
-	LegacyCommitID string // remove in DX-2307
+	Owner      string
+	Project    string
+	BranchName string
+	Directory  string
+	Content    string
+	Language   string
+	Private    bool
+	path       string
+	ProjectURL string
+	Cache      string
 }
 
 // Create will create a new activestate.yaml with a projectURL for the given details
@@ -978,11 +958,6 @@ func createCustom(params *CreateParams, lang language.Language) (*Project, error
 
 		if params.BranchName != "" {
 			q.Set("branch", params.BranchName)
-		}
-
-		// Remove this block in DX-2307.
-		if params.LegacyCommitID != "" {
-			q.Set("commitID", params.LegacyCommitID)
 		}
 
 		u.RawQuery = q.Encode()

@@ -367,13 +367,8 @@ func (suite *PushIntegrationTestSuite) TestPush_Outdated() {
 	wd := filepath.Join(ts.Dirs.Work, "cli")
 	pjfilepath := filepath.Join(ts.Dirs.Work, "cli", constants.ConfigFileName)
 	suite.Require().NoError(fileutils.WriteFile(pjfilepath, []byte(projectLine)))
-	// Remove the following lines in DX-2307.
-	pjfile, err := projectfile.Parse(pjfilepath)
-	suite.Require().NoError(err)
-	suite.Require().NoError(pjfile.LegacySetCommit(unPushedCommit))
-	// Re-enable the following lines in DX-2307.
-	//commitIdFile := filepath.Join(ts.Dirs.Work, "cli", constants.ProjectConfigDirName, constants.CommitIdFileName)
-	//suite.Require().NoError(fileutils.WriteFile(commitIdFile, []byte(unPushedCommit)))
+	commitIdFile := filepath.Join(ts.Dirs.Work, "cli", constants.ProjectConfigDirName, constants.CommitIdFileName)
+	suite.Require().NoError(fileutils.WriteFile(commitIdFile, []byte(unPushedCommit)))
 
 	ts.LoginAsPersistentUser()
 	cp := ts.SpawnWithOpts(e2e.OptArgs("push"), e2e.OptWD(wd))
