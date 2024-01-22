@@ -120,8 +120,6 @@ func (r *Runtime) validateCache() error {
 		return nil
 	}
 
-	return nil // remove in DX-2307 to re-enable buildscripts below
-
 	// Check if local build script has changes that should be committed.
 	script, err := buildscript.NewScriptFromProject(r.target, r.auth)
 	if err != nil {

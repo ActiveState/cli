@@ -5,6 +5,7 @@ import (
 	"github.com/ActiveState/cli/internal/locale"
 	"github.com/ActiveState/cli/internal/output"
 	"github.com/ActiveState/cli/internal/rtutils"
+	"github.com/ActiveState/cli/internal/runbits/buildscript"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/platform/runtime"
@@ -25,11 +26,10 @@ func RefreshRuntime(
 	svcm *model.SvcModel,
 	cfg model.Configurable,
 ) (rerr error) {
-	// Re-enable in DX-2307.
-	//_, err := buildscript.Sync(proj, &commitID, out, auth)
-	//if err != nil {
-	//	return locale.WrapError(err, "err_update_build_script")
-	//}
+	_, err := buildscript.Sync(proj, &commitID, out, auth)
+	if err != nil {
+		return locale.WrapError(err, "err_update_build_script")
+	}
 	target := target.NewProjectTarget(proj, resolveCommitID(proj, &commitID), trigger)
 	isCached := true
 	rt, err := runtime.New(target, an, svcm, auth, cfg)

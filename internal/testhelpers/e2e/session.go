@@ -41,7 +41,6 @@ import (
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
 	"github.com/ActiveState/cli/pkg/project"
-	"github.com/ActiveState/cli/pkg/projectfile" // remove in DX-2307
 )
 
 // Session represents an end-to-end testing session during which several console process can be spawned and tested
@@ -320,11 +319,7 @@ func (s *Session) PrepareActiveStateYAML(contents string) {
 }
 
 func (s *Session) PrepareCommitIdFile(commitID string) {
-	// Replace the contents of this function with the line below in DX-2307.
-	//require.NoError(s.T, fileutils.WriteFile(filepath.Join(s.Dirs.Work, constants.ProjectConfigDirName, constants.CommitIdFileName), []byte(commitID)))
-	pjfile, err := projectfile.Parse(filepath.Join(s.Dirs.Work, constants.ConfigFileName))
-	require.NoError(s.T, err)
-	require.NoError(s.T, pjfile.LegacySetCommit(commitID))
+	require.NoError(s.T, fileutils.WriteFile(filepath.Join(s.Dirs.Work, constants.ProjectConfigDirName, constants.CommitIdFileName), []byte(commitID)))
 }
 
 // PrepareProject creates a very simple activestate.yaml file for the given org/project and, if a

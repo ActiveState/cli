@@ -40,13 +40,12 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckout() {
 	suite.Require().True(fileutils.FileExists(filepath.Join(ts.Dirs.Work, constants.ConfigFileName)), "ActiveState-CLI/Python3 was not checked out properly")
 
 	// Verify .activestate/commit and .gitignore were created.
-	// Re-enable the following lines in DX-2307.
-	//projectConfigDir := filepath.Join(ts.Dirs.Work, constants.ProjectConfigDirName)
-	//suite.Require().True(fileutils.DirExists(projectConfigDir), "state checkout should have created "+projectConfigDir)
-	//suite.Assert().True(fileutils.FileExists(filepath.Join(projectConfigDir, constants.CommitIdFileName)), "commit file not created")
-	//gitignoreFile := filepath.Join(ts.Dirs.Work, ".gitignore")
-	//suite.Assert().True(fileutils.FileExists(gitignoreFile), "fresh checkout did not create .gitignore")
-	//suite.Assert().Contains(string(fileutils.ReadFileUnsafe(gitignoreFile)), fmt.Sprintf("%s/%s", constants.ProjectConfigDirName, constants.CommitIdFileName), "commit file not added to .gitignore")
+	projectConfigDir := filepath.Join(ts.Dirs.Work, constants.ProjectConfigDirName)
+	suite.Require().True(fileutils.DirExists(projectConfigDir), "state checkout should have created "+projectConfigDir)
+	suite.Assert().True(fileutils.FileExists(filepath.Join(projectConfigDir, constants.CommitIdFileName)), "commit file not created")
+	gitignoreFile := filepath.Join(ts.Dirs.Work, ".gitignore")
+	suite.Assert().True(fileutils.FileExists(gitignoreFile), "fresh checkout did not create .gitignore")
+	suite.Assert().Contains(string(fileutils.ReadFileUnsafe(gitignoreFile)), fmt.Sprintf("%s/%s", constants.ProjectConfigDirName, constants.CommitIdFileName), "commit file not added to .gitignore")
 
 	// Verify runtime was installed correctly and works.
 	targetDir := target.ProjectDirToTargetDir(ts.Dirs.Work, ts.Dirs.Cache)
@@ -155,10 +154,9 @@ func (suite *CheckoutIntegrationTestSuite) TestCheckoutWithFlags() {
 	cp.ExpectExitCode(0)
 
 	suite.Require().True(fileutils.DirExists(python3Dir), "state checkout should have created "+python3Dir)
-	// Re-enable the following lines in DX-2307.
-	//commitIdFile := filepath.Join(python3Dir, constants.ProjectConfigDirName, constants.CommitIdFileName)
-	//suite.Require().True(fileutils.FileExists(commitIdFile), "ActiveState-CLI/Python3 was not checked out properly")
-	//suite.Assert().Equal(string(fileutils.ReadFileUnsafe(commitIdFile)), "6d9280e7-75eb-401a-9e71-0d99759fbad3", "did not check out specific commit ID")
+	commitIdFile := filepath.Join(python3Dir, constants.ProjectConfigDirName, constants.CommitIdFileName)
+	suite.Require().True(fileutils.FileExists(commitIdFile), "ActiveState-CLI/Python3 was not checked out properly")
+	suite.Assert().Equal(string(fileutils.ReadFileUnsafe(commitIdFile)), "6d9280e7-75eb-401a-9e71-0d99759fbad3", "did not check out specific commit ID")
 
 	// Test --branch mismatch in non-checked-out project.
 	branchPath := filepath.Join(ts.Dirs.Base, "branch")

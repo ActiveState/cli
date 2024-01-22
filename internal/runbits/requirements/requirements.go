@@ -28,6 +28,7 @@ import (
 	medmodel "github.com/ActiveState/cli/pkg/platform/api/mediator/model"
 	"github.com/ActiveState/cli/pkg/platform/authentication"
 	"github.com/ActiveState/cli/pkg/platform/model"
+	"github.com/ActiveState/cli/pkg/platform/runtime/buildscript"
 	"github.com/ActiveState/cli/pkg/platform/runtime/target"
 	"github.com/ActiveState/cli/pkg/project"
 	"github.com/go-openapi/strfmt"
@@ -281,19 +282,13 @@ func (r *RequirementOperation) ExecuteRequirementOperation(
 		return errs.Wrap(err, "Unsupported namespace type: %s", ns.Type().String())
 	}
 
-	// Re-enable in DX-2307.
-	//expr, err := bp.GetBuildExpression(r.Project.Owner(), r.Project.Name(), commitID.String())
-	//if err != nil {
-	//	return errs.Wrap(err, "Could not get remote build expr")
-	//}
-
 	// refresh or install runtime
 	err = runbits.RefreshRuntime(r.Auth, r.Output, r.Analytics, r.Project, commitID, true, trigger, r.SvcModel, r.Config)
 	if err != nil {
-		return handleRefreshError(err, r.Project, parentCommitID)
+		return r.handleRefreshError(err, parentCommitID)
 	}
 
-	if err := updateCommitID(r.Project, commitID); err != nil {
+	if err := r.updateCommitID(commitID); err != nil {
 		return locale.WrapError(err, "err_package_update_commit_id")
 	}
 
@@ -331,28 +326,32 @@ func (r *RequirementOperation) ExecuteRequirementOperation(
 	return nil
 }
 
-func handleRefreshError(err error, project *project.Project, parentCommitID strfmt.UUID) error {
+func (r *RequirementOperation) handleRefreshError(err error, parentCommitID strfmt.UUID) error {
 	// If the error is a build error then return, if not update the commit ID then return
 	if !runbits.IsBuildError(err) {
-		if err := updateCommitID(project, parentCommitID); err != nil {
+		if err := r.updateCommitID(parentCommitID); err != nil {
 			return locale.WrapError(err, "err_package_update_commit_id")
 		}
 	}
 	return err
 }
 
-func updateCommitID(project *project.Project, commitID strfmt.UUID) error {
-	if err := commitmediator.Set(project, commitID.String()); err != nil {
+func (r *RequirementOperation) updateCommitID(commitID strfmt.UUID) error {
+	if err := commitmediator.Set(r.Project, commitID.String()); err != nil {
 		return locale.WrapError(err, "err_package_update_commit_id")
 	}
 
+	bp := model.NewBuildPlannerModel(r.Auth)
+	expr, err := bp.GetBuildExpression(r.Project.Owner(), r.Project.Name(), commitID.String())
+	if err != nil {
+		return errs.Wrap(err, "Could not get remote build expr")
+	}
+
 	// Note: a commit ID file needs to exist at this point.
-	// Re-enable in DX-2307.
-	// Will have to pass the buildscript as an argument to this function.
-	//err = buildscript.Update(r.Project, expr, r.Auth)
-	//if err != nil {
-	//	return locale.WrapError(err, "err_update_build_script")
-	//}
+	err = buildscript.Update(r.Project, expr, r.Auth)
+	if err != nil {
+		return locale.WrapError(err, "err_update_build_script")
+	}
 
 	return nil
 }
