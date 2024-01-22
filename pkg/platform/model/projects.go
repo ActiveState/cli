@@ -245,6 +245,9 @@ func MakeProjectPrivate(owner, name string) error {
 	_, err := authentication.Client().Projects.EditProject(editParams, authentication.ClientAuth())
 	if err != nil {
 		msg := api.ErrorMessageFromPayload(err)
+		if errs.Matches(err, &projects.EditProjectBadRequest{}) {
+			return locale.WrapInputError(err, msg) // user does not have permission
+		}
 		return locale.WrapError(err, msg)
 	}
 
