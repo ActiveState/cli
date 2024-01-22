@@ -32,7 +32,7 @@ func (suite *ErrorsIntegrationTestSuite) TestMultiError() {
 	defer ts.Close()
 
 	cp := ts.Spawn("__test", "multierror")
-	cp.ExpectRe(`\s+x error1\s+\s+x error2\s+x error3\s+x error4\s+█\s+Need More Help`)
+	cp.ExpectRe(`\s+x error1.\s+\s+x error2.\s+x error3.\s+x error4.\s+█\s+Need More Help`)
 	cp.ExpectExitCode(1)
 	ts.IgnoreLogErrors()
 }
