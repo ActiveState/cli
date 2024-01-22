@@ -60,9 +60,12 @@ func (r *Checkout) Run(ns *project.Namespaced, branchName, cachePath, targetPath
 		return "", errs.Wrap(err, "Could not get absolute path")
 	}
 
-	emptyDir, err := fileutils.IsEmptyDir(path)
-	if err != nil {
-		multilog.Error("Unable to check if directory is empty: %v", err)
+	emptyDir := true
+	if fileutils.DirExists(path) {
+		emptyDir, err = fileutils.IsEmptyDir(path)
+		if err != nil {
+			multilog.Error("Unable to check if directory is empty: %v", err)
+		}
 	}
 
 	// If project does not exist at path then we must checkout
