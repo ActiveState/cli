@@ -40,9 +40,9 @@ type ArtifactCache struct {
 
 const MB int64 = 1024 * 1024
 
-// New returns a new artifact cache in the State Tool's cache directory with the default maximum size of 500MB.
+// New returns a new artifact cache in the State Tool's cache directory with the default maximum size of 1GB.
 func New() (*ArtifactCache, error) {
-	var maxSize int64 = 500 * MB
+	var maxSize int64 = 1024 * MB
 	// TODO: size should be configurable and the user should be warned of an invalid size.
 	// https://activestatef.atlassian.net/browse/DX-984
 	if sizeOverride, err := strconv.Atoi(os.Getenv(constants.ArtifactCacheSizeEnvVarName)); err != nil && sizeOverride > 0 {
