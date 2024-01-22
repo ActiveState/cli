@@ -87,5 +87,6 @@ func newActivateCommand(prime *primer.Values) *captain.Command {
 		},
 	)
 	cmd.SetGroup(EnvironmentUsageGroup)
+	cmd.DeprioritizeInHelpListing()
 	return cmd
 }
