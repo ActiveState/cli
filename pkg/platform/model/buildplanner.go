@@ -257,6 +257,10 @@ func (bp *BuildPlanner) StageCommit(params StageCommitParams) (strfmt.UUID, erro
 			if err != nil {
 				return "", errs.Wrap(err, "Failed to update build expression with requirement")
 			}
+
+			if err := expression.SetDefaultTimestamp(); err != nil {
+				return "", errs.Wrap(err, "Failed to set default timestamp")
+			}
 		}
 	}
 
