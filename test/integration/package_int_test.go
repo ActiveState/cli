@@ -446,7 +446,7 @@ func (suite *PackageIntegrationTestSuite) TestJSON() {
 	AssertValidJSON(suite.T(), cp)
 
 	cp = ts.Spawn("packages", "-o", "json")
-	cp.Expect(`[{"package":"Text-CSV","version":"Auto"}]`)
+	cp.Expect(`[{"package":"Text-CSV","version":"Auto","resolved_version":"`)
 	cp.ExpectExitCode(0)
 	AssertValidJSON(suite.T(), cp)
 
@@ -483,7 +483,9 @@ func (suite *PackageIntegrationTestSuite) TestNormalize() {
 		e2e.OptWD(dir),
 		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
-	cp.Expect("charset-normalizer")
+	// Even though we are not sourcing a runtime it can still take time to resolve
+	// the dependencies and create the commit
+	cp.Expect("charset-normalizer", e2e.RuntimeSourcingTimeoutOpt)
 	cp.Expect("is different")
 	cp.Expect("Charset_normalizer")
 	cp.ExpectExitCode(0)
@@ -503,8 +505,8 @@ func (suite *PackageIntegrationTestSuite) TestNormalize() {
 		e2e.OptWD(anotherDir),
 		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
-	cp.Expect("charset-normalizer")
-	cp.ExpectExitCode(0)
+	cp.Expect("charset-normalizer", e2e.RuntimeSourcingTimeoutOpt)
+	cp.ExpectExitCode(0, e2e.RuntimeSourcingTimeoutOpt)
 	suite.NotContains(cp.Output(), "is different")
 }
 
@@ -580,7 +582,7 @@ func (suite *PackageIntegrationTestSuite) TestUpdate() {
 		e2e.OptArgs("install", "pytest@7.4.0"),              // update
 		e2e.OptAppendEnv(constants.DisableRuntime+"=false"), // We DO want to test the runtime part, just not for every step
 	)
-	cp.ExpectExitCode(0)
+	cp.ExpectExitCode(0, e2e.RuntimeSourcingTimeoutOpt)
 
 	cp = ts.Spawn("history")
 	cp.Expect("pytest")
@@ -612,7 +614,7 @@ func (suite *PackageIntegrationTestSuite) TestRuby() {
 		e2e.OptArgs("exec", "rake", "--", "--version"),
 		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
-	cp.ExpectRe(`rake, version \d+\.\d+\.\d+`)
+	cp.ExpectRe(`rake, version \d+\.\d+\.\d+`, e2e.RuntimeSourcingTimeoutOpt)
 	cp.ExpectExitCode(0)
 }
 
@@ -634,13 +636,13 @@ func (suite *PackageIntegrationTestSuite) TestProjectWithOfflineInstallerAndDock
 		e2e.OptArgs("install", "requests"),
 		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
-	cp.ExpectExitCode(0)
+	cp.ExpectExitCode(0, e2e.RuntimeSourcingTimeoutOpt)
 
 	cp = ts.SpawnWithOpts(
 		e2e.OptArgs("uninstall", "requests"),
 		e2e.OptAppendEnv(constants.DisableRuntime+"=false"),
 	)
-	cp.ExpectExitCode(0)
+	cp.ExpectExitCode(0, e2e.RuntimeSourcingTimeoutOpt)
 }
 
 func TestPackageIntegrationTestSuite(t *testing.T) {
