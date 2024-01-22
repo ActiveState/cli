@@ -351,7 +351,7 @@ func (s *Auth) Logout() error {
 func (s *Auth) Client() *mono_client.Mono {
 	client, err := s.ClientSafe()
 	if err != nil {
-		multilog.Error("Trying to get the Client while not authenticated")
+		logging.Debug("Trying to get the Client while not authenticated")
 		fmt.Fprintln(os.Stderr, colorize.StripColorCodes(locale.T("err_api_not_authenticated")))
 		exit(1)
 	}
