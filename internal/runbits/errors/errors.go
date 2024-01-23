@@ -195,6 +195,7 @@ func ReportError(err error, cmd *captain.Command, an analytics.Dispatcher) {
 		multilog.Critical("Returning error:\n%s\nCreated at:\n%s", errs.JoinMessage(err), stack)
 		action = anaConst.ActCommandError
 	} else {
+		logging.Debug("Returning input error:\n%s\nCreated at:\n%s", errs.JoinMessage(err), stack)
 		action = anaConst.ActCommandInputError
 		for _, err := range errs.Unpack(err) {
 			if locale.IsInputErrorNonRecursive(err) {
